@@ -300,7 +300,7 @@ PS_COLORSPACE_DEPS=\
 	$(PSRESDIR)$(D)ColorSpace$(D)DefaultRGB \
 	$(PSRESDIR)$(D)ColorSpace$(D)TrivialCMYK \
 	$(PSRESDIR)$(D)ColorSpace$(D)sGray \
-	$(PSRESDIR)$(D)ColorSpace$(D)sRGB 
+	$(PSRESDIR)$(D)ColorSpace$(D)sRGB
 
 # A list of all of the files in Resource/Decoding
 PS_DECODING_DEPS=\
@@ -310,7 +310,7 @@ PS_DECODING_DEPS=\
 	$(PSRESDIR)$(D)Decoding$(D)FCO_Wingdings \
 	$(PSRESDIR)$(D)Decoding$(D)Latin1 \
 	$(PSRESDIR)$(D)Decoding$(D)StandardEncoding \
-	$(PSRESDIR)$(D)Decoding$(D)Unicode 
+	$(PSRESDIR)$(D)Decoding$(D)Unicode
 
 # A list of all of the files in Resource/Encoding
 PS_ENCODING_DEPS=\
@@ -391,7 +391,6 @@ PS_INIT_DEPS=\
 	$(PSRESDIR)$(D)Init$(D)gs_icc.ps \
 	$(PSRESDIR)$(D)Init$(D)gs_il1_e.ps \
 	$(PSRESDIR)$(D)Init$(D)gs_img.ps \
-	$(PSRESDIR)$(D)Init$(D)gs_l2img.ps \
 	$(PSRESDIR)$(D)Init$(D)gs_lev2.ps \
 	$(PSRESDIR)$(D)Init$(D)gs_ll3.ps \
 	$(PSRESDIR)$(D)Init$(D)gs_mex_e.ps \
@@ -435,4 +434,3 @@ PS_ROMFS_DEPS=$(PSSRCDIR)$(D)psromfs.mak $(gconfig_h) $(gs_tr) \
 	$(PDF_RESOURCE_DEPS) $(PS_COLORSPACE_DEPS) $(PS_DECODING_DEPS) $(PS_ENCODING_DEPS) \
 	$(PS_FONT_DEPS) $(PS_IDIOMSET_DEPS) $(PS_PROCSET_DEPS) $(PS_INIT_DEPS) $(PS_SUBSTCID_DEPS) \
 	$(PS_MISC_DEPS)
-

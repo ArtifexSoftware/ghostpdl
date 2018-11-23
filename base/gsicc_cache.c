@@ -33,6 +33,7 @@
 #include "string_.h"  /* Needed for named color structure allocation */
 #include "gxsync.h"
 #include "gzstate.h"
+#include "stdint_.h"
         /*
          *  Note that the the external memory used to maintain
          *  links in the CMS is generally not visible to GS.
@@ -119,8 +120,8 @@ gsicc_cache_new(gs_memory_t *memory)
     result->num_links = 0;
     result->memory = memory->stable_memory;
     if_debug2m(gs_debug_flag_icc, memory,
-               "[icc] Allocating link cache = 0x%p memory = 0x%p\n", result,
-               result->memory);
+               "[icc] Allocating link cache = 0x%p memory = 0x%p\n",
+	       result, result->memory);
     return(result);
 }
 
@@ -212,8 +213,8 @@ gsicc_alloc_link_dev(gs_memory_t *memory, cmm_profile_t *src_profile,
     result->valid = true;
     result->memory = memory->stable_memory;
 
-    if_debug2m('^', result->memory, "[^]%s 0x%lx init = 1\n",
-               "icclink", result);
+    if_debug1m('^', result->memory, "[^]icclink 0x%p init = 1\n",
+               result);
 
     if (src_profile->profile_handle == NULL) {
         src_profile->profile_handle = gsicc_get_profile_handle_buffer(
@@ -303,8 +304,8 @@ gsicc_alloc_link(gs_memory_t *memory, gsicc_hashlink_t hashcode)
     result->valid = false;		/* not yet complete */
     result->memory = memory->stable_memory;
 
-    if_debug2m('^', result->memory, "[^]%s 0x%lx init = 1\n",
-               "icclink", result);
+    if_debug1m('^', result->memory, "[^]icclink 0x%p init = 1\n",
+               result);
     return result;
 }
 
@@ -527,7 +528,7 @@ gsicc_findcachelink(gsicc_hashlink_t hash, gsicc_link_cache_t *icc_link_cache,
             }
             /* bump the ref_count since we will be using this one */
             curr->ref_count++;
-            if_debug3m('^', curr->memory, "[^]%s 0x%lx ++ => %ld\n",
+            if_debug3m('^', curr->memory, "[^]%s 0x%p ++ => %ld\n",
                        "icclink", curr, curr->ref_count);
             while (curr->valid == false) {
 #ifndef MEMENTO_SQUEEZE_BUILD
@@ -579,8 +580,8 @@ gsicc_find_zeroref_cache(gsicc_link_cache_t *icc_link_cache)
     while (curr != NULL ) {
         if (curr->ref_count == 0) {
             curr->ref_count++;		/* we will use this one */
-            if_debug3m('^', curr->memory, "[^]%s 0x%lx ++ => %ld\n",
-                       "icclink", curr, curr->ref_count);
+            if_debug2m('^', curr->memory, "[^]icclink 0x%p ++ => %ld\n",
+                       curr, curr->ref_count);
             break;
         }
         curr = curr->next;
@@ -603,7 +604,7 @@ gsicc_remove_link(gsicc_link_t *link, const gs_memory_t *memory)
     gx_monitor_enter(icc_link_cache->lock);
 #endif
     if (link->ref_count != 0) {
-        emprintf2(memory, "link at 0x%p being removed, but has ref_count = %d\n", link, link->ref_count);
+      emprintf2(memory, "link at 0x%p being removed, but has ref_count = %d\n", link, link->ref_count);
     }
     curr = icc_link_cache->head;
     prev = NULL;
@@ -1281,8 +1282,8 @@ gsicc_get_link_profile(const gs_gstate *pgs, gx_device *dev,
         /* This could result in an infinite loop if other threads are waiting	*/
         /* for it to be made valid. (see gsicc_findcachelink).			*/
         link->ref_count--;	/* this thread no longer using this link entry	*/
-        if_debug3m('^', link->memory, "[^]%s 0x%lx -- => %ld\n",
-                   "icclink", link, link->ref_count);
+        if_debug2m('^', link->memory, "[^]icclink 0x%p -- => %ld\n",
+                   link, link->ref_count);
 
 #ifndef MEMENTO_SQUEEZE_BUILD
         gx_monitor_leave(link->lock);
@@ -1665,8 +1666,8 @@ gsicc_release_link(gsicc_link_t *icclink)
 #ifndef MEMENTO_SQUEEZE_BUILD
     gx_monitor_enter(icc_link_cache->lock);
 #endif
-    if_debug3m('^', icclink->memory, "[^]%s 0x%lx -- => %ld\n",
-               "icclink", icclink, icclink->ref_count - 1);
+    if_debug2m('^', icclink->memory, "[^]icclink 0x%p -- => %ld\n",
+               icclink, icclink->ref_count - 1);
     /* Decrement the reference count */
     if (--(icclink->ref_count) == 0) {
 

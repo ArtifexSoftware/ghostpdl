@@ -560,11 +560,6 @@ BAND_LIST_COMPRESSOR=zlib
 
 FILE_IMPLEMENTATION=stdio
 
-# Choose the implementation of stdio: '' for file I/O and 'c' for callouts
-# See gs.mak and ziodevs.c/ziodevsc.c for more details.
-
-STDIO_IMPLEMENTATION=c
-
 # List of default devices, in order of priority. They need not be 
 # present in the actual build.
 GS_DEV_DEFAULT="x11alpha bbox"

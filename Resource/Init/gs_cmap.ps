@@ -118,7 +118,7 @@
 } bind def
 
 /endcmap {		% - endcmap -
-  .rewriteTempMapsNotDef
+  //.rewriteTempMapsNotDef exec
 
   CMAPDEBUG {
     2 (*** undefined charmap ***)
@@ -545,5 +545,7 @@ dup /DefineResource {
  { pop pop 3 -1 roll }
  { dup length 4 index length add dict .copydict 4 -1 roll exch .copydict }
 ifelse exch defineresource pop
+
+currentdict /.rewriteTempMapsNotDef .undef
 
 .setlanguagelevel

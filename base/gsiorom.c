@@ -137,7 +137,7 @@ s_block_read_seek(register stream * s, gs_offset_t pos)
 {
     uint32_t *node = (uint32_t *)s->file;
     uint32_t filelen = get_u32_big_endian(node) & 0x7fffffff;	/* ignore compression bit */
-    uint end = s->srlimit - s->cbuf + 1;
+    uint end = s->cursor.r.limit - s->cbuf + 1;
     long offset = pos - s->position;
 
     if (pos < 0 || pos > filelen)
@@ -151,16 +151,16 @@ s_block_read_seek(register stream * s, gs_offset_t pos)
         s->position = pos - offset;
         pw.ptr = s->cbuf - 1;
         pw.limit = pw.ptr + s->cbsize;
-        s->srptr = s->srlimit = s->cbuf - 1;
+        s->cursor.r.ptr = s->cursor.r.limit = s->cbuf - 1;
         if ((s->end_status = s_block_read_process((stream_state *)s, NULL, &pw, 0)) == ERRC)
             return ERRC;
         if (s->end_status == 1)
             s->end_status = 0;
-        s->srptr = s->cbuf - 1;
-        s->srlimit = pw.ptr;		/* limit of the block just read */
+        s->cursor.r.ptr = s->cbuf - 1;
+        s->cursor.r.limit = pw.ptr;		/* limit of the block just read */
     }
     /* Now set the read pointer to the correct place in the buffer */
-    s->srptr = s->cbuf + offset - 1;
+    s->cursor.r.ptr = s->cbuf + offset - 1;
     return 0;
 }
 
@@ -186,7 +186,7 @@ s_block_read_process(stream_state * st, stream_cursor_read * ignore_pr,
     int compression = ((get_u32_big_endian(node) & 0x80000000) != 0) ? 1 : 0;
     uint32_t filelen = get_u32_big_endian(node) & 0x7fffffff;	/* ignore compression bit */
     uint32_t blocks = (filelen+ROMFS_BLOCKSIZE-1) / ROMFS_BLOCKSIZE;
-    uint32_t iblock = (s->position + s->file_offset + (s->srlimit + 1 - s->cbuf)) / ROMFS_BLOCKSIZE;
+    uint32_t iblock = (s->position + s->file_offset + (s->cursor.r.limit + 1 - s->cbuf)) / ROMFS_BLOCKSIZE;
     uint32_t block_length = get_u32_big_endian(node+1+(2*iblock));
     uint32_t block_offset = get_u32_big_endian(node+2+(2*iblock));
     unsigned const char *block_data = ((unsigned char *)node) + block_offset;
@@ -216,7 +216,7 @@ s_block_read_process(stream_state * st, stream_cursor_read * ignore_pr,
             /* the cbuf, then the cbuf must be empty.			 */
             if (max_count < count) {
 #ifdef DEBUG
-                if ((sbufptr(s)) != s->srlimit)
+                if ((sbufptr(s)) != s->cursor.r.limit)
                     emprintf(s->memory, "cbuf not empty as expected\n.");
 #endif
                 dest = s->cbuf;

@@ -2626,7 +2626,6 @@
     <None Include="..\Resource\Init\gs_il1_e.ps" />
     <None Include="..\Resource\Init\gs_img.ps" />
     <None Include="..\Resource\Init\gs_init.ps" />
-    <None Include="..\Resource\Init\gs_l2img.ps" />
     <None Include="..\Resource\Init\gs_lev2.ps" />
     <None Include="..\Resource\Init\gs_ll3.ps" />
     <None Include="..\Resource\Init\gs_mex_e.ps" />

@@ -68,8 +68,13 @@ dup 7 -1 put
 
 setglobal
 
-% Remove all but 'letter' page size
+% Remove all but the default page size (the 0 entry in the InputAttributes
+% dictionary). This is usually 'letter'.
 <<
+% As we're removing all but the default, make sure we're
+% using the default.
+/PageSize currentpagedevice /InputAttributes get 0 get /PageSize get
+
 currentpagedevice /InputAttributes get
 1 1 2 index length 1 sub {
   1 index exch undef

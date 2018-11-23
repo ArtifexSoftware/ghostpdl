@@ -143,7 +143,6 @@ restore_check_save(i_ctx_t *i_ctx_p, alloc_save_t **asave)
 int
 dorestore(i_ctx_t *i_ctx_p, alloc_save_t *asave)
 {
-    os_ptr op = osp;
     bool last;
     vm_save_t *vmsave;
     int code;

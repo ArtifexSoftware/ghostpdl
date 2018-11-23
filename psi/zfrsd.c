@@ -396,16 +396,16 @@ s_aos_available(stream *s, gs_offset_t *pl)
 static int
 s_aos_seek(register stream * s, gs_offset_t pos)
 {
-    uint end = s->srlimit - s->cbuf + 1;
+    uint end = s->cursor.r.limit - s->cbuf + 1;
     long offset = pos - s->position;
 
     if (offset >= 0 && offset <= end) {  /* Staying within the same buffer */
-        s->srptr = s->cbuf + offset - 1;
+        s->cursor.r.ptr = s->cbuf + offset - 1;
         return 0;
     }
     if (pos < 0 || pos > s->file_limit)
         return ERRC;
-    s->srptr = s->srlimit = s->cbuf - 1;
+    s->cursor.r.ptr = s->cursor.r.limit = s->cbuf - 1;
     s->end_status = 0;
     s->position = pos;
     return 0;
@@ -417,7 +417,7 @@ s_aos_reset(stream *s)
     /* PLRM definition of reset operator is strange. */
     /* Rewind the file and discard the buffer. */
     s->position = 0;
-    s->srptr = s->srlimit = s->cbuf - 1;
+    s->cursor.r.ptr = s->cursor.r.limit = s->cbuf - 1;
     s->end_status = 0;
 }
 
@@ -425,7 +425,7 @@ static int
 s_aos_flush(stream *s)
 {
     s->position = ((aos_state_t *)s->state)->file_sz;
-    s->srptr = s->srlimit = s->cbuf - 1;
+    s->cursor.r.ptr = s->cursor.r.limit = s->cbuf - 1;
     return 0;
 }
 

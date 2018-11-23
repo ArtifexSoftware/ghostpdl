@@ -1217,7 +1217,7 @@ clist_writer_push_no_cropping(gx_device_clist_writer *cdev)
 
     if (buf == NULL)
         return_error(gs_error_VMerror);
-    if_debug4m('v', cdev->memory, "[v]push cropping[%d], min=%d, max=%d, buf=%0x\n",
+    if_debug4m('v', cdev->memory, "[v]push cropping[%d], min=%d, max=%d, buf=%p\n",
                cdev->cropping_level, cdev->cropping_min, cdev->cropping_max, buf);
     buf->next = cdev->cropping_stack;
     cdev->cropping_stack = buf;
@@ -1254,7 +1254,7 @@ clist_writer_pop_cropping(gx_device_clist_writer *cdev)
     cdev->temp_mask_id = buf->temp_mask_id;
     cdev->cropping_stack = buf->next;
     cdev->cropping_level--;
-    if_debug4m('v', cdev->memory, "[v]pop cropping[%d] min=%d, max=%d, buf=%0x\n",
+    if_debug4m('v', cdev->memory, "[v]pop cropping[%d] min=%d, max=%d, buf=%p\n",
                cdev->cropping_level, cdev->cropping_min, cdev->cropping_max, buf);
     gs_free_object(cdev->memory, buf, "clist_writer_transparency_pop");
     return 0;

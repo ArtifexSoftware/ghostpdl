@@ -29,6 +29,7 @@
 #include "gdevmpla.h"
 #include "gdevmrop.h"
 #include "gxdevsop.h"
+#include "stdint_.h"
 
 /*
  * Define the maximum amount of space we are willing to allocate for a
@@ -55,7 +56,7 @@ trace_copy_rop(const char *cname, gx_device * dev,
     dmlprintf4(dev->memory, "  source data=0x%lx x=%d raster=%u id=%lu colors=",
                (ulong) sdata, sourcex, sraster, (ulong) id);
     if (scolors)
-        dmprintf2(dev->memory, "(%lu,%lu);\n", scolors[0], scolors[1]);
+        dmprintf2(dev->memory, "(%"PRIx64",%"PRIx64");\n", (uint64_t)scolors[0], (uint64_t)scolors[1]);
     else
         dmputs(dev->memory, "none;\n");
     if (textures)
@@ -66,7 +67,7 @@ trace_copy_rop(const char *cname, gx_device * dev,
     else
         dmlputs(dev->memory, "  textures=none");
     if (tcolors)
-        dmprintf2(dev->memory, " colors=(%lu,%lu)\n", tcolors[0], tcolors[1]);
+        dmprintf2(dev->memory, " colors=(%"PRIx64",%"PRIx64")\n", (uint64_t)tcolors[0], (uint64_t)tcolors[1]);
     else
         dmputs(dev->memory, " colors=none\n");
     dmlprintf7(dev->memory, "  rect=(%d,%d),(%d,%d) phase=(%d,%d) op=0x%x\n",

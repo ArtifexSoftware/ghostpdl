@@ -150,11 +150,6 @@
 #	    both, provides both implementations with different procedure
 #	    names for the fd-based implementation (see sfxfd.c for
 #	    more information).
-#	STDIO_IMPLEMENTATION - normally 'c' which uses callouts and 
-#	    ziodevsc.c, but ghostscript library must use '' for file 
-#	    based stdio in ziodevs.c. 
-#           Callouts use procedure based streams and return back to
-#           to gs_main_interpret() in imain.c whenever stdio is needed.
 #
 # It is very unlikely that anyone would want to edit the remaining
 #   symbols, but we describe them here for completeness:

@@ -744,6 +744,31 @@ if
   }
 .bind systemdict begin odef end
 
+% undefine a bunch of local definitions
+% NOTE: all this goes away if we just get rid of img_utils_dict, but
+% that is intertwined with gs_dps.ps, so for now, just undef the separate pieces.
+[
+% /.colorimage -- used in gs_dpnxt,ps, need to nuke that so we can undef all this stuff
+ /img_params_dict
+ /img_unbuild_dict
+ /img_unbuild_image_dict
+ /img_unbuild_imagemask_dict
+ /img_build_dict
+ /img_build_image_dict
+ /img_build_imagemask_dict
+ /img_check_keys
+ /img_mask_check_ary
+ /img_params_ary
+ /img_mask_unbuild_ary
+ /img_mask_params_ary
+ /img_csary
+ /img_decary
+ /img_check_ary
+ /img_unbuild_ary
+ /.is_low_resolution
+]
+{currentdict exch .undef} forall
+
 end        % img_utils_dict
 
 .setglobal  % restore VM mode
