@@ -38,7 +38,7 @@
 #include "oper.h"
 #include "iconf.h"              /* for gs_init_* imports */
 #include "idebug.h"
-#include "idict.h"
+#include "iddict.h"
 #include "iname.h"              /* for name_init */
 #include "dstack.h"
 #include "estack.h"
@@ -686,18 +686,22 @@ gs_main_set_device(gs_main_instance * minst, gx_device *pdev)
     int code;
 
     if (pdev == NULL) {
-        code = gs_main_run_string(minst, "true 0 startjob pop .uninstallpagedevice gsave", 0, &code, &error_object);
-        if (code < 0) goto done;
-        code = gs_main_run_string(minst, "false 0 startjob pop", 0, &code, &error_object);
+        /* Leave job encapsulation, restore the graphics state gsaved below (so back to the nullpage device)
+           and re-enter job encapsulation.
+           We rely on the end of job encapsulation restore to the put the gstate stack back how it was when
+           we entered job encapsulation below, so the grestore will pickup the correct gstate.
+         */
+        code = gs_main_run_string(minst,
+                                 "true 0 startjob pop grestore false 0 startjob pop",
+                                 0, &code, &error_object);
         if (code < 0) goto done;
     }
     else {
+        /* Leave job encapsulation, and save the graphics state (including the device: nullpage)
+           Store the page size in a dictionary, which we'll use to configure the incoming device */
         code = gs_main_run_string(minst,
-                                  /* Do the startjob magic */
-                                  "true 0 startjob pop "
-                                  /* Make us a dictionary to carry over configuration from this
-                                   * device to the next (currently just page size). */
-                                  "<< /PageSize currentpagedevice /PageSize get >> "
+                                  "true 0 startjob pop gsave "
+                                  "<< /PageSize /PageSize /GetDeviceParam .special_op >> "
                                   , 0, &code, &error_object);
         if (code < 0) goto done;
         /* First call goes to the C directly to actually set the device. This
@@ -711,15 +715,12 @@ gs_main_set_device(gs_main_instance * minst, gx_device *pdev)
                                    * whether to erase page or not, but passes the safer
                                    * checks as the device is unchanged. */
                                   "setdevice "
-                                  /* Reconfigure the device with the carried over config. */
                                   "setpagedevice "
                                   /* GS specifics: Force the cached copy of the params to be updated. */
                                   "currentpagedevice pop "
                                   /* Setup the halftone */
                                   ".setdefaultscreen "
-                                  /* Save the gstate */
-                                  "gsave "
-                                  /* More startjob magic */
+                                  /* Re-enter job encapsulation */
                                   "false 0 startjob pop"
                                   , 0, &code, &error_object);
         if (code < 0) goto done;
