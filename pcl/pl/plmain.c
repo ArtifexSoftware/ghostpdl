@@ -291,8 +291,10 @@ revert_to_pjli(pl_main_instance_t *minst)
 
     if (minst->curr_implementation) {
         code = pl_dnit_job(minst->curr_implementation);
-        if (code < 0)
+        if (code < 0) {
+            minst->curr_implementation = NULL;
             return code;
+        }
     }
     minst->curr_implementation = pjli;
     code = pl_init_job(minst->curr_implementation, minst->device);
@@ -561,16 +563,17 @@ pl_main_delete_instance(pl_main_instance_t *minst)
 int
 pl_to_exit(gs_memory_t *mem)
 {
+    int ret = 0;
     pl_main_instance_t *minst = mem->gs_lib_ctx->top_of_system;
     /* Deselect last-selected device */
     if (minst->curr_implementation
         && pl_dnit_job(minst->curr_implementation) < 0) {
-        return -1;
+        ret = -1;
     }
 
     gs_c_param_list_release(&minst->params);
     arg_finit(&minst->args);
-    return 0;
+    return ret;
 }
 
 static int                             /* 0 ok, else -1 error */
