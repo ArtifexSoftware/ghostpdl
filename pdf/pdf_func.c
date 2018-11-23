@@ -25,6 +25,7 @@
 
 #include "gsdsrc.h"
 #include "gsfunc0.h"
+#include "gsfunc3.h"
 #include "gsfunc4.h"
 #include "stream.h"
 
@@ -698,6 +699,15 @@ sub_function_error:
     gs_free_const_object(ctx->memory, params.Domain, "pdfi_build_sub_function (Domain) error exit\n");
     gs_free_const_object(ctx->memory, params.Range, "pdfi_build_sub_function(Range) error exit\n");
     return code;
+}
+
+int pdfi_free_function(pdf_context *ctx, gs_function_t *pfn)
+{
+    if (pfn == NULL)
+        return 0;
+
+    gs_function_free(pfn, true, ctx->memory);
+    return 0;
 }
 
 int pdfi_build_function(pdf_context *ctx, gs_function_t ** ppfn, const float *shading_domain, int num_inputs, pdf_dict *stream_dict, pdf_dict *page_dict)
