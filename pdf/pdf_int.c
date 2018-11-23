@@ -134,6 +134,7 @@ static int pdfi_add_to_cache(pdf_context *ctx, pdf_obj *o)
 
     if (ctx->cache_entries == MAX_OBJECT_CACHE_SIZE)
     {
+        dbgmprintf(ctx->memory, "Cache full, evicting LRU\n");
         if (ctx->cache_LRU) {
             entry = ctx->cache_LRU;
             ctx->cache_LRU = entry->next;
