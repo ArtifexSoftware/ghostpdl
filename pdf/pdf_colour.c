@@ -29,6 +29,7 @@
 
 /* Forward definitions for a routine we need */
 static int pdfi_create_colorspace_by_name(pdf_context *ctx, pdf_name *name, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs);
+static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_array, int index, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs);
 
 /* Rendering intent is a bit of an oddity, but its clearly colour related, so we
  * deal with it here. Cover it first to get it out of the way.
@@ -809,6 +810,115 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
     return code;
 }
 
+static int
+pdfi_get_colorname_string(const gs_memory_t *mem, gs_separation_name colorname_index,
+                        unsigned char **ppstr, unsigned int *pname_size)
+{
+    pdf_name *name = (pdf_name *)colorname_index;
+
+    *ppstr = name->data;
+    *pname_size = name->length;
+    return 0;
+}
+
+static int pdfi_create_Separation(pdf_context *ctx, pdf_array *color_array, int index, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs)
+{
+    pdf_obj *o = NULL;
+    pdf_name *name = NULL, *NamedAlternate = NULL;
+    pdf_array *ArrayAlternate = NULL;
+    pdf_dict *transform = NULL;
+    int code;
+    gs_color_space *pcs = NULL, *pcs_alt = NULL;
+    gs_function_t * pfn = NULL;
+    separation_type sep_type;
+    gs_client_color cc;
+
+    code = pdfi_array_get_type(ctx, color_array, index + 1, PDF_NAME, (pdf_obj **)&name);
+    if (code < 0)
+        goto pdfi_separation_error;
+
+    sep_type = SEP_OTHER;
+    if (name->length == 4 && memcmp(name->data, "None", 4) == 0)
+        sep_type = SEP_NONE;
+    if (name->length == 3 && memcmp(name->data, "All", 3) == 0)
+        sep_type = SEP_ALL;
+
+    code = pdfi_array_get(color_array, index + 2, &o);
+    if (code < 0)
+        goto pdfi_separation_error;
+    if (o->type == PDF_INDIRECT) {
+        pdf_indirect_ref *r = (pdf_indirect_ref *)o;
+
+        code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, &o);
+        if (code < 0)
+            goto pdfi_separation_error;
+        pdfi_countdown(r);
+    }
+
+    if (o->type == PDF_NAME) {
+        NamedAlternate = (pdf_name *)o;
+        code = pdfi_create_colorspace_by_name(ctx, NamedAlternate, stream_dict, page_dict, &pcs_alt);
+        if (code < 0)
+            goto pdfi_separation_error;
+
+    } else {
+        if (o->type == PDF_ARRAY) {
+            ArrayAlternate = (pdf_array *)o;
+            code = pdfi_create_colorspace_by_array(ctx, ArrayAlternate, 0, stream_dict, page_dict, &pcs_alt);
+            if (code < 0)
+                goto pdfi_separation_error;
+        }
+        else {
+            code = gs_error_typecheck;
+            goto pdfi_separation_error;
+        }
+    }
+
+    code = pdfi_array_get_type(ctx, color_array, index + 3, PDF_DICT, (pdf_obj **)&transform);
+    if (code < 0)
+        goto pdfi_separation_error;
+
+    code = pdfi_build_function(ctx, &pfn, NULL, 1, transform, page_dict);
+    if (code < 0)
+        goto pdfi_separation_error;
+
+    code = gs_cspace_new_Separation(&pcs, pcs_alt, ctx->memory);
+    if (code < 0)
+        goto pdfi_separation_error;
+
+    pcs->params.separation.sep_type = sep_type;
+    pcs->params.separation.sep_name = name;
+    pcs->params.separation.get_colorname_string = pdfi_get_colorname_string;
+
+    code = gs_cspace_set_sepr_function(pcs, pfn);
+    if (code < 0)
+        goto pdfi_separation_error;
+
+    *ppcs = pcs;
+    pdfi_countdown(name);
+    pdfi_countdown(NamedAlternate);
+    pdfi_countdown(ArrayAlternate);
+    pdfi_countdown(transform);
+    return_error(0);
+
+pdfi_separation_error:
+    pdfi_free_function(ctx, pfn);
+    if (pcs_alt != NULL)
+        rc_decrement_only_cs(pcs_alt, "setseparationspace");
+    if(pcs != NULL)
+        rc_decrement_only_cs(pcs, "setseparationspace");
+    pdfi_countdown(name);
+    pdfi_countdown(NamedAlternate);
+    pdfi_countdown(ArrayAlternate);
+    pdfi_countdown(transform);
+    return code;
+}
+
+static int pdfi_create_DeviceN(pdf_context *ctx, pdf_array *color_array, int index, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs)
+{
+    return_error(gs_error_undefined);
+}
+
 /* Now /Indexed spaces, essentially we just need to set the underlying space(s) and then set
  * /Indexed.
  */
@@ -1081,6 +1191,16 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
         if (index != 0)
             return_error(gs_error_syntaxerror);
     } else if (pdfi_name_strcmp(space, "DeviceN") == 0) {
+        code = pdfi_create_DeviceN(ctx, color_array, index, stream_dict, page_dict, &pcs);
+        if (code < 0)
+            goto exit;
+        if (ppcs!= NULL){
+            *ppcs = pcs;
+        } else {
+            code = gs_setcolorspace(ctx->pgs, pcs);
+            /* release reference from construction */
+            rc_decrement_only_cs(pcs, "setdevicenspace");
+        }
     } else if (pdfi_name_strcmp(space, "Indexed") == 0) {
         code = pdfi_create_indexed(ctx, color_array, index, stream_dict, page_dict, &pcs);
         if (code < 0)
@@ -1136,14 +1256,15 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
             code = gs_setcmykcolor(ctx->pgs, 0, 0, 0, 1);
         }
     } else if (pdfi_name_strcmp(space, "Separation") == 0) {
-        if (ppcs != NULL) {
-            pcs = gs_cspace_new_DeviceGray(ctx->memory);
-            if (pcs == NULL)
-                code = gs_note_error(gs_error_VMerror);
-            else
-                *ppcs = pcs;
+        code = pdfi_create_Separation(ctx, color_array, index, stream_dict, page_dict, &pcs);
+        if (code < 0)
+            goto exit;
+        if (ppcs!= NULL){
+            *ppcs = pcs;
         } else {
-            code = gs_setgray(ctx->pgs, 1);
+            code = gs_setcolorspace(ctx->pgs, pcs);
+            /* release reference from construction */
+            rc_decrement_only_cs(pcs, "setdevicenspace");
         }
     } else {
         code = pdfi_find_resource(ctx, (unsigned char *)"ColorSpace",
