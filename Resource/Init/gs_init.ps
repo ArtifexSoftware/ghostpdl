@@ -1541,10 +1541,18 @@ setpacking
   % any-part-of-pixel rule.
   0.5 .setfilladjust
 } bind def
+
 % Set the default screen and BG/UCR.
+% We define the proc here, rather than inline in .setdefaultbgucr
+% for the benefit of gs_cet.ps so jobs that do anything that causes
+% .setdefaultbgucr to be called will still get the redefined proc
+% in gs_cet.ps
+(%.defaultbgrucrproc) cvn { pop 0 } def
+
 /.setdefaultbgucr {
   systemdict /setblackgeneration known {
-    { pop 0 } dup setblackgeneration setundercolorremoval
+    (%.defaultbgrucrproc) cvn load dup
+    setblackgeneration setundercolorremoval
   } if
 } bind def
 /.useloresscreen {	% - .useloresscreen <bool>
@@ -2511,5 +2519,8 @@ WRITESYSTEMDICT {
 % support DeviceN and spot color separations this will need to
 % be 'true' in some cases.
 userdict /AGM_preserve_spots //false put
+
+systemdict /CETMODE .knownget
+{ { (gs_cet.ps) runlibfile } if } if
 
 % The interpreter will run the initial procedure (start).
