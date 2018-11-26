@@ -701,7 +701,15 @@ gs_main_set_device(gs_main_instance * minst, gx_device *pdev)
            Store the page size in a dictionary, which we'll use to configure the incoming device */
         code = gs_main_run_string(minst,
                                   "true 0 startjob pop gsave "
-                                  "<< /PageSize /PageSize /GetDeviceParam .special_op >> "
+                                  /* /PageSize /GetDeviceParam .special_op will either return:
+                                   * /PageSize [ <width> <height> ] true   (if it exists) or
+                                   * false                                 (if it does not) */
+                                  "<< /PageSize /GetDeviceParam .special_op "
+                                  /* If we wanted to force a default pagesize, we'd do:
+                                   * "not { /PageSize [595 842] } if "
+                                   * but for now we'll just leave the default as it is, and do: */
+                                  "pop "
+                                  ">> "
                                   , 0, &code, &error_object);
         if (code < 0) goto done;
         /* First call goes to the C directly to actually set the device. This
