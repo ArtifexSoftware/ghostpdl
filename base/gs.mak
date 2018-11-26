@@ -274,6 +274,9 @@ iconfig_h=$(GLGENDIR)$(D)iconfig.h
 all default : $(GS_XE) $(PCL_XPS_TARGETS) $(GS_SHARED_OBJS) $(MAKEDIRSTOP) $(GS_MAK) $(MAKEDIRS)
 	$(NO_OP)
 
+experimental: all $(GPDL_TARGET)
+        $(NO_OP)
+
 # the distclean and maintainer-clean targets (if any)
 # are the responsibility of the platform-specific
 # makefiles. We only handle the internal build system
