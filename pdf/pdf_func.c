@@ -76,7 +76,7 @@ static const op_struct_t ops_table[] = {
     {(unsigned char)4, PtCr_copy, "copy"},
     {(unsigned char)4, PtCr_exch, "exch"},
     {(unsigned char)4, PtCr_idiv, "idiv"},
-    {(unsigned char)4, PtCr_atan, "roll"},
+    {(unsigned char)4, PtCr_roll, "roll"},
     {(unsigned char)4, PtCr_sqrt, "sqrt"},
     {(unsigned char)4, PtCr_true, "true"},
 
