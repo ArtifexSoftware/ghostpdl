@@ -445,27 +445,14 @@ gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
         }
     }
 
-    /* littleCMS knows nothing about word boundarys.  As such, we need to do
-       this row by row adjusting for our stride.  Output buffer must already
-       be allocated. ToDo:  Check issues with plane and row stride and word
-       boundry */
     inputpos = (byte *) inputbuffer;
     outputpos = (byte *) outputbuffer;
-    if(input_buff_desc->is_planar) {
-        cmsDoTransformLineStride(ctx, hTransform,
-            inputpos, outputpos, input_buff_desc->pixels_per_row,
-            input_buff_desc->num_rows, input_buff_desc->row_stride,
-            output_buff_desc->row_stride, input_buff_desc->plane_stride,
-            output_buff_desc->plane_stride);
-    } else {
-        /* Do row by row. */
-        for(k = 0; k < input_buff_desc->num_rows ; k++){
-            cmsDoTransform(ctx, hTransform, inputpos, outputpos,
-                           input_buff_desc->pixels_per_row);
-            inputpos += input_buff_desc->row_stride;
-            outputpos += output_buff_desc->row_stride;
-        }
-    }
+    cmsDoTransformLineStride(ctx, hTransform,
+        inputpos, outputpos, input_buff_desc->pixels_per_row,
+        input_buff_desc->num_rows, input_buff_desc->row_stride,
+        output_buff_desc->row_stride, input_buff_desc->plane_stride,
+        output_buff_desc->plane_stride);
+
 #if DUMP_CMS_BUFFER
     fid_in = gp_fopen("CM_Input.raw","ab");
     fid_out = gp_fopen("CM_Output.raw","ab");
