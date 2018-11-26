@@ -168,7 +168,11 @@ int
 sfclose(stream *s)
 {
     /* no need to flush since these are 'read' only */
-    gs_memory_t *mem = s->memory;
+    gs_memory_t *mem;
+    
+    if (s == NULL)
+        return 0;
+    mem = s->memory;
     sclose(s);
     gs_free_object(mem, s, "sfclose(stream)");
     return 0;
