@@ -748,6 +748,7 @@ currentdict end readonly def
       } repeat
     } if
     EPS2Write not {showpage} if
+    pagesave restore
   } if
 } bind def
 
@@ -999,6 +1000,8 @@ currentdict end readonly def
   dup /ImmediateExec true put
   dup /IsPage true put
   SetPageSize {dup /Context get //SetupPageView exec} if
+  % This gets restored at the end of ExecuteStream if IsPage is true.
+  /pagesave save def
 } bind def
 
 /FontFileDaemon % <id> <obj> <font_descriptor> FontFileDaemon <id> <obj>
