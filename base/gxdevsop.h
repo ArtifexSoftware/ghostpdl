@@ -333,6 +333,13 @@ enum {
     gxdso_current_output_device,
     /* Should we call copy_color rather than resolving images to fill_rectangles? */
     gxdso_copy_color_is_fast,
+    /* gxdso_is_encoding_direct:
+     *     data = NULL
+     *     size = 0
+     * Returns 1 if the device maps color byte values directly into the device,
+     * 0 otherwise.
+     */
+    gxdso_is_encoding_direct,
 
     /* Debug only dsos follow here */
 #ifdef DEBUG

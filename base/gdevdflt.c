@@ -1052,6 +1052,11 @@ gx_default_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
             }
         case gxdso_copy_color_is_fast:
             return (dev_proc(pdev, copy_color) != gx_default_copy_color);
+        case gxdso_is_encoding_direct:
+            if (pdev->color_info.comp_bits != 8)
+                return 0;
+            return (dev_proc(pdev, encode_color) == gx_default_encode_color ||
+                    dev_proc(pdev, encode_color) == gx_default_rgb_map_rgb_color);
     }
     return_error(gs_error_undefined);
 }
