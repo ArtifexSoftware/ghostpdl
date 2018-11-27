@@ -888,7 +888,7 @@ bit_dev_spec_op(gx_device *pdev, int dso, void *ptr, int size)
     switch (dso)
     {
     case gxdso_is_encoding_direct:
-        if (pdev->color_info.comp_bits != 8)
+        if (pdev->color_info.depth != 8 * pdev->color_info.num_components)
             return 0;
         return (dev_proc(pdev, encode_color) == bitrgb_rgb_map_rgb_color ||
                 dev_proc(pdev, encode_color) == bit_map_cmyk_color);
