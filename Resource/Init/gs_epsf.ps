@@ -71,7 +71,16 @@
   }{
     false
   }ifelse
-  9 1 roll	% compute need-rotate.
+  dup 10 1 roll	% need-rotate compute need-rotate.
+
+  % if we are rotating the contents, we need to also rotate the
+  % bounding box of the content!
+  {
+    8 -4 roll
+    exch 4 -2 roll exch 4 2 roll
+    8 4 roll
+  } if
+
   % stack: rotate-needed bbox page-clipbox
   % calculate scale to fit smaller of width or height
   exch 4 -1 roll sub 3 1 roll exch sub
@@ -84,7 +93,7 @@
   % translate to EPS -llx,-lly
   exch neg exch neg translate
   % Finally perform the rotate if needed.
-  { clippath pathbbox pop 0 exch translate 90 rotate pop pop } if
+  { clippath pathbbox pop 0 translate 90 rotate pop pop } if
 } bind executeonly odef
 
 /EPSBoundingBoxProcess { % (llx lly urx ury) state --

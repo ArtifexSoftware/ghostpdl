@@ -212,12 +212,9 @@ currentdict /SCANCONVERTERTYPE known
   currentdict /SCANCONVERTERTYPE get .setscanconverter
 } if
 
-% We rely on PSFitPage to actually implement EPSFitPage
-% But we need EPSCrop to be true, to actually issue a PageSize request, so set it here
-% in case the user forgets.
-currentdict /EPSFitPage known { /PSFitPage //true def /EPSCrop //true def} if
+currentdict /EPSFitPage known { /PSFitPage //true def } if
 % This is a "convenience" option that sets a combination of EPSFitPage, PDFFitPage and PSFitPage
-currentdict /FitPage known { /EPSFitPage //true def /EPSCrop //true def /PDFFitPage //true def /PSFitPage //true def } if
+currentdict /FitPage known { /EPSFitPage //true def /PDFFitPage //true def /PSFitPage //true def } if
 
 % Acquire environment variables.
 currentdict /DEVICE known not
