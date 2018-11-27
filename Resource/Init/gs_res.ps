@@ -196,7 +196,7 @@ setglobal
 % can use it without entering another level of pseudo-operator.
 /.findresource {		% <key> <category> findresource <instance>
         2 copy dup /Category eq
-          { pop //Category 0 get begin } { .findcategory } ifelse
+          { pop //Category 0 get begin } { //.findcategory exec } ifelse
         /FindResource //.resourceexec exec exch pop exch pop
 } bind
 end		% .Instances of Category
@@ -216,7 +216,7 @@ def
     2 .argindex 2 index 2 index	% catch stackunderflow
     % See above re .errorexec.
     /defineresource cvx {
-        .findcategory
+        //.findcategory exec
         currentdict /InstanceType known {
           dup type InstanceType ne {
             dup type /packedarraytype eq InstanceType /arraytype eq and
@@ -235,7 +235,7 @@ def
 % calls, so stack protection doesn't apply to the very last token of an
 % operator procedure.
 /resourceforall1 {	% <template> <proc> <scratch> <category> resourceforall1 -
-        dup .findcategory
+        dup //.findcategory exec
         /ResourceForAll load
         % Stack: <template> <proc> <scratch> <category> proc
         exch pop		% pop the category
@@ -252,7 +252,7 @@ def
       % without the check.
       /resourcestatus cvx /typecheck signalerror
     } if
-    2 copy .findcategory /ResourceStatus //.resourceexec exec
+    2 copy //.findcategory exec /ResourceStatus //.resourceexec exec
     { 4 2 roll pop pop //true } { pop pop //false } ifelse
   } stopped {
     % Although resourcestatus is an operator, Adobe uses executable name
@@ -266,7 +266,7 @@ def
   } if
   1 .argindex 1 index		% catch stackunderflow
 
-  { .findcategory /UndefineResource //.resourceexec exec pop pop
+  { //.findcategory exec /UndefineResource //.resourceexec exec pop pop
   } stopped {
     % Although undefineresource is an operator, Adobe uses executable name
     % here but uses operator for the errors above. CET 23-33
@@ -764,7 +764,7 @@ counttomark 2 idiv
    /ResourceStatus
         { .Instances exch known { 0 0 //true } { //false } ifelse } bind executeonly
    /ResourceForAll
-        /Generic .findcategory /ResourceForAll load end
+        /Generic //.findcategory exec /ResourceForAll load end
 
                 % Additional entries
 

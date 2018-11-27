@@ -38,7 +38,7 @@ languagelevel dup 2 .max .setlanguagelevel
   .knownget not { //false } if
   {
     //false
-    /IdiomSet .findcategory .Instances
+    /IdiomSet //.findcategory exec .Instances
     {
       exch pop                                    % pop the IdiomSet identifying key. Stack /proc /false [-dict- status size]
       0 get                                       % get resource instance, a dictionary. Stack : /proc false -dict-
