@@ -92,6 +92,12 @@ typedef int (*pl_interp_proc_set_param_t) (pl_interp_implementation_t *,
                                            const void *);
 
 /*
+ * Do any language specific init required after the args have been sent.
+ */
+int pl_post_args_init(pl_interp_implementation_t *);
+typedef int (*pl_interp_proc_post_args_init_t) (pl_interp_implementation_t *);
+
+/*
  * Work to be done when a job begins.
  */
 int pl_init_job(pl_interp_implementation_t *, gx_device *);
@@ -162,6 +168,7 @@ struct pl_interp_implementation_s
     pl_interp_proc_allocate_interp_instance_t proc_allocate_interp_instance;
     pl_interp_proc_get_device_memory_t proc_get_device_memory;
     pl_interp_proc_set_param_t proc_set_param;
+    pl_interp_proc_post_args_init_t proc_post_args_init;
     pl_interp_proc_init_job_t proc_init_job;
     pl_interp_proc_process_file_t proc_process_file;
     pl_interp_proc_process_begin_t proc_process_begin;

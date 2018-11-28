@@ -881,10 +881,25 @@ pass_param_to_languages(pl_main_instance_t *pmi,
                         const void         *value)
 {
     pl_interp_implementation_t **imp;
-    int code;
+    int code = 0;
 
     for (imp = pmi->implementations; *imp != NULL; imp++) {
         code = pl_set_param(*imp, type, param, value);
+        if (code != 0)
+            break;
+    }
+
+    return code;
+}
+
+static int
+pl_main_post_args_init(pl_main_instance_t * pmi)
+{
+    pl_interp_implementation_t **imp;
+    int code = 0;
+
+    for (imp = pmi->implementations; *imp != NULL; imp++) {
+        code = pl_post_args_init(*imp);
         if (code != 0)
             break;
     }
@@ -1462,6 +1477,12 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
         if (code < 0)
             return code;
     }
+
+    /* Do any last minute language specific device initialisation
+     * (i.e. let gs_init.ps do its worst). */
+    code = pl_main_post_args_init(pmi);
+    if (code < 0)
+        return code;
 
     gs_c_param_list_read(params);
     code = pl_top_create_device(pmi, device_index); /* create default device if needed */

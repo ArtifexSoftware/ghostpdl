@@ -66,6 +66,14 @@ pl_set_param(pl_interp_implementation_t *impl,
     return impl->proc_set_param(impl, type, param, value);
 }
 
+int pl_post_args_init(pl_interp_implementation_t *impl)
+{
+    if (impl->proc_post_args_init == NULL)
+        return 0;
+
+    return impl->proc_post_args_init(impl);
+}
+
 /* Prepare interp instance for the next "job" */
 int                             /* ret 0 ok, else -ve error code */
 pl_init_job(pl_interp_implementation_t * impl,     /* interp instance to start job in */

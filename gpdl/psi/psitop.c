@@ -60,7 +60,6 @@ typedef struct ps_interp_instance_s {
     gs_memory_t  *memory;
     uint          bytes_fed;
     gs_lib_ctx_t *psapi_instance;
-    int           init_completed;
 } ps_interp_instance_t;
 
 static int
@@ -346,7 +345,6 @@ ps_impl_allocate_interp_instance(pl_interp_implementation_t *impl, gs_memory_t *
 
     psi->memory = mem;
     psi->bytes_fed = 0;
-    psi->init_completed = 0;
     psi->psapi_instance = gs_lib_ctx_get_interp_instance(mem);
     code = psapi_new_instance(&psi->psapi_instance, NULL);
     if (code < 0)
@@ -387,6 +385,19 @@ ps_impl_set_param(pl_interp_implementation_t *impl,
     return psapi_set_param(psi->psapi_instance, type, param, val);
 }
 
+static int
+ps_impl_post_args_init(pl_interp_implementation_t *impl)
+{
+    ps_interp_instance_t *psi = (ps_interp_instance_t *)impl->interp_client_data;
+    const float *resolutions;
+    const long *page_sizes;
+
+    pl_main_get_forced_geometry(psi->memory, &resolutions, &page_sizes);
+    psapi_force_geometry(psi->psapi_instance, resolutions, page_sizes);
+
+    return psapi_init_with_args2(psi->psapi_instance);
+}
+
 /* Prepare interp instance for the next "job" */
 static int
 ps_impl_init_job(pl_interp_implementation_t *impl,
@@ -395,19 +406,6 @@ ps_impl_init_job(pl_interp_implementation_t *impl,
     ps_interp_instance_t *psi = (ps_interp_instance_t *)impl->interp_client_data;
     int exit_code;
     int code = 0;
-
-    if (!psi->init_completed) {
-        const float *resolutions;
-        const long *page_sizes;
-
-        pl_main_get_forced_geometry(psi->memory, &resolutions, &page_sizes);
-        psapi_force_geometry(psi->psapi_instance, resolutions, page_sizes);
-
-        code = psapi_init_with_args2(psi->psapi_instance);
-        if (code < 0)
-            return code;
-        psi->init_completed = 1;
-    }
 
     /* Any error after here *must* reset the device to null */
     if (code >= 0)
@@ -566,6 +564,7 @@ const pl_interp_implementation_t ps_implementation = {
   ps_impl_allocate_interp_instance,
   ps_impl_get_device_memory,
   ps_impl_set_param,
+  ps_impl_post_args_init,
   ps_impl_init_job,
   ps_impl_process_file,
   ps_impl_process_begin,
