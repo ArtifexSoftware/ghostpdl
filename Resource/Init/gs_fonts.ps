@@ -419,7 +419,7 @@ systemdict /NONATIVEFONTMAP known .setnativefontmapbuilt
       } forall
     } if
     % record that we've been run
-    //true .setnativefontmapbuilt
+    //true //.setnativefontmapbuilt
   } ifelse
 } bind def
 currentdict /.setnativefontmapbuilt .forceundef
@@ -1103,7 +1103,7 @@ $error /SubstituteFont { } put
 
                 % Check to make sure the font was actually loaded.
         dup 3 index .fontknownget
-         { dup /PathLoad 4 index .putgstringcopy
+         { dup /PathLoad 4 index //.putgstringcopy
            4 1 roll pop pop pop //true exit
          } if
 
@@ -1115,7 +1115,7 @@ $error /SubstituteFont { } put
          {            % Stack: origfontname fontdirectory path filefontname
            2 index 1 index .fontknownget
             {   % Yes.  Stack: origfontname fontdirectory path filefontname fontdict
-              dup 4 -1 roll /PathLoad exch .putgstringcopy
+              dup 4 -1 roll /PathLoad exch //.putgstringcopy
                       % Stack: origfontname fontdirectory filefontname fontdict
               3 -1 roll pop
                       % Stack: origfontname filefontname fontdict
@@ -1149,8 +1149,7 @@ $error /SubstituteFont { } put
     } loop              % end of loop
 
  } bind executeonly odef % must be bound and hidden for .putgstringcopy
-
-currentdict /.putgstringcopy .undef
+currentdict /.putgstringcopy .forceundef
 
 % Define a procedure to load all known fonts.
 % This isn't likely to be very useful.
