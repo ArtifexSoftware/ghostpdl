@@ -168,11 +168,11 @@ pdfi_parse_type4_func_stream(pdf_context *ctx, pdf_stream *function_stream, int 
                     if (p) {
                         if (clause == false) {
                             *p = (byte)PtCr_if;
-                            psc_fixup(p, ops + *size + 3);
+                            psc_fixup(p, ops + *size);
                             clause = true;
                         } else {
                             *p = (byte)PtCr_else;
-                            psc_fixup(p, ops + *size + 3);
+                            psc_fixup(p, ops + *size);
                             clause = false;
                         }
                         p = ops + *size;
@@ -183,6 +183,8 @@ pdfi_parse_type4_func_stream(pdf_context *ctx, pdf_stream *function_stream, int 
                 return *size;
                 break;
             default:
+                if (clause)
+                    clause = false;
                 if ((c >= '0' && c <= '9') || c == '-' || c == '.') {
                     /* parse a number */
                     Size = 1;
