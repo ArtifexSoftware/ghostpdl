@@ -169,7 +169,7 @@ sfclose(stream *s)
 {
     /* no need to flush since these are 'read' only */
     gs_memory_t *mem;
-    
+
     if (s == NULL)
         return 0;
     mem = s->memory;
