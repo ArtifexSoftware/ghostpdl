@@ -26,6 +26,7 @@
 #include "pdf_loop_detect.h"
 #include "stream.h"
 #include "strmio.h"
+#include "gscdevn.h"
 
 /* Forward definitions for a routine we need */
 static int pdfi_create_colorspace_by_name(pdf_context *ctx, pdf_name *name, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs);
@@ -887,7 +888,7 @@ static int pdfi_create_Separation(pdf_context *ctx, pdf_array *color_array, int 
         goto pdfi_separation_error;
 
     pcs->params.separation.sep_type = sep_type;
-    pcs->params.separation.sep_name = name;
+    pcs->params.separation.sep_name = (gs_separation_name)name;
     pcs->params.separation.get_colorname_string = pdfi_get_colorname_string;
 
     code = gs_cspace_set_sepr_function(pcs, pfn);
@@ -916,7 +917,119 @@ pdfi_separation_error:
 
 static int pdfi_create_DeviceN(pdf_context *ctx, pdf_array *color_array, int index, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs)
 {
-    return_error(gs_error_undefined);
+    pdf_obj *o = NULL;
+    pdf_name *NamedAlternate = NULL;
+    pdf_array *ArrayAlternate = NULL, *inks = NULL;
+    pdf_dict *transform = NULL;
+    int code;
+    uint64_t num_components, ix;
+    gs_color_space *pcs = NULL, *pcs_alt = NULL;
+    gs_function_t * pfn = NULL;
+    separation_type sep_type;
+    gs_client_color cc;
+
+    /* Deal with alternate space */
+    code = pdfi_array_get(color_array, index + 2, &o);
+    if (code < 0)
+        goto pdfi_devicen_error;
+    if (o->type == PDF_INDIRECT) {
+        pdf_indirect_ref *r = (pdf_indirect_ref *)o;
+
+        code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, &o);
+        if (code < 0)
+            goto pdfi_devicen_error;
+        pdfi_countdown(r);
+    }
+
+    if (o->type == PDF_NAME) {
+        NamedAlternate = (pdf_name *)o;
+        code = pdfi_create_colorspace_by_name(ctx, NamedAlternate, stream_dict, page_dict, &pcs_alt);
+        if (code < 0)
+            goto pdfi_devicen_error;
+
+    } else {
+        if (o->type == PDF_ARRAY) {
+            ArrayAlternate = (pdf_array *)o;
+            code = pdfi_create_colorspace_by_array(ctx, ArrayAlternate, 0, stream_dict, page_dict, &pcs_alt);
+            if (code < 0)
+                goto pdfi_devicen_error;
+        }
+        else {
+            code = gs_error_typecheck;
+            goto pdfi_devicen_error;
+        }
+    }
+
+    /* Now the tint transform */
+    code = pdfi_array_get_type(ctx, color_array, index + 3, PDF_DICT, (pdf_obj **)&transform);
+    if (code < 0)
+        goto pdfi_devicen_error;
+
+    code = pdfi_build_function(ctx, &pfn, NULL, 1, transform, page_dict);
+    if (code < 0)
+        goto pdfi_devicen_error;
+
+    /* Finally the array of inks */
+    code = pdfi_array_get_type(ctx, color_array, index + 1, PDF_ARRAY, (pdf_obj **)&inks);
+    if (code < 0)
+        goto pdfi_devicen_error;
+
+    /* Sigh, Acrobat allows this, even though its contra the spec. Convert to
+     * a /Separation space and go on
+     */
+    if (inks->size == 1) {
+        pdf_name *ink_name;
+
+        code = pdfi_array_get_type(ctx, inks, 0, PDF_NAME, (pdf_obj **)&ink_name);
+        if (code < 0)
+            goto pdfi_devicen_error;
+
+        sep_type = SEP_OTHER;
+        if (ink_name->length == 3 && memcmp(ink_name->data, "All", 3) == 0) {
+            sep_type = SEP_ALL;
+            /* FIXME make a separation sdpace instead */
+            code = gs_error_undefined;
+            goto pdfi_devicen_error;
+        }
+    }
+
+    code = gs_cspace_new_DeviceN(&pcs, inks->size, pcs_alt, ctx->memory);
+    if (code < 0)
+        return code;
+
+    pcs->params.device_n.get_colorname_string = pdfi_get_colorname_string;
+
+    for (ix = 0;ix < inks->size;ix++) {
+        pdf_name *ink_name;
+        code = pdfi_array_get_type(ctx, inks, 0, PDF_NAME, (pdf_obj **)&ink_name);
+        if (code < 0)
+            goto pdfi_devicen_error;
+
+        pcs->params.device_n.names[ix] = (gs_separation_name)ink_name;
+    }
+
+    code = gs_cspace_set_devn_function(pcs, pfn);
+    if (code < 0)
+        goto pdfi_devicen_error;
+
+    *ppcs = pcs;
+    pdfi_countdown(inks);
+    pdfi_countdown(NamedAlternate);
+    pdfi_countdown(ArrayAlternate);
+    pdfi_countdown(transform);
+    return_error(0);
+
+pdfi_devicen_error:
+    pdfi_free_function(ctx, pfn);
+    if (pcs_alt != NULL)
+        rc_decrement_only_cs(pcs_alt, "setseparationspace");
+    if(pcs != NULL)
+        rc_decrement_only_cs(pcs, "setseparationspace");
+    pdfi_countdown(inks);
+    pdfi_countdown(NamedAlternate);
+    pdfi_countdown(ArrayAlternate);
+    pdfi_countdown(transform);
+    return code;
 }
 
 /* Now /Indexed spaces, essentially we just need to set the underlying space(s) and then set
