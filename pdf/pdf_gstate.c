@@ -24,6 +24,7 @@
 
 #include "gsmatrix.h"
 #include "gslparam.h"
+#include "gstparam.h"
 
 int pdfi_concat(pdf_context *ctx)
 {
@@ -490,6 +491,7 @@ static int GS_OPM(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dic
 
 static int GS_Font(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
+    dbgmprintf(ctx->memory, "ExtGState Font not yet implemented\n");
     return 0;
 }
 
@@ -615,10 +617,26 @@ static int GS_SA(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict
     return 0;
 }
 
+static const char *blend_mode_names[] = {
+    GS_BLEND_MODE_NAMES, 0
+};
+
 static int GS_BM(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
-    dbgmprintf(ctx->memory, "ExtGState BM not yet implemented\n");
-    return 0;
+    pdf_name *n;
+    const char **p;
+    int code;
+
+    code = pdfi_dict_get_type(ctx, GS, "BM", PDF_NAME, (pdf_obj **)&n);
+    if (code < 0)
+        return code;
+
+    for (p = blend_mode_names; *p; ++p) {
+        if (strlen(*p) == n->length && memcmp(*p, n->data, n->length) == 0) {
+            return gs_setblendmode(ctx->pgs, p - blend_mode_names);
+        }
+    }
+    return_error(gs_error_undefined);
 }
 
 static int GS_SMask(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
