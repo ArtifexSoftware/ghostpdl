@@ -628,11 +628,11 @@ status {
                 % which we must match for the sake of some badly written
                 % font downloading code, that such entries are popped
                 % automatically.
-        count 1 index cvlit .vmused
+        count 1 index cvlit //.vmused
                 % Stack: key count litkey memused
         {.LoadResource} 4 1 roll 4 .execn
                 % Stack: ... count key memused
-        .vmused exch sub
+        //.vmused exch sub
         1 index //.getvminstance exec not {
           pop dup //.undefinedresource exec	% didn't load
         } if
@@ -1016,11 +1016,11 @@ currentdict /.fontstatusaux .undef
 } bind executeonly
 
 /.loadfontresource {
-        dup .vmused exch
+        dup //.vmused exch
                 % Hack: rebind .currentresourcefile so that all calls of
                 % definefont will know these are built-in fonts.
         currentfile {pop //findfont exec} .execasresource  % (findfont is a procedure)
-        exch .vmused exch sub
+        exch //.vmused exch sub
                 % stack: name font vmused
                 % findfont has the prerogative of not calling definefont
                 % in certain obscure cases of font substitution.
