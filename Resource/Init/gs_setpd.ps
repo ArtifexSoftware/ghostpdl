@@ -91,12 +91,60 @@ level2dict begin
 % %restorepagedevice, %restore1pagedevice, and %setgstatepagedevice
 % are known to the interpreter.
 
+% Prepare to present parameters to the device, by spreading them onto the
+% operand stack and removing any that shouldn't be presented.
+/.prepareparams		% <params> .prepareparams -mark- <key1> <value1> ...
+ { mark exch dup
+    {			% Stack: -mark- key1 value1 ... merged key value
+      .presentspecial 2 index .knownget
+       { exec { 3 -1 roll } { pop pop } ifelse }
+       { 3 -1 roll }
+      ifelse
+    }
+   forall pop
+ } bind def
+
+% Compute the media size and initial matrix from a merged request (after
+% media selection).
+/.computemediasize	% <request> .computemediasize
+                        %   <request> <matrix> <[width height]>
+ { dup /PageSize get					% requested page size
+   1 index /InputAttributes get
+     2 index (%MediaSource) get get /PageSize get	% media size
+                                                        % (may be a range)
+   2 index /Policies get
+     dup /PageSize .knownget
+      { exch pop } { /PolicyNotFound get } ifelse	% PageSize policy,
+                                                        % affects scaling
+   3 index /Orientation .knownget not { //null } if
+   4 index /RollFedMedia .knownget not { //false } if
+   matrix .matchpagesize not {
+                % This is a "can't happen" condition!
+     /setpagedevice .systemvar /rangecheck signalerror
+   } if
+   2 array astore
+ } bind def
+
+% Try setting the device parameters from the merged request.
+/.trysetparams		% <merged> <(ignored)> <device> <Policies>
+                        %   .trysetparams
+ { //true 4 index //.prepareparams exec
+                        % Add the computed .MediaSize.
+                        % Stack: merged (ignored) device Policies -true-
+                        %   -mark- key1 value1 ...
+   counttomark 5 add index //.computemediasize exec
+   exch pop exch pop /.MediaSize exch
+SETPDDEBUG { (Putting.) = pstack flush } if
+   .putdeviceparamsonly
+SETPDDEBUG { (Result of putting.) = pstack flush } if
+ } bind executeonly odef
+
 /.installpagedevice
  {	% Since setpagedevice doesn't create new device objects,
         % we must (carefully) reinstall the old parameters in
         % the same device.
    .currentpagedevice pop //null currentdevice //null
-   { .trysetparams } .internalstopped
+   { //.trysetparams } .internalstopped
    {
      //null
    } if
@@ -129,23 +177,23 @@ level2dict begin
  {
  .uninstallpagedevice
  grestore
- .installpagedevice
+ //.installpagedevice exec
  } bind def
 
 (%grestoreallpagedevice) cvn
- { .uninstallpagedevice grestore .installpagedevice grestoreall
+ { .uninstallpagedevice grestore //.installpagedevice exec grestoreall
  } bind def
 
 (%restore1pagedevice) cvn
- { .uninstallpagedevice grestore .installpagedevice restore
+ { .uninstallpagedevice grestore //.installpagedevice exec restore
  } bind def
 
 (%restorepagedevice) cvn
- { .uninstallpagedevice restore .installpagedevice
+ { .uninstallpagedevice restore //.installpagedevice exec
  } bind def
 
 (%setgstatepagedevice) cvn
- { .uninstallpagedevice setgstate .installpagedevice
+ { .uninstallpagedevice setgstate //.installpagedevice exec
  } bind def
 
 % Redefine .currentnumcopies so it consults the NumCopies device parameter.
@@ -675,19 +723,6 @@ currentdict /0Policy undef
 currentdict /1Policy undef
 currentdict /7Policy undef
 
-% Prepare to present parameters to the device, by spreading them onto the
-% operand stack and removing any that shouldn't be presented.
-/.prepareparams		% <params> .prepareparams -mark- <key1> <value1> ...
- { mark exch dup
-    {			% Stack: -mark- key1 value1 ... merged key value
-      .presentspecial 2 index .knownget
-       { exec { 3 -1 roll } { pop pop } ifelse }
-       { 3 -1 roll }
-      ifelse
-    }
-   forall pop
- } bind def
-
 % Put device parameters without resetting currentpagedevice.
 % (.putdeviceparams clears the current page device.)
 /.putdeviceparamsonly	% <device> <Policies|null> <require_all> -mark-
@@ -705,40 +740,6 @@ currentdict /7Policy undef
    ifelse
  } bind def
 
-% Try setting the device parameters from the merged request.
-/.trysetparams		% <merged> <(ignored)> <device> <Policies>
-                        %   .trysetparams
- { //true 4 index .prepareparams
-                        % Add the computed .MediaSize.
-                        % Stack: merged (ignored) device Policies -true-
-                        %   -mark- key1 value1 ...
-   counttomark 5 add index .computemediasize
-   exch pop exch pop /.MediaSize exch
-SETPDDEBUG { (Putting.) = pstack flush } if
-   .putdeviceparamsonly
-SETPDDEBUG { (Result of putting.) = pstack flush } if
- } bind def
-
-% Compute the media size and initial matrix from a merged request (after
-% media selection).
-/.computemediasize	% <request> .computemediasize
-                        %   <request> <matrix> <[width height]>
- { dup /PageSize get					% requested page size
-   1 index /InputAttributes get
-     2 index (%MediaSource) get get /PageSize get	% media size
-                                                        % (may be a range)
-   2 index /Policies get
-     dup /PageSize .knownget
-      { exch pop } { /PolicyNotFound get } ifelse	% PageSize policy,
-                                                        % affects scaling
-   3 index /Orientation .knownget not { //null } if
-   4 index /RollFedMedia .knownget not { //false } if
-   matrix .matchpagesize not {
-                % This is a "can't happen" condition!
-     /setpagedevice .systemvar /rangecheck signalerror
-   } if
-   2 array astore
- } bind def
 
 % ---------------- setpagedevice itself ---------------- %
 
@@ -855,7 +856,7 @@ SETPDDEBUG { (Merging.) = pstack flush } if
    FIXEDRESOLUTION { dup /HWResolution .undef } if
                 % Hack: if FIXEDMEDIA is true, discard any attempt to change
                 % PageSize or HWSize unless the PageSize Policy 13 (for FitPage).
-   dup /Policies get /PageSize get 13 ne FIXEDMEDIA and 
+   dup /Policies get /PageSize get 13 ne FIXEDMEDIA and
     { dup /PageSize 4 index /PageSize get put
       dup /HWSize 4 index /HWSize get put
     } if
@@ -876,11 +877,11 @@ SETPDDEBUG { (Selecting.) = pstack flush } if
    0 dict	% <failed>
    1 index /InputAttributes .knownget
     { 2 index /Policies get
-      .inputattrkeys (%MediaSource) cvn .selectmedia
+      .inputattrkeys (%MediaSource) cvn //.selectmedia exec
     } if
    1 index /OutputAttributes .knownget
     { 2 index /Policies get
-      .outputattrkeys (%MediaDestination) cvn .selectmedia
+      .outputattrkeys (%MediaDestination) cvn //.selectmedia exec
      } if
    3 -1 roll 4 1 roll		% temporarily swap orig & request
    .applypolicies
@@ -905,7 +906,7 @@ SETPDDEBUG { (Constructing.) = pstack flush } if
                 %**************** we don't.  This is WRONG.
         %****************copydevice
    2 index /Policies get
-   .trysetparams
+   //.trysetparams
    dup type /booleantype ne
     {		% The request failed.
                 % Stack: ... <orig> <request> <merged> <failed> <device>
@@ -919,7 +920,7 @@ SETPDDEBUG { (Recovering.) = pstack flush } if
       6 2 roll 3 -1 roll 4 1 roll
       .applypolicies
       3 -1 roll 4 1 roll 6 -2 roll
-      .trysetparams		% shouldn't fail!
+      //.trysetparams		% shouldn't fail!
       dup type /booleantype ne
        { 2 { counttomark 1 add 1 roll cleartomark } repeat
          /setpagedevice .systemvar exch signalerror
@@ -984,7 +985,7 @@ SETPDDEBUG { (Installing.) = pstack flush } if
    } ifelse .copydict
                 % Initialize the default matrix, taking media matching
                 % into account.
-   .computemediasize pop initmatrix concat
+   //.computemediasize exec pop initmatrix concat
    dup /PageOffset .knownget
     {		% Translate by the given number of 1/72" units in device X/Y.
       dup 0 get exch 1 get
@@ -1064,6 +1065,16 @@ SETPDDEBUG { (Finishing.) = pstack flush } if
    ifelse pop
 
 } odef
+
+[
+    /.computemediasize
+    /.prepareparams
+    /.selectmedia
+    /.trysetparams
+    /.installpagedevice
+%    /.uninstallpagedevice % (called from C code)
+]
+{currentdict exch .forceundef} forall
 
 end				% level2dict
 .setlanguagelevel
