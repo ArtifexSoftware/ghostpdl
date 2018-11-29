@@ -1001,7 +1001,6 @@ gs_fapi_finish_render(gs_font *pfont, gs_gstate *pgs, gs_text_enum_t *penum, gs_
     gs_memory_t *mem = pfont->memory;
     gs_font_base *pbfont = (gs_font_base *)pfont;
 
-    extern_st(st_gs_show_enum);
     if (penum == NULL)
         return_error(gs_error_undefined);
 
@@ -1156,8 +1155,7 @@ gs_fapi_finish_render(gs_font *pfont, gs_gstate *pgs, gs_text_enum_t *penum, gs_
                     if ((code = fapi_copy_mono(dev1, &rast, dx, dy)) < 0)
                         return code;
 
-                    if (gs_object_type(penum->memory, penum) ==
-                        &st_gs_show_enum) {
+                    if (penum_s->cc != NULL) {
                         penum_s->cc->offset.x +=
                             float2fixed(penum_s->fapi_glyph_shift.x);
                         penum_s->cc->offset.y +=
