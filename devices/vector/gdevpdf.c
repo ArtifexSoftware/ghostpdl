@@ -1477,6 +1477,16 @@ static int write_xref_section(gx_device_pdf *pdev, FILE *tfile, int64_t start, i
             if (pos & ASIDES_BASE_POSITION)
                 pos += resource_pos - ASIDES_BASE_POSITION;
             pos -= pdev->OPDFRead_procset_length;
+
+            /* check to see we haven't got an offset which is too large to represent
+             * in an xref (10 digits). Throw an error if we do.
+             */
+            if (pos > 9999999999) {
+                emprintf(pdev->pdf_memory, "ERROR - Attempt to create an xref entry with more than 10 digits which is illegal.\n");
+                emprintf(pdev->pdf_memory, "PDF file production has been aborted.\n");
+                return_error(gs_error_rangecheck);
+            }
+
             /* If we are linearising there's no point in writing an xref we will
              * later replace. Also makes the file slightly smaller reducing the
              * chances of needing to write white space to pad the file out.
@@ -2967,7 +2977,10 @@ pdf_close(gx_device * dev)
         }
 
         do {
-            write_xref_section(pdev, tfile, start_section, end_section, resource_pos, linear_params.Offsets);
+            code = write_xref_section(pdev, tfile, start_section, end_section, resource_pos, linear_params.Offsets);
+            if (code < 0)
+                return code;
+
             if (end_section >= pdev->next_id)
                 break;
             start_section = end_section + 1;
