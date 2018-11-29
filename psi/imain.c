@@ -728,8 +728,10 @@ gs_main_set_device(gs_main_instance * minst, gx_device *pdev)
                                   "currentpagedevice pop "
                                   /* Setup the halftone */
                                   ".setdefaultscreen "
+                                  /* Re-run the scheduled initialisation procs, in case we've just set pdfwrite */
+                                  "1183615869 internaldict /.execute_scheduled_inits get exec "
                                   /* Re-enter job encapsulation */
-                                  "false 0 startjob pop"
+                                  "false 0 startjob pop "
                                   , 0, &code, &error_object);
         if (code < 0) goto done;
     }
