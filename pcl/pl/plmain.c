@@ -699,11 +699,11 @@ pl_main_alloc_instance(gs_memory_t * mem)
 
 /* Create a default device if not already defined. */
 static int
-pl_top_create_device(pl_main_instance_t * pti, int index, bool is_default)
+pl_top_create_device(pl_main_instance_t * pti, int index)
 {
     int code = 0;
 
-    if (!is_default || !pti->device) {
+    if (!pti->device) {
         const gx_device *dev;
         pl_interp_implementation_t **impl;
         gs_memory_t *mem = pti->device_memory;
@@ -900,6 +900,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
     bool help = false;
     char *arg;
     gs_c_param_list *params = &pmi->params;
+    int device_index = -1;
 
     gs_c_param_list_write_more(params);
     while ((code = arg_next(pal, (const char **)&arg, pmi->memory)) > 0 && *arg == '-') {
@@ -1389,11 +1390,13 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     }
                     value = eqp + 1;
                     if (!strncmp(arg, "DEVICE", 6)) {
-                        code = pl_top_create_device(pmi,
-                                                    get_device_index(pmi->
-                                                                     memory,
-                                                                     value),
-                                                                     false);
+                        if (device_index != -1) {
+                            dmprintf(pmi->memory, "DEVICE can only be set once!\n");
+                            return -1;
+                        }
+                        device_index = get_device_index(pmi->memory, value);
+                        if (device_index == -1)
+                            return -1;
                         /* check for icc settings */
                     } else
                         if (!strncmp
@@ -1461,7 +1464,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
     }
 
     gs_c_param_list_read(params);
-    code = pl_top_create_device(pmi, -1, true); /* create default device if needed */
+    code = pl_top_create_device(pmi, device_index); /* create default device if needed */
     if (code < 0)
         return code;
 
