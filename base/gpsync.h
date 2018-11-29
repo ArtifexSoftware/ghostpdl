@@ -25,6 +25,12 @@
 /* 8/9/98 L. Peter Deutsch (ghost@aladdin.com) Changed ...sizeof to
    procedures, added some comments. */
 
+/* Maximum number of threads, although render threads assume a main instance */
+/* so each main instance (rare) could have MAX_THREADS-2 render threads      */
+#ifndef MAX_THREADS
+#  define MAX_THREADS 50	/* Arbitrary, but does affect ICC_CACHE_MAXLINKS */
+#endif
+
 /* -------- Synchronization primitives ------- */
 
 /*

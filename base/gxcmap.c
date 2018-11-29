@@ -2220,8 +2220,9 @@ gx_get_cmapper(gx_cmapper_t *data, const gs_gstate *pgs,
         if (has_halftone)
             data->set_color = cmapper_halftone;
         else {
+            int code = dev_proc(dev, dev_spec_op)(dev, gxdso_is_encoding_direct, NULL, 0);
             data->set_color = cmapper_vanilla;
-            data->direct = 1;
+            data->direct = (code == 1);
         }
     }
 }

@@ -390,16 +390,16 @@ void PrecalculatedXFORMIdentity(cmsContext ContextID,
                                 cmsUInt32Number LineCount,
                                 const cmsStride* Stride)
 {
-    cmsUInt32Number bppi = Stride->BytesPerPlaneIn;
-    cmsUInt32Number bppo = Stride->BytesPerPlaneOut;
+    cmsUInt32Number bpli = Stride->BytesPerLineIn;
+    cmsUInt32Number bplo = Stride->BytesPerLineOut;
     int bpp;
     cmsUNUSED_PARAMETER(ContextID);
 
     /* Silence some warnings */
-    (void)bppi;
-    (void)bppo;
+    (void)bpli;
+    (void)bplo;
 
-    if (PixelsPerLine == 0)
+    if ((in == out && bpli == bplo) || PixelsPerLine == 0)
         return;
 
     bpp = T_BYTES(p->InputFormat);
@@ -409,7 +409,55 @@ void PrecalculatedXFORMIdentity(cmsContext ContextID,
     PixelsPerLine *= bpp; /* Convert to BytesPerLine */
     while (LineCount-- > 0)
     {
-        memcpy(out, in, PixelsPerLine);
+        memmove(out, in, PixelsPerLine);
+        in = (void *)((cmsUInt8Number *)in + bpli);
+        out = (void *)((cmsUInt8Number *)out + bplo);
+    }
+}
+
+static
+void PrecalculatedXFORMIdentityPlanar(cmsContext ContextID,
+                                      _cmsTRANSFORM* p,
+                                      const void* in,
+                                      void* out,
+                                      cmsUInt32Number PixelsPerLine,
+                                      cmsUInt32Number LineCount,
+                                      const cmsStride* Stride)
+{
+    cmsUInt32Number bpli = Stride->BytesPerLineIn;
+    cmsUInt32Number bplo = Stride->BytesPerLineOut;
+    cmsUInt32Number bppi = Stride->BytesPerPlaneIn;
+    cmsUInt32Number bppo = Stride->BytesPerPlaneOut;
+    int bpp;
+    int planes;
+    const void *plane_in;
+    void *plane_out;
+    cmsUNUSED_PARAMETER(ContextID);
+
+    /* Silence some warnings */
+    (void)bpli;
+    (void)bplo;
+    (void)bppi;
+    (void)bppo;
+
+    if ((in == out && bpli == bplo && bppi == bppo) || PixelsPerLine == 0)
+        return;
+
+    bpp = T_BYTES(p->InputFormat);
+    if (bpp == 0)
+        bpp = sizeof(double);
+    PixelsPerLine *= bpp; /* Convert to BytesPerLine */
+    planes = T_CHANNELS(p->InputFormat) + T_EXTRA(p->InputFormat);
+    while (planes-- > 0)
+    {
+        plane_in = in;
+        plane_out = out;
+        while (LineCount-- > 0)
+        {
+            memmove(plane_out, plane_in, PixelsPerLine);
+            plane_in = (void *)((cmsUInt8Number *)plane_in + bpli);
+            plane_out = (void *)((cmsUInt8Number *)plane_out + bplo);
+        }
         in = (void *)((cmsUInt8Number *)in + bppi);
         out = (void *)((cmsUInt8Number *)out + bppo);
     }
@@ -961,9 +1009,12 @@ _cmsFindFormatter(_cmsTRANSFORM* p, cmsUInt32Number InputFormat, cmsUInt32Number
         if (dwFlags & cmsFLAGS_GAMUTCHECK)
             p ->xform = PrecalculatedXFORMGamutCheck;  // Gamut check, no cache
         else if ((InputFormat & ~COLORSPACE_SH(31)) == (OutputFormat & ~COLORSPACE_SH(31)) &&
-                 _cmsLutIsIdentity(p->core->Lut))
-            p ->xform = PrecalculatedXFORMIdentity;
-        else
+                 _cmsLutIsIdentity(p->core->Lut)) {
+            if (T_PLANAR(InputFormat))
+                p ->xform = PrecalculatedXFORMIdentityPlanar;
+            else
+                p ->xform = PrecalculatedXFORMIdentity;
+        } else
             p ->xform = PrecalculatedXFORM;  // No cache, no gamut check
 	return;
     }
@@ -973,7 +1024,11 @@ _cmsFindFormatter(_cmsTRANSFORM* p, cmsUInt32Number InputFormat, cmsUInt32Number
     }
     if ((InputFormat & ~COLORSPACE_SH(31)) == (OutputFormat & ~COLORSPACE_SH(31)) &&
         _cmsLutIsIdentity(p->core->Lut)) {
-        p ->xform = PrecalculatedXFORMIdentity; /* No point in a cache here! */
+        /* No point in a cache here! */
+        if (T_PLANAR(InputFormat))
+            p ->xform = PrecalculatedXFORMIdentityPlanar;
+        else
+            p ->xform = PrecalculatedXFORMIdentity;
         return;
     }
     if (T_EXTRA(InputFormat) != 0) {

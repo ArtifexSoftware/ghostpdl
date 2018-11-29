@@ -212,12 +212,9 @@ currentdict /SCANCONVERTERTYPE known
   currentdict /SCANCONVERTERTYPE get .setscanconverter
 } if
 
-% We rely on PSFitPage to actually implement EPSFitPage
-% But we need EPSCrop to be true, to actually issue a PageSize request, so set it here
-% in case the user forgets.
-currentdict /EPSFitPage known { /PSFitPage //true def /EPSCrop //true def} if
+currentdict /EPSFitPage known { /PSFitPage //true def } if
 % This is a "convenience" option that sets a combination of EPSFitPage, PDFFitPage and PSFitPage
-currentdict /FitPage known { /EPSFitPage //true def /EPSCrop //true def /PDFFitPage //true def /PSFitPage //true def } if
+currentdict /FitPage known { /EPSFitPage //true def /PDFFitPage //true def /PSFitPage //true def } if
 
 % Acquire environment variables.
 currentdict /DEVICE known not
@@ -1544,10 +1541,18 @@ setpacking
   % any-part-of-pixel rule.
   0.5 .setfilladjust
 } bind def
+
 % Set the default screen and BG/UCR.
+% We define the proc here, rather than inline in .setdefaultbgucr
+% for the benefit of gs_cet.ps so jobs that do anything that causes
+% .setdefaultbgucr to be called will still get the redefined proc
+% in gs_cet.ps
+(%.defaultbgrucrproc) cvn { pop 0 } def
+
 /.setdefaultbgucr {
   systemdict /setblackgeneration known {
-    { pop 0 } dup setblackgeneration setundercolorremoval
+    (%.defaultbgrucrproc) cvn load dup
+    setblackgeneration setundercolorremoval
   } if
 } bind def
 /.useloresscreen {	% - .useloresscreen <bool>
@@ -2248,8 +2253,8 @@ SAFER { .setsafeglobal } if
   /.currenthalftone /.sethalftone5 /.image1 /.imagemask1 /.image3 /.image4
   /.getiodevice /.getdevparms /.putdevparams /.bbox_transform /.matchmedia /.matchpagesize /.defaultpapersize
   /.oserrno /.setoserrno /.oserrorstring /.getCPSImode
-  /.getscanconverter /.setscanconverter /.type1encrypt /.type1decrypt/.languagelevel /.setlanguagelevel /.eqproc /.fillpage /.buildpattern1 /.saslprep
-  /.buildshading1 /.buildshading2 /.buildshading3 /.buildshading4 /.buildshading5 /.buildshading6 /.buildshading7 /.buildshadingpattern
+  /.getscanconverter /.setscanconverter /.type1encrypt /.type1decrypt/.languagelevel /.setlanguagelevel /.eqproc /.fillpage
+  /.saslprep
   /.shfill /.argindex /.bytestring /.namestring /.stringbreak /.stringmatch /.globalvmarray /.globalvmdict /.globalvmpackedarray /.globalvmstring
   /.localvmarray /.localvmdict /.localvmpackedarray /.localvmstring /.systemvmarray /.systemvmdict /.systemvmpackedarray /.systemvmstring /.systemvmfile /.systemvmlibfile
   /.systemvmSFD /.settrapparams /.currentsystemparams /.currentuserparams /.getsystemparam /.getuserparam /.setsystemparams /.setuserparams
@@ -2258,7 +2263,7 @@ SAFER { .setsafeglobal } if
   /filterdict /.cidfonttypes /.colorrenderingtypes
   /.formtypes /.halftonetypes /.imagetypes /.imagemasktypes
   /.patterntypes /.shadingtypes /.wheredict /.renderingintentdict
-  /.currentmatrix /.setmatrix /.setdevicecolorrendering1
+  /.currentmatrix /.setmatrix
   /.setlinecap  /.setlinejoin  /.sizeimagebox  /.systemvmcheck
 
   % Used by a free user in the Library of Congress. Apparently this is used to
@@ -2295,7 +2300,9 @@ SAFER { .setsafeglobal } if
       /.checkFilePermitparams
       /.checksetparams
       /.copyparam
-      /.setpagesize
+      /.setdevicecolorrendering1
+      /.buildpattern1
+      /.findcategory
 
 % Couldn't figure out how to do these yet
 %      /.checkparamtype
@@ -2303,6 +2310,12 @@ SAFER { .setsafeglobal } if
   ]
   dup {level2dict exch .forceundef} forall
   {systemdict exch .forceundef} forall
+
+  % undef stuff from statusdict
+  [
+%      /.setpagesize
+  ]
+  {statusdict exch .forceundef} forall
 
   //systemdict /UndefinePostScriptOperators .forceundef
 } .bind executeonly def % must be bound and hidden for .forceundef
@@ -2507,5 +2520,8 @@ WRITESYSTEMDICT {
 % support DeviceN and spot color separations this will need to
 % be 'true' in some cases.
 userdict /AGM_preserve_spots //false put
+
+systemdict /CETMODE .knownget
+{ { (gs_cet.ps) runlibfile } if } if
 
 % The interpreter will run the initial procedure (start).

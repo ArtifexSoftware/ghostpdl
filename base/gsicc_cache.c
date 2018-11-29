@@ -22,6 +22,7 @@
 #include "gsstruct.h"
 #include "scommon.h"
 #include "gx.h"
+#include "gpsync.h"	/* for MAX_THREADS */
 #include "gxgstate.h"
 #include "smd5.h"
 #include "gscms.h"
@@ -45,7 +46,7 @@
          *  This will be done later.  For now, just limit the number
          *  of links.
          */
-#define ICC_CACHE_MAXLINKS 50
+#define ICC_CACHE_MAXLINKS (MAX_THREADS*2)	/* allow up to two active links per thread */
 
 /* Static prototypes */
 
@@ -59,8 +60,6 @@ static int gsicc_compute_linkhash(gsicc_manager_t *icc_manager, gx_device *dev,
                                   cmm_profile_t *output_profile,
                                   gsicc_rendering_param_t *rendering_params,
                                   gsicc_hashlink_t *hash);
-
-static gsicc_link_t* gsicc_find_zeroref_cache(gsicc_link_cache_t *icc_link_cache);
 
 static void gsicc_remove_link(gsicc_link_t *link, const gs_memory_t *memory);
 
@@ -78,9 +77,9 @@ gs_private_st_ptrs3_final(st_icc_link, gsicc_link_t, "gsiccmanage_link",
 
 struct_proc_finalize(icc_linkcache_finalize);
 
-gs_private_st_ptrs2_final(st_icc_linkcache, gsicc_link_cache_t, "gsiccmanage_linkcache",
+gs_private_st_ptrs3_final(st_icc_linkcache, gsicc_link_cache_t, "gsiccmanage_linkcache",
                     icc_linkcache_enum_ptrs, icc_linkcache_reloc_ptrs, icc_linkcache_finalize,
-                    head, lock);
+                    head, lock, full_wait);
 
 /* These are used to construct a hash for the ICC link based upon the
    render parameters */
@@ -114,10 +113,18 @@ gsicc_cache_new(gs_memory_t *memory)
         gs_free_object(memory->stable_memory, result, "gsicc_cache_new");
         return(NULL);
     }
+    result->full_wait = gx_semaphore_label(gx_semaphore_alloc(memory->stable_memory),
+                                    "gsicc_cache_new");
+    if (result->full_wait == NULL) {
+        gx_monitor_free(result->lock);
+        gs_free_object(memory->stable_memory, result, "gsicc_cache_new");
+        return(NULL);
+    }
 #endif
     rc_init_free(result, memory->stable_memory, 1, rc_gsicc_link_cache_free);
     result->head = NULL;
     result->num_links = 0;
+    result->cache_full = false;
     result->memory = memory->stable_memory;
     if_debug2m(gs_debug_flag_icc, memory,
                "[icc] Allocating link cache = 0x%p memory = 0x%p\n",
@@ -161,6 +168,8 @@ icc_linkcache_finalize(const gs_memory_t *mem, void *ptr)
 #ifndef MEMENTO_SQUEEZE_BUILD
         gx_monitor_free(link_cache->lock);
         link_cache->lock = NULL;
+        gx_semaphore_free(link_cache->full_wait);
+        link_cache->full_wait = 0;
 #endif
     }
 }
@@ -559,36 +568,6 @@ gsicc_findcachelink(gsicc_hashlink_t hash, gsicc_link_cache_t *icc_link_cache,
     return NULL;
 }
 
-/* Find entry with zero ref count and remove it */
-/* lock the cache during this time for multi-threaded case */
-/* This may release links waiting for an icc_link_cache slot */
-static gsicc_link_t*
-gsicc_find_zeroref_cache(gsicc_link_cache_t *icc_link_cache)
-{
-    gsicc_link_t *curr = NULL;
-
-    /* Look through the cache for first zero ref count */
-    /* when ref counts go to zero, the icc_link is moved to the */
-    /* end of the list, so the first we find is the 'oldest'.
-       If we get to the last entry we return NULL.  At that point
-       there are no slots available and the thread should be
-       put into a wait state.  Since most threads have at most 1 active
-       link at anyone time, this will not be an issue for a single-threaded
-       case. */
-
-    curr = icc_link_cache->head;
-    while (curr != NULL ) {
-        if (curr->ref_count == 0) {
-            curr->ref_count++;		/* we will use this one */
-            if_debug2m('^', curr->memory, "[^]icclink 0x%p ++ => %ld\n",
-                       curr, curr->ref_count);
-            break;
-        }
-        curr = curr->next;
-    }
-    return(curr);
-}
-
 /* Remove link from cache.  Notify CMS and free */
 static void
 gsicc_remove_link(gsicc_link_t *link, const gs_memory_t *memory)
@@ -627,6 +606,10 @@ gsicc_remove_link(gsicc_link_t *link, const gs_memory_t *memory)
     if (curr == link && link->ref_count == 0) {
         icc_link_cache->num_links--;	/* no longer in the cache */
 #ifndef MEMENTO_SQUEEZE_BUILD
+        if (icc_link_cache->cache_full) {
+            icc_link_cache->cache_full = false;
+            gx_semaphore_signal(icc_link_cache->full_wait);	/* let a waiting thread run */
+        }
         gx_monitor_leave(icc_link_cache->lock);
 #endif
         gsicc_link_free(link, memory);	/* outside link cache now. */
@@ -897,19 +880,39 @@ gsicc_alloc_link_entry(gsicc_link_cache_t *icc_link_cache,
     gx_monitor_enter(icc_link_cache->lock);
 #endif
     while (icc_link_cache->num_links >= ICC_CACHE_MAXLINKS) {
-        /* If not, see if there is anything we can remove from cache. */
-        while ((link = gsicc_find_zeroref_cache(icc_link_cache)) == NULL) {
+        /* Look through the cache for first zero ref count to re-use that entry.
+           When ref counts go to zero, the icc_link will have been moved to
+           the end of the list, so the first we find is the 'oldest'.
+           If we get to the last entry we release the lock, set the cache_full
+           flag and wait on full_wait for some other thread to let this thread
+           run again after releasing a cache slot. Release the cache lock to
+           let other threads run and finish with (release) a cache entry.
+        */
+        link = icc_link_cache->head;
+        while (link != NULL ) {
+            if (link->ref_count == 0) {
+                /* we will use this one */
+                if_debug3m('^', cache_mem, "[^]%s 0x%lx ++ => %ld\n",
+                           "icclink", link, link->ref_count);
+                break;
+            }
+            link = link->next;
+        }
+        if (link == NULL) {
 #ifndef MEMENTO_SQUEEZE_BUILD
+            icc_link_cache->cache_full = true;
             /* unlock while waiting for a link to come available */
             gx_monitor_leave(icc_link_cache->lock);
+            gx_semaphore_wait(icc_link_cache->full_wait);
 #endif
             /* repeat the findcachelink to see if some other thread has	*/
-            /*already started building the link	we need			*/
+            /* already started building the link we need		*/
             *ret_link = gsicc_findcachelink(hash, icc_link_cache,
                                             include_softproof, include_devlink);
             /* Got a hit, return link. ref_count for the link was already bumped */
             if (*ret_link != NULL)
                 return true;
+
 #ifndef MEMENTO_SQUEEZE_BUILD
             gx_monitor_enter(icc_link_cache->lock);	    /* restore the lock */
 #endif
@@ -917,16 +920,17 @@ gsicc_alloc_link_entry(gsicc_link_cache_t *icc_link_cache,
             /* that some other thread didn't grab the slot and max us out */
             if (retries++ > 10)
                 return false;
+        } else {
+            /* Remove the zero ref_count link profile we found.		*/
+            /* Even if we remove this link, we may still be maxed out so*/
+            /* the outermost 'while' will check to make sure some other	*/
+            /* thread did not grab the one we remove.			*/
+            gsicc_remove_link(link, cache_mem);
         }
-        /* Remove the zero ref_count link profile we found.		*/
-        /* Even if we remove this link, we may still be maxed out so	*/
-        /* the outermost 'while' will check to make sure some other	*/
-        /* thread did not grab the one we remove.			*/
-        gsicc_remove_link(link, cache_mem);
     }
     /* insert an empty link that we will reserve so we can unlock while	*/
     /* building the link contents. If successful, the entry will set	*/
-    /* the hash for the link, set valid=false, and lock the profile     */
+    /* the hash for the link, Set valid=false, and lock the profile     */
     (*ret_link) = gsicc_alloc_link(cache_mem->stable_memory, hash);
     /* NB: the link returned will be have the lock owned by this thread */
     /* the lock will be released when the link becomes valid.           */
@@ -940,7 +944,7 @@ gsicc_alloc_link_entry(gsicc_link_cache_t *icc_link_cache,
     /* unlock before returning */
     gx_monitor_leave(icc_link_cache->lock);
 #endif
-    return false;
+    return false;	/* we didn't find it, but return a link to be filled */
 }
 
 /* This is the main function called to obtain a linked transform from the ICC
@@ -1072,8 +1076,9 @@ gsicc_get_link_profile(const gs_gstate *pgs, gx_device *dev,
            handle that properly. */
         src_dev_link = gs_input_profile->isdevlink;
     }
-    /* No link was found so lets create a new one if there is room. This may
-       actually return a link if another thread has already created it */
+    /* No link was found so lets create a new one if there is room. This will
+       usually return a link that is not yet valid, but may return a valid link
+       if another thread has already created it */
     if (gsicc_alloc_link_entry(icc_link_cache, &link, hash, include_softproof,
                                include_devicelink))
         return link;
@@ -1286,6 +1291,10 @@ gsicc_get_link_profile(const gs_gstate *pgs, gx_device *dev,
                    link, link->ref_count);
 
 #ifndef MEMENTO_SQUEEZE_BUILD
+        if (icc_link_cache->cache_full) {
+            icc_link_cache->cache_full = false;
+            gx_semaphore_signal(icc_link_cache->full_wait);	/* let a waiting thread run */
+        }
         gx_monitor_leave(link->lock);
 #endif
         gsicc_remove_link(link, cache_mem);
@@ -1703,6 +1712,13 @@ gsicc_release_link(gsicc_link_t *icclink)
             prev->next = icclink;
             icclink->next = curr;
         }
+#ifndef MEMENTO_SQUEEZE_BUILD
+        /* Finally, if some thread was waiting because the cache was full, let it run */
+        if (icc_link_cache->cache_full) {
+            icc_link_cache->cache_full = false;
+            gx_semaphore_signal(icc_link_cache->full_wait);	/* let a waiting thread run */
+        }
+#endif
     }
 #ifndef MEMENTO_SQUEEZE_BUILD
     gx_monitor_leave(icc_link_cache->lock);

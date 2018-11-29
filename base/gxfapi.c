@@ -277,10 +277,11 @@ recreate_multiple_master(gs_font_base *pbfont)
         (pbfont->FontType == ft_encrypted
         || pbfont->FontType == ft_encrypted2)) {
         gs_font_type1 *pfont1 = (gs_font_type1 *) pbfont;
-        if (I->face.WeightVector.count != pfont1->data.WeightVector.count) {
+        if (pfont1->data.WeightVector.count != 0
+            && I->face.WeightVector.count != pfont1->data.WeightVector.count) {
             changed = true;
         }
-        else {
+        else if (pfont1->data.WeightVector.count != 0) {
             changed = (memcmp(I->face.WeightVector.values, pfont1->data.WeightVector.values,
                              pfont1->data.WeightVector.count * sizeof(pfont1->data.WeightVector.values[0])) != 0);
         }

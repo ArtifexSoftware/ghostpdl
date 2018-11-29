@@ -47,6 +47,7 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
     int                     code, k;
     gs_color_space *        pcs;
     ref *                   pstrmval;
+    ref *                   phashval = NULL;
     stream *                s = 0L;
     cmm_profile_t           *picc_profile = NULL;
     int                     i, expected = 0;
@@ -58,13 +59,27 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
             GSICC_STANDARD_PROFILES_KEYS
         };
 
+    /* If we are override ICC mode, we won't use the profile */
+    if (!gs_currentoverrideicc(igs) &&
+        dict_find_string(ICCdict, ".hash", &phashval) == 1 &&
+        r_has_type(phashval, t_integer)) {
+        pcs = gsicc_find_cs(phashval->value.intval, igs);
+        if (pcs != NULL) {
+            /* Set the color space.  We are done. */
+            code = gs_setcolorspace(igs, pcs);
+            /* Remove the ICC dict from the stack */
+            pop(1);
+            return code;
+        }
+    }
+
     /* verify the DataSource entry */
     if (dict_find_string(ICCdict, "DataSource", &pstrmval) <= 0)
         return_error(gs_error_undefined);
     check_read_file(i_ctx_p, s, pstrmval);
 
     /* build the color space object */
-    code = gs_cspace_build_ICC(&pcs, NULL, gs_gstate_memory(igs));
+    code = gs_cspace_build_ICC(&pcs, NULL, gs_gstate_memory(igs)->stable_memory);
     if (code < 0)
         return gs_rethrow(code, "building color space object");
     /*  For now, dump the profile into a buffer
@@ -198,18 +213,27 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
         }
         /* Have one increment from the color space.  Having these tied
            together is not really correct.  Need to fix that.  ToDo.  MJV */
-        rc_adjust(picc_profile, -2, "seticc");
+        rc_adjust(picc_profile, -2, "seticc");	/* NB: May free the profile and set picc_profile to 0 */
         rc_increment(pcs->cmm_icc_profile_data);
     }
-    /* Set the color space.  We are done.  No joint cache here... */
+    /* Set the color space.  We are done. */
     code = gs_setcolorspace(igs, pcs);
     /* The context has taken a reference to the colorspace. We no longer need
      * ours, so drop it. */
     rc_decrement_only(pcs, "seticc");
-    /* In this case, we already have a ref count of 2 on the icc profile
-       one for when it was created and one for when it was set.  We really
-       only want one here so adjust */
-    rc_decrement(picc_profile,"seticc");
+    if (picc_profile != NULL) {
+        /* In this case, we already have a ref count of 2 on the icc profile
+           one for when it was created and one for when it was set.  We really
+           only want one here so adjust */
+        rc_decrement(picc_profile,"seticc");
+        if (code >= 0) {
+            /* Save this colorspace in the iccprofile_cache */
+            gsicc_add_cs(igs, pcs, picc_profile->hashcode);
+            /* should be an integer, but if for some reason it isn't, don't update */
+            if (phashval && r_has_type(phashval, t_integer))
+                phashval->value.intval = picc_profile->hashcode;
+        }
+    }
     /* Remove the ICC dict from the stack */
     pop(1);
     return code;

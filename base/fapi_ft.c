@@ -578,29 +578,6 @@ load_glyph(gs_fapi_server * a_server, gs_fapi_font * a_fapi_font,
         s->outline_glyph = NULL;
     }
 
-#if 0
-    if (a_fapi_font->is_type1) {
-        FT_Fixed coords[16] = {0};
-        int i;
-        gs_font_type1 *pfont1 = (gs_font_type1 *) a_fapi_font->client_font_data;
-        FT_Multi_Master amaster;
-        T1_Face *face = (T1_Face *)ft_face;
-
-        ft_error = FT_Get_Multi_Master(ft_face, &amaster);
-
-        if (pfont1->data.WeightVector.count > 0) {
-            for (i = 0; i < pfont1->data.WeightVector.count; i++) {
-                coords[i] = (FT_Fixed)(pfont1->data.WeightVector.values[i] * 65536);
-            }
-            coords[0] = coords[1];
-            coords[1] = coords[2];
-            ft_error = FT_Set_MM_Blend_Coordinates (ft_face, pfont1->data.WeightVector.count / 2, coords);
-        }
-        else
-            ft_error = FT_Set_MM_Blend_Coordinates (ft_face, 0, coords);
-    }
-#endif
-
     if (!a_char_ref->is_glyph_index) {
         if (ft_face->num_charmaps)
             index = FT_Get_Char_Index(ft_face, index);
@@ -1788,12 +1765,31 @@ gs_fapi_ft_check_cmap_for_GID(gs_fapi_server * server, uint * index)
 static gs_fapi_retcode
 gs_fapi_ft_set_mm_weight_vector(gs_fapi_server *server, gs_fapi_font *ff, float *wvector, int length)
 {
+    ff_face *face = (ff_face *) ff->server_font_data;
+    FT_Fixed nwv[16] = {0};
+    FT_Fixed cwv[16] = {0};
+    FT_UInt len = 16;
+    int i;
+    bool setit = false;
+    FT_Error ft_error;
     (void)server;
-    (void)ff;
-    (void)wvector;
-    (void)length;
+
+    ft_error = FT_Get_MM_WeightVector(face->ft_face, &len, cwv);
+    if (ft_error != 0) return_error(gs_error_invalidaccess);
+
+    for (i = 0; i < length; i++) {
+        nwv[i] = (FT_Fixed)(wvector[i] * 65536.0);
+        if (nwv[i] != cwv[i]) {
+            setit = true;
+        }
+    }
     
-    return gs_error_invalidaccess;
+    if (setit == true) {
+        ft_error = FT_Set_MM_WeightVector(face->ft_face, length, nwv);
+        if (ft_error != 0) return_error(gs_error_invalidaccess);
+    }
+
+    return 0;
 }
 
 static void gs_fapi_freetype_destroy(gs_fapi_server ** serv);

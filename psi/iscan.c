@@ -44,9 +44,6 @@
 #include "store.h"
 #include "scanchar.h"
 
-#define recognize_btokens()\
-  (ref_binary_object_format.value.intval != 0 && level2_enabled)
-
 /* Procedure for handling DSC comments if desired. */
 /* Set at initialization if a DSC handling module is included. */
 int (*gs_scan_dsc_proc) (const byte *, uint) = NULL;
@@ -63,9 +60,8 @@ int (*gs_scan_comment_proc) (const byte *, uint) = NULL;
  *      - << and >> are legal tokens;
  *      - <~ introduces an ASCII85 encoded string (terminated by ~>);
  *      - Character codes above 127 introduce binary objects.
- * We explicitly enable or disable these changes here.
+ * We explicitly enable or disable these changes based on level2_enabled.
  */
-#define scan_enable_level2 level2_enabled       /* from ilevel.h */
 
 /* ------ Dynamic strings ------ */
 
@@ -471,7 +467,7 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
   if ( osp >= osbot ) osp--;\
   else ref_stack_pop(&o_stack, 1)
     int max_name_ctype =
-        (recognize_btokens()? ctype_name : ctype_btoken);
+        ((ref_binary_object_format.value.intval != 0 && level2_enabled)? ctype_name : ctype_btoken);
 
 #define scan_sign(sign, ptr)\
   switch ( *ptr ) {\
@@ -480,7 +476,7 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
     default: sign = 0;\
   }
 #define refill2_back(styp,nback)\
-  BEGIN sptr -= nback; scan_type = styp; goto pause; END
+  BEGIN sptr -= nback; sstate.s_scan_type = styp; goto pause; END
 #define ensure2_back(styp,nback)\
   if ( sptr >= endptr ) refill2_back(styp,nback)
 #define ensure2(styp) ensure2_back(styp, 1)
@@ -500,13 +496,6 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                       PDFScanRules ? 0x04 : 0xffff);
     scanner_state sstate;
 
-#define pstack sstate.s_pstack
-#define pdepth sstate.s_pdepth
-#define scan_type sstate.s_scan_type
-#define da sstate.s_da
-#define name_type sstate.s_ss.s_name.s_name_type
-#define try_number sstate.s_ss.s_name.s_try_number
-
     sptr = endptr = NULL; /* Quiet compiler */
     if (pstate->s_pstack != 0) {
         if_not_spush1()
@@ -516,18 +505,18 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
     /* Check whether we are resuming after an interruption. */
     if (pstate->s_scan_type != scanning_none) {
         sstate = *pstate;
-        if (!da.is_dynamic && da.base != da.buf) {
-            /* The da contains some self-referencing pointers. */
+        if (!sstate.s_da.is_dynamic && sstate.s_da.base != sstate.s_da.buf) {
+            /* The sstate.s_da contains some self-referencing pointers. */
             /* Fix them up now. */
-            uint next = da.next - da.base;
-            uint limit = da.limit - da.base;
+            uint next = sstate.s_da.next - sstate.s_da.base;
+            uint limit = sstate.s_da.limit - sstate.s_da.base;
 
-            da.base = da.buf;
-            da.next = da.buf + next;
-            da.limit = da.buf + limit;
+            sstate.s_da.base = sstate.s_da.buf;
+            sstate.s_da.next = sstate.s_da.buf + next;
+            sstate.s_da.limit = sstate.s_da.buf + limit;
         }
-        daptr = da.next;
-        switch (scan_type) {
+        daptr = sstate.s_da.next;
+        switch (sstate.s_scan_type) {
             case scanning_binary:
                 retcode = (*sstate.s_ss.binary.cont)
                     (i_ctx_p, myref, &sstate);
@@ -547,16 +536,16 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
         }
     }
     /* Fetch any state variables that are relevant even if */
-    /* scan_type == scanning_none. */
-    pstack = pstate->s_pstack;
-    pdepth = pstate->s_pdepth;
+    /* sstate.s_scan_type == scanning_none. */
+    sstate.s_pstack = pstate->s_pstack;
+    sstate.s_pdepth = pstate->s_pdepth;
     ref_assign(&sstate.s_file, &pstate->s_file);
     sstate.s_options = pstate->s_options;
     SCAN_INIT_ERROR(&sstate);
     s_begin_inline(s, sptr, endptr);
     /*
      * Loop invariants:
-     *      If pstack != 0, myref = osp, and *osp is a valid slot.
+     *      If sstate.s_pstack != 0, myref = osp, and *osp is a valid slot.
      */
   top:c = sgetc_inline(s, sptr, endptr);
     if_debug1m('S', imemory, (c >= 32 && c <= 126 ? "`%c'" : c >= 0 ? "`\\%03o'" : "`%d'"), c);
@@ -579,14 +568,14 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
             r_set_attrs(myref, a_executable);
             break;
         case '<':
-            if (scan_enable_level2) {
+            if (level2_enabled) {
                 ensure2(scanning_none);
                 c = sgetc_inline(s, sptr, endptr);
                 switch (c) {
                     case '<':
                         sputback_inline(s, sptr, endptr);
-                        name_type = 0;
-                        try_number = false;
+                        sstate.s_ss.s_name.s_name_type = 0;
+                        sstate.s_ss.s_name.s_try_number = false;
                         goto try_funny_name;
                     case '~':
                         s_A85D_init_inline(&sstate.s_ss.a85d);
@@ -599,17 +588,17 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
             (void)s_AXD_init_inline(&sstate.s_ss.axd);
             sstate.s_ss.st.templat = &s_AXD_template;
           str:s_end_inline(s, sptr, endptr);
-            dynamic_init(&da, imemory);
+            dynamic_init(&sstate.s_da, imemory);
           cont_string:for (;;) {
                 stream_cursor_write w;
 
-                w.ptr = da.next - 1;
-                w.limit = da.limit - 1;
+                w.ptr = sstate.s_da.next - 1;
+                w.limit = sstate.s_da.limit - 1;
                 status = (*sstate.s_ss.st.templat->process)
                     (&sstate.s_ss.st, &s->cursor.r, &w,
                      s->end_status == EOFC);
                 if (!check_only)
-                    da.next = w.ptr + 1;
+                    sstate.s_da.next = w.ptr + 1;
                 switch (status) {
                     case 0:
                         status = s->end_status;
@@ -617,7 +606,7 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                             if (status == EOFC) {
                                 if (check_only) {
                                     retcode = scan_Refill;
-                                    scan_type = scanning_string;
+                                    sstate.s_scan_type = scanning_string;
                                     goto suspend;
                                 } else
                                     sreturn(gs_error_syntaxerror);
@@ -628,9 +617,9 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                         continue;
                     case 1:
                         if (!check_only) {
-                            retcode = dynamic_grow(&da, da.next, max_string_size);
+                            retcode = dynamic_grow(&sstate.s_da, sstate.s_da.next, max_string_size);
                             if (retcode == gs_error_VMerror) {
-                                scan_type = scanning_string;
+                                sstate.s_scan_type = scanning_string;
                                 goto suspend;
                             } else if (retcode < 0)
                                 sreturn(retcode);
@@ -646,65 +635,65 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                     sreturn(gs_error_syntaxerror);
                 case INTC:
                 case CALLC:
-                    scan_type = scanning_string;
+                    sstate.s_scan_type = scanning_string;
                     goto pause;
                 case EOFC:
                     ;
             }
-            retcode = dynamic_make_string(i_ctx_p, myref, &da, da.next);
+            retcode = dynamic_make_string(i_ctx_p, myref, &sstate.s_da, sstate.s_da.next);
             if (retcode < 0) {  /* VMerror */
                 sputback(s);    /* rescan ) */
-                scan_type = scanning_string;
+                sstate.s_scan_type = scanning_string;
                 goto suspend;
             }
             break;
         case '(':
             sstate.s_ss.pssd.from_string =
                 ((pstate->s_options & SCAN_FROM_STRING) != 0) &&
-                !scan_enable_level2;
+                !level2_enabled;
             s_PSSD_partially_init_inline(&sstate.s_ss.pssd);
             sstate.s_ss.st.templat = &s_PSSD_template;
             goto str;
         case '{':
-            if (pstack == 0) {  /* outermost procedure */
+            if (sstate.s_pstack == 0) {  /* outermost procedure */
                 if_not_spush1() {
                     sputback_inline(s, sptr, endptr);
-                    scan_type = scanning_none;
+                    sstate.s_scan_type = scanning_none;
                     goto pause_ret;
                 }
-                pdepth = ref_stack_count_inline(&o_stack);
+                sstate.s_pdepth = ref_stack_count_inline(&o_stack);
             }
-            make_int(osp, pstack);
-            pstack = ref_stack_count_inline(&o_stack);
+            make_int(osp, sstate.s_pstack);
+            sstate.s_pstack = ref_stack_count_inline(&o_stack);
             if_debug3m('S', imemory, "[S{]d=%d, s=%d->%d\n",
-                       pdepth, (int)osp->value.intval, pstack);
+                       sstate.s_pdepth, (int)osp->value.intval, sstate.s_pstack);
             goto snext;
         case '>':
-            if (scan_enable_level2) {
+            if (level2_enabled) {
                 ensure2(scanning_none);
-                name_type = 0;
-                try_number = false;
+                sstate.s_ss.s_name.s_name_type = 0;
+                sstate.s_ss.s_name.s_try_number = false;
                 goto try_funny_name;
             }
             /* falls through */
         case ')':
             sreturn(gs_error_syntaxerror);
         case '}':
-            if (pstack == 0)
+            if (sstate.s_pstack == 0)
                 sreturn(gs_error_syntaxerror);
             osp--;
             {
-                uint size = ref_stack_count_inline(&o_stack) - pstack;
+                uint size = ref_stack_count_inline(&o_stack) - sstate.s_pstack;
                 ref arr;
 
                 if_debug4m('S', imemory, "[S}]d=%"PRIu32", s=%"PRIu32"->%"PRIpsint", c=%"PRIu32"\n",
-                           pdepth, pstack,
-                           (pstack == pdepth ? 0 :
+                           sstate.s_pdepth, sstate.s_pstack,
+                           (sstate.s_pstack == sstate.s_pdepth ? 0 :
                            ref_stack_index(&o_stack, size)->value.intval),
-                           size + pstack);
+                           size + sstate.s_pstack);
                 if (size > max_array_size)
                     sreturn(gs_error_limitcheck);
-                myref = (pstack == pdepth ? pref : &arr);
+                myref = (sstate.s_pstack == sstate.s_pdepth ? pref : &arr);
                 if (check_only) {
                     make_empty_array(myref, 0);
                     ref_stack_pop(&o_stack, size);
@@ -714,7 +703,7 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                     if (retcode < 0) {  /* must be VMerror */
                         osp++;
                         sputback_inline(s, sptr, endptr);
-                        scan_type = scanning_none;
+                        sstate.s_scan_type = scanning_none;
                         goto pause_ret;
                     }
                     r_set_attrs(myref, a_executable);
@@ -725,7 +714,7 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                     if (retcode < 0) {  /* must be VMerror */
                         osp++;
                         sputback_inline(s, sptr, endptr);
-                        scan_type = scanning_none;
+                        sstate.s_scan_type = scanning_none;
                         goto pause_ret;
                     }
                     retcode = ref_stack_store(&o_stack, myref, size, 0, 1,
@@ -736,13 +725,13 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                     }
                     ref_stack_pop(&o_stack, size);
                 }
-                if (pstack == pdepth) {         /* This was the top-level procedure. */
+                if (sstate.s_pstack == sstate.s_pdepth) {         /* This was the top-level procedure. */
                     spop1();
-                    pstack = 0;
+                    sstate.s_pstack = 0;
                 } else {
                     if (osp < osbot)
                         ref_stack_pop_block(&o_stack);
-                    pstack = osp->value.intval;
+                    sstate.s_pstack = osp->value.intval;
                     *osp = arr;
                     goto snext;
                 }
@@ -758,17 +747,17 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
             }
             c = sgetc_inline(s, sptr, endptr);
             if (!PDFScanRules && (c == '/')) {
-                name_type = 2;
+                sstate.s_ss.s_name.s_name_type = 2;
                 c = sgetc_inline(s, sptr, endptr);
             } else
-                name_type = 1;
-            try_number = false;
+                sstate.s_ss.s_name.s_name_type = 1;
+            sstate.s_ss.s_name.s_try_number = false;
             switch (decoder[c]) {
                 case ctype_name:
                 default:
                     goto do_name;
                 case ctype_btoken:
-                    if (!recognize_btokens())
+                    if (!(ref_binary_object_format.value.intval != 0 && level2_enabled))
                         goto do_name;
                     /* otherwise, an empty name */
                 case ctype_exception:
@@ -782,8 +771,8 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                 case ctype_other:
                     if (c == ctrld) /* see above */
                         goto do_name;
-                    da.base = da.limit = daptr = 0;
-                    da.is_dynamic = false;
+                    sstate.s_da.base = sstate.s_da.limit = daptr = 0;
+                    sstate.s_da.is_dynamic = false;
                     goto nx;
             }
         case '%':
@@ -814,20 +803,19 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                  * to an external procedure, move what we have collected
                  * so far into a private buffer now.
                  */
-#define comment_line da.buf
                 --sptr;
-                comment_line[1] = 0;
+                sstate.s_da.buf[1] = 0;
                 {
                     /* Could be an externally processable comment. */
                     uint len = sptr + 1 - base;
-                    if (len > sizeof(comment_line))
-                        len = sizeof(comment_line);
+                    if (len > sizeof(sstate.s_da.buf))
+                        len = sizeof(sstate.s_da.buf);
 
-                    memcpy(comment_line, base, len);
-                    daptr = comment_line + len;
+                    memcpy(sstate.s_da.buf, base, len);
+                    daptr = sstate.s_da.buf + len;
                 }
-                da.base = comment_line;
-                da.is_dynamic = false;
+                sstate.s_da.base = sstate.s_da.buf;
+                sstate.s_da.is_dynamic = false;
             }
             /* Enter here to continue scanning a comment. */
             /* daptr must be set. */
@@ -838,8 +826,8 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                             switch (c) {
                                 case INTC:
                                 case CALLC:
-                                    da.next = daptr;
-                                    scan_type = scanning_comment;
+                                    sstate.s_da.next = daptr;
+                                    sstate.s_scan_type = scanning_comment;
                                     goto pause;
                                 case EOFC:
                                     /*
@@ -851,7 +839,7 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                                 default:
                                     sreturn(gs_error_syntaxerror);
                             }
-                        if (daptr < comment_line + max_comment_line)
+                        if (daptr < sstate.s_da.buf + max_comment_line)
                             *daptr++ = c;
                         continue;
                     case char_CR:
@@ -859,16 +847,15 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                     case '\f':
                       end_comment:
                         retcode = scan_comment(i_ctx_p, myref, &sstate,
-                                               comment_line, daptr, true);
+                                               sstate.s_da.buf, daptr, true);
                         if (retcode != 0)
                             goto comment;
                         goto top;
                 }
             }
-#undef comment_line
             /*NOTREACHED */
         case EOFC:
-            if (pstack != 0) {
+            if (sstate.s_pstack != 0) {
                 if (check_only)
                     goto pause;
                 sreturn(gs_error_syntaxerror);
@@ -924,8 +911,8 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                 ref_mark_new(myref);
                 break;
             }
-            name_type = 0;
-            try_number = true;
+            sstate.s_ss.s_name.s_name_type = 0;
+            sstate.s_ss.s_name.s_try_number = true;
             goto do_name;
         case '+':
             sign = 1;
@@ -943,11 +930,11 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
             goto nr;
 
             /* Check for a binary object */
-#define case4(c) case c: case c+1: case c+2: case c+3
-          case4(128): case4(132): case4(136): case4(140):
-          case4(144): case4(148): case4(152): case4(156):
-#undef case4
-            if (recognize_btokens()) {
+          case 128: case 129: case 130: case 131: case 132: case 133: case 134: case 135:
+          case 136: case 137: case 138: case 139: case 140: case 141: case 142: case 143:
+          case 144: case 145: case 146: case 147: case 148: case 149: case 150: case 151:
+          case 152: case 153: case 154: case 155: case 156: case 157: case 158: case 159:
+            if ((ref_binary_object_format.value.intval != 0 && level2_enabled)) {
                 s_end_inline(s, sptr, endptr);
                 retcode = scan_binary_token(i_ctx_p, myref, &sstate);
                 s_begin_inline(s, sptr, endptr);
@@ -960,8 +947,8 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
             /* The default is a name. */
         default:
             if (c < 0) {
-                dynamic_init(&da, name_memory(imemory));        /* da state must be clean */
-                scan_type = scanning_none;
+                dynamic_init(&sstate.s_da, name_memory(imemory));        /* sstate.s_da state must be clean */
+                sstate.s_scan_type = scanning_none;
                 goto pause;
             }
             /* Populate the switch with enough cases to force */
@@ -1039,17 +1026,17 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
         case '~':
           begin_name:
             /* Common code for scanning a name. */
-            /* try_number and name_type are already set. */
+            /* sstate.s_ss.s_name.s_try_number and sstate.s_ss.s_name.s_name_type are already set. */
             /* We know c has ctype_name (or maybe ctype_btoken, */
             /* or is ^D) or is a digit. */
-            name_type = 0;
-            try_number = false;
+            sstate.s_ss.s_name.s_name_type = 0;
+            sstate.s_ss.s_name.s_try_number = false;
           do_name:
             /* Try to scan entirely within the stream buffer. */
             /* We stop 1 character early, so we don't switch buffers */
             /* looking ahead if the name is terminated by \r\n. */
-            da.base = (byte *) sptr;
-            da.is_dynamic = false;
+            sstate.s_da.base = (byte *) sptr;
+            sstate.s_da.is_dynamic = false;
             {
                 const byte *endp1 = endptr - 1;
 
@@ -1068,33 +1055,33 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
             /* Initialize the dynamic area. */
             /* We have to do this before the next */
             /* sgetc, which will overwrite the buffer. */
-            da.limit = (byte *)++ sptr;
-            da.memory = name_memory(imemory);
-            retcode = dynamic_grow(&da, da.limit, name_max_string);
+            sstate.s_da.limit = (byte *)++ sptr;
+            sstate.s_da.memory = name_memory(imemory);
+            retcode = dynamic_grow(&sstate.s_da, sstate.s_da.limit, name_max_string);
             if (retcode < 0) {
-                dynamic_save(&da);
+                dynamic_save(&sstate.s_da);
                 if (retcode != gs_error_VMerror)
                     sreturn(retcode);
-                scan_type = scanning_name;
+                sstate.s_scan_type = scanning_name;
                 goto pause_ret;
             }
-            daptr = da.next;
+            daptr = sstate.s_da.next;
             /* Enter here to continue scanning a name. */
             /* daptr must be set. */
           cont_name:s_begin_inline(s, sptr, endptr);
             while (decoder[c = sgetc_inline(s, sptr, endptr)] <= max_name_ctype || c == ctrld) {
-                if (daptr == da.limit) {
-                    retcode = dynamic_grow(&da, daptr,
+                if (daptr == sstate.s_da.limit) {
+                    retcode = dynamic_grow(&sstate.s_da, daptr,
                                            name_max_string);
                     if (retcode < 0) {
-                        dynamic_save(&da);
+                        dynamic_save(&sstate.s_da);
                         if (retcode != gs_error_VMerror)
                             sreturn(retcode);
                         sputback_inline(s, sptr, endptr);
-                        scan_type = scanning_name;
+                        sstate.s_scan_type = scanning_name;
                         goto pause_ret;
                     }
-                    daptr = da.next;
+                    daptr = sstate.s_da.next;
                 }
                 *daptr++ = c;
             }
@@ -1131,8 +1118,8 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                     }
             }
             /* Check for a number */
-            if (try_number) {
-                const byte *base = da.base;
+            if (sstate.s_ss.s_name.s_try_number) {
+                const byte *base = sstate.s_da.base;
 
                 scan_sign(sign, base);
                 retcode = scan_number(base, daptr, sign, myref, &newptr, i_ctx_p->scanner_options);
@@ -1140,46 +1127,46 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                     ref_mark_new(myref);
                     retcode = 0;
                 } else if (retcode != gs_error_syntaxerror) {
-                    dynamic_free(&da);
-                    if (name_type == 2)
+                    dynamic_free(&sstate.s_da);
+                    if (sstate.s_ss.s_name.s_name_type == 2)
                         sreturn(gs_error_syntaxerror);
                     break;      /* might be gs_error_limitcheck */
                 }
             }
-            if (da.is_dynamic) {        /* We've already allocated the string on the heap. */
-                uint size = daptr - da.base;
+            if (sstate.s_da.is_dynamic) {        /* We've already allocated the string on the heap. */
+                uint size = daptr - sstate.s_da.base;
 
-                retcode = name_ref(imemory, da.base, size, myref, -1);
+                retcode = name_ref(imemory, sstate.s_da.base, size, myref, -1);
                 if (retcode >= 0) {
-                    dynamic_free(&da);
+                    dynamic_free(&sstate.s_da);
                 } else {
-                    retcode = dynamic_resize(&da, size);
+                    retcode = dynamic_resize(&sstate.s_da, size);
                     if (retcode < 0) {  /* VMerror */
                         if (c != EOFC)
                             sputback_inline(s, sptr, endptr);
-                        scan_type = scanning_name;
+                        sstate.s_scan_type = scanning_name;
                         goto pause_ret;
                     }
-                    retcode = name_ref(imemory, da.base, size, myref, 2);
+                    retcode = name_ref(imemory, sstate.s_da.base, size, myref, 2);
                 }
             } else {
-                retcode = name_ref(imemory, da.base, (uint) (daptr - da.base),
+                retcode = name_ref(imemory, sstate.s_da.base, (uint) (daptr - sstate.s_da.base),
                                    myref, !s->foreign);
             }
             /* Done scanning.  Check for preceding /'s. */
             if (retcode < 0) {
                 if (retcode != gs_error_VMerror)
                     sreturn(retcode);
-                if (!da.is_dynamic) {
-                    da.next = daptr;
-                    dynamic_save(&da);
+                if (!sstate.s_da.is_dynamic) {
+                    sstate.s_da.next = daptr;
+                    dynamic_save(&sstate.s_da);
                 }
                 if (c != EOFC)
                     sputback_inline(s, sptr, endptr);
-                scan_type = scanning_name;
+                sstate.s_scan_type = scanning_name;
                 goto pause_ret;
             }
-          have_name:switch (name_type) {
+          have_name:switch (sstate.s_ss.s_name.s_name_type) {
                 case 0: /* ordinary executable name */
                     if (r_has_type(myref, t_name))      /* i.e., not a number */
                         r_set_attrs(myref, a_executable);
@@ -1196,7 +1183,7 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                                 a_executable); /* Adobe compatibility */
                             sreturn(gs_error_undefined);
                         }
-                        if (pstack != 0 &&
+                        if (sstate.s_pstack != 0 &&
                             r_space(pvalue) > ialloc_space(idmemory)
                             )
                             sreturn(gs_error_invalidaccess);
@@ -1207,23 +1194,23 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
   sret:if (retcode < 0) {
         s_end_inline(s, sptr, endptr);
         pstate->s_error = sstate.s_error;
-        if (pstack != 0) {
+        if (sstate.s_pstack != 0) {
             if (retcode == gs_error_undefined)
                 *pref = *osp;   /* return undefined name as error token */
             ref_stack_pop(&o_stack,
-                          ref_stack_count(&o_stack) - (pdepth - 1));
+                          ref_stack_count(&o_stack) - (sstate.s_pdepth - 1));
         }
         return retcode;
     }
     /* If we are at the top level, return the object, */
     /* otherwise keep going. */
-    if (pstack == 0) {
+    if (sstate.s_pstack == 0) {
         s_end_inline(s, sptr, endptr);
         return retcode;
     }
   snext:if_not_spush1() {
         s_end_inline(s, sptr, endptr);
-        scan_type = scanning_none;
+        sstate.s_scan_type = scanning_none;
         goto save;
     }
     myref = osp;
@@ -1232,16 +1219,16 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
     /* Pause for an interrupt or callout. */
   pause_name:
     /* If we're still scanning within the stream buffer, */
-    /* move the characters to the private buffer (da.buf) now. */
-    da.next = daptr;
-    dynamic_save(&da);
-    scan_type = scanning_name;
+    /* move the characters to the private buffer (sstate.s_da.buf) now. */
+    sstate.s_da.next = daptr;
+    dynamic_save(&sstate.s_da);
+    sstate.s_scan_type = scanning_name;
   pause:
     retcode = scan_Refill;
   pause_ret:
     s_end_inline(s, sptr, endptr);
   suspend:
-    if (pstack != 0)
+    if (sstate.s_pstack != 0)
         osp--;                  /* myref */
   save:
     *pstate = sstate;
@@ -1252,6 +1239,6 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
     if (retcode < 0)
         goto sret;
     s_end_inline(s, sptr, endptr);
-    scan_type = scanning_none;
+    sstate.s_scan_type = scanning_none;
     goto save;
 }

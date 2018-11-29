@@ -24,6 +24,7 @@
 #include "gxdcconv.h"
 #include "gdevdcrd.h"
 #include "gsutil.h" /* for bittags hack */
+#include "gxdevsop.h"
 
 /* Define the device parameters. */
 #ifndef X_DPI
@@ -53,6 +54,7 @@ static dev_proc_put_params(bit_put_params);
 static dev_proc_print_page(bit_print_page);
 static dev_proc_print_page(bittags_print_page);
 static dev_proc_put_image(bit_put_image);
+static dev_proc_dev_spec_op(bit_dev_spec_op);
 dev_proc_get_color_comp_index(gx_default_DevRGB_get_color_comp_index);
 
 #define bit_procs(encode_color)\
@@ -109,7 +111,20 @@ dev_proc_get_color_comp_index(gx_default_DevRGB_get_color_comp_index);
         NULL,	/* get_color_mapping_procs */\
         NULL,	/* get_color_comp_index */\
         encode_color,		/* encode_color */\
-        bit_map_color_rgb	/* decode_color */\
+        bit_map_color_rgb,	/* decode_color */\
+        NULL,   /* pattern_manage */\
+        NULL,   /* fill_rectangle_hl_color */\
+        NULL,   /* include_color_space */\
+        NULL,   /* fill_linear_color_scanline */\
+        NULL,   /* fill_linear_color_trapezoid */\
+        NULL,   /* fill_linear_color_triangle */\
+        NULL,   /* update_spot_equivalent_colors */\
+        NULL,   /* ret_devn_params */\
+        NULL,   /* fillpage */\
+        NULL,   /* push_transparency_state */\
+        NULL,   /* pop_transparency_state */\
+        NULL,   /* put_image */\
+        bit_dev_spec_op\
 }
 
 /*
@@ -225,7 +240,8 @@ static const gx_device_procs bitrgbtags_procs =
         bittag_fillpage,                    /* fillpage */
         ((void *)0),                        /* push_transparency_state */
         ((void *)0),                        /* pop_transparency_state */
-        bit_put_image                        /* put_image */
+        bit_put_image,                      /* put_image */
+        bit_dev_spec_op                     /* dev_spec_op */
     };
 
 const gx_device_bit gs_bitrgbtags_device =
@@ -864,4 +880,19 @@ bit_put_image(gx_device *pdev, gx_device *mdev, const byte **buffers, int num_ch
         }
     }
     return height;        /* we used all of the data */
+}
+
+static int
+bit_dev_spec_op(gx_device *pdev, int dso, void *ptr, int size)
+{
+    switch (dso)
+    {
+    case gxdso_is_encoding_direct:
+        if (pdev->color_info.depth != 8 * pdev->color_info.num_components)
+            return 0;
+        return (dev_proc(pdev, encode_color) == bitrgb_rgb_map_rgb_color ||
+                dev_proc(pdev, encode_color) == bit_map_cmyk_color);
+    }
+
+    return gdev_prn_dev_spec_op(pdev, dso, ptr, size);
 }

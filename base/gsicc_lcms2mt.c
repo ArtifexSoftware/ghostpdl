@@ -445,81 +445,14 @@ gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
         }
     }
 
-    /* littleCMS knows nothing about word boundarys.  As such, we need to do
-       this row by row adjusting for our stride.  Output buffer must already
-       be allocated. ToDo:  Check issues with plane and row stride and word
-       boundry */
     inputpos = (byte *) inputbuffer;
     outputpos = (byte *) outputbuffer;
-    if(input_buff_desc->is_planar){
-        /* Determine if we can do this in one operation or if we have to break
-           it up.  Essentially if the width * height = plane_stride then yes.  If
-           we are doing some subsection of a plane then no. */
-        if (input_buff_desc->num_rows * input_buff_desc->pixels_per_row ==
-            input_buff_desc->plane_stride  &&
-            output_buff_desc->num_rows * output_buff_desc->pixels_per_row ==
-            output_buff_desc->plane_stride) {
-            /* Do entire buffer.*/
-            cmsDoTransform(ctx, hTransform, inputpos, outputpos,
-                           input_buff_desc->plane_stride);
-        } else {
-            /* We have to do this row by row, with memory transfers */
-            byte *temp_des, *temp_src;
-            int source_size = input_buff_desc->bytes_per_chan *
-                              input_buff_desc->pixels_per_row;
+    cmsDoTransformLineStride(ctx, hTransform,
+        inputpos, outputpos, input_buff_desc->pixels_per_row,
+        input_buff_desc->num_rows, input_buff_desc->row_stride,
+        output_buff_desc->row_stride, input_buff_desc->plane_stride,
+        output_buff_desc->plane_stride);
 
-            int des_size = output_buff_desc->bytes_per_chan *
-                           output_buff_desc->pixels_per_row;
-            int y, i;
-
-            temp_src = (byte*)gs_alloc_bytes(icclink->memory->non_gc_memory,
-                                              source_size * input_buff_desc->num_chan,
-                                              "gscms_transform_color_buffer");
-            if (temp_src == NULL)
-                return_error(gs_error_VMerror);
-            temp_des = (byte*) gs_alloc_bytes(icclink->memory->non_gc_memory,
-                                              des_size * output_buff_desc->num_chan,
-                                              "gscms_transform_color_buffer");
-            if (temp_des == NULL)
-                return_error(gs_error_VMerror);
-            for (y = 0; y < input_buff_desc->num_rows; y++) {
-                byte *src_cm = temp_src;
-                byte *src_buff = inputpos;
-                byte *des_cm = temp_des;
-                byte *des_buff = outputpos;
-
-                /* Put into planar temp buffer */
-                for (i = 0; i < input_buff_desc->num_chan; i ++) {
-                    memcpy(src_cm, src_buff, source_size);
-                    src_cm += source_size;
-                    src_buff += input_buff_desc->plane_stride;
-                }
-                /* Transform */
-                cmsDoTransform(ctx, hTransform, temp_src, temp_des,
-                               input_buff_desc->pixels_per_row);
-                /* Get out of temp planar buffer */
-                for (i = 0; i < output_buff_desc->num_chan; i ++) {
-                    memcpy(des_buff, des_cm, des_size);
-                    des_cm += des_size;
-                    des_buff += output_buff_desc->plane_stride;
-                }
-                inputpos += input_buff_desc->row_stride;
-                outputpos += output_buff_desc->row_stride;
-            }
-            gs_free_object(icclink->memory->non_gc_memory, temp_src,
-                           "gscms_transform_color_buffer");
-            gs_free_object(icclink->memory->non_gc_memory, temp_des,
-                           "gscms_transform_color_buffer");
-        }
-    } else {
-        /* Do row by row. */
-        for(k = 0; k < input_buff_desc->num_rows ; k++){
-            cmsDoTransform(ctx, hTransform, inputpos, outputpos,
-                           input_buff_desc->pixels_per_row);
-            inputpos += input_buff_desc->row_stride;
-            outputpos += output_buff_desc->row_stride;
-        }
-    }
 #if DUMP_CMS_BUFFER
     fid_in = gp_fopen("CM_Input.raw","ab");
     fid_out = gp_fopen("CM_Output.raw","ab");

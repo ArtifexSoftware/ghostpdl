@@ -38,7 +38,7 @@ languagelevel dup 2 .max .setlanguagelevel
   .knownget not { //false } if
   {
     //false
-    /IdiomSet .findcategory .Instances
+    /IdiomSet //.findcategory exec .Instances
     {
       exch pop                                    % pop the IdiomSet identifying key. Stack /proc /false [-dict- status size]
       0 get                                       % get resource instance, a dictionary. Stack : /proc false -dict-
@@ -100,6 +100,26 @@ DELAYBIND not {
 } if
 currentdict /.bind_ undef
 
+/.readbytestring {	% <source> <bytestring> .readbytestring
+                        %   <bytestring> <filled>
+                % Note that since bytestrings don't implement getinterval,
+                % if filled is false, there is no way to tell how much
+                % was read.
+  //true exch 0 1 2 index length 1 sub {
+                % Stack: source true str index
+    3 index read not { pop exch not exch exit } if
+    3 copy put pop pop
+  } for 3 -1 roll pop exch
+} bind def
+
+/.bigstring {	% <size> .bigstring <string|bytestring>
+  count 1 lt { /.bigstring /stackunderflow signalerror } if
+  dup type /integertype ne {
+    /.bigstring /typecheck signalerror
+  } if
+  dup 65400 gt { .bytestring } { string } ifelse
+} bind def
+
 % ------ HalftoneTypes 6, 10, 16 and HalftoneMode ------ %
 
 % This code depends on an internal HalftoneType 7 with the following keys:
@@ -130,9 +150,9 @@ currentdict /.bind_ undef
   } ifelse 3 1 roll
   /Height 1 index def
   /Width 2 index def
-  mul add BitsPerSample 8 idiv mul .bigstring
+  mul add BitsPerSample 8 idiv mul //.bigstring exec
                 % Stack: dict dict source str
-  dup type /stringtype eq { readstring } { .readbytestring } ifelse
+  dup type /stringtype eq { readstring } { //.readbytestring exec} ifelse
   not { /sethalftone .systemvar /rangecheck signalerror exit } if
   readonly /Thresholds exch def
   /TransferFunction .knownget { /TransferFunction exch def } if
@@ -145,32 +165,12 @@ currentdict /.bind_ undef
   { .sethalftone5 }
 } bind def
 
-/.bigstring {	% <size> .bigstring <string|bytestring>
-  count 1 lt { /.bigstring /stackunderflow signalerror } if
-  dup type /integertype ne {
-    /.bigstring /typecheck signalerror
-  } if
-  dup 65400 gt { .bytestring } { string } ifelse
-} bind def
-
-/.readbytestring {	% <source> <bytestring> .readbytestring
-                        %   <bytestring> <filled>
-                % Note that since bytestrings don't implement getinterval,
-                % if filled is false, there is no way to tell how much
-                % was read.
-  //true exch 0 1 2 index length 1 sub {
-                % Stack: source true str index
-    3 index read not { pop exch not exch exit } if
-    3 copy put pop pop
-  } for 3 -1 roll pop exch
-} bind def
-
 /.sethalftone6 {	% <dict> <dict> .sethalftone6 <setdict> <dict5>
                         %   { .sethalftone5 }
                         % Keys: Width, Height, Thresholds, T'Function
   dup /Thresholds get
   1 index /Width get 2 index /Height get
-  //null 8 .makehalftone7
+  //null 8 //.makehalftone7 exec
 } bind def
 
 /.sethalftone10 {	% <dict> <dict> .sethalftone10 <setdict> <dict5>
@@ -180,7 +180,7 @@ currentdict /.bind_ undef
                 % that allows either a file or a string for Thresholds.
   dup /Thresholds get dup type /stringtype eq { 0 () .subfiledecode } if
   1 index /Xsquare get dup 3 index /Ysquare get dup
-  8 .makehalftone7
+  8 //.makehalftone7 exec
 } bind def
 
 /.sethalftone16 {	% <dict> <dict> .sethalftone16 <setdict> <dict5>
@@ -193,13 +193,13 @@ currentdict /.bind_ undef
     4 index /Height2 get
   } {			% 1-rectangle case
     //null
-  } ifelse 16 .makehalftone7
+  } ifelse 16 //.makehalftone7 exec
 } bind def
 
 .halftonetypes begin
-  6 /.sethalftone6 load def
-  10 /.sethalftone10 load def
-  16 /.sethalftone16 load def
+  6 //.sethalftone6 def
+  10 //.sethalftone10 def
+  16 //.sethalftone16 def
 end
 
 % Redefine the halftone-setting operators to honor HalftoneMode.
@@ -446,7 +446,7 @@ systemdict /.reuseparamdict mark
 } bind def
 
 /.buildshading_and_shfill {
-  .buildshading .shfill
+  //.buildshading exec .shfill
 } bind def
 
 systemdict /.reuseparamdict undef
@@ -459,7 +459,7 @@ systemdict /.reuseparamdict undef
   mark currentcolor currentcolorspace
   counttomark 4 add -3 roll mark 4 1 roll
         % Stack: -mark- ..color.. cspace -mark- template matrix shadingdict
-  { .buildshading } stopped {
+  { //.buildshading exec} stopped {
     cleartomark setcolorspace setcolor pop stop
   } if
   .buildshadingpattern
@@ -467,7 +467,7 @@ systemdict /.reuseparamdict undef
 } bind def
 
 .patterntypes
-  2 /.buildpattern2 load put
+  2 //.buildpattern2 put
 
 /shfill {		% <shadingdict> shfill -
         % Currently, .shfill requires that the color space
@@ -545,5 +545,17 @@ end
 /version (3010) readonly def
 
 .setlanguagelevel
+
+% undefine things defined (or used) in this file and not referenced elsewhere
+[
+    /.buildpattern2
+    /.buildshading
+    /.buildshading1 /.buildshading2 /.buildshading3 /.buildshading4
+    /.buildshading5 /.buildshading6 /.buildshading7 /.buildshadingpattern
+    /.makehalftone7 /.sethalftone6 /.sethalftone10 /.sethalftone16
+    /.readbytestring /.bigstring
+]
+dup {currentdict exch .forceundef} forall
+{systemdict exch .forceundef} forall
 
 end			% ll3dict

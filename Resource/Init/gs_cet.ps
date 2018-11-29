@@ -1,6 +1,11 @@
 %!PS
 % Set defaults for Ghostscript to match Adobe CPSI behaviour for CET
 
+systemdict /product get (PhotoPRINT SE 5.0v2) readonly eq
+{
+  (%END GS_CET) .skipeof
+} if
+
 % do this in the server level so it is persistent across jobs
 //true 0 startjob not {
   (*** Warning: CET startup is not in server default) = flush
@@ -25,7 +30,9 @@ currentglobal //true setglobal
 
 /UNROLLFORMS true def
 
-{ } bind dup
+(%.defaultbgrucrproc) cvn { } bind def
+
+(%.defaultbgrucrproc) cvn load dup
 setblackgeneration
 setundercolorremoval
 0 array cvx readonly dup dup dup setcolortransfer
@@ -114,3 +121,5 @@ userdict /.smoothness currentsmoothness put
 % end of slightly nasty hack to give consistent cluster results
 
 //false 0 startjob pop		% re-enter encapsulated mode
+
+%END GS_CET

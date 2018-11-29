@@ -567,7 +567,7 @@ struct spec_op_s {
     int spec_op;                /* Integer used to switch on the name */
 };
 
-/* To ad    d more spec_ops, put a key name (used to identify the specific
+/* To add more spec_ops, put a key name (used to identify the specific
  * spec_op required) in this table, the integer is just used in the switch
  * in the main code to execute the required spec_op code.
  */

@@ -400,8 +400,8 @@ typedef struct gsicc_profile_entry_s gsicc_profile_entry_t;
 
 struct gsicc_profile_entry_s {
     gs_color_space *color_space;     /* The color space with the profile */
-    gsicc_profile_entry_t *next;    /* next CS */
-    int64_t key;                    /* Key based off dictionary location */
+    gsicc_profile_entry_t *next;     /* next CS */
+    uint64_t key;                    /* Key based off dictionary location */
 };
 
 /* ProfileList. The size of the list is limited by max_memory_size.
@@ -471,6 +471,8 @@ typedef struct gsicc_link_cache_s {
     rc_header rc;
     gs_memory_t *memory;
     gx_monitor_t *lock;		/* handle for the monitor */
+    bool cache_full;		/* flag that some thread needs a cache slot */
+    gx_semaphore_t *full_wait;	/* semaphore for waiting when the cache is full */
 } gsicc_link_cache_t;
 
 /* A linked list structure to keep DeviceN ICC profiles

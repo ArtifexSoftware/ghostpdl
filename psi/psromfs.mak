@@ -25,8 +25,8 @@ PDF_RESOURCE_LIST=CMap$(D)*
 
 MISC_INIT_FILES=FCOfontmap-PCLPS2 -C cidfmap \
  FAPIcidfmap FAPIconfig FAPIfontmap Fontmap Fontmap.GS xlatmap \
- gs_cet.ps gs_diskn.ps gs_dscp.ps gs_trap.ps \
- -B
+ gs_diskn.ps gs_dscp.ps gs_trap.ps \
+ -B gs_cet.ps
 
 # In the below list, the Font contents are _not_ compressed since it doesn't help.
 PS_RESOURCE_LIST=SubstCID$(D)* CIDFSubst$(D)* CIDFont$(D)* -C $(PDF_RESOURCE_LIST) ColorSpace$(D)* Decoding$(D)* Encoding$(D)* -c -C IdiomSet$(D)* ProcSet$(D)* -P $(PSRESDIR)$(D)Init$(D) -d Resource/Init/ -B $(MISC_INIT_FILES)

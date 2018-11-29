@@ -169,7 +169,7 @@ mark
   dup type //cntdict exch get exec
 } .bind def
 cntdict /arraytype {
-  dup dup length 5 -1 roll add 4 2 roll { .cntobj } forall
+  dup dup length 5 -1 roll add 4 2 roll { //.cntobj exec } forall
 } bind put
 cntdict /dicttype {
   WRITEDICTS {
@@ -177,7 +177,7 @@ cntdict /dicttype {
         % We have to use .execn here, rather than simply rolling the
         % value under the top elements, because key might involve arrays
         % or dictionaries.
-      cvlit {.cntobj} exch 2 .execn .cntobj
+      cvlit {//.cntobj exec} exch 2 .execn //.cntobj exec
     } forall
   } {
     /writeobject .systemvar /typecheck signalerror
@@ -217,7 +217,7 @@ cntdict /dicttype {
 
   dup length 0 3 -1 roll
         % Stack: file tag -mark- #refs #chars array
-  dup 4 1 roll { .cntobj } forall
+  dup 4 1 roll { //.cntobj exec } forall
 
         % Write the header.
 
@@ -226,7 +226,7 @@ cntdict /dicttype {
         % Stack: -mark- array1 ... (array|dict)N tag #refs #chars file
   dup counttomark 1 sub index length
   4 index 3 bitshift 4 index add
-  (xxxxxxxx) .bosheader writestring
+  (xxxxxxxx) //.bosheader exec writestring
 
         % Write the objects per se.
 
@@ -277,39 +277,41 @@ cntdict /dicttype {
 
 } .bind def
 
-/printobject {		% <obj> <tag> printobject -
-  currentobjectformat 0 eq {
-      /printobject .systemvar /undefined signalerror
-  } if
-  (%stdout) (w) file 2 index 2 index .writeobject pop pop
-} odef
-/writeobject {		% <file> <obj> <tag> writeobject -
-  currentobjectformat 0 eq {
-      /writeobject .systemvar /undefined signalerror
-  } if
-  2 .argindex pop	% check # of args
-  .writeobject
-} odef
 /.writeobject {
   3 copy exch
                 % We must allocate the array in local VM
                 % to avoid a possible invalidaccess.
   .currentglobal //false .setglobal exch 1 array astore exch .setglobal
-  .writeobjects pop pop pop
+  //.writeobjects exec pop pop pop
 } .bind def
+
+/printobject {		% <obj> <tag> printobject -
+  currentobjectformat 0 eq {
+      /printobject .systemvar /undefined signalerror
+  } if
+  (%stdout) (w) file 2 index 2 index //.writeobject exec pop pop
+} odef
+
+/writeobject {		% <file> <obj> <tag> writeobject -
+  currentobjectformat 0 eq {
+      /writeobject .systemvar /undefined signalerror
+  } if
+  2 .argindex pop	% check # of args
+  //.writeobject exec
+} odef
 
 % Implement binary error message output.
 /.objectprinttest {		% <obj> .objectprinttest -
                 % This is a pseudo-operator so it will restore the stack
                 % if it gets an error.
-  mark 0 0 3 .argindex .cntobj cleartomark pop
-} bind odef
+  mark 0 0 3 .argindex //.cntobj exec cleartomark pop
+} bind def
 /.printerror {
   $error /binary get .languagelevel 2 ge and {
     currentobjectformat 0 ne {
       [ /Error $error /errorname get $error /command get
                 % Convert the object with cvs if it isn't printable.
-      dup { .objectprinttest } .internalstopped {
+      dup { //.objectprinttest exec } .internalstopped {
         pop 100 string cvs
       } if
       //false ] 250 printobject
@@ -328,3 +330,13 @@ currentdict /w2dict .undef
 
 end
 .setlanguagelevel
+
+% undefine things defined in this file and not referenced elsewhere
+[
+    /.objectprinttest
+    /.bosheader
+    /.cntobj
+    /.writeobject
+    /.writeobjects
+]
+{level2dict exch .forceundef} forall

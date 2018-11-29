@@ -92,6 +92,8 @@ end % colorspacedict
 % If the boolean is true then the C code must set the additional colour space
 % and execute .includecolorspace before finally setting a DeviceGray space.
 %
+% called from C code, can't undef. Use this to trigger the code:
+% -sDEVICE=pkmraw -dMaxBitmap=4000m -r72 -dNOSUBSTDEVICECOLORS ./tests/Ghent_V3.0/110_defaultcolourspace_x3.pdf
 /..nosubstdevicetest
 {
   //false mark 3 -1 roll
@@ -118,67 +120,6 @@ end % colorspacedict
   } ifelse
 }bind def
 
-%
-% <color_space_name> ..includecolorspace -
-%
-/..includecolorspace
-{
-  % If we have already recorded this space, don't repeat it.
-  systemdict /..page_default_spaces get 1 index known {
-    pop
-  } {
-    mark exch
-    {
-    % Check to see if this space was defined by defineresource, if so then
-    % the job defined it, otherwise its the usual default, so ignore it.
-    dup /ColorSpace resourcestatus {
-        pop 0 eq {
-          % Job defined /Default*, so record it and allow the device access to it
-          systemdict /..page_default_spaces get 1 index //true put
-          gsave
-          { dup /ColorSpace findresource //setcolorspace exec .includecolorspace
-          } stopped pop
-          grestore
-        } if
-      } if
-    } stopped pop
-    cleartomark
-  } ifelse
-} bind def
-
-%
-% <color_space> <color_space_name> cs_substitute_generic <color_space1> <color_space2>
-%
-/cs_substitute_generic
-{ .getuseciecolor
-    {NOSUBSTDEVICECOLORS
-        { //..includecolorspace exec dup }
-        { /ColorSpace findresource }
-      ifelse
-    }
-    { pop dup }
-  ifelse
-}
-bind def
-
-%
-% <color_space> <color_space_name> cs_substitute_DeviceRGB_for_PDFX_or_PDFA <color_space1> <color_space2>
-%
-/cs_substitute_DeviceRGB_for_PDFX_or_PDFA
-{ systemdict /PDFX .knownget not { //false } if
-  systemdict /PDFA .knownget not { //false } {0 eq {//false}{//true} ifelse} ifelse
-  or {
-    dup /ColorSpace resourcestatus {
-      pop pop
-    } {
-      (Error: Need a /DefaultRGB /ColorSpace resource for generating a PDF/X or PDF/A document.) =
-      /cs_substitute_DeviceRGB_for_PDFX_or_PDFA cvx /undefined signalerror
-    } ifelse
-    /ColorSpace findresource
-  } {
-    //cs_substitute_generic exec
-  } ifelse
-} bind def
 end
 
 %
