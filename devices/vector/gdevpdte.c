@@ -559,12 +559,6 @@ adjust_first_last_char(pdf_font_resource_t *pdfont, byte *str, int size)
 int
 pdf_shift_text_currentpoint(pdf_text_enum_t *penum, gs_point *wpt)
 {
-    extern_st(st_gs_gstate);
-
-    if (gs_object_type(penum->dev->memory, penum->pgs) != &st_gs_gstate) {
-        /* Probably never happens. Not sure though. */
-        return_error(gs_error_unregistered);
-    }
     return gs_moveto_aux(penum->pgs, gx_current_path(penum->pgs),
                               fixed2float(penum->origin.x) + wpt->x,
                               fixed2float(penum->origin.y) + wpt->y);
