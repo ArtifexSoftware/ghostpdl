@@ -1765,6 +1765,11 @@ gs_fapi_ft_check_cmap_for_GID(gs_fapi_server * server, uint * index)
 static gs_fapi_retcode
 gs_fapi_ft_set_mm_weight_vector(gs_fapi_server *server, gs_fapi_font *ff, float *wvector, int length)
 {
+#if defined(SHARE_FT) && SHARE_FT == 1 && \
+    FREETYPE_MAJOR <= 2 && FREETYPE_MINOR <= 9 && FREETYPE_PATCH <= 1
+
+    return gs_error_invalidaccess;
+#else
     ff_face *face = (ff_face *) ff->server_font_data;
     FT_Fixed nwv[16] = {0};
     FT_Fixed cwv[16] = {0};
@@ -1790,6 +1795,7 @@ gs_fapi_ft_set_mm_weight_vector(gs_fapi_server *server, gs_fapi_font *ff, float 
     }
 
     return 0;
+#endif
 }
 
 static void gs_fapi_freetype_destroy(gs_fapi_server ** serv);
