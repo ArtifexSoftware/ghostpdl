@@ -1232,7 +1232,7 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
         goto exit;
     }
 
-    code = gs_error_rangecheck;
+    code = 0;
     if (pdfi_name_strcmp(space, "G") == 0) {
         if (ppcs != NULL) {
             *ppcs = gs_cspace_new_DeviceGray(ctx->memory);
