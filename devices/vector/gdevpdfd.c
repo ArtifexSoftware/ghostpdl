@@ -2024,14 +2024,22 @@ gdev_pdf_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
 
         code = pdf_setfillcolor((gx_device_vector *)pdev, pgs, pdcolor_fill);
         if (code == gs_error_rangecheck) {
+            /* rangecheck means we revert to the equivalent to the default implementation */
             code = gdev_pdf_fill_path(dev, pgs, ppath, fill_params, pdcolor_fill, pcpath);
             if (code < 0)
                 return code;
-            return gdev_pdf_stroke_path(dev, pgs, ppath, stroke_params, pdcolor_stroke, pcpath);
+            /* Swap colors to make sure the pgs colorspace is correct for stroke */
+            gs_swapcolors(pgs);
+            code = gdev_pdf_stroke_path(dev, pgs, ppath, stroke_params, pdcolor_stroke, pcpath);
+            gs_swapcolors(pgs);
+            return code;
         }
 
+        /* Swap colors to make sure the pgs colorspace is correct for stroke */
+        gs_swapcolors(pgs);
         code = gdev_vector_prepare_stroke((gx_device_vector *)pdev, pgs, stroke_params,
                                           pdcolor_stroke, scale);
+        gs_swapcolors(pgs);
         if (code < 0) {
             code = gdev_pdf_fill_path(dev, pgs, ppath, fill_params, pdcolor_fill, pcpath);
             if (code < 0)
