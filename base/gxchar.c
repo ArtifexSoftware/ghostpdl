@@ -43,7 +43,6 @@
 /* Structure descriptors */
 public_st_gs_show_enum();
 extern_st(st_gs_text_enum);
-extern_st(st_gs_gstate);         /* only for testing */
 static
 ENUM_PTRS_BEGIN(show_enum_enum_ptrs)
      return ENUM_USING(st_gs_text_enum, vptr, size, index - 5);
@@ -131,12 +130,6 @@ gx_default_text_begin(gx_device * dev, gs_gstate * pgs1,
     gs_gstate *pgs = (gs_gstate *)pgs1;
     gs_show_enum *penum;
 
-    /*
-     * For the moment, require pgs to be a gs_gstate *, since all the
-     * procedures for character rendering expect it.
-     */
-    if (gs_object_type(mem, pgs) != &st_gs_gstate)
-        return_error(gs_error_Fatal);
     penum = gs_show_enum_alloc(mem, pgs, "gx_default_text_begin");
     if (!penum)
         return_error(gs_error_VMerror);
@@ -244,11 +237,8 @@ gs_text_count_chars(gs_gstate * pgs, gs_text_params_t *text, gs_memory_t * mem)
 int
 gx_hld_stringwidth_begin(gs_gstate * pgs, gx_path **path)
 {
-    extern_st(st_gs_gstate);
     int code;
 
-    if (gs_object_type(pgs->memory, pgs) != &st_gs_gstate)
-        return_error(gs_error_unregistered);
     code = gs_gsave(pgs);
     if (code < 0)
         return code;

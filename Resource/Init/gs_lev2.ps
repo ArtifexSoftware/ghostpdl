@@ -117,7 +117,7 @@ counttomark 2 idiv {
 } repeat pop
 /.definepsuserparam {		% <name> <value> .definepsuserparam -
   psuserparams 3 copy pop
-  type cvlit /.checkparamtype cvx 2 packedarray cvx put
+  type cvlit //.checkparamtype /exec load 3 packedarray cvx put
   userparams 3 1 roll put
 } .bind def
 end
@@ -210,7 +210,7 @@ end
      } forall
    } if
    /setsystemparams //pssystemparams mark exch {
-     type cvlit /.checkparamtype cvx 2 packedarray cvx
+     type cvlit //.checkparamtype /exec load 3 packedarray cvx
    } forall .dicttomark .checksetparams
         % Set the C-level system params.  If this succeeds, we know that
         % the password check succeeded.
@@ -1251,5 +1251,7 @@ end				% level2dict
 [
     /.checkprocesscomment
     /.pair2dict
+    /.setcolorrendering1
+    /.checkparamtype
 ]
 {level2dict exch .forceundef} forall

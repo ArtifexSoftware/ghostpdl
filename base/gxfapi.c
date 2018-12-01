@@ -562,22 +562,8 @@ outline_char(gs_memory_t *mem, gs_fapi_server *I, int import_shift_v,
     gs_fapi_path path_interface = path_interface_stub;
     gs_fapi_outline_handler olh;
     int code;
-    gs_gstate *pgs;
+    gs_gstate *pgs = penum_s->pgs;
 
-    extern_st(st_gs_show_enum);
-    extern_st(st_gs_gstate);
-
-    if (gs_object_type(penum_s->memory, penum_s) == &st_gs_show_enum) {
-        pgs = penum_s->pgs;
-    }
-    else {
-        if (gs_object_type(penum_s->memory, penum_s->pgs) == &st_gs_gstate) {
-            pgs = (gs_gstate *) penum_s->pgs;
-        }
-        else
-            /* No graphics state, give up... */
-            return_error(gs_error_undefined);
-    }
     olh.path = path;
     olh.x0 = pgs->ctm.tx_fixed;
     olh.y0 = pgs->ctm.ty_fixed;
@@ -1015,27 +1001,10 @@ gs_fapi_finish_render(gs_font *pfont, gs_gstate *pgs, gs_text_enum_t *penum, gs_
     gs_memory_t *mem = pfont->memory;
     gs_font_base *pbfont = (gs_font_base *)pfont;
 
-    extern_st(st_gs_show_enum);
-    extern_st(st_gs_gstate);
-
-    if (penum == NULL) {
+    if (penum == NULL)
         return_error(gs_error_undefined);
-    }
 
-    /* Ensure that pgs points to a st_gs_gstate (graphics state) structure */
-    if (gs_object_type(penum->memory, penum->pgs) != &st_gs_gstate) {
-        /* If pgs is not a graphics state, see if the text enumerator is a
-         * show enumerator, in which case we have a pointer to the graphics state there
-         */
-        if (gs_object_type(penum->memory, penum) == &st_gs_show_enum) {
-            penum_pgs = penum_s->pgs;
-        }
-        else
-            /* No graphics state, give up... */
-            return_error(gs_error_undefined);
-    }
-    else
-        penum_pgs = (gs_gstate *) penum->pgs;
+    penum_pgs = penum_s->pgs;
 
     dev1 = gs_currentdevice_inline(penum_pgs);  /* Possibly changed by zchar_set_cache. */
 
@@ -1186,8 +1155,7 @@ gs_fapi_finish_render(gs_font *pfont, gs_gstate *pgs, gs_text_enum_t *penum, gs_
                     if ((code = fapi_copy_mono(dev1, &rast, dx, dy)) < 0)
                         return code;
 
-                    if (gs_object_type(penum->memory, penum) ==
-                        &st_gs_show_enum) {
+                    if (penum_s->cc != NULL) {
                         penum_s->cc->offset.x +=
                             float2fixed(penum_s->fapi_glyph_shift.x);
                         penum_s->cc->offset.y +=

@@ -535,8 +535,10 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
      */
     if (pdev->PDFX)
         cl = (float)1.3; /* Instead pdev->CompatibilityLevel = 1.2; - see below. */
-    if (pdev->PDFA != 0 && cl < 1.4)
+    if (pdev->PDFA == 1 && cl != 1.4)
         cl = (float)1.4;
+    if (pdev->PDFA == 2 && cl < 1.7)
+        cl = (float)1.7;
     pdev->version = (cl < 1.2 ? psdf_version_level2 : psdf_version_ll3);
     if (pdev->ForOPDFRead) {
         pdev->ResourcesBeforeUsage = true;
