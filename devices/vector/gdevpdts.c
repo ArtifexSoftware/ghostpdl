@@ -207,7 +207,12 @@ add_text_delta_move(gx_device_pdf *pdev, const gs_matrix *pmat)
             (tdw >= -MAX_USER_COORD && (tdw * pts->in.size) < MAX_USER_COORD)
             ) {
             /* Use TJ. */
-            int code = append_text_move(pts, tdw);
+            int code;
+
+            if (tdw < MAX_USER_COORD || pdev->CompatibilityLevel > 1.4)
+                code = append_text_move(pts, tdw);
+            else
+                return -1;
 
             if (code >= 0)
                 goto finish;
