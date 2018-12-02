@@ -1,7 +1,4 @@
-#ifndef CLAPTRAP_H
-#define CLAPTRAP_H
-
-/* Copyright (C) 2015-2018 Artifex Software, Inc.
+/* Copyright (C) 2001-2018 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -15,6 +12,9 @@
    Artifex Software, Inc.,  1305 Grant Avenue - Suite 200, Novato,
    CA 94945, U.S.A., +1(415)492-9861, for further information.
 */
+
+#ifndef CLAPTRAP_H
+#define CLAPTRAP_H
 
 #include "std.h"
 #include "stdpre.h"
