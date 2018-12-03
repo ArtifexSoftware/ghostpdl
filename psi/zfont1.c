@@ -90,6 +90,342 @@ charstring_font_get_refs(const_os_ptr op, charstring_font_refs_t *pfr)
     return 0;
 }
 
+static int
+charstring_check_mm_params(ref *fdict, unsigned int ndesigns)
+{
+    ref *p1, *p2;
+    ref p3, p4;
+    ref *Blend, *FInfo, *BFInfo, *BPriv;
+    int code;
+    int i, j;
+    gs_memory_t *mem = dict_mem(fdict->value.pdict);
+
+    code = dict_find_string(fdict, "$Blend", &p1);
+    if (code < 0 || !r_is_proc(p1))
+        goto bad;
+
+    code = dict_find_string(fdict, "FontInfo", &FInfo);
+    if (code < 0 || !r_has_type(FInfo, t_dictionary))
+        goto bad;
+
+    code = dict_find_string(FInfo, "BlendAxisTypes", &p1);
+    if (code < 0 || !r_is_array(p1))
+        goto bad;
+    for (i = 0; i < r_size(p1); i ++) {
+        code = array_get(mem, p1, i, &p3);
+        if (code < 0 || !r_has_type(&p3, t_name))
+            goto bad;
+    }
+    code = dict_find_string(FInfo, "BlendDesignPositions", &p1);
+    if (code < 0 || !r_is_array(p1))
+        goto bad;
+    for (i = 0; i < r_size(p1); i++) {
+        code = array_get(mem, p1, i, &p3);
+        if (code < 0 || !r_is_array(&p3)) {
+            goto bad;
+        }
+        else {
+            for (j = 0; j < r_size(&p3); j++) {
+                code = array_get(mem, &p3, j, &p4);
+                if (code < 0 || !r_has_type(&p4, t_integer))
+                    goto bad;
+            }
+        }
+    }
+    code = dict_find_string(FInfo, "BlendDesignMap", &p1);
+    if (code < 0 || !r_is_array(p1))
+        goto bad;
+    for (i = 0; i < r_size(p1); i++) {
+        code = array_get(mem, p1, i , &p3);
+        if (code < 0 || !r_is_array(&p3)) {
+            goto bad;
+        }
+        else {
+            for (j = 0; j < r_size(&p3); j++) {
+                code = array_get(mem, &p3, j, &p4);
+                if (code < 0 || !r_is_array(&p4))
+                    goto bad;
+                else {
+                    ref p5;
+                    int k;
+                    for (k = 0; k < r_size(&p4); k++) {
+                        code = array_get(mem, &p4, k, &p5);
+                        if (code < 0 || !r_is_number(&p5))
+                            goto bad;
+                    }
+                }
+            }
+        }
+    }
+    code = dict_find_string(fdict, "Blend", &Blend);
+    if (code < 0 || !r_has_type(Blend, t_dictionary))
+        goto bad;
+    code = dict_find_string(Blend, "FontBBox", &p1);
+    if (code < 0 || !r_is_array(p1))
+        goto bad;
+    for (i = 0; i < r_size(p1); i++) {
+         code = array_get(mem, p1, i, &p3);
+         if (code < 0 || !r_is_array(&p3)) {
+             goto bad;
+         }
+         else {
+             for (j = 0; j < r_size(&p3); j++) {
+                 code = array_get(mem, &p3, j, &p4);
+                 if (code < 0 || !r_is_number(&p4))
+                     goto bad;
+             }
+         }
+    }
+    code = dict_find_string(Blend, "Private", &BPriv);
+    if (code < 0 || !r_has_type(BPriv, t_dictionary))
+        goto bad;
+    code = dict_find_string(BPriv, "BlueValues", &p1);
+    if (code > 0) {
+        if (!r_is_array(p1)) {
+            goto bad;
+        }
+        else {
+            for (i = 0; i < r_size(p1); i++) {
+                code = array_get(mem, p1, i, &p3);
+                if (code < 0 || !r_is_array(&p3)) {
+                    goto bad;
+                }
+                else {
+                    for (j = 0; j < r_size(&p3); j++) {
+                        code = array_get(mem, &p3, j, &p4);
+                        if (code < 0 || !r_has_type(&p4, t_integer))
+                            goto bad;
+                    }
+                }
+            }
+        }
+    }
+    code = dict_find_string(BPriv, "OtherBlues", &p1);
+    if (code > 0) {
+        if (!r_is_array(p1)) {
+            goto bad;
+        }
+        else {
+            for (i = 0; i < r_size(p1); i++) {
+                code = array_get(mem, p1, i, &p3);
+                if (code < 0 || !r_is_array(&p3))
+                    goto bad;
+                else {
+                    for (j = 0; j < r_size(&p3); j++) {
+                        code = array_get(mem, &p3, j, &p4);
+                        if (code < 0 || !r_has_type(&p4, t_integer))
+                            goto bad;
+                    }
+                }
+            }
+        }
+    }
+    code = dict_find_string(BPriv, "StdHW", &p1);
+    if (code > 0) {
+        if (!r_is_array(p1)) {
+            goto bad;
+        }
+        else {
+            for (i = 0; i < r_size(p1); i++){
+                code = array_get(mem, p1, i, &p3);
+                if (code < 0 || !r_is_array(&p3))
+                    goto bad;
+                else {
+                    for (j = 0; j < r_size(&p3); j++) {
+                        code = array_get(mem, &p3, j, &p4);
+                        if (code < 0 || !r_is_number(&p4))
+                            goto bad;
+                    }
+                }
+            }
+        }
+    }
+    code = dict_find_string(BPriv, "StdVW", &p1);
+    if (code > 0) {
+        if (!r_is_array(p1)) {
+            goto bad;
+        }
+        else {
+            for (i = 0; i < r_size(p1); i++){
+                code = array_get(mem, p1, i, &p3);
+                if (code < 0 || !r_is_array(&p3))
+                    goto bad;
+                else {
+                    for (j = 0; j < r_size(&p3); j++) {
+                        code = array_get(mem, &p3, j, &p4);
+                        if (code < 0 || !r_is_number(&p4))
+                            goto bad;
+                    }
+                }
+            }
+        }
+    }
+    code = dict_find_string(BPriv, "StemSnapH,", &p1);
+    if (code > 0) {
+        if (!r_is_array(p1)) {
+            goto bad;
+        }
+        else {
+            for (i = 0; i < r_size(p1); i++){
+                code = array_get(mem, p1, i, &p3);
+                if (code < 0 || !r_is_array(&p3))
+                    goto bad;
+                else {
+                    for (j = 0; j < r_size(&p3); j++) {
+                        code = array_get(mem, &p3, j, &p4);
+                        if (code < 0 || !r_is_number(&p4))
+                            goto bad;
+                    }
+                }
+            }
+        }
+    }
+    code = dict_find_string(BPriv, "StemSnapV", &p1);
+    if (code > 0) {
+        if (!r_is_array(p1)) {
+            goto bad;
+        }
+        else {
+            for (i = 0; i < r_size(p1); i++){
+                code = array_get(mem, p1, i, &p3);
+                if (code < 0 || !r_is_array(&p3))
+                    goto bad;
+                else {
+                    for (j = 0; j < r_size(&p3); j++) {
+                        code = array_get(mem, &p3, j, &p4);
+                        if (code < 0 || !r_is_number(&p4))
+                            goto bad;
+                    }
+                }
+            }
+        }
+    }
+    code = dict_find_string(BPriv, "BlueScale", &p1);
+    if (code > 0) {
+        if (!r_is_array(p1)) {
+            goto bad;
+        }
+        else {
+            for (i = 0; i < r_size(p1); i++) {
+                code = array_get(mem, p1, i, &p4);
+                if (code < 0 || !r_is_number(&p4))
+                    goto bad;
+            }
+        }
+    }
+    code = dict_find_string(BPriv, "BlueShift", &p1);
+    if (code > 0) {
+        if (!r_is_array(p1)) {
+            goto bad;
+        }
+        else {
+            for (i = 0; i < r_size(p1); i++) {
+                code = array_get(mem, p1, i, &p4);
+                if (code < 0 || !r_has_type(&p4, t_integer))
+                    goto bad;
+            }
+        }
+    }
+    code = dict_find_string(BPriv, "FamilyBlues", &p1);
+    if (code > 0) {
+        if (!r_is_array(p1)) {
+            goto bad;
+        }
+        else {
+            for (i = 0; i < r_size(p1); i++){
+                code = array_get(mem, p1, i, &p3);
+                if (code < 0 || !r_is_array(&p3))
+                    goto bad;
+                else {
+                    for (j = 0; j < r_size(&p3); j++) {
+                        code = array_get(mem, &p3, j, &p4);
+                        if (code < 0 || !r_has_type(&p4, t_integer))
+                            goto bad;
+                    }
+                }
+            }
+        }
+    }
+    code = dict_find_string(BPriv, "FamilyOtherBlues", &p1);
+    if (code > 0) {
+        if (!r_is_array(p1)) {
+            goto bad;
+        }
+        else {
+            for (i = 0; i < r_size(p1); i++){
+                code = array_get(mem, p1, i, &p3);
+                if (code < 0 || !r_is_array(&p3))
+                    goto bad;
+                else {
+                    for (j = 0; j < r_size(&p3); j++) {
+                        code = array_get(mem, &p3, j, &p4);
+                        if (code < 0 || !r_has_type(&p4, t_integer))
+                            goto bad;
+                    }
+                }
+            }
+        }
+    }
+    code = dict_find_string(BPriv, "ForceBold", &p1);
+    if (code > 0) {
+        if (!r_is_array(p1)) {
+            goto bad;
+        }
+        else {
+            for (i = 0; i < r_size(p1); i++) {
+                code = array_get(mem, p1, i, &p4);
+                if (code < 0 || !r_has_type(&p4, t_boolean))
+                    goto bad;
+            }
+        }
+    }
+    code = dict_find_string(Blend, "FontInfo", &BFInfo);
+    if (code > 0 && r_has_type(BFInfo, t_dictionary)) {
+        code = dict_find_string(BFInfo, "UnderlinePosition", &p1);
+        if (code > 0) {
+            if (!r_is_array(p1)) {
+                goto bad;
+            }
+            else {
+                for (i = 0; i < r_size(p1); i++) {
+                    code = array_get(mem, p1, i, &p4);
+                    if (code < 0 || !r_is_number(&p4))
+                        goto bad;
+                }
+            }
+        }
+        code = dict_find_string(BFInfo, "UnderlineThickness", &p1);
+        if (code > 0) {
+            if (!r_is_array(p1)) {
+                goto bad;
+            }
+            else {
+                for (i = 0; i < r_size(p1); i++) {
+                    code = array_get(mem, p1, i, &p4);
+                    if (code < 0 || !r_is_number(&p4))
+                        goto bad;
+                }
+            }
+        }
+        code = dict_find_string(BFInfo, "ItalicAngle", &p1);
+        if (code > 0) {
+            if (!r_is_array(p1)) {
+                goto bad;
+            }
+            else {
+                for (i = 0; i < r_size(p1); i++) {
+                    code = array_get(mem, p1, i, &p4);
+                    if (code < 0 || !r_is_number(&p4))
+                        goto bad;
+                }
+            }
+        }
+    }
+    return 0;
+bad:
+    return_error(gs_error_invalidfont);
+}
+
 /* Get the parameters of a CharString-based font or a FDArray entry. */
 int
 charstring_font_params(const gs_memory_t *mem,
@@ -151,6 +487,12 @@ charstring_font_params(const gs_memory_t *mem,
     if ((code = pdata1->WeightVector.count = dict_float_array_param(mem, op, "WeightVector",
                 max_WeightVector, pdata1->WeightVector.values, NULL)) < 0)
         return code;
+
+    if (pdata1->WeightVector.count > 0) {
+        code = charstring_check_mm_params((ref *)op, pdata1->WeightVector.count);
+        if (code < 0)
+            return code;
+    }
     /*
      * According to section 5.6 of the "Adobe Type 1 Font Format",
      * there is a requirement that BlueScale times the maximum
