@@ -168,8 +168,13 @@ typedef enum {
 /*
  * We now continue with individual types.
  */
-    t_fontID,			/* @    value.pstruct */
+/* t_integer and t_real must be consecutive and start at a
+ * multiple of 2, for the sake of r_is_number.
+ */
+#define _REF_T_NUMBER_SPAN 2
     t_integer,			/*      value.intval */
+    t_real,			/*      value.realval */
+    t_fontID,			/* @    value.pstruct */
     t_mark,			/*        (no value) */
 /*
  * Name objects use the a_space field because they really are composite
@@ -183,7 +188,6 @@ typedef enum {
  * disguised procedures.  (Real operators always have a_space = 0.)
  */
     t_operator,			/* @! # value.opproc, uses size for index */
-    t_real,			/*      value.realval */
     t_save,			/*      value.saveid, see isave.h for why */
                                 /*        this isn't a t_struct */
     t_string,			/* @!+# value.bytes */
@@ -232,13 +236,13 @@ extern const byte ref_type_properties[1 << 6];	/* r_type_bits */
   _REF_TYPE_USES_ACCESS | _REF_TYPE_USES_SIZE, /* (unused array type) */\
   0,				/* t_struct */\
   _REF_TYPE_USES_ACCESS,		/* t_astruct */\
-  0,				/* t_fontID */\
   0,				/* t_integer */\
+  0,				/* t_real */\
+  0,				/* t_fontID */\
   0,				/* t_mark */\
   _REF_TYPE_USES_SIZE,		/* t_name */\
   _REF_TYPE_IS_NULL,		/* t_null, uses size only on e-stack */\
   _REF_TYPE_USES_SIZE,		/* t_operator */\
-  0,				/* t_real */\
   0,				/* t_save */\
   _REF_TYPE_USES_ACCESS | _REF_TYPE_USES_SIZE, /* t_string */\
   _REF_TYPE_USES_ACCESS,		/* t_device */\
@@ -274,8 +278,8 @@ extern const byte ref_type_properties[1 << 6];	/* r_type_bits */
   "INVL","bool","dict","file",\
   "arry","mpry","spry","u?ry",\
   "STRC","ASTR",\
-  "font","int ","mark","name","null",\
-  "oper","real","save","str ",\
+  "int ","real","font","mark","name","null",\
+  "oper","save","str ",\
   "devc","opry"
 /*
  * Define the type names for the type operator.
@@ -284,8 +288,8 @@ extern const byte ref_type_properties[1 << 6];	/* r_type_bits */
   0,"booleantype","dicttype","filetype",\
   "arraytype","packedarraytype","packedarraytype","arraytype",\
   0,0,\
-  "fonttype","integertype","marktype","nametype","nulltype",\
-  "operatortype","realtype","savetype","stringtype",\
+  "integertype","realtype","fonttype","marktype","nametype","nulltype",\
+  "operatortype","savetype","stringtype",\
   "devicetype","operatortype"
 /*
  * Define the type names for obj_cvp (the == operator).  We only need these
@@ -294,8 +298,8 @@ extern const byte ref_type_properties[1 << 6];	/* r_type_bits */
 #define REF_TYPE_PRINT_STRINGS\
   0,0,"-dict-","-file-",\
   "-array-","-packedarray-","-packedarray-","-array-",\
-  0,0,\
-  "-fontID-",0,"-mark-",0,0,\
+  0,0,0,0,\
+  "-fontID-","-mark-",0,\
   0,0,"-save-","-string-",\
   "-device-",0
 
@@ -521,6 +525,8 @@ struct ref_s {
   _REF_HAS_MASKED_TYPE_ATTRS(rp,t_array,_REF_T_ARRAY_SPAN,a_execute+a_executable)
 #define r_is_struct(rp)\
   _REF_HAS_MASKED_TYPE_ATTRS(rp,t_struct,_REF_T_STRUCT_SPAN,0)
+#define r_is_number(rp)\
+  _REF_HAS_MASKED_TYPE_ATTRS(rp,t_integer,_REF_T_NUMBER_SPAN,0)
 
 /*
  * Test whether a ref is a struct or astruct with a specific structure type

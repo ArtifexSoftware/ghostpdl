@@ -306,7 +306,7 @@ fn_build_float_array_forced(const ref * op, const char *kstr, bool required,
 
     if( r_is_array(par) )
         size = r_size(par);
-    else if(r_type(par) == t_integer || r_type(par) == t_real)
+    else if(r_is_number(par))
         size = 1;
     else
         return_error(gs_error_typecheck);
