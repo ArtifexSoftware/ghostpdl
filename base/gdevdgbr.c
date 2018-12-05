@@ -384,7 +384,10 @@ gx_get_bits_copy(gx_device * dev, int x, int w, int h,
         dest.raster =
             (options & GB_RASTER_STANDARD ?
              bitmap_raster((x_offset + w) * dest_depth) : params->raster);
-        dest.depth = dest_depth;
+        if (dev->color_info.separable_and_linear == GX_CINFO_SEP_LIN)
+            dest.depth = dev->color_info.comp_bits[plane];
+        else
+            dest.depth = dest_depth;
         dest.x = x_offset;
         return bits_extract_plane(&dest, &source,
                                   (num_planes - 1 - plane) * dest_depth,
