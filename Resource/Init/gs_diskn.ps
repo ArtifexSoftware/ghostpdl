@@ -51,7 +51,7 @@ systemdict begin
     mark 5 1 roll ] mark exch { { } forall } forall ]
     //systemdict /.searchabledevs 2 index .forceput
     exch .setglobal
-  }
+  } executeonly
   if
 } .bind executeonly odef % must be bound and hidden for .forceput
 

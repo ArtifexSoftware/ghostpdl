@@ -703,7 +703,7 @@ again:
                  * i.e. it's an internal operator we have hidden
                  */
                 code = dict_find_string(systemdict, (const char *)bufptr, &tobj);
-                if (code < 0) {
+                if (code <= 0) {
                     buf[0] = buf[1] = buf[rlen + 2] = buf[rlen + 3] = '-';
                     rlen += 4;
                     bufptr = buf;
@@ -761,6 +761,7 @@ copy_stack(i_ctx_t *i_ctx_p, const ref_stack_t * pstack, int skip, ref * arr)
     uint size = ref_stack_count(pstack) - skip;
     uint save_space = ialloc_space(idmemory);
     int code, i;
+    ref *safety, *safe;
 
     if (size > 65535)
         size = 65535;
@@ -777,6 +778,13 @@ copy_stack(i_ctx_t *i_ctx_p, const ref_stack_t * pstack, int skip, ref * arr)
             if (errorexec_find(i_ctx_p, &arr->value.refs[i]) < 0)
                 make_null(&arr->value.refs[i]);
         }
+    }
+    if (pstack == &o_stack && dict_find_string(systemdict, "SAFETY", &safety) > 0 &&
+        dict_find_string(safety, "safe", &safe) > 0 && r_has_type(safe, t_boolean) &&
+        safe->value.boolval == true) {
+        code = ref_stack_array_sanitize(i_ctx_p, arr, arr);
+        if (code < 0)
+            return code;
     }
     ialloc_set_space(idmemory, save_space);
     return code;

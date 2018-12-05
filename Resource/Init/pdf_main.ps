@@ -2701,14 +2701,14 @@ currentdict /PDF2PS_matrix_key undef
           pdfdict /.Qqwarning_issued //true .forceput
           .setglobal
           pdfformaterror
-        } ifelse
+        } executeonly ifelse
       }
       {
         currentglobal pdfdict gcheck .setglobal
         pdfdict /.Qqwarning_issued //true .forceput
         .setglobal
         pdfformaterror
-      } ifelse
+      } executeonly ifelse
     } if
   } if
   pop

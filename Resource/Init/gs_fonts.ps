@@ -374,7 +374,7 @@ FONTPATH length 0 eq { (%END FONTPATH) .skipeof } if
 /.setnativefontmapbuilt { % set whether we've been run
   dup type /booleantype eq {
       systemdict exch /.nativefontmapbuilt exch .forceput
-  }
+  } executeonly
   {pop}
   ifelse
 } .bind executeonly odef
@@ -516,7 +516,7 @@ buildfontdict 3 /.buildfont3 cvx put
       if
     }
    if
-   dup .FontDirectory 4 -2 roll { .growput } systemdict /superexec known {//superexec}{1183615869 internaldict /superexec get exec} ifelse	% readonly
+   dup //.FontDirectory 4 -2 roll { .growput } systemdict /superexec known {//superexec}{1183615869 internaldict /superexec get exec} ifelse	% readonly
                 % If the font originated as a resource, register it.
    currentfile .currentresourcefile eq { dup .registerfont } if
    readonly
@@ -943,7 +943,7 @@ $error /SubstituteFont { } put
 % Try to find a font using only the present contents of Fontmap.
 /.tryfindfont {         % <fontname> .tryfindfont <font> true
                         % <fontname> .tryfindfont false
-  .FontDirectory 1 index .fontknownget
+  //.FontDirectory 1 index .fontknownget
     {                   % Already loaded
       exch pop //true
     }
@@ -975,7 +975,7 @@ $error /SubstituteFont { } put
                {                % Font with a procedural definition
                  exec           % The procedure will load the font.
                                 % Check to make sure this really happened.
-                 .FontDirectory 1 index .knownget
+                 //.FontDirectory 1 index .knownget
                   { exch pop //true exit }
                  if
                }
@@ -1007,11 +1007,11 @@ $error /SubstituteFont { } put
 { 2 index gcheck currentglobal
   2 copy eq {
     pop pop .forceput
-  } {
+  } executeonly {
     5 1 roll setglobal
     dup length string copy
     .forceput setglobal
-  } ifelse
+  } executeonly ifelse
 } .bind executeonly odef % must be bound and hidden for .forceput
 
 % Attempt to load a font from a file.
@@ -1081,11 +1081,11 @@ $error /SubstituteFont { } put
                 % because it's different depending on language level.
            .currentglobal exch /.setglobal .systemvar exec
                 % Remove the fake definition, if any.
-           .FontDirectory 3 index .forceundef		% readonly
-           1 index (r) file .loadfont .FontDirectory exch
+           //.FontDirectory 3 index .forceundef		% readonly
+           1 index (r) file .loadfont //.FontDirectory exch
            /.setglobal .systemvar exec
-         }
-         { .loadfont .FontDirectory
+         } executeonly
+         { .loadfont //.FontDirectory
          }
         ifelse
                 % Stack: fontname fontfilename fontdirectory
@@ -1105,7 +1105,7 @@ $error /SubstituteFont { } put
         dup 3 index .fontknownget
          { dup /PathLoad 4 index .putgstringcopy
            4 1 roll pop pop pop //true exit
-         } if
+         } executeonly if
 
                 % Maybe the file had a different FontName.
                 % See if we can get a FontName from the file, and if so,
@@ -1119,8 +1119,8 @@ $error /SubstituteFont { } put
                       % Stack: origfontname fontdirectory filefontname fontdict
               3 -1 roll pop
                       % Stack: origfontname filefontname fontdict
-              dup /FontName get dup FontDirectory exch .forceundef
-              GlobalFontDirectory exch .forceundef
+              dup /FontName get dup //.FontDirectory exch .forceundef
+              /GlobalFontDirectory .systemvar exch .forceundef
               dup length dict .copydict dup 3 index /FontName exch put
               2 index exch definefont
               exch
@@ -1134,9 +1134,9 @@ $error /SubstituteFont { } put
               ifelse  % Stack: origfontname fontdict
               exch pop //true exit
                       % Stack: fontdict
-            }
+            } executeonly
            if pop % Stack: origfontname fontdirectory path
-         }
+         } executeonly
         if pop pop  % Stack: origfontname
 
                 % The font definitely did not load correctly.
@@ -1176,10 +1176,10 @@ currentdict /.putgstringcopy .undef
       {
         {
           pop dup type /stringtype eq { cvn } if
-          .FontDirectory 1 index known not {
+          //.FontDirectory 1 index known not {
             2 dict dup /FontName 3 index put
             dup /FontType 1 put
-            .FontDirectory 3 1 roll { put } systemdict /superexec known {//superexec}{1183615869 internaldict /superexec get exec} ifelse   % readonly
+            //.FontDirectory 3 1 roll { put } systemdict /superexec known {//superexec}{1183615869 internaldict /superexec get exec} ifelse   % readonly
           } {
             pop
           } ifelse

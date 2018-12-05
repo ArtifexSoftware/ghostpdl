@@ -401,12 +401,12 @@ currentdict end def
       .forceput % FontInfo can be read-only.
       pop                                                        % bool <font>
       exit
-    } if
+    } executeonly if
     dup /FontInfo get                                            % bool <font> <FI>
     /GlyphNames2Unicode /Unicode /Decoding findresource
     .forceput % FontInfo can be read-only.
     exit
-  } loop
+  } executeonly loop
   exch setglobal
 } .bind executeonly odef % must be bound and hidden for .forceput
 

@@ -1168,8 +1168,8 @@ errordict /unknownerror .undef
     }ifelse
   }forall
   noaccess pop
-  systemdict /.setsafeerrors .forceundef
-  systemdict /.SAFERERRORLIST .forceundef
+  //systemdict /.setsafeerrors .forceundef
+  //systemdict /.SAFERERRORLIST .forceundef
 } bind executeonly odef
 
 SAFERERRORS {.setsafererrors} if
@@ -2114,7 +2114,7 @@ currentdict /tempfilepaths undef
 
 /.locksafe {
   .locksafe_userparams
-  systemdict /getenv {pop //false} .forceput
+  //systemdict /getenv {pop //false} .forceput
   % setpagedevice has the side effect of clearing the page, but
   % we will just document that. Using setpagedevice keeps the device
   % properties and pagedevice .LockSafetyParams in agreement even
@@ -2357,7 +2357,7 @@ SAFER { .setsafeglobal } if
         % Update the copy of the user parameters.
   mark .currentuserparams counttomark 2 idiv {
     userparams 3 1 roll .forceput	% userparams is read-only
-  } repeat pop
+  } executeonly repeat pop
         % Turn on idiom recognition, if available.
   currentuserparams /IdiomRecognition known {
     /IdiomRecognition //true .definepsuserparam
@@ -2376,7 +2376,7 @@ SAFER { .setsafeglobal } if
         % Remove real system params from pssystemparams.
   mark .currentsystemparams counttomark 2 idiv {
     pop pssystemparams exch .forceundef
-  } repeat pop
+  } executeonly repeat pop
 } if
 
 % Set up AlignToPixels :
