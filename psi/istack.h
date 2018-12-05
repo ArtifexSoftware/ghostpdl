@@ -125,6 +125,9 @@ int ref_stack_store(const ref_stack_t *pstack, ref *parray, uint count,
                     uint skip, int age, bool check,
                     gs_dual_memory_t *idmem, client_name_t cname);
 
+int
+ref_stack_array_sanitize(i_ctx_t *i_ctx_p, ref *sarr, ref *darr);
+
 /*
  * Pop the top N elements off a stack.
  * The number must not exceed the number of elements in use.

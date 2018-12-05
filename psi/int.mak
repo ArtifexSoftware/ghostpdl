@@ -203,7 +203,8 @@ $(PSOBJ)iparam.$(OBJ) : $(PSSRC)iparam.c $(GH)\
 $(PSOBJ)istack.$(OBJ) : $(PSSRC)istack.c $(GH) $(memory__h)\
  $(ierrors_h) $(gsstruct_h) $(gsutil_h)\
  $(ialloc_h) $(istack_h) $(istkparm_h) $(istruct_h) $(iutil_h) $(ivmspace_h)\
- $(store_h) $(INT_MAK) $(MAKEDIRS)
+ $(store_h) $(icstate_h) $(iname_h) $(dstack_h) $(idict_h) \
+ $(INT_MAK) $(MAKEDIRS)
 	$(PSCC) $(PSO_)istack.$(OBJ) $(C_) $(PSSRC)istack.c
 
 $(PSOBJ)iutil.$(OBJ) : $(PSSRC)iutil.c $(GH) $(math__h) $(memory__h) $(string__h)\
