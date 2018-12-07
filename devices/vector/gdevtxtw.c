@@ -598,9 +598,12 @@ static int simple_text_output(gx_device_txtwrite_t *tdev)
             if (x_entry->next) {
                 /* If we have following text, check to see if *not* using the newly calculated size would result in
                  * the end of the text going past the beginning of the following text. If it does then we must
-                 * use the new minimum, regardless of how small it is!
+                 * use the new minimum, regardless of how small it is! The foregoing comment isn't quite true...
+                 * we never used a width of 0 because that would result in an endless loop, we need to allow a little
+                 * slop in case rounding errors mean that the x difference from start to end of the text is almost,
+                 * but not quite, zero.
                  */
-                if (x_entry->start.x + ((x_entry->Unicode_Text_Size + 1) * min_width_size) > x_entry->next->start.x && width > 0)
+                if (x_entry->start.x + ((x_entry->Unicode_Text_Size + 1) * min_width_size) > x_entry->next->start.x && width > 0.001)
                     min_width_size = width;
             } else {
                 if (width < min_width_size && width >= (float)min_size * 0.75)
