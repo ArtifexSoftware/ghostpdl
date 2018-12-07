@@ -219,9 +219,9 @@ cleanup1:
         jbig2_release_huffman_table(ctx, runcodes);
 
         if (SBSYMCODES == NULL) {
-            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to construct symbol ID huffman table");
+            code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to construct symbol ID huffman table");
             jbig2_huffman_free(ctx, hs);
-            return ((code != 0) ? code : -1);
+            return code;
         }
     }
 
