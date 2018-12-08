@@ -148,16 +148,17 @@ typedef enum {
     cmd_opv_fill_stroke = 0xf4,
     cmd_opv_eofill_stroke = 0xf5,
     cmd_opv_stroke = 0xf6,
+    cmd_opv_swapcolors = 0xf7,	/* needed for setting colorspace for fill_stroke */
     cmd_opv_polyfill = 0xf9,
     cmd_opv_fill_trapezoid = 0xfc
 
 #define cmd_path_op_name_strings\
   "fill", "rgapto", "?f2?", "eofill",\
-  "fill_stroke", "eofill_stroke", "stroke", "?f7?",\
+  "fill_stroke", "eofill_stroke", "stroke", "swapcolors",\
   "?f8?", "polyfill", "?fa?", "?fb?",\
   "fill_trapezoid", "?fd?", "?fe?", "?ff?"
 
-/* unused cmd_op values: 0xd0, 0xf2, 0xf7, 0xf8, 0xfa, 0xfb, 0xfd, 0xfe, 0xff */
+/* unused cmd_op values: 0xd0, 0xf2, 0xf8, 0xfa, 0xfb, 0xfd, 0xfe, 0xff */
 } gx_cmd_xop;
 
 /* This is usd for cmd_opv_ext_put_drawing_color so that we know if it

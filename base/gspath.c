@@ -400,7 +400,7 @@ gx_effective_clip_path(gs_gstate * pgs, gx_clip_path ** ppcpath)
         (pgs->view_clip == 0 || pgs->view_clip->rule == 0 ? gs_no_id :
          pgs->view_clip->id);
 
-    if (pgs->device == NULL || gs_device_is_memory(pgs->device)) {
+    if (pgs->device == NULL || gs_device_is_memory(pgs->device) || pgs->clip_path == NULL) {
         *ppcpath = pgs->clip_path;
         return 0;
     }
