@@ -796,12 +796,14 @@ int default_subclass_put_image(gx_device *dev, gx_device *mdev, const byte **buf
             int width, int height, int row_stride,
             int alpha_plane_index, int tag_plane_index)
 {
-    if (dev->child)
-        if (dev == mdev)
+    if (dev->child) {
+        if (dev == mdev) {
             return dev_proc(dev->child, put_image)(dev->child, dev->child, buffers, num_chan, x, y, width, height, row_stride, alpha_plane_index, tag_plane_index);
-        else
+        }
+        else {
             return dev_proc(dev->child, put_image)(dev->child, mdev, buffers, num_chan, x, y, width, height, row_stride, alpha_plane_index, tag_plane_index);
-
+        }
+    }
     return 0;
 }
 
