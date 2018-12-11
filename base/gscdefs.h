@@ -13,11 +13,34 @@
    CA 94945, U.S.A., +1(415)492-9861, for further information.
 */
 
-
-/* Prototypes for configuration definitions in gconfig.c. */
-
 #ifndef gscdefs_INCLUDED
 #  define gscdefs_INCLUDED
+
+
+#define GS_STRINGIZE2(s) #s
+#define GS_STRINGIZE(s) GS_STRINGIZE2(s)
+
+#ifndef GS_BUILDTIME
+#  define GS_BUILDTIME\
+        0			/* should be set in the makefile */
+#endif
+
+#ifndef GS_COPYRIGHT
+#  define GS_COPYRIGHT\
+        "Copyright (C) 2018 Artifex Software, Inc.  All rights reserved."
+#endif
+
+#ifndef GS_PRODUCTFAMILY
+#  define GS_PRODUCTFAMILY\
+        "GPL Ghostscript"
+#endif
+
+#ifndef GS_PRODUCT
+#  define GS_PRODUCT\
+        GS_PRODUCTFAMILY " GIT PRERELEASE"
+#endif
+
+/* Prototypes for configuration definitions in gconfig.c. */
 
 /*
  * This file may be #included in places that don't even have stdpre.h,

@@ -25,22 +25,10 @@
 /* All of these can be set in the makefile. */
 /* Normally they are all const; see gscdefs.h for more information. */
 
-#ifndef GS_BUILDTIME
-#  define GS_BUILDTIME\
-        0			/* should be set in the makefile */
-#endif
 const long gs_buildtime = GS_BUILDTIME;
 
-#ifndef GS_COPYRIGHT
-#  define GS_COPYRIGHT\
-        "Copyright (C) 2018 Artifex Software, Inc.  All rights reserved."
-#endif
 const char *const gs_copyright = GS_COPYRIGHT;
 
-#ifndef GS_PRODUCTFAMILY
-#  define GS_PRODUCTFAMILY\
-        "GPL Ghostscript"
-#endif
 const char *const gs_productfamily = GS_PRODUCTFAMILY;
 
 const char *
@@ -48,11 +36,6 @@ gs_program_family_name(void)
 {
     return gs_productfamily;
 }
-
-#ifndef GS_PRODUCT
-#  define GS_PRODUCT\
-        GS_PRODUCTFAMILY " GIT PRERELEASE"
-#endif
 const char *const gs_product = GS_PRODUCT;
 
 const char *

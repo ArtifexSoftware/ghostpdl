@@ -83,7 +83,7 @@ $(GS_OBJ).res: $(PSSRC)dwmain.rc $(dwres_h) $(ICONS) $(WININT_MAK)
 	$(ECHOGS_XE) -w $(PSGEN)_exe.rc -x 23 define -s gstext_ico $(GLGENDIR)\gswin.ico
 	$(ECHOGS_XE) -a $(PSGEN)_exe.rc -x 23 define -s gsgraph_ico $(GLGENDIR)\gswin.ico
 	$(ECHOGS_XE) -a $(PSGEN)_exe.rc -R $(PSSRC)dwmain.rc
-	$(RCOMP) -i$(PSSRCDIR) -i$(PSGENDIR) $(i_INCDIR) -r $(RO_)$(GS_OBJ).res $(PSGEN)_exe.rc
+	$(RCOMP) -dGS_DOT_VERSION=$(GS_DOT_VERSION) -dGS_VERSION_MAJOR=$(GS_VERSION_MAJOR) -dGS_VERSION_MINOR=$(GS_VERSION_MINOR) -i$(PSSRCDIR) -i$(PSGENDIR) -i$(GLSRCDIR) $(i_INCDIR) -r $(RO_)$(GS_OBJ).res $(PSGEN)_exe.rc
 	del $(PSGEN)_exe.rc
 
 # resources for main program (includes dialogs)
@@ -91,7 +91,7 @@ $(GSDLL_OBJ).res: $(PSSRC)gsdll32.rc $(gp_mswin_h) $(ICONS) $(WININT_MAK)
 	$(ECHOGS_XE) -w $(PSGEN)_dll.rc -x 23 define -s gstext_ico $(GLGENDIR)\gswin.ico
 	$(ECHOGS_XE) -a $(PSGEN)_dll.rc -x 23 define -s gsgraph_ico $(GLGENDIR)\gswin.ico
 	$(ECHOGS_XE) -a $(PSGEN)_dll.rc -R $(PSSRC)gsdll32.rc
-	$(RCOMP) -i$(PSSRCDIR) -i$(PSGENDIR) -i$(GLSRCDIR) $(i_INCDIR) -r $(RO_)$(GSDLL_OBJ).res $(PSGEN)_dll.rc
+	$(RCOMP) -dGS_DOT_VERSION=$(GS_DOT_VERSION) -dGS_VERSION_MAJOR=$(GS_VERSION_MAJOR) -dGS_VERSION_MINOR=$(GS_VERSION_MINOR) -i$(PSSRCDIR) -i$(PSGENDIR) -i$(GLSRCDIR) $(i_INCDIR) -r $(RO_)$(GSDLL_OBJ).res $(PSGEN)_dll.rc
 	del $(PSGEN)_dll.rc
 
 
