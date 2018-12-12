@@ -330,7 +330,6 @@ grept1 define.TEST [glob base/gdev*.c]
 grept1 define.PDFX base/gdevpdfx.h
 grept1 define.FORCE base/gshtscr.c
 grept1 define.CAPTURE base/gslib.c
-grept1 interval.= base/zcontext.c
 # Apparently diff exits with a non-zero status if there are any differences!
 catch {exec diff $GREPFILE $CHECKFILE >> $DIFFFILE}
 exec wc $DIFFFILE >@ stdout

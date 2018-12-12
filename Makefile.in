@@ -337,7 +337,7 @@ JPEGXR_OBJDIR=$(GLOBJDIR)
 # Define the directory where the ijs source is stored,
 # and the process forking method to use for the server.
 # See ijs.mak for more information.
- 
+
 SHARE_IJS=@SHAREIJS@
 IJS_NAME=@IJSLIB@
 IJSSRCDIR=@IJSDIR@
@@ -390,7 +390,7 @@ CCAUXLD=$(CCAUX)
 GCFLAGS=@CPPFLAGS@ @GCFLAGS@ @CFLAGS@ @HAVE_POPEN_PROTO@
 GCFLAGSAUX=@GCFLAGSAUX@ @HAVE_POPEN_PROTO@
 
-# Define the added flags for standard, debugging, profiling 
+# Define the added flags for standard, debugging, profiling
 # and shared object builds.
 
 CFLAGS_STANDARD=@OPT_CFLAGS@
@@ -496,7 +496,7 @@ XINCLUDE=@X_CFLAGS@
 #XLIBS=Xt SM ICE Xext X11
 
 # We use the autoconf macro AC_PATH_XTRA which defines X_LIBS with
-# the -L (or whatever). It also defines X_PRE_LIBS and X_EXTRA_LIBS 
+# the -L (or whatever). It also defines X_PRE_LIBS and X_EXTRA_LIBS
 # all three of which are stripped and slotted into XLIBS below.
 # Usually however, all but X_LIBS are empty on modern platforms.
 XLIBDIRS=@X_LDFLAGS@
@@ -536,7 +536,7 @@ SO_LIB_VERSION_SEPARATOR=@SO_LIB_VERSION_SEPARATOR@
 # Choose the language feature(s) to include.  See gs.mak for details.
 
 # if it's included, $(PSD)gs_pdfwr.dev should always be one of the last in the list
-PSI_FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)epsf.dev $(PSD)ttfont.dev \
+PSI_FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)epsf.dev $(PSD)ttfont.dev \
                  @UTF8DEVS@ $(PSD)fapi_ps.dev $(PSD)jpx.dev $(PSD)jbig2.dev $(PSD)gs_pdfwr.dev
 
 
@@ -554,9 +554,9 @@ FEATURE_DEVS=$(GLD)pipe.dev $(GLD)gsnogc.dev $(GLD)htxlib.dev $(GLD)psl3lib.dev 
              $(GLD)pwgd.dev
 
 #FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev
-#FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(GLD)pipe.dev
+#FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)ttfont.dev $(GLD)pipe.dev
 # The following is strictly for testing.
-FEATURE_DEVS_ALL=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)double.dev $(PSD)trapping.dev $(PSD)stocht.dev $(GLD)pipe.dev $(GLD)gsnogc.dev $(GLD)htxlib.dev @JBIG2DEVS@ @JPXDEVS@ @UTF8DEVS@ $(GLD)ramfs.dev
+FEATURE_DEVS_ALL=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)ttfont.dev $(PSD)double.dev $(PSD)trapping.dev $(PSD)stocht.dev $(GLD)pipe.dev $(GLD)gsnogc.dev $(GLD)htxlib.dev @JBIG2DEVS@ @JPXDEVS@ @UTF8DEVS@ $(GLD)ramfs.dev
 #FEATURE_DEVS=$(FEATURE_DEVS_ALL)
 
 # The list of resources to be included in the %rom% file system.
@@ -578,11 +578,11 @@ BAND_LIST_COMPRESSOR=zlib
 
 FILE_IMPLEMENTATION=stdio
 
-# List of default devices, in order of priority. They need not be 
+# List of default devices, in order of priority. They need not be
 # present in the actual build.
 GS_DEV_DEFAULT="x11alpha bbox"
 
-# Fallback default device.  This is set to 'display' by 
+# Fallback default device.  This is set to 'display' by
 # unix-dll.mak when building a shared object.
 DISPLAY_DEV=$(DD)bbox.dev
 
@@ -754,4 +754,3 @@ maintainer-clean : distclean
 
 check : default
 	$(NO_OP)
-

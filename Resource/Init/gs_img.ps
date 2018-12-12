@@ -115,22 +115,6 @@ def
   5 dict
   dup 1 /.imagemask1 load put
 def
-end
-.setglobal
-
-%
-% Build a dictionary of utility procedures and constants for use in
-% impelementing the image operators. This dictionary is in global VM but
-% is maintained (during initialization) in userdict. It should be pushed
-% onto the dictionary stack when constructing image-related procedures
-% and pseudo-operators.
-%
-% This dictionary is removed from userdict when initialization is
-% completed.
-%
-.currentglobal //true .setglobal
-userdict /img_utils_dict 30 dict put
-img_utils_dict begin
 
 %
 % Some useful local data structures:
@@ -664,7 +648,7 @@ if
       }
     ifelse
   }
-.bind systemdict begin odef end
+.bind odef
 
 % An auxiliary function for checking whether an imagemask to be interpolated.
 /.is_low_resolution    %  <image dict> .is_low_resolution <bool>
@@ -742,13 +726,11 @@ if
       }
     ifelse
   }
-.bind systemdict begin odef end
+.bind odef
 
 % undefine a bunch of local definitions
-% NOTE: all this goes away if we just get rid of img_utils_dict, but
-% that is intertwined with gs_dps.ps, so for now, just undef the separate pieces.
 [
-% /.colorimage -- used in gs_dpnxt,ps, need to nuke that so we can undef all this stuff
+ /.colorimage
  /img_params_dict
  /img_unbuild_dict
  /img_unbuild_image_dict
@@ -769,6 +751,6 @@ if
 ]
 {currentdict exch .undef} forall
 
-end        % img_utils_dict
+end        % systemdict
 
 .setglobal  % restore VM mode

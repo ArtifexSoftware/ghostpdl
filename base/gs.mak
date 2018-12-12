@@ -69,8 +69,8 @@
 #	    typically 'jbig2dec' or 'jbig2dec-/version/'
 #	JPX_LIB - choice of which jpeg2k implementation to use
 #	SHARE_JPX - If set to 1, asks the linker to use an existing
-#	    complied jpeg2k library. If set to 0, asks to compile and 
-#	    link from a local copy of the source using our custom 
+#	    complied jpeg2k library. If set to 0, asks to compile and
+#	    link from a local copy of the source using our custom
 #	    makefile.
 #	JPXSRCDIR - the name of the jpeg2k library source directory
 #	    e.g. 'openjpeg'
@@ -95,7 +95,7 @@
 #		    pdf - a PDF 1.2 interpreter.
 #	    psl3 includes everything in psl2, and psl2 includes everything
 #	      in psl1.  For backward compatibility, level1 is a synonym for
-#	      psl1, and level2 is a synonym for psl2.  
+#	      psl1, and level2 is a synonym for psl2.
 #	    The remaining features are of interest primarily to developers
 #	      who want to "mix and match" features to create custom
 #	      configurations:
@@ -113,8 +113,6 @@
 #                       paramter for each %disk (see Language.htm).
 #		    dps - (partial) support for Display PostScript extensions:
 #			see Language.htm for details.
-#		    dpsnext - (partial) support for Display PostScript
-#			extensions with NeXT's additions.
 #		    epsf - support for recognizing and skipping the binary
 #			header of MS-DOS EPSF files.
 #		    filter - support for Level 2 filters (other than eexec,
@@ -139,7 +137,7 @@
 #	COMPILE_INITS - normally 1; compiles the PostScript language
 #	    initialization files (gs_init.ps et al) and Resource/* tree
 #	    into the executable, eliminating the need for these files
-#	    to be present at run time. Files will be placed in the 
+#	    to be present at run time. Files will be placed in the
 #	    %rom% device.
 #	BAND_LIST_STORAGE - normally file; if set to memory, stores band
 #	    lists in memory (with compression if needed).
@@ -393,7 +391,7 @@ DEVICE_DEVS_ALL=$(DEVICE_DEVS) $(DEVICE_DEVS1) \
  $(DEVICE_DEVS10) $(DEVICE_DEVS11) $(DEVICE_DEVS12) $(DEVICE_DEVS13) \
  $(DEVICE_DEVS14) $(DEVICE_DEVS15) $(DEVICE_DEVS16) $(DEVICE_DEVS17) \
  $(DEVICE_DEVS18) $(DEVICE_DEVS19) $(DEVICE_DEVS20) $(DEVICE_DEVS21) \
- $(DEVICE_DEVS_EXTRA) 
+ $(DEVICE_DEVS_EXTRA)
 
 PSI_DEVS_ALL=$(GSPLAT_DEVS_ALL) \
  $(PSI_FEATURE_DEVS) \
@@ -533,7 +531,7 @@ $(gconfxx_h) : $(ld_tr)
 $(gconfig_h) : $(gconfxx_h)
 	$(RM_) $(gconfig_h)
 	$(CP_) $(gconfxx_h) $(gconfig_h)
-	
+
 # The line above is an empty command; don't delete.
 
 # save our set of makefile variables that are defined in every build (paths, etc.)

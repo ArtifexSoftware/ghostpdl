@@ -34,6 +34,32 @@
 #  include <stringprep.h>
 #endif
 
+/* ------ Graphics state ------ */
+
+/* <screen_index> <x> <y> .setscreenphase - */
+static int
+zsetscreenphase(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    int code;
+    int x, y;
+
+    check_type(op[-2], t_integer);
+    check_type(op[-1], t_integer);
+    check_type(*op, t_integer);
+    x = op[-1].value.intval;
+    y = op->value.intval;
+    if (op[-2].value.intval < -1 ||
+        op[-2].value.intval >= gs_color_select_count
+        )
+        return_error(gs_error_rangecheck);
+    code = gs_setscreenphase(igs, x, y,
+                             (gs_color_select_t) op[-2].value.intval);
+    if (code >= 0)
+        pop(3);
+    return code;
+}
+
 /* Construct a smooth path passing though a number of points  on the stack */
 /* for PDF ink annotations. The program is based on a very simple method of */
 /* smoothing polygons by Maxim Shemanarev. */
@@ -222,6 +248,7 @@ const op_def zpdfops_op_defs[] =
 {
     {"0.pdfinkpath", zpdfinkpath},
     {"1.pdfFormName", zpdfFormName},
+    {"3.setscreenphase", zsetscreenphase},
 #ifdef HAVE_LIBIDN
     {"1.saslprep", zsaslprep},
 #endif

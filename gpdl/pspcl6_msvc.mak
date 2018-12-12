@@ -248,11 +248,10 @@ BSCFILE=$(GENDIR)\language_switch.bsc
 TARGET_DEVS=$(PXLOBJDIR)\pxl.dev $(PCLOBJDIR)\pcl5c.dev $(PCLOBJDIR)\hpgl2c.dev
 !endif
 
-!ifndef FEATURE_DEVS    
+!ifndef FEATURE_DEVS
 FEATURE_CORE    = \
           $(DD)\psl3.dev		\
 	  $(DD)\pdf.dev		\
-	  $(DD)\dpsnext.dev	\
           $(DD)\htxlib.dev	\
 	  $(DD)\ttfont.dev	\
           $(DD)\gsnogc.dev	\
@@ -273,4 +272,3 @@ FEATURE_DEVS    = $(FEATURE_CORE)
 
 # Subsystems
 !include $(PSISRCDIR)\psi.mak
-

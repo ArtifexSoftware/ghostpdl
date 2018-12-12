@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
@@ -1357,14 +1357,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\Resource\Init\gs_dpnxt.ps"
-					>
-				</File>
-				<File
-					RelativePath="..\Resource\Init\gs_dps.ps"
-					>
-				</File>
-				<File
 					RelativePath="..\Resource\Init\gs_dps1.ps"
 					>
 				</File>
@@ -2079,10 +2071,6 @@
 			</File>
 			<File
 				RelativePath="..\base\gsdparam.c"
-				>
-			</File>
-			<File
-				RelativePath="..\base\gsdps.c"
 				>
 			</File>
 			<File
@@ -3591,14 +3579,6 @@
 			</File>
 			<File
 				RelativePath="..\base\gsdllwin.h"
-				>
-			</File>
-			<File
-				RelativePath="..\base\gsdpnext.h"
-				>
-			</File>
-			<File
-				RelativePath="..\base\gsdps.h"
 				>
 			</File>
 			<File
@@ -8156,10 +8136,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\psi\zcontext.c"
-				>
-			</File>
-			<File
 				RelativePath="..\psi\zcontrol.c"
 				>
 			</File>
@@ -8197,14 +8173,6 @@
 			</File>
 			<File
 				RelativePath="..\psi\zdouble.c"
-				>
-			</File>
-			<File
-				RelativePath="..\psi\zdpnext.c"
-				>
-			</File>
-			<File
-				RelativePath="..\psi\zdps.c"
 				>
 			</File>
 			<File

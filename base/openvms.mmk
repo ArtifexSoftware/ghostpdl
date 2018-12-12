@@ -189,7 +189,7 @@ SW_DEBUG=/NODEBUG/NOOPTIMIZE
 
 SW_PLATFORM=/DECC/PREFIX=ALL/NESTED_INCLUDE=PRIMARY/name=(as_is,short)/nowarn
 
-# Define any other compilation flags. 
+# Define any other compilation flags.
 # Including defines for A4 paper size
 
 .ifdef A4_PAPER
@@ -258,7 +258,7 @@ DEVICE_DEVS21=
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 
-FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(PSD)fapi.dev $(PSD)jbig2.dev
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(PSD)fapi.dev $(PSD)jbig2.dev
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
@@ -429,7 +429,7 @@ JBIG2_EXTRA_OBJS=$(JBIG2OBJDIR)$(D)snprintf.$(OBJ)
 .include $(GLSRCDIR)contrib.mak
 
 
-# ----------------------------- Main program ------------------------------ 
+# ----------------------------- Main program ------------------------------
 
 macro :
 .ifdef A4_PAPER
@@ -468,7 +468,7 @@ openvms__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_paper.$(OBJ) $(GLOBJ)gp_vms.$(OBJ) 
 $(GLGEN)openvms_.dev : $(openvms__) $(GLGEN)nosync.dev
 	$(SETMOD) $(GLGEN)openvms_ $(openvms__) -include $(GLGEN)nosync
 
-$(ECHOGS_XE) :  $(GLOBJDIR)echogs.$(OBJ) 
+$(ECHOGS_XE) :  $(GLOBJDIR)echogs.$(OBJ)
 $(GENARCH_XE) : $(GLOBJDIR)genarch.$(OBJ)
 $(GENCONF_XE) : $(GLOBJDIR)genconf.$(OBJ)
 $(GENDEV_XE) : $(GLOBJDIR)gendev.$(OBJ)
@@ -523,4 +523,3 @@ $(GLSRCDIR)openvms.opt :
 
 $(gconfig__h) : $(TOP_MAKEFILES) $(ECHOGS_XE)
 	$(EXP)$(ECHOGS_XE) -w $(gconfig__h) -x 23 define "HAVE_SYS_TIME_H"
-

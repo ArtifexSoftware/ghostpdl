@@ -108,7 +108,8 @@ public_st_context_state();
 static int
 no_reschedule(i_ctx_t **pi_ctx_p)
 {
-    return (gs_error_invalidcontext);
+    return 0;
+    /*    return (gs_error_invalidcontext); */
 }
 
 /* Allocate the state of a context. */

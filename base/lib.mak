@@ -2954,9 +2954,6 @@ $(GLOBJ)gximdecode.$(OBJ) : $(GLSRC)gximdecode.c $(gximdecode_h) $(string__h)\
 
 # ================ Display Postscript extensions ================ #
 
-gsiparm2_h=$(GLSRC)gsiparm2.h $(gsiparam_h) $(gsgstate_h)
-gsdps_h=$(GLSRC)gsdps.h $(gsiparm2_h) $(gsgstate_h)
-
 # Display PostScript needs the DevicePixel color space to implement
 # the PixelCopy option of ImageType 2 images.
 dpslib_=$(GLOBJ)gsdps.$(OBJ) $(GLOBJ)gximage2.$(OBJ)
@@ -2966,35 +2963,11 @@ $(GLD)dpslib.dev : $(LIB_MAK) $(ECHOGS_XE) $(dpslib_) $(GLD)cspixlib.dev \
 	$(ADDMOD) $(GLD)dpslib -imagetype 2
 	$(ADDMOD) $(GLD)dpslib -include $(GLD)cspixlib
 
-$(GLOBJ)gsdps.$(OBJ) : $(GLSRC)gsdps.c $(AK) $(gx_h)\
- $(gsdps_h) $(gserrors_h) $(gspath_h)\
- $(gxdevice_h) $(gzcpath_h) $(gzpath_h) $(gzstate_h) $(LIB_MAK) $(MAKEDIRS)
-	$(GLCC) $(GLO_)gsdps.$(OBJ) $(C_) $(GLSRC)gsdps.c
-
 $(GLOBJ)gximage2.$(OBJ) : $(GLSRC)gximage2.c $(AK) $(gx_h)\
  $(math__h) $(memory__h) $(gserrors_h) $(gscolor2_h)\
  $(gscpixel_h) $(gscoord_h) $(gscspace_h) $(gsdevice_h) $(gsiparm2_h)\
  $(gsmatrix_h) $(gxgetbit_h) $(gxiparam_h) $(gxpath_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gximage2.$(OBJ) $(C_) $(GLSRC)gximage2.c
-
-# ---------------- NeXT Display PostScript ---------------- #
-
-gsalphac_h=$(GLSRC)gsalphac.h $(gscompt_h) $(std_h)
-gsdpnext_h=$(GLSRC)gsdpnext.h $(gsalpha_h) $(gsalphac_h)
-
-$(GLOBJ)gsalphac.$(OBJ) : $(GLSRC)gsalphac.c $(AK) $(gx_h)\
- $(gserrors_h) $(memory__h) $(gsalphac_h) $(gsiparam_h) $(gsutil_h)\
- $(gxalpha_h) $(gxcomp_h) $(gxdevice_h) $(gxgetbit_h) $(gxlum_h)\
- $(LIB_MAK) $(MAKEDIRS)
-	$(GLCC) $(GLO_)gsalphac.$(OBJ) $(C_) $(GLSRC)gsalphac.c
-
-$(GLOBJ)gximagec.$(OBJ) : $(GLSRC)gximagec.c $(AK) $(LIB_MAK) $(MAKEDIRS)
-	$(GLCC) $(GLO_)gximagec.$(OBJ) $(C_) $(GLSRC)gximagec.c
-
-dpnxtlib_=$(GLOBJ)gsalphac.$(OBJ)
-$(GLD)dpnxtlib.dev : $(LIB_MAK) $(ECHOGS_XE) $(dpnxtlib_) $(LIB_MAK) $(MAKEDIRS)
-	$(SETMOD) $(GLD)dpnxtlib $(dpnxtlib_)
-	$(ADDCOMP) $(GLD)dpnxtlib alpha
 
 # ================ PostScript LanguageLevel 3 support ================ #
 

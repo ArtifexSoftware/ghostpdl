@@ -1597,49 +1597,6 @@ $(PSOBJ)zfdctd.$(OBJ) : $(PSSRC)zfdctd.c $(OP)\
  $(INT_MAK) $(MAKEDIRS)
 	$(PSCC) $(PSO_)zfdctd.$(OBJ) $(C_) $(PSSRC)zfdctd.c
 
-# ================ Display PostScript ================ #
-
-dps_=$(PSOBJ)zdps.$(OBJ) $(PSOBJ)zcontext.$(OBJ)
-$(PSD)dps.dev : $(ECHOGS_XE) $(GLD)dpslib.dev $(PSD)psl2.dev\
- $(dps_) $(INT_MAK) $(MAKEDIRS)
-	$(SETMOD) $(PSD)dps -include $(GLD)dpslib $(PSD)psl2
-	$(ADDMOD) $(PSD)dps -obj $(dps_)
-	$(ADDMOD) $(PSD)dps -oper zcontext1 zcontext2 zdps
-	$(ADDMOD) $(PSD)dps -ps gs_dps
-
-$(PSOBJ)zdps.$(OBJ) : $(PSSRC)zdps.c $(OP)\
- $(gsdps_h) $(gsimage_h) $(gsiparm2_h) $(gsstate_h)\
- $(gxalloc_h) $(gxfixed_h) $(gxpath_h)\
- $(btoken_h)\
- $(idparam_h) $(iddict_h) $(igstate_h) $(iimage2_h) $(iname_h)\
- $(store_h) $(INT_MAK) $(MAKEDIRS)
-	$(PSCC) $(PSO_)zdps.$(OBJ) $(C_) $(PSSRC)zdps.c
-
-$(PSOBJ)zcontext.$(OBJ) : $(PSSRC)zcontext.c $(OP) $(gp_h) $(memory__h)\
- $(gsexit_h) $(gsgc_h) $(gsstruct_h) $(gsutil_h) $(gxalloc_h) $(gxstate_h)\
- $(icontext_h) $(idict_h) $(igstate_h) $(interp_h) $(isave_h) $(istruct_h)\
- $(dstack_h) $(estack_h) $(files_h) $(ostack_h) $(store_h) $(stream_h)\
- $(INT_MAK) $(MAKEDIRS)
-	$(PSCC) $(PSO_)zcontext.$(OBJ) $(C_) $(PSSRC)zcontext.c
-
-# ---------------- NeXT Display PostScript ---------------- #
-
-dpsnext_=$(PSOBJ)zdpnext.$(OBJ)
-$(PSD)dpsnext.dev : $(ECHOGS_XE) $(dpsnext_)\
- $(PSD)dps.dev $(GLD)dpnxtlib.dev $(INT_MAK) $(MAKEDIRS)
-	$(SETMOD) $(PSD)dpsnext -include $(PSD)dps $(GLD)dpnxtlib
-	$(ADDMOD) $(PSD)dpsnext -obj $(dpsnext_)
-	$(ADDMOD) $(PSD)dpsnext -oper zdpnext
-	$(ADDMOD) $(PSD)dpsnext -ps gs_dpnxt
-
-$(PSOBJ)zdpnext.$(OBJ) : $(PSSRC)zdpnext.c $(math__h) $(OP)\
- $(gscoord_h) $(gscspace_h) $(gsdpnext_h)\
- $(gsiparam_h) $(gsiparm2_h) $(gsmatrix_h) $(gspath2_h)\
- $(gxcvalue_h) $(gxdevice_h) $(gxsample_h)\
- $(ialloc_h) $(igstate_h) $(iimage_h) $(iimage2_h) $(store_h)\
- $(INT_MAK) $(MAKEDIRS)
-	$(PSCC) $(PSO_)zdpnext.$(OBJ) $(C_) $(PSSRC)zdpnext.c
-
 # ==================== PostScript LanguageLevel 3 ===================== #
 
 # ---------------- DevicePixel color space ---------------- #

@@ -147,7 +147,7 @@ SHARE_LIBPNG=0
 LIBPNG_NAME=png
 
 # Define whether to use a shared version of libtiff and where
-# it is stored and what its name is.  
+# it is stored and what its name is.
 
 SHARE_LIBTIFF=0
 TIFFSRCDIR=tiff
@@ -315,7 +315,7 @@ SYNC=nosync
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 
-FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(GLD)pipe.dev $(PSD)fapi.dev
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(GLD)pipe.dev $(PSD)fapi.dev
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
@@ -415,7 +415,7 @@ include $(GLSRCDIR)/unixlink.mak
 include $(GLSRCDIR)/unix-end.mak
 include $(GLSRCDIR)/unixinst.mak
 
-# platform-specific clean-up  
+# platform-specific clean-up
 # this makefile is intended to be hand edited so we don't distribute
 # the (presumedly modified) version in the top level directory
 distclean : clean config-clean
@@ -424,4 +424,3 @@ distclean : clean config-clean
 
 maintainer-clean : distclean
 	# nothing special to do
-

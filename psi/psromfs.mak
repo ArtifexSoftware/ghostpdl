@@ -378,8 +378,6 @@ PS_INIT_DEPS=\
 	$(PSRESDIR)$(D)Init$(D)gs_cspace.ps \
 	$(PSRESDIR)$(D)Init$(D)gs_dbt_e.ps \
 	$(PSRESDIR)$(D)Init$(D)gs_diskn.ps \
-	$(PSRESDIR)$(D)Init$(D)gs_dpnxt.ps \
-	$(PSRESDIR)$(D)Init$(D)gs_dps.ps \
 	$(PSRESDIR)$(D)Init$(D)gs_dps1.ps \
 	$(PSRESDIR)$(D)Init$(D)gs_dps2.ps \
 	$(PSRESDIR)$(D)Init$(D)gs_dscp.ps \

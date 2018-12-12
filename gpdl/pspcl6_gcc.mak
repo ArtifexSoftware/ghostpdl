@@ -85,7 +85,6 @@ DD=$(GLGENDIR)/
 FEATURE_DEVS    ?= \
           $(DD)psl3.dev		\
 	  $(DD)pdf.dev		\
-	  $(DD)dpsnext.dev	\
           $(DD)htxlib.dev	\
 	  $(DD)ttfont.dev	\
 	  $(DD)pipe.dev         \
@@ -93,7 +92,7 @@ FEATURE_DEVS    ?= \
 
 # extra objects.
 XOBJS?=$(GLOBJDIR)/gsargs.o $(GLOBJDIR)/gconfig.o \
-       $(GLOBJDIR)/gscdefs.o $(GLOBJDIR)/iconfig.o 
+       $(GLOBJDIR)/gscdefs.o $(GLOBJDIR)/iconfig.o
 
 ifeq ($(COMPILE_INITS), 1)
 include $(PSSRCDIR)/psromfs.mak
