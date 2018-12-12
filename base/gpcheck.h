@@ -19,6 +19,8 @@
 #ifndef gpcheck_INCLUDED
 #  define gpcheck_INCLUDED
 
+#include "std.h"
+
 /*
  * On some platforms, the interpreter must check periodically for user-
  * initiated actions.  (Eventually, this may be extended to all platforms,

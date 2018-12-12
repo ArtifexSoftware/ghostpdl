@@ -19,6 +19,8 @@
 #ifndef gxclip_INCLUDED
 #  define gxclip_INCLUDED
 
+#include "gxdevcli.h"
+
 /*
  * Both rectangle list and mask clipping use callback procedures to process
  * each rectangle selected by the clipping region.  They share both the

@@ -19,6 +19,8 @@
 #ifndef gxbitfmt_INCLUDED
 #  define gxbitfmt_INCLUDED
 
+#include "stdpre.h"
+
 /*
  * Several operations, such as the get_bits_rectangle driver procedure, can
  * take and/or produce data in a flexible variety of formats; the ability to

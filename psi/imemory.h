@@ -29,6 +29,7 @@
  */
 
 #include "gsalloc.h"
+#include "gsmemory.h"
 
 #ifndef gs_ref_memory_DEFINED
 #  define gs_ref_memory_DEFINED

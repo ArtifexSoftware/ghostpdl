@@ -19,6 +19,10 @@
 #ifndef icolor_INCLUDED
 #  define icolor_INCLUDED
 
+#include "iref.h"
+#include "gsgstate.h"
+#include "gxtmap.h"
+
 /*
  * Define the number of stack slots needed for zcolor_remap_one.
  * The client is responsible for doing check_e/ostack or the equivalent

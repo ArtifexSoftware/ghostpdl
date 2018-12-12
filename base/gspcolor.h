@@ -22,6 +22,7 @@
 #include "gsccolor.h"
 #include "gsrefct.h"
 #include "gsuid.h"
+#include "gsgstate.h"
 
 /* ---------------- Types and structures ---------------- */
 

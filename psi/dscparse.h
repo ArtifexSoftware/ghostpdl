@@ -19,6 +19,8 @@
 #ifndef dscparse_INCLUDED
 #  define dscparse_INCLUDED
 
+#include "stdpre.h"
+
 /* Some local types that may need modification */
 typedef int GSBOOL;
 typedef unsigned long GSDWORD;	/* must be at least 32 bits */

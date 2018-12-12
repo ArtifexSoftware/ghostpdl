@@ -19,6 +19,9 @@
 #ifndef icie_INCLUDED
 #  define icie_INCLUDED
 
+#include "gscie.h"
+#include "igstate.h"
+
 /*
  * All of the routines below are exported by zcie.c for zcrd.c,
  * except for cie_cache_joint which is exported by zcrd.c for zcie.c.

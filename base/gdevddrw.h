@@ -18,6 +18,8 @@
 #ifndef gdevddrw_INCLUDED
 #  define gdevddrw_INCLUDED
 
+#include "gxdevcli.h"
+
 enum fill_trap_flags {
     ftf_peak0 = 1,
     ftf_peak1 = 2

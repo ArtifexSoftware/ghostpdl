@@ -20,6 +20,9 @@
 #ifndef ichar_INCLUDED
 #  define ichar_INCLUDED
 
+#include "gxfapi.h"
+#include "iostack.h"
+
 /*
  * All the character rendering operators use the execution stack
  * for loop control -- see estack.h for details.

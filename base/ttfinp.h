@@ -19,6 +19,8 @@
 #ifndef incl_ttfinp
 #define incl_ttfinp
 
+#include "ttfoutl.h"
+
 unsigned char  ttfReader__Byte(ttfReader *r);
 signed   char  ttfReader__SignedByte(ttfReader *r);
 unsigned short ttfReader__UShort(ttfReader *r);

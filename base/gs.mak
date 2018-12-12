@@ -565,5 +565,3 @@ $(xpsobj_tr) : $(xps_tr)
 pdlobj_tr=$(GLGENDIR)$(D)pdlobj.tr
 $(pdlobj_tr) : $(gpdl_tr)
 	$(EXP)$(GENCONF_XE) $(gpdl_tr) -h $(GLGENDIR)$(D)unused.h $(CONFILES) -o $(pdlobj_tr)
-
-

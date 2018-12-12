@@ -28,6 +28,7 @@
 #include "gdevplnx.h"
 #include "gstrans.h"
 #include "gxdownscale.h"
+#include "gsbitops.h"
 
 #include "gdevkrnlsclass.h" /* 'standard' built in subclasses, currently First/Last Page and obejct filter */
 

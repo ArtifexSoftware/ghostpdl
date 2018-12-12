@@ -19,6 +19,9 @@
 #ifndef idparam_INCLUDED
 #  define idparam_INCLUDED
 
+#include "stdpre.h"
+#include "iref.h"
+
 #ifndef gs_matrix_DEFINED
 #  define gs_matrix_DEFINED
 typedef struct gs_matrix_s gs_matrix;

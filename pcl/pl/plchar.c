@@ -51,6 +51,7 @@
 #include "plchar.h"
 /* include the prototype for pixmap_high_level_pattern */
 #include "gsptype1.h"
+#include "gsgstate.h"
 
 /* Define whether to cache TrueType characters. */
 /* This would only be disabled for debugging. */
@@ -711,11 +712,6 @@ tt_find_table(gs_font_type42 * pfont, const char *tname, uint * plen)
     }
     return 0;
 }
-
-#ifndef gs_gstate_DEFINED
-#  define gs_gstate_DEFINED
-typedef struct gs_gstate_s gs_gstate;
-#endif
 
 /* Opaque type for a path */
 #ifndef gx_path_DEFINED

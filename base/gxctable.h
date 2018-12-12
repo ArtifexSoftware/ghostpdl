@@ -21,6 +21,7 @@
 
 #include "gxfixed.h"
 #include "gxfrac.h"
+#include "gstypes.h"
 
 /*
  * Define a 3- or 4-D color lookup table.

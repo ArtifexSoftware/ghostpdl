@@ -27,6 +27,7 @@
 #ifndef sfntIncludes
 #define sfntIncludes
 
+#include "tttypes.h"
 #include "stdint_.h" /* make sure stdint types are available */
 
 typedef   uint8_t    uint8; /* 8-bit unsigned integer */

@@ -22,11 +22,7 @@
 
 #include "gsiparam.h"
 #include "gsimage.h"
-
-#ifndef gs_gstate_DEFINED
-#  define gs_gstate_DEFINED
-typedef struct gs_gstate_s gs_gstate;
-#endif
+#include "gsgstate.h"
 
 /* Begin an image with parameters derived from a graphics state. */
 int pl_begin_image(gs_gstate * pgs, const gs_image_t * pim, void **pinfo);

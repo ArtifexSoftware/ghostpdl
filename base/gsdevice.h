@@ -19,6 +19,9 @@
 #ifndef gsdevice_INCLUDED
 #  define gsdevice_INCLUDED
 
+#include "std.h"
+#include "gsgstate.h"
+
 #ifndef gx_device_DEFINED
 #  define gx_device_DEFINED
 typedef struct gx_device_s gx_device;
@@ -93,20 +96,8 @@ int gs_closedevice(gx_device *);
 
 /* Device procedures involving an gs_gstate. */
 
-#ifndef gs_gstate_DEFINED
-#  define gs_gstate_DEFINED
-typedef struct gs_gstate_s gs_gstate;
-#endif
-
 int gs_gstate_putdeviceparams(gs_gstate *pgs, gx_device *dev,
 gs_param_list *plist);
-
-/* Device procedures involving a graphics state. */
-
-#ifndef gs_gstate_DEFINED
-#  define gs_gstate_DEFINED
-typedef struct gs_gstate_s gs_gstate;
-#endif
 
 int gs_flushpage(gs_gstate *);
 int gs_copypage(gs_gstate *);

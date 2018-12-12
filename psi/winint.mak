@@ -63,11 +63,11 @@ ICONS=$(GLGEN)gswin.ico $(GLGEN)gswin16.ico
 GS_ALL=$(INT_ALL)\
   $(LIB_ALL) $(LIBCTR) $(ld_tr) $(GSDLL_OBJ).res $(PSSRC)$(GSDLL).def $(ICONS)
 
-dwdll_h=$(PSSRC)dwdll.h
-dwimg_h=$(PSSRC)dwimg.h
+dwdll_h=$(PSSRC)dwdll.h $(iapi_h) $(windows__h)
+dwimg_h=$(PSSRC)dwimg.h $(windows__h)
 dwtrace_h=$(PSSRC)dwtrace.h
 dwres_h=$(PSSRC)dwres.h
-dwtext_h=$(PSSRC)dwtext.h
+dwtext_h=$(PSSRC)dwtext.h $(windows__h)
 dwreg_h=$(PSSRC)dwreg.h
 
 # Make the icons from their text form.
@@ -218,4 +218,3 @@ gs$(GS_VERSION)src.zip:
 srczip: gs$(GS_VERSION)src.zip
 
 # end of winint.mak
-

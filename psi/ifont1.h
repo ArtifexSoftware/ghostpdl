@@ -19,6 +19,10 @@
 #ifndef ifont1_INCLUDED
 #  define ifont1_INCLUDED
 
+#include "gxfont1.h"
+#include "ichar1.h"
+#include "bfont.h"
+
 /*
  * Define the temporary structure for holding pointers to substructures of a
  * CharString-based font.  This is used for parsing Type 1, 2, and 4 fonts.

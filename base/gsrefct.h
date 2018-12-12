@@ -20,12 +20,7 @@
 #  define gsrefct_INCLUDED
 
 #include "memento.h"
-
-/* Remove this, hopefully */
-#ifndef gs_memory_DEFINED
-#  define gs_memory_DEFINED
-typedef struct gs_memory_s gs_memory_t;
-#endif
+#include "std.h"
 
 /*
  * A reference-counted object must include the following header:

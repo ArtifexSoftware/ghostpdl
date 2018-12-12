@@ -20,6 +20,8 @@
 #ifndef spwgx_INCLUDED
 #  define spwgx_INCLUDED
 
+#include "scommon.h"
+
 /* Common state */
 #define stream_PWG_state_common\
         stream_state_common;\

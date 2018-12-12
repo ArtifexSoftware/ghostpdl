@@ -36,7 +36,7 @@ LIBTIFF_MAK=$(GLSRC)tiff.mak $(TOP_MAKEFILES)
 TIFFCC=$(CC_) $(TIFF_CFLAGS) $(I_)$(TI_) $(II)$(JI_)$(_I) $(PF_)
 
 TIFFDEP = $(AK) $(TIFFGEN)tif_config.h $(TIFFGEN)tiffconf.h $(LIBTIFF_MAK) $(MAKEDIRS)
-gstiffio_h=$(GLSRC)gstiffio.h
+gstiffio_h=$(GLSRC)gstiffio.h $(gdevprn_h)
 
 tiff_1=$(TIFFOBJ)tif_aux.$(OBJ) $(TIFFOBJ)tif_close.$(OBJ) $(TIFFOBJ)tif_codec.$(OBJ) $(TIFFOBJ)tif_color.$(OBJ)
 tiff_2=$(TIFFOBJ)tif_compress.$(OBJ) $(TIFFOBJ)tif_dir.$(OBJ) $(TIFFOBJ)tif_dirinfo.$(OBJ) $(TIFFOBJ)tif_dirread.$(OBJ)
@@ -232,4 +232,3 @@ $(TIFFGEN)libtiff_0.dev : $(LIBTIFF_MAK) $(ECHOGS_XE) \
 	$(ADDMOD) $(TIFFGEN)libtiff_0 $(tiff_11)
 	$(ADDMOD) $(TIFFGEN)libtiff_0 -include $(JPEGGEN)jpegd.dev
 	$(ADDMOD) $(TIFFGEN)libtiff_0 -include $(JPEGGEN)jpege.dev
-

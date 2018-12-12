@@ -19,6 +19,8 @@
 #ifndef gsropt_INCLUDED
 #  define gsropt_INCLUDED
 
+#include "stdpre.h"
+
 /*
  * This file defines the types for some library extensions that are
  * motivated by PCL5 and also made available for PostScript:

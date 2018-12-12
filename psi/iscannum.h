@@ -19,6 +19,9 @@
 #ifndef iscannum_INCLUDED
 #  define iscannum_INCLUDED
 
+#include "stdpre.h"
+#include "imemory.h"
+
 /*
  * Scan a number.  If the number consumes the entire string, return 0;
  * if not, set *psp to the first character beyond the number and return 1.

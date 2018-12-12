@@ -19,6 +19,7 @@
 #  define gxhldevc_INCLUDED
 
 #include "gsdcolor.h"
+#include "gsgstate.h"
 
 /*
  * Most high level devices want more information about the color spaces
@@ -50,11 +51,6 @@
  * The functions below are desiged to assist the high level device in the
  * saving, comparing, and getting high level color information.
  */
-
-#ifndef gs_gstate_DEFINED
-#  define gs_gstate_DEFINED
-typedef struct gs_gstate_s gs_gstate;
-#endif
 
 #ifndef gx_device_color_DEFINED
 #  define gx_device_color_DEFINED

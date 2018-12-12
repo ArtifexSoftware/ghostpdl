@@ -51,6 +51,8 @@
   extern "C" {
 #endif
 
+#include "std.h"
+
   /*******************************************************************/
   /*                                                                 */
   /*  FreeType types definitions.                                    */

@@ -19,6 +19,8 @@
 #ifndef gxttf_INCLUDED
 #  define gxttf_INCLUDED
 
+#include "stdpre.h"
+
 /* ------ Composite glyf component flags ------ */
 
 #define TT_CG_ARGS_ARE_WORDS     (1<<0)

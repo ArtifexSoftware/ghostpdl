@@ -19,6 +19,10 @@
 #ifndef icharout_INCLUDED
 #  define icharout_INCLUDED
 
+#include "iref.h"
+#include "gxfapi.h"
+#include "gsgdata.h"
+
 /* Execute an outline defined by a PostScript procedure. */
 int zchar_exec_char_proc(i_ctx_t *);
 

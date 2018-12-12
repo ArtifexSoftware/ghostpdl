@@ -19,6 +19,12 @@
 #ifndef ifilter2_INCLUDED
 #  define ifilter2_INCLUDED
 
+#include "iostack.h"
+#include "scfx.h"
+#include "slzwx.h"
+#include "spdiffx.h"
+#include "spngpx.h"
+
 /* Import setup code from zfdecode.c */
 int zcf_setup(os_ptr op, stream_CF_state * pcfs, gs_ref_memory_t *imem);
 int zlz_setup(os_ptr op, stream_LZW_state * plzs);

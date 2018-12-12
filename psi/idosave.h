@@ -19,6 +19,8 @@
 #ifndef idosave_INCLUDED
 #  define idosave_INCLUDED
 
+#include "imemory.h"
+
 /*
  * Structure for saved change chain for save/restore.  Because of the
  * garbage collector, we need to distinguish the cases where the change

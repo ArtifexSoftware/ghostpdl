@@ -19,6 +19,8 @@
 #ifndef imainarg_INCLUDED
 #  define imainarg_INCLUDED
 
+#include "std.h"
+
 /* Define an opaque type for an interpreter instance.  See imain.h. */
 #ifndef gs_main_instance_DEFINED
 #  define gs_main_instance_DEFINED

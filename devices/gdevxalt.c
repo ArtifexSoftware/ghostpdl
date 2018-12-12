@@ -25,6 +25,7 @@
 #include "gxdevice.h"
 #include "gsdevice.h"		/* for gs_copydevice */
 #include "gdevx.h"
+#include "gsbitops.h"
 
 void
 gs_shared_init(void);

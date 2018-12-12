@@ -18,15 +18,12 @@
 #ifndef gdevdevn_INCLUDED
 # define gdevdevn_INCLUDED
 
+#include "gxblend.h"
+#include "gsequivc.h"
+
 /* See Comments in gdevtsep.c or gdevpsd.c as to the purpose of this */
 #define LIMIT_TO_ICC 1
 
-/*
- * Define the maximum number of spot colors supported by this device.
- * This value is arbitrary.  It is set simply to define a limit on
- * on the separation_name_array and separation_order map.
- */
-#define GX_DEVICE_MAX_SEPARATIONS GX_DEVICE_COLOR_MAX_COMPONENTS
 /*
  * Define the maximum number of process model colorants.  Currently we only
  * have code for DeviceGray, DeviceRGB, and DeviceCMYK.  Thus this value
@@ -119,8 +116,6 @@ typedef struct gs_devn_params_s gs_devn_params;
 #endif
 
 extern fixed_colorant_name DeviceCMYKComponents[];
-
-#include "gsequivc.h"
 
 /*
  * Utility routines for common DeviceN related parameters:

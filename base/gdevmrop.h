@@ -19,6 +19,9 @@
 #ifndef gdevmrop_INCLUDED
 #  define gdevmrop_INCLUDED
 
+#include "gsropt.h"
+#include "gxdevcli.h"
+
 /*
  * Compute the effective RasterOp for the 1-bit case,
  * taking transparency into account.

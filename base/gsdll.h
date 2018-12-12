@@ -24,6 +24,7 @@
 #  define gsdll_INCLUDED
 
 #include "iapi.h"
+#include "windows_.h"
 
 #ifdef __MACOS__
 #define HWND char *

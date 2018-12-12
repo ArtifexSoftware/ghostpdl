@@ -20,6 +20,9 @@
 #ifndef istream_INCLUDED
 #  define istream_INCLUDED
 
+#include "scommon.h"
+#include "imemory.h"
+
 /* Procedures exported by zfproc.c */
 
         /* for zfilter.c - procedure stream initialization */

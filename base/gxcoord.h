@@ -21,6 +21,7 @@
 #  define gxcoord_INCLUDED
 
 #include "gscoord.h"
+#include "gxmatrix.h"
 
 /* Set the translation to a fixed value, and translate any existing path. */
 /* Used by gschar.c to prepare for a BuildChar or BuildGlyph procedure. */

@@ -20,6 +20,9 @@
 #  define gxhintn_INCLUDED
 
 #include "stdint_.h"
+#include "gxfixed.h"
+#include "gspath.h"
+#include "gsmatrix.h"
 
 #ifndef gs_type1_data_DEFINED
 #define gs_type1_data_DEFINED

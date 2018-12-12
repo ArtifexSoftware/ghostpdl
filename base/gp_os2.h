@@ -19,6 +19,8 @@
 #ifndef gp_os2_INCLUDED
 #  define gp_os2_INCLUDED
 
+#include "std.h"
+
 /* If queue_name is NULL, list available queues */
 /* If strlen(queue_name)==0, return default queue and driver name */
 /* If queue_name supplied, return driver_name */

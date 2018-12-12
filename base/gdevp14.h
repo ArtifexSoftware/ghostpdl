@@ -24,6 +24,7 @@
 #include "gxdcolor.h"
 #include "gxpcolor.h"
 #include "gdevdevn.h"
+#include "gsgstate.h"
 
 typedef enum {
     PDF14_DeviceGray = 0,
@@ -184,11 +185,6 @@ struct pdf14_ctx_s {
 #ifndef gs_devn_params_DEFINED
 #  define gs_devn_params_DEFINED
 typedef struct gs_devn_params_s gs_devn_params;
-#endif
-
-#ifndef gs_gstate_DEFINED
-#  define gs_gstate_DEFINED
-typedef struct gs_gstate_s gs_gstate;
 #endif
 
 #ifndef gx_device_DEFINED

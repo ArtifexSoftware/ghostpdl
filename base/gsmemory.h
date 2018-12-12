@@ -39,6 +39,7 @@
 #ifndef gsmemory_INCLUDED
 #  define gsmemory_INCLUDED
 
+#include "std.h"
 #include "gstypes.h"		/* for gs_bytestring */
 #include "gslibctx.h"
 

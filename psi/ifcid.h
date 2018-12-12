@@ -19,6 +19,10 @@
 #ifndef ifcid_INCLUDED
 #  define ifcid_INCLUDED
 
+#include "gxfcid.h"
+#include "icid.h"
+#include "iostack.h"
+
 /* Get the CIDSystemInfo of a CIDFont. */
 int cid_font_system_info_param(gs_cid_system_info_t *pcidsi,
                                const ref *prfont);

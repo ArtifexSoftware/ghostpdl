@@ -20,6 +20,8 @@
 #ifndef gslib_INCLUDED
 #  define gslib_INCLUDED
 
+#include "std.h"
+
 /*
  * Initialize the library.  gs_lib_init does all of the initialization,
  * using the C heap for initial allocation; if a client wants the library to

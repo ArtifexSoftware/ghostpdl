@@ -20,6 +20,7 @@
 #  define icremap_INCLUDED
 
 #include "gsccolor.h"
+#include "iref.h"
 
 /*
  * Define the structure used to communicate information back to the

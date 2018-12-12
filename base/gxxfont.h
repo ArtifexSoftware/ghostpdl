@@ -20,7 +20,7 @@
 #  define gxxfont_INCLUDED
 
 #include "gsccode.h"
-#include "gsmatrix.h"
+#include "gxdevcli.h"
 #include "gsuid.h"
 #include "gsxfont.h"
 

@@ -19,6 +19,8 @@
 #ifndef gsuid_INCLUDED
 #  define gsuid_INCLUDED
 
+#include "std.h"
+
 /* A unique id (uid) may be either a UniqueID or an XUID. */
 /* (XUIDs are a Level 2 feature.) */
 #ifndef gs_uid_DEFINED

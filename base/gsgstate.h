@@ -13,20 +13,12 @@
    CA 94945, U.S.A., +1(415)492-9861, for further information.
 */
 
+#ifndef gsgstate_INCLUDED
+#  define gsgstate_INCLUDED
 
-/* Client interface to Display PostScript facilities. */
+#ifndef gs_gstate_DEFINED
+#  define gs_gstate_DEFINED
+typedef struct gs_gstate_s gs_gstate;
+#endif
 
-#ifndef gsdps_INCLUDED
-#  define gsdps_INCLUDED
-
-/* Device-source images */
-#include "gsiparm2.h"
-#include "gsgstate.h"
-
-/* View clipping */
-int gs_initviewclip(gs_gstate *);
-int gs_eoviewclip(gs_gstate *);
-int gs_viewclip(gs_gstate *);
-int gs_viewclippath(gs_gstate *);
-
-#endif /* gsdps_INCLUDED */
+#endif

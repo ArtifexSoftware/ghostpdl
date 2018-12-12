@@ -26,6 +26,7 @@
 #include "iosdata.h"
 #include "stream.h"
 #include "opdef.h"
+#include "gsgstate.h"
 
 /*
  * Define the externally visible state of an interpreter context.

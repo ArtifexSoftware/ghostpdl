@@ -19,6 +19,9 @@
 #ifndef gxfill_INCLUDED
 #  define gxfill_INCLUDED
 
+#include "gzpath.h"
+#include "gxdevcli.h"
+
 enum
 {
     DIR_UP = 1,

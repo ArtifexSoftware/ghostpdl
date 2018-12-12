@@ -19,6 +19,8 @@
 #ifndef iscanbin_INCLUDED
 #  define iscanbin_INCLUDED
 
+#include "iscan.h"
+
 /*
  * Scan a binary token.  The main scanner calls this iff recognize_btokens()
  * is true.  Return gs_error_unregistered if Level 2 features are not included.

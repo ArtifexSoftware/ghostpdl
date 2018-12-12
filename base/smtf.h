@@ -20,6 +20,8 @@
 #ifndef smtf_INCLUDED
 #  define smtf_INCLUDED
 
+#include "scommon.h"
+
 /* MoveToFrontEncode/Decode */
 typedef struct stream_MTF_state_s {
     stream_state_common;

@@ -20,6 +20,7 @@
 #ifndef gxdevmem_INCLUDED
 #  define gxdevmem_INCLUDED
 
+#include "gxdevcli.h"
 #include "gxrplane.h"
 
 /*

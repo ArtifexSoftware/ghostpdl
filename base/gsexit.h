@@ -19,6 +19,8 @@
 #ifndef gsexit_INCLUDED
 #  define gsexit_INCLUDED
 
+#include "std.h"
+
 /** The client must provide this.
  *  normally they do exit cleanup and error messaging
  *  without calling system exit() returning to the caller.

@@ -19,6 +19,8 @@
 #ifndef gsmchunk_INCLUDED
 #  define gsmchunk_INCLUDED
 
+#include "std.h"
+
 #define CHUNK_SIZE		65536
 
 /* ---------- Public constructors/destructors ---------- */

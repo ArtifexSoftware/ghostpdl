@@ -19,6 +19,8 @@
 #ifndef gsbittab_INCLUDED
 #  define gsbittab_INCLUDED
 
+#include "gstypes.h"
+
 /*
  * Generate tables for transforming 2, 4, 6, or 8 bits.
  */

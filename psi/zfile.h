@@ -19,6 +19,9 @@
 #ifndef zfile_INCLUDED
 #  define zfile_INCLUDED
 
+#include "iref.h"
+#include "gsfname.h"
+
 int zopen_file(i_ctx_t *i_ctx_p, const gs_parsed_file_name_t *pfn,
            const char *file_access, stream **ps, gs_memory_t *mem);
 

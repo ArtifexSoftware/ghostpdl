@@ -20,7 +20,6 @@
 #  define gxcindex_INCLUDED
 
 #include "stdint_.h"		/* for uint64_t and uint32_t */
-#include "gsbitops.h"		/* for sample_store inline functions */
 
 /*
  * Define the maximum number of components in a device color.

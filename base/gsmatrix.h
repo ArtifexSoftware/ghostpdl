@@ -19,6 +19,8 @@
 #ifndef gsmatrix_INCLUDED
 #  define gsmatrix_INCLUDED
 
+#include "gstypes.h"
+
 /* See p. 65 of the PostScript manual for the semantics of */
 /* transformation matrices. */
 

@@ -21,6 +21,7 @@
 #  define gxmclip_INCLUDED
 
 #include "gxclip.h"
+#include "gxdevmem.h"
 
 /*
  * ImageType 3 images and Patterns that don't completely fill their

@@ -33,6 +33,8 @@
  *                               T will be read from a pointer.
  */
 
+#if defined(TEMPLATE_NAME)
+
 #ifdef SPECIFIC_ROP
 #if rop3_uses_S(SPECIFIC_ROP)
 #define S_USED
@@ -364,3 +366,7 @@ static void TEMPLATE_NAME(rop_run_op *op, byte *d_, int len)
 #undef T_SKEW
 #undef TEMPLATE_NAME
 #undef ROP_PTRDIFF_T
+
+#else
+int dummy;
+#endif

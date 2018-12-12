@@ -19,6 +19,7 @@
 #ifndef gsrect_INCLUDED
 #  define gsrect_INCLUDED
 
+#include "gstypes.h"
 #include "gxfixed.h"
 
 /* Check whether one rectangle is included entirely within another. */

@@ -20,6 +20,8 @@
 #ifndef gdevpccm_INCLUDED
 #  define gdevpccm_INCLUDED
 
+#include "gxdevcli.h"
+
 /* Color mapping routines for EGA/VGA-style color. */
 dev_proc_map_rgb_color(pc_4bit_map_rgb_color);
 dev_proc_map_color_rgb(pc_4bit_map_color_rgb);

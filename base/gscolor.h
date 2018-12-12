@@ -19,7 +19,9 @@
 #ifndef gscolor_INCLUDED
 #  define gscolor_INCLUDED
 
+#include "stdpre.h"
 #include "gxtmap.h"
+#include "gsgstate.h"
 
 /* Color and gray interface */
 int gs_setgray(gs_gstate *, double);

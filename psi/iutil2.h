@@ -19,6 +19,10 @@
 #ifndef iutil2_INCLUDED
 #  define iutil2_INCLUDED
 
+#include "stdpre.h"
+#include "gsfunc.h"
+#include "iref.h"
+
 /* ------ Password utilities ------ */
 
 /* Define the password structure. */

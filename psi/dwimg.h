@@ -17,6 +17,8 @@
 #ifndef dwimg_INCLUDED
 #  define dwimg_INCLUDED
 
+#include "windows_.h"
+
 /* Windows Image Window structure */
 
 typedef struct IMAGE_DEVICEN_S IMAGE_DEVICEN;

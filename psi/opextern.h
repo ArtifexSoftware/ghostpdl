@@ -19,6 +19,8 @@
 #ifndef opextern_INCLUDED
 #  define opextern_INCLUDED
 
+#include "iref.h"
+
 /*
  * Normally, the procedures that implement PostScript operators (named zX
  * where X is the name of the operator, e.g., zadd) are private to the

@@ -16,6 +16,15 @@
 
 /* Client interface to FormType 1 Forms */
 
+#ifndef gsform1_h_INCLUDED
+#  define gsform1_h_INCLUDED
+
+#include "gstypes.h"
+#include "gsmatrix.h"
+#include "gxpath.h"
+#include "gsgstate.h"
+
+
 typedef struct gs_form_template_s {
     gs_rect BBox;
     gs_matrix form_matrix;
@@ -25,3 +34,4 @@ typedef struct gs_form_template_s {
     gs_gstate *pgs;
 } gs_form_template_t;
 
+#endif

@@ -19,6 +19,8 @@
 #ifndef gxiclass_INCLUDED
 #  define gxiclass_INCLUDED
 
+#include "stdpre.h"
+
 /* Define the abstract type for the image enumerator state. */
 typedef struct gx_image_enum_s gx_image_enum;
 

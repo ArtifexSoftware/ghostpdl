@@ -21,6 +21,7 @@
 #  define gsbitops_INCLUDED
 
 #include "gxcindex.h"
+#include "gstypes.h"
 
 /* ---------------- Pixel processing macros ---------------- */
 

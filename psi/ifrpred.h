@@ -19,6 +19,9 @@
 #ifndef ifrpred_INCLUDED
 #  define ifrpred_INCLUDED
 
+#include "scommon.h"
+#include "iref.h"
+
 /* Exported by zfdecode.c for zfzlib.c */
 int filter_read_predictor(i_ctx_t *i_ctx_p, int npop,
                           const stream_template * templat,

@@ -37,6 +37,7 @@
 #include "gscspace.h"
 #include "gxdcolor.h"
 #include "gxstate.h"
+#include "gsgstate.h"
 
 
 /*
@@ -274,11 +275,6 @@ typedef struct gs_device_filter_stack_s gs_device_filter_stack_t;
 #define gs_currentlineparams_inline(pgs) (&(pgs)->line_params)
 #define gs_current_logical_op_inline(pgs) ((pgs)->log_op)
 #define gs_set_logical_op_inline(pgs, lop) ((pgs)->log_op = (lop))
-
-#ifndef gs_gstate_DEFINED
-#  define gs_gstate_DEFINED
-typedef struct gs_gstate_s gs_gstate;
-#endif
 
 struct gs_gstate_s {
     gs_memory_t *memory;

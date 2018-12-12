@@ -21,6 +21,7 @@
 #  define gdevplnx_INCLUDED
 
 #include "gxrplane.h"
+#include "gxdevcli.h"
 
 /*
  * A plane-extraction device appears to its client to be a color-capable

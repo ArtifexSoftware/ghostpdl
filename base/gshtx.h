@@ -23,6 +23,7 @@
 #include "gsht1.h"
 #include "gxtmap.h"
 #include "gscspace.h"
+#include "gsgstate.h"
 
 /*
  * The stand-alone halftone structures are opaque, and are placed in an opaque
@@ -42,12 +43,6 @@
 #define ht_spot spot
 #define ht_threshold threshold
 #define ht_multiple multiple
-
-#ifndef gs_gstate_DEFINED
-#  define gs_gstate_DEFINED
-typedef struct gs_gstate_s gs_gstate;
-
-#endif
 
 /*
  * A "closure" form of gs_mapping_proc. This allows the procedure to access

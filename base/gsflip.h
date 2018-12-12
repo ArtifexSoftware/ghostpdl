@@ -19,6 +19,8 @@
 #ifndef gsflip_INCLUDED
 #  define gsflip_INCLUDED
 
+#include "stdpre.h"
+
 /*
  * Convert planar (MultipleDataSource) input to chunky format.  The input
  * data starts at planes[0] + offset ... planes[num_planes-1] + offset; the

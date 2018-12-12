@@ -20,6 +20,8 @@
 #ifndef gxhttile_INCLUDED
 #  define gxhttile_INCLUDED
 
+#include "gxbitmap.h"
+
 /*
  * A halftone tile is just an ordinary bitmap tile, plus a couple of other
  * items associated with managing its existence in a tile cache.

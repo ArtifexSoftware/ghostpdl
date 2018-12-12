@@ -20,6 +20,10 @@
 #ifndef gsht_thresh_INCLUDED
 #  define gsht_thresh_INCLUDED
 
+#include "gxdda.h"
+#include "gsiparam.h"
+#include "gxiclass.h"
+
 #define RAW_HT_DUMP 0
 #define USE_FAST_HT_CODE 1
 /* #define PACIFY_VALGRIND */

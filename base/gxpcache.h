@@ -19,6 +19,8 @@
 #ifndef gxpcache_INCLUDED
 #  define gxpcache_INCLUDED
 
+#include "std.h"
+
 /*
  * Define a cache for rendered Patterns.  This is currently an open
  * hash table with single probing (no reprobing) and round-robin

@@ -20,6 +20,7 @@
 #  define ifunc_INCLUDED
 
 #include "gsfunc.h"
+#include "iref.h"
 
 /* Define build procedures for the various function types. */
 #define build_function_proc(proc)\

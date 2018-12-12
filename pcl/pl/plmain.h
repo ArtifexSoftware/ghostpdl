@@ -23,6 +23,7 @@
 #include "stdpre.h"
 #include "gsmemory.h"
 #include "pltop.h"
+#include "gsgstate.h"
 
 typedef struct pl_main_instance_s pl_main_instance_t;
 
@@ -34,10 +35,6 @@ void pl_main_init_standard_io(void);
 void pl_main_init(pl_main_instance_t * pmi, gs_memory_t * memory);
 
 /* Allocate and initialize the first graphics state. */
-#ifndef gs_gstate_DEFINED
-#  define gs_gstate_DEFINED
-typedef struct gs_gstate_s gs_gstate;
-#endif
 int pl_main_make_gstate(pl_main_instance_t * pmi, gs_gstate ** ppgs);
 
 /* Print memory and time usage. */

@@ -20,6 +20,7 @@
 #  define gsiparm2_INCLUDED
 
 #include "gsiparam.h"
+#include "gsgstate.h"
 
 /* Opaque type for a path */
 #ifndef gx_path_DEFINED

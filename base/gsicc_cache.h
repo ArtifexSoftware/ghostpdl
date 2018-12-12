@@ -18,10 +18,9 @@
 #ifndef gsicccache_INCLUDED
 #  define gsicccache_INCLUDED
 
-#ifndef gs_gstate_DEFINED
-#  define gs_gstate_DEFINED
-typedef struct gs_gstate_s gs_gstate;
-#endif
+#include "gsgstate.h"
+#include "gscms.h"
+#include "gxcvalue.h"
 
 #ifndef gx_device_DEFINED
 #  define gx_device_DEFINED

@@ -22,6 +22,7 @@
 #include "gsccolor.h"
 #include "gscsel.h"
 #include "gxcspace.h"
+#include "gsgstate.h"
 
 /*
  * Enable custom client callback color processing.  Note:  There is a sample
@@ -58,16 +59,6 @@ typedef struct gs_color_space_s gs_color_space;
 #ifndef gx_device_color_DEFINED
 #  define gx_device_color_DEFINED
 typedef struct gx_device_color_s gx_device_color;
-#endif
-
-#ifndef gs_gstate_DEFINED
-#  define gs_gstate_DEFINED
-typedef struct gs_gstate_s gs_gstate;
-#endif
-
-#ifndef gs_gstate_DEFINED
-#  define gs_gstate_DEFINED
-typedef struct gs_gstate_s gs_gstate;
 #endif
 
 #ifndef gx_device_DEFINED

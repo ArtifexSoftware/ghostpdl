@@ -20,6 +20,7 @@
 #  define gxdither_INCLUDED
 
 #include "gxfrac.h"
+#include "gsdcolor.h"
 
 #ifndef gx_device_halftone_DEFINED
 #  define gx_device_halftone_DEFINED

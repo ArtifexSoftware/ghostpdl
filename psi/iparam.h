@@ -21,6 +21,8 @@
 #  define iparam_INCLUDED
 
 #include "gsparam.h"
+#include "imemory.h"
+#include "isdata.h"
 
 /*
  * This file defines the interface to iparam.c, which provides

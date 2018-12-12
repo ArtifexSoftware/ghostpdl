@@ -19,6 +19,7 @@
 #ifndef gxfarith_INCLUDED
 #  define gxfarith_INCLUDED
 
+#include "stdpre.h"
 #include "gxarith.h"
 
 /*

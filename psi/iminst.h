@@ -20,6 +20,8 @@
 #ifndef iminst_INCLUDED
 #  define iminst_INCLUDED
 
+#include "iref.h"
+
 #ifndef gs_main_instance_DEFINED
 #  define gs_main_instance_DEFINED
 typedef struct gs_main_instance_s gs_main_instance;

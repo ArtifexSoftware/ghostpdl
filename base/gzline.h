@@ -20,6 +20,7 @@
 #  define gzline_INCLUDED
 
 #include "gxline.h"
+#include "gsgstate.h"
 
 /*
  * The GC procedures are complex because we must not attempt to follow

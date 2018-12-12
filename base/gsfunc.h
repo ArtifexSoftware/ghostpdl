@@ -19,6 +19,7 @@
 #ifndef gsfunc_INCLUDED
 #  define gsfunc_INCLUDED
 
+#include "std.h"
 #include "memento.h" /* Because we use 'free' below */
 #include "gstypes.h"		/* for gs_range_t */
 

@@ -19,6 +19,8 @@
 #ifndef gsalloc_INCLUDED
 #  define gsalloc_INCLUDED
 
+#include "std.h"
+
 /* The following should not be needed at this level! */
 
 #ifndef gs_ref_memory_DEFINED

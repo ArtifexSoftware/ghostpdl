@@ -19,7 +19,6 @@
 #  define gscms_INCLUDED
 
 #include "std.h"
-#include "stdpre.h"
 #include "gstypes.h"
 #include "gscspace.h"      /* for gs_color_space */
 #include "gsdevice.h"     /* Need to carry pointer to clist reader */

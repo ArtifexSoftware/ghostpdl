@@ -24,9 +24,9 @@ PCWIN_MAK=$(GLSRC)pcwin.mak $(TOP_MAKEFILES)
 
 ### -------------------- The MS-Windows 3.n DLL ------------------------- ###
 
-gp_mswin_h=$(GLSRC)gp_mswin.h
-gsdll_h=$(GLSRC)gsdll.h
-gsdllwin_h=$(GLSRC)gsdllwin.h
+gp_mswin_h=$(GLSRC)gp_mswin.h $(windows__h)
+gsdll_h=$(GLSRC)gsdll.h $(iapi_h) $(windows__h)
+gsdllwin_h=$(GLSRC)gsdllwin.h $(windows__h) $(gs_dll_call_h)
 
 ### -------------------- The MS-Windows DIB 3.n printer ----------------- ###
 

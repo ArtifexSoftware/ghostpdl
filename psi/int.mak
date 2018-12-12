@@ -50,43 +50,42 @@ INT_MAK=$(PSSRC)int.mak $(TOP_MAKEFILES)
 # depend on anything outside itself.
 
 ierrors_h=$(PSSRC)ierrors.h $(gserrors_h)
-iconf_h=$(PSSRC)iconf.h
-idebug_h=$(PSSRC)idebug.h
+iconf_h=$(PSSRC)iconf.h $(gxiodev_h) $(stdpre_h)
+idebug_h=$(PSSRC)idebug.h $(iref_h) $(std_h)
 # Having iddstack.h at this level is unfortunate, but unavoidable.
-iddstack_h=$(PSSRC)iddstack.h
+iddstack_h=$(PSSRC)iddstack.h $(iref_h) $(stdpre_h)
 idict_h=$(PSSRC)idict.h $(iddstack_h)
 idictdef_h=$(PSSRC)idictdef.h
 idicttpl_h=$(PSSRC)idicttpl.h
-idosave_h=$(PSSRC)idosave.h
-igcstr_h=$(PSSRC)igcstr.h
-inames_h=$(PSSRC)inames.h
+idosave_h=$(PSSRC)idosave.h $(imemory_h)
+igcstr_h=$(PSSRC)igcstr.h $(gxalloc_h)
+inames_h=$(PSSRC)inames.h $(iref_h) $(std_h)
 iname_h=$(PSSRC)iname.h $(inames_h)
 inameidx_h=$(PSSRC)inameidx.h
-inamestr_h=$(PSSRC)inamestr.h $(inameidx_h)
+inamestr_h=$(PSSRC)inamestr.h $(inameidx_h) $(stdpre_h)
 ipacked_h=$(PSSRC)ipacked.h
 iref_h=$(PSSRC)iref.h $(stdint__h)
-isave_h=$(PSSRC)isave.h $(idosave_h)
-isstate_h=$(PSSRC)isstate.h
-istruct_h=$(PSSRC)istruct.h $(gsstruct_h)
-iutil_h=$(PSSRC)iutil.h
-ivmspace_h=$(PSSRC)ivmspace.h $(gsgc_h)
-opdef_h=$(PSSRC)opdef.h
+isave_h=$(PSSRC)isave.h $(idosave_h) $(gsgstate_h)
+isstate_h=$(PSSRC)isstate.h $(gxalloc_h) $(gsgc_h)
+istruct_h=$(PSSRC)istruct.h $(gsstruct_h) $(iref_h)
+iutil_h=$(PSSRC)iutil.h $(imemory_h)
+ivmspace_h=$(PSSRC)ivmspace.h $(gsgc_h) $(iref_h)
+opdef_h=$(PSSRC)opdef.h $(iref_h)
 # Nested include files
 ghost_h=$(PSSRC)ghost.h $(gx_h) $(iref_h)
-igc_h=$(PSSRC)igc.h $(istruct_h)
-imemory_h=$(PSSRC)imemory.h $(gsalloc_h) $(ivmspace_h)
+igc_h=$(PSSRC)igc.h $(istruct_h) $(gxalloc_h) $(imemory_h) $(gsgc_h)
+imemory_h=$(PSSRC)imemory.h $(ivmspace_h) $(gsmemory_h) $(gsalloc_h)
 ialloc_h=$(PSSRC)ialloc.h $(imemory_h)
-iastruct_h=$(PSSRC)iastruct.h $(gxobj_h) $(ialloc_h)
-iastate_h=$(PSSRC)iastate.h $(gxalloc_h) $(ialloc_h) $(istruct_h)
-inamedef_h=$(PSSRC)inamedef.h\
- $(gsstruct_h) $(inameidx_h) $(inames_h) $(inamestr_h)
+iastruct_h=$(PSSRC)iastruct.h $(ialloc_h) $(gxobj_h)
+iastate_h=$(PSSRC)iastate.h $(ialloc_h) $(istruct_h) $(gxalloc_h)
+inamedef_h=$(PSSRC)inamedef.h $(inames_h) $(inamestr_h) $(inameidx_h) $(gsstruct_h)
 store_h=$(PSSRC)store.h $(ialloc_h) $(idosave_h)
 iplugin_h=$(PSSRC)iplugin.h
-ifapi_h=$(PSSRC)ifapi.h $(iplugin_h) $(gstypes_h) $(gsmatrix_h) $(gp_h) $(memory__h)
+ifapi_h=$(PSSRC)ifapi.h $(iplugin_h) $(gxfapi_h) $(gsmatrix_h) $(memory__h) $(gp_h) $(gstypes_h)
 zht2_h=$(PSSRC)zht2.h $(gscspace_h)
-gen_ordered_h=$(GLSRC)gen_ordered.h
-zchar42_h=$(PSSRC)zchar42.h
-zfunc_h=$(PSSRC)zfunc.h
+gen_ordered_h=$(GLSRC)gen_ordered.h $(stdpre_h)
+zchar42_h=$(PSSRC)zchar42.h $(gxfapi_h) $(iref_h)
+zfunc_h=$(PSSRC)zfunc.h $(gsfunc_h) $(iref_h)
 
 GH=$(AK) $(ghost_h)
 
@@ -145,30 +144,30 @@ $(PSOBJ)isave.$(OBJ) : $(PSSRC)isave.c $(GH) $(memory__h)\
 
 ### Include files
 
-idparam_h=$(PSSRC)idparam.h
-ilevel_h=$(PSSRC)ilevel.h
-interp_h=$(PSSRC)interp.h
-iparam_h=$(PSSRC)iparam.h $(gsparam_h)
-isdata_h=$(PSSRC)isdata.h
+idparam_h=$(PSSRC)idparam.h $(iref_h) $(stdpre_h)
+ilevel_h=$(PSSRC)ilevel.h $(imemory_h)
+interp_h=$(PSSRC)interp.h $(imemory_h)
+iparam_h=$(PSSRC)iparam.h $(imemory_h) $(gsparam_h) $(isdata_h)
+isdata_h=$(PSSRC)isdata.h $(iref_h)
 istack_h=$(PSSRC)istack.h $(isdata_h)
-istkparm_h=$(PSSRC)istkparm.h
-iutil2_h=$(PSSRC)iutil2.h
-oparc_h=$(PSSRC)oparc.h
-opcheck_h=$(PSSRC)opcheck.h
-opextern_h=$(PSSRC)opextern.h
+istkparm_h=$(PSSRC)istkparm.h $(gsstruct_h) $(iref_h) $(stdpre_h)
+iutil2_h=$(PSSRC)iutil2.h $(gsfunc_h) $(iref_h) $(stdpre_h)
+oparc_h=$(PSSRC)oparc.h $(iref_h)
+opcheck_h=$(PSSRC)opcheck.h $(iref_h)
+opextern_h=$(PSSRC)opextern.h $(iref_h)
 # Nested include files
 idsdata_h=$(PSSRC)idsdata.h $(isdata_h)
-idstack_h=$(PSSRC)idstack.h $(iddstack_h) $(idsdata_h) $(istack_h)
+idstack_h=$(PSSRC)idstack.h $(idsdata_h) $(iddstack_h) $(istack_h)
 iesdata_h=$(PSSRC)iesdata.h $(isdata_h)
-iestack_h=$(PSSRC)iestack.h $(istack_h) $(iesdata_h)
+iestack_h=$(PSSRC)iestack.h $(iesdata_h) $(istack_h)
 iosdata_h=$(PSSRC)iosdata.h $(isdata_h)
-iostack_h=$(PSSRC)iostack.h $(istack_h) $(iosdata_h)
-icstate_h=$(PSSRC)icstate.h $(imemory_h) $(iref_h) $(idsdata_h) $(iesdata_h) $(iosdata_h)
+iostack_h=$(PSSRC)iostack.h $(iosdata_h) $(istack_h)
+icstate_h=$(PSSRC)icstate.h $(idsdata_h) $(stream_h) $(iesdata_h) $(opdef_h) $(iosdata_h) $(imemory_h) $(iref_h) $(gsgstate_h)
 iddict_h=$(PSSRC)iddict.h $(icstate_h) $(idict_h)
-dstack_h=$(PSSRC)dstack.h $(icstate_h) $(idstack_h)
+dstack_h=$(PSSRC)dstack.h $(idstack_h) $(icstate_h)
 estack_h=$(PSSRC)estack.h $(icstate_h) $(iestack_h)
 ostack_h=$(PSSRC)ostack.h $(icstate_h) $(iostack_h)
-oper_h=$(PSSRC)oper.h $(ierrors_h) $(iutil_h) $(opcheck_h) $(opdef_h) $(opextern_h) $(ostack_h)
+oper_h=$(PSSRC)oper.h $(ostack_h) $(opdef_h) $(ierrors_h) $(iutil_h) $(opcheck_h) $(opextern_h)
 
 $(PSOBJ)idebug.$(OBJ) : $(PSSRC)idebug.c $(GH) $(string__h)\
  $(gxalloc_h)\
@@ -225,53 +224,54 @@ $(PSOBJ)iplugin.$(OBJ) : $(PSSRC)iplugin.c $(GH) $(malloc__h) $(string__h)\
 
 # Binary tokens are a Level 2 feature, but we need to refer to them
 # in the scanner.
-btoken_h=$(PSSRC)btoken.h
-files_h=$(PSSRC)files.h
+btoken_h=$(PSSRC)btoken.h $(iref_h)
+files_h=$(PSSRC)files.h $(store_h) $(stream_h)
 fname_h=$(PSSRC)fname.h
+psapi_h=$(PSSRC)psapi.h $(gsdevice_h) $(gsmemory_h)
 iapi_h=$(PSSRC)iapi.h
-ichar_h=$(PSSRC)ichar.h
-ichar1_h=$(PSSRC)ichar1.h
-icharout_h=$(PSSRC)icharout.h
-icolor_h=$(PSSRC)icolor.h
-icremap_h=$(PSSRC)icremap.h $(gsccolor_h)
-icsmap_h=$(PSSRC)icsmap.h
-idisp_h=$(PSSRC)idisp.h
-ifilter2_h=$(PSSRC)ifilter2.h
-ifont_h=$(PSSRC)ifont.h $(gsccode_h) $(gsstype_h)
-ifont1_h=$(PSSRC)ifont1.h
-ifont2_h=$(PSSRC)ifont2.h
-ifont42_h=$(PSSRC)ifont42.h
-ifrpred_h=$(PSSRC)ifrpred.h
-ifwpred_h=$(PSSRC)ifwpred.h
-iht_h=$(PSSRC)iht.h
-iimage_h=$(PSSRC)iimage.h
-iinit_h=$(PSSRC)iinit.h
-imain_h=$(PSSRC)imain.h $(gsexit_h)
-imainarg_h=$(PSSRC)imainarg.h
-iminst_h=$(PSSRC)iminst.h
-iparray_h=$(PSSRC)iparray.h
-iscanbin_h=$(PSSRC)iscanbin.h
-iscannum_h=$(PSSRC)iscannum.h
-istream_h=$(PSSRC)istream.h
-itoken_h=$(PSSRC)itoken.h
-main_h=$(PSSRC)main.h $(iapi_h) $(imain_h) $(iminst_h)
+ichar_h=$(PSSRC)ichar.h $(iostack_h) $(gxfapi_h)
+ichar1_h=$(PSSRC)ichar1.h $(gxfont_h) $(gsgdata_h) $(gxfapi_h) $(iref_h)
+icharout_h=$(PSSRC)icharout.h $(gsgdata_h) $(gxfapi_h) $(iref_h)
+icolor_h=$(PSSRC)icolor.h $(gxtmap_h) $(iref_h) $(gsgstate_h)
+icremap_h=$(PSSRC)icremap.h $(iref_h) $(gsccolor_h)
+icsmap_h=$(PSSRC)icsmap.h $(gscspace_h) $(iref_h)
+idisp_h=$(PSSRC)idisp.h $(imain_h)
+ifilter2_h=$(PSSRC)ifilter2.h $(scfx_h) $(slzwx_h) $(spdiffx_h) $(spngpx_h) $(iostack_h)
+ifont_h=$(PSSRC)ifont.h $(gxfont_h) $(iref_h)
+ifont1_h=$(PSSRC)ifont1.h $(gxfont1_h) $(ichar1_h) $(bfont_h)
+ifont2_h=$(PSSRC)ifont2.h $(ifont1_h)
+ifont42_h=$(PSSRC)ifont42.h $(gxfont42_h) $(bfont_h) $(iostack_h) $(gxftype_h) $(gsmemory_h)
+ifrpred_h=$(PSSRC)ifrpred.h $(scommon_h) $(iref_h)
+ifwpred_h=$(PSSRC)ifwpred.h $(scommon_h) $(iref_h)
+iht_h=$(PSSRC)iht.h $(gxht_h) $(iostack_h) $(gsgstate_h)
+iimage_h=$(PSSRC)iimage.h $(gsiparam_h) $(iref_h)
+iinit_h=$(PSSRC)iinit.h $(imemory_h)
+imain_h=$(PSSRC)imain.h $(gsexit_h) $(iref_h) $(gstypes_h)
+imainarg_h=$(PSSRC)imainarg.h $(std_h)
+iminst_h=$(PSSRC)iminst.h $(iref_h)
+iparray_h=$(PSSRC)iparray.h $(imemory_h) $(isdata_h)
+iscanbin_h=$(PSSRC)iscanbin.h $(iscan_h)
+iscannum_h=$(PSSRC)iscannum.h $(imemory_h) $(stdpre_h)
+istream_h=$(PSSRC)istream.h $(imemory_h) $(scommon_h)
+itoken_h=$(PSSRC)itoken.h $(iref_h)
+main_h=$(PSSRC)main.h $(imain_h) $(iminst_h) $(iapi_h)
 sbwbs_h=$(PSSRC)sbwbs.h
 shcgen_h=$(PSSRC)shcgen.h
-smtf_h=$(PSSRC)smtf.h
+smtf_h=$(GLSRC)smtf.h $(scommon_h)
 # Nested include files
-bfont_h=$(PSSRC)bfont.h $(ifont_h)
-icontext_h=$(PSSRC)icontext.h $(gsstype_h) $(icstate_h)
+bfont_h=$(PSSRC)bfont.h $(ifont_h) $(iostack_h) $(imemory_h)
+icontext_h=$(PSSRC)icontext.h $(icstate_h) $(gsstype_h)
 ifilter_h=$(PSSRC)ifilter.h $(istream_h) $(ivmspace_h)
-igstate_h=$(PSSRC)igstate.h $(gsstate_h) $(gxstate_h) $(imemory_h) $(istruct_h) $(gxcindex_h)
-iscan_h=$(PSSRC)iscan.h $(sa85x_h) $(sstring_h) $(inamestr_h)
+igstate_h=$(PSSRC)igstate.h $(gxstate_h) $(gsstate_h) $(istruct_h) $(imemory_h) $(gxcindex_h)
+iscan_h=$(PSSRC)iscan.h $(sstring_h) $(sa85x_h) $(inamestr_h) $(iref_h)
 sbhc_h=$(PSSRC)sbhc.h $(shc_h)
-zfile_h=$(PSSRC)zfile.h
+zfile_h=$(PSSRC)zfile.h $(gsfname_h) $(iref_h)
 # Include files for optional features
-ibnum_h=$(PSSRC)ibnum.h
-zcolor_h=$(PSSRC)zcolor.h
-zcie_h=$(PSSRC)zcie.h
-zicc_h=$(PSSRC)zicc.h
-zfrsd_h=$(PSSRC)zfrsd.h
+ibnum_h=$(PSSRC)ibnum.h $(iref_h) $(stdpre_h)
+zcolor_h=$(PSSRC)zcolor.h $(iref_h)
+zcie_h=$(PSSRC)zcie.h $(iref_h)
+zicc_h=$(PSSRC)zicc.h $(iref_h)
+zfrsd_h=$(PSSRC)zfrsd.h $(iostack_h)
 
 ### Initialization and scanning
 
@@ -672,7 +672,7 @@ $(PSOBJ)zht1.$(OBJ) : $(PSSRC)zht1.c $(OP) $(memory__h)\
 # (to compensate for badly-written PostScript producers that don't emit
 # the necessary setpagedevice calls) and by the PDF writer.
 
-dscparse_h=$(PSSRC)dscparse.h
+dscparse_h=$(PSSRC)dscparse.h $(stdpre_h)
 
 $(PSOBJ)zdscpars.$(OBJ) : $(PSSRC)zdscpars.c $(GH) $(memory__h) $(string__h)\
  $(dscparse_h) $(estack_h) $(ialloc_h) $(idict_h) $(iddict_h) $(iname_h)\
@@ -905,7 +905,7 @@ $(PSGEN)ht_ccsto.c : $(PSLIB)ht_ccsto.ps $(GENHT_XE) $(INT_MAK) $(MAKEDIRS)
 
 # ---------------- Functions ---------------- #
 
-ifunc_h=$(PSSRC)ifunc.h $(gsfunc_h)
+ifunc_h=$(PSSRC)ifunc.h $(gsfunc_h) $(iref_h)
 
 # Generic support, and FunctionType 0.
 funcread_=$(PSOBJ)zfunc.$(OBJ) $(PSOBJ)zfunc0.$(OBJ)
@@ -998,7 +998,7 @@ $(PSD)psl2int.dev : $(ECHOGS_XE) $(psl2int_)\
 	$(ADDMOD) $(PSD)psl2int -oper zmisc2
 	$(ADDMOD) $(PSD)psl2int -ps gs_lev2 gs_res
 
-ivmem2_h=$(PSSRC)ivmem2.h
+ivmem2_h=$(PSSRC)ivmem2.h $(iref_h)
 
 $(PSOBJ)iutil2.$(OBJ) : $(PSSRC)iutil2.c $(GH) $(memory__h) $(string__h)\
  $(gsparam_h) $(gsutil_h)\
@@ -1041,7 +1041,7 @@ $(PSOBJ)zusparam.$(OBJ) : $(PSSRC)zusparam.c $(OP) $(memory__h) $(string__h)\
 
 # Define full Level 2 support.
 
-iimage2_h=$(PSSRC)iimage2.h
+iimage2_h=$(PSSRC)iimage2.h $(gsiparam_h) $(iref_h)
 
 psl2read_=$(PSOBJ)zcolor2.$(OBJ) $(PSOBJ)zcsindex.$(OBJ) $(PSOBJ)zht2.$(OBJ) $(PSOBJ)zimage2.$(OBJ)
 # Note that zmisc2 includes both Level 1 and Level 2 operators.
@@ -1429,8 +1429,8 @@ $(PSOBJ)zfont0.$(OBJ) : $(PSSRC)zfont0.c $(OP)\
 # Note that this requires at least minimal Level 2 support,
 # because it requires findresource.
 
-icid_h=$(PSSRC)icid.h
-ifcid_h=$(PSSRC)ifcid.h
+icid_h=$(PSSRC)icid.h $(iref_h) $(std_h)
+ifcid_h=$(PSSRC)ifcid.h $(gxfcid_h) $(icid_h) $(iostack_h)
 
 cmapread_=$(PSOBJ)zcid.$(OBJ) $(PSOBJ)zfcmap.$(OBJ)
 $(PSD)cmapread.dev : $(ECHOGS_XE) $(cmapread_)\
@@ -1494,7 +1494,7 @@ $(PSD)cie.dev : $(ECHOGS_XE) $(cieread_) $(GLD)cielib.dev\
 	$(ADDMOD) $(PSD)cie -oper zcrd_l2
 	$(ADDMOD) $(PSD)cie -include $(GLD)cielib
 
-icie_h=$(PSSRC)icie.h
+icie_h=$(PSSRC)icie.h $(gscie_h) $(igstate_h)
 
 $(PSOBJ)zcie.$(OBJ) : $(PSSRC)zcie.c $(OP) $(math__h) $(memory__h)\
  $(gscolor2_h) $(gscie_h) $(gsstruct_h) $(gxcspace_h)\
@@ -1512,7 +1512,7 @@ $(PSOBJ)zcrd.$(OBJ) : $(PSSRC)zcrd.c $(OP) $(math__h)\
 
 # ---------------- Pattern color ---------------- #
 
-ipcolor_h=$(PSSRC)ipcolor.h
+ipcolor_h=$(PSSRC)ipcolor.h $(iref_h)
 
 $(PSD)pattern.dev : $(ECHOGS_XE) $(GLD)patlib.dev\
  $(PSD)patread.dev $(INT_MAK) $(MAKEDIRS)
@@ -1797,6 +1797,7 @@ $(GLD)diskn.dev : $(LIB_MAK) $(ECHOGS_XE) $(diskn_) $(INT_MAK) $(MAKEDIRS)
 
 # ------------------ Support high level Forms ------------------ #
 form_=$(GLOBJ)zform.$(OBJ)
+gsform1_h=$(GLSRC)gsform1.h $(gxpath_h) $(gsmatrix_h) $(gsgstate_h) $(gstypes_h)
 $(GLD)form.dev : $(LIB_MAK) $(ECHOGS_XE) $(form_) $(INT_MAK) $(MAKEDIRS)
 	$(SETMOD) $(PSD)form $(form_)
 	$(ADDMOD) $(PSD)form -oper zform
@@ -1920,7 +1921,7 @@ $(PSOBJ)apitest.$(OBJ) : $(PSSRC)apitest.c $(GH)\
  $(locale__h) $(gp_h) $(INT_MAK) $(MAKEDIRS)
 	$(PSCC) $(PSO_)apitest.$(OBJ) $(C_) $(PSSRC)apitest.c
 
-$(PSOBJ)iapi.$(OBJ) : $(PSSRC)iapi.c $(AK)\
+$(PSOBJ)iapi.$(OBJ) : $(PSSRC)iapi.c $(AK) $(psapi_h)\
  $(string__h) $(ierrors_h) $(gscdefs_h) $(gstypes_h) $(iapi_h)\
  $(iref_h) $(imain_h) $(imainarg_h) $(iminst_h) $(gslibctx_h)\
  $(INT_MAK) $(MAKEDIRS)

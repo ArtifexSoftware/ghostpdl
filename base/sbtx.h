@@ -20,6 +20,8 @@
 #ifndef sbtx_INCLUDED
 #  define sbtx_INCLUDED
 
+#include "scommon.h"
+
 /* ByteTranslateEncode/Decode */
 typedef struct stream_BT_state_s {
     stream_state_common;

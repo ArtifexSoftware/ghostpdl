@@ -20,6 +20,9 @@
 #ifndef gdevppla_INCLUDED
 #  define gdevppla_INCLUDED
 
+#include "gsdevice.h"
+#include "gxdevbuf.h"
+
 /* Set the buf_procs in a printer device to planar mode. */
 int gdev_prn_set_procs_planar(gx_device *pdev);
 

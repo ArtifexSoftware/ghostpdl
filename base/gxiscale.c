@@ -40,6 +40,7 @@
 #include "sidscale.h"           /* for special case downscale filter */
 #include "gscindex.h"           /* included for proper handling of index color spaces
                                 and keeping data in source color space */
+#include "gsbitops.h"
 #include "gxcolor2.h"           /* define of float_color_to_byte_color */
 #include "gscspace.h"           /* Needed for checking is space is CIE */
 #include "gsicc_cache.h"

@@ -19,6 +19,8 @@
 #ifndef gscompt_INCLUDED
 #  define gscompt_INCLUDED
 
+#include "gstypes.h"
+
 /*
  * Compositing is the next-to-last step in the rendering pipeline.
  * It occurs after color correction but before halftoning (if needed).

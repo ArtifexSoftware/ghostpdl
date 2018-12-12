@@ -25,6 +25,7 @@
 #endif
 
 #include "iapi.h"
+#include "windows_.h"
 
 typedef struct GSDLL_S {
         HINSTANCE hmodule;	/* DLL module handle */

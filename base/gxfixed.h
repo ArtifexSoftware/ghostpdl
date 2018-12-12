@@ -19,6 +19,8 @@
 #ifndef gxfixed_INCLUDED
 #  define gxfixed_INCLUDED
 
+#include "std.h"
+
 /*
  * Coordinates are generally represented internally by fixed-point
  * quantities: integers lose accuracy in crucial places,

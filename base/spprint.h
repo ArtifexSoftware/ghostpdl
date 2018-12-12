@@ -19,6 +19,8 @@
 #ifndef spprint_INCLUDED
 #  define spprint_INCLUDED
 
+#include "stdpre.h"
+
 /* Define an opaque type for streams. */
 #ifndef stream_DEFINED
 #  define stream_DEFINED

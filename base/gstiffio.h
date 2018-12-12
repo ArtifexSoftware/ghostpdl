@@ -18,7 +18,7 @@
 
 #include <tiffio.h>
 #include <tiffvers.h>
-
+#include "gdevprn.h"
 
 TIFF *
 tiff_from_filep(gx_device_printer *dev,  const char *name, FILE *filep, int big_endian, bool usebigtiff);

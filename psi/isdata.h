@@ -20,6 +20,8 @@
 #ifndef isdata_INCLUDED
 #  define isdata_INCLUDED
 
+#include "iref.h"
+
 /*
  * In order to detect under- and overflow with minimum overhead, we put
  * guard elements at the top and bottom of each stack block (see idsdata.h,

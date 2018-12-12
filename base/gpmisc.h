@@ -19,6 +19,8 @@
 #ifndef gpmisc_INCLUDED
 #  define gpmisc_INCLUDED
 
+#include "gp.h"
+
 /*
  * The facilities defined in this file and implemented in gpmisc.c are
  * generic utilities shared among multiple gp_ platform files.

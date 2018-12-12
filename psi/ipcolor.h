@@ -19,6 +19,8 @@
 #ifndef ipcolor_INCLUDED
 #  define ipcolor_INCLUDED
 
+#include "iref.h"
+
 /*
  * Define the structure for remembering the pattern dictionary.
  * This is the "client data" in the template.

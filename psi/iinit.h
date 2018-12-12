@@ -23,6 +23,8 @@
 #ifndef iinit_INCLUDED
 #  define iinit_INCLUDED
 
+#include "imemory.h"
+
 /*
  * Declare initialization procedures exported by iinit.c for imain.c.
  * These must be executed in the order they are declared below.

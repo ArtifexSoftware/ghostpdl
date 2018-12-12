@@ -19,6 +19,8 @@
 #ifndef gxoprect_INCLUDED
 #define gxoprect_INCLUDED
 
+#include "gxdevcli.h"
+
 /*
  * Perform the fill rectangle operation for a non-separable color encoding
  * that requires overprint support.

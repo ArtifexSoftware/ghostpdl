@@ -20,6 +20,8 @@
 #ifndef spngpx_INCLUDED
 #  define spngpx_INCLUDED
 
+#include "scommon.h"
+
 /*
  * Define the maximum value for Colors.  The PNG specification probably
  * defines this as 16, but some PS3 CET files require it to be as large as

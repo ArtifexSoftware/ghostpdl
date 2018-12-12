@@ -20,6 +20,7 @@
 #  define gsrop_INCLUDED
 
 #include "gsropt.h"
+#include "gsgstate.h"
 
 /* Procedural interface */
 

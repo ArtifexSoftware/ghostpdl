@@ -26,6 +26,8 @@
 #ifndef gsgc_INCLUDED
 #  define gsgc_INCLUDED
 
+#include "stdpre.h"
+
 /*
  * Define the VM space numbers, in increasing order of dynamism.  Pointers
  * from a higher-numbered space to the same or a lower-numbered space are

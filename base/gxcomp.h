@@ -22,6 +22,7 @@
 #include "gscompt.h"
 #include "gsrefct.h"
 #include "gxbitfmt.h"
+#include "gsgstate.h"
 
 /*
  * Because compositor information is passed through the command list,
@@ -52,11 +53,6 @@
  * Define the abstract superclass for all compositing function types.
  */
                                                    /*typedef struct gs_composite_s gs_composite_t; *//* in gscompt.h */
-
-#ifndef gs_gstate_DEFINED
-#  define gs_gstate_DEFINED
-typedef struct gs_gstate_s gs_gstate;
-#endif
 
 #ifndef gx_device_DEFINED
 #  define gx_device_DEFINED

@@ -19,6 +19,9 @@
 #ifndef files_INCLUDED
 #  define files_INCLUDED
 
+#include "stream.h"
+#include "store.h"
+
 /*
  * File objects store a pointer to a stream in value.pfile.
  * A file object is valid if its "size" matches the read_id or write_id

@@ -22,6 +22,7 @@
 #  define sfilter_INCLUDED
 
 #include "gstypes.h"		/* for gs_[const_]string */
+#include "scommon.h"
 
 /*
  * Define the processing states of the simplest Ghostscript streams.

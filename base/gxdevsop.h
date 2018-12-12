@@ -19,6 +19,8 @@
 #ifndef gxdevsop_INCLUDED
 #  define gxdevsop_INCLUDED
 
+#include "gxdevcli.h"
+
 /* This file enumerates a series of device specific operations, that can be
  * performed using the 'dev_spec_op' procedure in the gs_device structure.
  *

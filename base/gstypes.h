@@ -19,6 +19,8 @@
 #ifndef gstypes_INCLUDED
 #  define gstypes_INCLUDED
 
+#include "stdpre.h"
+
 /*
  * Define a type used internally for unique IDs of various kinds
  * (primarily, but not exclusively, character and halftone bitmaps).

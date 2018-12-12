@@ -20,6 +20,8 @@
 #ifndef gxcpath_INCLUDED
 #  define gxcpath_INCLUDED
 
+#include "gxdevcli.h"
+
 /* We expose the implementation of clipping lists so that clients */
 /* can allocate clipping lists or devices on the stack. */
 

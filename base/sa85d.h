@@ -20,6 +20,8 @@
 #ifndef sa85d_INCLUDED
 #  define sa85d_INCLUDED
 
+#include "scommon.h"
+
 /* ASCII85Decode */
 typedef struct stream_A85D_state_s {
     stream_state_common;

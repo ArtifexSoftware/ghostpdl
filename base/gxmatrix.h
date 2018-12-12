@@ -20,6 +20,7 @@
 #  define gxmatrix_INCLUDED
 
 #include "gsmatrix.h"
+#include "gxfixed.h"
 
 /* The following switch is for developmenty purpose only.
    PRECISE_CURRENTPOINT 0 must not go to production due to no clamping. */

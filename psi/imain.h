@@ -21,6 +21,8 @@
 #  define imain_INCLUDED
 
 #include "gsexit.h"		/* exported by imain.c */
+#include "gstypes.h"
+#include "iref.h"
 
 /*
  * This file defines the intended API between client front ends

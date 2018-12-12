@@ -19,6 +19,10 @@
 #ifndef istkparm_INCLUDED
 #  define istkparm_INCLUDED
 
+#include "stdpre.h"
+#include "gsstruct.h"
+#include "iref.h"
+
 /*
  * Define the structure for stack parameters set at initialization.
  */

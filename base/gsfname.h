@@ -18,6 +18,8 @@
 #ifndef gsfname_INCLUDED
 #  define gsfname_INCLUDED
 
+#include "std.h"
+
 /*
  * Structure and procedures for parsing file names.
  *

@@ -19,12 +19,7 @@
 #ifndef gxstate_INCLUDED
 #  define gxstate_INCLUDED
 
-/* Opaque type for a graphics state */
-#ifndef gs_gstate_DEFINED
-#  define gs_gstate_DEFINED
-typedef struct gs_gstate_s gs_gstate;
-
-#endif
+#include "gsgstate.h"
 #include "gscspace.h"
 
 /*

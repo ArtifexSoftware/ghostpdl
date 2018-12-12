@@ -19,6 +19,8 @@
 #ifndef gsxfont_INCLUDED
 #  define gsxfont_INCLUDED
 
+#include "stdpre.h"
+
 /* Define a character glyph identifier.  This is opaque, probably an index */
 /* into the font.  Glyph identifiers are font-specific. */
 typedef ulong gx_xglyph;

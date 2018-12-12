@@ -20,6 +20,9 @@
 #ifndef iparray_INCLUDED
 #  define iparray_INCLUDED
 
+#include "isdata.h"
+#include "imemory.h"
+
 /*
  * The only reason to put this in a separate header is that it requires
  * both ipacked.h and istack.h; putting it in either one would make it

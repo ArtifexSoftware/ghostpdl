@@ -27,6 +27,8 @@
  *  extend a trapezoid to reduce the total number produced.
  */
 
+#if defined(LOOP_FILL_RECTANGLE_DIRECT) && defined(TEMPLATE_slant_into_trapezoids) && defined(TRY_TO_EXTEND_TRAP)
+
 static inline int
 TEMPLATE_slant_into_trapezoids (const line_list *ll,
         const active_line *flp, const active_line *alp, fixed y, fixed y1)
@@ -214,3 +216,7 @@ TEMPLATE_slant_into_trapezoids (const line_list *ll,
     /* Otherwise, handle it as a slanted trapezoid. */
     return fill_slant_adjust(ll, flp, alp, y, y1);
 }
+
+#else
+int dummy;
+#endif

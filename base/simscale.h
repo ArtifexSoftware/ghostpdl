@@ -21,6 +21,8 @@
 #ifndef simscale_INCLUDED
 #  define simscale_INCLUDED
 
+#include "sisparam.h"
+
 typedef struct stream_imscale_state_s stream_imscale_state;
 
 struct stream_imscale_state_s {

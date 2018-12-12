@@ -19,6 +19,9 @@
 #ifndef gxshade4_INCLUDED
 #  define gxshade4_INCLUDED
 
+#include "gxshade.h"
+#include "gxdevcli.h"
+
 /* Configuration flags for development needs only. Users should not modify them. */
 #define USE_LINEAR_COLOR_PROCS 1 /* Old code = 0, new code = 1. */
 

@@ -26,6 +26,7 @@
 #include "gxdevice.h"
 #include "gxgetbit.h"
 #include "gxlum.h"
+#include "gsbitops.h"
 
 /* ---------------- Internal definitions ---------------- */
 

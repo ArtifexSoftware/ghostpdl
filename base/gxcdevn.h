@@ -19,8 +19,10 @@
 #ifndef gxcdevn_INCLUDED
 #  define gxcdevn_INCLUDED
 
-#include "gsrefct.h"
 #include "gxcindex.h"
+#include "gsccolor.h"
+#include "gxfrac.h"
+#include "gscspace.h"
 
 /* Cache for DeviceN color.  Note that currently this is a 1-entry cache. */
 #ifndef gs_device_n_map_DEFINED

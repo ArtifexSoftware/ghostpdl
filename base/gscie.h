@@ -21,10 +21,10 @@
 #  define gscie_INCLUDED
 
 #include "std.h"
-#include "gsrefct.h"
 #include "gsstype.h"		/* for extern_st */
 #include "gstypes.h"		/* for gs_range_t */
 #include "gxctable.h"
+#include "gscspace.h"
 
 /* ---------------- Configuration parameters ---------------- */
 

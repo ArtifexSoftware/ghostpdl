@@ -20,15 +20,11 @@
 #include "gsmatrix.h"
 #include "gsccode.h"
 #include "stdint_.h"
+#include "gsgstate.h"
 
 #ifndef gs_font_base_DEFINED
 #  define gs_font_base_DEFINED
 typedef struct gs_font_base_s gs_font_base;
-#endif
-
-#ifndef gs_gstate_DEFINED
-#  define gs_gstate_DEFINED
-typedef struct gs_gstate_s gs_gstate;
 #endif
 
 #ifndef gs_text_enum_DEFINED
