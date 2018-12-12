@@ -19,6 +19,8 @@ my %products=('abort' =>1,
               'svg'=>1,
               'xps'=>1,
               'ls'=>1,
+              'gpdf'=>1,
+              'gpdl'=>1,
               'mupdf'=>1,
               'mujstest'=>1);
 
