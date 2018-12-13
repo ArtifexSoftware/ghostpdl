@@ -55,6 +55,8 @@ struct gs_context_state_s {
     long usertime_total;	/* total accumulated usertime, */
                                 /* not counting current time if running */
     bool keep_usertime;		/* true if context ever executed usertime */
+    long usertime_0[2];         /* initial value first time usertime was called */
+    bool usertime_inited;       /* has usertime been called yet? */
     int in_superexec;		/* # of levels of superexec */
     /* View clipping is handled in the graphics state. */
     ref error_object;		/* t__invalid or error object from operator */

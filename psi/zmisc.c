@@ -194,10 +194,18 @@ zrealtime(i_ctx_t *i_ctx_p)
 static int
 zusertime(i_ctx_t *i_ctx_p)
 {
+    gs_context_state_t *current = (gs_context_state_t *)i_ctx_p;
     os_ptr op = osp;
     long secs_ns[2];
 
     gp_get_usertime(secs_ns);
+    if (!current->usertime_inited) {
+        current->usertime_inited = true;
+        current->usertime_0[0] = secs_ns[0];
+        current->usertime_0[1] = secs_ns[1];
+    }
+    secs_ns[0] -= current->usertime_0[0];
+    secs_ns[1] -= current->usertime_0[1];
     push(1);
     make_int(op, secs_ns[0] * 1000 + secs_ns[1] / 1000000);
     return 0;
