@@ -272,6 +272,8 @@ txtwrite_open_device(gx_device * dev)
 #ifdef TRACE_TXTWRITE
     tdev->DebugFile = gp_fopen("/temp/txtw_dbg.txt", "wb+");
 #endif
+    dev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
+    set_linear_color_bits_mask_shift(dev);
 
     code = install_internal_subclass_devices((gx_device **)&dev, NULL);
     return code;
