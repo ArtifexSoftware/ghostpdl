@@ -152,7 +152,7 @@ setglobal
                 % use .forceput / .forcedef later to replace the dummy,
                 % empty .Instances dictionary with the real one later.
           readonly
-        } {
+        }{
           /defineresource cvx /typecheck signaloperror
         } ifelse
 } bind executeonly odef
@@ -424,7 +424,7 @@ status {
                         % As noted above, Category dictionaries are read-only,
                         % so we have to use .forcedef here.
                   /.Instances 1 index .forcedef	% Category dict is read-only
-                } if
+                } executeonly if
               }
               { .LocalInstances dup //.emptydict eq
                  { pop 3 dict localinstancedict Category 2 index put

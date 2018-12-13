@@ -78,7 +78,7 @@ level2dict begin
    .currentglobal
     {		% Current mode is global; delete from local directory too.
       //systemdict /LocalFontDirectory .knownget
-       { 1 index .forceundef }		% LocalFontDirectory is readonly
+       { 1 index .forceundef } executeonly		% LocalFontDirectory is readonly
       if
     }
     {		% Current mode is local; if there was a shadowed global
@@ -126,7 +126,7 @@ level2dict begin
           }
          ifelse
        } forall
-      pop counttomark 2 idiv { .forceundef } repeat pop		% readonly
+      pop counttomark 2 idiv { .forceundef } executeonly repeat pop		% readonly
     }
    if
    //SharedFontDirectory exch .forcecopynew pop

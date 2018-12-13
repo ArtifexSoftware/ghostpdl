@@ -154,7 +154,8 @@ end
       % protect top level of parameters that we copied
       dup type dup /arraytype eq exch /stringtype eq or { readonly } if
       /userparams .systemvar 3 1 roll .forceput  % userparams is read-only
-    } {
+    } executeonly
+    {
       pop pop
     } ifelse
   } forall
@@ -224,7 +225,7 @@ end
          % protect top level parameters that we copied
          dup type dup /arraytype eq exch /stringtype eq or { readonly } if
          //pssystemparams 3 1 roll .forceput	% pssystemparams is read-only
-       }
+       } executeonly
        { pop pop
        }
       ifelse
@@ -941,7 +942,7 @@ mark
   dup /PaintProc get
   1 index /Implementation known not {
     1 index dup /Implementation //null .forceput readonly pop
-  } if
+  } executeonly if
   exec
 }.bind odef
 
@@ -965,7 +966,7 @@ mark
   dup /PaintProc get
   1 index /Implementation known not {
     1 index dup /Implementation //null .forceput readonly pop
-  } if
+  } executeonly if
   /UNROLLFORMS where {/UNROLLFORMS get}{false}ifelse not
   %% [CTM] <<Form>> PaintProc .beginform -
   {
@@ -1012,7 +1013,7 @@ mark
         %% Form dictioanry using the /Implementation key).
         1 dict dup /FormID 4 -1 roll put
         1 index exch /Implementation exch .forceput readonly pop
-      }
+      } executeonly
       ifelse
     }
     {

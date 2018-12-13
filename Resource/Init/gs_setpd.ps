@@ -689,7 +689,7 @@ SETPDDEBUG { (Result of putting.) = pstack flush } if
   SETPDDEBUG { (Rolling back.) = pstack flush } if
   3 index 2 index 3 -1 roll .forceput
   4 index 1 index .knownget
-  { 4 index 3 1 roll .forceput }
+  { 4 index 3 1 roll .forceput } executeonly
   { 3 index exch .undef }
   ifelse
 } bind executeonly odef

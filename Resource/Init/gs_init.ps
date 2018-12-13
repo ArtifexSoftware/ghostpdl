@@ -2386,7 +2386,7 @@ SAFER { .setsafeglobal } if
         % Update the copy of the user parameters.
   mark .currentuserparams counttomark 2 idiv {
     userparams 3 1 roll .forceput	% userparams is read-only
-  } repeat pop
+  } executeonly repeat pop
         % Turn on idiom recognition, if available.
   currentuserparams /IdiomRecognition known {
     /IdiomRecognition //true .definepsuserparam
@@ -2405,7 +2405,7 @@ SAFER { .setsafeglobal } if
         % Remove real system params from pssystemparams.
   mark .currentsystemparams counttomark 2 idiv {
     pop pssystemparams exch .forceundef
-  } repeat pop
+  } executeonly repeat pop
 } if
 
 % Set up AlignToPixels :

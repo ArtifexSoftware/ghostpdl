@@ -374,7 +374,7 @@ FONTPATH length 0 eq { (%END FONTPATH) .skipeof } if
 /.setnativefontmapbuilt { % set whether we've been run
   dup type /booleantype eq {
       systemdict exch /.nativefontmapbuilt exch .forceput
-  }
+  } executeonly
   {pop}
   ifelse
 } .bind executeonly odef
@@ -1007,11 +1007,11 @@ $error /SubstituteFont { } put
 { 2 index gcheck currentglobal
   2 copy eq {
     pop pop .forceput
-  } {
+  } executeonly {
     5 1 roll setglobal
     dup length string copy
     .forceput setglobal
-  } ifelse
+  } executeonly ifelse
 } .bind executeonly odef % must be bound and hidden for .forceput
 
 % Attempt to load a font from a file.
@@ -1084,7 +1084,7 @@ $error /SubstituteFont { } put
            .FontDirectory 3 index .forceundef		% readonly
            1 index (r) file .loadfont .FontDirectory exch
            /.setglobal .systemvar exec
-         }
+         } executeonly
          { .loadfont .FontDirectory
          }
         ifelse
@@ -1105,7 +1105,7 @@ $error /SubstituteFont { } put
         dup 3 index .fontknownget
          { dup /PathLoad 4 index //.putgstringcopy
            4 1 roll pop pop pop //true exit
-         } if
+         } executeonly if
 
                 % Maybe the file had a different FontName.
                 % See if we can get a FontName from the file, and if so,
@@ -1134,7 +1134,7 @@ $error /SubstituteFont { } put
               ifelse  % Stack: origfontname fontdict
               exch pop //true exit
                       % Stack: fontdict
-            }
+            } executeonly
            if pop % Stack: origfontname fontdirectory path
          }
         if pop pop  % Stack: origfontname
