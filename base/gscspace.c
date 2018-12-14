@@ -601,7 +601,7 @@ int gx_set_overprint_cmyk(const gs_color_space * pcs, gs_gstate * pgs)
     }
 
     pdc = gs_currentdevicecolor_inline(pgs);
-    if (color_is_set(pdc) && profile_ok && pgs->overprint_mode == 1) {
+    if (color_is_set(pdc) && profile_ok && pgs->effective_overprint_mode) {
         gx_color_index  nz_comps, one, temp;
         int             code;
         int             num_colorant[4], k;
@@ -653,8 +653,10 @@ int gx_set_overprint_cmyk(const gs_color_space * pcs, gs_gstate * pgs)
     params.retain_spot_comps = false;
     params.drawn_comps = drawn_comps;
     /* We are in CMYK, the profiles match and overprint is true.  Set effective
-       overprint mode to overprint mode */
-    pgs->effective_overprint_mode = pgs->overprint_mode;
+       overprint mode to overprint mode but only if effective has not already
+       been set to 0 */
+    pgs->effective_overprint_mode = 
+        (pgs->overprint_mode && pgs->effective_overprint_mode);
 
     return gs_gstate_update_overprint(pgs, &params);
 }

@@ -633,7 +633,14 @@ gs_do_set_overprint(gs_gstate * pgs)
     if (cs_num_components(pcs) < 0 && pcc->pattern != 0)
         code = pcc->pattern->type->procs.set_color(pcc, pgs);
     else
+    {
+        /* The spaces that do not allow opm (e.g. ones that are not ICC or DeviceCMYK)
+           will blow away any true setting later. But we have to be prepared
+           in case this is an CMYK ICC space for example. Hence we set effective mode
+           to mode here (Bug 698721)*/
+        pgs->effective_overprint_mode = pgs->overprint_mode;
         pcs->type->set_overprint(pcs, pgs);
+    }
     return code;
 }
 
