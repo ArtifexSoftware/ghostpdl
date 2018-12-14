@@ -737,7 +737,7 @@ run_stdin:
 
                 if ((code = gs_main_init1(minst)) < 0)
                     return code;
-                switch (sscanf((const char *)arg, "%fx%f", &res[0], &res[0])) {
+                switch (sscanf((const char *)arg, "%fx%f", &res[0], &res[1])) {
                     default:
                         puts(minst->heap, "-r must be followed by <res> or <xres>x<yres>");
                         return gs_error_Fatal;
