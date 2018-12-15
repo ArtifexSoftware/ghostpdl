@@ -707,7 +707,7 @@ again:
                  * i.e. it's an internal operator we have hidden
                  */
                 code = dict_find_string(systemdict, (const char *)bufptr, &tobj);
-                if (code < 0) {
+                if (code <= 0) {
                     buf[0] = buf[1] = buf[rlen + 2] = buf[rlen + 3] = '-';
                     rlen += 4;
                     bufptr = buf;
