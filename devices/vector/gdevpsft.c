@@ -449,17 +449,14 @@ size_cmap(gs_font *font, uint first_code, int num_glyphs, gs_glyph max_glyph,
 
 /* ------ hmtx/vmtx ------ */
 
-/* The HMTX and VMTX generation code here is broken. It assumes that its legal
- * to write out only the metrics for the number of glyphs we include outlines for
- * but in fact we must include data for every single glyph, even if we don't
- * actually write the glyph data.
- * It really should have been obvious that this is incorrect, since there is no
- * mapping other than GID to find the correct metrics in this table. So simply
- * writing out the minimum number of metrics would only work if we wrote a
- * contiguous range of GIDs, which we don't
- * By setting generate_mtx to false in psf_write_truetype_data() below, we prevent
- * the use of this code and instead simply copy out the original table.
- * Bug #697376.
+/* We must include mtx data for every single glyph, even if we don't
+ * actually write the glyph data. If we don't, the font will be invalid (cf bug 697376)
+ * We also must not simply copy the table from the original font, because its possible
+ * that we are combining two different fonts, and the metrics in each font may not
+ * be the same (or at least, not in the same position) cf bug 700099.
+ * Originally we only wrote the metrics for the glyphs we copy, then we disabled
+ * generat_mtx so that we copied the table. This solution; generating all the metrics
+ * we need and dummies for the glyphs we don't actually embed, works best so far.
  */
 static void
 write_mtx(stream *s, gs_font_type42 *pfont, const gs_type42_mtx_t *pmtx,
@@ -492,7 +489,7 @@ write_mtx(stream *s, gs_font_type42 *pfont, const gs_type42_mtx_t *pmtx,
 
 /* Compute the metrics from the glyph_info. */
 static uint
-size_mtx(gs_font_type42 *pfont, gs_type42_mtx_t *pmtx, uint max_glyph,
+size_mtx(gs_font_type42 *pfont, gs_type42_mtx_t *pmtx, uint max_glyph, uint numGlyphs,
          int wmode)
 {
     int prev_width = min_int;
@@ -513,6 +510,7 @@ size_mtx(gs_font_type42 *pfont, gs_type42_mtx_t *pmtx, uint max_glyph,
     }
     pmtx->numMetrics = last_width + 1;
     pmtx->length = pmtx->numMetrics * 4 + (max_glyph - last_width) * 2;
+    pmtx->length += (numGlyphs - pmtx->numMetrics) * 2;
     return pmtx->length;
 }
 
@@ -792,8 +790,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
     bool
         writing_cid = (options & WRITE_TRUETYPE_CID) != 0,
         writing_stripped = (options & WRITE_TRUETYPE_STRIPPED) != 0,
-        /* see size_mtx() and write_mtx() above for reasons why this is disabled */
-        generate_mtx = 0, /*(options & WRITE_TRUETYPE_HVMTX) != 0,*/
+        generate_mtx = (options & WRITE_TRUETYPE_HVMTX) != 0,
         no_generate = writing_cid | writing_stripped,
         have_cmap = no_generate,
         have_name = !(options & WRITE_TRUETYPE_NAME),
@@ -1078,7 +1075,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
                     offset = put_table(tab, (i ? "vmtx" : "hmtx"),
                                        0L /****** NO CHECKSUM ******/,
                                        offset,
-                                       size_mtx(pfont, &mtx[i], max_glyph, i));
+                                       size_mtx(pfont, &mtx[i], max_glyph, numGlyphs, i));
                     tab += 16;
                 }
 
