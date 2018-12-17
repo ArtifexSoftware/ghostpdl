@@ -9,7 +9,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ghostxps", "ghostxps.vcproj
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ghostpdl", "ghostpdl.vcproj", "{C4038125-61B9-4147-9EA8-39690BA3A599}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gpdf", "gpdf.vcproj", "{4C038125-61B9-4147-9EA8-39690BA3A599}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ghostpdf", "gpdf.vcproj", "{4C038125-61B9-4147-9EA8-39690BA3A599}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "All", "All.vcproj", "{98351FEF-0032-457C-B9D9-D6B68A829386}"
 EndProject
