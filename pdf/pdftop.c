@@ -199,59 +199,17 @@ pdf_imp_process_file(pl_interp_implementation_t *impl, char *filename)
     pdf_interp_instance_t *instance = impl->interp_client_data;
     pdf_context *ctx = instance->ctx;
     int code;
-    pl_main_instance_t *imain;
-
-    imain = pl_main_get_instance(ctx->memory);
-
-    ctx->first_page = imain->first_page;             /* -dFirstPage= */
-    ctx->last_page = imain->last_page;              /* -dLastPage= */
-    ctx->pdfdebug = imain->pdfdebug;
-    ctx->pdfstoponerror = imain->pdfstoponerror;
-    ctx->pdfstoponwarning = imain->pdfstoponwarning;
-    ctx->notransparency = imain->notransparency;
-    ctx->nocidfallback = imain->nocidfallback;
-    ctx->no_pdfmark_outlines = imain->no_pdfmark_outlines;
-    ctx->no_pdfmark_dests = imain->no_pdfmark_dests;
-    ctx->pdffitpage = imain->pdffitpage;
-    ctx->usecropbox = imain->usecropbox;
-    ctx->useartbox = imain->useartbox;
-    ctx->usebleedbox = imain->usebleedbox;
-    ctx->usetrimbox = imain->usetrimbox;
-    ctx->printed = imain->printed;
-    ctx->showacroform = imain->showacroform;
-    ctx->showannots = imain->showannots;
-    ctx->nouserunit = imain->nouserunit;
-    ctx->renderttnotdef = imain->renderttnotdef;
-
-    if (imain->PDFPassword) {
-        ctx->PDFPassword = (char *)gs_alloc_bytes(ctx->memory, strlen(imain->PDFPassword) + 1, "allocate PDFpassword parameter");
-        if (ctx->PDFPassword == NULL) {
-            gs_free_object(ctx->memory, ctx, "pdf_imp_allocate_interp_instance");
-            gs_free_object(ctx->memory, instance, "pdf_imp_allocate_interp_instance");
-            return gs_error_VMerror;
-        }
-        memset(ctx->PDFPassword, 0x00, strlen(imain->PDFPassword) + 1);
-        strcpy(ctx->PDFPassword, imain->PDFPassword);
-    }
-    if(imain->PageList) {
-        ctx->PageList = (char *)gs_alloc_bytes(ctx->memory, strlen(imain->PageList) + 1, "allocate PDFpassword parameter");
-        if (ctx->PageList == NULL) {
-            if (ctx->PDFPassword != NULL) {
-                gs_free_object(ctx->memory, ctx->PDFPassword, "pdf_imp_allocate_interp_instance");
-                ctx->PDFPassword = NULL;
-            }
-            gs_free_object(ctx->memory, ctx, "pdf_imp_allocate_interp_instance");
-            gs_free_object(ctx->memory, instance, "pdf_imp_allocate_interp_instance");
-            return gs_error_VMerror;
-        }
-        memset(ctx->PageList, 0x00, strlen(imain->PageList) + 1);
-        strcpy(ctx->PageList, imain->PageList);
-    }
 
     code = pdfi_process_pdf_file(ctx, filename);
     if (code)
         return code;
 
+    return 0;
+}
+
+static int
+pdf_impl_process_begin(pl_interp_implementation_t * impl)
+{
     return 0;
 }
 
@@ -284,6 +242,12 @@ pdf_imp_process(pl_interp_implementation_t *impl, stream_cursor_read *cursor)
     }
     cursor->ptr = cursor->limit;
 
+    return 0;
+}
+
+static int                      /* ret 0 or +ve if ok, else -ve error code */
+pdf_impl_process_end(pl_interp_implementation_t * impl)
+{
     return 0;
 }
 
@@ -334,9 +298,117 @@ pdf_imp_report_errors(pl_interp_implementation_t *impl,
     return 0;
 }
 
+/*
+ * Get the allocator with which to allocate a device
+ */
+static gs_memory_t *
+pdf_impl_get_device_memory(pl_interp_implementation_t *impl)
+{
+    pdf_interp_instance_t *instance = impl->interp_client_data;
+    pdf_context *ctx = instance->ctx;
+
+    return ctx->memory;
+}
+
+static int
+pdf_impl_set_param(pl_interp_implementation_t *impl,
+                  pl_set_param_type           type,
+                  const char                 *param,
+                  const void                 *val)
+{
+    pdf_interp_instance_t *instance = impl->interp_client_data;
+    pdf_context *ctx = instance->ctx;
+
+    if (!strncmp(param, "FirstPage", 9)) {
+        ctx->first_page = (int)val;
+        return 0;
+    }
+    if (!strncmp(param, "LastPage", 8)) {
+        ctx->last_page = (int)val;
+        return 0;
+    }
+    /* PDF interpreter flags */
+    if (!strncmp(param, "PDFDEBUG", 8)) {
+        ctx->pdfdebug = (bool)val;
+        return 0;
+    }
+    if (!strncmp(param, "PDFSTOPONERROR", 14)) {
+        ctx->pdfstoponerror = (bool)val;
+        return 0;
+    }
+    if (!strncmp(param, "PDFSTOPONWARNING", 16)) {
+        ctx->pdfstoponwarning = (bool)val;
+        return 0;
+    }
+    if (!strncmp(param, "NOTRANSPARENCY", 14)) {
+        ctx->notransparency = (bool)val;
+        return 0;
+    }
+    if (!strncmp(param, "NOCIDFALLBACK", 13)) {
+        ctx->nocidfallback = (bool)val;
+        return 0;
+    }
+    if (!strncmp(param, "NO_PDFMARK_OUTLINES", 19)) {
+        ctx->no_pdfmark_outlines = (bool)val;
+        return 0;
+    }
+    if (!strncmp(param, "NO_PDFMARK_DESTS", 16)) {
+        ctx->no_pdfmark_dests = (bool)val;
+        return 0;
+    }
+    if (!strncmp(param, "PDFFitPage", 10)) {
+        ctx->pdffitpage = (bool)val;
+        return 0;
+    }
+    if (!strncmp(param, "UseCropBox", 10)) {
+        ctx->usecropbox = (bool)val;
+        return 0;
+    }
+    if (!strncmp(param, "UseArtBox", 9)) {
+        ctx->useartbox = (bool)val;
+        return 0;
+    }
+    if (!strncmp(param, "UseBleedBox", 11)) {
+        ctx->usebleedbox = (bool)val;
+        return 0;
+    }
+    if (!strncmp(param, "UseTrimBox", 10)) {
+        ctx->usetrimbox = (bool)val;
+        return 0;
+    }
+    if (!strncmp(param, "Printed", 7)) {
+        ctx->printed = (bool)val;
+        return 0;
+    }
+    if (!strncmp(param, "ShowAcroForm", 12)) {
+        ctx->showacroform = (bool)val;
+        return 0;
+    }
+    if (!strncmp(param, "ShowAnnots", 10)) {
+        ctx->showannots = (bool)val;
+        return 0;
+    }
+    if (!strncmp(param, "NoUserUnit", 10)) {
+        ctx->nouserunit = (bool)val;
+        return 0;
+    }
+    if (!strncmp(param, "RENDERTTNOTDEF", 13)) {
+        ctx->renderttnotdef = (bool)val;
+        return 0;
+    }
+    return 0;
+}
+
+static int
+pdf_impl_post_args_init(pl_interp_implementation_t *impl)
+{
+    return 0;
+}
+
 /* Prepare interp instance for the next "job" */
 static int
-pdf_imp_init_job(pl_interp_implementation_t *impl)
+pdf_imp_init_job(pl_interp_implementation_t *impl,
+                 gx_device                  *device)
 {
     pdf_interp_instance_t *instance = impl->interp_client_data;
     pdf_context *ctx = instance->ctx;
@@ -345,7 +417,7 @@ pdf_imp_init_job(pl_interp_implementation_t *impl)
     if (getenv("PDF_DISABLE_TRANSPARENCY"))
         ctx->use_transparency = 0;
 
-    return 0;
+    return pdf_imp_set_device(impl, device);
 }
 
 /* Wrap up interp instance after a "job" */
@@ -387,15 +459,18 @@ pl_interp_implementation_t pdf_implementation =
 {
     pdf_imp_characteristics,
     pdf_imp_allocate_interp_instance,
-    pdf_imp_set_device,
+    pdf_impl_get_device_memory,
+    pdf_impl_set_param,
+    pdf_impl_post_args_init,
     pdf_imp_init_job,
     pdf_imp_process_file,
+    pdf_impl_process_begin,
     pdf_imp_process,
+    pdf_impl_process_end,
     pdf_imp_flush_to_eoj,
     pdf_imp_process_eof,
     pdf_imp_report_errors,
     pdf_imp_dnit_job,
-    pdf_imp_remove_device,
     pdf_imp_deallocate_interp_instance,
     NULL,
 };

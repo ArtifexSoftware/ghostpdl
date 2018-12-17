@@ -30,12 +30,14 @@
 #include "gsstruct.h"
 #include "gxalloc.h"
 #include "gsalloc.h"
+#include "gsargs.h"
 #include "gp.h"
 #include "gsdevice.h"
 #include "gxdevice.h"
 #include "gxdevsop.h"       /* for gxdso_* */
 #include "gxclpage.h"
 #include "gdevprn.h"
+#include "gsparam.h"
 #include "gslib.h"
 #include "pjtop.h"
 #include "plparse.h"
@@ -90,8 +92,6 @@ struct pl_main_instance_s
     long base_time[2];          /* starting time */
     int error_report;           /* -E# */
     bool pause;                 /* -dNOPAUSE => false */
-    int first_page;             /* -dFirstPage= */
-    int last_page;              /* -dLastPage= */
     gx_device *device;
     gs_gc_root_t *device_root;
     pl_main_get_codepoint_t *get_codepoint;
@@ -845,83 +845,6 @@ static int check_for_special_int(pl_main_instance_t * pmi, const char *arg, int 
         pmi->scanconverter = b;
         return 0;
     }
-    if (!strncmp(arg, "FirstPage", 9)) {
-        pmi->first_page = b;
-        return 0;
-    }
-    if (!strncmp(arg, "LastPage", 8)) {
-        pmi->last_page = b;
-        return 0;
-    }
-    /* PDF interpreter flags */
-    if (!strncmp(arg, "PDFDEBUG", 8)) {
-        pmi->pdfdebug = b;
-        return 0;
-    }
-    if (!strncmp(arg, "PDFSTOPONERROR", 14)) {
-        pmi->pdfstoponerror = b;
-        return 0;
-    }
-    if (!strncmp(arg, "PDFSTOPONWARNING", 16)) {
-        pmi->pdfstoponwarning = b;
-        return 0;
-    }
-    if (!strncmp(arg, "NOTRANSPARENCY", 14)) {
-        pmi->notransparency = b;
-        return 0;
-    }
-    if (!strncmp(arg, "NOCIDFALLBACK", 13)) {
-        pmi->nocidfallback = b;
-        return 0;
-    }
-    if (!strncmp(arg, "NO_PDFMARK_OUTLINES", 19)) {
-        pmi->no_pdfmark_outlines = b;
-        return 0;
-    }
-    if (!strncmp(arg, "NO_PDFMARK_DESTS", 16)) {
-        pmi->no_pdfmark_dests = b;
-        return 0;
-    }
-    if (!strncmp(arg, "PDFFitPage", 10)) {
-        pmi->pdffitpage = b;
-        return 0;
-    }
-    if (!strncmp(arg, "UseCropBox", 10)) {
-        pmi->usecropbox = b;
-        return 0;
-    }
-    if (!strncmp(arg, "UseArtBox", 9)) {
-        pmi->useartbox = b;
-        return 0;
-    }
-    if (!strncmp(arg, "UseBleedBox", 11)) {
-        pmi->usebleedbox = b;
-        return 0;
-    }
-    if (!strncmp(arg, "UseTrimBox", 10)) {
-        pmi->usetrimbox = b;
-        return 0;
-    }
-    if (!strncmp(arg, "Printed", 7)) {
-        pmi->printed = b;
-        return 0;
-    }
-    if (!strncmp(arg, "ShowAcroForm", 12)) {
-        pmi->showacroform = b;
-        return 0;
-    }
-    if (!strncmp(arg, "ShowAnnots", 10)) {
-        pmi->showannots = b;
-        return 0;
-    }
-    if (!strncmp(arg, "NoUserUnit", 10)) {
-        pmi->nouserunit = b;
-        return 0;
-    }
-    if (!strncmp(arg, "RENDERTTNOTDEF", 13)) {
-        pmi->renderttnotdef = b;
-        return 0;
-    }
     return 1;
 }
 
@@ -1512,14 +1435,6 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                         if (!strncmp
                             (arg, "ICCProfileDir", strlen("ICCProfileDir"))) {
                         pmi->piccdir = arg_copy(value, pmi->memory);
-                    } else
-                        if (!strncmp
-                            (arg, "PDFpassword", 11)) {
-                        pmi->PDFPassword = arg_copy(value, pmi->memory);
-                    } else
-                        if (!strncmp
-                            (arg, "PageList", 8)) {
-                        pmi->PageList = arg_copy(value, pmi->memory);
                     } else {
                         char buffer[128];
 
