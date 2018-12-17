@@ -19,6 +19,8 @@
 #ifndef igcstr_INCLUDED
 #  define igcstr_INCLUDED
 
+#include "gxalloc.h"
+
 /* Exported by ilocate.c for igcstr.c */
 clump_t *gc_locate(const void *, gc_state_t *);
 

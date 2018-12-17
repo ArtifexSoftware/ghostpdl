@@ -16,6 +16,8 @@
 
 /* A template for packed dictionary search method */
 
+#if defined(found) && defined(deleted) && defined(missing)
+
 /*
  * Define template for searching a packed dictionary.
  *
@@ -61,3 +63,6 @@
             }
         }
    }
+#else
+int dummy;
+#endif

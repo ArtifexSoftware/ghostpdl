@@ -28,6 +28,8 @@
 #ifndef gscedata_INCLUDED
 #  define gscedata_INCLUDED
 
+#include "stdpre.h"
+
 #define NUM_LEN_BITS 5
 
 #define N(len,offset) (((offset) << NUM_LEN_BITS) + (len))

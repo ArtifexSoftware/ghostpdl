@@ -24,6 +24,9 @@
 #include "gsstruct.h"
 #include "gsdevice.h"
 #include "pltop.h"
+#include "gserrors.h"
+#include "stream.h"
+#include "strmio.h"
 
 /* Get implementation's characteristics */
 const pl_interp_characteristics_t *     /* always returns a descriptor */
@@ -35,27 +38,48 @@ pl_characteristics(const pl_interp_implementation_t * impl)      /* implementati
 /* Do instance interpreter allocation/init. No device is set yet */
 int                             /* ret 0 ok, else -ve error code */
 pl_allocate_interp_instance(pl_interp_implementation_t * impl,
-                            gs_memory_t * mem   /* allocator to allocate instance from */
-    )
+                            gs_memory_t                * mem)   /* allocator to allocate instance from */
 {
     return impl->proc_allocate_interp_instance(impl, mem);
 }
 
-/* Get and interpreter prefered device memory allocator if any */
-int                             /* ret 0 ok, else -ve error code */
-pl_set_device(pl_interp_implementation_t * impl,  /* interp instance to use */
-              gx_device * device        /* device to set (open or closed) */
-    )
+/*
+ * Get the allocator with which to allocate a device
+ */
+gs_memory_t *
+pl_get_device_memory(pl_interp_implementation_t *impl)
 {
-    return impl->proc_set_device(impl, device);
+    if (impl->proc_get_device_memory == NULL)
+        return NULL;
+    return impl->proc_get_device_memory(impl);
+}
+
+int
+pl_set_param(pl_interp_implementation_t *impl,
+             pl_set_param_type           type,
+             const char                 *param,
+             const void                 *value)
+{
+    if (impl->proc_set_param == NULL)
+        return 0;
+
+    return impl->proc_set_param(impl, type, param, value);
+}
+
+int pl_post_args_init(pl_interp_implementation_t *impl)
+{
+    if (impl->proc_post_args_init == NULL)
+        return 0;
+
+    return impl->proc_post_args_init(impl);
 }
 
 /* Prepare interp instance for the next "job" */
 int                             /* ret 0 ok, else -ve error code */
-pl_init_job(pl_interp_implementation_t * impl     /* interp instance to start job in */
-    )
+pl_init_job(pl_interp_implementation_t * impl,     /* interp instance to start job in */
+            gx_device                  * device) /* device to set (open or closed) */
 {
-    return impl->proc_init_job(impl);
+    return impl->proc_init_job(impl, device);
 }
 
 /* Parse a random access seekable file.
@@ -66,7 +90,50 @@ pl_init_job(pl_interp_implementation_t * impl     /* interp instance to start jo
 int
 pl_process_file(pl_interp_implementation_t * impl, char *filename)
 {
-    return impl->proc_process_file(impl, filename);
+    gs_memory_t *mem;
+    int code, code1;
+    stream *s;
+
+    if (impl->proc_process_file != NULL)
+        return impl->proc_process_file(impl, filename);
+
+    /* We have to process the file in chunks. */
+    mem = pl_get_device_memory(impl);
+    code = 0;
+
+    s = sfopen(filename, "r", mem);
+    if (s == NULL)
+        return gs_error_undefinedfilename;
+
+    code = pl_process_begin(impl);
+
+    while (code == gs_error_NeedInput || code >= 0) {
+        if (s->cursor.r.ptr == s->cursor.r.limit && sfeof(s))
+            break;
+        code = s_process_read_buf(s);
+        if (code < 0)
+            break;
+
+        code = pl_process(impl, &s->cursor.r);
+        if_debug2m('I', mem, "processed (%s) job to offset %ld\n",
+                   pl_characteristics(impl)->language,
+                   sftell(s));
+    }
+
+    code1 = pl_process_end(impl);
+    if (code >= 0 && code1 < 0)
+        code = code1;
+
+    sfclose(s);
+
+    return code;
+}
+
+/* Do setup to for parsing cursor-fulls of data */
+int
+pl_process_begin(pl_interp_implementation_t * impl) /* interp instance to process data job in */
+{
+    return impl->proc_process_begin(impl);
 }
 
 /* Parse a cursor-full of data */
@@ -78,37 +145,39 @@ pl_process_file(pl_interp_implementation_t * impl, char *filename)
  *      other <0 value - an error was detected.
  */
 int
-pl_process(pl_interp_implementation_t * impl,     /* interp instance to process data job in */
-           stream_cursor_read * cursor  /* data to process */
-    )
+pl_process(pl_interp_implementation_t * impl,       /* interp instance to process data job in */
+           stream_cursor_read         * cursor)     /* data to process */
 {
     return impl->proc_process(impl, cursor);
 }
 
+int
+pl_process_end(pl_interp_implementation_t * impl)   /* interp instance to process data job in */
+{
+    return impl->proc_process_end(impl);
+}
+
 /* Skip to end of job ret 1 if done, 0 ok but EOJ not found, else -ve error code */
 int
-pl_flush_to_eoj(pl_interp_implementation_t * impl,        /* interp instance to flush for */
-                stream_cursor_read * cursor     /* data to process */
-    )
+pl_flush_to_eoj(pl_interp_implementation_t * impl,  /* interp instance to flush for */
+                stream_cursor_read         * cursor)/* data to process */
 {
     return impl->proc_flush_to_eoj(impl, cursor);
 }
 
 /* Parser action for end-of-file (also resets after unexpected EOF) */
 int                             /* ret 0 or +ve if ok, else -ve error code */
-pl_process_eof(pl_interp_implementation_t * impl  /* interp instance to process data job in */
-    )
+pl_process_eof(pl_interp_implementation_t * impl)   /* interp instance to process data job in */
 {
     return impl->proc_process_eof(impl);
 }
 
 /* Report any errors after running a job */
 int                             /* ret 0 ok, else -ve error code */
-pl_report_errors(pl_interp_implementation_t * impl,       /* interp instance to wrap up job in */
-                 int code,      /* prev termination status */
-                 long file_position,    /* file position of error, -1 if unknown */
-                 bool force_to_cout     /* force errors to cout */
-    )
+pl_report_errors(pl_interp_implementation_t * impl,          /* interp instance to wrap up job in */
+                 int                          code,          /* prev termination status */
+                 long                         file_position, /* file position of error, -1 if unknown */
+                 bool                         force_to_cout) /* force errors to cout */
 {
     return impl->proc_report_errors
         (impl, code, file_position, force_to_cout);
@@ -116,24 +185,14 @@ pl_report_errors(pl_interp_implementation_t * impl,       /* interp instance to 
 
 /* Wrap up interp instance after a "job" */
 int                             /* ret 0 ok, else -ve error code */
-pl_dnit_job(pl_interp_implementation_t * impl     /* interp instance to wrap up job in */
-    )
+pl_dnit_job(pl_interp_implementation_t * impl)     /* interp instance to wrap up job in */
 {
     return impl->proc_dnit_job(impl);
 }
 
-/* Remove a device from an interperter instance */
-int                             /* ret 0 ok, else -ve error code */
-pl_remove_device(pl_interp_implementation_t * impl        /* interp instance to use */
-    )
-{
-    return impl->proc_remove_device(impl);
-}
-
 /* Deallocate a interpreter instance */
 int                             /* ret 0 ok, else -ve error code */
-pl_deallocate_interp_instance(pl_interp_implementation_t * impl   /* instance to dealloc */
-    )
+pl_deallocate_interp_instance(pl_interp_implementation_t * impl)   /* instance to dealloc */
 {
     if (impl->interp_client_data == NULL)
         return 0;

@@ -20,6 +20,7 @@
 #  define inamestr_INCLUDED
 
 #include "inameidx.h"
+#include "stdpre.h"
 
 /*
  * In the code below, we use the hashing method described in

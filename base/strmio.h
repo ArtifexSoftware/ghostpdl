@@ -20,6 +20,8 @@
 #ifndef strmio_INCLUDED
 #  define strmio_INCLUDED
 
+#include "scommon.h"
+
 #ifndef stream_DEFINED
 #  define stream_DEFINED
 typedef struct stream_s stream;

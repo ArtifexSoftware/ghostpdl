@@ -20,6 +20,8 @@
 #ifndef spdiffx_INCLUDED
 #  define spdiffx_INCLUDED
 
+#include "scommon.h"
+
 /*
  * Define the maximum value for Colors.  This must be at least 4, but can
  * be arbitrarily large: the only cost is a larger stream state structure.

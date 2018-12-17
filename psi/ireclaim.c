@@ -156,12 +156,12 @@ gs_vmreclaim(gs_dual_memory_t *dmem, bool global)
 
     {
         void *ctxp = i_ctx_p;
-        gs_gc_root_t context_root;
+        gs_gc_root_t context_root, *r = &context_root;
 
-        gs_register_struct_root((gs_memory_t *)lmem, &context_root,
+        gs_register_struct_root((gs_memory_t *)lmem, &r,
                                 &ctxp, "i_ctx_p root");
         GS_RECLAIM(&dmem->spaces, global);
-        gs_unregister_root((gs_memory_t *)lmem, &context_root, "i_ctx_p root");
+        gs_unregister_root((gs_memory_t *)lmem, r, "i_ctx_p root");
         i_ctx_p = ctxp;
         dmem = &i_ctx_p->memory;
     }

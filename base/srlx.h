@@ -20,6 +20,8 @@
 #ifndef srlx_INCLUDED
 #  define srlx_INCLUDED
 
+#include "scommon.h"
+
 /* Common state */
 #define stream_RL_state_common\
         stream_state_common;\

@@ -21,6 +21,7 @@
 
 #include "gsstype.h"
 #include "gxcomp.h"
+#include "gxcindex.h"
 
 /*
  * Overprint compositor.

@@ -1132,7 +1132,7 @@ static int grayvalidate(i_ctx_t *i_ctx_p, ref *space, float *values, int num_com
 {
     os_ptr op = osp;
 
-    if (!r_has_type(op, t_integer) && !r_has_type(op, t_real))
+    if (!r_is_number(op))
         return_error(gs_error_typecheck);
 
     if (num_comps < 1)
@@ -1477,7 +1477,7 @@ static int rgbvalidate(i_ctx_t *i_ctx_p, ref *space, float *values, int num_comp
 
     op -= 2;
     for (i=0;i<3;i++) {
-        if (!r_has_type(op, t_integer) && !r_has_type(op, t_real))
+        if (!r_is_number(op))
             return_error(gs_error_typecheck);
         op++;
     }
@@ -1744,7 +1744,7 @@ static int cmykvalidate(i_ctx_t *i_ctx_p, ref *space, float *values, int num_com
 
     op -= 3;
     for (i=0;i < 4;i++) {
-        if (!r_has_type(op, t_integer) && !r_has_type(op, t_real))
+        if (!r_is_number(op))
             return_error(gs_error_typecheck);
         op++;
     }
@@ -2319,7 +2319,7 @@ static int cieavalidate(i_ctx_t *i_ctx_p, ref *space, float *values, int num_com
     if (num_comps < 1)
         return_error(gs_error_stackunderflow);
 
-    if (!r_has_type(op, t_integer) && !r_has_type(op, t_real))
+    if (!r_is_number(op))
         return_error(gs_error_typecheck);
 
     return 0;
@@ -2580,7 +2580,7 @@ static int cieabcvalidate(i_ctx_t *i_ctx_p, ref *space, float *values, int num_c
 
     op -= 2;
     for (i=0;i<3;i++) {
-        if (!r_has_type(op, t_integer) && !r_has_type(op, t_real))
+        if (!r_is_number(op))
             return_error(gs_error_typecheck);
         op++;
     }
@@ -2870,7 +2870,7 @@ static int ciedefvalidate(i_ctx_t *i_ctx_p, ref *space, float *values, int num_c
 
     op -= 2;
     for (i=0;i<3;i++) {
-        if (!r_has_type(op, t_integer) && !r_has_type(op, t_real))
+        if (!r_is_number(op))
             return_error(gs_error_typecheck);
         op++;
     }
@@ -3182,7 +3182,7 @@ static int ciedefgvalidate(i_ctx_t *i_ctx_p, ref *space, float *values, int num_
 
     op -= 3;
     for (i=0;i < 4;i++) {
-        if (!r_has_type(op, t_integer) && !r_has_type(op, t_real))
+        if (!r_is_number(op))
             return_error(gs_error_typecheck);
         op++;
     }
@@ -3634,7 +3634,7 @@ static int sepvalidate(i_ctx_t *i_ctx_p, ref *space, float *values, int num_comp
     if (num_comps < 1)
         return_error(gs_error_stackunderflow);
 
-    if (!r_has_type(op, t_integer) && !r_has_type(op, t_real))
+    if (!r_is_number(op))
         return_error(gs_error_typecheck);
 
     if (*values > 1.0)
@@ -4276,7 +4276,7 @@ static int devicenvalidate(i_ctx_t *i_ctx_p, ref *space, float *values, int num_
     op -= r_size(&narray) - 1;
 
     for (i=0;i < r_size(&narray); i++) {
-        if (!r_has_type(op, t_integer) && !r_has_type(op, t_real))
+        if (!r_is_number(op))
             return_error(gs_error_typecheck);
 
         if (values[i] > 1.0)
@@ -4674,7 +4674,7 @@ static int indexedvalidate(i_ctx_t *i_ctx_p, ref *space, float *values, int num_
     if (num_comps < 1)
         return_error(gs_error_stackunderflow);
 
-    if (!r_has_type(op, t_integer) && !r_has_type(op, t_real))
+    if (!r_is_number(op))
         return_error(gs_error_typecheck);
 
     code = array_get(imemory, space, 2, &hival);
@@ -5206,7 +5206,7 @@ static int labvalidate(i_ctx_t *i_ctx_p, ref *space, float *values, int num_comp
         return_error(gs_error_stackunderflow);
     op -= 2;
     for (i=0;i<3;i++) {
-        if (!r_has_type(op, t_integer) && !r_has_type(op, t_real))
+        if (!r_is_number(op))
             return_error(gs_error_typecheck);
         op++;
     }
@@ -5685,7 +5685,7 @@ static int validateiccspace(i_ctx_t * i_ctx_p, ref **r)
             code = array_get(imemory, tempref, i, &valref);
             if (code < 0)
                 return code;
-            if (!r_has_type(&valref, t_integer) && !r_has_type(&valref, t_real))
+            if (!r_is_number(&valref))
                 return_error(gs_error_typecheck);
         }
     }

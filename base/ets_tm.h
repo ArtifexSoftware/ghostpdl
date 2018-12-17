@@ -1,3 +1,22 @@
+/* Copyright (C) 2001-2018 Artifex Software, Inc.
+   All Rights Reserved.
+
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
+   This software is distributed under license and may not be copied,
+   modified or distributed except as expressly authorized under the terms
+   of the license contained in the file LICENSE in this distribution.
+
+   Refer to licensing information at http://www.artifex.com or contact
+   Artifex Software, Inc.,  1305 Grant Avenue - Suite 200, Novato,
+   CA 94945, U.S.A., +1(415)492-9861, for further information.
+*/
+
+
+#ifndef ets_tm_h_INCLUDED
+#  define ets_tm_h_INCLUDED
+
 #define TM_WIDTH 256
 #define TM_HEIGHT 256
 const signed char tmmat[] = {
@@ -4097,3 +4116,5 @@ const signed char tmmat[] = {
   8, -17, -59, -12, -32, -46, 16, -47, -17, 27, 9, -21, -18, -41, 19, -37,
   13, -43, -63, 61, 18, -56, -22, -52, 62, -35, -56, 30, 57, -44, -3, 0,
   12, -1, 24, 3, 0, -23, 29, -6, 42, -59, 45, 52, -1, 46, -51, 66};
+
+#endif

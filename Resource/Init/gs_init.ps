@@ -1239,33 +1239,46 @@ end
 /=== { ===only (\n) print } bind def
 
 % Create the initialization queue.
-
-/.delayed_init_queue 10 dict def
+1183615869 internaldict dup
+/.delayed_init_queue 10 dict put
 
 /.schedule_init   %   <priority> <proc> .schedule_init -
 {
-  //.delayed_init_queue 2 index known {
+   1183615869 internaldict begin
+  .delayed_init_queue 2 index known {
+    end
     (.delayed_init_queue priority conflict with ) print 1 index =
     /.schedule_init cvx /configurationerror signalerror
   } if
-  //.delayed_init_queue 3 1 roll .growput
+  .delayed_init_queue 3 1 roll .growput
+  end
 } bind def
 
+begin
 /.execute_scheduled_inits %   - .execute_scheduled_inits -
 {
-  { 0 //null //.delayed_init_queue {     % maxp {} p {}
+  2 dict begin
+  /.newdelayed_init_queue
+  mark
+  1183615869 internaldict /.delayed_init_queue get {} forall
+  .dicttomark def
+  {
+    0 //null .newdelayed_init_queue {     % maxp {} p {}
       3 index 2 index lt {
         4 2 roll
       } if
       pop pop
     } forall
-    exch //.delayed_init_queue exch undef
+    exch .newdelayed_init_queue exch undef
     dup //null eq {
       pop exit
     } if
     exec
   } loop
+  currentdict /.newdelayed_init_queue undef
+  end
 } bind def
+end
 
 (END PROCS) VMDEBUG
 
@@ -2025,9 +2038,21 @@ gsave
   } {
     { }
   } ifelse def
-<1b> cvn {	 		% UEL is <esc>%-12345X and acts the same as ^D
-  currentfile (%-12345X) .peekstring pop (%-12345X) eq <04> cvn load if
-} bind def
+<1b> cvn
+.actonuel % UEL is <esc>%-12345X and acts the same as ^D
+{systemdict (.forceinterp_exit) cvn known {//true} {//false} ifelse}
+{//false} ifelse
+
+{
+  {
+    currentfile (%-12345X) .peekstring pop (%-12345X) eq
+    { currentfile .forceinterp_exit } if
+  }
+}
+{
+  {currentfile (%-12345X) .peekstring pop (%-12345X) eq <04> cvn load if}
+} ifelse bind def
+
 <1b45> cvn { } def		% PJL reset prologue (ESC E)
 <1b451b> cvn <1b> cvn load def	% PJL reset epilogue (ESC E + UEL)
 (\001M) cvn			% TBCP initiator
@@ -2265,6 +2290,7 @@ SAFER { .setsafeglobal } if
   /.patterntypes /.shadingtypes /.wheredict /.renderingintentdict
   /.currentmatrix /.setmatrix
   /.setlinecap  /.setlinejoin  /.sizeimagebox  /.systemvmcheck
+  /.forceinterp_exit /.actonuel
 
   % Used by a free user in the Library of Congress. Apparently this is used to
   % draw a partial page, which is then filled in by the results of a barcode
@@ -2454,9 +2480,10 @@ $error /.nosetlocal //false put
 } ifelse
 
 % Execute scheduled inits :
-//.execute_scheduled_inits exec
-currentdict /.execute_scheduled_inits undef
-currentdict /.delayed_init_queue undef
+1183615869 internaldict /.execute_scheduled_inits get exec
+currentdict /.schedule_init undef
+%currentdict /.execute_scheduled_inits undef
+%currentdict /.delayed_init_queue undef
 
 % Make global and local FontDirectory read-only.
 FontDirectory readonly pop

@@ -47,6 +47,8 @@
  *                               will assume that this is the case.
  */
 
+#if defined(TEMPLATE_NAME)
+
 #ifdef SPECIFIC_ROP
 #if rop3_uses_S(SPECIFIC_ROP)
 #define S_USED
@@ -234,3 +236,7 @@ static void TEMPLATE_NAME(rop_run_op *op, byte *d, int len)
 #undef T_CONST
 #undef T_TRANS
 #undef TEMPLATE_NAME
+
+#else
+int dummy;
+#endif

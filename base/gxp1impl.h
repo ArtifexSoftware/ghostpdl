@@ -20,6 +20,10 @@
 #ifndef gxp1impl_INCLUDED
 #  define gxp1impl_INCLUDED
 
+#include "gxdevcli.h"
+#include "gxdcolor.h"
+#include "gxpcolor.h"
+
 /*
  * Declare the filling algorithms implemented in gxp1fill.c.
  * We use 'masked_fill_rect' instead of 'masked_fill_rectangle'

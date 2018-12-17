@@ -17,6 +17,10 @@
 #ifndef gsdfilt_INCLUDED
 #  define gsdfilt_INCLUDED
 
+#include "std.h"
+#include "gsgstate.h"
+#include "gxdevcli.h"
+
 /* The device filter stack lives in the gs_gstate structure. It represents
    a chained sequence of devices that filter device requests, each forwarding
    to its target. The last such target is the physical device as set by

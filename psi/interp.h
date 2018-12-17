@@ -19,6 +19,8 @@
 #ifndef interp_INCLUDED
 #  define interp_INCLUDED
 
+#include "imemory.h"
+
 /* ------ iinit.c ------ */
 
 /* Enter a name and value into systemdict. */

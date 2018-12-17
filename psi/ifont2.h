@@ -19,6 +19,8 @@
 #ifndef ifont2_INCLUDED
 #  define ifont2_INCLUDED
 
+#include "ifont1.h"
+
 /* Default value of lenIV */
 #define DEFAULT_LENIV_2 (-1)
 

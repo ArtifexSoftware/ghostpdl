@@ -39,6 +39,7 @@
 #ifndef gsmemory_INCLUDED
 #  define gsmemory_INCLUDED
 
+#include "std.h"
 #include "gstypes.h"		/* for gs_bytestring */
 #include "gslibctx.h"
 
@@ -355,7 +356,7 @@ typedef struct gs_memory_procs_s {
      */
 
 #define gs_memory_proc_register_root(proc)\
-  int proc(gs_memory_t *mem, gs_gc_root_t *root, gs_ptr_type_t ptype,\
+  int proc(gs_memory_t *mem, gs_gc_root_t **root, gs_ptr_type_t ptype,\
     void **pp, client_name_t cname)
 #define gs_register_root(mem, root, ptype, pp, cname)\
   (*(mem)->procs.register_root)(mem, root, ptype, pp, cname)
@@ -431,7 +432,7 @@ void *gs_resize_struct_array(gs_memory_t *mem, void *obj, uint num_elements,
                              client_name_t cname);
 
 /* Register a structure root.  This just calls gs_register_root. */
-int gs_register_struct_root(gs_memory_t *mem, gs_gc_root_t *root,
+int gs_register_struct_root(gs_memory_t *mem, gs_gc_root_t **root,
                             void **pp, client_name_t cname);
 
 /* Define no-op freeing procedures for use by enable_free. */

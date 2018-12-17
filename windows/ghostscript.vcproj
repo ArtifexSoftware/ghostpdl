@@ -2154,6 +2154,10 @@
 				>
 			</File>
 			<File
+                RelativePath="..\base\gsgstate.c"
+                >
+            </File>
+            <File
 				RelativePath="..\base\gshsb.c"
 				>
 			</File>
@@ -2161,7 +2165,7 @@
 				RelativePath="..\base\gsht.c"
 				>
 			</File>
-			<File
+            <File
 				RelativePath="..\base\gsht1.c"
 				>
 			</File>
@@ -2318,10 +2322,18 @@
 				>
 			</File>
 			<File
+                RelativePath="..\base\gsstrl.c"
+                >
+            </File>
+            <File
 				RelativePath="..\base\gstext.c"
 				>
 			</File>
 			<File
+                RelativePath="..\base\gstiffio.c"
+                >
+            </File>
+            <File
 				RelativePath="..\base\gstrap.c"
 				>
 			</File>
@@ -3382,11 +3394,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\base\gp.h"
+                RelativePath="..\base\gen_ordered.h"
 				>
 			</File>
 			<File
-				RelativePath="..\base\gp_mac.h"
+                RelativePath="..\base\gp.h"
 				>
 			</File>
 			<File
@@ -3622,6 +3634,10 @@
 				>
 			</File>
 			<File
+                RelativePath="..\base\gsform1.h"
+                >
+            </File>
+            <File
 				RelativePath="..\base\gsfunc.h"
 				>
 			</File>
@@ -3629,11 +3645,11 @@
 				RelativePath="..\base\gsfunc0.h"
 				>
 			</File>
-			<File
-				RelativePath="..\base\gsfunc3.h"
-				>
-			</File>
-			<File
+            <File
+                RelativePath="..\base\gsfunc3.h"
+                >
+            </File>
+            <File
 				RelativePath="..\base\gsfunc4.h"
 				>
 			</File>
@@ -3649,7 +3665,11 @@
 				RelativePath="..\base\gsgdata.h"
 				>
 			</File>
-			<File
+            <File
+                RelativePath="..\base\gsgstate.h"
+                >
+            </File>
+            <File
 				RelativePath="..\base\gshsb.h"
 				>
 			</File>
@@ -3862,6 +3882,10 @@
 				>
 			</File>
 			<File
+                RelativePath="..\base\gsstrl.h"
+                >
+            </File>
+            <File
 				RelativePath="..\base\gsstruct.h"
 				>
 			</File>
@@ -3874,6 +3898,10 @@
 				>
 			</File>
 			<File
+                RelativePath="..\base\gstiffio.h"
+                >
+            </File>
+            <File
 				RelativePath="..\base\gstparam.h"
 				>
 			</File>
@@ -4071,10 +4099,6 @@
 			</File>
 			<File
 				RelativePath="..\base\gxdevmem.h"
-				>
-			</File>
-			<File
-				RelativePath="..\base\gxdevndi.h"
 				>
 			</File>
 			<File
@@ -5694,6 +5718,10 @@
 				>
 			</File>
 			<File
+                RelativePath="..\devices\gdevchameleon.c"
+                >
+            </File>
+            <File
 				RelativePath="..\devices\gdevcif.c"
 				>
 			</File>
@@ -8028,6 +8056,14 @@
 				>
 			</File>
 			<File
+                RelativePath="..\psi\psapi.c"
+                >
+            </File>
+            <File
+                RelativePath="..\psi\psapi.h"
+                >
+            </File>
+            <File
 				RelativePath="..\psi\sfilter1.c"
 				>
 			</File>
@@ -8931,7 +8967,11 @@
 				RelativePath="..\psi\zfile.h"
 				>
 			</File>
-			<File
+            <File
+                RelativePath="..\psi\zfrsd.h"
+                >
+            </File>
+            <File
 				RelativePath="..\psi\zfunc.h"
 				>
 			</File>

@@ -18,6 +18,9 @@
 #ifndef gdevmpla_INCLUDED
 #  define gdevmpla_INCLUDED
 
+#include "gsdevice.h"
+#include "gxrplane.h"
+
 /*
  * Planar memory devices store the bits by planes instead of by chunks.
  * The plane corresponding to the least significant bits of the color index

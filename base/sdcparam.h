@@ -19,6 +19,9 @@
 #ifndef sdcparam_INCLUDED
 #  define sdcparam_INCLUDED
 
+#include "sdct.h"
+#include "gsparam.h"
+
 /*
  * All of these procedures are defined in sdcparam.c and are only for
  * internal use (by sddparam.c and sdeparam.c), so they are not

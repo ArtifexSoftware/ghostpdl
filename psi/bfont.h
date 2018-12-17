@@ -21,6 +21,8 @@
 #  define bfont_INCLUDED
 
 #include "ifont.h"
+#include "imemory.h"
+#include "iostack.h"
 
 /* In zfont.c */
 int add_FID(i_ctx_t *i_ctx_p, ref *pfdict, gs_font *pfont,

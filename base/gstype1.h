@@ -19,6 +19,10 @@
 #ifndef gstype1_INCLUDED
 #  define gstype1_INCLUDED
 
+#include "gstypes.h"
+#include "gsgstate.h"
+#include "gsgdata.h"
+
 /* ------ Normal client interface ------ */
 
 #define crypt_charstring_seed 4330

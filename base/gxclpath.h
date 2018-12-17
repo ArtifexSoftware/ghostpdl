@@ -20,6 +20,9 @@
 #ifndef gxclpath_INCLUDED
 #  define gxclpath_INCLUDED
 
+#include "gxdevcli.h"
+#include "gxcldev.h"
+
 /*
  * Define the flags indicating whether a band knows the current values of
  * various miscellaneous parameters (pcls->known).  The first N flags match

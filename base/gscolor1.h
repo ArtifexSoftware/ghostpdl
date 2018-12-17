@@ -20,6 +20,10 @@
 #ifndef gscolor1_INCLUDED
 #  define gscolor1_INCLUDED
 
+#include "stdpre.h"
+#include "gxtmap.h"
+#include "gsgstate.h"
+
 /* Color and gray interface */
 int gs_setcmykcolor(gs_gstate *, double, double, double, double),
     gs_currentcmykcolor(const gs_gstate *, float[4]),

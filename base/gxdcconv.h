@@ -19,7 +19,9 @@
 #ifndef gxdcconv_INCLUDED
 #  define gxdcconv_INCLUDED
 
+#include "std.h"
 #include "gxfrac.h"
+#include "gsgstate.h"
 
 /* Color space conversion routines */
 frac color_rgb_to_gray(frac r, frac g, frac b,

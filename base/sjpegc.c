@@ -26,7 +26,6 @@
 #include "sjpeg.h"
 #include "gsmchunk.h"
 
-typedef void *backing_store_ptr;
 #include "jmemcust.h"
 
 /*

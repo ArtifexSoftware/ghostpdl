@@ -18,6 +18,8 @@
 #ifndef gdebug_INCLUDED
 #  define gdebug_INCLUDED
 
+#include "std.h"
+
 /*
  * The compile-time DEBUG symbol determines whether debugging/tracing
  * code is included in the compiled code.  DEBUG may be set or not set

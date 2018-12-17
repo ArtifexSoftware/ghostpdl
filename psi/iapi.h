@@ -112,6 +112,16 @@ extern "C" {
 typedef struct display_callback_s display_callback;
 #endif
 
+#ifndef gs_memory_DEFINED
+#  define gs_memory_DEFINED
+typedef struct gs_memory_s gs_memory_t;
+#endif
+
+#ifndef gx_device_DEFINED
+#  define gx_device_DEFINED
+typedef struct gx_device_s gx_device;
+#endif
+
 typedef struct gsapi_revision_s {
     const char *product;
     const char *copyright;
@@ -296,6 +306,14 @@ gsapi_run_fileW(void *instance,
     const wchar_t *file_name, int user_errors, int *pexit_code);
 #endif
 
+/* Retrieve the memory allocator for the interpreter instance */
+GSDLLEXPORT gs_memory_t * GSDLLAPI
+gsapi_get_device_memory(void *instance);
+
+/* Set the device */
+GSDLLEXPORT int GSDLLAPI
+gsapi_set_device(void *instance, gx_device *pdev);
+
 /* Exit the interpreter.
  * This must be called on shutdown if gsapi_init_with_args()
  * has been called, and just before gsapi_delete_instance().
@@ -353,6 +371,8 @@ typedef int (GSDLLAPIPTR PFN_gsapi_run_fileA)(void *instance,
 typedef int (GSDLLAPIPTR PFN_gsapi_run_fileW)(void *instance,
     const wchar_t *file_name, int user_errors, int *pexit_code);
 #endif
+typedef gs_memory_t * (GSDLLAPIPTR PFN_gsapi_get_device_memory)(void *instance);
+typedef gs_memory_t * (GSDLLAPIPTR PFN_gsapi_set_device)(void *instance, gx_device *pdev);
 typedef int (GSDLLAPIPTR PFN_gsapi_exit)(void *instance);
 
 #ifdef __MACOS__

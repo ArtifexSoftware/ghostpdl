@@ -21,6 +21,7 @@
 
 #include "gsccode.h"
 #include "gscpm.h"
+#include "gsgstate.h"
 
 /*
  * Note that text display must return information to the generic code:
@@ -151,10 +152,6 @@ typedef struct gs_text_enum_s gs_text_enum_t;
 #  define gx_device_DEFINED
 typedef struct gx_device_s gx_device;
 #endif
-#ifndef gs_gstate_DEFINED
-#  define gs_gstate_DEFINED
-typedef struct gs_gstate_s gs_gstate;
-#endif
 #ifndef gx_device_color_DEFINED
 #  define gx_device_color_DEFINED
 typedef struct gx_device_color_s gx_device_color;
@@ -196,10 +193,6 @@ typedef struct gx_clip_path_s gx_clip_path;
 dev_proc_text_begin(gx_device_text_begin);
 
 /* Begin processing text with a graphics state. */
-#ifndef gs_gstate_DEFINED
-#  define gs_gstate_DEFINED
-typedef struct gs_gstate_s gs_gstate;
-#endif
 int gs_text_begin(gs_gstate * pgs, const gs_text_params_t * text,
                   gs_memory_t * mem, gs_text_enum_t ** ppenum);
 

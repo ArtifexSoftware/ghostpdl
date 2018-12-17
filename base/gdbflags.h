@@ -21,6 +21,8 @@
  * repeated inclusion.
  */
 
+#if defined(UNUSED) && defined(FLAG)
+
 UNUSED(0) /* Never use 0, as lots of things 'imply' 0. */
 FLAG(icc, 1, 'c', "ICC profile"),
 FLAG(validate_clumps, 2, 0, "Validate clumps during interpretation"),
@@ -148,3 +150,7 @@ UNUSED('{')
 UNUSED('|') /* "Reserved for experimental code" */
 UNUSED('}')
 FLAG(math,              '~', 0,   "Math functions and Functions")
+
+#else
+int dummy;
+#endif

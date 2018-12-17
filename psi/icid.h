@@ -19,6 +19,9 @@
 #ifndef icid_INCLUDED
 #  define icid_INCLUDED
 
+#include "std.h"
+#include "iref.h"
+
 #ifndef gs_cid_system_info_DEFINED
 #  define gs_cid_system_info_DEFINED
 typedef struct gs_cid_system_info_s gs_cid_system_info_t;

@@ -20,6 +20,9 @@
 #ifndef srdline_INCLUDED
 #  define srdline_INCLUDED
 
+#include "std.h"
+#include "gstypes.h"
+
 /*
  * Read a line from s_in, starting at index *pcount in buf.  Start by
  * printing prompt on s_out.  If the string is longer than size - 1 (we need

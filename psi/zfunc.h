@@ -19,6 +19,9 @@
 #ifndef zfunc_INCLUDED
 #  define zfunc_INCLUDED
 
+#include "iref.h"
+#include "gsfunc.h"
+
 /* imported from zfsample.c */
 int make_sampled_function(i_ctx_t * i_ctx_p, ref *arr, ref *pproc, gs_function_t **func);
 /* imported from zfunc4.c */

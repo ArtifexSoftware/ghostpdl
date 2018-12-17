@@ -399,6 +399,11 @@ float_to_ushort(float v)
     return ((ushort) (v * 16)); /* fixme : the scale may depend on renderer */
 }
 
+/* In general, we assumed that the entries we use below have been validated (at least for type)
+ * at definefont time. This means validating each entry only once, rather than on every read
+ * here. Better, for example, for BlendDesignMap which is an array, of arrays, of arrays of
+ * numbers.
+ */
 static ushort
 FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index)
 {
@@ -1223,6 +1228,9 @@ FAPI_FF_get_name(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index,
     return 1;
 }
 
+/* NOTE: we checked the type of $Blend at definefont time, so we know it is a
+ * procedure and don't need to check it again here
+ */
 static int
 FAPI_FF_get_proc(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index,
                  char *Buffer)

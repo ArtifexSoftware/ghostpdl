@@ -1218,6 +1218,7 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
                 ctx->stack->rowstride, ctx->stack->n_planes,
                 ctx->stack->planestride, ctx->stack->rowstride,
                 "aaTrans_Group_Pop",ctx->stack->data);
+    global_index++;
 #endif
 /* Note currently if a pattern space has transparency, the ICC profile is not used
    for blending purposes.  Instead we rely upon the gray, rgb, or cmyk parent space.

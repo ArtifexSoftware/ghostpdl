@@ -19,6 +19,8 @@
 #ifndef gsline_INCLUDED
 #  define gsline_INCLUDED
 
+#include "stdpre.h"
+#include "gsgstate.h"
 #include "gslparam.h"
 
 /* Procedures */
@@ -58,10 +60,6 @@ int gs_setdotorientation(gs_gstate *);
 int gs_dotorientation(gs_gstate *);
 
 /* gs_gstate-level procedures */
-#ifndef gs_gstate_DEFINED
-#  define gs_gstate_DEFINED
-typedef struct gs_gstate_s gs_gstate;
-#endif
 int gs_gstate_setflat(gs_gstate *, double);
 bool gs_gstate_currentdashadapt(const gs_gstate *);
 bool gs_gstate_currentaccuratecurves(const gs_gstate *);

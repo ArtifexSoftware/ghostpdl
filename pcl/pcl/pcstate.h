@@ -44,6 +44,7 @@
 
                                 /*#include "pgstate.h"*//* HP-GL/2 state, included below */
 #include "pjtop.h"
+#include "gsgstate.h"
 
 /* type for string id's */
 typedef struct pcl_string_id_s
@@ -81,10 +82,6 @@ typedef struct pstack_entry_s
 #ifndef pcl_state_DEFINED
 #  define pcl_state_DEFINED
 typedef struct pcl_state_s pcl_state_t;
-#endif
-#ifndef gs_gstate_DEFINED
-#  define gs_gstate_DEFINED
-typedef struct gs_gstate_s gs_gstate;
 #endif
 
 /*

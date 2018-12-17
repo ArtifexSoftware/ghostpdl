@@ -20,6 +20,8 @@
 #ifndef zcolor_INCLUDED
 #  define zcolor_INCLUDED
 
+#include "iref.h"
+
 /*
  * The code to set color space and color values has been moved from PostScript
  * into C (mostly). The new C code broadly follows the old PostScript method, each

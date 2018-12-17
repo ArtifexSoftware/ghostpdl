@@ -19,6 +19,7 @@
 #  define gdevmem_INCLUDED
 
 #include "gxbitops.h"
+#include "gxdevcli.h"
 
 /*
    The representation for a "memory" device is simply a

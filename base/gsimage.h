@@ -21,6 +21,7 @@
 #  define gsimage_INCLUDED
 
 #include "gsiparam.h"
+#include "gsgstate.h"
 
 /*
   The API defined in this file and implemented in gsimage.c provides a

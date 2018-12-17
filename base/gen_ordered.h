@@ -15,6 +15,11 @@
 
 /* Defines and exports for library (e.g., Ghostscript) use of gen_ordered.c */
 
+#ifndef gen_ordered_INCLUDED
+#  define gen_ordered_INCLUDED
+
+#include "stdpre.h"
+
 #ifndef RAW_SCREEN_DUMP
 #  define RAW_SCREEN_DUMP 0	/* Noisy output for .raw files for detailed debugging */
 #endif
@@ -96,3 +101,5 @@ void htsc_set_default_params(htsc_param_t *params);
     it is the callers responsibilty to free the final_mask.data that is returned.
 */
 int htsc_gen_ordered(htsc_param_t params, int *S, htsc_dig_grid_t *final_mask);
+
+#endif

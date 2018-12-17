@@ -19,6 +19,8 @@
 #ifndef opextern_INCLUDED
 #  define opextern_INCLUDED
 
+#include "iref.h"
+
 /*
  * Normally, the procedures that implement PostScript operators (named zX
  * where X is the name of the operator, e.g., zadd) are private to the
@@ -148,6 +150,8 @@ int zcurrentdevice(i_ctx_t *);
 int ztoken(i_ctx_t *);
 int ztokenexec(i_ctx_t *);
 int zwrite(i_ctx_t *);
+int zcurrentoutputdevice(i_ctx_t *i_ctx_p);
+int zsetdevice_no_safer(i_ctx_t *i_ctx_p, gx_device *new_dev);
 
 int zspec_op(i_ctx_t *i_ctx_p);
 #endif /* opextern_INCLUDED */

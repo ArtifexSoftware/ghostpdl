@@ -19,6 +19,8 @@
 #ifndef imainarg_INCLUDED
 #  define imainarg_INCLUDED
 
+#include "std.h"
+
 /* Define an opaque type for an interpreter instance.  See imain.h. */
 #ifndef gs_main_instance_DEFINED
 #  define gs_main_instance_DEFINED
@@ -33,6 +35,13 @@ typedef struct gs_main_instance_s gs_main_instance;
  * strings (which, however, it forbids the callee to modify!).
  */
 int gs_main_init_with_args(gs_main_instance * minst, int argc, char *argv[]);
+
+/*
+ * Split init functions; gs_main_init_with_args01 and 2 together do
+ * the same as gs_main_init_with_args, but allow for additional
+ * options to be processed in between. */
+int gs_main_init_with_args01(gs_main_instance * minst, int argc, char *argv[]);
+int gs_main_init_with_args2(gs_main_instance * minst);
 
 /*
  * Run the 'start' procedure (after processing the command line).

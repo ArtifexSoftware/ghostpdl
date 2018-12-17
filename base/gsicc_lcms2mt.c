@@ -337,7 +337,7 @@ gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
     cmsHTRANSFORM hTransform = (cmsHTRANSFORM)link_handle->hTransform;
     cmsUInt32Number dwInputFormat, dwOutputFormat, num_src_lcms, num_des_lcms;
     int  hasalpha, planarIN, planarOUT, numbytesIN, numbytesOUT, big_endianIN, big_endianOUT;
-    int k, needed_flags = 0;
+    int needed_flags = 0;
     unsigned char *inputpos, *outputpos;
     cmsContext ctx = gs_lib_ctx_get_cms_context(icclink->memory);
 

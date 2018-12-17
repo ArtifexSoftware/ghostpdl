@@ -19,6 +19,8 @@
 #ifndef opdef_INCLUDED
 #  define opdef_INCLUDED
 
+#include "iref.h"
+
 /*
  * Define the structure for initializing the operator table.  Each operator
  * file zxxx.c declares an array of these as follows:

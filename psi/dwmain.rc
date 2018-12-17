@@ -17,6 +17,8 @@
 
 #include <windows.h>
 #include "dwres.h"
+#include "gscdefs.h"
+
 
 #ifndef gstext_ico
 #define gstext_ico gswin.ico
@@ -31,3 +33,23 @@ GSIMAGE_ICON ICON gsgraph_ico
 #ifndef DS_3DLOOK
 #define DS_3DLOOK 0x0004L	/* for Windows 95 look */
 #endif
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION        0,0,GS_VERSION_MAJOR,GS_VERSION_MINOR
+ PRODUCTVERSION     0,0,GS_VERSION_MAJOR,GS_VERSION_MINOR
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "FileVersion",      GS_STRINGIZE(GS_DOT_VERSION) "\0"
+            VALUE "ProductVersion",   GS_STRINGIZE(GS_DOT_VERSION) "\0"
+            VALUE "LegalCopyright",   GS_COPYRIGHT "\0"
+            VALUE "ProductName",      GS_PRODUCT
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END

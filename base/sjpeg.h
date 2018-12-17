@@ -20,6 +20,8 @@
 #ifndef sjpeg_INCLUDED
 #  define sjpeg_INCLUDED
 
+#include "sdct.h"
+
 /*
  * Each routine gs_jpeg_xxx is equivalent to the IJG entry point jpeg_xxx,
  * except that

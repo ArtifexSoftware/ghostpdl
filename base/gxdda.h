@@ -20,6 +20,9 @@
 #ifndef gxdda_INCLUDED
 #  define gxdda_INCLUDED
 
+#include "stdpre.h"
+#include "gxfixed.h"
+
 /* We use the familiar Bresenham DDA algorithm for several purposes:
  *      - tracking the edges when filling trapezoids;
  *      - tracking the current pixel corner coordinates when rasterizing

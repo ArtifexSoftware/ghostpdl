@@ -19,6 +19,7 @@
 #ifndef gxdevbuf_INCLUDED
 #  define gxdevbuf_INCLUDED
 
+#include "gxband.h"
 #include "gxrplane.h"		/* for _buf_device procedures */
 
 /*

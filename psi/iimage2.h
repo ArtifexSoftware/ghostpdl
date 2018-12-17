@@ -20,6 +20,9 @@
 #ifndef iimage2_INCLUDED
 #  define iimage2_INCLUDED
 
+#include "gsiparam.h"
+#include "iref.h"
+
 /* This procedure is exported by zimage2.c for other modules. */
 
 /*

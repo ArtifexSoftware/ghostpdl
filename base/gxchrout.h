@@ -19,10 +19,7 @@
 #ifndef gxchrout_INCLUDED
 #  define gxchrout_INCLUDED
 
-#ifndef gs_gstate_DEFINED
-#  define gs_gstate_DEFINED
-typedef struct gs_gstate_s gs_gstate;
-#endif
+#include "gsgstate.h"
 
 /*
  * Determine the flatness for rendering a character in an outline font.

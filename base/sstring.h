@@ -19,6 +19,8 @@
 #ifndef sstring_INCLUDED
 #  define sstring_INCLUDED
 
+#include "scommon.h"
+
 /* ASCIIHexEncode */
 typedef struct stream_AXE_state_s {
     stream_state_common;

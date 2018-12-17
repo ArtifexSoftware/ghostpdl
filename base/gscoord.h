@@ -20,6 +20,9 @@
 #ifndef gscoord_INCLUDED
 #  define gscoord_INCLUDED
 
+#include "gsgstate.h"
+#include "gsmatrix.h"
+
 /* Coordinate system modification */
 int gs_initmatrix(gs_gstate *),
     gs_defaultmatrix(const gs_gstate *, gs_matrix *),
@@ -42,11 +45,6 @@ int gs_transform(gs_gstate *, double, double, gs_point *),
     gs_dtransform(gs_gstate *, double, double, gs_point *),
     gs_itransform(gs_gstate *, double, double, gs_point *),
     gs_idtransform(gs_gstate *, double, double, gs_point *);
-
-#ifndef gs_gstate_DEFINED
-#  define gs_gstate_DEFINED
-typedef struct gs_gstate_s gs_gstate;
-#endif
 
 int gs_gstate_setmatrix(gs_gstate *, const gs_matrix *);
 int gs_gstate_idtransform(const gs_gstate *, double, double, gs_point *);

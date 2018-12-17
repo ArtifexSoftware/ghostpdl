@@ -19,6 +19,8 @@
 #ifndef gxgcache_INCLUDED
 #  define gxgcache_INCLUDED
 
+#include "stdpre.h"
+
 /* Using : */
 
 #ifndef gs_font_type42_DEFINED

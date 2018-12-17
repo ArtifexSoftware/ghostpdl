@@ -22,6 +22,8 @@
 
 #include "gxfixed.h"	/* for fixed */
 #include "gxdda.h"	/* for gx_dda_fixed_point */
+#include "scommon.h"
+
 /*
  * Image scaling streams all use a common set of parameters to define the
  * input and output data.  That is what we define here.

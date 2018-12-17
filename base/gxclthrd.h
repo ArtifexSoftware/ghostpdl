@@ -20,7 +20,8 @@
 #ifndef gxclthrd_INCLUDED
 #  define gxclthrd_INCLUDED
 
-#include "gxsync.h"
+#include "gscms.h"
+#include "gxdevcli.h"
 
 /* clone a device and set params and its chunk memory                   */
 /* The chunk_base_mem MUST be thread safe                               */

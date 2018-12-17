@@ -19,6 +19,8 @@
 #ifndef gsclipsr_INCLUDED
 #  define gsclipsr_INCLUDED
 
+#include "gsgstate.h"
+
 int gs_clipsave(gs_gstate *);
 int gs_cliprestore(gs_gstate *);
 

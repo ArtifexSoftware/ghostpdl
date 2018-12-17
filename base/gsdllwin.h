@@ -19,6 +19,9 @@
 #ifndef gsdllwin_INCLUDED
 #  define gsdllwin_INCLUDED
 
+#include "gs_dll_call.h"
+#include "windows_.h"
+
 /* DLL exported functions */
 /* for load time dynamic linking */
 GSDLLEXPORT HGLOBAL GSDLLAPI gsdll_copy_dib(unsigned char * device);

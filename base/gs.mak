@@ -398,6 +398,7 @@ DEVICE_DEVS_ALL=$(DEVICE_DEVS) $(DEVICE_DEVS1) \
 
 PSI_DEVS_ALL=$(GSPLAT_DEVS_ALL) \
  $(PSI_FEATURE_DEVS) \
+ $(PSD)iapi.dev \
  $(FEATURE_DEVS) \
  $(FEATURE_DEVS_EXTRA) \
  $(DEVICE_DEVS_ALL)
@@ -479,17 +480,25 @@ $(ld_tr) : \
 	$(EXP)$(GENCONF_XE) $(devs_tr) -h $(gconfxx_h) $(CONFILES) $(CONFLDTR) $(ld_tr)
 	$(EXP)$(ECHOGS_XE) -a $(gconfxx_h) $(GCONFIG_EXTRAS)
 
+gsnoapi_tr=$(GLGENDIR)$(D)gsnoapi.tr
 gs_tr=$(GLGENDIR)$(D)gs.tr
 igs_tr=$(GLGENDIR)$(D)igs.tr
 gsld_tr=$(GLGENDIR)$(D)gsld.tr
-$(gs_tr): $(GS_MAK) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(ld_tr) $(devs_tr) $(PSI_DEVS_ALL) \
-                                               $(GLGENDIR)$(D)libcore.dev $(MAKEDIRS)
+gsnoapild_tr=$(GLGENDIR)$(D)gsnoapild.tr
+$(gsnoapi_tr): $(GS_MAK) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(ld_tr) $(devs_tr) $(PSI_DEVS_ALL)\
+ $(GLGENDIR)$(D)libcore.dev $(MAKEDIRS)
 	$(EXP)$(ECHOGS_XE) -w $(igs_tr) - -include $(PSI_FEATURE_DEVS)
 	$(EXP)$(GENCONF_XE) $(igs_tr) -h $(iconfxx_h) $(CONFILES) $(CONFLDTR) $(gsld_tr)
 	$(EXP)$(ECHOGS_XE) -w $(iconfig_h) -R $(iconfxx_h)
-	$(EXP)$(ECHOGS_XE) -w $(gs_tr) -R $(devs_tr)
-	$(EXP)$(ECHOGS_XE) -a $(gs_tr) -R $(igs_tr)
+	$(EXP)$(ECHOGS_XE) -w $(gsnoapi_tr) -R $(devs_tr)
+	$(EXP)$(ECHOGS_XE) -a $(gsnoapi_tr) -R $(igs_tr)
+	$(EXP)$(GENCONF_XE) $(gsnoapi_tr) -h $(GLGENDIR)$(D)unused.h $(CONFILES) $(CONFLDTR) $(gsnoapild_tr)
+
+$(gs_tr): $(gsnoapi_tr)
+	$(EXP)$(ECHOGS_XE) -w $(gs_tr) -R $(gsnoapi_tr)
+	$(EXP)$(ECHOGS_XE) -a $(gs_tr) - -include $(PSD)iapi.dev
 	$(EXP)$(GENCONF_XE) $(gs_tr) -h $(GLGENDIR)$(D)unused.h $(CONFILES) $(CONFLDTR) $(gsld_tr)
+
 
 pcl_tr=$(GLGENDIR)$(D)pcl.tr
 ipcl_tr=$(GLGENDIR)$(D)ipcl.tr
@@ -576,5 +585,3 @@ $(pdfobj_tr) : $(pdf_tr)
 pdlobj_tr=$(GLGENDIR)$(D)pdlobj.tr
 $(pdlobj_tr) : $(gpdl_tr)
 	$(EXP)$(GENCONF_XE) $(gpdl_tr) -h $(GLGENDIR)$(D)unused.h $(CONFILES) -o $(pdlobj_tr)
-
-

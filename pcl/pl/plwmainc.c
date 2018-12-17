@@ -353,7 +353,7 @@ main_utf8(int argc, char *argv[])
     hwndforeground = GetForegroundWindow();     /* assume this is ours */
 #endif
 
-    if (plapi_new_instance(&instance, NULL) < 0) {
+    if (gsapi_new_instance(&instance, NULL) < 0) {
         fprintf(stderr, "Cannot create instance\n");
         return 1;
     }
@@ -384,7 +384,7 @@ main_utf8(int argc, char *argv[])
     nargc = argc;
     nargv = argv;
 #else
-    plapi_set_display_callback(instance, &display);
+    gsapi_set_display_callback(instance, &display);
     {
         int format = DISPLAY_COLORS_NATIVE | DISPLAY_ALPHA_NONE |
             DISPLAY_DEPTH_1 | DISPLAY_BIGENDIAN | DISPLAY_BOTTOMFIRST;
@@ -420,11 +420,11 @@ main_utf8(int argc, char *argv[])
         nargv[2] = ddpi;
         memcpy(&nargv[3], &argv[1], argc * sizeof(char *));
 #endif
-        code = plapi_init_with_args(instance, nargc, nargv);
-        code1 = plapi_exit(instance);
+        code = gsapi_init_with_args(instance, nargc, nargv);
+        code1 = gsapi_exit(instance);
         if (code == 0 || (code == gs_error_Quit && code1 != 0))
             code = code1;
-        plapi_delete_instance(instance);
+        gsapi_delete_instance(instance);
 
 #ifndef METRO
     free(nargv);

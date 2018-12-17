@@ -19,6 +19,8 @@
 #ifndef itoken_INCLUDED
 #  define itoken_INCLUDED
 
+#include "iref.h"
+
 /*
  * Continue after handling a procedure stream refill or other callout
  * while reading tokens in the interpreter.

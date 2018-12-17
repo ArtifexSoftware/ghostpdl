@@ -21,6 +21,7 @@
 #  define ssha2_INCLUDED
 
 #include "sha2.h"
+#include "scommon.h"
 
 /*
  * The SHA256Encode filter accepts an arbitrary amount of input data,

@@ -18,6 +18,8 @@
 #ifndef gsserial_INCLUDED
 #  define gsserial_INCLUDED
 
+#include "stdpre.h"
+
 /*
  * A variable-length, little-endian format for encoding (unsigned)
  * integers.

@@ -20,6 +20,7 @@
 #  define istruct_INCLUDED
 
 #include "gsstruct.h"
+#include "iref.h"
 
 /* ================ Refs ================ */
 

@@ -19,6 +19,8 @@
 #ifndef gxfont0_INCLUDED
 #  define gxfont0_INCLUDED
 
+#include "gxfont.h"
+
 /* Define the composite font mapping types. */
 /* These numbers must be the same as the values of FMapType */
 /* in type 0 font dictionaries. */

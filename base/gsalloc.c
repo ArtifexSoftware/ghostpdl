@@ -2340,19 +2340,23 @@ trim_obj(gs_ref_memory_t *mem, obj_header_t *obj, uint size, clump_t *cp)
 
 /* Register a root. */
 static int
-i_register_root(gs_memory_t * mem, gs_gc_root_t * rp, gs_ptr_type_t ptype,
+i_register_root(gs_memory_t * mem, gs_gc_root_t ** rpp, gs_ptr_type_t ptype,
                 void **up, client_name_t cname)
 {
     gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
+    gs_gc_root_t *rp;
 
-    if (rp == NULL) {
+    if (rpp == NULL || *rpp == NULL) {
         rp = gs_raw_alloc_struct_immovable(imem->non_gc_memory, &st_gc_root_t,
                                            "i_register_root");
         if (rp == 0)
             return_error(gs_error_VMerror);
         rp->free_on_unregister = true;
-    } else
+        *rpp = rp;
+    } else {
+        rp = *rpp;
         rp->free_on_unregister = false;
+    }
     if_debug3m('8', mem, "[8]register root(%s) 0x%lx -> 0x%lx\n",
                client_name_string(cname), (ulong)rp, (ulong)up);
     rp->ptype = ptype;

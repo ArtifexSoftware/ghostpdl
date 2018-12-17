@@ -19,6 +19,10 @@
 #ifndef gsht_INCLUDED
 #  define gsht_INCLUDED
 
+#include "std.h"
+#include "gsgstate.h"
+#include "gstypes.h"
+
 /* Client definition of (Type 1) halftones */
 typedef struct gs_screen_halftone_s {
     float frequency;

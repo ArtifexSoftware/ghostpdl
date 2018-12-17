@@ -30,6 +30,8 @@
  *  INSIDE_PATH_P(inside, rule) - a macro for checking the winding rule.
 */
 
+#if defined(TEMPLATE_spot_into_trapezoids) && defined(INCR) && defined(FILL_ADJUST) && defined(LOOP_FILL_RECTANGLE_DIRECT) && defined(COVERING_PIXEL_CENTERS)
+
 /* ---------------- Trapezoid decomposition loop ---------------- */
 
 /* Takes lines off of y_list and adds them to */
@@ -271,3 +273,7 @@ TEMPLATE_spot_into_trapezoids (line_list *ll, fixed band_mask)
     }
     return 0;
 }
+
+#else
+int dummy;
+#endif

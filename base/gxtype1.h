@@ -23,6 +23,7 @@
 #include "gsgdata.h"
 #include "gstype1.h"
 #include "gxhintn.h"
+#include "gxmatrix.h"
 
 /* This file defines the structures for the state of a Type 1 / */
 /* Type 2 charstring interpreter. */

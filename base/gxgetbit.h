@@ -20,6 +20,7 @@
 #  define gxgetbit_INCLUDED
 
 #include "gxbitfmt.h"
+#include "gxdevcli.h"
 
 /* The parameter record typedef is also in gxdevcli.h. */
 #ifndef gs_get_bits_params_DEFINED

@@ -19,6 +19,8 @@
 #ifndef gscolor3_INCLUDED
 #  define gscolor3_INCLUDED
 
+#include "gsgstate.h"
+
 /* Smooth shading */
 #ifndef gs_shading_t_DEFINED
 #  define gs_shading_t_DEFINED

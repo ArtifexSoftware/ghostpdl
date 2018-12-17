@@ -40,6 +40,7 @@
 #include "pcpalet.h"
 #include "rtgmode.h"
 #include "gsicc_manage.h"
+#include "pcparam.h"
 
 /* Configuration table for modules */
 extern const pcl_init_t pcparse_init;
@@ -168,9 +169,30 @@ typedef struct pcl_interp_instance_s
 static int
 pcl_detect_language(const char *s, int length)
 {
+    int count;
+    int len;
+
     if (length < 2)
-        return 1;
-    return memcmp(s, "\033E", 2);
+        return 0;
+    if (s[0] == 27) {
+        if (s[1] == 'E')
+            return 100;
+        return 80;
+    }
+
+    /* Count the number of ESC's */
+    for (count = 0, len = length; len > 0; len--, s++)
+    {
+        if (*s == 27)
+            count++;
+    }
+
+    if (count > 10 || count > length/20)
+        return 80;
+    if (count > 0)
+        return 20;
+
+    return 0;
 }
 
 /* Get implementation's characteristics */
@@ -252,7 +274,7 @@ pcl_impl_allocate_interp_instance(pl_interp_implementation_t *impl,
     }
 
     pcli->pcs.pjls = pl_main_get_pjl_instance(mem);
-    
+
     /* Return success */
     impl->interp_client_data = pcli;
     return 0;
@@ -265,12 +287,12 @@ pcl_get_personality(pl_interp_implementation_t * impl, gx_device * device)
 {
     pcl_interp_instance_t *pcli  = impl->interp_client_data;
     char *personality = pl_main_get_pcl_personality(pcli->memory);
-    
+
     if (!strcmp(personality, "PCL5C"))
         return pcl5c;
     else if (!strcmp(personality, "PCL5E"))
         return pcl5e;
-    /* 
+    /*
      * match RTL or any string containing "GL" we see many variants in
      * test files: HPGL/2, HPGL2 etc.
      */
@@ -291,20 +313,19 @@ pcl_set_icc_params(pl_interp_implementation_t * impl, gs_gstate * pgs)
     return pl_set_icc_params(pcli->memory, pgs);
 }
 
-/* Set a device into an interperter instance */
+/* Prepare interp instance for the next "job" */
 static int                      /* ret 0 ok, else -ve error code */
-pcl_impl_set_device(pl_interp_implementation_t * impl,    /* interp instance to use */
-                    gx_device * device  /* device to set (open or closed) */
-    )
+pcl_impl_init_job(pl_interp_implementation_t * impl,       /* interp instance to start job in */
+                  gx_device                  * device)
 {
-
-    int code;
+    int code = 0;
     pcl_interp_instance_t *pcli = impl->interp_client_data;
     gs_memory_t *mem = pcli->memory;
-    
     enum
     { Sbegin, Ssetdevice, Sinitg, Sgsave1, Spclgsave, Sreset, Serase,
             Sdone } stage;
+
+    pcl_process_init(&pcli->pst);
 
     stage = Sbegin;
 
@@ -385,19 +406,22 @@ pcl_impl_set_device(pl_interp_implementation_t * impl,    /* interp instance to 
         case Sbegin:           /* nothing left to undo */
             break;
     }
+
+    /* Warn the device we use ROPs */
+    if (code == 0) {
+        code = put_param1_bool(&pcli->pcs, "LanguageUsesROPs", true);
+        if (!device->is_open)
+            code = gs_opendevice(device);
+    }
+
     return code;
 }
 
-/* Prepare interp instance for the next "job" */
-static int                      /* ret 0 ok, else -ve error code */
-pcl_impl_init_job(pl_interp_implementation_t * impl       /* interp instance to start job in */
-    )
+/* Do any setup for parser per-cursor */
+static int                      /* ret 0 or +ve if ok, else -ve error code */
+pcl_impl_process_begin(pl_interp_implementation_t * impl)
 {
-    int code = 0;
-    pcl_interp_instance_t *pcli = impl->interp_client_data;
-
-    pcl_process_init(&pcli->pst);
-    return code;
+    return 0;
 }
 
 /* Parse a cursor-full of data */
@@ -410,6 +434,12 @@ pcl_impl_process(pl_interp_implementation_t * impl,       /* interp instance to 
     int code = pcl_process(&pcli->pst, &pcli->pcs, cursor);
 
     return code;
+}
+
+static int                      /* ret 0 or +ve if ok, else -ve error code */
+pcl_impl_process_end(pl_interp_implementation_t * impl)
+{
+    return 0;
 }
 
 /* Skip to end of job ret 1 if done, 0 ok but EOJ not found, else -ve error code */
@@ -469,24 +499,12 @@ pcl_impl_report_errors(pl_interp_implementation_t * impl, /* interp instance to 
 
 /* Wrap up interp instance after a "job" */
 static int                      /* ret 0 ok, else -ve error code */
-pcl_impl_dnit_job(pl_interp_implementation_t * impl       /* interp instance to wrap up job in */
-    )
+pcl_impl_dnit_job(pl_interp_implementation_t * impl)       /* interp instance to wrap up job in */
 {
     pcl_interp_instance_t *pcli = impl->interp_client_data;
     pcl_state_t *pcs = &pcli->pcs;
-
-    if (pcs->raster_state.graphics_mode)
-        return pcl_end_graphics_mode(pcs);
-    return 0;
-}
-
-/* Remove a device from an interperter instance */
-static int                      /* ret 0 ok, else -ve error code */
-pcl_impl_remove_device(pl_interp_implementation_t * impl  /* interp instance to use */
-    )
-{
     int code;
-    pcl_interp_instance_t *pcli = impl->interp_client_data;
+    gx_device *device = gs_currentdevice(pcs->pgs);
 
     /* Note: "PCL" grestore. */
     code = pcl_grestore(&pcli->pcs);
@@ -498,7 +516,22 @@ pcl_impl_remove_device(pl_interp_implementation_t * impl  /* interp instance to 
     if (code < 0)
         return code;
 
-    return pcl_do_resets(&pcli->pcs, pcl_reset_permanent);
+    code = pcl_do_resets(&pcli->pcs, pcl_reset_permanent);
+    if (code < 0)
+        return code;
+
+    if (pcs->raster_state.graphics_mode)
+        code = pcl_end_graphics_mode(pcs);
+
+    if (code >= 0) {
+        /* Warn the device that ROP usage has come to an end */
+        code = put_param1_bool(&pcli->pcs, "LanguageUsesROPs", false);
+
+        if (!device->is_open)
+            code = gs_opendevice(device);
+    }
+
+    return code;
 }
 
 /* Deallocate a interpreter instance */
@@ -545,15 +578,18 @@ pcl_end_page_top(pcl_state_t * pcs, int num_copies, int flush)
 pl_interp_implementation_t pcl_implementation = {
     pcl_impl_characteristics,
     pcl_impl_allocate_interp_instance,
-    pcl_impl_set_device,
+    NULL,
+    NULL,
+    NULL,
     pcl_impl_init_job,
     NULL,                       /* process_file */
+    pcl_impl_process_begin,
     pcl_impl_process,
+    pcl_impl_process_end,
     pcl_impl_flush_to_eoj,
     pcl_impl_process_eof,
     pcl_impl_report_errors,
     pcl_impl_dnit_job,
-    pcl_impl_remove_device,
     pcl_impl_deallocate_interp_instance,
     NULL
 };

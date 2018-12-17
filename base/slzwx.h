@@ -20,6 +20,8 @@
 #ifndef slzwx_INCLUDED
 #  define slzwx_INCLUDED
 
+#include "scommon.h"
+
 typedef struct lzw_decode_s lzw_decode;
 typedef struct lzw_encode_table_s lzw_encode_table;
 typedef struct stream_LZW_state_s {

@@ -42,7 +42,7 @@
 #ifndef TTLOAD_H
 #define TTLOAD_H
 
-#include "ttcommon.h"
+#include "ttobjs.h"
 
 #ifdef __cplusplus
   extern "C" {

@@ -314,7 +314,7 @@ gs_forward_free_string(gs_memory_t * mem, byte * data, uint nbytes,
     DO_FORWARD(target->procs.free_string(target, data, nbytes, cname));
 }
 static int
-gs_retrying_register_root(gs_memory_t * mem, gs_gc_root_t * rp,
+gs_retrying_register_root(gs_memory_t * mem, gs_gc_root_t ** rp,
                         gs_ptr_type_t ptype, void **up, client_name_t cname)
 {
     RETURN_RETRYING(

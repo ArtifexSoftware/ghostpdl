@@ -20,6 +20,8 @@
 #ifndef scanchar_INCLUDED
 #  define scanchar_INCLUDED
 
+#include "scommon.h"
+
 /*
  * An array for fast scanning of names, numbers, and hex strings.
  * Indexed by character code (including exceptions), it contains:

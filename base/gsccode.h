@@ -19,6 +19,9 @@
 #ifndef gsccode_INCLUDED
 #  define gsccode_INCLUDED
 
+#include "std.h"
+#include "gstypes.h"
+
 /*
  * Define a character code.  Normally this is just a single byte from a
  * string, but because of composite fonts, character codes must be

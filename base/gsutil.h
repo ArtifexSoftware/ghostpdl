@@ -19,6 +19,9 @@
 #ifndef gsutil_INCLUDED
 #  define gsutil_INCLUDED
 
+#include "std.h"
+#include "gstypes.h"
+
 /* ------ Unique IDs ------ */
 
 /* Generate a block of unique IDs. */

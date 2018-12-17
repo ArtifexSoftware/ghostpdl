@@ -19,6 +19,9 @@
 #ifndef gxdhtserial_INCLUDED
 #  define gxdhtserial_INCLUDED
 
+#include "stdpre.h"
+#include "gsgstate.h"
+
 #ifndef gs_memory_DEFINED
 #  define gs_memory_DEFINED
 typedef struct gs_memory_s  gs_memory_t;
@@ -32,11 +35,6 @@ typedef struct gx_device_s  gx_device;
 #ifndef gx_device_halftone_DEFINED
 #  define gx_device_halftone_DEFINED
 typedef struct gx_device_halftone_s gx_device_halftone;
-#endif
-
-#ifndef gs_gstate_DEFINED
-#  define gs_gstate_DEFINED
-typedef struct gs_gstate_s    gs_gstate;
 #endif
 
 /*

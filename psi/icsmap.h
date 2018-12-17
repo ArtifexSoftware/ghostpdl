@@ -19,6 +19,9 @@
 #ifndef icsmap_INCLUDED
 #  define icsmap_INCLUDED
 
+#include "iref.h"
+#include "gscspace.h"
+
 /*
  * Set up to load a cached map for an Indexed or substituted Separation
  * color space.  The implementation is in zcsindex.c.  When the map1

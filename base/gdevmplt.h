@@ -19,6 +19,8 @@
 #ifndef gdevmplt_INCLUDED
 #  define gdevmplt_INCLUDED
 
+#include "gxdevice.h"
+
 typedef struct gx_device_s gx_device_mplt;
 
 /* Initialize device. */

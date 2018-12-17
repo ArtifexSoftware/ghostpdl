@@ -19,6 +19,10 @@
 #ifndef gsfont_INCLUDED
 #  define gsfont_INCLUDED
 
+#include "std.h"
+#include "gsgstate.h"
+#include "gstypes.h"
+
 #ifndef gs_matrix_DEFINED
 #  define gs_matrix_DEFINED
 typedef struct gs_matrix_s gs_matrix;

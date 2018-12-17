@@ -41,6 +41,7 @@
 #include "gscms.h"
 #include "gxrplane.h"
 #include "gxdda.h"
+#include "gsgstate.h"
 
 /* See Drivers.htm for documentation of the driver interface. */
 
@@ -118,13 +119,6 @@ typedef struct gx_device_s gx_device;
 
 /* ---------------- Auxiliary types and structures ---------------- */
 
-/* We need at least an abstract type for a graphics state, */
-/* which is passed to the page device procedures. */
-#ifndef gs_gstate_DEFINED
-#  define gs_gstate_DEFINED
-typedef struct gs_gstate_s gs_gstate;
-#endif
-
 /* We need abstract types for paths and fill/stroke parameters, */
 /* for the path-oriented device procedures. */
 #ifndef gx_path_DEFINED
@@ -142,10 +136,6 @@ typedef struct gx_fill_params_s gx_fill_params;
 #ifndef gx_stroke_params_DEFINED
 #  define gx_stroke_params_DEFINED
 typedef struct gx_stroke_params_s gx_stroke_params;
-#endif
-#ifndef gs_gstate_DEFINED
-#  define gs_gstate_DEFINED
-typedef struct gs_gstate_s gs_gstate;
 #endif
 #ifndef patch_fill_state_t_DEFINED
 #  define patch_fill_state_t_DEFINED

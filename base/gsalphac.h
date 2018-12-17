@@ -19,6 +19,7 @@
 #ifndef gsalphac_INCLUDED
 #  define gsalphac_INCLUDED
 
+#include "std.h"
 #include "gscompt.h"
 
 /*

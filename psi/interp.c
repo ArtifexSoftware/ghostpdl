@@ -136,6 +136,7 @@ struct stats_interp_s {
 static int estack_underflow(i_ctx_t *);
 static int interp(i_ctx_t **, const ref *, ref *);
 static int interp_exit(i_ctx_t *);
+static int zforceinterp_exit(i_ctx_t *i_ctx_p);
 static void set_gc_signal(i_ctx_t *, int);
 static int copy_stack(i_ctx_t *, const ref_stack_t *, int skip, ref *);
 static int oparray_pop(i_ctx_t *);
@@ -146,6 +147,7 @@ static int errorexec_pop(i_ctx_t *);
 static int errorexec_cleanup(i_ctx_t *);
 static int zsetstackprotect(i_ctx_t *);
 static int zcurrentstackprotect(i_ctx_t *);
+static int zactonuel(i_ctx_t *);
 
 /* Stack sizes */
 
@@ -279,8 +281,10 @@ const op_def interp2_op_defs[] = {
     {"2.errorexec", zerrorexec},
     {"0.finderrorobject", zfinderrorobject},
     {"0%interp_exit", interp_exit},
+    {"0.forceinterp_exit", zforceinterp_exit},
     {"0%oparray_pop", oparray_pop},
     {"0%errorexec_pop", errorexec_pop},
+    {"0.actonuel", zactonuel},
     op_def_end(0)
 };
 
@@ -433,7 +437,7 @@ int
 interp_reclaim(i_ctx_t **pi_ctx_p, int space)
 {
     i_ctx_t *i_ctx_p = *pi_ctx_p;
-    gs_gc_root_t ctx_root;
+    gs_gc_root_t ctx_root, *r = &ctx_root;
     int code;
 
 #ifdef DEBUG
@@ -441,11 +445,11 @@ interp_reclaim(i_ctx_t **pi_ctx_p, int space)
         return 0;
 #endif
 
-    gs_register_struct_root(imemory_system, &ctx_root,
+    gs_register_struct_root(imemory_system, &r,
                             (void **)pi_ctx_p, "interp_reclaim(pi_ctx_p)");
     code = (*idmemory->reclaim)(idmemory, space);
     i_ctx_p = *pi_ctx_p;        /* may have moved */
-    gs_unregister_root(imemory_system, &ctx_root, "interp_reclaim(pi_ctx_p)");
+    gs_unregister_root(imemory_system, r, "interp_reclaim(pi_ctx_p)");
     return code;
 }
 
@@ -465,10 +469,10 @@ gs_interpret(i_ctx_t **pi_ctx_p, ref * pref, int user_errors, int *pexit_code,
              ref * perror_object)
 {
     i_ctx_t *i_ctx_p = *pi_ctx_p;
-    gs_gc_root_t error_root;
+    gs_gc_root_t error_root, *r = &error_root;
     int code;
 
-    gs_register_ref_root(imemory_system, &error_root,
+    gs_register_ref_root(imemory_system, &r,
                          (void **)&perror_object, "gs_interpret");
     code = gs_call_interp(pi_ctx_p, pref, user_errors, pexit_code,
                           perror_object);
@@ -499,12 +503,12 @@ again:
     make_null(perror_object);
     o_stack.requested = e_stack.requested = d_stack.requested = 0;
     while (*gc_signal) { /* Some routine below triggered a GC. */
-        gs_gc_root_t epref_root;
+        gs_gc_root_t epref_root, *r = &epref_root;
 
         *gc_signal = 0;
         /* Make sure that doref will get relocated properly if */
         /* a garbage collection happens with epref == &doref. */
-        gs_register_ref_root(imemory_system, &epref_root,
+        gs_register_ref_root(imemory_system, &r,
                              (void **)&epref, "gs_call_interp(epref)");
         code = interp_reclaim(pi_ctx_p, -1);
         i_ctx_p = *pi_ctx_p;
@@ -725,6 +729,38 @@ static int
 interp_exit(i_ctx_t *i_ctx_p)
 {
     return gs_error_InterpreterExit;
+}
+
+/* Only used (currently) with language switching:
+ * allows the PS interpreter to co-exist with the
+ * PJL interpreter.
+ */
+static int
+zforceinterp_exit(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    stream *s;
+
+    check_file(s, op);
+    i_ctx_p->uel_position = stell(s)-1;
+    /* resetfile */
+    if (file_is_valid(s, op))
+        sreset(s);
+
+    if (!gs_lib_ctx_get_act_on_uel((gs_memory_t *)(i_ctx_p->memory.current)))
+        return 0;
+
+    gs_interp_reset(i_ctx_p);
+    /* gs_interp_reset() actually leaves the op stack one entry below
+     * the bottom of the stack, and that can cause problems depending
+     * on the interpreter state at the end of the job.
+     * So push a null object, and the return code before continuing.
+     */
+    push(2);
+    op = osp;
+    make_null(op - 1);
+    make_int(op, gs_error_InterpreterExit);
+    return_error(gs_error_Quit);
 }
 
 /* Set the GC signal for all VMs. */
@@ -2015,5 +2051,15 @@ zcurrentstackprotect(i_ctx_t *i_ctx_p)
         return_error(gs_error_rangecheck);
     push(1);
     make_bool(op, ep->value.opproc == oparray_cleanup);
+    return 0;
+}
+
+static int
+zactonuel(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+
+    push(1);
+    make_bool(op, !!gs_lib_ctx_get_act_on_uel((gs_memory_t *)(i_ctx_p->memory.current)));
     return 0;
 }

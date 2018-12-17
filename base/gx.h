@@ -25,14 +25,6 @@
 #include "gstypes.h"
 #include "gsmemory.h"
 #include "gdebug.h"
-
-/* Define opaque types for the graphics state. */
-/* This is used so pervasively that we define it here, */
-/* rather than at a higher level as perhaps would be more appropriate. */
-#ifndef gs_gstate_DEFINED
-#  define gs_gstate_DEFINED
-typedef struct gs_gstate_s gs_gstate;
-
-#endif
+#include "gsgstate.h"
 
 #endif /* gx_INCLUDED */

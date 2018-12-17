@@ -20,6 +20,7 @@
 #ifndef isave_INCLUDED
 #  define isave_INCLUDED
 
+#include "gsgstate.h"
 #include "idosave.h"
 
 /*

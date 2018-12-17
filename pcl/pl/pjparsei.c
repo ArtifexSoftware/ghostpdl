@@ -35,8 +35,10 @@ pjl_detect_language(const char *s, int len)
     if (len && *s == '\n')
         s++, len--;
     if (len < 4)
-        return 1;
-    return memcmp(s, "@PJL", 4);
+        return 0;
+    if (memcmp(s, "@PJL", 4) == 0)
+        return 100;
+    return 0;
 }
 
 /* Get implementation's characteristics */
@@ -71,25 +73,22 @@ pjl_impl_allocate_interp_instance(pl_interp_implementation_t *impl,
     return 0;
 }
 
-/* Set a device into an interperter instance */
-static int                      /* ret 0 ok, else -ve error code */
-pjl_impl_set_device(pl_interp_implementation_t *impl,    /* interp instance to use */
-                    gx_device * device  /* device to set (open or closed) */
-    )
-{
-    return 0;
-}
-
 /* Prepare interp instance for the next "job" */
 static int                      /* ret 0 ok, else -ve error code */
-pjl_impl_init_job(pl_interp_implementation_t *impl       /* interp instance to start job in */
-    )
+pjl_impl_init_job(pl_interp_implementation_t *impl,       /* interp instance to start job in */
+                  gx_device                  *device)
 {
     pjl_parser_state *pjls = impl->interp_client_data;
     if (pjls == NULL)
         return gs_error_VMerror;
     /* copy the default state to the initial state */
     pjl_set_init_from_defaults(pjls);
+    return 0;
+}
+
+static int
+pjl_impl_process_begin(pl_interp_implementation_t *impl       /* interp instance to process data job in */)
+{
     return 0;
 }
 
@@ -111,6 +110,12 @@ pjl_impl_process(pl_interp_implementation_t *impl,       /* interp instance to p
     int code = pjl_process(pjls, NULL, cursor);
 
     return code == 1 ? e_ExitLanguage : code;
+}
+
+static int
+pjl_impl_process_end(pl_interp_implementation_t *impl       /* interp instance to process data job in */)
+{
+    return 0;
 }
 
 /* Skip to end of job ret 1 if done, 0 ok but EOJ not found, else -ve error code */
@@ -149,14 +154,6 @@ pjl_impl_dnit_job(pl_interp_implementation_t * impl       /* interp impl to wrap
     return 0;
 }
 
-/* Remove a device from an interperter impl */
-static int                      /* ret 0 ok, else -ve error code */
-pjl_impl_remove_device(pl_interp_implementation_t * impl  /* interp impl to use */
-    )
-{
-    return 0;
-}
-
 /* Deallocate a interpreter impl */
 static int                      /* ret 0 ok, else -ve error code */
 pjl_impl_deallocate_interp_instance(pl_interp_implementation_t * impl     /* impl to dealloc */
@@ -171,15 +168,18 @@ pjl_impl_deallocate_interp_instance(pl_interp_implementation_t * impl     /* imp
 pl_interp_implementation_t pjl_implementation = {
     pjl_impl_characteristics,
     pjl_impl_allocate_interp_instance,
-    pjl_impl_set_device,
+    NULL,
+    NULL,
+    NULL,
     pjl_impl_init_job,
     NULL,                      /* process_file */
+    pjl_impl_process_begin,
     pjl_impl_process,
+    pjl_impl_process_end,
     pjl_impl_flush_to_eoj,
     pjl_impl_process_eof,
     pjl_impl_report_errors,
     pjl_impl_dnit_job,
-    pjl_impl_remove_device,
     pjl_impl_deallocate_interp_instance,
     NULL, /* instance */
 };

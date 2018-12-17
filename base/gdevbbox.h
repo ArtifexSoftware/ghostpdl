@@ -19,6 +19,8 @@
 #ifndef gdevbbox_INCLUDED
 #  define gdevbbox_INCLUDED
 
+#include "gxdevcli.h"
+
 /*
  * This device keeps track of the per-page bounding box, and also optionally
  * forwards all drawing commands to a target.  It can be used either as a

@@ -19,6 +19,8 @@
 #ifndef gp_mswin_INCLUDED
 #  define gp_mswin_INCLUDED
 
+#include "windows_.h"
+
 #define GSTEXT_ICON	50
 #define GSIMAGE_ICON	51
 #define SPOOL_PORT	100

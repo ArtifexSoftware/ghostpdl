@@ -26,6 +26,8 @@
         TEMPLATE_sample_unpack_8 - a name for the function
  */
 
+#if defined(TEMPLATE_sample_unpack_1) && defined(TEMPLATE_sample_unpack_2) && defined(TEMPLATE_sample_unpack_4) && defined(TEMPLATE_sample_unpack_8)
+
 #if MULTIPLE_MAPS
 #   define NEXT_MAP map = smap[++smap_index % num_components_per_plane].table.lookup4x1to32
 #   define NEXT_MAP8 map = smap[++smap_index % num_components_per_plane].table.lookup8
@@ -234,3 +236,7 @@ TEMPLATE_sample_unpack_8(byte * bptr, int *pdata_x, const byte * data, int data_
 #undef NEXT_MAP
 #undef NEXT_MAP8
 #undef DEFINE_SMAP_INDEX
+
+#else
+int dummy;
+#endif

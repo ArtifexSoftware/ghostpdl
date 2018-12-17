@@ -21,7 +21,10 @@
 #  define sdct_INCLUDED
 
 #include "setjmp_.h"		/* for jmp_buf */
-#include "gscms.h"		
+#include "gscms.h"
+#include "strimpl.h"
+#include "jpeglib_.h"
+
 
 /* ------ DCT filters ------ */
 

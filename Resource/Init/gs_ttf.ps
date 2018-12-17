@@ -1903,14 +1903,14 @@ currentdict /postalias undef
     } {
       <00010000> .findcmap {
         TTFDEBUG { (Using cmap 1.0 for non-symbolic.) = } if
-        0 dict exch
-        .romanmacdict .pdfmapchars
-        /Encoding
         prebuilt_encoding //null ne {
+          prebuilt_encoding .invert_encoding exch .romanmacdict .pdfmapchars
           prebuilt_encoding
         } {
+          0 dict exch
           /MacRomanEncodingForTrueType .findencoding
         } ifelse
+        /Encoding exch
       } {
         % Apply the default algorithm for using the 'post'.
         .charkeys

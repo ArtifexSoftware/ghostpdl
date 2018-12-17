@@ -30,12 +30,7 @@
 #include "plfont.h"
 #include "pxdict.h"
 #include "pxenum.h"
-
-/* Define an abstract type for the PostScript graphics state. */
-#ifndef gs_gstate_DEFINED
-#  define gs_gstate_DEFINED
-typedef struct gs_gstate_s gs_gstate;
-#endif
+#include "gsgstate.h"
 
 /* Define the type of the PCL XL state. */
 #ifndef px_state_DEFINED

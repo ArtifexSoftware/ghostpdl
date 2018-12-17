@@ -20,6 +20,7 @@
 #  define gxobj_INCLUDED
 
 #include "gxbitmap.h"
+#include "gsstruct.h"
 
 #ifndef IGC_PTR_STABILITY_CHECK
 #  define IGC_PTR_STABILITY_CHECK 0

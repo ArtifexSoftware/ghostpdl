@@ -21,6 +21,12 @@
 #include "assert_.h"
 #include "ets.h"
 
+/* Nasty inline declaration, as gxht_thresh.h requires penum */
+void gx_ht_threshold_row_bit_sub(byte *contone,  byte *threshold_strip,
+                             int contone_stride, byte *halftone,
+                             int dithered_stride, int width, int num_rows,
+                             int offset_bits);
+
 enum
 {
     MAX_ETS_PLANES = 8
@@ -872,6 +878,81 @@ static void down_core4(gx_downscaler_t *ds,
         outp = in_buffer + awidth*factor*4 - (awidth*4);
     }
     pack_8to1(out_buffer, outp, awidth*4);
+}
+
+static void down_core4_ht(gx_downscaler_t *ds,
+                          byte            *out_buffer, /* Guaranteed aligned */
+                          byte            *in_buffer,  /* Not guaranteed aligned */
+                          int              row,
+                          int              plane /* unused */,
+                          int              span)
+{
+    int pad_white, y;
+    int factor = ds->factor;
+    int i;
+    int nc = ds->early_cm ? ds->post_cm_num_comps : ds->num_comps;
+    byte *downscaled_data = ds->inbuf;
+
+    pad_white = (ds->awidth - ds->width) * factor * 4;
+    if (pad_white < 0)
+        pad_white = 0;
+
+    if (pad_white)
+    {
+        unsigned char *inp = in_buffer + ds->width * factor * 4;
+        for (y = factor; y > 0; y--)
+        {
+            memset(inp, 0xFF, pad_white);
+            inp += span;
+        }
+    }
+
+    /* Color conversion has already happened. Do any downscale required. */
+    if (ds->ets_downscale)
+        ds->ets_downscale(ds, downscaled_data, in_buffer, row, plane, span);
+    else if ((31 & (intptr_t)in_buffer) == 0)
+        downscaled_data = in_buffer; /* Already aligned! Yay! */
+    else
+        memcpy(downscaled_data, in_buffer, nc*ds->width); /* Copy to align */
+
+    /* Do the halftone */
+    for (i = 0; i < nc; i++)
+    {
+        /* Make the expanded threshold row */
+        byte *d = ds->htrow + i;
+        int len = ds->width;
+        const byte *srow = ds->ht[i].data + ds->ht[i].stride * ((row + ds->ht[i].y_phase) % ds->ht[i].h);
+        {
+            int o = ds->ht[i].x_phase;
+            int run = ds->ht[i].w - o;
+            const byte *s = &srow[o];
+            if (run > len)
+                run = len;
+            len -= run;
+            do {
+                *d = *s++;
+                d += nc;
+            } while (--run);
+        }
+        while (len)
+        {
+            const byte *s = srow;
+            int run = ds->ht[i].w;
+            if (run > len)
+                run = len;
+            len -= run;
+            do {
+                *d = *s++;
+                d += nc;
+            }
+            while (--run);
+        }
+    }
+
+    /* Do the halftone */
+    gx_ht_threshold_row_bit_sub(downscaled_data, ds->htrow, 0,
+                                out_buffer, 0,
+                                ds->width * nc, 1, 0);
 }
 
 static void down_core4_ets(gx_downscaler_t *ds,
@@ -1769,11 +1850,40 @@ static int init_ets(gx_downscaler_t *ds, int num_planes, gx_downscale_core *down
 
     ds->ets_config = ets_create(ds->dev->memory, &params);
     if (ds->ets_config == NULL)
-        return gs_error_VMerror;
+        return gs_note_error(gs_error_VMerror);
 
     return 0;
 }
 
+static int init_ht(gx_downscaler_t *ds, int num_planes, gx_downscale_core *downscale_core)
+{
+    int nc = ds->early_cm ? ds->post_cm_num_comps : ds->num_comps;
+
+    ds->ets_downscale = downscale_core;
+
+    /* Allocate us a row (with padding for alignment) so we can hold the
+     * expanded threshold array. */
+    ds->htrow_alloc = gs_alloc_bytes(ds->dev->memory, ds->width * nc + 64,
+                                     "gx_downscaler(htrow)");
+    if (ds->htrow_alloc == NULL)
+        return gs_error_VMerror;
+    /* Make an aligned version */
+    ds->htrow = ds->htrow_alloc + ((32-(intptr_t)ds->htrow_alloc) & 31);
+
+    /* Allocate us a row (with padding for alignment) for the downscaled data. */
+    ds->inbuf_alloc = gs_alloc_bytes(ds->dev->memory, ds->width * nc + 64,
+                                     "gx_downscaler(inbuf)");
+    if (ds->inbuf_alloc == NULL)
+    {
+        gs_free_object(ds->dev->memory, ds->htrow_alloc, "gx_downscaler(htrow)");
+        ds->htrow_alloc = ds->htrow = NULL;
+        return gs_error_VMerror;
+    }
+    /* Make an aligned version */
+    ds->inbuf = ds->inbuf_alloc + ((32-(intptr_t)ds->inbuf_alloc) & 31);
+
+    return 0;
+}
 
 int gx_downscaler_init_planar(gx_downscaler_t      *ds,
                               gx_device            *dev,
@@ -2102,6 +2212,8 @@ int gx_downscaler_init_trapped_cm(gx_downscaler_t    *ds,
                                              0);
 }
 
+static gx_downscaler_ht_t bogus_ets_halftone;
+
 int gx_downscaler_init_trapped_cm_ets(gx_downscaler_t    *ds,
                                   gx_device          *dev,
                                   int                 src_bpc,
@@ -2112,12 +2224,73 @@ int gx_downscaler_init_trapped_cm_ets(gx_downscaler_t    *ds,
                                   int               (*adjust_width_proc)(int, int),
                                   int                 adjust_width,
                                   int                 trap_w,
-                                  int                  trap_h,
+                                  int                 trap_h,
                                   const int          *comp_order,
                                   gx_downscale_cm_fn *apply_cm,
                                   void               *apply_cm_arg,
                                   int                 post_cm_num_comps,
                                   int                 ets)
+{
+    return gx_downscaler_init_trapped_cm_halftone(ds,
+                                                  dev,
+                                                  src_bpc,
+                                                  dst_bpc,
+                                                  num_comps,
+                                                  factor,
+                                                  mfs,
+                                                  adjust_width_proc,
+                                                  adjust_width,
+                                                  trap_w,
+                                                  trap_h,
+                                                  comp_order,
+                                                  apply_cm,
+                                                  apply_cm_arg,
+                                                  post_cm_num_comps,
+                                                  &bogus_ets_halftone);
+}
+
+
+static gx_downscale_core *
+select_8_to_8_core(int nc, int factor)
+{
+    if (factor == 1)
+        return NULL; /* No sense doing anything */
+    if (nc == 1)
+    {
+        if (factor == 4)
+            return &down_core8_4;
+        else if (factor == 3)
+            return &down_core8_3;
+        else if (factor == 2)
+            return &down_core8_2;
+        else
+            return &down_core8;
+    }
+    else if (nc == 3)
+        return &down_core24;
+    else if (nc == 4)
+        return &down_core32;
+
+    return NULL;
+}
+
+int
+gx_downscaler_init_trapped_cm_halftone(gx_downscaler_t    *ds,
+                                  gx_device          *dev,
+                                  int                 src_bpc,
+                                  int                 dst_bpc,
+                                  int                 num_comps,
+                                  int                 factor,
+                                  int                 mfs,
+                                  int               (*adjust_width_proc)(int, int),
+                                  int                 adjust_width,
+                                  int                 trap_w,
+                                  int                 trap_h,
+                                  const int          *comp_order,
+                                  gx_downscale_cm_fn *apply_cm,
+                                  void               *apply_cm_arg,
+                                  int                 post_cm_num_comps,
+                                  gx_downscaler_ht_t *ht)
 {
     int                size;
     int                post_size;
@@ -2159,6 +2332,9 @@ int gx_downscaler_init_trapped_cm_ets(gx_downscaler_t    *ds,
     ds->apply_cm_arg      = apply_cm_arg;
     ds->early_cm          = dst_bpc < src_bpc;
     ds->post_cm_num_comps = post_cm_num_comps;
+    ds->ht                = ht;
+    ds->dst_bpc           = dst_bpc;
+    ds->num_comps         = num_comps;
 
     code = check_trapping(dev->memory, trap_w, trap_h, num_comps, comp_order);
     if (code < 0)
@@ -2193,12 +2369,19 @@ int gx_downscaler_init_trapped_cm_ets(gx_downscaler_t    *ds,
         {
             if (mfs > 1)
                 core = &down_core4_mfs;
-            else if (ets)
+            else if (ht == &bogus_ets_halftone)
             {
-                code = init_ets(ds, 4, core);
+                code = init_ets(ds, 4, select_8_to_8_core(nc, factor));
                 if (code)
                     goto cleanup;
                 core = &down_core4_ets;
+            }
+            else if (ht != NULL)
+            {
+                code = init_ht(ds, 4, select_8_to_8_core(nc, factor));
+                if (code)
+                    goto cleanup;
+                core = &down_core4_ht;
             }
             else
                 core = &down_core4;
@@ -2207,7 +2390,7 @@ int gx_downscaler_init_trapped_cm_ets(gx_downscaler_t    *ds,
         {
             if (mfs > 1)
                 core = &down_core_mfs;
-            else if (ets)
+            else if (ht == &bogus_ets_halftone)
             {
                 code = init_ets(ds, 1, core);
                 if (code)
@@ -2227,21 +2410,8 @@ int gx_downscaler_init_trapped_cm_ets(gx_downscaler_t    *ds,
         }
         else if ((factor == 1) && (src_bpc == dst_bpc))
             break;
-        else if ((src_bpc == 8) && (dst_bpc == 8) && (nc == 1))
-        {
-            if (factor == 4)
-                core = &down_core8_4;
-            else if (factor == 3)
-                core = &down_core8_3;
-            else if (factor == 2)
-                core = &down_core8_2;
-            else
-                core = &down_core8;
-        }
-        else if ((src_bpc == 8) && (dst_bpc == 8) && (nc == 3))
-            core = &down_core24;
-        else if ((src_bpc == 8) && (dst_bpc == 8) && (nc == 4))
-            core = &down_core32;
+        else if (src_bpc == 8 && dst_bpc == 8)
+            core = select_8_to_8_core(nc, factor);
 
         /* If we found one, or we have nothing to fallback to, exit */
         if (core || !ds->early_cm)
@@ -2290,13 +2460,13 @@ int gx_downscaler_init_trapped_cm_ets(gx_downscaler_t    *ds,
         }
         if (dst_bpc == 1) {
             ds->errors = (int *)gs_alloc_bytes(dev->memory,
-                                               num_comps*(awidth+3)*sizeof(int),
+                                               nc*(awidth+3)*sizeof(int),
                                                "gx_downscaler(errors)");
             if (ds->errors == NULL) {
                 code = gs_note_error(gs_error_VMerror);
                 goto cleanup;
             }
-            memset(ds->errors, 0, num_comps * (awidth+3) * sizeof(int));
+            memset(ds->errors, 0, nc * (awidth+3) * sizeof(int));
         }
     }
 
@@ -2324,6 +2494,9 @@ void gx_downscaler_fin(gx_downscaler_t *ds)
     ds->errors = NULL;
     gs_free_object(ds->dev->memory, ds->scaled_data, "gx_downscaler(scaled_data)");
     ds->scaled_data = NULL;
+    gs_free_object(ds->dev->memory, ds->htrow_alloc, "gx_downscaler(htrow)");
+    ds->htrow = NULL;
+    ds->htrow_alloc = NULL;
 
     if (ds->claptrap)
         ClapTrap_Fin(ds->dev->memory, ds->claptrap);

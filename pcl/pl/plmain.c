@@ -18,6 +18,7 @@
 /* Main program command-line interpreter for PCL interpreters */
 #include "string_.h"
 #include <stdlib.h> /* atof */
+#include "assert_.h"
 #include "gdebug.h"
 #include "gscdefs.h"
 #include "gsio.h"
@@ -78,10 +79,54 @@ Options: -dNOPAUSE -E[#] -h -L<PCL|PCLXL> -K<maxK> -l<PCL5C|PCL5E|RTL> -Z...\n\
          -sOutputFile=<file> (-s<option>=<string> | -d<option>[=<value>])*\n\
          -J<PJL commands>\n";
 
+/*
+ * Main instance for all interpreters.
+ */
+struct pl_main_instance_s
+{
+    /* The following are set at initialization time. */
+    gs_memory_t *memory;
+    gs_memory_t *device_memory;
+    long base_time[2];          /* starting time */
+    int error_report;           /* -E# */
+    bool pause;                 /* -dNOPAUSE => false */
+    int first_page;             /* -dFirstPage= */
+    int last_page;              /* -dLastPage= */
+    gx_device *device;
+    gs_gc_root_t *device_root;
+    pl_main_get_codepoint_t *get_codepoint;
+                                /* Get next 'unicode' codepoint */
 
-/* ---------------- Static data for memory management ------------------ */
+    pl_interp_implementation_t *implementation; /*-L<Language>*/
 
-static gs_gc_root_t device_root;
+    char pcl_personality[6];    /* a character string to set pcl's
+                                   personality - rtl, pcl5c, pcl5e, and
+                                   pcl == default.  NB doesn't belong here. */
+    bool interpolate;
+    bool nocache;
+    bool page_set_on_command_line;
+    long page_size[2];
+    bool res_set_on_command_line;
+    float res[2];
+    bool high_level_device;
+#ifndef OMIT_SAVED_PAGES_TEST
+    bool saved_pages_test_mode;
+#endif
+    bool pjl_from_args; /* pjl was passed on the command line */
+    int scanconverter;
+    /* we have to store these in the main instance until the languages
+       state is sufficiently initialized to set the parameters. */
+    char *piccdir;
+    char *pdefault_gray_icc;
+    char *pdefault_rgb_icc;
+    char *pdefault_cmyk_icc;
+    gs_c_param_list params;
+    arg_list args;
+    pl_interp_implementation_t **implementations;
+    pl_interp_implementation_t *curr_implementation;
+    byte buf[8192]; /* languages read buffer */
+    void *disp; /* display device pointer NB wrong - remove */
+};
 
 
 /* ---------------- Forward decls ------------------ */
@@ -163,7 +208,7 @@ pl_main_init_with_args(pl_main_instance_t *inst, int argc, char *argv[])
     gs_param_list_set_persistent_keys((gs_param_list *)&inst->params, false);
 
     arg_init(&inst->args, (const char **)argv, argc, pl_main_arg_fopen, NULL,
-             NULL, mem);
+             inst->get_codepoint, mem);
 
     /* Create PDL instances, etc */
     if (pl_main_languages_init(mem, inst) < 0) {
@@ -173,7 +218,7 @@ pl_main_init_with_args(pl_main_instance_t *inst, int argc, char *argv[])
     inst->curr_implementation = pjli = inst->implementations[0];
 
     /* initialize pjl, needed for option processing. */
-    if (pl_init_job(pjli) < 0) {
+    if (pl_init_job(pjli, inst->device) < 0) {
         return gs_error_Fatal;
     }
 
@@ -210,25 +255,53 @@ pl_main_init_with_args(pl_main_instance_t *inst, int argc, char *argv[])
 
 
 int
-pl_main_run_string_begin(void *instance)
+pl_main_run_string_begin(pl_main_instance_t *minst)
 {
-    return 0;
+    return pl_process_begin(minst->curr_implementation);
 }
 
 int
-pl_main_run_string_continue(void *instance, const char *str, unsigned int length)
+pl_main_run_string_continue(pl_main_instance_t *minst, const char *str, unsigned int length)
 {
-    return 0;
+    stream_cursor_read cursor;
+
+    cursor.ptr = (const byte *)str-1; /* -1 because of gs's stupid stream convention */
+    cursor.limit = cursor.ptr + length;
+    return pl_process(minst->curr_implementation, &cursor);
 }
 
 int
-pl_main_run_string_end(void *instance)
+pl_main_run_string_end(pl_main_instance_t *minst)
 {
-    return 0;
+    return pl_process_end(minst->curr_implementation);
 }
 
-int
-pl_main_run_file(pl_main_instance_t *minst, const char *filename)
+static int
+revert_to_pjli(pl_main_instance_t *minst)
+{
+    pl_interp_implementation_t *pjli =
+        minst->implementations[0];
+    int code;
+
+    /* If we're already in PJL, don't clear the state. */
+    if (minst->curr_implementation == pjli)
+        return 0;
+
+    if (minst->curr_implementation) {
+        code = pl_dnit_job(minst->curr_implementation);
+        if (code < 0) {
+            minst->curr_implementation = NULL;
+            return code;
+        }
+    }
+    minst->curr_implementation = pjli;
+    code = pl_init_job(minst->curr_implementation, minst->device);
+
+    return code;
+}
+
+static int
+pl_main_run_file_utf8(pl_main_instance_t *minst, const char *filename)
 {
     bool new_job = true;
     pl_interp_implementation_t *pjli =
@@ -237,20 +310,40 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
     stream *s;
     int code = 0;
     bool is_stdin = filename[0] == '-' && filename[1] == 0;
+    bool use_process_file = false;
+    bool first_job = true;
+    pl_interp_implementation_t *desired_implementation = NULL;
 
     s = sfopen(filename, "r", mem);
     if (s == NULL)
-        return gs_error_Fatal;
+        return gs_error_undefinedfilename;
+
+    /* This function can run in 2 modes. Either it can run a file directly
+     * using the run_file mechanism, or it can feed the data piecemeal
+     * using the run_string mechanism. Which one depends on several things:
+     *
+     * If we're being piped data, then we have to use run_string.
+     * If we are entered (as is usually the case) with PJL as the selected
+     * interpreter, then we do a quick assessment of the file contents to
+     * pick an interpreter. If the first interpreter has a run_file method
+     * then we'll use that.
+     *
+     * This means that files that start with PJL data will always be run
+     * using run_string.
+     */
 
     for (;;) {
         if_debug1m('I', mem, "[i][file pos=%ld]\n",
                    sftell(s));
 
+        /* Check for EOF and prepare the next block of data. */
         if (s->cursor.r.ptr == s->cursor.r.limit && sfeof(s)) {
             if_debug0m('I', mem, "End of of data\n");
+            if (pl_process_end(minst->curr_implementation) < 0)
+                 goto error_fatal;
             pl_process_eof(minst->curr_implementation);
-            if (pl_dnit_job(minst->curr_implementation) < 0)
-                return gs_error_Fatal;
+            if (revert_to_pjli(minst) < 0)
+                goto error_fatal_reverted;
             break;
         }
         code = s_process_read_buf(s);
@@ -258,102 +351,163 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
             break;
 
         if (new_job) {
-            if_debug0m('I', mem, "Selecting PDL\n");
-            minst->desired_implementation = pl_select_implementation(pjli, minst, s);
-            if (minst->curr_implementation != minst->desired_implementation) {
-                code = pl_remove_device(minst->curr_implementation);
-                if (code >= 0)
-                    code = pl_set_device(minst->desired_implementation, minst->device);
-                if (code < 0) {
-                    minst->curr_implementation = minst->desired_implementation;
-                    return gs_error_Fatal;
-                }
-            }
-
-            minst->curr_implementation = minst->desired_implementation;
-
-            /* Don't reset PJL if there is PJL state from the command line arguments. */
+            /* The only time the current implementation won't be PJL,
+             * is if someone has preselected a particular language
+             * before calling this function. */
             if (minst->curr_implementation == pjli) {
-                if (minst->pjl_from_args == false) {
-                    if (pl_init_job(pjli) < 0)
-                        return gs_error_Fatal;
-                } else
-                    minst->pjl_from_args = false;
-            } else {
-                if (pl_init_job(minst->curr_implementation) < 0)
-                    return gs_error_Fatal;
+                /* Autodetect the language based on the content. */
+                desired_implementation = pl_select_implementation(pjli, minst, s);
+
+                /* Possibly this never happens? But attempt to cope anyway. */
+                if (desired_implementation == NULL)
+                    goto flush_to_end_of_job;
+                if (gs_debug_c('I') || gs_debug_c(':'))
+                    dmlprintf1(mem, "PDL detected as %s\n",
+                               pl_characteristics(desired_implementation)->language);
+
+                /* If the language implementation needs changing, change it. */
+                if (desired_implementation != pjli) {
+                    code = pl_dnit_job(pjli);
+                    minst->curr_implementation = NULL;
+                    if (code >= 0)
+                        code = pl_init_job(desired_implementation, minst->device);
+                    if (code < 0)
+                        goto error_fatal;
+                    minst->curr_implementation = desired_implementation;
+                }
             }
 
-            if_debug1m('I', mem, "selected and initializing (%s)\n",
-                       pl_characteristics(minst->curr_implementation)->language);
+            if (minst->curr_implementation != pjli) {
+                if_debug1m('I', mem, "initialised (%s)\n",
+                           pl_characteristics(minst->curr_implementation)->language);
+                if (first_job &&
+                    !is_stdin &&
+                    minst->curr_implementation->proc_process_file) {
+                    /* If we aren't being piped data, and this interpreter
+                     * is capable of coping with running a file directly,
+                     * let's do that. */
+                    use_process_file = true;
+                    break;
+                }
+            }
+
+            first_job = false;
             new_job = false;
+
+            if (pl_process_begin(minst->curr_implementation) < 0)
+                 goto error_fatal;
         }
 
-        if (minst->curr_implementation) {
-            /* Special case when the job resides in a seekable file and
-               the implementation has a function to process a file at a
-               time. */
-            if (minst->curr_implementation->proc_process_file
-                && !is_stdin) {
-                if_debug1m('I', mem, "processing job from file (%s)\n",
-                           filename);
-
-                code = pl_process_file(minst->curr_implementation, (char *)filename);
-                if (code < 0) {
-                    errprintf(mem, "Warning interpreter exited with error code %d\n",
-                              code);
-                }
-                if (pl_dnit_job(minst->curr_implementation) < 0)
-                    return gs_error_Fatal;
-
-                break;      /* break out of the loop to process the next file */
-            }
-
-            code = pl_process(minst->curr_implementation, &s->cursor.r);
-            if_debug1m('I', mem, "processing (%s) job\n",
-                       pl_characteristics(minst->curr_implementation)->language);
-            if (code == e_ExitLanguage) {
-                if (pl_dnit_job(minst->curr_implementation) < 0)
-                    return gs_error_Fatal;
-
-                new_job = true;
-
-                if (minst->curr_implementation != pjli)
-                    if (pl_init_job(pjli) < 0)
-                        return gs_error_Fatal;
-
-            } else if (code < 0) {  /* error and not exit language */
-                dmprintf1(mem,
-                          "Warning interpreter exited with error code %d\n",
-                          code);
-                dmprintf(mem, "Flushing to end of job\n");
-                /* flush eoj may require more data */
-                while ((pl_flush_to_eoj(minst->curr_implementation, &s->cursor.r)) == 0) {
-                    int code2;
-                    if (s->cursor.r.ptr == s->cursor.r.limit && sfeof(s)) {
-                        if_debug0m('I', mem,
-                                   "end of data found while flushing\n");
-                        break;
-                    }
-                    code2 = s_process_read_buf(s);
-                    if (code2 < 0)
-                        break;
-                }
-                pl_report_errors(minst->curr_implementation, code,
-                                 sftell(s),
-                                 minst->error_report > 0);
-                if (pl_dnit_job(minst->curr_implementation) < 0)
-                    return gs_error_Fatal;
-                if (pl_init_job(pjli) < 0)
-                    return gs_error_Fatal;
-
-                code = 0;
-                new_job = true;
-            }
+        if_debug2m('I', mem, "processing (%s) job from offset %ld\n",
+                   pl_characteristics(minst->curr_implementation)->language,
+                   sftell(s));
+        code = pl_process(minst->curr_implementation, &s->cursor.r);
+        if_debug2m('I', mem, "processed (%s) job to offset %ld\n",
+                   pl_characteristics(minst->curr_implementation)->language,
+                   sftell(s));
+        if (code == gs_error_NeedInput || code >= 0) {
+            continue;
         }
+        if (code != e_ExitLanguage) {
+            /* error and not exit language */
+            dmprintf1(mem,
+                      "Warning interpreter exited with error code %d\n",
+                      code);
+flush_to_end_of_job:
+            dmprintf(mem, "Flushing to end of job\n");
+            /* flush eoj may require more data */
+            while ((pl_flush_to_eoj(minst->curr_implementation, &s->cursor.r)) == 0) {
+                int code2;
+                if (s->cursor.r.ptr == s->cursor.r.limit && sfeof(s)) {
+                    if_debug0m('I', mem,
+                               "end of data found while flushing\n");
+                    break;
+                }
+                code2 = s_process_read_buf(s);
+                if (code2 < 0)
+                    break;
+            }
+            pl_report_errors(minst->curr_implementation, code,
+                             sftell(s),
+                             minst->error_report > 0);
+        }
+
+        if (pl_process_end(minst->curr_implementation) < 0)
+            goto error_fatal;
+        new_job = true;
+        /* Always revert to PJL after each job. We avoid reinitialising PJL
+         * if we are already in PJL to avoid clearing the state. */
+        if (revert_to_pjli(minst))
+            goto error_fatal_reverted;
     }
     sfclose(s);
+    s = NULL;
+    if (use_process_file)
+    {
+        if_debug1m('I', mem, "processing job from file (%s)\n",
+                   filename);
+
+        code = pl_process_file(minst->curr_implementation, (char *)filename);
+        if (code == gs_error_InterpreterExit)
+            code = 0;
+        if (code < 0) {
+            errprintf(mem, "Warning interpreter exited with error code %d\n",
+                      code);
+        }
+    }
+    if (revert_to_pjli(minst) < 0)
+        goto error_fatal_reverted;
     return 0;
+
+error_fatal:
+    revert_to_pjli(minst);
+error_fatal_reverted:
+    sfclose(s);
+    return gs_error_Fatal;
+}
+
+void
+pl_main_set_arg_decode(pl_main_instance_t *minst,
+                       pl_main_get_codepoint_t *get_codepoint)
+{
+    if (minst == NULL)
+        return;
+
+    minst->get_codepoint = get_codepoint;
+}
+
+int
+pl_main_run_file(pl_main_instance_t *minst, const char *file_name)
+{
+    char *d, *temp;
+    const char *c = file_name;
+    char dummy[6];
+    int rune, code, len;
+
+    if (minst == NULL)
+        return 0;
+
+    /* Convert the file_name to utf8 */
+    if (minst->get_codepoint) {
+        len = 1;
+        while ((rune = minst->get_codepoint(NULL, &c)) >= 0)
+            len += codepoint_to_utf8(dummy, rune);
+        temp = (char *)gs_alloc_bytes_immovable(minst->memory, len, "gsapi_run_file");
+        if (temp == NULL)
+            return gs_error_VMerror;
+        c = file_name;
+        d = temp;
+        while ((rune = minst->get_codepoint(NULL, &c)) >= 0)
+           d += codepoint_to_utf8(d, rune);
+        *d = 0;
+    }
+    else {
+      temp = (char *)file_name;
+    }
+    code = pl_main_run_file_utf8(minst, temp);
+    if (temp != file_name)
+        gs_free_object(minst->memory, temp, "gsapi_run_file");
+    return code;
 }
 
 int
@@ -366,6 +520,15 @@ pl_main_delete_instance(pl_main_instance_t *minst)
     if (minst == NULL)
         return 0;
 
+    /* close and deallocate the device */
+    if (minst->device) {
+        gs_closedevice(minst->device);
+        gs_unregister_root(minst->device->memory, minst->device_root,
+                           "pl_main_languages_delete_instance");
+        minst->device_root = NULL;
+        gx_device_retain(minst->device, false);
+        minst->device = NULL;
+    }
     mem = minst->memory;
     impl = minst->implementations;
     if (impl != NULL) {
@@ -381,14 +544,6 @@ pl_main_delete_instance(pl_main_instance_t *minst)
         gs_free_object(mem, impl, "pl_main_languages_delete_instance()");
     }
 
-    /* close and deallocate the device */
-    if (minst->device) {
-        gs_closedevice(minst->device);
-        gs_unregister_root(minst->device->memory, &device_root,
-                           "pl_main_languages_delete_instance");
-        gx_device_retain(minst->device, false);
-        minst->device = NULL;
-    }
 
     gs_iodev_finit(mem);
     gs_lib_finit(0, 0, mem);
@@ -406,16 +561,17 @@ pl_main_delete_instance(pl_main_instance_t *minst)
 int
 pl_to_exit(gs_memory_t *mem)
 {
+    int ret = 0;
     pl_main_instance_t *minst = mem->gs_lib_ctx->top_of_system;
     /* Deselect last-selected device */
     if (minst->curr_implementation
-        && pl_remove_device(minst->curr_implementation) < 0) {
-        return -1;
+        && pl_dnit_job(minst->curr_implementation) < 0) {
+        ret = -1;
     }
 
     gs_c_param_list_release(&minst->params);
     arg_finit(&minst->args);
-    return 0;
+    return ret;
 }
 
 static int                             /* 0 ok, else -1 error */
@@ -440,7 +596,7 @@ pl_main_languages_init(gs_memory_t * mem,        /* deallocator for devices */
         goto pmui_err;
 
     minst->implementations = impls;
-    minst->curr_implementation = minst->desired_implementation = NULL;
+    minst->curr_implementation = NULL;
     memset(impls, 0, sz);
 
     /* Create & init PDL all instances. Could do this lazily to save memory, */
@@ -509,7 +665,7 @@ pl_main_alloc_instance(gs_memory_t * mem)
 
     memset(minst, 0, sizeof(*minst));
 
-    minst->memory = mem;
+    minst->memory = minst->device_memory = mem;
 
     minst->pjl_from_args = false;
     minst->error_report = -1;
@@ -541,12 +697,14 @@ pl_main_alloc_instance(gs_memory_t * mem)
 
 /* Create a default device if not already defined. */
 static int
-pl_top_create_device(pl_main_instance_t * pti, int index, bool is_default)
+pl_top_create_device(pl_main_instance_t * pti, int index)
 {
     int code = 0;
 
-    if (!is_default || !pti->device) {
+    if (!pti->device) {
         const gx_device *dev;
+        pl_interp_implementation_t **impl;
+        gs_memory_t *mem = pti->device_memory;
         /* We assume that nobody else changes pti->device,
            and this function is called from this module only.
            Due to that device_root is always consistent with pti->device,
@@ -563,7 +721,20 @@ pl_top_create_device(pl_main_instance_t * pti, int index, bool is_default)
             gs_lib_device_list((const gx_device * const **)&list, NULL);
             dev = list[index];
         }
-        code = gs_copydevice(&pti->device, dev, pti->memory);
+        for (impl = pti->implementations; *impl != 0; ++impl) {
+           mem = pl_get_device_memory(*impl);
+           if (mem)
+               break;
+        }
+        if (mem)
+            pti->device_memory = mem;
+#ifdef DEBUG
+        for (; *impl != 0; ++impl) {
+            mem = pl_get_device_memory(*impl);
+            assert(mem == NULL || mem == pti->device_memory);
+        }
+#endif
+        code = gs_copydevice(&pti->device, dev, pti->device_memory);
 
         if (code < 0)
             return code;
@@ -571,7 +742,8 @@ pl_top_create_device(pl_main_instance_t * pti, int index, bool is_default)
         if (pti->device == NULL)
             return gs_error_VMerror;
 
-        gs_register_struct_root(pti->memory, &device_root,
+        pti->device_root = NULL;
+        gs_register_struct_root(pti->device_memory, &pti->device_root,
                                 (void **)&pti->device,
                                 "pl_top_create_device");
 
@@ -650,23 +822,26 @@ parse_floats(gs_memory_t * mem, uint arg_count, char *arg, float *f)
     return float_index;
 }
 
+#define argcmp(A, S, L) \
+    (!strncmp(A, S, L) && (A[L] == 0 || A[L] == '='))
+
 static int check_for_special_int(pl_main_instance_t * pmi, const char *arg, int b)
 {
-    if (!strncmp(arg, "BATCH", 5))
-        return (b == 0) ? 0 : gs_note_error(gs_error_rangecheck);
-    if (!strncmp(arg, "NOPAUSE", 6)) {
+    if (argcmp(arg, "BATCH", 5))
+        return (b == 1) ? 0 : gs_note_error(gs_error_rangecheck);
+    if (argcmp(arg, "NOPAUSE", 7)) {
         pmi->pause = !b;
         return 0;
     }
-    if (!strncmp(arg, "DOINTERPOLATE", 13)) {
+    if (argcmp(arg, "DOINTERPOLATE", 13)) {
         pmi->interpolate = !!b;
         return 0;
     }
-    if (!strncmp(arg, "NOCACHE", 7)) {
+    if (argcmp(arg, "NOCACHE", 7)) {
         pmi->nocache = !!b;
         return 0;
     }
-    if (!strncmp(arg, "SCANCONVERTERTYPE", 17)) {
+    if (argcmp(arg, "SCANCONVERTERTYPE", 17)) {
         pmi->scanconverter = b;
         return 0;
     }
@@ -752,11 +927,11 @@ static int check_for_special_int(pl_main_instance_t * pmi, const char *arg, int 
 
 static int check_for_special_float(pl_main_instance_t * pmi, const char *arg, float f)
 {
-    if (!strncmp(arg, "BATCH", 5) ||
-        !strncmp(arg, "NOPAUSE", 6) ||
-        !strncmp(arg, "DOINTERPOLATE", 13) ||
-        !strncmp(arg, "NOCACHE", 7) ||
-        !strncmp(arg, "SCANCONVERTERTYPE", 17)) {
+    if (argcmp(arg, "BATCH", 5) ||
+        argcmp(arg, "NOPAUSE", 7) ||
+        argcmp(arg, "DOINTERPOLATE", 13) ||
+        argcmp(arg, "NOCACHE", 7) ||
+        argcmp(arg, "SCANCONVERTERTYPE", 17)) {
         return gs_note_error(gs_error_rangecheck);
     }
     return 1;
@@ -764,14 +939,47 @@ static int check_for_special_float(pl_main_instance_t * pmi, const char *arg, fl
 
 static int check_for_special_str(pl_main_instance_t * pmi, const char *arg, gs_param_string *f)
 {
-    if (!strncmp(arg, "BATCH", 5) ||
-        !strncmp(arg, "NOPAUSE", 6) ||
-        !strncmp(arg, "DOINTERPOLATE", 13) ||
-        !strncmp(arg, "NOCACHE", 7) ||
-        !strncmp(arg, "SCANCONVERTERTYPE", 17)) {
+    if (argcmp(arg, "BATCH", 5) ||
+        argcmp(arg, "NOPAUSE", 7) ||
+        argcmp(arg, "DOINTERPOLATE", 13) ||
+        argcmp(arg, "NOCACHE", 7) ||
+        argcmp(arg, "SCANCONVERTERTYPE", 17)) {
         return gs_note_error(gs_error_rangecheck);
     }
     return 1;
+}
+
+static int
+pass_param_to_languages(pl_main_instance_t *pmi,
+                        pl_set_param_type   type,
+                        const char         *param,
+                        const void         *value)
+{
+    pl_interp_implementation_t **imp;
+    int code = 0;
+
+    for (imp = pmi->implementations; *imp != NULL; imp++) {
+        code = pl_set_param(*imp, type, param, value);
+        if (code != 0)
+            break;
+    }
+
+    return code;
+}
+
+static int
+pl_main_post_args_init(pl_main_instance_t * pmi)
+{
+    pl_interp_implementation_t **imp;
+    int code = 0;
+
+    for (imp = pmi->implementations; *imp != NULL; imp++) {
+        code = pl_post_args_init(*imp);
+        if (code != 0)
+            break;
+    }
+
+    return code;
 }
 
 static int
@@ -782,6 +990,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
     bool help = false;
     char *arg;
     gs_c_param_list *params = &pmi->params;
+    int device_index = -1;
 
     gs_c_param_list_write_more(params);
     while ((code = arg_next(pal, (const char **)&arg, pmi->memory)) > 0 && *arg == '-') {
@@ -874,73 +1083,86 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     float vf;
                     bool bval = true;
                     char buffer[128];
+                    pl_set_param_type spt_type = pl_spt_invalid;
+                    const void *spt_val = NULL;
+                    static const char const_true_string[] = "true";
 
                     if (eqp || (eqp = strchr(arg, '#')))
                         value = eqp + 1;
                     else {
                         /* -dDefaultBooleanIs_TRUE */
-                        code = check_for_special_int(pmi, arg, (int)bval);
-                        if (code < 0) code = 0;
-                        if (code == 1)
-                            code =
-                                param_write_bool((gs_param_list *) params,
-                                                 arg, &bval);
-                        break;
+                        value = const_true_string;
+                        eqp = arg + strlen(arg);
                     }
 
+                    /* Arrange for a null terminated copy of the key name in buffer. */
+                    if (eqp-arg >= sizeof(buffer)-1) {
+                        dmprintf1(pmi->memory, "Command line key is too long: %s\n", arg);
+                        return -1;
+                    }
+                    strncpy(buffer, arg, eqp - arg);
+                    buffer[eqp - arg] = '\0';
+                    code = 0;
                     if (value && value[0] == '/') {
+                        /* We have a name! */
                         gs_param_string str;
 
-                        strncpy(buffer, arg, eqp - arg);
-                        buffer[eqp - arg] = '\0';
-                        param_string_from_transient_string(str, value + 1);
                         code = check_for_special_str(pmi, arg, &str);
-                        if (code == 1)
-                            code = param_write_name((gs_param_list *) params,
-                                                    buffer, &str);
-                        break;
-                    }
-                    /* Search for a non-decimal 'radix' number */
-                    else if (strchr(value, '#')) {
-                        int base, number = 0;
-                        char *val = strchr(value, '#');
+                        if (code <= 0)
+                            break;
 
-                        *val++ = 0x00;
-                        sscanf(value, "%d", &base);
-                        if (base < 2 || base > 36) {
-                            dmprintf1(pmi->memory, "Value out of range %s",
+                        param_string_from_transient_string(str, value + 1);
+                        code = param_write_name((gs_param_list *) params,
+                                                buffer, &str);
+                        spt_type = pl_spt_name;
+                        spt_val = value+1;
+                    } else if (strchr(value, '#')) {
+                        /* We have a non-decimal 'radix' number */
+                        int base = 0;
+                        const char *val = strchr(value, '#');
+                        const char *v = value;
+                        char c;
+
+                        while ((c = *v++) >= '0' && c <= '9')
+                            base = base*10 + (c - '0');
+                        if (*v != '#') {
+                            dmprintf1(pmi->memory, "Malformed base value for radix. %s",
                                       value);
                             return -1;
                         }
+
+                        if (base < 2 || base > 36) {
+                            dmprintf1(pmi->memory, "Base out of range %s",
+                                      value);
+                            return -1;
+                        }
+                        vi = 0;
                         while (*val) {
-                            if (*val >= '0' && *val <= '9') {
-                                number = number * base + (*val - '0');
-                            } else {
-                                if (*val >= 'A' && *val <= 'Z') {
-                                    number = number * base + (*val - 'A');
+                            if (*val >= '0' && *val < ('0'+(base<=10?base:10))) {
+                                vi = vi * base + (*val - '0');
+                            } else if (base > 10) {
+                                if (*val >= 'A' && *val < 'A'+base-10) {
+                                    vi = vi * base + (*val - 'A' + 10);
+                                } else if (*val >= 'a' && *val < 'a'+base-10) {
+                                    vi = vi * base + (*val - 'a' + 10);
                                 } else {
-                                    if (*val >= 'a' && *val <= 'z') {
-                                        number = number * base + (*val - 'a');
-                                    } else {
-                                        dmprintf1(pmi->memory,
-                                                  "Value out of range %s",
-                                                  val);
-                                        return -1;
-                                    }
+                                    dmprintf1(pmi->memory,
+                                              "Value out of range %s\n",
+                                              val);
+                                    return -1;
                                 }
                             }
                             val++;
                         }
-                        strncpy(buffer, arg, eqp - arg);
-                        buffer[eqp - arg] = '\0';
-                        code = check_for_special_int(pmi, arg, number);
+                        code = check_for_special_int(pmi, arg, vi);
                         if (code < 0) code = 0;
-                        if (code == 1)
-                            code =
-                                param_write_int((gs_param_list *) params,
-                                                buffer, &number);
+                        if (code <= 0)
+                            break;
+                        code = param_write_int((gs_param_list *) params,
+                                               buffer, &vi);
+                        spt_type = pl_spt_int;
+                        spt_val = &vi;
                     } else if ((!strchr(value, '.')) &&
-                               /* search for an int (no decimal), if fail try a float */
                                (sscanf(value, "%d", &vi) == 1)) {
                         /* Here we have an int -- check for a scaling suffix */
                         char suffix = eqp[strlen(eqp) - 1];
@@ -963,51 +1185,63 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                             default:
                                 break;  /* not a valid suffix or last char was digit */
                         }
-                        /* create a null terminated string for the key */
-                        strncpy(buffer, arg, eqp - arg);
-                        buffer[eqp - arg] = '\0';
                         code = check_for_special_int(pmi, arg, vi);
                         if (code < 0) code = 0;
-                        if (code == 1)
-                            code =
-                                param_write_int((gs_param_list *) params,
-                                                buffer, &vi);
+                        if (code <= 0)
+                            break;
+                        code = param_write_int((gs_param_list *) params,
+                                               buffer, &vi);
+                        spt_type = pl_spt_int;
+                        spt_val = &vi;
                     } else if (sscanf(value, "%f", &vf) == 1) {
-                        /* create a null terminated string.  NB duplicated code. */
-                        strncpy(buffer, arg, eqp - arg);
-                        buffer[eqp - arg] = '\0';
+                        /* We have a float */
                         code = check_for_special_float(pmi, arg, vf);
-                        if (code == 1)
-                            code =
-                                param_write_float((gs_param_list *) params,
+                        if (code <= 0)
+                            break;
+                        code = param_write_float((gs_param_list *) params,
                                                   buffer, &vf);
+                        spt_type = pl_spt_float;
+                        spt_val = &vf;
+                    } else if (!strcmp(value, "null")) {
+                        code = check_for_special_int(pmi, arg, (int)bval);
+                        if (code < 0) code = 0;
+                        if (code <= 0)
+                            break;
+                        code = param_write_null((gs_param_list *) params,
+                                                buffer);
+                        spt_type = pl_spt_null;
+                        spt_val = NULL;
                     } else if (!strcmp(value, "true")) {
                         /* bval = true; */
-                        strncpy(buffer, arg, eqp - arg);
-                        buffer[eqp - arg] = '\0';
                         code = check_for_special_int(pmi, arg, (int)bval);
                         if (code < 0) code = 0;
-                        if (code == 1)
-                            code =
-                                param_write_bool((gs_param_list *) params,
-                                                 buffer, &bval);
+                        if (code <= 0)
+                            break;
+                        code = param_write_bool((gs_param_list *) params,
+                                                buffer, &bval);
+                        spt_type = pl_spt_bool;
+                        spt_val = (void*)1;
                     } else if (!strcmp(value, "false")) {
                         bval = false;
-                        strncpy(buffer, arg, eqp - arg);
-                        buffer[eqp - arg] = '\0';
                         code = check_for_special_int(pmi, arg, (int)bval);
                         if (code < 0) code = 0;
-                        if (code == 1)
-                            code =
-                                param_write_bool((gs_param_list *) params,
-                                                 buffer, &bval);
+                        if (code <= 0)
+                            break;
+                        code = param_write_bool((gs_param_list *) params,
+                                                buffer, &bval);
+                        spt_type = pl_spt_bool;
+                        spt_val = NULL;
                     } else {
                         dmprintf(pmi->memory,
-                                 "Usage for -d is -d<option>=[<integer>|<float>|true|false]\n");
+                                 "Usage for -d is -d<option>=[<integer>|<float>|null|true|false|name]\n");
                         continue;
                     }
+                    if (code < 0)
+                        return code;
+                    code = pass_param_to_languages(pmi, spt_type, buffer, spt_val);
+                    if (code < 0)
+                        return code;
                 }
-                break;
             case 'E':
                 if (*arg == 0)
                     gs_debug['#'] = 1;
@@ -1030,8 +1264,11 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     code =
                         param_write_int_array((gs_param_list *) params,
                                               "HWSize", &ia);
-                    if (code >= 0)
+                    if (code >= 0) {
                         pmi->page_set_on_command_line = true;
+                        pmi->page_size[0] = geom[0];
+                        pmi->page_size[1] = geom[1];
+                    }
                 }
                 break;
             case 'H':
@@ -1221,8 +1458,11 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     code =
                         param_write_float_array((gs_param_list *) params,
                                                 "HWResolution", &fa);
-                    if (code == 0)
+                    if (code == 0) {
                         pmi->res_set_on_command_line = true;
+                        pmi->res[0] = res[0];
+                        pmi->res[1] = res[1];
+                    }
                 }
                 break;
             case 's':
@@ -1245,12 +1485,13 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                      */
                     value = eqp + 1;
                     if (!strncmp(arg, "DEVICE", 6)) {
-                        code = pl_top_create_device(pmi,
-                                                        get_device_index(pmi->
-                                                                         memory,
-                                                                         value),
-                                                        false);
-
+                        if (device_index != -1) {
+                            dmprintf(pmi->memory, "DEVICE can only be set once!\n");
+                            return -1;
+                        }
+                        device_index = get_device_index(pmi->memory, value);
+                        if (device_index == -1)
+                            return -1;
                         /* check for icc settings */
                     } else
                         if (!strncmp
@@ -1282,12 +1523,22 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     } else {
                         char buffer[128];
 
+                        if (eqp-arg >= sizeof(buffer)-1) {
+                            dmprintf1(pmi->memory, "Command line key is too long: %s\n", arg);
+                            return -1;
+                        }
                         strncpy(buffer, arg, eqp - arg);
                         buffer[eqp - arg] = '\0';
+
                         param_string_from_transient_string(str, value);
                         code =
                             param_write_string((gs_param_list *) params,
                                                buffer, &str);
+                        if (code < 0)
+                            return code;
+                        code = pass_param_to_languages(pmi, pl_spt_string, buffer, value);
+                        if (code < 0)
+                            return code;
                     }
                 }
                 break;
@@ -1315,8 +1566,14 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
             return code;
     }
 
+    /* Do any last minute language specific device initialisation
+     * (i.e. let gs_init.ps do its worst). */
+    code = pl_main_post_args_init(pmi);
+    if (code < 0)
+        return code;
+
     gs_c_param_list_read(params);
-    code = pl_top_create_device(pmi, -1, true); /* create default device if needed */
+    code = pl_top_create_device(pmi, device_index); /* create default device if needed */
     if (code < 0)
         return code;
 
@@ -1329,7 +1586,9 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
         return 0;
 
     do {
-        code = pl_main_run_file(pmi, arg);
+        code = pl_main_run_file_utf8(pmi, arg);
+        if (code == gs_error_undefinedfilename)
+            errprintf(pmi->memory, "Failed to open file '%s'\n", arg);
         if (code < 0)
             return code;
     } while ((code = arg_next(pal, (const char **)&arg, pmi->memory)) > 0);
@@ -1347,6 +1606,8 @@ pl_auto_sense(pl_main_instance_t *minst, const char *name,  int buffer_length)
     pl_interp_implementation_t **impls = minst->implementations;
     pl_interp_implementation_t **impl;
     size_t uel_len = strlen(PJL_UEL);
+    pl_interp_implementation_t *best = NULL;
+    int max_score = 0;
 
     /* first check for a UEL */
     if (buffer_length >= uel_len) {
@@ -1354,12 +1615,16 @@ pl_auto_sense(pl_main_instance_t *minst, const char *name,  int buffer_length)
             return impls[0];
     }
 
-    for (impl = impls; *impl != NULL; ++impl) {
-        if (pl_characteristics(*impl)->auto_sense(name, buffer_length) == 0)
-            return *impl;
-    }
     /* Defaults to language 1 (if there is one): PJL is language 0, PCL is language 1. */
-    return impls[1] ? impls[1] : impls[0];
+    best = impls[1] ? impls[1] : impls[0];
+    for (impl = impls; *impl != NULL; ++impl) {
+        int score = pl_characteristics(*impl)->auto_sense(name, buffer_length);
+        if (score > max_score) {
+            best = *impl;
+            max_score = score;
+        }
+    }
+    return best;
 }
 
 /* either the (1) implementation has been selected on the command line or
@@ -1418,7 +1683,7 @@ pl_log_string(const gs_memory_t * mem, const char *str, int wait_for_key)
 {
     errwrite(mem, str, strlen(str));
     if (wait_for_key)
-        (void)fgetc(mem->gs_lib_ctx->fstdin);
+        (void)fgetc(mem->gs_lib_ctx->core->fstdin);
 }
 
 pl_interp_implementation_t *
@@ -1451,6 +1716,24 @@ bool pl_main_get_page_set_on_command_line(const gs_memory_t *mem)
 bool pl_main_get_res_set_on_command_line(const gs_memory_t *mem)
 {
     return pl_main_get_instance(mem)->res_set_on_command_line;
+}
+
+void pl_main_get_forced_geometry(const gs_memory_t *mem, const float **resolutions, const long **dimensions)
+{
+    pl_main_instance_t *minst = pl_main_get_instance(mem);
+
+    if (resolutions) {
+        if (minst->res_set_on_command_line)
+            *resolutions = minst->res;
+        else
+            *resolutions = NULL;
+    }
+    if (dimensions) {
+        if (minst->page_set_on_command_line)
+            *dimensions = minst->page_size;
+        else
+            *dimensions = NULL;
+    }
 }
 
 bool pl_main_get_high_level_device(const gs_memory_t *mem)

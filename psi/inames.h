@@ -19,6 +19,9 @@
 #ifndef inames_INCLUDED
 #  define inames_INCLUDED
 
+#include "std.h"
+#include "iref.h"
+
 /*
  * This file defines those parts of the name table API that depend neither
  * on the implementation nor on the existence of a single distinguished

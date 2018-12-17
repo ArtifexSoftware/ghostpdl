@@ -19,6 +19,9 @@
 #ifndef idebug_INCLUDED
 #  define idebug_INCLUDED
 
+#include "std.h"
+#include "iref.h"
+
 /* Print individual values. */
 void debug_print_name(const gs_memory_t *mem, const ref *);
 void debug_print_name_index(const gs_memory_t *mem, uint /*name_index_t*/);

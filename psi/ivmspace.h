@@ -21,6 +21,7 @@
 #  define ivmspace_INCLUDED
 
 #include "gsgc.h"
+#include "iref.h"
 
 /*
  * r_space_bits and r_space_shift, which define the bits in a ref

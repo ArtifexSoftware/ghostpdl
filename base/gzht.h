@@ -25,6 +25,7 @@
 #include "gxfmap.h"
 #include "gxdht.h"
 #include "gxhttile.h"
+#include "gxdevcli.h"
 
 /* Sort a sampled halftone order by sample value. */
 void gx_sort_ht_order(gx_ht_bit *, uint);

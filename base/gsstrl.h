@@ -16,6 +16,8 @@
 #ifndef gsstrl_INCLUDED
 #  define gsstrl_INCLUDED
 
+#include "stdpre.h"
+
 size_t gs_strlcat(char *dst, const char *src, size_t siz);
 
 size_t gs_strlcpy(char *dst, const char *src, size_t siz);

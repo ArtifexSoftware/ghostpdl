@@ -29,6 +29,7 @@
  */
 
 #include "gsalloc.h"
+#include "gsmemory.h"
 
 #ifndef gs_ref_memory_DEFINED
 #  define gs_ref_memory_DEFINED
@@ -60,7 +61,7 @@ int gs_alloc_string_ref(gs_ref_memory_t * mem, ref * psref,
 /* Register a ref root.  This just calls gs_register_root. */
 /* Note that ref roots are a little peculiar: they assume that */
 /* the ref * that they point to points to a *statically* allocated ref. */
-int gs_register_ref_root(gs_memory_t *mem, gs_gc_root_t *root,
+int gs_register_ref_root(gs_memory_t *mem, gs_gc_root_t **root,
                          void **pp, client_name_t cname);
 
 /*

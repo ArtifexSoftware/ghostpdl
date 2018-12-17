@@ -21,6 +21,7 @@
 
 /* Device-source images */
 #include "gsiparm2.h"
+#include "gsgstate.h"
 
 /* View clipping */
 int gs_initviewclip(gs_gstate *);

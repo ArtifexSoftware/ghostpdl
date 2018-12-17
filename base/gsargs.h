@@ -19,6 +19,8 @@
 #ifndef gsargs_INCLUDED
 #  define gsargs_INCLUDED
 
+#include "std.h"
+
 /*
  * We need to handle recursion into @-files.
  * The following structures keep track of the state.

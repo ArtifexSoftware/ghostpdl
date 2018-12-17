@@ -24,17 +24,13 @@
 #include "gsropt.h"
 #include "gsstruct.h"		/* for extern_st, GC procs */
 #include "stdint_.h"		/* for int64_t */
+#include "gsgstate.h"
 
 /* Define opaque types. */
 
 #ifndef gx_device_DEFINED
 #  define gx_device_DEFINED
 typedef struct gx_device_s gx_device;
-#endif
-
-#ifndef gs_gstate_DEFINED
-#  define gs_gstate_DEFINED
-typedef struct gs_gstate_s gs_gstate;
 #endif
 
 /*

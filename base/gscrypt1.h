@@ -19,6 +19,8 @@
 #ifndef gscrypt1_INCLUDED
 #  define gscrypt1_INCLUDED
 
+#include "stdpre.h"
+
 /* Normal public interface */
 typedef ushort crypt_state;
 int gs_type1_encrypt(byte * dest, const byte * src, uint len,

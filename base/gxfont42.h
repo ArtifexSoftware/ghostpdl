@@ -19,6 +19,8 @@
 #ifndef gxfont42_INCLUDED
 #  define gxfont42_INCLUDED
 
+#include "gxfont.h"
+
 #ifndef gs_glyph_cache_DEFINED
 #  define gs_glyph_cache_DEFINED
 typedef struct gs_glyph_cache_s gs_glyph_cache;

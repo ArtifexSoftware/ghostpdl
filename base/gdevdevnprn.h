@@ -18,6 +18,9 @@
 #ifndef gdevdevnprn_INCLUDED
 # define gdevdevnprn_INCLUDED
 
+#include "gdevprn.h"
+#include "gdevdevn.h"
+
 /*
  * DevN based printer devices all start with the same device fields.
  */

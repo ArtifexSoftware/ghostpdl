@@ -18,6 +18,10 @@
 
 #ifndef iconf_INCLUDED
 #define iconf_INCLUDED
+
+#include "stdpre.h"
+#include "gxiodev.h"
+
 /* ------ Imported data ------ */
 
 /* Configuration information imported from iccinit[01].c */

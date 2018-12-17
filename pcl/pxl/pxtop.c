@@ -44,6 +44,7 @@
 #include "pltop.h"
 #include "plmain.h"
 #include "gsicc_manage.h"
+#include "gxdevsop.h"
 
 /* Imported operators */
 px_operator_proc(pxEndPage);
@@ -141,8 +142,10 @@ static int
 pxl_detect_language(const char *s, int len)
 {
    if (len < 11)
-       return 1;
-   return memcmp(s, ") HP-PCL XL", 11);
+       return 0;
+   if (memcmp(s, ") HP-PCL XL", 11) == 0)
+       return 100;
+   return 0;
 }
 
 /* Get implementation's characteristics */
@@ -221,18 +224,48 @@ pxl_set_icc_params(pl_interp_implementation_t * impl, gs_gstate * pgs)
     return pl_set_icc_params(pxli->memory, pgs);
 }
 
-/* Set a device into an interperter instance */
-/* ret 0 ok, else -ve error code */
-static int 
-pxl_impl_set_device(pl_interp_implementation_t * impl,
-                    gx_device * device)
+/*
+ * Set a Boolean parameter.
+ */
+static int
+put_param_bool(pxl_interp_instance_t *pxli, gs_param_name pkey, bool value)
 {
+    gs_c_param_list list;
     int code;
+
+    gs_c_param_list_write(&list, pxli->memory);
+    code = param_write_bool((gs_param_list *) & list, pkey, &value);
+    if (code >= 0) {
+        gs_c_param_list_read(&list);
+
+        code = gs_gstate_putdeviceparams(pxli->pgs,
+                                         gs_currentdevice(pxli->pgs),
+                                         (gs_param_list *) &list);
+    }
+
+    gs_c_param_list_release(&list);
+    return code;
+}
+
+/* Prepare interp instance for the next "job" */
+/* ret 0 ok, else -ve error code */
+static int
+pxl_impl_init_job(pl_interp_implementation_t * impl,
+                  gx_device                  * device)
+{
+    int code = 0;
     pxl_interp_instance_t *pxli = impl->interp_client_data;
     px_state_t *pxs = pxli->pxs;
     gs_memory_t *mem = pxli->memory;
     
     enum { Sbegin, Ssetdevice, Sinitg, Sgsave, Serase, Sdone } stage;
+
+    px_reset_errors(pxli->pxs);
+    px_process_init(pxli->st, true);
+
+    /* set input status to: expecting stream header */
+    px_stream_header_init(&pxli->headerState, pxli->st, pxli->pxs);
+    pxli->processState = PSHeader;
 
     stage = Sbegin;
 
@@ -295,25 +328,23 @@ pxl_impl_set_device(pl_interp_implementation_t * impl,
         case Sbegin:           /* nothing left to undo */
             break;
     }
+
+    /* Warn the device that PXL uses ROPs. */
+    if (code == 0) {
+        code = put_param_bool(pxli, "LanguageUsesROPs", true);
+
+        if (!device->is_open)
+            code = gs_opendevice(device);
+    }
+
     return code;
 }
 
-/* Prepare interp instance for the next "job" */
-/* ret 0 ok, else -ve error code */
+/* Do any setup for parser per-cursor */
 static int
-pxl_impl_init_job(pl_interp_implementation_t * impl)
+pxl_impl_process_begin(pl_interp_implementation_t * impl)
 {
-    int code = 0;
-    pxl_interp_instance_t *pxli = impl->interp_client_data;
-
-    px_reset_errors(pxli->pxs);
-    px_process_init(pxli->st, true);
-
-    /* set input status to: expecting stream header */
-    px_stream_header_init(&pxli->headerState, pxli->st, pxli->pxs);
-    pxli->processState = PSHeader;
-
-    return code;
+    return 0;
 }
 
 /* Parse a cursor-full of data */
@@ -371,6 +402,13 @@ pxl_impl_process(pl_interp_implementation_t * impl,
     }
     return code;
 }
+
+static int
+pxl_impl_process_end(pl_interp_implementation_t * impl)
+{
+    return 0;
+}
+
 
 /* Skip to end of job ret 1 if done, 0 ok but EOJ not found, else -ve error code */
 static int
@@ -457,23 +495,25 @@ pxl_impl_report_errors(pl_interp_implementation_t * impl,
 static int
 pxl_impl_dnit_job(pl_interp_implementation_t * impl)
 {
+    int code;
     pxl_interp_instance_t *pxli = impl->interp_client_data;
+    gx_device *device = gs_currentdevice(pxli->pgs);
 
     px_stream_header_dnit(&pxli->headerState);
     px_state_cleanup(pxli->pxs);
     px_process_init(pxli->st, true);
-    return 0;
-}
-
-/* Remove a device from an interperter instance */
-/* ret 0 ok, else -ve error code */
-static int
-pxl_impl_remove_device(pl_interp_implementation_t * impl)
-{
-    pxl_interp_instance_t *pxli = impl->interp_client_data;
-
     /* return to original gstate  */
-    return gs_grestore_only(pxli->pgs);        /* destroys gs_save stack */
+    code = gs_grestore_only(pxli->pgs);        /* destroys gs_save stack */
+
+    /* Warn the device that ROP usage has come to an end */
+    if (code >= 0) {
+        code = put_param_bool(pxli, "LanguageUsesROPs", false);
+
+        if (!device->is_open)
+            code = gs_opendevice(device);
+    }
+
+    return code;
 }
 
 /* Deallocate a interpreter instance */
@@ -511,15 +551,18 @@ pxl_end_page_top(px_state_t * pxls, int num_copies, int flush)
 pl_interp_implementation_t pxl_implementation = {
     pxl_impl_characteristics,
     pxl_impl_allocate_interp_instance,
-    pxl_impl_set_device,
+    NULL,
+    NULL,
+    NULL,
     pxl_impl_init_job,
     NULL,                       /* process_file */
+    pxl_impl_process_begin,
     pxl_impl_process,
+    pxl_impl_process_end,
     pxl_impl_flush_to_eoj,
     pxl_impl_process_eof,
     pxl_impl_report_errors,
     pxl_impl_dnit_job,
-    pxl_impl_remove_device,
     pxl_impl_deallocate_interp_instance,
     NULL
 };

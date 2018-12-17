@@ -22,6 +22,7 @@
 #include "gsmemory.h"
 #include "gsiparam.h"
 #include "gsrefct.h"
+#include "gsgstate.h"
 
 /*
  * Previous versions had a complicated lifecycle discipline for
@@ -133,11 +134,6 @@
 */
 
 /* Opaque types for a graphics state stuff */
-#ifndef gs_gstate_DEFINED
-#  define gs_gstate_DEFINED
-typedef struct gs_gstate_s gs_gstate;
-#endif
-
 #ifndef gsicc_link_DEFINED
 typedef struct gsicc_link_s gsicc_link_t;
 #  define gsicc_link_DEFINED

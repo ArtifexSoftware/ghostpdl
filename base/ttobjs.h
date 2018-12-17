@@ -41,6 +41,7 @@
 #include "tttypes.h"
 #include "tttables.h"
 #include "setjmp_.h"
+#include "ttfoutl.h"
 
 #ifdef __cplusplus
   extern "C" {

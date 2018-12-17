@@ -19,6 +19,8 @@
 #ifndef sbcp_INCLUDED
 #  define sbcp_INCLUDED
 
+#include "scommon.h"
+
 /* (T)BCPEncode */
 /* (no state) */
 extern const stream_template s_BCPE_template;

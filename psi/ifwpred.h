@@ -19,6 +19,9 @@
 #ifndef ifwpred_INCLUDED
 #  define ifwpred_INCLUDED
 
+#include "scommon.h"
+#include "iref.h"
+
 /* Exported by zfilter2.c for zfzlib.c */
 int filter_write_predictor(i_ctx_t *i_ctx_p, int npop,
                            const stream_template * templat,

@@ -2024,7 +2024,7 @@ if test "x$XPS_TARGET" != "x" && test "x$PCL_TARGET" != "x" ; then
           [name of the GhostPDL executible (if the source is available, ignored otherwise) [[gpdl]]]),
           [GPDL="$with_gpdl"],[GPDL='gpdl'])
 
-#    GPDL_TARGET=gpdl
+    GPDL_TARGET=gpdl
     GPDL_MAK="\$(GPDLSRCDIR)\$(D)gpdl.mak"
   fi
 fi

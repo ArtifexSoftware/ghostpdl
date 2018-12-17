@@ -20,6 +20,8 @@
 #  define gxttfb_INCLUDED
 
 #include "ttfoutl.h"
+#include "gxfont.h"
+#include "gslibctx.h"
 
 #ifndef gx_ttfReader_DEFINED
 #  define gx_ttfReader_DEFINED

@@ -20,6 +20,9 @@
 #ifndef gspaint_INCLUDED
 #  define gspaint_INCLUDED
 
+#include "stdpre.h"
+#include "gsgstate.h"
+
 /* Painting */
 int gs_erasepage(gs_gstate *),
     gs_fillpage(gs_gstate *),

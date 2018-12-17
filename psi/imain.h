@@ -21,6 +21,8 @@
 #  define imain_INCLUDED
 
 #include "gsexit.h"		/* exported by imain.c */
+#include "gstypes.h"
+#include "iref.h"
 
 /*
  * This file defines the intended API between client front ends
@@ -169,6 +171,13 @@ int gs_main_run_string_with_length(gs_main_instance * minst,
                                    int user_errors, int *pexit_code,
                                    ref * perror_object);
 
+/* Version of gs_main_run_file that works for PDF files. */
+int gs_main_run_file2(gs_main_instance *minst,
+                      const char       *fname,
+                      int               user_errors,
+                      int              *pexit_code,
+                      ref              *perror_object);
+
 /*
  * Open the file for gs_main_run_file.  This is an internal routine
  * that is only exported for some special clients.
@@ -197,6 +206,25 @@ int gs_main_run_string_continue(gs_main_instance * minst,
                                 ref * perror_object);
 int gs_main_run_string_end(gs_main_instance * minst, int user_errors,
                            int *pexit_code, ref * perror_object);
+
+/* This procedure returns the offset at which the last UEL was
+ * encountered during parsing. This is only defined after
+ * a gs_error_InterpreterExit has been returned (and in particular
+ * after a .forceinterp_exit has been called). Calling this
+ * in other circumstances will get undefined results. */
+uint gs_main_get_uel_offset(gs_main_instance * minst);
+
+gs_memory_t *
+gs_main_get_device_memory(gs_main_instance * minst);
+
+int
+gs_main_set_device(gs_main_instance * minst, gx_device *pdev);
+
+int
+gs_main_force_resolutions(gs_main_instance * minst, const float *resolutions);
+
+int
+gs_main_force_dimensions(gs_main_instance * minst, const long *resolutions);
 
 /* ---------------- Operand stack access ---------------- */
 

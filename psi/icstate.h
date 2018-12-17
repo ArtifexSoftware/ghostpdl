@@ -26,6 +26,7 @@
 #include "iosdata.h"
 #include "stream.h"
 #include "opdef.h"
+#include "gsgstate.h"
 
 /*
  * Define the externally visible state of an interpreter context.
@@ -70,6 +71,7 @@ struct gs_context_state_s {
     int (*time_slice_proc)(i_ctx_t **);   /* Time slice procedure */
     int time_slice_ticks;                 /* Ticks before next slice */
     int (*reschedule_proc)(i_ctx_t **);   /* Reschedule procedure */
+    gs_offset_t uel_position;   /* The file position at which we last hit UEL */
 
     /* Put the stacks at the end to minimize other offsets. */
     dict_stack_t dict_stack;

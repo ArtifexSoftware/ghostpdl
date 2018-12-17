@@ -1673,7 +1673,7 @@ template_compose_group(byte *gs_restrict tos_ptr, bool tos_isolated,
                                                 blend_mode, first_blend_spot,
                                                 pblend_procs, pdev);
             }
-            if (nos_shape_offset) {
+            if (nos_shape_offset && pix_alpha != 0) {
                 nos_ptr[nos_shape_offset] =
                     art_pdf_union_mul_8 (nos_ptr[nos_shape_offset],
                                          has_alpha ? tos_ptr[tos_shape_offset] : global_shape,

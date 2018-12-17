@@ -20,6 +20,9 @@
 #ifndef ibnum_INCLUDED
 #  define ibnum_INCLUDED
 
+#include "stdpre.h"
+#include "iref.h"
+
 /*
  * There is a bug in all Adobe interpreters that causes them to byte-swap
  * native reals in binary object sequences iff the native real format is

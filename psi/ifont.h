@@ -19,8 +19,8 @@
 #ifndef ifont_INCLUDED
 #  define ifont_INCLUDED
 
-#include "gsccode.h"		/* for gs_glyph, NUM_KNOWN_ENCODINGS */
-#include "gsstype.h"		/* for extern_st */
+#include "gxfont.h"
+#include "iref.h"
 
 /* The external definition of fonts is given in the PostScript manual, */
 /* pp. 91-93. */

@@ -24,6 +24,7 @@
 #include "gslparam.h"
 #include "gspenum.h"
 #include "gsrect.h"
+#include "gsgstate.h" /* For stroke flattening */
 
 /* The routines and types in this interface use */
 /* device, rather than user, coordinates, and fixed-point, */
@@ -260,10 +261,6 @@ gx_path_is_rectangular(const gx_path *, gs_fixed_rect *);
 /* Path transformers */
 
 /* The gs_gstate is only needed when flattening for stroke. */
-#ifndef gs_gstate_DEFINED
-#  define gs_gstate_DEFINED
-typedef struct gs_gstate_s gs_gstate;
-#endif
 int gx_path_copy_reducing(const gx_path * ppath_old, gx_path * ppath_new,
                           fixed fixed_flatness, const gs_gstate *pgs,
                           gx_path_copy_options options);

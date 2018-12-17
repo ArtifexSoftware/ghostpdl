@@ -19,6 +19,8 @@
 #ifndef btoken_INCLUDED
 #  define btoken_INCLUDED
 
+#include "iref.h"
+
 /*
  * Define accessors for pointers to the system and user name tables
  * (arrays).  Note that these refer implicitly to i_ctx_p.  Note also

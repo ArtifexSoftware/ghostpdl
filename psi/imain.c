@@ -38,7 +38,7 @@
 #include "oper.h"
 #include "iconf.h"              /* for gs_init_* imports */
 #include "idebug.h"
-#include "idict.h"
+#include "iddict.h"
 #include "iname.h"              /* for name_init */
 #include "dstack.h"
 #include "estack.h"
@@ -192,7 +192,7 @@ gs_main_init1(gs_main_instance * minst)
                 goto fail;
             }
             mem->gs_lib_ctx->gs_name_table = nt;
-            code = gs_register_struct_root(mem, mem->gs_lib_ctx->name_table_root,
+            code = gs_register_struct_root(mem, &mem->gs_lib_ctx->name_table_root,
                                            (void **)&mem->gs_lib_ctx->gs_name_table,
                                            "the_gs_name_table");
             if (code < 0)
@@ -225,7 +225,7 @@ fail:
  */
 static int
 gs_main_interpret(gs_main_instance *minst, ref * pref, int user_errors,
-        int *pexit_code, ref * perror_object)
+                  int *pexit_code, ref * perror_object)
 {
     int code;
 
@@ -233,7 +233,7 @@ gs_main_interpret(gs_main_instance *minst, ref * pref, int user_errors,
     minst->i_ctx_p->lib_path = &minst->lib_path;
 
     code = gs_interpret(&minst->i_ctx_p, pref,
-                user_errors, pexit_code, perror_object);
+                        user_errors, pexit_code, perror_object);
     return code;
 }
 
@@ -630,7 +630,7 @@ gs_main_run_string_begin(gs_main_instance * minst, int user_errors,
     make_const_string(&rstr, avm_foreign | a_readonly | a_executable,
                       strlen(setup), (const byte *)setup);
     code = gs_main_interpret(minst, &rstr, user_errors, pexit_code,
-                        perror_object);
+                             perror_object);
     return (code == gs_error_NeedInput ? 0 : code == 0 ? gs_error_Fatal : code);
 }
 /* Continue running a string with the option of suspending. */
@@ -645,8 +645,16 @@ gs_main_run_string_continue(gs_main_instance * minst, const char *str,
     make_const_string(&rstr, avm_foreign | a_readonly, length,
                       (const byte *)str);
     return gs_main_interpret(minst, &rstr, user_errors, pexit_code,
-                        perror_object);
+                             perror_object);
 }
+uint
+gs_main_get_uel_offset(gs_main_instance * minst)
+{
+    if (minst->i_ctx_p == NULL)
+        return 0;
+    return (uint)minst->i_ctx_p->uel_position;
+}
+
 /* Signal EOF when suspended. */
 int
 gs_main_run_string_end(gs_main_instance * minst, int user_errors,
@@ -656,7 +664,79 @@ gs_main_run_string_end(gs_main_instance * minst, int user_errors,
 
     make_empty_const_string(&rstr, avm_foreign | a_readonly);
     return gs_main_interpret(minst, &rstr, user_errors, pexit_code,
-                        perror_object);
+                             perror_object);
+}
+
+gs_memory_t *
+gs_main_get_device_memory(gs_main_instance * minst)
+{
+  gs_memory_t *dev_mem = NULL;
+  if (minst && minst->init_done >= 1) {
+      i_ctx_t * i_ctx_p = minst->i_ctx_p;
+      dev_mem = imemory_global->stable_memory;
+  }
+  return dev_mem;
+}
+
+int
+gs_main_set_device(gs_main_instance * minst, gx_device *pdev)
+{
+    i_ctx_t *i_ctx_p = minst->i_ctx_p;
+    ref error_object;
+    int code;
+
+    if (pdev == NULL) {
+        /* Leave job encapsulation, restore the graphics state gsaved below (so back to the nullpage device)
+           and re-enter job encapsulation.
+           We rely on the end of job encapsulation restore to the put the gstate stack back how it was when
+           we entered job encapsulation below, so the grestore will pickup the correct gstate.
+         */
+        code = gs_main_run_string(minst,
+                                 "true 0 startjob pop grestore false 0 startjob pop",
+                                 0, &code, &error_object);
+        if (code < 0) goto done;
+    }
+    else {
+        /* Leave job encapsulation, and save the graphics state (including the device: nullpage)
+           Store the page size in a dictionary, which we'll use to configure the incoming device */
+        code = gs_main_run_string(minst,
+                                  "true 0 startjob pop gsave "
+                                  /* /PageSize /GetDeviceParam .special_op will either return:
+                                   * /PageSize [ <width> <height> ] true   (if it exists) or
+                                   * false                                 (if it does not) */
+                                  "<< /PageSize /GetDeviceParam .special_op "
+                                  /* If we wanted to force a default pagesize, we'd do:
+                                   * "not { /PageSize [595 842] } if "
+                                   * but for now we'll just leave the default as it is, and do: */
+                                  "pop "
+                                  ">> "
+                                  , 0, &code, &error_object);
+        if (code < 0) goto done;
+        /* First call goes to the C directly to actually set the device. This
+         * avoids the SAFER checks. */
+        code = zsetdevice_no_safer(i_ctx_p, pdev);
+        if (code < 0) goto done;
+        code = zcurrentoutputdevice(i_ctx_p);
+        if (code < 0) goto done;
+        code = gs_main_run_string(minst,
+                                  /* Set the device again to the same one. This determines
+                                   * whether to erase page or not, but passes the safer
+                                   * checks as the device is unchanged. */
+                                  "setdevice "
+                                  "setpagedevice "
+                                  /* GS specifics: Force the cached copy of the params to be updated. */
+                                  "currentpagedevice pop "
+                                  /* Setup the halftone */
+                                  ".setdefaultscreen "
+                                  /* Re-run the scheduled initialisation procs, in case we've just set pdfwrite */
+                                  "1183615869 internaldict /.execute_scheduled_inits get exec "
+                                  /* Re-enter job encapsulation */
+                                  "false 0 startjob pop "
+                                  , 0, &code, &error_object);
+        if (code < 0) goto done;
+    }
+done:
+    return code;
 }
 
 /* ------ Operand stack access ------ */
@@ -875,6 +955,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
     int exit_code;
     ref error_object;
     char *tempnames = NULL;
+    gs_lib_ctx_core_t *core;
 
     /* NB: need to free gs_name_table
      */
@@ -960,6 +1041,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
             gx_device *pdev = i_ctx_p->pgs->device;
             const char * dname = pdev->dname;
             gs_gc_root_t dev_root;
+            gs_gc_root_t *dev_root_ptr = &dev_root;
             /* There is a chance that, during the call to gs_main_run_string(), the interpreter may
              * decide to call the garbager - the device is in gc memory, and the only reference to it
              * (in the gstate) has been removed, thus it can be destroyed by the garbager.
@@ -967,7 +1049,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
              * Register the device as a gc 'root' so it will be implicitely marked by garbager, and
              * and thus surive until control returns here.
              */
-            if (gs_register_struct_root(pdev->memory, &dev_root, (void **)&pdev, "gs_main_finit") < 0) {
+            if (gs_register_struct_root(pdev->memory, &dev_root_ptr, (void **)&pdev, "gs_main_finit") < 0) {
                 free(tempnames);
                 return_error(gs_error_Fatal);
             }
@@ -993,7 +1075,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
                     emprintf2(imemory, "UNKNOWN ERROR %d closing %s device.\n", code, dname);
                }
             }
-            gs_unregister_root(pdev->memory, &dev_root, "gs_main_finit");
+            gs_unregister_root(pdev->memory, dev_root_ptr, "gs_main_finit");
             rc_decrement(pdev, "gs_main_finit");                /* device might be freed */
             if (exit_status == 0 || exit_status == gs_error_Quit)
                 exit_status = code;
@@ -1029,15 +1111,16 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
     }
 
     /* clean up redirected stdout */
-    if (minst->heap->gs_lib_ctx->fstdout2
-        && (minst->heap->gs_lib_ctx->fstdout2 != minst->heap->gs_lib_ctx->fstdout)
-        && (minst->heap->gs_lib_ctx->fstdout2 != minst->heap->gs_lib_ctx->fstderr)) {
-        fclose(minst->heap->gs_lib_ctx->fstdout2);
-        minst->heap->gs_lib_ctx->fstdout2 = (FILE *)NULL;
+    core = minst->heap->gs_lib_ctx->core;
+    if (core->fstdout2
+        && (core->fstdout2 != core->fstdout)
+        && (core->fstdout2 != core->fstderr)) {
+        fclose(core->fstdout2);
+        core->fstdout2 = (FILE *)NULL;
     }
 
-    minst->heap->gs_lib_ctx->stdout_is_redirected = 0;
-    minst->heap->gs_lib_ctx->stdout_to_stderr = 0;
+    minst->heap->gs_lib_ctx->core->stdout_is_redirected = 0;
+    minst->heap->gs_lib_ctx->core->stdout_to_stderr = 0;
     /* remove any temporary files, after ghostscript has closed files */
     if (tempnames) {
         char *p = tempnames;
@@ -1126,4 +1209,54 @@ gs_main_dump_stack(gs_main_instance *minst, int code, ref * perror_object)
     debug_dump_stack(minst->heap, &o_stack, "Operand stack");
     debug_dump_stack(minst->heap, &e_stack, "Execution stack");
     debug_dump_stack(minst->heap, &d_stack, "Dictionary stack");
+}
+
+int
+gs_main_force_resolutions(gs_main_instance * minst, const float *resolutions)
+{
+    ref value;
+    int code;
+
+    if (resolutions == NULL)
+        return 0;
+
+    if (minst == NULL)
+        return gs_error_Fatal;
+
+    make_true(&value);
+    code = i_initial_enter_name(minst->i_ctx_p, "FIXEDRESOLUTION", &value);
+    if (code < 0)
+        return code;
+    make_real(&value, resolutions[0]);
+    code = i_initial_enter_name(minst->i_ctx_p, "DEVICEXRESOLUTION", &value);
+    if (code < 0)
+        return code;
+    make_real(&value, resolutions[1]);
+    return i_initial_enter_name(minst->i_ctx_p, "DEVICEYRESOLUTION", &value);
+}
+
+int
+gs_main_force_dimensions(gs_main_instance *minst, const long *dimensions)
+{
+    i_ctx_t *i_ctx_p;
+    ref value;
+    int code = 0;
+
+    if (dimensions == NULL)
+        return 0;
+    if (minst == NULL)
+        return gs_error_Fatal;
+
+    i_ctx_p = minst->i_ctx_p;
+
+    make_true(&value);
+    code = i_initial_enter_name(minst->i_ctx_p, "FIXEDMEDIA", &value);
+    if (code < 0)
+        return code;
+    make_int(&value, dimensions[0]);
+    code = i_initial_enter_name(minst->i_ctx_p, "DEVICEWIDTH", &value);
+    if (code < 0)
+        return code;
+    make_int(&value, dimensions[1]);
+    return i_initial_enter_name(minst->i_ctx_p, "DEVICEHEIGHT", &value);
 }

@@ -20,6 +20,7 @@
 #  define gxband_INCLUDED
 
 #include "gxclio.h"
+#include "gxdevcli.h"
 
 /* We hold color usage as a bitfield that needs to be at least as wide as
  * a gx_color_index - so for simplicity define it that way, even though

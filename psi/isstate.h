@@ -20,6 +20,9 @@
 #ifndef isstate_INCLUDED
 #  define isstate_INCLUDED
 
+#include "gxalloc.h"
+#include "gsgc.h"
+
 /* Saved state of allocator and other things as needed. */
 /*typedef struct alloc_save_s alloc_save_t; *//* in isave.h */
 struct alloc_save_s {

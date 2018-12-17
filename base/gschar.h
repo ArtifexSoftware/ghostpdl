@@ -19,6 +19,7 @@
 #ifndef gschar_INCLUDED
 #  define gschar_INCLUDED
 
+#include "gsstate.h"
 #include "gsccode.h"
 #include "gscpm.h"
 

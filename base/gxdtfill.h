@@ -129,6 +129,8 @@ It is computed with the macro 'rational_floor'.
 
 */
 
+#if defined(GX_FILL_TRAPEZOID) && defined(EDGE_TYPE)
+
 GX_FILL_TRAPEZOID (gx_device * dev, const EDGE_TYPE * left,
     const EDGE_TYPE * right, fixed ybot, fixed ytop, int flags,
     const gx_device_color * pdevc, FILL_ATTRS fa)
@@ -393,3 +395,7 @@ xit:	if (code < 0 && FILL_DIRECT)
 #undef CONTIGUOUS_FILL
 #undef SWAP_AXES
 #undef FLAGS_TYPE
+
+#else
+int dummy;
+#endif

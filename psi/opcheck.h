@@ -20,6 +20,8 @@
 #ifndef opcheck_INCLUDED
 #  define opcheck_INCLUDED
 
+#include "iref.h"
+
 /*
  * Check the type of an object.  Operators almost always use check_type,
  * which is defined in oper.h; check_type_only is for checking

@@ -23,72 +23,7 @@
 #include "stdpre.h"
 #include "gsmemory.h"
 #include "pltop.h"
-#include "gsparam.h"
-#include "gsargs.h"
-
-/*
- * Main instance for all interpreters.
- */
-struct pl_main_instance_s
-{
-    /* The following are set at initialization time. */
-    gs_memory_t *memory;
-    long base_time[2];          /* starting time */
-    int error_report;           /* -E# */
-    bool pause;                 /* -dNOPAUSE => false */
-    int first_page;             /* -dFirstPage= */
-    int last_page;              /* -dLastPage= */
-    bool pdfdebug;
-    bool pdfstoponerror;
-    bool pdfstoponwarning;
-    bool notransparency;
-    bool nocidfallback;
-    bool no_pdfmark_outlines;
-    bool no_pdfmark_dests;
-    bool pdffitpage;
-    bool usecropbox;
-    bool useartbox;
-    bool usebleedbox;
-    bool usetrimbox;
-    bool printed;
-    bool showacroform;
-    bool showannots;
-    bool nouserunit;
-    bool renderttnotdef;
-
-    gx_device *device;
-
-    pl_interp_implementation_t *implementation; /*-L<Language>*/
-
-    char pcl_personality[6];    /* a character string to set pcl's
-                                   personality - rtl, pcl5c, pcl5e, and
-                                   pcl == default.  NB doesn't belong here. */
-    bool interpolate;
-    bool nocache;
-    bool page_set_on_command_line;
-    bool res_set_on_command_line;
-    bool high_level_device;
-#ifndef OMIT_SAVED_PAGES_TEST
-    bool saved_pages_test_mode;
-#endif
-    bool pjl_from_args; /* pjl was passed on the command line */
-    int scanconverter;
-    /* we have to store these in the main instance until the languages
-       state is sufficiently initialized to set the parameters. */
-    char *piccdir;
-    char *pdefault_gray_icc;
-    char *pdefault_rgb_icc;
-    char *pdefault_cmyk_icc;
-    char *PDFPassword;
-    char *PageList;
-    gs_c_param_list params;
-    arg_list args;
-    pl_interp_implementation_t **implementations;
-    pl_interp_implementation_t *curr_implementation;
-    pl_interp_implementation_t *desired_implementation;
-    byte buf[8192]; /* languages read buffer */
-    void *disp; /* display device pointer NB wrong - remove */
-};
+#include "gsgstate.h"
 
 typedef struct pl_main_instance_s pl_main_instance_t;
 
@@ -100,10 +35,6 @@ void pl_main_init_standard_io(void);
 void pl_main_init(pl_main_instance_t * pmi, gs_memory_t * memory);
 
 /* Allocate and initialize the first graphics state. */
-#ifndef gs_gstate_DEFINED
-#  define gs_gstate_DEFINED
-typedef struct gs_gstate_s gs_gstate;
-#endif
 int pl_main_make_gstate(pl_main_instance_t * pmi, gs_gstate ** ppgs);
 
 /* Print memory and time usage. */
@@ -121,9 +52,9 @@ int pl_main_set_display_callback(pl_main_instance_t *inst, void *callback);
 int pl_main_run_file(pl_main_instance_t *minst, const char *filename);
 int pl_main_init_with_args(pl_main_instance_t *inst, int argc, char *argv[]);
 int pl_main_delete_instance(pl_main_instance_t *minst);
-int pl_main_run_string_begin(void *instance);
-int pl_main_run_string_continue(void *instance, const char *str, unsigned int length);
-int pl_main_run_string_end(void *instance);
+int pl_main_run_string_begin(pl_main_instance_t *minst);
+int pl_main_run_string_continue(pl_main_instance_t *minst, const char *str, unsigned int length);
+int pl_main_run_string_end(pl_main_instance_t *minst);
 int pl_to_exit(gs_memory_t *mem);
 
 /* instance accessors */
@@ -132,8 +63,13 @@ bool pl_main_get_nocache(const gs_memory_t *mem);
 bool pl_main_get_page_set_on_command_line(const gs_memory_t *mem);
 bool pl_main_get_res_set_on_command_line(const gs_memory_t *mem);
 bool pl_main_get_high_level_device(const gs_memory_t *mem);
+void pl_main_get_forced_geometry(const gs_memory_t *mem, const float **resolutions, const long **dimensions);
 int pl_main_get_scanconverter(const gs_memory_t *mem);
 pl_main_instance_t *pl_main_get_instance(const gs_memory_t *mem);
+
+typedef int pl_main_get_codepoint_t(FILE *, const char **);
+void pl_main_set_arg_decode(pl_main_instance_t *minst,
+                            pl_main_get_codepoint_t *get_codepoint);
 
 /* retrieve the PJL instance so languages can query PJL. */
 bool pl_main_get_pjl_from_args(const gs_memory_t *mem); /* pjl was passed on the command line */

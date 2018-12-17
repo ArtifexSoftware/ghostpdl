@@ -32,9 +32,10 @@
 ulong
 gs_next_ids(const gs_memory_t *mem, uint count)
 {
-    ulong id = mem->gs_lib_ctx->gs_next_id;
+    gs_lib_ctx_core_t *core = mem->gs_lib_ctx->core;
+    ulong id = core->gs_next_id;
 
-    mem->gs_lib_ctx->gs_next_id += count;
+    core->gs_next_id += count;
     return id;
 }
 

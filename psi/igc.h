@@ -19,7 +19,10 @@
 #ifndef igc_INCLUDED
 #  define igc_INCLUDED
 
+#include "gsgc.h"
+#include "gxalloc.h"
 #include "istruct.h"
+#include "imemory.h"
 
 /* Declare the vm_reclaim procedure for the real GC. */
 extern vm_reclaim_proc(gs_gc_reclaim);

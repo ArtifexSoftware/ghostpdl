@@ -25,6 +25,8 @@
  *  TEMPLATE_spot_into_scanlines - the name of the procedure to generate.
 */
 
+#if defined(TEMPLATE_spot_into_scanlines) && defined(INCR) && defined(LOOP_FILL_RECTANGLE_DIRECT)
+
 static int
 TEMPLATE_spot_into_scanlines (line_list *ll, fixed band_mask)
 {
@@ -238,3 +240,7 @@ TEMPLATE_spot_into_scanlines (line_list *ll, fixed band_mask)
     range_list_free(&rlist);
     return code;
 }
+
+#else
+int dummy;
+#endif

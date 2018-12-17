@@ -23,6 +23,7 @@
 #include "sa85x.h"
 #include "sstring.h"
 #include "inamestr.h"
+#include "iref.h"
 
 /*
  * Define the state of the scanner.  Before first calling gs_scan_token,

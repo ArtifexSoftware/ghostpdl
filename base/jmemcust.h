@@ -13,6 +13,13 @@
    CA 94945, U.S.A., +1(415)492-9861, for further information.
 */
 
+#ifndef jmemcust_h_INCLUDED
+#  define jmemcust_h_INCLUDED
+
+#include "std.h" /* FILE needed by jpeglib.h */
+#include "jpeglib.h"
+#include "jmemsys.h"
+
 typedef JMETHOD(long, j_custmem_init_ptr, (j_common_ptr cinfo));
 typedef JMETHOD(void, j_custmem_term_ptr, (j_common_ptr cinfo));
 typedef JMETHOD(long, j_custmem_avail_ptr, (j_common_ptr cinfo));
@@ -54,3 +61,5 @@ jpeg_cust_mem_init(jpeg_cust_mem_data *custm, void *priv,
 
 GLOBAL(jpeg_cust_mem_data *)
 jpeg_cust_mem_set_private(jpeg_cust_mem_data *custm, void *priv);
+
+#endif

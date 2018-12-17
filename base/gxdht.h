@@ -26,6 +26,7 @@
 #include "gscspace.h"
 #include "gxcindex.h"
 #include "gxfrac.h"
+#include "gxtmap.h"
 
 /*
  * We represent a halftone tile as a rectangular super-cell consisting of

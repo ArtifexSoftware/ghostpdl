@@ -21,6 +21,18 @@
 #ifndef gsequivc_INCLUDED
 # define gsequivc_INCLUDED
 
+#include "stdpre.h"
+#include "gxfrac.h"
+#include "gxcindex.h"
+#include "gxdevcli.h"
+
+/*
+ * Define the maximum number of spot colors supported by this device.
+ * This value is arbitrary.  It is set simply to define a limit on
+ * on the separation_name_array and separation_order map.
+ */
+#define GX_DEVICE_MAX_SEPARATIONS GX_DEVICE_COLOR_MAX_COMPONENTS
+
 /*
  * Structure for holding a CMYK color.
  */

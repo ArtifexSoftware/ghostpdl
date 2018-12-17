@@ -14,22 +14,12 @@
 */
 
 
-/* Reusable straem implementation */
+/* Reusable stream implementation */
 
 #ifndef zfrsd_INCLUDED
 #  define zfrsd_INCLUDED
 
-/* Make a reusable string stream. */
-int
-make_rss(i_ctx_t *i_ctx_p, os_ptr op, const byte * data, uint size,
-   uint string_space, long offset, long length, bool is_bytestring);
-
-#endif /* zfrsd_INCLUDED */
-
-/* Reusable straem implementation */
-
-#ifndef zfrsd_INCLUDED
-#  define zfrsd_INCLUDED
+#include "iostack.h"
 
 /* Make a reusable string stream. */
 int

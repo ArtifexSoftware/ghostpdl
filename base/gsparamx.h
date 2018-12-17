@@ -19,6 +19,10 @@
 #ifndef gsparamx_INCLUDED
 #  define gsparamx_INCLUDED
 
+#include "stdpre.h"
+#include "gstypes.h"
+#include "gsparam.h"
+
 /* Test whether a parameter's string value is equal to a C string. */
 bool gs_param_string_eq(const gs_param_string *pcs, const char *str);
 

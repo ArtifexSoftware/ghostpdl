@@ -19,6 +19,8 @@
 #ifndef oparc_INCLUDED
 #  define oparc_INCLUDED
 
+#include "iref.h"
+
 /*
  * These declarations are in a separate from, rather than in opextern.h,
  * because these operators are not included in PDF-only configurations.

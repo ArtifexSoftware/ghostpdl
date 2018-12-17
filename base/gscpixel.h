@@ -20,6 +20,8 @@
 #ifndef gscpixel_INCLUDED
 #  define gscpixel_INCLUDED
 
+#include "gscspace.h"
+
 /* Construct a new DevicePixel color space. */
 int gs_cspace_new_DevicePixel(gs_memory_t *mem, gs_color_space **ppcs,
                               int depth);

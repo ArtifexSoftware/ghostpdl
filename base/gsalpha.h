@@ -19,6 +19,8 @@
 #ifndef gsalpha_INCLUDED
 #  define gsalpha_INCLUDED
 
+#include "gsgstate.h"
+
 /*
  * This tiny little file is separate so that it can be included by
  * gsstate.c for initializing the alpha value, even in configurations

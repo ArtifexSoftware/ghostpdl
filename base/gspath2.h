@@ -20,6 +20,9 @@
 #ifndef gspath2_INCLUDED
 #  define gspath2_INCLUDED
 
+#include "gsgstate.h"
+#include "gsmatrix.h"
+
 /* Miscellaneous */
 int gs_setbbox(gs_gstate *, double, double, double, double);
 

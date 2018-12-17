@@ -19,6 +19,8 @@
 #ifndef szlibx_INCLUDED
 #  define szlibx_INCLUDED
 
+#include "scommon.h"
+
 /* Define an opaque type for the dynamic part of the state. */
 typedef struct zlib_dynamic_state_s zlib_dynamic_state_t;
 

@@ -609,6 +609,7 @@ def
   matrix currentmatrix 4 1 roll
   mark currentcolor counttomark dup 4 add exch roll pop
   currentcolorspace 4 1 roll .getuseciecolor 4 1 roll
+  .swapcolors mark currentcolor counttomark dup 4 add exch roll pop currentcolorspace 4 1 roll .swapcolors
   currentuserparams /OverrideICC get 4 1 roll
   mark /OverrideICC true .dicttomark setuserparams
 
@@ -660,6 +661,7 @@ def
   .endtransparencymask
   PDFfile exch setfileposition
   mark exch /OverrideICC exch .dicttomark setuserparams
+  .swapcolors setcolorspace setcolor .swapcolors
   .setuseciecolor setcolorspace setcolor
   setmatrix
   end	% restore colorspace, color and ExtGState (end)

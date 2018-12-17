@@ -20,6 +20,8 @@
 #ifndef iutil_INCLUDED
 #  define iutil_INCLUDED
 
+#include "imemory.h"
+
 /* ------ Object utilities ------ */
 
 /* Copy refs from one place to another. */

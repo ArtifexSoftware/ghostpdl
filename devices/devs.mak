@@ -131,6 +131,7 @@ DEVGEN=$(DEVGENDIR)$(D)
 #	bmp256		8-bit (256-color) .BMP file format
 #	bmp16m		24-bit .BMP file format
 #	bmp32b		32-bit pseudo-.BMP file format
+#	chameleon	Plain bits, rgb/mono/cmyk runtime configurable.
 #	jpeg		JPEG format, RGB output
 #	jpeggray	JPEG format, gray output
 #	jpegcmyk	JPEG format, cmyk output
@@ -291,7 +292,7 @@ display_=$(DEVOBJ)gdevdsp.$(OBJ) $(DEVOBJ)gdevpccm.$(OBJ) $(GLOBJ)gdevdevn.$(OBJ
 $(DD)display.dev : $(display_) $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
 	$(SETDEV) $(DD)display $(display_)
 
-$(DEVOBJ)gdevdsp.$(OBJ) : $(DEVSRC)gdevdsp.c $(string__h)\
+$(DEVOBJ)gdevdsp.$(OBJ) : $(DEVSRC)gdevdsp.c $(string__h) $(gdevkrnlsclass_h)\
  $(gp_h) $(gpcheck_h) $(gdevpccm_h) $(gsparam_h) $(gsdevice_h)\
  $(GDEVH) $(gxdevmem_h) $(gdevdevn_h) $(gsequivc_h) $(gdevdsp_h) $(gdevdsp2_h) \
   $(DEVS_MAK) $(MAKEDIRS)
@@ -322,7 +323,8 @@ $(DD)x11.dev : $(DD)x11_.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
 GDEVX=$(GDEV) $(x__h) $(gdevx_h) $(TOP_MAKEFILES)
 $(DEVOBJ)gdevx.$(OBJ) : $(DEVSRC)gdevx.c $(GDEVX) $(math__h) $(memory__h)\
  $(gscoord_h) $(gsdevice_h) $(gsiparm2_h) $(gsmatrix_h) $(gsparam_h)\
- $(gxdevmem_h) $(gxgetbit_h) $(gxiparam_h) $(gxpath_h) $(DEVS_MAK) $(MAKEDIRS)
+ $(gxdevmem_h) $(gxgetbit_h) $(gxiparam_h) $(gxpath_h) $(gdevkrnlsclass_h) \
+ $(DEVS_MAK) $(MAKEDIRS)
 	$(DEVCCSHARED) $(XINCLUDE) $(DEVO_)gdevx.$(OBJ) $(C_) $(DEVSRC)gdevx.c
 
 $(DEVOBJ)gdevxcmp.$(OBJ) : $(DEVSRC)gdevxcmp.c $(GDEVX) $(math__h) \
@@ -660,7 +662,7 @@ $(DD)txtwrite.dev : $(ECHOGS_XE) $(txtwrite_) $(GDEV)\
  $(gdevagl_h) $(DEVS_MAK) $(MAKEDIRS)
 	$(SETDEV2) $(DD)txtwrite $(txtwrite_)
 
-$(DEVOBJ)gdevtxtw.$(OBJ) : $(DEVVECSRC)gdevtxtw.c $(GDEV)\
+$(DEVOBJ)gdevtxtw.$(OBJ) : $(DEVVECSRC)gdevtxtw.c $(GDEV) $(gdevkrnlsclass_h) \
   $(memory__h) $(string__h) $(gp_h) $(gsparam_h) $(gsutil_h) \
   $(gsdevice_h) $(gxfont_h) $(gxfont0_h) $(gstext_h) $(gxfcid_h)\
   $(gxgstate_h) $(gxpath_h) $(gdevagl_h) $(DEVS_MAK) $(MAKEDIRS)
@@ -1125,6 +1127,20 @@ $(DEVOBJ)gdevbit.$(OBJ) : $(DEVSRC)gdevbit.c $(PDEVH)\
  $(gsparam_h) $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gxlum_h) $(gxdcconv_h)\
  $(gsutil_h) $(DEVS_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevbit.$(OBJ) $(C_) $(DEVSRC)gdevbit.c
+
+### --------------------- The chameleon device ---------------------- ###
+
+chameleon_=$(DEVOBJ)gdevchameleon.$(OBJ) $(DEVOBJ)gdevdcrd.$(OBJ)
+
+$(DD)chameleon.dev : $(chameleon_) $(GLD)page.dev $(GLD)cielib.dev $(GDEV) \
+ $(DEVS_MAK) $(MAKEDIRS)
+	$(SETPDEV2) $(DD)chameleon $(chameleon_)
+	$(ADDMOD) $(DD)chameleon -include $(GLD)cielib
+
+$(DEVOBJ)gdevchameleon.$(OBJ) : $(DEVSRC)gdevchameleon.c $(PDEVH)\
+ $(gsparam_h) $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gxlum_h) $(gxdcconv_h)\
+ $(gsutil_h) $(DEVS_MAK) $(MAKEDIRS)
+	$(DEVCC) $(DEVO_)gdevchameleon.$(OBJ) $(C_) $(DEVSRC)gdevchameleon.c
 
 ### ------------------------- .BMP file formats ------------------------- ###
 
@@ -1599,7 +1615,7 @@ $(DD)tfax.dev : $(libtiff_dev) $(tfax_) $(GLD)cfe.dev\
 	$(ADDMOD) $(DD)tfax -include $(DD)fax $(DD)tiffs $(tiff_i_)
 
 $(DEVOBJ)gdevtfax.$(OBJ) : $(DEVSRC)gdevtfax.c $(PDEVH)\
- $(stdint__h) $(gdevfax_h) $(gdevtifs_h)\
+ $(stdint__h) $(gdevfax_h) $(gdevtifs_h) $(gdevkrnlsclass_h) \
  $(scfx_h) $(slzwx_h) $(srlx_h) $(strimpl_h) $(DEVS_MAK) $(MAKEDIRS)
 	$(DEVCC) $(I_)$(TI_)$(_I) $(DEVO_)gdevtfax.$(OBJ) $(C_) $(DEVSRC)gdevtfax.c
 
@@ -1619,7 +1635,7 @@ $(DD)tiffs.dev : $(libtiff_dev) $(tiffs_) $(GLD)page.dev\
 
 $(DEVOBJ)gdevtifs.$(OBJ) : $(DEVSRC)gdevtifs.c $(PDEVH) $(stdint__h) $(stdio__h) $(time__h)\
  $(gdevtifs_h) $(gscdefs_h) $(gstypes_h) $(stream_h) $(strmio_h) $(gstiffio_h)\
- $(gsicc_cache_h) $(gscms_h) $(DEVS_MAK) $(MAKEDIRS)
+ $(gsicc_cache_h) $(gdevkrnlsclass_h) $(gscms_h) $(DEVS_MAK) $(MAKEDIRS)
 	$(DEVCC) $(I_)$(DEVI_) $(II)$(TI_)$(_I) $(DEVO_)gdevtifs.$(OBJ) $(C_) $(DEVSRC)gdevtifs.c
 
 # Black & white, G3/G4 fax
@@ -1912,7 +1928,7 @@ $(DD)PCLm.dev : $(DEVOBJ)gdevpdfimg.$(OBJ) $(GLD)page.dev $(GDEV) $(DEVS_MAK) $(
 	$(SETPDEV2) $(DD)PCLm $(DEVOBJ)gdevpdfimg.$(OBJ)
 	$(ADDMOD) $(DD)PCLm -include $(GLD)page
 
-$(DEVOBJ)gdevpdfimg.$(OBJ) : $(DEVSRC)gdevpdfimg.c $(AK) \
+$(DEVOBJ)gdevpdfimg.$(OBJ) : $(DEVSRC)gdevpdfimg.c $(AK) $(gdevkrnlsclass_h) \
   $(DEVS_MAK) $(MAKEDIRS) $(arch_h) $(stdint__h) $(gdevprn_h) $(gxdownscale_h) \
   $(stream_h) $(spprint_h) $(time__h) $(smd5_h) $(sstring_h) $(strimpl_h) \
   $(slzwx_h) $(szlibx_h) $(jpeglib__h) $(sdct_h) $(srlx_h) $(gsicc_cache_h) $(sjpeg_h)

@@ -19,6 +19,8 @@
 #ifndef gxsample_INCLUDED
 #  define gxsample_INCLUDED
 
+#include "std.h"
+
 /*
  * The following union implements the expansion of sample
  * values from N bits to 8, and a possible linear transformation.

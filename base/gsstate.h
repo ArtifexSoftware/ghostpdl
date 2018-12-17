@@ -19,11 +19,8 @@
 #ifndef gsstate_INCLUDED
 #  define gsstate_INCLUDED
 
-/* Opaque type for a graphics state */
-#ifndef gs_gstate_DEFINED
-#  define gs_gstate_DEFINED
-typedef struct gs_gstate_s gs_gstate;
-#endif
+#include "std.h"
+#include "gsgstate.h"
 
 /* opague type for overprint compositor parameters */
 #ifndef gs_overprint_params_t_DEFINED

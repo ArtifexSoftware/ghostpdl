@@ -19,6 +19,8 @@
 #ifndef ilevel_INCLUDED
 #  define ilevel_INCLUDED
 
+#include "imemory.h"
+
 /* The current interpreter language level */
 #define LANGUAGE_LEVEL (i_ctx_p->language_level)
 #define LL2_ENABLED (LANGUAGE_LEVEL >= 2)

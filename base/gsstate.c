@@ -633,7 +633,14 @@ gs_do_set_overprint(gs_gstate * pgs)
     if (cs_num_components(pcs) < 0 && pcc->pattern != 0)
         code = pcc->pattern->type->procs.set_color(pcc, pgs);
     else
+    {
+        /* The spaces that do not allow opm (e.g. ones that are not ICC or DeviceCMYK)
+           will blow away any true setting later. But we have to be prepared
+           in case this is an CMYK ICC space for example. Hence we set effective mode
+           to mode here (Bug 698721)*/
+        pgs->effective_overprint_mode = pgs->overprint_mode;
         pcs->type->set_overprint(pcs, pgs);
+    }
     return code;
 }
 
@@ -715,7 +722,7 @@ gs_setcpsimode(gs_memory_t *mem, bool mode)
 {
     gs_lib_ctx_t *libctx = gs_lib_ctx_get_interp_instance(mem);
 
-    libctx->CPSI_mode = mode;
+    libctx->core->CPSI_mode = mode;
 }
 
 /* currentcpsimode */
@@ -724,7 +731,7 @@ gs_currentcpsimode(const gs_memory_t * mem)
 {
     gs_lib_ctx_t *libctx = gs_lib_ctx_get_interp_instance(mem);
 
-    return libctx->CPSI_mode;
+    return libctx->core->CPSI_mode;
 }
 
 /* The edgebuffer based scanconverter can only cope with values of 0
@@ -748,7 +755,7 @@ gs_setscanconverter(gs_gstate * gs, int converter)
 {
     gs_lib_ctx_t *libctx = gs_lib_ctx_get_interp_instance(gs->memory);
 
-    libctx->scanconverter = converter;
+    libctx->core->scanconverter = converter;
 
     sanitize_fill_adjust(gs);
 }
@@ -759,7 +766,7 @@ gs_getscanconverter(const gs_memory_t * mem)
 {
     gs_lib_ctx_t *libctx = gs_lib_ctx_get_interp_instance(mem);
 
-    return libctx->scanconverter;
+    return libctx->core->scanconverter;
 }
 
 /* setrenderingintent
