@@ -3570,10 +3570,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\base\gsdfilt.h"
-				>
-			</File>
-			<File
 				RelativePath="..\base\gsdll.h"
 				>
 			</File>

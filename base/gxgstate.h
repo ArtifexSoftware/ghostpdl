@@ -253,10 +253,6 @@ typedef struct gs_client_color_s gs_client_color;
 #  define gs_font_DEFINED
 typedef struct gs_font_s gs_font;
 #endif
-#ifndef gs_device_filter_stack_DEFINED
-#  define gs_device_filter_stack_DEFINED
-typedef struct gs_device_filter_stack_s gs_device_filter_stack_t;
-#endif
 
 /* Define the graphics state structure itself. */
 /*
@@ -316,30 +312,30 @@ struct gs_gstate_s {
     CUSTOM_COLOR_PTR        /* Pointer to custom color callback struct */
     const gx_color_map_procs *
       (*get_cmap_procs)(const gs_gstate *, const gx_device *);
-    gs_color_rendering_state_common; 
-    
-    gs_gstate *saved;	        /* previous state from gsave */ 
-    
-    /* Transformation: */ 
-    gs_matrix ctm_inverse; 
-    bool ctm_inverse_valid;     /* true if ctm_inverse = ctm^-1 */ 
-    gs_matrix ctm_default; 
-    bool ctm_default_set;       /* if true, use ctm_default; */ 
-                                /* if false, ask device */ 
-    /* Paths: */ 
-    
-    gx_path *path; 
-    gx_clip_path *clip_path; 
-    gx_clip_stack_t *clip_stack;  /* (LanguageLevel 3 only) */ 
-    gx_clip_path *view_clip;	  /* (may be 0, or have rule = 0) */ 
-    
-    /* Effective clip path cache */ 
-    gs_id effective_clip_id;            /* (key) clip path id */ 
-    gs_id effective_view_clip_id;	/* (key) view clip path id */ 
-    gx_clip_path *effective_clip_path;	/* (value) effective clip path, */ 
-                                /* possibly = clip_path or view_clip */ 
-    bool effective_clip_shared;	/* true iff e.c.p. = c.p. or v.c. */ 
-    
+    gs_color_rendering_state_common;
+
+    gs_gstate *saved;	        /* previous state from gsave */
+
+    /* Transformation: */
+    gs_matrix ctm_inverse;
+    bool ctm_inverse_valid;     /* true if ctm_inverse = ctm^-1 */
+    gs_matrix ctm_default;
+    bool ctm_default_set;       /* if true, use ctm_default; */
+                                /* if false, ask device */
+    /* Paths: */
+
+    gx_path *path;
+    gx_clip_path *clip_path;
+    gx_clip_stack_t *clip_stack;  /* (LanguageLevel 3 only) */
+    gx_clip_path *view_clip;	  /* (may be 0, or have rule = 0) */
+
+    /* Effective clip path cache */
+    gs_id effective_clip_id;            /* (key) clip path id */
+    gs_id effective_view_clip_id;	/* (key) view clip path id */
+    gx_clip_path *effective_clip_path;	/* (value) effective clip path, */
+                                /* possibly = clip_path or view_clip */
+    bool effective_clip_shared;	/* true iff e.c.p. = c.p. or v.c. */
+
     /* PDF graphics state parameters */
     float strokeconstantalpha, fillconstantalpha;
                                 /* *SMask is stored in int_gstate as its a ref object */
@@ -352,21 +348,21 @@ struct gs_gstate_s {
     float PDFfontsize;
     gs_matrix textlinematrix;
     gs_matrix textmatrix;
-    /* Current colors (non-stroking, and stroking) */ 
-    gs_gstate_color color[2]; 
-    
-    /* Font: */ 
-    gs_font *font; 
-    gs_font *root_font; 
-    gs_matrix_fixed char_tm;     /* font matrix * ctm */ 
-    bool char_tm_valid;	         /* true if char_tm is valid */ 
-    gs_in_cache_device_t in_cachedevice;    /* (see gscpm.h) */ 
-    gs_char_path_mode in_charpath;          /* (see gscpm.h) */ 
-    gs_gstate *show_gstate;      /* gstate when show was invoked */ 
-                                /* (so charpath can append to path) */ 
-    /* Other stuff: */ 
-    int level;			/* incremented by 1 per gsave */ 
-    gx_device *device; 
+    /* Current colors (non-stroking, and stroking) */
+    gs_gstate_color color[2];
+
+    /* Font: */
+    gs_font *font;
+    gs_font *root_font;
+    gs_matrix_fixed char_tm;     /* font matrix * ctm */
+    bool char_tm_valid;	         /* true if char_tm is valid */
+    gs_in_cache_device_t in_cachedevice;    /* (see gscpm.h) */
+    gs_char_path_mode in_charpath;          /* (see gscpm.h) */
+    gs_gstate *show_gstate;      /* gstate when show was invoked */
+                                /* (so charpath can append to path) */
+    /* Other stuff: */
+    int level;			/* incremented by 1 per gsave */
+    gx_device *device;
     gs_gstate_client_procs client_procs;
 };
 
