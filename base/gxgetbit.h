@@ -22,12 +22,6 @@
 #include "gxbitfmt.h"
 #include "gxdevcli.h"
 
-/* The parameter record typedef is also in gxdevcli.h. */
-#ifndef gs_get_bits_params_DEFINED
-#  define gs_get_bits_params_DEFINED
-typedef struct gs_get_bits_params_s gs_get_bits_params_t;
-#endif
-
 /*
  * We define the options for get_bits_rectangle here in a separate file
  * so that the great majority of driver implementors and clients, which

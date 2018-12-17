@@ -32,18 +32,8 @@
 
 #define RAW_PATTERN_DUMP 0
 
-#ifndef gx_device_clist_DEFINED
-#define gx_device_clist_DEFINED
 typedef union gx_device_clist_s gx_device_clist;
-#endif
 
-/*
- * Define the type of a Pattern, also used with Pattern instances.
- */
-#ifndef gs_pattern_type_DEFINED
-#  define gs_pattern_type_DEFINED
-typedef struct gs_pattern_type_s gs_pattern_type_t;
-#endif
 struct gs_pattern_type_s {
     int PatternType;
     struct pp_ {

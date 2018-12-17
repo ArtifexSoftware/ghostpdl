@@ -20,6 +20,8 @@
 #ifndef gdevpcl_INCLUDED
 #  define gdevpcl_INCLUDED
 
+#include "gxdevcli.h"
+
 /*
  * Define the PCL paper size codes.  H-P's documentation and coding for the
  * 11x17 size are inconsistent: some printers seem to accept code 11 as well

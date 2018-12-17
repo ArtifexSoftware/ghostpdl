@@ -22,6 +22,9 @@
 
 #include "stat_.h"
 #include "gsstype.h"
+#include "scommon.h"
+#include "gp.h"
+#include "gsfname.h"
 
 /*
  * Note that IODevices are not the same as Ghostscript output devices.
@@ -29,10 +32,6 @@
  * Second and Third Edition, for more information.
  */
 
-#ifndef gx_io_device_DEFINED
-#  define gx_io_device_DEFINED
-typedef struct gx_io_device_s gx_io_device;
-#endif
 typedef struct gx_io_device_procs_s gx_io_device_procs;  /* defined here */
 
 /* the number of slots reserved in the io device table for io devices to
@@ -45,23 +44,8 @@ gs_iodev_register_dev(gs_memory_t * mem, const gx_io_device *newiodev);
 
 /* The IODevice table is defined in gconf.c; its extern is in gscdefs.h. */
 
-#ifndef file_enum_DEFINED	/* also defined in gp.h */
-#  define file_enum_DEFINED
-struct file_enum_s;		/* opaque to client, defined by implementors */
-typedef struct file_enum_s file_enum;
-#endif
-
 /* Define an opaque type for parameter lists. */
-#ifndef gs_param_list_DEFINED
-#  define gs_param_list_DEFINED
 typedef struct gs_param_list_s gs_param_list;
-#endif
-
-/* Define an opaque type for streams. */
-#ifndef stream_DEFINED
-#  define stream_DEFINED
-typedef struct stream_s stream;
-#endif
 
 /*
  * Define the IODevice procedures.  Note that file names for fopen, delete,

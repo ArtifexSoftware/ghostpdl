@@ -713,12 +713,6 @@ tt_find_table(gs_font_type42 * pfont, const char *tname, uint * plen)
     return 0;
 }
 
-/* Opaque type for a path */
-#ifndef gx_path_DEFINED
-#  define gx_path_DEFINED
-typedef struct gx_path_s gx_path;
-#endif
-
 /*
  * Map a key through a cmap sub-table.  We export this so we can use
  * it someday for mapping between glyph vocabularies.  If the key is

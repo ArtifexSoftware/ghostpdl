@@ -23,19 +23,8 @@
 #include "gsmemory.h"
 #include "pxgstate.h"
 #include "pltop.h"
-
-/* Define an abstract type for a font directory. */
-#ifndef gs_font_dir_DEFINED
-#  define gs_font_dir_DEFINED
-typedef struct gs_font_dir_s gs_font_dir;
-#endif
-
-/* Define an abstract type for a text enumerator. */
-/* We only need this for the preallocated enumerator for the error page. */
-#ifndef gs_show_enum_DEFINED
-#  define gs_show_enum_DEFINED
-typedef struct gs_show_enum_s gs_show_enum;
-#endif
+#include "gslibctx.h"
+#include "gxtext.h"
 
 /* Define an abstract type for an image enumerator. */
 #ifndef px_image_enum_DEFINED

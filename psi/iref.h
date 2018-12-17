@@ -20,6 +20,10 @@
 #  define iref_INCLUDED
 
 #include "stdint_.h"
+#include "gsdevice.h"
+#include "gxalloc.h"
+#include "scommon.h"
+#include "gsnamecl.h"
 
 /*
  * Note: this file defines a large number of macros.  Many of these are
@@ -29,11 +33,7 @@
  * macros have names beginning with an underscore (_).
  */
 
-/* The typedef for object references */
-#ifndef ref_DEFINED
-typedef struct ref_s ref;
-#  define ref_DEFINED
-#endif
+typedef struct ref_stack_s ref_stack_t;
 
 /*
  * Define the type for packed object references.  This is opaque here:
@@ -394,28 +394,11 @@ typedef struct ref_attr_print_mask_s {
 typedef struct dict_s dict;
 typedef struct name_s name;
 
-#ifndef stream_DEFINED
-#  define stream_DEFINED
-typedef struct stream_s stream;
-#endif
-#ifndef gx_device_DEFINED
-#  define gx_device_DEFINED
-typedef struct gx_device_s gx_device;
-#endif
-#ifndef obj_header_DEFINED
-#  define obj_header_DEFINED
-typedef struct obj_header_s obj_header_t;
-#endif
-
 /*
  * Define the argument type for operator procedures.  Note that the
  * argument name is not arbitrary: it is used in access macros, so all
  * operator procedures must use it.
  */
-#ifndef i_ctx_t_DEFINED
-#  define i_ctx_t_DEFINED
-typedef struct gs_context_state_s i_ctx_t;
-#endif
 typedef int (*op_proc_t)(i_ctx_t *i_ctx_p);
 /* real_opproc is a holdover.... */
 #define real_opproc(pref) ((pref)->value.opproc)

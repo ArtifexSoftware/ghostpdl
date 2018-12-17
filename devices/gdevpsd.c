@@ -28,7 +28,6 @@
 #include "gxdcconv.h"
 #include "gdevdevn.h"
 #include "gsequivc.h"
-#include "gscms.h"
 #include "gsicc_cache.h"
 #include "gsicc_manage.h"
 #include "gxgetbit.h"
@@ -37,16 +36,7 @@
 #include "gdevdevnprn.h"
 #include "gdevpsd.h"
 #include "gxdevsop.h"
-
-#ifndef cmm_gcmmhlink_DEFINED
-    #define cmm_gcmmhlink_DEFINED
-    typedef void* gcmmhlink_t;
-#endif
-
-#ifndef cmm_gcmmhprofile_DEFINED
-    #define cmm_gcmmhprofile_DEFINED
-    typedef void* gcmmhprofile_t;
-#endif
+#include "gsicc_cms.h"
 
 #ifndef MAX_CHAN
 #   define MAX_CHAN 15
@@ -230,18 +220,6 @@ gs_private_st_composite_final(st_psd_device, psd_device,
         NULL,                       /* put_image */\
         psd_spec_op                 /* dev_spec_op */\
 }
-
-static fixed_colorant_name DeviceGrayComponents[] = {
-        "Gray",
-        0		/* List terminator */
-};
-
-static fixed_colorant_name DeviceRGBComponents[] = {
-        "Red",
-        "Green",
-        "Blue",
-        0		/* List terminator */
-};
 
 #define psd_device_body(procs, dname, ncomp, pol, depth, mg, mc, sl, cn)\
     std_device_full_body_type_extended(psd_device, &procs, dname,\

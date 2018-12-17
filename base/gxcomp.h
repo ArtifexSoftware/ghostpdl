@@ -22,7 +22,7 @@
 #include "gscompt.h"
 #include "gsrefct.h"
 #include "gxbitfmt.h"
-#include "gsgstate.h"
+#include "gsdevice.h"
 
 /*
  * Because compositor information is passed through the command list,
@@ -52,17 +52,9 @@
 /*
  * Define the abstract superclass for all compositing function types.
  */
-                                                   /*typedef struct gs_composite_s gs_composite_t; *//* in gscompt.h */
+/*typedef struct gs_composite_s gs_composite_t; *//* in gscompt.h */
 
-#ifndef gx_device_DEFINED
-#  define gx_device_DEFINED
-typedef struct gx_device_s gx_device;
-#endif
-
-#ifndef gx_device_clist_writer_DEFINED
-#define gx_device_clist_writer_DEFINED
 typedef struct gx_device_clist_writer_s gx_device_clist_writer;
-#endif
 
 typedef struct gs_composite_type_procs_s {
 

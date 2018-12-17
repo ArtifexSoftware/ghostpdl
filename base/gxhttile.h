@@ -29,11 +29,7 @@
  * clients of gx_device_color can access it.
  */
 
-#ifndef gx_ht_tile_DEFINED
-#  define gx_ht_tile_DEFINED
 typedef struct gx_ht_tile_s gx_ht_tile;
-
-#endif
 
 struct gx_ht_tile_s {
     gx_strip_bitmap tiles;	/* the currently rendered tile */

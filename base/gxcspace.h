@@ -25,23 +25,9 @@
 #include "gscsel.h"
 #include "gxfrac.h"		/* for concrete colors */
 #include "gxcindex.h"           /* for gx_color_index  */
-
-/* Define opaque types. */
-
-#ifndef gx_device_color_DEFINED
-#  define gx_device_color_DEFINED
-typedef struct gx_device_color_s gx_device_color;
-#endif
-
-#ifndef gx_device_DEFINED
-#  define gx_device_DEFINED
-typedef struct gx_device_s gx_device;
-#endif
-
-#ifndef stream_DEFINED
-#  define stream_DEFINED
-typedef struct stream_s stream;
-#endif
+#include "gsdevice.h"
+#include "gsdcolor.h"
+#include "scommon.h"
 
 /* Color space types (classes): */
 /*typedef struct gs_color_space_type_s gs_color_space_type; */

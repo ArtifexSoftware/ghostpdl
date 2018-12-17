@@ -19,7 +19,7 @@
 #ifndef gxdevcli_INCLUDED
 #  define gxdevcli_INCLUDED
 
-#include "std.h"		/* for FILE */
+#include "gsdevice.h"
 #include "stdint_.h"
 #include "gscompt.h"
 #include "gsdcolor.h"
@@ -41,14 +41,10 @@
 #include "gscms.h"
 #include "gxrplane.h"
 #include "gxdda.h"
-#include "gsgstate.h"
+#include "gxpath.h"
+#include "gsimage.h"
 
 /* See Drivers.htm for documentation of the driver interface. */
-
-#ifndef gx_device_DEFINED
-#  define gx_device_DEFINED
-typedef struct gx_device_s gx_device;
-#endif
 
 /* ---------------- Memory management ---------------- */
 
@@ -119,42 +115,13 @@ typedef struct gx_device_s gx_device;
 
 /* ---------------- Auxiliary types and structures ---------------- */
 
-/* We need abstract types for paths and fill/stroke parameters, */
-/* for the path-oriented device procedures. */
-#ifndef gx_path_DEFINED
-#  define gx_path_DEFINED
-typedef struct gx_path_s gx_path;
-#endif
-#ifndef gx_clip_path_DEFINED
-#  define gx_clip_path_DEFINED
-typedef struct gx_clip_path_s gx_clip_path;
-#endif
-#ifndef gx_fill_params_DEFINED
-#  define gx_fill_params_DEFINED
-typedef struct gx_fill_params_s gx_fill_params;
-#endif
-#ifndef gx_stroke_params_DEFINED
-#  define gx_stroke_params_DEFINED
-typedef struct gx_stroke_params_s gx_stroke_params;
-#endif
-#ifndef patch_fill_state_t_DEFINED
-#  define patch_fill_state_t_DEFINED
-typedef struct patch_fill_state_s  patch_fill_state_t;
-#endif
-
 /* We need an abstract type for the image enumeration state, */
 /* for begin[_typed]_image. */
-#ifndef gx_image_enum_common_t_DEFINED
-#  define gx_image_enum_common_t_DEFINED
 typedef struct gx_image_enum_common_s gx_image_enum_common_t;
-#endif
 
 /* We need an abstract type for the pattern instance, */
 /* for pattern_manage. */
-#ifndef gs_pattern1_instance_t_DEFINED
-#  define gs_pattern1_instance_t_DEFINED
 typedef struct gs_pattern1_instance_s gs_pattern1_instance_t;
-#endif
 
 /* Define the type for colors passed to the higher-level procedures. */
 typedef gx_device_color gx_drawing_color;
@@ -173,10 +140,7 @@ typedef struct gs_fixed_edge_s {
 } gs_fixed_edge;
 
 /* Define the parameters passed to get_bits_rectangle. */
-#ifndef gs_get_bits_params_DEFINED
-#  define gs_get_bits_params_DEFINED
 typedef struct gs_get_bits_params_s gs_get_bits_params_t;
-#endif
 
 /* Define the structure for device color capabilities. */
 typedef struct gx_device_anti_alias_info_s {
@@ -882,12 +846,6 @@ typedef enum FILTER_FLAGS {
 
 /* ---------------- Device procedures ---------------- */
 
-/* Define an opaque type for parameter lists. */
-#ifndef gs_param_list_DEFINED
-#  define gs_param_list_DEFINED
-typedef struct gs_param_list_s gs_param_list;
-#endif
-
 /*
  * Definition of device procedures.
  * Note that the gx_device * argument is not declared const,
@@ -1473,10 +1431,7 @@ typedef struct gs_fill_attributes_s {
  * return a pointer to the devn_params section of a device.  Return NULL
  * if this field is not present within the device.
  */
-#ifndef gs_devn_params_DEFINED
-#define gs_devn_params_DEFINED
 typedef struct gs_devn_params_s gs_devn_params;
-#endif
 
 #define dev_t_proc_ret_devn_params(proc, dev_t)\
   gs_devn_params * proc(dev_t *dev)
@@ -1885,10 +1840,6 @@ static inline bool device_encodes_tags(gx_device *dev)
 }
 
 /* A null device.  This is used to temporarily disable output. */
-#ifndef gx_device_null_DEFINED
-#  define gx_device_null_DEFINED
-typedef struct gx_device_null_s gx_device_null;
-#endif
 struct gx_device_null_s {
     gx_device_forward_common;
 };

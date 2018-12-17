@@ -23,6 +23,7 @@
 #include "gsrefct.h"
 #include "gsuid.h"
 #include "gsgstate.h"
+#include "gsmatrix.h"
 
 /* ---------------- Types and structures ---------------- */
 
@@ -47,14 +48,7 @@
  * Book).
  */
 
-#ifndef gs_pattern_type_DEFINED
-#  define gs_pattern_type_DEFINED
 typedef struct gs_pattern_type_s gs_pattern_type_t;
-#endif
-#ifndef gs_matrix_DEFINED
-#  define gs_matrix_DEFINED
-typedef struct gs_matrix_s gs_matrix;
-#endif
 
 #define gs_pattern_template_common\
   const gs_pattern_type_t *type;\
@@ -75,11 +69,6 @@ extern_st(st_pattern_template);
 #define st_pattern_template_max_ptrs 2
 
 /* Definition of Pattern instances. */
-#ifndef gs_pattern_instance_DEFINED
-#  define gs_pattern_instance_DEFINED
-typedef struct gs_pattern_instance_s gs_pattern_instance_t;
-#endif
-
 #define gs_pattern_instance_common\
     rc_header rc;\
     /* Following are set by makepattern */\

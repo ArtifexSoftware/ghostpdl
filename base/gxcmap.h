@@ -24,16 +24,7 @@
 #include "gxfmap.h"
 #include "gscspace.h"
 #include "gsdcolor.h"
-#include "gsgstate.h"
-
-#ifndef gx_device_DEFINED
-#  define gx_device_DEFINED
-typedef struct gx_device_s gx_device;
-#endif
-#ifndef gx_device_color_DEFINED
-#  define gx_device_color_DEFINED
-typedef struct gx_device_color_s gx_device_color;
-#endif
+#include "gsdevice.h"
 
 /* Procedures for rendering colors specified by fractions. */
 

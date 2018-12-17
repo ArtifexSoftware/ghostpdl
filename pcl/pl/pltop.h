@@ -23,11 +23,7 @@
 
 #include "gsgc.h"
 #include "scommon.h"
-
-#ifndef gx_device_DEFINED
-#  define gx_device_DEFINED
-typedef struct gx_device_s gx_device;
-#endif
+#include "gsdevice.h"
 
 /*
  * Generic interpreter data types which may be subclassed by specific interpreters

@@ -22,10 +22,7 @@
 #include "gsstype.h"
 
 /* Define the structure for CIDSystemInfo. */
-#ifndef gs_cid_system_info_DEFINED
-#  define gs_cid_system_info_DEFINED
 typedef struct gs_cid_system_info_s gs_cid_system_info_t;
-#endif
 struct gs_cid_system_info_s {
     gs_const_string Registry;
     gs_const_string Ordering;

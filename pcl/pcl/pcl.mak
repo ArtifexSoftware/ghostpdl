@@ -1352,4 +1352,3 @@ $(PCLOBJ)hpgl2c.dev: $(ECHOGS_XE) $(HPGL2C_OPS) $(PCLOBJ)hpgl2.dev \
 	$(SETMOD) $(PCLOBJ)hpgl2c $(HPGL2C_OPS)
 	$(ADDMOD) $(PCLOBJ)hpgl2c -include $(PCLOBJ)hpgl2
 	$(ADDMOD) $(PCLOBJ)hpgl2c -init pgcolor
-

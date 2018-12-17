@@ -22,11 +22,6 @@
 #ifndef pcfontst_INCLUDED
 #define pcfontst_INCLUDED
 
-#ifndef pl_font_t_DEFINED
-#  define pl_font_t_DEFINED
-typedef struct pl_font_s pl_font_t;
-#endif
-
 typedef struct pcl_font_selection_s
 {
     /* Parameters used for selection, or loaded from font selected by ID. */

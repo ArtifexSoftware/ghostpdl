@@ -52,11 +52,6 @@
  * saving, comparing, and getting high level color information.
  */
 
-#ifndef gx_device_color_DEFINED
-#  define gx_device_color_DEFINED
-typedef struct gx_device_color_s gx_device_color;
-#endif
-
 /*
  * A structure for saving high level color information for high level devices.
  */

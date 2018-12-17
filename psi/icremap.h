@@ -21,16 +21,13 @@
 
 #include "gsccolor.h"
 #include "iref.h"
+#include "igstate.h"
 
 /*
  * Define the structure used to communicate information back to the
  * interpreter for color remapping.  Pattern remapping doesn't use the
  * tint values, DeviceN remapping does.
  */
-#ifndef int_remap_color_info_DEFINED
-#  define int_remap_color_info_DEFINED
-typedef struct int_remap_color_info_s int_remap_color_info_t;
-#endif
 struct int_remap_color_info_s {
     op_proc_t proc;		/* remapping procedure */
     float tint[MAX_COMPONENTS_IN_DEVN];    /* must match limitcheck in psi/zcolor.c: validatedevicenspace */

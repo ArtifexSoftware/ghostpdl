@@ -31,10 +31,7 @@
 /* rather than floating, representation. */
 
 /* Opaque type for a path */
-#ifndef gx_path_DEFINED
-#  define gx_path_DEFINED
 typedef struct gx_path_s gx_path;
-#endif
 
 /* Define the two insideness rules */
 #define gx_rule_winding_number (-1)
@@ -308,10 +305,7 @@ int gx_path_merge_contacting_contours(gx_path *ppath);
 /* ------ Clipping paths ------ */
 
 /* Opaque type for a clipping path */
-#ifndef gx_clip_path_DEFINED
-#  define gx_clip_path_DEFINED
 typedef struct gx_clip_path_s gx_clip_path;
-#endif
 
 /* Graphics state clipping */
 int gx_clip_to_rectangle(gs_gstate *, gs_fixed_rect *);
@@ -322,16 +316,14 @@ int gx_curr_bbox(gs_gstate * pgs, gs_rect *bbox, gs_bbox_comp_t comp_type);
  
 
 /* Opaque type for a clip list. */
-#ifndef gx_clip_list_DEFINED
-#  define gx_clip_list_DEFINED
 typedef struct gx_clip_list_s gx_clip_list;
-#endif
 
-/* Opaque type for fill parameters. */
-#ifndef gx_fill_params_DEFINED
-#  define gx_fill_params_DEFINED
+
+/* We need abstract types for paths and fill/stroke parameters, */
+/* for the path-oriented device procedures. */
 typedef struct gx_fill_params_s gx_fill_params;
-#endif
+typedef struct gx_stroke_params_s gx_stroke_params;
+typedef struct patch_fill_state_s  patch_fill_state_t;
 
 /* Opaque type for a clipping path enumerator. */
 typedef struct gs_cpath_enum_s gs_cpath_enum;

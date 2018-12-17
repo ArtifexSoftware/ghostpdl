@@ -34,11 +34,6 @@ typedef enum {
     PDF14_DeviceCustom = 4
 } pdf14_default_colorspace_t;
 
-#ifndef pdf14_buf_DEFINED
-#  define pdf14_buf_DEFINED
-typedef struct pdf14_buf_s pdf14_buf;
-#endif
-
 /*
  * This structure contains procedures for processing routine which differ
  * between the different blending color spaces.
@@ -182,25 +177,7 @@ struct pdf14_ctx_s {
     bool smask_blend;
 };
 
-#ifndef gs_devn_params_DEFINED
-#  define gs_devn_params_DEFINED
-typedef struct gs_devn_params_s gs_devn_params;
-#endif
-
-#ifndef gx_device_DEFINED
-#  define gx_device_DEFINED
-typedef struct gx_device_s gx_device;
-#endif
-
-#ifndef gs_pdf14trans_params_DEFINED
-#  define gs_pdf14trans_params_DEFINED
 typedef struct gs_pdf14trans_params_s gs_pdf14trans_params_t;
-#endif
-
-#ifndef pdf14_device_DEFINED
-#  define pdf14_device_DEFINED
-typedef struct pdf14_device_s pdf14_device;
-#endif
 
 /*
  * Define the default post-clist (clist reader) PDF 1.4 compositing device.

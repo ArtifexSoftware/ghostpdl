@@ -19,6 +19,10 @@
 #ifndef gdevpdtw_INCLUDED
 #  define gdevpdtw_INCLUDED
 
+#include "gxfcmap.h"
+#include "gxcid.h"
+#include "gdevpdtx.h"
+
 /*
  * The procedures declared here are called only from gdevpdtf.c: they are
  * not intended to be called from anywhere else.
@@ -44,15 +48,6 @@ int
   pdf_write_encoding_ref(gx_device_pdf *pdev, const pdf_font_resource_t *pdfont, long id);
 
 /* ---------------- CMap resource writing ---------------- */
-
-#ifndef gs_cid_system_info_DEFINED
-#  define gs_cid_system_info_DEFINED
-typedef struct gs_cid_system_info_s gs_cid_system_info_t;
-#endif
-#ifndef gs_cmap_DEFINED
-#  define gs_cmap_DEFINED
-typedef struct gs_cmap_s gs_cmap_t;
-#endif
 
 /*
  * Write the CIDSystemInfo for a CIDFont or a CMap.

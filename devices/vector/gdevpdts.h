@@ -20,6 +20,7 @@
 #  define gdevpdts_INCLUDED
 
 #include "gsmatrix.h"
+#include "gdevpdtx.h"
 
 /*
  * See gdevpdtt.h for a discussion of the multiple coordinate systems that
@@ -27,11 +28,6 @@
  */
 
 /* ================ Types and structures ================ */
-
-#ifndef pdf_text_state_DEFINED
-#  define pdf_text_state_DEFINED
-typedef struct pdf_text_state_s pdf_text_state_t;
-#endif
 
 /*
  * Clients pass in the text state values; the implementation decides when

@@ -17,25 +17,13 @@
 #define gxfapi_INCLUDED
 
 #include "gsmemory.h"
-#include "gsmatrix.h"
 #include "gsccode.h"
 #include "stdint_.h"
 #include "gsgstate.h"
+#include "gsfont.h"
+#include "gstext.h"
 
-#ifndef gs_font_base_DEFINED
-#  define gs_font_base_DEFINED
 typedef struct gs_font_base_s gs_font_base;
-#endif
-
-#ifndef gs_text_enum_DEFINED
-#  define gs_text_enum_DEFINED
-typedef struct gs_text_enum_s gs_text_enum_t;
-#endif
-
-#ifndef gs_font_DEFINED
-#  define gs_font_DEFINED
-typedef struct gs_font_s gs_font;
-#endif
 
 typedef int fracint;            /* A fractional integer with statically unknown number of fraction bits.
                                    The number of bits depends on plugin and is being specified in
@@ -284,11 +272,6 @@ typedef struct
     int left_indent, top_indent;
     int black_width, black_height;
 } gs_fapi_raster;
-
-#ifndef gs_fapi_server_DEFINED
-#define gs_fapi_server_DEFINED
-typedef struct gs_fapi_server_s gs_fapi_server;
-#endif
 
 typedef enum gs_fapi_descendant_code_s
 {                               /* Possible values are descendant font indices and 4 ones defined below. */

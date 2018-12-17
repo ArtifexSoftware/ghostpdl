@@ -20,14 +20,10 @@
 #  define gxiclass_INCLUDED
 
 #include "stdpre.h"
+#include "gsdevice.h"
 
 /* Define the abstract type for the image enumerator state. */
 typedef struct gx_image_enum_s gx_image_enum;
-
-#ifndef gx_device_DEFINED
-#  define gx_device_DEFINED
-typedef struct gx_device_s gx_device;
-#endif
 
 /*
  * Define the interface for routines used to render a (source) scan line.

@@ -31,10 +31,7 @@
 #include "gsalloc.h"
 #include "gsmemory.h"
 
-#ifndef gs_ref_memory_DEFINED
-#  define gs_ref_memory_DEFINED
 typedef struct gs_ref_memory_s gs_ref_memory_t;
-#endif
 
         /* Allocate a ref array. */
 
@@ -78,10 +75,8 @@ int gs_register_ref_root(gs_memory_t *mem, gs_gc_root_t **root,
  * instances must not be stored anywhere that might persist across a
  * garbage collection.
  */
-#ifndef gs_dual_memory_DEFINED
-#  define gs_dual_memory_DEFINED
 typedef struct gs_dual_memory_s gs_dual_memory_t;
-#endif
+
 struct gs_dual_memory_s {
     gs_ref_memory_t *current;	/* = ...global or ...local */
     vm_spaces spaces;		/* system, global, local */

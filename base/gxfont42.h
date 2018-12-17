@@ -20,31 +20,12 @@
 #  define gxfont42_INCLUDED
 
 #include "gxfont.h"
-
-#ifndef gs_glyph_cache_DEFINED
-#  define gs_glyph_cache_DEFINED
-typedef struct gs_glyph_cache_s gs_glyph_cache;
-#endif
-
-#ifndef cached_fm_pair_DEFINED
-#  define cached_fm_pair_DEFINED
-typedef struct cached_fm_pair_s cached_fm_pair;
-#endif
+#include "gsgcache.h"
+#include "gxmatrix.h"
+#include "gxfcache.h"
 
 /* This is the type-specific information for a Type 42 (TrueType) font. */
-#ifndef gs_type42_data_DEFINED
-#define gs_type42_data_DEFINED
 typedef struct gs_type42_data_s gs_type42_data;
-#endif
-#ifndef gs_font_type42_DEFINED
-#  define gs_font_type42_DEFINED
-typedef struct gs_font_type42_s gs_font_type42;
-#endif
-
-#ifndef gs_matrix_fixed_DEFINED
-#define gs_matrix_fixed_DEFINED
-typedef struct gs_matrix_fixed_s gs_matrix_fixed;
-#endif
 
 typedef enum gs_type42_metrics_options_s {
     gs_type42_metrics_options_WMODE0 = 0,

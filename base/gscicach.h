@@ -21,10 +21,7 @@
 
 #include "gxdevcli.h" /* For frac31. */
 
-#ifndef gs_color_index_cache_DEFINED
-#  define gs_color_index_cache_DEFINED
 typedef struct gs_color_index_cache_s gs_color_index_cache_t;
-#endif
 
 gs_color_index_cache_t *gs_color_index_cache_create(gs_memory_t *memory,
                 const gs_color_space *direct_space, gx_device *dev, gs_gstate *pgs, bool need_frac, gx_device *trans_dev);

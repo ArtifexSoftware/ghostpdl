@@ -38,25 +38,11 @@ typedef bits16 ArtPixMaxDepth;
 
 #define ART_MAX_CHAN GX_DEVICE_COLOR_MAX_COMPONENTS
 
-#ifndef pdf14_device_DEFINED
-#  define pdf14_device_DEFINED
 typedef struct pdf14_device_s pdf14_device;
-#endif
 
-#ifndef pdf14_buf_DEFINED
-#  define pdf14_buf_DEFINED
 typedef struct pdf14_buf_s pdf14_buf;
-#endif
 
-#ifndef gx_device_DEFINED
-#  define gx_device_DEFINED
-typedef struct gx_device_s gx_device;
-#endif
-
-#ifndef gs_separations_DEFINED
-#   define gs_separations_DEFINED
-    typedef struct gs_separations_s gs_separations;
-#endif
+typedef struct gs_separations_s gs_separations;
 
 /*
  * This structure contains procedures for processing which differ

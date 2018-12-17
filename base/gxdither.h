@@ -22,11 +22,6 @@
 #include "gxfrac.h"
 #include "gsdcolor.h"
 
-#ifndef gx_device_halftone_DEFINED
-#  define gx_device_halftone_DEFINED
-typedef struct gx_device_halftone_s gx_device_halftone;
-#endif
-
 /*
  * Render DeviceN possibly by halftoning.
  *  pcolors = pointer to an array color values (as fracs)

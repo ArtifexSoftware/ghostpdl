@@ -29,6 +29,7 @@
 #include "gxgstate.h"
 #include "gxrplane.h"
 #include "gscms.h"
+#include "gxcomp.h"
 
 /*
  * A command list is essentially a compressed list of driver calls.
@@ -367,11 +368,6 @@ struct gx_device_clist_writer_s {
                                            information */
 };
 
-#ifndef gx_device_clist_writer_DEFINED
-#define gx_device_clist_writer_DEFINED
-typedef struct gx_device_clist_writer_s gx_device_clist_writer;
-#endif
-
 /* Bits for gx_device_clist_writer.disable_mask. Bit set disables behavior */
 #define clist_disable_fill_path	(1 << 0)
 #define clist_disable_stroke_path (1 << 1)
@@ -381,10 +377,7 @@ typedef struct gx_device_clist_writer_s gx_device_clist_writer;
 #define clist_disable_pass_thru_params (1 << 5)	/* disable EXCEPT at top of page */
 #define clist_disable_copy_alpha (1 << 6) /* target does not support copy_alpha */
 
-#ifndef clist_render_thread_control_t_DEFINED
-#  define clist_render_thread_control_t_DEFINED
 typedef struct clist_render_thread_control_s clist_render_thread_control_t;
-#endif
 
 /* Define the state of a band list when reading. */
 /* For normal rasterizing, pages and num_pages are both 0. */
@@ -410,11 +403,6 @@ union gx_device_clist_s {
     gx_device_clist_reader reader;
     gx_device_clist_writer writer;
 };
-
-#ifndef gx_device_clist_DEFINED
-#define gx_device_clist_DEFINED
-typedef union gx_device_clist_s gx_device_clist;
-#endif
 
 extern_st(st_device_clist);
 #define public_st_device_clist()	/* in gxclist.c */\
@@ -459,10 +447,7 @@ int clist_close_output_file(gx_device *dev);
 int clist_close_page_info(gx_band_page_info_t *ppi);
 
 /* Define the abstract type for a printer device. */
-#ifndef gx_device_printer_DEFINED
-#  define gx_device_printer_DEFINED
 typedef struct gx_device_printer_s gx_device_printer;
-#endif
 
 /* Do device setup from params passed in the command list. */
 int clist_setup_params(gx_device *dev);

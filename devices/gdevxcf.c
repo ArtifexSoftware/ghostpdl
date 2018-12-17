@@ -25,19 +25,10 @@
 #include "gdevdcrd.h"
 #include "gstypes.h"
 #include "gxdcconv.h"
-#include "gscms.h"
 #include "gsicc_cache.h"
 #include "gsicc_manage.h"
-
-#ifndef cmm_gcmmhlink_DEFINED
-    #define cmm_gcmmhlink_DEFINED
-    typedef void* gcmmhlink_t;
-#endif
-
-#ifndef cmm_gcmmhprofile_DEFINED
-    #define cmm_gcmmhprofile_DEFINED
-    typedef void* gcmmhprofile_t;
-#endif
+#include "gsicc_cms.h"
+#include "gdevdevn.h"
 
 #ifndef MAX_CHAN
 #   define MAX_CHAN 8
@@ -65,12 +56,6 @@ static dev_proc_get_color_mapping_procs(get_xcf_color_mapping_procs);
 static dev_proc_get_color_comp_index(xcf_get_color_comp_index);
 static dev_proc_encode_color(xcf_encode_color);
 static dev_proc_decode_color(xcf_decode_color);
-
-/*
- * Type definitions associated with the fixed color model names.
- */
-typedef const char * fixed_colorant_name;
-typedef fixed_colorant_name fixed_colorant_names_list[];
 
 /*
  * Structure for holding SeparationNames and SeparationOrder elements.
@@ -112,7 +97,7 @@ typedef struct xcf_device_s {
      * names are those in this list plus those in the separation_names
      * list (below).
      */
-    const fixed_colorant_names_list * std_colorant_names;
+    fixed_colorant_names_list std_colorant_names;
     int num_std_colorant_names;	/* Number of names in list */
 
     /*
@@ -207,26 +192,6 @@ typedef struct xcf_device_s {
         xcf_decode_color		/* decode_color */\
 }
 
-static const fixed_colorant_names_list DeviceGrayComponents = {
-        "Gray",
-        0		/* List terminator */
-};
-
-static const fixed_colorant_names_list DeviceRGBComponents = {
-        "Red",
-        "Green",
-        "Blue",
-        0		/* List terminator */
-};
-
-static const fixed_colorant_names_list DeviceCMYKComponents = {
-        "Cyan",
-        "Magenta",
-        "Yellow",
-        "Black",
-        0		/* List terminator */
-};
-
 /*
  * Example device with RGB and spot color support
  */
@@ -248,7 +213,7 @@ const xcf_device gs_xcf_device =
     /* DeviceN device specific parameters */
     XCF_DEVICE_RGB,		/* Color model */
     8,				/* Bits per color - must match ncomp, depth, etc. above */
-    (&DeviceRGBComponents),	/* Names of color model colorants */
+    DeviceRGBComponents,	/* Names of color model colorants */
     3,				/* Number colorants for RGB */
     {0},			/* SeparationNames */
     {0}				/* SeparationOrder names */
@@ -272,7 +237,7 @@ const xcf_device gs_xcfcmyk_device =
     /* DeviceN device specific parameters */
     XCF_DEVICE_CMYK,		/* Color model */
     8,				/* Bits per color - must match ncomp, depth, etc. above */
-    (&DeviceCMYKComponents),	/* Names of color model colorants */
+    DeviceCMYKComponents,	/* Names of color model colorants */
     4,				/* Number colorants for RGB */
     {0},			/* SeparationNames */
     {0}				/* SeparationOrder names */
@@ -730,11 +695,10 @@ xcf_get_params(gx_device * pdev, gs_param_list * plist)
  * color component names.
  */
 static bool
-check_process_color_names(const fixed_colorant_names_list * pcomp_list,
+check_process_color_names(fixed_colorant_names_list plist,
                           const gs_param_string * pstring)
 {
-    if (pcomp_list) {
-        const fixed_colorant_name * plist = *pcomp_list;
+    if (plist) {
         uint size = pstring->size;
 
         while( *plist) {
@@ -745,35 +709,6 @@ check_process_color_names(const fixed_colorant_names_list * pcomp_list,
         }
     }
     return false;
-}
-
-/*
- * This utility routine calculates the number of bits required to store
- * color information.  In general the values are rounded up to an even
- * byte boundary except those cases in which mulitple pixels can evenly
- * into a single byte.
- *
- * The parameter are:
- *   ncomp - The number of components (colorants) for the device.  Valid
- * 	values are 1 to GX_DEVICE_COLOR_MAX_COMPONENTS
- *   bpc - The number of bits per component.  Valid values are 1, 2, 4, 5,
- *	and 8.
- * Input values are not tested for validity.
- */
-static int
-bpc_to_depth(uchar ncomp, int bpc)
-{
-    static const byte depths[4][8] = {
-        {1, 2, 0, 4, 8, 0, 0, 8},
-        {2, 4, 0, 8, 16, 0, 0, 16},
-        {4, 8, 0, 16, 16, 0, 0, 24},
-        {4, 8, 0, 16, 32, 0, 0, 32}
-    };
-
-    if (ncomp <=4 && bpc <= 8)
-        return depths[ncomp -1][bpc-1];
-    else
-        return (ncomp * bpc + 7) & ~7;
 }
 
 #define BEGIN_ARRAY_PARAM(pread, pname, pa, psize, e)\
@@ -822,22 +757,22 @@ xcf_set_color_model(xcf_device *xdev, xcf_color_model color_model)
 {
     xdev->color_model = color_model;
     if (color_model == XCF_DEVICE_GRAY) {
-        xdev->std_colorant_names = &DeviceGrayComponents;
+        xdev->std_colorant_names = DeviceGrayComponents;
         xdev->num_std_colorant_names = 1;
         xdev->color_info.cm_name = "DeviceGray";
         xdev->color_info.polarity = GX_CINFO_POLARITY_ADDITIVE;
     } else if (color_model == XCF_DEVICE_RGB) {
-        xdev->std_colorant_names = &DeviceRGBComponents;
+        xdev->std_colorant_names = DeviceRGBComponents;
         xdev->num_std_colorant_names = 3;
         xdev->color_info.cm_name = "DeviceRGB";
         xdev->color_info.polarity = GX_CINFO_POLARITY_ADDITIVE;
     } else if (color_model == XCF_DEVICE_CMYK) {
-        xdev->std_colorant_names = &DeviceCMYKComponents;
+        xdev->std_colorant_names = DeviceCMYKComponents;
         xdev->num_std_colorant_names = 4;
         xdev->color_info.cm_name = "DeviceCMYK";
         xdev->color_info.polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
     } else if (color_model == XCF_DEVICE_N) {
-        xdev->std_colorant_names = &DeviceCMYKComponents;
+        xdev->std_colorant_names = DeviceCMYKComponents;
         xdev->num_std_colorant_names = 4;
         xdev->color_info.cm_name = "DeviceN";
         xdev->color_info.polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
@@ -948,7 +883,7 @@ xcf_put_params(gx_device * pdev, gs_param_list * plist)
         if (scna.data != 0) {
             int i;
             int num_names = scna.size;
-            const fixed_colorant_names_list * pcomp_names =
+            fixed_colorant_names_list pcomp_names =
                                 ((xcf_device *)pdev)->std_colorant_names;
 
             for (i = num_spot = 0; i < num_names; i++) {
@@ -1009,8 +944,7 @@ xcf_get_color_comp_index(gx_device * dev, const char * pname, int name_size,
                                         int component_type)
 {
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
-    const fixed_colorant_names_list * list = ((const xcf_device *)dev)->std_colorant_names;
-    const fixed_colorant_name * pcolor = *list;
+    fixed_colorant_name * pcolor = ((const xcf_device *)dev)->std_colorant_names;
     int color_component_number = 0;
     int i;
 

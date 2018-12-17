@@ -22,16 +22,6 @@
 
 #include "scommon.h"
 
-#ifndef stream_DEFINED
-#  define stream_DEFINED
-typedef struct stream_s stream;
-#endif /* stream_DEFINED */
-
-#ifndef gs_memory_DEFINED
-#  define gs_memory_DEFINED
-typedef struct gs_memory_s gs_memory_t;
-#endif /* gs_memory_DEFINED */
-
 /*
  * Open a stream using a filename that can include a PS style IODevice prefix
  * If iodev_default is the '%os' device, then the file will be on the host

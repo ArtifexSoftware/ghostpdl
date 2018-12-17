@@ -22,6 +22,7 @@
 
 #include "gscindex.h"
 #include "gsptype1.h"
+#include "gscie.h"
 
 /* ---------------- Graphics state ---------------- */
 
@@ -49,10 +50,6 @@ extern const gs_color_space_type gs_color_space_type_Indexed;
 extern const gs_color_space_type gs_color_space_type_Indexed_Named;
 
 /* CIE-specific routines */
-#ifndef gs_cie_render_DEFINED
-#  define gs_cie_render_DEFINED
-typedef struct gs_cie_render_s gs_cie_render;
-#endif
 const gs_cie_render *gs_currentcolorrendering(const gs_gstate *);
 int gs_setcolorrendering(gs_gstate *, gs_cie_render *);
 

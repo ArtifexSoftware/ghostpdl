@@ -23,6 +23,7 @@
 #include "gxfixed.h"		/* for gxmatrix.h */
 #include "gxmatrix.h"		/* for gs_matrix_fixed */
 #include "stream.h"
+#include "gsdcolor.h"
 
 /*
    All shadings are defined with respect to some parameter that varies
@@ -132,10 +133,7 @@ typedef struct mesh_vertex_s {
 /* Define a structure for mesh or patch vertex. */
 typedef struct shading_vertex_s shading_vertex_t;
 
-#ifndef patch_color_t_DEFINED
-#  define patch_color_t_DEFINED
 typedef struct patch_color_s patch_color_t;
-#endif
 
 /* Initialize a packed value stream. */
 void shade_next_init(shade_coord_stream_t * cs,
@@ -212,10 +210,6 @@ int shade_init_fill_state(shading_fill_state_t * pfs,
                           gs_gstate * pgs);
 
 /* Fill one piece of a shading. */
-#ifndef gx_device_color_DEFINED
-#  define gx_device_color_DEFINED
-typedef struct gx_device_color_s gx_device_color;
-#endif
 int shade_fill_path(const shading_fill_state_t * pfs, gx_path * ppath,
                     gx_device_color * pdevc, const gs_fixed_point *fill_adjust);
 

@@ -28,7 +28,6 @@ struct gs_show_enum_s {
     gs_text_enum_common;	/* (procs, text, index) */
 };
 
-#define gs_show_enum_s_DEFINED
 /* The structure descriptor is public for gschar.c. */
 #define public_st_gs_show_enum() /* in gxchar.c */\
   gs_public_st_composite(st_gs_show_enum, gs_show_enum, "gs_show_enum",\
@@ -38,11 +37,8 @@ struct gs_show_enum_s {
 int gx_current_char(const gs_text_enum_t * pte);
 
 /* Cached character procedures (in gxccache.c and gxccman.c) */
-#ifndef gs_font_dir_DEFINED
-#  define gs_font_dir_DEFINED
 typedef struct gs_font_dir_s gs_font_dir;
 
-#endif
 int  gx_alloc_char_bits(gs_font_dir *, gx_device_memory *, gx_device_memory *, ushort, ushort, const gs_log2_scale_point *, int, cached_char **);
 void gx_open_cache_device(gx_device_memory *, cached_char *);
 void gx_free_cached_char(gs_font_dir *, cached_char *);

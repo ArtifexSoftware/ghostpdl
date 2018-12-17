@@ -22,11 +22,6 @@
 #include "gscms.h"
 #include "gxcvalue.h"
 
-#ifndef gx_device_DEFINED
-#  define gx_device_DEFINED
-typedef struct gx_device_s gx_device;
-#endif
-
 /* Used in named color handling */
 typedef struct gsicc_namedcolor_s {
     char *colorant_name;            /* The name */

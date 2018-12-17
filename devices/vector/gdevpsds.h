@@ -21,6 +21,7 @@
 
 #include "strimpl.h"
 #include "gsiparam.h"
+#include "gsdevice.h"
 
 /* ---------------- Depth conversion ---------------- */
 
@@ -190,11 +191,6 @@ s_compr_chooser_set_dimensions(stream_compr_chooser_state * st, int width,
 uint s_compr_chooser__get_choice(stream_compr_chooser_state *st, bool force);
 
 /* ---------------- Am image color conversion filter ---------------- */
-
-#ifndef gx_device_DEFINED
-#  define gx_device_DEFINED
-typedef struct gx_device_s gx_device;
-#endif
 
 typedef struct stream_image_colors_state_s stream_image_colors_state;
 

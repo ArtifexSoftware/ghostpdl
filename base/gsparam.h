@@ -31,10 +31,7 @@
 /* ---------------- Generic interfaces ---------------- */
 
 /* Define the abstract type for a parameter list. */
-#ifndef gs_param_list_DEFINED
-#  define gs_param_list_DEFINED
 typedef struct gs_param_list_s gs_param_list;
-#endif
 
 /* Define the type for a parameter key name. */
 typedef const char *gs_param_name;

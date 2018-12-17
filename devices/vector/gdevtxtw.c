@@ -242,10 +242,7 @@ const gx_device_txtwrite_t gs_txtwrite_device =
     3				/* TextFormat */
 };
 
-#ifndef gx_device_textw_DEFINED
-#  define gx_device_textw_DEFINED
 typedef struct gx_device_textwrite_s gx_device_textw;
-#endif
 
 static const gs_param_item_t txt_param_items[] = {
 #define pi(key, type, memb) { key, type, offset_of(gx_device_txtwrite_t, memb) }

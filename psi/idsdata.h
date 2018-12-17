@@ -20,12 +20,9 @@
 #  define idsdata_INCLUDED
 
 #include "isdata.h"
+#include "iddstack.h"
 
 /* Define the dictionary stack structure. */
-#ifndef dict_stack_DEFINED
-#  define dict_stack_DEFINED
-typedef struct dict_stack_s dict_stack_t;
-#endif
 struct dict_stack_s {
 
     ref_stack_t stack;		/* the actual stack of dictionaries */

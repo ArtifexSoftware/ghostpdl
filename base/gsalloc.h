@@ -21,12 +21,7 @@
 
 #include "std.h"
 
-/* The following should not be needed at this level! */
-
-#ifndef gs_ref_memory_DEFINED
-#  define gs_ref_memory_DEFINED
 typedef struct gs_ref_memory_s gs_ref_memory_t;
-#endif
 
 /*
  * Define a structure and interface for GC-related allocator state.

@@ -25,6 +25,10 @@
 #include "pldict.h"
 #include "stream.h"             /* required by strmio.h */
 #include "strmio.h"
+#include "gsfont.h"
+#include "gslibctx.h"
+#include "gsgcache.h"
+#include "gxfapi.h"
 
 /* ---------------- PCL-specified definitions ---------------- */
 
@@ -143,19 +147,6 @@ typedef struct pl_tt_char_glyph_table_s
                        pl_table_sizes;
 } pl_tt_char_glyph_table_t;
 
-/* Define an abstract type for library fonts. */
-#ifndef gs_font_DEFINED
-#  define gs_font_DEFINED
-typedef struct gs_font_s gs_font;
-#endif
-
-/* Define an abstract type for transformation matrices. */
-#ifndef gs_matrix_DEFINED
-#  define gs_matrix_DEFINED
-typedef struct gs_matrix_s gs_matrix;
-#endif
-
-
 #define PL_MAX_WIDTHS_CACHE_NITEMS 256
 typedef struct pl_glyph_width_node_s pl_glyph_width_node_t;
 
@@ -171,10 +162,8 @@ struct pl_glyph_width_node_s
  * We 'wrap' gs_fonts in our own structure.
  *
  */
-#ifndef pl_font_t_DEFINED
-#  define pl_font_t_DEFINED
 typedef struct pl_font_s pl_font_t;
-#endif
+
 struct pl_font_s
 {
     gs_font *pfont;             /* Type 42 if TrueType, Type 3 if bitmap. */
@@ -248,18 +237,10 @@ int pl_tt_alloc_char_glyphs(pl_font_t * plfont, uint num_chars,
                             gs_memory_t * mem, client_name_t cname);
 
 /* Fill in generic gs_font boilerplate. */
-#ifndef gs_font_dir_DEFINED
-#  define gs_font_dir_DEFINED
-typedef struct gs_font_dir_s gs_font_dir;
-#endif
 int pl_fill_in_font(gs_font * pfont, pl_font_t * plfont, gs_font_dir * pdir,
                     gs_memory_t * mem, const char *font_name);
 
 /* Fill in bitmap and intellifont gs_font boilerplate. */
-#ifndef gs_font_base_DEFINED
-#  define gs_font_base_DEFINED
-typedef struct gs_font_base_s gs_font_base;
-#endif
 void pl_fill_in_bitmap_font(gs_font_base * pfont, long unique_id);
 
 void pl_fill_in_intelli_font(gs_font_base * pfont, long unique_id);
@@ -272,10 +253,6 @@ void pl_intelli_init_procs(gs_font_base * pfont);
 
 /* Fill in TrueType gs_font boilerplate. */
 /* data = NULL for downloaded fonts, the TT data for complete fonts. */
-#ifndef gs_font_type42_DEFINED
-#  define gs_font_type42_DEFINED
-typedef struct gs_font_type42_s gs_font_type42;
-#endif
 int pl_fill_in_tt_font(gs_font_type42 * pfont, void *data, long unique_id);
 
 /* Initialize the callback procedures for a TrueType font. */

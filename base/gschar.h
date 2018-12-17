@@ -22,19 +22,11 @@
 #include "gsstate.h"
 #include "gsccode.h"
 #include "gscpm.h"
+#include "gsfont.h"
+#include "gxtext.h"
 
 /* String display, like image display, uses an enumeration structure */
 /* to keep track of what's going on (aka 'poor man's coroutine'). */
-#ifndef gs_show_enum_DEFINED
-#  define gs_show_enum_DEFINED
-typedef struct gs_show_enum_s gs_show_enum;
-#endif
-
-/* Define an opaque type for fonts if necessary. */
-#ifndef gs_font_DEFINED
-#  define gs_font_DEFINED
-typedef struct gs_font_s gs_font;
-#endif
 
 /* Allocate an enumerator. */
 gs_show_enum *gs_show_enum_alloc(gs_memory_t *, gs_gstate *, client_name_t);

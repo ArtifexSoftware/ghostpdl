@@ -18,6 +18,10 @@
 #ifndef gdevfax_INCLUDED
 #  define gdevfax_INCLUDED
 
+#include "gxdevcli.h"
+#include "gdevprn.h"
+#include "scfx.h"
+
 /* Define the default device parameters. */
 #define X_DPI 204
 #define Y_DPI 196

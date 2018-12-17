@@ -21,6 +21,7 @@
 
 #include "gxshade.h"
 #include "gxdevcli.h"
+#include "gscicach.h"
 
 /* Configuration flags for development needs only. Users should not modify them. */
 #define USE_LINEAR_COLOR_PROCS 1 /* Old code = 0, new code = 1. */
@@ -111,21 +112,6 @@ struct patch_color_s {
        The number of allocated elements are known from the shading color space
        and from patch_fill_state_s::num_components. */
 };
-
-#ifndef patch_color_t_DEFINED
-#  define patch_color_t_DEFINED
-typedef struct patch_color_s patch_color_t;
-#endif
-
-#ifndef gs_color_index_cache_DEFINED
-#  define gs_color_index_cache_DEFINED
-typedef struct gs_color_index_cache_s gs_color_index_cache_t;
-#endif
-
-#ifndef patch_fill_state_t_DEFINED
-#  define patch_fill_state_t_DEFINED
-typedef struct patch_fill_state_s  patch_fill_state_t;
-#endif
 
 /* Define the common state for rendering Coons and tensor patches. */
 struct patch_fill_state_s {

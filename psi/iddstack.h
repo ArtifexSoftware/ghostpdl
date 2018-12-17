@@ -22,10 +22,7 @@
 #include "stdpre.h"
 #include "iref.h"
 
-#ifndef dict_stack_DEFINED
-#  define dict_stack_DEFINED
 typedef struct dict_stack_s dict_stack_t;
-#endif
 
 /*
  * Reset the cached top values.  Every routine that alters the

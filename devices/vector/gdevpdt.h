@@ -19,6 +19,8 @@
 #ifndef gdevpdt_INCLUDED
 #  define gdevpdt_INCLUDED
 
+#include "gdevpdfx.h"
+
 /*
  * This file defines a largely opaque interface to the text and font
  * handling code for pdfwrite.  This is the only file that pdfwrite code

@@ -21,7 +21,7 @@
 #  define gsimage_INCLUDED
 
 #include "gsiparam.h"
-#include "gsgstate.h"
+#include "gsdevice.h"
 
 /*
   The API defined in this file and implemented in gsimage.c provides a
@@ -114,10 +114,7 @@
  * rows of data, not the buffered enumerator used by the procedures below:
  * for this reason, we may move the prototype elsewhere in the future.
  */
-#ifndef gx_image_enum_common_t_DEFINED
-#  define gx_image_enum_common_t_DEFINED
 typedef struct gx_image_enum_common_s gx_image_enum_common_t;
-#endif
 
 typedef struct gs_image_enum_s gs_image_enum;
 int gs_image_begin_typed(const gs_image_common_t * pic, gs_gstate * pgs,
@@ -131,14 +128,6 @@ gs_image_enum *gs_image_enum_alloc(gs_memory_t *, client_name_t);
  * Note that gs_image_init serves for both image and imagemask,
  * depending on the value of ImageMask in the image structure.
  */
-#ifndef gx_device_DEFINED
-#  define gx_device_DEFINED
-typedef struct gx_device_s gx_device;
-#endif
-#ifndef gx_device_color_DEFINED
-#  define gx_device_color_DEFINED
-typedef struct gx_device_color_s gx_device_color;
-#endif
 
 /* Initialize the common part of the image class */
 int gs_image_common_init(gs_image_enum * penum,

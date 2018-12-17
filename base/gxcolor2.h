@@ -24,6 +24,7 @@
 #include "gsmatrix.h"		/* for step_matrix */
 #include "gsrefct.h"
 #include "gxbitmap.h"
+#include "gxdevcli.h"
 
 /* Cache for Indexed color with procedure, or Separation color. */
 struct gs_indexed_map_s {
@@ -64,11 +65,6 @@ rc_free_proc(free_indexed_map);
  * adjust it to make the tiling computation easier; in particular, we can
  * arrange it so that all 4 transformation factors are non-negative.
  */
-
-#ifndef gs_pattern1_instance_t_DEFINED
-#  define gs_pattern1_instance_t_DEFINED
-typedef struct gs_pattern1_instance_s gs_pattern1_instance_t;
-#endif
 
 struct gs_pattern1_instance_s {
     gs_pattern_instance_common;	/* must be first */

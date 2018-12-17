@@ -19,6 +19,7 @@
 #  define gdevdljm_INCLUDED
 
 #include "gdevpcl.h"
+#include "gdevprn.h"
 
 /*
  * The notion that there is such a thing as a "PCL printer" is a fiction: no

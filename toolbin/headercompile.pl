@@ -103,6 +103,8 @@ sub pcompare($$)
 
 readdeps("base");
 readdeps("psi");
+readdeps("devices");
+readdeps("devices/vector");
 
 print "Processing header dependencies...\n";
 
@@ -313,6 +315,25 @@ for (my $ui=$mx-1; $ui >= 0; $ui--) {
 #    print "\n";
 #}
 
+sub prep($) {
+    my $f = shift;
+    if ($dirs{$f} eq "base") {
+        return "\$(GLSRC)";
+    } elsif ($dirs{$f} eq "psi") {
+        return "\$(PSSRC)";
+    } elsif ($dirs{$f} eq "gen") {
+        return "\$(GLGEN)";
+    } elsif ($dirs{$f} eq "jpeg") {
+        return "\$(JSRCDIR)\$(D)";
+    } elsif ($dirs{$f} eq "devices") {
+        return "\$(DEVSRC)";
+    } elsif ($dirs{$f} eq "devices/vector") {
+        return "\$(DEVVECSRC)";
+    } else {
+        return "";
+    }
+}
+
 sub rewrite($$) {
     my $i = shift;
     my $m = shift;
@@ -321,30 +342,8 @@ sub rewrite($$) {
     my $g = $f;
     $g =~ s/\./_/;
 
-    if ($dirs{$f} eq "base") {
-        print "$g=\$(GLSRC)$f";
-    } elsif ($dirs{$f} eq "psi") {
-        print "$g=\$(PSSRC)$f";
-    } elsif ($dirs{$f} eq "gen") {
-        print "$g=\$(GLGEN)$f";
-    } elsif ($dirs{$f} eq "jpeg") {
-        print "$g=\$(JSRCDIR)\$(D)$f";
-    } else {
-        print "$g=$f";
-    }
-    for (my $uj=1; $uj < $mx; $uj++) {
-        my $j = $order[$uj];
-        if ($deparr[$i][$j] != 1) { next; }
-        my $e = $num2fname[$j];
-        if (!exists $dirs{$e}) {
-            # Don't include things like sgidefs_h
-            next;
-        }
-        my $d = $e;
-
-        $e =~ s/\./_/;
-        print " \$($e)";
-    }
+    my $h = prep($f);
+    print "$g=$h$f";
     if ($m) {
         print " \$(MAKEFILE)";
     }
@@ -371,13 +370,14 @@ sub write_dep($$)
         $good[$i] = -2;
 
         rewrite($i, $m);
-        return 0;
+        return $i;
     }
-    return 1;
+    return 0;
 }
 
 sub rewrite_make($)
 {
+    my @deplist = ();
     my $f = shift;
 
     print "$f:\n";
@@ -385,8 +385,11 @@ sub rewrite_make($)
     open(F, "$f") || die "WTF?";
     while (<F>) {
         $_ =~ s/[\r\n]*$//;
+	if ($_ =~ m/^\# Dependencies:/) {
+	    last;
+	}
         if ($_ =~ m/^([a-z0-9_\-]+_h)=/) {
-	    my $f = $1;
+            my $f = $1;
             # Gather up the line, allowing for continuations
             if ($_ =~ m/\\$/) {
                 my $block = $_;
@@ -408,11 +411,31 @@ sub rewrite_make($)
             if ($_ =~ m/\$\(MAKEFILE\)/) {
                 $makefile = 1;
             }
-            if (write_dep($f, $makefile)) {
+            my $i = write_dep($f, $makefile);
+            if ($i == 0) {
                 print "$_\n";
+            } else {
+                push @deplist, $i;
             }
         } else {
             print "$_\n";
+        }
+    }
+    print "# Dependencies:\n";
+    foreach $i (@deplist) {
+        my $f = $num2fname[$i];
+        my $df = prep($f);
+        for (my $uj=1; $uj < $mx; $uj++) {
+            my $j = $order[$uj];
+            if ($deparr[$i][$j] == 0) { next; }
+            my $e = $num2fname[$j];
+            if (!exists $dirs{$e}) {
+                # Don't include things like sgidefs_h
+                next;
+            }
+            my $d = prep($e);
+
+            print "$df$f:$d$e\n";
         }
     }
     print "-----\n";
@@ -422,8 +445,13 @@ rewrite_make("base/gs.mak");
 rewrite_make("base/pcwin.mak");
 rewrite_make("base/lib.mak");
 rewrite_make("base/tiff.mak");
+rewrite_make("base/winlib.mak");
 rewrite_make("psi/int.mak");
 rewrite_make("psi/winint.mak");
+rewrite_make("devices/contrib.mak");
+rewrite_make("devices/devs.mak");
+rewrite_make("gpdl/pspcl6_gcc.mak");
+rewrite_make("pcl/pl/pl.mak");
 
 # Now output the troubled ones.
 print "\nThese references are questionable: (possibly they didn't compile?)\n";

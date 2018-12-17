@@ -21,26 +21,18 @@
 
 #include "std.h"
 #include "gsgstate.h"
+#include "gsmatrix.h"
+#include "gsparam.h"
 
+/* We maintain the #ifdef gx_device_DEFINED dance, even though
+ * this is now the primary place in the source that defines it,
+ * to allow iapi.h to remain standalone. */
 #ifndef gx_device_DEFINED
 #  define gx_device_DEFINED
 typedef struct gx_device_s gx_device;
 #endif
 
-#ifndef gx_device_memory_DEFINED
-#  define gx_device_memory_DEFINED
 typedef struct gx_device_memory_s gx_device_memory;
-#endif
-
-#ifndef gs_matrix_DEFINED
-#  define gs_matrix_DEFINED
-typedef struct gs_matrix_s gs_matrix;
-#endif
-
-#ifndef gs_param_list_DEFINED
-#  define gs_param_list_DEFINED
-typedef struct gs_param_list_s gs_param_list;
-#endif
 
 /* Device procedures not involving a graphics state. */
 

@@ -21,20 +21,11 @@
 
 #include "gsstype.h"		/* for extern_st */
 #include "gxdevcli.h"
+#include "scommon.h"
 
 /* ---------------- Image types ---------------- */
 
 /* Define the structure for image types. */
-
-#ifndef stream_DEFINED
-#  define stream_DEFINED
-typedef struct stream_s stream;
-#endif
-
-#ifndef gx_image_type_DEFINED
-#  define gx_image_type_DEFINED
-typedef struct gx_image_type_s gx_image_type_t;
-#endif
 
 struct gx_image_type_s {
 
@@ -130,11 +121,6 @@ int sget_variable_uint(stream *s, uint *pw);
   ((i) == 1 ? dd1 : (i) & 1)
 
 /* ---------------- Image enumerators ---------------- */
-
-#ifndef gx_image_enum_common_t_DEFINED
-#  define gx_image_enum_common_t_DEFINED
-typedef struct gx_image_enum_common_s gx_image_enum_common_t;
-#endif
 
 /*
  * Define the procedures associated with an image enumerator.

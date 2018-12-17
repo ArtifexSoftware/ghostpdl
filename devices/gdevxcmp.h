@@ -19,6 +19,10 @@
 #ifndef gdevxcmp_INCLUDED
 #  define gdevxcmp_INCLUDED
 
+#include "x_.h"
+#include "std.h"
+#include "gxcvalue.h"
+
 /*
  * The structure defined in this file is used in only one place, in the
  * gx_device_X structure defined in gdevx.h.  We define it as a separate

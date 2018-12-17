@@ -382,10 +382,7 @@ void gp_close_printer(const gs_memory_t *mem,
 
 /* ------ File enumeration ------ */
 
-#ifndef file_enum_DEFINED	/* also defined in iodev.h */
-#  define file_enum_DEFINED
 typedef struct file_enum_s file_enum;
-#endif
 
 /*
  * Begin an enumeration.  pat is a C string that may contain *s or ?s.

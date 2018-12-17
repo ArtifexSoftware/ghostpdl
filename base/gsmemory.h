@@ -47,13 +47,6 @@
 typedef struct gs_memory_struct_type_s gs_memory_struct_type_t;
 typedef const gs_memory_struct_type_t *gs_memory_type_ptr_t;
 
-/* Define the opaque type for an allocator. */
-/* (The actual structure is defined later in this file.) */
-#ifndef gs_memory_DEFINED
-#  define gs_memory_DEFINED
-typedef struct gs_memory_s gs_memory_t;
-#endif
-
 /* Define the opaque type for a pointer type. */
 typedef struct gs_ptr_procs_s gs_ptr_procs_t;
 typedef const gs_ptr_procs_t *gs_ptr_type_t;

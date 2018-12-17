@@ -28,24 +28,14 @@
 #include "gsuid.h"
 #include "gsstype.h"		/* for extern_st */
 #include "gxftype.h"
+#include "gspath.h"
+#include "gsfcmap.h"
+#include "gxfapi.h"
 
 /* A font object as seen by clients. */
 /* See the PostScript Language Reference Manual for details. */
 
-#ifndef gs_text_enum_DEFINED
-#  define gs_text_enum_DEFINED
-typedef struct gs_text_enum_s gs_text_enum_t;
-#endif
-
-#ifndef gs_show_enum_DEFINED
-#  define gs_show_enum_DEFINED
 typedef struct gs_show_enum_s gs_show_enum;
-#endif
-
-#ifndef gx_path_DEFINED
-#  define gx_path_DEFINED
-typedef struct gx_path_s gx_path;
-#endif
 
 /*
  * Define flags for font properties (Flags* members in the structure below.)
@@ -453,10 +443,7 @@ int gs_font_notify_register(gs_font *font, gs_notify_proc_t proc,
 int gs_font_notify_unregister(gs_font *font, gs_notify_proc_t proc,
                               void *proc_data);
 
-#ifndef gs_fapi_server_DEFINED
-#define gs_fapi_server_DEFINED
 typedef struct gs_fapi_server_s gs_fapi_server;
-#endif
 
 /* Define a base (not composite) font. */
 #define gs_font_base_common\
@@ -468,10 +455,7 @@ typedef struct gs_fapi_server_s gs_fapi_server;
         gs_encoding_index_t encoding_index;\
         gs_encoding_index_t nearest_encoding_index  /* (may be >= 0 even if */\
                                                 /* encoding_index = -1) */
-#ifndef gs_font_base_DEFINED
-#  define gs_font_base_DEFINED
-typedef struct gs_font_base_s gs_font_base;
-#endif
+
 struct gs_font_base_s {
     gs_font_base_common;
 };

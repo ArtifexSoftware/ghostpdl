@@ -65,10 +65,6 @@ extern_st(st_clip_rect);
  * starting at min_int, and a dummy tail entry to cover Y values
  * ending at max_int.  This eliminates the need for end tests.
  */
-#ifndef gx_clip_list_DEFINED
-#  define gx_clip_list_DEFINED
-typedef struct gx_clip_list_s gx_clip_list;
-#endif
 struct gx_clip_list_s {
     gx_clip_rect single;	/* (has next = prev = 0) */
     gx_clip_rect *head;
@@ -96,10 +92,7 @@ struct gx_clip_list_s {
  * clipping box and the clip list must be const after the clipping device
  * is opened.
  */
-#ifndef gx_device_clip_DEFINED
-#  define gx_device_clip_DEFINED
 typedef struct gx_device_clip_s gx_device_clip;
-#endif
 struct gx_device_clip_s {
     gx_device_forward_common;	/* target is set by client */
     gx_clip_list list;		/* set by client */

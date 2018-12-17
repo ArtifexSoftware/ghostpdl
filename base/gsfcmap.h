@@ -22,10 +22,7 @@
 #include "gsccode.h"
 
 /* Define the abstract type for a CMap. */
-#ifndef gs_cmap_DEFINED
-#  define gs_cmap_DEFINED
 typedef struct gs_cmap_s gs_cmap_t;
-#endif
 
 /* ---------------- Procedural interface ---------------- */
 

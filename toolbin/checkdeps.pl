@@ -37,11 +37,11 @@ sub read_makefile {
     open(IN, "$dir/$file") or die "can't open $dir/$file";
     LINE: while (<IN>) {
         # Reassemble split lines
-        chomp $_;
+        $_ =~ s/[\r\n]*$//;
         my $line=$_;
         while (substr($line,-1) eq "\\") {
             my $nextline = <IN>;
-            chomp $nextline;
+            $nextline =~ s/[\r\n]*$//;
             substr($line,-1) = $nextline;
         }
 

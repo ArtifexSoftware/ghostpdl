@@ -30,11 +30,8 @@ int gs_currentcolorscreen(gs_gstate *, gs_colorscreen_halftone *);
  * because it turns out to be convenient to define setcolorscreen
  * using sethalftone.
  */
-#ifndef gs_halftone_DEFINED
-#  define gs_halftone_DEFINED
 typedef struct gs_halftone_s gs_halftone;
 
-#endif
 /*
  * gs_halftone structures may have complex substructures.  We provide two
  * procedures for setting them.  gs_halftone assumes that the gs_halftone

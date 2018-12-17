@@ -22,23 +22,14 @@
 #include "gstypes.h"
 #include "gsgstate.h"
 #include "gsgdata.h"
+#include "gspath.h"
 
 /* ------ Normal client interface ------ */
 
 #define crypt_charstring_seed 4330
 typedef struct gs_type1_state_s gs_type1_state;
 
-#ifndef gx_path_DEFINED
-#  define gx_path_DEFINED
-typedef struct gx_path_s gx_path;
-#endif
-#ifndef gs_font_type1_DEFINED
-#  define gs_font_type1_DEFINED
 typedef struct gs_font_type1_s gs_font_type1;
-#endif
-#ifndef gs_type1_data_s_DEFINED
-struct gs_type1_data_s;
-#endif
 int gs_type1_interp_init(gs_type1_state * pcis, gs_gstate * pgs,
                          gx_path * ppath, const gs_log2_scale_point * pscale,
                          const gs_log2_scale_point * psubpixels, bool no_grid_fitting,

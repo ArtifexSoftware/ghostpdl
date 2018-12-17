@@ -21,16 +21,8 @@
 
 #include "stdpre.h"
 #include "iref.h"
-
-#ifndef gs_matrix_DEFINED
-#  define gs_matrix_DEFINED
-typedef struct gs_matrix_s gs_matrix;
-#endif
-
-#ifndef gs_uid_DEFINED
-#  define gs_uid_DEFINED
-typedef struct gs_uid_s gs_uid;
-#endif
+#include "gsmatrix.h"
+#include "gsuid.h"
 
 /*
  * Unless otherwise noted, all the following routines return 0 for

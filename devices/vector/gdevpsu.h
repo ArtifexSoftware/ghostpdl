@@ -19,6 +19,8 @@
 #ifndef gdevpsu_INCLUDED
 #  define gdevpsu_INCLUDED
 
+#include "gsdevice.h"
+
 /* Define parameters and state for PostScript-writing drivers. */
 typedef struct gx_device_pswrite_common_s {
     float LanguageLevel;

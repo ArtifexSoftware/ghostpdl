@@ -54,11 +54,6 @@ struct gs_separations_s {
     devn_separation_name names[GX_DEVICE_MAX_SEPARATIONS];
 };
 
-#ifndef gs_separations_DEFINED
-#   define gs_separations_DEFINED
-    typedef struct gs_separations_s gs_separations;
-#endif
-
 /*
  * Type for holding a separation order map
  */
@@ -110,11 +105,8 @@ typedef struct gs_devn_params_s {
     gs_separations pdf14_separations;
 } gs_devn_params_t;
 
-#ifndef gs_devn_params_DEFINED
-#  define gs_devn_params_DEFINED
-typedef struct gs_devn_params_s gs_devn_params;
-#endif
-
+extern fixed_colorant_name DeviceGrayComponents[];
+extern fixed_colorant_name DeviceRGBComponents[];
 extern fixed_colorant_name DeviceCMYKComponents[];
 
 /*

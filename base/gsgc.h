@@ -26,7 +26,7 @@
 #ifndef gsgc_INCLUDED
 #  define gsgc_INCLUDED
 
-#include "stdpre.h"
+#include "gsalloc.h"
 
 /*
  * Define the VM space numbers, in increasing order of dynamism.  Pointers
@@ -51,10 +51,6 @@ typedef enum {
  * allocator (typically, static const objects, or objects allocated with
  * malloc by some piece of code other than Ghostscript).
  */
-#ifndef gs_ref_memory_DEFINED
-#  define gs_ref_memory_DEFINED
-typedef struct gs_ref_memory_s gs_ref_memory_t;
-#endif
 /*
  * r_space_bits is only defined in PostScript interpreters, but if it is
  * defined, we want to make sure it's 2.

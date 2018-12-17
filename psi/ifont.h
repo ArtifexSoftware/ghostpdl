@@ -21,6 +21,7 @@
 
 #include "gxfont.h"
 #include "iref.h"
+#include "gsfont.h"
 
 /* The external definition of fonts is given in the PostScript manual, */
 /* pp. 91-93. */
@@ -90,11 +91,6 @@ extern_st(st_font_data);
 int font_bbox_param(const gs_memory_t *mem, const ref *pfdict, double bbox[4]);
 
 /* ---------------- Exported by zfont.c ---------------- */
-
-#ifndef gs_font_DEFINED
-#  define gs_font_DEFINED
-typedef struct gs_font_s gs_font;
-#endif
 
 /*
  * Check a parameter that should be a valid font dictionary, and return

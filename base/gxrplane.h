@@ -19,10 +19,7 @@
 #ifndef gxrplane_INCLUDED
 #  define gxrplane_INCLUDED
 
-#ifndef gx_device_DEFINED
-#  define gx_device_DEFINED
-typedef struct gx_device_s gx_device;
-#endif
+#include "gsdevice.h"
 
 /*
  * Define the parameters for extracting a single plane from chunky pixels.

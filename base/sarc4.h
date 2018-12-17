@@ -34,10 +34,7 @@ struct stream_arcfour_state_s
     unsigned char S[256];
 };
 
-#ifndef stream_arcfour_state_DEFINED
-#define stream_arcfour_state_DEFINED
 typedef struct stream_arcfour_state_s stream_arcfour_state;
-#endif
 
 int s_arcfour_set_key(stream_arcfour_state * state, const unsigned char *key,
                       int keylength);

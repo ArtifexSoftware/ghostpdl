@@ -20,15 +20,9 @@
 #  define gstrap_INCLUDED
 
 #include "gsparam.h"
+#include "gspath.h"
 
 /* ---------------- Types and structures ---------------- */
-
-/* Opaque type for a path */
-#ifndef gx_path_DEFINED
-#  define gx_path_DEFINED
-typedef struct gx_path_s gx_path;
-
-#endif
 
 /* Define the placement of image traps. */
 typedef enum {

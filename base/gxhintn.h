@@ -23,21 +23,8 @@
 #include "gxfixed.h"
 #include "gspath.h"
 #include "gsmatrix.h"
-
-#ifndef gs_type1_data_DEFINED
-#define gs_type1_data_DEFINED
-typedef struct gs_type1_data_s gs_type1_data;
-#endif
-
-#ifndef gs_type42_data_DEFINED
-#define gs_type42_data_DEFINED
-typedef struct gs_type42_data_s gs_type42_data;
-#endif
-
-#ifndef gx_path_DEFINED
-#  define gx_path_DEFINED
-typedef struct gx_path_s gx_path;
-#endif
+#include "gxfont42.h"
+#include "gxfont1.h"
 
 #define T1_MAX_STEM_SNAPS 12
 #define T1_MAX_ALIGNMENT_ZONES 6

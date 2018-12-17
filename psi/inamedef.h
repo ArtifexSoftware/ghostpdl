@@ -23,6 +23,7 @@
 #include "inamestr.h"
 #include "inames.h"
 #include "gsstruct.h"		/* for gc_state_t */
+#include "isave.h"
 
 /*
  * The name table machinery has two slightly different configurations:
@@ -162,10 +163,6 @@ void names_trace_finish(name_table * nt, gc_state_t * gcst);
 /* ------ Save/restore ------ */
 
 /* Clean up the name table before a restore. */
-#ifndef alloc_save_t_DEFINED	/* also in isave.h */
-typedef struct alloc_save_s alloc_save_t;
-#  define alloc_save_t_DEFINED
-#endif
 void names_restore(name_table * nt, alloc_save_t * save);
 
 #endif /* inamedef_INCLUDED */

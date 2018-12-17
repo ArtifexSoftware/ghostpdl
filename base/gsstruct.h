@@ -80,10 +80,7 @@
  */
 
 /* An opaque type for an object header. */
-#ifndef obj_header_DEFINED
-#  define obj_header_DEFINED
 typedef struct obj_header_s obj_header_t;
-#endif
 
 /*
  * Define pointer types, which define how to mark the referent of the

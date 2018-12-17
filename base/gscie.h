@@ -154,10 +154,7 @@ typedef float cie_cached_value;
 
 /* ---------------- Structures ---------------- */
 
-#ifndef gs_cie_render_DEFINED
-#  define gs_cie_render_DEFINED
 typedef struct gs_cie_render_s gs_cie_render;
-#endif
 
 /* ------ Common definitions ------ */
 
@@ -638,10 +635,7 @@ struct gx_cie_joint_caches_s {
     bool skipEncodeLMN;
 };
 
-#ifndef gx_cie_joint_caches_DEFINED
-#define gx_cie_joint_caches_DEFINED
 typedef struct gx_cie_joint_caches_s gx_cie_joint_caches;
-#endif
 
 #define private_st_joint_caches() /* in gscie.c */\
   gs_private_st_simple(st_joint_caches, gx_cie_joint_caches,\

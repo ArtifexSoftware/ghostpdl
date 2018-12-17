@@ -20,22 +20,15 @@
 #  define gxpcache_INCLUDED
 
 #include "std.h"
+#include "gsdcolor.h"
 
 /*
  * Define a cache for rendered Patterns.  This is currently an open
  * hash table with single probing (no reprobing) and round-robin
  * replacement.  Obviously, we can do better in both areas.
  */
-#ifndef gx_pattern_cache_DEFINED
-#  define gx_pattern_cache_DEFINED
 typedef struct gx_pattern_cache_s gx_pattern_cache;
 
-#endif
-#ifndef gx_color_tile_DEFINED
-#  define gx_color_tile_DEFINED
-typedef struct gx_color_tile_s gx_color_tile;
-
-#endif
 struct gx_pattern_cache_s {
     gs_memory_t *memory;
     gx_color_tile *tiles;

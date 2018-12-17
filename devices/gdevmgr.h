@@ -18,6 +18,8 @@
 #ifndef gdevmgr_INCLUDED
 #  define gdevmgr_INCLUDED
 
+#include "gxdevcli.h"
+
 #define MGR_RESERVEDCOLORS 16
 
 /* Color mapping routines for 8-bit color (with a fixed palette). */

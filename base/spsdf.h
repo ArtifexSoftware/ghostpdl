@@ -20,12 +20,7 @@
 #  define spsdf_INCLUDED
 
 #include "gsparam.h"
-
-/* Define an opaque type for streams. */
-#ifndef stream_DEFINED
-#  define stream_DEFINED
-typedef struct stream_s stream;
-#endif
+#include "scommon.h"
 
 /* ---------------- Symbolic data printing ---------------- */
 

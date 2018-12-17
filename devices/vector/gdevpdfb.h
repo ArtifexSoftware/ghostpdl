@@ -24,6 +24,8 @@
    PDF_FOR_OPDFREAD - an integer 0 (false) or 1 (true).
  */
 
+#ifdef PDF_DEVICE_NAME
+
 const gx_device_pdf PDF_DEVICE_IDENT =
 {std_device_dci_type_body(gx_device_pdf, 0, PDF_DEVICE_NAME,
                           &st_device_pdfwrite,
@@ -287,3 +289,7 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  0,                     /* PDFFormName */
  0                      /* PassThroughWriter */
 };
+
+#else
+int dummy;
+#endif

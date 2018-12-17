@@ -19,7 +19,7 @@
 #ifndef gdevpdti_INCLUDED
 #  define gdevpdti_INCLUDED
 
-#include "gdevpdt.h"
+#include "gdevpdtx.h"
 
 /*
  * Bitmap fonts are Type 3 fonts created internally by pdfwrite.  Their

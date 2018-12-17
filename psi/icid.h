@@ -21,11 +21,7 @@
 
 #include "std.h"
 #include "iref.h"
-
-#ifndef gs_cid_system_info_DEFINED
-#  define gs_cid_system_info_DEFINED
-typedef struct gs_cid_system_info_s gs_cid_system_info_t;
-#endif
+#include "gxcid.h"
 
 /* Get the information from a CIDSystemInfo dictionary. */
 int cid_system_info_param(gs_cid_system_info_t *, const ref *);

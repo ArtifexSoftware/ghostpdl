@@ -39,10 +39,7 @@
  * the stack differently in LL2 vs. LL3 (yes, the Genoa LL2 and LL3 tests
  * require this!).  See zvmem.c:restore_check_stack.
  */
-#ifndef alloc_save_t_DEFINED	/* also in inamedef.h */
 typedef struct alloc_save_s alloc_save_t;
-#  define alloc_save_t_DEFINED
-#endif
 
 /* 'Save' structure */
 typedef struct vm_save_s vm_save_t;
