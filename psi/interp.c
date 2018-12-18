@@ -1307,9 +1307,6 @@ x_sub:      INCR(x_sub);
                         goto bot;
                     iesp = esp;
                     goto up;
-                case o_reschedule:
-                    store_state(iesp);
-                    goto res;
                 case gs_error_Remap_Color:
 oe_remap:           store_state(iesp);
 remap:              if (iesp + 2 >= estop) {
@@ -1414,9 +1411,6 @@ remap:              if (iesp + 2 >= estop) {
                                 goto opush;
                             case o_pop_estack:
                                 goto opop;
-                            case o_reschedule:
-                                store_state(iesp);
-                                goto res;
                             case gs_error_Remap_Color:
                                 goto oe_remap;
                         }
@@ -1684,9 +1678,6 @@ remap:              if (iesp + 2 >= estop) {
                                 }
                                 iesp = esp;
                                 goto up;
-                            case o_reschedule:
-                                store_state_short(iesp);
-                                goto res;
                             case gs_error_Remap_Color:
                                 store_state_short(iesp);
                                 goto remap;
@@ -1783,12 +1774,6 @@ remap:              if (iesp + 2 >= estop) {
             goto up;
     }
     goto top;
-res:
-    /* Some operator has asked for context rescheduling. */
-    /* We've done a store_state. */
-    *pi_ctx_p = i_ctx_p;
-    code = (*i_ctx_p->reschedule_proc)(pi_ctx_p);
-    i_ctx_p = *pi_ctx_p;
   sched:                        /* We've just called a scheduling procedure. */
     /* The interpreter state is in memory; iref is not current. */
     if (code < 0) {
@@ -1822,10 +1807,6 @@ res:
     if ((*ticks_left) <= -100) {   /* We need to garbage collect now. */
         *pi_ctx_p = i_ctx_p;
         code = interp_reclaim(pi_ctx_p, -1);
-        i_ctx_p = *pi_ctx_p;
-    } else if (i_ctx_p->time_slice_proc != NULL) {
-        *pi_ctx_p = i_ctx_p;
-        code = (*i_ctx_p->time_slice_proc)(pi_ctx_p);
         i_ctx_p = *pi_ctx_p;
     } else
         code = 0;

@@ -105,13 +105,6 @@ static RELOC_PTRS_WITH(context_state_reloc_ptrs, gs_context_state_t *pcst);
 RELOC_PTRS_END
 public_st_context_state();
 
-static int
-no_reschedule(i_ctx_t **pi_ctx_p)
-{
-    return 0;
-    /*    return (gs_error_invalidcontext); */
-}
-
 /* Allocate the state of a context. */
 int
 context_state_alloc(gs_context_state_t ** ppcst,
@@ -150,8 +143,6 @@ context_state_alloc(gs_context_state_t ** ppcst,
     make_int(&pcst->binary_object_format, 0);
     pcst->nv_page_count = 0;
     pcst->rand_state = rand_state_initial;
-    pcst->usertime_total = 0;
-    pcst->keep_usertime = false;
     pcst->usertime_inited = false;
     pcst->in_superexec = 0;
     pcst->plugin_list = 0;
@@ -204,8 +195,6 @@ context_state_alloc(gs_context_state_t ** ppcst,
      * Currently, the clock ticks before each operator, and at each
      * procedure return. */
     pcst->time_slice_ticks = 0x7fff;
-    pcst->reschedule_proc = no_reschedule;
-    pcst->time_slice_proc = no_reschedule;
     *ppcst = pcst;
     return 0;
   x3:/* No need to delete dictionary here, as gc will do it for us. */
