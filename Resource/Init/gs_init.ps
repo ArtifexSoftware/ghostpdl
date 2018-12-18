@@ -1165,8 +1165,8 @@ errordict /unknownerror .undef
     }ifelse
   }forall
   noaccess pop
-  systemdict /.setsafeerrors .forceundef
-  systemdict /.SAFERERRORLIST .forceundef
+  //systemdict /.setsafeerrors .forceundef
+  //systemdict /.SAFERERRORLIST .forceundef
 } bind executeonly odef
 
 SAFERERRORS {.setsafererrors} if
@@ -2144,7 +2144,7 @@ currentdict /tempfilepaths undef
 
 /.locksafe {
   .locksafe_userparams
-  systemdict /getenv {pop //false} .forceput
+  //systemdict /getenv {pop //false} .forceput
   % setpagedevice has the side effect of clearing the page, but
   % we will just document that. Using setpagedevice keeps the device
   % properties and pagedevice .LockSafetyParams in agreement even

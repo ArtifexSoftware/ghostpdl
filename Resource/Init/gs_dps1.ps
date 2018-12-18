@@ -74,7 +74,7 @@ level2dict begin
  } odef
 % undefinefont has to take local/global VM into account.
 /undefinefont		% <fontname> undefinefont -
- { .FontDirectory 1 .argindex .forceundef	% FontDirectory is readonly
+ { //.FontDirectory 1 .argindex .forceundef	% FontDirectory is readonly
    .currentglobal
     {		% Current mode is global; delete from local directory too.
       //systemdict /LocalFontDirectory .knownget
@@ -85,7 +85,7 @@ level2dict begin
                 % definition, copy it into the local directory.
       //systemdict /SharedFontDirectory .knownget
        { 1 index .knownget
-          { .FontDirectory 2 index 3 -1 roll { put } systemdict /superexec known {//superexec}{1183615869 internaldict /superexec get exec} ifelse } % readonly
+          { //.FontDirectory 2 index 3 -1 roll { put } systemdict /superexec known {//superexec}{1183615869 internaldict /superexec get exec} ifelse } % readonly
          if
        }
       if
