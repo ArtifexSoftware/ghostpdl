@@ -287,32 +287,6 @@ xps_flush_text_buffer(xps_context_t *ctx, xps_font_t *font,
             gs_text_release(Tr_textenum, "gslt font render");
 
             gs_stroke(ctx->pgs);
-        } else {
-            /* Nasty complications; the pdfwrite device always scales the line width
-             * by 1, not the CTM, when handling stroking text rendering modes (when stroking
-             * a path it *does* apply the CTM to the line width. Consistency ? We've heard of it....)
-             * Altering this would mean lots of hackery in the PDF interpreter, so instead alter the
-             * line width here by the CTM. Note; if we have Text rendering mode set then we know that
-             * xps_parse_glyphs_imp() will have done a gsave and set the linewidth, so its safe to
-             * meddle with it here, it will be grestore'd when we trickle back up.
-             */
-            gs_gstate *pgs = ctx->pgs;
-            double scale = 1;
-
-            /* This code is copied from gdev_vector_stroke_scaling() and applies the same CTM
-             * scaling as we would for a stroke, so that the pdfwrite output will be consistent
-             * with a rendered stroke and fill operation when Tr is 2.
-             */
-            if (is_xxyy(&pgs->ctm)) {
-                scale = fabs(pgs->ctm.xx);
-            } else if (is_xyyx(&pgs->ctm)) {
-                scale = fabs(pgs->ctm.xy);
-            } else if ((pgs->ctm.xx == pgs->ctm.yy && pgs->ctm.xy == -pgs->ctm.yx) ||
-                       (pgs->ctm.xx == -pgs->ctm.yy && pgs->ctm.xy == pgs->ctm.yx)
-                ) {
-                scale = hypot(pgs->ctm.xx, pgs->ctm.xy);
-            }
-            gs_setlinewidth(pgs, pgs->line_params.half_width * scale);
         }
     }
 
@@ -405,7 +379,7 @@ static char *
 xps_parse_glyph_advance(char *s, float *advance, int bidi_level)
 {
     bool advance_overridden = false;
-    
+
     if (*s == ',') {
         s = xps_parse_real_num(s + 1, advance, &advance_overridden);
 
@@ -420,7 +394,7 @@ xps_parse_glyph_advance(char *s, float *advance, int bidi_level)
     }
     return s;
 }
-        
+
 static char *
 xps_parse_glyph_offsets(char *s, float *uofs, float *vofs)
 {
