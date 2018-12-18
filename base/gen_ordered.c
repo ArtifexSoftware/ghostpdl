@@ -124,8 +124,8 @@ static int htsc_allocate_supercell(htsc_dig_grid_t *super_cell, int x, int y, in
                            htsc_dig_grid_t dot_grid, int N, int *S, int *H, int *L);
 static void htsc_tile_supercell(htsc_dig_grid_t *super_cell, htsc_dig_grid_t *dot_grid,
                  int x, int y, int u, int v, int N);
-void create_2d_gauss_filter(float *filter, int x_size, int y_size,
-                            float stdvalx, float stdvaly);
+void create_2d_gauss_filter(double *filter, int x_size, int y_size,
+                            double stdvalx, double stdvaly);
 static int htsc_create_holladay_mask(htsc_dig_grid_t super_cell, int H, int L,
                                double gamma, htsc_dig_grid_t *final_mask);
 static int htsc_create_dither_mask(htsc_dig_grid_t super_cell,
@@ -143,9 +143,9 @@ static void htsc_matrix_vector_mult(htsc_matrix_t matrix_in, htsc_vector_t vecto
 static int htsc_mask_to_tos(htsc_dig_grid_t *final_mask);
 #if RAW_SCREEN_DUMP
 static void htsc_dump_screen(htsc_dig_grid_t *dig_grid, char filename[]);
-static void htsc_dump_float_image(float *image, int height, int width, float max_val,
+static void htsc_dump_float_image(double *image, int height, int width, double max_val,
                       char filename[]);
-static void htsc_dump_byte_image(byte *image, int height, int width, float max_val,
+static void htsc_dump_byte_image(byte *image, int height, int width, double max_val,
                       char filename[]);
 #endif
 
@@ -798,7 +798,7 @@ htsc_create_dot_mask(htsc_dig_grid_t *dot_grid, int x, int y, int u, int v,
     int k,j,val_min,index_x,index_y;
     double slope1, slope2;
     int t1,t2,t3,t4,point_in;
-    float b3, b4;
+    double b3, b4;
     htsc_point_t test_point;
 
     if (screen_angle != 0) {
@@ -1042,8 +1042,8 @@ htsc_allocate_supercell(htsc_dig_grid_t *super_cell, int x, int y, int u,
         min_vert_number = *H;
     }
 
-    a = (int)ceil((float) target_size / (float) lcm_value);
-    b = (int)ceil((float) target_size / (float) min_vert_number);
+    a = (int)ceil((double) target_size / (double) lcm_value);
+    b = (int)ceil((double) target_size / (double) min_vert_number);
 
     /* super_cell Size is  b*min_vert_number by a*lcm_value
        create the large cell */
@@ -1137,15 +1137,15 @@ htsc_tile_supercell(htsc_dig_grid_t *super_cell, htsc_dig_grid_t *dot_grid,
 /* Create 2d gaussian filter that varies with respect to coordinate
    spatial resolution */
 void
-create_2d_gauss_filter(float *filter, int x_size, int y_size,
-                       float stdvalx, float stdvaly)
+create_2d_gauss_filter(double *filter, int x_size, int y_size,
+    double stdvalx, double stdvaly)
 {
     int x_half_size  = (x_size-1)/2;
     int y_half_size = (y_size-1)/2;
     int k,j;
-    float arg, val;
+    double arg, val;
     double sum = 0;
-    float max_val = 0;
+    double max_val = 0;
     int total_size = x_size * y_size;
     int index_x, index_y;
 
@@ -1154,7 +1154,7 @@ create_2d_gauss_filter(float *filter, int x_size, int y_size,
         for (k = -x_half_size; k < x_half_size+1; k++) {
             arg   = -(k  * k / (stdvalx * stdvalx) +
                       j * j / (stdvaly * stdvaly) ) /2;
-            val = (float) exp(arg);
+            val = exp(arg);
             sum += val;
             if (val > max_val) max_val = val;
             index_x = k + x_half_size;
@@ -1172,9 +1172,9 @@ create_2d_gauss_filter(float *filter, int x_size, int y_size,
 /* 2-D convolution (or correlation) with periodic boundary condition */
 static void
 htsc_apply_filter(byte *screen_matrix, int num_cols_sc,
-                  int num_rows_sc, float *filter, int num_cols_filt,
-                  int num_rows_filt, float *screen_blur,
-                  float *max_val, htsc_point_t *max_pos, float *min_val,
+                  int num_rows_sc, double *filter, int num_cols_filt,
+                  int num_rows_filt, double *screen_blur,
+    double *max_val, htsc_point_t *max_pos, double *min_val,
                   htsc_point_t *min_pos)
 {
     int k,j,kk,jj;
@@ -1182,8 +1182,8 @@ htsc_apply_filter(byte *screen_matrix, int num_cols_sc,
     int half_cols_filt = (num_cols_filt-1)/2;
     int half_rows_filt = (num_rows_filt-1)/2;
     int j_circ,k_circ;
-    float fmax_val = -1;
-    float fmin_val = 100000000;
+    double fmax_val = -1;
+    double fmin_val = 100000000;
     htsc_point_t fmax_pos = { 0.0, 0.0 }, fmin_pos = { 0.0, 0.0 };
 
     for (j = 0; j < num_rows_sc; j++) {
@@ -1248,10 +1248,10 @@ htsc_add_dots(byte *screen_matrix, int num_cols, int num_rows,
     double sigma_y = vert_dpi / lpi_act;
     double sigma_x = sigma_y * xscale;
     int sizefiltx, sizefilty;
-    float *filter;
-    float *screen_blur;
+    double *filter;
+    double *screen_blur;
     int white_pos;
-    float max_val, min_val;
+    double max_val, min_val;
     htsc_point_t max_pos, min_pos;
     int k,j;
     int dist, curr_dist;
@@ -1259,17 +1259,17 @@ htsc_add_dots(byte *screen_matrix, int num_cols, int num_rows,
 
     sizefiltx = ROUND(sigma_x * 4);
     sizefilty = ROUND(sigma_y * 4);
-    if ( ((float) sizefiltx / 2.0) == (sizefiltx >> 1)) {
+    if ( ((double) sizefiltx / 2.0) == (sizefiltx >> 1)) {
         sizefiltx += 1;
     }
-    if ( ((float) sizefilty / 2.0) == (sizefilty >> 1)) {
+    if ( ((double) sizefilty / 2.0) == (sizefilty >> 1)) {
         sizefilty += 1;
     }
-    filter = (float*) ALLOC(mem, sizeof(float) * sizefilty * sizefiltx);
+    filter = (double*) ALLOC(mem, sizeof(double) * sizefilty * sizefiltx);
     if (filter == NULL)
         return -1;
-    create_2d_gauss_filter(filter, sizefiltx, sizefilty, (float)sizefiltx, (float)sizefilty);
-    screen_blur = (float*)ALLOC(mem, sizeof(float) * num_cols * num_rows);
+    create_2d_gauss_filter(filter, sizefiltx, sizefilty, (double)sizefiltx, (double)sizefilty);
+    screen_blur = (double*)ALLOC(mem, sizeof(double) * num_cols * num_rows);
     if (screen_blur == NULL) {
         FREE(mem, filter);
         return -1;
@@ -1318,11 +1318,11 @@ htsc_init_dot_position(byte *screen_matrix, int num_cols, int num_rows,
     double sigma_y = vert_dpi / lpi_act;
     double sigma_x = sigma_y * xscale;
     int sizefiltx, sizefilty;
-    float *filter;
+    double *filter;
     bool done = false;
-    float *screen_blur;
+    double *screen_blur;
     int white_pos, black_pos;
-    float max_val, min_val;
+    double max_val, min_val;
     htsc_point_t max_pos, min_pos;
     int k;
     int dist, curr_dist;
@@ -1330,17 +1330,17 @@ htsc_init_dot_position(byte *screen_matrix, int num_cols, int num_rows,
 
     sizefiltx = ROUND(sigma_x * 4);
     sizefilty = ROUND(sigma_y * 4);
-    if ( ((float) sizefiltx / 2.0) == (sizefiltx >> 1)) {
+    if ( ((double) sizefiltx / 2.0) == (sizefiltx >> 1)) {
         sizefiltx += 1;
     }
-    if ( ((float) sizefilty / 2.0) == (sizefilty >> 1)) {
+    if ( ((double) sizefilty / 2.0) == (sizefilty >> 1)) {
         sizefilty += 1;
     }
-    filter = (float*) ALLOC(mem, sizeof(float) * sizefilty * sizefiltx);
+    filter = (double*) ALLOC(mem, sizeof(double) * sizefilty * sizefiltx);
     if (filter == NULL)
         return -1;
-    create_2d_gauss_filter(filter, sizefiltx, sizefilty, (float)sizefiltx, (float)sizefilty);
-    screen_blur = (float*) ALLOC(mem, sizeof(float) * num_cols * num_rows);
+    create_2d_gauss_filter(filter, sizefiltx, sizefilty, (double)sizefiltx, (double)sizefilty);
+    screen_blur = (double*) ALLOC(mem, sizeof(double) * num_cols * num_rows);
     if (screen_blur == NULL) {
         FREE(mem, filter);
         return -1;
@@ -1520,7 +1520,7 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
             code = -1;
             goto out;
         }
-        percent = 1.0 / ((float)num_levels + 1.0);
+        percent = 1.0 / ((double)num_levels + 1.0);
         prev_dot_level = 0;
         for (k = 0; k < num_levels; k++) {
             perc_val = (k + 1) * percent;
@@ -1964,7 +1964,7 @@ htsc_dump_screen(htsc_dig_grid_t *dig_grid, char filename[])
 }
 
 static void
-htsc_dump_float_image(float *image, int height, int width, float max_val,
+htsc_dump_float_image(double *image, int height, int width, double max_val,
                       char filename[])
 {
     char full_file_name[FULL_FILE_NAME_LENGTH];
@@ -1988,7 +1988,7 @@ htsc_dump_float_image(float *image, int height, int width, float max_val,
 }
 
 static void
-htsc_dump_byte_image(byte *image, int height, int width, float max_val,
+htsc_dump_byte_image(byte *image, int height, int width, double max_val,
                       char filename[])
 {
     char full_file_name[FULL_FILE_NAME_LENGTH];
