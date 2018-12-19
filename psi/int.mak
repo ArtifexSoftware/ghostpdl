@@ -1041,9 +1041,7 @@ $(PSOBJ)zusparam.$(OBJ) : $(PSSRC)zusparam.c $(OP) $(memory__h) $(string__h)\
 
 # Define full Level 2 support.
 
-iimage2_h=$(PSSRC)iimage2.h $(gsiparam_h) $(iref_h)
-
-psl2read_=$(PSOBJ)zcolor2.$(OBJ) $(PSOBJ)zcsindex.$(OBJ) $(PSOBJ)zht2.$(OBJ) $(PSOBJ)zimage2.$(OBJ)
+psl2read_=$(PSOBJ)zcolor2.$(OBJ) $(PSOBJ)zcsindex.$(OBJ) $(PSOBJ)zht2.$(OBJ)
 # Note that zmisc2 includes both Level 1 and Level 2 operators.
 $(PSD)psl2read.dev : $(ECHOGS_XE) $(psl2read_)\
  $(PSD)psl2int.dev $(PSD)dps2read.dev $(INT_MAK) $(MAKEDIRS)
@@ -1069,13 +1067,6 @@ $(PSOBJ)zht2.$(OBJ) : $(PSSRC)zht2.c $(OP)\
  $(estack_h) $(ialloc_h) $(icolor_h) $(iddict_h) $(idparam_h) $(igstate_h)\
  $(iht_h) $(store_h) $(iname_h) $(zht2_h) $(gxgstate_h) $(INT_MAK) $(MAKEDIRS)
 	$(PSCC) $(PSO_)zht2.$(OBJ) $(II)$(GENORDERED_SRCDIR) $(C_) $(PSSRC)zht2.c
-
-$(PSOBJ)zimage2.$(OBJ) : $(PSSRC)zimage2.c $(OP) $(math__h) $(memory__h)\
- $(gscolor_h) $(gscolor2_h) $(gscspace_h) $(gsimage_h) $(gsmatrix_h)\
- $(gxfixed_h)\
- $(idict_h) $(idparam_h) $(iimage_h) $(iimage2_h) $(ilevel_h) $(igstate_h)\
- $(INT_MAK) $(MAKEDIRS)
-	$(PSCC) $(PSO_)zimage2.$(OBJ) $(C_) $(PSSRC)zimage2.c
 
 # ---------------- setpagedevice ---------------- #
 
@@ -1649,7 +1640,7 @@ $(PSOBJ)zfunc4.$(OBJ) : $(PSSRC)zfunc4.c $(memory__h) $(string__h)\
 
 $(PSOBJ)zimage3.$(OBJ) : $(PSSRC)zimage3.c $(OP) $(memory__h)\
  $(gscolor2_h) $(gsiparm3_h) $(gsiparm4_h) $(gscspace_h) $(gxiparam_h)\
- $(idparam_h) $(idict_h) $(igstate_h) $(iimage_h) $(iimage2_h)\
+ $(idparam_h) $(idict_h) $(igstate_h) $(iimage_h)\
  $(INT_MAK) $(MAKEDIRS)
 	$(PSCC) $(PSO_)zimage3.$(OBJ) $(C_) $(PSSRC)zimage3.c
 

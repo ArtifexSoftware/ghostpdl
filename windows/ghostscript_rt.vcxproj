@@ -1212,7 +1212,6 @@
     <ClCompile Include="..\psi\zht2.c" />
     <ClCompile Include="..\psi\zicc.c" />
     <ClCompile Include="..\psi\zimage.c" />
-    <ClCompile Include="..\psi\zimage2.c" />
     <ClCompile Include="..\psi\zimage3.c" />
     <ClCompile Include="..\psi\ziodev.c" />
     <ClCompile Include="..\psi\ziodev2.c" />
@@ -2083,7 +2082,6 @@
     <ClInclude Include="..\psi\igstate.h" />
     <ClInclude Include="..\psi\iht.h" />
     <ClInclude Include="..\psi\iimage.h" />
-    <ClInclude Include="..\psi\iimage2.h" />
     <ClInclude Include="..\psi\iinit.h" />
     <ClInclude Include="..\psi\ilevel.h" />
     <ClInclude Include="..\psi\imain.h" />

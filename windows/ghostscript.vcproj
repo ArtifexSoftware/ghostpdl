@@ -8352,10 +8352,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\psi\zimage2.c"
-				>
-			</File>
-			<File
 				RelativePath="..\psi\zimage3.c"
 				>
 			</File>
@@ -8729,10 +8725,6 @@
 			</File>
 			<File
 				RelativePath="..\psi\iimage.h"
-				>
-			</File>
-			<File
-				RelativePath="..\psi\iimage2.h"
 				>
 			</File>
 			<File
