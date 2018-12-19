@@ -46,7 +46,7 @@
 % implemented in this file as well.
 %
 % In this implementation, all sampled objects are passed through one of
-% the internal operators .image1, .imagemask1, .image1alpha, .image2,
+% the internal operators .image1, .imagemask1, .image2,
 % .image3, or .image4, each of which handles a specific ImageType value.
 %
 % The procedures in this file are responsible for constructing
@@ -302,16 +302,14 @@ def
 
 %
 %   <width>  <height>  <bits/component>  <matrix>  <dsrc0> ...
-%   <multi>  <ncomp>  <has_alpha>
+%   <multi>  <ncomp>
 %   img_build_image_dict
-%   <dict>  <has_alpha>
+%   <dict>
 %
 % Build the dictionary corresponding to a colorimage operand stack. This
 % routine will check just enough of the stack to verify that the
 % dictionary can be built, and will generate the appropriate error if this
 % is not the case.
-%
-% The <has_alpha> boolean is used to support the Next alphaimage extension.
 %
 % At the first level, errors in this procedure are reported as colorimage
 % errors. The error actually reported will usually be determined by the
@@ -319,39 +317,34 @@ def
 %
 /img_build_image_dict
   {
-    % Veify that at least 8 operands are available, and that the top three
+    % Verify that at least 7 operands are available, and that the top two
     % operands have the expected types
-    count 8 lt
+    count 7 lt
       { /.colorimage cvx /stackunderflow signalerror }
     if
-    3 copy
-    type /booleantype ne exch
-    type /integertype ne or exch
+    2 copy
+    type /integertype ne exch
     type /booleantype ne or
       { /.colorimage cvx /typecheck signalerror }
     if
 
     % verify that the number of components is 1, 3, or 4
-    1 index 1 lt 2 index 2 eq or 2 index 4 gt or
+    dup 1 lt 1 index 2 eq or 1 index 4 gt or
       { /.colorimage cvx /rangecheck signalerror }
     if
 
     % Verify that the required number of operands are present if multiple
     % data sources are being used. If this test is successful, convert
     % the data sources to an array (in local VM).
-    2 index
+    1 index
       {
-        % if an alpha component is present, this adds one more component
-        2 copy
-          { 1 add }
-        if
-        dup count 9 sub gt
-          {
+        dup dup count 8 sub gt
+        {
             % Adobe interpreters appear to test the arguments sequentially
             % starting from the top of the stack and report the 1st error found.
             % To satisfy CET test 12-02.PS we emulate this logic.
             //true exch -1 1
-              { 3 add index
+              { 2 add index
                 //good_image_types 1 index type .knownget
                   { exec and
                   }
@@ -372,14 +365,14 @@ def
         % build the DataSource array in local VM
         dup .currentglobal //false .setglobal exch array exch .setglobal
 
-        % stack: <w> <h> <bps> <mtx> <d0> ... <multi> <n> <alpha> <n'> <array>
-        5 1 roll 4 add 3 roll astore 4 1 roll
+        % stack: <w> <h> <bps> <mtx> <d0> ... <multi> <n> <n'> <array>
+        4 1 roll 3 add 2 roll astore 3 1 roll
       }
     if
 
     % the image dictionary can be built; do so
-    % stack: <w> <h> <bps> <mtx> <dsrc|dsrc_array> <multi> <n> <alpha>
-    8 1 roll //img_params_ary //img_build_dict exec exch
+    % stack: <w> <h> <bps> <mtx> <dsrc|dsrc_array> <multi> <n>
+    //img_params_ary //img_build_dict exec
   }
 .bind def
 currentdict /good_image_types .undef
@@ -392,8 +385,7 @@ currentdict /good_image_types .undef
 %
 % If the top entry of the stack is a dictionary that has the keys required
 % by a colorimage dictionary, unpack that dictionary onto the stack.
-% Otherwise just leave things as they are. Note that the <has_alpha>
-% parameter is not pushd onto the stack.
+% Otherwise just leave things as they are.
 %
 /img_unbuild_image_dict
   {
@@ -466,29 +458,26 @@ currentdict /good_image_types .undef
 
 %
 %   <width>  <height>  <bits/component>  <matrix>  <dsrc_0> ...
-%   <multi>  <ncomp>  <has_alpha>
+%   <multi>  <ncomp>
 %   .colorimage
 %   -
 %
 % Convert the image/colorimage operator from their traditional form to
-% the dictionary form. The <has_alpha> operand is used ot support the
-% Next alphaimage extension.
+% the dictionary form.
 %
 % Error handling for these operators is a bit complex, due to the stack
 % handling required of operators that potentially invoke procedures.
 % This problem is discussed in the comment above. The facts relevant to
 % this particular implementation are:
 %
-%   1. The .image1 (or .alphaimage) operator is executed in a stopped
+%   1. The .image1 operator is executed in a stopped
 %      context, so that we can undo the gsave context in the event of
 %      an error.
 %
 %   2. In the event of an error, the stack is examined to see if the
-%      dictionary passed to .image1 (.alphaimage) is still present.
+%      dictionary passed to .image1 is still present.
 %      If so, this dictionary is "unpacked" onto the stack to re-
-%      create the original stack. The <has_alpha> parameter is not
-%      pushed onto the stack, as it is not required for any of the
-%      pseudo-operators than invoke this procedure.
+%      create the original stack.
 %
 %   3. The use of pseudo-operators in this case may yield incorrect
 %      results for late-detected errors, as the stack depth will be
@@ -506,14 +495,12 @@ currentdict /good_image_types .undef
         gsave
         % The CET test file 12-02.ps creates colorimages with a width and
         % height of 0.  Ignore these since that is what the CET expects.
-        1 index dup /Height get 0 eq exch /Width get 0 eq or
-          { pop pop }	% Ignore colorimage.  Pop bool and dict
+        dup dup /Height get 0 eq exch /Width get 0 eq or
+        { pop }	% Ignore colorimage.  Pop dict
           {
             0 .setoverprintmode             % disable overprint mode for images
-            //img_csary 2 index /IMG_NComps get get setcolorspace
-              { .alphaimage }
-              { .image1 }
-            ifelse
+            //img_csary 1 index /IMG_NComps get get setcolorspace
+            .image1
           }
         ifelse
       }
@@ -542,7 +529,6 @@ systemdict /setcolorscreen .knownget
       {
         /colorimage
           {
-             //false
                //.colorimage
              stopped
                { /colorimage .systemvar  $error /errorname get signalerror }
@@ -640,7 +626,7 @@ if
         ifelse
       }
       {
-        //false 1 //false
+        //false 1
           //.colorimage
         stopped
           { /image .systemvar $error /errorname get signalerror }
