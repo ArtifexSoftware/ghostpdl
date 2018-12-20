@@ -123,7 +123,7 @@ xps_begin_opacity(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
     }
 
     gs_trans_group_params_init(&tgp);
-    gs_begin_transparency_group(ctx->pgs, &tgp, &bbox);
+    gs_begin_transparency_group(ctx->pgs, &tgp, &bbox, PDF14_BEGIN_TRANS_GROUP);
 
     return 0;
 }

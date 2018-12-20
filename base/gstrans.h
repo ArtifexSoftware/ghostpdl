@@ -33,6 +33,7 @@ typedef enum {
     PDF14_ABORT_DEVICE,
     PDF14_BEGIN_TRANS_GROUP,
     PDF14_END_TRANS_GROUP,
+    PDF14_BEGIN_TRANS_PAGE_GROUP,
     PDF14_BEGIN_TRANS_TEXT_GROUP,
     PDF14_END_TRANS_TEXT_GROUP,
     PDF14_BEGIN_TRANS_MASK,
@@ -180,7 +181,7 @@ int gs_update_trans_marking_params(gs_gstate * pgs);
 
 int gs_begin_transparency_group(gs_gstate * pgs,
                                 const gs_transparency_group_params_t *ptgp,
-                                const gs_rect *pbbox);
+                                const gs_rect *pbbox, pdf14_compositor_operations group_type);
 
 int gs_end_transparency_group(gs_gstate *pgs);
 

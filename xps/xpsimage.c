@@ -329,7 +329,7 @@ xps_paint_image_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, 
         gs_setcolorspace(ctx->pgs, image->colorspace);
         gs_setblendmode(ctx->pgs, BLEND_MODE_Normal);
         gs_trans_group_params_init(&tgp);
-        gs_begin_transparency_group(ctx->pgs, &tgp, &bbox);
+        gs_begin_transparency_group(ctx->pgs, &tgp, &bbox, PDF14_BEGIN_TRANS_GROUP);
         code = xps_paint_image_brush_imp(ctx, image, 0);
         if (code < 0)
         {
