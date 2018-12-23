@@ -1947,8 +1947,8 @@ In addition to that, Resolution & Margin-Parameters are tested & adjusted.
             case MAP_GRAY:     ip[0] = 1; break;
             case MAP_RGBW:     ip[0] = 3; break;
             case MAP_RGB:      ip[0] = 3; break;
-            case MAP_CMYK:     ip[0] = 4; break;
-            case MAP_CMYKGEN:  ip[0] = 4; break;
+            case MAP_CMYK:
+            case MAP_CMYKGEN:  ip[0] = 4; color_info.polarity = GX_CINFO_POLARITY_SUBTRACTIVE; break;
             case MAP_RGBOV:    ip[0] = 3; break;
             case MAP_RGBNOV:   ip[0] = 3; break;
             default:           ip[0] = color_info.num_components; break;
@@ -1959,14 +1959,15 @@ In addition to that, Resolution & Margin-Parameters are tested & adjusted.
          case MAP_GRAY:     ncomp = 1; break;
          case MAP_RGBW:     ncomp = 4; break;
          case MAP_RGB:      ncomp = 3; break;
-         case MAP_CMYK:     ncomp = 4; break;
-         case MAP_CMYKGEN:  ncomp = 4; break;
+         case MAP_CMYK:
+         case MAP_CMYKGEN:  ncomp = 4; color_info.polarity = GX_CINFO_POLARITY_SUBTRACTIVE; break;
          case MAP_RGBOV:    ncomp = 4; break;
          case MAP_RGBNOV:   ncomp = 4; break;
          default:           ncomp = ip[0]; break;
       }
       if(UPD_CMAP_MAX < ncomp) ncomp = UPD_CMAP_MAX;
 
+      color_info.max_components = ncomp;
       if(ncomp > int_a[IA_COMPBITS].size) { /* Default ComponentBits */
          UPD_MM_GET_ARRAY(udev->memory, ip2,ncomp);
          nbits = 32 / ncomp;
@@ -2042,6 +2043,8 @@ In addition to that, Resolution & Margin-Parameters are tested & adjusted.
       }                             /* Color-Ramp */
 
       udev->color_info.num_components = ip[0];
+      udev->color_info.max_components = ip[0];
+      udev->color_info.polarity       = color_info.polarity;
       udev->color_info.depth          = ip[1];
       udev->color_info.max_gray       = (gx_color_value) ip[2];
       udev->color_info.max_color      = (gx_color_value) ip[3];
