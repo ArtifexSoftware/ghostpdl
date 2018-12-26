@@ -386,8 +386,18 @@ run_stdin:
                 /* If init2 not yet done, just save the argument for processing then */
                 if (minst->init_done < 2) {
                     if (minst->saved_pages_initial_arg == NULL) {
-                        /* Tuck the parameters away for later when init2 is done */
-                        minst->saved_pages_initial_arg = (char *)arg+12;
+                        /* Tuck the parameters away for later when init2 is done (usually "begin") */
+                        minst->saved_pages_initial_arg = gs_alloc_bytes(minst->heap,
+                                                                        1+strlen((char *)arg+12),
+                                                                        "GS_OPTIONS");
+                        if (minst->saved_pages_initial_arg != NULL) {
+                            strcpy(minst->saved_pages_initial_arg,(char *)arg+12);
+                        } else {
+                            outprintf(minst->heap,
+                                      "   saved_pages_initial_arg larger than expected\n");
+                            arg_finit(pal);
+                            return gs_error_Fatal;
+                        }
                     } else {
                         outprintf(minst->heap,
                                   "   Only one --saved-pages=... command allowed before processing input\n");

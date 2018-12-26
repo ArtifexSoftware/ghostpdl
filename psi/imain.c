@@ -87,6 +87,7 @@ gs_main_alloc_instance(gs_memory_t *mem)
                                                          "init_main_instance");
     if (minst == NULL)
         return NULL;
+    memset(minst, 0, sizeof(gs_main_instance));
     memcpy(minst, &gs_main_instance_init_values, sizeof(gs_main_instance_init_values));
     minst->heap = mem;
     mem->gs_lib_ctx->top_of_system = minst;
@@ -336,6 +337,8 @@ gs_main_init2(gs_main_instance * minst)
             }
         } else if (minst->saved_pages_initial_arg != NULL) {
             if (dev_proc(pdev, dev_spec_op)(pdev, gxdso_supports_saved_pages, NULL, 0) <= 0) {
+                while (pdev->child)
+                    pdev = pdev->child;		/* so we get the real device name */
                 outprintf(minst->heap,
                           "   --saved-pages not supported by the '%s' device.\n",
                           pdev->dname);
@@ -1158,6 +1161,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
         0 , &exit_code, &error_object);
     }
     gp_readline_finit(minst->readline_data);
+    gs_free_object(minst->heap, minst->saved_pages_initial_arg, "gs_main_finit");
     i_ctx_p = minst->i_ctx_p;		/* get current interp context */
     if (gs_debug_c(':')) {
         print_resource_usage(minst, &gs_imemory, "Final");
