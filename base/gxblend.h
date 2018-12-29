@@ -342,7 +342,9 @@ void pdf14_cmyk_cs_to_grayspot_cm(gx_device * dev, frac c, frac m, frac y, frac 
 void gx_build_blended_image_row(const byte *gs_restrict buf_ptr, int planestride,
                            int width, int num_comp, byte bg, byte *gs_restrict linebuf);
 void gx_blend_image_buffer(byte *buf_ptr, int width, int height,
-                      int rowstride, int planestride, int num_comp, byte bg);
+    int rowstride, int planestride, int num_comp, byte bg);
+void gx_blend_image_buffer16(byte *buf_ptr, unsigned short *buf_ptr_out, int width, int height,
+        int rowstride, int planestride, int num_comp, byte bg);
 int gx_put_blended_image_cmykspot(gx_device *target, byte *buf_ptr,
                       int planestride, int rowstride,
                       int x0, int y0, int width, int height, int num_comp, byte bg,

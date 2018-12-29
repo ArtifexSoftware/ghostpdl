@@ -22,9 +22,9 @@ typedef struct {
 
     int width;
     int height;
-    int base_bytes_pp;	/* almost always 3 (rgb) or 4 (CMYK) */
+    int base_num_channels;	/* almost always 3 (rgb) or 4 (CMYK) */
     int n_extra_channels;
-    int num_channels;	/* base_bytes_pp + any spot colors that are imaged */
+    int num_channels;	/* base_num_channels + any spot colors that are imaged */
     /* Map output channel number to original separation number. */
     int chnl_to_orig_sep[GX_DEVICE_COLOR_MAX_COMPONENTS];
     /* Map output channel number to gx_color_index position. */
