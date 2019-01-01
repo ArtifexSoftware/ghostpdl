@@ -3393,7 +3393,7 @@ $(GLOBJ)pclromfs0.$(OBJ) : $(GLGEN)pclromfs0.c $(stdint__h) $(LIB_MAK) $(MAKEDIR
 $(GLOBJ)pclromfs1.$(OBJ) : $(GLOBJ)pclromfs1.c $(time__h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)pclromfs1.$(OBJ) $(C_) $(GLOBJ)pclromfs1.c
 
-# A xpsromfs module with only ICC profiles  for COMPILE_INITS=0
+# A xpsromfs module with only ICC profiles for COMPILE_INITS=0
 $(GLOBJ)xpsromfs0.$(OBJ) : $(GLGEN)xpsromfs0.c $(stdint__h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)xpsromfs0.$(OBJ) $(C_) $(GLGEN)xpsromfs0.c
 
@@ -3407,13 +3407,13 @@ $(GLOBJ)pdlromfs0.$(OBJ) : $(GLGEN)pdlromfs0.c $(stdint__h) $(LIB_MAK) $(MAKEDIR
 $(GLOBJ)pdlromfs0c0.$(OBJ) : $(GLGEN)pdlromfs0c0.c $(stdint__h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)pdlromfs0c0.$(OBJ) $(C_) $(GLGEN)pdlromfs0c0.c
 
-$(GLOBJ)pdlromfs0c1.$(OBJ) : $(GLGEN)pdlromfs0c0.c $(stdint__h) $(LIB_MAK) $(MAKEDIRS)
+$(GLOBJ)pdlromfs0c1.$(OBJ) : $(GLGEN)pdlromfs0c1.c $(stdint__h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)pdlromfs0c1.$(OBJ) $(C_) $(GLGEN)pdlromfs0c1.c
 
-$(GLOBJ)pdlromfs0c2.$(OBJ) : $(GLGEN)pdlromfs0c0.c $(stdint__h) $(LIB_MAK) $(MAKEDIRS)
+$(GLOBJ)pdlromfs0c2.$(OBJ) : $(GLGEN)pdlromfs0c2.c $(stdint__h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)pdlromfs0c2.$(OBJ) $(C_) $(GLGEN)pdlromfs0c2.c
 
-$(GLOBJ)pdlromfs0c3.$(OBJ) : $(GLGEN)pdlromfs0c0.c $(stdint__h) $(LIB_MAK) $(MAKEDIRS)
+$(GLOBJ)pdlromfs0c3.$(OBJ) : $(GLGEN)pdlromfs0c3.c $(stdint__h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)pdlromfs0c3.$(OBJ) $(C_) $(GLGEN)pdlromfs0c3.c
 
 $(GLOBJ)pdlromfs1.$(OBJ) : $(GLOBJ)pdlromfs1.c $(time__h) $(LIB_MAK) $(MAKEDIRS)
