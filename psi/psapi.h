@@ -73,6 +73,10 @@ psapi_set_param(gs_lib_ctx_t *ctx,
                 const void   *val);
 
 int
+psapi_add_path(gs_lib_ctx_t *ctx,
+               const char   *path);
+
+int
 psapi_run_string_begin(gs_lib_ctx_t *instance,
                        int           user_errors,
                        int          *pexit_code);

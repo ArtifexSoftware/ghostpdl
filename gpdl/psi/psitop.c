@@ -386,6 +386,15 @@ ps_impl_set_param(pl_interp_implementation_t *impl,
 }
 
 static int
+ps_impl_add_path(pl_interp_implementation_t *impl,
+                 const char                 *path)
+{
+    ps_interp_instance_t *psi = (ps_interp_instance_t *)impl->interp_client_data;
+
+    return psapi_add_path(psi->psapi_instance, path);
+}
+
+static int
 ps_impl_post_args_init(pl_interp_implementation_t *impl)
 {
     ps_interp_instance_t *psi = (ps_interp_instance_t *)impl->interp_client_data;
@@ -564,6 +573,7 @@ const pl_interp_implementation_t ps_implementation = {
   ps_impl_allocate_interp_instance,
   ps_impl_get_device_memory,
   ps_impl_set_param,
+  ps_impl_add_path,
   ps_impl_post_args_init,
   ps_impl_init_job,
   ps_impl_process_file,

@@ -171,6 +171,7 @@ pl_interp_implementation_t pjl_implementation = {
     NULL,
     NULL,
     NULL,
+    NULL,
     pjl_impl_init_job,
     NULL,                      /* process_file */
     pjl_impl_process_begin,

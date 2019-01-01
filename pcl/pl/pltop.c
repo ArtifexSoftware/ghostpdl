@@ -66,6 +66,16 @@ pl_set_param(pl_interp_implementation_t *impl,
     return impl->proc_set_param(impl, type, param, value);
 }
 
+int
+pl_add_path(pl_interp_implementation_t *impl,
+            const char                 *path)
+{
+    if (impl->proc_add_path == NULL)
+        return 0;
+
+    return impl->proc_add_path(impl, path);
+}
+
 int pl_post_args_init(pl_interp_implementation_t *impl)
 {
     if (impl->proc_post_args_init == NULL)
