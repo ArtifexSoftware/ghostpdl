@@ -40,17 +40,13 @@ int data_image_params(const gs_memory_t *mem,
                       const ref *op, gs_data_image_t *pim,
                       image_params *pip, bool require_DataSource,
                       int num_components, int max_bits_per_component,
-                      bool has_alpha, bool islab);
+                      bool islab);
 int pixel_image_params(i_ctx_t *i_ctx_p, const ref *op,
                        gs_pixel_image_t *pim, image_params * pip,
-                       int max_bits_per_component, bool has_alpha,
-                       gs_color_space *csp);
+                       int max_bits_per_component, gs_color_space *csp);
 
 /* Exported for zimage3.c and ztrans.c */
 int zimage_setup(i_ctx_t *i_ctx_p, const gs_pixel_image_t * pim,
                  const ref * sources, bool uses_color, int npop);
-
-/* Exported for zdpnext.c */
-int image1_setup(i_ctx_t * i_ctx_p, bool has_alpha);
 
 #endif /* iimage_INCLUDED */

@@ -432,7 +432,7 @@ zimage3x(i_ctx_t *i_ctx_p)
     check_type(*pDataDict, t_dictionary);
     if ((code = pixel_image_params(i_ctx_p, pDataDict,
                    (gs_pixel_image_t *)&image, &ip_data,
-                   16, false, gs_currentcolorspace(igs))) < 0 ||
+                   16, gs_currentcolorspace(igs))) < 0 ||
         (code = dict_int_param(pDataDict, "ImageType", 1, 1, 0, &ignored)) < 0
         )
         return code;
@@ -470,7 +470,7 @@ image_params *pip_data, const char *dict_name,
         return gs_note_error(gs_error_typecheck);
 
     if ((mcode = code = data_image_params(mem, pMaskDict, &pixm->MaskDict,
-                                          &ip_mask, false, 1, 16, false, false)) < 0 ||
+                                          &ip_mask, false, 1, 16, false)) < 0 ||
         (code = dict_int_param(pMaskDict, "ImageType", 1, 1, 0, &ignored)) < 0 ||
         (code = dict_int_param(pMaskDict, "InterleaveType", 1, 3, -1,
                                &pixm->InterleaveType)) < 0 ||
