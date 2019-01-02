@@ -28,7 +28,6 @@
 #include "gxpath.h"
 #include "gxgetbit.h"
 #include "gxiparam.h"
-#include "gsiparm2.h"
 #include "gxdevmem.h"
 #include "gdevx.h"
 #include "gdevkrnlsclass.h" /* 'standard' built in subclasses, currently First/Last Page and obejct filter */
@@ -72,7 +71,6 @@ static dev_proc_copy_color(x_copy_color);
 /*extern dev_proc_put_params(gdev_x_put_params);*/
 static dev_proc_get_page_device(x_get_page_device);
 static dev_proc_strip_tile_rectangle(x_strip_tile_rectangle);
-static dev_proc_begin_typed_image(x_begin_typed_image);
 static dev_proc_get_bits_rectangle(x_get_bits_rectangle);
 /*extern dev_proc_get_xfont_procs(gdev_x_finish_copydevice);*/
 static dev_proc_fillpage(x_fillpage);
@@ -119,7 +117,7 @@ const gx_device_X this_device = { \
         x_strip_tile_rectangle, \
         NULL,			/* strip_copy_rop */ \
         NULL,			/* get_clipping_box */ \
-        x_begin_typed_image, \
+        NULL,                   /* begin_typed_image */ \
         x_get_bits_rectangle, \
         NULL,			/* map_color_rgb_alpha */ \
         NULL,			/* create_compositor */ \
@@ -735,84 +733,6 @@ x_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
     if_debug6m('F', dev->memory, "[F] tile (%d,%d):(%d,%d) %ld,%ld\n",
                x, y, w, h, lzero, lone);
     return 0;
-}
-
-/* Implement ImageType 2 using CopyArea if possible. */
-/* Note that since ImageType 2 images don't have any source data, */
-/* this procedure does all the work. */
-static int
-x_begin_typed_image(gx_device * dev,
-                    const gs_gstate * pgs1, const gs_matrix * pmat,
-                    const gs_image_common_t * pic, const gs_int_rect * prect,
-              const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
-                    gs_memory_t * mem, gx_image_enum_common_t ** pinfo)
-{
-    gx_device_X *xdev = (gx_device_X *) dev;
-    const gs_image2_t *pim;
-    gs_gstate *pgs = (gs_gstate *)pgs1;
-    gx_device *sdev;
-    gs_matrix smat, dmat;
-
-    if (pic->type->index != 2)
-        goto punt;
-    pim = (const gs_image2_t *)pic;
-    if (!pim->PixelCopy)
-        goto punt;
-    pgs = pim->DataSource;
-    if (pgs == 0)
-        goto punt;
-    sdev = gs_currentdevice(pgs);
-    if (dev->dname != sdev->dname ||
-        memcmp(&dev->color_info, &sdev->color_info,
-               sizeof(dev->color_info))
-        )
-        goto punt;
-    flush_text(xdev);
-    gs_currentmatrix(pgs, &smat);
-    /*
-     * Figure 7.2 of the Adobe 3010 Supplement says that we should
-     * compute CTM x ImageMatrix here, but I'm almost certain it
-     * should be the other way around.  Also see gximage2.c.
-     */
-    gs_matrix_multiply(&pim->ImageMatrix, &smat, &smat);
-    gs_currentmatrix(pgs, &dmat);
-    if (!((is_xxyy(&dmat) || is_xyyx(&dmat)) &&
-#define eqe(e) smat.e == dmat.e
-          eqe(xx) && eqe(xy) && eqe(yx) && eqe(yy))
-#undef eqe
-        )
-        goto punt;
-    {
-        gs_rect rect, src, dest;
-        gs_int_point size;
-        int srcx, srcy, destx, desty;
-
-        rect.p.x = rect.p.y = 0;
-        rect.q.x = pim->Width, rect.q.y = pim->Height;
-        gs_bbox_transform(&rect, &dmat, &dest);
-        if (pcpath != NULL &&
-            !gx_cpath_includes_rectangle(pcpath,
-                               float2fixed(dest.p.x), float2fixed(dest.p.y),
-                               float2fixed(dest.q.x), float2fixed(dest.q.y))
-            )
-            goto punt;
-        rect.q.x += (rect.p.x = pim->XOrigin);
-        rect.q.y += (rect.p.y = pim->YOrigin);
-        gs_bbox_transform(&rect, &smat, &src);
-        (*pic->type->source_size) (pgs, pic, &size);
-        X_SET_FILL_STYLE(xdev, FillSolid);
-        X_SET_FUNCTION(xdev, GXcopy);
-        srcx = (int)(src.p.x + 0.5);
-        srcy = (int)(src.p.y + 0.5);
-        destx = (int)(dest.p.x + 0.5);
-        desty = (int)(dest.p.y + 0.5);
-        XCopyArea(xdev->dpy, xdev->bpixmap, xdev->bpixmap, xdev->gc,
-                  srcx, srcy, size.x, size.y, destx, desty);
-        x_update_add(xdev, destx, desty, size.x, size.y);
-    }
-    return 0;
-  punt:return gx_default_begin_typed_image(dev, pgs, pmat, pic, prect,
-                                        pdcolor, pcpath, mem, pinfo);
 }
 
 /* Read bits back from the screen. */

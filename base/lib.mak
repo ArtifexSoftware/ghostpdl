@@ -2952,23 +2952,6 @@ $(GLOBJ)gximdecode.$(OBJ) : $(GLSRC)gximdecode.c $(gximdecode_h) $(string__h)\
  $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gximdecode.$(OBJ) $(C_) $(GLSRC)gximdecode.c
 
-# ================ Display Postscript extensions ================ #
-
-# Display PostScript needs the DevicePixel color space to implement
-# the PixelCopy option of ImageType 2 images.
-dpslib_=$(GLOBJ)gsdps.$(OBJ) $(GLOBJ)gximage2.$(OBJ)
-$(GLD)dpslib.dev : $(LIB_MAK) $(ECHOGS_XE) $(dpslib_) $(GLD)cspixlib.dev \
- $(LIB_MAK) $(MAKEDIRS)
-	$(SETMOD) $(GLD)dpslib $(dpslib_)
-	$(ADDMOD) $(GLD)dpslib -imagetype 2
-	$(ADDMOD) $(GLD)dpslib -include $(GLD)cspixlib
-
-$(GLOBJ)gximage2.$(OBJ) : $(GLSRC)gximage2.c $(AK) $(gx_h)\
- $(math__h) $(memory__h) $(gserrors_h) $(gscolor2_h)\
- $(gscpixel_h) $(gscoord_h) $(gscspace_h) $(gsdevice_h) $(gsiparm2_h)\
- $(gsmatrix_h) $(gxgetbit_h) $(gxiparam_h) $(gxpath_h) $(LIB_MAK) $(MAKEDIRS)
-	$(GLCC) $(GLO_)gximage2.$(OBJ) $(C_) $(GLSRC)gximage2.c
-
 # ================ PostScript LanguageLevel 3 support ================ #
 
 $(GLOBJ)gscdevn.$(OBJ) : $(GLSRC)gscdevn.c $(AK) $(gx_h) $(gserrors_h)\

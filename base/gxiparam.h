@@ -53,6 +53,8 @@ struct gx_image_type_s {
      * Compute the width and height of the source data.  For images with
      * explicit data, this information is in the gs_data_image_t
      * structure, but ImageType 2 images must compute it.
+     * NOTE: we no longer support ImageType 2, so maybe this could be
+     * simplified/refactored?
      */
 #define image_proc_source_size(proc)\
   int proc(const gs_gstate *pgs, const gs_image_common_t *pic,\

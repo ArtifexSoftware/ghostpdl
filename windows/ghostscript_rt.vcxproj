@@ -762,7 +762,6 @@
     <ClCompile Include="..\base\gximag3x.c" />
     <ClCompile Include="..\base\gximage.c" />
     <ClCompile Include="..\base\gximage1.c" />
-    <ClCompile Include="..\base\gximage2.c" />
     <ClCompile Include="..\base\gximage3.c" />
     <ClCompile Include="..\base\gximage4.c" />
     <ClCompile Include="..\base\gximask.c" />
@@ -1736,7 +1735,6 @@
     <ClInclude Include="..\base\gsiorom.h" />
     <ClInclude Include="..\base\gsipar3x.h" />
     <ClInclude Include="..\base\gsiparam.h" />
-    <ClInclude Include="..\base\gsiparm2.h" />
     <ClInclude Include="..\base\gsiparm3.h" />
     <ClInclude Include="..\base\gsiparm4.h" />
     <ClInclude Include="..\base\gsjconf.h" />

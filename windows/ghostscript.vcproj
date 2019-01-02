@@ -3201,10 +3201,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\base\gximage2.c"
-					>
-				</File>
-				<File
 					RelativePath="..\base\gximage3.c"
 					>
 				</File>
@@ -3683,10 +3679,6 @@
 			</File>
 			<File
 				RelativePath="..\base\gsiparam.h"
-				>
-			</File>
-			<File
-				RelativePath="..\base\gsiparm2.h"
 				>
 			</File>
 			<File
