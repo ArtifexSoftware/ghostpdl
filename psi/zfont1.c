@@ -93,8 +93,8 @@ charstring_font_get_refs(const_os_ptr op, charstring_font_refs_t *pfr)
 static int
 charstring_check_mm_params(ref *fdict, unsigned int ndesigns)
 {
-    ref *p1, *p2;
-    ref p3, p4;
+    ref *p1;
+    ref p2, p3;
     ref *Blend, *FInfo, *BFInfo, *BPriv;
     int code;
     int i, j;
@@ -112,22 +112,22 @@ charstring_check_mm_params(ref *fdict, unsigned int ndesigns)
     if (code < 0 || !r_is_array(p1))
         goto bad;
     for (i = 0; i < r_size(p1); i ++) {
-        code = array_get(mem, p1, i, &p3);
-        if (code < 0 || !r_has_type(&p3, t_name))
+        code = array_get(mem, p1, i, &p2);
+        if (code < 0 || !r_has_type(&p2, t_name))
             goto bad;
     }
     code = dict_find_string(FInfo, "BlendDesignPositions", &p1);
     if (code < 0 || !r_is_array(p1))
         goto bad;
     for (i = 0; i < r_size(p1); i++) {
-        code = array_get(mem, p1, i, &p3);
-        if (code < 0 || !r_is_array(&p3)) {
+        code = array_get(mem, p1, i, &p2);
+        if (code < 0 || !r_is_array(&p2)) {
             goto bad;
         }
         else {
-            for (j = 0; j < r_size(&p3); j++) {
-                code = array_get(mem, &p3, j, &p4);
-                if (code < 0 || !r_has_type(&p4, t_integer))
+            for (j = 0; j < r_size(&p2); j++) {
+                code = array_get(mem, &p2, j, &p3);
+                if (code < 0 || !r_has_type(&p3, t_integer))
                     goto bad;
             }
         }
@@ -136,20 +136,20 @@ charstring_check_mm_params(ref *fdict, unsigned int ndesigns)
     if (code < 0 || !r_is_array(p1))
         goto bad;
     for (i = 0; i < r_size(p1); i++) {
-        code = array_get(mem, p1, i , &p3);
-        if (code < 0 || !r_is_array(&p3)) {
+        code = array_get(mem, p1, i , &p2);
+        if (code < 0 || !r_is_array(&p2)) {
             goto bad;
         }
         else {
-            for (j = 0; j < r_size(&p3); j++) {
-                code = array_get(mem, &p3, j, &p4);
-                if (code < 0 || !r_is_array(&p4))
+            for (j = 0; j < r_size(&p2); j++) {
+                code = array_get(mem, &p2, j, &p3);
+                if (code < 0 || !r_is_array(&p3))
                     goto bad;
                 else {
                     ref p5;
                     int k;
-                    for (k = 0; k < r_size(&p4); k++) {
-                        code = array_get(mem, &p4, k, &p5);
+                    for (k = 0; k < r_size(&p3); k++) {
+                        code = array_get(mem, &p3, k, &p5);
                         if (code < 0 || !r_is_number(&p5))
                             goto bad;
                     }
@@ -164,14 +164,14 @@ charstring_check_mm_params(ref *fdict, unsigned int ndesigns)
     if (code < 0 || !r_is_array(p1))
         goto bad;
     for (i = 0; i < r_size(p1); i++) {
-         code = array_get(mem, p1, i, &p3);
-         if (code < 0 || !r_is_array(&p3)) {
+         code = array_get(mem, p1, i, &p2);
+         if (code < 0 || !r_is_array(&p2)) {
              goto bad;
          }
          else {
-             for (j = 0; j < r_size(&p3); j++) {
-                 code = array_get(mem, &p3, j, &p4);
-                 if (code < 0 || !r_is_number(&p4))
+             for (j = 0; j < r_size(&p2); j++) {
+                 code = array_get(mem, &p2, j, &p3);
+                 if (code < 0 || !r_is_number(&p3))
                      goto bad;
              }
          }
@@ -186,14 +186,14 @@ charstring_check_mm_params(ref *fdict, unsigned int ndesigns)
         }
         else {
             for (i = 0; i < r_size(p1); i++) {
-                code = array_get(mem, p1, i, &p3);
-                if (code < 0 || !r_is_array(&p3)) {
+                code = array_get(mem, p1, i, &p2);
+                if (code < 0 || !r_is_array(&p2)) {
                     goto bad;
                 }
                 else {
-                    for (j = 0; j < r_size(&p3); j++) {
-                        code = array_get(mem, &p3, j, &p4);
-                        if (code < 0 || !r_has_type(&p4, t_integer))
+                    for (j = 0; j < r_size(&p2); j++) {
+                        code = array_get(mem, &p2, j, &p3);
+                        if (code < 0 || !r_has_type(&p3, t_integer))
                             goto bad;
                     }
                 }
@@ -207,13 +207,13 @@ charstring_check_mm_params(ref *fdict, unsigned int ndesigns)
         }
         else {
             for (i = 0; i < r_size(p1); i++) {
-                code = array_get(mem, p1, i, &p3);
-                if (code < 0 || !r_is_array(&p3))
+                code = array_get(mem, p1, i, &p2);
+                if (code < 0 || !r_is_array(&p2))
                     goto bad;
                 else {
-                    for (j = 0; j < r_size(&p3); j++) {
-                        code = array_get(mem, &p3, j, &p4);
-                        if (code < 0 || !r_has_type(&p4, t_integer))
+                    for (j = 0; j < r_size(&p2); j++) {
+                        code = array_get(mem, &p2, j, &p3);
+                        if (code < 0 || !r_has_type(&p3, t_integer))
                             goto bad;
                     }
                 }
@@ -227,13 +227,13 @@ charstring_check_mm_params(ref *fdict, unsigned int ndesigns)
         }
         else {
             for (i = 0; i < r_size(p1); i++){
-                code = array_get(mem, p1, i, &p3);
-                if (code < 0 || !r_is_array(&p3))
+                code = array_get(mem, p1, i, &p2);
+                if (code < 0 || !r_is_array(&p2))
                     goto bad;
                 else {
-                    for (j = 0; j < r_size(&p3); j++) {
-                        code = array_get(mem, &p3, j, &p4);
-                        if (code < 0 || !r_is_number(&p4))
+                    for (j = 0; j < r_size(&p2); j++) {
+                        code = array_get(mem, &p2, j, &p3);
+                        if (code < 0 || !r_is_number(&p3))
                             goto bad;
                     }
                 }
@@ -247,13 +247,13 @@ charstring_check_mm_params(ref *fdict, unsigned int ndesigns)
         }
         else {
             for (i = 0; i < r_size(p1); i++){
-                code = array_get(mem, p1, i, &p3);
-                if (code < 0 || !r_is_array(&p3))
+                code = array_get(mem, p1, i, &p2);
+                if (code < 0 || !r_is_array(&p2))
                     goto bad;
                 else {
-                    for (j = 0; j < r_size(&p3); j++) {
-                        code = array_get(mem, &p3, j, &p4);
-                        if (code < 0 || !r_is_number(&p4))
+                    for (j = 0; j < r_size(&p2); j++) {
+                        code = array_get(mem, &p2, j, &p3);
+                        if (code < 0 || !r_is_number(&p3))
                             goto bad;
                     }
                 }
@@ -267,13 +267,13 @@ charstring_check_mm_params(ref *fdict, unsigned int ndesigns)
         }
         else {
             for (i = 0; i < r_size(p1); i++){
-                code = array_get(mem, p1, i, &p3);
-                if (code < 0 || !r_is_array(&p3))
+                code = array_get(mem, p1, i, &p2);
+                if (code < 0 || !r_is_array(&p2))
                     goto bad;
                 else {
-                    for (j = 0; j < r_size(&p3); j++) {
-                        code = array_get(mem, &p3, j, &p4);
-                        if (code < 0 || !r_is_number(&p4))
+                    for (j = 0; j < r_size(&p2); j++) {
+                        code = array_get(mem, &p2, j, &p3);
+                        if (code < 0 || !r_is_number(&p3))
                             goto bad;
                     }
                 }
@@ -287,13 +287,13 @@ charstring_check_mm_params(ref *fdict, unsigned int ndesigns)
         }
         else {
             for (i = 0; i < r_size(p1); i++){
-                code = array_get(mem, p1, i, &p3);
-                if (code < 0 || !r_is_array(&p3))
+                code = array_get(mem, p1, i, &p2);
+                if (code < 0 || !r_is_array(&p2))
                     goto bad;
                 else {
-                    for (j = 0; j < r_size(&p3); j++) {
-                        code = array_get(mem, &p3, j, &p4);
-                        if (code < 0 || !r_is_number(&p4))
+                    for (j = 0; j < r_size(&p2); j++) {
+                        code = array_get(mem, &p2, j, &p3);
+                        if (code < 0 || !r_is_number(&p3))
                             goto bad;
                     }
                 }
@@ -307,8 +307,8 @@ charstring_check_mm_params(ref *fdict, unsigned int ndesigns)
         }
         else {
             for (i = 0; i < r_size(p1); i++) {
-                code = array_get(mem, p1, i, &p4);
-                if (code < 0 || !r_is_number(&p4))
+                code = array_get(mem, p1, i, &p3);
+                if (code < 0 || !r_is_number(&p3))
                     goto bad;
             }
         }
@@ -320,8 +320,8 @@ charstring_check_mm_params(ref *fdict, unsigned int ndesigns)
         }
         else {
             for (i = 0; i < r_size(p1); i++) {
-                code = array_get(mem, p1, i, &p4);
-                if (code < 0 || !r_has_type(&p4, t_integer))
+                code = array_get(mem, p1, i, &p3);
+                if (code < 0 || !r_has_type(&p3, t_integer))
                     goto bad;
             }
         }
@@ -333,13 +333,13 @@ charstring_check_mm_params(ref *fdict, unsigned int ndesigns)
         }
         else {
             for (i = 0; i < r_size(p1); i++){
-                code = array_get(mem, p1, i, &p3);
-                if (code < 0 || !r_is_array(&p3))
+                code = array_get(mem, p1, i, &p2);
+                if (code < 0 || !r_is_array(&p2))
                     goto bad;
                 else {
-                    for (j = 0; j < r_size(&p3); j++) {
-                        code = array_get(mem, &p3, j, &p4);
-                        if (code < 0 || !r_has_type(&p4, t_integer))
+                    for (j = 0; j < r_size(&p2); j++) {
+                        code = array_get(mem, &p2, j, &p3);
+                        if (code < 0 || !r_has_type(&p3, t_integer))
                             goto bad;
                     }
                 }
@@ -353,13 +353,13 @@ charstring_check_mm_params(ref *fdict, unsigned int ndesigns)
         }
         else {
             for (i = 0; i < r_size(p1); i++){
-                code = array_get(mem, p1, i, &p3);
-                if (code < 0 || !r_is_array(&p3))
+                code = array_get(mem, p1, i, &p2);
+                if (code < 0 || !r_is_array(&p2))
                     goto bad;
                 else {
-                    for (j = 0; j < r_size(&p3); j++) {
-                        code = array_get(mem, &p3, j, &p4);
-                        if (code < 0 || !r_has_type(&p4, t_integer))
+                    for (j = 0; j < r_size(&p2); j++) {
+                        code = array_get(mem, &p2, j, &p3);
+                        if (code < 0 || !r_has_type(&p3, t_integer))
                             goto bad;
                     }
                 }
@@ -373,8 +373,8 @@ charstring_check_mm_params(ref *fdict, unsigned int ndesigns)
         }
         else {
             for (i = 0; i < r_size(p1); i++) {
-                code = array_get(mem, p1, i, &p4);
-                if (code < 0 || !r_has_type(&p4, t_boolean))
+                code = array_get(mem, p1, i, &p3);
+                if (code < 0 || !r_has_type(&p3, t_boolean))
                     goto bad;
             }
         }
@@ -388,8 +388,8 @@ charstring_check_mm_params(ref *fdict, unsigned int ndesigns)
             }
             else {
                 for (i = 0; i < r_size(p1); i++) {
-                    code = array_get(mem, p1, i, &p4);
-                    if (code < 0 || !r_is_number(&p4))
+                    code = array_get(mem, p1, i, &p3);
+                    if (code < 0 || !r_is_number(&p3))
                         goto bad;
                 }
             }
@@ -401,8 +401,8 @@ charstring_check_mm_params(ref *fdict, unsigned int ndesigns)
             }
             else {
                 for (i = 0; i < r_size(p1); i++) {
-                    code = array_get(mem, p1, i, &p4);
-                    if (code < 0 || !r_is_number(&p4))
+                    code = array_get(mem, p1, i, &p3);
+                    if (code < 0 || !r_is_number(&p3))
                         goto bad;
                 }
             }
@@ -414,8 +414,8 @@ charstring_check_mm_params(ref *fdict, unsigned int ndesigns)
             }
             else {
                 for (i = 0; i < r_size(p1); i++) {
-                    code = array_get(mem, p1, i, &p4);
-                    if (code < 0 || !r_is_number(&p4))
+                    code = array_get(mem, p1, i, &p3);
+                    if (code < 0 || !r_is_number(&p3))
                         goto bad;
                 }
             }

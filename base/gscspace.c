@@ -34,6 +34,8 @@
 #include "gsicc.h"
 #include "gsicc_manage.h"
 #include "string_.h"
+#include "strmio.h"         /* needed for sfclose */
+#include "gsicc_cache.h"    /* Needed for gsicc_get_icc_buff_hash */
 
 static cs_proc_install_cspace(gx_install_DeviceGray);
 static cs_proc_install_cspace(gx_install_DeviceRGB);
@@ -703,7 +705,7 @@ int gx_set_overprint_cmyk(const gs_color_space * pcs, gs_gstate * pgs)
     /* We are in CMYK, the profiles match and overprint is true.  Set effective
        overprint mode to overprint mode but only if effective has not already
        been set to 0 */
-    pgs->effective_overprint_mode = 
+    pgs->effective_overprint_mode =
         (pgs->overprint_mode && pgs->effective_overprint_mode);
 
     return gs_gstate_update_overprint(pgs, &params);

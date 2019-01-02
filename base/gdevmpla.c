@@ -258,8 +258,6 @@ mem_planar_put_image(gx_device *pdev, gx_device *pmdev, const byte **buffers, in
               int ystart, int width, int height, int row_stride,
               int alpha_plane_index, int tag_plane_index)
 {
-    gx_device_memory * const mdev = (gx_device_memory *)pmdev;
-
     /* We don't want alpha, return 0 to ask for the pdf14 device to do the
        alpha composition. We also do not want chunky data coming in */
     if (alpha_plane_index != 0)

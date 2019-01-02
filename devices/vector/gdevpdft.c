@@ -170,7 +170,6 @@ pdf_begin_transparency_group(gs_gstate * pgs, gx_device_pdf * pdev,
                                 const gs_pdf14trans_params_t * pparams, bool page_group)
 {
     cos_dict_t *group_dict;
-    bool in_page = is_in_page(pdev);
     int code;
 
     if (pgs == NULL)
@@ -233,7 +232,7 @@ pdf_end_transparency_group(gs_gstate * pgs, gx_device_pdf * pdev)
     int bottom = (pdev->ResourcesBeforeUsage ? 1 : 0);
 
     if (!is_in_page(pdev) && pdev->sbstack_depth == 0)
-        return 0;	/* corresponds to check in pdf_begin_transparency_group */
+        return 0;	/* A Group definition at the page level, handled separately. */
     if (pdev->image_with_SMask & (1 << pdev->FormDepth)) {
         /* An internal group for the image implementation.
            See pdf_begin_transparency_group. */

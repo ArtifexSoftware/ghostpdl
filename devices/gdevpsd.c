@@ -1253,7 +1253,6 @@ psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
     int num_comp = xc->num_channels;
     gs_get_bits_params_t params;
     gx_downscaler_t ds = { NULL };
-    int val;
     int octets_per_component = bpc >> 3;
     int octets_per_line = xc->width * octets_per_component;
 
