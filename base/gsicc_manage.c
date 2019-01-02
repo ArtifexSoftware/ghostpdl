@@ -68,10 +68,6 @@ static void rc_free_icc_profile(gs_memory_t * mem, void *ptr_in,
                                 client_name_t cname);
 static int gsicc_load_profile_buffer(cmm_profile_t *profile, stream *s,
                                      gs_memory_t *memory);
-static int gsicc_open_search(const char* pname, int namelen,
-                             gs_memory_t *mem_gc,
-                             const char* dirname, int dir_namelen,
-                             stream **stmp);
 static int64_t gsicc_search_icc_table(clist_icctable_t *icc_table,
                                       int64_t icc_hashcode, int *size);
 static int gsicc_load_namedcolor_buffer(cmm_profile_t *profile, stream *s,
@@ -1182,7 +1178,7 @@ gsicc_init_profile_info(cmm_profile_t *profile)
 /* This is used to try to find the specified or default ICC profiles */
 /* This is where we would enhance the directory searching to use a   */
 /* list of paths separated by ':' (unix) or ';' Windows              */
-static int
+int
 gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc,
                   const char* dirname, int dirlen, stream**strp)
 {

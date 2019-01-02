@@ -297,8 +297,11 @@ zget_device_params(i_ctx_t *i_ctx_p, bool is_hardware)
         /* We have to put back the top argument. */
         if (list.count > 0)
             ref_stack_pop(&o_stack, list.count * 2 - 1);
-        else
-            ref_stack_push(&o_stack, 1);
+        else {
+            code = ref_stack_push(&o_stack, 1);
+            if (code < 0)
+                return code;
+        }
         *osp = rkeys;
         return code;
     }

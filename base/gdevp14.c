@@ -1847,13 +1847,16 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
     byte *linebuf;
     gs_color_space *pcs;
     int x1, y1, width, height;
-    byte *buf_ptr;
+    byte *buf_ptr, *buf16_ptr = NULL;
     bool data_blended = false;
     int num_rows_left;
     gsicc_rendering_param_t render_cond;
     cmm_dev_profile_t *dev_profile;
     cmm_dev_profile_t *dev_target_profile;
     byte bg = pdev->ctx->additive ? 255 : 0;
+    bool expand = (target->color_info.depth / target->color_info.num_components == 16);
+    int planestride = buf->planestride;
+    int rowstride = buf->rowstride;
 
     /* Make sure that this is the only item on the stack. Fuzzing revealed a
        potential problem. Bug 694190 */
@@ -1872,7 +1875,7 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
 #endif
     if (width <= 0 || height <= 0 || buf->data == NULL)
         return 0;
-    buf_ptr = buf->data + rect.p.y * buf->rowstride + rect.p.x;
+    buf_ptr = buf->data + rect.p.y * rowstride + rect.p.x;
 
     /* Check that target is OK.  From fuzzing results the target could have been
        destroyed, for e.g if it were a pattern accumulator that was closed
@@ -1909,8 +1912,8 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
                 &render_cond);
 
 #if RAW_DUMP
-            dump_raw_buffer(height, width, buf->n_planes, buf->planestride,
-                buf->rowstride, "pre_blend_cs", buf_ptr);
+            dump_raw_buffer(height, width, buf->n_planes, planestride,
+                rowstride, "pre_blend_cs", buf_ptr);
             global_index++;
 #endif
 
@@ -1930,8 +1933,8 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
                 buf_ptr = cm_result->data;  /* Note the lack of offset */
 
 #if RAW_DUMP
-            dump_raw_buffer(height, width, buf->n_planes, buf->planestride,
-                buf->rowstride, "post_blend_cs", buf_ptr);
+            dump_raw_buffer(height, width, buf->n_planes, planestride,
+                rowstride, "post_blend_cs", buf_ptr);
             global_index++;
 #endif
             /* May need to adjust background value due to color space change */
@@ -1945,10 +1948,10 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
 
         /* See if the target device can handle the data with alpha component */
         for (i = 0; i < buf->n_planes; i++)
-            buf_ptrs[i] = buf_ptr + i * buf->planestride;
+            buf_ptrs[i] = buf_ptr + i * planestride;
         code = dev_proc(target, put_image) (target, target, buf_ptrs, num_comp,
                                             rect.p.x, rect.p.y, width, height,
-                                            buf->rowstride, alpha_offset,
+                                            rowstride, alpha_offset,
                                             tag_offset);
         if (code == 0) {
             /* Device could not handle the alpha data.  Go ahead and preblend
@@ -1960,22 +1963,33 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
                         "pre_final_blend",buf_ptr);
             global_index++;
 #endif
-            gx_blend_image_buffer(buf_ptr, width, height, buf->rowstride,
-                                  buf->planestride, num_comp, bg);
+            if (expand) {
+                buf16_ptr = gs_alloc_bytes(pdev->memory,
+                    planestride * num_comp * 2, "pdf14_put_image");
+                gx_blend_image_buffer16(buf_ptr, (unsigned short*) buf16_ptr,
+                    width, height, rowstride, planestride, num_comp, bg);
+                planestride = planestride * 2;
+                rowstride = rowstride * 2;
+                for (i = 0; i < num_comp; i++)
+                    buf_ptrs[i] = buf16_ptr + i * planestride;
+            } else {
+                gx_blend_image_buffer(buf_ptr, width, height, rowstride,
+                    buf->planestride, num_comp, bg);
 #if RAW_DUMP
-            dump_raw_buffer(height, width, buf->n_planes,
-                        pdev->ctx->stack->planestride, pdev->ctx->stack->rowstride,
-                        "post_final_blend",buf_ptr);
-            global_index++;
-            clist_band_count++;
+                dump_raw_buffer(height, width, buf->n_planes,
+                    pdev->ctx->stack->planestride, pdev->ctx->stack->rowstride,
+                    "post_final_blend", buf_ptr);
+                global_index++;
+                clist_band_count++;
 #endif
+            }
             data_blended = true;
 
             /* Try again now with just the tags */
             alpha_offset = 0;
             code = dev_proc(target, put_image) (target, target, buf_ptrs, num_comp,
                                                 rect.p.x, rect.p.y, width, height,
-                                                buf->rowstride, alpha_offset,
+                                                rowstride, alpha_offset,
                                                 tag_offset);
         }
         if (code > 0) {
@@ -1984,16 +1998,24 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
             while (num_rows_left > 0) {
                 code = dev_proc(target, put_image) (target, target, buf_ptrs, num_comp,
                                                     rect.p.x, rect.p.y + code, width,
-                                                    num_rows_left, buf->rowstride,
+                                                    num_rows_left, rowstride,
                                                     alpha_offset, tag_offset);
                 num_rows_left = num_rows_left - code;
             }
+            if (buf16_ptr != NULL)
+                gs_free_object(pdev->memory, buf16_ptr, "pdf14_put_image");
             return 0;
         }
     }
+
     /*
      * Set color space in preparation for sending an image.
      */
+    if (buf16_ptr != NULL)
+        gs_free_object(pdev->memory, buf16_ptr, "pdf14_put_image");
+    planestride = buf->planestride;
+    rowstride = buf->rowstride;
+
     code = gs_cspace_build_ICC(&pcs, NULL, pgs->memory);
     if (pcs == NULL)
         return_error(gs_error_VMerror);
@@ -3747,6 +3769,7 @@ gx_update_pdf14_compositor(gx_device * pdev, gs_gstate * pgs,
                 pdf14_close(pdev);
             }
             break;
+        case PDF14_BEGIN_TRANS_PAGE_GROUP:
         case PDF14_BEGIN_TRANS_GROUP:
             code = gx_begin_transparency_group(pgs, pdev, &params);
             break;
@@ -3882,7 +3905,7 @@ pdf14_push_text_group(gx_device *dev, gs_gstate *pgs, gx_path *path,
         if (code < 0)
             return code;
     }
-    code = gs_begin_transparency_group(pgs, &params, &bbox);
+    code = gs_begin_transparency_group(pgs, &params, &bbox, PDF14_BEGIN_TRANS_GROUP);
     if (code < 0)
         return code;
     gs_setopacityalpha(pgs, opacity);
@@ -5975,6 +5998,7 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
             if (smask_level == 0 && trans_group_level == 0)
                 pdf14_needed = cdev->page_pdf14_needed;
             break;			/* No data */
+        case PDF14_BEGIN_TRANS_PAGE_GROUP:
         case PDF14_BEGIN_TRANS_GROUP:
             pdf14_needed = true;		/* the compositor will be needed while reading */
             trans_group_level++;
@@ -6187,6 +6211,7 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
             break;
         case PDF14_POP_TRANS_STATE:
             break;
+        case PDF14_BEGIN_TRANS_PAGE_GROUP:
         case PDF14_BEGIN_TRANS_GROUP:
             /*
              * We are currently not using the bbox or the colorspace so they were
@@ -6362,13 +6387,13 @@ find_opening_op(int opening_op, gs_composite_t **ppcte,
             if (op != PDF14_SET_BLEND_PARAMS) {
                 if (opening_op == PDF14_BEGIN_TRANS_MASK)
                     return COMP_ENQUEUE;
-                if (opening_op == PDF14_BEGIN_TRANS_GROUP) {
+                if (opening_op == PDF14_BEGIN_TRANS_GROUP || opening_op == PDF14_BEGIN_TRANS_PAGE_GROUP || opening_op == PDF14_BEGIN_TRANS_PAGE_GROUP) {
                     if (op != PDF14_BEGIN_TRANS_MASK && op != PDF14_END_TRANS_MASK)
                         return COMP_ENQUEUE;
                 }
                 if (opening_op == PDF14_PUSH_DEVICE) {
                     if (op != PDF14_BEGIN_TRANS_MASK && op != PDF14_END_TRANS_MASK &&
-                        op != PDF14_BEGIN_TRANS_GROUP && op != PDF14_END_TRANS_GROUP &&
+                        op != PDF14_BEGIN_TRANS_GROUP && op != PDF14_BEGIN_TRANS_PAGE_GROUP && op != PDF14_END_TRANS_GROUP &&
                         op != PDF14_END_TRANS_TEXT_GROUP)
                         return COMP_ENQUEUE;
                 }
@@ -6441,6 +6466,7 @@ c_pdf14trans_is_closing(const gs_composite_t * composite_action, gs_composite_t 
                     return COMP_DROP_QUEUE;
                 return state;
             }
+        case PDF14_BEGIN_TRANS_PAGE_GROUP:
         case PDF14_BEGIN_TRANS_GROUP:
             return COMP_ENQUEUE;
         case PDF14_END_TRANS_GROUP:
@@ -7235,6 +7261,7 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
                 if (code < 0)
                     return code;
                 break;
+            case PDF14_BEGIN_TRANS_PAGE_GROUP:
             case PDF14_BEGIN_TRANS_GROUP:
                 /*
                  * Keep track of any changes made in the blending parameters.
@@ -7829,7 +7856,7 @@ pdf14_clist_begin_typed_image(gx_device	* dev, const gs_gstate * pgs,
                     tgp.text_group = 0;
                     /* This will handle the compositor command */
                     gs_begin_transparency_group((gs_gstate *) pgs_noconst, &tgp,
-                                                &bbox_out);
+                                                &bbox_out, PDF14_BEGIN_TRANS_GROUP);
                     ptile->ttrans->image_render = penum->render;
                     penum->render = &pdf14_pattern_trans_render;
                     ptile->trans_group_popped = false;
@@ -7955,6 +7982,7 @@ c_pdf14trans_clist_write_update(const gs_composite_t * pcte, gx_device * dev,
             code = clist_writer_check_empty_cropping_stack(cdev);
             break;
 
+        case PDF14_BEGIN_TRANS_PAGE_GROUP:
         case PDF14_BEGIN_TRANS_GROUP:
             {	/* HACK: store mask_id into our params for subsequent
                    calls of c_pdf14trans_write. To do this we must
@@ -8166,6 +8194,7 @@ c_pdf14trans_get_cropping(const gs_composite_t *pcte, int *ry, int *rheight,
         case PDF14_PUSH_DEVICE: return ALLBANDS; /* Applies to all bands. */
         case PDF14_POP_DEVICE:  return ALLBANDS; /* Applies to all bands. */
         case PDF14_ABORT_DEVICE: return ALLBANDS; /* Applies to all bands */
+        case PDF14_BEGIN_TRANS_PAGE_GROUP:
         case PDF14_BEGIN_TRANS_GROUP:
             {	gs_int_rect rect;
 

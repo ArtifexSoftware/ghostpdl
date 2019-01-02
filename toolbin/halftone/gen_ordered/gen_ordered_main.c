@@ -227,7 +227,7 @@ htsc_save_tos(htsc_dig_grid_t *final_mask)
     int height = final_mask->height;
     int *buff_ptr;
     FILE *fid;
-    int code, x, y, k = 0;
+    int k = 0;
     int count= height * width;
 
     fid = fopen("turn_on_seq.out","w");
@@ -339,7 +339,7 @@ htsc_save_screen(htsc_dig_grid_t *final_mask, bool use_holladay_grid, int S,
                         data_short = (unsigned short) (*buff_ptr & 0xffff);
                         fprintf(fid, "%04x", data_short);
                         buff_ptr++;
-                        if ((x & 0xf) == 0x1f && (x != (width - 1)))
+                        if ((x & 0x1f) == 0x1f && (x != (width - 1)))
                             fprintf(fid, "\n");
                     }
                     fprintf(fid, "\n");	/* end of one row */

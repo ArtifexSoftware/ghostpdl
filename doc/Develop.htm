@@ -9,18 +9,18 @@
   gtag('js', new Date());
 
   gtag('config', 'UA-54391264-2');
-</script>	
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro" rel="stylesheet">
-<link rel="shortcut icon" type="image/png" href="../../images/favicon.png">	
+<link rel="shortcut icon" type="image/png" href="../../images/favicon.png">
 <title>Information for Ghostscript Developers</title>
 <link href="style.css" rel="stylesheet" type="text/css">
 <link href="gs-style.css" rel="stylesheet" type="text/css">
 </head>
 
 <body>
-	
+
 	<div class="header">
 	<div class="row">
 		<div class="col-lt-6 logo"><a href="https://www.ghostscript.com/"><img src="images/ghostscript_logo.png" width="108" height="119" alt=""></a></div>
@@ -29,13 +29,13 @@
 		<div class="button button2 hidden-xs"><a href="https://www.ghostscript.com/download.html" title="Download">Download</a></div></div></div>
 	</div>
 	</div>
-	
+
 	<div class="banner">
 	<div class="row">
-		<div class="col-12">Information for Ghostscript Developers</div>	
+		<div class="col-12">Information for Ghostscript Developers</div>
 	</div>
 	</div>
-	
+
 	<div class="main">
 	<div class="row">
 	<div id="sidebar">
@@ -55,9 +55,9 @@
 			<li><a href="https://www.ghostscript.com/faq.html" title="FAQ">FAQ</a></li>
 		</ul>
 	</div>
-	</div>	
+	</div>
 	<div class="col-10 page">
-		
+
 <!--START EDITING HERE-->
 
 <h2>Table of contents</h2>
@@ -468,7 +468,7 @@ source files.
 
 <dl>
 <dt>
-The libctx provides pointers to memory, stdio, and various other runtime 
+The libctx provides pointers to memory, stdio, and various other runtime
 portablility services.
 <dd>
 <a href="../base/gslibctx.h">base/gslibctx.h</a>,
@@ -1142,8 +1142,8 @@ not standard in PostScript.
 <a href="../base/gsicc.h">base/gsicc.h</a>,
 
 <p>
-The following files provide a callback mechanism to allow a client program 
-to specify a special case alternate tint transforms for Separation and DeviceN 
+The following files provide a callback mechanism to allow a client program
+to specify a special case alternate tint transforms for Separation and DeviceN
 color spaces. Among other uses this can be used to provide special handling for
 PANTONE colors.
 <dt>
@@ -1282,11 +1282,11 @@ Shading:
 
 </dl>
 
-<p> In addition to the PostScript graphics model, Ghostscript supports RasterOp, 
-  a weak form of alpha channel, and eventually the full PDF 1.4 transparency model. 
-  The implemention of these facilities is quite slipshod and scattered: only RasterOp 
-  is really implemented fully. There is a general compositing architecture, but 
-  it is hardly used at all, and in particular is not used for RasterOp. It is 
+<p> In addition to the PostScript graphics model, Ghostscript supports RasterOp,
+  a weak form of alpha channel, and eventually the full PDF 1.4 transparency model.
+  The implemention of these facilities is quite slipshod and scattered: only RasterOp
+  is really implemented fully. There is a general compositing architecture, but
+  it is hardly used at all, and in particular is not used for RasterOp. It is
   used for implementation of the general support for overprint and overprint mode.
 <dl>
 
@@ -2525,9 +2525,7 @@ Color, pattern, and halftone:
 Images:
 <dd>
 <a href="../psi/iimage.h">psi/iimage.h</a>,
-<a href="../psi/iimage2.h">psi/iimage2.h</a>,
 <a href="../psi/zimage.c">psi/zimage.c</a>,
-<a href="../psi/zimage2.c">psi/zimage2.c</a>,
 <a href="../psi/zimage3.c">psi/zimage3.c</a>,
 <a href="../psi/zfimscale.c">psi/zfimscale.c</a>.
 
@@ -2922,9 +2920,9 @@ Files:
 
 <h3><a name="PPD"></a>PostScript Printer Description</h3>
 <p>
-A PostScript Printer Description tells a generic PostScript printer 
+A PostScript Printer Description tells a generic PostScript printer
 driver how to generate PostScript for a particular printer.
-Ghostscript includes a PPD file for generating PostScript 
+Ghostscript includes a PPD file for generating PostScript
 intended to be converted to PDF.  A Windows INF file for
 installing the PPD on Windows 2000 and XP is included.
 
@@ -3124,8 +3122,8 @@ examples of .dev rules, see any of the Ghostscript makefiles.
 Ultimately, a person must specify the root set of modules to include in a
 build (which of course may require other modules, recursively).
 Ghostscript's makefiles do this with a set of macros called
-<code>FEATURE_DEVS</code> and <code>DEVICE_DEVS</code><em>n</em>, 
-defined in each top-level makefile, but nothing in the module machinery 
+<code>FEATURE_DEVS</code> and <code>DEVICE_DEVS</code><em>n</em>,
+defined in each top-level makefile, but nothing in the module machinery
 depends on this.
 
 <h4><a name="Generators"></a>Generators</h4>
@@ -3198,7 +3196,7 @@ through the %rom% iodevice prefix. This is used to implement the
 <code>COMPILE_INITS=1</code> feature (a compressed init fileset is more
 efficient than the current 'gsinit.c' produced by 'geninit.c'). This IODevice
 is more versatile since other files can be encapsulated such as fonts, helper
-PostScript files and Resources. The list of files is defined in part in 
+PostScript files and Resources. The list of files is defined in part in
 <a href="../psi/psromfs.mak">psi/psromfs.mak</a>.
 
 </dl>
@@ -4654,11 +4652,11 @@ Enterprise Edition only. Standard Edition and Professional Edition do not includ
 
 <p>
 Microsoft profiler tool requires the application to be linked with
-a special linker option. To provide it you need the following change to 
+a special linker option. To provide it you need the following change to
 <code>gs/base/msvccmd.mak</code> :
 
-<blockquote><pre><code> 
- 
+<blockquote><pre><code>
+
 *** SVN-GS\HEAD\gs\src\msvccmd.mak	Tue Jan  9 21:41:07 2007
 --- gs\src\msvccmd.mak	Mon May  7 11:29:35 2007
 ***************
@@ -4702,16 +4700,16 @@ a special linker option. To provide it you need the following change to
 </code></pre></blockquote>
 
 Note that any of debug and release build may be profiled.
- 
+
 <p>
-Mictosoft Profiler tool can't profile a dynamically loaded DLLs. 
-When building Ghostscript with makefiles you need to specify 
+Mictosoft Profiler tool can't profile a dynamically loaded DLLs.
+When building Ghostscript with makefiles you need to specify
 <code>MAKEDLL=0</code> to <code>nmake</code> command line.
 
 <p>
 The Integrated Development Environment of Microsoft Developer Studio 6
 cannot profile a makefile-based project. Therefore the profiling tool
-to be started from command line. 
+to be started from command line.
 
 <p>
 The profiling from command line is a 4 step procedure.
@@ -4724,11 +4722,11 @@ set GS_HOME=..\..\gs-hdp
 set GS_COMMAND_LINE=%GS_HOME%\bin\gswin32c.exe -I%GS_HOME%\lib;f:\afpl\fonts -r144 -dBATCH -dNOPAUSE -d/DEBUG attachment.pdf
 set START_FUNCTION=_main
 set Path=%DEVSTUDIO%\Common\MSDev98\Bin;%DEVSTUDIO%\VC98\Bin
-PREP.EXE /OM /SF %START_FUNCTION% /FT   %GS_HOME%\bin\gswin32c.exe  
+PREP.EXE /OM /SF %START_FUNCTION% /FT   %GS_HOME%\bin\gswin32c.exe
 If ERRORLEVEL 1 echo step 1 fails&amp;exit
 PROFILE  /I %GS_HOME%\bin\gswin32c.pbi  %GS_COMMAND_LINE%
 If ERRORLEVEL 1 echo step 2 fails&amp;exit
-PREP /M %GS_HOME%\bin\gswin32c /OT xxx.pbt 
+PREP /M %GS_HOME%\bin\gswin32c /OT xxx.pbt
 If ERRORLEVEL 1 echo step 3 fails&amp;exit
 PLIST /ST xxx.pbt &gt;profile.txt
 If ERRORLEVEL 1 echo step 4 fails&amp;exit
@@ -4757,7 +4755,7 @@ Edit the output file name in the line 5.
 
 
 <!-- [2.0 end contents] ==================================================== -->
-	
+
 <!-- [3.0 begin visible trailer] =========================================== -->
 <hr>
 
@@ -4778,15 +4776,15 @@ Novato, CA 94945, U.S.A., +1(415)492-9861, for further information.
 <p>
 <small>Ghostscript version 9.26, 20 November 2018
 
-<!-- [3.0 end visible trailer] ============================================= -->	
+<!-- [3.0 end visible trailer] ============================================= -->
 
 
 <!--FINISH EDITING HERE-->
-	
+
 	</div>
 	</div>
-	</div>	
-	
+	</div>
+
 	<div class="footer">
 	<div class="row">
 		<div class="col-7 footleft">
@@ -4809,7 +4807,7 @@ Novato, CA 94945, U.S.A., +1(415)492-9861, for further information.
 		</div>
 	  	</div>
 	</div>
-	
+
 	<script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
 	<script src="index.js"></script>
 </body>

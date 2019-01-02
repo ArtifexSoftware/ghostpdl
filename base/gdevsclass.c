@@ -33,12 +33,6 @@
 #include "gdevp14.h"        /* Needed to patch up the procs after compositor creation */
 #include "gdevsclass.h"
 
-/* This seems to be broadly similar to the 'device filter stack' which is defined in gsdfilt.c
- * and the stack for which is defined in the graphics state (dfilter_stack) but which seems to be
- * completely unused. We should probably remove dfilter_stack from the graphics state and remove
- * gsdfilt.c from the build.
- */
-
 /*
  * It would be nice if we could rewrite the clist handling to use this kind of device class chain
  * instead of the nasty hackery it currently utilises (stores the device procs for the existing

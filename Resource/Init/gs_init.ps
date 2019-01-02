@@ -2227,19 +2227,6 @@ SAFER { .setsafeglobal } if
 } .bind executeonly def % must be bound and hidden for .forceundef
 
 /UndefinePostScriptOperators {
-
-  % This list is of Display PostScript operators. We believe that Display PostScript
-  % was never fully implemented and the only known user, GNUStep, is no longer
-  % using it. So lets remove it.
-  [
-  /condition /currentcontext /detach /.fork /join /.localfork /lock /monitor /notify
-  /wait /yield /.currentscreenphase /.setscreenphase /.image2 /eoviewclip /initviewclip
-  /viewclip /viewclippath /defineusername
-  % NeXT DPS extensions
-  /currentalpha /setalpha /.alphaimage /composite /compositerect /dissolve /sizeimagebox /.sizeimageparams
-  ]
-  {systemdict exch .forceundef} forall
-
   % This list is of operators which no longer appear to be used, and which we do not believe
   % to have any real use. For now we will undefine the operstors so they cannot easily be used
   % but can be easily restored (just delete the name from the list in the array). In future

@@ -494,7 +494,6 @@
     <ClCompile Include="..\base\gsdevice.c" />
     <ClCompile Include="..\base\gsdevmem.c" />
     <ClCompile Include="..\base\gsdparam.c" />
-    <ClCompile Include="..\base\gsdps.c" />
     <ClCompile Include="..\base\gsdps1.c" />
     <ClCompile Include="..\base\gsdsrc.c" />
     <ClCompile Include="..\base\gsfcid.c" />
@@ -1159,7 +1158,6 @@
     <ClCompile Include="..\psi\zcolor1.c" />
     <ClCompile Include="..\psi\zcolor2.c" />
     <ClCompile Include="..\psi\zcolor3.c" />
-    <ClCompile Include="..\psi\zcontext.c" />
     <ClCompile Include="..\psi\zcontrol.c" />
     <ClCompile Include="..\psi\zcrd.c" />
     <ClCompile Include="..\psi\zcsindex.c" />
@@ -1170,8 +1168,6 @@
     <ClCompile Include="..\psi\zdevice2.c" />
     <ClCompile Include="..\psi\zdict.c" />
     <ClCompile Include="..\psi\zdouble.c" />
-    <ClCompile Include="..\psi\zdpnext.c" />
-    <ClCompile Include="..\psi\zdps.c" />
     <ClCompile Include="..\psi\zdps1.c" />
     <ClCompile Include="..\psi\zdscpars.c" />
     <ClCompile Include="..\psi\zfaes.c" />
@@ -1216,7 +1212,6 @@
     <ClCompile Include="..\psi\zht2.c" />
     <ClCompile Include="..\psi\zicc.c" />
     <ClCompile Include="..\psi\zimage.c" />
-    <ClCompile Include="..\psi\zimage2.c" />
     <ClCompile Include="..\psi\zimage3.c" />
     <ClCompile Include="..\psi\ziodev.c" />
     <ClCompile Include="..\psi\ziodev2.c" />
@@ -1716,8 +1711,6 @@
     <ClInclude Include="..\base\gsdfilt.h" />
     <ClInclude Include="..\base\gsdll.h" />
     <ClInclude Include="..\base\gsdllwin.h" />
-    <ClInclude Include="..\base\gsdpnext.h" />
-    <ClInclude Include="..\base\gsdps.h" />
     <ClInclude Include="..\base\gsdsrc.h" />
     <ClInclude Include="..\base\gsequivc.h" />
     <ClInclude Include="..\base\gserrors.h" />
@@ -2089,7 +2082,6 @@
     <ClInclude Include="..\psi\igstate.h" />
     <ClInclude Include="..\psi\iht.h" />
     <ClInclude Include="..\psi\iimage.h" />
-    <ClInclude Include="..\psi\iimage2.h" />
     <ClInclude Include="..\psi\iinit.h" />
     <ClInclude Include="..\psi\ilevel.h" />
     <ClInclude Include="..\psi\imain.h" />
@@ -2612,8 +2604,6 @@
     <None Include="..\Resource\Init\gs_dbt_e.ps" />
     <None Include="..\Resource\Init\gs_diskf.ps" />
     <None Include="..\Resource\Init\gs_diskn.ps" />
-    <None Include="..\Resource\Init\gs_dpnxt.ps" />
-    <None Include="..\Resource\Init\gs_dps.ps" />
     <None Include="..\Resource\Init\gs_dps1.ps" />
     <None Include="..\Resource\Init\gs_dps2.ps" />
     <None Include="..\Resource\Init\gs_dscp.ps" />

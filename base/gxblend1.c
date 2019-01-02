@@ -28,6 +28,7 @@
 #include "gdevp14.h"
 #include "gxdcconv.h"
 #include "gsicc_cache.h"
+#include "gxdevsop.h"
 
 #ifdef DUMP_TO_PNG
 #include "png_.h"
@@ -672,9 +673,50 @@ gx_blend_image_buffer(byte *buf_ptr, int width, int height, int rowstride,
     }
 }
 
+void
+gx_blend_image_buffer16(byte *buf_ptr_in, unsigned short *buf_ptr_out, int width,
+    int height, int rowstride, int planestride, int num_comp, byte bg)
+{
+    int x, y;
+    int position;
+    int comp, a;
+    int tmp, comp_num;
+    int bg_out = bg + (bg << 8);
+
+    for (y = 0; y < height; y++) {
+        position = y * rowstride;
+        for (x = 0; x < width; x++) {
+            /* composite RGBA (or CMYKA, etc.) pixel with over solid background */
+            a = buf_ptr_in[position + planestride * num_comp];
+            if (a == 0xff) {
+                for (comp_num = 0; comp_num < num_comp; comp_num++) {
+                    comp = buf_ptr_in[position + planestride * comp_num];
+                    buf_ptr_out[position + planestride * comp_num] = (comp + (comp << 8));
+                }
+            } else if (a == 0) {
+                for (comp_num = 0; comp_num < num_comp; comp_num++) {
+                    buf_ptr_out[position + planestride * comp_num] = bg_out;
+                }
+            } else {
+                a ^= 0xff;
+                a += (a << 8);
+                for (comp_num = 0; comp_num < num_comp; comp_num++) {
+                    comp = buf_ptr_in[position + planestride * comp_num];
+                    comp += (comp << 8);
+                    tmp = ((bg_out - comp) * a) + 0x8000;
+                    comp += (tmp + (tmp >> 16)) >> 16;
+                    comp = ((comp & 0xff) << 8) + ((comp & 0xff00) >> 8);
+                    buf_ptr_out[position + planestride * comp_num] = comp;
+                }
+            } 
+            position += 1;
+        }
+    }
+}
+
 int
-gx_put_blended_image_cmykspot(gx_device *target, byte *buf_ptr, int planestride,
-                      int rowstride, int x0, int y0, int width, int height,
+gx_put_blended_image_cmykspot(gx_device *target, byte *buf_ptr, int planestride_in,
+                      int rowstride_in, int x0, int y0, int width, int height,
                       int num_comp, byte bg, bool has_tags, gs_int_rect rect,
                       gs_separations * pseparations)
 {
@@ -690,6 +732,13 @@ gx_put_blended_image_cmykspot(gx_device *target, byte *buf_ptr, int planestride,
     int output_num_comp = target->color_info.num_components;
     int num_sep = pseparations->num_separations++;
     int num_rows_left;
+    int i;
+    gx_drawing_color pdcolor;
+    gs_fixed_rect rect_fixed;
+    bool expand = (target->color_info.depth / output_num_comp == 16);
+    int planestride = planestride_in;
+    int rowstride = rowstride_in;
+    byte *buf16_ptr = NULL;
 
     /*
      * The process color model for the PDF 1.4 compositor device is CMYK plus
@@ -727,56 +776,78 @@ gx_put_blended_image_cmykspot(gx_device *target, byte *buf_ptr, int planestride,
         /* See if the target device can handle the data in its current
            form with the alpha component */
         int alpha_offset = num_comp;
-        int tag_offset = has_tags ? num_comp+1 : 0;
+        int tag_offset = has_tags ? num_comp + 1 : 0;
         const byte *buf_ptrs[GS_CLIENT_COLOR_MAX_COMPONENTS];
-        int i;
+
         for (i = 0; i < num_comp; i++)
             buf_ptrs[i] = buf_ptr + i * planestride;
         code = dev_proc(target, put_image) (target, target, buf_ptrs, num_comp,
-                                            rect.p.x, rect.p.y, width, height,
-                                            rowstride,
-                                            num_comp,tag_offset);
+            rect.p.x, rect.p.y, width, height,
+            rowstride,
+            num_comp, tag_offset);
         if (code == 0) {
             /* Device could not handle the alpha data.  Go ahead and
                preblend now. Note that if we do this, and we end up in the
-               default below, we only need to repack in chunky not blend */
+               default below, we only need to repack in chunky not blend.  Add
+               in conversion to 16 bits if the target device is planar and
+               a 16 bit device. */
 #if RAW_DUMP
-            /* Dump before and after the blend to make sure we are doing that ok */
-            dump_raw_buffer(height, width, num_comp+1, planestride, rowstride,
-                            "pre_final_blend",buf_ptr);
+               /* Dump before and after the blend to make sure we are doing that ok */
+            dump_raw_buffer(height, width, num_comp + 1, planestride, rowstride,
+                "pre_final_blend", buf_ptr);
             global_index++;
 #endif
-            gx_blend_image_buffer(buf_ptr, width, height, rowstride,
-                                  planestride, num_comp, bg);
+            if (expand) {
+                buf16_ptr = gs_alloc_bytes(target->memory,
+                    planestride * num_comp * 2, "gx_put_blended_image_cmykspot");
+                gx_blend_image_buffer16(buf_ptr, (unsigned short*)buf16_ptr, width, height,
+                    rowstride, planestride, num_comp, bg);
+                planestride = planestride_in * 2;
+                rowstride = rowstride_in * 2;
+                for (i = 0; i < num_comp; i++)
+                    buf_ptrs[i] = buf16_ptr + i * planestride;
+            } else {
+                gx_blend_image_buffer(buf_ptr, width, height, rowstride,
+                    planestride, num_comp, bg);
 #if RAW_DUMP
-            /* Dump before and after the blend to make sure we are doing that ok */
-            dump_raw_buffer(height, width, num_comp, planestride, rowstride,
-                            "post_final_blend",buf_ptr);
-            global_index++;
-            /* clist_band_count++; */
+                /* Dump before and after the blend to make sure we are doing that ok */
+                dump_raw_buffer(height, width, num_comp, planestride, rowstride,
+                    "post_final_blend", buf_ptr);
+                global_index++;
+                /* clist_band_count++; */
 #endif
+            }
             /* Try again now */
             alpha_offset = 0;
             code = dev_proc(target, put_image) (target, target, buf_ptrs, num_comp,
-                                                rect.p.x, rect.p.y, width, height,
-                                                rowstride,
-                                                alpha_offset, tag_offset);
-        }
-        if (code > 0) {
-            /* We processed some or all of the rows.  Continue until we are done */
-            num_rows_left = height - code;
-            while (num_rows_left > 0) {
-                code = dev_proc(target, put_image) (target, target, buf_ptrs, num_comp,
-                                                    rect.p.x, rect.p.y+code, width,
-                                                    num_rows_left, rowstride,
-                                                    alpha_offset, tag_offset);
-                if (code < 0)
-                    return code;
-                num_rows_left = num_rows_left - code;
+                rect.p.x, rect.p.y, width, height,
+                rowstride, alpha_offset, tag_offset);
+            if (code > 0) {
+                /* We processed some or all of the rows.  Continue until we are done */
+                num_rows_left = height - code;
+                while (num_rows_left > 0) {
+                    code = dev_proc(target, put_image) (target, target, buf_ptrs, num_comp,
+                        rect.p.x, rect.p.y + code, width,
+                        num_rows_left, rowstride,
+                        alpha_offset, tag_offset);
+                    if (code < 0) {
+                        if (buf16_ptr != NULL)
+                            gs_free_object(target->memory, buf16_ptr, "gx_put_blended_image_cmykspot");
+                        return code;
+                    }
+                    num_rows_left = num_rows_left - code;
+                }
             }
+            if (buf16_ptr != NULL)
+                gs_free_object(target->memory, buf16_ptr, "gx_put_blended_image_cmykspot");
             return 0;
         }
     }
+
+    if (buf16_ptr != NULL)
+        gs_free_object(target->memory, buf16_ptr, "gx_put_blended_image_cmykspot");
+    planestride = planestride_in;
+    rowstride = rowstride_in;
 
     /* Clear all output colorants first */
     for (comp_num = 0; comp_num < output_num_comp; comp_num++)
@@ -792,7 +863,7 @@ gx_put_blended_image_cmykspot(gx_device *target, byte *buf_ptr, int planestride,
             if ((a + 1) & 0xfe) {
                 /* a ^= 0xff; */  /* No inversion here! Bug 689895 */
                 for (comp_num = 0; comp_num < num_known_comp; comp_num++) {
-                    comp  = buf_ptr[x + planestride * input_map[comp_num]];
+                    comp = buf_ptr[x + planestride * input_map[comp_num]];
                     tmp = ((comp - bg) * a) + 0x80;
                     comp += tmp + (tmp >> 8);
                     cv[output_map[comp_num]] = comp;
@@ -807,8 +878,26 @@ gx_put_blended_image_cmykspot(gx_device *target, byte *buf_ptr, int planestride,
                     cv[output_map[comp_num]] = (comp << 8) + comp;
                 }
             }
-            color = dev_proc(target, encode_color)(target, cv);
-            code = dev_proc(target, fill_rectangle)(target, x + x0, y + y0, 1, 1, color);
+
+            /* If we have spot colors we need to encode and fill as a high level
+               color if the device supports it which should always be the case
+               if we are in this procedure */
+            if (dev_proc(target, dev_spec_op)(target, gxdso_supports_devn, NULL, 0)) {
+                for (i = 0; i < output_num_comp; i++) {
+                    pdcolor.colors.devn.values[i] = cv[i];
+                }
+                pdcolor.type = gx_dc_type_devn;
+                rect_fixed.p.x = int2fixed(x + x0);
+                rect_fixed.p.y = int2fixed(y + y0);
+                rect_fixed.q.x = int2fixed(x + x0 + 1);
+                rect_fixed.q.y = int2fixed(y + y0 + 1);
+                code = dev_proc(target, fill_rectangle_hl_color)(target, &rect_fixed,
+                    NULL, &pdcolor, NULL);
+            } else {
+                /* encode as a color index */
+                color = dev_proc(target, encode_color)(target, cv);
+                code = dev_proc(target, fill_rectangle)(target, x + x0, y + y0, 1, 1, color);
+            }
             if (code < 0)
                 return code;
         }

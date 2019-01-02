@@ -34,7 +34,7 @@ level2dict begin
            { { exch pop }		% halftone
              { /HalftoneType 1		% screen
                 { /Frequency /Angle /SpotFunction }
-               .makestackdict readonly
+               //.makestackdict exec readonly
              }
              { /HalftoneType 2		% colorscreen
                 { /RedFrequency /RedAngle /RedSpotFunction
@@ -42,11 +42,13 @@ level2dict begin
                   /BlueFrequency /BlueAngle /BlueSpotFunction
                   /GrayFrequency /GrayAngle /GraySpotFunction
                 }
-               .makestackdict readonly
+               //.makestackdict exec readonly
              }
            }
           exch get exec
         } odef
+currentdict /.makestackdict undef
+
 % Define sethalftone so it converts types 1-4 to type 5.
 /.makehalftoneRGBV {	% <dict> <type> <keys> <keysRGBV>
   4 -1 roll exch { 1 index exch get exch } forall 15 1 roll
@@ -79,7 +81,7 @@ systemdict begin
       /GreenFrequency /GreenAngle /GreenSpotFunction
       /BlueFrequency /BlueAngle /BlueSpotFunction
       /GrayFrequency /GrayAngle /GraySpotFunction
-    } .makehalftoneRGBV
+    } //.makehalftoneRGBV exec
   } bind def
   3 {
     mark exch /Default exch .dicttomark { .sethalftone5 }
@@ -90,7 +92,7 @@ systemdict begin
       /GreenWidth /GreenHeight /GreenThresholds
       /BlueWidth /BlueHeight /BlueThresholds
       /GrayWidth /GrayHeight /GrayThresholds
-    } .makehalftoneRGBV
+    } //.makehalftoneRGBV exec
   } bind def
   5 {
     pop dup length dict copy
@@ -115,6 +117,8 @@ systemdict begin
   } bind def
 end
 end
+currentdict /.makehalftoneRGBV undef
+
 /sethalftone {		% <dict> sethalftone -
         % We must create the new dictionary in the same VM as the
         % operand; otherwise, invalidaccess errors may occur.
@@ -144,16 +148,18 @@ end
  } bind def
 /setscreen		% <ignore*2> <dict> setscreen -
         { dup type /dicttype eq
-           { .fixsethalftonescreen sethalftone pop pop pop }
+           { //.fixsethalftonescreen exec sethalftone pop pop pop }
            { //setscreen }
           ifelse
         } .bind odef
 /setcolorscreen		% <ignore*11> <dict> setcolorscreen -
         { dup type /dicttype eq
-           { .fixsethalftonescreen sethalftone 12 { pop } repeat }
+           { //.fixsethalftonescreen exec sethalftone 12 { pop } repeat }
            { //setcolorscreen }
           ifelse
         } .bind odef
+currentdict /.fixsethalftonescreen undef
+
 % Redefine currentscreen and currentcolorscreen to extract the Frequency
 % and Angle from Type 1 halftones, per Adobe TN 5085.
 /.fixcurrenthalftonescreen	% <dict> .fix... <freq> <angle> <proc>
@@ -164,17 +170,17 @@ end
  } bind def
 /currentscreen		% - currentscreen 60 0 <dict>
         { .currenthalftone
-           { { .fixcurrenthalftonescreen }	% halftone
+           { { //.fixcurrenthalftonescreen exec }% halftone
              { }				% screen
              { 12 3 roll 9 { pop } repeat	% colorscreen
-               dup type /dicttype eq { .fixcurrenthalftonescreen } if
+               dup type /dicttype eq { //.fixcurrenthalftonescreen exec } if
              }
            }
           exch get exec
         } odef
 /currentcolorscreen	% - currentcolorscreen (60 0 <dict>)*4
 { .currenthalftone
-   { { .fixcurrenthalftonescreen 3 copy 6 copy }	% halftone
+   { { //.fixcurrenthalftonescreen exec 3 copy 6 copy }	% halftone
      {					% screen
          % The procedure might not be readable....
          dup rcheck { dup length array copy cvx } if
@@ -184,6 +190,7 @@ end
    }
   exch get exec
 } odef
+currentdict /.fixcurrenthalftonescreen undef
 
 % ------ User objects ------ %
 
@@ -213,21 +220,22 @@ end
     .UserObjects 3 .argindex 1 add 10 .max .localvmarray put
   } ifelse
   .UserObjects get 2 .argindex 2 index put pop pop
-} odef
+} bind odef
 /execuserobject {		% <index> execuserobject -
   dup type /integertype ne {
     % Adobe validates the argument before accessing UserObjects - CET 31-03
     /execuserobject .systemvar /typecheck signalerror
   } if
   .UserObjects get 1 .argindex get exch pop exec
-} odef
+} bind odef
 /undefineuserobject {		% <index> undefineuserobject -
   dup type /integertype ne {
     % Adobe validates the argument before accessing UserObjects - CET 31-11
     /undefineuserobject .systemvar /typecheck signalerror
   } if
   .UserObjects get 1 .argindex //null put pop
-} odef
+} bind odef
+currentdict /.UserObjects undef
 
 % ------ Cache control ------ %
 

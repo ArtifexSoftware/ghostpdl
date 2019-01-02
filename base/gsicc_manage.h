@@ -28,6 +28,7 @@
 #define SMASK_RGB_ICC     "ps_rgb.icc"
 #define SMASK_CMYK_ICC    "ps_cmyk.icc"
 #define GRAY_TO_K         "gray_to_k.icc"
+#define SCRGB             "scrgb.icc"
 #define DEFAULT_DIR_ICC   "%rom%iccprofiles/"
 #define MAX_DEFAULT_ICC_LENGTH 17
 
@@ -115,6 +116,8 @@ int gsicc_initialize_default_profile(cmm_profile_t *icc_profile);
 gs_color_space_index gsicc_get_default_type(cmm_profile_t *profile_data);
 bool gsicc_profile_from_ps(cmm_profile_t *profile_data);
 void gsicc_adjust_profile_rc(cmm_profile_t *profile_data, int delta, const char *name_str);
+ int gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc,
+    const char* dirname, int dir_namelen, stream **stmp);
 
 /* Device related */
 cmm_dev_profile_t* gsicc_new_device_profile_array(gs_memory_t *memory);

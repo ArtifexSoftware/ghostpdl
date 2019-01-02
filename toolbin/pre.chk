@@ -200,8 +200,8 @@ src/ugcclib.mak:DEVICE_DEVS14=
 src/ugcclib.mak:DEVICE_DEVS15=
 src/unixansi.mak:FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)pipe.dev
 src/unixtrad.mak:FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)pipe.dev
-src/unix-gcc.mak:#FEATURE_DEVS=$(PSD)psl3.dev $(PSD)xpdf.dev $(PSD)dpsnext.dev $(PSD)pipe.dev $(PSD)rasterop.dev
-src/unix-gcc.mak:FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)pipe.dev
+src/unix-gcc.mak:#FEATURE_DEVS=$(PSD)psl3.dev $(PSD)xpdf.dev $(PSD)pipe.dev $(PSD)rasterop.dev
+src/unix-gcc.mak:FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)pipe.dev
 src/dvx-gcc.mak:FEATURE_DEVS=psl3.dev pdf.dev
 src/bcwin32.mak:FEATURE_DEVS=psl3.dev pdf.dev ttfont.dev
 src/msvc32.mak:!ifndef FEATURE_DEVS
@@ -235,4 +235,3 @@ src/watc.mak:CPU_TYPE=386
 src/watc.mak:FPU_TYPE=0
 src/gxfixed.h:#define _fixed_shift 12
 src/gslib.c:/*#define CAPTURE */
-src/zcontext.c:private int reschedule_interval = 100;

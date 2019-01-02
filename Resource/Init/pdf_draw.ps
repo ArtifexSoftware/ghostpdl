@@ -427,7 +427,7 @@ end
     } ifelse
   } bind executeonly def
   /sethalftonephases {
-    /sethalftonephase where { pop aload pop sethalftonephase } { pop } ifelse
+      aload pop -1 2 index 2 index .setscreenphase pop pop
   } bind executeonly def
 
   /HT {
@@ -712,6 +712,17 @@ def
                 % Stack: bbox paramdict
   exch aload pop
   .begintransparencygroup
+} bind executeonly def
+
+/.beginpagegroup {	% groupdict bbox .beginformgroup -
+  exch mark exch			% bbox mark groupdict
+  dup /CS knownoget { resolvecolorspace dup setgcolorspace /CS exch 3 2 roll} if
+  dup /I knownoget { /Isolated exch 3 2 roll } if
+  dup /K knownoget { /Knockout exch 3 2 roll } if
+  pop .dicttomark
+                % Stack: bbox paramdict
+  exch aload pop
+  .begintransparencypagegroup
 } bind executeonly def
 
 % .paintgroupform implements the Form PaintProc in the case where the

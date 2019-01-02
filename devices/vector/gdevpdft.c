@@ -167,10 +167,9 @@ pdf_make_form_dict(gx_device_pdf * pdev, const gs_pdf14trans_params_t * pparams,
 
 static int
 pdf_begin_transparency_group(gs_gstate * pgs, gx_device_pdf * pdev,
-                                const gs_pdf14trans_params_t * pparams)
+                                const gs_pdf14trans_params_t * pparams, bool page_group)
 {
     cos_dict_t *group_dict;
-    bool in_page = is_in_page(pdev);
     int code;
 
     if (pgs == NULL)
@@ -189,7 +188,7 @@ pdf_begin_transparency_group(gs_gstate * pgs, gx_device_pdf * pdev,
         if (code < 0)
             return code;
     }
-    if (!in_page)
+    if (page_group)
         pdev->pages[pdev->next_page].group_id = group_dict->id;
     else if (pparams->image_with_SMask) {
         /* An internal group for the image implementation.
@@ -232,8 +231,8 @@ pdf_end_transparency_group(gs_gstate * pgs, gx_device_pdf * pdev)
 {
     int bottom = (pdev->ResourcesBeforeUsage ? 1 : 0);
 
-    if (!is_in_page(pdev))
-        return 0;	/* corresponds to check in pdf_begin_transparency_group */
+    if (!is_in_page(pdev) && pdev->sbstack_depth == 0)
+        return 0;	/* A Group definition at the page level, handled separately. */
     if (pdev->image_with_SMask & (1 << pdev->FormDepth)) {
         /* An internal group for the image implementation.
            See pdf_begin_transparency_group. */
@@ -336,7 +335,7 @@ pdf_begin_transparency_mask(gs_gstate * pgs, gx_device_pdf * pdev,
         code = pdf_open_page(pdev, PDF_IN_STREAM);
         if (code < 0)
             return code;
-        return pdf_begin_transparency_group(pgs, pdev, pparams);
+        return pdf_begin_transparency_group(pgs, pdev, pparams, 0);
     }
 }
 
@@ -414,9 +413,10 @@ gdev_pdf_create_compositor(gx_device *dev,
                 return 0;
             case PDF14_ABORT_DEVICE:
                 return 0;
+            case PDF14_BEGIN_TRANS_PAGE_GROUP:
+                return pdf_begin_transparency_group(pgs, pdev, params, 1);
             case PDF14_BEGIN_TRANS_GROUP:
-
-                return pdf_begin_transparency_group(pgs, pdev, params);
+                return pdf_begin_transparency_group(pgs, pdev, params, 0);
             case PDF14_END_TRANS_GROUP:
                 return pdf_end_transparency_group(pgs, pdev);
             case PDF14_BEGIN_TRANS_TEXT_GROUP:

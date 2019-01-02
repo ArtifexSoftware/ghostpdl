@@ -907,7 +907,7 @@ $(GLOBJ)gscspace.$(OBJ) : $(GLSRC)gscspace.c $(AK) $(gx_h)\
  $(gserrors_h) $(memory__h) $(gsstruct_h) $(gsccolor_h) $(gsutil_h)\
  $(gxcmap_h) $(gxcspace_h) $(gxgstate_h) $(gsovrc_h) $(gsstate_h)\
  $(gsdevice_h) $(gxdevcli_h) $(gzstate_h) $(gsnamecl_h) $(stream_h)\
- $(gsicc_h) $(gsicc_manage_h) $(LIB_MAK) $(MAKEDIRS)
+ $(gsicc_h) $(gsicc_manage_h) $(string__h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gscspace.$(OBJ) $(C_) $(GLSRC)gscspace.c
 
 $(GLOBJ)gscicach.$(OBJ) : $(GLSRC)gscicach.c $(AK) $(gx_h)\
@@ -2955,9 +2955,6 @@ $(GLOBJ)gximdecode.$(OBJ) : $(GLSRC)gximdecode.c $(gximdecode_h) $(string__h)\
 
 # ================ Display Postscript extensions ================ #
 
-gsiparm2_h=$(GLSRC)gsiparm2.h $(gsiparam_h) $(gsgstate_h)
-gsdps_h=$(GLSRC)gsdps.h $(gsiparm2_h) $(gsgstate_h)
-
 # Display PostScript needs the DevicePixel color space to implement
 # the PixelCopy option of ImageType 2 images.
 dpslib_=$(GLOBJ)gsdps.$(OBJ) $(GLOBJ)gximage2.$(OBJ)
@@ -2967,35 +2964,11 @@ $(GLD)dpslib.dev : $(LIB_MAK) $(ECHOGS_XE) $(dpslib_) $(GLD)cspixlib.dev \
 	$(ADDMOD) $(GLD)dpslib -imagetype 2
 	$(ADDMOD) $(GLD)dpslib -include $(GLD)cspixlib
 
-$(GLOBJ)gsdps.$(OBJ) : $(GLSRC)gsdps.c $(AK) $(gx_h)\
- $(gsdps_h) $(gserrors_h) $(gspath_h)\
- $(gxdevice_h) $(gzcpath_h) $(gzpath_h) $(gzstate_h) $(LIB_MAK) $(MAKEDIRS)
-	$(GLCC) $(GLO_)gsdps.$(OBJ) $(C_) $(GLSRC)gsdps.c
-
 $(GLOBJ)gximage2.$(OBJ) : $(GLSRC)gximage2.c $(AK) $(gx_h)\
  $(math__h) $(memory__h) $(gserrors_h) $(gscolor2_h)\
  $(gscpixel_h) $(gscoord_h) $(gscspace_h) $(gsdevice_h) $(gsiparm2_h)\
  $(gsmatrix_h) $(gxgetbit_h) $(gxiparam_h) $(gxpath_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gximage2.$(OBJ) $(C_) $(GLSRC)gximage2.c
-
-# ---------------- NeXT Display PostScript ---------------- #
-
-gsalphac_h=$(GLSRC)gsalphac.h $(gscompt_h) $(std_h)
-gsdpnext_h=$(GLSRC)gsdpnext.h $(gsalpha_h) $(gsalphac_h)
-
-$(GLOBJ)gsalphac.$(OBJ) : $(GLSRC)gsalphac.c $(AK) $(gx_h)\
- $(gserrors_h) $(memory__h) $(gsalphac_h) $(gsiparam_h) $(gsutil_h)\
- $(gxalpha_h) $(gxcomp_h) $(gxdevice_h) $(gxgetbit_h) $(gxlum_h)\
- $(LIB_MAK) $(MAKEDIRS)
-	$(GLCC) $(GLO_)gsalphac.$(OBJ) $(C_) $(GLSRC)gsalphac.c
-
-$(GLOBJ)gximagec.$(OBJ) : $(GLSRC)gximagec.c $(AK) $(LIB_MAK) $(MAKEDIRS)
-	$(GLCC) $(GLO_)gximagec.$(OBJ) $(C_) $(GLSRC)gximagec.c
-
-dpnxtlib_=$(GLOBJ)gsalphac.$(OBJ)
-$(GLD)dpnxtlib.dev : $(LIB_MAK) $(ECHOGS_XE) $(dpnxtlib_) $(LIB_MAK) $(MAKEDIRS)
-	$(SETMOD) $(GLD)dpnxtlib $(dpnxtlib_)
-	$(ADDCOMP) $(GLD)dpnxtlib alpha
 
 # ================ PostScript LanguageLevel 3 support ================ #
 
@@ -3099,7 +3072,7 @@ $(GLOBJ)gxblend.$(OBJ) : $(GLSRC)gxblend.c $(AK) $(gx_h) $(memory__h)\
 $(GLOBJ)gxblend1.$(OBJ) : $(GLSRC)gxblend1.c $(AK) $(gx_h) $(memory__h)\
  $(gstparam_h) $(gsrect_h) $(gxdcconv_h) $(gxblend_h) $(gxdevcli_h)\
  $(gxgstate_h) $(gdevdevn_h) $(gdevp14_h) $(png__h) $(gp_h)\
- $(gsicc_cache_h) $(LIB_MAK) $(MAKEDIRS)
+ $(gsicc_cache_h) $(gxdevsop_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gxblend1.$(OBJ) $(C_) $(GLSRC)gxblend1.c
 
 $(GLOBJ)gdevp14.$(OBJ) : $(GLSRC)gdevp14.c $(AK) $(gx_h) $(gserrors_h)\
@@ -3448,7 +3421,7 @@ $(GLOBJ)pclromfs0.$(OBJ) : $(GLGEN)pclromfs0.c $(stdint__h) $(LIB_MAK) $(MAKEDIR
 $(GLOBJ)pclromfs1.$(OBJ) : $(GLOBJ)pclromfs1.c $(time__h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)pclromfs1.$(OBJ) $(C_) $(GLOBJ)pclromfs1.c
 
-# A xpsromfs module with only ICC profiles  for COMPILE_INITS=0
+# A xpsromfs module with only ICC profiles for COMPILE_INITS=0
 $(GLOBJ)xpsromfs0.$(OBJ) : $(GLGEN)xpsromfs0.c $(stdint__h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)xpsromfs0.$(OBJ) $(C_) $(GLGEN)xpsromfs0.c
 
@@ -3469,13 +3442,13 @@ $(GLOBJ)pdlromfs0.$(OBJ) : $(GLGEN)pdlromfs0.c $(stdint__h) $(LIB_MAK) $(MAKEDIR
 $(GLOBJ)pdlromfs0c0.$(OBJ) : $(GLGEN)pdlromfs0c0.c $(stdint__h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)pdlromfs0c0.$(OBJ) $(C_) $(GLGEN)pdlromfs0c0.c
 
-$(GLOBJ)pdlromfs0c1.$(OBJ) : $(GLGEN)pdlromfs0c0.c $(stdint__h) $(LIB_MAK) $(MAKEDIRS)
+$(GLOBJ)pdlromfs0c1.$(OBJ) : $(GLGEN)pdlromfs0c1.c $(stdint__h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)pdlromfs0c1.$(OBJ) $(C_) $(GLGEN)pdlromfs0c1.c
 
-$(GLOBJ)pdlromfs0c2.$(OBJ) : $(GLGEN)pdlromfs0c0.c $(stdint__h) $(LIB_MAK) $(MAKEDIRS)
+$(GLOBJ)pdlromfs0c2.$(OBJ) : $(GLGEN)pdlromfs0c2.c $(stdint__h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)pdlromfs0c2.$(OBJ) $(C_) $(GLGEN)pdlromfs0c2.c
 
-$(GLOBJ)pdlromfs0c3.$(OBJ) : $(GLGEN)pdlromfs0c0.c $(stdint__h) $(LIB_MAK) $(MAKEDIRS)
+$(GLOBJ)pdlromfs0c3.$(OBJ) : $(GLGEN)pdlromfs0c3.c $(stdint__h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)pdlromfs0c3.$(OBJ) $(C_) $(GLGEN)pdlromfs0c3.c
 
 $(GLOBJ)pdlromfs1.$(OBJ) : $(GLOBJ)pdlromfs1.c $(time__h) $(LIB_MAK) $(MAKEDIRS)

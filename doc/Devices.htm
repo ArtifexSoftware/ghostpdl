@@ -503,7 +503,8 @@ the names of spot colors within a document.</p>
 
 <p>
 Generally Ghostscript will support a maximum of 64 process and spot
-colors.   The <code>tiffsep</code> device and the <code>psdcmyk</code> device maintain rendered data
+colors.   The <code>tiffsep</code> device the <code>psdcmyk</code> device
+and the <code>psdcmyk16</code> devices maintain rendered data
 in a planar form with a maximum of 64 planes set by the definition of
 GS_CLIENT_COLOR_MAX_COMPONENTS in the code.  That is there can be up to
 64 colorants accurately handled with overprint on a single page.  If more
@@ -537,7 +538,8 @@ the <code>tiffscaled</code> device. No composite file is produced in
 and <code>-dMinFeatureSize=</code> in 1bpp mode.</p>
 
 <p>When <code>-dDownScaleFactor=</code> is used in 8 bit mode with the <code>tiffsep</code>
-(and <code>psdcmyk</code>/<code>psdrgb</code>) device(s) 2 additional &quot;special&quot; ratios
+(and <code>psdcmyk</code>/<code>psdrgb</code>/<code>psdcmyk16</code>/<code>psdrgb16</code>)
+device(s) 2 additional &quot;special&quot; ratios
 are available, 32 and 34. 32 provides a 3:2 downscale (so from 300 to
 200 dpi, say). 34 produces a 3:4 upscale (so from 300 to 400 dpi, say).</p>
 
@@ -877,10 +879,15 @@ series of devices.
 
 <p>
 PSD is the image format used by Adobe Photoshop.
-It is supported by the <code>psdcmyk</code> and <code>psdrgb</code> devices.
-Of special interest with the <code>psdcmyk</code> device is that it supports spot
+It is supported by the <code>psdcmyk</code>, <code>psdrgb</code> 
+<code>psdcmyk16</code> and <code>psdrgb16</code> devices.
+Of special interest with the <code>psdcmyk</code> and <code>psdcmyk16</code> devices is that they support spot
 colors.  <a href="#tiffsep">See the comments under the <code>tiffsep</code> and <code>tiffsep1</code>
 device about the maximum number of spot colors supported by Ghostscript</a></p>
+<p>
+The <code>psdcmyk16</code> and <code>psdrgb16</code> devices are essentially the same
+as the <code>psdcmyk</code> and <code>psdrgb</code> devices except they provide 16 bit output. 
+</p>
 <p>
 The <code>psdcmykog</code> device produces PSD files with 6 components:
 Cyan, Magenta, Yellow, blacK, Orange, and Green.  This device does not support the -dDownScaleFactor=

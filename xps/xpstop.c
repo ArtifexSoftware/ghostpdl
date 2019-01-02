@@ -149,7 +149,9 @@ xps_imp_allocate_interp_instance(pl_interp_implementation_t *impl,
     ctx->gray = gs_cspace_new_ICC(ctx->memory, ctx->pgs, 1);
     ctx->cmyk = gs_cspace_new_ICC(ctx->memory, ctx->pgs, 4);
     ctx->srgb = gs_cspace_new_ICC(ctx->memory, ctx->pgs, 3);
-    ctx->scrgb = gs_cspace_new_ICC(ctx->memory, ctx->pgs, 3);
+
+    /* scrgb needs special treatment */
+    ctx->scrgb = gs_cspace_new_scrgb(ctx->memory, ctx->pgs);
 
     instance->ctx = ctx;
     instance->scratch_file = NULL;

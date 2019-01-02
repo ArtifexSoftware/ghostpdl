@@ -187,7 +187,7 @@ endif
 
 COMP:=$(COMP)/DECC/PREFIX=ALL/NESTED_INCLUDE=PRIMARY/NAMES=SHORTENED
 
-# Define any other compilation flags. 
+# Define any other compilation flags.
 # Including defines for A4 paper size
 
 ifdef A4_PAPER
@@ -245,7 +245,7 @@ DEVICE_DEVS21=
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 
-FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(PSD)fapi.dev
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(PSD)fapi.dev
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
@@ -460,7 +460,7 @@ $(GLOBJ)gp_stdia.$(OBJ): $(GLSRC)gp_stdia.c $(AK) $(stdio__h) $(time__h) $(unist
 
 # Interpreter AUX programs
 
-$(ECHOGS_XE) :  $(GLOBJ)echogs.$(OBJ) 
+$(ECHOGS_XE) :  $(GLOBJ)echogs.$(OBJ)
 	LINK/EXE=$@ $(GLOBJ)echogs.$(OBJ)
 
 $(GLOBJ)echogs.$(OBJ) :  $(GLSRC)echogs.c

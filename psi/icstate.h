@@ -52,9 +52,8 @@ struct gs_context_state_s {
     long nv_page_count;    /* non-decreasing page counter for /PageCount */
                            /* It's updated only by currentsystemparams .*/
     long rand_state;		/* (not in Red Book) */
-    long usertime_total;	/* total accumulated usertime, */
-                                /* not counting current time if running */
-    bool keep_usertime;		/* true if context ever executed usertime */
+    long usertime_0[2];         /* initial value first time usertime was called */
+    bool usertime_inited;       /* has usertime been called yet? */
     int in_superexec;		/* # of levels of superexec */
     /* View clipping is handled in the graphics state. */
     ref error_object;		/* t__invalid or error object from operator */
@@ -68,9 +67,7 @@ struct gs_context_state_s {
     stream *invalid_file_stream;/* An invalid file object (stable memory) */
     op_array_table op_array_table_global; /* Global operator table */
     op_array_table op_array_table_local;  /* Local operator table */
-    int (*time_slice_proc)(i_ctx_t **);   /* Time slice procedure */
     int time_slice_ticks;                 /* Ticks before next slice */
-    int (*reschedule_proc)(i_ctx_t **);   /* Reschedule procedure */
     gs_offset_t uel_position;   /* The file position at which we last hit UEL */
 
     /* Put the stacks at the end to minimize other offsets. */

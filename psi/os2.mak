@@ -11,7 +11,7 @@
 #  Novato, CA 94945, U.S.A., +1(415)492-9861, for further information.
 #
 # makefile for MS-DOS or OS/2 GCC/EMX platform.
-# Uses Borland (MSDOS) MAKER or 
+# Uses Borland (MSDOS) MAKER or
 # Uses IBM NMAKE.EXE Version 2.000.000 Mar 27 1992
 
 # ------------------------------- Options ------------------------------- #
@@ -88,7 +88,7 @@ IBMCPP=0
 BUILD_X11=0
 !if $(BUILD_X11)
 X11INCLUDE=-I$(X11ROOT)\XFree86\include
-X11LIBS=$(X11ROOT)\XFree86\lib\Xt.lib $(X11ROOT)\XFree86\lib\X11.lib 
+X11LIBS=$(X11ROOT)\XFree86\lib\Xt.lib $(X11ROOT)\XFree86\lib\X11.lib
 MT_OPT=-Zmtd
 !endif
 
@@ -361,7 +361,7 @@ CEXESYS=-Zomf -Zsys
 GENOPT=$(CD) $(CGDB) $(CDLL) $(CO) $(CPNG)
 
 CCFLAGS0=$(GENOPT) $(PLATOPT) -D__OS2__ $(GCIFLAGS)
-CCFLAGS=$(CCFLAGS0) 
+CCFLAGS=$(CCFLAGS0)
 CC=$(COMPDIR)\$(COMP) $(CCFLAGS0)
 CCAUX=$(CC)
 CC_=$(CC)
@@ -375,7 +375,7 @@ CC_SHARED=$(CC_)
 # Choose the language feature(s) to include.  See gs.mak for details.
 # Since we have a large address space, we include some optional features.
 
-FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(PSD)os2print.dev
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(PSD)os2print.dev
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
@@ -424,7 +424,7 @@ DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev $(DD)jpegcmyk.dev
 DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)ps2write.dev $(DD)eps2write.dev $(DD)txtwrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev
 DEVICE_DEVS16=$(DD)bbox.dev $(DD)pdfimage8.dev $(DD)pdfimage24.dev $(DD)pdfimage32.dev $(DD)PCLm.dev
 # Overflow for DEVS3,4,5,6,9
-DEVICE_DEVS17=$(DD)ljet3.dev $(DD)ljet3d.dev $(DD)ljet4.dev $(DD)ljet4d.dev 
+DEVICE_DEVS17=$(DD)ljet3.dev $(DD)ljet3d.dev $(DD)ljet4.dev $(DD)ljet4d.dev
 DEVICE_DEVS18=$(DD)pj.dev $(DD)pjxl.dev $(DD)pjxl300.dev $(DD)jetp3852.dev $(DD)r4081.dev
 DEVICE_DEVS19=$(DD)lbp8.dev $(DD)m8510.dev $(DD)necp6.dev $(DD)bjc600.dev $(DD)bjc800.dev
 DEVICE_DEVS20=$(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev $(DD)pamcmyk32.dev
@@ -451,7 +451,7 @@ DEVICE_DEVS21= $(DD)spotcmyk.dev $(DD)devicen.dev $(DD)bmpsep1.dev $(DD)bmpsep8.
 
 # The GCC/EMX platform
 
-os2__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_os2.$(OBJ) $(GLOBJ)gp_os2fs.$(OBJ) $(GLOBJ)gp_paper.$(OBJ) $(GLOBJ)gp_stdia.$(OBJ) $(GLOBJ)gp_nxpsprn.$(OBJ) 
+os2__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_os2.$(OBJ) $(GLOBJ)gp_os2fs.$(OBJ) $(GLOBJ)gp_paper.$(OBJ) $(GLOBJ)gp_stdia.$(OBJ) $(GLOBJ)gp_nxpsprn.$(OBJ)
 
 $(GLGEN)os2_.dev: $(os2__) $(GLD)nosync.dev
 	$(SETMOD) $(GLGEN)os2_ $(os2__) -include $(GLD)nosync
@@ -582,7 +582,7 @@ $(GS_XE): $(BINDIR)\$(GSDLL).dll $(PSSRC)dpmain.c $(PSSRC)gsos2.rc $(GLOBJ)gscde
 !endif
 	rc $(PSOBJ)$(GS).res $(GS_XE)
 
-$(BINDIR)\$(GSDLL).dll: $(GS_ALL) $(ALL_DEVS) 
+$(BINDIR)\$(GSDLL).dll: $(GS_ALL) $(ALL_DEVS)
 !if $(EMX)
 	LINK386 /DEBUG $(COMPBASE)\lib\dll0.obj $(COMPBASE)\lib\end.lib @$(ld_tr) $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ), $(BINDIR)\$(GSDLL).dll, ,$(X11LIBS) $(COMPBASE)\lib\gcc.lib $(COMPBASE)\lib\st\c.lib $(COMPBASE)\lib\st\c_dllso.lib $(COMPBASE)\lib\st\sys.lib $(COMPBASE)\lib\c_alias.lib $(COMPBASE)\lib\os2.lib, $(PSSRC)gsdll2.def
 !endif
@@ -622,7 +622,7 @@ $(GLOBJ)gspmdrv.res: $(GLSRC)gspmdrv.rc $(GLSRC)gspmdrv.h $(GLOBJ)gspmdrv.ico $(
 	rc -i $(COMPBASE)\include -i $(GLSRCDIR) -i $(GLOBJDIR) -r $(GLSRC)gspmdrv.rc $(GLOBJ)gspmdrv.res
 
 $(BINDIR)\gspmdrv.exe: $(GLOBJ)gspmdrv.o $(GLOBJ)gspmdrv.res $(GLSRC)gspmdrv.def $(TOP_MAKEFILES)
-	$(COMPDIR)\$(COMP) $(CGDB) $(CO) -o $(GLOBJ)gspmdrv $(GLOBJ)gspmdrv.o 
+	$(COMPDIR)\$(COMP) $(CGDB) $(CO) -o $(GLOBJ)gspmdrv $(GLOBJ)gspmdrv.o
 	$(COMPDIR)\emxbind -p -r$(GLOBJ)gspmdrv.res -d$(GLSRC)gspmdrv.def $(COMPDIR)\emxl.exe $(GLOBJ)gspmdrv $(BINDIR)\gspmdrv.exe
 	del $(GLOBJ)gspmdrv
 

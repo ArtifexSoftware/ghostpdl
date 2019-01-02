@@ -210,7 +210,7 @@ gs_update_trans_marking_params(gs_gstate * pgs)
 int
 gs_begin_transparency_group(gs_gstate *pgs,
                             const gs_transparency_group_params_t *ptgp,
-                            const gs_rect *pbbox)
+                            const gs_rect *pbbox, pdf14_compositor_operations group_type)
 {
     gs_pdf14trans_params_t params = { 0 };
     const gs_color_space *blend_color_space;
@@ -225,7 +225,7 @@ gs_begin_transparency_group(gs_gstate *pgs,
      * create_compositor.  This will pass the data to the PDF 1.4
      * transparency device.
      */
-    params.pdf14_op = PDF14_BEGIN_TRANS_GROUP;
+    params.pdf14_op = group_type;
     params.Isolated = ptgp->Isolated;
     params.Knockout = ptgp->Knockout;
     params.image_with_SMask = ptgp->image_with_SMask;

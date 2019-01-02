@@ -81,7 +81,7 @@ PSD=$(PSGENDIR)/
 INSTALL = $(GLSRCDIR)/instcopy -c
 INSTALL_PROGRAM = $(INSTALL) -m 755
 INSTALL_DATA = $(INSTALL) -m 644
-INSTALL_SHARED = 
+INSTALL_SHARED =
 
 prefix = /usr/local
 exec_prefix = ${prefix}
@@ -304,10 +304,10 @@ JPX_CFLAGS=  -DUSE_JPIP -DUSE_OPENJPEG_JP2 -DOPJ_HAVE_STDINT_H=1 -DOPJ_HAVE_INTT
 # options for lcms color management library
 SHARE_LCMS=0
 LCMS2SRCDIR=./lcms2mt
-LCMS2_CFLAGS=-DSHARE_LCMS=$(SHARE_LCMS) -DCMS_USE_BIG_ENDIAN=0   
+LCMS2_CFLAGS=-DSHARE_LCMS=$(SHARE_LCMS) -DCMS_USE_BIG_ENDIAN=0
 
 LCMS2MTSRCDIR=./lcms2mt
-LCMS2_CFLAGS=-DSHARE_LCMS=$(SHARE_LCMS) -DCMS_USE_BIG_ENDIAN=0   
+LCMS2_CFLAGS=-DSHARE_LCMS=$(SHARE_LCMS) -DCMS_USE_BIG_ENDIAN=0
 
 # Which CMS are we using?
 # Options are currently lcms2mt or lcms2
@@ -328,7 +328,7 @@ JPEGXR_OBJDIR=$(GLOBJDIR)
 # Define the directory where the ijs source is stored,
 # and the process forking method to use for the server.
 # See ijs.mak for more information.
- 
+
 SHARE_IJS=0
 IJS_NAME=
 IJSSRCDIR=./ijs
@@ -378,7 +378,7 @@ CCAUXLD=$(CCAUX)
 # Define the default gcc flags.
 GCFLAGS=  -Wall -Wstrict-prototypes -Wundef -Wmissing-declarations -Wmissing-prototypes -Wwrite-strings -Wno-strict-aliasing -Werror=declaration-after-statement -fno-builtin -fno-common -Werror=return-type -DHAVE_STDINT_H=1 -DHAVE_DIRENT_H=1 -DHAVE_SYS_DIR_H=1 -DHAVE_SYS_TIME_H=1 -DHAVE_SYS_TIMES_H=1 -DHAVE_INTTYPES_H=1 -DGX_COLOR_INDEX_TYPE="unsigned long int" -D__USE_UNIX98=1   -DNOCONTRIB
 
-# Define the added flags for standard, debugging, profiling 
+# Define the added flags for standard, debugging, profiling
 # and shared object builds.
 
 CFLAGS_STANDARD= -O2
@@ -442,8 +442,8 @@ PDF_LDFLAGS_SO=-shared -Wl,$(LD_SET_DT_SONAME)$(LDFLAGS_SO_PREFIX)$(PDF_SONAME_M
 # Solaris may need -lnsl -lsocket -lposix4.
 # (Libraries required by individual drivers are handled automatically.)
 
-EXTRALIBS=$(XTRALIBS) -ldl -lm  -rdynamic -ldl  
-AUXEXTRALIBS=$(XTRALIBS) -ldl -lm  -rdynamic -ldl   
+EXTRALIBS=$(XTRALIBS) -ldl -lm  -rdynamic -ldl
+AUXEXTRALIBS=$(XTRALIBS) -ldl -lm  -rdynamic -ldl
 
 # Define the standard libraries to search at the end of linking.
 # Most platforms require -lpthread for the POSIX threads library;
@@ -473,7 +473,7 @@ XINCLUDE=
 #XLIBS=Xt SM ICE Xext X11
 
 # We use the autoconf macro AC_PATH_XTRA which defines X_LIBS with
-# the -L (or whatever). It also defines X_PRE_LIBS and X_EXTRA_LIBS 
+# the -L (or whatever). It also defines X_PRE_LIBS and X_EXTRA_LIBS
 # all three of which are stripped and slotted into XLIBS below.
 # Usually however, all but X_LIBS are empty on modern platforms.
 XLIBDIRS=
@@ -494,8 +494,8 @@ SYNC=nosync
 RM=rm -f
 
 # ------ Dynamic loader options ------- #
-SOC_CFLAGS	=	
-SOC_LIBS	=	
+SOC_CFLAGS	=
+SOC_LIBS	=
 SOC_LOADER	=	dxmainc.c
 
 # on virtually every Unix-a-like system, this is "so",
@@ -513,7 +513,7 @@ SO_LIB_VERSION_SEPARATOR=.
 # Choose the language feature(s) to include.  See gs.mak for details.
 
 # if it's included, $(PSD)gs_pdfwr.dev should always be one of the last in the list
-PSI_FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)epsf.dev $(PSD)ttfont.dev \
+PSI_FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)epsf.dev $(PSD)ttfont.dev \
                   $(PSD)fapi_ps.dev $(PSD)jpx.dev $(PSD)jbig2.dev $(PSD)gs_pdfwr.dev
 
 
@@ -536,9 +536,9 @@ FEATURE_DEVS=$(GLD)pipe.dev $(GLD)gsnogc.dev $(GLD)htxlib.dev $(GLD)psl3lib.dev 
 
 
 #FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev
-#FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(GLD)pipe.dev
+#FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)ttfont.dev $(GLD)pipe.dev
 # The following is strictly for testing.
-FEATURE_DEVS_ALL=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)double.dev $(PSD)trapping.dev $(PSD)stocht.dev $(GLD)pipe.dev $(GLD)gsnogc.dev $(GLD)htxlib.dev $(PSD)jbig2.dev $(PSD)jpx.dev  $(GLD)ramfs.dev
+FEATURE_DEVS_ALL=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)ttfont.dev $(PSD)double.dev $(PSD)trapping.dev $(PSD)stocht.dev $(GLD)pipe.dev $(GLD)gsnogc.dev $(GLD)htxlib.dev $(PSD)jbig2.dev $(PSD)jpx.dev  $(GLD)ramfs.dev
 #FEATURE_DEVS=$(FEATURE_DEVS_ALL)
 
 # The list of resources to be included in the %rom% file system.
@@ -560,24 +560,24 @@ BAND_LIST_COMPRESSOR=zlib
 
 FILE_IMPLEMENTATION=stdio
 
-# List of default devices, in order of priority. They need not be 
+# List of default devices, in order of priority. They need not be
 # present in the actual build.
 GS_DEV_DEFAULT="x11alpha bbox"
 
-# Fallback default device.  This is set to 'display' by 
+# Fallback default device.  This is set to 'display' by
 # unix-dll.mak when building a shared object.
 DISPLAY_DEV=$(DD)bbox.dev
 
 # Choose the device(s) to include.  See devs.mak for details,
 # devs.mak and contrib.mak for the list of available devices.
 # DEVICE_DEVS=$(DISPLAY_DEV) $(DD)x11.dev $(DD)x11_.dev $(DD)x11alpha.dev $(DD)x11alt_.dev $(DD)x11cmyk.dev $(DD)x11cmyk2.dev $(DD)x11cmyk4.dev $(DD)x11cmyk8.dev $(DD)x11gray2.dev $(DD)x11gray4.dev $(DD)x11mono.dev $(DD)x11rg16x.dev $(DD)x11rg32x.dev
-DEVICE_DEVS=$(DISPLAY_DEV) 
-DEVICE_DEVS1=$(DD)bit.dev $(DD)bitcmyk.dev $(DD)bitrgb.dev $(DD)bitrgbtags.dev $(DD)bmp16.dev $(DD)bmp16m.dev $(DD)bmp256.dev $(DD)bmp32b.dev $(DD)bmpgray.dev $(DD)bmpmono.dev $(DD)bmpsep1.dev $(DD)bmpsep8.dev $(DD)ccr.dev $(DD)cif.dev $(DD)devicen.dev $(DD)eps2write.dev $(DD)fpng.dev $(DD)inferno.dev $(DD)ink_cov.dev $(DD)inkcov.dev $(DD)jpeg.dev $(DD)jpegcmyk.dev $(DD)jpeggray.dev $(DD)mgr4.dev $(DD)mgr8.dev $(DD)mgrgray2.dev $(DD)mgrgray4.dev $(DD)mgrgray8.dev $(DD)mgrmono.dev $(DD)miff24.dev $(DD)pam.dev $(DD)pamcmyk32.dev $(DD)pamcmyk4.dev $(DD)pbm.dev $(DD)pbmraw.dev $(DD)pcx16.dev $(DD)pcx24b.dev $(DD)pcx256.dev $(DD)pcxcmyk.dev $(DD)pcxgray.dev $(DD)pcxmono.dev $(DD)pdfwrite.dev $(DD)pgm.dev $(DD)pgmraw.dev $(DD)pgnm.dev $(DD)pgnmraw.dev $(DD)pkm.dev $(DD)pkmraw.dev $(DD)pksm.dev $(DD)pksmraw.dev $(DD)plan.dev $(DD)plan9bm.dev $(DD)planc.dev $(DD)plang.dev $(DD)plank.dev $(DD)planm.dev $(DD)plank.dev $(DD)plib.dev $(DD)plibc.dev $(DD)plibg.dev $(DD)plibk.dev $(DD)plibm.dev $(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev $(DD)ps2write.dev $(DD)psdcmyk.dev $(DD)psdcmykog.dev $(DD)psdf.dev $(DD)psdrgb.dev $(DD)spotcmyk.dev $(DD)txtwrite.dev $(DD)xcf.dev
+DEVICE_DEVS=$(DISPLAY_DEV)
+DEVICE_DEVS1=$(DD)bit.dev $(DD)bitcmyk.dev $(DD)bitrgb.dev $(DD)bitrgbtags.dev $(DD)bmp16.dev $(DD)bmp16m.dev $(DD)bmp256.dev $(DD)bmp32b.dev $(DD)bmpgray.dev $(DD)bmpmono.dev $(DD)bmpsep1.dev $(DD)bmpsep8.dev $(DD)ccr.dev $(DD)cif.dev $(DD)devicen.dev $(DD)eps2write.dev $(DD)fpng.dev $(DD)inferno.dev $(DD)ink_cov.dev $(DD)inkcov.dev $(DD)jpeg.dev $(DD)jpegcmyk.dev $(DD)jpeggray.dev $(DD)mgr4.dev $(DD)mgr8.dev $(DD)mgrgray2.dev $(DD)mgrgray4.dev $(DD)mgrgray8.dev $(DD)mgrmono.dev $(DD)miff24.dev $(DD)pam.dev $(DD)pamcmyk32.dev $(DD)pamcmyk4.dev $(DD)pbm.dev $(DD)pbmraw.dev $(DD)pcx16.dev $(DD)pcx24b.dev $(DD)pcx256.dev $(DD)pcxcmyk.dev $(DD)pcxgray.dev $(DD)pcxmono.dev $(DD)pdfwrite.dev $(DD)pgm.dev $(DD)pgmraw.dev $(DD)pgnm.dev $(DD)pgnmraw.dev $(DD)pkm.dev $(DD)pkmraw.dev $(DD)pksm.dev $(DD)pksmraw.dev $(DD)plan.dev $(DD)plan9bm.dev $(DD)planc.dev $(DD)plang.dev $(DD)plank.dev $(DD)planm.dev $(DD)plank.dev $(DD)plib.dev $(DD)plibc.dev $(DD)plibg.dev $(DD)plibk.dev $(DD)plibm.dev $(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev $(DD)ps2write.dev $(DD)psdcmyk.dev $(DD)psdcmykog.dev $(DD)psdf.dev $(DD)psdrgb.dev $(DD)spotcmyk.dev $(DD)txtwrite.dev $(DD)xcf.dev $(DD)psdcmyk16.dev $(DD)psdrgb16.dev
 DEVICE_DEVS2=$(DD)ap3250.dev $(DD)atx23.dev $(DD)atx24.dev $(DD)atx38.dev $(DD)bj10e.dev $(DD)bj200.dev $(DD)bjc600.dev $(DD)bjc800.dev $(DD)cdeskjet.dev $(DD)cdj500.dev $(DD)cdj550.dev $(DD)cdjcolor.dev $(DD)cdjmono.dev $(DD)cljet5.dev $(DD)cljet5c.dev $(DD)cljet5pr.dev $(DD)coslw2p.dev $(DD)coslwxl.dev $(DD)declj250.dev $(DD)deskjet.dev $(DD)dj505j.dev $(DD)djet500.dev $(DD)djet500c.dev $(DD)dnj650c.dev $(DD)eps9high.dev $(DD)eps9mid.dev $(DD)epson.dev $(DD)epsonc.dev $(DD)escp.dev $(DD)fs600.dev $(DD)hl7x0.dev $(DD)ibmpro.dev $(DD)imagen.dev $(DD)itk24i.dev $(DD)itk38.dev $(DD)jetp3852.dev $(DD)laserjet.dev $(DD)lbp8.dev $(DD)lips3.dev $(DD)lj250.dev $(DD)lj3100sw.dev $(DD)lj4dith.dev $(DD)lj4dithp.dev $(DD)lj5gray.dev $(DD)lj5mono.dev $(DD)ljet2p.dev $(DD)ljet3.dev $(DD)ljet3d.dev $(DD)ljet4.dev $(DD)ljet4d.dev $(DD)ljet4pjl.dev $(DD)ljetplus.dev $(DD)lp2563.dev $(DD)lp8000.dev $(DD)lq850.dev $(DD)lxm5700m.dev $(DD)m8510.dev $(DD)necp6.dev $(DD)oce9050.dev $(DD)oki182.dev $(DD)okiibm.dev $(DD)paintjet.dev $(DD)photoex.dev $(DD)picty180.dev $(DD)pj.dev $(DD)pjetxl.dev $(DD)pjxl.dev $(DD)pjxl300.dev $(DD)pxlcolor.dev $(DD)pxlmono.dev $(DD)r4081.dev $(DD)rinkj.dev $(DD)sj48.dev $(DD)st800.dev $(DD)stcolor.dev $(DD)t4693d2.dev $(DD)t4693d4.dev $(DD)t4693d8.dev $(DD)tek4696.dev $(DD)uniprint.dev
 DEVICE_DEVS3=
-DEVICE_DEVS4=$(DD)ijs.dev 
+DEVICE_DEVS4=$(DD)ijs.dev
 DEVICE_DEVS5=
-DEVICE_DEVS6=$(DD)png16.dev $(DD)png16m.dev $(DD)png256.dev $(DD)png48.dev $(DD)pngalpha.dev $(DD)pnggray.dev $(DD)pngmono.dev 
+DEVICE_DEVS6=$(DD)png16.dev $(DD)png16m.dev $(DD)png256.dev $(DD)png48.dev $(DD)pngalpha.dev $(DD)pnggray.dev $(DD)pngmono.dev
 DEVICE_DEVS7=
 DEVICE_DEVS8=
 DEVICE_DEVS9=
@@ -714,4 +714,3 @@ maintainer-clean : distclean
 
 check : default
 	$(NO_OP)
-

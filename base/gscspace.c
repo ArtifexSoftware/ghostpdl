@@ -33,6 +33,9 @@
 #include "gsnamecl.h"  /* Custom color call back define */
 #include "gsicc.h"
 #include "gsicc_manage.h"
+#include "string_.h"
+#include "strmio.h"         /* needed for sfclose */
+#include "gsicc_cache.h"    /* Needed for gsicc_get_icc_buff_hash */
 
 static cs_proc_install_cspace(gx_install_DeviceGray);
 static cs_proc_install_cspace(gx_install_DeviceRGB);
@@ -162,6 +165,53 @@ gs_cspace_new_DeviceCMYK(gs_memory_t *mem)
 }
 
 /* For use in initializing ICC color spaces for XPS */
+gs_color_space *
+gs_cspace_new_scrgb(gs_memory_t *pmem, gs_gstate * pgs)
+{
+    gs_color_space *pcspace = gs_cspace_alloc(pmem, &gs_color_space_type_ICC);
+    cmm_profile_t *profile;
+    stream *str;
+    int code;
+
+    if (pcspace == NULL)
+        return pcspace;
+
+    code = gsicc_open_search(SCRGB, strlen(SCRGB), pmem, pmem->gs_lib_ctx->profiledir,
+        pmem->gs_lib_ctx->profiledir_len, &str);
+
+    if (code < 0 || str == NULL) {
+        rc_decrement(pcspace, "gs_cspace_new_scrgb");
+        return NULL;
+    }
+
+    pcspace->cmm_icc_profile_data = gsicc_profile_new(str, pmem, SCRGB, strlen(SCRGB));
+    code = sfclose(str);
+    if (pcspace->cmm_icc_profile_data == NULL) {
+        rc_decrement(pcspace, "gs_cspace_new_scrgb");
+        return NULL;
+    }
+
+    /* Get the profile handle */
+    pcspace->cmm_icc_profile_data->profile_handle =
+        gsicc_get_profile_handle_buffer(pcspace->cmm_icc_profile_data->buffer,
+            pcspace->cmm_icc_profile_data->buffer_size, pmem);
+    profile = pcspace->cmm_icc_profile_data;
+
+    /* Compute the hash code of the profile. Everything in the
+    ICC manager will have it's hash code precomputed */
+    gsicc_get_icc_buff_hash(profile->buffer, &(profile->hashcode),
+        profile->buffer_size);
+    profile->hash_is_valid = true;
+    profile->num_comps =
+        gscms_get_input_channel_count(profile->profile_handle, profile->memory);
+    profile->num_comps_out =
+        gscms_get_output_channel_count(profile->profile_handle, profile->memory);
+    profile->data_cs =
+        gscms_get_profile_data_space(profile->profile_handle, profile->memory);
+    gsicc_set_icc_range(&profile);
+    return pcspace;
+}
+
 gs_color_space *
 gs_cspace_new_ICC(gs_memory_t *pmem, gs_gstate * pgs, int components)
 {

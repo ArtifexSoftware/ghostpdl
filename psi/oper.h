@@ -90,17 +90,11 @@ int check_type_failed(const ref *);
  * It is OK to return o_pop_estack if nothing has been popped,
  * but it is not OK to return o_push_estack if nothing has been pushed.
  *
- * If an operator has suspended the current context and wants the
- * interpreter to call the scheduler, it must return o_reschedule.
- * It may also have pushed or popped elements on the control stack.
- * (This is only used when the Display PostScript option is included.)
- *
  * These values must be greater than 1, and far enough apart from zero and
  * from each other not to tempt a compiler into implementing a 'switch'
  * on them using indexing rather than testing.
  */
 #define o_push_estack 5
 #define o_pop_estack 14
-#define o_reschedule 22
 
 #endif /* oper_INCLUDED */

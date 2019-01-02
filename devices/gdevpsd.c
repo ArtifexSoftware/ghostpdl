@@ -289,6 +289,27 @@ const psd_device gs_psdrgb_device =
     GX_DOWNSCALER_PARAMS_DEFAULTS
 };
 
+const psd_device gs_psdrgb16_device =
+{
+    psd_device_body(spot_rgb_procs, "psdrgb16", 3, GX_CINFO_POLARITY_ADDITIVE, 48, 65535, 65535, GX_CINFO_SEP_LIN, "DeviceRGB"),
+    /* devn_params specific parameters */
+    { 16,	/* Bits per color - must match ncomp, depth, etc. above */
+    DeviceRGBComponents,	/* Names of color model colorants */
+    3,			/* Number colorants for RGB */
+    0,			/* MaxSeparations has not been specified */
+    -1,			/* PageSpotColors has not been specified */
+    { 0 },			/* SeparationNames */
+    0,			/* SeparationOrder names */
+    { 0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
+    },
+    { true },			/* equivalent CMYK colors for spot colors */
+    /* PSD device specific parameters */
+    psd_DEVICE_RGB,		/* Color model */
+    GS_SOFT_MAX_SPOTS,           /* max_spots */
+    false,                      /* colorants not locked */
+    GX_DOWNSCALER_PARAMS_DEFAULTS
+};
+
 /*
  * PSD device with CMYK process color model and spot color support.
  */
@@ -311,6 +332,31 @@ const psd_device gs_psdcmyk_device =
       {0},			/* SeparationNames */
       0,			/* SeparationOrder names */
       {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
+    },
+    { true },			/* equivalent CMYK colors for spot colors */
+    /* PSD device specific parameters */
+    psd_DEVICE_CMYK,		/* Color model */
+    GS_SOFT_MAX_SPOTS,          /* max_spots */
+    false,                      /* colorants not locked */
+    GX_DOWNSCALER_PARAMS_DEFAULTS
+};
+
+const psd_device gs_psdcmyk16_device =
+{
+    psd_device_body(spot_cmyk_procs, "psdcmyk16",
+    ARCH_SIZEOF_GX_COLOR_INDEX, /* Number of components - need a nominal 1 bit for each */
+    GX_CINFO_POLARITY_SUBTRACTIVE,
+    ARCH_SIZEOF_GX_COLOR_INDEX * 16, /* 8 bits per component (albeit in planes) */
+    65535, 65535, GX_CINFO_SEP_LIN, "DeviceCMYK"),
+    /* devn_params specific parameters */
+    { 16,	/* Bits per color - must match ncomp, depth, etc. above */
+    DeviceCMYKComponents,	/* Names of color model colorants */
+    4,			/* Number colorants for CMYK */
+    0,			/* MaxSeparations has not been specified */
+    -1,			/* PageSpotColors has not been specified */
+    { 0 },			/* SeparationNames */
+    0,			/* SeparationOrder names */
+    { 0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
     },
     { true },			/* equivalent CMYK colors for spot colors */
     /* PSD device specific parameters */
@@ -914,7 +960,7 @@ psd_setup(psd_write_ctx *xc, gx_devn_prn_device *dev, FILE *file, int w, int h)
         if (dev->devn_params.std_colorant_names[i] == NULL)
             break;
     }
-    xc->base_bytes_pp = dev->devn_params.num_std_colorant_names;
+    xc->base_num_channels = dev->devn_params.num_std_colorant_names;
     xc->num_channels = i;
     if (dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
         if (dev->devn_params.num_separation_order_names == 0) {
@@ -1016,7 +1062,8 @@ int
 psd_write_header(psd_write_ctx *xc, gx_devn_prn_device *pdev)
 {
     int code = 0;
-    int bytes_pp = xc->num_channels;
+    int num_channels = xc->num_channels;
+    int bpc = pdev->devn_params.bitspercomponent;
     int chan_idx;
     int chan_names_len = 0;
     int sep_num;
@@ -1027,11 +1074,12 @@ psd_write_header(psd_write_ctx *xc, gx_devn_prn_device *pdev)
     /* Reserved 6 Bytes - Must be zero */
     psd_write_32(xc, 0);
     psd_write_16(xc, 0);
-    psd_write_16(xc, (bits16) bytes_pp); /* Channels (2 Bytes) - Supported range is 1 to 24 */
+    psd_write_16(xc, (bits16)num_channels); /* Channels (2 Bytes) - Supported range is 1 to 56 */
     psd_write_32(xc, xc->height); /* Rows */
     psd_write_32(xc, xc->width); /* Columns */
-    psd_write_16(xc, 8); /* Depth - 1, 8 and 16 */
-    psd_write_16(xc, (bits16) xc->base_bytes_pp); /* Mode - RGB=3, CMYK=4 */
+    psd_write_16(xc, bpc); /* Depth - 1, 8 and 16 */
+    /* Modes: Bitmap=0, Grayscale=1, RGB=3, CMYK=4 MultiChannel=7 Lab=9 */
+    psd_write_16(xc, (bits16) xc->base_num_channels);  /* We use 1, 3 or 4. */
 
     /* Color Mode Data */
     psd_write_32(xc, 0); 	/* No color mode data */
@@ -1051,7 +1099,7 @@ psd_write_header(psd_write_ctx *xc, gx_devn_prn_device *pdev)
         chan_names_len += (separation_name->size + 1);
     }
     psd_write_32(xc, 12 + (chan_names_len + (chan_names_len % 2))
-                        + (12 + (14 * (xc->num_channels - xc->base_bytes_pp)))
+                        + (12 + (14 * (xc->num_channels - xc->base_num_channels)))
                         + 28);
     psd_write(xc, (const byte *)"8BIM", 4);
     psd_write_16(xc, 1006); /* 0x03EE */
@@ -1079,7 +1127,7 @@ psd_write_header(psd_write_ctx *xc, gx_devn_prn_device *pdev)
     psd_write(xc, (const byte *)"8BIM", 4);
     psd_write_16(xc, 1007); /* 0x03EF */
     psd_write_16(xc, 0); /* PString */
-    psd_write_32(xc, 14 * (xc->num_channels - xc->base_bytes_pp)); /* Length */
+    psd_write_32(xc, 14 * (xc->num_channels - xc->base_num_channels)); /* Length */
     for (chan_idx = NUM_CMYK_COMPONENTS; chan_idx < xc->num_channels; chan_idx++) {
         sep_num = xc->chnl_to_orig_sep[chan_idx] - NUM_CMYK_COMPONENTS;
         psd_write_16(xc, 02); /* CMYK */
@@ -1136,7 +1184,8 @@ psd_write_header(psd_write_ctx *xc, gx_devn_prn_device *pdev)
     /* Layer and Mask information */
     psd_write_32(xc, 0); 	/* No layer or mask information */
 
-    psd_write_16(xc, 0); /* Compression */
+    /* Compression: 0=None, 1=RLE/PackBits, 2=Deflate 3=Defalte+Prediction */
+    psd_write_16(xc, 0);
 
     return code;
 }
@@ -1190,20 +1239,22 @@ psd_prn_close(gx_device *dev)
 static int
 psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
 {
-    int raster_plane = bitmap_raster(pdev->width * 8);
+
+    psd_device *psd_dev = (psd_device *)pdev;
+    int bpc = psd_dev->devn_params.bitspercomponent;
+    int raster_plane = bitmap_raster(pdev->width * bpc);
     byte *planes[GS_CLIENT_COLOR_MAX_COMPONENTS];
     int code = 0;
     int i, j;
     byte *sep_line;
-    int base_bytes_pp = xc->base_bytes_pp;
+    int base_num_channels = xc->base_num_channels;
     int chan_idx;
-/*  psd_device *xdev = (psd_device *)pdev;
-    gcmmhlink_t link = xdev->output_icc_link; */
     byte * unpacked;
     int num_comp = xc->num_channels;
     gs_get_bits_params_t params;
     gx_downscaler_t ds = { NULL };
-    psd_device *psd_dev = (psd_device *)pdev;
+    int octets_per_component = bpc >> 3;
+    int octets_per_line = xc->width * octets_per_component;
 
     /* Return planar data */
     params.options = (GB_RETURN_POINTER | GB_RETURN_COPY |
@@ -1212,7 +1263,7 @@ psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
     params.x_offset = 0;
     params.raster = bitmap_raster(pdev->width * pdev->color_info.depth);
 
-    sep_line = gs_alloc_bytes(pdev->memory, xc->width, "psd_write_sep_line");
+    sep_line = gs_alloc_bytes(pdev->memory, octets_per_line, "psd_write_sep_line");
 
     for (chan_idx = 0; chan_idx < num_comp; chan_idx++) {
         planes[chan_idx] = gs_alloc_bytes(pdev->memory, raster_plane,
@@ -1226,7 +1277,7 @@ psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
         return_error(gs_error_VMerror);
 
     code = gx_downscaler_init_planar_trapped(&ds, (gx_device *)pdev, &params, num_comp,
-                                             psd_dev->downscale.downscale_factor, 0, 8, 8,
+                                             psd_dev->downscale.downscale_factor, 0, bpc, bpc,
                                              psd_dev->downscale.trap_w,
                                              psd_dev->downscale.trap_h,
                                              psd_dev->downscale.trap_order);
@@ -1243,29 +1294,25 @@ psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
                     goto cleanup;
 
                 unpacked = params.data[data_pos];
-                /* To do, get ICC stuff in place for planar device */
-               // if (link == NULL) {
-                    if (base_bytes_pp == 3) {
-                        /* RGB */
-                        memcpy(sep_line, unpacked, xc->width);
-                    } else {
-                        for (i = 0; i < xc->width; ++i) {
-                            /* CMYK + spots*/
-                            sep_line[i] = 255 - unpacked[i];
-                        }
+
+                if (base_num_channels == 3) {
+                    memcpy(sep_line, unpacked, octets_per_line);
+                } else if (octets_per_component == 1) {
+                    for (i = 0; i < xc->width; ++i) {
+                        sep_line[i] = 255 - unpacked[i];
                     }
-              /*  } else {
-                    psd_calib_row((gx_device*) xdev, xc, &sep_line, unpacked, data_pos,
-                        link, xdev->output_profile->num_comps,
-                        xdev->output_profile->num_comps_out);
-                } */
-                psd_write(xc, sep_line, xc->width);
+                } else { /* octets_per_component == 2 */
+                    for (i = 0; i < xc->width; ++i) {
+                        ((unsigned short *)sep_line)[i] = 65535 - ((unsigned short *)unpacked)[i];
+                    }
+                }
+                psd_write(xc, sep_line, octets_per_line);
             }
         } else {
             if (chan_idx < NUM_CMYK_COMPONENTS) {
                 /* Write empty process color in the area */
-                memset(sep_line,255,xc->width);
-                psd_write(xc, sep_line, xc->width);
+                memset(sep_line,255,octets_per_line);
+                psd_write(xc, sep_line, octets_per_line);
             }
         }
     }

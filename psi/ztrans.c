@@ -205,9 +205,7 @@ mask_op(i_ctx_t *i_ctx_p,
 
 }
 
-/* <paramdict> <llx> <lly> <urx> <ury> .begintransparencygroup - */
-static int
-zbegintransparencygroup(i_ctx_t *i_ctx_p)
+static int common_transparency_group(i_ctx_t *i_ctx_p, pdf14_compositor_operations group_type)
 {
     os_ptr op = osp;
     os_ptr dop = op - 4;
@@ -247,11 +245,25 @@ zbegintransparencygroup(i_ctx_t *i_ctx_p)
                 params.ColorSpace = NULL;
         }
     }
-    code = gs_begin_transparency_group(igs, &params, &bbox);
+    code = gs_begin_transparency_group(igs, &params, &bbox, group_type);
     if (code < 0)
         return code;
     pop(5);
     return code;
+}
+
+/* <paramdict> <llx> <lly> <urx> <ury> .beginpagegroup - */
+static int
+zbegintransparencypagegroup(i_ctx_t *i_ctx_p)
+{
+    return common_transparency_group(i_ctx_p, PDF14_BEGIN_TRANS_PAGE_GROUP);
+}
+
+/* <paramdict> <llx> <lly> <urx> <ury> .begintransparencygroup - */
+static int
+zbegintransparencygroup(i_ctx_t *i_ctx_p)
+{
+    return common_transparency_group(i_ctx_p, PDF14_BEGIN_TRANS_GROUP);
 }
 
 /* - .endtransparencygroup - */
@@ -674,6 +686,7 @@ const op_def ztrans1_op_defs[] = {
 };
 const op_def ztrans2_op_defs[] = {
     {"5.begintransparencygroup", zbegintransparencygroup},
+    {"5.begintransparencypagegroup", zbegintransparencypagegroup},
     {"0.endtransparencygroup", zendtransparencygroup},
     { "0.endtransparencytextgroup", zendtransparencytextgroup },
     { "0.begintransparencytextgroup", zbegintransparencytextgroup },
