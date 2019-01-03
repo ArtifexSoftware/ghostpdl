@@ -116,9 +116,57 @@ static int pdfi_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
     return code;
 }
 
+static int pdfi_check_ExtGState_for_transparency(pdf_context *ctx, pdf_dict *ExtGState_dict, bool *transparent)
+{
+    return 0;
+}
+
+static int pdfi_check_Pattern_for_transparency(pdf_context *ctx, pdf_dict *Pattern_dict, bool *transparent)
+{
+    return 0;
+}
+
+static int pdfi_check_Resources_for_transparency(pdf_context *ctx, pdf_dict *Resources_dict, bool *transparent)
+{
+    return 0;
+}
+
+static int pdfi_check_Annots_for_transparency(pdf_context *ctx, pdf_dict *page_dict, bool *transparent)
+{
+    return 0;
+}
+
 static int pdfi_check_page_transparency(pdf_context *ctx, pdf_dict *page_dict, bool *transparent)
 {
+    int code;
+    pdf_obj *r = NULL;
+
     *transparent = false;
+
+    code = pdfi_dict_get(ctx, page_dict, "Resources", &r);
+    if (code >= 0) {
+        code = pdfi_check_Resources_for_transparency(ctx, r, transparent);
+        pdfi_countdown(r);
+        if (code < 0)
+            return code;
+        if (*transparent == true)
+            return 0;
+    }
+    if (code < 0 && code != gs_error_undefined)
+        return code;
+
+    code = pdfi_dict_get(ctx, page_dict, "Annots", &r);
+    if (code >= 0) {
+        code = pdfi_check_Annots_for_transparency(ctx, r, transparent);
+        pdfi_countdown(r);
+        if (code < 0)
+            return code;
+        if (*transparent == true)
+            return 0;
+    }
+    if (code < 0 && code != gs_error_undefined)
+        return code;
+
     return 0;
 }
 
