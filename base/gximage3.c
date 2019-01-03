@@ -27,6 +27,7 @@
 #include "gxclipm.h"
 #include "gximage3.h"
 #include "gxgstate.h"
+#include <limits.h> /* For INT_MAX etc */
 
 /* Forward references */
 static dev_proc_begin_typed_image(gx_begin_image3);
@@ -355,8 +356,18 @@ gx_begin_image3_generic(gx_device * dev,
         )
         return code;
 
-    origin.x = (mrect.p.x < 0) ? (int)ceil(mrect.p.x) : (int)floor(mrect.p.x);
-    origin.y = (mrect.p.y < 0) ? (int)ceil(mrect.p.y) : (int)floor(mrect.p.y);
+    /* Bug 700438: If the rectangle is out of range, bail */
+    if (mrect.p.x >= (double)INT_MAX || mrect.q.x <= (double)INT_MIN ||
+        mrect.p.y >= (double)INT_MAX || mrect.q.y <= (double)INT_MIN) {
+            code = gs_note_error(gs_error_rangecheck);
+        goto out1;
+    }
+
+    /* This code was changed for bug 686843/687411, but in a way that
+     * a) looked wrong, and b) doesn't appear to make a difference. Revert
+     * it to the sane version until we have evidence why not. */
+    origin.x = (int)floor(mrect.p.x);
+    origin.y = (int)floor(mrect.p.y);
     code = make_mid(&mdev, dev, (int)ceil(mrect.q.x) - origin.x,
                     (int)ceil(mrect.q.y) - origin.y, mem);
     if (code < 0)
