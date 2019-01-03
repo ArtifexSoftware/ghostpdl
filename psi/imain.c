@@ -157,9 +157,10 @@ gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
                array);
     make_array(&minst->lib_path.list, avm_foreign | a_readonly, 0,
                minst->lib_path.container.value.refs);
-    minst->lib_path.env = 0;
-    minst->lib_path.final = 0;
+    minst->lib_path.env = NULL;
+    minst->lib_path.final = NULL;
     minst->lib_path.count = 0;
+    minst->lib_path.first_is_current = 0;
     minst->user_errors = 1;
     minst->init_done = 0;
     return 0;
@@ -383,62 +384,112 @@ extend_path_list_container (gs_main_instance * minst, gs_file_path * pfp)
     return(0);
 }
 
+static int
+lib_path_insert_copy_of_string(gs_main_instance *minst, int pos, size_t strlen, const char *str)
+{
+    ref *paths;
+    int listlen = r_size(&minst->lib_path.list); /* The real number of entries currently in the list */
+    byte *newstr;
+    int code;
+
+    /* Extend the container if required */
+    if (listlen == r_size(&minst->lib_path.container)) {
+        code = extend_path_list_container(minst, &minst->lib_path);
+        if (code < 0) {
+            emprintf(minst->heap, "\nAdding path to search paths failed.\n");
+            return(code);
+        }
+    }
+
+    /* Copy the string */
+    newstr = gs_alloc_string(minst->heap, strlen, "lib_path_add");
+    if (newstr == NULL)
+        return gs_error_VMerror;
+    memcpy(newstr, str, strlen);
+
+    /* Shuffle up the entries */
+    paths = &minst->lib_path.container.value.refs[pos];
+    if (pos != listlen)
+        memmove(paths + 1, paths, (listlen-pos) * sizeof(*paths));
+
+    /* And insert the new string, converted to a PS thing */
+    make_const_string(paths, avm_foreign | a_readonly,
+                      strlen,
+                      newstr);
+
+    /* Update the list length */
+    r_set_size(&minst->lib_path.list, listlen+1);
+
+    return 0;
+}
+
 /* Internal routine to add a set of directories to a search list. */
 /* Returns 0 or an error code. */
 
 static int
-file_path_add(gs_main_instance * minst, gs_file_path * pfp, const char *dirs)
+lib_path_add(gs_main_instance * minst, const char *dirs)
 {
+    gs_file_path * pfp = &minst->lib_path;
     uint len = r_size(&pfp->list);
     const char *dpath = dirs;
     int code;
 
     if (dirs == 0)
         return 0;
+
     for (;;) {                  /* Find the end of the next directory name. */
         const char *npath = dpath;
 
         while (*npath != 0 && *npath != gp_file_name_list_separator)
             npath++;
         if (npath > dpath) {
-            if (len == r_size(&pfp->container)) {
-                code = extend_path_list_container(minst, pfp);
-                if (code < 0) {
-                    emprintf(minst->heap, "\nAdding path to search paths failed.\n");
-                    return(code);
-                }
-            }
-            make_const_string(&pfp->container.value.refs[len],
-                              avm_foreign | a_readonly,
-                              npath - dpath, (const byte *)dpath);
-            ++len;
+            code = lib_path_insert_copy_of_string(minst, len, npath - dpath, dpath);
+            if (code < 0)
+                return code;
+            len++;
+            /* Update length/count so we don't lose entries if a later
+             * iteration fails. */
+            r_set_size(&pfp->list, len);
         }
         if (!*npath)
             break;
         dpath = npath + 1;
     }
-    r_set_size(&pfp->list, len);
     return 0;
+}
+
+static void
+set_lib_path_length(gs_main_instance * minst, int newsize)
+{
+    gs_file_path * pfp = &minst->lib_path;
+    uint len = r_size(&pfp->list); /* Yes, list, not container */
+    uint i;
+
+    /* Free any entries that are discarded by us shortening the list */
+    for (i = newsize; i < len; i++)
+        gs_free_object(minst->heap, pfp->container.value.refs[i].value.bytes, "lib_path entry");
+    r_set_size(&pfp->list, newsize);
 }
 
 /* Add a library search path to the list. */
 int
 gs_main_add_lib_path(gs_main_instance * minst, const char *lpath)
 {
-    /* Account for the possibility that the first element */
-    /* is gp_current_directory name added by set_lib_paths. */
-    int first_is_here =
-        (r_size(&minst->lib_path.list) != 0 &&
-         minst->lib_path.container.value.refs[0].value.bytes ==
-         (const byte *)gp_current_directory_name ? 1 : 0);
+    gs_file_path * pfp = &minst->lib_path;
     int code;
 
-    r_set_size(&minst->lib_path.list, minst->lib_path.count +
-               first_is_here);
-    code = file_path_add(minst, &minst->lib_path, lpath);
-    minst->lib_path.count = r_size(&minst->lib_path.list) - first_is_here;
+    /* Throw away all the elements after the user ones. */
+    set_lib_path_length(minst, pfp->count + pfp->first_is_current);
+
+    /* Now add the new one */
+    code = lib_path_add(minst, lpath);
     if (code < 0)
         return code;
+
+    /* Update the count of user paths */
+    pfp->count = r_size(&pfp->list) - pfp->first_is_current;
+
+    /* Now add back in the others */
     return gs_main_set_lib_paths(minst);
 }
 
@@ -452,35 +503,53 @@ extern_gx_io_device_table();
 int
 gs_main_set_lib_paths(gs_main_instance * minst)
 {
-    ref *paths = minst->lib_path.container.value.refs;
-    int first_is_here =
-        (r_size(&minst->lib_path.list) != 0 &&
-         paths[0].value.bytes == (const byte *)gp_current_directory_name ? 1 : 0);
     int code = 0;
-    int count = minst->lib_path.count;
     int i, have_rom_device = 0;
 
-    if (minst->search_here_first) {
-        if (!(first_is_here ||
-              (r_size(&minst->lib_path.list) != 0 &&
-               !bytes_compare((const byte *)gp_current_directory_name,
-                              strlen(gp_current_directory_name),
-                              paths[0].value.bytes,
-                              r_size(&paths[0]))))
-            ) {
-            memmove(paths + 1, paths, count * sizeof(*paths));
-            make_const_string(paths, avm_foreign | a_readonly,
-                              strlen(gp_current_directory_name),
-                              (const byte *)gp_current_directory_name);
-        }
-    } else {
-        if (first_is_here)
-            memmove(paths, paths + 1, count * sizeof(*paths));
+    /* We are entered with a list potentially full of stuff already.
+     * In general the list is of the form:
+     *    <optionally, the current directory>
+     *    <any -I specified directories, "count" of them>
+     *    <any directories from the environment variable>
+     *    <if there is a romfs, the romfs paths>
+     *    <any directories from the 'final' variable>
+     *
+     * Unfortunately, the value read from the environment variable may not
+     * have actually been read the first time this function is called, so
+     * we can see the value change over time. Short of a complete rewrite
+     * this requires us to clear the latter part of the list and repopulate
+     * it each time we run through.
+     */
+
+    /* First step, ensure that we have the current directory as our
+     * first entry, iff we need it. */
+    if (minst->search_here_first && !minst->lib_path.first_is_current) {
+        /* We should have a "gp_current_directory" at the start, and we haven't.
+         * So insert one. */
+        code = lib_path_insert_copy_of_string(minst, 0,
+                                              strlen(gp_current_directory_name),
+                                              gp_current_directory_name);
+        if (code < 0)
+            return code;
+    } else if (!minst->search_here_first && minst->lib_path.first_is_current) {
+        /* We have a "gp_current_directory" at the start, and we shouldn't have.
+         * Remove it. */
+        int listlen = r_size(&minst->lib_path.list); /* The real number of entries currently in the list */
+        ref *paths = minst->lib_path.container.value.refs;
+
+        gs_free_object(minst->heap, paths->value.bytes, "lib_path entry");
+        --listlen;
+        memmove(paths, paths + 1, listlen * sizeof(*paths));
+        r_set_size(&minst->lib_path.list, listlen);
     }
-    r_set_size(&minst->lib_path.list,
-               count + (minst->search_here_first ? 1 : 0));
+    minst->lib_path.first_is_current = minst->search_here_first;
+
+    /* Now, the horrid bit. We throw away all the entries after the user entries */
+    set_lib_path_length(minst, minst->lib_path.count + minst->lib_path.first_is_current);
+
+    /* Now we (re)populate the end of the list. */
     if (minst->lib_path.env != 0)
-        code = file_path_add(minst, &minst->lib_path, minst->lib_path.env);
+        code = lib_path_add(minst, minst->lib_path.env);
     /* now put the %rom%lib/ device path before the gs_lib_default_path on the list */
     for (i = 0; i < gx_io_device_table_count; i++) {
         const gx_io_device *iodev = gx_io_device_table[i];
@@ -497,13 +566,13 @@ gs_main_set_lib_paths(gs_main_instance * minst)
         }
     }
     if (have_rom_device && code >= 0) {
-        code = file_path_add(minst, &minst->lib_path, "%rom%Resource/Init/");
+        code = lib_path_add(minst, "%rom%Resource/Init/");
         if (code < 0)
             return code;
-        code = file_path_add(minst, &minst->lib_path, "%rom%lib/");
+        code = lib_path_add(minst, "%rom%lib/");
     }
-    if (minst->lib_path.final != 0 && code >= 0)
-        code = file_path_add(minst, &minst->lib_path, minst->lib_path.final);
+    if (minst->lib_path.final != NULL && code >= 0)
+        code = lib_path_add(minst, minst->lib_path.final);
     return code;
 }
 
@@ -1132,6 +1201,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
     }
     gs_lib_finit(exit_status, code, minst->heap);
 
+    set_lib_path_length(minst, 0);
     gs_free_object(minst->heap, minst->lib_path.container.value.refs, "lib_path array");
     ialloc_finit(&dmem);
     return exit_status;

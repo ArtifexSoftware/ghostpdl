@@ -631,9 +631,6 @@ run_stdin:
                     path = arg;
                 if (path == NULL)
                     return gs_error_Fatal;
-                path = arg_copy(path, minst->heap);
-                if (path == NULL)
-                    return gs_error_Fatal;
                 gs_main_add_lib_path(minst, path);
             }
             break;
