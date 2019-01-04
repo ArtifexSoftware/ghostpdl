@@ -399,6 +399,7 @@ pattern_accum_open(gx_device * dev)
         padev->transbuff->fill_trans_buffer = NULL;
         /* n_chan = 0 => padev->transbuff isn't inited. */
         padev->transbuff->n_chan = 0;
+        padev->transbuff->buf = NULL;
     } else {
         padev->transbuff = NULL;
     }
