@@ -348,12 +348,19 @@ typedef struct gs_memory_procs_s {
   (*(mem)->procs.free_string)(mem, data, nbytes, cname)
     gs_memory_proc_free_string((*free_string));
 
-    /*
-     * Register a root for the garbage collector.  root = NULL
-     * asks the memory manager to allocate the root object
-     * itself (immovable, in the manager's parent): this is the usual
-     * way to call this procedure.
-     */
+/*
+  Register a root for the garbage collector.
+    We have three scenarios to deal with:
+    1) rpp is NULL:
+       the root will remain internal to the memory manager.
+    2) rpp is valid, but *rpp is NULL:
+       We'll allocate the root, and return a pointer to it (via rpp).
+    3) rpp is valid, and *rpp is valid:
+       The caller has supplied the root, so use it.
+
+    Scenario 1 is a root that will last until the memory mamanger is
+    shutdown. 2 & 3 allow the root to be unregistered by the caller.
+*/
 
 #define gs_memory_proc_register_root(proc)\
   int proc(gs_memory_t *mem, gs_gc_root_t **root, gs_ptr_type_t ptype,\
