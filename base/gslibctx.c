@@ -168,10 +168,14 @@ int gs_lib_ctx_init(gs_lib_ctx_t *ctx, gs_memory_t *mem)
     memset(pio, 0, sizeof(*pio));
 
     if (ctx != NULL) {
+#ifdef MEMENTO_SQUEEZE_BUILD
+        goto Failure;
+#else
         pio->core = ctx->core;
         gx_monitor_enter((gx_monitor_t *)(pio->core->monitor));
         pio->core->refs++;
         gx_monitor_leave((gx_monitor_t *)(pio->core->monitor));
+#endif /* MEMENTO_SQUEEZE_BUILD */
     } else {
         pio->core = (gs_lib_ctx_core_t *)gs_alloc_bytes_immovable(mem,
                                                                   sizeof(gs_lib_ctx_core_t),
@@ -182,12 +186,14 @@ int gs_lib_ctx_init(gs_lib_ctx_t *ctx, gs_memory_t *mem)
         }
         memset(pio->core, 0, sizeof(*pio->core));
 
+#ifndef MEMENTO_SQUEEZE_BUILD
         pio->core->monitor = gx_monitor_alloc(mem);
         if (pio->core->monitor == NULL) {
             gs_free_object(mem, pio->core, "gs_lib_ctx_init");
             gs_free_object(mem, pio, "gs_lib_ctx_init");
             return -1;
         }
+#endif /* MEMENTO_SQUEEZE_BUILD */
         pio->core->refs = 1;
         pio->core->memory = mem;
 
@@ -283,11 +289,17 @@ void gs_lib_ctx_fin(gs_memory_t *mem)
 #endif
     remove_ctx_pointers(ctx_mem);
 
+#ifndef MEMENTO_SQUEEZE_BUILD
     gx_monitor_enter((gx_monitor_t *)(ctx->core->monitor));
+#endif
     refs = --ctx->core->refs;
+#ifndef MEMENTO_SQUEEZE_BUILD
     gx_monitor_leave((gx_monitor_t *)(ctx->core->monitor));
+#endif
     if (refs == 0) {
+#ifndef MEMENTO_SQUEEZE_BUILD
         gx_monitor_free((gx_monitor_t *)(ctx->core->monitor));
+#endif
         gs_free_object(ctx->core->memory, ctx->core, "gs_lib_ctx_fin");
     }
 
