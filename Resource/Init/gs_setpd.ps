@@ -91,6 +91,202 @@ level2dict begin
 % %restorepagedevice, %restore1pagedevice, and %setgstatepagedevice
 % are known to the interpreter.
 
+% ---------------- Keys and Attributes ---------------- %
+
+% We have to deal specially with entries that the driver may change
+% on its own. We also have to deal specially with parameters which the device may
+% change on its own but which we *also* want to transmit to the device. Previously
+% any parameter which was 'dynamic' would not be sent to the device, making it
+% impossible to set a parameter, and later have the device change it. Currently
+% only OutputICCProfile fits this category.
+% This whole area is broken its completely the wrong way round from the way the spec says it should work.
+
+% This dictionary contains the keys we never want to set.
+/.readonlypdkeys mark
+  /.MediaSize dup		% because it changes when PageSize is set
+  /PageCount dup
+  /Colors dup
+  /BitsPerPixel dup
+  /ColorValues dup
+.dicttomark readonly def
+
+% Bonkers, but needed by our ridiculous setpagedevice implementation. There are
+% some keys (at the moment, RedValues, GreenValues and BlueValues are known) which
+% only exist in the page device dictionary under some conditions (ProcessColorModel == DeviceRGB)
+% If we change the conditions, so that these keys are no longer present in the params
+% returned by the device, sending these keys to the device can trigger a fault.
+% This is a problem because of our stored dictionary:
+%
+% 1) Set up the inital dictioanry by retrieving the params from the device
+% 2) Change the conditions (ProcessColorModel == DeviceGray)
+% 3) merge any volatile keys from the device. Note that RedValues etc no longer defined.
+% 4) Call .installpagdevice, use the stored dicitonary to set the params
+% 5) The stored RedValues etc, cause an error.
+%
+% The stored dictioanry is readonly (we use forceput to wedge new keys into it) so
+% we can't 'undef' keys from it. (the dictionary is made readonly by the action of zsetpagedevice
+% '.setpagedevice' in PostScrfipt)
+%
+% So the only solution is to have 'write only' keys. These can be written to the device
+% but are not stored in the saved page device dictionary. This means PostScript programs
+% can't interrogate and take action on these, but there's no solution to that except to
+% rewrite this stuff completely so that it actually works properly.
+
+/.writeonlykeys mark
+  /RedValues dup        % Set by the device when ProcessColorModel changes
+  /GreenValues dup      % Set by the device when ProcessColorModel changes
+  /BlueValues dup       % Set by the device when ProcessColorModel changes
+  /GrayValues dup       % Set by the device when ProcessColorModel changes
+.dicttomark readonly def
+
+% This dictionary contains the keys we always want to read back from the device.
+/.volatilepdkeys mark
+  /.MediaSize dup		% because it changes when PageSize is set
+  /RedValues dup        % Set by the device when ProcessColorModel changes
+  /GreenValues dup      % Set by the device when ProcessColorModel changes
+  /BlueValues dup       % Set by the device when ProcessColorModel changes
+  /GrayValues dup       % Set by the device when ProcessColorModel changes
+  /PageCount dup
+  /Colors dup
+  /BitsPerPixel dup
+  /ColorValues dup
+  /OutputICCProfile dup		% ColorConversionStrategy can change this
+.dicttomark readonly def
+
+% The implementation of setpagedevice is quite complex.  Currently,
+% everything but the media matching algorithm is implemented here.
+
+% By default, we only present the requested changes to the device,
+% but there are some parameters that require special merging action.
+% Define those parameters here, with the procedures that do the merging.
+% The procedures are called as follows:
+%	<merged> <key> <new_value> -proc- <merged> <key> <new_value'>
+/.mergespecial mark
+  /InputAttributes
+   { dup //null eq
+      { pop //null
+      }
+      { 3 copy pop .knownget
+         { dup //null eq
+            { pop dup length dict }
+            { dup length 2 index length add dict .copydict }
+           ifelse
+         }
+         { dup length dict
+         }
+        ifelse .copydict readonly
+      }
+     ifelse
+   } bind
+  /OutputAttributes 1 index
+  /Policies
+    { 3 copy pop .knownget
+       { dup length 2 index length add dict .copydict }
+       { dup length dict }
+      ifelse copy readonly
+    } bind
+.dicttomark readonly def
+
+% M. Sweet, Easy Software Products:
+%
+% Define NOMEDIAATTRS to turn off the default (but unimplementable) media
+% selection policies for setpagedevice.  This is used by CUPS to support
+% the standard Adobe media attributes.
+NOMEDIAATTRS {
+  % Define only PageSize for input attribute matching.
+  /.inputattrkeys [
+    /PageSize
+  ] readonly def
+  % Define no other keys used in media selection.
+  /.inputselectionkeys [
+    /noInputSelectionsKeys
+  ] readonly def
+
+  % Define no keys used in output attribute matching.
+  /.outputattrkeys [
+    /noOutputAttrKeys
+  ] readonly def
+} {
+  % Define the keys used in input attribute matching.
+  /.inputattrkeys [
+    /PageSize /MediaColor /MediaWeight /MediaType /InsertSheet /ManualFeed
+          % The following are documented in Adobe's supplement for v2017.
+    /LeadingEdge /MediaClass
+  ] readonly def
+  % Define other keys used in media selection.
+  /.inputselectionkeys [
+    /MediaPosition /Orientation
+  ] readonly def
+
+  % Define the keys used in output attribute matching.
+  /.outputattrkeys [
+    /OutputType
+  ] readonly def
+} ifelse
+
+% Define all the parameters that should always be copied to the merged
+% dictionary.
+/.copiedkeys [
+  /OutputDevice
+  .mergespecial { pop } forall
+  .inputattrkeys aload pop
+  .inputselectionkeys aload pop
+  .outputattrkeys aload pop
+] readonly def
+
+% Define the parameters that should not be presented to the device.
+% The procedures are called as follows:
+%	<merged> <key> <value> -proc-
+% The procedure leaves all its operands on the stack and returns
+% true iff the key/value pair should be presented to .putdeviceparams.
+/.presentspecial mark
+  .readonlypdkeys
+      { pop //false }
+  forall
+                        % We must ignore an explicit request for .MediaSize,
+                        % because media matching always handles this.
+  /.MediaSize //false
+  /Name //false
+  /OutputDevice //false
+  /PageDeviceName //false
+  /PageOffset //false
+  /PageSize //false		% obsolete alias for .MediaSize
+  /InputAttributes //false
+  .inputattrkeys
+       { dup dup /PageSize eq exch /LeadingEdge eq or
+       { pop }
+       { { 2 index /InputAttributes .knownget { //null eq } { //true } ifelse } }
+      ifelse
+    }
+  forall
+  .inputselectionkeys { //false } forall
+  /OutputAttributes //false
+  .outputattrkeys
+    { { 2 index /OutputAttributes .knownget { //null eq } { //true } ifelse } }
+  forall
+  /Install //false
+  /BeginPage //false
+  /EndPage //false
+  /Policies //false
+        % Our extensions:
+  /HWColorMap
+    {			% HACK: don't transmit the color map, because
+                        % window systems can change the color map on their own
+                        % incrementally.  Someday we'll have a better
+                        % solution for this....
+      //false
+    }
+  /ViewerPreProcess //false
+  /ImagingBBox //false	% This prevents the ImagingBBox value in the setpagedevice
+                        % from affecting the device's ImagingBBox parameter, but
+                        % does retain a 'shadow' copy at the PostScript level.
+                        % This is done for Adobe compatibility since Adobe does
+                        % render marks outside the ImagingBBox (and QuarkXpress
+                        % relies on it).
+.dicttomark readonly def
+
+% ---------------- End Keys and Attributes ---------------- %
+
 % Prepare to present parameters to the device, by spreading them onto the
 % operand stack and removing any that shouldn't be presented.
 /.prepareparams		% <params> .prepareparams -mark- <key1> <value1> ...
@@ -306,66 +502,6 @@ SETPDDEBUG { (Result of putting.) = pstack flush } if
 % Define currentpagedevice so it creates the dictionary on demand if needed,
 % adding all the required entries defined just above.
 
-% We have to deal specially with entries that the driver may change
-% on its own. We also have to deal specially with parameters which the device may
-% change on its own but which we *also* want to transmit to the device. Previously
-% any parameter which was 'dynamic' would not be sent to the device, making it
-% impossible to set a parameter, and later have the device change it. Currently
-% only OutputICCProfile fits this category.
-% This whole area is broken its completely the wrong way round from the way the spec says it should work.
-
-% This dictionary contains the keys we never want to set.
-/.readonlypdkeys mark
-  /.MediaSize dup		% because it changes when PageSize is set
-  /PageCount dup
-  /Colors dup
-  /BitsPerPixel dup
-  /ColorValues dup
-.dicttomark readonly def
-
-% Bonkers, but needed by our ridiculous setpagedevice implementation. There are
-% some keys (at the moment, RedValues, GreenValues and BlueValues are known) which
-% only exist in the page device dictionary under some conditions (ProcessColorModel == DeviceRGB)
-% If we change the conditions, so that these keys are no longer present in the params
-% returned by the device, sending these keys to the device can trigger a fault.
-% This is a problem because of our stored dictionary:
-%
-% 1) Set up the inital dictioanry by retrieving the params from the device
-% 2) Change the conditions (ProcessColorModel == DeviceGray)
-% 3) merge any volatile keys from the device. Note that RedValues etc no longer defined.
-% 4) Call .installpagdevice, use the stored dicitonary to set the params
-% 5) The stored RedValues etc, cause an error.
-%
-% The stored dictioanry is readonly (we use forceput to wedge new keys into it) so
-% we can't 'undef' keys from it. (the dictionary is made readonly by the action of zsetpagedevice
-% '.setpagedevice' in PostScrfipt)
-%
-% So the only solution is to have 'write only' keys. These can be written to the device
-% but are not stored in the saved page device dictionary. This means PostScript programs
-% can't interrogate and take action on these, but there's no solution to that except to
-% rewrite this stuff completely so that it actually works properly.
-
-/.writeonlykeys mark
-  /RedValues dup        % Set by the device when ProcessColorModel changes
-  /GreenValues dup      % Set by the device when ProcessColorModel changes
-  /BlueValues dup       % Set by the device when ProcessColorModel changes
-  /GrayValues dup       % Set by the device when ProcessColorModel changes
-.dicttomark readonly def
-
-% This dictionary contains the keys we always want to read back from the device.
-/.volatilepdkeys mark
-  /.MediaSize dup		% because it changes when PageSize is set
-  /RedValues dup        % Set by the device when ProcessColorModel changes
-  /GreenValues dup      % Set by the device when ProcessColorModel changes
-  /BlueValues dup       % Set by the device when ProcessColorModel changes
-  /GrayValues dup       % Set by the device when ProcessColorModel changes
-  /PageCount dup
-  /Colors dup
-  /BitsPerPixel dup
-  /ColorValues dup
-  /OutputICCProfile dup		% ColorConversionStrategy can change this
-.dicttomark readonly def
-
 /.makecurrentpagedevice {	% - .makecurrentpagedevice <dict>
   currentdevice //null .getdeviceparams
         % Make the dictionary large enough to add defaulted entries.
@@ -481,138 +617,6 @@ SETPDDEBUG { (Result of putting.) = pstack flush } if
     } ifelse
   } if
 } bind odef
-
-% The implementation of setpagedevice is quite complex.  Currently,
-% everything but the media matching algorithm is implemented here.
-
-% By default, we only present the requested changes to the device,
-% but there are some parameters that require special merging action.
-% Define those parameters here, with the procedures that do the merging.
-% The procedures are called as follows:
-%	<merged> <key> <new_value> -proc- <merged> <key> <new_value'>
-/.mergespecial mark
-  /InputAttributes
-   { dup //null eq
-      { pop //null
-      }
-      { 3 copy pop .knownget
-         { dup //null eq
-            { pop dup length dict }
-            { dup length 2 index length add dict .copydict }
-           ifelse
-         }
-         { dup length dict
-         }
-        ifelse .copydict readonly
-      }
-     ifelse
-   } bind
-  /OutputAttributes 1 index
-  /Policies
-    { 3 copy pop .knownget
-       { dup length 2 index length add dict .copydict }
-       { dup length dict }
-      ifelse copy readonly
-    } bind
-.dicttomark readonly def
-
-% M. Sweet, Easy Software Products:
-%
-% Define NOMEDIAATTRS to turn off the default (but unimplementable) media
-% selection policies for setpagedevice.  This is used by CUPS to support
-% the standard Adobe media attributes.
-NOMEDIAATTRS {
-  % Define only PageSize for input attribute matching.
-  /.inputattrkeys [
-    /PageSize
-  ] readonly def
-  % Define no other keys used in media selection.
-  /.inputselectionkeys [
-    /noInputSelectionsKeys
-  ] readonly def
-
-  % Define no keys used in output attribute matching.
-  /.outputattrkeys [
-    /noOutputAttrKeys
-  ] readonly def
-} {
-  % Define the keys used in input attribute matching.
-  /.inputattrkeys [
-    /PageSize /MediaColor /MediaWeight /MediaType /InsertSheet /ManualFeed
-          % The following are documented in Adobe's supplement for v2017.
-    /LeadingEdge /MediaClass
-  ] readonly def
-  % Define other keys used in media selection.
-  /.inputselectionkeys [
-    /MediaPosition /Orientation
-  ] readonly def
-
-  % Define the keys used in output attribute matching.
-  /.outputattrkeys [
-    /OutputType
-  ] readonly def
-} ifelse
-
-% Define all the parameters that should always be copied to the merged
-% dictionary.
-/.copiedkeys [
-  /OutputDevice
-  .mergespecial { pop } forall
-  .inputattrkeys aload pop
-  .inputselectionkeys aload pop
-  .outputattrkeys aload pop
-] readonly def
-
-% Define the parameters that should not be presented to the device.
-% The procedures are called as follows:
-%	<merged> <key> <value> -proc-
-% The procedure leaves all its operands on the stack and returns
-% true iff the key/value pair should be presented to .putdeviceparams.
-/.presentspecial mark
-  .readonlypdkeys
-      { pop //false }
-  forall
-                        % We must ignore an explicit request for .MediaSize,
-                        % because media matching always handles this.
-  /.MediaSize //false
-  /Name //false
-  /OutputDevice //false
-  /PageDeviceName //false
-  /PageOffset //false
-  /PageSize //false		% obsolete alias for .MediaSize
-  /InputAttributes //false
-  .inputattrkeys
-       { dup dup /PageSize eq exch /LeadingEdge eq or
-       { pop }
-       { { 2 index /InputAttributes .knownget { //null eq } { //true } ifelse } }
-      ifelse
-    }
-  forall
-  .inputselectionkeys { //false } forall
-  /OutputAttributes //false
-  .outputattrkeys
-    { { 2 index /OutputAttributes .knownget { //null eq } { //true } ifelse } }
-  forall
-  /Install //false
-  /BeginPage //false
-  /EndPage //false
-  /Policies //false
-        % Our extensions:
-  /HWColorMap
-    {			% HACK: don't transmit the color map, because
-                        % window systems can change the color map on their own
-                        % incrementally.  Someday we'll have a better
-                        % solution for this....
-      //false
-    }
-  /ViewerPreProcess //false
-  /ImagingBBox //false	% This prevents the ImagingBBox value in the setpagedevice
-                        % from affecting the device's ImagingBBox parameter, but
-                        % does retain a 'shadow' copy at the PostScript level.
-                        % This is done for Adobe compatibility since Adobe does
-                        % render marks outside the ImagingBBox (and QuarkXpress
-                        % relies on it).
-.dicttomark readonly def
 
 % Define access to device defaults.
 /.defaultdeviceparams
