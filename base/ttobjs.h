@@ -164,22 +164,10 @@
   struct _TExecution_Context;
   struct _TGlyph;
 
-#ifndef TFace_defined
-#define TFace_defined
-typedef struct _TFace  TFace;
-#endif
   typedef TFace*         PFace;
 
-#ifndef TInstance_defined
-#define TInstance_defined
-typedef struct _TInstance TInstance;
-#endif
   typedef TInstance*         PInstance;
 
-#ifndef TExecution_Context_defined
-#define TExecution_Context_defined
-typedef struct _TExecution_Context TExecution_Context;
-#endif
   typedef TExecution_Context*         PExecution_Context;
 
   typedef struct _TGlyph  TGlyph;

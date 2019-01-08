@@ -32,18 +32,8 @@
 
 #define RAW_PATTERN_DUMP 0
 
-#ifndef gx_device_clist_DEFINED
-#define gx_device_clist_DEFINED
 typedef union gx_device_clist_s gx_device_clist;
-#endif
 
-/*
- * Define the type of a Pattern, also used with Pattern instances.
- */
-#ifndef gs_pattern_type_DEFINED
-#  define gs_pattern_type_DEFINED
-typedef struct gs_pattern_type_s gs_pattern_type_t;
-#endif
 struct gs_pattern_type_s {
     int PatternType;
     struct pp_ {
@@ -173,7 +163,7 @@ struct gx_pattern_trans_s {
     int height;
     const pdf14_nonseparable_blending_procs_t *blending_procs;
     bool is_additive;
-    gs_int_rect *dirty;
+    void *buf;
     void (* pat_trans_fill)(int xmin, int ymin, int xmax, int ymax, int px,
                             int py, const gx_color_tile *ptile,
                             gx_pattern_trans_t *fill_trans_buffer);
@@ -182,9 +172,9 @@ struct gx_pattern_trans_s {
 };
 
 #define private_st_pattern_trans() /* in gxpcmap.c */\
-gs_private_st_ptrs3(st_pattern_trans, gx_pattern_trans_t, "gx_pattern_trans",\
+gs_private_st_ptrs4(st_pattern_trans, gx_pattern_trans_t, "gx_pattern_trans",\
                     pattern_trans_enum_ptrs, pattern_trans_reloc_ptrs,\
-                    pdev14, transbytes, fill_trans_buffer)
+                    pdev14, transbytes, fill_trans_buffer, buf)
 /*
  * Define a color tile, an entry in the rendered Pattern cache (and
  * eventually in the colored halftone cache).  Note that the depth is

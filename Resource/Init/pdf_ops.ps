@@ -691,7 +691,14 @@ end def
 {
    PDFusingtransparency {
       .currentSMask //null ne {
-        mark /Subtype /Group /Isolated //true .dicttomark pathbbox .begintransparencygroup
+        mark /Subtype /Group /Isolated //true .dicttomark
+        1 index /stroke eq {
+          % BBox needs to include line width / line join expansion.
+          gsave strokepath pathbbox grestore
+        } {
+          pathbbox	% fill/eofill cases
+        } ifelse
+        .begintransparencygroup
         .currentshapealpha .currentopacityalpha 3 -1 roll % avoid double application
         1 .setopacityalpha 1 .setshapealpha
       } if

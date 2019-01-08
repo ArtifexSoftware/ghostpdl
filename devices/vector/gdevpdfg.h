@@ -20,11 +20,7 @@
 #  define gdevpdfg_INCLUDED
 
 #include "gscspace.h"		/* for gs_separation_name */
-
-#ifndef pdf_base_font_DEFINED
-#  define pdf_base_font_DEFINED
-typedef struct pdf_base_font_s pdf_base_font_t;
-#endif
+#include "gdevpdfx.h"
 
 /* ---------------- Exported by gdevpdfc.c ---------------- */
 
@@ -47,12 +43,6 @@ typedef struct pdf_color_space_names_s {
 extern const pdf_color_space_names_t
     pdf_color_space_names,
     pdf_color_space_names_short;
-
-/* Define an abstract color space type. */
-#ifndef gs_color_space_DEFINED
-#  define gs_color_space_DEFINED
-typedef struct gs_color_space_s gs_color_space;
-#endif
 
 /*
  * Define a ColorSpace resource.  We need to retain the range scaling

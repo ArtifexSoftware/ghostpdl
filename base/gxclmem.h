@@ -121,10 +121,7 @@ struct MEMFILE_s {
     stream_state *compress_state;
     stream_state *decompress_state;					/******* READER INSTANCE *******/
 };
-#ifndef MEMFILE_DEFINED
-#define MEMFILE_DEFINED
 typedef struct MEMFILE_s MEMFILE;
-#endif
 
 /*
  * Only the MEMFILE and stream_state structures are GC-compatible, so we

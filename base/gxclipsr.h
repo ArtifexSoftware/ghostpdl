@@ -20,6 +20,7 @@
 #  define gxclipsr_INCLUDED
 
 #include "gsrefct.h"
+#include "gxpath.h"
 
 /*
  * Unlike the graphics state stack, which is threaded through the actual
@@ -28,14 +29,7 @@
  * shared by off-stack graphics states.
  */
 
-#ifndef gx_clip_path_DEFINED
-#  define gx_clip_path_DEFINED
-typedef struct gx_clip_path_s gx_clip_path;
-#endif
-#ifndef gx_clip_stack_DEFINED
-#  define gx_clip_stack_DEFINED
 typedef struct gx_clip_stack_s gx_clip_stack_t;
-#endif
 
 struct gx_clip_stack_s {
     rc_header rc;

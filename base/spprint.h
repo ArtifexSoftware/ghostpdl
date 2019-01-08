@@ -20,12 +20,7 @@
 #  define spprint_INCLUDED
 
 #include "stdpre.h"
-
-/* Define an opaque type for streams. */
-#ifndef stream_DEFINED
-#  define stream_DEFINED
-typedef struct stream_s stream;
-#endif
+#include "scommon.h"
 
 /* Put a character on a stream. */
 #define stream_putc(s, c) spputc(s, c)

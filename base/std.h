@@ -571,14 +571,6 @@ void lprintf_file_only(const gs_memory_t *,const char *);
   (_eplm(mem) epfm(mem,str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9))
 #define mlprintf10(mem,str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10)\
   (_eplm(mem) epfm(mem,str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10))
-/*
- * Define the prototype for module initialization procedures.  This is not
- * a very good place to define this, but we can't find a better one.
- */
-#ifndef gs_memory_DEFINED
-#  define gs_memory_DEFINED
-typedef struct gs_memory_s gs_memory_t;
-#endif
 #define init_proc(proc)\
   int proc(gs_memory_t *)
 

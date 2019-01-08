@@ -20,6 +20,7 @@
 #  define gdevpdtf_INCLUDED
 
 #include "gdevpdtx.h"
+#include "gsfcmap.h"
 
 /* ================ Types and structures ================ */
 
@@ -83,30 +84,12 @@
  * after writing out the base font.
  */
 
-#ifndef gs_cmap_DEFINED
-#  define gs_cmap_DEFINED
-typedef struct gs_cmap_s gs_cmap_t;
-#endif
-
-#ifndef gs_font_type0_DEFINED
-#  define gs_font_type0_DEFINED
-typedef struct gs_font_type0_s gs_font_type0;
-#endif
-
-#ifndef pdf_base_font_DEFINED
-#  define pdf_base_font_DEFINED
-typedef struct pdf_base_font_s pdf_base_font_t;
-#endif
-
 #ifndef pdf_font_descriptor_DEFINED
 #  define pdf_font_descriptor_DEFINED
 typedef struct pdf_font_descriptor_s pdf_font_descriptor_t;
 #endif
 
-#ifndef pdf_char_glyph_pair_DEFINED
-#  define pdf_char_glyph_pair_DEFINED
 typedef struct pdf_char_glyph_pair_s pdf_char_glyph_pair_t;
-#endif
 
 struct pdf_char_glyph_pair_s {
     gs_char chr;

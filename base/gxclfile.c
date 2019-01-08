@@ -15,7 +15,7 @@
 
 
 /* File-based command list implementation */
-#include "assert.h"
+#include "assert_.h"
 #include "stdio_.h"
 #include "string_.h"
 #include "unistd_.h"

@@ -454,20 +454,6 @@ zustrokepath(i_ctx_t *i_ctx_p)
     return 0;
 }
 
-/* <with_ucache> upath <userpath> */
-/* We do all the work in a procedure that is also used to construct */
-/* the UnpaintedPath user path for ImageType 2 images. */
-int make_upath(i_ctx_t *i_ctx_p, ref *rupath, gs_gstate *pgs, gx_path *ppath,
-               bool with_ucache);
-static int
-zupath(i_ctx_t *i_ctx_p)
-{
-    os_ptr op = osp;
-
-    check_type(*op, t_boolean);
-    return make_upath(i_ctx_p, op, igs, igs->path, op->value.boolval);
-}
-
 /* Compute the path length for user path purposes. */
 static int
 path_length_for_upath(const gx_path *ppath)
@@ -496,7 +482,7 @@ path_length_for_upath(const gx_path *ppath)
     return size;
 }
 
-int
+static int
 make_upath(i_ctx_t *i_ctx_p, ref *rupath, gs_gstate *pgs, gx_path *ppath,
            bool with_ucache)
 {
@@ -593,6 +579,16 @@ make_upath(i_ctx_t *i_ctx_p, ref *rupath, gs_gstate *pgs, gx_path *ppath,
         }
     }
     return 0;
+}
+
+/* <with_ucache> upath <userpath> */
+static int
+zupath(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+
+    check_type(*op, t_boolean);
+    return make_upath(i_ctx_p, op, igs, igs->path, op->value.boolval);
 }
 
 static int

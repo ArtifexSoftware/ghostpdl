@@ -21,12 +21,8 @@
 #  define pxfont_INCLUDED
 
 /* Rename types. */
-#ifdef px_font_t_DEFINED
-#  define pl_font_t_DEFINED
-#endif
 #define px_font_t pl_font_t
 #include "plfont.h"
-#define px_font_t_DEFINED
 
 /*
  * This file provides a layer of specialization and renaming around

@@ -29,6 +29,7 @@
 #include "gxiparam.h"
 #include "gxsample.h"
 #include "gscms.h"
+#include "gxcpath.h"
 
 /* Define the abstract type for the image enumerator state. */
 /*typedef struct gx_image_enum_s gx_image_enum;*/  /* in gxiclass.h */
@@ -91,11 +92,6 @@ struct sample_map_s {
 
 };
 
-#ifndef sample_map_DEFINED
-#define sample_map_DEFINED
-typedef struct sample_map_s sample_map;
-#endif
-
 /* Decode an 8-bit sample into a floating point color component. */
 /* penum points to the gx_image_enum structure. */
 #define decode_sample(sample_value, cc, i)\
@@ -157,15 +153,7 @@ typedef struct gx_image_color_cache_s {
 
 /* Main state structure */
 
-#ifndef gx_device_clip_DEFINED
-#  define gx_device_clip_DEFINED
-typedef struct gx_device_clip_s gx_device_clip;
-#endif
-
-#ifndef gx_device_rop_texture_DEFINED
-#  define gx_device_rop_texture_DEFINED
 typedef struct gx_device_rop_texture_s gx_device_rop_texture;
-#endif
 
 typedef struct gx_image_icc_setup_s {
     bool need_decode; /* used in icc processing */

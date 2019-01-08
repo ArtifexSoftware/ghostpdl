@@ -23,6 +23,7 @@
 #include "gsiparam.h"
 #include "gsrefct.h"
 #include "gsgstate.h"
+#include "gsccolor.h"
 
 /*
  * Previous versions had a complicated lifecycle discipline for
@@ -134,25 +135,10 @@
 */
 
 /* Opaque types for a graphics state stuff */
-#ifndef gsicc_link_DEFINED
 typedef struct gsicc_link_s gsicc_link_t;
-#  define gsicc_link_DEFINED
-#endif
-
 
 /* Define ICC profile structure type */
-#ifndef cmm_profile_DEFINED
-#define cmm_profile_DEFINED
 typedef struct cmm_profile_s cmm_profile_t;
-#endif
-
-/*
- * Define the abstract type for color space objects.
- */
-#ifndef gs_color_space_DEFINED
-#  define gs_color_space_DEFINED
-typedef struct gs_color_space_s gs_color_space;
-#endif
 
 typedef struct cmm_dev_profile_s cmm_dev_profile_t;
 
@@ -215,15 +201,8 @@ typedef struct gs_cie_abc_s gs_cie_abc;
 typedef struct gs_cie_def_s gs_cie_def;
 typedef struct gs_cie_defg_s gs_cie_defg;
 
-#ifndef gs_device_n_map_DEFINED
-#  define gs_device_n_map_DEFINED
 typedef struct gs_device_n_map_s gs_device_n_map;
-#endif
-
-#ifndef gs_device_n_attributes_DEFINED
-#  define gs_device_n_attributes_DEFINED
 typedef struct gs_device_n_attributes_s gs_device_n_attributes;
-#endif
 
 /*
  * Non-base direct color spaces: Separation and DeviceN.
@@ -372,10 +351,6 @@ bool gs_color_space_equal(const gs_color_space *pcs1,
                           const gs_color_space *pcs2);
 
 /* Restrict a color to its legal range. */
-#ifndef gs_client_color_DEFINED
-#  define gs_client_color_DEFINED
-typedef struct gs_client_color_s gs_client_color;
-#endif
 void gs_color_space_restrict_color(gs_client_color *, const gs_color_space *);
 
 /*

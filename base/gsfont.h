@@ -22,26 +22,11 @@
 #include "std.h"
 #include "gsgstate.h"
 #include "gstypes.h"
-
-#ifndef gs_matrix_DEFINED
-#  define gs_matrix_DEFINED
-typedef struct gs_matrix_s gs_matrix;
-#endif
-
-/* A 'font directory' object (to avoid making fonts global). */
-/* 'directory' is something of a misnomer: this structure */
-/* just keeps track of the defined fonts, and the scaled font and */
-/* rendered character caches. */
-#ifndef gs_font_dir_DEFINED
-#  define gs_font_dir_DEFINED
-typedef struct gs_font_dir_s gs_font_dir;
-#endif
+#include "gsmatrix.h"
+#include "gslibctx.h"
 
 /* Font objects */
-#ifndef gs_font_DEFINED
-#  define gs_font_DEFINED
 typedef struct gs_font_s gs_font;
-#endif
 
 /* Initialization */
 /* These procedures return 0 if they fail. */

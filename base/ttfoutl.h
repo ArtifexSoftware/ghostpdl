@@ -21,26 +21,13 @@
 
 /* For memento */
 #include "malloc_.h"
+#include "gxfcache.h"
 
-#ifndef TFace_defined
-#define TFace_defined
 typedef struct _TFace TFace;
-#endif
 
-#ifndef TInstance_defined
-#define TInstance_defined
 typedef struct _TInstance TInstance;
-#endif
 
-#ifndef TExecution_Context_defined
-#define TExecution_Context_defined
 typedef struct _TExecution_Context TExecution_Context;
-#endif
-
-#ifndef ttfInterpreter_DEFINED
-#  define ttfInterpreter_DEFINED
-typedef struct ttfInterpreter_s ttfInterpreter;
-#endif
 
 /* Define auxiliary data types for the TT interpreter. */
 
@@ -123,10 +110,6 @@ typedef struct {
 /* Define a capsule for a TT face.
    Diue to historical reason the name is some misleading.
    It should be ttfFace. */
-#ifndef ttfFont_DEFINED
-#  define ttfFont_DEFINED
-typedef struct ttfFont_s ttfFont;
-#endif
 struct ttfFont_s {
     ttfPtrElem t_cvt_;
     ttfPtrElem t_fpgm;

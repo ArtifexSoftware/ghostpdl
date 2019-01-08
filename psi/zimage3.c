@@ -57,9 +57,9 @@ zimage3(i_ctx_t *i_ctx_p)
     check_type(*pMaskDict, t_dictionary);
     if ((code = pixel_image_params(i_ctx_p, pDataDict,
                         (gs_pixel_image_t *)&image, &ip_data,
-                        12, false, gs_currentcolorspace(igs))) < 0 ||
+                        12, gs_currentcolorspace(igs))) < 0 ||
         (mcode = code = data_image_params(imemory, pMaskDict, &image.MaskDict,
-                                   &ip_mask, false, 1, 12, false, false)) < 0 ||
+                                   &ip_mask, false, 1, 12, false)) < 0 ||
         (code = dict_int_param(pDataDict, "ImageType", 1, 1, 0, &ignored)) < 0 ||
         (code = dict_int_param(pMaskDict, "ImageType", 1, 1, 0, &ignored)) < 0
         )
@@ -101,7 +101,7 @@ zimage4(i_ctx_t *i_ctx_p)
 
     gs_image4_t_init(&image, NULL);
     code = pixel_image_params(i_ctx_p, op, (gs_pixel_image_t *)&image, &ip,
-                              12, false, gs_currentcolorspace(igs));
+                              12, gs_currentcolorspace(igs));
     if (code < 0)
         return code;
     code = dict_int_array_check_param(imemory, op, "MaskColor",

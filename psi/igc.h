@@ -23,6 +23,7 @@
 #include "gxalloc.h"
 #include "istruct.h"
 #include "imemory.h"
+#include "inames.h"
 
 /* Declare the vm_reclaim procedure for the real GC. */
 extern vm_reclaim_proc(gs_gc_reclaim);
@@ -55,11 +56,6 @@ struct struct_shared_procs_s {
 };
 
 /* Define the structure for holding GC state. */
-/*typedef struct gc_state_s gc_state_t; *//* in gsstruct.h */
-#ifndef name_table_DEFINED
-#  define name_table_DEFINED
-typedef struct name_table_s name_table;
-#endif
 struct gc_state_s {
     const gc_procs_with_refs_t *procs;	/* must be first */
     clump_locator_t loc;

@@ -22,16 +22,8 @@
 
 #include "gxpath.h"
 #include "gxfixed.h"
-
-#ifndef gx_device_DEFINED
-#  define gx_device_DEFINED
-typedef struct gx_device_s gx_device;
-#endif
-
-#ifndef gx_device_color_DEFINED
-#  define gx_device_color_DEFINED
-typedef struct gx_device_color_s gx_device_color;
-#endif
+#include "gsdevice.h"
+#include "gsdcolor.h"
 
 /* ------ Graphics-state-aware procedures ------ */
 
@@ -82,10 +74,6 @@ int gx_stroke_path_expansion(const gs_gstate *pgs,
  */
 
 /* Define the parameters passed to the imager's filling routine. */
-#ifndef gx_fill_params_DEFINED
-#  define gx_fill_params_DEFINED
-typedef struct gx_fill_params_s gx_fill_params;
-#endif
 struct gx_fill_params_s {
     int rule;			/* -1 = winding #, 1 = even/odd */
     gs_fixed_point adjust;
@@ -96,10 +84,6 @@ struct gx_fill_params_s {
   (*dev_proc(dev, fill_path))(dev, pgs, ppath, params, pdevc, pcpath)
 
 /* Define the parameters passed to the imager's stroke routine. */
-#ifndef gx_stroke_params_DEFINED
-#  define gx_stroke_params_DEFINED
-typedef struct gx_stroke_params_s gx_stroke_params;
-#endif
 struct gx_stroke_params_s {
     float flatness;
     bool  traditional;

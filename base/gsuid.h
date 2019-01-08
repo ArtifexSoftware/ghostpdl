@@ -23,10 +23,7 @@
 
 /* A unique id (uid) may be either a UniqueID or an XUID. */
 /* (XUIDs are a Level 2 feature.) */
-#ifndef gs_uid_DEFINED
-#  define gs_uid_DEFINED
 typedef struct gs_uid_s gs_uid;
-#endif
 struct gs_uid_s {
     /* id >= 0 is a UniqueID, xvalues is 0. */
     /* id < 0 is an XUID, size of xvalues is -id. */

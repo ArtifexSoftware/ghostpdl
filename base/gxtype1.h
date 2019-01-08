@@ -24,6 +24,8 @@
 #include "gstype1.h"
 #include "gxhintn.h"
 #include "gxmatrix.h"
+#include "gspath.h"
+#include "gzpath.h"
 
 /* This file defines the structures for the state of a Type 1 / */
 /* Type 2 charstring interpreter. */
@@ -78,16 +80,6 @@ typedef struct {
    (chvar = ch))
 #define charstring_skip_next(ch, state, encrypted)\
   (encrypted ? decrypt_skip_next(ch, state) : 0)
-
-#ifndef gx_path_DEFINED
-#  define gx_path_DEFINED
-typedef struct gx_path_s gx_path;
-#endif
-
-#ifndef segment_DEFINED
-#  define segment_DEFINED
-typedef struct segment_s segment;
-#endif
 
 /* This is the full state of the Type 1 interpreter. */
 #define ostack_size 48		/* per Type 2 documentation */

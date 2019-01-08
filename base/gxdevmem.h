@@ -74,10 +74,6 @@
  * but not the bits), but the client can change the foreign_* flag(s) after
  * opening the device if this is not the case.
  */
-#ifndef gx_device_memory_DEFINED
-#  define gx_device_memory_DEFINED
-typedef struct gx_device_memory_s gx_device_memory;
-#endif
 
 struct gx_device_memory_s {
     gx_device_forward_common;	/* (see gxdevice.h) */

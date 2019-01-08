@@ -20,16 +20,8 @@
 #  define gxfcopy_INCLUDED
 
 #include "gsccode.h"
-
-#ifndef gs_font_DEFINED
-#  define gs_font_DEFINED
-typedef struct gs_font_s gs_font;
-#endif
-
-#ifndef gs_matrix_DEFINED
-#  define gs_matrix_DEFINED
-typedef struct gs_matrix_s gs_matrix;
-#endif
+#include "gsmatrix.h"
+#include "gsfont.h"
 
 /*
  * Copy a font, aside from its glyphs.  Note that PostScript-specific data

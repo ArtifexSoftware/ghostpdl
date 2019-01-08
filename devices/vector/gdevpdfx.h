@@ -29,6 +29,7 @@
 #include "gdevpsdf.h"
 #include "gxdevmem.h"
 #include "sarc4.h"
+#include "gsfunc.h"
 
 #define FINE_GLYPH_USAGE 1 /* Old code = 0, new code = 1 */
 
@@ -54,6 +55,8 @@
 
 /* ================ Types and structures ================ */
 
+typedef struct pdf_base_font_s pdf_base_font_t;
+
 /* Define the possible contexts for the output stream. */
 typedef enum {
     PDF_IN_NONE,
@@ -77,15 +80,9 @@ typedef struct cos_object_procs_s cos_object_procs_t;
 typedef const cos_object_procs_t *cos_type_t;
 #define cos_types_DEFINED
 
-#ifndef pdf_text_state_DEFINED
-#  define pdf_text_state_DEFINED
 typedef struct pdf_text_state_s pdf_text_state_t;
-#endif
 
-#ifndef pdf_char_glyph_pairs_DEFINED
-#  define pdf_char_glyph_pairs_DEFINED
 typedef struct pdf_char_glyph_pairs_s pdf_char_glyph_pairs_t;
-#endif
 
 /* ---------------- Resources ---------------- */
 
@@ -346,10 +343,7 @@ typedef struct pdf_temp_file_s {
     stream *save_strm;                /* save pdev->strm while writing here */
 } pdf_temp_file_t;
 
-#ifndef gx_device_pdf_DEFINED
-#  define gx_device_pdf_DEFINED
 typedef struct gx_device_pdf_s gx_device_pdf;
-#endif
 
 /* Structures and definitions for linearisation */
 typedef struct linearisation_record_s {
@@ -1312,10 +1306,6 @@ int pdf_end_data(pdf_data_writer_t *pdw);
  * ranges[i].rmin) / (ranges[i].rmax - ranges[i].rmin).  Note that this is
  * the inverse of the scaling convention for Functions per se.
  */
-#ifndef gs_function_DEFINED
-typedef struct gs_function_s gs_function_t;
-#  define gs_function_DEFINED
-#endif
 int pdf_function(gx_device_pdf *pdev, const gs_function_t *pfn,
                  cos_value_t *pvalue);
 int pdf_function_scaled(gx_device_pdf *pdev, const gs_function_t *pfn,

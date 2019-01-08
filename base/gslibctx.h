@@ -27,15 +27,13 @@ typedef struct name_table_s *name_table_ptr;
    original gs_gc_root_t definition resulted in a circular header dependency. */
 typedef struct gs_gc_root_s *gs_gc_root_ptr;
 
-#ifndef gs_fapi_server_DEFINED
-#define gs_fapi_server_DEFINED
 typedef struct gs_fapi_server_s gs_fapi_server;
-#endif
 
-#ifndef gs_font_dir_DEFINED
-#  define gs_font_dir_DEFINED
+/* A 'font directory' object (to avoid making fonts global). */
+/* 'directory' is something of a misnomer: this structure */
+/* just keeps track of the defined fonts, and the scaled font and */
+/* rendered character caches. */
 typedef struct gs_font_dir_s gs_font_dir;
-#endif
 
 typedef int (*client_check_file_permission_t) (gs_memory_t *mem, const char *fname, const int len, const char *permission);
 

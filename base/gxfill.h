@@ -31,10 +31,8 @@ enum
 };
 
 /* Define the structure for keeping track of active lines. */
-#ifndef active_line_DEFINED
-#  define active_line_DEFINED
 typedef struct active_line_s active_line;
-#endif
+
 struct active_line_s {
     gs_fixed_point start;	/* x,y where line starts */
     gs_fixed_point end; 	/* x,y where line ends */
@@ -116,10 +114,8 @@ typedef struct fill_options_s {
 } fill_options;
 
 /* Line list structure */
-#ifndef line_list_DEFINED
-#  define line_list_DEFINED
 typedef struct line_list_s line_list;
-#endif
+
 struct line_list_s {
     gs_memory_t *memory;
     active_line *active_area;	/* allocated active_line list */

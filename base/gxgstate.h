@@ -37,7 +37,11 @@
 #include "gscspace.h"
 #include "gxdcolor.h"
 #include "gxstate.h"
-#include "gsgstate.h"
+#include "gsfont.h"
+#include "gxpath.h"
+#include "gsccolor.h"
+#include "gsht1.h"
+#include "gxclipsr.h"
 
 
 /*
@@ -45,24 +49,6 @@
  * This should be a separate object (or at least a substructure),
  * but making this change would require editing too much code.
  */
-
-/* Opaque types referenced by the color rendering state. */
-#ifndef gs_halftone_DEFINED
-#  define gs_halftone_DEFINED
-typedef struct gs_halftone_s gs_halftone;
-#endif
-#ifndef gx_device_color_DEFINED
-#  define gx_device_color_DEFINED
-typedef struct gx_device_color_s gx_device_color;
-#endif
-#ifndef gx_device_halftone_DEFINED
-#  define gx_device_halftone_DEFINED
-typedef struct gx_device_halftone_s gx_device_halftone;
-#endif
-#ifndef gs_color_space_DEFINED
-#  define gs_color_space_DEFINED
-typedef struct gs_color_space_s gs_color_space;
-#endif
 
 /*
  * We need some special memory management for the components of a
@@ -190,11 +176,6 @@ typedef struct gs_gstate_color_s {
  */
 #define st_cr_state_num_ptrs 14
 
-#ifndef gs_devicen_color_map_DEFINED
-#  define gs_devicen_color_map_DEFINED
-typedef struct gs_devicen_color_map_s gs_devicen_color_map;
-#endif
-
 struct gs_devicen_color_map_s {
     bool use_alt_cspace;
     separation_type sep_type;
@@ -227,32 +208,6 @@ typedef struct gs_xstate_trans_flags {
 #define gs_currentdevice_inline(pgs) ((pgs)->device)
 
 #define gs_gstate_client_data(pgs) ((pgs)->client_data)
-
-/* Opaque types referenced by the graphics state. */
-#ifndef gx_path_DEFINED
-#  define gx_path_DEFINED
-typedef struct gx_path_s gx_path;
-#endif
-#ifndef gx_clip_path_DEFINED
-#  define gx_clip_path_DEFINED
-typedef struct gx_clip_path_s gx_clip_path;
-#endif
-#ifndef gx_clip_stack_DEFINED
-#  define gx_clip_stack_DEFINED
-typedef struct gx_clip_stack_s gx_clip_stack_t;
-#endif
-#ifndef gs_color_space_DEFINED
-#  define gs_color_space_DEFINED
-typedef struct gs_color_space_s gs_color_space;
-#endif
-#ifndef gs_client_color_DEFINED
-#  define gs_client_color_DEFINED
-typedef struct gs_client_color_s gs_client_color;
-#endif
-#ifndef gs_font_DEFINED
-#  define gs_font_DEFINED
-typedef struct gs_font_s gs_font;
-#endif
 
 /* Define the graphics state structure itself. */
 /*
@@ -296,8 +251,6 @@ struct gs_gstate_s {
     int overprint_mode;
     int effective_overprint_mode;
     bool stroke_overprint;
-    int overprint_mode_alt;
-    int effective_overprint_mode_alt;
     float flatness;
     gs_fixed_point fill_adjust; /* A path expansion for fill; -1 = dropout prevention*/
     bool stroke_adjust;
@@ -372,7 +325,7 @@ struct gs_gstate_s {
    { (float)(scale), 0.0, 0.0, (float)(-(scale)), 0.0, 0.0 },\
   false, {0, 0}, {0, 0}, false, \
   lop_default, gx_max_color_value, BLEND_MODE_Compatible,\
-{ 1.0 }, { 1.0 }, {0, 0}, 0, 0/*false*/, 0, 0, 0, 0/*false*/, 0, 0, 0/*false*/, 0, 0, 1.0,  \
+{ 1.0 }, { 1.0 }, {0, 0}, 0, 0/*false*/, 0, 0/*false*/, 0, 0/*false*/, 0, 0, 0/*false*/, 1.0,  \
    { fixed_half, fixed_half }, 0/*false*/, 1/*true*/, 0/*false*/, 1.0,\
   1, 1/* bpt true */, 0, 0, 0, INIT_CUSTOM_COLOR_PTR	/* 'Custom color' callback pointer */  \
   gx_default_get_cmap_procs
@@ -404,8 +357,6 @@ struct gs_gstate_s {
     s->overprint_mode = __state_init.overprint_mode; \
     s->effective_overprint_mode = __state_init.effective_overprint_mode; \
     s->stroke_overprint = __state_init.stroke_overprint; \
-    s->overprint_mode_alt = __state_init.overprint_mode_alt; \
-    s->effective_overprint_mode_alt = __state_init.effective_overprint_mode_alt; \
     s->flatness = __state_init.flatness; \
     s->fill_adjust = __state_init.fill_adjust; \
     s->stroke_adjust = __state_init.stroke_adjust; \

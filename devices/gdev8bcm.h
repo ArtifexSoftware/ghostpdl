@@ -19,6 +19,9 @@
 #ifndef gdev8bcm_INCLUDED
 #  define gdev8bcm_INCLUDED
 
+#include "stdpre.h"
+#include "gxcvalue.h"
+
 /*
  * The MS-DOS, MS Windows, and X Windows drivers all use (at least on
  * some platforms) an 8-bit color map in which some fraction is reserved

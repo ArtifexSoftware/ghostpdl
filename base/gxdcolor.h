@@ -24,14 +24,7 @@
 #include "gsropt.h"
 #include "gsstruct.h"		/* for extern_st, GC procs */
 #include "stdint_.h"		/* for int64_t */
-#include "gsgstate.h"
-
-/* Define opaque types. */
-
-#ifndef gx_device_DEFINED
-#  define gx_device_DEFINED
-typedef struct gx_device_s gx_device;
-#endif
+#include "gsdevice.h"
 
 /*
  * Define a source structure for RasterOp.

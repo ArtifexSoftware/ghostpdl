@@ -345,6 +345,15 @@ psapi_set_param(gs_lib_ctx_t *ctx,
     return code;
 }
 
+int
+psapi_add_path(gs_lib_ctx_t *ctx,
+               const char   *path)
+{
+    gs_main_instance *minst = get_minst_from_memory(ctx->memory);
+
+    return gs_main_add_lib_path(minst, path);
+}
+
 /* The gsapi_run_* functions are like gs_main_run_* except
  * that the error_object is omitted.
  * An error object in minst is used instead.

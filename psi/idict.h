@@ -20,6 +20,7 @@
 #  define idict_INCLUDED
 
 #include "iddstack.h"
+#include "gsalloc.h"
 
 /*
  * Contrary to our usual practice, we expose the (first-level)
@@ -56,10 +57,6 @@ extern bool dict_auto_expand;
 /*
  * Create a dictionary.
  */
-#ifndef gs_ref_memory_DEFINED
-#  define gs_ref_memory_DEFINED
-typedef struct gs_ref_memory_s gs_ref_memory_t;
-#endif
 int dict_alloc(gs_ref_memory_t *, uint maxlength, ref * pdref);
 
 #define dict_create(maxlen, pdref)\

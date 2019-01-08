@@ -28,16 +28,7 @@
 #  define gzspotan_INCLUDED
 
 #include "gxdevcli.h"
-
-#ifndef segment_DEFINED
-#  define segment_DEFINED
-typedef struct segment_s segment; /* gzpath.h */
-#endif
-
-#ifndef gx_device_spot_analyzer_DEFINED
-#   define gx_device_spot_analyzer_DEFINED
-typedef struct gx_device_spot_analyzer_s gx_device_spot_analyzer;
-#endif
+#include "gzpath.h"
 
 /* -------------- Structures ----------------------------- */
 

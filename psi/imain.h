@@ -39,10 +39,7 @@
  * top-level API calls take an interpreter instance (gs_main_instance *)
  * as their first argument.
  */
-#ifndef gs_main_instance_DEFINED
-#  define gs_main_instance_DEFINED
 typedef struct gs_main_instance_s gs_main_instance;
-#endif
 
 /* ================ Exported procedures from imain.c ================ */
 

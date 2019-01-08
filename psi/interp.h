@@ -68,10 +68,11 @@ int gs_errorinfo_put_string(i_ctx_t *, const char *);
 int gs_interp_init(i_ctx_t **pi_ctx_p, const ref *psystem_dict,
                    gs_dual_memory_t *dmem);
 
-#ifndef gs_context_state_t_DEFINED
-#  define gs_context_state_t_DEFINED
+/*
+ * Define the externally visible state of an interpreter context.
+ * There is only a single context.
+ */
 typedef struct gs_context_state_s gs_context_state_t;
-#endif
 
 /*
  * Create initial stacks for the interpreter.

@@ -216,10 +216,7 @@
  *     closing of a device is not itself used as an error indication.
  */
 
-#ifndef gs_overprint_params_t_DEFINED
-#  define gs_overprint_params_t_DEFINED
 typedef struct gs_overprint_params_s    gs_overprint_params_t;
-#endif
 
 struct gs_overprint_params_s {
 

@@ -24,6 +24,7 @@
 #include "gstypes.h"
 #include "gspenum.h"
 #include "gsgstate.h"
+#include "gxmatrix.h"
 
 /*
  * Define clamped values for out-of-range coordinates.
@@ -56,14 +57,7 @@ int gs_newpath(gs_gstate *),
     gs_rcurveto(gs_gstate *, double, double, double, double, double, double),
     gs_closepath(gs_gstate *);
 
-#ifndef gx_path_DEFINED
-#  define gx_path_DEFINED
 typedef struct gx_path_s gx_path;
-#endif
-#ifndef gs_matrix_fixed_DEFINED
-#define gs_matrix_fixed_DEFINED
-typedef struct gs_matrix_fixed_s gs_matrix_fixed;
-#endif
 
 /* gs_gstate-level procedures */
 void make_quadrant_arc(gs_point *p, const gs_point *c,

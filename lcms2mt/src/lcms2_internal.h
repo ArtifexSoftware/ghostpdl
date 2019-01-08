@@ -114,7 +114,9 @@
 
 #else
 #  if !defined(HAVE_ISINF)
+#    if !defined(isinf)
 #       define isinf(x) (!finite((x)))
+#    endif
 #  endif
 #endif
 

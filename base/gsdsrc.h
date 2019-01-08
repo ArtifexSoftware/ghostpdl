@@ -20,6 +20,7 @@
 #  define gsdsrc_INCLUDED
 
 #include "gsstruct.h"
+#include "scommon.h"
 
 /* ---------------- Types and structures ---------------- */
 
@@ -33,11 +34,6 @@
  * The handling of floats is anomalous, but we don't see a good alternative
  * at the moment.
  */
-
-#ifndef stream_DEFINED
-#  define stream_DEFINED
-typedef struct stream_s stream;
-#endif
 
 /*
  * Prepare to access a block of data from a source.  buf must be a client-
@@ -56,10 +52,7 @@ typedef enum {
     data_source_type_floats,
     data_source_type_stream
 } gs_data_source_type_t;
-#ifndef gs_data_source_DEFINED
-#  define gs_data_source_DEFINED
 typedef struct gs_data_source_s gs_data_source_t;
-#endif
 struct gs_data_source_s {
     data_source_proc_access((*access));
     gs_data_source_type_t type;

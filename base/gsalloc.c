@@ -2352,7 +2352,8 @@ i_register_root(gs_memory_t * mem, gs_gc_root_t ** rpp, gs_ptr_type_t ptype,
         if (rp == 0)
             return_error(gs_error_VMerror);
         rp->free_on_unregister = true;
-        *rpp = rp;
+        if (rpp && *rpp == NULL)
+            *rpp = rp;
     } else {
         rp = *rpp;
         rp->free_on_unregister = false;

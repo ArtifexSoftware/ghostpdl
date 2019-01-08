@@ -20,6 +20,7 @@
 #  define gscdevn_INCLUDED
 
 #include "gscspace.h"
+#include "gsfunc.h"
 
 /*
  * Construct a new a DeviceN color space.
@@ -49,10 +50,6 @@ extern int gs_cspace_set_devn_proc(
                                       );
 
 /* Set the DeviceN tint transformation procedure to a Function. */
-#ifndef gs_function_DEFINED
-typedef struct gs_function_s gs_function_t;
-#  define gs_function_DEFINED
-#endif
 int gs_cspace_set_devn_function(gs_color_space *pcspace,
                                    gs_function_t *pfn);
 

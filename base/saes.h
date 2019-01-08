@@ -39,10 +39,7 @@ struct stream_aes_state_s
     aes_context *ctx;		/* from aes.h */
 };
 
-#ifndef stream_aes_state_DEFINED
-#define stream_aes_state_DEFINED
 typedef struct stream_aes_state_s stream_aes_state;
-#endif
 
 int s_aes_set_key(stream_aes_state * state,
                         const unsigned char *key, int keylength);

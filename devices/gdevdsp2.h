@@ -18,6 +18,9 @@
 #ifndef gdevdsp2_INCLUDED
 #  define gdevdsp2_INCLUDED
 
+#include "gdevdevn.h"
+#include "gdevdsp.h"
+
 typedef struct gx_device_display_s gx_device_display;
 
 #define gx_device_display_common\

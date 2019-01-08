@@ -27,6 +27,8 @@
 #include "gxcindex.h"
 #include "gxfrac.h"
 #include "gxtmap.h"
+#include "gsdcolor.h"
+#include "gxht.h"
 
 /*
  * We represent a halftone tile as a rectangular super-cell consisting of
@@ -154,14 +156,6 @@ typedef ht_mask_t ht_sample_t;
  * See gxbitmap.h for more details about strip halftones.
  */
 typedef struct gx_ht_cache_s gx_ht_cache;
-#ifndef gx_ht_order_DEFINED
-#  define gx_ht_order_DEFINED
-typedef struct gx_ht_order_s gx_ht_order;
-#endif
-#ifndef gx_ht_tile_DEFINED
-#  define gx_ht_tile_DEFINED
-typedef struct gx_ht_tile_s gx_ht_tile;
-#endif
 typedef struct gx_ht_order_procs_s {
 
     /* Define the size of each element of bit_data. */
@@ -276,11 +270,6 @@ extern_st(st_ht_order_component_element);
   gs_public_st_element(st_ht_order_component_element, gx_ht_order_component,\
     "gx_ht_order_component[]", ht_order_element_enum_ptrs,\
     ht_order_element_reloc_ptrs, st_ht_order_component)
-
-#ifndef gx_device_halftone_DEFINED
-#  define gx_device_halftone_DEFINED
-typedef struct gx_device_halftone_s gx_device_halftone;
-#endif
 
 /*
  * Device Halftone Structure definition.  See comments before

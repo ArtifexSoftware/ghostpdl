@@ -21,19 +21,9 @@
 
 #include "gxbitmap.h"
 #include "gsropt.h"
-
-#ifndef gx_device_DEFINED
-#  define gx_device_DEFINED
-typedef struct gx_device_s gx_device;
-#endif
-#ifndef gx_device_color_DEFINED
-#  define gx_device_color_DEFINED
-typedef struct gx_device_color_s gx_device_color;
-#endif
-#ifndef gx_clip_path_DEFINED
-#  define gx_clip_path_DEFINED
-typedef struct gx_clip_path_s gx_clip_path;
-#endif
+#include "gsdevice.h"
+#include "gsdcolor.h"
+#include "gxpath.h"
 
 int gx_image_fill_masked_start(gx_device *dev, const gx_device_color *pdevc, bool transpose,
                              const gx_clip_path *pcpath, gs_memory_t *mem, gs_logical_operation_t lop,

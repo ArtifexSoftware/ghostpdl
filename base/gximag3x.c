@@ -29,6 +29,7 @@
 #include "gximag3x.h"
 #include "gxgstate.h"
 #include "gdevbbox.h"
+#include <limits.h> /* For INT_MAX etc */
 
 extern_st(st_color_space);
 
@@ -224,6 +225,17 @@ gx_begin_image3x_generic(gx_device * dev,
             (code = gs_bbox_transform(&mrect, &mat, &mrect)) < 0
             )
             return code;
+
+        /* Bug 700438: If the rectangle is out of range, bail */
+        if (mrect.p.x >= (double)INT_MAX || mrect.q.x <= (double)INT_MIN ||
+            mrect.p.y >= (double)INT_MAX || mrect.q.y <= (double)INT_MIN) {
+                code = gs_note_error(gs_error_rangecheck);
+            goto out1;
+        }
+
+        /* This code was changed for bug 686843/687411, but in a way that
+         * a) looked wrong, and b) doesn't appear to make a difference. Revert
+         * it to the sane version until we have evidence why not. */
         origin[i].x = (int)floor(mrect.p.x);
         origin[i].y = (int)floor(mrect.p.y);
         code = make_mid(&mdev, dev,

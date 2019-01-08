@@ -23,6 +23,7 @@
 #include "gxfont.h"
 #include "gxfont42.h"
 #include "gsrefct.h"
+#include "gstype1.h"
 
 /* ---------------- Structures ---------------- */
 
@@ -57,15 +58,7 @@ extern_st(st_gs_font_cid_data);
 
 /* CIDFontType 0 references an array of (partial) FontType 1 fonts. */
 
-#ifndef gs_font_type1_DEFINED
-#  define gs_font_type1_DEFINED
-typedef struct gs_font_type1_s gs_font_type1;
-#endif
-
-#ifndef gs_font_cid0_DEFINED
-#  define gs_font_cid0_DEFINED
 typedef struct gs_font_cid0_s gs_font_cid0;
-#endif
 
 #define MAX_FDBytes 4
 typedef struct gs_font_cid0_data_s {
@@ -130,10 +123,8 @@ typedef struct gs_subst_CID_on_WMode_s {
 
 /* CIDFontType 2 is a subclass of FontType 42. */
 
-#ifndef gs_font_cid2_DEFINED
-#  define gs_font_cid2_DEFINED
 typedef struct gs_font_cid2_s gs_font_cid2;
-#endif
+
 typedef struct gs_font_cid2_data_s {
     gs_font_cid_data common;
     int MetricsCount;

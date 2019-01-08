@@ -57,11 +57,6 @@ typedef struct gs_range_icc_s {
 /* This object is used only for device post processing CM.  It and its objects
    must be allocated in non-gc memory. */
 
-#ifndef cmm_profile_DEFINED
-typedef struct cmm_profile_s cmm_profile_t;
-#define cmm_profile_DEFINED
-#endif
-
 typedef struct gsicc_device_cm_s {
     cmm_profile_t *gray_profile;
     cmm_profile_t *rgb_profile;
@@ -251,10 +246,7 @@ struct gsicc_colorname_s {
 
 typedef struct gsicc_namelist_s gsicc_namelist_t;
 
-#ifndef gs_devicen_color_map_DEFINED
-#  define gs_devicen_color_map_DEFINED
 typedef struct gs_devicen_color_map_s gs_devicen_color_map;
-#endif
 
 struct gsicc_namelist_s {
     int count;
@@ -372,11 +364,6 @@ struct cmm_profile_s {
     gscms_free_profile_proc_t release;  /* Release the profile handle at CMM */
 };
 
-#ifndef cmm_profile_DEFINED
-typedef struct cmm_profile_s cmm_profile_t;
-#define cmm_profile_DEFINED
-#endif
-
 /* The above definition is plagued with an offset issue.  Probably should
    do away with gsicc_serialized_profile_t type */
 #ifndef offsetof
@@ -426,11 +413,6 @@ typedef enum {
 } gs_colortype_t;
 
 /* The link object. */
-
-#ifndef gsicc_link_DEFINED
-typedef struct gsicc_link_s gsicc_link_t;
-#  define gsicc_link_DEFINED
-#endif
 
 typedef struct gsicc_hashlink_s {
     int64_t link_hashcode;

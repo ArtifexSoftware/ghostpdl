@@ -32,10 +32,7 @@
  * procedures that handle things like buffer refilling.  See stream.h
  * for more information about streams.
  */
-#ifndef stream_DEFINED
-#  define stream_DEFINED
 typedef struct stream_s stream;
-#endif
 
 /* We really want our offset type to be 64 bit for large file support
  * but this allows a particular port to specficy a prefered data type

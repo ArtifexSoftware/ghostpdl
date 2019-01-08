@@ -22,12 +22,8 @@
 #include "gxfont.h"
 #include "gsgdata.h"
 #include "gxfapi.h"
+#include "gstype1.h"
 #include "iref.h"
-
-#ifndef gs_font_type1_DEFINED
-#  define gs_font_type1_DEFINED
-typedef struct gs_font_type1_s gs_font_type1;
-#endif
 
 /* ---------------- Public ---------------- */
 

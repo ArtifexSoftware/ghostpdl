@@ -127,10 +127,6 @@ typedef struct gx_cmap_lookup_entry_s {
  * glyph_name procedure can, in principle, be used with multiple different
  * subclasses of gs_cmap_t.
  */
-#ifndef gs_cmap_DEFINED
-#  define gs_cmap_DEFINED
-typedef struct gs_cmap_s gs_cmap_t;
-#endif
 
 #define GS_CMAP_COMMON\
     int CMapType;		/* must be first */\

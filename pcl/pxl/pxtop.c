@@ -554,6 +554,7 @@ pl_interp_implementation_t pxl_implementation = {
     NULL,
     NULL,
     NULL,
+    NULL,
     pxl_impl_init_job,
     NULL,                       /* process_file */
     pxl_impl_process_begin,

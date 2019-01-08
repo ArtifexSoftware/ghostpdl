@@ -108,10 +108,7 @@ typedef struct ref_colorspace_s {
                                 /* with one of these. */
 } ref_colorspace;
 
-#ifndef int_remap_color_info_DEFINED
-#  define int_remap_color_info_DEFINED
 typedef struct int_remap_color_info_s int_remap_color_info_t;
-#endif
 
 typedef struct int_gstate_s {
     ref dash_pattern_array;	/* (array) */

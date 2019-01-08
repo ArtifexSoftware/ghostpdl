@@ -20,13 +20,9 @@
 #ifndef gxalloc_INCLUDED
 #  define gxalloc_INCLUDED
 
-#ifndef gs_ref_memory_DEFINED
-#  define gs_ref_memory_DEFINED
-typedef struct gs_ref_memory_s gs_ref_memory_t;
-#endif
-
 #include "gsalloc.h"
 #include "gxobj.h"
+#include "scommon.h"
 
 /* ================ Clumps ================ */
 
@@ -296,23 +292,11 @@ void alloc_free_clump(clump_t *, gs_ref_memory_t *);
 struct alloc_save_s;
 struct alloc_change_s;
 
-/* Stream structure, only needed for the streams member of the state. */
-#ifndef stream_DEFINED
-#  define stream_DEFINED
-typedef struct stream_s stream;
-#endif
-
 /*
  * Ref (PostScript object) type, only needed for the binary_token_names
- * member of the state.  This really shouldn't be visible at this level at
- * all: we include it here only to avoid splitting gs_ref_memory_t two
- * levels, which would be architecturally better but would involve too much
- * work at this point.
+ * member of the state.
  */
-#ifndef ref_DEFINED
 typedef struct ref_s ref;
-#  define ref_DEFINED
-#endif
 
 /*
  * Define the number of freelists.  The index in the freelist array

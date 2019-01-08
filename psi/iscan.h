@@ -38,10 +38,7 @@
  * We expose the entire state definition to the caller so that
  * the state can normally be allocated on the stack.
  */
-#ifndef scanner_state_DEFINED
-#  define scanner_state_DEFINED
 typedef struct scanner_state_s scanner_state;
-#endif
 
 /*
  * Define a structure for dynamically growable strings.

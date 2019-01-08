@@ -21,6 +21,7 @@
 
 #include "std.h"
 #include "iref.h"
+#include "imemory.h"
 
 /*
  * This file defines those parts of the name table API that depend neither
@@ -30,10 +31,7 @@
 
 /* ---------------- Interface types ---------------- */
 
-#ifndef name_table_DEFINED
-#  define name_table_DEFINED
 typedef struct name_table_s name_table;
-#endif
 
 typedef uint name_index_t;
 
@@ -42,11 +40,6 @@ typedef uint name_index_t;
 extern const uint name_max_string;
 
 /* ---------------- Procedural interface ---------------- */
-
-#ifndef gs_ref_memory_DEFINED
-#  define gs_ref_memory_DEFINED
-typedef struct gs_ref_memory_s gs_ref_memory_t;
-#endif
 
 /* Allocate and initialize a name table. */
 name_table *names_init(ulong size, gs_ref_memory_t *imem);

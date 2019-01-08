@@ -30,11 +30,6 @@
  * there isn't very much of it and it's less trouble to include here.
  */
 
-#ifndef gs_font_type1_DEFINED
-#  define gs_font_type1_DEFINED
-typedef struct gs_font_type1_s gs_font_type1;
-#endif
-
 /*
  * The zone_table values should be ints, according to the Adobe
  * specification, but some fonts have arbitrary floats here.
@@ -52,10 +47,7 @@ typedef struct gs_font_type1_s gs_font_type1;
 #define stem_table(size)\
         float_array(size)
 
-#ifndef gs_type1_data_DEFINED
-#define gs_type1_data_DEFINED
 typedef struct gs_type1_data_s gs_type1_data;
-#endif
 
 typedef struct gs_type1_data_procs_s {
 
@@ -144,8 +136,6 @@ struct gs_type1_data_s {
     byte hash_subrs[16];	/* Used only for checking font copying compatibility */
     int num_subrs;		/* Used only for checking font copying compatibility */
 };
-
-#define gs_type1_data_s_DEFINED
 
 struct gs_font_type1_s {
     gs_font_base_common;

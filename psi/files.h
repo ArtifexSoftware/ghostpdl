@@ -99,10 +99,7 @@ int file_switch_to_write(const ref *);
         /* for zfilter.c and ziodev.c */
 extern const uint file_default_buffer_size;
 
-#ifndef gs_file_path_ptr_DEFINED
-#  define gs_file_path_ptr_DEFINED
 typedef struct gs_file_path_s *gs_file_path_ptr;
-#endif
 
 /* Procedures exported by zfile.c. */
         /* for imainarg.c */
@@ -114,10 +111,6 @@ lib_file_open(gs_file_path_ptr, const gs_memory_t *, i_ctx_t *,
                        const char *, uint, char *, int, uint *, ref *pfile);
 
         /* for imain.c */
-#ifndef gs_ref_memory_DEFINED
-#  define gs_ref_memory_DEFINED
-typedef struct gs_ref_memory_s gs_ref_memory_t;
-#endif
 int file_read_string(const byte *, uint, ref *, gs_ref_memory_t *);
 
         /* for os_open in ziodev.c */

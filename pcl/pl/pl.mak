@@ -73,8 +73,7 @@ plvalue_h=$(PLSRC)plvalue.h
 plvocab_h=$(PLSRC)plvocab.h
 romfnttab_h=$(PLSRC)romfnttab.h
 # Out of order because of inclusion
-plfont_h=$(PLSRC)plfont.h $(gsccode_h) $(plsymbol_h) \
-         $(pldict_h) $(stream_h) $(strmio_h)
+plfont_h=$(PLSRC)plfont.h $(gsccode_h) $(plsymbol_h)          $(pldict_h) $(stream_h) $(strmio_h)
 plchar_h=$(PLSRC)plchar.h
 
 pconfig_h=$(GLGEN)pconfig.h
@@ -318,8 +317,7 @@ $(PLOBJ)ufst.dev: $(ECHOGS_XE)  $(ufst_obj) $(PLOBJ)plufstlp1.$(OBJ) $(PL_MAK) $
 	$(SETMOD) $(PLOBJ)ufst $(ufst_obj)
 	$(ADDMOD) $(PLOBJ)ufst $(PLOBJ)plufstlp1.$(OBJ)
 
-plufstlp_h=$(PLSRC)plufstlp.h $(studio__h) $(string__h) $(gsmemory_h) \
-           $(gstypes_h)
+plufstlp_h=$(PLSRC)plufstlp.h $(studio__h) $(string__h) $(gsmemory_h)            $(gstypes_h)
 
 fapi_objs=$(PLOBJ)plfapi.$(OBJ)
 $(PLOBJ)fapi_pl.dev: $(ECHOGS_XE) $(fapi_objs) $(PL_MAK) $(MAKEDIRS)

@@ -61,10 +61,7 @@ typedef struct gs_memory_status_s {
 } gs_memory_status_t;
 
 /* Define the abstract type for the memory manager. */
-#ifndef gs_raw_memory_t_DEFINED
-#define gs_raw_memory_t_DEFINED
 typedef struct gs_raw_memory_s gs_raw_memory_t;
-#endif
 
 /* Define the procedures for raw memory management.  Memory managers have no
  * standard constructor: each implementation defines its own, and is

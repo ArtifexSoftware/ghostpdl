@@ -21,12 +21,7 @@
 
 #include "std.h"
 #include "gsgstate.h"
-
-/* opague type for overprint compositor parameters */
-#ifndef gs_overprint_params_t_DEFINED
-#  define gs_overprint_params_t_DEFINED
-typedef struct gs_overprint_params_s    gs_overprint_params_t;
-#endif
+#include "gsovrc.h"
 
 /* Initial allocation and freeing */
 gs_gstate *gs_gstate_alloc(gs_memory_t *);	/* 0 if fails */

@@ -22,6 +22,7 @@
 
 #include "gscms.h"
 #include "gxdevcli.h"
+#include "gxclist.h"
 
 /* clone a device and set params and its chunk memory                   */
 /* The chunk_base_mem MUST be thread safe                               */
@@ -44,11 +45,6 @@ typedef enum {
     THREAD_DONE = 1,
     THREAD_BUSY = 2
 } thread_status;
-
-#ifndef clist_render_thread_control_t_DEFINED
-#  define clist_render_thread_control_t_DEFINED
-typedef struct clist_render_thread_control_s clist_render_thread_control_t;
-#endif
 
 struct clist_render_thread_control_s {
     thread_status status;	/* 0: not started, 1: done, 2: busy, < 0: error */

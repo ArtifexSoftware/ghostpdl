@@ -20,12 +20,7 @@
 #  define imainarg_INCLUDED
 
 #include "std.h"
-
-/* Define an opaque type for an interpreter instance.  See imain.h. */
-#ifndef gs_main_instance_DEFINED
-#  define gs_main_instance_DEFINED
-typedef struct gs_main_instance_s gs_main_instance;
-#endif
+#include "imain.h"
 
 /*
  * As a shortcut for very high-level clients, we define a single call

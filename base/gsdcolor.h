@@ -26,20 +26,11 @@
 #include "gxhttile.h"
 #include "gxcindex.h"
 
-#ifndef gx_device_color_DEFINED
-#  define gx_device_color_DEFINED
 typedef struct gx_device_color_s gx_device_color;
-#endif
 
-#ifndef gx_device_saved_color_DEFINED
-#  define gx_device_saved_color_DEFINED
 typedef struct gx_device_color_saved_s  gx_device_color_saved;
-#endif
 
-#ifndef gx_device_halftone_DEFINED
-#  define gx_device_halftone_DEFINED
 typedef struct gx_device_halftone_s gx_device_halftone;
-#endif
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * The definitions in the following section of the file are the only
@@ -181,15 +172,7 @@ void gx_complete_halftone(gx_device_color *pdevc, int num_comps,
 
 /* Define opaque types for objects referenced by device colors. */
 
-#ifndef gx_ht_tile_DEFINED
-#  define gx_ht_tile_DEFINED
-typedef struct gx_ht_tile_s gx_ht_tile;
-#endif
-
-#ifndef gx_color_tile_DEFINED
-#  define gx_color_tile_DEFINED
 typedef struct gx_color_tile_s gx_color_tile;
-#endif
 
 /*
  * The device color in the graphics state is computed from client color

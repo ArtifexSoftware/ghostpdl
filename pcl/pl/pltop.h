@@ -23,11 +23,7 @@
 
 #include "gsgc.h"
 #include "scommon.h"
-
-#ifndef gx_device_DEFINED
-#  define gx_device_DEFINED
-typedef struct gx_device_s gx_device;
-#endif
+#include "gsdevice.h"
 
 /*
  * Generic interpreter data types which may be subclassed by specific interpreters
@@ -90,6 +86,12 @@ typedef int (*pl_interp_proc_set_param_t) (pl_interp_implementation_t *,
                                            pl_set_param_type,
                                            const char *,
                                            const void *);
+
+/*
+ * Add a path to a language's search path.
+ */
+typedef int (*pl_interp_proc_add_path_t) (pl_interp_implementation_t *,
+                                          const char *);
 
 /*
  * Do any language specific init required after the args have been sent.
@@ -168,6 +170,7 @@ struct pl_interp_implementation_s
     pl_interp_proc_allocate_interp_instance_t proc_allocate_interp_instance;
     pl_interp_proc_get_device_memory_t proc_get_device_memory;
     pl_interp_proc_set_param_t proc_set_param;
+    pl_interp_proc_add_path_t proc_add_path;
     pl_interp_proc_post_args_init_t proc_post_args_init;
     pl_interp_proc_init_job_t proc_init_job;
     pl_interp_proc_process_file_t proc_process_file;

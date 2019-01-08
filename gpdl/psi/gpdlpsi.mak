@@ -62,4 +62,3 @@ $(PSI_TOP_OBJ): $(PSISRC)psitop.c $(AK) $(stdio__h)\
 $(PSIOBJ)psi.dev: $(PSI_MAK) $(ECHOGS_XE) $(PLOBJ)pjl.dev 
 	$(SETMOD) $(PSIOBJ)psi $(PSI_TOP_OBJ)
 	$(ADDMOD) $(PSIOBJ)psi -include $(PLOBJ)pl $(PLOBJ)pjl
-

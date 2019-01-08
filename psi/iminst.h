@@ -21,11 +21,7 @@
 #  define iminst_INCLUDED
 
 #include "iref.h"
-
-#ifndef gs_main_instance_DEFINED
-#  define gs_main_instance_DEFINED
-typedef struct gs_main_instance_s gs_main_instance;
-#endif
+#include "imain.h"
 
 #ifndef display_callback_DEFINED
 # define display_callback_DEFINED
@@ -45,6 +41,8 @@ typedef struct display_callback_s display_callback;
  * at the end of the list; may be 0.
  *      final - the final set of directories specified in the makefile;
  * may be 0.
+ *      first_is_current - 1 if we have inserted "gp_current_directory"
+ * as the first entry.
  *      count - the number of elements in the list, excluding a possible
  * initial '.', env, and final.
  */
@@ -53,6 +51,7 @@ typedef struct gs_file_path_s {
     ref list;
     const char *env;
     const char *final;
+    uint first_is_current;
     uint count;
 } gs_file_path;
 

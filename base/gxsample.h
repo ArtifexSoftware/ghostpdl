@@ -41,10 +41,7 @@ typedef union sample_lookup_s {
 extern const bits32 lookup4x1to32_identity[16];
 extern const bits32 lookup4x1to32_inverted[16];
 
-#ifndef sample_map_DEFINED
-#define sample_map_DEFINED
 typedef struct sample_map_s sample_map;
-#endif
 
 /*
  * Define procedures to unpack and shuffle image data samples.  The Unix C

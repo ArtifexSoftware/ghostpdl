@@ -20,6 +20,13 @@
 #ifndef gdevpxut_INCLUDED
 #  define gdevpxut_INCLUDED
 
+#include "gsdevice.h"
+#include "scommon.h"
+#include "gdevpxen.h"
+#include "gdevpxat.h"
+#include "gdevpxop.h"
+#include "gxfixed.h"
+
 /* ---------------- High-level constructs ---------------- */
 
 /* Write the file header, including the resolution. */

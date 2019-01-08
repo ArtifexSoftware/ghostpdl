@@ -21,6 +21,7 @@
 
 #include "gsropt.h"
 #include "gxdevcli.h"
+#include "gximage.h"
 
 /*
  * Compute the effective RasterOp for the 1-bit case,
@@ -48,15 +49,6 @@ void trace_copy_rop(const char *cname, gx_device * dev,
  * The texture is a gx_device_color; it may be any type of color, even a
  * pattern.
  */
-#ifndef gx_device_color_DEFINED
-#  define gx_device_color_DEFINED
-typedef struct gx_device_color_s gx_device_color;
-#endif
-
-#ifndef gx_device_rop_texture_DEFINED
-#  define gx_device_rop_texture_DEFINED
-typedef struct gx_device_rop_texture_s gx_device_rop_texture;
-#endif
 
 struct gx_device_rop_texture_s {
     gx_device_forward_common;

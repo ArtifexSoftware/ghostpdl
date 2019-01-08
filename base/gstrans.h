@@ -23,6 +23,8 @@
 #include "gxcomp.h"
 #include "gsmatrix.h"
 #include "gxblend.h"
+#include "gdevp14.h"
+#include "gsfunc.h"
 
 /*
  * Define the operations for the PDF 1.4 transparency compositor.
@@ -81,11 +83,6 @@ typedef enum {
     PDF14_TEXTGROUP_BT_PUSHED   /* We are in a BT/ET section and group was pushed */
 } pdf14_text_group_state;
 
-#ifndef gs_function_DEFINED
-typedef struct gs_function_s gs_function_t;
-#  define gs_function_DEFINED
-#endif
-
 typedef struct gs_transparency_source_s {
     float alpha;		/* constant alpha */
 } gs_transparency_source_t;
@@ -139,11 +136,6 @@ struct gs_pdf14trans_params_s {
                                 during a transparency group push */
     bool is_pattern;      /* Needed to detect device push and pop for clist pattern */
 };
-
-#ifndef gs_pdf14trans_params_DEFINED
-#define gs_pdf14trans_params_DEFINED
-typedef struct gs_pdf14trans_params_s gs_pdf14trans_params_t;
-#endif
 
 /*
  * The PDF 1.4 transparency compositor structure. This is exactly analogous to

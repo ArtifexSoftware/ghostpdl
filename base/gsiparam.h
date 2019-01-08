@@ -41,11 +41,8 @@
  * Define the data common to all image types.  The type structure is
  * opaque here, defined in gxiparam.h.
  */
-#ifndef gx_image_type_DEFINED
-#  define gx_image_type_DEFINED
 typedef struct gx_image_type_s gx_image_type_t;
 
-#endif
 #define gs_image_common\
         const gx_image_type_t *type;\
                 /*\
@@ -151,11 +148,7 @@ typedef enum {
 } gs_image_format_t;
 
 /* Define an opaque type for a color space. */
-#ifndef gs_color_space_DEFINED
-#  define gs_color_space_DEFINED
 typedef struct gs_color_space_s gs_color_space;
-
-#endif
 
 #define gs_pixel_image_common\
         gs_data_image_common;\

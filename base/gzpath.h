@@ -53,11 +53,8 @@ typedef enum {
                                 /* final point for others */
 
 /* Forward declarations for structure types */
-#ifndef segment_DEFINED
-#  define segment_DEFINED
 typedef struct segment_s segment;
 
-#endif
 typedef struct subpath_s subpath;
 
 /*

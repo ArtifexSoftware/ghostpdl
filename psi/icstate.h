@@ -27,21 +27,8 @@
 #include "stream.h"
 #include "opdef.h"
 #include "gsgstate.h"
-
-/*
- * Define the externally visible state of an interpreter context.
- * If we aren't supporting Display PostScript features, there is only
- * a single context.
- */
-#ifndef gs_context_state_t_DEFINED
-#  define gs_context_state_t_DEFINED
-typedef struct gs_context_state_s gs_context_state_t;
-#endif
-
-#ifndef gs_file_path_ptr_DEFINED
-#  define gs_file_path_ptr_DEFINED
-typedef struct gs_file_path_s *gs_file_path_ptr;
-#endif
+#include "files.h"
+#include "interp.h"
 
 struct gs_context_state_s {
     gs_gstate *pgs;

@@ -403,10 +403,18 @@ SETPDDEBUG { (Result of putting.) = pstack flush } if
   .writeonlykeys {2 index exch undef pop} forall
   dup .setpagedevice
 } bind def
+
+% Copy a dictionary recursively.
+/.copytree {	% <dict> .copytree <dict'>
+  dup length dict exch {
+    dup type /dicttype eq { .copytree } if 2 index 3 1 roll put
+  } forall
+} bind def
+
 /currentpagedevice {
   .currentpagedevice {
     dup length 0 eq {
-      pop .makecurrentpagedevice
+      pop //.makecurrentpagedevice exec
     } {
                 % If any of the dynamic keys have changed,
                 % we must update the page device dictionary.
@@ -455,7 +463,7 @@ SETPDDEBUG { (Result of putting.) = pstack flush } if
               3 -1 roll dup length dict .copydict
               3 1 roll
             } if
-            .copytree 2 index 3 1 roll put
+            //.copytree exec 2 index 3 1 roll put
           } {
             pop pop
           } ifelse
@@ -473,13 +481,6 @@ SETPDDEBUG { (Result of putting.) = pstack flush } if
     } ifelse
   } if
 } bind odef
-
-% Copy a dictionary recursively.
-/.copytree {	% <dict> .copytree <dict'>
-  dup length dict exch {
-    dup type /dicttype eq { .copytree } if 2 index 3 1 roll put
-  } forall
-} bind def
 
 % The implementation of setpagedevice is quite complex.  Currently,
 % everything but the media matching algorithm is implemented here.
@@ -741,6 +742,30 @@ currentdict /7Policy undef
  } bind def
 
 
+/.postinstall {		% mark ... <failed> <merged> .postinstall -
+   matrix currentmatrix .setdefaultmatrix
+                % Erase and initialize the page.
+   initgraphics
+   currentoverprint //false setoverprint 1 setcolor
+   .fillpage
+   0 setcolor setoverprint
+   .beginpage
+
+                % Clean up, calling PolicyReport if needed.
+                % Stack: mark ... <failed> <merged>
+SETPDDEBUG { (Finishing.) = pstack flush } if
+
+   exch dup length 0 ne
+    { 1 index /Policies get /PolicyReport get
+      counttomark 1 add 2 roll cleartomark
+      exec
+    }
+    { cleartomark
+    }
+   ifelse pop
+
+} def
+
 % ---------------- setpagedevice itself ---------------- %
 
 /setpagedevice
@@ -817,7 +842,7 @@ SETPDDEBUG { (Checking.) = pstack flush } if
    dup //null eq
     { pop
     }
-    { exch pop .defaultdeviceparams
+    { exch pop //.defaultdeviceparams exec
                 % In case of duplicate keys, .dicttomark takes the entry
                 % lower on the stack, so we can just append the defaults here.
       .requiredattrs { exec } forall .dicttomark
@@ -1014,12 +1039,12 @@ SETPDDEBUG { (Installing.) = pstack flush } if
       exch 4 2 roll exch 4 2 roll .applypolicies exch 4 2 roll exch 4 2 roll
       % Now execute the old Install -- failures after this are not handled
       dup /Install .knownget { { .execinstall } stopped { pop } if } if
-      .postinstall stop
+      //.postinstall exec stop
     } {
-      .postinstall
+      //.postinstall exec
     } ifelse
   } {
-    .postinstall
+    //.postinstall exec
   } ifelse
   setglobal           % return to original VM allocation mode
 } bind executeonly odef
@@ -1042,36 +1067,16 @@ SETPDDEBUG { (Installing.) = pstack flush } if
   pop	% See above.
 } odef
 
-/.postinstall {		% mark ... <failed> <merged> .postinstall -
-   matrix currentmatrix .setdefaultmatrix
-                % Erase and initialize the page.
-   initgraphics
-   currentoverprint //false setoverprint 1 setcolor
-   .fillpage
-   0 setcolor setoverprint
-   .beginpage
-
-                % Clean up, calling PolicyReport if needed.
-                % Stack: mark ... <failed> <merged>
-SETPDDEBUG { (Finishing.) = pstack flush } if
-
-   exch dup length 0 ne
-    { 1 index /Policies get /PolicyReport get
-      counttomark 1 add 2 roll cleartomark
-      exec
-    }
-    { cleartomark
-    }
-   ifelse pop
-
-} odef
-
 [
     /.computemediasize
     /.prepareparams
     /.selectmedia
     /.trysetparams
     /.installpagedevice
+    /.postinstall
+    /.copytree
+    /.defaultdeviceparams
+    /.makecurrentpagedevice
 %    /.uninstallpagedevice % (called from C code)
 ]
 {currentdict exch .forceundef} forall

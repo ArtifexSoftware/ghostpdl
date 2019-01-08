@@ -891,6 +891,22 @@ pass_param_to_languages(pl_main_instance_t *pmi,
 }
 
 static int
+pass_path_to_languages(pl_main_instance_t *pmi,
+                       const char         *path)
+{
+    pl_interp_implementation_t **imp;
+    int code = 0;
+
+    for (imp = pmi->implementations; *imp != NULL; imp++) {
+        code = pl_add_path(*imp, path);
+        if (code < 0)
+            break;
+    }
+
+    return code;
+}
+
+static int
 pl_main_post_args_init(pl_main_instance_t * pmi)
 {
     pl_interp_implementation_t **imp;
@@ -1211,6 +1227,21 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     code =
                         param_write_float_array((gs_param_list *) params,
                                               ".HWMargins", &fa);
+                }
+                break;
+            case 'I':               /* specify search path */
+                {
+                    const char *path;
+
+                    if (arg[0] == 0) {
+                        code = arg_next(pal, (const char **)&path, pmi->memory);
+                        if (code < 0)
+                            return code;
+                    } else
+                        path = arg;
+                    if (path == NULL)
+                        return gs_error_Fatal;
+                    code = pass_path_to_languages(pmi, path);
                 }
                 break;
             case 'm':

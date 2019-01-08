@@ -21,11 +21,7 @@
 
 #include "gscie.h"
 #include "gsparam.h"
-
-#ifndef gx_device_DEFINED
-#  define gx_device_DEFINED
-typedef struct gx_device_s gx_device;
-#endif
+#include "gsdevice.h"
 
 /*
  * A driver can provide any number of its own CRDs through (read-only)

@@ -18,6 +18,8 @@
 #ifndef gdevbmp_INCLUDED
 #  define gdevbmp_INCLUDED
 
+#include "gxclist.h"
+
 /* Define the default X and Y resolution. */
 #define X_DPI 72
 #define Y_DPI 72

@@ -19,6 +19,8 @@
 #ifndef gdevplib_INCLUDED
 #  define gdevplib_INCLUDED
 
+#include "std.h"
+
 /* Function called at the start of a job.
  *
  * Pass in a memory pointer, get back an opaque value to parrot in future

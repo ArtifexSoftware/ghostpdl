@@ -985,6 +985,18 @@ gs_public_st_composite_final(st_gx_devn_prn_device, gx_devn_prn_device,
         gx_devn_prn_ret_devn_params     /* ret_devn_params */\
 }
 
+fixed_colorant_name DeviceGrayComponents[] = {
+        "Gray",
+        0              /* List terminator */
+};
+
+fixed_colorant_name DeviceRGBComponents[] = {
+        "Red",
+        "Green",
+        "Blue",
+        0              /* List terminator */
+};
+
 fixed_colorant_name DeviceCMYKComponents[] = {
         "Cyan",
         "Magenta",

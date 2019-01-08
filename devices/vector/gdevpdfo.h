@@ -37,12 +37,7 @@
 
 #include "gsparam.h"
 #include "smd5.h"
-
-/* Define some needed abstract types. */
-#ifndef gx_device_pdf_DEFINED
-#  define gx_device_pdf_DEFINED
-typedef struct gx_device_pdf_s gx_device_pdf;
-#endif
+#include "gdevpdfx.h"
 
 /* ---------------- Structures ---------------- */
 

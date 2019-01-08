@@ -23,6 +23,7 @@
 #include "gsrefct.h"
 #include "gscspace.h"
 #include "stdint_.h"
+#include "gsfunc.h"
 
 /* Define the names of the known blend modes. */
 typedef enum {
@@ -55,15 +56,6 @@ typedef enum {
   "Saturation", "Color", "CompatibleOverprint", "Compatible"
 
 /* Define the parameter structure for a transparency group. */
-#ifndef gs_color_space_DEFINED
-#  define gs_color_space_DEFINED
-typedef struct gs_color_space_s gs_color_space;
-#endif
-#ifndef gs_function_DEFINED
-typedef struct gs_function_s gs_function_t;
-#  define gs_function_DEFINED
-#endif
-
 /* (Update gs_trans_group_params_init if these change.) */
 typedef struct gs_transparency_group_params_s {
     const gs_color_space *ColorSpace;

@@ -63,11 +63,11 @@ static irender_proc(image_render_color_thresh);
 
 static int image_skip_color_icc_tpr(gx_image_enum *penum, gx_device *dev);
 
-irender_proc_t
-gs_image_class_4_color(gx_image_enum * penum)
+int
+gs_image_class_4_color(gx_image_enum * penum, irender_proc_t *render_fn)
 {
     bool std_cmap_procs;
-    int code;
+    int code = 0;
 #if USE_FAST_HT_CODE
     bool use_fast_thresh = true;
 #else
@@ -119,13 +119,14 @@ gs_image_class_4_color(gx_image_enum * penum)
     if ( (gs_color_space_get_index(penum->pcs) == gs_color_space_index_DeviceN &&
         penum->pcs->cmm_icc_profile_data == NULL) || penum->use_mask_color ||
         !std_cmap_procs) {
-        return &image_render_color_DeviceN;
+         *render_fn = &image_render_color_DeviceN;
+         return code;
     }
 
     /* Set up the link now */
     code = dev_proc(penum->dev, get_profile)(penum->dev, &dev_profile);
     if (code < 0)
-        return NULL;    /* This function does not return errors, best we can do is say 'we can't handle this' */
+        return code;
 
     des_num_comp = gsicc_get_device_profile_comps(dev_profile);
     bpc = penum->dev->color_info.depth / des_num_comp;	/* bits per component */
@@ -193,7 +194,8 @@ gs_image_class_4_color(gx_image_enum * penum)
             if (code == 0) {
                  /* NB: transfer function is pickled into the threshold arrray */
                  penum->icc_setup.has_transfer = false;
-                 return &image_render_color_thresh;
+                 *render_fn = &image_render_color_thresh;
+                 return code;
             }
         }
     }
@@ -220,10 +222,11 @@ gs_image_class_4_color(gx_image_enum * penum)
         if (code >= 0) {
             penum->tpr_state = data.state;
             penum->skip_next_line = image_skip_color_icc_tpr;
-            return &image_render_color_icc_tpr;
+            *render_fn = &image_render_color_icc_tpr;
+            return code;
         }
     }
-    return NULL;
+    return code;
 }
 
 /* ------ Rendering procedures ------ */

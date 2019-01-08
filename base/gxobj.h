@@ -21,6 +21,7 @@
 
 #include "gxbitmap.h"
 #include "gsstruct.h"
+#include "memento.h" /* Because we use "free" below */
 
 #ifndef IGC_PTR_STABILITY_CHECK
 #  define IGC_PTR_STABILITY_CHECK 0

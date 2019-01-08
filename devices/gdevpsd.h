@@ -16,6 +16,8 @@
 #ifndef gdevpsd_INCLUDED
 # define gdevpsd_INCLUDED
 
+#include "std.h"
+#include "gdevdevnprn.h"
 
 typedef struct {
     FILE *f;

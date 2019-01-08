@@ -22,14 +22,11 @@
 #include "gstext.h"
 #include "gsrefct.h"
 #include "gxfixed.h"
+#include "gsfont.h"
+#include "gxfcache.h"
 
 /* Define the abstract type for the object procedures. */
 typedef struct gs_text_enum_procs_s gs_text_enum_procs_t;
-
-#ifndef cached_fm_pair_DEFINED
-#  define cached_fm_pair_DEFINED
-typedef struct cached_fm_pair_s cached_fm_pair;
-#endif
 
 /*
  * Define values returned by text_process to the client.
@@ -75,44 +72,13 @@ typedef enum {
     sws_retry			/* retry setcachedevice[2] */
 } show_width_status;
 
-/* The type of cached characters is opaque. */
-#ifndef cached_char_DEFINED
-#  define cached_char_DEFINED
-typedef struct cached_char_s cached_char;
-#endif
-
 /* The type of cached font/matrix pairs is opaque. */
-#ifndef cached_fm_pair_DEFINED
-#  define cached_fm_pair_DEFINED
 typedef struct cached_fm_pair_s cached_fm_pair;
-#endif
 
-/* The type of font objects is opaque. */
-#ifndef gs_font_DEFINED
-#  define gs_font_DEFINED
-typedef struct gs_font_s gs_font;
-#endif
-
-/* The type of text enum objects is opaque. */
-#ifndef gs_text_enum_DEFINED
-#  define gs_text_enum_DEFINED
-typedef struct gs_text_enum_s gs_text_enum_t;
-#endif
-
-#ifndef gs_show_enum_DEFINED
-#  define gs_show_enum_DEFINED
 typedef struct gs_show_enum_s gs_show_enum;
-#endif
 
 /* The types of memory and null devices may be opaque. */
-#ifndef gx_device_memory_DEFINED
-#  define gx_device_memory_DEFINED
-typedef struct gx_device_memory_s gx_device_memory;
-#endif
-#ifndef gx_device_null_DEFINED
-#  define gx_device_null_DEFINED
 typedef struct gx_device_null_s gx_device_null;
-#endif
 
 /*
  * Define the common part of the structure that tracks the state of text

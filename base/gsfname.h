@@ -30,10 +30,7 @@
  * NOTE: You must use parse_[real_]file_name to construct parsed_file_names.
  * Do not simply allocate the structure and fill it in.
  */
-#ifndef gx_io_device_DEFINED
-#  define gx_io_device_DEFINED
 typedef struct gx_io_device_s gx_io_device;
-#endif
 
 typedef struct gs_parsed_file_name_s {
     gs_memory_t *memory;	/* allocator for terminated name string */

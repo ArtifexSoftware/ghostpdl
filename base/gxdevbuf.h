@@ -32,11 +32,6 @@
  * by the reader thread.
  */
 
-#ifndef gx_device_DEFINED
-#  define gx_device_DEFINED
-typedef struct gx_device_s gx_device;
-#endif
-
 /* Define the structure for returning buffer space requirements. */
 typedef struct gx_device_buf_space_s {
     ulong bits;

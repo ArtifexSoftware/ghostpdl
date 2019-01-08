@@ -19,19 +19,16 @@
 #ifndef gsptype2_INCLUDED
 #  define gsptype2_INCLUDED
 
+#include "gsdevice.h"
 #include "gspcolor.h"
 #include "gsdcolor.h"
 #include "gxfixed.h"
+#include "gxpath.h"
+#include "gsshade.h"
 
 /* ---------------- Types and structures ---------------- */
 
 /* PatternType 2 template */
-
-#ifndef gs_shading_t_DEFINED
-#  define gs_shading_t_DEFINED
-typedef struct gs_shading_s gs_shading_t;
-#endif
-
 typedef struct gs_pattern2_template_s {
     gs_pattern_template_common;
     const gs_shading_t *Shading;
@@ -46,11 +43,6 @@ typedef struct gs_pattern2_template_s {
 
 /* PatternType 2 instance */
 
-#ifndef gx_device_color_DEFINED
-#  define gx_device_color_DEFINED
-typedef struct gx_device_color_s gx_device_color;
-#endif
-
 typedef struct gs_pattern2_instance_s {
     gs_pattern_instance_common;
     gs_pattern2_template_t templat;
@@ -61,26 +53,6 @@ typedef struct gs_pattern2_instance_s {
   gs_public_st_composite(st_pattern2_instance, gs_pattern2_instance_t,\
     "gs_pattern2_instance_t", pattern2_instance_enum_ptrs,\
     pattern2_instance_reloc_ptrs)
-
-#ifndef gx_path_DEFINED
-#define gx_path_DEFINED
-typedef struct gx_path_s gx_path;
-#endif
-
-#ifndef gx_device_DEFINED
-#define gx_device_DEFINED
-typedef struct gx_device_s gx_device;
-#endif
-
-#ifndef gs_color_space_DEFINED
-#  define gs_color_space_DEFINED
-typedef struct gs_color_space_s gs_color_space;
-#endif
-
-#ifndef gx_clip_path_DEFINED
-#  define gx_clip_path_DEFINED
-typedef struct gx_clip_path_s gx_clip_path;
-#endif
 
 extern const gx_device_color_type_t gx_dc_pattern2;
 

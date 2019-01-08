@@ -41,10 +41,6 @@ typedef enum {
   ((fmt) == fmap_escape || (fmt) == fmap_double_escape || (fmt) == fmap_shift)
 
 /* This is the type-specific information for a type 0 (composite) gs_font. */
-#ifndef gs_cmap_DEFINED
-#  define gs_cmap_DEFINED
-typedef struct gs_cmap_s gs_cmap_t;
-#endif
 typedef struct gs_type0_data_s {
     fmap_type FMapType;
     byte EscChar, ShiftIn, ShiftOut;
@@ -60,10 +56,7 @@ typedef struct gs_type0_data_s {
 
 #define gs_type0_data_max_ptrs 3
 
-#ifndef gs_font_type0_DEFINED
-#  define gs_font_type0_DEFINED
 typedef struct gs_font_type0_s gs_font_type0;
-#endif
 
 struct gs_font_type0_s {
     gs_font_common;

@@ -35,10 +35,6 @@ void debug_dump_refs(const gs_memory_t *mem,
 void debug_dump_array(const gs_memory_t *mem, const ref * array);
 
 /* Dump a stack.  Using this requires istack.h. */
-#ifndef ref_stack_DEFINED
-typedef struct ref_stack_s ref_stack_t;	/* also defined in isdata.h */
-#  define ref_stack_DEFINED
-#endif
 void debug_dump_stack(const gs_memory_t *mem,
                       const ref_stack_t * pstack, const char *msg);
 

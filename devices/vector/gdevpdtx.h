@@ -65,10 +65,6 @@ typedef struct pdf_bitmap_fonts_s pdf_bitmap_fonts_t;
 #  define pdf_outline_fonts_DEFINED
 typedef struct pdf_outline_fonts_s pdf_outline_fonts_t;
 #endif
-#ifndef pdf_text_state_DEFINED
-#  define pdf_text_state_DEFINED
-typedef struct pdf_text_state_s pdf_text_state_t;
-#endif
 
 /*typedef struct pdf_text_data_s pdf_text_data_t;*/  /* gdevpdfx.h */
 struct pdf_text_data_s {

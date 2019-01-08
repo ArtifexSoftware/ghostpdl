@@ -16,9 +16,6 @@
 #ifndef gsgstate_INCLUDED
 #  define gsgstate_INCLUDED
 
-#ifndef gs_gstate_DEFINED
-#  define gs_gstate_DEFINED
 typedef struct gs_gstate_s gs_gstate;
-#endif
 
 #endif

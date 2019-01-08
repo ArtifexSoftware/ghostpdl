@@ -107,10 +107,8 @@ typedef struct gs_threshold2_halftone_s {
 /* Client-defined halftone that generates a halftone order. */
 typedef struct gs_client_order_halftone_s gs_client_order_halftone;
 
-#ifndef gx_ht_order_DEFINED
-#  define gx_ht_order_DEFINED
 typedef struct gx_ht_order_s gx_ht_order;
-#endif
+
 typedef struct gs_client_order_ht_procs_s {
 
     /*

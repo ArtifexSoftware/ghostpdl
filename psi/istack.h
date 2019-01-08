@@ -121,10 +121,6 @@ int ref_stack_store_check(const ref_stack_t *pstack, ref *parray,
  * no check, 0 for old, 1 for new.  May return gs_error_rangecheck or
  * gs_error_invalidaccess.
  */
-#ifndef gs_dual_memory_DEFINED
-#  define gs_dual_memory_DEFINED
-typedef struct gs_dual_memory_s gs_dual_memory_t;
-#endif
 int ref_stack_store(const ref_stack_t *pstack, ref *parray, uint count,
                     uint skip, int age, bool check,
                     gs_dual_memory_t *idmem, client_name_t cname);

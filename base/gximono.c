@@ -59,8 +59,8 @@ iclass_proc(gs_image_class_3_mono);
 static irender_proc(image_render_mono);
 static irender_proc(image_render_mono_ht);
 
-irender_proc_t
-gs_image_class_3_mono(gx_image_enum * penum)
+int
+gs_image_class_3_mono(gx_image_enum * penum, irender_proc_t *render_fn)
 {
 #if USE_FAST_HT_CODE
     bool use_fast_code = true;
@@ -112,7 +112,7 @@ gs_image_class_3_mono(gx_image_enum * penum)
             }
             code = dev_proc(penum->dev, get_profile)(penum->dev, &dev_profile);
             if (code < 0)
-                return NULL;    /* This function does not return errors, best we can do is say 'we can't handle this' */
+                return code;
 
             /* Define the rendering intents */
             rendering_params.black_point_comp = penum->pgs->blackptcomp;
@@ -170,8 +170,10 @@ gs_image_class_3_mono(gx_image_enum * penum)
             code = image_init_color_cache(penum, penum->bps, penum->spp);
             if (code >= 0) {
                 code = gxht_thresh_image_init(penum);
-                if (code >= 0)
-                    return &image_render_mono_ht;
+                if (code >= 0) {
+                    *render_fn = &image_render_mono_ht;
+                    return code;
+                }
             }
         }
 not_fast_halftoning:
@@ -204,7 +206,7 @@ not_fast_halftoning:
         /* Reset the clues here, rather than in image_render_mono as
          * previously. Even doing so this often may be overzealous. */
         image_init_clues(penum, penum->bps, penum->spp);
-        return &image_render_mono;
+        *render_fn = &image_render_mono;
     }
     return 0;
 }

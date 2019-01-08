@@ -1737,7 +1737,7 @@ pdf14_get_buffer_information(const gx_device * dev,
 #endif
     buf = pdev->ctx->stack;
     rect = buf->rect;
-    transbuff->dirty = &buf->dirty;
+    transbuff->buf = (free_device ? NULL : buf);
     x1 = min(pdev->width, rect.q.x);
     y1 = min(pdev->height, rect.q.y);
     width = x1 - rect.p.x;

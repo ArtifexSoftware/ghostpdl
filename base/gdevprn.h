@@ -46,23 +46,11 @@
 #define PRN_MIN_MEMORY_LEFT MIN_MEMORY_LEFT	/* see gxdevice.h */
 #define PRN_MIN_BUFFER_SPACE MIN_BUFFER_SPACE	/* see gxdevice.h */
 
-/* Define the abstract type for a printer device. */
-#ifndef gx_device_printer_DEFINED
-#  define gx_device_printer_DEFINED
-typedef struct gx_device_printer_s gx_device_printer;
-#endif
-
 /* Define the abstract type for parameters describing buffer space. */
-#ifndef gdev_prn_space_params_DEFINED
-#  define gdev_prn_space_params_DEFINED
 typedef struct gdev_space_params_s gdev_prn_space_params;
-#endif
 
 /* Define the abstract type for parameters describing buffer space. */
-#ifndef gdev_prn_banding_type_DEFINED
-#  define gdev_prn_banding_type_DEFINED
 typedef struct gdev_banding_type gdev_prn_banding_type;
-#endif
 
 /* Define the abstract type for some band device procedures' arguments. */
 typedef struct gdev_prn_start_render_params_s gdev_prn_start_render_params;

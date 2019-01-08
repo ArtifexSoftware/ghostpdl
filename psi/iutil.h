@@ -21,6 +21,7 @@
 #  define iutil_INCLUDED
 
 #include "imemory.h"
+#include "gsmatrix.h"
 
 /* ------ Object utilities ------ */
 
@@ -132,12 +133,6 @@ int int_param(const ref *, int, int *);
 /* Return gs_error_limitcheck for infinities or double->float overflow. */
 int make_reals(ref *, const double *, int);
 int make_floats(ref *, const float *, int);
-
-/* Define the gs_matrix type if necessary. */
-#ifndef gs_matrix_DEFINED
-#  define gs_matrix_DEFINED
-typedef struct gs_matrix_s gs_matrix;
-#endif
 
 /* Read a matrix operand. */
 int read_matrix(const gs_memory_t *mem, const ref *, gs_matrix *);

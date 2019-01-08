@@ -19,17 +19,15 @@
 #ifndef gsshade_INCLUDED
 #  define gsshade_INCLUDED
 
+#include "gsdevice.h"
 #include "gsccolor.h"
 #include "gscspace.h"
 #include "gsdsrc.h"
 #include "gsfunc.h"
-#include "gsmatrix.h"
-#include "gxfixed.h"
+#include "gxmatrix.h"
+#include "gspath.h"
+#include "gscie.h"
 
-#ifndef gx_cie_joint_caches_DEFINED
-#define gx_cie_joint_caches_DEFINED
-typedef struct gx_cie_joint_caches_s gx_cie_joint_caches;
-#endif
 
 /* ---------------- Types and structures ---------------- */
 
@@ -62,14 +60,7 @@ typedef struct gs_shading_params_s {
 } gs_shading_params_t;
 
 /* Define the type-specific procedures for shadings. */
-#ifndef gs_shading_t_DEFINED
-#  define gs_shading_t_DEFINED
 typedef struct gs_shading_s gs_shading_t;
-#endif
-#ifndef gx_device_DEFINED
-#  define gx_device_DEFINED
-typedef struct gx_device_s gx_device;
-#endif
 
 /*
  * Fill a user space rectangle.  This will paint every pixel that is in the
@@ -247,14 +238,6 @@ int gs_shading_Tpp_init(gs_shading_t ** ppsh,
  * the shading's geometry: it is true for filling with a pattern, false for
  * shfill.
  */
-#ifndef gx_path_DEFINED
-#  define gx_path_DEFINED
-typedef struct gx_path_s gx_path;
-#endif
-#ifndef gs_matrix_fixed_DEFINED
-#define gs_matrix_fixed_DEFINED
-typedef struct gs_matrix_fixed_s gs_matrix_fixed;
-#endif
 /* Fill a rectangle with a shading. */
 int gs_shading_do_fill_rectangle(const gs_shading_t *psh,
                          const gs_fixed_rect *prect, gx_device *dev,

@@ -19,6 +19,9 @@
 #ifndef gdevpdtt_INCLUDED
 #  define gdevpdtt_INCLUDED
 
+#include "gdevpdtf.h"
+#include "gdevpdts.h"
+
 /*
  * This file is only used internally to define the interface between
  * gdevpdtt.c, gdevpdtc.c, and gdevpdte.c.
@@ -81,16 +84,6 @@
 */
 
 /* ---------------- Types and structures ---------------- */
-
-#ifndef pdf_char_glyph_pair_DEFINED
-#  define pdf_char_glyph_pair_DEFINED
-typedef struct pdf_char_glyph_pair_s pdf_char_glyph_pair_t;
-#endif
-
-#ifndef pdf_char_glyph_pairs_DEFINED
-#  define pdf_char_glyph_pairs_DEFINED
-typedef struct pdf_char_glyph_pairs_s pdf_char_glyph_pairs_t;
-#endif
 
 /* Define a structure for a text characters list. */
 /* It must not contain pointers due to variable length. */

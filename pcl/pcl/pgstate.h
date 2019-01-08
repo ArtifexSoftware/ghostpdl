@@ -40,12 +40,6 @@
 #include "gsgstate.h"
 #include "gzpath.h"
 
-/* Opaque type for a path */
-#ifndef gx_path_DEFINED
-#  define gx_path_DEFINED
-typedef struct gx_path_s gx_path;
-#endif
-
 /* Define a type for HP-GL/2 floating point values. */
 typedef double hpgl_real_t;
 

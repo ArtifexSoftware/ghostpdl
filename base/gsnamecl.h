@@ -19,10 +19,10 @@
 # define gsnamecl_INCLUDED
 
 #include "gxfrac.h"
-#include "gsccolor.h"
 #include "gscsel.h"
 #include "gxcspace.h"
-#include "gsgstate.h"
+#include "gsdevice.h"
+#include "gsdcolor.h"
 
 /*
  * Enable custom client callback color processing.  Note:  There is a sample
@@ -51,31 +51,7 @@
  * Also see the comments at the start of src/gsnamecl.c
  */
 
-#ifndef gs_color_space_DEFINED
-#  define gs_color_space_DEFINED
-typedef struct gs_color_space_s gs_color_space;
-#endif
-
-#ifndef gx_device_color_DEFINED
-#  define gx_device_color_DEFINED
-typedef struct gx_device_color_s gx_device_color;
-#endif
-
-#ifndef gx_device_DEFINED
-#  define gx_device_DEFINED
-typedef struct gx_device_s gx_device;
-#endif
-
-#ifndef i_ctx_t_DEFINED
-#define i_ctx_t_DEFINED
 typedef struct gs_context_state_s i_ctx_t;
-#endif
-
-/* Define an opaque type for parameter lists. */
-#ifndef gs_param_list_DEFINED
-#  define gs_param_list_DEFINED
-typedef struct gs_param_list_s gs_param_list;
-#endif
 
 #define cs_proc_adjust_client_cspace_count(proc)\
   void proc(const gs_color_space *, int)
@@ -141,15 +117,12 @@ int gx_remap_concrete_custom_color_DeviceN(const frac * pconc,
  * and a pointer to a client data structure.
  */
 
-#ifndef client_custom_color_params_DEFINED
-#define client_custom_color_params_DEFINED
 typedef struct client_custom_color_params_s {
     /* Client callback handlers */
     struct client_custom_color_procs_s * client_procs;
     /* For global client data */
     void * data;
 } client_custom_color_params_t;
-#endif
 
 /*
  * Define a base type for client color space data.  Most clients will

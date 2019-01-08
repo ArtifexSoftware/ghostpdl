@@ -22,15 +22,9 @@
 #include "gxcvalue.h"
 #include "gscms.h"
 
-#ifndef cmm_gcmmhprofile_DEFINED
-    #define cmm_gcmmhprofile_DEFINED
-    typedef void* gcmmhprofile_t;
-#endif
+typedef void* gcmmhprofile_t;
 
-#ifndef cmm_gcmmhlink_DEFINED
-    #define cmm_gcmmhlink_DEFINED
-    typedef void* gcmmhlink_t;
-#endif
+typedef void* gcmmhlink_t;
 
 /* Made to match lcms settings */
 #define GSICC_HIGHACCURACY cmsFLAGS_HIGHRESPRECALC

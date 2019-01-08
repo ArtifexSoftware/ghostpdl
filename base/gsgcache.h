@@ -20,30 +20,17 @@
 #  define gxgcache_INCLUDED
 
 #include "stdpre.h"
+#include "scommon.h"
 
 /* Using : */
 
-#ifndef gs_font_type42_DEFINED
-#  define gs_font_type42_DEFINED
 typedef struct gs_font_type42_s gs_font_type42;
-#endif
 
-#ifndef gs_glyph_data_DEFINED
-#   define gs_glyph_data_DEFINED
 typedef struct gs_glyph_data_s gs_glyph_data_t;
-#endif
-
-#ifndef stream_DEFINED
-#  define stream_DEFINED
-typedef struct stream_s stream;
-#endif
 
 /* Data type definition : */
 
-#ifndef gs_glyph_cache_DEFINED
-#  define gs_glyph_cache_DEFINED
 typedef struct gs_glyph_cache_s gs_glyph_cache;
-#endif
 
 typedef int (*get_glyph_data_from_file)(gs_font_type42 *pfont, stream *s, uint glyph_index,
                 gs_glyph_data_t *pgd);

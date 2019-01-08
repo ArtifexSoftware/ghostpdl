@@ -221,4 +221,3 @@ install-shared: $(GS_SHARED_OBJS)
 	-mkdir -p $(DESTDIR)$(gssharedir)
 	$(SH) -c 'for obj in $(GS_SHARED_OBJS); do \
 	    $(INSTALL_PROGRAM) $$obj $(DESTDIR)$(gssharedir)/; done'
-

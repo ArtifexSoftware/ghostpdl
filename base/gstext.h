@@ -21,7 +21,10 @@
 
 #include "gsccode.h"
 #include "gscpm.h"
-#include "gsgstate.h"
+#include "gsdevice.h"
+#include "gsfont.h"
+#include "gsdcolor.h"
+#include "gxpath.h"
 
 /*
  * Note that text display must return information to the generic code:
@@ -142,32 +145,7 @@ int gs_text_replaced_width(const gs_text_params_t *text, uint index,
  * Define the abstract type for the structure that tracks the state of text
  * processing.
  */
-#ifndef gs_text_enum_DEFINED
-#  define gs_text_enum_DEFINED
 typedef struct gs_text_enum_s gs_text_enum_t;
-#endif
-
-/* Abstract types */
-#ifndef gx_device_DEFINED
-#  define gx_device_DEFINED
-typedef struct gx_device_s gx_device;
-#endif
-#ifndef gx_device_color_DEFINED
-#  define gx_device_color_DEFINED
-typedef struct gx_device_color_s gx_device_color;
-#endif
-#ifndef gs_font_DEFINED
-#  define gs_font_DEFINED
-typedef struct gs_font_s gs_font;
-#endif
-#ifndef gx_path_DEFINED
-#  define gx_path_DEFINED
-typedef struct gx_path_s gx_path;
-#endif
-#ifndef gx_clip_path_DEFINED
-#  define gx_clip_path_DEFINED
-typedef struct gx_clip_path_s gx_clip_path;
-#endif
 
 /*
  * Define the driver procedure for text.  This procedure must allocate

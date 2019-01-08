@@ -59,11 +59,6 @@
  * be subsetted.
  */
 
-#ifndef pdf_base_font_DEFINED
-#  define pdf_base_font_DEFINED
-typedef struct pdf_base_font_s pdf_base_font_t;
-#endif
-
 /* ================ Procedures ================ */
 
 /*
