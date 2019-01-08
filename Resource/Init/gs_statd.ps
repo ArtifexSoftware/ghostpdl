@@ -30,6 +30,16 @@ end
 
 statusdict begin
 
+/.setpagesize
+{ 2 copy 2 array astore /PageSize exch mark 3 1 roll .dicttomark
+  { setpagedevice } stopped {
+     pop	% the setpagedevice dict
+     /setpagesize $error /errorname get signalerror
+   } {
+     pop pop	% success -- pop the arguments
+   } ifelse
+} bind def
+
 % Keep the table of named paper sizes as procedures. Reuse them later
 % as compatibility operators.
 /.pagetypeprocs 70 dict begin
@@ -38,14 +48,6 @@ statusdict begin
 % 11x17, a3, a4, a4small, b5, ledger, legal, letter, lettersmall, note.
 % These procedures are also accessed as data structures during initialization,
 % so the page dimensions must be the first two elements of the procedure.
-
-/.setpagesize {
-   /statusdict .systemvar begin
-   { .setpagesize } stopped {
-     /setpagesize $error /errorname get signalerror
-   } if
-   end
-} bind def
 
                 % Page sizes defined by Adobe documentation
                 % Note: these executable arrays should all begin with two
@@ -132,7 +134,6 @@ statusdict begin
  /ANSI_F {2016 2880 //.setpagesize stopped { pop pop /ANSI_F $error /errorname get signalerror } if } bind def
 %END SIZES
 currentdict end
-dup /.setpagesize .undef
 userdict begin dup { def } forall end  % reuse!
 readonly def
 
@@ -255,12 +256,12 @@ readonly def
   } bind def
  /setpage
   { ORIENT1 { 1 } { 0 } ifelse ne {exch} if
-    statusdict /.setpagesize get exec
+    //.setpagesize exec
   } bind def
  /setpagemargin {pop} bind def	% can't do better without setpagedevice
  /setpageparams
   { exch pop ORIENT1 { 1 } { 0 } ifelse ne {exch} if
-    statusdict /.setpagesize get exec
+    //.setpagesize exec
   } bind def
  /setpagetype
   { statusdict begin
@@ -307,13 +308,6 @@ readonly def
 
 %%%%%% End of documented items.
 
-/.setpagesize
- { mark /HWSize [
-     4 index 4 index matrix defaultmatrix dtransform
-     abs ceiling cvi exch abs ceiling cvi exch
-   ] currentdevice putdeviceprops pop pop pop
-   initmatrix initclip erasepage
- } bind def
 /.password 0 def
 /.timeouts [0 60 30] def
 //true setdostartpage
@@ -322,6 +316,7 @@ mark setidlefonts
 0 0 setmargins
 product setprintername
 
+currentdict /.setpagesize .undef
 end	% statusdict
 
 %%%%%% The following documented compatibility "operators" are in systemdict,
