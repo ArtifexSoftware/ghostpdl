@@ -292,13 +292,15 @@ NOMEDIAATTRS {
 /.prepareparams		% <params> .prepareparams -mark- <key1> <value1> ...
  { mark exch dup
     {			% Stack: -mark- key1 value1 ... merged key value
-      .presentspecial 2 index .knownget
+      //.presentspecial 2 index .knownget
        { exec { 3 -1 roll } { pop pop } ifelse }
        { 3 -1 roll }
       ifelse
     }
    forall pop
  } bind def
+
+currentdict /.presentspecial .undef
 
 % Compute the media size and initial matrix from a merged request (after
 % media selection).
