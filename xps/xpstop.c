@@ -429,6 +429,7 @@ pl_interp_implementation_t xps_implementation =
     NULL,
     xps_imp_init_job,
     xps_imp_process_file,
+    NULL,                       /* run_prefix_commands */
     xps_impl_process_begin,
     xps_imp_process,
     xps_impl_process_end,

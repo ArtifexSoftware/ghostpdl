@@ -551,11 +551,12 @@ pxl_end_page_top(px_state_t * pxls, int num_copies, int flush)
 pl_interp_implementation_t pxl_implementation = {
     pxl_impl_characteristics,
     pxl_impl_allocate_interp_instance,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
+    NULL,                       /* get_device_memory */
+    NULL,                       /* set_param */
+    NULL,                       /* add_path */
+    NULL,                       /* post_args_init */
     pxl_impl_init_job,
+    NULL,                       /* run_prefix_commands */
     NULL,                       /* process_file */
     pxl_impl_process_begin,
     pxl_impl_process,
