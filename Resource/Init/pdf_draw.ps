@@ -1508,9 +1508,9 @@ end
   17 { /sGrayICC /ColorSpace findresource } bind executeonly
   18 3 index               % YCC is converted to RGB
 % 19                       % CIEJab not supportec by PDF 1.7
-% 20                       % e-sRGB
-% 21                       % ROMMRGB
-% 24                       % e-sYCC
+  20 { /esRGBICC /ColorSpace findresource } bind executeonly                   % e-sRGB
+  21 { /rommRGBICC /ColorSpace findresource} bind executeonly                  % ROMMRGB
+  24 { /esRGBICC /ColorSpace findresource } bind executeonly                   % e-sYCC
 .dicttomark readonly def
 
 % Process jp2 blocks (aka boxes). All procedures have the signature

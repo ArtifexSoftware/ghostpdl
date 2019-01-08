@@ -908,6 +908,28 @@ mark
   .dicttomark
 ] def
 
+% Special type to install
+% e-sRGB ICC profile color space
+/CIEesRGBICC [ /ICCBased
+  mark
+    /N 3
+    /DataSource (esrgb)
+    /Alternate [/DeviceRGB]
+    /Name (esrgb)
+  .dicttomark
+] def
+
+% Special type to install
+% rommRGB ICC profile color space
+/CIErommRGBICC [ /ICCBased
+  mark
+    /N 3
+    /DataSource (rommrgb)
+    /Alternate [/DeviceRGB]
+    /Name (rommrgb)
+  .dicttomark
+] def
+
 % ------ Painting ------ %
 
 %% We don't want to do any high level forms stuff if the source
