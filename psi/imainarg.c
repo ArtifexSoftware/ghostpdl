@@ -387,9 +387,9 @@ run_stdin:
                 if (minst->init_done < 2) {
                     if (minst->saved_pages_initial_arg == NULL) {
                         /* Tuck the parameters away for later when init2 is done (usually "begin") */
-                        minst->saved_pages_initial_arg = gs_alloc_bytes(minst->heap,
-                                                                        1+strlen((char *)arg+12),
-                                                                        "GS_OPTIONS");
+                        minst->saved_pages_initial_arg = (char *)gs_alloc_bytes(minst->heap,
+                                                                                1+strlen((char *)arg+12),
+                                                                               "GS_OPTIONS");
                         if (minst->saved_pages_initial_arg != NULL) {
                             strcpy(minst->saved_pages_initial_arg,(char *)arg+12);
                         } else {
