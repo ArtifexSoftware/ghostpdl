@@ -302,6 +302,39 @@ revert_to_pjli(pl_main_instance_t *minst)
     return code;
 }
 
+#define STDIO_BUF_SIZE 128
+static int
+stdio_close_file(stream *s)
+{
+    /* Don't close stdio files, but do free the buffer. */
+    gs_memory_t *mem = s->memory;
+
+    s->file = 0;
+    gs_free_object(mem, s->cbuf, "stdio_close_file(buffer)");
+    return 0;
+}
+
+static int
+stdin_open(stream ** ps,
+           gs_memory_t * mem)
+{
+    stream *s;
+    byte *buf;
+    FILE *file = mem->gs_lib_ctx->core->fstdin;
+
+    s = s_alloc(mem, "stdio_open(stream)");
+    buf = gs_alloc_bytes(mem, STDIO_BUF_SIZE, "stdio_open(buffer)");
+    if (s == 0 || buf == 0) {
+        gs_free_object(mem, buf, "stdio_open(buffer)");
+        gs_free_object(mem, s, "stdio_open(stream)");
+        return_error(gs_error_VMerror);
+    }
+    sread_file(s, file, buf, STDIO_BUF_SIZE);
+    s->procs.close = stdio_close_file;
+    *ps = s;
+    return 0;
+}
+
 static int
 pl_main_run_file_utf8(pl_main_instance_t *minst, const char *prefix_commands, const char *filename)
 {
@@ -316,7 +349,13 @@ pl_main_run_file_utf8(pl_main_instance_t *minst, const char *prefix_commands, co
     bool first_job = true;
     pl_interp_implementation_t *desired_implementation = NULL;
 
-    s = sfopen(filename, "r", mem);
+    if (is_stdin) {
+        code = stdin_open(&s, mem);
+        if (code < 0)
+            return code;
+    } else {
+        s = sfopen(filename, "r", mem);
+    }
     if (s == NULL)
         return gs_error_undefinedfilename;
 
@@ -1013,9 +1052,14 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
     bool not_an_arg = 1;
 
     gs_c_param_list_write_more(params);
-    while (arg != NULL || (code = arg_next(pal, (const char **)&arg, pmi->memory)) > 0 && *arg == '-') {
-        if (arg[1] == '\0') /* not an option, stdin */
+    while (arg != NULL || (code = arg_next(pal, (const char **)&arg, pmi->memory)) > 0) {
+        if (*arg != '-') /* Stop when we hit something that isn't an option */
             break;
+        if (arg[1] == 0) {
+            /* Stdin, not an option! */
+            not_an_arg = 1;
+            break;
+        }
         arg += 2;
         switch (arg[-1]) {
             case '-':
@@ -1088,10 +1132,8 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                 }
                 /* FALLTHROUGH */
             default:
-                dmprintf1(pmi->memory, "Unrecognized switch: %s\n", arg);
+                dmprintf1(pmi->memory, "Unrecognized switch: %s\n", arg-2);
                 code = -1;
-            case '\0':
-                /* read from stdin - must be last arg */
                 break;
             case 'c':
                 code = handle_dash_c(pmi, pal, &collected_commands, &arg);
