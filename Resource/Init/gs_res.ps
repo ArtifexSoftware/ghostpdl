@@ -961,7 +961,7 @@ userdict /.localcsdefaults //false put
     dup type /nametype eq { .namestring } if
     dup type /stringtype ne { //false exit } if
                 % Check the resource directory.
-    dup .fonttempstring /FontResourceDir getsystemparam .genericrfn
+    dup //.fonttempstring /FontResourceDir getsystemparam .genericrfn
     status {
       pop pop pop pop //true exit
     } if
@@ -969,7 +969,7 @@ userdict /.localcsdefaults //false put
                 % as the font.
     findlibfile { closefile //true exit } if
                 % Scan a FONTPATH directory and try again.
-    .scannextfontdir not { //false exit } if
+    //.scannextfontdir exec not { //false exit } if
   } loop
 } bind def
 
@@ -1008,7 +1008,7 @@ currentdict /.fontstatusaux .undef
         } ifelse
 } bind executeonly
 /ResourceForAll {
-        { .scannextfontdir not { exit } if } loop
+        { //.scannextfontdir exec not { exit } if } loop
         /Generic /Category findresource /ResourceForAll get exec
 } bind executeonly
 /.ResourceFileStatus {
@@ -1171,6 +1171,7 @@ end				% level2dict
 [
     /.default_resource_dir
     /.resource_dir_name
+    /.fonttempstring /.scannextfontdir % from gs_fonts.ps
 ]
 {systemdict exch .forceundef} forall
 

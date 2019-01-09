@@ -67,7 +67,8 @@ level2dict begin
 
 /selectfont		% <fontname> <size> selectfont -
  {
-   { 1 .argindex findfont
+   {
+     1 .argindex findfont
      1 index dup type /arraytype eq { makefont } { scalefont } ifelse
      setfont pop pop
    } stopped { /selectfont .systemvar $error /errorname get signalerror } if
