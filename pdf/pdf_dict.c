@@ -111,6 +111,10 @@ int pdfi_dict_from_stack(pdf_context *ctx)
     return code;
 }
 
+int pdfi_dict_entries(pdf_dict *d)
+{
+    return d->entries;
+}
 
 /* Convenience routine for common case where there are two possible keys */
 int
@@ -653,6 +657,46 @@ int pdfi_dict_known_by_key(pdf_dict *d, pdf_name *Key, bool *known)
         }
     }
     return 0;
+}
+
+int pdfi_dict_next(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, pdf_obj **Value, void *index)
+{
+    int code, *i = (int *)index;
+
+    if (*i >= d->entries) {
+        *Key = NULL;
+        *Value= NULL;
+        return gs_error_undefined;
+    }
+
+    *Key = d->keys[*i];
+
+    if (d->values[*i]->type == PDF_INDIRECT) {
+        pdf_indirect_ref *r = (pdf_indirect_ref *)d->values[*i];
+        pdf_obj *o;
+
+        code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, &o);
+        if (code < 0) {
+            *Key = *Value = NULL;
+            return code;
+        }
+        *Value = o;
+    } else {
+        *Value = d->values[*i];
+    }
+
+    pdfi_countup(*Key);
+    pdfi_countup(*Value);
+    (*i)++;
+    return 0;
+}
+
+int pdfi_dict_first(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, pdf_obj **Value, void *index)
+{
+    int *i = (int *)index;
+
+    *i = 0;
+    return pdfi_dict_next(ctx, d, Key, Value, index);
 }
 
 int pdfi_merge_dicts(pdf_dict *target, pdf_dict *source)
