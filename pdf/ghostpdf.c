@@ -26,6 +26,8 @@
 #include "stream.h"
 #include "strmio.h"
 
+static int pdfi_check_Resources_for_transparency(pdf_context *ctx, pdf_dict *Resources_dict, bool *transparent);
+
 static int pdfi_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
 {
     int i, code = 0;
@@ -118,54 +120,565 @@ static int pdfi_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
 
 static int pdfi_check_ExtGState_for_transparency(pdf_context *ctx, pdf_dict *ExtGState_dict, bool *transparent)
 {
+    bool known = false;
+    int code;
+
+    code = pdfi_dict_known(ExtGState_dict, "BM", &known);
+    if (code < 0) {
+        if (ctx->pdfstoponerror)
+            return code;
+    } else {
+        if (known) {
+            pdf_name *n;
+
+            code = pdfi_dict_get_type(ctx, ExtGState_dict, "BM", PDF_NAME, (pdf_obj **)&n);
+            if (code < 0) {
+                if (ctx->pdfstoponerror)
+                    return code;
+            } else {
+                if (pdfi_name_strcmp(n, "Normal") != 0) {
+                    if (pdfi_name_strcmp(n, "Compatible") != 0) {
+                        pdfi_countdown(n);
+                        *transparent = true;
+                        return 0;
+                    }
+                }
+                pdfi_countdown(n);
+            }
+            known = false;
+        }
+    }
+
+    code = pdfi_dict_known(ExtGState_dict, "SMask", &known);
+    if (code < 0) {
+        if (ctx->pdfstoponerror)
+            return code;
+    } else {
+        if (known) {
+            pdf_name *n;
+
+            code = pdfi_dict_get(ctx, ExtGState_dict, "SMask", (pdf_obj **)&n);
+            if (code < 0) {
+                if (ctx->pdfstoponerror)
+                    return code;
+            } else {
+                if (n->type == PDF_NAME) {
+                    if (pdfi_name_strcmp(n, "None") != 0) {
+                        pdfi_countdown(n);
+                        *transparent = true;
+                        return 0;
+                    }
+                } else {
+                    if (n->type == PDF_DICT) {
+                        pdfi_countdown(n);
+                        *transparent = true;
+                        return 0;
+                    }
+                }
+                pdfi_countdown(n);
+            }
+            known = false;
+        }
+    }
+
+    code = pdfi_dict_known(ExtGState_dict, "CA", &known);
+    if (code < 0) {
+        if (ctx->pdfstoponerror)
+            return code;
+    } else {
+        if (known) {
+            double f;
+
+            code = pdfi_dict_get_number(ctx, ExtGState_dict, "CA", &f);
+            if (code < 0) {
+                if (ctx->pdfstoponerror)
+                    return code;
+            } else {
+                if (f != 1.0) {
+                    *transparent = true;
+                    return 0;
+                }
+            }
+            known = false;
+        }
+    }
+
+    code = pdfi_dict_known(ExtGState_dict, "ca", &known);
+    if (code < 0) {
+        if (ctx->pdfstoponerror)
+            return code;
+    }
+    if (known) {
+        double f;
+
+        code = pdfi_dict_get_number(ctx, ExtGState_dict, "ca", &f);
+        if (code < 0) {
+            if (ctx->pdfstoponerror)
+                return code;
+        } else {
+            if (f != 1.0) {
+                *transparent = true;
+                return 0;
+            }
+        }
+        known = false;
+    }
     return 0;
 }
 
 static int pdfi_check_Pattern_for_transparency(pdf_context *ctx, pdf_dict *Pattern_dict, bool *transparent)
 {
-    return 0;
+    int code;
+    pdf_obj *d = NULL;
+
+    code = pdfi_loop_detector_mark(ctx);
+    if (code < 0)
+        goto pattern_error;
+
+    code = pdfi_dict_get_type(ctx, Pattern_dict, "ExtGState", PDF_DICT, &d);
+    if (code >= 0) {
+        code = pdfi_check_ExtGState_for_transparency(ctx, (pdf_dict *)d, transparent);
+        pdfi_countdown(d);
+        if (code < 0 && ctx->pdfstoponerror)
+            goto pattern_error;
+    }
+    if (code < 0 && code != gs_error_undefined && ctx->pdfstoponerror)
+        goto pattern_error;
+
+    code = pdfi_dict_get_type(ctx, Pattern_dict, "Resources", PDF_DICT, &d);
+    if (code >= 0) {
+        code = pdfi_check_Resources_for_transparency(ctx, (pdf_dict *)d, transparent);
+        pdfi_countdown(d);
+        if (code < 0 && ctx->pdfstoponerror)
+            goto pattern_error;
+    }
+    return pdfi_loop_detector_cleartomark(ctx);
+
+pattern_error:
+    (void)pdfi_loop_detector_cleartomark(ctx);
+    return code;
 }
 
 static int pdfi_check_Resources_for_transparency(pdf_context *ctx, pdf_dict *Resources_dict, bool *transparent)
 {
-    return 0;
+    int code, i, index;
+    pdf_obj *d = NULL, *Key = NULL, *Value = NULL, *n = NULL;
+    double f;
+    bool known = false;
+
+    code = pdfi_loop_detector_mark(ctx);
+    if (code < 0)
+        return code;
+
+    code = pdfi_dict_get_type(ctx, Resources_dict, "ExtGState", PDF_DICT, &d);
+    if (code >= 0) {
+        code = pdfi_dict_first(ctx, (pdf_dict *)d, &Key, &Value, (void *)&index);
+        if (code < 0) {
+            pdfi_countdown(d);
+            (void)pdfi_loop_detector_cleartomark(ctx);
+            return 0;
+        }
+
+        i = 1;
+        do {
+            code = pdfi_check_ExtGState_for_transparency(ctx, (pdf_dict *)Value, transparent);
+            if (code < 0) {
+                if (ctx->pdfstoponerror)
+                    goto resource_error;
+            } else {
+                if (*transparent == true)
+                    goto resource_transparent;
+
+                pdfi_countdown(Key);
+                pdfi_countdown(Value);
+            }
+
+            if (i++ >= pdfi_dict_entries((pdf_dict *)d))
+                break;
+
+            code = pdfi_dict_next(ctx, (pdf_dict *)d, &Key, &Value, (void *)&index);
+            if (code < 0) {
+                pdfi_countdown(d);
+                (void)pdfi_loop_detector_cleartomark(ctx);
+                return 0;
+            }
+        } while (1);
+
+        pdfi_countdown(d);
+    }
+
+    code = pdfi_dict_get_type(ctx, Resources_dict, "Pattern", PDF_DICT, &d);
+    if (code >= 0) {
+        code = pdfi_dict_first(ctx, (pdf_dict *)d, &Key, &Value, (void *)&index);
+        if (code < 0) {
+            pdfi_countdown(d);
+            (void)pdfi_loop_detector_cleartomark(ctx);
+            return 0;
+        }
+        i = 1;
+        do {
+            code = pdfi_check_Pattern_for_transparency(ctx, (pdf_dict *)Value, transparent);
+            if (code < 0) {
+                if (ctx->pdfstoponerror)
+                    goto resource_error;
+            } else {
+                if (*transparent == true)
+                    goto resource_transparent;
+
+                pdfi_countdown(Key);
+                pdfi_countdown(Value);
+            }
+
+            if (i++ >= pdfi_dict_entries((pdf_dict *)d))
+                break;
+
+            code = pdfi_dict_next(ctx, (pdf_dict *)d, &Key, &Value, (void *)&index);
+            if (code < 0) {
+                pdfi_countdown(d);
+                (void)pdfi_loop_detector_cleartomark(ctx);
+                return 0;
+            }
+        } while (1);
+        pdfi_countdown(d);
+    }
+
+    code = pdfi_dict_get_type(ctx, Resources_dict, "XObject", PDF_DICT, &d);
+    if (code >= 0) {
+        code = pdfi_loop_detector_mark(ctx);
+        if (code < 0)
+            return code;
+
+        code = pdfi_dict_first(ctx, (pdf_dict *)d, &Key, &Value, (void *)&index);
+        if (code < 0) {
+            pdfi_countdown(d);
+            (void)pdfi_loop_detector_cleartomark(ctx); /* The XObject loop */
+            (void)pdfi_loop_detector_cleartomark(ctx); /* The Resources dixtionary loop */
+            return 0;
+        }
+        i = 1;
+        do {
+            code = pdfi_dict_get_type(ctx, (pdf_dict *)Value, "Subtype", PDF_NAME, &n);
+            if (code < 0) {
+                if (ctx->pdfstoponerror) {
+                    (void)pdfi_loop_detector_cleartomark(ctx); /* The XObject loop */
+                    goto resource_error;
+                }
+            } else {
+                if (pdfi_name_strcmp((const pdf_name *)n, "Image") == 0) {
+                    code = pdfi_dict_known((pdf_dict *)Value, "SMask", &known);
+                    if (code < 0 && ctx->pdfstoponerror) {
+                        (void)pdfi_loop_detector_cleartomark(ctx); /* The XObject loop */
+                        goto resource_error;
+                    }
+
+                    if (known == true) {
+                        (void)pdfi_loop_detector_cleartomark(ctx); /* The XObject loop */
+                        goto resource_transparent;
+                    }
+
+                    code = pdfi_dict_known((pdf_dict *)Value, "SMaskInData", &known);
+                    if (code < 0 && ctx->pdfstoponerror) {
+                        (void)pdfi_loop_detector_cleartomark(ctx); /* The XObject loop */
+                        goto resource_error;
+                    }
+
+                    if (known) {
+                        code = pdfi_dict_get_number(ctx, (pdf_dict *)Value, "SMaskInData", &f);
+                        if (code < 0) {
+                            (void)pdfi_loop_detector_cleartomark(ctx); /* The XObject loop */
+                            goto resource_error;
+                        }
+
+                        if (f != 0.0) {
+                            (void)pdfi_loop_detector_cleartomark(ctx); /* The XObject loop */
+                            goto resource_transparent;
+                        }
+                    }
+                } else {
+                    if (pdfi_name_strcmp((const pdf_name *)n, "Form") == 0) {
+                        code = pdfi_dict_known((pdf_dict *)Value, "Group", &known);
+                        if (code < 0 && ctx->pdfstoponerror) {
+                            (void)pdfi_loop_detector_cleartomark(ctx); /* The XObject loop */
+                            goto resource_error;
+                        }
+
+                        if (known == true) {
+                            (void)pdfi_loop_detector_cleartomark(ctx); /* The XObject loop */
+                            goto resource_transparent;
+                        }
+
+                        code = pdfi_dict_known((pdf_dict *)Value, "Resources", &known);
+                        if (code < 0 && ctx->pdfstoponerror) {
+                            (void)pdfi_loop_detector_cleartomark(ctx); /* The XObject loop */
+                            goto resource_error;
+                        }
+
+                        if (known) {
+                            pdf_obj *o;
+
+                            code = pdfi_dict_get_type(ctx, (pdf_dict *)Value, "Resources", PDF_DICT, &o);
+                            if (code >= 0) {
+                                code = pdfi_check_Resources_for_transparency(ctx, (pdf_dict *)o, transparent);
+                                pdfi_countdown(o);
+                                if (code < 0 && ctx->pdfstoponerror) {
+                                    (void)pdfi_loop_detector_cleartomark(ctx); /* The XObject loop */
+                                    goto resource_error;
+                                }
+                                if (*transparent == true) {
+                                    (void)pdfi_loop_detector_cleartomark(ctx); /* The XObject loop */
+                                    goto resource_transparent;
+                                }
+                            } else {
+                                if (ctx->pdfstoponerror) {
+                                    (void)pdfi_loop_detector_cleartomark(ctx); /* The XObject loop */
+                                    goto resource_error;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            pdfi_countdown(Key);
+            pdfi_countdown(Value);
+            code = pdfi_loop_detector_cleartomark(ctx); /* The XObject loop */
+            if (code < 0)
+                goto resource_error;
+
+            if (i++ >= pdfi_dict_entries((pdf_dict *)d))
+                break;
+
+            code = pdfi_loop_detector_mark(ctx);
+            if (code < 0)
+                goto resource_error;
+
+            code = pdfi_dict_next(ctx, (pdf_dict *)d, &Key, &Value, (void *)&index);
+            if (code < 0) {
+                (void)pdfi_loop_detector_cleartomark(ctx);
+                pdfi_countdown(d);
+                return 0;
+            }
+        } while (1);
+        pdfi_countdown(d);
+    }
+    return pdfi_loop_detector_cleartomark(ctx);
+
+resource_transparent:
+    *transparent = true;
+    code = 0;
+    /* Fall through */
+
+resource_error:
+    pdfi_countdown(Key);
+    pdfi_countdown(Value);
+    pdfi_countdown(d);
+    (void)pdfi_loop_detector_cleartomark(ctx);
+    return code;
 }
 
-static int pdfi_check_Annots_for_transparency(pdf_context *ctx, pdf_dict *page_dict, bool *transparent)
+static int pdfi_check_annot_for_transparency(pdf_context *ctx, pdf_dict *annot, bool *transparent)
 {
+    int code;
+    pdf_name *n;
+    bool known = false;
+    double f;
+
+    code = pdfi_dict_get_type(ctx, annot, "Subtype", PDF_NAME, (pdf_obj **)&n);
+    if (code < 0) {
+        if (ctx->pdfstoponerror)
+            return code;
+    } else {
+        /* Check #1, Highlight annotations are always preformed with transparency */
+        if (pdfi_name_strcmp((const pdf_name *)n, "Highlight") == 0) {
+            pdfi_countdown(n);
+            *transparent = true;
+            return 0;
+        }
+        pdfi_countdown(n);
+
+        /* Check #2 Blend Mode (BM) not being 'Normal' or 'Compatible' */
+        code = pdfi_dict_known(annot, "BM", &known);
+        if (code < 0) {
+            if (ctx->pdfstoponerror)
+                return code;
+        }
+
+        if (known) {
+            code = pdfi_dict_get_type(ctx, annot, "BM", PDF_NAME, (pdf_obj **)&n);
+            if (code < 0) {
+                if (ctx->pdfstoponerror)
+                    return code;
+            } else {
+                if (pdfi_name_strcmp((const pdf_name *)n, "Normal") != 0) {
+                    if (pdfi_name_strcmp((const pdf_name *)n, "Compatible") != 0) {
+                        pdfi_countdown(n);
+                        *transparent = true;
+                        return 0;
+                    }
+                }
+                pdfi_countdown(n);
+            }
+            known = false;
+        }
+
+        /* Check #3 stroke constant alpha (CA) is not 1 (100% opaque) */
+        code = pdfi_dict_known(annot, "CA", &known);
+        if (code < 0) {
+            if (ctx->pdfstoponerror)
+                return code;
+        }
+
+        if (known) {
+            code = pdfi_dict_get_number(ctx, annot, "CA", &f);
+            if (code < 0) {
+                if (ctx->pdfstoponerror)
+                    return code;
+            } else {
+                if (f != 1.0) {
+                    *transparent = true;
+                    return 0;
+                }
+            }
+            known = false;
+        }
+
+        /* Check #4 non-stroke constant alpha (ca) is not 1 (100% opaque) */
+        code = pdfi_dict_known(annot, "ca", &known);
+        if (code < 0) {
+            if (ctx->pdfstoponerror)
+                return code;
+        }
+
+        if (known) {
+            code = pdfi_dict_get_number(ctx, annot, "ca", &f);
+            if (code < 0) {
+                if (ctx->pdfstoponerror)
+                    return code;
+            } else {
+                if (f != 1.0) {
+                    *transparent = true;
+                    return 0;
+                }
+            }
+            known = false;
+        }
+        /* Check #5 Does the (Normal) Appearnce stream use any Resources which include transparency */
+        code = pdfi_dict_known(annot, "AP", &known);
+        if (code < 0) {
+            if (ctx->pdfstoponerror)
+                return code;
+        }
+        if (known) {
+            pdf_dict *d = NULL, *d1 = NULL;
+
+            code = pdfi_dict_get_type(ctx, annot, "AP", PDF_NAME, (pdf_obj **)&d);
+            if (code < 0) {
+                if (ctx->pdfstoponerror)
+                    return code;
+            } else {
+                code = pdfi_dict_known(d, "N", &known);
+                if (code < 0) {
+                    if (ctx->pdfstoponerror){
+                        pdfi_countdown(d);
+                        return code;
+                    }
+                }
+                if (known) {
+                    code = pdfi_dict_get_type(ctx, d, "N", PDF_NAME, (pdf_obj **)&d1);
+                    pdfi_countdown(d);
+                    if (code < 0) {
+                        if (ctx->pdfstoponerror)
+                            return code;
+                    } else {
+                        code = pdfi_dict_known(d1, "Resources", &known);
+                        if (code < 0) {
+                            pdfi_countdown(d1);
+                            if (ctx->pdfstoponerror) {
+                                return code;
+                            }
+                        } else {
+                            code = pdfi_dict_get_type(ctx, d1, "Resources", PDF_DICT, (pdf_obj **)&d);
+                            pdfi_countdown(d1);
+                            if (code < 0) {
+                                if (ctx->pdfstoponerror)
+                                    return code;
+                            } else {
+                                code = pdfi_check_Resources_for_transparency(ctx, (pdf_dict *)d, transparent);
+                                pdfi_countdown(d);
+                                if (code < 0) {
+                                    if (ctx->pdfstoponerror)
+                                        return code;
+                                }
+                                if (*transparent == true)
+                                    return 0;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
     return 0;
 }
 
+static int pdfi_check_Annots_for_transparency(pdf_context *ctx, pdf_array *annots_array, bool *transparent)
+{
+    int i, code;
+    pdf_dict *annot = NULL;
+
+    for (i=0; i < annots_array->entries; i++) {
+        annot = annots_array->values[i];
+
+        if (annot->type == PDF_DICT) {
+            code = pdfi_check_annot_for_transparency(ctx, annot, transparent);
+            if (code < 0 && ctx->pdfstoponerror)
+                return code;
+
+            if (*transparent)
+                return 0;
+        }
+    }
+    return 0;
+}
+
+/* From the original PDF interpreter written in PostScript:
+ * Note: we deliberately don't check to see whether a Group is defined,
+ * because Adobe Illustrator 10 (and possibly other applications) define
+ * a page-level group whether transparency is actually used or not.
+ * Ignoring the presence of Group is justified because, in the absence
+ * of any other transparency features, they have no effect.
+ */
 static int pdfi_check_page_transparency(pdf_context *ctx, pdf_dict *page_dict, bool *transparent)
 {
     int code;
-    pdf_obj *r = NULL;
+    pdf_obj *d = NULL;
 
     *transparent = false;
 
-    code = pdfi_dict_get(ctx, page_dict, "Resources", &r);
+    code = pdfi_dict_get_type(ctx, page_dict, "Resources", PDF_DICT, &d);
     if (code >= 0) {
-        code = pdfi_check_Resources_for_transparency(ctx, r, transparent);
-        pdfi_countdown(r);
+        code = pdfi_check_Resources_for_transparency(ctx, (pdf_dict *)d, transparent);
+        pdfi_countdown(d);
         if (code < 0)
             return code;
         if (*transparent == true)
             return 0;
     }
-    if (code < 0 && code != gs_error_undefined)
+    if (code < 0 && code != gs_error_undefined && ctx->pdfstoponerror)
         return code;
 
-    code = pdfi_dict_get(ctx, page_dict, "Annots", &r);
-    if (code >= 0) {
-        code = pdfi_check_Annots_for_transparency(ctx, r, transparent);
-        pdfi_countdown(r);
-        if (code < 0)
+    if (ctx->showannots) {
+        code = pdfi_dict_get_type(ctx, page_dict, "Annots", PDF_ARRAY, &d);
+        if (code >= 0) {
+            code = pdfi_check_Annots_for_transparency(ctx, (pdf_dict *)d, transparent);
+            pdfi_countdown(d);
+            if (code < 0)
+                return code;
+            if (*transparent == true)
+                return 0;
+        }
+        if (code < 0 && code != gs_error_undefined && ctx->pdfstoponerror)
             return code;
-        if (*transparent == true)
-            return 0;
     }
-    if (code < 0 && code != gs_error_undefined)
-        return code;
 
     return 0;
 }
