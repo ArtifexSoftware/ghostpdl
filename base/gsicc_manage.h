@@ -38,10 +38,10 @@
    file formats as a magic number. */
 
 #define GSICC_STANDARD_PROFILES_KEYS\
-  "srgb", "sgray"
+  "srgb", "sgray", "esrgb", "rommrgb"
 #define GSICC_STANDARD_PROFILES\
-  "srgb.icc", "sgray.icc"
-#define GSICC_NUMBER_STANDARD_PROFILES 2
+  "srgb.icc", "sgray.icc", "esrgb.icc", "rommrgb.icc"
+#define GSICC_NUMBER_STANDARD_PROFILES 4
 /* This enumeration has to be in sync with GSICC_SRCGTAG_KEYS */
 typedef enum {
     COLOR_TUNE,

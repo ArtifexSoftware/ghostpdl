@@ -578,11 +578,12 @@ pcl_end_page_top(pcl_state_t * pcs, int num_copies, int flush)
 pl_interp_implementation_t pcl_implementation = {
     pcl_impl_characteristics,
     pcl_impl_allocate_interp_instance,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
+    NULL,                       /* get_device_memory */
+    NULL,                       /* set_param */
+    NULL,                       /* add_path */
+    NULL,                       /* post_args_init */
     pcl_impl_init_job,
+    NULL,                       /* run_prefix_commands */
     NULL,                       /* process_file */
     pcl_impl_process_begin,
     pcl_impl_process,

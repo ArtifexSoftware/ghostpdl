@@ -66,7 +66,7 @@ xps_detect_language(const char *s, int len)
 }
 
 static const pl_interp_characteristics_t *
-xps_imp_characteristics(const pl_interp_implementation_t *pimpl)
+xps_impl_characteristics(const pl_interp_implementation_t *pimpl)
 {
     static pl_interp_characteristics_t xps_characteristics =
     {
@@ -101,7 +101,7 @@ xps_set_icc_user_params(pl_interp_implementation_t *impl, gs_gstate *pgs)
 
 /* Do per-instance interpreter allocation/init. No device is set yet */
 static int
-xps_imp_allocate_interp_instance(pl_interp_implementation_t *impl,
+xps_impl_allocate_interp_instance(pl_interp_implementation_t *impl,
                                  gs_memory_t *pmem)
 {
     xps_interp_instance_t *instance;
@@ -109,19 +109,19 @@ xps_imp_allocate_interp_instance(pl_interp_implementation_t *impl,
     gs_gstate *pgs;
 
     instance = (xps_interp_instance_t *) gs_alloc_bytes(pmem,
-            sizeof(xps_interp_instance_t), "xps_imp_allocate_interp_instance");
+            sizeof(xps_interp_instance_t), "xps_impl_allocate_interp_instance");
 
     ctx = (xps_context_t *) gs_alloc_bytes(pmem,
-            sizeof(xps_context_t), "xps_imp_allocate_interp_instance");
+            sizeof(xps_context_t), "xps_impl_allocate_interp_instance");
 
     pgs = gs_gstate_alloc(pmem);
 
     if (!instance || !ctx || !pgs)
     {
         if (instance)
-            gs_free_object(pmem, instance, "xps_imp_allocate_interp_instance");
+            gs_free_object(pmem, instance, "xps_impl_allocate_interp_instance");
         if (ctx)
-            gs_free_object(pmem, ctx, "xps_imp_allocate_interp_instance");
+            gs_free_object(pmem, ctx, "xps_impl_allocate_interp_instance");
         if (pgs)
             gs_gstate_free(pgs);
         return gs_error_VMerror;
@@ -171,7 +171,7 @@ xps_imp_allocate_interp_instance(pl_interp_implementation_t *impl,
 
 /* Prepare interp instance for the next "job" */
 static int
-xps_imp_init_job(pl_interp_implementation_t *impl,
+xps_impl_init_job(pl_interp_implementation_t *impl,
                  gx_device                  *pdevice)
 {
     xps_interp_instance_t *instance = impl->interp_client_data;
@@ -251,7 +251,7 @@ cleanup_setdevice:
 
 /* Parse an entire random access file */
 static int
-xps_imp_process_file(pl_interp_implementation_t *impl, char *filename)
+xps_impl_process_file(pl_interp_implementation_t *impl, const char *filename)
 {
     xps_interp_instance_t *instance = impl->interp_client_data;
     xps_context_t *ctx = instance->ctx;
@@ -273,7 +273,7 @@ xps_impl_process_begin(pl_interp_implementation_t * impl)
 
 /* Parse a cursor-full of data */
 static int
-xps_imp_process(pl_interp_implementation_t *impl, stream_cursor_read *cursor)
+xps_impl_process(pl_interp_implementation_t *impl, stream_cursor_read *cursor)
 {
     xps_interp_instance_t *instance = impl->interp_client_data;
     xps_context_t *ctx = instance->ctx;
@@ -313,7 +313,7 @@ xps_impl_process_end(pl_interp_implementation_t * impl)
  * Return 1 if done, 0 ok but EOJ not found, else negative error code.
  */
 static int
-xps_imp_flush_to_eoj(pl_interp_implementation_t *impl, stream_cursor_read *pcursor)
+xps_impl_flush_to_eoj(pl_interp_implementation_t *impl, stream_cursor_read *pcursor)
 {
     /* assume XPS cannot be pjl embedded */
     pcursor->ptr = pcursor->limit;
@@ -322,7 +322,7 @@ xps_imp_flush_to_eoj(pl_interp_implementation_t *impl, stream_cursor_read *pcurs
 
 /* Parser action for end-of-file */
 static int
-xps_imp_process_eof(pl_interp_implementation_t *impl)
+xps_impl_process_eof(pl_interp_implementation_t *impl)
 {
     xps_interp_instance_t *instance = impl->interp_client_data;
     xps_context_t *ctx = instance->ctx;
@@ -347,7 +347,7 @@ xps_imp_process_eof(pl_interp_implementation_t *impl)
 
 /* Report any errors after running a job */
 static int
-xps_imp_report_errors(pl_interp_implementation_t *impl,
+xps_impl_report_errors(pl_interp_implementation_t *impl,
         int code,           /* prev termination status */
         long file_position, /* file position of error, -1 if unknown */
         bool force_to_cout  /* force errors to cout */
@@ -368,7 +368,7 @@ static void xps_free_font_func(xps_context_t *ctx, void *ptr)
 
 /* Wrap up interp instance after a "job" */
 static int
-xps_imp_dnit_job(pl_interp_implementation_t *impl)
+xps_impl_dnit_job(pl_interp_implementation_t *impl)
 {
     xps_interp_instance_t *instance = impl->interp_client_data;
     xps_context_t *ctx = instance->ctx;
@@ -396,24 +396,24 @@ xps_imp_dnit_job(pl_interp_implementation_t *impl)
 
 /* Deallocate a interpreter instance */
 static int
-xps_imp_deallocate_interp_instance(pl_interp_implementation_t *impl)
+xps_impl_deallocate_interp_instance(pl_interp_implementation_t *impl)
 {
     xps_interp_instance_t *instance = impl->interp_client_data;
     xps_context_t *ctx = instance->ctx;
     gs_memory_t *mem = ctx->memory;
 
     /* language clients don't free the font cache machinery */
-    rc_decrement_cs(ctx->gray_lin, "xps_imp_deallocate_interp_instance");
-    rc_decrement_cs(ctx->gray, "xps_imp_deallocate_interp_instance");
-    rc_decrement_cs(ctx->cmyk, "xps_imp_deallocate_interp_instance");
-    rc_decrement_cs(ctx->srgb, "xps_imp_deallocate_interp_instance");
-    rc_decrement_cs(ctx->scrgb, "xps_imp_deallocate_interp_instance");
+    rc_decrement_cs(ctx->gray_lin, "xps_impl_deallocate_interp_instance");
+    rc_decrement_cs(ctx->gray, "xps_impl_deallocate_interp_instance");
+    rc_decrement_cs(ctx->cmyk, "xps_impl_deallocate_interp_instance");
+    rc_decrement_cs(ctx->srgb, "xps_impl_deallocate_interp_instance");
+    rc_decrement_cs(ctx->scrgb, "xps_impl_deallocate_interp_instance");
 
     gs_gstate_free(ctx->pgs);
 
-    gs_free_object(mem, ctx->fontdir, "xps_imp_deallocate_interp_instance");
-    gs_free_object(mem, ctx, "xps_imp_deallocate_interp_instance");
-    gs_free_object(mem, instance, "xps_imp_deallocate_interp_instance");
+    gs_free_object(mem, ctx->fontdir, "xps_impl_deallocate_interp_instance");
+    gs_free_object(mem, ctx, "xps_impl_deallocate_interp_instance");
+    gs_free_object(mem, instance, "xps_impl_deallocate_interp_instance");
 
     return 0;
 }
@@ -421,22 +421,23 @@ xps_imp_deallocate_interp_instance(pl_interp_implementation_t *impl)
 /* Parser implementation descriptor */
 pl_interp_implementation_t xps_implementation =
 {
-    xps_imp_characteristics,
-    xps_imp_allocate_interp_instance,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    xps_imp_init_job,
-    xps_imp_process_file,
+    xps_impl_characteristics,
+    xps_impl_allocate_interp_instance,
+    NULL,                       /* get_device_memory */
+    NULL,                       /* set_param */
+    NULL,                       /* add_path */
+    NULL,                       /* post_args_init */
+    xps_impl_init_job,
+    NULL,                       /* run_prefix_commands */
+    xps_impl_process_file,
     xps_impl_process_begin,
-    xps_imp_process,
+    xps_impl_process,
     xps_impl_process_end,
-    xps_imp_flush_to_eoj,
-    xps_imp_process_eof,
-    xps_imp_report_errors,
-    xps_imp_dnit_job,
-    xps_imp_deallocate_interp_instance,
+    xps_impl_flush_to_eoj,
+    xps_impl_process_eof,
+    xps_impl_report_errors,
+    xps_impl_dnit_job,
+    xps_impl_deallocate_interp_instance,
     NULL,
 };
 

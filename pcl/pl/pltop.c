@@ -92,13 +92,24 @@ pl_init_job(pl_interp_implementation_t * impl,     /* interp instance to start j
     return impl->proc_init_job(impl, device);
 }
 
+int                             /* ret 0 ok, else -ve error code */
+pl_run_prefix_commands(pl_interp_implementation_t * impl,     /* interp instance to start job in */
+                       const char                 * prefix)
+{
+    if (prefix == NULL)
+        return 0;
+    if (impl->proc_run_prefix_commands == NULL)
+        return -1;
+    return impl->proc_run_prefix_commands(impl, prefix);
+}
+
 /* Parse a random access seekable file.
    This function is mutually exclusive with pl_process and pl_flush_to_eoj,
    and is only called if the file is seekable and the function pointer is
    not NULL.
  */
 int
-pl_process_file(pl_interp_implementation_t * impl, char *filename)
+pl_process_file(pl_interp_implementation_t * impl, const char *filename)
 {
     gs_memory_t *mem;
     int code, code1;

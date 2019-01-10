@@ -106,6 +106,12 @@ int pl_init_job(pl_interp_implementation_t *, gx_device *);
 typedef int (*pl_interp_proc_init_job_t) (pl_interp_implementation_t *, gx_device *);
 
 /*
+ * Run prefix commands before an encapsulated job.
+ */
+int pl_run_prefix_commands(pl_interp_implementation_t *, const char *prefix);
+typedef int (*pl_interp_proc_run_prefix_commands_t) (pl_interp_implementation_t *, const char *prefix);
+
+/*
  * Process a stream of PDL data.
  */
 int pl_process_begin(pl_interp_implementation_t *);
@@ -124,8 +130,8 @@ typedef int (*pl_interp_proc_process_end_t) (pl_interp_implementation_t *);
  * is called for a job, pl_process, pl_flush_to_eoj and
  * pl_process_eof are not called.
  */
-int pl_process_file(pl_interp_implementation_t *, char *);
-typedef int (*pl_interp_proc_process_file_t) (pl_interp_implementation_t *, char *);
+int pl_process_file(pl_interp_implementation_t *, const char *);
+typedef int (*pl_interp_proc_process_file_t) (pl_interp_implementation_t *, const char *);
 
 /*
  * Process and ignore all data until an end of job delimiter is
@@ -173,6 +179,7 @@ struct pl_interp_implementation_s
     pl_interp_proc_add_path_t proc_add_path;
     pl_interp_proc_post_args_init_t proc_post_args_init;
     pl_interp_proc_init_job_t proc_init_job;
+    pl_interp_proc_run_prefix_commands_t proc_run_prefix_commands;
     pl_interp_proc_process_file_t proc_process_file;
     pl_interp_proc_process_begin_t proc_process_begin;
     pl_interp_proc_process_t proc_process;

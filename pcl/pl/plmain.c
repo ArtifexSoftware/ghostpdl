@@ -300,8 +300,41 @@ revert_to_pjli(pl_main_instance_t *minst)
     return code;
 }
 
+#define STDIO_BUF_SIZE 128
 static int
-pl_main_run_file_utf8(pl_main_instance_t *minst, const char *filename)
+stdio_close_file(stream *s)
+{
+    /* Don't close stdio files, but do free the buffer. */
+    gs_memory_t *mem = s->memory;
+
+    s->file = 0;
+    gs_free_object(mem, s->cbuf, "stdio_close_file(buffer)");
+    return 0;
+}
+
+static int
+stdin_open(stream ** ps,
+           gs_memory_t * mem)
+{
+    stream *s;
+    byte *buf;
+    FILE *file = mem->gs_lib_ctx->core->fstdin;
+
+    s = s_alloc(mem, "stdio_open(stream)");
+    buf = gs_alloc_bytes(mem, STDIO_BUF_SIZE, "stdio_open(buffer)");
+    if (s == 0 || buf == 0) {
+        gs_free_object(mem, buf, "stdio_open(buffer)");
+        gs_free_object(mem, s, "stdio_open(stream)");
+        return_error(gs_error_VMerror);
+    }
+    sread_file(s, file, buf, STDIO_BUF_SIZE);
+    s->procs.close = stdio_close_file;
+    *ps = s;
+    return 0;
+}
+
+static int
+pl_main_run_file_utf8(pl_main_instance_t *minst, const char *prefix_commands, const char *filename)
 {
     bool new_job = true;
     pl_interp_implementation_t *pjli =
@@ -314,7 +347,13 @@ pl_main_run_file_utf8(pl_main_instance_t *minst, const char *filename)
     bool first_job = true;
     pl_interp_implementation_t *desired_implementation = NULL;
 
-    s = sfopen(filename, "r", mem);
+    if (is_stdin) {
+        code = stdin_open(&s, mem);
+        if (code < 0)
+            return code;
+    } else {
+        s = sfopen(filename, "r", mem);
+    }
     if (s == NULL)
         return gs_error_undefinedfilename;
 
@@ -375,6 +414,12 @@ pl_main_run_file_utf8(pl_main_instance_t *minst, const char *filename)
                         goto error_fatal;
                     minst->curr_implementation = desired_implementation;
                 }
+
+                /* Run any prefix commands */
+                code = pl_run_prefix_commands(minst->curr_implementation, prefix_commands);
+                if (code < 0)
+                    goto error_fatal;
+                prefix_commands = NULL;
             }
 
             if (minst->curr_implementation != pjli) {
@@ -466,6 +511,28 @@ error_fatal_reverted:
     return gs_error_Fatal;
 }
 
+/* We assume that the desired language has been set as minst->implementation here. */
+static int
+pl_main_run_prefix(pl_main_instance_t *minst, const char *prefix_commands)
+{
+    int code;
+
+    if (minst->curr_implementation != minst->implementation) {
+        code = pl_dnit_job(minst->curr_implementation);
+        minst->curr_implementation = NULL;
+        if (code < 0)
+            return code;
+    }
+    code = pl_init_job(minst->implementation, minst->device);
+    if (code < 0)
+        return code;
+    minst->curr_implementation = minst->implementation;
+
+    code = pl_run_prefix_commands(minst->curr_implementation, prefix_commands);
+
+    return code;
+}
+
 void
 pl_main_set_arg_decode(pl_main_instance_t *minst,
                        pl_main_get_codepoint_t *get_codepoint)
@@ -504,7 +571,7 @@ pl_main_run_file(pl_main_instance_t *minst, const char *file_name)
     else {
       temp = (char *)file_name;
     }
-    code = pl_main_run_file_utf8(minst, temp);
+    code = pl_main_run_file_utf8(minst, NULL, temp);
     if (temp != file_name)
         gs_free_object(minst->memory, temp, "gsapi_run_file");
     return code;
@@ -671,7 +738,7 @@ pl_main_alloc_instance(gs_memory_t * mem)
     minst->error_report = -1;
     minst->pause = true;
     minst->device = 0;
-    minst->implementation = 0;
+    minst->implementation = NULL;
     minst->base_time[0] = 0;
     minst->base_time[1] = 0;
     minst->interpolate = false;
@@ -922,19 +989,75 @@ pl_main_post_args_init(pl_main_instance_t * pmi)
 }
 
 static int
+handle_dash_c(pl_main_instance_t *pmi, arg_list *pal, char **collected_commands, char **arg)
+{
+    bool ats = pal->expand_ats;
+    int code = 0;
+
+    *arg = NULL;
+    pal->expand_ats = false;
+    while ((code = arg_next(pal, (const char **)arg, pmi->memory)) > 0) {
+        size_t arglen;
+        if ((*arg)[0] == '@' ||
+            ((*arg)[0] == '-' && !isdigit((unsigned char)(*arg)[1]))
+            )
+            break;
+        arglen = strlen(*arg);
+        if (*collected_commands == NULL) {
+            *collected_commands = (char *)gs_alloc_bytes(pmi->memory, arglen+1,
+                                                         "-c buffer");
+            if (*collected_commands == NULL)
+                goto problem_in_dash_c;
+            memcpy(*collected_commands, *arg, arglen+1);
+        } else {
+            char *newc;
+            size_t oldlen = strlen(*collected_commands);
+            newc = (char *)gs_resize_object(pmi->memory,
+                                            *collected_commands,
+                                            oldlen + 1 + arglen + 1,
+                                            "-c buffer");
+            if (newc == NULL)
+                goto problem_in_dash_c;
+            newc[oldlen] = 32;
+            memcpy(newc + oldlen + 1, *arg, arglen + 1);
+            *collected_commands = newc;
+        }
+        *arg = NULL;
+    }
+    if (0) {
+problem_in_dash_c:
+        code = gs_error_Fatal;
+        dmprintf(pmi->memory, "Failed to allocate memory while handling -c\n");
+    }
+    if (code < 0) {
+        dmprintf(pmi->memory, "Syntax: -c <postscript commands>\n");
+    }
+    pal->expand_ats = ats;
+
+    return code;
+}
+
+static int
 pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                         pl_interp_implementation_t * pjli)
 {
     int code = 0;
     bool help = false;
-    char *arg;
+    char *arg = NULL;
     gs_c_param_list *params = &pmi->params;
     int device_index = -1;
+    char *collected_commands = NULL;
+    bool not_an_arg = 1;
 
     gs_c_param_list_write_more(params);
-    while ((code = arg_next(pal, (const char **)&arg, pmi->memory)) > 0 && *arg == '-') {
-        if (arg[1] == '\0') /* not an option, stdin */
+    while (arg != NULL || (code = arg_next(pal, (const char **)&arg, pmi->memory)) > 0) {
+        if (*arg != '-') /* Stop when we hit something that isn't an option */
             break;
+        if (arg[1] == 0) {
+            /* Stdin, not an option! */
+            not_an_arg = 1;
+            break;
+        }
         arg += 2;
         switch (arg[-1]) {
             case '-':
@@ -1007,11 +1130,14 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                 }
                 /* FALLTHROUGH */
             default:
-                dmprintf1(pmi->memory, "Unrecognized switch: %s\n", arg);
+                dmprintf1(pmi->memory, "Unrecognized switch: %s\n", arg-2);
                 code = -1;
-            case '\0':
-                /* read from stdin - must be last arg */
-                continue;
+                break;
+            case 'c':
+                code = handle_dash_c(pmi, pal, &collected_commands, &arg);
+                if (code < 0)
+                    arg = NULL;
+                continue; /* Next arg has already been read, if there is one */
             case 'd':
             case 'D':
                 {
@@ -1173,6 +1299,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     } else {
                         dmprintf(pmi->memory,
                                  "Usage for -d is -d<option>=[<integer>|<float>|null|true|false|name]\n");
+                        arg = NULL;
                         continue;
                     }
                     if (code < 0)
@@ -1187,6 +1314,15 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                 else
                     sscanf(arg, "%d", &pmi->error_report);
                 break;
+            case 'f':
+                code = arg_next(pal, (const char **)&arg, pmi->memory);
+                if (code < 0)
+                    return code;
+                if (arg == NULL) {
+                    dmprintf(pmi->memory, "-f must be followed by a filename\n");
+                    continue;
+                }
+                goto out;
             case 'g':
                 {
                     int geom[2];
@@ -1494,6 +1630,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
         }
         if (code < 0)
             return code;
+        arg = NULL;
     }
   out:if (help) {
         arg_finit(pal);
@@ -1527,17 +1664,63 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
     if (code < 0)
         return code;
 
-    /* No file names to process.*/
-    if (!arg)
-        return 0;
+    /* If we have (at least one) filename to process */
+    if (arg) {
+        /* From here on in, we can only accept -c, -f, and filenames */
+        /* In the unlikely event that someone wants to run a file starting with
+         * a '-', they'll do "-f -blah". The - of the "-blah" must not be accepted
+         * by the arg processing in the loop below. We use 'not_an_arg' to handle
+         * this. */
+        do {
+            if (!not_an_arg && arg[0] == '-' && arg[1] == 'c') {
+                code = handle_dash_c(pmi, pal, &collected_commands, &arg);
+                if (code < 0)
+                    break;
+                not_an_arg = 0;
+                continue; /* We've already read any -f into arg */
+            } else if (!not_an_arg && arg[0] == '-' && arg[1] == 'f') {
+                code = arg_next(pal, (const char **)&arg, pmi->memory);
+                if (code < 0)
+                    return code;
+                if (arg == NULL) {
+                    dmprintf(pmi->memory, "-f must be followed by a filename\n");
+                    continue;
+                }
+                not_an_arg = 1;
+                continue;
+            } else {
+                code = pl_main_run_file_utf8(pmi, collected_commands, arg);
+                if (code == gs_error_undefinedfilename)
+                    errprintf(pmi->memory, "Failed to open file '%s'\n", arg);
+                gs_free_object(pmi->memory, collected_commands, "-c buffer");
+                collected_commands = NULL;
+                if (code < 0)
+                    break;
+            }
+            arg = NULL;
+            not_an_arg = 0;
+        } while (arg != NULL || (code = arg_next(pal, (const char **)&arg, pmi->memory)) > 0);
+    }
 
-    do {
-        code = pl_main_run_file_utf8(pmi, arg);
-        if (code == gs_error_undefinedfilename)
-            errprintf(pmi->memory, "Failed to open file '%s'\n", arg);
-        if (code < 0)
-            return code;
-    } while ((code = arg_next(pal, (const char **)&arg, pmi->memory)) > 0);
+    if (code == 0 && collected_commands != NULL) {
+        /* Find the PS interpreter */
+        int index;
+        pl_interp_implementation_t **impls = pmi->implementations;
+
+        /* Start at 1 to skip PJL */
+        for (index = 1; impls[index] != 0; ++index)
+            if (!strcmp("POSTSCRIPT",
+                        pl_characteristics(impls[index])->language))
+                break;
+        if (impls[index] == 0) {
+            dmprintf(pmi->memory, "-c can only be used in a built with POSTSCRIPT included.\n");
+            return gs_error_Fatal;
+        }
+        pmi->implementation = impls[index];
+        code = pl_main_run_prefix(pmi, collected_commands);
+    }
+    gs_free_object(pmi->memory, collected_commands, "-c buffer");
+    collected_commands = NULL;
 
     return code;
 }

@@ -431,11 +431,31 @@ ps_impl_init_job(pl_interp_implementation_t *impl,
     return code;
 }
 
-/* Not complete. */
 static int
-ps_impl_process_file(pl_interp_implementation_t *impl, char *filename)
+ps_impl_run_prefix_commands(pl_interp_implementation_t *impl,
+                            const char                 *prefix)
 {
-    /* NB incomplete */
+    ps_interp_instance_t *psi = (ps_interp_instance_t *)impl->interp_client_data;
+    int exit_code;
+    int code = 0;
+
+    if (prefix == NULL)
+        return 0;
+
+    /* Any error after here *must* reset the device to null */
+    code = psapi_run_string(psi->psapi_instance, prefix, 0, &exit_code);
+
+    if (code < 0) {
+        int code1 = psapi_set_device(psi->psapi_instance, NULL);
+        (void)code1;
+    }
+
+    return code;
+}
+
+static int
+ps_impl_process_file(pl_interp_implementation_t *impl, const char *filename)
+{
     ps_interp_instance_t *psi = (ps_interp_instance_t *)impl->interp_client_data;
     int exit_code;
 
@@ -576,6 +596,7 @@ const pl_interp_implementation_t ps_implementation = {
   ps_impl_add_path,
   ps_impl_post_args_init,
   ps_impl_init_job,
+  ps_impl_run_prefix_commands,
   ps_impl_process_file,
   ps_impl_process_begin,
   ps_impl_process,
