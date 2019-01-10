@@ -1428,7 +1428,6 @@ static inline int
 constant_color_trapezoid(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge *re,
         fixed ybot, fixed ytop, bool swap_axes, const patch_color_t *c)
 {
-    patch_color_t c1 = *c;
     gx_device_color dc;
     int code;
 
@@ -1436,7 +1435,8 @@ constant_color_trapezoid(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_ed
         /* if (dbg_nofill)
                 return 0; */
 #   endif
-    code = patch_color_to_device_color_inline(pfs, &c1, &dc, NULL);
+
+    code = patch_color_to_device_color_inline(pfs, c, &dc, NULL);
     if (code < 0)
         return code;
     return dev_proc(pfs->dev, fill_trapezoid)(pfs->dev,
