@@ -461,6 +461,7 @@ pl_interp_implementation_t pdf_implementation =
     pdf_imp_allocate_interp_instance,
     pdf_impl_get_device_memory,
     pdf_impl_set_param,
+    NULL,                               /* add_path */
     pdf_impl_post_args_init,
     pdf_imp_init_job,
     pdf_imp_process_file,
