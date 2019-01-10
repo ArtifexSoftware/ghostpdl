@@ -302,39 +302,6 @@ revert_to_pjli(pl_main_instance_t *minst)
     return code;
 }
 
-#define STDIO_BUF_SIZE 128
-static int
-stdio_close_file(stream *s)
-{
-    /* Don't close stdio files, but do free the buffer. */
-    gs_memory_t *mem = s->memory;
-
-    s->file = 0;
-    gs_free_object(mem, s->cbuf, "stdio_close_file(buffer)");
-    return 0;
-}
-
-static int
-stdin_open(stream ** ps,
-           gs_memory_t * mem)
-{
-    stream *s;
-    byte *buf;
-    FILE *file = mem->gs_lib_ctx->core->fstdin;
-
-    s = s_alloc(mem, "stdio_open(stream)");
-    buf = gs_alloc_bytes(mem, STDIO_BUF_SIZE, "stdio_open(buffer)");
-    if (s == 0 || buf == 0) {
-        gs_free_object(mem, buf, "stdio_open(buffer)");
-        gs_free_object(mem, s, "stdio_open(stream)");
-        return_error(gs_error_VMerror);
-    }
-    sread_file(s, file, buf, STDIO_BUF_SIZE);
-    s->procs.close = stdio_close_file;
-    *ps = s;
-    return 0;
-}
-
 static int
 pl_main_run_file_utf8(pl_main_instance_t *minst, const char *prefix_commands, const char *filename)
 {
@@ -350,7 +317,7 @@ pl_main_run_file_utf8(pl_main_instance_t *minst, const char *prefix_commands, co
     pl_interp_implementation_t *desired_implementation = NULL;
 
     if (is_stdin) {
-        code = stdin_open(&s, mem);
+        code = gs_get_callout_stdin(&s, mem);
         if (code < 0)
             return code;
     } else {
@@ -1050,6 +1017,11 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
     int device_index = -1;
     char *collected_commands = NULL;
     bool not_an_arg = 1;
+
+    /* By default, stdin_is_interactive = 1. This mirrors what stdin_init
+     * would have done in the iodev one time initialisation. We aren't
+     * getting our stdin via an iodev though, so we do it here. */
+   pmi->memory->gs_lib_ctx->core->stdin_is_interactive = 1;
 
     gs_c_param_list_write_more(params);
     while (arg != NULL || (code = arg_next(pal, (const char **)&arg, pmi->memory)) > 0) {

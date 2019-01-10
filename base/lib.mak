@@ -1497,7 +1497,7 @@ strmio_h=$(GLSRC)strmio.h
 $(GLOBJ)strmio.$(OBJ) : $(GLSRC)strmio.c $(AK) $(malloc__h)\
   $(memory__h) $(gdebug_h) $(gsfname_h) $(gslibctx_h) $(gsstype_h)\
   $(gsmalloc_h) $(gsmemret_h) $(strmio_h) $(stream_h) $(gxiodev_h)\
- $(LIB_MAK) $(MAKEDIRS)
+ $(gserrors_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)strmio.$(OBJ) $(C_) $(GLSRC)strmio.c
 
 # ---------------- BCP filters ---------------- #

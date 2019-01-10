@@ -75,4 +75,7 @@ int sferror(stream *s);
  */
 int sfclose(stream *s);
 
+/* Get a callout-capable stdin stream. */
+int gs_get_callout_stdin(stream **ps, gs_memory_t *mem);
+
 #endif /* strmio_INCLUDED */
