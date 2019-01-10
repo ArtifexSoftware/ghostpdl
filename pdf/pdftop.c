@@ -464,6 +464,7 @@ pl_interp_implementation_t pdf_implementation =
     NULL,                               /* add_path */
     pdf_impl_post_args_init,
     pdf_imp_init_job,
+    NULL,                               /* run_prefix_commands */
     pdf_imp_process_file,
     pdf_impl_process_begin,
     pdf_imp_process,
@@ -473,7 +474,7 @@ pl_interp_implementation_t pdf_implementation =
     pdf_imp_report_errors,
     pdf_imp_dnit_job,
     pdf_imp_deallocate_interp_instance,
-    NULL,
+    NULL,                               /* interp_client_data */
 };
 
 /*
