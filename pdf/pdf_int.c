@@ -181,7 +181,20 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
     if (obj >= ctx->xref_table->xref_size) {
         dmprintf1(ctx->memory, "Error, attempted to dereference object %"PRIu64", which is not present in the xref table\n", obj);
         ctx->pdf_errors |= E_PDF_BADOBJNUMBER;
-        return_error(gs_error_rangecheck);
+
+        if(ctx->pdfstoponerror)
+            return_error(gs_error_rangecheck);
+
+        o = (pdf_obj *)gs_alloc_bytes(ctx->memory, sizeof(pdf_obj), "pdfi_read_keyword");
+        if (o == NULL)
+            return_error(gs_error_VMerror);
+
+        memset(o, 0x00, sizeof(pdf_obj));
+        o->memory = ctx->memory;
+        o->type = PDF_NULL;
+        *object = o;
+        pdfi_countup(*object);
+        return 0;
     }
 
     entry = &ctx->xref_table->xref[obj];
@@ -396,8 +409,11 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
             }
 
             *object = ctx->stack_top[-1];
-            pdfi_countup(*object);
             pdfi_pop(ctx, 1);
+            if ((*object)->object_num == obj)
+                pdfi_countup(*object);
+            else
+                return_error(gs_error_undefined);
         }
         (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
     }
