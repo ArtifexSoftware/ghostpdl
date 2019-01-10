@@ -432,7 +432,7 @@ struct xps_context_s
     int fill_rule;
 };
 
-int xps_process_file(xps_context_t *ctx, char *filename);
+int xps_process_file(xps_context_t *ctx, const char *filename);
 
 /* end of page device callback foo */
 int xps_show_page(xps_context_t *ctx, int num_copies, int flush);

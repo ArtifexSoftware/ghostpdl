@@ -566,7 +566,7 @@ xps_read_and_process_page_part(xps_context_t *ctx, char *name)
  */
 
 int
-xps_process_file(xps_context_t *ctx, char *filename)
+xps_process_file(xps_context_t *ctx, const char *filename)
 {
     char buf[2048];
     xps_document_t *doc;
