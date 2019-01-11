@@ -626,7 +626,7 @@ static int pdfi_check_Annots_for_transparency(pdf_context *ctx, pdf_array *annot
     pdf_dict *annot = NULL;
 
     for (i=0; i < annots_array->entries; i++) {
-        annot = annots_array->values[i];
+        annot = (pdf_dict *)annots_array->values[i];
 
         if (annot->type == PDF_DICT) {
             code = pdfi_check_annot_for_transparency(ctx, annot, transparent);
@@ -669,7 +669,7 @@ static int pdfi_check_page_transparency(pdf_context *ctx, pdf_dict *page_dict, b
     if (ctx->showannots) {
         code = pdfi_dict_get_type(ctx, page_dict, "Annots", PDF_ARRAY, &d);
         if (code >= 0) {
-            code = pdfi_check_Annots_for_transparency(ctx, (pdf_dict *)d, transparent);
+            code = pdfi_check_Annots_for_transparency(ctx, (pdf_array *)d, transparent);
             pdfi_countdown(d);
             if (code < 0)
                 return code;
@@ -796,6 +796,323 @@ static int pdfi_set_media_size(pdf_context *ctx, pdf_dict *page_dict)
     gs_translate(ctx->pgs, d[0] * -1, d[1] * -1);
 
     code = gs_erasepage(ctx->pgs);
+    return 0;
+}
+
+/*
+ * Convenience routine to check if a given string exists in a dictionary
+ * verify its contents and print it in a particular fashion to stdout. This
+ * is used to display information about the PDF in response to -dPDFINFO
+ */
+static int dump_info_string(pdf_context *ctx, pdf_dict *source_dict, char *Key)
+{
+    int code;
+    pdf_string *s = NULL;
+    char *Cstr;
+    bool known;
+
+    code = pdfi_dict_known(source_dict, Key, &known);
+    if (code < 0) {
+        if (code != gs_error_undefined && ctx->pdfstoponerror)
+            return code;
+    } else {
+        code = pdfi_dict_get_type(ctx, source_dict, Key, PDF_STRING, (pdf_obj **)&s);
+        if (code < 0) {
+            if (ctx->pdfstoponerror)
+                return code;
+        } else {
+            Cstr = (char *)gs_alloc_bytes(ctx->memory, s->length + 1, "Working memory for string dumping");
+            if (Cstr) {
+                memcpy(Cstr, s->data, s->length);
+                Cstr[s->length] = 0x00;
+                dmprintf2(ctx->memory, "%s: %s\n", Key, Cstr);
+                gs_free_object(ctx->memory, Cstr, "Working memory for string dumping");
+            }
+            pdfi_countdown(s);
+        }
+    }
+}
+
+static int pdfi_output_metadata(pdf_context *ctx)
+{
+    int code;
+    bool known = false;
+
+    if (ctx->num_pages > 1)
+        dmprintf2(ctx->memory, "\n        %s has %"PRIi64" pages\n\n", ctx->filename, ctx->num_pages);
+    else
+        dmprintf2(ctx->memory, "\n        %s has %"PRIi64" page.\n\n", ctx->filename, ctx->num_pages);
+
+    if (ctx->Info != NULL) {
+        pdf_string *s = NULL;
+        pdf_name *n = NULL;
+        char *Cstr;
+
+        code = dump_info_string(ctx, ctx->Info, "Title");
+        if (code < 0) {
+            if (ctx->pdfstoponerror)
+                return code;
+        }
+
+        code = dump_info_string(ctx, ctx->Info, "Author");
+        if (code < 0) {
+            if (ctx->pdfstoponerror)
+                return code;
+        }
+
+        code = dump_info_string(ctx, ctx->Info, "Subject");
+        if (code < 0) {
+            if (ctx->pdfstoponerror)
+                return code;
+        }
+
+        code = dump_info_string(ctx, ctx->Info, "Keywords");
+        if (code < 0) {
+            if (ctx->pdfstoponerror)
+                return code;
+        }
+
+        code = dump_info_string(ctx, ctx->Info, "Creator");
+        if (code < 0) {
+            if (ctx->pdfstoponerror)
+                return code;
+        }
+
+        code = dump_info_string(ctx, ctx->Info, "Producer");
+        if (code < 0) {
+            if (ctx->pdfstoponerror)
+                return code;
+        }
+
+        code = dump_info_string(ctx, ctx->Info, "CreationDate");
+        if (code < 0) {
+            if (ctx->pdfstoponerror)
+                return code;
+        }
+
+        code = dump_info_string(ctx, ctx->Info, "ModDate");
+        if (code < 0) {
+            if (ctx->pdfstoponerror)
+                return code;
+        }
+
+
+        code = pdfi_dict_known(ctx->Info, "Trapped", &known);
+        if (code < 0) {
+            if (code != gs_error_undefined && ctx->pdfstoponerror)
+                return code;
+        } else {
+            code = pdfi_dict_get_type(ctx, ctx->Info, "Trapped", PDF_NAME, (pdf_obj **)&n);
+            if (code < 0) {
+                if (ctx->pdfstoponerror)
+                    return code;
+            } else {
+                Cstr = (char *)gs_alloc_bytes(ctx->memory, n->length + 1, "Working memory for string dumping");
+                if (Cstr) {
+                    memcpy(Cstr, n->data, n->length);
+                    Cstr[n->length] = 0x00;
+                    dmprintf1(ctx->memory, "Trapped: %s\n\n", Cstr);
+                    gs_free_object(ctx->memory, Cstr, "Working memory for string dumping");
+                }
+                pdfi_countdown(n);
+            }
+        }
+    }
+    return 0;
+}
+
+/*
+ * Convenience routine to check if a given *Box exists in a page dictionary
+ * verify its contents and print it in a particular fashion to stdout. This
+ * is used to display information about the PDF in response to -dPDFINFO
+ */
+static int pdfi_dump_box(pdf_context *ctx, pdf_dict *page_dict, char *Key)
+{
+    int code, i;
+    bool known = false;
+    double f;
+    pdf_array *a;
+
+    code = pdfi_dict_known(page_dict, Key, &known);
+    if (code < 0) {
+        if (code != gs_error_undefined && ctx->pdfstoponerror)
+            return code;
+    } else {
+        code = pdfi_dict_get_type(ctx, page_dict, Key, PDF_ARRAY, (pdf_obj **)&a);
+        if (code < 0) {
+            if (ctx->pdfstoponerror)
+                return code;
+        } else {
+            if (a->entries != 4) {
+                pdfi_countdown(a);
+                if (ctx->pdfstoponerror)
+                    return_error(gs_error_rangecheck);
+            } else {
+                for (i = 0; i < a->entries; i++) {
+                    if (a->values[i]->type != PDF_INT && a->values[i]->type != PDF_REAL){
+                        pdfi_countdown(a);
+                        if (ctx->pdfstoponerror)
+                            return_error(gs_error_rangecheck);
+                        break;
+                    }
+                }
+                if (i == a->entries) {
+                    pdf_num *num;
+
+                    dmprintf1(ctx->memory, " %s: [", Key);
+                    for (i=0;i < a->entries;i++) {
+                        if (i != 0)
+                            dmprintf(ctx->memory, " ");
+                        num = (pdf_num *)a->values[i];
+                        if (a->values[i]->type == PDF_INT)
+                            dmprintf1(ctx->memory, "%"PRIi64"", ((pdf_num *)a->values[i])->value.d);
+                        else
+                            dmprintf1(ctx->memory, "%f", ((pdf_num *)a->values[i])->value.i);
+                    }
+                    dmprintf(ctx->memory, "]");
+                }
+                pdfi_countdown(a);
+            }
+        }
+    }
+    return 0;
+}
+
+/*
+ * This routine along with pdfi_output_metadtaa above, dumps certain kinds
+ * of metadata from the PDF file, and from each page in the PDF file. It is
+ * intended to duplicate the pdf_info.ps functionality of the PostScript-based
+ * PDF interpreter in Ghostscript.
+ *
+ * It is not yet complete, we don't allow an option for dumping media sizes
+ * we always emit them, and the switches -dDumpFontsNeeded, -dDumpXML,
+ * -dDumpFontsUsed and -dShowEmbeddedFonts are not implemented at all yet.
+ */
+static int pdfi_output_page_info(pdf_context *ctx, uint64_t page_num)
+{
+    int code;
+    bool known = false, transparent = false;
+    double f;
+    uint64_t page_offset = 0;
+    pdf_dict *page_dict = NULL;
+
+    code = pdfi_loop_detector_mark(ctx);
+    if (code < 0)
+        return code;
+
+    code = pdfi_loop_detector_add_object(ctx, ctx->Pages->object_num);
+    if (code < 0) {
+        pdfi_loop_detector_cleartomark(ctx);
+        return code;
+    }
+
+    code = pdfi_get_page_dict(ctx, ctx->Pages, page_num, &page_offset, &page_dict, NULL);
+    pdfi_loop_detector_cleartomark(ctx);
+    if (code < 0) {
+        if (code == gs_error_VMerror || ctx->pdfstoponerror)
+            return code;
+        return 0;
+    }
+
+    dmprintf1(ctx->memory, "Page %d", page_num + 1);
+
+    code = pdfi_dict_known(page_dict, "UserUnit", &known);
+    if (code < 0) {
+        if (code != gs_error_undefined && ctx->pdfstoponerror) {
+            pdfi_countdown(page_dict);
+            return code;
+        }
+    } else {
+        code = pdfi_dict_get_number(ctx, page_dict, "UserUnit", &f);
+        if (code < 0) {
+            if (code != gs_error_undefined && ctx->pdfstoponerror) {
+                pdfi_countdown(page_dict);
+                return code;
+            }
+        } else {
+            dmprintf1(ctx->memory, " UserUnit: %f ", f);
+        }
+    }
+
+    code = pdfi_dump_box(ctx, page_dict, "MediaBox");
+    if (code < 0) {
+        if (code != gs_error_undefined && ctx->pdfstoponerror) {
+            pdfi_countdown(page_dict);
+            return code;
+        }
+    }
+
+    code = pdfi_dump_box(ctx, page_dict, "CropBox");
+    if (code < 0) {
+        if (code != gs_error_undefined && ctx->pdfstoponerror) {
+            pdfi_countdown(page_dict);
+            return code;
+        }
+    }
+
+    code = pdfi_dump_box(ctx, page_dict, "BleedBox");
+    if (code < 0) {
+        if (code != gs_error_undefined && ctx->pdfstoponerror) {
+            pdfi_countdown(page_dict);
+            return code;
+        }
+    }
+
+    code = pdfi_dump_box(ctx, page_dict, "TrimBox");
+    if (code < 0) {
+        if (code != gs_error_undefined && ctx->pdfstoponerror) {
+            pdfi_countdown(page_dict);
+            return code;
+        }
+    }
+
+    code = pdfi_dump_box(ctx, page_dict, "ArtBox");
+    if (code < 0) {
+        if (code != gs_error_undefined && ctx->pdfstoponerror) {
+            pdfi_countdown(page_dict);
+            return code;
+        }
+    }
+
+    code = pdfi_dict_known(page_dict, "Rotate", &known);
+    if (code < 0) {
+        if (code != gs_error_undefined && ctx->pdfstoponerror) {
+            pdfi_countdown(page_dict);
+            return code;
+        }
+    } else {
+        code = pdfi_dict_get_number(ctx, page_dict, "Rotate", &f);
+        if (code < 0) {
+            if (code != gs_error_undefined && ctx->pdfstoponerror) {
+                pdfi_countdown(page_dict);
+                return code;
+            }
+        } else {
+            dmprintf1(ctx->memory, "    Rotate = %d ", f);
+        }
+    }
+
+    code = pdfi_check_page_transparency(ctx, page_dict, &transparent);
+    if (code < 0) {
+        if (ctx->pdfstoponerror)
+            return code;
+    } else {
+        if (transparent == true)
+            dmprintf(ctx->memory, "     Page uses transparency features");
+    }
+
+    code = pdfi_dict_known(page_dict, "Annots", &known);
+    if (code < 0) {
+        if (code != gs_error_undefined && ctx->pdfstoponerror)
+            return code;
+    } else {
+        if (known == true)
+            dmprintf(ctx->memory, "     Page contains Annotations");
+    }
+
+    dmprintf(ctx->memory, "\n\n");
+    pdfi_countdown(page_dict);
+
     return 0;
 }
 
@@ -967,6 +1284,12 @@ read_root:
     if (code < 0)
         return code;
 
+    if (ctx->pdfinfo) {
+        code = pdfi_output_metadata(ctx);
+        if (code < 0 && ctx->pdfstoponerror)
+            return code;
+    }
+
     for (i=0;i < ctx->num_pages;i++) {
         if (ctx->first_page != 0) {
             if (i < ctx->first_page - 1)
@@ -976,7 +1299,11 @@ read_root:
             if (i >= ctx->last_page - 1)
                 break;;
         }
-        code = pdfi_render_page(ctx, i);
+        if (ctx->pdfinfo)
+            code = pdfi_output_page_info(ctx, i);
+        else
+            code = pdfi_render_page(ctx, i);
+
         if (code < 0 && ctx->pdfstoponerror)
             return code;
     }

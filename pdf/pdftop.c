@@ -396,6 +396,10 @@ pdf_impl_set_param(pl_interp_implementation_t *impl,
         ctx->renderttnotdef = (bool)val;
         return 0;
     }
+    if (!strncmp(param, "PDFINFO", 13)) {
+        ctx->pdfinfo = (bool)val;
+        return 0;
+    }
     return 0;
 }
 

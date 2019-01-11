@@ -140,6 +140,8 @@ typedef struct pdf_context_s
     bool showannots;
     bool nouserunit;
     bool renderttnotdef;
+    bool pdfinfo;
+
     char *PDFPassword;
     char *PageList;
 
