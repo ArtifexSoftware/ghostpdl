@@ -58,7 +58,7 @@ pdf_detect_language(const char *s, int len)
 }
 
 static const pl_interp_characteristics_t *
-pdf_imp_characteristics(const pl_interp_implementation_t *pimpl)
+pdf_impl_characteristics(const pl_interp_implementation_t *pimpl)
 {
     static pl_interp_characteristics_t pdf_characteristics =
     {
@@ -96,14 +96,14 @@ pdf_set_icc_user_params(pl_interp_implementation_t *impl, gs_gstate *pgs)
 
 /* Do per-instance interpreter allocation/init. No device is set yet */
 static int
-pdf_imp_allocate_interp_instance(pl_interp_implementation_t *impl,
+pdf_impl_allocate_interp_instance(pl_interp_implementation_t *impl,
                                  gs_memory_t *pmem)
 {
     pdf_interp_instance_t *instance;
     pdf_context *ctx;
 
     instance = (pdf_interp_instance_t *) gs_alloc_bytes(pmem,
-            sizeof(pdf_interp_instance_t), "pdf_imp_allocate_interp_instance");
+            sizeof(pdf_interp_instance_t), "pdf_impl_allocate_interp_instance");
 
     if (!instance)
         return gs_error_VMerror;
@@ -111,7 +111,7 @@ pdf_imp_allocate_interp_instance(pl_interp_implementation_t *impl,
     ctx = pdfi_create_context(pmem);
 
     if (ctx == NULL) {
-        gs_free_object(pmem, instance, "pdf_imp_allocate_interp_instance");
+        gs_free_object(pmem, instance, "pdf_impl_allocate_interp_instance");
         return gs_error_VMerror;
     }
 
@@ -127,7 +127,7 @@ pdf_imp_allocate_interp_instance(pl_interp_implementation_t *impl,
 }
 
 static int
-pdf_imp_set_device(pl_interp_implementation_t *impl, gx_device *pdevice)
+pdf_impl_set_device(pl_interp_implementation_t *impl, gx_device *pdevice)
 {
     pdf_interp_instance_t *instance = impl->interp_client_data;
     pdf_context *ctx = instance->ctx;
@@ -194,7 +194,7 @@ cleanup_setdevice:
 
 /* Parse an entire random access file */
 static int
-pdf_imp_process_file(pl_interp_implementation_t *impl, char *filename)
+pdf_impl_process_file(pl_interp_implementation_t *impl, char *filename)
 {
     pdf_interp_instance_t *instance = impl->interp_client_data;
     pdf_context *ctx = instance->ctx;
@@ -215,7 +215,7 @@ pdf_impl_process_begin(pl_interp_implementation_t * impl)
 
 /* Parse a cursor-full of data */
 static int
-pdf_imp_process(pl_interp_implementation_t *impl, stream_cursor_read *cursor)
+pdf_impl_process(pl_interp_implementation_t *impl, stream_cursor_read *cursor)
 {
     pdf_interp_instance_t *instance = impl->interp_client_data;
     pdf_context *ctx = instance->ctx;
@@ -255,7 +255,7 @@ pdf_impl_process_end(pl_interp_implementation_t * impl)
  * Return 1 if done, 0 ok but EOJ not found, else negative error code.
  */
 static int
-pdf_imp_flush_to_eoj(pl_interp_implementation_t *impl, stream_cursor_read *pcursor)
+pdf_impl_flush_to_eoj(pl_interp_implementation_t *impl, stream_cursor_read *pcursor)
 {
     /* assume PDF cannot be pjl embedded */
     pcursor->ptr = pcursor->limit;
@@ -264,7 +264,7 @@ pdf_imp_flush_to_eoj(pl_interp_implementation_t *impl, stream_cursor_read *pcurs
 
 /* Parser action for end-of-file */
 static int
-pdf_imp_process_eof(pl_interp_implementation_t *impl)
+pdf_impl_process_eof(pl_interp_implementation_t *impl)
 {
     pdf_interp_instance_t *instance = impl->interp_client_data;
     pdf_context *ctx = instance->ctx;
@@ -289,7 +289,7 @@ pdf_imp_process_eof(pl_interp_implementation_t *impl)
 
 /* Report any errors after running a job */
 static int
-pdf_imp_report_errors(pl_interp_implementation_t *impl,
+pdf_impl_report_errors(pl_interp_implementation_t *impl,
         int code,           /* prev termination status */
         long file_position, /* file position of error, -1 if unknown */
         bool force_to_cout  /* force errors to cout */
@@ -407,7 +407,7 @@ pdf_impl_post_args_init(pl_interp_implementation_t *impl)
 
 /* Prepare interp instance for the next "job" */
 static int
-pdf_imp_init_job(pl_interp_implementation_t *impl,
+pdf_impl_init_job(pl_interp_implementation_t *impl,
                  gx_device                  *device)
 {
     pdf_interp_instance_t *instance = impl->interp_client_data;
@@ -417,19 +417,19 @@ pdf_imp_init_job(pl_interp_implementation_t *impl,
     if (getenv("PDF_DISABLE_TRANSPARENCY"))
         ctx->use_transparency = 0;
 
-    return pdf_imp_set_device(impl, device);
+    return pdf_impl_set_device(impl, device);
 }
 
 /* Wrap up interp instance after a "job" */
 static int
-pdf_imp_dnit_job(pl_interp_implementation_t *impl)
+pdf_impl_dnit_job(pl_interp_implementation_t *impl)
 {
     return 0;
 }
 
 /* Remove a device from an interperter instance */
 static int
-pdf_imp_remove_device(pl_interp_implementation_t *impl)
+pdf_impl_remove_device(pl_interp_implementation_t *impl)
 {
     pdf_interp_instance_t *instance = impl->interp_client_data;
     pdf_context *ctx = instance->ctx;
@@ -440,7 +440,7 @@ pdf_imp_remove_device(pl_interp_implementation_t *impl)
 
 /* Deallocate a interpreter instance */
 static int
-pdf_imp_deallocate_interp_instance(pl_interp_implementation_t *impl)
+pdf_impl_deallocate_interp_instance(pl_interp_implementation_t *impl)
 {
     pdf_interp_instance_t *instance = impl->interp_client_data;
     pdf_context *ctx = instance->ctx;
@@ -449,7 +449,7 @@ pdf_imp_deallocate_interp_instance(pl_interp_implementation_t *impl)
 
     code = pdfi_free_context(mem, ctx);
 
-    gs_free_object(mem, instance, "pdf_imp_deallocate_interp_instance");
+    gs_free_object(mem, instance, "pdf_impl_deallocate_interp_instance");
 
     return code;
 }
@@ -457,23 +457,23 @@ pdf_imp_deallocate_interp_instance(pl_interp_implementation_t *impl)
 /* Parser implementation descriptor */
 pl_interp_implementation_t pdf_implementation =
 {
-    pdf_imp_characteristics,
-    pdf_imp_allocate_interp_instance,
+    pdf_impl_characteristics,
+    pdf_impl_allocate_interp_instance,
     pdf_impl_get_device_memory,
     pdf_impl_set_param,
     NULL,                               /* add_path */
     pdf_impl_post_args_init,
-    pdf_imp_init_job,
+    pdf_impl_init_job,
     NULL,                               /* run_prefix_commands */
-    pdf_imp_process_file,
+    pdf_impl_process_file,
     pdf_impl_process_begin,
-    pdf_imp_process,
+    pdf_impl_process,
     pdf_impl_process_end,
-    pdf_imp_flush_to_eoj,
-    pdf_imp_process_eof,
-    pdf_imp_report_errors,
-    pdf_imp_dnit_job,
-    pdf_imp_deallocate_interp_instance,
+    pdf_impl_flush_to_eoj,
+    pdf_impl_process_eof,
+    pdf_impl_report_errors,
+    pdf_impl_dnit_job,
+    pdf_impl_deallocate_interp_instance,
     NULL,                               /* interp_client_data */
 };
 
