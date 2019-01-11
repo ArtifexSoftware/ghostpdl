@@ -263,6 +263,9 @@ xps_read_zip_dir(xps_context_t *ctx, int start_offset)
         (void) getlong(ctx->file); /* ext file atts */
         ctx->zip_table[i].offset = getlong(ctx->file);
 
+	if (ctx->zip_table[i].csize < 0 || ctx->zip_table[i].usize < 0)
+            return gs_throw(gs_error_ioerror, "cannot read zip entries larger than 2GB");
+
         ctx->zip_table[i].name = xps_alloc(ctx, namesize + 1);
         if (!ctx->zip_table[i].name)
             return gs_rethrow(gs_error_VMerror, "cannot allocate zip entry name");
