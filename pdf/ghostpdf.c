@@ -804,7 +804,7 @@ static int pdfi_set_media_size(pdf_context *ctx, pdf_dict *page_dict)
  * verify its contents and print it in a particular fashion to stdout. This
  * is used to display information about the PDF in response to -dPDFINFO
  */
-static int dump_info_string(pdf_context *ctx, pdf_dict *source_dict, char *Key)
+static int dump_info_string(pdf_context *ctx, pdf_dict *source_dict, const char *Key)
 {
     int code;
     pdf_string *s = NULL;
@@ -831,6 +831,7 @@ static int dump_info_string(pdf_context *ctx, pdf_dict *source_dict, char *Key)
             pdfi_countdown(s);
         }
     }
+    return 0;
 }
 
 static int pdfi_output_metadata(pdf_context *ctx)
@@ -926,11 +927,10 @@ static int pdfi_output_metadata(pdf_context *ctx)
  * verify its contents and print it in a particular fashion to stdout. This
  * is used to display information about the PDF in response to -dPDFINFO
  */
-static int pdfi_dump_box(pdf_context *ctx, pdf_dict *page_dict, char *Key)
+static int pdfi_dump_box(pdf_context *ctx, pdf_dict *page_dict, const char *Key)
 {
     int code, i;
     bool known = false;
-    double f;
     pdf_array *a;
 
     code = pdfi_dict_known(page_dict, Key, &known);
@@ -957,17 +957,14 @@ static int pdfi_dump_box(pdf_context *ctx, pdf_dict *page_dict, char *Key)
                     }
                 }
                 if (i == a->entries) {
-                    pdf_num *num;
-
                     dmprintf1(ctx->memory, " %s: [", Key);
                     for (i=0;i < a->entries;i++) {
                         if (i != 0)
                             dmprintf(ctx->memory, " ");
-                        num = (pdf_num *)a->values[i];
                         if (a->values[i]->type == PDF_INT)
-                            dmprintf1(ctx->memory, "%"PRIi64"", ((pdf_num *)a->values[i])->value.d);
+                            dmprintf1(ctx->memory, "%"PRIi64"", ((pdf_num *)a->values[i])->value.i);
                         else
-                            dmprintf1(ctx->memory, "%f", ((pdf_num *)a->values[i])->value.i);
+                            dmprintf1(ctx->memory, "%f", ((pdf_num *)a->values[i])->value.d);
                     }
                     dmprintf(ctx->memory, "]");
                 }
@@ -1014,7 +1011,7 @@ static int pdfi_output_page_info(pdf_context *ctx, uint64_t page_num)
         return 0;
     }
 
-    dmprintf1(ctx->memory, "Page %d", page_num + 1);
+    dmprintf1(ctx->memory, "Page %"PRIi64"", page_num + 1);
 
     code = pdfi_dict_known(page_dict, "UserUnit", &known);
     if (code < 0) {
@@ -1088,7 +1085,7 @@ static int pdfi_output_page_info(pdf_context *ctx, uint64_t page_num)
                 return code;
             }
         } else {
-            dmprintf1(ctx->memory, "    Rotate = %d ", f);
+            dmprintf1(ctx->memory, "    Rotate = %d ", (int)f);
         }
     }
 
