@@ -304,31 +304,30 @@ end
     psuserparams exch /.checkFilePermitparams load put
   .setglobal
 
-pssystemparams begin
-  /CurDisplayList 0 .forcedef
-  /CurFormCache 0 .forcedef
-  /CurInputDevice () .forcedef
-  /CurOutlineCache 0 .forcedef
-  /CurOutputDevice () .forcedef
-  /CurPatternCache 0 .forcedef
-  /CurUPathCache 0 .forcedef
-  /CurScreenStorage 0 .forcedef
-  /CurSourceList 0 .forcedef
-  /DoPrintErrors //false .forcedef
-  /JobTimeout 0 .forcedef
-  /LicenseID (LN-001) .forcedef     % bogus
-  /MaxDisplayList 140000 .forcedef
-  /MaxFormCache 100000 .forcedef
-  /MaxImageBuffer 524288 .forcedef
-  /MaxOutlineCache 65000 .forcedef
-  /MaxPatternCache 100000 .forcedef
-  /MaxUPathCache 300000 .forcedef
-  /MaxScreenStorage 84000 .forcedef
-  /MaxSourceList 25000 .forcedef
-  /PrinterName product .forcedef
-  /RamSize 4194304 .forcedef
-  /WaitTimeout 40 .forcedef
-end
+pssystemparams
+dup /CurDisplayList 0 .forceput
+dup /CurFormCache 0 .forceput
+dup /CurInputDevice () .forceput
+dup /CurOutlineCache 0 .forceput
+dup /CurOutputDevice () .forceput
+dup /CurPatternCache 0 .forceput
+dup /CurUPathCache 0 .forceput
+dup /CurScreenStorage 0 .forceput
+dup /CurSourceList 0 .forceput
+dup /DoPrintErrors //false .forceput
+dup /JobTimeout 0 .forceput
+dup /LicenseID (LN-001) .forceput     % bogus
+dup /MaxDisplayList 140000 .forceput
+dup /MaxFormCache 100000 .forceput
+dup /MaxImageBuffer 524288 .forceput
+dup /MaxOutlineCache 65000 .forceput
+dup /MaxPatternCache 100000 .forceput
+dup /MaxUPathCache 300000 .forceput
+dup /MaxScreenStorage 84000 .forceput
+dup /MaxSourceList 25000 .forceput
+dup /PrinterName product .forceput
+dup /RamSize 4194304 .forceput
+    /WaitTimeout 40 .forceput
 
 % Define the procedures for handling comment scanning.  The names
 % %ProcessComment and %ProcessDSCComment are known to the interpreter.
@@ -695,7 +694,7 @@ pop		% currentsystemparams
 /statusdict currentdict def
 
 currentdict end
-/statusdict exch .forcedef	% statusdict is local, systemdict is global
+currentdict exch /statusdict exch .forceput	% statusdict is local, systemdict is global
 
 % The following compatibility operators are in systemdict.  They are
 % defined here, rather than in gs_init.ps, because they require the

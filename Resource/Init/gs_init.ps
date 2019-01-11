@@ -54,7 +54,7 @@ systemdict exch
    dup /userdict
    currentdict dup 200 .setmaxlength		% userdict
    .forceput			% userdict is local, systemdict is global
- }
+ } executeonly
 if begin
 
 % Define dummy local/global operators if needed.
@@ -296,13 +296,6 @@ QUIET not { printgreeting flush } if
   1 index exch .makeoperator def
 } .bind def
 
-% Define a special version of def for storing local objects into global
-% dictionaries.  Like .forceput, this exists only during initialization.
-/.forcedef {		% <key> <value> .forcedef -
-  1 .argindex pop	% check # of args
-  currentdict 3 1 roll .forceput
-} .bind odef
-
 % Define procedures for accessing variables in systemdict and userdict
 % regardless of the contents of the dictionary stack.
 /.systemvar {		% <name> .systemvar <value>
@@ -344,7 +337,7 @@ DELAYBIND
        }
       ifelse
     } .bind def
-} if
+} executeonly if
 
 %**************** BACKWARD COMPATIBILITY ****************
 /hwsizedict mark /HWSize //null .dicttomark readonly def
@@ -652,7 +645,7 @@ currentdict /.typenames .undef
       /ifelse .systemvar
     ] cvx executeonly
   exch .setglobal
-} odef
+} executeonly odef
 systemdict /internaldict dup .makeinternaldict .makeoperator
 .forceput		% proc is local, systemdict is global
 
@@ -1090,7 +1083,7 @@ def
 
 % Define $error.  This must be in local VM.
 .currentglobal //false .setglobal
-/$error 40 dict .forcedef	% $error is local, systemdict is global
+currentdict /$error 40 dict .forceput	% $error is local, systemdict is global
                 % newerror, errorname, command, errorinfo,
                 % ostack, estack, dstack, recordstacks,
                 % binary, globalmode,
@@ -1109,8 +1102,8 @@ end
 % Define errordict similarly.  It has one entry per error name,
 %   plus handleerror.  However, some astonishingly badly written PostScript
 %   files require it to have at least one empty slot.
-/errordict ErrorNames length 3 add dict
-.forcedef		% errordict is local, systemdict is global
+currentdict /errordict ErrorNames length 3 add dict
+.forceput		% errordict is local, systemdict is global
 .setglobal		% back to global VM
 %  gserrordict contains all the default error handling methods, but unlike
 %  errordict it is noaccess after creation (also it is in global VM).
@@ -1283,8 +1276,9 @@ end
 (END PROCS) VMDEBUG
 
 % Define the font directory.
+currentdict
 /FontDirectory //false .setglobal 100 dict //true .setglobal
-.forcedef		% FontDirectory is local, systemdict is global
+.forceput		% FontDirectory is local, systemdict is global
 
 % Define the encoding dictionary.
 /EncodingDirectory 16 dict def	% enough for Level 2 + PDF standard encodings
@@ -2362,7 +2356,6 @@ SAFER { .setsafeglobal } if
   //systemdict /UndefinePostScriptOperators get exec
   //systemdict /UndefinePDFOperators get exec
   //systemdict /.forcecopynew .forceundef	% remove temptation
-  //systemdict /.forcedef .forceundef		% ditto
   //systemdict /.forceput .forceundef		% ditto
   //systemdict /.undef .forceundef		    % ditto
   //systemdict /.forceundef .forceundef		% ditto
@@ -2397,9 +2390,9 @@ SAFER { .setsafeglobal } if
         % (and, if implemented, context switching).
   .currentglobal //false .setglobal
      mark userparams { } forall .dicttomark readonly
-     /userparams exch .forcedef		% systemdict is read-only
+     currentdict exch /userparams exch .forceput		% systemdict is read-only
   .setglobal
-} if
+} executeonly if
 /.currentsystemparams where {
   pop
         % Remove real system params from pssystemparams.
@@ -2474,7 +2467,6 @@ end
 DELAYBIND not {
   systemdict /.bindnow .undef       % We only need this for DELAYBIND
   systemdict /.forcecopynew .undef	% remove temptation
-  systemdict /.forcedef .undef		% ditto
   systemdict /.forceput .undef		% ditto
   systemdict /.forceundef .undef	% ditto
 } if

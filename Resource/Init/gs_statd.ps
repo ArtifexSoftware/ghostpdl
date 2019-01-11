@@ -21,10 +21,10 @@ systemdict begin
         % We make statusdict a little larger for Level 2 stuff.
         % Note that it must be allocated in local VM.
  .currentglobal //false .setglobal
- /statusdict 91 dict .forcedef		% statusdict is local, sys'dict global
+ currentdict /statusdict 91 dict .forceput		% statusdict is local, sys'dict global
         % To support the Level 2 job control features,
         % serverdict must also be in local VM.
- /serverdict 10 dict .forcedef		% serverdict is local, sys'dict global
+ currentdict /serverdict 10 dict .forceput		% serverdict is local, sys'dict global
  .setglobal
 end
 

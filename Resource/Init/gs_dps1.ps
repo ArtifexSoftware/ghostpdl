@@ -33,14 +33,17 @@ systemdict begin
 
 /SharedFontDirectory .FontDirectory .gcheck
  { .currentglobal //false .setglobal
+   currentdict
    /LocalFontDirectory .FontDirectory dup maxlength dict copy
-   .forcedef	% LocalFontDirectory is local, systemdict is global
+   .forceput	% LocalFontDirectory is local, systemdict is global
    .setglobal .FontDirectory
- }
- { /LocalFontDirectory .FontDirectory
-   .forcedef	% LocalFontDirectory is local, systemdict is global
+ } executeonly
+ {
+   currentdict
+   /LocalFontDirectory .FontDirectory
+   .forceput	% LocalFontDirectory is local, systemdict is global
    50 dict
- }
+ }executeonly
 ifelse def
 
 end				% systemdict
@@ -55,7 +58,7 @@ level2dict begin
     { //SharedFontDirectory }
     { /LocalFontDirectory .systemvar }	% can't embed ref to local VM
    ifelse .forceput pop	% LocalFontDirectory is local, systemdict is global
- } .bind odef
+ } .bind executeonly odef
 % Don't just copy (load) the definition of .setglobal:
 % it gets redefined for LL3.
 /setshared { /.setglobal .systemvar exec } odef

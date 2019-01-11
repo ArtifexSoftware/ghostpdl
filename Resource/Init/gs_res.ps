@@ -41,10 +41,10 @@ level2dict begin
 % However, Ed Taft of Adobe says their interpreters don't implement this
 % either, so we aren't going to worry about it for a while.
 
-currentglobal //false setglobal systemdict begin
-  /localinstancedict 5 dict
-  .forcedef	% localinstancedict is local, systemdict is global
-end //true setglobal
+currentglobal //false setglobal
+  systemdict /localinstancedict 5 dict
+  .forceput	% localinstancedict is local, systemdict is global
+//true setglobal
 /.emptydict 0 dict readonly def
 setglobal
 
@@ -149,7 +149,7 @@ setglobal
           dup [ exch 0 -1 ] exch
           .Instances 4 2 roll put
                 % Make the Category dictionary read-only.  We will have to
-                % use .forceput / .forcedef later to replace the dummy,
+                % use .forceput / .forceput later to replace the dummy,
                 % empty .Instances dictionary with the real one later.
           readonly
         }{
@@ -304,7 +304,8 @@ systemdict begin
      dup () ne {
      .file_name_directory_separator concatstrings
     } if
-    2 index exch //false .file_name_combine not {
+    2 index exch //false
+    .file_name_combine not {
       (Error: .default_resource_dir returned ) print exch print ( that can't combine with ) print =
       /.default_resource_dir cvx /configurationerror signalerror
     } if
@@ -317,14 +318,14 @@ currentdict /pssystemparams known not {
 pssystemparams begin
   //.default_resource_dir exec
   /FontResourceDir (Font) //.resource_dir_name exec
-     readonly .forcedef	% pssys'params is r-o
+     readonly currentdict 3 1 roll .forceput	% pssys'params is r-o
   /GenericResourceDir () //.resource_dir_name exec
-     readonly .forcedef	% pssys'params is r-o
+     readonly currentdict 3 1 roll .forceput	% pssys'params is r-o
   pop % .default_resource_dir
   /GenericResourcePathSep
-        .file_name_separator readonly .forcedef		% pssys'params is r-o
-  (%diskFontResourceDir) cvn (/Resource/Font/) readonly .forcedef	% pssys'params is r-o
-  (%diskGenericResourceDir) cvn (/Resource/) readonly .forcedef	% pssys'params is r-o
+        .file_name_separator readonly currentdict 3 1 roll .forceput		% pssys'params is r-o
+  currentdict (%diskFontResourceDir) cvn (/Resource/Font/) readonly .forceput	% pssys'params is r-o
+  currentdict (%diskGenericResourceDir) cvn (/Resource/) readonly .forceput	% pssys'params is r-o
 end
 end
 
@@ -422,8 +423,8 @@ status {
                 .Instances dup //.emptydict eq {
                   pop 3 dict
                         % As noted above, Category dictionaries are read-only,
-                        % so we have to use .forcedef here.
-                  /.Instances 1 index .forcedef	% Category dict is read-only
+                        % so we have to use .forceput here.
+                  currentdict /.Instances 2 index .forceput	% Category dict is read-only
                 } executeonly if
               }
               { .LocalInstances dup //.emptydict eq
@@ -441,7 +442,7 @@ status {
            { /defineresource cvx /typecheck signaloperror
            }
         ifelse
-} .bind executeonly .makeoperator		% executeonly to prevent access to .forcedef
+} .bind executeonly .makeoperator		% executeonly to prevent access to .forceput
 /UndefineResource
         {  { dup 2 index .knownget
               { dup 1 get 1 ge
