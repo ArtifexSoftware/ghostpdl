@@ -1144,14 +1144,14 @@ pdf_context *pdfi_create_context(gs_memory_t *pmem)
     int code = 0;
 
     ctx = (pdf_context *) gs_alloc_bytes(pmem->non_gc_memory,
-            sizeof(pdf_context), "pdf_imp_allocate_interp_instance");
+            sizeof(pdf_context), "pdf_create_context");
 
     pgs = gs_gstate_alloc(pmem);
 
     if (!ctx || !pgs)
     {
         if (ctx)
-            gs_free_object(pmem->non_gc_memory, ctx, "pdf_imp_allocate_interp_instance");
+            gs_free_object(pmem->non_gc_memory, ctx, "pdf_create_context");
         if (pgs)
             gs_gstate_free(pgs);
         return NULL;
@@ -1161,7 +1161,7 @@ pdf_context *pdfi_create_context(gs_memory_t *pmem)
 
     ctx->stack_bot = (pdf_obj **)gs_alloc_bytes(pmem->non_gc_memory, INITIAL_STACK_SIZE * sizeof (pdf_obj *), "pdf_imp_allocate_interp_stack");
     if (ctx->stack_bot == NULL) {
-        gs_free_object(pmem->non_gc_memory, ctx, "pdf_imp_allocate_interp_instance");
+        gs_free_object(pmem->non_gc_memory, ctx, "pdf_create_context");
         gs_gstate_free(pgs);
         return NULL;
     }
@@ -1173,16 +1173,16 @@ pdf_context *pdfi_create_context(gs_memory_t *pmem)
 
     pmem->gs_lib_ctx->font_dir = gs_font_dir_alloc2(pmem->non_gc_memory, pmem->non_gc_memory);
     if (pmem->gs_lib_ctx->font_dir == NULL) {
-        gs_free_object(pmem->non_gc_memory, ctx->stack_bot, "pdf_imp_allocate_interp_instance");
-        gs_free_object(pmem->non_gc_memory, ctx, "pdf_imp_allocate_interp_instance");
+        gs_free_object(pmem->non_gc_memory, ctx->stack_bot, "pdf_create_context");
+        gs_free_object(pmem->non_gc_memory, ctx, "pdf_create_context");
         gs_gstate_free(pgs);
         return NULL;
     }
 
     code = gsicc_init_iccmanager(pgs);
     if (code < 0) {
-        gs_free_object(pmem->non_gc_memory, ctx->stack_bot, "pdf_imp_allocate_interp_instance");
-        gs_free_object(pmem->non_gc_memory, ctx, "pdf_imp_allocate_interp_instance");
+        gs_free_object(pmem->non_gc_memory, ctx->stack_bot, "pdf_create_context");
+        gs_free_object(pmem->non_gc_memory, ctx, "pdf_create_context");
         gs_gstate_free(pgs);
         return NULL;
     }
@@ -1229,7 +1229,7 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
             next = entry->next;
             pdfi_countdown(entry->o);
             ctx->cache_entries--;
-            gs_free_object(ctx->memory, entry, "pdfi_add_to_cache, free LRU");
+            gs_free_object(ctx->memory, entry, "pdfi_free_context, free LRU");
             entry = next;
         }
         ctx->cache_LRU = ctx->cache_MRU = NULL;
@@ -1265,7 +1265,7 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
     }
 
     if (ctx->filename) {
-        gs_free_object(ctx->memory, ctx->filename, "free copy of filename");
+        gs_free_object(ctx->memory, ctx->filename, "pdfi_free_context, free copy of filename");
         ctx->filename = NULL;
     }
 
