@@ -662,6 +662,10 @@ scan_bos_continue(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                     scan_bos_error(pstate, "bad array offset");
                     return_error(gs_error_syntaxerror);
                 }
+                if (osize > (size / 8)) {
+                    scan_bos_error(pstate, "bad array length");
+                    return_error(gs_error_syntaxerror);
+                }
                 {
                     uint aindex = value / SIZEOF_BIN_SEQ_OBJ;
 
