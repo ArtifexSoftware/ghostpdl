@@ -285,6 +285,9 @@ cmd_write_buffer(gx_device_clist_writer * cldev, byte cmd_end)
     for (; band < nbands; band++, pcls++)
         pcls->list.head = pcls->list.tail = 0;
     cldev->cnext = cldev->cbuf;
+#ifdef HAVE_VALGRIND
+    VALGRIND_MAKE_MEM_UNDEFINED(cldev->cbuf, cldev->cend - cldev->cbuf);
+#endif
     cldev->ccl = 0;
 #if defined(DEBUG) && !defined(GS_THREADSAFE)
     if (gs_debug_c('l'))
