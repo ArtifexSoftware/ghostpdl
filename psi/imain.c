@@ -129,6 +129,10 @@ gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
               int max_lib_paths)
 {
     ref *array;
+    int code = 0;
+
+    if (gs_debug_c(gs_debug_flag_init_details))
+        dmprintf1(minst->heap, "%% Init phase 0 started, instance 0x%p\n", minst);
 
     /* Do platform-dependent initialization. */
     /* We have to do this as the very first thing, */
@@ -152,7 +156,8 @@ gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
                                         "lib_path array");
     if (array == 0) {
         gs_lib_finit(1, gs_error_VMerror, minst->heap);
-        return_error(gs_error_VMerror);
+        code = gs_note_error(gs_error_VMerror);
+        goto fail;
     }
     make_array(&minst->lib_path.container, avm_foreign, max_lib_paths,
                array);
@@ -164,7 +169,12 @@ gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
     minst->lib_path.first_is_current = 0;
     minst->user_errors = 1;
     minst->init_done = 0;
-    return 0;
+
+fail:
+    if (gs_debug_c(gs_debug_flag_init_details))
+        dmprintf2(minst->heap, "%% Init phase 0 %s, instance 0x%p\n", code < 0 ? "failed" : "done", minst);
+
+    return code;
 }
 
 /* Initialization to be done before constructing any objects. */
@@ -173,51 +183,59 @@ gs_main_init1(gs_main_instance * minst)
 {
     gs_dual_memory_t idmem;
     name_table *nt = NULL;
-    int code = 0;
+    int code;
 
-    if (minst->init_done < 1) {
-        code = ialloc_init(&idmem, minst->heap,
-                        minst->memory_clump_size, gs_have_level2());
+    if (minst->init_done >= 1)
+        return 0;
 
-        if (code < 0)
-            return code;
-        code = gs_lib_init1((gs_memory_t *)idmem.space_system);
-        if (code < 0)
+    if (gs_debug_c(gs_debug_flag_init_details))
+        dmprintf1(minst->heap, "%% Init phase 1 started, instance 0x%p\n", minst);
+
+    code = ialloc_init(&idmem, minst->heap,
+                       minst->memory_clump_size, gs_have_level2());
+
+    if (code < 0)
+        goto fail_early;
+
+    code = gs_lib_init1((gs_memory_t *)idmem.space_system);
+    if (code < 0)
+        goto fail;
+    alloc_save_init(&idmem);
+    {
+        gs_memory_t *mem = (gs_memory_t *)idmem.space_system;
+        nt = names_init(minst->name_table_size, idmem.space_system);
+
+        if (nt == 0) {
+            code = gs_note_error(gs_error_VMerror);
             goto fail;
-        alloc_save_init(&idmem);
-        {
-            gs_memory_t *mem = (gs_memory_t *)idmem.space_system;
-            nt = names_init(minst->name_table_size, idmem.space_system);
-
-            if (nt == 0) {
-                code = gs_note_error(gs_error_VMerror);
-                goto fail;
-            }
-            mem->gs_lib_ctx->gs_name_table = nt;
-            code = gs_register_struct_root(mem, &mem->gs_lib_ctx->name_table_root,
-                                           (void **)&mem->gs_lib_ctx->gs_name_table,
-                                           "the_gs_name_table");
-            if (code < 0)
-                goto fail;
-            mem->gs_lib_ctx->client_check_file_permission = z_check_file_permissions;
         }
-        code = obj_init(&minst->i_ctx_p, &idmem);  /* requires name_init */
+        mem->gs_lib_ctx->gs_name_table = nt;
+        code = gs_register_struct_root(mem, &mem->gs_lib_ctx->name_table_root,
+                                       (void **)&mem->gs_lib_ctx->gs_name_table,
+                                       "the_gs_name_table");
         if (code < 0)
             goto fail;
-        minst->init_done = 1;
-        code = i_plugin_init(minst->i_ctx_p);
-        if (code < 0)
-            goto fail;
-        code = i_iodev_init(&idmem);
-        if (code < 0)
-            goto fail;
+        mem->gs_lib_ctx->client_check_file_permission = z_check_file_permissions;
     }
-    return 0;
-
+    code = obj_init(&minst->i_ctx_p, &idmem);  /* requires name_init */
+    if (code < 0)
+        goto fail;
+    minst->init_done = 1;
+    code = i_plugin_init(minst->i_ctx_p);
+    if (code < 0)
+        goto fail;
+    code = i_iodev_init(&idmem);
+    if (code < 0) {
 fail:
-    names_free(nt);
-    if (minst->i_ctx_p == NULL)
-        ialloc_finit(&idmem);
+        names_free(nt);
+        if (minst->i_ctx_p == NULL)
+            ialloc_finit(&idmem);
+    }
+fail_early:
+
+    if (gs_debug_c(gs_debug_flag_init_details))
+        dmprintf2(minst->heap, "%% Init phase 1 %s, instance 0x%p\n", code < 0 ? "failed" : "done", minst);
+
     return code;
 }
 
@@ -309,18 +327,24 @@ gs_main_init2(gs_main_instance * minst)
 {
     i_ctx_t *i_ctx_p;
     int code = gs_main_init1(minst);
-    int initial_init_level = minst->init_done;
 
     if (code < 0)
         return code;
 
+    if (minst->init_done >= 2)
+        return 0;
+
+    if (gs_debug_c(gs_debug_flag_init_details))
+        dmprintf1(minst->heap, "%% Init phase 2 started, instance 0x%p\n", minst);
+
     code = gs_main_init2aux(minst);
     if (code < 0)
-       return code;
+       goto fail;
+
     i_ctx_p = minst->i_ctx_p; /* display_set_callback or run_string may change it */
 
     /* Now process the initial saved-pages=... argument, if any as well as saved-pages-test */
-    if (initial_init_level < 2) {
+    {
        gx_device *pdev = gs_currentdevice(minst->i_ctx_p->pgs);	/* get the current device */
        gx_device_printer *ppdev = (gx_device_printer *)pdev;
 
@@ -330,10 +354,10 @@ gs_main_init2(gs_main_instance * minst)
                 minst->saved_pages_test_mode = false;  /* device doesn't support it */
             } else {
                 if ((code = gx_saved_pages_param_process(ppdev, (byte *)"begin", 5)) < 0)
-                    return code;
+                    goto fail;
                 if (code > 0)
                     if ((code = gs_erasepage(minst->i_ctx_p->pgs)) < 0)
-                        return code;
+                        goto fail;
             }
         } else if (minst->saved_pages_initial_arg != NULL) {
             if (dev_proc(pdev, dev_spec_op)(pdev, gxdso_supports_saved_pages, NULL, 0) <= 0) {
@@ -342,20 +366,28 @@ gs_main_init2(gs_main_instance * minst)
                 outprintf(minst->heap,
                           "   --saved-pages not supported by the '%s' device.\n",
                           pdev->dname);
-                return gs_error_Fatal;
+                code = gs_error_Fatal;
+                goto fail;
             }
             code = gx_saved_pages_param_process(ppdev, (byte *)minst->saved_pages_initial_arg,
                                                 strlen(minst->saved_pages_initial_arg));
             if (code > 0)
                 if ((code = gs_erasepage(minst->i_ctx_p->pgs)) < 0)
-                    return code;
+                    goto fail;
         }
     }
 
-    if (gs_debug_c(':'))
-        print_resource_usage(minst, &gs_imemory, "Start");
-    gp_readline_init(&minst->readline_data, imemory_system);
-    return 0;
+fail:
+    if (gs_debug_c(gs_debug_flag_init_details))
+        dmprintf2(minst->heap, "%% Init phase 2 %s, instance 0x%p\n", code < 0 ? "failed" : "done", minst);
+
+    if (code >= 0) {
+        if (gs_debug_c(':'))
+            print_resource_usage(minst, &gs_imemory, "Start");
+        gp_readline_init(&minst->readline_data, imemory_system);
+    }
+
+    return code;
 }
 
 /* ------ Search paths ------ */
