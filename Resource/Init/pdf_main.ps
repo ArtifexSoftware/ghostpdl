@@ -3444,13 +3444,13 @@ currentdict /PDF2PS_matrix_key undef
 end			% pdfdict
 .setglobal
 
-DELAYBIND not {
 %% This list of operators are used internally by various parts of the Ghostscript PDF interpreter.
 %% Since each operator is a potential security vulnerability, and any operator listed here
 %% is not required once the initislisation is complete and functions are bound, we undefine
 %% the ones that aren't needed at runtime.
+/.PDF_UNDEF_OPLIST
 [
-/.pdfawidthshow /.pdfwidthshow
+/.pdfawidthshow /.pdfwidthshow /.currentblackptcomp /.setblackptcomp
 /.setfillcolor /.setfillcolorspace /.setstrokecolor /.setstrokecolorspace /.currentrenderingintent /.setrenderingintent
 /.currenttextrenderingmode /.settextspacing /.currenttextspacing /.settextleading /.currenttextleading
 /.settextrise /.currenttextrise /.setwordspacing /.currentwordspacing /.settexthscaling /.currenttexthscaling
@@ -3461,7 +3461,7 @@ DELAYBIND not {
 /.abortpdf14devicefilter /.pdfinkpath /.pdfFormName /.setstrokeconstantalpha
 /.setfillconstantalpha /.setalphaisshape /.currentalphaisshape
 /.settextspacing /.currenttextspacing /.settextleading /.currenttextleading /.settextrise /.currenttextrise
-/.setwordspacing /.currentwordspacing /.settexthscaling /.currenttexthscaling
+/.setwordspacing /.currentwordspacing /.settexthscaling /.currenttexthscaling /.setPDFfontsize /.currentPDFfontsize
 /.setdistillerparams
 
 % Used by our own test suite files
@@ -3474,6 +3474,10 @@ DELAYBIND not {
 % undefining these causes errors/incorrect output
 %/.settextrenderingmode /.setblendmode /.begintransparencygroup /.settextknockout /check_r6_password /.setstrokeoverprint /.setfilloverprint
 %/.currentstrokeoverprint /.currentfilloverprint /.currentfillconstantalpha /.currentstrokeconstantalpha
-]
+] def
+
+DELAYBIND not {
+.PDF_UNDEF_OPLIST
 {systemdict exch .undef} forall
+systemdict /.PDF_UNDEF_OPLIST .undef
 } if
