@@ -2338,10 +2338,10 @@ SAFER { .setsafeglobal } if
 % This list is maintained in pdf_main.ps
 /UndefinePDFOperators {
   .PDF_UNDEF_OPLIST
-  {systemdict exch .forceundef} forall
-  systemdict /PDF_UNDEF_OPLIST .undef
+  {//systemdict exch .forceundef} forall
+  //systemdict /.PDF_UNDEF_OPLIST .forceundef
   //systemdict /UndefinePDFOperators .forceundef
-} .bind executeonly def % must be bound and hidden for .forceundef
+} .bind def
 
 % If we delayed binding, make it possible to do it later.
 /.bindnow {
