@@ -28,6 +28,8 @@
 
 #if defined(TEMPLATE_sample_unpack_1) && defined(TEMPLATE_sample_unpack_2) && defined(TEMPLATE_sample_unpack_4) && defined(TEMPLATE_sample_unpack_8)
 
+#include "valgrind.h"
+
 #if MULTIPLE_MAPS
 #   define NEXT_MAP map = smap[++smap_index % num_components_per_plane].table.lookup4x1to32
 #   define NEXT_MAP8 map = smap[++smap_index % num_components_per_plane].table.lookup8
@@ -47,6 +49,20 @@ TEMPLATE_sample_unpack_1(byte * bptr, int *pdata_x, const byte * data, int data_
     const byte *psrc = data + (data_x >> 3);
     int left = dsize - (data_x >> 3);
     DEFINE_SMAP_INDEX
+
+#ifdef PACIFY_VALGRIND
+    byte *bend = bptr + left*spread;
+    byte vbits = 0;
+
+    /* Allow for undefined bits at the end */
+    VALGRIND_GET_VBITS(&psrc[left-1], &vbits, 1);
+    /* At least the top bit must be defined. If not,
+     * don't change anything, and let valgrind complain. */
+    if ((vbits & 0x80) == 0) {
+        byte zero = 0;
+        VALGRIND_SET_VBITS(&psrc[left-1], &zero, 1);
+    }
+#endif
 
     if (spread == 1) {
         bits32 *bufp = (bits32 *) bptr;
@@ -108,6 +124,27 @@ TEMPLATE_sample_unpack_1(byte * bptr, int *pdata_x, const byte * data, int data_
             bufp += spread;
         }
     }
+#ifdef PACIFY_VALGRIND
+    /* Put any undefinedness back, and carry it over to the output. */
+    VALGRIND_SET_VBITS(psrc-1, &vbits, 1);
+    {
+        byte ones = 0xff;
+        if (vbits & 0x40)
+            VALGRIND_SET_VBITS(bend - spread*7, &ones, 1);
+        if (vbits & 0x20)
+            VALGRIND_SET_VBITS(bend - spread*6, &ones, 1);
+        if (vbits & 0x10)
+            VALGRIND_SET_VBITS(bend - spread*5, &ones, 1);
+        if (vbits & 0x08)
+            VALGRIND_SET_VBITS(bend - spread*4, &ones, 1);
+        if (vbits & 0x04)
+            VALGRIND_SET_VBITS(bend - spread*3, &ones, 1);
+        if (vbits & 0x02)
+            VALGRIND_SET_VBITS(bend - spread*2, &ones, 1);
+        if (vbits & 0x01)
+            VALGRIND_SET_VBITS(bend - spread*1, &ones, 1);
+    }
+#endif
     *pdata_x = data_x & 7;
     return bptr;
 }
@@ -129,6 +166,20 @@ TEMPLATE_sample_unpack_2(byte * bptr, int *pdata_x, const byte * data, int data_
     const byte *psrc = data + (data_x >> 2);
     int left = dsize - (data_x >> 2);
     DEFINE_SMAP_INDEX
+
+#ifdef PACIFY_VALGRIND
+    byte *bend = bptr + left*spread;
+    byte vbits = 0;
+
+    /* Allow for undefined bits at the end */
+    VALGRIND_GET_VBITS(&psrc[left-1], &vbits, 1);
+    /* At least the top 2 bits must be defined. If not,
+     * don't change anything, and let valgrind complain. */
+    if ((vbits & 0xC0) == 0) {
+        byte zero = 0;
+        VALGRIND_SET_VBITS(&psrc[left-1], &zero, 1);
+    }
+#endif
 
     if (spread == 1) {
         bits16 *bufp = (bits16 *) bptr;
@@ -164,6 +215,19 @@ TEMPLATE_sample_unpack_2(byte * bptr, int *pdata_x, const byte * data, int data_
         }
     }
     *pdata_x = data_x & 3;
+#ifdef PACIFY_VALGRIND
+    /* Put any undefinedness back, and carry it over to the output. */
+    VALGRIND_SET_VBITS(psrc-1, &vbits, 1);
+    {
+        byte ones = 0xff;
+        if (vbits & 0x30)
+            VALGRIND_SET_VBITS(bend - spread*3, &ones, 1);
+        if (vbits & 0x0C)
+            VALGRIND_SET_VBITS(bend - spread*2, &ones, 1);
+        if (vbits & 0x03)
+            VALGRIND_SET_VBITS(bend - spread*1, &ones, 1);
+    }
+#endif
     return bptr;
 }
 
@@ -181,6 +245,19 @@ TEMPLATE_sample_unpack_4(byte * bptr, int *pdata_x, const byte * data, int data_
     const byte *map = &ptab->lookup8[0];
     DEFINE_SMAP_INDEX
 
+#ifdef PACIFY_VALGRIND
+    byte vbits = 0;
+
+    /* Allow for undefined bits at the end */
+    VALGRIND_GET_VBITS(&psrc[left-1], &vbits, 1);
+    /* At least the top 4 bits must be defined. If not,
+     * don't change anything, and let valgrind complain. */
+    if ((vbits & 0xf0) == 0) {
+        byte zero = 0;
+        VALGRIND_SET_VBITS(&psrc[left-1], &zero, 1);
+    }
+#endif
+
     while (left--) {
         uint b = *psrc++;
 
@@ -191,6 +268,14 @@ TEMPLATE_sample_unpack_4(byte * bptr, int *pdata_x, const byte * data, int data_
         NEXT_MAP8;
         bufp += spread;
     }
+#ifdef PACIFY_VALGRIND
+    /* Put any undefinedness back, and carry it over to the output. */
+    VALGRIND_SET_VBITS(psrc-1, &vbits, 1);
+    if ((vbits & 0x0f) != 0) {
+        byte ones = 0xFF;
+        VALGRIND_SET_VBITS(bufp-spread, &ones, 1);
+    }
+#endif
     *pdata_x = data_x & 1;
     return bptr;
 }
