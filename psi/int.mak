@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2019 Artifex Software, Inc.
+# Copyright (C) 2001-2018 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -1772,13 +1772,13 @@ $(PSOBJ)zform.$(OBJ) : $(PSSRC)zform.c $(OP) $(ghost_h) $(oper_h)\
 # level2dict is defined.
 $(PSD)pdf.dev : $(ECHOGS_XE)\
  $(GLD)dps2lib.dev $(PSD)dps2read.dev\
- $(PSD)pdffonts.dev $(PSD)psl3.dev $(PSD)pdfread.dev $(PSD)cff.dev\
+ $(PSD)pdffonts.dev $(PSD)psl3.dev $(PSD)pdfread.dev\
  $(PSD)fmd5.dev $(PSD)fsha2.dev $(PSD)farc4.dev $(PSD)faes.dev\
  $(PSD)ttfont.dev $(PSD)type2.dev $(PSD)pdfops.dev\
  $(PSD)pdf_r6.dev $(INT_MAK) $(MAKEDIRS)
 	$(SETMOD) $(PSD)pdf -include $(PSD)psbase $(GLD)dps2lib
 	$(ADDMOD) $(PSD)pdf -include $(PSD)dps2read $(PSD)pdffonts $(PSD)psl3
-	$(ADDMOD) $(PSD)pdf -include $(GLD)psl2lib $(PSD)pdfread $(PSD)cff
+	$(ADDMOD) $(PSD)pdf -include $(GLD)psl2lib $(PSD)pdfread
 	$(ADDMOD) $(PSD)pdf -include $(PSD)fmd5 $(PSD)fsha2
 	$(ADDMOD) $(PSD)pdf -include $(PSD)farc4 $(PSD)faes.dev
 	$(ADDMOD) $(PSD)pdf -include $(PSD)ttfont $(PSD)type2
@@ -1793,13 +1793,15 @@ $(PSD)pdffonts.dev : $(ECHOGS_XE) $(INT_MAK) $(MAKEDIRS)
 	$(SETMOD) $(PSD)pdffonts -ps gs_mex_e gs_mro_e gs_pdf_e gs_wan_e
 
 $(PSD)pdfread.dev : $(ECHOGS_XE) \
- $(PSD)frsd.dev $(PSD)func4.dev $(PSD)fzlib.dev $(PSD)transpar.dev\
+ $(PSD)frsd.dev $(PSD)func4.dev $(PSD)fzlib.dev $(PSD)transpar.dev $(PSD)cff.dev\
  $(INT_MAK) $(MAKEDIRS)
 	$(SETMOD) $(PSD)pdfread -include $(PSD)frsd $(PSD)func4 $(PSD)fzlib
 	$(ADDMOD) $(PSD)pdfread -include $(PSD)transpar
 	$(ADDMOD) $(PSD)pdfread -ps pdf_ops
 	$(ADDMOD) $(PSD)pdfread -ps pdf_rbld
-	$(ADDMOD) $(PSD)pdfread -ps pdf_base pdf_draw pdf_font pdf_main pdf_sec
+	$(ADDMOD) $(PSD)pdfread -ps pdf_base pdf_draw
+	$(ADDMOD) $(PSD)pdfread -include $(PSD)cff
+	$(ADDMOD) $(PSD)pdfread -ps pdf_font pdf_main pdf_sec
 
 # ---------------- PS Support for Font API ---------------- #
 $(PSD)fapi_ps.dev : $(LIB_MAK) $(ECHOGS_XE) $(PSOBJ)zfapi.$(OBJ)\

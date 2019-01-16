@@ -33,33 +33,6 @@
 
 % Load a font file that might be an OpenType CFF font set.
 
-% <file> .loadfontfile -
-/.loadnonottofontfile /.loadfontfile load def
-/.loadfontfile {
-  dup (12345678) .peekstring pop (wOFFOTTO) eq
-  {
-    .init_wOFF_otto_font_file
-    //true //false
-  }{//true} ifelse
-
-  {
-    dup 4 string .peekstring pop (OTTO) eq
-    {
-                  % If this is a font at all, it's an OpenType CFF font set.
-      .init_otto_font_file //true
-    }
-    { //false } ifelse
-  } if
-
-  {      % Use a random FontSet resource name.  ****** WRONG ******
-    realtime rand xor =string cvs exch //false //false
-    ReadData pop
-  } {
-                % Not a TrueType font.
-    .loadnonottofontfile
-  } ifelse
-} bind def
-
 % <file> .init_otto_font_file <file>
 /.init_otto_font_file {
   /FontSetInit /ProcSet findresource begin
@@ -79,7 +52,7 @@
   exch 3 -1 roll 1 add 16 mul 12 add sub
   f exch subfilefilter flushfile	% skip to start
   f exch subfilefilter end
-} bind def
+} .bind executeonly odef
 
 % <file> .init_otto_font_file <file>
 /.init_wOFF_otto_font_file {
@@ -116,8 +89,37 @@
   { pop f exch subfilefilter /FlateDecode filter} ifelse
   end
 } bind def
-20 dict begin
 
+% <file> .loadfontfile -
+/.loadnonottofontfile /.loadfontfile load def
+/.loadfontfile {
+  dup (12345678) .peekstring pop (wOFFOTTO) eq
+  {
+    //.init_wOFF_otto_font_file exec
+    //true //false
+  }{//true} ifelse
+
+  {
+    dup 4 string .peekstring pop (OTTO) eq
+    {
+                  % If this is a font at all, it's an OpenType CFF font set.
+      .init_otto_font_file //true
+    }
+    { //false } ifelse
+  } if
+
+  {      % Use a random FontSet resource name.  ****** WRONG ******
+    realtime rand xor =string cvs exch //false //false
+    ReadData pop
+  } {
+                % Not a TrueType font.
+    .loadnonottofontfile
+  } ifelse
+} bind executeonly def
+
+currentdict /.init_wOFF_otto_font_file .forceundef
+
+20 dict begin
 % ------ Utilities ------ %
 
 /subfilefilter {	% <file> <length> subfilefilter <filter>
