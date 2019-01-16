@@ -9,57 +9,57 @@
   gtag('js', new Date());
 
   gtag('config', 'UA-54391264-2');
-</script>	
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro" rel="stylesheet">
-<link rel="shortcut icon" type="image/png" href="../../images/favicon.png">	
+<link rel="shortcut icon" type="image/png" href="../../images/favicon.png">
 <title>The Interface between Ghostscript and Device Drivers</title>
-	<!-- Originally: drivers.txt -->
+    <!-- Originally: drivers.txt -->
 <link href="style.css" rel="stylesheet" type="text/css">
 <link href="gs-style.css" rel="stylesheet" type="text/css">
 </head>
 
 <body>
-	
-	<div class="header">
-	<div class="row">
-		<div class="col-lt-6 logo"><a href="https://www.ghostscript.com/"><img src="images/ghostscript_logo.png" width="108" height="119" alt=""></a></div>
-		<div class="col-6"><div class="row"><div class="artifexlogo"><a href="https://artifex.com" target="_blank"><img src="images/Artifex_logo.png" width="194" height="40" alt=""></a></div>
-		<div class="col-12"><div class="button button1"><a href="https://artifex.com/contact-us/" title="Contact Us" target="_blank">Contact Us</a></div>
-		<div class="button button2 hidden-xs"><a href="https://www.ghostscript.com/download.html" title="Download">Download</a></div></div></div>
-	</div>
-	</div>
-	</div>
-	
-	<div class="banner">
-	<div class="row">
-		<div class="col-12">The Interface between Ghostscript and Device Drivers</div>	
-	</div>
-	</div>
-	
-	<div class="main">
-	<div class="row">
-	<div id="sidebar">
-	<div class="sidebar-item"></div>
-	<div class="col-2 leftnav">
-	<ul>
-			<li><a href="https://www.ghostscript.com/">Home</a></li>
-			<li><a href="https://www.ghostscript.com/license.html">Licensing</a></li>
-			<li><a href="https://www.ghostscript.com/releases.html">Releases</a></li>
-			<li><a href="https://www.ghostscript.com/release_history.html">Release History</a></li>
-			<li><a href="https://www.ghostscript.com/documentation.html" title="Documentation">Documentation</a></li>
-			<li><a href="https://www.ghostscript.com/download.html" title="Download">Download</a></li>
-			<li><a href="https://www.ghostscript.com/performance.html" title="Performance">Performance</a></li>
-			<li><a href="http://jbig2dec.com/" title="jbig2dec">jbig2dec</a></li>
-			<li><a href="http://git.ghostscript.com/?p=ghostpdl.git;a=summary">Source</a></li>
-			<li><a href="http://bugs.ghostscript.com/">Bugs</a></li>
-			<li><a href="https://www.ghostscript.com/faq.html" title="FAQ">FAQ</a></li>
-		</ul>
-	</div>
-	</div>	
-	<div class="col-10 page">
-		
+
+    <div class="header">
+    <div class="row">
+        <div class="col-lt-6 logo"><a href="https://www.ghostscript.com/"><img src="images/ghostscript_logo.png" width="108" height="119" alt=""></a></div>
+        <div class="col-6"><div class="row"><div class="artifexlogo"><a href="https://artifex.com" target="_blank"><img src="images/Artifex_logo.png" width="194" height="40" alt=""></a></div>
+        <div class="col-12"><div class="button button1"><a href="https://artifex.com/contact-us/" title="Contact Us" target="_blank">Contact Us</a></div>
+        <div class="button button2 hidden-xs"><a href="https://www.ghostscript.com/download.html" title="Download">Download</a></div></div></div>
+    </div>
+    </div>
+    </div>
+
+    <div class="banner">
+    <div class="row">
+        <div class="col-12">The Interface between Ghostscript and Device Drivers</div>
+    </div>
+    </div>
+
+    <div class="main">
+    <div class="row">
+    <div id="sidebar">
+    <div class="sidebar-item"></div>
+    <div class="col-2 leftnav">
+    <ul>
+            <li><a href="https://www.ghostscript.com/">Home</a></li>
+            <li><a href="https://www.ghostscript.com/license.html">Licensing</a></li>
+            <li><a href="https://www.ghostscript.com/releases.html">Releases</a></li>
+            <li><a href="https://www.ghostscript.com/release_history.html">Release History</a></li>
+            <li><a href="https://www.ghostscript.com/documentation.html" title="Documentation">Documentation</a></li>
+            <li><a href="https://www.ghostscript.com/download.html" title="Download">Download</a></li>
+            <li><a href="https://www.ghostscript.com/performance.html" title="Performance">Performance</a></li>
+            <li><a href="http://jbig2dec.com/" title="jbig2dec">jbig2dec</a></li>
+            <li><a href="http://git.ghostscript.com/?p=ghostpdl.git;a=summary">Source</a></li>
+            <li><a href="http://bugs.ghostscript.com/">Bugs</a></li>
+            <li><a href="https://www.ghostscript.com/faq.html" title="FAQ">FAQ</a></li>
+        </ul>
+    </div>
+    </div>
+    <div class="col-10 page">
+
 <!--START EDITING HERE-->
 
 <!-- [1.2 begin table of contents] ========================================= -->
@@ -80,7 +80,7 @@
   <li><a href="#Color_definition">Color definition</a></li>
 <ul>
   <li><a href="#sep_and_linear_fields">Separable and linear fields</a></li>
-  <li><a href="#Changing_color_info_data">Changing color_info data</a></li>           
+  <li><a href="#Changing_color_info_data">Changing color_info data</a></li>
 </ul>
 <li><a href="#Types">Types</a></li>
 </ul>
@@ -173,10 +173,10 @@ smurf_=&#36;(GLOBJ)joe.&#36;(OBJ) &#36;(GLOBJ)fred.&#36;(OBJ)
         &#36;(SETDEV) &#36;(DD)smurf &#36;(smurf_)
 
 &#36;(GLOBJ)joe.&#36;(OBJ) : &#36;(GLSRC)joe.c
-	&#36;(GLCC) &#36;(GLO_)joe.&#36;(OBJ) &#36;(C_) &#36;(GLSRC)joe.c
+    &#36;(GLCC) &#36;(GLO_)joe.&#36;(OBJ) &#36;(C_) &#36;(GLSRC)joe.c
 
 &#36;(GLOBJ)fred.&#36;(OBJ) : &#36;(GLSRC)fred.c
-	&#36;(GLCC) &#36;(GLO_)fred.&#36;(OBJ) &#36;(C_) &#36;(GLSRC)fred.c</pre>
+    &#36;(GLCC) &#36;(GLO_)fred.&#36;(OBJ) &#36;(C_) &#36;(GLSRC)fred.c</pre>
 </blockquote>
 
 <p>
@@ -323,21 +323,21 @@ generic device structure.  Some of the most important members of this
 structure for ordinary drivers are:</p>
 
 <blockquote><table>
-	<tr valign="top">	<td><code>const char *dname;</code></td>
-	<td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
-	<td>The device name</td></tr>
-	<tr valign="top">	<td><code>bool is_open;</code></td>
-	<td>&nbsp;</td>
-	<td>True if device has been opened</td></tr>
-<tr valign="top">	<td><code>gx_device_color_info color_info;</code></td>
-	<td>&nbsp;</td>
-	<td>Color information</td></tr>
-<tr valign="top">	<td><code>int width;</code></td>
-	<td>&nbsp;</td>
-	<td>Width in pixels</td></tr>
-<tr valign="top">	<td><code>int height;</code></td>
-	<td>&nbsp;</td>
-	<td>Height in pixels</td></tr>
+    <tr valign="top">    <td><code>const char *dname;</code></td>
+    <td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+    <td>The device name</td></tr>
+    <tr valign="top">    <td><code>bool is_open;</code></td>
+    <td>&nbsp;</td>
+    <td>True if device has been opened</td></tr>
+<tr valign="top">    <td><code>gx_device_color_info color_info;</code></td>
+    <td>&nbsp;</td>
+    <td>Color information</td></tr>
+<tr valign="top">    <td><code>int width;</code></td>
+    <td>&nbsp;</td>
+    <td>Width in pixels</td></tr>
+<tr valign="top">    <td><code>int height;</code></td>
+    <td>&nbsp;</td>
+    <td>Height in pixels</td></tr>
 </table></blockquote>
 
 <p>
@@ -352,43 +352,43 @@ structure, or to add procedures, you must change the following places:</p>
 
 <blockquote><ul>
 <li>This document and the <a href="News.htm">news document</a> (if you want
-	to keep the documentation up to date).</li>
+    to keep the documentation up to date).</li>
 <li>The definition of <code>gx_device_common</code> and the procedures
-	in <a href="../base/gxdevcli.h">gxdevcli.h</a>.</li>
+    in <a href="../base/gxdevcli.h">gxdevcli.h</a>.</li>
 <li>Possibly, the default forwarding procedures declared in
-	<a href="../base/gxdevice.h">gxdevice.h</a> and implemented in
-	<a href="../base/gdevnfwd.c">gdevnfwd.c</a>.</li>
+    <a href="../base/gxdevice.h">gxdevice.h</a> and implemented in
+    <a href="../base/gdevnfwd.c">gdevnfwd.c</a>.</li>
 <li>The device procedure record completion routines in
-	<a href="../base/gdevdflt.c">gdevdflt.c</a>.</li>
+    <a href="../base/gdevdflt.c">gdevdflt.c</a>.</li>
 <li>Possibly, the default device implementation in
-	<a href="../base/gdevdflt.c">gdevdflt.c</a>,
-	<a href="../base/gdevddrw.c">gdevddrw.c</a>, and
-	<a href="../base/gxcmap.c">gxcmap.c</a>.</li>
+    <a href="../base/gdevdflt.c">gdevdflt.c</a>,
+    <a href="../base/gdevddrw.c">gdevddrw.c</a>, and
+    <a href="../base/gxcmap.c">gxcmap.c</a>.</li>
 <li>The bounding box device in <a href="../base/gdevbbox.c">gdevbbox.c</a>
-	(probably just adding <code>NULL</code> procedure entries if the
-	new procedures don't produce output).</li>
+    (probably just adding <code>NULL</code> procedure entries if the
+    new procedures don't produce output).</li>
 <li>These devices that must have complete (non-defaulted) procedure vectors:</li>
 <ul>
 <li>The null device in <a href="../base/gdevnfwd.c">gdevnfwd.c</a>.</li>
 <li>The command list "device" in <a href="../base/gxclist.c">gxclist.c</a>.
-	This is not an actual device; it only defines procedures.</li>
+    This is not an actual device; it only defines procedures.</li>
 <li>The "memory" devices in <a href="../base/gdevmem.h">gdevmem.h</a> and
-	<code>gdevm*.c</code>.</li>
+    <code>gdevm*.c</code>.</li>
 </ul>
 <li>The clip list accumulation "device" in
-	<a href="../base/gxacpath.c">gxacpath.c</a>.</li>
+    <a href="../base/gxacpath.c">gxacpath.c</a>.</li>
 <li>The clipping "devices" <a href="../base/gxclip.c">gxclip.c</a>,
-	<a href="../base/gxclip2.c">gxclip2.c</a>,
-	and <a href="../base/gxclipm.c">gxclipm.c</a>.</li>
+    <a href="../base/gxclip2.c">gxclip2.c</a>,
+    and <a href="../base/gxclipm.c">gxclipm.c</a>.</li>
 <li>The pattern accumulation "device" in
-	<a href="../base/gxpcmap.c">gxpcmap.c</a>.</li>
+    <a href="../base/gxpcmap.c">gxpcmap.c</a>.</li>
 <li>The hit detection "device" in <a href="../base/gdevhit.c">gdevhit.c</a>.</li>
 <li>The generic printer device macros in
-	<a href="../base/gdevprn.h">gdevprn.h</a>.</li>
+    <a href="../base/gdevprn.h">gdevprn.h</a>.</li>
 <li>The generic printer device code in
-	<a href="../base/gdevprn.c">gdevprn.c</a>.</li>
+    <a href="../base/gdevprn.c">gdevprn.c</a>.</li>
 <li>The RasterOp source device in
-	<a href="../base/gdevrops.c">gdevrops.c</a>.</li>
+    <a href="../base/gdevrops.c">gdevrops.c</a>.</li>
 </ul></blockquote>
 
 <p>
@@ -491,7 +491,7 @@ typedef struct gx_device_color_info_s {
     gx_color_polarity_t polarity;
 
     /*
-     * The number of bits of gx_color_index actually used. 
+     * The number of bits of gx_color_index actually used.
      * This must be &lt;= sizeof(gx_color_index), which is usually 64.
      */
     byte depth;
@@ -501,7 +501,7 @@ typedef struct gx_device_color_info_s {
      * dither_gray values apply to this component only; all other
      * components use the max_color and dither_color values.
      *
-     * This will be GX_CINFO_COMP_NO_INDEX if there is no gray 
+     * This will be GX_CINFO_COMP_NO_INDEX if there is no gray
      * component.
      */
     byte gray_index;
@@ -526,7 +526,7 @@ typedef struct gx_device_color_info_s {
      * with configurable color models which may be set for a single
      * non-gray color model.
      */
-    gx_color_value max_gray;	/* # of distinct color levels -1 */
+    gx_color_value max_gray;    /* # of distinct color levels -1 */
     gx_color_value max_color;
 
     gx_color_value dither_grays;
@@ -589,7 +589,7 @@ typedef struct gx_device_color_info_s {
 
 <p>
 Note: See <a href="#Changing_color_info_data">Changing color_info data</a> before changing
-any information in the <code>color_info structure</code> for a device.  </p>         
+any information in the <code>color_info structure</code> for a device.  </p>
 
 <p>
 It is recommended that the values for this structure be defined using one
@@ -601,7 +601,7 @@ actual device code.</p>
 The following macros (in <a href="../base/gxdevcli.h">gxdevcli.h</a>) provide
 convenient shorthands for initializing this structure for ordinary
 black-and-white or color devices:</p>
-		
+
 <blockquote>
 <code>#define dci_black_and_white</code> ...<br>
 <code>#define dci_color(depth,maxv,dither)</code> ...
@@ -617,12 +617,12 @@ to define a 24 bit RGB device or a 4 or 32 bit CMYK device.</p>
 
 <p>
 The <code>#define dci_extended_alpha_values</code> macro (in
-<a href="../base/gxdevcli.h">gxdevcli.h</a>) 
-specifies most of the current fields in the structure. However this macro allows 
-only the default setting for the comp_shift, comp_bits, and comp_mask fields 
-to be set. Any device which requires a non-default setting for these fields 
+<a href="../base/gxdevcli.h">gxdevcli.h</a>)
+specifies most of the current fields in the structure. However this macro allows
+only the default setting for the comp_shift, comp_bits, and comp_mask fields
+to be set. Any device which requires a non-default setting for these fields
 has to correctly these fields during the device open procedure.
-See 
+See
 <a href="#sep_and_linear_fields">Separable and linear fields></a> and
 <a href="#Changing_color_info_data">Changing color_info data</a>.</p>
 
@@ -650,7 +650,7 @@ If the color is not a gray level:</p>
 If <code>max_rgb</code> is large (&gt;= 31), Ghostscript asks the device
 to approximate the color directly.  If the device returns a valid
 <code>gx_color_index</code>, Ghostscript uses it.  Otherwise,
-	Ghostscript assumes that the device can represent</blockquote>
+    Ghostscript assumes that the device can represent</blockquote>
 
 <blockquote>
 <code>dither_rgb</code> &times; <code>dither_rgb</code> &times; <code>dither_rgb</code>
@@ -662,29 +662,29 @@ the nearest ones to the desired color for halftoning.</p>
 
 <h4><a name="sep_and_linear_fields"></a>Separable and linear fields</h4>
 <p>
-The three fields <code>comp_shift</code>, <code>comp_bits</code>, and 
-<code>comp_mask</code> are only used if the <code>separable_and_linear</code> 
-field is set to <code>GX_CINFO_SEP_LIN</code>. In this situation a <code>gx_color_index</code> 
-value must represent a combination created by or'ing bits for each of the devices's 
-output colorants. The <code>comp_shift</code> array defines the location 
-(shift count) of each colorants bits in the output gx_color_index value. The 
-<code>comp_bits</code> array defines the number of bits for each colorant. 
-The <code>comp_mask</code> array contains a mask which can be used to isolate 
-the bits for each colorant. These fields must be set if the device supports 
+The three fields <code>comp_shift</code>, <code>comp_bits</code>, and
+<code>comp_mask</code> are only used if the <code>separable_and_linear</code>
+field is set to <code>GX_CINFO_SEP_LIN</code>. In this situation a <code>gx_color_index</code>
+value must represent a combination created by or'ing bits for each of the devices's
+output colorants. The <code>comp_shift</code> array defines the location
+(shift count) of each colorants bits in the output gx_color_index value. The
+<code>comp_bits</code> array defines the number of bits for each colorant.
+The <code>comp_mask</code> array contains a mask which can be used to isolate
+the bits for each colorant. These fields must be set if the device supports
 more than four colorants.</p>
 
 <h4><a name="Changing_color_info_data"></a>Changing color_info data</h4>
 
-<p> For most devices, the information in the device's <code>color_info</code> 
-structure is defined by the various device definition macros and the data remains 
-constant during the entire existence of the device. In general the Ghostscript 
-graphics assumes that the information is constant. However some devices want 
+<p> For most devices, the information in the device's <code>color_info</code>
+structure is defined by the various device definition macros and the data remains
+constant during the entire existence of the device. In general the Ghostscript
+graphics assumes that the information is constant. However some devices want
 to modify the data in this structure.</p>
 
 <p>
 The device's <code>put_params</code> procedure may change
 <code>color_info</code> field values.
-After the data has been modified then the 
+After the data has been modified then the
 device should be closed (via a call to <code>gs_closedevice</code>). Closing
 the device will erase the current page so these changes should only be made
 before anything has been drawn on a page.</p>
@@ -696,7 +696,7 @@ any other procedures are called.</p>
 <p>
 The Ghostscript graphics library
 uses some of the data in <code>color_info</code> to set the default
-procedures for the 
+procedures for the
 <code>get_color_mapping_procs</code>,
 <code>get_color_comp_index</code>,
 <code>encode_color</code>, and
@@ -707,8 +707,8 @@ device is originally created. If any changes are made to the
 procedure
 has responsibility for insuring that the correct procedures are contained
 in the device structure. (For an example, see the display device open procedure
-<code>display_open</code> and its subroutine 
-<code>display_set_color_format</code> 
+<code>display_open</code> and its subroutine
+<code>display_set_color_format</code>
 (in <a href="../devices/gdevdsp.c">gdevdsp.c</a>).</p>
 
 
@@ -737,20 +737,20 @@ and <code>gx_max_color_value</code> is the maximum value, equal to
 </dl>
 
 <dl>
-<dt><code>gx_device</code> (defined in 
+<dt><code>gx_device</code> (defined in
 <a href="../base/gxdevice.h">gxdevice.h</a>)</dt>
 <dd>This is the device structure, as explained above.</dd>
 </dl>
 
 <dl>
-<dt><code>gs_matrix</code> (defined in 
+<dt><code>gs_matrix</code> (defined in
 <a href="../base/gsmatrix.h">gsmatrix.h</a>)</dt>
 <dd>This is a 2-D homogeneous coordinate transformation matrix, used by
 many Ghostscript operators.</dd>
 </dl>
 
 <dl>
-<dt><code>gx_color_index</code> (defined in 
+<dt><code>gx_color_index</code> (defined in
 <a href="../base/gxcindex.h">gxcindex.h</a>)</dt>
 <dd>This is meant to be whatever the driver uses to represent a device
 color.  For example, it might be an index in a color map, or it might be R,
@@ -769,8 +769,8 @@ value <code>gx_no_color_index</code> (defined as
 the procedures.</p>
 
 <p>
-The size of <code>gx_color_index</code> can be either 32 or 64 bits. The 
-choice depends upon the architecture of the CPU and the compiler. The default 
+The size of <code>gx_color_index</code> can be either 32 or 64 bits. The
+choice depends upon the architecture of the CPU and the compiler. The default
 type definition is simply: </p>
 
 <blockquote><code>
@@ -786,7 +786,7 @@ typedef GX_COLOR_INDEX_TYPE gx_color_index;
 
 <p>The smaller size (32 bits) may produce more efficient or faster executing
 code. The larger size (64 bits) is needed for representing either more
-bits per component or more components. An example of the later case is 
+bits per component or more components. An example of the later case is
 a device that supports 8 bit contone colorants using a DeviceCMYK process
 color model with its four colorants and also supports additional spot
 colorants.</p>
@@ -797,9 +797,9 @@ compiler being used, and if a 64 bit type is found then
 <code>GX_COLOR_INDEX_TYPE</code> is set to the type.</p>
 
 <p>
-For Microsoft and the MSVC compiler, <code>GX_COLOR_INDEX_TYPE</code> will 
-be set to <code>unsigned _int64</code> if <code>USE_LARGE_COLOR_INDEX</code> 
-is set to 1 either on the make command line or by editing the definition 
+For Microsoft and the MSVC compiler, <code>GX_COLOR_INDEX_TYPE</code> will
+be set to <code>unsigned _int64</code> if <code>USE_LARGE_COLOR_INDEX</code>
+is set to 1 either on the make command line or by editing the definition
  in <a href="../psi/msvc32.mak">msvc32.mak</a> </p>
 </dl>
 
@@ -818,8 +818,8 @@ the <a href="#Parameters">description of the <code>get_params</code> and
 <br><code>gx_strip_bitmap</code> (defined in
 <a href="../base/gxbitmap.h">gxbitmap.h</a>)</dt>
 <dd>These structure types represent bitmaps to be used as a tile for
-filling a region (rectangle).  <code>gx_tile_bitmap</code> is an 
-older, deprecated type lacking <code>shift</code> and 
+filling a region (rectangle).  <code>gx_tile_bitmap</code> is an
+older, deprecated type lacking <code>shift</code> and
 <code>rep_shift</code>;
 <code>gx_strip_bitmap</code> has superseded it, and should be
 used in new code.  Here is a copy of the relevant part of the file:</dd>
@@ -948,7 +948,7 @@ reading the code for existing drivers: driver procedures must not use
 <code>malloc</code> to allocate any storage that stays around after the
 procedure returns. Instead, they must use <code>gs_malloc</code> and
 <code>gs_free</code>, which have slightly different calling conventions.
-(The prototypes for these are in <a href="../base/gsmemory.h">gsmemory.h</a>, 
+(The prototypes for these are in <a href="../base/gsmemory.h">gsmemory.h</a>,
 which is included in <a href="../base/gx.h">gx.h</a>, which is included in <a
 href="../base/gdevprn.h">gdevprn.h</a>.) This is necessary so that
 Ghostscript can clean up all allocated memory before exiting, which is
@@ -1006,7 +1006,7 @@ and <a href="../base/gsstruct.h">gsstruct.h</a>. </p>
 
 <p>
 Printer drivers (which include drivers that write some kind of raster file)
-are especially simple to implement.  
+are especially simple to implement.
 The printer driver must implement a <code>print_page</code> or
 <code>print_page_copies</code> procedure.  There are macros in <a
 href="../base/gdevprn.h">gdevprn.h</a> that generate the device structure for
@@ -1029,7 +1029,7 @@ int (*print_page_copies)(gx_device_printer *, FILE *, int)</pre>
 This procedure must read out the rendered image from the device and write
 whatever is appropriate to the file.  To read back one or more scan lines
 of the image, the <code>print_page</code> procedure must call one of
-several procedures. Traditionally devices have called 
+several procedures. Traditionally devices have called
 <tt>gdev_prn_copy_scan_lines</tt>, <tt>gdev_prn_get_bits</tt>, or
 the generic <tt>get_bits_rectangle</tt> device entry point. Alternatively
 devices may now call the new <tt>process_page</tt> entrypoint, which can
@@ -1309,7 +1309,7 @@ default implementation allows copying the device prototype, but does not
 allow copying device instances, because instances may contain internal
 pointers that should not be shared between copies, and there is no way to
 determine this from outside the device. <b>NOTE</b>: Clients should never
-call a device's <code>finish_copydevice</code> procedure: this procedure 
+call a device's <code>finish_copydevice</code> procedure: this procedure
 is only intended for use by <code>gs_copydevice[2]</code>. </dd>
 </dl>
 
@@ -1366,12 +1366,12 @@ the driver's <code>put_params</code> procedure), the driver must call
 <code>gx_device_decache_colors(dev)</code>.</p>
 
 <p>
-The <code>map_rgb_color</code>, <code>map_color_rgb</code>, and 
+The <code>map_rgb_color</code>, <code>map_color_rgb</code>, and
 <code>map_cmyk_color</code> are obsolete. They have been left
 in the device procedure list for backward compatibility. See the
 <code>encode_color</code> and <code>decode_color</code> procedures
 below. To insure that older device drivers are changed to use the new
-<code>encode_color</code> and <code>decode_color</code> 
+<code>encode_color</code> and <code>decode_color</code>
 procedures,
 the parameters for the older procedures have been changed to
 match the new procedures.  To minimize changes in devices that have
@@ -1501,7 +1501,7 @@ means fully opaque.  The default is to use the
 Note that if a driver implements <code>map_rgb_alpha_color</code>, it
 must also implement <code>encode_color</code>, and must implement them
 in such a way that
-<code>map_rgb_alpha_color(dev,&nbsp;r,&nbsp;g,&nbsp;b,&nbsp;gx_max_color_value)</code> 
+<code>map_rgb_alpha_color(dev,&nbsp;r,&nbsp;g,&nbsp;b,&nbsp;gx_max_color_value)</code>
 returns the same value as
 <code>encode_color(dev,&nbsp;CV)</code>. </p>
 </dl>
@@ -1522,7 +1522,7 @@ in such a way that the first 3 values returned by
 <code>decode_color</code>.</p>
 
 <p>
-Note that only RGB devices currently support variable opacity; alpha is ignored 
+Note that only RGB devices currently support variable opacity; alpha is ignored
 on other devices. The PDF 1.4 transparency features are supported on all devices. </p>
 </dl>
 
@@ -1847,9 +1847,9 @@ effectively ignores the compositing function.</li>
 compositing (for example, some memory devices) ask the
 <code>gs_composite_t</code> to create a default compositor. </li>
 
-<li>Leaf devices that can implement some kinds of compositing operation 
+<li>Leaf devices that can implement some kinds of compositing operation
 efficiently (for example, monobit memory devices and RasterOp) inspect the
-type and values of <code>*pcte</code> to determine whether it specifies 
+type and values of <code>*pcte</code> to determine whether it specifies
 such an operation: if so, they create a specialized compositor, and if not,
 they ask the <code>gs_composite_t</code> to create a default compositor. </li>
 </ul>
@@ -1924,24 +1924,24 @@ may each (independently) be a solid color, a bitmap with "foreground" and
 slow) operation.  The arguments are as follows:</dd>
 
 <blockquote><table>
-<tr valign="top">	<td><code>dev</code></td>
-	<td>&nbsp;</td>
-	<td>the device, as for all driver procedures</td></tr>
-<tr valign="top">	<td><code>sdata</code>, <code>sourcex</code>, <code>sraster</code>, <code>id</code>, <code>scolors</code></td>
-	<td>&nbsp;</td>
-	<td>specify <b>S</b>, <a href="#S_spec">see below</a></td></tr>
-<tr valign="top">	<td><code>texture</code>, <code>tcolors</code></td>
-	<td>&nbsp;</td>
-	<td>specify <b>T</b>, <a href="#T_spec">see below</a></td></tr>
-<tr valign="top">	<td><code>x</code>, <code>y</code>, <code>width</code>, <code>height</code></td>
-	<td>&nbsp;</td>
-	<td>as for the other copy and fill procedures</td></tr>
-<tr valign="top">	<td><code>phase_x</code>, <code>phase_y</code></td>
-	<td>&nbsp;</td>
-	<td>part of <b>T</b> specification, <a href="#T_spec">see below</a></td></tr>
-<tr valign="top">	<td><code>command</code></td>
-	<td>&nbsp;</td>
-	<td><a href="#F_spec">see below</a></td></tr>
+<tr valign="top">    <td><code>dev</code></td>
+    <td>&nbsp;</td>
+    <td>the device, as for all driver procedures</td></tr>
+<tr valign="top">    <td><code>sdata</code>, <code>sourcex</code>, <code>sraster</code>, <code>id</code>, <code>scolors</code></td>
+    <td>&nbsp;</td>
+    <td>specify <b>S</b>, <a href="#S_spec">see below</a></td></tr>
+<tr valign="top">    <td><code>texture</code>, <code>tcolors</code></td>
+    <td>&nbsp;</td>
+    <td>specify <b>T</b>, <a href="#T_spec">see below</a></td></tr>
+<tr valign="top">    <td><code>x</code>, <code>y</code>, <code>width</code>, <code>height</code></td>
+    <td>&nbsp;</td>
+    <td>as for the other copy and fill procedures</td></tr>
+<tr valign="top">    <td><code>phase_x</code>, <code>phase_y</code></td>
+    <td>&nbsp;</td>
+    <td>part of <b>T</b> specification, <a href="#T_spec">see below</a></td></tr>
+<tr valign="top">    <td><code>command</code></td>
+    <td>&nbsp;</td>
+    <td><a href="#F_spec">see below</a></td></tr>
 </table></blockquote>
 </dl>
 
@@ -2053,36 +2053,36 @@ replicated or clipped as needed.</p>
 
 <blockquote><table>
 <tr valign="bottom">
-	<th colspan ="3">Bits</th>
+    <th colspan ="3">Bits</th>
 </tr>
-<tr valign="top">	<td>7-0</td>
-	<td>&nbsp;</td>
-	<td>raster op</td></tr>
-<tr valign="top">	<td>8</td>
-	<td>&nbsp;</td>
-	<td>0 if source opaque, 1 if source transparent</td></tr>
-<tr valign="top">	<td>9</td>
-	<td>&nbsp;</td>
-	<td>0 if texture opaque, 1 if texture transparent</td></tr>
-<tr valign="top">	<td>10</td>
-	<td>&nbsp;</td>
-	<td>1 if pdf transparency is in use, 0 otherwise. This makes no
+<tr valign="top">    <td>7-0</td>
+    <td>&nbsp;</td>
+    <td>raster op</td></tr>
+<tr valign="top">    <td>8</td>
+    <td>&nbsp;</td>
+    <td>0 if source opaque, 1 if source transparent</td></tr>
+<tr valign="top">    <td>9</td>
+    <td>&nbsp;</td>
+    <td>0 if texture opaque, 1 if texture transparent</td></tr>
+<tr valign="top">    <td>10</td>
+    <td>&nbsp;</td>
+    <td>1 if pdf transparency is in use, 0 otherwise. This makes no
 difference to the rendering, but forces the raster operation to be considered
-		non-idempotent by internal routines.</td></tr>
-<tr valign="top">	<td>11</td>
-	<td>&nbsp;</td>
-	<td>1 if the target of this operation is a specific plane, rather
+        non-idempotent by internal routines.</td></tr>
+<tr valign="top">    <td>11</td>
+    <td>&nbsp;</td>
+    <td>1 if the target of this operation is a specific plane, rather
 than all planes. The plane in question is given by bits 13 upwards. This
 is only used by the planar device.</td></tr>
-<tr valign="top">	<td>12-</td>
-	<td>&nbsp;</td>
-	<td>If bit 11 = 1, then bits 12 upwards give the plane number to
-		operate on. Otherwise, should be set to 0.</td></tr>
+<tr valign="top">    <td>12-</td>
+    <td>&nbsp;</td>
+    <td>If bit 11 = 1, then bits 12 upwards give the plane number to
+        operate on. Otherwise, should be set to 0.</td></tr>
 </table></blockquote>
 
 <p>In general most devices should just check to see that bits they do not
 handle (11 and above typically) are zero, and should jump to the default
-	implementation, or return an error otherwise.</p>
+    implementation, or return an error otherwise.</p>
 
 <p>
 The raster operation follows the Microsoft and H-P specification.  It is an
@@ -2091,74 +2091,74 @@ possible 2&times;2&times;2 input values as follows:</p>
 
 <blockquote><table>
 <tr valign="bottom">
-	<th>Bit</th>
-	<th>&nbsp;</th>
-	<th>Texture</th>
-	<th>&nbsp;</th>
-	<th>Source</th>
-	<th>&nbsp;</th>
-	<th>Destination</th></tr>
-<tr valign="top">	<td align="center">7</td>
-	<td>&nbsp;</td>
-	<td align="center">1</td>
-	<td>&nbsp;</td>
-	<td align="center">1</td>
-	<td>&nbsp;</td>
-	<td align="center">1</td></tr>
-<tr valign="top">	<td align="center">6</td>
-	<td>&nbsp;</td>
-	<td align="center">1</td>
-	<td>&nbsp;</td>
-	<td align="center">1</td>
-	<td>&nbsp;</td>
-	<td align="center">0</td></tr>
-<tr valign="top">	<td align="center">5</td>
-	<td>&nbsp;</td>
-	<td align="center">1</td>
-	<td>&nbsp;</td>
-	<td align="center">0</td>
-	<td>&nbsp;</td>
-	<td align="center">1</td></tr>
-<tr valign="top">	<td align="center">4</td>
-	<td>&nbsp;</td>
-	<td align="center">1</td>
-	<td>&nbsp;</td>
-	<td align="center">0</td>
-	<td>&nbsp;</td>
-	<td align="center">0</td></tr>
-<tr valign="top">	<td align="center">3</td>
-	<td>&nbsp;</td>
-	<td align="center">0</td>
-	<td>&nbsp;</td>
-	<td align="center">1</td>
-	<td>&nbsp;</td>
-	<td align="center">1</td></tr>
-<tr valign="top">	<td align="center">2</td>
-	<td>&nbsp;</td>
-	<td align="center">0</td>
-	<td>&nbsp;</td>
-	<td align="center">1</td>
-	<td>&nbsp;</td>
-	<td align="center">0</td></tr>
-<tr valign="top">	<td align="center">1</td>
-	<td>&nbsp;</td>
-	<td align="center">0</td>
-	<td>&nbsp;</td>
-	<td align="center">0</td>
-	<td>&nbsp;</td>
-	<td align="center">1</td></tr>
-<tr valign="top">	<td align="center">0</td>
-	<td>&nbsp;</td>
-	<td align="center">0</td>
-	<td>&nbsp;</td>
-	<td align="center">0</td>
-	<td>&nbsp;</td>
-	<td align="center">0</td></tr>
+    <th>Bit</th>
+    <th>&nbsp;</th>
+    <th>Texture</th>
+    <th>&nbsp;</th>
+    <th>Source</th>
+    <th>&nbsp;</th>
+    <th>Destination</th></tr>
+<tr valign="top">    <td align="center">7</td>
+    <td>&nbsp;</td>
+    <td align="center">1</td>
+    <td>&nbsp;</td>
+    <td align="center">1</td>
+    <td>&nbsp;</td>
+    <td align="center">1</td></tr>
+<tr valign="top">    <td align="center">6</td>
+    <td>&nbsp;</td>
+    <td align="center">1</td>
+    <td>&nbsp;</td>
+    <td align="center">1</td>
+    <td>&nbsp;</td>
+    <td align="center">0</td></tr>
+<tr valign="top">    <td align="center">5</td>
+    <td>&nbsp;</td>
+    <td align="center">1</td>
+    <td>&nbsp;</td>
+    <td align="center">0</td>
+    <td>&nbsp;</td>
+    <td align="center">1</td></tr>
+<tr valign="top">    <td align="center">4</td>
+    <td>&nbsp;</td>
+    <td align="center">1</td>
+    <td>&nbsp;</td>
+    <td align="center">0</td>
+    <td>&nbsp;</td>
+    <td align="center">0</td></tr>
+<tr valign="top">    <td align="center">3</td>
+    <td>&nbsp;</td>
+    <td align="center">0</td>
+    <td>&nbsp;</td>
+    <td align="center">1</td>
+    <td>&nbsp;</td>
+    <td align="center">1</td></tr>
+<tr valign="top">    <td align="center">2</td>
+    <td>&nbsp;</td>
+    <td align="center">0</td>
+    <td>&nbsp;</td>
+    <td align="center">1</td>
+    <td>&nbsp;</td>
+    <td align="center">0</td></tr>
+<tr valign="top">    <td align="center">1</td>
+    <td>&nbsp;</td>
+    <td align="center">0</td>
+    <td>&nbsp;</td>
+    <td align="center">0</td>
+    <td>&nbsp;</td>
+    <td align="center">1</td></tr>
+<tr valign="top">    <td align="center">0</td>
+    <td>&nbsp;</td>
+    <td align="center">0</td>
+    <td>&nbsp;</td>
+    <td align="center">0</td>
+    <td>&nbsp;</td>
+    <td align="center">0</td></tr>
 </table></blockquote>
 
 <p>
-Transparency affects the output in the following way. A source or texture 
-pixel is considered transparent if its value is all 1s (for instance, 1 for 
+Transparency affects the output in the following way. A source or texture
+pixel is considered transparent if its value is all 1s (for instance, 1 for
 bitmaps, <tt>0xffffff</tt> for 24-bit RGB pixmaps) <b><em>and</em></b> the
 corresponding transparency bit is set in the command. For each pixel, the
 result of the Boolean operation is written into the destination iff neither
@@ -2166,7 +2166,7 @@ the source nor the texture pixel is transparent. (Note that the HP
 RasterOp specification, on which this is based, specifies that if the
 source and texture are both all 1s and the command specifies transparent
 source and opaque texture, the result <b><em>should</em></b> be written in
-	the output. We think this is an error in the documentation.) </p>
+    the output. We think this is an error in the documentation.) </p>
 
 <h5><a name="Compositing_notes"></a>Notes</h5>
 
@@ -2260,9 +2260,9 @@ region is to the right of it.</p>
 <dl>
 <dt><code>int (*fill_trapezoid)(gx_device&nbsp;*dev, const&nbsp;
 gs_fixed_edge&nbsp;*left, const&nbsp;gs_fixed_edge&nbsp;*right,
-fixed&nbsp;ybot, fixed&nbsp;ytop, bool&nbsp;swap_axes, 
+fixed&nbsp;ybot, fixed&nbsp;ytop, bool&nbsp;swap_axes,
 const&nbsp;gx_drawing_color&nbsp;*pdcolor,
-gs_logical_operation_t&nbsp;lop)</code> <b><em>[OPTIONAL]</em></b></dt> 
+gs_logical_operation_t&nbsp;lop)</code> <b><em>[OPTIONAL]</em></b></dt>
 <dd>Fill a trapezoid. The bottom and top edges are parallel to the x
 axis, and are defined by <code>ybot</code> and <code>ytop</code>,
 respectively.  The left and right edges are defined by <code>left</code>
@@ -2274,7 +2274,7 @@ The y coordinates of these lines need not have any specific relation to
 that the filling algorithm can subdivide edges and still guarantee
 that the exact same pixels will be filled. If
 <code>swap_axes</code> is set, the meanings of X and Y are
-interchanged. 
+interchanged.
 </dd>
 
 <dt><code>int (*fill_parallelogram)(gx_device&nbsp;*dev,
@@ -2313,7 +2313,7 @@ implement it.</dd>
 <h3><a name="Linear_color_drawing"></a>Linear color drawing</h3>
 
 <p>
-Linear color functions allow fast high quality rendering of 
+Linear color functions allow fast high quality rendering of
 shadings on continuous tone devices. They implement filling simple areas
 with a lineary varying color. These functions are not called if the device applies halftones,
 or uses a non-separable or a non-linear color model.</p>
@@ -2321,9 +2321,9 @@ or uses a non-separable or a non-linear color model.</p>
 <dl>
 <dt><code> int (*fill_linear_color_triangle)
   (dev_t *dev, const gs_fill_attributes *fa,
-	const gs_fixed_point *p0, const gs_fixed_point *p1,
-	const gs_fixed_point *p2,
-	const frac31 *c0, const frac31 *c1, const frac31 *c2)
+    const gs_fixed_point *p0, const gs_fixed_point *p1,
+    const gs_fixed_point *p2,
+    const frac31 *c0, const frac31 *c1, const frac31 *c2)
 </code></dt>
 <b><em>[OPTIONAL]</em></b>
 <dd>This function is the highest level one within the linear color function group.
@@ -2340,7 +2340,7 @@ The color of each pixel within the triangle is computed as a linear interpolatio
 of vertex colors.</dd>
 <dd>
 The implementation may reject the request if the area or the color appears too complex
-for filling in a single action. For doing that the implementation returns 0 and must not 
+for filling in a single action. For doing that the implementation returns 0 and must not
 paint any pixel. In this case the graphics library will perform a subdivision of the area
 into smaller triangles and call the function again with smaller areas.</dd>
 <dd>
@@ -2352,7 +2352,7 @@ The graphics libary is smart enough to do that properly.</dd>
 <dd>
 <b><em>Important note :</em></b>
 The implementation must handle a special case, when only 2 colors are specified.
-It happens if <code>p2</code> is <code>NULL</code>. 
+It happens if <code>p2</code> is <code>NULL</code>.
 This means that the color does not depend on the X coordinate,
 i.e. it forms a linear gradient along the Y axis.
 The implementation must not reject (return 0) such cases.</dd>
@@ -2381,10 +2381,10 @@ in <code>gdevddrw.c</code> for sample code.</dd>
 <dl>
 <dt><code> int (*fill_linear_color_trapezoid)
   (dev_t *dev, const gs_fill_attributes *fa,
-	const gs_fixed_point *p0, const gs_fixed_point *p1,
-	const gs_fixed_point *p2, const gs_fixed_point *p3,
-	const frac31 *c0, const frac31 *c1,
-	const frac31 *c2, const frac31 *c2)
+    const gs_fixed_point *p0, const gs_fixed_point *p1,
+    const gs_fixed_point *p2, const gs_fixed_point *p3,
+    const frac31 *c0, const frac31 *c1,
+    const frac31 *c2, const frac31 *c2)
 </code></dt>
 <b><em>[OPTIONAL]</em></b>
 <dd>This function is a lower level one within the linear color function group.
@@ -2396,7 +2396,7 @@ when a decomposition into triangles appears undesirable.</dd>
 While the prototype can specify a bilinear color,
 we assume that the implementation handles linear colors only.
 This means that the implementation can ignore any of <code> c0, c1, c2, c3 </code>.
-The graphics library takes a special care of the color linearity 
+The graphics library takes a special care of the color linearity
 when calling this function. The reason for passing all 4 color arguments
 is to avoid color precision problems.</dd>
 <dd>
@@ -2409,7 +2409,7 @@ A linear color function is generated from it as <code> gx_fill_trapezoid_ns_lc <
 with the following template parameters :</dd>
 
 <pre>
-#define LINEAR_COLOR 1 
+#define LINEAR_COLOR 1
 #define EDGE_TYPE gs_linear_color_edge
 #define FILL_ATTRS const gs_fill_attributes *
 #define CONTIGUOUS_FILL 0
@@ -2427,11 +2427,11 @@ that can't be painted in a single action due to 64-bits fixed overflows.</p>
 <dl>
 <dt><code> int (*fill_linear_color_scanline)
       (dev_t *dev, const gs_fill_attributes *fa,
-	int i, int j, int w,
-	const frac31 *c0,
-	const int32_t *c0_f,
-	const int32_t *cg_num,
-	int32_t cg_den)
+    int i, int j, int w,
+    const frac31 *c0,
+    const int32_t *c0_f,
+    const int32_t *cg_num,
+    int32_t cg_den)
 </code>
 <b><em>[OPTIONAL]</em></b></dt>
 <dd>This function is the lowest level one within the linear color function group.
@@ -2443,12 +2443,12 @@ Thus if the device implements <code> fill_linear_color_triangle </code> and
 this function may be left unimplemented.</dd>
 <dd>
 <code>i</code> and <code>j</code> specify device coordinates (indices)
-of the starting pixel of the scanline, <code>w</code> specifies the 
+of the starting pixel of the scanline, <code>w</code> specifies the
 width of the scanline, i.e. the number of pixels to be painted to the right from
 the starting pixel, including the starting pixel.</dd>
 <dd>
 <code>c0</code> specifies the color for the starting pixel
-as a vector of fraction values, each of which represents 
+as a vector of fraction values, each of which represents
 a color value in the interval <code>[0,1]</code>.</dd>
 <dd>
 <code>c0_f</code> specify a fraction part of the color for the starting pixel.
@@ -2493,34 +2493,34 @@ implement these high-level operations directly.  For more details, please
 consult the source code, specifically:</p>
 
 <blockquote><table>
-<tr valign="top">	<th align="left">Header</th>
-	<th>&nbsp;&nbsp;&nbsp;</th>
-	<th align="left">Defines</th></tr>
-<tr valign="top">	<td><a href="../base/gxpaint.h">gxpaint.h</a></td>
-	<td>&nbsp;</td>
-	<td><code>gx_fill_params</code>, <code>gx_stroke_params</code></td></tr>
-<tr valign="top">	<td><a href="../base/gxfixed.h">gxfixed.h</a></td>
-	<td>&nbsp;</td>
-	<td><code>fixed</code>, <code>gs_fixed_point</code> (used by
-	<code>gx_*_params</code>)</td></tr>
-<tr valign="top">	<td><a href="../base/gxgstate.h">gxgstate.h</a></td>
-	<td>&nbsp;</td>
-	<td><code>gs_imager_state</code> (used by <code>gx_*_params</code>)</td></tr>
-<tr valign="top">	<td><a href="../base/gxline.h">gxline.h</a></td>
-	<td>&nbsp;</td>
-	<td><code>gx_line_params</code> (used by <code>gs_imager_state</code>)</td></tr>
-<tr valign="top">	<td><a href="../base/gslparam.h">gslparam.h</a></td>
-	<td>&nbsp;</td>
-	<td>line cap/join values (used by <code>gx_line_params</code>)</td></tr>
-<tr valign="top">	<td><a href="../base/gxmatrix.h">gxmatrix.h</a></td>
-	<td>&nbsp;</td>
-	<td><code>gs_matrix_fixed</code> (used by <code>gs_imager_state</code>)</td></tr>
-<tr valign="top">	<td><a href="../base/gspath.h">gspath.h</a>, <a href="../base/gxpath.h">gxpath.h</a>, <a href="../base/gzpath.h">gzpath.h</a></td>
-	<td>&nbsp;</td>
-	<td><code>gx_path</code></td></tr>
-<tr valign="top">	<td><a href="../base/gxcpath.h">gxcpath.h</a>, <a href="../base/gzcpath.h">gzcpath.h</a></td>
-	<td>&nbsp;</td>
-	<td><code>gx_clip_path</code></td></tr>
+<tr valign="top">    <th align="left">Header</th>
+    <th>&nbsp;&nbsp;&nbsp;</th>
+    <th align="left">Defines</th></tr>
+<tr valign="top">    <td><a href="../base/gxpaint.h">gxpaint.h</a></td>
+    <td>&nbsp;</td>
+    <td><code>gx_fill_params</code>, <code>gx_stroke_params</code></td></tr>
+<tr valign="top">    <td><a href="../base/gxfixed.h">gxfixed.h</a></td>
+    <td>&nbsp;</td>
+    <td><code>fixed</code>, <code>gs_fixed_point</code> (used by
+    <code>gx_*_params</code>)</td></tr>
+<tr valign="top">    <td><a href="../base/gxgstate.h">gxgstate.h</a></td>
+    <td>&nbsp;</td>
+    <td><code>gs_imager_state</code> (used by <code>gx_*_params</code>)</td></tr>
+<tr valign="top">    <td><a href="../base/gxline.h">gxline.h</a></td>
+    <td>&nbsp;</td>
+    <td><code>gx_line_params</code> (used by <code>gs_imager_state</code>)</td></tr>
+<tr valign="top">    <td><a href="../base/gslparam.h">gslparam.h</a></td>
+    <td>&nbsp;</td>
+    <td>line cap/join values (used by <code>gx_line_params</code>)</td></tr>
+<tr valign="top">    <td><a href="../base/gxmatrix.h">gxmatrix.h</a></td>
+    <td>&nbsp;</td>
+    <td><code>gs_matrix_fixed</code> (used by <code>gs_imager_state</code>)</td></tr>
+<tr valign="top">    <td><a href="../base/gspath.h">gspath.h</a>, <a href="../base/gxpath.h">gxpath.h</a>, <a href="../base/gzpath.h">gzpath.h</a></td>
+    <td>&nbsp;</td>
+    <td><code>gx_path</code></td></tr>
+<tr valign="top">    <td><a href="../base/gxcpath.h">gxcpath.h</a>, <a href="../base/gzcpath.h">gzcpath.h</a></td>
+    <td>&nbsp;</td>
+    <td><code>gx_clip_path</code></td></tr>
 </table></blockquote>
 
 <p>
@@ -2591,7 +2591,7 @@ bitmap images is defined by:</p>
 
 <blockquote>
 <pre>typedef struct {
-	const gx_image_type_t *type;
+    const gx_image_type_t *type;
         gs_matrix ImageMatrix;
 } gs_image_common_t;</pre>
 </blockquote>
@@ -2617,12 +2617,12 @@ Images that supply pixel (as opposed to mask) data are defined by:</p>
 
 <blockquote>
 <pre>typedef enum {
-	/* Single plane, chunky pixels. */
-	gs_image_format_chunky = 0,
-	/* num_components planes, chunky components. */
-	gs_image_format_component_planar = 1,
-	/* BitsPerComponent * num_components planes, 1 bit per plane */
-	gs_image_format_bit_planar = 2
+    /* Single plane, chunky pixels. */
+    gs_image_format_chunky = 0,
+    /* num_components planes, chunky components. */
+    gs_image_format_component_planar = 1,
+    /* BitsPerComponent * num_components planes, 1 bit per plane */
+    gs_image_format_bit_planar = 2
 } gs_image_format_t;
 typedef struct {
         &lt;&lt; gs_data_image_t &gt;&gt;
@@ -2637,18 +2637,18 @@ are defined by:</p>
 
 <blockquote>
 <pre>typedef enum {
-	/* No alpha. */
-	gs_image_alpha_none = 0,
-	/* Alpha precedes color components. */
-	gs_image_alpha_first,
-	/* Alpha follows color components. */
-	gs_image_alpha_last
+    /* No alpha. */
+    gs_image_alpha_none = 0,
+    /* Alpha precedes color components. */
+    gs_image_alpha_first,
+    /* Alpha follows color components. */
+    gs_image_alpha_last
 } gs_image_alpha_t;
 typedef struct {
         &lt;&lt; gs_pixel_image_t &gt;&gt;
         bool ImageMask;
         bool adjust;
-	gs_image_alpha_t Alpha;
+    gs_image_alpha_t Alpha;
 } gs_image1_t;
 typedef gs_image1_t gs_image_t;</pre>
 </blockquote>
@@ -2666,12 +2666,12 @@ enumeration structures.  The common part of these structures consists of:</p>
 <blockquote>
 <pre>typedef struct gx_image_enum_common_s {
         const gx_image_type_t *image_type;
-	const gx_image_enum_procs_t *procs;
-	gx_device *dev;
-	gs_id id;
+    const gx_image_enum_procs_t *procs;
+    gx_device *dev;
+    gs_id id;
         int num_planes;
         int plane_depths[gs_image_max_planes];  /* [num_planes] */
-	int plane_widths[gs_image_max_planes]	/* [num_planes] */
+    int plane_widths[gs_image_max_planes]    /* [num_planes] */
 } gx_image_enum_common_t;</pre>
 </blockquote>
 
@@ -2700,16 +2700,16 @@ where <code>procs</code> consists of:</p>
 
         image_enum_proc_end_image((*end_image));
 
-	/*
-	 * Flush any intermediate buffers to the target device.
-	 * We need this for situations where two images interact
-	 * (currently, only the mask and the data of ImageType 3).
-	 * This procedure is optional (may be 0).
-	 */
+    /*
+     * Flush any intermediate buffers to the target device.
+     * We need this for situations where two images interact
+     * (currently, only the mask and the data of ImageType 3).
+     * This procedure is optional (may be 0).
+     */
 #define image_enum_proc_flush(proc)\
   int proc(gx_image_enum_common_t *info)
 
-	image_enum_proc_flush((*flush));
+    image_enum_proc_flush((*flush));
 
 } gx_image_enum_procs_t;</pre>
 </blockquote>
@@ -2753,42 +2753,42 @@ gx_image_enum_common_t&nbsp;**pinfo)</code> <b><em>[OPTIONAL]</em></b></dt>
 are as follows:</dd>
 
 <blockquote><table>
-<tr valign="top">	<td><code>pis</code></td>
-	<td>&nbsp;&nbsp;&nbsp;</td>
-	<td>pointer to an imager state.  The only relevant elements of the
-	    imager state are the CTM (coordinate transformation matrix),
-	    the logical operation (<code>RasterOp</code> or
-	    transparency), and the color rendering information.</td></tr>
-<tr valign="top">	<td><code>pim</code></td>
-	<td>&nbsp;</td>
-	<td>pointer to the <code>gs_image_t</code> structure that
-	    defines the image parameters</td></tr>
-<tr valign="top">	<td><code>format</code></td>
-	<td>&nbsp;</td>
-	<td>defines how pixels are represented for
-	    <code>image_plane_data</code>.  See the description of
-	    <code>image_plane_data</code> below</td></tr>
-<tr valign="top">	<td><code>prect</code></td>
-	<td>&nbsp;</td>
-	<td>if not <code>NULL</code>, defines a subrectangle of the
-	    image; only the data for this subrectangle will be passed to
-	    <code>image_plane_data</code>, and only this subrectangle should
-	    be drawn</td></tr>
-<tr valign="top">	<td><code>pdcolor</code></td>
-	<td>&nbsp;</td>
-	<td>defines a drawing color, only needed for masks or if
-	    <code>CombineWithColor</code> is true</td></tr>
-<tr valign="top">	<td><code>pcpath</code></td>
-	<td>&nbsp;</td>
-	<td>if not <code>NULL</code>, defines an optional clipping path</td></tr>
-<tr valign="top">	<td><code>memory</code></td>
-	<td>&nbsp;</td>
-	<td>defines the allocator to be used for allocating bookkeeping
-	    information</td></tr>
-<tr valign="top">	<td><code>pinfo</code></td>
-	<td>&nbsp;</td>
-	<td>the implementation should return a pointer to its state
-	    structure here</td></tr>
+<tr valign="top">    <td><code>pis</code></td>
+    <td>&nbsp;&nbsp;&nbsp;</td>
+    <td>pointer to an imager state.  The only relevant elements of the
+        imager state are the CTM (coordinate transformation matrix),
+        the logical operation (<code>RasterOp</code> or
+        transparency), and the color rendering information.</td></tr>
+<tr valign="top">    <td><code>pim</code></td>
+    <td>&nbsp;</td>
+    <td>pointer to the <code>gs_image_t</code> structure that
+        defines the image parameters</td></tr>
+<tr valign="top">    <td><code>format</code></td>
+    <td>&nbsp;</td>
+    <td>defines how pixels are represented for
+        <code>image_plane_data</code>.  See the description of
+        <code>image_plane_data</code> below</td></tr>
+<tr valign="top">    <td><code>prect</code></td>
+    <td>&nbsp;</td>
+    <td>if not <code>NULL</code>, defines a subrectangle of the
+        image; only the data for this subrectangle will be passed to
+        <code>image_plane_data</code>, and only this subrectangle should
+        be drawn</td></tr>
+<tr valign="top">    <td><code>pdcolor</code></td>
+    <td>&nbsp;</td>
+    <td>defines a drawing color, only needed for masks or if
+        <code>CombineWithColor</code> is true</td></tr>
+<tr valign="top">    <td><code>pcpath</code></td>
+    <td>&nbsp;</td>
+    <td>if not <code>NULL</code>, defines an optional clipping path</td></tr>
+<tr valign="top">    <td><code>memory</code></td>
+    <td>&nbsp;</td>
+    <td>defines the allocator to be used for allocating bookkeeping
+        information</td></tr>
+<tr valign="top">    <td><code>pinfo</code></td>
+    <td>&nbsp;</td>
+    <td>the implementation should return a pointer to its state
+        structure here</td></tr>
 </table></blockquote>
 
 <p>
@@ -2953,44 +2953,44 @@ follows:</dd>
 </dl>
 
 <blockquote><table>
-<tr valign="top">	<td><code>dev</code></td>
-	<td>&nbsp;&nbsp;&nbsp;</td>
-	<td>The usual pointer to the device.</td></tr>
-<tr valign="top">	<td><code>pis</code></td>
-	<td>&nbsp;&nbsp;&nbsp;</td>
-	<td>A pointer to an imager state.  All elements may be relevant,
-	    depending on how the text is rendered.	</td></tr>
-<tr valign="top">	<td><code>text</code></td>
-	<td>&nbsp;</td>
-	<td>A pointer to the structure that defines the text operation
-	    and parameters.  See <a href="../base/gstext.h">gstext.h</a> for details.</td></tr>
-<tr valign="top">	<td><code>font</code></td>
-	<td>&nbsp;</td>
-	<td>Defines the font for drawing.</td></tr>
-<tr valign="top">	<td><code>path</code></td>
-	<td>&nbsp;</td>
-	<td>Defines the path where the character outline will be appended
-	    (if the text operation includes <code>TEXT_DO_...PATH</code>),
-	    and whose current point indicates where drawing should occur
-	    and will be updated by the string width (unless the text
-	    operation includes <code>TEXT_DO_NONE</code>).</td>
-<tr valign="top">	<td><code>pdcolor</code></td>
-	<td>&nbsp;</td>
-	<td>Defines the drawing color for the text.  Only relevant if
-	    the text operation includes <code>TEXT_DO_DRAW</code>.</td></tr>
-<tr valign="top">	<td><code>pcpath</code></td>
-	<td>&nbsp;</td>
-	<td>If not <code>NULL</code>, defines an optional clipping path.
-	    Only relevant if the text operation includes
-	    <code>TEXT_DO_DRAW</code>.</td></tr>
-<tr valign="top">	<td><code>memory</code></td>
-	<td>&nbsp;</td>
-	<td>Defines the allocator to be used for allocating bookkeeping
-	    information.</td></tr>
-<tr valign="top">	<td><code>ppte</code></td>
-	<td>&nbsp;</td>
-	<td>The implementation should return a pointer to its state
-	    structure here.</td></tr>
+<tr valign="top">    <td><code>dev</code></td>
+    <td>&nbsp;&nbsp;&nbsp;</td>
+    <td>The usual pointer to the device.</td></tr>
+<tr valign="top">    <td><code>pis</code></td>
+    <td>&nbsp;&nbsp;&nbsp;</td>
+    <td>A pointer to an imager state.  All elements may be relevant,
+        depending on how the text is rendered.    </td></tr>
+<tr valign="top">    <td><code>text</code></td>
+    <td>&nbsp;</td>
+    <td>A pointer to the structure that defines the text operation
+        and parameters.  See <a href="../base/gstext.h">gstext.h</a> for details.</td></tr>
+<tr valign="top">    <td><code>font</code></td>
+    <td>&nbsp;</td>
+    <td>Defines the font for drawing.</td></tr>
+<tr valign="top">    <td><code>path</code></td>
+    <td>&nbsp;</td>
+    <td>Defines the path where the character outline will be appended
+        (if the text operation includes <code>TEXT_DO_...PATH</code>),
+        and whose current point indicates where drawing should occur
+        and will be updated by the string width (unless the text
+        operation includes <code>TEXT_DO_NONE</code>).</td>
+<tr valign="top">    <td><code>pdcolor</code></td>
+    <td>&nbsp;</td>
+    <td>Defines the drawing color for the text.  Only relevant if
+        the text operation includes <code>TEXT_DO_DRAW</code>.</td></tr>
+<tr valign="top">    <td><code>pcpath</code></td>
+    <td>&nbsp;</td>
+    <td>If not <code>NULL</code>, defines an optional clipping path.
+        Only relevant if the text operation includes
+        <code>TEXT_DO_DRAW</code>.</td></tr>
+<tr valign="top">    <td><code>memory</code></td>
+    <td>&nbsp;</td>
+    <td>Defines the allocator to be used for allocating bookkeeping
+        information.</td></tr>
+<tr valign="top">    <td><code>ppte</code></td>
+    <td>&nbsp;</td>
+    <td>The implementation should return a pointer to its state
+        structure here.</td></tr>
 </table></blockquote>
 
 <p>
@@ -3028,13 +3028,13 @@ error code as usual, or one of the following values (see
 <a href="../base/gstext.h">gstext.h</a> for details).</dd></p>
 
 <blockquote><table>
-<tr valign="top">	<td><code>TEXT_PROCESS_RENDER</code></td>
-	<td>The client must cause the current character to be rendered.
-	    This currently only is used for PostScript Type 0-4 fonts
-	    and their CID-keyed relatives.</td></tr>
-<tr valign="top">	<td><code>TEXT_PROCESS_INTERVENE</code></td>
-	<td>The client has asked to intervene between characters.
-	    This is used for <code>cshow</code> and <code>kshow</code>.</td></tr>
+<tr valign="top">    <td><code>TEXT_PROCESS_RENDER</code></td>
+    <td>The client must cause the current character to be rendered.
+        This currently only is used for PostScript Type 0-4 fonts
+        and their CID-keyed relatives.</td></tr>
+<tr valign="top">    <td><code>TEXT_PROCESS_INTERVENE</code></td>
+    <td>The client has asked to intervene between characters.
+        This is used for <code>cshow</code> and <code>kshow</code>.</td></tr>
 </table></blockquote>
 </dl>
 
@@ -3095,18 +3095,18 @@ Read a rectangle of bits back from the device.  The <code>params</code>
 structure consists of:</dd></p>
 
 <table>
-<tr valign="top">	<td><code>options</code></td>
-	<td>&nbsp;</td>
-	<td>the allowable formats for returning the data</td></tr>
-<tr valign="top">	<td><code>data[32]</code></td>
-	<td>&nbsp;</td>
-	<td>pointers to the returned data</td></tr>
-<tr valign="top">	<td><code>x_offset</code></td>
-	<td>&nbsp;</td>
-	<td>the X offset of the first returned pixel in data</td></tr>
-<tr valign="top">	<td><code>raster</code></td>
-	<td>&nbsp;</td>
-	<td>the distance between scan lines in the returned data</td></tr>
+<tr valign="top">    <td><code>options</code></td>
+    <td>&nbsp;</td>
+    <td>the allowable formats for returning the data</td></tr>
+<tr valign="top">    <td><code>data[32]</code></td>
+    <td>&nbsp;</td>
+    <td>pointers to the returned data</td></tr>
+<tr valign="top">    <td><code>x_offset</code></td>
+    <td>&nbsp;</td>
+    <td>the X offset of the first returned pixel in data</td></tr>
+<tr valign="top">    <td><code>raster</code></td>
+    <td>&nbsp;</td>
+    <td>the distance between scan lines in the returned data</td></tr>
 </table>
 
 <p>
@@ -3347,15 +3347,15 @@ requiring the same behaviour can use these parameters.</p>
 <dd>True if the device is a high level (vector) device. Currently this controls haltone emission
 during setpagedevice. Normally setpagdevice resets the halftone to a default value, which is
 unfortunate for high-level devices such as ps2write and pdfwrite, as they are unable to tell
-that this is caused by setpagdevice rather than a halftone set by the input file. In order to prevent 
+that this is caused by setpagdevice rather than a halftone set by the input file. In order to prevent
 spurious default halftones being embedded in the output, if /HighLevelDevice is present and
 true in the device paramters, then the default halftone will not be set during setpagedevice.
 Also prevents interpolation of imagemasks during PDF interpretation.
 </dd>
 
 <dt><b><em>/AllowIncrementalCFF</em></b></dt>
-<dd>Pdfwrite relies on font processing occuring in a particular order, which 
-may not happen if CFF fonts are downloaded incrementally. Defining this 
+<dd>Pdfwrite relies on font processing occuring in a particular order, which
+may not happen if CFF fonts are downloaded incrementally. Defining this
 parameter to true will prevent incremental CFF downloading (may raise an error
 during processing).
 </dd>
@@ -3367,7 +3367,7 @@ as true will cause such functions to raise an error during processing.
 </dd>
 
 <dt><b><em>/IsDistiller</em></b></dt>
-<dd>Defining this parameter as true will result in the operators relating to 
+<dd>Defining this parameter as true will result in the operators relating to
 'distillerparams' being defined (setdistillerparams/currentdistillerparams).
 Some PostScript files behave differently if these operators are present (e.g.
 rotating the page) so this parameter may be true even if the device is not
@@ -3660,12 +3660,12 @@ non-rotated case.</li>
 <!-- Why oh why does it all have to be so complicated? -->
 
 <!-- [2.0 end contents] ==================================================== -->
-		
+
 <!-- [3.0 begin visible trailer] =========================================== -->
 <hr>
 
 <p>
-<small>Copyright &copy; 2000-2018 Artifex Software, Inc.  All rights reserved.</small>
+<small>Copyright &copy; 2000-2019 Artifex Software, Inc.  All rights reserved.</small>
 
 <p>
 This software is provided AS-IS with no warranty, either express or
@@ -3680,39 +3680,39 @@ Novato, CA 94945, U.S.A., +1(415)492-9861, for further information.
 <p>
 <small>Ghostscript version 9.26, 20 November 2018
 
-<!-- [3.0 end visible trailer] ============================================= -->		
+<!-- [3.0 end visible trailer] ============================================= -->
 
 
 <!--FINISH EDITING HERE-->
-	
-	</div>
-	</div>
-	</div>	
-	
-	<div class="footer">
-	<div class="row">
-		<div class="col-7 footleft">
-		<ul>
-			<li><a href="https://artifex.com/contact-us/" target="blank">CONTACT US</a></li>
-			<li><a href="https://artifex.com/about-us/" target="blank">ABOUT</a></li>
-			<li><a href="https://ghostscript.com/security.html">SECURITY</a></li>
-		</ul>
-		</div>
-		<div class="col-1 footcenter">
-		 <ul>
-		   <li><a href="https://artifex.com/support/" target="blank">SUPPORT</a></li>
-		   <li><a href="https://artifex.com/blog/artifex/" target="blank">BLOG</a></li>
-		   <li><a href="https://artifex.com/privacy-policy/" target="blank">PRIVACY</a></li>
-	   	</ul>
-		</div>
-		<div class="col-ft-3 footright"><img src="images/Artifex_logo.png" width="194" height="40" alt=""/> <br>
-  			© Copyright 2018 Artifex Software, Inc. <br>
-			All rights reserved.
-		</div>
-	  	</div>
-	</div>
-	
-	<script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
-	<script src="index.js"></script>
+
+    </div>
+    </div>
+    </div>
+
+    <div class="footer">
+    <div class="row">
+        <div class="col-7 footleft">
+        <ul>
+            <li><a href="https://artifex.com/contact-us/" target="blank">CONTACT US</a></li>
+            <li><a href="https://artifex.com/about-us/" target="blank">ABOUT</a></li>
+            <li><a href="https://ghostscript.com/security.html">SECURITY</a></li>
+        </ul>
+        </div>
+        <div class="col-1 footcenter">
+         <ul>
+           <li><a href="https://artifex.com/support/" target="blank">SUPPORT</a></li>
+           <li><a href="https://artifex.com/blog/artifex/" target="blank">BLOG</a></li>
+           <li><a href="https://artifex.com/privacy-policy/" target="blank">PRIVACY</a></li>
+           </ul>
+        </div>
+        <div class="col-ft-3 footright"><img src="images/Artifex_logo.png" width="194" height="40" alt=""/> <br>
+              © Copyright 2019 Artifex Software, Inc. <br>
+            All rights reserved.
+        </div>
+          </div>
+    </div>
+
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+    <script src="index.js"></script>
 </body>
 </html>

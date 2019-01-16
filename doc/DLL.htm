@@ -9,57 +9,57 @@
   gtag('js', new Date());
 
   gtag('config', 'UA-54391264-2');
-</script>	
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro" rel="stylesheet">
-<link rel="shortcut icon" type="image/png" href="../../images/favicon.png">	
+<link rel="shortcut icon" type="image/png" href="../../images/favicon.png">
 <title>How to Use the Ghostscript Dynamic Link Library (DLL)</title>
-	<!-- Originally: dll.txt -->
+    <!-- Originally: dll.txt -->
 <link href="style.css" rel="stylesheet" type="text/css">
 <link href="gs-style.css" rel="stylesheet" type="text/css">
 </head>
 
 <body>
-	
-	<div class="header">
-	<div class="row">
-		<div class="col-lt-6 logo"><a href="https://www.ghostscript.com/"><img src="images/ghostscript_logo.png" width="108" height="119" alt=""></a></div>
-		<div class="col-6"><div class="row"><div class="artifexlogo"><a href="https://artifex.com" target="_blank"><img src="images/Artifex_logo.png" width="194" height="40" alt=""></a></div>
-		<div class="col-12"><div class="button button1"><a href="https://artifex.com/contact-us/" title="Contact Us" target="_blank">Contact Us</a></div>
-		<div class="button button2 hidden-xs"><a href="https://www.ghostscript.com/download.html" title="Download">Download</a></div></div></div>
-	</div>
-	</div>
-	</div>
-	
-	<div class="banner">
-	<div class="row">
-		<div class="col-12">How to Use the Ghostscript Dynamic Link Library (DLL)</div>	
-	</div>
-	</div>
-	
-	<div class="main">
-	<div class="row">
-	<div id="sidebar">
-	<div class="sidebar-item"></div>
-	<div class="col-2 leftnav">
+
+    <div class="header">
+    <div class="row">
+        <div class="col-lt-6 logo"><a href="https://www.ghostscript.com/"><img src="images/ghostscript_logo.png" width="108" height="119" alt=""></a></div>
+        <div class="col-6"><div class="row"><div class="artifexlogo"><a href="https://artifex.com" target="_blank"><img src="images/Artifex_logo.png" width="194" height="40" alt=""></a></div>
+        <div class="col-12"><div class="button button1"><a href="https://artifex.com/contact-us/" title="Contact Us" target="_blank">Contact Us</a></div>
+        <div class="button button2 hidden-xs"><a href="https://www.ghostscript.com/download.html" title="Download">Download</a></div></div></div>
+    </div>
+    </div>
+    </div>
+
+    <div class="banner">
+    <div class="row">
+        <div class="col-12">How to Use the Ghostscript Dynamic Link Library (DLL)</div>
+    </div>
+    </div>
+
+    <div class="main">
+    <div class="row">
+    <div id="sidebar">
+    <div class="sidebar-item"></div>
+    <div class="col-2 leftnav">
 <ul>
-			<li><a href="https://www.ghostscript.com/">Home</a></li>
-			<li><a href="https://www.ghostscript.com/license.html">Licensing</a></li>
-			<li><a href="https://www.ghostscript.com/releases.html">Releases</a></li>
-			<li><a href="https://www.ghostscript.com/release_history.html">Release History</a></li>
-			<li><a href="https://www.ghostscript.com/documentation.html" title="Documentation">Documentation</a></li>
-			<li><a href="https://www.ghostscript.com/download.html" title="Download">Download</a></li>
-			<li><a href="https://www.ghostscript.com/performance.html" title="Performance">Performance</a></li>
-			<li><a href="http://jbig2dec.com/" title="jbig2dec">jbig2dec</a></li>
-			<li><a href="http://git.ghostscript.com/?p=ghostpdl.git;a=summary">Source</a></li>
-			<li><a href="http://bugs.ghostscript.com/">Bugs</a></li>
-			<li><a href="https://www.ghostscript.com/faq.html" title="FAQ">FAQ</a></li>
-		</ul>
-	</div>
-	</div>	
-	<div class="col-10 page">
-		
+            <li><a href="https://www.ghostscript.com/">Home</a></li>
+            <li><a href="https://www.ghostscript.com/license.html">Licensing</a></li>
+            <li><a href="https://www.ghostscript.com/releases.html">Releases</a></li>
+            <li><a href="https://www.ghostscript.com/release_history.html">Release History</a></li>
+            <li><a href="https://www.ghostscript.com/documentation.html" title="Documentation">Documentation</a></li>
+            <li><a href="https://www.ghostscript.com/download.html" title="Download">Download</a></li>
+            <li><a href="https://www.ghostscript.com/performance.html" title="Performance">Performance</a></li>
+            <li><a href="http://jbig2dec.com/" title="jbig2dec">jbig2dec</a></li>
+            <li><a href="http://git.ghostscript.com/?p=ghostpdl.git;a=summary">Source</a></li>
+            <li><a href="http://bugs.ghostscript.com/">Bugs</a></li>
+            <li><a href="https://www.ghostscript.com/faq.html" title="FAQ">FAQ</a></li>
+        </ul>
+    </div>
+    </div>
+    <div class="col-10 page">
+
 <!--START EDITING HERE-->
 
 <h2>Table of contents</h2>
@@ -101,8 +101,8 @@ overview</a>.
 
 <p>
 <b>WARNING: The API described in this document is obsolete and will
-be removed in the future.</b> 
-The current Ghostscript Interpreter API 
+be removed in the future.</b>
+The current Ghostscript Interpreter API
 is described in <a href="API.htm">API.htm</a>.
 
 <!-- [1.3 end hint] ======================================================== -->
@@ -273,30 +273,30 @@ code = gsdll_execute_cont(command, strlen(command));
 <a name="cont_returns"></a>
 <table>
 <tr>
-	<th colspan="3">Return codes from gsdll_execute_cont()</th>
-</tr>		
-<tr>
-	<th align="left">Code</th>
-	<th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
-	<th align="left">Status</th>
+    <th colspan="3">Return codes from gsdll_execute_cont()</th>
 </tr>
-<tr>	
-	<td align="left">0</td>
-	<td>&nbsp;</td>
-	<td>No errors</td>
-	</tr>
-<tr>	
-	<td align="left">&lt; 0</td>
-	<td>&nbsp;</td>
-	<td>Error</td>
-	</tr>
-<tr>	
-	<td align="left">&lt;= -100</td>
-	<td>&nbsp;</td>
-	<td>"<code>quit</code>" has been executed, or fatal error.
+<tr>
+    <th align="left">Code</th>
+    <th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+    <th align="left">Status</th>
+</tr>
+<tr>
+    <td align="left">0</td>
+    <td>&nbsp;</td>
+    <td>No errors</td>
+    </tr>
+<tr>
+    <td align="left">&lt; 0</td>
+    <td>&nbsp;</td>
+    <td>Error</td>
+    </tr>
+<tr>
+    <td align="left">&lt;= -100</td>
+    <td>&nbsp;</td>
+    <td>"<code>quit</code>" has been executed, or fatal error.
 <code>gsdll_exit()</code> must then be called: do not call
 <code>gsdll_execute_end()</code>.</td>
-	</tr>
+    </tr>
 </table>
 </blockquote>
 
@@ -313,7 +313,7 @@ uses the callback.
 <p>
 Please note that there is a 64 KB length limit on the passed string.
 If you have more than 65535 bytes of input to process at a given time,
-it must be split into separate smaller buffers, each passed on a 
+it must be split into separate smaller buffers, each passed on a
 separate call.
 
 </blockquote>
@@ -361,18 +361,18 @@ locking.
 
 <table>
 <tr>
-	<th colspan="3">Locking and unlocking devices</th>
-	</tr>
-<tr>	
-	<td>To lock a device</td>
+    <th colspan="3">Locking and unlocking devices</th>
+    </tr>
+<tr>
+    <td>To lock a device</td>
         <td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
         <td><code>gsdll_lock_device(device, 1)</code>;</td>
-	</tr>
-<tr>	
-	<td>To unlock a device</td>
+    </tr>
+<tr>
+    <td>To unlock a device</td>
         <td>&nbsp;</td>
         <td><code>gsdll_lock_device(device, 0)</code>;</td>
-	</tr>
+    </tr>
 </table>
 </blockquote>
 
@@ -456,75 +456,75 @@ char *p;
 </pre>
 
 <table>
-	<tr>
-		<th colspan="5">Messages used by callback</th>
-		</tr>
+    <tr>
+        <th colspan="5">Messages used by callback</th>
+        </tr>
 <tr>
-	<th align="left">Symbol</th>
-	<th>&nbsp;&nbsp;</th>
-	<th align="left"></th>
-	<th>&nbsp;&nbsp;</th>
-	<th align="left">Use</th>
-	</tr>
-<tr>	
-	<td><code>GSDLL_STDIN</code></td>
-	<td>&nbsp;</td>
-	<td>1</td>
-	<td>&nbsp;</td>
-	<td>get <code>count</code> characters to <code>str</code> from stdin, return number of characters read</td>
-	</tr>
-<tr>	
-	<td><code>GSDLL_STDOUT</code></td>
-	<td>&nbsp;</td>
-	<td>2</td>
-	<td>&nbsp;</td>
-	<td>put <code>count</code> characters from <code>str</code>
-		to stdout, return number of characters written</td>
-	</tr>
-<tr>	
-	<td><code>GSDLL_DEVICE</code></td>
-	<td>&nbsp;</td>
-	<td>3</td>
-	<td>&nbsp;</td>
-	<td>device <code>str</code> has been opened if
-		<code>count</code>&nbsp;=&nbsp;1, closed if
-		<code>count</code>&nbsp;=&nbsp;0</td>
-	</tr>
-<tr>	
-	<td><code>GSDLL_SYNC</code></td>
-	<td>&nbsp;</td>
-	<td>4</td>
-	<td>&nbsp;</td>
-	<td>sync_output for device <code>str</code></td>
-	</tr>
-<tr>	
-	<td><code>GSDLL_PAGE</code></td>
-	<td>&nbsp;</td>
-	<td>5</td>
-	<td>&nbsp;</td>
-	<td>output_page for device <code>str</code></td>
-	</tr>
-<tr>	
-	<td><code>GSDLL_SIZE</code></td>
-	<td>&nbsp;</td>
-	<td>6</td>
-	<td>&nbsp;</td>
-	<td>resize for device <code>str</code>:
-		LOWORD(<code>count</code>) is new <code>xsize</code>,
-		HIWORD(<code>count</code>) is new <code>ysize</code></td>
-	</tr>
-<tr>	
-	<td><code>GSDLL_POLL</code></td>
-	<td>&nbsp;</td>
-	<td>7</td>
-	<td>&nbsp;</td>
-	<td>Called from <code>gp_check_interrupt()</code><br>
-		Can be used by the caller to poll the message queue.
-		Normally returns 0.  To abort
-		<code>gsdll_execute_cont()</code>, return a non-zero
-		error code until <code>gsdll_execute_cont()</code>
-		returns.</td>
-	</tr>
+    <th align="left">Symbol</th>
+    <th>&nbsp;&nbsp;</th>
+    <th align="left"></th>
+    <th>&nbsp;&nbsp;</th>
+    <th align="left">Use</th>
+    </tr>
+<tr>
+    <td><code>GSDLL_STDIN</code></td>
+    <td>&nbsp;</td>
+    <td>1</td>
+    <td>&nbsp;</td>
+    <td>get <code>count</code> characters to <code>str</code> from stdin, return number of characters read</td>
+    </tr>
+<tr>
+    <td><code>GSDLL_STDOUT</code></td>
+    <td>&nbsp;</td>
+    <td>2</td>
+    <td>&nbsp;</td>
+    <td>put <code>count</code> characters from <code>str</code>
+        to stdout, return number of characters written</td>
+    </tr>
+<tr>
+    <td><code>GSDLL_DEVICE</code></td>
+    <td>&nbsp;</td>
+    <td>3</td>
+    <td>&nbsp;</td>
+    <td>device <code>str</code> has been opened if
+        <code>count</code>&nbsp;=&nbsp;1, closed if
+        <code>count</code>&nbsp;=&nbsp;0</td>
+    </tr>
+<tr>
+    <td><code>GSDLL_SYNC</code></td>
+    <td>&nbsp;</td>
+    <td>4</td>
+    <td>&nbsp;</td>
+    <td>sync_output for device <code>str</code></td>
+    </tr>
+<tr>
+    <td><code>GSDLL_PAGE</code></td>
+    <td>&nbsp;</td>
+    <td>5</td>
+    <td>&nbsp;</td>
+    <td>output_page for device <code>str</code></td>
+    </tr>
+<tr>
+    <td><code>GSDLL_SIZE</code></td>
+    <td>&nbsp;</td>
+    <td>6</td>
+    <td>&nbsp;</td>
+    <td>resize for device <code>str</code>:
+        LOWORD(<code>count</code>) is new <code>xsize</code>,
+        HIWORD(<code>count</code>) is new <code>ysize</code></td>
+    </tr>
+<tr>
+    <td><code>GSDLL_POLL</code></td>
+    <td>&nbsp;</td>
+    <td>7</td>
+    <td>&nbsp;</td>
+    <td>Called from <code>gp_check_interrupt()</code><br>
+        Can be used by the caller to poll the message queue.
+        Normally returns 0.  To abort
+        <code>gsdll_execute_cont()</code>, return a non-zero
+        error code until <code>gsdll_execute_cont()</code>
+        returns.</td>
+    </tr>
 </table>
 </blockquote>
 </blockquote>
@@ -758,12 +758,12 @@ if (!code) {
 </pre></blockquote>
 
 <!-- [2.0 end contents] ==================================================== -->
-		
+
 <!-- [3.0 begin visible trailer] =========================================== -->
 <hr>
 
 <p>
-<small>Copyright &copy; 2000-2018 Artifex Software, Inc.  All rights reserved.</small>
+<small>Copyright &copy; 2000-2019 Artifex Software, Inc.  All rights reserved.</small>
 
 <p>
 This software is provided AS-IS with no warranty, either express or
@@ -778,38 +778,38 @@ Novato, CA 94945, U.S.A., +1(415)492-9861, for further information.
 <p>
 <small>Ghostscript version 9.26, 20 November 2018
 
-<!-- [3.0 end visible trailer] ============================================= -->		
+<!-- [3.0 end visible trailer] ============================================= -->
 
 <!--FINISH EDITING HERE-->
-	
-	</div>
-	</div>
-	</div>	
-	
-	<div class="footer">
-	<div class="row">
-		<div class="col-7 footleft">
-		<ul>
-			<li><a href="https://artifex.com/contact-us/" target="blank">CONTACT US</a></li>
-			<li><a href="https://artifex.com/about-us/" target="blank">ABOUT</a></li>
-			<li><a href="https://ghostscript.com/security.html">SECURITY</a></li>
-		</ul>
-		</div>
-		<div class="col-1 footcenter">
-		 <ul>
-		   <li><a href="https://artifex.com/support/" target="blank">SUPPORT</a></li>
-		   <li><a href="https://artifex.com/blog/artifex/" target="blank">BLOG</a></li>
-		   <li><a href="https://artifex.com/privacy-policy/" target="blank">PRIVACY</a></li>
-	   	</ul>
-		</div>
-		<div class="col-ft-3 footright"><img src="images/Artifex_logo.png" width="194" height="40" alt=""/> <br>
-  			© Copyright 2018 Artifex Software, Inc. <br>
-			All rights reserved.
-		</div>
-	  	</div>
-	</div>
-	
-	<script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
-	<script src="index.js"></script>
+
+    </div>
+    </div>
+    </div>
+
+    <div class="footer">
+    <div class="row">
+        <div class="col-7 footleft">
+        <ul>
+            <li><a href="https://artifex.com/contact-us/" target="blank">CONTACT US</a></li>
+            <li><a href="https://artifex.com/about-us/" target="blank">ABOUT</a></li>
+            <li><a href="https://ghostscript.com/security.html">SECURITY</a></li>
+        </ul>
+        </div>
+        <div class="col-1 footcenter">
+         <ul>
+           <li><a href="https://artifex.com/support/" target="blank">SUPPORT</a></li>
+           <li><a href="https://artifex.com/blog/artifex/" target="blank">BLOG</a></li>
+           <li><a href="https://artifex.com/privacy-policy/" target="blank">PRIVACY</a></li>
+           </ul>
+        </div>
+        <div class="col-ft-3 footright"><img src="images/Artifex_logo.png" width="194" height="40" alt=""/> <br>
+              © Copyright 2019 Artifex Software, Inc. <br>
+            All rights reserved.
+        </div>
+          </div>
+    </div>
+
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+    <script src="index.js"></script>
 </body>
 </html>

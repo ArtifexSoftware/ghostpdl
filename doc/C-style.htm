@@ -9,57 +9,57 @@
   gtag('js', new Date());
 
   gtag('config', 'UA-54391264-2');
-</script>	
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro" rel="stylesheet">
-<link rel="shortcut icon" type="image/png" href="../../images/favicon.png">	
+<link rel="shortcut icon" type="image/png" href="../../images/favicon.png">
 <title>Ghostscript C Coding Guidelines</title>
-	<!-- Originally: c-style.txt -->
+    <!-- Originally: c-style.txt -->
 <link href="style.css" rel="stylesheet" type="text/css">
 <link href="gs-style.css" rel="stylesheet" type="text/css">
 </head>
 
 <body>
-	
-	<div class="header">
-	<div class="row">
-		<div class="col-lt-6 logo"><a href="https://www.ghostscript.com/"><img src="images/ghostscript_logo.png" width="108" height="119" alt=""></a></div>
-		<div class="col-6"><div class="row"><div class="artifexlogo"><a href="https://artifex.com" target="_blank"><img src="images/Artifex_logo.png" width="194" height="40" alt=""></a></div>
-		<div class="col-12"><div class="button button1"><a href="https://artifex.com/contact-us/" title="Contact Us" target="_blank">Contact Us</a></div>
-		<div class="button button2 hidden-xs"><a href="https://www.ghostscript.com/download.html" title="Download">Download</a></div></div></div>
-	</div>
-	</div>
-	</div>
-	
-	<div class="banner">
-	<div class="row">
-		<div class="col-12">Ghostscript C Coding Guidelines</div>	
-	</div>
-	</div>
-	
-	<div class="main">
-	<div class="row">
-	<div id="sidebar">
-	<div class="sidebar-item"></div>
-	<div class="col-2 leftnav">
+
+    <div class="header">
+    <div class="row">
+        <div class="col-lt-6 logo"><a href="https://www.ghostscript.com/"><img src="images/ghostscript_logo.png" width="108" height="119" alt=""></a></div>
+        <div class="col-6"><div class="row"><div class="artifexlogo"><a href="https://artifex.com" target="_blank"><img src="images/Artifex_logo.png" width="194" height="40" alt=""></a></div>
+        <div class="col-12"><div class="button button1"><a href="https://artifex.com/contact-us/" title="Contact Us" target="_blank">Contact Us</a></div>
+        <div class="button button2 hidden-xs"><a href="https://www.ghostscript.com/download.html" title="Download">Download</a></div></div></div>
+    </div>
+    </div>
+    </div>
+
+    <div class="banner">
+    <div class="row">
+        <div class="col-12">Ghostscript C Coding Guidelines</div>
+    </div>
+    </div>
+
+    <div class="main">
+    <div class="row">
+    <div id="sidebar">
+    <div class="sidebar-item"></div>
+    <div class="col-2 leftnav">
 <ul>
-			<li><a href="https://www.ghostscript.com/">Home</a></li>
-			<li><a href="https://www.ghostscript.com/license.html">Licensing</a></li>
-			<li><a href="https://www.ghostscript.com/releases.html">Releases</a></li>
-			<li><a href="https://www.ghostscript.com/release_history.html">Release History</a></li>
-			<li><a href="https://www.ghostscript.com/documentation.html" title="Documentation">Documentation</a></li>
-			<li><a href="https://www.ghostscript.com/download.html" title="Download">Download</a></li>
-			<li><a href="https://www.ghostscript.com/performance.html" title="Performance">Performance</a></li>
-			<li><a href="http://jbig2dec.com/" title="jbig2dec">jbig2dec</a></li>
-			<li><a href="http://git.ghostscript.com/?p=ghostpdl.git;a=summary">Source</a></li>
-			<li><a href="http://bugs.ghostscript.com/">Bugs</a></li>
-			<li><a href="https://www.ghostscript.com/faq.html" title="FAQ">FAQ</a></li>
-		</ul>
-	</div>
-	</div>	
-	<div class="col-10 page">
-		
+            <li><a href="https://www.ghostscript.com/">Home</a></li>
+            <li><a href="https://www.ghostscript.com/license.html">Licensing</a></li>
+            <li><a href="https://www.ghostscript.com/releases.html">Releases</a></li>
+            <li><a href="https://www.ghostscript.com/release_history.html">Release History</a></li>
+            <li><a href="https://www.ghostscript.com/documentation.html" title="Documentation">Documentation</a></li>
+            <li><a href="https://www.ghostscript.com/download.html" title="Download">Download</a></li>
+            <li><a href="https://www.ghostscript.com/performance.html" title="Performance">Performance</a></li>
+            <li><a href="http://jbig2dec.com/" title="jbig2dec">jbig2dec</a></li>
+            <li><a href="http://git.ghostscript.com/?p=ghostpdl.git;a=summary">Source</a></li>
+            <li><a href="http://bugs.ghostscript.com/">Bugs</a></li>
+            <li><a href="https://www.ghostscript.com/faq.html" title="FAQ">FAQ</a></li>
+        </ul>
+    </div>
+    </div>
+    <div class="col-10 page">
+
 <!--START EDITING HERE-->
 
 <h2>Table of contents</h2>
@@ -71,7 +71,7 @@
 <li>Preprocessor:
     <a href="#Conditionals">Conditionals</a>,
     <a href="#Macros">Macros</a>,
-	<a href="#Preprocessor_other">Other</a>
+    <a href="#Preprocessor_other">Other</a>
 <li><a href="#Lexical_elements">Lexical elements</a></li>
 <li><a href="#Scoping">Scoping</a></li>
 <li>Data types:</li>
@@ -344,7 +344,7 @@ explicitly.  ANSI compilers in their default mode do all floating point
 computations in double precision, and handle such casts automatically.</li>
 
 <li>Don't use <code>long long</code>: even though it is in the ANSI
-standard, not all compilers support it.  Use the 
+standard, not all compilers support it.  Use the
 <code>(u)int64_t</code> types from <code>stdint_.h</code> instead.</li>
 
 <li>Don't assume anything about whether <code>sizeof(long)</code> is less
@@ -595,7 +595,7 @@ list.  Instead, use <code>gs_stdin</code> et al.</li>
 
 <dt><code>static</code></dt>
 
-<dd>Ghostscript assumes the compiler supports the <code>static</code> 
+<dd>Ghostscript assumes the compiler supports the <code>static</code>
 keyword for declaring variables and procedures as local to a particular
 source file.</dd>
 
@@ -664,7 +664,7 @@ opposed to a null terminated C-style string, which is <code>char
 
 <dd>These are unsigned integer types of the given width.  Use them wherever
 the actual width matters: do <em>not</em>, for example, use
-<code>short</code> assuming that it is 16 bits wide. New code can use 
+<code>short</code> assuming that it is 16 bits wide. New code can use
 the C99 fixed-width types from <code>stdint_.h</code>.</dd>
 
 </dl>
@@ -700,7 +700,7 @@ both pre- and post-processing of the code.</p>
 
 <p>
 Put indentation points every 4 spaces. Never use tab stops!</p>
-  
+
 <p>
 Don't indent the initial <code>#</code> of preprocessor commands.
 However, for nested preprocessor commands, do use indentation between the
@@ -771,7 +771,7 @@ this:</p>
 &nbsp;&nbsp;&nbsp;... subordinate simple statement ...
 </blockquote>
 
-<p>This is considered particularly important so that a breakpoint can be 
+<p>This is considered particularly important so that a breakpoint can be
 set inside the conditional easily.</p>
 
 <p>
@@ -1070,11 +1070,11 @@ treats memory as opaque.</p>
 
 <h3><a name="Procedures_style"></a>Procedures</h3>
 
-<p> In general, don't create procedures that are private and only called 
-from one place. However, if a compound statement (especially an arm of 
-a conditional) is too long for the eye easily to match its enclosing 
-braces "<code>{...}</code>" -- that is, longer than 10 or 15 lines -- 
-and it doesn't use or set a lot of state held in outer local variables, 
+<p> In general, don't create procedures that are private and only called
+from one place. However, if a compound statement (especially an arm of
+a conditional) is too long for the eye easily to match its enclosing
+braces "<code>{...}</code>" -- that is, longer than 10 or 15 lines --
+and it doesn't use or set a lot of state held in outer local variables,
 it may be more readable if you put it in a procedure.</p>
 
 <h3>Miscellany</h3>
@@ -1133,10 +1133,10 @@ someproc(... <code>int x</code> ...)<br>
 <h4><a name="Compiler_warnings"></a>Compiler warnings</h4>
 
 <p>
-We want Ghostscript to compile with no warnings. This is a constant 
-battle as compilers change and new code is added. Work hard to eliminate 
-warnings by improving the code structure instead of patching over them. 
-If the compiler can't figure out that a variable is always initialized, 
+We want Ghostscript to compile with no warnings. This is a constant
+battle as compilers change and new code is added. Work hard to eliminate
+warnings by improving the code structure instead of patching over them.
+If the compiler can't figure out that a variable is always initialized,
 a future reader will probably have trouble as well.</p>
 
 <hr>
@@ -1291,18 +1291,18 @@ values.  Some of the commonest and least obvious are these two:</p>
 <p>A value to be returned from a procedure:</p>
 
 <table>
-<tr>	
-	<td align="right">&lt; 0</td>
-	<td colspan="2">An error code defined in <a href="../base/gserrors.h">gserrors.h</a> (or <a href="../psi/ierrors.h">ierrors.h</a>)</td>
-</tr>	
-<tr>	
-	<td align="right">0</td>
-	<td colspan="2">Normal return</td>
-</tr>	
-<tr>	
-	<td align="right">&gt; 0</td>
-	<td colspan="2">A non-standard but successful return (which must be documented, preferably with the procedure's prototype)</td>
-</tr>	
+<tr>
+    <td align="right">&lt; 0</td>
+    <td colspan="2">An error code defined in <a href="../base/gserrors.h">gserrors.h</a> (or <a href="../psi/ierrors.h">ierrors.h</a>)</td>
+</tr>
+<tr>
+    <td align="right">0</td>
+    <td colspan="2">Normal return</td>
+</tr>
+<tr>
+    <td align="right">&gt; 0</td>
+    <td colspan="2">A non-standard but successful return (which must be documented, preferably with the procedure's prototype)</td>
+</tr>
 </table>
 
 </blockquote>
@@ -1313,17 +1313,17 @@ values.  Some of the commonest and least obvious are these two:</p>
 <p>A value returned from a stream procedure:</p>
 
 <table>
-<tr>	
-	<td align="right">&lt; 0</td>
-	<td colspan="2">An exceptional condition as defined in <a href="../base/scommon.h">scommon.h</a></td>
-</tr>	
-<tr>	
-	<td align="right">0</td>
-	<td colspan="2">Normal return (or, from the "<code>process</code>" procedure, means that more input is needed)</td>
-</tr>	
 <tr>
-	<td align="right">1</td>
-	<td colspan="2">More output space is needed (from the "<code>process</code>" procedure)</td>
+    <td align="right">&lt; 0</td>
+    <td colspan="2">An exceptional condition as defined in <a href="../base/scommon.h">scommon.h</a></td>
+</tr>
+<tr>
+    <td align="right">0</td>
+    <td colspan="2">Normal return (or, from the "<code>process</code>" procedure, means that more input is needed)</td>
+</tr>
+<tr>
+    <td align="right">1</td>
+    <td colspan="2">More output space is needed (from the "<code>process</code>" procedure)</td>
 </tr>
 </table>
 </blockquote>
@@ -1557,17 +1557,17 @@ to <b>its</b> callers.  By convention, nearly every procedure returns an
 
 <blockquote>
 <table>
-<tr>	
-	<td align="right">&lt; 0</td>
-	<td colspan="2">Error return</td>
-</tr>	
-<tr>	
-	<td align="right">0</td>
-	<td colspan="2">Normal return</td>
-</tr>	
-<tr>	
-	<td align="right">&gt; 0</td>
-	<td colspan="2">Non-error return other than the normal case</td>
+<tr>
+    <td align="right">&lt; 0</td>
+    <td colspan="2">Error return</td>
+</tr>
+<tr>
+    <td align="right">0</td>
+    <td colspan="2">Normal return</td>
+</tr>
+<tr>
+    <td align="right">&gt; 0</td>
+    <td colspan="2">Non-error return other than the normal case</td>
 </tr>
 </table>
 </blockquote>
@@ -1606,7 +1606,7 @@ to PostScript error conditions.</p>
 <hr>
 
 <p>
-<small>Copyright &copy; 2000-2018 Artifex Software, Inc.  All rights reserved.</small></p>
+<small>Copyright &copy; 2000-2019 Artifex Software, Inc.  All rights reserved.</small></p>
 
 <p>
 This software is provided AS-IS with no warranty, either express or
@@ -1620,38 +1620,38 @@ Novato, CA 94945, U.S.A., +1(415)492-9861, for further information.</p>
 
 <p>
 <small>Ghostscript version 9.23, 21 March 2018</small></p>
-<!-- [3.0 end visible trailer] ============================================= -->	
+<!-- [3.0 end visible trailer] ============================================= -->
 
 <!--FINISH EDITING HERE-->
-	
-	</div>
-	</div>
-	</div>	
-	
-	<div class="footer">
-	<div class="row">
-		<div class="col-7 footleft">
-		<ul>
-			<li><a href="https://artifex.com/contact-us/" target="blank">CONTACT US</a></li>
-			<li><a href="https://artifex.com/about-us/" target="blank">ABOUT</a></li>
-			<li><a href="https://ghostscript.com/security.html">SECURITY</a></li>
-		</ul>
-		</div>
-		<div class="col-1 footcenter">
-		 <ul>
-		   <li><a href="https://artifex.com/support/" target="blank">SUPPORT</a></li>
-		   <li><a href="https://artifex.com/blog/artifex/" target="blank">BLOG</a></li>
-		   <li><a href="https://artifex.com/privacy-policy/" target="blank">PRIVACY</a></li>
-	   	</ul>
-		</div>
-		<div class="col-ft-3 footright"><img src="images/Artifex_logo.png" width="194" height="40" alt=""/> <br>
-  			© Copyright 2018 Artifex Software, Inc. <br>
-			All rights reserved.
-		</div>
-	  	</div>
-	</div>
-	
-	<script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
-	<script src="index.js"></script>
+
+    </div>
+    </div>
+    </div>
+
+    <div class="footer">
+    <div class="row">
+        <div class="col-7 footleft">
+        <ul>
+            <li><a href="https://artifex.com/contact-us/" target="blank">CONTACT US</a></li>
+            <li><a href="https://artifex.com/about-us/" target="blank">ABOUT</a></li>
+            <li><a href="https://ghostscript.com/security.html">SECURITY</a></li>
+        </ul>
+        </div>
+        <div class="col-1 footcenter">
+         <ul>
+           <li><a href="https://artifex.com/support/" target="blank">SUPPORT</a></li>
+           <li><a href="https://artifex.com/blog/artifex/" target="blank">BLOG</a></li>
+           <li><a href="https://artifex.com/privacy-policy/" target="blank">PRIVACY</a></li>
+           </ul>
+        </div>
+        <div class="col-ft-3 footright"><img src="images/Artifex_logo.png" width="194" height="40" alt=""/> <br>
+              © Copyright 2019 Artifex Software, Inc. <br>
+            All rights reserved.
+        </div>
+          </div>
+    </div>
+
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+    <script src="index.js"></script>
 </body>
 </html>
