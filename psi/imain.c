@@ -818,7 +818,7 @@ gs_main_set_device(gs_main_instance * minst, gx_device *pdev)
          * avoids the SAFER checks. */
         code = zsetdevice_no_safer(i_ctx_p, pdev);
         if (code < 0) goto done;
-        code = zcurrentoutputdevice(i_ctx_p);
+        code = zcurrentdevice(i_ctx_p);
         if (code < 0) goto done;
         code = gs_main_run_string(minst,
                                   /* Set the device again to the same one. This determines
