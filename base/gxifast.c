@@ -36,6 +36,8 @@
 #include "gximage.h"
 #include "gzht.h"
 
+#include "valgrind.h"
+
 /* Conditionally include statistics code. */
 #if defined(DEBUG) && !defined(GS_THREADSAFE)
 #  define STATS
@@ -211,6 +213,7 @@ fill_row(byte *line, int line_x, uint raster, int value)
 {
     memset(line + (line_x >> 3), value, raster - (line_x >> 3));
 }
+
 static void
 image_simple_expand(byte * line, int line_x, uint raster,
                     const byte * buffer, int data_x, uint w,
@@ -250,6 +253,9 @@ image_simple_expand(byte * line, int line_x, uint raster,
     byte data;
     byte one = ~zero;
     fixed xl0;
+#ifdef PACIFY_VALGRIND
+    byte vbits;
+#endif
 
     if (w == 0)
         return;
@@ -261,6 +267,33 @@ image_simple_expand(byte * line, int line_x, uint raster,
     else
         stopbit <<= 1;
     /* Now (stop, stopbit) give the last bit of the row. */
+#ifdef PACIFY_VALGRIND
+    /* Here, we are dealing with a row of bits, rather than bytes.
+     * If the width of the bits is not a multiple of 8, we don't
+     * fill out the last byte, and valgrind (correctly) tracks the
+     * bits in that last byte as being a mix of defined and undefined.
+     * When we are scanning through the row bitwise, everything works
+     * fine, but our "skip whole bytes" code can confuse valgrind.
+     * We know that we won't match the "data == 0xff" for the final
+     * byte (i.e. the undefinedness of some of the bits doesn't matter
+     * to the correctness of the routine), but valgrind is not smart
+     * enough to realise that we know this. Accordingly, we get a false
+     * positive "undefined memory read".
+     * How do we fix this? Well, one way would be to read in the
+     * partial last byte, and explicitly set the undefined bits to
+     * be 0.
+     *   *stop &= ~(stopbit-1);
+     * Unfortunately, stop is a const *, so we can't do that (we could
+     * break const, but it is just conceivable that the caller might
+     * pass the next string of bits out in a later call, and so we
+     * might be corrupting valid data).
+     * Instead, we make a call to a valgrind helper. */
+    VALGRIND_GET_VBITS(stop,&vbits,1);
+    if ((vbits & stopbit)==0) { /* At least our stop bit must be addressable already! */
+      byte zero = 0;
+      VALGRIND_SET_VBITS(stop,&zero,1);
+    }
+#endif
     {
         byte stopmask = -stopbit << 1;
         byte last = *stop;
@@ -280,7 +313,7 @@ image_simple_expand(byte * line, int line_x, uint raster,
                     /* The input is all 1s.  Clear the row and exit. */
                     INCS(all1s);
                     fill_row(line, line_x, raster, one);
-                    return;
+                    goto end;
                 }
                 last = *--stop;
             }
@@ -298,7 +331,7 @@ image_simple_expand(byte * line, int line_x, uint raster,
                     /* The input is all 0s.  Clear the row and exit. */
                     INCS(all0s);
                     fill_row(line, line_x, raster, zero);
-                    return;
+                    goto end;
                 }
                 last = *--stop;
             }
@@ -473,6 +506,8 @@ sw:	    if ((data = psrc[1]) != 0) {
         if (psrc >= stop && sbit == stopbit)
             break;
     }
+ end:
+    VALGRIND_SET_VBITS(stop,&vbits,1);
 }
 
 /* Copy one rendered scan line to the device. */

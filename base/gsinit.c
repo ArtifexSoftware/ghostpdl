@@ -25,9 +25,7 @@
 #include "gslib.h"		/* interface definition */
 #include "gxfapi.h"
 
-#ifdef PACIFY_VALGRIND
 #include "valgrind.h"
-#endif
 
 /* Configuration information from gconfig.c. */
 extern_gx_init_table();

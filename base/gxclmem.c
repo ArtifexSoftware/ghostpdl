@@ -21,9 +21,7 @@
 #include "gxclmem.h"
 #include "gssprintf.h"
 
-#ifdef PACIFY_VALGRIND
 #include "valgrind.h"
-#endif
 
 /*
  * Based on: memfile.c        Version: 1.4 3/21/95 14:59:33 by Ray Johnston.

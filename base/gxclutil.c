@@ -28,9 +28,7 @@
 #include "gxclpath.h"
 #include "gsparams.h"
 
-#ifdef HAVE_VALGRIND
-#include "valgrind/memcheck.h"
-#endif
+#include "valgrind.h"
 
 /* ---------------- Statistics ---------------- */
 

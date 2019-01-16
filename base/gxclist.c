@@ -32,9 +32,7 @@
 #include "gsicc_cache.h"
 #include "gxdevsop.h"
 
-#ifdef PACIFY_VALGRIND
 #include "valgrind.h"
-#endif
 
 extern dev_proc_open_device(pattern_clist_open_device);
 

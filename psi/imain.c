@@ -59,9 +59,7 @@
 #include "iplugin.h"
 #include "zfile.h"
 
-#ifdef PACIFY_VALGRIND
 #include "valgrind.h"
-#endif
 
 /* ------ Exported data ------ */
 

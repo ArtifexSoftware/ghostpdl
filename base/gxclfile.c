@@ -24,9 +24,7 @@
 #include "gp.h"
 #include "gxclio.h"
 
-#ifdef PACIFY_VALGRIND
 #include "valgrind.h"
-#endif
 
 
 /* This is an implementation of the command list I/O interface */
