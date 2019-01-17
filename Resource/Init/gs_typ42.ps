@@ -20,12 +20,6 @@
 % interpreter.  The real work is done in an operator:
 %	<font> <code|name> <name> <glyphindex> .type42execchar -
 
-(%Type42BuildChar) cvn	% <font> <code> %Type42BuildChar -
- { 1 index /Encoding get 1 index get .type42build
- } bind def
-(%Type42BuildGlyph) cvn	% <font> <name> %Type42BuildGlyph -
- { dup .type42build
- } bind def
 /.type42build		% <font> <code|name> <name> .type42build -
  { 2 index begin
     dup CharStrings exch .knownget not
@@ -41,6 +35,14 @@
      } if
    end .type42execchar
  } bind def
+(%Type42BuildChar) cvn	% <font> <code> %Type42BuildChar -
+ { 1 index /Encoding get 1 index get //.type42build exec
+ } bind executeonly def
+(%Type42BuildGlyph) cvn	% <font> <name> %Type42BuildGlyph -
+ { dup //.type42build exec
+ } bind executeonly def
+
+currentdict /.type42build .undef
 
 % Register the font type for definefont.
 buildfontdict 42
