@@ -1208,8 +1208,13 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
             if (stream_w.ptr == stream_w.limit) {
                 int xe = xo + limited_PatchWidthOut;
                 int scaled_w = 0;		/* accumulate scaled up width */
-                int scaled_h = interpolate_scaled_expanded_height(1, pss);
-                int scaled_y = yo + (dy * dda_current(pss->params.scale_dda.y));
+                int scaled_h = 0;
+                int scaled_y = 0;
+
+                if (abs_interp_limit > 1) {
+                    scaled_h = interpolate_scaled_expanded_height(1, pss);
+                    scaled_y = yo + (dy * dda_current(pss->params.scale_dda.y));
+                }
 
                 /* Are we active? (i.e. in the render rectangle) */
                 if (!pss->params.Active)
@@ -1631,8 +1636,13 @@ irii_inner_template(gx_image_enum * penum, int xo, int xe, int spp_cm, unsigned 
     int code;
     int ry = yo + penum->line_xy * dy;
     gx_dda_fixed save_x_dda = pss->params.scale_dda.x;
-    int scaled_h = interpolate_scaled_expanded_height(1, pss);
-    int scaled_y = yo + (dy * dda_current(pss->params.scale_dda.y));
+    int scaled_h = 0;
+    int scaled_y = 0;
+
+    if (abs_interp_limit > 1) {
+        scaled_h = interpolate_scaled_expanded_height(1, pss);
+        scaled_y = yo + (dy * dda_current(pss->params.scale_dda.y));
+    }
 
     for (x = xo; x < xe;) {
 
@@ -2303,9 +2313,14 @@ image_render_interpolate_landscape(gx_image_enum * penum,
                 return_error(gs_error_ioerror);
             if (stream_w.ptr == stream_w.limit) {
                 int xe = xo + (pss->params.PatchWidthOut + abs_interp_limit - 1) / abs_interp_limit;
-                int scaled_h = interpolate_scaled_expanded_height(1, pss);
-                int scaled_y = yo + (dy * dda_current(pss->params.scale_dda.y)) -
+                int scaled_h = 0;
+                int scaled_y = 0;
+
+                if (abs_interp_limit > 1) {
+                    scaled_h = interpolate_scaled_expanded_height(1, pss);
+                    scaled_y = yo + (dy * dda_current(pss->params.scale_dda.y)) -
                                ((dy < 0) ? (scaled_h - 1) : 0);
+                }
 
                 /* Are we active? (i.e. in the render rectangle) */
                 if (!pss->params.Active)
@@ -2676,9 +2691,14 @@ image_render_interpolate_landscape_icc(gx_image_enum * penum,
                 return_error(gs_error_ioerror);
             if (stream_w.ptr == stream_w.limit) {
                 int xe = xo + (pss->params.PatchWidthOut + abs_interp_limit - 1) / abs_interp_limit;
-                int scaled_h = interpolate_scaled_expanded_height(1, pss);
-                int scaled_y = yo + (dy * dda_current(pss->params.scale_dda.y)) -
+                int scaled_h = 0;
+                int scaled_y = 0;
+
+                if (abs_interp_limit > 1) {
+                    scaled_h = interpolate_scaled_expanded_height(1, pss);
+                    scaled_y = yo + (dy * dda_current(pss->params.scale_dda.y)) -
                                ((dy < 0) ? (scaled_h - 1) : 0);
+                }
 
                 /* Are we active? (i.e. in the render rectangle) */
                 if (!pss->params.Active)
