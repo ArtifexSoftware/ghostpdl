@@ -150,32 +150,6 @@
    {//.buildfont1 $error /errorname get signalerror} if
  } bind def
 
-% If the diskfont feature isn't included, define a dummy .loadfontdict.
-/.loadfontdict where
- { pop }
- { /.loadfontdict 0 dict readonly def }
-ifelse
-/.loadfontfile		% <file> .loadfontfile -
- { mark exch
-
-        % In order to load fonts reliably, we should push systemdict
-        % here.  However, Ed Taft says that Adobe implementations
-        % push userdict and nothing else!
-        % We really would just like systemdict on the stack,
-        % but fonts produced by Fontographer require a writable dictionary.
-        % However, we can't use any of the other well-known dictionaries
-        % (such as userdict), since the whole point of pushing systemdict
-        % is to make sure that nothing important has been redefined.
-   32 dict begin
-        % We can't just use `run', because we want to check for .PFB files.
-   currentpacking
-    { //false setpacking .loadfont1 //true setpacking }
-    { .loadfont1 }
-   ifelse
-    end
-    { stop } if
-   cleartomark
- } bind def
  % container for CloseSource flag (default //true to prevent buildup of file handles)
  /closesourcedict mark
    /CloseSource //true
@@ -204,20 +178,37 @@ ifelse
     } ifelse
   } stopped
 } bind def
-% undefine a dict that is only used internally, and is immediately bound
+
+% If the diskfont feature isn't included, define a dummy .loadfontdict.
+/.loadfontdict where
+ { pop }
+ { /.loadfontdict 0 dict readonly def }
+ifelse
+/.loadfontfile		% <file> .loadfontfile -
+ { mark exch
+
+        % In order to load fonts reliably, we should push systemdict
+        % here.  However, Ed Taft says that Adobe implementations
+        % push userdict and nothing else!
+        % We really would just like systemdict on the stack,
+        % but fonts produced by Fontographer require a writable dictionary.
+        % However, we can't use any of the other well-known dictionaries
+        % (such as userdict), since the whole point of pushing systemdict
+        % is to make sure that nothing important has been redefined.
+   32 dict begin
+        % We can't just use `run', because we want to check for .PFB files.
+   currentpacking
+    { //false setpacking //.loadfont1 exec //true setpacking }
+    { //.loadfont1 exec }
+   ifelse
+    end
+    { stop } if
+   cleartomark
+ } bind def
+% undefine stuff that is only used internally, and is immediately bound
 currentdict /closesourcedict .undef
+currentdict /.loadfont1 .undef
 
-% Here are the BuildChar and BuildGlyph implementation for Type 1 fonts.
-% The names %Type1BuildChar and %Type1BuildGlyph are known to the interpreter.
-% The real work is done in an operator:
-%	<font> <code|name> <name> <charstring> .type1execchar -
-
-(%Type1BuildChar)  cvn {	% <font> <code> %Type1BuildChar -
-  1 index /Encoding get 1 index get .type1build .type1execchar
-} bind def
-(%Type1BuildGlyph) cvn {	% <font> <name> %Type1BuildGlyph -
-  dup .type1build .type1execchar
-} bind def
 % Note: this procedure is used for both Type 1 and Type 2 fonts.
 /.type1build {		% <font> <code|name> <name> .type1build
                         %   <font> <code|name> <name> <charstring>
@@ -235,6 +226,18 @@ currentdict /closesourcedict .undef
     } if
   end
 } bind def
+
+% Here are the BuildChar and BuildGlyph implementation for Type 1 fonts.
+% The names %Type1BuildChar and %Type1BuildGlyph are known to the interpreter.
+% The real work is done in an operator:
+%	<font> <code|name> <name> <charstring> .type1execchar -
+
+(%Type1BuildChar)  cvn {	% <font> <code> %Type1BuildChar -
+  1 index /Encoding get 1 index get //.type1build exec .type1execchar
+} bind executeonly def
+(%Type1BuildGlyph) cvn {	% <font> <name> %Type1BuildGlyph -
+  dup //.type1build exec .type1execchar
+} bind executeonly def
 
 1183615869 internaldict begin
 % CCRun is an undocumented procedure provided for Type 4 and Type 0 fonts.
@@ -294,10 +297,10 @@ buildfontdict 4 /.buildfont4 cvx put
 /.buildfont2 where not { (%END2) .skipeof } if
 pop
 (%Type2BuildChar)  cvn {	% <font> <code> %Type2BuildChar -
-  1 index /Encoding get 1 index get .type1build .type2execchar
-} bind def
+  1 index /Encoding get 1 index get //.type1build exec .type2execchar
+} bind executeonly def
 (%Type2BuildGlyph) cvn {	% <font> <name> %Type2BuildGlyph -
-  dup .type1build .type2execchar
-} bind def
+  dup //.type1build exec .type2execchar
+} bind executeonly def
 buildfontdict 2 /.buildfont2 cvx put
 %END2
