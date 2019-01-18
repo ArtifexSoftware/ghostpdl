@@ -8428,11 +8428,11 @@ pdf14_increment_smask_color(gs_gstate * pgs, gx_device * dev)
     } else {
         /* Allocate and swap out the current profiles.  The softmask
            profiles should already be in place */
-        result = gs_alloc_struct(pdev->memory, pdf14_smaskcolor_t,
+        result = gs_alloc_struct(pdev->memory->stable_memory, pdf14_smaskcolor_t,
                                 &st_pdf14_smaskcolor,
                                 "pdf14_increment_smask_color");
         if (result == NULL ) return(-1);
-        result->profiles = gsicc_new_iccsmask(pdev->memory);
+        result->profiles = gsicc_new_iccsmask(pdev->memory->stable_memory);
         if (result->profiles == NULL ) return(-1);
         pdev->smaskcolor = result;
 
@@ -8581,10 +8581,10 @@ pdf14_free_smask_color(pdf14_device * pdev)
             /* Do not decrement the profiles - the references were moved
                here and moved back again, so the ref counts don't change
              */
-            gs_free_object(pdev->memory, pdev->smaskcolor->profiles,
+            gs_free_object(pdev->memory->stable_memory, pdev->smaskcolor->profiles,
                         "pdf14_free_smask_color");
         }
-        gs_free_object(pdev->memory, pdev->smaskcolor, "pdf14_free_smask_color");
+        gs_free_object(pdev->memory->stable_memory, pdev->smaskcolor, "pdf14_free_smask_color");
         pdev->smaskcolor = NULL;
     }
 }
