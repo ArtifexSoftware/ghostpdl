@@ -116,7 +116,7 @@ mem_mapped2_copy_mono(gx_device * dev,
             } else {		/* Filling a mask. */
                 for ( ; ; ) {
                     if (sbyte & bit)
-                        *pptr = (*pptr & ~mask) + (b1 & mask);
+                        *pptr = (*pptr & ~mask) | (b1 & mask);
                     if (--count <= 0)
                         break;
                     if ((bit >>= 1) == 0)
@@ -129,7 +129,7 @@ mem_mapped2_copy_mono(gx_device * dev,
             for ( ; ; ) {
                 if (!(sbyte & bit)) {
                     if (zero != gx_no_color_index)
-                        *pptr = (*pptr & ~mask) + (b0 & mask);
+                        *pptr = (*pptr & ~mask) | (b0 & mask);
                 }
                 if (--count <= 0)
                     break;
