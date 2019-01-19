@@ -239,7 +239,7 @@ mem_mono_strip_copy_rop_dev(gx_device * dev, const byte * sdata,
                 const byte *sptr = srow;
                 int left = width-8;
 #define fetch1(ptr, skew)\
-  (skew ? (ptr[0] << skew) + (ptr[1] >> (8 - skew)) : *ptr)
+  (skew ? ((ptr[0] << skew) | (ptr[1] >> (8 - skew))) : *ptr)
                 {
                     /* Left hand byte */
                     byte dbyte = *dptr;
@@ -343,7 +343,7 @@ mem_mono_strip_copy_rop_dev(gx_device * dev, const byte * sdata,
                     byte dbyte = *dptr;
 
 #define fetch1(ptr, skew)\
-  (skew ? (ptr[0] << skew) + (ptr[1] >> (8 - skew)) : *ptr)
+  (skew ? ((ptr[0] << skew) | (ptr[1] >> (8 - skew))) : *ptr)
                     byte tbyte = fetch1(tptr, tskew);
 
 #undef fetch1
@@ -397,7 +397,7 @@ mem_mono_strip_copy_rop_dev(gx_device * dev, const byte * sdata,
                     byte dbyte = *dptr;
 
 #define fetch1(ptr, skew)\
-  (skew ? (ptr[0] << skew) + (ptr[1] >> (8 - skew)) : *ptr)
+  (skew ? ((ptr[0] << skew) | (ptr[1] >> (8 - skew))) : *ptr)
                     byte sbyte = fetch1(sptr, sskew);
                     byte tbyte = fetch1(tptr, tskew);
 
@@ -508,7 +508,7 @@ mem_mono_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 #  define CFETCH_USES_CSKEW 0
 /* Fetch a chunk that straddles a chunk boundary. */
 #  define CFETCH2(cptr, cskew, skew)\
-    (CFETCH_LEFT(cptr, cskew, skew) +\
+    (CFETCH_LEFT(cptr, cskew, skew) |\
      CFETCH_RIGHT((const chunk *)(cptr) + 1, skew, cskew))
 #else /* little-endian */
 #  define chunk bits16
@@ -524,12 +524,12 @@ static const bits16 left_masks2[9] =
 #  define CCONT(cptr, off) (((const chunk *)(cptr))[off])
 #  define CFETCH_RIGHT(cptr, shift, cshift)\
         ((shift) < 8 ?\
-         ((CCONT(cptr, 0) >> (shift)) & right_masks2[shift]) +\
+         ((CCONT(cptr, 0) >> (shift)) & right_masks2[shift]) |\
           (CCONT(cptr, 0) << (cshift)) :\
          ((chunk)*(const byte *)(cptr) << (cshift)) & 0xff00)
 #  define CFETCH_LEFT(cptr, shift, cshift)\
         ((shift) < 8 ?\
-         ((CCONT(cptr, 0) << (shift)) & left_masks2[shift]) +\
+         ((CCONT(cptr, 0) << (shift)) & left_masks2[shift]) |\
           (CCONT(cptr, 0) >> (cshift)) :\
          ((CCONT(cptr, 0) & 0xff00) >> (cshift)) & 0xff)
 #  define CFETCH_USES_CSKEW 1
@@ -538,11 +538,11 @@ static const bits16 left_masks2[9] =
 /* by expanding the CFETCH_LEFT/right macros in-line. */
 #  define CFETCH2(cptr, cskew, skew)\
         ((cskew) < 8 ?\
-         ((CCONT(cptr, 0) << (cskew)) & left_masks2[cskew]) +\
-          (CCONT(cptr, 0) >> (skew)) +\
+         ((CCONT(cptr, 0) << (cskew)) & left_masks2[cskew]) |\
+          (CCONT(cptr, 0) >> (skew)) |\
           (((chunk)(((const byte *)(cptr))[2]) << (cskew)) & 0xff00) :\
-         (((CCONT(cptr, 0) & 0xff00) >> (skew)) & 0xff) +\
-          ((CCONT(cptr, 1) >> (skew)) & right_masks2[skew]) +\
+         (((CCONT(cptr, 0) & 0xff00) >> (skew)) & 0xff) |\
+          ((CCONT(cptr, 1) >> (skew)) & right_masks2[skew]) |\
            (CCONT(cptr, 1) << (cskew)))
 #endif
 
@@ -799,7 +799,7 @@ mem_mono_copy_mono(gx_device * dev,
   /* Do last chunk */\
   if ( count > 0 )\
     { bits = CFETCH_LEFT(bptr, cskew, skew);\
-      if ( count > skew ) bits += CFETCH_RIGHT(bptr + chunk_bytes, skew, cskew);\
+      if ( count > skew ) bits |= CFETCH_RIGHT(bptr + chunk_bytes, skew, cskew);\
       wr_op_masked(bits, rmask, 1);\
     }
 
@@ -1051,7 +1051,7 @@ int tx, int y, int tw, int th, gx_color_index color0, gx_color_index color1,
                 if (count > 0) {
                     bits = CFETCH_LEFT(bptr, cskew, skew);
                     if (count > skew)
-                        bits += CFETCH_RIGHT(bptr + chunk_bytes, skew, cskew);
+                        bits |= CFETCH_RIGHT(bptr + chunk_bytes, skew, cskew);
                     WRITE_STORE_MASKED(bits, rmask, 1);
                 }
                 if (--h == 0)
