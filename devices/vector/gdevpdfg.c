@@ -99,6 +99,8 @@ pdf_save_viewer_state(gx_device_pdf *pdev, stream *s)
         if (pdev->vgstack[i].dash_pattern)
             gs_free_object(pdev->memory->non_gc_memory, pdev->vgstack[i].dash_pattern, "free gstate copy dash");
         pdev->vgstack[i].dash_pattern = (float *)gs_alloc_bytes(pdev->memory->non_gc_memory, pdev->dash_pattern_size * sizeof(float), "gstate copy dash");
+        if (pdev->vgstack[i].dash_pattern == NULL)
+            return_error(gs_error_VMerror);
         memcpy(pdev->vgstack[i].dash_pattern, pdev->dash_pattern, pdev->dash_pattern_size * sizeof(float));
         pdev->vgstack[i].dash_pattern_size = pdev->dash_pattern_size;
     } else {
@@ -115,7 +117,7 @@ pdf_save_viewer_state(gx_device_pdf *pdev, stream *s)
 }
 
 /* Load the viewer's graphic state. */
-static void
+static int
 pdf_load_viewer_state(gx_device_pdf *pdev, pdf_viewer_state *s)
 {
     pdev->transfer_ids[0] = s->transfer_ids[0];
@@ -146,6 +148,9 @@ pdf_load_viewer_state(gx_device_pdf *pdev, pdf_viewer_state *s)
         if (pdev->dash_pattern)
             gs_free_object(pdev->memory->stable_memory, pdev->dash_pattern, "vector free dash pattern");
         pdev->dash_pattern = (float *)gs_alloc_bytes(pdev->memory->stable_memory, s->dash_pattern_size * sizeof(float), "vector allocate dash pattern");
+        if (pdev->dash_pattern == NULL)
+            return_error(gs_error_VMerror);
+        memcpy(pdev->dash_pattern, s->dash_pattern, sizeof(float)*s->dash_pattern_size);
         pdev->dash_pattern_size  = s->dash_pattern_size;
     } else {
         if (pdev->dash_pattern) {
@@ -154,6 +159,7 @@ pdf_load_viewer_state(gx_device_pdf *pdev, pdf_viewer_state *s)
             pdev->dash_pattern_size = 0;
         }
     }
+    return 0;
 }
 
 /* Restore the viewer's graphic state. */
@@ -170,8 +176,7 @@ pdf_restore_viewer_state(gx_device_pdf *pdev, stream *s)
     }
     if (s)
         stream_puts(s, "Q\n");
-    pdf_load_viewer_state(pdev, pdev->vgstack + i);
-    return 0;
+    return pdf_load_viewer_state(pdev, pdev->vgstack + i);
 }
 
 /* Set initial color. */
@@ -242,11 +247,15 @@ pdf_viewer_state_from_gs_gstate(gx_device_pdf * pdev,
     pdf_viewer_state vs;
 
     pdf_viewer_state_from_gs_gstate_aux(&vs, pgs);
+    /* pdf_viewer_state_from_gs_gstate_aux always returns
+     * vs with a NULL dash pattern. */
     gx_hld_save_color(pgs, pdevc, &vs.saved_fill_color);
     gx_hld_save_color(pgs, pdevc, &vs.saved_stroke_color);
     vs.fill_used_process_color = 0;
     vs.stroke_used_process_color = 0;
-    pdf_load_viewer_state(pdev, &vs);
+    /* pdf_load_viewer_state should never fail, as vs has a NULL
+     * dash pattern, and therefore will not allocate. */
+    (void)pdf_load_viewer_state(pdev, &vs);
 }
 
 /* Prepare intitial values for viewer's graphics state parameters. */
@@ -301,7 +310,9 @@ pdf_reset_graphics(gx_device_pdf * pdev)
     int soft_mask_id = pdev->state.soft_mask_id;
 
     if (pdev->vg_initial_set)
-        pdf_load_viewer_state(pdev, &pdev->vg_initial);
+        /* The following call cannot fail as vg_initial has no
+         * dash pattern, and so no allocations are required. */
+        (void)pdf_load_viewer_state(pdev, &pdev->vg_initial);
     else
         pdf_reset_graphics_old(pdev);
     pdf_reset_text(pdev);
@@ -2905,14 +2916,16 @@ pdf_update_alpha(gx_device_pdf *pdev, const gs_gstate *pgs,
         }
         else{
             gs_sprintf(buf, "%ld 0 R", pgs->soft_mask_id);
-        code = pdf_open_gstate(pdev, ppres);
-        if (code < 0)
-            return code;
-        code = cos_dict_put_c_key_string(resource_dict(*ppres),
-                    "/SMask", (byte *)buf, strlen(buf));
-        if (code < 0)
-            return code;
-        pdf_save_viewer_state(pdev, pdev->strm);
+            code = pdf_open_gstate(pdev, ppres);
+            if (code < 0)
+                return code;
+            code = cos_dict_put_c_key_string(resource_dict(*ppres),
+                        "/SMask", (byte *)buf, strlen(buf));
+            if (code < 0)
+                return code;
+            code = pdf_save_viewer_state(pdev, pdev->strm);
+            if (code < 0)
+                return code;
         }
         pdev->state.soft_mask_id = pgs->soft_mask_id;
     }
