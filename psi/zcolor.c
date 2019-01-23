@@ -1554,6 +1554,9 @@ static int setcmykspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CI
                 pcs = gs_cspace_new_DeviceCMYK(imemory);
                 if (pcs == NULL)
                     return_error(gs_error_VMerror);
+                /* Bug 693816 unset device color prior to possible overprint 
+                   colorant check */
+                gx_unset_dev_color(igs);
                 code = gs_setcolorspace(igs, pcs);
                 if (code >= 0) {
                     gs_client_color *pcc = gs_currentcolor_inline(igs);
