@@ -64,7 +64,7 @@ level2dict begin
       pop
     } ifelse pop pop
   } forall pop pop
-} .bind odef
+} .bind def
 
 % currentuser/systemparams creates and returns a dictionary in the
 % current VM.  The easiest way to make this work is to copy any composite
@@ -129,7 +129,7 @@ end
 /.setuserparams2 {
         % Check that we will be able to set the PostScript-level
         % user parameters.
-  /setuserparams /psuserparams .systemvar .checksetparams
+  /setuserparams /psuserparams .systemvar //.checksetparams exec
         % Set the C-level user params.  If this succeeds, we know that
         % the password check succeeded.
   dup .setuserparams
@@ -212,7 +212,7 @@ end
    } if
    /setsystemparams //pssystemparams mark exch {
      type cvlit //.checkparamtype /exec load 3 packedarray cvx
-   } forall .dicttomark .checksetparams
+   } forall .dicttomark //.checksetparams exec
         % Set the C-level system params.  If this succeeds, we know that
         % the password check succeeded.
    dup .setsystemparams
@@ -1267,5 +1267,6 @@ end				% level2dict
     /.pair2dict
     /.setcolorrendering1
     /.checkparamtype
+    /.checksetparams
 ]
 {level2dict exch .forceundef} forall
