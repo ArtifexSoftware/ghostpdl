@@ -94,7 +94,7 @@ cmd_compress_bitmap(stream_state * st, const byte * data, uint width_bits,
                 status = -1;
                 break;
             }
-            r.ptr += raster - width_bytes;
+            r.ptr += (int)(raster - width_bytes);
         }
         if (status == 0)
             status = (*st->templat->process) (st, &r, pw, true);
