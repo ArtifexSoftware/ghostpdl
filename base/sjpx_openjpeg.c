@@ -202,8 +202,8 @@ static OPJ_SIZE_T sjpx_stream_read(void * p_buffer, OPJ_SIZE_T p_nb_bytes, void 
 	stream_block *sb = (stream_block *)p_user_data;
 	OPJ_SIZE_T len;
 
-	len = sb->size - sb->pos;
-        if (sb->size < sb->pos)
+	len = sb->fill - sb->pos;
+        if (sb->fill < sb->pos)
 		len = 0;
 	if (len == 0)
 		return (OPJ_SIZE_T)-1;  /* End of file! */
@@ -218,8 +218,8 @@ static OPJ_OFF_T sjpx_stream_skip(OPJ_OFF_T skip, void * p_user_data)
 {
 	stream_block *sb = (stream_block *)p_user_data;
 
-	if (skip > sb->size - sb->pos)
-		skip = sb->size - sb->pos;
+	if (skip > sb->fill - sb->pos)
+		skip = sb->fill - sb->pos;
 	sb->pos += skip;
 	return sb->pos;
 }
@@ -228,7 +228,7 @@ static OPJ_BOOL sjpx_stream_seek(OPJ_OFF_T seek_pos, void * p_user_data)
 {
 	stream_block *sb = (stream_block *)p_user_data;
 
-	if (seek_pos > sb->size)
+	if (seek_pos > sb->fill)
 		return OPJ_FALSE;
 	sb->pos = seek_pos;
 	return OPJ_TRUE;
