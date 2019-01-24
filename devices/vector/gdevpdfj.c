@@ -499,9 +499,32 @@ pdf_end_image_binary(gx_device_pdf *pdev, pdf_image_writer *piw, int data_h)
 static int
 smask_image_check(gx_device_pdf * pdev, pdf_resource_t *pres0, pdf_resource_t *pres1)
 {
+    cos_value_t *v = NULL;
+
     /* image_mask_id is non-zero if we have a pending SMask image */
-    if (pdev->image_mask_id != 0 && (pres0->object->id == pdev->image_mask_id || pres1->object->id == pdev->image_mask_id))
-        return 0;
+    if (pdev->image_mask_id != 0) {
+        if (pres0->object->id == pdev->image_mask_id || pres1->object->id == pdev->image_mask_id)
+            return 0;
+        if (pdev->image_mask_is_SMask)
+            v = cos_dict_find(pres1->object, "/SMask", 5);
+        else
+            v = cos_dict_find(pres1->object, "/Mask", 4);
+        if (v == 0)
+            return 0;
+        if (v != 0) {
+            const byte *p = v->contents.chars.data;
+            int ix = 0;
+
+            while (*p != 0x20) {
+                if (p > v->contents.chars.data + v->contents.chars.size)
+                    return 0;
+                ix *= 10;
+                ix += (*p) - 0x30;
+            }
+            if (ix != pdev->image_mask_id)
+                return 0;
+        }
+    }
     return 1;
 }
 

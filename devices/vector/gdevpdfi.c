@@ -1844,6 +1844,7 @@ pdf_end_and_do_image(gx_device_pdf *pdev, pdf_image_writer *piw,
                 gs_sprintf(buf, "%ld 0 R", pdev->image_mask_id);
                 code = cos_dict_put_string_copy((cos_dict_t *)pres->object,
                         pdev->image_mask_is_SMask ? "/SMask" : "/Mask", buf);
+                (*(pres->object)).md5_valid = 0;
                 if (code < 0)
                     return code;
             }
