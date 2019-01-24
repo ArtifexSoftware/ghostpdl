@@ -2960,6 +2960,29 @@ currentdict /PDF2PS_matrix_key undef
         pop
       } ifelse
     } if
+    dup /Font knownoget {
+      //false exch
+      {
+        exch pop oforce
+        dup type /dicttype eq {
+          dup /Subtype knownoget {
+            /Type3 eq
+            {
+              3 index exch resourceusestransparency
+              { pop //true exit } if
+            }
+            {pop} ifelse
+          }
+          {
+            pop
+          }ifelse
+        }
+        { % probably a name object
+          pop
+        }ifelse
+      } forall
+      { pop //true exit } if
+    } if
     2 copy //false put             % Visited but not in the current chain.
     pop //false exit
   } loop

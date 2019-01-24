@@ -85,7 +85,10 @@ pdfdict begin
 % dictionary.  The name procedures may do whatever they want
 % to the operand stack.
 /.pdftokenerror {		% <count> <opdict> <errtoken> .pdftokenerror -
-  BXlevel 0 le {
+  % if we're called prior to actually drawing the page contents
+  % (i.e. for pageusestransparency) BXlevel may not be defined, yet.
+  /BXlevel where {/BXlevel get 0 le}{//true} ifelse
+  {
     (   **** Error: Unknown operator: ') pdfformaterror
     dup =string cvs pdfformaterror
     (') pdfformaterror
