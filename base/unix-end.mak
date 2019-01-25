@@ -244,6 +244,9 @@ gpcl6sanitize:
 gxpssanitize:
 	$(MAKE) $(SANITIZEMAKEOPTS) .xpssubtarget
 
+gpdlsanitize:
+	$(MAKE) $(SANITIZEMAKEOPTS) .gpdlsubtarget
+
 sanitizeclean:
 	$(MAKE) $(SANITIZEMAKEOPTS) cleansub
 
