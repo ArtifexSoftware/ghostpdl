@@ -460,6 +460,83 @@ static int pdfi_check_Resources_for_transparency(pdf_context *ctx, pdf_dict *Res
         } while (1);
         pdfi_countdown(d);
     }
+
+    code = pdfi_dict_get_type(ctx, Resources_dict, "Font", PDF_DICT, &d);
+    if (code >= 0) {
+        code = pdfi_loop_detector_mark(ctx);
+        if (code < 0)
+            return code;
+
+        code = pdfi_dict_first(ctx, (pdf_dict *)d, &Key, &Value, (void *)&index);
+        if (code < 0) {
+            pdfi_countdown(d);
+            (void)pdfi_loop_detector_cleartomark(ctx); /* The Font loop */
+            (void)pdfi_loop_detector_cleartomark(ctx); /* The Resources dixtionary loop */
+            return 0;
+        }
+        i = 1;
+        do {
+            code = pdfi_dict_get_type(ctx, (pdf_dict *)Value, "Subtype", PDF_NAME, &n);
+            if (code < 0) {
+                if (ctx->pdfstoponerror) {
+                    (void)pdfi_loop_detector_cleartomark(ctx); /* The Font loop */
+                    goto resource_error;
+                }
+            } else {
+                if (pdfi_name_strcmp((const pdf_name *)n, "Type3") == 0) {
+                    code = pdfi_dict_known((pdf_dict *)Value, "Resources", &known);
+                    if (code < 0 && ctx->pdfstoponerror) {
+                        (void)pdfi_loop_detector_cleartomark(ctx); /* The Font loop */
+                        goto resource_error;
+                    }
+
+                    if (known) {
+                        pdf_obj *o;
+
+                        code = pdfi_dict_get_type(ctx, (pdf_dict *)Value, "Resources", PDF_DICT, &o);
+                        if (code >= 0) {
+                            code = pdfi_check_Resources_for_transparency(ctx, (pdf_dict *)o, transparent);
+                            pdfi_countdown(o);
+                            if (code < 0 && ctx->pdfstoponerror) {
+                                (void)pdfi_loop_detector_cleartomark(ctx); /* The Font loop */
+                                goto resource_error;
+                            }
+                            if (*transparent == true) {
+                                (void)pdfi_loop_detector_cleartomark(ctx); /* The Font loop */
+                                goto resource_transparent;
+                            }
+                        } else {
+                            if (ctx->pdfstoponerror) {
+                                (void)pdfi_loop_detector_cleartomark(ctx); /* The Font loop */
+                                goto resource_error;
+                            }
+                        }
+                    }
+                }
+            }
+            pdfi_countdown(Key);
+            pdfi_countdown(Value);
+            code = pdfi_loop_detector_cleartomark(ctx); /* The Font loop */
+            if (code < 0)
+                goto resource_error;
+
+            if (i++ >= pdfi_dict_entries((pdf_dict *)d))
+                break;
+
+            code = pdfi_loop_detector_mark(ctx);
+            if (code < 0)
+                goto resource_error;
+
+            code = pdfi_dict_next(ctx, (pdf_dict *)d, &Key, &Value, (void *)&index);
+            if (code < 0) {
+                (void)pdfi_loop_detector_cleartomark(ctx);
+                pdfi_countdown(d);
+                return 0;
+            }
+        } while (1);
+        pdfi_countdown(d);
+    }
+
     return pdfi_loop_detector_cleartomark(ctx);
 
 resource_transparent:
