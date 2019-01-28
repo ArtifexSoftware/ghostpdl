@@ -777,9 +777,19 @@ copy_landscape(gx_image_enum * penum, int x0, int x1, bool y_neg,
     /* Flip the buffered data from raster x 8 to align_bitmap_mod x */
     /* line_width. */
     if (line_width > 0) {
-        int i;
+        int i = (line_width-1)>>3;
 
-        for (i = (line_width - 1) >> 3; i >= 0; --i)
+#ifdef PACIFY_VALGRIND
+        if (line_width & 7) {
+            memflip8x8_eol(line + i, raster,
+                           flipped + (i << (log2_align_bitmap_mod + 3)),
+                           align_bitmap_mod,
+                           line_width & 7);
+            i--;
+        }
+#endif
+
+        for (; i >= 0; --i)
             memflip8x8(line + i, raster,
                        flipped + (i << (log2_align_bitmap_mod + 3)),
                        align_bitmap_mod);
