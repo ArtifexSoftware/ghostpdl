@@ -1841,25 +1841,51 @@ currentdict /xref-char-dict undef
    ifelse
  } bind executeonly def
 
-/obj_get {
-  LocalResources 1 index knownoget {
-    dup 4 index known {
-      3 index get
-      0 get 4 1 roll pop pop pop
-    } if
+/parent_obj_get { % /ResourceName pagedict /ObjType LocalResourceDir
+  /ParentResources .knownget {
+    dup 2 index .knownget {
+      % Found ObjType directory
+      4 index .knownget {
+        0 get 5 1 roll pop pop pop pop
+      } {
+         parent_obj_get	% not found -- check it's parent.
+      } ifelse
+    } {
+      parent_obj_get	% not found -- check it's parent.
+    } ifelse
   } {
+    pop pop pop 0
+  } ifelse
+} bind executeonly def
+
+/obj_get { % /ResourceName pagedict /ObjType obj_get
+           %                                 success: /ResourceName objnumber
+           %                                    fail: /ResourceName /ResourceName 0
+  LocalResources 1 index knownoget {
+    dup 4 index .knownget {
+      0 get 5 1 roll pop pop pop pop
+    } {
+      pop pop pop 0
+    } ifelse
+  } {
+    % Not in LocalResources. Try Page Resources.
     1 index /Resources pget {
       1 index knownoget {
         dup 4 index known {
           3 index get
           0 get 4 1 roll pop pop pop
         }{
-          pop pop pop 0
+          % Not in Page Resources, recursively try ParentResources as a last resort
+          pop	% page Resources
+          LocalResources parent_obj_get
         }ifelse
       }{
-        pop pop pop 0
+        % No Page Resources, recursively try ParentResources as a last resort
+          pop	% page Resources
+          LocalResources parent_obj_get
       } ifelse
     } {
+        % No Page Resources, recursively try ParentResources as a last resort
       pop pop pop 0
     }ifelse
   }ifelse
