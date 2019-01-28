@@ -1,4 +1,4 @@
-% Copyright (C) 2001-2018 Artifex Software, Inc.
+% Copyright (C) 2001-2019 Artifex Software, Inc.
 % All Rights Reserved.
 %
 % This software is provided AS-IS with no warranty, either express or
@@ -521,9 +521,8 @@ end
 % Define additional user and system parameters.
 /HalftoneMode 0 .definepsuserparam
 /MaxSuperScreen 1016 .definepsuserparam
-pssystemparams begin		% read-only, so use .forcedef
-  /MaxDisplayAndSourceList 160000 .forcedef
-end
+% read-only, so use .forceput
+pssystemparams  /MaxDisplayAndSourceList 160000 .forceput
 
 % Define the IdiomSet resource category.
 { /IdiomSet } {

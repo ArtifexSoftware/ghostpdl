@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2018 Artifex Software, Inc.
+/* Copyright (C) 2001-2019 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -21,9 +21,7 @@
 #include "gxclmem.h"
 #include "gssprintf.h"
 
-#ifdef PACIFY_VALGRIND
 #include "valgrind.h"
-#endif
 
 /*
  * Based on: memfile.c        Version: 1.4 3/21/95 14:59:33 by Ray Johnston.

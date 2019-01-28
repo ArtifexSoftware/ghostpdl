@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2018 Artifex Software, Inc.
+/* Copyright (C) 2001-2019 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -24,9 +24,7 @@
 #include "gp.h"
 #include "gxclio.h"
 
-#ifdef PACIFY_VALGRIND
 #include "valgrind.h"
-#endif
 
 
 /* This is an implementation of the command list I/O interface */

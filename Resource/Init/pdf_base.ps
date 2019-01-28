@@ -1,4 +1,4 @@
-% Copyright (C) 2001-2018 Artifex Software, Inc.
+% Copyright (C) 2001-2019 Artifex Software, Inc.
 % All Rights Reserved.
 %
 % This software is provided AS-IS with no warranty, either express or
@@ -85,7 +85,10 @@ pdfdict begin
 % dictionary.  The name procedures may do whatever they want
 % to the operand stack.
 /.pdftokenerror {		% <count> <opdict> <errtoken> .pdftokenerror -
-  BXlevel 0 le {
+  % if we're called prior to actually drawing the page contents
+  % (i.e. for pageusestransparency) BXlevel may not be defined, yet.
+  /BXlevel where {/BXlevel get 0 le}{//true} ifelse
+  {
     (   **** Error: Unknown operator: ') pdfformaterror
     dup =string cvs pdfformaterror
     (') pdfformaterror
@@ -130,26 +133,29 @@ currentdict /num-chars-dict .undef
 
 /.pdfexectoken {		% <count> <opdict> <exectoken> .pdfexectoken ?
   PDFDEBUG {
-    pdfdict /PDFSTEPcount known not { pdfdict /PDFSTEPcount 1 .forceput } if
+    pdfdict /PDFSTEPcount known not { pdfdict /PDFSTEPcount 1 .forceput } executeonly if
     PDFSTEP {
       pdfdict /PDFtokencount 2 copy .knownget { 1 add } { 1 } ifelse .forceput
       PDFSTEPcount 1 gt {
         pdfdict /PDFSTEPcount PDFSTEPcount 1 sub .forceput
-      } {
+      } executeonly
+      {
         dup ==only
         (    step # ) print PDFtokencount =only
         ( ? ) print flush 1 //false .outputpage
         (%stdin) (r) file 255 string readline {
           token {
             exch pop pdfdict /PDFSTEPcount 3 -1 roll .forceput
-          } {
+          } executeonly
+          {
             pdfdict /PDFSTEPcount 1 .forceput
-          } ifelse % token
+          } executeonly ifelse % token
         } {
           pop /PDFSTEP //false def	 % EOF on stdin
         } ifelse % readline
       } ifelse % PDFSTEPcount > 1
-    } {
+    } executeonly
+    {
       dup ==only () = flush
     } ifelse % PDFSTEP
   } if % PDFDEBUG

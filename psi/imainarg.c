@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2018 Artifex Software, Inc.
+/* Copyright (C) 2001-2019 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -136,6 +136,7 @@ gs_main_init_with_args01(gs_main_instance * minst, int argc, char *argv[])
     const char *arg;
     arg_list args;
     int code;
+    int have_dumped_args = 0;
 
     arg_init(&args, (const char **)argv, argc,
              gs_main_arg_fopen, (void *)minst,
@@ -219,13 +220,14 @@ gs_main_init_with_args01(gs_main_instance * minst, int argc, char *argv[])
                     return code;
                 if (code > 0)
                     outprintf(minst->heap, "Unknown switch %s - ignoring\n", arg);
-                if (gs_debug[':'] && arg[1] == 'Z') {
+                if (gs_debug[':'] && !have_dumped_args) {
                     int i;
 
-                    dmprintf1(minst->heap, "%% Init started, instance 0x%p, with args: ", minst);
+                    dmprintf1(minst->heap, "%% Args passed to instance 0x%p: ", minst);
                     for (i=1; i<argc; i++)
                         dmprintf1(minst->heap, "%s ", argv[i]);
                     dmprintf(minst->heap, "\n");
+                    have_dumped_args = 1;
                 }
                 break;
             default:
@@ -257,14 +259,6 @@ gs_main_init_with_args01(gs_main_instance * minst, int argc, char *argv[])
         }
     }
 
-    if (gs_debug[':']) {
-        int i;
-
-        dmprintf1(minst->heap, "%% Init (Part 1/2) done, instance 0x%p, with args: ", minst);
-        for (i=1; i<argc; i++)
-            dmprintf1(minst->heap, "%s ", argv[i]);
-        dmprintf(minst->heap, "\n");
-    }
     return code;
 }
 
@@ -276,9 +270,6 @@ gs_main_init_with_args2(gs_main_instance * minst)
     code = gs_main_init2(minst);
     if (code < 0)
         return code;
-
-    if (gs_debug[':'])
-        dmprintf1(minst->heap, "%% Init (Part 2/2) done, instance 0x%p.", minst);
 
     if (!minst->run_start)
         return gs_error_Quit;

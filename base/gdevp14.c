@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2018 Artifex Software, Inc.
+/* Copyright (C) 2001-2019 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1742,13 +1742,18 @@ pdf14_get_buffer_information(const gx_device * dev,
     y1 = min(pdev->height, rect.q.y);
     width = x1 - rect.p.x;
     height = y1 - rect.p.y;
-    if (width <= 0 || height <= 0 || buf->data == NULL)
-        return 0;
+
     transbuff->n_chan    = buf->n_chan;
     transbuff->has_tags  = buf->has_tags;
     transbuff->has_shape = buf->has_shape;
     transbuff->width     = buf->rect.q.x - buf->rect.p.x;
     transbuff->height    = buf->rect.q.y - buf->rect.p.y;
+
+    if (width <= 0 || height <= 0 || buf->data == NULL) {
+        transbuff->planestride = 0;
+        transbuff->rowstride = 0;
+        return 0;
+    }
 
     if (free_device) {
         transbuff->pdev14 = NULL;

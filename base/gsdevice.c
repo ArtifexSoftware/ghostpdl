@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2018 Artifex Software, Inc.
+/* Copyright (C) 2001-2019 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -730,9 +730,11 @@ gs_nulldevice(gs_gstate * pgs)
                We just need something so we can end this job cleanly.
              */
             spgs = pgs->saved;
-            while (spgs->saved) spgs = spgs->saved;
-            gs_currentdevice_inline(pgs) = gs_currentdevice_inline(spgs);
-            rc_increment(gs_currentdevice_inline(pgs));
+            if (spgs != NULL) {
+                while (spgs->saved) spgs = spgs->saved;
+                gs_currentdevice_inline(pgs) = gs_currentdevice_inline(spgs);
+                rc_increment(gs_currentdevice_inline(pgs));
+            }
             code = gs_note_error(gs_error_Fatal);
         }
         if (gs_currentdevice_inline(pgs) != NULL)

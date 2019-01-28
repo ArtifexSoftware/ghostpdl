@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2018 Artifex Software, Inc.
+/* Copyright (C) 2001-2019 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -660,6 +660,10 @@ scan_bos_continue(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                     value & (SIZEOF_BIN_SEQ_OBJ - 1)
                     ) {
                     scan_bos_error(pstate, "bad array offset");
+                    return_error(gs_error_syntaxerror);
+                }
+                if (osize > (size / 8)) {
+                    scan_bos_error(pstate, "bad array length");
                     return_error(gs_error_syntaxerror);
                 }
                 {

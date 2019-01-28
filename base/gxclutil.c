@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2018 Artifex Software, Inc.
+/* Copyright (C) 2001-2019 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -27,6 +27,8 @@
 #include "gxcldev.h"
 #include "gxclpath.h"
 #include "gsparams.h"
+
+#include "valgrind.h"
 
 /* ---------------- Statistics ---------------- */
 
@@ -281,6 +283,9 @@ cmd_write_buffer(gx_device_clist_writer * cldev, byte cmd_end)
     for (; band < nbands; band++, pcls++)
         pcls->list.head = pcls->list.tail = 0;
     cldev->cnext = cldev->cbuf;
+#ifdef HAVE_VALGRIND
+    VALGRIND_MAKE_MEM_UNDEFINED(cldev->cbuf, cldev->cend - cldev->cbuf);
+#endif
     cldev->ccl = 0;
 #if defined(DEBUG) && !defined(GS_THREADSAFE)
     if (gs_debug_c('l'))
@@ -299,6 +304,8 @@ byte *
 cmd_put_list_op(gx_device_clist_writer * cldev, cmd_list * pcl, uint size)
 {
     byte *dp = cldev->cnext;
+
+    CMD_CHECK_LAST_OP_BLOCK_DEFINED(cldev);
 
     if (size + cmd_headroom > cldev->cend - dp) {
         if ((cldev->error_code =
@@ -357,6 +364,8 @@ cmd_put_list_op(gx_device_clist_writer * cldev, cmd_list * pcl, uint size)
 int
 cmd_get_buffer_space(gx_device_clist_writer * cldev, gx_clist_state * pcls, uint size)
 {
+    CMD_CHECK_LAST_OP_BLOCK_DEFINED(cldev);
+
     if (size + cmd_headroom > cldev->cend - cldev->cnext) {
         cldev->error_code = cmd_write_buffer(cldev, cmd_opv_end_run);
         if (cldev->error_code < 0) {
@@ -382,6 +391,8 @@ byte *
 cmd_put_range_op(gx_device_clist_writer * cldev, int band_min, int band_max,
                  uint size)
 {
+    CMD_CHECK_LAST_OP_BLOCK_DEFINED(cldev);
+
     if_debug4m('L', cldev->memory, "[L]band range(%d,%d): size=%u, left=%u",
                band_min, band_max, size, 0);
     if (cldev->ccl != 0 &&

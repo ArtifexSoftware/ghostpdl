@@ -1,4 +1,4 @@
-% Copyright (C) 2001-2018 Artifex Software, Inc.
+% Copyright (C) 2001-2019 Artifex Software, Inc.
 % All Rights Reserved.
 %
 % This software is provided AS-IS with no warranty, either express or
@@ -54,7 +54,7 @@ systemdict exch
    dup /userdict
    currentdict dup 200 .setmaxlength		% userdict
    .forceput			% userdict is local, systemdict is global
- }
+ } executeonly
 if begin
 
 % Define dummy local/global operators if needed.
@@ -296,13 +296,6 @@ QUIET not { printgreeting flush } if
   1 index exch .makeoperator def
 } .bind def
 
-% Define a special version of def for storing local objects into global
-% dictionaries.  Like .forceput, this exists only during initialization.
-/.forcedef {		% <key> <value> .forcedef -
-  1 .argindex pop	% check # of args
-  currentdict 3 1 roll .forceput
-} .bind odef
-
 % Define procedures for accessing variables in systemdict and userdict
 % regardless of the contents of the dictionary stack.
 /.systemvar {		% <name> .systemvar <value>
@@ -344,7 +337,7 @@ DELAYBIND
        }
       ifelse
     } .bind def
-} if
+} executeonly if
 
 %**************** BACKWARD COMPATIBILITY ****************
 /hwsizedict mark /HWSize //null .dicttomark readonly def
@@ -652,7 +645,7 @@ currentdict /.typenames .undef
       /ifelse .systemvar
     ] cvx executeonly
   exch .setglobal
-} odef
+} executeonly odef
 systemdict /internaldict dup .makeinternaldict .makeoperator
 .forceput		% proc is local, systemdict is global
 
@@ -1090,7 +1083,7 @@ def
 
 % Define $error.  This must be in local VM.
 .currentglobal //false .setglobal
-/$error 40 dict .forcedef	% $error is local, systemdict is global
+currentdict /$error 40 dict .forceput	% $error is local, systemdict is global
                 % newerror, errorname, command, errorinfo,
                 % ostack, estack, dstack, recordstacks,
                 % binary, globalmode,
@@ -1109,8 +1102,8 @@ end
 % Define errordict similarly.  It has one entry per error name,
 %   plus handleerror.  However, some astonishingly badly written PostScript
 %   files require it to have at least one empty slot.
-/errordict ErrorNames length 3 add dict
-.forcedef		% errordict is local, systemdict is global
+currentdict /errordict ErrorNames length 3 add dict
+.forceput		% errordict is local, systemdict is global
 .setglobal		% back to global VM
 %  gserrordict contains all the default error handling methods, but unlike
 %  errordict it is noaccess after creation (also it is in global VM).
@@ -1165,8 +1158,8 @@ errordict /unknownerror .undef
     }ifelse
   }forall
   noaccess pop
-  systemdict /.setsafeerrors .forceundef
-  systemdict /.SAFERERRORLIST .forceundef
+  //systemdict /.setsafeerrors .forceundef
+  //systemdict /.SAFERERRORLIST .forceundef
 } bind executeonly odef
 
 SAFERERRORS {.setsafererrors} if
@@ -1283,8 +1276,9 @@ end
 (END PROCS) VMDEBUG
 
 % Define the font directory.
+currentdict
 /FontDirectory //false .setglobal 100 dict //true .setglobal
-.forcedef		% FontDirectory is local, systemdict is global
+.forceput		% FontDirectory is local, systemdict is global
 
 % Define the encoding dictionary.
 /EncodingDirectory 16 dict def	% enough for Level 2 + PDF standard encodings
@@ -2144,7 +2138,7 @@ currentdict /tempfilepaths undef
 
 /.locksafe {
   .locksafe_userparams
-  systemdict /getenv {pop //false} .forceput
+  //systemdict /getenv {pop //false} .forceput
   % setpagedevice has the side effect of clearing the page, but
   % we will just document that. Using setpagedevice keeps the device
   % properties and pagedevice .LockSafetyParams in agreement even
@@ -2278,6 +2272,9 @@ SAFER { .setsafeglobal } if
   /.currentmatrix /.setmatrix
   /.setlinecap  /.setlinejoin  /.sizeimagebox  /.systemvmcheck
   /.forceinterp_exit /.actonuel
+  /.init_otto_font_file
+  /.composefontdict
+  /.type1build
 
   % Used by a free user in the Library of Congress. Apparently this is used to
   % draw a partial page, which is then filled in by the results of a barcode
@@ -2311,7 +2308,6 @@ SAFER { .setsafeglobal } if
       /.setuserparams2
       /.startjob
       /.checkFilePermitparams
-      /.checksetparams
       /.copyparam
       /.setdevicecolorrendering1
       /.buildpattern1
@@ -2334,35 +2330,14 @@ SAFER { .setsafeglobal } if
   //systemdict /UndefinePostScriptOperators .forceundef
 } .bind executeonly def % must be bound and hidden for .forceundef
 
+% Undefine operators that are used by PDF internally.
+% This list is maintained in pdf_main.ps
 /UndefinePDFOperators {
-  % This list of operators are used internally by various parts of the Ghostscript PDF interpreter.
-  % Since each operator is a potential security vulnerability, and any operator listed here
-  % is not required once the initislisation is complete and functions are bound, we undefine
-  % the ones that aren't needed at runtime.
-  % This function is only called if DELAYBIND is true. It is a copy of the code at the end of pdf_main.ps
-  % and must be maintained in parallel with it.
-  [
-  /.pdfawidthshow /.pdfwidthshow /.currentblackptcomp /.setblackptcomp
-  /.setfillcolor /.setfillcolorspace /.setstrokecolor /.setstrokecolorspace /.currentrenderingintent /.setrenderingintent
-  /.currenttextrenderingmode /.settextspacing /.currenttextspacing /.settextleading /.currenttextleading
-  /.settextrise /.currenttextrise /.setwordspacing /.currentwordspacing /.settexthscaling /.currenttexthscaling
-  /.settextlinematrix /.currenttextlinematrix /.currenttextmatrix /.settextmatrix /.currentblendmode
-  /.currentopacityalpha /.currentshapealpha /.currenttextknockout
-  /.pushextendedgstate /.popextendedgstate /.begintransparencytextgroup
-  /.endtransparencytextgroup /.begintransparencymaskgroup /.begintransparencymaskimage /.endtransparencymask /.image3x
-  /.abortpdf14devicefilter /.pdfinkpath /.pdfFormName /.setstrokeconstantalpha
-  /.setfillconstantalpha /.setalphaisshape /.currentalphaisshape
-  /.settextspacing /.currenttextspacing /.settextleading /.currenttextleading /.settextrise /.currenttextrise
-  /.setwordspacing /.currentwordspacing /.settexthscaling /.currenttexthscaling /.setPDFfontsize /.currentPDFfontsize
-  /.setdistillerparams
-
-  % undefining these causes errors/incorrect output
-  %/.settextrenderingmode /.setblendmode /.begintransparencygroup /.settextknockout /check_r6_password /.setstrokeoverprint /.setfilloverprint
-  %/.currentstrokeoverprint /.currentfilloverprint /.currentfillconstantalpha /.currentstrokeconstantalpha
-  ]
-  {systemdict exch .forceundef} forall
+  .PDF_UNDEF_OPLIST
+  {//systemdict exch .forceundef} forall
+  //systemdict /.PDF_UNDEF_OPLIST .forceundef
   //systemdict /UndefinePDFOperators .forceundef
-} .bind executeonly def % must be bound and hidden for .forceundef
+} .bind def
 
 % If we delayed binding, make it possible to do it later.
 /.bindnow {
@@ -2383,7 +2358,6 @@ SAFER { .setsafeglobal } if
   //systemdict /UndefinePostScriptOperators get exec
   //systemdict /UndefinePDFOperators get exec
   //systemdict /.forcecopynew .forceundef	% remove temptation
-  //systemdict /.forcedef .forceundef		% ditto
   //systemdict /.forceput .forceundef		% ditto
   //systemdict /.undef .forceundef		    % ditto
   //systemdict /.forceundef .forceundef		% ditto
@@ -2407,7 +2381,7 @@ SAFER { .setsafeglobal } if
         % Update the copy of the user parameters.
   mark .currentuserparams counttomark 2 idiv {
     userparams 3 1 roll .forceput	% userparams is read-only
-  } repeat pop
+  } executeonly repeat pop
         % Turn on idiom recognition, if available.
   currentuserparams /IdiomRecognition known {
     /IdiomRecognition //true .definepsuserparam
@@ -2418,15 +2392,15 @@ SAFER { .setsafeglobal } if
         % (and, if implemented, context switching).
   .currentglobal //false .setglobal
      mark userparams { } forall .dicttomark readonly
-     /userparams exch .forcedef		% systemdict is read-only
+     currentdict exch /userparams exch .forceput		% systemdict is read-only
   .setglobal
-} if
+} executeonly if
 /.currentsystemparams where {
   pop
         % Remove real system params from pssystemparams.
   mark .currentsystemparams counttomark 2 idiv {
     pop pssystemparams exch .forceundef
-  } repeat pop
+  } executeonly repeat pop
 } if
 
 % Set up AlignToPixels :
@@ -2495,7 +2469,6 @@ end
 DELAYBIND not {
   systemdict /.bindnow .undef       % We only need this for DELAYBIND
   systemdict /.forcecopynew .undef	% remove temptation
-  systemdict /.forcedef .undef		% ditto
   systemdict /.forceput .undef		% ditto
   systemdict /.forceundef .undef	% ditto
 } if

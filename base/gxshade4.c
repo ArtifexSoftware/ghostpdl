@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2018 Artifex Software, Inc.
+/* Copyright (C) 2001-2019 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -54,8 +54,10 @@ Gt_next_vertex(const gs_shading_mesh_t * psh, shade_coord_stream_t * cs,
                shading_vertex_t * vertex, patch_color_t *c)
 {
     int code = shade_next_vertex(cs, vertex, c);
+    if (code < 0)
+        return code;
 
-    if (code >= 0 && psh->params.Function) {
+    if (psh->params.Function) {
         c->t[0] = c->cc.paint.values[0];
         c->t[1] = 0;
         /* Decode the color with the function. */

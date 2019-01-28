@@ -1,4 +1,4 @@
-% Copyright (C) 2001-2018 Artifex Software, Inc.
+% Copyright (C) 2001-2019 Artifex Software, Inc.
 % All Rights Reserved.
 %
 % This software is provided AS-IS with no warranty, either express or
@@ -74,7 +74,7 @@
     CMap /WMode .knownget { /WMode exch def } if
     /FontType 0 def
   pop pop currentdict end
-} bind odef
+} bind executeonly odef
 
 % composefont doesn't appear in CMap files -- it's documented in
 % the "PostScript Language Reference Manual Supplement".

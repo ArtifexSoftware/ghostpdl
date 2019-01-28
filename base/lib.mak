@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2018 Artifex Software, Inc.
+# Copyright (C) 2001-2019 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -1497,7 +1497,7 @@ strmio_h=$(GLSRC)strmio.h
 $(GLOBJ)strmio.$(OBJ) : $(GLSRC)strmio.c $(AK) $(malloc__h)\
   $(memory__h) $(gdebug_h) $(gsfname_h) $(gslibctx_h) $(gsstype_h)\
   $(gsmalloc_h) $(gsmemret_h) $(strmio_h) $(stream_h) $(gxiodev_h)\
- $(LIB_MAK) $(MAKEDIRS)
+ $(gserrors_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)strmio.$(OBJ) $(C_) $(GLSRC)strmio.c
 
 # ---------------- BCP filters ---------------- #

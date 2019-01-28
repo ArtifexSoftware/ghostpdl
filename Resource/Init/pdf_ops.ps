@@ -1,4 +1,4 @@
-% Copyright (C) 2001-2018 Artifex Software, Inc.
+% Copyright (C) 2001-2019 Artifex Software, Inc.
 % All Rights Reserved.
 %
 % This software is provided AS-IS with no warranty, either express or
@@ -184,14 +184,14 @@ currentdict /gput_always_allow .undef
         pdfdict /.Qqwarning_issued //true .forceput
         .setglobal
         pdfformaterror
-      } ifelse
+      } executeonly ifelse
     }
     {
       currentglobal pdfdict gcheck .setglobal
       pdfdict /.Qqwarning_issued //true .forceput
       .setglobal
       pdfformaterror
-    } ifelse
+    } executeonly ifelse
   } if
 } bind executeonly odef
 
@@ -439,7 +439,8 @@ currentdict /gput_always_allow .undef
   dup type /booleantype eq {
     .currentSMask type /dicttype eq {
       .currentSMask /Processed 2 index .forceput
-    } {
+  } executeonly
+  {
       .setSMask
   }ifelse
   }{

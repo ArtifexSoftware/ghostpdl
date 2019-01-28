@@ -9,57 +9,57 @@
   gtag('js', new Date());
 
   gtag('config', 'UA-54391264-2');
-</script>	
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro" rel="stylesheet">
-<link rel="shortcut icon" type="image/png" href="../../images/favicon.png">	
+<link rel="shortcut icon" type="image/png" href="../../images/favicon.png">
 <title>Ghostscript and the PostScript Language</title>
-	<!-- Originally: language.txt -->
+    <!-- Originally: language.txt -->
 <link href="style.css" rel="stylesheet" type="text/css">
 <link href="gs-style.css" rel="stylesheet" type="text/css">
 </head>
 
 <body>
-	
-	<div class="header">
-	<div class="row">
-		<div class="col-lt-6 logo"><a href="https://www.ghostscript.com/"><img src="images/ghostscript_logo.png" width="108" height="119" alt=""></a></div>
-		<div class="col-6"><div class="row"><div class="artifexlogo"><a href="https://artifex.com" target="_blank"><img src="images/Artifex_logo.png" width="194" height="40" alt=""></a></div>
-		<div class="col-12"><div class="button button1"><a href="https://artifex.com/contact-us/" title="Contact Us" target="_blank">Contact Us</a></div>
-		<div class="button button2 hidden-xs"><a href="https://www.ghostscript.com/download.html" title="Download">Download</a></div></div></div>
-	</div>
-	</div>
-	</div>
-	
-	<div class="banner">
-	<div class="row">
-		<div class="col-12">Ghostscript and the PostScript Language</div>	
-	</div>
-	</div>
-	
-	<div class="main">
-	<div class="row">
-	<div id="sidebar">
-	<div class="sidebar-item"></div>
-	<div class="col-2 leftnav">
+
+    <div class="header">
+    <div class="row">
+        <div class="col-lt-6 logo"><a href="https://www.ghostscript.com/"><img src="images/ghostscript_logo.png" width="108" height="119" alt=""></a></div>
+        <div class="col-6"><div class="row"><div class="artifexlogo"><a href="https://artifex.com" target="_blank"><img src="images/Artifex_logo.png" width="194" height="40" alt=""></a></div>
+        <div class="col-12"><div class="button button1"><a href="https://artifex.com/contact-us/" title="Contact Us" target="_blank">Contact Us</a></div>
+        <div class="button button2 hidden-xs"><a href="https://www.ghostscript.com/download.html" title="Download">Download</a></div></div></div>
+    </div>
+    </div>
+    </div>
+
+    <div class="banner">
+    <div class="row">
+        <div class="col-12">Ghostscript and the PostScript Language</div>
+    </div>
+    </div>
+
+    <div class="main">
+    <div class="row">
+    <div id="sidebar">
+    <div class="sidebar-item"></div>
+    <div class="col-2 leftnav">
 <ul>
-			<li><a href="https://www.ghostscript.com/">Home</a></li>
-			<li><a href="https://www.ghostscript.com/license.html">Licensing</a></li>
-			<li><a href="https://www.ghostscript.com/releases.html">Releases</a></li>
-			<li><a href="https://www.ghostscript.com/release_history.html">Release History</a></li>
-			<li><a href="https://www.ghostscript.com/documentation.html" title="Documentation">Documentation</a></li>
-			<li><a href="https://www.ghostscript.com/download.html" title="Download">Download</a></li>
-			<li><a href="https://www.ghostscript.com/performance.html" title="Performance">Performance</a></li>
-			<li><a href="http://jbig2dec.com/" title="jbig2dec">jbig2dec</a></li>
-			<li><a href="http://git.ghostscript.com/?p=ghostpdl.git;a=summary">Source</a></li>
-			<li><a href="http://bugs.ghostscript.com/">Bugs</a></li>
-			<li><a href="https://www.ghostscript.com/faq.html" title="FAQ">FAQ</a></li>
-		</ul>
-	</div>
-	</div>	
-	<div class="col-10 page">
-		
+            <li><a href="https://www.ghostscript.com/">Home</a></li>
+            <li><a href="https://www.ghostscript.com/license.html">Licensing</a></li>
+            <li><a href="https://www.ghostscript.com/releases.html">Releases</a></li>
+            <li><a href="https://www.ghostscript.com/release_history.html">Release History</a></li>
+            <li><a href="https://www.ghostscript.com/documentation.html" title="Documentation">Documentation</a></li>
+            <li><a href="https://www.ghostscript.com/download.html" title="Download">Download</a></li>
+            <li><a href="https://www.ghostscript.com/performance.html" title="Performance">Performance</a></li>
+            <li><a href="http://jbig2dec.com/" title="jbig2dec">jbig2dec</a></li>
+            <li><a href="http://git.ghostscript.com/?p=ghostpdl.git;a=summary">Source</a></li>
+            <li><a href="http://bugs.ghostscript.com/">Bugs</a></li>
+            <li><a href="https://www.ghostscript.com/faq.html" title="FAQ">FAQ</a></li>
+        </ul>
+    </div>
+    </div>
+    <div class="col-10 page">
+
 <!--START EDITING HERE-->
 
 <h2>Table of contents</h2>
@@ -246,76 +246,76 @@ shown.</p>
 <blockquote><table>
 <tr><th colspan="7">Architectural limits (corresponds to Adobe table B.1)</th></tr>
 <tr valign="bottom">
-	<th align="left">Quantity</th>
-	<th>&nbsp;&nbsp;</th>
-	<th align="left">Limit</th>
-	<th>&nbsp;&nbsp;</th>
-	<th align="left">Type</th>
-	<th>&nbsp;&nbsp;</th>
-	<th align="left">Adobe</th></tr>
-<tr valign="top">	<td>integer</td>
-	<td>&nbsp;</td>
-	<td>32-bit</td>
-	<td>&nbsp;</td>
-	<td>twos complement integer</td>
-	<td>&nbsp;</td>
-	<td>&nbsp;</td></tr>
-<tr valign="top">	<td>real</td>
-	<td>&nbsp;</td>
-	<td>single-precision</td>
-	<td>&nbsp;</td>
-	<td>IEEE float</td>
-	<td>&nbsp;</td>
-	<td>&nbsp;</td></tr>
-<tr valign="top">	<td>array</td>
-	<td>&nbsp;</td>
-	<td>16777216</td>
-	<td>&nbsp;</td>
-	<td>elements</td>
-	<td>&nbsp;</td>
-	<td>65535</td></tr>
-<tr valign="top">	<td>dictionary</td>
-	<td>&nbsp;</td>
-	<td>16777215</td>
-	<td>&nbsp;</td>
-	<td>elements</td>
-	<td>&nbsp;</td>
-	<td>65535</td></tr>
-<tr valign="top">	<td>string</td>
-	<td>&nbsp;</td>
-	<td>16777216</td>
-	<td>&nbsp;</td>
-	<td>characters</td>
-	<td>&nbsp;</td>
-	<td>65535</td></tr>
-<tr valign="top">	<td>name</td>
-	<td>&nbsp;</td>
-	<td>16383</td>
-	<td>&nbsp;</td>
-	<td>characters</td>
-	<td>&nbsp;</td>
-	<td>127</td></tr>
-<tr valign="top">	<td>filename</td>
-	<td>&nbsp;</td>
-	<td>128*</td>
-	<td>&nbsp;</td>
-	<td>characters</td>
-	<td>&nbsp;</td>
-	<td>&nbsp;</td></tr>
-<tr valign="top">	<td><code>save</code> level</td>
-	<td>&nbsp;</td>
-	<td>none</td>
-	<td>&nbsp;</td>
-	<td>(capacity of memory)</td>
-	<td>&nbsp;</td>
-	<td>15</td></tr>
-<tr valign="top">	<td><code>gsave</code> level</td>
-	<td>&nbsp;</td>
-	<td>none</td>
-	<td>&nbsp;</td>
-	<td>(capacity of memory)</td>
-	<td>&nbsp;</td>
-	<td>13</td></tr>
+    <th align="left">Quantity</th>
+    <th>&nbsp;&nbsp;</th>
+    <th align="left">Limit</th>
+    <th>&nbsp;&nbsp;</th>
+    <th align="left">Type</th>
+    <th>&nbsp;&nbsp;</th>
+    <th align="left">Adobe</th></tr>
+<tr valign="top">    <td>integer</td>
+    <td>&nbsp;</td>
+    <td>32-bit</td>
+    <td>&nbsp;</td>
+    <td>twos complement integer</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td></tr>
+<tr valign="top">    <td>real</td>
+    <td>&nbsp;</td>
+    <td>single-precision</td>
+    <td>&nbsp;</td>
+    <td>IEEE float</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td></tr>
+<tr valign="top">    <td>array</td>
+    <td>&nbsp;</td>
+    <td>16777216</td>
+    <td>&nbsp;</td>
+    <td>elements</td>
+    <td>&nbsp;</td>
+    <td>65535</td></tr>
+<tr valign="top">    <td>dictionary</td>
+    <td>&nbsp;</td>
+    <td>16777215</td>
+    <td>&nbsp;</td>
+    <td>elements</td>
+    <td>&nbsp;</td>
+    <td>65535</td></tr>
+<tr valign="top">    <td>string</td>
+    <td>&nbsp;</td>
+    <td>16777216</td>
+    <td>&nbsp;</td>
+    <td>characters</td>
+    <td>&nbsp;</td>
+    <td>65535</td></tr>
+<tr valign="top">    <td>name</td>
+    <td>&nbsp;</td>
+    <td>16383</td>
+    <td>&nbsp;</td>
+    <td>characters</td>
+    <td>&nbsp;</td>
+    <td>127</td></tr>
+<tr valign="top">    <td>filename</td>
+    <td>&nbsp;</td>
+    <td>128*</td>
+    <td>&nbsp;</td>
+    <td>characters</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td></tr>
+<tr valign="top">    <td><code>save</code> level</td>
+    <td>&nbsp;</td>
+    <td>none</td>
+    <td>&nbsp;</td>
+    <td>(capacity of memory)</td>
+    <td>&nbsp;</td>
+    <td>15</td></tr>
+<tr valign="top">    <td><code>gsave</code> level</td>
+    <td>&nbsp;</td>
+    <td>none</td>
+    <td>&nbsp;</td>
+    <td>(capacity of memory)</td>
+    <td>&nbsp;</td>
+    <td>13</td></tr>
 </table></blockquote>
 
 <p>
@@ -328,95 +328,95 @@ starts with a %...% IODevice designation, or 124 characters if it does not.</p>
 
 <tr><th colspan="7">Memory limits (corresponds to Adobe table B.2)</th></tr>
 <tr valign="bottom">
-	<th align="left">Quantity</th>
-	<th>&nbsp;&nbsp;</th>
-	<th align="left">Limit</th>
-	<th>&nbsp;&nbsp;</th>
-	<th align="left">Type</th>
-	<th>&nbsp;&nbsp;</th>
-	<th align="left">Adobe</th></tr>
-<tr valign="top">	<td><code>userdict</code></td>
-	<td>&nbsp;</td>
-	<td>200</td>
-	<td>&nbsp;</td>
-	<td>&nbsp;</td>
-	<td>&nbsp;</td>
-	<td>&nbsp;</td></tr>
-<tr valign="top">	<td><code>FontDirectory</code></td>
-	<td>&nbsp;</td>
-	<td>100</td>
-	<td>&nbsp;</td>
-	<td>&nbsp;</td>
-	<td>&nbsp;</td>
-	<td>&nbsp;</td></tr>
-<tr valign="top">	<td>operand stack</td>
-	<td>&nbsp;</td>
-	<td>800</td>
-	<td>&nbsp;</td>
-	<td>&nbsp;</td>
-	<td>&nbsp;</td>
-	<td>500</td></tr>
-<tr valign="top">	<td>dictionary stack</td>
-	<td>&nbsp;</td>
-	<td>20</td>
-	<td>&nbsp;</td>
-	<td>&nbsp;</td>
-	<td>&nbsp;</td>
-	<td>&nbsp;</td></tr>
-<tr valign="top">	<td>execution stack</td>
-	<td>&nbsp;</td>
-	<td>250</td>
-	<td>&nbsp;</td>
-	<td>&nbsp;</td></tr>
-<tr valign="top">	<td>interpreter level</td>
-	<td>&nbsp;</td>
-	<td>none</td>
-	<td>&nbsp;</td>
-	<td>(capacity of memory)</td>
-	<td>&nbsp;</td>
-	<td>10</td></tr>
-<tr valign="top">	<td>path</td>
-	<td>&nbsp;</td>
-	<td>none</td>
-	<td>&nbsp;</td>
-	<td>(capacity of memory)</td>
-	<td>&nbsp;</td>
-	<td>1500</td></tr>
-<tr valign="top">	<td>dash</td>
-	<td>&nbsp;</td>
-	<td>11</td>
-	<td>&nbsp;</td>
-	<td>&nbsp;</td>
-	<td>&nbsp;</td>
-	<td>&nbsp;</td></tr>
-<tr valign="top">	<td>VM</td>
-	<td>&nbsp;</td>
-	<td>none</td>
-	<td>&nbsp;</td>
-	<td>(capacity of memory)</td>
-	<td>&nbsp;</td>
-	<td>240000</td></tr>
-<tr valign="top">	<td>file</td>
-	<td>&nbsp;</td>
-	<td>none</td>
-	<td>&nbsp;</td>
-	<td>(determined by operating system)</td>
-	<td>&nbsp;</td>
-	<td>6</td></tr>
-<tr valign="top">	<td>image</td>
-	<td>&nbsp;</td>
-	<td>65535</td>
-	<td>&nbsp;</td>
-	<td>values (samples &times; components)<br>for 1-, 2-, 4-, or 8-bit samples</td>
-	<td>&nbsp;</td>
-	<td>3300</td></tr>
-<tr valign="top">	<td>&nbsp;</td>
-	<td>&nbsp;</td>
-	<td>32767</td>
-	<td>&nbsp;</td>
-	<td>values for 12-bit samples</td>
-	<td>&nbsp;</td>
-	<td>3300</td></tr>
+    <th align="left">Quantity</th>
+    <th>&nbsp;&nbsp;</th>
+    <th align="left">Limit</th>
+    <th>&nbsp;&nbsp;</th>
+    <th align="left">Type</th>
+    <th>&nbsp;&nbsp;</th>
+    <th align="left">Adobe</th></tr>
+<tr valign="top">    <td><code>userdict</code></td>
+    <td>&nbsp;</td>
+    <td>200</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td></tr>
+<tr valign="top">    <td><code>FontDirectory</code></td>
+    <td>&nbsp;</td>
+    <td>100</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td></tr>
+<tr valign="top">    <td>operand stack</td>
+    <td>&nbsp;</td>
+    <td>800</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>500</td></tr>
+<tr valign="top">    <td>dictionary stack</td>
+    <td>&nbsp;</td>
+    <td>20</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td></tr>
+<tr valign="top">    <td>execution stack</td>
+    <td>&nbsp;</td>
+    <td>250</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td></tr>
+<tr valign="top">    <td>interpreter level</td>
+    <td>&nbsp;</td>
+    <td>none</td>
+    <td>&nbsp;</td>
+    <td>(capacity of memory)</td>
+    <td>&nbsp;</td>
+    <td>10</td></tr>
+<tr valign="top">    <td>path</td>
+    <td>&nbsp;</td>
+    <td>none</td>
+    <td>&nbsp;</td>
+    <td>(capacity of memory)</td>
+    <td>&nbsp;</td>
+    <td>1500</td></tr>
+<tr valign="top">    <td>dash</td>
+    <td>&nbsp;</td>
+    <td>11</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td></tr>
+<tr valign="top">    <td>VM</td>
+    <td>&nbsp;</td>
+    <td>none</td>
+    <td>&nbsp;</td>
+    <td>(capacity of memory)</td>
+    <td>&nbsp;</td>
+    <td>240000</td></tr>
+<tr valign="top">    <td>file</td>
+    <td>&nbsp;</td>
+    <td>none</td>
+    <td>&nbsp;</td>
+    <td>(determined by operating system)</td>
+    <td>&nbsp;</td>
+    <td>6</td></tr>
+<tr valign="top">    <td>image</td>
+    <td>&nbsp;</td>
+    <td>65535</td>
+    <td>&nbsp;</td>
+    <td>values (samples &times; components)<br>for 1-, 2-, 4-, or 8-bit samples</td>
+    <td>&nbsp;</td>
+    <td>3300</td></tr>
+<tr valign="top">    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>32767</td>
+    <td>&nbsp;</td>
+    <td>values for 12-bit samples</td>
+    <td>&nbsp;</td>
+    <td>3300</td></tr>
 </table></blockquote>
 
 <h3><a name="VM_consumption"></a>Other differences in VM consumption</h3>
@@ -757,7 +757,7 @@ that resides in the /Root directory.</p>
     <th valign="bottom" align="left">Flag</th>
     <th>&nbsp;&nbsp;&nbsp;</th>
     <th valign="bottom" align="left">Definition</th></tr>
-<tr valign="top">	<td>DELAYBIND</td>
+<tr valign="top">    <td>DELAYBIND</td>
     <td>&nbsp;</td>
     <td>returns the argument, stores the argument for later use by <code>.bindnow</code></td></tr>
 </table></blockquote>
@@ -870,12 +870,12 @@ operator to perform the locking needed to enter <b>SAFER</b> mode.</p>
 For example, to enable reading everywhere, but disallow writing and file
 control (deleting and renaming files), the following can be used:</p>
 <pre>
-	{ &lt;&lt; /PermitFileReading [ (*) ]
-	     /PermitFileWriting [ ]
-	     /PermitFileControl [ ]
-	  &gt;&gt; setuserparams
-	  .locksafe
-	} stopped pop
+    { &lt;&lt; /PermitFileReading [ (*) ]
+         /PermitFileWriting [ ]
+         /PermitFileControl [ ]
+      &gt;&gt; setuserparams
+      .locksafe
+    } stopped pop
 </pre>
 <p>In the above example, use of stopped will allow the use of this sequence on
 older versions of Ghostscript where <code>.locksafe</code> was not an operator.</p>
@@ -990,18 +990,18 @@ These are interpreted as:</p>
 
 <blockquote><table>
 <tr valign="bottom">
-	<th valign="bottom" align="left">Palette</th>
-	<th>&nbsp;&nbsp;&nbsp;</th>
-	<th valign="bottom" align="left">Bits allocated per color</th></tr>
-<tr valign="top">	<td>16</td>
-	<td>&nbsp;</td>
-	<td>5 red, 6 green, 5 blue</td></tr>
-<tr valign="top">	<td>24</td>
-	<td>&nbsp;</td>
-	<td>8 red, 8 green, 8 blue</td></tr>
-<tr valign="top">	<td>32</td>
-	<td>&nbsp;</td>
-	<td>8C, 8M, 8Y, 8K</td></tr>
+    <th valign="bottom" align="left">Palette</th>
+    <th>&nbsp;&nbsp;&nbsp;</th>
+    <th valign="bottom" align="left">Bits allocated per color</th></tr>
+<tr valign="top">    <td>16</td>
+    <td>&nbsp;</td>
+    <td>5 red, 6 green, 5 blue</td></tr>
+<tr valign="top">    <td>24</td>
+    <td>&nbsp;</td>
+    <td>8 red, 8 green, 8 blue</td></tr>
+<tr valign="top">    <td>32</td>
+    <td>&nbsp;</td>
+    <td>8C, 8M, 8Y, 8K</td></tr>
 </table></blockquote>
 
 <p>
@@ -1195,31 +1195,31 @@ graphics format</a>.  Recognized keys are:</dd></p>
 <blockquote><table>
 <tr><th colspan="5">Keys recognized in PNG filter algorithms</th></tr>
 <tr valign="bottom">
-	<th align="left">Key</th>
-	<th>&nbsp;&nbsp;</th>
-	<th align="left">Range</th>
-	<th>&nbsp;&nbsp;</th>
-	<th align="left">Default</th></tr>
-<tr valign="top">	<td><code>Colors &lt;integer&gt;</code></td>
-	<td>&nbsp;&nbsp;&nbsp;</td>
-	<td>1 to 16</td>
-	<td>&nbsp;&nbsp;</td>
-	<td>16</td></tr>
-<tr valign="top">	<td><code>BitsPerComponent &lt;integer&gt;</code></td>
-	<td>&nbsp;</td>
-	<td>1, 2, 4, 8, or 16</td>
-	<td>&nbsp;&nbsp;</td>
-	<td>8</td></tr>
-<tr valign="top">	<td><code>Columns &lt;integer&gt;</code></td>
-	<td>&nbsp;</td>
-	<td>&gt;= 0</td>
-	<td>&nbsp;&nbsp;</td>
-	<td>1</td></tr>
-<tr valign="top">	<td><code>Predictor &lt;integer&gt;</code></td>
-	<td>&nbsp;</td>
-	<td>10 to 15</td>
-	<td>&nbsp;&nbsp;</td>
-	<td>15</td></tr>
+    <th align="left">Key</th>
+    <th>&nbsp;&nbsp;</th>
+    <th align="left">Range</th>
+    <th>&nbsp;&nbsp;</th>
+    <th align="left">Default</th></tr>
+<tr valign="top">    <td><code>Colors &lt;integer&gt;</code></td>
+    <td>&nbsp;&nbsp;&nbsp;</td>
+    <td>1 to 16</td>
+    <td>&nbsp;&nbsp;</td>
+    <td>16</td></tr>
+<tr valign="top">    <td><code>BitsPerComponent &lt;integer&gt;</code></td>
+    <td>&nbsp;</td>
+    <td>1, 2, 4, 8, or 16</td>
+    <td>&nbsp;&nbsp;</td>
+    <td>8</td></tr>
+<tr valign="top">    <td><code>Columns &lt;integer&gt;</code></td>
+    <td>&nbsp;</td>
+    <td>&gt;= 0</td>
+    <td>&nbsp;&nbsp;</td>
+    <td>1</td></tr>
+<tr valign="top">    <td><code>Predictor &lt;integer&gt;</code></td>
+    <td>&nbsp;</td>
+    <td>10 to 15</td>
+    <td>&nbsp;&nbsp;</td>
+    <td>15</td></tr>
 </table></blockquote>
 
 <p>
@@ -1239,7 +1239,7 @@ specification</p>
 <dt><code>&lt;source&gt; /TBCPDecode filter &lt;file&gt;</code></dt>
 <dd>Create filters that implement the Adobe Tagged Binary Communications
 Protocol.  See Adobe documentation for details.</dd>
-		</dl>
+        </dl>
 
 <dl>
 <dt><code>&lt;target&gt; /zlibEncode filter &lt;file&gt;</code></dt>
@@ -1885,14 +1885,14 @@ specifying an absolute path. The default value for
 <code>GenericResourceDir</code> is a relative path. Therefore
 a default invocation with a PostScript installer
 will install resource files into <code>/gs/Resource</code>.</p>
-	
+
 <!-- [2.0 end contents] ==================================================== -->
-		
+
 <!-- [3.0 begin visible trailer] =========================================== -->
 <hr>
 
 <p>
-<small>Copyright &copy; 2000-2018 Artifex Software, Inc.  All rights reserved.</small>
+<small>Copyright &copy; 2000-2019 Artifex Software, Inc.  All rights reserved.</small>
 
 <p>
 This software is provided AS-IS with no warranty, either express or
@@ -1907,38 +1907,38 @@ Novato, CA 94945, U.S.A., +1(415)492-9861, for further information.
 <p>
 <small>Ghostscript version 9.26, 20 November 2018
 
-<!-- [3.0 end visible trailer] ============================================= -->		
+<!-- [3.0 end visible trailer] ============================================= -->
 
 <!--FINISH EDITING HERE-->
-	
-	</div>
-	</div>
-	</div>	
-	
-	<div class="footer">
-	<div class="row">
-		<div class="col-7 footleft">
-		<ul>
-			<li><a href="https://artifex.com/contact-us/" target="blank">CONTACT US</a></li>
-			<li><a href="https://artifex.com/about-us/" target="blank">ABOUT</a></li>
-			<li><a href="https://ghostscript.com/security.html">SECURITY</a></li>
-		</ul>
-		</div>
-		<div class="col-1 footcenter">
-		 <ul>
-		   <li><a href="https://artifex.com/support/" target="blank">SUPPORT</a></li>
-		   <li><a href="https://artifex.com/blog/artifex/" target="blank">BLOG</a></li>
-		   <li><a href="https://artifex.com/privacy-policy/" target="blank">PRIVACY</a></li>
-	   	</ul>
-		</div>
-		<div class="col-ft-3 footright"><img src="images/Artifex_logo.png" width="194" height="40" alt=""/> <br>
-  			© Copyright 2018 Artifex Software, Inc. <br>
-			All rights reserved.
-		</div>
-	  	</div>
-	</div>
-	
-	<script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
-	<script src="index.js"></script>
+
+    </div>
+    </div>
+    </div>
+
+    <div class="footer">
+    <div class="row">
+        <div class="col-7 footleft">
+        <ul>
+            <li><a href="https://artifex.com/contact-us/" target="blank">CONTACT US</a></li>
+            <li><a href="https://artifex.com/about-us/" target="blank">ABOUT</a></li>
+            <li><a href="https://ghostscript.com/security.html">SECURITY</a></li>
+        </ul>
+        </div>
+        <div class="col-1 footcenter">
+         <ul>
+           <li><a href="https://artifex.com/support/" target="blank">SUPPORT</a></li>
+           <li><a href="https://artifex.com/blog/artifex/" target="blank">BLOG</a></li>
+           <li><a href="https://artifex.com/privacy-policy/" target="blank">PRIVACY</a></li>
+           </ul>
+        </div>
+        <div class="col-ft-3 footright"><img src="images/Artifex_logo.png" width="194" height="40" alt=""/> <br>
+              © Copyright 2019 Artifex Software, Inc. <br>
+            All rights reserved.
+        </div>
+          </div>
+    </div>
+
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+    <script src="index.js"></script>
 </body>
 </html>

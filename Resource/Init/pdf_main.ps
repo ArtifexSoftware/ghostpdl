@@ -1,4 +1,4 @@
-% Copyright (C) 2001-2018 Artifex Software, Inc.
+% Copyright (C) 2001-2019 Artifex Software, Inc.
 % All Rights Reserved.
 %
 % This software is provided AS-IS with no warranty, either express or
@@ -2701,14 +2701,14 @@ currentdict /PDF2PS_matrix_key undef
           pdfdict /.Qqwarning_issued //true .forceput
           .setglobal
           pdfformaterror
-        } ifelse
+        } executeonly ifelse
       }
       {
         currentglobal pdfdict gcheck .setglobal
         pdfdict /.Qqwarning_issued //true .forceput
         .setglobal
         pdfformaterror
-      } ifelse
+      } executeonly ifelse
     } if
   } if
   pop
@@ -2959,6 +2959,29 @@ currentdict /PDF2PS_matrix_key undef
         pdfformatwarning
         pop
       } ifelse
+    } if
+    dup /Font knownoget {
+      //false exch
+      {
+        exch pop oforce
+        dup type /dicttype eq {
+          dup /Subtype knownoget {
+            /Type3 eq
+            {
+              3 index exch resourceusestransparency
+              { pop //true exit } if
+            }
+            {pop} ifelse
+          }
+          {
+            pop
+          }ifelse
+        }
+        { % probably a name object
+          pop
+        }ifelse
+      } forall
+      { pop //true exit } if
     } if
     2 copy //false put             % Visited but not in the current chain.
     pop //false exit
@@ -3444,13 +3467,13 @@ currentdict /PDF2PS_matrix_key undef
 end			% pdfdict
 .setglobal
 
-DELAYBIND not {
 %% This list of operators are used internally by various parts of the Ghostscript PDF interpreter.
 %% Since each operator is a potential security vulnerability, and any operator listed here
 %% is not required once the initislisation is complete and functions are bound, we undefine
 %% the ones that aren't needed at runtime.
+/.PDF_UNDEF_OPLIST
 [
-/.pdfawidthshow /.pdfwidthshow
+/.pdfawidthshow /.pdfwidthshow /.currentblackptcomp /.setblackptcomp
 /.setfillcolor /.setfillcolorspace /.setstrokecolor /.setstrokecolorspace /.currentrenderingintent /.setrenderingintent
 /.currenttextrenderingmode /.settextspacing /.currenttextspacing /.settextleading /.currenttextleading
 /.settextrise /.currenttextrise /.setwordspacing /.currentwordspacing /.settexthscaling /.currenttexthscaling
@@ -3461,7 +3484,7 @@ DELAYBIND not {
 /.abortpdf14devicefilter /.pdfinkpath /.pdfFormName /.setstrokeconstantalpha
 /.setfillconstantalpha /.setalphaisshape /.currentalphaisshape
 /.settextspacing /.currenttextspacing /.settextleading /.currenttextleading /.settextrise /.currenttextrise
-/.setwordspacing /.currentwordspacing /.settexthscaling /.currenttexthscaling
+/.setwordspacing /.currentwordspacing /.settexthscaling /.currenttexthscaling /.setPDFfontsize /.currentPDFfontsize
 /.setdistillerparams
 
 % Used by our own test suite files
@@ -3474,6 +3497,10 @@ DELAYBIND not {
 % undefining these causes errors/incorrect output
 %/.settextrenderingmode /.setblendmode /.begintransparencygroup /.settextknockout /check_r6_password /.setstrokeoverprint /.setfilloverprint
 %/.currentstrokeoverprint /.currentfilloverprint /.currentfillconstantalpha /.currentstrokeconstantalpha
-]
+] def
+
+DELAYBIND not {
+.PDF_UNDEF_OPLIST
 {systemdict exch .undef} forall
+systemdict /.PDF_UNDEF_OPLIST .undef
 } if

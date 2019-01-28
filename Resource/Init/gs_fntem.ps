@@ -1,4 +1,4 @@
-% Copyright (C) 2001-2018 Artifex Software, Inc.
+% Copyright (C) 2001-2019 Artifex Software, Inc.
 % All Rights Reserved.
 %
 % This software is provided AS-IS with no warranty, either express or
@@ -401,12 +401,12 @@ currentdict end def
       .forceput % FontInfo can be read-only.
       pop                                                        % bool <font>
       exit
-    } if
+    } executeonly if
     dup /FontInfo get                                            % bool <font> <FI>
     /GlyphNames2Unicode /Unicode /Decoding findresource
     .forceput % FontInfo can be read-only.
     exit
-  } loop
+  } executeonly loop
   exch setglobal
 } .bind executeonly odef % must be bound and hidden for .forceput
 

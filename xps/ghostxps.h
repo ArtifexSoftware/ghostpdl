@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2018 Artifex Software, Inc.
+/* Copyright (C) 2001-2019 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -432,7 +432,7 @@ struct xps_context_s
     int fill_rule;
 };
 
-int xps_process_file(xps_context_t *ctx, char *filename);
+int xps_process_file(xps_context_t *ctx, const char *filename);
 
 /* end of page device callback foo */
 int xps_show_page(xps_context_t *ctx, int num_copies, int flush);

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2018 Artifex Software, Inc.
+/* Copyright (C) 2001-2019 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -90,10 +90,19 @@ static int
 pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
                    gs_text_cache_control_t control)
 {
-    pdf_text_enum_t *const penum = (pdf_text_enum_t *)pte;
+    pdf_text_enum_t *penum;
     gs_text_enum_t *pgste;
     gx_device_pdf *pdev = (gx_device_pdf *)pte->dev;
     gs_matrix m;
+
+    if (pdev->pte != NULL)
+        penum = (pdf_text_enum_t *)pdev->pte;
+    else {
+        if (gs_object_type(pte->memory, pte) == &st_pdf_text_enum)
+            penum = (pdf_text_enum_t *)pte;
+        else
+            return_error(gs_error_typecheck);
+    }
 
     if (pdev->type3charpath)
         return gs_text_set_cache(penum->pte_default, pw, control);
@@ -157,18 +166,11 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
         glyph = penum->returned.current_glyph;
         if ((glyph != GS_NO_GLYPH && penum->output_char_code != GS_NO_CHAR) || !pdev->PS_accumulator) {
             gs_show_enum *penum_s;
-            extern_st(st_gs_show_enum);
             gs_fixed_rect clip_box;
             double pw1[10];
             int narg = (control == TEXT_SET_CHAR_WIDTH ? 2 :
                         control == TEXT_SET_CACHE_DEVICE ? 6 : 10), i;
 
-            /* Check to verify the structure type is really gs_show_enum */
-            if (gs_object_type(pgste->memory, pgste) != &st_gs_show_enum) {
-                /* Must not happen with PS interpreter.
-                   Other clients should conform. */
-                return_error(gs_error_unregistered);
-            }
             penum_s = (gs_show_enum *)pgste;
             /* BuildChar could change the scale before calling setcachedevice (Bug 687290).
                We must scale the setcachedevice arguments because we assumed
@@ -506,14 +508,14 @@ gdev_pdf_text_begin(gx_device * dev, gs_gstate * pgs,
     gx_path *path = path0;
     pdf_text_enum_t *penum;
     int code, user_defined = 0;
-    
+
     /* should we "flatten" the font to "normal" marking operations */
     if (pdev->FlattenFonts) {
         font->dir->ccache.upper = 0;
         return gx_default_text_begin(dev, pgs, text, font, path, pdcolor,
                                          pcpath, mem, ppte);
     }
-    
+
     /* Track the dominant text rotation. */
     {
         gs_matrix tmat;
@@ -3253,7 +3255,6 @@ pdf_text_process(gs_text_enum_t *pte)
                 gs_gstate *pgs = (gs_gstate *)penum->pgs;
                 gs_text_enum_procs_t special_procs = *pte_default->procs;
                 void (*save_proc)(gx_device *, gs_matrix *) = pdev->procs.get_initial_matrix;
-                extern_st(st_gs_show_enum);
                 gs_matrix m, savem;
 
                 special_procs.set_cache = pdf_text_set_cache;
@@ -3324,7 +3325,7 @@ pdf_text_process(gs_text_enum_t *pte)
                  */
                 pdev->procs.get_initial_matrix = pdf_type3_get_initial_matrix;
 
-                pdev->pte = pte_default; /* CAUTION: See comment in gdevpdfx.h . */
+                pdev->pte = (gs_text_enum_t *)penum; /* CAUTION: See comment in gdevpdfx.h . */
                 code = gs_text_process(pte_default);
                 if (code < 0)
                     return code;

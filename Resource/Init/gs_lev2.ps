@@ -1,4 +1,4 @@
-% Copyright (C) 2001-2018 Artifex Software, Inc.
+% Copyright (C) 2001-2019 Artifex Software, Inc.
 % All Rights Reserved.
 %
 % This software is provided AS-IS with no warranty, either express or
@@ -64,7 +64,7 @@ level2dict begin
       pop
     } ifelse pop pop
   } forall pop pop
-} .bind odef
+} .bind def
 
 % currentuser/systemparams creates and returns a dictionary in the
 % current VM.  The easiest way to make this work is to copy any composite
@@ -129,7 +129,7 @@ end
 /.setuserparams2 {
         % Check that we will be able to set the PostScript-level
         % user parameters.
-  /setuserparams /psuserparams .systemvar .checksetparams
+  /setuserparams /psuserparams .systemvar //.checksetparams exec
         % Set the C-level user params.  If this succeeds, we know that
         % the password check succeeded.
   dup .setuserparams
@@ -154,7 +154,8 @@ end
       % protect top level of parameters that we copied
       dup type dup /arraytype eq exch /stringtype eq or { readonly } if
       /userparams .systemvar 3 1 roll .forceput  % userparams is read-only
-    } {
+    } executeonly
+    {
       pop pop
     } ifelse
   } forall
@@ -211,7 +212,7 @@ end
    } if
    /setsystemparams //pssystemparams mark exch {
      type cvlit //.checkparamtype /exec load 3 packedarray cvx
-   } forall .dicttomark .checksetparams
+   } forall .dicttomark //.checksetparams exec
         % Set the C-level system params.  If this succeeds, we know that
         % the password check succeeded.
    dup .setsystemparams
@@ -224,7 +225,7 @@ end
          % protect top level parameters that we copied
          dup type dup /arraytype eq exch /stringtype eq or { readonly } if
          //pssystemparams 3 1 roll .forceput	% pssystemparams is read-only
-       }
+       } executeonly
        { pop pop
        }
       ifelse
@@ -303,31 +304,30 @@ end
     psuserparams exch /.checkFilePermitparams load put
   .setglobal
 
-pssystemparams begin
-  /CurDisplayList 0 .forcedef
-  /CurFormCache 0 .forcedef
-  /CurInputDevice () .forcedef
-  /CurOutlineCache 0 .forcedef
-  /CurOutputDevice () .forcedef
-  /CurPatternCache 0 .forcedef
-  /CurUPathCache 0 .forcedef
-  /CurScreenStorage 0 .forcedef
-  /CurSourceList 0 .forcedef
-  /DoPrintErrors //false .forcedef
-  /JobTimeout 0 .forcedef
-  /LicenseID (LN-001) .forcedef     % bogus
-  /MaxDisplayList 140000 .forcedef
-  /MaxFormCache 100000 .forcedef
-  /MaxImageBuffer 524288 .forcedef
-  /MaxOutlineCache 65000 .forcedef
-  /MaxPatternCache 100000 .forcedef
-  /MaxUPathCache 300000 .forcedef
-  /MaxScreenStorage 84000 .forcedef
-  /MaxSourceList 25000 .forcedef
-  /PrinterName product .forcedef
-  /RamSize 4194304 .forcedef
-  /WaitTimeout 40 .forcedef
-end
+pssystemparams
+dup /CurDisplayList 0 .forceput
+dup /CurFormCache 0 .forceput
+dup /CurInputDevice () .forceput
+dup /CurOutlineCache 0 .forceput
+dup /CurOutputDevice () .forceput
+dup /CurPatternCache 0 .forceput
+dup /CurUPathCache 0 .forceput
+dup /CurScreenStorage 0 .forceput
+dup /CurSourceList 0 .forceput
+dup /DoPrintErrors //false .forceput
+dup /JobTimeout 0 .forceput
+dup /LicenseID (LN-001) .forceput     % bogus
+dup /MaxDisplayList 140000 .forceput
+dup /MaxFormCache 100000 .forceput
+dup /MaxImageBuffer 524288 .forceput
+dup /MaxOutlineCache 65000 .forceput
+dup /MaxPatternCache 100000 .forceput
+dup /MaxUPathCache 300000 .forceput
+dup /MaxScreenStorage 84000 .forceput
+dup /MaxSourceList 25000 .forceput
+dup /PrinterName product .forceput
+dup /RamSize 4194304 .forceput
+    /WaitTimeout 40 .forceput
 
 % Define the procedures for handling comment scanning.  The names
 % %ProcessComment and %ProcessDSCComment are known to the interpreter.
@@ -694,7 +694,7 @@ pop		% currentsystemparams
 /statusdict currentdict def
 
 currentdict end
-/statusdict exch .forcedef	% statusdict is local, systemdict is global
+currentdict exch /statusdict exch .forceput	% statusdict is local, systemdict is global
 
 % The following compatibility operators are in systemdict.  They are
 % defined here, rather than in gs_init.ps, because they require the
@@ -941,7 +941,7 @@ mark
   dup /PaintProc get
   1 index /Implementation known not {
     1 index dup /Implementation //null .forceput readonly pop
-  } if
+  } executeonly if
   exec
 }.bind odef
 
@@ -965,7 +965,7 @@ mark
   dup /PaintProc get
   1 index /Implementation known not {
     1 index dup /Implementation //null .forceput readonly pop
-  } if
+  } executeonly if
   /UNROLLFORMS where {/UNROLLFORMS get}{false}ifelse not
   %% [CTM] <<Form>> PaintProc .beginform -
   {
@@ -1012,7 +1012,7 @@ mark
         %% Form dictioanry using the /Implementation key).
         1 dict dup /FormID 4 -1 roll put
         1 index exch /Implementation exch .forceput readonly pop
-      }
+      } executeonly
       ifelse
     }
     {
@@ -1267,5 +1267,6 @@ end				% level2dict
     /.pair2dict
     /.setcolorrendering1
     /.checkparamtype
+    /.checksetparams
 ]
 {level2dict exch .forceundef} forall

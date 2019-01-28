@@ -1,4 +1,4 @@
-% Copyright (C) 2001-2018 Artifex Software, Inc.
+% Copyright (C) 2001-2019 Artifex Software, Inc.
 % All Rights Reserved.
 %
 % This software is provided AS-IS with no warranty, either express or
@@ -1131,14 +1131,14 @@ currentdict end readonly def
           pdfdict /.Qqwarning_issued //true .forceput
           .setglobal
           pdfformaterror
-        } ifelse
+        } executeonly ifelse
       }
       {
         currentglobal pdfdict gcheck .setglobal
         pdfdict /.Qqwarning_issued //true .forceput
         .setglobal
         pdfformaterror
-      } ifelse
+      } executeonly ifelse
       end
     } ifelse
   } loop
@@ -1154,14 +1154,14 @@ currentdict end readonly def
         pdfdict /.Qqwarning_issued //true .forceput
         .setglobal
         pdfformaterror
-      } ifelse
+      } executeonly ifelse
     }
     {
       currentglobal pdfdict gcheck .setglobal
       pdfdict /.Qqwarning_issued //true .forceput
       .setglobal
       pdfformaterror
-    } ifelse
+    } executeonly ifelse
   } if
   pop
 
@@ -2363,9 +2363,10 @@ currentdict /last-ditch-bpc-csp undef
 /IncrementAppearanceNumber {
   pdfdict /AppearanceNumber .knownget {
     1 add pdfdict /AppearanceNumber 3 -1 roll .forceput
-  }{
+  } executeonly
+  {
     pdfdict /AppearanceNumber 0 .forceput
-  } ifelse
+  } executeonly ifelse
 }bind executeonly odef
 
 /MakeAppearanceName {
@@ -2523,7 +2524,8 @@ currentdict /last-ditch-bpc-csp undef
     %% want to preserve it.
     pdfdict /.PreservePDFForm false .forceput
     /q cvx /execform cvx 5 -2 roll
-  }{
+  } executeonly
+  {
     /q cvx /PDFexecform cvx 5 -2 roll
   } ifelse
 

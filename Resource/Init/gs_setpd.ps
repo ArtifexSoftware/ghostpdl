@@ -1,4 +1,4 @@
-% Copyright (C) 2001-2018 Artifex Software, Inc.
+% Copyright (C) 2001-2019 Artifex Software, Inc.
 % All Rights Reserved.
 %
 % This software is provided AS-IS with no warranty, either express or
@@ -689,7 +689,7 @@ SETPDDEBUG { (Result of putting.) = pstack flush } if
   SETPDDEBUG { (Rolling back.) = pstack flush } if
   3 index 2 index 3 -1 roll .forceput
   4 index 1 index .knownget
-  { 4 index 3 1 roll .forceput }
+  { 4 index 3 1 roll .forceput } executeonly
   { 3 index exch .undef }
   ifelse
 } bind executeonly odef

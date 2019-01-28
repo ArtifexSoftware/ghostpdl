@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2018 Artifex Software, Inc.
+/* Copyright (C) 2001-2019 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -124,6 +124,9 @@ int ref_stack_store_check(const ref_stack_t *pstack, ref *parray,
 int ref_stack_store(const ref_stack_t *pstack, ref *parray, uint count,
                     uint skip, int age, bool check,
                     gs_dual_memory_t *idmem, client_name_t cname);
+
+int
+ref_stack_array_sanitize(i_ctx_t *i_ctx_p, ref *sarr, ref *darr);
 
 /*
  * Pop the top N elements off a stack.

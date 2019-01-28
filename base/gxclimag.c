@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2018 Artifex Software, Inc.
+/* Copyright (C) 2001-2019 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1268,6 +1268,8 @@ clist_create_compositor(gx_device * dev,
     int code = pcte->type->procs.write(pcte, 0, &size, cdev);
     int temp_cropping_min, temp_cropping_max;
 
+    CMD_CHECK_LAST_OP_BLOCK_DEFINED(cdev);
+
     /* determine the amount of space required */
     if (code < 0 && code != gs_error_rangecheck)
         return code;
@@ -1279,7 +1281,11 @@ clist_create_compositor(gx_device * dev,
     if (code < 0)
         return code;
 
+    CMD_CHECK_LAST_OP_BLOCK_DEFINED(cdev);
+
     code = pcte->type->procs.get_cropping(pcte, &ry, &rheight, cdev->cropping_min, cdev->cropping_max);
+
+    CMD_CHECK_LAST_OP_BLOCK_DEFINED(cdev);
 
     if (code < 0)
         return code;

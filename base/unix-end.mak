@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2018 Artifex Software, Inc.
+# Copyright (C) 2001-2019 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -216,10 +216,11 @@ mementoclean:
 	$(MAKE) $(MEMENTOMAKEOPTS) cleansub
 
 # Define a rule for building memento configurations with valgrind
-MEMENTOVGDEFS=GENOPT='-DMEMENTO -DDEBUG -DPACIFY_VALGRIND -DHAVE_VALGRIND' \
+MEMENTOVGDEFS=GENOPT='-DMEMENTO -DDEBUG -DPACIFY_VALGRIND -DHAVE_VALGRIND'\
  CFLAGS='$(CFLAGS_DEBUG) $(GCFLAGS) $(XCFLAGS)'\
- BUILDDIRPREFIX=$(MEMENTODIRPREFIX) GENOPTAUX='-DMEMENTO' \
- CFLAGSAUX='$(CFLAGSAUX_DEBUG) $(GCFLAGSAUX) $(XCFLAGSAUX)'
+ BUILDDIRPREFIX=$(MEMENTODIRPREFIX) GENOPTAUX='-DMEMENTO'\
+ CFLAGSAUX='$(CFLAGSAUX_DEBUG) $(GCFLAGSAUX) $(XCFLAGSAUX)'\
+ BAND_LIST_STORAGE=memory
 
 MEMENTOVGMAKEOPTS=$(SUB_MAKE_OPTION) $(MEMENTOVGDEFS)
 
@@ -269,6 +270,59 @@ gpdfsanitize:
 
 sanitizeclean:
 	$(MAKE) $(SANITIZEMAKEOPTS) cleansub
+
+# Define a rule for building release configurations with valgrind
+VGDEFS=GENOPT='-DPACIFY_VALGRIND -DHAVE_VALGRIND' \
+ CFLAGS='$(GCFLAGS) $(XCFLAGS)'\
+ CFLAGSAUX='$(CFLAGSAUX) $(GCFLAGSAUX) $(XCFLAGSAUX)'\
+ BAND_LIST_STORAGE=memory
+
+VGMAKEOPTS=$(SUB_MAKE_OPTION) $(VGDEFS)
+
+vg:
+	$(MAKE) $(VGMAKEOPTS) default
+
+gsvg:
+	$(MAKE) $(VGMAKEOPTS) .gssubtarget
+
+gpcl6vg:
+	$(MAKE) $(VGMAKEOPTS) .pcl6subtarget
+
+gxpsvg:
+	$(MAKE) $(VGMAKEOPTS) .xpssubtarget
+
+gpdlvg:
+	$(MAKE) $(VGMAKEOPTS) .gpdlsubtarget
+
+vgclean:
+	$(MAKE) $(VGMAKEOPTS) cleansub
+
+# Define a rule for building debugging configurations.
+DEBUGVGDEFS=GENOPT='-DDEBUG -DPACIFY_VALGRIND -DHAVE_VALGRIND'\
+ CFLAGS='$(CFLAGS_DEBUG) $(GCFLAGS) $(XCFLAGS)'\
+ GENOPTAUXVG='-DDEBUG_AUX'\
+ CFLAGSAUX='$(CFLAGSAUX_DEBUG) $(GCFLAGSAUX) $(XCFLAGSAUX)'\
+ BAND_LIST_STORAGE=memory
+
+DEBUGVGMAKEOPTS=$(SUB_MAKE_OPTION) $(DEBUGVGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX)
+
+debugvg:
+	$(MAKE) $(DEBUGVGMAKEOPTS) default
+
+gsdebugvg:
+	$(MAKE) $(DEBUGVGMAKEOPTS) .gssubtarget
+
+gpcl6debugvg:
+	$(MAKE) $(DEBUGVGMAKEOPTS) .pcl6subtarget
+
+gxpsdebugvg:
+	$(MAKE) $(DEBUGVGMAKEOPTS) .xpssubtarget
+
+gpdldebugvg:
+	$(MAKE) $(DEBUGVGMAKEOPTS) .gpdlsubtarget
+
+debugvgclean:
+	$(MAKE) $(DEBUGVGMAKEOPTS) cleansub
 
 # Emacs tags maintenance.
 

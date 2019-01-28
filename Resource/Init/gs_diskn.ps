@@ -1,4 +1,4 @@
-% Copyright (C) 2001-2018 Artifex Software, Inc.
+% Copyright (C) 2001-2019 Artifex Software, Inc.
 % All Rights Reserved.
 %
 % This software is provided AS-IS with no warranty, either express or
@@ -51,7 +51,7 @@ systemdict begin
     mark 5 1 roll ] mark exch { { } forall } forall ]
     //systemdict /.searchabledevs 2 index .forceput
     exch .setglobal
-  }
+  } executeonly
   if
 } .bind executeonly odef % must be bound and hidden for .forceput
 

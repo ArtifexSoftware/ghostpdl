@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2018 Artifex Software, Inc.
+/* Copyright (C) 2001-2019 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -74,5 +74,8 @@ int sferror(stream *s);
  * to  the  stream results in undefined behaviour (reference to freed memory);
  */
 int sfclose(stream *s);
+
+/* Get a callout-capable stdin stream. */
+int gs_get_callout_stdin(stream **ps, gs_memory_t *mem);
 
 #endif /* strmio_INCLUDED */

@@ -1,4 +1,4 @@
-% Copyright (C) 2001-2018 Artifex Software, Inc.
+% Copyright (C) 2001-2019 Artifex Software, Inc.
 % All Rights Reserved.
 %
 % This software is provided AS-IS with no warranty, either express or
@@ -33,14 +33,17 @@ systemdict begin
 
 /SharedFontDirectory .FontDirectory .gcheck
  { .currentglobal //false .setglobal
+   currentdict
    /LocalFontDirectory .FontDirectory dup maxlength dict copy
-   .forcedef	% LocalFontDirectory is local, systemdict is global
+   .forceput	% LocalFontDirectory is local, systemdict is global
    .setglobal .FontDirectory
- }
- { /LocalFontDirectory .FontDirectory
-   .forcedef	% LocalFontDirectory is local, systemdict is global
+ } executeonly
+ {
+   currentdict
+   /LocalFontDirectory .FontDirectory
+   .forceput	% LocalFontDirectory is local, systemdict is global
    50 dict
- }
+ }executeonly
 ifelse def
 
 end				% systemdict
@@ -55,7 +58,7 @@ level2dict begin
     { //SharedFontDirectory }
     { /LocalFontDirectory .systemvar }	% can't embed ref to local VM
    ifelse .forceput pop	% LocalFontDirectory is local, systemdict is global
- } .bind odef
+ } .bind executeonly odef
 % Don't just copy (load) the definition of .setglobal:
 % it gets redefined for LL3.
 /setshared { /.setglobal .systemvar exec } odef
@@ -67,25 +70,26 @@ level2dict begin
 
 /selectfont		% <fontname> <size> selectfont -
  {
-   { 1 .argindex findfont
+   {
+     1 .argindex findfont
      1 index dup type /arraytype eq { makefont } { scalefont } ifelse
      setfont pop pop
    } stopped { /selectfont .systemvar $error /errorname get signalerror } if
  } odef
 % undefinefont has to take local/global VM into account.
 /undefinefont		% <fontname> undefinefont -
- { .FontDirectory 1 .argindex .forceundef	% FontDirectory is readonly
+ { //.FontDirectory 1 .argindex .forceundef	% FontDirectory is readonly
    .currentglobal
     {		% Current mode is global; delete from local directory too.
       //systemdict /LocalFontDirectory .knownget
-       { 1 index .forceundef }		% LocalFontDirectory is readonly
+       { 1 index .forceundef } executeonly		% LocalFontDirectory is readonly
       if
     }
     {		% Current mode is local; if there was a shadowed global
                 % definition, copy it into the local directory.
       //systemdict /SharedFontDirectory .knownget
        { 1 index .knownget
-          { .FontDirectory 2 index 3 -1 roll { put } systemdict /superexec known {//superexec}{1183615869 internaldict /superexec get exec} ifelse } % readonly
+          { //.FontDirectory 2 index 3 -1 roll { put } systemdict /superexec known {//superexec}{1183615869 internaldict /superexec get exec} ifelse } % readonly
          if
        }
       if
@@ -126,7 +130,7 @@ level2dict begin
           }
          ifelse
        } forall
-      pop counttomark 2 idiv { .forceundef } repeat pop		% readonly
+      pop counttomark 2 idiv { .forceundef } executeonly repeat pop		% readonly
     }
    if
    //SharedFontDirectory exch .forcecopynew pop

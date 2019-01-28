@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2018 Artifex Software, Inc.
+/* Copyright (C) 2001-2019 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -271,6 +271,7 @@ txtwrite_open_device(gx_device * dev)
 #endif
     dev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
     set_linear_color_bits_mask_shift(dev);
+    dev->interpolate_control = 0;
 
     code = install_internal_subclass_devices((gx_device **)&dev, NULL);
     return code;
@@ -1094,6 +1095,8 @@ txtwrite_put_params(gx_device * dev, gs_param_list * plist)
     code = gx_default_put_params(dev, plist);
     if (code < 0)
         return code;
+
+    dev->interpolate_control = 0;
 
     if (ofs.data != 0) {	/* Close the file if it's open. */
         if (tdev->file != 0) {

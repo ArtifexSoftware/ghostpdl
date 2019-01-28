@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2018 Artifex Software, Inc.
+/* Copyright (C) 2001-2019 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -262,6 +262,9 @@ xps_read_zip_dir(xps_context_t *ctx, int start_offset)
         (void) getshort(ctx->file); /* int file atts */
         (void) getlong(ctx->file); /* ext file atts */
         ctx->zip_table[i].offset = getlong(ctx->file);
+
+	if (ctx->zip_table[i].csize < 0 || ctx->zip_table[i].usize < 0)
+            return gs_throw(gs_error_ioerror, "cannot read zip entries larger than 2GB");
 
         ctx->zip_table[i].name = xps_alloc(ctx, namesize + 1);
         if (!ctx->zip_table[i].name)
@@ -563,7 +566,7 @@ xps_read_and_process_page_part(xps_context_t *ctx, char *name)
  */
 
 int
-xps_process_file(xps_context_t *ctx, char *filename)
+xps_process_file(xps_context_t *ctx, const char *filename)
 {
     char buf[2048];
     xps_document_t *doc;

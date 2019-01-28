@@ -1,4 +1,4 @@
-% Copyright (C) 2001-2018 Artifex Software, Inc.
+% Copyright (C) 2001-2019 Artifex Software, Inc.
 % All Rights Reserved.
 %
 % This software is provided AS-IS with no warranty, either express or
@@ -714,7 +714,7 @@ currentdict end readonly def
     pop pop pop
     currentdict /.stackdepth .forceundef
     currentdict /.dstackdepth .forceundef
-  }
+  } executeonly
   {pop pop pop}
   ifelse
 
@@ -1232,7 +1232,7 @@ currentdict /eexec_pdf_param_dict .undef
                 (\n   **** Warning: Type 3 glyph has unbalanced q/Q operators \(too many q's\)\n               Output may be incorrect.\n)
                 pdfformatwarning
                 pdfdict /.Qqwarning_issued //true .forceput
-              } if
+              } executeonly if
               Q
             } repeat
             Q
@@ -2016,7 +2016,7 @@ currentdict /CMap_read_dict undef
               /CIDFallBack /CIDFont findresource
             } if
             exit
-          } if
+          } executeonly if
         } if
       } if
 

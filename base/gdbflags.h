@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2018 Artifex Software, Inc.
+/* Copyright (C) 2001-2019 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -30,7 +30,7 @@ FLAG(gc_disable, 3, 0, "Disable Garbage Collection (completely)"),
 FLAG(epo_disable, 4, 0, "Disable Erasepage Optimization (completely)"),
 FLAG(epo_details, 5, 0, "Erasepage Optimization tracing"),
 FLAG(epo_install_only, 6, 0, "Erasepage Optimization install only (for debugging subclass)"),
-UNUSED(7)
+FLAG(init_details, 7, 0, "Language initialisation (detail)"),
 UNUSED(8)
 UNUSED(9)
 UNUSED(10)
