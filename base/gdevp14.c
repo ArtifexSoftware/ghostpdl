@@ -1868,7 +1868,6 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
     if (buf->saved != NULL) {
         return gs_throw(gs_error_unknownerror, "PDF14 device push/pop out of sync");
     }
-
     if_debug0m('v', dev->memory, "[v]pdf14_put_image\n");
     rect_intersect(rect, buf->dirty);
     x1 = min(pdev->width, rect.q.x);
@@ -2134,6 +2133,11 @@ pdf14_cmykspot_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
     int num_comp = buf->n_chan - 1;
     byte *buf_ptr;
 
+    /* Make sure that this is the only item on the stack. Fuzzing revealed a
+       potential problem. Bug 694190 */
+    if (buf->saved != NULL) {
+        return gs_throw(gs_error_unknownerror, "PDF14 device push/pop out of sync");
+    }
     if_debug0m('v', dev->memory, "[v]pdf14_cmykspot_put_image\n");
     rect_intersect(rect, buf->dirty);
     x1 = min(pdev->width, rect.q.x);
@@ -2184,6 +2188,11 @@ pdf14_custom_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
     int x1, y1, width, height;
     byte *buf_ptr;
 
+    /* Make sure that this is the only item on the stack. Fuzzing revealed a
+       potential problem. Bug 694190 */
+    if (buf->saved != NULL) {
+        return gs_throw(gs_error_unknownerror, "PDF14 device push/pop out of sync");
+    }
     if_debug0m('v', dev->memory, "[v]pdf14_custom_put_image\n");
     rect_intersect(rect, buf->dirty);
     x1 = min(pdev->width, rect.q.x);
