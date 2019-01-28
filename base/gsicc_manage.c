@@ -1120,8 +1120,9 @@ gsicc_get_profile_handle_file(const char* pname, int namelen, gs_memory_t *mem)
     stream* str;
     int code;
 
-    /* First see if we can get the stream.  NOTE  icc directory not used! */
-    code = gsicc_open_search(pname, namelen, mem, NULL, 0, &str);
+    /* First see if we can get the stream. */
+    code = gsicc_open_search(pname, namelen, mem, mem->gs_lib_ctx->profiledir,
+        mem->gs_lib_ctx->profiledir_len, &str);
     if (code < 0 || str == NULL) {
         gs_throw(gs_error_VMerror, "Creation of ICC profile failed");
         return NULL;
