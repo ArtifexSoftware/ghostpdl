@@ -4502,10 +4502,6 @@ pdf14_update_device_color_procs(gx_device *dev,
             return_error(gs_error_rangecheck);
             break;
         }
-    if_debug2m('v', pdev->memory,
-                "[v]pdf14_update_device_color_procs,num_components_old = %d num_components_new = %d\n",
-                pdev->color_info.num_components,new_num_comps);
-
     /* Save the old information */
     parent_color_info->get_cmap_procs = pgs->get_cmap_procs;
     parent_color_info->parent_color_mapping_procs =
@@ -4549,7 +4545,9 @@ pdf14_update_device_color_procs(gx_device *dev,
             }
         }
     }
-
+    if_debug2m('v', pdev->memory,
+                "[v]pdf14_update_device_color_procs,num_components_old = %d num_components_new = %d\n",
+                pdev->color_info.num_components,new_num_comps);
     set_dev_proc(pdev, get_color_mapping_procs, pdevproto->static_procs->get_color_mapping_procs);
     set_dev_proc(pdev, get_color_comp_index, pdevproto->static_procs->get_color_comp_index);
     pdev->blend_procs = pdevproto->blend_procs;
