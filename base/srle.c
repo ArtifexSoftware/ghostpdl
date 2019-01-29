@@ -42,6 +42,71 @@ s_RLE_init(stream_state * st)
     return s_RLE_init_inline(ss);
 }
 
+enum {
+    /* Initial state - Nothing read (but may be mid run). */
+    state_0,
+
+    /* 0 bytes into a run, n0 read. */
+    state_eq_0,
+
+    /* 0 bytes into a run, n0 and n1 read. */
+    state_eq_01,
+
+    /* n bytes into a literal run, n0 and n1 read. */
+    state_gt_01,
+
+    /* n bytes into a literal run, n0,n1,n2 read. */
+    state_gt_012,
+
+    /* -n bytes into a repeated run, n0 and n1 read. */
+    state_lt_01
+};
+
+#ifdef DEBUG_RLE
+static void
+debug_ate(const byte *p, const byte *plimit,
+          const byte *q, const byte *qlimit,
+          int ret)
+{
+    if (p != plimit) {
+        dlprintf("CONSUMED");
+        while (p != plimit) {
+            dlprintf1(" %02x", *++p);
+        }
+        dlprintf("\n");
+    }
+    if (q != qlimit) {
+        dlprintf("PRODUCED\n");
+        while (q != qlimit) {
+            int n = *++q;
+            if (n == 128) {
+                dlprintf1(" EOD(%02x)", n);
+            } else if (n < 128) {
+                dlprintf2(" %d(%02x)(", n+1, n);
+                n++;
+                while (n-- && q != qlimit) {
+                    dlprintf1(" %02x", *++q);
+                }
+                if (n != -1) {
+                    dlprintf1(" %d missing!", n+1);
+                }
+                dlprintf(" )\n");
+            } else {
+                dlprintf2(" %d(%02x) - ", 257-n, n);
+                if (q == qlimit) {
+                    dlprintf("WTF!");
+                }
+                dlprintf1("%02x\n", *++q);
+            }
+        }
+        dlprintf("\n");
+    }
+    dlprintf1("RETURNED %d\n", ret);
+}
+#else
+#define debug_ate(a,b,c,d,e) do { } while (0)
+#endif
+
 /* Process a buffer */
 static int
 s_RLE_process(stream_state * st, stream_cursor_read * pr,
@@ -50,145 +115,254 @@ s_RLE_process(stream_state * st, stream_cursor_read * pr,
     stream_RLE_state *const ss = (stream_RLE_state *) st;
     register const byte *p = pr->ptr;
     register byte *q = pw->ptr;
-    const byte *rlimit = pr->limit;
+    const byte *plimit = pr->limit;
     byte *wlimit = pw->limit;
-    int status = 0;
     ulong rleft = ss->record_left;
+    int run_len = ss->run_len;
+    byte n0 = ss->n0;
+    byte n1 = ss->n1;
+    byte n2 = ss->n2;
+    const byte *rlimit = p + rleft;
+#ifdef DEBUG_RLE
+    const byte *pinit = p;
+    const byte *qinit = q;
+    static int entry = -1;
 
-    /*
-     * We thought that the Genoa CET demands that the output from this
-     * filter be not just legal, but optimal, so we went to the trouble
-     * of ensuring this.  It turned out that this wasn't actually
-     * necessary, but we didn't want to change the code back.
-     *
-     * For optimal output, we can't just break runs at buffer
-     * boundaries: unless we hit a record boundary or the end of the
-     * input, we have to look ahead far enough to know that we aren't
-     * breaking a run prematurely.
-     */
+    entry++;
+    dlprintf7("ENTERED(%d): avail_in=%d avail_out=%d run_len=%d n0=%02x n1=%02x n2=%02x\n",
+              entry, plimit-p, wlimit-q, run_len, n0, n1, n2);
+#endif
 
-    /* Check for leftover output. */
-copy:
-    if (ss->copy_left) {
-        uint rcount = rlimit - p;
-        uint wcount = wlimit - q;
-        uint count = ss->copy_left;
-
-        if (rcount < count)
-            count = rcount;
-        if (wcount < count)
-            count = wcount;
-        if (rleft < count)
-            count = rleft;
-        memcpy(q + 1, p + 1, count);
-        pr->ptr = p += count;
-        pw->ptr = q += count;
-        if ((ss->record_left = rleft -= count) == 0)
-            ss->record_left = rleft = ss->record_size;
-        if ((ss->copy_left -= count) != 0)
-            return (rcount == 0 ? 0 : 1);
-    }
-    while (p < rlimit) {
-        const byte *beg = p;
-        const byte *p1;
-        uint count = rlimit - p;
-        bool end = last;
-        byte next;
-
-        if (count > rleft)
-            count = rleft, end = true;
-        if (count > 128)
-            count = 128, end = true;
-        p1 = p + count - 1;
-        if (count < 3) {
-            if (!end || count == 0)
-                break;		/* can't look ahead far enough */
-            if (count == 1) {
-                if (wlimit - q < 2) {
-                    status = 1;
-                    break;
+    switch (ss->state) {
+    default:
+        dlprintf("Inconsistent state in s_RLE_process!\n");
+    case state_0:
+        while (p != plimit) {
+            if (run_len == 0) {
+                /* About to start a new run */
+                n0 = *++p;
+    case state_eq_0:
+run_len_0_n0_read:
+                if (p == rlimit || (p == plimit && last)) {
+                    /* flush the record here, and restart */
+                    if (wlimit - q < 2)
+                        goto no_output_room_n0_read;
+                    *++q = 0; /* Single literal */
+                    *++q = n0;
+                    rlimit = p + ss->record_size;
+                    continue;
                 }
-                *++q = 0;
-            } else {		/* count == 2 */
-                if (p[1] == p[2]) {
-                    if (wlimit - q < 2) {
-                        status = 1;
-                        break;
+                if (p == plimit)
+                    goto no_more_data_n0_read;
+                n1 = *++p;
+    case state_eq_01:
+                if (p == rlimit || (p == plimit && last)) {
+                    /* flush the record here, and restart */
+                    if (wlimit - q < 3 - (n0 == n1))
+                        goto no_output_room_n0n1_read;
+                    if (n0 == n1) {
+                        *++q = 0xff; /* Repeat 2 */
+                        *++q = n0;
+                    } else {
+                        *++q = 1; /* Two literals */
+                        *++q = n0;
+                        *++q = n1;
                     }
-                    *++q = 255;
+                    run_len = 0;
+                    rlimit = p + ss->record_size;
+                    continue;
+                }
+                if (n0 == n1) {
+                    /* Start of a repeated run */
+                    run_len = -2;
                 } else {
-                    if (wlimit - q < 3) {
-                        status = 1;
-                        break;
+                    /* A literal run of at least 1. */
+                    run_len = 1;
+                    ss->literals[0] = n0;
+                    n0 = n1;
+                }
+                if (p == plimit)
+                    goto no_more_data;
+            } else if (run_len > 0) {
+                /* We are in the middle of a run of literals */
+                n1 = *++p;
+    case state_gt_01:
+                if (p == rlimit || run_len == 126 ||
+                    (n0 == n1 && p == plimit && last)) {
+                    /* flush the record here, and restart */
+                    /* <len> <queue> n0 n1 */
+                    if (wlimit - q < run_len+3)
+                        goto no_output_room_gt_n0n1_read;
+                    *++q = run_len+1;
+                    memcpy(q+1, ss->literals, run_len);
+                    q += run_len;
+                    *++q = n0;
+                    *++q = n1;
+                    run_len = 0;
+                    if (p == rlimit)
+                        rlimit = p + ss->record_size;
+                    continue;
+                }
+                if (n0 == n1) {
+                    if (p == plimit)
+                        goto no_more_data_n0n1_read;
+                    n2 = *++p;
+    case state_gt_012:
+                    if (p == rlimit || run_len == 125) {
+                        /* flush the record here, and restart */
+                        /* <len> <queue> n0 n1 n2 */
+                        if (wlimit - q < run_len+4)
+                            goto no_output_room_n0n1n2_read;
+                        *++q = run_len+2;
+                        memcpy(q+1, ss->literals, run_len);
+                        q += run_len;
+                        *++q = n0;
+                        *++q = n1;
+                        *++q = n2;
+                        run_len = 0;
+                        if (p == rlimit)
+                            rlimit = p + ss->record_size;
+                        continue;
                     }
-                    *++q = 1;
-                    *++q = p[1];
+                    if (n0 != n2) {
+                        /* Stick with a literal run */
+                        ss->literals[run_len++] = n0;
+                        ss->literals[run_len++] = n1;
+                        n0 = n2;
+                    } else {
+                        /* Flush current run, start a repeated run */
+                        /* <len> <queue> */
+                        if (wlimit - q < run_len+1)
+                            goto no_output_room_n0n1n2_read;
+                        *++q = run_len-1;
+                        memcpy(q+1, ss->literals, run_len);
+                        q += run_len;
+                        run_len = -3; /* Repeated run of length 3 */
+                    }
+                } else {
+                    /* Continue literal run */
+                    ss->literals[run_len++] = n0;
+                    n0 = n1;
+                }
+            } else {
+                /* We are in the middle of a repeated run */
+                /* <n0 repeated -run_len times> */
+                n1 = *++p;
+                if (n0 == n1)
+                    run_len--; /* Repeated run got longer */
+    case state_lt_01:
+                if (n0 != n1 || p == rlimit || run_len == -128) {
+                    /* flush the record here, and restart */
+                    if (wlimit - q < 2)
+                        goto no_output_room_lt_n0n1_read;
+                    *++q = 257+run_len; /* Repeated run */
+                    *++q = n0;
+                    run_len = 0;
+                    if (p == rlimit)
+                        rlimit = p + ss->record_size;
+                    if (n0 != n1) {
+                        n0 = n1;
+                        goto run_len_0_n0_read;
+                    }
                 }
             }
-            *++q = p1[1];
-            p = p1 + 1;
-        } else if ((next = p[1]) == p[2] && next == p[3]) {
-            if (wlimit - q < 2) {
-                status = 1;
-                break;
-            }
-            /* Recognize leading repeated byte */
-            do {
-                p++;
-            }
-            while (p < p1 && p[2] == next);
-            if (p == p1 && !end) {
-                p = beg;	/* need to look ahead further */
-                break;
-            }
-            p++;
-            *++q = (byte) (257 - (p - beg));
-            *++q = next;
-        } else {
-            p1--;
-            while (p < p1 && (p[2] != p[1] || p[3] != p[1]))
-                p++;
-            if (p == p1) {
-                if (!end) {
-                    p = beg;	/* need to look ahead further */
-                    break;
-                }
-                p += 2;
-            }
-            count = p - beg;
-            if (wlimit - q < count + 1) {
-                p = beg;
-                if (q >= wlimit) {
-                    status = 1;
-                    break;
-                }
-                /* Copy some now and some later. */
-                *++q = count - 1;
-                ss->copy_left = count;
-                goto copy;
-            }
-            *++q = count - 1;
-            memcpy(q + 1, beg + 1, count);
-            q += count;
         }
-        rleft -= p - beg;
-        if (rleft == 0)
-            rleft = ss->record_size;
     }
-    if (last && status == 0 && ss->EndOfData) {
-        if (q < wlimit)
-            *++q = 128;
-        else
-            status = 1;
+    /* n1 is never valid here */
+
+    if (last) {
+        if (run_len == 0) {
+            /* EOD */
+            if (wlimit - q < 1)
+                goto no_output_room;
+        } else if (run_len > 0) {
+            /* Flush literal run + EOD */
+            if (wlimit - q < run_len+2)
+                goto no_output_room;
+            *++q = run_len;
+            memcpy(q+1, ss->literals, run_len);
+            q += run_len;
+            *++q = n0;
+        } else if (run_len < 0) {
+            /* Flush repeated run + EOD */
+            if (wlimit - q < 3)
+                goto no_output_room;
+            *++q = 257+run_len; /* Repeated run */
+            *++q = n0;
+        }
+        *++q = 128; /* EOD */
+        ss->run_len = 0;
+        ss->state = state_0;
+        pr->ptr = p;
+        pw->ptr = q;
+        ss->record_left = rlimit - p;
+        debug_ate(pinit, p, qinit, q, EOFC);
+        return EOFC;
     }
+
+    /* Normal exit */
+    ss->run_len = run_len;
+    ss->state = state_0;
+    ss->n0 = n0;
+    ss->n1 = n1;
     pr->ptr = p;
     pw->ptr = q;
-    ss->record_left = rleft;
-    return status;
+    ss->record_left = rlimit - p;
+    debug_ate(pinit, p, qinit, q, 0);
+    return 0;
+
+    /* Now, the "I ran out of data, or space" exits */
+    {
+        int ret;
+        if (0) {
+            /* All the "need more output space" exits */
+            if (0) {
+no_output_room:
+                ss->state = state_0;
+            } else if (0) {
+no_output_room_n0_read:
+                ss->state = state_eq_0;
+            } else if (0) {
+no_output_room_n0n1_read:
+                ss->state = state_eq_01;
+            } else if (0) {
+no_output_room_gt_n0n1_read:
+                ss->state = state_gt_01;
+            } else if (0) {
+no_output_room_lt_n0n1_read:
+                ss->state = state_lt_01;
+            } else if (0) {
+no_output_room_n0n1n2_read:
+                ss->state = state_gt_012;
+            }
+            ret = 1; /* Need more output space */
+        } else if (0) {
+            if (0) {
+no_more_data_n0_read:
+                ss->state = state_eq_0;
+            } else if (0) {
+no_more_data:
+                ss->state = state_0;
+            } else if (0) {
+no_more_data_n0n1_read:
+                ss->state = state_gt_01;
+            }
+            ret = 0; /* Need more input */
+        }
+        ss->n0 = n0;
+        ss->n1 = n1;
+        ss->n2 = n2;
+        ss->run_len = run_len;
+        pr->ptr = p;
+        pw->ptr = q;
+        ss->record_left = rlimit - p;
+        debug_ate(pinit, p, qinit, q, ret);
+        return ret;
+    }
 }
 
 /* Stream template */
 const stream_template s_RLE_template = {
-    &st_RLE_state, s_RLE_init, s_RLE_process, 129, 2, NULL,
+    &st_RLE_state, s_RLE_init, s_RLE_process, 1, 129, NULL,
     s_RLE_set_defaults, s_RLE_init
 };

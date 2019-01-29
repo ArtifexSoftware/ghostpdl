@@ -109,8 +109,6 @@ int gsicc_set_gscs_profile(gs_color_space *pcs, cmm_profile_t *icc_profile,
     gs_memory_t * mem);
 cmm_profile_t* gsicc_get_gscs_profile(gs_color_space *gs_colorspace,
     gsicc_manager_t *icc_manager);
-cmm_profile_t* gsicc_get_profile_handle_file(const char* pname, int namelen,
-    gs_memory_t *mem);
 int gsicc_init_profile_info(cmm_profile_t *profile);
 int gsicc_initialize_default_profile(cmm_profile_t *icc_profile);
 gs_color_space_index gsicc_get_default_type(cmm_profile_t *profile_data);

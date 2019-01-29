@@ -34,7 +34,12 @@ typedef struct stream_RLE_state_s {
     ulong record_size;
     /* The following change dynamically. */
     ulong record_left;		/* bytes left in current record */
-    int copy_left;		/* # of bytes waiting to be copied */
+    byte n0;
+    byte n1;
+    byte n2;
+    byte state;
+    int run_len;
+    byte literals[128];
 } stream_RLE_state;
 
 #define private_st_RLE_state()	/* in srle.c */\
@@ -47,7 +52,9 @@ typedef struct stream_RLE_state_s {
   ((ss)->record_left =\
    ((ss)->record_size == 0 ? ((ss)->record_size = max_uint) :\
     (ss)->record_size),\
-   (ss)->copy_left = 0)
+   (ss)->n0=(ss)->n1=(ss)->n2=0,\
+   (ss)->run_len=0,\
+   (ss)->state=0)
 extern const stream_template s_RLE_template;
 
 /* RunLengthDecode */

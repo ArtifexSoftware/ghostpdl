@@ -37,6 +37,12 @@ gs_id gs_next_ids(const gs_memory_t *mem, uint count);
 /* this will rotate an 8 x 8 block 90 degrees counter-clockwise. */
 void memflip8x8(const byte * inp, int line_size, byte * outp, int dist);
 
+#ifdef PACIFY_VALGRIND
+/* A variant that does the same thing, but allows for undefined
+ * bits at the end of a line. */
+void memflip8x8_eol(const byte * inp, int line_size, byte * outp, int dist, int bits);
+#endif
+
 /* Get an unsigned, big-endian 32-bit value. */
 ulong get_u32_msb(const byte *p);
 

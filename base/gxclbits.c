@@ -71,33 +71,73 @@ clist_bitmap_bytes(uint width_bits, uint height, int compression_mask,
  * necessary.  We require height >= 1, raster >= bitmap_raster(width_bits).
  */
 static int
+go_process(stream_state * st, stream_cursor_read *pr, stream_cursor_write *pw, bool end)
+{
+    int status = (*st->templat->process) (st, pr, pw, end);
+    if (status)
+        return status;
+    /* We don't attempt to handle compressors that */
+    /* require >1 input byte to make progress. */
+    if (pr->ptr != pr->limit)
+        return -1;
+    return 0;
+}
+static byte zeros[1<<align_bitmap_mod];
+static int
 cmd_compress_bitmap(stream_state * st, const byte * data, uint width_bits,
                     uint raster, uint height, stream_cursor_write * pw)
 {
     uint width_bytes = bitmap_raster(width_bits);
     int status = 0;
     stream_cursor_read r;
+    stream_cursor_read r2;
+    uint whole_bytes = width_bits>>3;
+    uint mask = (0xff00>>(width_bits & 7)) & 0xff;
+    uint padding = width_bytes - ((width_bits+7)>>3);
 
     r.ptr = data - 1;
-    if (raster == width_bytes) {
+    if (raster == whole_bytes) {
         r.limit = r.ptr + raster * height;
         status = (*st->templat->process) (st, &r, pw, true);
     } else {			/* Compress row-by-row. */
         uint y;
 
-        for (y = 1; (r.limit = r.ptr + width_bytes), y < height; ++y) {
-            status = (*st->templat->process) (st, &r, pw, false);
+        for (y = height-1; (r.limit = r.ptr + whole_bytes), y > 0; y--) {
+            status = go_process(st, &r, pw, false);
             if (status)
                 break;
-            if (r.ptr != r.limit) {	/* We don't attempt to handle compressors that */
-                /* require >1 input byte to make progress. */
-                status = -1;
-                break;
+            if (mask) {
+                byte b = r.ptr[1] & mask;
+                r2.limit = &b;
+                r2.ptr = r2.limit-1;
+
+                status = go_process(st, &r2, pw, false);
+                if (status)
+                    break;
             }
-            r.ptr += raster - width_bytes;
+            if (padding) {
+                r2.ptr = zeros - 1;
+                r2.limit = r2.ptr + padding;
+                status = go_process(st, &r2, pw, false);
+                if (status)
+                    break;
+            }
+            r.ptr += (int)(raster - whole_bytes);
         }
-        if (status == 0)
-            status = (*st->templat->process) (st, &r, pw, true);
+        if (status == 0) {
+            status = go_process(st, &r, pw, padding == 0 && mask == 0);
+            if (status == 0 && mask) {
+                byte b = r.ptr[1] & mask;
+                r2.limit = &b;
+                r2.ptr = r2.limit-1;
+                status = go_process(st, &r2, pw, padding == 0);
+            }
+            if (status == 0 && padding) {
+                r2.ptr = zeros - 1;
+                r2.limit = r2.ptr + padding;
+                status = go_process(st, &r2, pw, true);
+            }
+        }
     }
     if (st->templat->release)
         (*st->templat->release) (st);
@@ -189,7 +229,7 @@ cmd_put_bits(gx_device_clist_writer * cldev, gx_clist_state * pcls,
             w.ptr = wbase;
             w.limit = w.ptr + min(wmax, short_size >> 1);
             status = cmd_compress_bitmap((stream_state *) & sstate, data,
-                                  uncompressed_raster << 3 /*width_bits */ ,
+                                  width_bits, /* was uncompressed_raster << 3, but this overruns. */
                                          raster, height, &w);
             if (status == 0) {	/* Use compressed representation. */
                 uint wcount = w.ptr - wbase;

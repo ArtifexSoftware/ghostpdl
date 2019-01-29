@@ -845,15 +845,15 @@ void
 clist_rle_init(stream_RLE_state *ss)
 {
     s_init_state((stream_state *)ss, &s_RLE_template, (gs_memory_t *)0);
-    s_RLE_set_defaults_inline(ss);
-    s_RLE_init_inline(ss);
+    ss->templat->set_defaults((stream_state *)ss);
+    ss->templat->init((stream_state *)ss);
 }
 void
 clist_rld_init(stream_RLD_state *ss)
 {
     s_init_state((stream_state *)ss, &s_RLD_template, (gs_memory_t *)0);
-    s_RLD_set_defaults_inline(ss);
-    s_RLD_init_inline(ss);
+    ss->templat->set_defaults((stream_state *)ss);
+    ss->templat->init((stream_state *)ss);
 }
 
 /* Read a transformation matrix. */
