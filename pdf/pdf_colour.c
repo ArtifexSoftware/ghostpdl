@@ -1052,7 +1052,7 @@ static int pdfi_create_indexed(pdf_context *ctx, pdf_array *color_array, int ind
     if (code < 0)
         return code;
 
-    if (hival > 255 || hival < 1)
+    if (hival > 255 || hival < 0)
         return_error(gs_error_syntaxerror);
 
     code = pdfi_array_get(color_array, index + 1, &space);
