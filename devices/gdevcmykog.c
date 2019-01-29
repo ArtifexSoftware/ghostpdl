@@ -170,6 +170,19 @@ cmykog_open(gx_device * pdev)
   dev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
   dev->icc_struct->supports_devn = true;
 
+  /* This device is a DeviceN color based device but unlike psdcmyk and
+     tiffsep it can't change its color characteristics.  It remains as 
+     a 6 color cmykog device.  Postsript files can change the maxseparations 
+     (example Bug 696600 29-07E.PS)  The gdevdevn code will, if it 
+     detects a change occured, close the device and reopen (see
+     devn_printer_put_params) possibly resetting the color info.  tiffsep
+     and psdcmyk, when reopened, will  reset their color characteristics based upon
+     the content of the page, avoiding any issues upon the reopen.  Here we
+     will need to make sure to set the color information to avoid problems. */
+  pdev->color_info.max_components = 6;
+  pdev->color_info.num_components = 6;
+  pdev->color_info.depth = 48;
+
   /* For the planar device we need to set up the bit depth of each plane.
    * For other devices this is handled in check_device_separable where
    * we compute the bit shift for the components etc. */
