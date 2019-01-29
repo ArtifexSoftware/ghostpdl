@@ -272,10 +272,15 @@ static int pdfi_check_Resources_for_transparency(pdf_context *ctx, pdf_dict *Res
 
     code = pdfi_dict_get_type(ctx, Resources_dict, "ExtGState", PDF_DICT, &d);
     if (code >= 0) {
+        code = pdfi_loop_detector_mark(ctx);
+        if (code < 0)
+            return code;
+
         code = pdfi_dict_first(ctx, (pdf_dict *)d, &Key, &Value, (void *)&index);
         if (code < 0) {
             pdfi_countdown(d);
-            (void)pdfi_loop_detector_cleartomark(ctx);
+            (void)pdfi_loop_detector_cleartomark(ctx); /* The ExtGState loop */
+            (void)pdfi_loop_detector_cleartomark(ctx); /* The Resources dictionary loop */
             return 0;
         }
 
@@ -283,23 +288,34 @@ static int pdfi_check_Resources_for_transparency(pdf_context *ctx, pdf_dict *Res
         do {
             code = pdfi_check_ExtGState_for_transparency(ctx, (pdf_dict *)Value, transparent);
             if (code < 0) {
-                if (ctx->pdfstoponerror)
+                if (ctx->pdfstoponerror) {
+                    (void)pdfi_loop_detector_cleartomark(ctx);
                     goto resource_error;
+                }
             } else {
-                if (*transparent == true)
+                if (*transparent == true) {
+                    (void)pdfi_loop_detector_cleartomark(ctx);
                     goto resource_transparent;
+                }
 
                 pdfi_countdown(Key);
                 pdfi_countdown(Value);
             }
 
+            (void)pdfi_loop_detector_cleartomark(ctx);
+
             if (i++ >= pdfi_dict_entries((pdf_dict *)d))
                 break;
+
+            code = pdfi_loop_detector_mark(ctx);
+            if (code < 0)
+                return code;
 
             code = pdfi_dict_next(ctx, (pdf_dict *)d, &Key, &Value, (void *)&index);
             if (code < 0) {
                 pdfi_countdown(d);
-                (void)pdfi_loop_detector_cleartomark(ctx);
+                (void)pdfi_loop_detector_cleartomark(ctx); /* The ExtGState loop */
+                (void)pdfi_loop_detector_cleartomark(ctx); /* The Resources dictionary loop */
                 return 0;
             }
         } while (1);
@@ -309,33 +325,49 @@ static int pdfi_check_Resources_for_transparency(pdf_context *ctx, pdf_dict *Res
 
     code = pdfi_dict_get_type(ctx, Resources_dict, "Pattern", PDF_DICT, &d);
     if (code >= 0) {
+        code = pdfi_loop_detector_mark(ctx);
+        if (code < 0)
+            return code;
+
         code = pdfi_dict_first(ctx, (pdf_dict *)d, &Key, &Value, (void *)&index);
         if (code < 0) {
             pdfi_countdown(d);
-            (void)pdfi_loop_detector_cleartomark(ctx);
+            (void)pdfi_loop_detector_cleartomark(ctx); /* The Pattern loop */
+            (void)pdfi_loop_detector_cleartomark(ctx); /* The Resources dictionary loop */
             return 0;
         }
         i = 1;
         do {
             code = pdfi_check_Pattern_for_transparency(ctx, (pdf_dict *)Value, transparent);
             if (code < 0) {
-                if (ctx->pdfstoponerror)
+                if (ctx->pdfstoponerror) {
+                    (void)pdfi_loop_detector_cleartomark(ctx);
                     goto resource_error;
+                }
             } else {
-                if (*transparent == true)
+                if (*transparent == true) {
                     goto resource_transparent;
+                    (void)pdfi_loop_detector_cleartomark(ctx);
+                }
 
                 pdfi_countdown(Key);
                 pdfi_countdown(Value);
             }
 
+            (void)pdfi_loop_detector_cleartomark(ctx);
+
             if (i++ >= pdfi_dict_entries((pdf_dict *)d))
                 break;
+
+            code = pdfi_loop_detector_mark(ctx);
+            if (code < 0)
+                return code;
 
             code = pdfi_dict_next(ctx, (pdf_dict *)d, &Key, &Value, (void *)&index);
             if (code < 0) {
                 pdfi_countdown(d);
-                (void)pdfi_loop_detector_cleartomark(ctx);
+                (void)pdfi_loop_detector_cleartomark(ctx); /* The Pattern loop */
+                (void)pdfi_loop_detector_cleartomark(ctx); /* The Resources dictionayr loop */
                 return 0;
             }
         } while (1);
