@@ -572,7 +572,7 @@ gx_image3_plane_data(gx_image_enum_common_t * info,
                 mask_plane.raster = 0; /* raster doesn't matter, pacify Valgrind */
                 pixel_plane.data = pptr;
                 pixel_plane.data_x = 0;
-                /* raster doesn't matter */
+                pixel_plane.raster = 0; /* raster doesn't matter, pacify Valgrind */
                 pixel_planes = &pixel_plane;
                 for (x = 0; x < width; ++x) {
                     uint value;
