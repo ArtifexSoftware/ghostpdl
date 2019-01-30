@@ -462,7 +462,7 @@ buildfontdict 3 /.buildfont3 cvx put
   {             % Check for disabled platform fonts.
       NOPLATFONTS
        {        % Make sure we leave room for FID.
-         .growfontdict dup /ExactSize 0 put
+         //.growfontdict exec dup /ExactSize 0 put
        }
        {        % Hack: if the Encoding looks like it might be the
                 % Symbol or Dingbats encoding, load those now (for the
