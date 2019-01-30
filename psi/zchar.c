@@ -120,7 +120,7 @@ widthshow_aux(i_ctx_t *i_ctx_p, bool single_byte_space)
     *(op_proc_t *)&penum->enum_client_data = zwidthshow;
 
     penum->single_byte_space = single_byte_space;
-    
+
     if ((code = op_show_finish_setup(i_ctx_p, penum, 4, finish_show)) < 0) {
         ifree_object(penum, "op_show_enum_setup");
         return code;
@@ -186,7 +186,7 @@ awidthshow_aux(i_ctx_t *i_ctx_p, bool single_byte_space)
     *(op_proc_t *)&penum->enum_client_data = zawidthshow;
 
     penum->single_byte_space = single_byte_space;
-    
+
     if ((code = op_show_finish_setup(i_ctx_p, penum, 6, finish_show)) < 0) {
         ifree_object(penum, "op_show_enum_setup");
         return code;
@@ -247,6 +247,21 @@ finish_show(i_ctx_t *i_ctx_p)
     return 0;
 }
 
+/* Finishing procedure for stringwidth. */
+/* Pushes the accumulated width. */
+static int
+finish_stringwidth(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    gs_point width;
+
+    gs_text_total_width(senum, &width);
+    push(2);
+    make_real(op - 1, width.x);
+    make_real(op, width.y);
+    return 0;
+}
+
 /* <string> stringwidth <wx> <wy> */
 static int
 zstringwidth(i_ctx_t *i_ctx_p)
@@ -266,22 +281,6 @@ zstringwidth(i_ctx_t *i_ctx_p)
     }
     return op_show_continue_pop(i_ctx_p, 1);
 }
-/* Finishing procedure for stringwidth. */
-/* Pushes the accumulated width. */
-/* This is exported for .glyphwidth (in zcharx.c). */
-int
-finish_stringwidth(i_ctx_t *i_ctx_p)
-{
-    os_ptr op = osp;
-    gs_point width;
-
-    gs_text_total_width(senum, &width);
-    push(2);
-    make_real(op - 1, width.x);
-    make_real(op, width.y);
-    return 0;
-}
-
 /* Common code for charpath and .charboxpath. */
 static int
 zchar_path(i_ctx_t *i_ctx_p, op_proc_t proc,
@@ -447,7 +446,7 @@ const op_def zchar_a_op_defs[] =
     {"1.fontbbox", zfontbbox},
     {"6.pdfawidthshow", zpdfawidthshow},
     {"4.pdfwidthshow", zpdfwidthshow},
-    
+
                 /* Internal operators */
     {"0%finish_show", finish_show},
     op_def_end(0)
