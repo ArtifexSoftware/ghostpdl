@@ -2278,6 +2278,7 @@ SAFER { .setsafeglobal } if
   /.origdefinefont /.origundefinefont /.origfindfont
   /.buildnativefontmap
   /.completefont
+  /.definefakefonts
 
   % Used by a free user in the Library of Congress. Apparently this is used to
   % draw a partial page, which is then filled in by the results of a barcode
@@ -2442,7 +2443,7 @@ $error /.nosetlocal //false put
 } {
         % If we're *not* running in a multi-context system and FAKEFONTS is
         % defined, add the fake fonts to LocalFontDirectory.
-  .definefakefonts	% current VM is local
+  //.definefakefonts exec	% current VM is local
 } ifelse
 
 % Execute scheduled inits :
