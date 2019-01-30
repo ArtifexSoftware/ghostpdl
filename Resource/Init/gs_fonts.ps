@@ -342,7 +342,7 @@ FONTPATH length 0 eq { (%END FONTPATH) .skipeof } if
                 }
                 { exch copystring exch
                   DEBUG { ( ) print dup =only flush } if
-                  1 index .definenativefontmap
+                  1 index //.definenativefontmap exec
                   //.splitfilename exec pop //true //.scanfontdict 3 1 roll .growput
                         % Increment fontcount.
                   3 -1 roll 1 add 3 1 roll
@@ -421,7 +421,7 @@ systemdict /NONATIVEFONTMAP known .setnativefontmapbuilt
             % DEBUG { (  found ) print dup print (\n) print flush } if
             % add entry to the fontmap
             1 index exch 0 exch dup type /nametype ne {cvn} if put
-            aload pop .definenativefontmap
+            aload pop //.definenativefontmap exec
           } ifelse
         } ifelse
       } forall
@@ -1290,4 +1290,5 @@ FAKEFONTS { exch } if pop def   % don't bind, .current/setglobal get redefined
  /.setloadingfont /.substitutefaces /.substituteproperties /.substitutefamilies
  /.nametostring /.fontnamestring /.checkalias /.fontknownget /.stdsubstfont
  /.putgstringcopy
+ /.definenativefontmap
 ] {systemdict exch .forceundef} forall
