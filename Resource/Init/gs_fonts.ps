@@ -429,7 +429,7 @@ systemdict /NONATIVEFONTMAP known .setnativefontmapbuilt
     % record that we've been run
     //true //.setnativefontmapbuilt
   } ifelse
-} bind def
+} bind executeonly odef
 
 % Create the dictionary that registers the .buildfont procedure
 % (called by definefont) for each FontType.
@@ -951,7 +951,7 @@ $error /SubstituteFont { } put
       } ifelse
     } ifelse
   } if
-} bind def
+} bind executeonly def
 
 % any user of .putgstringcopy must use bind and executeonly
 /.putgstringcopy  %   <dict> <name> <string> .putgstringcopy -
