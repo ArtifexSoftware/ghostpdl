@@ -1277,14 +1277,6 @@ FAKEFONTS { exch } if pop def   % don't bind, .current/setglobal get redefined
     } forall
  } bind def
 
-% Make a modified font and define it.  Note that unlike definefont,
-% this does not leave the font on the operand stack.
-
-/.definemodifiedfont    % <fontdict> <paramdict> .definemodifiedfont -
- { .makemodifiedfont
-   dup /FontName get exch definefont pop
- } bind def
-
 % Undef these, not needed outside this file
 [
  % /.fonttempstring /.scannextfontdir - are also used in gs_res.ps, so are undefined there
