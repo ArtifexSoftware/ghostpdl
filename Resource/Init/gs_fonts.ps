@@ -336,7 +336,7 @@ FONTPATH length 0 eq { (%END FONTPATH) .skipeof } if
          forall exch pop
           {     % stack: <fontcount> <scancount+1> <filecount+1> <filename>
                 %       <file>
-            dup 0 setfileposition .findfontname
+            dup 0 setfileposition //.findfontname exec
              { dup .nativeFontmap exch known
                 { pop pop
                 }
@@ -410,7 +410,7 @@ systemdict /NONATIVEFONTMAP known .setnativefontmapbuilt
         }{
           % we could open the font file
           mark 2 1 roll
-          {.findfontname} .internalstopped
+          {//.findfontname exec} .internalstopped
           {
             cleartomark
             pop
@@ -1043,7 +1043,7 @@ $error /SubstituteFont { } put
                 % See if we can get a FontName from the file, and if so,
                 % whether a font by that name exists now.
         exch dup      % Stack: origfontname fontdirectory path path
-        (r) file .findfontname
+        (r) file //.findfontname exec
          {            % Stack: origfontname fontdirectory path filefontname
            2 index 1 index //.fontknownget exec
             {   % Yes.  Stack: origfontname fontdirectory path filefontname fontdict
@@ -1291,4 +1291,5 @@ FAKEFONTS { exch } if pop def   % don't bind, .current/setglobal get redefined
  /.nametostring /.fontnamestring /.checkalias /.fontknownget /.stdsubstfont
  /.putgstringcopy
  /.definenativefontmap
+ /.findfontname
 ] {systemdict exch .forceundef} forall
