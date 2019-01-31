@@ -24,6 +24,7 @@
 systemdict /pdfmark known not
  { userdict /pdfmark { cleartomark } bind executeonly put } if
 
+systemdict /pdfdict where { pop } { /pdfdict 100 dict put } ifelse
 userdict /GS_PDF_ProcSet 256 dict dup begin
 
 % ---------------- Abbreviations ---------------- %
@@ -174,21 +175,21 @@ currentdict /gput_always_allow .undef
   {
     (\n   **** Error: File has unbalanced q/Q operators \(too many Q's\)\n               Output may be incorrect.\n)
 
-    pdfdict /.Qqwarning_issued .knownget
+    //pdfdict /.Qqwarning_issued .knownget
     {
       {
         pop
       }
       {
-        currentglobal pdfdict gcheck .setglobal
-        pdfdict /.Qqwarning_issued //true .forceput
+        currentglobal //pdfdict gcheck .setglobal
+        //pdfdict /.Qqwarning_issued //true .forceput
         .setglobal
         pdfformaterror
       } executeonly ifelse
     }
     {
-      currentglobal pdfdict gcheck .setglobal
-      pdfdict /.Qqwarning_issued //true .forceput
+      currentglobal //pdfdict gcheck .setglobal
+      //pdfdict /.Qqwarning_issued //true .forceput
       .setglobal
       pdfformaterror
     } executeonly ifelse

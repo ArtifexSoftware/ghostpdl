@@ -39,7 +39,6 @@
 
 /.setlanguagelevel where { pop 2 .setlanguagelevel } if
 .currentglobal //true .setglobal
-/pdfdict where { pop } { /pdfdict 100 dict def } ifelse
 pdfdict begin
 
 % Older ghostscript versions do not have .pdftoken, so we use 'token' instead.
@@ -748,4 +747,7 @@ currentdict /PDFScanRules_null undef
  } bind executeonly def
 
 end			% pdfdict
+
+systemdict /pdfdict .forceundef		% hide pdfdict
+
 .setglobal

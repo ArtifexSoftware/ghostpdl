@@ -37,8 +37,7 @@
 
 /.setlanguagelevel where { pop 2 .setlanguagelevel } if
 .currentglobal //true .setglobal
-/pdfdict where { pop } { /pdfdict 100 dict def } ifelse
-GS_PDF_ProcSet begin
+/GS_PDF_ProcSet load begin	% from userdict at this point
 pdfdict begin
 
 % We cache the PostScript font in an additional element of the
@@ -1227,11 +1226,11 @@ currentdict /eexec_pdf_param_dict .undef
             .pdfruncontext
             countdictstack BuildCharDictDepth sub
             {
-              pdfdict /.Qqwarning_issued .knownget {not}{//true} ifelse
+              //pdfdict /.Qqwarning_issued .knownget {not}{//true} ifelse
               {
                 (\n   **** Warning: Type 3 glyph has unbalanced q/Q operators \(too many q's\)\n               Output may be incorrect.\n)
                 pdfformatwarning
-                pdfdict /.Qqwarning_issued //true .forceput
+                //pdfdict /.Qqwarning_issued //true .forceput
               } executeonly if
               Q
             } repeat
@@ -2361,7 +2360,7 @@ currentdict /bndef undef
   dup //null eq
   {pop}
   {
-    pdfdict /InputPDFFileName .knownget {.CRCHashFilenameAndObject} if
+    //pdfdict /InputPDFFileName .knownget {.CRCHashFilenameAndObject} if
     exch dup /.OrigUniqueIDXUID .knownget not
     {
       dup /XUID .knownget not

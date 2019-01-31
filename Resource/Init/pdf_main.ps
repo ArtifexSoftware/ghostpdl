@@ -18,8 +18,9 @@
 
 /.setlanguagelevel where { pop 2 .setlanguagelevel } if
 .currentglobal //true .setglobal
-/pdfdict where { pop } { /pdfdict 100 dict def } ifelse
 pdfdict begin
+/GS_PDF_ProcSet dup load def	% keep in pdfdict to hide it
+userdict /GS_PDF_ProcSet undef
 
 % Patch in an obsolete variable used by some third-party software.
 /#? //false def
@@ -304,8 +305,8 @@ currentdict /runpdfstring .undef
    /Page //null def
    /DSCPageCount 0 def
    /PDFSave //null def
-   GS_PDF_ProcSet begin
-   pdfdict begin
+   //pdfdict /GS_PDF_ProcSet get begin
+   //pdfdict begin
    pdfopen begin
    /CumulativePageCount currentpagedevice /PageCount get def
 } bind executeonly def
@@ -624,7 +625,7 @@ currentdict /runpdfstring .undef
   %% copied to a temporary file) and store it in pdfdict. We will use this for
   %% hashing fonts to detect if fonts with the same name are from different files.
   %%
-  dup currentglobal exch true setglobal .getfilename exch setglobal /InputPDFFileName exch pdfdict 3 1 roll .forceput
+  dup currentglobal exch true setglobal .getfilename exch setglobal /InputPDFFileName exch //pdfdict 3 1 roll .forceput
 
   //runpdfbegin exec
   //pdf_collection_files exec
@@ -1390,7 +1391,7 @@ currentdict /xref-char-dict undef
 } bind executeonly def
 
 /pdfopenfile {		% <file> pdfopenfile <dict>
-   pdfdict readonly pop		% can't do it any earlier than this
+   //pdfdict readonly pop		% can't do it any earlier than this
    32 dict begin
    /LocalResources 0 dict def
    /DefaultQstate //null def	% establish binding
@@ -2717,21 +2718,21 @@ currentdict /PDF2PS_matrix_key undef
     StreamRunAborted not {
       (\n   **** Error: File has unbalanced q/Q operators \(too many q's\)\n               Output may be incorrect.\n)
 
-      pdfdict /.Qqwarning_issued .knownget
+      //pdfdict /.Qqwarning_issued .knownget
       {
         {
           pop
         }
         {
-          currentglobal pdfdict gcheck .setglobal
-          pdfdict /.Qqwarning_issued //true .forceput
+          currentglobal //pdfdict gcheck .setglobal
+          //pdfdict /.Qqwarning_issued //true .forceput
           .setglobal
           pdfformaterror
         } executeonly ifelse
       }
       {
-        currentglobal pdfdict gcheck .setglobal
-        pdfdict /.Qqwarning_issued //true .forceput
+        currentglobal //pdfdict gcheck .setglobal
+        //pdfdict /.Qqwarning_issued //true .forceput
         .setglobal
         pdfformaterror
       } executeonly ifelse
@@ -2743,8 +2744,8 @@ currentdict /PDF2PS_matrix_key undef
   Repaired		% pass Repaired state around the restore
   RepairedAnError
   PDFSave restore
-  currentglobal pdfdict gcheck .setglobal
-  pdfdict /.Qqwarning_issued //false .forceput
+  currentglobal //pdfdict gcheck .setglobal
+  //pdfdict /.Qqwarning_issued //false .forceput
   .setglobal
   /RepairedAnError exch def
   /Repaired exch def

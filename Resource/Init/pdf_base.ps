@@ -23,7 +23,6 @@
 
 /.setlanguagelevel where { pop 2 .setlanguagelevel } if
 .currentglobal //true .setglobal
-/pdfdict where { pop } { /pdfdict 100 dict def } ifelse
 pdfdict begin
 
 % Define the name interpretation dictionary for reading values.
@@ -133,11 +132,11 @@ currentdict /num-chars-dict .undef
 
 /.pdfexectoken {		% <count> <opdict> <exectoken> .pdfexectoken ?
   PDFDEBUG {
-    pdfdict /PDFSTEPcount known not { pdfdict /PDFSTEPcount 1 .forceput } executeonly if
+    //pdfdict /PDFSTEPcount known not { //pdfdict /PDFSTEPcount 1 .forceput } executeonly if
     PDFSTEP {
-      pdfdict /PDFtokencount 2 copy .knownget { 1 add } { 1 } ifelse .forceput
+      //pdfdict /PDFtokencount 2 copy .knownget { 1 add } { 1 } ifelse .forceput
       PDFSTEPcount 1 gt {
-        pdfdict /PDFSTEPcount PDFSTEPcount 1 sub .forceput
+        //pdfdict /PDFSTEPcount PDFSTEPcount 1 sub .forceput
       } executeonly
       {
         dup ==only
@@ -145,10 +144,10 @@ currentdict /num-chars-dict .undef
         ( ? ) print flush 1 //false .outputpage
         (%stdin) (r) file 255 string readline {
           token {
-            exch pop pdfdict /PDFSTEPcount 3 -1 roll .forceput
+            exch pop //pdfdict /PDFSTEPcount 3 -1 roll .forceput
           } executeonly
           {
-            pdfdict /PDFSTEPcount 1 .forceput
+            //pdfdict /PDFSTEPcount 1 .forceput
           } executeonly ifelse % token
         } {
           pop /PDFSTEP //false def	 % EOF on stdin
