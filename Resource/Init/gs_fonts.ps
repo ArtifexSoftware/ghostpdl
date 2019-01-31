@@ -45,7 +45,7 @@ end def
 % Define a reliable way of accessing FontDirectory in systemdict.
 /.FontDirectory
 { /FontDirectory .systemvar
-} .bind odef
+} .bind executeonly odef
 
 % Define a temporary string for local use, since using =string
 % interferes with some PostScript programs.
@@ -1162,7 +1162,7 @@ $error /SubstituteFont { } put
       if
     }
    ifelse
- } bind def
+ } bind executeonly def
 
 % Define a procedure to load all known fonts.
 % This isn't likely to be very useful.
