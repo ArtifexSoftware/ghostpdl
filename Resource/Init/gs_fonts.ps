@@ -758,7 +758,7 @@ buildfontdict 3 /.buildfont3 cvx put
     } ifelse
   } forall pop
   1 index length mod get exec
-} bind def
+} bind executeonly odef
 /.substitutefont {              % <fontname> .substitutefont <altname>
   dup 0 exch //.fontnameproperties exec .substitutefontname
         % Only accept fonts known in the Fontmap.
@@ -767,7 +767,7 @@ buildfontdict 3 /.buildfont3 cvx put
      .nativeFontmap 1 index known not
      {pop defaultfontname } if
    } if
-} bind def
+} bind executeonly odef
 
 % If requested, make (and recognize) fake entries in FontDirectory for fonts
 % present in Fontmap but not actually loaded.  Thanks to Ray Johnston for
@@ -884,7 +884,7 @@ FAKEFONTS not { (%END FAKEFONTS) .skipeof } if
         } if
       } ifelse
   /Font findresource
-} bind def
+} bind executeonly def
 
 % Default font substitution does {pop /Courier} om many implementations.
 % GS post-process font substitution in .stdsubstfont and uses {} for
