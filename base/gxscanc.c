@@ -1157,7 +1157,7 @@ cursor_output(cursor * gs_restrict cr, int iy)
             row[2 * count - 1] = (cr->left&~1) | cr->d;
             row[2 * count    ] = cr->right;
         } else {
-            assert(cr->left == max_int_in_fixed && cr->right == min_int_in_fixed);
+            assert(cr->left == max_fixed && cr->right == min_fixed);
         }
     }
     cr->first = 0;
@@ -1370,7 +1370,7 @@ cursor_flush(cursor * gs_restrict cr, fixed x)
          * those on the baseline of a pixel. */
         if (cr->d == DIRN_UNSET && (cr->y & 0xff) == 0)
             return;
-        assert(cr->left != max_int_in_fixed && cr->right != min_int_in_fixed);
+        assert(cr->left != max_fixed && cr->right != min_fixed);
         if (iy >= 0 && iy < cr->scanlines) {
             int *row = &cr->table[cr->index[iy]];
             int count = *row = (*row)+2; /* Increment the count */
@@ -1409,8 +1409,8 @@ cursor_flush(cursor * gs_restrict cr, fixed x)
 static inline void
 cursor_null(cursor *cr)
 {
-    cr->right = min_int_in_fixed;
-    cr->left  = max_int_in_fixed;
+    cr->right = min_fixed;
+    cr->left  = max_fixed;
     cr->d     = DIRN_UNSET;
 }
 
@@ -2103,8 +2103,8 @@ int gx_scan_convert_app(gx_device     * gs_restrict pdev,
         fixed sx, sy;
 
         if ((ey & 0xff) == 0) {
-            cr.left  = max_int_in_fixed;
-            cr.right = min_int_in_fixed;
+            cr.left  = max_fixed;
+            cr.right = min_fixed;
         } else {
             cr.left = cr.right = ex;
         }
@@ -3075,7 +3075,7 @@ cursor_output_tr(cursor_tr * gs_restrict cr, int iy)
             row[4 * count - 1] = cr->right;
             row[4 * count    ] = cr->rid;
         } else {
-            assert(cr->left == max_int_in_fixed && cr->right == min_int_in_fixed);
+            assert(cr->left == max_fixed && cr->right == min_fixed);
         }
     }
     cr->first = 0;
@@ -3320,7 +3320,7 @@ cursor_flush_tr(cursor_tr * gs_restrict cr, fixed x, int id)
          * those on the baseline of a pixel. */
         if (cr->d == DIRN_UNSET && (cr->y & 0xff) == 0)
             return;
-        assert(cr->left != max_int_in_fixed && cr->right != min_int_in_fixed);
+        assert(cr->left != max_fixed && cr->right != min_fixed);
         if (iy >= 0 && iy < cr->scanlines) {
             int *row = &cr->table[cr->index[iy]];
             int count = *row = (*row)+2; /* Increment the count */
@@ -3369,8 +3369,8 @@ cursor_flush_tr(cursor_tr * gs_restrict cr, fixed x, int id)
 static inline void
 cursor_null_tr(cursor_tr *cr)
 {
-    cr->right = min_int_in_fixed;
-    cr->left  = max_int_in_fixed;
+    cr->right = min_fixed;
+    cr->left  = max_fixed;
     cr->d     = DIRN_UNSET;
 }
 
@@ -4074,8 +4074,8 @@ int gx_scan_convert_tr_app(gx_device     * gs_restrict pdev,
         fixed sx, sy;
 
         if ((ey & 0xff) == 0) {
-            cr.left  = max_int_in_fixed;
-            cr.right = min_int_in_fixed;
+            cr.left  = max_fixed;
+            cr.right = min_fixed;
         } else {
             cr.left = cr.right = ex;
         }
