@@ -833,7 +833,9 @@ psd_put_params_generic(gx_device * pdev, gs_param_list * plist, int cmyk)
 
     if (code >= 0)
         code = param_read_name(plist, "ProcessColorModel", &pcm);
-    if (code == 0) {
+
+    /* Bug 696318.  Don't allow process color model change for RGB device */
+    if (code == 0 && color_model != psd_DEVICE_RGB) {
         if (param_string_eq (&pcm, "DeviceGray"))
             color_model = psd_DEVICE_GRAY;
         else if (param_string_eq (&pcm, "DeviceRGB"))
