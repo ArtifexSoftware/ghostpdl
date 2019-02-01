@@ -128,7 +128,7 @@ static void pdf14_debug_mask_stack_state(pdf14_ctx *ctx);
 gs_private_st_ptrs7(st_pdf14_buf, pdf14_buf, "pdf14_buf",
                     pdf14_buf_enum_ptrs, pdf14_buf_reloc_ptrs,
                     saved, data, backdrop, transfer_fn, mask_stack,
-                    matte, parent_color_info_procs);
+                    matte, parent_color_info);
 
 gs_private_st_ptrs2(st_pdf14_ctx, pdf14_ctx, "pdf14_ctx",
                     pdf14_ctx_enum_ptrs, pdf14_ctx_reloc_ptrs,
@@ -824,14 +824,14 @@ pdf14_buf_new(gs_int_rect *rect, bool has_tags, bool has_alpha_g,
         return NULL;
     }
 
-    result->parent_color_info_procs = new_parent_color;
-    result->parent_color_info_procs->get_cmap_procs = NULL;
-    result->parent_color_info_procs->parent_color_mapping_procs = NULL;
-    result->parent_color_info_procs->parent_color_comp_index = NULL;
-    result->parent_color_info_procs->icc_profile = NULL;
-    result->parent_color_info_procs->previous = NULL;
-    result->parent_color_info_procs->encode = NULL;
-    result->parent_color_info_procs->decode = NULL;
+    result->parent_color_info = new_parent_color;
+    result->parent_color_info->get_cmap_procs = NULL;
+    result->parent_color_info->parent_color_mapping_procs = NULL;
+    result->parent_color_info->parent_color_comp_index = NULL;
+    result->parent_color_info->icc_profile = NULL;
+    result->parent_color_info->previous = NULL;
+    result->parent_color_info->encode = NULL;
+    result->parent_color_info->decode = NULL;
     if (idle || height <= 0) {
         /* Empty clipping - will skip all drawings. */
         result->planestride = 0;
@@ -868,7 +868,7 @@ pdf14_buf_new(gs_int_rect *rect, bool has_tags, bool has_alpha_g,
 static	void
 pdf14_buf_free(pdf14_buf *buf)
 {
-    pdf14_parent_color_t *old_parent_color_info = buf->parent_color_info_procs;
+    pdf14_parent_color_t *old_parent_color_info = buf->parent_color_info;
     gs_memory_t *memory = buf->memory;
 
     if (buf->mask_stack && buf->mask_stack->rc_mask)
@@ -883,9 +883,9 @@ pdf14_buf_free(pdf14_buf *buf)
        if (old_parent_color_info->icc_profile != NULL) {
            gsicc_adjust_profile_rc(old_parent_color_info->icc_profile, -1, "pdf14_buf_free");
        }
-       buf->parent_color_info_procs = old_parent_color_info->previous;
+       buf->parent_color_info = old_parent_color_info->previous;
        gs_free_object(memory, old_parent_color_info, "pdf14_buf_free");
-       old_parent_color_info = buf->parent_color_info_procs;
+       old_parent_color_info = buf->parent_color_info;
     }
 
     gs_free_object(memory, buf->backdrop, "pdf14_buf_free");
@@ -1115,7 +1115,7 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
                 if (child == NULL) {
                     prev_knockout_profile = tos_profile;
                 } else {
-                    prev_knockout_profile  = child->parent_color_info_procs->icc_profile;
+                    prev_knockout_profile  = child->parent_color_info->icc_profile;
                 }
             }
             if (!cm_back_drop) {
@@ -1170,7 +1170,7 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
     if (nos == NULL)
         return_error(gs_error_unknownerror);  /* Unmatched group pop */
 
-    nos_num_color_comp = nos->parent_color_info_procs->num_components - nos->num_spots;
+    nos_num_color_comp = nos->parent_color_info->num_components - nos->num_spots;
     tos_num_color_comp = tos_num_color_comp - tos->num_spots;
 
 #ifdef DEBUG
@@ -1227,8 +1227,8 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
    operations called in the tile transparency code.  Instead we may want to
    look at pdf14_begin_transparency_group and pdf14_end_transparency group which
    is where all the ICC information is handled.  We will return to look at that later */
-    if (nos->parent_color_info_procs->icc_profile != NULL) {
-        icc_match = (nos->parent_color_info_procs->icc_profile->hashcode !=
+    if (nos->parent_color_info->icc_profile != NULL) {
+        icc_match = (nos->parent_color_info->icc_profile->hashcode !=
                         curr_icc_profile->hashcode);
     } else {
         /* Let the other tests make the decision if we need to transform */
@@ -1236,14 +1236,14 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
     }
     /* If the color spaces are different and we actually did do a swap of
        the procs for color */
-    if ((nos->parent_color_info_procs->parent_color_mapping_procs != NULL &&
+    if ((nos->parent_color_info->parent_color_mapping_procs != NULL &&
         nos_num_color_comp != tos_num_color_comp) || icc_match) {
         if (x0 < x1 && y0 < y1) {
             pdf14_buf *result;
             bool did_alloc; /* We don't care here */
 
             result = pdf14_transform_color_buffer(pgs, ctx, dev, tos, tos->data,
-                curr_icc_profile, nos->parent_color_info_procs->icc_profile,
+                curr_icc_profile, nos->parent_color_info->icc_profile,
                 tos->rect.p.x, tos->rect.p.y, tos->rect.q.x - tos->rect.p.x,
                 tos->rect.q.y - tos->rect.p.y, &did_alloc);
             if (result == NULL)
@@ -1258,8 +1258,8 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
 #endif
              /* compose. never do overprint in this case */
             pdf14_compose_group(tos, nos, maskbuf, x0, x1, y0, y1, nos->n_chan,
-                 nos->parent_color_info_procs->isadditive,
-                 nos->parent_color_info_procs->parent_blending_procs,
+                 nos->parent_color_info->isadditive,
+                 nos->parent_color_info->parent_blending_procs,
                  false, drawn_comps, ctx->memory, dev);
         }
     } else {
@@ -1405,7 +1405,7 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_gstate *pgs, gx_device *dev)
     pdf14_buf *tos = ctx->stack;
     byte *new_data_buf;
     int icc_match;
-    cmm_profile_t *des_profile = tos->parent_color_info_procs->icc_profile; /* If set, this should be a gray profile */
+    cmm_profile_t *des_profile = tos->parent_color_info->icc_profile; /* If set, this should be a gray profile */
     cmm_profile_t *src_profile;
     gsicc_rendering_param_t rendering_params;
     gsicc_link_t *icc_link;
@@ -2218,7 +2218,7 @@ static void pdf14_cleanup_parent_color_profiles (pdf14_device *pdev)
         pdf14_buf *buf, *next;
 
         for (buf = pdev->ctx->stack; buf != NULL; buf = next) {
-            pdf14_parent_color_t *old_parent_color_info = buf->parent_color_info_procs;
+            pdf14_parent_color_t *old_parent_color_info = buf->parent_color_info;
             next = buf->saved;
             while (old_parent_color_info) {
                if (old_parent_color_info->icc_profile != NULL) {
@@ -2305,7 +2305,7 @@ pdf14_discard_trans_layer(gx_device *dev, gs_gstate * pgs)
                the ctx to the tos mask_stack. We are done with this now so it is safe
                to free this one object */
             gs_free_object(ctx->memory, buf->mask_stack, "pdf14_discard_trans_layer");
-            for (procs = buf->parent_color_info_procs; procs != NULL; procs = prev_procs) {
+            for (procs = buf->parent_color_info; procs != NULL; procs = prev_procs) {
                 prev_procs = procs->previous;
                 gs_free_object(ctx->memory, procs, "pdf14_discard_trans_layer");
             }
@@ -4104,7 +4104,7 @@ pdf14_copy_planes(gx_device * dev, const byte * data, int data_x, int raster,
     fake_tos.n_chan = dev->color_info.num_components;
     fake_tos.n_planes = dev->color_info.num_components;
     fake_tos.num_spots = 0;
-    fake_tos.parent_color_info_procs = NULL;
+    fake_tos.parent_color_info = NULL;
     fake_tos.planestride = raster * plane_height;
     fake_tos.rect.p.x = x;
     fake_tos.rect.p.y = y;
@@ -4306,7 +4306,7 @@ pdf14_end_transparency_group(gx_device *dev,
    /* May need to reset some color stuff related
      * to a mismatch between the parents color space
      * and the group blending space */
-    parent_color = pdev->ctx->stack->parent_color_info_procs;
+    parent_color = pdev->ctx->stack->parent_color_info;
         if (!(parent_color->parent_color_mapping_procs == NULL &&
                 parent_color->parent_color_comp_index == NULL)) {
             pgs->get_cmap_procs = parent_color->get_cmap_procs;
@@ -4361,7 +4361,7 @@ pdf14_update_device_color_procs(gx_device *dev,
     cmm_dev_profile_t *dev_profile;
 
     if (pdev->ctx->stack != NULL){
-        parent_color_info = pdev->ctx->stack->parent_color_info_procs;
+        parent_color_info = pdev->ctx->stack->parent_color_info;
     } else {
         /* This should not occur */
         return_error(gs_error_undefined);
@@ -5043,7 +5043,7 @@ pdf14_end_transparency_mask(gx_device *dev, gs_gstate *pgs)
      * to a mismatch between the Smask color space
      * and the Smask blending space */
     if (pdev->ctx->stack != NULL ) {
-        parent_color = pdev->ctx->stack->parent_color_info_procs;
+        parent_color = pdev->ctx->stack->parent_color_info;
         if (!(parent_color->parent_color_mapping_procs == NULL &&
             parent_color->parent_color_comp_index == NULL)) {
             pgs->get_cmap_procs = parent_color->get_cmap_procs;
