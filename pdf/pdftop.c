@@ -417,9 +417,8 @@ pdf_impl_init_job(pl_interp_implementation_t *impl,
     pdf_interp_instance_t *instance = impl->interp_client_data;
     pdf_context *ctx = instance->ctx;
 
-    ctx->use_transparency = 1;
     if (getenv("PDF_DISABLE_TRANSPARENCY"))
-        ctx->use_transparency = 0;
+        ctx->notransparency = true;
 
     return pdf_impl_set_device(impl, device);
 }

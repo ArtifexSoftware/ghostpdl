@@ -762,6 +762,8 @@ static int pdfi_check_page_transparency(pdf_context *ctx, pdf_dict *page_dict, b
     pdf_obj *d = NULL;
 
     *transparent = false;
+    if (ctx->notransparency == true)
+        return 0;
 
     code = pdfi_dict_get_type(ctx, page_dict, "Resources", PDF_DICT, &d);
     if (code >= 0) {
@@ -824,7 +826,7 @@ static int pdfi_set_media_size(pdf_context *ctx, pdf_dict *page_dict)
     if (ctx->usebleedbox) {
         if (a != NULL)
             pdfi_countdown(a);
-        (void)pdfi_dict_get_type(ctx, page_dict, "BBox", PDF_ARRAY, (pdf_obj **)&a);
+        (void)pdfi_dict_get_type(ctx, page_dict, "BleedBox", PDF_ARRAY, (pdf_obj **)&a);
     }
     if (ctx->usetrimbox) {
         if (a != NULL)
@@ -839,6 +841,7 @@ static int pdfi_set_media_size(pdf_context *ctx, pdf_dict *page_dict)
     }
 
     normalize_rectangle(d);
+    memcpy(ctx->PageSize, d, 4 * sizeof(double));
 
     code = pdfi_dict_get_int(ctx, page_dict, "Rotate", &rotate);
 
@@ -1227,7 +1230,8 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
     int code;
     uint64_t page_offset = 0;
     pdf_dict *page_dict = NULL;
-    bool uses_transparency;
+    bool uses_transparency = false;
+    bool page_group_known = false;
 
     if (page_num > ctx->num_pages)
         return_error(gs_error_rangecheck);
@@ -1256,22 +1260,64 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
     if (code > 0)
         return_error(gs_error_unknownerror);
 
-    code = pdfi_check_page_transparency(ctx, page_dict, &uses_transparency);
-    if (code < 0) {
-        pdfi_countdown(page_dict);
-        return code;
-    }
-
     code = pdfi_set_media_size(ctx, page_dict);
     if (code < 0) {
         pdfi_countdown(page_dict);
         return code;
     }
 
-    code = pdfi_process_page_contents(ctx, page_dict);
+    code = pdfi_check_page_transparency(ctx, page_dict, &uses_transparency);
     if (code < 0) {
         pdfi_countdown(page_dict);
         return code;
+    }
+
+    ctx->page_has_transparency = uses_transparency;
+    if (uses_transparency) {
+        code = gs_push_pdf14trans_device(ctx->pgs, false);
+        if (code < 0) {
+            pdfi_countdown(page_dict);
+            return code;
+        }
+
+        code = pdfi_dict_known(page_dict, "Group", &page_group_known);
+        if (code < 0) {
+            pdfi_countdown(page_dict);
+            return code;
+        }
+        if (page_group_known) {
+            code = pdfi_begin_page_group(ctx, page_dict);
+            if (code < 0) {
+                pdfi_countdown(page_dict);
+                return code;
+            }
+        }
+    }
+
+    code = pdfi_process_page_contents(ctx, page_dict);
+    if (code < 0) {
+        if (uses_transparency)
+            (void)gs_abort_pdf14trans_device(ctx->pgs);
+        pdfi_countdown(page_dict);
+        return code;
+    }
+
+    if (uses_transparency) {
+
+        if (page_group_known) {
+            code = pdfi_end_transparency_group(ctx);
+            if (code < 0) {
+                (void)gs_abort_pdf14trans_device(ctx->pgs);
+                pdfi_countdown(page_dict);
+                return code;
+            }
+        }
+
+        code = gs_pop_pdf14trans_device(ctx->pgs, false);
+        if (code < 0) {
+            pdfi_countdown(page_dict);
+            return code;
+        }
     }
 
     pdfi_countdown(page_dict);
@@ -1627,6 +1673,7 @@ pdf_context *pdfi_create_context(gs_memory_t *pmem)
      */
     ctx->pgs->have_pattern_streams = true;
     ctx->preserve_tr_mode = 0;
+    ctx->notransparency = true;
 
     ctx->main_stream = NULL;
 

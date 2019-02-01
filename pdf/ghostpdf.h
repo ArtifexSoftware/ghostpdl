@@ -173,8 +173,8 @@ typedef struct pdf_context_s
     bool repaired;
 
     /* Global toggle for transparency */
-    bool use_transparency;
-    bool has_transparency;
+    bool page_has_transparency;
+    double PageSize[4];
 
     xref_table *xref_table;
     pdf_dict *Trailer;

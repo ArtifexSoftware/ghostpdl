@@ -78,8 +78,11 @@ int pdfi_gsave(pdf_context *ctx)
 
     if(code < 0 && ctx->pdfstoponerror)
         return code;
-    else
+    else {
+        if (ctx->page_has_transparency)
+            return gs_push_transparency_state(ctx->pgs);
         return 0;
+    }
 }
 
 int pdfi_grestore(pdf_context *ctx)
@@ -88,8 +91,11 @@ int pdfi_grestore(pdf_context *ctx)
 
     if(code < 0 && ctx->pdfstoponerror)
         return code;
-    else
+    else {
+        if (ctx->page_has_transparency)
+            return gs_pop_transparency_state(ctx->pgs, false);
         return 0;
+    }
 }
 
 int pdfi_setlinewidth(pdf_context *ctx)
@@ -641,6 +647,23 @@ static int GS_BM(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict
 
 static int GS_SMask(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
+    pdf_obj *o;
+    int code;
+
+    code = pdfi_dict_get(ctx, GS, "SMask", (pdf_obj **)&o);
+    if (code < 0)
+        return code;
+
+    if (o->type == PDF_NAME) {
+        pdf_name *n = (pdf_name *)o;
+
+        if (n->length == 4 && memcmp(n->data, "None", 4) == 0) {
+            pdfi_countdown(n);
+            return 0;
+        }
+    }
+
+    pdfi_countdown(o);
     dbgmprintf(ctx->memory, "ExtGState SMask not yet implemented\n");
     return 0;
 }

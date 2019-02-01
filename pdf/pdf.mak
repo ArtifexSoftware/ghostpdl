@@ -92,6 +92,9 @@ $(PDFOBJ)pdf_int.$(OBJ): $(PDFSRC)pdf_int.c $(PDFINCLUDES) $(plmain_h) $(PDF_MAK
 $(PDFOBJ)pdf_file.$(OBJ): $(PDFSRC)pdf_file.c $(sjpeg_h) $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_file.c $(PDFO_)pdf_file.$(OBJ)
 
+$(PDFOBJ)pdf_trans.$(OBJ): $(PDFSRC)pdf_trans.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
+	$(PDFCCC) $(PDFSRC)pdf_trans.c $(PDFO_)pdf_trans.$(OBJ)
+
 $(PDFGEN)pdfimpl.c: $(PLSRC)plimpl.c $(PDF_MAK) $(MAKEDIRS)
 	$(CP_) $(PLSRC)plimpl.c $(PDFGEN)pdfimpl.c
 
@@ -126,6 +129,7 @@ PDF_OBJS=\
     $(PDFOBJ)pdf_text.$(OBJ)\
     $(PDFOBJ)pdf_shading.$(OBJ)\
     $(PDFOBJ)pdf_func.$(OBJ)\
+    $(PDFOBJ)pdf_trans.$(OBJ)\
 
 
 # NB - note this is a bit squirrely.  Right now the pjl interpreter is
