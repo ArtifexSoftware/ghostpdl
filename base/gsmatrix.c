@@ -442,8 +442,10 @@ int
 gs_bbox_transform_inverse(const gs_rect * pbox_in, const gs_matrix * pmat,
                           gs_rect * pbox_out)
 {
-    return bbox_transform_either(pbox_in, pmat, pbox_out,
+    int code = bbox_transform_either(pbox_in, pmat, pbox_out,
                                  gs_point_transform_inverse);
+
+    return code;
 }
 
 /* ------ Coordinate transformations (to fixed point) ------ */
