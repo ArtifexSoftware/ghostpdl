@@ -1866,7 +1866,7 @@ txtwrite_process_cmap_text(gs_text_enum_t *pte)
                           &penum->text_state->matrix, &wanted);
                 pte->returned.total_width.x += wanted.x;
                 pte->returned.total_width.y += wanted.y;
-                penum->Widths[pte->index - 1] = wanted.x;
+                penum->Widths[penum->TextBufferIndex] = wanted.x;
 
                 if (pte->text.operation & TEXT_ADD_TO_ALL_WIDTHS) {
                     gs_point tpt;
@@ -1888,7 +1888,7 @@ txtwrite_process_cmap_text(gs_text_enum_t *pte)
                 pte->returned.total_width.y += dpt.y;
 
                 penum->TextBufferIndex += get_unicode(penum, (gs_font *)pte->orig_font, glyph, chr, &penum->TextBuffer[penum->TextBufferIndex]);
-                penum->Widths[pte->index - 1] += dpt.x;
+                penum->Widths[penum->TextBufferIndex] += dpt.x;
                 break;
             case 2:		/* end of string */
                 return 0;
