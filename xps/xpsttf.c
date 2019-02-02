@@ -191,8 +191,20 @@ xps_true_callback_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *ps
         /* Invent a name if we don't know the table format. */
         char buf[32];
         gs_sprintf(buf, "glyph%d", (int)glyph);
-        pstr->data = (byte*)buf;
-        pstr->size = strlen((char*)pstr->data);
+
+        /* Ugly hackery. see comment below, after 'not mac' this ends up as a memory leak.
+         * The PostScript interpreter adds the strings it creates to the PostScript name table
+         * which is cleared and freed at EOJ. Presumably because these functions were
+         * written with PostScript in mind, there is no provision for there not to be a
+         * persistent copy of the name data, so we have to make one, which means it leaks.
+         */
+        pstr->size = strlen(buf);
+        pstr->data = gs_alloc_bytes(pfont->memory, pstr->size + 1, "glyph to name");
+        if ( pstr->data == 0 )
+            return -1;
+
+        memset((byte *)pstr->data, 0x00, pstr->size + 1);
+        memcpy((byte *)pstr->data, buf, pstr->size);
         return 0;
     }
 
