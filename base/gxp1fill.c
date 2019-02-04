@@ -175,7 +175,9 @@ tile_by_steps(tile_fill_state_t * ptfs, int x0, int y0, int w0, int h0,
 
         bbox.p.x = x0, bbox.p.y = y0;
         bbox.q.x = x1, bbox.q.y = y1;
-        gs_bbox_transform_inverse(&bbox, &step_matrix, &ibbox);
+        code = gs_bbox_transform_inverse(&bbox, &step_matrix, &ibbox);
+        if (code < 0)
+            return code;
         if_debug10m('T', mem,
           "[T]x,y=(%d,%d) w,h=(%d,%d) => (%g,%g),(%g,%g), offset=(%g,%g)\n",
                     x0, y0, w0, h0,
@@ -616,6 +618,7 @@ tile_by_steps_trans(tile_fill_trans_state_t * ptfs, int x0, int y0, int w0, int 
 #ifdef DEBUG
     const gs_memory_t *mem = ptile->ttrans->mem;
 #endif
+    int code;
 
     ptfs->x0 = x0, ptfs->w0 = w0;
     ptfs->y0 = y0, ptfs->h0 = h0;
@@ -631,7 +634,9 @@ tile_by_steps_trans(tile_fill_trans_state_t * ptfs, int x0, int y0, int w0, int 
 
         bbox.p.x = x0, bbox.p.y = y0;
         bbox.q.x = x1, bbox.q.y = y1;
-        gs_bbox_transform_inverse(&bbox, &step_matrix, &ibbox);
+        code = gs_bbox_transform_inverse(&bbox, &step_matrix, &ibbox);
+        if (code < 0)
+            return code;
         if_debug10m('T', mem,
           "[T]x,y=(%d,%d) w,h=(%d,%d) => (%g,%g),(%g,%g), offset=(%g,%g)\n",
                     x0, y0, w0, h0,

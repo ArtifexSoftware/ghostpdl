@@ -132,7 +132,9 @@ gs_shading_Fb_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     {
         gs_rect pbox;
 
-        gs_bbox_transform_inverse(rect, &psh->params.Matrix, &pbox);
+        code = gs_bbox_transform_inverse(rect, &psh->params.Matrix, &pbox);
+        if (code < 0)
+            return code;
         x[0] = max(pbox.p.x, psh->params.Domain[0]);
         x[1] = min(pbox.q.x, psh->params.Domain[1]);
         y[0] = max(pbox.p.y, psh->params.Domain[2]);

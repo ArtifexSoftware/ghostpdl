@@ -331,10 +331,11 @@ gx_device_bbox_release(gx_device_bbox *dev)
 }
 
 /* Read back the bounding box in 1/72" units. */
-void
+int
 gx_device_bbox_bbox(gx_device_bbox * dev, gs_rect * pbbox)
 {
     gs_fixed_rect bbox;
+    int code;
 
     BBOX_GET_BOX(dev, &bbox);
     if (bbox.p.x > bbox.q.x || bbox.p.y > bbox.q.y) {
@@ -349,8 +350,11 @@ gx_device_bbox_bbox(gx_device_bbox * dev, gs_rect * pbbox)
         dbox.q.x = fixed2float(bbox.q.x);
         dbox.q.y = fixed2float(bbox.q.y);
         gs_deviceinitialmatrix((gx_device *)dev, &mat);
-        gs_bbox_transform_inverse(&dbox, &mat, pbbox);
+        code = gs_bbox_transform_inverse(&dbox, &mat, pbbox);
+        if (code < 0)
+            return code;
     }
+    return 0;
 }
 
 static int
@@ -391,8 +395,11 @@ bbox_output_page(gx_device * dev, int num_copies, int flush)
          * This is a free-standing device.  Print the page bounding box.
          */
         gs_rect bbox;
+        int code;
 
-        gx_device_bbox_bbox(bdev, &bbox);
+        code = gx_device_bbox_bbox(bdev, &bbox);
+        if (code < 0)
+            return code;
         dmlprintf4(dev->memory, "%%%%BoundingBox: %d %d %d %d\n",
                    (int)floor(bbox.p.x), (int)floor(bbox.p.y),
                    (int)ceil(bbox.q.x), (int)ceil(bbox.q.y));

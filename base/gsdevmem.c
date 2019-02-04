@@ -42,6 +42,16 @@ gs_initialize_wordimagedevice(gx_device_memory * new_dev, const gs_matrix * pmat
     float x_pixels_per_unit, y_pixels_per_unit;
     byte palette[256 * 3];
     bool has_color;
+    int code;
+    gs_rect bbox;
+
+    bbox.p.x = 0;
+    bbox.p.y = 0;
+    bbox.q.x = width;
+    bbox.q.y = height;
+    code = gs_bbox_transform_inverse(&bbox, pmat, &bbox);
+    if (code < 0)
+        return code;
 
     switch (colors_size) {
         case 3 * 2:
@@ -194,13 +204,6 @@ gs_initialize_wordimagedevice(gx_device_memory * new_dev, const gs_matrix * pmat
     gx_device_set_width_height((gx_device *) new_dev, width, height);
     /* Set the ImagingBBox so we get a correct clipping region. */
     {
-        gs_rect bbox;
-
-        bbox.p.x = 0;
-        bbox.p.y = 0;
-        bbox.q.x = width;
-        bbox.q.y = height;
-        gs_bbox_transform_inverse(&bbox, pmat, &bbox);
         new_dev->ImagingBBox[0] = bbox.p.x;
         new_dev->ImagingBBox[1] = bbox.p.y;
         new_dev->ImagingBBox[2] = bbox.q.x;

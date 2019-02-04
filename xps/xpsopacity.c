@@ -33,7 +33,9 @@ xps_bounds_in_user_space(xps_context_t *ctx, gs_rect *ubox)
     dbox.p.y = fixed2float(clip_path->outer_box.p.y);
     dbox.q.x = fixed2float(clip_path->outer_box.q.x);
     dbox.q.y = fixed2float(clip_path->outer_box.q.y);
-    gs_bbox_transform_inverse(&dbox, &ctm_only(ctx->pgs), ubox);
+    code = gs_bbox_transform_inverse(&dbox, &ctm_only(ctx->pgs), ubox);
+    if (code < 0)
+        gs_warn("gs_bbox_transform_inverse failed");
 }
 
 /* This will get the proper bounds based upon the current path, clip path
@@ -54,8 +56,7 @@ int xps_bounds_in_user_space_path_clip(xps_context_t *ctx, gs_rect *ubox,
     }
     if (code < 0)
         return code;
-    gs_bbox_transform_inverse(&bbox, &ctm_only(ctx->pgs), ubox);
-    return code;
+    return gs_bbox_transform_inverse(&bbox, &ctm_only(ctx->pgs), ubox);
 }
 
 int

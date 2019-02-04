@@ -136,7 +136,7 @@ void gx_device_bbox_set_white_opaque(gx_device_bbox *dev,
                                      bool white_is_opaque);
 
 /* Read back the bounding box in 1/72" units. */
-void gx_device_bbox_bbox(gx_device_bbox * dev, gs_rect * pbbox);
+int gx_device_bbox_bbox(gx_device_bbox * dev, gs_rect * pbbox);
 
 /* Release a bounding box device. */
 void gx_device_bbox_release(gx_device_bbox *dev);
