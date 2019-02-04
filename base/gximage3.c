@@ -342,6 +342,15 @@ gx_begin_image3_generic(gx_device * dev,
             code = gs_note_error(gs_error_VMerror);
             goto out1;
         }
+        /* Because the mask data is 1 BPC, if the width is not a multiple of 8
+         * then we will not fill the last byte of mask_data completely. This
+         * provokes valgrind when running to pdfwrite, because pdfwrite has to
+         * write the full byte of mask data to the file. It also means (potentially)
+         * that we could run the same input twice and get (slightly) different
+         * PDF files produced. So we set the last byte to zero to ensure the bits
+         * are fully initialised. See Bug #693814
+         */
+        penum->mask_data[((penum->mask_width + 7) >> 3) - 1] = 0x00;
     }
     penum->InterleaveType = pim->InterleaveType;
     penum->bpc = pim->BitsPerComponent;
