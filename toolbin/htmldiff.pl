@@ -695,9 +695,9 @@ while (<>)
         unlink $tmp2;
 
         # Add the files to the HTML, converting to PNG if required.
-        while (stat($outdir."/out.".sprintf("%05d",$images).".bmp"))
+        $outsuffix = ".png";
+        while (stat($outdir."/out.".sprintf("%05d",$images).$outsuffix))
         {
-            $suffix = ".bmp";
             $imstr1 = sprintf("%05d",$images);
             $imstr2 = sprintf("%05d",$images+1);
             $imstr3 = sprintf("%05d",$images+2);
@@ -716,10 +716,9 @@ while (<>)
                 unlink $outdir."/out.$imstr1.bmp";
                 unlink $outdir."/out.$imstr2.bmp";
                 unlink $outdir."/out.$imstr3.bmp";
-                $suffix = ".png";
             }
             
-            $metafile = $outdir."/out.$imstr.meta";
+            $metafile = $outdir."/out.$imstr1.meta";
             $meta{"X"}    = 0;
             $meta{"Y"}    = 0;
             $meta{"PW"}   = 0;
@@ -745,15 +744,15 @@ while (<>)
             $mousemove = "onmousemove=\"coord(event,this,".$images.",".$meta{"X"}.",".$meta{"Y"}.")\"";
             
             if (!$iframes) {
-                print $html "<TABLE><TR><TD><IMG SRC=\"$framedir/out.$imstr1$suffix\" onMouseOver=\"swap($images)\" onMouseOut=\"swap($images)\" NAME=\"compare$images\" BORDER=1 TITLE=\"Candidate<->Reference: $file page=$page res=$res\" $mousemove></TD>";
-               print $html "<TD><IMG SRC=\"$framedir/out.$imstr2$suffix\" NAME=\"compare".($images+1)."\" BORDER=1 TITLE=\"Reference: $file page=$page res=$res\" $mousemove></TD>";
-               print $html "<TD><IMG SRC=\"$framedir/out.$imstr3$suffix\" BORDER=1 TITLE=\"Diff: $file page=$page res=$res\" $mousemove></TD></TR>";
+                print $html "<TABLE><TR><TD><IMG SRC=\"$framedir/out.$imstr1$outsuffix\" onMouseOver=\"swap($images)\" onMouseOut=\"swap($images)\" NAME=\"compare$images\" BORDER=1 TITLE=\"Candidate<->Reference: $file page=$page res=$res\" $mousemove></TD>";
+               print $html "<TD><IMG SRC=\"$framedir/out.$imstr2$outsuffix\" NAME=\"compare".($images+1)."\" BORDER=1 TITLE=\"Reference: $file page=$page res=$res\" $mousemove></TD>";
+               print $html "<TD><IMG SRC=\"$framedir/out.$imstr3$outsuffix\" BORDER=1 TITLE=\"Diff: $file page=$page res=$res\" $mousemove></TD></TR>";
                print $html "<TR><TD COLSPAN=3><FORM name=\"Coord$images\"><LABEL for=\"X\">Page=$page PageSize=".$meta{"PW"}."x".$meta{"PH"}." Res=$res TopLeft=(".$meta{"X"}.",".$meta{"Y"}.") W=".$meta{"W"}." H=".$meta{"H"}." </LABEL><INPUT type=\"text\" name=\"X\" value=0 size=3>X<INPUT type=\"text\" name=\"Y\" value=0 size=3>Y</FORM></TD></TR></TABLE><BR>";
             }
 
-            print $iframe "<TABLE><TR><TD><IMG SRC=\"out.$imstr1$suffix\" onMouseOver=\"swap($images)\" onMouseOut=\"swap($images)\" NAME=\"compare$images\" BORDER=1 TITLE=\"Candidate<->Reference: $file page=$page res=$res\" $mousemove></TD>";
-            print $iframe "<TD><IMG SRC=\"out.$imstr2$suffix\" NAME=\"compare".($images+1)."\" BORDER=1 TITLE=\"Reference: $file page=$page res=$res\" $mousemove></TD>";
-            print $iframe "<TD><IMG SRC=\"out.$imstr3$suffix\" BORDER=1 TITLE=\"Diff: $file page=$page res=$res\" $mousemove></TD></TR>";
+            print $iframe "<TABLE><TR><TD><IMG SRC=\"out.$imstr1$outsuffix\" onMouseOver=\"swap($images)\" onMouseOut=\"swap($images)\" NAME=\"compare$images\" BORDER=1 TITLE=\"Candidate<->Reference: $file page=$page res=$res\" $mousemove></TD>";
+            print $iframe "<TD><IMG SRC=\"out.$imstr2$outsuffix\" NAME=\"compare".($images+1)."\" BORDER=1 TITLE=\"Reference: $file page=$page res=$res\" $mousemove></TD>";
+            print $iframe "<TD><IMG SRC=\"out.$imstr3$outsuffix\" BORDER=1 TITLE=\"Diff: $file page=$page res=$res\" $mousemove></TD></TR>";
             print $iframe "<TR><TD COLSPAN=3><FORM name=\"Coord$images\"><LABEL for=\"X\">Page=$page PageSize=".$meta{"PW"}."x".$meta{"PH"}." Res=$res TopLeft=(".$meta{"X"}.",".$meta{"Y"}.") W=".$meta{"W"}." H=".$meta{"H"}." </LABEL><INPUT type=\"text\" name=\"X\" value=0 size=3>X<INPUT type=\"text\" name=\"Y\" value=0 size=3>Y</FORM></TD></TR></TABLE><BR>";
             $images += 3;
             $diffs++;

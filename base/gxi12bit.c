@@ -172,7 +172,7 @@ gs_image_class_2_fracs(gx_image_enum * penum, irender_proc_t *render_fn)
             }
             penum->icc_setup.is_lab = pcs->cmm_icc_profile_data->islab;
             penum->icc_setup.must_halftone = gx_device_must_halftone(penum->dev);
-            penum->icc_setup.has_transfer = 
+            penum->icc_setup.has_transfer =
                 gx_has_transfer(penum->pgs, num_des_comps);
             if (penum->icc_setup.is_lab) penum->icc_setup.need_decode = false;
             if (penum->icc_link == NULL) {
@@ -264,7 +264,7 @@ image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
     int code = 0, mcode = 0;
     int i;
     bool is_devn = false;
-    bool is_sep = (gs_color_space_get_index(penum->pcs) == 
+    bool is_sep = (gs_color_space_get_index(penum->pcs) ==
                     gs_color_space_index_Separation);
 
     if (h == 0)
@@ -607,6 +607,7 @@ image_render_icc16(gx_image_enum * penum, const byte * buffer, int data_x,
     gx_cmapper_t data;
     gx_cmapper_fn *mapper;
     gx_color_value *conc = &data.conc[0];
+    int first = 1;
 
     if (h == 0)
         return 0;
@@ -665,18 +666,18 @@ image_render_icc16(gx_image_enum * penum, const byte * buffer, int data_x,
                                         (const unsigned short*) (psrc_decode+w),
                                          get_cie_range(penum->pcs));
                 }
-                (penum->icc_link->procs.map_buffer)(dev, penum->icc_link, 
+                (penum->icc_link->procs.map_buffer)(dev, penum->icc_link,
                                                     &input_buff_desc,
-                                                    &output_buff_desc, 
+                                                    &output_buff_desc,
                                                     (void*) psrc_decode,
                                                     (void*) psrc_cm);
                 gs_free_object(pgs->memory, (byte *)psrc_decode, "image_render_color_icc");
             } else {
                 /* CM only. No decode */
-                (penum->icc_link->procs.map_buffer)(dev, penum->icc_link, 
+                (penum->icc_link->procs.map_buffer)(dev, penum->icc_link,
                                                     &input_buff_desc,
-                                                    &output_buff_desc, 
-                                                    (void*) psrc, 
+                                                    &output_buff_desc,
+                                                    (void*) psrc,
                                                     (void*) psrc_cm);
             }
         }
@@ -713,11 +714,15 @@ image_render_icc16(gx_image_enum * penum, const byte * buffer, int data_x,
                 break;
             if (memcmp(run, psrc_cm, spp_cm * 2))
                 break;
-            if (posture == image_skewed)
+            if (posture == image_skewed) {
+                if (first) /* We always need to map the first pixel on a line */
+                    break;
                 /* The color doesn't need remapping, but we can't handle a run */
                 goto skewed_but_same;
+            }
             run += spp_cm;
         }
+        first = 0;
         /* So we have a run of pixels from psrc_cm to run that are all the same. */
         /* This needs to be sped up */
         for ( k = 0; k < spp_cm; k++ ) {

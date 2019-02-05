@@ -739,8 +739,14 @@ gdevpdfx_h=$(DEVVECSRC)gdevpdfx.h
 
 opdfread_h=$(DEVGEN)opdfread.h
 
-$(DEVGEN)opdfread.h : $(PACKPS_XE) $(DEVVECSRC)opdfread.ps
-	$(EXP)$(PACKPS_XE) -c -n opdfread_ps -o $(opdfread_h) $(DEVVECSRC)opdfread.ps
+$(DEVGEN)opdfread_1.h : $(PACKPS_XE) $(DEVVECSRC)opdfread.ps
+	$(EXP)$(PACKPS_XE) -d -c -n opdfread_ps -o $(DEVGEN)opdfread_1.h $(DEVVECSRC)opdfread.ps
+
+$(DEVGEN)opdfread_.h : $(PACKPS_XE) $(DEVVECSRC)opdfread.ps
+	$(EXP)$(PACKPS_XE) -c -n opdfread_ps -o $(DEVGEN)opdfread_.h $(DEVVECSRC)opdfread.ps
+
+$(DEVGEN)opdfread.h : $(DEVGEN)opdfread_$(DEBUG_OPDFREAD).h
+	$(CP_) $(DEVGEN)opdfread_$(DEBUG_OPDFREAD).h $(opdfread_h)
 
 $(DEVOBJ)gdevpdf.$(OBJ) : $(DEVVECSRC)gdevpdf.c $(GDEVH)\
  $(fcntl__h) $(memory__h) $(string__h) $(time__h) $(unistd__h) $(gp_h)\

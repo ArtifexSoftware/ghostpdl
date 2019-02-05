@@ -67,7 +67,6 @@ int op_show_continue_pop(i_ctx_t *, int);
 int op_show_continue_dispatch(i_ctx_t *, int, int);
 int op_show_free(i_ctx_t *, int);
 void glyph_ref(const gs_memory_t *mem, gs_glyph, ref *);
-int finish_stringwidth(i_ctx_t *);
 
 /* Exported by zchar.c for zcharout.c */
 bool zchar_show_width_only(const gs_text_enum_t *);

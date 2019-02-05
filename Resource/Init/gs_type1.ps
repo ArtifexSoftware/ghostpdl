@@ -38,7 +38,7 @@
    dup .fontbbox {
      pop pop pop pop
      dup /FontInfo known not
-      { .growfontdict dup /FontInfo 2 dict put }
+      { //.growfontdict exec dup /FontInfo 2 dict put }
      if
      dup dup /FontInfo get dup dup
      /UnderlinePosition known exch /UnderlineThickness known and

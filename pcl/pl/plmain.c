@@ -377,9 +377,9 @@ pl_main_run_file_utf8(pl_main_instance_t *minst, const char *prefix_commands, co
                     minst->curr_implementation = NULL;
                     if (code >= 0)
                         code = pl_init_job(desired_implementation, minst->device);
+                    minst->curr_implementation = desired_implementation;
                     if (code < 0)
                         goto error_fatal;
-                    minst->curr_implementation = desired_implementation;
                 }
 
                 /* Run any prefix commands */

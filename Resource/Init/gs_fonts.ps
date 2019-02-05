@@ -336,13 +336,13 @@ FONTPATH length 0 eq { (%END FONTPATH) .skipeof } if
          forall exch pop
           {     % stack: <fontcount> <scancount+1> <filecount+1> <filename>
                 %       <file>
-            dup 0 setfileposition .findfontname
+            dup 0 setfileposition //.findfontname exec
              { dup .nativeFontmap exch known
                 { pop pop
                 }
                 { exch copystring exch
                   DEBUG { ( ) print dup =only flush } if
-                  1 index .definenativefontmap
+                  1 index //.definenativefontmap exec
                   //.splitfilename exec pop //true //.scanfontdict 3 1 roll .growput
                         % Increment fontcount.
                   3 -1 roll 1 add 3 1 roll
@@ -410,7 +410,7 @@ systemdict /NONATIVEFONTMAP known .setnativefontmapbuilt
         }{
           % we could open the font file
           mark 2 1 roll
-          {.findfontname} .internalstopped
+          {//.findfontname exec} .internalstopped
           {
             cleartomark
             pop
@@ -421,7 +421,7 @@ systemdict /NONATIVEFONTMAP known .setnativefontmapbuilt
             % DEBUG { (  found ) print dup print (\n) print flush } if
             % add entry to the fontmap
             1 index exch 0 exch dup type /nametype ne {cvn} if put
-            aload pop .definenativefontmap
+            aload pop //.definenativefontmap exec
           } ifelse
         } ifelse
       } forall
@@ -429,7 +429,7 @@ systemdict /NONATIVEFONTMAP known .setnativefontmapbuilt
     % record that we've been run
     //true //.setnativefontmapbuilt
   } ifelse
-} bind def
+} bind executeonly odef
 
 % Create the dictionary that registers the .buildfont procedure
 % (called by definefont) for each FontType.
@@ -462,7 +462,7 @@ buildfontdict 3 /.buildfont3 cvx put
   {             % Check for disabled platform fonts.
       NOPLATFONTS
        {        % Make sure we leave room for FID.
-         .growfontdict dup /ExactSize 0 put
+         //.growfontdict exec dup /ExactSize 0 put
        }
        {        % Hack: if the Encoding looks like it might be the
                 % Symbol or Dingbats encoding, load those now (for the
@@ -509,7 +509,7 @@ buildfontdict 3 /.buildfont3 cvx put
       } if
       readonly          % stack: name fontdict
   } stopped { $error /command get /invalidfont signalerror } if
-} bind def
+} bind executeonly odef
 /definefont
  { dup rcheck not {
       /definefont cvx /invalidaccess signalerror
@@ -527,7 +527,7 @@ buildfontdict 3 /.buildfont3 cvx put
                 % If the font originated as a resource, register it.
    currentfile .currentresourcefile eq { dup .registerfont } if
    readonly
- } odef
+ } .bind executeonly odef
 
 % Define a procedure for defining aliased fonts.
 % We use this only for explicitly aliased fonts, not substituted fonts:
@@ -579,7 +579,7 @@ buildfontdict 3 /.buildfont3 cvx put
     }
    ifelse
    exch setglobal
- } odef         % so findfont will bind it
+ } bind executeonly odef         % so findfont will bind it
 
 % Define .loadfontfile for loading a font.  If we recognize Type 1 and/or
 % TrueType fonts, gs_type1.ps and/or gs_ttf.ps will redefine this.
@@ -951,7 +951,7 @@ $error /SubstituteFont { } put
       } ifelse
     } ifelse
   } if
-} bind def
+} bind executeonly def
 
 % any user of .putgstringcopy must use bind and executeonly
 /.putgstringcopy  %   <dict> <name> <string> .putgstringcopy -
@@ -1043,7 +1043,7 @@ $error /SubstituteFont { } put
                 % See if we can get a FontName from the file, and if so,
                 % whether a font by that name exists now.
         exch dup      % Stack: origfontname fontdirectory path path
-        (r) file .findfontname
+        (r) file //.findfontname exec
          {            % Stack: origfontname fontdirectory path filefontname
            2 index 1 index //.fontknownget exec
             {   % Yes.  Stack: origfontname fontdirectory path filefontname fontdict
@@ -1231,7 +1231,7 @@ FAKEFONTS { exch } if pop def   % don't bind, .current/setglobal get redefined
     }
    if
    userdict /defaultfontmap_content .undef
-   .definefakefonts     % current VM is global
+   //.definefakefonts exec     % current VM is global
  } def                  % don't bind, .current/setglobal get redefined
 
 % ---------------- Synthetic font support ---------------- %
@@ -1277,18 +1277,9 @@ FAKEFONTS { exch } if pop def   % don't bind, .current/setglobal get redefined
     } forall
  } bind def
 
-% Make a modified font and define it.  Note that unlike definefont,
-% this does not leave the font on the operand stack.
-
-/.definemodifiedfont    % <fontdict> <paramdict> .definemodifiedfont -
- { .makemodifiedfont
-   dup /FontName get exch definefont pop
- } bind def
-
 % Undef these, not needed outside this file
 [
  % /.fonttempstring /.scannextfontdir - are also used in gs_res.ps, so are undefined there
- % /.fontnameproperties - is used in pdf_font.ps
  % /.scanfontheaders - used in gs_cff.ps, gs_ttf.ps
  /.loadfontloop /.tryloadfont /.findfont /.pathlist /.loadFontmap /.lowerstring
  /.splitfilename /.scanfontdict /.scanfontbegin
@@ -1298,4 +1289,6 @@ FAKEFONTS { exch } if pop def   % don't bind, .current/setglobal get redefined
  /.setloadingfont /.substitutefaces /.substituteproperties /.substitutefamilies
  /.nametostring /.fontnamestring /.checkalias /.fontknownget /.stdsubstfont
  /.putgstringcopy
+ /.definenativefontmap
+ /.findfontname
 ] {systemdict exch .forceundef} forall

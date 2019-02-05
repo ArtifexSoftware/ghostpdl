@@ -163,7 +163,7 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
         int code;
         gs_glyph glyph;
 
-        glyph = penum->returned.current_glyph;
+        glyph = pte->returned.current_glyph;
         if ((glyph != GS_NO_GLYPH && penum->output_char_code != GS_NO_CHAR) || !pdev->PS_accumulator) {
             gs_show_enum *penum_s;
             gs_fixed_rect clip_box;

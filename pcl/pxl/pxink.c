@@ -174,7 +174,7 @@ px_set_halftone(px_state_t * pxs)
                                    /* width */ 16, /*height */ 16,
                                    /* dither data */ thresh,
                                    /* x phase */ (int)pxgs->halftone.origin.x,
-                                   /* y phase */ 
+                                   /* y phase */
                                    (int)pxgs->halftone.origin.y);
     } else {                    /* downloaded */
         int ht_width, ht_height;
@@ -201,7 +201,7 @@ px_set_halftone(px_state_t * pxs)
                                    /* dither data */
                                    pxgs->halftone.thresholds,
                                    /* x phase */ (int)pxgs->halftone.origin.x,
-                                   /* y phase */ 
+                                   /* y phase */
                                    (int)pxgs->halftone.origin.y);
         if (code < 0)
             gs_free_string(pxs->memory, pxgs->halftone.thresholds.data,
@@ -873,9 +873,9 @@ pxSetHalftoneMethod(px_args_t * par, px_state_t * pxs)
     px_gstate_t *pxgs = pxs->pxgs;
     pxeDitherMatrix_t method;
 
-    if (par->pv[6] || par->pv[7] || par->pv[8] || par->pv[9])
-        /* ignore object type arguments */
-        return 0;
+    if (par->pv[5] || par->pv[6] || par->pv[7] || par->pv[8])
+        /* Placeholder to support halftones per object type. */
+        ;
 
     if (par->pv[1]) {           /* Internal halftone */
         if (par->pv[2] || par->pv[3] || par->pv[4])
@@ -961,7 +961,7 @@ pxSetHalftoneMethod(px_args_t * par, px_state_t * pxs)
         pxgs->halftone.height = height;
         method = eDownloaded;
     } else
-        return_error(errorMissingAttribute);
+        return 0;
     if (par->pv[0])
         gs_transform(pgs, real_value(par->pv[0], 0),
                      real_value(par->pv[0], 1), &pxgs->halftone.origin);

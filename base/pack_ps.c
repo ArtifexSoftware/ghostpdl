@@ -55,7 +55,7 @@
 
 /* Forward references */
 static bool readline(FILE * in, char *str, int len);
-static int pack_postscript_line(const char *inputline, char *outputline, char *comment);
+static int pack_postscript_line(const char *inputline, char *outputline, char *comment, bool nopack);
 static void usage(const char *outfilename, const char *arrayname);
 int main(int argc, char *argv[]);
 
@@ -117,7 +117,7 @@ readline(FILE * in, char *str, int len)
  * its output is intended to be embedded in a C string.
  */
 static int
-pack_postscript_line(const char *inputline, char *outputline, char *comment)
+pack_postscript_line(const char *inputline, char *outputline, char *comment, bool nopack)
 {
     const char *str = inputline;
     const char *from;
@@ -128,7 +128,7 @@ pack_postscript_line(const char *inputline, char *outputline, char *comment)
     outputline[0] = '\0';
     comment[0] = '\0';
 
-    while (*str == ' ' || *str == '\t') {       /* strip leading whitespace */
+    while (!nopack && (*str == ' ' || *str == '\t')) {       /* strip leading whitespace */
         ++str;
     }
     if (*str == 0) {       /* all whitespace */
@@ -150,7 +150,7 @@ pack_postscript_line(const char *inputline, char *outputline, char *comment)
     for (from = str, to = outputline; (*to = *from) != 0; ++from, ++to) {
         switch (*from) {
             case '%':
-                if (!in_string) {
+                if (!in_string && !nopack) {
                     /* Store the rest of the line in the comment. */
                     while (*from && (/* (*from == '%') || */ (*from == ' ') || (*from == '\t'))) {
                         from++;
@@ -161,7 +161,7 @@ pack_postscript_line(const char *inputline, char *outputline, char *comment)
                 continue;
             case ' ':
             case '\t':
-                if (to > outputline && !in_string && strchr(" \t>[]{})", to[-1])) {
+                if (!nopack && to > outputline && !in_string && strchr(" \t>[]{})", to[-1])) {
                     --to;
                 }
                 continue;
@@ -172,7 +172,7 @@ pack_postscript_line(const char *inputline, char *outputline, char *comment)
             case ']':
             case '{':
             case '}':
-                if (to > outputline && !in_string && strchr(" \t", to[-1])) {
+                if (!nopack && to > outputline && !in_string && strchr(" \t", to[-1])) {
                     *--to = *from;
                 }
                 if (*from == '(') {
@@ -249,6 +249,7 @@ main(int argc, char *argv[])
     const char *arrayname = ARRAY_NAME_DEFAULT;
     const char *infilename = NULL;
     bool output_comments = false;
+    bool no_pack = false;
     FILE *infile;
     FILE *outfile;
 
@@ -304,6 +305,11 @@ main(int argc, char *argv[])
             output_comments = true;
             atarg++;
             break;
+        case 'd' : /* Don't string whitespace or comments */
+            /* Skip to next argument */
+            no_pack = true;
+            atarg++;
+            break;
         }
     }
 
@@ -345,7 +351,7 @@ main(int argc, char *argv[])
         char packedline[INPUT_LINE_LENGTH_MAX];
         char comment[INPUT_LINE_LENGTH_MAX];
         int unpackedlen = strlen(inputline);
-        int packedlen = pack_postscript_line(inputline, packedline, comment);
+        int packedlen = pack_postscript_line(inputline, packedline, comment, no_pack);
         int commentlen = strlen(comment);
 
 #if STRIP_PDFR_DEBUG_CALLS

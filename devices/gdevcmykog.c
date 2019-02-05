@@ -180,8 +180,7 @@ cmykog_open(gx_device * pdev)
      the content of the page, avoiding any issues upon the reopen.  Here we
      will need to make sure to set the color information to avoid problems. */
   pdev->color_info.max_components = 6;
-  pdev->color_info.num_components = 6;
-  pdev->color_info.depth = 48;
+  pdev->color_info.depth = pdev->color_info.num_components * 8;
 
   /* For the planar device we need to set up the bit depth of each plane.
    * For other devices this is handled in check_device_separable where
