@@ -36,33 +36,6 @@
   ] def
 } if
 
-% <file> <key> .findfontvalue <value> true
-% <file> <key> .findfontvalue false
-% Closes the file in either case.
-/.findnonttfontvalue /.findfontvalue load def
-/.findfontvalue {
-  1 index .is_woff {
-    dup /FontType eq {
-      pop closefile 42 //true
-    } {
-      dup /FontName eq { pop .findwoffname } { pop closefile //false } ifelse
-    } ifelse
-  }
-  {
-    1 index .is_ttf_or_otf {
-                  % If this is a font at all, it's a TrueType font.
-        dup /FontType eq {
-          pop closefile 42 //true
-        } {
-          dup /FontName eq { pop .findttfontname } { pop closefile //false } ifelse
-        } ifelse
-    } {
-                  % Not a TrueType font.
-        .findnonttfontvalue
-    } ifelse
-  } ifelse
-} bind def
-
 % <file> .findttfontname <fname> true
 % <file> .findttfontname false
 % Closes the file in either case.
@@ -113,6 +86,32 @@
   f closefile end end
 } bind def
 
+% <file> <key> .findfontvalue <value> true
+% <file> <key> .findfontvalue false
+% Closes the file in either case.
+/.findnonttfontvalue /.findfontvalue load def
+/.findfontvalue {
+  1 index .is_woff {
+    dup /FontType eq {
+      pop closefile 42 //true
+    } {
+      dup /FontName eq { pop //.findwoffname exec} { pop closefile //false } ifelse
+    } ifelse
+  }
+  {
+    1 index .is_ttf_or_otf {
+                  % If this is a font at all, it's a TrueType font.
+        dup /FontType eq {
+          pop closefile 42 //true
+        } {
+          dup /FontName eq { pop //.findttfontname exec} { pop closefile //false } ifelse
+        } ifelse
+    } {
+                  % Not a TrueType font.
+        .findnonttfontvalue
+    } ifelse
+  } ifelse
+} bind def
 
 % Load a font file that might be a TrueType font.
 
@@ -1988,4 +1987,6 @@ currentdict /postalias undef
  /.definettcidfont
  /.fill_identity_cmap
  /.findseg
+ /.findttfontname
+ /.findwoffname
 ] {systemdict exch .forceundef} forall
