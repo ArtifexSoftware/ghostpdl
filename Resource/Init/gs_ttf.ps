@@ -1569,11 +1569,11 @@ currentdict /postalias undef
   def               % processCIDToGIDMap may replace.
   /CIDMap numloca maxstring le {
                 % Use a single string.
-      numloca 2 mul string 0 .fill_identity_cmap
+      numloca 2 mul string 0 //.fill_identity_cmap exec
   } {
                 % We must use 2 strings.
-      maxstring 2 mul string 0 .fill_identity_cmap
-      numloca maxstring sub 2 mul string maxstring .fill_identity_cmap
+      maxstring 2 mul string 0 //.fill_identity_cmap exec
+      numloca maxstring sub 2 mul string maxstring //.fill_identity_cmap exec
       2 array astore
   } ifelse
   def
@@ -1598,7 +1598,7 @@ currentdict /postalias undef
   dup
   /fontname exch def
   /FontName exch put           % replace any definition of /FontName
-  .definettcidfont
+  //.definettcidfont exec
 } bind def
 
 % <file> <SubfontID> .load_tt_font_stripped <font_data>
@@ -1985,4 +1985,6 @@ currentdict /postalias undef
 % Undef these, not needed outside this file
 [
  /.addglyph
+ /.definettcidfont
+ /.fill_identity_cmap
 ] {systemdict exch .forceundef} forall
