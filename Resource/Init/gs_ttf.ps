@@ -910,7 +910,7 @@ end readonly def                % .loadttfontdict
 % Defines f, offsets, tables, tabdict, tabs, tthdrlen.
 % Skips loca and glyf if <bool> is true.
 /.loadttfonttables {
-  .loadttfontdict begin
+  //.loadttfontdict begin
   40 dict begin
   /SubfontID exch def
   /load_stripped exch def
@@ -986,7 +986,7 @@ end readonly def                % .loadttfontdict
 % Defines f, offsets, tables, tabdict, tabs, tthdrlen.
 % Skips loca and glyf if <bool> is true.
 /.loadwofftables {
-  .loadttfontdict begin
+  //.loadttfontdict begin
   40 dict begin
   /SubfontID exch def
   /load_stripped exch def
@@ -1985,4 +1985,5 @@ mark
  /.findseg
  /.findttfontname
  /.findwoffname
+ /.loadttfontdict
 ] {systemdict exch .forceundef} forall
