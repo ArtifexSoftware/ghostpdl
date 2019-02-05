@@ -1124,7 +1124,7 @@ mark
     locatable type /stringtype eq {
       /.indexloca {} def
     } {
-      /.indexloca /.findseg load def
+      /.indexloca //.findseg def
     } ifelse
     head 50 getu16 0 ne {
       /getloca {
@@ -1987,4 +1987,5 @@ currentdict /postalias undef
  /.addglyph
  /.definettcidfont
  /.fill_identity_cmap
+ /.findseg
 ] {systemdict exch .forceundef} forall
