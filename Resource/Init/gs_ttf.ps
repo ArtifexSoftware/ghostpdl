@@ -1981,3 +1981,8 @@ currentdict /postalias undef
   end end
  .completefont
 } bind executeonly def
+
+% Undef these, not needed outside this file
+[
+ /.addglyph
+] {systemdict exch .forceundef} forall
