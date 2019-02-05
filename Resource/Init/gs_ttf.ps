@@ -1486,7 +1486,7 @@ mark
       } ifelse
     ]
   TTFDEBUG { (Encoding: ) print dup === flush } if
-} bind def
+} bind executeonly odef
 
 % to be removed 9.09......
 currentdict /postalias undef
@@ -1513,7 +1513,7 @@ currentdict /postalias undef
   } if
   .dicttomark
   end end dup /FontName get exch definefont
-} bind def
+} bind executeonly def
 
 % <file> .loadwofffont <type42font>
 /.loadwofffont
@@ -1534,7 +1534,7 @@ currentdict /postalias undef
   .dicttomark
   end end dup /FontName get exch
   definefont
-} bind def
+} bind executeonly def
 
 
 % ---------------- CIDFontType 2 font loading ---------------- %
@@ -1922,7 +1922,7 @@ currentdict /postalias undef
     } ifelse
   } if
   TTFDEBUG { (.pdfcharkeys end) = } if
-} bind def
+} bind executeonly def
 
 % <file> <is_symbolic> <Encoding|null> <FontName> .loadpdfttfont <type42font>
 /.loadpdfttfont {
