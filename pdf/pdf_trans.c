@@ -85,6 +85,27 @@ int pdfi_begin_page_group(pdf_context *ctx, pdf_dict *page_dict)
     return code;
 }
 
+int pdfi_begin_group(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_dict)
+{
+    pdf_dict *group_dict = NULL;
+    gs_rect bbox;
+    int code;
+
+    code = pdfi_dict_get_type(ctx, form_dict, "Group", PDF_DICT, &group_dict);
+    if (code < 0)
+        return_error(code);
+
+    bbox.p.x = ctx->PageSize[0];
+    bbox.p.y = ctx->PageSize[1];
+    bbox.q.x = ctx->PageSize[2];
+    bbox.q.y = ctx->PageSize[3];
+
+    code = pdfi_transparency_group_common(ctx, page_dict, group_dict, &bbox, PDF14_BEGIN_TRANS_PAGE_GROUP);
+    pdfi_countdown(group_dict);
+    return code;
+}
+
+
 int pdfi_end_transparency_group(pdf_context *ctx)
 {
     return gs_end_transparency_group(ctx->pgs);
