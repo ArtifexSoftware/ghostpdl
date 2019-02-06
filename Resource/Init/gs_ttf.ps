@@ -1114,7 +1114,7 @@ mark
 % Defines checksum, getloca, head, locatable, numloca, post, sfnts, upem
 % Note that the 'loca' table may be out of order.
 /.makesfnts {
-  .readttdata
+  //.readttdata exec
   /head tabdict /head get def
   /post tabdict /post .knownget {
     dup 0 get /post_first_part exch def
@@ -1378,7 +1378,7 @@ currentdict /.pickcmap_with_no_xlatmap .undef
       } for
       % /glyphencoding <newarray> <glyphencoding length>
       1 numloca 1 sub {
-        1 index exch dup .nname put
+        1 index exch dup //.nname exec put
       } for
     def
   } if
@@ -1403,7 +1403,7 @@ currentdict /.pickcmap_with_no_xlatmap .undef
       3 index 1 index known
       { % The same name maps to more than one glyph. Change the name.
         % No special treatment for /.notdef glyph. Bug 689408.
-        pop .nname 3 index 2 index 2 index put
+        pop //.nname exec 3 index 2 index 2 index put
         2 index exch 3 -1 roll put
       } {
         3 index exch 3 -1 roll put	% unique name
@@ -1999,4 +1999,6 @@ currentdict /.pickcmap_with_no_xlatmap .undef
  /.popfex
  /.ttkeys
  /.printtab
+ /.readttdata
+ /.nname
 ] {systemdict exch .forceundef} forall
