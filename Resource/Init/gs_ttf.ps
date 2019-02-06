@@ -1329,7 +1329,9 @@ mark
   } {
     //.pickcmap_with_no_xlatmap exec
   } ifelse
-} bind def
+} .bind executeonly odef
+currentdict /.pickcmap_with_xlatmap .undef
+currentdict /.pickcmap_with_no_xlatmap .undef
 
 % <glyph> .nname <_name>
 /.nname {
