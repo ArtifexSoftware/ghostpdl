@@ -961,7 +961,7 @@ end readonly def                % .loadttfontdict
         % tabs = tables we want to keep, sorted by file position.
   /tabs [ 0 16 tables length 1 sub {
     tables exch 16 getinterval
-    TTFDEBUG { dup .printtab } if
+    TTFDEBUG { dup //.printtab exec } if
     dup 0 4 getinterval readtables_ 1 index known {
       % put all 0 length tables at 0 to avoid overlap
       1 index 12 getu32 0 eq { 1 index 8 0 putu32 } if
@@ -1018,7 +1018,7 @@ end readonly def                % .loadttfontdict
     /tabs [ 0 20 tables length 1 sub
       {
         tables exch 20 getinterval
-        TTFDEBUG { dup .printtab } if
+        TTFDEBUG { dup //.printtab exec } if
         dup  0 4 getinterval readtables_ 1 index known
         {
           % put all 0 length tables at 0 to avoid overlap
@@ -1216,7 +1216,7 @@ mark
   counttomark 0 ne { .dicttomark } { pop pop } ifelse
   /XUID [orgXUID 42 curxuid]
   TTFDEBUG {
-    tabs { .printtab } forall
+    tabs { //.printtab exec } forall
     [ sfnts { length } forall ] //== exec
     count ttkeycount sub array astore dup { //== exec } forall aload pop
   } if
@@ -1998,4 +1998,5 @@ currentdict /.pickcmap_with_no_xlatmap .undef
  /.pop3ex
  /.popfex
  /.ttkeys
+ /.printtab
 ] {systemdict exch .forceundef} forall
