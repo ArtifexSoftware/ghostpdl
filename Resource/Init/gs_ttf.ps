@@ -36,6 +36,7 @@
   ] def
 } if
 
+% ----- Utilities for loading possible TrueType font ------
 % <file> .findttfontname <fname> true
 % <file> .findttfontname false
 % Closes the file in either case.
@@ -86,12 +87,32 @@
   f closefile end end
 } bind def
 
+/tt_tag_dict << <00010000> 0 (true) 0 (typ1) 0 (ttcf) 0 >> readonly def
+/ttf_otf_tag_dict << <00010000> 0 (true) 0 (typ1) 0 (ttcf) 0 (OTTO) 0>> readonly def
+% The wOFF tag is immediately followed by the sfnt "flavour" so for simplicity
+% combine them
+/woff_tag_dict <<
+  (wOFF) 0
+  <774F464600010000> 0 % (wOFF)<00010000> .concatstrings
+  (wOFFtrue) 0
+  (wOFFtyp1) 0
+>> readonly def
+
+% <file> .is_ttf_or_otf <bool>
+/.is_ttf_or_otf {
+    dup 0 setfileposition (1234) .peekstring { //ttf_otf_tag_dict exch known } { //false } ifelse
+} bind def
+
+/.is_woff {
+    dup 0 setfileposition (1234) .peekstring { //woff_tag_dict exch known } { //false } ifelse
+} bind def
+
 % <file> <key> .findfontvalue <value> true
 % <file> <key> .findfontvalue false
 % Closes the file in either case.
 /.findnonttfontvalue /.findfontvalue load def
 /.findfontvalue {
-  1 index .is_woff {
+  1 index //.is_woff exec {
     dup /FontType eq {
       pop closefile 42 //true
     } {
@@ -99,7 +120,7 @@
     } ifelse
   }
   {
-    1 index .is_ttf_or_otf {
+    1 index //.is_ttf_or_otf exec {
                   % If this is a font at all, it's a TrueType font.
         dup /FontType eq {
           pop closefile 42 //true
@@ -114,18 +135,6 @@
 } bind def
 
 % Load a font file that might be a TrueType font.
-
-/tt_tag_dict << <00010000> 0 (true) 0 (typ1) 0 (ttcf) 0 >> readonly def
-/ttf_otf_tag_dict << <00010000> 0 (true) 0 (typ1) 0 (ttcf) 0 (OTTO) 0>> readonly def
-% The wOFF tag is immediately followed by the sfnt "flavour" so for simplicity
-% combine them
-/woff_tag_dict <<
-  (wOFF) 0
-  <774F464600010000> 0 % (wOFF)<00010000> .concatstrings
-  (wOFFtrue) 0
-  (wOFFtyp1) 0
->> readonly def
-
 % <file> .loadfontfile -
 /.loadnonttfontfile /.loadfontfile load def
 /.loadfontfile {
@@ -144,18 +153,17 @@
   } ifelse
 } bind def
 
-% <file> .is_ttf_or_otf <bool>
-/.is_ttf_or_otf {
-    dup 0 setfileposition (1234) .peekstring { //ttf_otf_tag_dict exch known } { //false } ifelse
-} bind def
-
-/.is_woff {
-    dup 0 setfileposition (1234) .peekstring { //woff_tag_dict exch known } { //false } ifelse
-} bind def
-
-currentdict /tt_tag_dict .undef
-currentdict /ttf_otf_tag_dict .undef
-currentdict /woff_tag_dict .undef
+% Undef the local utility funcs
+[
+    /.findttfontname
+    /.findwoffname
+    /ttf_otf_tag_dict
+    /tt_tag_dict
+    /woff_tag_dict
+    /.is_ttf_or_otf
+    /.is_woff
+]
+{currentdict exch .undef} forall
 
 % ---------------- Automatic Type 42 generation ---------------- %
 
@@ -1983,8 +1991,6 @@ mark
  /.definettcidfont
  /.fill_identity_cmap
  /.findseg
- /.findttfontname
- /.findwoffname
  /.loadttfontdict
  /.is_hex_digit
  /.pop3ex
