@@ -930,7 +930,7 @@ mark
         % This is a separate operator so that the stacks will be restored
         % properly if an error occurs.
   %% High level forms need the CTM before the Form Matrix is applied
-  /UNROLLFORMS where {/UNROLLFORMS get}{false}ifelse not
+  /UNROLLFORMS where {/UNROLLFORMS get}{//false}ifelse not
   {matrix currentmatrix exch} if
   dup /Matrix get concat
   dup /BBox get aload pop
@@ -939,7 +939,7 @@ mark
   1 index /Implementation known not {
     1 index dup /Implementation //null .forceput readonly pop
   } executeonly if
-  /UNROLLFORMS where {/UNROLLFORMS get}{false}ifelse not
+  /UNROLLFORMS where {/UNROLLFORMS get}{//false}ifelse not
   %% [CTM] <<Form>> PaintProc .beginform -
   {
     %% First,, check to see if we have no /Implementation already defined (see above)

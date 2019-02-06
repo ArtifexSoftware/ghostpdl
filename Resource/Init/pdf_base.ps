@@ -183,17 +183,17 @@ currentdict /num-chars-dict .undef
         %% we look for 0-9 as well as '.' ',' and '-' to permit those
         %% locales in which the separator is a comma, as well as negative
         %% numbers. We've seena t least one tool replace '0' with '-' *sometimes*
-        true exch
+        //true exch
         dup length 1 sub 0 1 3 -1 roll {
           1 index exch get
           dup 44 lt {
-            pop exch pop false exch exit
+            pop exch pop //false exch exit
           }{
             dup 57 gt {
-              pop exch pop false exch exit
+              pop exch pop //false exch exit
             }{
               dup 47 eq {
-                pop exch pop false exch exit
+                pop exch pop //false exch exit
               }{
                 pop
               } ifelse
@@ -1255,7 +1255,7 @@ currentdict /pdf_rules_dict undef
 
 /.leafget {		% <key> <pairs> .leafget <obj|null>
   dup length 2 eq {
-    dup 0 get 2 index eq { 1 oget } { pop null } ifelse
+    dup 0 get 2 index eq { 1 oget } { pop //null } ifelse
     exch pop
   } {
     dup length -1 bitshift -2 and 2 copy oget
@@ -1282,7 +1282,7 @@ currentdict /pdf_rules_dict undef
 
 /.branchgetle {		%  <key> <leafkey> <kids> .branchgetle  <key obj true|false>
     dup length 0 eq {
-        pop pop pop false
+        pop pop pop //false
     } {
         dup length -1 bitshift 2 copy oget
         dup /Limits oget aload pop
@@ -1306,7 +1306,7 @@ currentdict /pdf_rules_dict undef
 /.leafgetle {		% <key> <pairs> .leafget <obj|null>
     dup length 2 eq {
         dup 0 get
-        2 index le { exch pop aload pop true } { pop pop false } ifelse
+        2 index le { exch pop aload pop //true } { pop pop //false } ifelse
     } {
         dup length -1 bitshift -2 and 2 copy oget
         % Stack: key pairs mid pairs[mid]

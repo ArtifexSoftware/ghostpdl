@@ -166,7 +166,7 @@ userdict /GS_PDF_ProcSet undef
       % WantsPageLabels means that pagelabels will be passed
       % using .pdfpagelabels and not using pdfmarks
     /WantsPageLabels /GetDeviceParam .special_op
-    {pop pop false}{true} ifelse
+    {pop pop //false}{//true} ifelse
 
     %% This is truly ugly.....
     %% GSView 5 redefines pdfmark and processes it itself. However if it gets
@@ -176,11 +176,11 @@ userdict /GS_PDF_ProcSet undef
     %% try not to break it. We happen to know that GSView 5 installs a GSview
     %% dictionary in userdict, so this test simply ensures we don't emit PAGELABEL
     %% pdfmarks if that dictioanry is present.
-    userdict /GSview known {pop false} if
+    userdict /GSview known {pop //false} if
   } bind executeonly
   % generate pagelabel pdfmark
   /dopagelabel {  % -- dopagelabel --
-      << /S null /P () /O 0 >> begin
+      << /S //null /P () /O 0 >> begin
       wantpagelabelmarks {
           Trailer /Root knownoget {
               oforce /PageLabels knownoget {
@@ -312,7 +312,7 @@ currentdict /runpdfstring .undef
 } bind executeonly def
 
 /runpdfpagerange {	% - runpdfpagerange <firstpage#> <lastpage#>
-<</DisablePageHandler true>> setpagedevice
+<</DisablePageHandler //true>> setpagedevice
    /PortfolioPage where {
      pop
      PortfolioPage cvi dup pdfpagecount add                  % a b+1
@@ -321,8 +321,8 @@ currentdict /runpdfstring .undef
      dup 3 index exch cvs pop                                % a b+1 /P (b+1)
      store
      1 sub                                                   % a b
-     /FirstPage where { pop FirstPage <</DisablePageHandler true>> setpagedevice} { 1 } ifelse
-     /LastPage  where { pop LastPage  <</DisablePageHandler true>> setpagedevice} {2000000000} ifelse  % a b fp lp
+     /FirstPage where { pop FirstPage <</DisablePageHandler //true>> setpagedevice} { 1 } ifelse
+     /LastPage  where { pop LastPage  <</DisablePageHandler //true>> setpagedevice} {2000000000} ifelse  % a b fp lp
      2 index 2 index lt { % b < fp
        1e10
      } {
@@ -395,7 +395,7 @@ currentdict /runpdfstring .undef
              pop
            }
            forall
-           <</DisablePageHandler true>> setpagedevice
+           <</DisablePageHandler //true>> setpagedevice
            /PDFPageList pdfpagecount 1 add array def
            {
              (,) search {
@@ -477,7 +477,7 @@ currentdict /runpdfstring .undef
        1 pdfpagecount
      }{
        /FirstPage where {
-         <</DisablePageHandler true>> setpagedevice
+         <</DisablePageHandler //true>> setpagedevice
          pop FirstPage dup pdfpagecount gt {
            (\nRequested FirstPage is greater than the number of pages in the file: ) print
             pdfpagecount = flush
@@ -485,7 +485,7 @@ currentdict /runpdfstring .undef
        } {
           1
        } ifelse
-       /LastPage where {<</DisablePageHandler true>> setpagedevice pop LastPage pdfpagecount .min } { pdfpagecount } ifelse
+       /LastPage where {<</DisablePageHandler //true>> setpagedevice pop LastPage pdfpagecount .min } { pdfpagecount } ifelse
        1 index 1 index gt {
          (   No pages will be processed \(FirstPage > LastPage\).) = flush
        } {
@@ -508,7 +508,7 @@ currentdict /runpdfstring .undef
       /PDFPageList where {
         pop dup PDFPageList exch get 1 eq
       }
-      {true} ifelse
+      {//true} ifelse
 
       {
         dup /Page# exch store
@@ -625,7 +625,7 @@ currentdict /runpdfstring .undef
   %% copied to a temporary file) and store it in pdfdict. We will use this for
   %% hashing fonts to detect if fonts with the same name are from different files.
   %%
-  dup currentglobal exch true setglobal .getfilename exch setglobal /InputPDFFileName exch //pdfdict 3 1 roll .forceput
+  dup currentglobal exch //true setglobal .getfilename exch setglobal /InputPDFFileName exch //pdfdict 3 1 roll .forceput
 
   //runpdfbegin exec
   //pdf_collection_files exec
@@ -758,7 +758,7 @@ pdfdict begin
    % Bug #696454
    PDFfile fileposition
    /dictlevelcount 0 def
-   /TrailerSizeError false def
+   /TrailerSizeError //false def
    /TrailerSize 0 def
 
    {
@@ -789,7 +789,7 @@ pdfdict begin
    TrailerSize growPDFobjects
    PDFfile exch setfileposition
    0				% Initialize xref table error counter
-   false            % Have we seen at least one section entry in this xref ? Bug #694342
+   //false            % Have we seen at least one section entry in this xref ? Bug #694342
    { PDFfile token pop		% first object # or trailer
      dup /trailer eq {
          %% check to see if we have seen at least an empty section for this xref
@@ -823,7 +823,7 @@ pdfdict begin
      2 copy add
      TrailerSize gt {
        TrailerSizeError not {
-         /TrailerSizeError true def
+         /TrailerSizeError //true def
          PDFSTOPONERROR not {
            (**** Warning: Discovered more enties in xref than declared in trailer /Size\n) pdfformatwarning
          } {
@@ -880,7 +880,7 @@ pdfdict begin
        1 add			% increment object number
      } repeat
      pop			% pop <obj #>
-     true           % We have seen at least one entry in an xref section Bug #694342
+     //true           % We have seen at least one entry in an xref section Bug #694342
    } loop
    0 ne {
      (   **** Warning:  length of some xref entries is not equal to 20 bytes.\n)
@@ -1115,7 +1115,7 @@ currentdict /xref-char-dict undef
         % Copy bookmarks (outline) to the output.
     Trailer /Root knownoget {
      /Outlines knownoget {
-       /NO_PDFMARK_OUTLINES where {pop NO_PDFMARK_OUTLINES not}{true}ifelse
+       /NO_PDFMARK_OUTLINES where {pop NO_PDFMARK_OUTLINES not}{//true}ifelse
        {
           dup /First known {
             100 dict exch                               %% dictionary for detecting circular references
@@ -1402,8 +1402,8 @@ currentdict /xref-char-dict undef
    currentpagedevice /OutputFile known {
      currentpagedevice /OutputFile get (%d) search {
        pop pop pop
-       /NO_PDFMARK_OUTLINES true def
-       /NO_PDFMARK_DESTS true def
+       /NO_PDFMARK_OUTLINES //true def
+       /NO_PDFMARK_DESTS //true def
      } {
        pop
      }ifelse
@@ -1417,7 +1417,7 @@ currentdict /xref-char-dict undef
    /RepairedAnError //false def
    /StreamRunAborted //false def
    /NeedAppearances //false def
-   /ICCProfileNError false def
+   /ICCProfileNError //false def
    currentglobal //true .setglobal globaldict begin
    /UndefProcList 0 dict def
    end .setglobal
@@ -1454,12 +1454,12 @@ currentdict /xref-char-dict undef
      .internalstopped {
        recover_xref_data		% Read failed.  Attempt to recover xref data.
        search_trailer		% Search for the primary trailer
-       false                % search_trailer sets up /Trailer, so don't run the code to do that...
+       //false                % search_trailer sets up /Trailer, so don't run the code to do that...
      } {
-       true
+       //true
      } ifelse
    } {
-     exec true
+     exec //true
    } ifelse
 
    {
@@ -1562,18 +1562,18 @@ currentdict /xref-char-dict undef
     <<
     /EODCount 2 index bytesavailable    %% fix data length at underlying bytes
     /EODString ()                       %% make sure filter passes that many bytes, no EOD
-    /CloseSource false                  %% Be sure, tell the filter not to close the source file
+    /CloseSource //false                  %% Be sure, tell the filter not to close the source file
     >>
     /SubFileDecode filter dup           %% -filter- -filter-
     token {                             %% -filter- <any> true | false
                                         %%  token returned a value
       exch                              %%  <any> filter
       closefile                         %%  <any>
-      true                              %%  <any> true
+      //true                              %%  <any> true
     }{
                                         %% token didn't find a value
       closefile                         %%  -
-      false                             %%  false
+      //false                             %%  false
     } ifelse
   } {
       token
@@ -2669,7 +2669,7 @@ currentdict /PDF2PS_matrix_key undef
     % If the current device isn't CMYK, or if it is a HighLevelDevice (pdfwrite) we
     % don't need the special handling of Overprint transparency, so disable the checking.
     currentpagedevice dup /Colors get 4 lt exch /HighLevelDevice known or {
-      /checkOPtrans { pop false } def	% NB: original will be restored from PDFsave
+      /checkOPtrans { pop //false } def	% NB: original will be restored from PDFsave
     } if
     % Show the page within a PDF 1.4 device filter.
     0 .pushpdf14devicefilter {
@@ -2698,7 +2698,7 @@ currentdict /PDF2PS_matrix_key undef
     .poppdf14devicefilter	% NB: reset to DefaultQstate will also restore transfer function
     /DefaultQstate qstate store	% device has changed -- reset DefaultQstate
   } {
-    /checkOPtrans { pop false } def	% no-op the check if the page doesn't use transparency
+    /checkOPtrans { pop //false } def	% no-op the check if the page doesn't use transparency
                                 % NB: original will be restored from PDFsave
     showpagecontents
   } ifelse
@@ -2965,7 +2965,7 @@ currentdict /PDF2PS_matrix_key undef
                   } if
                 } if
                 /Form eq {
-                  dup /Group known {pop pop true exit}{
+                  dup /Group known {pop pop //true exit}{
                   3 index exch resourceusestransparency { not exit } if
                   } ifelse
                 } {
@@ -3291,7 +3291,7 @@ currentdict /PDF2PS_matrix_key undef
                 dup 0 get dup 4 index
                 eq
               } {
-                0 false
+                0 //false
               }ifelse
 
               %%  <calling obj_num> <XObjectdict> false value <form object or 0 if not indirect> <boolean>
