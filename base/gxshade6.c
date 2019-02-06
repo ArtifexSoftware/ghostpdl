@@ -1564,6 +1564,8 @@ decompose_linear_color(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge
             gs_fill_attributes fa;
             gs_fixed_rect clip;
 
+            memset(fc, 0x99, sizeof(fc));
+
             clip = pfs->rect;
             if (swap_axes) {
                 fixed v;

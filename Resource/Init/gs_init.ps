@@ -1801,6 +1801,7 @@ end
 % Load initial fonts from FONTPATH directories, Fontmap file,
 % and/or .getccfont as appropriate.
 .loadinitialfonts
+currentdict /.loadinitialfonts .undef
 
 % Remove NullFont from FontDirectory, so it can't be accessed by mistake.
 /undefinefont where {
@@ -2281,6 +2282,9 @@ SAFER { .setsafeglobal } if
   /.definefakefonts
   /.fontnameproperties
   /.growfontdict
+  /.substitutefont /.substitutefontname
+  /.FontDirectory
+  /.charkeys
 
   % Used by a free user in the Library of Congress. Apparently this is used to
   % draw a partial page, which is then filled in by the results of a barcode

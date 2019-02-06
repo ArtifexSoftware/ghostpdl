@@ -473,8 +473,9 @@ gs_shading_do_fill_rectangle(const gs_shading_t *psh,
         path_rect.p.y = fixed2float(path_box.p.y);
         path_rect.q.x = fixed2float(path_box.q.x);
         path_rect.q.y = fixed2float(path_box.q.y);
-        gs_bbox_transform_inverse(&path_rect, (const gs_matrix *)pmat, &rect);
-        code = gs_shading_fill_rectangle(psh, &rect, &path_box, dev, pgs);
+        code = gs_bbox_transform_inverse(&path_rect, (const gs_matrix *)pmat, &rect);
+        if (code >= 0)
+            code = gs_shading_fill_rectangle(psh, &rect, &path_box, dev, pgs);
     }
     return code;
 }

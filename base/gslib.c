@@ -194,8 +194,11 @@ main(int argc, const char *argv[])
     gs_output_page(pgs, 1, 1);
     {
         gs_rect bbox;
+        int code1;
 
-        gx_device_bbox_bbox(bbdev, &bbox);
+        code1 = gx_device_bbox_bbox(bbdev, &bbox);
+        if (code1 < 0)
+            code = code1;
         dmprintf4(mem, "Bounding box: [%g %g %g %g]\n",
                  bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y);
     }

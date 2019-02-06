@@ -714,6 +714,7 @@ def
 } bind executeonly def
 
 /.beginpagegroup {	% groupdict bbox .beginformgroup -
+  currentcolorspace 3 1 roll
   exch mark exch			% bbox mark groupdict
   dup /CS knownoget { resolvecolorspace dup setgcolorspace /CS exch 3 2 roll} if
   dup /I knownoget { /Isolated exch 3 2 roll } if
@@ -722,6 +723,7 @@ def
                 % Stack: bbox paramdict
   exch aload pop
   .begintransparencypagegroup
+  setcolorspace
 } bind executeonly def
 
 % .paintgroupform implements the Form PaintProc in the case where the

@@ -132,7 +132,9 @@ gs_shading_Fb_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     {
         gs_rect pbox;
 
-        gs_bbox_transform_inverse(rect, &psh->params.Matrix, &pbox);
+        code = gs_bbox_transform_inverse(rect, &psh->params.Matrix, &pbox);
+        if (code < 0)
+            return code;
         x[0] = max(pbox.p.x, psh->params.Domain[0]);
         x[1] = min(pbox.q.x, psh->params.Domain[1]);
         y[0] = max(pbox.p.y, psh->params.Domain[2]);
@@ -233,10 +235,8 @@ gs_shading_A_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
     pfs1.Function = pfn;
     pfs1.rect = *clip_rect;
     code = init_patch_fill_state(&pfs1);
-    if (code < 0) {
-        if (pfs1.icclink != NULL) gsicc_release_link(pfs1.icclink);
-        return code;
-    }
+    if (code < 0)
+        goto fail;
     pfs1.maybe_self_intersecting = false;
     pfs1.function_arg_shift = 1;
     /*
@@ -252,7 +252,11 @@ gs_shading_A_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
     cmat.yy = state.delta.y;
     cmat.xx = cmat.yy;
     cmat.xy = -cmat.yx;
-    gs_bbox_transform_inverse(rect, &cmat, &t_rect);
+    code = gs_bbox_transform_inverse(rect, &cmat, &t_rect);
+    if (code < 0) {
+        code = 0; /* Swallow this silently */
+        goto fail;
+    }
     t0 = min(max(t_rect.p.y, 0), 1);
     t1 = max(min(t_rect.q.y, 1), 0);
     state.v0 = t0;
@@ -261,15 +265,15 @@ gs_shading_A_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
     state.u1 = t_rect.q.x;
     state.t0 = t0 * dd + d0;
     state.t1 = t1 * dd + d0;
-    gs_distance_transform(state.delta.x, state.delta.y, &ctm_only(pgs),
+    code = gs_distance_transform(state.delta.x, state.delta.y, &ctm_only(pgs),
                           &dist);
+    if (code < 0)
+        goto fail;
     state.length = hypot(dist.x, dist.y);	/* device space line length */
     code = A_fill_region(&state, &pfs1);
     if (psh->params.Extend[0] && t0 > t_rect.p.y) {
-        if (code < 0) {
-            if (pfs1.icclink != NULL) gsicc_release_link(pfs1.icclink);
-            return code;
-        }
+        if (code < 0)
+            goto fail;
         /* Use the general algorithm, because we need the trapping. */
         state.v0 = t_rect.p.y;
         state.v1 = t0;
@@ -277,17 +281,16 @@ gs_shading_A_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
         code = A_fill_region(&state, &pfs1);
     }
     if (psh->params.Extend[1] && t1 < t_rect.q.y) {
-        if (code < 0) {
-            if (pfs1.icclink != NULL) gsicc_release_link(pfs1.icclink);
-            return code;
-        }
+        if (code < 0)
+            goto fail;
         /* Use the general algorithm, because we need the trapping. */
         state.v0 = t1;
         state.v1 = t_rect.q.y;
         state.t0 = state.t1 = t1 * dd + d0;
         code = A_fill_region(&state, &pfs1);
     }
-    if (pfs1.icclink != NULL) gsicc_release_link(pfs1.icclink);
+fail:
+    gsicc_release_link(pfs1.icclink);
     if (term_patch_fill_state(&pfs1))
         return_error(gs_error_unregistered); /* Must not happen. */
     return code;

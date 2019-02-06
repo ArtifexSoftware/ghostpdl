@@ -45,7 +45,7 @@ end def
 % Define a reliable way of accessing FontDirectory in systemdict.
 /.FontDirectory
 { /FontDirectory .systemvar
-} .bind odef
+} .bind executeonly odef
 
 % Define a temporary string for local use, since using =string
 % interferes with some PostScript programs.
@@ -758,7 +758,7 @@ buildfontdict 3 /.buildfont3 cvx put
     } ifelse
   } forall pop
   1 index length mod get exec
-} bind def
+} bind executeonly odef
 /.substitutefont {              % <fontname> .substitutefont <altname>
   dup 0 exch //.fontnameproperties exec .substitutefontname
         % Only accept fonts known in the Fontmap.
@@ -767,7 +767,7 @@ buildfontdict 3 /.buildfont3 cvx put
      .nativeFontmap 1 index known not
      {pop defaultfontname } if
    } if
-} bind def
+} bind executeonly odef
 
 % If requested, make (and recognize) fake entries in FontDirectory for fonts
 % present in Fontmap but not actually loaded.  Thanks to Ray Johnston for
@@ -884,7 +884,7 @@ FAKEFONTS not { (%END FAKEFONTS) .skipeof } if
         } if
       } ifelse
   /Font findresource
-} bind def
+} bind executeonly def
 
 % Default font substitution does {pop /Courier} om many implementations.
 % GS post-process font substitution in .stdsubstfont and uses {} for
@@ -1162,7 +1162,7 @@ $error /SubstituteFont { } put
       if
     }
    ifelse
- } bind def
+ } bind executeonly def
 
 % Define a procedure to load all known fonts.
 % This isn't likely to be very useful.
@@ -1233,49 +1233,6 @@ FAKEFONTS { exch } if pop def   % don't bind, .current/setglobal get redefined
    userdict /defaultfontmap_content .undef
    //.definefakefonts exec     % current VM is global
  } def                  % don't bind, .current/setglobal get redefined
-
-% ---------------- Synthetic font support ---------------- %
-
-% Create a new font by modifying an existing one.  paramdict contains
-% entries with the same keys as the ones found in a Type 1 font;
-% it should also contain enough empty entries to allow adding the
-% corresponding non-overridden entries from the original font dictionary,
-% including FID.  If paramdict includes a FontInfo entry, this will
-% also override the original font's FontInfo, entry by entry;
-% again, it must contain enough empty entries.
-
-% Note that this procedure does not perform a definefont.
-
-/.makemodifiedfont      % <fontdict> <paramdict> .makemodifiedfont <fontdict'>
- { exch
-    {                   % Stack: destdict key value
-      1 index /FID ne
-       { 2 index 2 index known
-          {             % Skip fontdict entry supplied in paramdict, but
-                        % handle FontInfo specially.
-            1 index /FontInfo eq
-             { 2 index 2 index get              % new FontInfo
-               1 index                          % old FontInfo
-                {       % Stack: destdict key value destinfo key value
-                  2 index 2 index known
-                   { pop pop }
-                   { 2 index 3 1 roll put }
-                  ifelse
-                }
-               forall pop
-             }
-            if
-          }
-          {             % No override, copy the fontdict entry.
-            2 index 3 1 roll put
-            dup dup     % to match pop pop below
-          }
-         ifelse
-       }
-      if
-      pop pop
-    } forall
- } bind def
 
 % Undef these, not needed outside this file
 [

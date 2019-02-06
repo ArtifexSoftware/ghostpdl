@@ -1670,7 +1670,12 @@ gsicc_transform_named_color(const float tint_values[],
 void
 gsicc_release_link(gsicc_link_t *icclink)
 {
-    gsicc_link_cache_t *icc_link_cache = icclink->icc_link_cache;
+    gsicc_link_cache_t *icc_link_cache;
+    
+    if (icclink == NULL)
+        return;
+
+    icc_link_cache = icclink->icc_link_cache;
 
 #ifndef MEMENTO_SQUEEZE_BUILD
     gx_monitor_enter(icc_link_cache->lock);

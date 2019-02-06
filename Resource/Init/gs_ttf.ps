@@ -36,33 +36,6 @@
   ] def
 } if
 
-% <file> <key> .findfontvalue <value> true
-% <file> <key> .findfontvalue false
-% Closes the file in either case.
-/.findnonttfontvalue /.findfontvalue load def
-/.findfontvalue {
-  1 index .is_woff {
-    dup /FontType eq {
-      pop closefile 42 //true
-    } {
-      dup /FontName eq { pop .findwoffname } { pop closefile //false } ifelse
-    } ifelse
-  }
-  {
-    1 index .is_ttf_or_otf {
-                  % If this is a font at all, it's a TrueType font.
-        dup /FontType eq {
-          pop closefile 42 //true
-        } {
-          dup /FontName eq { pop .findttfontname } { pop closefile //false } ifelse
-        } ifelse
-    } {
-                  % Not a TrueType font.
-        .findnonttfontvalue
-    } ifelse
-  } ifelse
-} bind def
-
 % <file> .findttfontname <fname> true
 % <file> .findttfontname false
 % Closes the file in either case.
@@ -113,6 +86,32 @@
   f closefile end end
 } bind def
 
+% <file> <key> .findfontvalue <value> true
+% <file> <key> .findfontvalue false
+% Closes the file in either case.
+/.findnonttfontvalue /.findfontvalue load def
+/.findfontvalue {
+  1 index .is_woff {
+    dup /FontType eq {
+      pop closefile 42 //true
+    } {
+      dup /FontName eq { pop //.findwoffname exec} { pop closefile //false } ifelse
+    } ifelse
+  }
+  {
+    1 index .is_ttf_or_otf {
+                  % If this is a font at all, it's a TrueType font.
+        dup /FontType eq {
+          pop closefile 42 //true
+        } {
+          dup /FontName eq { pop //.findttfontname exec} { pop closefile //false } ifelse
+        } ifelse
+    } {
+                  % Not a TrueType font.
+        .findnonttfontvalue
+    } ifelse
+  } ifelse
+} bind def
 
 % Load a font file that might be a TrueType font.
 
@@ -911,7 +910,7 @@ end readonly def                % .loadttfontdict
 % Defines f, offsets, tables, tabdict, tabs, tthdrlen.
 % Skips loca and glyf if <bool> is true.
 /.loadttfonttables {
-  .loadttfontdict begin
+  //.loadttfontdict begin
   40 dict begin
   /SubfontID exch def
   /load_stripped exch def
@@ -987,7 +986,7 @@ end readonly def                % .loadttfontdict
 % Defines f, offsets, tables, tabdict, tabs, tthdrlen.
 % Skips loca and glyf if <bool> is true.
 /.loadwofftables {
-  .loadttfontdict begin
+  //.loadttfontdict begin
   40 dict begin
   /SubfontID exch def
   /load_stripped exch def
@@ -1124,7 +1123,7 @@ mark
     locatable type /stringtype eq {
       /.indexloca {} def
     } {
-      /.indexloca /.findseg load def
+      /.indexloca //.findseg def
     } ifelse
     head 50 getu16 0 ne {
       /getloca {
@@ -1486,11 +1485,7 @@ mark
       } ifelse
     ]
   TTFDEBUG { (Encoding: ) print dup === flush } if
-} bind def
-
-% to be removed 9.09......
-currentdict /postalias undef
-% .....to be removed 9.09
+} bind executeonly odef
 
 % <file> .loadttfont <type42font>
 /.loadttfont {
@@ -1513,7 +1508,7 @@ currentdict /postalias undef
   } if
   .dicttomark
   end end dup /FontName get exch definefont
-} bind def
+} bind executeonly def
 
 % <file> .loadwofffont <type42font>
 /.loadwofffont
@@ -1534,7 +1529,7 @@ currentdict /postalias undef
   .dicttomark
   end end dup /FontName get exch
   definefont
-} bind def
+} bind executeonly def
 
 
 % ---------------- CIDFontType 2 font loading ---------------- %
@@ -1569,11 +1564,11 @@ currentdict /postalias undef
   def               % processCIDToGIDMap may replace.
   /CIDMap numloca maxstring le {
                 % Use a single string.
-      numloca 2 mul string 0 .fill_identity_cmap
+      numloca 2 mul string 0 //.fill_identity_cmap exec
   } {
                 % We must use 2 strings.
-      maxstring 2 mul string 0 .fill_identity_cmap
-      numloca maxstring sub 2 mul string maxstring .fill_identity_cmap
+      maxstring 2 mul string 0 //.fill_identity_cmap exec
+      numloca maxstring sub 2 mul string maxstring //.fill_identity_cmap exec
       2 array astore
   } ifelse
   def
@@ -1598,7 +1593,7 @@ currentdict /postalias undef
   dup
   /fontname exch def
   /FontName exch put           % replace any definition of /FontName
-  .definettcidfont
+  //.definettcidfont exec
 } bind def
 
 % <file> <SubfontID> .load_tt_font_stripped <font_data>
@@ -1922,7 +1917,7 @@ currentdict /postalias undef
     } ifelse
   } if
   TTFDEBUG { (.pdfcharkeys end) = } if
-} bind def
+} bind executeonly def
 
 % <file> <is_symbolic> <Encoding|null> <FontName> .loadpdfttfont <type42font>
 /.loadpdfttfont {
@@ -1981,3 +1976,17 @@ currentdict /postalias undef
   end end
  .completefont
 } bind executeonly def
+
+% Undef these, not needed outside this file
+[
+ /.addglyph
+ /.definettcidfont
+ /.fill_identity_cmap
+ /.findseg
+ /.findttfontname
+ /.findwoffname
+ /.loadttfontdict
+ /.is_hex_digit
+ /.pop3ex
+ /.popfex
+] {systemdict exch .forceundef} forall
