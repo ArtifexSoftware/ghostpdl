@@ -1155,7 +1155,7 @@ mark
       dup type /stringtype ne { aload pop } if
     } forall
   ] def
-} bind def
+} .bind executeonly odef
 
 /first_post_string % - first_post_string <string>
 {
@@ -1516,7 +1516,7 @@ mark
   } if
   .dicttomark
   end end dup /FontName get exch definefont
-} bind executeonly def
+} .bind executeonly def
 
 % <file> .loadwofffont <type42font>
 /.loadwofffont
@@ -1537,7 +1537,7 @@ mark
   .dicttomark
   end end dup /FontName get exch
   definefont
-} bind executeonly def
+} .bind executeonly def
 
 
 % ---------------- CIDFontType 2 font loading ---------------- %
@@ -1602,7 +1602,7 @@ mark
   /fontname exch def
   /FontName exch put           % replace any definition of /FontName
   //.definettcidfont exec
-} bind def
+} .bind executeonly def
 
 % <file> <SubfontID> .load_tt_font_stripped <font_data>
 % The font_data includes sfnts, NumGlyphs, TT_cmap, file_table_pos, Decoding.
@@ -1619,7 +1619,7 @@ mark
   /Decoding Decoding
   .dicttomark
   end end
-} bind def
+} .bind executeonly def
 
 /.load_woff_for_cid {
   //false exch .loadwofftables
@@ -1638,7 +1638,7 @@ mark
   /Decoding Decoding
   .dicttomark
   end end
-} bind def
+} .bind executeonly def
 
 % ---------------- PDF TrueType font loading ---------------- %
 
@@ -1983,7 +1983,7 @@ mark
   dup /FontName font_name put        % replace any definition of /FontName
   end end
  .completefont
-} bind executeonly def
+} .bind executeonly def
 
 % Undef these, not needed outside this file
 [
