@@ -421,14 +421,14 @@ def
       dup 6 eq {
         pop
         % First, try the password as UTF-8.
-        dup Trailer /Encrypt oget check_r6_password {
+        dup Trailer /Encrypt oget //check_r6_password exec {
           exch pop //true
         } {
           % The password didn't work as UTF-8, so maybe it's in the
           % locale character set instead.  If possible, convert it to
           % UTF-8 and try again.
           /.locale_to_utf8 where {
-            pop .locale_to_utf8 Trailer /Encrypt oget check_r6_password
+            pop .locale_to_utf8 Trailer /Encrypt oget //check_r6_password exec
           } {
             pop //false
           } ifelse
@@ -443,6 +443,7 @@ def
     } ifelse
   } ifelse
 } bind executeonly def
+systemdict /check_r6_password .forceundef
 
 % Process the encryption information in the Trailer.
 /pdf_process_Encrypt {

@@ -924,33 +924,6 @@ mark
 
 % ------ Painting ------ %
 
-%% We don't want to do any high level forms stuff if the source
-%% is PDF because :
-%% 1) Transparent forms are handled separately and we don't want to ge confused
-%% 2) PDF forms are too llikely to trip over the limitations in our support
-%% 3) Its highly unusual to find a PDF file which uses forms sensibly.
-%%
-%% So we have a special PDF version of execform which doesn't do high level forms.
-
-/.PDFexecform {
-        % This is a separate operator so that the stacks will be restored
-        % properly if an error occurs.
-  dup /Matrix get concat
-  dup /BBox get aload pop
-  exch 3 index sub exch 2 index sub rectclip
-  dup /PaintProc get
-  1 index /Implementation known not {
-    1 index dup /Implementation //null .forceput readonly pop
-  } executeonly if
-  exec
-}.bind odef
-
-/PDFexecform {
-  gsave {
-    .PDFexecform
-  } stopped grestore {stop} if
-} odef
-
 % A straightforward definition of execform that doesn't actually
 % do any caching.
 /.execform1 {
