@@ -940,7 +940,7 @@ cff_write_Subrs(cff_writer_t *pcw, uint subrs_count, uint subrs_size,
 static uint
 cff_Encoding_size(cff_writer_t *pcw, cff_glyph_subset_t *pgsub)
 {
-    int j, code, num_enc = 0, nsupp = 0;
+    int j, code, max_enc = 0, nsupp = 0;
     gs_font_type1 *pfont = (gs_font_type1 *)pcw->pfont;
     byte used[255];
     gs_const_string str;
@@ -963,10 +963,13 @@ cff_Encoding_size(cff_writer_t *pcw, cff_glyph_subset_t *pgsub)
             continue;
         if (i >= sizeof(used) || used[i])
             nsupp++;
-        else
-            used[i] = 1, num_enc++;
+        else {
+            used[i] = 1;
+            if (i > max_enc)
+                max_enc = i;
+        }
     }
-    return 2 + num_enc + (3 * nsupp) + (nsupp > 0 ? 1 : 0);
+    return 2 + (max_enc+1) + (3 * nsupp) + (nsupp > 0 ? 1 : 0);
 }
 
 static int
@@ -976,12 +979,14 @@ cff_write_Encoding(cff_writer_t *pcw, cff_glyph_subset_t *pgsub)
     /* This procedure is only used for Type 1 / Type 2 fonts. */
     gs_font_type1 *pfont = (gs_font_type1 *)pcw->pfont;
     byte used[255], index[255], supplement[256];
-    int num_enc = min(pgsub->num_encoded, sizeof(index)), actual_enc = 0;
+    int num_enc = min(pgsub->num_encoded, sizeof(index));
     int nsupp = 0;
     int j, code;
+    int max_enc = 0;
     gs_const_string str;
 
     memset(used, 0, num_enc);
+    memset(index, 0, sizeof(index));
     for (j = 0; j < 256; ++j) {
         gs_glyph glyph = pfont->procs.encode_char((gs_font *)pfont,
                                                   (gs_char)j,
@@ -999,11 +1004,15 @@ cff_write_Encoding(cff_writer_t *pcw, cff_glyph_subset_t *pgsub)
             continue;
         if (i >= sizeof(used) || used[i])
             supplement[nsupp++] = j;
-        else
-            index[i] = j, used[i] = 1, actual_enc++;
+        else {
+            index[i] = j;
+            used[i] = 1;
+            if (i > max_enc)
+                max_enc = i;
+        }
     }
     sputc(s, (byte)(nsupp ? 0x80 : 0));
-    sputc(s, (byte)actual_enc);
+    sputc(s, (byte)max_enc+1);
 #ifdef DEBUG
     {	int num_enc_chars = pgsub->num_encoded_chars;
 
@@ -1016,7 +1025,7 @@ cff_write_Encoding(cff_writer_t *pcw, cff_glyph_subset_t *pgsub)
                          pgsub->glyphs.subset_data[j + 1]);
     }
 #endif
-    put_bytes(s, index, actual_enc);
+    put_bytes(s, index, max_enc+1);
     if (nsupp) {
         /* Write supplementary entries for multiply-encoded glyphs. */
         sputc(s, (byte)nsupp);
