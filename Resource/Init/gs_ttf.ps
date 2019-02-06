@@ -1508,7 +1508,7 @@ mark
   /prebuilt_encoding where
   {pop .pdfcharkeys}
   {.charkeys} ifelse
-  .ttkeys
+  //.ttkeys exec
   /FontType 42
   /PaintType 0
   TTFDEBUG {
@@ -1528,7 +1528,7 @@ mark
   .pickcmap
   mark
   .charkeys
-  .ttkeys
+  //.ttkeys exec
   /FontType 42
   /PaintType 0
   TTFDEBUG {
@@ -1594,7 +1594,7 @@ mark
   .makesfnts
         % CIDFontType2 fonts don't have a cmap: they are indexed by CID.
   mark
-  .ttkeys
+  //.ttkeys exec
   .dicttomark dup              % convert keys to dict and copy dict
   3 -1 roll                    % Bring PDF substitute name to top of stack
 
@@ -1612,7 +1612,7 @@ mark
   .makesfnts
   .pickcmap
   mark
-  .ttkeys
+  //.ttkeys exec
   /NumGlyphs numloca
   /TT_cmap cmaptab cmapdict
   /file_table_pos file_table_pos
@@ -1631,7 +1631,7 @@ mark
   .pickcmap
   /load_stripped //false def
   mark
-  .ttkeys
+  //.ttkeys exec
   /NumGlyphs numloca
   /TT_cmap cmaptab cmapdict
 %  /file_table_pos file_table_pos
@@ -1972,7 +1972,7 @@ mark
   .pickcmap
   mark
   .pdfcharkeys
-  .ttkeys
+  //.ttkeys exec
   /FontType 42
   /PaintType 0
   /.render_notdef .render_notdef
@@ -1995,4 +1995,5 @@ mark
  /.is_hex_digit
  /.pop3ex
  /.popfex
+ /.ttkeys
 ] {systemdict exch .forceundef} forall
