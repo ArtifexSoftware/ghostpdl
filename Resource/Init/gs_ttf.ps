@@ -1841,13 +1841,13 @@ currentdict /.pickcmap_with_no_xlatmap .undef
   % Finally, if none of that works, remove the Encoding, and treat it
   % as non-symbolic.
   is_symbolic {
-    <00030000> .findcmap
+    <00030000> //.findcmap exec
     { //true }
     {
       prebuilt_encoding //null eq {
-        <00030001> .findcmap
+        <00030001> //.findcmap exec
         {//true}
-        {<00010000> .findcmap}
+        {<00010000> //.findcmap exec}
         ifelse
       }
       {//false}
@@ -1855,7 +1855,7 @@ currentdict /.pickcmap_with_no_xlatmap .undef
     } ifelse
 
     {
-      .pdfmapsymbolic
+      //.pdfmapsymbolic exec
       /prebuilt_encoding //null def
       //false
     } {
@@ -1867,7 +1867,7 @@ currentdict /.pickcmap_with_no_xlatmap .undef
   }
   ifelse
   {
-    <00030001> .findcmap {
+    <00030001> //.findcmap exec {
       prebuilt_encoding //null ne {
         TTFDEBUG { (Using cmap 3.1 with prebuilt_encoding for non-symbolic.) = } if
         //true /.render_notdef gput
@@ -1906,7 +1906,7 @@ currentdict /.pickcmap_with_no_xlatmap .undef
           % because PDF spec requires it.
       } ifelse
     } {
-      <00010000> .findcmap {
+      <00010000> //.findcmap exec {
         TTFDEBUG { (Using cmap 1.0 for non-symbolic.) = } if
         prebuilt_encoding //null ne {
           prebuilt_encoding .invert_encoding exch .romanmacdict .pdfmapchars
@@ -2004,4 +2004,6 @@ currentdict /.pickcmap_with_no_xlatmap .undef
  /.loadttfont
  /.loadwofffont
  /.loadwofftables
+ /.findcmap
+ /.pdfmapsymbolic
 ] {systemdict exch .forceundef} forall
