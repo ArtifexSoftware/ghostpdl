@@ -1395,7 +1395,7 @@ currentdict /.pickcmap_with_no_xlatmap .undef
 /.loadwofffont
 {
   TTFDEBUG { (.loadwofffont) = } if
-  //false 0 .loadwofftables
+  //false 0 //.loadwofftables exec
   .makesfnts
   .getpost
   .pickcmap
@@ -1438,7 +1438,7 @@ currentdict /.pickcmap_with_no_xlatmap .undef
 } bind def
 
 /.findwoffname {
-  //true 0 .loadwofftables
+  //true 0 //.loadwofftables exec
   tabdict /name .knownget {
     dup /clen exch 8 getu32 def
     dup /olen exch 12 getu32 def
@@ -1517,12 +1517,12 @@ currentdict /.pickcmap_with_no_xlatmap .undef
 /.loadfontfile {
   dup (12345678) .peekstring { //woff_tag_dict exch known } { //false } ifelse
   {
-    .loadwofffont pop
+    //.loadwofffont exec pop
   }
   {
     dup (1234) .peekstring { //tt_tag_dict exch known } { //false } ifelse {
                   % If this is a font at all, it's a TrueType font.
-      .loadttfont pop
+      //.loadttfont exec pop
     } {
                   % Not a TrueType font.
       .loadnonttfontfile
@@ -1624,7 +1624,7 @@ currentdict /.pickcmap_with_no_xlatmap .undef
 } .bind executeonly def
 
 /.load_woff_for_cid {
-  //false exch .loadwofftables
+  //false exch //.loadwofftables exec
   .makesfnts
   % we have to set load_stripped here so
   % .pickcmap will follow the right logic
@@ -2001,4 +2001,7 @@ currentdict /.pickcmap_with_no_xlatmap .undef
  /.printtab
  /.readttdata
  /.nname
+ /.loadttfont
+ /.loadwofffont
+ /.loadwofftables
 ] {systemdict exch .forceundef} forall
