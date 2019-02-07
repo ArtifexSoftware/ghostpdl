@@ -1604,7 +1604,7 @@ currentdict /.pickcmap_with_no_xlatmap .undef
   /fontname exch def
   /FontName exch put           % replace any definition of /FontName
   //.definettcidfont exec
-} .bind executeonly def
+} .bind executeonly odef
 
 % <file> <SubfontID> .load_tt_font_stripped <font_data>
 % The font_data includes sfnts, NumGlyphs, TT_cmap, file_table_pos, Decoding.
@@ -1985,7 +1985,7 @@ currentdict /.pickcmap_with_no_xlatmap .undef
   dup /FontName font_name put        % replace any definition of /FontName
   end end
  .completefont
-} .bind executeonly def
+} .bind executeonly odef
 
 % Undef these, not needed outside this file
 [
