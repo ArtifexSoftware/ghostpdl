@@ -1340,7 +1340,10 @@ float txt_calculate_text_size(gs_gstate *pgs, gs_font *ofont,
     txtwrite_font_orig_matrix(ofont, -1, &orig_matrix);
     /* Compute the scaling matrix and combined matrix. */
 
-    gs_matrix_invert(&orig_matrix, smat);
+    if (gs_matrix_invert(&orig_matrix, smat) < 0) {
+        gs_make_identity(smat);
+        return 1; /* Arbitrary */
+    }
     gs_matrix_multiply(smat, pfmat, smat);
     *tmat = ctm_only(pgs);
     tmat->tx = tmat->ty = 0;

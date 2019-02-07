@@ -2348,7 +2348,10 @@ float pdf_calculate_text_size(gs_gstate *pgs, pdf_font_resource_t *pdfont,
 
     /* Compute the scaling matrix and combined matrix. */
 
-    gs_matrix_invert(&orig_matrix, smat);
+    if (gs_matrix_invert(&orig_matrix, smat) < 0) {
+        gs_make_identity(smat);
+        return 1; /* Arbitrary */
+    }
     gs_matrix_multiply(smat, pfmat, smat);
     *tmat = ctm_only(pgs);
     tmat->tx = tmat->ty = 0;
@@ -3070,6 +3073,7 @@ static void pdf_type3_get_initial_matrix(gx_device * dev, gs_matrix * pmat)
     pmat->yy = pdev->charproc_ctm.yy;
     pmat->tx = 0;
     pmat->ty = 0;
+    /* FIXME: Handle error here? Or is the charproc_ctm guaranteed to be invertible? */
     gs_matrix_invert(pmat, pmat);
     gs_matrix_scale(pmat, pdev->HWResolution[0] / 72.0, pdev->HWResolution[0] / 72.0, pmat);
 }

@@ -883,7 +883,9 @@ px_begin_image(px_state_t * pxs, bool is_jpeg, px_args_t * par)
         gs_make_translation(origin.x, origin.y, &dmat);
         gs_matrix_scale(&dmat, params.dest_width, params.dest_height, &dmat);
         /* The ImageMatrix is dmat' * imat. */
-        gs_matrix_invert(&dmat, &dmat);
+        code = gs_matrix_invert(&dmat, &dmat);
+        if (code < 0)
+            return code;
         gs_matrix_multiply(&dmat, &imat, &pxenum->image.ImageMatrix);
     }
     pxenum->image.CombineWithColor = true;

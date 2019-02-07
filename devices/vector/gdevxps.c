@@ -1827,7 +1827,8 @@ xps_begin_image(gx_device *dev, const gs_gstate *pgs,
         csindex == gs_color_space_index_DeviceN))
         goto use_default;
 
-    gs_matrix_invert(&pim->ImageMatrix, &mat);
+    if (gs_matrix_invert(&pim->ImageMatrix, &mat) < 0)
+        goto use_default;
     if (pgs)
         gs_matrix_multiply(&mat, &ctm_only(pgs), &mat);
 

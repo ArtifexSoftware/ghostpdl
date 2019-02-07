@@ -1005,7 +1005,9 @@ process_cid_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
     for (font = scaled_font; font->base != font; )
         font = font->base;
     /* Compute the scaling matrix. */
-    gs_matrix_invert(&font->FontMatrix, &scale_matrix);
+    code = gs_matrix_invert(&font->FontMatrix, &scale_matrix);
+    if (code < 0)
+        return code;
     gs_matrix_multiply(&scale_matrix, &scaled_font->FontMatrix, &scale_matrix);
 
     /* Find or create the CIDFont resource. */

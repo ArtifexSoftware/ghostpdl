@@ -2036,7 +2036,9 @@ pclxl_begin_image(gx_device * dev,
      * Check whether we can handle this image.  PCL XL 1.0 and 2.0 only
      * handle orthogonal transformations.
      */
-    gs_matrix_invert(&pim->ImageMatrix, &mat);
+    code = gs_matrix_invert(&pim->ImageMatrix, &mat);
+    if (code < 0)
+        goto use_default;
     gs_matrix_multiply(&mat, &ctm_only(pgs), &mat);
 
     if (pclxl_nontrivial_transfer(pgs))
