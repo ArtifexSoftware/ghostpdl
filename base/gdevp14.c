@@ -1300,6 +1300,7 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
 {
     pdf14_buf *buf;
     unsigned char *curr_ptr, gray;
+    int i;
 
     if_debug2m('v', ctx->memory,
                "[v]pdf14_push_transparency_mask, idle=%d, replacing=%d\n",
@@ -1326,11 +1327,13 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
     buf->transfer_fn = transfer_fn;
     buf->matte_num_comps = Matte_components;
     if (Matte_components) {
-        buf->matte = (byte *)gs_alloc_bytes(ctx->memory, sizeof(float)*Matte_components,
+        buf->matte = (byte *)gs_alloc_bytes(ctx->memory, Matte_components,
                                             "pdf14_push_transparency_mask");
         if (buf->matte == NULL)
             return_error(gs_error_VMerror);
-        memcpy(buf->matte, Matte, size_of(float)*Matte_components);
+        for (i = 0; i < Matte_components; i++) {
+            buf->matte[i] = (byte) floor(Matte[i] * 255.0 + 0.5);
+        }
     }
     buf->mask_id = mask_id;
     /* If replacing=false, we start the mask for an image with SMask.

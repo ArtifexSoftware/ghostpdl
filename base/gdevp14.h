@@ -147,7 +147,7 @@ struct pdf14_buf_s {
     byte *data;
     byte *transfer_fn;
     int matte_num_comps;
-    byte *matte;		/* actually floats */
+    byte *matte;
     gs_int_rect dirty;
     pdf14_mask_t *mask_stack;
     bool idle;
