@@ -178,7 +178,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
                     goto cleanup1;
                 }
                 if (err > 0) {
-                    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "OOB decoding huffman code");
+                    code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "OOB decoding huffman code");
                     goto cleanup1;
                 }
             }
@@ -324,7 +324,7 @@ cleanup1:
                 goto cleanup2;
             }
             if (code > 0) {
-                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "OOB obtained when decoding symbol instance T coordinate");
+                code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "OOB obtained when decoding symbol instance T coordinate");
                 goto cleanup2;
             }
             T = STRIPT + CURT;
