@@ -197,8 +197,10 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
         }
 
         if (index < SBNUMSYMS) {
-            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "runlength codes do not cover the available symbol set");
+            code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "runlength codes do not cover the available symbol set");
+            goto cleanup1;
         }
+
         symcodeparams.HTOOB = 0;
         symcodeparams.lines = symcodelengths;
         symcodeparams.n_lines = SBNUMSYMS;
