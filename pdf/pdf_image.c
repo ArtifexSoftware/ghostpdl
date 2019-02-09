@@ -1117,8 +1117,17 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
                 return code;
             }
             if (group_known) {
-                code = pdfi_begin_group(ctx, page_dict, d);
+                code = pdfi_loop_detector_mark(ctx);
                 if (code < 0) {
+                    (void)pdfi_loop_detector_cleartomark(ctx);
+                    pdfi_countdown(d);
+                    return code;
+                }
+
+                code = pdfi_begin_group(ctx, page_dict, d);
+                (void)pdfi_loop_detector_cleartomark(ctx);
+                if (code < 0) {
+                    (void)pdfi_loop_detector_cleartomark(ctx);
                     pdfi_countdown(d);
                     return code;
                 }
@@ -1131,6 +1140,7 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
             } else {
                 code = pdfi_end_transparency_group(ctx);
                 if (code < 0) {
+                    (void)pdfi_loop_detector_cleartomark(ctx);
                     pdfi_countdown(d);
                     return code;
                 }
