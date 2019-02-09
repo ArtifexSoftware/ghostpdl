@@ -109,7 +109,7 @@ gxpspgclean:
 	$(MAKE) $(PROFILEMAKEOPTS) cleansub
 
 gpdfpg:
-	$(MAKE) $(PROFILEMAKEOPTS) .gpdfsubtarget
+	$(MAKE) $(PROFILEMAKEOPTS) .pdfsubtarget
 
 gpdfpgclean:
 	$(MAKE) $(PROFILEMAKEOPTS) cleansub
@@ -158,7 +158,7 @@ gxpsdebugclean:
 	$(MAKE) $(DEBUGMAKEOPTS) cleansub
 
 gpdfdebug:
-	$(MAKE) $(DEBUGMAKEOPTS) .gpdfsubtarget
+	$(MAKE) $(DEBUGMAKEOPTS) .pdfsubtarget
 
 gpdlfdebugclean:
 	$(MAKE) $(DEBUGMAKEOPTS) cleansub
