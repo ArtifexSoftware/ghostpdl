@@ -391,14 +391,14 @@ jbig2_data_in(Jbig2Ctx *ctx, const unsigned char *data, size_t size)
     }
 }
 
-void
+Jbig2Allocator *
 jbig2_ctx_free(Jbig2Ctx *ctx)
 {
     Jbig2Allocator *ca;
     int i;
 
     if (ctx == NULL)
-        return;
+        return NULL;
 
     ca = ctx->allocator;
     jbig2_free(ca, ctx->buf);
@@ -416,6 +416,8 @@ jbig2_ctx_free(Jbig2Ctx *ctx)
     }
 
     jbig2_free(ca, ctx);
+
+    return ca;
 }
 
 Jbig2GlobalCtx *
@@ -424,10 +426,10 @@ jbig2_make_global_ctx(Jbig2Ctx *ctx)
     return (Jbig2GlobalCtx *) ctx;
 }
 
-void
+Jbig2Allocator *
 jbig2_global_ctx_free(Jbig2GlobalCtx *global_ctx)
 {
-    jbig2_ctx_free((Jbig2Ctx *) global_ctx);
+    return jbig2_ctx_free((Jbig2Ctx *) global_ctx);
 }
 
 /* I'm not committed to keeping the word stream interface. It's handy

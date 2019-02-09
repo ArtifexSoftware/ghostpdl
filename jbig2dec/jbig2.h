@@ -79,11 +79,11 @@ struct _Jbig2Allocator {
 /* decoder context */
 Jbig2Ctx *jbig2_ctx_new(Jbig2Allocator *allocator,
                         Jbig2Options options, Jbig2GlobalCtx *global_ctx, Jbig2ErrorCallback error_callback, void *error_callback_data);
-void jbig2_ctx_free(Jbig2Ctx *ctx);
+Jbig2Allocator *jbig2_ctx_free(Jbig2Ctx *ctx);
 
 /* global context for embedded streams */
 Jbig2GlobalCtx *jbig2_make_global_ctx(Jbig2Ctx *ctx);
-void jbig2_global_ctx_free(Jbig2GlobalCtx *global_ctx);
+Jbig2Allocator *jbig2_global_ctx_free(Jbig2GlobalCtx *global_ctx);
 
 /* submit data to the decoder */
 int jbig2_data_in(Jbig2Ctx *ctx, const unsigned char *data, size_t size);
