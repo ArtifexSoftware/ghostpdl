@@ -111,7 +111,10 @@ s_file_available(register stream * s, gs_offset_t *pl)
         if (*pl == 0)
             *pl = -1;		/* EOF */
     } else {
-        if (*pl == 0 && feof(s->file))
+        /* s->end_status == EOFC may indicate the stream is disabled
+         * or that the underlying FILE * has reached EOF.
+         */
+        if (*pl == 0 && (s->end_status == EOFC || feof(s->file)))
             *pl = -1;		/* EOF */
     }
     return 0;
@@ -126,7 +129,7 @@ s_file_read_seek(register stream * s, gs_offset_t pos)
         s->cursor.r.ptr = s->cbuf + offset - 1;
         return 0;
     }
-    if (pos < 0 || pos > s->file_limit ||
+    if (pos < 0 || pos > s->file_limit || s->file == NULL ||
         gp_fseek_64(s->file, s->file_offset + pos, SEEK_SET) != 0
         )
         return ERRC;
