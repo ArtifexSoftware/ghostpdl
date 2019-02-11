@@ -2350,6 +2350,7 @@ float pdf_calculate_text_size(gs_gstate *pgs, pdf_font_resource_t *pdfont,
 
     if (gs_matrix_invert(&orig_matrix, smat) < 0) {
         gs_make_identity(smat);
+        gs_make_identity(tmat);
         return 1; /* Arbitrary */
     }
     gs_matrix_multiply(smat, pfmat, smat);
