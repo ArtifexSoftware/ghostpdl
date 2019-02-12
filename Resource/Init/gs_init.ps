@@ -360,8 +360,6 @@ currentdict /hwsizedict .undef
     }
    if
  } bind odef
-/.currentfilladjust { .currentfilladjust2 pop } bind odef
-/.setfilladjust { dup .setfilladjust2 } bind odef
 /.writecvs { 0 .writecvp } bind odef
 %**************** DEPRECATED PROCEDURES ****************
 %**************** DO NOT USE THESE IN NEW CODE ****************
@@ -1547,7 +1545,7 @@ setpacking
 
   % Increase fill adjustment so that we effectively use Adobe's
   % any-part-of-pixel rule.
-  0.5 .setfilladjust
+  0.5 dup .setfilladjust2
 } bind def
 
 % Set the default screen and BG/UCR.
@@ -2216,6 +2214,7 @@ SAFER { .setsafeglobal } if
   /.makeoperator /.setCPSImode              % gs_cet.ps, this won't work on cluster with -dSAFER
 
   /unread
+  /odef
   ]
   {systemdict exch .forceundef} forall
 
@@ -2257,7 +2256,7 @@ SAFER { .setsafeglobal } if
   /.file_name_combine /.file_name_is_absolute /.file_name_separator /.file_name_directory_separator /.file_name_current /.filename
   /.peekstring /.writecvp /.subfiledecode /.setupUnicodeDecoder /.jbig2makeglobalctx /.registerfont /.parsecff
   /.getshowoperator /.getnativefonts /.beginform /.endform /.get_form_id /.repeatform /.reusablestream /.rsdparams
-  /.buildfunction /.currentfilladjust2 /.setfilladjust2 /.sethpglpathmode /.currenthpglpathmode
+  /.buildfunction /.sethpglpathmode /.currenthpglpathmode
   /.currenthalftone /.sethalftone5 /.image1 /.imagemask1 /.image3 /.image4
   /.getiodevice /.getdevparms /.putdevparams /.bbox_transform /.matchmedia /.matchpagesize /.defaultpapersize
   /.oserrno /.setoserrno /.oserrorstring /.getCPSImode
