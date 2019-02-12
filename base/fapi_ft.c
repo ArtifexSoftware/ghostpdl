@@ -1067,25 +1067,10 @@ transform_decompose(FT_Matrix * a_transform, FT_UInt * xresp, FT_UInt * yresp,
         scalex *= fact;
     }
 
-    /* see above */
-    fact = 1.0;
-    while (scaley * yres > 512.0 * 72.0 && (xres > 0 && yres > 0)
-           && (scalex > 0.0 && scaley > 0.0)) {
-        if (scaley < yres) {
-            xres >>= 1;
-            yres >>= 1;
-            fact *= 2.0;
-        }
-        else {
-            scalex /= 1.25;
-            scaley /= 1.25;
-        }
-    }
-
-    ftscale_mat.xx = (FT_Fixed) ((65536.0 / scalex) * fact);
-    ftscale_mat.xy = 0;
-    ftscale_mat.yx = 0;
-    ftscale_mat.yy = (FT_Fixed) ((65536.0 / scaley) * fact);
+    ftscale_mat.xx = (FT_Fixed) (65536.0 / scalex);
+    ftscale_mat.xy = (FT_Fixed) 0;
+    ftscale_mat.yx = (FT_Fixed) 0;
+    ftscale_mat.yy = (FT_Fixed) (65536.0 / scaley);
 
     FT_Matrix_Multiply(a_transform, &ftscale_mat);
     memcpy(a_transform, &ftscale_mat, sizeof(FT_Matrix));
