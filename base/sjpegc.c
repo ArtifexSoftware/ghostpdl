@@ -26,7 +26,9 @@
 #include "sjpeg.h"
 #include "gsmchunk.h"
 
+#if !defined(SHARE_JPEG) || SHARE_JPEG==0
 #include "jmemcust.h"
+#endif
 
 /*
   Ghostscript uses a non-public interface to libjpeg in order to
@@ -148,7 +150,7 @@ gs_jpeg_destroy(stream_DCT_state * st)
     return 0;
 }
 
-#if SHARE_JPEG == 0
+#if !defined(SHARE_JPEG) || SHARE_JPEG==0
 static void *gs_j_mem_alloc(j_common_ptr cinfo, size_t size)
 {
     gs_memory_t *mem = (gs_memory_t *)(GET_CUST_MEM_DATA(cinfo)->priv);
@@ -192,7 +194,7 @@ static void gs_j_mem_term (j_common_ptr cinfo)
 int gs_jpeg_mem_init (gs_memory_t *mem, j_common_ptr cinfo)
 {
     int code = 0;
-#if SHARE_JPEG == 0
+#if !defined(SHARE_JPEG) || SHARE_JPEG==0
     jpeg_cust_mem_data custm, *custmptr;
 
     memset(&custm, 0x00, sizeof(custm));
@@ -219,7 +221,7 @@ int gs_jpeg_mem_init (gs_memory_t *mem, j_common_ptr cinfo)
 void
 gs_jpeg_mem_term(j_common_ptr cinfo)
 {
-#if SHARE_JPEG == 0
+#if !defined(SHARE_JPEG) || SHARE_JPEG==0
     if (cinfo->client_data) {
         jpeg_cust_mem_data *custmptr = (jpeg_cust_mem_data *)cinfo->client_data;
         gs_memory_t *mem = (gs_memory_t *)(GET_CUST_MEM_DATA(cinfo)->priv);
