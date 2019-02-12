@@ -1799,7 +1799,7 @@ currentdict /.pickcmap_with_no_xlatmap .undef
   .getpost
   .pickcmap
   mark
-  .pdfcharkeys
+  //.pdfcharkeys exec
   //.ttkeys exec
   /FontType 42
   /PaintType 0
@@ -1825,7 +1825,7 @@ currentdict /.pickcmap_with_no_xlatmap .undef
   % if we're loading to substitute for TTF in a PDF,
   % load the font the "PDF way"
   /prebuilt_encoding where
-  {pop .pdfcharkeys}
+  {pop //.pdfcharkeys exec}
   {.charkeys} ifelse
   //.ttkeys exec
   /FontType 42
@@ -2007,4 +2007,5 @@ currentdict /.pickcmap_with_no_xlatmap .undef
  /.loadwofftables
  /.findcmap
  /.pdfmapsymbolic
+ /.pdfcharkeys
 ] {systemdict exch .forceundef} forall
