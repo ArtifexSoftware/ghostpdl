@@ -286,7 +286,8 @@ userdict /=string 256 string put
     } repeat pop
  } .bind def
 
-QUIET not { printgreeting flush } if
+QUIET not { //printgreeting exec flush } if
+currentdict /printgreeting .undef
 
 % Define a special version of def for making operator procedures.
 /obind {	% <name> <proc> obind <name> <oper>
