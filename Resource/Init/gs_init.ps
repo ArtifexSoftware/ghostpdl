@@ -662,8 +662,6 @@ systemdict /internaldict dup .makeinternaldict .makeoperator
 % Copy a dictionary per the Level 2 spec even in Level 1.
 /.copydict		% <fromdict> <todict> .copydict <todict>
         { dup 3 -1 roll { put dup } forall pop } bind def
-/copystring
-        { dup length string copy } bind def
 /findlibfile {
   .systemvmlibfile { dup .filename pop exch //true } { //false } ifelse
 } odef

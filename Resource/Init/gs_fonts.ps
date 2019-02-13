@@ -340,7 +340,9 @@ FONTPATH length 0 eq { (%END FONTPATH) .skipeof } if
              { dup .nativeFontmap exch known
                 { pop pop
                 }
-                { exch copystring exch
+                { exch
+                  dup length string copy % copy string
+                  exch
                   DEBUG { ( ) print dup =only flush } if
                   1 index //.definenativefontmap exec
                   //.splitfilename exec pop //true //.scanfontdict 3 1 roll .growput
