@@ -869,7 +869,8 @@ def
         } bind def
 % Temporarily substitute it for the real runlibfile.
 /.runlibfile /runlibfile load def
-/runlibfile /runlibfile0 load def
+/runlibfile //runlibfile0 def
+currentdict /runlibfile0 .undef
 
 % Create the error handling machinery.
 % Define the standard error handlers.
