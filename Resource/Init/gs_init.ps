@@ -696,8 +696,6 @@ systemdict /internaldict dup .makeinternaldict .makeoperator
 } ifelse
 /.packtomark
         { counttomark packedarray exch pop } bind def
-/ppstack
-        { 0 1 count 3 sub { index === } for } bind def
 /runlibfile
         {		% We don't want to bind 'run' into this procedure,
                         % since run may get redefined.
