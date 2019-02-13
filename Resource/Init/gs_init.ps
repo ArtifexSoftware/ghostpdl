@@ -807,9 +807,6 @@ userdict /.currentresourcefile //null put
   stopped $error /newerror get and
    { /handleerror .systemvar exec flush //true } { //false } ifelse
 } bind def
-/execute {		% <obj> execute -
-  .execute pop
-} odef
 % Define an execute analogue of runlibfile0.
 /execute0 {		% <obj> execute0 -
   .execute { /execute0 cvx 1 .quit } if
