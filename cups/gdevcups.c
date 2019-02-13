@@ -4147,6 +4147,18 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
 
     case CUPS_CSPACE_RGBA :
     case CUPS_CSPACE_RGBW :
+#ifdef CUPS_RASTER_SYNCv1
+        cups->header.cupsNumColors = 4;
+#endif /* CUPS_RASTER_SYNCv1 */
+        if (cups->header.cupsColorOrder != CUPS_ORDER_CHUNKED)
+            cups->header.cupsBitsPerPixel = cups->header.cupsBitsPerColor;
+        else
+            cups->header.cupsBitsPerPixel = 4 * cups->header.cupsBitsPerColor;
+
+        cups->color_info.depth = 4 * cups->header.cupsBitsPerColor;
+        cups->color_info.num_components = 3;
+        break;
+
     case CUPS_CSPACE_CMYK :
     case CUPS_CSPACE_YMCK :
     case CUPS_CSPACE_KCMY :
@@ -4156,9 +4168,9 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
 	cups->header.cupsNumColors = 4;
 #endif /* CUPS_RASTER_SYNCv1 */
         if (cups->header.cupsColorOrder != CUPS_ORDER_CHUNKED)
-          cups->header.cupsBitsPerPixel = cups->header.cupsBitsPerColor;
-	else
-	  cups->header.cupsBitsPerPixel = 4 * cups->header.cupsBitsPerColor;
+            cups->header.cupsBitsPerPixel = cups->header.cupsBitsPerColor;
+	    else
+	      cups->header.cupsBitsPerPixel = 4 * cups->header.cupsBitsPerColor;
 
         cups->color_info.depth          = 4 * cups->header.cupsBitsPerColor;
         cups->color_info.num_components = 4;
@@ -5916,12 +5928,6 @@ cups_print_planar(gx_device_printer *pdev,
 private int
 cups_spec_op(gx_device *dev_, int op, void *data, int datasize)
 {
-    /* Although not strictly DeviceN, the range of color models
-       this device supports presets similar issues.
-     */
-    if (op == gxdso_supports_devn) {
-        return true;
-    }
     return gx_default_dev_spec_op(dev_, op, data, datasize);
 }
 
