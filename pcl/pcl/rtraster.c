@@ -975,7 +975,7 @@ process_ccitt_compress(gs_gstate * pgs,
         state.K = -1;
     s_CFD_template.init((stream_state *) & state);
     scr.ptr = pin + 4 - 1;
-    scr.limit = scr.ptr + insize;
+    scr.limit = scr.ptr + insize - 4;
 
     wrsize = (state.Columns + 7) / 8;
     temp_buffer = gs_alloc_bytes(prast->pmem, wrsize, "CCITT temp_buffer");
