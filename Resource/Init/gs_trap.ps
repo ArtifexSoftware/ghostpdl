@@ -53,7 +53,7 @@ languagelevel dup 2 .max .setlanguagelevel
 
 /currenttrapparams dup {	% - currenttrapparams <paramdict>
   /.trapparams .uservar .copyparams
-} bind .makeoperator
+} bind executeonly .makeoperator
 
 /settrapzone dup {		% - settrapzone -
         % ****** DUMMY ******
