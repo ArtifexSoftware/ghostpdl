@@ -1719,7 +1719,7 @@ currentdict /.gsgetdeviceprop .forceundef
     dup length
     2 index length sub % drop "ffn", remaining "ldffn" = length of the "directory" part
     exch                            % {} b [dl] (templ) (ffn) ldffn (dffn)
-    .makepathtemplate               % {} b [dl] (templ) (ffn) ldffn (Dffn)
+    //.makepathtemplate exec        % {} b [dl] (templ) (ffn) ldffn (Dffn)
     dup                             % {} b [dl] (templ) (ffn) ldffn (Dffn) (Dffn)
     4 index length dup              % {} b [dl] (templ) (ffn) ldffn (Dffn) (Dffn) templL templL
     2 index length                  % {} b [dl] (templ) (ffn) ldffn (Dffn) (Dffn) templL templL DffnL
@@ -1752,6 +1752,7 @@ currentdict /.gsgetdeviceprop .forceundef
   } ifelse                                         % (t1) ?l1 (t2) ?l2 ... (tN) ?ln {} b [dl] (templ) (ffn)
   pop pop pop pop pop                              % (t1) ?l1 (t2) ?l2 ... (tN) ?ln
 } bind def
+currentdict /.makepathtemplate .undef
 
 %   <dir_list> <template> .generate_dir_list_templates <t1> ... <tN>
 %
