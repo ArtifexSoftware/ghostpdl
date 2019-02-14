@@ -36,7 +36,7 @@ languagelevel dup 2 .max .setlanguagelevel
   } forall pop
   dup .settrapparams	% Let the operator check parameter validity.
   .userdict /.trapparams 3 -1 roll put pop
-} bind .makeoperator
+} bind executeonly .makeoperator
 
 /.copyparams {		% <obj> .copyparams <obj'>
   dup type /dicttype eq {

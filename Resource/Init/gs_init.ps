@@ -301,16 +301,16 @@ currentdict /printgreeting .undef
 % regardless of the contents of the dictionary stack.
 /.systemvar {		% <name> .systemvar <value>
   //systemdict exch get
-} .bind odef
+} .bind executeonly odef
 /.systemexec {
   .systemvar exec
-} .bind odef
+} .bind executeonly odef
 /.userdict {		% - .userdict <dict>
   /userdict .systemvar
-} .bind odef
+} .bind executeonly odef
 /.uservar {		% <name> .uservar <value>
   .userdict exch get
-} .bind odef
+} .bind executeonly odef
 
 % If we're delaying binding, remember everything that needs to be bound later.
 DELAYBIND
@@ -767,7 +767,7 @@ userdict /.currentresourcefile //null put
   2 .execn		% stopped <file>
   .userdict /.currentresourcefile 3 -1 roll put
   { stop } if
-} bind def
+} bind executeonly def
 /.runresource {		% <file> .runresource -
   { /run .systemvar exec } .execasresource
 } bind def
@@ -2289,6 +2289,7 @@ SAFER { .setsafeglobal } if
   /.packtomark
   /.putdeviceprops
   /.growdict /.growdictlength
+  /.userdict
 
   % Used by a free user in the Library of Congress. Apparently this is used to
   % draw a partial page, which is then filled in by the results of a barcode
