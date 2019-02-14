@@ -501,13 +501,15 @@ userdict /.echo.mode //true put
 /languagelevel 1 def		% gs_lev2.ps may change this
 /makeimagedevice { //false makewordimagedevice } odef
 /matrix	{ 6 array identmatrix } odef
-% .promptmsg is redefined if the interpreter includes readline support.
+
 /.promptmsg {
         (GS) print
         count 0 ne { (<) print count =only } if
         (>) print flush
 } bind def
-/prompt	{ flush flushpage NOPROMPT not { .promptmsg } if } bind def
+/prompt	{ flush flushpage NOPROMPT not { //.promptmsg exec} if } bind def
+currentdict /.promptmsg .undef
+
 /pstack	{ 0 1 count 3 sub { index == } for } bind def
 /putdeviceprops
         { .putdeviceprops { erasepage } if } odef
