@@ -1,10 +1,10 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="gpdf"
+	Name="ghostpdf"
 	ProjectGUID="{4C038125-61B9-4147-9EA8-39690BA3A599}"
-	RootNamespace="gpdf"
+	RootNamespace="ghostpdf"
 	Keyword="MakeFileProj"
 	>
 	<Platforms>
@@ -303,14 +303,10 @@
 	</References>
 	<Files>
 		<Filter
-			Name="pdf"
+			Name="pdf (*.c)"
 			>
 			<File
 				RelativePath="..\pdf\ghostpdf.c"
-				>
-			</File>
-			<File
-				RelativePath="..\pdf\ghostpdf.h"
 				>
 			</File>
 			<File
@@ -318,15 +314,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\pdf\pdf_array.h"
-				>
-			</File>
-			<File
 				RelativePath="..\pdf\pdf_colour.c"
-				>
-			</File>
-			<File
-				RelativePath="..\pdf\pdf_colour.h"
 				>
 			</File>
 			<File
@@ -334,15 +322,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\pdf\pdf_dict.h"
-				>
-			</File>
-			<File
 				RelativePath="..\pdf\pdf_file.c"
-				>
-			</File>
-			<File
-				RelativePath="..\pdf\pdf_file.h"
 				>
 			</File>
 			<File
@@ -350,15 +330,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\pdf\pdf_font.h"
-				>
-			</File>
-			<File
 				RelativePath="..\pdf\pdf_func.c"
-				>
-			</File>
-			<File
-				RelativePath="..\pdf\pdf_func.h"
 				>
 			</File>
 			<File
@@ -366,15 +338,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\pdf\pdf_gstate.h"
-				>
-			</File>
-			<File
 				RelativePath="..\pdf\pdf_image.c"
-				>
-			</File>
-			<File
-				RelativePath="..\pdf\pdf_image.h"
 				>
 			</File>
 			<File
@@ -382,15 +346,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\pdf\pdf_int.h"
-				>
-			</File>
-			<File
 				RelativePath="..\pdf\pdf_loop_detect.c"
-				>
-			</File>
-			<File
-				RelativePath="..\pdf\pdf_loop_detect.h"
 				>
 			</File>
 			<File
@@ -398,15 +354,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\pdf\pdf_path.h"
-				>
-			</File>
-			<File
 				RelativePath="..\pdf\pdf_shading.c"
-				>
-			</File>
-			<File
-				RelativePath="..\pdf\pdf_shading.h"
 				>
 			</File>
 			<File
@@ -414,19 +362,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\pdf\pdf_stack.h"
-				>
-			</File>
-			<File
 				RelativePath="..\pdf\pdf_text.c"
 				>
 			</File>
 			<File
-				RelativePath="..\pdf\pdf_text.h"
-				>
-			</File>
-			<File
-				RelativePath="..\pdf\pdf_types.h"
+				RelativePath="..\pdf\pdf_trans.c"
 				>
 			</File>
 			<File
@@ -434,11 +374,83 @@
 				>
 			</File>
 			<File
-				RelativePath="..\pdf\pdf_xref.h"
+				RelativePath="..\pdf\pdftop.c"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="pdf (*.h)"
+			>
+			<File
+				RelativePath="..\pdf\ghostpdf.h"
 				>
 			</File>
 			<File
-				RelativePath="..\pdf\pdftop.c"
+				RelativePath="..\pdf\pdf_array.h"
+				>
+			</File>
+			<File
+				RelativePath="..\pdf\pdf_colour.h"
+				>
+			</File>
+			<File
+				RelativePath="..\pdf\pdf_dict.h"
+				>
+			</File>
+			<File
+				RelativePath="..\pdf\pdf_file.h"
+				>
+			</File>
+			<File
+				RelativePath="..\pdf\pdf_font.h"
+				>
+			</File>
+			<File
+				RelativePath="..\pdf\pdf_func.h"
+				>
+			</File>
+			<File
+				RelativePath="..\pdf\pdf_gstate.h"
+				>
+			</File>
+			<File
+				RelativePath="..\pdf\pdf_image.h"
+				>
+			</File>
+			<File
+				RelativePath="..\pdf\pdf_int.h"
+				>
+			</File>
+			<File
+				RelativePath="..\pdf\pdf_loop_detect.h"
+				>
+			</File>
+			<File
+				RelativePath="..\pdf\pdf_path.h"
+				>
+			</File>
+			<File
+				RelativePath="..\pdf\pdf_shading.h"
+				>
+			</File>
+			<File
+				RelativePath="..\pdf\pdf_stack.h"
+				>
+			</File>
+			<File
+				RelativePath="..\pdf\pdf_text.h"
+				>
+			</File>
+			<File
+				RelativePath="..\pdf\pdf_trans.h"
+				>
+			</File>
+			<File
+				RelativePath="..\pdf\pdf_types.h"
+				>
+			</File>
+			<File
+				RelativePath="..\pdf\pdf_xref.h"
 				>
 			</File>
 		</Filter>
