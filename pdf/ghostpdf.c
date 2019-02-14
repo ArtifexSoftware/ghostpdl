@@ -333,12 +333,6 @@ static int pdfi_check_Resources_for_transparency(pdf_context *ctx, pdf_dict *Res
                 }
             } while (1);
             pdfi_countdown(d);
-
-            code = pdfi_loop_detector_cleartomark(ctx); /* The ColorSpace loop */
-            if (code < 0) {
-                (void)pdfi_loop_detector_cleartomark(ctx); /* The Resources dictionary loop */
-                return code;
-            }
         }
     }
 
@@ -1888,7 +1882,7 @@ pdf_context *pdfi_create_context(gs_memory_t *pmem)
      */
     ctx->pgs->have_pattern_streams = true;
     ctx->preserve_tr_mode = 0;
-    ctx->notransparency = true;
+    ctx->notransparency = false;
 
     ctx->main_stream = NULL;
 
