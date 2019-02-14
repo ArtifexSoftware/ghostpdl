@@ -109,6 +109,71 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
     } else if (pdfi_name_strcmp(space, "DeviceCMYK") == 0) {
         goto exit;
     } else if (pdfi_name_strcmp(space, "DeviceN") == 0) {
+        bool known = false;
+        pdf_obj *dummy, *name;
+        int i;
+
+        pdfi_countdown(space);
+        code = pdfi_array_get(color_array, 1, (pdf_obj **)&space);
+        if (code != 0)
+            goto exit;
+
+        if (space->type == PDF_INDIRECT) {
+            pdf_indirect_ref *r = (pdf_indirect_ref *)space;
+
+            space = NULL;
+            code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, (pdf_obj **)&space);
+            pdfi_countdown(r);
+            if (code < 0)
+                goto exit;
+        }
+
+        if (space->type != PDF_ARRAY) {
+            code = gs_error_typecheck;
+            goto exit;
+        }
+
+        for (i=0;i < ((pdf_array *)space)->entries; i++) {
+            code = pdfi_array_get((pdf_array *)space, (uint64_t)i, &name);
+            if (code < 0)
+                goto exit;
+
+            if (space->type != PDF_NAME) {
+                code = gs_error_typecheck;
+                goto exit;
+            }
+
+            if (pdfi_name_strcmp(name, "Cyan") == 0 || pdfi_name_strcmp(name, "Magenta") == 0 ||
+                pdfi_name_strcmp(name, "Yellow") == 0 || pdfi_name_strcmp(name, "Black") == 0) {
+
+                pdfi_countdown(name);
+                continue;
+            }
+
+            code = pdfi_dict_known_by_key(ctx->SpotNames, name, &known);
+            if (code < 0 || known) {
+                pdfi_countdown(name);
+                goto exit;
+            }
+            if (known) {
+                pdfi_countdown(name);
+                continue;
+            }
+
+            dummy = (pdf_obj *)gs_alloc_bytes(ctx->memory, sizeof(pdf_num), "pdfi_check_for_spots_by_array");
+            if (dummy == NULL) {
+                code = gs_error_VMerror;
+                goto exit;
+            }
+            memset(dummy, 0x00, sizeof(pdf_num));
+            dummy->memory = ctx->memory;
+
+            code = pdfi_dict_put(ctx->SpotNames, name, dummy);
+            pdfi_countdown(name);
+            if (code < 0)
+                break;
+            *num_spots += 1;
+        }
         goto exit;
     } else if (pdfi_name_strcmp(space, "Separation") == 0) {
         bool known = false;
@@ -128,6 +193,12 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
             if (code < 0)
                 goto exit;
         }
+
+        if (space->type != PDF_NAME) {
+            code = gs_error_typecheck;
+            goto exit;
+        }
+
         if (pdfi_name_strcmp(space, "Cyan") == 0 || pdfi_name_strcmp(space, "Magenta") == 0 ||
             pdfi_name_strcmp(space, "Yellow") == 0 || pdfi_name_strcmp(space, "Black") == 0)
             goto exit;
