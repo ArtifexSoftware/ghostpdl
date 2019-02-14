@@ -1,35 +1,28 @@
-%!PS
 % Set defaults for Ghostscript to match Adobe CPSI behaviour for CET
 
-/.odef {		% <name> <proc> odef -
-  1 index exch .makeoperator def
-} bind def
-
+% skip if we've already run this -- based on fake "product"
 systemdict /product get (PhotoPRINT SE 5.0v2) readonly eq
 {
   (%END GS_CET) .skipeof
 } if
 
-% do this in the server level so it is persistent across jobs
-//true 0 startjob not {
-  (*** Warning: CET startup is not in server default) = flush
-} if
+% Note: this must be run at save level 0 and when systemdict is writeable
+currentglobal //true setglobal
+systemdict dup dup dup
+/version (3017.102) readonly .forceput		% match CPSI 3017.102
+/product (PhotoPRINT SE 5.0v2) readonly .forceput	% match CPSI 3017.102
+/revision 0 put			% match CPSI 3017.103 Tek shows revision 5
+/serialnumber dup {233640} readonly .makeoperator .forceput % match CPSI 3017.102 Tek shows serialnumber 1401788461
+
+systemdict /.odef {           % <name> <proc> odef -
+  1 index exch //.makeoperator def
+} .bind .forceput          % this will be undefined at the end
 
 300 .sethiresscreen	% needed for language switch build since it
                         % processes gs_init.ps BEFORE setting the resolution
 
 0 array 0 setdash % CET 09-08 wants local setdash
 
-currentglobal //true setglobal
-
-{
-  systemdict dup dup dup
-  /version (3017.102) readonly put		% match CPSI 3017.102
-  /product (PhotoPRINT SE 5.0v2) readonly put	% match CPSI 3017.102
-  /revision 0 put			% match CPSI 3017.103 Tek shows revision 5
-  /serialnumber dup {233640} readonly .makeoperator put % match CPSI 3017.102 Tek shows serialnumber 1401788461
-%  /UNROLLFORMS //true put                 % CET files do unreasonable things inside forms
-} 1183615869 internaldict /superexec get exec
 
 /UNROLLFORMS //true def
 
@@ -169,9 +162,7 @@ userdict /.smoothness currentsmoothness put
   ofnfa
 } bind def
 
-currentdict /.odef undef
+systemdict /.odef .undef
+
 % end of slightly nasty hack to give consistent cluster results
-
-//false 0 startjob pop		% re-enter encapsulated mode
-
 %END GS_CET

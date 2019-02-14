@@ -2204,9 +2204,6 @@ SAFER { .setsafeglobal } if
   /.endtransparencygroup     % transparency-example.ps
   /.setdotlength             % Bug687720.ps
   /.sort /.setdebug /.mementolistnewblocks /getenv
-
-  /.makeoperator /.setCPSImode              % gs_cet.ps, this won't work on cluster with -dSAFER
-
   /unread
   ]
   {systemdict exch .forceundef} forall
@@ -2296,7 +2293,6 @@ SAFER { .setsafeglobal } if
 
   % Used by our own test suite files
   %/.fileposition %image-qa.ps
-  %/.makeoperator /.setCPSImode % gs_cet.ps
 
   % Either our code uses these in ways which mean they can't be undefined, or they are used directly by
   % test files/utilities, or engineers expressed a desire to keep them visible.
@@ -2476,6 +2472,16 @@ end
 /vmreclaim where
  { pop NOGC not { 2 .vmreclaim 0 vmreclaim } if
  } if
+
+% Do this before systemdict is locked (see below for additional CETMODE setup using gs_cet.ps)
+systemdict /CETMODE .knownget {
+  {
+    (gs_cet.ps) runlibfile
+  } if
+} if
+systemdict /.makeoperator .undef	% must be after gs_cet.ps
+systemdict /.setCPSImode .undef		% must be after gs_cet.ps
+
 DELAYBIND not {
   systemdict /.bindnow .undef       % We only need this for DELAYBIND
   systemdict /.forcecopynew .undef	% remove temptation
@@ -2483,16 +2489,29 @@ DELAYBIND not {
   systemdict /.forceundef .undef	% ditto
 } if
 
-% Move superexec to internaldict if superexec is defined.
-systemdict /superexec .knownget {
-  1183615869 internaldict /superexec 3 -1 roll put
-  systemdict /superexec .undef
+% Move superexec to internaldict if superexec is defined. (Level 2 or later)
+systemdict /superexec known {
+  % restrict superexec to single known use by PScript5.dll
+  % We could do this only for SAFER mode, but internaldict and superexec are
+  % not very well documented, and we don't want them to be used.
+  1183615869 internaldict /superexec {
+    2 index /Private eq		% first check for typical use in PScript5.dll
+    1 index length 1 eq and	% expected usage is: dict /Private <value> {put} superexec
+    1 index 0 get systemdict /put get eq and
+    {
+      //superexec exec		% the only usage we allow
+    } {
+      /superexec load /invalidaccess signalerror
+    } ifelse
+  } bind cvx executeonly put
+  systemdict /superexec .undef	% get rid of the dangerous (unrestricted) operator
 } if
 
 % Can't remove this one until the last minute :-)
 DELAYBIND not {
 systemdict /.undef .undef
 } if
+
 WRITESYSTEMDICT {
    SAFER {
        (\n *** WARNING - you have selected SAFER, indicating you want Ghostscript\n) print
@@ -2518,8 +2537,5 @@ WRITESYSTEMDICT {
 % support DeviceN and spot color separations this will need to
 % be 'true' in some cases.
 userdict /AGM_preserve_spots //false put
-
-systemdict /CETMODE .knownget
-{ { (gs_cet.ps) runlibfile } if } if
 
 % The interpreter will run the initial procedure (start).

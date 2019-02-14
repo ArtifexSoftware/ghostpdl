@@ -521,11 +521,11 @@ buildfontdict 3 /.buildfont3 cvx put
                 % the font in LocalFontDirectory.
    .currentglobal
     { //systemdict /LocalFontDirectory .knownget
-       { 2 index 2 index { .growput } systemdict /superexec known {//superexec}{1183615869 internaldict /superexec get exec} ifelse }	% readonly
+       { 2 index 2 index .forceput }	% readonly
       if
     }
    if
-   dup //.FontDirectory 4 -2 roll { .growput } systemdict /superexec known {//superexec}{1183615869 internaldict /superexec get exec} ifelse	% readonly
+   dup //.FontDirectory 4 -2 roll .forceput % readonly
                 % If the font originated as a resource, register it.
    currentfile .currentresourcefile eq { dup .registerfont } if
    readonly
@@ -1193,13 +1193,13 @@ $error /SubstituteFont { } put
           //.FontDirectory 1 index known not {
             2 dict dup /FontName 3 index put
             dup /FontType 1 put
-            //.FontDirectory 3 1 roll { put } systemdict /superexec known {//superexec}{1183615869 internaldict /superexec get exec} ifelse   % readonly
+            //.FontDirectory 3 1 roll //.forceput exec % readonly
           } {
             pop
           } ifelse
         } forall
       } forall
-    }
+    } executeonly	% hide .forceput
 FAKEFONTS { exch } if pop def   % don't bind, .current/setglobal get redefined
 
 % Install initial fonts from Fontmap.
