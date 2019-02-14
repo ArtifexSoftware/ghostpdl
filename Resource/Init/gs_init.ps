@@ -351,6 +351,9 @@ currentdict /hwsizedict .undef
 /getdeviceprops
  { //null .getdeviceparams
  } bind odef
+
+% NOTE: Note sure why/if this needs to be a separate operator.  Consider rolling this
+% implementation into /putdeviceprops ?
 /.putdeviceprops
  { //null //true counttomark 1 add 3 roll .putdeviceparams
    dup type /booleantype ne
@@ -359,7 +362,7 @@ currentdict /hwsizedict .undef
       /.putdeviceprops .systemvar exch signalerror
     }
    if
- } bind odef
+ } bind executeonly odef
 /.writecvs { 0 .writecvp } bind odef
 %**************** DEPRECATED PROCEDURES ****************
 %**************** DO NOT USE THESE IN NEW CODE ****************
@@ -512,7 +515,7 @@ currentdict /.promptmsg .undef
 
 /pstack	{ 0 1 count 3 sub { index == } for } bind def
 /putdeviceprops
-        { .putdeviceprops { erasepage } if } odef
+        { .putdeviceprops { erasepage } if } bind executeonly odef
 /quit	{ /quit load 0 .quit } odef
 /run	{ dup type /filetype ne { (r) .systemvmfile } if
                 % We must close the file when execution terminates,
@@ -2284,6 +2287,7 @@ SAFER { .setsafeglobal } if
   /obind
   /odef
   /.packtomark
+  /.putdeviceprops
 
   % Used by a free user in the Library of Congress. Apparently this is used to
   % draw a partial page, which is then filled in by the results of a barcode
