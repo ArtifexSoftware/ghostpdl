@@ -1,6 +1,10 @@
 %!PS
 % Set defaults for Ghostscript to match Adobe CPSI behaviour for CET
 
+/.odef {		% <name> <proc> odef -
+  1 index exch .makeoperator def
+} bind def
+
 systemdict /product get (PhotoPRINT SE 5.0v2) readonly eq
 {
   (%END GS_CET) .skipeof
@@ -93,7 +97,7 @@ dup 7 -1 put
    {
      ofile
    } ifelse
-} bind odef
+} bind //.odef exec
 currentdict /ofile undef
 
 % One QL job (23-12B.PS) effectively does:
@@ -116,7 +120,7 @@ currentdict /ofile undef
     {
       osetfileposition
     } ifelse
-} bind odef
+} bind //.odef exec
 currentdict /osetfileposition undef
 
 setglobal
@@ -144,8 +148,8 @@ userdict /.smoothness currentsmoothness put
    } {
      /setsmoothness .systemvar /typecheck signalerror
    } ifelse
-} bind odef
-/currentsmoothness { userdict /.smoothness get } bind odef % for 09-55.PS, 09-57.PS .
+} bind //.odef exec
+/currentsmoothness { userdict /.smoothness get } bind //.odef exec % for 09-55.PS, 09-57.PS .
 
 % slightly nasty hack to give consistent cluster results
 /ofnfa systemdict /filenameforall get def
@@ -164,6 +168,8 @@ userdict /.smoothness currentsmoothness put
   } ifelse
   ofnfa
 } bind def
+
+currentdict /.odef undef
 % end of slightly nasty hack to give consistent cluster results
 
 //false 0 startjob pop		% re-enter encapsulated mode
