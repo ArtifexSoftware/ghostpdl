@@ -172,13 +172,37 @@ s_jbig2decode_invert_buffer(unsigned char *buf, int length)
         *buf++ ^= 0xFF;
 }
 
+typedef struct {
+        Jbig2Allocator allocator;
+        gs_memory_t *mem;
+} s_jbig2decode_allocator_t;
+
+static void *s_jbig2decode_alloc(Jbig2Allocator *_allocator, size_t size)
+{
+        s_jbig2decode_allocator_t *allocator = (s_jbig2decode_allocator_t *) _allocator;
+        return gs_alloc_bytes(allocator->mem, size, "s_jbig2decode_alloc");
+}
+
+static void s_jbig2decode_free(Jbig2Allocator *_allocator, void *p)
+{
+        s_jbig2decode_allocator_t *allocator = (s_jbig2decode_allocator_t *) _allocator;
+        gs_free_object(allocator->mem, p, "s_jbig2decode_free");
+}
+
+static void *s_jbig2decode_realloc(Jbig2Allocator *_allocator, void *p, size_t size)
+{
+        s_jbig2decode_allocator_t *allocator = (s_jbig2decode_allocator_t *) _allocator;
+        return gs_resize_object(allocator->mem, p, size, "s_jbig2decode_realloc");
+}
+
 /* parse a globals stream packed into a gs_bytestring for us by the postscript
    layer and stuff the resulting context into a pointer for use in later decoding */
 int
-s_jbig2decode_make_global_data(byte *data, uint length, void **result)
+s_jbig2decode_make_global_data(gs_memory_t *mem, byte *data, uint length, void **result)
 {
     Jbig2Ctx *ctx = NULL;
     int code;
+    s_jbig2decode_allocator_t *allocator;
 
     /* the cvision encoder likes to include empty global streams */
     if (length == 0) {
@@ -187,19 +211,34 @@ s_jbig2decode_make_global_data(byte *data, uint length, void **result)
         return 0;
     }
 
+    allocator = (s_jbig2decode_allocator_t *) gs_alloc_bytes(mem,
+            sizeof (s_jbig2decode_allocator_t), "s_jbig2_make_global_data");
+    if (allocator == NULL) {
+        *result = NULL;
+        return_error(gs_error_VMerror);
+    }
+
+    allocator->allocator.alloc = s_jbig2decode_alloc;
+    allocator->allocator.free = s_jbig2decode_free;
+    allocator->allocator.realloc = s_jbig2decode_realloc;
+    allocator->mem = mem;
+
     /* allocate a context with which to parse our global segments */
-    ctx = jbig2_ctx_new(NULL, JBIG2_OPTIONS_EMBEDDED, NULL,
-                            s_jbig2decode_error, NULL);
-    if (ctx == NULL) return 0;
+    ctx = jbig2_ctx_new((Jbig2Allocator *) allocator, JBIG2_OPTIONS_EMBEDDED,
+                            NULL, s_jbig2decode_error, NULL);
+    if (ctx == NULL) {
+        gs_free_object(mem, allocator, "s_jbig2_make_global_data");
+        return_error(gs_error_VMerror);
+    }
 
     /* parse the global bitstream */
     code = jbig2_data_in(ctx, data, length);
-
     if (code) {
         /* error parsing the global stream */
-        jbig2_ctx_free(ctx);
+        allocator = (s_jbig2decode_allocator_t *) jbig2_ctx_free(ctx);
+        gs_free_object(allocator->mem, allocator, "s_jbig2_make_global_data");
         *result = NULL;
-        return code;
+        return_error(gs_error_ioerror);
     }
 
     /* canonize and store our global state */
@@ -213,8 +252,11 @@ void
 s_jbig2decode_free_global_data(void *data)
 {
     Jbig2GlobalCtx *global_ctx = (Jbig2GlobalCtx*)data;
+    s_jbig2decode_allocator_t *allocator;
 
-    jbig2_global_ctx_free(global_ctx);
+    allocator = (s_jbig2decode_allocator_t *) jbig2_global_ctx_free(global_ctx);
+
+    gs_free_object(allocator->mem, allocator, "s_jbig2decode_free_global_data");
 }
 
 /* store a global ctx pointer in our state structure */
@@ -237,6 +279,7 @@ s_jbig2decode_init(stream_state * ss)
     stream_jbig2decode_state *const state = (stream_jbig2decode_state *) ss;
     Jbig2GlobalCtx *global_ctx = state->global_ctx; /* may be NULL */
     int code = 0;
+    s_jbig2decode_allocator_t *allocator = NULL;
 
     state->callback_data = (s_jbig2_callback_data_t *)gs_alloc_bytes(
                                                 ss->memory->non_gc_memory,
@@ -247,9 +290,26 @@ s_jbig2decode_init(stream_state * ss)
         state->callback_data->error = 0;
         state->callback_data->last_message = NULL;
         state->callback_data->repeats = 0;
-        /* initialize the decoder with the parsed global context if any */
-        state->decode_ctx = jbig2_ctx_new(NULL, JBIG2_OPTIONS_EMBEDDED,
-                     global_ctx, s_jbig2decode_error, state->callback_data);
+
+        allocator = (s_jbig2decode_allocator_t *) gs_alloc_bytes(ss->memory->non_gc_memory, sizeof (s_jbig2decode_allocator_t), "s_jbig2decode_init(allocator)");
+        if (allocator == NULL) {
+                s_jbig2decode_error(state->callback_data, "failed to allocate custom jbig2dec allocator", JBIG2_SEVERITY_FATAL, -1);
+        }
+        else {
+                allocator->allocator.alloc = s_jbig2decode_alloc;
+                allocator->allocator.free = s_jbig2decode_free;
+                allocator->allocator.realloc = s_jbig2decode_realloc;
+                allocator->mem = ss->memory->non_gc_memory;
+
+                /* initialize the decoder with the parsed global context if any */
+                state->decode_ctx = jbig2_ctx_new((Jbig2Allocator *) allocator, JBIG2_OPTIONS_EMBEDDED,
+                             global_ctx, s_jbig2decode_error, state->callback_data);
+
+                if (state->decode_ctx == NULL) {
+                        gs_free_object(allocator->mem, allocator, "s_jbig2decode_release");
+                }
+
+        }
 
         code = state->callback_data->error;
     }
@@ -323,11 +383,15 @@ s_jbig2decode_release(stream_state *ss)
     stream_jbig2decode_state *const state = (stream_jbig2decode_state *) ss;
 
     if (state->decode_ctx) {
+        s_jbig2decode_allocator_t *allocator = NULL;
+
         if (state->image) jbig2_release_page(state->decode_ctx, state->image);
 	state->image = NULL;
         s_jbig2decode_flush_errors(state->callback_data);
-        jbig2_ctx_free(state->decode_ctx);
+        allocator = (s_jbig2decode_allocator_t *) jbig2_ctx_free(state->decode_ctx);
 	state->decode_ctx = NULL;
+
+        gs_free_object(allocator->mem, allocator, "s_jbig2decode_release");
     }
     if (state->callback_data) {
         gs_memory_t *mem = state->callback_data->memory;

@@ -178,7 +178,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
                     goto cleanup1;
                 }
                 if (err > 0) {
-                    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "OOB decoding huffman code");
+                    code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "OOB decoding huffman code");
                     goto cleanup1;
                 }
             }
@@ -197,8 +197,10 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
         }
 
         if (index < SBNUMSYMS) {
-            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "runlength codes do not cover the available symbol set");
+            code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "runlength codes do not cover the available symbol set");
+            goto cleanup1;
         }
+
         symcodeparams.HTOOB = 0;
         symcodeparams.lines = symcodelengths;
         symcodeparams.n_lines = SBNUMSYMS;
@@ -219,9 +221,9 @@ cleanup1:
         jbig2_release_huffman_table(ctx, runcodes);
 
         if (SBSYMCODES == NULL) {
-            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to construct symbol ID huffman table");
+            code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to construct symbol ID huffman table");
             jbig2_huffman_free(ctx, hs);
-            return ((code != 0) ? code : -1);
+            return code;
         }
     }
 
@@ -324,7 +326,7 @@ cleanup1:
                 goto cleanup2;
             }
             if (code > 0) {
-                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "OOB obtained when decoding symbol instance T coordinate");
+                code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "OOB obtained when decoding symbol instance T coordinate");
                 goto cleanup2;
             }
             T = STRIPT + CURT;

@@ -519,7 +519,7 @@ end
 
       .currentSMask //null ne {
         % get rid of the current SMask (Bug 695471)
-        false			% colorspace not set
+        //false			% colorspace not set
         << /Subtype /None >>	% Special type for this purpose
         0 0 0 0			% fake BBox
         .begintransparencymaskgroup
@@ -610,7 +610,7 @@ def
   currentcolorspace 4 1 roll .getuseciecolor 4 1 roll
   .swapcolors mark currentcolor counttomark dup 4 add exch roll pop currentcolorspace 4 1 roll .swapcolors
   currentuserparams /OverrideICC get 4 1 roll
-  mark /OverrideICC true .dicttomark setuserparams
+  mark /OverrideICC //true .dicttomark setuserparams
 
   % We can't simply set the group's gstate here because
   % we can't use gsave/grestore. So we actually set it
@@ -1186,13 +1186,13 @@ currentdict end readonly def
           %% If the name is inside_text_m then we are in a text block
           /inside_text_m eq
           }{
-             pop false
+             pop //false
           } ifelse
         }{
-          pop false
+          pop //false
         } ifelse
     }{
-      pop false
+      pop //false
     } ifelse
     %% rearrange the operands, move the boolean to the back
     3 1 roll
@@ -1762,7 +1762,7 @@ currentdict /jp2_csp_dict .undef
             } if
           } ifelse
         }ifelse
-        /ICCProfileNError true def
+        /ICCProfileNError //true def
       }{cleartomark}ifelse
     } if
   } if
@@ -1987,7 +1987,7 @@ currentdict /jp2_csp_dict .undef
           2 copy                         % <<stream dict>> [] loopcount [] loopcount []
           exch
           get                            % <<stream dict>> [] loopcount [] <<>> or -null-
-          dup null eq {
+          dup //null eq {
             pop exch                     % <<stream dict>> [] [] loopcount
             <</Height
             5 index /Height oget         % <<stream dict>> [] [] loopcount << /Height Height
@@ -2231,7 +2231,7 @@ currentdict /last-ditch-bpc-csp undef
     % Note that any SMask in the ExtGState should be reapplied
     % by the next call to setfill(stroke)state AND this relies
     % on our lazy evaulation of SMask groups
-    false << /Subtype /None >> 0 0 0 0 .begintransparencymaskgroup
+    //false << /Subtype /None >> 0 0 0 0 .begintransparencymaskgroup
   } {
     .currentSMask //null ne {
       % the image doesn't have an SMask, but the ExtGState does, force a group.
@@ -2322,8 +2322,8 @@ currentdict /last-ditch-bpc-csp undef
       makemaskimage
   } if
                 % Stack: datasource imagemask
-  { currentdict end setfillstate true ValidateDecode { imagemask } }
-  { ColorSpace setgcolorspace currentdict end setfillblend false ValidateDecode { image } }
+  { currentdict end setfillstate //true ValidateDecode { imagemask } }
+  { ColorSpace setgcolorspace currentdict end setfillblend //false ValidateDecode { image } }
   ifelse
   PDFSTOPONERROR { exec //false } { stopped } ifelse {
     dup type /dicttype eq { pop } if % Sometimes image fails to restore the stack
@@ -2393,11 +2393,39 @@ currentdict /last-ditch-bpc-csp undef
   MakeNewAppearanceName
   .pdfFormName
   //pdfdict /.PreservePDFForm known {//pdfdict /.PreservePDFForm get} {//false}ifelse exch
-  //pdfdict /.PreservePDFForm true .forceput
+  //pdfdict /.PreservePDFForm //true .forceput
   DoForm
   //pdfdict /.PreservePDFForm 3 -1 roll .forceput
   grestore
 } bind executeonly odef
+
+%% We don't want to do any high level forms stuff if the source
+%% is PDF because :
+%% 1) Transparent forms are handled separately and we don't want to ge confused
+%% 2) PDF forms are too llikely to trip over the limitations in our support
+%% 3) Its highly unusual to find a PDF file which uses forms sensibly.
+%%
+%% So we have a special PDF version of execform which doesn't do high level forms.
+
+pdfdict
+/.PDFexecform {
+        % This is a separate operator so that the stacks will be restored
+        % properly if an error occurs.
+  dup /Matrix get concat
+  dup /BBox get aload pop
+  exch 3 index sub exch 2 index sub rectclip
+  dup /PaintProc get
+  1 index /Implementation known not {
+    1 index dup /Implementation //null .forceput readonly pop
+  } executeonly if
+  exec
+} .bind executeonly put
+
+pdfdict
+/PDFexecform {
+  gsave { //.PDFexecform exec } stopped
+  grestore {stop} if
+} .bind executeonly put
 
 /DoForm {
   %% save the current value, if its true we will set it to false later, in order
@@ -2523,7 +2551,7 @@ currentdict /last-ditch-bpc-csp undef
     %% form preservation doesn't really work. This is used just for Annotation
     %% Appearances currently, and if they should happen to use a form, we do not
     %% want to preserve it.
-    //pdfdict /.PreservePDFForm false .forceput
+    //pdfdict /.PreservePDFForm //false .forceput
     /q cvx /execform cvx 5 -2 roll
   } executeonly
   {
@@ -2721,7 +2749,7 @@ drawopdict begin
         //false
       }{
         % We haven't seen it yet, so record it.
-        //pdfdict /Recursive_XObject_D get 1 index null put
+        //pdfdict /Recursive_XObject_D get 1 index //null put
         3 1 roll
         //true
       }ifelse
@@ -2954,27 +2982,27 @@ end
 /annotsetcolor {	% <annot> annotsetcolor bool
   /C knownoget {
     dup length 4 eq {
-      aload pop setcmykcolor true
+      aload pop setcmykcolor //true
     }{
       dup length 3 eq {
-        aload pop setrgbcolor true
+        aload pop setrgbcolor //true
       }{
         dup length 1 eq {
-          aload pop setgray true
+          aload pop setgray //true
         } {
           dup length 0 eq {
             pop
-            false
+            //false
           }{
             (   **** Error: invalid color specified for annotation /C entry)
-            pdfformaterror false
+            pdfformaterror //false
             (               Output may be incorrect.\n) pdfformaterror
           } ifelse
         } ifelse
       } ifelse
     } ifelse
   }
-  { 0 setgray true} ifelse
+  { 0 setgray //true} ifelse
 } bind executeonly def
 
 % Set an annotation color.
@@ -2983,27 +3011,27 @@ end
 /annotsetinteriorcolor {	% <annot> annotsetcolor bool
   /IC knownoget {
     dup length 4 eq {
-      aload pop setcmykcolor true
+      aload pop setcmykcolor //true
     }{
       dup length 3 eq {
-        aload pop setrgbcolor true
+        aload pop setrgbcolor //true
       }{
         dup length 1 eq {
-          aload pop setgray true
+          aload pop setgray //true
         } {
           dup length 0 eq {
             pop
-            false
+            //false
           }{
             (   **** Error: invalid color specified for annotation /C entry)
-            pdfformaterror false
+            pdfformaterror //false
             (               Output may be incorrect.\n) pdfformaterror
           } ifelse
         } ifelse
       } ifelse
     } ifelse
   }
-  { 0 setgray true} ifelse
+  { 0 setgray //true} ifelse
 } bind executeonly def
 
 % Draw the border.  Currently, we ignore requests for beveling, and we
@@ -4260,28 +4288,28 @@ currentdict /set_bc_color undef
 
       dup /C knownoget {
         dup length 4 eq {
-          aload pop setcmykcolor true
+          aload pop setcmykcolor //true
         }{
           dup length 3 eq {
-            aload pop setrgbcolor true
+            aload pop setrgbcolor //true
           }{
             dup length 1 eq {
-              aload pop setgray true
+              aload pop setgray //true
             } {
               dup length 0 eq {
                 pop
-                false
+                //false
               }{
                 (   **** Error: invalid color specified for FreeText annotation /C entry)
                 pdfformaterror
                 (               Output may be incorrect.\n) pdfformaterror
-                false
+                //false
               } ifelse
             } ifelse
           } ifelse
         } ifelse
       }{
-        false
+        //false
       } ifelse
       {dup annotrect
         %% Somewhat horrifyingly, rectfill maps directly to the device fill_rectangle
@@ -4378,7 +4406,7 @@ currentdict /set_bc_color undef
           %% Heuristic to determine the height (ascender to descender) of the text
           %% for when we move down a line.
           gsave
-          /..TextHeight (Hy) false charpath pathbbox exch pop exch sub exch pop def
+          /..TextHeight (Hy) //false charpath pathbbox exch pop exch sub exch pop def
           grestore
           %% and use it immediatley to start the text one line down
           %%
@@ -4822,9 +4850,9 @@ currentdict /drawannottypes undef
 
 /preserveannottypes 20 dict begin
 
-/Circle {mark exch loadannot /ANN pdfmark  false} bind executeonly def
-/FileAttachment {mark exch loadannot /ANN pdfmark  false} bind executeonly def
-/FreeText {mark exch loadannot /ANN pdfmark  false} bind executeonly def
+/Circle {mark exch loadannot /ANN pdfmark  //false} bind executeonly def
+/FileAttachment {mark exch loadannot /ANN pdfmark  //false} bind executeonly def
+/FreeText {mark exch loadannot /ANN pdfmark  //false} bind executeonly def
 
 /Highlight {
   mark exch
@@ -4833,10 +4861,10 @@ currentdict /drawannottypes undef
     ApplyCTMToQuadPoints
     put
   } if
-  loadannot /ANN pdfmark  false
+  loadannot /ANN pdfmark  //false
 } bind executeonly def
 
-/Ink {mark exch loadannot /ANN pdfmark  false} bind executeonly def
+/Ink {mark exch loadannot /ANN pdfmark  //false} bind executeonly def
 
 /Line {
   mark exch dup /L .knownget {
@@ -4844,11 +4872,11 @@ currentdict /drawannottypes undef
     5 -1 roll astore
     1 index /L 3 -1 roll put
   } if
-  loadannot /ANN pdfmark false
+  loadannot /ANN pdfmark //false
 } bind executeonly def
 
 /Link {
-    /NO_PDFMARK_DESTS where {pop NO_PDFMARK_DESTS not}{true}ifelse
+    /NO_PDFMARK_DESTS where {pop NO_PDFMARK_DESTS not}{//true}ifelse
     {
     mark exch
     dup /BS knownoget { << exch { oforce } forall >> /BS exch 3 -1 roll } if
@@ -4932,14 +4960,14 @@ currentdict /drawannottypes undef
       } stopped {cleartomark} if
     } ifelse
     }{pop} ifelse
-    false
+    //false
 } bind executeonly def
 
-/Movie {mark exch loadannot /ANN pdfmark  false} bind executeonly def
-/Popup {mark exch loadannot /ANN pdfmark  false} bind executeonly def
-/Sound {mark exch loadannot /ANN pdfmark  false} bind executeonly def
-/Square {mark exch loadannot /ANN pdfmark false} bind executeonly def
-/Stamp {mark exch loadannot /ANN pdfmark  false} bind executeonly def
+/Movie {mark exch loadannot /ANN pdfmark  //false} bind executeonly def
+/Popup {mark exch loadannot /ANN pdfmark  //false} bind executeonly def
+/Sound {mark exch loadannot /ANN pdfmark  //false} bind executeonly def
+/Square {mark exch loadannot /ANN pdfmark //false} bind executeonly def
+/Stamp {mark exch loadannot /ANN pdfmark  //false} bind executeonly def
 
 /StrikeOut {
   mark exch
@@ -4948,7 +4976,7 @@ currentdict /drawannottypes undef
     ApplyCTMToQuadPoints
     put
   } if
-  loadannot /ANN pdfmark  false
+  loadannot /ANN pdfmark  //false
 } bind executeonly def
 
 /Squiggly {
@@ -4958,11 +4986,11 @@ currentdict /drawannottypes undef
     ApplyCTMToQuadPoints
     put
   } if
-  loadannot /ANN pdfmark  false
+  loadannot /ANN pdfmark  //false
 } bind executeonly def
 
-/Text {mark exch loadannot /ANN pdfmark  false} bind executeonly def
-/TrapNet {mark exch loadannot /ANN pdfmark  false} bind executeonly def
+/Text {mark exch loadannot /ANN pdfmark  //false} bind executeonly def
+/TrapNet {mark exch loadannot /ANN pdfmark  //false} bind executeonly def
 
 /Underline {
   mark exch
@@ -4971,7 +4999,7 @@ currentdict /drawannottypes undef
     ApplyCTMToQuadPoints
     put
   } if
-  loadannot /ANN pdfmark  false
+  loadannot /ANN pdfmark  //false
 } bind executeonly def
 
 %% Widget annotations are only used with AcroForms, and since we don't preserve AcroForms
@@ -4979,7 +5007,7 @@ currentdict /drawannottypes undef
 %% PDF won't know what values they should take. So we draw widget annotations instead. If we
 %% ever preserve AcroForms then we should alter this to preserve Widgets as well.
 %% simply chane "drawannot" to "mark exch loadannot /ANN pdfmark"
-/Widget {mark exch {drawannot} PDFSTOPONERROR {exec}{stopped {(Error: Ignoring invalid annotation, output may be incorrect.\n) pdfformaterror} if} ifelse cleartomark false} bind executeonly def
+/Widget {mark exch {drawannot} PDFSTOPONERROR {exec}{stopped {(Error: Ignoring invalid annotation, output may be incorrect.\n) pdfformaterror} if} ifelse cleartomark //false} bind executeonly def
 
 currentdict end readonly def
 

@@ -268,6 +268,9 @@ gxpssanitize:
 gpdfsanitize:
 	$(MAKE) $(SANITIZEMAKEOPTS) .pdfsubtarget
 
+gpdlsanitize:
+	$(MAKE) $(SANITIZEMAKEOPTS) .gpdlsubtarget
+
 sanitizeclean:
 	$(MAKE) $(SANITIZEMAKEOPTS) cleansub
 

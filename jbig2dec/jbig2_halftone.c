@@ -325,7 +325,7 @@ jbig2_decode_gray_scale_image(Jbig2Ctx *ctx, Jbig2Segment *segment,
 
         code = jbig2_decode_generic_region(ctx, segment, &rparams, as, GSPLANES[GSBPP - 1], GB_stats);
     }
-    if (code != 0) {
+    if (code < 0) {
         jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "error decoding GSPLANES for halftone image");
         goto cleanup;
     }
@@ -341,7 +341,7 @@ jbig2_decode_gray_scale_image(Jbig2Ctx *ctx, Jbig2Segment *segment,
         } else {
             code = jbig2_decode_generic_region(ctx, segment, &rparams, as, GSPLANES[j], GB_stats);
         }
-        if (code != 0) {
+        if (code < 0) {
             jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to decode GSPLANES for halftone image");
             goto cleanup;
         }

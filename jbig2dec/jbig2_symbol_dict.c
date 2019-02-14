@@ -1043,7 +1043,7 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
             jbig2_free(ctx->allocator, GB_stats);
             goto cleanup;
         }
-        memset(GR_stats, 0, stats_size);
+        memset(GR_stats, 0, sizeof (Jbig2ArithCx) * stats_size);
     }
 
     segment->result = (void *)jbig2_decode_symbol_dict(ctx, segment, &params, segment_data + offset, segment->data_length - offset, GB_stats, GR_stats);

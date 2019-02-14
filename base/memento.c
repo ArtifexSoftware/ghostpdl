@@ -1255,14 +1255,19 @@ static int Memento_appBlock(Memento_Blocks    *blks,
 }
 #endif /* MEMENTO_LEAKONLY */
 
-static void showBlock(Memento_BlkHeader *b, int space)
+static int showBlock(Memento_BlkHeader *b, int space)
 {
+    int seq;
+    VALGRIND_MAKE_MEM_DEFINED(b, sizeof(Memento_BlkHeader));
     fprintf(stderr, "0x%p:(size=" FMTZ ",num=%d)",
             MEMBLK_TOBLK(b), (FMTZ_CAST)b->rawsize, b->sequence);
     if (b->label)
         fprintf(stderr, "%c(%s)", space, b->label);
     if (b->flags & Memento_Flag_KnownLeak)
         fprintf(stderr, "(Known Leak)");
+    seq = b->sequence;
+    VALGRIND_MAKE_MEM_NOACCESS(b, sizeof(Memento_BlkHeader));
+    return seq;
 }
 
 static void blockDisplay(Memento_BlkHeader *b, int n)
@@ -1291,7 +1296,9 @@ static int Memento_listBlock(Memento_BlkHeader *b,
     size_t *counts = (size_t *)arg;
     blockDisplay(b, 0);
     counts[0]++;
+    VALGRIND_MAKE_MEM_DEFINED(b, sizeof(Memento_BlkHeader));
     counts[1]+= b->rawsize;
+    VALGRIND_MAKE_MEM_NOACCESS(b, sizeof(Memento_BlkHeader));
     return 0;
 }
 
@@ -1300,15 +1307,19 @@ static void doNestedDisplay(Memento_BlkHeader *b,
 {
     /* Try and avoid recursion if we can help it */
     do {
+        Memento_BlkHeader *c = NULL;
         blockDisplay(b, depth);
+        VALGRIND_MAKE_MEM_DEFINED(b, sizeof(Memento_BlkHeader));
         if (b->sibling) {
-            if (b->child)
-                doNestedDisplay(b->child, depth+1);
+            c = b->child;
             b = b->sibling;
         } else {
             b = b->child;
             depth++;
         }
+        VALGRIND_MAKE_MEM_NOACCESS(b, sizeof(Memento_BlkHeader));
+        if (c)
+            doNestedDisplay(c, depth+1);
     } while (b);
 }
 
@@ -2621,9 +2632,11 @@ static int Memento_Internal_checkAllFreed(Memento_BlkHeader *memblk, void *arg)
                         (data->preCorrupt ? "+" : ""));
             }
         }
+        VALGRIND_MAKE_MEM_DEFINED(memblk, sizeof(Memento_BlkHeader));
         fprintf(stderr, " corrupted.\n"
                 "    Block last checked OK at allocation %d. Now %d.\n",
                 memblk->lastCheckedOK, memento.sequence);
+        VALGRIND_MAKE_MEM_NOACCESS(memblk, sizeof(Memento_BlkHeader));
         data->preCorrupt  = 0;
         data->postCorrupt = 0;
         data->freeCorrupt = 0;
@@ -2702,6 +2715,7 @@ int Memento_check(void)
 int Memento_find(void *a)
 {
     findBlkData data;
+    int s;
 
     MEMENTO_LOCK();
     data.addr  = a;
@@ -2713,10 +2727,10 @@ int Memento_find(void *a)
                 data.addr,
                 (data.flags == 1 ? "" : (data.flags == 2 ?
                                          "preguard of " : "postguard of ")));
-        showBlock(data.blk, ' ');
+        s = showBlock(data.blk, ' ');
         fprintf(stderr, "\n");
         MEMENTO_UNLOCK();
-        return data.blk->sequence;
+        return s;
     }
     data.blk   = NULL;
     data.flags = 0;
@@ -2726,10 +2740,10 @@ int Memento_find(void *a)
                 data.addr,
                 (data.flags == 1 ? "" : (data.flags == 2 ?
                                          "preguard of " : "postguard of ")));
-        showBlock(data.blk, ' ');
+        s = showBlock(data.blk, ' ');
         fprintf(stderr, "\n");
         MEMENTO_UNLOCK();
-        return data.blk->sequence;
+        return s;
     }
     MEMENTO_UNLOCK();
     return 0;
@@ -2751,7 +2765,9 @@ void Memento_breakOnFree(void *a)
                                          "preguard of " : "postguard of ")));
         showBlock(data.blk, ' ');
         fprintf(stderr, ") is freed\n");
+        VALGRIND_MAKE_MEM_DEFINED(data.blk, sizeof(Memento_BlkHeader));
         data.blk->flags |= Memento_Flag_BreakOnFree;
+        VALGRIND_MAKE_MEM_NOACCESS(data.blk, sizeof(Memento_BlkHeader));
         MEMENTO_UNLOCK();
         return;
     }
@@ -2788,7 +2804,9 @@ void Memento_breakOnRealloc(void *a)
                                          "preguard of " : "postguard of ")));
         showBlock(data.blk, ' ');
         fprintf(stderr, ") is freed (or realloced)\n");
+        VALGRIND_MAKE_MEM_DEFINED(data.blk, sizeof(Memento_BlkHeader));
         data.blk->flags |= Memento_Flag_BreakOnFree | Memento_Flag_BreakOnRealloc;
+        VALGRIND_MAKE_MEM_NOACCESS(data.blk, sizeof(Memento_BlkHeader));
         MEMENTO_UNLOCK();
         return;
     }

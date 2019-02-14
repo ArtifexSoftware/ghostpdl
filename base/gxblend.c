@@ -1567,13 +1567,14 @@ template_compose_group(byte *gs_restrict tos_ptr, bool tos_isolated,
             if (has_matte && matte_alpha != 0 && matte_alpha < 0xff) {
                 for (i = 0; i < n_chan; i++) {
                     /* undo */
-                    int val = (tos_ptr[i * tos_planestride] - maskbuf->matte[i] < 0 ?
-                        0 : tos_ptr[i * tos_planestride] - maskbuf->matte[i]);
+                    int val = tos_ptr[i * tos_planestride] - maskbuf->matte[i];
                     int temp = ((((val * 0xff) << 8) / matte_alpha) >> 8) + maskbuf->matte[i];
 
                     /* clip */
                     if (temp > 0xff)
                         tos_pixel[i] = 0xff;
+                    else if (temp < 0)
+                        tos_pixel[i] = 0;
                     else
                         tos_pixel[i] = temp;
 

@@ -62,7 +62,7 @@ extern const stream_template s_jbig2decode_template;
 
 /* call ins to process the JBIG2Globals parameter */
 int
-s_jbig2decode_make_global_data(byte *data, uint length, void **result);
+s_jbig2decode_make_global_data(gs_memory_t *mem, byte *data, uint length, void **result);
 int
 s_jbig2decode_set_global_data(stream_state *ss, s_jbig2_global_data_t *gd);
 void

@@ -478,6 +478,8 @@ gs_screen_enum_init_memory(gs_screen_enum * penum, const gx_ht_order * porder,
                            gs_gstate * pgs, const gs_screen_halftone * phsp,
                            gs_memory_t * mem)
 {
+    int code;
+
     penum->pgs = pgs;           /* ensure clean for GC */
     if (&penum->order != porder) /* Pacify Valgrind */
         penum->order = *porder;
@@ -518,13 +520,13 @@ gs_screen_enum_init_memory(gs_screen_enum * penum, const gx_ht_order * porder,
         penum->mat.yy = Q * (R1 * M);
         penum->mat.tx = -1.0;
         penum->mat.ty = -1.0;
-        gs_matrix_invert(&penum->mat, &penum->mat_inv);
+        code = gs_matrix_invert(&penum->mat, &penum->mat_inv);
     }
     if_debug7('h', "[h]Screen: (%dx%d)/%d [%f %f %f %f]\n",
               porder->width, porder->height, porder->params.R,
               penum->mat.xx, penum->mat.xy,
               penum->mat.yx, penum->mat.yy);
-    return 0;
+    return code;
 }
 
 /* Report current point for sampling */

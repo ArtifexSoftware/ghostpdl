@@ -25,7 +25,6 @@
 #include "strimpl.h"
 #include "slzwx.h"
 #include "szlibx.h"
-#include "jpeglib.h"
 #include "sdct.h"
 #include "srlx.h"
 #include "gsicc_cache.h"

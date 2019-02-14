@@ -141,17 +141,6 @@ gx_default_text_begin(gx_device * dev, gs_gstate * pgs1,
     }
     penum->auto_release = false; /* new API */
     penum->level = pgs->level;
-    if (operation & TEXT_DO_ANY_CHARPATH)
-        penum->charpath_flag =
-            (operation & TEXT_DO_FALSE_CHARPATH ? cpm_false_charpath :
-             operation & TEXT_DO_TRUE_CHARPATH ? cpm_true_charpath :
-             operation & TEXT_DO_FALSE_CHARBOXPATH ? cpm_false_charboxpath :
-             operation & TEXT_DO_TRUE_CHARBOXPATH ? cpm_true_charboxpath :
-             operation & TEXT_DO_CHARWIDTH ? cpm_charwidth :
-             cpm_show /* can't happen */ );
-    else
-        penum->charpath_flag =
-            (propagate_charpath ? pgs->in_charpath : cpm_show);
     penum->cc = 0;
     penum->continue_proc = continue_show;
     switch (penum->charpath_flag) {

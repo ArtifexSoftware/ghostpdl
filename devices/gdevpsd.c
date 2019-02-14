@@ -833,7 +833,9 @@ psd_put_params_generic(gx_device * pdev, gs_param_list * plist, int cmyk)
 
     if (code >= 0)
         code = param_read_name(plist, "ProcessColorModel", &pcm);
-    if (code == 0) {
+
+    /* Bug 696318.  Don't allow process color model change for RGB device */
+    if (code == 0 && color_model != psd_DEVICE_RGB) {
         if (param_string_eq (&pcm, "DeviceGray"))
             color_model = psd_DEVICE_GRAY;
         else if (param_string_eq (&pcm, "DeviceRGB"))
@@ -940,7 +942,8 @@ psd_setup(psd_write_ctx *xc, gx_devn_prn_device *dev, FILE *file, int w, int h)
     }
     xc->base_num_channels = dev->devn_params.num_std_colorant_names;
     xc->num_channels = i;
-    if (dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
+    if (dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE
+        && strcmp(dev->dname, "psdcmykog") != 0) {
         if (dev->devn_params.num_separation_order_names == 0) {
             xc->n_extra_channels = dev->devn_params.separations.num_separations;
         } else {
@@ -972,7 +975,8 @@ psd_setup(psd_write_ctx *xc, gx_devn_prn_device *dev, FILE *file, int w, int h)
         xc->chnl_to_orig_sep[i] = i;
     }
     /* If we had a specify order name, then we may need to adjust things */
-    if (dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
+    if (dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE &&
+        strcmp(dev->dname, "psdcmykog") != 0) {
         if (dev->devn_params.num_separation_order_names > 0) {
             for (i = 0; i < dev->devn_params.num_separation_order_names; i++) {
                 int sep_order_num = dev->devn_params.separation_order_map[i];

@@ -336,8 +336,11 @@ pcl_font_header(pcl_args_t * pargs, pcl_state_t * pcs)
     /* Create the generic font information. */
     plfont = pl_alloc_font(mem, "pcl_font_header(pl_font_t)");
     header = gs_alloc_bytes(mem, count, "pcl_font_header(header)");
-    if (plfont == 0 || header == 0)
+    if (plfont == NULL || header == NULL) {
+        gs_free_object(mem, header, "pcl_font_header(header)");
+        gs_free_object(mem, plfont, "pcl_font_header(pl_font_t)");
         return_error(e_Memory);
+    }
     memcpy(header, data, count);
     plfont->storage = pcds_temporary;
     plfont->data_are_permanent = false;
@@ -356,7 +359,7 @@ pcl_font_header(pcl_args_t * pargs, pcl_state_t * pcs)
     code = pl_font_alloc_glyph_table(plfont, 256, mem,
                                      "pcl_font_header(char table)");
     if (code < 0)
-        return code;
+        goto fail;
     /* Create the actual font. */
     switch (fst) {
         case plfst_bitmap:
@@ -366,13 +369,15 @@ pcl_font_header(pcl_args_t * pargs, pcl_state_t * pcs)
               bitmap:pfont = gs_alloc_struct(mem, gs_font_base, &st_gs_font_base,
                                         "pcl_font_header(bitmap font)");
 
-                if (pfont == 0)
-                    return_error(e_Memory);
+                if (pfont == NULL) {
+                    code = e_Memory;
+                    goto fail;
+                }
                 code =
                     pl_fill_in_font((gs_font *) pfont, plfont, pcs->font_dir,
                                     mem, "nameless_font");
                 if (code < 0)
-                    return code;
+                    goto fail;
                 pl_fill_in_bitmap_font(pfont, gs_next_ids(mem, 1));
                 /* Extract parameters from the font header. */
                 if (pfh->HeaderFormat == pcfh_resolution_bitmap) {
@@ -423,7 +428,7 @@ pcl_font_header(pcl_args_t * pargs, pcl_state_t * pcs)
                                               pfh->HeaderFormat ==
                                               pcfh_truetype_large, &errors);
                     if (code < 0)
-                        return code;
+                        goto fail;
                     /* truetype large format 16 can be truetype or bitmap -
                        absurd */
                     if ((pfh->HeaderFormat == pcfh_truetype_large) &&
@@ -434,8 +439,10 @@ pcl_font_header(pcl_args_t * pargs, pcl_state_t * pcs)
                 pfont =
                     gs_alloc_struct(mem, gs_font_type42, &st_gs_font_type42,
                                     "pcl_font_header(truetype font)");
-                if (pfont == 0)
-                    return_error(e_Memory);
+                if (pfont == NULL) {
+                    code = e_Memory;
+                    goto fail;
+                }
 
                 {
                     uint num_chars = pl_get_uint16(pfh->LastCode);
@@ -447,16 +454,16 @@ pcl_font_header(pcl_args_t * pargs, pcl_state_t * pcs)
                     code = pl_tt_alloc_char_glyphs(plfont, num_chars, mem,
                                                    "pcl_font_header(char_glyphs)");
                     if (code < 0)
-                        return code;
+                        goto fail;
                 }
                 code =
                     pl_fill_in_font((gs_font *) pfont, plfont, pcs->font_dir,
                                     mem, "nameless_font");
                 if (code < 0)
-                    return code;
+                    goto fail;
                 code = pl_fill_in_tt_font(pfont, NULL, gs_next_ids(mem, 1));
                 if (code < 0)
-                    return code;
+                    goto fail;
                 {
                     uint pitch_cp =
                         (uint) (pl_get_uint16(pfh->Pitch) * 1000.0 /
@@ -471,13 +478,15 @@ pcl_font_header(pcl_args_t * pargs, pcl_state_t * pcs)
                     gs_alloc_struct(mem, gs_font_base, &st_gs_font_base,
                                     "pcl_font_header(bitmap font)");
 
-                if (pfont == 0)
-                    return_error(e_Memory);
+                if (pfont == NULL) {
+                    code = e_Memory;
+                    goto fail;
+                }
                 code =
                     pl_fill_in_font((gs_font *) pfont, plfont, pcs->font_dir,
                                     mem, "nameless_font");
                 if (code < 0)
-                    return code;
+                    goto fail;
                 pl_fill_in_intelli_font(pfont, gs_next_ids(mem, 1));
                 {
                     uint pitch_cp =
@@ -487,12 +496,15 @@ pcl_font_header(pcl_args_t * pargs, pcl_state_t * pcs)
                 break;
             }
         default:
-            return_error(gs_error_invalidfont); /* can't happen */
+            code = gs_error_invalidfont; /* can't happen */
+            goto fail;
     }
     /* Extract common parameters from the font header. */
     plfont->params.symbol_set = pl_get_uint16(pfh->SymbolSet);
-    if (pfh->Spacing > 1)
-        return_error(e_Range);
+    if (pfh->Spacing > 1) {
+        code = e_Range;
+        goto fail;
+    }
     plfont->params.proportional_spacing = pfh->Spacing;
     plfont->params.style = (pfh->StyleMSB << 8) + pfh->StyleLSB;
     plfont->params.stroke_weight =      /* signed byte */
@@ -504,15 +516,19 @@ pcl_font_header(pcl_args_t * pargs, pcl_state_t * pcs)
     code = pl_dict_put(&pcs->soft_fonts, current_font_id,
                 current_font_id_size, plfont);
     if (code < 0)
-        return code;
+        goto fail;
     plfont->pfont->procs.define_font = gs_no_define_font;
 
     if ((code = gs_definefont(pcs->font_dir, plfont->pfont)) != 0) {
-        return (code);
+        goto fail;
     }
 
     if (plfont->scaling_technology == plfst_TrueType)
         code = pl_fapi_passfont(plfont, 0, NULL, NULL, NULL, 0);
+
+fail:
+    if (code < 0)
+        pl_free_font(mem, plfont, "pcl_font_header(pl_font_t)");
 
     return (code);
 }

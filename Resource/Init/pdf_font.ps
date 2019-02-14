@@ -197,7 +197,7 @@ currentdict /known_symbolic_fonts undef
         } if
       } if
       exch pop /Subtype knownoget {/Type1C eq}{//false} ifelse
-      exch /Flags knownoget {4 and 4 eq not}{false}ifelse and
+      exch /Flags knownoget {4 and 4 eq not}{//false}ifelse and
     } {//false} ifelse
 
     1 index /FontType get 2 eq and
@@ -695,7 +695,7 @@ currentdict end readonly def
               exch pop exch                        % font-res font-dict g2u encoding|null
               userdict /.lastToUnicode get         % font-res font-dict g2u Encoding|null CMap
               .convert_ToUnicode-into-g2u          % font-res font-dict
-              //null                               % font-res font-dict null
+              //null                               % font-res font-dict //null
             } ifelse
           } ifelse
         } if
@@ -1220,7 +1220,7 @@ currentdict /eexec_pdf_param_dict .undef
             %% below will fail. It would be nice to fix the cases of this someday, but
             %% we use 'nodict'[ to store other PDF state stuff that isn't gstate, and we
             %% probably always will, so it may well be more trouble than its worth.
-            /Dummy false gput
+            /Dummy //false gput
             Font /Resources get exch pdfopdict
             /BuildCharDictDepth countdictstack def
             .pdfruncontext

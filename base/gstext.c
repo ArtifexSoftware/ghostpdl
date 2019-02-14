@@ -149,6 +149,9 @@ gx_device_text_begin(gx_device * dev, gs_gstate * pgs,
 static int
 gs_text_enum_init_dynamic(gs_text_enum_t *pte, gs_font *font)
 {
+    uint operation = pte->text.operation;
+    bool propagate_charpath = (operation & TEXT_DO_DRAW) != 0;
+
     pte->current_font = font;
     pte->index = 0;
     pte->xy_index = 0;
@@ -158,6 +161,23 @@ gs_text_enum_init_dynamic(gs_text_enum_t *pte, gs_font *font)
     pte->outer_CID = GS_NO_GLYPH;
     pte->single_byte_space = false;
     pte->cc = NULL;
+
+    /* We need to set the charpath_flag, as the PCL interpreter calls the
+     * graphics lib to do some measurement operations, which relies on the
+     * charpath_flag. See bug 700577 for more details. */
+    if (operation & TEXT_DO_ANY_CHARPATH)
+        pte->charpath_flag =
+            (operation & TEXT_DO_FALSE_CHARPATH ? cpm_false_charpath :
+             operation & TEXT_DO_TRUE_CHARPATH ? cpm_true_charpath :
+             operation & TEXT_DO_FALSE_CHARBOXPATH ? cpm_false_charboxpath :
+             operation & TEXT_DO_TRUE_CHARBOXPATH ? cpm_true_charboxpath :
+             operation & TEXT_DO_CHARWIDTH ? cpm_charwidth :
+             cpm_show /* can't happen */ );
+    else
+        pte->charpath_flag =
+        (propagate_charpath ? (pte->pgs ? pte->pgs->in_charpath : 0) : cpm_show);
+    pte->is_pure_color = pte->pgs ? gs_color_writes_pure(pte->pgs) : 0;
+
     return font->procs.init_fstack(pte, font);
 }
 int

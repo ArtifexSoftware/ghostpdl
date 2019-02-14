@@ -1302,6 +1302,42 @@ patch_color_to_device_color_inline(const patch_fill_state_t *pfs,
     int code;
     gx_device_color devc;
 
+#ifdef PACIFY_VALGRIND
+    /* This is a hack to get us around some valgrind warnings seen
+     * when transparency is in use with the clist. We run through
+     * the shading code dealing with pfs->num_components components.
+     * I believe this is intended to match the source space of the
+     * shading, as we have to perform all shadings in the source
+     * space initially, and only convert after decomposition.
+     * When this reaches down to the clist writing phase, the
+     * clist writes pfs->dev->color_info.num_components color
+     * components to the clist. In the example I am using
+     *  pfs->num_components = 1
+     *  pfs->dev->color_info.num_components=3
+     * So valgrind complains that 2 of the 3 color components
+     * it is writing are uninitialised. Magically, it appears
+     * not to actually use them when read back though, so
+     * it suffices to blank them to kill the warnings now.
+     * If pfs->num_components > pfs->dev->color_info.num_components
+     * then we'll not be writing enough information to the clist
+     * and so hopefully we'll see bad rendering!
+     *
+     * An example that shows why this is required:
+     *  make gsdebugvg
+     *  valgrind --track-origins=yes debugbin/gs -sOutputFile=test.ps
+     *    -dMaxBitmap=1000 -sDEVICE=ps2write  -r300  -Z: -dNOPAUSE
+     *    -dBATCH -K2000000 -dClusterJob Bug693480.pdf
+     * (though ps2write is not implicated here).
+     */
+     if (frac_values) {
+        int i;
+	int n = pfs->dev->color_info.num_components;
+	for (i = pfs->num_components; i < n; i++) {
+            frac_values[i] = 0;
+	}
+    }
+#endif
+
     if (DEBUG_COLOR_INDEX_CACHE && pdevc == NULL)
         pdevc = &devc;
     if (pfs->pcic) {

@@ -116,7 +116,7 @@ currentdict /PDFSTEP known /PDFSTEP exch def
 PDFSTEP { /PDFDEBUG //true def } if
 
 currentdict /PDFSTOPONERROR known /PDFSTOPONERROR exch def
-currentdict /PDFSTOPONWARNING known {/PDFSTOPONWARNING true def /PDFSTOPONERROR true def}{/PDFSTOPONWARNING false def} ifelse
+currentdict /PDFSTOPONWARNING known {/PDFSTOPONWARNING //true def /PDFSTOPONERROR //true def}{/PDFSTOPONWARNING //false def} ifelse
 currentdict /PDFNOCIDFALLBACK known /PDFNOCIDFALLBACK exch def
 /.bind /bind load def
 
@@ -147,7 +147,7 @@ currentdict /PDFNOCIDFALLBACK known /PDFNOCIDFALLBACK exch def
 % ancient and no longer maintained piece of softare, did check
 % its value unconditionally. So we retain this key in the dictionary
 % purely for backward compatibility.
-/NOBIND false def
+/NOBIND //false def
 
 currentdict /BATCH known   /BATCH exch def
 currentdict /DELAYBIND known   /DELAYBIND exch def
@@ -2285,6 +2285,10 @@ SAFER { .setsafeglobal } if
   /.substitutefont /.substitutefontname
   /.FontDirectory
   /.charkeys
+  /.makesfnts
+  /.pickcmap
+  /.loadttcidfont
+  /.loadpdfttfont
 
   % Used by a free user in the Library of Congress. Apparently this is used to
   % draw a partial page, which is then filled in by the results of a barcode

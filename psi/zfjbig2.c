@@ -104,7 +104,7 @@ z_jbig2makeglobalctx(i_ctx_t * i_ctx_p)
         size = gs_object_size(imemory, op->value.pstruct);
         data = r_ptr(op, byte);
 
-        code = s_jbig2decode_make_global_data(data, size,
+        code = s_jbig2decode_make_global_data(imemory->non_gc_memory, data, size,
                         &global);
         if (size > 0 && global == NULL) {
             dmlprintf(imemory, "failed to create parsed JBIG2GLOBALS object.");

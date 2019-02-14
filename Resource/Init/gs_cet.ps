@@ -24,10 +24,10 @@ currentglobal //true setglobal
   /product (PhotoPRINT SE 5.0v2) readonly put	% match CPSI 3017.102
   /revision 0 put			% match CPSI 3017.103 Tek shows revision 5
   /serialnumber dup {233640} readonly .makeoperator put % match CPSI 3017.102 Tek shows serialnumber 1401788461
-%  /UNROLLFORMS true put                 % CET files do unreasonable things inside forms
+%  /UNROLLFORMS //true put                 % CET files do unreasonable things inside forms
 } 1183615869 internaldict /superexec get exec
 
-/UNROLLFORMS true def
+/UNROLLFORMS //true def
 
 (%.defaultbgrucrproc) cvn { } bind def
 

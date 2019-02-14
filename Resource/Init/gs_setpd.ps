@@ -792,7 +792,7 @@ SETPDDEBUG { (Finishing.) = pstack flush } if
                 % (to satisfy the WordPerfect bug).
    dup /..StartupGlobal known
    {
-       currentglobal exch true setglobal
+       currentglobal exch //true setglobal
        dup /..StartupGlobal undef
    } {
                 % ensure that we are always in local VM mode to avoid
@@ -801,7 +801,7 @@ SETPDDEBUG { (Finishing.) = pstack flush } if
                 % (see .makecurrentpagdevice) and we can't store local objects
                 % in a global object, so we must ensure teh dictionary returned
                 % from currentpagedevice is in local VM.
-     currentglobal exch false setglobal
+     currentglobal exch //false setglobal
    } ifelse
 
    %% We used to execute endpage after .tsrysetparams, but that actually alters

@@ -55,24 +55,28 @@ private_st_jbig2decode_state();
 
 /* our implementation of the "parsed" /JBIG2Globals filter parameter */
 typedef struct s_jbig2decode_global_data_s {
+    gs_memory_t *mem;
     unsigned char *data;
     unsigned long size;
 } s_jbig2decode_global_data;
 
 /* create a global data struct and copy data into it */
 int
-s_jbig2decode_make_global_data(byte *data, uint size, void **result)
+s_jbig2decode_make_global_data(gs_memory_t *mem, byte *data, uint size, void **result)
 {
     s_jbig2decode_global_data *global = NULL;
 
-    global = malloc(sizeof(*global));
+    global = gs_alloc_bytes(mem, sizeof (*global), "s_jbig2decode_make_global_data(global)");
     if (global == NULL) return_error(gs_error_VMerror);
 
-    global->data = malloc(size);
+    global->mem = mem;
+
+    global->data = gs_alloc_bytes(global->mem, size, "s_jbig2decode_make_global_data(global_data)");
     if (global->data == NULL) {
-        free(global);
+        gs_free_object(global->mem, global, "s_jbig2decode_make_global_data(global)");
         return_error(gs_error_VMerror);
     }
+
     memcpy(global->data, data, size);
     global->size = size;
 
@@ -87,10 +91,11 @@ s_jbig2decode_free_global_data(void *data)
     s_jbig2decode_global_data *global = (s_jbig2decode_global_data*)data;
 
     if (global->size && global->data) {
-        free(global->data);
+        gs_free_object(global->mem, global->data, "s_jbig2decode_free_global_data(global_data)");
         global->size = 0;
     }
-    free(global);
+
+    gs_free_object(global->mem, global, "s_jbig2decode_free_global_data(global)");
 }
 
 /* store a global ctx pointer in our state structure */
@@ -131,15 +136,16 @@ s_jbig2_invert_buffer(unsigned char *buf, int length)
 static void * JB2_Callback
 s_jbig2_alloc(unsigned long size, void *userdata)
 {
-    void *result = malloc(size);
-    return result;
+    gs_memory_t *mem = (gs_memory_t *) userdata;
+    return gs_alloc_bytes(mem, size, "s_jbig2_alloc");
 }
 
 /* memory release */
 static JB2_Error JB2_Callback
 s_jbig2_free(void *ptr, void *userdata)
 {
-    free(ptr);
+    gs_memory_t *mem = (gs_memory_t *) userdata;
+    gs_free_object(mem, ptr, "s_jbig2_free");
     return cJB2_Error_OK;
 }
 
@@ -312,8 +318,8 @@ s_jbig2decode_process(stream_state * ss, stream_cursor_read * pr,
 
             /* initialize the codec state and pass our callbacks */
             error = JB2_Document_Start( &(state->doc),
-                s_jbig2_alloc, ss,	/* alloc and its data */
-                s_jbig2_free, ss, 	/* free and its data */
+                s_jbig2_alloc, ss->memory->non_gc_memory,	/* alloc and its data */
+                s_jbig2_free, ss->memory->non_gc_memory,	/* free and its data */
                 s_jbig2_read, ss,	/* read callback and data */
                 s_jbig2_message, ss);   /* message callback and data */
             if (error != cJB2_Error_OK) return ERRC;
@@ -404,8 +410,8 @@ s_jbig2encode_start(stream_jbig2encode_state *state)
 
     /* initialize the compression handle */
     err = JB2_Compress_Start(&(state->cmp),
-        s_jbig2_alloc, state,	/* alloc and its parameter data */
-        s_jbig2_free,  state,	/* free callback */
+        s_jbig2_alloc, state->memory,	/* alloc and its parameter data */
+        s_jbig2_free,  state->memory,	/* free callback */
         s_jbig2_message, state);/* message callback */
     if (err != cJB2_Error_OK) return err;
 

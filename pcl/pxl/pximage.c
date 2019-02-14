@@ -94,10 +94,10 @@ typedef enum
     delta  = 8,
 } decomp_init_t;
 
-static inline bool nocomp_init(uint comp)  {return comp & nocomp;}
-static inline bool rle_init(uint comp)     {return comp & rle;}
-static inline bool jpeg_init(uint comp)    {return comp & jpeg;}
-static inline bool delta_init(uint comp)   {return comp & delta;}
+static inline bool nocomp_inited(uint comp)  {return comp & nocomp;}
+static inline bool rle_inited(uint comp)     {return comp & rle;}
+static inline bool jpeg_inited(uint comp)    {return comp & jpeg;}
+static inline bool delta_inited(uint comp)   {return comp & delta;}
 
 static inline void nocomp_set(uint *comp) {*comp |= nocomp;}
 static inline void rle_set(uint *comp)    {*comp |= rle;}
@@ -192,7 +192,7 @@ px_jpeg_init(px_bitmap_enum_t * benum, px_bitmap_params_t * params, px_args_t * 
     uint avail = par->source.available;
     int code = 0;
 
-    if (!jpeg_init(benum->initialized)) {
+    if (!jpeg_inited(benum->initialized)) {
         s_init_state((stream_state *)ss, &s_DCTD_template, benum->mem);
         ss->report_error = stream_error;
         s_DCTD_template.set_defaults((stream_state *)ss);
@@ -265,7 +265,7 @@ begin_bitmap(px_bitmap_params_t * params, px_bitmap_enum_t * benum,
     px_gstate_t *pxgs = pxs->pxgs;
 
     benum->mem = pxs->memory;
-    benum->grayscale = false;
+
     if (is_jpeg) {
         int code = px_jpeg_init(benum, params, par);
         if (code < 0 || code == pxNeedData)
@@ -347,7 +347,7 @@ read_jpeg_bitmap_data(px_bitmap_enum_t * benum, byte ** pdata,
     /* consumed all of the data */
     if ((par->source.position >= end_pos) && (ss->phase != 4) && (par->source.available == 0)) {
         /* shutdown jpeg filter if necessary */
-        if (jpeg_init(benum->initialized))
+        if (jpeg_inited(benum->initialized))
             gs_jpeg_destroy((&benum->dct_stream_state));
         return 0;
     }
@@ -355,7 +355,7 @@ read_jpeg_bitmap_data(px_bitmap_enum_t * benum, byte ** pdata,
     if (last)
         return_error(errorIllegalDataLength);
 
-    if (!jpeg_init(benum->initialized)) {
+    if (!jpeg_inited(benum->initialized)) {
         jpeg_decompress_data *jddp = &(benum->jdd);
 
         /* we do not allow switching from other compression schemes to jpeg */
@@ -490,7 +490,7 @@ read_rle_bitmap_data(px_bitmap_enum_t * benum, byte ** pdata, px_args_t * par, b
     if (last)
         return_error(errorIllegalDataLength);
 
-    if (!rle_init(benum->initialized)) {
+    if (!rle_inited(benum->initialized)) {
         ss->EndOfData = false;
         ss->templat = &s_RLD_template;
         s_RLD_init_inline(ss);
@@ -589,7 +589,7 @@ read_deltarow_bitmap_data(px_bitmap_enum_t * benum, byte ** pdata,
     const byte *pout_start = pout;
     bool end_of_row = false;
 
-    if (delta_init(benum->initialized) && deltarow->rowwritten == par->pv[1]->value.i) {
+    if (delta_inited(benum->initialized) && deltarow->rowwritten == par->pv[1]->value.i) {
         deltarow->rowwritten = 0;
         return 0;
     }
@@ -598,7 +598,7 @@ read_deltarow_bitmap_data(px_bitmap_enum_t * benum, byte ** pdata,
         return_error(errorIllegalDataLength);
 
     /* initialize at begin of image */
-    if (!delta_init(benum->initialized)) {
+    if (!delta_inited(benum->initialized)) {
         /* zero seed row */
         deltarow->seedrow =
             gs_alloc_bytes(benum->mem, benum->data_per_row,
@@ -809,9 +809,8 @@ pxBeginImage(px_args_t * par, px_state_t * pxs)
 
     pxenum->bi_args = bi_args;
     pxenum->enum_started = false;
-    comp_unset(&pxenum->benum.initialized);
     pxs->image_enum = pxenum;
-
+    memset(&pxenum->benum, 0, sizeof(pxenum->benum));
     return 0;
 }
 
@@ -883,7 +882,9 @@ px_begin_image(px_state_t * pxs, bool is_jpeg, px_args_t * par)
         gs_make_translation(origin.x, origin.y, &dmat);
         gs_matrix_scale(&dmat, params.dest_width, params.dest_height, &dmat);
         /* The ImageMatrix is dmat' * imat. */
-        gs_matrix_invert(&dmat, &dmat);
+        code = gs_matrix_invert(&dmat, &dmat);
+        if (code < 0)
+            return code;
         gs_matrix_multiply(&dmat, &imat, &pxenum->image.ImageMatrix);
     }
     pxenum->image.CombineWithColor = true;
@@ -963,9 +964,8 @@ pxEndImage(px_args_t * par, px_state_t * pxs)
     int code = pl_end_image(pxs->pgs, pxenum->info, true);
 
     gs_free_object(pxs->memory, pxenum->row, "pxEndImage(row)");
-    if (delta_init(pxenum->benum.initialized))
-        gs_free_object(pbenum->mem, pbenum->deltarow_state.seedrow,
-                       "pxEndImage(seedrow)");
+    gs_free_object(pbenum->mem, pbenum->deltarow_state.seedrow,
+                   "pxEndImage(seedrow)");
     if (pxenum->image.ColorSpace)
         rc_decrement(pxenum->image.ColorSpace,
                      "pxEndImage(image.ColorSpace)");
@@ -1021,7 +1021,7 @@ pxBeginRastPattern(px_args_t * par, px_state_t * pxs)
     bi_args.dest_width  = real_value(par->pv[4], 0);
     bi_args.dest_height = real_value(par->pv[4], 1);
 
-
+    memset(&benum, 0, sizeof(benum));
     code = begin_bitmap(&params, &benum, &bi_args, pxs, false, par);
 
     if (code < 0)
@@ -1051,7 +1051,6 @@ pxBeginRastPattern(px_args_t * par, px_state_t * pxs)
         return_error(errorInsufficientMemory);
     }
     pxenum->benum = benum;
-    comp_unset(&pxenum->benum.initialized);
     pxenum->pattern_id = par->pv[5]->value.i;
     pxenum->persistence = par->pv[6]->value.i;
     pxenum->lines_rendered = 0;

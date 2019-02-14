@@ -24,7 +24,7 @@
 systemdict /pdfmark known not
  { userdict /pdfmark { cleartomark } bind executeonly put } if
 
-systemdict /pdfdict where { pop } { /pdfdict 100 dict put } ifelse
+systemdict /pdfdict where { pop } { /pdfdict 325 dict put } ifelse
 userdict /GS_PDF_ProcSet 256 dict dup begin
 
 % ---------------- Abbreviations ---------------- %
@@ -316,7 +316,7 @@ currentdict /gput_always_allow .undef
             (                  Output may be incorrect.\n) print
           } if
           setcolorspace
-          /ICCProfileNError where {/ICCProfileNError true put} if
+          /ICCProfileNError where {/ICCProfileNError //true put} if
         } ifelse
       }ifelse
     }{
@@ -350,7 +350,7 @@ currentdict /gput_always_allow .undef
             (                  Output may be incorrect.\n) print
           } if
           setcolorspace
-          /ICCProfileNError where {/ICCProfileNError true put} if
+          /ICCProfileNError where {/ICCProfileNError //true put} if
         } ifelse
       }ifelse
     }{
@@ -470,7 +470,7 @@ currentdict /gput_always_allow .undef
 
 /UseBlackPtComp {
   %% Our implementation of black point compensation uses 0 or 1, not a boolean
-  /.setblackptcomp where {pop false eq {0}{1}ifelse .setblackptcomp }{ pop } ifelse
+  /.setblackptcomp where {pop //false eq {0}{1}ifelse .setblackptcomp }{ pop } ifelse
 } bind executeonly def
 
 % ---------------- Color installation ---------------- %
@@ -575,7 +575,7 @@ currentdict /gput_always_allow .undef
             (                  Output may be incorrect.\n) print
           } if
           setcolorspace
-          /ICCProfileNError true def
+          /ICCProfileNError //true def
         } ifelse
       }ifelse
     }{
@@ -982,9 +982,9 @@ end readonly def
   3 1 roll mul
   exch sub
   0 eq {
-    true
+    //true
   }{
-    false
+    //false
   } ifelse
 } bind executeonly def
 
@@ -1929,7 +1929,7 @@ end readonly def
     {
      /FDepVector get 0 get /FontBBox get}
     {
-      pop null % force an error
+      pop //null % force an error
     } ifelse
   }if
   dup 1 get neg exch 3 get        % MaxLen (V) Ff Q dx dy yy desc asc

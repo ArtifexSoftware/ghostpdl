@@ -363,7 +363,9 @@ static int setup_type3_image(gx_device_pdf *pdev, const gs_gstate * pgs,
         m.tx = floor(pgs->ctm.tx + 0.5); /* Round the origin against the image size distorsions */
         m.ty = floor(pgs->ctm.ty + 0.5);
         pim3a = *pim3;
-        gs_matrix_invert(&pim3a.ImageMatrix, &mi);
+        code = gs_matrix_invert(&pim3a.ImageMatrix, &mi);
+        if (code < 0)
+            return code;
         gs_make_identity(&pim3a.ImageMatrix);
         if (pim3a.Width < pim3a.MaskDict.Width && pim3a.Width > 0) {
             int sx = (pim3a.MaskDict.Width + pim3a.Width - 1) / pim3a.Width;
@@ -460,7 +462,9 @@ static int convert_type4_to_masked_image(gx_device_pdf *pdev, const gs_gstate * 
         if (code < 0)
             return code;
         gs_make_identity(&m1);
-        gs_matrix_invert(&pic->ImageMatrix, &mi);
+        code = gs_matrix_invert(&pic->ImageMatrix, &mi);
+        if (code < 0)
+            return code;
         gs_matrix_multiply(&mi, &ctm_only(pgs), &m);
         code = pdf_setup_masked_image_converter(pdev, mem, &m, &cvd,
                              true, 0, 0, pi4.Width, pi4.Height, false);

@@ -36,127 +36,6 @@
   ] def
 } if
 
-% <file> .findttfontname <fname> true
-% <file> .findttfontname false
-% Closes the file in either case.
-/.findttfontname {
-  //true 0 .loadttfonttables
-  tabdict /name .knownget {
-    dup 8 getu32 f exch setfileposition
-    12 getu32
-    dup 65535 gt { pop 65535 } if % protect against extremely large name
-    string f exch readstring pop
-    dup
-    6 findname not {
-      4 findname	% Try FullName
-    } {
-      exch pop //true
-    }
-    ifelse
-  } {
-    //false
-  } ifelse
-  f closefile end end
-} bind def
-
-/.findwoffname {
-  //true 0 .loadwofftables
-  tabdict /name .knownget {
-    dup /clen exch 8 getu32 def
-    dup /olen exch 12 getu32 def
-    4 getu32 f exch setfileposition
-    olen dup 65535 gt { pop 65535 } if % protect against extremely large name
-    /fs
-    clen olen ne
-    {f clen () /SubFileDecode filter /FlateDecode filter}
-    {f clen () /SubFileDecode filter}
-    ifelse def
-    string fs exch readstring pop
-    fs closefile
-    dup
-    6 findname not {
-      4 findname	% Try FullName
-    } {
-      exch pop //true
-    }
-    ifelse
-  } {
-    //false
-  } ifelse
-  f closefile end end
-} bind def
-
-% <file> <key> .findfontvalue <value> true
-% <file> <key> .findfontvalue false
-% Closes the file in either case.
-/.findnonttfontvalue /.findfontvalue load def
-/.findfontvalue {
-  1 index .is_woff {
-    dup /FontType eq {
-      pop closefile 42 //true
-    } {
-      dup /FontName eq { pop //.findwoffname exec} { pop closefile //false } ifelse
-    } ifelse
-  }
-  {
-    1 index .is_ttf_or_otf {
-                  % If this is a font at all, it's a TrueType font.
-        dup /FontType eq {
-          pop closefile 42 //true
-        } {
-          dup /FontName eq { pop //.findttfontname exec} { pop closefile //false } ifelse
-        } ifelse
-    } {
-                  % Not a TrueType font.
-        .findnonttfontvalue
-    } ifelse
-  } ifelse
-} bind def
-
-% Load a font file that might be a TrueType font.
-
-/tt_tag_dict << <00010000> 0 (true) 0 (typ1) 0 (ttcf) 0 >> readonly def
-/ttf_otf_tag_dict << <00010000> 0 (true) 0 (typ1) 0 (ttcf) 0 (OTTO) 0>> readonly def
-% The wOFF tag is immediately followed by the sfnt "flavour" so for simplicity
-% combine them
-/woff_tag_dict <<
-  (wOFF) 0
-  <774F464600010000> 0 % (wOFF)<00010000> .concatstrings
-  (wOFFtrue) 0
-  (wOFFtyp1) 0
->> readonly def
-
-% <file> .loadfontfile -
-/.loadnonttfontfile /.loadfontfile load def
-/.loadfontfile {
-  dup (12345678) .peekstring { //woff_tag_dict exch known } { //false } ifelse
-  {
-    .loadwofffont pop
-  }
-  {
-    dup (1234) .peekstring { //tt_tag_dict exch known } { //false } ifelse {
-                  % If this is a font at all, it's a TrueType font.
-      .loadttfont pop
-    } {
-                  % Not a TrueType font.
-      .loadnonttfontfile
-    } ifelse
-  } ifelse
-} bind def
-
-% <file> .is_ttf_or_otf <bool>
-/.is_ttf_or_otf {
-    dup 0 setfileposition (1234) .peekstring { //ttf_otf_tag_dict exch known } { //false } ifelse
-} bind def
-
-/.is_woff {
-    dup 0 setfileposition (1234) .peekstring { //woff_tag_dict exch known } { //false } ifelse
-} bind def
-
-currentdict /tt_tag_dict .undef
-currentdict /ttf_otf_tag_dict .undef
-currentdict /woff_tag_dict .undef
-
 % ---------------- Automatic Type 42 generation ---------------- %
 
 % Load a TrueType font from a file as a Type 42 PostScript font.
@@ -953,7 +832,7 @@ end readonly def                % .loadttfontdict
         % tabs = tables we want to keep, sorted by file position.
   /tabs [ 0 16 tables length 1 sub {
     tables exch 16 getinterval
-    TTFDEBUG { dup .printtab } if
+    TTFDEBUG { dup //.printtab exec } if
     dup 0 4 getinterval readtables_ 1 index known {
       % put all 0 length tables at 0 to avoid overlap
       1 index 12 getu32 0 eq { 1 index 8 0 putu32 } if
@@ -1010,7 +889,7 @@ end readonly def                % .loadttfontdict
     /tabs [ 0 20 tables length 1 sub
       {
         tables exch 20 getinterval
-        TTFDEBUG { dup .printtab } if
+        TTFDEBUG { dup //.printtab exec } if
         dup  0 4 getinterval readtables_ 1 index known
         {
           % put all 0 length tables at 0 to avoid overlap
@@ -1106,7 +985,7 @@ mark
 % Defines checksum, getloca, head, locatable, numloca, post, sfnts, upem
 % Note that the 'loca' table may be out of order.
 /.makesfnts {
-  .readttdata
+  //.readttdata exec
   /head tabdict /head get def
   /post tabdict /post .knownget {
     dup 0 get /post_first_part exch def
@@ -1147,7 +1026,7 @@ mark
       dup type /stringtype ne { aload pop } if
     } forall
   ] def
-} bind def
+} .bind executeonly odef
 
 /first_post_string % - first_post_string <string>
 {
@@ -1208,7 +1087,7 @@ mark
   counttomark 0 ne { .dicttomark } { pop pop } ifelse
   /XUID [orgXUID 42 curxuid]
   TTFDEBUG {
-    tabs { .printtab } forall
+    tabs { //.printtab exec } forall
     [ sfnts { length } forall ] //== exec
     count ttkeycount sub array astore dup { //== exec } forall aload pop
   } if
@@ -1321,7 +1200,9 @@ mark
   } {
     //.pickcmap_with_no_xlatmap exec
   } ifelse
-} bind def
+} .bind executeonly odef
+currentdict /.pickcmap_with_xlatmap .undef
+currentdict /.pickcmap_with_no_xlatmap .undef
 
 % <glyph> .nname <_name>
 /.nname {
@@ -1368,7 +1249,7 @@ mark
       } for
       % /glyphencoding <newarray> <glyphencoding length>
       1 numloca 1 sub {
-        1 index exch dup .nname put
+        1 index exch dup //.nname exec put
       } for
     def
   } if
@@ -1393,7 +1274,7 @@ mark
       3 index 1 index known
       { % The same name maps to more than one glyph. Change the name.
         % No special treatment for /.notdef glyph. Bug 689408.
-        pop .nname 3 index 2 index 2 index put
+        pop //.nname exec 3 index 2 index 2 index put
         2 index exch 3 -1 roll put
       } {
         3 index exch 3 -1 roll put	% unique name
@@ -1487,51 +1368,6 @@ mark
   TTFDEBUG { (Encoding: ) print dup === flush } if
 } bind executeonly odef
 
-% <file> .loadttfont <type42font>
-/.loadttfont {
-  TTFDEBUG { (.loadttfont) = } if
-  //false 0 .loadttfonttables
-  .makesfnts
-  .getpost
-  .pickcmap
-  mark
-  % if we're loading to substitute for TTF in a PDF,
-  % load the font the "PDF way"
-  /prebuilt_encoding where
-  {pop .pdfcharkeys}
-  {.charkeys} ifelse
-  .ttkeys
-  /FontType 42
-  /PaintType 0
-  TTFDEBUG {
-    (numloca=) print numloca =
-  } if
-  .dicttomark
-  end end dup /FontName get exch definefont
-} bind executeonly def
-
-% <file> .loadwofffont <type42font>
-/.loadwofffont
-{
-  TTFDEBUG { (.loadwofffont) = } if
-  //false 0 .loadwofftables
-  .makesfnts
-  .getpost
-  .pickcmap
-  mark
-  .charkeys
-  .ttkeys
-  /FontType 42
-  /PaintType 0
-  TTFDEBUG {
-    (numloca=) print numloca =
-  } if
-  .dicttomark
-  end end dup /FontName get exch
-  definefont
-} bind executeonly def
-
-
 % ---------------- CIDFontType 2 font loading ---------------- %
 
 % Fill a string with sequential CIDs starting from the initial value.
@@ -1586,7 +1422,7 @@ mark
   .makesfnts
         % CIDFontType2 fonts don't have a cmap: they are indexed by CID.
   mark
-  .ttkeys
+  //.ttkeys exec
   .dicttomark dup              % convert keys to dict and copy dict
   3 -1 roll                    % Bring PDF substitute name to top of stack
 
@@ -1594,7 +1430,7 @@ mark
   /fontname exch def
   /FontName exch put           % replace any definition of /FontName
   //.definettcidfont exec
-} bind def
+} .bind executeonly odef
 
 % <file> <SubfontID> .load_tt_font_stripped <font_data>
 % The font_data includes sfnts, NumGlyphs, TT_cmap, file_table_pos, Decoding.
@@ -1604,17 +1440,17 @@ mark
   .makesfnts
   .pickcmap
   mark
-  .ttkeys
+  //.ttkeys exec
   /NumGlyphs numloca
   /TT_cmap cmaptab cmapdict
   /file_table_pos file_table_pos
   /Decoding Decoding
   .dicttomark
   end end
-} bind def
+} .bind executeonly def
 
 /.load_woff_for_cid {
-  //false exch .loadwofftables
+  //false exch //.loadwofftables exec
   .makesfnts
   % we have to set load_stripped here so
   % .pickcmap will follow the right logic
@@ -1623,14 +1459,14 @@ mark
   .pickcmap
   /load_stripped //false def
   mark
-  .ttkeys
+  //.ttkeys exec
   /NumGlyphs numloca
   /TT_cmap cmaptab cmapdict
 %  /file_table_pos file_table_pos
   /Decoding Decoding
   .dicttomark
   end end
-} bind def
+} .bind executeonly def
 
 % ---------------- PDF TrueType font loading ---------------- %
 
@@ -1831,13 +1667,13 @@ mark
   % Finally, if none of that works, remove the Encoding, and treat it
   % as non-symbolic.
   is_symbolic {
-    <00030000> .findcmap
+    <00030000> //.findcmap exec
     { //true }
     {
       prebuilt_encoding //null eq {
-        <00030001> .findcmap
+        <00030001> //.findcmap exec
         {//true}
-        {<00010000> .findcmap}
+        {<00010000> //.findcmap exec}
         ifelse
       }
       {//false}
@@ -1845,7 +1681,7 @@ mark
     } ifelse
 
     {
-      .pdfmapsymbolic
+      //.pdfmapsymbolic exec
       /prebuilt_encoding //null def
       //false
     } {
@@ -1857,7 +1693,7 @@ mark
   }
   ifelse
   {
-    <00030001> .findcmap {
+    <00030001> //.findcmap exec {
       prebuilt_encoding //null ne {
         TTFDEBUG { (Using cmap 3.1 with prebuilt_encoding for non-symbolic.) = } if
         //true /.render_notdef gput
@@ -1896,7 +1732,7 @@ mark
           % because PDF spec requires it.
       } ifelse
     } {
-      <00010000> .findcmap {
+      <00010000> //.findcmap exec {
         TTFDEBUG { (Using cmap 1.0 for non-symbolic.) = } if
         prebuilt_encoding //null ne {
           prebuilt_encoding .invert_encoding exch .romanmacdict .pdfmapchars
@@ -1963,8 +1799,8 @@ mark
   .getpost
   .pickcmap
   mark
-  .pdfcharkeys
-  .ttkeys
+  //.pdfcharkeys exec
+  //.ttkeys exec
   /FontType 42
   /PaintType 0
   /.render_notdef .render_notdef
@@ -1975,7 +1811,182 @@ mark
   dup /FontName font_name put        % replace any definition of /FontName
   end end
  .completefont
-} bind executeonly def
+} .bind executeonly odef
+
+%--------- Define main type42font loading routines, after their dependencies ------------
+% <file> .loadttfont <type42font>
+/.loadttfont {
+  TTFDEBUG { (.loadttfont) = } if
+  //false 0 .loadttfonttables
+  .makesfnts
+  .getpost
+  .pickcmap
+  mark
+  % if we're loading to substitute for TTF in a PDF,
+  % load the font the "PDF way"
+  /prebuilt_encoding where
+  {pop //.pdfcharkeys exec}
+  {.charkeys} ifelse
+  //.ttkeys exec
+  /FontType 42
+  /PaintType 0
+  TTFDEBUG {
+    (numloca=) print numloca =
+  } if
+  .dicttomark
+  end end dup /FontName get exch definefont
+} .bind executeonly def
+
+% <file> .loadwofffont <type42font>
+/.loadwofffont
+{
+  TTFDEBUG { (.loadwofffont) = } if
+  //false 0 //.loadwofftables exec
+  .makesfnts
+  .getpost
+  .pickcmap
+  mark
+  .charkeys
+  //.ttkeys exec
+  /FontType 42
+  /PaintType 0
+  TTFDEBUG {
+    (numloca=) print numloca =
+  } if
+  .dicttomark
+  end end dup /FontName get exch
+  definefont
+} .bind executeonly def
+
+% ----- Utilities for loading possible TrueType font ------
+% <file> .findttfontname <fname> true
+% <file> .findttfontname false
+% Closes the file in either case.
+/.findttfontname {
+  //true 0 .loadttfonttables
+  tabdict /name .knownget {
+    dup 8 getu32 f exch setfileposition
+    12 getu32
+    dup 65535 gt { pop 65535 } if % protect against extremely large name
+    string f exch readstring pop
+    dup
+    6 findname not {
+      4 findname	% Try FullName
+    } {
+      exch pop //true
+    }
+    ifelse
+  } {
+    //false
+  } ifelse
+  f closefile end end
+} bind def
+
+/.findwoffname {
+  //true 0 //.loadwofftables exec
+  tabdict /name .knownget {
+    dup /clen exch 8 getu32 def
+    dup /olen exch 12 getu32 def
+    4 getu32 f exch setfileposition
+    olen dup 65535 gt { pop 65535 } if % protect against extremely large name
+    /fs
+    clen olen ne
+    {f clen () /SubFileDecode filter /FlateDecode filter}
+    {f clen () /SubFileDecode filter}
+    ifelse def
+    string fs exch readstring pop
+    fs closefile
+    dup
+    6 findname not {
+      4 findname	% Try FullName
+    } {
+      exch pop //true
+    }
+    ifelse
+  } {
+    //false
+  } ifelse
+  f closefile end end
+} bind def
+
+/tt_tag_dict << <00010000> 0 (true) 0 (typ1) 0 (ttcf) 0 >> readonly def
+/ttf_otf_tag_dict << <00010000> 0 (true) 0 (typ1) 0 (ttcf) 0 (OTTO) 0>> readonly def
+% The wOFF tag is immediately followed by the sfnt "flavour" so for simplicity
+% combine them
+/woff_tag_dict <<
+  (wOFF) 0
+  <774F464600010000> 0 % (wOFF)<00010000> .concatstrings
+  (wOFFtrue) 0
+  (wOFFtyp1) 0
+>> readonly def
+
+% <file> .is_ttf_or_otf <bool>
+/.is_ttf_or_otf {
+    dup 0 setfileposition (1234) .peekstring { //ttf_otf_tag_dict exch known } { //false } ifelse
+} bind def
+
+/.is_woff {
+    dup 0 setfileposition (1234) .peekstring { //woff_tag_dict exch known } { //false } ifelse
+} bind def
+
+% <file> <key> .findfontvalue <value> true
+% <file> <key> .findfontvalue false
+% Closes the file in either case.
+/.findnonttfontvalue /.findfontvalue load def
+/.findfontvalue {
+  1 index //.is_woff exec {
+    dup /FontType eq {
+      pop closefile 42 //true
+    } {
+      dup /FontName eq { pop //.findwoffname exec} { pop closefile //false } ifelse
+    } ifelse
+  }
+  {
+    1 index //.is_ttf_or_otf exec {
+                  % If this is a font at all, it's a TrueType font.
+        dup /FontType eq {
+          pop closefile 42 //true
+        } {
+          dup /FontName eq { pop //.findttfontname exec} { pop closefile //false } ifelse
+        } ifelse
+    } {
+                  % Not a TrueType font.
+        .findnonttfontvalue
+    } ifelse
+  } ifelse
+} bind def
+
+% Load a font file that might be a TrueType font.
+% <file> .loadfontfile -
+/.loadnonttfontfile /.loadfontfile load def
+/.loadfontfile {
+  dup (12345678) .peekstring { //woff_tag_dict exch known } { //false } ifelse
+  {
+    //.loadwofffont exec pop
+  }
+  {
+    dup (1234) .peekstring { //tt_tag_dict exch known } { //false } ifelse {
+                  % If this is a font at all, it's a TrueType font.
+      //.loadttfont exec pop
+    } {
+                  % Not a TrueType font.
+      .loadnonttfontfile
+    } ifelse
+  } ifelse
+} bind def
+
+% Undef the local utility funcs
+[
+    /.findttfontname
+    /.findwoffname
+    /ttf_otf_tag_dict
+    /tt_tag_dict
+    /woff_tag_dict
+    /.is_ttf_or_otf
+    /.is_woff
+]
+{currentdict exch .undef} forall
+% ----- END .loadfontfile that supports possible TrueType font ------
 
 % Undef these, not needed outside this file
 [
@@ -1983,10 +1994,18 @@ mark
  /.definettcidfont
  /.fill_identity_cmap
  /.findseg
- /.findttfontname
- /.findwoffname
  /.loadttfontdict
  /.is_hex_digit
  /.pop3ex
  /.popfex
+ /.ttkeys
+ /.printtab
+ /.readttdata
+ /.nname
+ /.loadttfont
+ /.loadwofffont
+ /.loadwofftables
+ /.findcmap
+ /.pdfmapsymbolic
+ /.pdfcharkeys
 ] {systemdict exch .forceundef} forall
