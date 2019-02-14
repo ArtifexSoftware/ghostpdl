@@ -242,7 +242,7 @@ currentdict /num-chars-dict .undef
     { token } stopped {
       dup type /filetype eq { pop } if
       pop pop stop
-    } if { 
+    } if {
       dup type /nametype eq {
         dup xcheck {
           .pdfexectoken
@@ -265,7 +265,7 @@ currentdict /num-chars-dict .undef
       pop pop exit
     } ifelse
   }
-  aload pop .packtomark cvx             % file [ {cnt <<>> file ... }
+  aload pop //.packtomark exec cvx             % file [ {cnt <<>> file ... }
   { loop } 0 get 2 packedarray cvx      % file [ { {cnt <<>> file ... } loop }
   PDFSTOPONERROR { {exec //false} } { {stopped} } ifelse
   aload pop                             % file [ { {cnt <<>> file ... } loop } stopped
@@ -280,8 +280,8 @@ currentdict /num-chars-dict .undef
       (               Output may be incorrect.\n) pdfformaterror
     } if
   } aload pop                           % file [ { {cnt <<>> file ... } loop } stopped /PDFsource PDFsource store {...} if
-  .packtomark cvx                       % file { { {cnt <<>> file ... } loop } stopped /PDFsource PDFsource store {...} if}
-  /PDFsource 3 -1 roll store            % {...} 
+  //.packtomark exec cvx                       % file { { {cnt <<>> file ... } loop } stopped /PDFsource PDFsource store {...} if}
+  /PDFsource 3 -1 roll store            % {...}
   exec
 } bind executeonly def
 
@@ -848,7 +848,7 @@ currentdict /no_debug_dict undef
   } if
   1 index dup 0 le exch NumObjects ge or {
     (   **** Error: Considering object with an invalid number )
-    2 index 20 string cvs concatstrings   
+    2 index 20 string cvs concatstrings
     ( as null.\n) concatstrings pdfformaterror
     (               Output may be incorrect.\n) pdfformaterror
     pop pop //null
@@ -1179,11 +1179,11 @@ currentdict /pdf_rules_dict undef
                 % Stack: readdata? dict
       /DecodeParms /Filter filterparms
                 % Stack: readdata? dict parms filternames
-      2 index /File .knownget not { 
+      2 index /File .knownget not {
         (   **** Error: Stream object is missing the stream data.\n)
         (               Output may be incorrect.\n) pdfformaterror
         pdfformaterror
-        () 
+        ()
       } if exch
                 % Stack: readdata? dict parms file/string filternames
       dup length 0 eq {

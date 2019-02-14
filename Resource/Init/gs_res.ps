@@ -704,7 +704,7 @@ mark
  /ColorSpaceFamily
    { }	% These must be deferred, because optional features may add some.
  /Emulator
-   mark EMULATORS { <00> search { exch pop cvn exch }{ cvn exit } ifelse } .bind loop .packtomark
+   mark EMULATORS { <00> search { exch pop cvn exch }{ cvn exit } ifelse } .bind loop //.packtomark exec
  /Filter
    { }	% These must be deferred, because optional features may add some.
  /IODevice
@@ -714,7 +714,7 @@ mark
    mark 0 { {
     dup .getiodevice dup //null eq { pop } { exch } ifelse 1 add
    } loop} .internalstopped
-   pop pop pop .packtomark
+   pop pop pop //.packtomark exec
    4 1 roll put
    .clearerror
         % Type categories listed in the Red Book.

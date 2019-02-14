@@ -644,14 +644,14 @@ systemdict /check_r6_password .forceundef
        }
       ifelse
     }
-   aload pop .packtomark cvx
+   aload pop //.packtomark exec cvx
    { loop } 0 get 2 packedarray cvx
     { stopped } 0 get
    /PDFScanRules .getuserparam //null eq {
      //PDFScanRules_null { setuserparams } 0 get % reset PDF scannig mode if it was off
    } if
    /PDFsource PDFsource
-    { store { stop } if } aload pop .packtomark cvx
+    { store { stop } if } aload pop //.packtomark exec cvx
    /PDFsource 3 -1 roll store exec
  } bind executeonly def
 currentdict /PDFScanRules_true undef

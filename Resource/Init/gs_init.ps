@@ -1118,7 +1118,7 @@ currentdict /errordict ErrorNames length 3 add dict
 /.registererror2	% <dict> <name> .registererror -
  { .currentglobal //true .setglobal	% create procs in global VM
    3 1 roll
-   mark 1 index systemdict /.errorhandler get /exec load .packtomark cvx put
+   mark 1 index systemdict /.errorhandler get /exec load //.packtomark exec cvx put
    .setglobal
  } bind def
 ErrorNames
@@ -1127,7 +1127,7 @@ errordict begin
 % The handlers for interrupt and timeout are special; there is no
 % 'current object', so they push their own name.
    { /interrupt /timeout }
-   { mark 1 index dup systemdict /.errorhandler get /exec load .packtomark cvx def
+   { mark 1 index dup systemdict /.errorhandler get /exec load //.packtomark exec cvx def
    } forall
 /handleerror	% this key is 'well known' and some PS may redefine it
  { /.printerror .systemvar exec
@@ -2281,6 +2281,7 @@ SAFER { .setsafeglobal } if
   /.loadpdfttfont
   /obind
   /odef
+  /.packtomark
 
   % Used by a free user in the Library of Congress. Apparently this is used to
   % draw a partial page, which is then filled in by the results of a barcode

@@ -220,7 +220,7 @@
 16#ffffffff 0 gt {  % 64-bit sign extension
   { /gets32 /gets32a} {
     mark 1 index load aload pop { 16#80000000 xor 16#80000000 sub } aload pop
-    .packtomark cvx def
+    //.packtomark exec cvx def
   } bind forall
 } if
 
