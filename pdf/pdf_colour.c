@@ -167,6 +167,7 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
             }
             memset(dummy, 0x00, sizeof(pdf_num));
             dummy->memory = ctx->memory;
+            dummy->type = PDF_INT;
 
             code = pdfi_dict_put(ctx->SpotNames, name, dummy);
             pdfi_countdown(name);
@@ -214,6 +215,7 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
 
         memset(dummy, 0x00, sizeof(pdf_num));
         dummy->memory = ctx->memory;
+        dummy->type = PDF_INT;
 
         code = pdfi_dict_put(ctx->SpotNames, space, dummy);
         *num_spots += 1;
