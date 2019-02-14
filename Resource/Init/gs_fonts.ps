@@ -452,8 +452,8 @@ buildfontdict 3 /.buildfont3 cvx put
         % added entry, making sure there is at least one slot left for FID.
    dup maxlength 1 index length sub 2 lt
     { dup dup wcheck
-       { .growdict }
-       { .growdictlength dict .copydict }
+       { //.growdict exec}
+       { //.growdictlength exec dict .copydict }
       ifelse
     }
     { dup wcheck not { dup maxlength dict .copydict } if

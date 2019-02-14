@@ -674,11 +674,11 @@ systemdict /internaldict dup .makeinternaldict .makeoperator
         { length 3 mul 2 idiv 1 add
         } bind def
 /.growdict		% grow a dictionary
-        { dup .growdictlength .setmaxlength
+        { dup //.growdictlength exec .setmaxlength
         } bind def
 /.growput		% put, grow the dictionary if needed
         { 2 index length 3 index maxlength eq
-           { 3 copy pop known not { 2 index .growdict } if
+           { 3 copy pop known not { 2 index //.growdict exec} if
            } if
           put
         } bind def
@@ -2288,6 +2288,7 @@ SAFER { .setsafeglobal } if
   /odef
   /.packtomark
   /.putdeviceprops
+  /.growdict /.growdictlength
 
   % Used by a free user in the Library of Congress. Apparently this is used to
   % draw a partial page, which is then filled in by the results of a barcode
