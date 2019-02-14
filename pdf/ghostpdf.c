@@ -1882,7 +1882,7 @@ pdf_context *pdfi_create_context(gs_memory_t *pmem)
      */
     ctx->pgs->have_pattern_streams = true;
     ctx->preserve_tr_mode = 0;
-    ctx->notransparency = false;
+    ctx->notransparency = true;
 
     ctx->main_stream = NULL;
 
