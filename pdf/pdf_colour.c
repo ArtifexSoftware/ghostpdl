@@ -32,6 +32,170 @@
 static int pdfi_create_colorspace_by_name(pdf_context *ctx, pdf_name *name, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs);
 static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_array, int index, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs);
 
+/* This is used only from the page level interpreter code, we need to know the number
+ * of spot colours in a PDF file, which we have to pass to the device for spot colour
+ * rendering. We deal with it here because its colour related.
+ * The PDF context has a page-level object which maintains a list of the spot colour
+ * names seen so far, so we can ensure we don't end up with duplictaes.
+ */
+static int pdfi_check_for_spots_by_name(pdf_context *ctx, pdf_name *name,
+                                          pdf_dict *parent_dict, pdf_dict *page_dict, int *num_spots)
+{
+    pdf_obj *ref_space;
+    int code;
+
+    if (pdfi_name_strcmp(name, "G") == 0) {
+        return 0;
+    } else if (pdfi_name_strcmp(name, "RGB") == 0) {
+        return 0;
+    } else if (pdfi_name_strcmp(name, "CMYK") == 0) {
+        return 0;
+    } else if (pdfi_name_strcmp(name, "DeviceRGB") == 0) {
+        return 0;
+    } else if (pdfi_name_strcmp(name, "DeviceGray") == 0) {
+        return 0;
+    } else if (pdfi_name_strcmp(name, "DeviceCMYK") == 0) {
+        return 0;
+    } else {
+        code = pdfi_find_resource(ctx, (unsigned char *)"ColorSpace", name, parent_dict, page_dict, &ref_space);
+        if (code < 0)
+            return code;
+
+        /* recursion */
+        return pdfi_check_ColorSpace_for_spots(ctx, ref_space, parent_dict, page_dict, num_spots);
+    }
+    return 0;
+}
+
+static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_array,
+                                           pdf_dict *parent_dict, pdf_dict *page_dict, int *num_spots)
+{
+    pdf_name *space = NULL;
+    pdf_array *a = NULL;
+    int code = 0;
+
+    code = pdfi_array_get(color_array, 0, (pdf_obj **)&space);
+    if (code != 0)
+        goto exit;
+
+    if (space->type != PDF_NAME) {
+        code = gs_error_typecheck;
+        goto exit;
+    }
+
+    code = 0;
+    if (pdfi_name_strcmp(space, "G") == 0) {
+        goto exit;
+    } else if (pdfi_name_strcmp(space, "I") == 0 || pdfi_name_strcmp(space, "Indexed") == 0) {
+        goto exit;
+    } else if (pdfi_name_strcmp(space, "Lab") == 0) {
+        goto exit;
+    } else if (pdfi_name_strcmp(space, "RGB") == 0) {
+        goto exit;
+    } else if (pdfi_name_strcmp(space, "CMYK") == 0) {
+        goto exit;
+    } else if (pdfi_name_strcmp(space, "CalRGB") == 0) {
+        goto exit;
+    } else if (pdfi_name_strcmp(space, "CalGray") == 0) {
+        goto exit;
+    } else if (pdfi_name_strcmp(space, "Pattern") == 0) {
+        goto exit;
+    } else if (pdfi_name_strcmp(space, "ICCBased") == 0) {
+        goto exit;
+    } else if (pdfi_name_strcmp(space, "DeviceRGB") == 0) {
+        goto exit;
+    } else if (pdfi_name_strcmp(space, "DeviceGray") == 0) {
+        goto exit;
+    } else if (pdfi_name_strcmp(space, "DeviceCMYK") == 0) {
+        goto exit;
+    } else if (pdfi_name_strcmp(space, "DeviceN") == 0) {
+        goto exit;
+    } else if (pdfi_name_strcmp(space, "Separation") == 0) {
+        bool known = false;
+        pdf_obj *dummy;
+
+        pdfi_countdown(space);
+        code = pdfi_array_get(color_array, 1, (pdf_obj **)&space);
+        if (code != 0)
+            goto exit;
+
+        if (space->type == PDF_INDIRECT) {
+            pdf_indirect_ref *r = (pdf_indirect_ref *)space;
+
+            space = NULL;
+            code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, (pdf_obj **)&space);
+            pdfi_countdown(r);
+            if (code < 0)
+                goto exit;
+        }
+        if (pdfi_name_strcmp(space, "Cyan") == 0 || pdfi_name_strcmp(space, "Magenta") == 0 ||
+            pdfi_name_strcmp(space, "Yellow") == 0 || pdfi_name_strcmp(space, "Black") == 0)
+            goto exit;
+        code = pdfi_dict_known_by_key(ctx->SpotNames, space, &known);
+        if (code < 0 || known)
+            goto exit;
+
+        dummy = (pdf_obj *)gs_alloc_bytes(ctx->memory, sizeof(pdf_num), "pdfi_check_for_spots_by_array");
+        if (dummy == NULL) {
+            code = gs_error_VMerror;
+            goto exit;
+        }
+
+        memset(dummy, 0x00, sizeof(pdf_num));
+        dummy->memory = ctx->memory;
+
+        code = pdfi_dict_put(ctx->SpotNames, space, dummy);
+        *num_spots += 1;
+        goto exit;
+    } else {
+        code = pdfi_find_resource(ctx, (unsigned char *)"ColorSpace",
+                                  space, parent_dict, page_dict, (pdf_obj **)&a);
+        if (code < 0)
+            goto exit;
+
+        if (a->type != PDF_ARRAY) {
+            code = gs_note_error(gs_error_typecheck);
+            goto exit;
+        }
+
+        /* recursion */
+        code = pdfi_check_for_spots_by_array(ctx, a, parent_dict, page_dict, num_spots);
+    }
+
+ exit:
+    if (space)
+        pdfi_countdown(space);
+    if (a)
+        pdfi_countdown(a);
+    return code;
+}
+
+int pdfi_check_ColorSpace_for_spots(pdf_context *ctx, pdf_obj *space, pdf_dict *parent_dict, pdf_dict *page_dict, int *num_spots)
+{
+    int code;
+
+    if (num_spots == NULL)
+        return 0;
+
+    code = pdfi_loop_detector_mark(ctx);
+    if (code < 0)
+        return code;
+
+    if (space->type == PDF_NAME) {
+        code = pdfi_check_for_spots_by_name(ctx, (pdf_name *)space, parent_dict, page_dict, num_spots);
+    } else {
+        if (space->type == PDF_ARRAY) {
+            code = pdfi_check_for_spots_by_array(ctx, (pdf_array *)space, parent_dict, page_dict, num_spots);
+        } else {
+            pdfi_loop_detector_cleartomark(ctx);
+            return_error(gs_error_typecheck);
+        }
+    }
+
+    (void)pdfi_loop_detector_cleartomark(ctx);
+    return code;
+}
+
 /* Rendering intent is a bit of an oddity, but its clearly colour related, so we
  * deal with it here. Cover it first to get it out of the way.
  */

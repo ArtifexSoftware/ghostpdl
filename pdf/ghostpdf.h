@@ -147,6 +147,11 @@ typedef struct pdf_context_s
 
     float HeaderVersion, FinalVersion;
 
+    /* Needed for communicating with the devie. I'm not sure if its legitimate
+     * to keep one, and read/write it all the time, but there's one way to find out....
+     */
+    gs_c_param_list pdfi_param_list;
+
     gs_gstate *pgs;
     int preserve_tr_mode; /* for avoiding charpath with pdfwrite */
 
@@ -176,6 +181,10 @@ typedef struct pdf_context_s
     bool page_has_transparency;
     double PageSize[4];
 
+    /* Page level PDF objects */
+    pdf_dict *SpotNames;
+
+    /* Document level PDF objects */
     xref_table *xref_table;
     pdf_dict *Trailer;
     pdf_dict *Root;
@@ -183,6 +192,7 @@ typedef struct pdf_context_s
     pdf_dict *Pages;
     uint64_t num_pages;
 
+    /* Interpreter level PDF objects */
     uint32_t stack_size;
     pdf_obj **stack_bot;
     pdf_obj **stack_top;
