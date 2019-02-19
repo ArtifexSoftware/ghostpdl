@@ -49,8 +49,6 @@
 /* Utility routine to create a pdf_stream object */
 static int pdfi_alloc_stream(pdf_context *ctx, stream *source, stream *original, pdf_stream **new_stream)
 {
-    int code;
-
     *new_stream = NULL;
     *new_stream = (pdf_stream *)gs_alloc_bytes(ctx->memory, sizeof(pdf_stream), "pdfi_alloc_stream");
     if (*new_stream == NULL)

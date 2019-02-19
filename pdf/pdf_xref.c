@@ -446,7 +446,6 @@ static int skip_to_digit(pdf_context *ctx, pdf_stream *s, unsigned int limit)
 
 static int read_digits(pdf_context *ctx, pdf_stream *s, byte *Buffer, unsigned int limit)
 {
-    byte c;
     int bytes, read = 0;
 
     do {

@@ -23,6 +23,7 @@
 #include "pdf_stack.h"
 #include "pdf_file.h"
 #include "pdf_loop_detect.h"
+#include "pdf_trans.h"
 #include "stream.h"
 #include "strmio.h"
 #include "pdf_colour.h"
@@ -235,7 +236,6 @@ static int pdfi_check_Pattern_for_transparency(pdf_context *ctx, pdf_dict *Patte
 {
     int code;
     pdf_obj *d = NULL;
-    int new_spots = 0;
 
     code = pdfi_loop_detector_mark(ctx);
     if (code < 0)
@@ -1095,7 +1095,6 @@ static int pdfi_output_metadata(pdf_context *ctx)
         dmprintf2(ctx->memory, "\n        %s has %"PRIi64" page.\n\n", ctx->filename, ctx->num_pages);
 
     if (ctx->Info != NULL) {
-        pdf_string *s = NULL;
         pdf_name *n = NULL;
         char *Cstr;
 
@@ -1435,7 +1434,6 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
         }
         if (page_group_known) {
             pdf_dict *group_dict;
-            pdf_obj *CS;
             bool CS_known = false;
 
             code = pdfi_dict_get(ctx, page_dict, "Group", (pdf_obj **)&group_dict);

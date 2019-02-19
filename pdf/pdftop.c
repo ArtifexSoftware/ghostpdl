@@ -203,13 +203,13 @@ cleanup_setdevice:
 
 /* Parse an entire random access file */
 static int
-pdf_impl_process_file(pl_interp_implementation_t *impl, char *filename)
+pdf_impl_process_file(pl_interp_implementation_t *impl, const char *filename)
 {
     pdf_interp_instance_t *instance = impl->interp_client_data;
     pdf_context *ctx = instance->ctx;
     int code;
 
-    code = pdfi_process_pdf_file(ctx, filename);
+    code = pdfi_process_pdf_file(ctx, (char *)filename);
     if (code)
         return code;
 
@@ -325,88 +325,90 @@ pdf_impl_set_param(pl_interp_implementation_t *impl,
                   const char                 *param,
                   const void                 *val)
 {
+    int64_t i = (int64_t)val;
+
     pdf_interp_instance_t *instance = impl->interp_client_data;
     pdf_context *ctx = instance->ctx;
 
     if (!strncmp(param, "FirstPage", 9)) {
-        ctx->first_page = (int)val;
+        ctx->first_page = (int)i;
         return 0;
     }
     if (!strncmp(param, "LastPage", 8)) {
-        ctx->last_page = (int)val;
+        ctx->last_page = (int)i;
         return 0;
     }
     /* PDF interpreter flags */
     if (!strncmp(param, "PDFDEBUG", 8)) {
-        ctx->pdfdebug = (bool)val;
+        ctx->pdfdebug = (bool)i;
         return 0;
     }
     if (!strncmp(param, "PDFSTOPONERROR", 14)) {
-        ctx->pdfstoponerror = (bool)val;
+        ctx->pdfstoponerror = (bool)i;
         return 0;
     }
     if (!strncmp(param, "PDFSTOPONWARNING", 16)) {
-        ctx->pdfstoponwarning = (bool)val;
+        ctx->pdfstoponwarning = (bool)i;
         return 0;
     }
     if (!strncmp(param, "NOTRANSPARENCY", 14)) {
-        ctx->notransparency = (bool)val;
+        ctx->notransparency = (bool)i;
         return 0;
     }
     if (!strncmp(param, "NOCIDFALLBACK", 13)) {
-        ctx->nocidfallback = (bool)val;
+        ctx->nocidfallback = (bool)i;
         return 0;
     }
     if (!strncmp(param, "NO_PDFMARK_OUTLINES", 19)) {
-        ctx->no_pdfmark_outlines = (bool)val;
+        ctx->no_pdfmark_outlines = (bool)i;
         return 0;
     }
     if (!strncmp(param, "NO_PDFMARK_DESTS", 16)) {
-        ctx->no_pdfmark_dests = (bool)val;
+        ctx->no_pdfmark_dests = (bool)i;
         return 0;
     }
     if (!strncmp(param, "PDFFitPage", 10)) {
-        ctx->pdffitpage = (bool)val;
+        ctx->pdffitpage = (bool)i;
         return 0;
     }
     if (!strncmp(param, "UseCropBox", 10)) {
-        ctx->usecropbox = (bool)val;
+        ctx->usecropbox = (bool)i;
         return 0;
     }
     if (!strncmp(param, "UseArtBox", 9)) {
-        ctx->useartbox = (bool)val;
+        ctx->useartbox = (bool)i;
         return 0;
     }
     if (!strncmp(param, "UseBleedBox", 11)) {
-        ctx->usebleedbox = (bool)val;
+        ctx->usebleedbox = (bool)i;
         return 0;
     }
     if (!strncmp(param, "UseTrimBox", 10)) {
-        ctx->usetrimbox = (bool)val;
+        ctx->usetrimbox = (bool)i;
         return 0;
     }
     if (!strncmp(param, "Printed", 7)) {
-        ctx->printed = (bool)val;
+        ctx->printed = (bool)i;
         return 0;
     }
     if (!strncmp(param, "ShowAcroForm", 12)) {
-        ctx->showacroform = (bool)val;
+        ctx->showacroform = (bool)i;
         return 0;
     }
     if (!strncmp(param, "ShowAnnots", 10)) {
-        ctx->showannots = (bool)val;
+        ctx->showannots = (bool)i;
         return 0;
     }
     if (!strncmp(param, "NoUserUnit", 10)) {
-        ctx->nouserunit = (bool)val;
+        ctx->nouserunit = (bool)i;
         return 0;
     }
     if (!strncmp(param, "RENDERTTNOTDEF", 13)) {
-        ctx->renderttnotdef = (bool)val;
+        ctx->renderttnotdef = (bool)i;
         return 0;
     }
     if (!strncmp(param, "PDFINFO", 13)) {
-        ctx->pdfinfo = (bool)val;
+        ctx->pdfinfo = (bool)i;
         return 0;
     }
     return 0;

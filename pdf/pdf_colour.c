@@ -24,6 +24,8 @@
 #include "pdf_file.h"
 #include "pdf_dict.h"
 #include "pdf_loop_detect.h"
+#include "pdf_func.h"
+#include "gscsepr.h"
 #include "stream.h"
 #include "strmio.h"
 #include "gscdevn.h"
@@ -875,10 +877,9 @@ static int pdfi_create_icc(pdf_context *ctx, char *Name, stream *s, int ncomps, 
 
 static int pdfi_create_iccprofile(pdf_context *ctx, pdf_dict *ICC_dict, char *cname, int64_t Length, int N, float *range, gs_color_space **ppcs)
 {
-    pdf_stream *profile_stream = NULL, *filtered_profile_stream = NULL;
+    pdf_stream *profile_stream = NULL;
     byte *profile_buffer;
     gs_offset_t savedoffset;
-    bool known;
     int code, code1;
 
     /* Save the current stream position, and move to the start of the profile stream */
@@ -1058,7 +1059,6 @@ static int pdfi_create_Separation(pdf_context *ctx, pdf_array *color_array, int 
     gs_color_space *pcs = NULL, *pcs_alt = NULL;
     gs_function_t * pfn = NULL;
     separation_type sep_type;
-    gs_client_color cc;
 
     code = pdfi_array_get_type(ctx, color_array, index + 1, PDF_NAME, (pdf_obj **)&name);
     if (code < 0)
@@ -1148,11 +1148,9 @@ static int pdfi_create_DeviceN(pdf_context *ctx, pdf_array *color_array, int ind
     pdf_array *ArrayAlternate = NULL, *inks = NULL;
     pdf_dict *transform = NULL;
     int code;
-    uint64_t num_components, ix;
+    uint64_t ix;
     gs_color_space *pcs = NULL, *pcs_alt = NULL;
     gs_function_t * pfn = NULL;
-    separation_type sep_type;
-    gs_client_color cc;
 
     /* Deal with alternate space */
     code = pdfi_array_get(color_array, index + 2, &o);
@@ -1210,9 +1208,7 @@ static int pdfi_create_DeviceN(pdf_context *ctx, pdf_array *color_array, int ind
         if (code < 0)
             goto pdfi_devicen_error;
 
-        sep_type = SEP_OTHER;
         if (ink_name->length == 3 && memcmp(ink_name->data, "All", 3) == 0) {
-            sep_type = SEP_ALL;
             /* FIXME make a separation sdpace instead */
             code = gs_error_undefined;
             goto pdfi_devicen_error;
@@ -1265,11 +1261,11 @@ static int pdfi_create_indexed(pdf_context *ctx, pdf_array *color_array, int ind
 {
     pdf_obj *space, *lookup;
     int code;
-    int64_t hival, lookup_length;
+    int64_t hival, lookup_length = 0;
     int num_values;
     gs_color_space *pcs, *pcs_base;
     gs_color_space_index base_type;
-    byte *Buffer;
+    byte *Buffer = NULL;
 
     if (index != 0)
         return_error(gs_error_syntaxerror);
@@ -1393,13 +1389,22 @@ static int pdfi_create_indexed(pdf_context *ctx, pdf_array *color_array, int ind
                 pdf_string *lookup_string = (pdf_string *)lookup_dict;
 
                 Buffer = gs_alloc_bytes(ctx->memory, lookup_string->length, "pdfi_create_indexed (lookup buffer)");
+                if (Buffer == NULL)
+                    return_error(gs_error_VMerror);;
+
                 memcpy(Buffer, lookup_string->data, lookup_string->length);
                 lookup_length = lookup_string->length;
                 pdfi_countdown(lookup_string);
+            } else {
+                pdfi_countdown(lookup_dict);
+                return_error(gs_error_typecheck);
             }
         }
     } else {
         Buffer = gs_alloc_bytes(ctx->memory, ((pdf_string *)lookup)->length, "pdfi_create_indexed (lookup buffer)");
+        if (Buffer == NULL)
+            return_error(gs_error_VMerror);
+
         memcpy(Buffer, ((pdf_string *)lookup)->data, ((pdf_string *)lookup)->length);
         lookup_length = ((pdf_string *)lookup)->length;
         pdfi_countdown(lookup);

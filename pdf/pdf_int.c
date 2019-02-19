@@ -44,7 +44,7 @@
 
 int pdfi_alloc_object(pdf_context *ctx, pdf_obj_type type, unsigned int size, pdf_obj **obj)
 {
-    int code = 0, bytes = 0;
+    int bytes = 0;
 
     switch(type) {
         case PDF_ARRAY_MARK:
@@ -121,7 +121,6 @@ int pdfi_alloc_object(pdf_context *ctx, pdf_obj_type type, unsigned int size, pd
         case PDF_ARRAY:
             {
                 pdf_obj **values = NULL;
-                pdf_array *a = (pdf_array *)*obj;
 
                 ((pdf_array *)*obj)->size = size;
                 if (size > 0) {
@@ -374,7 +373,7 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
             char Buffer[256];
             int i = 0;
             int64_t num_entries;
-            gs_offset_t offset;
+            gs_offset_t offset = 0;
 
             if (ctx->pdfdebug) {
                 dmprintf1(ctx->memory, "%% Reading compressed object %"PRIi64, obj);
@@ -1832,7 +1831,7 @@ int pdfi_repair_file(pdf_context *ctx)
 {
     int code;
     gs_offset_t offset;
-    uint64_t object_num, generation_num;
+    uint64_t object_num = 0, generation_num = 0;
     int i;
 
     ctx->repaired = true;

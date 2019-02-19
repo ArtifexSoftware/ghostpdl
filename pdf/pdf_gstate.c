@@ -21,6 +21,8 @@
 #include "pdf_dict.h"
 #include "pdf_array.h"
 #include "pdf_func.h"
+#include "pdf_file.h"
+#include "pdf_loop_detect.h"
 
 #include "gsmatrix.h"
 #include "gslparam.h"
@@ -266,8 +268,8 @@ int pdfi_setdash(pdf_context *ctx)
 {
     pdf_num *phase;
     pdf_array *a;
-    double phase_d, temp;
-    int i, code;
+    double phase_d;
+    int code;
 
     if (ctx->stack_top - ctx->stack_bot < 2) {
         if (ctx->pdfstoponerror)
@@ -402,7 +404,6 @@ static int GS_ML(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict
 
 static int GS_D(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
-    pdf_obj *o;
     pdf_array *a, *a1;
     double d;
     int code;
@@ -725,7 +726,7 @@ static int GS_TK(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict
 typedef int (*GS_proc)(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict);
 
 typedef struct GS_Func {
-    char *Name;
+    const char *Name;
     GS_proc proc;
 } GS_Func_t;
 
@@ -734,7 +735,7 @@ GS_Func_t ExtGStateTable[] = {
     {"LC", GS_LC},
     {"LJ", GS_LJ},
     {"ML", GS_ML},
-    {"D", GS_LC},
+    {"D", GS_D},
     {"RI", GS_RI},
     {"OP", GS_OP},
     {"op", GS_op},
@@ -761,7 +762,7 @@ GS_Func_t ExtGStateTable[] = {
 int pdfi_setgstate(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     pdf_name *n;
-    pdf_obj *o, *o1, *cspace;
+    pdf_obj *o;
     int code, i, limit = sizeof(ExtGStateTable) / sizeof (GS_Func_t);
     bool known;
 

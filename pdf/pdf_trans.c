@@ -18,6 +18,8 @@
 #include "pdf_int.h"
 #include "pdf_stack.h"
 #include "pdf_trans.h"
+#include "pdf_dict.h"
+#include "pdf_colour.h"
 
 static int pdfi_transparency_group_common(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *group_dict, gs_rect *bbox, pdf14_compositor_operations group_type)
 {
@@ -71,7 +73,7 @@ int pdfi_begin_page_group(pdf_context *ctx, pdf_dict *page_dict)
     gs_rect bbox;
     int code;
 
-    code = pdfi_dict_get_type(ctx, page_dict, "Group", PDF_DICT, &group_dict);
+    code = pdfi_dict_get_type(ctx, page_dict, "Group", PDF_DICT, (pdf_obj **)&group_dict);
     if (code < 0)
         return_error(code);
 
@@ -91,7 +93,7 @@ int pdfi_begin_group(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_dict)
     gs_rect bbox;
     int code;
 
-    code = pdfi_dict_get_type(ctx, form_dict, "Group", PDF_DICT, &group_dict);
+    code = pdfi_dict_get_type(ctx, form_dict, "Group", PDF_DICT, (pdf_obj **)&group_dict);
     if (code < 0)
         return_error(code);
 
