@@ -1827,7 +1827,11 @@ currentdict /.runlibfile .undef
       if pop pop
     } forall
  } def
-DELAYBIND not { .bindoperators } if
+DELAYBIND not {
+    .bindoperators
+    %% if not DELAYBIND, undef this now. Otherwise defer to .bindnow
+    //systemdict /.bindoperators .undef
+}  if
 
 % Establish a default environment.
 
@@ -2376,6 +2380,7 @@ SAFER { .setsafeglobal } if
   //systemdict /.forcecopynew .forceundef	% remove temptation
   //systemdict /.forceput .forceundef		% ditto
   //systemdict /.undef .forceundef		    % ditto
+  //systemdict /.bindoperators .forceundef
   //systemdict /.forceundef .forceundef		% ditto
   currentuserparams /IdiomRecognition known {
     1 dict dup /IdiomRecognition 4 -1 roll put setuserparams
