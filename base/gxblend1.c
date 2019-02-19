@@ -38,7 +38,7 @@
  * should zero out the spot colorants */
 void
 pdf14_unpack_rgb_mix(int num_comp, gx_color_index color,
-    pdf14_device * p14dev, byte * out)
+                     pdf14_device * p14dev, byte * out)
 {
     int i;
 
@@ -49,14 +49,35 @@ pdf14_unpack_rgb_mix(int num_comp, gx_color_index color,
     }
 }
 
+void
+pdf14_unpack16_rgb_mix(int num_comp, gx_color_index color,
+                       pdf14_device * p14dev, uint16_t * out)
+{
+    int i;
+
+    memset(out, 0, num_comp);
+    for (i = 2; i >= 0; i--) {
+        out[i] = (uint16_t)color;
+        color >>= 16;
+    }
+}
+
 /* A case where we have Gray + spots.  This is actually a Gray color and we
 * should zero out the spot colorants */
 void
 pdf14_unpack_gray_mix(int num_comp, gx_color_index color,
-    pdf14_device * p14dev, byte * out)
+                      pdf14_device * p14dev, byte * out)
 {
     memset(out, 0, num_comp);
     out[0] = (byte)(color & 0xff);
+}
+
+void
+pdf14_unpack16_gray_mix(int num_comp, gx_color_index color,
+                        pdf14_device * p14dev, uint16_t * out)
+{
+    memset(out, 0, num_comp);
+    out[0] = (uint16_t)color;
 }
 
 /*
@@ -67,13 +88,25 @@ pdf14_unpack_gray_mix(int num_comp, gx_color_index color,
  */
 void
 pdf14_unpack_additive(int num_comp, gx_color_index color,
-                                pdf14_device * p14dev, byte * out)
+                      pdf14_device * p14dev, byte * out)
 {
     int i;
 
     for (i = num_comp - 1; i >= 0; i--) {
         out[i] = (byte)(color & 0xff);
         color >>= 8;
+    }
+}
+
+void
+pdf14_unpack16_additive(int num_comp, gx_color_index color,
+                        pdf14_device * p14dev, uint16_t * out)
+{
+    int i;
+
+    for (i = num_comp - 1; i >= 0; i--) {
+        out[i] = (uint16_t)color;
+        color >>= 16;
     }
 }
 
@@ -96,6 +129,18 @@ pdf14_unpack_subtractive(int num_comp, gx_color_index color,
     }
 }
 
+void
+pdf14_unpack16_subtractive(int num_comp, gx_color_index color,
+                           pdf14_device * p14dev, uint16_t * out)
+{
+    int i;
+
+    for (i = num_comp - 1; i >= 0; i--) {
+        out[i] = (uint16_t)~color;
+        color >>= 16;
+    }
+}
+
 /*
  * Unpack a device color.  This routine is used for devices in which we do
  * not know the details of the process color model.  In this case we use
@@ -114,15 +159,30 @@ pdf14_unpack_custom(int num_comp, gx_color_index color,
         out[i] = 0xff - gx_color_value_to_byte(cm_values[i]);
 }
 
+void
+pdf14_unpack16_custom(int num_comp, gx_color_index color,
+                      pdf14_device * p14dev, uint16_t * out)
+{
+    int i;
+    gx_device * tdev = p14dev->target;
+    gx_color_value cm_values[GX_DEVICE_COLOR_MAX_COMPONENTS];
+
+    dev_proc(tdev, decode_color)(tdev, color, cm_values);
+    for (i = 0; i < num_comp; i++)
+        out[i] = ~cm_values[i];
+}
+
 #if RAW_DUMP
 extern unsigned int global_index;
 #endif
 
 static void
 copy_plane_part(byte *des_ptr, int des_rowstride, byte *src_ptr, int src_rowstride,
-                int width, int height)
+                int width, int height, bool deep)
 {
     int y;
+
+    width <<= deep;
 
     if (width == des_rowstride && width == src_rowstride) {
         width *= height;
@@ -149,7 +209,7 @@ copy_extra_planes(byte *des_buf, pdf14_buf *des_info, byte *src_buf,
     if (des_info->has_tags) {
         if (src_info->has_tags) {
             copy_plane_part(des_buf, des_info->rowstride, src_buf,
-                            src_info->rowstride, width, height);
+                            src_info->rowstride, width, height, src_info->deep);
         }
     }
 }
@@ -165,6 +225,7 @@ pdf14_preserve_backdrop_cm(pdf14_buf *buf, cmm_profile_t *group_profile,
     int x1 = min(buf->rect.q.x, tos->rect.q.x);
     int y0 = max(buf->rect.p.y, tos->rect.p.y);
     int y1 = min(buf->rect.q.y, tos->rect.q.y);
+    bool deep = buf->deep;
 
     if (x0 < x1 && y0 < y1) {
         int width = x1 - x0;
@@ -194,27 +255,27 @@ pdf14_preserve_backdrop_cm(pdf14_buf *buf, cmm_profile_t *group_profile,
             return 0;
         } else {
             if (knockout_buff) {
-                buf_plane = buf->backdrop + x0 - buf->rect.p.x +
+                buf_plane = buf->backdrop + ((x0 - buf->rect.p.x)<<deep) +
                         (y0 - buf->rect.p.y) * buf->rowstride;
-                tos_plane = tos->backdrop + x0 - tos->rect.p.x +
+                tos_plane = tos->backdrop + ((x0 - tos->rect.p.x)<<deep) +
                         (y0 - tos->rect.p.y) * tos->rowstride;
-                memset(buf->backdrop, 0, buf->n_chan * buf->planestride);
+                memset(buf->backdrop, 0, buf->n_chan * buf->planestride<<deep);
             } else {
-                buf_plane = buf->data + x0 - buf->rect.p.x +
+                buf_plane = buf->data + ((x0 - buf->rect.p.x)<<deep) +
                         (y0 - buf->rect.p.y) * buf->rowstride;
-                tos_plane = tos->data + x0 - tos->rect.p.x +
+                tos_plane = tos->data + ((x0 - tos->rect.p.x)<<deep) +
                         (y0 - tos->rect.p.y) * tos->rowstride;
                 /* First clear out everything. There are cases where the incoming buf
                    has a region outside the existing tos group.  Need to check if this
                    is getting clipped in which case we need to fix the allocation of
                    the buffer to be smaller */
-                memset(buf->data, 0, buf->n_planes * buf->planestride);
+                memset(buf->data, 0, buf->n_planes * buf->planestride<<deep);
             }
             /* Set up the buffer descriptors. */
-            gsicc_init_buffer(&input_buff_desc, tos_profile->num_comps, 1, false,
+            gsicc_init_buffer(&input_buff_desc, tos_profile->num_comps, 1<<deep, false,
                               false, true, tos->planestride, tos->rowstride, height,
                               width);
-            gsicc_init_buffer(&output_buff_desc, group_profile->num_comps, 1, false,
+            gsicc_init_buffer(&output_buff_desc, group_profile->num_comps, 1<<deep, false,
                               false, true, buf->planestride, buf->rowstride, height,
                               width);
             /* Transform the data.  */
@@ -226,7 +287,7 @@ pdf14_preserve_backdrop_cm(pdf14_buf *buf, cmm_profile_t *group_profile,
         buf_plane += buf->planestride * (buf->n_chan - 1);
         tos_plane += tos->planestride * (tos->n_chan - 1);
         copy_plane_part(buf_plane, buf->rowstride, tos_plane, tos->rowstride, width,
-                        height);
+                        height, deep);
         buf_plane += buf->planestride;
         tos_plane += tos->planestride;
 
@@ -235,10 +296,10 @@ pdf14_preserve_backdrop_cm(pdf14_buf *buf, cmm_profile_t *group_profile,
     }
 #if RAW_DUMP
     if (x0 < x1 && y0 < y1) {
-        byte *buf_plane = buf->data + x0 - buf->rect.p.x +
+        byte *buf_plane = buf->data + ((x0 - buf->rect.p.x)<<deep) +
             (y0 - buf->rect.p.y) * buf->rowstride;
         dump_raw_buffer(y1 - y0, x1 - x0, buf->n_planes, buf->planestride,
-                        buf->rowstride, "BackDropInit_CM", buf_plane);
+                        buf->rowstride, "BackDropInit_CM", buf_plane, deep);
         global_index++;
     }
 #endif
@@ -259,6 +320,7 @@ pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool knockout_buff)
         int height = y1 - y0;
         byte *buf_plane, *tos_plane;
         int i, n_planes;
+        bool deep = buf->deep;
 
         if (knockout_buff) {
             buf_plane = buf->backdrop;
@@ -288,14 +350,14 @@ pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool knockout_buff)
             if (n_planes > tos->n_chan)
                 memset(buf->data + tos->n_chan * buf->planestride, 0, (n_planes - tos->n_chan) * buf->planestride);
         }
-        buf_plane += x0 - buf->rect.p.x +
-                    (y0 - buf->rect.p.y) * buf->rowstride;
-        tos_plane += x0 - tos->rect.p.x +
-                    (y0 - tos->rect.p.y) * tos->rowstride;
+        buf_plane += (y0 - buf->rect.p.y) * buf->rowstride +
+                     ((x0 - buf->rect.p.x)<<deep);
+        tos_plane += (y0 - tos->rect.p.y) * tos->rowstride +
+                     ((x0 - tos->rect.p.x)<<deep);
         /* Color and alpha plane */
         for (i = 0; i < tos->n_chan; i++) {
             copy_plane_part(buf_plane, buf->rowstride, tos_plane, tos->rowstride,
-                            width, height);
+                            width, height, buf->deep);
             buf_plane += buf->planestride;
             tos_plane += tos->planestride;
         }
@@ -305,10 +367,10 @@ pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool knockout_buff)
 #if RAW_DUMP
     if (x0 < x1 && y0 < y1) {
         byte *buf_plane = (knockout_buff ? buf->backdrop : buf->data);
-        buf_plane +=  x0 - buf->rect.p.x +
+        buf_plane +=  ((x0 - buf->rect.p.x)<<buf->deep) +
             (y0 - buf->rect.p.y) * buf->rowstride;
         dump_raw_buffer(y1 - y0, x1 - x0, buf->n_planes, buf->planestride,
-                        buf->rowstride, "BackDropInit", buf_plane);
+                        buf->rowstride, "BackDropInit", buf_plane, buf->deep);
         global_index++;
     }
 #endif
@@ -329,6 +391,22 @@ pdf14_encode_color(gx_device *dev, const gx_color_value	colors[])
     COLROUND_SETUP(8);
     for (i = 0; i < ncomp; i++) {
         color <<= 8;
+        color |= COLROUND_ROUND(colors[i]);
+    }
+    return (color == gx_no_color_index ? color ^ 1 : color);
+}
+
+gx_color_index
+pdf14_encode_color16(gx_device *dev, const gx_color_value	colors[])
+{
+    gx_color_index color = 0;
+    uchar i;
+    uchar ncomp = dev->color_info.num_components;
+    COLROUND_VARS;
+
+    COLROUND_SETUP(16);
+    for (i = 0; i < ncomp; i++) {
+        color <<= 16;
         color |= COLROUND_ROUND(colors[i]);
     }
     return (color == gx_no_color_index ? color ^ 1 : color);
@@ -356,6 +434,24 @@ pdf14_encode_color_tag(gx_device *dev, const gx_color_value colors[])
     return (color == gx_no_color_index ? color ^ 1 : color);
 }
 
+gx_color_index
+pdf14_encode_color16_tag(gx_device *dev, const gx_color_value colors[])
+{
+    gx_color_index color;
+    uchar i;
+    uchar ncomp = dev->color_info.num_components;
+    COLROUND_VARS;
+
+    COLROUND_SETUP(16);
+    /* Add in the tag information */
+    color = dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS;
+    for (i = 0; i < ncomp; i++) {
+        color <<= 16;
+        color |= COLROUND_ROUND(colors[i]);
+    }
+    return (color == gx_no_color_index ? color ^ 1 : color);
+}
+
 /*
  * Decode a gx_color_index value back to a list of colorant values.
  */
@@ -368,6 +464,19 @@ pdf14_decode_color(gx_device * dev, gx_color_index color, gx_color_value * out)
     for (i = 0; i < ncomp; i++) {
         out[ncomp - i - 1] = (gx_color_value) ((color & 0xff) * 0x101);
         color >>= 8;
+    }
+    return 0;
+}
+
+int
+pdf14_decode_color16(gx_device * dev, gx_color_index color, gx_color_value * out)
+{
+    uchar i;
+    uchar ncomp = dev->color_info.num_components;
+
+    for (i = 0; i < ncomp; i++) {
+        out[ncomp - i - 1] = (gx_color_value) (color & 0xffff);
+        color >>= 16;
     }
     return 0;
 }
@@ -642,6 +751,53 @@ gx_build_blended_image_row(const byte *gs_restrict buf_ptr, int planestride,
 }
 
 void
+gx_build_blended_image_row16(const byte *gs_restrict buf_ptr_, int planestride,
+                             int width, int num_comp, uint16_t bg, byte *gs_restrict linebuf)
+{
+    const uint16_t *gs_restrict buf_ptr = (const uint16_t *)(const void *)buf_ptr_;
+    int inc;
+
+    /* Note that we read in in native endian and blend,
+     * then store out in big endian. */
+    planestride >>= 1; /* Array indexing, not byte indexing */
+    inc = planestride * num_comp;
+    buf_ptr += inc - 1;
+    for (; width > 0; width--) {
+        /* composite RGBA (or CMYKA, etc.) pixel with over solid background */
+        uint16_t a = *++buf_ptr;
+        int i = num_comp;
+
+        if (a == 0) {
+            do {
+                *linebuf++ = bg>>8;
+                *linebuf++ = bg;
+            } while (--i);
+        } else {
+            buf_ptr -= inc;
+            if (a == 0xffff) {
+                do {
+                    uint16_t comp = *buf_ptr;
+                    *linebuf++ = comp>>8;
+                    *linebuf++ = comp;
+                    buf_ptr += planestride;
+                } while (--i);
+            } else {
+                a ^= 0xffff;
+                a += a>>15;
+                do {
+                    uint32_t comp = *buf_ptr;
+                    comp += (((bg - comp) * a) + 0x8000)>>16;
+                    /* Errors in bit 16 and above will be ignored */
+                    buf_ptr += planestride;
+                    *linebuf++ = comp>>8;
+                    *linebuf++ = comp;
+                } while (--i);
+            }
+        }
+    }
+}
+
+void
 gx_blend_image_buffer(byte *buf_ptr, int width, int height, int rowstride,
                       int planestride, int num_comp, byte bg)
 {
@@ -674,7 +830,62 @@ gx_blend_image_buffer(byte *buf_ptr, int width, int height, int rowstride,
 }
 
 void
-gx_blend_image_buffer16(byte *buf_ptr_in, unsigned short *buf_ptr_out, int width,
+gx_blend_image_buffer16(byte *buf_ptr_, int width, int height, int rowstride,
+                        int planestride, int num_comp, uint16_t bg)
+{
+    uint16_t *buf_ptr = (uint16_t *)(void *)buf_ptr_;
+    int x, y;
+    int position;
+    int comp, a;
+    int tmp, comp_num;
+    uint16_t bebg;
+
+    /* Convert bg to be */
+    ((byte *)&bebg)[0] = bg >> 8;
+    ((byte *)&bebg)[1] = bg;
+
+    /* planestride and rowstride are in bytes, and we want them in shorts */
+    planestride >>= 1;
+    rowstride >>= 1;
+
+    /* Note that the input here is native endian, and the output must be in big endian! */
+    for (y = 0; y < height; y++) {
+        position = y * rowstride;
+        for (x = 0; x < width; x++) {
+            /* composite RGBA (or CMYKA, etc.) pixel with over solid background */
+            a = buf_ptr[position + planestride * num_comp];
+            if (a == 0) {
+                for (comp_num = 0; comp_num < num_comp; comp_num++) {
+                    buf_ptr[position + planestride * comp_num] = bebg;
+                }
+            } else if (a == 0xffff) {
+                /* Convert from native -> big endian */
+                /* FIXME: Are compilers smart enough to spot that this is
+                 * a no-op on big endian hosts? */
+                for (comp_num = 0; comp_num < num_comp; comp_num++) {
+                    comp  = buf_ptr[position + planestride * comp_num];
+                    ((byte *)&buf_ptr[position + planestride * comp_num])[0] = comp>>8;
+                    ((byte *)&buf_ptr[position + planestride * comp_num])[1] = comp;
+                }
+            } else {
+                a ^= 0xffff;
+                a += a>>15;
+                for (comp_num = 0; comp_num < num_comp; comp_num++) {
+                    comp  = buf_ptr[position + planestride * comp_num];
+                    tmp = ((bg - comp) * a) + 0x8000;
+                    comp += (tmp >> 16); /* Errors in bit 16 upwards will be ignored */
+                    /* Store as big endian */
+                    ((byte *)&buf_ptr[position + planestride * comp_num])[0] = comp>>8;
+                    ((byte *)&buf_ptr[position + planestride * comp_num])[1] = comp;
+                }
+            }
+            position+=1;
+        }
+    }
+}
+
+void
+gx_blend_image_buffer8to16(const byte *buf_ptr_in, unsigned short *buf_ptr_out, int width,
     int height, int rowstride, int planestride, int num_comp, byte bg)
 {
     int x, y;
@@ -717,15 +928,14 @@ gx_blend_image_buffer16(byte *buf_ptr_in, unsigned short *buf_ptr_out, int width
 int
 gx_put_blended_image_cmykspot(gx_device *target, byte *buf_ptr, int planestride_in,
                       int rowstride_in, int x0, int y0, int width, int height,
-                      int num_comp, byte bg, bool has_tags, gs_int_rect rect,
-                      gs_separations * pseparations)
+                      int num_comp, uint16_t bg, bool has_tags, gs_int_rect rect,
+                      gs_separations * pseparations, bool deep)
 {
     int code = 0;
     int x, y, tmp, comp_num, output_comp_num;
     gx_color_index color;
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_value comp;
-    byte a;
     int input_map[GX_DEVICE_COLOR_MAX_COMPONENTS];
     int output_map[GX_DEVICE_COLOR_MAX_COMPONENTS];
     int num_known_comp = 0;
@@ -735,7 +945,9 @@ gx_put_blended_image_cmykspot(gx_device *target, byte *buf_ptr, int planestride_
     int i;
     gx_drawing_color pdcolor;
     gs_fixed_rect rect_fixed;
-    bool expand = (target->color_info.depth / output_num_comp == 16);
+    int bits_per_comp = ((target->color_info.depth - has_tags*8) /
+                         target->color_info.num_components);
+    bool expand = (!deep && bits_per_comp > 8);
     int planestride = planestride_in;
     int rowstride = rowstride_in;
     byte *buf16_ptr = NULL;
@@ -792,27 +1004,32 @@ gx_put_blended_image_cmykspot(gx_device *target, byte *buf_ptr, int planestride_
                in conversion to 16 bits if the target device is planar and
                a 16 bit device. */
 #if RAW_DUMP
-               /* Dump before and after the blend to make sure we are doing that ok */
+            /* Dump before and after the blend to make sure we are doing that ok */
             dump_raw_buffer(height, width, num_comp + 1, planestride, rowstride,
-                "pre_final_blend", buf_ptr);
+                            "pre_final_blend", buf_ptr, deep);
             global_index++;
 #endif
             if (expand) {
                 buf16_ptr = gs_alloc_bytes(target->memory,
                     planestride * num_comp * 2, "gx_put_blended_image_cmykspot");
-                gx_blend_image_buffer16(buf_ptr, (unsigned short*)buf16_ptr, width, height,
-                    rowstride, planestride, num_comp, bg);
+                gx_blend_image_buffer8to16(buf_ptr, (unsigned short*)buf16_ptr, width, height,
+                    rowstride, planestride, num_comp, bg>>8);
                 planestride = planestride_in * 2;
                 rowstride = rowstride_in * 2;
                 for (i = 0; i < num_comp; i++)
                     buf_ptrs[i] = buf16_ptr + i * planestride;
             } else {
-                gx_blend_image_buffer(buf_ptr, width, height, rowstride,
-                    planestride, num_comp, bg);
+                if (deep) {
+                    gx_blend_image_buffer16(buf_ptr, width, height, rowstride,
+                        planestride, num_comp, bg);
+                } else {
+                    gx_blend_image_buffer(buf_ptr, width, height, rowstride,
+                        planestride, num_comp, bg>>8);
+                }
 #if RAW_DUMP
                 /* Dump before and after the blend to make sure we are doing that ok */
-                dump_raw_buffer(height, width, num_comp, planestride, rowstride,
-                    "post_final_blend", buf_ptr);
+                dump_raw_buffer_be(height, width, num_comp, planestride, rowstride,
+                    "post_final_blend", buf_ptr, deep);
                 global_index++;
                 /* clist_band_count++; */
 #endif
@@ -854,104 +1071,199 @@ gx_put_blended_image_cmykspot(gx_device *target, byte *buf_ptr, int planestride_
         cv[comp_num] = 0;
 
     /* Send pixel data to the target device. */
-    for (y = 0; y < height; y++) {
-        for (x = 0; x < width; x++) {
+    if (deep) {
+        /* NOTE: buf_ptr points to big endian data */
+        for (y = 0; y < height; y++) {
+            for (x = 0; x < width; x++) {
 
-            /* composite CMYKA, etc. pixel with over solid background */
-            a = buf_ptr[x + planestride * num_comp];
+                /* composite CMYKA, etc. pixel with over solid background */
+#define GET16_BE2NATIVE(v) \
+    ((((byte *)&(v))[0]<<8) | (((byte *)&(v))[1]))
+                uint16_t a = GET16_BE2NATIVE(buf_ptr[x + planestride * num_comp]);
 
-            if ((a + 1) & 0xfe) {
-                /* a ^= 0xff; */  /* No inversion here! Bug 689895 */
-                for (comp_num = 0; comp_num < num_known_comp; comp_num++) {
-                    comp = buf_ptr[x + planestride * input_map[comp_num]];
-                    tmp = ((comp - bg) * a) + 0x80;
-                    comp += tmp + (tmp >> 8);
-                    cv[output_map[comp_num]] = comp;
+                if (a == 0) {
+                    for (comp_num = 0; comp_num < num_known_comp; comp_num++) {
+                        cv[output_map[comp_num]] = bg;
+                    }
+                } else if (a == 0xffff) {
+                    for (comp_num = 0; comp_num < num_known_comp; comp_num++) {
+                        comp = GET16_BE2NATIVE(buf_ptr[x + planestride * input_map[comp_num]]);
+                        cv[output_map[comp_num]] = comp;
+                    }
+                } else {
+                    /* a ^= 0xff; */  /* No inversion here! Bug 689895 */
+                    for (comp_num = 0; comp_num < num_known_comp; comp_num++) {
+                        comp = GET16_BE2NATIVE(buf_ptr[x + planestride * input_map[comp_num]]);
+                        tmp = ((comp - bg) * a) + 0x8000;
+                        comp += (tmp + (tmp >> 16))>>16;
+                        cv[output_map[comp_num]] = comp;
+                    }
                 }
-            } else if (a == 0) {
-                for (comp_num = 0; comp_num < num_known_comp; comp_num++) {
-                    cv[output_map[comp_num]] = bg;
+
+                /* If we have spot colors we need to encode and fill as a high level
+                   color if the device supports it which should always be the case
+                   if we are in this procedure */
+                if (dev_proc(target, dev_spec_op)(target, gxdso_supports_devn, NULL, 0)) {
+                    for (i = 0; i < output_num_comp; i++) {
+                        pdcolor.colors.devn.values[i] = cv[i];
+                    }
+                    pdcolor.type = gx_dc_type_devn;
+                    rect_fixed.p.x = int2fixed(x + x0);
+                    rect_fixed.p.y = int2fixed(y + y0);
+                    rect_fixed.q.x = int2fixed(x + x0 + 1);
+                    rect_fixed.q.y = int2fixed(y + y0 + 1);
+                    code = dev_proc(target, fill_rectangle_hl_color)(target, &rect_fixed,
+                        NULL, &pdcolor, NULL);
+                } else {
+                    /* encode as a color index */
+                    color = dev_proc(target, encode_color)(target, cv);
+                    code = dev_proc(target, fill_rectangle)(target, x + x0, y + y0, 1, 1, color);
                 }
-            } else {
-                for (comp_num = 0; comp_num < num_known_comp; comp_num++) {
-                    comp = buf_ptr[x + planestride * input_map[comp_num]];
-                    cv[output_map[comp_num]] = (comp << 8) + comp;
-                }
+                if (code < 0)
+                    return code;
             }
 
-            /* If we have spot colors we need to encode and fill as a high level
-               color if the device supports it which should always be the case
-               if we are in this procedure */
-            if (dev_proc(target, dev_spec_op)(target, gxdso_supports_devn, NULL, 0)) {
-                for (i = 0; i < output_num_comp; i++) {
-                    pdcolor.colors.devn.values[i] = cv[i];
-                }
-                pdcolor.type = gx_dc_type_devn;
-                rect_fixed.p.x = int2fixed(x + x0);
-                rect_fixed.p.y = int2fixed(y + y0);
-                rect_fixed.q.x = int2fixed(x + x0 + 1);
-                rect_fixed.q.y = int2fixed(y + y0 + 1);
-                code = dev_proc(target, fill_rectangle_hl_color)(target, &rect_fixed,
-                    NULL, &pdcolor, NULL);
-            } else {
-                /* encode as a color index */
-                color = dev_proc(target, encode_color)(target, cv);
-                code = dev_proc(target, fill_rectangle)(target, x + x0, y + y0, 1, 1, color);
-            }
-            if (code < 0)
-                return code;
+            buf_ptr += rowstride;
         }
+    } else {
+        bg >>= 8;
+        for (y = 0; y < height; y++) {
+            for (x = 0; x < width; x++) {
 
-        buf_ptr += rowstride;
+                /* composite CMYKA, etc. pixel with over solid background */
+                byte a = buf_ptr[x + planestride * num_comp];
+
+                if ((a + 1) & 0xfe) {
+                    /* a ^= 0xff; */  /* No inversion here! Bug 689895 */
+                    for (comp_num = 0; comp_num < num_known_comp; comp_num++) {
+                        comp = buf_ptr[x + planestride * input_map[comp_num]];
+                        tmp = ((comp - bg) * a) + 0x80;
+                        comp += tmp + (tmp >> 8);
+                        cv[output_map[comp_num]] = comp;
+                    }
+                } else if (a == 0) {
+                    for (comp_num = 0; comp_num < num_known_comp; comp_num++) {
+                        cv[output_map[comp_num]] = bg;
+                    }
+                } else {
+                    for (comp_num = 0; comp_num < num_known_comp; comp_num++) {
+                        comp = buf_ptr[x + planestride * input_map[comp_num]];
+                        cv[output_map[comp_num]] = (comp << 8) + comp;
+                    }
+                }
+
+                /* If we have spot colors we need to encode and fill as a high level
+                   color if the device supports it which should always be the case
+                   if we are in this procedure */
+                if (dev_proc(target, dev_spec_op)(target, gxdso_supports_devn, NULL, 0)) {
+                    for (i = 0; i < output_num_comp; i++) {
+                        pdcolor.colors.devn.values[i] = cv[i];
+                    }
+                    pdcolor.type = gx_dc_type_devn;
+                    rect_fixed.p.x = int2fixed(x + x0);
+                    rect_fixed.p.y = int2fixed(y + y0);
+                    rect_fixed.q.x = int2fixed(x + x0 + 1);
+                    rect_fixed.q.y = int2fixed(y + y0 + 1);
+                    code = dev_proc(target, fill_rectangle_hl_color)(target, &rect_fixed,
+                        NULL, &pdcolor, NULL);
+                } else {
+                    /* encode as a color index */
+                    color = dev_proc(target, encode_color)(target, cv);
+                    code = dev_proc(target, fill_rectangle)(target, x + x0, y + y0, 1, 1, color);
+                }
+                if (code < 0)
+                    return code;
+            }
+
+            buf_ptr += rowstride;
+        }
     }
     return code;
 }
 
 int
-gx_put_blended_image_custom(gx_device *target, byte *buf_ptr,
+gx_put_blended_image_custom(gx_device *target, byte *buf_ptr_,
                       int planestride, int rowstride,
-                      int x0, int y0, int width, int height, int num_comp, byte bg)
+                      int x0, int y0, int width, int height,
+                      int num_comp, uint16_t bg, bool deep)
 {
     int code = 0;
     int x, y, tmp, comp_num;
     gx_color_index color;
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_value comp;
-    byte a;
+    uint16_t *buf_ptr = (uint16_t *)(void *)buf_ptr_;
 
     /* Send pixel data to the target device. */
-    for (y = 0; y < height; y++) {
-        for (x = 0; x < width; x++) {
+    if (deep) {
+        for (y = 0; y < height; y++) {
+            for (x = 0; x < width; x++) {
 
-            /* composite CMYKA, etc. pixel with over solid background */
-            a = buf_ptr[x + planestride * num_comp];
+                /* composite CMYKA, etc. pixel with over solid background */
+#define GET16(v) (*((uint16_t *)(void *)&(v)))
+                uint16_t a = GET16(buf_ptr[x + planestride * num_comp]);
 
-            if ((a + 1) & 0xfe) {
-                a ^= 0xff;
-                for (comp_num = 0; comp_num < num_comp; comp_num++) {
-                    comp  = buf_ptr[x + planestride * comp_num];
-                    tmp = ((bg - comp) * a) + 0x80;
-                    comp += tmp + (tmp >> 8);
-                    cv[comp_num] = comp;
+                if (a == 0) {
+                    for (comp_num = 0; comp_num < num_comp; comp_num++) {
+                        cv[comp_num] = bg;
+                    }
+                } else if (a == 0xffff) {
+                    for (comp_num = 0; comp_num < num_comp; comp_num++) {
+                        comp = buf_ptr[x + planestride * comp_num];
+                        cv[comp_num] = comp;
+                    }
+                } else {
+                    a ^= 0xffff;
+                    for (comp_num = 0; comp_num < num_comp; comp_num++) {
+                        comp  = GET16(buf_ptr[x + planestride * comp_num]);
+                        tmp = ((bg - comp) * a) + 0x8000;
+                        cv[comp_num] = comp + ((tmp + (tmp>>16))>>16);
+                    }
                 }
-            } else if (a == 0) {
-                for (comp_num = 0; comp_num < num_comp; comp_num++) {
-                    cv[comp_num] = bg;
-                }
-            } else {
-                for (comp_num = 0; comp_num < num_comp; comp_num++) {
-                    comp = buf_ptr[x + planestride * comp_num];
-                    cv[comp_num] = (comp << 8) + comp;
-                }
+                color = dev_proc(target, encode_color)(target, cv);
+                code = dev_proc(target, fill_rectangle)(target, x + x0,
+                                                                y + y0, 1, 1, color);
+                if (code < 0)
+                    return code;
             }
-            color = dev_proc(target, encode_color)(target, cv);
-            code = dev_proc(target, fill_rectangle)(target, x + x0,
-                                                            y + y0, 1, 1, color);
-            if (code < 0)
-                return code;
-        }
 
-        buf_ptr += rowstride;
+            buf_ptr += rowstride;
+        }
+    } else {
+        bg >>= 8;
+        for (y = 0; y < height; y++) {
+            for (x = 0; x < width; x++) {
+
+                /* composite CMYKA, etc. pixel with over solid background */
+                byte a = buf_ptr[x + planestride * num_comp];
+
+                if ((a + 1) & 0xfe) {
+                    a ^= 0xff;
+                    for (comp_num = 0; comp_num < num_comp; comp_num++) {
+                        comp  = buf_ptr[x + planestride * comp_num];
+                        tmp = ((bg - comp) * a) + 0x80;
+                        comp += tmp + (tmp >> 8);
+                        cv[comp_num] = comp;
+                    }
+                } else if (a == 0) {
+                    for (comp_num = 0; comp_num < num_comp; comp_num++) {
+                        cv[comp_num] = bg;
+                    }
+                } else {
+                    for (comp_num = 0; comp_num < num_comp; comp_num++) {
+                        comp = buf_ptr[x + planestride * comp_num];
+                        cv[comp_num] = (comp << 8) + comp;
+                    }
+                }
+                color = dev_proc(target, encode_color)(target, cv);
+                code = dev_proc(target, fill_rectangle)(target, x + x0,
+                                                                y + y0, 1, 1, color);
+                if (code < 0)
+                    return code;
+            }
+
+            buf_ptr += rowstride;
+        }
     }
     return code;
 }

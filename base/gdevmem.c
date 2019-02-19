@@ -382,11 +382,15 @@ gdev_mem_data_size(const gx_device_memory * dev, int width, int height, ulong *p
  */
 int
 gdev_mem_max_height(const gx_device_memory * dev, int width, ulong size,
-                bool page_uses_transparency)
+                    bool page_uses_transparency)
 {
     int height;
     ulong max_height;
     ulong data_size;
+    bool has_tags = device_encodes_tags((gx_device *)dev);
+    int bits_per_comp = ((dev->color_info.depth - has_tags*8) /
+                          dev->color_info.num_components);
+    bool deep = bits_per_comp > 8;
 
     if (page_uses_transparency) {
         /*
@@ -397,7 +401,7 @@ gdev_mem_max_height(const gx_device_memory * dev, int width, ulong size,
          * processing the file.
          */
         max_height = size / (bitmap_raster_pad_align(width
-                * dev->color_info.depth + ESTIMATED_PDF14_ROW_SPACE(width, dev->color_info.num_components),
+            * dev->color_info.depth + ESTIMATED_PDF14_ROW_SPACE(width, dev->color_info.num_components, deep ? 16 : 8),
                 dev->pad, dev->log2_align_mod) + sizeof(byte *) * (dev->is_planar ? dev->color_info.num_components : 1));
         height = (int)min(max_height, max_int);
     } else {

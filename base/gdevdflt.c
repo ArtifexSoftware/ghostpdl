@@ -532,6 +532,10 @@ void check_device_compatible_encoding(gx_device *dev)
     gx_color_index mul, color_index;
     int i, j;
     gx_color_value colorants[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    bool has_tags = device_encodes_tags(dev);
+    int bits_per_comp = ((dev->color_info.depth - has_tags*8) /
+                         dev->color_info.num_components);
+    bool deep = bits_per_comp > 8;
 
     if (pinfo->separable_and_linear == GX_CINFO_UNKNOWN_SEP_LIN)
         check_device_separable(dev);
@@ -546,30 +550,31 @@ void check_device_compatible_encoding(gx_device *dev)
 
     /* Do the superficial quick checks */
     for (i = 0; i < num_components; i++) {
-        int shift = (num_components-1-i)*8;
+        int shift = (num_components-1-i)*(8<<deep);
         if (pinfo->comp_shift[i] != shift)
             goto bad;
-        if (pinfo->comp_bits[i] != 8)
+        if (pinfo->comp_bits[i] != 8<<deep)
             goto bad;
-        if (pinfo->comp_mask[i] != ((gx_color_index)255)<<shift)
+        if (pinfo->comp_mask[i] != ((gx_color_index)(deep ? 65535 : 255))<<shift)
             goto bad;
     }
 
     /* OK, now we are going to be slower. */
     mul = 0;
     for (i = 0; i < num_components; i++) {
-        mul = (mul<<8) | 1;
+        mul = (mul<<(8<<deep)) | 1;
     }
+    /* In the deep case, we don't exhaustively test */
     for (i = 0; i < 255; i++) {
         for (j = 0; j < num_components; j++)
             colorants[j] = i*257;
         color_index = dev_proc(dev, encode_color)(dev, colorants);
-        if (color_index != i*mul && (i*mul != gx_no_color_index_value))
+        if (color_index != i*mul*(deep ? 257 : 1) && (i*mul*(deep ? 257 : 1) != gx_no_color_index_value))
             goto bad;
     }
     /* If we reach here, then every value matched, except possibly the last one.
      * We'll allow that to differ just in the lowest bits. */
-    if ((color_index | mul) != 255*mul)
+    if ((color_index | mul) != 255*mul*(deep ? 257 : 1))
         goto bad;
 
     pinfo->separable_and_linear = GX_CINFO_SEP_LIN_STANDARD;

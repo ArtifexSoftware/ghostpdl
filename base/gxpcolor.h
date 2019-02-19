@@ -163,6 +163,7 @@ struct gx_pattern_trans_s {
     int height;
     const pdf14_nonseparable_blending_procs_t *blending_procs;
     bool is_additive;
+    bool deep;
     void *buf;
     void (* pat_trans_fill)(int xmin, int ymin, int xmax, int ymax, int px,
                             int py, const gx_color_tile *ptile,

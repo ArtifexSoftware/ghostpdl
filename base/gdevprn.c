@@ -384,6 +384,10 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
     gs_memory_t *buffer_memory =
         (ppdev->buffer_memory == 0 ? pdev->memory->non_gc_memory :
          ppdev->buffer_memory);
+    bool has_tags = device_encodes_tags(pdev);
+    int bits_per_comp = ((pdev->color_info.depth - has_tags*8) /
+                         pdev->color_info.num_components);
+    bool deep = bits_per_comp > 8;
 
     /* If reallocate, find allocated memory & tear down buffer device */
     if (reallocate)
@@ -424,7 +428,7 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
             (&buf_space, pdev, NULL, pdev->height, false) >= 0;
         mem_space = buf_space.bits + buf_space.line_ptrs;
         if (ppdev->page_uses_transparency) {
-            pdf14_trans_buffer_size = (ESTIMATED_PDF14_ROW_SPACE(max(1, pdev->width), pdev->color_info.num_components) >> 3);
+            pdf14_trans_buffer_size = (ESTIMATED_PDF14_ROW_SPACE(max(1, pdev->width), pdev->color_info.num_components, deep ? 16 : 8) >> 3);
             if (new_height < (max_ulong - mem_space) / pdf14_trans_buffer_size) {
                 pdf14_trans_buffer_size *= pdev->height;
             } else {
