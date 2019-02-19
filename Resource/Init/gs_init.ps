@@ -1597,7 +1597,7 @@ setpacking
 currentdict /.gsgetdeviceprop .forceundef
 
 /.setdefaulthalftone {
-  .getdefaulthalftone
+  //.getdefaulthalftone exec
   { sethalftone }
   { % default not found
     .useloresscreen { .setloreshalftone } { .sethireshalftone pop } ifelse
@@ -2295,6 +2295,7 @@ SAFER { .setsafeglobal } if
   /.putdeviceprops
   /.growdict /.growdictlength
   /.userdict /.uservar
+  /.getdefaulthalftone
 
   % Used by a free user in the Library of Congress. Apparently this is used to
   % draw a partial page, which is then filled in by the results of a barcode

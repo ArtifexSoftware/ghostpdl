@@ -207,7 +207,7 @@ end
   /HalftoneMode getuserparam 0 eq {
     //setcolorscreen
   } {
-    12 { pop } repeat .getdefaulthalftone
+    12 { pop } repeat //.getdefaulthalftone exec
     { //sethalftone }
     { .setdefaulthalftone }
     ifelse
@@ -217,7 +217,7 @@ end
   /HalftoneMode getuserparam 0 eq {
     //setscreen
   } {
-    pop pop pop .getdefaulthalftone
+    pop pop pop //.getdefaulthalftone exec
     { //sethalftone }
     { .setdefaulthalftone }
     ifelse
@@ -228,7 +228,7 @@ end
     //sethalftone
   } {
     gsave //sethalftone grestore
-    .getdefaulthalftone
+    //.getdefaulthalftone exec
     { //sethalftone }
     { .setdefaulthalftone }
     ifelse
