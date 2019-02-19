@@ -434,7 +434,7 @@ psuserparams /ProcessDSCComment {//.checkprocesscomment exec} put
     {pop /vmreclaim load $error /errorname get signalerror}
     {pop} ifelse
   } ifelse
-} odef
+} .bind executeonly odef
 -1 setvmthreshold
 
 % ------ IODevices ------ %

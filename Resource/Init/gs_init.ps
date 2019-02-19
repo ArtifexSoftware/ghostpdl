@@ -2371,7 +2371,7 @@ SAFER { .setsafeglobal } if
   %/.buildfont32 /.buildfont42 /.type9mapcid /.type11mapcid /.swapcolors
   %/currentdevice  /.quit /.setuseciecolor /.needinput /.setoverprintmode /.special_op /.dicttomark /.knownget
   %/.FAPIBuildGlyph /.FAPIBuildChar /.FAPIBuildGlyph9
-  %/.tempfile /.numicc_components /.set_outputintent  /.max /.min /.vmreclaim /.getpath /.setglobal
+  %/.tempfile /.numicc_components /.set_outputintent  /.max /.min /.getpath /.setglobal
   %/.setdebug /.mementolistnewblocks /getenv
   ]
   {systemdict exch .forceundef} forall
@@ -2543,6 +2543,8 @@ end
 /vmreclaim where
  { pop NOGC not { 2 .vmreclaim 0 vmreclaim } if
  } if
+systemdict /.vmreclaim .undef
+level2dict /.vmreclaim .undef
 
 % Do this before systemdict is locked (see below for additional CETMODE setup using gs_cet.ps)
 systemdict /CETMODE .knownget {
