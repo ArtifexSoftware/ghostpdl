@@ -436,18 +436,10 @@ pdf_impl_init_job(pl_interp_implementation_t *impl,
 static int
 pdf_impl_dnit_job(pl_interp_implementation_t *impl)
 {
-    return 0;
-}
-
-/* Remove a device from an interperter instance */
-static int
-pdf_impl_remove_device(pl_interp_implementation_t *impl)
-{
     pdf_interp_instance_t *instance = impl->interp_client_data;
     pdf_context *ctx = instance->ctx;
 
-    /* return to original gstate */
-    return gs_grestore_only(ctx->pgs); /* destroys gs_save stack */
+    return gs_grestore_only(ctx->pgs); /* pdf_impl_set_device does a gsave (after setting the device), restore now. */
 }
 
 /* Deallocate a interpreter instance */

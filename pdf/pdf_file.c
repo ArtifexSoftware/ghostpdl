@@ -46,6 +46,22 @@
 #  include "sjpx.h"
 #endif
 
+/* Utility routine to create a pdf_stream object */
+static int pdfi_alloc_stream(pdf_context *ctx, stream *source, stream *original, pdf_stream **new_stream)
+{
+    int code;
+
+    *new_stream = NULL;
+    *new_stream = (pdf_stream *)gs_alloc_bytes(ctx->memory, sizeof(pdf_stream), "pdfi_alloc_stream");
+    if (*new_stream == NULL)
+        return_error(gs_error_VMerror);
+    memset(*new_stream, 0x00, sizeof(pdf_stream));
+    (*new_stream)->eof = false;
+    ((pdf_stream *)(*new_stream))->s = source;
+    ((pdf_stream *)(*new_stream))->original = original;
+    return 0;
+}
+
 /***********************************************************************************/
 /* Decompression filters.                                                          */
 
@@ -687,6 +703,7 @@ int pdfi_filter(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream
     int code;
     int64_t i, j, duplicates;
     stream *s = source->s, *new_s = NULL;
+
     *new_stream = NULL;
 
     if (ctx->pdfdebug)
@@ -701,14 +718,8 @@ int pdfi_filter(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream
                     return code;
             }
             if (code < 0) {
-                *new_stream = (pdf_stream *)gs_alloc_bytes(ctx->memory, sizeof(pdf_stream), "pdfi_filter, new pdf_stream");
-                if (*new_stream == NULL)
-                    return_error(gs_error_VMerror);
-                memset(*new_stream, 0x00, sizeof(pdf_stream));
-                (*new_stream)->eof = false;
-                ((pdf_stream *)(*new_stream))->s = s;
-                ((pdf_stream *)(*new_stream))->original = source->s;
-                return 0;
+                code = pdfi_alloc_stream(ctx, s, source->s, new_stream);
+                return code;
             }
         } else
             return code;
@@ -839,13 +850,7 @@ int pdfi_filter(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream
             }
             pdfi_countdown(decodeparams_array);
             pdfi_countdown(filter_array);
-            *new_stream = (pdf_stream *)gs_alloc_bytes(ctx->memory, sizeof(pdf_stream), "pdfi_filter, new pdf_stream");
-            if (*new_stream == NULL)
-                return_error(gs_error_VMerror);
-            memset(*new_stream, 0x00, sizeof(pdf_stream));
-            (*new_stream)->eof = false;
-            ((pdf_stream *)(*new_stream))->original = source->s;
-            ((pdf_stream *)(*new_stream))->s = s;
+            code = pdfi_alloc_stream(ctx, s, source->s, new_stream);
         } else
             return_error(gs_error_typecheck);
     } else {
@@ -871,13 +876,7 @@ int pdfi_filter(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream
         if (code < 0)
             return code;
 
-        *new_stream = (pdf_stream *)gs_alloc_bytes(ctx->memory, sizeof(pdf_stream), "pdf_filter, new pdf_stream");
-        if (*new_stream == NULL)
-            return_error(gs_error_VMerror);
-        memset(*new_stream, 0x00, sizeof(pdf_stream));
-        (*new_stream)->eof = false;
-        ((pdf_stream *)(*new_stream))->original = source->s;
-        ((pdf_stream *)(*new_stream))->s = new_s;
+        code = pdfi_alloc_stream(ctx, new_s, source->s, new_stream);
     }
     return code;
 }
@@ -899,15 +898,8 @@ int pdfi_apply_SubFileDecode_filter(pdf_context *ctx, int EODCount, gs_const_str
     code = pdfi_apply_filter(ctx, NULL, &SFD_name, NULL, s, &new_s, inline_image);
     if (code < 0)
         return code;
-    *new_stream = (pdf_stream *)gs_alloc_bytes(ctx->memory, sizeof(pdf_stream), "pdfi_apply_SubFileDecode_filter, new pdf_stream");
-    if (*new_stream == NULL)
-        return_error(gs_error_VMerror);
-    memset(*new_stream, 0x00, sizeof(pdf_stream));
-    (*new_stream)->eof = false;
-    ((pdf_stream *)(*new_stream))->original = source->s;
-    ((pdf_stream *)(*new_stream))->s = new_s;
-
-    return 0;
+    code = pdfi_alloc_stream(ctx, new_s, source->s, new_stream);
+    return code;
 }
 
 /* We would really like to use a ReusableStreamDecode filter here, but that filter is defined
@@ -939,19 +931,14 @@ int pdfi_open_memory_stream_from_stream(pdf_context *ctx, unsigned int size, byt
 
     sread_string(new_stream, *Buffer, size);
 
-    *new_pdf_stream = (pdf_stream *)gs_alloc_bytes(ctx->memory, sizeof(pdf_stream), "pdfi_open_memory_stream (pdf_stream)");
-    if (*new_pdf_stream == NULL) {
+    code = pdfi_alloc_stream(ctx, new_stream, source->s, new_pdf_stream);
+    if (code < 0) {
         sclose(new_stream);
         gs_free_object(ctx->memory, *Buffer, "open memory stream(buffer)");
         gs_free_object(ctx->memory, new_stream, "open memory stream(stream)");
-        return_error(gs_error_VMerror);
     }
-    memset(*new_pdf_stream, 0x00, sizeof(pdf_stream));
-    (*new_pdf_stream)->eof = false;
-    ((pdf_stream *)(*new_pdf_stream))->original = source->s;
-    ((pdf_stream *)(*new_pdf_stream))->s = new_stream;
 
-    return 0;
+    return code;
 }
 
 /*
@@ -1054,6 +1041,7 @@ int pdfi_open_memory_stream_from_filtered_stream(pdf_context *ctx, pdf_dict *str
 
 int pdfi_open_memory_stream_from_memory(pdf_context *ctx, unsigned int size, byte *Buffer, pdf_stream **new_pdf_stream)
 {
+    int code;
     stream *new_stream;
 
     new_stream = file_alloc_stream(ctx->memory, "open memory stream from memory(stream)");
@@ -1061,18 +1049,13 @@ int pdfi_open_memory_stream_from_memory(pdf_context *ctx, unsigned int size, byt
         return_error(gs_error_VMerror);
     sread_string(new_stream, Buffer, size);
 
-    *new_pdf_stream = (pdf_stream *)gs_alloc_bytes(ctx->memory, sizeof(pdf_stream), "pdfi_open_memory_stream_from_memory(pdf_stream)");
-    if (*new_pdf_stream == NULL) {
+    code = pdfi_alloc_stream(ctx, new_stream, NULL, new_pdf_stream);
+    if (code < 0) {
         sclose(new_stream);
         gs_free_object(ctx->memory, new_stream, "open memory stream from memory(stream)");
-        return_error(gs_error_VMerror);
     }
-    memset(*new_pdf_stream, 0x00, sizeof(pdf_stream));
-    (*new_pdf_stream)->eof = false;
-    ((pdf_stream *)(*new_pdf_stream))->original = NULL;
-    ((pdf_stream *)(*new_pdf_stream))->s = new_stream;
 
-    return 0;
+    return code;
 }
 
 int pdfi_close_memory_stream(pdf_context *ctx, byte *Buffer, pdf_stream *source)

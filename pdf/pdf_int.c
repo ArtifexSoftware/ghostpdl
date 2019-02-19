@@ -33,6 +33,147 @@
 #include "pdf_dict.h"
 #include "pdf_array.h"
 
+
+/***********************************************************************************/
+/* Functions to create the various kinds of 'PDF objects', Created objects have a  */
+/* reference count of 0. Composite objects (dictionaries, arrays, strings) use the */
+/* 'size' argument to create an object with the correct numbr of entries or of the */
+/* requested size. Simple objects (integers etc) ignore this parameter.            */
+/* Objects do not get their data assigned, that's up to the caller, but we do      */
+/* set the lngth or size fields for composite objects.                             */
+
+int pdfi_alloc_object(pdf_context *ctx, pdf_obj_type type, unsigned int size, pdf_obj **obj)
+{
+    int code = 0, bytes = 0;
+
+    switch(type) {
+        case PDF_ARRAY_MARK:
+        case PDF_DICT_MARK:
+        case PDF_PROC_MARK:
+        case PDF_NULL:
+            bytes = sizeof(pdf_obj);
+            break;
+        case PDF_INT:
+        case PDF_REAL:
+            bytes = sizeof(pdf_num);
+            break;
+        case PDF_STRING:
+        case PDF_NAME:
+            bytes = sizeof(pdf_string);
+            break;
+        case PDF_ARRAY:
+            bytes = sizeof(pdf_array);
+            break;
+        case PDF_DICT:
+            bytes = sizeof(pdf_dict);
+            break;
+        case PDF_INDIRECT:
+            bytes = sizeof(pdf_indirect_ref);
+            break;
+        case PDF_BOOL:
+            bytes = sizeof(pdf_bool);
+            break;
+        case PDF_KEYWORD:
+            bytes = sizeof(pdf_keyword);
+            break;
+        /* The following aren't PDF object types, but are objects we either want to
+         * reference count, or store on the stack.
+         */
+        case PDF_XREF_TABLE:
+            bytes = sizeof(xref_table);
+            break;
+        default:
+            return_error(gs_error_typecheck);
+    }
+    *obj = (pdf_obj *)gs_alloc_bytes(ctx->memory, bytes, "pdfi_alloc_object");
+    if (*obj == NULL)
+        return_error(gs_error_VMerror);
+
+    memset(*obj, 0x00, bytes);
+    (*obj)->memory = ctx->memory;
+    (*obj)->type = type;
+
+    switch(type) {
+        case PDF_NULL:
+        case PDF_INT:
+        case PDF_REAL:
+        case PDF_INDIRECT:
+        case PDF_BOOL:
+        case PDF_ARRAY_MARK:
+        case PDF_DICT_MARK:
+        case PDF_PROC_MARK:
+            break;
+        case PDF_KEYWORD:
+        case PDF_STRING:
+        case PDF_NAME:
+            {
+                unsigned char *data = NULL;
+                data = (unsigned char *)gs_alloc_bytes(ctx->memory, size, "pdfi_alloc_object");
+                if (data == NULL) {
+                    gs_free_object(ctx->memory, *obj, "pdfi_alloc_object");
+                    *obj = NULL;
+                    return_error(gs_error_VMerror);
+                }
+                ((pdf_string *)*obj)->data = data;
+                ((pdf_string *)*obj)->length = size;
+            }
+            break;
+        case PDF_ARRAY:
+            {
+                pdf_obj **values = NULL;
+                pdf_array *a = (pdf_array *)*obj;
+
+                ((pdf_array *)*obj)->size = size;
+                if (size > 0) {
+                    values = (pdf_obj **)gs_alloc_bytes(ctx->memory, size * sizeof(pdf_obj *), "pdfi_alloc_object");
+                    if (values == NULL) {
+                        gs_free_object(ctx->memory, *obj, "pdfi_alloc_object");
+                        gs_free_object(ctx->memory, values, "pdfi_alloc_object");
+                        *obj = NULL;
+                        return_error(gs_error_VMerror);
+                    }
+                    ((pdf_array *)*obj)->values = values;
+                    memset(((pdf_array *)*obj)->values, 0x00, size * sizeof(pdf_obj *));
+                }
+            }
+            break;
+        case PDF_DICT:
+            {
+                pdf_obj **keys = NULL, **values = NULL;
+
+                ((pdf_dict *)*obj)->size = size;
+                if (size > 0) {
+                    keys = (pdf_obj **)gs_alloc_bytes(ctx->memory, size * sizeof(pdf_obj *), "pdfi_alloc_object");
+                    values = (pdf_obj **)gs_alloc_bytes(ctx->memory, size * sizeof(pdf_obj *), "pdfi_alloc_object");
+                    if (keys == NULL || values == NULL) {
+                        gs_free_object(ctx->memory, *obj, "pdfi_alloc_object");
+                        gs_free_object(ctx->memory, keys, "pdfi_alloc_object");
+                        gs_free_object(ctx->memory, values, "pdfi_alloc_object");
+                        *obj = NULL;
+                        return_error(gs_error_VMerror);
+                    }
+                    ((pdf_dict *)*obj)->values = values;
+                    ((pdf_dict *)*obj)->keys = keys;
+                    memset(((pdf_dict *)*obj)->values, 0x00, size * sizeof(pdf_obj *));
+                    memset(((pdf_dict *)*obj)->keys, 0x00, size * sizeof(pdf_obj *));
+                }
+            }
+            break;
+        /* The following aren't PDF object types, but are objects we either want to
+         * reference count, or store on the stack.
+         */
+        case PDF_XREF_TABLE:
+            break;
+        default:
+            break;
+    }
+#if REFCNT_DEBUG
+    (*obj)->UID = ctx->UID++;
+    dmprintf2(ctx->memory, "Allocated object of type %c with UID %"PRIi64"\n", (*obj)->type, (*obj)->UID);
+#endif
+    return 0;
+}
+
 /***********************************************************************************/
 /* Functions to free the various kinds of 'PDF objects' and stack manipulations.   */
 /* All objects are reference counted. Pushign an object onto the stack increments  */
@@ -185,16 +326,10 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
         if(ctx->pdfstoponerror)
             return_error(gs_error_rangecheck);
 
-        o = (pdf_obj *)gs_alloc_bytes(ctx->memory, sizeof(pdf_obj), "pdfi_read_keyword");
-        if (o == NULL)
-            return_error(gs_error_VMerror);
-
-        memset(o, 0x00, sizeof(pdf_obj));
-        o->memory = ctx->memory;
-        o->type = PDF_NULL;
-        *object = o;
-        pdfi_countup(*object);
-        return 0;
+        code = pdfi_alloc_object(ctx, PDF_NULL, 0, object);
+        if (code == 0)
+            pdfi_countup(*object);
+        return code;
     }
 
     entry = &ctx->xref_table->xref[obj];
@@ -615,23 +750,21 @@ static int pdfi_read_num(pdf_context *ctx, pdf_stream *s)
             return_error(gs_error_syntaxerror);
     } while(1);
 
-    num = (pdf_num *)gs_alloc_bytes(ctx->memory, sizeof(pdf_num), "pdfi_read_num");
-    if (num == NULL)
-        return_error(gs_error_VMerror);
-
-    memset(num, 0x00, sizeof(pdf_num));
-    num->memory = ctx->memory;
+    if (real && !malformed)
+        code = pdfi_alloc_object(ctx, PDF_REAL, 0, (pdf_obj **)&num);
+    else
+        code = pdfi_alloc_object(ctx, PDF_INT, 0, (pdf_obj **)&num);
+    if (code < 0)
+        return code;
 
     if (malformed) {
         if (!(ctx->pdf_errors & E_PDF_MALFORMEDNUMBER))
             dmprintf1(ctx->memory, "Treating malformed number %s as 0.\n", Buffer);
         ctx->pdf_errors |= E_PDF_MALFORMEDNUMBER;
-        num->type = PDF_INT;
         num->value.i = 0;
     } else {
         if (real) {
             float tempf;
-            num->type = PDF_REAL;
             if (sscanf((const char *)Buffer, "%f", &tempf) == 0) {
                 if (ctx->pdfdebug)
                     dmprintf1(ctx->memory, "failed to read real number : %s\n", Buffer);
@@ -641,7 +774,6 @@ static int pdfi_read_num(pdf_context *ctx, pdf_stream *s)
             num->value.d = tempf;
         } else {
             int tempi;
-            num->type = PDF_INT;
             if (sscanf((const char *)Buffer, "%d", &tempi) == 0) {
                 if (ctx->pdfdebug)
                     dmprintf1(ctx->memory, "failed to read integer : %s\n", Buffer);
@@ -658,10 +790,6 @@ static int pdfi_read_num(pdf_context *ctx, pdf_stream *s)
             dmprintf1(ctx->memory, " %"PRIi64, num->value.i);
     }
 
-#if REFCNT_DEBUG
-    num->UID = ctx->UID++;
-    dmprintf1(ctx->memory, "Allocated number object with UID %"PRIi64"\n", num->UID);
-#endif
     code = pdfi_push(ctx, (pdf_obj *)num);
 
     if (code < 0)
@@ -733,35 +861,18 @@ static int pdfi_read_name(pdf_context *ctx, pdf_stream *s)
         }
     } while(1);
 
-    name = (pdf_name *)gs_alloc_bytes(ctx->memory, sizeof(pdf_name), "pdfi_read_name");
-    if (name == NULL) {
+    code = pdfi_alloc_object(ctx, PDF_NAME, index, (pdf_obj **)&name);
+    if (code < 0) {
         gs_free_object(ctx->memory, Buffer, "pdfi_read_name error");
-        return_error(gs_error_VMerror);
+        return code;
     }
-
-    memset(name, 0x00, sizeof(pdf_name));
-    name->memory = ctx->memory;
-    name->type = PDF_NAME;
-
-    NewBuf = (char *)gs_alloc_bytes(ctx->memory, index, "pdfi_read_name");
-    if (NewBuf == NULL) {
-        gs_free_object(ctx->memory, Buffer, "pdfi_read_name error");
-        return_error(gs_error_VMerror);
-    }
-    memcpy(NewBuf, Buffer, index);
+    memcpy(name->data, Buffer, index);
 
     if (ctx->pdfdebug)
         dmprintf1(ctx->memory, " /%s", Buffer);
 
     gs_free_object(ctx->memory, Buffer, "pdfi_read_name");
 
-    name->data = (unsigned char *)NewBuf;
-    name->length = index;
-
-#if REFCNT_DEBUG
-    name->UID = ctx->UID++;
-    dmprintf1(ctx->memory, "Allocated name object with UID %"PRIi64"\n", name->UID);
-#endif
     code = pdfi_push(ctx, (pdf_obj *)name);
 
     if (code < 0)
@@ -837,31 +948,14 @@ static int pdfi_read_hexstring(pdf_context *ctx, pdf_stream *s)
     if (ctx->pdfdebug)
         dmprintf(ctx->memory, ">");
 
-    string = (pdf_string *)gs_alloc_bytes(ctx->memory, sizeof(pdf_string), "pdfi_read_hexstring");
-    if (string == NULL) {
-        gs_free_object(ctx->memory, Buffer, "pdfi_read_hexstring");
-        return_error(gs_error_VMerror);
+    code = pdfi_alloc_object(ctx, PDF_STRING, index, (pdf_obj **)&string);
+    if (code < 0) {
+        gs_free_object(ctx->memory, Buffer, "pdfi_read_name error");
+        return code;
     }
-
-    memset(string, 0x00, sizeof(pdf_string));
-    string->memory = ctx->memory;
-    string->type = PDF_STRING;
-
-    NewBuf = (char *)gs_alloc_bytes(ctx->memory, index, "pdfi_read_hexstring");
-    if (NewBuf == NULL) {
-        gs_free_object(ctx->memory, Buffer, "pdfi_read_hexstring error");
-        return_error(gs_error_VMerror);
-    }
-    memcpy(NewBuf, Buffer, index);
+    memcpy(string->data, Buffer, index);
     gs_free_object(ctx->memory, Buffer, "pdfi_read_hexstring");
 
-    string->data = (unsigned char *)NewBuf;
-    string->length = index;
-
-#if REFCNT_DEBUG
-    string->UID = ctx->UID++;
-    dmprintf1(ctx->memory, "Allocated hexstring object with UID %"PRIi64"\n", string->UID);
-#endif
     code = pdfi_push(ctx, (pdf_obj *)string);
     if (code < 0)
         pdfi_free_namestring((pdf_obj *)string);
@@ -1035,26 +1129,14 @@ static int pdfi_read_string(pdf_context *ctx, pdf_stream *s)
         }
     } while(1);
 
-    string = (pdf_string *)gs_alloc_bytes(ctx->memory, sizeof(pdf_string), "pdfi_read_string");
-    if (string == NULL) {
-        gs_free_object(ctx->memory, Buffer, "pdfi_read_string");
-        return_error(gs_error_VMerror);
+    code = pdfi_alloc_object(ctx, PDF_STRING, index, (pdf_obj **)&string);
+    if (code < 0) {
+        gs_free_object(ctx->memory, Buffer, "pdfi_read_name error");
+        return code;
     }
+    memcpy(string->data, Buffer, index);
 
-    memset(string, 0x00, sizeof(pdf_string));
-    string->memory = ctx->memory;
-    string->type = PDF_STRING;
-
-    NewBuf = (char *)gs_alloc_bytes(ctx->memory, index, "pdfi_read_string");
-    if (NewBuf == NULL) {
-        gs_free_object(ctx->memory, Buffer, "pdfi_read_string error");
-        return_error(gs_error_VMerror);
-    }
-    memcpy(NewBuf, Buffer, index);
     gs_free_object(ctx->memory, Buffer, "pdfi_read_string");
-
-    string->data = (unsigned char *)NewBuf;
-    string->length = index;
 
     if (ctx->pdfdebug) {
         int i;
@@ -1064,10 +1146,6 @@ static int pdfi_read_string(pdf_context *ctx, pdf_stream *s)
         dmprintf(ctx->memory, ")");
     }
 
-#if REFCNT_DEBUG
-    string->UID = ctx->UID++;
-    dmprintf1(ctx->memory, "Allocated string object with UID %"PRIi64"\n", string->UID);
-#endif
     code = pdfi_push(ctx, (pdf_obj *)string);
     if (code < 0)
         pdfi_free_namestring((pdf_obj *)string);
@@ -1086,22 +1164,11 @@ static int pdfi_array_from_stack(pdf_context *ctx)
     if (code < 0)
         return code;
 
-    a = (pdf_array *)gs_alloc_bytes(ctx->memory, sizeof(pdf_array), "pdfi_array_from_stack");
-    if (a == NULL)
-        return_error(gs_error_VMerror);
+    code = pdfi_alloc_object(ctx, PDF_ARRAY, index, (pdf_obj **)&a);
+    if (code < 0)
+        return code;
 
-    memset(a, 0x00, sizeof(pdf_array));
-    a->memory = ctx->memory;
-    a->type = PDF_ARRAY;
-
-    a->size = a->entries = index;
-
-    a->values = (pdf_obj **)gs_alloc_bytes(ctx->memory, index * sizeof(pdf_obj *), "pdfi_array_from_stack");
-    if (a->values == NULL) {
-        gs_free_object(a->memory, a, "pdfi_array_from_stack error");
-        return_error(gs_error_VMerror);
-    }
-    memset(a->values, 0x00, index * sizeof(pdf_obj *));
+    a->entries = index;
 
     while (index) {
         o = ctx->stack_top[-1];
@@ -1117,10 +1184,6 @@ static int pdfi_array_from_stack(pdf_context *ctx)
     if (ctx->pdfdebug)
         dmprintf (ctx->memory, " ]\n");
 
-#if REFCNT_DEBUG
-    a->UID = ctx->UID++;
-    dmprintf1(ctx->memory, "Allocated array object with UID %"PRIi64"\n", a->UID);
-#endif
     code = pdfi_push(ctx, (pdf_obj *)a);
     if (code < 0)
         pdfi_free_array((pdf_obj *)a);
@@ -1217,29 +1280,12 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_stream *s)
     /* NB The code below uses 'Buffer', not the data stored in keyword->data to compare strings */
     Buffer[index] = 0x00;
 
-    keyword = (pdf_keyword *)gs_alloc_bytes(ctx->memory, sizeof(pdf_keyword), "pdfi_read_keyword");
-    if (keyword == NULL)
-        return_error(gs_error_VMerror);
-
-    keyword->data = (unsigned char *)gs_alloc_bytes(ctx->memory, index, "pdfi_read_keyword");
-    if (keyword->data == NULL) {
-        gs_free_object(ctx->memory, keyword, "pdfi_read_keyword error");
-        return_error(gs_error_VMerror);
-    }
-
-    memset(keyword, 0x00, sizeof(pdf_obj));
-    keyword->memory = ctx->memory;
-    keyword->type = PDF_KEYWORD;
-    keyword->refcnt = 1;
+    code = pdfi_alloc_object(ctx, PDF_KEYWORD, index, (pdf_obj **)&keyword);
+    if (code < 0)
+        return code;
 
     memcpy(keyword->data, Buffer, index);
-    keyword->length = index;
-    keyword->key = PDF_NOT_A_KEYWORD;
-
-#if REFCNT_DEBUG
-    keyword->UID = ctx->UID++;
-    dmprintf1(ctx->memory, "Allocated keyword object with UID %"PRIi64"\n", keyword->UID);
-#endif
+    pdfi_countup(keyword);
 
     if (ctx->pdfdebug)
         dmprintf1(ctx->memory, " %s\n", Buffer);
@@ -1258,34 +1304,35 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_stream *s)
 
                 pdfi_countdown(keyword);
 
-                if(ctx->stack_top - ctx->stack_bot < 2)
+                if(ctx->stack_top - ctx->stack_bot < 2) {
+                    pdfi_countdown(keyword);
                     return_error(gs_error_stackunderflow);
+                }
 
-                if(((pdf_obj *)ctx->stack_top[-1])->type != PDF_INT || ((pdf_obj *)ctx->stack_top[-2])->type != PDF_INT)
+                if(((pdf_obj *)ctx->stack_top[-1])->type != PDF_INT || ((pdf_obj *)ctx->stack_top[-2])->type != PDF_INT) {
+                    pdfi_countdown(keyword);
                     return_error(gs_error_typecheck);
+                }
 
                 gen_num = ((pdf_num *)ctx->stack_top[-1])->value.i;
                 pdfi_pop(ctx, 1);
                 obj_num = ((pdf_num *)ctx->stack_top[-1])->value.i;
                 pdfi_pop(ctx, 1);
 
-                o = (pdf_indirect_ref *)gs_alloc_bytes(ctx->memory, sizeof(pdf_indirect_ref), "pdfi_read_keyword");
-                if (o == NULL)
-                    return_error(gs_error_VMerror);
+                code = pdfi_alloc_object(ctx, PDF_INDIRECT, 0, (pdf_obj **)&o);
+                if (code < 0) {
+                    pdfi_countdown(keyword);
+                    return code;
+                }
 
-                memset(o, 0x00, sizeof(pdf_indirect_ref));
-                o->memory = ctx->memory;
-                o->type = PDF_INDIRECT;
                 o->ref_generation_num = gen_num;
                 o->ref_object_num = obj_num;
 
-#if REFCNT_DEBUG
-                o->UID = ctx->UID++;
-                dmprintf1(ctx->memory, "Allocated indirect reference object with UID %"PRIi64"\n", o->UID);
-#endif
                 code = pdfi_push(ctx, (pdf_obj *)o);
-                if (code < 0)
+                if (code < 0) {
+                    pdfi_countdown(keyword);
                     pdfi_free_object((pdf_obj *)o);
+                }
                 return code;
             }
             break;
@@ -1305,8 +1352,10 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_stream *s)
             if (keyword->length == 6 && memcmp((const char *)Buffer, "stream", 6) == 0){
                 keyword->key = PDF_STREAM;
                 code = skip_eol(ctx, s);
-                if (code < 0)
+                if (code < 0) {
+                    pdfi_countdown(keyword);
                     return code;
+                }
             }
             else {
                 if (keyword->length == 9 && memcmp((const char *)Buffer, "startxref", 9) == 0)
@@ -1319,19 +1368,12 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_stream *s)
 
                 pdfi_countdown(keyword);
 
-                o = (pdf_bool *)gs_alloc_bytes(ctx->memory, sizeof(pdf_bool), "pdfi_read_keyword");
-                if (o == NULL)
-                    return_error(gs_error_VMerror);
+                code = pdfi_alloc_object(ctx, PDF_BOOL, 0, (pdf_obj **)&o);
+                if (code < 0)
+                    return code;
 
-                memset(o, 0x00, sizeof(pdf_bool));
-                o->memory = ctx->memory;
-                o->type = PDF_BOOL;
                 o->value = true;
 
-#if REFCNT_DEBUG
-                o->UID = ctx->UID++;
-                dmprintf1(ctx->memory, "Allocated boolean object with UID %"PRIi64"\n", o->UID);
-#endif
                 code = pdfi_push(ctx, (pdf_obj *)o);
                 if (code < 0)
                     pdfi_free_object((pdf_obj *)o);
@@ -1349,19 +1391,12 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_stream *s)
 
                 pdfi_countdown(keyword);
 
-                o = (pdf_bool *)gs_alloc_bytes(ctx->memory, sizeof(pdf_bool), "pdfi_read_keyword");
-                if (o == NULL)
-                    return_error(gs_error_VMerror);
+                code = pdfi_alloc_object(ctx, PDF_BOOL, 0, (pdf_obj **)&o);
+                if (code < 0)
+                    return code;
 
-                memset(o, 0x00, sizeof(pdf_obj));
-                o->memory = ctx->memory;
-                o->type = PDF_BOOL;
                 o->value = false;
 
-#if REFCNT_DEBUG
-                o->UID = ctx->UID++;
-                dmprintf1(ctx->memory, "Allocated boolean object with UID %"PRIi64"\n", o->UID);
-#endif
                 code = pdfi_push(ctx, (pdf_obj *)o);
                 if (code < 0)
                     pdfi_free_object((pdf_obj *)o);
@@ -1374,18 +1409,10 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_stream *s)
 
                 pdfi_countdown(keyword);
 
-                o = (pdf_obj *)gs_alloc_bytes(ctx->memory, sizeof(pdf_obj), "pdfi_read_keyword");
-                if (o == NULL)
-                    return_error(gs_error_VMerror);
+                code = pdfi_alloc_object(ctx, PDF_NULL, 0, &o);
+                if (code < 0)
+                    return code;
 
-                memset(o, 0x00, sizeof(pdf_obj));
-                o->memory = ctx->memory;
-                o->type = PDF_NULL;
-
-#if REFCNT_DEBUG
-                o->UID = ctx->UID++;
-                dmprintf1(ctx->memory, "Allocated null object with UID %"PRIi64"\n", o->UID);
-#endif
                 code = pdfi_push(ctx, o);
                 if (code < 0)
                     pdfi_free_object((pdf_obj *)o);
@@ -1684,10 +1711,6 @@ int pdfi_read_object(pdf_context *ctx, pdf_stream *s)
             return_error(gs_error_typecheck);
         }
         pdfi_pop(ctx, 1);
-#if REFCNT_DEBUG
-        ctx->stack_top[-1]->UID = ctx->UID++;
-        dmprintf1(ctx->memory, "Allocated object with UID %"PRIi64"\n", ctx->stack_top[-1]->UID);
-#endif
         return 0;
     }
     /* Assume that any other keyword means a missing 'endobj' */
@@ -1734,35 +1757,16 @@ int pdfi_read_object_of_type(pdf_context *ctx, pdf_stream *s, pdf_obj_type type)
  */
 int pdfi_make_name(pdf_context *ctx, byte *n, uint32_t size, pdf_obj **o)
 {
-    char *NewBuf = NULL;
-    pdf_name *name = NULL;
-
+    int code;
     *o = NULL;
 
-    name = (pdf_name *)gs_alloc_bytes(ctx->memory, sizeof(pdf_name), "pdfi_make_name");
-    if (name == NULL)
-        return_error(gs_error_VMerror);
+    code = pdfi_alloc_object(ctx, PDF_NAME, size, o);
+    if (code < 0)
+        return code;
+    pdfi_countup(*o);
 
-    memset(name, 0x00, sizeof(pdf_name));
-    name->memory = ctx->memory;
-    name->type = PDF_NAME;
-    name->refcnt = 1;
+    memcpy(((pdf_name *)*o)->data, n, size);
 
-    NewBuf = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_make_name");
-    if (NewBuf == NULL)
-        return_error(gs_error_VMerror);
-
-    memcpy(NewBuf, n, size);
-
-    name->data = (unsigned char *)NewBuf;
-    name->length = size;
-
-    *o = (pdf_obj *)name;
-
-#if REFCNT_DEBUG
-    (*o)->UID = ctx->UID++;
-    dmprintf1(ctx->memory, "Allocated name object with UID %"PRIi64"\n", (*o)->UID);
-#endif
     return 0;
 }
 
@@ -2337,7 +2341,7 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
 
     /* if we are being passed any inherited values from our parent, copy them now */
     if (inherited != NULL) {
-        code = pdfi_alloc_dict(ctx, inherited->size, &inheritable);
+        code = pdfi_alloc_object(ctx, PDF_DICT, inherited->size, (pdf_obj **)&inheritable);
         if (code < 0)
             return code;
         code = pdfi_dict_copy(inheritable, inherited);
@@ -2378,7 +2382,7 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
         pdf_obj *object;
 
         if (inheritable == NULL) {
-            code = pdfi_alloc_dict(ctx, 0, &inheritable);
+            code = pdfi_alloc_object(ctx, PDF_DICT, 0, (pdf_obj **)&inheritable);
             if (code < 0)
                 return code;
         }
@@ -2408,7 +2412,7 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
         pdf_obj *object;
 
         if (inheritable == NULL) {
-            code = pdfi_alloc_dict(ctx, 0, &inheritable);
+            code = pdfi_alloc_object(ctx, PDF_DICT, 0, (pdf_obj **)&inheritable);
             if (code < 0)
                 return code;
         }
@@ -2438,7 +2442,7 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
         pdf_obj *object;
 
         if (inheritable == NULL) {
-            code = pdfi_alloc_dict(ctx, 0, &inheritable);
+            code = pdfi_alloc_object(ctx, PDF_DICT, 0, (pdf_obj **)&inheritable);
             if (code < 0)
                 return code;
         }
@@ -2468,7 +2472,7 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
         pdf_obj *object;
 
         if (inheritable == NULL) {
-            code = pdfi_alloc_dict(ctx, 0, &inheritable);
+            code = pdfi_alloc_object(ctx, PDF_DICT, 0, (pdf_obj **)&inheritable);
             if (code < 0)
                 return code;
         }
@@ -2565,7 +2569,7 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
                 pdf_dict *leaf_dict = NULL;
                 pdf_name *Key = NULL, *Key1 = NULL;
 
-                code = pdfi_alloc_dict(ctx, 0, &leaf_dict);
+                code = pdfi_alloc_object(ctx, PDF_DICT, 0, (pdf_obj **)&leaf_dict);
                 if (code == 0) {
                     code = pdfi_make_name(ctx, (byte *)"PageRef", 7, (pdf_obj **)&Key);
                     if (code == 0) {
@@ -2585,7 +2589,6 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
                 }
                 pdfi_countdown(Key);
                 pdfi_countdown(Key1);
-                pdfi_countdown(leaf_dict);
                 if (code < 0) {
                     pdfi_countdown(inheritable);
                     pdfi_countdown(Kids);

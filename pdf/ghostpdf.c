@@ -981,8 +981,12 @@ static int pdfi_set_media_size(pdf_context *ctx, pdf_dict *page_dict)
 
     code = pdfi_dict_get_int(ctx, page_dict, "Rotate", &rotate);
 
+    rotate = rotate % 360;
+
     switch(rotate) {
+        default:
         case 0:
+        case 360:
         case -180:
         case 180:
             fv[0] = (float)(d[2] - d[0]);
@@ -994,8 +998,6 @@ static int pdfi_set_media_size(pdf_context *ctx, pdf_dict *page_dict)
         case 270:
             fv[1] = (float)(d[2] - d[0]);
             fv[0] = (float)(d[3] - d[1]);
-            break;
-        default:
             break;
     }
 
@@ -1402,11 +1404,12 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
         return code;
     }
 
-    code = pdfi_alloc_dict(ctx, 32, &ctx->SpotNames);
+    code = pdfi_alloc_object(ctx, PDF_DICT, 32, (pdf_obj **)&ctx->SpotNames);
     if (code < 0) {
         pdfi_countdown(page_dict);
         return code;
     }
+    ctx->SpotNames->refcnt++;
 
     code = pdfi_check_page_transparency(ctx, page_dict, &uses_transparency, &spots);
     if (code < 0) {

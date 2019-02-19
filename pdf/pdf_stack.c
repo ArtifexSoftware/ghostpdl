@@ -76,19 +76,8 @@ int pdfi_mark_stack(pdf_context *ctx, pdf_obj_type type)
     if (type != PDF_ARRAY_MARK && type != PDF_DICT_MARK && type != PDF_PROC_MARK)
         return_error(gs_error_typecheck);
 
-    o = (pdf_obj *)gs_alloc_bytes(ctx->memory, sizeof(pdf_obj), "Allocate a stack mark");
-    if (o == NULL)
-        return_error(gs_error_VMerror);
-
-    memset(o, 0x00, sizeof(pdf_obj));
-    o->memory = ctx->memory;
-    o->type = type;
-    o->refcnt = 1;
-#if REFCNT_DEBUG
-    o->UID = ctx->UID++;
-#endif
+    code = pdfi_alloc_object(ctx, type, 0, &o);
     code = pdfi_push(ctx, o);
-    pdfi_countdown(o);
     return code;
 }
 

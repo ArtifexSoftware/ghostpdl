@@ -50,30 +50,11 @@ int pdfi_dict_from_stack(pdf_context *ctx)
     if (index & 1)
         return_error(gs_error_rangecheck);
 
-    d = (pdf_dict *)gs_alloc_bytes(ctx->memory, sizeof(pdf_dict), "pdfi_dict_from_stack");
-    if (d == NULL)
-        return_error(gs_error_VMerror);
+    code = pdfi_alloc_object(ctx, PDF_DICT, index >> 1, (pdf_obj **)&d);
+    if (code < 0)
+        return code;
 
-    memset(d, 0x00, sizeof(pdf_dict));
-    d->memory = ctx->memory;
-    d->type = PDF_DICT;
-
-    d->size = d->entries = index >> 1;
-
-    d->keys = (pdf_obj **)gs_alloc_bytes(ctx->memory, d->size * sizeof(pdf_obj *), "pdfi_dict_from_stack");
-    if (d->keys == NULL) {
-        gs_free_object(d->memory, d, "pdfi_read_dict error");
-        return_error(gs_error_VMerror);
-    }
-    memset(d->keys, 0x00, d->size * sizeof(pdf_obj *));
-
-    d->values = (pdf_obj **)gs_alloc_bytes(ctx->memory, d->size * sizeof(pdf_obj *), "pdfi_dict_from_stack");
-    if (d->values == NULL) {
-        gs_free_object(d->memory, d->keys, "pdfi_read_dict error");
-        gs_free_object(d->memory, d, "pdfi_read_dict error");
-        return_error(gs_error_VMerror);
-    }
-    memset(d->values, 0x00, d->size * sizeof(pdf_obj *));
+    d->entries = d->size;
 
     while (index) {
         i = (index / 2) - 1;
@@ -94,16 +75,14 @@ int pdfi_dict_from_stack(pdf_context *ctx)
     }
 
     code = pdfi_clear_to_mark(ctx);
-    if (code < 0)
+    if (code < 0) {
+        pdfi_free_dict((pdf_obj *)d);
         return code;
+    }
 
     if (ctx->pdfdebug)
         dmprintf (ctx->memory, "\n >>\n");
 
-#if REFCNT_DEBUG
-    d->UID = ctx->UID++;
-    dmprintf1(ctx->memory, "Allocated dictionary object with UID %"PRIi64"\n", d->UID);
-#endif
     code = pdfi_push(ctx, (pdf_obj *)d);
     if (code < 0)
         pdfi_free_dict((pdf_obj *)d);
@@ -227,14 +206,22 @@ int pdfi_dict_get_type(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj_t
             if (code < 0)
                 return code;
 
-            code = pdfi_make_name(ctx, (byte *)Key, strlen(Key), (pdf_obj **)&NewKey);
-            if (code == 0) {
-                (void)pdfi_dict_put(d, (pdf_obj *)NewKey, o1);
-                pdfi_countdown(NewKey);
-            }
             if (o1->type != type) {
                 pdfi_countdown(o1);
                 return_error(gs_error_typecheck);
+            }
+
+            code = pdfi_alloc_object(ctx, PDF_NAME, strlen(Key), (pdf_obj **)&NewKey);
+            if (code < 0) {
+                pdfi_countdown(o1);
+                return code;
+            }
+            memcpy(NewKey->data, Key, strlen(Key));
+            code = pdfi_dict_put(d, (pdf_obj *)NewKey, o1);
+            if (code < 0) {
+                pdfi_countdown(o1);
+                pdfi_free_object((pdf_obj *)NewKey);
+                return code;
             }
             *o = o1;
         } else {
@@ -714,42 +701,5 @@ int pdfi_merge_dicts(pdf_dict *target, pdf_dict *source)
                 return code;
         }
     }
-    return 0;
-}
-
-int pdfi_alloc_dict(pdf_context *ctx, uint64_t size, pdf_dict **returned)
-{
-    pdf_dict *returned_dict;
-
-    *returned = NULL;
-
-    returned_dict = (pdf_dict *)gs_alloc_bytes(ctx->memory, sizeof(pdf_dict), "pdfi_alloc_dict");
-    if (returned_dict == NULL)
-        return_error(gs_error_VMerror);
-
-    memset(returned_dict, 0x00, sizeof(pdf_dict));
-    returned_dict->memory = ctx->memory;
-    returned_dict->type = PDF_DICT;
-    returned_dict->refcnt = 1;
-
-    returned_dict->keys = (pdf_obj **)gs_alloc_bytes(ctx->memory, size * sizeof(pdf_obj *), "pdfi_alloc_dict");
-    if (returned_dict->keys == NULL) {
-        gs_free_object(ctx->memory, returned_dict, "pdfi_alloc_dict");
-        return_error(gs_error_VMerror);
-    }
-    returned_dict->values = (pdf_obj **)gs_alloc_bytes(ctx->memory, size * sizeof(pdf_obj *), "pdfi_alloc_dict");
-    if (returned_dict->keys == NULL) {
-        gs_free_object(ctx->memory, returned_dict->keys, "pdfi_alloc_dict");
-        gs_free_object(ctx->memory, returned_dict, "pdfi_alloc_dict");
-        return_error(gs_error_VMerror);
-    }
-    memset(returned_dict->keys, 0x00, size * sizeof(pdf_obj *));
-    memset(returned_dict->values, 0x00, size * sizeof(pdf_obj *));
-    returned_dict->size = size;
-    *returned = returned_dict;
-#if REFCNT_DEBUG
-    returned_dict->UID = ctx->UID++;
-    dmprintf1(ctx->memory, "Allocated dictobject with UID %"PRIi64"\n", returned_dict->UID);
-#endif
     return 0;
 }

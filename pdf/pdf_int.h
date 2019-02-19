@@ -25,6 +25,7 @@ int skip_white(pdf_context *ctx, pdf_stream *s);
 int pdfi_read_token(pdf_context *ctx, pdf_stream *s);
 int pdfi_read_object(pdf_context *ctx, pdf_stream *s);
 int pdfi_read_object_of_type(pdf_context *ctx, pdf_stream *s, pdf_obj_type t);
+int pdfi_alloc_object(pdf_context *ctx, pdf_obj_type type, unsigned int size, pdf_obj **obj);
 void pdfi_free_object(pdf_obj *o);
 
 int pdfi_make_name(pdf_context *ctx, byte *key, uint32_t size, pdf_obj **o);

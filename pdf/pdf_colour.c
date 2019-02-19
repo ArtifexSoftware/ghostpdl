@@ -143,14 +143,14 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
                 goto exit;
             }
 
-            if (pdfi_name_strcmp(name, "Cyan") == 0 || pdfi_name_strcmp(name, "Magenta") == 0 ||
-                pdfi_name_strcmp(name, "Yellow") == 0 || pdfi_name_strcmp(name, "Black") == 0) {
+            if (pdfi_name_strcmp((const pdf_name *)name, "Cyan") == 0 || pdfi_name_strcmp((const pdf_name *)name, "Magenta") == 0 ||
+                pdfi_name_strcmp((const pdf_name *)name, "Yellow") == 0 || pdfi_name_strcmp((const pdf_name *)name, "Black") == 0) {
 
                 pdfi_countdown(name);
                 continue;
             }
 
-            code = pdfi_dict_known_by_key(ctx->SpotNames, name, &known);
+            code = pdfi_dict_known_by_key(ctx->SpotNames, (pdf_name *)name, &known);
             if (code < 0 || known) {
                 pdfi_countdown(name);
                 goto exit;
@@ -160,14 +160,9 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
                 continue;
             }
 
-            dummy = (pdf_obj *)gs_alloc_bytes(ctx->memory, sizeof(pdf_num), "pdfi_check_for_spots_by_array");
-            if (dummy == NULL) {
-                code = gs_error_VMerror;
+            code = pdfi_alloc_object(ctx, PDF_INT, 0, &dummy);
+            if (code < 0)
                 goto exit;
-            }
-            memset(dummy, 0x00, sizeof(pdf_num));
-            dummy->memory = ctx->memory;
-            dummy->type = PDF_INT;
 
             code = pdfi_dict_put(ctx->SpotNames, name, dummy);
             pdfi_countdown(name);
@@ -207,17 +202,11 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
         if (code < 0 || known)
             goto exit;
 
-        dummy = (pdf_obj *)gs_alloc_bytes(ctx->memory, sizeof(pdf_num), "pdfi_check_for_spots_by_array");
-        if (dummy == NULL) {
-            code = gs_error_VMerror;
+        code = pdfi_alloc_object(ctx, PDF_INT, 0, &dummy);
+        if (code < 0)
             goto exit;
-        }
 
-        memset(dummy, 0x00, sizeof(pdf_num));
-        dummy->memory = ctx->memory;
-        dummy->type = PDF_INT;
-
-        code = pdfi_dict_put(ctx->SpotNames, space, dummy);
+        code = pdfi_dict_put(ctx->SpotNames, (pdf_obj *)space, dummy);
         *num_spots += 1;
         goto exit;
     } else {
