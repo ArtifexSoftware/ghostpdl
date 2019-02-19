@@ -392,19 +392,19 @@ userdict /#copies 1 put
         /mark load def
 (]) cvn
         {counttomark array astore exch pop} odef
-% .beginpage is redefined if setpagedevice is present.
-/.beginpage { } odef
-% In LanguageLevel 3, copypage erases the page.
-/copypage {
-        .languagelevel 3 ge
-        dup { 0 } { 1 } ifelse .endpage .doneshowpage {
-          .currentnumcopies 1 index .outputpage
-          (>>copypage, press <return> to continue<<\n) .confirm
-          dup { erasepage } if
-        } if pop
-    systemdict /..page_default_spaces .knownget { //.PurgeDict exec } if
-    .beginpage
-} odef
+%
+%   -   initgraphics   -
+%
+% Although the internal routine gs_initgraphics resets the color space,
+% it does not reset the color space we store in the 'interpreter'
+% graphics state (so that we can hand it back in currentcolorspace).
+% So we need to do that in the PostScript world.
+%
+%
+/initgraphics
+  { initgraphics systemdict /DeviceGray_array get setcolorspace }
+.bind executeonly odef
+
 /currentmatrix {
         dup type /arraytype ne
         { /currentmatrix load  /typecheck signalerror } if
@@ -412,8 +412,52 @@ userdict /#copies 1 put
         { /currentmatrix load  /rangecheck signalerror } if
         .currentmatrix 6 .argindex astore pop
 } odef
-% .currentnumcopies is redefined in Level 2.
-/.currentnumcopies { #copies } odef
+
+% We have to guard against the BeginPage procedure not popping its operand.
+% This is really stupid, but the Genoa CET does it.
+/.beginpage {		% - .beginpage -
+  .currentshowpagecount {
+    .currentpagedevice pop
+    dup //null ne { /BeginPage .knownget } { pop //false } ifelse {
+                % Stack: ... pagecount proc
+       count 2 .execn
+                % Stack: ... ..???.. oldcount
+       count 1 add exch sub { pop } repeat
+    } {
+      pop
+    } ifelse
+  } if
+} .bind executeonly odef
+
+% Guard similarly against EndPage not popping its operand.
+/.endpage {		% <reason> .endpage <print_bool>
+  .currentshowpagecount {
+    1 index .currentpagedevice pop
+    dup //null ne { /EndPage .knownget } { pop //false } ifelse {
+                % Stack: ... reason pagecount reason proc
+      count 2 .execn
+                % Stack: ... ..???.. print oldcount
+      count 2 add exch sub { exch pop } repeat
+    } {
+      pop pop 2 ne
+    } ifelse
+  } {
+    2 ne
+  } ifelse
+} .bind executeonly odef
+
+% Define .currentnumcopies so it consults the NumCopies device parameter.
+/.numcopiesdict mark
+  /NumCopies dup
+.dicttomark readonly def
+/.currentnumcopies
+ { currentdevice //.numcopiesdict .getdeviceparams
+   dup type /integertype eq
+    { exch pop exch pop }
+    { cleartomark #copies }
+   ifelse
+} .bind executeonly odef
+
 /setcolorscreen where { pop		% not in all Level 1 configurations
    /currentcolorscreen
         { .currenthalftone
@@ -448,8 +492,6 @@ userdict /.echo.mode //true put
         % because this is apparently what Adobe interpreters do.
   currentdict //systemdict eq { end } if
 } odef
-% .endpage is redefined if setpagedevice is present.
-/.endpage { 2 ne } odef
 % erasepage mustn't use gsave/grestore, because we call it before
 % the graphics state stack has been fully initialized.
 /erasepage
@@ -592,6 +634,18 @@ odef
         dup length 6 ne { /setmatrix load  /rangecheck signalerror } if
         dup aload pop .setmatrix pop
 } odef
+% In LanguageLevel 3, copypage erases the page.
+/copypage {
+        .languagelevel 3 ge
+        dup { 0 } { 1 } ifelse .endpage .doneshowpage {
+          .currentnumcopies 1 index .outputpage
+          (>>copypage, press <return> to continue<<\n) .confirm
+          dup { erasepage } if
+        } if pop
+    systemdict /..page_default_spaces .knownget { //.PurgeDict exec } if
+    .beginpage
+} .bind executeonly odef
+
 /showpage {
         0 .endpage .doneshowpage {
           .currentnumcopies //true .outputpage
@@ -608,7 +662,8 @@ odef
         { initgraphics } ifelse
     systemdict /..page_default_spaces .knownget { //.PurgeDict exec } if
     .beginpage
-} odef
+} .bind executeonly odef
+
 % Code output by Adobe Illustrator relies on the fact that
 % `stack' is a procedure, not an operator!!!
 /stack	{ 0 1 count 3 sub { index = } for } bind def

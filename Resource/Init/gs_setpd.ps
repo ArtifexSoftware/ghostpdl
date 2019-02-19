@@ -18,44 +18,7 @@
 
 languagelevel 1 .setlanguagelevel
 level2dict begin
-
 % ---------------- Redefinitions ---------------- %
-
-% Redefine .beginpage and .endpage so that they call BeginPage and
-% EndPage respectively if appropriate.
-
-% We have to guard against the BeginPage procedure not popping its operand.
-% This is really stupid, but the Genoa CET does it.
-/.beginpage {		% - .beginpage -
-  .currentshowpagecount {
-    .currentpagedevice pop
-    dup //null ne { /BeginPage .knownget } { pop //false } ifelse {
-                % Stack: ... pagecount proc
-       count 2 .execn
-                % Stack: ... ..???.. oldcount
-       count 1 add exch sub { pop } repeat
-    } {
-      pop
-    } ifelse
-  } if
-} bind odef
-
-% Guard similarly against EndPage not popping its operand.
-/.endpage {		% <reason> .endpage <print_bool>
-  .currentshowpagecount {
-    1 index .currentpagedevice pop
-    dup //null ne { /EndPage .knownget } { pop //false } ifelse {
-                % Stack: ... reason pagecount reason proc
-      count 2 .execn
-                % Stack: ... ..???.. print oldcount
-      count 2 add exch sub { exch pop } repeat
-    } {
-      pop pop 2 ne
-    } ifelse
-  } {
-    2 ne
-  } ifelse
-} bind odef
 
 % Define interpreter callouts for handling gstate-saving operators,
 % to make sure that they create a page device dictionary for use by
@@ -393,19 +356,6 @@ SETPDDEBUG { (Result of putting.) = pstack flush } if
 (%setgstatepagedevice) cvn
  { .uninstallpagedevice setgstate //.installpagedevice exec
  } bind def
-
-% Redefine .currentnumcopies so it consults the NumCopies device parameter.
-/.numcopiesdict mark
-  /NumCopies dup
-.dicttomark readonly def
-
-/.currentnumcopies
- { currentdevice //.numcopiesdict .getdeviceparams
-   dup type /integertype eq
-    { exch pop exch pop }
-    { cleartomark #copies }
-   ifelse
- } bind odef
 
 % Redefine .currentpagedevice and .setpagedevice so they convert between
 % null and a fixed empty directionary.
