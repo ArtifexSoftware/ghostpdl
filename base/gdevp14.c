@@ -1821,9 +1821,7 @@ pdf14_get_buffer_information(const gx_device * dev,
     /* Dump the buffer that should be going into the pattern */;
         dump_raw_buffer(height, width, buf->n_chan,
                     pdev->ctx->stack->planestride, pdev->ctx->stack->rowstride,
-                    "pdf14_pattern_buff", buf->data +
-                    transbuff->rowstride * transbuff->rect.p.y +
-                    transbuff->rect.p.x);
+                    "pdf14_pattern_buff", buf->data);
         global_index++;
 #endif
     }
