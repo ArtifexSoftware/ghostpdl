@@ -116,7 +116,7 @@
                  {                                               % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname aglname
                    CFFDEBUG { (\nsetting alias: ) print dup ==only
                          ( to be the same as glyph: ) print 1 index //== exec } if
-                   3 index exch 3 index //.growput systemdict /superexec known {//superexec}{1183615869 internaldict /superexec get exec} ifelse
+                   3 index exch 3 index .forceput
                                                                  % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname
                  }
                  {pop} ifelse
@@ -135,7 +135,7 @@
          3 1 roll pop pop
      } if
      pop
-     dup /.AGLprocessed~GS //true //.growput systemdict /superexec known {//superexec}{1183615869 internaldict /superexec get exec} ifelse
+     dup /.AGLprocessed~GS //true .forceput
    } if
 
    %% We need to excute the C .buildfont1 in a stopped context so that, if there
@@ -148,7 +148,7 @@
    {//.buildfont1} stopped
    4 3 roll .setglobal
    {//.buildfont1 $error /errorname get signalerror} if
- } bind def
+ } .bind executeonly def	% hide .forceput
 
  % container for CloseSource flag (default //true to prevent buildup of file handles)
  /closesourcedict mark

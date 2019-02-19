@@ -506,9 +506,9 @@ smask_image_check(gx_device_pdf * pdev, pdf_resource_t *pres0, pdf_resource_t *p
         if (pres0->object->id == pdev->image_mask_id || pres1->object->id == pdev->image_mask_id)
             return 0;
         if (pdev->image_mask_is_SMask)
-            v = cos_dict_find(pres1->object, "/SMask", 5);
+            v = (cos_value_t *)cos_dict_find_c_key((const cos_dict_t *)pres1->object, "/SMask");
         else
-            v = cos_dict_find(pres1->object, "/Mask", 4);
+            v = (cos_value_t *)cos_dict_find_c_key((const cos_dict_t *)pres1->object, "/Mask");
         if (v == 0)
             return 0;
         if (v != 0) {

@@ -1129,19 +1129,19 @@ end readonly def
   %% Set the special version of the path constructoin operators, so that
   %% they will work as expected if they are illgeally present in a text block.
   switch_to_text_marking_ops
-  
+
   %% If needed, let the pdf14 device know we are in a BT condition.  This
   %% distinguishes BT from an Annotation /FreeText show command which also
   %% can come into pdf_text_begin with an opacity not equal to 1.
   PDFusingtransparency .currenttextknockout and {
     .begintransparencytextgroup
   } if
-  
+
 } bind executeonly def
 
 /ET_NO_TXT_KO {
   currentdict /TextSaveMatrix known {
-    .currenttextrenderingmode 4 ge { .currentfilladjust 0 .setfilladjust clip .setfilladjust} if
+    .currenttextrenderingmode 4 ge { .currentfilladjust2 0 dup .setfilladjust2 clip .setfilladjust2} if
     newpath TextSaveMatrix setmatrix
     currentdict /TextSaveMatrix undef
 
@@ -1169,7 +1169,7 @@ end readonly def
   % Group push occurred in pdf14_text_begin.
   PDFusingtransparency .currenttextknockout and {
     .endtransparencytextgroup
-  } if 
+  } if
 } bind executeonly def
 
 /Tc { .settextspacing { showfirst } /Show gput } bind executeonly def

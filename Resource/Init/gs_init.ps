@@ -286,7 +286,8 @@ userdict /=string 256 string put
     } repeat pop
  } .bind def
 
-QUIET not { printgreeting flush } if
+QUIET not { //printgreeting exec flush } if
+currentdict /printgreeting .undef
 
 % Define a special version of def for making operator procedures.
 /obind {	% <name> <proc> obind <name> <oper>
@@ -359,8 +360,6 @@ currentdict /hwsizedict .undef
     }
    if
  } bind odef
-/.currentfilladjust { .currentfilladjust2 pop } bind odef
-/.setfilladjust { dup .setfilladjust2 } bind odef
 /.writecvs { 0 .writecvp } bind odef
 %**************** DEPRECATED PROCEDURES ****************
 %**************** DO NOT USE THESE IN NEW CODE ****************
@@ -663,8 +662,6 @@ systemdict /internaldict dup .makeinternaldict .makeoperator
 % Copy a dictionary per the Level 2 spec even in Level 1.
 /.copydict		% <fromdict> <todict> .copydict <todict>
         { dup 3 -1 roll { put dup } forall pop } bind def
-/copystring
-        { dup length string copy } bind def
 /findlibfile {
   .systemvmlibfile { dup .filename pop exch //true } { //false } ifelse
 } odef
@@ -699,8 +696,6 @@ systemdict /internaldict dup .makeinternaldict .makeoperator
 } ifelse
 /.packtomark
         { counttomark packedarray exch pop } bind def
-/ppstack
-        { 0 1 count 3 sub { index === } for } bind def
 /runlibfile
         {		% We don't want to bind 'run' into this procedure,
                         % since run may get redefined.
@@ -812,9 +807,6 @@ userdict /.currentresourcefile //null put
   stopped $error /newerror get and
    { /handleerror .systemvar exec flush //true } { //false } ifelse
 } bind def
-/execute {		% <obj> execute -
-  .execute pop
-} odef
 % Define an execute analogue of runlibfile0.
 /execute0 {		% <obj> execute0 -
   .execute { /execute0 cvx 1 .quit } if
@@ -874,7 +866,8 @@ def
         } bind def
 % Temporarily substitute it for the real runlibfile.
 /.runlibfile /runlibfile load def
-/runlibfile /runlibfile0 load def
+/runlibfile //runlibfile0 def
+currentdict /runlibfile0 .undef
 
 % Create the error handling machinery.
 % Define the standard error handlers.
@@ -1546,7 +1539,7 @@ setpacking
 
   % Increase fill adjustment so that we effectively use Adobe's
   % any-part-of-pixel rule.
-  0.5 .setfilladjust
+  0.5 dup .setfilladjust2
 } bind def
 
 % Set the default screen and BG/UCR.
@@ -2211,9 +2204,6 @@ SAFER { .setsafeglobal } if
   /.endtransparencygroup     % transparency-example.ps
   /.setdotlength             % Bug687720.ps
   /.sort /.setdebug /.mementolistnewblocks /getenv
-
-  /.makeoperator /.setCPSImode              % gs_cet.ps, this won't work on cluster with -dSAFER
-
   /unread
   ]
   {systemdict exch .forceundef} forall
@@ -2256,7 +2246,7 @@ SAFER { .setsafeglobal } if
   /.file_name_combine /.file_name_is_absolute /.file_name_separator /.file_name_directory_separator /.file_name_current /.filename
   /.peekstring /.writecvp /.subfiledecode /.setupUnicodeDecoder /.jbig2makeglobalctx /.registerfont /.parsecff
   /.getshowoperator /.getnativefonts /.beginform /.endform /.get_form_id /.repeatform /.reusablestream /.rsdparams
-  /.buildfunction /.currentfilladjust2 /.setfilladjust2 /.sethpglpathmode /.currenthpglpathmode
+  /.buildfunction /.sethpglpathmode /.currenthpglpathmode
   /.currenthalftone /.sethalftone5 /.image1 /.imagemask1 /.image3 /.image4
   /.getiodevice /.getdevparms /.putdevparams /.bbox_transform /.matchmedia /.matchpagesize /.defaultpapersize
   /.oserrno /.setoserrno /.oserrorstring /.getCPSImode
@@ -2289,6 +2279,8 @@ SAFER { .setsafeglobal } if
   /.pickcmap
   /.loadttcidfont
   /.loadpdfttfont
+  /obind
+  /odef
 
   % Used by a free user in the Library of Congress. Apparently this is used to
   % draw a partial page, which is then filled in by the results of a barcode
@@ -2301,7 +2293,6 @@ SAFER { .setsafeglobal } if
 
   % Used by our own test suite files
   %/.fileposition %image-qa.ps
-  %/.makeoperator /.setCPSImode % gs_cet.ps
 
   % Either our code uses these in ways which mean they can't be undefined, or they are used directly by
   % test files/utilities, or engineers expressed a desire to keep them visible.
@@ -2481,6 +2472,16 @@ end
 /vmreclaim where
  { pop NOGC not { 2 .vmreclaim 0 vmreclaim } if
  } if
+
+% Do this before systemdict is locked (see below for additional CETMODE setup using gs_cet.ps)
+systemdict /CETMODE .knownget {
+  {
+    (gs_cet.ps) runlibfile
+  } if
+} if
+systemdict /.makeoperator .undef	% must be after gs_cet.ps
+systemdict /.setCPSImode .undef		% must be after gs_cet.ps
+
 DELAYBIND not {
   systemdict /.bindnow .undef       % We only need this for DELAYBIND
   systemdict /.forcecopynew .undef	% remove temptation
@@ -2488,16 +2489,29 @@ DELAYBIND not {
   systemdict /.forceundef .undef	% ditto
 } if
 
-% Move superexec to internaldict if superexec is defined.
-systemdict /superexec .knownget {
-  1183615869 internaldict /superexec 3 -1 roll put
-  systemdict /superexec .undef
+% Move superexec to internaldict if superexec is defined. (Level 2 or later)
+systemdict /superexec known {
+  % restrict superexec to single known use by PScript5.dll
+  % We could do this only for SAFER mode, but internaldict and superexec are
+  % not very well documented, and we don't want them to be used.
+  1183615869 internaldict /superexec {
+    2 index /Private eq		% first check for typical use in PScript5.dll
+    1 index length 1 eq and	% expected usage is: dict /Private <value> {put} superexec
+    1 index 0 get systemdict /put get eq and
+    {
+      //superexec exec		% the only usage we allow
+    } {
+      /superexec load /invalidaccess signalerror
+    } ifelse
+  } bind cvx executeonly put
+  systemdict /superexec .undef	% get rid of the dangerous (unrestricted) operator
 } if
 
 % Can't remove this one until the last minute :-)
 DELAYBIND not {
 systemdict /.undef .undef
 } if
+
 WRITESYSTEMDICT {
    SAFER {
        (\n *** WARNING - you have selected SAFER, indicating you want Ghostscript\n) print
@@ -2523,8 +2537,5 @@ WRITESYSTEMDICT {
 % support DeviceN and spot color separations this will need to
 % be 'true' in some cases.
 userdict /AGM_preserve_spots //false put
-
-systemdict /CETMODE .knownget
-{ { (gs_cet.ps) runlibfile } if } if
 
 % The interpreter will run the initial procedure (start).

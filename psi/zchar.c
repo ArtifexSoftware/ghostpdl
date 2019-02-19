@@ -56,8 +56,9 @@ static int zwidthshow(i_ctx_t *i_ctx_p);
 static int
 zshow(i_ctx_t *i_ctx_p)
 {
+    es_ptr ep = esp;        /* Save in case of error */
     os_ptr op = osp;
-    gs_text_enum_t *penum;
+    gs_text_enum_t *penum = NULL;
     int code = op_show_setup(i_ctx_p, op);
 
     if (code != 0 ||
@@ -65,10 +66,27 @@ zshow(i_ctx_t *i_ctx_p)
         return code;
     *(op_proc_t *)&penum->enum_client_data = zshow;
     if ((code = op_show_finish_setup(i_ctx_p, penum, 1, finish_show)) < 0) {
-        ifree_object(penum, "op_show_enum_setup");
+        /* We must restore the exec stack pointer back to the point where we entered, in case
+         * we 'retry' the operation (eg having increased the operand stack).
+         * We must also free the enumerator if we created one.
+         * Bug #700618.
+         */
+        esp = ep;
+        ifree_object(penum, "zshow");
         return code;
     }
-    return op_show_continue_pop(i_ctx_p, 1);
+
+    code = op_show_continue_pop(i_ctx_p, 1);
+    if (code < 0) {
+        /* We must restore the exec stack pointer back to the point where we entered, in case
+         * we 'retry' the operation (eg having increased the operand stack).
+         * We must also free the enumerator if we created one.
+         * Bug #700618.
+         */
+        esp = ep;
+        ifree_object(penum, "zshow");
+    }
+    return code;
 }
 
 /* <ax> <ay> <string> ashow - */
