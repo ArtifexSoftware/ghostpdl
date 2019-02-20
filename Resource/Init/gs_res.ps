@@ -426,7 +426,7 @@ status {
                         % so we have to use .forceput here.
                   currentdict /.Instances 2 index .forceput	% Category dict is read-only
                 } executeonly if
-              }
+              } executeonly
               { .LocalInstances dup //.emptydict eq
                  { pop 3 dict localinstancedict Category 2 index put
                  }
