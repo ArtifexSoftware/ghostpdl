@@ -33,6 +33,8 @@ gs_shared_init(void);
 extern const gx_device_X gs_x11_device;
 extern const gx_device_X gs_x11alpha_device;
 
+#define X_COLOR_CACHE_SIZE 16
+
 /*
  * Define a forwarding device with a cache for the first 16 colors,
  * which avoids all of the time-consuming color mapping calls for
@@ -40,7 +42,7 @@ extern const gx_device_X gs_x11alpha_device;
  */
 typedef struct {
     gx_device_forward_common;
-    gx_color_index color_cache[16];
+    gx_color_index color_cache[X_COLOR_CACHE_SIZE];
     /*
      * alt_map_color returns a value >= 0 if it maps directly to the final
      * gx_color_index, or < 0 if it only sets RGB values.
@@ -73,7 +75,7 @@ x_clear_color_cache(gx_device /*gx_device_X_wrapper */  * dev)
     gx_device_X_wrapper *xdev = (gx_device_X_wrapper *) dev;
     int i;
 
-    for (i = 0; i < countof(xdev->color_cache); ++i)
+    for (i = 0; i < X_COLOR_CACHE_SIZE; ++i)
         xdev->color_cache[i] = gx_no_color_index;
     gx_device_decache_colors(dev);
 }
@@ -183,11 +185,13 @@ x_wrap_copy_color(gx_device * dev, const byte * base, int sourcex,
     gx_device *tdev;
 
 #define mapped_bytes 480	/* must be a multiple of 3 & 4 */
-    int depth_bytes, source_bits;
+    int depth_bytes, source_bits, source_bytes;
     int block_w, block_h;
     int xblock, yblock;
     byte mapped[mapped_bytes];
     int code;
+    gx_color_index mask = 0;
+    int k;
 
     fit_copy(dev, base, sourcex, raster, id, x, y, w, h);
     if ((code = get_dev_target(&tdev, dev)) < 0)
@@ -198,6 +202,13 @@ x_wrap_copy_color(gx_device * dev, const byte * base, int sourcex,
                                      x, y, w, h);
     depth_bytes = tdev->color_info.depth >> 3;
     source_bits = dev->color_info.depth;
+    if (source_bits > 8) {
+        for (k = 0; k < dev->color_info.num_components; k++) {
+            mask |= dev->color_info.comp_mask[k];
+        }
+    }
+    source_bytes = dev->color_info.depth >> 3;
+
     {
         int mapped_pixels = mapped_bytes / depth_bytes;
 
@@ -213,19 +224,40 @@ x_wrap_copy_color(gx_device * dev, const byte * base, int sourcex,
             int yend = min(yblock + block_h, y + h);
             int xcur, ycur;
             int code;
+            gx_color_index cindex;
+            uint spixel;
+            uint sbyte;
 
             for (ycur = yblock; ycur < yend; ++ycur)
                 for (xcur = xblock; xcur < xend; ++xcur) {
                     int sbit = (xcur - x + sourcex) * source_bits;
-                    uint sbyte =
-                        base[(ycur - y) * raster + (sbit >> 3)];
-                    uint spixel =
-                        ((sbyte << (sbit & 7)) & 0xff) >> (8 - source_bits);
-                    gx_color_index cindex =
-                        ((gx_device_X_wrapper *) dev)->color_cache[spixel];
+                    if (source_bits <= 8) {
+                        sbyte = base[(ycur - y) * raster + (sbit >> 3)];
+                        spixel =
+                            ((sbyte << (sbit & 7)) & 0xff) >> (8 - source_bits);
+                        if (spixel < X_COLOR_CACHE_SIZE) {
+                            cindex =
+                                ((gx_device_X_wrapper *)dev)->color_cache[spixel];
+                            if (cindex == gx_no_color_index)
+                                cindex = x_alt_map_color(dev, spixel);
+                        } else {
+                            cindex = x_alt_map_color(dev, spixel);
+                        }
+                    } else {
+                        gx_color_index temp_color1 = 0;
+                        gx_color_index temp_color2 = 0;
 
-                    if (cindex == gx_no_color_index)
-                        cindex = x_alt_map_color(dev, spixel);
+                        memcpy(&temp_color1, &(base[(ycur - y) * raster + (sbit >> 3)]), sizeof(gx_color_index));
+                        temp_color1 = (temp_color1 << (sbit & 7)) & mask;
+
+                        for (k = 0; k < source_bytes; k++) {
+                            byte color = temp_color1 & 0xff;
+                            temp_color1 >>= 8;
+                            temp_color2 += color << ((source_bytes - k - 1) * 8);
+                        }
+                        cindex = x_alt_map_color(dev, temp_color2);
+                    }
+
                     switch (depth_bytes) {
                         case 4:
                             *p++ = (byte) (cindex >> 24);
@@ -489,7 +521,7 @@ x_alt_map_color(gx_device * dev, gx_color_index color)
 
     if (color == gx_no_color_index)
         return color;
-    if (color < 16) {
+    if (color < X_COLOR_CACHE_SIZE) {
         cindex = ((gx_device_X_wrapper *) dev)->color_cache[color];
         if (cindex != gx_no_color_index)
             return cindex;
@@ -501,7 +533,7 @@ x_alt_map_color(gx_device * dev, gx_color_index color)
         cindex = result;
     else
         cindex = dev_proc(tdev, map_rgb_color)(tdev, rgb);
-    if (color < 16)
+    if (color < X_COLOR_CACHE_SIZE)
         ((gx_device_X_wrapper *) dev)->color_cache[color] = cindex;
     return cindex;
 }
