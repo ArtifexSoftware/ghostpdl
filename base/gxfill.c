@@ -435,7 +435,7 @@ gx_general_fill_path(gx_device * pdev, const gs_gstate * pgs,
 
     if (!fo.is_spotan && ((scanconverter = gs_getscanconverter(pdev->memory)) >= GS_SCANCONVERTER_EDGEBUFFER ||
                           (scanconverter == GS_SCANCONVERTER_DEFAULT && GS_SCANCONVERTER_DEFAULT_IS_EDGEBUFFER))) {
-        gx_edgebuffer eb = { 0 };
+        gx_scan_converter_t *sc;
         /* If we have a request for accurate curves, make sure we exactly
          * match what we'd get for stroking. */
         if (!big_path && pgs->accurate_curves && gx_path_has_curves(ppath))
@@ -452,81 +452,26 @@ gx_general_fill_path(gx_device * pdev, const gs_gstate * pgs,
             fill_by_trapezoids = 0;
         if (!fill_by_trapezoids)
         {
-            if (adjust.x == 0 && adjust.y == 0) {
-                code = gx_scan_convert(dev,
-                                       ppath,
-                                       &ibox,
-                                       &eb,
-                                       fo.fixed_flat);
-                if (code >= 0) {
-                    code = gx_filter_edgebuffer(dev,
-                                                &eb,
-                                                params->rule);
-                }
-                if (code >= 0) {
-                    code = gx_fill_edgebuffer(dev,
-                                              pdevc,
-                                              &eb,
-                                              fo.fill_direct ? -1 : (int)pgs->log_op);
-                }
-            } else {
-                code = gx_scan_convert_app(dev,
-                                           ppath,
-                                           &ibox,
-                                           &eb,
-                                           fo.fixed_flat);
-                if (code >= 0) {
-                    code = gx_filter_edgebuffer_app(dev,
-                                                    &eb,
-                                                    params->rule);
-                }
-                if (code >= 0) {
-                    code = gx_fill_edgebuffer_app(dev,
-                                                  pdevc,
-                                                  &eb,
-                                                  fo.fill_direct ? -1 : (int)pgs->log_op);
-                }
-            }
+            if (adjust.x == 0 && adjust.y == 0)
+                sc = &gx_scan_converter;
+            else
+                sc = &gx_scan_converter_app;
         } else {
-            if (adjust.x == 0 && adjust.y == 0) {
-                code = gx_scan_convert_tr(dev,
-                                          ppath,
-                                          &ibox,
-                                          &eb,
-                                          fo.fixed_flat);
-                if (code >= 0) {
-                    code = gx_filter_edgebuffer_tr(dev,
-                                                   &eb,
-                                                    params->rule);
-                }
-                if (code >= 0) {
-                    code = gx_fill_edgebuffer_tr(dev,
-                                                 pdevc,
-                                                 &eb,
-                                                 (int)pgs->log_op);
-                }
-            } else {
-                code = gx_scan_convert_tr_app(dev,
-                                              ppath,
-                                              &ibox,
-                                              &eb,
-                                              fo.fixed_flat);
-                if (code >= 0) {
-                    code = gx_filter_edgebuffer_tr_app(dev,
-                                                       &eb,
-                                                       params->rule);
-                }
-                if (code >= 0) {
-                    code = gx_fill_edgebuffer_tr_app(dev,
-                                                     pdevc,
-                                                     &eb,
-                                                     (int)pgs->log_op);
-                }
-            }
+            if (adjust.x == 0 && adjust.y == 0)
+                sc = &gx_scan_converter_tr;
+            else
+                sc = &gx_scan_converter_tr_app;
         }
+        code = gx_scan_convert_and_fill(sc,
+                                        dev,
+                                        ppath,
+                                        &ibox,
+                                        fo.fixed_flat,
+                                        params->rule,
+                                        pdevc,
+                                        (!fill_by_trapezoids && fo.fill_direct) ? -1 : (int)pgs->log_op);
         if (ppath == &ffpath)
             gx_path_free(ppath, "gx_general_fill_path");
-        gx_edgebuffer_fin(dev,&eb);
         return code;
     }
 

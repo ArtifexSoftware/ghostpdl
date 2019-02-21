@@ -792,6 +792,18 @@ make_table_template(gx_device     * pdev,
     if (offset < 2*intersection_size)
         offset += 2*intersection_size;
     offset *= sizeof(*table);
+
+    /* Try to keep the size to 1Meg. This is enough for the vast majority
+     * of files. Allow us to grow above this if it would mean dropping
+     * the height below a suitably small number (set to be larger than
+     * any max_fill_band we might meet). */
+    if (scanlines > 16 && offset > 1024*1024) { /* Arbitrary */
+        gs_free_object(pdev->memory, index, "scanc index buffer");
+        return offset/(1024*1024) + 1;
+    }
+
+    /* In the case where we have let offset be large, at least make sure
+     * it's not TOO large for us to malloc. */
     if (offset != (int64_t)(uint)offset)
     {
         gs_free_object(pdev->memory, index, "scanc index buffer");
@@ -873,8 +885,11 @@ int gx_scan_convert(gx_device     * gs_restrict pdev,
         return 0;
 
     code = make_table(pdev, path, &ibox, &scanlines, &index, &table);
-    if (code < 0)
+    if (code != 0) /* >0 means "retry with smaller height" */
         return code;
+
+    if (scanlines == 0)
+        return 0;
 
     if (zero) {
         code = zero_case(pdev, path, &ibox, index, table, fixed_flat, fill_zero);
@@ -2081,8 +2096,11 @@ int gx_scan_convert_app(gx_device     * gs_restrict pdev,
         return 0;
 
     code = make_table_app(pdev, path, &ibox, &scanlines, &index, &table);
-    if (code < 0)
+    if (code != 0) /* > 0 means "retry with smaller height" */
         return code;
+
+    if (scanlines == 0)
+        return 0;
 
     if (zero) {
         code = zero_case(pdev, path, &ibox, index, table, fixed_flat, fill_zero_app);
@@ -2606,8 +2624,11 @@ int gx_scan_convert_tr(gx_device     * gs_restrict pdev,
         return 0;
 
     code = make_table_tr(pdev, path, &ibox, &scanlines, &index, &table);
-    if (code < 0)
+    if (code != 0) /* > 0 means "retry with smaller height" */
         return code;
+
+    if (scanlines == 0)
+        return 0;
 
     if (zero) {
         code = zero_case(pdev, path, &ibox, index, table, fixed_flat, fill_zero_tr);
@@ -4052,8 +4073,11 @@ int gx_scan_convert_tr_app(gx_device     * gs_restrict pdev,
         return 0;
 
     code = make_table_tr_app(pdev, path, &ibox, &scanlines, &index, &table);
-    if (code < 0)
+    if (code != 0) /* > 0 means "retry with smaller height" */
         return code;
+
+    if (scanlines == 0)
+        return 0;
 
     if (zero) {
         code = zero_case(pdev, path, &ibox, index, table, fixed_flat, fill_zero_app_tr);
@@ -4523,4 +4547,98 @@ gx_edgebuffer_fin(gx_device     * pdev,
     gs_free_object(pdev->memory, edgebuffer->index, "scanc index buffer");
     edgebuffer->index = NULL;
     edgebuffer->table = NULL;
+}
+
+gx_scan_converter_t gx_scan_converter =
+{
+    gx_scan_convert,
+    gx_filter_edgebuffer,
+    gx_fill_edgebuffer
+};
+
+gx_scan_converter_t gx_scan_converter_app =
+{
+    gx_scan_convert_app,
+    gx_filter_edgebuffer_app,
+    gx_fill_edgebuffer_app
+};
+
+gx_scan_converter_t gx_scan_converter_tr =
+{
+    gx_scan_convert_tr,
+    gx_filter_edgebuffer_tr,
+    gx_fill_edgebuffer_tr
+};
+
+gx_scan_converter_t gx_scan_converter_tr_app =
+{
+    gx_scan_convert_tr_app,
+    gx_filter_edgebuffer_tr_app,
+    gx_fill_edgebuffer_tr_app
+};
+
+int
+gx_scan_convert_and_fill(const gx_scan_converter_t *sc,
+                               gx_device       *dev,
+                               gx_path         *ppath,
+                         const gs_fixed_rect   *ibox,
+                               fixed            flat,
+                               int              rule,
+                         const gx_device_color *pdevc,
+                               int              lop)
+{
+    int code;
+    gx_edgebuffer eb;
+    gs_fixed_rect ibox2 = *ibox;
+    int height;
+    int mfb = dev->max_fill_band;
+
+    if (mfb != 0) {
+        ibox2.p.y &= ~(mfb-1);
+        ibox2.q.y = (ibox2.q.y+mfb-1) & ~(mfb-1);
+    }
+    height = ibox2.q.y - ibox2.p.y;
+
+    do {
+        gx_edgebuffer_init(&eb);
+        while (1) {
+            ibox2.q.y = ibox2.p.y + height;
+            if (ibox2.q.y > ibox->q.y)
+                ibox2.q.y = ibox->q.y;
+            code = sc->scan_convert(dev,
+                                    ppath,
+                                    &ibox2,
+                                    &eb,
+                                    flat);
+            if (code <= 0)
+                break;
+            /* Let's shrink the ibox and try again */
+            if (mfb && height == mfb) {
+                /* Can't shrink the height any more! */
+                code = gs_error_rangecheck;
+                break;
+            }
+            height = height/code;
+            if (mfb)
+                height = (height + mfb-1) & ~(mfb-1);
+            if (height < (mfb ? mfb : 1)) {
+                code = gs_error_VMerror;
+                break;
+            }
+        }
+        if (code >= 0)
+            code = sc->filter(dev,
+                              &eb,
+                              rule);
+        if (code >= 0)
+            code = sc->fill(dev,
+                            pdevc,
+                            &eb,
+                            lop);
+        gx_edgebuffer_fin(dev,&eb);
+        ibox2.p.y += height;
+    }
+    while (ibox2.p.y < ibox->q.y);
+
+    return code;
 }
