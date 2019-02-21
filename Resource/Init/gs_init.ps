@@ -1177,15 +1177,17 @@ currentdict /errordict ErrorNames length 3 add dict
 % files.  However, ErrorNames contains all of the error names regardless of
 % what features are included, so we have to "know" that VMerror is the last
 % Level 1 error.
-/.registererror		% <name> .registererror -
- { errordict exch .registererror2
- } bind def
 /.registererror2	% <dict> <name> .registererror -
  { .currentglobal //true .setglobal	% create procs in global VM
    3 1 roll
    mark 1 index systemdict /.errorhandler get /exec load //.packtomark exec cvx put
    .setglobal
  } bind def
+/.registererror		% <name> .registererror -
+ { errordict exch //.registererror2 exec
+ } bind def
+currentdict /.registererror2 .undef
+
 ErrorNames
  { .registererror} forall
 errordict begin
@@ -2364,6 +2366,7 @@ currentdict /.locksafeglobal .undef
   /.growdict /.growdictlength
   /.userdict /.uservar
   /.getdefaulthalftone
+  /.registererror
 
   % Used by a free user in the Library of Congress. Apparently this is used to
   % draw a partial page, which is then filled in by the results of a barcode
