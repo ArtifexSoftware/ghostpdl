@@ -506,7 +506,19 @@ userdict /.echo.mode //true put
           currentoverprint //false setoverprint 1 setgray .fillpage setoverprint
           exec
         } odef
-% To satisfy the Genoa FTS, executive must be a procedure, not an operator.
+
+        % To satisfy the Genoa FTS, executive must be a procedure, not an operator.
+% Define the procedure used by .runfile, .runstdin and .runstring
+% for executing user input.
+% This is called with a procedure or executable file on the operand stack.
+/.execute {		% <obj> .execute <stopped>
+  stopped $error /newerror get and
+   { /handleerror .systemvar exec flush //true } { //false } ifelse
+} bind def
+% Define an execute analogue of runlibfile0.
+/execute0 {		% <obj> execute0 -
+  //.execute exec { /execute0 cvx 1 .quit } if
+} bind def
 /executive
         { { prompt
              { (%statementedit) (r) .systemvmfile } stopped
@@ -515,9 +527,11 @@ userdict /.echo.mode //true put
                /handleerror .systemvar exec //null		% ioerror??
              }
             if
-            cvx { .runexec } .execute pop
+            cvx { .runexec } //.execute exec pop
           } loop
         } bind def
+currentdict /.execute .undef
+
 /filter
         { //filterdict 1 .argindex .knownget
            { exch pop exec }
@@ -860,17 +874,6 @@ userdict /.currentresourcefile //null put
   } ifelse
 } bind def
 
-% Define the procedure used by .runfile, .runstdin and .runstring
-% for executing user input.
-% This is called with a procedure or executable file on the operand stack.
-/.execute {		% <obj> .execute <stopped>
-  stopped $error /newerror get and
-   { /handleerror .systemvar exec flush //true } { //false } ifelse
-} bind def
-% Define an execute analogue of runlibfile0.
-/execute0 {		% <obj> execute0 -
-  .execute { /execute0 cvx 1 .quit } if
-} bind def
 % Define the procedure that the C code uses for running files
 % named on the command line.
 /.runfile {
