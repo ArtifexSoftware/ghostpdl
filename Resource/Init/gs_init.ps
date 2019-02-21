@@ -2196,7 +2196,7 @@ readonly def
 currentdict /tempfilepaths undef
 
 /.locksafe {
-  .locksafe_userparams
+  //.locksafe_userparams exec
   //systemdict /getenv {pop //false} .forceput
   % setpagedevice has the side effect of clearing the page, but
   % we will just document that. Using setpagedevice keeps the device
@@ -2215,7 +2215,7 @@ currentdict /tempfilepaths undef
 % in gs_setpd.ps)
 %
 /.locksafeglobal {
-  .locksafe_userparams
+  //.locksafe_userparams exec
   systemdict /getenv {pop //false} put
   % setpagedevice has the side effect of clearing the page, but
   % we will just document that. Using setpagedevice keeps the device
@@ -2254,11 +2254,13 @@ currentdict /tempfilepaths undef
   }
   if
   .locksafeglobal
-} bind executeonly odef
+} .bind executeonly odef
 
 % If we are running in SAFER mode, lock things down
 SAFER { .setsafeglobal } if
+currentdict /.locksafe_userparams .undef
 currentdict /.setsafeglobal .undef
+currentdict /.locksafeglobal .undef
 
 /SAFERUndefinePostScriptOperators {
   [
