@@ -2258,6 +2258,7 @@ currentdict /tempfilepaths undef
 
 % If we are running in SAFER mode, lock things down
 SAFER { .setsafeglobal } if
+currentdict /.setsafeglobal .undef
 
 /SAFERUndefinePostScriptOperators {
   [
