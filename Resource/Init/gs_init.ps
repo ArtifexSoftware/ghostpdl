@@ -1002,56 +1002,9 @@ currentdict /runlibfile0 .undef
 % Define the standard handleerror.  We break out the printing procedure
 % (.printerror) so that it can be extended for binary output
 % if the Level 2 facilities are present.
-  /.printerror
-   { $error begin newerror
-     {
-       /command load errorname SHORTERRORS
-        { (%%[ Error: ) print =only flush
-          (; OffendingCommand: ) print =only
-          errorinfo dup //null eq {
-            pop
-          } {
-            (;\nErrorInfo:) print
-            dup type /arraytype eq
-              { { ( ) print =only } forall }
-              { ( ) print =only }
-            ifelse
-          } ifelse
-          ( ]%%) = flush
-        }
-        { (Error: ) print ==only flush
-          ( in ) print ==only flush
-          errorinfo dup //null eq {
-            pop
-          } {
-            (\nAdditional information: ) print ==only flush
-          } ifelse
-          .printerror_long
-        }
-       ifelse
-       .clearerror flush
-     }
-     { % newerror is //false, test to see if user has set handleerror to a different
-       % routine, if so execute it, otherwise, just return.  This code deals with the
-       % Genoa issue of setting /handleerror, and then calling it, without an error
-       % being set.  We were erroring in this case, due to /command load failing.
-
-        //JOBSERVER {
-            /errordict .systemvar /handleerror get /.GShandleerror .systemvar ne
-        } {
-            //false
-        } ifelse
-         { /errordict .systemvar begin /handleerror load .internalstopped pop end
-         }
-         if
-     }
-     ifelse	% newerror
-     end
-     flush
-    } bind executeonly def
-  /.printerror_long			% long error printout,
+/.printerror_long			% long error printout,
                                         % $error is on the dict stack
-   {	% Push the (anonymous) stack printing procedure.
+{	% Push the (anonymous) stack printing procedure.
         %  <heading> <==flag> <override-name> <stackname> proc
        {
          currentdict exch .knownget	% stackname defined in $error?
@@ -1125,7 +1078,56 @@ currentdict /runlibfile0 .undef
         { (Current file position is ) print position = }
        if
 
-   } bind executeonly def
+} bind executeonly def
+/.printerror
+{ $error begin newerror
+     {
+       /command load errorname SHORTERRORS
+        { (%%[ Error: ) print =only flush
+          (; OffendingCommand: ) print =only
+          errorinfo dup //null eq {
+            pop
+          } {
+            (;\nErrorInfo:) print
+            dup type /arraytype eq
+              { { ( ) print =only } forall }
+              { ( ) print =only }
+            ifelse
+          } ifelse
+          ( ]%%) = flush
+        }
+        { (Error: ) print ==only flush
+          ( in ) print ==only flush
+          errorinfo dup //null eq {
+            pop
+          } {
+            (\nAdditional information: ) print ==only flush
+          } ifelse
+          //.printerror_long exec
+        }
+       ifelse
+       .clearerror flush
+     }
+     { % newerror is //false, test to see if user has set handleerror to a different
+       % routine, if so execute it, otherwise, just return.  This code deals with the
+       % Genoa issue of setting /handleerror, and then calling it, without an error
+       % being set.  We were erroring in this case, due to /command load failing.
+
+        //JOBSERVER {
+            /errordict .systemvar /handleerror get /.GShandleerror .systemvar ne
+        } {
+            //false
+        } ifelse
+         { /errordict .systemvar begin /handleerror load .internalstopped pop end
+         }
+         if
+     }
+     ifelse	% newerror
+     end
+     flush
+} bind executeonly def
+currentdict /.printerror_long .undef
+
 % Define a procedure for clearing the error indication.
 /.clearerror
  { $error /newerror //false put
