@@ -2132,6 +2132,7 @@ gsave
 % Install the EPS handler if needed
 systemdict /EPSBoundingBoxInit known { EPSBoundingBoxInit } if
 
+%% ---------------- SAFER stuff BEGIN -------------------%%
 % If we want a "safer" system, disable some obvious ways to cause havoc.
 .currentglobal //true .setglobal
 /SAFETY 2 dict
@@ -2195,6 +2196,7 @@ readonly def
 
 currentdict /tempfilepaths undef
 
+%% --- These are documented extensions ---
 /.locksafe {
   //.locksafe_userparams exec
   //systemdict /getenv {pop //false} .forceput
@@ -2207,6 +2209,20 @@ currentdict /tempfilepaths undef
   setglobal
   //SAFETY /safe //true .forceput % overrides readonly
 } .bind executeonly odef
+
+/.setsafe
+{
+  SAFETY /safe get not {
+    <<
+      /PermitFileReading [ ]
+      /PermitFileWriting [ ]
+      /PermitFileControl [ ]
+    >> setuserparams
+  }
+  if
+  .locksafe
+} .bind executeonly odef
+%% --- End documented extensions ---
 
 % This is only used during startup. Its required so that
 % we can detect in setpagdevice that we are in fact in startup
@@ -2227,20 +2243,7 @@ currentdict /tempfilepaths undef
   >> setpagedevice
   setglobal
   //SAFETY /safe //true .forceput % overrides readonly
-} .bind executeonly odef
-
-/.setsafe
-{
-  SAFETY /safe get not {
-    <<
-      /PermitFileReading [ ]
-      /PermitFileWriting [ ]
-      /PermitFileControl [ ]
-    >> setuserparams
-  }
-  if
-  .locksafe
-} .bind executeonly odef
+} .bind def
 
 % See /.locksafeglobal above.
 %
@@ -2253,8 +2256,8 @@ currentdict /tempfilepaths undef
     >> setuserparams
   }
   if
-  .locksafeglobal
-} .bind executeonly odef
+  //.locksafeglobal exec
+} .bind def
 
 % If we are running in SAFER mode, lock things down
 SAFER { .setsafeglobal } if
@@ -2278,6 +2281,8 @@ currentdict /.locksafeglobal .undef
 
   //systemdict /SAFERUndefinePostScriptOperators .forceundef
 } .bind executeonly def % must be bound and hidden for .forceundef
+
+%% ---------------- SAFER stuff END -------------------%%
 
 /UndefinePostScriptOperators {
   % This list is of operators which no longer appear to be used, and which we do not believe
