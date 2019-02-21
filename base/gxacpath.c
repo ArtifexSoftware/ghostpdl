@@ -36,6 +36,7 @@ static dev_proc_open_device(accum_open_device);
 static dev_proc_close_device(accum_close);
 static dev_proc_fill_rectangle(accum_fill_rectangle);
 static dev_proc_dev_spec_op(accum_dev_spec_op);
+static dev_proc_get_clipping_box(accum_get_clipping_box);
 
 /* GC information */
 extern_st(st_clip_list);
@@ -94,7 +95,7 @@ static const gx_device_cpath_accum gs_cpath_accum_device =
   gx_default_end_image,
   NULL,
   NULL,
-  gx_get_largest_clipping_box,
+  accum_get_clipping_box,
   gx_default_begin_typed_image,
   NULL,
   NULL,
@@ -157,6 +158,24 @@ gx_cpath_accum_set_cbox(gx_device_cpath_accum * padev,
         padev->clip_box.p.y = fixed2int_var(pbox->p.y);
         padev->clip_box.q.x = fixed2int_var_ceiling(pbox->q.x);
         padev->clip_box.q.y = fixed2int_var_ceiling(pbox->q.y);
+    }
+}
+
+static void
+accum_get_clipping_box(gx_device *dev, gs_fixed_rect *pbox)
+{
+    gx_device_cpath_accum * padev = (gx_device_cpath_accum *)dev;
+
+    if (padev->list.transpose) {
+        pbox->p.x = int2fixed(padev->clip_box.p.y);
+        pbox->p.y = int2fixed(padev->clip_box.p.x);
+        pbox->q.x = int2fixed(padev->clip_box.q.y+1)-1;
+        pbox->q.y = int2fixed(padev->clip_box.q.x+1)-1;
+    } else {
+        pbox->p.x = int2fixed(padev->clip_box.p.x);
+        pbox->p.y = int2fixed(padev->clip_box.p.y);
+        pbox->q.x = int2fixed(padev->clip_box.q.x+1)-1;
+        pbox->q.y = int2fixed(padev->clip_box.q.y+1)-1;
     }
 }
 
