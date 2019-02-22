@@ -438,7 +438,7 @@ status {
                         % Now make the resource value read-only.
              0 2 copy get { readonly } .internalstopped pop
              dup 4 1 roll put exch pop exch pop
-           }
+           } executeonly
            { /defineresource cvx /typecheck signaloperror
            }
         ifelse
