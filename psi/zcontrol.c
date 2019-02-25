@@ -158,34 +158,6 @@ zexecn(i_ctx_t *i_ctx_p)
     return o_push_estack;
 }
 
-/* <obj> superexec - */
-static int end_superexec(i_ctx_t *);
-static int
-zsuperexec(i_ctx_t *i_ctx_p)
-{
-    os_ptr op = osp;
-    es_ptr ep;
-
-    check_op(1);
-    if (!r_has_attr(op, a_executable))
-        return 0;		/* literal object just gets pushed back */
-    check_estack(2);
-    ep = esp += 3;
-    make_mark_estack(ep - 2, es_other, end_superexec); /* error case */
-    make_op_estack(ep - 1,  end_superexec); /* normal case */
-    ref_assign(ep, op);
-    esfile_check_cache();
-    pop(1);
-    i_ctx_p->in_superexec++;
-    return o_push_estack;
-}
-static int
-end_superexec(i_ctx_t *i_ctx_p)
-{
-    i_ctx_p->in_superexec--;
-    return 0;
-}
-
 /* <array> <executable> .runandhide <obj>				*/
 /* 	before executing  <executable>, <array> is been removed from	*/
 /*	the operand stack and placed on the execstack with attributes	*/
@@ -971,8 +943,6 @@ const op_def zcontrol3_op_defs[] = {
     {"0%loop_continue", loop_continue},
     {"0%repeat_continue", repeat_continue},
     {"0%stopped_push", stopped_push},
-    {"1superexec", zsuperexec},
-    {"0%end_superexec", end_superexec},
     {"2.runandhide", zrunandhide},
     {"0%end_runandhide", end_runandhide},
     op_def_end(0)

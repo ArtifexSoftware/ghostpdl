@@ -2563,24 +2563,6 @@ DELAYBIND not {
   systemdict /.forceundef .undef	% ditto
 } if
 
-% Move superexec to internaldict if superexec is defined. (Level 2 or later)
-systemdict /superexec known {
-  % restrict superexec to single known use by PScript5.dll
-  % We could do this only for SAFER mode, but internaldict and superexec are
-  % not very well documented, and we don't want them to be used.
-  1183615869 internaldict /superexec {
-    2 index /Private eq		% first check for typical use in PScript5.dll
-    1 index length 1 eq and	% expected usage is: dict /Private <value> {put} superexec
-    1 index 0 get systemdict /put get eq and
-    {
-      //superexec exec		% the only usage we allow
-    } {
-      /superexec load /invalidaccess signalerror
-    } ifelse
-  } bind cvx executeonly put
-  systemdict /superexec .undef	% get rid of the dangerous (unrestricted) operator
-} if
-
 % Can't remove this one until the last minute :-)
 DELAYBIND not {
 systemdict /.undef .undef

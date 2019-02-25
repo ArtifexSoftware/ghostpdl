@@ -144,7 +144,6 @@ context_state_alloc(gs_context_state_t ** ppcst,
     pcst->nv_page_count = 0;
     pcst->rand_state = rand_state_initial;
     pcst->usertime_inited = false;
-    pcst->in_superexec = 0;
     pcst->plugin_list = 0;
     make_t(&pcst->error_object, t__invalid);
     {	/*
