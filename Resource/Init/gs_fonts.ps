@@ -1133,7 +1133,21 @@ $error /SubstituteFont { } put
            dup type /nametype eq
             {                   % Font alias
               //.checkalias exec
-              .tryfindfont exit
+              dup .tryfindfont
+              {
+                % We don't want to reuse an embedded font as a substitute
+                % so make sure the font came from disk before using it.
+                dup /Path known
+                1 index /PathLoad known or
+                { exch pop //true exit }
+                {
+                  % if the candidate didn't come from disk, remove it from
+                  % FontDirectory and try again.
+                  pop dup undefinefont
+                  .tryfindfont exit
+                }
+                ifelse
+              } if
             }
             { dup dup type dup /arraytype eq exch /packedarraytype eq or exch xcheck and
                {                % Font with a procedural definition
