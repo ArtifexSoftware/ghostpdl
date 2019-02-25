@@ -1267,13 +1267,13 @@ psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
         goto cleanup;
 
     /* Print the output planes */
-    for (chan_idx = 0; chan_idx < num_comp; chan_idx++) {
-        int data_pos = xc->chnl_to_position[chan_idx];
-        if (data_pos >= 0) {
-            for (j = 0; j < xc->height; ++j) {
-                code = gx_downscaler_get_bits_rectangle(&ds, &params, j);
-                if (code < 0)
-                    goto cleanup;
+    for (j = 0; j < xc->height; ++j) {
+        code = gx_downscaler_get_bits_rectangle(&ds, &params, j);
+        if (code < 0)
+            goto cleanup;
+        for (chan_idx = 0; chan_idx < num_comp; chan_idx++) {
+            int data_pos = xc->chnl_to_position[chan_idx];
+            if (data_pos >= 0) {
 
                 unpacked = params.data[data_pos];
 
@@ -1289,14 +1289,15 @@ psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
                     }
                 }
                 psd_write(xc, sep_line, octets_per_line);
-            }
-        } else {
-            if (chan_idx < NUM_CMYK_COMPONENTS) {
+            } else if (chan_idx < NUM_CMYK_COMPONENTS) {
                 /* Write empty process color in the area */
                 memset(sep_line,255,octets_per_line);
                 psd_write(xc, sep_line, octets_per_line);
             }
+            fseek(xc->f, (xc->height-1) * octets_per_line, SEEK_CUR);
         }
+        if (j < xc->height-1)
+            fseek(xc->f, -(num_comp * xc->height - 1) * octets_per_line, SEEK_CUR);
     }
 
 cleanup:
