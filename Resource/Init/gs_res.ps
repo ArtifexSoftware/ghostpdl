@@ -645,8 +645,8 @@ status {
 /.LoadResource
         { dup .ResourceFile
            { exch pop currentglobal
-              { .runresource }
-              { //true setglobal { .runresource } stopped //false setglobal { stop } if }
+              { //.runresource exec }
+              { //true setglobal { //.runresource exec } stopped //false setglobal { stop } if }
              ifelse
            }
            { dup //.undefinedresource exec
