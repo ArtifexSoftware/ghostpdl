@@ -593,7 +593,7 @@ currentdict /.promptmsg .undef
         % startjob replaces the null on the o-stack with a procedure
         % to be executed when we get back here.
   dup //null ne { exec //true } { pop //false } ifelse
-} bind def
+} bind executeonly def
 /.runexec2 {		% <continue> <file|fileproc> .runexec2 -
   exch {
     .runexec
@@ -684,7 +684,7 @@ odef
 /start	{ BATCH { //null 0 .quit } { executive } ifelse } def
 % Internal uses of stopped that aren't going to do a stop if an error occurs
 % should use .internalstopped to avoid setting newerror et al.
-/.internalstopped { //null 1 .stopped //null ne } bind def
+/.internalstopped { //null 1 .stopped //null ne } bind executeonly def
 /store {	% Don't alter operands before completing.
         1 .argindex where { 2 index 2 index put pop pop } { def } ifelse
 } odef
