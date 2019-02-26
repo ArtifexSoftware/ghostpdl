@@ -574,8 +574,7 @@ znumicc_components(i_ctx_t * i_ctx_p)
     return 0;
 }
 
-const op_def    zicc_ll3_op_defs[] = {
-    op_def_begin_ll3(),
+const op_def    zicc_op_defs[] = {
     { "1.set_outputintent", zset_outputintent },
     { "1.numicc_components", znumicc_components },
     op_def_end(0)
