@@ -327,7 +327,7 @@ currentdict /num-chars-dict .undef
   dup type /filetype eq {
     { dup ( ) .peekstring not { ({) } if
       //token_nofail_dict exch .knownget not {
-        //null 1 index { token } .internalstopped exit
+        //null 1 index { token } //.internalstopped exec exit
       } if
       exec
     } loop
@@ -340,7 +340,7 @@ currentdict /num-chars-dict .undef
     } ifelse
   } {
     //null 1 index			% stack: source null source
-    { token } .internalstopped {	% stack: source null [source]
+    { token } //.internalstopped exec {	% stack: source null [source]
       //null ne { pop } if pop //false
     } {			         	% stack: source null ([post] token true | false)
       { 4 2 roll pop pop //true }

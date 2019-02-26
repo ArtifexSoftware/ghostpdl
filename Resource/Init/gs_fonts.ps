@@ -308,7 +308,7 @@ FONTPATH length 0 eq { (%END FONTPATH) .skipeof } if
        }
        { 3 -1 roll 1 add 3 1 roll
                 % stack: <fontcount> <scancount+1> <filecount+1> <filename>
-         dup (r) { file } .internalstopped
+         dup (r) { file } //.internalstopped exec
           { pop pop //null ()
                 % stack: <fontcount> <scancount+1> <filecount+1> <filename>
                 %       null ()
@@ -317,7 +317,7 @@ FONTPATH length 0 eq { (%END FONTPATH) .skipeof } if
                 % On some platforms, the file operator will open directories,
                 % but an error will occur if we try to read from one.
                 % Handle this possibility here.
-            dup //.scan1fontfirst { readstring } .internalstopped
+            dup //.scan1fontfirst { readstring } //.internalstopped exec
              { pop pop () }
              { pop }
             ifelse
@@ -405,14 +405,14 @@ systemdict /NONATIVEFONTMAP known .setnativefontmapbuilt
       {
         % stack: [ (name) (path) ]
         % verify the font name ourselves
-        dup 1 get (r) { file } .internalstopped
+        dup 1 get (r) { file } //.internalstopped exec
         {
           % skip the entry if we can't open the returned path
           pop pop pop
         }{
           % we could open the font file
           mark 2 1 roll
-          {//.findfontname exec} .internalstopped
+          {//.findfontname exec} //.internalstopped exec
           {
             cleartomark
             pop
@@ -1092,14 +1092,14 @@ $error /SubstituteFont { } put
   /.genericrfn where {
     pop
     pop dup //.fonttempstring /FontResourceDir getsystemparam .genericrfn
-    {//false .loadfontloop} .internalstopped {//false} if {
+    {//false .loadfontloop} //.internalstopped exec {//false} if {
       //true
     } {
       dup //.nametostring exec
-      {//true .loadfontloop} .internalstopped {//false} if
+      {//true .loadfontloop} //.internalstopped exec {//false} if
     } ifelse
   } {
-    {//true .loadfontloop} .internalstopped {//false} if
+    {//true .loadfontloop} //.internalstopped exec {//false} if
   } ifelse
 } bind def
 
@@ -1232,7 +1232,7 @@ FAKEFONTS { exch } if pop def   % don't bind, .current/setglobal get redefined
                //false .file_name_combine
                {
                  dup VMDEBUG
-                 (r) { file } .internalstopped {
+                 (r) { file } //.internalstopped exec {
                    pop pop
                    defaultfontmap_content { .definefontmap } forall
                  } {

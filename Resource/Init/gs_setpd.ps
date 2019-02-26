@@ -305,7 +305,7 @@ SETPDDEBUG { (Result of putting.) = pstack flush } if
         % we must (carefully) reinstall the old parameters in
         % the same device.
    .currentpagedevice pop //null currentdevice //null
-   { //.trysetparams } .internalstopped
+   { //.trysetparams } //.internalstopped exec
    {
      //null
    } if
@@ -313,7 +313,7 @@ SETPDDEBUG { (Result of putting.) = pstack flush } if
     { pop pop }
     {
       SETPDDEBUG { (Error in .trysetparams!) = pstack flush } if
-      {cleartomark pop pop pop} .internalstopped pop
+      {cleartomark pop pop pop} //.internalstopped exec pop
       % if resetting the entire device state failed, at least put back the
       % security related key
       currentdevice //null //false mark /.LockSafetyParams
@@ -330,7 +330,7 @@ SETPDDEBUG { (Result of putting.) = pstack flush } if
 
 /.uninstallpagedevice
  {
-   {2 .endpage { .currentnumcopies //false .outputpage } if} .internalstopped pop
+   {2 .endpage { .currentnumcopies //false .outputpage } if} //.internalstopped exec pop
    nulldevice
  } bind def
 

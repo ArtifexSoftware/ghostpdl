@@ -172,7 +172,7 @@ pop		% .cidfonttypes
       exch pop {stop}if
     }if
     currentfile fileposition
-  } .internalstopped {
+  } //.internalstopped exec {
                 % File is not positionable, or uses hex data.
                 % Load the data now.
     cleartomark exch
@@ -310,7 +310,7 @@ currentdict end
 % The name %Type11BuildGlyph is known to the interpreter.
 (%Type11BuildGlyph) cvn {	% <cidfont> <cid> %Type11BuildGlyph -
                 % We must be prepared for out-of-range CIDs.
-  2 copy { .type11mapcid } .internalstopped {
+  2 copy { .type11mapcid } //.internalstopped exec {
     pop /CharStrings get /.notdef get
   } if
                         % Stack: cidfont cid glyphindex

@@ -116,7 +116,7 @@ currentdict /super.complete_instance currentdict /complete_instance get put
       } if
       closefile
   } {
-    (r) { file } .internalstopped
+    (r) { file } //.internalstopped exec
     {
       (Can't find the font file ) print =
       /findfont cvx /undefinedfilename signalerror

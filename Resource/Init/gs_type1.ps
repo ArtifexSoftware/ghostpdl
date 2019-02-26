@@ -90,7 +90,7 @@
                {
                  % as luck would have it, we can just replace the "uni" with "16#"
                  % to get something we can convert to a number
-                 pop pop dup 0 (16#) putinterval {cvi} .internalstopped
+                 pop pop dup 0 (16#) putinterval {cvi} //.internalstopped exec
                  { pop //false}
                  {                                             % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname cpoint
                    dup 5 index exch known

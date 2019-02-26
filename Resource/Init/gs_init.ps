@@ -538,6 +538,9 @@ currentdict /.execute .undef
            { /filter .systemvar /undefined signalerror }
           ifelse
         } odef
+% Internal uses of stopped that aren't going to do a stop if an error occurs
+% should use .internalstopped to avoid setting newerror et al.
+/.internalstopped { //null 1 .stopped //null ne } bind executeonly def
 % handleerror procedure as mentioned in the "Operators" section of the PLRM Section 8.2
 % This invokes the handleerror procedure from errordict (unless we are running under a
 % JOBSERVER where we want to always use a defined error handler (many error handlers in
@@ -547,9 +550,9 @@ currentdict /.execute .undef
 % won't cause nested errors (Unexpected Error conditions).
 /handleerror
         JOBSERVER {
-          { /.GShandleerror .systemvar .internalstopped pop } bind % always use .GShandleerror.
+          { /.GShandleerror .systemvar //.internalstopped exec pop } bind % always use .GShandleerror.
         } {
-          { /errordict .systemvar /handleerror get .internalstopped pop } bind % PLRM standard errorhandling
+          { /errordict .systemvar /handleerror get //.internalstopped exec pop } bind % PLRM standard errorhandling
         } ifelse def
 /identmatrix [1.0 0.0 0.0 1.0 0.0 0.0] readonly def
 /identmatrix {
@@ -682,9 +685,6 @@ odef
 % `stack' is a procedure, not an operator!!!
 /stack	{ 0 1 count 3 sub { index = } for } bind def
 /start	{ BATCH { //null 0 .quit } { executive } ifelse } def
-% Internal uses of stopped that aren't going to do a stop if an error occurs
-% should use .internalstopped to avoid setting newerror et al.
-/.internalstopped { //null 1 .stopped //null ne } bind executeonly def
 /store {	% Don't alter operands before completing.
         1 .argindex where { 2 index 2 index put pop pop } { def } ifelse
 } odef
@@ -986,12 +986,12 @@ currentdict /runlibfile0 .undef
      }
     ifelse
     $error /position currentfile status
-     { currentfile { fileposition } .internalstopped { pop //null } if
+     { currentfile { fileposition } //.internalstopped exec { pop //null } if
      }
      {		% If this was a scanner error, the file is no longer current,
                 % but the command holds the file, which may still be open.
        $error /command get dup type /filetype eq
-        { { fileposition } .internalstopped { pop //null } if }
+        { { fileposition } //.internalstopped exec { pop //null } if }
         { pop //null }
        ifelse
      }
@@ -1121,7 +1121,7 @@ currentdict /runlibfile0 .undef
         } {
             //false
         } ifelse
-         { /errordict .systemvar begin /handleerror load .internalstopped pop end
+         { /errordict .systemvar begin /handleerror load //.internalstopped exec pop end
          }
          if
      }
@@ -1400,7 +1400,7 @@ currentdict /PDFA known { PDFA type /booleantype eq { /PDFA 1 def } if } if
         % Loop until the .getdevice gets a rangecheck.
 errordict /rangecheck 2 copy get
 errordict /rangecheck { pop stop } put	% pop the command
-  0 { {dup .getdevice exch 1 add} loop} .internalstopped pop
+  0 { {dup .getdevice exch 1 add} loop} //.internalstopped exec pop
   1 add dict  /devicedict 1 index def
   begin			% 2nd copy of count is on stack
    { dup .devicename exch
@@ -1643,7 +1643,7 @@ setpacking
 %			      false
 /.getdefaulthalftone {
   % try the device to see if it has a default halftone
-  { currentdevice /HalftoneDefault //.gsgetdeviceprop exec } .internalstopped
+  { currentdevice /HalftoneDefault //.gsgetdeviceprop exec } //.internalstopped exec
   { pop pop //false }		% no device property
   { dup type /dicttype eq { //true } { pop //false } ifelse }
   ifelse
@@ -1651,7 +1651,7 @@ setpacking
   %         false		  not found
   dup not
   { % device did not provide a default, try Resource
-    pop { /Default /Halftone /findresource .systemvar exec } .internalstopped
+    pop { /Default /Halftone /findresource .systemvar exec } //.internalstopped exec
     { pop pop //false } { //true } ifelse
   }
   if
@@ -1813,7 +1813,7 @@ currentdict /.gsgetdeviceprop .forceundef
     } forall
   } ifelse                                         % (t1) ?l1 (t2) ?l2 ... (tN) ?ln {} b [dl] (templ) (ffn)
   pop pop pop pop pop                              % (t1) ?l1 (t2) ?l2 ... (tN) ?ln
-} bind def
+} .bind executeonly def
 currentdict /.makepathtemplate .undef
 
 %   <dir_list> <template> .generate_dir_list_templates <t1> ... <tN>
@@ -1823,7 +1823,7 @@ currentdict /.makepathtemplate .undef
 %
 /.generate_dir_list_templates
 { //false 3 1 roll //.generate_dir_list_templates_with_length exec
-} bind def
+} .bind executeonly def
 
 % Load the initialization files for optional features.
 %% Replace 4 INITFILES
@@ -1884,7 +1884,7 @@ currentdict /.runlibfile .undef
     { dup type /operatortype eq
        {
          % This might be a real operator, so bind might cause a typecheck
-         {.bind} .internalstopped pop
+         {.bind} //.internalstopped exec pop
        }
       if pop pop
     } forall
@@ -2016,7 +2016,7 @@ ifelse
 % If the initial device parameters are invalid, the setdevice may fail.
 % Trap this and produce a reasonable error message.
 { setdevice }		% does an erasepage
-INITDEBUG { exec //false } { .internalstopped } ifelse {
+INITDEBUG { exec //false } { //.internalstopped exec } ifelse {
   (%stderr) (w) file dup
   (**** Unable to open the initial device, quitting.\n) writestring
   flushfile
@@ -2199,7 +2199,7 @@ readonly def
     >> setuserparams
   }
   if
-} bind def
+} .bind def
 
 currentdict /tempfilepaths undef
 
@@ -2371,6 +2371,7 @@ currentdict /.locksafeglobal .undef
   /.runresource
   /.numicc_components
   /.set_outputintent
+  /.internalstopped
 
   % Used by a free user in the Library of Congress. Apparently this is used to
   % draw a partial page, which is then filled in by the results of a barcode
