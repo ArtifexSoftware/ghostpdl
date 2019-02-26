@@ -165,7 +165,7 @@ currentdict end def
             .libfile
             {closefile pop}
             {
-              {(r) file} .internalstopped
+              {(r) file} //.internalstopped exec
               {pop pop 2 index exch .undef}
               {closefile pop} ifelse
             } ifelse

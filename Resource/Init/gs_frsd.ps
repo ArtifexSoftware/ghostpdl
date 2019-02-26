@@ -46,7 +46,7 @@ level2dict begin
                 % If AsyncRead is true, try to create the filter directly.
                 % Stack: dict filters parms CloseSource source
   4 index /AsyncRead .knownget not { //false } if {
-    1 index { .reusablestream } .internalstopped
+    1 index { .reusablestream } //.internalstopped exec
   } {
     //null //true
   } ifelse {

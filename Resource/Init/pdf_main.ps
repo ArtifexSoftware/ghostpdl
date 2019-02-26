@@ -1360,7 +1360,7 @@ currentdict /xref-char-dict undef
               } if
             } if
           } ifelse
-        } .internalstopped
+        } //.internalstopped exec
         { //true } if			% If we stop then we need to rebuild
         % Stack:  <filesize> <obj num> <need rebuild flag>
         {
@@ -1451,7 +1451,7 @@ currentdict /xref-char-dict undef
    /Trailer << >> def		% Initialize to an emptry dict.
    {initPDFobjects findxref readxref}
    PDFSTOPONERROR not {
-     .internalstopped {
+     //.internalstopped exec {
        recover_xref_data		% Read failed.  Attempt to recover xref data.
        search_trailer		% Search for the primary trailer
        //false                % search_trailer sets up /Trailer, so don't run the code to do that...
@@ -1510,7 +1510,7 @@ currentdict /xref-char-dict undef
 
        { readxref }
        PDFSTOPONERROR not {
-         .internalstopped {
+         //.internalstopped exec {
            recover_xref_data	% Read failed.  Attempt to recover xref data.
            /PrevArray where {/PrevArray undef} if     %% remove the array we were using to detect circular references
            exit			% Exit loop since recover gets all obj data.
@@ -2849,7 +2849,7 @@ currentdict /PDF2PS_matrix_key undef
   currentdevice 1 dict dup /ProcessColorModel dup put .getdeviceparams
   exch pop exch pop
   dup type /nametype ne { cvn } if
-  dup { setcolorspace } .internalstopped { pop /DeviceRGB } if
+  dup { setcolorspace } //.internalstopped exec { pop /DeviceRGB } if
 } bind executeonly def
 
 % ------ Transparency support ------ %

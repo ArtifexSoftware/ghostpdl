@@ -436,7 +436,7 @@ status {
                         % Stack: key value instance instancedict
              3 index 2 index .growput
                         % Now make the resource value read-only.
-             0 2 copy get { readonly } .internalstopped pop
+             0 2 copy get { readonly } //.internalstopped exec pop
              dup 4 1 roll put exch pop exch pop
            } executeonly
            { /defineresource cvx /typecheck signaloperror
@@ -555,7 +555,7 @@ status {
         3 2 roll pop % args
         { forall } 0 get
         currentdict end 2 .execn begin
-} bind executeonly
+} bind
 
 /ResourceFileName  {                          % /in (scr) --> (p/c/n)
   exch //.rfnstring cvs                       % (scr) (n)
@@ -668,10 +668,10 @@ status {
           } {
             pop
             currentdict /ResourceFileName known {
-              mark 1 index //.rfnstring { ResourceFileName } .internalstopped {
+              mark 1 index //.rfnstring { ResourceFileName } //.internalstopped exec {
                 cleartomark //false
               } {
-                (r) { file } .internalstopped {
+                (r) { file } //.internalstopped exec {
                   cleartomark //false
                 } {
                   exch pop exch pop //true
@@ -713,7 +713,7 @@ mark
    errordict /rangecheck { pop stop } put	% pop the command
    mark 0 { {
     dup .getiodevice dup //null eq { pop } { exch } ifelse 1 add
-   } loop} .internalstopped
+   } loop} //.internalstopped exec
    pop pop pop //.packtomark exec
    4 1 roll put
    .clearerror
@@ -827,7 +827,7 @@ counttomark 2 idiv
 0
 {
   {dup .getdevice .devicename cvn 1 dict dup /PageSize [1 1 14400 14400] put [exch readonly 0 -1] 3 -1 roll 1 add} loop
-} .internalstopped pop
+} //.internalstopped exec pop
 %% Remove the count, and the duplicate, from the stack
 pop pop
 .dicttomark

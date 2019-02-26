@@ -374,7 +374,7 @@
     } ifelse
     % Read a line from file.  If the line does not fit into our working string,
     % or any other error, then we will discard it.
-    PDFfile exch { readline } .internalstopped
+    PDFfile exch { readline } //.internalstopped exec
     { pop pop //false } if		% indicate no string if we stopped
     { % stack: <length> <working_str> <loc> <string>
       % Now that we have line, get obj num, ref num, and 'obj'.  Verify that each

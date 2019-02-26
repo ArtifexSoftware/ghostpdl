@@ -311,7 +311,7 @@ cntdict /dicttype {
     currentobjectformat 0 ne {
       [ /Error $error /errorname get $error /command get
                 % Convert the object with cvs if it isn't printable.
-      dup { //.objectprinttest exec } .internalstopped {
+      dup { //.objectprinttest exec } //.internalstopped exec {
         pop 100 string cvs
       } if
       //false ] 250 printobject

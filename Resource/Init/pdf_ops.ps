@@ -458,7 +458,7 @@ currentdict /gput_always_allow .undef
 /BM {
   /.setblendmode where {
     pop [ exch dup type /nametype ne { aload pop } if /Normal ] {
-      { .setblendmode } .internalstopped not { exit } if pop
+      { .setblendmode } //.internalstopped exec not { exit } if pop
     } forall
   } {
     pop

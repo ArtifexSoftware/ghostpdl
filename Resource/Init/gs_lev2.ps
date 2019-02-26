@@ -652,7 +652,7 @@ currentuserparams /WaitTimeout known
 } {
   % First see if the current value is valid so we don't have to guess
   mark .currentuserparams .dicttomark /ICCProfilesDir get
-  (default_gray.icc) concatstrings {status} .internalstopped
+  (default_gray.icc) concatstrings {status} //.internalstopped exec
   {pop //false} if
   {
     pop pop pop pop		% current value was OK. Just clean up stack

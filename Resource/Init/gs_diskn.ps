@@ -129,7 +129,7 @@ systemdict begin
     2 index 0 get 37 eq { [ () ] } { .getsearchabledevs } ifelse
     { 3 index concatstrings	% prepend the device
       {
-        2 index //file } .internalstopped not {
+        2 index //file } //.internalstopped exec not {
         4 1 roll pop pop pop //true
         exit		% exit with success
       } {
@@ -151,7 +151,7 @@ systemdict begin
   //false			% success code
   1 index 0 get 37 eq { [ () ] } { .getsearchabledevs } ifelse
   { 2 index concatstrings	% prepend the device
-    { //deletefile } .internalstopped exch pop not {
+    { //deletefile } //.internalstopped exec exch pop not {
       pop //true exit		% exit with success
     }
     if
@@ -166,7 +166,7 @@ systemdict begin
     //false			% success code
     1 index 0 get 37 eq { [ () ] } { .getsearchabledevs } ifelse
     { 2 index concatstrings	% prepend the device
-      { //status } .internalstopped not {
+      { //status } //.internalstopped exec not {
         { //true 7 -2 roll pop pop //true exit } % exit with success
         if
       }
@@ -187,7 +187,7 @@ systemdict begin
   //false			% success code
   2 index 0 get 37 eq { [ () ] } { .getsearchabledevs } ifelse
   { dup 4 index concatstrings	% prepend the device
-    { (r) //file } .internalstopped
+    { (r) //file } //.internalstopped exec
     not {
       closefile exch pop //true exit	% exit with success
     } {
