@@ -853,8 +853,8 @@ initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
                 for (i = 0; i < pss->params.WidthIn; i++, psrc += spp_decode) {
                     /* Lets get the decoded value. Then we need to do the lookup
                        of this */
-                    decode_value = penum->map[i].decode_base +
-                        (((const frac *)pdata)[0]) * penum->map[i].decode_factor;
+                    decode_value = penum->map[0].decode_base +
+                        (((const frac *)pdata)[0]) * penum->map[0].decode_factor;
                     /* Now we need to do the lookup of this value, and stick it
                        in psrc as a frac, which is what the interpolator is
                        expecting, since we had more than 8 bits of original
