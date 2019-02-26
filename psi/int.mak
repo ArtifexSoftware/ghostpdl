@@ -1720,7 +1720,7 @@ iccread_=$(PSOBJ)zicc.$(OBJ)
 $(PSD)icc.dev : $(ECHOGS_XE) $(PSD)cie.dev $(iccread_) \
                 $(GLD)sicclib.dev $(INT_MAK) $(MAKEDIRS)
 	$(SETMOD) $(PSD)icc $(iccread_)
-	$(ADDMOD) $(PSD)icc -oper zicc_ll3
+	$(ADDMOD) $(PSD)icc -oper zicc
 	$(ADDMOD) $(PSD)icc -ps gs_icc
 	$(ADDMOD) $(PSD)icc -include $(GLD)sicclib $(PSD)cie
 
