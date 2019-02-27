@@ -1813,7 +1813,7 @@ currentdict /.gsgetdeviceprop .forceundef
     } forall
   } ifelse                                         % (t1) ?l1 (t2) ?l2 ... (tN) ?ln {} b [dl] (templ) (ffn)
   pop pop pop pop pop                              % (t1) ?l1 (t2) ?l2 ... (tN) ?ln
-} .bind executeonly def
+} .bind executeonly odef
 currentdict /.makepathtemplate .undef
 
 %   <dir_list> <template> .generate_dir_list_templates <t1> ... <tN>
@@ -1822,8 +1822,8 @@ currentdict /.makepathtemplate .undef
 % It's the 'false' case of the function above.
 %
 /.generate_dir_list_templates
-{ //false 3 1 roll //.generate_dir_list_templates_with_length exec
-} .bind executeonly def
+{ //false 3 1 roll //.generate_dir_list_templates_with_length
+} .bind executeonly odef
 
 % Load the initialization files for optional features.
 %% Replace 4 INITFILES
@@ -2199,7 +2199,7 @@ readonly def
     >> setuserparams
   }
   if
-} .bind def
+} .bind executeonly def
 
 currentdict /tempfilepaths undef
 
@@ -2372,6 +2372,7 @@ currentdict /.locksafeglobal .undef
   /.numicc_components
   /.set_outputintent
   /.internalstopped
+  /.generate_dir_list_templates /.generate_dir_list_templates_with_length
 
   % Used by a free user in the Library of Congress. Apparently this is used to
   % draw a partial page, which is then filled in by the results of a barcode
