@@ -1806,7 +1806,7 @@ currentdict /CMap_read_dict undef
     11 -1 roll pop
     % Stack: <w0x'> <w0y'> <llx> <lly> <urx> <ury> <w1x'> <w1y'> <vx'> <vy'>
   end                                   % recover currentdict
-} executeonly def
+} bind executeonly def
 
 % <string> <match> tailmatch ==> <pre> true
 %                            ==> <string> false
