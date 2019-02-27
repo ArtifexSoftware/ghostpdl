@@ -204,8 +204,7 @@ zput(i_ctx_t *i_ctx_p)
 
     switch (r_type(op2)) {
         case t_dictionary:
-            if (i_ctx_p->in_superexec == 0)
-                check_dict_write(*op2);
+            check_dict_write(*op2);
             {
                 int code = idict_put(op2, op1, op);
 

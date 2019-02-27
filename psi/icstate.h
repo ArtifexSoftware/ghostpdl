@@ -41,7 +41,6 @@ struct gs_context_state_s {
     long rand_state;		/* (not in Red Book) */
     long usertime_0[2];         /* initial value first time usertime was called */
     bool usertime_inited;       /* has usertime been called yet? */
-    int in_superexec;		/* # of levels of superexec */
     /* View clipping is handled in the graphics state. */
     ref error_object;		/* t__invalid or error object from operator */
     ref userparams;		/* t_dictionary */

@@ -301,16 +301,16 @@ currentdict /printgreeting .undef
 % regardless of the contents of the dictionary stack.
 /.systemvar {		% <name> .systemvar <value>
   //systemdict exch get
-} .bind odef
+} .bind executeonly odef
 /.systemexec {
   .systemvar exec
-} .bind odef
+} .bind executeonly odef
 /.userdict {		% - .userdict <dict>
   /userdict .systemvar
-} .bind odef
+} .bind executeonly odef
 /.uservar {		% <name> .uservar <value>
   .userdict exch get
-} .bind odef
+} .bind executeonly odef
 
 % If we're delaying binding, remember everything that needs to be bound later.
 DELAYBIND
@@ -351,6 +351,9 @@ currentdict /hwsizedict .undef
 /getdeviceprops
  { //null .getdeviceparams
  } bind odef
+
+% NOTE: Note sure why/if this needs to be a separate operator.  Consider rolling this
+% implementation into /putdeviceprops ?
 /.putdeviceprops
  { //null //true counttomark 1 add 3 roll .putdeviceparams
    dup type /booleantype ne
@@ -359,7 +362,7 @@ currentdict /hwsizedict .undef
       /.putdeviceprops .systemvar exch signalerror
     }
    if
- } bind odef
+ } bind executeonly odef
 /.writecvs { 0 .writecvp } bind odef
 %**************** DEPRECATED PROCEDURES ****************
 %**************** DO NOT USE THESE IN NEW CODE ****************
@@ -389,19 +392,19 @@ userdict /#copies 1 put
         /mark load def
 (]) cvn
         {counttomark array astore exch pop} odef
-% .beginpage is redefined if setpagedevice is present.
-/.beginpage { } odef
-% In LanguageLevel 3, copypage erases the page.
-/copypage {
-        .languagelevel 3 ge
-        dup { 0 } { 1 } ifelse .endpage .doneshowpage {
-          .currentnumcopies 1 index .outputpage
-          (>>copypage, press <return> to continue<<\n) .confirm
-          dup { erasepage } if
-        } if pop
-    systemdict /..page_default_spaces .knownget { //.PurgeDict exec } if
-    .beginpage
-} odef
+%
+%   -   initgraphics   -
+%
+% Although the internal routine gs_initgraphics resets the color space,
+% it does not reset the color space we store in the 'interpreter'
+% graphics state (so that we can hand it back in currentcolorspace).
+% So we need to do that in the PostScript world.
+%
+%
+/initgraphics
+  { initgraphics systemdict /DeviceGray_array get setcolorspace }
+.bind executeonly odef
+
 /currentmatrix {
         dup type /arraytype ne
         { /currentmatrix load  /typecheck signalerror } if
@@ -409,8 +412,52 @@ userdict /#copies 1 put
         { /currentmatrix load  /rangecheck signalerror } if
         .currentmatrix 6 .argindex astore pop
 } odef
-% .currentnumcopies is redefined in Level 2.
-/.currentnumcopies { #copies } odef
+
+% We have to guard against the BeginPage procedure not popping its operand.
+% This is really stupid, but the Genoa CET does it.
+/.beginpage {		% - .beginpage -
+  .currentshowpagecount {
+    .currentpagedevice pop
+    dup //null ne { /BeginPage .knownget } { pop //false } ifelse {
+                % Stack: ... pagecount proc
+       count 2 .execn
+                % Stack: ... ..???.. oldcount
+       count 1 add exch sub { pop } repeat
+    } {
+      pop
+    } ifelse
+  } if
+} .bind executeonly odef
+
+% Guard similarly against EndPage not popping its operand.
+/.endpage {		% <reason> .endpage <print_bool>
+  .currentshowpagecount {
+    1 index .currentpagedevice pop
+    dup //null ne { /EndPage .knownget } { pop //false } ifelse {
+                % Stack: ... reason pagecount reason proc
+      count 2 .execn
+                % Stack: ... ..???.. print oldcount
+      count 2 add exch sub { exch pop } repeat
+    } {
+      pop pop 2 ne
+    } ifelse
+  } {
+    2 ne
+  } ifelse
+} .bind executeonly odef
+
+% Define .currentnumcopies so it consults the NumCopies device parameter.
+/.numcopiesdict mark
+  /NumCopies dup
+.dicttomark readonly def
+/.currentnumcopies
+ { currentdevice //.numcopiesdict .getdeviceparams
+   dup type /integertype eq
+    { exch pop exch pop }
+    { cleartomark #copies }
+   ifelse
+} .bind executeonly odef
+
 /setcolorscreen where { pop		% not in all Level 1 configurations
    /currentcolorscreen
         { .currenthalftone
@@ -445,8 +492,6 @@ userdict /.echo.mode //true put
         % because this is apparently what Adobe interpreters do.
   currentdict //systemdict eq { end } if
 } odef
-% .endpage is redefined if setpagedevice is present.
-/.endpage { 2 ne } odef
 % erasepage mustn't use gsave/grestore, because we call it before
 % the graphics state stack has been fully initialized.
 /erasepage
@@ -461,7 +506,19 @@ userdict /.echo.mode //true put
           currentoverprint //false setoverprint 1 setgray .fillpage setoverprint
           exec
         } odef
-% To satisfy the Genoa FTS, executive must be a procedure, not an operator.
+
+        % To satisfy the Genoa FTS, executive must be a procedure, not an operator.
+% Define the procedure used by .runfile, .runstdin and .runstring
+% for executing user input.
+% This is called with a procedure or executable file on the operand stack.
+/.execute {		% <obj> .execute <stopped>
+  stopped $error /newerror get and
+   { /handleerror .systemvar exec flush //true } { //false } ifelse
+} bind def
+% Define an execute analogue of runlibfile0.
+/execute0 {		% <obj> execute0 -
+  //.execute exec { /execute0 cvx 1 .quit } if
+} bind def
 /executive
         { { prompt
              { (%statementedit) (r) .systemvmfile } stopped
@@ -470,9 +527,11 @@ userdict /.echo.mode //true put
                /handleerror .systemvar exec //null		% ioerror??
              }
             if
-            cvx { .runexec } .execute pop
+            cvx { .runexec } //.execute exec pop
           } loop
         } bind def
+currentdict /.execute .undef
+
 /filter
         { //filterdict 1 .argindex .knownget
            { exch pop exec }
@@ -501,16 +560,18 @@ userdict /.echo.mode //true put
 /languagelevel 1 def		% gs_lev2.ps may change this
 /makeimagedevice { //false makewordimagedevice } odef
 /matrix	{ 6 array identmatrix } odef
-% .promptmsg is redefined if the interpreter includes readline support.
+
 /.promptmsg {
         (GS) print
         count 0 ne { (<) print count =only } if
         (>) print flush
 } bind def
-/prompt	{ flush flushpage NOPROMPT not { .promptmsg } if } bind def
+/prompt	{ flush flushpage NOPROMPT not { //.promptmsg exec} if } bind def
+currentdict /.promptmsg .undef
+
 /pstack	{ 0 1 count 3 sub { index == } for } bind def
 /putdeviceprops
-        { .putdeviceprops { erasepage } if } odef
+        { .putdeviceprops { erasepage } if } bind executeonly odef
 /quit	{ /quit load 0 .quit } odef
 /run	{ dup type /filetype ne { (r) .systemvmfile } if
                 % We must close the file when execution terminates,
@@ -587,6 +648,18 @@ odef
         dup length 6 ne { /setmatrix load  /rangecheck signalerror } if
         dup aload pop .setmatrix pop
 } odef
+% In LanguageLevel 3, copypage erases the page.
+/copypage {
+        .languagelevel 3 ge
+        dup { 0 } { 1 } ifelse .endpage .doneshowpage {
+          .currentnumcopies 1 index .outputpage
+          (>>copypage, press <return> to continue<<\n) .confirm
+          dup { erasepage } if
+        } if pop
+    systemdict /..page_default_spaces .knownget { //.PurgeDict exec } if
+    .beginpage
+} .bind executeonly odef
+
 /showpage {
         0 .endpage .doneshowpage {
           .currentnumcopies //true .outputpage
@@ -603,7 +676,8 @@ odef
         { initgraphics } ifelse
     systemdict /..page_default_spaces .knownget { //.PurgeDict exec } if
     .beginpage
-} odef
+} .bind executeonly odef
+
 % Code output by Adobe Illustrator relies on the fact that
 % `stack' is a procedure, not an operator!!!
 /stack	{ 0 1 count 3 sub { index = } for } bind def
@@ -669,11 +743,11 @@ systemdict /internaldict dup .makeinternaldict .makeoperator
         { length 3 mul 2 idiv 1 add
         } bind def
 /.growdict		% grow a dictionary
-        { dup .growdictlength .setmaxlength
+        { dup //.growdictlength exec .setmaxlength
         } bind def
 /.growput		% put, grow the dictionary if needed
         { 2 index length 3 index maxlength eq
-           { 3 copy pop known not { 2 index .growdict } if
+           { 3 copy pop known not { 2 index //.growdict exec} if
            } if
           put
         } bind def
@@ -762,7 +836,7 @@ userdict /.currentresourcefile //null put
   2 .execn		% stopped <file>
   .userdict /.currentresourcefile 3 -1 roll put
   { stop } if
-} bind def
+} bind executeonly def
 /.runresource {		% <file> .runresource -
   { /run .systemvar exec } .execasresource
 } bind def
@@ -800,17 +874,6 @@ userdict /.currentresourcefile //null put
   } ifelse
 } bind def
 
-% Define the procedure used by .runfile, .runstdin and .runstring
-% for executing user input.
-% This is called with a procedure or executable file on the operand stack.
-/.execute {		% <obj> .execute <stopped>
-  stopped $error /newerror get and
-   { /handleerror .systemvar exec flush //true } { //false } ifelse
-} bind def
-% Define an execute analogue of runlibfile0.
-/execute0 {		% <obj> execute0 -
-  .execute { /execute0 cvx 1 .quit } if
-} bind def
 % Define the procedure that the C code uses for running files
 % named on the command line.
 /.runfile {
@@ -942,56 +1005,9 @@ currentdict /runlibfile0 .undef
 % Define the standard handleerror.  We break out the printing procedure
 % (.printerror) so that it can be extended for binary output
 % if the Level 2 facilities are present.
-  /.printerror
-   { $error begin newerror
-     {
-       /command load errorname SHORTERRORS
-        { (%%[ Error: ) print =only flush
-          (; OffendingCommand: ) print =only
-          errorinfo dup //null eq {
-            pop
-          } {
-            (;\nErrorInfo:) print
-            dup type /arraytype eq
-              { { ( ) print =only } forall }
-              { ( ) print =only }
-            ifelse
-          } ifelse
-          ( ]%%) = flush
-        }
-        { (Error: ) print ==only flush
-          ( in ) print ==only flush
-          errorinfo dup //null eq {
-            pop
-          } {
-            (\nAdditional information: ) print ==only flush
-          } ifelse
-          .printerror_long
-        }
-       ifelse
-       .clearerror flush
-     }
-     { % newerror is //false, test to see if user has set handleerror to a different
-       % routine, if so execute it, otherwise, just return.  This code deals with the
-       % Genoa issue of setting /handleerror, and then calling it, without an error
-       % being set.  We were erroring in this case, due to /command load failing.
-
-        //JOBSERVER {
-            /errordict .systemvar /handleerror get /.GShandleerror .systemvar ne
-        } {
-            //false
-        } ifelse
-         { /errordict .systemvar begin /handleerror load .internalstopped pop end
-         }
-         if
-     }
-     ifelse	% newerror
-     end
-     flush
-    } bind executeonly def
-  /.printerror_long			% long error printout,
+/.printerror_long			% long error printout,
                                         % $error is on the dict stack
-   {	% Push the (anonymous) stack printing procedure.
+{	% Push the (anonymous) stack printing procedure.
         %  <heading> <==flag> <override-name> <stackname> proc
        {
          currentdict exch .knownget	% stackname defined in $error?
@@ -1065,7 +1081,56 @@ currentdict /runlibfile0 .undef
         { (Current file position is ) print position = }
        if
 
-   } bind executeonly def
+} bind executeonly def
+/.printerror
+{ $error begin newerror
+     {
+       /command load errorname SHORTERRORS
+        { (%%[ Error: ) print =only flush
+          (; OffendingCommand: ) print =only
+          errorinfo dup //null eq {
+            pop
+          } {
+            (;\nErrorInfo:) print
+            dup type /arraytype eq
+              { { ( ) print =only } forall }
+              { ( ) print =only }
+            ifelse
+          } ifelse
+          ( ]%%) = flush
+        }
+        { (Error: ) print ==only flush
+          ( in ) print ==only flush
+          errorinfo dup //null eq {
+            pop
+          } {
+            (\nAdditional information: ) print ==only flush
+          } ifelse
+          //.printerror_long exec
+        }
+       ifelse
+       .clearerror flush
+     }
+     { % newerror is //false, test to see if user has set handleerror to a different
+       % routine, if so execute it, otherwise, just return.  This code deals with the
+       % Genoa issue of setting /handleerror, and then calling it, without an error
+       % being set.  We were erroring in this case, due to /command load failing.
+
+        //JOBSERVER {
+            /errordict .systemvar /handleerror get /.GShandleerror .systemvar ne
+        } {
+            //false
+        } ifelse
+         { /errordict .systemvar begin /handleerror load .internalstopped pop end
+         }
+         if
+     }
+     ifelse	% newerror
+     end
+     flush
+} bind executeonly def
+currentdict /.printerror_long .undef
+
 % Define a procedure for clearing the error indication.
 /.clearerror
  { $error /newerror //false put
@@ -1112,22 +1177,24 @@ currentdict /errordict ErrorNames length 3 add dict
 % files.  However, ErrorNames contains all of the error names regardless of
 % what features are included, so we have to "know" that VMerror is the last
 % Level 1 error.
-/.registererror		% <name> .registererror -
- { errordict exch .registererror2
- } bind def
 /.registererror2	% <dict> <name> .registererror -
  { .currentglobal //true .setglobal	% create procs in global VM
    3 1 roll
-   mark 1 index systemdict /.errorhandler get /exec load .packtomark cvx put
+   mark 1 index systemdict /.errorhandler get /exec load //.packtomark exec cvx put
    .setglobal
  } bind def
+/.registererror		% <name> .registererror -
+ { errordict exch //.registererror2 exec
+ } bind def
+currentdict /.registererror2 .undef
+
 ErrorNames
  { .registererror} forall
 errordict begin
 % The handlers for interrupt and timeout are special; there is no
 % 'current object', so they push their own name.
    { /interrupt /timeout }
-   { mark 1 index dup systemdict /.errorhandler get /exec load .packtomark cvx def
+   { mark 1 index dup systemdict /.errorhandler get /exec load //.packtomark exec cvx def
    } forall
 /handleerror	% this key is 'well known' and some PS may redefine it
  { /.printerror .systemvar exec
@@ -1592,7 +1659,7 @@ setpacking
 currentdict /.gsgetdeviceprop .forceundef
 
 /.setdefaulthalftone {
-  .getdefaulthalftone
+  //.getdefaulthalftone exec
   { sethalftone }
   { % default not found
     .useloresscreen { .setloreshalftone } { .sethireshalftone pop } ifelse
@@ -1714,7 +1781,7 @@ currentdict /.gsgetdeviceprop .forceundef
     dup length
     2 index length sub % drop "ffn", remaining "ldffn" = length of the "directory" part
     exch                            % {} b [dl] (templ) (ffn) ldffn (dffn)
-    .makepathtemplate               % {} b [dl] (templ) (ffn) ldffn (Dffn)
+    //.makepathtemplate exec        % {} b [dl] (templ) (ffn) ldffn (Dffn)
     dup                             % {} b [dl] (templ) (ffn) ldffn (Dffn) (Dffn)
     4 index length dup              % {} b [dl] (templ) (ffn) ldffn (Dffn) (Dffn) templL templL
     2 index length                  % {} b [dl] (templ) (ffn) ldffn (Dffn) (Dffn) templL templL DffnL
@@ -1747,6 +1814,7 @@ currentdict /.gsgetdeviceprop .forceundef
   } ifelse                                         % (t1) ?l1 (t2) ?l2 ... (tN) ?ln {} b [dl] (templ) (ffn)
   pop pop pop pop pop                              % (t1) ?l1 (t2) ?l2 ... (tN) ?ln
 } bind def
+currentdict /.makepathtemplate .undef
 
 %   <dir_list> <template> .generate_dir_list_templates <t1> ... <tN>
 %
@@ -1821,7 +1889,11 @@ currentdict /.runlibfile .undef
       if pop pop
     } forall
  } def
-DELAYBIND not { .bindoperators } if
+DELAYBIND not {
+    .bindoperators
+    %% if not DELAYBIND, undef this now. Otherwise defer to .bindnow
+    //systemdict /.bindoperators .undef
+}  if
 
 % Establish a default environment.
 
@@ -2067,6 +2139,7 @@ gsave
 % Install the EPS handler if needed
 systemdict /EPSBoundingBoxInit known { EPSBoundingBoxInit } if
 
+%% ---------------- SAFER stuff BEGIN -------------------%%
 % If we want a "safer" system, disable some obvious ways to cause havoc.
 .currentglobal //true .setglobal
 /SAFETY 2 dict
@@ -2130,8 +2203,9 @@ readonly def
 
 currentdict /tempfilepaths undef
 
+%% --- These are documented extensions ---
 /.locksafe {
-  .locksafe_userparams
+  //.locksafe_userparams exec
   //systemdict /getenv {pop //false} .forceput
   % setpagedevice has the side effect of clearing the page, but
   % we will just document that. Using setpagedevice keeps the device
@@ -2139,27 +2213,6 @@ currentdict /tempfilepaths undef
   % after a restore that changes the value to false.
   currentglobal currentpagedevice gcheck setglobal % use correct VM space
   << /.LockSafetyParams //true >> setpagedevice
-  setglobal
-  //SAFETY /safe //true .forceput % overrides readonly
-} .bind executeonly odef
-
-% This is only used during startup. Its required so that
-% we can detect in setpagdevice that we are in fact in startup
-% and allocate a *global* instead of local VM. We need it to be
-% global to satisfy Display PostScript (see start of /setpagdevice
-% in gs_setpd.ps)
-%
-/.locksafeglobal {
-  .locksafe_userparams
-  systemdict /getenv {pop //false} put
-  % setpagedevice has the side effect of clearing the page, but
-  % we will just document that. Using setpagedevice keeps the device
-  % properties and pagedevice .LockSafetyParams in agreement even
-  % after a restore that changes the value to false.
-  currentglobal currentpagedevice gcheck setglobal % use correct VM space
-  << /.LockSafetyParams //true
-    /..StartupGlobal //true
-  >> setpagedevice
   setglobal
   //SAFETY /safe //true .forceput % overrides readonly
 } .bind executeonly odef
@@ -2176,6 +2229,28 @@ currentdict /tempfilepaths undef
   if
   .locksafe
 } .bind executeonly odef
+%% --- End documented extensions ---
+
+% This is only used during startup. Its required so that
+% we can detect in setpagdevice that we are in fact in startup
+% and allocate a *global* instead of local VM. We need it to be
+% global to satisfy Display PostScript (see start of /setpagdevice
+% in gs_setpd.ps)
+%
+/.locksafeglobal {
+  //.locksafe_userparams exec
+  systemdict /getenv {pop //false} put
+  % setpagedevice has the side effect of clearing the page, but
+  % we will just document that. Using setpagedevice keeps the device
+  % properties and pagedevice .LockSafetyParams in agreement even
+  % after a restore that changes the value to false.
+  currentglobal currentpagedevice gcheck setglobal % use correct VM space
+  << /.LockSafetyParams //true
+    /..StartupGlobal //true
+  >> setpagedevice
+  setglobal
+  //SAFETY /safe //true .forceput % overrides readonly
+} .bind def
 
 % See /.locksafeglobal above.
 %
@@ -2188,11 +2263,14 @@ currentdict /tempfilepaths undef
     >> setuserparams
   }
   if
-  .locksafeglobal
-} bind executeonly odef
+  //.locksafeglobal exec
+} .bind def
 
 % If we are running in SAFER mode, lock things down
 SAFER { .setsafeglobal } if
+currentdict /.locksafe_userparams .undef
+currentdict /.setsafeglobal .undef
+currentdict /.locksafeglobal .undef
 
 /SAFERUndefinePostScriptOperators {
   [
@@ -2210,6 +2288,8 @@ SAFER { .setsafeglobal } if
 
   //systemdict /SAFERUndefinePostScriptOperators .forceundef
 } .bind executeonly def % must be bound and hidden for .forceundef
+
+%% ---------------- SAFER stuff END -------------------%%
 
 /UndefinePostScriptOperators {
   % This list is of operators which no longer appear to be used, and which we do not believe
@@ -2281,6 +2361,12 @@ SAFER { .setsafeglobal } if
   /.loadpdfttfont
   /obind
   /odef
+  /.packtomark
+  /.putdeviceprops
+  /.growdict /.growdictlength
+  /.userdict /.uservar
+  /.getdefaulthalftone
+  /.registererror
 
   % Used by a free user in the Library of Congress. Apparently this is used to
   % draw a partial page, which is then filled in by the results of a barcode
@@ -2301,7 +2387,7 @@ SAFER { .setsafeglobal } if
   %/.buildfont32 /.buildfont42 /.type9mapcid /.type11mapcid /.swapcolors
   %/currentdevice  /.quit /.setuseciecolor /.needinput /.setoverprintmode /.special_op /.dicttomark /.knownget
   %/.FAPIBuildGlyph /.FAPIBuildChar /.FAPIBuildGlyph9
-  %/.tempfile /.numicc_components /.set_outputintent  /.max /.min /.vmreclaim /.getpath /.setglobal
+  %/.tempfile /.numicc_components /.set_outputintent  /.max /.min /.getpath /.setglobal
   %/.setdebug /.mementolistnewblocks /getenv
   ]
   {systemdict exch .forceundef} forall
@@ -2366,6 +2452,7 @@ SAFER { .setsafeglobal } if
   //systemdict /.forcecopynew .forceundef	% remove temptation
   //systemdict /.forceput .forceundef		% ditto
   //systemdict /.undef .forceundef		    % ditto
+  //systemdict /.bindoperators .forceundef
   //systemdict /.forceundef .forceundef		% ditto
   currentuserparams /IdiomRecognition known {
     1 dict dup /IdiomRecognition 4 -1 roll put setuserparams
@@ -2472,6 +2559,8 @@ end
 /vmreclaim where
  { pop NOGC not { 2 .vmreclaim 0 vmreclaim } if
  } if
+systemdict /.vmreclaim .undef
+level2dict /.vmreclaim .undef
 
 % Do this before systemdict is locked (see below for additional CETMODE setup using gs_cet.ps)
 systemdict /CETMODE .knownget {
@@ -2487,24 +2576,6 @@ DELAYBIND not {
   systemdict /.forcecopynew .undef	% remove temptation
   systemdict /.forceput .undef		% ditto
   systemdict /.forceundef .undef	% ditto
-} if
-
-% Move superexec to internaldict if superexec is defined. (Level 2 or later)
-systemdict /superexec known {
-  % restrict superexec to single known use by PScript5.dll
-  % We could do this only for SAFER mode, but internaldict and superexec are
-  % not very well documented, and we don't want them to be used.
-  1183615869 internaldict /superexec {
-    2 index /Private eq		% first check for typical use in PScript5.dll
-    1 index length 1 eq and	% expected usage is: dict /Private <value> {put} superexec
-    1 index 0 get systemdict /put get eq and
-    {
-      //superexec exec		% the only usage we allow
-    } {
-      /superexec load /invalidaccess signalerror
-    } ifelse
-  } bind cvx executeonly put
-  systemdict /superexec .undef	% get rid of the dangerous (unrestricted) operator
 } if
 
 % Can't remove this one until the last minute :-)

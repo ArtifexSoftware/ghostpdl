@@ -1834,7 +1834,7 @@ void map_cmyk_subclass(const subclass_color_mappings scm, frac c, frac m, frac y
 }
 
 /* Test to see if the device wants to use tags */
-static inline bool device_encodes_tags(gx_device *dev)
+static inline bool device_encodes_tags(const gx_device *dev)
 {
     return (dev->graphics_type_tag & GS_DEVICE_ENCODES_TAGS) != 0;
 }

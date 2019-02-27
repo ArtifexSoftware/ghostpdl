@@ -949,7 +949,7 @@ cmsBool  _cmsRegisterTransformPlugin(cmsContext ContextID, cmsPluginBase* Data)
     if (fl == NULL) return FALSE;
 
     // Check for full xform plug-ins previous to 2.8, we would need an adapter in that case
-    if (Plugin->base.ExpectedVersion < 2080) {
+    if (Plugin->base.ExpectedVersion < 80) {
 
            fl->OldXform = TRUE;
     }
@@ -1059,7 +1059,7 @@ _cmsFindFormatter(_cmsTRANSFORM* p, cmsUInt32Number InputFormat, cmsUInt32Number
                 return;
             case CHANNELS_SH(3) | BYTES_SH(1) | ((CHANNELS_SH(1) | BYTES_SH(1))<<6):
                 p ->xform = CachedXFORM3to1;
-		return;
+                return;
             case CHANNELS_SH(3) | BYTES_SH(2) | ((CHANNELS_SH(1) | BYTES_SH(2))<<6):
                 p ->xform = CachedXFORM3x2to1x2;
                 return;
@@ -1590,6 +1590,9 @@ cmsHTRANSFORM cmsCloneTransformChangingFormats(cmsContext ContextID,
     const _cmsTRANSFORM *oldXform = (const _cmsTRANSFORM *)hTransform;
     _cmsTRANSFORM *xform;
     cmsFormatter16 FromInput, ToOutput;
+    _cmsTransformPluginChunkType* ctx = (_cmsTransformPluginChunkType*)_cmsContextGetClientChunk(ContextID, TransformPlugin);
+    _cmsTransformCollection* Plugin;
+    _cmsTRANSFORMCORE *core;
 
     _cmsAssert(oldXform != NULL && oldXform->core != NULL);
 
@@ -1618,6 +1621,19 @@ cmsHTRANSFORM cmsCloneTransformChangingFormats(cmsContext ContextID,
     xform ->OutputFormat = OutputFormat;
     xform ->FromInput    = FromInput;
     xform ->ToOutput     = ToOutput;
+
+    /* Transformation plug-in support needed here */
+    if (oldXform->core->Lut != NULL) {
+        for (Plugin = ctx->TransformCollection; Plugin != NULL; Plugin = Plugin->Next) {
+            core = xform->core;
+            if (Plugin->Factory(ContextID, &xform->xform, &core->UserData,
+                &core->FreeUserData, &core->Lut, &InputFormat, &OutputFormat, NULL)) {
+                (void)_cmsAdjustReferenceCount(&xform->core->refs, 1);
+                return xform;
+            }
+        }
+    }
+
     _cmsFindFormatter(xform, InputFormat, OutputFormat, xform->core->dwOriginalFlags);
 
     (void)_cmsAdjustReferenceCount(&xform->core->refs, 1);

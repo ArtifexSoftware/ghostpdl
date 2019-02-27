@@ -196,7 +196,7 @@ currentdict /.fixcurrenthalftonescreen undef
 
 /.UserObjects {
   .userdict /UserObjects
-} odef
+} bind executeonly odef
 % In order to get proper error recovery behavior, we need to be careful
 % not to pop any operands from the stack until we're done.
 % The code below faithfully duplicates the apparent array-growing

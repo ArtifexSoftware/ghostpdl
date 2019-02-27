@@ -494,7 +494,16 @@ end
     dup {
       oforce exch gsparamdict exch .knownget { exec } { pop } ifelse
     } forall pop
-  } if
+  } {
+    //pdfdict /.gs_warning_issued known not {
+      (\n   **** Error 'gs' ignored -- ExtGState missing from Resources.\n)
+      pdfformaterror
+      (        Output may be incorrect.\n) pdfformaterror
+      //pdfdict /.gs_warning_issued //true .forceput
+      PDFSTOPONERROR { /gs /undefined signalerror } if
+    } if
+  }
+  ifelse
 } bind executeonly def
 
 % ------ Transparency support ------ %

@@ -667,6 +667,20 @@ cups_encode_color(gx_device            *pdev,
       ci = 0x06;			/* == light cyan + yellow */
   }
 
+  /* The entire manner that cups does its color mapping needs some serious
+     rework.  In the case of the output RGBW color space, it takes a source
+     CMYK value which gs maps to RGB, cups then maps the RGB to CMYK and then
+     from there to RGBW and finally it does an encode.  Unfortunately, the
+     number of color values for RGBW is 3 since it is using an RGB ICC profile
+     this means that the W mapping value from cups is lost in cmap_rgb_direct
+     So here we ensure that the W is always set to on (else we end up with a
+     blue background cast).  The ideal way
+     to fix this is to move some of these odd color spaces of cups to the
+     separation device model ensuring that things are handled properly. */
+  if (cups->header.cupsColorSpace == CUPS_CSPACE_RGBW) {
+      ci = (ci << shift) | cups->EncodeLUT[gx_max_color_value];
+  }
+
  /*
   * Range check the return value...
   */
@@ -4147,6 +4161,18 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
 
     case CUPS_CSPACE_RGBA :
     case CUPS_CSPACE_RGBW :
+#ifdef CUPS_RASTER_SYNCv1
+        cups->header.cupsNumColors = 4;
+#endif /* CUPS_RASTER_SYNCv1 */
+        if (cups->header.cupsColorOrder != CUPS_ORDER_CHUNKED)
+            cups->header.cupsBitsPerPixel = cups->header.cupsBitsPerColor;
+        else
+            cups->header.cupsBitsPerPixel = 4 * cups->header.cupsBitsPerColor;
+
+        cups->color_info.depth = 4 * cups->header.cupsBitsPerColor;
+        cups->color_info.num_components = 3;
+        break;
+
     case CUPS_CSPACE_CMYK :
     case CUPS_CSPACE_YMCK :
     case CUPS_CSPACE_KCMY :
@@ -4156,9 +4182,9 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
 	cups->header.cupsNumColors = 4;
 #endif /* CUPS_RASTER_SYNCv1 */
         if (cups->header.cupsColorOrder != CUPS_ORDER_CHUNKED)
-          cups->header.cupsBitsPerPixel = cups->header.cupsBitsPerColor;
-	else
-	  cups->header.cupsBitsPerPixel = 4 * cups->header.cupsBitsPerColor;
+            cups->header.cupsBitsPerPixel = cups->header.cupsBitsPerColor;
+	    else
+	      cups->header.cupsBitsPerPixel = 4 * cups->header.cupsBitsPerColor;
 
         cups->color_info.depth          = 4 * cups->header.cupsBitsPerColor;
         cups->color_info.num_components = 4;
@@ -5916,12 +5942,6 @@ cups_print_planar(gx_device_printer *pdev,
 private int
 cups_spec_op(gx_device *dev_, int op, void *data, int datasize)
 {
-    /* Although not strictly DeviceN, the range of color models
-       this device supports presets similar issues.
-     */
-    if (op == gxdso_supports_devn) {
-        return true;
-    }
     return gx_default_dev_spec_op(dev_, op, data, datasize);
 }
 

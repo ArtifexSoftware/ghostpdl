@@ -116,7 +116,7 @@
 <li><a href="#OS_specific_issues">OS-specific issues</a></li>
 <ul>
 <li><a href="#HP_RISC">H-P RISC workstations</a></li>
-<li><a href="#RS6000">IBM RS/6000 with AIX</a></li>
+<li><a href="#IBMAIX">IBM AIX</a></li>
 <li><a href="#Silicon_Graphics">Silicon Graphics</a></li>
 <li><a href="#Sun">Oracle/Sun</a></li>
 <li><a href="#Solaris">Solaris</a></li>
@@ -1280,11 +1280,18 @@ executable with an older gcc by removing <code>-O</code> from
 <code>CFLAGS</code>.</li>
 </ul>
 
-<h4><a name="RS6000"></a>IBM RS/6000 with AIX</h4>
+<h4><a name="IBMAIX"></a>IBM AIX</h4>
 <p>
     We recommend installing gcc and GNU make, and using the Autoconf-based method.</p>
 <p>
 Other combinations are known to work, but are less well supported.</p>
+<p>
+Recent veresions of Ghostscript can trigger a 'TOC overflow' error with some compilers
+on AIX. If this occurs, use the linker flag "-bbigtoc", which can either be added to
+your configure options:
+<p><code>configure LDFLAGS="-Wl,-bbigtoc"</code>
+<p>Or on the make command line:
+<p><code>make XLDFLAGS="-Wl,-bbigtoc"</code>
 <h4>
 <a NAME="Silicon_Graphics"></a>Silicon Graphics</h4>
 <p>

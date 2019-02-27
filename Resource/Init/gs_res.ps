@@ -426,7 +426,7 @@ status {
                         % so we have to use .forceput here.
                   currentdict /.Instances 2 index .forceput	% Category dict is read-only
                 } executeonly if
-              }
+              } executeonly
               { .LocalInstances dup //.emptydict eq
                  { pop 3 dict localinstancedict Category 2 index put
                  }
@@ -438,7 +438,7 @@ status {
                         % Now make the resource value read-only.
              0 2 copy get { readonly } .internalstopped pop
              dup 4 1 roll put exch pop exch pop
-           }
+           } executeonly
            { /defineresource cvx /typecheck signaloperror
            }
         ifelse
@@ -704,7 +704,7 @@ mark
  /ColorSpaceFamily
    { }	% These must be deferred, because optional features may add some.
  /Emulator
-   mark EMULATORS { <00> search { exch pop cvn exch }{ cvn exit } ifelse } .bind loop .packtomark
+   mark EMULATORS { <00> search { exch pop cvn exch }{ cvn exit } ifelse } .bind loop //.packtomark exec
  /Filter
    { }	% These must be deferred, because optional features may add some.
  /IODevice
@@ -714,7 +714,7 @@ mark
    mark 0 { {
     dup .getiodevice dup //null eq { pop } { exch } ifelse 1 add
    } loop} .internalstopped
-   pop pop pop .packtomark
+   pop pop pop //.packtomark exec
    4 1 roll put
    .clearerror
         % Type categories listed in the Red Book.

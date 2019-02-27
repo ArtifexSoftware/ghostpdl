@@ -62,19 +62,6 @@ end % colorspacedict
 /DeviceCMYK_array /DeviceCMYK 1 array astore readonly def
 
 %
-%   -   initgraphics   -
-%
-% Although the internal routine gs_initgraphics resets the color space,
-% it does not reset the color space we store in the 'interpreter'
-% graphics state (so that we can hand it back in currentcolorspace).
-% So we need to do that in the PostScript world.
-%
-%
-/initgraphics
-  { initgraphics systemdict /DeviceGray_array get setcolorspace }
-.bind odef
-
-%
 % These routines used for the NOSUBSTDEVICECOLORS switch. This prevents
 % substitution of DeviceGray, DeviceRGB and DeviceCMYK with a Default*
 % colour space when /UseCIEColors is true. If the job includes a

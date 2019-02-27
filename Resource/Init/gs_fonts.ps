@@ -452,8 +452,8 @@ buildfontdict 3 /.buildfont3 cvx put
         % added entry, making sure there is at least one slot left for FID.
    dup maxlength 1 index length sub 2 lt
     { dup dup wcheck
-       { .growdict }
-       { .growdictlength dict .copydict }
+       { //.growdict exec}
+       { //.growdictlength exec dict .copydict }
       ifelse
     }
     { dup wcheck not { dup maxlength dict .copydict } if
@@ -1133,7 +1133,21 @@ $error /SubstituteFont { } put
            dup type /nametype eq
             {                   % Font alias
               //.checkalias exec
-              .tryfindfont exit
+              dup .tryfindfont
+              {
+                % We don't want to reuse an embedded font as a substitute
+                % so make sure the font came from disk before using it.
+                dup /Path known
+                1 index /PathLoad known or
+                { exch pop //true exit }
+                {
+                  % if the candidate didn't come from disk, remove it from
+                  % FontDirectory and try again.
+                  pop dup undefinefont
+                  .tryfindfont exit
+                }
+                ifelse
+              } if
             }
             { dup dup type dup /arraytype eq exch /packedarraytype eq or exch xcheck and
                {                % Font with a procedural definition
