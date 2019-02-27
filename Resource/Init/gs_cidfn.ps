@@ -282,7 +282,7 @@ currentdict end
 /.readglyphdata {
   currentfont exch .type9mapcid
   FDArray exch get exch
-} bind def
+} bind executeonly def
 
 % BuildGlyph procedure for CIDFontType 0.
 % The name %Type9BuildGlyph is known to the interpreter.
