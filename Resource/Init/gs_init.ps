@@ -506,8 +506,15 @@ userdict /.echo.mode //true put
           currentoverprint //false setoverprint 1 setgray .fillpage setoverprint
           exec
         } odef
+% Define a procedure for clearing the error indication.
+/.clearerror
+ { $error /newerror //false put
+   $error /errorname //null put
+   $error /errorinfo //null put
+   0 .setoserrno
+ } bind executeonly def
 
-        % To satisfy the Genoa FTS, executive must be a procedure, not an operator.
+% To satisfy the Genoa FTS, executive must be a procedure, not an operator.
 % Define the procedure used by .runfile, .runstdin and .runstring
 % for executing user input.
 % This is called with a procedure or executable file on the operand stack.
@@ -523,7 +530,7 @@ userdict /.echo.mode //true put
         { { prompt
              { (%statementedit) (r) .systemvmfile } stopped
              { pop pop $error /errorname get /undefinedfilename eq
-                { .clearerror exit } if		% EOF
+                { //.clearerror exec exit } if		% EOF
                /handleerror .systemvar exec //null		% ioerror??
              }
             if
@@ -1111,7 +1118,7 @@ currentdict /.unstoppederrorhandler .undef
           //.printerror_long exec
         }
        ifelse
-       .clearerror flush
+       //.clearerror exec flush
      }
      { % newerror is //false, test to see if user has set handleerror to a different
        % routine, if so execute it, otherwise, just return.  This code deals with the
@@ -1132,14 +1139,6 @@ currentdict /.unstoppederrorhandler .undef
      flush
 } bind executeonly def
 currentdict /.printerror_long .undef
-
-% Define a procedure for clearing the error indication.
-/.clearerror
- { $error /newerror //false put
-   $error /errorname //null put
-   $error /errorinfo //null put
-   0 .setoserrno
- } bind executeonly def
 
 % Define $error.  This must be in local VM.
 .currentglobal //false .setglobal
@@ -2377,6 +2376,7 @@ currentdict /.locksafeglobal .undef
   /.internalstopped
   /.generate_dir_list_templates /.generate_dir_list_templates_with_length
   /.type11mapcid /.type9mapcid
+  /.clearerror
 
   % Used by a free user in the Library of Congress. Apparently this is used to
   % draw a partial page, which is then filled in by the results of a barcode
