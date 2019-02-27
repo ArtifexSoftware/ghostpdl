@@ -962,7 +962,7 @@ currentdict /runlibfile0 .undef
     1 .instopped { //null eq { pop pop stop } if } if
     (I) //false .setdebug
     $error /.inerror get 1 .instopped { pop } { pop //true } ifelse
-     { .unstoppederrorhandler
+     { //.unstoppederrorhandler exec
      } if	% detect error recursion
     $error /globalmode .currentglobal //false .setglobal put
     $error /.inerror //true put
@@ -1002,6 +1002,8 @@ currentdict /runlibfile0 .undef
     $error /.inerror //false put
     stop
   } bind executeonly def
+currentdict /.unstoppederrorhandler .undef
+
 % Define the standard handleerror.  We break out the printing procedure
 % (.printerror) so that it can be extended for binary output
 % if the Level 2 facilities are present.
