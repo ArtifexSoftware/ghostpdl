@@ -2140,6 +2140,7 @@ gsave
 
 % Install the EPS handler if needed
 systemdict /EPSBoundingBoxInit known { EPSBoundingBoxInit } if
+systemdict /EPSBoundingBoxInit .forceundef
 
 %% ---------------- SAFER stuff BEGIN -------------------%%
 % If we want a "safer" system, disable some obvious ways to cause havoc.
