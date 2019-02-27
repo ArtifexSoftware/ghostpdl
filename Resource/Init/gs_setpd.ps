@@ -191,7 +191,7 @@ NOMEDIAATTRS {
 % dictionary.
 /.copiedkeys [
   /OutputDevice
-  .mergespecial { pop } forall
+  //.mergespecial { pop } forall
   .inputattrkeys aload pop
   .inputselectionkeys aload pop
   .outputattrkeys aload pop
@@ -457,14 +457,14 @@ SETPDDEBUG { (Result of putting.) = pstack flush } if
 /.makecurrentpagedevice {	% - .makecurrentpagedevice <dict>
   currentdevice //null .getdeviceparams
         % Make the dictionary large enough to add defaulted entries.
-  counttomark 2 idiv .requiredattrs length add dict
+  counttomark 2 idiv //.requiredattrs length add dict
   counttomark 2 idiv { dup 4 2 roll put } repeat exch pop
         % Add any missing required attributes.
         % Make a writable and (if possible) local copy of any default
         % dictionaries, to work around a bug in the output of WordPerfect,
         % which assumes that these dictionaries are writable and local.
   .currentglobal exch dup gcheck .setglobal
-  .requiredattrs {
+  //.requiredattrs {
     2 index 2 index known {
       1 index /Policies eq {
         % Merge policies from the device driver with defaults
@@ -801,7 +801,7 @@ SETPDDEBUG { (Checking.) = pstack flush } if
     { exch pop //.defaultdeviceparams exec
                 % In case of duplicate keys, .dicttomark takes the entry
                 % lower on the stack, so we can just append the defaults here.
-      .requiredattrs { exec } forall .dicttomark
+      //.requiredattrs { exec } forall .dicttomark
     }
    ifelse
 
@@ -828,7 +828,7 @@ SETPDDEBUG { (Merging.) = pstack flush } if
                 % Stack: <orig> <request> <merged>
    dup 2 index
     {		% stack: <orig> <request> <merged> <merged> <rkey> <rvalue>
-      .mergespecial 2 index .knownget { exec } if
+      //.mergespecial 2 index .knownget { exec } if
       put dup
     }
    forall pop
@@ -1033,6 +1033,8 @@ SETPDDEBUG { (Installing.) = pstack flush } if
     /.copytree
     /.defaultdeviceparams
     /.makecurrentpagedevice
+    /.mergespecial
+    /.requiredattrs
 %    /.uninstallpagedevice % (called from C code)
 ]
 {currentdict exch .forceundef} forall
