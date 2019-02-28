@@ -2529,23 +2529,8 @@ $error /.nosetlocal //false put
 
 (END GLOBAL) VMDEBUG
 
-% .savelocalstate is part of Display PostScript (if included). Part of the function of
-% the .savelocalstate routine is to store the 'initial saved gstate' (savedinitialgstate)
-% in systemdict. The code in dps1.c, gstate_check_space, disallows writing or creating
-% gstates in global VM in certain conditions. If we execute setpagedevice before we
-% reach this point, we must ensure that we do so using /..StartupGlobal so that
-% the dictionary is defined in global VM, because the gstate contains a pointer to the
-% device dictionary, and if that is allocated in local VM we will fail the gstate check.
-/.savelocalstate where {
-        % If we might create new contexts, save away copies of all dictionaries
-        % referenced from systemdict that are stored in local VM,
-        % and also save a copy of the initial gstate.
-  pop .savelocalstate
-} {
-        % If we're *not* running in a multi-context system and FAKEFONTS is
-        % defined, add the fake fonts to LocalFontDirectory.
-  //.definefakefonts exec	% current VM is local
-} ifelse
+% Add the fake fonts to LocalFontDirectory.
+//.definefakefonts exec	% current VM is local
 
 % Execute scheduled inits :
 1183615869 internaldict /.execute_scheduled_inits get exec
