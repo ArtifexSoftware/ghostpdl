@@ -889,7 +889,12 @@ const op_def zupath_l2_op_defs[] =
     {"1upath", zupath},
     {"1ustroke", zustroke},
     {"1ustrokepath", zustrokepath},
-                /* Path access for PDF */
+    op_def_end(0)
+};
+
+const op_def zupath_op_defs[] =
+{
+    /* Path access for PDF */
     {"0.getpath", zgetpath},
     op_def_end(0)
 };
