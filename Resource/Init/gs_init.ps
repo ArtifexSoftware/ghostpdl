@@ -712,8 +712,6 @@ currentdict /.typenames .undef
 % internaldict is defined in systemdict, but the dictionary is allocated
 % in local VM.  However, the procedure must be global, since it is an
 % "operator" and must be bind-able into global procedures.
-% We make a procedure for creating it, since we must create a new one
-% for each context with private local VM.
 /.makeinternaldict {
   .currentglobal //true .setglobal
     [ /dup .systemvar 1183615869 /eq .systemvar
@@ -725,9 +723,10 @@ currentdict /.typenames .undef
       /ifelse .systemvar
     ] cvx executeonly
   exch .setglobal
-} executeonly odef
+} executeonly def
 systemdict /internaldict dup .makeinternaldict .makeoperator
 .forceput		% proc is local, systemdict is global
+currentdict /.makeinternaldict .undef
 
 % Define some additional built-in procedures (beyond the ones defined by
 % the PostScript Language Reference Manual).
