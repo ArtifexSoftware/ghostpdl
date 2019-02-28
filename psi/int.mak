@@ -1333,7 +1333,7 @@ $(PSOBJ)zbseq.$(OBJ) : $(PSSRC)zbseq.c $(OP) $(memory__h)\
 upath_=$(PSOBJ)zupath.$(OBJ) $(PSOBJ)ibnum.$(OBJ) $(GLOBJ)gdevhit.$(OBJ)
 $(PSD)upath.dev : $(ECHOGS_XE) $(upath_) $(INT_MAK) $(MAKEDIRS)
 	$(SETMOD) $(PSD)upath $(upath_)
-	$(ADDMOD) $(PSD)upath -oper zupath_l2
+	$(ADDMOD) $(PSD)upath -oper zupath_l2 zupath
 
 $(PSOBJ)zupath.$(OBJ) : $(PSSRC)zupath.c $(OP)\
  $(dstack_h) $(oparc_h) $(store_h)\
