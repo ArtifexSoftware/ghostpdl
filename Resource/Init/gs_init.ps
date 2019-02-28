@@ -1670,8 +1670,9 @@ currentdict /.gsgetdeviceprop .forceundef
 
 /.setdefaultscreen {
   .useloresscreen { .setloresscreen } { .sethiresscreen } ifelse
-  .setdefaultbgucr
+  //.setdefaultbgucr exec
 } bind def
+currentdict /.setdefaultbgucr .undef
 
 % Rendering intent mapping for setcolorrendering1 and PDF interpreter
 /.renderingintentdict mark
