@@ -1663,16 +1663,17 @@ currentdict /.gsgetdeviceprop .forceundef
   //.getdefaulthalftone exec
   { sethalftone }
   { % default not found
-    .useloresscreen { .setloreshalftone } { .sethireshalftone pop } ifelse
+    //.useloresscreen exec { .setloreshalftone } { .sethireshalftone pop } ifelse
   }
   ifelse
 } bind def
 
 /.setdefaultscreen {
-  .useloresscreen { .setloresscreen } { .sethiresscreen } ifelse
+  //.useloresscreen exec { .setloresscreen } { .sethiresscreen } ifelse
   //.setdefaultbgucr exec
 } bind def
 currentdict /.setdefaultbgucr .undef
+currentdict /.useloresscreen .undef
 
 % Rendering intent mapping for setcolorrendering1 and PDF interpreter
 /.renderingintentdict mark
