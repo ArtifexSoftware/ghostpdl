@@ -24,7 +24,7 @@
 static int pdfi_transparency_group_common(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *group_dict, gs_rect *bbox, pdf14_compositor_operations group_type)
 {
     gs_transparency_group_params_t params;
-    pdf_obj *CS;
+    pdf_obj *CS = NULL;
     bool b;
     gs_color_space  *pcs = NULL;
     int code;
@@ -48,14 +48,12 @@ static int pdfi_transparency_group_common(pdf_context *ctx, pdf_dict *page_dict,
     params.image_with_SMask = false;
     params.ColorSpace = NULL;
 
-    code = pdfi_dict_known(group_dict, "CS", &b);
-    if (code < 0)
-        return_error(code);
-    if (b == true) {
-        code = pdfi_dict_get2(ctx, group_dict, "ColorSpace", "CS", &CS);
-        if (code < 0)
-            return_error(code);
-
+    code = pdfi_dict_knownget(ctx, group_dict, "CS", &CS);
+    if (code == 0) {
+        /* Didn't find a /CS key, try again using /ColorSpace */
+        code = pdfi_dict_knownget(ctx, group_dict, "ColorSpace", &CS);
+    }
+    if (code > 0) {
         code = pdfi_create_colorspace(ctx, (pdf_obj *)CS, page_dict, group_dict, &pcs);
         if (code < 0) {
             pdfi_countdown(&CS);
@@ -63,6 +61,8 @@ static int pdfi_transparency_group_common(pdf_context *ctx, pdf_dict *page_dict,
         }
         params.ColorSpace = pcs;
     }
+    if (code < 0)
+        return_error(code);
 
     return gs_begin_transparency_group(ctx->pgs, &params, (const gs_rect *)bbox, group_type);
 }

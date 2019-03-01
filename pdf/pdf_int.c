@@ -167,6 +167,7 @@ int pdfi_alloc_object(pdf_context *ctx, pdf_obj_type type, unsigned int size, pd
             break;
     }
 #if REFCNT_DEBUG
+    (*obj)->ctx = (void *)ctx;
     (*obj)->UID = ctx->UID++;
     dmprintf2(ctx->memory, "Allocated object of type %c with UID %"PRIi64"\n", (*obj)->type, (*obj)->UID);
 #endif
@@ -335,6 +336,14 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
 
     if(entry->object_num == 0)
         return_error(gs_error_undefined);
+
+    if (entry->free) {
+        dmprintf1(ctx->memory, "Attempt to dereference free object %"PRIu64", returning a null object.\n", entry->object_num);
+        code = pdfi_alloc_object(ctx, PDF_NULL, 1, object);
+        if (code > 0)
+            pdfi_countup(*object);
+        return code;
+    }
 
     if (ctx->loop_detection) {
         if (pdfi_loop_detector_check_object(ctx, obj) == true)
@@ -1659,12 +1668,12 @@ int pdfi_read_object(pdf_context *ctx, pdf_stream *s)
 
         code = pdfi_dict_get_int(ctx, d, "Length", &i);
         if (code < 0) {
-            pdfi_pop(ctx, 1);
-            return code;
+            dmprintf1(ctx->memory, "Stream object %"PRIu64" is missing the mandatory keyword /Length, unable to verify the stream langth.\n", objnum);
+            return 0;
         }
         if (i < 0 || (i + offset)> ctx->main_stream_length) {
-            pdfi_pop(ctx, 1);
-            return_error(gs_error_rangecheck);
+            dmprintf1(ctx->memory, "Stream object %"PRIu64" has a /Length which, when added to the offset of the object, exceeds the file size.\n", objnum);
+            return 0;
         }
         code = pdfi_seek(ctx, ctx->main_stream, i, SEEK_CUR);
         if (code < 0) {
@@ -1673,23 +1682,18 @@ int pdfi_read_object(pdf_context *ctx, pdf_stream *s)
         }
 
         code = pdfi_read_token(ctx, s);
-        if (ctx->stack_top - ctx->stack_bot < 2)
-            return_error(gs_error_stackunderflow);
+        if (ctx->stack_top - ctx->stack_bot < 2) {
+            dmprintf1(ctx->memory, "Failed to find a valid object at the end of the stream object %"PRIu64".\n", objnum);
+            return 0;
+        }
 
         if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
-            if (ctx->pdfstoponerror) {
-                pdfi_pop(ctx, 2);
-                return_error(gs_error_typecheck);
-            }
+            dmprintf1(ctx->memory, "Failed to find an 'endstream' keyword at the end of the stream object %"PRIu64".\n", objnum);
             pdfi_pop(ctx, 1);
             return 0;
         }
         keyword = ((pdf_keyword *)ctx->stack_top[-1]);
         if (keyword->key != PDF_ENDSTREAM) {
-            if (ctx->pdfstoponerror) {
-                pdfi_pop(ctx, 2);
-                return_error(gs_error_typecheck);
-            }
             dmprintf2(ctx->memory, "Stream object %"PRIu64" has an incorrect /Length of %"PRIu64"\n", objnum, i);
             pdfi_pop(ctx, 1);
             return 0;
@@ -1697,6 +1701,16 @@ int pdfi_read_object(pdf_context *ctx, pdf_stream *s)
         pdfi_pop(ctx, 1);
 
         code = pdfi_read_token(ctx, s);
+        if (code < 0) {
+            if (ctx->pdfstoponerror)
+                return code;
+            else
+                /* Something went wrong looking for endobj, but we foudn endstream, so assume
+                 * for now that will suffice.
+                 */
+                return 0;
+        }
+
         if (ctx->stack_top - ctx->stack_bot < 2)
             return_error(gs_error_stackunderflow);
 
@@ -1858,7 +1872,10 @@ int pdfi_repair_file(pdf_context *ctx)
             else
                 index = 0;
         } while (index < 4 && ctx->main_stream->eof == false);
+        if (memcmp(Buffer, test, 4) != 0)
+            return_error(gs_error_undefined);
         pdfi_unread(ctx, ctx->main_stream, (byte *)Buffer, 4);
+        pdfi_skip_comment(ctx, ctx->main_stream);
     }
     if (ctx->main_stream->eof == true)
         return_error(gs_error_ioerror);

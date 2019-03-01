@@ -26,10 +26,10 @@ void pdfi_free_dict(pdf_obj *o)
     int i;
 
     for (i=0;i < d->entries;i++) {
-        if (d->keys[i] != NULL)
-            pdfi_countdown(d->keys[i]);
         if (d->values[i] != NULL)
             pdfi_countdown(d->values[i]);
+        if (d->keys[i] != NULL)
+            pdfi_countdown(d->keys[i]);
     }
     gs_free_object(d->memory, d->keys, "pdf interpreter free dictionary keys");
     gs_free_object(d->memory, d->values, "pdf interpreter free dictioanry values");
@@ -625,6 +625,74 @@ int pdfi_dict_known(pdf_dict *d, const char *Key, bool *known)
         }
     }
     return 0;
+}
+
+/* Tests if a Key is present in the dictionary, if it is, retrieves the value associted with the
+ * key. Returns < 0 for error, 0 if the key is not found > 0 if the key is present, and initialises
+ * the value in the arguments. Since this uses pdf_dict_get(), the returned value has its
+ * reference count incremented by 1, just like pdfi_dict_get().
+ */
+int pdfi_dict_knownget(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj **o)
+{
+    bool known = false;
+    int code;
+
+    code = pdfi_dict_known(d, Key, &known);
+    if (code < 0)
+        return code;
+
+    if (known == false)
+        return 0;
+
+    code = pdfi_dict_get(ctx, d, Key, o);
+    if (code < 0)
+        return code;
+
+    return 1;
+}
+
+/* Like pdfi_dict_knownget() but allows the user to specify a type for the object that we get.
+ * returns < 0 for erro (including typecheck if the object is not the requested type)
+ * 0 if the key is not found, or > 0 if the key was found and returned.
+ */
+int pdfi_dict_knownget_type(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj_type type, pdf_obj **o)
+{
+    bool known = false;
+    int code;
+
+    code = pdfi_dict_known(d, Key, &known);
+    if (code < 0)
+        return code;
+
+    if (known == false)
+        return 0;
+
+    code = pdfi_dict_get_type(ctx, d, Key, type, o);
+    if (code < 0)
+        return code;
+
+    return 1;
+}
+
+/* Like pdfi_dict_knownget_type() but retrieves numbers (two possible types)
+ */
+int pdfi_dict_knownget_number(pdf_context *ctx, pdf_dict *d, const char *Key, double *f)
+{
+    bool known = false;
+    int code;
+
+    code = pdfi_dict_known(d, Key, &known);
+    if (code < 0)
+        return code;
+
+    if (known == false)
+        return 0;
+
+    code = pdfi_dict_get_number(ctx, d, Key, f);
+    if (code < 0)
+        return code;
+
+    return 1;
 }
 
 int pdfi_dict_known_by_key(pdf_dict *d, pdf_name *Key, bool *known)

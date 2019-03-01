@@ -58,6 +58,8 @@ static int pdfi_check_for_spots_by_name(pdf_context *ctx, pdf_name *name,
         return 0;
     } else if (pdfi_name_strcmp(name, "DeviceCMYK") == 0) {
         return 0;
+    } else if (pdfi_name_strcmp(name, "Pattern") == 0) {
+        return 0;
     } else {
         code = pdfi_find_resource(ctx, (unsigned char *)"ColorSpace", name, parent_dict, page_dict, &ref_space);
         if (code < 0)
@@ -140,7 +142,7 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
             if (code < 0)
                 goto exit;
 
-            if (space->type != PDF_NAME) {
+            if (name->type != PDF_NAME) {
                 code = gs_error_typecheck;
                 goto exit;
             }
@@ -252,7 +254,7 @@ int pdfi_check_ColorSpace_for_spots(pdf_context *ctx, pdf_obj *space, pdf_dict *
             code = pdfi_check_for_spots_by_array(ctx, (pdf_array *)space, parent_dict, page_dict, num_spots);
         } else {
             pdfi_loop_detector_cleartomark(ctx);
-            return_error(gs_error_typecheck);
+            return 0;
         }
     }
 
@@ -940,22 +942,22 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
     if (code < 0) {
         return code;
     }
-    pdfi_dict_known(ICC_dict, "Name", &known);
-    if (known) {
-        code = pdfi_dict_get(ctx, ICC_dict, "Name", &Name);
-        if (code >= 0) {
-            if(Name->type == PDF_STRING || Name->type == PDF_NAME) {
-                cname = (char *)gs_alloc_bytes(ctx->memory, ((pdf_name *)Name)->length + 1, "pdfi_create_iccbased (profile name)");
-                if (cname == NULL) {
-                    pdfi_countdown(Name);
-                    return_error(gs_error_VMerror);
-                }
-                memset(cname, 0x00, ((pdf_name *)Name)->length + 1);
-                memcpy(cname, ((pdf_name *)Name)->data, ((pdf_name *)Name)->length);
+    code = pdfi_dict_knownget(ctx, ICC_dict, "Name", &Name);
+    if (code > 0) {
+        if(Name->type == PDF_STRING || Name->type == PDF_NAME) {
+            cname = (char *)gs_alloc_bytes(ctx->memory, ((pdf_name *)Name)->length + 1, "pdfi_create_iccbased (profile name)");
+            if (cname == NULL) {
+                pdfi_countdown(Name);
+                return_error(gs_error_VMerror);
             }
-            pdfi_countdown(Name);
+            memset(cname, 0x00, ((pdf_name *)Name)->length + 1);
+            memcpy(cname, ((pdf_name *)Name)->data, ((pdf_name *)Name)->length);
         }
+        pdfi_countdown(Name);
     }
+    if (code < 0)
+        return code;
+
 
     pdfi_dict_known(ICC_dict, "Range", &known);
     if (known) {
@@ -995,43 +997,37 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
     gs_free_object(ctx->memory, cname, "pdfi_create_iccbased (profile name)");
 
     if (code < 0) {
-        /* Failed to set the ICCBased space, attempt to use the Alternate */
-        pdfi_dict_known(ICC_dict, "Alternate", &known);
-        if (known) {
-            pdf_obj *Alternate;
+        pdf_obj *Alternate = NULL;
 
-            code = pdfi_dict_get(ctx, ICC_dict, "Alternate", &Alternate);
-            if (code < 0)
-                return code;
-            code = pdfi_create_colorspace_by_name(ctx, (pdf_name *)Alternate, stream_dict, page_dict, ppcs);
-            /* The Alternate should be one of the device spaces */
-            pdfi_countdown(Alternate);
-        } else {
+        /* Failed to set the ICCBased space, attempt to use the Alternate */
+        code = pdfi_dict_knownget(ctx, ICC_dict, "Alternate", &Alternate);
+        if (code == 0) {
             /* Use the number of components (N) to set a space.... */
             switch(N) {
                 case 1:
                     *ppcs = gs_cspace_new_DeviceGray(ctx->memory);
                     if (*ppcs == NULL)
-                        return_error(gs_error_VMerror);
-                    code = 0;
+                        code = gs_note_error(gs_error_VMerror);
                     break;
                 case 3:
                     *ppcs = gs_cspace_new_DeviceRGB(ctx->memory);
                     if (*ppcs == NULL)
-                        return_error(gs_error_VMerror);
-                    code = 0;
+                        code = gs_note_error(gs_error_VMerror);
                     break;
                 case 4:
                     *ppcs = gs_cspace_new_DeviceCMYK(ctx->memory);
                     if (*ppcs == NULL)
-                        return_error(gs_error_VMerror);
-                    code = 0;
+                        code = gs_note_error(gs_error_VMerror);
                     break;
                 default:
-                    return_error(gs_error_undefined);
+                    code = gs_note_error(gs_error_undefined);
                     break;
             }
         }
+        if (code > 0)
+            code = pdfi_create_colorspace_by_name(ctx, (pdf_name *)Alternate, stream_dict, page_dict, ppcs);
+            /* The Alternate should be one of the device spaces */
+        pdfi_countdown(Alternate);
     }
 
     pdfi_countdown(ICC_dict);

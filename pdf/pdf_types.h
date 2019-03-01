@@ -13,10 +13,10 @@
    CA 94945, U.S.A., +1(415)492-9861, for further information.
 */
 
-#define REFCNT_DEBUG 0
-
 #ifndef PDF_OBJ_TYPES
 #define PDF_OBJ_TYPES
+
+#define REFCNT_DEBUG 0
 
 #include "stdint_.h"    /* Various data types */
 #include "scommon.h"    /* for gs_offset_t */
@@ -43,6 +43,7 @@ typedef enum pdf_obj_type_e {
 
 #if REFCNT_DEBUG
 #define pdf_obj_common \
+    void *ctx;\
     pdf_obj_type type;\
     char flags;\
     unsigned int refcnt;\
