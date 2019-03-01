@@ -324,6 +324,8 @@ pdfi_JPX_filter(pdf_context *ctx, pdf_dict *dict, pdf_dict *decode,
         if (csobj->type == PDF_ARRAY) {
             /* assume it's the first array element */
             csname =  (pdf_name *)((pdf_array *)csobj)->values[0];
+            /* We're going to count this down, below, so we need to count it up first. */
+            pdfi_countup(csname);
         } else if (csobj->type == PDF_NAME) {
             /* use the name directly */
             csname = (pdf_name *)csobj;
