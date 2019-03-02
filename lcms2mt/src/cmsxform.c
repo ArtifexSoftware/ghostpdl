@@ -1622,8 +1622,9 @@ cmsHTRANSFORM cmsCloneTransformChangingFormats(cmsContext ContextID,
     xform ->FromInput    = FromInput;
     xform ->ToOutput     = ToOutput;
 
-    /* Transformation plug-in support needed here */
-    if (oldXform->core->Lut != NULL) {
+    /* Transformation plug-in support needed here but only if lcms has determined
+       that this lut is not the identity transform */
+    if (oldXform->core->Lut != NULL && _cmsLutIsIdentity(oldXform->core->Lut) == FALSE) {
         for (Plugin = ctx->TransformCollection; Plugin != NULL; Plugin = Plugin->Next) {
             core = xform->core;
             if (Plugin->Factory(ContextID, &xform->xform, &core->UserData,
