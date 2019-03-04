@@ -3075,7 +3075,7 @@ static void pdf_type3_get_initial_matrix(gx_device * dev, gs_matrix * pmat)
     pmat->tx = 0;
     pmat->ty = 0;
     /* FIXME: Handle error here? Or is the charproc_ctm guaranteed to be invertible? */
-    gs_matrix_invert(pmat, pmat);
+    (void)gs_matrix_invert(pmat, pmat);
     gs_matrix_scale(pmat, pdev->HWResolution[0] / 72.0, pdev->HWResolution[0] / 72.0, pmat);
 }
 

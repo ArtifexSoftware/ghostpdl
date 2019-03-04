@@ -2301,7 +2301,10 @@ lips4v_begin_image(gx_device * dev,
             lputs(s, "&}");
             pdev->TextMode = FALSE;
         }
-        gs_matrix_invert(&pim->ImageMatrix, &imat);
+        code = gs_matrix_invert(&pim->ImageMatrix, &imat);
+        if (code < 0)
+            return code;
+
         gs_matrix_multiply(&imat, &ctm_only(pgs), &imat);
         /*
            [xx xy yx yy tx ty]
