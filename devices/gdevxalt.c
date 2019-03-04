@@ -253,7 +253,7 @@ x_wrap_copy_color(gx_device * dev, const byte * base, int sourcex,
                         for (k = 0; k < source_bytes; k++) {
                             byte color = temp_color1 & 0xff;
                             temp_color1 >>= 8;
-                            temp_color2 += color << ((source_bytes - k - 1) * 8);
+                            temp_color2 += (uint32_t)(color << ((source_bytes - k - 1) * 8));
                         }
                         cindex = x_alt_map_color(dev, temp_color2);
                     }
