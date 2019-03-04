@@ -136,6 +136,7 @@ s_RLE_process(stream_state * st, stream_cursor_read * pr,
     switch (ss->state) {
     default:
         dlprintf("Inconsistent state in s_RLE_process!\n");
+        /* fall through */
     case state_0:
         while (p != plimit) {
             if (run_len == 0) {
