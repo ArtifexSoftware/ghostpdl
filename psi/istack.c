@@ -356,6 +356,10 @@ ref_stack_array_sanitize(i_ctx_t *i_ctx_p, ref *sarr, ref *darr)
                 }
                 else {
                     code = ref_stack_array_sanitize(i_ctx_p, &obj, &arr2);
+                    if (code < 0) {
+                        ifree_ref_array(&arr2, "ref_stack_array_sanitize");
+                        return code;
+                    }
                 }
                 ref_assign(darr->value.refs + i, &arr2);
             }
