@@ -118,7 +118,7 @@ s_RLE_process(stream_state * st, stream_cursor_read * pr,
     const byte *plimit = pr->limit;
     byte *wlimit = pw->limit;
     ulong rleft = ss->record_left;
-    int run_len = ss->run_len;
+    int run_len = ss->run_len, ret = 0;
     byte n0 = ss->n0;
     byte n1 = ss->n1;
     byte n2 = ss->n2;
@@ -146,21 +146,30 @@ s_RLE_process(stream_state * st, stream_cursor_read * pr,
 run_len_0_n0_read:
                 if (p == rlimit || (p == plimit && last)) {
                     /* flush the record here, and restart */
-                    if (wlimit - q < 2)
-                        goto no_output_room_n0_read;
+                    if (wlimit - q < 2){
+                        ss->state = state_eq_0;
+                        /* no_output_room_n0_read */
+                        goto no_output_room;
+                    }
                     *++q = 0; /* Single literal */
                     *++q = n0;
                     rlimit = p + ss->record_size;
                     continue;
                 }
-                if (p == plimit)
-                    goto no_more_data_n0_read;
+                if (p == plimit) {
+                    ss->state = state_eq_0;
+                    /* no_more_data_n0_read */
+                    goto no_more_data;
+                }
                 n1 = *++p;
     case state_eq_01:
                 if (p == rlimit || (p == plimit && last)) {
                     /* flush the record here, and restart */
-                    if (wlimit - q < 3 - (n0 == n1))
-                        goto no_output_room_n0n1_read;
+                    if (wlimit - q < 3 - (n0 == n1)) {
+                        ss->state = state_eq_01;
+                        /* no_output_room_n0n1_read */
+                        goto no_output_room;
+                    }
                     if (n0 == n1) {
                         *++q = 0xff; /* Repeat 2 */
                         *++q = n0;
@@ -182,8 +191,10 @@ run_len_0_n0_read:
                     ss->literals[0] = n0;
                     n0 = n1;
                 }
-                if (p == plimit)
+                if (p == plimit) {
+                    ss->state = state_0;
                     goto no_more_data;
+                }
             } else if (run_len > 0) {
                 /* We are in the middle of a run of literals */
                 n1 = *++p;
@@ -192,8 +203,11 @@ run_len_0_n0_read:
                     (n0 == n1 && p == plimit && last)) {
                     /* flush the record here, and restart */
                     /* <len> <queue> n0 n1 */
-                    if (wlimit - q < run_len+3)
-                        goto no_output_room_gt_n0n1_read;
+                        if (wlimit - q < run_len+3) {
+                            ss->state = state_gt_01;
+                            /* no_output_room_gt_n0n1_read */
+                            goto no_output_room;
+                        }
                     *++q = run_len+1;
                     memcpy(q+1, ss->literals, run_len);
                     q += run_len;
@@ -205,15 +219,21 @@ run_len_0_n0_read:
                     continue;
                 }
                 if (n0 == n1) {
-                    if (p == plimit)
-                        goto no_more_data_n0n1_read;
+                    if (p == plimit) {
+                        ss->state = state_gt_01;
+                        /* no_more_data_n0n1_read */
+                        goto no_more_data;
+                    }
                     n2 = *++p;
     case state_gt_012:
                     if (p == rlimit || run_len == 125) {
                         /* flush the record here, and restart */
                         /* <len> <queue> n0 n1 n2 */
-                        if (wlimit - q < run_len+4)
-                            goto no_output_room_n0n1n2_read;
+                        if (wlimit - q < run_len+4) {
+                            ss->state = state_gt_012;
+                            /* no_output_room_n0n1n2_read */
+                            goto no_output_room;
+                        }
                         *++q = run_len+2;
                         memcpy(q+1, ss->literals, run_len);
                         q += run_len;
@@ -233,8 +253,11 @@ run_len_0_n0_read:
                     } else {
                         /* Flush current run, start a repeated run */
                         /* <len> <queue> */
-                        if (wlimit - q < run_len+1)
-                            goto no_output_room_n0n1n2_read;
+                        if (wlimit - q < run_len+1) {
+                            ss->state = state_gt_012;
+                            /* no_output_room_n0n1n2_read */
+                            goto no_output_room;
+                        }
                         *++q = run_len-1;
                         memcpy(q+1, ss->literals, run_len);
                         q += run_len;
@@ -254,8 +277,11 @@ run_len_0_n0_read:
     case state_lt_01:
                 if (n0 != n1 || p == rlimit || run_len == -128) {
                     /* flush the record here, and restart */
-                    if (wlimit - q < 2)
-                        goto no_output_room_lt_n0n1_read;
+                    if (wlimit - q < 2) {
+                        ss->state = state_lt_01;
+                        /* no_output_room_lt_n0n1_read */
+                        goto no_output_room;
+                    }
                     *++q = 257+run_len; /* Repeated run */
                     *++q = n0;
                     run_len = 0;
@@ -274,20 +300,26 @@ run_len_0_n0_read:
     if (last) {
         if (run_len == 0) {
             /* EOD */
-            if (wlimit - q < 1)
+            if (wlimit - q < 1) {
+                ss->state = state_0;
                 goto no_output_room;
+            }
         } else if (run_len > 0) {
             /* Flush literal run + EOD */
-            if (wlimit - q < run_len+2)
+            if (wlimit - q < run_len+2) {
+                ss->state = state_0;
                 goto no_output_room;
+            }
             *++q = run_len;
             memcpy(q+1, ss->literals, run_len);
             q += run_len;
             *++q = n0;
         } else if (run_len < 0) {
             /* Flush repeated run + EOD */
-            if (wlimit - q < 3)
+            if (wlimit - q < 3) {
+                ss->state = state_0;
                 goto no_output_room;
+            }
             *++q = 257+run_len; /* Repeated run */
             *++q = n0;
         }
@@ -312,54 +344,18 @@ run_len_0_n0_read:
     debug_ate(pinit, p, qinit, q, 0);
     return 0;
 
-    /* Now, the "I ran out of data, or space" exits */
-    {
-        int ret;
-        if (0) {
-            /* All the "need more output space" exits */
-            if (0) {
 no_output_room:
-                ss->state = state_0;
-            } else if (0) {
-no_output_room_n0_read:
-                ss->state = state_eq_0;
-            } else if (0) {
-no_output_room_n0n1_read:
-                ss->state = state_eq_01;
-            } else if (0) {
-no_output_room_gt_n0n1_read:
-                ss->state = state_gt_01;
-            } else if (0) {
-no_output_room_lt_n0n1_read:
-                ss->state = state_lt_01;
-            } else if (0) {
-no_output_room_n0n1n2_read:
-                ss->state = state_gt_012;
-            }
-            ret = 1; /* Need more output space */
-        } else if (0) {
-            if (0) {
-no_more_data_n0_read:
-                ss->state = state_eq_0;
-            } else if (0) {
+    ret = 1;
 no_more_data:
-                ss->state = state_0;
-            } else if (0) {
-no_more_data_n0n1_read:
-                ss->state = state_gt_01;
-            }
-            ret = 0; /* Need more input */
-        }
-        ss->n0 = n0;
-        ss->n1 = n1;
-        ss->n2 = n2;
-        ss->run_len = run_len;
-        pr->ptr = p;
-        pw->ptr = q;
-        ss->record_left = rlimit - p;
-        debug_ate(pinit, p, qinit, q, ret);
-        return ret;
-    }
+    ss->n0 = n0;
+    ss->n1 = n1;
+    ss->n2 = n2;
+    ss->run_len = run_len;
+    pr->ptr = p;
+    pw->ptr = q;
+    ss->record_left = rlimit - p;
+    debug_ate(pinit, p, qinit, q, ret);
+    return ret;
 }
 
 /* Stream template */
