@@ -2549,7 +2549,10 @@ escv_begin_image(gx_device * dev,
   }
 
   /* Write the image/colorimage/imagemask preamble. */
-  gs_matrix_invert(&pim->ImageMatrix, &imat);
+  code = gs_matrix_invert(&pim->ImageMatrix, &imat);
+  if (code < 0)
+      return code;
+
   gs_matrix_multiply(&imat, &ctm_only(pgs), &imat);
 
   ty = imat.ty;

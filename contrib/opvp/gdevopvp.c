@@ -3721,7 +3721,7 @@ opvp_begin_image(
 #endif
             /* adjust matrix */
             reverse_image = false;
-            gs_matrix_invert(&pim->ImageMatrix, &mtx);
+            ecode = gs_matrix_invert(&pim->ImageMatrix, &mtx);
             gs_matrix_multiply(&mtx, &ctm_only(pgs), &mtx);
             switch (FastImageMode) {
             case FastImageNoCTM:
