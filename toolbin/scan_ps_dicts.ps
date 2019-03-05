@@ -1,0 +1,196 @@
+%!
+(rwx = Read/Write/eXecutable, - = no, . = not applicable to this type\n) print
+(systemdict length is ) print systemdict length 256 string cvs print (\n) print
+(Name                             type                             RWX\n) print
+(---------------------------------------------------------------------\n) print
+
+20 dict begin	% so our local stuff doesn't end up in the list
+
+/pstring {
+  dup print
+  length 16 exch sub
+  0 1 3 -1 roll {pop ( ) print} for
+} def
+
+/visited systemdict length 3 mul dict def
+/operator_list systemdict length 3 mul dict def
+
+/operator_name {	% convert operator to a name
+  /S 256 string def
+  /F S /NullEncode filter def
+  F exch write==only
+  F closefile
+  S (\000) search
+  { exch pop exch pop } { S } ifelse
+  % trim trailing nulls from the string.
+  cvn
+} def
+
+/nest_level -1 def
+/indent {
+  (                             ) 0 nest_level 2 mul getinterval print
+} def
+
+/rwx {
+  dup type
+  dup /arraytype eq exch
+  dup /packedarraytype eq exch
+  dup /dicttype eq exch
+  dup /filetype eq exch
+  /stringtype eq
+  or
+  or
+  or
+  or {
+    dup rcheck {(r) print}{(-) print} ifelse
+    dup wcheck {(w) print}{(-) print} ifelse
+  }{
+    (..) print
+  } ifelse
+  dup xcheck {(x ) print}{(- ) print} ifelse
+} def
+
+/lsitem {
+  indent
+  /item_name 2 index  def
+  dup rwx
+  type 16 string cvs pstring
+  item_name
+  = flush
+} def
+
+/add_op_definition {
+%%%(add op def: ) print 1 index =only ( ) print dup =
+   operator_list 2 index known not {
+     operator_list 2 index 2 dict put
+   } if
+   operator_list 2 index get exch /def
+   put
+   pop
+} def
+
+/add_op_reference {
+%%%(add op ref ) print 1 index =only ( ) print dup =
+   operator_list 2 index known not {
+     operator_list 2 index 2 dict put
+   } if
+   operator_list 2 index get exch /ref
+   put
+   pop
+} def
+
+/show_dictionary {
+  {
+    5 dict begin
+    indent
+    lsitem
+    dup type /operatortype eq {
+      1 index 3 index add_op_definition
+    } if
+    dup type /dicttype eq {
+      check_dictionary
+    } {
+      dup type /arraytype eq 1 index type /packedarraytype eq or {
+        1 index 3 index add_op_definition
+        dup rcheck {
+          exch pop check_array
+        } {
+          pop pop
+        } ifelse
+      } {
+        pop pop
+      } ifelse
+    } ifelse
+    end
+  } forall
+} def
+
+/check_array {
+  /nest_level nest_level 1 add store
+  /i 0 def
+  {
+    dup type /operatortype eq {
+      dup operator_name
+      %%      dup /--.forceput-- eq { (.forceput in ) print item_name = } if
+      item_name add_op_reference
+    } if
+    dup type /arrayttype eq 1 index type /packedarraytype eq or {
+      dup
+      dup wcheck {
+        indent (writable array, element ) print i =only (: )  print dup ==
+      } if
+      dup rcheck {
+        check_array
+      } {
+        pop
+      } ifelse
+    } if
+    dup type /dicttype eq {
+      dup wcheck {
+        indent (writable dict, element: ) print i =only (: ) print dup { exch ==only (	) print == exit } forall
+      } if
+      indent ( dict, element: ) print i =
+      (unknown) 1 index dup systemdict ne {
+        check_dictionary
+     } {
+       pop pop
+     } ifelse
+    } if
+    pop
+    /i i 1 add def
+  } forall
+  /nest_level nest_level 1 sub store
+} def
+
+/check_dictionary {
+  /nest_level nest_level 1 add store
+  5 dict begin
+  visited 2 index known {
+    pop pop
+  } {
+    visited 2 index true put
+    dup rcheck {
+      indent (-------------------- Dumping dict: ) print 1 index 256 string cvs print ( length: ) print dup length =
+      show_dictionary
+      indent (==================== Done with dict: ) print 256 string cvs =
+    } {
+      indent (-------------------- Cannot read dict: ) print 1 index 256 string cvs =
+      pop pop
+    } ifelse
+  } ifelse
+  end
+  /nest_level nest_level 1 sub store
+} def
+
+/systemdict systemdict check_dictionary
+
+(######################################################################################) =
+
+[ operator_list { pop } forall ]
+/.sort where { pop { 100 string cvs exch 100 string cvs gt } .sort } if
+{ dup =only (  ) print operator_list exch get === } forall
+
+(######################################################################################) =
+(\nChecking internal dictionaries returned by operators\n) =
+/currentcolorrendering currentcolorrendering check_dictionary
+/currenthalftone currenthalftone check_dictionary
+/currentpagedevice currentpagedevice check_dictionary
+/currentsystemparams currentsystemparams check_dictionary
+%%%/currenttrapparams currenttrapparams check_dictionary
+/currentuserparams currentuserparams check_dictionary
+
+(*)
+{ (currentdevparams/) 1 index concatstrings cvn exch currentdevparams check_dictionary }
+100 string
+/IODevice
+resourceforall
+
+(######################################################################################) =
+(\nusage from operator_list capture\n) =
+operator_list {
+  exch =only (	defined in: ) print dup { /def eq { =only (, ) print } { pop } ifelse } forall
+  () =
+  (	referenced by: ) print  { /ref eq { =only (, ) print } { pop } ifelse } forall
+  () =
+} forall
+quit
