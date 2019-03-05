@@ -2275,6 +2275,7 @@ currentdict /.locksafe_userparams .undef
 currentdict /.setsafeglobal .undef
 currentdict /.locksafeglobal .undef
 
+SAFER {
 /SAFERUndefinePostScriptOperators {
   [
   % Used by our own test suite files
@@ -2291,6 +2292,7 @@ currentdict /.locksafeglobal .undef
 
   //systemdict /SAFERUndefinePostScriptOperators .forceundef
 } .bind executeonly def % must be bound and hidden for .forceundef
+} if
 
 %% ---------------- SAFER stuff END -------------------%%
 
