@@ -164,7 +164,7 @@
         % Since the file might leave garbage on the operand stack,
         % we have to create a procedure to close the file reliably.
     dup read not { -1 } if
-    2 copy unread 16#80 eq {
+    2 copy .unread 16#80 eq {
         dup //closesourcedict //true /PFBDecode filter cvx
         exch .currentresourcefile eq {
           dup /.execasresource .systemvar
@@ -177,7 +177,7 @@
         cvx exec
     } ifelse
   } stopped
-} bind def
+} bind executeonly def
 
 % If the diskfont feature isn't included, define a dummy .loadfontdict.
 /.loadfontdict where

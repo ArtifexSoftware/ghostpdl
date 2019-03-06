@@ -364,11 +364,7 @@ currentdict /hwsizedict .undef
    if
  } bind executeonly odef
 /.writecvs { 0 .writecvp } bind odef
-%**************** DEPRECATED PROCEDURES ****************
-%**************** DO NOT USE THESE IN NEW CODE ****************
-/max { .max } bind def		% use .max instead
-/min { .min } bind def		% use .min instead
-/unread /.unread load def	% use .peekstring instead
+
 %**************** END OF BACKWARD COMPATIBILITY SECTION ****************
 
 % Utility for removing all entries from a dictionary
@@ -866,19 +862,19 @@ userdict /.currentresourcefile //null put
   } {
     pop
   } ifelse
-} bind def
+} bind executeonly def
 /.confirmread {
   TTYPAUSE {
     (/dev/tty) (r) file dup read pop pop closefile
   } {
     .echo.mode //false echo
     (%stdin) (r) file dup read {
-      dup (\n) 0 get eq { pop pop } { unread } ifelse
+      dup (\n) 0 get eq { pop pop } { .unread } ifelse
     } {
       pop
     } ifelse echo
   } ifelse
-} bind def
+} bind executeonly def
 
 % Define the procedure that the C code uses for running files
 % named on the command line.
