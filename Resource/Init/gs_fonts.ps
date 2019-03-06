@@ -172,7 +172,7 @@ userdict /.nativeFontmap .FontDirectory maxlength dict put
                         % <file> <key> .findfontvalue false
                         % Closes the file in either case.
   exch dup read {
-    2 copy unread 16#80 eq {
+    2 copy .unread 16#80 eq {
       dup (xxxxxx) readstring pop pop             % skip .PFB header
     } if
     {           % Stack: key file
@@ -191,7 +191,7 @@ userdict /.nativeFontmap .FontDirectory maxlength dict put
                 % Stack: key file false
     dup { 4 } { 3 } ifelse -2 roll closefile pop
   } { closefile pop //false } ifelse
-} bind def
+} bind executeonly def
 /.findfontname
  { /FontName .findfontvalue
  } bind def
