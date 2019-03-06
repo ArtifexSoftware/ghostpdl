@@ -763,7 +763,7 @@ SETPDDEBUG { (Finishing.) = pstack flush } if
    %% Bug 690667.
    2 .endpage
    { 1 //true .outputpage
-     (>>setpagedevice, press <return> to continue<<\n) .confirm
+     (>>setpagedevice, press <return> to continue<<\n) //.confirm exec
    }
    if
                 % We mustn't pop the argument until the very end,
