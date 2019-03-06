@@ -394,12 +394,15 @@ pcl_impl_init_job(pl_interp_implementation_t * impl,       /* interp instance to
         case Sreset:           /* pcl_do_resets failed */
         case Serase:           /* gs_erasepage failed */
             /* undo 1st gsave */
-            gs_grestore_only(pcli->pcs.pgs);    /* destroys gs_save stack */
+
+            if (gs_grestore_only(pcli->pcs.pgs) < 0)    /* destroys gs_save stack */
+                return_error(gs_error_Fatal);
             /* fall thru to next */
 
         case Sgsave1:          /* 1st gsave failed */
             /* undo setdevice */
-            code = gs_nulldevice(pcli->pcs.pgs);
+            if (gs_nulldevice(pcli->pcs.pgs) < 0)
+                return_error(gs_error_Fatal);
             /* fall thru to next */
 
         case Ssetdevice:       /* gs_setdevice failed */
