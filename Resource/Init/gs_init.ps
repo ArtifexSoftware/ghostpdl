@@ -654,12 +654,38 @@ odef
         dup length 6 ne { /setmatrix load  /rangecheck signalerror } if
         dup aload pop .setmatrix pop
 } odef
+
+/.confirmread {
+  TTYPAUSE {
+    (/dev/tty) (r) file dup read pop pop closefile
+  } {
+    .echo.mode //false echo
+    (%stdin) (r) file dup read {
+      dup (\n) 0 get eq { pop pop } { .unread } ifelse
+    } {
+      pop
+    } ifelse echo
+  } ifelse
+} bind executeonly def
+
+/.confirm {
+  DISPLAYING NOPAUSE not TTYPAUSE or and {
+        % Print a message (unless NOPAGEPROMPT or NOPROMPT is true)
+        % and wait for the user to type something.
+        % If the user just types a newline, flush it.
+    NOPAGEPROMPT NOPROMPT or { pop } { print flush } ifelse
+    //.confirmread exec
+  } {
+    pop
+  } ifelse
+} bind executeonly def
+
 % In LanguageLevel 3, copypage erases the page.
 /copypage {
         .languagelevel 3 ge
         dup { 0 } { 1 } ifelse .endpage .doneshowpage {
           .currentnumcopies 1 index .outputpage
-          (>>copypage, press <return> to continue<<\n) .confirm
+          (>>copypage, press <return> to continue<<\n) //.confirm exec
           dup { erasepage } if
         } if pop
     systemdict /..page_default_spaces .knownget { //.PurgeDict exec } if
@@ -669,7 +695,7 @@ odef
 /showpage {
         0 .endpage .doneshowpage {
           .currentnumcopies //true .outputpage
-          (>>showpage, press <return> to continue<<\n) .confirm
+          (>>showpage, press <return> to continue<<\n) //.confirm exec
           % Uncomment the following line, and use a Memento build to track
           % blocks that are created and not destroyed between each successive
           % page.
@@ -852,29 +878,6 @@ userdict /.currentresourcefile //null put
              ifelse }
            { //false } ifelse
         } bind def
-/.confirm {
-  DISPLAYING NOPAUSE not TTYPAUSE or and {
-        % Print a message (unless NOPAGEPROMPT or NOPROMPT is true)
-        % and wait for the user to type something.
-        % If the user just types a newline, flush it.
-    NOPAGEPROMPT NOPROMPT or { pop } { print flush } ifelse
-    .confirmread
-  } {
-    pop
-  } ifelse
-} bind executeonly def
-/.confirmread {
-  TTYPAUSE {
-    (/dev/tty) (r) file dup read pop pop closefile
-  } {
-    .echo.mode //false echo
-    (%stdin) (r) file dup read {
-      dup (\n) 0 get eq { pop pop } { .unread } ifelse
-    } {
-      pop
-    } ifelse echo
-  } ifelse
-} bind executeonly def
 
 % Define the procedure that the C code uses for running files
 % named on the command line.
@@ -2378,6 +2381,7 @@ SAFER {
   /.clearerror
   /.beginpage /.endpage
   /.getpath
+  /.confirm /.confirmread
 
   % Used by a free user in the Library of Congress. Apparently this is used to
   % draw a partial page, which is then filled in by the results of a barcode
