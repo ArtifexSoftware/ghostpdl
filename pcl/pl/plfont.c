@@ -488,7 +488,7 @@ pl_font_glyph_width_cache_node_add(pl_font_t *plfont,
     if (plfont->widths_cache_nitems > PL_MAX_WIDTHS_CACHE_NITEMS) {
         pl_font_glyph_width_cache_remove_nodes(plfont);
     }
-    
+
     node = (pl_glyph_width_node_t *) gs_alloc_bytes(plfont->pfont->memory,
                                                  sizeof
                                                  (pl_glyph_width_node_t),
@@ -559,7 +559,7 @@ pl_font_char_width(const pl_font_t * plfont, const void *pgs,
     if (pl_font_glyph_width_cache_node_search(plfont, char_code, pwidth) >= 0) {
         return(code);
     }
-    
+
     if ((code = (*(plfont)->char_width) (plfont, pgs, char_code, pwidth)) == 0) {
 
         /* at least here, ignore the return value - if we fail to add a node
@@ -1167,7 +1167,7 @@ pl_load_resident_font_data_from_file(gs_memory_t * mem, pl_font_t * plfont)
     byte *data;
 
     if (plfont->font_file && !plfont->font_file_loaded) {
-        stream *in = sfopen(plfont->font_file, gp_fmode_rb, mem);
+        stream *in = sfopen(plfont->font_file, "r", mem);
 
         if (in == NULL)
             return -1;
