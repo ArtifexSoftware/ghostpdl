@@ -281,7 +281,8 @@ were printed, then print the even pages:
 <blockquote><dl><code>
 <dt>gs -sDEVICE=pgmraw -o /dev/lp0 --saved-pages="begin" examples/annots.pdf \
 <dt>--saved-pages="print odd" \
-<dt>-c "(Move printed pages to the input tray, then press enter.) = flush .confirmread)" \
+<dt>-c "(Move printed pages to the input tray, then press enter.) = flush \
+<dt> (%stdin) (r) file 256 string readline clear" \
 <dt>--saved-pages="print even"
 </code></dl></blockquote>
 
