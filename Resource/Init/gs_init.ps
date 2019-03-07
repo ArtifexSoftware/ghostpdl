@@ -365,6 +365,11 @@ currentdict /hwsizedict .undef
  } bind executeonly odef
 /.writecvs { 0 .writecvp } bind odef
 
+%**************** DEPRECATED PROCEDURES ****************
+%**************** DO NOT USE THESE IN NEW CODE ****************
+% Keeping these because they have been around a long time and we don't want to break old code that's out in the wild
+/max { .max } bind def		% use .max instead
+/min { .min } bind def		% use .min instead
 %**************** END OF BACKWARD COMPATIBILITY SECTION ****************
 
 % Utility for removing all entries from a dictionary
