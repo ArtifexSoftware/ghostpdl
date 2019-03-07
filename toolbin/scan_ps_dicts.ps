@@ -9,6 +9,21 @@
 
 20 dict begin	% so our local stuff doesn't end up in the list
 
+/concatenate % (string1) (string2) concatenate string3 % array1 array2 concatenate array3
+{ %def
+    dup type 2 index type 2 copy ne { %if
+        pop pop
+        errordict begin (concatenate) typecheck end }{ %else
+        /stringtype ne exch /arraytype ne and {
+            errordict begin (concatenate) typecheck end
+        } if } ifelse
+    dup length 2 index length add 1 index type /arraytype eq { array }{ string } ifelse
+    % stack: arg1 arg2 new
+    dup 0 4 index putinterval
+    % stack: arg1 arg2 new
+    dup 4 -1 roll length 4 -1 roll putinterval % stack: new
+} bind def
+
 /pstring {
   dup print
   length 16 exch sub
@@ -173,1089 +188,581 @@
   /nest_level nest_level 1 sub store
 } def
 
-% We have have both forms of everything, the "bare" operator and the form bracketed by '--'
-% since that's the printed form for the final "usage" section.
-/whitelist
-<<
-(AdobeGlyphList) cvn //null
-(ReverseAdobeGlyphList) cvn //null
-($error) cvn //null
-([) cvn //null
-(]) cvn //null
-(<<) cvn //null
-(=) cvn //null
-(==) cvn //null
-(>>) cvn //null
-(abs) cvn //null
-(add) cvn //null
-(aload) cvn //null
-(anchorsearch) cvn //null
-(and) cvn //null
-(arc) cvn //null
-(arcn) cvn //null
-(arct) cvn //null
-(arcto) cvn //null
-(array) cvn //null
-(ashow) cvn //null
-(astore) cvn //null
-(atan) cvn //null
-(awidthshow) cvn //null
-(begin) cvn //null
-(bind) cvn //null
-(bitshift) cvn //null
-(bytesavailable) cvn //null
-(ceiling) cvn //null
-(charpath) cvn //null
-(clear) cvn //null
-(cleardictstack) cvn //null
-(cleartomark) cvn //null
-(clip) cvn //null
-(clippath) cvn //null
-(cliprestore) cvn //null
-(clipsave) cvn //null
-(closefile) cvn //null
-(closepath) cvn //null
-(colorimage) cvn //null
-(composefont) cvn //null
-(concat) cvn //null
-(concatmatrix) cvn //null
-(copy) cvn //null
-(copypage) cvn //null
-(cos) cvn //null
-(count) cvn //null
-(countdictstack) cvn //null
-(countexecstack) cvn //null
-(counttomark) cvn //null
-(cshow) cvn //null
-(currentblackgeneration) cvn //null
-(currentcacheparams) cvn //null
-(currentcmykcolor) cvn //null
-(currentcolor) cvn //null
-(currentcolorrendering) cvn //null
-(currentcolorscreen) cvn //null
-(currentcolorspace) cvn //null
-(currentcolortransfer) cvn //null
-(currentdash) cvn //null
-(currentdevparams) cvn //null
-(currentdict) cvn //null
-(currentfile) cvn //null
-(currentflat) cvn //null
-(currentglobal) cvn //null
-(currentgray) cvn //null
-(currentgstate) cvn //null
-(currenthalftone) cvn //null
-(currenthsbcolor) cvn //null
-(currentlinecap) cvn //null
-(currentlinejoin) cvn //null
-(currentlinewidth) cvn //null
-(currentmatrix) cvn //null
-(currentmiterlimit) cvn //null
-(currentobjectformat) cvn //null
-(currentoverprint) cvn //null
-(currentpacking) cvn //null
-(currentpagedevice) cvn //null
-(currentpoint) cvn //null
-(currentrgbcolor) cvn //null
-(currentscreen) cvn //null
-(currentsmoothness) cvn //null
-(currentstrokeadjust) cvn //null
-(currentsystemparams) cvn //null
-(currenttransfer) cvn //null
-(currentundercolorremoval) cvn //null
-(currentuserparams) cvn //null
-(curveto) cvn //null
-(cvi) cvn //null
-(cvlit) cvn //null
-(cvn) cvn //null
-(cvr) cvn //null
-(cvrs) cvn //null
-(cvs) cvn //null
-(cvx) cvn //null
-(def) cvn //null
-(defaultmatrix) cvn //null
-(definefont) cvn //null
-(defineresource) cvn //null
-(defineuserobject) cvn //null
-(deletefile) cvn //null
-(dict) cvn //null
-(dictstack) cvn //null
-(div) cvn //null
-(dtransform) cvn //null
-(dup) cvn //null
-(echo) cvn //null
-(end) cvn //null
-(eoclip) cvn //null
-(eofill) cvn //null
-(eq) cvn //null
-(erasepage) cvn //null
-(errordict) cvn //null
-(exch) cvn //null
-(exec) cvn //null
-(execform) cvn //null
-(execstack) cvn //null
-(execuserobject) cvn //null
-(executeonly) cvn //null
-(executive) cvn //null
-(exit) cvn //null
-(exp) cvn //null
-(false) cvn //null
-(file) cvn //null
-(filenameforall) cvn //null
-(fileposition) cvn //null
-(fill) cvn //null
-(filter) cvn //null
-(findcolorrendering) cvn //null
-(findencoding) cvn //null
-(findfont) cvn //null
-(findresource) cvn //null
-(flattenpath) cvn //null
-(floor) cvn //null
-(flush) cvn //null
-(flushfile) cvn //null
-(FontDirectory) cvn //null
-(for) cvn //null
-(forall) cvn //null
-(gcheck) cvn //null
-(ge) cvn //null
-(get) cvn //null
-(getinterval) cvn //null
-(globaldict) cvn //null
-(GlobalFontDirectory) cvn //null
-(glyphshow) cvn //null
-(grestore) cvn //null
-(grestoreall) cvn //null
-(gsave) cvn //null
-(gstate) cvn //null
-(gt) cvn //null
-(identmatrix) cvn //null
-(idiv) cvn //null
-(idtransform) cvn //null
-(if) cvn //null
-(ifelse) cvn //null
-(image) cvn //null
-(imagemask) cvn //null
-(index) cvn //null
-(ineofill) cvn //null
-(infill) cvn //null
-(initclip) cvn //null
-(initgraphics) cvn //null
-(initmatrix) cvn //null
-(instroke) cvn //null
-(inueofill) cvn //null
-(inufill) cvn //null
-(inustroke) cvn //null
-(invertmatrix) cvn //null
-(ISOLatin1Encoding) cvn //null
-(itransform) cvn //null
-(known) cvn //null
-(kshow) cvn //null
-(languagelevel) cvn //null
-(le) cvn //null
-(length) cvn //null
-(lineto) cvn //null
-(ln) cvn //null
-(load) cvn //null
-(log) cvn //null
-(loop) cvn //null
-(lt) cvn //null
-(makefont) cvn //null
-(makepattern) cvn //null
-(mark) cvn //null
-(matrix) cvn //null
-(maxlength) cvn //null
-(mod) cvn //null
-(moveto) cvn //null
-(mul) cvn //null
-(ne) cvn //null
-(neg) cvn //null
-(newpath) cvn //null
-(noaccess) cvn //null
-(not) cvn //null
-(null) cvn //null
-(nulldevice) cvn //null
-(or) cvn //null
-(packedarray) cvn //null
-(pathbbox) cvn //null
-(pathforall) cvn //null
-(pop) cvn //null
-(printobject) cvn //null
-(product) cvn //null
-(prompt) cvn //null
-(pstack) cvn //null
-(put) cvn //null
-(putinterval) cvn //null
-(quit) cvn //null
-(rand) cvn //null
-(rcheck) cvn //null
-(rcurveto) cvn //null
-(read) cvn //null
-(readhexstring) cvn //null
-(readline) cvn //null
-(readonly) cvn //null
-(readstring) cvn //null
-(realtime) cvn //null
-(rectclip) cvn //null
-(rectfill) cvn //null
-(rectstroke) cvn //null
-(renamefile) cvn //null
-(repeat) cvn //null
-(resetfile) cvn //null
-(resourceforall) cvn //null
-(resourcestatus) cvn //null
-(restore) cvn //null
-(reversepath) cvn //null
-(revision) cvn //null
-(rlineto) cvn //null
-(rmoveto) cvn //null
-(roll) cvn //null
-(rotate) cvn //null
-(round) cvn //null
-(rrand) cvn //null
-(run) cvn //null
-(save) cvn //null
-(scale) cvn //null
-(scalefont) cvn //null
-(search) cvn //null
-(selectfont) cvn //null
-(serialnumber) cvn //null
-(setbbox) cvn //null
-(setblackgeneration) cvn //null
-(setcachedevice) cvn //null
-(setcachedevice2) cvn //null
-(setcachelimit) cvn //null
-(setcacheparams) cvn //null
-(setcharwidth) cvn //null
-(setcmykcolor) cvn //null
-(setcolor) cvn //null
-(setcolorrendering) cvn //null
-(setcolorscreen) cvn //null
-(setcolorspace) cvn //null
-(setcolortransfer) cvn //null
-(setdash) cvn //null
-(setdevparams) cvn //null
-(setfileposition) cvn //null
-(setflat) cvn //null
-(setfont) cvn //null
-(setglobal) cvn //null
-(setgray) cvn //null
-(setgstate) cvn //null
-(sethalftone) cvn //null
-(sethsbcolor) cvn //null
-(setlinecap) cvn //null
-(setlinejoin) cvn //null
-(setlinewidth) cvn //null
-(setmatrix) cvn //null
-(setmiterlimit) cvn //null
-(setobjectformat) cvn //null
-(setoverprint) cvn //null
-(setpacking) cvn //null
-(setpagedevice) cvn //null
-(setpattern) cvn //null
-(setrgbcolor) cvn //null
-(setscreen) cvn //null
-(setsmoothness) cvn //null
-(setstrokeadjust) cvn //null
-(setsystemparams) cvn //null
-(settransfer) cvn //null
-(setucacheparams) cvn //null
-(setundercolorremoval) cvn //null
-(setuserparams) cvn //null
-(setvmthreshold) cvn //null
-(shfill) cvn //null
-(show) cvn //null
-(showpage) cvn //null
-(sin) cvn //null
-(sqrt) cvn //null
-(srand) cvn //null
-(stack) cvn //null
-(StandardEncoding) cvn //null
-(start) cvn //null
-(startjob) cvn //null
-(status) cvn //null
-(stop) cvn //null
-(stopped) cvn //null
-(store) cvn //null
-(string) cvn //null
-(stringwidth) cvn //null
-(stroke) cvn //null
-(strokepath) cvn //null
-(sub) cvn //null
-(systemdict) cvn //null
-(token) cvn //null
-(transform) cvn //null
-(translate) cvn //null
-(true) cvn //null
-(truncate) cvn //null
-(type) cvn //null
-(uappend) cvn //null
-(ucache) cvn //null
-(ucachestatus) cvn //null
-(ueofill) cvn //null
-(ufill) cvn //null
-(undef) cvn //null
-(undefinefont) cvn //null
-(undefineresource) cvn //null
-(undefineuserobject) cvn //null
-(upath) cvn //null
-(userdict) cvn //null
-(UserObjects) cvn //null
-(usertime) cvn //null
-(ustroke) cvn //null
-(ustrokepath) cvn //null
-(version) cvn //null
-(vmreclaim) cvn //null
-(vmstatus) cvn //null
-(wcheck) cvn //null
-(where) cvn //null
-(widthshow) cvn //null
-(write) cvn //null
-(writehexstring) cvn //null
-(writeobject) cvn //null
-(writestring) cvn //null
-(xcheck) cvn //null
-(xor) cvn //null
-(xshow) cvn //null
-(xyshow) cvn //null
-(yshow) cvn //null
-(%Type1BuildChar) cvn //null
-(%Type1BuildGlyph) cvn //null
-(.begintransparencygroup) cvn //null
-(.begintransparencymaskgroup) cvn //null
-(.bind) cvn //null
-(.bindnow) cvn //null
-(.currentoverprintmode) cvn //null
-(.dicttomark) cvn //null
-(.endtransparencygroup) cvn //null
-(.fileposition) cvn //null
-(.knownget) cvn //null
-(.locksafe) cvn //null
-(.makeoperator) cvn //null
-(.setblendmode) cvn //null
-(.setdebug) cvn //null
-(.setopacityalpha) cvn //null
-(.setoverprintmode) cvn //null
-(.setsafe) cvn //null
-(.setshapealpha) cvn //null
-(.settextknockout) cvn //null
-(.tempfile) cvn //null
-(arccos) cvn //null
-(arcsin) cvn //null
-(copydevice) cvn //null
-(copyscanlines) cvn //null
-(currentdevice) cvn //null
-(finddevice) cvn //null
-(findlibfile) cvn //null
-(findprotodevice) cvn //null
-(getdeviceprops) cvn //null
-(getenv) cvn //null
-(makeimagedevice) cvn //null
-(max) cvn //null
-(min) cvn //null
-(.genordered) cvn //null
-(.setpdfwrite) cvn //null
-(putdeviceprops) cvn //null
-(setdevice) cvn //null
-(.password) cvn //null
-(.timeouts) cvn //null
-(11x17) cvn //null
-(11x17tray) cvn //null
-(a0) cvn //null
-(a1) cvn //null
-(a10) cvn //null
-(a2) cvn //null
-(a3) cvn //null
-(a3tray) cvn //null
-(a4) cvn //null
-(a4small) cvn //null
-(a4tray) cvn //null
-(a5) cvn //null
-(a5tray) cvn //null
-(a6) cvn //null
-(a6tray) cvn //null
-(a7) cvn //null
-(a8) cvn //null
-(a9) cvn //null
-(allowjobreset) cvn //null
-(ANSI_A) cvn //null
-(ANSI_B) cvn //null
-(ANSI_C) cvn //null
-(ANSI_D) cvn //null
-(ANSI_E) cvn //null
-(ANSI_F) cvn //null
-(appletalktype) cvn //null
-(archA) cvn //null
-(archB) cvn //null
-(archC) cvn //null
-(archD) cvn //null
-(archE) cvn //null
-(b0) cvn //null
-(b1) cvn //null
-(b2) cvn //null
-(b3) cvn //null
-(b4) cvn //null
-(b4tray) cvn //null
-(b5) cvn //null
-(b5tray) cvn //null
-(b6) cvn //null
-(c0) cvn //null
-(c1) cvn //null
-(c2) cvn //null
-(c3) cvn //null
-(c4) cvn //null
-(c5) cvn //null
-(c6) cvn //null
-(checkpassword) cvn //null
-(defaultpaperfamily) cvn //null
-(defaultpapertray) cvn //null
-(defaulttimeouts) cvn //null
-(defaulttrayswitch) cvn //null
-(devforall) cvn //null
-(devformat) cvn //null
-(devstatus) cvn //null
-(diskonline) cvn //null
-(diskstatus) cvn //null
-(dosysstart) cvn //null
-(eescratch) cvn //null
-(execjob) cvn //null
-(exitserver) cvn //null
-(flsa) cvn //null
-(flsatray) cvn //null
-(flse) cvn //null
-(flsetray) cvn //null
-(hagaki) cvn //null
-(halfletter) cvn //null
-(halflettertray) cvn //null
-(hardwareiomode) cvn //null
-(idlefonts) cvn //null
-(isob0) cvn //null
-(isob1) cvn //null
-(isob2) cvn //null
-(isob3) cvn //null
-(isob4) cvn //null
-(isob5) cvn //null
-(isob6) cvn //null
-(jisb0) cvn //null
-(jisb1) cvn //null
-(jisb2) cvn //null
-(jisb3) cvn //null
-(jisb4) cvn //null
-(jisb5) cvn //null
-(jisb6) cvn //null
-(jobname) cvn //null
-(ledger) cvn //null
-(ledgertray) cvn //null
-(legal) cvn //null
-(legaltray) cvn //null
-(letter) cvn //null
-(lettersmall) cvn //null
-(lettertray) cvn //null
-(manualfeed) cvn //null
-(manualfeedtimeout) cvn //null
-(margins) cvn //null
-(note) cvn //null
-(pa4) cvn //null
-(pagecount) cvn //null
-(pagemargin) cvn //null
-(pageparams) cvn //null
-(pagestackorder) cvn //null
-(pagetype) cvn //null
-(paperfamily) cvn //null
-(papertray) cvn //null
-(prefeed) cvn //null
-(printererror) cvn //null
-(printername) cvn //null
-(processcolors) cvn //null
-(product) cvn //null
-(ramsize) cvn //null
-(revision) cvn //null
-(sccbatch) cvn //null
-(sccinteractive) cvn //null
-(setallowjobreset) cvn //null
-(setdefaultpaperfamily) cvn //null
-(setdefaultpapertray) cvn //null
-(setdefaulttimeouts) cvn //null
-(setdefaulttrayswitch) cvn //null
-(setdostartpage) cvn //null
-(setdosysstart) cvn //null
-(setduplexmode) cvn //null
-(seteescratch) cvn //null
-(sethardwareiomode) cvn //null
-(setidlefonts) cvn //null
-(setjobtimeout) cvn //null
-(setmargins) cvn //null
-(setpage) cvn //null
-(setpagemargin) cvn //null
-(setpageparams) cvn //null
-(setpagetype) cvn //null
-(setpapertray) cvn //null
-(setpassword) cvn //null
-(setprintername) cvn //null
-(setrealdevice) cvn //null
-(setresolution) cvn //null
-(setsccbatch) cvn //null
-(setsccinteractive) cvn //null
-(setsoftwareiomode) cvn //null
-(settumble) cvn //null
-(softwareiomode) cvn //null
-(tabloid) cvn //null
-(trayswitch) cvn //null
-(waittimeout) cvn //null
-(--AdobeGlyphList--) cvn //null
-(--ReverseAdobeGlyphList--) cvn //null
-(--$error--) cvn //null
-(--[--) cvn //null
-(--]--) cvn //null
-(--<<--) cvn //null
-(--=--) cvn //null
-(--==--) cvn //null
-(-->>--) cvn //null
-(--abs--) cvn //null
-(--add--) cvn //null
-(--aload--) cvn //null
-(--anchorsearch--) cvn //null
-(--and--) cvn //null
-(--arc--) cvn //null
-(--arcn--) cvn //null
-(--arct--) cvn //null
-(--arcto--) cvn //null
-(--array--) cvn //null
-(--ashow--) cvn //null
-(--astore--) cvn //null
-(--atan--) cvn //null
-(--awidthshow--) cvn //null
-(--begin--) cvn //null
-(--bind--) cvn //null
-(--bitshift--) cvn //null
-(--bytesavailable--) cvn //null
-(--ceiling--) cvn //null
-(--charpath--) cvn //null
-(--clear--) cvn //null
-(--cleardictstack--) cvn //null
-(--cleartomark--) cvn //null
-(--clip--) cvn //null
-(--clippath--) cvn //null
-(--cliprestore--) cvn //null
-(--clipsave--) cvn //null
-(--closefile--) cvn //null
-(--closepath--) cvn //null
-(--colorimage--) cvn //null
-(--composefont--) cvn //null
-(--concat--) cvn //null
-(--concatmatrix--) cvn //null
-(--copy--) cvn //null
-(--copypage--) cvn //null
-(--cos--) cvn //null
-(--count--) cvn //null
-(--countdictstack--) cvn //null
-(--countexecstack--) cvn //null
-(--counttomark--) cvn //null
-(--cshow--) cvn //null
-(--currentblackgeneration--) cvn //null
-(--currentcacheparams--) cvn //null
-(--currentcmykcolor--) cvn //null
-(--currentcolor--) cvn //null
-(--currentcolorrendering--) cvn //null
-(--currentcolorscreen--) cvn //null
-(--currentcolorspace--) cvn //null
-(--currentcolortransfer--) cvn //null
-(--currentdash--) cvn //null
-(--currentdevparams--) cvn //null
-(--currentdict--) cvn //null
-(--currentfile--) cvn //null
-(--currentflat--) cvn //null
-(--currentglobal--) cvn //null
-(--currentgray--) cvn //null
-(--currentgstate--) cvn //null
-(--currenthalftone--) cvn //null
-(--currenthsbcolor--) cvn //null
-(--currentlinecap--) cvn //null
-(--currentlinejoin--) cvn //null
-(--currentlinewidth--) cvn //null
-(--currentmatrix--) cvn //null
-(--currentmiterlimit--) cvn //null
-(--currentobjectformat--) cvn //null
-(--currentoverprint--) cvn //null
-(--currentpacking--) cvn //null
-(--currentpagedevice--) cvn //null
-(--currentpoint--) cvn //null
-(--currentrgbcolor--) cvn //null
-(--currentscreen--) cvn //null
-(--currentsmoothness--) cvn //null
-(--currentstrokeadjust--) cvn //null
-(--currentsystemparams--) cvn //null
-(--currenttransfer--) cvn //null
-(--currentundercolorremoval--) cvn //null
-(--currentuserparams--) cvn //null
-(--curveto--) cvn //null
-(--cvi--) cvn //null
-(--cvlit--) cvn //null
-(--cvn--) cvn //null
-(--cvr--) cvn //null
-(--cvrs--) cvn //null
-(--cvs--) cvn //null
-(--cvx--) cvn //null
-(--def--) cvn //null
-(--defaultmatrix--) cvn //null
-(--definefont--) cvn //null
-(--defineresource--) cvn //null
-(--defineuserobject--) cvn //null
-(--deletefile--) cvn //null
-(--dict--) cvn //null
-(--dictstack--) cvn //null
-(--div--) cvn //null
-(--dtransform--) cvn //null
-(--dup--) cvn //null
-(--echo--) cvn //null
-(--end--) cvn //null
-(--eoclip--) cvn //null
-(--eofill--) cvn //null
-(--eq--) cvn //null
-(--erasepage--) cvn //null
-(--errordict--) cvn //null
-(--exch--) cvn //null
-(--exec--) cvn //null
-(--execform--) cvn //null
-(--execstack--) cvn //null
-(--execuserobject--) cvn //null
-(--executeonly--) cvn //null
-(--executive--) cvn //null
-(--exit--) cvn //null
-(--exp--) cvn //null
-(--false--) cvn //null
-(--file--) cvn //null
-(--filenameforall--) cvn //null
-(--fileposition--) cvn //null
-(--fill--) cvn //null
-(--filter--) cvn //null
-(--findcolorrendering--) cvn //null
-(--findencoding--) cvn //null
-(--findfont--) cvn //null
-(--findresource--) cvn //null
-(--flattenpath--) cvn //null
-(--floor--) cvn //null
-(--flush--) cvn //null
-(--flushfile--) cvn //null
-(--FontDirectory--) cvn //null
-(--for--) cvn //null
-(--forall--) cvn //null
-(--gcheck--) cvn //null
-(--ge--) cvn //null
-(--get--) cvn //null
-(--getinterval--) cvn //null
-(--globaldict--) cvn //null
-(--GlobalFontDirectory--) cvn //null
-(--glyphshow--) cvn //null
-(--grestore--) cvn //null
-(--grestoreall--) cvn //null
-(--gsave--) cvn //null
-(--gstate--) cvn //null
-(--gt--) cvn //null
-(--identmatrix--) cvn //null
-(--idiv--) cvn //null
-(--idtransform--) cvn //null
-(--if--) cvn //null
-(--ifelse--) cvn //null
-(--image--) cvn //null
-(--imagemask--) cvn //null
-(--index--) cvn //null
-(--ineofill--) cvn //null
-(--infill--) cvn //null
-(--initclip--) cvn //null
-(--initgraphics--) cvn //null
-(--initmatrix--) cvn //null
-(--instroke--) cvn //null
-(--inueofill--) cvn //null
-(--inufill--) cvn //null
-(--inustroke--) cvn //null
-(--invertmatrix--) cvn //null
-(--ISOLatin1Encoding--) cvn //null
-(--itransform--) cvn //null
-(--known--) cvn //null
-(--kshow--) cvn //null
-(--languagelevel--) cvn //null
-(--le--) cvn //null
-(--length--) cvn //null
-(--lineto--) cvn //null
-(--ln--) cvn //null
-(--load--) cvn //null
-(--log--) cvn //null
-(--loop--) cvn //null
-(--lt--) cvn //null
-(--makefont--) cvn //null
-(--makepattern--) cvn //null
-(--mark--) cvn //null
-(--matrix--) cvn //null
-(--maxlength--) cvn //null
-(--mod--) cvn //null
-(--moveto--) cvn //null
-(--mul--) cvn //null
-(--ne--) cvn //null
-(--neg--) cvn //null
-(--newpath--) cvn //null
-(--noaccess--) cvn //null
-(--not--) cvn //null
-(--null--) cvn //null
-(--nulldevice--) cvn //null
-(--or--) cvn //null
-(--packedarray--) cvn //null
-(--pathbbox--) cvn //null
-(--pathforall--) cvn //null
-(--pop--) cvn //null
-(--printobject--) cvn //null
-(--product--) cvn //null
-(--prompt--) cvn //null
-(--pstack--) cvn //null
-(--put--) cvn //null
-(--putinterval--) cvn //null
-(--quit--) cvn //null
-(--rand--) cvn //null
-(--rcheck--) cvn //null
-(--rcurveto--) cvn //null
-(--read--) cvn //null
-(--readhexstring--) cvn //null
-(--readline--) cvn //null
-(--readonly--) cvn //null
-(--readstring--) cvn //null
-(--realtime--) cvn //null
-(--rectclip--) cvn //null
-(--rectfill--) cvn //null
-(--rectstroke--) cvn //null
-(--renamefile--) cvn //null
-(--repeat--) cvn //null
-(--resetfile--) cvn //null
-(--resourceforall--) cvn //null
-(--resourcestatus--) cvn //null
-(--restore--) cvn //null
-(--reversepath--) cvn //null
-(--revision--) cvn //null
-(--rlineto--) cvn //null
-(--rmoveto--) cvn //null
-(--roll--) cvn //null
-(--rotate--) cvn //null
-(--round--) cvn //null
-(--rrand--) cvn //null
-(--run--) cvn //null
-(--save--) cvn //null
-(--scale--) cvn //null
-(--scalefont--) cvn //null
-(--search--) cvn //null
-(--selectfont--) cvn //null
-(--serialnumber--) cvn //null
-(--setbbox--) cvn //null
-(--setblackgeneration--) cvn //null
-(--setcachedevice--) cvn //null
-(--setcachedevice2--) cvn //null
-(--setcachelimit--) cvn //null
-(--setcacheparams--) cvn //null
-(--setcharwidth--) cvn //null
-(--setcmykcolor--) cvn //null
-(--setcolor--) cvn //null
-(--setcolorrendering--) cvn //null
-(--setcolorscreen--) cvn //null
-(--setcolorspace--) cvn //null
-(--setcolortransfer--) cvn //null
-(--setdash--) cvn //null
-(--setdevparams--) cvn //null
-(--setfileposition--) cvn //null
-(--setflat--) cvn //null
-(--setfont--) cvn //null
-(--setglobal--) cvn //null
-(--setgray--) cvn //null
-(--setgstate--) cvn //null
-(--sethalftone--) cvn //null
-(--sethsbcolor--) cvn //null
-(--setlinecap--) cvn //null
-(--setlinejoin--) cvn //null
-(--setlinewidth--) cvn //null
-(--setmatrix--) cvn //null
-(--setmiterlimit--) cvn //null
-(--setobjectformat--) cvn //null
-(--setoverprint--) cvn //null
-(--setpacking--) cvn //null
-(--setpagedevice--) cvn //null
-(--setpattern--) cvn //null
-(--setrgbcolor--) cvn //null
-(--setscreen--) cvn //null
-(--setsmoothness--) cvn //null
-(--setstrokeadjust--) cvn //null
-(--setsystemparams--) cvn //null
-(--settransfer--) cvn //null
-(--setucacheparams--) cvn //null
-(--setundercolorremoval--) cvn //null
-(--setuserparams--) cvn //null
-(--setvmthreshold--) cvn //null
-(--shfill--) cvn //null
-(--show--) cvn //null
-(--showpage--) cvn //null
-(--sin--) cvn //null
-(--sqrt--) cvn //null
-(--srand--) cvn //null
-(--stack--) cvn //null
-(--StandardEncoding--) cvn //null
-(--start--) cvn //null
-(--startjob--) cvn //null
-(--status--) cvn //null
-(--stop--) cvn //null
-(--stopped--) cvn //null
-(--store--) cvn //null
-(--string--) cvn //null
-(--stringwidth--) cvn //null
-(--stroke--) cvn //null
-(--strokepath--) cvn //null
-(--sub--) cvn //null
-(--systemdict--) cvn //null
-(--token--) cvn //null
-(--transform--) cvn //null
-(--translate--) cvn //null
-(--true--) cvn //null
-(--truncate--) cvn //null
-(--type--) cvn //null
-(--uappend--) cvn //null
-(--ucache--) cvn //null
-(--ucachestatus--) cvn //null
-(--ueofill--) cvn //null
-(--ufill--) cvn //null
-(--undef--) cvn //null
-(--undefinefont--) cvn //null
-(--undefineresource--) cvn //null
-(--undefineuserobject--) cvn //null
-(--upath--) cvn //null
-(--userdict--) cvn //null
-(--UserObjects--) cvn //null
-(--usertime--) cvn //null
-(--ustroke--) cvn //null
-(--ustrokepath--) cvn //null
-(--version--) cvn //null
-(--vmreclaim--) cvn //null
-(--vmstatus--) cvn //null
-(--wcheck--) cvn //null
-(--where--) cvn //null
-(--widthshow--) cvn //null
-(--write--) cvn //null
-(--writehexstring--) cvn //null
-(--writeobject--) cvn //null
-(--writestring--) cvn //null
-(--xcheck--) cvn //null
-(--xor--) cvn //null
-(--xshow--) cvn //null
-(--xyshow--) cvn //null
-(--yshow--) cvn //null
-(--%Type1BuildChar--) cvn //null
-(--%Type1BuildGlyph--) cvn //null
-(--.begintransparencygroup--) cvn //null
-(--.begintransparencymaskgroup--) cvn //null
-(--.bind--) cvn //null
-(--.bindnow--) cvn //null
-(--.currentoverprintmode--) cvn //null
-(--.dicttomark--) cvn //null
-(--.endtransparencygroup--) cvn //null
-(--.fileposition--) cvn //null
-(--.knownget--) cvn //null
-(--.locksafe--) cvn //null
-(--.makeoperator--) cvn //null
-(--.setblendmode--) cvn //null
-(--.setdebug--) cvn //null
-(--.setopacityalpha--) cvn //null
-(--.setoverprintmode--) cvn //null
-(--.setsafe--) cvn //null
-(--.setshapealpha--) cvn //null
-(--.settextknockout--) cvn //null
-(--.tempfile--) cvn //null
-(--arccos--) cvn //null
-(--arcsin--) cvn //null
-(--copydevice--) cvn //null
-(--copyscanlines--) cvn //null
-(--currentdevice--) cvn //null
-(--finddevice--) cvn //null
-(--findlibfile--) cvn //null
-(--findprotodevice--) cvn //null
-(--getdeviceprops--) cvn //null
-(--getenv--) cvn //null
-(--makeimagedevice--) cvn //null
-(--max--) cvn //null
-(--min--) cvn //null
-(--.genordered--) cvn //null
-(--.setpdfwrite--) cvn //null
-(--putdeviceprops--) cvn //null
-(--setdevice--) cvn //null
-(--.password--) cvn //null
-(--.timeouts--) cvn //null
-(--11x17--) cvn //null
-(--11x17tray--) cvn //null
-(--a0--) cvn //null
-(--a1--) cvn //null
-(--a10--) cvn //null
-(--a2--) cvn //null
-(--a3--) cvn //null
-(--a3tray--) cvn //null
-(--a4--) cvn //null
-(--a4small--) cvn //null
-(--a4tray--) cvn //null
-(--a5--) cvn //null
-(--a5tray--) cvn //null
-(--a6--) cvn //null
-(--a6tray--) cvn //null
-(--a7--) cvn //null
-(--a8--) cvn //null
-(--a9--) cvn //null
-(--allowjobreset--) cvn //null
-(--ANSI_A--) cvn //null
-(--ANSI_B--) cvn //null
-(--ANSI_C--) cvn //null
-(--ANSI_D--) cvn //null
-(--ANSI_E--) cvn //null
-(--ANSI_F--) cvn //null
-(--appletalktype--) cvn //null
-(--archA--) cvn //null
-(--archB--) cvn //null
-(--archC--) cvn //null
-(--archD--) cvn //null
-(--archE--) cvn //null
-(--b0--) cvn //null
-(--b1--) cvn //null
-(--b2--) cvn //null
-(--b3--) cvn //null
-(--b4--) cvn //null
-(--b4tray--) cvn //null
-(--b5--) cvn //null
-(--b5tray--) cvn //null
-(--b6--) cvn //null
-(--c0--) cvn //null
-(--c1--) cvn //null
-(--c2--) cvn //null
-(--c3--) cvn //null
-(--c4--) cvn //null
-(--c5--) cvn //null
-(--c6--) cvn //null
-(--checkpassword--) cvn //null
-(--defaultpaperfamily--) cvn //null
-(--defaultpapertray--) cvn //null
-(--defaulttimeouts--) cvn //null
-(--defaulttrayswitch--) cvn //null
-(--devforall--) cvn //null
-(--devformat--) cvn //null
-(--devstatus--) cvn //null
-(--diskonline--) cvn //null
-(--diskstatus--) cvn //null
-(--dosysstart--) cvn //null
-(--eescratch--) cvn //null
-(--execjob--) cvn //null
-(--exitserver--) cvn //null
-(--flsa--) cvn //null
-(--flsatray--) cvn //null
-(--flse--) cvn //null
-(--flsetray--) cvn //null
-(--hagaki--) cvn //null
-(--halfletter--) cvn //null
-(--halflettertray--) cvn //null
-(--hardwareiomode--) cvn //null
-(--idlefonts--) cvn //null
-(--isob0--) cvn //null
-(--isob1--) cvn //null
-(--isob2--) cvn //null
-(--isob3--) cvn //null
-(--isob4--) cvn //null
-(--isob5--) cvn //null
-(--isob6--) cvn //null
-(--jisb0--) cvn //null
-(--jisb1--) cvn //null
-(--jisb2--) cvn //null
-(--jisb3--) cvn //null
-(--jisb4--) cvn //null
-(--jisb5--) cvn //null
-(--jisb6--) cvn //null
-(--jobname--) cvn //null
-(--ledger--) cvn //null
-(--ledgertray--) cvn //null
-(--legal--) cvn //null
-(--legaltray--) cvn //null
-(--letter--) cvn //null
-(--lettersmall--) cvn //null
-(--lettertray--) cvn //null
-(--manualfeed--) cvn //null
-(--manualfeedtimeout--) cvn //null
-(--margins--) cvn //null
-(--note--) cvn //null
-(--pa4--) cvn //null
-(--pagecount--) cvn //null
-(--pagemargin--) cvn //null
-(--pageparams--) cvn //null
-(--pagestackorder--) cvn //null
-(--pagetype--) cvn //null
-(--paperfamily--) cvn //null
-(--papertray--) cvn //null
-(--prefeed--) cvn //null
-(--printererror--) cvn //null
-(--printername--) cvn //null
-(--processcolors--) cvn //null
-(--product--) cvn //null
-(--ramsize--) cvn //null
-(--revision--) cvn //null
-(--sccbatch--) cvn //null
-(--sccinteractive--) cvn //null
-(--setallowjobreset--) cvn //null
-(--setdefaultpaperfamily--) cvn //null
-(--setdefaultpapertray--) cvn //null
-(--setdefaulttimeouts--) cvn //null
-(--setdefaulttrayswitch--) cvn //null
-(--setdostartpage--) cvn //null
-(--setdosysstart--) cvn //null
-(--setduplexmode--) cvn //null
-(--seteescratch--) cvn //null
-(--sethardwareiomode--) cvn //null
-(--setidlefonts--) cvn //null
-(--setjobtimeout--) cvn //null
-(--setmargins--) cvn //null
-(--setpage--) cvn //null
-(--setpagemargin--) cvn //null
-(--setpageparams--) cvn //null
-(--setpagetype--) cvn //null
-(--setpapertray--) cvn //null
-(--setpassword--) cvn //null
-(--setprintername--) cvn //null
-(--setrealdevice--) cvn //null
-(--setresolution--) cvn //null
-(--setsccbatch--) cvn //null
-(--setsccinteractive--) cvn //null
-(--setsoftwareiomode--) cvn //null
-(--settumble--) cvn //null
-(--softwareiomode--) cvn //null
-(--tabloid--) cvn //null
-(--trayswitch--) cvn //null
-(--waittimeout--) cvn //null
+/STANDARD_OP_LIST
+[
+(AdobeGlyphList)
+(ReverseAdobeGlyphList)
+($error)
+([)
+(])
+(<<)
+(=)
+(==)
+(>>)
+(abs)
+(add)
+(aload)
+(anchorsearch)
+(and)
+(arc)
+(arcn)
+(arct)
+(arcto)
+(array)
+(ashow)
+(astore)
+(atan)
+(awidthshow)
+(begin)
+(bind)
+(bitshift)
+(bytesavailable)
+(ceiling)
+(charpath)
+(clear)
+(cleardictstack)
+(cleartomark)
+(clip)
+(clippath)
+(cliprestore)
+(clipsave)
+(closefile)
+(closepath)
+(colorimage)
+(composefont)
+(concat)
+(concatmatrix)
+(copy)
+(copypage)
+(cos)
+(count)
+(countdictstack)
+(countexecstack)
+(counttomark)
+(cshow)
+(currentblackgeneration)
+(currentcacheparams)
+(currentcmykcolor)
+(currentcolor)
+(currentcolorrendering)
+(currentcolorscreen)
+(currentcolorspace)
+(currentcolortransfer)
+(currentdash)
+(currentdevparams)
+(currentdict)
+(currentfile)
+(currentflat)
+(currentglobal)
+(currentgray)
+(currentgstate)
+(currenthalftone)
+(currenthsbcolor)
+(currentlinecap)
+(currentlinejoin)
+(currentlinewidth)
+(currentmatrix)
+(currentmiterlimit)
+(currentobjectformat)
+(currentoverprint)
+(currentpacking)
+(currentpagedevice)
+(currentpoint)
+(currentrgbcolor)
+(currentscreen)
+(currentsmoothness)
+(currentstrokeadjust)
+(currentsystemparams)
+(currenttransfer)
+(currentundercolorremoval)
+(currentuserparams)
+(curveto)
+(cvi)
+(cvlit)
+(cvn)
+(cvr)
+(cvrs)
+(cvs)
+(cvx)
+(def)
+(defaultmatrix)
+(definefont)
+(defineresource)
+(defineuserobject)
+(deletefile)
+(dict)
+(dictstack)
+(div)
+(dtransform)
+(dup)
+(echo)
+(end)
+(eoclip)
+(eofill)
+(eq)
+(erasepage)
+(errordict)
+(exch)
+(exec)
+(execform)
+(execstack)
+(execuserobject)
+(executeonly)
+(executive)
+(exit)
+(exp)
+(false)
+(file)
+(filenameforall)
+(fileposition)
+(fill)
+(filter)
+(findcolorrendering)
+(findencoding)
+(findfont)
+(findresource)
+(flattenpath)
+(floor)
+(flush)
+(flushfile)
+(FontDirectory)
+(for)
+(forall)
+(gcheck)
+(ge)
+(get)
+(getinterval)
+(globaldict)
+(GlobalFontDirectory)
+(glyphshow)
+(grestore)
+(grestoreall)
+(gsave)
+(gstate)
+(gt)
+(identmatrix)
+(idiv)
+(idtransform)
+(if)
+(ifelse)
+(image)
+(imagemask)
+(index)
+(ineofill)
+(infill)
+(initclip)
+(initgraphics)
+(initmatrix)
+(instroke)
+(inueofill)
+(inufill)
+(inustroke)
+(invertmatrix)
+(ISOLatin1Encoding)
+(itransform)
+(known)
+(kshow)
+(languagelevel)
+(le)
+(length)
+(lineto)
+(ln)
+(load)
+(log)
+(loop)
+(lt)
+(makefont)
+(makepattern)
+(mark)
+(matrix)
+(maxlength)
+(mod)
+(moveto)
+(mul)
+(ne)
+(neg)
+(newpath)
+(noaccess)
+(not)
+(null)
+(nulldevice)
+(or)
+(packedarray)
+(pathbbox)
+(pathforall)
+(pop)
+(printobject)
+(product)
+(prompt)
+(pstack)
+(put)
+(putinterval)
+(quit)
+(rand)
+(rcheck)
+(rcurveto)
+(read)
+(readhexstring)
+(readline)
+(readonly)
+(readstring)
+(realtime)
+(rectclip)
+(rectfill)
+(rectstroke)
+(renamefile)
+(repeat)
+(resetfile)
+(resourceforall)
+(resourcestatus)
+(restore)
+(reversepath)
+(revision)
+(rlineto)
+(rmoveto)
+(roll)
+(rotate)
+(round)
+(rrand)
+(run)
+(save)
+(scale)
+(scalefont)
+(search)
+(selectfont)
+(serialnumber)
+(setbbox)
+(setblackgeneration)
+(setcachedevice)
+(setcachedevice2)
+(setcachelimit)
+(setcacheparams)
+(setcharwidth)
+(setcmykcolor)
+(setcolor)
+(setcolorrendering)
+(setcolorscreen)
+(setcolorspace)
+(setcolortransfer)
+(setdash)
+(setdevparams)
+(setfileposition)
+(setflat)
+(setfont)
+(setglobal)
+(setgray)
+(setgstate)
+(sethalftone)
+(sethsbcolor)
+(setlinecap)
+(setlinejoin)
+(setlinewidth)
+(setmatrix)
+(setmiterlimit)
+(setobjectformat)
+(setoverprint)
+(setpacking)
+(setpagedevice)
+(setpattern)
+(setrgbcolor)
+(setscreen)
+(setsmoothness)
+(setstrokeadjust)
+(setsystemparams)
+(settransfer)
+(setucacheparams)
+(setundercolorremoval)
+(setuserparams)
+(setvmthreshold)
+(shfill)
+(show)
+(showpage)
+(sin)
+(sqrt)
+(srand)
+(stack)
+(StandardEncoding)
+(start)
+(startjob)
+(status)
+(stop)
+(stopped)
+(store)
+(string)
+(stringwidth)
+(stroke)
+(strokepath)
+(sub)
+(systemdict)
+(token)
+(transform)
+(translate)
+(true)
+(truncate)
+(type)
+(uappend)
+(ucache)
+(ucachestatus)
+(ueofill)
+(ufill)
+(undef)
+(undefinefont)
+(undefineresource)
+(undefineuserobject)
+(upath)
+(userdict)
+(UserObjects)
+(usertime)
+(ustroke)
+(ustrokepath)
+(version)
+(vmreclaim)
+(vmstatus)
+(wcheck)
+(where)
+(widthshow)
+(write)
+(writehexstring)
+(writeobject)
+(writestring)
+(xcheck)
+(xor)
+(xshow)
+(xyshow)
+(yshow)
+(%Type1BuildChar)
+(%Type1BuildGlyph)
+(.begintransparencygroup)
+(.begintransparencymaskgroup)
+(.bind)
+(.bindnow)
+(.currentoverprintmode)
+(.dicttomark)
+(.endtransparencygroup)
+(.fileposition)
+(.knownget)
+(.locksafe)
+(.makeoperator)
+(.setblendmode)
+(.setdebug)
+(.setopacityalpha)
+(.setoverprintmode)
+(.setsafe)
+(.setshapealpha)
+(.settextknockout)
+(.tempfile)
+(arccos)
+(arcsin)
+(copydevice)
+(copyscanlines)
+(currentdevice)
+(finddevice)
+(findlibfile)
+(findprotodevice)
+(getdeviceprops)
+(getenv)
+(makeimagedevice)
+(max)
+(min)
+(.genordered)
+(.setpdfwrite)
+(putdeviceprops)
+(setdevice)
+(.password)
+(.timeouts)
+(11x17)
+(11x17tray)
+(a0)
+(a1)
+(a10)
+(a2)
+(a3)
+(a3tray)
+(a4)
+(a4small)
+(a4tray)
+(a5)
+(a5tray)
+(a6)
+(a6tray)
+(a7)
+(a8)
+(a9)
+(allowjobreset)
+(ANSI_A)
+(ANSI_B)
+(ANSI_C)
+(ANSI_D)
+(ANSI_E)
+(ANSI_F)
+(appletalktype)
+(archA)
+(archB)
+(archC)
+(archD)
+(archE)
+(b0)
+(b1)
+(b2)
+(b3)
+(b4)
+(b4tray)
+(b5)
+(b5tray)
+(b6)
+(c0)
+(c1)
+(c2)
+(c3)
+(c4)
+(c5)
+(c6)
+(checkpassword)
+(defaultpaperfamily)
+(defaultpapertray)
+(defaulttimeouts)
+(defaulttrayswitch)
+(devforall)
+(devformat)
+(devstatus)
+(diskonline)
+(diskstatus)
+(dosysstart)
+(eescratch)
+(execjob)
+(exitserver)
+(flsa)
+(flsatray)
+(flse)
+(flsetray)
+(hagaki)
+(halfletter)
+(halflettertray)
+(hardwareiomode)
+(idlefonts)
+(isob0)
+(isob1)
+(isob2)
+(isob3)
+(isob4)
+(isob5)
+(isob6)
+(jisb0)
+(jisb1)
+(jisb2)
+(jisb3)
+(jisb4)
+(jisb5)
+(jisb6)
+(jobname)
+(ledger)
+(ledgertray)
+(legal)
+(legaltray)
+(letter)
+(lettersmall)
+(lettertray)
+(manualfeed)
+(manualfeedtimeout)
+(margins)
+(note)
+(pa4)
+(pagecount)
+(pagemargin)
+(pageparams)
+(pagestackorder)
+(pagetype)
+(paperfamily)
+(papertray)
+(prefeed)
+(printererror)
+(printername)
+(processcolors)
+(product)
+(ramsize)
+(revision)
+(sccbatch)
+(sccinteractive)
+(setallowjobreset)
+(setdefaultpaperfamily)
+(setdefaultpapertray)
+(setdefaulttimeouts)
+(setdefaulttrayswitch)
+(setdostartpage)
+(setdosysstart)
+(setduplexmode)
+(seteescratch)
+(sethardwareiomode)
+(setidlefonts)
+(setjobtimeout)
+(setmargins)
+(setpage)
+(setpagemargin)
+(setpageparams)
+(setpagetype)
+(setpapertray)
+(setpassword)
+(setprintername)
+(setrealdevice)
+(setresolution)
+(setsccbatch)
+(setsccinteractive)
+(setsoftwareiomode)
+(settumble)
+(softwareiomode)
+(tabloid)
+(trayswitch)
+(waittimeout)
 
 %% Manually added
 %% These are official from some tech note or something
-(customcolorimage) cvn //null
-(findcmykcustomcolor) cvn //null
-(findrgbcustomcolor) cvn //null
-(separationimage) cvn //null
-(setcmykoverprint) cvn //null
-(setcustomcolor) cvn //null
-(setseparationgray) cvn //null
-(--customcolorimage--) cvn //null
-(--findcmykcustomcolor--) cvn //null
-(--findrgbcustomcolor--) cvn //null
-(--separationimage--) cvn //null
-(--setcmykoverprint--) cvn //null
-(--setcustomcolor--) cvn //null
-(--setseparationgray--) cvn //null
+(customcolorimage)
+(findcmykcustomcolor)
+(findrgbcustomcolor)
+(separationimage)
+(setcmykoverprint)
+(setcustomcolor)
+(setseparationgray)
 
-%% These are ghostscript extensions that we are keeping
-%% (These are not operators)
-(.shellarguments) cvn //null
-(===) cvn //null
-(===only) cvn //null
-(==only) cvn //null
-(=only) cvn //null
-(write=) cvn //null
-(write==) cvn //null
-(write===) cvn //null
-(write===only) cvn //null
-(write==only) cvn //null
-(write=only) cvn //null
+] def
 
->> def
+% For any standard things that aren't operators
+/STANDARD_FUNC_LIST [
+] def
+
+/EXTENSIONS_FUNC_LIST [
+(.shellarguments)
+(===)
+(===only)
+(==only)
+(=only)
+(write=)
+(write==)
+(write===)
+(write===only)
+(write==only)
+(write=only)
+] def
+
+/EXTENSIONS_OPER_LIST [
+] def
+
+% make a dictionary out of the lists of operators
+% size is arbitrary, it will auto-expand
+/whitelist 2000 dict def
+/operlist_to_whitelist {
+    dup
+    {whitelist exch cvn //false put} forall
+    {(--) exch concatenate (--) concatenate cvn whitelist exch //false put} forall
+} bind def
+/funclist_to_whitelist {
+    {whitelist exch cvn //false put} forall
+} bind def
+
+STANDARD_OP_LIST operlist_to_whitelist
+STANDARD_FUNC_LIST funclist_to_whitelist
+EXTENSIONS_FUNC_LIST funclist_to_whitelist
+EXTENSIONS_OPER_LIST operlist_to_whitelist
 
 /systemdict systemdict check_dictionary
 
