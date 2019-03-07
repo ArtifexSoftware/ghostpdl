@@ -812,13 +812,6 @@ operator_list {
 
 (######################################################################################) =
 (\nwhitelist entries not seen in scan:\n) =
-whitelist {
-  exch type /nulltype eq {
-    =
-  } {
-    pop
-  }
-  ifelse
-} forall
+whitelist { { pop } { = } ifelse } forall
 
 quit
