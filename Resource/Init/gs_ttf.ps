@@ -1719,13 +1719,13 @@ currentdict /.pickcmap_with_no_xlatmap .undef
         exch pop                                                   % <<pbe>>
         TTFDEBUG { dup (<<\n) print { exch (    ) print =only (\t) print //== exec } forall (>>\n) print flush } if
         exch AdobeGlyphList
-        .pdfmapchars
+        //.pdfmapchars exec
         /Encoding prebuilt_encoding
       } {
         % Likely this branch is now obsolete.
         TTFDEBUG { (Using cmap 3.1 for non-symbolic.) = } if
         0 dict exch
-        AdobeGlyphList .pdfmapchars
+        AdobeGlyphList //.pdfmapchars exec
         /Encoding /WinAnsiEncoding .findencoding
           % WinAnsiEncoding is just a stub here.
           % It will be replaced with one from font resource,
@@ -1735,7 +1735,7 @@ currentdict /.pickcmap_with_no_xlatmap .undef
       <00010000> //.findcmap exec {
         TTFDEBUG { (Using cmap 1.0 for non-symbolic.) = } if
         prebuilt_encoding //null ne {
-          prebuilt_encoding .invert_encoding exch .romanmacdict .pdfmapchars
+          prebuilt_encoding .invert_encoding exch .romanmacdict //.pdfmapchars exec
           prebuilt_encoding
         } {
           0 dict exch
@@ -2008,4 +2008,5 @@ currentdict /.pickcmap_with_no_xlatmap .undef
  /.findcmap
  /.pdfmapsymbolic
  /.pdfcharkeys
+ /.pdfmapchars
 ] {systemdict exch .forceundef} forall
