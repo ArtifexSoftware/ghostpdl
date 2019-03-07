@@ -93,8 +93,9 @@ zshow(i_ctx_t *i_ctx_p)
 static int
 zashow(i_ctx_t *i_ctx_p)
 {
+    es_ptr ep = esp;        /* Save in case of error */
     os_ptr op = osp;
-    gs_text_enum_t *penum;
+    gs_text_enum_t *penum = NULL;
     double axy[2];
     int code = num_params(op - 1, 2, axy);
 
@@ -104,17 +105,34 @@ zashow(i_ctx_t *i_ctx_p)
         return code;
     *(op_proc_t *)&penum->enum_client_data = zashow;
     if ((code = op_show_finish_setup(i_ctx_p, penum, 3, finish_show)) < 0) {
-        ifree_object(penum, "op_show_enum_setup");
+        /* We must restore the exec stack pointer back to the point where we entered, in case
+         * we 'retry' the operation (eg having increased the operand stack).
+         * We must also free the enumerator if we created one.
+         * Bug #700618.
+         */
+        esp = ep;
+        ifree_object(penum, "zashow");
         return code;
     }
-    return op_show_continue_pop(i_ctx_p, 3);
+    code = op_show_continue_pop(i_ctx_p, 3);
+    if (code < 0) {
+        /* We must restore the exec stack pointer back to the point where we entered, in case
+         * we 'retry' the operation (eg having increased the operand stack).
+         * We must also free the enumerator if we created one.
+         * Bug #700618.
+         */
+        esp = ep;
+        ifree_object(penum, "zashow");
+    }
+    return code;
 }
 
 static int
 widthshow_aux(i_ctx_t *i_ctx_p, bool single_byte_space)
 {
+    es_ptr ep = esp;        /* Save in case of error */
     os_ptr op = osp;
-    gs_text_enum_t *penum;
+    gs_text_enum_t *penum = NULL;
     double cxy[2];
     int code;
 
@@ -133,18 +151,42 @@ widthshow_aux(i_ctx_t *i_ctx_p, bool single_byte_space)
     if ((code = gs_widthshow_begin(igs, cxy[0], cxy[1],
                                    (gs_char) op[-1].value.intval,
                                    op->value.bytes, r_size(op),
-                                   imemory_local, &penum)) < 0)
+                                   imemory_local, &penum)) < 0) {
+        /* We must restore the exec stack pointer back to the point where we entered, in case
+         * we 'retry' the operation (eg having increased the operand stack).
+         * We must also free the enumerator if we created one.
+         * Bug #700618.
+         */
+        ifree_object(penum, "widthshow_aux");
+        esp = ep;
         return code;
+    }
     *(op_proc_t *)&penum->enum_client_data = zwidthshow;
 
     penum->single_byte_space = single_byte_space;
 
     if ((code = op_show_finish_setup(i_ctx_p, penum, 4, finish_show)) < 0) {
-        ifree_object(penum, "op_show_enum_setup");
+        /* We must restore the exec stack pointer back to the point where we entered, in case
+         * we 'retry' the operation (eg having increased the operand stack).
+         * We must also free the enumerator if we created one.
+         * Bug #700618.
+         */
+        esp = ep;
+        ifree_object(penum, "widthshow_aux");
         return code;
     }
 
-    return op_show_continue_pop(i_ctx_p, 4);
+    code = op_show_continue_pop(i_ctx_p, 4);
+    if (code < 0) {
+        /* We must restore the exec stack pointer back to the point where we entered, in case
+         * we 'retry' the operation (eg having increased the operand stack).
+         * We must also free the enumerator if we created one.
+         * Bug #700618.
+         */
+        esp = ep;
+        ifree_object(penum, "widthshow_aux");
+    }
+    return code;
 }
 
 /* <cx> <cy> <char> <string> widthshow - */
@@ -176,8 +218,9 @@ zpdfwidthshow(i_ctx_t *i_ctx_p)
 static int
 awidthshow_aux(i_ctx_t *i_ctx_p, bool single_byte_space)
 {
+    es_ptr ep = esp;        /* Save in case of error */
     os_ptr op = osp;
-    gs_text_enum_t *penum;
+    gs_text_enum_t *penum = NULL;
     double cxy[2], axy[2];
     int code;
 
@@ -206,11 +249,27 @@ awidthshow_aux(i_ctx_t *i_ctx_p, bool single_byte_space)
     penum->single_byte_space = single_byte_space;
 
     if ((code = op_show_finish_setup(i_ctx_p, penum, 6, finish_show)) < 0) {
-        ifree_object(penum, "op_show_enum_setup");
+        /* We must restore the exec stack pointer back to the point where we entered, in case
+         * we 'retry' the operation (eg having increased the operand stack).
+         * We must also free the enumerator if we created one.
+         * Bug #700618.
+         */
+        esp = ep;
+        ifree_object(penum, "awidthshow_aux");
         return code;
     }
 
-    return op_show_continue_pop(i_ctx_p, 6);
+    code = op_show_continue_pop(i_ctx_p, 6);
+    if (code < 0) {
+        /* We must restore the exec stack pointer back to the point where we entered, in case
+         * we 'retry' the operation (eg having increased the operand stack).
+         * We must also free the enumerator if we created one.
+         * Bug #700618.
+         */
+        esp = ep;
+        ifree_object(penum, "awidthshow_aux");
+    }
+    return code;
 }
 
 /* <cx> <cy> <char> <ax> <ay> <string> awidthshow - */
@@ -231,8 +290,9 @@ zpdfawidthshow(i_ctx_t *i_ctx_p)
 static int
 zkshow(i_ctx_t *i_ctx_p)
 {
+    es_ptr ep = esp;        /* Save in case of error */
     os_ptr op = osp;
-    gs_text_enum_t *penum;
+    gs_text_enum_t *penum = NULL;
     int code;
 
     check_read_type(*op, t_string);
@@ -250,11 +310,27 @@ zkshow(i_ctx_t *i_ctx_p)
         return code;
     *(op_proc_t *)&penum->enum_client_data = zkshow;
     if ((code = op_show_finish_setup(i_ctx_p, penum, 2, finish_show)) < 0) {
-        ifree_object(penum, "op_show_enum_setup");
+        /* We must restore the exec stack pointer back to the point where we entered, in case
+         * we 'retry' the operation (eg having increased the operand stack).
+         * We must also free the enumerator if we created one.
+         * Bug #700618.
+         */
+        esp = ep;
+        ifree_object(penum, "zkshow");
         return code;
     }
     sslot = op[-1];		/* save kerning proc */
-    return op_show_continue_pop(i_ctx_p, 2);
+    code = op_show_continue_pop(i_ctx_p, 2);
+    if (code < 0) {
+        /* We must restore the exec stack pointer back to the point where we entered, in case
+         * we 'retry' the operation (eg having increased the operand stack).
+         * We must also free the enumerator if we created one.
+         * Bug #700618.
+         */
+        esp = ep;
+        ifree_object(penum, "zkshow");
+    }
+    return code;
 }
 
 /* Common finish procedure for all show operations. */
@@ -284,8 +360,9 @@ finish_stringwidth(i_ctx_t *i_ctx_p)
 static int
 zstringwidth(i_ctx_t *i_ctx_p)
 {
+    es_ptr ep = esp;        /* Save in case of error */
     os_ptr op = osp;
-    gs_text_enum_t *penum;
+    gs_text_enum_t *penum = NULL;
     int code = op_show_setup(i_ctx_p, op);
 
     if (code != 0 ||
@@ -294,10 +371,26 @@ zstringwidth(i_ctx_t *i_ctx_p)
         return code;
     *(op_proc_t *)&penum->enum_client_data = zstringwidth;
     if ((code = op_show_finish_setup(i_ctx_p, penum, 1, finish_stringwidth)) < 0) {
-        ifree_object(penum, "op_show_enum_setup");
+        /* We must restore the exec stack pointer back to the point where we entered, in case
+         * we 'retry' the operation (eg having increased the operand stack).
+         * We must also free the enumerator if we created one.
+         * Bug #700618.
+         */
+        esp = ep;
+        ifree_object(penum, "zstringwidth");
         return code;
     }
-    return op_show_continue_pop(i_ctx_p, 1);
+    code = op_show_continue_pop(i_ctx_p, 1);
+    if (code < 0) {
+        /* We must restore the exec stack pointer back to the point where we entered, in case
+         * we 'retry' the operation (eg having increased the operand stack).
+         * We must also free the enumerator if we created one.
+         * Bug #700618.
+         */
+        esp = ep;
+        ifree_object(penum, "zstringwidth");
+    }
+    return code;
 }
 /* Common code for charpath and .charboxpath. */
 static int
@@ -305,8 +398,9 @@ zchar_path(i_ctx_t *i_ctx_p, op_proc_t proc,
            int (*begin)(gs_gstate *, const byte *, uint,
                         bool, gs_memory_t *, gs_text_enum_t **))
 {
+    es_ptr ep = esp;        /* Save in case of error */
     os_ptr op = osp;
-    gs_text_enum_t *penum;
+    gs_text_enum_t *penum = NULL;
     int code;
 
     check_type(*op, t_boolean);
@@ -317,10 +411,26 @@ zchar_path(i_ctx_t *i_ctx_p, op_proc_t proc,
         return code;
     *(op_proc_t *)&penum->enum_client_data = proc;
     if ((code = op_show_finish_setup(i_ctx_p, penum, 2, finish_show)) < 0) {
-        ifree_object(penum, "op_show_enum_setup");
+        /* We must restore the exec stack pointer back to the point where we entered, in case
+         * we 'retry' the operation (eg having increased the operand stack).
+         * We must also free the enumerator if we created one.
+         * Bug #700618.
+         */
+        esp = ep;
+        ifree_object(penum, "zchar_path");
         return code;
     }
-    return op_show_continue_pop(i_ctx_p, 2);
+    code = op_show_continue_pop(i_ctx_p, 2);
+    if (code < 0) {
+        /* We must restore the exec stack pointer back to the point where we entered, in case
+         * we 'retry' the operation (eg having increased the operand stack).
+         * We must also free the enumerator if we created one.
+         * Bug #700618.
+         */
+        esp = ep;
+        ifree_object(penum, "zchar_path");
+    }
+    return code;
 }
 /* <string> <outline_bool> charpath - */
 static int
