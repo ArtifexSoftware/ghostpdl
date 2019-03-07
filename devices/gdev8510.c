@@ -35,13 +35,13 @@ const gx_device_printer far_data gs_m8510_device =
 /* ------ forward declarations ------ */
 
 static void m8510_output_run(gx_device_printer *pdev,
-        byte *out, int pass, FILE *prn_stream);
+        byte *out, int pass, gp_file *prn_stream);
 
 /* ------ internal routines ------ */
 
 /* Send the page to the printer. */
 static int
-m8510_print_page(gx_device_printer *pdev, FILE *prn_stream)
+m8510_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {
         int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
         byte *in1 = (byte *) gs_malloc(pdev->memory, 8, line_size, "m8510_print_page(in1)");
@@ -62,7 +62,7 @@ m8510_print_page(gx_device_printer *pdev, FILE *prn_stream)
          * NLQ mode, proportional print (160x144 dpi).
          * and 16/144" linefeeds.
          */
-        fwrite("\033m2\033P\033T16", 1, 9, prn_stream);
+        gp_fwrite("\033m2\033P\033T16", 1, 9, prn_stream);
 
         /* Transfer pixels to printer */
         while ( lnum < pdev->height ) {
@@ -92,8 +92,8 @@ m8510_print_page(gx_device_printer *pdev, FILE *prn_stream)
         }
 
         /* reset the printer. */
-        fwrite("\033c1", 1, 3, prn_stream);
-        fflush(prn_stream);
+        gp_fwrite("\033c1", 1, 3, prn_stream);
+        gp_fflush(prn_stream);
 
 out:;
         if (out) gs_free(pdev->memory, (char *) out, 8, line_size, "m8510_print_page(out)");
@@ -105,7 +105,7 @@ out:;
 
 static void
 m8510_output_run(gx_device_printer *pdev,
-        byte *out, int pass, FILE *prn_stream)
+        byte *out, int pass, gp_file *prn_stream)
 {
         byte *out_end = out + pdev->width;
         char tmp[10];
@@ -130,10 +130,10 @@ m8510_output_run(gx_device_printer *pdev,
         count = out_end - out;
         if (count) {
                 gs_sprintf(tmp, "\033g%03d", count/8);
-                fwrite(tmp, 1, 5, prn_stream);
-                fwrite(out, 1, count, prn_stream);
-                fwrite("\r", 1, 1, prn_stream);
+                gp_fwrite(tmp, 1, 5, prn_stream);
+                gp_fwrite(out, 1, count, prn_stream);
+                gp_fwrite("\r", 1, 1, prn_stream);
         }
 
-        if (pass) fwrite("\n", 1, 1, prn_stream);
+        if (pass) gp_fwrite("\n", 1, 1, prn_stream);
 }

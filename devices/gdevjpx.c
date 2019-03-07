@@ -139,7 +139,7 @@ jpx_cmyk_map_cmyk_color(gx_device * dev, const gx_color_value cv[])
 
 /* Send the page to the file. */
 static int
-jpx_print_page(gx_device_printer * pdev, FILE * prn_stream)
+jpx_print_page(gx_device_printer * pdev, gp_file * prn_stream)
 {
     gx_device_jpx *jdev = (gx_device_jpx *) pdev;
     gs_memory_t *mem = jdev->memory;

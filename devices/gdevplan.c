@@ -68,12 +68,12 @@ static dev_proc_close_device(plan_close);
 /* And of course we need our own print-page routines. */
 static dev_proc_print_page(plan_print_page);
 
-static int plan_print_page(gx_device_printer * pdev, FILE * pstream);
-static int planm_print_page(gx_device_printer * pdev, FILE * pstream);
-static int plang_print_page(gx_device_printer * pdev, FILE * pstream);
-static int planc_print_page(gx_device_printer * pdev, FILE * pstream);
-static int plank_print_page(gx_device_printer * pdev, FILE * pstream);
-static int planr_print_page(gx_device_printer * pdev, FILE * pstream);
+static int plan_print_page(gx_device_printer * pdev, gp_file * pstream);
+static int planm_print_page(gx_device_printer * pdev, gp_file * pstream);
+static int plang_print_page(gx_device_printer * pdev, gp_file * pstream);
+static int planc_print_page(gx_device_printer * pdev, gp_file * pstream);
+static int plank_print_page(gx_device_printer * pdev, gp_file * pstream);
+static int planr_print_page(gx_device_printer * pdev, gp_file * pstream);
 
 /* The device procedures */
 
@@ -187,7 +187,7 @@ const gx_device_printer gs_planr_device =
 /* ------ Initialization ------ */
 
 #ifdef DEBUG_DUMP
-static void dump_row_ppm(int w, byte **data, FILE *dump_file)
+static void dump_row_ppm(int w, byte **data, gp_file *dump_file)
 {
     byte *r = data[0];
     byte *g = data[1];
@@ -196,13 +196,13 @@ static void dump_row_ppm(int w, byte **data, FILE *dump_file)
     if (dump_file == NULL)
         return;
     while (w--) {
-        fputc(*r++, dump_file);
-        fputc(*g++, dump_file);
-        fputc(*b++, dump_file);
+        gp_fputc(*r++, dump_file);
+        gp_fputc(*g++, dump_file);
+        gp_fputc(*b++, dump_file);
     }
 }
 
-static void dump_row_pnmk(int w, byte **data, FILE *dump_file)
+static void dump_row_pnmk(int w, byte **data, gp_file *dump_file)
 {
     byte *r = data[0];
     byte *g = data[1];
@@ -218,17 +218,17 @@ static void dump_row_pnmk(int w, byte **data, FILE *dump_file)
         byte K = *k++;
         int s;
         for (s=7; s>=0; s--) {
-            fputc(255*((C>>s)&1), dump_file);
-            fputc(255*((M>>s)&1), dump_file);
-            fputc(255*((Y>>s)&1), dump_file);
-            fputc(255*((K>>s)&1), dump_file);
+            gp_fputc(255*((C>>s)&1), dump_file);
+            gp_fputc(255*((M>>s)&1), dump_file);
+            gp_fputc(255*((Y>>s)&1), dump_file);
+            gp_fputc(255*((K>>s)&1), dump_file);
             w--;
             if (w == 0) break;
         }
     }
 }
 
-static void dump_row_pnmc(int w, byte **data, FILE *dump_file)
+static void dump_row_pnmc(int w, byte **data, gp_file *dump_file)
 {
     byte *r = data[0];
     byte *g = data[1];
@@ -238,14 +238,14 @@ static void dump_row_pnmc(int w, byte **data, FILE *dump_file)
     if (dump_file == NULL)
         return;
     while (w--) {
-        fputc(*r++, dump_file);
-        fputc(*g++, dump_file);
-        fputc(*b++, dump_file);
-        fputc(*k++, dump_file);
+        gp_fputc(*r++, dump_file);
+        gp_fputc(*g++, dump_file);
+        gp_fputc(*b++, dump_file);
+        gp_fputc(*k++, dump_file);
     }
 }
 
-static void dump_row_pbm(int w, byte **data, FILE *dump_file)
+static void dump_row_pbm(int w, byte **data, gp_file *dump_file)
 {
     byte *r = data[0];
 
@@ -253,22 +253,22 @@ static void dump_row_pbm(int w, byte **data, FILE *dump_file)
         return;
     w = (w+7)>>3;
     while (w--) {
-        fputc(*r++, dump_file);
+        gp_fputc(*r++, dump_file);
     }
 }
 
-static void dump_row_pgm(int w, byte **data, FILE *dump_file)
+static void dump_row_pgm(int w, byte **data, gp_file *dump_file)
 {
     byte *r = data[0];
 
     if (dump_file == NULL)
         return;
     while (w--) {
-        fputc(*r++, dump_file);
+        gp_fputc(*r++, dump_file);
     }
 }
 
-static void dump_row_pnmr(int w, byte **data, FILE *dump_file)
+static void dump_row_pnmr(int w, byte **data, gp_file *dump_file)
 {
     byte *r = data[0];
     byte *g = data[1];
@@ -282,19 +282,19 @@ static void dump_row_pnmr(int w, byte **data, FILE *dump_file)
         byte B = *b++;
         int s;
         for (s=7; s>=0; s--) {
-            fputc(255*((R>>s)&1), dump_file);
-            fputc(255*((G>>s)&1), dump_file);
-            fputc(255*((B>>s)&1), dump_file);
+            gp_fputc(255*((R>>s)&1), dump_file);
+            gp_fputc(255*((G>>s)&1), dump_file);
+            gp_fputc(255*((B>>s)&1), dump_file);
             w--;
             if (w == 0) break;
         }
     }
 }
 
-typedef void (*dump_row)(int w, byte **planes, FILE *file);
+typedef void (*dump_row)(int w, byte **planes, gp_file *file);
 
 static dump_row dump_start(int w, int h, int num_comps, int log2bits,
-                           FILE *dump_file)
+                           gp_file *dump_file)
 {
     dump_row row_proc = NULL;
     if ((num_comps == 3) && (log2bits == 3)) {
@@ -315,22 +315,22 @@ static dump_row dump_start(int w, int h, int num_comps, int log2bits,
         return row_proc;
     if (num_comps == 3) {
         if (log2bits == 0)
-            fprintf(dump_file, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 3\n"
+            gp_fprintf(dump_file, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 3\n"
                     "MAXVAL 255\nTUPLTYPE RGB\n# Image generated by %s\nENDHDR\n", w, h, gs_product);
         else
-            fprintf(dump_file, "P6 %d %d 255\n", w, h);
+            gp_fprintf(dump_file, "P6 %d %d 255\n", w, h);
     } else if (num_comps == 4) {
         if (log2bits == 0)
-            fprintf(dump_file, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 4\n"
+            gp_fprintf(dump_file, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 4\n"
                     "MAXVAL 255\nTUPLTYPE CMYK\n# Image generated by %s\nENDHDR\n", w, h, gs_product);
 
         else
-            fprintf(dump_file, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 4\n"
+            gp_fprintf(dump_file, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 4\n"
                     "MAXVAL 255\nTUPLTYPE CMYK\n# Image generated by %s\nENDHDR\n", w, h, gs_product);
     } else if (log2bits == 0)
-        fprintf(dump_file, "P4 %d %d\n", w, h);
+        gp_fprintf(dump_file, "P4 %d %d\n", w, h);
     else
-        fprintf(dump_file, "P5 %d %d 255\n", w, h);
+        gp_fprintf(dump_file, "P5 %d %d 255\n", w, h);
     return row_proc;
 }
 #endif
@@ -486,7 +486,7 @@ planc_encode_color(gx_device * dev, const gx_color_value cv[])
 /* Print a page using a given row printing routine. */
 static int
 plan_print_page_loop(gx_device_printer * pdev, int log2bits, int numComps,
-                     FILE *pstream)
+                     gp_file *pstream)
 {
     int lnum;
     int code = 0;
@@ -535,7 +535,7 @@ plan_print_page_loop(gx_device_printer * pdev, int log2bits, int numComps,
 
 /* Print a monobit page. */
 static int
-planm_print_page(gx_device_printer * pdev, FILE * pstream)
+planm_print_page(gx_device_printer * pdev, gp_file * pstream)
 {
 #ifdef DEBUG_PRINT
     emprintf(pdev->memory, "planm_print_page\n");
@@ -545,7 +545,7 @@ planm_print_page(gx_device_printer * pdev, FILE * pstream)
 
 /* Print a gray-mapped page. */
 static int
-plang_print_page(gx_device_printer * pdev, FILE * pstream)
+plang_print_page(gx_device_printer * pdev, gp_file * pstream)
 {
 #ifdef DEBUG_PRINT
     emprintf(pdev->memory, "plang_print_page\n");
@@ -555,7 +555,7 @@ plang_print_page(gx_device_printer * pdev, FILE * pstream)
 
 /* Print a color-mapped page. */
 static int
-plan_print_page(gx_device_printer * pdev, FILE * pstream)
+plan_print_page(gx_device_printer * pdev, gp_file * pstream)
 {
 #ifdef DEBUG_PRINT
     emprintf(pdev->memory, "planc_print_page\n");
@@ -565,7 +565,7 @@ plan_print_page(gx_device_printer * pdev, FILE * pstream)
 
 /* Print a 1 bit CMYK page. */
 static int
-plank_print_page(gx_device_printer * pdev, FILE * pstream)
+plank_print_page(gx_device_printer * pdev, gp_file * pstream)
 {
 #ifdef DEBUG_PRINT
     emprintf(pdev->memory, "plank_print_page\n");
@@ -575,7 +575,7 @@ plank_print_page(gx_device_printer * pdev, FILE * pstream)
 
 /* Print an 8bpc CMYK page. */
 static int
-planc_print_page(gx_device_printer * pdev, FILE * pstream)
+planc_print_page(gx_device_printer * pdev, gp_file * pstream)
 {
 #ifdef DEBUG_PRINT
     emprintf(pdev->memory, "planc_print_page\n");
@@ -585,7 +585,7 @@ planc_print_page(gx_device_printer * pdev, FILE * pstream)
 
 /* Print a color-mapped page (rgb, 1 bpc). */
 static int
-planr_print_page(gx_device_printer * pdev, FILE * pstream)
+planr_print_page(gx_device_printer * pdev, gp_file * pstream)
 {
 #ifdef DEBUG_PRINT
     emprintf(pdev->memory, "planr_print_page\n");

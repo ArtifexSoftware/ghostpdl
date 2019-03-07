@@ -53,7 +53,7 @@ const gx_device_printer far_data gs_djet500c_device =
     3, djet500c_print_page);
 
 /* Forward references */
-static int djet500c_print_page(gx_device_printer *, FILE *);
+static int djet500c_print_page(gx_device_printer *, gp_file *);
 
 static int mode2compress(byte *row, byte *end_row, byte *compressed);
 
@@ -67,7 +67,7 @@ static int mode2compress(byte *row, byte *end_row, byte *compressed);
 /* The DeskJet Color can compress (mode 2) */
 
 static int
-djet500c_print_page(gx_device_printer *pdev, FILE *fprn)
+djet500c_print_page(gx_device_printer *pdev, gp_file *fprn)
 {
     byte *bitData=NULL;
     byte *plane1=NULL;
@@ -78,32 +78,32 @@ djet500c_print_page(gx_device_printer *pdev, FILE *fprn)
 
     /* select the most compressed mode available & clear tmp storage */
     /* put printer in known state */
-    fputs("\033E",fprn);
+    gp_fputs("\033E",fprn);
 
     /* ends raster graphics to set raster graphics resolution */
-    fputs("\033*rbC", fprn);	/*  was \033*rB  */
+    gp_fputs("\033*rbC", fprn);	/*  was \033*rB  */
 
     /* set raster graphics resolution -- 300 dpi */
-    fputs("\033*t300R", fprn);
+    gp_fputs("\033*t300R", fprn);
 
     /* A4, skip perf, def. paper tray */
-    fputs("\033&l26a0l1H", fprn);
+    gp_fputs("\033&l26a0l1H", fprn);
 
     /* RGB Mode */
-    fputs("\033*r3U", fprn);
+    gp_fputs("\033*r3U", fprn);
 
     /* set depletion level */
-    fprintf(fprn, "\033*o%dD", DEPLETION);
+    gp_fprintf(fprn, "\033*o%dD", DEPLETION);
 
     /* set shingling level */
-    fprintf(fprn, "\033*o%dQ", SHINGLING);
+    gp_fprintf(fprn, "\033*o%dQ", SHINGLING);
 
     /* move to top left of page & set current position */
-    fputs("\033*p0x0Y", fprn); /* cursor pos: 0,0 */
+    gp_fputs("\033*p0x0Y", fprn); /* cursor pos: 0,0 */
 
-    fputs("\033*b2M", fprn);	/*  mode 2 compression for now  */
+    gp_fputs("\033*b2M", fprn);	/*  mode 2 compression for now  */
 
-    fputs("\033*r0A", fprn);  /* start graf. left */
+    gp_fputs("\033*r0A", fprn);  /* start graf. left */
 
     /* Send each scan line in turn */
        {    int lnum;
@@ -171,7 +171,7 @@ djet500c_print_page(gx_device_printer *pdev, FILE *fprn)
                 /* Skip blank lines if any */
                 if (num_blank_lines > 0)
                 {    /* move down from current position */
-                    fprintf(fprn, "\033*b%dY", num_blank_lines);
+                    gp_fprintf(fprn, "\033*b%dY", num_blank_lines);
                     num_blank_lines = 0;
                 }
 
@@ -183,29 +183,29 @@ djet500c_print_page(gx_device_printer *pdev, FILE *fprn)
                    are different, so we are stuck with mode 2, which is good enough */
 
                 /* set the line width */
-                fprintf(fprn, "\033*r%dS", lineLen*8);
+                gp_fprintf(fprn, "\033*r%dS", lineLen*8);
 
                 count = mode2compress(plane1, plane1 + lineLen, bitData);
-                fprintf(fprn, "\033*b%dV", count);
-                fwrite(bitData, sizeof(byte), count, fprn);
+                gp_fprintf(fprn, "\033*b%dV", count);
+                gp_fwrite(bitData, sizeof(byte), count, fprn);
                 count = mode2compress(plane2, plane2 + lineLen, bitData);
-                fprintf(fprn, "\033*b%dV", count);
-                fwrite(bitData, sizeof(byte), count, fprn);
+                gp_fprintf(fprn, "\033*b%dV", count);
+                gp_fwrite(bitData, sizeof(byte), count, fprn);
                 count = mode2compress(plane3, plane3 + lineLen, bitData);
-                fprintf(fprn, "\033*b%dW", count);
-                fwrite(bitData, sizeof(byte), count, fprn);
+                gp_fprintf(fprn, "\033*b%dW", count);
+                gp_fwrite(bitData, sizeof(byte), count, fprn);
             }
         }
     }
     /* end raster graphics */
-    fputs("\033*rbC", fprn);	/*  was \033*rB  */
-    fputs("\033*r1U", fprn);	/*  back to 1 plane  */
+    gp_fputs("\033*rbC", fprn);	/*  was \033*rB  */
+    gp_fputs("\033*r1U", fprn);	/*  back to 1 plane  */
 
-       /* put printer in known state */
-    fputs("\033E",fprn);
+    /* put printer in known state */
+    gp_fputs("\033E",fprn);
 
     /* eject page */
-    fputs("\033&l0H", fprn);
+    gp_fputs("\033&l0H", fprn);
 
     /* release allocated memory */
     if (bitData) free(bitData);

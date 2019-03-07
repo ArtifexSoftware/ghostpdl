@@ -403,24 +403,24 @@ runlength(byte *out, byte *in, int length)
 }
 
 #define write_short(data, stream) { \
-    fputc((unsigned char) (data), stream); \
-    fputc((unsigned short) (data) >> 8, stream); \
+    gp_fputc((unsigned char) (data), stream); \
+    gp_fputc((unsigned short) (data) >> 8, stream); \
 }
 
 #define alps_cmd(cmd1, data, cmd2, stream) { \
-    fwrite(cmd1, 1, 3, stream); \
+    gp_fwrite(cmd1, 1, 3, stream); \
     write_short(data, stream); \
-    fputc(cmd2, stream); \
+    gp_fputc(cmd2, stream); \
 }
 
 static void
-alps_init(gx_device_printer *pdev, FILE *prn_stream, alps_printer_type ptype)
+alps_init(gx_device_printer *pdev, gp_file *prn_stream, alps_printer_type ptype)
 {
     short height;		/* page height (unit: dots) */
 
-    fwrite  ("\033\145"
-             "\033\045\200\101"
-             "\033\032\0\0\114", 1, 11, prn_stream);
+    gp_fwrite("\033\145"
+              "\033\045\200\101"
+              "\033\032\0\0\114", 1, 11, prn_stream);
     /* paper feed (auto=1, manual=2) */
     alps_cmd("\033\046\154", (dev_alps->manualFeed ? 2 : 1), 0110, prn_stream);
     /* media type */
@@ -436,48 +436,48 @@ alps_init(gx_device_printer *pdev, FILE *prn_stream, alps_printer_type ptype)
              0101, prn_stream);
 
     /* monocrome=0, eco black=1, CMYK=4, CMYK(MD-5000)=8 */
-    fwrite("\033\052\162", 1, 3, prn_stream);
-    fputc((dev_alps->mediaType == 1 ? 4 :
-           pdev->color_info.num_components == 1 ? dev_alps->ecoBlack ? 1 : 0
-                                                : ptype == MD5000    ? 8 : 4),
-          prn_stream);
-    fputc(0125, prn_stream);
+    gp_fwrite("\033\052\162", 1, 3, prn_stream);
+    gp_fputc((dev_alps->mediaType == 1 ? 4 :
+              pdev->color_info.num_components == 1 ? dev_alps->ecoBlack ? 1 : 0
+                                                   : ptype == MD5000    ? 8 : 4),
+             prn_stream);
+    gp_fputc(0125, prn_stream);
 
     /* set resolution (300dpi = 2, 600dpi = 3, 1200x600dpi = 4) */
-    fwrite("\033\052\164", 1, 3, prn_stream);
-    fputc((pdev->x_pixels_per_inch == 300 ? 2
-         : pdev->x_pixels_per_inch == 600 ? 3 : 4), prn_stream);
-    fputc(0122, prn_stream);
+    gp_fwrite("\033\052\164", 1, 3, prn_stream);
+    gp_fputc((pdev->x_pixels_per_inch == 300 ? 2
+            : pdev->x_pixels_per_inch == 600 ? 3 : 4), prn_stream);
+    gp_fputc(0122, prn_stream);
 
     height = (pdev->MediaSize[1] - pdev->HWMargins[1] - pdev->HWMargins[3])
             * pdev->y_pixels_per_inch / 72.;
     alps_cmd("\033\046\154", height, 0120, prn_stream);
 
     /* if -dReverseSide ... */
-    fwrite("\033\032", 1, 2, prn_stream);
-    fputc (dev_alps->reverseSide, prn_stream);
-    fwrite("\0\101",   1, 2, prn_stream);
+    gp_fwrite("\033\032", 1, 2, prn_stream);
+    gp_fputc (dev_alps->reverseSide, prn_stream);
+    gp_fwrite("\0\101",   1, 2, prn_stream);
 
     if (ptype == MD5000) {
         if (dev_alps->ecoBlack) {
-            fwrite("\033\032\001\0\103",         1, 5, prn_stream);
-            fwrite("\033\046\154\001\0\103\027", 1, 7, prn_stream);
+            gp_fwrite("\033\032\001\0\103",         1, 5, prn_stream);
+            gp_fwrite("\033\046\154\001\0\103\027", 1, 7, prn_stream);
         } else if (pdev->color_info.num_components == 1)
-            fwrite("\033\046\154\001\0\103\0",   1, 7, prn_stream);
+            gp_fwrite("\033\046\154\001\0\103\0",   1, 7, prn_stream);
         else
-            fwrite("\033\046\154\004\0\103\003\002\001\0", 1, 10, prn_stream);
-        fwrite("\033\032\0\0\125",     1, 5, prn_stream);
-        fwrite("\033\052\162\1\101",   1, 5, prn_stream);
-        fwrite("\033\052\142\0\0\115", 1, 6, prn_stream);
+            gp_fwrite("\033\046\154\004\0\103\003\002\001\0", 1, 10, prn_stream);
+        gp_fwrite("\033\032\0\0\125",     1, 5, prn_stream);
+        gp_fwrite("\033\052\162\1\101",   1, 5, prn_stream);
+        gp_fwrite("\033\052\142\0\0\115", 1, 6, prn_stream);
     } else {
-        fwrite("\033\052\162\0\101",   1, 5, prn_stream);
-        fwrite("\033\052\142\2\0\115", 1, 6, prn_stream);
+        gp_fwrite("\033\052\162\0\101",   1, 5, prn_stream);
+        gp_fwrite("\033\052\142\2\0\115", 1, 6, prn_stream);
     }
 }
 
 /* Send the page to the printer. */
 static int
-alps_print_page(gx_device_printer *pdev, FILE *prn_stream,
+alps_print_page(gx_device_printer *pdev, gp_file *prn_stream,
                 alps_printer_type ptype)
 {
     int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
@@ -518,12 +518,12 @@ alps_print_page(gx_device_printer *pdev, FILE *prn_stream,
                          gold=4, metalic red=5, metalic blue=6, silver=7,
                          rebeca black=8, rebeca red=9, rebeca blue=10,
                          white=11, glossy=14) */
-        fwrite("\033\032", 1, 2, prn_stream);
-        fputc((n_comp == 1 ? dev_alps->ecoBlack ? 026 : 0 : (c_comp+1) % 4),
-              prn_stream);
-        fputc((c_comp == n_comp-1 && ptype == MD5000 ? 0200 : 0),
-              prn_stream);
-        fputc(0162, prn_stream);
+        gp_fwrite("\033\032", 1, 2, prn_stream);
+        gp_fputc((n_comp == 1 ? dev_alps->ecoBlack ? 026 : 0 : (c_comp+1) % 4),
+                 prn_stream);
+        gp_fputc((c_comp == n_comp-1 && ptype == MD5000 ? 0200 : 0),
+                 prn_stream);
+        gp_fputc(0162, prn_stream);
 
         for(y = 0; y < y_height; y ++) {
             uint len = line_size;
@@ -573,37 +573,37 @@ alps_print_page(gx_device_printer *pdev, FILE *prn_stream,
 
                     alps_cmd("\033\052\142", len, 0124, prn_stream);
                     write_short(xskip, prn_stream);
-                    fwrite(dp, 1, len, prn_stream);
+                    gp_fwrite(dp, 1, len, prn_stream);
                 } else {
                     len = runlength(out, dp, len);
                     alps_cmd("\033\052\142", len, 0127, prn_stream);
-                    fwrite(out, 1, len, prn_stream);
+                    gp_fwrite(out, 1, len, prn_stream);
                 }
             }
         }
 
         /* rewind */
         if (c_comp + 1 < n_comp)
-            fwrite("\033\032\0\0\014", 1, 5, prn_stream);
+            gp_fwrite("\033\032\0\0\014", 1, 5, prn_stream);
     }
 
     /* end of print */
-    fwrite("\014"
-           "\033\052\162\103"
-           "\033\045\0\130", 1, 9, prn_stream);
+    gp_fwrite("\014"
+              "\033\052\162\103"
+              "\033\045\0\130", 1, 9, prn_stream);
 
     gs_free(pdev->memory->non_gc_memory, (char *)work, 3+sizeof(int), line_size, "alps_print_page(work)");
     return 0;
 }
 
 static int
-md2k_print_page(gx_device_printer *pdev, FILE *prn_stream)
+md2k_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {
     return alps_print_page(pdev, prn_stream, MD2000);
 }
 
 static int
-md5k_print_page(gx_device_printer *pdev, FILE *prn_stream)
+md5k_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {
     return alps_print_page(pdev, prn_stream, MD5000);
 }

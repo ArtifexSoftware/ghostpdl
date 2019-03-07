@@ -14,6 +14,8 @@
 #ifndef _pagecount_h	/* Inclusion protection */
 #define _pagecount_h
 
+#include "std.h"
+
 #ifdef _MSC_VER
 #define EPRN_NO_PAGECOUNTFILE
 #else
@@ -28,8 +30,8 @@
 
     The routines are safe against concurrent access.
 */
-extern int pcf_getcount(const char *filename, unsigned long *count);
-extern int pcf_inccount(const char *filename, unsigned long by);
+extern int pcf_getcount(const gs_memory_t *mem, const char *filename, unsigned long *count);
+extern int pcf_inccount(const gs_memory_t *mem, const char *filename, unsigned long by);
 
 /*****************************************************************************/
 

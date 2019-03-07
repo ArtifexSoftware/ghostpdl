@@ -72,7 +72,7 @@ dfax_prn_open(gx_device *dev)
 
 /* Print a DigiFAX page. */
 static int
-dfax_print_page(gx_device_printer *dev, FILE *prn_stream)
+dfax_print_page(gx_device_printer *dev, gp_file *prn_stream)
 {	stream_CFE_state state;
         static char hdr[64] = "\000PC Research, Inc\000\000\000\000\000\000";
         int code;
@@ -88,8 +88,8 @@ dfax_print_page(gx_device_printer *dev, FILE *prn_stream)
                 { hdr[45] = 0x40; hdr[29] = 1; }	/* high res */
         else
                 { hdr[45] = hdr[29] = 0; }		/* low res */
-        fseek(prn_stream, 0, SEEK_END);
-        fwrite(hdr, sizeof(hdr), 1, prn_stream);
+        gp_fseek(prn_stream, 0, SEEK_END);
+        gp_fwrite(hdr, sizeof(hdr), 1, prn_stream);
 
         /* Write the page */
         code = gdev_fax_print_page(dev, prn_stream, &state);
@@ -97,11 +97,11 @@ dfax_print_page(gx_device_printer *dev, FILE *prn_stream)
             return code;
 
         /* Fixup page count */
-        if (fseek(prn_stream, 24L, SEEK_SET) != 0)
+        if (gp_fseek(prn_stream, 24L, SEEK_SET) != 0)
             return_error(gs_error_ioerror);
 
         hdr[24] = dfdev->pageno; hdr[25] = dfdev->pageno >> 8;
-        if (fwrite(hdr+24, 2, 1, prn_stream) != 1)
+        if (gp_fwrite(hdr+24, 2, 1, prn_stream) != 1)
             return_error(gs_error_ioerror);
 
         return 0;

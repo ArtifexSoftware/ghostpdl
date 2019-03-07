@@ -29,7 +29,7 @@
  * hardwired.
  */
 static int
-cljc_print_page(gx_device_printer * pdev, FILE * prn_stream)
+cljc_print_page(gx_device_printer * pdev, gp_file * prn_stream)
 {
     gs_memory_t *mem = pdev->memory;
     uint raster = gx_device_raster((gx_device *)pdev, false);
@@ -48,18 +48,18 @@ cljc_print_page(gx_device_printer * pdev, FILE * prn_stream)
         goto out;
     }
     /* send a reset and the the paper definition */
-    fprintf(prn_stream, "\033E\033&u300D\033&l%dA",
-            gdev_pcl_paper_size((gx_device *) pdev));
+    gp_fprintf(prn_stream, "\033E\033&u300D\033&l%dA",
+               gdev_pcl_paper_size((gx_device *) pdev));
     /* turn off source and pattern transparency */
-    fprintf(prn_stream, "\033*v1N\033*v1O");
+    gp_fprintf(prn_stream, "\033*v1N\033*v1O");
     /* set color render mode and the requested resolution */
-    fprintf(prn_stream, "\033*t4J\033*t%dR", (int)(pdev->HWResolution[0]));
+    gp_fprintf(prn_stream, "\033*t4J\033*t%dR", (int)(pdev->HWResolution[0]));
     /* set up the color model - NB currently hardwired to direct by
        pixel which requires 8 bits per component.  See PCL color
        technical reference manual for other possible encodings. */
-    fprintf(prn_stream, "\033*v6W%c%c%c%c%c%c", 0, 3, 0, 8, 8, 8);
+    gp_fprintf(prn_stream, "\033*v6W%c%c%c%c%c%c", 0, 3, 0, 8, 8, 8);
     /* set up raster width and height, compression mode 3 */
-    fprintf(prn_stream, "\033&l0e-180u36Z\033*p0x0Y\033*r1A\033*b3M");
+    gp_fprintf(prn_stream, "\033&l0e-180u36Z\033*p0x0Y\033*r1A\033*b3M");
     /* initialize the seed row */
     memset(prow, 0, worst_case_comp_size);
     /* process each scanline */
@@ -70,11 +70,11 @@ cljc_print_page(gx_device_printer * pdev, FILE * prn_stream)
         if (code < 0)
             break;
         compressed_size = gdev_pcl_mode3compress(raster, data, prow, cdata);
-        fprintf(prn_stream, "\033*b%dW", compressed_size);
-        fwrite(cdata, sizeof(byte), compressed_size, prn_stream);
+        gp_fprintf(prn_stream, "\033*b%dW", compressed_size);
+        gp_fwrite(cdata, sizeof(byte), compressed_size, prn_stream);
     }
     /* PCL will take care of blank lines at the end */
-    fputs("\033*rC\f", prn_stream);
+    gp_fputs("\033*rC\f", prn_stream);
 out:
     gs_free_object(mem, prow, "cljc_print_page(prow)");
     gs_free_object(mem, cdata, "cljc_print_page(cdata)");

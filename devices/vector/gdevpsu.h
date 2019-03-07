@@ -35,7 +35,7 @@ typedef struct gx_device_pswrite_common_s {
 /* ---------------- Low level ---------------- */
 
 /* Write a 0-terminated array of strings as lines. */
-int psw_print_lines(FILE *f, const char *const lines[]);
+int psw_print_lines(gp_file *f, const char *const lines[]);
 
 /* ---------------- File level ---------------- */
 
@@ -43,15 +43,15 @@ int psw_print_lines(FILE *f, const char *const lines[]);
  * Write the file header, up through the BeginProlog.  This must write to a
  * file, not a stream, because it may be called during finalization.
  */
-int psw_begin_file_header(FILE *f, const gx_device *dev,
+int psw_begin_file_header(gp_file *f, const gx_device *dev,
                            const gs_rect *pbbox,
                            gx_device_pswrite_common_t *pdpc, bool ascii);
 
 /* End the file header.*/
-int psw_end_file_header(FILE *f);
+int psw_end_file_header(gp_file *f);
 
 /* End the file. */
-int psw_end_file(FILE *f, const gx_device *dev,
+int psw_end_file(gp_file *f, const gx_device *dev,
                   const gx_device_pswrite_common_t *pdpc,
                   const gs_rect *pbbox, int page_count);
 
@@ -67,6 +67,6 @@ int psw_write_page_header(stream *s, const gx_device *dev,
  * Write the page trailer.  We do this directly to the file, rather than to
  * the stream, because we may have to do it during finalization.
  */
-int psw_write_page_trailer(FILE *f, int num_copies, int flush);
+int psw_write_page_trailer(gp_file *f, int num_copies, int flush);
 
 #endif /* gdevpsu_INCLUDED */

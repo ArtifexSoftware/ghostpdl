@@ -186,7 +186,7 @@ dprintf_file_only(const char *file)
         dpf(dprintf_file_only_format, dprintf_file_tail(file));
 }
 void
-lprintf_file_only(FILE * f, const char *file)
+lprintf_file_only(gp_file * f, const char *file)
 {
     epf("%s(?): ", file);
 }
@@ -256,7 +256,7 @@ mlprintf_file_and_line(const gs_memory_t *mem, const char *file, int line)
 }
 #else
 void
-mlprintf_file_only(const gs_memory_t *mem, FILE * f, const char *file)
+mlprintf_file_only(const gs_memory_t *mem, gp_file * f, const char *file)
 {
     epfm(mem, "%s(?): ", file);
 }

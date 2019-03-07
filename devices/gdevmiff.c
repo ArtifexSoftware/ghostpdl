@@ -39,7 +39,7 @@ prn_device(miff24_procs, "miff24",
 
 /* Print one page in 24-bit RLE direct color format. */
 static int
-miff24_print_page(gx_device_printer * pdev, FILE * file)
+miff24_print_page(gx_device_printer * pdev, gp_file * file)
 {
     int raster = gx_device_raster((gx_device *) pdev, true);
     byte *line = gs_alloc_bytes(pdev->memory, raster, "miff line buffer");
@@ -48,12 +48,12 @@ miff24_print_page(gx_device_printer * pdev, FILE * file)
 
     if (line == 0)		/* can't allocate line buffer */
         return_error(gs_error_VMerror);
-    fputs("id=ImageMagick\n", file);
-    fputs("class=DirectClass\n", file);
-    fprintf(file, "columns=%d\n", pdev->width);
-    fputs("compression=RunlengthEncoded\n", file);
-    fprintf(file, "rows=%d\n", pdev->height);
-    fputs(":\n", file);
+    gp_fputs("id=ImageMagick\n", file);
+    gp_fputs("class=DirectClass\n", file);
+    gp_fprintf(file, "columns=%d\n", pdev->width);
+    gp_fputs("compression=RunlengthEncoded\n", file);
+    gp_fprintf(file, "rows=%d\n", pdev->height);
+    gp_fputs(":\n", file);
     for (y = 0; y < pdev->height; ++y) {
         byte *row;
         byte *end;
@@ -70,10 +70,10 @@ miff24_print_page(gx_device_printer * pdev, FILE * file)
                    row[2] == row[5]
                 )
                 ++count, row += 3;
-            putc(row[0], file);
-            putc(row[1], file);
-            putc(row[2], file);
-            putc(count, file);
+            gp_fputc(row[0], file);
+            gp_fputc(row[1], file);
+            gp_fputc(row[2], file);
+            gp_fputc(count, file);
             row += 3;
         }
     }

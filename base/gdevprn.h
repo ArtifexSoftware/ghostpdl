@@ -67,7 +67,7 @@ typedef struct gx_printer_device_procs_s {
      */
 
 #define prn_dev_proc_print_page(proc)\
-  int proc(gx_device_printer *, FILE *)
+  int proc(gx_device_printer *, gp_file *)
     prn_dev_proc_print_page((*print_page));
 /* BACKWARD COMPATIBILITY */
 #define dev_proc_print_page(proc) prn_dev_proc_print_page(proc)
@@ -75,7 +75,7 @@ typedef struct gx_printer_device_procs_s {
     /* Print the page on the output file, with a given # of copies. */
 
 #define prn_dev_proc_print_page_copies(proc)\
-  int proc(gx_device_printer *, FILE *, int)
+  int proc(gx_device_printer *, gp_file *, int)
     prn_dev_proc_print_page_copies((*print_page_copies));
 /* BACKWARD COMPATIBILITY */
 #define dev_proc_print_page_copies(proc) prn_dev_proc_print_page_copies(proc)
@@ -140,7 +140,7 @@ typedef struct bg_print_s {
         int Duplex_set;		        /* -1 = not supported */\
                 /* ------ End of parameters ------ */\
         bool file_is_new;		/* true iff file just opened */\
-        FILE *file;			/* output file */\
+        gp_file *file;  		/* output file */\
         long buffer_space;	        /* amount of space for clist buffer, */\
                                         /* 0 means not using clist */\
         byte *buf;			/* buffer for rendering */\

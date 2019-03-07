@@ -83,11 +83,11 @@ const gx_device_printer far_data gs_okiibm_device =
 /* ------ Internal routines ------ */
 
 /* Forward references */
-static void okiibm_output_run(byte *, int, int, char, FILE *, int);
+static void okiibm_output_run(byte *, int, int, char, gp_file *, int);
 
 /* Send the page to the printer. */
 static int
-okiibm_print_page1(gx_device_printer *pdev, FILE *prn_stream, int y_9pin_high,
+okiibm_print_page1(gx_device_printer *pdev, gp_file *prn_stream, int y_9pin_high,
   const char *init_string, int init_length,
   const char *end_string, int end_length)
 {
@@ -123,7 +123,7 @@ okiibm_print_page1(gx_device_printer *pdev, FILE *prn_stream, int y_9pin_high,
         }
 
         /* Initialize the printer. */
-        fwrite(init_string, 1, init_length, prn_stream);
+        gp_fwrite(init_string, 1, init_length, prn_stream);
 
         /* Print lines of graphics */
         while ( lnum < pdev->height )
@@ -155,19 +155,19 @@ okiibm_print_page1(gx_device_printer *pdev, FILE *prn_stream, int y_9pin_high,
                 if ( skip & 1 )
                 {
                         int n = 1 + (y_step == 0 ? 1 : 0);
-                        fprintf(prn_stream, "\033J%c", n);
+                        gp_fprintf(prn_stream, "\033J%c", n);
                         y_step = (y_step + n) % 3;
                         skip -= 1;
                 }
                 skip = skip / 2 * 3;
                 while ( skip > 255 )
                 {
-                        fputs("\033J\377", prn_stream);
+                        gp_fputs("\033J\377", prn_stream);
                         skip -= 255;
                 }
                 if ( skip )
                 {
-                        fprintf(prn_stream, "\033J%c", skip);
+                        gp_fprintf(prn_stream, "\033J%c", skip);
                 }
 
                 /* Copy the the scan lines. */
@@ -229,12 +229,12 @@ okiibm_print_page1(gx_device_printer *pdev, FILE *prn_stream, int y_9pin_high,
                                    out_y_mult, start_graphics,
                                    prn_stream, pass);
                 }
-                fputc('\r', prn_stream);
+                gp_fputc('\r', prn_stream);
             }
             if ( ypass < y_passes - 1 )
             {
                 int n = 1 + (y_step == 0 ? 1 : 0);
-                fprintf(prn_stream, "\033J%c", n);
+                gp_fprintf(prn_stream, "\033J%c", n);
                 y_step = (y_step + n) % 3;
             }
         }
@@ -243,8 +243,8 @@ okiibm_print_page1(gx_device_printer *pdev, FILE *prn_stream, int y_9pin_high,
         }
 
         /* Reinitialize the printer. */
-        fwrite(end_string, 1, end_length, prn_stream);
-        fflush(prn_stream);
+        gp_fwrite(end_string, 1, end_length, prn_stream);
+        gp_fflush(prn_stream);
 
         gs_free(pdev->memory, (char *)buf2, in_size, 1, "okiibm_print_page(buf2)");
         gs_free(pdev->memory, (char *)buf1, in_size, 1, "okiibm_print_page(buf1)");
@@ -255,17 +255,17 @@ okiibm_print_page1(gx_device_printer *pdev, FILE *prn_stream, int y_9pin_high,
 /* pass=0 for all columns, 1 for even columns, 2 for odd columns. */
 static void
 okiibm_output_run(byte *data, int count, int y_mult,
-  char start_graphics, FILE *prn_stream, int pass)
+  char start_graphics, gp_file *prn_stream, int pass)
 {
         int xcount = count / y_mult;
 
-        fputc(033, prn_stream);
-        fputc((int)("KLYZ"[(int)start_graphics]), prn_stream);
-        fputc(xcount & 0xff, prn_stream);
-        fputc(xcount >> 8, prn_stream);
+        gp_fputc(033, prn_stream);
+        gp_fputc((int)("KLYZ"[(int)start_graphics]), prn_stream);
+        gp_fputc(xcount & 0xff, prn_stream);
+        gp_fputc(xcount >> 8, prn_stream);
         if ( !pass )
         {
-                fwrite(data, 1, count, prn_stream);
+                gp_fwrite(data, 1, count, prn_stream);
         }
         else
         {
@@ -278,7 +278,7 @@ okiibm_output_run(byte *data, int count, int y_mult,
                 {
                         for ( j = 0; j < y_mult; j++, dp++ )
                         {
-                                putc(((which & 1) ? *dp : 0), prn_stream);
+                                gp_fputc(((which & 1) ? *dp : 0), prn_stream);
                         }
                 }
         }
@@ -292,7 +292,7 @@ static const char okiibm_one_direct[]	= { 0x1b, 0x55, 0x01 };
 static const char okiibm_two_direct[]	= { 0x1b, 0x55, 0x00 };
 
 static int
-okiibm_print_page(gx_device_printer *pdev, FILE *prn_stream)
+okiibm_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {
         char init_string[16], end_string[16];
         int init_length, end_length;

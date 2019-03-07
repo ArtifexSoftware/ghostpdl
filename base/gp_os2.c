@@ -283,9 +283,10 @@ gp_set_file_binary(int prnfno, int binary)
  *   "port"            open port using fopen()
  */
 FILE *
-gp_open_printer(const gs_memory_t *mem,
-                      char         fname[gp_file_name_sizeof],
-                      int          binary_mode)
+gp_open_printer_impl(gs_memory_t *mem,
+                     char         fname[gp_file_name_sizeof],
+                     int         *binary_mode,
+                     int          (**close)(FILE *))
 {
     FILE *pfile;
 
@@ -294,34 +295,35 @@ gp_open_printer(const gs_memory_t *mem,
             /* default or spool */
             if (pm_spool(mem, NULL, fname))	/* check if spool queue valid */
                 return NULL;
-            pfile = gp_open_scratch_file(mem,
-                                         gp_scratch_file_name_prefix,
-                                         pm_prntmp,
-                                         (binary_mode ? "wb" : "w"));
-        } else
-            pfile = fopen("PRN", (binary_mode ? "wb" : "w"));
-    } else if ((isos2) && (fname[0] == '|'))
+            pfile = gp_open_scratch_file_impl(mem,
+                                              gp_scratch_file_name_prefix,
+                                              pm_prntmp,
+                                              (binary_mode ? "wb" : "w"),
+                                              0);
+        } else {
+            pfile = fopen("PRN", (*binary_mode ? "wb" : "w"));
+        }
+    } else if ((isos2) && (fname[0] == '|')) {
         /* pipe */
-        pfile = popen(fname + 1, (binary_mode ? "wb" : "w"));
+        pfile = popen(fname + 1, (*binary_mode ? "wb" : "w"));
+        *close = isos2 ? pclose : fclose;
     else
         /* normal file or port */
-        pfile = gp_fopen(fname, (binary_mode ? "wb" : "w"));
+        pfile = gp_fopen_impl(mem, fname, (*binary_mode ? "wb" : "w"));
 
-    if (pfile == (FILE *) NULL)
-        return (FILE *) NULL;
+    if (pfile == NULL)
+        return NULL;
     if (!isos2)
-        gp_set_file_binary(fileno(pfile), binary_mode);
+        *binary_mode = 1;
+
     return pfile;
 }
 
 /* Close the connection to the printer. */
 void
-gp_close_printer(const gs_memory_t *mem, FILE * pfile, const char *fname)
+gp_close_printer(gp_file *pfile, const char *fname)
 {
-    if (isos2 && (fname[0] == '|'))
-        pclose(pfile);
-    else
-        fclose(pfile);
+    gp_fclose(pfile);
 
     if ((strlen(fname) == 0) || is_os2_spool(fname)) {
         /* spool temporary file */
@@ -334,7 +336,7 @@ gp_close_printer(const gs_memory_t *mem, FILE * pfile, const char *fname)
 
 /* Set a file into binary or text mode. */
 int
-gp_setmode_binary(FILE * pfile, bool binary)
+gp_setmode_binary_impl(FILE * pfile, bool binary)
 {
     gp_set_file_binary(fileno(pfile), binary);
     return 0;
@@ -570,32 +572,12 @@ void gp_enumerate_fonts_free(void *enum_state)
  * Currently we stub it with 32 bits access.
  */
 
-FILE *gp_fopen_64(const char *filename, const char *mode)
-{
-    return fopen(filename, mode);
-}
-
-FILE *gp_open_scratch_file_64(const gs_memory_t *mem,
-                              const char        *prefix,
-                                    char         fname[gp_file_name_sizeof],
-                              const char        *mode)
-{
-    return gp_open_scratch_file(mem, prefix, fname, mode);
-}
-
-FILE *gp_open_printer_64(const gs_memory_t *mem,
-                               char         fname[gp_file_name_sizeof],
-                               int          binary_mode)
-{
-    return gp_open_printer(mem, fname, binary_mode);
-}
-
-int64_t gp_ftell_64(FILE *strm)
+int64_t gp_ftell_impl(FILE *strm)
 {
     return ftell(strm);
 }
 
-int gp_fseek_64(FILE *strm, int64_t offset, int origin)
+int gp_fseek_impl(FILE *strm, gs_offset_t offset, int origin)
 {
     long offset1 = (long)offset;
 
@@ -604,7 +586,7 @@ int gp_fseek_64(FILE *strm, int64_t offset, int origin)
     return fseek(strm, offset1, origin);
 }
 
-bool gp_fseekable (FILE *f)
+bool gp_fseekable_impl(FILE *f)
 {
     struct stat s;
     int fno;

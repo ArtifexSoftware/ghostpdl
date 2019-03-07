@@ -99,29 +99,29 @@ gx_device_printer far_data gs_lj3100sw_device =
 #define BUFFERSIZE 0x1000
 
 static void
-lj3100sw_output_section_header(FILE *prn_stream, int type, int arg1, int arg2)
+lj3100sw_output_section_header(gp_file *prn_stream, int type, int arg1, int arg2)
 {
-        fputc(type      & 0xff, prn_stream);
-        fputc(type >> 8 & 0xff, prn_stream);
-        fputc(arg1      & 0xff, prn_stream);
-        fputc(arg1 >> 8 & 0xff, prn_stream);
-        fputc(arg2      & 0xff, prn_stream);
-        fputc(arg2 >> 8 & 0xff, prn_stream);
+        gp_fputc(type      & 0xff, prn_stream);
+        gp_fputc(type >> 8 & 0xff, prn_stream);
+        gp_fputc(arg1      & 0xff, prn_stream);
+        gp_fputc(arg1 >> 8 & 0xff, prn_stream);
+        gp_fputc(arg2      & 0xff, prn_stream);
+        gp_fputc(arg2 >> 8 & 0xff, prn_stream);
 }
 
 static void
-lj3100sw_flush_buffer(FILE *prn_stream, char *buffer, char **pptr)
+lj3100sw_flush_buffer(gp_file *prn_stream, char *buffer, char **pptr)
 {
         int size = *pptr - buffer;
         if (size) {
                 lj3100sw_output_section_header(prn_stream, 0, size, 0);
-                fwrite(buffer, 1, size, prn_stream);
+                gp_fwrite(buffer, 1, size, prn_stream);
                 *pptr = buffer;
         }
 }
 
 static void
-lj3100sw_output_data_byte(FILE *prn_stream, char *buffer, char **pptr, int val)
+lj3100sw_output_data_byte(gp_file *prn_stream, char *buffer, char **pptr, int val)
 {
         if (*pptr >= buffer + BUFFERSIZE)
                 lj3100sw_flush_buffer(prn_stream, buffer, pptr);
@@ -129,7 +129,7 @@ lj3100sw_output_data_byte(FILE *prn_stream, char *buffer, char **pptr, int val)
 }
 
 static void
-lj3100sw_output_repeated_data_bytes(FILE *prn_stream, char *buffer, char **pptr, int val, int num)
+lj3100sw_output_repeated_data_bytes(gp_file *prn_stream, char *buffer, char **pptr, int val, int num)
 {
         int size;
         while (num) {
@@ -143,7 +143,7 @@ lj3100sw_output_repeated_data_bytes(FILE *prn_stream, char *buffer, char **pptr,
 }
 
 static void
-lj3100sw_output_newline(FILE *prn_stream, char *buffer, char **pptr)
+lj3100sw_output_newline(gp_file *prn_stream, char *buffer, char **pptr)
 {
         lj3100sw_output_data_byte(prn_stream, buffer, pptr, 0);
         lj3100sw_output_data_byte(prn_stream, buffer, pptr, 0);
@@ -151,7 +151,7 @@ lj3100sw_output_newline(FILE *prn_stream, char *buffer, char **pptr)
 }
 
 static void
-lj3100sw_output_empty_line(FILE *prn_stream, char *buffer, char **pptr, bool high_resolution)
+lj3100sw_output_empty_line(gp_file *prn_stream, char *buffer, char **pptr, bool high_resolution)
 {
         if (high_resolution) {
                 lj3100sw_output_data_byte(prn_stream, buffer, pptr, 0x80);
@@ -166,7 +166,7 @@ lj3100sw_output_empty_line(FILE *prn_stream, char *buffer, char **pptr, bool hig
 }
 
 static int
-lj3100sw_print_page_copies(gx_device_printer *pdev, FILE *prn_stream, int num_copies /* ignored */)
+lj3100sw_print_page_copies(gx_device_printer *pdev, gp_file *prn_stream, int num_copies /* ignored */)
 {
         int i, j;
         char buffer[BUFFERSIZE], *ptr = buffer;
@@ -269,11 +269,11 @@ static int
 lj3100sw_close(gx_device *pdev)
 {
         int i;
-        FILE *prn_stream = ((gx_device_printer *)pdev)->file;
+        gp_file *prn_stream = ((gx_device_printer *)pdev)->file;
 
         if (prn_stream) {
             lj3100sw_output_section_header(prn_stream, 0, 4, 0);
-            fputs("XX\r\n", prn_stream);
+            gp_fputs("XX\r\n", prn_stream);
             for (i = 0; i < 4 * ppdev->NumCopies; i++)
                     lj3100sw_output_section_header(prn_stream, 54, 0, 0);
             lj3100sw_output_section_header(prn_stream, 2, 0, 0);

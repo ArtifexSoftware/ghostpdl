@@ -388,7 +388,7 @@ static char *next_word(char *s)
 #define BUFFER_SIZE     200
   /* should be large enough for a single line */
 
-#define cleanup()       (free(list), fclose(f))
+#define cleanup()       (free(list), gp_fclose(f))
 
 static int eprn_read_media_data(eprn_Eprn *eprn, gs_memory_t *memory)
 {
@@ -396,7 +396,7 @@ static int eprn_read_media_data(eprn_Eprn *eprn, gs_memory_t *memory)
   const char
     *epref = eprn->CUPS_messages? CUPS_ERRPREF: "",
     *wpref = eprn->CUPS_messages? CUPS_WARNPREF: "";
-  FILE *f;
+  gp_file *f;
   float conversion_factor = BP_PER_IN;
     /* values read have to be multiplied by this value to obtain bp */
   int
@@ -405,7 +405,7 @@ static int eprn_read_media_data(eprn_Eprn *eprn, gs_memory_t *memory)
   eprn_PageDescription *list = NULL;
 
   /* Open the file */
-  if ((f = gp_fopen(eprn->media_file, "r")) == NULL) {
+  if ((f = gp_fopen(memory, eprn->media_file, "r")) == NULL) {
     eprintf5("%s" ERRPREF "Error opening the media configuration file\n"
       "%s    `%s'\n%s  for reading: %s.\n",
       epref, epref, eprn->media_file, epref, strerror(errno));
@@ -413,7 +413,7 @@ static int eprn_read_media_data(eprn_Eprn *eprn, gs_memory_t *memory)
   }
 
   /* Loop over input lines */
-  while (fgets(buffer, BUFFER_SIZE, f) != NULL) {
+  while (gp_fgets(buffer, BUFFER_SIZE, f) != NULL) {
     char *s, *t;
     eprn_PageDescription *current;
     int chars_read;
@@ -421,7 +421,7 @@ static int eprn_read_media_data(eprn_Eprn *eprn, gs_memory_t *memory)
     line++;
 
     /* Check for buffer overflow */
-    if ((s = strchr(buffer, '\n')) == NULL && fgetc(f) != EOF) {
+    if ((s = strchr(buffer, '\n')) == NULL && gp_fgetc(f) != EOF) {
       eprintf5("%s" ERRPREF "Exceeding line length %d in "
           "media configuration file\n%s  %s, line %d.\n",
         epref, BUFFER_SIZE - 2 /* '\n'+'\0' */, epref, eprn->media_file, line);
@@ -563,14 +563,14 @@ static int eprn_read_media_data(eprn_Eprn *eprn, gs_memory_t *memory)
         "%s    are not supported by the %s.\n",
         wpref, eprn->media_file, wpref, line, wpref, eprn->cap->name);
   }
-  if (ferror(f)) {
+  if (gp_ferror(f)) {
     eprintf2("%s" ERRPREF
       "Unidentified system error while reading `%s'.\n",
       epref, eprn->media_file);
     cleanup();
     return_error(gs_error_invalidfileaccess);
   }
-  fclose(f);
+  gp_fclose(f);
 
   /* Was the file empty? */
   if (read == 0) {

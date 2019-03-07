@@ -628,7 +628,7 @@ dump_planar_rgba(gs_memory_t *mem, const pdf14_buf *pbuf)
     const char *software_key = "Software";
     char software_text[256];
     png_text text_png;
-    FILE *file;
+    gp_file *file;
     int code;
     int y;
 

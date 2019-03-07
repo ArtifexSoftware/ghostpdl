@@ -51,7 +51,7 @@ gp_set_file_binary(int prnfno, bool binary)
 
 /* Set a file into binary or text mode. */
 int
-gp_setmode_binary(FILE * pfile, bool binary)
+gp_setmode_binary_impl(FILE * pfile, bool binary)
 {
     gp_set_file_binary(fileno(pfile), binary);
     return 0;			/* Fake out dos return status */

@@ -46,25 +46,25 @@ gx_device_printer gs_fmpr_device =
 static int
 prn_putc(gx_device_printer *pdev, int c)
 {
-  return fputc(c, pdev->file);
+  return gp_fputc(c, pdev->file);
 }
 
 static int
 prn_puts(gx_device_printer *pdev, const char *ptr)
 {
-  return fputs(ptr, pdev->file);
+  return gp_fputs(ptr, pdev->file);
 }
 
 static int
 prn_write(gx_device_printer *pdev, const char *ptr, int size)
 {
-  return fwrite(ptr, 1, size, pdev->file);
+  return gp_fwrite(ptr, 1, size, pdev->file);
 }
 
-static int
+static void
 prn_flush(gx_device_printer *pdev)
 {
-  return fflush(pdev->file);
+  gp_fflush(pdev->file);
 }
 
 /* ------ internal routines ------ */
@@ -105,7 +105,7 @@ fmpr_transpose_8x8(byte *src, int src_step, byte *dst, int dst_step)
 
 /* Send the page to the printer. */
 static int
-fmpr_print_page(gx_device_printer *pdev, FILE *prn_stream)
+fmpr_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {
   int line_size = gdev_prn_raster(pdev);
   int height = pdev->height;

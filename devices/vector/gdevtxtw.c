@@ -112,10 +112,10 @@ typedef struct gx_device_txtwrite_s {
     gx_device_common;
     page_text_t PageData;
     char fname[gp_file_name_sizeof];	/* OutputFile */
-    FILE *file;
+    gp_file *file;
     int TextFormat;
 #ifdef TRACE_TXTWRITE
-    FILE *DebugFile;
+    gp_file *DebugFile;
 #endif
 } gx_device_txtwrite_t;
 
@@ -342,15 +342,15 @@ static int merge_vertically(gx_device_txtwrite_t *tdev)
                 fprintf(tdev->DebugFile, "\nConsolidating two horizontal lines, line 1:");
                 debug_x = from;
                 while (debug_x) {
-                    fprintf(tdev->DebugFile, "\n\t");
-                    fwrite(debug_x->Unicode_Text, sizeof(unsigned short), debug_x->Unicode_Text_Size, tdev->DebugFile);
+                    gp_fprintf(tdev->DebugFile, "\n\t");
+                    gp_fwrite(debug_x->Unicode_Text, sizeof(unsigned short), debug_x->Unicode_Text_Size, tdev->DebugFile);
                     debug_x = debug_x->next;
                 }
                 fprintf(tdev->DebugFile, "\nConsolidating two horizontal lines, line 2");
                 debug_x = to;
                 while (debug_x) {
-                    fprintf(tdev->DebugFile, "\n\t");
-                    fwrite(debug_x->Unicode_Text, sizeof(unsigned short), debug_x->Unicode_Text_Size, tdev->DebugFile);
+                    gp_fprintf(tdev->DebugFile, "\n\t");
+                    gp_fwrite(debug_x->Unicode_Text, sizeof(unsigned short), debug_x->Unicode_Text_Size, tdev->DebugFile);
                     debug_x = debug_x->next;
                 }
 #endif
@@ -387,8 +387,8 @@ static int merge_vertically(gx_device_txtwrite_t *tdev)
                 fprintf(tdev->DebugFile, "\nAfter:");
                 debug_x = new_order;
                 while (debug_x) {
-                    fprintf(tdev->DebugFile, "\n\t");
-                    fwrite(debug_x->Unicode_Text, sizeof(unsigned short), debug_x->Unicode_Text_Size, tdev->DebugFile);
+                    gp_fprintf(tdev->DebugFile, "\n\t");
+                    gp_fwrite(debug_x->Unicode_Text, sizeof(unsigned short), debug_x->Unicode_Text_Size, tdev->DebugFile);
                     debug_x = debug_x->next;
                 }
                 fprintf(tdev->DebugFile, "\n");
@@ -444,10 +444,10 @@ static int merge_horizontally(gx_device_txtwrite_t *tdev)
                     to = to->next;
                 } else {
 #ifdef TRACE_TXTWRITE
-                    fprintf(tdev->DebugFile, "Consolidating two horizontal fragments in one line, before:\n\t");
-                    fwrite(from->Unicode_Text, sizeof(unsigned short), from->Unicode_Text_Size, tdev->DebugFile);
-                    fprintf(tdev->DebugFile, "\n\t");
-                    fwrite(to->Unicode_Text, sizeof(unsigned short), to->Unicode_Text_Size, tdev->DebugFile);
+                    gp_fprintf(tdev->DebugFile, "Consolidating two horizontal fragments in one line, before:\n\t");
+                    gp_fwrite(from->Unicode_Text, sizeof(unsigned short), from->Unicode_Text_Size, tdev->DebugFile);
+                    gp_fprintf(tdev->DebugFile, "\n\t");
+                    gp_fwrite(to->Unicode_Text, sizeof(unsigned short), to->Unicode_Text_Size, tdev->DebugFile);
 #endif
                     memcpy(NewText, from->Unicode_Text, from->Unicode_Text_Size * sizeof(unsigned short));
                     memcpy(&NewText[from->Unicode_Text_Size], to->Unicode_Text, to->Unicode_Text_Size * sizeof(unsigned short));
@@ -462,8 +462,8 @@ static int merge_horizontally(gx_device_txtwrite_t *tdev)
                     from->Unicode_Text_Size += to->Unicode_Text_Size;
                     from->Widths = NewWidths;
 #ifdef TRACE_TXTWRITE
-                    fprintf(tdev->DebugFile, "After:\n\t");
-                    fwrite(from->Unicode_Text, sizeof(unsigned short), from->Unicode_Text_Size, tdev->DebugFile);
+                    gp_fprintf(tdev->DebugFile, "After:\n\t");
+                    gp_fwrite(from->Unicode_Text, sizeof(unsigned short), from->Unicode_Text_Size, tdev->DebugFile);
 #endif
                     from->end = to->end;
                     from->next = to->next;
@@ -524,7 +524,7 @@ static int write_simple_text(unsigned short *text, int count, gx_device_txtwrite
 {
     switch(tdev->TextFormat) {
         case 2:
-            fwrite(text, sizeof (unsigned short), count, tdev->file);
+            gp_fwrite(text, sizeof (unsigned short), count, tdev->file);
             break;
         case 3:
             {
@@ -535,17 +535,17 @@ static int write_simple_text(unsigned short *text, int count, gx_device_txtwrite
                 for (i=0;i<count;i++) {
                     if (*UTF16 < 0x80) {
                         UTF8[0] = *UTF16 & 0xff;
-                        fwrite (UTF8, sizeof(unsigned char), 1, tdev->file);
+                        gp_fwrite (UTF8, sizeof(unsigned char), 1, tdev->file);
                     } else {
                         if (*UTF16 < 0x800) {
                             UTF8[0] = (*UTF16 >> 6) + 0xC0;
                             UTF8[1] = (*UTF16 & 0x3F) + 0x80;
-                            fwrite (UTF8, sizeof(unsigned char), 2, tdev->file);
+                            gp_fwrite (UTF8, sizeof(unsigned char), 2, tdev->file);
                         } else {
                             UTF8[0] = (*UTF16 >> 12) + 0xE0;
                             UTF8[1] = ((*UTF16 >> 6) & 0x3F) + 0x80;
                             UTF8[2] = (*UTF16 & 0x3F) + 0x80;
-                            fwrite (UTF8, sizeof(unsigned char), 3, tdev->file);
+                            gp_fwrite (UTF8, sizeof(unsigned char), 3, tdev->file);
                         }
                     }
                     UTF16++;
@@ -677,33 +677,33 @@ static int decorated_text_output(gx_device_txtwrite_t *tdev)
 #endif
 
     if (tdev->TextFormat == 0) {
-        fwrite("<page>\n", sizeof(unsigned char), 7, tdev->file);
+        gp_fwrite("<page>\n", sizeof(unsigned char), 7, tdev->file);
         x_entry = tdev->PageData.unsorted_text_list;
         while (x_entry) {
             next_x = x_entry->next;
             gs_sprintf(TextBuffer, "<span bbox=\"%0.0f %0.0f %0.0f %0.0f\" font=\"%s\" size=\"%0.4f\">\n", x_entry->start.x, x_entry->start.y,
                 x_entry->end.x, x_entry->end.y, x_entry->FontName,x_entry->size);
-            fwrite(TextBuffer, 1, strlen(TextBuffer), tdev->file);
+            gp_fwrite(TextBuffer, 1, strlen(TextBuffer), tdev->file);
             xpos = x_entry->start.x;
             for (i=0;i<x_entry->Unicode_Text_Size;i++) {
                 escaped_Unicode(x_entry->Unicode_Text[i], (char *)&Escaped);
                 gs_sprintf(TextBuffer, "<char bbox=\"%0.0f %0.0f %0.0f %0.0f\" c=\"%s\"/>\n", xpos,
                     x_entry->start.y, xpos + x_entry->Widths[i], x_entry->end.y, Escaped);
-                fwrite(TextBuffer, 1, strlen(TextBuffer), tdev->file);
+                gp_fwrite(TextBuffer, 1, strlen(TextBuffer), tdev->file);
                 xpos += x_entry->Widths[i];
             }
-            fwrite("</span>\n", sizeof(unsigned char), 8, tdev->file);
+            gp_fwrite("</span>\n", sizeof(unsigned char), 8, tdev->file);
 
             x_entry = next_x;
         }
-        fwrite("</page>\n", sizeof(unsigned char), 8, tdev->file);
+        gp_fwrite("</page>\n", sizeof(unsigned char), 8, tdev->file);
     } else {
 
         merge_vertically(tdev);
         merge_horizontally(tdev);
 
         y_list = tdev->PageData.y_ordered_list;
-        fwrite("<page>\n", sizeof(unsigned char), 7, tdev->file);
+        gp_fwrite("<page>\n", sizeof(unsigned char), 7, tdev->file);
         /* Walk the list looking for 'blocks' */
         do {
             page_text_list_t *temp;
@@ -798,34 +798,34 @@ static int decorated_text_output(gx_device_txtwrite_t *tdev)
                     y_list = y_list->next;
             }
             /* FIXME - need to free the used memory in here */
-            fwrite("<block>\n", sizeof(unsigned char), 8, tdev->file);
+            gp_fwrite("<block>\n", sizeof(unsigned char), 8, tdev->file);
             block_line = block.y_ordered_list;
             while (block_line) {
-                fwrite("<line>\n", sizeof(unsigned char), 7, tdev->file);
+                gp_fwrite("<line>\n", sizeof(unsigned char), 7, tdev->file);
                 x_entry = block_line->x_ordered_list;
                 while(x_entry) {
                     gs_sprintf(TextBuffer, "<span bbox=\"%0.0f %0.0f %0.0f %0.0f\" font=\"%s\" size=\"%0.4f\">\n", x_entry->start.x, x_entry->start.y,
                         x_entry->end.x, x_entry->end.y, x_entry->FontName,x_entry->size);
-                    fwrite(TextBuffer, 1, strlen(TextBuffer), tdev->file);
+                    gp_fwrite(TextBuffer, 1, strlen(TextBuffer), tdev->file);
                     xpos = x_entry->start.x;
                     for (i=0;i<x_entry->Unicode_Text_Size;i++) {
                         escaped_Unicode(x_entry->Unicode_Text[i], (char *)&Escaped);
                         gs_sprintf(TextBuffer, "<char bbox=\"%0.0f %0.0f %0.0f %0.0f\" c=\"%s\"/>\n", xpos,
                             x_entry->start.y, xpos + x_entry->Widths[i], x_entry->end.y, Escaped);
-                        fwrite(TextBuffer, 1, strlen(TextBuffer), tdev->file);
+                        gp_fwrite(TextBuffer, 1, strlen(TextBuffer), tdev->file);
                         xpos += x_entry->Widths[i];
                     }
-                    fwrite("</span>\n", sizeof(unsigned char), 8, tdev->file);
+                    gp_fwrite("</span>\n", sizeof(unsigned char), 8, tdev->file);
                     x_entry = x_entry->next;
                 }
-                fwrite("</line>\n", sizeof(unsigned char), 8, tdev->file);
+                gp_fwrite("</line>\n", sizeof(unsigned char), 8, tdev->file);
                 block_line = block_line->next;
             }
-            fwrite("</block>\n", sizeof(unsigned char), 9, tdev->file);
+            gp_fwrite("</block>\n", sizeof(unsigned char), 9, tdev->file);
             y_list = tdev->PageData.y_ordered_list;
         } while (y_list);
 
-        fwrite("</page>\n", sizeof(unsigned char), 8, tdev->file);
+        gp_fwrite("</page>\n", sizeof(unsigned char), 8, tdev->file);
     }
     return 0;
 }
@@ -858,7 +858,7 @@ txtwrite_output_page(gx_device * dev, int num_copies, int flush)
             break;
 
         case 2:
-            fwrite (&BOM, sizeof(unsigned short), 1, tdev->file);
+            gp_fwrite (&BOM, sizeof(unsigned short), 1, tdev->file);
             /* fall through */
         case 3:
             code = simple_text_output(tdev);
@@ -1100,7 +1100,7 @@ txtwrite_put_params(gx_device * dev, gs_param_list * plist)
 
     if (ofs.data != 0) {	/* Close the file if it's open. */
         if (tdev->file != 0) {
-            fclose(tdev->file);
+            gp_fclose(tdev->file);
             tdev->file = 0;
         }
         memcpy(tdev->fname, ofs.data, ofs.size);

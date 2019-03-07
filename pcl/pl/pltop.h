@@ -91,6 +91,7 @@ typedef int (*pl_interp_proc_set_param_t) (pl_interp_implementation_t *,
 /*
  * Add a path to a language's search path.
  */
+int pl_add_path(pl_interp_implementation_t *impl, const char *path);
 typedef int (*pl_interp_proc_add_path_t) (pl_interp_implementation_t *,
                                           const char *);
 

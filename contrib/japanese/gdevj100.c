@@ -75,7 +75,7 @@ jj100_transpose_8x8(byte *src, int src_step, byte *dst, int dst_step)
 
 /* Send the page to the printer. */
 static int
-jj100_print_page(gx_device_printer *pdev, FILE *prn_stream)
+jj100_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {	int line_size = gdev_prn_raster(pdev);
         int height = pdev->height;
         int bits_per_column = 48;
@@ -91,9 +91,9 @@ jj100_print_page(gx_device_printer *pdev, FILE *prn_stream)
                 return -1;
 
         /* Initialize printer */
-        fputs("\033P", pdev->file);	/* Proportional Mode */
-        fputs("\033G", pdev->file);        /* 1/180 inch per line */
-        fputs("\033T16", pdev->file);	/* 16/180 inch per line */
+        gp_fputs("\033P", pdev->file);	/* Proportional Mode */
+        gp_fputs("\033G", pdev->file);        /* 1/180 inch per line */
+        gp_fputs("\033T16", pdev->file);	/* 16/180 inch per line */
 
         /* Send Data to printer */
         lnum = 0;
@@ -129,12 +129,12 @@ jj100_print_page(gx_device_printer *pdev, FILE *prn_stream)
                 /* Vertical tab to the appropriate position. */
                 while(skip > 15) {
                         gs_sprintf(prn_buf, "\037%c", 16 + 15);
-                        fputs(prn_buf, pdev->file);
+                        gp_fputs(prn_buf, pdev->file);
                         skip -= 15;
                 }
                 if(skip > 0) {
                         gs_sprintf(prn_buf, "\037%c", 16 + skip);
-                        fputs(prn_buf, pdev->file);
+                        gp_fputs(prn_buf, pdev->file);
                 }
 
                 /* Transpose in blocks of 8 scan lines. */
@@ -172,22 +172,22 @@ jj100_print_page(gx_device_printer *pdev, FILE *prn_stream)
                 /* Dot addressing */
                 gs_sprintf(prn_buf, "\033F%04d",
                         (out_beg - out) / bytes_per_column / 2);
-                fputs(prn_buf, pdev->file);
+                gp_fputs(prn_buf, pdev->file);
 
                 /* Dot graphics */
                 size = out_end - out_beg + 1;
                 gs_sprintf(prn_buf, "\034bP,48,%04d.", size / bytes_per_column);
-                fputs(prn_buf, pdev->file);
-                fwrite(out_beg, 1, size, pdev->file);
+                gp_fputs(prn_buf, pdev->file);
+                gp_fwrite(out_beg, 1, size, pdev->file);
 
                 /* Carriage Return */
-                fputc('\r', pdev->file);
+                gp_fputc('\r', pdev->file);
                 skip = 1;
         }
 
         /* Form Feed */
-        fputc('\f', pdev->file);
-        fflush(pdev->file);
+        gp_fputc('\f', pdev->file);
+        gp_fflush(pdev->file);
 
         gs_free(pdev->memory->non_gc_memory, (char *)out,
                 bits_per_column, line_size, "jj100_print_page(out)");

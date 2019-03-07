@@ -438,10 +438,10 @@ hl1250_compress_line(hl1250_state_t * s, unsigned int y)
    send a 16-bit big endian value
  */
 static void
-put_be16(FILE * fp, u16 data)
+put_be16(gp_file * fp, u16 data)
 {
-    putc(data >> 8, fp);
-    putc(data & 0xFF, fp);
+    gp_fputc(data >> 8, fp);
+    gp_fputc(data & 0xFF, fp);
 }
 
 /*
@@ -450,7 +450,7 @@ put_be16(FILE * fp, u16 data)
    band = Y coordinate of the band from top of page
  */
 static void
-hl1250_compress_band(FILE * prn_stream, hl1250_state_t * s, unsigned int band)
+hl1250_compress_band(gp_file * prn_stream, hl1250_state_t * s, unsigned int band)
 {
     unsigned int y, ytop, ybottom;
 
@@ -481,18 +481,18 @@ hl1250_compress_band(FILE * prn_stream, hl1250_state_t * s, unsigned int band)
         break;
     }
     if (s->out_count) {
-        fprintf(prn_stream, "\033*b%uW", s->out_count * sizeof(u16) + 9);
+        gp_fprintf(prn_stream, "\033*b%uW", s->out_count * sizeof(u16) + 9);
         put_be16(prn_stream, s->out_count * sizeof(u16) + 7);
         put_be16(prn_stream, s->xl * 16);
         put_be16(prn_stream, band + ytop);
-        putc(ybottom - ytop, prn_stream);
+        gp_fputc(ybottom - ytop, prn_stream);
         put_be16(prn_stream, s->xr - s->xl);
-        fwrite(s->out_buf, sizeof(u16), s->out_count, prn_stream);
+        gp_fwrite(s->out_buf, sizeof(u16), s->out_count, prn_stream);
     }
 }
 
 static int
-hl1250_print_1200dpi(gx_device_printer * pdev, FILE * prn_stream,
+hl1250_print_1200dpi(gx_device_printer * pdev, gp_file * prn_stream,
                      int num_copies, const char *page_init)
 {
     int band, lnum;
@@ -514,22 +514,22 @@ hl1250_print_1200dpi(gx_device_printer * pdev, FILE * prn_stream,
 
     if (pdev->PageCount == 0) {
         /* reset, set paper size */
-        fprintf(prn_stream, "\033E\033&l%dA", paper_size);
+        gp_fprintf(prn_stream, "\033E\033&l%dA", paper_size);
     }
-    fputs("\033&u1200D", prn_stream);
-    fputs("\033&l0o0l0E", prn_stream);
-    fputs(page_init, prn_stream);
-    fprintf(prn_stream, "\033&l%dX", num_copies);
-    fputs("\033*rB\033*p0x0Y", prn_stream);
+    gp_fputs("\033&u1200D", prn_stream);
+    gp_fputs("\033&l0o0l0E", prn_stream);
+    gp_fputs(page_init, prn_stream);
+    gp_fprintf(prn_stream, "\033&l%dX", num_copies);
+    gp_fputs("\033*rB\033*p0x0Y", prn_stream);
 
     /* set 600dpi (vertical) resolution */
-    fputs("\033*t600R", prn_stream);
+    gp_fputs("\033*t600R", prn_stream);
 
     /* start raster graphics */
-    fputs("\033*r1A", prn_stream);
+    gp_fputs("\033*r1A", prn_stream);
 
     /* transfer data in the special 1200x600 dpi format */
-    fputs("\033*b1027M", prn_stream);
+    gp_fputs("\033*b1027M", prn_stream);
 
     for (band = 0; band < num_rows; band += BAND_SCANS) {
         int next_band = band + BAND_SCANS;
@@ -549,7 +549,7 @@ hl1250_print_1200dpi(gx_device_printer * pdev, FILE * prn_stream,
         hl1250_compress_band(prn_stream, s, band);
     }
   error_out:
-    fputs("\033*rB\f", prn_stream);
+    gp_fputs("\033*rB\f", prn_stream);
     gs_free_object(pdev->memory, s, "hl1250_print_1200dpi");
     return code;
 }
@@ -590,21 +590,21 @@ static int
 hl1250_close(gx_device * pdev)
 {
     int code = gdev_prn_open_printer(pdev, 1);
-    FILE *fp;
+    gp_file *fp;
 
     if (code < 0)
         return code;
     fp = ((gx_device_printer *) pdev)->file;
     /* job separation, reset, UEL */
-    fputs("\033&l1T\033E", fp);
-    fputs(UEL, fp);
-    fprintf(fp, "@PJL EOJ NAME=\"%s\"\r\n", PJL_JOB_NAME);
-    fputs(UEL, fp);
+    gp_fputs("\033&l1T\033E", fp);
+    gp_fputs(UEL, fp);
+    gp_fprintf(fp, "@PJL EOJ NAME=\"%s\"\r\n", PJL_JOB_NAME);
+    gp_fputs(UEL, fp);
     return gdev_prn_close(pdev);
 }
 
 static int
-hl1250_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
+hl1250_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream,
                          int num_copies)
 {
     int x_dpi = (int)pdev->x_pixels_per_inch;
@@ -641,18 +641,18 @@ hl1250_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
     }
     if (pdev->PageCount == 0) {
         /* initialize printer */
-        fputs(UEL, prn_stream);
-        fputs("@PJL \r\n", prn_stream);
-        fprintf(prn_stream, "@PJL JOB NAME=\"%s\"\r\n", PJL_JOB_NAME);
-        fprintf(prn_stream, "@PJL SET ECONOMODE=%s\n", onoff[econo_mode != 0]);
+        gp_fputs(UEL, prn_stream);
+        gp_fputs("@PJL \r\n", prn_stream);
+        gp_fprintf(prn_stream, "@PJL JOB NAME=\"%s\"\r\n", PJL_JOB_NAME);
+        gp_fprintf(prn_stream, "@PJL SET ECONOMODE=%s\n", onoff[econo_mode != 0]);
         if (econo_mode)
-            fprintf(prn_stream, "@PJL SET ECONOLEVEL=%d\n", 3 - (int)econo_mode);
-        fprintf(prn_stream, "@PJL SET MEDIATYPE=%s\n", papertypes[paper_type]);
-        fprintf(prn_stream, "@PJL SET SOURCETRAY=%s\n", tray_pjl);
-        fprintf(prn_stream, "@PJL SET RESOLUTION=%d\n", y_dpi);
-        fprintf(prn_stream, "@PJL SET RAS1200MODE=%s\n", onoff[x_dpi == 1200]);
+            gp_fprintf(prn_stream, "@PJL SET ECONOLEVEL=%d\n", 3 - (int)econo_mode);
+        gp_fprintf(prn_stream, "@PJL SET MEDIATYPE=%s\n", papertypes[paper_type]);
+        gp_fprintf(prn_stream, "@PJL SET SOURCETRAY=%s\n", tray_pjl);
+        gp_fprintf(prn_stream, "@PJL SET RESOLUTION=%d\n", y_dpi);
+        gp_fprintf(prn_stream, "@PJL SET RAS1200MODE=%s\n", onoff[x_dpi == 1200]);
 
-        fputs("@PJL ENTER LANGUAGE=PCL\n", prn_stream);
+        gp_fputs("@PJL ENTER LANGUAGE=PCL\n", prn_stream);
     }
     if (x_dpi != 1200) {
         char page_init[100];

@@ -573,15 +573,15 @@ struct misc_struct {
 
     /* function pointer typedefs for device driver struct */
 typedef void (*StartRasterMode) (gx_device_printer * pdev, int paper_size,
-                                 FILE * prn_stream);
+                                 gp_file * prn_stream);
 typedef void (*PrintNonBlankLines) (gx_device_printer * pdev,
                                     struct ptr_arrays *data_ptrs,
                                     struct misc_struct *misc_vars,
                                     struct error_val_field *error_values,
                                     const Gamma *gamma,
-                                    FILE * prn_stream);
+                                    gp_file * prn_stream);
 
-typedef void (*TerminatePage) (gx_device_printer * pdev, FILE * prn_stream);
+typedef void (*TerminatePage) (gx_device_printer * pdev, gp_file * prn_stream);
 
 typedef struct gx_device_cdj850_s {
     gx_device_common;
@@ -726,7 +726,7 @@ typedef struct {
  */
 static void
      cdj850_start_raster_mode(gx_device_printer * pdev,
-                              int papersize, FILE * prn_stream);
+                              int papersize, gp_file * prn_stream);
 
 static void
      cdj850_print_non_blank_lines(gx_device_printer * pdev,
@@ -734,17 +734,17 @@ static void
                                   struct misc_struct *misc_vars,
                                   struct error_val_field *error_values,
                                   const Gamma *gamma,
-                                  FILE * prn_stream);
+                                  gp_file * prn_stream);
 
 static void
-     cdj850_terminate_page(gx_device_printer * pdev, FILE * prn_stream);
+     cdj850_terminate_page(gx_device_printer * pdev, gp_file * prn_stream);
 
 /*  The 880C and siblings need a separate set of functions because they seem
  *  to require a somewhat different version of PCL3+.
  */
 static void
      cdj880_start_raster_mode(gx_device_printer * pdev,
-                              int papersize, FILE * prn_stream);
+                              int papersize, gp_file * prn_stream);
 
 static void
      cdj880_print_non_blank_lines(gx_device_printer * pdev,
@@ -752,41 +752,41 @@ static void
                                   struct misc_struct *misc_vars,
                                   struct error_val_field *error_values,
                                   const Gamma *gamma,
-                                  FILE * prn_stream);
+                                  gp_file * prn_stream);
 
 static void
-     cdj880_terminate_page(gx_device_printer * pdev, FILE * prn_stream);
+     cdj880_terminate_page(gx_device_printer * pdev, gp_file * prn_stream);
 
 /*  Functions for the 1600C.
  */
 static void
      cdj1600_start_raster_mode(gx_device_printer * pdev,
-                               int papersize, FILE * prn_stream);
+                               int papersize, gp_file * prn_stream);
 static void
      cdj1600_print_non_blank_lines(gx_device_printer * pdev,
                                    struct ptr_arrays *data_ptrs,
                                    struct misc_struct *misc_vars,
                                    struct error_val_field *error_values,
                                    const Gamma *gamma,
-                                   FILE * prn_stream);
+                                   gp_file * prn_stream);
 static void
-     cdj1600_terminate_page(gx_device_printer * pdev, FILE * prn_stream);
+     cdj1600_terminate_page(gx_device_printer * pdev, gp_file * prn_stream);
 
 /*  Functions for the HP2200C */
 static void
      chp2200_start_raster_mode(gx_device_printer * pdev,
-                               int papersize, FILE * prn_stream);
+                               int papersize, gp_file * prn_stream);
 
 static void
-     chp2200_terminate_page(gx_device_printer * pdev, FILE * prn_stream);
+     chp2200_terminate_page(gx_device_printer * pdev, gp_file * prn_stream);
 
 /*  Functions for the DNJ500C */
 static void
      cdnj500_start_raster_mode(gx_device_printer * pdev,
-                               int papersize, FILE * prn_stream);
+                               int papersize, gp_file * prn_stream);
 
 static void
-     cdnj500_terminate_page(gx_device_printer * pdev, FILE * prn_stream);
+     cdnj500_terminate_page(gx_device_printer * pdev, gp_file * prn_stream);
 
 static const gx_device_procs cdj670_procs =
 cmyk_colour_procs(hp_colour_open, cdj850_get_params, cdj850_put_params,
@@ -1182,7 +1182,7 @@ static void
                      struct misc_struct *misc_vars,
                      struct error_val_field *error_values,
                      const Gamma *gamma,
-                     FILE * prn_stream);
+                     gp_file * prn_stream);
 #ifdef UNUSED
 static void
      do_gamma(float mastergamma, float gammaval, byte * values);
@@ -1211,39 +1211,39 @@ assign_dpi(int dpi, byte * msb)
 }
 
 static void
-cdj850_terminate_page(gx_device_printer * pdev, FILE * prn_stream)
+cdj850_terminate_page(gx_device_printer * pdev, gp_file * prn_stream)
 {
-    fputs("0M", prn_stream);	/* Reset compression */
-    fputs("\033*rC\033E", prn_stream);	/* End Graphics, Reset */
-    fputs("\033&l0H", prn_stream);	/* eject page */
+    gp_fputs("0M", prn_stream);	/* Reset compression */
+    gp_fputs("\033*rC\033E", prn_stream);	/* End Graphics, Reset */
+    gp_fputs("\033&l0H", prn_stream);	/* eject page */
 }
 
 static void
-cdj880_terminate_page(gx_device_printer * pdev, FILE * prn_stream)
+cdj880_terminate_page(gx_device_printer * pdev, gp_file * prn_stream)
 {
-    fputs("\033*rC\f\033E", prn_stream);  /* End graphics, FF, Reset */
-    fputs("\033%-12345X", prn_stream);
+    gp_fputs("\033*rC\f\033E", prn_stream);  /* End graphics, FF, Reset */
+    gp_fputs("\033%-12345X", prn_stream);
 }
 
 /* HP2200 terminate page routine */
 static void
-chp2200_terminate_page(gx_device_printer * pdev, FILE * prn_stream)
+chp2200_terminate_page(gx_device_printer * pdev, gp_file * prn_stream)
 {
-    fputs("\033*rC\f\033E", prn_stream);  /* End graphics, FF, Reset */
-    fputs("\033%-12345X@PJL EOJ\012\033%-12345X", prn_stream); /* Send the PJL EOJ */
+    gp_fputs("\033*rC\f\033E", prn_stream);  /* End graphics, FF, Reset */
+    gp_fputs("\033%-12345X@PJL EOJ\012\033%-12345X", prn_stream); /* Send the PJL EOJ */
 }
 
 /* DNJ500 terminate page routine */
 static void
-cdnj500_terminate_page(gx_device_printer * pdev, FILE * prn_stream)
+cdnj500_terminate_page(gx_device_printer * pdev, gp_file * prn_stream)
 {
-    fputs("\033*rC", prn_stream);  /* End graphics */
-    fputs("\033%-12345X@PJL EOJ \n", prn_stream); /* Send the PJL EOJ */
+    gp_fputs("\033*rC", prn_stream);  /* End graphics */
+    gp_fputs("\033%-12345X@PJL EOJ \n", prn_stream); /* Send the PJL EOJ */
 }
 
 /* Here comes the hp850 output routine -------------------- */
 static int
-cdj850_print_page(gx_device_printer * pdev, FILE * prn_stream)
+cdj850_print_page(gx_device_printer * pdev, gp_file * prn_stream)
 {
 
     struct error_val_field error_values;
@@ -1726,7 +1726,7 @@ IsScanlineDirty(byte* pScanline, int iWidth)
 
 /* HP2200 output routine -------------------- */
 static int
-chp2200_print_page(gx_device_printer * pdev, FILE * prn_stream)
+chp2200_print_page(gx_device_printer * pdev, gp_file * prn_stream)
 {
     gs_memory_t *mem = pdev->memory;
     int width_in_pixels = pdev->width;
@@ -1752,7 +1752,7 @@ chp2200_print_page(gx_device_printer * pdev, FILE * prn_stream)
                                   prn_stream);
 
     /* start the scanline */
-    fputs("\033*b", prn_stream);
+    gp_fputs("\033*b", prn_stream);
 
     /* initialise buffers */
     INIT_WHITE(lseedbuf, width_in_bytes);
@@ -1771,7 +1771,7 @@ chp2200_print_page(gx_device_printer * pdev, FILE * prn_stream)
             if (iEmptyRows)
             {
                 /* send vertical Y move */
-                        fprintf(prn_stream, "%dy", iEmptyRows);
+                        gp_fprintf(prn_stream, "%dy", iEmptyRows);
 
                 /* reset empty row count */
                 iEmptyRows = 0;
@@ -1787,15 +1787,15 @@ chp2200_print_page(gx_device_printer * pdev, FILE * prn_stream)
 
             if (OutputLen)
             {
-                fprintf(prn_stream, "%dw", OutputLen);
-                        fwrite(loutputbuf, sizeof(byte), OutputLen, prn_stream);
+                gp_fprintf(prn_stream, "%dw", OutputLen);
+                gp_fwrite(loutputbuf, sizeof(byte), OutputLen, prn_stream);
 
                 /* save the current scanline as the seed for the next scanline*/
                 memcpy((void*)lseedbuf, (const void*)data, width_in_bytes);
             }
             else
             {
-                        fputs("0w", prn_stream);
+                        gp_fputs("0w", prn_stream);
             }
         }
         else
@@ -1805,7 +1805,7 @@ chp2200_print_page(gx_device_printer * pdev, FILE * prn_stream)
     }
 
     /* terminate the scanline */
-    fputs("0Y", prn_stream);
+    gp_fputs("0Y", prn_stream);
 
     /* terminate page and eject paper */
     (*cdj850->terminate_page) (pdev, prn_stream);
@@ -1822,7 +1822,7 @@ chp2200_print_page(gx_device_printer * pdev, FILE * prn_stream)
 
 /* DNJ500 output routine -------------------- */
 static int
-cdnj500_print_page(gx_device_printer * pdev, FILE * prn_stream)
+cdnj500_print_page(gx_device_printer * pdev, gp_file * prn_stream)
 {
     byte  CRD_SeqC[]     = {0x1b, 0x2a, 0x67, 0x31, 0x32, 0x57, 0x06, 0x1F, 0x00, 0x01,
     /*                      Esc   *     |g    |# of bytes |W    |frmt |SP   |# of cmpnts*/
@@ -1883,10 +1883,10 @@ cdnj500_print_page(gx_device_printer * pdev, FILE * prn_stream)
             if (iBlock == 448) /* from DesignJet 500 winNT driver */
             {
                 /* terminate the scanline */
-                fputs("0Y", prn_stream);
+                gp_fputs("0Y", prn_stream);
 
                 /* End graphics */
-                fputs("\033*rC", prn_stream);
+                gp_fputs("\033*rC", prn_stream);
 
                 /* Reset in block lines counter */
                 iBlock = 0;
@@ -1894,13 +1894,13 @@ cdnj500_print_page(gx_device_printer * pdev, FILE * prn_stream)
             if (iBlock == 0)
             {
                 /* Send CRD */
-                fwrite(CRD_SeqC, sizeof(byte), sizeof(CRD_SeqC), prn_stream);
+                gp_fwrite(CRD_SeqC, sizeof(byte), sizeof(CRD_SeqC), prn_stream);
 
                 /* Raster mode */
-                fputs("\033*r1A", prn_stream);
+                gp_fputs("\033*r1A", prn_stream);
 
                 /* start the scanline */
-                fputs("\033*b", prn_stream);
+                gp_fputs("\033*b", prn_stream);
 
                 /* reset seed buffer */
                 INIT_WHITE(lseedbuf, width_in_bytes);
@@ -1910,7 +1910,7 @@ cdnj500_print_page(gx_device_printer * pdev, FILE * prn_stream)
             if (iEmptyRows)
             {
                 /* send vertical Y move */
-                        fprintf(prn_stream, "%dy", iEmptyRows);
+                        gp_fprintf(prn_stream, "%dy", iEmptyRows);
 
                 /* reset empty row count */
                 iEmptyRows = 0;
@@ -1926,15 +1926,15 @@ cdnj500_print_page(gx_device_printer * pdev, FILE * prn_stream)
 
             if (OutputLen)
             {
-                fprintf(prn_stream, "%dw", OutputLen);
-                        fwrite(loutputbuf, sizeof(byte), OutputLen, prn_stream);
+                gp_fprintf(prn_stream, "%dw", OutputLen);
+                gp_fwrite(loutputbuf, sizeof(byte), OutputLen, prn_stream);
 
                 /* save the current scanline as the seed for the next scanline*/
                 memcpy((void*)lseedbuf, (const void*)data, width_in_bytes);
             }
             else
             {
-                        fputs("0w", prn_stream);
+                        gp_fputs("0w", prn_stream);
             }
 
             /* Content printing already started */
@@ -1948,7 +1948,7 @@ cdnj500_print_page(gx_device_printer * pdev, FILE * prn_stream)
     }
 
     /* terminate the scanline */
-    fputs("0Y", prn_stream);
+    gp_fputs("0Y", prn_stream);
 
     /* terminate page and eject paper */
     (*cdj850->terminate_page) (pdev, prn_stream);
@@ -1994,7 +1994,7 @@ send_scan_lines(gx_device_printer * pdev,
                 struct misc_struct *misc_vars,
                 struct error_val_field *error_values,
                 const Gamma *gamma,
-                FILE * prn_stream)
+                gp_file * prn_stream)
 {
     int lnum, lend, llen;
     int num_blank_lines = 0;
@@ -2024,7 +2024,7 @@ send_scan_lines(gx_device_printer * pdev,
         }
         /* Skip blank lines if any */
         if (num_blank_lines > 0) {
-            fprintf(prn_stream, "\033*b%dY", num_blank_lines / (cdj850->yscal + 1));
+            gp_fprintf(prn_stream, "\033*b%dY", num_blank_lines / (cdj850->yscal + 1));
             memset(data_ptrs->plane_data[0][0], 0,
                    (misc_vars->plane_size * 2 * misc_vars->num_comps));
             memset(data_ptrs->plane_data_c[0][0], 0,
@@ -2034,7 +2034,7 @@ send_scan_lines(gx_device_printer * pdev,
         /* all blank lines printed, now for the non-blank lines */
         if (cdj850->yscal && odd(lnum)) {
             /* output a blank black plane for odd lines */
-            fprintf(prn_stream, "\033*b0V");
+            gp_fprintf(prn_stream, "\033*b0V");
         }
         /* now output all non blank lines */
         while (lnum < lend && llen != 0) {
@@ -2053,16 +2053,16 @@ send_scan_lines(gx_device_printer * pdev,
 
 /* print_line compresses (mode 9) and outputs one plane */
 static void
-print_c9plane(FILE * prn_stream, char plane_code, int plane_size,
+print_c9plane(gp_file * prn_stream, char plane_code, int plane_size,
               const byte * curr, const byte * prev, byte * out_data)
 {
     /* Compress the output data */
     int out_count = gdev_pcl_mode9compress(plane_size, curr, prev, out_data);
 
     /* and output the data */
-        fprintf(prn_stream, "%d%c", out_count, plane_code);
+        gp_fprintf(prn_stream, "%d%c", out_count, plane_code);
     if (out_count > 0) {
-        fwrite(out_data, sizeof(byte), out_count, prn_stream);
+        gp_fwrite(out_data, sizeof(byte), out_count, prn_stream);
     }
 }
 
@@ -2072,7 +2072,7 @@ print_c9plane(FILE * prn_stream, char plane_code, int plane_size,
  *  result to the output.
  */
 static void
-print_c2plane(FILE *prn_stream, char plane_code, int plane_size,
+print_c2plane(gp_file *prn_stream, char plane_code, int plane_size,
               const byte *curr, byte *out_data)
 {
   /*
@@ -2084,9 +2084,9 @@ print_c2plane(FILE *prn_stream, char plane_code, int plane_size,
   /*
    *  Send it out
    */
-  fprintf(prn_stream, "%d%c", out_count, plane_code);
+  gp_fprintf(prn_stream, "%d%c", out_count, plane_code);
   if (out_count > 0)
-    fwrite(out_data, sizeof(byte), out_count, prn_stream);
+      gp_fwrite(out_data, sizeof(byte), out_count, prn_stream);
 }
 
 #ifdef UNUSED
@@ -2095,12 +2095,12 @@ print_c2plane(FILE *prn_stream, char plane_code, int plane_size,
  *  Outputs a plane with no compression.
  */
 static void
-print_c0plane(FILE *prn_stream, char plane_code, int plane_size,
+print_c0plane(gp_file *prn_stream, char plane_code, int plane_size,
               const byte *curr, byte *out_data)
 {
-  fprintf(prn_stream, "%d%c", plane_size, plane_code);
+  gp_fprintf(prn_stream, "%d%c", plane_size, plane_code);
   if (plane_size > 0)
-    fwrite(curr, sizeof(byte), plane_size, prn_stream);
+    gp_fwrite(curr, sizeof(byte), plane_size, prn_stream);
 }
 #endif
 
@@ -2111,7 +2111,7 @@ cdj850_print_non_blank_lines(gx_device_printer * pdev,
                              struct misc_struct *misc_vars,
                              struct error_val_field *error_values,
                              const Gamma *gamma,
-                             FILE * prn_stream)
+                             gp_file * prn_stream)
 {
     static const char *const plane_code[2] =
     {"wvvv", "vvvv"};
@@ -2189,7 +2189,7 @@ cdj880_print_non_blank_lines(gx_device_printer * pdev,
                              struct misc_struct *misc_vars,
                              struct error_val_field *error_values,
                              const Gamma *gamma,
-                             FILE * prn_stream)
+                             gp_file * prn_stream)
 {
     static const char *const plane_code[2] =
     {"WVVV", "VVVV"};
@@ -2214,12 +2214,12 @@ cdj880_print_non_blank_lines(gx_device_printer * pdev,
               error_values, kP, misc_vars->num_comps, ep, dp);
 
     /* output the black plane */
-    fputs("\033*b", prn_stream);
+    gp_fputs("\033*b", prn_stream);
     print_c2plane(prn_stream, 'V', misc_vars->plane_size,
                   data_ptrs->plane_data[misc_vars->scan][3],
 /*		  data_ptrs->plane_data[1 - misc_vars->scan][3],*/
                   data_ptrs->out_data);
-/*    fputs("\033*b0V", prn_stream);*/
+/*    gp_fputs("\033*b0V", prn_stream);*/
 
     /* since color resolution is only half of the b/w-resolution,
        we only output every second row */
@@ -2241,7 +2241,7 @@ cdj880_print_non_blank_lines(gx_device_printer * pdev,
         for (i = misc_vars->num_comps - 2; i >= 0; i--) {
 
             /* output the lower color planes */
-      fputs("\033*b", prn_stream);
+      gp_fputs("\033*b", prn_stream);
             print_c2plane(prn_stream, plane_code[cdj850->intensities > 2][i],
                           plane_size_c,
                           data_ptrs->plane_data_c[misc_vars->cscan][i],
@@ -2250,7 +2250,7 @@ cdj880_print_non_blank_lines(gx_device_printer * pdev,
 
             /* output the upper color planes */
             if (cdj850->intensities > 2) {
-    fputs("\033*b", prn_stream);
+    gp_fputs("\033*b", prn_stream);
                 print_c2plane(prn_stream, plane_code[0][i], plane_size_c,
                               data_ptrs->plane_data_c[misc_vars->cscan][i + 4],
 /*			      data_ptrs->plane_data_c[1 -
@@ -3125,7 +3125,7 @@ init_data_structure(gx_device_printer * pdev,
 /* Configure the printer and start Raster mode */
 static void
 cdj850_start_raster_mode(gx_device_printer * pdev, int paper_size,
-                         FILE * prn_stream)
+                         gp_file * prn_stream)
 {
     int xres, yres;		/* x,y resolution for color planes */
     hp850_cmyk_init_t init;
@@ -3151,32 +3151,32 @@ cdj850_start_raster_mode(gx_device_printer * pdev, int paper_size,
     assign_dpi(xres, init.a + 20);
     assign_dpi(yres, init.a + 22);
 
-    fputs("\033*rbC", prn_stream);	/* End raster graphics */
-    fputs("\033E", prn_stream);	/* Reset */
+    gp_fputs("\033*rbC", prn_stream);	/* End raster graphics */
+    gp_fputs("\033E", prn_stream);	/* Reset */
     /* Page size, orientation, top margin & perforation skip */
-    fprintf(prn_stream, "\033&l%daolE", paper_size);
+    gp_fprintf(prn_stream, "\033&l%daolE", paper_size);
 
     /* Print Quality, -1 = draft, 0 = normal, 1 = presentation */
-    fprintf(prn_stream, "\033*o%dM", cdj850->quality);
+    gp_fprintf(prn_stream, "\033*o%dM", cdj850->quality);
     /* Media Type,0 = plain paper, 1 = bond paper, 2 = special
        paper, 3 = glossy film, 4 = transparency film */
-    fprintf(prn_stream, "\033&l%dM", cdj850->papertype);
+    gp_fprintf(prn_stream, "\033&l%dM", cdj850->papertype);
 
     /* Move to top left of printed area */
-    fprintf(prn_stream, "\033*p%dY", (int)(600 * DOFFSET));
+    gp_fprintf(prn_stream, "\033*p%dY", (int)(600 * DOFFSET));
 
     /* This will start and configure the raster-mode */
-    fprintf(prn_stream, "\033*g%dW", (int)sizeof(init.a));	/* The new configure
+    gp_fprintf(prn_stream, "\033*g%dW", (int)sizeof(init.a));	/* The new configure
                                                                            raster data comand */
-    fwrite(init.a, sizeof(byte), sizeof(init.a),
-           prn_stream);		/* Transmit config
+    gp_fwrite(init.a, sizeof(byte), sizeof(init.a),
+              prn_stream);	/* Transmit config
                                    data */
     /* From now on, all escape commands start with \033*b, so we
      * combine them (if the printer supports this). */
-    fputs("\033*b", prn_stream);
+    gp_fputs("\033*b", prn_stream);
     /* Set compression if the mode has been defined. */
     if (cdj850->compression)
-        fprintf(prn_stream, "%dm", cdj850->compression);
+        gp_fprintf(prn_stream, "%dm", cdj850->compression);
 
     return;
 }				/* end configure raster-mode */
@@ -3184,7 +3184,7 @@ cdj850_start_raster_mode(gx_device_printer * pdev, int paper_size,
 /* Configure the printer and start Raster mode */
 static void
 cdj880_start_raster_mode(gx_device_printer * pdev, int paper_size,
-                         FILE * prn_stream)
+                         gp_file * prn_stream)
 {
     int xres, yres;		/* x,y resolution for color planes */
     hp850_cmyk_init_t init;
@@ -3210,42 +3210,42 @@ cdj880_start_raster_mode(gx_device_printer * pdev, int paper_size,
     assign_dpi(xres, init.a + 20);
     assign_dpi(yres, init.a + 22);
 
-    fputs("\033*rbC", prn_stream);	/* End raster graphics */
-    fputs("\033E", prn_stream);	/* Reset */
+    gp_fputs("\033*rbC", prn_stream);	/* End raster graphics */
+    gp_fputs("\033E", prn_stream);	/* Reset */
 
     /* Set the language to PCL3 enhanced, DeskJet 880 style */
-    fprintf(prn_stream, "\033%%-12345X@PJL ENTER LANGUAGE=PCL3GUI\n");
+    gp_fprintf(prn_stream, "\033%%-12345X@PJL ENTER LANGUAGE=PCL3GUI\n");
 
     /* Page size, orientation, top margin & perforation skip */
-    fprintf(prn_stream, "\033&l%daolE", paper_size);
+    gp_fprintf(prn_stream, "\033&l%daolE", paper_size);
 
     /* Print Quality, -1 = draft, 0 = normal, 1 = presentation */
-    fprintf(prn_stream, "\033*o%dM", cdj850->quality);
+    gp_fprintf(prn_stream, "\033*o%dM", cdj850->quality);
     /* Media Type,0 = plain paper, 1 = bond paper, 2 = special
        paper, 3 = glossy film, 4 = transparency film */
-    fprintf(prn_stream, "\033&l%dM", cdj850->papertype);
+    gp_fprintf(prn_stream, "\033&l%dM", cdj850->papertype);
 
     /* Move to top left of printed area */
-    fprintf(prn_stream, "\033*p%dY", (int)(600 * DOFFSET));
+    gp_fprintf(prn_stream, "\033*p%dY", (int)(600 * DOFFSET));
 
     /* This will configure the raster-mode */
-    fprintf(prn_stream, "\033*g%dW", (int)sizeof(init.a));	/* The new configure
+    gp_fprintf(prn_stream, "\033*g%dW", (int)sizeof(init.a));	/* The new configure
                                                                            raster data comand */
-    fwrite(init.a, sizeof(byte), sizeof(init.a),
-           prn_stream);		/* Transmit config
+    gp_fwrite(init.a, sizeof(byte), sizeof(init.a),
+              prn_stream);	/* Transmit config
                                    data */
 
     /*  Start the raster graphics mode.  The 880C needs this explicit command.
      */
-    fputs("\033*r1A", prn_stream);
+    gp_fputs("\033*r1A", prn_stream);
 
     /* From now on, all escape commands start with \033*b, so we
      * combine them (if the printer supports this). */
-/*    fputs("\033*b", prn_stream);*/
+/*    gp_fputs("\033*b", prn_stream);*/
 
     /* Set compression if the mode has been defined. */
 /*    if (cdj850->compression)*/
-        fprintf(prn_stream, "\033*b%dm", cdj850->compression);
+        gp_fprintf(prn_stream, "\033*b%dm", cdj850->compression);
 
     return;
 }				/* end configure raster-mode */
@@ -3253,7 +3253,7 @@ cdj880_start_raster_mode(gx_device_printer * pdev, int paper_size,
 /* Start Raster mode for HP2200 */
 static void
 chp2200_start_raster_mode(gx_device_printer * pdev, int paper_size,
-                         FILE * prn_stream)
+                         gp_file * prn_stream)
 {
     byte  CRD_SeqC[]     = {0x1b, 0x2a, 0x67, 0x31, 0x32, 0x57, 0x06, 0x07, 0x00, 0x01,
     /*                      Esc   *     |g    |# of bytes |W    |frmt |SP   |# of cmpnts*/
@@ -3266,52 +3266,52 @@ chp2200_start_raster_mode(gx_device_printer * pdev, int paper_size,
     int width_in_pixels = cdj850->width;
 
     /* Exit from any previous language */
-    fprintf(prn_stream, "\033%%-12345X");
+    gp_fprintf(prn_stream, "\033%%-12345X");
 
     /* send @PJL JOB NAME before entering the language
      * this will be matched by a @PJL EOJ after leaving the language
      */
-    fprintf(prn_stream, "@PJL JOB NAME=\"ghostscript job\"\012");
+    gp_fprintf(prn_stream, "@PJL JOB NAME=\"ghostscript job\"\012");
 
     /* Set timeout value */
-    fprintf(prn_stream, "@PJL SET TIMEOUT=90\n");
+    gp_fprintf(prn_stream, "@PJL SET TIMEOUT=90\n");
 
     /* Set the language to PCL3 enhanced */
-    fprintf(prn_stream, "@PJL ENTER LANGUAGE=PCL3GUI\n");
+    gp_fprintf(prn_stream, "@PJL ENTER LANGUAGE=PCL3GUI\n");
 
     /* Paper source: assume AutoFeed */
-    fprintf(prn_stream, "\033&l7H");
+    gp_fprintf(prn_stream, "\033&l7H");
 
     /* Media Type,0 = plain paper, 1 = bond paper, 2 = special
        paper, 3 = glossy film, 4 = transparency film */
-    fprintf(prn_stream, "\033&l%dM", cdj850->papertype);
+    gp_fprintf(prn_stream, "\033&l%dM", cdj850->papertype);
 
     /* Print Quality, -1 = draft, 0 = normal, 1 = presentation */
-    fprintf(prn_stream, "\033*o%dM", cdj850->quality);
+    gp_fprintf(prn_stream, "\033*o%dM", cdj850->quality);
 
     /* Raster Width */
-    fprintf(prn_stream, "\033*r%dS", width_in_pixels);
+    gp_fprintf(prn_stream, "\033*r%dS", width_in_pixels);
 
     /* Page size */
-    fprintf(prn_stream, "\033&l%dA", paper_size);
+    gp_fprintf(prn_stream, "\033&l%dA", paper_size);
 
     /* Load paper */
-    fprintf(prn_stream, "\033&l-2H");
+    gp_fprintf(prn_stream, "\033&l-2H");
 
     /* Unit of Measure*/
-    fprintf(prn_stream, "\033&u%dD", (int)xres);
+    gp_fprintf(prn_stream, "\033&u%dD", (int)xres);
 
     /* Move to top of form */
-    fprintf(prn_stream, "\033*p%dY", (int)(yres * DOFFSET));
+    gp_fprintf(prn_stream, "\033*p%dY", (int)(yres * DOFFSET));
 
     /* This will configure the raster-mode */
     CRD_SeqC[10] = HIBYTE(xres);
     CRD_SeqC[11] = LOBYTE(xres);
     CRD_SeqC[12] = HIBYTE(yres);
     CRD_SeqC[13] = LOBYTE(yres);
-    fwrite(CRD_SeqC, sizeof(byte), sizeof(CRD_SeqC), prn_stream);
+    gp_fwrite(CRD_SeqC, sizeof(byte), sizeof(CRD_SeqC), prn_stream);
 
-    fputs("\033*r1A", prn_stream);
+    gp_fputs("\033*r1A", prn_stream);
 
     return;
 }				/* end configure raster-mode */
@@ -3319,7 +3319,7 @@ chp2200_start_raster_mode(gx_device_printer * pdev, int paper_size,
 /* Start Raster mode for DNJ500 */
 static void
 cdnj500_start_raster_mode(gx_device_printer * pdev, int paper_size,
-                         FILE * prn_stream)
+                         gp_file * prn_stream)
 {
     /* x,y resolution for color planes, assume x=y */
     int xres = cdj850->x_pixels_per_inch;
@@ -3327,42 +3327,42 @@ cdnj500_start_raster_mode(gx_device_printer * pdev, int paper_size,
     float y = pdev->height / pdev->y_pixels_per_inch * 10;
 
     /* Exit from any previous language */
-    fprintf(prn_stream, "\033%%-12345X");
+    gp_fprintf(prn_stream, "\033%%-12345X");
 
     /* send @PJL JOB NAME before entering the language
      * this will be matched by a @PJL EOJ after leaving the language
      */
-    fprintf(prn_stream, "@PJL JOB NAME=\"GS %.2fx%.2f\" \n", x * 2.54, y * 2.54);
+    gp_fprintf(prn_stream, "@PJL JOB NAME=\"GS %.2fx%.2f\" \n", x * 2.54, y * 2.54);
 
     /* Color use */
-    fprintf(prn_stream, "@PJL SET RENDERMODE = COLOR \n");
+    gp_fprintf(prn_stream, "@PJL SET RENDERMODE = COLOR \n");
 
     /* Color correction */
-    fprintf(prn_stream, "@PJL SET COLORSPACE = SRGB \n");
+    gp_fprintf(prn_stream, "@PJL SET COLORSPACE = SRGB \n");
 
     /* Predef qual set (TODO: need add options) */
     if (cdj850->quality == DRAFT) {
-        fprintf(prn_stream, "@PJL SET RENDERINTENT = PERCEPTUAL \n");
-        fprintf(prn_stream, "@PJL SET RET = ON \n");
-        fprintf(prn_stream, "@PJL SET MAXDETAIL = OFF \n");
+        gp_fprintf(prn_stream, "@PJL SET RENDERINTENT = PERCEPTUAL \n");
+        gp_fprintf(prn_stream, "@PJL SET RET = ON \n");
+        gp_fprintf(prn_stream, "@PJL SET MAXDETAIL = OFF \n");
     } else if (cdj850->quality == NORMAL) {
-        fprintf(prn_stream, "@PJL SET RENDERINTENT = PERCEPTUAL \n");
-        fprintf(prn_stream, "@PJL SET RET = ON \n");
-        fprintf(prn_stream, "@PJL SET MAXDETAIL = ON \n");
+        gp_fprintf(prn_stream, "@PJL SET RENDERINTENT = PERCEPTUAL \n");
+        gp_fprintf(prn_stream, "@PJL SET RET = ON \n");
+        gp_fprintf(prn_stream, "@PJL SET MAXDETAIL = ON \n");
     } else {  /* quality == PRESENTATION */
-        fprintf(prn_stream, "@PJL SET RENDERINTENT = PERCEPTUAL \n");
-        fprintf(prn_stream, "@PJL SET RET = OFF \n");
-        fprintf(prn_stream, "@PJL SET MAXDETAIL = ON \n");
+        gp_fprintf(prn_stream, "@PJL SET RENDERINTENT = PERCEPTUAL \n");
+        gp_fprintf(prn_stream, "@PJL SET RET = OFF \n");
+        gp_fprintf(prn_stream, "@PJL SET MAXDETAIL = ON \n");
     }
 
     /* Set the language to PCL3 enhanced */
-    fprintf(prn_stream, "@PJL ENTER LANGUAGE=PCL3GUI \n");
+    gp_fprintf(prn_stream, "@PJL ENTER LANGUAGE=PCL3GUI \n");
 
     /* Print Quality, -1 = draft, 0 = normal, 1 = presentation */
-    fprintf(prn_stream, "\033*o%dM", cdj850->quality);
+    gp_fprintf(prn_stream, "\033*o%dM", cdj850->quality);
 
     /* Unit of Measure*/
-    fprintf(prn_stream, "\033&u%dD", (int)xres);
+    gp_fprintf(prn_stream, "\033&u%dD", (int)xres);
 
     return;
 }   /* end configure raster-mode */
@@ -3996,57 +3996,57 @@ cdj_put_param_bpp(gx_device * pdev, gs_param_list * plist, int new_bpp,
 /* Configure the printer and start Raster mode */
 static void
 cdj1600_start_raster_mode(gx_device_printer * pdev, int paper_size,
-                          FILE * prn_stream)
+                          gp_file * prn_stream)
 {
     uint raster_width = pdev->width -
     pdev->x_pixels_per_inch * (dev_l_margin(pdev) + dev_r_margin(pdev));
 
     /* switch to PCL control language */
-    fputs("\033%-12345X@PJL enter language = PCL\n", prn_stream);
+    gp_fputs("\033%-12345X@PJL enter language = PCL\n", prn_stream);
 
-    fputs("\033*rbC", prn_stream);	/* End raster graphics */
-    fputs("\033E", prn_stream);	/* Reset */
+    gp_fputs("\033*rbC", prn_stream);	/* End raster graphics */
+    gp_fputs("\033E", prn_stream);	/* Reset */
 
     /* resolution */
-    fprintf(prn_stream, "\033*t%dR", (int)cdj850->x_pixels_per_inch);
+    gp_fprintf(prn_stream, "\033*t%dR", (int)cdj850->x_pixels_per_inch);
 
     /* Page size, orientation, top margin & perforation skip */
-    fprintf(prn_stream, "\033&l%daolE", paper_size);
+    gp_fprintf(prn_stream, "\033&l%daolE", paper_size);
 
     /* no negative motion */
-    fputs("\033&a1N", prn_stream);
+    gp_fputs("\033&a1N", prn_stream);
 
     /* Print Quality, -1 = draft, 0 = normal, 1 = presentation */
-    fprintf(prn_stream, "\033*o%dQ", cdj850->quality);
+    gp_fprintf(prn_stream, "\033*o%dQ", cdj850->quality);
 
     /* Media Type,0 = plain paper, 1 = bond paper, 2 = special
        paper, 3 = glossy film, 4 = transparency film */
-    fprintf(prn_stream, "\033&l%dM", cdj850->papertype);
+    gp_fprintf(prn_stream, "\033&l%dM", cdj850->papertype);
 
     /* Move to top left of printed area */
-    fprintf(prn_stream, "\033*p%dY", (int)(300.0 * DOFFSET));
+    gp_fprintf(prn_stream, "\033*p%dY", (int)(300.0 * DOFFSET));
 
     /* raster width and number of planes */
-    fprintf(prn_stream, "\033*r%ds-%du0A",
+    gp_fprintf(prn_stream, "\033*r%ds-%du0A",
             raster_width, pdev->color_info.num_components);
 
     /* start raster graphics */
-    fputs("\033*r1A", prn_stream);
+    gp_fputs("\033*r1A", prn_stream);
 
     /* From now on, all escape commands start with \033*b, so we
      * combine them (if the printer supports this). */
-    fputs("\033*b", prn_stream);
+    gp_fputs("\033*b", prn_stream);
 
     /* Set compression if the mode has been defined. */
     if (cdj850->compression)
-        fprintf(prn_stream, "%dm", cdj850->compression);
+        gp_fprintf(prn_stream, "%dm", cdj850->compression);
 
     return;
 }				/* end configure raster-mode */
 
 /* print_plane compresses (mode 3) and outputs one plane */
 static void
-print_c3plane(FILE * prn_stream, char plane_code, int plane_size,
+print_c3plane(gp_file * prn_stream, char plane_code, int plane_size,
               const byte * curr, byte * prev, byte * out_data)
 {
     /* Compress the output data */
@@ -4054,10 +4054,10 @@ print_c3plane(FILE * prn_stream, char plane_code, int plane_size,
 
     /* and output the data */
     if (out_count > 0) {
-        fprintf(prn_stream, "%d%c", out_count, plane_code);
-        fwrite(out_data, sizeof(byte), out_count, prn_stream);
+        gp_fprintf(prn_stream, "%d%c", out_count, plane_code);
+        gp_fwrite(out_data, sizeof(byte), out_count, prn_stream);
     } else {
-        putc(plane_code, prn_stream);
+        gp_fputc(plane_code, prn_stream);
     }
 }
 
@@ -4082,7 +4082,7 @@ cdj1600_print_non_blank_lines(gx_device_printer * pdev,
                               struct misc_struct *misc_vars,
                               struct error_val_field *error_values,
                               const Gamma *gamma,
-                              FILE * prn_stream)
+                              gp_file * prn_stream)
 {
     int i, plane_size_c;
 
@@ -4111,8 +4111,8 @@ cdj1600_print_non_blank_lines(gx_device_printer * pdev,
 }
 
 static void
-cdj1600_terminate_page(gx_device_printer * pdev, FILE * prn_stream)
+cdj1600_terminate_page(gx_device_printer * pdev, gp_file * prn_stream)
 {
     cdj850_terminate_page(pdev, prn_stream);
-    fputs("\033%-12345X", prn_stream);
+    gp_fputs("\033%-12345X", prn_stream);
 }

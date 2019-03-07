@@ -179,7 +179,7 @@ oki_compress(byte *in, int origWidth, int highRes,
 /* Send the page to the printer. */
 
 static int
-oki_print_page(gx_device_printer *pdev, FILE *prn_stream)
+oki_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {
         int highRes = pdev->y_pixels_per_inch > 100;
         int bits_per_column = 7;
@@ -206,10 +206,10 @@ oki_print_page(gx_device_printer *pdev, FILE *prn_stream)
 
         /* Initialize the printer. */
         /* CAN; 72x72; left margin = 001; disable skip over perforation */
-        fwrite("\030\034\033%C001\033%S0", 1, 12, prn_stream);
+        gp_fwrite("\030\034\033%C001\033%S0", 1, 12, prn_stream);
 
         if (highRes) {
-                fwrite("\033R", 1, 2, prn_stream);
+                gp_fwrite("\033R", 1, 2, prn_stream);
                 bits_per_column = 14;
         }
 
@@ -234,11 +234,11 @@ oki_print_page(gx_device_printer *pdev, FILE *prn_stream)
 
                 /* use fine line feed to get to the appropriate position. */
                 while ( skip > 127 ) {
-                        fputs("\033%5\177", prn_stream);
+                        gp_fputs("\033%5\177", prn_stream);
                         skip -= 127;
                 }
                 if ( skip )
-                        fprintf(prn_stream, "\033%%5%c",
+                        gp_fprintf(prn_stream, "\033%%5%c",
                                         (char) (skip & 0xff));
                 skip = 0;
 
@@ -266,31 +266,31 @@ oki_print_page(gx_device_printer *pdev, FILE *prn_stream)
                                                 &spaces, &width);
 
                 for (i=0; i < spaces; i++)
-                        putc(' ', prn_stream);
+                        gp_fputc(' ', prn_stream);
 
-                fwrite("\003", 1, 1, prn_stream);
-                fwrite(out3, 1, width, prn_stream);
+                gp_fwrite("\003", 1, 1, prn_stream);
+                gp_fwrite(out3, 1, width, prn_stream);
 
                 if (highRes) {
                         /* exit graphics; carriage return; 1 bit line feed */
-                        fprintf(prn_stream, "\003\002\015\033%%5%c", (char) 1);
+                        gp_fprintf(prn_stream, "\003\002\015\033%%5%c", (char) 1);
                         out3 = oki_compress(out2, pdev->width, highRes,
                                                         &spaces, &width);
                         for (i=0; i < spaces; i++)
-                                putc(' ', prn_stream);
-                        fwrite("\003", 1, 1, prn_stream);
-                        fwrite(out3, 1, width, prn_stream);
-                        fprintf(prn_stream, "\003\002\015\033%%5%c", (char) 13);
+                                gp_fputc(' ', prn_stream);
+                        gp_fwrite("\003", 1, 1, prn_stream);
+                        gp_fwrite(out3, 1, width, prn_stream);
+                        gp_fprintf(prn_stream, "\003\002\015\033%%5%c", (char) 13);
                 } else
-                        fwrite("\003\016\003\002", 1, 4, prn_stream);
+                        gp_fwrite("\003\016\003\002", 1, 4, prn_stream);
 
                 lnum += bits_per_column;
            }
 
         /* Eject the page */
 xit:
-        fputc(014, prn_stream);	/* form feed */
-        fflush(prn_stream);
+        gp_fputc(014, prn_stream);	/* form feed */
+        gp_fflush(prn_stream);
 
 bail:
         if ( out1 != 0 )

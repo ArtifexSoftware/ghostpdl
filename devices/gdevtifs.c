@@ -295,7 +295,7 @@ tiff_put_params_downscale_cmyk_ets(gx_device * dev, gs_param_list * plist)
 }
 
 int gdev_tiff_begin_page(gx_device_tiff *tfdev,
-                         FILE *file)
+                         gp_file *file)
 {
     gx_device_printer *const pdev = (gx_device_printer *)tfdev;
     cmm_dev_profile_t *profile_struct;

@@ -161,7 +161,7 @@ nwp533_close(gx_device *dev)
 
 /* Send the page to the printer. */
 static int
-nwp533_print_page(gx_device_printer *dev, FILE *prn_stream)
+nwp533_print_page(gx_device_printer *dev, gp_file *prn_stream)
 {
   int lnum;
   int line_size = gdev_mem_bytes_per_scan_line(dev);

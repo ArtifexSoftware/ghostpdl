@@ -22,7 +22,6 @@
    51 Franklin Street, Fifth Floor
    Boston, MA 02110-1301
    USA
-s
 
    This program may also be distributed as part of Aladdin Ghostscript,
    under the terms of the Aladdin Free Public License (the "License").
@@ -274,8 +273,8 @@ static int (* const rescale_color_plane[2][2]) (int, const byte *, const byte *,
     }
 };
 */
-static int cdj970_write_header(gx_device *, FILE *);
-static int cdj970_write_trailer(gx_device *, FILE *);
+static int cdj970_write_header(gx_device *, gp_file *);
+static int cdj970_write_trailer(gx_device *, gp_file *);
 
 /*
  * Drivers stuff.
@@ -427,14 +426,14 @@ struct misc_struct
 
     /* function pointer typedefs for device driver struct */
 typedef void (*StartRasterMode) (gx_device_printer * pdev, int paper_size,
-                                 FILE * prn_stream);
+                                 gp_file * prn_stream);
 typedef void (*PrintNonBlankLines) (gx_device_printer * pdev,
                                     struct ptr_arrays * data_ptrs,
                                     struct misc_struct * misc_vars,
                                     struct error_val_field * error_values,
-                                    const Gamma * gamma, FILE * prn_stream);
+                                    const Gamma * gamma, gp_file * prn_stream);
 
-typedef void (*TerminatePage) (gx_device_printer * pdev, FILE * prn_stream);
+typedef void (*TerminatePage) (gx_device_printer * pdev, gp_file * prn_stream);
 
 typedef struct gx_device_cdj970_s
 {
@@ -533,16 +532,16 @@ typedef struct
 
 static void
 cdj970_start_raster_mode(gx_device_printer * pdev,
-                         int papersize, FILE * prn_stream);
+                         int papersize, gp_file * prn_stream);
 
 static void
 cdj970_print_non_blank_lines(gx_device_printer * pdev,
                              struct ptr_arrays *data_ptrs,
                              struct misc_struct *misc_vars,
                              struct error_val_field *error_values,
-                             const Gamma * gamma, FILE * prn_stream);
+                             const Gamma * gamma, gp_file * prn_stream);
 static void
-cdj970_terminate_page(gx_device_printer * pdev, FILE * prn_stream);
+cdj970_terminate_page(gx_device_printer * pdev, gp_file * prn_stream);
 
 static const gx_device_procs cdj970_procs =
 cmyk_colour_procs(hp_colour_open, cdj970_get_params, cdj970_put_params,
@@ -747,7 +746,7 @@ send_scan_lines(gx_device_printer * pdev,
                 struct ptr_arrays *data_ptrs,
                 struct misc_struct *misc_vars,
                 struct error_val_field *error_values,
-                const Gamma * gamma, FILE * prn_stream);
+                const Gamma * gamma, gp_file * prn_stream);
 
 static void do_gamma(float mastergamma, float gammaval, byte * values);
 
@@ -779,9 +778,9 @@ assign_dpi(int dpi, byte * msb)
 /* cdj970_terminate_page:
 ----------------------------------------------------------------------------------*/
 static void
-cdj970_terminate_page(gx_device_printer * pdev, FILE * prn_stream)
+cdj970_terminate_page(gx_device_printer * pdev, gp_file * prn_stream)
 {
-    fputs("\033*rC\f\033&l-2H", prn_stream);    /* End Graphics, Reset */
+    gp_fputs("\033*rC\f\033&l-2H", prn_stream);    /* End Graphics, Reset */
 }
 
 /* cdj970_one_time_initialisation:
@@ -828,7 +827,7 @@ cdj970_one_time_initialisation(gx_device_printer * pdev)
 /* cdj970_print_page: Here comes the hp970 output routine
 ----------------------------------------------------------------------------------*/
 static int
-cdj970_print_page(gx_device_printer * pdev, FILE * prn_stream)
+cdj970_print_page(gx_device_printer * pdev, gp_file * prn_stream)
 {
     struct error_val_field error_values;
     struct ptr_arrays data_ptrs;
@@ -979,7 +978,7 @@ send_scan_lines(gx_device_printer * pdev,
                 struct ptr_arrays *data_ptrs,
                 struct misc_struct *misc_vars,
                 struct error_val_field *error_values,
-                const Gamma * gamma, FILE * prn_stream)
+                const Gamma * gamma, gp_file * prn_stream)
 {
     int lnum, lend, llen;
     int num_blank_lines = 0;
@@ -1027,7 +1026,7 @@ send_scan_lines(gx_device_printer * pdev,
 
         /* Skip blank lines if any */
         if (num_blank_lines > 0) {
-            fprintf(prn_stream, "%dy", num_blank_lines / (cdj970->yscal + 1));
+            gp_fprintf(prn_stream, "%dy", num_blank_lines / (cdj970->yscal + 1));
             memset(data_ptrs->plane_data[0][0], 0,
                    (misc_vars->plane_size * 2 * misc_vars->num_comps));
             memset(data_ptrs->plane_data_c[0][0], 0,
@@ -1038,7 +1037,7 @@ send_scan_lines(gx_device_printer * pdev,
         /* all blank lines printed, now for the non-blank lines */
         if (cdj970->yscal && odd(lnum)) {
             /* output a blank black plane for odd lines */
-            putc('v', prn_stream);
+            gp_fputc('v', prn_stream);
         }
         /* now output all non blank lines */
         while (PAGE_CTR_OK && llen != 0) {
@@ -1061,7 +1060,7 @@ send_scan_lines(gx_device_printer * pdev,
 /* print_c2plane: Sprint_line compresses (mode 2) and outputs one plane
 ----------------------------------------------------------------------------------*/
 static void
-print_c2plane(FILE * prn_stream,
+print_c2plane(gp_file * prn_stream,
               char plane_code,
               int plane_size,
               const byte * curr, const byte * prev, byte * out_data)
@@ -1074,10 +1073,10 @@ print_c2plane(FILE * prn_stream,
 
     /* and output the data */
     if (out_count > 0) {
-        fprintf(prn_stream, "%d%c", out_count, plane_code);
-        fwrite(out_data, sizeof(byte), out_count, prn_stream);
+        gp_fprintf(prn_stream, "%d%c", out_count, plane_code);
+        gp_fwrite(out_data, sizeof(byte), out_count, prn_stream);
     } else {
-        putc(plane_code, prn_stream);
+        gp_fputc(plane_code, prn_stream);
     }
 }
 
@@ -1090,7 +1089,7 @@ cdj970_print_non_blank_lines(gx_device_printer * pdev,
                              struct ptr_arrays *data_ptrs,
                              struct misc_struct *misc_vars,
                              struct error_val_field *error_values,
-                             const Gamma * gamma, FILE * prn_stream)
+                             const Gamma * gamma, gp_file * prn_stream)
 {
     static const char *const plane_code[2] = { "vvvv", "wvvv" };
 
@@ -1989,7 +1988,7 @@ init_data_structure(gx_device_printer * pdev,
 ----------------------------------------------------------------------------------*/
 static void
 cdj970_start_raster_mode(gx_device_printer * pdev,
-                         int paper_size, FILE * prn_stream)
+                         int paper_size, gp_file * prn_stream)
 {
     int xres, yres;             /* x,y resolution for color planes */
     hp970_cmyk_init_t init;
@@ -2021,35 +2020,35 @@ cdj970_start_raster_mode(gx_device_printer * pdev,
     assign_dpi(yres, init.a + 22);
 
     /* Page size, orientation, top margin & perforation skip */
-    fprintf(prn_stream, "\033&l%dA", paper_size);
+    gp_fprintf(prn_stream, "\033&l%dA", paper_size);
 
     /* Print Quality, -1 = draft, 0 = normal, 1 = presentation */
-    fprintf(prn_stream, "\033*o%dM", cdj970->quality);
+    gp_fprintf(prn_stream, "\033*o%dM", cdj970->quality);
 
     /* Media Type,0 = plain paper, 1 = bond paper, 2 = special
        paper, 3 = glossy film, 4 = transparency film */
-    fprintf(prn_stream, "\033&l%dM", cdj970->papertype);
+    gp_fprintf(prn_stream, "\033&l%dM", cdj970->papertype);
 
-    fprintf(prn_stream, "\033u%dD\033&l0e0L", xres);
+    gp_fprintf(prn_stream, "\033u%dD\033&l0e0L", xres);
 
-    /* fputs("\033u%dD\033&l0e0L", prn_stream); */
+    /* gp_fputs("\033u%dD\033&l0e0L", prn_stream); */
 
-    fprintf(prn_stream, "\033*p%dY", (int)(600 * DOFFSET));
+    gp_fprintf(prn_stream, "\033*p%dY", (int)(600 * DOFFSET));
 
     /* This will start and configure the raster-mode */
-    fprintf(prn_stream, "\033*g%dW", (int)sizeof(init.a));      /* The new configure
+    gp_fprintf(prn_stream, "\033*g%dW", (int)sizeof(init.a));      /* The new configure
                                                                    raster data comand */
-    fwrite(init.a, sizeof(byte), sizeof(init.a), prn_stream);   /* Transmit config
+    gp_fwrite(init.a, sizeof(byte), sizeof(init.a), prn_stream);   /* Transmit config
                                                                    data */
-    fputs("\033&l0H", prn_stream);
-    fputs("\033*r1A", prn_stream);
+    gp_fputs("\033&l0H", prn_stream);
+    gp_fputs("\033*r1A", prn_stream);
     /* From now on, all escape commands start with \033*b, so we
      * combine them (if the printer supports this). */
-    fputs("\033*b", prn_stream);
+    gp_fputs("\033*b", prn_stream);
 
     /* Set compression if the mode has been defined. */
     if (cdj970->compression)
-        fprintf(prn_stream, "%dm", cdj970->compression);
+        gp_fprintf(prn_stream, "%dm", cdj970->compression);
 
     return;
 }
@@ -2642,7 +2641,7 @@ cdj_put_param_bpp(gx_device * pdev,
 /* cdj970_write_header:
 ----------------------------------------------------------------------------------*/
 static int
-cdj970_write_header(gx_device * pdev, FILE * prn_stream)
+cdj970_write_header(gx_device * pdev, gp_file * prn_stream)
 {
 
     char startbuffer[1260];
@@ -2652,27 +2651,27 @@ cdj970_write_header(gx_device * pdev, FILE * prn_stream)
     gs_sprintf(&(startbuffer[600]),
                "\033E\033%%-12345X@PJL JOB NAME = \"GHOST BY RENE HARSCH\"\n@PJL ENTER LANGUAGE=PCL3GUI\n");
 
-    fwrite(startbuffer, sizeof(char), 678, prn_stream);
+    gp_fwrite(startbuffer, sizeof(char), 678, prn_stream);
 
-    fputs("\033&l1H\033&l-2H", prn_stream);     /* reverse engineering */
+    gp_fputs("\033&l1H\033&l-2H", prn_stream);     /* reverse engineering */
 
     /* enter duplex mode / reverse engineering */
     if (cdj970->duplex > NONE) {
-        fputs("\033&l2S\033&b16WPML", prn_stream);
+        gp_fputs("\033&l2S\033&b16WPML", prn_stream);
 
-        fputc(0x20, prn_stream);
-        fputc(0x04, prn_stream);
-        fputc(0x00, prn_stream);
-        fputc(0x06, prn_stream);
-        fputc(0x01, prn_stream);
-        fputc(0x04, prn_stream);
-        fputc(0x01, prn_stream);
-        fputc(0x04, prn_stream);
-        fputc(0x01, prn_stream);
-        fputc(0x06, prn_stream);
-        fputc(0x08, prn_stream);
-        fputc(0x01, prn_stream);
-        fputc(0x00, prn_stream);
+        gp_fputc(0x20, prn_stream);
+        gp_fputc(0x04, prn_stream);
+        gp_fputc(0x00, prn_stream);
+        gp_fputc(0x06, prn_stream);
+        gp_fputc(0x01, prn_stream);
+        gp_fputc(0x04, prn_stream);
+        gp_fputc(0x01, prn_stream);
+        gp_fputc(0x04, prn_stream);
+        gp_fputc(0x01, prn_stream);
+        gp_fputc(0x06, prn_stream);
+        gp_fputc(0x08, prn_stream);
+        gp_fputc(0x01, prn_stream);
+        gp_fputc(0x00, prn_stream);
     }
 
     return 0;
@@ -2681,9 +2680,9 @@ cdj970_write_header(gx_device * pdev, FILE * prn_stream)
 /* cdj970_write_trailer:
 ----------------------------------------------------------------------------------*/
 static int
-cdj970_write_trailer(gx_device * pdev, FILE * prn_stream)
+cdj970_write_trailer(gx_device * pdev, gp_file * prn_stream)
 {
-    fprintf(prn_stream, "\033E\033%%-12345X");  /* reverse engineering */
+    gp_fprintf(prn_stream, "\033E\033%%-12345X");  /* reverse engineering */
 
     return 0;
 }

@@ -414,7 +414,7 @@ jpeg_get_initial_matrix(gx_device *dev, gs_matrix *pmat)
 
 /* Send the page to the file. */
 static int
-jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
+jpeg_print_page(gx_device_printer * pdev, gp_file * prn_stream)
 {
     gx_device_jpeg *jdev = (gx_device_jpeg *) pdev;
     gs_memory_t *mem = pdev->memory;

@@ -172,19 +172,19 @@ typedef enum {
 } lips_printer_type;
 
 /* Forward references */
-static void lips_job_start(gx_device_printer * dev, lips_printer_type ptype, FILE * fp, int num_copies);
-static void lips_job_end(gx_device_printer * pdev, FILE * fp);
+static void lips_job_start(gx_device_printer * dev, lips_printer_type ptype, gp_file * fp, int num_copies);
+static void lips_job_end(gx_device_printer * pdev, gp_file * fp);
 static int lips_open(gx_device * pdev, lips_printer_type ptype);
-static int lips4c_output_page(gx_device_printer * pdev, FILE * prn_stream);
+static int lips4c_output_page(gx_device_printer * pdev, gp_file * prn_stream);
 static int lips_delta_encode(byte * inBuff, byte * prevBuff, byte * outBuff, byte * diffBuff, int Length);
 static int lips_byte_cat(byte * TotalBuff, byte * Buff, int TotalLen, int Len);
-static int lips_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, lips_printer_type ptype, int numcopies);
+static int lips_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream, lips_printer_type ptype, int numcopies);
 #if GS_VERSION_MAJOR >= 8
-static int lips_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, lips_printer_type ptype, int numcopies);
-static int lips4type_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, int num_copies, int ptype);
+static int lips_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream, lips_printer_type ptype, int numcopies);
+static int lips4type_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream, int num_copies, int ptype);
 #else
-static int lips_print_page_copies(P4(gx_device_printer * pdev, FILE * prn_stream, lips_printer_type ptype, int numcopies));
-static int lips_print_page_copies(P4(gx_device_printer * pdev, FILE * prn_stream, lips_printer_type ptype, int numcopies));
+static int lips_print_page_copies(P4(gx_device_printer * pdev, gp_file * prn_stream, lips_printer_type ptype, int numcopies));
+static int lips_print_page_copies(P4(gx_device_printer * pdev, gp_file * prn_stream, lips_printer_type ptype, int numcopies));
 #endif
 static int
 lips2p_open(gx_device * pdev)
@@ -263,9 +263,9 @@ lips_close(gx_device * pdev)
     int code = gdev_prn_open_printer(pdev, 1);
 
     if (code >= 0) {
-        fprintf(ppdev->file, "%c0J%c", LIPS_DCS, LIPS_ST);
+        gp_fprintf(ppdev->file, "%c0J%c", LIPS_DCS, LIPS_ST);
         if (lips->pjl)
-            fprintf(ppdev->file,
+            gp_fprintf(ppdev->file,
                 "%c%%-12345X"
                 "@PJL SET LPARM : LIPS SW2 = OFF\n"
                 "@PJL EOJ\n"
@@ -576,13 +576,13 @@ lips4_put_params(gx_device * pdev, gs_param_list * plist)
 /* ------ Internal routines ------ */
 
 static int
-lips2p_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, int num_copies)
+lips2p_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream, int num_copies)
 {
     return lips_print_page_copies(pdev, prn_stream, LIPS2P, num_copies);
 }
 
 static int
-lips3_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, int num_copies)
+lips3_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream, int num_copies)
 {
     return lips_print_page_copies(pdev, prn_stream, LIPS3, num_copies);
 }
@@ -591,7 +591,7 @@ lips3_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, int num_cop
 #define NUM_LINES_4C 256
 
 static int
-lips_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, lips_printer_type ptype, int num_copies)
+lips_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream, lips_printer_type ptype, int num_copies)
 {
     gx_device_lprn *const lprn = (gx_device_lprn *) pdev;
     int code = 0;
@@ -619,19 +619,19 @@ lips_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, lips_printer
 }
 
 static int
-bjc880j_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, int num_copies)
+bjc880j_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream, int num_copies)
 {
   return lips4type_print_page_copies(pdev, prn_stream, num_copies, BJC880J);
 }
 
 static int
-lips4_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, int num_copies)
+lips4_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream, int num_copies)
 {
   return lips4type_print_page_copies(pdev, prn_stream, num_copies, LIPS4);
 }
 
 static int
-lips4type_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, int num_copies, int ptype)
+lips4type_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream, int num_copies, int ptype)
 {
     gx_device_lprn *const lprn = (gx_device_lprn *) pdev;
     int code = 0;
@@ -652,11 +652,11 @@ lips4type_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, int num
           int rm = pdev->width - (dev_l_margin(pdev) + dev_r_margin(pdev)) * pdev->x_pixels_per_inch;
           int bm = pdev->height - (dev_t_margin(pdev) + dev_b_margin(pdev)) * pdev->y_pixels_per_inch;
           /* Draw black rectangle */
-          fprintf(prn_stream,
-                  "%c{%c%da%c%de%c;;;3}",
-                  LIPS_CSI, LIPS_CSI, rm, LIPS_CSI, bm, LIPS_CSI);
-          fprintf(prn_stream, "%c%dj%c%dk",
-                  LIPS_CSI, rm, LIPS_CSI, bm);
+          gp_fprintf(prn_stream,
+                     "%c{%c%da%c%de%c;;;3}",
+                     LIPS_CSI, LIPS_CSI, rm, LIPS_CSI, bm, LIPS_CSI);
+          gp_fprintf(prn_stream, "%c%dj%c%dk",
+                     LIPS_CSI, rm, LIPS_CSI, bm);
         }
 
         lprn->prev_x = lprn->prev_y = 0;
@@ -684,7 +684,7 @@ lips4type_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, int num
 #if 0
 /* Send the page to the printer.  */
 static int
-lips4c_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, int num_copies)
+lips4c_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream, int num_copies)
 {
     int code;
 
@@ -704,43 +704,43 @@ lips4c_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, int num_co
 #endif
 
 static void
-move_cap(gx_device_printer * pdev, FILE * prn_stream, int x, int y)
+move_cap(gx_device_printer * pdev, gp_file * prn_stream, int x, int y)
 {
     gx_device_lprn *const lprn = (gx_device_lprn *) pdev;
 
     if (x != lprn->prev_x) {
         if (x > lprn->prev_x)
-            fprintf(prn_stream, "%c%da", LIPS_CSI, x - lprn->prev_x);
+            gp_fprintf(prn_stream, "%c%da", LIPS_CSI, x - lprn->prev_x);
         else
-            fprintf(prn_stream, "%c%dj", LIPS_CSI, lprn->prev_x - x);
+            gp_fprintf(prn_stream, "%c%dj", LIPS_CSI, lprn->prev_x - x);
 
         lprn->prev_x = x;
     }
     if (y != lprn->prev_y) {
         if (y > lprn->prev_y)
-            fprintf(prn_stream, "%c%de", LIPS_CSI, y - lprn->prev_y);
+            gp_fprintf(prn_stream, "%c%de", LIPS_CSI, y - lprn->prev_y);
         else
-            fprintf(prn_stream, "%c%dk", LIPS_CSI, lprn->prev_y - y);
+            gp_fprintf(prn_stream, "%c%dk", LIPS_CSI, lprn->prev_y - y);
 
         lprn->prev_y = y;
     }
 }
 
 static void
-draw_bubble(FILE * prn_stream, int width, int height)
+draw_bubble(gp_file * prn_stream, int width, int height)
 {
     /* Draw a rectangle */
-    fprintf(prn_stream,
-            "%c{%c%da%c%de%c}",
-            LIPS_CSI, LIPS_CSI, width, LIPS_CSI, height, LIPS_CSI);
-    fprintf(prn_stream, "%c%dj%c%dk",
-            LIPS_CSI, width, LIPS_CSI, height);
+    gp_fprintf(prn_stream,
+               "%c{%c%da%c%de%c}",
+               LIPS_CSI, LIPS_CSI, width, LIPS_CSI, height, LIPS_CSI);
+    gp_fprintf(prn_stream, "%c%dj%c%dk",
+                LIPS_CSI, width, LIPS_CSI, height);
 }
 
 #if 0
 /* Non Compression Version of image_out */
 static void
-lips_image_out(gx_device_printer * pdev, FILE * prn_stream, int x, int y, int width, int height)
+lips_image_out(gx_device_printer * pdev, gp_file * prn_stream, int x, int y, int width, int height)
 {
     gx_device_lprn *const lprn = (gx_device_lprn *) pdev;
 
@@ -750,13 +750,13 @@ lips_image_out(gx_device_printer * pdev, FILE * prn_stream, int x, int y, int wi
 
     move_cap(pdev, prn_stream, x, y);
 
-    fprintf(prn_stream, "%c%d;%d;%d.r", LIPS_CSI,
-            width / 8 * height, width / 8, (int)pdev->x_pixels_per_inch);
+    gp_fprintf(prn_stream, "%c%d;%d;%d.r", LIPS_CSI,
+               width / 8 * height, width / 8, (int)pdev->x_pixels_per_inch);
 
     for (i = 0; i < height; i++) {
         p = lprn->ImageBuf + ((i + y) % maxY) * raster;
         for (j = 0; j < width / 8; j++) {
-            fputc(p[j + data_x], prn_stream);
+            gp_fputc(p[j + data_x], prn_stream);
         }
     }
 
@@ -766,7 +766,7 @@ lips_image_out(gx_device_printer * pdev, FILE * prn_stream, int x, int y, int wi
 #endif
 
 static void
-lips2p_image_out(gx_device_printer * pdev, FILE * prn_stream, int x, int y, int width, int height)
+lips2p_image_out(gx_device_printer * pdev, gp_file * prn_stream, int x, int y, int width, int height)
 {
     gx_device_lprn *const lprn = (gx_device_lprn *) pdev;
     int Len;
@@ -782,12 +782,12 @@ lips2p_image_out(gx_device_printer * pdev, FILE * prn_stream, int x, int y, int 
             Len, width / 8, (int)pdev->x_pixels_per_inch, height);
 
     if (Len < width / 8 * height - strlen(comp_str) + strlen(raw_str)) {
-        fprintf(prn_stream, "%s", comp_str);
-        fwrite(lprn->CompBuf, 1, Len, prn_stream);
+        gp_fprintf(prn_stream, "%s", comp_str);
+        gp_fwrite(lprn->CompBuf, 1, Len, prn_stream);
     } else {
         /* compression result is bad. */
-        fprintf(prn_stream, "%s", raw_str);
-        fwrite(lprn->TmpBuf, 1, width / 8 * height, prn_stream);
+        gp_fprintf(prn_stream, "%s", raw_str);
+        gp_fwrite(lprn->TmpBuf, 1, width / 8 * height, prn_stream);
     }
 
     if (lprn->ShowBubble)
@@ -795,7 +795,7 @@ lips2p_image_out(gx_device_printer * pdev, FILE * prn_stream, int x, int y, int 
 }
 
 static void
-lips4_image_out(gx_device_printer * pdev, FILE * prn_stream, int x, int y, int width, int height)
+lips4_image_out(gx_device_printer * pdev, gp_file * prn_stream, int x, int y, int width, int height)
 {
     gx_device_lprn *const lprn = (gx_device_lprn *) pdev;
     int Len, Len_rle;
@@ -814,23 +814,23 @@ lips4_image_out(gx_device_printer * pdev, FILE * prn_stream, int x, int y, int w
         gs_sprintf(comp_str, "%c%d;%d;%d;11;%d.r", LIPS_CSI,
                 Len, width / 8, (int)pdev->x_pixels_per_inch, height);
         if (Len < width / 8 * height - strlen(comp_str) + strlen(raw_str)) {
-            fprintf(prn_stream, "%s", comp_str);
-            fwrite(lprn->CompBuf, 1, Len, prn_stream);
+            gp_fprintf(prn_stream, "%s", comp_str);
+            gp_fwrite(lprn->CompBuf, 1, Len, prn_stream);
         } else {
             /* compression result is bad. */
-            fprintf(prn_stream, "%s", raw_str);
-            fwrite(lprn->TmpBuf, 1, width / 8 * height, prn_stream);
+            gp_fprintf(prn_stream, "%s", raw_str);
+            gp_fwrite(lprn->TmpBuf, 1, width / 8 * height, prn_stream);
         }
     } else {
         gs_sprintf(comp_str, "%c%d;%d;%d;10;%d.r", LIPS_CSI,
                 Len, width / 8, (int)pdev->x_pixels_per_inch, height);
         if (Len_rle < width / 8 * height - strlen(comp_str) + strlen(raw_str)) {
-            fprintf(prn_stream, "%s", comp_str);
-            fwrite(lprn->CompBuf2, 1, Len, prn_stream);
+            gp_fprintf(prn_stream, "%s", comp_str);
+            gp_fwrite(lprn->CompBuf2, 1, Len, prn_stream);
         } else {
             /* compression result is bad. */
-            fprintf(prn_stream, "%s", raw_str);
-            fwrite(lprn->TmpBuf, 1, width / 8 * height, prn_stream);
+            gp_fprintf(prn_stream, "%s", raw_str);
+            gp_fwrite(lprn->TmpBuf, 1, width / 8 * height, prn_stream);
         }
     }
 
@@ -839,7 +839,7 @@ lips4_image_out(gx_device_printer * pdev, FILE * prn_stream, int x, int y, int w
 }
 
 static int
-lips4c_write_raster(gx_device_printer * pdev, FILE * prn_stream, byte * pBuff, byte * prevBuff, byte * ComBuff, byte * TotalBuff, byte * diffBuff, int lnum, int raster_height)
+lips4c_write_raster(gx_device_printer * pdev, gp_file * prn_stream, byte * pBuff, byte * prevBuff, byte * ComBuff, byte * TotalBuff, byte * diffBuff, int lnum, int raster_height)
 {
     int bits_per_pixel = pdev->color_info.depth;
     int num_components = bits_per_pixel > 8 ? 3 : 1;
@@ -880,19 +880,19 @@ lips4c_write_raster(gx_device_printer * pdev, FILE * prn_stream, byte * pBuff, b
         }
     }
 
-    fprintf(prn_stream, "%c%d;%d;%d;12;%d;;%d;%d;;1.r", LIPS_CSI,
-            TotalLen, Xpixel, (int)pdev->x_pixels_per_inch,
-            raster_height,
-            bits_per_pixel / num_components,
-            num_components < 3 ? 0 : 10);
-    fwrite(TotalBuff, 1, TotalLen, prn_stream);
-    fputc(0x85, prn_stream);	/* CR + LF */
+    gp_fprintf(prn_stream, "%c%d;%d;%d;12;%d;;%d;%d;;1.r", LIPS_CSI,
+               TotalLen, Xpixel, (int)pdev->x_pixels_per_inch,
+               raster_height,
+               bits_per_pixel / num_components,
+               num_components < 3 ? 0 : 10);
+    gp_fwrite(TotalBuff, 1, TotalLen, prn_stream);
+    gp_fputc(0x85, prn_stream);	/* CR + LF */
 
     return 0;
 }
 
 static int
-lips4c_output_page(gx_device_printer * pdev, FILE * prn_stream)
+lips4c_output_page(gx_device_printer * pdev, gp_file * prn_stream)
 {
     byte *pBuff, *ComBuff, *prevBuff, *TotalBuff, *diffBuff;
     int bits_per_pixel = pdev->color_info.depth;
@@ -936,7 +936,7 @@ lips4c_output_page(gx_device_printer * pdev, FILE * prn_stream)
 }
 
 static void
-lips_job_start(gx_device_printer * pdev, lips_printer_type ptype, FILE * prn_stream, int num_copies)
+lips_job_start(gx_device_printer * pdev, lips_printer_type ptype, gp_file * prn_stream, int num_copies)
 {
     gx_device_lips *const lips = (gx_device_lips *) pdev;
     gx_device_lips4 *const lips4 = (gx_device_lips4 *) pdev;
@@ -947,56 +947,56 @@ lips_job_start(gx_device_printer * pdev, lips_printer_type ptype, FILE * prn_str
 
     if (pdev->PageCount == 0) {
         if (lips->pjl) {
-            fprintf(prn_stream,
-                    "%c%%-12345X@PJL CJLMODE\n"
-                    "@PJL JOB\n", LIPS_ESC);
+            gp_fprintf(prn_stream,
+                       "%c%%-12345X@PJL CJLMODE\n"
+                       "@PJL JOB\n", LIPS_ESC);
             if (ptype == LIPS4) {
-                fprintf(prn_stream,
-                        "%c%%-12345X@PJL CJLMODE\n", LIPS_ESC);
+                gp_fprintf(prn_stream,
+                           "%c%%-12345X@PJL CJLMODE\n", LIPS_ESC);
                 if ((int)pdev->x_pixels_per_inch == 1200)
-                    fprintf(prn_stream, "@PJL SET RESOLUTION = SUPERFINE\n");
+                    gp_fprintf(prn_stream, "@PJL SET RESOLUTION = SUPERFINE\n");
                 else if ((int)pdev->x_pixels_per_inch == 600)
-                    fprintf(prn_stream, "@PJL SET RESOLUTION = FINE\n");
+                    gp_fprintf(prn_stream, "@PJL SET RESOLUTION = FINE\n");
                 else if ((int)pdev->x_pixels_per_inch == 300)
-                    fprintf(prn_stream, "@PJL SET RESOLUTION = QUICK\n");
+                    gp_fprintf(prn_stream, "@PJL SET RESOLUTION = QUICK\n");
             }
             if (lips->toner_density)
-                fprintf(prn_stream, "@PJL SET TONER-DENSITY=%d\n",
-                        lips->toner_density);
+                gp_fprintf(prn_stream, "@PJL SET TONER-DENSITY=%d\n",
+                           lips->toner_density);
             if (lips->toner_saving_set) {
-                fprintf(prn_stream, "@PJL SET TONER-SAVING=");
+                gp_fprintf(prn_stream, "@PJL SET TONER-SAVING=");
                 if (lips->toner_saving)
-                    fprintf(prn_stream, "ON\n");
+                    gp_fprintf(prn_stream, "ON\n");
                 else
-                    fprintf(prn_stream, "OFF\n");
+                    gp_fprintf(prn_stream, "OFF\n");
             }
-            fprintf(prn_stream,
-                    "@PJL SET LPARM : LIPS SW2 = ON\n"
-                    "@PJL ENTER LANGUAGE = LIPS\n");
+            gp_fprintf(prn_stream,
+                       "@PJL SET LPARM : LIPS SW2 = ON\n"
+                       "@PJL ENTER LANGUAGE = LIPS\n");
         }
-        fprintf(prn_stream, "%c%%@", LIPS_ESC);
+        gp_fprintf(prn_stream, "%c%%@", LIPS_ESC);
         if (ptype == LIPS2P)
-            fprintf(prn_stream, "%c21;%d;0J" LIPS2P_STRING LIPS_VERSION "%c",
-                    LIPS_DCS, (int)pdev->x_pixels_per_inch, LIPS_ST);
+            gp_fprintf(prn_stream, "%c21;%d;0J" LIPS2P_STRING LIPS_VERSION "%c",
+                       LIPS_DCS, (int)pdev->x_pixels_per_inch, LIPS_ST);
         else if (ptype == LIPS3)
-            fprintf(prn_stream, "%c31;%d;0J" LIPS3_STRING LIPS_VERSION "%c",
-                    LIPS_DCS, (int)pdev->x_pixels_per_inch, LIPS_ST);
+            gp_fprintf(prn_stream, "%c31;%d;0J" LIPS3_STRING LIPS_VERSION "%c",
+                       LIPS_DCS, (int)pdev->x_pixels_per_inch, LIPS_ST);
         else if (ptype == LIPS4)
-            fprintf(prn_stream, "%c41;%d;0J" LIPS4_STRING LIPS_VERSION "%c",
-                    LIPS_DCS, (int)pdev->x_pixels_per_inch, LIPS_ST);
+            gp_fprintf(prn_stream, "%c41;%d;0J" LIPS4_STRING LIPS_VERSION "%c",
+                       LIPS_DCS, (int)pdev->x_pixels_per_inch, LIPS_ST);
         else if (ptype == BJC880J)
-            fprintf(prn_stream, "%c41;%d;0J" BJC880J_STRING LIPS_VERSION "%c",
-                    LIPS_DCS, (int)pdev->x_pixels_per_inch, LIPS_ST);
+            gp_fprintf(prn_stream, "%c41;%d;0J" BJC880J_STRING LIPS_VERSION "%c",
+                       LIPS_DCS, (int)pdev->x_pixels_per_inch, LIPS_ST);
 
         if (ptype == LIPS4 || ptype == BJC880J)
           {
             if (pdev->color_info.depth == 24)
-              fprintf(prn_stream, "%c1\"p", LIPS_CSI);
+              gp_fprintf(prn_stream, "%c1\"p", LIPS_CSI);
             else
-              fprintf(prn_stream, "%c0\"p", LIPS_CSI);
+              gp_fprintf(prn_stream, "%c0\"p", LIPS_CSI);
           }
-        fprintf(prn_stream, "%c<", LIPS_ESC);
-        fprintf(prn_stream, "%c11h", LIPS_CSI);	/* Size Unit Mode */
+        gp_fprintf(prn_stream, "%c<", LIPS_ESC);
+        gp_fprintf(prn_stream, "%c11h", LIPS_CSI);	/* Size Unit Mode */
     }
     /*                           */
     /* Print Environment Setting */
@@ -1012,45 +1012,45 @@ lips_job_start(gx_device_printer * pdev, lips_printer_type ptype, FILE * prn_str
             paper_size == LEGAL_SIZE ||
             paper_size == LEGAL_SIZE + LANDSCAPE)
             /* for BJC-880J */
-            fprintf(prn_stream, "%c3&z", LIPS_CSI);
+            gp_fprintf(prn_stream, "%c3&z", LIPS_CSI);
         else if (paper_size == A3_SIZE ||
                  paper_size == A3_SIZE + LANDSCAPE ||
                  paper_size == LEDGER_SIZE ||
                  paper_size == LEDGER_SIZE + LANDSCAPE)
             /* for BJC-880J */
-            fprintf(prn_stream, "%c4&z", LIPS_CSI);
+            gp_fprintf(prn_stream, "%c4&z", LIPS_CSI);
         else
-            fprintf(prn_stream, "%c2&z", LIPS_CSI);
+            gp_fprintf(prn_stream, "%c2&z", LIPS_CSI);
     }
     if (ptype == LIPS4) {
         if (strcmp(lips4->mediaType, "PlainPaper") == 0)
-            fprintf(prn_stream, "%c20\'t", LIPS_CSI);
+            gp_fprintf(prn_stream, "%c20\'t", LIPS_CSI);
         else if (strcmp(lips4->mediaType, "OHP") == 0 ||
                  strcmp(lips4->mediaType, "TransparencyFilm") == 0)
-            fprintf(prn_stream, "%c40\'t", LIPS_CSI);	/* OHP mode (for LBP-2160) */
+            gp_fprintf(prn_stream, "%c40\'t", LIPS_CSI);	/* OHP mode (for LBP-2160) */
         else if (strcmp(lips4->mediaType, "CardBoard") == 0)
-            fprintf(prn_stream, "%c30\'t", LIPS_CSI);	/* CardBoard mode (for LBP-2160) */
+            gp_fprintf(prn_stream, "%c30\'t", LIPS_CSI);	/* CardBoard mode (for LBP-2160) */
         else if (strcmp(lips4->mediaType, "GlossyFilm") == 0)
-            fprintf(prn_stream, "%c41\'t", LIPS_CSI);	/* GlossyFile mode (for LBP-2160) */
+            gp_fprintf(prn_stream, "%c41\'t", LIPS_CSI);	/* GlossyFile mode (for LBP-2160) */
     }
     if (ptype == LIPS4 || ptype == BJC880J) {
         if (lips4->ManualFeed ||
             (strcmp(lips4->mediaType, "PlainPaper") != 0 && strcmp(lips4->mediaType, LIPS_MEDIATYPE_DEFAULT) != 0)) {
             if (lips->prev_feed_mode != 10)
-                fprintf(prn_stream, "%c10q", LIPS_CSI);
+                gp_fprintf(prn_stream, "%c10q", LIPS_CSI);
             lips->prev_feed_mode = 10;
         } else {
             if (lips->prev_feed_mode != lips->cassetFeed)
-                fprintf(prn_stream, "%c%dq", LIPS_CSI, lips->cassetFeed);
+                gp_fprintf(prn_stream, "%c%dq", LIPS_CSI, lips->cassetFeed);
             lips->prev_feed_mode = lips->cassetFeed;
         }
     } else if (lips->ManualFeed) {	/* Use ManualFeed */
         if (lips->prev_feed_mode != 1)
-            fprintf(prn_stream, "%c1q", LIPS_CSI);
+            gp_fprintf(prn_stream, "%c1q", LIPS_CSI);
         lips->prev_feed_mode = 1;
     } else {
         if (lips->prev_feed_mode != lips->cassetFeed)
-            fprintf(prn_stream, "%c%dq", LIPS_CSI, lips->cassetFeed);
+            gp_fprintf(prn_stream, "%c%dq", LIPS_CSI, lips->cassetFeed);
         lips->prev_feed_mode = lips->cassetFeed;
     }
 
@@ -1061,48 +1061,48 @@ lips_job_start(gx_device_printer * pdev, lips_printer_type ptype, FILE * prn_str
 
     if (prev_paper_size != paper_size) {
         if (paper_size == USER_SIZE) {
-            fprintf(prn_stream, "%c2 I", LIPS_CSI);
-            fprintf(prn_stream, "%c80;%d;%dp", LIPS_CSI,
-                    width * 10, height * 10);
+            gp_fprintf(prn_stream, "%c2 I", LIPS_CSI);
+            gp_fprintf(prn_stream, "%c80;%d;%dp", LIPS_CSI,
+                       width * 10, height * 10);
         } else if (paper_size == USER_SIZE + LANDSCAPE) {
-            fprintf(prn_stream, "%c2 I", LIPS_CSI);
-            fprintf(prn_stream, "%c81;%d;%dp", LIPS_CSI,
-                    height * 10, width * 10);
+            gp_fprintf(prn_stream, "%c2 I", LIPS_CSI);
+            gp_fprintf(prn_stream, "%c81;%d;%dp", LIPS_CSI,
+                       height * 10, width * 10);
         } else {
-            fprintf(prn_stream, "%c%dp", LIPS_CSI, paper_size);
+            gp_fprintf(prn_stream, "%c%dp", LIPS_CSI, paper_size);
         }
     } else if (paper_size == USER_SIZE) {
         if (prev_paper_width != width ||
             prev_paper_height != height) {
-            fprintf(prn_stream, "%c2 I", LIPS_CSI);
-            fprintf(prn_stream, "%c80;%d;%dp", LIPS_CSI,
-                    width * 10, height * 10);
+            gp_fprintf(prn_stream, "%c2 I", LIPS_CSI);
+            gp_fprintf(prn_stream, "%c80;%d;%dp", LIPS_CSI,
+                       width * 10, height * 10);
         }
     } else if (paper_size == USER_SIZE + LANDSCAPE) {
         if (prev_paper_width != width ||
             prev_paper_height != height) {
-            fprintf(prn_stream, "%c2 I", LIPS_CSI);
-            fprintf(prn_stream, "%c81;%d;%dp", LIPS_CSI,
-                    height * 10, width * 10);
+            gp_fprintf(prn_stream, "%c2 I", LIPS_CSI);
+            gp_fprintf(prn_stream, "%c81;%d;%dp", LIPS_CSI,
+                       height * 10, width * 10);
         }
     }
     /* desired number of copies */
     if (num_copies > 255)
         num_copies = 255;
     if (lips->prev_num_copies != num_copies) {
-        fprintf(prn_stream, "%c%dv", LIPS_CSI, num_copies);
+        gp_fprintf(prn_stream, "%c%dv", LIPS_CSI, num_copies);
         lips->prev_num_copies = num_copies;
     }
     if (ptype == LIPS4) {
         if (lips4->faceup)
-            fprintf(prn_stream, "%c11;12;12~", LIPS_CSI);
+            gp_fprintf(prn_stream, "%c11;12;12~", LIPS_CSI);
     }
     if (ptype == LIPS4) {
 
         if (pdev->PageCount == 0) {
             /* N-up Printing */
             if (lips4->nup != 1) {
-                fprintf(prn_stream, "%c%d1;;%do", LIPS_CSI, lips4->nup, paper_size);
+                gp_fprintf(prn_stream, "%c%d1;;%do", LIPS_CSI, lips4->nup, paper_size);
             }
         }
         /* Duplex mode */
@@ -1114,36 +1114,36 @@ lips_job_start(gx_device_printer * pdev, lips_printer_type ptype, FILE * prn_str
             if (dupset && dup) {
                 if (lips4->prev_duplex_mode == 0 ||
                     lips4->prev_duplex_mode == 1)
-                    fprintf(prn_stream, "%c2;#x", LIPS_CSI);	/* duplex */
+                    gp_fprintf(prn_stream, "%c2;#x", LIPS_CSI);	/* duplex */
                 if (!tum) {
                     /* long edge binding */
                     if (lips4->prev_duplex_mode != 2)
-                        fprintf(prn_stream, "%c0;#w", LIPS_CSI);
+                        gp_fprintf(prn_stream, "%c0;#w", LIPS_CSI);
                     lips4->prev_duplex_mode = 2;
                 } else {
                     /* short edge binding */
                     if (lips4->prev_duplex_mode != 3)
-                        fprintf(prn_stream, "%c2;#w", LIPS_CSI);
+                        gp_fprintf(prn_stream, "%c2;#w", LIPS_CSI);
                     lips4->prev_duplex_mode = 3;
                 }
             } else if (dupset && !dup) {
                 if (lips4->prev_duplex_mode != 1)
-                    fprintf(prn_stream, "%c0;#x", LIPS_CSI);	/* simplex */
+                    gp_fprintf(prn_stream, "%c0;#x", LIPS_CSI);	/* simplex */
                 lips4->prev_duplex_mode = 1;
             }
         }
     }
     if (pdev->PageCount == 0) {
         /* Display text on printer panel */
-        fprintf(prn_stream, "%c2y%s%c", LIPS_DCS, lips->Username, LIPS_ST);
+        gp_fprintf(prn_stream, "%c2y%s%c", LIPS_DCS, lips->Username, LIPS_ST);
 
-        fprintf(prn_stream, "%c11h", LIPS_CSI);	/* Size Unit Mode */
+        gp_fprintf(prn_stream, "%c11h", LIPS_CSI);	/* Size Unit Mode */
 
-        fprintf(prn_stream, "%c?2;3h", LIPS_CSI);
+        gp_fprintf(prn_stream, "%c?2;3h", LIPS_CSI);
         /* 2: Disable Auto FF */
         /* 3: Disable Auto CAP Movement */
 
-        fprintf(prn_stream, "%c?1;4;5;6l", LIPS_CSI);
+        gp_fprintf(prn_stream, "%c?1;4;5;6l", LIPS_CSI);
         /* 1: Disable Auto NF */
         /* 4: Disable Auto LF at CR */
         /* 5: Disable Auto CR at LF */
@@ -1152,48 +1152,48 @@ lips_job_start(gx_device_printer * pdev, lips_printer_type ptype, FILE * prn_str
     if (prev_paper_size != paper_size || paper_size == USER_SIZE ||
         paper_size == USER_SIZE + LANDSCAPE) {
         if (ptype == LIPS4 || ptype == BJC880J) {
-            fprintf(prn_stream, "%c?7;%d I", LIPS_CSI,
-                    (int)pdev->x_pixels_per_inch);	/* SelectSizeUnit */
+            gp_fprintf(prn_stream, "%c?7;%d I", LIPS_CSI,
+                       (int)pdev->x_pixels_per_inch);	/* SelectSizeUnit */
         } else {
-            fprintf(prn_stream, "%c7 I", LIPS_CSI);	/* SelectSizeUnit */
+            gp_fprintf(prn_stream, "%c7 I", LIPS_CSI);	/* SelectSizeUnit */
         }
 
         if (ptype == LIPS4 || ptype == BJC880J)
           {
             if (pdev->color_info.depth == 24)
-              fprintf(prn_stream, "%c%d G", LIPS_CSI, NUM_LINES_4C);		/* VMI (dots) */
+              gp_fprintf(prn_stream, "%c%d G", LIPS_CSI, NUM_LINES_4C);		/* VMI (dots) */
             else
-              fprintf(prn_stream, "%c%d G", LIPS_CSI, NUM_LINES);	/* VMI (dots) */
+              gp_fprintf(prn_stream, "%c%d G", LIPS_CSI, NUM_LINES);	/* VMI (dots) */
           }
     }
     if (prev_paper_size != paper_size) {
         /* Top Margin: 63/300 inch + 5 mm */
         tm = (63. / 300. + 5. / MMETER_PER_INCH - dev_t_margin(pdev)) * pdev->x_pixels_per_inch;
         if (tm > 0)
-            fprintf(prn_stream, "%c%dk", LIPS_CSI, tm);
+            gp_fprintf(prn_stream, "%c%dk", LIPS_CSI, tm);
         if (tm < 0)
-            fprintf(prn_stream, "%c%de", LIPS_CSI, -tm);
+            gp_fprintf(prn_stream, "%c%de", LIPS_CSI, -tm);
 
         /* Left Margin: 5 mm left */
         lm = (5. / MMETER_PER_INCH - dev_l_margin(pdev)) * pdev->x_pixels_per_inch;
         if (lm > 0)
-            fprintf(prn_stream, "%c%dj", LIPS_CSI, lm);
+            gp_fprintf(prn_stream, "%c%dj", LIPS_CSI, lm);
         if (lm < 0)
-            fprintf(prn_stream, "%c%da", LIPS_CSI, -lm);
+            gp_fprintf(prn_stream, "%c%da", LIPS_CSI, -lm);
 
         /* Set Top/Left Margins */
-        fprintf(prn_stream, "%c0;2t", LIPS_CSI);
+        gp_fprintf(prn_stream, "%c0;2t", LIPS_CSI);
 
         /* Bottom Margin: height */
         bm = pdev->height - (dev_t_margin(pdev) + dev_b_margin(pdev)) * pdev->y_pixels_per_inch;
-        fprintf(prn_stream, "%c%de", LIPS_CSI, bm);
+        gp_fprintf(prn_stream, "%c%de", LIPS_CSI, bm);
         /* Right Margin: width */
         rm = pdev->width - (dev_l_margin(pdev) + dev_r_margin(pdev)) * pdev->x_pixels_per_inch;
-        fprintf(prn_stream, "%c%da", LIPS_CSI, rm);
-        fprintf(prn_stream, "%c1;3t", LIPS_CSI);
+        gp_fprintf(prn_stream, "%c%da", LIPS_CSI, rm);
+        gp_fprintf(prn_stream, "%c1;3t", LIPS_CSI);
 
         /* move CAP to (0, 0) */
-        fprintf(prn_stream, "%c%dk\r", LIPS_CSI, bm);
+        gp_fprintf(prn_stream, "%c%dk\r", LIPS_CSI, bm);
     }
     lips->prev_paper_size = paper_size;
     lips->prev_paper_width = width;
@@ -1201,10 +1201,10 @@ lips_job_start(gx_device_printer * pdev, lips_printer_type ptype, FILE * prn_str
 }
 
 static void
-lips_job_end(gx_device_printer * pdev, FILE * prn_stream)
+lips_job_end(gx_device_printer * pdev, gp_file * prn_stream)
 {
     /* Paper eject command */
-    fprintf(prn_stream, "\r%c", LIPS_FF);
+    gp_fprintf(prn_stream, "\r%c", LIPS_FF);
 }
 
 static int lips_delta_compress(byte * inBuff, byte * prevBuff, byte * diffBuff, int Length);

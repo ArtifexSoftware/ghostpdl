@@ -32,7 +32,7 @@
 static dev_proc_print_page(lj250_print_page);
 static dev_proc_print_page(paintjet_print_page);
 static dev_proc_print_page(pjetxl_print_page);
-static int pj_common_print_page(gx_device_printer *, FILE *, int, const char *);
+static int pj_common_print_page(gx_device_printer *, gp_file *, int, const char *);
 /* Since the print_page doesn't alter the device, this device can print in the background */
 static gx_device_procs paintjet_procs =
   prn_color_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
@@ -71,34 +71,34 @@ static int compress1_row(const byte *, const byte *, byte *);
 /* Send a page to the LJ250.  We need to enter and exit */
 /* the PaintJet emulation mode. */
 static int
-lj250_print_page(gx_device_printer *pdev, FILE *prn_stream)
-{	fputs("\033%8", prn_stream);	/* Enter PCL emulation mode */
+lj250_print_page(gx_device_printer *pdev, gp_file *prn_stream)
+{	gp_fputs("\033%8", prn_stream);	/* Enter PCL emulation mode */
         /* ends raster graphics to set raster graphics resolution */
-        fputs("\033*rB", prn_stream);
+        gp_fputs("\033*rB", prn_stream);
         /* Exit PCL emulation mode after printing */
         return pj_common_print_page(pdev, prn_stream, 0, "\033*r0B\014\033%@");
 }
 
 /* Send a page to the PaintJet. */
 static int
-paintjet_print_page(gx_device_printer *pdev, FILE *prn_stream)
+paintjet_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {	/* ends raster graphics to set raster graphics resolution */
-        fputs("\033*rB", prn_stream);
+        gp_fputs("\033*rB", prn_stream);
         return pj_common_print_page(pdev, prn_stream, 0, "\033*r0B\014");
 }
 
 /* Send a page to the PaintJet XL. */
 static int
-pjetxl_print_page(gx_device_printer *pdev, FILE *prn_stream)
+pjetxl_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {	/* Initialize PaintJet XL for printing */
-        fputs("\033E", prn_stream);
+        gp_fputs("\033E", prn_stream);
         /* The XL has a different vertical origin, who knows why?? */
         return pj_common_print_page(pdev, prn_stream, -360, "\033*rC");
 }
 
 /* Send the page to the printer.  Compress each scan line. */
 static int
-pj_common_print_page(gx_device_printer *pdev, FILE *prn_stream, int y_origin,
+pj_common_print_page(gx_device_printer *pdev, gp_file *prn_stream, int y_origin,
   const char *end_page)
 {
 #define DATA_SIZE (LINE_SIZE * 8)
@@ -119,22 +119,22 @@ pj_common_print_page(gx_device_printer *pdev, FILE *prn_stream, int y_origin,
         }
 
         /* set raster graphics resolution -- 90 or 180 dpi */
-        fprintf(prn_stream, "\033*t%dR", X_DPI);
+        gp_fprintf(prn_stream, "\033*t%dR", X_DPI);
 
         /* set the line width */
-        fprintf(prn_stream, "\033*r%dS", DATA_SIZE);
+        gp_fprintf(prn_stream, "\033*r%dS", DATA_SIZE);
 
         /* set the number of color planes */
-        fprintf(prn_stream, "\033*r%dU", 3);		/* always 3 */
+        gp_fprintf(prn_stream, "\033*r%dU", 3);		/* always 3 */
 
         /* move to top left of page */
-        fprintf(prn_stream, "\033&a0H\033&a%dV", y_origin);
+        gp_fprintf(prn_stream, "\033&a0H\033&a%dV", y_origin);
 
         /* select data compression */
-        fputs("\033*b1M", prn_stream);
+        gp_fputs("\033*b1M", prn_stream);
 
         /* start raster graphics */
-        fputs("\033*r1A", prn_stream);
+        gp_fputs("\033*r1A", prn_stream);
 
         /* Send each scan line in turn */
            {	int lnum;
@@ -187,8 +187,8 @@ pj_common_print_page(gx_device_printer *pdev, FILE *prn_stream, int y_origin,
                                 /* Skip blank lines if any */
                                 if ( num_blank_lines > 0 )
                                    {	/* move down from current position */
-                                        fprintf(prn_stream, "\033&a+%dV",
-                                                num_blank_lines * (720 / Y_DPI));
+                                        gp_fprintf(prn_stream, "\033&a+%dV",
+                                                   num_blank_lines * (720 / Y_DPI));
                                         num_blank_lines = 0;
                                    }
 
@@ -199,17 +199,17 @@ pj_common_print_page(gx_device_printer *pdev, FILE *prn_stream, int y_origin,
                                     )
                                    {	byte temp[LINE_SIZE * 2];
                                         int count = compress1_row(row, row + LINE_SIZE, temp);
-                                        fprintf(prn_stream, "\033*b%d%c",
-                                                count, "VVW"[i]);
-                                        fwrite(temp, sizeof(byte),
-                                               count, prn_stream);
+                                        gp_fprintf(prn_stream, "\033*b%d%c",
+                                                   count, "VVW"[i]);
+                                        gp_fwrite(temp, sizeof(byte),
+                                                  count, prn_stream);
                                    }
                            }
                    }
            }
 
         /* end the page */
-        fputs(end_page, prn_stream);
+        gp_fputs(end_page, prn_stream);
 
         gs_free(pdev->memory, (char *)data, DATA_SIZE, 1, "paintjet_print_page(data)");
         gs_free(pdev->memory, (char *)plane_data, LINE_SIZE * 3, 1, "paintjet_print_page(plane_data)");

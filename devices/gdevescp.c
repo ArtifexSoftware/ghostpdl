@@ -107,7 +107,7 @@ const gx_device_printer far_data gs_ap3250_device =
 
 /* Send the page to the printer. */
 static int
-escp2_print_page(gx_device_printer *pdev, FILE *prn_stream)
+escp2_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {
         int line_size = gdev_prn_raster((gx_device_printer *)pdev);
         int band_size = 24;	/* 1, 8, or 24 */
@@ -153,7 +153,7 @@ escp2_print_page(gx_device_printer *pdev, FILE *prn_stream)
         ** Reset printer, enter graphics mode:
         */
 
-        fwrite("\033@\033(G\001\000\001", 1, 8, prn_stream);
+        gp_fwrite("\033@\033(G\001\000\001", 1, 8, prn_stream);
 
 #ifdef A4
         /*
@@ -172,9 +172,9 @@ escp2_print_page(gx_device_printer *pdev, FILE *prn_stream)
         */
 
         if( pdev->y_pixels_per_inch == 360 )
-           fwrite("\033(U\001\0\012\033+\030", 1, 9, prn_stream);
+           gp_fwrite("\033(U\001\0\012\033+\030", 1, 9, prn_stream);
         else
-           fwrite("\033(U\001\0\024\033+\060", 1, 9, prn_stream);
+           gp_fwrite("\033(U\001\0\024\033+\060", 1, 9, prn_stream);
 
         /*
         ** If the printer has automatic page feeding, then the paper
@@ -235,9 +235,9 @@ escp2_print_page(gx_device_printer *pdev, FILE *prn_stream)
                 */
 
                 if( skip ) {
-                   fwrite("\033(v\002\000", 1, 5, prn_stream);
-                   fputc(skip & 0xff, prn_stream);
-                   fputc(skip >> 8,   prn_stream);
+                   gp_fwrite("\033(v\002\000", 1, 5, prn_stream);
+                   gp_fputc(skip & 0xff, prn_stream);
+                   gp_fputc(skip >> 8,   prn_stream);
                    skip = 0;
                 }
 
@@ -375,33 +375,33 @@ escp2_print_page(gx_device_printer *pdev, FILE *prn_stream)
                 ** Output data:
                 */
 
-                fwrite("\033.\001", 1, 3, prn_stream);
+                gp_fwrite("\033.\001", 1, 3, prn_stream);
 
                 if(pdev->y_pixels_per_inch == 360)
-                   fputc('\012', prn_stream);
+                   gp_fputc('\012', prn_stream);
                 else
-                   fputc('\024', prn_stream);
+                   gp_fputc('\024', prn_stream);
 
                 if(pdev->x_pixels_per_inch == 360)
-                   fputc('\012', prn_stream);
+                   gp_fputc('\012', prn_stream);
                 else
-                   fputc('\024', prn_stream);
+                   gp_fputc('\024', prn_stream);
 
-                fputc(band_size, prn_stream);
+                gp_fputc(band_size, prn_stream);
 
-                fputc((width << 3) & 0xff, prn_stream);
-                fputc( width >> 5,         prn_stream);
+                gp_fputc((width << 3) & 0xff, prn_stream);
+                gp_fputc( width >> 5,         prn_stream);
 
-                fwrite(out, 1, (outp - out), prn_stream);
+                gp_fwrite(out, 1, (outp - out), prn_stream);
 
-                fwrite("\r\n", 1, 2, prn_stream);
+                gp_fwrite("\r\n", 1, 2, prn_stream);
                 lnum += band_size;
         }
 
         /* Eject the page and reinitialize the printer */
 
-        fputs("\f\033@", prn_stream);
-        fflush(prn_stream);
+        gp_fputs("\f\033@", prn_stream);
+        gp_fflush(prn_stream);
 
         gs_free(pdev->memory, (char *)buf2, in_size, 1, "escp2_print_page(buf2)");
         gs_free(pdev->memory, (char *)buf1, in_size, 1, "escp2_print_page(buf1)");

@@ -653,7 +653,7 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
 
     if (pdev->FirstObjectNumber != save_dev->FirstObjectNumber) {
         if (pdev->xref.file != 0) {
-            if (gp_fseek_64(pdev->xref.file, 0L, SEEK_SET) != 0) {
+            if (gp_fseek(pdev->xref.file, 0L, SEEK_SET) != 0) {
                 ecode = gs_error_ioerror;
                 goto fail;
             }

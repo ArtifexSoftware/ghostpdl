@@ -404,7 +404,7 @@ pack_and_compress_scanline(
   static int
 clj_print_page(
     gx_device_printer *     pdev,
-    FILE *                  prn_stream
+    gp_file *               prn_stream
 )
 {
     gs_memory_t *mem = pdev->memory;
@@ -451,7 +451,7 @@ clj_print_page(
        offset such that it coincides with the offsets of the imageable
        area.  This calculation should be independant of rotation but
        only the rotated case has been tested with a real device. */
-    fprintf( prn_stream,
+    gp_fprintf( prn_stream,
              "\033E\033&u300D\033&l%da1x%dO\033*p0x0y+50x-100Y\033*t%dR"
 #ifdef USE_FAST_MODE
              "\033*r-3U"
@@ -479,20 +479,20 @@ clj_print_page(
             ++blank_lines;
         else {
             if (blank_lines != 0) {
-                fprintf(prn_stream, "\033*b%dY", blank_lines);
+                gp_fprintf(prn_stream, "\033*b%dY", blank_lines);
                 blank_lines = 0;
             }
-            fprintf(prn_stream, "\033*b%dV", clen[0]);
-            fwrite(cdata[0], sizeof(byte), clen[0], prn_stream);
-            fprintf(prn_stream, "\033*b%dV", clen[1]);
-            fwrite(cdata[1], sizeof(byte), clen[1], prn_stream);
-            fprintf(prn_stream, "\033*b%dW", clen[2]);
-            fwrite(cdata[2], sizeof(byte), clen[2], prn_stream);
+            gp_fprintf(prn_stream, "\033*b%dV", clen[0]);
+            gp_fwrite(cdata[0], sizeof(byte), clen[0], prn_stream);
+            gp_fprintf(prn_stream, "\033*b%dV", clen[1]);
+            gp_fwrite(cdata[1], sizeof(byte), clen[1], prn_stream);
+            gp_fprintf(prn_stream, "\033*b%dW", clen[2]);
+            gp_fwrite(cdata[2], sizeof(byte), clen[2], prn_stream);
         }
     }
 
     /* PCL will take care of blank lines at the end */
-    fputs("\033*rC\f", prn_stream);
+    gp_fputs("\033*rC\f", prn_stream);
 
     /* free the buffers used */
     gs_free_object(mem, cdata[0], "clj_print_page(cdata)");

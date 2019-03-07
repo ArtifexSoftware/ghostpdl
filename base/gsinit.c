@@ -32,12 +32,12 @@ extern_gx_init_table();
 
 /* Initialization to be done before anything else. */
 int
-gs_lib_init(FILE * debug_out)
+gs_lib_init(gp_file * debug_out)
 {
     return gs_lib_init1(gs_lib_init0(debug_out));
 }
 gs_memory_t *
-gs_lib_init0(FILE * debug_out)
+gs_lib_init0(gp_file * debug_out)
 {
     /* Reset debugging flags */
 #ifdef PACIFY_VALGRIND

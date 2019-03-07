@@ -38,13 +38,19 @@ typedef struct gs_font_dir_s gs_font_dir;
 typedef int (*client_check_file_permission_t) (gs_memory_t *mem, const char *fname, const int len, const char *permission);
 
 typedef struct {
+    unsigned int   max;
+    unsigned int   num;
+    char         **paths;
+} gs_path_control_set_t;
+
+typedef struct {
     void *monitor;
     int refs;
     gs_memory_t *memory;
     FILE *fstdin;
     FILE *fstdout;
     FILE *fstderr;
-    FILE *fstdout2;		/* for redirecting %stdout and diagnostics */
+    gp_file *fstdout2;		/* for redirecting %stdout and diagnostics */
     bool stdout_is_redirected;	/* to stderr or fstdout2 */
     bool stdout_to_stderr;
     bool stdin_is_interactive;
@@ -61,6 +67,11 @@ typedef struct {
     bool CPSI_mode;
     int scanconverter;
     int act_on_uel;
+
+    int path_control_active;
+    gs_path_control_set_t permit_reading;
+    gs_path_control_set_t permit_writing;
+    gs_path_control_set_t permit_control;
 } gs_lib_ctx_core_t;
 
 typedef struct gs_lib_ctx_s
@@ -166,5 +177,33 @@ gs_check_file_permission (gs_memory_t *mem, const char *fname, const int len, co
 int sjpxd_create(gs_memory_t *mem);
 
 void sjpxd_destroy(gs_memory_t *mem);
+
+/* Path control list functions. */
+typedef enum {
+    gs_permit_file_reading = 0,
+    gs_permit_file_writing = 1,
+    gs_permit_file_control = 2,
+} gs_path_control_t;
+
+int
+gs_add_control_path(const gs_memory_t *mem, gs_path_control_t type, const char *path);
+
+int
+gs_add_control_path_len(const gs_memory_t *mem, gs_path_control_t type, const char *path, size_t path_len);
+
+int
+gs_remove_control_path(const gs_memory_t *mem, gs_path_control_t type, const char *path);
+
+int
+gs_remove_control_path_len(const gs_memory_t *mem, gs_path_control_t type, const char *path, size_t path_len);
+
+void
+gs_purge_control_paths(const gs_memory_t *mem, gs_path_control_t type);
+
+void
+gs_activate_path_control(gs_memory_t *mem, int enable);
+
+int
+gs_is_path_control_active(const gs_memory_t *mem);
 
 #endif /* GSLIBCTX_H */

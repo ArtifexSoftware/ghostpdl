@@ -44,12 +44,12 @@ const gx_device_printer gs_lq850_device =
 /* ------ Internal routines ------ */
 
 /* Forward references */
-static void dot24_output_run (byte *, int, int, FILE *);
+static void dot24_output_run (byte *, int, int, gp_file *);
 static void dot24_improve_bitmap (byte *, int);
 
 /* Send the page to the printer. */
 static int
-dot24_print_page (gx_device_printer *pdev, FILE *prn_stream, char *init_string, int init_len)
+dot24_print_page (gx_device_printer *pdev, gp_file *prn_stream, char *init_string, int init_len)
 {
   int xres = (int)pdev->x_pixels_per_inch;
   int yres = (int)pdev->y_pixels_per_inch;
@@ -77,8 +77,8 @@ dot24_print_page (gx_device_printer *pdev, FILE *prn_stream, char *init_string, 
     }
 
   /* Initialize the printer and reset the margins. */
-  fwrite (init_string, init_len - 1, sizeof (char), prn_stream);
-  fputc ((int) (pdev->width / pdev->x_pixels_per_inch * 10) + 2,
+  gp_fwrite (init_string, init_len - 1, sizeof (char), prn_stream);
+  gp_fputc ((int) (pdev->width / pdev->x_pixels_per_inch * 10) + 2,
          prn_stream);
 
   /* Print lines of graphics */
@@ -104,16 +104,16 @@ dot24_print_page (gx_device_printer *pdev, FILE *prn_stream, char *init_string, 
       /* Vertical tab to the appropriate position. */
       while ((skip >> 1) > 255)
         {
-          fputs ("\033J\377", prn_stream);
+          gp_fputs ("\033J\377", prn_stream);
           skip -= 255 * 2;
         }
 
       if (skip)
         {
           if (skip >> 1)
-            fprintf (prn_stream, "\033J%c", skip >> 1);
+            gp_fprintf (prn_stream, "\033J%c", skip >> 1);
           if (skip & 1)
-            fputc ('\n', prn_stream);
+            gp_fputc ('\n', prn_stream);
         }
 
       /* Copy the rest of the scan lines. */
@@ -196,7 +196,7 @@ dot24_print_page (gx_device_printer *pdev, FILE *prn_stream, char *init_string, 
                                           x_high, prn_stream);
                         }
                       /* Tab over to the appropriate position. */
-                      fprintf (prn_stream, "\033D%c%c\t", tpos, 0);
+                      gp_fprintf (prn_stream, "\033D%c%c\t", tpos, 0);
                       out_blk = outp = newp;
                     }
                 }
@@ -211,17 +211,17 @@ dot24_print_page (gx_device_printer *pdev, FILE *prn_stream, char *init_string, 
                               prn_stream);
             }
 
-          fputc ('\r', prn_stream);
+          gp_fputc ('\r', prn_stream);
           if (ypass < y_passes - 1)
-            fputc ('\n', prn_stream);
+            gp_fputc ('\n', prn_stream);
         }
       skip = 48 - y_high;
       lnum += bits_per_column;
     }
 
   /* Eject the page and reinitialize the printer */
-  fputs ("\f\033@", prn_stream);
-  fflush (prn_stream);
+  gp_fputs ("\f\033@", prn_stream);
+  gp_fflush (prn_stream);
 
   gs_free (pdev->memory, (char *) out, out_size, 1, "dot24_print_page (out)");
   gs_free (pdev->memory, (char *) in, in_size, 1, "dot24_print_page (in)");
@@ -231,15 +231,15 @@ dot24_print_page (gx_device_printer *pdev, FILE *prn_stream, char *init_string, 
 
 /* Output a single graphics command. */
 static void
-dot24_output_run (byte *data, int count, int x_high, FILE *prn_stream)
+dot24_output_run (byte *data, int count, int x_high, gp_file *prn_stream)
 {
   int xcount = count / 3;
-  fputc (033, prn_stream);
-  fputc ('*', prn_stream);
-  fputc ((x_high ? 40 : 39), prn_stream);
-  fputc (xcount & 0xff, prn_stream);
-  fputc (xcount >> 8, prn_stream);
-  fwrite (data, 1, count, prn_stream);
+  gp_fputc (033, prn_stream);
+  gp_fputc ('*', prn_stream);
+  gp_fputc ((x_high ? 40 : 39), prn_stream);
+  gp_fputc (xcount & 0xff, prn_stream);
+  gp_fputc (xcount >> 8, prn_stream);
+  gp_fwrite (data, 1, count, prn_stream);
 }
 
 /* If xdpi == 360, the P6 / LQ850 cannot print adjacent pixels.  Clear the
@@ -264,7 +264,7 @@ dot24_improve_bitmap (byte *data, int count)
 }
 
 static int
-necp6_print_page(gx_device_printer *pdev, FILE *prn_stream)
+necp6_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {
   char necp6_init_string [] = "\033@\033P\033l\000\r\034\063\001\033Q";
 
@@ -272,7 +272,7 @@ necp6_print_page(gx_device_printer *pdev, FILE *prn_stream)
 }
 
 static int
-lq850_print_page(gx_device_printer *pdev, FILE *prn_stream)
+lq850_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {
   char lq850_init_string [] = "\033@\033P\033l\000\r\033\053\001\033Q";
 

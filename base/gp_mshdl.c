@@ -87,33 +87,47 @@ get_os_handle(const char *name)
 
 static int
 mswin_handle_fopen(gx_io_device * iodev, const char *fname, const char *access,
-           FILE ** pfile, char *rfname, uint rnamelen)
+                   gp_file ** pfile, char *rfname, uint rnamelen, gs_memory_t *mem)
 {
     int fd;
     long hfile;	/* Correct for Win32, may be wrong for Win64 */
     errno = 0;
 
-    if ((hfile = get_os_handle(fname)) == (long)INVALID_HANDLE_VALUE)
+    if (gp_validate_path(mem, fname, access) != 0)
+        return gs_error_invalidfileaccess;
+
+    *pfile = gp_file_FILE_alloc(mem);
+    if (*pfile == NULL) {
+        return gs_error_VMerror;
+    }
+
+    if ((hfile = get_os_handle(fname)) == (long)INVALID_HANDLE_VALUE) {
+        gp_file_dealloc(*pfile);
         return_error(gs_fopen_errno_to_code(EBADF));
+    }
 
     /* associate a C file handle with an OS file handle */
     fd = _open_osfhandle((long)hfile, 0);
-    if (fd == -1)
+    if (fd == -1) {
+        gp_file_dealloc(*pfile);
         return_error(gs_fopen_errno_to_code(EBADF));
+    }
 
     /* associate a C file stream with C file handle */
-    *pfile = fdopen(fd, (char *)access);
-    if (*pfile == NULL)
+    if (gp_file_FILE_set(*pfile, fdopen(fd, (char *)access), NULL)) {
+        *pfile = NULL;
         return_error(gs_fopen_errno_to_code(errno));
+    }
 
     if (rfname != NULL)
         strcpy(rfname, fname);
+
     return 0;
 }
 
 static int
-mswin_handle_fclose(gx_io_device * iodev, FILE * file)
+mswin_handle_fclose(gx_io_device * iodev, gp_file * file)
 {
-    fclose(file);
+    gp_fclose(file);
     return 0;
 }

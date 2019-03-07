@@ -22,6 +22,7 @@
 #include "gsmemory.h"
 #include "gsargs.h"
 #include "gserrors.h"
+#include "gp.h"
 
 int codepoint_to_utf8(char *cstr, int rune)
 {
@@ -58,7 +59,7 @@ int codepoint_to_utf8(char *cstr, int rune)
     return idx;
 }
 
-static int get_codepoint_utf8(FILE *file, const char **astr)
+static int get_codepoint_utf8(gp_file *file, const char **astr)
 {
     int c;
     int rune;
@@ -71,7 +72,7 @@ static int get_codepoint_utf8(FILE *file, const char **astr)
      * what they get. */
 
     do {
-        c = (file ? fgetc(file) : (**astr ? (int)(unsigned char)*(*astr)++ : EOF));
+        c = (file ? gp_fgetc(file) : (**astr ? (int)(unsigned char)*(*astr)++ : EOF));
         if (c == EOF)
             return EOF;
         if (c < 0x80)
@@ -92,7 +93,7 @@ lead: /* We've just read a byte >= 0x80, presumably a leading byte */
         else
             continue; /* Illegal - skip it */
         do {
-            c = (file ? fgetc(file) : (**astr ? (int)(unsigned char)*(*astr)++ : EOF));
+            c = (file ? gp_fgetc(file) : (**astr ? (int)(unsigned char)*(*astr)++ : EOF));
             if (c == EOF)
                 return EOF;
             rune = (rune<<6) | (c & 0x3f);
@@ -116,10 +117,12 @@ lead: /* We've just read a byte >= 0x80, presumably a leading byte */
 
 /* Initialize an arg list. */
 void
-arg_init(arg_list * pal, const char **argv, int argc,
-         FILE         *(*arg_fopen)(const char *fname, void *fopen_data),
+arg_init(arg_list     * pal,
+         const char  **argv,
+         int           argc,
+         gp_file      *(*arg_fopen)(const char *fname, void *fopen_data),
          void         *fopen_data,
-         int           (*get_codepoint)(FILE *file, const char **astr),
+         int           (*get_codepoint)(gp_file *file, const char **astr),
          gs_memory_t  *memory)
 {
     pal->expand_ats = true;
@@ -171,7 +174,7 @@ arg_finit(arg_list * pal)
         arg_source *pas = &pal->sources[pal->depth--];
 
         if (pas->is_file)
-            fclose(pas->u.file);
+            gp_fclose(pas->u.file);
         else if (pas->u.s.memory)
             gs_free_object(pas->u.s.memory, pas->u.s.chars, "arg_finit");
     }
@@ -179,7 +182,7 @@ arg_finit(arg_list * pal)
 
 static int get_codepoint(arg_list *pal, arg_source *pas)
 {
-    int (*fn)(FILE *file, const char **str);
+    int (*fn)(gp_file *file, const char **str);
 
     fn = (!pas->is_file && pas->u.s.decoded ? get_codepoint_utf8 : pal->get_codepoint);
     return fn(pas->is_file ? pas->u.file : NULL, &pas->u.s.str);
@@ -238,7 +241,7 @@ arg_next(arg_list * pal, const char **argstr, const gs_memory_t *errmem)
             if (c == EOF) {
                 /* EOF before any argument characters. */
                 if (pas->is_file)
-                    fclose(pas->u.file);
+                    gp_fclose(pas->u.file);
                 else if (pas->u.s.memory)
                     gs_free_object(pas->u.s.memory, pas->u.s.chars,
                                    "arg_next");
@@ -339,7 +342,7 @@ arg_next(arg_list * pal, const char **argstr, const gs_memory_t *errmem)
          * it to the caller. */
         if (pal->expand_ats && **argstr == '@') {
             char *fname;
-            FILE *f;
+            gp_file *f;
             if (pal->depth+1 == arg_depth_max) {
                 errprintf(errmem, "Too much nesting of @-files.\n");
                 return_error(gs_error_Fatal);

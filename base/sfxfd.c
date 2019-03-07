@@ -45,9 +45,9 @@
 #ifdef KEEP_FILENO_API
 /* Provide prototypes to avoid compiler warnings. */
 void
-    sread_fileno(stream *, FILE *, byte *, uint),
-    swrite_fileno(stream *, FILE *, byte *, uint),
-    sappend_fileno(stream *, FILE *, byte *, uint);
+    sread_fileno(stream *, gp_file *, byte *, uint),
+    swrite_fileno(stream *, gp_file *, byte *, uint),
+    sappend_fileno(stream *, gp_file *, byte *, uint);
 #else
 #  define sread_fileno sread_file
 #  define swrite_fileno swrite_file
@@ -106,7 +106,7 @@ errno_is_retry(int errn)
 
 /* Initialize a stream for reading an OS file. */
 void
-sread_fileno(register stream * s, FILE * file, byte * buf, uint len)
+sread_fileno(register stream * s, gp_file * file, byte * buf, uint len)
 {
     static const stream_procs p = {
         s_fileno_available, s_fileno_read_seek, s_std_read_reset,
@@ -203,7 +203,7 @@ s_fileno_read_seek(register stream * s, gs_offset_t pos)
 static int
 s_fileno_read_close(stream * s)
 {
-    FILE *file = s->file;
+    gp_file *file = s->file;
 
     if (file != 0) {
         s->file = 0;
@@ -254,7 +254,7 @@ again:
 
 /* Initialize a stream for writing an OS file. */
 void
-swrite_fileno(register stream * s, FILE * file, byte * buf, uint len)
+swrite_fileno(register stream * s, gp_file * file, byte * buf, uint len)
 {
     static const stream_procs p = {
         s_std_noavailable, s_fileno_write_seek, s_std_write_reset,
@@ -273,7 +273,7 @@ swrite_fileno(register stream * s, FILE * file, byte * buf, uint len)
 }
 /* Initialize for appending to an OS file. */
 void
-sappend_fileno(register stream * s, FILE * file, byte * buf, uint len)
+sappend_fileno(register stream * s, gp_file * file, byte * buf, uint len)
 {
     swrite_fileno(s, file, buf, len);
     s->modes = s_mode_write + s_mode_append;	/* no seek */

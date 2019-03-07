@@ -230,4 +230,28 @@ typedef enum {
 } gs_set_param_type;
 GSDLLEXPORT int GSDLLAPI gsapi_set_param(void *instance, gs_set_param_type type, const char *param, const void *value);
 
+enum {
+    GS_PERMIT_FILE_READING = 0,
+    GS_PERMIT_FILE_WRITING = 1,
+    GS_PERMIT_FILE_CONTROL = 2
+};
+
+/* Add a path to one of the sets of permitted paths. */
+GSDLLEXPORT int GSDLLAPI
+gsapi_add_control_path(void *instance, int type, const char *path);
+
+/* Remove a path from one of the sets of permitted paths. */
+GSDLLEXPORT int GSDLLAPI
+gsapi_remove_control_path(void *instance, int type, const char *path);
+
+/* Purge all the paths from the one of the sets of permitted paths. */
+GSDLLEXPORT void GSDLLAPI
+gsapi_purge_control_paths(void *instance, int type);
+
+GSDLLEXPORT void GSDLLAPI
+gsapi_activate_path_control(void *instance, int enable);
+
+GSDLLEXPORT int GSDLLAPI
+gsapi_is_path_control_active(void *instance);
+
 #endif /* gsapi_INCLUDED */

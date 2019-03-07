@@ -1340,7 +1340,7 @@ static int devn_write_pcx_file(gx_device_printer * pdev, char * filename, int nc
  * combinations of bits per pixel and number of colorants that are not supported.
  */
 static int
-spotcmyk_print_page(gx_device_printer * pdev, FILE * prn_stream)
+spotcmyk_print_page(gx_device_printer * pdev, gp_file * prn_stream)
 {
     int line_size = gdev_mem_bytes_per_scan_line((gx_device *) pdev);
     byte *in = gs_alloc_bytes(pdev->memory, line_size, "spotcmyk_print_page(in)");
@@ -1353,7 +1353,7 @@ spotcmyk_print_page(gx_device_printer * pdev, FILE * prn_stream)
     int bpc = pdevn->devn_params.bitspercomponent;
     int lnum = 0, bottom = pdev->height;
     int width = pdev->width;
-    FILE * spot_file[GX_DEVICE_COLOR_MAX_COMPONENTS] = {0};
+    gp_file * spot_file[GX_DEVICE_COLOR_MAX_COMPONENTS] = {0};
     uint i;
     int code = 0;
     int first_bit;
@@ -1382,7 +1382,7 @@ spotcmyk_print_page(gx_device_printer * pdev, FILE * prn_stream)
     /* Open the output files for the spot colors */
     for(i = 0; i < nspot; i++) {
         gs_sprintf(spotname, "%ss%d", pdevn->fname, i);
-        spot_file[i] = gp_fopen(spotname, "wb");
+        spot_file[i] = gp_fopen(pdev->memory, spotname, "wb");
         if (spot_file[i] == NULL) {
             code = gs_note_error(gs_error_VMerror);
             goto prn_done;
@@ -1396,19 +1396,19 @@ spotcmyk_print_page(gx_device_printer * pdev, FILE * prn_stream)
         if (npcmcolors) {
             first_bit = bpc * (ncomp - npcmcolors);
             pcmlinelength = repack_data(data, buf, depth, first_bit, bpc * npcmcolors, width);
-            fwrite(buf, 1, pcmlinelength, prn_stream);
+            gp_fwrite(buf, 1, pcmlinelength, prn_stream);
         }
         /* Put spot color data into the output files */
         for (i = 0; i < nspot; i++) {
             first_bit = bpc * (nspot - 1 - i);
             linelength[i] = repack_data(data, buf, depth, first_bit, bpc, width);
-            fwrite(buf, 1, linelength[i], spot_file[i]);
+            gp_fwrite(buf, 1, linelength[i], spot_file[i]);
         }
     }
 
     /* Close the bit image files */
     for(i = 0; i < nspot; i++) {
-        fclose(spot_file[i]);
+        gp_fclose(spot_file[i]);
         spot_file[i] = NULL;
     }
 
@@ -1430,7 +1430,7 @@ spotcmyk_print_page(gx_device_printer * pdev, FILE * prn_stream)
   prn_done:
     for(i = 0; i < nspot; i++) {
         if (spot_file[i] != NULL)
-            fclose(spot_file[i]);
+            gp_fclose(spot_file[i]);
     }
     if (in != NULL)
         gs_free_object(pdev->memory, in, "spotcmyk_print_page(in)");
@@ -1505,9 +1505,9 @@ static const pcx_header pcx_header_prototype =
 };
 
 /* Forward declarations */
-static void devn_pcx_write_rle(const byte *, const byte *, int, FILE *);
-static int devn_pcx_write_page(gx_device_printer * pdev, FILE * infile,
-    int linesize, FILE * outfile, pcx_header * phdr, bool planar, int depth);
+static void devn_pcx_write_rle(const byte *, const byte *, int, gp_file *);
+static int devn_pcx_write_page(gx_device_printer * pdev, gp_file * infile,
+    int linesize, gp_file * outfile, pcx_header * phdr, bool planar, int depth);
 
 static const byte pcx_cmyk_palette[16 * 3] =
 {
@@ -1638,7 +1638,7 @@ devn_setup_pcx_header(gx_device_printer * pdev, pcx_header * phdr, int num_plane
 
 /* Write a palette on a file. */
 static int
-pc_write_mono_palette(gx_device * dev, uint max_index, FILE * file)
+pc_write_mono_palette(gx_device * dev, uint max_index, gp_file * file)
 {
     uint i, c;
     gx_color_value rgb[3];
@@ -1648,7 +1648,7 @@ pc_write_mono_palette(gx_device * dev, uint max_index, FILE * file)
         for (c = 0; c < 3; c++) {
             byte b = gx_color_value_to_byte(rgb[c]);
 
-            fputc(b, file);
+            gp_fputc(b, file);
         }
     }
     return 0;
@@ -1668,7 +1668,7 @@ pc_write_mono_palette(gx_device * dev, uint max_index, FILE * file)
  *   num_planes - The number of planes.
  */
 static int
-devn_finish_pcx_file(gx_device_printer * pdev, FILE * file, pcx_header * header, int num_planes, int bits_per_plane)
+devn_finish_pcx_file(gx_device_printer * pdev, gp_file * file, pcx_header * header, int num_planes, int bits_per_plane)
 {
     switch (num_planes) {
         case 1:
@@ -1682,7 +1682,7 @@ devn_finish_pcx_file(gx_device_printer * pdev, FILE * file, pcx_header * header,
                 case 5:                         /* Not defined */
                         break;
                 case 8:
-                        fputc(0x0c, file);
+                        gp_fputc(0x0c, file);
                         return pc_write_mono_palette((gx_device *) pdev, 256, file);
                 case 16:                        /* Not defined */
                         break;
@@ -1749,8 +1749,8 @@ devn_write_pcx_file(gx_device_printer * pdev, char * filename, int ncomp,
     int code;
     bool planar;
     char *outname = (char *)gs_alloc_bytes(pdev->memory, gp_file_name_sizeof, "devn_write_pcx_file(outname)");
-    FILE * in = NULL;
-    FILE * out = NULL;
+    gp_file * in = NULL;
+    gp_file * out = NULL;
     int depth = bpc_to_depth(ncomp, bpc);
 
     if (outname == NULL) {
@@ -1758,13 +1758,13 @@ devn_write_pcx_file(gx_device_printer * pdev, char * filename, int ncomp,
 	goto done;
     }
 
-    in = gp_fopen(filename, "rb");
+    in = gp_fopen(pdev->memory, filename, "rb");
     if (!in) {
         code = gs_note_error(gs_error_invalidfileaccess);
 	goto done;
     }
     gs_sprintf(outname, "%s.pcx", filename);
-    out = gp_fopen(outname, "wb");
+    out = gp_fopen(pdev->memory, outname, "wb");
     if (!out) {
         code = gs_note_error(gs_error_invalidfileaccess);
 	goto done;
@@ -1777,9 +1777,9 @@ devn_write_pcx_file(gx_device_printer * pdev, char * filename, int ncomp,
 
 done:
     if (in)
-      fclose(in);
+      gp_fclose(in);
     if (out)
-      fclose(out);
+      gp_fclose(out);
 
     if (outname)
       gs_free_object(pdev->memory, outname, "spotcmyk_print_page(outname)");
@@ -1791,7 +1791,7 @@ done:
 /* This routine is used for all formats. */
 /* The caller has set header->bpp, nplanes, and palette. */
 static int
-devn_pcx_write_page(gx_device_printer * pdev, FILE * infile, int linesize, FILE * outfile,
+devn_pcx_write_page(gx_device_printer * pdev, gp_file * infile, int linesize, gp_file * outfile,
                pcx_header * phdr, bool planar, int depth)
 {
     int raster = linesize;
@@ -1817,7 +1817,7 @@ devn_pcx_write_page(gx_device_printer * pdev, FILE * infile, int linesize, FILE 
 
     /* Write the header. */
 
-    if (fwrite((const char *)phdr, 1, 128, outfile) < 128) {
+    if (gp_fwrite((const char *)phdr, 1, 128, outfile) < 128) {
         code = gs_error_ioerror;
         goto pcx_done;
     }
@@ -1826,7 +1826,7 @@ devn_pcx_write_page(gx_device_printer * pdev, FILE * infile, int linesize, FILE 
         byte *row = line;
         byte *end;
 
-        code = fread(line, sizeof(byte), linesize, infile);
+        code = gp_fread(line, sizeof(byte), linesize, infile);
         if (code < 0)
             break;
         end = row + raster;
@@ -1877,7 +1877,7 @@ devn_pcx_write_page(gx_device_printer * pdev, FILE * infile, int linesize, FILE 
                         for (pnum = 0; pnum < 3; ++pnum) {
                             devn_pcx_write_rle(row + pnum, row + raster, 3, outfile);
                             if (pdev->width & 1)
-                                fputc(0, outfile);              /* pad to even */
+                                gp_fputc(0, outfile);              /* pad to even */
                         }
                     }
                     break;
@@ -1900,7 +1900,7 @@ devn_pcx_write_page(gx_device_printer * pdev, FILE * infile, int linesize, FILE 
 
 /* Write one line in PCX run-length-encoded format. */
 static void
-devn_pcx_write_rle(const byte * from, const byte * end, int step, FILE * file)
+devn_pcx_write_rle(const byte * from, const byte * end, int step, gp_file * file)
 {  /*
     * The PCX format theoretically allows encoding runs of 63
     * identical bytes, but some readers can't handle repetition
@@ -1915,7 +1915,7 @@ devn_pcx_write_rle(const byte * from, const byte * end, int step, FILE * file)
         from += step;
         if (data != *from || from == end) {
             if (data >= 0xc0)
-                putc(0xc1, file);
+                gp_fputc(0xc1, file);
         } else {
             const byte *start = from;
 
@@ -1923,14 +1923,14 @@ devn_pcx_write_rle(const byte * from, const byte * end, int step, FILE * file)
                 from += step;
             /* Now (from - start) / step + 1 is the run length. */
             while (from - start >= max_run) {
-                putc(0xc0 + MAX_RUN_COUNT, file);
-                putc(data, file);
+                gp_fputc(0xc0 + MAX_RUN_COUNT, file);
+                gp_fputc(data, file);
                 start += max_run;
             }
             if (from > start || data >= 0xc0)
-                putc((from - start) / step + 0xc1, file);
+                gp_fputc((from - start) / step + 0xc1, file);
         }
-        putc(data, file);
+        gp_fputc(data, file);
     }
 #undef MAX_RUN_COUNT
 }

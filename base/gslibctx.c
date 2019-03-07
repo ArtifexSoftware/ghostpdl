@@ -300,6 +300,9 @@ void gs_lib_ctx_fin(gs_memory_t *mem)
 #ifndef MEMENTO_SQUEEZE_BUILD
         gx_monitor_free((gx_monitor_t *)(ctx->core->monitor));
 #endif
+        gs_purge_control_paths(ctx_mem, 0);
+        gs_purge_control_paths(ctx_mem, 1);
+        gs_purge_control_paths(ctx_mem, 2);
         gs_free_object(ctx->core->memory, ctx->core, "gs_lib_ctx_fin");
     }
 
@@ -340,7 +343,6 @@ int gs_lib_ctx_get_act_on_uel( const gs_memory_t *mem )
 int outwrite(const gs_memory_t *mem, const char *str, int len)
 {
     int code;
-    FILE *fout;
     gs_lib_ctx_t *pio = mem->gs_lib_ctx;
     gs_lib_ctx_core_t *core = pio->core;
 
@@ -349,16 +351,14 @@ int outwrite(const gs_memory_t *mem, const char *str, int len)
     if (core->stdout_is_redirected) {
         if (core->stdout_to_stderr)
             return errwrite(mem, str, len);
-        fout = core->fstdout2;
-    }
-    else if (core->stdout_fn) {
+        code = gp_fwrite(str, 1, len, core->fstdout2);
+        gp_fflush(core->fstdout2);
+    } else if (core->stdout_fn) {
         return (*core->stdout_fn)(core->caller_handle, str, len);
+    } else {
+        code = fwrite(str, 1, len, core->fstdout);
+        fflush(core->fstdout);
     }
-    else {
-        fout = core->fstdout;
-    }
-    code = fwrite(str, 1, len, fout);
-    fflush(fout);
     return code;
 }
 
@@ -406,7 +406,7 @@ void outflush(const gs_memory_t *mem)
                 fflush(core->fstderr);
         }
         else
-            fflush(core->fstdout2);
+            gp_fflush(core->fstdout2);
     }
     else if (!core->stdout_fn)
         fflush(core->fstdout);
@@ -434,4 +434,176 @@ gs_check_file_permission (gs_memory_t *mem, const char *fname, const int len, co
         code = mem->gs_lib_ctx->client_check_file_permission(mem, fname, len, permission);
     }
     return code;
+}
+
+int
+gs_add_control_path_len(const gs_memory_t *mem, gs_path_control_t type, const char *path, size_t len)
+{
+    gs_path_control_set_t *control;
+    unsigned int n, i;
+    gs_lib_ctx_core_t *core;
+
+    if (mem == NULL || mem->gs_lib_ctx == NULL ||
+        (core = mem->gs_lib_ctx->core) == NULL)
+        return gs_error_unknownerror;
+
+    switch(type) {
+        case 0:
+            control = &core->permit_reading;
+            break;
+        case 1:
+            control = &core->permit_writing;
+            break;
+        case 2:
+            control = &core->permit_control;
+            break;
+        default:
+            return gs_error_rangecheck;
+    }
+
+    n = control->num;
+    for (i = 0; i < n; i++)
+    {
+        if (strncmp(control->paths[i], path, len) == 0 &&
+            control->paths[i][len] == 0)
+            return 0; /* Already there! */
+    }
+
+    if (control->num == control->max) {
+        char **p;
+
+        n = control->max * 2;
+        if (n == 0) {
+            n = 4;
+            p = (char **)gs_alloc_bytes(core->memory, sizeof(*p)*n, "gs_lib_ctx(paths)");
+        } else
+            p = (char **)gs_resize_object(core->memory, control->paths, sizeof(*p)*n, "gs_lib_ctx(paths)");
+        if (p == NULL)
+            return gs_error_VMerror;
+        control->paths = p;
+        control->max = n;
+    }
+
+    n = control->num;
+    control->paths[n] = (char *)gs_alloc_bytes(core->memory, len+1, "gs_lib_ctx(path)");
+    if (control->paths[n] == NULL)
+        return gs_error_VMerror;
+    memcpy(control->paths[n], path, len);
+    control->paths[n][len] = 0;
+    control->num++;
+
+    return 0;
+}
+
+int
+gs_add_control_path(const gs_memory_t *mem, gs_path_control_t type, const char *path)
+{
+    return gs_add_control_path_len(mem, type, path, strlen(path));
+}
+
+int
+gs_remove_control_path_len(const gs_memory_t *mem, gs_path_control_t type, const char *path, size_t len)
+{
+    gs_path_control_set_t *control;
+    unsigned int n, i;
+    gs_lib_ctx_core_t *core;
+
+    if (mem == NULL || mem->gs_lib_ctx == NULL ||
+        (core = mem->gs_lib_ctx->core) == NULL)
+        return gs_error_unknownerror;
+
+    switch(type) {
+        case gs_permit_file_reading:
+            control = &core->permit_reading;
+            break;
+        case gs_permit_file_writing:
+            control = &core->permit_writing;
+            break;
+        case gs_permit_file_control:
+            control = &core->permit_control;
+            break;
+        default:
+            return gs_error_rangecheck;
+    }
+
+    n = control->num;
+    for (i = 0; i < n; i++) {
+        if (strncmp(control->paths[i], path, len) == 0 &&
+            control->paths[i][len] == 0)
+            break;
+    }
+    if (i == n)
+        return 0;
+
+    gs_free_object(core->memory, control->paths[i], "gs_lib_ctx(path)");
+    for (;i < n-1; i++)
+        control->paths[i] = control->paths[i+1];
+    control->num = n-1;
+
+    return 0;
+}
+
+int
+gs_remove_control_path(const gs_memory_t *mem, gs_path_control_t type, const char *path)
+{
+    return gs_remove_control_path_len(mem, type, path, strlen(path));
+}
+
+void
+gs_purge_control_paths(const gs_memory_t *mem, gs_path_control_t type)
+{
+    gs_path_control_set_t *control;
+    unsigned int n, i;
+    gs_lib_ctx_core_t *core;
+
+    if (mem == NULL || mem->gs_lib_ctx == NULL ||
+        (core = mem->gs_lib_ctx->core) == NULL)
+        return;
+
+    switch(type) {
+        case gs_permit_file_reading:
+            control = &core->permit_reading;
+            break;
+        case gs_permit_file_writing:
+            control = &core->permit_writing;
+            break;
+        case gs_permit_file_control:
+            control = &core->permit_control;
+            break;
+        default:
+            return;
+    }
+
+    n = control->num;
+    for (i = 0; i < n; i++) {
+        gs_free_object(core->memory, control->paths[i], "gs_lib_ctx(path)");
+    }
+    gs_free_object(core->memory, control->paths, "gs_lib_ctx(paths)");
+    control->paths = NULL;
+    control->num = 0;
+    control->max = 0;
+}
+
+void
+gs_activate_path_control(gs_memory_t *mem, int enable)
+{
+    gs_lib_ctx_core_t *core;
+
+    if (mem == NULL || mem->gs_lib_ctx == NULL ||
+        (core = mem->gs_lib_ctx->core) == NULL)
+        return;
+
+    core->path_control_active = enable;
+}
+
+int
+gs_is_path_control_active(const gs_memory_t *mem)
+{
+    gs_lib_ctx_core_t *core;
+
+    if (mem == NULL || mem->gs_lib_ctx == NULL ||
+        (core = mem->gs_lib_ctx->core) == NULL)
+        return 0;
+
+    return core->path_control_active;
 }

@@ -825,7 +825,7 @@ typedef	struct {
 *	These macros are used to access the printer device
 */
 
-#define	SendByte( s, x )	fputc( (x), (s) )
+#define	SendByte( s, x )	gp_fputc( (x), (s) )
 
 #define	SendWord( s, x )	SendByte((s), (x) & 255); \
                                                         SendByte((s), ((x) >> 8 ) & 255);
@@ -837,7 +837,7 @@ typedef	struct {
 typedef	struct {
 
         EDEV	*dev;					/* The actual device struct			*/
-        FILE	*stream;				/* Output stream					*/
+        gp_file	*stream;				/* Output stream					*/
         int		yres;					/* Y resolution						*/
         int		xres;					/* X resolution						*/
         int		start;					/* Left margin in 1/1440 inches		*/
@@ -928,7 +928,7 @@ static dev_proc_encode_color(photoex_encode_color);
 static dev_proc_decode_color(photoex_decode_color);
 
 static int		photoex_open( gx_device *pdev );
-static	int		photoex_print_page( PDEV *dev, FILE *prn_stream );
+static	int		photoex_print_page( PDEV *dev, gp_file *prn_stream );
 static	CINX	photoex_map_rgb_color( DEV *dev, const CVAL prgb[] );
 static int		photoex_map_color_rgb( DEV *dev, CINX index, CVAL prgb[] );
 static	int		photoex_get_params( DEV *dev, PLIST *plist );
@@ -954,19 +954,19 @@ static	int		IsScanlineEmpty( RENDER *p, byte *line );
 static	int		RleCompress( RAWLINE *raw, int min, int max, byte *rle_data );
 static	int		RleFlush( byte *first, byte *reps, byte *now, byte *out );
 
-static	void	SendReset( FILE *stream );
-static	void	SendMargin( FILE *stream, int top, int bot );
-static	void	SendPaper( FILE *stream, int length );
-static	void	SendGmode( FILE *stream, int on );
-static void	SendUnit( FILE *stream, int res );
-static	void	SendUnidir( FILE *stream, int on );
-static	void	SendMicro( FILE *stream, int on );
-static void	SendInk( FILE *stream, int x );
-static	void	SendDown( FILE *stream, int x );
-static	void	SendRight( FILE *stream, int amount );
-static	void	SendColour( FILE *stream, int col );
-static void	SendData( FILE *stream, int hres, int vres, int noz, int col );
-static	void	SendString( FILE *stream, const char *s );
+static	void	SendReset( gp_file *stream );
+static	void	SendMargin( gp_file *stream, int top, int bot );
+static	void	SendPaper( gp_file *stream, int length );
+static	void	SendGmode( gp_file *stream, int on );
+static void	SendUnit( gp_file *stream, int res );
+static	void	SendUnidir( gp_file *stream, int on );
+static	void	SendMicro( gp_file *stream, int on );
+static void	SendInk( gp_file *stream, int x );
+static	void	SendDown( gp_file *stream, int x );
+static	void	SendRight( gp_file *stream, int amount );
+static	void	SendColour( gp_file *stream, int col );
+static void	SendData( gp_file *stream, int hres, int vres, int noz, int col );
+static	void	SendString( gp_file *stream, const char *s );
 
 static	void	HalftonerStart( RENDER *render, int line );
 static	int		HalftoneThold( RENDER *render );
@@ -1678,7 +1678,7 @@ static	int		GetInt( PLIST *list, PNAME name, int *value, int code )
 *	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-static	int		photoex_print_page( PDEV *device, FILE *stream )
+static	int		photoex_print_page( PDEV *device, gp_file *stream )
 {
 int			pixels;						/* Length of the line 				*/
 int			x;							/* Work vars						*/
@@ -1919,7 +1919,7 @@ int		i, j, l, col;
                                                                            min, max, p->rle );
                                         }
 
-                                        fwrite( p->rle, l, 1, p->stream );
+                                        gp_fwrite( p->rle, l, 1, p->stream );
                                 }
 
                                 SendByte( p->stream, CR );
@@ -2628,12 +2628,12 @@ int		l;
 /*		Low level procedures to send various commands to the printer		*/
 /****************************************************************************/
 
-static	void	SendReset( FILE *stream )
+static	void	SendReset( gp_file *stream )
 {
         SendString( stream, ESC "@" );
 }
 
-static	void	SendMargin( FILE *stream, int top, int bot )
+static	void	SendMargin( gp_file *stream, int top, int bot )
 {
         SendString( stream, ESC "(c" );
         SendWord( stream, 4 );
@@ -2641,41 +2641,41 @@ static	void	SendMargin( FILE *stream, int top, int bot )
         SendWord( stream, top );
 }
 
-static	void	SendPaper( FILE *stream, int length )
+static	void	SendPaper( gp_file *stream, int length )
 {
         SendString( stream, ESC "(C" );
         SendWord( stream, 2 );
         SendWord( stream, length );
 }
 
-static	void	SendGmode( FILE *stream, int on )
+static	void	SendGmode( gp_file *stream, int on )
 {
         SendString( stream, ESC "(G" );
         SendWord( stream, 1 );
         SendByte( stream, on );
 }
 
-static void	SendUnit( FILE *stream, int res )
+static void	SendUnit( gp_file *stream, int res )
 {
         SendString( stream, ESC "(U" );
         SendWord( stream, 1 );
         SendByte( stream, res );
 }
 
-static	void	SendUnidir( FILE *stream, int on )
+static	void	SendUnidir( gp_file *stream, int on )
 {
         SendString( stream, ESC "U" );
         SendByte( stream, on );
 }
 
-static	void	SendMicro( FILE *stream, int on )
+static	void	SendMicro( gp_file *stream, int on )
 {
         SendString( stream, ESC "(i" );
         SendWord( stream, 1 );
         SendByte( stream, on );
 }
 
-static void	SendInk( FILE *stream, int x )
+static void	SendInk( gp_file *stream, int x )
 {
         SendString( stream, ESC "(e" );
         SendWord( stream, 2 );
@@ -2683,14 +2683,14 @@ static void	SendInk( FILE *stream, int x )
         SendByte( stream, x );
 }
 
-static	void	SendDown( FILE *stream, int x )
+static	void	SendDown( gp_file *stream, int x )
 {
         SendString( stream, ESC "(v" );
         SendWord( stream, 2 );
         SendWord( stream, x );
 }
 
-static	void	SendRight( FILE *stream, int amount )
+static	void	SendRight( gp_file *stream, int amount )
 {
         SendString( stream, ESC "(\\" );
         SendWord( stream, 4 );
@@ -2698,7 +2698,7 @@ static	void	SendRight( FILE *stream, int amount )
         SendWord( stream, amount );
 }
 
-static	void	SendColour( FILE *stream, int col )
+static	void	SendColour( gp_file *stream, int col )
 {
 static	int	ccode[] = { 0x000, 0x200, 0x100, 0x400, 0x201, 0x101 };
 
@@ -2707,7 +2707,7 @@ static	int	ccode[] = { 0x000, 0x200, 0x100, 0x400, 0x201, 0x101 };
         SendWord( stream, ccode[ col ] );
 }
 
-static void	SendData( FILE *stream, int hres, int vres, int noz, int col )
+static void	SendData( gp_file *stream, int hres, int vres, int noz, int col )
 {
         SendString( stream, ESC "." );
         SendByte( stream, 1 );				/* Run-length encoded data */
@@ -2733,7 +2733,7 @@ static void	SendData( FILE *stream, int hres, int vres, int noz, int col )
         SendWord( stream, col );
 }
 
-static	void	SendString( FILE *stream, const char *s )
+static	void	SendString( gp_file *stream, const char *s )
 {
         while ( *s ) SendByte( stream, *s++ );
 }

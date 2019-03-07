@@ -64,7 +64,7 @@ file_open_stream(const char *fname, uint len, const char *file_access,
                  iodev_proc_fopen_t fopen_proc, gs_memory_t *mem)
 {
     int code;
-    FILE *file;
+    gp_file *file;
     char fmode[4];  /* r/w/a, [+], [b], null */
 
 #ifdef DEBUG
@@ -85,7 +85,7 @@ file_open_stream(const char *fname, uint len, const char *file_access,
     if (fname[0] == 0)		/* fopen_proc gets NUL terminated string, not len */
         return 0;		/* so this is the same as len == 0, so return NULL */
     code = (*fopen_proc)(iodev, (char *)(*ps)->cbuf, fmode, &file,
-                         (char *)(*ps)->cbuf, (*ps)->bsize);
+                         (char *)(*ps)->cbuf, (*ps)->bsize, mem);
     if (code < 0) {
         /* discard the stuff we allocated to keep from accumulating stuff needing GC */
         gs_free_object(mem, (*ps)->cbuf, "file_close(buffer)");
@@ -138,7 +138,7 @@ file_close_file(stream * s)
  * stream and buffer.
  */
 int
-file_init_stream(stream *s, FILE *file, const char *fmode, byte *buffer,
+file_init_stream(stream *s, gp_file *file, const char *fmode, byte *buffer,
                  uint buffer_size)
 {
     switch (fmode[0]) {
@@ -149,12 +149,10 @@ file_init_stream(stream *s, FILE *file, const char *fmode, byte *buffer,
     case 'r':
         /* Defeat buffering for terminals. */
         {
-            struct stat rstat;
-
-            if (fstat(fileno(file), &rstat) != 0)
-                return ERRC;
-            sread_file(s, file, buffer,
-                       (S_ISCHR(rstat.st_mode) ? 1 : buffer_size));
+            int char_buffered = gp_file_is_char_buffered(file);
+            if (char_buffered < 0)
+                return char_buffered;
+            sread_file(s, file, buffer, char_buffered ? 1 : buffer_size);
         }
         break;
     case 'w':

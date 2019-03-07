@@ -69,7 +69,7 @@ gs_main_instance *gs_main_alloc_instance(gs_memory_t *);
  * init0 records the files to be used for stdio, and initializes the
  * graphics library, the file search paths, and other instance data.
  */
-int gs_main_init0(gs_main_instance *minst, FILE *in, FILE *out, FILE *err,
+int gs_main_init0(gs_main_instance *minst, gp_file *in, gp_file *out, gp_file *err,
                   int max_lib_paths);
 
 /*

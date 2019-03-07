@@ -198,7 +198,7 @@ static int process_pdfmark(gs_memory_t *mem, gx_device *device, char *pdfmark)
      * special variety of 'PUT' called 'PUTFILE' and we handle that here.
      */
     if (strncmp((const char *)(parray[tokens].data), "PUTFILE", 7) == 0) {
-        FILE *f;
+        gp_file *f;
         char *filename;
         int bytes;
 
@@ -210,24 +210,24 @@ static int process_pdfmark(gs_memory_t *mem, gx_device *device, char *pdfmark)
         filename = (char *)&(parray[tokens - 2].data[1]);
         filename[strlen(filename) - 1] = 0x00;
 
-        f = gp_fopen((const char *)filename, "rb");
+        f = gp_fopen(mem, (const char *)filename, "rb");
         if (!f) {
             gs_free_object(mem, copy, "working buffer for pdfmark processing");
             gs_free_object(mem, parray, "temporary pdfmark array");
             return -1;
         }
 
-        if (gp_fseek_64(f, 0, SEEK_END) != 0) {
+        if (gp_fseek(f, 0, SEEK_END) != 0) {
             gs_free_object(mem, copy, "working buffer for pdfmark processing");
             gs_free_object(mem, parray, "temporary pdfmark array");
-            fclose(f);
+            gp_fclose(f);
             return -1;
         }
-        bytes = gp_ftell_64(f);
+        bytes = gp_ftell(f);
         if (bytes < 0) {
             gs_free_object(mem, copy, "working buffer for pdfmark processing");
             gs_free_object(mem, parray, "temporary pdfmark array");
-            fclose(f);
+            gp_fclose(f);
             return -1;
         }
             
@@ -235,27 +235,27 @@ static int process_pdfmark(gs_memory_t *mem, gx_device *device, char *pdfmark)
         if (!parray[tokens - 2].data) {
             gs_free_object(mem, copy, "working buffer for pdfmark processing");
             gs_free_object(mem, parray, "temporary pdfmark array");
-            fclose(f);
+            gp_fclose(f);
             return -1;
         }
         stream_data = (char *)(parray[tokens - 2].data);
 
-        if (gp_fseek_64(f, 0, SEEK_SET) != 0) {
+        if (gp_fseek(f, 0, SEEK_SET) != 0) {
             gs_free_object(mem, stream_data, "PJL pdfmark, stream");
             gs_free_object(mem, copy, "working buffer for pdfmark processing");
             gs_free_object(mem, parray, "temporary pdfmark array");
-            fclose(f);
+            gp_fclose(f);
             return gs_note_error(gs_error_ioerror);
         }
-        code = fread(stream_data, 1, bytes, f);
+        code = gp_fread(stream_data, 1, bytes, f);
         if (code != bytes) {
             gs_free_object(mem, stream_data, "PJL pdfmark, stream");
             gs_free_object(mem, copy, "working buffer for pdfmark processing");
             gs_free_object(mem, parray, "temporary pdfmark array");
-            fclose(f);
+            gp_fclose(f);
             return gs_note_error(gs_error_ioerror);
         }
-        fclose(f);
+        gp_fclose(f);
         parray[tokens - 2].size = bytes;
 
         parray[tokens].data = (const byte *)".PUTSTREAM";

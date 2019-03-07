@@ -61,7 +61,8 @@ $(GENHT_XE): $(GLSRC)genht.c $(GLGENDIR)\ccf32.tr $(GENHT_DEPS) $(MSVCTAIL_MAK)
 	$(CCAUX_) $(GENHT_CFLAGS) $(GLSRC)genht.c /Fo$(AUX)genht.obj /Fe$(GENHT_XE) $(CCAUX_TAIL)
 
 MKROMFS_OBJS=$(MKROMFS_ZLIB_OBJS) $(AUX)gp_ntfs.$(OBJ) $(AUX)gp_win32.$(OBJ) $(AUX)gpmisc.$(OBJ)\
-            $(AUX)gp_getnv.$(OBJ) $(AUX)gp_wutf8.$(OBJ)
+            $(AUX)gp_getnv.$(OBJ) $(AUX)gp_wutf8.$(OBJ) $(AUX)gp_winfs.$(OBJ)\
+	    $(AUX)gp_winfs2.$(OBJ)
 $(MKROMFS_XE): $(GLSRC)mkromfs.c $(GLGENDIR)\ccf32.tr $(MKROMFS_COMMON_DEPS) $(MKROMFS_OBJS) $(MSVCTAIL_MAK)
 	$(CCAUX_) -I$(GLOBJ) -I$(ZSRCDIR) $(GLSRC)mkromfs.c /Fo$(AUX)mkromfs.obj /Fe$(MKROMFS_XE) $(MKROMFS_OBJS) $(CCAUX_TAIL)
 

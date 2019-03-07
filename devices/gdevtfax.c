@@ -290,7 +290,7 @@ const gx_device_tfax gs_tiffpack_device = {
 };
 
 /* Forward references */
-static int tfax_begin_page(gx_device_tfax * tfdev, FILE * file);
+static int tfax_begin_page(gx_device_tfax * tfdev, gp_file * file);
 
 static void
 tfax_set_fields(gx_device_tfax *tfdev)
@@ -309,7 +309,7 @@ tfax_set_fields(gx_device_tfax *tfdev)
 }
 
 static int
-tiffcrle_print_page(gx_device_printer * dev, FILE * prn_stream)
+tiffcrle_print_page(gx_device_printer * dev, gp_file * prn_stream)
 {
     gx_device_tfax *tfdev = (gx_device_tfax *)dev;
 
@@ -321,7 +321,7 @@ tiffcrle_print_page(gx_device_printer * dev, FILE * prn_stream)
 }
 
 static int
-tiffg3_print_page(gx_device_printer * dev, FILE * prn_stream)
+tiffg3_print_page(gx_device_printer * dev, gp_file * prn_stream)
 {
     gx_device_tfax *tfdev = (gx_device_tfax *)dev;
 
@@ -335,7 +335,7 @@ tiffg3_print_page(gx_device_printer * dev, FILE * prn_stream)
 }
 
 static int
-tiffg32d_print_page(gx_device_printer * dev, FILE * prn_stream)
+tiffg32d_print_page(gx_device_printer * dev, gp_file * prn_stream)
 {
     gx_device_tfax *tfdev = (gx_device_tfax *)dev;
 
@@ -349,7 +349,7 @@ tiffg32d_print_page(gx_device_printer * dev, FILE * prn_stream)
 }
 
 static int
-tiffg4_print_page(gx_device_printer * dev, FILE * prn_stream)
+tiffg4_print_page(gx_device_printer * dev, gp_file * prn_stream)
 {
     gx_device_tfax *tfdev = (gx_device_tfax *)dev;
 
@@ -364,7 +364,7 @@ tiffg4_print_page(gx_device_printer * dev, FILE * prn_stream)
 
 /* Print an LZW page. */
 static int
-tifflzw_print_page(gx_device_printer * dev, FILE * prn_stream)
+tifflzw_print_page(gx_device_printer * dev, gp_file * prn_stream)
 {
     gx_device_tfax *const tfdev = (gx_device_tfax *)dev;
 
@@ -377,7 +377,7 @@ tifflzw_print_page(gx_device_printer * dev, FILE * prn_stream)
 
 /* Print a PackBits page. */
 static int
-tiffpack_print_page(gx_device_printer * dev, FILE * prn_stream)
+tiffpack_print_page(gx_device_printer * dev, gp_file * prn_stream)
 {
     gx_device_tfax *const tfdev = (gx_device_tfax *)dev;
 
@@ -390,7 +390,7 @@ tiffpack_print_page(gx_device_printer * dev, FILE * prn_stream)
 
 /* Begin a TIFF fax page. */
 static int
-tfax_begin_page(gx_device_tfax * tfdev, FILE * file)
+tfax_begin_page(gx_device_tfax * tfdev, gp_file * file)
 {
     gx_device_printer *const pdev = (gx_device_printer *)tfdev;
     int code;

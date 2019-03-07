@@ -301,7 +301,7 @@ bjc_device(bjc_truecolor_procs, "bjccolor",
 
 /*
 static int
-bjc_print_page(gx_device_printer * pdev, FILE * file)
+bjc_print_page(gx_device_printer * pdev, gp_file * file)
 {
 #define ppdev ((gx_device_bjc_printer *) pdev)
 #define prdev ((gx_device_printer *) pdev)
@@ -328,7 +328,7 @@ bjc_print_page(gx_device_printer * pdev, FILE * file)
 done:
     gs_free_object(pdev->memory, row, "bjc file buffer");
 
-    fwrite((const char *) alma, 512, 1, file);
+    gp_fwrite((const char *) alma, 512, 1, file);
     return code;
 
 #undef ppdev
@@ -336,15 +336,15 @@ done:
 */
 
 void
-bjc_put_bjl_command(FILE * file, int bjl_command)
+bjc_put_bjl_command(gp_file * file, int bjl_command)
 {
     BJL_command *command = BJL_command_set;
     for( ; command->string; command++)
         if(command->numeric == bjl_command) break;
     if(command->string) {
-      fwrite((const char *)"\033[K\002\000\000\037BJLSTART\012", 16, 1, file);
-      fwrite(command->string, command->length, 1, file);
-      fwrite((const char *)"\012BJLEND\012", 8, 1, file); }
+      gp_fwrite((const char *)"\033[K\002\000\000\037BJLSTART\012", 16, 1, file);
+      gp_fwrite(command->string, command->length, 1, file);
+      gp_fwrite((const char *)"\012BJLEND\012", 8, 1, file); }
 }
 
 /* ------ Get/put parameters ------ */
@@ -553,7 +553,7 @@ label:							\
 }
 
 static int
-bjc_print_page_mono(gx_device_printer * pdev, FILE * file)
+bjc_print_page_mono(gx_device_printer * pdev, gp_file * file)
 {
 #define ppdev ((gx_device_bjc_printer *) pdev)
 #define prdev ((gx_device_printer *) pdev)
@@ -624,7 +624,7 @@ bjc_print_page_mono(gx_device_printer * pdev, FILE * file)
 }
 
 static int
-bjc_print_page_gray(gx_device_printer * pdev, FILE * file)
+bjc_print_page_gray(gx_device_printer * pdev, gp_file * file)
 {
 #define ppdev ((gx_device_bjc_printer *) pdev)
 #define prdev ((gx_device_printer *) pdev)
@@ -711,7 +711,7 @@ bjc_print_page_gray(gx_device_printer * pdev, FILE * file)
 }
 
 static int
-bjc_print_page_cmyk(gx_device_printer * pdev, FILE * file)
+bjc_print_page_cmyk(gx_device_printer * pdev, gp_file * file)
 {
 #define ppdev ((gx_device_bjc_printer *) pdev)
 #define prdev ((gx_device_printer *) pdev)
@@ -827,7 +827,7 @@ bjc_print_page_cmyk(gx_device_printer * pdev, FILE * file)
 }
 
 static int
-bjc_print_page_color(gx_device_printer * pdev, FILE * file)
+bjc_print_page_color(gx_device_printer * pdev, gp_file * file)
 {
 #define ppdev ((gx_device_bjc_printer *) pdev)
 #define prdev ((gx_device_printer *) pdev)

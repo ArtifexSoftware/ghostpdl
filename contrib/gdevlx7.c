@@ -241,13 +241,13 @@ lxm_device far_data gs_lex2050_device = {
 
 static byte ofs8[8]={128,64,32,16,8,4,2,1};
 /* Lexmark 5xxx, 7xxx page eject */
-static void lex_eject(FILE *out)
+static void lex_eject(gp_file *out)
 {
    byte buf[4]={0x1b,0x2a,0x7,0x65};
 #ifdef DEBUG
    dprintf("Sending page eject.\n");
 #endif
-   fwrite(buf,sizeof(buf),1,out);
+   gp_fwrite(buf,sizeof(buf),1,out);
 }
 
 /*
@@ -256,7 +256,7 @@ static void lex_eject(FILE *out)
  * 384 for 192 pixels or
  * 416 for 208 pixels etc...
  */
-static void paper_shift(FILE *out,int offset)
+static void paper_shift(gp_file *out,int offset)
 {
    byte buf[5]={0x1b,0x2a,0x3,0x0,0x0};
    buf[3]=(byte)(offset >> 8);   /* just to be endian safe we don't use short */
@@ -265,7 +265,7 @@ static void paper_shift(FILE *out,int offset)
    dprintf3("paper_shift() %d 1200dpi = %d 600dpi = %d 300dpi pixels\n",
          offset,offset/2,offset/4);
 #endif
-   fwrite(buf,sizeof(buf),1,out);
+   gp_fwrite(buf,sizeof(buf),1,out);
 }
 
 /* return coordinate of leftmost pixel (in pixels) */
@@ -399,7 +399,7 @@ static byte outb[]={0x1B,0x2A,0x04,0x00,0x00,0xFF,0xFF,
 
 #define BITSTART12 4096
 
-static int print_cols(FILE *prn_stream,gx_device_printer *pdev,
+static int print_cols(gp_file *prn_stream,gx_device_printer *pdev,
       byte *outbuf,
       int left,int right,int vstart, int vend,byte *buf[],
       int width,int LR_SHIFT)
@@ -543,7 +543,7 @@ static int print_cols(FILE *prn_stream,gx_device_printer *pdev,
    outbuf[IDX_SEQLEN-1]  =(unsigned char)(clen >> 16);
    outbuf[IDX_SEQLEN]  =(unsigned char)(clen >> 8);
    outbuf[IDX_SEQLEN+1]=(unsigned char)(clen & 0xFF);
-   fwrite(outbuf,1,clen,prn_stream);
+   gp_fwrite(outbuf,1,clen,prn_stream);
 #ifdef DEBUG
    dprintf1("\nSent %d data bytes\n",clen);
 #endif
@@ -555,7 +555,7 @@ static int print_cols(FILE *prn_stream,gx_device_printer *pdev,
 /* Send the page to the printer. */
 /* Lexmark generic print page routine */
 static int
-lxmgen_print_page(gx_device_printer *pdev, FILE *prn_stream)
+lxmgen_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {
    int pheight=pdev->height; /* page height (pixels) */
 #ifdef DEBUG
@@ -673,13 +673,13 @@ lxmgen_print_page(gx_device_printer *pdev, FILE *prn_stream)
    }
 
    if(gdev_prn_file_is_new(pdev))
-      fwrite(((lxm_device*)pdev)->fullInit,
-            ((lxm_device*)pdev)->nfullInit,
-            1,prn_stream);
+      gp_fwrite(((lxm_device*)pdev)->fullInit,
+                ((lxm_device*)pdev)->nfullInit,
+                1,prn_stream);
    else
-      fwrite(((lxm_device*)pdev)->pageInit,
-            ((lxm_device*)pdev)->npageInit,
-            1,prn_stream);
+      gp_fwrite(((lxm_device*)pdev)->pageInit,
+                ((lxm_device*)pdev)->npageInit,
+                1,prn_stream);
 
    while(prest>0)
    {

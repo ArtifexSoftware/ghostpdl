@@ -576,7 +576,7 @@ const pdf14_device gs_pdf14_custom_device = {
 static dev_proc_print_page(no_print_page);
 
 static int
-no_print_page(gx_device_printer *pdev, FILE *prn_stream)
+no_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {
     return_error(gs_error_unknownerror);
 }

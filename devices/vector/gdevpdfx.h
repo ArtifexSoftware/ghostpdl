@@ -337,7 +337,7 @@ typedef struct pdf_page_s {
  */
 typedef struct pdf_temp_file_s {
     char file_name[gp_file_name_sizeof];
-    FILE *file;
+    gp_file *file;
     stream *strm;
     byte *strm_buf;
     stream *save_strm;                /* save pdev->strm while writing here */
@@ -411,7 +411,7 @@ typedef struct share_hint_stream_s {
 } shared_hint_stream_t;
 
 typedef struct pdf_linearisation_s {
-    FILE *sfile;
+    gp_file *sfile;
     pdf_temp_file_t Lin_File;
     char HintBuffer[256];
     unsigned char HintBits;
@@ -1141,8 +1141,8 @@ int pdf_free_resource_objects(gx_device_pdf *pdev, pdf_resource_type_t rtype);
 int pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page, bool clear_usage);
 
 /* Copy data from a temporary file to a stream. */
-int pdf_copy_data(stream *s, FILE *file, gs_offset_t count, stream_arcfour_state *ss);
-int pdf_copy_data_safe(stream *s, FILE *file, gs_offset_t position, long count);
+int pdf_copy_data(stream *s, gp_file *file, gs_offset_t count, stream_arcfour_state *ss);
+int pdf_copy_data_safe(stream *s, gp_file *file, gs_offset_t position, long count);
 
 /* Add the encryption filter. */
 int pdf_begin_encrypt(gx_device_pdf * pdev, stream **s, gs_id object_id);

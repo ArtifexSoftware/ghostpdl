@@ -617,7 +617,7 @@ long pdf_obj_forward_ref(gx_device_pdf * pdev)
     long id = pdf_next_id(pdev);
     gs_offset_t pos = 0;
 
-    fwrite(&pos, sizeof(pos), 1, pdev->xref.file);
+    gp_fwrite(&pos, sizeof(pos), 1, pdev->xref.file);
     return id;
 }
 
@@ -628,7 +628,7 @@ pdf_obj_ref(gx_device_pdf * pdev)
     long id = pdf_next_id(pdev);
     gs_offset_t pos = pdf_stell(pdev);
 
-    fwrite(&pos, sizeof(pos), 1, pdev->xref.file);
+    gp_fwrite(&pos, sizeof(pos), 1, pdev->xref.file);
     return id;
 }
 
@@ -644,15 +644,15 @@ pdf_obj_ref(gx_device_pdf * pdev)
 long
 pdf_obj_mark_unused(gx_device_pdf *pdev, long id)
 {
-    FILE *tfile = pdev->xref.file;
-    int64_t tpos = gp_ftell_64(tfile);
+    gp_file *tfile = pdev->xref.file;
+    int64_t tpos = gp_ftell(tfile);
     gs_offset_t pos = 0;
 
-    if (gp_fseek_64 (tfile, ((int64_t)(id - pdev->FirstObjectNumber)) * sizeof(pos),
+    if (gp_fseek(tfile, ((int64_t)(id - pdev->FirstObjectNumber)) * sizeof(pos),
           SEEK_SET) != 0)
       return_error(gs_error_ioerror);
-    fwrite(&pos, sizeof(pos), 1, tfile);
-    if (gp_fseek_64(tfile, tpos, SEEK_SET) != 0)
+    gp_fwrite(&pos, sizeof(pos), 1, tfile);
+    if (gp_fseek(tfile, tpos, SEEK_SET) != 0)
       return_error(gs_error_ioerror);
     return 0;
 }
@@ -667,14 +667,14 @@ pdf_open_obj(gx_device_pdf * pdev, long id, pdf_resource_type_t type)
         id = pdf_obj_ref(pdev);
     } else {
         gs_offset_t pos = pdf_stell(pdev);
-        FILE *tfile = pdev->xref.file;
-        int64_t tpos = gp_ftell_64(tfile);
+        gp_file *tfile = pdev->xref.file;
+        int64_t tpos = gp_ftell(tfile);
 
-        if (gp_fseek_64 (tfile, ((int64_t)(id - pdev->FirstObjectNumber)) * sizeof(pos),
+        if (gp_fseek(tfile, ((int64_t)(id - pdev->FirstObjectNumber)) * sizeof(pos),
               SEEK_SET) != 0)
 	  return_error(gs_error_ioerror);
-        fwrite(&pos, sizeof(pos), 1, tfile);
-        if (gp_fseek_64(tfile, tpos, SEEK_SET) != 0)
+        gp_fwrite(&pos, sizeof(pos), 1, tfile);
+        if (gp_fseek(tfile, tpos, SEEK_SET) != 0)
 	  return_error(gs_error_ioerror);
     }
     if (pdev->ForOPDFRead && pdev->ProduceDSC) {
@@ -1744,7 +1744,7 @@ pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page, bool clear_usage
 
 /* Copy data from a temporary file to a stream. */
 int
-pdf_copy_data(stream *s, FILE *file, gs_offset_t count, stream_arcfour_state *ss)
+pdf_copy_data(stream *s, gp_file *file, gs_offset_t count, stream_arcfour_state *ss)
 {
     gs_offset_t r, left = count;
     byte buf[sbuf_size];
@@ -1752,7 +1752,7 @@ pdf_copy_data(stream *s, FILE *file, gs_offset_t count, stream_arcfour_state *ss
     while (left > 0) {
         uint copy = min(left, sbuf_size);
 
-        r = fread(buf, 1, copy, file);
+        r = gp_fread(buf, 1, copy, file);
         if (r < 1) {
             return gs_note_error(gs_error_ioerror);
         }
@@ -1767,23 +1767,23 @@ pdf_copy_data(stream *s, FILE *file, gs_offset_t count, stream_arcfour_state *ss
 /* Copy data from a temporary file to a stream,
    which may be targetted to the same file. */
 int
-pdf_copy_data_safe(stream *s, FILE *file, gs_offset_t position, long count)
+pdf_copy_data_safe(stream *s, gp_file *file, gs_offset_t position, long count)
 {
     long r, left = count;
 
     while (left > 0) {
         byte buf[sbuf_size];
         long copy = min(left, (long)sbuf_size);
-        int64_t end_pos = gp_ftell_64(file);
+        int64_t end_pos = gp_ftell(file);
 
-        if (gp_fseek_64(file, position + count - left, SEEK_SET) != 0) {
+        if (gp_fseek(file, position + count - left, SEEK_SET) != 0) {
             return_error(gs_error_ioerror);
         }
-        r = fread(buf, 1, copy, file);
+        r = gp_fread(buf, 1, copy, file);
         if (r < 1) {
             return_error(gs_error_ioerror);
         }
-        if (gp_fseek_64(file, end_pos, SEEK_SET) != 0) {
+        if (gp_fseek(file, end_pos, SEEK_SET) != 0) {
             return_error(gs_error_ioerror);
         }
         stream_write(s, buf, copy);

@@ -102,14 +102,14 @@ static const char lips3_end[] = {
 
 /* Send the page to the printer.  */
 static int
-can_print_page(gx_device_printer *pdev, FILE *prn_stream,
+can_print_page(gx_device_printer *pdev, gp_file *prn_stream,
   const char *init, int init_size, const char *end, int end_size)
 {
         char data[LINE_SIZE*2];
         char *out_data;
         int last_line_nro = 0;
 
-        fwrite(init, init_size, 1, prn_stream);		/* initialize */
+        gp_fwrite(init, init_size, 1, prn_stream);		/* initialize */
 
         /* Send each scan line in turn */
         {
@@ -133,8 +133,8 @@ can_print_page(gx_device_printer *pdev, FILE *prn_stream,
                     out_data = data;
 
                     /* move down */
-                    fprintf(prn_stream, "%c[%de",
-                            ESC, lnum-last_line_nro );
+                    gp_fprintf(prn_stream, "%c[%de",
+                               ESC, lnum-last_line_nro );
                     last_line_nro = lnum;
 
                     while (out_data < end_data) {
@@ -170,15 +170,15 @@ can_print_page(gx_device_printer *pdev, FILE *prn_stream,
                                 break;
 
                         /* move down and across*/
-                        fprintf(prn_stream, "%c[%d`",
-                                ESC, num_cols );
+                        gp_fprintf(prn_stream, "%c[%d`",
+                                   ESC, num_cols );
                         /* transfer raster graphic command */
-                        fprintf(prn_stream, "%c[%d;%d;300;.r",
-                                ESC, out_count, out_count);
+                        gp_fprintf(prn_stream, "%c[%d;%d;300;.r",
+                                   ESC, out_count, out_count);
 
                         /* send the row */
-                        fwrite(out_data, sizeof(char),
-                               out_count, prn_stream);
+                        gp_fwrite(out_data, sizeof(char),
+                                  out_count, prn_stream);
 
                         out_data += out_count+zero_count;
                         num_cols += 8*(out_count+zero_count);
@@ -188,18 +188,18 @@ can_print_page(gx_device_printer *pdev, FILE *prn_stream,
         }
 
         /* eject page */
-        fprintf(prn_stream, "%c=", ESC);
+        gp_fprintf(prn_stream, "%c=", ESC);
 
         /* terminate */
         if (end != NULL)
-            (void)fwrite(end, end_size, 1, prn_stream);
+            (void)gp_fwrite(end, end_size, 1, prn_stream);
 
         return 0;
 }
 
 /* Print an LBP-8 page. */
 static int
-lbp8_print_page(gx_device_printer *pdev, FILE *prn_stream)
+lbp8_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {
     return can_print_page(pdev, prn_stream, lbp8_init, sizeof(lbp8_init),
                               NULL, 0);
@@ -208,7 +208,7 @@ lbp8_print_page(gx_device_printer *pdev, FILE *prn_stream)
 #ifdef NOCONTRIB
 /* Print a LIPS III page. */
 static int
-lips3_print_page(gx_device_printer *pdev, FILE *prn_stream)
+lips3_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {	return can_print_page(pdev, prn_stream, lips3_init, sizeof(lips3_init),
                               lips3_end, sizeof(lips3_end));
 }

@@ -123,7 +123,7 @@ void print_resource_usage(const gs_main_instance *,
 
 /* Initialization to be done before anything else. */
 int
-gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
+gs_main_init0(gs_main_instance * minst, gp_file * in, gp_file * out, gp_file * err,
               int max_lib_paths)
 {
     ref *array;
@@ -1222,10 +1222,10 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
     /* clean up redirected stdout */
     core = minst->heap->gs_lib_ctx->core;
     if (core->fstdout2
-        && (core->fstdout2 != core->fstdout)
-        && (core->fstdout2 != core->fstderr)) {
-        fclose(core->fstdout2);
-        core->fstdout2 = (FILE *)NULL;
+        && (gp_get_file(core->fstdout2) != core->fstdout)
+        && (gp_get_file(core->fstdout2) != core->fstderr)) {
+        gp_fclose(core->fstdout2);
+        core->fstdout2 = NULL;
     }
 
     minst->heap->gs_lib_ctx->core->stdout_is_redirected = 0;

@@ -114,7 +114,7 @@ static void print_help_trailer(const gs_main_instance *);
 /* ------ Main program ------ */
 
 /* Process the command line with a given instance. */
-static FILE *
+static gp_file *
 gs_main_arg_fopen(const char *fname, void *vminst)
 {
     gs_main_set_lib_paths((gs_main_instance *) vminst);
@@ -937,7 +937,7 @@ argproc(gs_main_instance * minst, const char *arg)
 static int
 run_buffered(gs_main_instance * minst, const char *arg)
 {
-    FILE *in = gp_fopen(arg, gp_fmode_rb);
+    gp_file *in = gp_fopen(minst->heap, arg, gp_fmode_rb);
     int exit_code;
     ref error_object;
     int code;
@@ -948,7 +948,7 @@ run_buffered(gs_main_instance * minst, const char *arg)
     }
     code = gs_main_init2(minst);
     if (code < 0) {
-        fclose(in);
+        gp_fclose(in);
         return code;
     }
     code = gs_main_run_string_begin(minst, minst->user_errors,
@@ -958,7 +958,7 @@ run_buffered(gs_main_instance * minst, const char *arg)
         int count;
 
         code = gs_error_NeedInput;
-        while ((count = fread(buf, 1, minst->run_buffer_size, in)) > 0) {
+        while ((count = gp_fread(buf, 1, minst->run_buffer_size, in)) > 0) {
             code = gs_main_run_string_continue(minst, buf, count,
                                                minst->user_errors,
                                                &exit_code, &error_object);
@@ -970,7 +970,7 @@ run_buffered(gs_main_instance * minst, const char *arg)
                                           &exit_code, &error_object);
         }
     }
-    fclose(in);
+    gp_fclose(in);
     zflush(minst->i_ctx_p);
     zflushpage(minst->i_ctx_p);
     return run_finish(minst, code, exit_code, &error_object);
@@ -1087,20 +1087,21 @@ try_stdout_redirect(gs_main_instance * minst,
          * or stderr, close it
          */
         if (core->fstdout2
-            && (core->fstdout2 != core->fstdout)
-            && (core->fstdout2 != core->fstderr)) {
-            fclose(core->fstdout2);
-            core->fstdout2 = (FILE *)NULL;
+            && (gp_get_file(core->fstdout2) != core->fstdout)
+            && (gp_get_file(core->fstdout2) != core->fstderr)) {
+            gp_fclose(core->fstdout2);
+            core->fstdout2 = NULL;
         }
         /* If stdout is being redirected, set minst->fstdout2 */
         if ( (filename != 0) && strlen(filename) &&
             strcmp(filename, "-") && strcmp(filename, "%stdout") ) {
             if (strcmp(filename, "%stderr") == 0) {
                 core->stdout_to_stderr = 1;
+            } else {
+                core->fstdout2 = gp_fopen(minst->heap, filename, "w");
+                if (core->fstdout2 == NULL)
+                    return_error(gs_error_invalidfileaccess);
             }
-            else if ((core->fstdout2 =
-                      gp_fopen(filename, "w")) == (FILE *)NULL)
-                return_error(gs_error_invalidfileaccess);
             core->stdout_is_redirected = 1;
         }
         return 0;

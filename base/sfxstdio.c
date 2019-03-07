@@ -46,7 +46,7 @@ static int
 
 /* Initialize a stream for reading an OS file. */
 void
-sread_file(register stream * s, FILE * file, byte * buf, uint len)
+sread_file(register stream * s, gp_file * file, byte * buf, uint len)
 {
     static const stream_procs p = {
         s_file_available, s_file_read_seek, s_std_read_reset,
@@ -58,12 +58,12 @@ sread_file(register stream * s, FILE * file, byte * buf, uint len)
      * work on most systems.  Note that if our probe sets the ferror bit for
      * the stream, we have to clear it again to avoid trouble later.
      */
-    int had_error = ferror(file);
-    gs_offset_t curpos = gp_ftell_64(file);
-    bool seekable = (curpos != -1L && gp_fseek_64(file, curpos, SEEK_SET) == 0);
+    int had_error = gp_ferror(file);
+    gs_offset_t curpos = gp_ftell(file);
+    bool seekable = (curpos != -1L && gp_fseek(file, curpos, SEEK_SET) == 0);
 
     if (!had_error)
-        clearerr(file);
+        gp_clearerr(file);
     s_std_init(s, buf, len, &p,
                (seekable ? s_mode_read + s_mode_seek : s_mode_read));
     if_debug1m('s', s->memory, "[s]read file=0x%lx\n", (ulong) file);
@@ -100,11 +100,11 @@ s_file_available(register stream * s, gs_offset_t *pl)
     if (sseekable(s)) {
         gs_offset_t pos, end;
 
-        pos = gp_ftell_64(s->file);
-        if (gp_fseek_64(s->file, 0, SEEK_END))
+        pos = gp_ftell(s->file);
+        if (gp_fseek(s->file, 0, SEEK_END))
             return ERRC;
-        end = gp_ftell_64(s->file);
-        if (gp_fseek_64(s->file, pos, SEEK_SET))
+        end = gp_ftell(s->file);
+        if (gp_fseek(s->file, pos, SEEK_SET))
             return ERRC;
         buf_avail += end - pos;
         *pl = min(max_avail, buf_avail);
@@ -112,9 +112,9 @@ s_file_available(register stream * s, gs_offset_t *pl)
             *pl = -1;		/* EOF */
     } else {
         /* s->end_status == EOFC may indicate the stream is disabled
-         * or that the underlying FILE * has reached EOF.
+         * or that the underlying gp_file * has reached EOF.
          */
-        if (*pl == 0 && (s->end_status == EOFC || feof(s->file)))
+        if (*pl == 0 && (s->end_status == EOFC || gp_feof(s->file)))
             *pl = -1;		/* EOF */
     }
     return 0;
@@ -130,7 +130,7 @@ s_file_read_seek(register stream * s, gs_offset_t pos)
         return 0;
     }
     if (pos < 0 || pos > s->file_limit || s->file == NULL ||
-        gp_fseek_64(s->file, s->file_offset + pos, SEEK_SET) != 0
+        gp_fseek(s->file, s->file_offset + pos, SEEK_SET) != 0
         )
         return ERRC;
     s->cursor.r.ptr = s->cursor.r.limit = s->cbuf - 1;
@@ -141,11 +141,11 @@ s_file_read_seek(register stream * s, gs_offset_t pos)
 static int
 s_file_read_close(stream * s)
 {
-    FILE *file = s->file;
+    gp_file *file = s->file;
 
     if (file != 0) {
         s->file = 0;
-        return (fclose(file) ? ERRC : 0);
+        return (gp_fclose(file) ? ERRC : 0);
     }
     return 0;
 }
@@ -159,30 +159,30 @@ s_file_read_process(stream_state * st, stream_cursor_read * ignore_pr,
                     stream_cursor_write * pw, bool last)
 {
     stream *s = (stream *)st;	/* no separate state */
-    FILE *file = s->file;
+    gp_file *file = s->file;
     gs_offset_t max_count = pw->limit - pw->ptr;
     int status = 1;
     int count;
 
     if (s->file_limit < S_FILE_LIMIT_MAX) {
-        gs_offset_t limit_count = s->file_offset + s->file_limit - gp_ftell_64(file);
+        gs_offset_t limit_count = s->file_offset + s->file_limit - gp_ftell(file);
 
         if (max_count > limit_count)
             max_count = limit_count, status = EOFC;
     }
-    count = fread(pw->ptr + 1, 1, max_count, file);
+    count = gp_fread(pw->ptr + 1, 1, max_count, file);
     if (count < 0)
         count = 0;
     pw->ptr += count;
     process_interrupts(s->memory);
-    return (ferror(file) ? ERRC : feof(file) ? EOFC : status);
+    return (gp_ferror(file) ? ERRC : gp_feof(file) ? EOFC : status);
 }
 
 /* ------ File writing ------ */
 
 /* Initialize a stream for writing an OS file. */
 void
-swrite_file(register stream * s, FILE * file, byte * buf, uint len)
+swrite_file(register stream * s, gp_file * file, byte * buf, uint len)
 {
     static const stream_procs p = {
         s_std_noavailable, s_file_write_seek, s_std_write_reset,
@@ -191,7 +191,7 @@ swrite_file(register stream * s, FILE * file, byte * buf, uint len)
     };
 
     s_std_init(s, buf, len, &p,
-               (file == stdout ? s_mode_write : s_mode_write + s_mode_seek));
+               (gp_get_file(file) == stdout ? s_mode_write : s_mode_write + s_mode_seek));
     if_debug1m('s', s->memory, "[s]write file=0x%lx\n", (ulong) file);
     s->file = file;
     s->file_modes = s->modes;
@@ -200,14 +200,14 @@ swrite_file(register stream * s, FILE * file, byte * buf, uint len)
 }
 /* Initialize for appending to an OS file. */
 int
-sappend_file(register stream * s, FILE * file, byte * buf, uint len)
+sappend_file(register stream * s, gp_file * file, byte * buf, uint len)
 {
     swrite_file(s, file, buf, len);
     s->modes = s_mode_write + s_mode_append;	/* no seek */
     s->file_modes = s->modes;
-    if (gp_fseek_64(file, 0L, SEEK_END) != 0)
+    if (gp_fseek(file, 0L, SEEK_END) != 0)
         return ERRC;
-    s->position = gp_ftell_64(file);
+    s->position = gp_ftell(file);
     return 0;
 }
 /* Procedures for writing on a file */
@@ -219,7 +219,7 @@ s_file_write_seek(stream * s, gs_offset_t pos)
 
     if (code < 0)
         return code;
-    if (gp_fseek_64(s->file, pos, SEEK_SET) != 0)
+    if (gp_fseek(s->file, pos, SEEK_SET) != 0)
         return ERRC;
     s->position = pos;
     return 0;
@@ -229,7 +229,7 @@ s_file_write_flush(register stream * s)
 {
     int result = s_process_write_buf(s, false);
 
-    fflush(s->file);
+    gp_fflush(s->file);
     return result;
 }
 static int
@@ -254,14 +254,14 @@ s_file_write_process(stream_state * st, stream_cursor_read * pr,
      * fwrite if the count is zero!
      */
     if (count != 0) {
-        FILE *file = ((stream *) st)->file;
-        int written = fwrite(pr->ptr + 1, 1, count, file);
+        gp_file *file = ((stream *) st)->file;
+        int written = gp_fwrite(pr->ptr + 1, 1, count, file);
 
         if (written < 0)
             written = 0;
         pr->ptr += written;
         process_interrupts(st->memory);
-        return (ferror(file) ? ERRC : 0);
+        return (gp_ferror(file) ? ERRC : 0);
     } else {
         process_interrupts(st->memory);
         return 0;
@@ -275,7 +275,7 @@ static int
 s_file_switch(stream * s, bool writing)
 {
     uint modes = s->file_modes;
-    FILE *file = s->file;
+    gp_file *file = s->file;
     gs_offset_t pos;
 
     if (writing) {
@@ -284,7 +284,7 @@ s_file_switch(stream * s, bool writing)
         pos = stell(s);
         if_debug2m('s', s->memory, "[s]switch 0x%"PRIx64" to write at %"PRId64"\n",
                    (uint64_t) s, (int64_t)pos);
-        if (gp_fseek_64(file, pos, SEEK_SET) != 0)
+        if (gp_fseek(file, pos, SEEK_SET) != 0)
             return ERRC;
         if (modes & s_mode_append) {
             if (sappend_file(s, file, s->cbuf, s->cbsize)!= 0)	/* sets position */
@@ -302,7 +302,7 @@ s_file_switch(stream * s, bool writing)
                    (uint64_t) s, (int64_t)pos);
         if (sflush(s) < 0)
             return ERRC;
-        if (gp_fseek_64(file, 0L, SEEK_CUR) != 0)
+        if (gp_fseek(file, 0L, SEEK_CUR) != 0)
             return ERRC;
         sread_file(s, file, s->cbuf, s->cbsize);
         s->modes |= modes & s_mode_append;	/* don't lose append info */

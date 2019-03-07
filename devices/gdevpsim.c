@@ -42,7 +42,7 @@
 
 /* Write the file (if necessary) and page headers. */
 static void
-ps_image_write_headers(FILE *f, gx_device_printer *pdev,
+ps_image_write_headers(gp_file *f, gx_device_printer *pdev,
                        const char *const setup[],
                        gx_device_pswrite_common_t *pdpc)
 {
@@ -138,9 +138,9 @@ static const gx_device_pswrite_common_t psmono_values =
 #define max_repeat_run 255
 
 /* Send the page to the printer. */
-static void write_data_run(const byte *, int, FILE *, byte);
+static void write_data_run(const byte *, int, gp_file *, byte);
 static int
-psmono_print_page(gx_device_printer * pdev, FILE * prn_stream)
+psmono_print_page(gx_device_printer * pdev, gp_file * prn_stream)
 {
     int line_size = gdev_mem_bytes_per_scan_line((gx_device *) pdev);
     int lnum;
@@ -236,7 +236,7 @@ psmono_close(gx_device *dev)
 
 /* Write a run of data on the file. */
 static void
-write_data_run(const byte * data, int count, FILE * f, byte invert)
+write_data_run(const byte * data, int count, gp_file * f, byte invert)
 {
     const byte *p = data;
     const char *const hex_digits = "0123456789abcdef";
@@ -301,7 +301,7 @@ static const gx_device_pswrite_common_t psrgb_values =
 
 /* Send the page to the printer. */
 static int
-psrgb_print_page(gx_device_printer * pdev, FILE * prn_stream)
+psrgb_print_page(gx_device_printer * pdev, gp_file * prn_stream)
 {
     gs_memory_t *mem = pdev->memory;
     int width = pdev->width;

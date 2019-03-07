@@ -218,7 +218,7 @@ sread_ram(register stream * s, ramhandle * file, byte * buf, uint len)
     };
 
     s_std_init(s, buf, len, &p,s_mode_read + s_mode_seek);
-    s->file = (FILE*)file;
+    s->file = (gp_file *)file;
     s->file_modes = s->modes;
     s->file_offset = 0;
     ramfile_seek(file, 0, RAMFS_SEEK_END);
@@ -310,7 +310,7 @@ swrite_ram(register stream * s, ramhandle * file, byte * buf, uint len)
     };
 
     s_std_init(s, buf, len, &p, s_mode_write + s_mode_seek);
-    s->file = (FILE*)file;
+    s->file = (gp_file *)file;
     s->file_modes = s->modes;
     s->file_offset = 0;        /* in case we switch to reading later */
     s->file_limit = S_FILE_LIMIT_MAX;

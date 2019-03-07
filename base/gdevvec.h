@@ -159,7 +159,7 @@ int gdev_vector_dorect(gx_device_vector * vdev, fixed x0, fixed y0,
         const gx_device_vector_procs *vec_procs;\
                 /* Output file */\
         char fname[fname_size + 1];\
-        FILE *file;\
+        gp_file *file;\
         stream *strm;\
         byte *strmbuf;\
         uint strmbuf_size;\

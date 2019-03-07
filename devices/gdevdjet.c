@@ -286,9 +286,9 @@ hpjet_close(gx_device * pdev)
         return code;
     if (ppdev->PageCount > 0) {
         if (ppdev->Duplex_set >= 0 && ppdev->Duplex)
-            fputs("\033&l0H", ppdev->file);
+            gp_fputs("\033&l0H", ppdev->file);
 
-        fputs("\033E", ppdev->file);
+        gp_fputs("\033E", ppdev->file);
     }
 
     return gdev_prn_close(pdev);
@@ -306,9 +306,9 @@ ljet4pjl_close(gx_device *pdev)
         code = gdev_prn_open_printer(pdev, 1);
         if (code < 0)
             return code;
-        fputs("\033&l0H", ppdev->file) ;
+        gp_fputs("\033&l0H", ppdev->file) ;
     }
-    fputs("\033%-12345X", ppdev->file);
+    gp_fputs("\033%-12345X", ppdev->file);
     return gdev_prn_close(pdev);
 }
 
@@ -334,7 +334,7 @@ hpjet_make_init(gx_device_printer *pdev, char *buf, const char *str)
 
 /* The DeskJet can compress (mode 2) */
 static int
-djet_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
+djet_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream,
                        int num_copies)
 {
     char init[80];
@@ -345,7 +345,7 @@ djet_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
 }
 /* The DeskJet500 can compress (modes 2&3) */
 static int
-djet500_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
+djet500_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream,
                           int num_copies)
 {
     char init[80];
@@ -358,7 +358,7 @@ djet500_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
 /* which use the PeerlessPrint5 firmware) doesn't handle        */
 /* ESC&l#u and ESC&l#Z correctly.                               */
 static int
-fs600_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
+fs600_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream,
                         int num_copies)
 {
     int dots_per_inch = (int)pdev->y_pixels_per_inch;
@@ -373,7 +373,7 @@ fs600_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
 }
 /* The LaserJet series II can't compress */
 static int
-ljet_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
+ljet_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream,
                        int num_copies)
 {
     char init[80];
@@ -384,7 +384,7 @@ ljet_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
 }
 /* The LaserJet Plus can't compress */
 static int
-ljetplus_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
+ljetplus_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream,
                            int num_copies)
 {
     char init[80];
@@ -396,7 +396,7 @@ ljetplus_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
 /* LaserJet series IIp & IId compress (mode 2) */
 /* but don't support *p+ or *b vertical spacing. */
 static int
-ljet2p_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
+ljet2p_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream,
                          int num_copies)
 {
     char init[80];
@@ -408,7 +408,7 @@ ljet2p_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
 /* All LaserJet series IIIs (III,IIId,IIIp,IIIsi) compress (modes 2&3) */
 /* They also need their coordinate system translated slightly. */
 static int
-ljet3_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
+ljet3_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream,
                         int num_copies)
 {
     char init[80];
@@ -419,7 +419,7 @@ ljet3_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
 }
 /* LaserJet IIId is same as LaserJet III, except for duplex */
 static int
-ljet3d_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
+ljet3d_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream,
                          int num_copies)
 {
     char init[80];
@@ -437,7 +437,7 @@ ljet3d_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
 /* allow it to specify coordinates at 600 dpi. */
 /* It too needs its coordinate system translated slightly. */
 static int
-ljet4_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
+ljet4_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream,
                         int num_copies)
 {
     int dots_per_inch = (int)pdev->y_pixels_per_inch;
@@ -454,7 +454,7 @@ ljet4_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
                                         init, init, false);
 }
 static int
-ljet4d_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
+ljet4d_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream,
                          int num_copies)
 {
     int dots_per_inch = (int)pdev->y_pixels_per_inch;
@@ -490,7 +490,7 @@ ljet4d_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
 /* allow it to specify coordinates at 600 dpi. */
 /* It too needs its coordinate system translated slightly. */
 static int
-ljet4pjl_print_page_copies(gx_device_printer *pdev, FILE *prn_stream,
+ljet4pjl_print_page_copies(gx_device_printer *pdev, gp_file *prn_stream,
                         int num_copies)
 {	int dots_per_inch = (int)pdev->y_pixels_per_inch;
         char real_init[60];
@@ -504,7 +504,7 @@ ljet4pjl_print_page_copies(gx_device_printer *pdev, FILE *prn_stream,
 /* The 2563B line printer can't compress */
 /* and doesn't support *p+ or *b vertical spacing. */
 static int
-lp2563_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
+lp2563_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream,
                          int num_copies)
 {
     char init[80];
@@ -516,17 +516,17 @@ lp2563_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
 /* The Oce line printer has TIFF compression */
 /* and doesn't support *p+ or *b vertical spacing. */
 static int
-oce9050_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
+oce9050_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream,
                           int num_copies)
 {
     int code;
     char init[80];
 
     /* Switch to HP_RTL. */
-    fputs("\033%1B", prn_stream);	/* Enter HPGL/2 mode */
-    fputs("BP", prn_stream);	/* Begin Plot */
-    fputs("IN;", prn_stream);	/* Initialize (start plot) */
-    fputs("\033%1A", prn_stream);	/* Enter PCL mode */
+    gp_fputs("\033%1B", prn_stream);	/* Enter HPGL/2 mode */
+    gp_fputs("BP", prn_stream);	/* Begin Plot */
+    gp_fputs("IN;", prn_stream);	/* Initialize (start plot) */
+    gp_fputs("\033%1A", prn_stream);	/* Enter PCL mode */
 
     hpjet_make_init(pdev, init, "\033*b0M");
 
@@ -534,12 +534,12 @@ oce9050_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
                                         400, PCL_OCE9050_FEATURES, init, init, false);
 
     /* Return to HPGL/2 mode. */
-    fputs("\033%1B", prn_stream);	/* Enter HPGL/2 mode */
+    gp_fputs("\033%1B", prn_stream);	/* Enter HPGL/2 mode */
     if (code == 0) {
-        fputs("PU", prn_stream);	/* Pen Up */
-        fputs("SP0", prn_stream);	/* Pen Select */
-        fputs("PG;", prn_stream);	/* Advance Full Page */
-        fputs("\033E", prn_stream);	/* Reset */
+        gp_fputs("PU", prn_stream);	/* Pen Up */
+        gp_fputs("SP0", prn_stream);	/* Pen Select */
+        gp_fputs("PG;", prn_stream);	/* Advance Full Page */
+        gp_fputs("\033E", prn_stream);	/* Reset */
     }
     return code;
 }

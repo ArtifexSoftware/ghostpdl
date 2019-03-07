@@ -124,7 +124,7 @@ lxm_device far_data gs_lxm5700m_device = {
 #define fin()  \
         0x1b,'*', 7, 0x65 \
 
-#define outByte(b) putc(b, prn_stream)
+#define outByte(b) gp_fputc(b, prn_stream)
 
 #define RIGHTWARD 0
 #define LEFTWARD 1
@@ -141,7 +141,7 @@ lxm_device far_data gs_lxm5700m_device = {
 
 /* Send the page to the printer. */
 static int
-lxm5700m_print_page(gx_device_printer *pdev, FILE *prn_stream)
+lxm5700m_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {
     int lnum,minX, maxX, i, l, highestX, leastX, extent;
     int direction = RIGHTWARD;
@@ -172,7 +172,7 @@ quit_ignomiously: /* and a goto into an if statement is pretty ignomious! */
             init2(),
             init3()
         };
-        fwrite(init_string, 1, sizeof(init_string), prn_stream);
+        gp_fwrite(init_string, 1, sizeof(init_string), prn_stream);
     }
     /* Print lines of graphics */
     for (lnum=0; lnum < pdev->height-swipeHeight ; ) { /* increment in body */
@@ -335,7 +335,7 @@ quit_ignomiously: /* and a goto into an if statement is pretty ignomious! */
             outByte(0x22); outByte(0x33); outByte(0x44);
             outByte(0x55); outByte(1);
             /* put out bytes */
-            fwrite(swipeBuf,1,outp-swipeBuf,prn_stream);
+            gp_fwrite(swipeBuf,1,outp-swipeBuf,prn_stream);
         }
             lnum += overLap;
             direction ^= 1;
@@ -351,9 +351,9 @@ quit_ignomiously: /* and a goto into an if statement is pretty ignomious! */
             top(),
             fin()  */
         };
-        fwrite(bottom, 1, sizeof(bottom), prn_stream);
+        gp_fwrite(bottom, 1, sizeof(bottom), prn_stream);
     }
-    fflush(prn_stream);
+    gp_fflush(prn_stream);
 
     gs_free(pdev->memory, (char *)swipeBuf, swipeBuf_size, 1, "lxm_print_page(swipeBuf)");
     gs_free(pdev->memory, (char *)buf1, in_size, 1, "lxm_print_page(buf1)");

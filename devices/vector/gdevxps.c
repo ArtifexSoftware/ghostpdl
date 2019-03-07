@@ -97,7 +97,7 @@ attr_t xps_fixed_state[] = {
    directly to the archive without a temp file. */
 
 typedef struct gx_device_xps_zdata_s {
-    FILE *fp;
+    gp_file *fp;
     ulong count;
 } gx_device_xps_zdata_t;
 
@@ -149,7 +149,7 @@ typedef struct xps_image_enum_s {
     gs_color_space *pcs;     /* Needed for Sep, DeviceN, Indexed */
     gsicc_link_t *icc_link;  /* Needed for CIELAB */
     const gs_gstate *pgs;    /* Needed for color conversions of DeviceN etc */
-    FILE *fid;
+    gp_file *fid;
 } xps_image_enum_t;
 
 gs_private_st_suffix_add4(st_xps_image_enum, xps_image_enum_t,
@@ -453,7 +453,7 @@ zip_append_data(gs_memory_t *mem, gx_device_xps_zinfo_t *info, byte *data, uint 
         char *filename =
           (char *)gs_alloc_bytes(mem->non_gc_memory, gp_file_name_sizeof, 
                 "zip_append_data(filename)");
-        FILE *fp;
+        gp_file *fp;
         
         if (!filename) {
             return(gs_throw_code(gs_error_VMerror));
@@ -470,13 +470,13 @@ zip_append_data(gs_memory_t *mem, gx_device_xps_zinfo_t *info, byte *data, uint 
     if (info->data.fp == NULL)
         return gs_throw_code(gs_error_Fatal);
 
-    count = fwrite(data, 1, len, info->data.fp);
+    count = gp_fwrite(data, 1, len, info->data.fp);
     if (count != len) {
-        fclose(info->data.fp);
+        gp_fclose(info->data.fp);
         return -1;
     }
     /* probably unnecessary but makes debugging easier */
-    fflush(info->data.fp);
+    gp_fflush(info->data.fp);
     info->data.count += len;
 
     return 0;
@@ -620,7 +620,7 @@ add_data_to_zip_file(gx_device_xps *xps_dev, const char *filename, byte *buf, lo
 /* Used to add images to the zip file. This file is added now
 and not later like the other files */
 static int
-add_file_to_zip_file(gx_device_xps *xps_dev, const char *filename, FILE *src)
+add_file_to_zip_file(gx_device_xps *xps_dev, const char *filename, gp_file *src)
 {
     gx_device_xps_zinfo_t *info = zip_look_up_file_info(xps_dev, filename);
     int code = 0;
@@ -647,14 +647,14 @@ add_file_to_zip_file(gx_device_xps *xps_dev, const char *filename, FILE *src)
     curr_pos = stell(f);
 
     /* Get to the start */
-    if (gp_fseek_64(src, 0, 0) < 0)
+    if (gp_fseek(src, 0, 0) < 0)
         return gs_throw_code(gs_error_Fatal);
 
     /* Figure out the crc */
     crc = crc32(0L, Z_NULL, 0);
     /* Chunks of 4 until we get to remainder */
-    while (!feof(src)) {
-        nread = fread(buf, 1, sizeof(buf), src);
+    while (!gp_feof(src)) {
+        nread = gp_fread(buf, 1, sizeof(buf), src);
         count = count + nread;
         crc = crc32(crc, buf, nread);
     }
@@ -675,10 +675,10 @@ add_file_to_zip_file(gx_device_xps *xps_dev, const char *filename, FILE *src)
     put_u16(f, 0);         /* extra field length */
     put_bytes(f, (byte *)filename, strlen(filename));
     {
-        if (gp_fseek_64(src, (gs_offset_t)0, 0) < 0)
+        if (gp_fseek(src, (gs_offset_t)0, 0) < 0)
             return gs_throw_code(gs_error_Fatal);
-        while (!feof(src)) {
-            ulong nread = fread(buf, 1, sizeof(buf), src);
+        while (!gp_feof(src)) {
+            ulong nread = gp_fread(buf, 1, sizeof(buf), src);
             put_bytes(f, buf, nread);
         }
     }
@@ -719,16 +719,16 @@ zip_close_archive_file(gx_device_xps *xps_dev, const char *filename)
 
     data = info->data;
     if ((int)data.count >= 0) {
-        FILE *fp = data.fp;
+        gp_file *fp = data.fp;
         uint nread;
 
         if (fp == NULL)
             return gs_throw_code(gs_error_Fatal);
 
         crc = crc32(0L, Z_NULL, 0);
-        rewind(fp);
-        while (!feof(fp)) {
-            nread = fread(buf, 1, sizeof(buf), fp);
+        gp_fseek(fp, 0, SEEK_SET);
+        while (!gp_feof(fp)) {
+            nread = gp_fread(buf, 1, sizeof(buf), fp);
             crc = crc32(crc, buf, nread);
             count = count + nread;
         }
@@ -765,13 +765,13 @@ zip_close_archive_file(gx_device_xps *xps_dev, const char *filename)
     put_u16(f, 0);         /* extra field length */
     put_bytes(f, (byte *)filename, strlen(filename));
     {
-        FILE *fp = data.fp;
-        rewind(fp);
-        while (!feof(fp)) {
-                ulong nread = fread(buf, 1, sizeof(buf), fp);
+        gp_file *fp = data.fp;
+        gp_rewind(fp);
+        while (!gp_feof(fp)) {
+                ulong nread = gp_fread(buf, 1, sizeof(buf), fp);
                 put_bytes(f, buf, nread);
         }
-        fclose(fp);
+        gp_fclose(fp);
     }
     put_bytes(f, 0, 0); /* extra field */
 
@@ -1031,7 +1031,7 @@ xps_output_page(gx_device *dev, int num_copies, int flush)
     }
     xps->page_count++;
 
-    if (ferror(xps->file))
+    if (gp_ferror(xps->file))
       return gs_throw_code(gs_error_ioerror);
 
     if ((code=gx_finish_output_page(dev, num_copies, flush)) < 0)
@@ -1079,7 +1079,7 @@ xps_close_device(gx_device *dev)
     if (code < 0)
         return gs_rethrow_code(code);
 
-    if (ferror(xps->file))
+    if (gp_ferror(xps->file))
       return gs_throw_code(gs_error_ioerror);
 
     code = zip_close_archive(xps);
@@ -2185,7 +2185,7 @@ xps_add_tiff_image(xps_image_enum_t *pie)
     int code;
 
     code = add_file_to_zip_file(xdev, pie->file_name, pie->fid);
-    fclose(pie->fid);
+    gp_fclose(pie->fid);
     return code;
 }
 
@@ -2286,7 +2286,7 @@ tiff_set_values(xps_image_enum_t *pie, TIFF *tif, cmm_profile_t *profile,
 typedef struct tifs_io_xps_t
 {
     gx_device_xps *pdev;
-    FILE *fid; 
+    gp_file *fid; 
 } tifs_io_xps;
 
 /* libtiff i/o hooks */
@@ -2295,7 +2295,7 @@ xps_tifsWriteProc(thandle_t fd, void* buf, size_t size)
 {
     tifs_io_xps *tiffio = (tifs_io_xps *)fd;
     size_t size_io = (size_t)size;
-    FILE *fid = tiffio->fid;
+    gp_file *fid = tiffio->fid;
     size_t count;
 
     if ((size_t)size_io != size) {
@@ -2305,12 +2305,12 @@ xps_tifsWriteProc(thandle_t fd, void* buf, size_t size)
     if (fid == NULL)
         return gs_throw_code(gs_error_Fatal);
 
-    count = fwrite(buf, 1, size, fid);
+    count = gp_fwrite(buf, 1, size, fid);
     if (count != size) {
-        fclose(fid);
+        gp_fclose(fid);
         return gs_rethrow_code(-1);
     }
-    fflush(fid);
+    gp_fflush(fid);
     return size;
 }
 
@@ -2319,7 +2319,7 @@ xps_tifsSeekProc(thandle_t fd, uint64_t off, int origin)
 {
     tifs_io_xps *tiffio = (tifs_io_xps *)fd;
     gs_offset_t off_io = (gs_offset_t)off;
-    FILE *fid = tiffio->fid;
+    gp_file *fid = tiffio->fid;
 
     if ((uint64_t)off_io != off) {
         return (uint64_t)-1;
@@ -2331,10 +2331,10 @@ xps_tifsSeekProc(thandle_t fd, uint64_t off, int origin)
     if (fid == NULL)
         return (uint64_t)-1;
 
-    if (gp_fseek_64(fid, (gs_offset_t)off, origin) < 0) {
+    if (gp_fseek(fid, (gs_offset_t)off, origin) < 0) {
         return (uint64_t)-1;
     }
-    return (gp_ftell_64(fid));
+    return (gp_ftell(fid));
 }
 
 static int

@@ -345,7 +345,7 @@ $(PLOBJ)pl.dev: $(ECHOGS_XE) $(pl_obj) $(PLOBJ)fapi_pl.dev \
 ###### Command-line driver's main program #####
 
 # Almost the top level; provides pl_main
-$(PLOBJ)plmain.$(OBJ): $(PLSRC)plmain.c $(AK) $(string__h)\
+$(PLOBJ)plmain.$(OBJ): $(PLSRC)plmain.c $(AK) $(ctype__h) $(string__h)\
  $(gdebug_h) $(gscdefs_h) $(gsio_h) $(gstypes_h) $(gserrors_h) \
  $(gsmemory_h) $(gsmalloc_h) $(gsmchunk_h) $(gsstruct_h) $(gxalloc_h)\
  $(gsalloc_h) $(gsargs_h) $(gp_h) $(gsdevice_h) $(gslib_h) $(gslibctx_h)\

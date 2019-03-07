@@ -139,7 +139,7 @@ prn_device(bmp32b_procs, "bmp32b",
 /* Write out a page in BMP format. */
 /* This routine is used for all non-separated formats. */
 static int
-bmp_print_page(gx_device_printer * pdev, FILE * file)
+bmp_print_page(gx_device_printer * pdev, gp_file * file)
 {
     uint raster = gdev_prn_raster(pdev);
     /* BMP scan lines are padded to 32 bits. */
@@ -163,7 +163,7 @@ bmp_print_page(gx_device_printer * pdev, FILE * file)
 
     for (y = pdev->height - 1; y >= 0; y--) {
         gdev_prn_copy_scan_lines(pdev, y, row, raster);
-        fwrite((const char *)row, bmp_raster, 1, file);
+        gp_fwrite((const char *)row, bmp_raster, 1, file);
     }
 
 done:
@@ -175,7 +175,7 @@ done:
 /* Write out a page in separated CMYK format. */
 /* This routine is used for all formats. */
 static int
-bmp_cmyk_print_page(gx_device_printer * pdev, FILE * file)
+bmp_cmyk_print_page(gx_device_printer * pdev, gp_file * file)
 {
     int plane_depth = pdev->color_info.depth / 4;
     uint raster = (pdev->width * plane_depth + 7) >> 3;
@@ -212,7 +212,7 @@ bmp_cmyk_print_page(gx_device_printer * pdev, FILE * file)
                                       &render_plane);
             if (code < 0)
                 goto done;
-            fwrite((const char *)actual_data, bmp_raster, 1, file);
+            gp_fwrite((const char *)actual_data, bmp_raster, 1, file);
         }
     }
 

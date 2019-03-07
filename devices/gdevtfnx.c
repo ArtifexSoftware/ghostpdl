@@ -121,7 +121,7 @@ tiff_set_rgb_fields(gx_device_tiff *tfdev)
 }
 
 static int
-tiff12_print_page(gx_device_printer * pdev, FILE * file)
+tiff12_print_page(gx_device_printer * pdev, gp_file * file)
 {
     gx_device_tiff *const tfdev = (gx_device_tiff *)pdev;
     int code;
@@ -180,7 +180,7 @@ tiff12_print_page(gx_device_printer * pdev, FILE * file)
 }
 
 static int
-tiff_rgb_print_page(gx_device_printer * pdev, FILE * file)
+tiff_rgb_print_page(gx_device_printer * pdev, gp_file * file)
 {
     gx_device_tiff *const tfdev = (gx_device_tiff *)pdev;
     int code;

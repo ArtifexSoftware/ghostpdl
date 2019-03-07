@@ -16,6 +16,7 @@
 
 /* plmain.c */
 /* Main program command-line interpreter for PCL interpreters */
+#include "ctype_.h"
 #include "string_.h"
 #include <stdlib.h> /* atof */
 #include "assert_.h"
@@ -140,7 +141,7 @@ static pl_interp_implementation_t
                               pl_main_instance_t * pmi, stream *s);
 
 /* Process the options on the command line. */
-static FILE *pl_main_arg_fopen(const char *fname, void *ignore_data);
+static gp_file *pl_main_arg_fopen(const char *fname, void *mem);
 
 /* Process the options on the command line, including making the
    initial device and setting its parameters.  */
@@ -209,7 +210,7 @@ pl_main_init_with_args(pl_main_instance_t *inst, int argc, char *argv[])
     gs_c_param_list_write(&inst->params, mem);
     gs_param_list_set_persistent_keys((gs_param_list *)&inst->params, false);
 
-    arg_init(&inst->args, (const char **)argv, argc, pl_main_arg_fopen, NULL,
+    arg_init(&inst->args, (const char **)argv, argc, pl_main_arg_fopen, mem,
              inst->get_codepoint, mem);
 
     /* Create PDL instances, etc */
@@ -815,10 +816,11 @@ pl_top_create_device(pl_main_instance_t * pti, int index)
 }
 
 /* Process the options on the command line. */
-static FILE *
-pl_main_arg_fopen(const char *fname, void *ignore_data)
+static gp_file *
+pl_main_arg_fopen(const char *fname, void *data)
 {
-    return gp_fopen(fname, "r");
+    const gs_memory_t *mem = (const gs_memory_t *)data;
+    return gp_fopen(mem, fname, "r");
 }
 
 static void

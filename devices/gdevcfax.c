@@ -39,20 +39,20 @@ const gx_device_fax gs_cfax_device = {
 /* ---------------- SFF output ----------------- */
 
 static void
-cfax_byte(uint c, FILE * file)
+cfax_byte(uint c, gp_file * file)
 {
-    fputc(c & 0xff, file);
+    gp_fputc(c & 0xff, file);
 }
 
 static void
-cfax_word(ushort c, FILE * file)
+cfax_word(ushort c, gp_file * file)
 {
     cfax_byte(c & 0xff, file);
     cfax_byte(c >> 8, file);
 }
 
 static void
-cfax_dword(ulong c, FILE * file)
+cfax_dword(ulong c, gp_file * file)
 {
     cfax_byte(c & 0xff, file);
     cfax_byte(c >> 8, file);
@@ -61,7 +61,7 @@ cfax_dword(ulong c, FILE * file)
 }
 
 static void
-cfax_doc_hdr(FILE * file)
+cfax_doc_hdr(gp_file * file)
 {
     cfax_byte('S', file);
     cfax_byte('f', file);
@@ -77,7 +77,7 @@ cfax_doc_hdr(FILE * file)
 }
 
 static void
-cfax_page_hdr(gx_device_printer * pdev, FILE * file)
+cfax_page_hdr(gx_device_printer * pdev, gp_file * file)
 {
     cfax_byte(254, file);
     cfax_byte(16, file);
@@ -92,7 +92,7 @@ cfax_page_hdr(gx_device_printer * pdev, FILE * file)
 }
 
 static void
-cfax_doc_end(FILE * file)
+cfax_doc_end(gp_file * file)
 {
     cfax_byte(254, file);
     cfax_byte(0, file);
@@ -100,7 +100,7 @@ cfax_doc_end(FILE * file)
 
 /* Send the page to the printer. */
 static int
-cfax_stream_print_page_width(gx_device_printer * pdev, FILE * prn_stream,
+cfax_stream_print_page_width(gx_device_printer * pdev, gp_file * prn_stream,
                              const stream_template * temp, stream_state * ss,
                              int width)
 {
@@ -184,7 +184,7 @@ cfax_stream_print_page_width(gx_device_printer * pdev, FILE * prn_stream,
 
 /* Begin a capi fax page. */
 static int
-cfax_begin_page(gx_device_printer * pdev, FILE * fp, int width)
+cfax_begin_page(gx_device_printer * pdev, gp_file * fp, int width)
 {
     /* Patch the width to reflect fax page width adjustment. */
     int save_width = pdev->width;
@@ -201,7 +201,7 @@ cfax_begin_page(gx_device_printer * pdev, FILE * fp, int width)
 
 /* Print an capi fax (sff-encoded) page. */
 static int
-cfax_print_page(gx_device_printer * pdev, FILE * prn_stream)
+cfax_print_page(gx_device_printer * pdev, gp_file * prn_stream)
 {
     stream_CFE_state state;
     int code;

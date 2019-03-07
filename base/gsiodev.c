@@ -227,13 +227,13 @@ iodev_no_open_file(gx_io_device * iodev, const char *fname, uint namelen,
 
 int
 iodev_no_fopen(gx_io_device * iodev, const char *fname, const char *access,
-               FILE ** pfile, char *rfname, uint rnamelen)
+               gp_file ** pfile, char *rfname, uint rnamelen, gs_memory_t *mem)
 {
     return_error(gs_error_invalidfileaccess);
 }
 
 int
-iodev_no_fclose(gx_io_device * iodev, FILE * file)
+iodev_no_fclose(gx_io_device * iodev, gp_file * file)
 {
     return_error(gs_error_ioerror);
 }
@@ -280,10 +280,10 @@ iodev_no_put_params(gx_io_device * iodev, gs_param_list * plist)
 /* The fopen routine is exported for %null. */
 int
 iodev_os_gp_fopen(gx_io_device * iodev, const char *fname, const char *access,
-               FILE ** pfile, char *rfname, uint rnamelen)
+                  gp_file ** pfile, char *rfname, uint rnamelen, gs_memory_t *mem)
 {
     errno = 0;
-    *pfile = gp_fopen(fname, access);
+    *pfile = gp_fopen(mem, fname, access);
     if (*pfile == NULL)
         return_error(gs_fopen_errno_to_code(errno));
     if (rfname != NULL && rfname != fname)
@@ -293,9 +293,9 @@ iodev_os_gp_fopen(gx_io_device * iodev, const char *fname, const char *access,
 
 /* The fclose routine is exported for %null. */
 int
-iodev_os_fclose(gx_io_device * iodev, FILE * file)
+iodev_os_fclose(gx_io_device * iodev, gp_file * file)
 {
-    fclose(file);
+    gp_fclose(file);
     return 0;
 }
 

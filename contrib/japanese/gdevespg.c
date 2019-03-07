@@ -39,8 +39,8 @@ static dev_proc_print_page_copies(escpage_print_page_copies);
 static dev_proc_print_page_copies(lp2000_print_page_copies);
 static dev_proc_image_out(escpage_image_out);
 
-static void escpage_printer_initialize(gx_device_printer * pdev, FILE * fp, int);
-static void escpage_paper_set(gx_device_printer * pdev, FILE * fp);
+static void escpage_printer_initialize(gx_device_printer * pdev, gp_file * fp, int);
+static void escpage_paper_set(gx_device_printer * pdev, gp_file * fp);
 
 static gx_device_procs lp2000_prn_procs =
 lprn_procs(lp2000_open, gdev_prn_output_page, gdev_prn_close);
@@ -99,16 +99,16 @@ escpage_close(gx_device * pdev)
     int code = gdev_prn_open_printer(pdev, 1);
     if (code >= 0) {
         if (ppdev->Duplex && (pdev->PageCount & 1)) {
-            fprintf(ppdev->file, "%c0dpsE", GS);
+            gp_fprintf(ppdev->file, "%c0dpsE", GS);
         }
-        fputs(epson_remote_start, ppdev->file);
-        fputs(epson_remote_start, ppdev->file);
+        gp_fputs(epson_remote_start, ppdev->file);
+        gp_fputs(epson_remote_start, ppdev->file);
     }
     return gdev_prn_close(pdev);
 }
 
 static int
-escpage_print_page_copies(gx_device_printer * pdev, FILE * fp, int num_coipes)
+escpage_print_page_copies(gx_device_printer * pdev, gp_file * fp, int num_coipes)
 {
     gx_device_lprn *const lprn = (gx_device_lprn *) pdev;
 
@@ -116,24 +116,24 @@ escpage_print_page_copies(gx_device_printer * pdev, FILE * fp, int num_coipes)
         double xDpi = pdev->x_pixels_per_inch;
 
         /* Goto REMOTE MODE */
-        fputs(epson_remote_start, fp);
-        fprintf(fp, "@EJL SELECT LANGUAGE=ESC/PAGE\r\n");
+        gp_fputs(epson_remote_start, fp);
+        gp_fprintf(fp, "@EJL SELECT LANGUAGE=ESC/PAGE\r\n");
 
         /* RIT (Resolution Improvement Technology) Setting */
         if (lprn->RITOff)
-            fprintf(fp, "@EJL SET RI=OFF\r\n");
+            gp_fprintf(fp, "@EJL SET RI=OFF\r\n");
         else
-            fprintf(fp, "@EJL SET RI=ON\r\n");
+            gp_fprintf(fp, "@EJL SET RI=ON\r\n");
 
         /* Resolution Setting */
-        fprintf(fp, "@EJL SET RS=%s\r\n", xDpi > 300 ? "FN" : "QK");
-        fprintf(fp, "@EJL ENTER LANGUAGE=ESC/PAGE\r\n");
+        gp_fprintf(fp, "@EJL SET RS=%s\r\n", xDpi > 300 ? "FN" : "QK");
+        gp_fprintf(fp, "@EJL ENTER LANGUAGE=ESC/PAGE\r\n");
     }
     return lp2000_print_page_copies(pdev, fp, num_coipes);
 }
 
 static int
-lp2000_print_page_copies(gx_device_printer * pdev, FILE * fp, int num_coipes)
+lp2000_print_page_copies(gx_device_printer * pdev, gp_file * fp, int num_coipes)
 {
     gx_device_lprn *const lprn = (gx_device_lprn *) pdev;
     int code = 0;
@@ -148,9 +148,9 @@ lp2000_print_page_copies(gx_device_printer * pdev, FILE * fp, int num_coipes)
         return_error(gs_error_VMerror);
 
     if (lprn->NegativePrint) {
-        fprintf(fp, "%c1dmG", GS);
-        fprintf(fp, "%c0;0;%d;%d;0rG", GS, pdev->width, pdev->height);
-        fprintf(fp, "%c2owE", GS);
+        gp_fprintf(fp, "%c1dmG", GS);
+        gp_fprintf(fp, "%c0;0;%d;%d;0rG", GS, pdev->width, pdev->height);
+        gp_fprintf(fp, "%c2owE", GS);
     }
     code = lprn_print_image(pdev, fp);
     if (code < 0)
@@ -159,30 +159,30 @@ lp2000_print_page_copies(gx_device_printer * pdev, FILE * fp, int num_coipes)
     gs_free(pdev->memory->non_gc_memory, lprn->CompBuf, bpl * 3 / 2 + 1, maxY, "lp2000_print_page_copies(CompBuf)");
 
     if (pdev->Duplex)
-        fprintf(fp, "%c0dpsE", GS);
+        gp_fprintf(fp, "%c0dpsE", GS);
     else
-        fprintf(fp, "\014");	/* eject page */
+        gp_fprintf(fp, "\014");	/* eject page */
     return code;
 }
 
 /* Output data */
 static void
-escpage_image_out(gx_device_printer * pdev, FILE * fp, int x, int y, int width, int height)
+escpage_image_out(gx_device_printer * pdev, gp_file * fp, int x, int y, int width, int height)
 {
     gx_device_lprn *const lprn = (gx_device_lprn *) pdev;
     int Len;
 
-    fprintf(fp, "%c%dY%c%dX", GS, y, GS, x);
+    gp_fprintf(fp, "%c%dY%c%dX", GS, y, GS, x);
 
     Len = lips_mode3format_encode(lprn->TmpBuf, lprn->CompBuf, width / 8 * height);
 
-    fprintf(fp, "%c%d;%d;%d;0bi{I", GS, Len,
+    gp_fprintf(fp, "%c%d;%d;%d;0bi{I", GS, Len,
             width, height);
-    fwrite(lprn->CompBuf, 1, Len, fp);
+    gp_fwrite(lprn->CompBuf, 1, Len, fp);
 
     if (lprn->ShowBubble) {
-        fprintf(fp, "%c0dmG", GS);
-        fprintf(fp, "%c%d;%d;%d;%d;0rG", GS,
+        gp_fprintf(fp, "%c0dmG", GS);
+        gp_fprintf(fp, "%c%d;%d;%d;%d;0rG", GS,
                 x, y, x + width, y + height);
     }
 }
@@ -202,7 +202,7 @@ static char can_inits[] =
 };
 
 static void
-escpage_printer_initialize(gx_device_printer * pdev, FILE * fp, int copies)
+escpage_printer_initialize(gx_device_printer * pdev, gp_file * fp, int copies)
 {
     gx_device_lprn *const lprn = (gx_device_lprn *) pdev;
     double xDpi, yDpi;
@@ -211,28 +211,28 @@ escpage_printer_initialize(gx_device_printer * pdev, FILE * fp, int copies)
     yDpi = pdev->y_pixels_per_inch;
 
     /* Initialize */
-    fwrite(can_inits, sizeof(can_inits), 1, fp);
+    gp_fwrite(can_inits, sizeof(can_inits), 1, fp);
     /* Duplex Setting */
     if (pdev->Duplex_set > 0) {
         if (pdev->Duplex) {
-            fprintf(fp, "%c1sdE", GS);
+            gp_fprintf(fp, "%c1sdE", GS);
             if (lprn->Tumble == 0)
-                fprintf(fp, "%c0bdE", GS);
+                gp_fprintf(fp, "%c0bdE", GS);
             else
-                fprintf(fp, "%c1bdE", GS);
+                gp_fprintf(fp, "%c1bdE", GS);
         } else
-            fprintf(fp, "%c0sdE", GS);
+            gp_fprintf(fp, "%c0sdE", GS);
     }
     /* Set the Size Unit  */
-    fprintf(fp, "%c0;%4.2fmuE", GS, 72.0 / xDpi);
+    gp_fprintf(fp, "%c0;%4.2fmuE", GS, 72.0 / xDpi);
     /* Set the Resolution */
-    fprintf(fp, "%c0;%d;%ddrE", GS, (int)(xDpi + 0.5), (int)(yDpi + 0.5));
+    gp_fprintf(fp, "%c0;%d;%ddrE", GS, (int)(xDpi + 0.5), (int)(yDpi + 0.5));
     /* Set the Paper Size */
     escpage_paper_set(pdev, fp);
     /* Set the desired number of Copies */
-    fprintf(fp, "%c%dcoO", GS, copies < 256 ? copies : 255);
+    gp_fprintf(fp, "%c%dcoO", GS, copies < 256 ? copies : 255);
     /* Set the Position to (0, 0) */
-    fprintf(fp, "%c0;0loE", GS);
+    gp_fprintf(fp, "%c0;0loE", GS);
 }
 
 typedef struct {
@@ -268,7 +268,7 @@ static EpagPaperTable epagPaperTable[] =
 };
 
 static void
-escpage_paper_set(gx_device_printer * pdev, FILE * fp)
+escpage_paper_set(gx_device_printer * pdev, gp_file * fp)
 {
     int width, height, w, h, wp, hp, bLandscape;
     EpagPaperTable *pt;
@@ -294,10 +294,10 @@ escpage_paper_set(gx_device_printer * pdev, FILE * fp)
         if (pt->width == w && pt->height == h)
             break;
 
-    fprintf(fp, "%c%d", GS, pt->escpage);
+    gp_fprintf(fp, "%c%d", GS, pt->escpage);
     if (pt->escpage < 0)
-        fprintf(fp, ";%d;%d", wp, hp);
-    fprintf(fp, "psE");
+        gp_fprintf(fp, ";%d;%d", wp, hp);
+    gp_fprintf(fp, "psE");
 
-    fprintf(fp, "%c%dpoE", GS, bLandscape);
+    gp_fprintf(fp, "%c%dpoE", GS, bLandscape);
 }
