@@ -57,7 +57,7 @@ gs_iodev_register_dev(gs_memory_t * mem, const gx_io_device *newiodev);
  * implementation of open_device returns an error; the default
  * implementation of open_file in the PostScript interpreter,
  * iodev_os_open_file, uses the IODevice's fopen procedure to open a stream
- * based on an OS FILE *.  However, IODevices are free to implement
+ * based on a gp_file *.  However, IODevices are free to implement
  * open_file (and, if desired, open_device) in any way they want, returning
  * a stream that need not have any relationship to the OS's file system.
  * In this case there is no need to implement fopen or fclose.
@@ -90,11 +90,11 @@ struct gx_io_device_procs_s {
 
 #define iodev_proc_fopen(proc)\
   int proc(gx_io_device *iodev, const char *fname, const char *access,\
-           FILE **pfile, char *rfname, uint rnamelen)
+           gp_file **pfile, char *rfname, uint rnamelen, gs_memory_t *mem)
     iodev_proc_fopen((*gp_fopen));
 
 #define iodev_proc_fclose(proc)\
-  int proc(gx_io_device *iodev, FILE *file)
+  int proc(gx_io_device *iodev, gp_file *file)
     iodev_proc_fclose((*fclose));
 
 #define iodev_proc_delete_file(proc)\

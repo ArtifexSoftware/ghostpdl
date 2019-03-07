@@ -210,9 +210,9 @@ static stc_proc_iconvert(stc_cmyk10_dlong); /* CMYK10 direct longs */
 /***
  *** Print-functions
  ***/
-static void stc_print_weave(stcolor_device *sd,FILE *prn_stream);
-static void stc_print_bands(stcolor_device *sd,FILE *prn_stream);
-static void stc_print_delta(stcolor_device *sd,FILE *prn_stream);
+static void stc_print_weave(stcolor_device *sd, gp_file *prn_stream);
+static void stc_print_bands(stcolor_device *sd, gp_file *prn_stream);
+static void stc_print_delta(stcolor_device *sd, gp_file *prn_stream);
 static int  stc_print_setup(stcolor_device *sd);
 
 /***
@@ -345,7 +345,7 @@ stc_print_setup(stcolor_device *sd)
  ***/
 
 static int
-stc_print_page(gx_device_printer * pdev, FILE * prn_stream)
+stc_print_page(gx_device_printer * pdev, gp_file *prn_stream)
 {
    stcolor_device *sd    = (stcolor_device *) pdev;
    long            flags = sd == NULL ? 0 : sd->stc.flags;
@@ -732,9 +732,9 @@ stc_print_page(gx_device_printer * pdev, FILE * prn_stream)
          }                           /* Until all scans are processed */
 
          if(sd->stc.flags & STCPRINT) {
-            if((flags & STCCOMP) == STCDELTA) fputc(0xe3,prn_stream);
-            fwrite(sd->stc.escp_release.data,1,sd->stc.escp_release.size,prn_stream);
-            fflush(prn_stream);
+            if((flags & STCCOMP) == STCDELTA) gp_fputc(0xe3,prn_stream);
+            gp_fwrite(sd->stc.escp_release.data,1,sd->stc.escp_release.size,prn_stream);
+            gp_fflush(prn_stream);
          }
 #ifdef    STC_SIGNAL
          sigprocmask(SIG_SETMASK,&stc_int_save,NULL);
@@ -1109,7 +1109,7 @@ stc_rle(byte *out,const byte *in,int width)
  * Horizontal & vertical positioning, color-selection, "ESC ."
  */
 static int
-stc_print_escpcmd(stcolor_device *sd, FILE *prn_stream,
+stc_print_escpcmd(stcolor_device *sd, gp_file *prn_stream,
    int escp_used, int color,int m,int wbytes)
 {
 
@@ -1124,12 +1124,12 @@ stc_print_escpcmd(stcolor_device *sd, FILE *prn_stream,
  */
    if(0 == (sd->stc.flags & STCPRINT)) {
 
-      fwrite(sd->stc.escp_init.data,1,sd->stc.escp_init.size,prn_stream);
+      gp_fwrite(sd->stc.escp_init.data,1,sd->stc.escp_init.size,prn_stream);
 
       if(0 < sd->stc.escp_lf) { /* Adjust Linefeed */
-         fputc('\033',        prn_stream);
-         fputc('+',           prn_stream);
-         fputc(((sd->stc.escp_m*sd->stc.escp_u) / 10),prn_stream);
+         gp_fputc('\033',        prn_stream);
+         gp_fputc('+',           prn_stream);
+         gp_fputc(((sd->stc.escp_m*sd->stc.escp_u) / 10),prn_stream);
       }                         /* Adjust Linefeed */
       sd->stc.flags |= STCPRINT;
    }
@@ -1202,7 +1202,7 @@ stc_bandwidth(stcolor_device *sd,int color,int m,int npass)
  * Multi-Pass Printing-Routine
  */
 static void
-stc_print_weave(stcolor_device *sd, FILE *prn_stream)
+stc_print_weave(stcolor_device *sd, gp_file *prn_stream)
 {
 
    int escp_used,nprint,nspace,color,buf_a,iprint,w;
@@ -1247,7 +1247,7 @@ stc_print_weave(stcolor_device *sd, FILE *prn_stream)
                                     sd->stc.prt_data[buf_a],w);
             }
 
-            fwrite(sd->stc.escp_data,1,escp_used,prn_stream);
+            gp_fwrite(sd->stc.escp_data,1,escp_used,prn_stream);
             escp_used = 0;
 
             buf_a = (sd->stc.prt_buf-1) & (buf_a + ncolor * npass);
@@ -1263,7 +1263,7 @@ stc_print_weave(stcolor_device *sd, FILE *prn_stream)
                escp_used += stc_rle(sd->stc.escp_data+escp_used,NULL,w);
             }
 
-            fwrite(sd->stc.escp_data,1,escp_used,prn_stream);
+            gp_fwrite(sd->stc.escp_data,1,escp_used,prn_stream);
             escp_used = 0;
          }                               /* add empty rows */
       }                                             /* print the colors */
@@ -1276,7 +1276,7 @@ stc_print_weave(stcolor_device *sd, FILE *prn_stream)
  * Single-Pass printing-Routine
  */
 static void
-stc_print_bands(stcolor_device *sd, FILE *prn_stream)
+stc_print_bands(stcolor_device *sd, gp_file *prn_stream)
 {
 
    int escp_used,color,buf_a,iprint,w,m;
@@ -1328,7 +1328,7 @@ stc_print_bands(stcolor_device *sd, FILE *prn_stream)
                                     sd->stc.prt_data[buf_a],w);
             }
 
-            fwrite(sd->stc.escp_data,1,escp_used,prn_stream);
+            gp_fwrite(sd->stc.escp_data,1,escp_used,prn_stream);
             escp_used = 0;
 
             buf_a = (sd->stc.prt_buf-1) & (buf_a + ncolor);
@@ -1425,7 +1425,7 @@ stc_deltarow(byte *out,const byte *in,int width,byte *seed)
  * Slightly different single-pass printing
  */
 static void
-stc_print_delta(stcolor_device *sd, FILE *prn_stream)
+stc_print_delta(stcolor_device *sd, gp_file *prn_stream)
 {
 
    int color,buf_a,w;
@@ -1456,7 +1456,7 @@ stc_print_delta(stcolor_device *sd, FILE *prn_stream)
 
          sd->stc.flags |= STCPRINT;
 
-         fwrite(sd->stc.escp_init.data,1,sd->stc.escp_init.size,prn_stream);
+         gp_fwrite(sd->stc.escp_init.data,1,sd->stc.escp_init.size,prn_stream);
 
          sd->stc.escp_data[escp_used++] = '\033';
          sd->stc.escp_data[escp_used++] = '.';
@@ -1507,7 +1507,7 @@ stc_print_delta(stcolor_device *sd, FILE *prn_stream)
          if(w == 0) escp_used -= 1;
          else       escp_used += w;
 
-         if(escp_used > 0) fwrite(sd->stc.escp_data,1,escp_used,prn_stream);
+         if(escp_used > 0) gp_fwrite(sd->stc.escp_data,1,escp_used,prn_stream);
          escp_used = 0;
 
       }                                             /* print the colors */

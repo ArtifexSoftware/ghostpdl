@@ -202,28 +202,28 @@ typedef struct {
 
 /* Put a BJL command to stream */
 
-void bjc_put_bjl_command(FILE * file, int bjl_command);
+void bjc_put_bjl_command(gp_file * file, int bjl_command);
 
-void bjc_put_LF(FILE *file);
-void bjc_put_FF(FILE *file);
-void bjc_put_CR(FILE *file);
-void bjc_put_initialize(FILE *file);
-void bjc_put_set_initial(FILE *file);
-void bjc_put_set_compression(FILE *file, char compression);
-void bjc_put_print_method_short(FILE *file, char color);
-void bjc_put_print_method(FILE *file, char color, char media, char quality, char density);
-void bjc_put_raster_resolution(FILE *file, int x_resolution, int y_resolution);
-void bjc_put_raster_skip(FILE *file, int skip);
-void bjc_put_page_margins(FILE *file, int length, int lm, int rm, int top);
-void bjc_put_media_supply(FILE *file, char supply, char type);
-void bjc_put_cmyk_image(FILE *file, char component, const byte *data, int count);
-void bjc_put_move_lines(FILE *file, int lines);
-void bjc_put_move_lines_unit(FILE *file, int unit);
-void bjc_put_extended_margins(FILE *file, int length, int lm, int rm, int top);
-void bjc_put_image_format(FILE *file, char depth, char format, char ink);
-void bjc_put_page_id(FILE *file, int id);
-void bjc_put_continue_image(FILE *file, const byte *data, int count);
-void bjc_put_indexed_image(FILE *file, int dot_rows, int dot_cols, int layers);
+void bjc_put_LF(gp_file *file);
+void bjc_put_FF(gp_file *file);
+void bjc_put_CR(gp_file *file);
+void bjc_put_initialize(gp_file *file);
+void bjc_put_set_initial(gp_file *file);
+void bjc_put_set_compression(gp_file *file, char compression);
+void bjc_put_print_method_short(gp_file *file, char color);
+void bjc_put_print_method(gp_file *file, char color, char media, char quality, char density);
+void bjc_put_raster_resolution(gp_file *file, int x_resolution, int y_resolution);
+void bjc_put_raster_skip(gp_file *file, int skip);
+void bjc_put_page_margins(gp_file *file, int length, int lm, int rm, int top);
+void bjc_put_media_supply(gp_file *file, char supply, char type);
+void bjc_put_cmyk_image(gp_file *file, char component, const byte *data, int count);
+void bjc_put_move_lines(gp_file *file, int lines);
+void bjc_put_move_lines_unit(gp_file *file, int unit);
+void bjc_put_extended_margins(gp_file *file, int length, int lm, int rm, int top);
+void bjc_put_image_format(gp_file *file, char depth, char format, char ink);
+void bjc_put_page_id(gp_file *file, int id);
+void bjc_put_continue_image(gp_file *file, const byte *data, int count);
+void bjc_put_indexed_image(gp_file *file, int dot_rows, int dot_cols, int layers);
 
 bool bjc_invert_bytes(byte *row, uint raster, bool inverse, byte lastmask);
 bool bjc_invert_cmyk_bytes(byte *rowC,byte *rowM, byte *rowY, byte *rowK, uint raster,

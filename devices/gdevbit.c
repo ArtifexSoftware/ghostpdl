@@ -780,7 +780,7 @@ bit_put_params(gx_device * pdev, gs_param_list * plist)
 
 /* Send the page to the printer. */
 static int
-bit_print_page(gx_device_printer * pdev, FILE * prn_stream)
+bit_print_page(gx_device_printer * pdev, gp_file * prn_stream)
 {				/* Just dump the bits on the file. */
     /* If the file is 'nul', don't even do the writes. */
     int line_size = gdev_mem_bytes_per_scan_line((gx_device *) pdev);
@@ -801,7 +801,7 @@ bit_print_page(gx_device_printer * pdev, FILE * prn_stream)
     for (i = 0; i <= line_count; i++, lnum += step) {
         gdev_prn_get_bits(pdev, lnum, in, &data);
         if (!nul)
-            fwrite(data, 1, line_size, prn_stream);
+            gp_fwrite(data, 1, line_size, prn_stream);
     }
     gs_free_object(pdev->memory, in, "bit_print_page(in)");
     return 0;
@@ -811,7 +811,7 @@ bit_print_page(gx_device_printer * pdev, FILE * prn_stream)
    proper ppm outputs for various dimensions and not be restricted to 72dpi when
    using the tag viewer */
 static int
-bittags_print_page(gx_device_printer * pdev, FILE * prn_stream)
+bittags_print_page(gx_device_printer * pdev, gp_file * prn_stream)
 {				/* Just dump the bits on the file. */
     /* If the file is 'nul', don't even do the writes. */
     int line_size = gdev_mem_bytes_per_scan_line((gx_device *) pdev);
@@ -830,14 +830,14 @@ bittags_print_page(gx_device_printer * pdev, FILE * prn_stream)
         return_error(gs_error_VMerror);
 
     if (!nul)
-        fprintf(prn_stream, "P7\nWIDTH %d\nHEIGHT %d\nMAXVAL 255\nDEPTH 4\nTUPLTYPE RGB_TAG\nENDHDR\n", pdev->width, pdev->height);
+        gp_fprintf(prn_stream, "P7\nWIDTH %d\nHEIGHT %d\nMAXVAL 255\nDEPTH 4\nTUPLTYPE RGB_TAG\nENDHDR\n", pdev->width, pdev->height);
     if ((lnum == 0) && (bottom == 0))
         line_count = pdev->height - 1;		/* default when LastLine == 0, FirstLine == 0 */
     for (i = 0; i <= line_count; i++, lnum += step) {
         if ((code = gdev_prn_get_bits(pdev, lnum, in, &data)) < 0)
             return code;
         if (!nul)
-            fwrite(data, 1, line_size, prn_stream);
+            gp_fwrite(data, 1, line_size, prn_stream);
     }
     gs_free_object(pdev->memory, in, "bit_print_page(in)");
     return 0;

@@ -44,7 +44,7 @@ typedef struct {
     FILE *fstdin;
     FILE *fstdout;
     FILE *fstderr;
-    FILE *fstdout2;		/* for redirecting %stdout and diagnostics */
+    gp_file *fstdout2;		/* for redirecting %stdout and diagnostics */
     bool stdout_is_redirected;	/* to stderr or fstdout2 */
     bool stdout_to_stderr;
     bool stdin_is_interactive;

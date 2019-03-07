@@ -46,38 +46,38 @@
 #include <math.h>
 #include <time.h>
 
-static void bjc_put_bytes(FILE *file, const byte *data, int count);
-static void bjc_put_hi_lo(FILE *file, int value);
-static void bjc_put_lo_hi(FILE *file, int value);
-static void bjc_put_command(FILE *file, char command, int count);
+static void bjc_put_bytes(gp_file *file, const byte *data, int count);
+static void bjc_put_hi_lo(gp_file *file, int value);
+static void bjc_put_lo_hi(gp_file *file, int value);
+static void bjc_put_command(gp_file *file, char command, int count);
 
 /* ---------------- Utilities ---------------- */
 
 static void
-bjc_put_bytes(FILE *file, const byte *data, int count)
+bjc_put_bytes(gp_file *file, const byte *data, int count)
 {
-    fwrite(data, count, 1, file);
+    gp_fwrite(data, count, 1, file);
 }
 
 static void
-bjc_put_hi_lo(FILE *file, int value)
+bjc_put_hi_lo(gp_file *file, int value)
 {
-    fputc(((value & 0xffff) >> 8), file);
-    fputc(value & 0xff, file);
+    gp_fputc(((value & 0xffff) >> 8), file);
+    gp_fputc(value & 0xff, file);
 }
 
 static void
-bjc_put_lo_hi(FILE *file, int value)
+bjc_put_lo_hi(gp_file *file, int value)
 {
-    fputc(value & 0xff, file);
-    fputc(((value & 0xffff) >> 8), file);
+    gp_fputc(value & 0xff, file);
+    gp_fputc(((value & 0xffff) >> 8), file);
 }
 
 static void
-bjc_put_command(FILE *file, char command, int count)
+bjc_put_command(gp_file *file, char command, int count)
 {   char tmp[3] = { '\033', '(', ' '};
     tmp[2] = command;
-    fwrite( tmp, 3, 1, file);
+    gp_fwrite( tmp, 3, 1, file);
     bjc_put_lo_hi(file, count);
 }
 
@@ -85,68 +85,68 @@ bjc_put_command(FILE *file, char command, int count)
 
 /* Line feed (^J) */
 void
-bjc_put_LF(FILE *file)
+bjc_put_LF(gp_file *file)
 {
-    fputc(0x0a, file);
+    gp_fputc(0x0a, file);
 }
 
 /* Form feed (^L) */
 void
-bjc_put_FF(FILE *file)
+bjc_put_FF(gp_file *file)
 {
-    fputc(0x0c, file);
+    gp_fputc(0x0c, file);
 }
 
 /* Carriage return (^M) */
 void
-bjc_put_CR(FILE *file)
+bjc_put_CR(gp_file *file)
 {
-    fputc(0x0d, file);
+    gp_fputc(0x0d, file);
 }
 
 /* Return to initial condition (ESC @) */
 void
-bjc_put_initialize(FILE *file)
+bjc_put_initialize(gp_file *file)
 {
     bjc_put_bytes(file, (const byte *)"\033@", 2);
 }
 
 /* Set initial condition (ESC [ K <count> <init> <id> <parm1> <parm2>) */
 void
-bjc_put_set_initial(FILE *file)
+bjc_put_set_initial(gp_file *file)
 {
     bjc_put_bytes(file, (const byte *)"\033[K\002\000\000\017", 7);
 }
 
 /* Set data compression (ESC [ b <count> <state>) */
 void
-bjc_put_set_compression(FILE *file, char compression)
+bjc_put_set_compression(gp_file *file, char compression)
 {
     bjc_put_command(file, 'b', 1);
-    fputc(compression, file);
+    gp_fputc(compression, file);
 }
 
 /* Select print method (ESC ( c <count> <parm1> <parm2> [<parm3>]) */
 void
-bjc_put_print_method_short(FILE *file, char color)
+bjc_put_print_method_short(gp_file *file, char color)
 {
     bjc_put_command(file, 'c', 1);
-    fputc(color, file);
+    gp_fputc(color, file);
 }
 void
-bjc_put_print_method(FILE *file, char color, char media, char quality,
+bjc_put_print_method(gp_file *file, char color, char media, char quality,
                      char density)
 {
     bjc_put_command(file, 'c', 2 + (density != 0));
-    fputc(color, file);
-    fputc(media | quality, file);
+    gp_fputc(color, file);
+    gp_fputc(media | quality, file);
     if (density)
-        fputc(density, file);
+        gp_fputc(density, file);
 }
 
 /* Set raster resolution (ESC ( d <count> <y_res> [<x_res>]) */
 void
-bjc_put_raster_resolution(FILE *file, int x_resolution, int y_resolution)
+bjc_put_raster_resolution(gp_file *file, int x_resolution, int y_resolution)
 {
     if (x_resolution == y_resolution) {
         bjc_put_command(file, 'd', 2);
@@ -159,7 +159,7 @@ bjc_put_raster_resolution(FILE *file, int x_resolution, int y_resolution)
 
 /* Raster skip (ESC ( e <count> <skip>) */
 void
-bjc_put_raster_skip(FILE *file, int skip)
+bjc_put_raster_skip(gp_file *file, int skip)
 {
     bjc_put_command(file, 'e', 2);
     bjc_put_hi_lo(file, skip);
@@ -167,7 +167,7 @@ bjc_put_raster_skip(FILE *file, int skip)
 
 /* Set page margins (ESC ( g <count> <length> <lm> <rm> <top>) */
 void
-bjc_put_page_margins(FILE *file, int length, int lm, int rm, int top)
+bjc_put_page_margins(gp_file *file, int length, int lm, int rm, int top)
 {
     byte parms[4];
 
@@ -179,16 +179,16 @@ bjc_put_page_margins(FILE *file, int length, int lm, int rm, int top)
 
 /* Set media supply method (ESC * l <count> <parm1> <parm2>) */
 void
-bjc_put_media_supply(FILE *file, char supply, char type)
+bjc_put_media_supply(gp_file *file, char supply, char type)
 {
     bjc_put_command(file, 'l', 2);
-    fputc(supply, file);
-    fputc(type << 4, file);
+    gp_fputc(supply, file);
+    gp_fputc(type << 4, file);
 }
 
 /* Identify ink cartridge (ESC ( m <count> <type>) */ /*
 void
-bjc_put_identify_cartridge(FILE *file,
+bjc_put_identify_cartridge(gp_file *file,
                            bjc_identify_cartridge_command_t command)
 {
     bjc_put_command(s, 'm', 1);
@@ -197,17 +197,17 @@ bjc_put_identify_cartridge(FILE *file,
 
 /* CMYK raster image (ESC ( A <count> <color>) */
 void
-bjc_put_cmyk_image(FILE *file, char component,
+bjc_put_cmyk_image(gp_file *file, char component,
                    const byte *data, int count)
 {
     bjc_put_command(file, 'A', count + 1);
-    fputc(component, file);
+    gp_fputc(component, file);
     bjc_put_bytes(file, data, count);
 }
 
 /* Move by raster lines (ESC ( n <count> <lines>) */
 void
-bjc_put_move_lines(FILE *file, int lines)
+bjc_put_move_lines(gp_file *file, int lines)
 {
     bjc_put_command(file, 'n', 2);
     bjc_put_hi_lo(file, lines);
@@ -215,7 +215,7 @@ bjc_put_move_lines(FILE *file, int lines)
 
 /* Set unit for movement by raster lines (ESC ( o <count> <unit>) */
 void
-bjc_put_move_lines_unit(FILE *file, int unit)
+bjc_put_move_lines_unit(gp_file *file, int unit)
 {
     bjc_put_command(file, 'o', 2);
     bjc_put_hi_lo(file, unit);
@@ -224,7 +224,7 @@ bjc_put_move_lines_unit(FILE *file, int unit)
 /* Set extended margins (ESC ( p <count> <length60ths> <lm60ths> */
 /*   <rm60ths> <top60ths>) */
 void
-bjc_put_extended_margins(FILE *file, int length, int lm, int rm, int top)
+bjc_put_extended_margins(gp_file *file, int length, int lm, int rm, int top)
 {
     bjc_put_command(file, 'p', 8);
     bjc_put_hi_lo(file, length);
@@ -235,25 +235,25 @@ bjc_put_extended_margins(FILE *file, int length, int lm, int rm, int top)
 
 /* Set image format (ESC ( t <count> <depth> <format> <ink>) */
 void
-bjc_put_image_format(FILE *file, char depth, char format, char ink)
+bjc_put_image_format(gp_file *file, char depth, char format, char ink)
 {
     bjc_put_command(file, 't', 3);
-    fputc(depth, file);
-    fputc(format, file);
-    fputc(ink, file);
+    gp_fputc(depth, file);
+    gp_fputc(format, file);
+    gp_fputc(ink, file);
 }
 
 /* Page ID (ESC ( q <count> <id>) */
 void
-bjc_put_page_id(FILE *file, int id)
+bjc_put_page_id(gp_file *file, int id)
 {
     bjc_put_command(file, 'q', 1);
-    fputc(id, file);
+    gp_fputc(id, file);
 }
 
 /* Continue raster image (ESC ( F <count> <data>) */
 void
-bjc_put_continue_image(FILE *file, const byte *data, int count)
+bjc_put_continue_image(gp_file *file, const byte *data, int count)
 {
     bjc_put_command(file, 'F', count);
     bjc_put_bytes(file, data, count);
@@ -262,13 +262,13 @@ bjc_put_continue_image(FILE *file, const byte *data, int count)
 /* BJ indexed image (ESC ( f <count> R <dot_rows> <dot_cols> <layers> */
 /*   <index>) */
 void
-bjc_put_indexed_image(FILE *file, int dot_rows, int dot_cols, int layers)
+bjc_put_indexed_image(gp_file *file, int dot_rows, int dot_cols, int layers)
 {
     bjc_put_command(file, 'f', 5);
-    fputc('R', file); /* per spec */
-    fputc(dot_rows, file);
-    fputc(dot_cols, file);
-    fputc(layers, file);
+    gp_fputc('R', file); /* per spec */
+    gp_fputc(dot_rows, file);
+    gp_fputc(dot_cols, file);
+    gp_fputc(layers, file);
 }
 
 /* ------------------------------------------------------------------ */

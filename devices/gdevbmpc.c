@@ -92,7 +92,7 @@ typedef struct bmp_quad_s {
 
 /* Write the BMP file header. */
 static int
-write_bmp_depth_header(gx_device_printer *pdev, FILE *file, int depth,
+write_bmp_depth_header(gx_device_printer *pdev, gp_file *file, int depth,
                        const byte *palette /* [4 << depth] */,
                        int raster)
 {
@@ -103,8 +103,8 @@ write_bmp_depth_header(gx_device_printer *pdev, FILE *file, int depth,
 
     /* Write the file header. */
 
-    fputc('B', file);
-    fputc('M', file);
+    gp_fputc('B', file);
+    gp_fputc('M', file);
     {
         bmp_file_header fhdr;
 
@@ -117,7 +117,7 @@ write_bmp_depth_header(gx_device_printer *pdev, FILE *file, int depth,
         BMP_ASSIGN_DWORD(fhdr.offBits,
                      sizeof_bmp_file_header +
                      sizeof(bmp_info_header) + quads);
-        if (fwrite((const char *)&fhdr, 1, sizeof(fhdr), file) != sizeof(fhdr))
+        if (gp_fwrite((const char *)&fhdr, 1, sizeof(fhdr), file) != sizeof(fhdr))
             return_error(gs_error_ioerror);
     }
 
@@ -146,21 +146,21 @@ write_bmp_depth_header(gx_device_printer *pdev, FILE *file, int depth,
 #undef INCHES_PER_METER
         BMP_ASSIGN_DWORD(ihdr.clrUsed, 0);
         BMP_ASSIGN_DWORD(ihdr.clrImportant, 0);
-        if (fwrite((const char *)&ihdr, 1, sizeof(ihdr), file) != sizeof(ihdr))
+        if (gp_fwrite((const char *)&ihdr, 1, sizeof(ihdr), file) != sizeof(ihdr))
             return_error(gs_error_ioerror);
     }
 
     /* Write the palette. */
 
     if (depth <= 8)
-        fwrite(palette, sizeof(bmp_quad), 1 << depth, file);
+        gp_fwrite(palette, sizeof(bmp_quad), 1 << depth, file);
 
     return 0;
 }
 
 /* Write the BMP file header. */
 int
-write_bmp_header(gx_device_printer *pdev, FILE *file)
+write_bmp_header(gx_device_printer *pdev, gp_file *file)
 {
     int depth = pdev->color_info.depth;
     bmp_quad palette[256];
@@ -189,7 +189,7 @@ write_bmp_header(gx_device_printer *pdev, FILE *file)
 
 /* Write a BMP header for separated CMYK output. */
 int
-write_bmp_separated_header(gx_device_printer *pdev, FILE *file)
+write_bmp_separated_header(gx_device_printer *pdev, gp_file *file)
 {
     int depth = pdev->color_info.depth;
     int plane_depth = depth / 4;

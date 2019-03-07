@@ -196,12 +196,16 @@ gp_enumerate_files_close(file_enum * pfen)
 /* Create and open a scratch file with a given name prefix. */
 /* Write the actual file name at fname. */
 FILE *
-gp_open_scratch_file(const gs_memory_t *mem,
-                     const char        *prefix,
-                           char         fname[gp_file_name_sizeof],
-                     const char        *mode)
+gp_open_scratch_file_impl(const gs_memory_t *mem,
+                          const char        *prefix,
+                                char         fname[gp_file_name_sizeof],
+                          const char        *mode,
+                                int          remove)
 {
     FILE *f;
+
+    if (remove)
+        return NULL;
 #ifdef __IBMC__
     char *temp = 0;
     char *tname;
@@ -257,7 +261,7 @@ gp_open_scratch_file(const gs_memory_t *mem,
 
 /* Open a file with the given name, as a stream of uninterpreted bytes. */
 FILE *
-gp_fopen(const char *fname, const char *mode)
+gp_fopen_impl(gs_memory_t *mem, const char *fname, const char *mode)
 {
     return fopen(fname, mode);
 }
@@ -272,25 +276,17 @@ int gp_can_share_fdesc(void)
     return 0;
 }
 
-FILE *gp_open_scratch_file_rm(const gs_memory_t *mem,
-                              const char        *prefix,
-                                    char         fname[gp_file_name_sizeof],
-                              const char        *mode)
+FILE *gp_fdup_impl(FILE *f, const char *mode)
 {
     return NULL;
 }
 
-FILE *gp_fdup(FILE *f, const char *mode)
-{
-    return NULL;
-}
-
-int gp_fpread(char *buf, uint count, int64_t offset, FILE *f)
+int gp_pread_impl(char *buf, size_t count, gs_offset_t offset, FILE *f)
 {
     return -1;
 }
 
-int gp_fpwrite(char *buf, uint count, int64_t offset, FILE *f)
+int gp_pwrite_impl(char *buf, size_t count, gs_offset_t offset, FILE *f)
 {
     return -1;
 }

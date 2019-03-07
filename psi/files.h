@@ -103,7 +103,7 @@ typedef struct gs_file_path_s *gs_file_path_ptr;
 
 /* Procedures exported by zfile.c. */
         /* for imainarg.c */
-FILE *lib_fopen(const gs_file_path_ptr pfpath, const gs_memory_t *mem, const char *);
+gp_file *lib_fopen(const gs_file_path_ptr pfpath, const gs_memory_t *mem, const char *);
 
         /* for imain.c */
 int

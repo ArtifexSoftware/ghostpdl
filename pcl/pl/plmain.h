@@ -71,7 +71,7 @@ void pl_main_get_forced_geometry(const gs_memory_t *mem, const float **resolutio
 int pl_main_get_scanconverter(const gs_memory_t *mem);
 pl_main_instance_t *pl_main_get_instance(const gs_memory_t *mem);
 
-typedef int pl_main_get_codepoint_t(FILE *, const char **);
+typedef int pl_main_get_codepoint_t(gp_file *, const char **);
 void pl_main_set_arg_decode(pl_main_instance_t *minst,
                             pl_main_get_codepoint_t *get_codepoint);
 

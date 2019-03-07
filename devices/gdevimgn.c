@@ -248,7 +248,7 @@ const gx_device_printer far_data gs_imagen_device =
 
 /*-------------------------------------------*/
 static void
-iWrite(FILE *Out, byte Val)
+iWrite(gp_file *Out, byte Val)
 { /* iWrite */
   const char *hexList = "0123456789ABCDEF";
 
@@ -260,18 +260,18 @@ iWrite(FILE *Out, byte Val)
      (   Val == QUOTE_CHAR   || Val == EOF_CHAR
       || Val == EXTRA_QUOTE1 || Val == EXTRA_QUOTE2
       || Val == EXTRA_QUOTE3 || Val == EXTRA_QUOTE4 ) ) {
-    fputc (QUOTE_CHAR, Out);
-    fputc ((char) hexList[Val / 0x10], Out);
-    fputc ((char) hexList[Val % 0x10], Out);
+    gp_fputc (QUOTE_CHAR, Out);
+    gp_fputc ((char) hexList[Val / 0x10], Out);
+    gp_fputc ((char) hexList[Val % 0x10], Out);
   } else { /* quoted char */
     /* Not doing quoting, just send it out */
-    fputc(Val, Out);
+    gp_fputc(Val, Out);
   } /* quoted char */
 } /* iWrite */
 
 /* Write out 16bit, high byte first */
 static void
-iWrite2(FILE *Out, int Val)
+iWrite2(gp_file *Out, int Val)
 { /* iWrite2 */
   iWrite(Out,(byte) (Val >> 8) & 0x00FF );
   iWrite(Out,(byte) Val        & 0x00FF );
@@ -304,7 +304,7 @@ imagen_prn_open(gx_device *pdev)
     impHeader = IMPRESSHEADER ;
   } /* if impHeader */
 
-  fprintf(ppdev->file,"@document(language impress, %s)",impHeader);
+  gp_fprintf(ppdev->file,"@document(language impress, %s)",impHeader);
 
   code = gdev_prn_close_printer(pdev);
   if ( code < 0 ) return code;
@@ -332,10 +332,10 @@ imagen_prn_close(gx_device *pdev)
   /* And byte stream end of file */
   if (BYTE_STREAM) {
     /* DON'T use iWrite because actual EOF should not be quoted! */
-    fputc(EOF_CHAR,ppdev->file);
+    gp_fputc(EOF_CHAR,ppdev->file);
   } /* if byte stream */
 
-  fflush(ppdev->file);
+  gp_fflush(ppdev->file);
 
   code = gdev_prn_close_printer(pdev);
   if ( code < 0 ) return code;
@@ -350,7 +350,7 @@ imagen_prn_close(gx_device *pdev)
 /*-------------------------------------------*/
 /* Send the page to the printer. */
 static int
-imagen_print_page(gx_device_printer *pdev, FILE *prn_stream)
+imagen_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {
   int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
   const int align_size = obj_align_round((line_size/BIGSIZE)+1);
@@ -551,7 +551,7 @@ imagen_print_page(gx_device_printer *pdev, FILE *prn_stream)
   /* Eject the page */
   iWrite(prn_stream,iENDPAGE);
 
-  fflush(prn_stream);
+  gp_fflush(prn_stream);
 
   gs_free(pdev->memory, (char *)out, TotalBytesPerSw, swatchCount+1, "imagen_print_page(out)");
   gs_free(pdev->memory, (char *)swatchMap, BIGSIZE, swatchCount / BIGSIZE + 1,

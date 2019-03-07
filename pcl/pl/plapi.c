@@ -162,7 +162,7 @@ gsapi_get_default_device_list(void *instance, char **list, int *listlen)
     return gs_lib_ctx_get_default_device_list(ctx->memory, list, listlen);
 }
 
-static int utf16le_get_codepoint(FILE *file, const char **astr)
+static int utf16le_get_codepoint(gp_file *file, const char **astr)
 {
     int c;
     int rune;
@@ -179,10 +179,10 @@ static int utf16le_get_codepoint(FILE *file, const char **astr)
 
     do {
         if (file) {
-            rune = fgetc(file);
+            rune = gp_fgetc(file);
             if (rune == EOF)
                 return EOF;
-            c = fgetc(file);
+            c = gp_fgetc(file);
             if (c == EOF)
                 return EOF;
             rune += c<<8;
@@ -205,10 +205,10 @@ lead: /* We've just read a leading surrogate */
         rune -= 0xD800;
         rune <<= 10;
         if (file) {
-            trail = fgetc(file);
+            trail = gp_fgetc(file);
             if (trail == EOF)
                 return EOF;
-            c = fgetc(file);
+            c = gp_fgetc(file);
             if (c == EOF)
                 return EOF;
             trail += c<<8;

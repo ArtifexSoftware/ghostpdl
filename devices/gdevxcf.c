@@ -987,7 +987,7 @@ xcf_get_color_comp_index(gx_device * dev, const char * pname, int name_size,
 #endif
 
 typedef struct {
-    FILE *f;
+    gp_file *f;
     int offset;
 
     int width;
@@ -1049,7 +1049,7 @@ static int
 xcf_write(xcf_write_ctx *xc, const byte *buf, int size) {
     int code;
 
-    code = fwrite(buf, 1, size, xc->f);
+    code = gp_fwrite(buf, 1, size, xc->f);
     if (code < 0)
         return code;
     xc->offset += code;
@@ -1390,7 +1390,7 @@ xcf_write_footer(xcf_write_ctx *xc, xcf_device *pdev)
 }
 
 static int
-xcf_print_page(gx_device_printer *pdev, FILE *file)
+xcf_print_page(gx_device_printer *pdev, gp_file *file)
 {
     xcf_write_ctx xc;
 

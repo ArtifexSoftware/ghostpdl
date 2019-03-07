@@ -78,7 +78,7 @@ gx_device_printer far_data gs_sj48_device =
 
 /* Send the page to the printer. */
 static int
-sj48_print_page(gx_device_printer *pdev, FILE *prn_stream)
+sj48_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {	int line_size = gx_device_raster((gx_device *)pdev, 0);
         int xres = pdev->x_pixels_per_inch;
         int yres = pdev->y_pixels_per_inch;
@@ -109,7 +109,7 @@ sj48_print_page(gx_device_printer *pdev, FILE *prn_stream)
         }
 
         /* Initialize the printer. */
-        fwrite("\033@\000\000", 1, 4, prn_stream);  /* <Printer reset>, <0>, <0>. */
+        gp_fwrite("\033@\000\000", 1, 4, prn_stream);  /* <Printer reset>, <0>, <0>. */
 
         /* Transfer pixels to printer.  The last row we can print is defined
            by "last_row".  Only the bottom of the print head can print at the
@@ -171,11 +171,11 @@ notz:			;
                 }
 
                 while ( skips > 255 )
-                   {	fputs("\033J\377", prn_stream);
+                   {	gp_fputs("\033J\377", prn_stream);
                         skips -= 255;
                    }
                 if ( skips )
-                        fprintf(prn_stream, "\033J%c", skips);
+                        gp_fprintf(prn_stream, "\033J%c", skips);
 
                 /* If we've printed as far as "limit", then reset "limit"
                    to "last_row" for the final printing pass. */
@@ -234,7 +234,7 @@ notz:			;
                                 break;
                         if (outl > out_beg)
                            {	count = (outl - out_beg) / skip_unit;
-                                fprintf(prn_stream, "\033\\%c%c",
+                                gp_fprintf(prn_stream, "\033\\%c%c",
                                         count & 0xff, count >> 8);
                            }
 
@@ -259,22 +259,22 @@ notz:			;
                              Compare this with the <Esc>|*-command wich expects the
                              total number of bytes in the graphic row! */
                           int count1 = count/bytes_per_column;
-                          fprintf(prn_stream, "\033*%c%c%c",
+                          gp_fprintf(prn_stream, "\033*%c%c%c",
                                   mode, count1 & 0xff, count1 >> 8);
                         }
-                        fwrite(out_beg, 1, count, prn_stream);
+                        gp_fwrite(out_beg, 1, count, prn_stream);
                         out_beg = outl;
                         outl += n;
                    }
                 while ( out_beg < out_end );
 
-                fputc('\r', prn_stream);
+                gp_fputc('\r', prn_stream);
                 skip = bits_per_column;  /* <CR> only moves to the beginning of the row. */
            }
 
         /* Eject the page */
-xit:	fputc(014, prn_stream);	/* form feed */
-        fflush(prn_stream);
+xit:	gp_fputc(014, prn_stream);	/* form feed */
+        gp_fflush(prn_stream);
 fin:	if ( out != 0 )
                 gs_free(pdev->memory, (char *)out, bits_per_column, line_size,
                         "sj48_print_page(out)");

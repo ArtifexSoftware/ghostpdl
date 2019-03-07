@@ -97,7 +97,7 @@ typedef struct pagedata_s
         /* Data pointers */
         byte *outdata;    /* Buffer to output data codes for one full stripe */
         byte *scanbuf;    /* Buffer to contain the rasterized scanlines */
-        FILE *stream;     /* Output stream */
+        gp_file *stream;     /* Output stream */
         lxm_device *dev;  /* Pointer to our device */
 
         /* Buffer data */
@@ -561,7 +561,7 @@ lxm3200_map_color_rgb(gx_device *dev, gx_color_index color,
  * depending on the selected printing mode.
  */
 static int
-lxm3200_print_page(gx_device_printer *pdev, FILE *prn_stream)
+lxm3200_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {
 	lxm_device *dev = (lxm_device *)pdev;
 	pagedata *gendata;
@@ -757,8 +757,8 @@ lxm3200_print_page(gx_device_printer *pdev, FILE *prn_stream)
         }
 
         /* Send initialization sequence to the printer */
-        if(gendata->modelprint==1) fwrite(z12_init_sequence, sizeof(z12_init_sequence), 1, prn_stream);
-        else fwrite(init_sequence, sizeof(init_sequence), 1, prn_stream);
+        if(gendata->modelprint==1) gp_fwrite(z12_init_sequence, sizeof(z12_init_sequence), 1, prn_stream);
+        else gp_fwrite(init_sequence, sizeof(init_sequence), 1, prn_stream);
 
         /* Choose the right page printing routine
          * depending on the printing mode.
@@ -1032,7 +1032,7 @@ outputepilogue(pagedata *gendata)
         trailer[22] = 0x00;
         trailer[23] = 0x33;
 
-        fwrite(trailer, 8, 3, gendata->stream);
+        gp_fwrite(trailer, 8, 3, gendata->stream);
 }
 
 /* Output a "page forward" escape sequence,
@@ -1069,7 +1069,7 @@ skiplines(pagedata *gendata, int skiprow, int skipin)
         /* Adjust the number of lines still inside the printer */
         gendata->linetoeject -= vskip;
 
-        fwrite(escape, 8, 1, gendata->stream);
+        gp_fwrite(escape, 8, 1, gendata->stream);
 }
 
 /* Fill a stripe header with data.
@@ -1408,8 +1408,8 @@ finalizeheader(pagedata *gendata, int vskip, int newhead)
         /* Now output the data, signalling that the output
          * buffer is now empty.
          */
-        fwrite(header, 3, 8, gendata->stream);
-        fwrite(gendata->outdata, gendata->stripebytes, 1, gendata->stream);
+        gp_fwrite(header, 3, 8, gendata->stream);
+        gp_fwrite(gendata->outdata, gendata->stripebytes, 1, gendata->stream);
         gendata->fullflag = FALSE;
 }
 
@@ -1763,8 +1763,8 @@ encode_bw_buf(pagedata *gendata)
                  */
                 if(gendata->fullflag)
                 {
-                        fwrite(gendata->header, 3, 8, gendata->stream);
-                        fwrite(gendata->outdata, gendata->stripebytes, 1, gendata->stream);
+                        gp_fwrite(gendata->header, 3, 8, gendata->stream);
+                        gp_fwrite(gendata->outdata, gendata->stripebytes, 1, gendata->stream);
                         gendata->fullflag = FALSE;
                 }
 
@@ -2043,8 +2043,8 @@ encode_col_buf(pagedata *gendata, int head)
                  */
                 if(gendata->fullflag)
                 {
-                        fwrite(gendata->header, 3, 8, gendata->stream);
-                        fwrite(gendata->outdata, gendata->stripebytes, 1, gendata->stream);
+                        gp_fwrite(gendata->header, 3, 8, gendata->stream);
+                        gp_fwrite(gendata->outdata, gendata->stripebytes, 1, gendata->stream);
                         gendata->fullflag = FALSE;
                 }
 

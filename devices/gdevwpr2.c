@@ -253,7 +253,7 @@ win_pr2_open(gx_device * dev)
     POINT offset;
     POINT size;
     float m[4];
-    FILE *pfile;
+    gp_file *pfile;
     DOCINFO docinfo;
     float ratio = 1.0;
     gx_device_win_pr2 *wdev = (gx_device_win_pr2 *)dev;
@@ -398,7 +398,7 @@ win_pr2_open(gx_device * dev)
     pfile = gp_open_scratch_file(dev->memory,
                                  gp_scratch_file_name_prefix,
                                  wdev->fname, "wb");
-    fclose(pfile);
+    gp_fclose(pfile);
     code = gdev_prn_open(dev);
 
     /* If we subclassed the device, with a FirstPage LastPage device,
@@ -488,7 +488,7 @@ win_pr2_close(gx_device * dev)
 /* Write BMP header to memory, then send bitmap to printer */
 /* one scan line at a time */
 static int
-win_pr2_print_page(gx_device_printer * pdev, FILE * file)
+win_pr2_print_page(gx_device_printer * pdev, gp_file * file)
 {
     int raster = gdev_prn_raster(pdev);
 

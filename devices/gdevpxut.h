@@ -43,10 +43,10 @@ int px_write_select_media(stream *s, const gx_device *dev,
                           int media_type_set, char *media_type);
 
 /*
- * Write the file trailer.  Note that this takes a FILE *, not a stream *,
+ * Write the file trailer.  Note that this takes a gp_file *, not a stream *,
  * since it may be called after the stream is closed.
  */
-int px_write_file_trailer(FILE *file);
+int px_write_file_trailer(gp_file *file);
 
 /* ---------------- Low-level data output ---------------- */
 

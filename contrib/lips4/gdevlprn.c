@@ -192,15 +192,15 @@ lprn_put_params(gx_device * dev, gs_param_list * plist)
     return 0;
 }
 
-static void lprn_bubble_flush_all(gx_device_printer * pdev, FILE * fp);
-static void lprn_process_line(gx_device_printer * pdev, FILE * fp, int r, int h);
-static void lprn_bubble_flush(gx_device_printer * pdev, FILE * fp, Bubble * bbl);
+static void lprn_bubble_flush_all(gx_device_printer * pdev, gp_file * fp);
+static void lprn_process_line(gx_device_printer * pdev, gp_file * fp, int r, int h);
+static void lprn_bubble_flush(gx_device_printer * pdev, gp_file * fp, Bubble * bbl);
 static int lprn_is_black(gx_device_printer * pdev, int r, int h, int bx);
 static void lprn_bubble_gen(gx_device_printer * pdev, int x0, int x1, int y0, int y1);
-static void lprn_rect_add(gx_device_printer * pdev, FILE * fp, int r, int h, int start, int end);
+static void lprn_rect_add(gx_device_printer * pdev, gp_file * fp, int r, int h, int start, int end);
 
 int
-lprn_print_image(gx_device_printer * pdev, FILE * fp)
+lprn_print_image(gx_device_printer * pdev, gp_file * fp)
 {
     gx_device_lprn *const lprn = (gx_device_lprn *) pdev;
     int y;
@@ -273,7 +273,7 @@ lprn_print_image(gx_device_printer * pdev, FILE * fp)
  * epag_bubble_flush_all: Output the rect of bubble.
  */
 static void
-lprn_bubble_flush_all(gx_device_printer * pdev, FILE * fp)
+lprn_bubble_flush_all(gx_device_printer * pdev, gp_file * fp)
 {
     gx_device_lprn *const lprn = (gx_device_lprn *) pdev;
     int i = 0;
@@ -292,7 +292,7 @@ lprn_bubble_flush_all(gx_device_printer * pdev, FILE * fp)
  *    Process bh lines raster data.
  */
 static void
-lprn_process_line(gx_device_printer * pdev, FILE * fp, int r, int h)
+lprn_process_line(gx_device_printer * pdev, gp_file * fp, int r, int h)
 {
     gx_device_lprn *const lprn = (gx_device_lprn *) pdev;
 
@@ -342,7 +342,7 @@ lprn_is_black(gx_device_printer * pdev, int r, int h, int bx)
 }
 
 static void
-lprn_rect_add(gx_device_printer * pdev, FILE * fp, int r, int h, int start, int end)
+lprn_rect_add(gx_device_printer * pdev, gp_file * fp, int r, int h, int start, int end)
 {
     gx_device_lprn *const lprn = (gx_device_lprn *) pdev;
 
@@ -395,7 +395,7 @@ lprn_bubble_gen(gx_device_printer * pdev, int x0, int x1, int y0, int y1)
 
 /* make output */
 void
-lprn_bubble_flush(gx_device_printer * pdev, FILE * fp, Bubble * bbl)
+lprn_bubble_flush(gx_device_printer * pdev, gp_file * fp, Bubble * bbl)
 {
     gx_device_lprn *const lprn = (gx_device_lprn *) pdev;
     int i, j, bx;

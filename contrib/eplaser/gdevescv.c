@@ -1773,11 +1773,11 @@ escv_output_page(gx_device * dev, int num_copies, int flush)
 static int
 escv_close(gx_device *dev)
 {
-  gx_device_vector	*const vdev = (gx_device_vector *) dev;
-  FILE		*f = vdev->file;
+  gx_device_vector *const vdev = (gx_device_vector *) dev;
+  gp_file          *f = vdev->file;
 
   /* 終了処理コードは決め打ち */
-  (void)fprintf(f, ESC_GS "rhE" "\033\001@EJL \012@EJL EJ \012\033\001@EJL \012");
+  (void)gp_fprintf(f, ESC_GS "rhE" "\033\001@EJL \012@EJL EJ \012\033\001@EJL \012");
 
   gdev_vector_close_file(vdev);
 

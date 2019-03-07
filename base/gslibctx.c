@@ -340,7 +340,6 @@ int gs_lib_ctx_get_act_on_uel( const gs_memory_t *mem )
 int outwrite(const gs_memory_t *mem, const char *str, int len)
 {
     int code;
-    FILE *fout;
     gs_lib_ctx_t *pio = mem->gs_lib_ctx;
     gs_lib_ctx_core_t *core = pio->core;
 
@@ -349,16 +348,14 @@ int outwrite(const gs_memory_t *mem, const char *str, int len)
     if (core->stdout_is_redirected) {
         if (core->stdout_to_stderr)
             return errwrite(mem, str, len);
-        fout = core->fstdout2;
-    }
-    else if (core->stdout_fn) {
+        code = gp_fwrite(str, 1, len, core->fstdout2);
+        gp_fflush(core->fstdout2);
+    } else if (core->stdout_fn) {
         return (*core->stdout_fn)(core->caller_handle, str, len);
+    } else {
+        code = fwrite(str, 1, len, core->fstdout);
+        fflush(core->fstdout);
     }
-    else {
-        fout = core->fstdout;
-    }
-    code = fwrite(str, 1, len, fout);
-    fflush(fout);
     return code;
 }
 
@@ -406,7 +403,7 @@ void outflush(const gs_memory_t *mem)
                 fflush(core->fstderr);
         }
         else
-            fflush(core->fstdout2);
+            gp_fflush(core->fstdout2);
     }
     else if (!core->stdout_fn)
         fflush(core->fstdout);

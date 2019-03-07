@@ -207,43 +207,31 @@ gp_getenv_display(void)
 
 /* ------ Printer accessing ------ */
 
+extern gp_file *
+gp_fopen_unix(const gs_memory_t *mem, const char *fname, const char *mode, int pipe);
+
 /* Open a connection to a printer.  See gp.h for details. */
 FILE *
-gp_open_printer(const gs_memory_t *mem,
-                      char         fname[gp_file_name_sizeof],
-                      int          binary_mode)
+gp_open_printer_impl(gs_memory_t *mem,
+                     char         fname[gp_file_name_sizeof],
+                     int         *binary_mode,
+                     int          (**close)(FILE *))
 {
 #ifdef GS_NO_FILESYSTEM
     return NULL;
 #else
-    const char *fmode = (binary_mode ? "wb" : "w");
-
-    return (strlen(fname) == 0 ? 0 : gp_fopen(fname, fmode));
-#endif
-}
-FILE *
-gp_open_printer_64(const gs_memory_t *mem,
-                         char         fname[gp_file_name_sizeof],
-                         int          binary_mode)
-{
-#ifdef GS_NO_FILESYSTEM
-    return NULL;
-#else
-    const char *fmode = (binary_mode ? "wb" : "w");
-
-    return (strlen(fname) == 0 ? 0 : gp_fopen_64(fname, fmode));
+    const char *fmode = (*binary_mode ? "wb" : "w");
+    *close = fname[0] == '|' ? pclose : fclose;
+    return gp_fopen_impl(mem, fname, fmode);
 #endif
 }
 
 /* Close the connection to the printer. */
 void
-gp_close_printer(const gs_memory_t *mem, FILE * pfile, const char *fname)
+gp_close_printer(gp_file * pfile, const char *fname)
 {
 #ifndef GS_NO_FILESYSTEM
-    if (fname[0] == '|')
-        pclose(pfile);
-    else
-        fclose(pfile);
+    gp_fclose(pfile);
 #endif
 }
 

@@ -56,7 +56,7 @@ gp_set_file_binary(int prnfno, int binary)
 
 /* Set a file into binary or text mode. */
 int
-gp_setmode_binary(FILE * pfile, bool binary)
+gp_setmode_binary_impl(FILE * pfile, bool binary)
 {
     /* Use non-standard fileno that almost all NT compilers offer. */
 #if defined(__STDC__) && !defined(__WATCOMC__)

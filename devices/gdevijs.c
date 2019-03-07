@@ -849,7 +849,12 @@ gsijs_open(gx_device *dev)
         /* Note: dup() may not be portable to all interesting IJS
            platforms. In that case, this branch should be #ifdef'ed out.
         */
-        fd = dup(fileno(ijsdev->file));
+        FILE *file = gp_get_file(ijsdev->file);
+
+        if (file == NULL)
+            fd = -1;
+        else
+            fd = dup(fileno(file));
         if (fd < 0) {
             emprintf(ijsdev->memory, "dup() failed\n");
             return gs_note_error(gs_error_ioerror);

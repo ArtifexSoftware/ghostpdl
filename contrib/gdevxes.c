@@ -43,7 +43,7 @@ are compressed to an ascii count and a single character.
 
 /* Forward references */
 static int sixel_print_page(gx_device_printer *pdev,
-                             FILE *prn_stream, const char *init);
+                             gp_file *prn_stream, const char *init);
 
 /* The device descriptor */
 static dev_proc_output_page(sixel_output_page);
@@ -78,7 +78,7 @@ gx_device_printer gs_xes_device =
  "\033gw1;"
 
 static int
-xes_print_page(gx_device_printer *pdev, FILE *prn_stream)
+xes_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {
     return (sixel_print_page(pdev,prn_stream,XES_RESET));
 }
@@ -97,7 +97,7 @@ sixel_output_page(gx_device *pdev, int num_copies, int flush)
 
 /* Send the page to the printer. */
 static int
-sixel_print_page(gx_device_printer *pdev, FILE *prn_stream, const char *init)
+sixel_print_page(gx_device_printer *pdev, gp_file *prn_stream, const char *init)
 {
     byte *buf, *b, *end;
     byte last = '\0';
@@ -142,10 +142,10 @@ sixel_print_page(gx_device_printer *pdev, FILE *prn_stream, const char *init)
         right = min( line_size-1, left+width-1 );
         end = buf + right;		/* recompute EOL  */
 
-    fputs( init, prn_stream );
+    gp_fputs( init, prn_stream );
 
     /* Position and size graphics window */
-    fprintf( prn_stream, "%s%d,%d,%d,%d\n",
+    gp_fprintf( prn_stream, "%s%d,%d,%d,%d\n",
              XES_GRAPHICS,
              left*8, PAGE_LENGTH_PELS-top,
              width*8, height );
@@ -174,8 +174,8 @@ sixel_print_page(gx_device_printer *pdev, FILE *prn_stream, const char *init)
                 count++;
                 if (count==32767) {
                   run[gs_sprintf(run, "%d", count)]='\0';
-                  for (t=run; *t; t++)fputc( *t, prn_stream );
-                  fputc( last, prn_stream );
+                  for (t=run; *t; t++) gp_fputc( *t, prn_stream );
+                  gp_fputc( last, prn_stream );
                   last = '\0';
                   count = 0;
                   } /* end if count */
@@ -184,11 +184,11 @@ sixel_print_page(gx_device_printer *pdev, FILE *prn_stream, const char *init)
                   /* emit single character or run */
                   switch (count) {
                     case 0: break;
-                    case 1: fputc( last, prn_stream );
+                    case 1: gp_fputc( last, prn_stream );
                             break;
                     default:run[gs_sprintf(run, "%d", count)]='\0';
-                            for (t=run; *t; t++) fputc( *t, prn_stream );
-                            fputc( last, prn_stream );
+                            for (t=run; *t; t++) gp_fputc( *t, prn_stream );
+                            gp_fputc( last, prn_stream );
                             break;
                     } /* end switch */
                   last = tmp[l];
@@ -201,17 +201,17 @@ sixel_print_page(gx_device_printer *pdev, FILE *prn_stream, const char *init)
     /* Write final run */
     switch (count) {
       case 0: break;
-      case 1: fputc( last, prn_stream );
+      case 1: gp_fputc( last, prn_stream );
               break;
       default:run[gs_sprintf(run, "%d", count)]='\0';
-              for (t=run; *t; t++) fputc( *t, prn_stream );
-              fputc( last, prn_stream );
+              for (t=run; *t; t++) gp_fputc( *t, prn_stream );
+              gp_fputc( last, prn_stream );
               break;
       } /* end switch */
 
     /* Eject page and reset */
-    fprintf( prn_stream, "\f%s", XES_RESET );
-    fflush(prn_stream);
+    gp_fprintf( prn_stream, "\f%s", XES_RESET );
+    gp_fflush(prn_stream);
 
     gs_free(pdev->memory->non_gc_memory, (char *)buf, line_size, 1, "sixel_print_page");
 

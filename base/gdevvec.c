@@ -826,7 +826,7 @@ gdev_vector_update_clip_path(gx_device_vector * vdev,
 int
 gdev_vector_close_file(gx_device_vector * vdev)
 {
-    FILE *f = vdev->file;
+    gp_file *f = vdev->file;
     int err;
 
     if (vdev->dash_pattern) {
@@ -850,7 +850,7 @@ gdev_vector_close_file(gx_device_vector * vdev)
     }
     vdev->file = 0;
     if (f) {
-        err = ferror(f);
+        err = gp_ferror(f);
         /* We prevented sclose from closing the file. */
         if (gx_device_close_output_file((gx_device *)vdev, vdev->fname, f) != 0
                 || err != 0)

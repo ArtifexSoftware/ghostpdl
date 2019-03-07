@@ -292,13 +292,13 @@ tiff_set_gray_fields(gx_device_printer *pdev, TIFF *tif,
 }
 
 static int
-tiffgray_print_page(gx_device_printer * pdev, FILE * file)
+tiffgray_print_page(gx_device_printer * pdev, gp_file * file)
 {
     gx_device_tiff *const tfdev = (gx_device_tiff *)pdev;
     int code;
 
     if (tfdev->Compression==COMPRESSION_NONE &&
-        pdev->height > ((unsigned long) 0xFFFFFFFF - ftell(file))/(pdev->width)) /* note width is never 0 in print_page */
+        pdev->height > ((unsigned long) 0xFFFFFFFF - gp_ftell(file))/(pdev->width)) /* note width is never 0 in print_page */
         return_error(gs_error_rangecheck);  /* this will overflow 32 bits */
 
     code = gdev_tiff_begin_page(tfdev, file);
@@ -311,7 +311,7 @@ tiffgray_print_page(gx_device_printer * pdev, FILE * file)
 }
 
 static int
-tiffscaled_print_page(gx_device_printer * pdev, FILE * file)
+tiffscaled_print_page(gx_device_printer * pdev, gp_file * file)
 {
     gx_device_tiff *const tfdev = (gx_device_tiff *)pdev;
     int code;
@@ -334,7 +334,7 @@ tiffscaled_print_page(gx_device_printer * pdev, FILE * file)
 }
 
 static int
-tiffscaled8_print_page(gx_device_printer * pdev, FILE * file)
+tiffscaled8_print_page(gx_device_printer * pdev, gp_file * file)
 {
     gx_device_tiff *const tfdev = (gx_device_tiff *)pdev;
     int code;
@@ -393,7 +393,7 @@ tiff_set_rgb_fields(gx_device_tiff *tfdev)
 
 
 static int
-tiffscaled24_print_page(gx_device_printer * pdev, FILE * file)
+tiffscaled24_print_page(gx_device_printer * pdev, gp_file * file)
 {
     gx_device_tiff *const tfdev = (gx_device_tiff *)pdev;
     int code;
@@ -435,7 +435,7 @@ tiff_set_cmyk_fields(gx_device_printer *pdev, TIFF *tif,
 }
 
 static int
-tiffscaled32_print_page(gx_device_printer * pdev, FILE * file)
+tiffscaled32_print_page(gx_device_printer * pdev, gp_file * file)
 {
     gx_device_tiff *const tfdev = (gx_device_tiff *)pdev;
     int code;
@@ -465,7 +465,7 @@ tiffscaled32_print_page(gx_device_printer * pdev, FILE * file)
 }
 
 static int
-tiffscaled4_print_page(gx_device_printer * pdev, FILE * file)
+tiffscaled4_print_page(gx_device_printer * pdev, gp_file * file)
 {
     gx_device_tiff *const tfdev = (gx_device_tiff *)pdev;
     int code;
@@ -584,13 +584,13 @@ const gx_device_tiff gs_tiff64nc_device = {
 /* ------ Private functions ------ */
 
 static int
-tiffcmyk_print_page(gx_device_printer * pdev, FILE * file)
+tiffcmyk_print_page(gx_device_printer * pdev, gp_file * file)
 {
     gx_device_tiff *const tfdev = (gx_device_tiff *)pdev;
     int code;
 
     if (tfdev->Compression==COMPRESSION_NONE &&
-        pdev->height > ((unsigned long) 0xFFFFFFFF - ftell(file))/(pdev->width)) /* note width is never 0 in print_page */
+        pdev->height > ((unsigned long) 0xFFFFFFFF - gp_ftell(file))/(pdev->width)) /* note width is never 0 in print_page */
         return_error(gs_error_rangecheck);  /* this will overflow 32 bits */
 
     code = gdev_tiff_begin_page(tfdev, file);
@@ -634,7 +634,7 @@ static dev_proc_fill_path(sep1_fill_path);
     gx_device_common;\
     gx_prn_device_common;\
         /* tiff state for separation files */\
-    FILE *sep_file[GX_DEVICE_COLOR_MAX_COMPONENTS];\
+    gp_file *sep_file[GX_DEVICE_COLOR_MAX_COMPONENTS];\
     TIFF *tiff[GX_DEVICE_COLOR_MAX_COMPONENTS]; \
     bool  NoSeparationFiles;    /* true = no separation files created only a composite file */\
     bool  BigEndian;            /* true = big endian; false = little endian */\
@@ -656,7 +656,7 @@ static dev_proc_fill_path(sep1_fill_path);
  */
 typedef struct tiffsep_device_s {
     tiffsep_devices_common;
-    FILE *comp_file;            /* Underlying file for tiff_comp */
+    gp_file *comp_file;            /* Underlying file for tiff_comp */
     TIFF *tiff_comp;            /* tiff file for comp file */
     gsicc_link_t *icclink;      /* link profile if we are doing post rendering */
 } tiffsep_device;
@@ -2291,7 +2291,7 @@ print_cmyk_equivalent_colors(tiffsep_device *tfdev, int num_comp, cmyk_composite
  * MaxSeparations) are applied to the tiffsep device.
  */
 static int
-tiffsep_print_page(gx_device_printer * pdev, FILE * file)
+tiffsep_print_page(gx_device_printer * pdev, gp_file * file)
 {
     tiffsep_device * const tfdev = (tiffsep_device *)pdev;
     int num_std_colorants = tfdev->devn_params.num_std_colorant_names;
@@ -2346,7 +2346,7 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
     if (!tfdev->comp_file) {
         pdev->color_info.depth = dst_bpc*4;        /* Create directory for 32 bit cmyk */
         if (tfdev->Compression==COMPRESSION_NONE &&
-            height > ((unsigned long) 0xFFFFFFFF - (file ? ftell(file) : 0))/(width*4)) { /* note width is never 0 in print_page */
+            height > ((unsigned long) 0xFFFFFFFF - (file ? gp_ftell(file) : 0))/(width*4)) { /* note width is never 0 in print_page */
             dmprintf(pdev->memory, "CMYK composite file would be too large! Reduce resolution or enable compression.\n");
             return_error(gs_error_rangecheck);  /* this will overflow 32 bits */
         }
@@ -2424,7 +2424,7 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
             pdev->color_info.depth = dst_bpc;     /* Create files for 8 bit gray */
             pdev->color_info.num_components = 1;
             if (tfdev->Compression == COMPRESSION_NONE &&
-                height * 8 / dst_bpc > ((unsigned long)0xFFFFFFFF - (file ? ftell(file) : 0)) / width) /* note width is never 0 in print_page */
+                height * 8 / dst_bpc > ((unsigned long)0xFFFFFFFF - (file ? gp_ftell(file) : 0)) / width) /* note width is never 0 in print_page */
             {
                 code = gs_note_error(gs_error_rangecheck);  /* this will overflow 32 bits */
                 goto done;
@@ -2655,7 +2655,7 @@ done:
  * MaxSeparations) are applied to the tiffsep device.
  */
 static int
-tiffsep1_print_page(gx_device_printer * pdev, FILE * file)
+tiffsep1_print_page(gx_device_printer * pdev, gp_file * file)
 {
     tiffsep1_device * const tfdev = (tiffsep1_device *)pdev;
     int num_std_colorants = tfdev->devn_params.num_std_colorant_names;

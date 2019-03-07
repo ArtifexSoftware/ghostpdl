@@ -19,6 +19,12 @@
 #ifndef stdpre_INCLUDED
 #  define stdpre_INCLUDED
 
+/* We do not use FILE * as a rule. Instead we use gp_file * and
+ * gp_ prefixed versions of fgetc, fread, fwrite, fseek, ftell
+ * fclose, etc.
+ */
+typedef struct gp_file_s gp_file;
+
 /* if we define _LARGEFILE64_SOURCE zlib tries to include unistd.h */
 #ifndef _MSC_VER
 /* Ghostscript uses transitional LFS functions. */

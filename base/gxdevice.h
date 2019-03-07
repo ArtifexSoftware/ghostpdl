@@ -501,11 +501,11 @@ bool gx_outputfile_is_separate_pages(const char *fname, gs_memory_t *memory);
  */
 int gx_device_open_output_file(const gx_device * dev, char *fname,
                                bool binary, bool positionable,
-                               FILE ** pfile);
+                               gp_file ** pfile);
 
 /* Close the output file for a device. */
 int gx_device_close_output_file(const gx_device * dev, const char *fname,
-                                FILE *file);
+                                gp_file *file);
 
 /* Delete the current output file for a device (file must be closed first) */
 int gx_device_delete_output_file(const gx_device * dev, const char *fname);

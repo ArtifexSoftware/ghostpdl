@@ -294,7 +294,7 @@ cmykog_put_params(gx_device * pdev, gs_param_list * plist)
  * passed to every process_page function:
  */
 typedef struct cmykog_process_arg_s {
-  FILE *spot_file[GX_DEVICE_COLOR_MAX_COMPONENTS];
+  gp_file *spot_file[GX_DEVICE_COLOR_MAX_COMPONENTS];
   char spot_name[GX_DEVICE_COLOR_MAX_COMPONENTS][gp_file_name_sizeof];
   int dev_raster;
 } cmykog_process_arg_t;
@@ -551,11 +551,11 @@ cmykog_process(void *arg_, gx_device *dev_, gx_device *bdev, const gs_int_rect *
 }
 
 static void
-write_plane(FILE *file, byte *data, int w, int h, int raster)
+write_plane(gp_file *file, byte *data, int w, int h, int raster)
 {
 #ifndef NO_OUTPUT
   for (; h > 0; h--) {
-      fwrite(data, 1, w, file);
+      gp_fwrite(data, 1, w, file);
       data += raster;
   }
 #endif
@@ -573,7 +573,7 @@ static const char empty[64] = {
 };
 
 static void
-write_empty_plane(FILE *file, int w, int h)
+write_empty_plane(gp_file *file, int w, int h)
 {
 #ifndef NO_OUTPUT
   w *= h;
@@ -581,7 +581,7 @@ write_empty_plane(FILE *file, int w, int h)
     h = w;
     if (h > 64)
         h = 64;
-    fwrite(empty, 1, h, file);
+    gp_fwrite(empty, 1, h, file);
     w -= h;
   }
 #endif
@@ -616,7 +616,7 @@ cmykog_output(void *arg_, gx_device *dev_, void *buffer_)
 /* This, finally is the main entry point that triggers printing for the
  * device. */
 static int
-cmykog_print_page(gx_device_printer * pdev, FILE * prn_stream)
+cmykog_print_page(gx_device_printer * pdev, gp_file * prn_stream)
 {
   gx_device_cmykog * pdevn = (gx_device_cmykog *) pdev;
   int ncomp = pdevn->color_info.num_components;
@@ -686,10 +686,10 @@ cmykog_print_page(gx_device_printer * pdev, FILE * prn_stream)
     for (i = 1; i < ncomp; i++) {
       char tmp[4096];
       int n;
-      fseek(arg->spot_file[i], 0, SEEK_SET);
-      while (!feof(arg->spot_file[i])) {
-        n = fread(tmp, 1, 4096, arg->spot_file[i]);
-        fwrite(tmp, 1, n, prn_stream);
+      gp_fseek(arg->spot_file[i], 0, SEEK_SET);
+      while (!gp_feof(arg->spot_file[i])) {
+        n = gp_fread(tmp, 1, 4096, arg->spot_file[i]);
+        gp_fwrite(tmp, 1, n, prn_stream);
       }
     }
     /* If Ghostscript knows that all 6 planes aren't used, it may
@@ -705,7 +705,7 @@ prn_done:
     /* Close the temporary files. */
     for(i = 1; i < ncomp; i++) {
       if (arg->spot_file[i] != NULL)
-        fclose(arg->spot_file[i]);
+        gp_fclose(arg->spot_file[i]);
       if(arg->spot_name[i][0])
         unlink(arg->spot_name[i]);
     }

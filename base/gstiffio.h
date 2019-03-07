@@ -21,7 +21,7 @@
 #include "gdevprn.h"
 
 TIFF *
-tiff_from_filep(gx_device_printer *dev,  const char *name, FILE *filep, int big_endian, bool usebigtiff);
+tiff_from_filep(gx_device_printer *dev,  const char *name, gp_file *filep, int big_endian, bool usebigtiff);
 void tiff_set_handlers (void);
 
 #endif /* gstiffio_INCLUDED */

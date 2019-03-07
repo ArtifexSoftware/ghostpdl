@@ -39,14 +39,14 @@ typedef struct arg_source_s {
             gs_memory_t *memory;/* if non-0, free chars when done with it */
             const char *str;    /* string being read */
         } s;
-        FILE *file;
+        gp_file *file;
     } u;
 } arg_source;
 typedef struct arg_list_s {
     bool expand_ats;            /* if true, expand @-files */
-    FILE *(*arg_fopen) (const char *fname, void *fopen_data);
+    gp_file *(*arg_fopen) (const char *fname, void *fopen_data);
     void *fopen_data;
-    int (*get_codepoint)(FILE *file, const char **astr);
+    int (*get_codepoint)(gp_file *file, const char **astr);
     gs_memory_t *memory;
     const char **argp;
     int argn;
@@ -58,10 +58,12 @@ typedef struct arg_list_s {
 int codepoint_to_utf8(char *cstr, int rune);
 
 /* Initialize an arg list. */
-void arg_init(arg_list * pal, const char **argv, int argc,
-              FILE        *(*arg_fopen)(const char *fname, void *fopen_data),
+void arg_init(arg_list    *pal,
+              const char **argv,
+              int          argc,
+              gp_file     *(*arg_fopen)(const char *fname, void *fopen_data),
               void        *fopen_data,
-              int          (*get_codepoint)(FILE *file, const char **astr),
+              int          (*get_codepoint)(gp_file *file, const char **astr),
               gs_memory_t *mem);
 
 /*

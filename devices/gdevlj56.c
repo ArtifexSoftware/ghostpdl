@@ -106,7 +106,7 @@ ljet5_close(gx_device * pdev)
 
 /* Send the page to the printer.  For now, just send the whole image. */
 static int
-ljet5_print_page(gx_device_printer * pdev, FILE * prn_stream)
+ljet5_print_page(gx_device_printer * pdev, gp_file * prn_stream)
 {
     gs_memory_t *mem = pdev->memory;
     uint line_size = gdev_mem_bytes_per_scan_line((gx_device *) pdev);

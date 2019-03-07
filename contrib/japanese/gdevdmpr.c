@@ -41,7 +41,7 @@
 /* include library header. */
 #include "dviprlib.h"
 
-extern FILE *lib_fopen(const char *);
+extern gp_file *lib_fopen(const char *);
 
 #define LOCAL_DEBUG 0
 
@@ -90,7 +90,7 @@ static dev_proc_close_device(gdev_dmprt_close);
 static void gdev_dmprt_init_printer_props(gx_device_dmprt *);
 static int gdev_dmprt_get_printer_props(gx_device_dmprt *,char *);
 static int gdev_dmprt_check_code_props(byte * ,int );
-static FILE *gdev_dmprt_dviprt_lib_fopen(const char *,char *);
+static gp_file *gdev_dmprt_dviprt_lib_fopen(const char *,char *);
 
 static int gdev_dmprt_error_no_dviprt_to_gs(int );
 
@@ -672,7 +672,7 @@ gdev_dmprt_close(gx_device *pdev)
 
 /* Output the PAGE. */
 static int
-gdev_dmprt_print_page(gx_device_printer *pdev, FILE *prn_stream)
+gdev_dmprt_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {
   int code = 0;
   dviprt_print *pprint = &pddev->dmprt.prtinfo;
@@ -798,7 +798,7 @@ static int
 gdev_dmprt_get_printer_props(gx_device_dmprt *pdev,char *fnamebase)
 {
   int code;
-  FILE *fp;
+  gp_file *fp;
   dviprt_cfg_t cfg;
   char *fname;
 
@@ -839,10 +839,10 @@ gdev_dmprt_get_printer_props(gx_device_dmprt *pdev,char *fnamebase)
 }
 
 static const char * gp_file_name_concat_string(const char *, unsigned);
-static FILE *
+static gp_file *
 gdev_dmprt_dviprt_lib_fopen(const char *fnamebase,char *fname)
 {
-  FILE *fp;
+  gp_file *fp;
   char *env;
 
   strcpy(fname,fnamebase);

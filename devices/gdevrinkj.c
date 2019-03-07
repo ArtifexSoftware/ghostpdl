@@ -795,7 +795,7 @@ struct rinkj_lutchain_s {
 };
 
 static int
-rinkj_add_lut(rinkj_device *rdev, rinkj_lutset *lutset, char plane, FILE *f)
+rinkj_add_lut(rinkj_device *rdev, rinkj_lutset *lutset, char plane, gp_file *f)
 {
     char linebuf[256];
     rinkj_lutchain *chain;
@@ -811,7 +811,7 @@ rinkj_add_lut(rinkj_device *rdev, rinkj_lutset *lutset, char plane, FILE *f)
         return -1;
     pp = &lutset->lut[plane_ix];
 
-    if (fgets(linebuf, sizeof(linebuf), f) == NULL)
+    if (gp_fgets(linebuf, sizeof(linebuf), f) == NULL)
         return -1;
     if (sscanf(linebuf, "%d", &n_graph) != 1)
         return -1;
@@ -825,7 +825,7 @@ rinkj_add_lut(rinkj_device *rdev, rinkj_lutset *lutset, char plane, FILE *f)
     for (i = 0; i < n_graph; i++) {
         double x, y;
 
-        if (fgets(linebuf, sizeof(linebuf), f) == NULL)
+        if (gp_fgets(linebuf, sizeof(linebuf), f) == NULL)
             return -1;
         if (sscanf(linebuf, "%lf %lf", &y, &x) != 2)
             return -1;
@@ -868,7 +868,7 @@ rinkj_set_luts(rinkj_device *rdev,
                RinkjDevice *printer_dev, RinkjDevice *cmyk_dev,
                const char *config_fn, const RinkjDeviceParams *params)
 {
-    FILE *f = gp_fopen(config_fn, "r");
+  gp_file *f = gp_fopen(rdev->memory, config_fn, "r");
     char linebuf[256];
     char key[256];
     char *val;
@@ -880,7 +880,7 @@ rinkj_set_luts(rinkj_device *rdev,
         lutset.lut[i] = NULL;
     }
     for (;;) {
-        if (fgets(linebuf, sizeof(linebuf), f) == NULL)
+        if (gp_fgets(linebuf, sizeof(linebuf), f) == NULL)
             break;
         for (i = 0; linebuf[i]; i++)
             if (linebuf[i] == ':') break;
@@ -902,7 +902,7 @@ rinkj_set_luts(rinkj_device *rdev,
         }
     }
 
-    fclose(f);
+    gp_fclose(f);
 
     rinkj_apply_luts(rdev, cmyk_dev, &lutset);
     /* todo: free lutset contents */
@@ -911,7 +911,7 @@ rinkj_set_luts(rinkj_device *rdev,
 }
 
 static RinkjDevice *
-rinkj_init(rinkj_device *rdev, FILE *file)
+rinkj_init(rinkj_device *rdev, gp_file *file)
 {
     RinkjByteStream *bs;
     RinkjDevice *epson_dev;
@@ -1124,7 +1124,7 @@ rinkj_write_image_data(gx_device_printer *pdev, RinkjDevice *cmyk_dev)
 }
 
 static int
-rinkj_print_page(gx_device_printer *pdev, FILE *file)
+rinkj_print_page(gx_device_printer *pdev, gp_file *file)
 {
     rinkj_device *rdev = (rinkj_device *)pdev;
     int code = 0;

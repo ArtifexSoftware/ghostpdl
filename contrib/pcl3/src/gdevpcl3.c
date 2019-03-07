@@ -1450,7 +1450,7 @@ static int pcl3_close_device(gx_device *device)
       return_error(gs_error_ioerror);   /* actually any environment error */ \
     }
 
-static int pcl3_print_page(gx_device_printer *device, FILE *out)
+static int pcl3_print_page(gx_device_printer *device, gp_file *out)
 {
   int
     blank_lines,

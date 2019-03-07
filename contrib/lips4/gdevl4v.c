@@ -1506,12 +1506,12 @@ lips4v_close(gx_device * dev)
 {
     gx_device_vector *const vdev = (gx_device_vector *) dev;
     gx_device_lips4v *const pdev = (gx_device_lips4v *) dev;
-    FILE *f = vdev->file;
+    gp_file *f = vdev->file;
 
-    fprintf(f, "%c0J%c", LIPS_DCS, LIPS_ST);
+    gp_fprintf(f, "%c0J%c", LIPS_DCS, LIPS_ST);
     if (pdev->pjl) {
-        fprintf(f, "%c%%-12345X@PJL SET LPARM : LIPS SW2 = OFF\n", LIPS_ESC);
-        fprintf(f,
+        gp_fprintf(f, "%c%%-12345X@PJL SET LPARM : LIPS SW2 = OFF\n", LIPS_ESC);
+        gp_fprintf(f,
                 "%c%%-12345X%c%%-12345X@PJL EOJ\n"
                 "%c%%-12345X", LIPS_ESC, LIPS_ESC, LIPS_ESC);
     }

@@ -33,6 +33,8 @@ int dummy;
 #include <unistd.h>
 #include <fcntl.h>
 
+#include "gp.h"
+
 /* Specific headers */
 #include "pagecount.h"
 
@@ -53,7 +55,7 @@ int dummy;
 
 ******************************************************************************/
 
-static int lock_file(const char *filename, FILE *f, int lock_type)
+static int lock_file(const char *filename, gp_file *f, int lock_type)
 {
   int
     fd,
@@ -62,11 +64,11 @@ static int lock_file(const char *filename, FILE *f, int lock_type)
   struct flock cmd;
 
   /* Obtain file descriptor */
-  fd = fileno(f);
+  fd = fileno(gp_get_file(f));
   if (fd == -1) {
     fprintf(stderr, ERRPREFIX "Cannot obtain file descriptor (%s).\n",
       strerror(errno));
-    fclose(f);
+    gp_fclose(f);
     return -1;
   }
 
@@ -98,13 +100,24 @@ static int lock_file(const char *filename, FILE *f, int lock_type)
 
 ******************************************************************************/
 
-static int read_count(const char *filename, FILE *f, unsigned long *count)
+static int read_count(const gs_memory_t *mem, const char *filename, gp_file *f, unsigned long *count)
 {
-  if (fscanf(f, "%lu\n", count) != 1) {
-    if (feof(f) && !ferror(f)) *count = 0;	/* Empty file */
+  char text[32];
+  char *t = text;
+  while (t-text < sizeof(text)-1) {
+    int c = gp_fgetc(f);
+    if (c < '0' || c > '9') {
+      if (c < 0 || t != text)
+        break;
+    } else
+      *t++ = c;
+  }
+  *t++ = 0;
+  if (sscanf(text, "%lu", count) != 1) {
+    if (gp_feof(f) && !gp_ferror(f)) *count = 0;	/* Empty file */
     else {
-      fprintf(stderr, ERRPREFIX "Strange contents in page count file `%s'.\n",
-        filename);
+      errprintf(mem, ERRPREFIX "Strange contents in page count file `%s'.\n",
+                filename);
       return -1;
     }
   }
@@ -124,9 +137,9 @@ static int read_count(const char *filename, FILE *f, unsigned long *count)
 
 ******************************************************************************/
 
-int pcf_getcount(const char *filename, unsigned long *count)
+int pcf_getcount(const gs_memory_t *mem, const char *filename, unsigned long *count)
 {
-  FILE *f;
+  gp_file *f;
 
   /* Should we use a page count file? */
   if (filename == NULL || *filename == '\0') return 0;
@@ -138,26 +151,26 @@ int pcf_getcount(const char *filename, unsigned long *count)
   }
 
   /* Open the file */
-  if ((f = fopen(filename, "r")) == NULL) {
-    fprintf(stderr, ERRPREFIX "Cannot open page count file `%s': %s.\n",
-      filename, strerror(errno));
+  if ((f = gp_fopen(mem, filename, "r")) == NULL) {
+    errprintf(mem, ERRPREFIX "Cannot open page count file `%s': %s.\n",
+      filename, strerror(gp_ferror(f)));
     return -1;
   }
 
   /* Lock the file for reading (shared lock) */
   if (lock_file(filename, f, F_RDLCK) != 0) {
-    fclose(f);
+    gp_fclose(f);
     return 1;
   }
 
   /* Read the contents */
-  if (read_count(filename, f, count) != 0) {
-    fclose(f);
+  if (read_count(mem, filename, f, count) != 0) {
+    gp_fclose(f);
     return -1;
   }
 
   /* Close the file, releasing the lock */
-  fclose(f);
+  gp_fclose(f);
 
   return 0;
 }
@@ -175,9 +188,9 @@ int pcf_getcount(const char *filename, unsigned long *count)
 
 ******************************************************************************/
 
-int pcf_inccount(const char *filename, unsigned long by)
+int pcf_inccount(const gs_memory_t *mem, const char *filename, unsigned long by)
 {
-  FILE *f;
+  gp_file *f;
   int rc;
   unsigned long count;
 
@@ -191,63 +204,63 @@ int pcf_inccount(const char *filename, unsigned long by)
      being valid. This is, however, anyway necessary because of the fopen() and
      fcntl() calls being not in one transaction.
   */
-  if ((f = fopen(filename, "a+")) == NULL) {
-    fprintf(stderr, ERRPREFIX "Cannot open page count file `%s': %s.\n",
-      filename, strerror(errno));
+  if ((f = gp_fopen(mem, filename, "a+")) == NULL) {
+    errprintf(mem, ERRPREFIX "Cannot open page count file `%s': %s.\n",
+      filename, strerror(gp_ferror(f)));
     return 1;
   }
 
   /* Lock the file for writing (exclusively) */
   if (lock_file(filename, f, F_WRLCK) != 0) {
-    fclose(f);
+    gp_fclose(f);
     return 1;
   }
 
   /* Reposition on the beginning. fopen() with "a" as above opens the file at
      EOF. */
-  if (fseek(f, 0L, SEEK_SET) != 0) {
-    fprintf(stderr, ERRPREFIX "fseek() failed on `%s': %s.\n",
-      filename, strerror(errno));
-    fclose(f);
+  if (gp_fseek(f, 0L, SEEK_SET) != 0) {
+    errprintf(mem, ERRPREFIX "fseek() failed on `%s': %s.\n",
+      filename, strerror(gp_ferror(f)));
+    gp_fclose(f);
     return 1;
   }
 
   /* Read the contents */
-  if (read_count(filename, f, &count) != 0) {
-    fclose(f);
+  if (read_count(mem, filename, f, &count) != 0) {
+    gp_fclose(f);
     return -1;
   }
 
   /* Rewrite the file */
   rc = 0;
   {
-    FILE *f1 = fopen(filename, "w");
+    gp_file *f1 = gp_fopen(mem, filename, "w");
 
     if (f1 == NULL) {
-      fprintf(stderr, ERRPREFIX
+      errprintf(mem, ERRPREFIX
         "Error opening page count file `%s' a second time: %s.\n",
-        filename, strerror(errno));
+        filename, strerror(gp_ferror(f1)));
       rc = 1;
     }
     else {
-      if (fprintf(f1, "%lu\n", count + by) < 0) {
-        fprintf(stderr, ERRPREFIX "Error writing to `%s': %s.\n",
-          filename, strerror(errno));
+      if (gp_fprintf(f1, "%lu\n", count + by) < 0) {
+        errprintf(mem, ERRPREFIX "Error writing to `%s': %s.\n",
+          filename, strerror(gp_ferror(f1)));
         rc = -1;
       }
-      if (fclose(f1) != 0) {
-        fprintf(stderr,
+      if (gp_fclose(f1) != 0) {
+        errprintf(mem,
           ERRPREFIX "Error closing `%s' after writing: %s.\n",
-          filename, strerror(errno));
+          filename, strerror(gp_ferror(f1)));
         rc = -1;
       }
     }
   }
 
   /* Close the file (this releases the lock) */
-  if (fclose(f) != 0)
-    fprintf(stderr, WARNPREFIX "Error closing `%s': %s.\n",
-      filename, strerror(errno));
+  if (gp_fclose(f) != 0)
+    errprintf(mem, WARNPREFIX "Error closing `%s': %s.\n",
+      filename, strerror(gp_ferror(f)));
 
   return rc;
 }

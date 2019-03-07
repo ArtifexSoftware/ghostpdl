@@ -175,7 +175,7 @@ xps_decode_jpegxr_alpha_block(jxr_image_t image, int mx, int my, int *data)
 int
 xps_decode_jpegxr(xps_context_t *ctx, byte *buf, int len, xps_image_t *output)
 {
-    FILE *file;
+    gp_file *file;
     char *name = xps_alloc(ctx, gp_file_name_sizeof);
     struct state state;
     jxr_container_t container;
@@ -194,7 +194,7 @@ xps_decode_jpegxr(xps_context_t *ctx, byte *buf, int len, xps_image_t *output)
         xps_free(ctx, name);
         return gs_throw(gs_error_invalidfileaccess, "cannot open scratch file");
     }
-    rc = fwrite(buf, 1, len, file);
+    rc = gp_fwrite(buf, 1, len, file);
     if (rc != len) {
         xps_free(ctx, name);
         return gs_throw(gs_error_invalidfileaccess, "cannot write to scratch file");
@@ -202,7 +202,7 @@ xps_decode_jpegxr(xps_context_t *ctx, byte *buf, int len, xps_image_t *output)
     xps_fseek(file, 0, SEEK_SET);
 
     container = jxr_create_container();
-    rc = jxr_read_image_container(container, file);
+    rc = jxr_read_image_container(container, gp_get_file(file));
     if (rc < 0) {
         xps_free(ctx, name);
         jxr_destroy_container(container);
@@ -233,7 +233,7 @@ xps_decode_jpegxr(xps_context_t *ctx, byte *buf, int len, xps_image_t *output)
     jxr_set_user_data(image, &state);
 
     xps_fseek(file, offset, SEEK_SET);
-    rc = jxr_read_image_bitstream(image, file);
+    rc = jxr_read_image_bitstream(image, gp_get_file(file));
     if (rc < 0) {
         xps_free(ctx, name);
         jxr_destroy_container(container);
@@ -262,7 +262,7 @@ xps_decode_jpegxr(xps_context_t *ctx, byte *buf, int len, xps_image_t *output)
         jxr_set_user_data(image, &state);
 
         xps_fseek(file, alpha_offset, SEEK_SET);
-        rc = jxr_read_image_bitstream(image, file);
+        rc = jxr_read_image_bitstream(image, gp_get_file(file));
         if (rc < 0) {
             xps_free(ctx, name);
             jxr_destroy_container(container);
@@ -274,7 +274,7 @@ xps_decode_jpegxr(xps_context_t *ctx, byte *buf, int len, xps_image_t *output)
 
     jxr_destroy_container(container);
 
-    fclose(file);
+    gp_fclose(file);
     unlink(name);
     xps_free(ctx, name);
 

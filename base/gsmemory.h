@@ -351,7 +351,7 @@ typedef struct gs_memory_procs_s {
     3) rpp is valid, and *rpp is valid:
        The caller has supplied the root, so use it.
 
-    Scenario 1 is a root that will last until the memory mamanger is
+    Scenario 1 is a root that will last until the memory manager is
     shutdown. 2 & 3 allow the root to be unregistered by the caller.
 */
 

@@ -35,7 +35,7 @@
 #include "gdevprn.h"
 
 static int
-cov_write_page(gx_device_printer *pdev, FILE *file)
+cov_write_page(gx_device_printer *pdev, gp_file *file)
 {
     int code = 0;
     int raster = gdev_prn_raster(pdev);
@@ -76,16 +76,16 @@ cov_write_page(gx_device_printer *pdev, FILE *file)
 	    }
 
         
-        if (IS_LIBCTX_STDOUT(pdev->memory, file)) {
+        if (IS_LIBCTX_STDOUT(pdev->memory, gp_get_file(file))) {
             outprintf(pdev->memory, "%8.5f %8.5f %8.5f %8.5f CMYK %s\n",
                 c, m, y, k, code ? "ERROR" : "OK");
         }
-        else if (IS_LIBCTX_STDERR(pdev->memory, file)) {
+        else if (IS_LIBCTX_STDERR(pdev->memory, gp_get_file(file))) {
             errprintf(pdev->memory, "%8.5f %8.5f %8.5f %8.5f CMYK %s\n",
                 c, m, y, k, code ? "ERROR" : "OK");
         }
         else {
-            fprintf (file, "%8.5f %8.5f %8.5f %8.5f CMYK %s\n",
+            gp_fprintf (file, "%8.5f %8.5f %8.5f %8.5f CMYK %s\n",
                 c, m, y, k, code ? "ERROR" : "OK");
         }
     }
@@ -95,7 +95,7 @@ cov_write_page(gx_device_printer *pdev, FILE *file)
 
 /*  cov_write_page2 gave ink coverage values not ratecoverage */
 
-static int cov_write_page_ink(gx_device_printer *pdev, FILE *file)
+static int cov_write_page_ink(gx_device_printer *pdev, gp_file *file)
 {
     int code = 0;
     int raster = gdev_prn_raster(pdev);
@@ -145,16 +145,16 @@ static int cov_write_page_ink(gx_device_printer *pdev, FILE *file)
             k = (dk_pix*100) / (total_pix*255);
         }
 
-        if (IS_LIBCTX_STDOUT(pdev->memory, file)) {
+        if (IS_LIBCTX_STDOUT(pdev->memory, gp_get_file(file))) {
             outprintf(pdev->memory, "%8.5f %8.5f %8.5f %8.5f CMYK %s\n",
                 c, m, y, k, code ? "ERROR" : "OK");
         }
-        else if (IS_LIBCTX_STDERR(pdev->memory, file)) {
+        else if (IS_LIBCTX_STDERR(pdev->memory, gp_get_file(file))) {
             errprintf(pdev->memory, "%8.5f %8.5f %8.5f %8.5f CMYK %s\n",
                 c, m, y, k, code ? "ERROR" : "OK");
         }
         else {
-            fprintf (file, "%8.5f %8.5f %8.5f %8.5f CMYK %s\n",
+            gp_fprintf (file, "%8.5f %8.5f %8.5f %8.5f CMYK %s\n",
                 c, m, y, k, code ? "ERROR" : "OK");
         }
     }

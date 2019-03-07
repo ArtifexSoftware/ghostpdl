@@ -1132,8 +1132,8 @@ gdev_prn_output_page_aux(gx_device * pdev, int num_copies, int flush, bool seeka
                 /* Print the accumulated page description. */
                 outcode = (*ppdev->printer_procs.print_page_copies)(ppdev, ppdev->file,
                                                           num_copies);
-                fflush(ppdev->file);
-                errcode = (ferror(ppdev->file) ? gs_note_error(gs_error_ioerror) : 0);
+                gp_fflush(ppdev->file);
+                errcode = (gp_ferror(ppdev->file) ? gs_note_error(gs_error_ioerror) : 0);
                 /* NB: background printing does this differently in its thread */
                 closecode = gdev_prn_close_printer(pdev);
 
@@ -1189,14 +1189,14 @@ gdev_prn_bg_output_page_seekable(gx_device * pdev, int num_copies, int flush)
 
 /* Print a single copy of a page by calling print_page_copies. */
 int
-gx_print_page_single_copy(gx_device_printer * pdev, FILE * prn_stream)
+gx_print_page_single_copy(gx_device_printer * pdev, gp_file * prn_stream)
 {
     return pdev->printer_procs.print_page_copies(pdev, prn_stream, 1);
 }
 
 /* Print multiple copies of a page by calling print_page multiple times. */
 int
-gx_default_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
+gx_default_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream,
                              int num_copies)
 {
     int i = 1;
@@ -1213,9 +1213,9 @@ gx_default_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
          * right thing if we're producing multiple output files.
          * Code is mostly copied from gdev_prn_output_page.
          */
-        fflush(pdev->file);
+        gp_fflush(pdev->file);
         errcode =
-            (ferror(pdev->file) ? gs_note_error(gs_error_ioerror) : 0);
+            (gp_ferror(pdev->file) ? gs_note_error(gs_error_ioerror) : 0);
         closecode = gdev_prn_close_printer((gx_device *)pdev);
         pdev->PageCount++;
         code = (errcode < 0 ? errcode : closecode < 0 ? closecode :
@@ -1246,9 +1246,9 @@ prn_print_page_in_background(void *data)
 
     code = (*ppdev->printer_procs.print_page_copies)(ppdev, ppdev->file,
                                                           num_copies);
-    fflush(ppdev->file);
+    gp_fflush(ppdev->file);
 
-    errcode = (ferror(ppdev->file) ? gs_note_error(gs_error_ioerror) : 0);
+    errcode = (gp_ferror(ppdev->file) ? gs_note_error(gs_error_ioerror) : 0);
     bg_print->return_code = code < 0 ? code : errcode;
 
     /* Finally, release the foreground that may be waiting */
@@ -1331,8 +1331,8 @@ gdev_prn_open_printer_seekable(gx_device *pdev, bool binary_mode,
 
         if (seekable && !gp_fseekable(ppdev->file)) {
             errprintf(pdev->memory, "I/O Error: Output File \"%s\" must be seekable\n", ppdev->fname);
-            if (!IS_LIBCTX_STDOUT(pdev->memory, ppdev->file)
-              && !IS_LIBCTX_STDERR(pdev->memory ,ppdev->file)) {
+            if (!IS_LIBCTX_STDOUT(pdev->memory, gp_get_file(ppdev->file))
+              && !IS_LIBCTX_STDERR(pdev->memory, gp_get_file(ppdev->file))) {
 
                 code = gx_device_close_output_file(pdev, ppdev->fname, ppdev->file);
                 if (code < 0)

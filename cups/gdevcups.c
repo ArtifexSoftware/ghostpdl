@@ -248,7 +248,7 @@ private dev_proc_get_initial_matrix(cups_get_matrix);
 private int cups_get_params(gx_device *, gs_param_list *);
 private dev_proc_open_device(cups_open);
 private dev_proc_output_page(cups_output_page);
-private int cups_print_pages(gx_device_printer *, FILE *, int);
+private int cups_print_pages(gx_device_printer *, gp_file *, int);
 private int cups_put_params(gx_device *, gs_param_list *);
 private int cups_set_color_info(gx_device *);
 private dev_proc_sync_output(cups_sync_output);
@@ -2891,7 +2891,7 @@ cups_output_page(gx_device *pdev, int num_copies, int flush)
 private int				/* O - 0 if everything is OK */
 cups_print_pages(gx_device_printer *pdev,
 					/* I - Device info */
-                 FILE              *fp,	/* I - Output file */
+                 gp_file           *fp,	/* I - Output file */
 		 int               num_copies)
 					/* I - Number of copies */
 {
@@ -2994,7 +2994,7 @@ cups_print_pages(gx_device_printer *pdev,
        contain the new code needed for PWG Raster output. This conditional
        is a temporary workaround for the time being until up-to-date CUPS
        libraries get included. */
-    if ((cups->stream = cupsRasterOpen(fileno(cups->file),
+    if ((cups->stream = cupsRasterOpen(fileno(gp_get_file(cups->file)),
 #if defined(CUPS_RASTER_HAVE_PWGRASTER)
                                        (strcasecmp(cups->header.MediaClass,
 						   "PwgRaster") == 0 ?

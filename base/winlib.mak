@@ -184,7 +184,7 @@ $(gconfig__h): $(TOP_MAKEFILES)
 # The Windows Win32 platform
 
 mswin32__=$(GLOBJ)gp_mswin.$(OBJ) $(GLOBJ)gp_wgetv.$(OBJ) $(GLOBJ)gp_wpapr.$(OBJ) \
- $(GLOBJ)gp_stdia.$(OBJ) $(GLOBJ)gp_wutf8.$(OBJ)
+ $(GLOBJ)gp_stdia.$(OBJ) $(GLOBJ)gp_wutf8.$(OBJ) $(GLOBJ)gp_winfs.$(OBJ)
 mswin32_inc=$(GLD)nosync.dev $(GLD)winplat.dev
 
 $(GLGEN)mswin32_.dev:  $(mswin32__) $(ECHOGS_XE) $(mswin32_inc) $(WINLIB_MAK)
@@ -197,6 +197,21 @@ $(GLOBJ)gp_mswin.$(OBJ): $(GLSRC)gp_mswin.c $(AK) $(gp_mswin_h) \
  $(gx_h) $(gp_h) $(gpcheck_h) $(gpmisc_h) $(gserrors_h) $(gsexit_h) \
  $(WINLIB_MAK)
 	$(GLCCWIN) $(GLO_)gp_mswin.$(OBJ) $(C_) $(GLSRC)gp_mswin.c
+
+$(GLOBJ)gp_winfs.$(OBJ): $(GLSRC)gp_winfs.c $(AK) $(gp_mswin_h) \
+ $(memory__h) $(stdio__h) $(windows__h) $(gp_h) $(gserrors_h) \
+ $(WINLIB_MAK)
+	$(GLCCWIN) $(GLO_)gp_winfs.$(OBJ) $(C_) $(GLSRC)gp_winfs.c
+
+$(AUX)gp_winfs.$(OBJ): $(GLSRC)gp_winfs.c $(AK) $(gp_mswin_h) \
+ $(memory__h) $(stdio__h) $(windows__h) $(gp_h) $(gserrors_h) \
+ $(WINLIB_MAK)
+	$(GLCCAUX) $(AUXO_)gp_winfs.$(OBJ) $(C_) $(GLSRC)gp_winfs.c
+
+$(AUX)gp_winfs2.$(OBJ): $(GLSRC)gp_winfs2.c $(AK) $(gp_mswin_h) \
+ $(memory__h) $(stdio__h) $(windows__h) $(gp_h) $(gserrors_h) \
+ $(WINLIB_MAK)
+	$(GLCCAUX) $(AUXO_)gp_winfs2.$(OBJ) $(C_) $(GLSRC)gp_winfs2.c
 
 $(GLOBJ)gp_wutf8.$(OBJ): $(GLSRC)gp_wutf8.c $(windows__h) $(WINLIB_MAK)
 	$(GLCCWIN) $(GLO_)gp_wutf8.$(OBJ) $(C_) $(GLSRC)gp_wutf8.c

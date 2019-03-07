@@ -74,7 +74,7 @@ gdev_t4693d_map_color_rgb(gx_device *dev, gx_color_index color, ushort prgb[3])
 }
 
 static int
-t4693d_print_page(gx_device_printer *dev, FILE *ps_stream)
+t4693d_print_page(gx_device_printer *dev, gp_file *ps_stream)
 {
         char header[32];
         int depth = prn_dev->color_info.depth;
@@ -119,7 +119,7 @@ t4693d_print_page(gx_device_printer *dev, FILE *ps_stream)
         *p++ = ((checksum%128)&0x7f) | 0x80;
         *p = 0x02; /* end of line. */
         /* write header */
-        if (fwrite(header,1,22,ps_stream) != 22) {
+        if (gp_fwrite(header,1,22,ps_stream) != 22) {
                 errprintf(dev->memory, "Could not write header (t4693d).\n");
                 gs_free(dev->memory, data, line_size, 1, "t4693d_print_page");
                 return_error(gs_error_ioerror);
@@ -151,7 +151,7 @@ t4693d_print_page(gx_device_printer *dev, FILE *ps_stream)
                                 return_error(gs_error_rangecheck);
                         }
 
-                        if (fwrite(&data[i],1,data_size,ps_stream) != data_size) {
+                        if (gp_fwrite(&data[i],1,data_size,ps_stream) != data_size) {
                                 errprintf(dev->memory,"Could not write pixel (t4693d).\n");
                                 gs_free(dev->memory, data, line_size, 1, "t4693d_print_page");
                                 return_error(gs_error_ioerror);
@@ -159,7 +159,7 @@ t4693d_print_page(gx_device_printer *dev, FILE *ps_stream)
 
                 }
 
-                if (fputc(0x02,ps_stream) != 0x02) {
+                if (gp_fputc(0x02,ps_stream) != 0x02) {
                         errprintf(dev->memory,"Could not write EOL (t4693d).\n");
                         gs_free(dev->memory, data, line_size, 1, "t4693d_print_page");
                         return_error(gs_error_ioerror);
@@ -167,7 +167,7 @@ t4693d_print_page(gx_device_printer *dev, FILE *ps_stream)
 
         }
 
-        if (fputc(0x01,ps_stream) != 0x01) {
+        if (gp_fputc(0x01,ps_stream) != 0x01) {
                 errprintf(dev->memory,"Could not write EOT (t4693d).\n");
                 gs_free(dev->memory, data, line_size, 1, "t4693d_print_page");
                 return_error(gs_error_ioerror);

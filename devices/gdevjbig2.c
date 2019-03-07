@@ -51,7 +51,7 @@ prn_device(prn_bg_procs, "jbig2",	/* The print_page proc is compatible with allo
 
 /* Send the page to the file. */
 static int
-jbig2_print_page(gx_device_printer * pdev, FILE * prn_stream)
+jbig2_print_page(gx_device_printer * pdev, gp_file * prn_stream)
 {
     gx_device_jbig2 *jdev = (gx_device_jbig2 *) pdev;
     gs_memory_t *mem = jdev->memory;

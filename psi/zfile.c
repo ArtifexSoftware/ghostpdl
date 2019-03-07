@@ -734,7 +734,7 @@ ztempfile(i_ctx_t *i_ctx_p)
     char *prefix = NULL;
     char *fname= NULL;
     uint fnlen;
-    FILE *sfile;
+    gp_file *sfile;
     stream *s;
     byte *buf, *sbody;
 
@@ -1211,12 +1211,12 @@ lib_file_open(gs_file_path_ptr  lib_path, const gs_memory_t *mem, i_ctx_t *i_ctx
 }
 
 /* The startup code calls this to open @-files. */
-FILE *
+gp_file *
 lib_fopen(const gs_file_path_ptr pfpath, const gs_memory_t *mem, const char *fname)
 {
     /* We need a buffer to hold the expanded file name. */
     char filename_found[DEFAULT_BUFFER_SIZE];
-    FILE *file = NULL;
+    gp_file *file = NULL;
     uint fnamelen;
     ref obj;
     int code;

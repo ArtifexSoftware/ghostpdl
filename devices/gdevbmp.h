@@ -25,10 +25,10 @@
 #define Y_DPI 72
 
 /* Write the BMP file header.  This procedure is used for all formats. */
-int write_bmp_header(gx_device_printer *pdev, FILE *file);
+int write_bmp_header(gx_device_printer *pdev, gp_file *file);
 
 /* Write a BMP header for separated CMYK output. */
-int write_bmp_separated_header(gx_device_printer *pdev, FILE *file);
+int write_bmp_separated_header(gx_device_printer *pdev, gp_file *file);
 
 /* 24-bit color mappers */
 dev_proc_map_rgb_color(bmp_map_16m_rgb_color);

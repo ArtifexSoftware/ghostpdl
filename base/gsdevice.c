@@ -1191,10 +1191,16 @@ done:
     return(code);
 }
 
+static int
+noclose(FILE *f)
+{
+    return 0;
+}
+
 /* Open the output file for a device. */
 int
 gx_device_open_output_file(const gx_device * dev, char *fname,
-                           bool binary, bool positionable, FILE ** pfile)
+                           bool binary, bool positionable, gp_file ** pfile)
 {
     gs_parsed_file_name_t parsed;
     const char *fmt;
@@ -1221,7 +1227,12 @@ gx_device_open_output_file(const gx_device * dev, char *fname,
             code = gs_note_error(gs_error_undefinedfilename);
 	    goto done;
 	}
-        *pfile = dev->memory->gs_lib_ctx->core->fstdout;
+        *pfile = gp_file_FILE_alloc(dev->memory);
+        if (*pfile == NULL) {
+            code = gs_note_error(gs_error_VMerror);
+            goto done;
+        }
+        gp_file_FILE_set(*pfile, dev->memory->gs_lib_ctx->core->fstdout, noclose);
         /* Force stdout to binary. */
         code = gp_setmode_binary(*pfile, true);
 	goto done;
@@ -1257,7 +1268,7 @@ gx_device_open_output_file(const gx_device * dev, char *fname,
         if (positionable)
             strcat(fmode, "+");
         code = parsed.iodev->procs.gp_fopen(parsed.iodev, parsed.fname, fmode,
-                                         pfile, NULL, 0);
+                                            pfile, NULL, 0, dev->memory);
         if (code)
             emprintf1(dev->memory,
                       "**** Could not open the file %s .\n",
@@ -1281,7 +1292,7 @@ done:
 /* Close the output file for a device. */
 int
 gx_device_close_output_file(const gx_device * dev, const char *fname,
-                            FILE *file)
+                            gp_file *file)
 {
     gs_parsed_file_name_t parsed;
     const char *fmt;
@@ -1297,7 +1308,7 @@ gx_device_close_output_file(const gx_device * dev, const char *fname,
         if (parsed.iodev != iodev_default(dev->memory))
             return parsed.iodev->procs.fclose(parsed.iodev, file);
     }
-    gp_close_printer(dev->memory, file, (parsed.fname ? parsed.fname : fname));
+    gp_close_printer(file, (parsed.fname ? parsed.fname : fname));
     return 0;
 }
 

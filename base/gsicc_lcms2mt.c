@@ -342,7 +342,7 @@ gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
     cmsContext ctx = gs_lib_ctx_get_cms_context(icclink->memory);
 
 #if DUMP_CMS_BUFFER
-    FILE *fid_in, *fid_out;
+    gp_file *fid_in, *fid_out;
 #endif
     /* Although little CMS does  make assumptions about data types in its
        transformations we can change it after the fact by cloning from any

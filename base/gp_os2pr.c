@@ -118,7 +118,7 @@ os2_printer_fopen(gx_io_device * iodev, const char *fname, const char *access,
     strncpy(pr->queue, fname, sizeof(pr->queue)-1);
 
     /* Create a temporary file */
-    *pfile = gp_open_scratch_file(pr->memory, "gs", pr->filename, access);
+    *pfile = gp_open_scratch_file_impl(pr->memory, "gs", pr->filename, access, 0);
     if (*pfile == NULL)
         return_error(gs_fopen_errno_to_code(errno));
 

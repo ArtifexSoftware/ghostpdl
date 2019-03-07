@@ -171,11 +171,11 @@ gp_getenv_display(void)
 FILE *
 gp_open_printer(const gs_memory_t *mem,
                       char         fname[gp_file_name_sizeof],
-                      int          binary_mode)
+                      int         *binary_mode)
 {
     if (strlen(fname) == 0)
         return 0;
-    if (binary_mode) {		/*
+    if (*binary_mode) {		/*
                                  * Printing must be done exactly byte to byte,
                                  * using "passall".  However the standard VMS symbiont
                                  * does not treat stream-LF files correctly in this respect,
@@ -191,9 +191,9 @@ gp_open_printer(const gs_memory_t *mem,
 
 /* Close the connection to the printer. */
 void
-gp_close_printer(const gs_memory_t *mem, FILE * pfile, const char *fname)
+gp_close_printer(gp_file *pfile, const char *fname)
 {
-    fclose(pfile);
+    gp_fclose(pfile);
 }
 
 /* ------ File naming and accessing ------ */
@@ -221,15 +221,19 @@ const char gp_fmode_wb[] = "w";
 /* Create and open a scratch file with a given name prefix. */
 /* Write the actual file name at fname. */
 FILE *
-gp_open_scratch_file(const gs_memory_t *mem,
-                     const char        *prefix,
-                           char         fname[gp_file_name_sizeof],
-                     const char        *mode)
+gp_open_scratch_file_impl(const gs_memory_t *mem,
+                          const char        *prefix,
+                                char         fname[gp_file_name_sizeof],
+                          const char        *mode,
+                                int          remove)
 {
     FILE *f;
     char tmpdir[gp_file_name_sizeof];
     int tdlen = gp_file_name_sizeof;
     int flen[1];
+
+    if (remove)
+        return NULL;
 
     if (!gp_file_name_is_absolute(prefix, strlen(prefix)) &&
         gp_gettmpdir(tmpdir, &tdlen) == 0) {
@@ -257,7 +261,7 @@ gp_open_scratch_file(const gs_memory_t *mem,
 /* We have to do something special if the file was FTP'ed in binary mode. */
 /* Unfortunately, only DEC C supports the extra arguments to fopen. */
 FILE *
-gp_fopen(const char *fname, const char *mode)
+gp_fopen_impl(gs_memory_t *mem, const char *fname, const char *mode)
 {
 #ifdef __DECC
 #define FAB$C_FIX 1
@@ -280,32 +284,24 @@ int gp_can_share_fdesc(void)
     return 0;
 }
 
-FILE *gp_open_scratch_file_rm(const gs_memory_t *mem,
-                              const char        *prefix,
-                                    char         fname[gp_file_name_sizeof],
-                              const char        *mode)
+FILE *gp_fdup_impl(FILE *f, const char *mode)
 {
     return NULL;
 }
 
-FILE *gp_fdup(FILE *f, const char *mode)
-{
-    return NULL;
-}
-
-int gp_fpread(char *buf, uint count, int64_t offset, FILE *f)
+int gp_pread_impl(char *buf, size_t count, gs_offset_t offset, FILE *f)
 {
     return -1;
 }
 
-int gp_fpwrite(char *buf, uint count, int64_t offset, FILE *f)
+int gp_pwrite_impl(const char *buf, size_t count, gs_offset_t offset, FILE *f)
 {
     return -1;
 }
 
 /* Set a file into binary or text mode. */
 int
-gp_setmode_binary(FILE * pfile, bool binary)
+gp_setmode_binary_impl(FILE * pfile, bool binary)
 {
     return 0;			/* Noop under VMS */
 }
@@ -695,32 +691,12 @@ void gp_enumerate_fonts_free(void *enum_state)
  * Currently we stub it with 32 bits access.
  */
 
-FILE *gp_fopen_64(const char *filename, const char *mode)
-{
-    return fopen(filename, mode);
-}
-
-FILE *gp_open_scratch_file_64(const gs_memory_t *mem,
-                              const char        *prefix,
-                                    char         fname[gp_file_name_sizeof],
-                              const char        *mode)
-{
-    return gp_open_scratch_file(mem, prefix, fname, mode);
-}
-
-FILE *gp_open_printer_64(const gs_memory_t *mem,
-                               char         fname[gp_file_name_sizeof],
-                               int          binary_mode)
-{
-    return gp_open_printer(mem, fname, binary_mode);
-}
-
-int64_t gp_ftell_64(FILE *strm)
+int64_t gp_ftell_impl(FILE *strm)
 {
     return ftell(strm);
 }
 
-int gp_fseek_64(FILE *strm, int64_t offset, int origin)
+int gp_fseek_impl(FILE *strm, gs_offset_t offset, int origin)
 {
     long offset1 = (long)offset;
 
@@ -729,7 +705,7 @@ int gp_fseek_64(FILE *strm, int64_t offset, int origin)
     return fseek(strm, offset1, origin);
 }
 
-bool gp_fseekable (FILE *f)
+bool gp_fseekable_impl(FILE *f)
 {
     struct stat s;
     int fno;

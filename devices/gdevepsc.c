@@ -157,12 +157,12 @@ prn_device(epson_procs, "epsonc",
 /* ------ Internal routines ------ */
 
 /* Forward references */
-static void epsc_output_run(byte *, int, int, char, FILE *, int);
+static void epsc_output_run(byte *, int, int, char, gp_file *, int);
 
 /* Send the page to the printer. */
 #define DD 0x80                 /* double density flag */
 static int
-epsc_print_page(gx_device_printer * pdev, FILE * prn_stream)
+epsc_print_page(gx_device_printer * pdev, gp_file * prn_stream)
 {
     static int graphics_modes_9[5] = { -1, 0 /*60 */ , 1 /*120 */ , -1, DD + 3  /*240 */
     };
@@ -208,7 +208,7 @@ epsc_print_page(gx_device_printer * pdev, FILE * prn_stream)
     }
 
     /* Initialize the printer and reset the margins. */
-    fwrite("\033@\033P\033l\000\033Q\377\033U\001\r", 1, 14, prn_stream);
+    gp_fwrite("\033@\033P\033l\000\033Q\377\033U\001\r", 1, 14, prn_stream);
 
     /* Create color buffer */
     if (gx_device_has_color(pdev)) {
@@ -248,11 +248,11 @@ epsc_print_page(gx_device_printer * pdev, FILE * prn_stream)
 
         /* Vertical tab to the appropriate position. */
         while (skip > 255) {
-            fputs("\033J\377", prn_stream);
+            gp_fputs("\033J\377", prn_stream);
             skip -= 255;
         }
         if (skip)
-            fprintf(prn_stream, "\033J%c", skip);
+            gp_fprintf(prn_stream, "\033J%c", skip);
 
         /* Copy the rest of the scan lines. */
         lcnt = 1 + gdev_prn_copy_scan_lines(pdev, lnum + 1,
@@ -347,7 +347,7 @@ epsc_print_page(gx_device_printer * pdev, FILE * prn_stream)
                ** but lets check anyway
                */
                 if (current_color)
-                    fprintf(prn_stream, "\033r%c", current_color ^ 7);
+                    gp_fprintf(prn_stream, "\033r%c", current_color ^ 7);
             }
 
             /* We have to 'transpose' blocks of 8 pixels x 8 lines, */
@@ -405,7 +405,7 @@ epsc_print_page(gx_device_printer * pdev, FILE * prn_stream)
                                                 y_mult, start_graphics,
                                                 prn_stream, pass);
                             /* Tab over to the appropriate position. */
-                            fprintf(prn_stream, "\033D%c%c\t", tpos, 0);
+                            gp_fprintf(prn_stream, "\033D%c%c\t", tpos, 0);
                             out_blk = outp = newp;
                         }
                     } else
@@ -415,7 +415,7 @@ epsc_print_page(gx_device_printer * pdev, FILE * prn_stream)
                     epsc_output_run(out_blk, (int)(outp - out_blk),
                                     y_mult, start_graphics, prn_stream, pass);
 
-                fputc('\r', prn_stream);
+                gp_fputc('\r', prn_stream);
             }
         } while (nextcolor);
         skip = 24;
@@ -423,7 +423,7 @@ epsc_print_page(gx_device_printer * pdev, FILE * prn_stream)
     }
 
     /* Eject the page and reinitialize the printer */
-    fputs("\f\033@", prn_stream);
+    gp_fputs("\f\033@", prn_stream);
 
     gs_free(pdev->memory, (char *)out, out_size + 1, 1,
             "epsc_print_page(out)");
@@ -438,21 +438,21 @@ epsc_print_page(gx_device_printer * pdev, FILE * prn_stream)
 /* pass=0 for all columns, 1 for even columns, 2 for odd columns. */
 static void
 epsc_output_run(byte * data, int count, int y_mult,
-                char start_graphics, FILE * prn_stream, int pass)
+                char start_graphics, gp_file * prn_stream, int pass)
 {
     int xcount = count / y_mult;
 
-    fputc(033, prn_stream);
+    gp_fputc(033, prn_stream);
     if (!(start_graphics & ~3)) {
-        fputc("KLYZ"[(int)start_graphics], prn_stream);
+        gp_fputc("KLYZ"[(int)start_graphics], prn_stream);
     } else {
-        fputc('*', prn_stream);
-        fputc(start_graphics & ~DD, prn_stream);
+        gp_fputc('*', prn_stream);
+        gp_fputc(start_graphics & ~DD, prn_stream);
     }
-    fputc(xcount & 0xff, prn_stream);
-    fputc(xcount >> 8, prn_stream);
+    gp_fputc(xcount & 0xff, prn_stream);
+    gp_fputc(xcount >> 8, prn_stream);
     if (!pass)
-        fwrite((char *)data, 1, count, prn_stream);
+        gp_fwrite((char *)data, 1, count, prn_stream);
     else {                      /* Only write every other column of y_mult bytes. */
         int which = pass;
         byte *dp = data;
@@ -460,7 +460,7 @@ epsc_output_run(byte * data, int count, int y_mult,
 
         for (i = 0; i < xcount; i++, which++)
             for (j = 0; j < y_mult; j++, dp++) {
-                putc(((which & 1) ? *dp : 0), prn_stream);
+                gp_fputc(((which & 1) ? *dp : 0), prn_stream);
             }
     }
 }

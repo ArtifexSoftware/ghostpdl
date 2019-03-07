@@ -62,11 +62,11 @@ extern const gx_device_procs gdev_fax_std_procs;
 void gdev_fax_init_state(stream_CFE_state *ss, const gx_device_fax *fdev);
 void gdev_fax_init_fax_state(stream_CFE_state *ss,
                              const gx_device_fax *fdev);
-int gdev_fax_print_strip(gx_device_printer * pdev, FILE * prn_stream,
+int gdev_fax_print_strip(gx_device_printer * pdev, gp_file * prn_stream,
                          const stream_template * temp, stream_state * ss,
                          int width, int row_first,
                          int row_end /* last + 1 */);
-int gdev_fax_print_page(gx_device_printer *pdev, FILE *prn_stream,
+int gdev_fax_print_page(gx_device_printer *pdev, gp_file *prn_stream,
                         stream_CFE_state *ss);
 
 #endif /* gdevfax_INCLUDED */

@@ -68,11 +68,11 @@ ATX_DEVICE("itk38", 80 /* 8.0" */, 35 /* (minimum) */,
 
 /* Output a printer command with a 2-byte, little-endian numeric argument. */
 static void
-fput_atx_command(FILE *f, const char *str, int value)
+fput_atx_command(gp_file *f, const char *str, int value)
 {
-    fputs(str, f);
-    fputc((byte)value, f);
-    fputc((byte)(value >> 8), f);
+    gp_fputs(str, f);
+    gp_fputc((byte)value, f);
+    gp_fputc((byte)(value >> 8), f);
 }
 
 /*
@@ -152,7 +152,7 @@ atx_compress(const byte *in_buf, int in_size, byte *out_buf, int out_size)
 
 /* Send the page to the printer. */
 static int
-atx_print_page(gx_device_printer *pdev, FILE *f, int max_width_bytes)
+atx_print_page(gx_device_printer *pdev, gp_file *f, int max_width_bytes)
 {
     /*
      * The page length command uses 16 bits to represent the length in
@@ -214,14 +214,14 @@ atx_print_page(gx_device_printer *pdev, FILE *f, int max_width_bytes)
              * Note that since compressed_raster can't exceed 510, count
              * can't exceed 510 either.
              */
-            fputs(ATX_COMPRESSED_DATA, f);
-            fputc(count / 2, f);
-            fwrite(compressed, 1, count, f);
+            gp_fputs(ATX_COMPRESSED_DATA, f);
+            gp_fputc(count / 2, f);
+            gp_fwrite(compressed, 1, count, f);
         } else {			/* uncompressed line */
             int num_bytes = end - row;
 
             fput_atx_command(f, ATX_UNCOMPRESSED_DATA, num_bytes);
-            fwrite(row, 1, num_bytes, f);
+            gp_fwrite(row, 1, num_bytes, f);
         }
     }
 
@@ -240,7 +240,7 @@ atx_print_page(gx_device_printer *pdev, FILE *f, int max_width_bytes)
 #endif
 
     /* End the page. */
-    fputs(ATX_END_PAGE, f);
+    gp_fputs(ATX_END_PAGE, f);
 
  done:
     gs_free_object(mem, compressed, "atx_print_page(compressed)");
@@ -250,17 +250,17 @@ atx_print_page(gx_device_printer *pdev, FILE *f, int max_width_bytes)
 
 /* Print pages with specified maximum pixel widths. */
 static int
-atx23_print_page(gx_device_printer *pdev, FILE *f)
+atx23_print_page(gx_device_printer *pdev, gp_file *f)
 {
     return atx_print_page(pdev, f, 576 / 8);
 }
 static int
-atx24_print_page(gx_device_printer *pdev, FILE *f)
+atx24_print_page(gx_device_printer *pdev, gp_file *f)
 {
     return atx_print_page(pdev, f, 832 / 8);
 }
 static int
-atx38_print_page(gx_device_printer *pdev, FILE *f)
+atx38_print_page(gx_device_printer *pdev, gp_file *f)
 {
     return atx_print_page(pdev, f, 2400 / 8);
 }

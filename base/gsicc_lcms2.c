@@ -313,7 +313,7 @@ gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
     int planar,numbytes, big_endian, hasalpha, k;
     unsigned char *inputpos, *outputpos;
 #if DUMP_CMS_BUFFER
-    FILE *fid_in, *fid_out;
+    gp_file *fid_in, *fid_out;
 #endif
     /* Although little CMS does  make assumptions about data types in its
        transformations you can change it after the fact.  */

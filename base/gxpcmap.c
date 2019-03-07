@@ -1248,7 +1248,7 @@ dump_raw_pattern(int height, int width, int n_chan, int depth,
                 byte *Buffer, int raster, const gx_device_memory * mdev)
 {
     char full_file_name[50];
-    FILE *fid;
+    gp_file *fid;
     int max_bands;
     int j, k, m;
     int byte_number, bit_position;

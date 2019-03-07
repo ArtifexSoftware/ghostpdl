@@ -31,7 +31,7 @@
 
 /* Write a 0-terminated array of strings as lines. */
 int
-psw_print_lines(FILE *f, const char *const lines[])
+psw_print_lines(gp_file *f, const char *const lines[])
 {
     int i;
     for (i = 0; lines[i] != 0; ++i) {
@@ -53,7 +53,7 @@ psw_put_procset_name(stream *s, const gx_device *dev,
             pdpc->ProcSet_version);
 }
 static void
-psw_print_procset_name(FILE *f, const gx_device *dev,
+psw_print_procset_name(gp_file *f, const gx_device *dev,
                        const gx_device_pswrite_common_t *pdpc)
 {
     byte buf[100];		/* arbitrary */
@@ -67,7 +67,7 @@ psw_print_procset_name(FILE *f, const gx_device *dev,
 
 /* Write a bounding box. */
 static void
-psw_print_bbox(FILE *f, const gs_rect *pbbox)
+psw_print_bbox(gp_file *f, const gs_rect *pbbox)
 {
     fprintf(f, "%%%%BoundingBox: %d %d %d %d\n",
             (int)floor(pbbox->p.x), (int)floor(pbbox->p.y),
@@ -150,7 +150,7 @@ static const char *const psw_end_prolog[] = {
  * On Windows NT ftell() returns some non-EOF value when used on pipes.
  */
 static bool
-is_seekable(FILE *f)
+is_seekable(gp_file *f)
 {
     struct stat buf;
 
@@ -164,7 +164,7 @@ is_seekable(FILE *f)
  * file, not a stream, because it may be called during finalization.
  */
 int
-psw_begin_file_header(FILE *f, const gx_device *dev, const gs_rect *pbbox,
+psw_begin_file_header(gp_file *f, const gx_device *dev, const gs_rect *pbbox,
                       gx_device_pswrite_common_t *pdpc, bool ascii)
 {
     psw_print_lines(f, (pdpc->ProduceEPS ? psw_eps_header : psw_ps_header));
@@ -176,7 +176,7 @@ psw_begin_file_header(FILE *f, const gx_device *dev, const gs_rect *pbbox,
         fputs("%%BoundingBox: (atend)\n", f);
         fputs("%%HiResBoundingBox: (atend)\n", f);
     } else {		/* File is seekable, leave room to rewrite bbox. */
-        pdpc->bbox_position = gp_ftell_64(f);
+        pdpc->bbox_position = gp_ftell(f);
         fputs("%...............................................................\n", f);
         fputs("%...............................................................\n", f);
     }
@@ -218,7 +218,7 @@ psw_begin_file_header(FILE *f, const gx_device *dev, const gs_rect *pbbox,
  * End the file header.
  */
 int
-psw_end_file_header(FILE *f)
+psw_end_file_header(gp_file *f)
 {
     return psw_print_lines(f, psw_end_prolog);
 }
@@ -227,7 +227,7 @@ psw_end_file_header(FILE *f)
  * End the file.
  */
 int
-psw_end_file(FILE *f, const gx_device *dev,
+psw_end_file(gp_file *f, const gx_device *dev,
              const gx_device_pswrite_common_t *pdpc, const gs_rect *pbbox,
              int /* should be long */ page_count)
 {
@@ -238,9 +238,9 @@ psw_end_file(FILE *f, const gx_device *dev,
         return_error(gs_error_ioerror);
     if (dev->PageCount > 0 && pdpc->bbox_position != 0) {
         if (pdpc->bbox_position >= 0) {
-            int64_t save_pos = gp_ftell_64(f);
+            int64_t save_pos = gp_ftell(f);
 
-            gp_fseek_64(f, pdpc->bbox_position, SEEK_SET);
+            gp_fseek(f, pdpc->bbox_position, SEEK_SET);
             /* Theoretically the bbox device should fill in the bounding box
              * but this does nothing because we don't write on the page.
              * So if bbox = 0 0 0 0, replace with the device page size.
@@ -261,7 +261,7 @@ psw_end_file(FILE *f, const gx_device *dev,
             fputc('%', f);
             if (ferror(f))
                 return_error(gs_error_ioerror);
-            gp_fseek_64(f, save_pos, SEEK_SET);
+            gp_fseek(f, save_pos, SEEK_SET);
         } else
             psw_print_bbox(f, pbbox);
     }
@@ -347,7 +347,7 @@ psw_write_page_header(stream *s, const gx_device *dev,
  * the stream, because we may have to do it during finalization.
  */
 int
-psw_write_page_trailer(FILE *f, int num_copies, int flush)
+psw_write_page_trailer(gp_file *f, int num_copies, int flush)
 {
     fprintf(f, "cleartomark end end pagesave restore\n");
     if (num_copies != 1)

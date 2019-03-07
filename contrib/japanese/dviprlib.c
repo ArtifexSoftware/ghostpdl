@@ -80,7 +80,7 @@ dviprt_readcfg(char *ifname,dviprt_cfg_t *pcfg,uchar *pcodebuf,int codebuf_s,
 static int
 dviprt_read_S_cfg(dviprt_cfg_t *pcfg,dviprt_cfg_i *pinfo)
 {
-  FILE *ifp;
+  gp_file *ifp;
   long intoff,stroff,codeoff;
   int i,count;
   uchar *pbuf,*rbuf;
@@ -461,7 +461,7 @@ dviprt_readsrc(char *fname,dviprt_cfg_t *pcfg,uchar *pcodebuf,int codebuf_s,
 {
   dviprt_cfg_i info;
   int code;
-  FILE *ifp;
+  gp_file *ifp;
   dviprt_cfg_item_t *pitem;
   int enc = CFG_ENCODE_NULL;
   enum { T_INTEGER,T_STRINGS,T_CODE,T_SELECT,T_UPPERPOS};

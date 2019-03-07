@@ -70,12 +70,12 @@ const char gp_current_directory_name[] = ".";
 
 /* Create and open a scratch file with a given name prefix. */
 /* Write the actual file name at fname. */
-static FILE *
-gp_open_scratch_file_generic(const gs_memory_t *mem,
-                             const char        *prefix,
-                                   char         fname[gp_file_name_sizeof],
-                             const char        *mode,
-                                   bool         b64)
+FILE *
+gp_open_scratch_file_impl(const gs_memory_t *mem,
+                          const char        *prefix,
+                                char         fname[gp_file_name_sizeof],
+                          const char        *mode,
+                                int          remove)
 {       /* The -8 is for XXXXXX plus a possible final / and -. */
 #ifdef GS_NO_FILESYSTEM
     return NULL;
@@ -108,10 +108,7 @@ gp_open_scratch_file_generic(const gs_memory_t *mem,
         /* save the old filename template in case mkstemp fails */
         memcpy(ofname, fname, gp_file_name_sizeof);
 #ifdef HAVE_MKSTEMP64
-        if (b64)
-            file = mkstemp64(fname);
-        else
-            file = mkstemp(fname);
+        file = mkstemp64(fname);
 #else
         file = mkstemp(fname);
 #endif
@@ -120,39 +117,39 @@ gp_open_scratch_file_generic(const gs_memory_t *mem,
             return NULL;
         }
 #if defined(O_LARGEFILE) && defined(__hpux)
-        if (b64)
-            fcntl(file, F_SETFD, fcntl(file, F_GETFD) | O_LARGEFILE);
+        fcntl(file, F_SETFD, fcntl(file, F_GETFD) | O_LARGEFILE);
 #else
         /* Fixme : what to do with b64 and 32-bit mkstemp? Unimplemented. */
 #endif
 
         fp = fdopen(file, mode);
-        if (fp == NULL)
-            close(file);
+        if (fp == NULL) {
+	    close(file);
+	}
     }
 #else
     mktemp(fname);
-    fp = (b64 ? gp_fopentemp : gp_fopentemp_64)(fname, mode);
+    fp = gp_fopentemp(fname, mode);
 #endif
     if (fp == NULL)
         emprintf1(mem, "**** Could not open temporary file %s\n", fname);
+
+    if (remove)
+        unlink(fname);
+
     return fp;
 #endif
-}
-FILE *
-gp_open_scratch_file(const gs_memory_t *mem,
-                     const char        *prefix,
-                           char         fname[gp_file_name_sizeof],
-                     const char        *mode)
-{
-    return gp_open_scratch_file_generic(mem, prefix, fname, mode, false);
 }
 
 /* Open a file with the given name, as a stream of uninterpreted bytes. */
 FILE *
-gp_fopen(const char *fname, const char *mode)
+gp_fopen_impl(gs_memory_t *mem, const char *fname, const char *mode)
 {
+#if defined(HAVE_FILE64)
+    return fopen64(fname, mode);
+#else
     return fopen(fname, mode);
+#endif
 }
 
 int gp_stat(const char *path, struct stat *buf)
@@ -169,21 +166,7 @@ int gp_can_share_fdesc(void)
 #endif
 }
 
-FILE *gp_open_scratch_file_rm(const gs_memory_t *mem,
-                              const char        *prefix,
-                                    char         fname[gp_file_name_sizeof],
-                              const char        *mode)
-{
-    FILE *f = gp_open_scratch_file_generic(mem, prefix, fname, mode, false);
-    /* Unlink file immediately to avoid it being left around if the program
-     * is killed. On this platform readers access temp files by cloning the
-     * FILE pointer and without accessing the file by name */
-    if (f)
-        unlink(fname);
-    return f;
-}
-
-FILE *gp_fdup(FILE *f, const char *mode)
+FILE *gp_fdup_impl(FILE *f, const char *mode)
 {
 #ifdef GS_NO_FILESYSTEM
     return NULL;
@@ -198,7 +181,7 @@ FILE *gp_fdup(FILE *f, const char *mode)
 #endif
 }
 
-int gp_fpread(char *buf, uint count, int64_t offset, FILE *f)
+int gp_pread_impl(char *buf, size_t count, gs_offset_t offset, FILE *f)
 {
 #ifdef GS_NO_FILESYSTEM
     return 0;
@@ -206,23 +189,23 @@ int gp_fpread(char *buf, uint count, int64_t offset, FILE *f)
     return pread(fileno(f), buf, count, offset);
 #else
     int c;
-    int64_t os, curroff = gp_ftell_64(f);
+    int64_t os, curroff = gp_ftell_impl(f);
     if (curroff < 0) return curroff;
     
-    os = gp_fseek_64(f, offset, 0);
+    os = gp_fseek_impl(f, offset, 0);
     if (os < 0) return os;
     
     c = fread(buf, 1, count, f);
     if (c < 0) return c;
     
-    os = gp_fseek_64(f, curroff, 0);
+    os = gp_fseek_impl(f, curroff, 0);
     if (os < 0) return os;
     
     return c;
 #endif
 }
 
-int gp_fpwrite(char *buf, uint count, int64_t offset, FILE *f)
+int gp_pwrite_impl(const char *buf, size_t count, gs_offset_t offset, FILE *f)
 {
 #ifdef GS_NO_FILESYSTEM
     return 0;
@@ -230,16 +213,16 @@ int gp_fpwrite(char *buf, uint count, int64_t offset, FILE *f)
     return pwrite(fileno(f), buf, count, offset);
 #else
     int c;
-    int64_t os, curroff = gp_ftell_64(f);
+    int64_t os, curroff = gp_ftell_impl(f);
     if (curroff < 0) return curroff;
     
-    os = gp_fseek_64(f, offset, 0);
+    os = gp_fseek_impl(f, offset, 0);
     if (os < 0) return os;
     
     c = fwrite(buf, 1, count, f);
     if (c < 0) return c;
     
-    os = gp_fseek_64(f, curroff, 0);
+    os = gp_fseek_impl(f, curroff, 0);
     if (os < 0) return os;
     
     return c;
@@ -248,7 +231,7 @@ int gp_fpwrite(char *buf, uint count, int64_t offset, FILE *f)
 
 /* Set a file into binary or text mode. */
 int
-gp_setmode_binary(FILE * pfile, bool mode)
+gp_setmode_binary_impl(FILE * pfile, bool mode)
 {
     return 0;                   /* Noop under Unix */
 }
@@ -632,26 +615,7 @@ gp_enumerate_files_close(file_enum * pfen)
 
 /* --------- 64 bit file access ----------- */
 
-FILE *gp_fopen_64(const char *filename, const char *mode)
-{
-#if defined(HAVE_FILE64)
-    return fopen64(filename, mode);
-#else
-    return fopen(filename, mode);
-#endif
-}
-
-FILE *gp_open_scratch_file_64(const gs_memory_t *mem,
-                              const char        *prefix,
-                                    char         fname[gp_file_name_sizeof],
-                              const char        *mode)
-{
-    return gp_open_scratch_file_generic(mem, prefix, fname, mode, true);
-}
-
-/* gp_open_printer_64 is defined in gp_unix.h */
-
-int64_t gp_ftell_64(FILE *strm)
+gs_offset_t gp_ftell_impl(FILE *strm)
 {
 #if defined(HAVE_FILE64)
     return ftello64(strm);
@@ -660,7 +624,7 @@ int64_t gp_ftell_64(FILE *strm)
 #endif
 }
 
-int gp_fseek_64(FILE *strm, int64_t offset, int origin)
+int gp_fseek_impl(FILE *strm, gs_offset_t offset, int origin)
 {
 #if defined(HAVE_FILE64)
     return fseeko64(strm, offset, origin);
@@ -673,7 +637,7 @@ int gp_fseek_64(FILE *strm, int64_t offset, int origin)
 #endif
 }
 
-bool gp_fseekable (FILE *f)
+bool gp_fseekable_impl(FILE *f)
 {
     struct stat s;
     int fno;

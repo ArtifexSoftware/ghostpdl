@@ -33,7 +33,7 @@ const gx_device_printer far_data gs_r4081_device =
 
 /* Send the page to the printer. */
 static int
-r4081_print_page(gx_device_printer *pdev, FILE *prn_stream)
+r4081_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {
         int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
         int out_size = ((pdev->width + 7) & -8) ;
@@ -71,19 +71,19 @@ r4081_print_page(gx_device_printer *pdev, FILE *prn_stream)
         }
 
         /* Initialize the printer and set the starting position. */
-        fprintf(prn_stream,"\033\rP\033\022YB2 \033\022G3,%d,%d,1,1,1,%d@",
+        gp_fprintf(prn_stream,"\033\rP\033\022YB2 \033\022G3,%d,%d,1,1,1,%d@",
                         out_size, last-lnum, (lnum+1)*720/Y_DPI);
 
         /* Print lines of graphics */
         while ( lnum < last )
            {
                 gdev_prn_copy_scan_lines(pdev, lnum, (byte *)out, line_size);
-                fwrite(out, sizeof(char), line_size, prn_stream);
+                gp_fwrite(out, sizeof(char), line_size, prn_stream);
                 lnum ++;
            }
 
         /* Eject the page and reinitialize the printer */
-        fputs("\f\033\rP", prn_stream);
+        gp_fputs("\f\033\rP", prn_stream);
 
         gs_free(pdev->memory, (char *)out, out_size, 1, "r4081_print_page(out)");
         return 0;

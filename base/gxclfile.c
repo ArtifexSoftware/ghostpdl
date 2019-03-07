@@ -225,7 +225,7 @@ cl_cache_load_slot(CL_CACHE *cache, CL_CACHE_SLOT *slot, int64_t pos, byte *data
 typedef struct
 {
     gs_memory_t *mem;
-    FILE *f;
+    gp_file *f;
     int64_t pos;
     int64_t filesize;		/* filesize maintained by clist_fwrite */
     CL_CACHE *cache;
@@ -247,14 +247,14 @@ fake_path_to_file(const char *fname)
     return r2 == 1 ? i2 : (r1 == 1 ? i1 : NULL);
 }
 
-static IFILE *wrap_file(gs_memory_t *mem, FILE *f, const char *fmode)
+static IFILE *wrap_file(gs_memory_t *mem, gp_file *f, const char *fmode)
 {
     IFILE *ifile;
 
     if (!f) return NULL;
     ifile = (IFILE *)gs_alloc_bytes(mem->non_gc_memory, sizeof(*ifile), "Allocate wrapped IFILE");
     if (!ifile) {
-        fclose(f);
+        gp_fclose(f);
         return NULL;
     }
     ifile->mem = mem->non_gc_memory;
@@ -269,7 +269,7 @@ static int close_file(IFILE *ifile)
 {
     int res = 0;
     if (ifile) {
-        res = fclose(ifile->f);
+        res = gp_fclose(ifile->f);
         if (ifile->cache != NULL)
             cl_cache_destroy(ifile->cache);
         gs_free_object(ifile->mem, ifile, "Free wrapped IFILE");
@@ -296,7 +296,7 @@ clist_fopen(char fname[gp_file_name_sizeof], const char *fmode,
             if (*pcf != NULL)
                 file_to_fake_path(*pcf, fname);
         } else {
-            *pcf = (clist_file_ptr)wrap_file(mem, gp_open_scratch_file_64(mem,
+            *pcf = (clist_file_ptr)wrap_file(mem, gp_open_scratch_file(mem,
                                                        gp_scratch_file_name_prefix,
                                                        fname, fmode), fmode);
         }
@@ -309,7 +309,7 @@ clist_fopen(char fname[gp_file_name_sizeof], const char *fmode,
             if (*pcf)
                 ((IFILE *)(*pcf))->filesize = ((IFILE *)ocf)->filesize;
         } else {
-            *pcf = wrap_file(mem, gp_fopen(fname, fmode), fmode);
+            *pcf = wrap_file(mem, gp_fopen(mem, fname, fmode), fmode);
         }
     }
 
@@ -362,7 +362,7 @@ clist_fwrite_chars(const void *data, uint len, clist_file_ptr cf)
     if (gp_can_share_fdesc()) {
         res = gp_fpwrite((char *)data, len, ((IFILE *)cf)->pos, ((IFILE *)cf)->f);
     } else {
-        res = fwrite(data, 1, len, ((IFILE *)cf)->f);
+        res = gp_fwrite(data, 1, len, ((IFILE *)cf)->f);
     }
     if (res >= 0)
         icf->pos += len;
@@ -415,7 +415,7 @@ clist_fread_chars(void *data, uint len, clist_file_ptr cf)
         if (nread >= 0)
             icf->pos += nread;
     } else {
-        FILE *f = ((IFILE *)cf)->f;
+        gp_file *f = ((IFILE *)cf)->f;
         byte *str = data;
 
         /* The typical implementation of fread */
@@ -423,23 +423,23 @@ clist_fread_chars(void *data, uint len, clist_file_ptr cf)
         /* so we just use straight-line code instead. */
         switch (len) {
             default:
-                return fread(str, 1, len, f);
+                return gp_fread(str, 1, len, f);
             case 8:
-                *str++ = (byte) getc(f);
+                *str++ = (byte) gp_fgetc(f);
             case 7:
-                *str++ = (byte) getc(f);
+                *str++ = (byte) gp_fgetc(f);
             case 6:
-                *str++ = (byte) getc(f);
+                *str++ = (byte) gp_fgetc(f);
             case 5:
-                *str++ = (byte) getc(f);
+                *str++ = (byte) gp_fgetc(f);
             case 4:
-                *str++ = (byte) getc(f);
+                *str++ = (byte) gp_fgetc(f);
             case 3:
-                *str++ = (byte) getc(f);
+                *str++ = (byte) gp_fgetc(f);
             case 2:
-                *str++ = (byte) getc(f);
+                *str++ = (byte) gp_fgetc(f);
             case 1:
-                *str = (byte) getc(f);
+                *str = (byte) gp_fgetc(f);
         }
         nread = len;
     }
@@ -457,7 +457,7 @@ clist_set_memory_warning(clist_file_ptr cf, int bytes_left)
 static int
 clist_ferror_code(clist_file_ptr cf)
 {
-    return (ferror(((IFILE *)cf)->f) ? gs_error_ioerror : 0);
+    return (gp_ferror(((IFILE *)cf)->f) ? gs_error_ioerror : 0);
 }
 
 static int64_t
@@ -465,13 +465,13 @@ clist_ftell(clist_file_ptr cf)
 {
     IFILE *ifile = (IFILE *)cf;
 
-    return gp_can_share_fdesc() ? ifile->pos : ftell(ifile->f);
+    return gp_can_share_fdesc() ? ifile->pos : gp_ftell(ifile->f);
 }
 
 static void
 clist_rewind(clist_file_ptr cf, bool discard_data, const char *fname)
 {
-    FILE *f = ((IFILE *)cf)->f;
+    gp_file *f = ((IFILE *)cf)->f;
     IFILE *ocf = fake_path_to_file(fname);
     char fmode[4];
 
@@ -483,8 +483,9 @@ clist_rewind(clist_file_ptr cf, bool discard_data, const char *fname)
             /* fname is an encoded ifile pointer. We can use an entirely
              * new scratch file. */
             char tfname[gp_file_name_sizeof];
-            fclose(ocf->f);
-            ocf->f = gp_open_scratch_file_rm(NULL, gp_scratch_file_name_prefix, tfname, fmode);
+            const gs_memory_t *mem = ocf->f->memory;
+            gp_fclose(ocf->f);
+            ocf->f = gp_open_scratch_file_rm(mem, gp_scratch_file_name_prefix, tfname, fmode);
             /* if there was a cache, get rid of it an get a new (empty) one */
             /* When we start reading, we will allocate a cache based on the filesize */
             if (ocf->cache != NULL) {
@@ -504,12 +505,12 @@ clist_rewind(clist_file_ptr cf, bool discard_data, const char *fname)
              */
 
             /* Opening with "w" mode deletes the contents when closing. */
-            f = freopen(fname, gp_fmode_wb, f);
-            ((IFILE *)cf)->f = freopen(fname, fmode, f);
+            f = gp_freopen(fname, gp_fmode_wb, f);
+            ((IFILE *)cf)->f = gp_freopen(fname, fmode, f);
             ((IFILE *)cf)->pos = 0;
             ((IFILE *)cf)->filesize = 0;
         } else {
-            rewind(f);
+            gp_rewind(f);
         }
     }
 }
@@ -521,7 +522,7 @@ clist_fseek(clist_file_ptr cf, int64_t offset, int mode, const char *ignore_fnam
     int res = 0;
 
     if (!gp_can_share_fdesc()) {
-        res = gp_fseek_64(ifile->f, offset, mode);
+        res = gp_fseek(ifile->f, offset, mode);
     }
     /* NB: if gp_can_share_fdesc, we don't actually seek */
     if (res >= 0) {

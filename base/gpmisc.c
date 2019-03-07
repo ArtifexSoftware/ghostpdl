@@ -47,8 +47,8 @@ gp_gettmpdir(char *ptr, int *plen)
  * Open a temporary file, using O_EXCL and S_I*USR to prevent race
  * conditions and symlink attacks.
  */
-static FILE *
-gp_fopentemp_generic(const char *fname, const char *mode, bool b64)
+FILE *
+gp_fopentemp(const char *fname, const char *mode)
 {
     int flags = O_EXCL;
     /* Scan the mode to construct the flags. */
@@ -58,8 +58,7 @@ gp_fopentemp_generic(const char *fname, const char *mode, bool b64)
 
 #if defined (O_LARGEFILE)
     /* It works for Linux/gcc. */
-    if (b64)
-        flags |= O_LARGEFILE;
+    flags |= O_LARGEFILE;
 #else
     /* fixme : Not sure what to do. Unimplemented. */
     /* MSVC has no O_LARGEFILE, but MSVC build never calls this function. */
@@ -99,16 +98,6 @@ gp_fopentemp_generic(const char *fname, const char *mode, bool b64)
     if (file == 0)
         close(fildes);
     return file;
-}
-
-FILE *gp_fopentemp_64(const char *fname, const char *mode)
-{
-    return gp_fopentemp_generic(fname, mode, true);
-}
-
-FILE *gp_fopentemp(const char *fname, const char *mode)
-{
-    return gp_fopentemp_generic(fname, mode, false);
 }
 
 /* Append a string to buffer. */
@@ -402,4 +391,414 @@ uint
 gp_file_name_cwds(const char *fname, uint flen)
 {
     return gp_file_name_prefix(fname, flen, gp_file_name_is_current);
+}
+
+static int
+generic_pread(gp_file *f, size_t count, gs_offset_t offset, void *buf)
+{
+    int c;
+    int64_t os, curroff = gp_ftell(f);
+    if (curroff < 0) return curroff;
+    
+    os = gp_fseek(f, offset, 0);
+    if (os < 0) return os;
+    
+    c = gp_fread(buf, 1, count, f);
+    if (c < 0) return c;
+    
+    os = gp_fseek(f, curroff, 0);
+    if (os < 0) return os;
+    
+    return c;
+}
+
+static int
+generic_pwrite(gp_file *f, size_t count, gs_offset_t offset, const void *buf)
+{
+    int c;
+    int64_t os, curroff = gp_ftell(f);
+    if (curroff < 0) return curroff;
+    
+    os = gp_fseek(f, offset, 0);
+    if (os < 0) return os;
+    
+    c = gp_fwrite(buf, 1, count, f);
+    if (c < 0) return c;
+    
+    os = gp_fseek(f, curroff, 0);
+    if (os < 0) return os;
+    
+    return c;
+}
+
+gp_file *gp_file_alloc(gs_memory_t *mem, const gp_file *prototype, size_t size, const char *cname)
+{
+    gp_file *file = (gp_file *)gs_alloc_bytes(mem->non_gc_memory, size, cname ? cname : "gp_file");
+    if (file == NULL)
+        return NULL;
+
+    if (prototype)
+        *file = *prototype;
+    if (file->pread == NULL)
+        file->pread = generic_pread;
+    if (file->pwrite == NULL)
+        file->pwrite = generic_pwrite;
+    if (size > sizeof(*prototype))
+        memset(((char *)file)+sizeof(*prototype),
+               0,
+               size - sizeof(*prototype));
+    file->memory = mem->non_gc_memory;
+
+    return file;
+}
+
+void gp_file_dealloc(gp_file *file)
+{
+    if (file == NULL)
+        return;
+
+    if (file->buffer)
+        gs_free_object(file->memory, file->buffer, "gp_file");
+    gs_free_object(file->memory, file, "gp_file");
+}
+
+int gp_fprintf(gp_file *f, const char *fmt, ...)
+{
+    va_list args;
+    int n;
+
+    if (f->buffer)
+        goto mid;
+    do {
+        n = f->buffer_size * 2;
+        if (n == 0)
+            n = 256;
+        gs_free_object(f->memory, f->buffer, "gp_file(buffer)");
+        f->buffer = (char *)gs_alloc_bytes(f->memory, n, "gp_file(buffer)");
+        if (f->buffer == NULL)
+            return -1;
+        f->buffer_size = n;
+mid:
+        va_start(args, fmt);
+        n = vsnprintf(f->buffer, f->buffer_size, fmt, args);
+        va_end(args);
+    } while (n >= f->buffer_size);
+    return (f->write)(f, n, f->buffer);
+}
+typedef struct {
+    gp_file base;
+    FILE *file;
+    int (*close)(FILE *file);
+} gp_file_FILE;
+
+static int
+gp_file_FILE_close(gp_file *file_)
+{
+    gp_file_FILE *file = (gp_file_FILE *)file_;
+
+    return (file->close)(file->file);
+}
+
+static int
+gp_file_FILE_getc(gp_file *file_)
+{
+    gp_file_FILE *file = (gp_file_FILE *)file_;
+
+    return fgetc(file->file);
+}
+
+static int
+gp_file_FILE_putc(gp_file *file_, int c)
+{
+    gp_file_FILE *file = (gp_file_FILE *)file_;
+
+    return fputc(c, file->file);
+}
+
+static int
+gp_file_FILE_read(gp_file *file_, size_t count, void *buf)
+{
+    gp_file_FILE *file = (gp_file_FILE *)file_;
+
+    return fread(buf, 1, count, file->file);
+}
+
+static int
+gp_file_FILE_write(gp_file *file_, size_t count, const void *buf)
+{
+    gp_file_FILE *file = (gp_file_FILE *)file_;
+
+    return fwrite(buf, 1, count, file->file);
+}
+
+static int
+gp_file_FILE_seek(gp_file *file_, gs_offset_t offset, int whence)
+{
+    gp_file_FILE *file = (gp_file_FILE *)file_;
+
+    return gp_fseek_impl(file->file, offset, whence);
+}
+
+static gs_offset_t
+gp_file_FILE_tell(gp_file *file_)
+{
+    gp_file_FILE *file = (gp_file_FILE *)file_;
+
+    return gp_ftell_impl(file->file);
+}
+
+static int
+gp_file_FILE_eof(gp_file *file_)
+{
+    gp_file_FILE *file = (gp_file_FILE *)file_;
+
+    return feof(file->file);
+}
+
+static gp_file *
+gp_file_FILE_dup(gp_file *file_, const char *mode)
+{
+    gp_file_FILE *file = (gp_file_FILE *)file_;
+    gp_file *file2 = gp_file_FILE_alloc(file->base.memory);
+
+    if (gp_file_FILE_set(file2, gp_fdup_impl(file->file, mode), NULL))
+        file2 = NULL;
+
+    return file2;
+}
+
+static int
+gp_file_FILE_seekable(gp_file *file_)
+{
+    gp_file_FILE *file = (gp_file_FILE *)file_;
+
+    return gp_fseekable_impl(file->file);
+}
+
+static int
+gp_file_FILE_pread(gp_file *file_, size_t count, gs_offset_t offset, void *buf)
+{
+    gp_file_FILE *file = (gp_file_FILE *)file_;
+
+    return gp_pread_impl(buf, count, offset, file->file);
+}
+
+static int
+gp_file_FILE_pwrite(gp_file *file_, size_t count, gs_offset_t offset, const void *buf)
+{
+    gp_file_FILE *file = (gp_file_FILE *)file_;
+
+    return gp_pwrite_impl(buf, count, offset, file->file);
+}
+
+static int
+gp_file_FILE_setmode_binary(gp_file *file_, bool binary)
+{
+    gp_file_FILE *file = (gp_file_FILE *)file_;
+
+    return gp_setmode_binary_impl(file->file, binary);
+}
+
+static int
+gp_file_FILE_is_char_buffered(gp_file *file_)
+{
+    gp_file_FILE *file = (gp_file_FILE *)file_;
+    struct stat rstat;
+
+    if (fstat(fileno(file->file), &rstat) != 0)
+        return ERRC;
+    return S_ISCHR(rstat.st_mode);
+}
+
+static void
+gp_file_FILE_fflush(gp_file *file_)
+{
+    gp_file_FILE *file = (gp_file_FILE *)file_;
+
+    fflush(file->file);
+}
+
+static int
+gp_file_FILE_ferror(gp_file *file_)
+{
+    gp_file_FILE *file = (gp_file_FILE *)file_;
+
+    return ferror(file->file);
+}
+
+static FILE *
+gp_file_FILE_get_file(gp_file *file_)
+{
+    gp_file_FILE *file = (gp_file_FILE *)file_;
+
+    return file->file;
+}
+
+static void
+gp_file_FILE_clearerr(gp_file *file_)
+{
+    gp_file_FILE *file = (gp_file_FILE *)file_;
+
+    clearerr(file->file);
+}
+
+static gp_file *
+gp_file_FILE_reopen(gp_file *file_, const char *fname, const char *mode)
+{
+    gp_file_FILE *file = (gp_file_FILE *)file_;
+
+    file->file = freopen(fname, mode, file->file);
+    if (file->file == NULL) {
+        gp_file_dealloc(file_);
+        return NULL;
+    }
+    return file_;
+}
+
+static const gp_file gp_file_FILE_prototype =
+{
+    gp_file_FILE_close,
+    gp_file_FILE_getc,
+    gp_file_FILE_putc,
+    gp_file_FILE_read,
+    gp_file_FILE_write,
+    gp_file_FILE_seek,
+    gp_file_FILE_tell,
+    gp_file_FILE_eof,
+    gp_file_FILE_dup,
+    gp_file_FILE_seekable,
+    gp_file_FILE_pread,
+    gp_file_FILE_pwrite,
+    gp_file_FILE_setmode_binary,
+    gp_file_FILE_is_char_buffered,
+    gp_file_FILE_fflush,
+    gp_file_FILE_ferror,
+    gp_file_FILE_get_file,
+    gp_file_FILE_clearerr,
+    gp_file_FILE_reopen
+};
+
+gp_file *gp_file_FILE_alloc(const gs_memory_t *mem)
+{
+    return gp_file_alloc(mem->non_gc_memory,
+                         &gp_file_FILE_prototype,
+                         sizeof(gp_file_FILE),
+                         "gp_file_FILE");
+}
+
+int gp_file_FILE_set(gp_file *file_, FILE *f, int (*close)(FILE *))
+{
+    gp_file_FILE *file = (gp_file_FILE *)file_;
+
+    if (f == NULL) {
+        gp_file_dealloc(file_);
+        return 1;
+    }
+
+    file->file = f;
+    file->close = close ? close : fclose;
+
+    return 0;
+}
+
+char *gp_fgets(char *buffer, size_t n, gp_file *f)
+{
+    int c = EOF;
+    char *b = buffer;
+    while (n > 1) {
+        c = gp_fgetc(f);
+	if (c == 0)
+            break;
+	*b++ = c;
+	n--;
+    }
+    if (c == EOF && b == buffer)
+        return NULL;
+    if (gp_ferror(f))
+        return NULL;
+    if (n > 0)
+        *b++ = 0;
+    return buffer;
+}
+
+gp_file *
+gp_fopen(const gs_memory_t *mem, const char *fname, const char *mode)
+{
+    gp_file *file;
+    FILE *f;
+
+    file = gp_file_FILE_alloc(mem);
+    if (file == NULL)
+        return NULL;
+    f = gp_fopen_impl(mem->non_gc_memory, fname, mode);
+    if (gp_file_FILE_set(file, f, fclose))
+        file = NULL;
+    return file;
+}
+
+gp_file *
+gp_open_printer(const gs_memory_t *mem,
+                      char         fname[gp_file_name_sizeof],
+                      int          binary_mode)
+{
+    gp_file *file;
+    FILE *f;
+    int (*close)(FILE *) = NULL;
+
+    file = gp_file_FILE_alloc(mem);
+    if (file == NULL)
+        return NULL;
+    f = gp_open_printer_impl(mem->non_gc_memory, fname, &binary_mode, &close);
+    if (gp_file_FILE_set(file, f, close))
+        file = NULL;
+    else
+        gp_setmode_binary(file, binary_mode);
+
+    return file;
+}
+
+gp_file *
+gp_open_scratch_file(const gs_memory_t *mem,
+                     const char        *prefix,
+                     char              *fname,
+                     const char        *mode)
+{
+    gp_file *file;
+
+    file = gp_file_FILE_alloc(mem);
+    if (file == NULL)
+        return NULL;
+    if (gp_file_FILE_set(file,
+                         gp_open_scratch_file_impl(mem,
+                                                   prefix,
+                                                   fname,
+                                                   mode,
+                                                   0),
+                         NULL))
+        return NULL;
+
+    return file;
+}
+
+gp_file *
+gp_open_scratch_file_rm(const gs_memory_t *mem,
+                        const char        *prefix,
+                        char              *fname,
+                        const char        *mode)
+{
+    gp_file *file;
+
+    file = gp_file_FILE_alloc(mem);
+    if (file == NULL)
+        return NULL;
+    if (gp_file_FILE_set(file,
+                         gp_open_scratch_file_impl(mem,
+                                                   prefix,
+                                                   fname,
+                                                   mode,
+                                                   1),
+                         NULL))
+        return NULL;
+
+    return file;
 }

@@ -112,7 +112,7 @@ sread_block(register stream *s,  const byte *ptr, uint len, const uint32_t *node
     };
     s_std_init(s, (byte *)ptr, len, &p, s_mode_read + s_mode_seek);
     s->end_status = 0;
-    s->file = (FILE *)node;	/* convenient place to put it for %rom% files */
+    s->file = (gp_file *)node;	/* convenient place to put it for %rom% files */
     s->file_modes = s->modes;
     s->file_offset = 0;
     s->file_limit = S_FILE_LIMIT_MAX;
