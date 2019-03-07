@@ -210,7 +210,7 @@
 } bind def
 
 % Check for command line arguments.
-[ shellarguments
+[ .shellarguments
  { ] dup length 1 eq
     { 0 get (r) file dup pphs closefile }
     { (Usage: pphs filename.pdf\n) print flush }

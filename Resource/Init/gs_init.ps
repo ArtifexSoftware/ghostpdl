@@ -869,8 +869,8 @@ userdict /.currentresourcefile //null put
   { /run .systemvar exec } .execasresource
 } bind def
 
-% Define auxiliary procedures needed for the above.
-/shellarguments		% -> shell_arguments true (or) false
+% Convenience function (documented extension)
+/.shellarguments		% -> shell_arguments true (or) false
         { /ARGUMENTS where
            { /ARGUMENTS get dup type /arraytype eq
               { aload pop /ARGUMENTS //null store //true }

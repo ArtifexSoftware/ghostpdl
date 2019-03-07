@@ -368,7 +368,7 @@ forall
  } bind def
 
 % If the program was invoked from the command line, run it now.
-[ shellarguments
+[ .shellarguments
  { counttomark 5 eq
     { convert
       QUIET not { (Done.\n) print flush } if
