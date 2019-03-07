@@ -125,7 +125,7 @@
     } {
       pop
       /SCANDEBUG where { pop (skipping ') print dup =only (') = flush } if
-      pop
+      whitelist exch true put
     }
     ifelse
   } forall
@@ -774,7 +774,7 @@ EXTENSIONS_OPER_LIST operlist_to_whitelist
     dup =only (  ) print operator_list exch get ===
   } {
     /SCANDEBUG where { pop (skipping ') dup =only (') = flush } if
-    pop
+    whitelist exch true put
   }
   ifelse
 } forall
@@ -805,8 +805,20 @@ operator_list {
   } {
     pop
     /SCANDEBUG where { pop (skipping ') print dup =only (') = flush } if
+    whitelist exch true put
+  }
+  ifelse
+} forall
+
+(######################################################################################) =
+(\nwhitelist entries not seen in scan:\n) =
+whitelist {
+  exch type /nulltype eq {
+    =
+  } {
     pop
   }
   ifelse
 } forall
+
 quit
