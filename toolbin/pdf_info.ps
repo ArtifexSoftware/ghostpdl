@@ -40,7 +40,7 @@
 /DumpMediaSizes where { pop } { /DumpMediaSizes true def } ifelse
 /DumpFontsNeeded where { pop } { /DumpFontsNeeded true def } ifelse
 
-[ shellarguments
+[ .shellarguments
   { counttomark 1 eq {
       dup 0 get (-) 0 get ne {
         % File specified on the command line using:  -- toolbin/pdf_info.ps infile.pdf
@@ -105,7 +105,7 @@ cleartomark		% discard the dict from --where--
 } bind def
 
 /dump-pdf-info {    % (fname) -> -
-  () = (        ) print print ( has ) print 
+  () = (        ) print print ( has ) print
   PDFPageCount dup =print 10 mod 1 eq { ( page.\n) } { ( pages\n) } ifelse = flush
 
   Trailer /Root oget /AcroForm knownoget {
@@ -193,7 +193,7 @@ cleartomark		% discard the dict from --where--
 
 /res-type-dict 10 dict begin
   /Font {
-    { 
+    {
       exch pop oforce_no_circular
       dup //null ne {
         dup /DescendantFonts knownoget {
@@ -224,7 +224,7 @@ cleartomark		% discard the dict from --where--
   } bind def
 
   /XObject {
-    { 
+    {
       exch pop oforce_no_circular
       dup //null ne {
         dup /Subtype knownoget {
@@ -243,9 +243,9 @@ cleartomark		% discard the dict from --where--
       } ifelse
     } forall
   } bind def
-  
+
   /Pattern {
-    { 
+    {
       exch pop oforce_no_circular
       dup //null ne {
         /Resources knownoget {
@@ -262,10 +262,10 @@ currentdict end readonly def
 /get-fonts-from-res {
   oforce_no_circular
   dup //null ne {
-    { 
+    {
       oforce_no_circular
       dup //null ne {
-        //res-type-dict 3 -1 roll 
+        //res-type-dict 3 -1 roll
         .knownget {
           exec
         } {
@@ -426,4 +426,3 @@ currentdict /res-type-dict undef
 enum-pdfs
 end
 quit
-

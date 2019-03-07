@@ -14,7 +14,7 @@
 % Modified by L. Peter Deutsch 9/14/93:
 %   uses Ghostscript's =only procedure to replace 'buf cvs print'.
 % Modified by L. Peter Deutsch 9/6/95:
-%   uses Ghostscript's shellarguments facility to accept the font name
+%   uses Ghostscript's .shellarguments facility to accept the font name
 %     on the command line.
 
 % Altered my master@iaas.msu.ru to work with fonts of more than 256 glyphs
@@ -163,7 +163,7 @@
 } bind def
 
 % Check for command line arguments.
-[ shellarguments
+[ .shellarguments
  { ] dup length 1 eq
     { 0 get printafm }
     { (Usage: printafm fontname\n) print flush }
