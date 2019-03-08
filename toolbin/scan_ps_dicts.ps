@@ -770,10 +770,13 @@ EXTENSIONS_OPER_LIST operlist_to_whitelist
 
 [ operator_list { pop } forall ]
 /.sort where { pop { 100 string cvs exch 100 string cvs gt } .sort } if
-{ whitelist 1 index 100 string cvs cvn known not {
+{
+  whitelist 1 index 100 string cvs cvn known not {
     dup =only (  ) print operator_list exch get ===
   } {
-    /SCANDEBUG where { pop (skipping ') dup =only (') = flush } if
+    /SCANDEBUG where { pop
+      (skipping ') print dup =only (') = flush
+    } if
     whitelist exch true put
   }
   ifelse
@@ -812,6 +815,29 @@ operator_list {
 
 (######################################################################################) =
 (\nwhitelist entries not seen in scan:\n) =
-whitelist { { pop } { = } ifelse } forall
+whitelist {
+  {
+    pop
+  } {
+    % check if this is the form of the operator with the -- bracketing
+    256 string cvs dup length 5 ge {
+      2 1 index length 4 sub getinterval
+      cvn dup whitelist exch 2 copy known {
+        get
+        {
+          pop	% on whitelist in "bare" form, but has been seen
+        } {
+          =	% on whitelist, but has not been seen
+        }
+        ifelse
+      } {
+        pop pop pop % not on whitelist without the -- in front and back
+      } ifelse
+    }
+    if
+  }
+  ifelse
+} forall
 
+(######################################################################################) =
 quit
