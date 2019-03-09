@@ -787,12 +787,57 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
             goto cleanupExit;
     }
 
-    /* TODO: Not sure how to implement SMask, needs transparency mode or something?
-     * The gs/pdf implementation seems to render the SMask as an image, and then the other
-     * image on top of it (both as Type1 images).
-     */
-    if (image_info.SMask != NULL) {
+    if (image_info.SMask != NULL && ctx->notransparency == false) {
         dbgmprintf(ctx->memory, "WARNING: Image has unsupported SMask\n");
+        /* We should check for the /PreserveSMask device parameter here. If this is
+         * true (currently pdfwite only) then the device will process the SMask from the
+         * image and we need do nothinng here.
+         */
+        if (ctx->page_has_transparency == true && ctx->notransparency == false) {
+            gs_color_space *gray_cs = gs_cspace_new_DeviceGray(ctx->memory);
+            gs_rect bbox = { { 0, 0} , { 1, 1} };
+            gs_transparency_mask_params_t params;
+            pdf_array *a = NULL;
+            gs_offset_t savedoffset = 0;
+
+            code = pdfi_dict_knownget_type(ctx, (pdf_dict *)image_info.SMask, "Matte", PDF_ARRAY, (pdf_obj **)&a);
+            if (code > 0) {
+                int ix;
+
+                for (ix = 0; ix < a->entries; ix++) {
+                    if (a->values[ix]->type == PDF_INT) {
+                        params.Matte[ix] = (float)((pdf_num *)a->values[ix])->value.i;
+                    } else {
+                        if (a->values[ix]->type == PDF_REAL) {
+                            params.Matte[ix] = ((pdf_num *)a->values[ix])->value.d;
+                        } else
+                            break;
+                    }
+                }
+                if (ix >= a->entries)
+                    params.Matte_components = a->entries;
+                else
+                    params.Matte_components = 0;
+            }
+            pdfi_countdown(a);
+            gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Luminosity);
+
+            code = gs_begin_transparency_mask(ctx->pgs, &params, &bbox, true);
+            if (code < 0) {
+                rc_decrement_cs(gray_cs, "pdfi image /SMask");
+                return code;
+            }
+            rc_decrement_cs(gray_cs, "pdfi image /SMask");
+            savedoffset = pdfi_tell(ctx->main_stream);
+            code = gs_gsave(ctx->pgs);
+
+            pdfi_seek(ctx, ctx->main_stream, ((pdf_dict *)image_info.SMask)->stream_offset, SEEK_SET);
+            code = pdfi_Do(ctx, (pdf_dict *)image_info.SMask, page_dict);
+
+            code = gs_grestore(ctx->pgs);
+            pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
+            code = gs_end_transparency_mask(ctx->pgs, 0);
+        }
     }
 
     if (image_info.SMask == NULL && image_info.Mask != NULL) {
@@ -1117,7 +1162,7 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
                 pdfi_countdown(d);
                 return code;
             }
-            if (group_known) {
+            if (group_known && ctx->notransparency == false) {
                 code = pdfi_loop_detector_mark(ctx);
                 if (code < 0) {
                     (void)pdfi_loop_detector_cleartomark(ctx);
@@ -1136,15 +1181,15 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 
             code = pdfi_interpret_content_stream(ctx, d, page_dict);
             pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
-            if (code < 0) {
+            if (code < 0)
                 (void)pdfi_end_transparency_group(ctx);
-            } else {
+            else
                 code = pdfi_end_transparency_group(ctx);
-                if (code < 0) {
-                    (void)pdfi_loop_detector_cleartomark(ctx);
-                    pdfi_countdown(d);
-                    return code;
-                }
+
+            if (code < 0) {
+                (void)pdfi_loop_detector_cleartomark(ctx);
+                pdfi_countdown(d);
+                return code;
             }
         } else if (pdfi_name_strcmp(n, "PS") == 0) {
             dmprintf(ctx->memory, "*** WARNING: PostScript XOBjects are deprecated (SubType 'PS')\n");
