@@ -23,6 +23,7 @@
 #include "pdf_func.h"
 #include "pdf_file.h"
 #include "pdf_loop_detect.h"
+#include "pdf_image.h"
 
 #include "gsmatrix.h"
 #include "gslparam.h"
@@ -639,7 +640,7 @@ static int GS_BM(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict
         return code;
 
     for (p = blend_mode_names; *p; ++p) {
-        if (strlen(*p) == n->length && memcmp(*p, n->data, n->length) == 0) {
+        if (pdfi_name_strcmp(n, *p) == 0) {
             return gs_setblendmode(ctx->pgs, p - blend_mode_names);
         }
     }
@@ -650,6 +651,9 @@ static int GS_SMask(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_d
 {
     pdf_obj *o;
     int code;
+
+    if (ctx->page_has_transparency == false || ctx->notransparency == true)
+        return 0;
 
     code = pdfi_dict_get(ctx, GS, "SMask", (pdf_obj **)&o);
     if (code < 0)
@@ -664,8 +668,69 @@ static int GS_SMask(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_d
         }
     }
 
+    if (o->type == PDF_DICT) {
+        gs_color_space *gray_cs = gs_cspace_new_DeviceGray(ctx->memory);
+        gs_rect bbox = { { 0, 0} , { 1, 1} };
+        gs_transparency_mask_params_t params;
+        pdf_array *a = NULL;
+        gs_offset_t savedoffset = 0;
+        pdf_dict *G_dict = NULL;
+        pdf_name *n;
+
+        code = pdfi_dict_knownget_type(ctx, (pdf_dict *)o, "Subtype", PDF_DICT, (pdf_obj **)&n);
+        if (code > 0 && pdfi_name_strcmp(n, "SMask") == 0) {
+            pdfi_countdown(n);
+            n = NULL;
+            code = pdfi_dict_knownget_type(ctx, (pdf_dict *)o, "G", PDF_DICT, (pdf_obj **)&G_dict);
+            if (code > 0) {
+                code = pdfi_dict_knownget_type(ctx, (pdf_dict *)G_dict, "Matte", PDF_ARRAY, (pdf_obj **)&a);
+                if (code > 0) {
+                    int ix;
+
+                    for (ix = 0; ix < a->entries; ix++) {
+                        if (a->values[ix]->type == PDF_INT) {
+                            params.Matte[ix] = (float)((pdf_num *)a->values[ix])->value.i;
+                        } else {
+                            if (a->values[ix]->type == PDF_REAL) {
+                                params.Matte[ix] = ((pdf_num *)a->values[ix])->value.d;
+                            } else
+                                break;
+                        }
+                    }
+                    if (ix >= a->entries)
+                        params.Matte_components = a->entries;
+                    else
+                        params.Matte_components = 0;
+                }
+                pdfi_countdown(a);
+                gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Luminosity);
+
+                code = gs_begin_transparency_mask(ctx->pgs, &params, &bbox, true);
+                if (code < 0) {
+                    pdfi_countdown(o);
+                    pdfi_countdown(G_dict);
+                    rc_decrement_cs(gray_cs, "pdfi image /SMask");
+                    return code;
+                }
+                rc_decrement_cs(gray_cs, "pdfi image /SMask");
+                savedoffset = pdfi_tell(ctx->main_stream);
+                code = gs_gsave(ctx->pgs);
+
+                pdfi_seek(ctx, ctx->main_stream, ((pdf_dict *)G_dict)->stream_offset, SEEK_SET);
+                code = pdfi_Do(ctx, (pdf_dict *)G_dict, page_dict);
+
+                code = gs_grestore(ctx->pgs);
+                pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
+                code = gs_end_transparency_mask(ctx->pgs, 0);
+                pdfi_countdown(G_dict);
+            }
+        } else {
+            /* take action on a /Mask entry. What does this mean ? What do we need to do */
+        }
+        pdfi_countdown(n);
+    }
+
     pdfi_countdown(o);
-    dbgmprintf(ctx->memory, "ExtGState SMask not yet implemented\n");
     return 0;
 }
 
