@@ -1162,7 +1162,7 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
                 pdfi_countdown(d);
                 return code;
             }
-            if (group_known && ctx->notransparency == false) {
+            if (group_known && ctx->page_has_transparency == true) {
                 code = pdfi_loop_detector_mark(ctx);
                 if (code < 0) {
                     (void)pdfi_loop_detector_cleartomark(ctx);
@@ -1181,10 +1181,12 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 
             code = pdfi_interpret_content_stream(ctx, d, page_dict);
             pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
-            if (code < 0)
-                (void)pdfi_end_transparency_group(ctx);
-            else
-                code = pdfi_end_transparency_group(ctx);
+            if (group_known && ctx->page_has_transparency == true) {
+                if (code < 0)
+                    (void)pdfi_end_transparency_group(ctx);
+                else
+                    code = pdfi_end_transparency_group(ctx);
+            }
 
             if (code < 0) {
                 (void)pdfi_loop_detector_cleartomark(ctx);
