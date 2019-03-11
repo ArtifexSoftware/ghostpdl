@@ -675,7 +675,7 @@ static int GS_SMask(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_d
         pdf_array *a = NULL;
         gs_offset_t savedoffset = 0;
         pdf_dict *G_dict = NULL;
-        pdf_name *n;
+        pdf_name *n = NULL;
 
         code = pdfi_dict_knownget_type(ctx, (pdf_dict *)o, "Subtype", PDF_DICT, (pdf_obj **)&n);
         if (code > 0 && pdfi_name_strcmp(n, "SMask") == 0) {
@@ -727,7 +727,6 @@ static int GS_SMask(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_d
         } else {
             /* take action on a /Mask entry. What does this mean ? What do we need to do */
         }
-        pdfi_countdown(n);
     }
 
     pdfi_countdown(o);
