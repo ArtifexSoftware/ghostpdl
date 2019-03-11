@@ -1338,6 +1338,9 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
 
 #ifndef DEBUG
     ctx->page_has_transparency = false;
+    dmprintf1(ctx->memory, "Setting page transparency to false, current page setting is %d\n", uses_transparency);
+#else
+    dmprintf1(ctx->memory, "Current page transparency setting is %d\n", uses_transparency);
 #endif
 
     if (spots > 0) {
