@@ -29,6 +29,9 @@ static int pdfi_transparency_group_common(pdf_context *ctx, pdf_dict *page_dict,
     gs_color_space  *pcs = NULL;
     int code;
 
+    gs_trans_group_params_init(&params);
+    gs_setopacityalpha(ctx->pgs, 1.0);
+
     code = pdfi_dict_get_bool(ctx, group_dict, "Isolated", &b);
     if (code < 0 && code != gs_error_undefined)
         return_error(code);
@@ -54,12 +57,13 @@ static int pdfi_transparency_group_common(pdf_context *ctx, pdf_dict *page_dict,
         code = pdfi_dict_knownget(ctx, group_dict, "ColorSpace", &CS);
     }
     if (code > 0) {
-        code = pdfi_create_colorspace(ctx, (pdf_obj *)CS, page_dict, group_dict, &pcs);
-        if (code < 0) {
-            pdfi_countdown(&CS);
-            return_error(code);
-        }
-        params.ColorSpace = pcs;
+        code = pdfi_setcolorspace(ctx, CS, group_dict, page_dict);
+        pdfi_countdown(CS);
+        if (code < 0)
+            return code;
+        params.ColorSpace = gs_currentcolorspace(ctx->pgs);
+    } else {
+        params.ColorSpace = NULL;
     }
     if (code < 0)
         return_error(code);
@@ -77,6 +81,7 @@ int pdfi_begin_page_group(pdf_context *ctx, pdf_dict *page_dict)
     if (code < 0)
         return_error(code);
 
+    code = gs_gsave(ctx->pgs);
     bbox.p.x = ctx->PageSize[0];
     bbox.p.y = ctx->PageSize[1];
     bbox.q.x = ctx->PageSize[2];
@@ -97,6 +102,7 @@ int pdfi_begin_group(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_dict)
     if (code < 0)
         return_error(code);
 
+    code = gs_gsave(ctx->pgs);
     bbox.p.x = ctx->PageSize[0];
     bbox.p.y = ctx->PageSize[1];
     bbox.q.x = ctx->PageSize[2];
@@ -110,5 +116,8 @@ int pdfi_begin_group(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_dict)
 
 int pdfi_end_transparency_group(pdf_context *ctx)
 {
+    int code;
+
+    code = gs_grestore(ctx->pgs);
     return gs_end_transparency_group(ctx->pgs);
 }
