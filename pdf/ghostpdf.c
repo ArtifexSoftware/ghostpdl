@@ -1299,24 +1299,9 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
     ctx->SpotNames->refcnt++;
 
     if (ctx->notransparency == false) {
-        code = pdfi_check_page_transparency(ctx, page_dict, &uses_transparency, &spots);
-        if (code < 0) {
-            pdfi_countdown(ctx->SpotNames);
-            pdfi_countdown(page_dict);
-            return code;
-        }
-    }
-
-#ifndef DEBUG
-    uses_transparency = false;
-#endif
-
-    ctx->page_has_transparency = uses_transparency;
-
-    if (uses_transparency) {
         pdf_dict *group_dict = NULL;
 
-        code = gs_push_pdf14trans_device(ctx->pgs, false);
+        code = pdfi_check_page_transparency(ctx, page_dict, &uses_transparency, &spots);
         if (code < 0) {
             pdfi_countdown(ctx->SpotNames);
             pdfi_countdown(page_dict);
@@ -1341,8 +1326,6 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
                 pdfi_countdown(CS);
             }
             pdfi_countdown(group_dict);
-
-            code = pdfi_begin_page_group(ctx, page_dict);
         }
         if (code < 0) {
             pdfi_countdown(ctx->SpotNames);
@@ -1350,6 +1333,12 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
             return code;
         }
     }
+
+    ctx->page_has_transparency = uses_transparency;
+
+#ifndef DEBUG
+    ctx->page_has_transparency = false;
+#endif
 
     if (spots > 0) {
         gs_c_param_list_write(&ctx->pdfi_param_list, ctx->memory);
@@ -1369,6 +1358,28 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
         }
     }
 
+#ifdef DEBUG
+    if (uses_transparency) {
+#else
+    if (ctx->page_has_transparency) {
+#endif
+        code = gs_push_pdf14trans_device(ctx->pgs, false);
+        if (code < 0) {
+            pdfi_countdown(ctx->SpotNames);
+            pdfi_countdown(page_dict);
+            return code;
+        }
+        if (page_group_known) {
+            code = pdfi_begin_page_group(ctx, page_dict);
+            if (code < 0) {
+                pdfi_countdown(ctx->SpotNames);
+                pdfi_countdown(page_dict);
+                return code;
+            }
+        }
+    }
+
+
     code = pdfi_process_page_contents(ctx, page_dict);
     if (code < 0) {
         if (uses_transparency)
@@ -1378,7 +1389,11 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
         return code;
     }
 
+#ifdef DEBUG
     if (uses_transparency) {
+#else
+    if (ctx->page_has_transparency) {
+#endif
         if (page_group_known) {
             code = pdfi_end_transparency_group(ctx);
             if (code < 0) {
