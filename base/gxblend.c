@@ -1207,7 +1207,8 @@ art_blend_pixel_8_inline(byte *gs_restrict dst, const byte *gs_restrict backdrop
              * PDF specification */
         case BLEND_MODE_CompatibleOverprint:
             {
-                gx_color_index drawn_comps = p14dev->drawn_comps;
+                gx_color_index drawn_comps = p14dev->color_is_stroke ?
+                                             p14dev->drawn_comps_stroke : p14dev->drawn_comps_fill;
                 gx_color_index comps;
                 /* If overprint mode is true and the current color space and
                  * the group color space are CMYK (or CMYK and spots), then
@@ -1462,7 +1463,8 @@ art_blend_pixel_16_inline(uint16_t *gs_restrict dst, const uint16_t *gs_restrict
              * PDF specification */
         case BLEND_MODE_CompatibleOverprint:
             {
-                gx_color_index drawn_comps = p14dev->drawn_comps;
+                gx_color_index drawn_comps = p14dev->color_is_stroke ?
+                                             p14dev->drawn_comps_stroke : p14dev->drawn_comps_fill;
                 gx_color_index comps;
                 /* If overprint mode is true and the current color space and
                  * the group color space are CMYK (or CMYK and spots), then
@@ -4312,7 +4314,8 @@ do_compose_alphaless_group(pdf14_buf *tos, pdf14_buf *nos,
     pdf14_device *pdev = (pdf14_device *)dev;
     bool overprint = pdev->overprint;
     bool additive = pdev->ctx->additive;
-    gx_color_index drawn_comps = pdev->drawn_comps;
+    gx_color_index drawn_comps = pdev->color_is_stroke ?
+                                     pdev->drawn_comps_stroke : pdev->drawn_comps_fill;
     int n_chan = nos->n_chan;
     int num_spots = tos->num_spots;
     byte alpha = tos->alpha>>8;
@@ -4442,7 +4445,8 @@ do_compose_alphaless_group16(pdf14_buf *tos, pdf14_buf *nos,
     pdf14_device *pdev = (pdf14_device *)dev;
     bool overprint = pdev->overprint;
     bool additive = pdev->ctx->additive;
-    gx_color_index drawn_comps = pdev->drawn_comps;
+    gx_color_index drawn_comps = pdev->color_is_stroke ?
+                                     pdev->drawn_comps_stroke : pdev->drawn_comps_fill;
     int n_chan = nos->n_chan;
     int num_spots = tos->num_spots;
     uint16_t alpha = tos->alpha;
@@ -5025,7 +5029,8 @@ do_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     int alpha_g_off = shape_off + (has_shape ? planestride : 0);
     int tag_off = alpha_g_off + (has_alpha_g ? planestride : 0);
     bool overprint = pdev->overprint;
-    gx_color_index drawn_comps = pdev->drawn_comps;
+    gx_color_index drawn_comps = pdev->color_is_stroke ?
+                                     pdev->drawn_comps_stroke : pdev->drawn_comps_fill;
     byte shape = 0; /* Quiet compiler. */
     byte src_alpha;
     const gx_color_index mask = ((gx_color_index)1 << 8) - 1;
@@ -5628,9 +5633,12 @@ do_mark_fill_rectangle16(gx_device * dev, int x, int y, int w, int h,
     int alpha_g_off = shape_off + (has_shape ? planestride : 0);
     int tag_off = alpha_g_off + (has_alpha_g ? planestride : 0);
     bool overprint = pdev->overprint;
-    gx_color_index drawn_comps = pdev->drawn_comps;
-    uint16_t shape = 0; /* Quiet compiler. */
-    uint16_t src_alpha;
+    gx_color_index drawn_comps = pdev->color_is_stroke ?
+                                 pdev->drawn_comps_stroke : pdev->drawn_comps_fill;
+    byte shape = 0; /* Quiet compiler. */
+    byte src_alpha;
+    const gx_color_index mask = ((gx_color_index)1 << 8) - 1;
+    const int shift = 8;
     int num_spots = buf->num_spots;
     int first_blend_spot = num_comp;
     pdf14_mark_fill_rect16_fn fn;

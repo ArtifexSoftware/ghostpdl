@@ -65,7 +65,7 @@ zfillstroke(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     push(1);
-    make_int(op, 0);
+    make_int(op, 0);		/* 0 implies we are at fill color, need to swap first */
     push_op_estack(fillstroke_cont);
     return o_push_estack;
 }

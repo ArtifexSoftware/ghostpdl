@@ -109,6 +109,8 @@ c_overprint_equal(const gs_composite_t * pct0, const gs_composite_t * pct1)
 
         pparams0 = &((const gs_overprint_t *)(pct0))->params;
         pparams1 = &((const gs_overprint_t *)(pct1))->params;
+        if (pparams0->color_is_stroke != pparams1->color_is_stroke)
+            return true;		/* this changed */
         if (!pparams0->retain_any_comps)
             return !pparams1->retain_any_comps;
         else if (pparams0->retain_spot_comps)
@@ -125,6 +127,7 @@ c_overprint_equal(const gs_composite_t * pct0, const gs_composite_t * pct1)
  */
 #define OVERPRINT_ANY_COMPS     1
 #define OVERPRINT_SPOT_COMPS    2
+#define OVERPRINT_COLOR_IS_STROKE	4
 
 /*
  * Convert an overprint compositor to string form for use by the command
@@ -142,6 +145,7 @@ c_overprint_write(const gs_composite_t * pct, byte * data, uint * psize, gx_devi
         flags |= OVERPRINT_ANY_COMPS;
         if (pparams->retain_spot_comps)
             flags |= OVERPRINT_SPOT_COMPS;
+        flags |= (pparams->color_is_stroke) ? OVERPRINT_COLOR_IS_STROKE : 0;
         /* write out the component bits only if necessary (and possible) */
         if (!pparams->retain_spot_comps) {
             uint tmp_size = (avail > 0 ? avail - 1 : 0);
@@ -158,7 +162,8 @@ c_overprint_write(const gs_composite_t * pct, byte * data, uint * psize, gx_devi
     if (used > avail)
         return_error(gs_error_rangecheck);
     data[0] = flags;
-    if_debug1m('v', ((const gx_device *)cdev)->memory, "[v]c_overprint_write(%d)\n", flags);
+    if_debug2m('v', ((const gx_device *)cdev)->memory, "[v]c_overprint_write(%d), drawn_comps=%ld\n",
+               flags, pparams->drawn_comps);
     return 0;
 }
 
@@ -180,9 +185,10 @@ c_overprint_read(
     if (size < 1)
         return_error(gs_error_rangecheck);
     flags = *data;
-    if_debug1m('v', mem, "[v]c_overprint_read(%d)\n", flags);
+    if_debug1m('v', mem, "[v]c_overprint_read(%d)", flags);
     params.retain_any_comps = (flags & OVERPRINT_ANY_COMPS) != 0;
     params.retain_spot_comps = (flags & OVERPRINT_SPOT_COMPS) != 0;
+    params.color_is_stroke = (flags & OVERPRINT_COLOR_IS_STROKE) != 0;
     params.idle = 0;
     params.drawn_comps = 0;
 
@@ -192,7 +198,9 @@ c_overprint_read(
         if (code < 0)
             return code;
         nbytes += code;
+        if_debug1m('v', mem, ", drawn_comps=%ld", params.drawn_comps);
     }
+        if_debug0m('v', mem, "\n");
     code = gs_create_overprint(ppct, &params, mem);
     return code < 0 ? code : nbytes;
 }
@@ -203,9 +211,7 @@ c_overprint_read(
 static gs_compositor_closing_state
 c_overprint_is_closing(const gs_composite_t *this, gs_composite_t **ppcte, gx_device *dev)
 {
-    if (*ppcte != NULL && (*ppcte)->type->comp_id != GX_COMPOSITOR_OVERPRINT)
-        return COMP_ENQUEUE;
-    return COMP_REPLACE_PREV;
+    return COMP_ENQUEUE;	/* maybe extra work, but these actions are fast */
 }
 
 static composite_create_default_compositor_proc(c_overprint_create_default_compositor);
@@ -291,7 +297,9 @@ typedef struct overprint_device_s {
      * target color space is not separable and linear.  It is also used
      * for the devn color values since we may need more than 8 components
      */
-    gx_color_index  drawn_comps;
+    bool color_is_stroke;					/* used to select drawn_comps */
+    gx_color_index  drawn_comps_fill;
+    gx_color_index	drawn_comps_stroke;		/* pparams->color_is_stroke determines which to set */
 
     /*
      * The mask of gx_color_index bits to be retained during a drawing
@@ -313,7 +321,8 @@ typedef struct overprint_device_s {
      * required. It will be required if depth > 8 and the host processor
      * is little-endian.
      */
-    gx_color_index  retain_mask;
+    gx_color_index  retain_mask_fill;
+    gx_color_index	retain_mask_stroke;
 
     bool copy_alpha_hl;
 
@@ -354,6 +363,7 @@ static dev_proc_put_params(overprint_put_params);
 static dev_proc_get_page_device(overprint_get_page_device);
 static dev_proc_create_compositor(overprint_create_compositor);
 static dev_proc_get_color_comp_index(overprint_get_color_comp_index);
+static dev_proc_fill_stroke_path(overprint_fill_stroke_path);
 
 static const gx_device_procs no_overprint_procs = {
     overprint_open_device,              /* open_device */
@@ -542,7 +552,7 @@ static const gx_device_procs generic_overprint_procs = {
     gx_forward_copy_alpha_hl_color,     /* copy_alpha_hl_color */
     NULL,                               /* process_page */\
     NULL,				/* transform_pixel_region */\
-    gx_default_fill_stroke_path,        /* fill_stroke */\
+    overprint_fill_stroke_path,         /* fill_stroke */
 };
 
 static const gx_device_procs sep_overprint_procs = {
@@ -620,7 +630,7 @@ static const gx_device_procs sep_overprint_procs = {
     overprint_copy_alpha_hl_color,      /* copy_alpha_hl_color */
     NULL,                               /* process_page */\
     NULL,				/* transform_pixel_region */\
-    gx_default_fill_stroke_path,        /* fill_stroke */\
+    overprint_fill_stroke_path,         /* fill_stroke */
 };
 
 /*
@@ -698,7 +708,9 @@ static void
 set_retain_mask(overprint_device_t * opdev)
 {
     uchar i, ncomps = opdev->color_info.num_components;
-    gx_color_index  drawn_comps = opdev->drawn_comps, retain_mask = 0;
+    gx_color_index  drawn_comps = opdev->color_is_stroke ?
+                                  opdev->drawn_comps_stroke : opdev->drawn_comps_fill;
+    gx_color_index retain_mask = 0;
 #if !ARCH_IS_BIG_ENDIAN
     int depth = opdev->color_info.depth;
 #endif
@@ -711,7 +723,10 @@ set_retain_mask(overprint_device_t * opdev)
     if (depth > 8)
         retain_mask = swap_color_index(depth, retain_mask);
 #endif
-    opdev->retain_mask = retain_mask;
+    if (opdev->color_is_stroke)
+        opdev->retain_mask_stroke = retain_mask;
+    else
+        opdev->retain_mask_fill = retain_mask;
 }
 
 /* enlarge mask of non-zero components */
@@ -742,6 +757,9 @@ update_overprint_params(
 {
     uchar ncomps = opdev->color_info.num_components;
 
+    /* propagate color_is_stroke into the overprint device */
+    opdev->color_is_stroke = pparams->color_is_stroke;
+
     /* check if overprint is to be turned off */
     if (!pparams->retain_any_comps || pparams->idle) {
         /* if fill_rectangle forwards, overprint is already off */
@@ -764,7 +782,10 @@ update_overprint_params(
 
     /* see if we need to determine the spot color components */
     if (!pparams->retain_spot_comps) {
-        opdev->drawn_comps = pparams->drawn_comps;
+        if (pparams->color_is_stroke)
+            opdev->drawn_comps_stroke = pparams->drawn_comps;
+        else
+            opdev->drawn_comps_fill = pparams->drawn_comps;
     } else {
         gx_device *                     dev = (gx_device *)opdev;
         subclass_color_mappings         scm;
@@ -793,7 +814,10 @@ update_overprint_params(
         map_cmyk_subclass(scm, frac_0, frac_0, frac_0, frac_13, cvals);
         drawn_comps |= check_drawn_comps(ncomps, cvals);
 
-        opdev->drawn_comps = drawn_comps;
+        if (pparams->color_is_stroke)
+            opdev->drawn_comps_stroke = drawn_comps;
+        else
+            opdev->drawn_comps_fill =  drawn_comps;
     }
 
     /* if appropriate, update the retain_mask field */
@@ -902,11 +926,16 @@ overprint_create_compositor(
         return gx_default_create_compositor(dev, pcdev, pct, pgs, memory, cdev);
     else {
         gs_overprint_params_t params = ((const gs_overprint_t *)pct)->params;
-        int     code;
+        overprint_device_t *opdev = (overprint_device_t *)dev;
+        int     code = 0;
 
         params.idle = pct->idle;
-        /* device must already exist, so just update the parameters */
-        code = update_overprint_params((overprint_device_t *)dev, &params);
+        /* device must already exist, so just update the parameters if settings change */
+        if (params.color_is_stroke != opdev->color_is_stroke ||
+            params.drawn_comps != (opdev->color_is_stroke ?
+            opdev->drawn_comps_stroke : opdev->drawn_comps_fill)
+            )
+            code = update_overprint_params(opdev, &params);
         if (code >= 0)
             *pcdev = dev;
         return code;
@@ -935,9 +964,10 @@ overprint_generic_fill_rectangle(
     if (tdev == 0)
         return 0;
     else
-        return gx_overprint_generic_fill_rectangle(tdev, opdev->drawn_comps, x,
-                                                    y, width, height, color,
-                                                    dev->memory);
+        return gx_overprint_generic_fill_rectangle(tdev,
+                                                   opdev->color_is_stroke ?
+                                                   opdev->drawn_comps_stroke : opdev->drawn_comps_fill,
+                                                   x, y, width, height, color, dev->memory);
 }
 
 static int
@@ -982,7 +1012,7 @@ overprint_copy_planes(gx_device * dev, const byte * data, int data_x, int raster
     uchar                   num_comps;
     uchar                   k,j;
     gs_memory_t *           mem = dev->memory;
-    gx_color_index          comps = opdev->drawn_comps;
+    gx_color_index          comps = opdev->color_is_stroke ? opdev->drawn_comps_stroke : opdev->drawn_comps_fill;
     byte                    *curr_data = (byte *) data + data_x;
     int                     row, offset;
 
@@ -1024,7 +1054,6 @@ overprint_copy_planes(gx_device * dev, const byte * data, int data_x, int raster
         /* step through the height */
         row = 0;
         while (h-- > 0 && code >= 0) {
-            comps = opdev->drawn_comps;
             gb_rect.p.y = y++;
             gb_rect.q.y = y;
             offset = row * raster_in + data_x;
@@ -1096,7 +1125,7 @@ overprint_fill_rectangle_hl_color(gx_device *dev,
     int                     x, y, w, h;
     uchar                   k, j;
     gs_memory_t *           mem = dev->memory;
-    gx_color_index          comps = opdev->drawn_comps;
+    gx_color_index          comps;
     gx_color_index          mask;
     int                     shift;
     int                     deep;
@@ -1142,9 +1171,9 @@ overprint_fill_rectangle_hl_color(gx_device *dev,
 
     /* step through the height */
     while (h-- > 0 && code >= 0) {
-        comps = opdev->drawn_comps;
         gb_rect.p.y = y++;
         gb_rect.q.y = y;
+        comps = opdev->color_is_stroke ? opdev->drawn_comps_stroke : opdev->drawn_comps_fill;
         /* And now through each plane */
         for (k = 0; k < tdev->color_info.num_components; k++) {
             /* First set the params to zero for all planes except the one we want */
@@ -1223,14 +1252,42 @@ overprint_sep_fill_rectangle(
          * depth < 8 * sizeof(mono_fill_chunk).
          */
         if ( depth <= 8 * sizeof(mono_fill_chunk) && (depth & (depth - 1)) == 0)
-            return gx_overprint_sep_fill_rectangle_1(tdev, opdev->retain_mask,
-                                                      x, y, width, height,
-                                                      color, dev->memory);
+            return gx_overprint_sep_fill_rectangle_1(tdev, opdev->color_is_stroke ?
+                                                     opdev->retain_mask_stroke : opdev->retain_mask_fill,
+                                                     x, y, width, height,
+                                                     color, dev->memory);
         else
-            return gx_overprint_sep_fill_rectangle_2(tdev,opdev->retain_mask,
-                                                      x, y, width, height,
-                                                      color, dev->memory);
+            return gx_overprint_sep_fill_rectangle_2(tdev, opdev->color_is_stroke ?
+                                                     opdev->retain_mask_stroke : opdev->retain_mask_fill,
+                                                     x, y, width, height,
+                                                     color, dev->memory);
     }
+}
+
+/*
+ *	Cannot use default_fill_stroke_path because we need to set the color_is_stroke
+ */
+int
+overprint_fill_stroke_path(gx_device * pdev, const gs_gstate * pgs,
+                           gx_path * ppath,
+                           const gx_fill_params * params_fill,
+                           const gx_device_color * pdevc_fill,
+                           const gx_stroke_params * params_stroke,
+                           const gx_device_color * pdevc_stroke,
+                           const gx_clip_path * pcpath)
+{
+    int code;
+    overprint_device_t *opdev = (overprint_device_t *)pdev;
+
+    opdev->color_is_stroke = false;
+    code = dev_proc(pdev, fill_path)(pdev, pgs, ppath, params_fill, pdevc_fill, pcpath);
+    if (code < 0)
+        return code;
+    /* Set up for stroke */
+    opdev->color_is_stroke = true;
+    code = dev_proc(pdev, stroke_path)(pdev, pgs, ppath, params_stroke, pdevc_stroke, pcpath);
+    opdev->color_is_stroke = false;
+    return code;
 }
 
 /* complete a procedure set */
@@ -1265,14 +1322,6 @@ fill_in_procs(gx_device_procs * pprocs)
  * Note that this routine will be called only if the device is not already
  * an overprint compositor. Hence, if pct->params.retain_any_comps is
  * false, we can just return.
- *
- * We also suppress use of overprint if the current device color model has only
- * a single component. In this case overprint mode is inapplicable (it applies
- * only to CMYK devices), and nothing can possibly be gained by using overprint.
- * More significantly, this cause avoids erroneous use of overprint when a
- * mask caching device is the current device, which would otherwise require
- * elaborate special handling in the caching device create_compositor
- * procedure.
  */
 static int
 c_overprint_create_default_compositor(
@@ -1297,17 +1346,17 @@ c_overprint_create_default_compositor(
     }
 
     /* build the overprint device */
-    opdev = gs_alloc_struct_immovable( mem,
-                                       overprint_device_t,
-                                       &st_overprint_device_t,
-                                       "create overprint compositor" );
+    opdev = gs_alloc_struct_immovable(mem,
+                                      overprint_device_t,
+                                      &st_overprint_device_t,
+                                      "create overprint compositor" );
     *popdev = (gx_device *)opdev;
     if (opdev == NULL)
         return_error(gs_error_VMerror);
-    gx_device_init( (gx_device *)opdev,
-                    (const gx_device *)&gs_overprint_device,
-                    mem,
-                    false );
+    gx_device_init((gx_device *)opdev,
+                   (const gx_device *)&gs_overprint_device,
+                   mem,
+                   false );
     memcpy(&opdev->no_overprint_procs,
            &no_overprint_procs,
            sizeof(no_overprint_procs));
@@ -1333,5 +1382,5 @@ c_overprint_create_default_compositor(
     params.idle = ovrpct->idle;
 
     /* set up the overprint parameters */
-    return update_overprint_params( opdev, &params);
+    return update_overprint_params(opdev, &params);
 }

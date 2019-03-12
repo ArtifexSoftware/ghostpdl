@@ -15,6 +15,7 @@
 
 /* Compositing devices for implementing	PDF 1.4	imaging	model */
 
+#include "assert_.h"
 #include "math_.h"
 #include "memory_.h"
 #include "gx.h"
@@ -1494,7 +1495,7 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
     bool icc_match;
     pdf14_device *pdev = (pdf14_device *)dev;
     bool overprint = pdev->overprint;
-    gx_color_index drawn_comps = pdev->drawn_comps;
+    gx_color_index drawn_comps = pdev->drawn_comps_stroke | pdev->drawn_comps_fill;
     bool has_matte = false;
 
     if (nos == NULL)
@@ -2948,6 +2949,8 @@ pdf14_set_marking_params(gx_device *dev, const gs_gstate *pgs)
     pdev->blend_mode = pgs->blend_mode;
     pdev->overprint = pgs->overprint;
     pdev->effective_overprint_mode = pgs->effective_overprint_mode;
+    pdev->stroke_overprint = pgs->stroke_overprint;
+    pdev->color_is_stroke = pgs->color_is_stroke;
     pdev->fillconstantalpha = pgs->fillconstantalpha;
     pdev->strokeconstantalpha = pgs->strokeconstantalpha;
 
@@ -3257,18 +3260,20 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
     int code, code2;
     gs_transparency_group_params_t params = { 0 };
     gs_fixed_rect clip_bbox;
-    gs_rect bbox, group_stroke_box, group_fill_box;
+    gs_rect bbox, group_stroke_box;
     float opacity = pgs->opacity.alpha;
     gs_blend_mode_t blend_mode = pgs->blend_mode;
     gs_fixed_rect path_bbox;
     int expansion_code;
     gs_fixed_point expansion;
     bool fill_overprint = pgs->overprint;
+    bool stroke_overprint = pgs->stroke_overprint;
+    bool save_color_is_stroke = pgs->color_is_stroke;
 
     if (pgs->fillconstantalpha == 0.0 && pgs->strokeconstantalpha == 0.0)
         return 0;
 
-    code = gx_curr_fixed_bbox(pgs, &clip_bbox, NO_PATH);
+    code = gx_curr_fixed_bbox((gs_gstate *)pgs, &clip_bbox, NO_PATH);
     if (code < 0 && code != gs_error_unknownerror)
         return code;
     if (code == gs_error_unknownerror) {
@@ -3317,25 +3322,22 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
         code = gs_setopacityalpha(pgs, pgs->fillconstantalpha);
         if (code < 0)
             goto cleanup;
+        ((pdf14_device *)dev)->color_is_stroke = false;
         code = pdf14_fill_path(dev, pgs, ppath, fill_params, pdcolor_fill, pcpath);
         if (code < 0)
             goto cleanup;
     }
 
     if (pgs->strokeconstantalpha > 0.0) {
-        pdf14_device * pdev = (pdf14_device *)dev;
-
-        if (pgs->stroke_overprint != fill_overprint) {
-            /* set up overprint for stroke */
-            ((gs_gstate *)pgs)->overprint = pgs->stroke_overprint;
-        }
         code = gs_setopacityalpha(pgs, pgs->strokeconstantalpha);
         if (code < 0)
             goto cleanup;
+        gs_swapcolors_quick(pgs);	/* flips color_is_stroke (to stroke) */
+        ((pdf14_device *)dev)->color_is_stroke = pgs->color_is_stroke;
         code = pdf14_stroke_path(dev, pgs, ppath, stroke_params, pdcolor_stroke, pcpath);
-        /* NB: restore the overprint settings to fill below in cleanup */
+        gs_swapcolors_quick(pgs);	/* this flips pgs->color_is_stroke back as well */
         if (code < 0)
-            goto cleanup;
+            goto cleanup;		/* bail out (with colors swapped back to fill) */
     }
 
     /* Now during the pop do the compositing with alpha of 1.0 and normal blend */
@@ -3347,15 +3349,12 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
     /* Restore where we were. If an error occured while in the group push
        return that error code but try to do the cleanup */
 cleanup:
+    ((pdf14_device *)dev)->color_is_stroke = save_color_is_stroke;
     code2 = pdf14_end_transparency_group(dev, pgs);
     if (code2 < 0) {
         /* At this point things have gone very wrong. We should just shut down */
         code = gs_abort_pdf14trans_device(pgs);
         return code2;
-    }
-    if (pgs->stroke_overprint != fill_overprint) {
-        /* restore the overprint settings to fill */
-        ((gs_gstate *)pgs)->overprint = fill_overprint;
     }
     code2 = gs_setopacityalpha(pgs, opacity);
     if (code2 < 0)
@@ -3416,7 +3415,8 @@ do_pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
     int alpha_g_off = shape_off + (has_shape ? planestride : 0);
     int tag_off = alpha_g_off + (has_alpha_g ? planestride : 0);
     bool overprint = pdev->overprint;
-    gx_color_index drawn_comps = pdev->drawn_comps;
+    gx_color_index drawn_comps = pdev->color_is_stroke ?
+                                 pdev->drawn_comps_stroke : pdev->drawn_comps_fill;
     gx_color_index comps;
     byte shape = 0; /* Quiet compiler. */
     byte src_alpha;
@@ -3604,7 +3604,8 @@ do_pdf14_copy_alpha_color_16(gx_device * dev, const byte * data, int data_x,
     int alpha_g_off = shape_off + (has_shape ? planestride : 0);
     int tag_off = alpha_g_off + (has_alpha_g ? planestride : 0);
     bool overprint = pdev->overprint;
-    gx_color_index drawn_comps = pdev->drawn_comps;
+    gx_color_index drawn_comps = pdev->color_is_stroke ?
+                                 pdev->drawn_comps_stroke : pdev->drawn_comps_fill;
     gx_color_index comps;
     uint16_t shape = 0; /* Quiet compiler. */
     uint16_t src_alpha;
@@ -4885,13 +4886,20 @@ pdf14_create_compositor(gx_device * dev, gx_device * * pcdev,
                    values around a fair amount.  Hence the forced assignement here.
                    See gx_spot_colors_set_overprint in gscspace for issues... */
                 const gs_overprint_t * op_pct = (const gs_overprint_t *) pct;
+                gx_color_index drawn_comps;
+
                 if (op_pct->params.retain_any_comps && !op_pct->params.retain_spot_comps) {
-                    p14dev->drawn_comps = op_pct->params.drawn_comps;
+                    drawn_comps = op_pct->params.drawn_comps;
                 } else {
                     /* Draw everything. If this parameter was not set, clist does
                        not fill it in.  */
-                    p14dev->drawn_comps = ( (gx_color_index) 1 << (p14dev->color_info.num_components)) - (gx_color_index) 1;
+                    drawn_comps = ( (gx_color_index) 1 << (p14dev->color_info.num_components)) - (gx_color_index) 1;
                 }
+                p14dev->color_is_stroke = op_pct->params.color_is_stroke;
+                if (p14dev->color_is_stroke)
+                    p14dev->drawn_comps_stroke = drawn_comps;
+                else
+                    p14dev->drawn_comps_fill = drawn_comps;
                 *pcdev = dev;
                 return 0;
     } else
@@ -6137,7 +6145,8 @@ do_mark_fill_rectangle_ko_simple(gx_device *dev, int x, int y, int w, int h,
     byte shape = 0; /* Quiet compiler. */
     byte src_alpha;
     bool overprint = pdev->overprint;
-    gx_color_index drawn_comps = pdev->drawn_comps;
+    gx_color_index drawn_comps = pdev->color_is_stroke ?
+                                 pdev->drawn_comps_stroke : pdev->drawn_comps_fill;
     gx_color_index comps;
 
     if (buf->data == NULL)
@@ -6312,7 +6321,8 @@ do_mark_fill_rectangle_ko_simple16(gx_device *dev, int x, int y, int w, int h,
     uint16_t shape = 0; /* Quiet compiler. */
     uint16_t src_alpha;
     bool overprint = pdev->overprint;
-    gx_color_index drawn_comps = pdev->drawn_comps;
+    gx_color_index drawn_comps = pdev->color_is_stroke ?
+                                 pdev->drawn_comps_stroke : pdev->drawn_comps_fill;
     gx_color_index comps;
 
     if (buf->data == NULL)

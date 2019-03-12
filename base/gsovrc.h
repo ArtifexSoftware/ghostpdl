@@ -274,6 +274,7 @@ struct gs_overprint_params_s {
      * it is to be left unaffected.
      */
     gx_color_index  drawn_comps;
+    bool color_is_stroke;				/* for fill_stroke_path we differentiate */
 };
 
 /*

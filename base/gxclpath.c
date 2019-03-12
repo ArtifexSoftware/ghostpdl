@@ -1006,6 +1006,7 @@ clist_fill_stroke_path(gx_device * pdev, const gs_gstate * pgs,
         gs_int_rect trans_bbox;
         int rx = fixed2int(bbox.p.x) - 1;
         int rwidth = fixed2int_ceiling(bbox.q.x) - rx + 1;
+        unknown |= stroke_all_known;
 
         fit_fill_w(cdev, rx, rwidth);
         trans_bbox.p.x = rx;
@@ -1015,23 +1016,26 @@ clist_fill_stroke_path(gx_device * pdev, const gs_gstate * pgs,
 
         clist_update_trans_bbox(cdev, &trans_bbox);
     }
+    /* If either fill or stroke uses overprint, or overprint_mode != 0, then we */
+    /* need to write out the overprint drawn_comps and retain_*			*/
+    if (((pgs->overprint_mode || pgs->overprint || pgs->stroke_overprint))) {
+        unknown |= op_bm_tk_known;
+    }
     RECT_ENUM_INIT(re, ry, rheight);
     do {
         int code;
         fixed ymin, ymax;
 
         RECT_STEP_INIT(re);
-        if ((code = cmd_do_write_unknown(cdev, re.pcls, stroke_all_known)) < 0 ||
-            (code = cmd_do_enable_clip(cdev, re.pcls, pcpath != NULL)) < 0 ||
-            (code = cmd_update_lop(cdev, re.pcls, lop)) < 0
-            )
+        if ((code = cmd_do_write_unknown(cdev, re.pcls, unknown)) < 0)
+            return code;
+        if ((code = cmd_do_enable_clip(cdev, re.pcls, pcpath != NULL)) < 0)
+            return code;
+        if ((code = cmd_update_lop(cdev, re.pcls, lop)) < 0)
             return code;
         code = cmd_put_drawing_color(cdev, re.pcls, pdevc_fill, &re, devn_not_tile_fill);
-        if (code < 0) {
-            /* Something went wrong, use the default implementation. */
-            return gx_default_fill_stroke_path(pdev, pgs, ppath, params_fill, pdevc_fill,
-                                               params_stroke, pdevc_stroke, pcpath);
-        }
+        if (code < 0)
+            return code;
         code = cmd_put_drawing_color(cdev, re.pcls, pdevc_stroke, &re, devn_not_tile_stroke);
         if (code < 0) {
             /* Something went wrong, use the default implementation. */

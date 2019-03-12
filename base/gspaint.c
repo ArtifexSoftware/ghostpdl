@@ -199,7 +199,7 @@ scale_dash_pattern(gs_gstate * pgs, double scale)
  Returns -ve for error
  */
 static int
-alpha_buffer_init(gs_gstate * pgs, fixed extra_x, fixed extra_y, int alpha_bits, 
+alpha_buffer_init(gs_gstate * pgs, fixed extra_x, fixed extra_y, int alpha_bits,
                   bool devn)
 {
     gx_device *dev = gs_currentdevice_inline(pgs);
@@ -547,16 +547,16 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
     bool devn;
     float orig_width, scale, orig_flatness;
 
-    /* If we restart with 1, then we're swapped to the alternative
-     * (stroke) color. Put us back before we do anything else. */
+    /* We alsways restart with fill_color swapped in. If this is */
+    /* the first pass (or restarted after error_Remap_Color,     */
+    /* swap to the stroke color */
     switch (*restart)
     {
     case 0:
-        /* Initial entry, or restart after loading fill pattern. */
-        break;
-    case 1:
-        /* restart after loading stroke pattern. */
+        /* Initial entry, or restart after loading stroke color. */
         gs_swapcolors_quick(pgs);
+        break;
+    case 1: /* restart after loading fill color. NB: color is still fill. */
         break;
     default:
         assert("This should never happen" == NULL);
@@ -584,29 +584,28 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
     else
         ensure_tag_is_set(pgs, pgs->device, GS_TEXT_TAG);	/* NB: may unset_dev_color */
 
+    /* if we are at restart == 0, we set the stroke color. */
     code = gx_set_dev_color(pgs);
-    *restart = 0;
     if (code != 0)
-        return code;
-    code = gs_gstate_color_load(pgs);
+        return code;		/* may be gs_error_Remap_color or real error */
+    code = gs_gstate_color_load(pgs);	/* FIXME: needed for stroke_color ?? */
     if (code < 0)
         return code;
-    gs_swapcolors_quick(pgs);
+    *restart = 1;		/* finished, successfully with stroke_color */
+    gs_swapcolors_quick(pgs);	/* switch to fill color */
     code = gx_set_dev_color(pgs);
-    *restart = 1;
     if (code != 0) {
         /* If we exit here, because of needing to Remap the colors,
-         * leave the colors swapped. Otherwise, put them back for
-         * sanity. */
-        if (code != gs_error_Remap_Color)
-            gs_swapcolors_quick(pgs);
+         * the color is set for fill, so don't need to swap */
         return code;
     }
-    *restart = 0;
     code = gs_gstate_color_load(pgs);
-    if (code < 0)
+    if (code < 0) {
+        /* color is set for fill, but a failure here is a problem */
+        /* i.e., something other than error_Remap_Color */
+        *restart = 2;	/* we shouldn't re-enter with '2' */
         return code;
-    gs_swapcolors_quick(pgs);
+    }
     abits = 0;
     {
         gx_device_color *col_fill = gs_currentdevicecolor_inline(pgs);
@@ -623,7 +622,6 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
          * if we know we're going to buffer.
          */
         float new_width;
-        gx_path spath;
         fixed extra_adjust;
         float xxyy = fabs(pgs->ctm.xx) + fabs(pgs->ctm.yy);
         float xyyx = fabs(pgs->ctm.xy) + fabs(pgs->ctm.yx);

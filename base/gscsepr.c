@@ -194,6 +194,7 @@ gx_set_overprint_Separation(const gs_color_space * pcs, gs_gstate * pgs)
         params.retain_any_comps = pgs->overprint &&
                                   pcs->params.separation.sep_type != SEP_ALL;
         if (params.retain_any_comps) {
+            params.color_is_stroke = pgs->color_is_stroke;
             params.retain_spot_comps = false;
             params.drawn_comps = 0;
             if (pcs->params.separation.sep_type != SEP_NONE) {

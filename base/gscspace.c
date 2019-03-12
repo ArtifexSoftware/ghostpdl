@@ -477,9 +477,10 @@ gx_install_DeviceCMYK(gs_color_space * pcs, gs_gstate * pgs)
 int
 gx_spot_colors_set_overprint(const gs_color_space * pcs, gs_gstate * pgs)
 {
-    gs_overprint_params_t   params;
+    gs_overprint_params_t   params = {0};
 
     if ((params.retain_any_comps = pgs->overprint)) {
+        params.color_is_stroke = pgs->color_is_stroke;
         params.retain_spot_comps = true;
         params.retain_any_comps = false;
     }
@@ -624,7 +625,7 @@ int gx_set_overprint_cmyk(const gs_color_space * pcs, gs_gstate * pgs)
     gx_device *             dev = pgs->device;
     gx_device_color_info *  pcinfo = (dev == 0 ? 0 : &dev->color_info);
     gx_color_index          drawn_comps = 0;
-    gs_overprint_params_t   params;
+    gs_overprint_params_t   params = { 0 };
     gx_device_color        *pdc;
     cmm_dev_profile_t      *dev_profile;
     cmm_profile_t          *output_profile = 0;
@@ -707,6 +708,7 @@ int gx_set_overprint_cmyk(const gs_color_space * pcs, gs_gstate * pgs)
         }
         drawn_comps &= nz_comps;
     }
+    params.color_is_stroke = pgs->color_is_stroke;
     params.retain_any_comps = true;
     params.retain_spot_comps = false;
     params.drawn_comps = drawn_comps;

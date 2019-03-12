@@ -303,7 +303,7 @@ struct gs_gstate_s {
     gs_matrix textmatrix;
     /* Current colors (non-stroking, and stroking) */
     gs_gstate_color color[2];
-
+    bool color_is_stroke;
     /* Font: */
     gs_font *font;
     gs_font *root_font;
@@ -370,6 +370,7 @@ struct gs_gstate_s {
     s->icc_profile_cache = __state_init.icc_profile_cache; \
     s->get_cmap_procs = __state_init.get_cmap_procs; \
     s->show_gstate = NULL; \
+    s->color_is_stroke = false; \
   } while (0)
 
 struct_proc_finalize(gs_gstate_finalize);

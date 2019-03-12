@@ -211,8 +211,11 @@ typedef struct pdf14_device_s {
     bool text_knockout;
     bool overprint;
     bool effective_overprint_mode;
+    bool stroke_overprint;
+    bool color_is_stroke;
     int text_group;
-    gx_color_index drawn_comps;		/* Used for overprinting.  Passed from overprint compositor */
+    gx_color_index drawn_comps_fill;		/* Used for overprinting.  Passed from overprint compositor */
+    gx_color_index drawn_comps_stroke;		/* selected by color_is_stroke */
     gx_device * pclist_device;
     bool free_devicen;              /* Used to avoid freeing a deviceN parameter from target clist device */
     bool sep_device;

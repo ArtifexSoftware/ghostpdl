@@ -667,7 +667,17 @@ gs_currentoverprint(const gs_gstate * pgs)
 void
 gs_setstrokeoverprint(gs_gstate * pgs, bool ovp)
 {
+    bool prior_ovp = pgs->stroke_overprint;
+    bool prior_cis = pgs->color_is_stroke;
+
     pgs->stroke_overprint = ovp;
+    if (prior_ovp != ovp) {
+        if (prior_cis == false)
+            gs_swapcolors_quick(pgs);	/* current was fill */
+        (void)gs_do_set_overprint(pgs);
+        if (prior_cis == false)
+            gs_swapcolors_quick(pgs);
+    }
 }
 
 /* currentstrokeoverprint */
@@ -681,11 +691,17 @@ gs_currentstrokeoverprint(const gs_gstate * pgs)
 void
 gs_setfilloverprint(gs_gstate * pgs, bool ovp)
 {
-    bool    prior_ovp = pgs->overprint;
+    bool prior_ovp = pgs->overprint;
+    bool prior_cis = pgs->color_is_stroke;
 
     pgs->overprint = ovp;
-    if (prior_ovp != ovp)
+    if (prior_ovp != ovp) {
+        if (prior_cis)
+            gs_swapcolors_quick(pgs);	/* current was stroke */
         (void)gs_do_set_overprint(pgs);
+        if (prior_cis)
+            gs_swapcolors_quick(pgs);	/* swap back */
+    }
 }
 
 /* currentstrokeoverprint */
@@ -1458,6 +1474,8 @@ void gs_swapcolors_quick(gs_gstate *pgs)
     tmp                = pgs->overprint;
     pgs->overprint     = pgs->stroke_overprint;
     pgs->stroke_overprint = tmp;
+
+    pgs->color_is_stroke = !(pgs->color_is_stroke);	/* used by overprint for fill_stroke */
 }
 
 int gs_swapcolors(gs_gstate *pgs)

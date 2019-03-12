@@ -249,7 +249,7 @@ static int read_set_bits(command_buf_t *pcb, tile_slot *bits,
                           gx_device_clist_reader *cdev, gs_memory_t *mem);
 static int read_set_misc2(command_buf_t *pcb, gs_gstate *pgs,
                            segment_notes *pnotes);
-static int read_set_color_space(command_buf_t *pcb, gs_gstate *pgs,
+static int read_set_color_space(command_buf_t *pcb, gs_gstate *pgs, gs_color_space **ppcs,
                                  gx_device_clist_reader *cdev, gs_memory_t *mem);
 static int read_begin_image(command_buf_t *pcb, gs_image_common_t *pic,
                              gs_color_space *pcs);
@@ -508,7 +508,7 @@ clist_playback_band(clist_playback_action playback_action,
         gx_device_color dcolor;
     } clip_save;
     bool in_clip = false;
-    gs_gstate gs_gstate = { 0 };
+    gs_gstate gs_gstate;
     gx_device_color fill_color;
     gx_device_color stroke_color;
     float dash_pattern[cmd_max_dash];
@@ -638,21 +638,6 @@ in:                             /* Initialize for a new page. */
     }
     fill_color.ccolor_valid = false;
     color_unset(&fill_color);
-    gs_gstate.color[0].dev_color = &fill_color;
-    gs_gstate.color[0].ccolor = &(fill_color.ccolor);
-    gs_gstate.color[0].color_space = pcs;
-    gs_setcolorspace(&gs_gstate, pcs);
-    pcs = gs_cspace_new_DeviceGray(mem);
-    if (pcs == NULL) {
-        code = gs_note_error(gs_error_VMerror);
-        goto out;
-    }
-    gs_gstate.color[1].color_space = pcs;
-    stroke_color.ccolor_valid = false;
-    color_unset(&stroke_color);
-    gs_gstate.color[1].dev_color = &stroke_color;
-    gs_gstate.color[1].ccolor = &(stroke_color.ccolor);
-    gs_gstate.color[1].color_space = pcs;
     data_bits = gs_alloc_bytes(mem, data_bits_size,
                                "clist_playback_band(data_bits)");
     if (data_bits == 0) {
@@ -1346,7 +1331,7 @@ set_phase:      /*
                         break;
                     case cmd_opv_set_color_space:
                         cbuf.ptr = cbp;
-                        code = read_set_color_space(&cbuf, &gs_gstate, cdev, mem);
+                        code = read_set_color_space(&cbuf, &gs_gstate, &pcs, cdev, mem);
                         cbp = cbuf.ptr;
                         if (code < 0) {
                             if (code == gs_error_rangecheck)
@@ -1378,7 +1363,7 @@ set_phase:      /*
                         continue;
                     case cmd_opv_begin_image_rect:
                         cbuf.ptr = cbp;
-                        code = read_begin_image(&cbuf, &image.c, gs_gstate.color[0].color_space);
+                        code = read_begin_image(&cbuf, &image.c, pcs);
                         cbp = cbuf.ptr;
                         if (code < 0)
                             goto out;
@@ -1398,7 +1383,7 @@ set_phase:      /*
                         goto ibegin;
                     case cmd_opv_begin_image:
                         cbuf.ptr = cbp;
-                        code = read_begin_image(&cbuf, &image.c, gs_gstate.color[0].color_space);
+                        code = read_begin_image(&cbuf, &image.c, pcs);
                         cbp = cbuf.ptr;
                         if (code < 0)
                             goto out;
@@ -1995,9 +1980,6 @@ idata:                  data_size = 0;
                                                        ppath, &stroke_params,
                                                        &stroke_color, pcpath);
                             break;
-                        case cmd_opv_swapcolors:
-                            gs_swapcolors_quick(&gs_gstate);	/* allows for setting stroke colorspace */
-                            break;
                         case cmd_opv_polyfill:
                             code = clist_do_polyfill(tdev, ppath, &fill_color,
                                                      gs_gstate.log_op);
@@ -2330,8 +2312,6 @@ idata:                  data_size = 0;
         if (code == 0)
             code = code1;
     }
-    rc_decrement_cs(&(gs_gstate.color[0].color_space), "clist_playback_band");
-    rc_decrement_cs(&(gs_gstate.color[1].color_space), "clist_playback_band");
     gx_cpath_free(&clip_path, "clist_render_band exit");
     gx_path_free(&path, "clist_render_band exit");
     if (gs_gstate.pattern_cache != NULL) {
