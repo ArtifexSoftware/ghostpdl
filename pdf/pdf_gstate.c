@@ -751,7 +751,7 @@ static int GS_ca(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict
     int code;
     double d1;
 
-    code = pdfi_dict_get_number(ctx, GS, "CA", &d1);
+    code = pdfi_dict_get_number(ctx, GS, "ca", &d1);
     if (code < 0)
         return code;
 
