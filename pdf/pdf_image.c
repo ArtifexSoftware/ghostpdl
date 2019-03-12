@@ -31,6 +31,8 @@
 
 extern int pdfi_dict_from_stack(pdf_context *ctx);
 
+static int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_dict *xobject_dict);
+
 int pdfi_BI(pdf_context *ctx)
 {
     return pdfi_mark_stack(ctx, PDF_DICT_MARK);
@@ -455,6 +457,11 @@ pdfi_get_image_info(pdf_context *ctx, pdf_dict *image_dict, pdfi_image_info_t *i
     if (code < 0) {
         if (code != gs_error_undefined)
             goto errorExit;
+    } else {
+        if (info->SMask->type != PDF_DICT){
+            pdfi_countdown(info->SMask);
+            info->SMask = NULL;
+        }
     }
 
     /* Optional, for JPXDecode filter images
@@ -788,7 +795,6 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     }
 
     if (image_info.SMask != NULL && ctx->notransparency == false) {
-        dbgmprintf(ctx->memory, "WARNING: Image has unsupported SMask\n");
         /* We should check for the /PreserveSMask device parameter here. If this is
          * true (currently pdfwite only) then the device will process the SMask from the
          * image and we need do nothinng here.
@@ -832,7 +838,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
             code = gs_gsave(ctx->pgs);
 
             pdfi_seek(ctx, ctx->main_stream, ((pdf_dict *)image_info.SMask)->stream_offset, SEEK_SET);
-            code = pdfi_Do(ctx, (pdf_dict *)image_info.SMask, page_dict);
+            code = pdfi_do_image_or_form(ctx, stream_dict, page_dict, (pdf_dict *)image_info.SMask);
 
             code = gs_grestore(ctx->pgs);
             pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
@@ -1105,6 +1111,71 @@ int pdfi_EI(pdf_context *ctx)
     return 0;
 }
 
+static int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_dict *xobject_dict)
+{
+    int code;
+    pdf_name *n = NULL;
+
+    code = pdfi_dict_get(ctx, (pdf_dict *)xobject_dict, "Subtype", (pdf_obj **)&n);
+    if (code == 0) {
+        bool group_known = false;
+
+        if (pdfi_name_strcmp(n, "Image") == 0) {
+            gs_offset_t savedoffset;
+
+            pdfi_countdown(n);
+            savedoffset = pdfi_tell(ctx->main_stream);
+            code = pdfi_do_image(ctx, page_dict, stream_dict, xobject_dict, ctx->main_stream, false);
+            pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
+        } else if (pdfi_name_strcmp(n, "Form") == 0) {
+            gs_offset_t savedoffset;
+
+            pdfi_countdown(n);
+            savedoffset = pdfi_tell(ctx->main_stream);
+            code = pdfi_dict_known(xobject_dict, "Group", &group_known);
+            if (code < 0)
+                return code;
+
+            if (group_known && ctx->page_has_transparency == true) {
+                code = pdfi_loop_detector_mark(ctx);
+                if (code < 0) {
+                    (void)pdfi_loop_detector_cleartomark(ctx);
+                    return code;
+                }
+
+                code = pdfi_begin_group(ctx, page_dict, xobject_dict);
+                (void)pdfi_loop_detector_cleartomark(ctx);
+                if (code < 0) {
+                    (void)pdfi_loop_detector_cleartomark(ctx);
+                    return code;
+                }
+            }
+
+            code = pdfi_interpret_content_stream(ctx, xobject_dict, page_dict);
+            pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
+            if (group_known && ctx->page_has_transparency == true) {
+                if (code < 0)
+                    (void)pdfi_end_transparency_group(ctx);
+                else
+                    code = pdfi_end_transparency_group(ctx);
+            }
+
+            if (code < 0) {
+                (void)pdfi_loop_detector_cleartomark(ctx);
+                return code;
+            }
+        } else if (pdfi_name_strcmp(n, "PS") == 0) {
+            pdfi_countdown(n);
+            dmprintf(ctx->memory, "*** WARNING: PostScript XObjects are deprecated (SubType 'PS')\n");
+            code = 0; /* Swallow silently */
+        } else {
+            pdfi_countdown(n);
+            code = gs_error_typecheck;
+        }
+    }
+    return 0;
+}
+
 int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     int code = 0;
@@ -1144,63 +1215,10 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
             return_error(gs_error_typecheck);
         return 0;
     }
-    code = pdfi_dict_get(ctx, (pdf_dict *)o, "Subtype", (pdf_obj **)&n);
-    if (code == 0) {
-        bool group_known = false;
-        pdf_dict *d = (pdf_dict *)o;
 
-        if (pdfi_name_strcmp(n, "Image") == 0) {
-            gs_offset_t savedoffset = pdfi_tell(ctx->main_stream);
+    code = pdfi_do_image_or_form(ctx, stream_dict, page_dict, o);
 
-            code = pdfi_do_image(ctx, page_dict, stream_dict, d, ctx->main_stream, false);
-            pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
-        } else if (pdfi_name_strcmp(n, "Form") == 0) {
-            gs_offset_t savedoffset = pdfi_tell(ctx->main_stream);
-
-            code = pdfi_dict_known(d, "Group", &group_known);
-            if (code < 0) {
-                pdfi_countdown(d);
-                return code;
-            }
-            if (group_known && ctx->page_has_transparency == true) {
-                code = pdfi_loop_detector_mark(ctx);
-                if (code < 0) {
-                    (void)pdfi_loop_detector_cleartomark(ctx);
-                    pdfi_countdown(d);
-                    return code;
-                }
-
-                code = pdfi_begin_group(ctx, page_dict, d);
-                (void)pdfi_loop_detector_cleartomark(ctx);
-                if (code < 0) {
-                    (void)pdfi_loop_detector_cleartomark(ctx);
-                    pdfi_countdown(d);
-                    return code;
-                }
-            }
-
-            code = pdfi_interpret_content_stream(ctx, d, page_dict);
-            pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
-            if (group_known && ctx->page_has_transparency == true) {
-                if (code < 0)
-                    (void)pdfi_end_transparency_group(ctx);
-                else
-                    code = pdfi_end_transparency_group(ctx);
-            }
-
-            if (code < 0) {
-                (void)pdfi_loop_detector_cleartomark(ctx);
-                pdfi_countdown(d);
-                return code;
-            }
-        } else if (pdfi_name_strcmp(n, "PS") == 0) {
-            dmprintf(ctx->memory, "*** WARNING: PostScript XOBjects are deprecated (SubType 'PS')\n");
-            code = 0; /* Swallow silently */
-        } else {
-            code = gs_error_typecheck;
-        }
-        pdfi_countdown(n);
-    }
+    /* No need to countdown 'n' because that poitns to tht stack object, and we're going to pop that */
     pdfi_countdown(o);
     pdfi_pop(ctx, 1);
     (void)pdfi_loop_detector_cleartomark(ctx);
