@@ -451,7 +451,7 @@ static int pdfi_check_ExtGState_dict(pdf_context *ctx, pdf_dict *extgstate_dict,
         i = 1;
         do {
 
-            (void)pdfi_check_ExtGState(ctx, extgstate_dict, transparent);
+            (void)pdfi_check_ExtGState(ctx, Value, transparent);
             if (*transparent == true)
                 goto transparency_exit;
 
@@ -1312,7 +1312,7 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
         if (code > 0) {
             pdf_obj *CS = NULL;
 
-            page_group_known = true;
+            uses_transparency = page_group_known = true;
             code = pdfi_dict_knownget(ctx, group_dict, "CS", &CS);
             if (code > 0) {
                 code = pdfi_check_ColorSpace_for_spots(ctx, CS, group_dict, page_dict, &spots);
