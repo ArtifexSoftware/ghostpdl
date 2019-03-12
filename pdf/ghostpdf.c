@@ -306,7 +306,7 @@ static int pdfi_check_XObject_dict(pdf_context *ctx, pdf_dict *xobject_dict, pdf
                         code = pdfi_dict_knownget_type(ctx, (pdf_dict *)Value, "Group", PDF_DICT, (pdf_obj **)&group_dict);
                         if (code > 0) {
                             *transparent = true;
-                            if (num_spots = NULL) {
+                            if (num_spots == NULL) {
                                 pdfi_countdown(group_dict);
                                 pdfi_countdown(n);
                                 goto transparency_exit;
@@ -1362,38 +1362,53 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
     }
 
 #ifdef DEBUG
-    if (uses_transparency) {
+    if (ctx->page_has_transparency) {
 #else
     if (ctx->page_has_transparency) {
 #endif
-        code = gs_push_pdf14trans_device(ctx->pgs, false);
-        if (code < 0) {
-            pdfi_countdown(ctx->SpotNames);
-            pdfi_countdown(page_dict);
-            return code;
-        }
-        if (page_group_known) {
-            code = pdfi_begin_page_group(ctx, page_dict);
-            if (code < 0) {
-                pdfi_countdown(ctx->SpotNames);
-                pdfi_countdown(page_dict);
-                return code;
+        code = gs_gsave(ctx->pgs);
+        if (code >= 0) {
+            code = gs_push_pdf14trans_device(ctx->pgs, false);
+            if (code >= 0) {
+                if (page_group_known) {
+                    code = pdfi_begin_page_group(ctx, page_dict);
+                    /* If setting the page group failed for some reason, abandon the page group, but continue with the page */
+                    if (code < 0)
+                        page_group_known = false;
+                }
+            } else {
+                /* Couldn't push the transparency compositor.
+                 * This is probably fatal, but attempt to recover by abandoning transparency
+                 */
+                gs_grestore(ctx->pgs);
+                ctx->page_has_transparency = uses_transparency = false;
             }
+        } else {
+            /* Couldn't gsave round the transparency compositor.
+             * This is probably fatal, but attempt to recover by abandoning transparency
+             */
+            ctx->page_has_transparency = uses_transparency = false;
         }
     }
 
 
     code = pdfi_process_page_contents(ctx, page_dict);
     if (code < 0) {
-        if (uses_transparency)
+#ifdef DEBUG
+        if (ctx->page_has_transparency) {
+#else
+        if (ctx->page_has_transparency) {
+#endif
+            gs_grestore(ctx->pgs);
             (void)gs_abort_pdf14trans_device(ctx->pgs);
+        }
         pdfi_countdown(ctx->SpotNames);
         pdfi_countdown(page_dict);
         return code;
     }
 
 #ifdef DEBUG
-    if (uses_transparency) {
+    if (ctx->page_has_transparency) {
 #else
     if (ctx->page_has_transparency) {
 #endif
@@ -1401,6 +1416,7 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
             code = pdfi_end_transparency_group(ctx);
             if (code < 0) {
                 (void)gs_abort_pdf14trans_device(ctx->pgs);
+                gs_grestore(ctx->pgs);
                 pdfi_countdown(ctx->SpotNames);
                 pdfi_countdown(page_dict);
                 return code;
@@ -1409,10 +1425,12 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
 
         code = gs_pop_pdf14trans_device(ctx->pgs, false);
         if (code < 0) {
+            gs_grestore(ctx->pgs);
             pdfi_countdown(ctx->SpotNames);
             pdfi_countdown(page_dict);
             return code;
         }
+        gs_grestore(ctx->pgs);
     }
 
     pdfi_countdown(ctx->SpotNames);
