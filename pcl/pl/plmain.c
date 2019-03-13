@@ -1158,13 +1158,13 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     } else if (strchr(value, '#')) {
                         /* We have a non-decimal 'radix' number */
                         int base = 0;
-                        const char *val = strchr(value, '#');
+                        const char *val = strchr(value, '#') + 1;
                         const char *v = value;
                         char c;
 
                         while ((c = *v++) >= '0' && c <= '9')
                             base = base*10 + (c - '0');
-                        if (*v != '#') {
+                        if (c != '#') {
                             dmprintf1(pmi->memory, "Malformed base value for radix. %s",
                                       value);
                             return -1;
