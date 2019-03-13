@@ -332,6 +332,30 @@ typedef enum {
 } gs_set_param_type;
 GSDLLEXPORT int GSDLLAPI gsapi_set_param(void *instance, gs_set_param_type type, const char *param, const void *value);
 
+enum {
+    GS_PERMIT_FILE_READING = 0,
+    GS_PERMIT_FILE_WRITING = 1,
+    GS_PERMIT_FILE_CONTROL = 2
+};
+
+/* Add a path to one of the sets of permitted paths. */
+GSDLLEXPORT int GSDLLAPI
+gsapi_add_control_path(void *instance, int type, const char *path);
+
+/* Remove a path from one of the sets of permitted paths. */
+GSDLLEXPORT int GSDLLAPI
+gsapi_remove_control_path(void *instance, int type, const char *path);
+
+/* Purge all the paths from the one of the sets of permitted paths. */
+GSDLLEXPORT void GSDLLAPI
+gsapi_purge_control_paths(void *instance, int type);
+
+GSDLLEXPORT void GSDLLAPI
+gsapi_activate_path_control(void *instance, int enable);
+
+GSDLLEXPORT int GSDLLAPI
+gsapi_is_path_control_active(void *instance);
+
 /* function prototypes */
 typedef int (GSDLLAPIPTR PFN_gsapi_revision)(
     gsapi_revision_t *pr, int len);
@@ -386,6 +410,13 @@ typedef gs_memory_t * (GSDLLAPIPTR PFN_gsapi_get_device_memory)(void *instance);
 typedef gs_memory_t * (GSDLLAPIPTR PFN_gsapi_set_device)(void *instance, gx_device *pdev);
 typedef int (GSDLLAPIPTR PFN_gsapi_exit)(void *instance);
 typedef int (GSDLLAPIPTR PFN_gsapi_set_param)(void *instance, gs_set_param_type type, const char *param, const void *value);
+
+typedef int (GSDLLAPIPTR PFN_gsapi_add_control_path)(void *instance, int type, const char *path);
+typedef int (GSDLLAPIPTR PFN_gsapi_remove_control_path)(void *instance, int type, const char *path);
+typedef void (GSDLLAPIPTR PFN_gsapi_purge_control_paths)(void *instance, int type);
+typedef void (GSDLLAPIPTR PFN_gsapi_activate_path_control)(void *instance, int enable);
+typedef int (GSDLLAPIPTR PFN_gsapi_is_path_control_active)(void *instance);
+
 
 #ifdef __MACOS__
 #pragma export off

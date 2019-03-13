@@ -93,6 +93,9 @@ mswin_handle_fopen(gx_io_device * iodev, const char *fname, const char *access,
     long hfile;	/* Correct for Win32, may be wrong for Win64 */
     errno = 0;
 
+    if (gp_validate_path(mem, fname, access) != 0)
+        return gs_error_invalidfileaccess;
+
     *pfile = gp_file_FILE_alloc(mem);
     if (*pfile == NULL) {
         return gs_error_VMerror;

@@ -56,6 +56,9 @@ pipe_fopen(gx_io_device * iodev, const char *fname, const char *access,
 #else
     gp_file *file;
 
+    if (gp_validate_path(mem, fname, access) != 0)
+        return gs_error_invalidfileaccess;
+
     errno = 0;
     /*
      * Some platforms allow opening a pipe with a '+' in the access

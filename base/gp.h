@@ -675,4 +675,9 @@ gp_local_arg_encoding_get_codepoint(gp_file *file, const char **astr);
 int
 gp_xpsprint(char *filename, char *printername, int *result);
 
+int
+gp_validate_path(const gs_memory_t *mem,
+                 const char        *path,
+                 const char        *mode);
+
 #endif /* gp_INCLUDED */

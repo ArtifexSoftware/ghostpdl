@@ -165,6 +165,9 @@ mswin_printer_fopen(gx_io_device * iodev, const char *fname, const char *access,
     char pname[gp_file_name_sizeof];
     unsigned long *ptid = &((tid_t *)(iodev->state))->tid;
 
+    if (gp_validate_path(mem, fname, access) != 0)
+        return gs_error_invalidfileaccess;
+
     /* Win32s supports neither pipes nor Win32 printers. */
     if (((HIWORD(version) & 0x8000) != 0) &&
         ((HIWORD(version) & 0x4000) == 0))

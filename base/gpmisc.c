@@ -25,6 +25,7 @@
 #include "gp.h"
 #include "gpgetenv.h"
 #include "gpmisc.h"
+#include "gserrors.h"
 
 /*
  * Get the name of the directory for temporary files, if any.  Currently
@@ -727,6 +728,9 @@ gp_fopen(const gs_memory_t *mem, const char *fname, const char *mode)
     gp_file *file;
     FILE *f;
 
+    if (gp_validate_path(mem, fname, mode) != 0)
+        return NULL;
+
     file = gp_file_FILE_alloc(mem);
     if (file == NULL)
         return NULL;
@@ -744,6 +748,9 @@ gp_open_printer(const gs_memory_t *mem,
     gp_file *file;
     FILE *f;
     int (*close)(FILE *) = NULL;
+
+    if (gp_validate_path(mem, fname, binary_mode ? "wb" : "w") != 0)
+        return NULL;
 
     file = gp_file_FILE_alloc(mem);
     if (file == NULL)
@@ -764,6 +771,12 @@ gp_open_scratch_file(const gs_memory_t *mem,
                      const char        *mode)
 {
     gp_file *file;
+
+    /* If the prefix is absolute, then we must check it's a permissible
+     * path. If not, we're OK. */
+    if (gp_file_name_is_absolute(prefix, strlen(prefix)) &&
+        gp_validate_path(mem, prefix, mode) != 0)
+            return NULL;
 
     file = gp_file_FILE_alloc(mem);
     if (file == NULL)
@@ -788,6 +801,9 @@ gp_open_scratch_file_rm(const gs_memory_t *mem,
 {
     gp_file *file;
 
+    if (gp_validate_path(mem, fname, mode) != 0)
+        return NULL;
+
     file = gp_file_FILE_alloc(mem);
     if (file == NULL)
         return NULL;
@@ -801,4 +817,164 @@ gp_open_scratch_file_rm(const gs_memory_t *mem,
         return NULL;
 
     return file;
+}
+
+static int
+ends_in(const char *first, const char *last, const char *ds, size_t len)
+{
+    while (len) {
+        if (last < first)
+            return 0; /* No match */
+        if (*last != ds[--len])
+            return 0; /* No match */
+        last--;
+    }
+    return 1;
+}
+
+/* Path validation: (FIXME: Move this somewhere better)
+ *
+ * The only wildcard we accept is '*'.
+ *
+ * A '*' at the end of the path means "in this directory,
+ * or any subdirectory". Anywhere else it means "a sequence of
+ * characters not including a director separator".
+ *
+ * A sequence of multiple '*'s is equivalent to a single one.
+ *
+ * Matching on '*' is simplistic; the matching sequence will end
+ * as soon as we meet an instance of a character that follows
+ * the '*' in a pattern. i.e. "foo*bar" will fail to match "fooabbar"
+ * as the '*' will be held to match just 'a'.
+ *
+ * There is no way of specifying a literal '*'; if you find yourself
+ * wanting to do this, slap yourself until you come to your senses.
+ *
+ * Due to the difficulties of using both * and / in writing C comments,
+ * I shall use \ as the directory separator in the examples below, but
+ * in practice it means "the directory separator for the current
+ * platform".
+ *
+ * Pattern           Match example
+ *  *                 any file, in any directory at all.
+ *  foo\bar           a file, foo\bar.
+ *  foo\bar\          any file within foo\bar\, but no subdirectories.
+ *  foo\bar\*         any file within foo\bar\ or any subdirectory thereof.
+ *  foo\*\bar         any file 'bar' within any single subdirectory of foo
+ *                    (i.e. foo\baz\bar, but not foo\baz\whoop\bar)
+ *  foo\out*.tif      e.g. foo\out1.tif
+ *  foo\out*.*.tif*   e.g. foo\out1.(Red).tif
+ */
+
+static int
+validate(const gs_memory_t *mem,
+         const char        *path,
+         gs_path_control_t  type)
+{
+    gs_lib_ctx_core_t *core = mem->gs_lib_ctx->core;
+    const gs_path_control_set_t *control;
+    unsigned int i, n;
+    const char *ds = gp_file_name_directory_separator();
+    size_t dslen = strlen(ds);
+
+    switch (type) {
+        case gs_permit_file_reading:
+            control = &core->permit_reading;
+            break;
+        case gs_permit_file_writing:
+            control = &core->permit_writing;
+            break;
+        case gs_permit_file_control:
+            control = &core->permit_control;
+            break;
+        default:
+            return gs_error_unknownerror;
+    }
+
+    n = control->num;
+    for (i = 0; i < n; i++) {
+        const char *a = path;
+        const char *b = control->paths[i];
+        while (1) {
+            if (*a == 0) {
+                if (*b == 0)
+                    /* PATH=abc pattern=abc */
+                    goto found; /* Bingo! */
+                else
+                    /* PATH=abc pattern=abcd */
+                    break; /* No match */
+            } else if (*b == '*') {
+                /* Skip over multiple '*'s - this is intended to
+                 * make life easier for the code constructing
+                 * patterns from OutputFile definitions. */
+                while (b[1] == '*')
+                    b++;
+                if (b[1] == 0)
+                    /* PATH=abc???? pattern=abc* */
+                    goto found;
+                /* Skip over anything except NUL, directory
+                 * separator, and the next char to match. */
+                while (*a && *a != ds[0] && *a != b[1])
+                    a++;
+                if (*a == 0 || *a == ds[0])
+                    break; /* No match */
+                /* Continue matching */
+                a--;
+            } else if (*b == 0) {
+                if (ends_in(control->paths[i], b, ds, dslen))
+                    /* PATH=abc/? pattern=abc/ */
+                    goto found; /* Bingo! */
+                /* PATH=abcd pattern=abc */
+                break; /* No match */
+            }
+            a++, b++;
+        }
+    }
+    return gs_error_invalidfileaccess;
+
+found:
+    return 0;
+}
+
+int
+gp_validate_path(const gs_memory_t *mem,
+                 const char        *path,
+                 const char        *mode)
+{
+    char *buffer;
+    size_t len;
+    uint rlen;
+
+    if (mem->gs_lib_ctx->core->path_control_active == 0)
+        return 0;
+
+    len = strlen(path);
+    rlen = len+1;
+    buffer = (char *)gs_alloc_bytes(mem->non_gc_memory, rlen, "gp_validate_path");
+    if (buffer == NULL)
+        return gs_error_VMerror;
+
+    if (gp_file_name_reduce(path, (uint)len, buffer, &rlen) != gp_combine_success)
+        return gs_error_invalidfileaccess;
+    buffer[rlen] = 0;
+
+    switch (mode[0])
+    {
+    case 'r': /* Read */
+        return validate(mem, buffer, gs_permit_file_reading);
+    case 'w': /* Write */
+        return validate(mem, buffer, gs_permit_file_writing);
+    case 'a': /* Append needs reading and writing */
+        return (validate(mem, buffer, gs_permit_file_reading) |
+                validate(mem, buffer, gs_permit_file_writing));
+        break;
+    case 'c': /* "Control" */
+        return validate(mem, buffer, gs_permit_file_control);
+    case 't': /* "Rename to" */
+        return (validate(mem, buffer, gs_permit_file_writing) |
+                validate(mem, buffer, gs_permit_file_control));
+    default:
+        errprintf(mem, "gp_validate_path: Unknown mode='%s'\n", mode);
+    }
+    return gs_error_invalidfileaccess;
 }
