@@ -1361,11 +1361,7 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
         }
     }
 
-#ifdef DEBUG
     if (ctx->page_has_transparency) {
-#else
-    if (ctx->page_has_transparency) {
-#endif
         code = gs_gsave(ctx->pgs);
         if (code >= 0) {
             code = gs_push_pdf14trans_device(ctx->pgs, false);
@@ -1394,11 +1390,7 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
 
     code = pdfi_process_page_contents(ctx, page_dict);
     if (code < 0) {
-#ifdef DEBUG
         if (ctx->page_has_transparency) {
-#else
-        if (ctx->page_has_transparency) {
-#endif
             gs_grestore(ctx->pgs);
             (void)gs_abort_pdf14trans_device(ctx->pgs);
         }
@@ -1407,11 +1399,7 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
         return code;
     }
 
-#ifdef DEBUG
     if (ctx->page_has_transparency) {
-#else
-    if (ctx->page_has_transparency) {
-#endif
         if (page_group_known) {
             code = pdfi_end_transparency_group(ctx);
             if (code < 0) {

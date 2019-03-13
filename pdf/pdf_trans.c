@@ -21,6 +21,8 @@
 #include "pdf_dict.h"
 #include "pdf_colour.h"
 
+#include "gstparam.h"
+
 static int pdfi_transparency_group_common(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *group_dict, gs_rect *bbox, pdf14_compositor_operations group_type)
 {
     gs_transparency_group_params_t params;
@@ -31,6 +33,7 @@ static int pdfi_transparency_group_common(pdf_context *ctx, pdf_dict *page_dict,
 
     gs_trans_group_params_init(&params);
     gs_setopacityalpha(ctx->pgs, 1.0);
+    gs_setblendmode(ctx->pgs, BLEND_MODE_Normal);
 
     code = pdfi_dict_get_bool(ctx, group_dict, "Isolated", &b);
     if (code < 0 && code != gs_error_undefined)
