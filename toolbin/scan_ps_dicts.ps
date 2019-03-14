@@ -734,15 +734,12 @@
 
 ] def
 
-% CURRENTLY BROKEN
+% Standard Functions (no -- form)
 /STANDARD_FUNC_LIST [
 ] def
 
-% CURRENTLY BROKEN
+% Extensions that are Functions (no -- form)
 /EXTENSIONS_FUNC_LIST [
-] def
-
-/EXTENSIONS_OPER_LIST [
 (.shellarguments)
 (===)
 (===only)
@@ -765,6 +762,10 @@
 % Internal, undef in SAFER
 (.mementolistnewblocks)
 (.sort)
+] def
+
+% Extensions that are Operators
+/EXTENSIONS_OPER_LIST [
 ] def
 
 % make a dictionary out of the lists of operators
@@ -835,29 +836,37 @@ operator_list {
 
 (######################################################################################) =
 (\nwhitelist entries not seen in scan:\n) =
+% pre-scan whitelist to mark anything that was marked in -- form
+% (this will error if there is something on the whitelist that starts with - and isn't at least
+% 5 characters long, so don't do that...  why would you?)
 whitelist {
-  {
-    pop
-  } {
-    % check if this is the form of the operator with the -- bracketing
-    256 string cvs dup length 5 ge {
-      2 1 index length 4 sub getinterval
-      cvn dup whitelist exch 2 copy known {
-        get
-        {
-          pop	% on whitelist in "bare" form, but has been seen
-        } {
-          =	% on whitelist, but has not been seen
-        }
-        ifelse
-      } {
-        pop pop pop % not on whitelist without the -- in front and back
-      } ifelse
-    }
-    if
-  }
-  ifelse
+    {
+        % see if it starts with a '-'
+        256 string cvs dup 0 1 getinterval (-) eq {
+            % mark the corresponding non- --oper-- form as true
+            2 1 index length 4 sub getinterval cvn whitelist exch //true put
+        }{
+            pop
+        } ifelse
+    } {
+        pop
+    } ifelse
 } forall
+
+% now print the stuff that wasn't found, ignoring all -- forms
+whitelist {
+    {
+        pop
+    } {
+        256 string cvs dup 0 1 getinterval (-) eq {
+            pop
+        }{
+            =
+        } ifelse
+    } ifelse
+} forall
+
+
 
 (######################################################################################) =
 quit
