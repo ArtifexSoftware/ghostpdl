@@ -875,6 +875,50 @@ static int zgetfilename(i_ctx_t *i_ctx_p)
     return 0;
 }
 
+static int zaddcontrolpath(i_ctx_t *i_ctx_p)
+{
+    int code;
+    os_ptr op = osp;
+    ref nsref;
+    unsigned int n = -1;
+
+    check_ostack(2);
+    check_read_type(*op, t_string);
+    check_type(op[-1], t_name);
+
+    name_string_ref(imemory, op-1, &nsref);
+    if (r_size(&nsref) == 17 &&
+        strncmp((const char *)nsref.value.const_bytes,
+                "PermitFileReading", 17) == 0) {
+        n = gs_permit_file_reading;
+    } else if (r_size(&nsref) == 17 &&
+               strncmp((const char *)nsref.value.const_bytes,
+                       "PermitFileWriting", 17) == 0) {
+        n = gs_permit_file_writing;
+    } else if (r_size(&nsref) == 17 &&
+               strncmp((const char *)nsref.value.const_bytes,
+                       "PermitFileControl", 17) == 0) {
+        n = gs_permit_file_control;
+    }
+
+    if (n == -1)
+        code = gs_note_error(gs_error_rangecheck);
+    else if (gs_is_path_control_active(imemory))
+        code = gs_note_error(gs_error_Fatal);
+    else
+        code = gs_add_control_path_len(imemory, n,
+                                       (const char *)op[0].value.const_bytes,
+                                       (size_t)r_size(&op[0]));
+    pop(2);
+    return code;
+}
+
+static int zactivatepathcontrol(i_ctx_t *i_ctx_p)
+{
+    gs_activate_path_control(imemory, 1);
+    return 0;
+}
+
 /* ------ Initialization procedure ------ */
 
 const op_def zfile_op_defs[] =
@@ -893,6 +937,9 @@ const op_def zfile_op_defs[] =
     {"0%file_continue", file_continue},
     {"0%execfile_finish", execfile_finish},
     {"1.getfilename", zgetfilename},
+    /* Control path operators */
+    {"2.addcontrolpath", zaddcontrolpath},
+    {"0.activatepathcontrol", zactivatepathcontrol},
     op_def_end(0)
 };
 
