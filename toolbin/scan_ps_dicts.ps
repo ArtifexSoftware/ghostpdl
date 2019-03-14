@@ -734,11 +734,15 @@
 
 ] def
 
-% For any standard things that aren't operators
+% CURRENTLY BROKEN
 /STANDARD_FUNC_LIST [
 ] def
 
+% CURRENTLY BROKEN
 /EXTENSIONS_FUNC_LIST [
+] def
+
+/EXTENSIONS_OPER_LIST [
 (.shellarguments)
 (===)
 (===only)
@@ -750,9 +754,17 @@
 (write===only)
 (write==only)
 (write=only)
-] def
 
-/EXTENSIONS_OPER_LIST [
+(concatstrings)
+(copyarray)
+(devicenames)
+(loadallfonts)
+(runlibfile)
+(selectdevice)
+
+% Internal, undef in SAFER
+(.mementolistnewblocks)
+(.sort)
 ] def
 
 % make a dictionary out of the lists of operators
