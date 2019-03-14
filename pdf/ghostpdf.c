@@ -451,7 +451,7 @@ static int pdfi_check_ExtGState_dict(pdf_context *ctx, pdf_dict *extgstate_dict,
         i = 1;
         do {
 
-            (void)pdfi_check_ExtGState(ctx, Value, transparent);
+            (void)pdfi_check_ExtGState(ctx, (pdf_dict *)Value, transparent);
             if (*transparent == true)
                 goto transparency_exit;
 
