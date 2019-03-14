@@ -666,6 +666,10 @@ static int GS_SMask(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_d
             pdfi_countdown(n);
             return 0;
         }
+        code = pdfi_find_resource(ctx, (unsigned char *)"ExtGState", n, stream_dict, page_dict, &o);
+        pdfi_countdown(n);
+        if (code < 0)
+            return code;
     }
 
     if (o->type == PDF_DICT) {
