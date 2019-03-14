@@ -29,6 +29,8 @@
 #include "gsiparm4.h"
 #include "gsiparm3.h"
 
+#include "gstrans.h"
+
 extern int pdfi_dict_from_stack(pdf_context *ctx);
 
 static int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_dict *xobject_dict);
@@ -388,7 +390,7 @@ pdfi_scan_jpxfilter(pdf_context *ctx, pdf_stream *source, int length, pdfi_jpx_i
 
 /* Get image info out of dict into more convenient form, enforcing some requirements from the spec */
 static int
-pdfi_get_image_info(pdf_context *ctx, pdf_dict *image_dict, pdfi_image_info_t *info)
+pdfi_get_image_info(pdf_context *ctx, pdf_dict *image_dict, pdf_dict *page_dict, pdfi_image_info_t *info)
 {
     int code;
 
@@ -458,6 +460,16 @@ pdfi_get_image_info(pdf_context *ctx, pdf_dict *image_dict, pdfi_image_info_t *i
         if (code != gs_error_undefined)
             goto errorExit;
     } else {
+        if (info->SMask->type == PDF_NAME) {
+            pdf_obj *o = NULL;
+
+            code = pdfi_find_resource(ctx, (unsigned char *)"ExtGState", (pdf_name *)info->SMask, image_dict, page_dict, &o);
+            if (code >= 0) {
+                pdfi_countdown(info->SMask);
+                info->SMask = o;
+            }
+        }
+
         if (info->SMask->type != PDF_DICT){
             pdfi_countdown(info->SMask);
             info->SMask = NULL;
@@ -764,7 +776,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
 
     memset(&mask_info, 0, sizeof(mask_info));
 
-    code = pdfi_get_image_info(ctx, image_dict, &image_info);
+    code = pdfi_get_image_info(ctx, image_dict, page_dict, &image_info);
     if (code < 0)
         goto cleanupExit;
 
@@ -780,7 +792,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
         if (alt_dict != NULL) {
             image_dict = alt_dict;
             pdfi_free_image_info_components(&image_info);
-            code = pdfi_get_image_info(ctx, image_dict, &image_info);
+            code = pdfi_get_image_info(ctx, image_dict, page_dict, &image_info);
             if (code < 0)
                 goto cleanupExit;
         }
@@ -794,56 +806,61 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
             goto cleanupExit;
     }
 
-    if (image_info.SMask != NULL && ctx->notransparency == false) {
+    if (ctx->page_has_transparency == true && image_info.SMask != NULL) {
         /* We should check for the /PreserveSMask device parameter here. If this is
          * true (currently pdfwite only) then the device will process the SMask from the
          * image and we need do nothinng here.
          */
-        if (ctx->page_has_transparency == true && ctx->notransparency == false) {
-            gs_color_space *gray_cs = gs_cspace_new_DeviceGray(ctx->memory);
-            gs_rect bbox = { { 0, 0} , { 1, 1} };
-            gs_transparency_mask_params_t params;
-            pdf_array *a = NULL;
-            gs_offset_t savedoffset = 0;
+        gs_color_space *gray_cs = gs_cspace_new_DeviceGray(ctx->memory);
+        gs_rect bbox = { { 0, 0} , { 1, 1} };
+        gs_transparency_mask_params_t params;
+        pdf_array *a = NULL;
+        gs_offset_t savedoffset = 0;
+        pdf_obj *o = NULL;
 
-            code = pdfi_dict_knownget_type(ctx, (pdf_dict *)image_info.SMask, "Matte", PDF_ARRAY, (pdf_obj **)&a);
-            if (code > 0) {
-                int ix;
+        code = pdfi_dict_knownget_type(ctx, (pdf_dict *)image_info.SMask, "Matte", PDF_ARRAY, (pdf_obj **)&a);
+        if (code > 0) {
+            int ix;
 
-                for (ix = 0; ix < a->entries; ix++) {
-                    if (a->values[ix]->type == PDF_INT) {
-                        params.Matte[ix] = (float)((pdf_num *)a->values[ix])->value.i;
-                    } else {
-                        if (a->values[ix]->type == PDF_REAL) {
-                            params.Matte[ix] = ((pdf_num *)a->values[ix])->value.d;
-                        } else
-                            break;
-                    }
+            for (ix = 0; ix < a->entries; ix++) {
+                if (a->values[ix]->type == PDF_INT) {
+                    params.Matte[ix] = (float)((pdf_num *)a->values[ix])->value.i;
+                } else {
+                    if (a->values[ix]->type == PDF_REAL) {
+                        params.Matte[ix] = ((pdf_num *)a->values[ix])->value.d;
+                    } else
+                        break;
                 }
-                if (ix >= a->entries)
-                    params.Matte_components = a->entries;
-                else
-                    params.Matte_components = 0;
             }
-            pdfi_countdown(a);
-            gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Luminosity);
-
-            code = gs_begin_transparency_mask(ctx->pgs, &params, &bbox, true);
-            if (code < 0) {
-                rc_decrement_cs(gray_cs, "pdfi image /SMask");
-                return code;
-            }
-            rc_decrement_cs(gray_cs, "pdfi image /SMask");
-            savedoffset = pdfi_tell(ctx->main_stream);
-            code = gs_gsave(ctx->pgs);
-
-            pdfi_seek(ctx, ctx->main_stream, ((pdf_dict *)image_info.SMask)->stream_offset, SEEK_SET);
-            code = pdfi_do_image_or_form(ctx, stream_dict, page_dict, (pdf_dict *)image_info.SMask);
-
-            code = gs_grestore(ctx->pgs);
-            pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
-            code = gs_end_transparency_mask(ctx->pgs, 0);
+            if (ix >= a->entries)
+                params.Matte_components = a->entries;
+            else
+                params.Matte_components = 0;
         }
+        pdfi_countdown(a);
+        gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Luminosity);
+
+        code = gs_begin_transparency_mask(ctx->pgs, &params, &bbox, true);
+        if (code < 0) {
+            rc_decrement_cs(gray_cs, "pdfi image /SMask");
+            return code;
+        }
+        rc_decrement_cs(gray_cs, "pdfi image /SMask");
+        savedoffset = pdfi_tell(ctx->main_stream);
+        code = gs_gsave(ctx->pgs);
+
+        gs_setopacityalpha(ctx->pgs, 1.0);
+        gs_setshapealpha(ctx->pgs, 1.0);
+        gs_setstrokeconstantalpha(ctx->pgs, 1.0);
+        gs_setfillconstantalpha(ctx->pgs, 1.0);
+        gs_setblendmode(ctx->pgs, BLEND_MODE_Compatible);
+
+        pdfi_seek(ctx, ctx->main_stream, ((pdf_dict *)image_info.SMask)->stream_offset, SEEK_SET);
+        code = pdfi_do_image_or_form(ctx, stream_dict, page_dict, (pdf_dict *)image_info.SMask);
+
+        code = gs_grestore(ctx->pgs);
+        pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
+        code = gs_end_transparency_mask(ctx->pgs, 0);
     }
 
     if (image_info.SMask == NULL && image_info.Mask != NULL) {
@@ -851,7 +868,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
             mask_array = (pdf_array *)image_info.Mask;
         } else if (image_info.Mask->type == PDF_DICT) {
             mask_dict = (pdf_dict *)image_info.Mask;
-            code = pdfi_get_image_info(ctx, mask_dict, &mask_info);
+            code = pdfi_get_image_info(ctx, mask_dict, page_dict, &mask_info);
             if (code < 0)
                 goto cleanupExit;
         } else {
