@@ -127,7 +127,9 @@ int pdfi_fill(pdf_context *ctx)
     int code;
 
     gs_swapcolors(ctx->pgs);
-    code = gs_fill(ctx->pgs);
+    code = gs_setopacityalpha(ctx->pgs, ctx->pgs->fillconstantalpha);
+    if (code == 0)
+        code = gs_fill(ctx->pgs);
     gs_swapcolors(ctx->pgs);
     if (code == 0)
         pdfi_pop(ctx, 2);
@@ -142,7 +144,9 @@ int pdfi_eofill(pdf_context *ctx)
     int code;
 
     gs_swapcolors(ctx->pgs);
-    code = gs_eofill(ctx->pgs);
+    code = gs_setopacityalpha(ctx->pgs, ctx->pgs->fillconstantalpha);
+    if (code == 0)
+        code = gs_eofill(ctx->pgs);
     gs_swapcolors(ctx->pgs);
     if (code == 0)
         pdfi_pop(ctx, 2);
@@ -154,8 +158,10 @@ int pdfi_eofill(pdf_context *ctx)
 
 int pdfi_stroke(pdf_context *ctx)
 {
-    int code = gs_stroke(ctx->pgs);
+    int code = gs_setopacityalpha(ctx->pgs, ctx->pgs->strokeconstantalpha);
 
+    if (code == 0)
+        code = gs_stroke(ctx->pgs);
     if(code < 0 && ctx->pdfstoponerror)
         return code;
     else
@@ -166,6 +172,8 @@ int pdfi_closepath_stroke(pdf_context *ctx)
 {
     int code;
     code = gs_closepath(ctx->pgs);
+    if (code == 0)
+        code = gs_setopacityalpha(ctx->pgs, ctx->pgs->strokeconstantalpha);
     if (code == 0) {
         code = gs_stroke(ctx->pgs);
     }
@@ -332,10 +340,14 @@ int pdfi_b(pdf_context *ctx)
         code = gs_gsave(ctx->pgs);
         if (code >= 0) {
             gs_swapcolors(ctx->pgs);
-            code = gs_fill(ctx->pgs);
+            code = gs_setopacityalpha(ctx->pgs, ctx->pgs->fillconstantalpha);
+            if (code == 0)
+                code = gs_fill(ctx->pgs);
             gs_swapcolors(ctx->pgs);
             if (code >= 0) {
                 code = gs_grestore(ctx->pgs);
+                if (code >= 0)
+                    code = gs_setopacityalpha(ctx->pgs, ctx->pgs->strokeconstantalpha);
                 if (code >= 0)
                     code = gs_stroke(ctx->pgs);
             } else
@@ -361,10 +373,14 @@ int pdfi_b_star(pdf_context *ctx)
         code = gs_gsave(ctx->pgs);
         if (code >= 0) {
             gs_swapcolors(ctx->pgs);
-            code = gs_eofill(ctx->pgs);
+            code = gs_setopacityalpha(ctx->pgs, ctx->pgs->fillconstantalpha);
+            if (code == 0)
+                code = gs_eofill(ctx->pgs);
             gs_swapcolors(ctx->pgs);
             if (code >= 0) {
                 code = gs_grestore(ctx->pgs);
+                if (code >= 0)
+                    code = gs_setopacityalpha(ctx->pgs, ctx->pgs->strokeconstantalpha);
                 if (code >= 0)
                     code = gs_stroke(ctx->pgs);
             } else
@@ -388,10 +404,14 @@ int pdfi_B(pdf_context *ctx)
     code = gs_gsave(ctx->pgs);
     if (code >= 0) {
         gs_swapcolors(ctx->pgs);
-        code = gs_fill(ctx->pgs);
+        code = gs_setopacityalpha(ctx->pgs, ctx->pgs->fillconstantalpha);
+        if (code == 0)
+            code = gs_fill(ctx->pgs);
         gs_swapcolors(ctx->pgs);
         if (code >= 0) {
             code = gs_grestore(ctx->pgs);
+            if (code >= 0)
+                code = gs_setopacityalpha(ctx->pgs, ctx->pgs->strokeconstantalpha);
             if (code >= 0)
                 code = gs_stroke(ctx->pgs);
         } else {
@@ -417,10 +437,14 @@ int pdfi_B_star(pdf_context *ctx)
     code = gs_gsave(ctx->pgs);
     if (code >= 0) {
         gs_swapcolors(ctx->pgs);
-        code = gs_eofill(ctx->pgs);
+        code = gs_setopacityalpha(ctx->pgs, ctx->pgs->fillconstantalpha);
+        if (code == 0)
+            code = gs_eofill(ctx->pgs);
         gs_swapcolors(ctx->pgs);
         if (code >= 0) {
             code = gs_grestore(ctx->pgs);
+            if (code >= 0)
+                code = gs_setopacityalpha(ctx->pgs, ctx->pgs->strokeconstantalpha);
             if (code >= 0)
                 code = gs_stroke(ctx->pgs);
         } else {
