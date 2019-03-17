@@ -1337,7 +1337,7 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
     ctx->page_has_transparency = uses_transparency;
 
 #ifndef DEBUG
-    ctx->page_has_transparency = false;
+//    ctx->page_has_transparency = false;
     dmprintf1(ctx->memory, "Setting page transparency to false, current page setting is %d\n", uses_transparency);
 #else
     dmprintf1(ctx->memory, "Current page transparency setting is %d\n", uses_transparency);
@@ -1360,6 +1360,12 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
             }
         }
     }
+
+    code = gs_setstrokeconstantalpha(ctx->pgs, 1.0);
+    code = gs_setfillconstantalpha(ctx->pgs, 1.0);
+    code = gs_setalphaisshape(ctx->pgs, 0);
+    code = gs_settextknockout(ctx->pgs, 0);
+    code = gs_setblendmode(ctx->pgs, 0);
 
     if (ctx->page_has_transparency) {
         code = gs_gsave(ctx->pgs);
@@ -1386,7 +1392,6 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
             ctx->page_has_transparency = uses_transparency = false;
         }
     }
-
 
     code = pdfi_process_page_contents(ctx, page_dict);
     if (code < 0) {
