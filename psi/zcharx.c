@@ -54,7 +54,7 @@ glyph_show_setup(i_ctx_t *i_ctx_p, gs_glyph *pglyph)
 static int
 zglyphshow(i_ctx_t *i_ctx_p)
 {
-    gs_glyph glyph;
+    gs_glyph glyph = 0;
     gs_text_enum_t *penum;
     int code;
 
