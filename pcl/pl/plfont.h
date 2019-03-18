@@ -203,7 +203,6 @@ struct pl_font_s
         long VT;                /* VerTical substitution (optional) */
     } offsets;                  /* segment offsets, -1 if segment missing */
     /* Glyph table for downloaded fonts. */
-    gs_char last_char;
     pl_glyph_table_t glyphs;
     /* Character to glyph map for downloaded TrueType fonts. */
     pl_tt_char_glyph_table_t char_glyphs;

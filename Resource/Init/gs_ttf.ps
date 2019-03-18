@@ -856,7 +856,7 @@ end readonly def                % .loadttfontdict
       2 index 12 3 -1 roll putu32
     } if pop pop
   } for
-} bind def
+} bind executeonly def
 
 
 
@@ -1954,7 +1954,7 @@ currentdict /.pickcmap_with_no_xlatmap .undef
         .findnonttfontvalue
     } ifelse
   } ifelse
-} bind def
+} bind executeonly def
 
 % Load a font file that might be a TrueType font.
 % <file> .loadfontfile -

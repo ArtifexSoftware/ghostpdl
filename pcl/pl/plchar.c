@@ -897,9 +897,6 @@ pl_tt_encode_char(gs_font * pfont_generic, gs_char chr,
     pl_font_t *plfont = pfont->client_data;
     pl_font_glyph_t *pfg;
 
-    /* This is used by pl_decode_glyph in plfont.c */
-    plfont->last_char = chr;
-
     if (plfont->offsets.GC < 0)
         return glyph;           /* no substitute */
     pfg = pl_font_lookup_glyph(plfont, glyph);

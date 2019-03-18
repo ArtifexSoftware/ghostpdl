@@ -461,15 +461,20 @@ pl_glyph_name(gs_font * pfont, gs_glyph glyph, gs_const_string * pstr)
     return 0;
 }
 
+#include "assert_.h"
+
 /* Get the unicode valude for a glyph */
 static int
 pl_decode_glyph(gs_font * font, gs_glyph glyph, int ch, ushort *unicode_return, unsigned int length)
 {
-    pl_font_t *plfont = (pl_font_t *) font->client_data;
+
+    if (ch < 0 || ch > 255)
+        return (int) GS_NO_CHAR;
 
     if (length == 0)
         return 1;
-    *unicode_return = plfont->last_char;
+
+    *unicode_return = (ushort)ch;
     return 1;
 }
 

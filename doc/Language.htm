@@ -797,20 +797,6 @@ false.</dd>
 </dl>
 
 <dl>
-<dt><code>&lt;name&gt; &lt;array&gt; .makeoperator &lt;operator&gt;</code></dt>
-<dd>Constructs and returns a new operator that is actually the given
-procedure in disguise.  The name is only used for printing.  The operator
-has the executable attribute.</dd>
-
-<p>
-Operators defined in this way do one other thing besides running the
-procedure: if an error occurs during the execution of the procedure, and
-there has been no net reduction in operand or dictionary stack depth, the
-operand or dictionary stack pointer respectively is reset to its position
-at the beginning of the procedure.</p>
-</dl>
-
-<dl>
 <dt><code>&lt;string&gt; &lt;boolean&gt; .setdebug -</code></dt>
 <dd>Sets or clears any subset of the debugging flags included in
 <code>&lt;string&gt;</code> based on the value of

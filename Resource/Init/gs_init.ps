@@ -57,15 +57,8 @@ systemdict exch
  } executeonly
 if begin
 
-% Define dummy local/global operators if needed.
-systemdict /.setglobal known
- { //true .setglobal
- }
- { /.setglobal { pop } bind def
-   /.currentglobal { //false } bind def
-   /.gcheck { pop //false } bind def
- }
-ifelse
+% Init to global memory (possibly not needed, but left in for legacy purposes)
+//true .setglobal
 
 % Define .languagelevel if needed.
 systemdict /.languagelevel known not { /.languagelevel 1 def } if

@@ -391,6 +391,7 @@
 (pathbbox)
 (pathforall)
 (pop)
+(print)
 (printobject)
 (product)
 (prompt)
@@ -511,7 +512,7 @@
 (undefineuserobject)
 (upath)
 (userdict)
-(UserObjects)
+%(UserObjects) % Not an operator, it's just a name that will only be defined in after 'defineuserobject'
 (usertime)
 (ustroke)
 (ustrokepath)
@@ -542,7 +543,6 @@
 (.fileposition)
 (.knownget)
 (.locksafe)
-(.makeoperator)
 (.setblendmode)
 (.setdebug)
 (.setopacityalpha)
@@ -724,12 +724,21 @@
 (setcustomcolor)
 (setseparationgray)
 
+%% Appear to be official but didn't make it into whitelist for some reason
+(cachestatus)
+(currentfont)
+(currentshared)
+(eexec)
+(scheck)
+(setshared)
+
 ] def
 
-% For any standard things that aren't operators
+% Standard Functions (no -- form)
 /STANDARD_FUNC_LIST [
 ] def
 
+% Extensions that are Functions (no -- form)
 /EXTENSIONS_FUNC_LIST [
 (.shellarguments)
 (===)
@@ -742,8 +751,20 @@
 (write===only)
 (write==only)
 (write=only)
+
+(concatstrings)
+(copyarray)
+(devicenames)
+(loadallfonts)
+(runlibfile)
+(selectdevice)
+
+% Internal, undef in SAFER
+(.mementolistnewblocks)
+(.sort)
 ] def
 
+% Extensions that are Operators
 /EXTENSIONS_OPER_LIST [
 ] def
 
@@ -770,10 +791,13 @@ EXTENSIONS_OPER_LIST operlist_to_whitelist
 
 [ operator_list { pop } forall ]
 /.sort where { pop { 100 string cvs exch 100 string cvs gt } .sort } if
-{ whitelist 1 index 100 string cvs cvn known not {
+{
+  whitelist 1 index 100 string cvs cvn known not {
     dup =only (  ) print operator_list exch get ===
   } {
-    /SCANDEBUG where { pop (skipping ') dup =only (') = flush } if
+    /SCANDEBUG where { pop
+      (skipping ') print dup =only (') = flush
+    } if
     whitelist exch true put
   }
   ifelse
@@ -812,6 +836,37 @@ operator_list {
 
 (######################################################################################) =
 (\nwhitelist entries not seen in scan:\n) =
-whitelist { { pop } { = } ifelse } forall
+% pre-scan whitelist to mark anything that was marked in -- form
+% (this will error if there is something on the whitelist that starts with - and isn't at least
+% 5 characters long, so don't do that...  why would you?)
+whitelist {
+    {
+        % see if it starts with a '-'
+        256 string cvs dup 0 1 getinterval (-) eq {
+            % mark the corresponding non- --oper-- form as true
+            2 1 index length 4 sub getinterval cvn whitelist exch //true put
+        }{
+            pop
+        } ifelse
+    } {
+        pop
+    } ifelse
+} forall
 
+% now print the stuff that wasn't found, ignoring all -- forms
+whitelist {
+    {
+        pop
+    } {
+        256 string cvs dup 0 1 getinterval (-) eq {
+            pop
+        }{
+            =
+        } ifelse
+    } ifelse
+} forall
+
+
+
+(######################################################################################) =
 quit

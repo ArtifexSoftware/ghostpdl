@@ -1087,20 +1087,45 @@ gdev_psdf_put_params(gx_device * dev, gs_param_list * plist)
     params.AutoRotatePages = (enum psdf_auto_rotate_pages)
         psdf_put_enum(plist, "AutoRotatePages", (int)params.AutoRotatePages,
                       AutoRotatePages_names, &ecode);
+    if (ecode < 0) {
+        code = ecode;
+        goto exit;
+    }
+
     params.Binding = (enum psdf_binding)
         psdf_put_enum(plist, "Binding", (int)params.Binding,
                       Binding_names, &ecode);
+    if (ecode < 0) {
+        code = ecode;
+        goto exit;
+    }
+
     params.DefaultRenderingIntent = (enum psdf_default_rendering_intent)
         psdf_put_enum(plist, "DefaultRenderingIntent",
                       (int)params.DefaultRenderingIntent,
                       DefaultRenderingIntent_names, &ecode);
+    if (ecode < 0) {
+        code = ecode;
+        goto exit;
+    }
+
     params.TransferFunctionInfo = (enum psdf_transfer_function_info)
         psdf_put_enum(plist, "TransferFunctionInfo",
                       (int)params.TransferFunctionInfo,
                       TransferFunctionInfo_names, &ecode);
+    if (ecode < 0) {
+        code = ecode;
+        goto exit;
+    }
+
     params.UCRandBGInfo = (enum psdf_ucr_and_bg_info)
         psdf_put_enum(plist, "UCRandBGInfo", (int)params.UCRandBGInfo,
                       UCRandBGInfo_names, &ecode);
+    if (ecode < 0) {
+        code = ecode;
+        goto exit;
+    }
+
     ecode = param_put_bool(plist, "UseFlateCompression",
                            &params.UseFlateCompression, ecode);
 
@@ -1109,10 +1134,20 @@ gdev_psdf_put_params(gx_device * dev, gs_param_list * plist)
     ecode = psdf_put_image_params(pdev, plist,
                     (pdev->ParamCompatibilityLevel >= 1.5 ? &Color_names15 : &Color_names),
                                   &params.ColorImage, ecode);
+    if (ecode < 0) {
+        code = ecode;
+        goto exit;
+    }
+
     params.ColorConversionStrategy = (enum psdf_color_conversion_strategy)
         psdf_put_enum(plist, "ColorConversionStrategy",
                       (int)params.ColorConversionStrategy,
                       ColorConversionStrategy_names, &ecode);
+    if (ecode < 0) {
+        code = ecode;
+        goto exit;
+    }
+
     ecode = psdf_read_string_param(plist, "CalCMYKProfile",
                                    &params.CalCMYKProfile, mem, ecode);
     ecode = psdf_read_string_param(plist, "CalGrayProfile",
@@ -1127,11 +1162,21 @@ gdev_psdf_put_params(gx_device * dev, gs_param_list * plist)
     ecode = psdf_put_image_params(pdev, plist,
                     (pdev->ParamCompatibilityLevel >= 1.5 ? &Gray_names15 : &Gray_names),
                                   &params.GrayImage, ecode);
+    if (ecode < 0) {
+        code = ecode;
+        goto exit;
+    }
+
 
     /* Mono sampled image parameters */
 
     ecode = psdf_put_image_params(pdev, plist, &Mono_names,
                                   &params.MonoImage, ecode);
+
+    if (ecode < 0) {
+        code = ecode;
+        goto exit;
+    }
 
     /* Font embedding parameters */
 

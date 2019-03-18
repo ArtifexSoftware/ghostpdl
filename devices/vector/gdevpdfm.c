@@ -1404,6 +1404,7 @@ pdfmark_OUT(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
         ++plevel;
         plevel->left = (sub_count > 0 ? sub_count : -sub_count);
         plevel->first.id = 0;
+        plevel->last.count = plevel->last.id = 0;
         plevel->first.action = plevel->last.action = 0;	/* for GC */
         if (sub_count < 0)
             pdev->closed_outline_depth++;
