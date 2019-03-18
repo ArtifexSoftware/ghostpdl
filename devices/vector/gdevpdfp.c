@@ -479,6 +479,8 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
 
         ecode = param_put_enum(plist, "ProcessColorModel", &pcm,
                                pcm_names, ecode);
+        if (ecode < 0)
+            goto fail;
         if (pcm >= 0) {
             pdf_set_process_color_model(pdev, pcm);
             rc_decrement(pdev->icc_struct, "gdev_pdf_put_params_impl, ProcessColorModel changed");
