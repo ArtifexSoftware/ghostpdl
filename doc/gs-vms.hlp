@@ -1,6 +1,6 @@
 1 gs
  gs - GPL Ghostscript interpreter/previewer
-! Ghostscript version 9.26, 20 November 2018
+! Ghostscript version 9.27, 19 March 2019
   Usage:
    $ gs [options] [file ...]
 
