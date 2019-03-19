@@ -2035,8 +2035,8 @@ void
 pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
               int x0, int x1, int y0, int y1, int n_chan, bool additive,
               const pdf14_nonseparable_blending_procs_t * pblend_procs,
-              bool overprint, gx_color_index drawn_comps, gs_memory_t *memory,
-              gx_device *dev)
+              bool has_matte, bool overprint, gx_color_index drawn_comps,
+              gs_memory_t *memory, gx_device *dev)
 {
     int num_spots = tos->num_spots;
     byte alpha = tos->alpha;
@@ -2065,7 +2065,6 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
     bool has_mask = false;
     byte *backdrop_ptr = NULL;
     pdf14_device *pdev = (pdf14_device *)dev;
-    bool has_matte = false;
 #if RAW_DUMP
     byte *composed_ptr = NULL;
     int width = x1 - x0;
@@ -2118,8 +2117,6 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
         mask_bg_alpha = mask_tr_fn[mask_bg_alpha];
         tmp = alpha * mask_bg_alpha + 0x80;
         mask_bg_alpha = (tmp + (tmp >> 8)) >> 8;
-        if (maskbuf->matte != NULL)
-            has_matte = true;
     }
     n_chan--; /* Now the true number of colorants (i.e. not including alpha)*/
 #if RAW_DUMP

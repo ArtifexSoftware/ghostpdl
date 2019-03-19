@@ -299,8 +299,8 @@ int pdf14_preserve_backdrop_cm(pdf14_buf *buf, cmm_profile_t *group_profile,
 void pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
               int x0, int x1, int y0, int y1, int n_chan, bool additive,
               const pdf14_nonseparable_blending_procs_t * pblend_procs,
-              bool overprint, gx_color_index drawn_comps, gs_memory_t *memory,
-              gx_device *dev);
+              bool has_matte, bool overprint, gx_color_index drawn_comps,
+              gs_memory_t *memory, gx_device *dev);
 
 void pdf14_compose_alphaless_group(pdf14_buf *tos, pdf14_buf *nos,
                                    int x0, int x1, int y0, int y1,
