@@ -97,14 +97,33 @@ overview</a>.
 <!-- [2.0 begin contents] ================================================== -->
 
 <h2><a name="Version9.27"></a>Version 9.27 (2019-03-19)</h2>
+<p><strong>IMPORTANT:</strong> It is our intention, within the next 12 months (ideally sooner,
+in time for the next release) to make SAFER the default mode of operation. For many users
+this will have no effect, since they use SAFER explicitly, but some niche uses which rely
+on SAFER being disabled may need to start explicitly adding the &quot;-dNOSAFER&quot; option.
 <p> Highlights in this release include:
 <ul>
 <li>
-<p>Security issues have been the primary focus of this release, including solving
-several (well publicised) real and potential exploits.
-<br>
-<p> <big><u><b>PLEASE NOTE:</b> We <b>strongly</b> urge users to upgrade to this latest
-release to avoid these issues.</u></big>
+<p>We have extensively cleaned up the Postscript name space: removing access to internal
+and/or undocumented Postscript operators, procedures and data. This has benefits for security
+and maintainability.
+</li>
+<li>
+<p>We have added a new &quot;product&quot;: &quot;gpdl&quot;. This is a rethink/redesign of the old
+&quot;language_switch&quot; product (pspcl6), and includes all the interpreters we
+develop based on the Ghostscript graphics library: Postscript, PDF, PCL6, PXL and XPS.
+This is experimental, and should be considered of beta testing quality, and thus is not
+built by default: it can be built by using the &quot;experimental&quot; target.
+<p><code>gpdl</code> uses a heuristic to judge the file type being passed to it. In general,
+it supports most of the widely used command line options for each interpreter, but
+compatibility is not complete (the practicalities of swapping interpreters means it is
+unlikely that full parity of command line options will be possible).
+</li>
+<li>
+<p>Fontmap can now reference invidual fonts in a TrueType Collection for font subsitution.
+Previously, a Fontmap entry could only reference a TrueType collection and use the default
+(index zero) font. Now, the Fontmap syntax allows for specifying a specific index in a TTC.
+See the comments at the top of (the default) Fontmap.GS for details.
 </li>
 <li>
 <p>IMPORTANT: We are in the process of forking LittleCMS. LCMS2 is not thread safe, and
@@ -114,20 +133,25 @@ will maintain compatibility between Ghostscript and LCMS2 for a time, but not in
 Our fork will be available as its own package separately from Ghostscript (and MuPDF).
 </li>
 <li>
-<p>Thanks to Man Yue Mo of Semmle Security Research Team, Jens M&uuml;ller of
-Ruhr-Universit&auml;t Bochum and Tavis Ormandy of Google's Project Zero for their help to
-identify specific security issues.
-</li>
-<li>
 <p>The usual round of bug fixes, compatibility changes, and incremental improvements.
 </li>
 </ul>
 <p>For a list of open issues, or to report problems,
 please visit <a href="http://bugs.ghostscript.com/">bugs.ghostscript.com</a>.
-<h3><a name="9.26_Incompatible_changes"></a>Incompatible changes</h3>
+<h3><a name="9.27_Incompatible_changes"></a>Incompatible changes</h3>
 <ul>
 <li>
-<p>None
+<p>The process of &quot;tidying&quot; the Postscript name space should have removed
+only non-standard and undocumented operators. Nevertheless, it is possible that
+any integrations or utilities that rely on those non-standard and undocumented
+operators may stop working, or may change behaviour.
+<p>If you encounter such a case, please contact us (either the #ghostscript IRC channel,
+or the gs-devel mailing list would be best), and we'll work with you to either find an
+alternative solution.
+<p>One case we know this has occurred is GSView 5 (and earlier). GSView 5 support for PDF
+files relied upon internal use only features which are no longer available. GSView 5 will
+still work as previously for Postscript files. For PDF files, users are encouraged to look
+at <a href="https://www.mupdf.com">MuPDF</a>.
 </li>
 </ul>
 <h3><a name="9.27_changelog"></a>Changelog</h3>
