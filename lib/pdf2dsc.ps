@@ -52,10 +52,7 @@ systemdict /.setsafe known { .setsafe } if
 /DSCstring 255 string def
 /MediaTypes 10 dict def
 
-   GS_PDF_ProcSet begin
-   pdfdict begin
-   PDFfile
-   pdfopen begin
+   PDFfile runpdfbegin
    /FirstPage where { pop } { /FirstPage 1 def } ifelse
    /LastPage where { pop } { /LastPage pdfpagecount def } ifelse
 
@@ -108,13 +105,12 @@ systemdict /.setsafe known { .setsafe } if
    (%%BeginProlog\n) puts
    (/Page null def\n/Page# 0 def\n/PDFSave null def\n) puts
    (/DSCPageCount 0 def\n) puts
-   (/DoPDFPage {dup /Page# exch store pdfgetpage pdfshowpage } def\n) puts
-   (GS_PDF_ProcSet begin\npdfdict begin\n) puts
+   (/DoPDFPage {dup /Page# exch store dup dopdfpages } def\n) puts
    (%%EndProlog\n) puts
    (%%BeginSetup\n) puts
    DSCfile PDFname write==only
    ( \(r\) file { DELAYSAFER { .setsafe } if } stopped pop\n) puts
-   ( pdfopen begin\n) puts
+   ( runpdfbegin\n) puts
    ( process_trailer_attrs\n) puts
    (%%EndSetup\n) puts
 
@@ -239,13 +235,10 @@ systemdict /.setsafe known { .setsafe } if
        DSCfile exch DSCstring cvs writestring
        ( DoPDFPage\n) puts
     } for
-   currentdict pdfclose
-   end
-   end
-   end
+    runpdfend
 % write trailer
 (%%Trailer\n) puts
-(currentdict pdfclose\nend\nend\nend\n) puts
+(runpdfend\n) puts
 (%%EOF\n) puts
 % close output file and exit
 DSCfile closefile
