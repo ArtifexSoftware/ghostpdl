@@ -124,8 +124,6 @@ tfax_get_params(gx_device * dev, gs_param_list * plist)
 
     if ((code = param_write_long(plist, "MaxStripSize", &tfdev->MaxStripSize)) < 0)
         ecode = code;
-    if ((code = param_write_int(plist, "FillOrder", &tfdev->FillOrder)) < 0)
-        ecode = code;
     if ((code = param_write_bool(plist, "BigEndian", &tfdev->BigEndian)) < 0)
         ecode = code;
 #if (TIFFLIB_VERSION >= 20111221)
