@@ -1170,12 +1170,11 @@ currentdict /xref-char-dict undef
       /emitProducer where {/emitProducer //false put} if
     }
     {
-      %
-      % Bug #700820, if the Info dictionary isn't a dictionary, then don't try to use it....
-      %
-      dup type /dicttype eq
       {
-        {
+        %
+        % Bug #700820, if the Info dictionary isn't a dictionary, then don't try to use it....
+        %
+        dup type /dicttype eq {
           mark exch
           { /Author /Creator /Title /Subject /Keywords
             % /Producer is Ghostscript; /CreationDate is now; /ModDate is also now.
@@ -1184,13 +1183,13 @@ currentdict /xref-char-dict undef
           } forall
           pop
           dup mark ne { {/DOCINFO pdfmark} stopped {cleartomark} if } { pop } ifelse
-        } if
-      } {
-        pop
-        (   **** Error:  The Info dictionary is not a dictionary, Info will not be preserved.\n) pdfformaterror
-        count pdfemptycount sub {pop} repeat
-        /emitProducer where {/emitProducer //false put} if
-      } ifelse
+        }{
+          pop
+          (   **** Error:  The Info dictionary is not a dictionary, Info will not be preserved.\n) pdfformaterror
+          count pdfemptycount sub {pop} repeat
+          /emitProducer where {/emitProducer //false put} if
+        } ifelse
+      } if
     } ifelse
   } if
   % Initialize OC groups
