@@ -1869,7 +1869,7 @@ currentdict /CMap_read_dict undef
     dup /CIDFont resourcestatus {
       pop pop dup /CIDFont findresource
       dup /Path known
-      1 index /ResourcePath known and
+      1 index /ResourcePath known or
       { exch pop exit }
       { pop dup /CIDFont undefineresource }
       ifelse
