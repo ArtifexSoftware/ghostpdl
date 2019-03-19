@@ -102,13 +102,13 @@ static int
 zexD(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    stream_exD_state state;
-    int code;
+    stream_exD_state state = {0};
+    int code = 0;
 
     (*s_exD_template.set_defaults)((stream_state *)&state);
     if (r_has_type(op, t_dictionary)) {
-        uint cstate;
-        bool is_eexec;
+        uint cstate = 0;
+        bool is_eexec = false;
 
         check_dict_read(*op);
         if ((code = dict_uint_param(op, "seed", 0, 0xffff, 0x10000,

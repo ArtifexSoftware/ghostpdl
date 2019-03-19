@@ -519,6 +519,7 @@ charstring_font_params(const gs_memory_t *mem,
      */
     if (pdata1->LanguageGroup > 1 || pdata1->LanguageGroup < 0)
         pdata1->LanguageGroup = 0;
+
     /* This is used only when determining if its possible to copy glyphs
      * between fonts. Currenly only by pdfwrite and friends. Rather than
      * check all the subrs (which we used to do) we hash tehm, store it
@@ -585,6 +586,8 @@ buildfont1or4(i_ctx_t *i_ctx_p, os_ptr op, build_proc_refs * pbuild,
         return code;
     data1.interpret = gs_type1_interpret;
     data1.subroutineNumberBias = 0;
+    data1.gsubrNumberBias = 0;
+
     data1.lenIV = DEFAULT_LENIV_1;
     return build_charstring_font(i_ctx_p, op, pbuild, ftype, &refs, &data1,
                                  options);
