@@ -1545,6 +1545,8 @@ read_root:
     if (code < 0)
         return code;
 
+    pdfi_read_OptionalRoot(ctx);
+
     if (ctx->pdfinfo) {
         code = pdfi_output_metadata(ctx);
         if (code < 0 && ctx->pdfstoponerror)
@@ -1848,6 +1850,8 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
         pdfi_countdown(ctx->xref_table);
         ctx->xref_table = NULL;
     }
+
+    pdfi_free_OptionalRoot(ctx);
 
     if (ctx->stack_bot) {
         pdfi_clearstack(ctx);

@@ -41,6 +41,8 @@ int pdfi_repair_file(pdf_context *ctx);
 int pdfi_read_Info(pdf_context *ctx);
 int pdfi_read_Pages(pdf_context *ctx);
 int pdfi_read_Root(pdf_context *ctx);
+void pdfi_read_OptionalRoot(pdf_context *ctx);
+void pdfi_free_OptionalRoot(pdf_context *ctx);
 int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_t *page_offset, pdf_dict **target, pdf_dict *inherited);
 int pdfi_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict);
 

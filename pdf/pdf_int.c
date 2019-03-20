@@ -2340,6 +2340,37 @@ int pdfi_read_Pages(pdf_context *ctx)
     return 0;
 }
 
+/* Read optional things in from Root */
+void
+pdfi_read_OptionalRoot(pdf_context *ctx)
+{
+    pdf_obj *obj = NULL;
+    int code;
+
+    if (ctx->pdfdebug)
+        dmprintf(ctx->memory, "%% Reading other Root contents\n");
+
+    if (ctx->pdfdebug)
+        dmprintf(ctx->memory, "%% OCProperties\n");
+    code = pdfi_dict_get_type(ctx, ctx->Root, "OCProperties", PDF_DICT, &obj);
+    if (code == 0) {
+        ctx->OCProperties = (pdf_dict *)obj;
+    } else {
+        ctx->OCProperties = NULL;
+        if (ctx->pdfdebug)
+            dmprintf(ctx->memory, "%% (None)\n");
+    }
+
+}
+
+void
+pdfi_free_OptionalRoot(pdf_context *ctx)
+{
+    if (ctx->OCProperties) {
+        pdfi_countdown(ctx->OCProperties);
+    }
+}
+
 int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_t *page_offset, pdf_dict **target, pdf_dict *inherited)
 {
     int i, code = 0;
