@@ -58,7 +58,7 @@ typedef struct {
     pdf_obj *Alternates;
     pdf_obj *Name; /* obsolete, do we still support? */
     pdf_obj *Decode;
-    pdf_obj *OC;  /* Optional Content */
+    pdf_dict *OC;  /* Optional Content */
     /* Filter and DecodeParms handled by pdfi_filter() (can probably remove, but I like the info while debugging) */
     bool is_JPXDecode;
     pdf_obj *Filter;
@@ -536,7 +536,7 @@ pdfi_get_image_info(pdf_context *ctx, pdf_dict *image_dict, pdf_dict *page_dict,
     }
 
     /* Optional "Optional Content" */
-    code = pdfi_dict_get(ctx, image_dict, "OC", &info->OC);
+    code = pdfi_dict_get_type(ctx, image_dict, "OC", PDF_DICT, (pdf_obj **)&info->OC);
     if (code < 0) {
         if (code != gs_error_undefined)
             goto errorExit;
@@ -819,10 +819,10 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
         gs_transparency_mask_params_t params;
         pdf_array *a = NULL;
         gs_offset_t savedoffset = 0;
-        pdf_obj *o = NULL;
         double f;
 
-        code = pdfi_dict_knownget_type(ctx, (pdf_dict *)image_info.SMask, "Matte", PDF_ARRAY, (pdf_obj **)&a);
+        code = pdfi_dict_knownget_type(ctx, (pdf_dict *)image_info.SMask, "Matte",
+                                       PDF_ARRAY, (pdf_obj **)&a);
         if (code > 0) {
             int ix;
 
@@ -1128,7 +1128,8 @@ int pdfi_EI(pdf_context *ctx)
     return 0;
 }
 
-static int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_dict *xobject_dict)
+static int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
+                                 pdf_dict *page_dict, pdf_dict *xobject_dict)
 {
     int code;
     pdf_name *n = NULL;
@@ -1233,7 +1234,7 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         return 0;
     }
 
-    code = pdfi_do_image_or_form(ctx, stream_dict, page_dict, o);
+    code = pdfi_do_image_or_form(ctx, stream_dict, page_dict, (pdf_dict *)o);
 
     /* No need to countdown 'n' because that poitns to tht stack object, and we're going to pop that */
     pdfi_countdown(o);
