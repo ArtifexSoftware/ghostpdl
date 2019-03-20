@@ -2392,7 +2392,7 @@ gx_downscaler_init_trapped_cm_halftone(gx_downscaler_t    *ds,
                 core = &down_core_mfs;
             else if (ht == &bogus_ets_halftone)
             {
-                code = init_ets(ds, 1, core);
+                code = init_ets(ds, 1, select_8_to_8_core(nc, factor));
                 if (code)
                     goto cleanup;
                 core = &down_core_ets_1;
