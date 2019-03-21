@@ -71,6 +71,9 @@ $(PDFOBJ)pdf_func.$(OBJ): $(PDFSRC)pdf_func.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDI
 $(PDFOBJ)pdf_image.$(OBJ): $(PDFSRC)pdf_image.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_image.c $(PDFO_)pdf_image.$(OBJ)
 
+$(PDFOBJ)pdf_page.$(OBJ): $(PDFSRC)pdf_page.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
+	$(PDFCCC) $(PDFSRC)pdf_page.c $(PDFO_)pdf_page.$(OBJ)
+
 $(PDFOBJ)pdf_stack.$(OBJ): $(PDFSRC)pdf_stack.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_stack.c $(PDFO_)pdf_stack.$(OBJ)
 
@@ -125,6 +128,7 @@ PDF_OBJS=\
     $(PDFOBJ)pdf_gstate.$(OBJ)\
     $(PDFOBJ)pdf_stack.$(OBJ)\
     $(PDFOBJ)pdf_image.$(OBJ)\
+    $(PDFOBJ)pdf_page.$(OBJ)\
     $(PDFOBJ)pdf_font.$(OBJ)\
     $(PDFOBJ)pdf_text.$(OBJ)\
     $(PDFOBJ)pdf_shading.$(OBJ)\

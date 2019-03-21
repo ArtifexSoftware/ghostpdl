@@ -17,6 +17,7 @@
 
 #include "pdf_int.h"
 #include "pdf_stack.h"
+#include "pdf_page.h"
 #include "pdf_image.h"
 #include "pdf_file.h"
 #include "pdf_dict.h"
@@ -762,7 +763,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
 {
     pdf_stream *new_stream = NULL;
     pdf_stream *mask_stream = NULL;
-    int code, comps = 0;
+    int code = 0, comps = 0;
     bool flush = false;
     gs_color_space  *pcs = NULL;
     gs_image1_t t1image;
@@ -782,6 +783,12 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     code = pdfi_get_image_info(ctx, image_dict, page_dict, &image_info);
     if (code < 0)
         goto cleanupExit;
+
+    /* If there is an OC dictionary, see if we even need to render this */
+    if (image_info.OC) {
+        if (!pdfi_page_is_ocg_visible(ctx, image_info.OC))
+            goto cleanupExit;
+    }
 
     /* If there is an alternate, swap it in */
     /* If image_info.Alternates, look in the array, see if any of them are flagged as "DefaultForPrinting"
