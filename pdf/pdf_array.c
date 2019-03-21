@@ -117,6 +117,25 @@ int pdfi_array_get_number(pdf_context *ctx, pdf_array *a, uint64_t index, double
     return 0;
 }
 
+/* Check whether a particular object is in an array
+ * If index is not NULL, fill it in with the index of the object
+ */
+bool
+pdfi_array_known(pdf_array *a, pdf_obj *o, int *index)
+{
+    int i;
+
+    for (i=0; i < a->size; i++) {
+        pdf_obj *val;
+        val = a->values[i];
+        if (val->object_num == o->object_num) {
+            if (index != NULL) *index = i;
+            return true;
+        }
+    }
+    return false;
+}
+
 int pdfi_array_put(pdf_array *a, uint64_t index, pdf_obj *o)
 {
     if (index > a->size)
