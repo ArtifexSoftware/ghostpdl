@@ -2198,7 +2198,7 @@ int pdfi_read_Root(pdf_context *ctx)
         pdfi_countdown(o1);
         return code;
     }
-    if (((pdf_name *)o)->length != 7 || memcmp(((pdf_name *)o)->data, "Catalog", 7) != 0){
+    if (pdfi_name_strcmp((pdf_name *)o, "Catalog") != 0){
         pdfi_countdown(o);
         pdfi_countdown(o1);
         return_error(gs_error_syntaxerror);
@@ -2566,7 +2566,7 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
                 pdfi_countdown(node);
                 return code;
             }
-            if (Type->length == 5 && memcmp(Type->data, "Pages", 5) == 0) {
+            if (pdfi_name_strcmp(Type, "Pages") == 0) {
                 code = pdfi_array_put(Kids, i, (pdf_obj *)child);
                 if (code < 0) {
                     pdfi_countdown(inheritable);
@@ -2577,7 +2577,7 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
                     return code;
                 }
             }
-            if (Type->length == 4 && memcmp(Type->data, "Page", 4) == 0) {
+            if (pdfi_name_strcmp(Type, "Page") == 0) {
                 /* Make a 'PageRef' entry (just stores an indirect reference to the actual page)
                  * and store that in the Kids array for future reference. But pass on the
                  * dereferenced Page dictionary, in case this is the target page.
@@ -2622,7 +2622,7 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
         /* Check the type, if its a Pages entry, then recurse. If its a Page entry, is it the one we want */
         code = pdfi_dict_get_type(ctx, child, "Type", PDF_NAME, (pdf_obj **)&Type);
         if (code == 0) {
-            if (Type->length == 5 && memcmp(Type->data, "Pages", 5) == 0) {
+            if (pdfi_name_strcmp(Type, "Pages") == 0) {
                 code = pdfi_dict_get_number(ctx, child, "Count", &dbl);
                 if (code == 0) {
                     if (dbl != floor(dbl))
@@ -2647,7 +2647,7 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
                     }
                 }
             } else {
-                if (Type->length == 7 && memcmp(Type->data, "PageRef", 7) == 0) {
+                if (pdfi_name_strcmp(Type, "PageRef") == 0) {
                     pdfi_countdown(Type);
                     Type = NULL;
                     if ((*page_offset) == page_num) {
@@ -2676,7 +2676,7 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
                         pdfi_countdown(child);
                     }
                 } else {
-                    if (Type->length == 4 && memcmp(Type->data, "Page", 4) == 0) {
+                    if (pdfi_name_strcmp(Type, "Page") == 0) {
                         pdfi_countdown(Type);
                         Type = NULL;
                         if ((*page_offset) == page_num) {
