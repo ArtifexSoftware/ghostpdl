@@ -2231,9 +2231,9 @@ currentdict /last-ditch-bpc-csp undef
       PDFfile exch setfileposition
       0 .endtransparencymask
     } ifelse
-	   << /Subtype /Group /Isolated //true
-       /.image_with_SMask //true 
-	   % pdfwrite needs : see gs/src/ztrans.c, gs/src/gdevpdft.c
+       << /Subtype /Group /Isolated //true
+       /.image_with_SMask //true
+       % pdfwrite needs : see gs/src/ztrans.c, gs/src/gdevpdft.c
        % Code to deal with a Matte in the SMask. We know the image dictionary must have an SMask
        % entry if we get here, so we don't need to check its existence. Just pull it out and see if
        % the SMask has a Matte entry. If it does, get the ColorSpace from the parent image and
