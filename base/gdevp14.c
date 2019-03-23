@@ -743,7 +743,7 @@ template_transform_color_buffer(gs_gstate *pgs, pdf14_ctx *ctx, gx_device *dev,
         des_rowstride, height, width);
 
     /* If we have a matte entry, undo the pre-blending now.  Also set pdf14
-       context to ensure that this is not done again during the group 
+       context to ensure that this is not done again during the group
        composition */
     if (has_matte) {
         int x, y, i;
