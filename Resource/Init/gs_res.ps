@@ -946,6 +946,7 @@ userdict /.localcsdefaults //false put
         dup type /nametype eq {
           .fontstatus { pop //null exit } if
         } {
+          dup type /dicttype eq {/Path .knownget pop} if
           dup type /stringtype eq {
             findlibfile { closefile pop //null exit } if pop
           } {

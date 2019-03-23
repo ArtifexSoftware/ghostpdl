@@ -695,9 +695,12 @@ tile_by_steps_trans(tile_fill_trans_state_t * ptfs, int x0, int y0, int w0, int 
                 ptfs->xoff = xoff;
                 ptfs->yoff = yoff;
 
-                /* We only go through blending during tiling, if
-                   there was overlap as defined by the step matrix
-                   and the bounding box */
+                /* We only go through blending during tiling, if there was overlap
+                   as defined by the step matrix and the bounding box.
+                   Ignore if the area is outside the fill_trans_buffer.rect (bug 700719) */
+                if (x > fill_trans_buffer->rect.q.x || x+w < 0 ||
+                    y > fill_trans_buffer->rect.q.y || y+h < 0)
+                    continue;	/* skip the fill (can breakpoint here) */
                 ptile->ttrans->pat_trans_fill(x, y, x+w, y+h, px, py, ptile,
                     fill_trans_buffer);
             }

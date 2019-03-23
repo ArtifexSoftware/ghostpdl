@@ -24,11 +24,18 @@
 % consistent with the one specified here.
 /defaultfontmap (Fontmap) def
 
+% we have to set .languagelevel to 2 so the parser will accept the names
+% '<<' and '>>', then we use a local definition here.
+.languagelevel 2 .setlanguagelevel
 /defaultfontmap_content 50 dict
-1 dict begin
+4 dict begin
+(<<) cvn /mark load def
+(>>) cvn /.dicttomark load def
 /; { 2 index 3 1 roll .growput } bind def
 %% Replace 0 (Fontmap)
 end def
+.setlanguagelevel
+
 
 % ------ End of editable parameters ------ %
 
@@ -88,6 +95,18 @@ userdict /.nativeFontmap .FontDirectory maxlength dict put
          {.readFontmap} 0 get 1 .quit
        } if
                 % stack: dict file fontname filename|aliasname
+      dup type /nametype eq
+      {
+        dup (<<) cvn eq
+        {
+          pop mark
+          {
+            counttomark 2 add index token not {//false exit} if
+            dup (>>) cvn eq {pop //true exit} if
+          } loop
+          { .dicttomark }{cleartomark} ifelse
+        } if
+      } if
       1 index type /stringtype eq
       1 index type /nametype eq and 1 index xcheck and
       1 index /run eq 2 index /.runlibfile eq or and {
@@ -1158,7 +1177,17 @@ $error /SubstituteFont { } put
                  if
                }
                {                % Font file name
-                 //true .loadfontloop { //true exit } if
+                 dup type /dicttype eq
+                 {
+                   begin
+                   Path
+                 }
+                 {
+                   1 dict begin
+                 } ifelse
+                 //true .loadfontloop
+                 end
+                 { //true exit } if
                }
               ifelse
             }

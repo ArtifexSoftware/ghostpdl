@@ -1167,17 +1167,28 @@ currentdict /xref-char-dict undef
     Trailer /Info {knownoget} stopped {
       (   **** Error:  Unable to read Info dictionary from Trailer, Info will not be preserved.\n) pdfformaterror
       count pdfemptycount sub {pop} repeat
+      /emitProducer where {/emitProducer //false put} if
     }
     {
       {
-        mark exch
-        { /Author /Creator /Title /Subject /Keywords
-          % /Producer is Ghostscript; /CreationDate is now; /ModDate is also now.
-        } {
-          2 copy knownoget { 3 -1 roll } { pop } ifelse
-        } forall
-        pop
-        dup mark ne { {/DOCINFO pdfmark} stopped {cleartomark} if } { pop } ifelse
+        %
+        % Bug #700820, if the Info dictionary isn't a dictionary, then don't try to use it....
+        %
+        dup type /dicttype eq {
+          mark exch
+          { /Author /Creator /Title /Subject /Keywords
+            % /Producer is Ghostscript; /CreationDate is now; /ModDate is also now.
+          } {
+            2 copy knownoget { 3 -1 roll } { pop } ifelse
+          } forall
+          pop
+          dup mark ne { {/DOCINFO pdfmark} stopped {cleartomark} if } { pop } ifelse
+        }{
+          pop
+          (   **** Error:  The Info dictionary is not a dictionary, Info will not be preserved.\n) pdfformaterror
+          count pdfemptycount sub {pop} repeat
+          /emitProducer where {/emitProducer //false put} if
+        } ifelse
       } if
     } ifelse
   } if
@@ -1414,6 +1425,7 @@ currentdict /xref-char-dict undef
    cvlit /PDFfile exch def
    /PDFsource PDFfile def
    /Repaired //false def
+   /emitProducer //true def
    /RepairedAnError //false def
    /StreamRunAborted //false def
    /NeedAppearances //false def
@@ -1650,11 +1662,19 @@ currentdict /xref-char-dict undef
 } odef
 
 /printProducer {
-  Trailer /Info { knownoget_safe } stopped { pop pop //false } if {
-    /Producer knownoget not { //null } if
+  Trailer /Info { knownoget_safe } stopped { pop pop //false } if
+
+  {
+    /emitProducer where {/emitProducer get}{//true} ifelse
+    {
+      /Producer knownoget not { //null } if
+    }{
+      pop //null
+    } ifelse
   } {
     //null
   } ifelse
+
   dup //null eq {
     pop
   } {

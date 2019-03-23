@@ -389,13 +389,15 @@ gs_type1_piece_codes(/*const*/ gs_font_type1 *pfont,
     for (;;) {
         uint c0;
 
-        if (cip > end)
+        if (cip >= end) {
              /* We used to treat buffer overrun as a simple invalid font, now we assume that
-             * there is an implicit endcharr.
+             * there is an implicit endchar/return.
              * Part of bug #693170 where the fonts are invalid (no endchar on some glyphs).
              */
+            if (call_depth > 0)
+                goto c_return;
             goto out;
-
+        }
         c0 = *cip++;
 
         charstring_next(c0, state, c, encrypted);
@@ -490,6 +492,7 @@ gs_type1_piece_codes(/*const*/ gs_font_type1 *pfont,
             end = ipsp->cs_data.bits.data + ipsp->cs_data.bits.size;
             goto call;
         case c_return:
+c_return:
             if (call_depth == 0)
                 return (gs_note_error(gs_error_invalidfont));
             else

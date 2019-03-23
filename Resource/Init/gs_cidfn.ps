@@ -57,7 +57,9 @@ dup 0 {
     .completefont9
     end
   } if
-  1 index exch .buildfont9 exch pop
+  1 index exch .buildfont9
+  .currentresourcefile dup type /filetype eq { //.filename {1 index exch /ResourcePath exch put} if }{ pop} ifelse
+  exch pop
 } put % Don't bind it here, because gs_fapi.ps redefines .buildfont9
 
 % Add entries to a new CIDFontType 0 font per documentation (FontMatrix)
@@ -138,14 +140,18 @@ dup 0 {
 
 dup 1 {
   10 //.checkfonttype exec pop
-  1 index exch .buildfont10 exch pop
+  1 index exch .buildfont10
+  .currentresourcefile dup type /filetype eq { //.filename {1 index exch /ResourcePath exch put} if }{ pop} ifelse
+  exch pop
 } put % Don't bind it here because gs_fapi.ps redefines .buildfont10
 
 % ------ CIDFontType 2 (FontType 11) ------ %
 
 dup 2 {
   11 //.checkfonttype exec pop
-  1 index exch .buildfont11 exch pop
+  1 index exch .buildfont11
+  .currentresourcefile dup type /filetype eq { //.filename {1 index exch /ResourcePath exch put} if }{ pop} ifelse
+  exch pop
 } put % Don't bind it here because gs_fapi.ps redefines .buildfont11
 
 pop		% .cidfonttypes

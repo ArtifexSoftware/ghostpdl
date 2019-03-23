@@ -2231,10 +2231,18 @@ currentdict /last-ditch-bpc-csp undef
       PDFfile exch setfileposition
       0 .endtransparencymask
     } ifelse
-    << /Subtype /Group /Isolated //true
-      /.image_with_SMask //true % pdfwrite needs : see gs/src/ztrans.c, gs/src/gdevpdft.c
-    >> 0 0 1 1 .begintransparencygroup
-    doimage
+       << /Subtype /Group /Isolated //true
+       /.image_with_SMask //true
+       % pdfwrite needs : see gs/src/ztrans.c, gs/src/gdevpdft.c
+       % Code to deal with a Matte in the SMask. We know the image dictionary must have an SMask
+       % entry if we get here, so we don't need to check its existence. Just pull it out and see if
+       % the SMask has a Matte entry. If it does, get the ColorSpace from the parent image and
+       % put a /CS key with that colour space in the Group that we manufacture. Bug #700686
+       % We also need to actually set the current colour space to be the same as the group
+       % code only picks up the current colour space, not the space from the dictionary.
+       currentdict /SMask get /Matte known {/CS currentdict /ColorSpace get dup pdfopdict /cs get exec } if
+     >> 0 0 1 1 .begintransparencygroup
+     doimage
     .endtransparencygroup
     % tell the compositor we're done with the SMask.
     % Note that any SMask in the ExtGState should be reapplied

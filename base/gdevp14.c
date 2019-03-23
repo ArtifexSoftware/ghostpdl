@@ -659,11 +659,15 @@ RELOC_PTRS_END
    in-place conversion if possible.  If not, it will do an allocation.  The
    put_image call needs to know if an allocation was made so that it can adjust
    for the fact that we likely don't have a full page any longer and we don't
-   need to do the offset to our data in the buffer. */
-static pdf14_buf*
-pdf14_transform_color_buffer(gs_gstate *pgs, pdf14_ctx *ctx, gx_device *dev,
+   need to do the offset to our data in the buffer. Bug 700686: If we are in
+   a softmask that includes a matte entry, then we need to undo the matte
+   entry here at this time in the image's native color space not the parent
+   color space. */
+static forceinline pdf14_buf*
+template_transform_color_buffer(gs_gstate *pgs, pdf14_ctx *ctx, gx_device *dev,
     pdf14_buf *src_buf, byte *src_data, cmm_profile_t *src_profile,
-    cmm_profile_t *des_profile, int x0, int y0, int width, int height, bool *did_alloc)
+    cmm_profile_t *des_profile, int x0, int y0, int width, int height, bool *did_alloc,
+    bool has_matte)
 {
     gsicc_rendering_param_t rendering_params;
     gsicc_link_t *icc_link;
@@ -738,6 +742,60 @@ pdf14_transform_color_buffer(gs_gstate *pgs, pdf14_ctx *ctx, gx_device *dev,
         1, false, false, true, des_planestride,
         des_rowstride, height, width);
 
+    /* If we have a matte entry, undo the pre-blending now.  Also set pdf14
+       context to ensure that this is not done again during the group
+       composition */
+    if (has_matte) {
+        int x, y, i;
+        byte matte_alpha = 0xff;
+        pdf14_mask_t *mask_stack = ctx->mask_stack;
+        byte* src_curr_ptr;
+        byte *mask_row_ptr;
+        byte *mask_curr_ptr = NULL;
+        pdf14_buf *maskbuf = NULL;
+        byte *mask_tr_fn = NULL;
+        byte *src_row_ptr = src_data;
+
+        /* This should always happen but lets check for safety */
+        if (mask_stack != NULL) {
+            maskbuf = mask_stack->rc_mask->mask_buf;
+
+            /* This also should always happen */
+            if (maskbuf != NULL) {
+
+                mask_tr_fn = maskbuf->transfer_fn;
+                mask_row_ptr = maskbuf->data;
+
+                for (y = 0; y < height; y++) {
+                    mask_curr_ptr = mask_row_ptr;
+                    src_curr_ptr = src_row_ptr;
+                    for (x = 0; x < width; x++) {
+                        matte_alpha = mask_tr_fn[*mask_curr_ptr];
+                        if (matte_alpha != 0 && matte_alpha < 0xff) {
+                            for (i = 0; i < src_profile->num_comps; i++) {
+                                int val = src_curr_ptr[i * src_planestride] - maskbuf->matte[i];
+                                int temp = ((((val * 0xff) << 8) / matte_alpha) >> 8) + maskbuf->matte[i];
+
+                                /* clip */
+                                if (temp > 0xff)
+                                    src_curr_ptr[i * src_planestride] = 0xff;
+                                else if (temp < 0)
+                                    src_curr_ptr[i * src_planestride] = 0;
+                                else
+                                    src_curr_ptr[i * src_planestride] = temp;
+                            }
+                        }
+                        mask_curr_ptr++;
+                        src_curr_ptr++;
+                    }
+                    src_row_ptr += src_rowstride;
+                    mask_row_ptr += maskbuf->rowstride;
+                }
+            }
+        }
+
+    }
+
     /* Transform the data. Since the pdf14 device should be using RGB, CMYK or
        Gray buffers, this transform does not need to worry about the cmap procs
        of the target device. */
@@ -762,6 +820,24 @@ pdf14_transform_color_buffer(gs_gstate *pgs, pdf14_ctx *ctx, gx_device *dev,
         output->rect.q.y = y0 + height;
     }
     return output;
+}
+
+static pdf14_buf*
+pdf14_transform_color_buffer_no_matte(gs_gstate *pgs, pdf14_ctx *ctx, gx_device *dev,
+    pdf14_buf *src_buf, byte *src_data, cmm_profile_t *src_profile,
+    cmm_profile_t *des_profile, int x0, int y0, int width, int height, bool *did_alloc)
+{
+    return template_transform_color_buffer(pgs, ctx, dev, src_buf, src_data, src_profile,
+        des_profile, x0, y0, width, height, did_alloc, false);
+}
+
+static pdf14_buf*
+pdf14_transform_color_buffer_with_matte(gs_gstate *pgs, pdf14_ctx *ctx, gx_device *dev,
+    pdf14_buf *src_buf, byte *src_data, cmm_profile_t *src_profile,
+    cmm_profile_t *des_profile, int x0, int y0, int width, int height, bool *did_alloc)
+{
+    return template_transform_color_buffer(pgs, ctx, dev, src_buf, src_data, src_profile,
+        des_profile, x0, y0, width, height, did_alloc, true);
 }
 
 /**
@@ -1166,6 +1242,7 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
     pdf14_device *pdev = (pdf14_device *)dev;
     bool overprint = pdev->overprint;
     gx_color_index drawn_comps = pdev->drawn_comps;
+    bool has_matte = false;
 
     if (nos == NULL)
         return_error(gs_error_unknownerror);  /* Unmatched group pop */
@@ -1181,6 +1258,10 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
     } else {
         maskbuf = mask_stack->rc_mask->mask_buf;
     }
+
+    if (maskbuf != NULL && maskbuf->matte != NULL)
+        has_matte = true;
+
     /* Sanitise the dirty rectangles, in case some of the drawing routines
      * have made them overly large. */
     rect_intersect(tos->dirty, tos->rect);
@@ -1242,10 +1323,18 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
             pdf14_buf *result;
             bool did_alloc; /* We don't care here */
 
-            result = pdf14_transform_color_buffer(pgs, ctx, dev, tos, tos->data,
-                curr_icc_profile, nos->parent_color_info->icc_profile,
-                tos->rect.p.x, tos->rect.p.y, tos->rect.q.x - tos->rect.p.x,
-                tos->rect.q.y - tos->rect.p.y, &did_alloc);
+            if (has_matte) {
+                result = pdf14_transform_color_buffer_with_matte(pgs, ctx, dev,
+                    tos, tos->data, curr_icc_profile, nos->parent_color_info->icc_profile,
+                    tos->rect.p.x, tos->rect.p.y, tos->rect.q.x - tos->rect.p.x,
+                    tos->rect.q.y - tos->rect.p.y, &did_alloc);
+                has_matte = false;
+            } else {
+                result = pdf14_transform_color_buffer_no_matte(pgs, ctx, dev,
+                    tos, tos->data, curr_icc_profile, nos->parent_color_info->icc_profile,
+                    tos->rect.p.x, tos->rect.p.y, tos->rect.q.x - tos->rect.p.x,
+                    tos->rect.q.y - tos->rect.p.y, &did_alloc);
+            }
             if (result == NULL)
                 return_error(gs_error_unknownerror);  /* transform failed */
 
@@ -1260,13 +1349,13 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
             pdf14_compose_group(tos, nos, maskbuf, x0, x1, y0, y1, nos->n_chan,
                  nos->parent_color_info->isadditive,
                  nos->parent_color_info->parent_blending_procs,
-                 false, drawn_comps, ctx->memory, dev);
+                 has_matte, false, drawn_comps, ctx->memory, dev);
         }
     } else {
         /* Group color spaces are the same.  No color conversions needed */
         if (x0 < x1 && y0 < y1)
             pdf14_compose_group(tos, nos, maskbuf, x0, x1, y0, y1, nos->n_chan,
-                                ctx->additive, pblend_procs, overprint,
+                                ctx->additive, pblend_procs, has_matte, overprint,
                                 drawn_comps, ctx->memory, dev);
     }
 exit:
@@ -1922,7 +2011,7 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
             global_index++;
 #endif
 
-            cm_result = pdf14_transform_color_buffer(pgs, pdev->ctx, dev, buf,
+            cm_result = pdf14_transform_color_buffer_no_matte(pgs, pdev->ctx, dev, buf,
                 buf_ptr, src_profile, des_profile, rect.p.x, rect.p.y, width,
                 height, &did_alloc);
 
