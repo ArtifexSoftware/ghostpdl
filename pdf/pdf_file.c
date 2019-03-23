@@ -323,9 +323,11 @@ pdfi_JPX_filter(pdf_context *ctx, pdf_dict *dict, pdf_dict *decode,
         /* parse the value */
         if (csobj->type == PDF_ARRAY) {
             /* assume it's the first array element */
-            csname =  (pdf_name *)((pdf_array *)csobj)->values[0];
-            /* We're going to count this down, below, so we need to count it up first. */
-            pdfi_countup(csname);
+            code = pdfi_array_get((pdf_array *)csobj, (uint64_t)0, &csname);
+            if (code < 0) {
+                pdfi_countdown(csobj);
+                return code;
+            }
         } else if (csobj->type == PDF_NAME) {
             /* use the name directly */
             csname = (pdf_name *)csobj;

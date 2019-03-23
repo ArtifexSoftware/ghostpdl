@@ -680,6 +680,7 @@ static int GS_SMask(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_d
         gs_offset_t savedoffset = 0;
         pdf_dict *G_dict = NULL;
         pdf_name *n = NULL;
+        double f;
 
         code = pdfi_dict_knownget_type(ctx, (pdf_dict *)o, "Subtype", PDF_DICT, (pdf_obj **)&n);
         if (code > 0 && pdfi_name_strcmp(n, "SMask") == 0) {
@@ -692,14 +693,10 @@ static int GS_SMask(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_d
                     int ix;
 
                     for (ix = 0; ix < a->entries; ix++) {
-                        if (a->values[ix]->type == PDF_INT) {
-                            params.Matte[ix] = (float)((pdf_num *)a->values[ix])->value.i;
-                        } else {
-                            if (a->values[ix]->type == PDF_REAL) {
-                                params.Matte[ix] = ((pdf_num *)a->values[ix])->value.d;
-                            } else
-                                break;
-                        }
+                        code = pdfi_array_get_number(ctx, a, (uint64_t)ix, &f);
+                        if (code < 0)
+                            break;
+                        params.Matte[ix] = f;
                     }
                     if (ix >= a->entries)
                         params.Matte_components = a->entries;

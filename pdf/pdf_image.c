@@ -135,7 +135,9 @@ pdfi_find_alternate(pdf_context *ctx, pdf_obj *alt)
 
     array = (pdf_array *)alt;
     for (i=0; i<array->size;i++) {
-        item = array->values[i];
+        code = pdfi_array_get(array, (uint64_t)i, &item);
+        if (code != 0)
+            continue;
         if (item->type != PDF_DICT)
             continue;
         code = pdfi_dict_get_bool(ctx, (pdf_dict *)item, "DefaultForPrinting", &flag);
@@ -817,20 +819,17 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
         pdf_array *a = NULL;
         gs_offset_t savedoffset = 0;
         pdf_obj *o = NULL;
+        double f;
 
         code = pdfi_dict_knownget_type(ctx, (pdf_dict *)image_info.SMask, "Matte", PDF_ARRAY, (pdf_obj **)&a);
         if (code > 0) {
             int ix;
 
             for (ix = 0; ix < a->entries; ix++) {
-                if (a->values[ix]->type == PDF_INT) {
-                    params.Matte[ix] = (float)((pdf_num *)a->values[ix])->value.i;
-                } else {
-                    if (a->values[ix]->type == PDF_REAL) {
-                        params.Matte[ix] = ((pdf_num *)a->values[ix])->value.d;
-                    } else
-                        break;
-                }
+                code = pdfi_array_get_number(ctx, a, (uint64_t)ix, &f);
+                if (code < 0)
+                    break;
+                params.Matte[ix] = f;
             }
             if (ix >= a->entries)
                 params.Matte_components = a->entries;

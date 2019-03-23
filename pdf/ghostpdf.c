@@ -787,9 +787,8 @@ static int pdfi_check_Annots_for_transparency(pdf_context *ctx, pdf_array *annot
     pdf_dict *annot = NULL;
 
     for (i=0; i < annots_array->entries; i++) {
-        annot = (pdf_dict *)annots_array->values[i];
-
-        if (annot->type == PDF_DICT) {
+        code = pdfi_array_get_type(ctx, annots_array, (uint64_t)i, PDF_DICT, &annot);
+        if (code > 0) {
             code = pdfi_check_annot_for_transparency(ctx, annot, page_dict, transparent, num_spots);
             if (code < 0 && ctx->pdfstoponerror)
                 return code;
@@ -1102,30 +1101,29 @@ static int pdfi_dump_box(pdf_context *ctx, pdf_dict *page_dict, const char *Key)
 {
     int code, i;
     pdf_array *a = NULL;
+    double f;
 
     code = pdfi_dict_knownget_type(ctx, page_dict, Key, PDF_ARRAY, (pdf_obj **)&a);
     if (code > 0) {
         if (a->entries != 4) {
+            dmprintf1(ctx->memory, "Error - %s does not contain 4 values.\n", Key);
             code = gs_note_error(gs_error_rangecheck);
         } else {
+            dmprintf1(ctx->memory, " %s: [", Key);
             for (i = 0; i < a->entries; i++) {
-                if (a->values[i]->type != PDF_INT && a->values[i]->type != PDF_REAL){
-                    code = gs_note_error(gs_error_rangecheck);
-                    break;
-                }
-            }
-            if (i == a->entries) {
-                dmprintf1(ctx->memory, " %s: [", Key);
-                for (i=0;i < a->entries;i++) {
+                code = pdfi_array_get_number(ctx, a, (uint64_t)i, &f);
+                if (code > 0) {
                     if (i != 0)
                         dmprintf(ctx->memory, " ");
                     if (a->values[i]->type == PDF_INT)
                         dmprintf1(ctx->memory, "%"PRIi64"", ((pdf_num *)a->values[i])->value.i);
                     else
                         dmprintf1(ctx->memory, "%f", ((pdf_num *)a->values[i])->value.d);
+                } else {
+                    dmprintf(ctx->memory, "NAN");
                 }
-                dmprintf(ctx->memory, "]");
             }
+            dmprintf(ctx->memory, "]");
         }
     }
     pdfi_countdown(a);
