@@ -487,8 +487,6 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
             pdev->icc_struct = 0;
         }
     }
-    if (ecode < 0)
-        goto fail;
 
     if (pdev->is_ps2write && (code = param_read_bool(plist, "ProduceDSC", &pdev->ProduceDSC)) < 0) {
         param_signal_error(plist, param_name, code);
