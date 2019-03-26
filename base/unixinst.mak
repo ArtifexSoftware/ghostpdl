@@ -152,7 +152,7 @@ DOC_PAGES=index.html API.htm C-style.htm Develop.htm DLL.htm Fonts.htm Install.h
           Devices.htm Drivers.htm History9.htm Language.htm Make.htm Ps2epsi.htm \
           Ps-style.htm Release.htm SavedPages.htm subclass.htm Unix-lpr.htm \
           VectorDevices.htm gs-style.css index.js pscet_status.txt style.css \
-          gdevds32.c \
+          gdevds32.c COPYING \
           GS9_Color_Management.pdf
 
 DOC_PAGE_IMAGES=Artifex_logo.png  favicon.png  ghostscript_logo.png  hamburger-light.png  x-light.png
