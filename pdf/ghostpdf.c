@@ -783,7 +783,7 @@ static int pdfi_check_annot_for_transparency(pdf_context *ctx, pdf_dict *annot, 
 
 static int pdfi_check_Annots_for_transparency(pdf_context *ctx, pdf_array *annots_array, pdf_dict *page_dict, bool *transparent, int *num_spots)
 {
-    int i, code;
+    int i, code = 0;
     pdf_dict *annot = NULL;
 
     for (i=0; i < annots_array->entries; i++) {
@@ -791,15 +791,17 @@ static int pdfi_check_Annots_for_transparency(pdf_context *ctx, pdf_array *annot
         if (code > 0) {
             code = pdfi_check_annot_for_transparency(ctx, annot, page_dict, transparent, num_spots);
             if (code < 0 && ctx->pdfstoponerror)
-                return code;
+                goto exit;
             /* If we've found transparency, and don't need to continue checkign for spot colours
              * just exit as fast as possible.
              */
             if (*transparent == true && num_spots == NULL)
-                return 0;
+                goto exit;
         }
     }
-    return 0;
+exit:
+    pdfi_countdown(annot);
+    return code;
 }
 
 /* From the original PDF interpreter written in PostScript:

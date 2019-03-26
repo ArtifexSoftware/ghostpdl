@@ -123,9 +123,9 @@ pdfi_get_image_line_size(gs_data_image_t *pim, int comps)
 static pdf_dict *
 pdfi_find_alternate(pdf_context *ctx, pdf_obj *alt)
 {
-    pdf_array *array;
-    pdf_obj *item;
-    pdf_dict *alt_dict;
+    pdf_array *array = NULL;
+    pdf_obj *item = NULL;
+    pdf_dict *alt_dict = NULL;
     int i;
     int code;
     bool flag;
@@ -135,18 +135,19 @@ pdfi_find_alternate(pdf_context *ctx, pdf_obj *alt)
 
     array = (pdf_array *)alt;
     for (i=0; i<array->size;i++) {
-        code = pdfi_array_get(array, (uint64_t)i, &item);
+        code = pdfi_array_get_type(ctx, array, (uint64_t)i, PDF_DICT, &item);
         if (code != 0)
-            continue;
-        if (item->type != PDF_DICT)
             continue;
         code = pdfi_dict_get_bool(ctx, (pdf_dict *)item, "DefaultForPrinting", &flag);
-        if (code != 0 || !flag)
+        if (code != 0 || !flag) {
+            pdfi_countdown(item);
+            item = NULL;
             continue;
-        code = pdfi_dict_get(ctx, (pdf_dict *)item, "Image", (pdf_obj **)&alt_dict);
+        }
+        code = pdfi_dict_get_type(ctx, (pdf_dict *)item, "Image", PDF_DICT, (pdf_obj **)&alt_dict);
+        pdfi_countdown(item);
+        item = NULL;
         if (code != 0)
-            continue;
-        if (alt_dict->type != PDF_DICT)
             continue;
         return alt_dict;
     }
