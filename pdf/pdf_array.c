@@ -33,17 +33,47 @@ void pdfi_free_array(pdf_obj *o)
     gs_free_object(a->memory, a, "pdf interpreter free array");
 }
 
+/* Fetch object from array, resolving indirect reference if needed
+ * (Does not increment reference count, caller needs to do that if they want to)
+ */
+static int
+pdfi_array_fetch(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o)
+{
+    int code;
+    pdf_obj *obj;
+
+    *o = NULL;
+
+    if (index >= a->size)
+        return_error(gs_error_rangecheck);
+    obj = a->values[index];
+
+    if (obj->type == PDF_INDIRECT) {
+        pdf_obj *o1 = NULL;
+        pdf_indirect_ref *r = (pdf_indirect_ref *)obj;
+
+        code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, &o1);
+        if (code < 0)
+            return code;
+        /* Don't need this reference */
+        pdfi_countdown(o1);
+
+        (void)pdfi_array_put(a, index, o1);
+        obj = o1;
+    }
+
+    *o = obj;
+    return 0;
+}
+
+
 /* Get the value from the pdfi_array without incrementing its reference count.
  * Caller needs to increment it themselves if they want to keep it (or just use
  * pdfi_array_get, below).
  */
 int pdfi_array_peek(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o)
 {
-    if (index >= a->size)
-        return_error(gs_error_rangecheck);
-
-    *o = a->values[index];
-    return 0;
+    return pdfi_array_fetch(ctx, a, index, o);
 }
 
 /* The object returned by pdfi_array_get has its reference count incremented by 1 to
@@ -62,38 +92,39 @@ int pdfi_array_get(pdf_array *a, uint64_t index, pdf_obj **o)
     return 0;
 }
 
-int pdfi_array_get_type(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj_type type, pdf_obj **o)
+/* Get value from pdfi_array without incrementing its reference count.
+ * Handles type-checking and resolving indirect references.
+ */
+int
+pdfi_array_peek_type(pdf_context *ctx, pdf_array *a, uint64_t index,
+                     pdf_obj_type type, pdf_obj **o)
 {
     int code;
 
-    code = pdfi_array_get(a, index, o);
+    code = pdfi_array_fetch(ctx, a, index, o);
     if (code < 0)
         return code;
 
-    if ((*o)->type != type) {
-        if ((*o)->type == PDF_INDIRECT){
-            pdf_obj *o1 = NULL;
-            pdf_indirect_ref *r = (pdf_indirect_ref *)*o;
+    if ((*o)->type != type)
+        return_error(gs_error_typecheck);
 
-            code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, &o1);
-            pdfi_countdown(*o);
-            *o = NULL;
-            if (code < 0)
-                return code;
+    return 0;
+}
 
-            (void)pdfi_array_put(a, index, o1);
+/* Get value from pdfi_array, incrementing its reference count for caller.
+ * Handles type-checking and resolving indirect references.
+ */
+int
+pdfi_array_get_type(pdf_context *ctx, pdf_array *a, uint64_t index,
+                    pdf_obj_type type, pdf_obj **o)
+{
+    int code;
 
-            if (o1->type != type) {
-                pdfi_countdown(o1);
-                return_error(gs_error_typecheck);
-            }
-            *o = o1;
-        } else {
-            pdfi_countdown(*o);
-            *o = NULL;
-            return_error(gs_error_typecheck);
-        }
-    }
+    code = pdfi_array_peek_type(ctx, a, index, type, o);
+    if (code < 0)
+        return code;
+
+    pdfi_countup(*o);
     return 0;
 }
 
@@ -102,11 +133,10 @@ int pdfi_array_get_int(pdf_context *ctx, pdf_array *a, uint64_t index, int64_t *
     int code;
     pdf_num *n;
 
-    code = pdfi_array_get_type(ctx, a, index, PDF_INT, (pdf_obj **)&n);
+    code = pdfi_array_peek_type(ctx, a, index, PDF_INT, (pdf_obj **)&n);
     if (code < 0)
         return code;
     *i = n->value.i;
-    pdfi_countdown(n);
     return 0;
 }
 
@@ -115,7 +145,7 @@ int pdfi_array_get_number(pdf_context *ctx, pdf_array *a, uint64_t index, double
     int code;
     pdf_num *n;
 
-    code = pdfi_array_get(a, index, (pdf_obj **)&n);
+    code = pdfi_array_peek(ctx, a, index, (pdf_obj **)&n);
     if (code < 0)
         return code;
     if (n->type == PDF_INT)
@@ -124,12 +154,10 @@ int pdfi_array_get_number(pdf_context *ctx, pdf_array *a, uint64_t index, double
         if (n->type == PDF_REAL)
             *f = n->value.d;
         else {
-            pdfi_countdown(n);
             return_error(gs_error_typecheck);
         }
     }
 
-    pdfi_countdown(n);
     return 0;
 }
 
