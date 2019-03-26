@@ -1,13 +1,7 @@
 
-  The files in the common, doc, main, pcl, pl, psi, pxl, tools, svg
-  and xps directories (folders) and any subdirectories (sub-folders)
-  thereof are part of GhostPCL, GhostXPS and GhostSVG, collectively
-  known as GhostPDL.
-
-  The files in the gs directory (folder) and the subdirectories 
-  (sub-folders) thereof are part of GPL Ghostscript, along with
-  copies of its dependent third-party libraries. See the file
-  gs/LICENSE for information about this directory,
+  The files in the pcl, pl, psi, pxl, tools and xps directories (folders)
+  and any subdirectories (sub-folders) thereof are part of GhostPCL and
+  GhostXPS, collectively known as GhostPDL.
 
   GhostPDL and GPL Ghostscript are free software; you can redistribute 
   and/or modify them under the terms of the GNU Affero General Public
@@ -29,8 +23,9 @@
 
   The set of truetype fonts in the urwfonts directory are necessary for 
   the PCL/XL interpreter to function properly but they ARE NOT FREE 
-  SOFTWARE and are NOT distributed under the GNU GPL. They can instead 
-  be redistributed under the AFPL licence which bars commercial use.
+  SOFTWARE and are NOT distributed under the GNU GPL/AGPL. They can
+  instead be redistributed under the AFPL licence which bars commercial
+  use.
 
   If your copy of GhostPDL includes these fonts, you should have
   received a copy of the the Aladdin Free Pubilc License, usually
