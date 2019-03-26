@@ -682,8 +682,8 @@ static int GS_SMask(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_d
         pdf_name *n = NULL;
         double f;
 
-        code = pdfi_dict_knownget_type(ctx, (pdf_dict *)o, "Subtype", PDF_DICT, (pdf_obj **)&n);
-        if (code > 0 && pdfi_name_strcmp(n, "SMask") == 0) {
+        code = pdfi_dict_knownget_type(ctx, (pdf_dict *)o, "Type", PDF_NAME, (pdf_obj **)&n);
+        if (code > 0 && pdfi_name_strcmp(n, "Mask") == 0) {
             pdfi_countdown(n);
             n = NULL;
             code = pdfi_dict_knownget_type(ctx, (pdf_dict *)o, "G", PDF_DICT, (pdf_obj **)&G_dict);
@@ -710,10 +710,10 @@ static int GS_SMask(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_d
                 if (code < 0) {
                     pdfi_countdown(o);
                     pdfi_countdown(G_dict);
-                    rc_decrement_cs(gray_cs, "pdfi image /SMask");
+                    rc_decrement_cs(gray_cs, "ExtGState /SMask");
                     return code;
                 }
-                rc_decrement_cs(gray_cs, "pdfi image /SMask");
+                rc_decrement_cs(gray_cs, "ExtGState /SMask");
                 savedoffset = pdfi_tell(ctx->main_stream);
                 code = gs_gsave(ctx->pgs);
 
