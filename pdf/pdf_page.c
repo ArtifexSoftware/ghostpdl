@@ -89,10 +89,10 @@ pdfi_get_default_OCG_val(pdf_context *ctx, pdf_dict *ocdict)
 
 
  cleanup:
-    if (BaseState) pdfi_countdown(BaseState);
-    if (D) pdfi_countdown(D);
-    if (OFF) pdfi_countdown(OFF);
-    if (ON) pdfi_countdown(ON);
+    pdfi_countdown(BaseState);
+    pdfi_countdown(D);
+    pdfi_countdown(OFF);
+    pdfi_countdown(ON);
     return is_visible;
 }
 
@@ -133,9 +133,9 @@ pdfi_page_check_OCG_usage(pdf_context *ctx, pdf_dict *ocdict)
     }
 
  cleanup:
-    if (Usage) pdfi_countdown(Usage);
-    if (dict) pdfi_countdown(dict);
-    if (name) pdfi_countdown(name);
+    pdfi_countdown(Usage);
+    pdfi_countdown(dict);
+    pdfi_countdown(name);
 
     return is_visible;
 }
@@ -151,7 +151,8 @@ static bool
 pdfi_page_check_OCMD_array(pdf_context *ctx, pdf_array *array, ocmd_p_type type)
 {
     bool is_visible;
-    int i;
+    uint64_t i;
+    int code;
 
     /* Setup default */
     switch (type) {
@@ -165,13 +166,19 @@ pdfi_page_check_OCMD_array(pdf_context *ctx, pdf_array *array, ocmd_p_type type)
         break;
     }
 
-    for (i=0; i<array->size; i++) {
-        pdf_obj *val;
+    for (i=0; i<pdfi_array_size(array); i++) {
         bool vis;
-        val = array->values[i];
-        if (!val || val->type != PDF_DICT) {
-            continue;
-        }
+        pdf_obj *val = NULL;
+
+        code = pdfi_array_peek(ctx, array, i, &val);
+        /* The spec says it could be PDF_DICT or PDF_NULL,
+         * But not flagging any errors here, in spirit of PDF
+         * being permissive.  Just quietly skip things that
+         * don't make sense.
+         */
+        if (code < 0) continue;
+        if (val->type != PDF_DICT) continue;
+
         vis = pdfi_get_default_OCG_val(ctx, (pdf_dict *)val);
         switch (type) {
         case P_AnyOn:
@@ -269,9 +276,9 @@ pdfi_page_check_OCMD(pdf_context *ctx, pdf_dict *ocdict)
     }
 
  cleanup:
-    if (VE) pdfi_countdown(VE);
-    if (obj) pdfi_countdown(obj);
-    if (Pname) pdfi_countdown(Pname);
+    pdfi_countdown(VE);
+    pdfi_countdown(obj);
+    pdfi_countdown(Pname);
 
     return is_visible;
 }
@@ -300,7 +307,7 @@ pdfi_page_is_ocg_visible(pdf_context *ctx, pdf_dict *ocdict)
     }
 
  cleanup:
-    if (type) pdfi_countdown(type);
+    pdfi_countdown(type);
 
     return is_visible;
 }
