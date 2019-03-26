@@ -73,11 +73,6 @@ static inline void pdfi_countdown_impl(pdf_obj *o)
                 pdfi_free_object(o);
         }
     }
-#if REFCNT_DEBUG
-    else {
-        dprintf("Decrementing reference count of NULL pointer\n");
-    }
-#endif
 }
 
 #define pdfi_countup(x) pdfi_countup_impl((pdf_obj *)x)
