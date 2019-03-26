@@ -613,14 +613,14 @@ int pdfi_dict_copy(pdf_dict *target, pdf_dict *source)
 int pdfi_dict_known(pdf_dict *d, const char *Key, bool *known)
 {
     int i;
-    pdf_obj *t;
+    pdf_name *t;
 
     *known = false;
     for (i=0;i< d->entries;i++) {
         t = d->keys[i];
 
         if (t && t->type == PDF_NAME) {
-            if (pdfi_name_strcmp((pdf_name *)t, Key) == 0) {
+            if (pdfi_name_strcmp(t, Key) == 0) {
                 *known = true;
                 break;
             }
