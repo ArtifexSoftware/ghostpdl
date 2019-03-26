@@ -916,7 +916,11 @@ tiffsep_cmyk_cs_to_cm(gx_device * dev,
     int j;
 
     if (devn->num_separation_order_names > 0) {
-        /* This is to set only those that we are using */
+
+        /* We need to make sure to clear everything */
+        for (j = 0; j < dev->color_info.num_components; j++)
+            out[j] = frac_0;
+
         for (j = 0; j < devn->num_separation_order_names; j++) {
             switch (map[j]) {
                 case 0 :
