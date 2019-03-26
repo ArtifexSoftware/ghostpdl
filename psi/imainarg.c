@@ -654,12 +654,10 @@ run_stdin:
                 unsigned msize = 0;
 
                 sscanf((const char *)arg, "%u", &msize);
-#if ARCH_INTS_ARE_SHORT
-                if (msize <= 0 || msize >= 64) {
-                    puts(minst->heap, "-M must be between 1 and 63");
+                if (msize <= 0 || msize >= (max_uint >> 10)) {
+                    outprintf(minst->heap, "-M must be between 1 and %d\n", (int)((max_uint >> 10) - 1));
                     return gs_error_Fatal;
                 }
-#endif
                 minst->memory_clump_size = msize << 10;
             }
             break;
@@ -668,12 +666,10 @@ run_stdin:
                 unsigned nsize = 0;
 
                 sscanf((const char *)arg, "%d", &nsize);
-#if ARCH_INTS_ARE_SHORT
-                if (nsize < 2 || nsize > 64) {
-                    puts(minst->heap, "-N must be between 2 and 64");
+                if (nsize < 2 || nsize > (max_uint >> 10)) {
+                    outprintf(minst->heap, "-N must be between 2 and %d\n", (int)(max_uint >> 10));
                     return gs_error_Fatal;
                 }
-#endif
                 minst->name_table_size = (ulong) nsize << 10;
             }
             break;
