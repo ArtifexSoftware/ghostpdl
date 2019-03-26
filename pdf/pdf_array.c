@@ -33,8 +33,24 @@ void pdfi_free_array(pdf_obj *o)
     gs_free_object(a->memory, a, "pdf interpreter free array");
 }
 
+/* Get the value from the pdfi_array without incrementing its reference count.
+ * Caller needs to increment it themselves if they want to keep it (or just use
+ * pdfi_array_get, below).
+ */
+int pdfi_array_peek(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o)
+{
+    if (index >= a->size)
+        return_error(gs_error_rangecheck);
+
+    *o = a->values[index];
+    return 0;
+}
+
 /* The object returned by pdfi_array_get has its reference count incremented by 1 to
  * indicate the reference now held by the caller, in **o.
+ *
+ * NOTE: This really should take a pdf_context param, to be consistent with
+ * everything else...  who wants to edit all the references?
  */
 int pdfi_array_get(pdf_array *a, uint64_t index, pdf_obj **o)
 {
