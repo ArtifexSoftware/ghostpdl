@@ -757,7 +757,7 @@ int pdfi_filter(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream
                     pdfi_countdown(filter_array);
                     return_error(gs_error_typecheck);
                 }
-                if (decodeparams_array->entries != filter_array->entries) {
+                if (pdfi_array_size(decodeparams_array) != pdfi_array_size(filter_array)) {
                     pdfi_countdown(decodeparams_array);
                     pdfi_countdown(filter_array);
                     return_error(gs_error_rangecheck);
@@ -768,7 +768,7 @@ int pdfi_filter(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream
              * For now we will allow one duplicate (in case people do stupid things like ASCIIEncode
              * and Flate and ASCIIEncode again or something).
              */
-            for (i = 0; i < filter_array->entries - 1;i++) {
+            for (i = 0; i < pdfi_array_size(filter_array) - 1;i++) {
                 code = pdfi_array_get(filter_array, i, &o);
                 if (code < 0) {
                     pdfi_countdown(decodeparams_array);
@@ -783,7 +783,7 @@ int pdfi_filter(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream
                 }
                 duplicates = 0;
 
-                for (j = i + 1; j < filter_array->entries;j++) {
+                for (j = i + 1; j < pdfi_array_size(filter_array);j++) {
                     code = pdfi_array_get(filter_array, j, &o1);
                     if (code < 0) {
                         pdfi_countdown(o);
@@ -812,7 +812,7 @@ int pdfi_filter(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream
                 }
             }
 
-            for (i = 0; i < filter_array->entries;i++) {
+            for (i = 0; i < pdfi_array_size(filter_array);i++) {
                 code = pdfi_array_get(filter_array, i, &o);
                 if (code < 0) {
                     pdfi_countdown(decodeparams_array);

@@ -1176,7 +1176,7 @@ static int pdfi_array_from_stack(pdf_context *ctx)
     if (code < 0)
         return code;
 
-    a->entries = index;
+    a->size = index;
 
     while (index) {
         o = ctx->stack_top[-1];
@@ -2549,7 +2549,7 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
     }
 
     /* Check each entry in the Kids array */
-    for (i = 0;i < Kids->entries;i++) {
+    for (i = 0;i < pdfi_array_size(Kids);i++) {
         code = pdfi_array_get(Kids, i, (pdf_obj **)&node);
         if (code < 0) {
             pdfi_countdown(inheritable);

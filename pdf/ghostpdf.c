@@ -786,8 +786,8 @@ static int pdfi_check_Annots_for_transparency(pdf_context *ctx, pdf_array *annot
     int i, code = 0;
     pdf_dict *annot = NULL;
 
-    for (i=0; i < annots_array->entries; i++) {
-        code = pdfi_array_get_type(ctx, annots_array, (uint64_t)i, PDF_DICT, &annot);
+    for (i=0; i < pdfi_array_size(annots_array); i++) {
+        code = pdfi_array_get_type(ctx, annots_array, (uint64_t)i, PDF_DICT, (pdf_obj **)&annot);
         if (code > 0) {
             code = pdfi_check_annot_for_transparency(ctx, annot, page_dict, transparent, num_spots);
             if (code < 0 && ctx->pdfstoponerror)
@@ -1107,12 +1107,12 @@ static int pdfi_dump_box(pdf_context *ctx, pdf_dict *page_dict, const char *Key)
 
     code = pdfi_dict_knownget_type(ctx, page_dict, Key, PDF_ARRAY, (pdf_obj **)&a);
     if (code > 0) {
-        if (a->entries != 4) {
+        if (pdfi_array_size(a) != 4) {
             dmprintf1(ctx->memory, "Error - %s does not contain 4 values.\n", Key);
             code = gs_note_error(gs_error_rangecheck);
         } else {
             dmprintf1(ctx->memory, " %s: [", Key);
-            for (i = 0; i < a->entries; i++) {
+            for (i = 0; i < pdfi_array_size(a); i++) {
                 code = pdfi_array_get_number(ctx, a, (uint64_t)i, &f);
                 if (code > 0) {
                     if (i != 0)

@@ -113,7 +113,6 @@ typedef struct pdf_keyword_s {
 typedef struct pdf_array_s {
     pdf_obj_common;
     uint64_t size;
-    uint64_t entries;
     pdf_obj **values;
 } pdf_array;
 

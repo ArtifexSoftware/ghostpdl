@@ -137,7 +137,7 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
             goto exit;
         }
 
-        for (i=0;i < ((pdf_array *)space)->entries; i++) {
+        for (i=0;i < pdfi_array_size((pdf_array *)space); i++) {
             code = pdfi_array_get((pdf_array *)space, (uint64_t)i, &name);
             if (code < 0)
                 goto exit;

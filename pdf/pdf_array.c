@@ -25,7 +25,7 @@ void pdfi_free_array(pdf_obj *o)
     pdf_array *a = (pdf_array *)o;
     int i;
 
-    for (i=0;i < a->entries;i++) {
+    for (i=0;i < a->size;i++) {
         if (a->values[i] != NULL)
             pdfi_countdown(a->values[i]);
     }

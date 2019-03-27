@@ -211,7 +211,7 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_dict *d, pdf_stream *s
         return code;
     }
 
-    if (a->entries != 3) {
+    if (pdfi_array_size(a) != 3) {
         pdfi_countdown(a);
         pdfi_close_file(ctx, XRefStrm);
         pdfi_countdown(ctx->xref_table);
@@ -249,7 +249,7 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_dict *d, pdf_stream *s
             return code;
         }
 
-        if (a->entries & 1) {
+        if (pdfi_array_size(a) & 1) {
             pdfi_countdown(a);
             pdfi_close_file(ctx, XRefStrm);
             pdfi_countdown(ctx->xref_table);
@@ -257,7 +257,7 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_dict *d, pdf_stream *s
             return_error(gs_error_rangecheck);
         }
 
-        for (i=0;i < a->entries;i+=2){
+        for (i=0;i < pdfi_array_size(a);i+=2){
             code = pdfi_array_get_int(ctx, a, (uint64_t)i, &start);
             if (code < 0) {
                 pdfi_countdown(a);

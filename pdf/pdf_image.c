@@ -833,14 +833,14 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
         if (code > 0) {
             int ix;
 
-            for (ix = 0; ix < a->entries; ix++) {
+            for (ix = 0; ix < pdfi_array_size(a); ix++) {
                 code = pdfi_array_get_number(ctx, a, (uint64_t)ix, &f);
                 if (code < 0)
                     break;
                 params.Matte[ix] = f;
             }
-            if (ix >= a->entries)
-                params.Matte_components = a->entries;
+            if (ix >= pdfi_array_size(a))
+                params.Matte_components = pdfi_array_size(a);
             else
                 params.Matte_components = 0;
         }
