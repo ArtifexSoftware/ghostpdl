@@ -24,6 +24,7 @@ void pdfi_free_array(pdf_obj *o);
 int pdfi_array_peek(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o);
 int pdfi_array_peek_type(pdf_context *ctx, pdf_array *a, uint64_t index,
                          pdf_obj_type t, pdf_obj **o);
+int pdfi_array_get_no_indirect(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o);
 int pdfi_array_get(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o);
 int pdfi_array_get_type(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj_type t, pdf_obj **o);
 int pdfi_array_get_int(pdf_context *ctx, pdf_array *a, uint64_t index, int64_t *i);

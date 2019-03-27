@@ -78,11 +78,28 @@ int pdfi_array_peek(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o)
 
 /* The object returned by pdfi_array_get has its reference count incremented by 1 to
  * indicate the reference now held by the caller, in **o.
- *
- * NOTE: This really should take a pdf_context param, to be consistent with
- * everything else...  who wants to edit all the references?
  */
 int pdfi_array_get(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o)
+{
+    int code;
+
+    /* temporarily call this until all old uses of pdfi_array_get() are sorted */
+    return pdfi_array_get_no_indirect(ctx, a, index, o);
+
+    code = pdfi_array_fetch(ctx, a, index, o);
+    if (code < 0) return code;
+
+    *o = a->values[index];
+    pdfi_countup(*o);
+    return 0;
+}
+
+/* Get element from array without resolving PDF_INDIRECT
+ * It looks to me like some usages need to do the checking themselves to
+ * avoid circular references?  Can remove this if not really needed.
+ */
+int
+pdfi_array_get_no_indirect(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o)
 {
     if (index >= a->size)
         return_error(gs_error_rangecheck);
