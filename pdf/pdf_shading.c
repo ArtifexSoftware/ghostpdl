@@ -67,7 +67,7 @@ static int pdfi_build_shading_function(pdf_context *ctx, gs_function_t **ppfn, c
             goto build_shading_function_error;
 
         for (i = 0; i < size; ++i) {
-            code = pdfi_array_get((pdf_array *)o, i, &rsubfn);
+            code = pdfi_array_get(ctx, (pdf_array *)o, i, &rsubfn);
             if (rsubfn->type == PDF_INDIRECT) {
                 pdf_indirect_ref *r = (pdf_indirect_ref *)rsubfn;
 

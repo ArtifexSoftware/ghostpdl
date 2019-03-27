@@ -571,7 +571,7 @@ pdfi_build_function_3(pdf_context *ctx, gs_function_params_t * mnDR,
     for (i = 0; i < params.k; ++i) {
         pdf_obj * rsubfn = NULL;
 
-        code = pdfi_array_get((pdf_array *)Functions, (int64_t)i, &rsubfn);
+        code = pdfi_array_get(ctx, (pdf_array *)Functions, (int64_t)i, &rsubfn);
         if (code < 0)
             goto function_3_error;
 

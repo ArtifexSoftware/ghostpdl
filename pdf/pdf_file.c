@@ -323,7 +323,7 @@ pdfi_JPX_filter(pdf_context *ctx, pdf_dict *dict, pdf_dict *decode,
         /* parse the value */
         if (csobj->type == PDF_ARRAY) {
             /* assume it's the first array element */
-            code = pdfi_array_get((pdf_array *)csobj, (uint64_t)0, &csname);
+            code = pdfi_array_get(ctx, (pdf_array *)csobj, (uint64_t)0, &csname);
             if (code < 0) {
                 pdfi_countdown(csobj);
                 return code;
@@ -769,7 +769,7 @@ int pdfi_filter(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream
              * and Flate and ASCIIEncode again or something).
              */
             for (i = 0; i < pdfi_array_size(filter_array) - 1;i++) {
-                code = pdfi_array_get(filter_array, i, &o);
+                code = pdfi_array_get(ctx, filter_array, i, &o);
                 if (code < 0) {
                     pdfi_countdown(decodeparams_array);
                     pdfi_countdown(filter_array);
@@ -784,7 +784,7 @@ int pdfi_filter(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream
                 duplicates = 0;
 
                 for (j = i + 1; j < pdfi_array_size(filter_array);j++) {
-                    code = pdfi_array_get(filter_array, j, &o1);
+                    code = pdfi_array_get(ctx, filter_array, j, &o1);
                     if (code < 0) {
                         pdfi_countdown(o);
                         pdfi_countdown(decodeparams_array);
@@ -813,7 +813,7 @@ int pdfi_filter(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream
             }
 
             for (i = 0; i < pdfi_array_size(filter_array);i++) {
-                code = pdfi_array_get(filter_array, i, &o);
+                code = pdfi_array_get(ctx, filter_array, i, &o);
                 if (code < 0) {
                     pdfi_countdown(decodeparams_array);
                     pdfi_countdown(filter_array);
@@ -826,7 +826,7 @@ int pdfi_filter(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream
                     return_error(gs_error_typecheck);
                 }
                 if (decodeparams_array != NULL) {
-                    code = pdfi_array_get(decodeparams_array, i, &decode);
+                    code = pdfi_array_get(ctx, decodeparams_array, i, &decode);
                     if (code < 0) {
                         pdfi_countdown(decodeparams_array);
                         pdfi_countdown(filter_array);

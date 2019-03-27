@@ -78,7 +78,7 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
     pdf_array *a = NULL;
     int code = 0;
 
-    code = pdfi_array_get(color_array, 0, (pdf_obj **)&space);
+    code = pdfi_array_get(ctx, color_array, 0, (pdf_obj **)&space);
     if (code != 0)
         goto exit;
 
@@ -118,7 +118,7 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
         int i;
 
         pdfi_countdown(space);
-        code = pdfi_array_get(color_array, 1, (pdf_obj **)&space);
+        code = pdfi_array_get(ctx, color_array, 1, (pdf_obj **)&space);
         if (code != 0)
             goto exit;
 
@@ -138,7 +138,7 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
         }
 
         for (i=0;i < pdfi_array_size((pdf_array *)space); i++) {
-            code = pdfi_array_get((pdf_array *)space, (uint64_t)i, &name);
+            code = pdfi_array_get(ctx, (pdf_array *)space, (uint64_t)i, &name);
             if (code < 0)
                 goto exit;
 
@@ -180,7 +180,7 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
         pdf_obj *dummy;
 
         pdfi_countdown(space);
-        code = pdfi_array_get(color_array, 1, (pdf_obj **)&space);
+        code = pdfi_array_get(ctx, color_array, 1, (pdf_obj **)&space);
         if (code != 0)
             goto exit;
 
@@ -924,7 +924,7 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
     bool known;
     float range[8];
 
-    code = pdfi_array_get(color_array, index + 1, (pdf_obj **)&ICC_dict);
+    code = pdfi_array_get(ctx, color_array, index + 1, (pdf_obj **)&ICC_dict);
     if (code < 0)
         return code;
 
@@ -1066,7 +1066,7 @@ static int pdfi_create_Separation(pdf_context *ctx, pdf_array *color_array, int 
     if (name->length == 3 && memcmp(name->data, "All", 3) == 0)
         sep_type = SEP_ALL;
 
-    code = pdfi_array_get(color_array, index + 2, &o);
+    code = pdfi_array_get(ctx, color_array, index + 2, &o);
     if (code < 0)
         goto pdfi_separation_error;
     if (o->type == PDF_INDIRECT) {
@@ -1149,7 +1149,7 @@ static int pdfi_create_DeviceN(pdf_context *ctx, pdf_array *color_array, int ind
     gs_function_t * pfn = NULL;
 
     /* Deal with alternate space */
-    code = pdfi_array_get(color_array, index + 2, &o);
+    code = pdfi_array_get(ctx, color_array, index + 2, &o);
     if (code < 0)
         goto pdfi_devicen_error;
     if (o->type == PDF_INDIRECT) {
@@ -1273,7 +1273,7 @@ static int pdfi_create_indexed(pdf_context *ctx, pdf_array *color_array, int ind
     if (hival > 255 || hival < 0)
         return_error(gs_error_syntaxerror);
 
-    code = pdfi_array_get(color_array, index + 1, &space);
+    code = pdfi_array_get(ctx, color_array, index + 1, &space);
     if (code < 0)
         return code;
 
@@ -1288,7 +1288,7 @@ static int pdfi_create_indexed(pdf_context *ctx, pdf_array *color_array, int ind
 
     base_type = gs_color_space_get_index(pcs_base);
 
-    code = pdfi_array_get(color_array, index + 3, &lookup);
+    code = pdfi_array_get(ctx, color_array, index + 3, &lookup);
     if (code < 0)
         return code;
 
@@ -1450,7 +1450,7 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
     pdf_array *a = NULL;
     gs_color_space *pcs;
 
-    code = pdfi_array_get(color_array, index, (pdf_obj **)&space);
+    code = pdfi_array_get(ctx, color_array, index, (pdf_obj **)&space);
     if (code != 0)
         goto exit;
 

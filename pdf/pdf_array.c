@@ -82,7 +82,7 @@ int pdfi_array_peek(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o)
  * NOTE: This really should take a pdf_context param, to be consistent with
  * everything else...  who wants to edit all the references?
  */
-int pdfi_array_get(pdf_array *a, uint64_t index, pdf_obj **o)
+int pdfi_array_get(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o)
 {
     if (index >= a->size)
         return_error(gs_error_rangecheck);
