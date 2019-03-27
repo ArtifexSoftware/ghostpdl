@@ -69,13 +69,15 @@ pdfi_array_fetch(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o)
         pdf_obj *o1 = NULL;
         pdf_indirect_ref *r = (pdf_indirect_ref *)obj;
 
+        pdfi_loop_detector_mark(ctx);
         code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, &o1);
+        pdfi_loop_detector_cleartomark(ctx);
         if (code < 0)
             return code;
-        /* Don't need this reference */
-        pdfi_countdown(o1);
 
         (void)pdfi_array_put(ctx, a, index, o1);
+        /* Don't need this reference */
+        pdfi_countdown(o1);
         obj = o1;
     }
 
@@ -99,9 +101,6 @@ int pdfi_array_peek(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o)
 int pdfi_array_get(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o)
 {
     int code;
-
-    /* temporarily call this until all old uses of pdfi_array_get() are sorted */
-    return pdfi_array_get_no_indirect(ctx, a, index, o);
 
     code = pdfi_array_fetch(ctx, a, index, o);
     if (code < 0) return code;
