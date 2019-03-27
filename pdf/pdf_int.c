@@ -226,7 +226,7 @@ void pdfi_free_object(pdf_obj *o)
             pdfi_free_namestring(o);
             break;
         case PDF_ARRAY:
-            pdfi_free_array(o);
+            pdfi_array_free(o);
             break;
         case PDF_DICT:
             pdfi_free_dict(o);
@@ -1172,16 +1172,14 @@ static int pdfi_array_from_stack(pdf_context *ctx)
     if (code < 0)
         return code;
 
-    code = pdfi_alloc_object(ctx, PDF_ARRAY, index, (pdf_obj **)&a);
+    code = pdfi_array_alloc(ctx, index, &a);
     if (code < 0)
         return code;
 
-    a->size = index;
-
     while (index) {
         o = ctx->stack_top[-1];
-        a->values[--index] = o;
-        pdfi_countup(o);
+        code = pdfi_array_put(ctx, a, --index, o);
+        if (code < 0) return code;
         pdfi_pop(ctx, 1);
     }
 
@@ -1194,7 +1192,7 @@ static int pdfi_array_from_stack(pdf_context *ctx)
 
     code = pdfi_push(ctx, (pdf_obj *)a);
     if (code < 0)
-        pdfi_free_array((pdf_obj *)a);
+        pdfi_array_free((pdf_obj *)a);
 
     return code;
 }
@@ -2598,7 +2596,7 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
                 return code;
             }
             if (pdfi_name_strcmp(Type, "Pages") == 0) {
-                code = pdfi_array_put(Kids, i, (pdf_obj *)child);
+                code = pdfi_array_put(ctx, Kids, i, (pdf_obj *)child);
                 if (code < 0) {
                     pdfi_countdown(inheritable);
                     pdfi_countdown(Kids);
@@ -2628,7 +2626,7 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
                                 if (code == 0) {
                                     code = pdfi_dict_put(leaf_dict, (pdf_obj *)Key, (pdf_obj *)Key1);
                                     if (code == 0)
-                                        code = pdfi_array_put(Kids, i, (pdf_obj *)leaf_dict);
+                                        code = pdfi_array_put(ctx, Kids, i, (pdf_obj *)leaf_dict);
                                 }
                             }
                         }

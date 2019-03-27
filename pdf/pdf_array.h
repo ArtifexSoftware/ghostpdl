@@ -20,7 +20,8 @@
 
 #define pdfi_array_size(a) ((a)->size)
 
-void pdfi_free_array(pdf_obj *o);
+void pdfi_array_free(pdf_obj *o);
+int pdfi_array_alloc(pdf_context *ctx, uint64_t size, pdf_array **a);
 int pdfi_array_peek(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o);
 int pdfi_array_peek_type(pdf_context *ctx, pdf_array *a, uint64_t index,
                          pdf_obj_type t, pdf_obj **o);
@@ -29,7 +30,7 @@ int pdfi_array_get(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o);
 int pdfi_array_get_type(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj_type t, pdf_obj **o);
 int pdfi_array_get_int(pdf_context *ctx, pdf_array *a, uint64_t index, int64_t *i);
 int pdfi_array_get_number(pdf_context *ctx, pdf_array *a, uint64_t index, double *f);
-int pdfi_array_put(pdf_array *a, uint64_t index, pdf_obj *o);
+int pdfi_array_put(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj *o);
 
 bool pdfi_array_known(pdf_array *a, pdf_obj *, int *index);
 #endif

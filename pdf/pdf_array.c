@@ -20,7 +20,10 @@
 #include "pdf_stack.h"
 #include "pdf_array.h"
 
-void pdfi_free_array(pdf_obj *o)
+/* NOTE: I think this should take a pdf_context param, but it's not available where it's
+ * called, would require some surgery.
+ */
+void pdfi_array_free(pdf_obj *o)
 {
     pdf_array *a = (pdf_array *)o;
     int i;
@@ -31,6 +34,20 @@ void pdfi_free_array(pdf_obj *o)
     }
     gs_free_object(a->memory, a->values, "pdf interpreter free array contents");
     gs_free_object(a->memory, a, "pdf interpreter free array");
+}
+
+int
+pdfi_array_alloc(pdf_context *ctx, uint64_t size, pdf_array **a)
+{
+    int code;
+
+    *a = NULL;
+    code = pdfi_alloc_object(ctx, PDF_ARRAY, size, (pdf_obj **)a);
+    if (code < 0)
+        return code;
+
+    (*a)->size = size;
+    return 0;
 }
 
 /* Fetch object from array, resolving indirect reference if needed
@@ -58,7 +75,7 @@ pdfi_array_fetch(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o)
         /* Don't need this reference */
         pdfi_countdown(o1);
 
-        (void)pdfi_array_put(a, index, o1);
+        (void)pdfi_array_put(ctx, a, index, o1);
         obj = o1;
     }
 
@@ -197,7 +214,8 @@ pdfi_array_known(pdf_array *a, pdf_obj *o, int *index)
     return false;
 }
 
-int pdfi_array_put(pdf_array *a, uint64_t index, pdf_obj *o)
+int
+pdfi_array_put(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj *o)
 {
     if (index > a->size)
         return_error(gs_error_rangecheck);
