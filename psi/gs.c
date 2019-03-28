@@ -44,6 +44,8 @@ static const char *run_strings[] =
 
 #endif
 
+static const char start_string[] = "systemdict /start get exec\n";
+
 #ifdef NEED_COMMIT_STACK
 /*
  * It is well known that GCC 2.96 for x86 sometimes forgets to adjust $esp
@@ -66,8 +68,7 @@ int
 main(int argc, char *argv[])
 {
     int exit_status, code;
-    gs_main_instance *minst;
-    gs_memory_t *mem;
+    void *minst = NULL;
 
 #ifdef NEED_COMMIT_STACK   /* hack for bug in gcc 2.96 */
     commit_stack_pages();
@@ -88,11 +89,10 @@ main(int argc, char *argv[])
      * a non-ASCII PDF password that doesn't work.
      */
     (void)setlocale(LC_CTYPE, "");
-    mem = gs_malloc_init();
-    minst = gs_main_alloc_instance(mem);
-    code = (minst == NULL ? gs_error_Fatal : 0);
+    code = gsapi_new_instance(&minst, NULL);
+
     if (code >= 0)
-        code = gs_main_init_with_args(minst, argc, argv);
+        code = gsapi_init_with_args(minst, argc, argv);
 
 #ifdef RUN_STRINGS
     {				/* Run a list of strings (for testing). */
@@ -101,12 +101,10 @@ main(int argc, char *argv[])
         for (; *pstr; ++pstr) {
             int exit_code;
             ref error_object;
-            int code;
 
             fprintf(stdout, "{%s} =>\n", *pstr);
             fflush(stdout);
-            code = gs_main_run_string(minst, *pstr, 0,
-                                      &exit_code, &error_object);
+            code = gsapi_run_string(minst, *pstr, 0, &exit_status);
             zflush(minst->i_ctx_p);
             fprintf(stdout, " => code = %d\n", code);
             fflush(stdout);
@@ -118,8 +116,12 @@ main(int argc, char *argv[])
     }
 #endif
 
-    if (code >= 0)
-        code = gs_main_run_start(minst);
+    if (code == 0)
+        code = gsapi_run_string(minst, start_string, 0, &exit_status);
+
+    exit_status = gsapi_exit(minst);
+    if( code >= 0 && exit_status < 0)
+        code = exit_status;
 
     exit_status = 0;
     switch (code) {
@@ -135,9 +137,7 @@ main(int argc, char *argv[])
     }
 
     if (minst)
-        gs_to_exit_with_code(minst->heap, exit_status, code);
-    gs_free_object(mem, minst, "init_main_instance");
-    gs_malloc_release(mem);
+        gsapi_delete_instance(minst);
 
     switch (exit_status) {
         case 0:
