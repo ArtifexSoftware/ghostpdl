@@ -19,6 +19,7 @@
 #include "pdf_types.h"
 #include "pdf_stack.h"
 #include "pdf_array.h"
+#include "pdf_loop_detect.h"
 
 /* NOTE: I think this should take a pdf_context param, but it's not available where it's
  * called, would require some surgery.

@@ -18,7 +18,7 @@
 #ifndef PDF_DICTIONARY_FUNCTIONS
 #define PDF_DICTIONARY_FUNCTIONS
 
-#define PDFI_DICT_ENTRIES(d) ((d)->entries)
+static inline uint64_t pdfi_dict_entries(pdf_dict *d) { return d->entries; }
 
 void pdfi_free_dict(pdf_obj *o);
 int pdfi_dict_from_stack(pdf_context *ctx);

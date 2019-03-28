@@ -18,7 +18,7 @@
 #ifndef PDF_ARRAY_FUNCTIONS
 #define PDF_ARRAY_FUNCTIONS
 
-#define PDFI_ARRAY_SIZE(a) ((a)->size)
+static inline uint64_t pdfi_array_size(pdf_array *a) { return a->size; }
 
 void pdfi_array_free(pdf_obj *o);
 int pdfi_array_alloc(pdf_context *ctx, uint64_t size, pdf_array **a);

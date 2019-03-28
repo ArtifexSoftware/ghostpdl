@@ -561,7 +561,7 @@ pdfi_build_function_3(pdf_context *ctx, gs_function_params_t * mnDR,
         }
     }
 
-    params.k = PDFI_ARRAY_SIZE(Functions);
+    params.k = pdfi_array_size(Functions);
     code = alloc_function_array(params.k, &ptr, ctx->memory);
     if (code < 0)
         goto function_3_error;

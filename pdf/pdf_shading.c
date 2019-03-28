@@ -56,7 +56,7 @@ static int pdfi_build_shading_function(pdf_context *ctx, gs_function_t **ppfn, c
             code = gs_error_typecheck;
             goto build_shading_function_error;
         }
-        size = PDFI_ARRAY_SIZE(((pdf_array *)o));
+        size = pdfi_array_size(((pdf_array *)o));
 
         if (size == 0) {
             code = gs_error_rangecheck;

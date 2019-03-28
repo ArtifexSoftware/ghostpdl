@@ -129,7 +129,7 @@ static int pdfi_check_ColorSpace_dict(pdf_context *ctx, pdf_dict *cspace_dict, p
     int code, i, index;
     pdf_obj *Key = NULL, *Value = NULL;
 
-    if (PDFI_DICT_ENTRIES(cspace_dict) > 0) {
+    if (pdfi_dict_entries(cspace_dict) > 0) {
         code = pdfi_loop_detector_mark(ctx); /* Mark the start of the ColorSpace dictionary loop */
         if (code < 0)
             return code;
@@ -156,7 +156,7 @@ static int pdfi_check_ColorSpace_dict(pdf_context *ctx, pdf_dict *cspace_dict, p
                 goto error1;
 
             do {
-                if (i++ >= PDFI_DICT_ENTRIES(cspace_dict)) {
+                if (i++ >= pdfi_dict_entries(cspace_dict)) {
                     code = 0;
                     goto transparency_exit;
                 }
@@ -188,7 +188,7 @@ static int pdfi_check_Shading_dict(pdf_context *ctx, pdf_dict *shading_dict, pdf
     int code, i, index;
     pdf_obj *Key = NULL, *Value = NULL, *o = NULL;
 
-    if (PDFI_DICT_ENTRIES(shading_dict) > 0) {
+    if (pdfi_dict_entries(shading_dict) > 0) {
         code = pdfi_loop_detector_mark(ctx); /* Mark the start of the Shading dictionary loop */
         if (code < 0)
             return code;
@@ -222,7 +222,7 @@ static int pdfi_check_Shading_dict(pdf_context *ctx, pdf_dict *shading_dict, pdf
                 goto error1;
 
             do {
-                if (i++ >= PDFI_DICT_ENTRIES(shading_dict)) {
+                if (i++ >= pdfi_dict_entries(shading_dict)) {
                     code = 0;
                     goto transparency_exit;
                 }
@@ -257,7 +257,7 @@ static int pdfi_check_XObject_dict(pdf_context *ctx, pdf_dict *xobject_dict, pdf
     bool known = false;
     double f;
 
-    if (PDFI_DICT_ENTRIES(xobject_dict) > 0) {
+    if (pdfi_dict_entries(xobject_dict) > 0) {
         code = pdfi_loop_detector_mark(ctx); /* Mark the start of the XObject dictionary loop */
         if (code < 0)
             return code;
@@ -346,7 +346,7 @@ static int pdfi_check_XObject_dict(pdf_context *ctx, pdf_dict *xobject_dict, pdf
                     goto error1;
 
                 do {
-                    if (i++ >= PDFI_DICT_ENTRIES(xobject_dict)) {
+                    if (i++ >= pdfi_dict_entries(xobject_dict)) {
                         code = 0;
                         goto transparency_exit;
                     }
@@ -380,7 +380,7 @@ static int pdfi_check_ExtGState(pdf_context *ctx, pdf_dict *extgstate_dict, int 
     pdf_obj *o = NULL;
     double f;
 
-    if (PDFI_DICT_ENTRIES(extgstate_dict) > 0) {
+    if (pdfi_dict_entries(extgstate_dict) > 0) {
         code = pdfi_dict_knownget_type(ctx, extgstate_dict, "BM", PDF_NAME, &o);
         if (code > 0) {
             if (pdfi_name_strcmp((pdf_name *)o, "Normal") != 0) {
@@ -439,7 +439,7 @@ static int pdfi_check_ExtGState_dict(pdf_context *ctx, pdf_dict *extgstate_dict,
     pdf_obj *Key = NULL, *Value = NULL, *o = NULL;
     double f;
 
-    if (PDFI_DICT_ENTRIES(extgstate_dict) > 0) {
+    if (pdfi_dict_entries(extgstate_dict) > 0) {
         code = pdfi_loop_detector_mark(ctx); /* Mark the start of the ColorSpace dictionary loop */
         if (code < 0)
             return code;
@@ -467,7 +467,7 @@ static int pdfi_check_ExtGState_dict(pdf_context *ctx, pdf_dict *extgstate_dict,
                 goto error1;
 
             do {
-                if (i++ >= PDFI_DICT_ENTRIES(extgstate_dict)) {
+                if (i++ >= pdfi_dict_entries(extgstate_dict)) {
                     code = 0;
                     goto transparency_exit;
                 }
@@ -500,7 +500,7 @@ static int pdfi_check_Pattern_dict(pdf_context *ctx, pdf_dict *pattern_dict, pdf
     pdf_obj *Key = NULL, *Value = NULL, *o = NULL;
     double f;
 
-    if (PDFI_DICT_ENTRIES(pattern_dict) > 0) {
+    if (pdfi_dict_entries(pattern_dict) > 0) {
         code = pdfi_loop_detector_mark(ctx); /* Mark the start of the ColorSpace dictionary loop */
         if (code < 0)
             return code;
@@ -539,7 +539,7 @@ static int pdfi_check_Pattern_dict(pdf_context *ctx, pdf_dict *pattern_dict, pdf
                 goto error1;
 
             do {
-                if (i++ >= PDFI_DICT_ENTRIES(pattern_dict)) {
+                if (i++ >= pdfi_dict_entries(pattern_dict)) {
                     code = 0;
                     goto transparency_exit;
                 }
@@ -572,7 +572,7 @@ static int pdfi_check_Font_dict(pdf_context *ctx, pdf_dict *font_dict, pdf_dict 
     pdf_obj *Key = NULL, *Value = NULL, *o = NULL;
     double f;
 
-    if (PDFI_DICT_ENTRIES(font_dict) > 0) {
+    if (pdfi_dict_entries(font_dict) > 0) {
         code = pdfi_loop_detector_mark(ctx); /* Mark the start of the ColorSpace dictionary loop */
         if (code < 0)
             return code;
@@ -609,7 +609,7 @@ static int pdfi_check_Font_dict(pdf_context *ctx, pdf_dict *font_dict, pdf_dict 
                 goto error1;
 
             do {
-                if (i++ >= PDFI_DICT_ENTRIES(font_dict)) {
+                if (i++ >= pdfi_dict_entries(font_dict)) {
                     code = 0;
                     goto transparency_exit;
                 }
@@ -786,7 +786,7 @@ static int pdfi_check_Annots_for_transparency(pdf_context *ctx, pdf_array *annot
     int i, code = 0;
     pdf_dict *annot = NULL;
 
-    for (i=0; i < PDFI_ARRAY_SIZE(annots_array); i++) {
+    for (i=0; i < pdfi_array_size(annots_array); i++) {
         code = pdfi_array_get_type(ctx, annots_array, (uint64_t)i, PDF_DICT, (pdf_obj **)&annot);
         if (code > 0) {
             code = pdfi_check_annot_for_transparency(ctx, annot, page_dict, transparent, num_spots);
@@ -1107,12 +1107,12 @@ static int pdfi_dump_box(pdf_context *ctx, pdf_dict *page_dict, const char *Key)
 
     code = pdfi_dict_knownget_type(ctx, page_dict, Key, PDF_ARRAY, (pdf_obj **)&a);
     if (code > 0) {
-        if (PDFI_ARRAY_SIZE(a) != 4) {
+        if (pdfi_array_size(a) != 4) {
             dmprintf1(ctx->memory, "Error - %s does not contain 4 values.\n", Key);
             code = gs_note_error(gs_error_rangecheck);
         } else {
             dmprintf1(ctx->memory, " %s: [", Key);
-            for (i = 0; i < PDFI_ARRAY_SIZE(a); i++) {
+            for (i = 0; i < pdfi_array_size(a); i++) {
                 code = pdfi_array_get_number(ctx, a, (uint64_t)i, &f);
                 if (code > 0) {
                     if (i != 0)
