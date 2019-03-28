@@ -1210,9 +1210,12 @@ pdfi_devicen_error:
 /* Now /Indexed spaces, essentially we just need to set the underlying space(s) and then set
  * /Indexed.
  */
-static int pdfi_create_indexed(pdf_context *ctx, pdf_array *color_array, int index, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs)
+static int
+pdfi_create_indexed(pdf_context *ctx, pdf_array *color_array, int index,
+                    pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs)
 {
-    pdf_obj *space, *lookup;
+    pdf_obj *space=NULL, *lookup=NULL;
+    gs_offset_t savedoffset;
     int code;
     int64_t hival, lookup_length = 0;
     int num_values;
@@ -1230,143 +1233,114 @@ static int pdfi_create_indexed(pdf_context *ctx, pdf_array *color_array, int ind
     if (hival > 255 || hival < 0)
         return_error(gs_error_syntaxerror);
 
+    /* remember this for cleanup code */
+    savedoffset = pdfi_tell(ctx->main_stream);
+
     code = pdfi_array_get(ctx, color_array, index + 1, &space);
     if (code < 0)
-        return code;
+        goto exit;
 
     code = pdfi_create_colorspace(ctx, space, stream_dict, page_dict, &pcs_base);
     if (code < 0)
-        return code;
+        goto exit;
 
     (void)pcs_base->type->install_cspace(pcs_base, ctx->pgs);
-    pdfi_countdown(space);
     if (code < 0)
-        return code;
+        goto exit;
 
     base_type = gs_color_space_get_index(pcs_base);
 
-    code = pdfi_array_get_no_indirect(ctx, color_array, index + 3, &lookup);
+    code = pdfi_array_get(ctx, color_array, index + 3, &lookup);
     if (code < 0)
-        return code;
+        goto exit;
 
-    if (lookup->type == PDF_INDIRECT) {
-        /* Need to dereference, and then read the stream */
-        pdf_indirect_ref *r = (pdf_indirect_ref *)lookup;
-        pdf_dict *lookup_dict = NULL;
-        gs_offset_t savedoffset;
+    if (lookup->type == PDF_DICT) {
+        pdf_dict *lookup_dict = (pdf_dict *)lookup; /* alias */
         bool known;
         pdf_stream *filtered_lookup_stream = NULL;
         int64_t Length;
 
-        code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, (pdf_obj **)&lookup_dict);
-        pdfi_countdown(r);
-        if (code < 0) {
-            pdfi_countdown(lookup_dict);
-            return code;
-        }
+        pdfi_seek(ctx, ctx->main_stream, lookup_dict->stream_offset, SEEK_SET);
 
-        if (lookup_dict->type == PDF_DICT) {
-            savedoffset = pdfi_tell(ctx->main_stream);
-            pdfi_seek(ctx, ctx->main_stream, lookup_dict->stream_offset, SEEK_SET);
+        pdfi_dict_known(lookup_dict, "F", &known);
+        if (!known)
+            pdfi_dict_known(lookup_dict, "Filter", &known);
 
-            pdfi_dict_known(lookup_dict, "F", &known);
-            if (!known)
-                pdfi_dict_known(lookup_dict, "Filter", &known);
+        /* If this is a compressed stream, we need to decompress it to discover its length
+         * then create a buffer big enough to read it int, then read it.
+         */
+        if(known) {
+            int decompressed_length = 0, bytes;
 
-            /* If this is a compressed stream, we need to decompress it to discover its length
-             * then create a buffer big enough to read it int, then read it.
-             */
-            if(known) {
-                int decompressed_length = 0, bytes;
+            code = pdfi_filter(ctx, lookup_dict, ctx->main_stream, &filtered_lookup_stream, false);
+            if (code < 0) {
+                goto exit;
+            }
+            do {
+                bytes = sfgetc(filtered_lookup_stream->s);
+                if (bytes > 0)
+                    decompressed_length++;
+            } while (bytes >= 0);
+            pdfi_close_file(ctx, filtered_lookup_stream);
 
-                code = pdfi_filter(ctx, lookup_dict, ctx->main_stream, &filtered_lookup_stream, false);
-                if (code < 0) {
-                    pdfi_countdown(lookup_dict);
-                    pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
-                    return code;
-                }
-                do {
-                    bytes = sfgetc(filtered_lookup_stream->s);
-                    if (bytes > 0)
-                        decompressed_length++;
-                } while (bytes >= 0);
-                pdfi_close_file(ctx, filtered_lookup_stream);
-
-                Buffer = gs_alloc_bytes(ctx->memory, decompressed_length, "pdfi_create_indexed (decompression buffer)");
-                if (Buffer != NULL) {
-                    code = pdfi_seek(ctx, ctx->main_stream, lookup_dict->stream_offset, SEEK_SET);
+            Buffer = gs_alloc_bytes(ctx->memory, decompressed_length, "pdfi_create_indexed (decompression buffer)");
+            if (Buffer != NULL) {
+                code = pdfi_seek(ctx, ctx->main_stream, lookup_dict->stream_offset, SEEK_SET);
+                if (code >= 0) {
+                    code = pdfi_filter(ctx, lookup_dict, ctx->main_stream, &filtered_lookup_stream, false);
                     if (code >= 0) {
-                        code = pdfi_filter(ctx, lookup_dict, ctx->main_stream, &filtered_lookup_stream, false);
-                        if (code >= 0) {
-                            sfread(Buffer, 1, decompressed_length, filtered_lookup_stream->s);
-                            pdfi_close_file(ctx, filtered_lookup_stream);
-                        }
-                    } else {
-                        gs_free_object(ctx->memory, Buffer, "pdfi_create_indexed (decompression buffer)");
-                        pdfi_countdown(lookup_dict);
-                        pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
-                        return code;
+                        sfread(Buffer, 1, decompressed_length, filtered_lookup_stream->s);
+                        pdfi_close_file(ctx, filtered_lookup_stream);
                     }
                 } else {
-                    pdfi_countdown(lookup_dict);
-                    pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
-                    return_error(gs_error_VMerror);
+                    goto exit;
                 }
-                if (code < 0) {
-                    pdfi_countdown(lookup_dict);
-                    pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
-                    gs_free_object(ctx->memory, Buffer, "pdfi_create_iindexed (decompression buffer)");
-                    return code;
-                }
-                lookup_length = decompressed_length;
             } else {
-                /* Create a buffer and read the data into it. */
-                code = pdfi_dict_get_int(ctx, lookup_dict, "Length", &Length);
-                if (code < 0) {
-                    pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
-                    pdfi_countdown(lookup_dict);
-                    return code;
-                }
-                Buffer = gs_alloc_bytes(ctx->memory, Length, "pdfi_create_indexed (lookup buffer)");
-                if (Buffer == NULL) {
-                    pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
-                    pdfi_countdown(lookup_dict);
-                    return_error(gs_error_VMerror);;
-                }
-                sfread(Buffer, (size_t)1, (size_t)Length, ctx->main_stream->s);
-                lookup_length = Length;
+                code = gs_note_error(gs_error_VMerror);
+                goto exit;
             }
+            if (code < 0) {
+                gs_free_object(ctx->memory, Buffer, "pdfi_create_iindexed (decompression buffer)");
+                goto exit;
+            }
+            lookup_length = decompressed_length;
         } else {
-            if (lookup_dict->type == PDF_STRING) {
-                /* This is not legal, but Acrobat seems to accept it */
-                pdf_string *lookup_string = (pdf_string *)lookup_dict;
-
-                Buffer = gs_alloc_bytes(ctx->memory, lookup_string->length, "pdfi_create_indexed (lookup buffer)");
-                if (Buffer == NULL)
-                    return_error(gs_error_VMerror);;
-
-                memcpy(Buffer, lookup_string->data, lookup_string->length);
-                lookup_length = lookup_string->length;
-                pdfi_countdown(lookup_string);
-            } else {
-                pdfi_countdown(lookup_dict);
-                return_error(gs_error_typecheck);
+            /* Create a buffer and read the data into it. */
+            code = pdfi_dict_get_int(ctx, lookup_dict, "Length", &Length);
+            if (code < 0) {
+                goto exit;
             }
+            Buffer = gs_alloc_bytes(ctx->memory, Length, "pdfi_create_indexed (lookup buffer)");
+            if (Buffer == NULL) {
+                code = gs_note_error(gs_error_VMerror);
+                goto exit;
+            }
+            sfread(Buffer, (size_t)1, (size_t)Length, ctx->main_stream->s);
+            lookup_length = Length;
         }
-    } else {
-        Buffer = gs_alloc_bytes(ctx->memory, ((pdf_string *)lookup)->length, "pdfi_create_indexed (lookup buffer)");
-        if (Buffer == NULL)
-            return_error(gs_error_VMerror);
+    } else if (lookup->type == PDF_STRING) {
+        /* This is not legal, but Acrobat seems to accept it */
+        pdf_string *lookup_string = (pdf_string *)lookup; /* alias */
 
-        memcpy(Buffer, ((pdf_string *)lookup)->data, ((pdf_string *)lookup)->length);
-        lookup_length = ((pdf_string *)lookup)->length;
-        pdfi_countdown(lookup);
+        Buffer = gs_alloc_bytes(ctx->memory, lookup_string->length, "pdfi_create_indexed (lookup buffer)");
+        if (Buffer == NULL) {
+            code = gs_note_error(gs_error_VMerror);
+            goto exit;
+        }
+
+        memcpy(Buffer, lookup_string->data, lookup_string->length);
+        lookup_length = lookup_string->length;
+    } else {
+        code = gs_note_error(gs_error_typecheck);
+        goto exit;
     }
 
     num_values = (hival+1) * cs_num_components(pcs_base);
     if (num_values > lookup_length) {
-        gs_free_object(ctx->memory, Buffer, "pdfi_create_indexed (lookup buffer)");
-        return_error(gs_error_rangecheck);
+        dmprintf2(ctx->memory, "WARNING: pdfi_create_indexed() got %ld values, expected at least %d values\n",
+                  lookup_length, num_values);
+        code = gs_note_error(gs_error_rangecheck);
+        goto exit;
     }
 
     /* If we have a named color profile and the base space is DeviceN or
@@ -1387,9 +1361,17 @@ static int pdfi_create_indexed(pdf_context *ctx, pdf_array *color_array, int ind
     pcs->params.indexed.hival = hival;
     pcs->params.indexed.n_comps = cs_num_components(pcs_base);
     pcs->params.indexed.lookup.table.data = Buffer;
+    Buffer = NULL;
 
     *ppcs = pcs;
-    return 0;
+
+ exit:
+    if (Buffer)
+        gs_free_object(ctx->memory, Buffer, "pdfi_create_indexed (decompression buffer)");
+    pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
+    pdfi_countdown(space);
+    pdfi_countdown(lookup);
+    return code;
 }
 
 /* These next routines allow us to use recursion to set up colour spaces. We can set

@@ -108,6 +108,20 @@ pdfi_get_image_data_size(gs_data_image_t *pim, int comps)
 }
 
 static inline uint64_t
+pdfi_data_size_from_image_info(pdfi_image_info_t *info, int comps)
+{
+    int size;
+    int64_t H, W, B;
+
+    H = info->Height;
+    W = info->Width;
+    B = info->BPC;
+
+    size = (((W * comps * B) + 7) / 8) * H;
+    return size;
+}
+
+static inline uint64_t
 pdfi_get_image_line_size(gs_data_image_t *pim, int comps)
 {
     int size;
@@ -752,6 +766,23 @@ pdfi_data_image_params(pdf_context *ctx, pdfi_image_info_t *info,
     return code;
 }
 
+static void
+pdfi_flush_image(pdf_context *ctx, pdf_dict *image_dict,
+                 pdf_stream *source, pdfi_image_info_t *image_info,
+                 int comps)
+{
+    int total;
+
+    if (comps == 0) {
+        dmprintf(ctx->memory, "WARNING: Trying to flush image but comps unknown (using 3)\n");
+        comps = 3;
+    }
+
+    total = pdfi_data_size_from_image_info(image_info, comps);
+    dmprintf1(ctx->memory, "WARNING: Flushing %d bytes of image\n", total);
+    pdfi_seek(ctx, source, image_dict->stream_offset + total, SEEK_SET);
+}
+
 /* NOTE: "source" is the current input stream.
  * on exit:
  *  inline_image = TRUE, stream it will point to after the image data.
@@ -960,6 +991,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
                 comps = dev->color_info.num_components;
                 pcs = NULL;
                 flush = true;
+                goto cleanupExit;
             }
         } else {
             code = pdfi_create_colorspace(ctx, image_info.ColorSpace, page_dict, stream_dict, &pcs);
@@ -975,6 +1007,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
                 } else {
                     dmprintf(ctx->memory, "(not a name)\n");
                 }
+                flush = true;
                 goto cleanupExit;
             }
             comps = gs_color_space_num_components(pcs);
@@ -1056,24 +1089,6 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     }
 
 
-    /* Handle null ColorSpace -- this is just swallowing the image data stream and continuing */
-    /* TODO: Is this correct or should we flag error? */
-    if (flush) {
-        if (inline_image) {
-            int total;
-
-            total = pdfi_get_image_data_size((gs_data_image_t *)pim, comps);
-            pdfi_seek(ctx, source, image_dict->stream_offset + total, SEEK_SET);
-
-            code = 0; /* TODO: Should we flag an error instead of silently swallowing? */
-            goto cleanupExit;
-        } else {
-            code = 0; /* TODO: Should we flag an error instead of just ignoring? */
-            goto cleanupExit;
-        }
-    }
-
-
     /* Setup the data stream for the image data */
     if (!inline_image)
         pdfi_seek(ctx, source, image_dict->stream_offset, SEEK_SET);
@@ -1094,6 +1109,15 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     code = 0;
 
  cleanupExit:
+    if (flush) {
+        if (inline_image) {
+            pdfi_flush_image(ctx, image_dict, source, &image_info, comps);
+            code = 0; /* TODO: Should we flag an error instead of silently swallowing? */
+        } else {
+            code = 0; /* TODO: Should we flag an error instead of just ignoring? */
+        }
+    }
+
     if (new_stream)
         pdfi_close_file(ctx, new_stream);
     if (mask_stream)
