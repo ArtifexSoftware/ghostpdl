@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
 {
     int exit_status;
     int code = 1, code1;
-    void *instance;
+    void *instance = NULL;
     int exit_code;
 
     /* run Ghostscript */

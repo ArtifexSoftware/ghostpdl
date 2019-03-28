@@ -707,7 +707,7 @@ do_dot(int choice_X, int choice_Y, int level, int last)
 #include "iapi.h"
 #include "vdtrace.h"
 
-void *instance;
+void *instance = NULL;
 
 #ifdef __WIN32__
 GSDLL gsdll;

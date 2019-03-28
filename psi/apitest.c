@@ -50,7 +50,7 @@ static void *gs_main(void *arg)
     int threadnum = (int)(void *)arg;
     int code, code1;
     char text[256];
-    void *minst;
+    void *minst = NULL;
     char **gsargv;
     int gsargc;
     int i, pos, len;
