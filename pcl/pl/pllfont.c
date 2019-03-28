@@ -595,12 +595,10 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t * mem,
     const font_resident_t *residentp;
     /* get rid of this should be keyed by pjl font number */
     byte key[3];
-    /* max pathname of 1024 including pattern */
-    char tmp_path_copy[1024];
-    char *tmp_pathp, *tplast = NULL;
+    char path[1024];
     bool found;
     bool found_any = false;
-    const char pattern[] = "*";
+    file_enum *fe;
     int code = 0;
 
     (void)pl_built_in_resident_font_table_count;
@@ -610,176 +608,143 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t * mem,
                                       use_unicode_names_for_keys))) {
         return (code);
     }
+
     /* don't load fonts more than once */
-    if (pl_dict_length(pfontdict, true) > 0) {
+    if (pl_dict_length(pfontdict, true) > 0)
         return 1;
-    }
 
-    if (pathname == NULL) {
-        /* no font pathname */
+    if (pathname == NULL)
         return 0;
-    }
 
-    /* Enumerate through the files in the path */
-    /* make a copy of the path for gs_strtok */
-    strcpy(tmp_path_copy, pathname);
-    for (tmp_pathp = tmp_path_copy; (tmp_pathp = gs_strtok(tmp_pathp, ";", &tplast)) != NULL;
-         tmp_pathp = NULL) {
-        int code;
-        file_enum *fe;
-        stream *in = NULL;
-        /* handle trailing separator */
-        bool append_separator = false;
-        int separator_length = strlen(gp_file_name_directory_separator());
-        int offset = strlen(tmp_pathp) - separator_length;
+    if (gs_strlcpy(path, pathname, sizeof(path)) >= sizeof(path))
+        return 0;
 
-        /* make sure the filename string ends in directory separator */
-        if (strcmp(tmp_pathp + offset, gp_file_name_directory_separator()) !=
-            0)
-            append_separator = true;
+    if (gs_strlcat(path, "*", sizeof(path)) >= sizeof(path))
+        return 0;
 
-        /* concatenate path and pattern */
-        if ((strlen(pattern) +
-             strlen(tmp_pathp) + 1) +
-            (append_separator ? separator_length : 0) >
-            sizeof(tmp_path_copy)) {
-            dmprintf1(mem, "path name %s too long\n", tmp_pathp);
+    fe = gs_enumerate_files_init(path, strlen(path), mem);
+    if (fe == NULL)
+        return 0;
+
+    /* loop through the files */
+    while ((code = gs_enumerate_files_next(fe, path, sizeof(path) - 1)) >= 0) {
+        char buffer[1024];
+        pl_font_t *plfont;
+        stream *in;
+
+        if (code > sizeof(path) - 1) {
+            dmprintf(mem,
+                     "filename length exceeds file name storage buffer length\n");
+            continue;
+        }
+        /* null terminate the string */
+        path[code] = '\0';
+
+        in = sfopen(path, "r", mem);
+        if (in == NULL) {   /* shouldn't happen */
+            dmprintf1(mem, "cannot open file %s\n", path);
             continue;
         }
 
-        memmove(tmp_path_copy, tmp_pathp, strlen(tmp_pathp) + 1);
-
-        if (append_separator == true)
-            strcat(tmp_path_copy, gp_file_name_directory_separator());
-
-        /* NOTE the gp code code takes care of converting * to *.* */
-        strcat(tmp_path_copy, pattern);
-
-        /* enumerate all files on the current path */
-        fe = gs_enumerate_files_init(tmp_path_copy,
-                                     strlen(tmp_path_copy), mem);
-
-        /* loop through the files */
-        while ((code = gs_enumerate_files_next(fe,
-                                               tmp_path_copy,
-                                               sizeof(tmp_path_copy))) >= 0) {
-            char buffer[1024];
-            pl_font_t *plfont;
-
-            if (code > sizeof(tmp_path_copy)) {
-                dmprintf(mem,
-                         "filename length exceeds file name storage buffer length\n");
-                continue;
-            }
-            /* null terminate the string */
-            tmp_path_copy[code] = '\0';
-
-            in = sfopen(tmp_path_copy, "r", mem);
-            if (in == NULL) {   /* shouldn't happen */
-                dmprintf1(mem, "cannot open file %s\n", tmp_path_copy);
-                continue;
-            }
-
-            code = get_name_from_tt_file(in, mem, buffer, PSNAME);
-            if (code < 0) {
-                dmprintf1(mem, "input output failure on TrueType File %s\n",
-                          tmp_path_copy);
-                sfclose(in);
-                continue;
-            }
-
-            if (strlen(buffer) == 0) {
-                dmprintf1(mem,
-                          "could not extract font file name from file %s\n",
-                          tmp_path_copy);
-                sfclose(in);
-                continue;
-            }
-
-            /* lookup the font file name in the resident table */
-            found = false;
-            for (residentp = resident_table;
-                 strlen(residentp->full_font_name); ++residentp) {
-                if (strcmp(buffer, residentp->full_font_name) != 0)
-                    continue;
-                /* load the font file into memory.  NOTE: this closes the file - argh... */
-                if (pl_load_tt_font(in, pdir, mem,
-                                    gs_next_ids(mem, 1), &plfont,
-                                    buffer) < 0) {
-                    /* vm error */
-                    gs_enumerate_files_close(fe);
-                    return gs_throw1(0,
-                                     "An unrecoverable failure occurred while reading the resident font %s\n",
-                                     tmp_path_copy);
-                }
-                /* reopen the file */
-                in = sfopen(tmp_path_copy, "r", mem);
-                if (in == NULL) {
-                    gs_free_object(mem, plfont->pfont, "pl_tt_load_font(gs_font_type42)");
-                    pl_free_tt_fontfile_buffer(mem, plfont->header);
-                    gs_free_object(mem, plfont, "pl_tt_load_font(pl_font_t)");
-                    gs_enumerate_files_close(fe);
-                    return gs_throw1(0,
-                                     "An unrecoverable failure occurred while reading the resident font %s\n",
-                                     tmp_path_copy);
-                }
-
-                plfont->storage = storage;
-                plfont->data_are_permanent = false;
-
-                /* use the offset in the table as the pjl font number */
-                /* for unicode keying of the dictionary use the unicode
-                   font name, otherwise use the keys. */
-                plfont->font_type = residentp->font_type;
-                plfont->params = residentp->params;
-                memcpy(plfont->character_complement,
-                       residentp->character_complement, 8);
-                if (use_unicode_names_for_keys)
-                    code = pl_dict_put(pfontdict,
-                                (const byte *)residentp->unicode_fontname, 32,
-                                plfont);
-                else {
-                    key[2] = (byte) (residentp - resident_table);
-                    key[0] = key[1] = 0;
-                    code = pl_dict_put(pfontdict, key, sizeof(key), plfont);
-                    /* leave data stored in the file.  NB this should be a fatal error also. */
-                    if ((code >= 0) && pl_store_resident_font_data_in_file
-                        (tmp_path_copy, mem, plfont) < 0) {
-                        dmprintf1(mem, "%s could not store data",
-                                  tmp_path_copy);
-                        continue;
-                    }
-                }
-                if (code < 0) {
-                    gs_free_object(mem, plfont->pfont, "pl_tt_load_font(gs_font_type42)");
-                    pl_free_tt_fontfile_buffer(mem, plfont->header);
-                    gs_free_object(mem, plfont, "pl_tt_load_font(pl_font_t)");
-                    continue;
-                }
-                found = true;
-                found_any = true;
-            }
+        code = get_name_from_tt_file(in, mem, buffer, PSNAME);
+        if (code < 0) {
+            dmprintf1(mem, "input output failure on TrueType File %s\n",
+                      path);
             sfclose(in);
+            continue;
+        }
 
-            /* nothing found */
-            if (!found) {
-#ifdef DEBUG
-                if (gs_debug_c('=')) {
-                    dmprintf2(mem,
-                              "TrueType font %s in file %s not found in table\n",
-                              buffer, tmp_path_copy);
-                    in = sfopen(tmp_path_copy, "r", mem);
-                    code =
-                        get_name_from_tt_file(in, mem, buffer, WINDOWSNAME);
-                    sfclose(in);
-                    dmprintf1(mem, "Windows name %s\n", buffer);
-                    if (code < 0)
-                        return code;
-                }
-#endif
+        if (strlen(buffer) == 0) {
+            dmprintf1(mem,
+                      "could not extract font file name from file %s\n",
+                      path);
+            sfclose(in);
+            continue;
+        }
+
+        /* lookup the font file name in the resident table */
+        found = false;
+        for (residentp = resident_table;
+             strlen(residentp->full_font_name); ++residentp) {
+            if (strcmp(buffer, residentp->full_font_name) != 0)
+                continue;
+            /* load the font file into memory.  NOTE: this closes the file - argh... */
+            if (pl_load_tt_font(in, pdir, mem,
+                                gs_next_ids(mem, 1), &plfont,
+                                buffer) < 0) {
+                /* vm error */
+                gs_enumerate_files_close(fe);
+                return gs_throw1(0,
+                                 "An unrecoverable failure occurred while reading the resident font %s\n",
+                                 path);
             }
-        }                       /* next file */
-    }                           /* next directory */
+            /* reopen the file */
+            in = sfopen(path, "r", mem);
+            if (in == NULL) {
+                gs_free_object(mem, plfont->pfont, "pl_tt_load_font(gs_font_type42)");
+                pl_free_tt_fontfile_buffer(mem, plfont->header);
+                gs_free_object(mem, plfont, "pl_tt_load_font(pl_font_t)");
+                gs_enumerate_files_close(fe);
+                return gs_throw1(0,
+                                 "An unrecoverable failure occurred while reading the resident font %s\n",
+                                 path);
+            }
+
+            plfont->storage = storage;
+            plfont->data_are_permanent = false;
+
+            /* use the offset in the table as the pjl font number */
+            /* for unicode keying of the dictionary use the unicode
+               font name, otherwise use the keys. */
+            plfont->font_type = residentp->font_type;
+            plfont->params = residentp->params;
+            memcpy(plfont->character_complement,
+                   residentp->character_complement, 8);
+            if (use_unicode_names_for_keys)
+                code = pl_dict_put(pfontdict,
+                                   (const byte *)residentp->unicode_fontname, 32,
+                                   plfont);
+            else {
+                key[2] = (byte) (residentp - resident_table);
+                key[0] = key[1] = 0;
+                code = pl_dict_put(pfontdict, key, sizeof(key), plfont);
+                /* leave data stored in the file.  NB this should be a fatal error also. */
+                if ((code >= 0) && pl_store_resident_font_data_in_file
+                    (path, mem, plfont) < 0) {
+                    dmprintf1(mem, "%s could not store data",
+                              path);
+                    continue;
+                }
+            }
+            if (code < 0) {
+                gs_free_object(mem, plfont->pfont, "pl_tt_load_font(gs_font_type42)");
+                pl_free_tt_fontfile_buffer(mem, plfont->header);
+                gs_free_object(mem, plfont, "pl_tt_load_font(pl_font_t)");
+                continue;
+            }
+            found = true;
+            found_any = true;
+        }
+        sfclose(in);
+
+        /* nothing found */
+        if (!found) {
+#ifdef DEBUG
+            if (gs_debug_c('=')) {
+                dmprintf2(mem,
+                          "TrueType font %s in file %s not found in table\n",
+                          buffer, path);
+                in = sfopen(path, "r", mem);
+                code =
+                    get_name_from_tt_file(in, mem, buffer, WINDOWSNAME);
+                sfclose(in);
+                dmprintf1(mem, "Windows name %s\n", buffer);
+                if (code < 0)
+                    return code;
+            }
+#endif
+        }
+    }                       /* next file */
 #ifdef DEBUG
     if (gs_debug_c('='))
         check_resident_fonts(pfontdict, mem);

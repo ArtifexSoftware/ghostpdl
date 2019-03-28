@@ -444,31 +444,35 @@ pjl_check_font_path(char *path_list, gs_memory_t * mem)
 {
     /* lookup a font path and check if any files (presumably fonts are
        present) */
-    char tmp_path[PJL_PATH_NAME_LENGTH + 1];
-    char *tmp_pathp = tmp_path, *tplast = NULL;
+    char path[PJL_PATH_NAME_LENGTH + 1];
+    char *pathp = path, *tplast = NULL;
     const char pattern[] = "*";
-    char tmp_path_and_pattern[PJL_PATH_NAME_LENGTH + 1 + 1];    /* pattern + null */
+    char path_and_pattern[PJL_PATH_NAME_LENGTH + 1 + 1];    /* pattern + null */
     char *dirname;
     char fontfilename[MAXPATHLEN + 1];
 
-    /* make a tmp copy of the colon delimited path */
-    strcpy(tmp_path, path_list);
+    /* Ignore error if the path list is too long, a single path may be
+       okay. */
+    gs_strlcpy(path, path_list, sizeof(path));
     /* for each path search for fonts.  If we find them return we only
        check if the directory resource has files without checking if
        the files are indeed fonts. */
-    while ((dirname = gs_strtok(tmp_pathp, ";", &tplast)) != NULL) {
+    while ((dirname = gs_strtok(pathp, ";", &tplast)) != NULL) {
         file_enum *fe;
 
-        strcpy(tmp_path_and_pattern, dirname);
-        strcat(tmp_path_and_pattern, pattern);
+        if (gs_strlcpy(path_and_pattern, dirname, sizeof(path_and_pattern)) >= sizeof(path_and_pattern))
+            continue;
 
-        fe = gs_enumerate_files_init(tmp_path_and_pattern,
-                                     strlen(tmp_path_and_pattern), mem);
+        if (gs_strlcat(path_and_pattern, pattern, sizeof(path_and_pattern)) >= sizeof(path_and_pattern))
+            continue;
+
+        fe = gs_enumerate_files_init(path_and_pattern,
+                                     strlen(path_and_pattern), mem);
         if (fe == NULL
             ||
             (gs_enumerate_files_next(fe, fontfilename, PJL_PATH_NAME_LENGTH))
             == -1) {
-            tmp_pathp = NULL;
+            pathp = NULL;
         } else {
             /* wind through the rest of the files.  This should close
                things up as well.  All we need to do is clean up but
@@ -482,10 +486,15 @@ pjl_check_font_path(char *path_list, gs_memory_t * mem)
                 if (fstatus == -1)
                     break;
             }
-            /* NB fix me - replace : separated path with real path.
-               We should do this elsewhere */
-            strcpy(path_list, dirname);
-            return path_list;
+            /* replace : separated path with real path.  The path list
+               is of equal or greater length than dirname, so it can't
+               fail, but we check anyway. */
+            if (strlen(path_list) < strlen(dirname))
+                return NULL;
+            else {
+                strcpy(path_list, dirname);
+                return path_list;
+            }
         }
     }
     return NULL;
@@ -869,10 +878,10 @@ pjl_parse_and_process_line(pjl_parser_state_t * pst)
     token = (char *)gs_alloc_bytes(pst->mem, bufsize, "working buffer for PJL parsing");
     if (token == 0)
         return -1;
-    
+
     memset(token, 0x00, bufsize);
     memset(pathname, 0x00, sizeof(pathname));
-           
+
     /* reset the line position to the beginning of the line */
     pst->pos = 0;
     /* all pjl commands start with the pjl prefix @PJL */
@@ -1862,7 +1871,7 @@ pjl_process_destroy(pjl_parser_state * pst)
         return;
 
     mem = pst->mem;
-    
+
     free_pjl_defaults(mem, &pst->defaults);
     free_pjl_environment(mem, &pst->envir);
     free_pjl_fontsource(mem, &pst->font_envir);
