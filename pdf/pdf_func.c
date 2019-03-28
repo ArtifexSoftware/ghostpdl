@@ -571,24 +571,10 @@ pdfi_build_function_3(pdf_context *ctx, gs_function_params_t * mnDR,
     for (i = 0; i < params.k; ++i) {
         pdf_obj * rsubfn = NULL;
 
-        code = pdfi_array_get(ctx, (pdf_array *)Functions, (int64_t)i, &rsubfn);
+        code = pdfi_array_get_type(ctx, (pdf_array *)Functions, (int64_t)i, PDF_DICT, &rsubfn);
         if (code < 0)
             goto function_3_error;
 
-        if (rsubfn->type == PDF_INDIRECT) {
-            pdf_indirect_ref *r = (pdf_indirect_ref *)rsubfn;
-
-            pdfi_loop_detector_mark(ctx);
-            code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, (pdf_obj **)&rsubfn);
-            pdfi_loop_detector_cleartomark(ctx);
-            pdfi_countdown(r);
-            if (code < 0)
-                goto function_3_error;
-        }
-        if (rsubfn->type != PDF_DICT) {
-            pdfi_countdown(rsubfn);
-            goto function_3_error;
-        }
         code = pdfi_build_sub_function(ctx, &ptr[i], shading_domain, num_inputs, (pdf_dict *)rsubfn, page_dict);
         pdfi_countdown(rsubfn);
         if (code < 0)

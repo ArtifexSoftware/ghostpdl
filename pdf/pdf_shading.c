@@ -67,18 +67,8 @@ static int pdfi_build_shading_function(pdf_context *ctx, gs_function_t **ppfn, c
             goto build_shading_function_error;
 
         for (i = 0; i < size; ++i) {
-            code = pdfi_array_get(ctx, (pdf_array *)o, i, &rsubfn);
-            if (rsubfn->type == PDF_INDIRECT) {
-                pdf_indirect_ref *r = (pdf_indirect_ref *)rsubfn;
-
-                (void)pdfi_loop_detector_mark(ctx);
-                code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, (pdf_obj **)&rsubfn);
-                (void)pdfi_loop_detector_cleartomark(ctx);
-                pdfi_countdown(r);
-                if (code < 0)
-                    goto build_shading_function_error;
-            }
-            if (rsubfn->type != PDF_DICT) {
+            code = pdfi_array_get_type(ctx, (pdf_array *)o, i, PDF_DICT, &rsubfn);
+            if (code < 0) {
                 int j;
 
                 for (j = 0;j < i; j++) {
@@ -86,7 +76,6 @@ static int pdfi_build_shading_function(pdf_context *ctx, gs_function_t **ppfn, c
                     Functions[j] = NULL;
                 }
                 gs_free_object(ctx->memory, Functions, "function array error, freeing functions");
-                code = gs_error_typecheck;
                 goto build_shading_function_error;
             }
             code = pdfi_build_function(ctx, &Functions[i], shading_domain, num_inputs, (pdf_dict *)rsubfn, page_dict);
@@ -690,7 +679,7 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
                     pdfi_free_function(ctx, ((gs_shading_R_params_t *)&psh->params)->Function);
                 break;
             case 4:
-                if (((gs_shading_FfGt_params_t *)&psh->params)->Function != NULL);
+                if (((gs_shading_FfGt_params_t *)&psh->params)->Function != NULL)
                     pdfi_free_function(ctx, ((gs_shading_FfGt_params_t *)&psh->params)->Function);
                 if (((gs_shading_mesh_params_t *)&psh->params)->DataSource.data.strm != NULL)
                     sclose(((gs_shading_mesh_params_t *)&psh->params)->DataSource.data.strm);
