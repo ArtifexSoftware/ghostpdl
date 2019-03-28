@@ -46,19 +46,19 @@ static int pdfi_check_for_spots_by_name(pdf_context *ctx, pdf_name *name,
     pdf_obj *ref_space;
     int code;
 
-    if (pdfi_name_strcmp(name, "G") == 0) {
+    if (pdfi_name_is(name, "G")) {
         return 0;
-    } else if (pdfi_name_strcmp(name, "RGB") == 0) {
+    } else if (pdfi_name_is(name, "RGB")) {
         return 0;
-    } else if (pdfi_name_strcmp(name, "CMYK") == 0) {
+    } else if (pdfi_name_is(name, "CMYK")) {
         return 0;
-    } else if (pdfi_name_strcmp(name, "DeviceRGB") == 0) {
+    } else if (pdfi_name_is(name, "DeviceRGB")) {
         return 0;
-    } else if (pdfi_name_strcmp(name, "DeviceGray") == 0) {
+    } else if (pdfi_name_is(name, "DeviceGray")) {
         return 0;
-    } else if (pdfi_name_strcmp(name, "DeviceCMYK") == 0) {
+    } else if (pdfi_name_is(name, "DeviceCMYK")) {
         return 0;
-    } else if (pdfi_name_strcmp(name, "Pattern") == 0) {
+    } else if (pdfi_name_is(name, "Pattern")) {
         return 0;
     } else {
         code = pdfi_find_resource(ctx, (unsigned char *)"ColorSpace", name, parent_dict, page_dict, &ref_space);
@@ -88,31 +88,31 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
     }
 
     code = 0;
-    if (pdfi_name_strcmp(space, "G") == 0) {
+    if (pdfi_name_is(space, "G")) {
         goto exit;
-    } else if (pdfi_name_strcmp(space, "I") == 0 || pdfi_name_strcmp(space, "Indexed") == 0) {
+    } else if (pdfi_name_is(space, "I") || pdfi_name_is(space, "Indexed")) {
         goto exit;
-    } else if (pdfi_name_strcmp(space, "Lab") == 0) {
+    } else if (pdfi_name_is(space, "Lab")) {
         goto exit;
-    } else if (pdfi_name_strcmp(space, "RGB") == 0) {
+    } else if (pdfi_name_is(space, "RGB")) {
         goto exit;
-    } else if (pdfi_name_strcmp(space, "CMYK") == 0) {
+    } else if (pdfi_name_is(space, "CMYK")) {
         goto exit;
-    } else if (pdfi_name_strcmp(space, "CalRGB") == 0) {
+    } else if (pdfi_name_is(space, "CalRGB")) {
         goto exit;
-    } else if (pdfi_name_strcmp(space, "CalGray") == 0) {
+    } else if (pdfi_name_is(space, "CalGray")) {
         goto exit;
-    } else if (pdfi_name_strcmp(space, "Pattern") == 0) {
+    } else if (pdfi_name_is(space, "Pattern")) {
         goto exit;
-    } else if (pdfi_name_strcmp(space, "ICCBased") == 0) {
+    } else if (pdfi_name_is(space, "ICCBased")) {
         goto exit;
-    } else if (pdfi_name_strcmp(space, "DeviceRGB") == 0) {
+    } else if (pdfi_name_is(space, "DeviceRGB")) {
         goto exit;
-    } else if (pdfi_name_strcmp(space, "DeviceGray") == 0) {
+    } else if (pdfi_name_is(space, "DeviceGray")) {
         goto exit;
-    } else if (pdfi_name_strcmp(space, "DeviceCMYK") == 0) {
+    } else if (pdfi_name_is(space, "DeviceCMYK")) {
         goto exit;
-    } else if (pdfi_name_strcmp(space, "DeviceN") == 0) {
+    } else if (pdfi_name_is(space, "DeviceN")) {
         bool known = false;
         pdf_obj *dummy, *name;
         int i;
@@ -147,8 +147,8 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
                 goto exit;
             }
 
-            if (pdfi_name_strcmp((const pdf_name *)name, "Cyan") == 0 || pdfi_name_strcmp((const pdf_name *)name, "Magenta") == 0 ||
-                pdfi_name_strcmp((const pdf_name *)name, "Yellow") == 0 || pdfi_name_strcmp((const pdf_name *)name, "Black") == 0) {
+            if (pdfi_name_is((const pdf_name *)name, "Cyan") || pdfi_name_is((const pdf_name *)name, "Magenta") ||
+                pdfi_name_is((const pdf_name *)name, "Yellow") || pdfi_name_is((const pdf_name *)name, "Black")) {
 
                 pdfi_countdown(name);
                 continue;
@@ -175,7 +175,7 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
             *num_spots += 1;
         }
         goto exit;
-    } else if (pdfi_name_strcmp(space, "Separation") == 0) {
+    } else if (pdfi_name_is(space, "Separation")) {
         bool known = false;
         pdf_obj *dummy;
 
@@ -199,8 +199,8 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
             goto exit;
         }
 
-        if (pdfi_name_strcmp(space, "Cyan") == 0 || pdfi_name_strcmp(space, "Magenta") == 0 ||
-            pdfi_name_strcmp(space, "Yellow") == 0 || pdfi_name_strcmp(space, "Black") == 0)
+        if (pdfi_name_is(space, "Cyan") || pdfi_name_is(space, "Magenta") ||
+            pdfi_name_is(space, "Yellow") || pdfi_name_is(space, "Black"))
             goto exit;
         code = pdfi_dict_known_by_key(ctx->SpotNames, space, &known);
         if (code < 0 || known)
@@ -284,13 +284,13 @@ int pdfi_ri(pdf_context *ctx)
         return 0;
     }
     n = (pdf_name *)ctx->stack_top[-1];
-    if (pdfi_name_strcmp(n, "Perceptual") == 0) {
+    if (pdfi_name_is(n, "Perceptual")) {
             code = gs_setrenderingintent(ctx->pgs, 0);
-    } else if (pdfi_name_strcmp(n, "Saturation") == 0) {
+    } else if (pdfi_name_is(n, "Saturation")) {
         code = gs_setrenderingintent(ctx->pgs, 2);
-    } else if (pdfi_name_strcmp(n, "RelativeColorimetric") == 0) {
+    } else if (pdfi_name_is(n, "RelativeColorimetric")) {
         code = gs_setrenderingintent(ctx->pgs, 1);
-    } else if (pdfi_name_strcmp(n, "AbsoluteColoimetric") == 0) {
+    } else if (pdfi_name_is(n, "AbsoluteColoimetric")) {
         code = gs_setrenderingintent(ctx->pgs, 3);
     } else {
         code = gs_error_undefined;
@@ -1460,7 +1460,7 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
     }
 
     code = 0;
-    if (pdfi_name_strcmp(space, "G") == 0) {
+    if (pdfi_name_is(space, "G")) {
         if (ppcs != NULL) {
             *ppcs = gs_cspace_new_DeviceGray(ctx->memory);
             if (*ppcs == NULL)
@@ -1468,7 +1468,7 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
         } else {
             code = gs_setgray(ctx->pgs, 1);
         }
-    } else if (pdfi_name_strcmp(space, "I") == 0) {
+    } else if (pdfi_name_is(space, "I")) {
         code = pdfi_create_indexed(ctx, color_array, index, stream_dict, page_dict, &pcs);
         if (code < 0)
             goto exit;
@@ -1480,7 +1480,7 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
             /* release reference from construction */
             rc_decrement_only_cs(pcs, "setindexedspace");
         }
-    } else if (pdfi_name_strcmp(space, "Lab") == 0) {
+    } else if (pdfi_name_is(space, "Lab")) {
         if (ppcs != NULL) {
             pcs = gs_cspace_new_DeviceRGB(ctx->memory);
             if (pcs == NULL)
@@ -1489,7 +1489,7 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
         } else {
             code = gs_setrgbcolor(ctx->pgs, 0, 0, 0);
         }
-    } else if (pdfi_name_strcmp(space, "RGB") == 0) {
+    } else if (pdfi_name_is(space, "RGB")) {
         if (ppcs != NULL) {
             *ppcs = gs_cspace_new_DeviceRGB(ctx->memory);
             if (*ppcs == NULL)
@@ -1497,7 +1497,7 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
         } else {
             code = gs_setrgbcolor(ctx->pgs, 0, 0, 0);
         }
-    } else if (pdfi_name_strcmp(space, "CMYK") == 0) {
+    } else if (pdfi_name_is(space, "CMYK")) {
         if (ppcs != NULL) {
             pcs = gs_cspace_new_DeviceCMYK(ctx->memory);
             if (pcs == NULL)
@@ -1507,7 +1507,7 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
         } else {
             code = gs_setcmykcolor(ctx->pgs, 0, 0, 0, 1);
         }
-    } else if (pdfi_name_strcmp(space, "CalRGB") == 0) {
+    } else if (pdfi_name_is(space, "CalRGB")) {
         if (ppcs != NULL) {
             pcs = gs_cspace_new_DeviceRGB(ctx->memory);
             if (pcs == NULL)
@@ -1517,7 +1517,7 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
         } else {
             code = gs_setrgbcolor(ctx->pgs, 0, 0, 0);
         }
-    } else if (pdfi_name_strcmp(space, "CalGray") == 0) {
+    } else if (pdfi_name_is(space, "CalGray")) {
         if (ppcs != NULL) {
             pcs = gs_cspace_new_DeviceGray(ctx->memory);
             if (pcs == NULL)
@@ -1527,10 +1527,10 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
         } else {
             code = gs_setgray(ctx->pgs, 1);
         }
-    } else if (pdfi_name_strcmp(space, "Pattern") == 0) {
+    } else if (pdfi_name_is(space, "Pattern")) {
         if (index != 0)
             return_error(gs_error_syntaxerror);
-    } else if (pdfi_name_strcmp(space, "DeviceN") == 0) {
+    } else if (pdfi_name_is(space, "DeviceN")) {
         code = pdfi_create_DeviceN(ctx, color_array, index, stream_dict, page_dict, &pcs);
         if (code < 0)
             goto exit;
@@ -1541,7 +1541,7 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
             /* release reference from construction */
             rc_decrement_only_cs(pcs, "setdevicenspace");
         }
-    } else if (pdfi_name_strcmp(space, "Indexed") == 0) {
+    } else if (pdfi_name_is(space, "Indexed")) {
         code = pdfi_create_indexed(ctx, color_array, index, stream_dict, page_dict, &pcs);
         if (code < 0)
             goto exit;
@@ -1553,7 +1553,7 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
             /* release reference from construction */
             rc_decrement_only_cs(pcs, "setindexedspace");
         }
-    } else if (pdfi_name_strcmp(space, "ICCBased") == 0) {
+    } else if (pdfi_name_is(space, "ICCBased")) {
         code = pdfi_create_iccbased(ctx, color_array, index, stream_dict, page_dict, &pcs);
         if (code < 0)
             goto exit;
@@ -1565,7 +1565,7 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
             /* release reference from construction */
             rc_decrement_only_cs(pcs, "seticcspace");
         }
-    } else if (pdfi_name_strcmp(space, "DeviceRGB") == 0) {
+    } else if (pdfi_name_is(space, "DeviceRGB")) {
         if (ppcs != NULL) {
             pcs = gs_cspace_new_DeviceRGB(ctx->memory);
             if (pcs == NULL)
@@ -1575,7 +1575,7 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
         } else {
             code = gs_setrgbcolor(ctx->pgs, 0, 0, 0);
         }
-    } else if (pdfi_name_strcmp(space, "DeviceGray") == 0) {
+    } else if (pdfi_name_is(space, "DeviceGray")) {
         if (ppcs != NULL) {
             pcs = gs_cspace_new_DeviceGray(ctx->memory);
             if (pcs == NULL)
@@ -1585,7 +1585,7 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
         } else {
             code = gs_setgray(ctx->pgs, 1);
         }
-    } else if (pdfi_name_strcmp(space, "DeviceCMYK") == 0) {
+    } else if (pdfi_name_is(space, "DeviceCMYK")) {
         if (ppcs != NULL) {
             pcs = gs_cspace_new_DeviceCMYK(ctx->memory);
             if (pcs == NULL)
@@ -1595,7 +1595,7 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
         } else {
             code = gs_setcmykcolor(ctx->pgs, 0, 0, 0, 1);
         }
-    } else if (pdfi_name_strcmp(space, "Separation") == 0) {
+    } else if (pdfi_name_is(space, "Separation")) {
         code = pdfi_create_Separation(ctx, color_array, index, stream_dict, page_dict, &pcs);
         if (code < 0)
             goto exit;
@@ -1635,37 +1635,37 @@ static int pdfi_create_colorspace_by_name(pdf_context *ctx, pdf_name *name,
     int code = 0;
     pdf_obj *ref_space;
 
-    if (pdfi_name_strcmp(name, "G") == 0) {
+    if (pdfi_name_is(name, "G")) {
         if (ppcs != NULL) {
             *ppcs = gs_cspace_new_DeviceGray(ctx->memory);
         } else {
             code = gs_setgray(ctx->pgs, 1);
         }
-    } else if (pdfi_name_strcmp(name, "RGB") == 0) {
+    } else if (pdfi_name_is(name, "RGB")) {
         if (ppcs != NULL) {
             *ppcs = gs_cspace_new_DeviceRGB(ctx->memory);
         } else {
             code = gs_setrgbcolor(ctx->pgs, 0, 0, 0);
         }
-    } else if (pdfi_name_strcmp(name, "CMYK") == 0) {
+    } else if (pdfi_name_is(name, "CMYK")) {
         if (ppcs != NULL) {
             *ppcs = gs_cspace_new_DeviceCMYK(ctx->memory);
         } else {
             code = gs_setcmykcolor(ctx->pgs, 0, 0, 0, 1);
         }
-    } else if (pdfi_name_strcmp(name, "DeviceRGB") == 0) {
+    } else if (pdfi_name_is(name, "DeviceRGB")) {
         if (ppcs != NULL) {
             *ppcs = gs_cspace_new_DeviceRGB(ctx->memory);
         } else {
             code = gs_setrgbcolor(ctx->pgs, 0, 0, 0);
         }
-    } else if (pdfi_name_strcmp(name, "DeviceGray") == 0) {
+    } else if (pdfi_name_is(name, "DeviceGray")) {
         if (ppcs != NULL) {
             *ppcs = gs_cspace_new_DeviceGray(ctx->memory);
         } else {
             code = gs_setgray(ctx->pgs, 1);
         }
-    } else if (pdfi_name_strcmp(name, "DeviceCMYK") == 0) {
+    } else if (pdfi_name_is(name, "DeviceCMYK")) {
         if (ppcs != NULL) {
             *ppcs = gs_cspace_new_DeviceCMYK(ctx->memory);
         } else {

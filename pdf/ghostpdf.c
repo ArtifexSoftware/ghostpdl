@@ -270,7 +270,7 @@ static int pdfi_check_XObject_dict(pdf_context *ctx, pdf_dict *xobject_dict, pdf
         do {
             code = pdfi_dict_get_type(ctx, (pdf_dict *)Value, "Subtype", PDF_NAME, (pdf_obj **)&n);
             if (code >= 0) {
-                if (pdfi_name_strcmp((const pdf_name *)n, "Image") == 0) {
+                if (pdfi_name_is((const pdf_name *)n, "Image")) {
                     pdfi_countdown(n);
                     n = NULL;
                     code = pdfi_dict_known((pdf_dict *)Value, "SMask", &known);
@@ -299,7 +299,7 @@ static int pdfi_check_XObject_dict(pdf_context *ctx, pdf_dict *xobject_dict, pdf
                         }
                     }
                 } else {
-                    if (pdfi_name_strcmp((const pdf_name *)n, "Form") == 0) {
+                    if (pdfi_name_is((const pdf_name *)n, "Form")) {
                         pdf_dict *group_dict = NULL, *resource_dict = NULL;
                         pdf_obj *CS = NULL;
 
@@ -383,8 +383,8 @@ static int pdfi_check_ExtGState(pdf_context *ctx, pdf_dict *extgstate_dict, int 
     if (pdfi_dict_entries(extgstate_dict) > 0) {
         code = pdfi_dict_knownget_type(ctx, extgstate_dict, "BM", PDF_NAME, &o);
         if (code > 0) {
-            if (pdfi_name_strcmp((pdf_name *)o, "Normal") != 0) {
-                if (pdfi_name_strcmp((pdf_name *)o, "Compatible") != 0) {
+            if (!pdfi_name_is((pdf_name *)o, "Normal")) {
+                if (!pdfi_name_is((pdf_name *)o, "Compatible")) {
                     pdfi_countdown(o);
                     *transparent = true;
                     return 0;
@@ -397,7 +397,7 @@ static int pdfi_check_ExtGState(pdf_context *ctx, pdf_dict *extgstate_dict, int 
         code = pdfi_dict_knownget(ctx, extgstate_dict, "SMask", &o);
         if (code > 0) {
             if (o->type == PDF_NAME) {
-                if (pdfi_name_strcmp((pdf_name *)o, "None") != 0) {
+                if (!pdfi_name_is((pdf_name *)o, "None")) {
                     pdfi_countdown(o);
                     *transparent = true;
                     return 0;
@@ -585,7 +585,7 @@ static int pdfi_check_Font_dict(pdf_context *ctx, pdf_dict *font_dict, pdf_dict 
         do {
             code = pdfi_dict_knownget_type(ctx, (pdf_dict *)Value, "Subtype", PDF_NAME, &o);
             if (code > 0) {
-                if (pdfi_name_strcmp((pdf_name *)o, "Type3") == 0) {
+                if (pdfi_name_is((pdf_name *)o, "Type3")) {
                     pdfi_countdown(o);
                     o = NULL;
 
@@ -731,7 +731,7 @@ static int pdfi_check_annot_for_transparency(pdf_context *ctx, pdf_dict *annot, 
             return code;
     } else {
         /* Check #2, Highlight annotations are always preformed with transparency */
-        if (pdfi_name_strcmp((const pdf_name *)n, "Highlight") == 0) {
+        if (pdfi_name_is((const pdf_name *)n, "Highlight")) {
             pdfi_countdown(n);
             *transparent = true;
             return 0;
@@ -742,8 +742,8 @@ static int pdfi_check_annot_for_transparency(pdf_context *ctx, pdf_dict *annot, 
         /* Check #3 Blend Mode (BM) not being 'Normal' or 'Compatible' */
         code = pdfi_dict_knownget_type(ctx, annot, "BM", PDF_NAME, (pdf_obj **)&n);
         if (code > 0) {
-            if (pdfi_name_strcmp((const pdf_name *)n, "Normal") != 0) {
-                if (pdfi_name_strcmp((const pdf_name *)n, "Compatible") != 0) {
+            if (!pdfi_name_is((const pdf_name *)n, "Normal")) {
+                if (!pdfi_name_is((const pdf_name *)n, "Compatible")) {
                     pdfi_countdown(n);
                     *transparent = true;
                     return 0;

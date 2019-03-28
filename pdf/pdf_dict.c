@@ -118,7 +118,7 @@ int pdfi_dict_get(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj **o)
         t = (pdf_name *)d->keys[i];
 
         if (t && t->type == PDF_NAME) {
-            if (pdfi_name_strcmp((pdf_name *)t, Key) == 0) {
+            if (pdfi_name_is((pdf_name *)t, Key)) {
                 if (d->values[i]->type == PDF_INDIRECT) {
                     pdf_indirect_ref *r = (pdf_indirect_ref *)d->values[i];
 
@@ -153,7 +153,7 @@ int pdfi_dict_get_no_store_R(pdf_context *ctx, pdf_dict *d, const char *Key, pdf
         t = (pdf_name *)d->keys[i];
 
         if (t && t->type == PDF_NAME) {
-            if (pdfi_name_strcmp((pdf_name *)t, Key) == 0) {
+            if (pdfi_name_is((pdf_name *)t, Key)) {
                 if (d->values[i]->type == PDF_INDIRECT) {
                     pdf_indirect_ref *r = (pdf_indirect_ref *)d->values[i];
 
@@ -628,7 +628,7 @@ int pdfi_dict_known(pdf_dict *d, const char *Key, bool *known)
         t = (pdf_name *)d->keys[i];
 
         if (t && t->type == PDF_NAME) {
-            if (pdfi_name_strcmp(t, Key) == 0) {
+            if (pdfi_name_is(t, Key)) {
                 *known = true;
                 break;
             }

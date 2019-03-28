@@ -442,13 +442,13 @@ static int GS_RI(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict
     if (code < 0)
         return code;
 
-    if (pdfi_name_strcmp(n, "Perceptual") == 0) {
+    if (pdfi_name_is(n, "Perceptual")) {
             code = gs_setrenderingintent(ctx->pgs, 0);
-    } else if (pdfi_name_strcmp(n, "Saturation") == 0) {
+    } else if (pdfi_name_is(n, "Saturation")) {
         code = gs_setrenderingintent(ctx->pgs, 2);
-    } else if (pdfi_name_strcmp(n, "RelativeColorimetric") == 0) {
+    } else if (pdfi_name_is(n, "RelativeColorimetric")) {
         code = gs_setrenderingintent(ctx->pgs, 1);
-    } else if (pdfi_name_strcmp(n, "AbsoluteColoimetric") == 0) {
+    } else if (pdfi_name_is(n, "AbsoluteColoimetric")) {
         code = gs_setrenderingintent(ctx->pgs, 3);
     } else {
         code = gs_error_undefined;
@@ -641,7 +641,7 @@ static int GS_BM(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict
         return code;
 
     for (p = blend_mode_names; *p; ++p) {
-        if (pdfi_name_strcmp(n, *p) == 0) {
+        if (pdfi_name_is(n, *p)) {
             return gs_setblendmode(ctx->pgs, p - blend_mode_names);
         }
     }
@@ -684,7 +684,7 @@ static int GS_SMask(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_d
         double f;
 
         code = pdfi_dict_knownget_type(ctx, (pdf_dict *)o, "Type", PDF_NAME, (pdf_obj **)&n);
-        if (code > 0 && pdfi_name_strcmp(n, "Mask") == 0) {
+        if (code > 0 && pdfi_name_is(n, "Mask")) {
             pdfi_countdown(n);
             n = NULL;
             code = pdfi_dict_knownget_type(ctx, (pdf_dict *)o, "G", PDF_DICT, (pdf_obj **)&G_dict);

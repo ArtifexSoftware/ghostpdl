@@ -337,16 +337,16 @@ pdfi_JPX_filter(pdf_context *ctx, pdf_dict *dict, pdf_dict *decode,
         }
         if (csname != NULL && csname->type == PDF_NAME) {
             /* request raw index values if the colorspace is /Indexed */
-            if (!pdfi_name_strcmp(csname, "Indexed"))
+            if (pdfi_name_is(csname, "Indexed"))
                 state.colorspace = gs_jpx_cs_indexed;
             /* tell the filter what output we want for other spaces */
-            else if (!pdfi_name_strcmp(csname, "DeviceGray"))
+            else if (pdfi_name_is(csname, "DeviceGray"))
                 state.colorspace = gs_jpx_cs_gray;
-            else if (!pdfi_name_strcmp(csname, "DeviceRGB"))
+            else if (pdfi_name_is(csname, "DeviceRGB"))
                 state.colorspace = gs_jpx_cs_rgb;
-            else if (!pdfi_name_strcmp(csname, "DeviceCMYK"))
+            else if (pdfi_name_is(csname, "DeviceCMYK"))
                 state.colorspace = gs_jpx_cs_cmyk;
-            else if (!pdfi_name_strcmp(csname, "ICCBased")) {
+            else if (pdfi_name_is(csname, "ICCBased")) {
                 /* TODO: I don't think this even happens without PS wrapper code? */
 #if 0
                 /* The second array element should be the profile's
@@ -360,11 +360,11 @@ pdfi_JPX_filter(pdf_context *ctx, pdf_dict *dict, pdf_dict *decode,
                     /* try to look up the alternate space */
                     if (dict_find_string(csdict, "Alternate", &nref) > 0) {
                         name_string_ref(imemory, csname, &altname);
-                        if (!pdfi_name_strcmp(&altname, "DeviceGray"))
+                        if (pdfi_name_is(&altname, "DeviceGray"))
                             state.colorspace = gs_jpx_cs_gray;
-                        else if (!pdfi_name_strcmp(&altname, "DeviceRGB"))
+                        else if (pdfi_name_is(&altname, "DeviceRGB"))
                             state.colorspace = gs_jpx_cs_rgb;
-                        else if (!pdfi_name_strcmp(&altname, "DeviceCMYK"))
+                        else if (pdfi_name_is(&altname, "DeviceCMYK"))
                             state.colorspace = gs_jpx_cs_cmyk;
                     }
                     /* else guess based on the number of components */
@@ -590,48 +590,48 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
         dmprintf1(ctx->memory, "FILTER NAME:%s\n", str);
     }
 
-    if (pdfi_name_strcmp(n, "RunLengthDecode") == 0) {
+    if (pdfi_name_is(n, "RunLengthDecode")) {
         code = pdfi_simple_filter(ctx, &s_RLD_template, source, new_stream);
         return code;
     }
-    if (pdfi_name_strcmp(n, "CCITTFaxDecode") == 0) {
+    if (pdfi_name_is(n, "CCITTFaxDecode")) {
         code = pdfi_CCITTFax_filter(ctx, decode, source, new_stream);
         return code;
     }
-    if (pdfi_name_strcmp(n, "ASCIIHexDecode") == 0) {
+    if (pdfi_name_is(n, "ASCIIHexDecode")) {
         code = pdfi_simple_filter(ctx, &s_AXD_template, source, new_stream);
         return code;
     }
-    if (pdfi_name_strcmp(n, "ASCII85Decode") == 0) {
+    if (pdfi_name_is(n, "ASCII85Decode")) {
         code = pdfi_ASCII85_filter(ctx, decode, source, new_stream);
         return code;
     }
-    if (pdfi_name_strcmp(n, "SubFileDecode") == 0) {
+    if (pdfi_name_is(n, "SubFileDecode")) {
         code = pdfi_simple_filter(ctx, &s_SFD_template, source, new_stream);
         return code;
     }
-    if (pdfi_name_strcmp(n, "FlateDecode") == 0) {
+    if (pdfi_name_is(n, "FlateDecode")) {
         code = pdfi_Flate_filter(ctx, decode, source, new_stream);
         return code;
     }
-    if (pdfi_name_strcmp(n, "JBIG2Decode") == 0) {
+    if (pdfi_name_is(n, "JBIG2Decode")) {
         dbgmprintf(ctx->memory, "WARNING: JBIG2Decode filter not implemented\n");
         return -1;
     }
-    if (pdfi_name_strcmp(n, "LZWDecode") == 0) {
+    if (pdfi_name_is(n, "LZWDecode")) {
         code = pdfi_LZW_filter(ctx, decode, source, new_stream);
         return code;
     }
-    if (pdfi_name_strcmp(n, "DCTDecode") == 0) {
+    if (pdfi_name_is(n, "DCTDecode")) {
         code = pdfi_DCT_filter(ctx, decode, source, new_stream);
         return code;
     }
-    if (pdfi_name_strcmp(n, "JPXDecode") == 0) {
+    if (pdfi_name_is(n, "JPXDecode")) {
         code = pdfi_JPX_filter(ctx, dict, decode, source, new_stream);
         return code;
     }
 
-    if (pdfi_name_strcmp(n, "AHx") == 0) {
+    if (pdfi_name_is(n, "AHx")) {
         if (!inline_image) {
             ctx->pdf_errors |= E_PDF_BAD_INLINEFILTER;
             if (ctx->pdfstoponerror)
@@ -640,7 +640,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
         code = pdfi_simple_filter(ctx, &s_AXD_template, source, new_stream);
         return code;
     }
-    if (pdfi_name_strcmp(n, "A85") == 0) {
+    if (pdfi_name_is(n, "A85")) {
         if (!inline_image) {
             ctx->pdf_errors |= E_PDF_BAD_INLINEFILTER;
             if (ctx->pdfstoponerror)
@@ -649,7 +649,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
         code = pdfi_ASCII85_filter(ctx, decode, source, new_stream);
         return code;
     }
-    if (pdfi_name_strcmp(n, "LZW") == 0) {
+    if (pdfi_name_is(n, "LZW")) {
         if (!inline_image) {
             ctx->pdf_errors |= E_PDF_BAD_INLINEFILTER;
             if (ctx->pdfstoponerror)
@@ -658,7 +658,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
         code = pdfi_LZW_filter(ctx, decode, source, new_stream);
         return code;
     }
-    if (pdfi_name_strcmp(n, "CCF") == 0) {
+    if (pdfi_name_is(n, "CCF")) {
         if (!inline_image) {
             ctx->pdf_errors |= E_PDF_BAD_INLINEFILTER;
             if (ctx->pdfstoponerror)
@@ -667,7 +667,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
         code = pdfi_CCITTFax_filter(ctx, decode, source, new_stream);
         return code;
     }
-    if (pdfi_name_strcmp(n, "DCT") == 0) {
+    if (pdfi_name_is(n, "DCT")) {
         if (!inline_image) {
             ctx->pdf_errors |= E_PDF_BAD_INLINEFILTER;
             if (ctx->pdfstoponerror)
@@ -676,7 +676,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
         code = pdfi_DCT_filter(ctx, decode, source, new_stream);
         return code;
     }
-    if (pdfi_name_strcmp(n, "Fl") == 0) {
+    if (pdfi_name_is(n, "Fl")) {
         if (!inline_image) {
             ctx->pdf_errors |= E_PDF_BAD_INLINEFILTER;
             if (ctx->pdfstoponerror)
@@ -685,7 +685,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
         code = pdfi_Flate_filter(ctx, decode, source, new_stream);
         return code;
     }
-    if (pdfi_name_strcmp(n, "RL") == 0) {
+    if (pdfi_name_is(n, "RL")) {
         if (!inline_image) {
             ctx->pdf_errors |= E_PDF_BAD_INLINEFILTER;
             if (ctx->pdfstoponerror)

@@ -60,7 +60,7 @@ pdfi_get_default_OCG_val(pdf_context *ctx, pdf_dict *ocdict)
         goto cleanup;
     }
     if (code > 0) {
-        if (pdfi_name_strcmp((pdf_name *)BaseState, "OFF") == 0) {
+        if (pdfi_name_is((pdf_name *)BaseState, "OFF")) {
             is_visible = false;
         }
     }
@@ -298,7 +298,7 @@ pdfi_page_is_ocg_visible(pdf_context *ctx, pdf_dict *ocdict)
     if (code <= 0)
         goto cleanup;
 
-    if (pdfi_name_strcmp((pdf_name *)type, "OCMD") == 0) {
+    if (pdfi_name_is((pdf_name *)type, "OCMD")) {
         is_visible = pdfi_page_check_OCMD(ctx, ocdict);
     } else {
         is_visible = pdfi_get_default_OCG_val(ctx, ocdict);

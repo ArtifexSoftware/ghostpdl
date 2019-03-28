@@ -553,7 +553,7 @@ pdfi_get_image_info(pdf_context *ctx, pdf_dict *image_dict, pdf_dict *page_dict,
     /* Check and set JPXDecode flag for later */
     info->is_JPXDecode = false;
     if (info->Filter && info->Filter->type == PDF_NAME) {
-        if (pdfi_name_strcmp((pdf_name *)info->Filter, "JPXDecode") == 0)
+        if (pdfi_name_is((pdf_name *)info->Filter, "JPXDecode"))
             info->is_JPXDecode = true;
     }
 
@@ -1145,14 +1145,14 @@ static int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
     if (code == 0) {
         bool group_known = false;
 
-        if (pdfi_name_strcmp(n, "Image") == 0) {
+        if (pdfi_name_is(n, "Image")) {
             gs_offset_t savedoffset;
 
             pdfi_countdown(n);
             savedoffset = pdfi_tell(ctx->main_stream);
             code = pdfi_do_image(ctx, page_dict, stream_dict, xobject_dict, ctx->main_stream, false);
             pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
-        } else if (pdfi_name_strcmp(n, "Form") == 0) {
+        } else if (pdfi_name_is(n, "Form")) {
             gs_offset_t savedoffset;
 
             pdfi_countdown(n);
@@ -1189,7 +1189,7 @@ static int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
                 (void)pdfi_loop_detector_cleartomark(ctx);
                 return code;
             }
-        } else if (pdfi_name_strcmp(n, "PS") == 0) {
+        } else if (pdfi_name_is(n, "PS")) {
             pdfi_countdown(n);
             dmprintf(ctx->memory, "*** WARNING: PostScript XObjects are deprecated (SubType 'PS')\n");
             code = 0; /* Swallow silently */

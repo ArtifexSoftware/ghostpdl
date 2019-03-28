@@ -51,7 +51,8 @@ int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name, pd
 
 /***********************************************************************************/
 /* Utility Functions                                                               */
-int pdfi_name_strcmp(const pdf_name *n, const char *s);
+bool pdfi_name_strcmp(const pdf_name *n, const char *s);
+int pdfi_name_is(const pdf_name *n, const char *s);
 int pdfi_name_cmp(const pdf_name *n1, const pdf_name *n2);
 
 #endif
