@@ -40,7 +40,7 @@
 #endif
 
 GSDLL gsdll;
-void *instance;
+void *instance = NULL;
 #ifndef METRO
 BOOL quitnow = FALSE;
 HANDLE hthread;

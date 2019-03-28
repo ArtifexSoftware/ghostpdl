@@ -49,7 +49,7 @@ Boolean   gDone;
 ControlActionUPP gActionFunctionScrollUPP;
 
 const char start_string[] = "systemdict /start get exec\n";
-void *instance;
+void *instance = NULL;
 
 const unsigned int display_format = DISPLAY_COLORS_RGB | DISPLAY_UNUSED_FIRST |
                                     DISPLAY_DEPTH_8 | DISPLAY_BIGENDIAN |

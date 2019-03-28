@@ -48,7 +48,7 @@ typedef int (* GSPLDLLCALLLINK GS_PL_DLL_CALLBACK) (int, char *, unsigned long);
 GS_PL_DLL_CALLBACK pgsdll_callback = NULL;
 #endif
 
-void *instance;
+void *instance = NULL;
 
 #ifndef METRO
 BOOL quitnow = FALSE;
