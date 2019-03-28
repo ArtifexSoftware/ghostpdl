@@ -122,16 +122,6 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
         if (code != 0)
             goto exit;
 
-        if (space->type == PDF_INDIRECT) {
-            pdf_indirect_ref *r = (pdf_indirect_ref *)space;
-
-            space = NULL;
-            code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, (pdf_obj **)&space);
-            pdfi_countdown(r);
-            if (code < 0)
-                goto exit;
-        }
-
         if (space->type != PDF_ARRAY) {
             code = gs_error_typecheck;
             goto exit;
@@ -183,16 +173,6 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
         code = pdfi_array_get(ctx, color_array, 1, (pdf_obj **)&space);
         if (code != 0)
             goto exit;
-
-        if (space->type == PDF_INDIRECT) {
-            pdf_indirect_ref *r = (pdf_indirect_ref *)space;
-
-            space = NULL;
-            code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, (pdf_obj **)&space);
-            pdfi_countdown(r);
-            if (code < 0)
-                goto exit;
-        }
 
         if (space->type != PDF_NAME) {
             code = gs_error_typecheck;
@@ -928,13 +908,6 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
     if (code < 0)
         return code;
 
-    if (ICC_dict->type == PDF_INDIRECT) {
-        pdf_indirect_ref *r = (pdf_indirect_ref *)ICC_dict;
-        code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, (pdf_obj **)&ICC_dict);
-        pdfi_countdown(r);
-        if (code < 0)
-            return code;
-    }
     code = pdfi_dict_get_int(ctx, ICC_dict, "Length", &Length);
     if (code < 0)
         return code;
@@ -1069,14 +1042,6 @@ static int pdfi_create_Separation(pdf_context *ctx, pdf_array *color_array, int 
     code = pdfi_array_get(ctx, color_array, index + 2, &o);
     if (code < 0)
         goto pdfi_separation_error;
-    if (o->type == PDF_INDIRECT) {
-        pdf_indirect_ref *r = (pdf_indirect_ref *)o;
-
-        code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, &o);
-        if (code < 0)
-            goto pdfi_separation_error;
-        pdfi_countdown(r);
-    }
 
     if (o->type == PDF_NAME) {
         NamedAlternate = (pdf_name *)o;
@@ -1152,14 +1117,6 @@ static int pdfi_create_DeviceN(pdf_context *ctx, pdf_array *color_array, int ind
     code = pdfi_array_get(ctx, color_array, index + 2, &o);
     if (code < 0)
         goto pdfi_devicen_error;
-    if (o->type == PDF_INDIRECT) {
-        pdf_indirect_ref *r = (pdf_indirect_ref *)o;
-
-        code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, &o);
-        if (code < 0)
-            goto pdfi_devicen_error;
-        pdfi_countdown(r);
-    }
 
     if (o->type == PDF_NAME) {
         NamedAlternate = (pdf_name *)o;
@@ -1288,7 +1245,7 @@ static int pdfi_create_indexed(pdf_context *ctx, pdf_array *color_array, int ind
 
     base_type = gs_color_space_get_index(pcs_base);
 
-    code = pdfi_array_get(ctx, color_array, index + 3, &lookup);
+    code = pdfi_array_get_no_indirect(ctx, color_array, index + 3, &lookup);
     if (code < 0)
         return code;
 
