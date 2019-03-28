@@ -243,12 +243,12 @@ static int setdash_impl(pdf_context *ctx, pdf_array *a, double phase_d)
     double temp;
     int i, code;
 
-    dash_array = (float *)gs_alloc_bytes(ctx->memory, pdfi_array_size(a) * sizeof (float),
+    dash_array = (float *)gs_alloc_bytes(ctx->memory, PDFI_ARRAY_SIZE(a) * sizeof (float),
                                          "temporary float array for setdash");
     if (dash_array == NULL)
         return_error(gs_error_VMerror);
 
-    for (i=0;i < pdfi_array_size(a);i++){
+    for (i=0;i < PDFI_ARRAY_SIZE(a);i++){
         code = pdfi_array_get_number(ctx, a, (uint64_t)i, &temp);
         if (code < 0) {
             if (ctx->pdfstoponerror) {
@@ -262,7 +262,7 @@ static int setdash_impl(pdf_context *ctx, pdf_array *a, double phase_d)
         }
         dash_array[i] = (float)temp;
     }
-    code = gs_setdash(ctx->pgs, dash_array, pdfi_array_size(a), phase_d);
+    code = gs_setdash(ctx->pgs, dash_array, PDFI_ARRAY_SIZE(a), phase_d);
     gs_free_object(ctx->memory, dash_array, "error in setdash");
     return code;
 }
@@ -693,14 +693,14 @@ static int GS_SMask(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_d
                 if (code > 0) {
                     int ix;
 
-                    for (ix = 0; ix < pdfi_array_size(a); ix++) {
+                    for (ix = 0; ix < PDFI_ARRAY_SIZE(a); ix++) {
                         code = pdfi_array_get_number(ctx, a, (uint64_t)ix, &f);
                         if (code < 0)
                             break;
                         params.Matte[ix] = f;
                     }
-                    if (ix >= pdfi_array_size(a))
-                        params.Matte_components = pdfi_array_size(a);
+                    if (ix >= PDFI_ARRAY_SIZE(a))
+                        params.Matte_components = PDFI_ARRAY_SIZE(a);
                     else
                         params.Matte_components = 0;
                 }

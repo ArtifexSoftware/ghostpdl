@@ -91,11 +91,6 @@ int pdfi_dict_from_stack(pdf_context *ctx)
     return code;
 }
 
-int pdfi_dict_entries(pdf_dict *d)
-{
-    return d->entries;
-}
-
 /* Convenience routine for common case where there are two possible keys */
 int
 pdfi_dict_get2(pdf_context *ctx, pdf_dict *d, const char *Key1,
@@ -359,7 +354,7 @@ int fill_domain_from_dict(pdf_context *ctx, float *parray, int size, pdf_dict *d
         pdfi_countdown(a);
         return_error(gs_error_typecheck);
     }
-    array_size = pdfi_array_size(a);
+    array_size = PDFI_ARRAY_SIZE(a);
     if (array_size & 1 || array_size > size) {
         pdfi_countdown(a);
         return_error(gs_error_rangecheck);
@@ -391,7 +386,7 @@ int fill_float_array_from_dict(pdf_context *ctx, float *parray, int size, pdf_di
         pdfi_countdown(a);
         return_error(gs_error_typecheck);
     }
-    array_size = pdfi_array_size(a);
+    array_size = PDFI_ARRAY_SIZE(a);
     if (array_size > size)
         return_error(gs_error_rangecheck);
 
@@ -421,7 +416,7 @@ int fill_bool_array_from_dict(pdf_context *ctx, bool *parray, int size, pdf_dict
         pdfi_countdown(a);
         return_error(gs_error_typecheck);
     }
-    array_size = pdfi_array_size(a);
+    array_size = PDFI_ARRAY_SIZE(a);
     if (array_size > size)
         return_error(gs_error_rangecheck);
 
@@ -452,7 +447,7 @@ int fill_matrix_from_dict(pdf_context *ctx, float *parray, pdf_dict *dict)
         pdfi_countdown(a);
         return_error(gs_error_typecheck);
     }
-    array_size = pdfi_array_size(a);
+    array_size = PDFI_ARRAY_SIZE(a);
     if (array_size != 6) {
         pdfi_countdown(a);
         return_error(gs_error_rangecheck);
@@ -488,7 +483,7 @@ int make_float_array_from_dict(pdf_context *ctx, float **parray, pdf_dict *dict,
         pdfi_countdown(a);
         return_error(gs_error_typecheck);
     }
-    array_size = pdfi_array_size(a);
+    array_size = PDFI_ARRAY_SIZE(a);
 
     arr = (float *)gs_alloc_byte_array(ctx->memory, array_size,
                                        sizeof(float), "array_from_dict_key");
@@ -525,7 +520,7 @@ int make_int_array_from_dict(pdf_context *ctx, int **parray, pdf_dict *dict, con
         pdfi_countdown(a);
         return_error(gs_error_typecheck);
     }
-    array_size = pdfi_array_size(a);
+    array_size = PDFI_ARRAY_SIZE(a);
     arr = (int *)gs_alloc_byte_array(ctx->memory, array_size,
                                      sizeof(int), "array_from_dict_key");
     *parray = arr;
@@ -630,7 +625,7 @@ int pdfi_dict_known(pdf_dict *d, const char *Key, bool *known)
 
     *known = false;
     for (i=0;i< d->entries;i++) {
-        t = d->keys[i];
+        t = (pdf_name *)d->keys[i];
 
         if (t && t->type == PDF_NAME) {
             if (pdfi_name_strcmp(t, Key) == 0) {

@@ -166,7 +166,7 @@ pdfi_page_check_OCMD_array(pdf_context *ctx, pdf_array *array, ocmd_p_type type)
         break;
     }
 
-    for (i=0; i<pdfi_array_size(array); i++) {
+    for (i=0; i<PDFI_ARRAY_SIZE(array); i++) {
         bool vis;
         pdf_obj *val = NULL;
 

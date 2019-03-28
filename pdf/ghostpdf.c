@@ -129,12 +129,12 @@ static int pdfi_check_ColorSpace_dict(pdf_context *ctx, pdf_dict *cspace_dict, p
     int code, i, index;
     pdf_obj *Key = NULL, *Value = NULL;
 
-    if (cspace_dict->entries > 0) {
+    if (PDFI_DICT_ENTRIES(cspace_dict) > 0) {
         code = pdfi_loop_detector_mark(ctx); /* Mark the start of the ColorSpace dictionary loop */
         if (code < 0)
             return code;
 
-        code = pdfi_dict_first(ctx, (pdf_dict *)cspace_dict, &Key, &Value, (void *)&index);
+        code = pdfi_dict_first(ctx, cspace_dict, &Key, &Value, (void *)&index);
         if (code < 0)
             goto error1;
 
@@ -156,12 +156,12 @@ static int pdfi_check_ColorSpace_dict(pdf_context *ctx, pdf_dict *cspace_dict, p
                 goto error1;
 
             do {
-                if (i++ >= pdfi_dict_entries((pdf_dict *)cspace_dict)) {
+                if (i++ >= PDFI_DICT_ENTRIES(cspace_dict)) {
                     code = 0;
                     goto transparency_exit;
                 }
 
-                code = pdfi_dict_next(ctx, (pdf_dict *)cspace_dict, &Key, &Value, (void *)&index);
+                code = pdfi_dict_next(ctx, cspace_dict, &Key, &Value, (void *)&index);
                 if (code == 0 && Value->type == PDF_DICT)
                     break;
                 pdfi_countdown(Key);
@@ -188,12 +188,12 @@ static int pdfi_check_Shading_dict(pdf_context *ctx, pdf_dict *shading_dict, pdf
     int code, i, index;
     pdf_obj *Key = NULL, *Value = NULL, *o = NULL;
 
-    if (shading_dict->entries > 0) {
+    if (PDFI_DICT_ENTRIES(shading_dict) > 0) {
         code = pdfi_loop_detector_mark(ctx); /* Mark the start of the Shading dictionary loop */
         if (code < 0)
             return code;
 
-        code = pdfi_dict_first(ctx, (pdf_dict *)shading_dict, &Key, &Value, (void *)&index);
+        code = pdfi_dict_first(ctx, shading_dict, &Key, &Value, (void *)&index);
         if (code < 0 || Value->type != PDF_DICT)
             goto error1;
 
@@ -222,12 +222,12 @@ static int pdfi_check_Shading_dict(pdf_context *ctx, pdf_dict *shading_dict, pdf
                 goto error1;
 
             do {
-                if (i++ >= pdfi_dict_entries((pdf_dict *)shading_dict)) {
+                if (i++ >= PDFI_DICT_ENTRIES(shading_dict)) {
                     code = 0;
                     goto transparency_exit;
                 }
 
-                code = pdfi_dict_next(ctx, (pdf_dict *)shading_dict, &Key, &Value, (void *)&index);
+                code = pdfi_dict_next(ctx, shading_dict, &Key, &Value, (void *)&index);
                 if (code == 0 && Value->type == PDF_DICT)
                     break;
                 pdfi_countdown(Key);
@@ -257,12 +257,12 @@ static int pdfi_check_XObject_dict(pdf_context *ctx, pdf_dict *xobject_dict, pdf
     bool known = false;
     double f;
 
-    if (xobject_dict->entries > 0) {
+    if (PDFI_DICT_ENTRIES(xobject_dict) > 0) {
         code = pdfi_loop_detector_mark(ctx); /* Mark the start of the XObject dictionary loop */
         if (code < 0)
             return code;
 
-        code = pdfi_dict_first(ctx, (pdf_dict *)xobject_dict, &Key, &Value, (void *)&index);
+        code = pdfi_dict_first(ctx, xobject_dict, &Key, &Value, (void *)&index);
         if (code < 0 || Value->type != PDF_DICT)
             goto error1;
 
@@ -346,12 +346,12 @@ static int pdfi_check_XObject_dict(pdf_context *ctx, pdf_dict *xobject_dict, pdf
                     goto error1;
 
                 do {
-                    if (i++ >= pdfi_dict_entries((pdf_dict *)xobject_dict)) {
+                    if (i++ >= PDFI_DICT_ENTRIES(xobject_dict)) {
                         code = 0;
                         goto transparency_exit;
                     }
 
-                    code = pdfi_dict_next(ctx, (pdf_dict *)xobject_dict, &Key, &Value, (void *)&index);
+                    code = pdfi_dict_next(ctx, xobject_dict, &Key, &Value, (void *)&index);
                     if (code == 0 && Value->type == PDF_DICT)
                         break;
                     pdfi_countdown(Key);
@@ -380,7 +380,7 @@ static int pdfi_check_ExtGState(pdf_context *ctx, pdf_dict *extgstate_dict, int 
     pdf_obj *o = NULL;
     double f;
 
-    if (extgstate_dict->entries > 0) {
+    if (PDFI_DICT_ENTRIES(extgstate_dict) > 0) {
         code = pdfi_dict_knownget_type(ctx, extgstate_dict, "BM", PDF_NAME, &o);
         if (code > 0) {
             if (pdfi_name_strcmp((pdf_name *)o, "Normal") != 0) {
@@ -439,12 +439,12 @@ static int pdfi_check_ExtGState_dict(pdf_context *ctx, pdf_dict *extgstate_dict,
     pdf_obj *Key = NULL, *Value = NULL, *o = NULL;
     double f;
 
-    if (extgstate_dict->entries > 0) {
+    if (PDFI_DICT_ENTRIES(extgstate_dict) > 0) {
         code = pdfi_loop_detector_mark(ctx); /* Mark the start of the ColorSpace dictionary loop */
         if (code < 0)
             return code;
 
-        code = pdfi_dict_first(ctx, (pdf_dict *)extgstate_dict, &Key, &Value, (void *)&index);
+        code = pdfi_dict_first(ctx, extgstate_dict, &Key, &Value, (void *)&index);
         if (code < 0)
             goto error1;
 
@@ -467,12 +467,12 @@ static int pdfi_check_ExtGState_dict(pdf_context *ctx, pdf_dict *extgstate_dict,
                 goto error1;
 
             do {
-                if (i++ >= pdfi_dict_entries((pdf_dict *)extgstate_dict)) {
+                if (i++ >= PDFI_DICT_ENTRIES(extgstate_dict)) {
                     code = 0;
                     goto transparency_exit;
                 }
 
-                code = pdfi_dict_next(ctx, (pdf_dict *)extgstate_dict, &Key, &Value, (void *)&index);
+                code = pdfi_dict_next(ctx, extgstate_dict, &Key, &Value, (void *)&index);
                 if (code == 0 && Value->type == PDF_DICT)
                     break;
                 pdfi_countdown(Key);
@@ -500,12 +500,12 @@ static int pdfi_check_Pattern_dict(pdf_context *ctx, pdf_dict *pattern_dict, pdf
     pdf_obj *Key = NULL, *Value = NULL, *o = NULL;
     double f;
 
-    if (pattern_dict->entries > 0) {
+    if (PDFI_DICT_ENTRIES(pattern_dict) > 0) {
         code = pdfi_loop_detector_mark(ctx); /* Mark the start of the ColorSpace dictionary loop */
         if (code < 0)
             return code;
 
-        code = pdfi_dict_first(ctx, (pdf_dict *)pattern_dict, &Key, &Value, (void *)&index);
+        code = pdfi_dict_first(ctx, pattern_dict, &Key, &Value, (void *)&index);
         if (code < 0)
             goto error1;
 
@@ -539,12 +539,12 @@ static int pdfi_check_Pattern_dict(pdf_context *ctx, pdf_dict *pattern_dict, pdf
                 goto error1;
 
             do {
-                if (i++ >= pdfi_dict_entries((pdf_dict *)pattern_dict)) {
+                if (i++ >= PDFI_DICT_ENTRIES(pattern_dict)) {
                     code = 0;
                     goto transparency_exit;
                 }
 
-                code = pdfi_dict_next(ctx, (pdf_dict *)pattern_dict, &Key, &Value, (void *)&index);
+                code = pdfi_dict_next(ctx, pattern_dict, &Key, &Value, (void *)&index);
                 if (code == 0 && Value->type == PDF_DICT)
                     break;
                 pdfi_countdown(Key);
@@ -572,12 +572,12 @@ static int pdfi_check_Font_dict(pdf_context *ctx, pdf_dict *font_dict, pdf_dict 
     pdf_obj *Key = NULL, *Value = NULL, *o = NULL;
     double f;
 
-    if (font_dict->entries > 0) {
+    if (PDFI_DICT_ENTRIES(font_dict) > 0) {
         code = pdfi_loop_detector_mark(ctx); /* Mark the start of the ColorSpace dictionary loop */
         if (code < 0)
             return code;
 
-        code = pdfi_dict_first(ctx, (pdf_dict *)font_dict, &Key, &Value, (void *)&index);
+        code = pdfi_dict_first(ctx, font_dict, &Key, &Value, (void *)&index);
         if (code < 0)
             goto error1;
 
@@ -609,12 +609,12 @@ static int pdfi_check_Font_dict(pdf_context *ctx, pdf_dict *font_dict, pdf_dict 
                 goto error1;
 
             do {
-                if (i++ >= pdfi_dict_entries((pdf_dict *)font_dict)) {
+                if (i++ >= PDFI_DICT_ENTRIES(font_dict)) {
                     code = 0;
                     goto transparency_exit;
                 }
 
-                code = pdfi_dict_next(ctx, (pdf_dict *)font_dict, &Key, &Value, (void *)&index);
+                code = pdfi_dict_next(ctx, font_dict, &Key, &Value, (void *)&index);
                 if (code == 0 && Value->type == PDF_DICT)
                     break;
                 pdfi_countdown(Key);
@@ -786,7 +786,7 @@ static int pdfi_check_Annots_for_transparency(pdf_context *ctx, pdf_array *annot
     int i, code = 0;
     pdf_dict *annot = NULL;
 
-    for (i=0; i < pdfi_array_size(annots_array); i++) {
+    for (i=0; i < PDFI_ARRAY_SIZE(annots_array); i++) {
         code = pdfi_array_get_type(ctx, annots_array, (uint64_t)i, PDF_DICT, (pdf_obj **)&annot);
         if (code > 0) {
             code = pdfi_check_annot_for_transparency(ctx, annot, page_dict, transparent, num_spots);
@@ -1107,12 +1107,12 @@ static int pdfi_dump_box(pdf_context *ctx, pdf_dict *page_dict, const char *Key)
 
     code = pdfi_dict_knownget_type(ctx, page_dict, Key, PDF_ARRAY, (pdf_obj **)&a);
     if (code > 0) {
-        if (pdfi_array_size(a) != 4) {
+        if (PDFI_ARRAY_SIZE(a) != 4) {
             dmprintf1(ctx->memory, "Error - %s does not contain 4 values.\n", Key);
             code = gs_note_error(gs_error_rangecheck);
         } else {
             dmprintf1(ctx->memory, " %s: [", Key);
-            for (i = 0; i < pdfi_array_size(a); i++) {
+            for (i = 0; i < PDFI_ARRAY_SIZE(a); i++) {
                 code = pdfi_array_get_number(ctx, a, (uint64_t)i, &f);
                 if (code > 0) {
                     if (i != 0)
@@ -1435,6 +1435,70 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
                           ctx->pgs, 1, true);
 }
 
+void pdfi_report_errors(pdf_context *ctx)
+{
+    int code;
+
+    if (ctx->pdf_errors == E_PDF_NOERROR)
+        return;
+
+    emprintf(ctx->memory, "The following errors were encountered at least once while processing this file:\n");
+    if (ctx->pdf_errors & E_PDF_NOHEADER)
+        emprintf(ctx->memory, "\tThe file does not have a valid PDF header.\n");
+    if (ctx->pdf_errors & E_PDF_NOHEADERVERSION)
+        emprintf(ctx->memory, "\tThe file header does not contain a version number.\n");
+    if (ctx->pdf_errors & E_PDF_NOSTARTXREF)
+        emprintf(ctx->memory, "\tThe file does contain a 'startxref' token.\n");
+    if (ctx->pdf_errors & E_PDF_BADSTARTXREF)
+        emprintf(ctx->memory, "\tThe file contain a 'startxref' token, but it does not point to an xref table.\n");
+    if (ctx->pdf_errors & E_PDF_BADXREFSTREAM)
+        emprintf(ctx->memory, "\tThe file uses an XRefStm, but the stream is invalid.\n");
+    if (ctx->pdf_errors & E_PDF_BADXREF)
+        emprintf(ctx->memory, "\tThe file uses an xref table, but the table is invalid.\n");
+    if (ctx->pdf_errors & E_PDF_SHORTXREF)
+        emprintf(ctx->memory, "\tThe file uses an xref table, but the table has ferwer entires than expected.\n");
+    if (ctx->pdf_errors & E_PDF_MISSINGENDSTREAM)
+        emprintf(ctx->memory, "\tA content stream is missing an 'endstream' token.\n");
+    if (ctx->pdf_errors & E_PDF_MISSINGENDOBJ)
+        emprintf(ctx->memory, "\tAn object is missing an 'endobj' token.\n");
+    if (ctx->pdf_errors & E_PDF_BAD_INLINEFILTER)
+        emprintf(ctx->memory, "\tThe file attempted to use an inline decompression filter on an XObject.\n");
+    if (ctx->pdf_errors & E_PDF_UNKNOWNFILTER)
+        emprintf(ctx->memory, "\tThe file attempted to use an unrecognised decompression filter.\n");
+    if (ctx->pdf_errors & E_PDF_MISSINGWHITESPACE)
+        emprintf(ctx->memory, "\tA missing white space was detected while trying to read a number.\n");
+    if (ctx->pdf_errors & E_PDF_MALFORMEDNUMBER)
+        emprintf(ctx->memory, "\tA malformed number was detected.\n");
+    if (ctx->pdf_errors & E_PDF_UNESCAPEDSTRING)
+        emprintf(ctx->memory, "\tA string used a '(' character without an escape.\n");
+    if (ctx->pdf_errors & E_PDF_BADOBJNUMBER)
+        emprintf(ctx->memory, "\tThe file contained a reference to an object number larger than the number of xref entries.\n");
+    if (ctx->pdf_errors & E_PDF_TOKENERROR)
+        emprintf(ctx->memory, "\tAn operator in a content stream returned an error.\n");
+    if (ctx->pdf_errors & E_PDF_KEYWORDTOOLONG)
+        emprintf(ctx->memory, "\tA keyword (outside a content stream) was too long (> 255).\n");
+
+    emprintf(ctx->memory, "\n   **** This file had errors that were repaired or ignored.\n");
+    if (ctx->Info) {
+        pdf_string *s = NULL;
+
+        code = pdfi_dict_knownget_type(ctx, ctx->Info, "Producer", PDF_STRING, (pdf_obj **)&s);
+        if (code > 0) {
+            char *cs;
+
+            cs = (char *)gs_alloc_bytes(ctx->memory, s->length + 1, "temporary string for error report");
+            memcpy(cs, s->data, s->length);
+            cs[s->length] = 0x00;
+            emprintf1(ctx->memory, "   **** The file was produced by: \n   **** >>>> %s <<<<", cs);
+            gs_free_object(ctx->memory, cs, "temporary string for error report");
+        }
+        pdfi_countdown(s);
+    }
+    emprintf(ctx->memory, "   **** Please notify the author of the software that produced this\n");
+    emprintf(ctx->memory, "   **** file that it does not conform to Adobe's published PDF\n");
+    emprintf(ctx->memory, "   **** specification.\n\n");
+}
+
 /* These functions are used by the 'PL' implementation, eventually we will */
 /* need to have custom PostScript operators to process the file or at      */
 /* (least pages from it).                                                  */
@@ -1570,6 +1634,8 @@ read_root:
         if (code < 0 && ctx->pdfstoponerror)
             return code;
     }
+
+    pdfi_report_errors(ctx);
 
     code = sfclose(ctx->main_stream->s);
     ctx->main_stream = NULL;

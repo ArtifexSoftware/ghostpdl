@@ -323,7 +323,7 @@ pdfi_JPX_filter(pdf_context *ctx, pdf_dict *dict, pdf_dict *decode,
         /* parse the value */
         if (csobj->type == PDF_ARRAY) {
             /* assume it's the first array element */
-            code = pdfi_array_get(ctx, (pdf_array *)csobj, (uint64_t)0, &csname);
+            code = pdfi_array_get(ctx, (pdf_array *)csobj, (uint64_t)0, (pdf_obj **)&csname);
             if (code < 0) {
                 pdfi_countdown(csobj);
                 return code;
@@ -757,7 +757,7 @@ int pdfi_filter(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream
                     pdfi_countdown(filter_array);
                     return_error(gs_error_typecheck);
                 }
-                if (pdfi_array_size(decodeparams_array) != pdfi_array_size(filter_array)) {
+                if (PDFI_ARRAY_SIZE(decodeparams_array) != PDFI_ARRAY_SIZE(filter_array)) {
                     pdfi_countdown(decodeparams_array);
                     pdfi_countdown(filter_array);
                     return_error(gs_error_rangecheck);
@@ -768,7 +768,7 @@ int pdfi_filter(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream
              * For now we will allow one duplicate (in case people do stupid things like ASCIIEncode
              * and Flate and ASCIIEncode again or something).
              */
-            for (i = 0; i < pdfi_array_size(filter_array) - 1;i++) {
+            for (i = 0; i < PDFI_ARRAY_SIZE(filter_array) - 1;i++) {
                 code = pdfi_array_get(ctx, filter_array, i, &o);
                 if (code < 0) {
                     pdfi_countdown(decodeparams_array);
@@ -783,7 +783,7 @@ int pdfi_filter(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream
                 }
                 duplicates = 0;
 
-                for (j = i + 1; j < pdfi_array_size(filter_array);j++) {
+                for (j = i + 1; j < PDFI_ARRAY_SIZE(filter_array);j++) {
                     code = pdfi_array_get(ctx, filter_array, j, &o1);
                     if (code < 0) {
                         pdfi_countdown(o);
@@ -812,7 +812,7 @@ int pdfi_filter(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream
                 }
             }
 
-            for (i = 0; i < pdfi_array_size(filter_array);i++) {
+            for (i = 0; i < PDFI_ARRAY_SIZE(filter_array);i++) {
                 code = pdfi_array_get(ctx, filter_array, i, &o);
                 if (code < 0) {
                     pdfi_countdown(decodeparams_array);

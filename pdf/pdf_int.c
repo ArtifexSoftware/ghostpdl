@@ -2547,7 +2547,7 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
     }
 
     /* Check each entry in the Kids array */
-    for (i = 0;i < pdfi_array_size(Kids);i++) {
+    for (i = 0;i < PDFI_ARRAY_SIZE(Kids);i++) {
         code = pdfi_array_get(ctx, Kids, i, (pdf_obj **)&node);
         if (code < 0) {
             pdfi_countdown(inheritable);
@@ -3123,6 +3123,7 @@ int pdfi_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict, pdf_d
                     break;
                 case PDF_NOT_A_KEYWORD:
                     code = pdfi_interpret_stream_operator(ctx, compressed_stream, stream_dict, page_dict);
+                    ctx->pdf_errors |= E_PDF_TOKENERROR;
                     if (code < 0 && ctx->pdfstoponerror) {
                         pdfi_close_file(ctx, compressed_stream);
                         pdfi_clearstack(ctx);
@@ -3130,10 +3131,11 @@ int pdfi_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict, pdf_d
                     }
                     break;
                 case PDF_INVALID_KEY:
+                    ctx->pdf_errors |= E_PDF_KEYWORDTOOLONG;
                     pdfi_clearstack(ctx);
                     break;
                 default:
-                    ctx->pdf_errors |= E_PDF_NOENDSTREAM;
+                    ctx->pdf_errors |= E_PDF_MISSINGENDSTREAM;
                     pdfi_close_file(ctx, compressed_stream);
                     pdfi_clearstack(ctx);
                     return_error(gs_error_typecheck);

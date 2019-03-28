@@ -75,6 +75,14 @@ static inline void pdfi_countdown_impl(pdf_obj *o)
     }
 }
 
+/* These two macros are present simply to add a cast to the generic object type, so that
+ * we don't get warnings in the implementation routines, the alternative would be to use
+ * a cast everywhere we use the inline functions above, or to have them take a void *
+ *
+ * Ordinarily we would capitalise the name of a macro to differentiate it from a function
+ * we make an exception in this case because hte macro descends to an inline function which
+ * can be debugged without expanding macros.
+ */
 #define pdfi_countup(x) pdfi_countup_impl((pdf_obj *)x)
 
 #define pdfi_countdown(x) pdfi_countdown_impl((pdf_obj *)x)
