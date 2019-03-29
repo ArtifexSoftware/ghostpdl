@@ -1271,13 +1271,14 @@ pdfi_create_indexed(pdf_context *ctx, pdf_array *color_array, int index,
          */
         if(known) {
             int decompressed_length = 0, bytes;
+            char c;
 
             code = pdfi_filter(ctx, lookup_dict, ctx->main_stream, &filtered_lookup_stream, false);
             if (code < 0) {
                 goto exit;
             }
             do {
-                bytes = sfgetc(filtered_lookup_stream->s);
+                bytes = sfread(&c, 1, 1, filtered_lookup_stream->s);
                 if (bytes > 0)
                     decompressed_length++;
             } while (bytes >= 0);
