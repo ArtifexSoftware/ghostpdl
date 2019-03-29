@@ -2246,7 +2246,7 @@ int gx_downscaler_init_trapped_cm_ets(gx_downscaler_t    *ds,
                                                   apply_cm,
                                                   apply_cm_arg,
                                                   post_cm_num_comps,
-                                                  &bogus_ets_halftone);
+                                                  ets ? &bogus_ets_halftone : NULL);
 }
 
 
