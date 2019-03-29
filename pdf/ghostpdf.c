@@ -1442,43 +1442,43 @@ void pdfi_report_errors(pdf_context *ctx)
     if (ctx->pdf_errors == E_PDF_NOERROR)
         return;
 
-    emprintf(ctx->memory, "The following errors were encountered at least once while processing this file:\n");
+    dmprintf(ctx->memory, "The following errors were encountered at least once while processing this file:\n");
     if (ctx->pdf_errors & E_PDF_NOHEADER)
-        emprintf(ctx->memory, "\tThe file does not have a valid PDF header.\n");
+        dmprintf(ctx->memory, "\tThe file does not have a valid PDF header.\n");
     if (ctx->pdf_errors & E_PDF_NOHEADERVERSION)
-        emprintf(ctx->memory, "\tThe file header does not contain a version number.\n");
+        dmprintf(ctx->memory, "\tThe file header does not contain a version number.\n");
     if (ctx->pdf_errors & E_PDF_NOSTARTXREF)
-        emprintf(ctx->memory, "\tThe file does contain a 'startxref' token.\n");
+        dmprintf(ctx->memory, "\tThe file does contain a 'startxref' token.\n");
     if (ctx->pdf_errors & E_PDF_BADSTARTXREF)
-        emprintf(ctx->memory, "\tThe file contain a 'startxref' token, but it does not point to an xref table.\n");
+        dmprintf(ctx->memory, "\tThe file contain a 'startxref' token, but it does not point to an xref table.\n");
     if (ctx->pdf_errors & E_PDF_BADXREFSTREAM)
-        emprintf(ctx->memory, "\tThe file uses an XRefStm, but the stream is invalid.\n");
+        dmprintf(ctx->memory, "\tThe file uses an XRefStm, but the stream is invalid.\n");
     if (ctx->pdf_errors & E_PDF_BADXREF)
-        emprintf(ctx->memory, "\tThe file uses an xref table, but the table is invalid.\n");
+        dmprintf(ctx->memory, "\tThe file uses an xref table, but the table is invalid.\n");
     if (ctx->pdf_errors & E_PDF_SHORTXREF)
-        emprintf(ctx->memory, "\tThe file uses an xref table, but the table has ferwer entires than expected.\n");
+        dmprintf(ctx->memory, "\tThe file uses an xref table, but the table has ferwer entires than expected.\n");
     if (ctx->pdf_errors & E_PDF_MISSINGENDSTREAM)
-        emprintf(ctx->memory, "\tA content stream is missing an 'endstream' token.\n");
+        dmprintf(ctx->memory, "\tA content stream is missing an 'endstream' token.\n");
     if (ctx->pdf_errors & E_PDF_MISSINGENDOBJ)
-        emprintf(ctx->memory, "\tAn object is missing an 'endobj' token.\n");
+        dmprintf(ctx->memory, "\tAn object is missing an 'endobj' token.\n");
     if (ctx->pdf_errors & E_PDF_BAD_INLINEFILTER)
-        emprintf(ctx->memory, "\tThe file attempted to use an inline decompression filter on an XObject.\n");
+        dmprintf(ctx->memory, "\tThe file attempted to use an inline decompression filter on an XObject.\n");
     if (ctx->pdf_errors & E_PDF_UNKNOWNFILTER)
-        emprintf(ctx->memory, "\tThe file attempted to use an unrecognised decompression filter.\n");
+        dmprintf(ctx->memory, "\tThe file attempted to use an unrecognised decompression filter.\n");
     if (ctx->pdf_errors & E_PDF_MISSINGWHITESPACE)
-        emprintf(ctx->memory, "\tA missing white space was detected while trying to read a number.\n");
+        dmprintf(ctx->memory, "\tA missing white space was detected while trying to read a number.\n");
     if (ctx->pdf_errors & E_PDF_MALFORMEDNUMBER)
-        emprintf(ctx->memory, "\tA malformed number was detected.\n");
+        dmprintf(ctx->memory, "\tA malformed number was detected.\n");
     if (ctx->pdf_errors & E_PDF_UNESCAPEDSTRING)
-        emprintf(ctx->memory, "\tA string used a '(' character without an escape.\n");
+        dmprintf(ctx->memory, "\tA string used a '(' character without an escape.\n");
     if (ctx->pdf_errors & E_PDF_BADOBJNUMBER)
-        emprintf(ctx->memory, "\tThe file contained a reference to an object number larger than the number of xref entries.\n");
+        dmprintf(ctx->memory, "\tThe file contained a reference to an object number larger than the number of xref entries.\n");
     if (ctx->pdf_errors & E_PDF_TOKENERROR)
-        emprintf(ctx->memory, "\tAn operator in a content stream returned an error.\n");
+        dmprintf(ctx->memory, "\tAn operator in a content stream returned an error.\n");
     if (ctx->pdf_errors & E_PDF_KEYWORDTOOLONG)
-        emprintf(ctx->memory, "\tA keyword (outside a content stream) was too long (> 255).\n");
+        dmprintf(ctx->memory, "\tA keyword (outside a content stream) was too long (> 255).\n");
 
-    emprintf(ctx->memory, "\n   **** This file had errors that were repaired or ignored.\n");
+    dmprintf(ctx->memory, "\n   **** This file had errors that were repaired or ignored.\n");
     if (ctx->Info) {
         pdf_string *s = NULL;
 
@@ -1489,14 +1489,14 @@ void pdfi_report_errors(pdf_context *ctx)
             cs = (char *)gs_alloc_bytes(ctx->memory, s->length + 1, "temporary string for error report");
             memcpy(cs, s->data, s->length);
             cs[s->length] = 0x00;
-            emprintf1(ctx->memory, "   **** The file was produced by: \n   **** >>>> %s <<<<", cs);
+            dmprintf1(ctx->memory, "   **** The file was produced by: \n   **** >>>> %s <<<<\n", cs);
             gs_free_object(ctx->memory, cs, "temporary string for error report");
         }
         pdfi_countdown(s);
     }
-    emprintf(ctx->memory, "   **** Please notify the author of the software that produced this\n");
-    emprintf(ctx->memory, "   **** file that it does not conform to Adobe's published PDF\n");
-    emprintf(ctx->memory, "   **** specification.\n\n");
+    dmprintf(ctx->memory, "   **** Please notify the author of the software that produced this\n");
+    dmprintf(ctx->memory, "   **** file that it does not conform to Adobe's published PDF\n");
+    dmprintf(ctx->memory, "   **** specification.\n\n");
 }
 
 /* These functions are used by the 'PL' implementation, eventually we will */
