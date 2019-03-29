@@ -1319,15 +1319,11 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_stream *s)
 
                 pdfi_countdown(keyword);
 
-                if(ctx->stack_top - ctx->stack_bot < 2) {
-                    pdfi_countdown(keyword);
+                if(ctx->stack_top - ctx->stack_bot < 2)
                     return_error(gs_error_stackunderflow);
-                }
 
-                if(((pdf_obj *)ctx->stack_top[-1])->type != PDF_INT || ((pdf_obj *)ctx->stack_top[-2])->type != PDF_INT) {
-                    pdfi_countdown(keyword);
+                if(((pdf_obj *)ctx->stack_top[-1])->type != PDF_INT || ((pdf_obj *)ctx->stack_top[-2])->type != PDF_INT)
                     return_error(gs_error_typecheck);
-                }
 
                 gen_num = ((pdf_num *)ctx->stack_top[-1])->value.i;
                 pdfi_pop(ctx, 1);
@@ -1335,19 +1331,16 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_stream *s)
                 pdfi_pop(ctx, 1);
 
                 code = pdfi_alloc_object(ctx, PDF_INDIRECT, 0, (pdf_obj **)&o);
-                if (code < 0) {
-                    pdfi_countdown(keyword);
+                if (code < 0)
                     return code;
-                }
 
                 o->ref_generation_num = gen_num;
                 o->ref_object_num = obj_num;
 
                 code = pdfi_push(ctx, (pdf_obj *)o);
-                if (code < 0) {
-                    pdfi_countdown(keyword);
+                if (code < 0)
                     pdfi_free_object((pdf_obj *)o);
-                }
+
                 return code;
             }
             break;
@@ -2470,6 +2463,7 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
             if (code < 0)
                 return code;
         }
+        pdfi_countup(inheritable);
 
         code = pdfi_make_name(ctx, (byte *)"MediaBox", 8, (pdf_obj **)&Key);
         if (code < 0) {
@@ -2500,6 +2494,7 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
             if (code < 0)
                 return code;
         }
+        pdfi_countup(inheritable);
 
         code = pdfi_make_name(ctx, (byte *)"CropBox", 7, (pdf_obj **)&Key);
         if (code < 0) {
@@ -2530,6 +2525,7 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
             if (code < 0)
                 return code;
         }
+        pdfi_countup(inheritable);
 
         code = pdfi_make_name(ctx, (byte *)"Rotate", 6, (pdf_obj **)&Key);
         if (code < 0) {
