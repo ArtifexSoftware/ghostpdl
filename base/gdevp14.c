@@ -675,6 +675,84 @@ RELOC_PTRS_END
 
 /* ------ Private definitions ------ */
 
+static void
+resolve_matte(pdf14_buf *maskbuf, byte *src_data, int src_planestride, int src_rowstride,
+              int width, int height, cmm_profile_t *src_profile, int deep)
+{
+    if (deep) {
+        int x, y, i;
+        uint16_t *mask_row_ptr  = (uint16_t *)maskbuf->data;
+        uint16_t *src_row_ptr   = (uint16_t *)src_data;
+        uint16_t *mask_tr_fn    = (uint16_t *)maskbuf->transfer_fn;
+
+        src_planestride >>= 1;
+        src_rowstride >>= 1;
+
+        for (y = 0; y < height; y++) {
+            uint16_t *mask_curr_ptr = mask_row_ptr;
+            uint16_t *src_curr_ptr = src_row_ptr;
+            for (x = 0; x < width; x++) {
+                uint16_t idx = *mask_curr_ptr;
+                byte     top = idx>>8;
+                uint16_t a   = mask_tr_fn[top];
+                int      b   = mask_tr_fn[top+1]-a;
+                uint16_t matte_alpha = a + ((0x80 + b*(idx & 0xff))>>8);
+
+                if (matte_alpha != 0 && matte_alpha != 0xffff) {
+                    for (i = 0; i < src_profile->num_comps; i++) {
+                        int val = src_curr_ptr[i * src_planestride] - maskbuf->matte[i];
+                        int temp = ((unsigned int)(val * 0xffff) / matte_alpha) + maskbuf->matte[i];
+
+                        /* clip */
+                        if (temp > 0xffff)
+                            src_curr_ptr[i * src_planestride] = 0xffff;
+                        else if (temp < 0)
+                            src_curr_ptr[i * src_planestride] = 0;
+                        else
+                            src_curr_ptr[i * src_planestride] = temp;
+                    }
+                }
+                mask_curr_ptr++;
+                src_curr_ptr++;
+            }
+            src_row_ptr += src_rowstride;
+            mask_row_ptr += (maskbuf->rowstride>>1);
+        }
+    } else {
+        int x, y, i;
+        byte *mask_row_ptr  = maskbuf->data;
+        byte *src_row_ptr   = src_data;
+        byte *mask_tr_fn    = maskbuf->transfer_fn;
+
+        for (y = 0; y < height; y++) {
+            byte *mask_curr_ptr = mask_row_ptr;
+            byte *src_curr_ptr = src_row_ptr;
+            for (x = 0; x < width; x++) {
+                byte matte_alpha = mask_tr_fn[*mask_curr_ptr];
+                if (matte_alpha != 0 && matte_alpha != 0xff) {
+                    for (i = 0; i < src_profile->num_comps; i++) {
+                        byte matte = maskbuf->matte[i]>>8;
+                        int val = src_curr_ptr[i * src_planestride] - matte;
+                        int temp = ((((val * 0xff) << 8) / matte_alpha) >> 8) + matte;
+
+                        /* clip */
+                        if (temp > 0xff)
+                            src_curr_ptr[i * src_planestride] = 0xff;
+                        else if (temp < 0)
+                            src_curr_ptr[i * src_planestride] = 0;
+                        else
+                            src_curr_ptr[i * src_planestride] = temp;
+                    }
+                }
+                mask_curr_ptr++;
+                src_curr_ptr++;
+            }
+            src_row_ptr += src_rowstride;
+            mask_row_ptr += maskbuf->rowstride;
+        }
+    }
+}
+
 /* Transform of color data and copy noncolor data.  Used in
    group pop and during the pdf14 put image calls when the blend color space
    is different than the target device color space.  The function will try do
@@ -773,72 +851,7 @@ template_transform_color_buffer(gs_gstate *pgs, pdf14_ctx *ctx, gx_device *dev,
         ((mask_stack = ctx->mask_stack) != NULL) &&
         ((maskbuf = mask_stack->rc_mask->mask_buf) != NULL))
     {
-        byte *mask_tr_fn    = maskbuf->transfer_fn;
-        if (deep) {
-            int x, y, i;
-            uint16_t *mask_row_ptr  = (uint16_t *)maskbuf->data;
-            uint16_t *src_row_ptr   = (uint16_t *)src_data;
-
-            src_planestride >>= 1;
-            src_rowstride >>= 1;
-
-            for (y = 0; y < height; y++) {
-                uint16_t *mask_curr_ptr = mask_row_ptr;
-                uint16_t *src_curr_ptr = src_row_ptr;
-                for (x = 0; x < width; x++) {
-                    uint16_t matte_alpha = 0x101*mask_tr_fn[(*mask_curr_ptr)>>8]; /* FIXME: Still using 8 bits for transfer functions */
-                    if (matte_alpha != 0 && matte_alpha != 0xffff) {
-                        for (i = 0; i < src_profile->num_comps; i++) {
-                            int val = src_curr_ptr[i * src_planestride] - maskbuf->matte[i];
-                            int temp = ((unsigned int)(val * 0xffff) / matte_alpha) + maskbuf->matte[i];
-
-                            /* clip */
-                            if (temp > 0xffff)
-                                src_curr_ptr[i * src_planestride] = 0xffff;
-                            else if (temp < 0)
-                                src_curr_ptr[i * src_planestride] = 0;
-                            else
-                                src_curr_ptr[i * src_planestride] = temp;
-                        }
-                    }
-                    mask_curr_ptr++;
-                    src_curr_ptr++;
-                }
-                src_row_ptr += src_rowstride;
-                mask_row_ptr += (maskbuf->rowstride>>1);
-            }
-        } else {
-            int x, y, i;
-            byte *mask_row_ptr  = maskbuf->data;
-            byte *src_row_ptr   = src_data;
-
-            for (y = 0; y < height; y++) {
-                byte *mask_curr_ptr = mask_row_ptr;
-                byte *src_curr_ptr = src_row_ptr;
-                for (x = 0; x < width; x++) {
-                    byte matte_alpha = mask_tr_fn[*mask_curr_ptr];
-                    if (matte_alpha != 0 && matte_alpha != 0xff) {
-                        for (i = 0; i < src_profile->num_comps; i++) {
-                            byte matte = maskbuf->matte[i]>>8;
-                            int val = src_curr_ptr[i * src_planestride] - matte;
-                            int temp = ((((val * 0xff) << 8) / matte_alpha) >> 8) + matte;
-
-                            /* clip */
-                            if (temp > 0xff)
-                                src_curr_ptr[i * src_planestride] = 0xff;
-                            else if (temp < 0)
-                                src_curr_ptr[i * src_planestride] = 0;
-                            else
-                                src_curr_ptr[i * src_planestride] = temp;
-                        }
-                    }
-                    mask_curr_ptr++;
-                    src_curr_ptr++;
-                }
-                src_row_ptr += src_rowstride;
-                mask_row_ptr += maskbuf->rowstride;
-            }
-        }
+        resolve_matte(maskbuf, src_data, src_planestride, src_rowstride, width, height, src_profile, deep);
     }
 
     /* Transform the data. Since the pdf14 device should be using RGB, CMYK or
@@ -5435,6 +5448,10 @@ pdf14_begin_transparency_mask(gx_device	*dev,
     int code;
     int group_color_numcomps;
     gs_transparency_color_t group_color;
+    bool has_tags = device_encodes_tags(dev);
+    int bits_per_comp = ((dev->color_info.depth - has_tags*8) /
+                         dev->color_info.num_components);
+    int deep = bits_per_comp > 8;
 
     if (ptmp->subtype == TRANSPARENCY_MASK_None) {
         pdf14_ctx *ctx = pdev->ctx;
@@ -5448,7 +5465,7 @@ pdf14_begin_transparency_mask(gx_device	*dev,
         }
         return 0;
     }
-    transfer_fn = (byte *)gs_alloc_bytes(pdev->ctx->memory, 256,
+    transfer_fn = (byte *)gs_alloc_bytes(pdev->ctx->memory, (256+deep)<<deep,
                                          "pdf14_begin_transparency_mask");
     if (transfer_fn == NULL)
         return_error(gs_error_VMerror);
@@ -5460,7 +5477,7 @@ pdf14_begin_transparency_mask(gx_device	*dev,
         bg_alpha = (int)(65535 * ptmp->GrayBackground + 0.5);
     if_debug1m('v', dev->memory,
                "pdf14_begin_transparency_mask, bg_alpha = %d\n", bg_alpha);
-    memcpy(transfer_fn, ptmp->transfer_fn, size_of(ptmp->transfer_fn));
+    memcpy(transfer_fn, ptmp->transfer_fn, (256+deep)<<deep);
    /* If the group color is unknown, then we must use the previous group color
        space or the device process color space */
     if (ptmp->group_color == UNKNOWN){
@@ -6653,6 +6670,10 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
     int pdf14_needed = cdev->pdf14_needed;
     int trans_group_level = cdev->pdf14_trans_group_level;
     int smask_level = cdev->pdf14_smask_level;
+    bool has_tags = device_encodes_tags((gx_device *)cdev);
+    int bits_per_comp = ((cdev->color_info.depth - has_tags*8) /
+                         cdev->color_info.num_components);
+    bool deep = bits_per_comp > 8;
 
     code = dev_proc((gx_device *) cdev, get_profile)((gx_device *) cdev,
                                                      &dev_profile);
@@ -6748,7 +6769,7 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
             *pbuf++ = pparams->group_color;
             put_value(pbuf, pparams->group_color_numcomps);
             *pbuf++ = pparams->replacing;
-            *pbuf++ = pparams->function_is_identity;
+            *pbuf++ = (pparams->function_is_identity) | (deep<<1);
             *pbuf++ = pparams->Background_components;
             *pbuf++ = pparams->Matte_components;
             put_value(pbuf, pparams->bbox);
@@ -6769,7 +6790,7 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
                 pbuf += m;
             }
             if (!pparams->function_is_identity)
-                mask_size = sizeof(pparams->transfer_fn);
+                mask_size = (256+deep)<<deep;
             /* Color space information may be ICC based
                in this case we need to store the ICC
                profile or the ID if it is cached already */
@@ -6882,6 +6903,7 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
     gs_pdf14trans_params_t params = {0};
     const byte * start = data;
     int used, code = 0;
+    bool deep;
 
     if (size < 1)
         return_error(gs_error_rangecheck);
@@ -6950,7 +6972,8 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
             params.group_color = *data++;
             read_value(data, params.group_color_numcomps);
             params.replacing = *data++;
-            params.function_is_identity = *data++;
+            params.function_is_identity = *data & 1;
+            deep = (*data++)>>1;
             params.Background_components = *data++;
             params.Matte_components = *data++;
             read_value(data, params.bbox);
@@ -6973,13 +6996,19 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
             if (params.function_is_identity) {
                 int i;
 
-                /* FIXME: Transfer functions may want to be based on 16 bits? */
-                for (i = 0; i < MASK_TRANSFER_FUNCTION_SIZE; i++) {
-                    params.transfer_fn[i] = (byte)floor(i *
-                        (255.0 / (MASK_TRANSFER_FUNCTION_SIZE - 1)) + 0.5);
+                if (deep) {
+                    for (i = 0; i < MASK_TRANSFER_FUNCTION_SIZE; i++)
+                        ((uint16_t *)params.transfer_fn)[i] = i*0x10000/MASK_TRANSFER_FUNCTION_SIZE;
+                    ((uint16_t *)params.transfer_fn)[i] = 0xffff;
+                } else {
+                    for (i = 0; i < MASK_TRANSFER_FUNCTION_SIZE; i++) {
+                        params.transfer_fn[i] = (byte)floor(i *
+                            (255.0 / (MASK_TRANSFER_FUNCTION_SIZE - 1)) + 0.5);
+                    }
                 }
             } else {
-                read_value(data, params.transfer_fn);
+                memcpy(params.transfer_fn, data, (256+deep)<<deep);
+                data += (256+deep)<<deep;
             }
             break;
         case PDF14_END_TRANS_MASK:
