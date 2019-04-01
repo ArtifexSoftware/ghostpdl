@@ -809,7 +809,7 @@ Default value is <code>12000</code>.
 If a shading exceeds this value, the resolution of the output bitmap
 is reduced to fit into the specified number of bytes.
 Note that the number of bytes depends on the number of color components
-in <code>ProcessColorModel</code> or <code>ColorConverionStrategy</code>, assumes 8 bits per sample,
+in <code>ProcessColorModel</code> or <code>ColorConversionStrategy</code>, assumes 8 bits per sample,
 and doesn't consider image compression or downsampling. The image is rendered at the current resolution
 as specified by <code>-r</code> or the default of 720 dpi.
 
@@ -1236,7 +1236,7 @@ It accepts a four-value array in the same format as the
 
 Here is a sample command line to invoke Ghostscript for generating a PDF/X-3 document :
 <blockquote><code>
-gs -dPDFX -dBATCH -dNOPAUSE -sColorConverionStrategy=CMYK -sDEVICE=pdfwrite -sOutputFile=out-x3.pdf PDFX_def.ps input.ps
+gs -dPDFX -dBATCH -dNOPAUSE -sColorConversionStrategy=CMYK -sDEVICE=pdfwrite -sOutputFile=out-x3.pdf PDFX_def.ps input.ps
 </code></blockquote>
 
 <p>
