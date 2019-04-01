@@ -548,6 +548,10 @@ gs_begin_transparency_mask(gs_gstate * pgs,
     int i, code;
     gs_color_space *blend_color_space;
     gsicc_manager_t *icc_manager = pgs->icc_manager;
+    bool has_tags = device_encodes_tags(pgs->device);
+    int bits_per_comp = ((pgs->device->color_info.depth - has_tags*8) /
+                         pgs->device->color_info.num_components);
+    int deep = bits_per_comp > 8;
 
     if (check_for_nontrans_pattern(pgs,
                   (unsigned char *)"gs_pop_transparency_state")) {
@@ -601,12 +605,29 @@ gs_begin_transparency_mask(gs_gstate * pgs,
                   (ptmp->TransferFunction == mask_transfer_identity ? "no TR" :
                    "has TR"));
         /* Sample the transfer function */
-        for (i = 0; i < MASK_TRANSFER_FUNCTION_SIZE; i++) {
-            float in = (float)(i * (1.0 / (MASK_TRANSFER_FUNCTION_SIZE - 1)));
+        /* For non-deep cases, we sample at 00,01,02..fe,ff.
+         * For deep cases, we sample from 0000,0100,0200..fe00,ff00 and a final one at ffff.
+         * This enables us to interpolate easily.
+         */
+        if (deep) {
+            uint16_t *trans16 = (uint16_t *)params.transfer_fn;
             float out;
+            for (i = 0; i < MASK_TRANSFER_FUNCTION_SIZE; i++) {
+                float in = (float)(i * (1.0 / MASK_TRANSFER_FUNCTION_SIZE));
 
-            ptmp->TransferFunction(in, &out, ptmp->TransferFunction_data);
-            params.transfer_fn[i] = (byte)floor((double)(out * 255 + 0.5));
+                ptmp->TransferFunction(in, &out, ptmp->TransferFunction_data);
+                trans16[i] = (uint16_t)floor((double)(out * 65535 + 0.5));
+            }
+            ptmp->TransferFunction(1.0, &out, ptmp->TransferFunction_data);
+            trans16[MASK_TRANSFER_FUNCTION_SIZE] = (uint16_t)floor((double)(out * 65535 + 0.5));
+        } else {
+            for (i = 0; i < MASK_TRANSFER_FUNCTION_SIZE; i++) {
+                float in = (float)(i * (1.0 / (MASK_TRANSFER_FUNCTION_SIZE - 1)));
+                float out;
+
+                ptmp->TransferFunction(in, &out, ptmp->TransferFunction_data);
+                params.transfer_fn[i] = (byte)floor((double)(out * 255 + 0.5));
+            }
         }
         /* Note:  This function is called during the c-list writer side. */
         if ( blend_color_space->cmm_icc_profile_data != NULL ) {

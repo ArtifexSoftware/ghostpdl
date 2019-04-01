@@ -114,7 +114,7 @@ struct gs_pdf14trans_params_s {
                               outside its own groups bounding
                               box in such a case */
     gs_function_t *transfer_function;
-    byte transfer_fn[MASK_TRANSFER_FUNCTION_SIZE];
+    byte transfer_fn[MASK_TRANSFER_FUNCTION_SIZE*2+2];
     /* Individual transparency parameters */
     gs_blend_mode_t blend_mode;
     bool text_knockout;

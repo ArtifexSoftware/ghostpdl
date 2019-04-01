@@ -114,7 +114,7 @@ typedef struct gx_transparency_mask_params_s {
     bool idle;
     bool replacing;
     uint mask_id;
-    byte transfer_fn[MASK_TRANSFER_FUNCTION_SIZE];
+    byte transfer_fn[MASK_TRANSFER_FUNCTION_SIZE*2+2];
     int64_t icc_hashcode;                    /* Needed when we are doing clist reading */
     cmm_profile_t *iccprofile;               /* The profile  */
 } gx_transparency_mask_params_t;
