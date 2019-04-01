@@ -1047,6 +1047,8 @@ tiffsep_get_params(gx_device * pdev, gs_param_list * plist)
         ecode = code;
     if ((code = param_write_bool(plist, "BigEndian", &pdevn->BigEndian)) < 0)
         ecode = code;
+    if ((code = param_write_bool(plist, "TIFFDateTime", &pdevn->write_datetime)) < 0)
+        ecode = code;
     if ((code = tiff_compression_param_string(&comprstr, pdevn->Compression)) < 0 ||
         (code = param_write_string(plist, "Compression", &comprstr)) < 0)
         ecode = code;
