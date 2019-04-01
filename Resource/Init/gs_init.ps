@@ -550,7 +550,7 @@ currentdict /.execute .undef
 % We run the handleerror procedure using .internalstopped so that broken error handlers
 % won't cause nested errors (Unexpected Error conditions).
 /handleerror
-        JOBSERVER {
+        //systemdict /JOBSERVER get{
           { /.GShandleerror .systemvar //.internalstopped exec pop } bind % always use .GShandleerror.
         } {
           { /errordict .systemvar /handleerror get //.internalstopped exec pop } bind % PLRM standard errorhandling
@@ -570,7 +570,7 @@ currentdict /.execute .undef
         count 0 ne { (<) print count =only } if
         (>) print flush
 } bind def
-/prompt	{ flush flushpage NOPROMPT not { //.promptmsg exec} if } bind def
+/prompt	{ flush flushpage //systemdict /NOPROMPT get not { //.promptmsg exec} if } bind def
 currentdict /.promptmsg .undef
 
 /pstack	{ 0 1 count 3 sub { index == } for } bind def
@@ -654,7 +654,7 @@ odef
 } odef
 
 /.confirmread {
-  TTYPAUSE {
+  //systemdict /TTYPAUSE get {
     (/dev/tty) (r) file dup read pop pop closefile
   } {
     .echo.mode //false echo
@@ -667,11 +667,11 @@ odef
 } bind executeonly def
 
 /.confirm {
-  DISPLAYING NOPAUSE not TTYPAUSE or and {
+  //systemdict /DISPLAYING get //systemdict /NOPAUSE get not //systemdict /TTYPAUSE get or and {
         % Print a message (unless NOPAGEPROMPT or NOPROMPT is true)
         % and wait for the user to type something.
         % If the user just types a newline, flush it.
-    NOPAGEPROMPT NOPROMPT or { pop } { print flush } ifelse
+    //systemdict /NOPAGEPROMPT get //systemdict /NOPROMPT get or { pop } { print flush } ifelse
     //.confirmread exec
   } {
     pop
@@ -711,7 +711,7 @@ odef
 % Code output by Adobe Illustrator relies on the fact that
 % `stack' is a procedure, not an operator!!!
 /stack	{ 0 1 count 3 sub { index = } for } bind def
-/start	{ BATCH { //null 0 .quit } { executive } ifelse } def
+/start	{ //systemdict /BATCH get { //null 0 .quit } { executive } ifelse } def
 /store {	% Don't alter operands before completing.
         1 .argindex where { 2 index 2 index put pop pop } { def } ifelse
 } odef
@@ -941,7 +941,7 @@ currentdict /runlibfile0 .undef
 /.unstoppederrorhandler	% <command> <errorname> .unstoppederrorhandler -
  {	% This is the handler that gets used for recursive errors,
         % or errors outside the scope of a 'stopped'.
-   2 copy SHORTERRORS
+   2 copy //systemdict /SHORTERRORS get
     { (%%[ Error: ) print =only flush
       (; OffendingCommand: ) print =only ( ]%%) =
     }
@@ -1090,7 +1090,7 @@ currentdict /.unstoppederrorhandler .undef
 /.printerror
 { $error begin newerror
      {
-       /command load errorname SHORTERRORS
+       /command load errorname //systemdict /SHORTERRORS get
         { (%%[ Error: ) print =only flush
           (; OffendingCommand: ) print =only
           errorinfo dup //null eq {
@@ -1409,8 +1409,8 @@ put		% errordict /rangecheck
 /devicenames devicedict { pop } forall devicedict length packedarray def
 
 % Determine the default device.
-/defaultdevice DISPLAYING
- { systemdict /DEVICE .knownget
+/defaultdevice //systemdict /DISPLAYING get
+ { //systemdict /DEVICE .knownget
     { devicedict 1 index known not
        { (Unknown device: ) print =
          flush /defaultdevice cvx 1 .quit
@@ -1505,7 +1505,7 @@ setpacking
         % between 200 and 400 DPI, so we use it for lower resolutions.
         % Imagesetters need even higher frequency screens.
    //systemdict /DITHERPPI known
-    { DITHERPPI
+    { //systemdict /DITHERPPI get
     }
     { dup cvi 100 idiv 15 .min
        {//null 46 46 60 60 60 106 106 106 106 133 133 133 133 133 150}
@@ -1546,7 +1546,7 @@ setpacking
    4 -1 roll 150 ge
     { /setcolorscreen where
        { pop //systemdict /COLORSCREEN known
-          { COLORSCREEN }
+          { //systemdict /COLORSCREEN get}
           { 3 index }
          ifelse
          dup //false ne
@@ -2555,7 +2555,7 @@ end
 
 % Clean up VM, and enable GC. Use .vmreclaim to force the GC.
 /vmreclaim where
- { pop NOGC not { 2 .vmreclaim 0 vmreclaim } if
+ { pop //systemdict /NOGC get not { 2 .vmreclaim 0 vmreclaim } if
  } if
 systemdict /.vmreclaim .undef
 level2dict /.vmreclaim .undef
