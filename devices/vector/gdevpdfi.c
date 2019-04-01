@@ -575,8 +575,6 @@ static int setup_image_colorspace(gx_device_pdf *pdev, image_union_t *image, con
                     switch (pdev->params.ColorConversionStrategy) {
                         case ccs_ByObjectType:
                             /* Object type not implemented yet */
-                        case ccs_UseDeviceDependentColor:
-                            /* DeviceDependentColor deprecated */
                         case ccs_UseDeviceIndependentColorForImages:
                             /* If only correcting images, then leave unchanged */
                         case ccs_LeaveColorUnchanged:
@@ -693,8 +691,6 @@ static int setup_image_colorspace(gx_device_pdf *pdev, image_union_t *image, con
         switch(strategy) {
             case ccs_ByObjectType:
                 /* Object type not implemented yet */
-            case ccs_UseDeviceDependentColor:
-                /* DeviceDependentCOlor deprecated */
             case ccs_UseDeviceIndependentColorForImages:
                 /* If only correcting images, then leave unchanged */
             case ccs_LeaveColorUnchanged:
@@ -2160,7 +2156,6 @@ pdf_image3x_make_mcde(gx_device *dev, const gs_gstate *pgs,
                 else
                     DoMatte = 0;
                 break;
-            case ccs_UseDeviceDependentColor:
             case ccs_UseDeviceIndependentColor:
             case ccs_UseDeviceIndependentColorForImages:
             case ccs_ByObjectType:

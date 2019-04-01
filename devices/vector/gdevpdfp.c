@@ -589,7 +589,6 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
         case ccs_ByObjectType:
         case ccs_LeaveColorUnchanged:
             break;
-        case ccs_UseDeviceDependentColor:
         case ccs_UseDeviceIndependentColor:
         case ccs_UseDeviceIndependentColorForImages:
             pdev->params.TransferFunctionInfo = tfi_Apply;
