@@ -1097,6 +1097,13 @@ tiffsep_put_params(gx_device * pdev, gs_param_list * plist)
         case 1:
             break;
     }
+    switch (code = param_read_bool(plist, (param_name = "TIFFDateTime"), &pdevn->write_datetime)) {
+        default:
+            param_signal_error(plist, param_name, code);
+        case 0:
+        case 1:
+            break;
+    }
     switch (code = param_read_bool(plist, (param_name = "PrintSpotCMYK"), &pdevn->PrintSpotCMYK)) {
         default:
             param_signal_error(plist, param_name, code);
