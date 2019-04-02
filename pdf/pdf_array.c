@@ -19,7 +19,6 @@
 #include "pdf_types.h"
 #include "pdf_stack.h"
 #include "pdf_array.h"
-#include "pdf_loop_detect.h"
 
 /* NOTE: I think this should take a pdf_context param, but it's not available where it's
  * called, would require some surgery.
@@ -70,9 +69,7 @@ pdfi_array_fetch(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o)
         pdf_obj *o1 = NULL;
         pdf_indirect_ref *r = (pdf_indirect_ref *)obj;
 
-        pdfi_loop_detector_mark(ctx);
-        code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, &o1);
-        pdfi_loop_detector_cleartomark(ctx);
+        code = pdfi_deref_loop_detect(ctx, r->ref_object_num, r->ref_generation_num, &o1);
         if (code < 0)
             return code;
 

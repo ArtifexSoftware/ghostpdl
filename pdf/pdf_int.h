@@ -33,6 +33,7 @@ int pdfi_make_name(pdf_context *ctx, byte *key, uint32_t size, pdf_obj **o);
 int pdfi_read_dict(pdf_context *ctx, pdf_stream *s);
 
 int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **object);
+int pdfi_deref_loop_detect(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **object);
 
 int pdfi_read_xref(pdf_context *ctx);
 

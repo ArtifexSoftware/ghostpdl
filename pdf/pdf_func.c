@@ -533,33 +533,9 @@ pdfi_build_function_3(pdf_context *ctx, gs_function_params_t * mnDR,
     params.Bounds = 0;
     params.Encode = 0;
 
-    code = pdfi_dict_get(ctx, function_dict, "Functions", (pdf_obj **)&Functions);
+    code = pdfi_dict_get_type(ctx, function_dict, "Functions", PDF_ARRAY, (pdf_obj **)&Functions);
     if (code < 0)
         return code;
-
-    if (Functions->type != PDF_ARRAY) {
-        pdf_indirect_ref *r = (pdf_indirect_ref *)Functions;
-
-        if (Functions->type != PDF_INDIRECT)
-            return_error(gs_error_typecheck);
-
-        code = pdfi_loop_detector_mark(ctx);
-        if (code < 0) {
-            pdfi_countdown(r);
-            return code;
-        }
-
-        code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, (pdf_obj **)&Functions);
-        pdfi_countdown(r);
-        (void)pdfi_loop_detector_cleartomark(ctx);
-        if (code < 0)
-            return code;
-
-        if (Functions->type != PDF_ARRAY) {
-            pdfi_countdown(Functions);
-            return_error(gs_error_typecheck);
-        }
-    }
 
     params.k = pdfi_array_size(Functions);
     code = alloc_function_array(params.k, &ptr, ctx->memory);

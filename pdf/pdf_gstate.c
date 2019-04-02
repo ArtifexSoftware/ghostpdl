@@ -546,12 +546,7 @@ static int GS_TR2(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dic
 
     saved_stream_offset = pdfi_unread_tell(ctx);
     if (n->type == PDF_INDIRECT) {
-        code = pdfi_loop_detector_mark(ctx);
-        if (code < 0)
-            return code;
-
-        code = pdfi_dereference(ctx, n->object_num, n->generation_num, &o);
-        (void)pdfi_loop_detector_cleartomark(ctx);
+        code = pdfi_deref_loop_detect(ctx, n->object_num, n->generation_num, &o);
         if (code < 0) {
             (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
             pdfi_countdown(o);

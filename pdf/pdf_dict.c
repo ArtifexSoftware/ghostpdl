@@ -20,6 +20,7 @@
 #include "pdf_stack.h"
 #include "pdf_array.h"
 #include "pdf_int.h"
+#include "pdf_loop_detect.h"
 
 void pdfi_free_dict(pdf_obj *o)
 {
@@ -122,7 +123,7 @@ int pdfi_dict_get(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj **o)
                 if (d->values[i]->type == PDF_INDIRECT) {
                     pdf_indirect_ref *r = (pdf_indirect_ref *)d->values[i];
 
-                    code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, o);
+                    code = pdfi_deref_loop_detect(ctx, r->ref_object_num, r->ref_generation_num, o);
                     if (code < 0)
                         return code;
                     pdfi_countdown(d->values[i]);
@@ -191,40 +192,9 @@ int pdfi_dict_get_type(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj_t
         return code;
 
     if ((*o)->type != type) {
-        if ((*o)->type == PDF_INDIRECT){
-            pdf_name *NewKey = NULL;
-            pdf_obj *o1 = NULL;
-            pdf_indirect_ref *r = (pdf_indirect_ref *)*o;
-
-            code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, &o1);
-            pdfi_countdown(*o);
-            *o = NULL;
-            if (code < 0)
-                return code;
-
-            if (o1->type != type) {
-                pdfi_countdown(o1);
-                return_error(gs_error_typecheck);
-            }
-
-            code = pdfi_alloc_object(ctx, PDF_NAME, strlen(Key), (pdf_obj **)&NewKey);
-            if (code < 0) {
-                pdfi_countdown(o1);
-                return code;
-            }
-            memcpy(NewKey->data, Key, strlen(Key));
-            code = pdfi_dict_put(d, (pdf_obj *)NewKey, o1);
-            if (code < 0) {
-                pdfi_countdown(o1);
-                pdfi_free_object((pdf_obj *)NewKey);
-                return code;
-            }
-            *o = o1;
-        } else {
-            pdfi_countdown(*o);
-            *o = NULL;
-            return_error(gs_error_typecheck);
-        }
+        pdfi_countdown(*o);
+        *o = NULL;
+        return_error(gs_error_typecheck);
     }
     return 0;
 }

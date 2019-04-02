@@ -578,6 +578,21 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
     return 0;
 }
 
+/* do a derefence with loop detection */
+int
+pdfi_deref_loop_detect(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **object)
+{
+    int code;
+
+    code = pdfi_loop_detector_mark(ctx);
+    if (code < 0)
+        return code;
+
+    code = pdfi_dereference(ctx, obj, gen, object);
+    (void)pdfi_loop_detector_cleartomark(ctx);
+    return code;
+}
+
 void normalize_rectangle(double *d)
 {
     double d1[4];
