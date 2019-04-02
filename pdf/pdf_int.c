@@ -2553,7 +2553,7 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
 
     /* Check each entry in the Kids array */
     for (i = 0;i < pdfi_array_size(Kids);i++) {
-        code = pdfi_array_get_no_indirect(ctx, Kids, i, (pdf_obj **)&node);
+        code = pdfi_array_get_no_deref(ctx, Kids, i, (pdf_obj **)&node);
         if (code < 0) {
             pdfi_countdown(inheritable);
             pdfi_countdown(Kids);

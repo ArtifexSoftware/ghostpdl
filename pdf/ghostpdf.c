@@ -65,7 +65,7 @@ static int pdfi_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
 
         for (i=0;i < a->size; i++) {
             pdf_indirect_ref *r;
-            code = pdfi_array_get_no_indirect(ctx, a, i, (pdf_obj **)&r);
+            code = pdfi_array_get_no_deref(ctx, a, i, (pdf_obj **)&r);
             if (code < 0) {
                 pdfi_countdown(o);
                 return code;

@@ -111,12 +111,12 @@ int pdfi_array_get(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o)
     return 0;
 }
 
-/* Get element from array without resolving PDF_INDIRECT
+/* Get element from array without resolving PDF_INDIRECT dereferences.
  * It looks to me like some usages need to do the checking themselves to
  * avoid circular references?  Can remove this if not really needed.
  */
 int
-pdfi_array_get_no_indirect(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o)
+pdfi_array_get_no_deref(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o)
 {
     if (index >= a->size)
         return_error(gs_error_rangecheck);
