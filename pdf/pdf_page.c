@@ -171,13 +171,11 @@ pdfi_page_check_OCMD_array(pdf_context *ctx, pdf_array *array, ocmd_p_type type)
         pdf_obj *val = NULL;
 
         code = pdfi_array_peek(ctx, array, i, &val);
-        /* The spec says it could be PDF_DICT or PDF_NULL,
-         * But not flagging any errors here, in spirit of PDF
-         * being permissive.  Just quietly skip things that
-         * don't make sense.
-         */
         if (code < 0) continue;
-        if (val->type != PDF_DICT) continue;
+        if (val->type != PDF_DICT) {
+            dmprintf1(ctx->memory, "WARNING: OCMD array contains item type %d, expected PDF_DICT or PDF_NULL\n", val->type);
+            continue;
+        }
 
         vis = pdfi_get_default_OCG_val(ctx, (pdf_dict *)val);
         switch (type) {
@@ -287,23 +285,27 @@ pdfi_page_check_OCMD(pdf_context *ctx, pdf_dict *ocdict)
 bool
 pdfi_page_is_ocg_visible(pdf_context *ctx, pdf_dict *ocdict)
 {
-    pdf_obj *type = NULL;
+    pdf_name *type = NULL;
     bool is_visible = true;
     int code;
 
     /* Type can be either OCMD or OCG.
-     * PS implementation only checked for OCMD and assumed missing or non-OCMD means OCG.
      */
-    code = pdfi_dict_knownget_type(ctx, ocdict, "Type", PDF_NAME, &type);
+    code = pdfi_dict_knownget_type(ctx, ocdict, "Type", PDF_NAME, (pdf_obj **)&type);
     if (code <= 0)
         goto cleanup;
 
-    if (pdfi_name_is((pdf_name *)type, "OCMD")) {
+    if (pdfi_name_is(type, "OCMD")) {
         is_visible = pdfi_page_check_OCMD(ctx, ocdict);
-    } else {
+    } else if (pdfi_name_is(type, "OCG")) {
         is_visible = pdfi_get_default_OCG_val(ctx, ocdict);
         if (is_visible)
             is_visible = pdfi_page_check_OCG_usage(ctx, ocdict);
+    } else {
+        char str[100];
+        memcpy(str, (const char *)type->data, type->length);
+        str[type->length] = '\0';
+        dmprintf1(ctx->memory, "WARNING: OC dict type is %s, expected OCG or OCMD\n", str);
     }
 
  cleanup:

@@ -436,8 +436,7 @@ static int pdfi_check_ExtGState(pdf_context *ctx, pdf_dict *extgstate_dict, int 
 static int pdfi_check_ExtGState_dict(pdf_context *ctx, pdf_dict *extgstate_dict, pdf_dict *page_dict, int *transparent)
 {
     int code, i, index;
-    pdf_obj *Key = NULL, *Value = NULL, *o = NULL;
-    double f;
+    pdf_obj *Key = NULL, *Value = NULL;
 
     if (pdfi_dict_entries(extgstate_dict) > 0) {
         code = pdfi_loop_detector_mark(ctx); /* Mark the start of the ColorSpace dictionary loop */
@@ -485,7 +484,6 @@ static int pdfi_check_ExtGState_dict(pdf_context *ctx, pdf_dict *extgstate_dict,
     return 0;
 
 transparency_exit:
-error2:
     pdfi_countdown(Key);
     pdfi_countdown(Value);
 
@@ -498,7 +496,6 @@ static int pdfi_check_Pattern_dict(pdf_context *ctx, pdf_dict *pattern_dict, pdf
 {
     int code, i, index;
     pdf_obj *Key = NULL, *Value = NULL, *o = NULL;
-    double f;
 
     if (pdfi_dict_entries(pattern_dict) > 0) {
         code = pdfi_loop_detector_mark(ctx); /* Mark the start of the ColorSpace dictionary loop */
@@ -557,7 +554,6 @@ static int pdfi_check_Pattern_dict(pdf_context *ctx, pdf_dict *pattern_dict, pdf
     return 0;
 
 transparency_exit:
-error2:
     pdfi_countdown(Key);
     pdfi_countdown(Value);
 
@@ -570,7 +566,6 @@ static int pdfi_check_Font_dict(pdf_context *ctx, pdf_dict *font_dict, pdf_dict 
 {
     int code, i, index;
     pdf_obj *Key = NULL, *Value = NULL, *o = NULL;
-    double f;
 
     if (pdfi_dict_entries(font_dict) > 0) {
         code = pdfi_loop_detector_mark(ctx); /* Mark the start of the ColorSpace dictionary loop */
@@ -627,7 +622,6 @@ static int pdfi_check_Font_dict(pdf_context *ctx, pdf_dict *font_dict, pdf_dict 
     return 0;
 
 transparency_exit:
-error2:
     pdfi_countdown(Key);
     pdfi_countdown(Value);
 
@@ -638,10 +632,8 @@ error1:
 
 static int pdfi_check_Resources_for_transparency(pdf_context *ctx, pdf_dict *Resources_dict, pdf_dict *page_dict, bool *transparent, int *num_spots)
 {
-    int code, i, index;
-    pdf_obj *d = NULL, *n = NULL;
-    double f;
-    bool known = false;
+    int code;
+    pdf_obj *d = NULL;
 
     /* First up, check any colour spaces, for new spot colours.
      * We only do this if asked because its expensive. num_spots being NULL
@@ -697,7 +689,6 @@ static int pdfi_check_annot_for_transparency(pdf_context *ctx, pdf_dict *annot, 
     int code;
     pdf_name *n;
     pdf_dict *ap = NULL, *N = NULL, *Resources = NULL;
-    bool known = false;
     double f;
 
     /* Check #1 Does the (Normal) Appearnce stream use any Resources which include transparency.
@@ -996,7 +987,6 @@ static int dump_info_string(pdf_context *ctx, pdf_dict *source_dict, const char 
     int code;
     pdf_string *s = NULL;
     char *Cstr;
-    bool known;
 
     code = pdfi_dict_knownget_type(ctx, source_dict, Key, PDF_STRING, (pdf_obj **)&s);
     if (code > 0) {
@@ -1017,7 +1007,6 @@ static int dump_info_string(pdf_context *ctx, pdf_dict *source_dict, const char 
 static int pdfi_output_metadata(pdf_context *ctx)
 {
     int code;
-    bool known = false;
 
     if (ctx->num_pages > 1)
         dmprintf2(ctx->memory, "\n        %s has %"PRIi64" pages\n\n", ctx->filename, ctx->num_pages);
@@ -1435,7 +1424,8 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
                           ctx->pgs, 1, true);
 }
 
-void pdfi_report_errors(pdf_context *ctx)
+static void
+pdfi_report_errors(pdf_context *ctx)
 {
     int code;
 
