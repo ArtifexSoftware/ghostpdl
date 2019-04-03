@@ -251,6 +251,8 @@ static int pdfi_Flate_filter(pdf_context *ctx, pdf_dict *d, stream *source, stre
     uint min_size = 2048;
     int code;
 
+    memset(&zls, 0, sizeof(zls));
+
     /* s_zlibD_template defined in base/szlibd.c */
     (*s_zlibD_template.set_defaults)((stream_state *)&zls);
 
