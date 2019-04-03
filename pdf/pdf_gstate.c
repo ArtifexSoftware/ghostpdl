@@ -532,47 +532,40 @@ static int GS_TR(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict
 static int GS_TR2(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     int code;
-    pdf_obj *o = NULL, *n = NULL;
+    pdf_obj *obj = NULL;
     gs_offset_t saved_stream_offset;
 
-    code = pdfi_dict_get(ctx, GS, "TR2", &n);
+    code = pdfi_dict_get(ctx, GS, "TR2", &obj);
     if (code < 0)
         return code;
 
-    if (n->type == PDF_NAME) {
-        pdfi_countdown(o);
-        return 0;
+    saved_stream_offset = pdfi_unread_tell(ctx);
+    if (obj->type == PDF_NAME) {
+        /* TODO */
+        goto exit;
     }
 
-    saved_stream_offset = pdfi_unread_tell(ctx);
-    if (n->type == PDF_INDIRECT) {
-        code = pdfi_deref_loop_detect(ctx, n->object_num, n->generation_num, &o);
-        if (code < 0) {
-            (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
-            pdfi_countdown(o);
-            return code;
-        }
-    } else
-        o = n;
-
-    if (o->type == PDF_ARRAY) {
+    if (obj->type == PDF_ARRAY) {
+        /* TODO */
     } else {
-        if (o->type == PDF_DICT) {
+        if (obj->type == PDF_DICT) {
             gs_function_t *pfn;
 
-            code = pdfi_build_function(ctx, &pfn, NULL, 1, (pdf_dict *)o, page_dict);
+            code = pdfi_build_function(ctx, &pfn, NULL, 1, (pdf_dict *)obj, page_dict);
             if (code < 0) {
-                (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
-                pdfi_countdown(o);
-                return code;
+                goto exit;
             }
+            /* TODO: incomplete code, pfn is built but need to do something with it? */
+            /* (so this probably causes a memory leak?) */
         }
     }
 
+ exit:
     (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
+    pdfi_countdown(obj);
     dbgmprintf(ctx->memory, "ExtGState TR2 not yet implemented\n");
 
-    return 0;
+    return code;
 }
 
 static int GS_HT(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
