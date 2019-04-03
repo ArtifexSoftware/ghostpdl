@@ -769,9 +769,9 @@ clist_finish_page(gx_device *dev, bool flush)
     if (!CLIST_IS_WRITER((gx_device_clist *)dev)) {
         gx_device_clist_reader * const crdev =  &((gx_device_clist *)dev)->reader;
 
+        clist_teardown_render_threads(dev);
         gs_free_object(cdev->memory, crdev->color_usage_array, "clist_color_usage_array");
         crdev->color_usage_array = NULL;
-        clist_teardown_render_threads(dev);
 
        /* Free the icc table associated with this device.
            The threads that may have pointed to this were destroyed in

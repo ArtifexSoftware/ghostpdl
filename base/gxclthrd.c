@@ -576,13 +576,18 @@ clist_teardown_render_threads(gx_device *dev)
     int i;
 
     if (crdev->render_threads != NULL) {
-        /* Wait for each thread to finish then free its memory */
+        /* Wait for all threads to finish */
+        for (i = (crdev->num_render_threads - 1); i >= 0; i--) {
+            clist_render_thread_control_t *thread = &(crdev->render_threads[i]);
+
+            if (thread->status == THREAD_BUSY)
+                gx_semaphore_wait(thread->sema_this);
+        }
+        /* then free each thread's memory */
         for (i = (crdev->num_render_threads - 1); i >= 0; i--) {
             clist_render_thread_control_t *thread = &(crdev->render_threads[i]);
             gx_device_clist_common *thread_cdev = (gx_device_clist_common *)thread->cdev;
 
-            if (thread->status == THREAD_BUSY)
-                gx_semaphore_wait(thread->sema_this);
             /* Free control semaphores */
             gx_semaphore_free(thread->sema_group);
             gx_semaphore_free(thread->sema_this);
