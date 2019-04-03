@@ -78,14 +78,9 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
     pdf_array *a = NULL;
     int code = 0;
 
-    code = pdfi_array_get(ctx, color_array, 0, (pdf_obj **)&space);
+    code = pdfi_array_get_type(ctx, color_array, 0, PDF_NAME, (pdf_obj **)&space);
     if (code != 0)
         goto exit;
-
-    if (space->type != PDF_NAME) {
-        code = gs_error_typecheck;
-        goto exit;
-    }
 
     code = 0;
     if (pdfi_name_is(space, "G")) {
@@ -118,24 +113,14 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
         int i;
 
         pdfi_countdown(space);
-        code = pdfi_array_get(ctx, color_array, 1, (pdf_obj **)&space);
+        code = pdfi_array_get_type(ctx, color_array, 1, PDF_ARRAY, (pdf_obj **)&space);
         if (code != 0)
             goto exit;
 
-        if (space->type != PDF_ARRAY) {
-            code = gs_error_typecheck;
-            goto exit;
-        }
-
         for (i=0;i < pdfi_array_size((pdf_array *)space); i++) {
-            code = pdfi_array_get(ctx, (pdf_array *)space, (uint64_t)i, &name);
+            code = pdfi_array_get_type(ctx, (pdf_array *)space, (uint64_t)i, PDF_NAME, &name);
             if (code < 0)
                 goto exit;
-
-            if (name->type != PDF_NAME) {
-                code = gs_error_typecheck;
-                goto exit;
-            }
 
             if (pdfi_name_is((const pdf_name *)name, "Cyan") || pdfi_name_is((const pdf_name *)name, "Magenta") ||
                 pdfi_name_is((const pdf_name *)name, "Yellow") || pdfi_name_is((const pdf_name *)name, "Black")) {
@@ -170,14 +155,9 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
         pdf_obj *dummy;
 
         pdfi_countdown(space);
-        code = pdfi_array_get(ctx, color_array, 1, (pdf_obj **)&space);
+        code = pdfi_array_get_type(ctx, color_array, 1, PDF_NAME, (pdf_obj **)&space);
         if (code != 0)
             goto exit;
-
-        if (space->type != PDF_NAME) {
-            code = gs_error_typecheck;
-            goto exit;
-        }
 
         if (pdfi_name_is(space, "Cyan") || pdfi_name_is(space, "Magenta") ||
             pdfi_name_is(space, "Yellow") || pdfi_name_is(space, "Black"))
@@ -904,7 +884,7 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
     bool known;
     float range[8];
 
-    code = pdfi_array_get(ctx, color_array, index + 1, (pdf_obj **)&ICC_dict);
+    code = pdfi_array_get_type(ctx, color_array, index + 1, PDF_DICT, (pdf_obj **)&ICC_dict);
     if (code < 0)
         return code;
 
@@ -1390,14 +1370,9 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
     pdf_array *a = NULL;
     gs_color_space *pcs;
 
-    code = pdfi_array_get(ctx, color_array, index, (pdf_obj **)&space);
+    code = pdfi_array_get_type(ctx, color_array, index, PDF_NAME, (pdf_obj **)&space);
     if (code != 0)
         goto exit;
-
-    if (space->type != PDF_NAME) {
-        code = gs_error_typecheck;
-        goto exit;
-    }
 
     code = 0;
     if (pdfi_name_is(space, "G")) {
