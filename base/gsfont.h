@@ -28,6 +28,11 @@
 /* Font objects */
 typedef struct gs_font_s gs_font;
 
+/* A font object as seen by clients. */
+/* See the PostScript Language Reference Manual for details. */
+
+typedef struct gs_show_enum_s gs_show_enum;
+
 /* Initialization */
 /* These procedures return 0 if they fail. */
 /* The returned gs_font_dir can be cleanly deallocated by

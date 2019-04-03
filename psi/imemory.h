@@ -31,8 +31,6 @@
 #include "gsalloc.h"
 #include "gsmemory.h"
 
-typedef struct gs_ref_memory_s gs_ref_memory_t;
-
         /* Allocate a ref array. */
 
 int gs_alloc_ref_array(gs_ref_memory_t * mem, ref * paref,

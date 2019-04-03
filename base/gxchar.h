@@ -36,9 +36,6 @@ struct gs_show_enum_s {
 /* Get the current character code. */
 int gx_current_char(const gs_text_enum_t * pte);
 
-/* Cached character procedures (in gxccache.c and gxccman.c) */
-typedef struct gs_font_dir_s gs_font_dir;
-
 int  gx_alloc_char_bits(gs_font_dir *, gx_device_memory *, gx_device_memory *, ushort, ushort, const gs_log2_scale_point *, int, cached_char **);
 void gx_open_cache_device(gx_device_memory *, cached_char *);
 void gx_free_cached_char(gs_font_dir *, cached_char *);
