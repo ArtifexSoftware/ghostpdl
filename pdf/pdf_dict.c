@@ -276,18 +276,6 @@ int pdfi_dict_get_number(pdf_context *ctx, pdf_dict *d, const char *Key, double 
     code = pdfi_dict_get(ctx, d, Key, (pdf_obj **)&o);
     if (code < 0)
         return code;
-    if (o->type == PDF_INDIRECT) {
-        pdf_obj *o1 = NULL;
-        pdf_indirect_ref *r = (pdf_indirect_ref *)o;
-
-        code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, &o1);
-        pdfi_countdown(o);
-        o = NULL;
-        if (code < 0)
-            return code;
-        o = (pdf_num *)o1;
-    }
-
     if (o->type == PDF_INT) {
         *f = (double)(o->value.i);
     } else {
