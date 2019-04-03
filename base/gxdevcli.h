@@ -115,10 +115,6 @@
 
 /* ---------------- Auxiliary types and structures ---------------- */
 
-/* We need an abstract type for the image enumeration state, */
-/* for begin[_typed]_image. */
-typedef struct gx_image_enum_common_s gx_image_enum_common_t;
-
 /* We need an abstract type for the pattern instance, */
 /* for pattern_manage. */
 typedef struct gs_pattern1_instance_s gs_pattern1_instance_t;

@@ -57,8 +57,6 @@ int gs_newpath(gs_gstate *),
     gs_rcurveto(gs_gstate *, double, double, double, double, double, double),
     gs_closepath(gs_gstate *);
 
-typedef struct gx_path_s gx_path;
-
 /* gs_gstate-level procedures */
 void make_quadrant_arc(gs_point *p, const gs_point *c,
         const gs_point *p0, const gs_point *p1, double r);

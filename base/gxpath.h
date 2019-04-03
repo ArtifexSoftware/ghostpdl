@@ -30,9 +30,6 @@
 /* device, rather than user, coordinates, and fixed-point, */
 /* rather than floating, representation. */
 
-/* Opaque type for a path */
-typedef struct gx_path_s gx_path;
-
 /* Define the two insideness rules */
 #define gx_rule_winding_number (-1)
 #define gx_rule_even_odd 1

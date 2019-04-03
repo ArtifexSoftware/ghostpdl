@@ -72,11 +72,6 @@ typedef enum {
     sws_retry			/* retry setcachedevice[2] */
 } show_width_status;
 
-/* The type of cached font/matrix pairs is opaque. */
-typedef struct cached_fm_pair_s cached_fm_pair;
-
-typedef struct gs_show_enum_s gs_show_enum;
-
 /* The types of memory and null devices may be opaque. */
 typedef struct gx_device_null_s gx_device_null;
 
