@@ -114,6 +114,24 @@ bool gx_hld_saved_color_equal(const gx_hl_saved_color * psc1,
         return(false);
     }
 
+    /* early bailout for pattern comparison */
+    if (gx_dc_is_pattern1_color((gx_device_color *)(&psc1->saved_dev_color.type))) {
+
+        if (psc1->saved_dev_color.colors.pattern.id != psc2->saved_dev_color.colors.pattern.id
+         || psc1->saved_dev_color.colors.pattern.phase.x != psc2->saved_dev_color.colors.pattern.phase.x
+         || psc1->saved_dev_color.colors.pattern.phase.y != psc2->saved_dev_color.colors.pattern.phase.y)
+            return(false);
+        else
+            return true;
+    }
+    if (gx_dc_is_pattern2_color((gx_device_color *)(&psc1->saved_dev_color.type))) {
+        if (psc1->saved_dev_color.colors.pattern2.id != psc2->saved_dev_color.colors.pattern2.id
+         || psc1->saved_dev_color.colors.pattern2.shfill != psc2->saved_dev_color.colors.pattern2.shfill)
+            return(false);
+        else
+            return true;
+    }
+
     for (i = 0; i < GX_DEVICE_COLOR_MAX_COMPONENTS; i++) {
         if (psc1->ccolor.paint.values[i] != psc2->ccolor.paint.values[i]) {
             return(false);
@@ -152,22 +170,6 @@ bool gx_hld_saved_color_equal(const gx_hl_saved_color * psc1,
 
                  return(false);
              }
-        }
-    }
-    else if (gx_dc_is_pattern1_color((gx_device_color *)(&psc1->saved_dev_color.type))) {
-
-        if (psc1->saved_dev_color.colors.pattern.id != psc2->saved_dev_color.colors.pattern.id
-         || psc1->saved_dev_color.colors.pattern.phase.x != psc2->saved_dev_color.colors.pattern.phase.x
-         || psc1->saved_dev_color.colors.pattern.phase.y != psc2->saved_dev_color.colors.pattern.phase.y) {
-
-            return(false);
-        }
-    }
-    else if (gx_dc_is_pattern2_color((gx_device_color *)(&psc1->saved_dev_color.type))) {
-        if (psc1->saved_dev_color.colors.pattern2.id != psc2->saved_dev_color.colors.pattern2.id
-         || psc1->saved_dev_color.colors.pattern2.shfill != psc2->saved_dev_color.colors.pattern2.shfill) {
-
-            return(false);
         }
     }
 

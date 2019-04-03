@@ -244,6 +244,7 @@ tfax_put_params(gx_device * dev, gs_param_list * plist)
     tfdev->BigEndian = big_endian;
     tfdev->UseBigTIFF = usebigtiff;
     tfdev->Compression = compr;
+    tfdev->write_datetime = write_datetime;
     return code;
 }
 

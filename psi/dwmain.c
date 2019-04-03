@@ -51,7 +51,7 @@ const char *szDllName = "gsdll32.dll";
 const LPSTR szIniSection = "Text";
 
 GSDLL gsdll;
-void *instance;
+void *instance = NULL;
 HWND hwndtext;
 
 char start_string[] = "systemdict /start get exec\n";

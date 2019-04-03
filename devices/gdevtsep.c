@@ -916,7 +916,11 @@ tiffsep_cmyk_cs_to_cm(gx_device * dev,
     int j;
 
     if (devn->num_separation_order_names > 0) {
-        /* This is to set only those that we are using */
+
+        /* We need to make sure to clear everything */
+        for (j = 0; j < dev->color_info.num_components; j++)
+            out[j] = frac_0;
+
         for (j = 0; j < devn->num_separation_order_names; j++) {
             switch (map[j]) {
                 case 0 :
@@ -1043,6 +1047,8 @@ tiffsep_get_params(gx_device * pdev, gs_param_list * plist)
         ecode = code;
     if ((code = param_write_bool(plist, "BigEndian", &pdevn->BigEndian)) < 0)
         ecode = code;
+    if ((code = param_write_bool(plist, "TIFFDateTime", &pdevn->write_datetime)) < 0)
+        ecode = code;
     if ((code = tiff_compression_param_string(&comprstr, pdevn->Compression)) < 0 ||
         (code = param_write_string(plist, "Compression", &comprstr)) < 0)
         ecode = code;
@@ -1089,6 +1095,13 @@ tiffsep_put_params(gx_device * pdev, gs_param_list * plist)
         default:
             param_signal_error(plist, param_name, code);
             return code;
+        case 0:
+        case 1:
+            break;
+    }
+    switch (code = param_read_bool(plist, (param_name = "TIFFDateTime"), &pdevn->write_datetime)) {
+        default:
+            param_signal_error(plist, param_name, code);
         case 0:
         case 1:
             break;

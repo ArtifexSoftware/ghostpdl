@@ -1183,7 +1183,7 @@ int main(int argc, char *argv[])
 {
     int exit_status;
     int code = 1, code1;
-    void *instance;
+    void *instance = NULL;
     int nargc;
     char **nargv;
     char dformat[64];

@@ -300,9 +300,9 @@ the output.  The default value is <code>true</code>; the
 <code>-d</code><em>parameter</em>=<em>value</em> or
 <code>-s</code><em>parameter</em>=<em>string</em> switches for setting
 "distiller parameters", Adobe's documented parameters for controlling the
-conversion of PostScript into PDFprocess.  The PostScript <code>setdistillerparams</code> and
+conversion of PostScript into PDF.  The PostScript <code>setdistillerparams</code> and
 <code>currentdistillerparams</code> operators are also recognized when
-the input is PostScript<code>ps2pdf</code>, and provide an equivalent way to set these
+the input is PostScript, and provide an equivalent way to set these
 parameters from within a PostScript input file.
 </p>
 <p>Although the name implies that these parameters are for controlling PDF output, in
@@ -348,7 +348,7 @@ Cells in the table below containing '=' mean that the value of the parameter is 
 <tr valign=top><td><code>CalRGBProfile</code><td><td><a href="#note_0">(0)</a><td><td>()<td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><code>CannotEmbedFontPolicy</code><td><td><a href="#note_0">(0)</a><td><td>/Warning<td><td>/Warning<td><td>/Warning<td><td>/Warning<td><td>/Error
 <tr valign=top><td><code>ColorACSImageDict</code><td><td><a href="#note_13">(13)</a><td><td><a href="#note_7">(note 7)</a><td><td><a href="#note_10">(note 10)</a><td><td><a href="#note_10">(note 10)</a><td><td><a href="#note_8">(note 8)</a><td><td><a href="#note_9">(note 9)</a>
-<tr valign=top><td><code>ColorConversionStrategy</code><td><td><a href="#note_0">(0</a>,<a href="#note_6">6)</a><td><td>LeaveColorUnchanged<td><td>RGB<td><td>RGB<td><td>UseDeviceIndependentColor<td><td>LeaveColorUnchanged
+<tr valign=top><td><code>ColorConversionStrategy</code><td><td><a href="#note_6">(6)</a><td><td>LeaveColorUnchanged<td><td>RGB<td><td>RGB<td><td>UseDeviceIndependentColor<td><td>LeaveColorUnchanged
 <tr valign=top><td><code>ColorImageDepth</code><td><td><td><td>-1<td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><code>ColorImageDict</code><td><td><a href="#note_13">(13)</a><td><td><a href="#note_7">(note 7)</a><td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><code>ColorImageFilter</code><td><td><td><td>/DCTEncode<td><td>=<td><td>=<td><td>=<td><td>=
@@ -424,12 +424,12 @@ Flate compression.
 
 <p>
 <a name="note_2">(note 2)</a>
-Because of Unisys's threats regarding the Welch patent,
-<code>ps2pdf</code> does not actually use LZW compression: instead, it
-treats all requests for LZW compression as calling for Flate compression.
-Concomitantly, <tt>UseFlateCompression</tt> is treated as always on, and
-the value of this parameter is ignored as with note 0. Now that the patent
-has expired, we could change this should it become worthwhile.
+Because the LZW compression scheme was covered by patents at the time this
+device was created, <code>pdfwrite</code> does not actually use LZW compression:
+all requests for LZW compression are ignored.
+<tt>UseFlateCompression</tt> is treated as always on, but the switch <code>CompressPages</code>
+can be set to false to turn off page level stream compression.
+Now that the patent has expired, we could change this should it become worthwhile.
 
 <p>
 <a name="note_3">(note 3)</a>
@@ -452,30 +452,21 @@ You can instead specifically set TransferFunctionInfo to /Remove when producing 
 avoid the transfer function being applied.
 
 <p>
+
+<a name="note_5">(note 5)</a>
+Use the -dFastWebView command line switch to 'optimize' output.
+<p>
+
 <a name="note_6">(note 6)</a>
 
-Ghostscript specifics : The value <code>UseDeviceIndependentColor</code>
-requires the device parameter <code>UseCIEColor</code> to be set to
-<code>true</code>.
-The value <code>UseDeviceIndependentColorForImages</code> works same as
+The value <code>UseDeviceIndependentColorForImages</code> works the same as
 <code>UseDeviceIndependentColor</code>.
-The value <code>CMYK</code> works with any <code>CompatibilityLevel</code> and
-requires the device parameter <code>ProcessColorModel</code> to be set
-to <code>DeviceCMYK</code>.
-The value <code>sRGB</code> requires the device parameter
-<code>ProcessColorModel</code> to be set to <code>DeviceRGB</code>,
-and actually converts to RGB with the default Ghostscript conversion.
-The new Ghostscript-specific value <code>Gray</code> requires the device
-parameter <code>ProcessColorModel</code> to be set to
-<code>DeviceGray</code>, and converts all colors to DeviceGray.
-The old Ghostscript-specific value <code>UseDeviceDependentColor</code>
-is now depricated. It is automaticly replaced with <code>sRGB</code>,
-<code>CMYK</code>, or <code>Gray</code>.
-With the new color conversion code active it is no longer neccesary to
+The value <code>sRGB</code> actually converts to RGB with the default Ghostscript conversion.
+The new Ghostscript-specific value <code>Gray</code> converts all colors to DeviceGray.
+With the introduction of new color conversion code in version 9.11 it is no longer neccesary to
 set <code>ProcessColorModel</code> when selecting <code>Gray</code>, <code>RGB</code> or <code>CMYK</code>. It is also no
 longer neccesary to set <code>UseCIEColor</code> for <code>UseDeviceIndependentColor</code> to
-work properly, and the use of <code>UseCIEColor</code> is now strongly discouraged. <code>sRGB</code>
-is not supported, use <code>RGB</code> instead.
+work properly, and the use of <code>UseCIEColor</code> is now strongly discouraged.
 <p>
 <a name="note_7">(note 7)</a>
  The default image parameter dictionary is
@@ -529,7 +520,7 @@ image parameter dictionaries <code>ColorACSImageDict</code>,
 <code>ColorACSImageDict</code>, <code>ColorImageDict</code>,
 
 <code>GrayACSImageDict</code>, <code>GrayImageDict</code>,
-<code>MonoImageDict</code> cannot be specified on the ps2pdf command line.
+<code>MonoImageDict</code> cannot be specified on the command line.
 To specify these, you must use PostScript, either by including it in the PostScript source
 or by passing the <code>-c</code> command-line parameter to ghostscript as described in <a href="#Limitations">Limitations</A> below.
 For example, including the PostScript string in your file <tt>in.ps</tt>:
@@ -540,9 +531,9 @@ is equivalent to invoking:
 '.setpdfwrite &lt;&lt;/AlwaysEmbed [/Helvetica /Times-Roman]&gt;&gt; setdistillerparams' -f
 in.ps</code></blockquote>
 
-or using <code>ps2pdf</code> with the extra parameters in a file:
+or using the extra parameters in a file:
 
-<blockquote><code>ps2pdf @params.in out.pdf</code></blockquote>
+<blockquote><code>@params.in</code></blockquote>
 
 where the file <b>params.in</b> contains:
 
@@ -569,14 +560,18 @@ As of the 9.11 pre-release, the color management in the pdfwrite family has been
 altered so that it now uses the same Color Management System as rendering (the default
 is LCMS2). This considerably improves the color handling in both pdfwrite and ps2write,
 particularly in the areas of Separation and DeviceN color spaces, and Indexed color
-spaces with images. Despite lengthy careful testing it is possible that there will be
-bugs in this initial implementation and so the following switch is available.
+spaces with images.
 </p>
 
-<dl>
-<dt><code>-dPDFUseOldCMS=</code><em>boolean</em>
-<dd>The old (non-ICC) colour management code has now been removed and this switch no longer has any effect.</dd>
-<p>
+<p>Note that while pdfwrite uses the same CMS as the rendering devices, this does not mean that the entire suite of options is avialable, as described
+in the GS9_Colour Management.pdf file. The colour management code has no effect at all unless either ColorConversionStrategy
+or ConvertCMYKImagesToRGB is set, or content has to be rendered to an image (this is rare and usually required only when
+converting a PDF file with transparency to a version < PDF 1.4).
+</p>
+<p>Options based on object type (image, text, linework) are not used, all objects are converted using the same scheme.
+<code>-dKPreserve</code> has no effect because we will not convert CMYK to CMYK. <code>-dDeviceGrayToK</code> also has no effect;
+when converting to CMYK DeviceGray objects are left in DeviceGray since that can be mapped directly to the K channel.</p>
+
 The <code>ColorConversionStrategy</code> switch can now be set to <code>LeaveColorUnchanged</code>, <code>Gray</code>, <code>RGB</code>, <code>CMYK</code> or
 <code>UseDeviceIndependentColor</code>. Note that, particularly for ps2write, <code>LeaveColorUnchanged</code> may still need to convert
 colors into a different space (ICCbased colors cannot be represented in PostScript for example). <code>ColorConversionStrategy</code> can be specified either as; a string
@@ -587,7 +582,7 @@ by using the <code>-s</code> switch (<code>-sColorConversionStrategy=RGB</code>)
 <p>All other color spaces are converted approproately. Separation and DeviceN spaces will be preserved if possible (ps2write cannot preserve DeviceN or Lab)
 and if the alternate space is not appropriate a new alternate space will be created. Eg a [/Separation (MyColor) /DeviceRGB {...}]
 when the <code>ColorConversionStrategy</code> is set to <code>CMYK</code> would be converted to [/Separation (MyColor) /DeviceCMYK {...}]
-The new tint transform would be created by sampling the original tint transform, converting the RGB values into CMYK, and then creating
+The new tint transform will be created by sampling the original tint transform, converting the RGB values into CMYK, and then creating
 a function to linearly interpolate between those values.</p>
 
 The <code>PreserveSeparation</code> switch now controls whether the pdfwrite family of devices will attempt to preserve Separation spaces. If this is set to false then
@@ -740,7 +735,7 @@ ESC%-12345X
 <h3><a name="PDF"></a>PDF file output</h3>
 <dt><code>-dMaxInlineImageSize=</code><em>integer</em>
 <dd>Specifies the maximum size of an inline image, in bytes. For images larger
-than this size, <code>ps2pdf</code> will create an XObject instead of embedding
+than this size, <code>pdfwrite</code> will create an XObject instead of embedding
 the image into the context stream.
 The default value is <code>4000</code>.
 Note that redundant inline images must be embedded each time they occur in the
@@ -809,7 +804,7 @@ Default value is <code>12000</code>.
 If a shading exceeds this value, the resolution of the output bitmap
 is reduced to fit into the specified number of bytes.
 Note that the number of bytes depends on the number of color components
-in <code>ProcessColorModel</code> or <code>ColorConverionStrategy</code>, assumes 8 bits per sample,
+in <code>ProcessColorModel</code> or <code>ColorConversionStrategy</code>, assumes 8 bits per sample,
 and doesn't consider image compression or downsampling. The image is rendered at the current resolution
 as specified by <code>-r</code> or the default of 720 dpi.
 
@@ -817,7 +812,7 @@ Default value is <code>256000</code>.
 In general larger values will result in higher quality,
 but the output file size may increase dramatically, particularly with shadings which cover large areas.
 
-Shadings hsould generally only be rendered to images if <code>CompatibilityLevel</code> is 1.2 or less
+Shadings should generally only be rendered to images if <code>CompatibilityLevel</code> is 1.2 or less
 or if <code>ColorCoversionStrategy</code> specifies a color space differnt to that of the shading.
 
 <dt><code>-dHaveTrueTypes=<em>boolean</em></code>
@@ -1135,6 +1130,10 @@ To create a PDF/X-3 document from a Postscript or a PDF file, you should :
 <li> Specify a PDF/X definition file before running the input document.
      It provides additional information to be included into the output document.
      A sample PDF/X definition file may be found in <code>gs/lib/PDFX_def.ps</code>.
+     You will need to modify the content of this file; in particular you must alter the
+     /ICCProfile so that it points to a valid ICC profile for your OutputCondition. The
+     string '(...)' defining the ICCProfile must be a fully qualified device and path
+     specification appropriate for your Operating System.
 <li> If a registered printing condition is applicable, specify its identifier
      in the PDF/X definition file. Otherwise provide an ICC profile and
      specify it in the PDF/X definition file as explained below.
@@ -1143,11 +1142,6 @@ To create a PDF/X-3 document from a Postscript or a PDF file, you should :
      a definition of <code>gs/Resource/ColorSpace/DefaultRGB</code> .
      <code>gs/Resource/ColorSpace/DefaultRGB</code> is usually
      distributed with Ghostscript, its content may not necessarily satisfy your needs, see below.
-<li> Specify, using <code>-sOutputICCProfile</code>, an ICC profile which represents the color
-     space (either CMYK or Gray) of the final file. This is the same ICC profile used in the
-     PDF/X definition file as the ICCProfile. Even if you are using a standard OutputCondition and
-     do not need to specify an ICCProfile, you must still set OutputICCProfile with an appropriate
-     ICC profile in order for proper color conversion.
 </ul>
 
 <p>
@@ -1191,7 +1185,7 @@ define a title with DSC comments. Otherwise remove entire line from definition f
 <dd>Defines an <code>Info</code> value for the output intent dictionary.
 </dl>
 
-<p>Ghostscript distribution does not contain an ICC profile to be used
+<p>The Ghostscript distribution does not contain an ICC profile to be used
 for creating a PDF/X-3 document. Users should either create an appropriate one themselves,
 or use one from a public domain, or create one with the PDF/X-3 inspector freeware.
 
@@ -1236,7 +1230,7 @@ It accepts a four-value array in the same format as the
 
 Here is a sample command line to invoke Ghostscript for generating a PDF/X-3 document :
 <blockquote><code>
-gs -dPDFX -dBATCH -dNOPAUSE -sColorConverionStrategy=CMYK -sDEVICE=pdfwrite -sOutputFile=out-x3.pdf PDFX_def.ps input.ps
+gs -dPDFX -dBATCH -dNOPAUSE -sColorConversionStrategy=CMYK -sDEVICE=pdfwrite -sOutputFile=out-x3.pdf PDFX_def.ps input.ps
 </code></blockquote>
 
 <p>
@@ -1351,7 +1345,7 @@ leaving the user with only the task of specifying the additional data.
 <code>The pdfwrite family</code> will sometimes convert input constructs to
 lower-level ones, even if a higher-level construct is available.  For
 example, if the PostScript file uses <code>charpath</code> to set a
-clipping path consisting of text, <code>ps2pdf</code> may write the
+clipping path consisting of text, <code>pdfwrite</code> may write the
 clipping path as a path in the PDF file, rather than as text, even though
 PDF is able to express clipping with text.  This is only a performance
 issue, and will be improved incrementally over time.
@@ -1361,7 +1355,7 @@ Some applications, such as HIGZ, produce PostScript files that use
 ridiculously large coordinates.  On such files, <code>pdfwrite</code> may
 cause a <code>limitcheck</code> error.  If this occurs, try reducing the
 default internal resolution of 720 dpi by using the <code>-r</code>
-switch, e.g., <code>ps2pdf&nbsp;-r300&nbsp;somefile.ps</code>.
+switch, e.g., <code>-r300&nbsp;somefile.ps</code>.
 
 <p>
 <code>pdfwrite</code> ignores the PDF 1.3 (Acrobat 4.x) pdfmarks related to

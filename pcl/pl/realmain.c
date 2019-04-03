@@ -24,7 +24,7 @@ int
 main(int argc, char *argv[])
 {
     int code, code1;
-    void *minst;
+    void *minst = NULL;
     size_t uel_len = strlen(PJL_UEL);
     
     code = gsapi_new_instance(&minst, (void *)0);

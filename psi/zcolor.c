@@ -310,11 +310,6 @@ zsetcolor(i_ctx_t * i_ctx_p)
     code = float_params(op - num_offset, n_numeric_comps, cc.paint.values);
     if (code < 0)
         return code;
-    /* The values are copied to graphic state and compared with */
-    /* other colors by memcmp() in gx_hld_saved_color_equal()   */
-    /* This is the easiest way to avoid indeterminism */
-    memset(cc.paint.values + n_numeric_comps, 0,
-            sizeof(cc.paint.values) - sizeof(*cc.paint.values)*n_numeric_comps);
 
     code = get_space_object(i_ctx_p, &istate->colorspace[0].array, &space);
     if (code < 0)

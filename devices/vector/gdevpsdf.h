@@ -116,7 +116,6 @@ typedef struct psdf_distiller_params_s {
     gs_const_string sRGBProfile;
     enum psdf_color_conversion_strategy {
         ccs_LeaveColorUnchanged,
-        ccs_UseDeviceDependentColor, /* not in Acrobat Distiller 4.0 */
         ccs_UseDeviceIndependentColor,
         ccs_UseDeviceIndependentColorForImages,
         ccs_sRGB,

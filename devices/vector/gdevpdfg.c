@@ -1572,8 +1572,6 @@ int pdf_reset_color(gx_device_pdf * pdev, const gs_gstate * pgs,
                             switch (pdev->params.ColorConversionStrategy) {
                                 case ccs_ByObjectType:
                                     /* Object type not implemented yet */
-                                case ccs_UseDeviceDependentColor:
-                                    /* DeviceDependentColor deprecated */
                                 case ccs_UseDeviceIndependentColorForImages:
                                     /* If only correcting images, then leave unchanged */
                                 case ccs_LeaveColorUnchanged:
@@ -1594,8 +1592,6 @@ int pdf_reset_color(gx_device_pdf * pdev, const gs_gstate * pgs,
                         switch (pdev->params.ColorConversionStrategy) {
                             case ccs_ByObjectType:
                                 /* Object type not implemented yet */
-                            case ccs_UseDeviceDependentColor:
-                                /* DeviceDependentColor deprecated */
                             case ccs_UseDeviceIndependentColorForImages:
                                 /* If only correcting images, then leave unchanged */
                             case ccs_LeaveColorUnchanged:
@@ -1643,8 +1639,6 @@ int pdf_reset_color(gx_device_pdf * pdev, const gs_gstate * pgs,
                         switch (pdev->params.ColorConversionStrategy) {
                             case ccs_ByObjectType:
                                 /* Object type not implemented yet */
-                            case ccs_UseDeviceDependentColor:
-                                /* DeviceDependentColor deprecated */
                             case ccs_UseDeviceIndependentColorForImages:
                                 /* If only correcting images, then leave unchanged */
                             case ccs_LeaveColorUnchanged:
@@ -1710,8 +1704,6 @@ int pdf_reset_color(gx_device_pdf * pdev, const gs_gstate * pgs,
                 switch(pdev->params.ColorConversionStrategy) {
                     case ccs_ByObjectType:
                         /* Object type not implemented yet */
-                    case ccs_UseDeviceDependentColor:
-                        /* DeviceDependentCOlor deprecated */
                     case ccs_UseDeviceIndependentColorForImages:
                         /* If only correcting images, then leave unchanged */
                     case ccs_LeaveColorUnchanged:
