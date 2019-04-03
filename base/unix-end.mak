@@ -160,7 +160,7 @@ gxpsdebugclean:
 gpdfdebug:
 	$(MAKE) $(DEBUGMAKEOPTS) .pdfsubtarget
 
-gpdlfdebugclean:
+gpdfdebugclean:
 	$(MAKE) $(DEBUGMAKEOPTS) cleansub
 
 gpdldebug:
@@ -297,6 +297,9 @@ gxpsvg:
 gpdlvg:
 	$(MAKE) $(VGMAKEOPTS) .gpdlsubtarget
 
+gpdfvg:
+	$(MAKE) $(VGMAKEOPTS) .pdfsubtarget
+
 vgclean:
 	$(MAKE) $(VGMAKEOPTS) cleansub
 
@@ -323,6 +326,9 @@ gxpsdebugvg:
 
 gpdldebugvg:
 	$(MAKE) $(DEBUGVGMAKEOPTS) .gpdlsubtarget
+
+gpdfdebugvg:
+	$(MAKE) $(DEBUGVGMAKEOPTS) .pdfsubtarget
 
 debugvgclean:
 	$(MAKE) $(DEBUGVGMAKEOPTS) cleansub
