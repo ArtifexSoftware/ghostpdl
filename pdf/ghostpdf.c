@@ -1613,7 +1613,7 @@ read_root:
                 continue;
         }
         if (ctx->last_page != 0) {
-            if (i >= ctx->last_page - 1)
+            if (i > ctx->last_page - 1)
                 break;;
         }
         if (ctx->pdfinfo)
