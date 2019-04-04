@@ -2485,8 +2485,21 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
             pdfi_countdown(inheritable);
             return code;
         }
+        code = pdfi_loop_detector_mark(ctx);
+        if (code < 0){
+            pdfi_countdown(Key);
+            pdfi_countdown(inheritable);
+            return code;
+        }
         code = pdfi_dict_get(ctx, d, "MediaBox", &object);
         if (code < 0) {
+            (void)pdfi_loop_detector_cleartomark(ctx);
+            pdfi_countdown(Key);
+            pdfi_countdown(inheritable);
+            return code;
+        }
+        code = pdfi_loop_detector_cleartomark(ctx);
+        if (code < 0){
             pdfi_countdown(Key);
             pdfi_countdown(inheritable);
             return code;
@@ -2516,8 +2529,21 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
             pdfi_countdown(inheritable);
             return code;
         }
+        code = pdfi_loop_detector_mark(ctx);
+        if (code < 0){
+            pdfi_countdown(Key);
+            pdfi_countdown(inheritable);
+            return code;
+        }
         code = pdfi_dict_get(ctx, d, "CropBox", &object);
         if (code < 0) {
+            (void)pdfi_loop_detector_cleartomark(ctx);
+            pdfi_countdown(Key);
+            pdfi_countdown(inheritable);
+            return code;
+        }
+        code = pdfi_loop_detector_cleartomark(ctx);
+        if (code < 0){
             pdfi_countdown(Key);
             pdfi_countdown(inheritable);
             return code;
