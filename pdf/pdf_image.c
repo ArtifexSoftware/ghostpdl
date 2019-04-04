@@ -1265,7 +1265,28 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         return 0;
     }
 
+    /* The image or form might change the colour space (or indeed other aspects
+     * of the graphics state, if its a Form XObject. So gsave/grestore round it
+     * to prevent unexpected changes.
+     */
+    code = gs_gsave(ctx->pgs);
+    if (code < 0) {
+        (void)pdfi_loop_detector_cleartomark(ctx);
+        pdfi_countdown(o);
+        if (ctx->pdfstoponerror)
+            return code;
+        return 0;
+    }
     code = pdfi_do_image_or_form(ctx, stream_dict, page_dict, (pdf_dict *)o);
+    if (code < 0) {
+        (void)pdfi_loop_detector_cleartomark(ctx);
+        pdfi_countdown(o);
+        if (ctx->pdfstoponerror)
+            return code;
+        return 0;
+    }
+
+    code = gs_grestore(ctx->pgs);
 
     /* No need to countdown 'n' because that poitns to tht stack object, and we're going to pop that */
     pdfi_countdown(o);

@@ -1515,6 +1515,7 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
         if (code < 0)
             goto exit;
         if (ppcs!= NULL){
+            code = gs_setcolorspace(ctx->pgs, pcs);
             *ppcs = pcs;
         } else {
             code = gs_setcolorspace(ctx->pgs, pcs);
