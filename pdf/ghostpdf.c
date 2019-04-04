@@ -1680,7 +1680,7 @@ int pdfi_open_pdf_file(pdf_context *ctx, char *filename)
     bytes = BUF_SIZE;
     pdfi_seek(ctx, ctx->main_stream, 0, SEEK_SET);
 
-    bytes = Offset = min(BUF_SIZE, ctx->main_stream_length);
+    bytes = Offset = min(BUF_SIZE - 1, ctx->main_stream_length);
 
     if (ctx->pdfdebug)
         dmprintf(ctx->memory, "%% Reading header\n");
@@ -1691,6 +1691,12 @@ int pdfi_open_pdf_file(pdf_context *ctx, char *filename)
         cleanup_pdfi_open_file(ctx, Buffer);
         return_error(gs_error_ioerror);
     }
+    if (bytes < 8) {
+        emprintf(ctx->memory, "Failed to read enough bytes for a valid PDF header from file\n");
+        cleanup_pdfi_open_file(ctx, Buffer);
+        return_error(gs_error_ioerror);
+    }
+    Buffer[Offset] = 0x00;
 
     /* First check for existence of header */
     s = strstr((char *)Buffer, "%PDF");
@@ -1744,7 +1750,7 @@ int pdfi_open_pdf_file(pdf_context *ctx, char *filename)
                 found = true;
                 break;
             } else {
-                if (Buffer[read] == 0x0a || Buffer[read] == 0x0d)
+                if (Buffer[read - 1] == 0x0a || Buffer[read - 1] == 0x0d)
                     last_lineend = Buffer + read;
             }
             read--;
