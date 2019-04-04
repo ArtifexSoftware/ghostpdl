@@ -748,9 +748,9 @@ pdfi_data_image_params(pdf_context *ctx, pdfi_image_info_t *info,
 
         /* TODO: Is there a less hacky way to identify Indexed case? */
         if (pcs && pcs->type == &gs_color_space_type_Indexed) {
-            /* Default value is [0,N], where N=2^n-1, our hival */
+            /* Default value is [0,N], where N=2^n-1, our hival (which depends on BPC)*/
             minval = 0.0;
-            maxval = (float)pcs->params.indexed.hival;
+            maxval = (float)((1 << info->BPC) - 1);
         } else {
             minval = 0.0;
             maxval = 1.0;
