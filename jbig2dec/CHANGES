@@ -1,4 +1,4 @@
-Version 0.16
+Version 0.16 (2019 April 04)
 
 * API change allowing for library users to get the custom allocator
   so it may be freed if necessary. This is useful if the allocator
