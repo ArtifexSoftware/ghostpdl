@@ -1402,9 +1402,16 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
 
     psubclass_data = (void *)gs_alloc_bytes(dev_to_subclass->memory->non_gc_memory, private_data_size, "subclass memory for subclassing device");
     if (psubclass_data == 0){
-        gs_free_const_object(dev_to_subclass->memory->non_gc_memory, a_std, "gs_device_subclass(stype)");
         gs_free_const_object(dev_to_subclass->memory->non_gc_memory, b_std, "gs_device_subclass(stype)");
+        /* We *don't* want to run the finalize routine. This would free the stype and
+         * properly handle the icc_struct and PageList, but for devices with a custom
+         * finalize (eg psdcmyk) it might also free memory it had allocated, and we're
+         * still pointing at that memory in the parent.
+         */
+        a_std->finalize = NULL;
+        gs_set_object_type(dev_to_subclass->memory->stable_memory, child_dev, a_std);
         gs_free_object(dev_to_subclass->memory->stable_memory, child_dev, "free subclass memory for subclassing device");
+        gs_free_const_object(dev_to_subclass->memory->non_gc_memory, a_std, "gs_device_subclass(stype)");
         return_error(gs_error_VMerror);
     }
     memset(psubclass_data, 0x00, private_data_size);

@@ -78,6 +78,10 @@ gs_fillpage(gs_gstate * pgs)
     gx_device *dev = gs_currentdevice(pgs);
     int code;
 
+    /*
+     * No need to check for returning error code,
+     * existing device will continue to operate as before.
+     */
     epo_check_and_install(dev);
 
     /* Deliberately use the terminal device here */
