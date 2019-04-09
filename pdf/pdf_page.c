@@ -67,22 +67,20 @@ pdfi_get_default_OCG_val(pdf_context *ctx, pdf_dict *ocdict)
 
     if (!is_visible) {
         code = pdfi_dict_knownget_type(ctx, D, "ON", PDF_ARRAY, (pdf_obj **)&ON);
-        if (code < 0) {
+        if (code < 0)
             goto cleanup;
-        }
         if (code > 0) {
-            if (pdfi_array_known(ON, (pdf_obj *)ocdict, NULL))
+            if (pdfi_array_known(ctx, ON, (pdf_obj *)ocdict, NULL))
                 is_visible = true;
         }
     }
 
     if (is_visible) {
-        code = pdfi_dict_get_type(ctx, D, "OFF", PDF_ARRAY, (pdf_obj **)&OFF);
-        if (code < 0) {
+        code = pdfi_dict_knownget_type(ctx, D, "OFF", PDF_ARRAY, (pdf_obj **)&OFF);
+        if (code < 0)
             goto cleanup;
-        }
         if (code > 0) {
-            if (pdfi_array_known(OFF, (pdf_obj *)ocdict, NULL))
+            if (pdfi_array_known(ctx, OFF, (pdf_obj *)ocdict, NULL))
                 is_visible = false;
         }
     }
@@ -246,13 +244,13 @@ pdfi_page_check_OCMD(pdf_context *ctx, pdf_dict *ocdict)
     code = pdfi_dict_knownget_type(ctx, ocdict, "P", PDF_NAME, &Pname);
     if (code < 0)
         goto cleanup;
-    if (code == 0 || pdfi_name_strcmp((pdf_name *)Pname, "AnyOn")) {
+    if (code == 0 || pdfi_name_is((pdf_name *)Pname, "AnyOn")) {
         Ptype = P_AnyOn;
-    } else if (pdfi_name_strcmp((pdf_name *)Pname, "AllOn")) {
+    } else if (pdfi_name_is((pdf_name *)Pname, "AllOn")) {
         Ptype = P_AllOn;
-    } else if (pdfi_name_strcmp((pdf_name *)Pname, "AnyOff")) {
+    } else if (pdfi_name_is((pdf_name *)Pname, "AnyOff")) {
         Ptype = P_AnyOff;
-    } else if (pdfi_name_strcmp((pdf_name *)Pname, "AllOff")) {
+    } else if (pdfi_name_is((pdf_name *)Pname, "AllOff")) {
         Ptype = P_AllOff;
     } else {
         Ptype = P_AnyOn;
@@ -311,5 +309,9 @@ pdfi_page_is_ocg_visible(pdf_context *ctx, pdf_dict *ocdict)
  cleanup:
     pdfi_countdown(type);
 
+    if (ctx->pdfdebug) {
+        dmprintf2(ctx->memory, "OCG: OC Dict %ld %s visible\n", ocdict->object_num,
+                  is_visible ? "IS" : "IS NOT");
+    }
     return is_visible;
 }
