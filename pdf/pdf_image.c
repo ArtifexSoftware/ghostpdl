@@ -149,7 +149,7 @@ pdfi_find_alternate(pdf_context *ctx, pdf_obj *alt)
         return NULL;
 
     array = (pdf_array *)alt;
-    for (i=0; i<array->size;i++) {
+    for (i=0; i<pdfi_array_size(array);i++) {
         code = pdfi_array_get_type(ctx, array, (uint64_t)i, PDF_DICT, &item);
         if (code != 0)
             continue;
@@ -730,12 +730,12 @@ pdfi_data_image_params(pdf_context *ctx, pdfi_image_info_t *info,
         int i;
         double num;
 
-        if (decode_array->size > GS_IMAGE_MAX_COMPONENTS * 2) {
+        if (pdfi_array_size(decode_array) > GS_IMAGE_MAX_COMPONENTS * 2) {
             code = gs_note_error(gs_error_limitcheck);
             goto cleanupExit;
         }
 
-        for (i=0; i<decode_array->size; i++) {
+        for (i=0; i<pdfi_array_size(decode_array); i++) {
             code = pdfi_array_get_number(ctx, decode_array, i, &num);
             if (code < 0)
                 goto cleanupExit;
@@ -1034,12 +1034,12 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
                 int i;
                 double num;
 
-                if (mask_array->size > GS_IMAGE_MAX_COMPONENTS * 2) {
+                if (pdfi_array_size(mask_array) > GS_IMAGE_MAX_COMPONENTS * 2) {
                     code = gs_note_error(gs_error_limitcheck);
                     goto cleanupExit;
                 }
 
-                for (i=0; i<mask_array->size; i++) {
+                for (i=0; i<pdfi_array_size(mask_array); i++) {
                     code = pdfi_array_get_number(ctx, mask_array, i, &num);
                     if (code < 0)
                         goto cleanupExit;
