@@ -94,6 +94,11 @@ s_jbig2decode_error(void *callback_data, const char *msg, Jbig2Severity severity
                 }
             }
             gs_free_object(error_data->memory, error_data->last_message, "s_jbig2decode_error(last_message)");
+            if (severity == JBIG2_SEVERITY_FATAL || severity == JBIG2_SEVERITY_WARNING) {
+                dmlprintf1(error_data->memory, "%s\n", message);
+            } else {
+                if_debug1m('w', error_data->memory, "[w] %s\n", message);
+            }
             error_data->last_message = message;
             error_data->severity = severity;
             error_data->type = type;
