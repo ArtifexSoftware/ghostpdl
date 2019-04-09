@@ -109,6 +109,7 @@ typedef enum pdf_error_flag_e {
     E_PDF_MISSINGENDOBJ = E_PDF_NOHEADER << 14,
     E_PDF_TOKENERROR = E_PDF_NOHEADER << 15,
     E_PDF_KEYWORDTOOLONG = E_PDF_NOHEADER << 16,
+    E_PDF_BADPAGETYPE = E_PDF_NOHEADER << 17,
 } pdf_error_flag;
 
 #define INITIAL_STACK_SIZE 32
@@ -152,6 +153,8 @@ typedef struct pdf_context_s
      * to keep one, and read/write it all the time, but there's one way to find out....
      */
     gs_c_param_list pdfi_param_list;
+    /* Needed to determine whether we need to reset the device to handle any spots */
+    bool spot_capable_device;
 
     gs_gstate *pgs;
     int preserve_tr_mode; /* for avoiding charpath with pdfwrite */
@@ -192,6 +195,7 @@ typedef struct pdf_context_s
     pdf_dict *Info;
     pdf_dict *Pages;
     uint64_t num_pages;
+    char *PageTransparencyArray;
 
     /* Optional things from Root */
     pdf_dict *OCProperties;

@@ -2651,14 +2651,17 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
                     pdfi_countdown(node);
                     return code;
                 }
-            }
-            if (pdfi_name_is(Type, "Page")) {
+            } else {
+                pdf_dict *leaf_dict = NULL;
+                pdf_name *Key = NULL, *Key1 = NULL;
+
+                /* Bizarrely, one of the QL FTS files (FTS_07_0704.pdf) has a page diciotnary with a /Type of /Template */
+                if (!pdfi_name_is(Type, "Page"))
+                    ctx->pdf_errors |= E_PDF_BADPAGETYPE;
                 /* Make a 'PageRef' entry (just stores an indirect reference to the actual page)
                  * and store that in the Kids array for future reference. But pass on the
                  * dereferenced Page dictionary, in case this is the target page.
                  */
-                pdf_dict *leaf_dict = NULL;
-                pdf_name *Key = NULL, *Key1 = NULL;
 
                 code = pdfi_alloc_object(ctx, PDF_DICT, 0, (pdf_obj **)&leaf_dict);
                 if (code == 0) {
@@ -2728,50 +2731,49 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
                     if ((*page_offset) == page_num) {
                         pdf_indirect_ref *o = NULL;
                         pdf_dict *d = NULL;
-                        code = pdfi_dict_get(ctx, child, "PageRef", (pdf_obj **)&o);
-                        if (code == 0) {
-                            code = pdfi_dereference(ctx, o->ref_object_num, o->ref_generation_num, (pdf_obj **)&d);
-                            if (code == 0) {
-                                if (inheritable != NULL) {
-                                    code = pdfi_merge_dicts(d, inheritable);
-                                    pdfi_countdown(inheritable);
-                                    inheritable = NULL;
-                                }
-                                if (code == 0) {
-                                    pdfi_countdown(Kids);
-                                    *target = d;
-                                    pdfi_countup(*target);
-                                    pdfi_countdown(d);
-                                    return 0;
-                                }
-                            }
+
+                        code = pdfi_dict_get(ctx, child, "PageRef", (pdf_obj **)&d);
+                        if (code < 0) {
+                            pdfi_countdown(child);
+                            child = NULL;
+                            pdfi_countdown(Kids);
+                            return code;
                         }
+                        if (inheritable != NULL) {
+                            code = pdfi_merge_dicts(d, inheritable);
+                            pdfi_countdown(inheritable);
+                            inheritable = NULL;
+                        }
+                        pdfi_countdown(Kids);
+                        *target = d;
+                        pdfi_countup(*target);
+                        pdfi_countdown(d);
+                        return 0;
                     } else {
                         *page_offset += 1;
                         pdfi_countdown(child);
                     }
                 } else {
-                    if (pdfi_name_is(Type, "Page")) {
-                        pdfi_countdown(Type);
-                        Type = NULL;
-                        if ((*page_offset) == page_num) {
-                            if (inheritable != NULL) {
-                                code = pdfi_merge_dicts(child, inheritable);
-                            }
-                            if (code == 0) {
-                                pdfi_countdown(inheritable);
-                                pdfi_countdown(Kids);
-                                *target = child;
-                                pdfi_countup(*target);
-                                pdfi_countdown(child);
-                                return 0;
-                            }
-                        } else {
-                            *page_offset += 1;
-                            pdfi_countdown(child);
+                    if (!pdfi_name_is(Type, "Page"))
+                        ctx->pdf_errors |= E_PDF_BADPAGETYPE;
+                    pdfi_countdown(Type);
+                    Type = NULL;
+                    if ((*page_offset) == page_num) {
+                        if (inheritable != NULL) {
+                            code = pdfi_merge_dicts(child, inheritable);
                         }
-                    } else
-                        code = gs_error_typecheck;
+                        if (code == 0) {
+                            pdfi_countdown(inheritable);
+                            pdfi_countdown(Kids);
+                            *target = child;
+                            pdfi_countup(*target);
+                            pdfi_countdown(child);
+                            return 0;
+                        }
+                    } else {
+                        *page_offset += 1;
+                        pdfi_countdown(child);
+                    }
                 }
             }
         }
