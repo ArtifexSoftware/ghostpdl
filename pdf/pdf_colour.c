@@ -86,6 +86,13 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
     if (pdfi_name_is(space, "G")) {
         goto exit;
     } else if (pdfi_name_is(space, "I") || pdfi_name_is(space, "Indexed")) {
+        pdf_obj *base_space;
+
+        code = pdfi_array_get(ctx, color_array, 1, &base_space);
+        if (code == 0) {
+            code = pdfi_check_ColorSpace_for_spots(ctx, base_space, parent_dict, page_dict, num_spots);
+            (void)pdfi_countdown(base_space);
+        }
         goto exit;
     } else if (pdfi_name_is(space, "Lab")) {
         goto exit;
@@ -123,7 +130,8 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
                 goto exit;
 
             if (pdfi_name_is((const pdf_name *)name, "Cyan") || pdfi_name_is((const pdf_name *)name, "Magenta") ||
-                pdfi_name_is((const pdf_name *)name, "Yellow") || pdfi_name_is((const pdf_name *)name, "Black")) {
+                pdfi_name_is((const pdf_name *)name, "Yellow") || pdfi_name_is((const pdf_name *)name, "Black") ||
+                pdfi_name_is((const pdf_name *)name, "None") || pdfi_name_is((const pdf_name *)name, "All")) {
 
                 pdfi_countdown(name);
                 continue;
@@ -159,8 +167,9 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
         if (code != 0)
             goto exit;
 
-        if (pdfi_name_is(space, "Cyan") || pdfi_name_is(space, "Magenta") ||
-            pdfi_name_is(space, "Yellow") || pdfi_name_is(space, "Black"))
+        if (pdfi_name_is((const pdf_name *)space, "Cyan") || pdfi_name_is((const pdf_name *)space, "Magenta") ||
+            pdfi_name_is((const pdf_name *)space, "Yellow") || pdfi_name_is((const pdf_name *)space, "Black") ||
+            pdfi_name_is((const pdf_name *)space, "None") || pdfi_name_is((const pdf_name *)space, "All"))
             goto exit;
         code = pdfi_dict_known_by_key(ctx->SpotNames, space, &known);
         if (code < 0 || known)
