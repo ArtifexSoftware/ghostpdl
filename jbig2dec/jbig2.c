@@ -100,9 +100,18 @@ jbig2_error(Jbig2Ctx *ctx, Jbig2Severity severity, int32_t segment_number, const
 }
 
 Jbig2Ctx *
-jbig2_ctx_new(Jbig2Allocator *allocator, Jbig2Options options, Jbig2GlobalCtx *global_ctx, Jbig2ErrorCallback error_callback, void *error_callback_data)
+jbig2_ctx_new_imp(Jbig2Allocator *allocator, Jbig2Options options, Jbig2GlobalCtx *global_ctx, Jbig2ErrorCallback error_callback, void *error_callback_data, int jbig2_version_major, int jbig2_version_minor)
 {
     Jbig2Ctx *result;
+
+    if (jbig2_version_major != JBIG2_VERSION_MAJOR || jbig2_version_minor != JBIG2_VERSION_MINOR) {
+        Jbig2Ctx fakectx;
+        fakectx.error_callback = error_callback;
+        fakectx.error_callback_data = error_callback_data;
+        jbig2_error(&fakectx, JBIG2_SEVERITY_FATAL, -1, "incompatible jbig2dec header (%d.%d) and library (%d.%d) versions",
+            jbig2_version_major, jbig2_version_minor, JBIG2_VERSION_MAJOR, JBIG2_VERSION_MINOR);
+        return NULL;
+    }
 
     if (allocator == NULL)
         allocator = &jbig2_default_allocator;

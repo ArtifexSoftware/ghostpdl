@@ -80,8 +80,14 @@ struct _Jbig2Allocator {
 };
 
 /* decoder context */
-Jbig2Ctx *jbig2_ctx_new(Jbig2Allocator *allocator,
-                        Jbig2Options options, Jbig2GlobalCtx *global_ctx, Jbig2ErrorCallback error_callback, void *error_callback_data);
+#define jbig2_ctx_new(allocator, options, global_ctx, error_callback, error_callback_data) jbig2_ctx_new_imp((allocator), (options), (global_ctx), (error_callback), (error_callback_data), JBIG2_VERSION_MAJOR, JBIG2_VERSION_MINOR)
+Jbig2Ctx *jbig2_ctx_new_imp(Jbig2Allocator *allocator,
+                        Jbig2Options options,
+                        Jbig2GlobalCtx *global_ctx,
+                        Jbig2ErrorCallback error_callback,
+                        void *error_callback_data,
+                        int jbig2_version_major,
+                        int jbig2_version_minor);
 Jbig2Allocator *jbig2_ctx_free(Jbig2Ctx *ctx);
 
 /* global context for embedded streams */
