@@ -33,6 +33,9 @@ jbig2dec_SOURCES = jbig2dec.c sha1.c sha1.h \
 	os_types.h config_types.h config_win32.h
 jbig2dec_LDADD = libjbig2dec.la @LIBOBJS@ $(PNG_LIBS)
 
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = jbig2dec.pc
+
 dist_man_MANS = jbig2dec.1
 
 EXTRA_DIST = test_jbig2dec.py msvc.mak LICENSE CHANGES

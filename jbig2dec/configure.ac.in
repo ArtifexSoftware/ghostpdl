@@ -146,5 +146,5 @@ AC_CHECK_FUNC(getopt_long,
 ])
 
 # generate output
-AC_CONFIG_FILES([Makefile config_types.h])
+AC_CONFIG_FILES([Makefile config_types.h jbig2dec.pc])
 AC_OUTPUT
