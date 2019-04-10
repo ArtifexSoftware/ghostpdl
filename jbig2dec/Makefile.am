@@ -6,7 +6,7 @@ AUTOMAKE_OPTIONS = foreign 1.7 dist-bzip2 dist-zip -Wall
 lib_LTLIBRARIES = libjbig2dec.la
 include_HEADERS = jbig2.h
 
-CFLAGS = @CFLAGS@ $(XCFLAGS)
+AM_CFLAGS = $(XCFLAGS)
 
 libjbig2dec_la_LDFLAGS = -version-info @JBIG2DEC_LT_CURRENT@:@JBIG2DEC_LT_REVISION@:@JBIG2DEC_LT_AGE@ -no-undefined
 libjbig2dec_la_SOURCES = jbig2.c \
