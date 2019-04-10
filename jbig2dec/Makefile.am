@@ -3,6 +3,8 @@
 # require automake 1.7
 AUTOMAKE_OPTIONS = foreign 1.7 dist-bzip2 dist-zip -Wall
 
+ACLOCAL_AMFLAGS = -I m4
+
 lib_LTLIBRARIES = libjbig2dec.la
 include_HEADERS = jbig2.h
 
