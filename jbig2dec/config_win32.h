@@ -19,10 +19,6 @@
 
 /* configuration header file for compiling under Microsoft Windows */
 
-/* update package version here */
-#define PACKAGE "jbig2dec"
-#define VERSION "0.16"
-
 #ifdef _MSC_VER
 
 /* VS 2012 and later have stdint.h */
