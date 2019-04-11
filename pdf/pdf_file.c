@@ -185,7 +185,7 @@ static int pdfi_Predictor_filter(pdf_context *ctx, pdf_dict *d, stream *source, 
             ppds.BitsPerComponent = (int)BPC;
             ppds.Columns = (int)Columns;
             pdfi_filter_open(min_size, &s_filter_read_procs,
-                             (const stream_template *)&s_PDiffE_template,
+                             (const stream_template *)&s_PDiffD_template,
                              (const stream_state *)&ppds, ctx->memory->non_gc_memory, new_stream);
             (*new_stream)->strm = source;
             break;
