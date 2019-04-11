@@ -64,7 +64,7 @@ extern const stream_template s_jbig2decode_template;
 int
 s_jbig2decode_make_global_data(gs_memory_t *mem, byte *data, uint length, void **result);
 int
-s_jbig2decode_set_global_data(stream_state *ss, s_jbig2_global_data_t *gd);
+s_jbig2decode_set_global_data(stream_state *ss, s_jbig2_global_data_t *gd, void *global_ctx);
 void
 s_jbig2decode_free_global_data(void *data);
 
