@@ -20,6 +20,8 @@
 #include "pdf_stack.h"
 #include "pdf_array.h"
 #include "gsicc_manage.h"
+#include "gsicc_profilecache.h"
+#include "gsicc_create.h"
 
 #include "pdf_file.h"
 #include "pdf_dict.h"
@@ -996,6 +998,320 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
     return code;
 }
 
+/*
+ * This, and pdfi_set_cal() below are copied from the similarly named routines
+ * in zicc.c
+ */
+/* Install a ICC type color space and use the ICC LABLUT profile. */
+static int
+pdfi_seticc_lab(pdf_context *ctx, float *range_buff, gs_color_space **ppcs)
+{
+    int                     code;
+    gs_color_space *        pcs;
+    int                     i;
+
+    /* build the color space object */
+    code = gs_cspace_build_ICC(&pcs, NULL, gs_gstate_memory(ctx->pgs));
+    if (code < 0)
+        return code;
+
+    /* record the current space as the alternative color space */
+    /* Get the lab profile.  It may already be set in the icc manager.
+       If not then lets populate it.  */
+    if (ctx->pgs->icc_manager->lab_profile == NULL ) {
+        /* This can't happen as the profile
+           should be initialized during the
+           setting of the user params */
+        return_error(gs_error_unknownerror);
+    }
+    /* Assign the LAB to LAB profile to this color space */
+    code = gsicc_set_gscs_profile(pcs, ctx->pgs->icc_manager->lab_profile, gs_gstate_memory(ctx->pgs));
+    if (code < 0)
+        return code;
+
+    pcs->cmm_icc_profile_data->Range.ranges[0].rmin = 0.0;
+    pcs->cmm_icc_profile_data->Range.ranges[0].rmax = 100.0;
+    for (i = 1; i < 3; i++) {
+        pcs->cmm_icc_profile_data->Range.ranges[i].rmin =
+            range_buff[2 * (i-1)];
+        pcs->cmm_icc_profile_data->Range.ranges[i].rmax =
+            range_buff[2 * (i-1) + 1];
+    }
+    *ppcs = pcs;
+
+    return code;
+}
+
+static int pdfi_create_Lab(pdf_context *ctx, pdf_array *color_array, int index, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs)
+{
+    int code = 0, i;
+    pdf_dict *Lab_dict = NULL;
+    pdf_array *Range = NULL;
+    float RangeBuf[4];
+    double f;
+
+    code = pdfi_array_get_type(ctx, color_array, index + 1, PDF_DICT, (pdf_obj **)&Lab_dict);
+    if (code < 0)
+        return code;
+
+    code = pdfi_dict_get_type(ctx, Lab_dict, "Range", PDF_ARRAY, (pdf_obj **)&Range);
+    if (code < 0) {
+        goto exit;
+    }
+    if (pdfi_array_size(Range) != 4){
+        code = gs_note_error(gs_error_rangecheck);
+        goto exit;
+    }
+
+    for (i=0; i < 4; i++) {
+        code = pdfi_array_get_number(ctx, Range, (uint64_t)i, &f);
+        if (code < 0)
+            goto exit;
+        RangeBuf[i] = (float)f;
+    }
+
+    code = pdfi_seticc_lab(ctx, RangeBuf, ppcs);
+
+exit:
+    pdfi_countdown(Lab_dict);
+    pdfi_countdown(Range);
+    return code;
+}
+
+/* Install an ICC space from the PDF CalRGB or CalGray types */
+static int
+pdfi_seticc_cal(pdf_context *ctx, float *white, float *black, float *gamma,
+           float *matrix, int num_colorants, ulong dictkey, gs_color_space **ppcs)
+{
+    int                     code;
+    gs_color_space *        pcs;
+    gs_memory_t             *mem = ctx->memory;
+    int                     i;
+    cmm_profile_t           *cal_profile;
+
+    /* See if the color space is in the profile cache */
+    pcs = gsicc_find_cs(dictkey, ctx->pgs);
+    if (pcs == NULL ) {
+        /* build the color space object.  Since this is cached
+           in the profile cache which is a member variable
+           of the graphic state, we will want to use stable
+           memory here */
+        code = gs_cspace_build_ICC(&pcs, NULL, ctx->memory);
+        if (code < 0)
+            return code;
+        /* There is no alternate for this.  Perhaps we should set DeviceRGB? */
+        pcs->base_space = NULL;
+        /* Create the ICC profile from the CalRGB or CalGray parameters */
+        cal_profile = gsicc_create_from_cal(white, black, gamma, matrix,
+                                            ctx->memory, num_colorants);
+        if (cal_profile == NULL)
+            return_error(gs_error_VMerror);
+        /* Assign the profile to this color space */
+        code = gsicc_set_gscs_profile(pcs, cal_profile, ctx->memory);
+        /* profile is created with ref count of 1, gsicc_set_gscs_profile()
+         * increments the ref count, so we need to decrement it here.
+         */
+        rc_decrement(cal_profile, "seticc_cal");
+        if (code < 0)
+            return code;
+        for (i = 0; i < num_colorants; i++) {
+            pcs->cmm_icc_profile_data->Range.ranges[i].rmin = 0;
+            pcs->cmm_icc_profile_data->Range.ranges[i].rmax = 1;
+        }
+        /* Add the color space to the profile cache */
+        gsicc_add_cs(ctx->pgs, pcs, dictkey);
+    }
+    *ppcs = pcs;
+    return code;
+}
+
+static int pdfi_create_CalGray(pdf_context *ctx, pdf_array *color_array, int index, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs)
+{
+    int code = 0, i;
+    pdf_dict *CalGray_dict = NULL;
+    pdf_array *PDFArray = NULL;
+    /* The default values here are as per the PDF 1.7 specification, there is
+     * no default for the WhitePoint as it is a required entry. The Matrix is
+     * not specified for CalGray, but we need it for the general 'pdfi_set_icc'
+     * routine, so we use the same default as CalRGB.
+     */
+    float WhitePoint[3], BlackPoint[3] = {0.0f, 0.0f, 0.0f}, Gamma = 1.0f;
+    float Matrix[9] = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+    double f;
+
+    code = pdfi_array_get_type(ctx, color_array, index + 1, PDF_DICT, (pdf_obj **)&CalGray_dict);
+    if (code < 0)
+        return code;
+
+    code = pdfi_dict_get_type(ctx, CalGray_dict, "WhitePoint", PDF_ARRAY, (pdf_obj **)&PDFArray);
+    if (code < 0) {
+        pdfi_countdown(PDFArray);
+        goto exit;
+    }
+    if (pdfi_array_size(PDFArray) != 3){
+        code = gs_note_error(gs_error_rangecheck);
+        goto exit;
+    }
+
+    for (i=0; i < 3; i++) {
+        code = pdfi_array_get_number(ctx, PDFArray, (uint64_t)i, &f);
+        if (code < 0)
+            goto exit;
+        WhitePoint[i] = (float)f;
+    }
+    pdfi_countdown(PDFArray);
+    PDFArray = NULL;
+
+    /* Check the WhitePoint values, the PDF 1.7 reference states that
+     * Xw ad Zw must be positive and Yw must be 1.0
+     */
+    if (WhitePoint[0] < 0 || WhitePoint[2] < 0 || WhitePoint[1] != 1.0f) {
+        code = gs_note_error(gs_error_rangecheck);
+        goto exit;
+    }
+
+    if (pdfi_dict_knownget_type(ctx, CalGray_dict, "BlackPoint", PDF_ARRAY, (pdf_obj **)&PDFArray)) {
+        if (pdfi_array_size(PDFArray) != 3){
+            code = gs_note_error(gs_error_rangecheck);
+            goto exit;
+        }
+        for (i=0; i < 3; i++) {
+            code = pdfi_array_get_number(ctx, PDFArray, (uint64_t)i, &f);
+            if (code < 0)
+                goto exit;
+            /* The PDF 1.7 reference states that all three components of the BlackPoint
+             * (if present) must be positive.
+             */
+            if (f < 0) {
+                code = gs_note_error(gs_error_rangecheck);
+                goto exit;
+            }
+            BlackPoint[i] = (float)f;
+        }
+        pdfi_countdown(PDFArray);
+        PDFArray = NULL;
+    }
+
+    if (pdfi_dict_knownget_number(ctx, CalGray_dict, "Gamma", &f))
+        Gamma = (float)f;
+    /* The PDF 1.7 reference states that Gamma
+     * (if present) must be positive.
+     */
+    if (Gamma < 0) {
+        code = gs_note_error(gs_error_rangecheck);
+        goto exit;
+    }
+
+    code = pdfi_seticc_cal(ctx, WhitePoint, BlackPoint, &Gamma, Matrix, 1, color_array->object_num, ppcs);
+
+exit:
+    pdfi_countdown(PDFArray);
+    pdfi_countdown(CalGray_dict);
+    return code;
+}
+
+static int pdfi_create_CalRGB(pdf_context *ctx, pdf_array *color_array, int index, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs)
+{
+    int code = 0, i;
+    pdf_dict *CalRGB_dict = NULL;
+    pdf_array *PDFArray = NULL;
+    /* The default values here are as per the PDF 1.7 specification, there is
+     * no default for the WhitePoint as it is a required entry
+     */
+    float WhitePoint[3], BlackPoint[3] = {0.0f, 0.0f, 0.0f}, Gamma[3] = {1.0f, 1.0f, 1.0f};
+    float Matrix[9] = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+    double f;
+
+    code = pdfi_array_get_type(ctx, color_array, index + 1, PDF_DICT, (pdf_obj **)&CalRGB_dict);
+    if (code < 0)
+        return code;
+
+    code = pdfi_dict_get_type(ctx, CalRGB_dict, "WhitePoint", PDF_ARRAY, (pdf_obj **)&PDFArray);
+    if (code < 0) {
+        pdfi_countdown(PDFArray);
+        goto exit;
+    }
+    if (pdfi_array_size(PDFArray) != 3){
+        code = gs_note_error(gs_error_rangecheck);
+        goto exit;
+    }
+
+    for (i=0; i < 3; i++) {
+        code = pdfi_array_get_number(ctx, PDFArray, (uint64_t)i, &f);
+        if (code < 0)
+            goto exit;
+        WhitePoint[i] = (float)f;
+    }
+    pdfi_countdown(PDFArray);
+    PDFArray = NULL;
+
+    /* Check the WhitePoint values, the PDF 1.7 reference states that
+     * Xw ad Zw must be positive and Yw must be 1.0
+     */
+    if (WhitePoint[0] < 0 || WhitePoint[2] < 0 || WhitePoint[1] != 1.0f) {
+        code = gs_note_error(gs_error_rangecheck);
+        goto exit;
+    }
+
+    if (pdfi_dict_knownget_type(ctx, CalRGB_dict, "BlackPoint", PDF_ARRAY, (pdf_obj **)&PDFArray)) {
+        if (pdfi_array_size(PDFArray) != 3){
+            code = gs_note_error(gs_error_rangecheck);
+            goto exit;
+        }
+        for (i=0; i < 3; i++) {
+            code = pdfi_array_get_number(ctx, PDFArray, (uint64_t)i, &f);
+            if (code < 0)
+                goto exit;
+            /* The PDF 1.7 reference states that all three components of the BlackPoint
+             * (if present) must be positive.
+             */
+            if (f < 0) {
+                code = gs_note_error(gs_error_rangecheck);
+                goto exit;
+            }
+            BlackPoint[i] = (float)f;
+        }
+        pdfi_countdown(PDFArray);
+        PDFArray = NULL;
+    }
+
+    if (pdfi_dict_knownget_type(ctx, CalRGB_dict, "Gamma", PDF_ARRAY, (pdf_obj **)&PDFArray)) {
+        if (pdfi_array_size(PDFArray) != 3){
+            code = gs_note_error(gs_error_rangecheck);
+            goto exit;
+        }
+        for (i=0; i < 3; i++) {
+            code = pdfi_array_get_number(ctx, PDFArray, (uint64_t)i, &f);
+            if (code < 0)
+                goto exit;
+            Gamma[i] = (float)f;
+        }
+        pdfi_countdown(PDFArray);
+        PDFArray = NULL;
+    }
+
+    if (pdfi_dict_knownget_type(ctx, CalRGB_dict, "Matrix", PDF_ARRAY, (pdf_obj **)&PDFArray)) {
+        if (pdfi_array_size(PDFArray) != 9){
+            code = gs_note_error(gs_error_rangecheck);
+            goto exit;
+        }
+        for (i=0; i < 9; i++) {
+            code = pdfi_array_get_number(ctx, PDFArray, (uint64_t)i, &f);
+            if (code < 0)
+                goto exit;
+            Matrix[i] = (float)f;
+        }
+        pdfi_countdown(PDFArray);
+        PDFArray = NULL;
+    }
+    code = pdfi_seticc_cal(ctx, WhitePoint, BlackPoint, Gamma, Matrix, 3, color_array->object_num, ppcs);
+
+exit:
+    pdfi_countdown(PDFArray);
+    pdfi_countdown(CalRGB_dict);
+    return code;
+}
+
 static int
 pdfi_get_colorname_string(const gs_memory_t *mem, gs_separation_name colorname_index,
                         unsigned char **ppstr, unsigned int *pname_size)
@@ -1405,13 +1721,14 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
             rc_decrement_only_cs(pcs, "setindexedspace");
         }
     } else if (pdfi_name_is(space, "Lab")) {
-        if (ppcs != NULL) {
-            pcs = gs_cspace_new_DeviceRGB(ctx->memory);
-            if (pcs == NULL)
-                code = gs_note_error(gs_error_VMerror);
+        code = pdfi_create_Lab(ctx, color_array, index, stream_dict, page_dict, &pcs);
+        if (code < 0)
+            goto exit;
+
+        if (ppcs!= NULL){
             *ppcs = pcs;
         } else {
-            code = gs_setrgbcolor(ctx->pgs, 0, 0, 0);
+            code = gs_setcolorspace(ctx->pgs, pcs);
         }
     } else if (pdfi_name_is(space, "RGB")) {
         if (ppcs != NULL) {
@@ -1432,24 +1749,24 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
             code = gs_setcmykcolor(ctx->pgs, 0, 0, 0, 1);
         }
     } else if (pdfi_name_is(space, "CalRGB")) {
-        if (ppcs != NULL) {
-            pcs = gs_cspace_new_DeviceRGB(ctx->memory);
-            if (pcs == NULL)
-                code = gs_note_error(gs_error_VMerror);
-            else
-                *ppcs = pcs;
+        code = pdfi_create_CalRGB(ctx, color_array, index, stream_dict, page_dict, &pcs);
+        if (code < 0)
+            goto exit;
+
+        if (ppcs!= NULL){
+            *ppcs = pcs;
         } else {
-            code = gs_setrgbcolor(ctx->pgs, 0, 0, 0);
+            code = gs_setcolorspace(ctx->pgs, pcs);
         }
     } else if (pdfi_name_is(space, "CalGray")) {
-        if (ppcs != NULL) {
-            pcs = gs_cspace_new_DeviceGray(ctx->memory);
-            if (pcs == NULL)
-                code = gs_note_error(gs_error_VMerror);
-            else
-                *ppcs = pcs;
+        code = pdfi_create_CalGray(ctx, color_array, index, stream_dict, page_dict, &pcs);
+        if (code < 0)
+            goto exit;
+
+        if (ppcs!= NULL){
+            *ppcs = pcs;
         } else {
-            code = gs_setgray(ctx->pgs, 1);
+            code = gs_setcolorspace(ctx->pgs, pcs);
         }
     } else if (pdfi_name_is(space, "Pattern")) {
         if (index != 0)
