@@ -261,11 +261,11 @@ s_jbig2decode_free_global_data(void *data)
 
 /* store a global ctx pointer in our state structure */
 int
-s_jbig2decode_set_global_data(stream_state *ss, s_jbig2_global_data_t *gd)
+s_jbig2decode_set_global_data(stream_state *ss, s_jbig2_global_data_t *gd, void *global_ctx)
 {
     stream_jbig2decode_state *state = (stream_jbig2decode_state*)ss;
     state->global_struct = gd;
-    state->global_ctx = (Jbig2GlobalCtx*)(gd ? gd->data : 0);
+    state->global_ctx = global_ctx;
     return 0;
 }
 
@@ -406,7 +406,7 @@ void
 s_jbig2decode_finalize(const gs_memory_t *cmem, void *vptr)
 {
     (void)cmem;
-    
+
     s_jbig2decode_release((stream_state *)vptr);
 }
 

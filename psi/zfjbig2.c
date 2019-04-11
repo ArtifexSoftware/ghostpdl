@@ -68,14 +68,14 @@ z_jbig2decode(i_ctx_t * i_ctx_p)
        z_jbig2makeglobalctx() below to create an astruct wrapping the
        global decoder data and store it under the .jbig2globalctx key
      */
-    s_jbig2decode_set_global_data((stream_state*)&state, NULL);
+    s_jbig2decode_set_global_data((stream_state*)&state, NULL, NULL);
     if (r_has_type(op, t_dictionary)) {
         check_dict_read(*op);
         if ( dict_find_string(op, ".jbig2globalctx", &sop) > 0) {
             if (!r_is_struct(sop) || !r_has_stype(sop, imemory, st_jbig2_global_data_t))
                 return_error(gs_error_typecheck);
             gref = r_ptr(sop, s_jbig2_global_data_t);
-            s_jbig2decode_set_global_data((stream_state*)&state, gref);
+            s_jbig2decode_set_global_data((stream_state*)&state, gref, gref->data);
         }
     }
 

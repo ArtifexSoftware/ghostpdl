@@ -278,7 +278,6 @@ pdfi_JBIG2Decode_filter(pdf_context *ctx, pdf_dict *dict, pdf_dict *decode,
                         stream *source, stream **new_stream)
 {
     stream_jbig2decode_state state;
-    s_jbig2_global_data_t gref;
     uint min_size = s_jbig2decode_template.min_out_size;
     int code;
     pdf_dict *Globals = NULL;
@@ -286,7 +285,7 @@ pdfi_JBIG2Decode_filter(pdf_context *ctx, pdf_dict *dict, pdf_dict *decode,
     int64_t buflen;
     void *globalctx;
 
-    s_jbig2decode_set_global_data((stream_state*)&state, NULL);
+    s_jbig2decode_set_global_data((stream_state*)&state, NULL, NULL);
 
     if (decode) {
         code = pdfi_dict_knownget_type(ctx, decode, "JBIG2Globals", PDF_DICT, (pdf_obj **)&Globals);
@@ -301,8 +300,7 @@ pdfi_JBIG2Decode_filter(pdf_context *ctx, pdf_dict *dict, pdf_dict *decode,
                 code = s_jbig2decode_make_global_data(ctx->memory->non_gc_memory,
                                                       buf, buflen, &globalctx);
 
-                gref.data = globalctx;
-                s_jbig2decode_set_global_data((stream_state*)&state, &gref);
+                s_jbig2decode_set_global_data((stream_state*)&state, NULL, globalctx);
             }
         }
     }
