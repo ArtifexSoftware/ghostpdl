@@ -32,3 +32,4 @@ int pdfi_open_memory_stream_from_filtered_stream(pdf_context *ctx, pdf_dict *str
                                         byte **Buffer, pdf_stream *source, pdf_stream **new_pdf_stream);
 int pdfi_open_memory_stream_from_memory(pdf_context *ctx, unsigned int size,
                                         byte *Buffer, pdf_stream **new_pdf_stream);
+int pdfi_stream_to_buffer(pdf_context *ctx, pdf_dict *stream_dict, byte **buf, int64_t *bufferlen);

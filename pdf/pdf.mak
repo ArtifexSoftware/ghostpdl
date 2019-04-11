@@ -23,7 +23,7 @@ PLOBJ       = $(PLOBJDIR)$(D)
 PDFCCC  = $(CC_) $(JPX_CFLAGS) $(D_)PDF_INCLUDED$(_D) $(I_)$(PDFSRCDIR)$(_I) $(I_)$(PDFGENDIR)$(_I) \
 	$(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) \
 	$(I_)$(EXPATINCDIR)$(_I) $(I_)$(JPEGXR_SRCDIR)$(_I) $(I_)$(ZSRCDIR)$(_I) \
-        $(I_)$(JPX_OPENJPEG_I_)$(_I) $(C_)
+        $(I_)$(JPX_OPENJPEG_I_)$(_I) $(I_)$(JB2I_)$(_I) $(C_)
 
 # Define the name of this makefile.
 PDF_MAK     = $(PDFSRC)pdf.mak $(TOP_MAKEFILES)

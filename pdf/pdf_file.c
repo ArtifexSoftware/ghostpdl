@@ -38,6 +38,11 @@
 #include "sarc4.h"      /* Arc4Decode */
 #include "saes.h"       /* AESDecode */
 
+#ifdef USE_LDF_JB2
+#include "sjbig2_luratech.h"
+#else
+#include "sjbig2.h"
+#endif
 #if defined(USE_LWF_JP2)
 #  include "sjpx_luratech.h"
 #elif defined(USE_OPENJPEG_JP2)
@@ -266,6 +271,54 @@ static int pdfi_Flate_filter(pdf_context *ctx, pdf_dict *d, stream *source, stre
     if (d && d->type == PDF_DICT)
         pdfi_Predictor_filter(ctx, d, source, new_stream);
     return 0;
+}
+
+static int
+pdfi_JBIG2Decode_filter(pdf_context *ctx, pdf_dict *dict, pdf_dict *decode,
+                        stream *source, stream **new_stream)
+{
+    stream_jbig2decode_state state;
+    s_jbig2_global_data_t gref;
+    uint min_size = s_jbig2decode_template.min_out_size;
+    int code;
+    pdf_dict *Globals = NULL;
+    byte *buf;
+    int64_t buflen;
+    void *globalctx;
+
+    s_jbig2decode_set_global_data((stream_state*)&state, NULL);
+
+    if (decode) {
+        code = pdfi_dict_knownget_type(ctx, decode, "JBIG2Globals", PDF_DICT, (pdf_obj **)&Globals);
+        if (code < 0) {
+            goto cleanupExit;
+        }
+
+        /* read in the globals from stream */
+        if (code > 0) {
+            code = pdfi_stream_to_buffer(ctx, Globals, &buf, &buflen);
+            if (code == 0) {
+                code = s_jbig2decode_make_global_data(ctx->memory->non_gc_memory,
+                                                      buf, buflen, &globalctx);
+
+                gref.data = globalctx;
+                s_jbig2decode_set_global_data((stream_state*)&state, &gref);
+            }
+        }
+    }
+
+    code = pdfi_filter_open(min_size, &s_filter_read_procs,
+                            (const stream_template *)&s_jbig2decode_template,
+                            (const stream_state *)&state, ctx->memory->non_gc_memory, new_stream);
+    if (code < 0)
+        goto cleanupExit;
+
+    (*new_stream)->strm = source;
+    code = 0;
+
+ cleanupExit:
+    pdfi_countdown(Globals);
+    return code;
 }
 
 static int pdfi_LZW_filter(pdf_context *ctx, pdf_dict *d, stream *source, stream **new_stream)
@@ -617,8 +670,8 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
         return code;
     }
     if (pdfi_name_is(n, "JBIG2Decode")) {
-        dbgmprintf(ctx->memory, "WARNING: JBIG2Decode filter not implemented\n");
-        return -1;
+        code = pdfi_JBIG2Decode_filter(ctx, dict, decode, source, new_stream);
+        return code;
     }
     if (pdfi_name_is(n, "LZWDecode")) {
         code = pdfi_LZW_filter(ctx, decode, source, new_stream);
@@ -1157,4 +1210,70 @@ int pdfi_read_bytes(pdf_context *ctx, byte *Buffer, uint32_t size, uint32_t coun
     }
 
     return bytes;
+}
+
+/* Read bytes from stream object into buffer.
+ * Buffer gets allocated and must be freed by caller.
+ */
+int
+pdfi_stream_to_buffer(pdf_context *ctx, pdf_dict *stream_dict, byte **buf, int64_t *bufferlen)
+{
+    byte *Buffer = NULL;
+    int code = 0;
+    int64_t buflen;
+    int bytes;
+    char c;
+    gs_offset_t savedoffset;
+    pdf_stream *stream;
+    bool filtered;
+
+    savedoffset = pdfi_tell(ctx->main_stream);
+
+    /* See if this is a filtered stream */
+    code = pdfi_dict_known(stream_dict, "Filter", &filtered);
+    if (code < 0)
+        goto exit;
+
+    if (filtered) {
+        code = pdfi_filter(ctx, stream_dict, ctx->main_stream, &stream, false);
+        if (code < 0) {
+            goto exit;
+        }
+        /* Find out how big it is */
+        do {
+            bytes = sfread(&c, 1, 1, stream->s);
+            if (bytes > 0)
+                buflen++;
+        } while (bytes >= 0);
+        pdfi_close_file(ctx, stream);
+    } else {
+        code = pdfi_dict_get_int(ctx, stream_dict, "Length", &buflen);
+        if (code < 0)
+            goto exit;
+    }
+
+    /* Alloc buffer */
+    Buffer = gs_alloc_bytes(ctx->memory, buflen, "pdfi_stream_to_buffer (Buffer)");
+    if (!Buffer) {
+        code = gs_note_error(gs_error_VMerror);
+        goto exit;
+    }
+    code = pdfi_seek(ctx, ctx->main_stream, stream_dict->stream_offset, SEEK_SET);
+    if (code < 0)
+        goto exit;
+    if (filtered) {
+        code = pdfi_filter(ctx, stream_dict, ctx->main_stream, &stream, false);
+        sfread(Buffer, 1, buflen, stream->s);
+        pdfi_close_file(ctx, stream);
+    } else {
+        sfread(Buffer, 1, buflen, ctx->main_stream->s);
+    }
+
+ exit:
+    pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
+    if (Buffer && code < 0)
+        gs_free_object(ctx->memory, Buffer, "pdfi_stream_to_buffer (Buffer)");
+    *buf = Buffer;
+    *bufferlen = buflen;
+    return code;
 }
