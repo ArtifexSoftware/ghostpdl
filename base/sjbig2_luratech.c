@@ -98,7 +98,13 @@ s_jbig2decode_free_global_data(void *data)
     gs_free_object(global->mem, global, "s_jbig2decode_free_global_data(global)");
 }
 
-/* store a global ctx pointer in our state structure */
+/* store a global ctx pointer in our state structure.
+ * If "gd" is NULL, then this library must free the global context.
+ * If not-NULL, then it will be memory managed by caller, for example,
+ * garbage collected in the case of the PS interpreter.
+ * Currently gpdf will use NULL, and the PDF implemented in the gs interpreter would use
+ * the garbage collection.
+ */
 int
 s_jbig2decode_set_global_data(stream_state *ss, s_jbig2_global_data_t *gd, void *global_ctx)
 {
@@ -382,7 +388,15 @@ s_jbig2decode_release(stream_state *ss)
         if (state->inbuf) free(state->inbuf);
         if (state->image) free(state->image);
     }
-    /* the interpreter calls jbig2decode_free_global_data() separately */
+    if (state->global_struct != NULL) {
+        /* the interpreter calls jbig2decode_free_global_data() separately */
+    } else {
+        /* We are responsible for freeing global context */
+        if (state->global_ctx) {
+            s_jbig2decode_free_global_data(state->global_ctx);
+            state->global_ctx = NULL;
+        }
+    }
 }
 
 /* stream template */
