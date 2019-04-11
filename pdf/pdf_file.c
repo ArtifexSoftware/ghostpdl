@@ -1211,14 +1211,16 @@ int pdfi_read_bytes(pdf_context *ctx, byte *Buffer, uint32_t size, uint32_t coun
 }
 
 /* Read bytes from stream object into buffer.
- * Buffer gets allocated and must be freed by caller.
+ * Handles both plain streams and filtered streams.
+ * Buffer gets allocated here, and must be freed by caller.
+ * Preserves the location of the current stream file position.
  */
 int
 pdfi_stream_to_buffer(pdf_context *ctx, pdf_dict *stream_dict, byte **buf, int64_t *bufferlen)
 {
     byte *Buffer = NULL;
     int code = 0;
-    int64_t buflen;
+    int64_t buflen = 0;
     int bytes;
     char c;
     gs_offset_t savedoffset;
@@ -1227,10 +1229,18 @@ pdfi_stream_to_buffer(pdf_context *ctx, pdf_dict *stream_dict, byte **buf, int64
 
     savedoffset = pdfi_tell(ctx->main_stream);
 
+    pdfi_seek(ctx, ctx->main_stream, stream_dict->stream_offset, SEEK_SET);
+
     /* See if this is a filtered stream */
     code = pdfi_dict_known(stream_dict, "Filter", &filtered);
     if (code < 0)
         goto exit;
+
+    if (!filtered) {
+        code = pdfi_dict_known(stream_dict, "F", &filtered);
+        if (code < 0)
+            goto exit;
+    }
 
     if (filtered) {
         code = pdfi_filter(ctx, stream_dict, ctx->main_stream, &stream, false);
