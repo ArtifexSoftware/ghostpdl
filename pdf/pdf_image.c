@@ -793,7 +793,6 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
               pdf_stream *source, bool inline_image)
 {
     pdf_stream *new_stream = NULL;
-    pdf_stream *mask_stream = NULL;
     int code = 0, comps = 0;
     bool flush = false;
     gs_color_space  *pcs = NULL;
@@ -1069,21 +1068,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
      * two streams simultaneously -- not even sure that is feasible?
      */
     if (mask_dict) {
-        mask_size = pdfi_get_image_data_size((gs_data_image_t *)&t3image.MaskDict, 1);
-
-        pdfi_seek(ctx, source, mask_dict->stream_offset, SEEK_SET);
-        mask_buffer = gs_alloc_bytes(ctx->memory, mask_size, "pdfi_do_image (mask_buffer)");
-        if (!mask_buffer) {
-            code = gs_note_error(gs_error_VMerror);
-            goto cleanupExit;
-        }
-
-        /* Setup the data stream for the mask data */
-        code = pdfi_filter(ctx, mask_dict, source, &mask_stream, false);
-        if (code < 0)
-            goto cleanupExit;
-
-        code = pdfi_read_bytes(ctx, mask_buffer, 1, mask_size, mask_stream);
+        code = pdfi_stream_to_buffer(ctx, mask_dict, &mask_buffer, (int64_t *)&mask_size);
         if (code < 0)
             goto cleanupExit;
     }
@@ -1120,8 +1105,6 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
 
     if (new_stream)
         pdfi_close_file(ctx, new_stream);
-    if (mask_stream)
-        pdfi_close_file(ctx, mask_stream);
     if (mask_buffer)
         gs_free_object(ctx->memory, mask_buffer, "pdfi_do_image (mask_buffer)");
     if (alt_dict) {
