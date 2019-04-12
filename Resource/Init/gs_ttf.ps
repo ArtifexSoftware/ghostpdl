@@ -418,7 +418,6 @@
     } bind def
     /glyphs 0 dict def
 
-    /numcodes 0 def /code 0 def
     % neg2 is number of segments x 2. A format 4 cmap, with usable
     % mappings cannot (according to the spec) have only 1 segment,
     % since format 4 requires a closing segment with start and end
@@ -429,6 +428,16 @@
     % segments - this works as we don't rely on the terminating segment
     % but use the loop counter to spot completion - effrectively, we
     % ignore the closing segment when it's present, anyway.
+    %
+    % This loop and/or putglyph do not account for out of spec fonts
+    % that have repeated or overlapping ranges in the segments. As we
+    % write the code/gid to a PS dictionary, later encounters with a
+    % given code will overwrite the earlier one(s). As this is outside
+    % of the spec, it's not clear how other consumers handle this
+    % condition, so we'll await a suitable example before making changes.
+    % Two choices are: drop later repeated/overlapping segments entirely,
+    % or only use codes from later, overlapping segments not already set
+    % by the earlier segment. (Inspired by Bug 700968).
     0 2 nseg2 dup 4 lt {pop 4}if 3 sub {
       /i2 exch def
       /scode startc i2 getu16a def
@@ -436,13 +445,7 @@
       % Bug 693538: see above
       scode 0 eq ecode 0 eq and not {
         scode ecode 1 add gt { /ecode scode 1 add def } if % Bug 691326. See above.
-
-        numcodes scode firstcode sub
-                  % Hack for fonts that have only 0x0000 and 0xf000 ranges
-        %dup 16#e000 ge { 255 and } if
-        % the previous line is obstructive to CJK fonts, so it was removed
-        exch sub 0 .max dup /code exch code exch add def
-        ecode scode sub 1 add add numcodes add /numcodes exch def
+        /code scode def
         /delta iddelta i2 gets16a def
         TTFDEBUG {
           (scode=) print scode =only
