@@ -56,7 +56,6 @@
 /* ------ Structure declaration ------ */
 
 typedef struct gs_glyph_data_procs_s gs_glyph_data_procs_t;
-typedef struct gs_glyph_data_s gs_glyph_data_t;
 struct gs_glyph_data_s {
     gs_const_bytestring bits;	/* pointer to actual data returned here */
     const gs_glyph_data_procs_t *procs;

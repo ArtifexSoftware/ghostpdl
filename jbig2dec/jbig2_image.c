@@ -110,17 +110,20 @@ Jbig2Image *
 jbig2_image_resize(Jbig2Ctx *ctx, Jbig2Image *image, uint32_t width, uint32_t height, int value)
 {
     if (width == image->width) {
+        uint8_t *data;
+
         /* check for integer multiplication overflow */
         if (image->height > (INT32_MAX / image->stride)) {
             jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "integer multiplication overflow during resize (stride=%u, height=%u)", image->stride, height);
             return NULL;
         }
         /* use the same stride, just change the length */
-        image->data = jbig2_renew(ctx, image->data, uint8_t, (size_t) height * image->stride);
-        if (image->data == NULL) {
+        data = jbig2_renew(ctx, image->data, uint8_t, (size_t) height * image->stride);
+        if (data == NULL) {
             jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to reallocate image");
             return NULL;
         }
+        image->data = data;
         if (height > image->height) {
             const uint8_t fill = value ? 0xFF : 0x00;
             memset(image->data + (size_t) image->height * image->stride, fill, ((size_t) height - image->height) * image->stride);

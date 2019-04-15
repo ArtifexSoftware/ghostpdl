@@ -3,10 +3,12 @@
 # require automake 1.7
 AUTOMAKE_OPTIONS = foreign 1.7 dist-bzip2 dist-zip -Wall
 
+ACLOCAL_AMFLAGS = -I m4
+
 lib_LTLIBRARIES = libjbig2dec.la
 include_HEADERS = jbig2.h
 
-CFLAGS = @CFLAGS@ $(XCFLAGS)
+AM_CFLAGS = $(XCFLAGS)
 
 libjbig2dec_la_LDFLAGS = -version-info @JBIG2DEC_LT_CURRENT@:@JBIG2DEC_LT_REVISION@:@JBIG2DEC_LT_AGE@ -no-undefined
 libjbig2dec_la_SOURCES = jbig2.c \
@@ -30,6 +32,9 @@ jbig2dec_SOURCES = jbig2dec.c sha1.c sha1.h \
 	jbig2.h jbig2_image.h getopt.h \
 	os_types.h config_types.h config_win32.h
 jbig2dec_LDADD = libjbig2dec.la @LIBOBJS@ $(PNG_LIBS)
+
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = jbig2dec.pc
 
 dist_man_MANS = jbig2dec.1
 

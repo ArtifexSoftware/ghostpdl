@@ -24,6 +24,7 @@
 #include "gdebug.h"
 #include "strimpl.h"
 #include "sjbig2.h"
+#include <limits.h>                     /* UINT_MAX */
 
 /* stream implementation */
 
@@ -94,6 +95,11 @@ s_jbig2decode_error(void *callback_data, const char *msg, Jbig2Severity severity
                 }
             }
             gs_free_object(error_data->memory, error_data->last_message, "s_jbig2decode_error(last_message)");
+            if (severity == JBIG2_SEVERITY_FATAL || severity == JBIG2_SEVERITY_WARNING) {
+                dmlprintf1(error_data->memory, "%s\n", message);
+            } else {
+                if_debug1m('w', error_data->memory, "[w] %s\n", message);
+            }
             error_data->last_message = message;
             error_data->severity = severity;
             error_data->type = type;
@@ -180,6 +186,8 @@ typedef struct {
 static void *s_jbig2decode_alloc(Jbig2Allocator *_allocator, size_t size)
 {
         s_jbig2decode_allocator_t *allocator = (s_jbig2decode_allocator_t *) _allocator;
+        if (size > UINT_MAX)
+            return NULL;
         return gs_alloc_bytes(allocator->mem, size, "s_jbig2decode_alloc");
 }
 
@@ -192,6 +200,8 @@ static void s_jbig2decode_free(Jbig2Allocator *_allocator, void *p)
 static void *s_jbig2decode_realloc(Jbig2Allocator *_allocator, void *p, size_t size)
 {
         s_jbig2decode_allocator_t *allocator = (s_jbig2decode_allocator_t *) _allocator;
+        if (size > UINT_MAX)
+            return NULL;
         return gs_resize_object(allocator->mem, p, size, "s_jbig2decode_realloc");
 }
 

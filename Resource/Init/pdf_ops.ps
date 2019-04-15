@@ -2008,7 +2008,46 @@ end readonly def
     8 { pop } repeat
   } {
     5 index 16#1000000 and 0 ne { % comb
-      8 { pop } repeat (Combed form fields are not yet implemented.) =
+      6 index type /stringtype eq {
+        6 index length 0 gt {
+          6 index length 8 index          % length of V and MaxLength
+          gt {
+            (Comb field with /V string which exceeds /MaxLength. Ignoring field.) =
+            8 {pop} repeat
+          }{
+            3 index 8 index div           % field Rect width / MaxLength, the offset between 'comb' boxes
+            7 index
+            <EFBBBF> anchorsearch {
+              pop
+            } {
+              <FEFF> anchorsearch {
+                  pop
+              } if
+            } ifelse
+            {
+              currentpoint newpath moveto                           % new path, preserving currnt point
+              currentpoint                                          % store the current point, this is the origin for the next 'comb'
+              3 -1 roll 1 string dup 3 -1 roll exch 0 3 -1 roll put % turn the character code into a 1 byte string
+              dup gsave
+              false charpath flattenpath pathbbox grestore          % get the bounding box of that character
+              3 -1 roll sub 3 1 roll exch sub                       % get its width and height (ch, cw)
+              8 index 6 index                                       % comb box width and height (bh, bw)
+              3 -1 roll                                             % ch cw bh bw -> ch bh bw cw
+              sub 2 div                                             % ch bh (bw - cw) / 2 = ch bh dw
+              3 1 roll                                              % ch bh dw -> dw ch bh
+              exch sub 2 div                                        % dw (bh - ch) /2 = dw dh
+              rmoveto                                               % centers character in box
+              Show exch 2 index add exch moveto                     % Draw the character
+            } forall                                                % repeat for every character in the original string
+            9 {pop} repeat                                          % discard the various arguments
+          }ifelse
+        }{
+          8 {pop} repeat                                            % discard the parameters
+        }ifelse
+      }{
+        (Comb field with a non-string /V value is illegal. Ignoring field.) =
+        8 {pop} repeat
+      } ifelse
     } { % plain text
       3 1 roll sub add 2 div             % MaxLen (V) Ff Q dx (dy-yy+desc)/2
       0 exch moveto                      % MaxLen (V) Ff Q dx

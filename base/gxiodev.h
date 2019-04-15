@@ -21,7 +21,7 @@
 #  define gxiodev_INCLUDED
 
 #include "stat_.h"
-#include "gsstype.h"
+#include "gsparam.h"
 #include "scommon.h"
 #include "gp.h"
 #include "gsfname.h"
@@ -43,9 +43,6 @@ int
 gs_iodev_register_dev(gs_memory_t * mem, const gx_io_device *newiodev);
 
 /* The IODevice table is defined in gconf.c; its extern is in gscdefs.h. */
-
-/* Define an opaque type for parameter lists. */
-typedef struct gs_param_list_s gs_param_list;
 
 /*
  * Define the IODevice procedures.  Note that file names for fopen, delete,

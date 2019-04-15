@@ -19,6 +19,9 @@
 #ifndef gspenum_INCLUDED
 #  define gspenum_INCLUDED
 
+/* Opaque type for a path */
+typedef struct gx_path_s gx_path;
+
 /* Define the path element types. */
 #define gs_pe_moveto 1
 #define gs_pe_lineto 2

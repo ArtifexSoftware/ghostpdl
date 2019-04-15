@@ -21,13 +21,6 @@
 #include "config.h"
 #endif
 
-#ifndef PACKAGE
-#define PACKAGE "jbig2dec"
-#endif
-#ifndef VERSION
-#define VERSION "unknown-version"
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -209,7 +202,7 @@ parse_options(int argc, char *argv[], jbig2dec_params_t *params)
 static int
 print_version(void)
 {
-    fprintf(stdout, "%s %s\n", PACKAGE, VERSION);
+    fprintf(stdout, "jbig2dec %d.%d\n", JBIG2_VERSION_MAJOR, JBIG2_VERSION_MINOR);
     return 0;
 }
 

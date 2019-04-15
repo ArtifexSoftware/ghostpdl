@@ -5711,7 +5711,7 @@ $(GLSRC)gxiodev.h:$(GLSRC)gp.h
 $(GLSRC)gxiodev.h:$(GLSRC)srdline.h
 $(GLSRC)gxiodev.h:$(GLSRC)scommon.h
 $(GLSRC)gxiodev.h:$(GLSRC)gsfname.h
-$(GLSRC)gxiodev.h:$(GLSRC)gsstype.h
+$(GLSRC)gxiodev.h:$(GLSRC)gsparam.h
 $(GLSRC)gxiodev.h:$(GLSRC)gpgetenv.h
 $(GLSRC)gxiodev.h:$(GLSRC)gsmemory.h
 $(GLSRC)gxiodev.h:$(GLSRC)gscdefs.h
