@@ -106,8 +106,11 @@
 <li><a href="#SPARC_problems">Problems</a></li>
 </ul>
 <li><a href="#Apple">Apple dot matrix printer</a></li>
-<li><a href="#Test">Test devices</a></li>
+<li><a href="#Test">Special and Test devices</a></li>
 <ul>
+<li><a href="#Bit">Raw 'bit' output.</a></li>
+<li><a href="#Bounding_box_output">Bounding Box output.</a></li>
+<li><a href="#Ink_coverage_output">Ink coverage output.</a></li>
 <li><a href="#Permute">Permutation (DeviceN color model)</a></li>
 <li><a href="#SPOT">spotcmyk (DeviceN color model)</a></li>
 <li><a href="#XCF">XCF (DeviceN color model)</a></li>
@@ -1767,7 +1770,7 @@ meet your needs.</p>
 The devices in this section are intended primarily for testing. They may
 be interesting as code examples, as well.</p>
 
-<h3>Raw 'bit' devices</h3>
+<h3><a name="Bit"></a>Raw 'bit' devices</h3>
 
 <p>There are a collection of 'bit' devices that don't do any special formatting
 but output 'raw' binary data for the page images. These are used for benchmarking
@@ -1823,22 +1826,24 @@ gs -dNOPAUSE -dBATCH -sDEVICE=bbox -r100 -g500000x500000
 <h3><a name="Ink_coverage_output"></a>Ink coverage output</h3>
 
 <p>
-There is a special <code>inkcov</code> device that just prints the
-ink coverage of each page.  It is selected like this:</p>
+There are two special <code>inkcov</code> devices that print the
+ink coverage of each page; the inkcov device and the ink_cov device.
+They are selected like this:</p>
 
-<blockquote><code>
+<blockquote><pre><code>
 gs -dSAFER -dNOPAUSE -dBATCH -o- -sDEVICE=inkcov Y.pdf
-</code></blockquote>
+gs -dSAFER -dNOPAUSE -dBATCH -o- -sDEVICE=ink_cov Y.pdf
+</code></pre></blockquote>
 
 <p>These commands also work as expected:</p>
 
-<blockquote><code>
+<blockquote><pre><code>
 gs -o X_inkcov.txt -sDEVICE=inkcov Y.pdf
 gs -o X_inkcov_page%03d.txt -sDEVICE=inkcov Y.pdf
-</code></blockquote>
+</code></pre></blockquote>
 
 <p>
-It prints the output in a format like this:</p>
+The devices print their output in a format like this:</p>
 
 <blockquote>
 <pre><code>Page 1
@@ -1846,6 +1851,20 @@ It prints the output in a format like this:</p>
 Page 2
  0.06108  0.05000  0.05834  0.04727 CMYK OK
 </code></pre></blockquote>
+
+<p>
+The difference between the two devices is that the inkcov device considers each rendered pixel and whether
+it marks the C, M, Y or K channels. So the percentages are a measure of how many device pixels
+contain that ink. The ink_cov device gives the more traditional use of ink coverage, it
+also considers the amount of each colourant at each rendered pixel, so the percentages in this
+case are what percentage of the ink is used on the page.
+</p>
+<p>
+As an example, If we take a page which is covered by a pure 100% cyan fill both devices would give
+the same result 1.00 0.00 0.00 0.00; each pixel is marked by the cyan ink and each pixel contains 100% cyan.
+If however we use a 50% cyan fill the inkcov device will still give 1.00 0.00 0.00 0.00 as 100% of the pixels contain cyan. The
+ink_cov device, however, would give a result of 0.50 0.00 0.00 0.00.
+</p>
 
 <h3><a name="Permute"></a>Permutation (DeviceN color model)</h3>
 
