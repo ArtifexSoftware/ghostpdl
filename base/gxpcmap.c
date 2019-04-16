@@ -1054,16 +1054,35 @@ gx_pattern_cache_add_entry(gs_gstate * pgs,
          * If so, we can avoid the expensive masking operations
          * when using the pattern.
          */
-        if (mmask != 0) {
+        /* Bug 700624: In cases where the mask is completely full,
+         * but the pattern cells are separated from one another,
+         * we need to leave gaps between the cells when rendering
+         * them. Sadly, the graphics library can't cope with this
+         * in the no-mask case. Therefore, only do the optimisation
+         * of not sending the mask if the step matrix is suitable.
+         *
+         * To do this, we compare the step matrix to the size. My
+         * belief is that the mask will only ever be full if it's
+         * orthogonal, cos otherwise the edges will be clipped,
+         * hence we lose no generality by checking for .xy and .yx
+         * being 0.
+         */
+        if (mmask != 0 &&
+            fabsf(pinst->step_matrix.tx) <= pinst->size.x &&
+            fabsf(pinst->step_matrix.ty) <= pinst->size.y &&
+            pinst->step_matrix.xy == 0 &&
+            pinst->step_matrix.yx == 0) {
             int y;
+            int w_less_8 = mmask->width-8;
 
             for (y = 0; y < mmask->height; y++) {
                 const byte *row = scan_line_base(mmask, y);
                 int w;
 
-                for (w = mmask->width; w > 8; w -= 8)
+                for (w = w_less_8; w > 0; w -= 8)
                     if (*row++ != 0xff)
                         goto keep;
+                w += 8;
                 if ((*row | (0xff >> w)) != 0xff)
                     goto keep;
             }
