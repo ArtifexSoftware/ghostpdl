@@ -30,8 +30,7 @@ int pdfi_setstrokecolor_space(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict 
 int pdfi_setfillcolor_space(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict);
 int pdfi_setstrokecolor(pdf_context *ctx);
 int pdfi_setfillcolor(pdf_context *ctx);
-int pdfi_setstrokecolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict);
-int pdfi_setfillcolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict);
+int pdfi_setcolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, bool is_fill);
 int pdfi_ri(pdf_context *ctx);
 
 /* For potential use by other types of object (images etc) */

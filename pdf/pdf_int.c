@@ -3023,11 +3023,11 @@ static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_stream *source, 
                 break;
             case K3('S','C','N'):   /* set special colour for stroke */
                 pdfi_pop(ctx, 1);
-                code = pdfi_setstrokecolorN(ctx, stream_dict, page_dict);
+                code = pdfi_setcolorN(ctx, stream_dict, page_dict, false);
                 break;
             case K3('s','c','n'):   /* set special colour for non-stroke */
                 pdfi_pop(ctx, 1);
-                code = pdfi_setfillcolorN(ctx, stream_dict, page_dict);
+                code = pdfi_setcolorN(ctx, stream_dict, page_dict, true);
                 break;
             case K2('s','h'):       /* fill with sahding pattern */
                 pdfi_pop(ctx, 1);
