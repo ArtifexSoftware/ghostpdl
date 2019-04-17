@@ -2293,15 +2293,14 @@ currentdict /CMap_read_dict undef
     { exch pop readtype1
     } 2 bndef
 
-  <01000401> <01000402> <01000403> <01000404> % Type 1C
-  <01000C02> <01000C03>
+  <01000401> % Type 1C
     { exch pop
       1 index /Subtype knownoget dup { pop /CIDFontType0 eq } if {
         readCIDFontType0C
       } {
         readType1C
       } ifelse
-    } 6 bndef
+    } bind executeonly def
 
   <00010000> (true) (typ1) (ttcf)  % TrueType OpenType
     { exch pop readtruetype
@@ -2466,14 +2465,36 @@ currentdict /bndef undef
                                           % /key res res desc stream tag
 
         //font_tag_dict 1 index known not {
+          %
+          % The tag is the first 4 (?) bytes frm the font stream, if we get here then
+          % it didn't match any of the keys in the dictionary. There seems to be
+          % a possibility that a PFB font could be undetected (because its only 2 bytes?)
+          % but the main problem is CFF fonts. These lack a magic number, and the header
+          % can vary in the last 3 of the 4 bytes. We've now found 7 different possible
+          % values for these bytes, adding more seems pointless and isn't future proof.
+          % Instead check the dictionary for its Subtype.
+          %
           dup 0 2 getinterval <8001> eq {
             0 2 getinterval               % /key res res desc stream pfb_tag
           } {
-            (12345678>\n) dup /ASCIIHexEncode filter dup 4 -1 roll writestring closefile
-            (   **** Error: unrecognized font file starts with <) exch concatstrings
-            pdfformaterror
-            (               Output may be incorrect.\n) pdfformaterror
-            /no_stream                    % /key res res desc stream unknown_tag
+            1 index /Subtype known {
+              1 index /Subtype get dup /CIDFontType0C eq exch /CIDFontType1C eq or {
+                pop <01000401>            % discard the data we read and pretend we read the original Type1C tag
+                //false
+              }{
+                //true
+              }ifelse
+            } {
+              //true                      % no /Subtype, give up.
+            }ifelse
+
+            {
+              (12345678>\n) dup /ASCIIHexEncode filter dup 4 -1 roll writestring closefile
+              (   **** Error: unrecognized font file starts with <) exch concatstrings
+              pdfformaterror
+              (               Output may be incorrect.\n) pdfformaterror
+              /no_stream                    % /key res res desc stream unknown_tag
+            }if
           } ifelse
         } if
         //font_tag_dict exch get          % /key res res desc stream {proc}
