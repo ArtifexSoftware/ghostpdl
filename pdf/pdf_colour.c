@@ -610,7 +610,8 @@ pdfi_setpattern(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, pd
 int
 pdfi_setcolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, bool is_fill)
 {
-    const gs_color_space *  pcs;
+    const gs_color_space *pcs;
+    gs_color_space *base_space = NULL;
     int ncomps, code;
     gs_client_color cc;
     bool is_pattern = false;
@@ -629,19 +630,27 @@ pdfi_setcolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, boo
 
     if (pcs->type == &gs_color_space_type_Pattern)
         is_pattern = true;
-    if (ctx->stack_top[-1]->type == PDF_NAME) {
-        /* NOTE: Should really check to see if current colorspace is "pattern", not go by arg type */
+    if (is_pattern) {
+        if (ctx->stack_top[-1]->type != PDF_NAME) {
+            if(ctx->pdfstoponerror)
+                code = gs_note_error(gs_error_syntaxerror);
+            goto cleanupExit;
+        }
         code = pdfi_setpattern(ctx, stream_dict, page_dict, (pdf_name *)ctx->stack_top[-1]);
-        /* FIXME Patterns */
-        pdfi_clearstack(ctx);
-        return 0;
+        pdfi_pop(ctx, 1);
+        base_space = pcs->base_space;
+        if (base_space)
+            ncomps = cs_num_components(base_space);
+    } else {
+        ncomps = cs_num_components(pcs);
     }
-    ncomps = cs_num_components(pcs);
     code = pdfi_get_color_from_stack(ctx, &cc, ncomps);
     if (code < 0)
         goto cleanupExit;
     if (is_pattern) {
         dbgmprintf(ctx->memory, "WARNING: pdfi_setcolorN: Pattern is not supported\n");
+        /* TODO: Need to set more stuff up I guess... */
+        //code = gs_setcolor(ctx->pgs, &cc);
     } else {
         code = gs_setcolor(ctx->pgs, &cc);
     }
@@ -1079,7 +1088,10 @@ pdfi_seticc_cal(pdf_context *ctx, float *white, float *black, float *gamma,
     return code;
 }
 
-/* Create a Pattern colorspace and set colorspace to it.
+/* Create a Pattern colorspace.
+ * If ppcs is NULL, then we will set the colorspace
+ * If ppcs not NULL, point the new colorspace to it
+ *
  * If color_array is NULL, then this is a simple "Pattern" colorspace, e.g. "/Pattern cs".
  * If it is an array, then first element is "Pattern" and second element should be the base colorspace.
  * e.g. "/CS1 cs" where /CS1 is a ColorSpace Resource containing "[/Pattern /DeviceRGB]"
@@ -1100,12 +1112,17 @@ pdfi_create_Pattern(pdf_context *ctx, pdf_array *color_array,
      */
     /* NOTE: See zcolor.c/setpatternspace */
     dbgmprintf(ctx->memory, "PATTERN: pdfi_create_Pattern\n");
+    return 0;
 
     pcs = gs_cspace_alloc(ctx->memory, &gs_color_space_type_Pattern);
+    if (pcs == NULL) {
+        return_error(gs_error_VMerror);
+    }
     if (color_array == NULL) {
         pcs->base_space = NULL;
         pcs->params.pattern.has_base_space = false;
     } else {
+        dbgmprintf(ctx->memory, "PATTERN: with base space! pdfi_create_Pattern\n");
         if (pdfi_array_size(color_array) < 2) {
             return_error(gs_error_syntaxerror);
         }
@@ -1118,9 +1135,14 @@ pdfi_create_Pattern(pdf_context *ctx, pdf_array *color_array,
         pcs->base_space = base_space;
         pcs->params.pattern.has_base_space = true;
     }
-    code = gs_setcolorspace(ctx->pgs, pcs);
-    if (ppcs != NULL)
+    if (ppcs != NULL) {
         *ppcs = pcs;
+    } else {
+        code = gs_setcolorspace(ctx->pgs, pcs);
+        /* release reference from construction */
+        rc_decrement_only_cs(pcs, "create_Pattern");
+    }
+
 
  exit:
     pdfi_countdown(base_name);
@@ -1708,12 +1730,9 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
     } else if (pdfi_name_is(space, "Pattern")) {
         if (index != 0)
             return_error(gs_error_syntaxerror);
-        code = pdfi_create_Pattern(ctx, color_array, stream_dict, page_dict, &pcs);
+        code = pdfi_create_Pattern(ctx, color_array, stream_dict, page_dict, ppcs);
         if (code < 0)
             goto exit;
-        if (ppcs != NULL) {
-            *ppcs = pcs;
-        }
     } else if (pdfi_name_is(space, "DeviceN")) {
         code = pdfi_create_DeviceN(ctx, color_array, index, stream_dict, page_dict, &pcs);
         if (code < 0)
@@ -1815,7 +1834,8 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
 }
 
 static int pdfi_create_colorspace_by_name(pdf_context *ctx, pdf_name *name,
-                                          pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs)
+                                          pdf_dict *stream_dict, pdf_dict *page_dict,
+                                          gs_color_space **ppcs)
 {
     int code = 0;
     pdf_obj *ref_space;
