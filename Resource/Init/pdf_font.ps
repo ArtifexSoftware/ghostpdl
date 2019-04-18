@@ -2478,7 +2478,8 @@ currentdict /bndef undef
             0 2 getinterval               % /key res res desc stream pfb_tag
           } {
             1 index /Subtype known {
-              1 index /Subtype get dup /CIDFontType0C eq exch /CIDFontType1C eq or {
+              1 index /Subtype get
+                dup /Type1C eq 1 index /CIDFontType0C eq or exch /CIDFontType1C eq or {
                 pop <01000401>            % discard the data we read and pretend we read the original Type1C tag
                 //false
               }{
