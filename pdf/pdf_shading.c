@@ -567,17 +567,133 @@ get_shading_common_error:
     return code;
 }
 
+/* Build gs_shading_t object from a Shading Dict */
+int
+pdfi_shading_build(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
+                   pdf_dict *sdict, gs_shading_t **ppsh, int64_t *ptype)
+{
+    gs_shading_params_t params;
+    gs_shading_t *psh = NULL;
+    pdf_obj *cspace;
+    int64_t type = 0;
+    int code = 0;
+
+    memset(&params, 0, sizeof(params));
+
+    params.ColorSpace = 0;
+    params.cie_joint_caches = 0;
+    params.Background = 0;
+    params.have_BBox = 0;
+    params.AntiAlias = 0;
+
+    code = pdfi_dict_get(ctx, sdict, "ColorSpace", &cspace);
+    if (code < 0)
+        goto shading_error;
+
+    code = pdfi_setcolorspace(ctx, cspace, stream_dict, page_dict);
+    if (code < 0)
+        goto shading_error;
+
+    code = get_shading_common(ctx, sdict, &params);
+    if (code < 0)
+        goto shading_error;
+
+    code = pdfi_dict_get_int(ctx, sdict, "ShadingType", &type);
+    if (code < 0)
+        goto shading_error;
+
+    switch(type){
+    case 1:
+        code = pdfi_shading1(ctx, &params, &psh, sdict, stream_dict, page_dict);
+        break;
+    case 2:
+        code = pdfi_shading2(ctx, &params, &psh, sdict, stream_dict, page_dict);
+        break;
+    case 3:
+        code = pdfi_shading3(ctx, &params, &psh, sdict, stream_dict, page_dict);
+        break;
+    case 4:
+        code = pdfi_shading4(ctx, &params, &psh, sdict, stream_dict, page_dict);
+        break;
+    case 5:
+        code = pdfi_shading5(ctx, &params, &psh, sdict, stream_dict, page_dict);
+        break;
+    case 6:
+        code = pdfi_shading6(ctx, &params, &psh, sdict, stream_dict, page_dict);
+        break;
+    case 7:
+        code = pdfi_shading7(ctx, &params, &psh, sdict, stream_dict, page_dict);
+        break;
+    default:
+        code = gs_note_error(gs_error_rangecheck);
+        break;
+    }
+
+ shading_error:
+    if (code >= 0) {
+        *ppsh = psh;
+        *ptype = type;
+    }
+    return code;
+}
+
+/* Free stuff associated with a gs_shading_t.  Have to pass in the type because it isn't
+ * stored in the params as far as I can tell.
+ */
+void
+pdfi_shading_free(pdf_context *ctx, gs_shading_t *psh, int64_t type)
+{
+    switch(type) {
+    case 1:
+        if (((gs_shading_Fb_params_t *)&psh->params)->Function != NULL)
+            pdfi_free_function(ctx, ((gs_shading_Fb_params_t *)&psh->params)->Function);
+        break;
+    case 2:
+        if (((gs_shading_A_params_t *)&psh->params)->Function != NULL)
+            pdfi_free_function(ctx, ((gs_shading_A_params_t *)&psh->params)->Function);
+        break;
+    case 3:
+        if (((gs_shading_R_params_t *)&psh->params)->Function != NULL)
+            pdfi_free_function(ctx, ((gs_shading_R_params_t *)&psh->params)->Function);
+        break;
+    case 4:
+        if (((gs_shading_FfGt_params_t *)&psh->params)->Function != NULL)
+            pdfi_free_function(ctx, ((gs_shading_FfGt_params_t *)&psh->params)->Function);
+        if (((gs_shading_mesh_params_t *)&psh->params)->DataSource.data.strm != NULL)
+            sclose(((gs_shading_mesh_params_t *)&psh->params)->DataSource.data.strm);
+        break;
+    case 5:
+        if (((gs_shading_LfGt_params_t *)&psh->params)->Function != NULL)
+            pdfi_free_function(ctx, ((gs_shading_LfGt_params_t *)&psh->params)->Function);
+        if (((gs_shading_mesh_params_t *)&psh->params)->DataSource.data.strm != NULL)
+            sclose(((gs_shading_mesh_params_t *)&psh->params)->DataSource.data.strm);
+        break;
+    case 6:
+        if (((gs_shading_Cp_params_t *)&psh->params)->Function != NULL)
+            pdfi_free_function(ctx, ((gs_shading_Cp_params_t *)&psh->params)->Function);
+        if (((gs_shading_mesh_params_t *)&psh->params)->DataSource.data.strm != NULL)
+            sclose(((gs_shading_mesh_params_t *)&psh->params)->DataSource.data.strm);
+        break;
+    case 7:
+        if (((gs_shading_Tpp_params_t *)&psh->params)->Function != NULL)
+            pdfi_free_function(ctx, ((gs_shading_Tpp_params_t *)&psh->params)->Function);
+        if (((gs_shading_mesh_params_t *)&psh->params)->DataSource.data.strm != NULL)
+            sclose(((gs_shading_mesh_params_t *)&psh->params)->DataSource.data.strm);
+        break;
+    default:
+        break;
+    }
+    gs_free_object(ctx->memory, psh, "Free shading, finished");
+}
+
 int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     int code, code1;
     pdf_name *n = NULL;
-    pdf_obj *o, *cspace;
-    gs_shading_params_t params;
+    pdf_obj *o;
     gs_shading_t *psh = NULL;
     gs_offset_t savedoffset;
     int64_t type;
-
-    memset(&params, 0, sizeof(params));
 
     if (ctx->stack_top - ctx->stack_bot < 1)
         return_error(gs_error_stackunderflow);
@@ -606,54 +722,7 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         goto shading_error;
     }
 
-    params.ColorSpace = 0;
-    params.cie_joint_caches = 0;
-    params.Background = 0;
-    params.have_BBox = 0;
-    params.AntiAlias = 0;
-
-    code = pdfi_dict_get(ctx, (pdf_dict *)o, "ColorSpace", &cspace);
-    if (code < 0)
-        goto shading_error;
-
-    code = pdfi_setcolorspace(ctx, cspace, stream_dict, page_dict);
-    if (code < 0)
-        goto shading_error;
-
-    code = get_shading_common(ctx, (pdf_dict *)o, &params);
-    if (code < 0)
-        goto shading_error;
-
-    code = pdfi_dict_get_int(ctx, (pdf_dict *)o, "ShadingType", &type);
-    if (code == 0) {
-        switch(type){
-            case 1:
-                code = pdfi_shading1(ctx, &params, &psh, (pdf_dict *)o, stream_dict, page_dict);
-                break;
-            case 2:
-                code = pdfi_shading2(ctx, &params, &psh, (pdf_dict *)o, stream_dict, page_dict);
-                break;
-            case 3:
-                code = pdfi_shading3(ctx, &params, &psh, (pdf_dict *)o, stream_dict, page_dict);
-                break;
-            case 4:
-                code = pdfi_shading4(ctx, &params, &psh, (pdf_dict *)o, stream_dict, page_dict);
-                break;
-            case 5:
-                code = pdfi_shading5(ctx, &params, &psh, (pdf_dict *)o, stream_dict, page_dict);
-                break;
-            case 6:
-                code = pdfi_shading6(ctx, &params, &psh, (pdf_dict *)o, stream_dict, page_dict);
-                break;
-            case 7:
-                code = pdfi_shading7(ctx, &params, &psh, (pdf_dict *)o, stream_dict, page_dict);
-                break;
-            default:
-                code = gs_error_rangecheck;
-                break;
-        }
-    }
-
+    code = pdfi_shading_build(ctx, stream_dict, page_dict, (pdf_dict *)o, &psh, &type);
     pdfi_countdown(o);
     pdfi_pop(ctx, 1);
     (void)pdfi_loop_detector_cleartomark(ctx);
@@ -665,47 +734,7 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     code1 = gs_grestore(ctx->pgs);
 
     if (psh) {
-        switch(type) {
-            case 1:
-                if (((gs_shading_Fb_params_t *)&psh->params)->Function != NULL)
-                    pdfi_free_function(ctx, ((gs_shading_Fb_params_t *)&psh->params)->Function);
-                break;
-            case 2:
-                if (((gs_shading_A_params_t *)&psh->params)->Function != NULL)
-                    pdfi_free_function(ctx, ((gs_shading_A_params_t *)&psh->params)->Function);
-                break;
-            case 3:
-                if (((gs_shading_R_params_t *)&psh->params)->Function != NULL)
-                    pdfi_free_function(ctx, ((gs_shading_R_params_t *)&psh->params)->Function);
-                break;
-            case 4:
-                if (((gs_shading_FfGt_params_t *)&psh->params)->Function != NULL)
-                    pdfi_free_function(ctx, ((gs_shading_FfGt_params_t *)&psh->params)->Function);
-                if (((gs_shading_mesh_params_t *)&psh->params)->DataSource.data.strm != NULL)
-                    sclose(((gs_shading_mesh_params_t *)&psh->params)->DataSource.data.strm);
-                break;
-            case 5:
-                if (((gs_shading_LfGt_params_t *)&psh->params)->Function != NULL)
-                    pdfi_free_function(ctx, ((gs_shading_LfGt_params_t *)&psh->params)->Function);
-                if (((gs_shading_mesh_params_t *)&psh->params)->DataSource.data.strm != NULL)
-                    sclose(((gs_shading_mesh_params_t *)&psh->params)->DataSource.data.strm);
-                break;
-            case 6:
-                if (((gs_shading_Cp_params_t *)&psh->params)->Function != NULL)
-                    pdfi_free_function(ctx, ((gs_shading_Cp_params_t *)&psh->params)->Function);
-                if (((gs_shading_mesh_params_t *)&psh->params)->DataSource.data.strm != NULL)
-                    sclose(((gs_shading_mesh_params_t *)&psh->params)->DataSource.data.strm);
-                break;
-            case 7:
-                if (((gs_shading_Tpp_params_t *)&psh->params)->Function != NULL)
-                    pdfi_free_function(ctx, ((gs_shading_Tpp_params_t *)&psh->params)->Function);
-                if (((gs_shading_mesh_params_t *)&psh->params)->DataSource.data.strm != NULL)
-                    sclose(((gs_shading_mesh_params_t *)&psh->params)->DataSource.data.strm);
-                break;
-            default:
-                break;
-        }
-        gs_free_object(ctx->memory, psh, "Free shaindg, finished");
+        pdfi_shading_free(ctx, psh, type);
     }
 
     pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
