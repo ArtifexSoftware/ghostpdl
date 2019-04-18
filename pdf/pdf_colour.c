@@ -22,11 +22,13 @@
 #include "gsicc_manage.h"
 #include "gsicc_profilecache.h"
 #include "gsicc_create.h"
+#include "gsptype2.h"
 
 #include "pdf_file.h"
 #include "pdf_dict.h"
 #include "pdf_loop_detect.h"
 #include "pdf_func.h"
+#include "pdf_shading.h"
 #include "gscsepr.h"
 #include "stream.h"
 #include "strmio.h"
@@ -582,21 +584,175 @@ int pdfi_setfillcolor(pdf_context *ctx)
     return 0;
 }
 
+/* Turn a /Matrix Array into a gs_matrix.  If Array is NULL, makes an identity matrix */
 static int
-pdfi_setpattern(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_name *pname)
+pdfi_array_to_gs_matrix(pdf_context *ctx, pdf_array *array, gs_matrix *mat)
 {
-    pdf_obj *pobj = NULL;
-    int code;
+    double number;
+    int code = 0;
 
-    code = pdfi_find_resource(ctx, (unsigned char *)"Pattern", pname, stream_dict, page_dict, &pobj);
+    /* Init to identity matrix to allow sane continuation on errors */
+    mat->xx = 1.0;
+    mat->xy = 0.0;
+    mat->yx = 0.0;
+    mat->yy = 1.0;
+    mat->tx = 0.0;
+    mat->ty = 0.0;
+
+    /* Identity matrix if no array */
+    if (array == NULL) {
+        return 0;
+    }
+    if (pdfi_array_size(array) != 6) {
+        return_error(gs_error_rangecheck);
+    }
+    code = pdfi_array_get_number(ctx, array, 0, &number);
+    if (code < 0) goto errorExit;
+    mat->xx = (float)number;
+    code = pdfi_array_get_number(ctx, array, 1, &number);
+    if (code < 0) goto errorExit;
+    mat->xy = (float)number;
+    code = pdfi_array_get_number(ctx, array, 2, &number);
+    if (code < 0) goto errorExit;
+    mat->yx = (float)number;
+    code = pdfi_array_get_number(ctx, array, 3, &number);
+    if (code < 0) goto errorExit;
+    mat->yy = (float)number;
+    code = pdfi_array_get_number(ctx, array, 4, &number);
+    if (code < 0) goto errorExit;
+    mat->tx = (float)number;
+    code = pdfi_array_get_number(ctx, array, 5, &number);
+    if (code < 0) goto errorExit;
+    mat->ty = (float)number;
+    return 0;
+
+ errorExit:
+    return code;
+}
+
+/* Type 1 (tiled) Pattern */
+static int
+pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
+                      pdf_dict *pdict, gs_client_color *cc)
+{
+    int code = 0;
+
+    dbgmprintf(ctx->memory, "WARNING: Type 1 pattern not implemented\n");
+ exit:
+    return code;
+}
+
+/* Type 2 (shading) Pattern */
+static int
+pdfi_setpattern_type2(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
+                      pdf_dict *pdict, gs_client_color *cc)
+{
+    int code = 0;
+    pdf_dict *Shading = NULL;
+    pdf_dict *ExtGState = NULL;
+    pdf_array *Matrix = NULL;
+    gs_matrix mat;
+    gs_shading_t *shading;
+    int64_t shading_type;
+    gs_pattern2_template_t templat;
+
+    /* See zbuildshadingpattern() */
+
+    dbgmprintf(ctx->memory, "PATTERN: Type 2 pattern\n");
+
+    /* (optional Matrix) */
+    code = pdfi_dict_knownget_type(ctx, pdict, "Matrix", PDF_ARRAY, (pdf_obj **)&Matrix);
+    if (code < 0)
+        goto exit;
+    code = pdfi_array_to_gs_matrix(ctx, Matrix, &mat);
+    if (code < 0)
+        goto exit;
+
+    /* Required Shading, can be stream or dict (but a stream is also a dict..) */
+    code = pdfi_dict_knownget_type(ctx, pdict, "Shading", PDF_DICT, (pdf_obj **)&Shading);
+    if (code < 0)
+        goto exit;
+    if (code == 0) {
+        dbgmprintf(ctx->memory, "ERROR: Shading not found in Pattern Type 2\n");
+        code = gs_note_error(gs_error_syntaxerror);
+        goto exit;
+    }
+
+    /* Optional ExtGState */
+    code = pdfi_dict_knownget_type(ctx, pdict, "ExtGState", PDF_DICT, (pdf_obj **)&ExtGState);
+    if (code < 0)
+        goto exit;
+    if (code != 0) {
+        /* Not implemented, ignore for now */
+        dbgmprintf(ctx->memory, "WARNING: Pattern ExtGState not supported, skipping\n");
+    }
+
+    code = gs_gsave(ctx->pgs);
+    if (code < 0)
+        goto exit;
+    code = pdfi_shading_build(ctx, stream_dict, page_dict, Shading, &shading, &shading_type);
+    if (code != 0) {
+        dbgmprintf(ctx->memory, "ERROR: can't build shading structure\n");
+        goto exit;
+    }
+    code = gs_grestore(ctx->pgs);
+    if (code < 0)
+        goto exit;
+
+    /* TODO: Something brilliant goes here */
+    /* ... */
+    /* TODO: turn Matrix into 'mat' */
+    gs_pattern2_init(&templat);
+    templat.Shading = shading;
+    code = gs_make_pattern(cc, (const gs_pattern_template_t *)&templat,
+                           &mat, ctx->pgs, ctx->memory);
+
+    /* NOTE: I am pretty sure this needs to be freed much later, but haven't figured it out :( */
+    //pdfi_shading_free(ctx, shading, shading_type);
+
+ exit:
+    pdfi_countdown(Shading);
+    pdfi_countdown(Matrix);
+    pdfi_countdown(ExtGState);
+    return code;
+}
+
+static int
+pdfi_setpattern(pdf_context *ctx, pdf_dict *stream_dict,
+                pdf_dict *page_dict, pdf_name *pname,
+                gs_client_color *cc)
+{
+    pdf_dict *pdict = NULL;
+    int code;
+    int64_t patternType;
+
+    memset(cc, 0, sizeof(*cc));
+    code = pdfi_find_resource(ctx, (unsigned char *)"Pattern", pname, stream_dict,
+                              page_dict, (pdf_obj **)&pdict);
     if (code < 0) {
         dbgmprintf(ctx->memory, "WARNING: Pattern object not found in resources\n");
         goto exit;
     }
-    dbgmprintf1(ctx->memory, "PATTERN: pdfi_setpattern: found pattern object %lu\n", pobj->object_num);
+    dbgmprintf1(ctx->memory, "PATTERN: pdfi_setpattern: found pattern object %lu\n", pdict->object_num);
+
+    code = pdfi_dict_get_int(ctx, pdict, "PatternType", &patternType);
+    if (code < 0)
+        goto exit;
+    if (patternType == 1) {
+        code = pdfi_setpattern_type1(ctx, stream_dict, page_dict, pdict, cc);
+        if (code < 0)
+            goto exit;
+    } else if (patternType == 2) {
+        code = pdfi_setpattern_type2(ctx, stream_dict, page_dict, pdict, cc);
+        if (code < 0)
+            goto exit;
+    } else {
+        code = gs_note_error(gs_error_syntaxerror);
+        goto exit;
+    }
 
  exit:
-    pdfi_countdown(pobj);
+    pdfi_countdown(pdict);
     return code;
 }
 
@@ -608,7 +764,7 @@ pdfi_setcolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, boo
 {
     const gs_color_space *pcs;
     gs_color_space *base_space = NULL;
-    int ncomps, code;
+    int ncomps=0, code;
     gs_client_color cc;
     bool is_pattern = false;
     int args_on_stack = ctx->stack_top - ctx->stack_bot;
@@ -618,6 +774,12 @@ pdfi_setcolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, boo
     }
     pcs = gs_currentcolorspace(ctx->pgs);
 
+    if (args_on_stack < 1) {
+        pdfi_clearstack(ctx);
+        code = gs_note_error(gs_error_stackunderflow);
+        goto cleanupExit;
+    }
+
     if (pcs->type == &gs_color_space_type_Pattern)
         is_pattern = true;
     if (is_pattern) {
@@ -625,9 +787,9 @@ pdfi_setcolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, boo
             code = gs_note_error(gs_error_syntaxerror);
             goto cleanupExit;
         }
-        code = pdfi_setpattern(ctx, stream_dict, page_dict, (pdf_name *)ctx->stack_top[-1]);
-        pdfi_pop(ctx, 1);
         base_space = pcs->base_space;
+        code = pdfi_setpattern(ctx, stream_dict, page_dict, (pdf_name *)ctx->stack_top[-1], &cc);
+        pdfi_pop(ctx, 1);
         if (base_space)
             ncomps = cs_num_components(base_space);
     } else {
@@ -639,20 +801,20 @@ pdfi_setcolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, boo
          * the current colour unchanged.
          */
         if (ctx->stack_top[-1]->type == PDF_NAME) {
-            dbgmprintf(ctx->memory, "WARNING: pdfi_setfillcolorN: Pattern is not supported\n");
+            dbgmprintf(ctx->memory, "WARNING: pdfi_setcolorN: Pattern is not supported\n");
+            code = gs_note_error(gs_error_syntaxerror);
             pdfi_clearstack(ctx);
             goto cleanupExit;
         }
         ncomps = cs_num_components(pcs);
     }
 
-    code = pdfi_get_color_from_stack(ctx, &cc, ncomps);
+    if (ncomps > 0)
+        code = pdfi_get_color_from_stack(ctx, &cc, ncomps);
     if (code < 0)
         goto cleanupExit;
     if (is_pattern) {
-        dbgmprintf(ctx->memory, "WARNING: pdfi_setcolorN: Pattern is not supported\n");
-        /* TODO: Need to set more stuff up I guess... */
-        //code = gs_setcolor(ctx->pgs, &cc);
+        code = gs_setcolor(ctx->pgs, &cc);
     } else {
         code = gs_setcolor(ctx->pgs, &cc);
     }
@@ -1748,7 +1910,6 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
     int code;
     pdf_name *space = NULL;
     pdf_array *a = NULL;
-    gs_color_space *pcs;
 
     code = pdfi_array_get_type(ctx, color_array, index, PDF_NAME, (pdf_obj **)&space);
     if (code != 0)
@@ -1771,10 +1932,9 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
         code = pdfi_create_CalGray(ctx, color_array, index, stream_dict, page_dict, ppcs);
     } else if (pdfi_name_is(space, "Pattern")) {
         if (index != 0)
-            return_error(gs_error_syntaxerror);
-        code = pdfi_create_Pattern(ctx, color_array, stream_dict, page_dict, ppcs);
-        if (code < 0)
-            goto exit;
+            code = gs_note_error(gs_error_syntaxerror);
+        else
+            code = pdfi_create_Pattern(ctx, color_array, stream_dict, page_dict, ppcs);
     } else if (pdfi_name_is(space, "DeviceN")) {
         code = pdfi_create_DeviceN(ctx, color_array, index, stream_dict, page_dict, ppcs);
     } else if (pdfi_name_is(space, "ICCBased")) {
@@ -1797,10 +1957,8 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
     }
 
  exit:
-    if (space)
-        pdfi_countdown(space);
-    if (a)
-        pdfi_countdown(a);
+    pdfi_countdown(space);
+    pdfi_countdown(a);
     return code;
 }
 
