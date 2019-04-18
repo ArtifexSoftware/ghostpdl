@@ -597,7 +597,6 @@
     <ClCompile Include="..\base\gxtype1.c" />
     <ClCompile Include="..\base\gzspotan.c" />
     <ClCompile Include="..\base\gsmd5.c" />
-    <ClCompile Include="..\base\md5main.c" />
     <ClCompile Include="..\base\memento.c" />
     <ClCompile Include="..\base\minftrsz.c" />
     <ClCompile Include="..\base\mkromfs.c" />
