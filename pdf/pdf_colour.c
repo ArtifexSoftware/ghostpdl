@@ -621,12 +621,6 @@ pdfi_setcolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, boo
         gs_swapcolors(ctx->pgs);
     }
     pcs = gs_currentcolorspace(ctx->pgs);
-    if (args_on_stack < 1) {
-        pdfi_clearstack(ctx);
-        if(ctx->pdfstoponerror)
-            code = gs_note_error(gs_error_stackunderflow);
-        goto cleanupExit;
-    }
 
     if (pcs->type == &gs_color_space_type_Pattern)
         is_pattern = true;
@@ -642,8 +636,27 @@ pdfi_setcolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, boo
         if (base_space)
             ncomps = cs_num_components(base_space);
     } else {
+        /* Hack because Patterns not working properly, remove when finished. We don't yet set the current colour
+         * space to be /Pattern in pdfi_setpattern. When we come here we retrieve the current space using
+         * gs_currentcolorspace() and if teh type is gs_color_space_Pattern then we set is_pattern.
+         * But because we don't actually set the space, this never happens. So we end up trying to process
+         * the pattern argument (a name) as if it were a number. So in this case just clear the stack and leave
+         * the current colour unchanged.
+         */
+        if (ctx->stack_top[-1]->type == PDF_NAME) {
+            dbgmprintf(ctx->memory, "WARNING: pdfi_setfillcolorN: Pattern is not supported\n");
+            pdfi_clearstack(ctx);
+            goto cleanupExit;
+        }
         ncomps = cs_num_components(pcs);
     }
+
+    if (args_on_stack < ncomps) {
+        pdfi_clearstack(ctx);
+        code = gs_note_error(gs_error_stackunderflow);
+        goto cleanupExit;
+    }
+
     code = pdfi_get_color_from_stack(ctx, &cc, ncomps);
     if (code < 0)
         goto cleanupExit;
