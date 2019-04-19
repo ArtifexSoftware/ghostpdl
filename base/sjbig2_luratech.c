@@ -66,7 +66,8 @@ s_jbig2decode_make_global_data(gs_memory_t *mem, byte *data, uint size, void **r
 {
     s_jbig2decode_global_data *global = NULL;
 
-    global = gs_alloc_bytes(mem, sizeof (*global), "s_jbig2decode_make_global_data(global)");
+    global = (s_jbig2decode_global_data *)gs_alloc_bytes(mem, sizeof (*global),
+                                                 "s_jbig2decode_make_global_data(global)");
     if (global == NULL) return_error(gs_error_VMerror);
 
     global->mem = mem;
@@ -392,9 +393,10 @@ s_jbig2decode_release(stream_state *ss)
         /* the interpreter calls jbig2decode_free_global_data() separately */
     } else {
         /* We are responsible for freeing global context */
-        if (state->global_ctx) {
-            s_jbig2decode_free_global_data(state->global_ctx);
-            state->global_ctx = NULL;
+        if (state->global_data) {
+            s_jbig2decode_free_global_data(state->global_data);
+            state->global_data = NULL;
+            state->global_size = 0;
         }
     }
 }
