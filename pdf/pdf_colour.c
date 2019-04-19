@@ -520,9 +520,7 @@ pdfi_get_color_from_stack(pdf_context *ctx, gs_client_color *cc, int ncomps)
 
     if (ctx->stack_top - ctx->stack_bot < ncomps) {
         pdfi_clearstack(ctx);
-        if(ctx->pdfstoponerror)
-            return_error(gs_error_stackunderflow);
-        return 0;
+        return_error(gs_error_stackunderflow);
     }
     for (i=0;i<ncomps;i++){
         n = (pdf_num *)ctx->stack_top[i - ncomps];
@@ -533,9 +531,7 @@ pdfi_get_color_from_stack(pdf_context *ctx, gs_client_color *cc, int ncomps)
                 cc->paint.values[i] = n->value.d;
             } else {
                 pdfi_clearstack(ctx);
-                if (ctx->pdfstoponerror)
-                    return_error(gs_error_typecheck);
-                return 0;
+                return_error(gs_error_typecheck);
             }
         }
     }
@@ -626,8 +622,7 @@ pdfi_setcolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, boo
         is_pattern = true;
     if (is_pattern) {
         if (ctx->stack_top[-1]->type != PDF_NAME) {
-            if(ctx->pdfstoponerror)
-                code = gs_note_error(gs_error_syntaxerror);
+            code = gs_note_error(gs_error_syntaxerror);
             goto cleanupExit;
         }
         code = pdfi_setpattern(ctx, stream_dict, page_dict, (pdf_name *)ctx->stack_top[-1]);
@@ -651,12 +646,6 @@ pdfi_setcolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, boo
         ncomps = cs_num_components(pcs);
     }
 
-    if (args_on_stack < ncomps) {
-        pdfi_clearstack(ctx);
-        code = gs_note_error(gs_error_stackunderflow);
-        goto cleanupExit;
-    }
-
     code = pdfi_get_color_from_stack(ctx, &cc, ncomps);
     if (code < 0)
         goto cleanupExit;
@@ -671,9 +660,7 @@ pdfi_setcolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, boo
  cleanupExit:
     if (is_fill)
         gs_swapcolors(ctx->pgs);
-    if (code < 0 && ctx->pdfstoponerror)
-        return code;
-    return 0;
+    return code;
 }
 
 /* And now, the routines to set the colour space on its own. */
