@@ -489,7 +489,7 @@ static int get_shading_common(pdf_context *ctx, pdf_dict *shading_dict, gs_shadi
         uint64_t i;
         gs_client_color *pcc = NULL;
 
-        if (a->size < num_comp) {
+        if (pdfi_array_size(a) < num_comp) {
             code = gs_error_rangecheck;
             goto get_shading_common_error;
         }
@@ -526,7 +526,7 @@ static int get_shading_common(pdf_context *ctx, pdf_dict *shading_dict, gs_shadi
         double box[4];
         uint64_t i;
 
-        if (a->size < 4) {
+        if (pdfi_array_size(a) < 4) {
             code = gs_error_rangecheck;
             goto get_shading_common_error;
         }

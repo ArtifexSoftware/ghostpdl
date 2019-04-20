@@ -620,7 +620,7 @@ int pdfi_dict_knownget(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj *
 }
 
 /* Like pdfi_dict_knownget() but allows the user to specify a type for the object that we get.
- * returns < 0 for erro (including typecheck if the object is not the requested type)
+ * returns < 0 for error (including typecheck if the object is not the requested type)
  * 0 if the key is not found, or > 0 if the key was found and returned.
  */
 int pdfi_dict_knownget_type(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj_type type, pdf_obj **o)

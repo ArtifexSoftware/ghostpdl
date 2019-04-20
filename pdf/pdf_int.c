@@ -2403,7 +2403,7 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
 
     /* if we are being passed any inherited values from our parent, copy them now */
     if (inherited != NULL) {
-        code = pdfi_alloc_object(ctx, PDF_DICT, inherited->size, (pdf_obj **)&inheritable);
+        code = pdfi_alloc_object(ctx, PDF_DICT, pdfi_dict_entries(inherited), (pdf_obj **)&inheritable);
         if (code < 0)
             return code;
         code = pdfi_dict_copy(inheritable, inherited);

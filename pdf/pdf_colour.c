@@ -852,6 +852,7 @@ static int pdfi_create_iccprofile(pdf_context *ctx, pdf_dict *ICC_dict, char *cn
 static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int index, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs)
 {
     pdf_dict *ICC_dict = NULL;
+    pdf_array *a;
     int64_t Length, N;
     pdf_obj *Name;
     char *cname = NULL;
@@ -887,31 +888,33 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
         return code;
 
 
-    pdfi_dict_known(ICC_dict, "Range", &known);
-    if (known) {
-        pdf_array *a;
+    code = pdfi_dict_knownget_type(ctx, ICC_dict, "Range", PDF_ARRAY, (pdf_obj **)&a);
+    if (code < 0)
+        return code;
+    if (code > 0) {
         double dbl;
         int i;
 
-        code = pdfi_dict_get_type(ctx, ICC_dict, "Range", PDF_ARRAY, (pdf_obj **)&a);
-        if (code < 0)
-            known = false;
-        else {
-            if (a->size >= N * 2) {
-                for (i = 0; i < a->size;i++) {
-                    code = pdfi_array_get_number(ctx, a, i, &dbl);
-                    if (code < 0) {
-                        known = false;
-                        break;
-                    }
-                    range[i] = (float)dbl;
+        if (pdfi_array_size(a) >= N * 2) {
+            for (i = 0; i < pdfi_array_size(a);i++) {
+                code = pdfi_array_get_number(ctx, a, i, &dbl);
+                if (code < 0) {
+                    known = false;
+                    break;
                 }
-            } else {
-                known = false;
+                range[i] = (float)dbl;
             }
+        } else {
+            known = false;
         }
-    }
+    } else
+        known = false;
 
+    /* We don't just use the final else clause above for setting the defaults
+     * because we also want to use these if there's a problem with the
+     * supplied data. In this case we also want to overwrite any partial
+     * data we might have read
+     */
     if (!known) {
         int i;
         for (i = 0;i < N; i++) {
@@ -1087,68 +1090,6 @@ pdfi_seticc_cal(pdf_context *ctx, float *white, float *black, float *gamma,
     *ppcs = pcs;
     return code;
 }
-
-/* Create a Pattern colorspace.
- * If ppcs is NULL, then we will set the colorspace
- * If ppcs not NULL, point the new colorspace to it
- *
- * If color_array is NULL, then this is a simple "Pattern" colorspace, e.g. "/Pattern cs".
- * If it is an array, then first element is "Pattern" and second element should be the base colorspace.
- * e.g. "/CS1 cs" where /CS1 is a ColorSpace Resource containing "[/Pattern /DeviceRGB]"
- *
- */
-static int
-pdfi_create_Pattern(pdf_context *ctx, pdf_array *color_array,
-                    pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs)
-{
-    gs_color_space *pcs = NULL;
-    gs_color_space *base_space;
-    pdf_name *base_name = NULL;
-    int code;
-
-    /* TODO: should set to "the initial color is a pattern object that causes nothing to be painted."
-     * (see page 288 of PDF 1.7)
-     * Need to make a "nullpattern" (see pdf_ops.c, /nullpattern)
-     */
-    /* NOTE: See zcolor.c/setpatternspace */
-    dbgmprintf(ctx->memory, "PATTERN: pdfi_create_Pattern\n");
-    return 0;
-
-    pcs = gs_cspace_alloc(ctx->memory, &gs_color_space_type_Pattern);
-    if (pcs == NULL) {
-        return_error(gs_error_VMerror);
-    }
-    if (color_array == NULL) {
-        pcs->base_space = NULL;
-        pcs->params.pattern.has_base_space = false;
-    } else {
-        dbgmprintf(ctx->memory, "PATTERN: with base space! pdfi_create_Pattern\n");
-        if (pdfi_array_size(color_array) < 2) {
-            return_error(gs_error_syntaxerror);
-        }
-        code = pdfi_array_get_type(ctx, color_array, 1, PDF_NAME, (pdf_obj **)&base_name);
-        if (code < 0)
-            goto exit;
-        code = pdfi_create_colorspace_by_name(ctx, base_name, stream_dict, page_dict, &base_space);
-        if (code < 0)
-            goto exit;
-        pcs->base_space = base_space;
-        pcs->params.pattern.has_base_space = true;
-    }
-    if (ppcs != NULL) {
-        *ppcs = pcs;
-    } else {
-        code = gs_setcolorspace(ctx->pgs, pcs);
-        /* release reference from construction */
-        rc_decrement_only_cs(pcs, "create_Pattern");
-    }
-
-
- exit:
-    pdfi_countdown(base_name);
-    return code;
-}
-
 
 static int pdfi_create_CalGray(pdf_context *ctx, pdf_array *color_array, int index, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs)
 {
@@ -1337,6 +1278,68 @@ exit:
     return code;
 }
 
+/* Create a Pattern colorspace.
+ * If ppcs is NULL, then we will set the colorspace
+ * If ppcs not NULL, point the new colorspace to it
+ *
+ * If color_array is NULL, then this is a simple "Pattern" colorspace, e.g. "/Pattern cs".
+ * If it is an array, then first element is "Pattern" and second element should be the base colorspace.
+ * e.g. "/CS1 cs" where /CS1 is a ColorSpace Resource containing "[/Pattern /DeviceRGB]"
+ *
+ */
+static int
+pdfi_create_Pattern(pdf_context *ctx, pdf_array *color_array,
+                    pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs)
+{
+    gs_color_space *pcs = NULL;
+    gs_color_space *base_space;
+    pdf_name *base_name = NULL;
+    int code;
+
+    /* TODO: should set to "the initial color is a pattern object that causes nothing to be painted."
+     * (see page 288 of PDF 1.7)
+     * Need to make a "nullpattern" (see pdf_ops.c, /nullpattern)
+     */
+    /* NOTE: See zcolor.c/setpatternspace */
+    dbgmprintf(ctx->memory, "PATTERN: pdfi_create_Pattern\n");
+    return 0;
+
+    pcs = gs_cspace_alloc(ctx->memory, &gs_color_space_type_Pattern);
+    if (pcs == NULL) {
+        return_error(gs_error_VMerror);
+    }
+    if (color_array == NULL) {
+        pcs->base_space = NULL;
+        pcs->params.pattern.has_base_space = false;
+    } else {
+        dbgmprintf(ctx->memory, "PATTERN: with base space! pdfi_create_Pattern\n");
+        if (pdfi_array_size(color_array) < 2) {
+            return_error(gs_error_syntaxerror);
+        }
+        code = pdfi_array_get_type(ctx, color_array, 1, PDF_NAME, (pdf_obj **)&base_name);
+        if (code < 0)
+            goto exit;
+        code = pdfi_create_colorspace_by_name(ctx, base_name, stream_dict, page_dict, &base_space);
+        if (code < 0)
+            goto exit;
+        pcs->base_space = base_space;
+        pcs->params.pattern.has_base_space = true;
+    }
+    if (ppcs != NULL) {
+        *ppcs = pcs;
+    } else {
+        code = gs_setcolorspace(ctx->pgs, pcs);
+        /* release reference from construction */
+        rc_decrement_only_cs(pcs, "create_Pattern");
+    }
+
+
+ exit:
+    pdfi_countdown(base_name);
+    return code;
+}
+
+
 static int
 pdfi_get_colorname_string(const gs_memory_t *mem, gs_separation_name colorname_index,
                         unsigned char **ppstr, unsigned int *pname_size)
@@ -1484,7 +1487,7 @@ static int pdfi_create_DeviceN(pdf_context *ctx, pdf_array *color_array, int ind
     /* Sigh, Acrobat allows this, even though its contra the spec. Convert to
      * a /Separation space and go on
      */
-    if (inks->size == 1) {
+    if (pdfi_array_size(inks) == 1) {
         pdf_name *ink_name;
 
         code = pdfi_array_get_type(ctx, inks, 0, PDF_NAME, (pdf_obj **)&ink_name);
@@ -1498,13 +1501,13 @@ static int pdfi_create_DeviceN(pdf_context *ctx, pdf_array *color_array, int ind
         }
     }
 
-    code = gs_cspace_new_DeviceN(&pcs, inks->size, pcs_alt, ctx->memory);
+    code = gs_cspace_new_DeviceN(&pcs, pdfi_array_size(inks), pcs_alt, ctx->memory);
     if (code < 0)
         return code;
 
     pcs->params.device_n.get_colorname_string = pdfi_get_colorname_string;
 
-    for (ix = 0;ix < inks->size;ix++) {
+    for (ix = 0;ix < pdfi_array_size(inks);ix++) {
         pdf_name *ink_name;
         code = pdfi_array_get_type(ctx, inks, 0, PDF_NAME, (pdf_obj **)&ink_name);
         if (code < 0)
@@ -1639,11 +1642,53 @@ pdfi_create_indexed(pdf_context *ctx, pdf_array *color_array, int index,
     return code;
 }
 
+static int pdfi_create_DeviceGray(pdf_context *ctx, gs_color_space **ppcs)
+{
+    int code = 0;
+
+    if (ppcs != NULL) {
+        *ppcs = gs_cspace_new_DeviceGray(ctx->memory);
+        if (*ppcs == NULL)
+            code = gs_note_error(gs_error_VMerror);
+    } else {
+        code = gs_setgray(ctx->pgs, 1);
+    }
+    return code;
+}
+
+static int pdfi_create_DeviceRGB(pdf_context *ctx, gs_color_space **ppcs)
+{
+    int code = 0;
+
+    if (ppcs != NULL) {
+        *ppcs = gs_cspace_new_DeviceRGB(ctx->memory);
+        if (*ppcs == NULL)
+            code = gs_note_error(gs_error_VMerror);
+    } else {
+        code = gs_setrgbcolor(ctx->pgs, 0, 0, 0);
+    }
+    return code;
+}
+
+static int pdfi_create_DeviceCMYK(pdf_context *ctx, gs_color_space **ppcs)
+{
+    int code = 0;
+
+    if (ppcs != NULL) {
+        *ppcs = gs_cspace_new_DeviceCMYK(ctx->memory);
+        if (*ppcs == NULL)
+            code = gs_note_error(gs_error_VMerror);
+    } else {
+        code = gs_setcmykcolor(ctx->pgs, 0, 0, 0, 1);
+    }
+    return code;
+}
+
 /* These next routines allow us to use recursion to set up colour spaces. We can set
  * colour space starting from a name (which can be a named resource) or an array.
  * If we get a name, and its a named resource we dereference it and go round again.
  * If its an array we select the correct handler (above) for that space. The space
- * handler will call pdfi_create_colorspace() to set the underlygin space(s) whcih
+ * handler will call pdfi_create_colorspace() to set the underlying space(s) which
  * may mean calling pdfi_create_colorspace again....
  */
 static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_array, int index,
@@ -1659,15 +1704,9 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
         goto exit;
 
     code = 0;
-    if (pdfi_name_is(space, "G")) {
-        if (ppcs != NULL) {
-            *ppcs = gs_cspace_new_DeviceGray(ctx->memory);
-            if (*ppcs == NULL)
-                code = gs_note_error(gs_error_VMerror);
-        } else {
-            code = gs_setgray(ctx->pgs, 1);
-        }
-    } else if (pdfi_name_is(space, "I")) {
+    if (pdfi_name_is(space, "G") || pdfi_name_is(space, "DeviceGray")) {
+        code = pdfi_create_DeviceGray(ctx, ppcs);
+    } else if (pdfi_name_is(space, "I") || pdfi_name_is(space, "Indexed")) {
         code = pdfi_create_indexed(ctx, color_array, index, stream_dict, page_dict, &pcs);
         if (code < 0)
             goto exit;
@@ -1689,7 +1728,7 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
         } else {
             code = gs_setcolorspace(ctx->pgs, pcs);
         }
-    } else if (pdfi_name_is(space, "RGB")) {
+    } else if (pdfi_name_is(space, "RGB") || pdfi_name_is(space, "DeviceRGB")) {
         if (ppcs != NULL) {
             *ppcs = gs_cspace_new_DeviceRGB(ctx->memory);
             if (*ppcs == NULL)
@@ -1697,7 +1736,7 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
         } else {
             code = gs_setrgbcolor(ctx->pgs, 0, 0, 0);
         }
-    } else if (pdfi_name_is(space, "CMYK")) {
+    } else if (pdfi_name_is(space, "CMYK") || pdfi_name_is(space, "DeviceCMYK")) {
         if (ppcs != NULL) {
             pcs = gs_cspace_new_DeviceCMYK(ctx->memory);
             if (pcs == NULL)
@@ -1744,18 +1783,6 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
             /* release reference from construction */
             rc_decrement_only_cs(pcs, "setdevicenspace");
         }
-    } else if (pdfi_name_is(space, "Indexed")) {
-        code = pdfi_create_indexed(ctx, color_array, index, stream_dict, page_dict, &pcs);
-        if (code < 0)
-            goto exit;
-
-        if (ppcs!= NULL){
-            *ppcs = pcs;
-        } else {
-            code = gs_setcolorspace(ctx->pgs, pcs);
-            /* release reference from construction */
-            rc_decrement_only_cs(pcs, "setindexedspace");
-        }
     } else if (pdfi_name_is(space, "ICCBased")) {
         code = pdfi_create_iccbased(ctx, color_array, index, stream_dict, page_dict, &pcs);
         if (code < 0)
@@ -1767,36 +1794,6 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
             code = gs_setcolorspace(ctx->pgs, pcs);
             /* release reference from construction */
             rc_decrement_only_cs(pcs, "seticcspace");
-        }
-    } else if (pdfi_name_is(space, "DeviceRGB")) {
-        if (ppcs != NULL) {
-            pcs = gs_cspace_new_DeviceRGB(ctx->memory);
-            if (pcs == NULL)
-                code = gs_note_error(gs_error_VMerror);
-            else
-                *ppcs = pcs;
-        } else {
-            code = gs_setrgbcolor(ctx->pgs, 0, 0, 0);
-        }
-    } else if (pdfi_name_is(space, "DeviceGray")) {
-        if (ppcs != NULL) {
-            pcs = gs_cspace_new_DeviceGray(ctx->memory);
-            if (pcs == NULL)
-                code = gs_note_error(gs_error_VMerror);
-            else
-                *ppcs = pcs;
-        } else {
-            code = gs_setgray(ctx->pgs, 1);
-        }
-    } else if (pdfi_name_is(space, "DeviceCMYK")) {
-        if (ppcs != NULL) {
-            pcs = gs_cspace_new_DeviceCMYK(ctx->memory);
-            if (pcs == NULL)
-                code = gs_note_error(gs_error_VMerror);
-            else
-                *ppcs = pcs;
-        } else {
-            code = gs_setcmykcolor(ctx->pgs, 0, 0, 0, 1);
         }
     } else if (pdfi_name_is(space, "Separation")) {
         code = pdfi_create_Separation(ctx, color_array, index, stream_dict, page_dict, &pcs);

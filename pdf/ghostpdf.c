@@ -63,7 +63,7 @@ static int pdfi_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
     if (o->type == PDF_ARRAY) {
         pdf_array *a = (pdf_array *)o;
 
-        for (i=0;i < a->size; i++) {
+        for (i=0;i < pdfi_array_size(a); i++) {
             pdf_indirect_ref *r;
             code = pdfi_array_get_no_deref(ctx, a, i, (pdf_obj **)&r);
             if (code < 0) {
