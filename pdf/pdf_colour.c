@@ -1004,7 +1004,12 @@ pdfi_seticc_lab(pdf_context *ctx, float *range_buff, gs_color_space **ppcs)
         pcs->cmm_icc_profile_data->Range.ranges[i].rmax =
             range_buff[2 * (i-1) + 1];
     }
-    *ppcs = pcs;
+    if (ppcs!= NULL){
+        *ppcs = pcs;
+    } else {
+        code = gs_setcolorspace(ctx->pgs, pcs);
+        rc_decrement_only_cs(pcs, "pdfi_seticc_lab");
+    }
 
     return code;
 }
@@ -1090,7 +1095,14 @@ pdfi_seticc_cal(pdf_context *ctx, float *white, float *black, float *gamma,
         /* We're passing back a new reference, increment the count */
         rc_adjust_only(pcs, 1, "pdfi_seticc_cal, return cached ICC profile");
     }
-    *ppcs = pcs;
+
+    if (ppcs!= NULL){
+        *ppcs = pcs;
+    } else {
+        code = gs_setcolorspace(ctx->pgs, pcs);
+        rc_decrement_only_cs(pcs, "pdfi_seticc_cal");
+    }
+
     return code;
 }
 
@@ -1718,42 +1730,15 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
     } else if (pdfi_name_is(space, "I") || pdfi_name_is(space, "Indexed")) {
         code = pdfi_create_indexed(ctx, color_array, index, stream_dict, page_dict, ppcs);
     } else if (pdfi_name_is(space, "Lab")) {
-        code = pdfi_create_Lab(ctx, color_array, index, stream_dict, page_dict, &pcs);
-        if (code < 0)
-            goto exit;
-
-        if (ppcs!= NULL){
-            *ppcs = pcs;
-        } else {
-            code = gs_setcolorspace(ctx->pgs, pcs);
-            rc_decrement_only_cs(pcs, "setLabspace");
-        }
+        code = pdfi_create_Lab(ctx, color_array, index, stream_dict, page_dict, ppcs);
     } else if (pdfi_name_is(space, "RGB") || pdfi_name_is(space, "DeviceRGB")) {
         code = pdfi_create_DeviceRGB(ctx, ppcs);
     } else if (pdfi_name_is(space, "CMYK") || pdfi_name_is(space, "DeviceCMYK")) {
         code = pdfi_create_DeviceCMYK(ctx, ppcs);
     } else if (pdfi_name_is(space, "CalRGB")) {
-        code = pdfi_create_CalRGB(ctx, color_array, index, stream_dict, page_dict, &pcs);
-        if (code < 0)
-            goto exit;
-
-        if (ppcs!= NULL){
-            *ppcs = pcs;
-        } else {
-            code = gs_setcolorspace(ctx->pgs, pcs);
-            rc_decrement_only_cs(pcs, "setCalRGBspace");
-        }
+        code = pdfi_create_CalRGB(ctx, color_array, index, stream_dict, page_dict, ppcs);
     } else if (pdfi_name_is(space, "CalGray")) {
-        code = pdfi_create_CalGray(ctx, color_array, index, stream_dict, page_dict, &pcs);
-        if (code < 0)
-            goto exit;
-
-        if (ppcs!= NULL){
-            *ppcs = pcs;
-        } else {
-            code = gs_setcolorspace(ctx->pgs, pcs);
-            rc_decrement_only_cs(pcs, "setCalGrayspace");
-        }
+        code = pdfi_create_CalGray(ctx, color_array, index, stream_dict, page_dict, ppcs);
     } else if (pdfi_name_is(space, "Pattern")) {
         if (index != 0)
             return_error(gs_error_syntaxerror);
