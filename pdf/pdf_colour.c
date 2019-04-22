@@ -1542,7 +1542,13 @@ static int pdfi_create_DeviceN(pdf_context *ctx, pdf_array *color_array, int ind
     if (code < 0)
         goto pdfi_devicen_error;
 
-    *ppcs = pcs;
+    if (ppcs!= NULL){
+        *ppcs = pcs;
+    } else {
+        code = gs_setcolorspace(ctx->pgs, pcs);
+        /* release reference from construction */
+        rc_decrement_only_cs(pcs, "setdevicenspace");
+    }
     pdfi_countdown(inks);
     pdfi_countdown(NamedAlternate);
     pdfi_countdown(ArrayAlternate);
@@ -1753,16 +1759,7 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
         if (code < 0)
             goto exit;
     } else if (pdfi_name_is(space, "DeviceN")) {
-        code = pdfi_create_DeviceN(ctx, color_array, index, stream_dict, page_dict, &pcs);
-        if (code < 0)
-            goto exit;
-        if (ppcs!= NULL){
-            *ppcs = pcs;
-        } else {
-            code = gs_setcolorspace(ctx->pgs, pcs);
-            /* release reference from construction */
-            rc_decrement_only_cs(pcs, "setdevicenspace");
-        }
+        code = pdfi_create_DeviceN(ctx, color_array, index, stream_dict, page_dict, ppcs);
     } else if (pdfi_name_is(space, "ICCBased")) {
         code = pdfi_create_iccbased(ctx, color_array, index, stream_dict, page_dict, ppcs);
     } else if (pdfi_name_is(space, "Separation")) {
