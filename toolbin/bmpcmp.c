@@ -1097,6 +1097,7 @@ static void *psd_read(ImageReader *im,
 {
     int c, ir_len, w, h, n, x, y, z, N;
     unsigned char *bmp, *line, *ptr;
+    int bpc;
 
     if (feof(im->file))
         return NULL;
@@ -1117,9 +1118,9 @@ static void *psd_read(ImageReader *im,
 
     h = *height = get_int(im->file, 1);
     w = *width = get_int(im->file, 1);
-    c = get_short(im->file, 1);
-    if (c != 8) {
-        fprintf(stderr, "bmpcmp: We only support 8bpp psd files!\n");
+    bpc = get_short(im->file, 1);
+    if (bpc != 8 && bpc != 16) {
+        fprintf(stderr, "bmpcmp: We only support 8bpp or 16bpp psd files!\n");
         exit(1);
     }
     c = get_short(im->file, 1);
@@ -1181,7 +1182,7 @@ static void *psd_read(ImageReader *im,
                 c |= fgetc(im->file);     if (--ir_len == 0) break;
                 /* We only support CMYK spots! */
                 if (c != 2) {
-                    fprintf(stderr, "bmpcmp: Spot color equivalent not CMYK!\n");
+                    fprintf(stderr, "bmpcmp: Spot color equivalent not CMYK! (%d)\n", c);
                     exit(EXIT_FAILURE);
                 }
                 /* c == 2 = COLORSPACE = CMYK */
@@ -1233,68 +1234,137 @@ static void *psd_read(ImageReader *im,
         N = 4;
     *span = (w * N + 3) & ~3;
     bmp = Malloc(*span * h);
-    line = Malloc(w);
+    line = Malloc(w * (bpc>>3));
     ptr = bmp + *span * (h-1);
-    if (n == 1) {
-        /* Greyscale */
-        for (y = 0; y < h; y++)
-        {
-            fread(line, 1, w, im->file);
-            for (x = 0; x < w; x++)
-            {
-                unsigned char val = 255 - *line++;
-                *ptr++ = val;
-                *ptr++ = val;
-                *ptr++ = val;
-                *ptr++ = 0;
-            }
-            ptr -= w*N + *span;
-            line -= w;
-        }
-        ptr += *span * h + 1;
-    } else if (n == 3) {
-        /* RGB */
-        for (z = 0; z < n; z++)
-        {
+    if (bpc == 8) {
+        if (n == 1) {
+            /* Greyscale */
             for (y = 0; y < h; y++)
             {
                 fread(line, 1, w, im->file);
                 for (x = 0; x < w; x++)
                 {
-                    *ptr = *line++;
-                    ptr += N;
+                    unsigned char val = 255 - *line++;
+                    *ptr++ = val;
+                    *ptr++ = val;
+                    *ptr++ = val;
+                    *ptr++ = 0;
                 }
                 ptr -= w*N + *span;
                 line -= w;
             }
             ptr += *span * h + 1;
-        }
-        for (y = 0; y < h; y++)
-        {
-            for (x = 0; x < w; x++)
+        } else if (n == 3) {
+            /* RGB */
+            for (z = 0; z < n; z++)
             {
-                *ptr = 0;
-                ptr += N;
+                for (y = 0; y < h; y++)
+                {
+                    fread(line, 1, w, im->file);
+                    for (x = 0; x < w; x++)
+                    {
+                        *ptr = *line++;
+                        ptr += N;
+                    }
+                    ptr -= w*N + *span;
+                    line -= w;
+                }
+                ptr += *span * h + 1;
             }
-            ptr -= w*N + *span;
-        }
-        ptr += *span * h + 1;
-    } else {
-        /* CMYK + (maybe) spots */
-        for (z = 0; z < n; z++)
-        {
             for (y = 0; y < h; y++)
             {
-                fread(line, 1, w, im->file);
                 for (x = 0; x < w; x++)
                 {
-                    *ptr = 255 - *line++;
-                    ptr += n;
+                    *ptr = 0;
+                    ptr += N;
                 }
-                ptr -= w*n + *span;
-                line -= w;
+                ptr -= w*N + *span;
             }
             ptr += *span * h + 1;
+        } else {
+            /* CMYK + (maybe) spots */
+            for (z = 0; z < n; z++)
+            {
+                for (y = 0; y < h; y++)
+                {
+                    fread(line, 1, w, im->file);
+                    for (x = 0; x < w; x++)
+                    {
+                        *ptr = 255 - *line++;
+                        ptr += n;
+                    }
+                    ptr -= w*n + *span;
+                    line -= w;
+                }
+                ptr += *span * h + 1;
+            }
+        }
+    } else {
+        /* 16 bit. Just load the top 8 bits */
+        if (n == 1) {
+            /* Greyscale */
+            for (y = 0; y < h; y++)
+            {
+                fread(line, 2, w, im->file);
+                for (x = 0; x < w; x++)
+                {
+                    unsigned char val = 255 - *line++;
+                    line++;
+                    *ptr++ = val;
+                    *ptr++ = val;
+                    *ptr++ = val;
+                    *ptr++ = 0;
+                }
+                ptr -= w*N + *span;
+                line -= w*2;
+            }
+            ptr += *span * h + 1;
+        } else if (n == 3) {
+            /* RGB */
+            for (z = 0; z < n; z++)
+            {
+                for (y = 0; y < h; y++)
+                {
+                    fread(line, 2, w, im->file);
+                    for (x = 0; x < w; x++)
+                    {
+                        *ptr = *line++;
+                        line++;
+                        ptr += N;
+                    }
+                    ptr -= w*N + *span;
+                    line -= w*2;
+                }
+                ptr += *span * h + 1;
+            }
+            for (y = 0; y < h; y++)
+            {
+                for (x = 0; x < w; x++)
+                {
+                    *ptr = 0;
+                    ptr += N;
+                }
+                ptr -= w*N + *span;
+            }
+            ptr += *span * h + 1;
+        } else {
+            /* CMYK + (maybe) spots */
+            for (z = 0; z < n; z++)
+            {
+                for (y = 0; y < h; y++)
+                {
+                    fread(line, 2, w, im->file);
+                    for (x = 0; x < w; x++)
+                    {
+                        *ptr = 255 - *line++;
+                        line++;
+                        ptr += n;
+                    }
+                    ptr -= w*n + *span;
+                    line -= 2*w;
+                }
+                ptr += *span * h + 1;
+            }
         }
     }
     free(line);
