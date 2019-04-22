@@ -805,7 +805,14 @@ static int pdfi_create_icc(pdf_context *ctx, char *Name, stream *s, int ncomps, 
         rc_adjust(picc_profile, -2, "pdfi_create_icc");
         rc_increment(pcs->cmm_icc_profile_data);
     }
-    *ppcs = pcs;
+
+    if (ppcs!= NULL){
+        *ppcs = pcs;
+    } else {
+        code = gs_setcolorspace(ctx->pgs, pcs);
+        rc_decrement_only_cs(pcs, "pdfi_seticc_cal");
+    }
+
     /* The context has taken a reference to the colorspace. We no longer need
      * ours, so drop it. */
     rc_decrement(picc_profile, "pdfi_create_icc");
@@ -1757,17 +1764,7 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
             rc_decrement_only_cs(pcs, "setdevicenspace");
         }
     } else if (pdfi_name_is(space, "ICCBased")) {
-        code = pdfi_create_iccbased(ctx, color_array, index, stream_dict, page_dict, &pcs);
-        if (code < 0)
-            goto exit;
-
-        if (ppcs!= NULL){
-            *ppcs = pcs;
-        } else {
-            code = gs_setcolorspace(ctx->pgs, pcs);
-            /* release reference from construction */
-            rc_decrement_only_cs(pcs, "seticcspace");
-        }
+        code = pdfi_create_iccbased(ctx, color_array, index, stream_dict, page_dict, ppcs);
     } else if (pdfi_name_is(space, "Separation")) {
         code = pdfi_create_Separation(ctx, color_array, index, stream_dict, page_dict, &pcs);
         if (code < 0)
