@@ -799,7 +799,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     gs_image1_t t1image;
     gs_image4_t t4image;
     gs_image3_t t3image;
-    gs_pixel_image_t *pim;
+    gs_pixel_image_t *pim = NULL;
     pdf_dict *alt_dict = NULL;
     pdfi_image_info_t image_info, mask_info;
     pdf_dict *mask_dict = NULL;
@@ -1113,6 +1113,10 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
 
     pdfi_free_image_info_components(&image_info);
     pdfi_free_image_info_components(&mask_info);
+
+    if (pcs != NULL)
+        rc_decrement_only_cs(pcs, "pdfi_do_image");
+
     return code;
 }
 
