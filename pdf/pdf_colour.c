@@ -1082,16 +1082,20 @@ pdfi_seticc_cal(pdf_context *ctx, float *white, float *black, float *gamma,
         /* Create the ICC profile from the CalRGB or CalGray parameters */
         cal_profile = gsicc_create_from_cal(white, black, gamma, matrix,
                                             ctx->memory, num_colorants);
-        if (cal_profile == NULL)
+        if (cal_profile == NULL) {
+            rc_decrement(pcs, "seticc_cal");
             return_error(gs_error_VMerror);
+        }
         /* Assign the profile to this color space */
         code = gsicc_set_gscs_profile(pcs, cal_profile, ctx->memory);
         /* profile is created with ref count of 1, gsicc_set_gscs_profile()
          * increments the ref count, so we need to decrement it here.
          */
         rc_decrement(cal_profile, "seticc_cal");
-        if (code < 0)
+        if (code < 0) {
+            rc_decrement(pcs, "seticc_cal");
             return code;
+        }
         for (i = 0; i < num_colorants; i++) {
             pcs->cmm_icc_profile_data->Range.ranges[i].rmin = 0;
             pcs->cmm_icc_profile_data->Range.ranges[i].rmax = 1;
