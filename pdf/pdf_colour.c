@@ -1437,7 +1437,20 @@ static int pdfi_create_Separation(pdf_context *ctx, pdf_array *color_array, int 
     if (code < 0)
         goto pdfi_separation_error;
 
-    *ppcs = pcs;
+    if (ppcs!= NULL){
+        /* FIXME
+         * I can see no justification for this whatever, but if I don't do this then some
+         * files with images in a /Separation colour space come out incorrectly. Even surrounding
+         * this with a gsave/grestore pair causes differences.
+         */
+        code = gs_setcolorspace(ctx->pgs, pcs);
+        *ppcs = pcs;
+    } else {
+        code = gs_setcolorspace(ctx->pgs, pcs);
+        /* release reference from construction */
+        rc_decrement_only_cs(pcs, "setdevicenspace");
+    }
+
     pdfi_countdown(name);
     pdfi_countdown(NamedAlternate);
     pdfi_countdown(ArrayAlternate);
@@ -1763,17 +1776,7 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
     } else if (pdfi_name_is(space, "ICCBased")) {
         code = pdfi_create_iccbased(ctx, color_array, index, stream_dict, page_dict, ppcs);
     } else if (pdfi_name_is(space, "Separation")) {
-        code = pdfi_create_Separation(ctx, color_array, index, stream_dict, page_dict, &pcs);
-        if (code < 0)
-            goto exit;
-        if (ppcs!= NULL){
-            code = gs_setcolorspace(ctx->pgs, pcs);
-            *ppcs = pcs;
-        } else {
-            code = gs_setcolorspace(ctx->pgs, pcs);
-            /* release reference from construction */
-            rc_decrement_only_cs(pcs, "setdevicenspace");
-        }
+        code = pdfi_create_Separation(ctx, color_array, index, stream_dict, page_dict, ppcs);
     } else {
         code = pdfi_find_resource(ctx, (unsigned char *)"ColorSpace",
                                   space, stream_dict, page_dict, (pdf_obj **)&a);
