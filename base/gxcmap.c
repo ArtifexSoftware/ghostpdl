@@ -1455,6 +1455,24 @@ devicen_has_cmyk(gx_device * dev)
     return(devn_params->num_std_colorant_names == 4);
 }
 
+static bool
+named_color_supported(const gs_gstate * pgs)
+{
+    gs_color_space *pcs = gs_currentcolorspace_inline(pgs);
+    gs_color_space_index type = gs_color_space_get_index(pcs);
+
+    if (pgs->icc_manager->device_named == NULL)
+        return false;
+
+    if (type == gs_color_space_index_Separation && pcs->params.separation.named_color_supported)
+        return true;
+
+    if (type = gs_color_space_index_DeviceN && pcs->params.device_n.named_color_supported)
+        return true;
+
+    return false;
+}
+
 static int
 devicen_icc_cmyk(frac cm_comps[], const gs_gstate * pgs, gx_device *dev)
 {
@@ -1529,7 +1547,8 @@ cmap_devicen_halftoned(const frac * pcc,
     map_components_to_colorants(pcc, &(pgs->color_component_map), cm_comps);
     /* See comments in cmap_devicen_direct for details on below operations */
     if (devicen_has_cmyk(dev) &&
-        des_profile->data_cs == gsCMYK) {
+        des_profile->data_cs == gsCMYK &&
+        !named_color_supported(pgs)) {
         devicen_icc_cmyk(cm_comps, pgs, dev);
     }
     /* apply the transfer function(s); convert to color values */
@@ -1589,13 +1608,15 @@ cmap_devicen_direct(const frac * pcc,
        as a CMYK color that will be color managed and specified with 10% C,
        20% M 0% Y 0% K. Hence the CMYK values should go through the same
        color management as a stand alone CMYK value.  */
-    if (devicen_has_cmyk(dev) && des_profile->data_cs == gsCMYK) {
+    if (devicen_has_cmyk(dev) && des_profile->data_cs == gsCMYK &&
+        !named_color_supported(pgs)) {
         /* We need to do a CMYK to CMYK conversion here.  This will always
            use the default CMYK profile and the device's output profile.
            We probably need to add some checking here
            and possibly permute the colorants, much as is done on the input
            side for the case when we add DeviceN icc source profiles for use
-           in PDF and PS data. */
+           in PDF and PS data. Also, don't do this if we are doing mapping
+           through the named color mapping.  */
         devicen_icc_cmyk(cm_comps, pgs, dev);
     }
     /* apply the transfer function(s); convert to color values.

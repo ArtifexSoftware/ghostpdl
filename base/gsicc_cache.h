@@ -61,6 +61,7 @@ int gsicc_transform_named_color(const float tint_values[],
                             const gs_gstate *pgs, gx_device *dev,
                             cmm_profile_t *gs_output_profile,
                             gsicc_rendering_param_t *rendering_params);
+bool gsicc_support_named_color(unsigned char *name, int len, const gs_gstate *pgs);
 int  gsicc_get_device_profile_comps(const cmm_dev_profile_t *dev_profile);
 gsicc_link_t * gsicc_alloc_link_dev(gs_memory_t *memory, cmm_profile_t *src_profile,
     cmm_profile_t *des_profile, gsicc_rendering_param_t *rendering_params);

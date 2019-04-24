@@ -130,6 +130,7 @@ gs_cspace_new_DeviceN(
     pcsdevn->names = NULL;
     pcsdevn->map = NULL;
     pcsdevn->colorants = NULL;
+    pcsdevn->named_color_supported = false;
 
     /* Allocate space for color names list. */
     code = alloc_device_n_map(&pcsdevn->map, pmem, "gs_cspace_build_DeviceN");
@@ -540,6 +541,45 @@ gx_remap_concrete_DeviceN(const gs_color_space * pcs, const frac * pconc,
 }
 
 /*
+ * See if this colorant is supported for named color mapping
+ */
+static int
+check_named_color_support(const gs_color_space * pcs, gs_gstate * pgs)
+{
+    const gs_separation_name *names = pcs->params.device_n.names;
+    byte *pname;
+    uint name_size;
+    int num_comp = pcs->params.device_n.num_components;
+    int i;
+    int num_realnames = 0;
+
+    for (i = 0; i < num_comp; i++) {
+        /*
+         * Get the character string and length for the component name.
+         */
+        pcs->params.device_n.get_colorname_string(pgs->memory, names[i], &pname, &name_size);
+
+        /*
+         *  Keep track of case with Alls and Nones.  We may want to do something
+         *  special here.
+         */
+        if (!(strncmp((char *)pname, "None", name_size) != 0 ||
+            strncmp((char *)pname, "All", name_size) != 0)) {
+            if (!gsicc_support_named_color(pname, name_size, pgs)) {
+                return false;
+            }
+            num_realnames++;
+        }
+    }
+
+    /* Everything All or None?*/
+    if (num_realnames == 0)
+        return false;
+    else
+        return true;
+}
+
+/*
  * Check that the color component names for a DeviceN color space
  * match the device colorant names.  Also build a gs_devicen_color_map
  * structure.
@@ -627,6 +667,12 @@ gx_install_DeviceN(gs_color_space * pcs, gs_gstate * pgs)
     code = check_DeviceN_component_names(pcs, pgs);
     if (code < 0)
        return code;
+
+    if (pgs->icc_manager->device_named != NULL) {
+        pcs->params.device_n.named_color_supported =
+            check_named_color_support(pcs, pgs);
+    }
+
     /* See if we have an ICC profile that we can associate with
        this DeviceN color space */
     if (pgs->icc_manager->device_n != NULL) {

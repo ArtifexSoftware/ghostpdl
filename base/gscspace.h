@@ -227,6 +227,7 @@ typedef struct gs_separation_params_s {
     gs_device_n_map *map;
     separation_type sep_type;
     bool use_alt_cspace;
+    bool named_color_supported;
     gs_callback_func_get_colorname_string *get_colorname_string;
 } gs_separation_params;
 
@@ -237,6 +238,7 @@ typedef struct gs_device_n_params_s {
     gs_device_n_attributes *colorants;
     bool use_alt_cspace;
     gs_callback_func_get_colorname_string *get_colorname_string;
+    bool named_color_supported;
 } gs_device_n_params;
 
 /* Define an abstract type for the client color space data */

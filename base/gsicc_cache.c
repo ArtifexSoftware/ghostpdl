@@ -1408,6 +1408,153 @@ gsicc_named_profile_release(void *ptr, gs_memory_t *memory)
     }
 }
 
+static int
+create_named_profile(gs_memory_t *mem, cmm_profile_t *named_profile)
+{
+    /* Create the structure that we will use in searching */
+    /*  Note that we do this in non-GC memory since the
+        profile pointer is not GC'd */
+    gsicc_namedcolortable_t *namedcolor_table;
+    gsicc_namedcolor_t *namedcolor_data;
+    char *buffptr;
+    int buffer_count;
+    int count;
+    unsigned int num_entries;
+    int code;
+    int k, j;
+    char *pch, *temp_ptr, *last = NULL;
+    bool done;
+    int curr_name_size;
+    float lab[3];
+
+    namedcolor_table =
+        (gsicc_namedcolortable_t*)gs_malloc(mem, 1,
+            sizeof(gsicc_namedcolortable_t), "create_named_profile");
+    if (namedcolor_table == NULL)
+        return_error(gs_error_VMerror);
+    namedcolor_table->memory = mem;
+
+    /* Parse buffer and load the structure we will be searching */
+    buffptr = (char*)named_profile->buffer;
+    buffer_count = named_profile->buffer_size;
+    count = sscanf(buffptr, "%d", &num_entries);
+    if (num_entries < 1 || count == 0) {
+        gs_free(mem, namedcolor_table, 1, sizeof(gsicc_namedcolortable_t),
+            "create_named_profile");
+        return -1;
+    }
+
+    code = get_to_next_line(&buffptr, &buffer_count);
+    if (code < 0) {
+        gs_free(mem, namedcolor_table, 1, sizeof(gsicc_namedcolortable_t),
+            "create_named_profile");
+        return -1;
+    }
+    namedcolor_data =
+        (gsicc_namedcolor_t*)gs_malloc(mem, num_entries, 
+            sizeof(gsicc_namedcolor_t), "create_named_profile");
+    if (namedcolor_data == NULL) {
+        gs_free(mem, namedcolor_table, num_entries,
+            sizeof(gsicc_namedcolortable_t), "create_named_profile");
+        return_error(gs_error_VMerror);
+    }
+    namedcolor_table->number_entries = num_entries;
+    namedcolor_table->named_color = namedcolor_data;
+    for (k = 0; k < num_entries; k++) {
+        if (k == 0) {
+            pch = gs_strtok(buffptr, ",;", &last);
+        } else {
+            pch = gs_strtok(NULL, ",;", &last);
+        }
+        /* Remove any /0d /0a stuff from start */
+        temp_ptr = pch;
+        done = 0;
+        while (!done) {
+            if (*temp_ptr == 0x0d || *temp_ptr == 0x0a) {
+                temp_ptr++;
+            } else {
+                done = 1;
+            }
+        }
+        curr_name_size = strlen(temp_ptr);
+        namedcolor_data[k].name_size = curr_name_size;
+
+        /* +1 for the null */
+        namedcolor_data[k].colorant_name =
+            (char*)gs_malloc(mem, 1, curr_name_size + 1,
+                "create_named_profile");
+        if (namedcolor_data[k].colorant_name == NULL) {
+            /* Free up all that has been allocated so far */
+            for (j = 0; j < k; j++) {
+                gs_free(mem, namedcolor_table, 1, namedcolor_data[j].name_size+1,
+                    "create_named_profile");
+            }
+            gs_free(mem, namedcolor_data, num_entries, sizeof(gsicc_namedcolor_t),
+                "create_named_profile");
+            gs_free(mem, namedcolor_table, num_entries,
+                sizeof(gsicc_namedcolortable_t), "create_named_profile");
+            return_error(gs_error_VMerror);
+        }
+        strncpy(namedcolor_data[k].colorant_name, temp_ptr,
+            namedcolor_data[k].name_size + 1);
+        for (j = 0; j < 3; j++) {
+            pch = gs_strtok(NULL, ",;", &last);
+            count = sscanf(pch, "%f", &(lab[j]));
+        }
+        lab[0] = lab[0] * 65535 / 100.0;
+        lab[1] = (lab[1] + 128.0) * 65535 / 255;
+        lab[2] = (lab[2] + 128.0) * 65535 / 255;
+        for (j = 0; j < 3; j++) {
+            if (lab[j] > 65535) lab[j] = 65535;
+            if (lab[j] < 0) lab[j] = 0;
+            namedcolor_data[k].lab[j] = (unsigned short)lab[j];
+        }
+    }
+
+    /* Assign to the profile pointer */
+    named_profile->profile_handle = namedcolor_table;
+    named_profile->release = gsicc_named_profile_release;
+    return 0;
+}
+
+
+/* Check for support of named color at time of install of DeviceN or Sep color space */
+bool
+gsicc_support_named_color(unsigned char *name, int len, const gs_gstate *pgs)
+{
+    cmm_profile_t *named_profile;
+    gsicc_namedcolortable_t *namedcolor_table;
+    unsigned int num_entries;
+    int k;
+    int code;
+
+    if (pgs == NULL || pgs->icc_manager->device_named == NULL)
+        return false;
+
+    named_profile = pgs->icc_manager->device_named;
+
+    if (named_profile->buffer != NULL &&
+        named_profile->profile_handle == NULL) {
+        code = create_named_profile(pgs->memory->non_gc_memory, named_profile);
+        if (code < 0)
+            return false;
+    }
+
+    namedcolor_table =
+        (gsicc_namedcolortable_t*)named_profile->profile_handle;
+    num_entries = namedcolor_table->number_entries;
+
+    for (k = 0; k < num_entries; k++) {
+        if (len == namedcolor_table->named_color[k].name_size) {
+            if (strncmp((const char *)namedcolor_table->named_color[k].colorant_name,
+                (const char *)name, len) == 0) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 /* Function returns -1 if a name is not found.  Otherwise it will transform
    the named colors and return 0 */
 int
@@ -1419,20 +1566,13 @@ gsicc_transform_named_color(const float tint_values[],
                             cmm_profile_t *gs_output_profile,
                             gsicc_rendering_param_t *rendering_params)
 {
-    gsicc_namedcolor_t *namedcolor_data;
     unsigned int num_entries;
     cmm_profile_t *named_profile;
     gsicc_namedcolortable_t *namedcolor_table;
     int num_nonnone_names;
     uint k,j,n;
     float lab[3];
-    char *buffptr;
-    int buffer_count;
-    int count;
     int code;
-    char *pch, *temp_ptr, *last = NULL;
-    bool done;
-    int curr_name_size;
     bool found_match;
     unsigned short psrc[GS_CLIENT_COLOR_MAX_COMPONENTS];
     unsigned short psrc_cm[GS_CLIENT_COLOR_MAX_COMPONENTS];
@@ -1458,87 +1598,9 @@ gsicc_transform_named_color(const float tint_values[],
             named_profile = pgs->icc_manager->device_named;
             if (named_profile->buffer != NULL &&
                 named_profile->profile_handle == NULL) {
-                /* Create the structure that we will use in searching */
-                /*  Note that we do this in non-GC memory since the
-                    profile pointer is not GC'd */
-                namedcolor_table =
-                    (gsicc_namedcolortable_t*) gs_malloc(nongc_mem, 1,
-                                                    sizeof(gsicc_namedcolortable_t),
-                                                    "gsicc_transform_named_color");
-                if (namedcolor_table == NULL)
-                    return(gs_error_VMerror);
-                namedcolor_table->memory = nongc_mem;
-                /* Parse buffer and load the structure we will be searching */
-                buffptr = (char*) named_profile->buffer;
-                buffer_count = named_profile->buffer_size;
-                count = sscanf(buffptr,"%d",&num_entries);
-                if (num_entries < 1 || count == 0) {
-                    gs_free(nongc_mem, namedcolor_table, 1,
-                            sizeof(gsicc_namedcolortable_t),
-                            "gsicc_transform_named_color");
+                code = create_named_profile(nongc_mem, named_profile);
+                if (code < 0)
                     return -1;
-                }
-                code = get_to_next_line(&buffptr,&buffer_count);
-                if (code < 0) {
-                    gs_free(nongc_mem, namedcolor_table, 1,
-                            sizeof(gsicc_namedcolortable_t),
-                            "gsicc_transform_named_color");
-                    return -1;
-                }
-                namedcolor_data =
-                    (gsicc_namedcolor_t*) gs_malloc(nongc_mem, num_entries,
-                                                    sizeof(gsicc_namedcolor_t),
-                                                    "gsicc_transform_named_color");
-                if (namedcolor_data == NULL) {
-                    gs_free(nongc_mem, namedcolor_table, num_entries,
-                            sizeof(gsicc_namedcolortable_t),
-                            "gsicc_transform_named_color");
-                    return_error(gs_error_VMerror);
-                }
-                namedcolor_table->number_entries = num_entries;
-                namedcolor_table->named_color = namedcolor_data;
-                for (k = 0; k < num_entries; k++) {
-                    if (k == 0) {
-                        pch = gs_strtok(buffptr,",;", &last);
-                    } else {
-                        pch = gs_strtok(NULL,",;", &last);
-                    }
-                    /* Remove any /0d /0a stuff from start */
-                    temp_ptr = pch;
-                    done = 0;
-                    while (!done) {
-                        if (*temp_ptr == 0x0d || *temp_ptr == 0x0a) {
-                            temp_ptr++;
-                        } else {
-                            done = 1;
-                        }
-                    }
-                    curr_name_size = strlen(temp_ptr);
-                    namedcolor_data[k].name_size = curr_name_size;
-                    /* +1 for the null */
-                    namedcolor_data[k].colorant_name =
-                        (char*)gs_malloc(nongc_mem, 1, curr_name_size + 1,
-                                          "gsicc_transform_named_color");
-                    if (namedcolor_data[k].colorant_name == NULL)
-                        return_error(gs_error_VMerror);
-                    strncpy(namedcolor_data[k].colorant_name,temp_ptr,
-                            namedcolor_data[k].name_size+1);
-                    for (j = 0; j < 3; j++) {
-                        pch = gs_strtok(NULL,",;", &last);
-                        count = sscanf(pch,"%f",&(lab[j]));
-                    }
-                    lab[0] = lab[0]*65535/100.0;
-                    lab[1] = (lab[1] + 128.0)*65535/255;
-                    lab[2] = (lab[2] + 128.0)*65535/255;
-                    for (j = 0; j < 3; j++) {
-                        if (lab[j] > 65535) lab[j] = 65535;
-                        if (lab[j] < 0) lab[j] = 0;
-                        namedcolor_data[k].lab[j] = (unsigned short) lab[j];
-                    }
-                }
-                /* Assign to the profile pointer */
-                named_profile->profile_handle = namedcolor_table;
-                named_profile->release = gsicc_named_profile_release;
             } else {
                 if (named_profile->profile_handle != NULL ) {
                     namedcolor_table =
