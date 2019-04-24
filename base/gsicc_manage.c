@@ -548,23 +548,23 @@ gsicc_fill_srcgtag_item(gsicc_rendering_param_t *r_params, char **pstrlast, bool
     int ri;
 
     /* Get the intent */
-    curr_ptr = gs_strtok(NULL, "\t,\32\n\r", pstrlast);
+    curr_ptr = gs_strtok(NULL, "\t, \n\r", pstrlast);
     if (sscanf(curr_ptr, "%d", &ri) != 1)
         return_error(gs_error_unknownerror);
     r_params->rendering_intent = ri | gsRI_OVERRIDE;
     /* Get the black point compensation setting */
-    curr_ptr = gs_strtok(NULL, "\t,\32\n\r", pstrlast);
+    curr_ptr = gs_strtok(NULL, "\t, \n\r", pstrlast);
     if (sscanf(curr_ptr, "%d", &blackptcomp) != 1)
         return_error(gs_error_unknownerror);
     r_params->black_point_comp = blackptcomp | gsBP_OVERRIDE;
     /* Get the over-ride embedded ICC boolean */
-    curr_ptr = gs_strtok(NULL, "\t,\32\n\r", pstrlast);
+    curr_ptr = gs_strtok(NULL, "\t, \n\r", pstrlast);
     if (sscanf(curr_ptr, "%d", &or_icc) != 1)
         return_error(gs_error_unknownerror);
     r_params->override_icc = or_icc;
     if (cmyk) {
         /* Get the preserve K control */
-        curr_ptr = gs_strtok(NULL, "\t,\32\n\r", pstrlast);
+        curr_ptr = gs_strtok(NULL, "\t, \n\r", pstrlast);
         if (sscanf(curr_ptr, "%d", &preserve_k) < 1)
             return_error(gs_error_unknownerror);
         r_params->preserve_black = preserve_k | gsKP_OVERRIDE;
@@ -666,10 +666,10 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
         }
         while (start || strlen(curr_ptr) > 0) {
             if (start) {
-                curr_ptr = gs_strtok(buffer_ptr, "\t,\32\n\r", &last);
+                curr_ptr = gs_strtok(buffer_ptr, "\t, \n\r", &last);
                 start = false;
             } else {
-                curr_ptr = gs_strtok(NULL, "\t,\32\n\r", &last);
+                curr_ptr = gs_strtok(NULL, "\t, \n\r", &last);
             }
             if (curr_ptr == NULL) break;
             /* Now go ahead and see if we have a match */
@@ -679,7 +679,7 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
                        object is not to be color managed.  Also, if the
                        curr_ptr is Replace which indicates we will be doing
                        direct replacement of the colors.  */
-                    curr_ptr = gs_strtok(NULL, "\t,\32\n\r", &last);
+                    curr_ptr = gs_strtok(NULL, "\t, \n\r", &last);
                     if (strncmp(curr_ptr, GSICC_SRCTAG_NOCM, strlen(GSICC_SRCTAG_NOCM)) == 0 &&
                         strlen(curr_ptr) == strlen(GSICC_SRCTAG_NOCM)) {
                         cmm = gsCMM_NONE;
