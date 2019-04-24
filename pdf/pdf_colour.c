@@ -807,6 +807,7 @@ pdfi_setcolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, boo
             goto cleanupExit;
         }
         ncomps = cs_num_components(pcs);
+        cc.pattern = 0x00;
     }
 
     if (ncomps > 0)
