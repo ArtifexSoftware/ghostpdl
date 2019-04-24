@@ -294,7 +294,9 @@ static void
 gsicc_rcm_freelink(gsicc_link_t *icclink)
 {
     rcm_link_t *rcm_link = (rcm_link_t*) icclink->link_handle;
-    gs_free_object(rcm_link->memory, rcm_link, "gsicc_rcm_freelink");
+    if (rcm_link != NULL)
+        gs_free_object(rcm_link->memory, rcm_link, "gsicc_rcm_freelink");
+    icclink->link_handle = NULL;
 }
 
 /* Get the replacement color management link.  It basically needs to store
