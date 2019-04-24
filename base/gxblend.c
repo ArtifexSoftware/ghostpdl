@@ -2431,7 +2431,7 @@ art_pdf_composite_knockout_16(uint16_t *gs_restrict dst,
                               const pdf14_nonseparable_blending_procs_t * pblend_procs,
                               pdf14_device *p14dev)
 {
-    byte src_shape = src[n_chan];
+    uint16_t src_shape = src[n_chan];
     int i, tmp;
 
     if (blend_mode == BLEND_MODE_Normal) {
