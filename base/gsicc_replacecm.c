@@ -328,15 +328,8 @@ gsicc_rcm_get_link(const gs_gstate *pgs, gx_device *dev,
         pageneutralcolor = dev_profile->pageneutralcolor;
     }
 
-    /* FIXME: What if we have a subclassed forwarding device? */
-    /* If the cm_procs are forwarding due to the overprint device or other
-       odd thing, drill down now and get the proper ones */
-    if (fwd_uses_fwd_cmap_procs(dev)) {
-        cm_procs = fwd_get_target_cmap_procs(dev);
-    } else {
-        scm = get_color_mapping_procs_subclass(dev);
-        cm_procs = scm.procs;
-    }
+    scm = get_color_mapping_procs_subclass(dev);
+    cm_procs = scm.procs;
 
     hash.rend_hash = gsCMM_REPLACE;
     hash.des_hash = dev->color_info.num_components;
@@ -403,11 +396,7 @@ gsicc_rcm_get_link(const gs_gstate *pgs, gx_device *dev,
     result->hashcode.rend_hash = hash.rend_hash;
     result->includes_softproof = false;
     result->includes_devlink = false;
-    if (hash.src_hash == hash.des_hash) {
-        result->is_identity = true;
-    } else {
-        result->is_identity = false;
-    }
+    result->is_identity = false;  /* Always do replacement for demo */
 
     /* Set up for monitoring non gray color spaces */
     if (pageneutralcolor && data_cs != gsGRAY)
