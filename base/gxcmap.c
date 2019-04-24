@@ -1467,7 +1467,7 @@ named_color_supported(const gs_gstate * pgs)
     if (type == gs_color_space_index_Separation && pcs->params.separation.named_color_supported)
         return true;
 
-    if (type = gs_color_space_index_DeviceN && pcs->params.device_n.named_color_supported)
+    if (type == gs_color_space_index_DeviceN && pcs->params.device_n.named_color_supported)
         return true;
 
     return false;

@@ -413,7 +413,6 @@ static bool
 check_named_color_support(const gs_color_space * pcs, gs_gstate * pgs)
 {
     const gs_separation_name name = pcs->params.separation.sep_name;
-    int colorant_number;
     byte *pname;
     uint name_size;
 

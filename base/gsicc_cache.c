@@ -1571,7 +1571,6 @@ gsicc_transform_named_color(const float tint_values[],
     gsicc_namedcolortable_t *namedcolor_table;
     int num_nonnone_names;
     uint k,j,n;
-    float lab[3];
     int code;
     bool found_match;
     unsigned short psrc[GS_CLIENT_COLOR_MAX_COMPONENTS];
@@ -1601,15 +1600,11 @@ gsicc_transform_named_color(const float tint_values[],
                 code = create_named_profile(nongc_mem, named_profile);
                 if (code < 0)
                     return -1;
-            } else {
-                if (named_profile->profile_handle != NULL ) {
-                    namedcolor_table =
-                        (gsicc_namedcolortable_t*) named_profile->profile_handle;
-                   num_entries = namedcolor_table->number_entries;
-                } else {
-                    return -1;
-                }
             }
+            namedcolor_table =
+                    (gsicc_namedcolortable_t*)named_profile->profile_handle;
+            num_entries = namedcolor_table->number_entries;
+ 
             /* Go through each of our spot names, getting the color value for
                each one. */
             num_nonnone_names = num_names;
