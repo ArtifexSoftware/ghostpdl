@@ -807,7 +807,7 @@ pdfi_setcolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, boo
             goto cleanupExit;
         }
         ncomps = cs_num_components(pcs);
-        cc.pattern = 0x00;
+        cc.pattern = NULL;
     }
 
     if (ncomps > 0)
@@ -1491,7 +1491,7 @@ pdfi_create_Pattern(pdf_context *ctx, pdf_array *color_array,
      */
     /* NOTE: See zcolor.c/setpatternspace */
     dbgmprintf(ctx->memory, "PATTERN: pdfi_create_Pattern\n");
-    return 0;
+    //    return 0;
 
     pcs = gs_cspace_alloc(ctx->memory, &gs_color_space_type_Pattern);
     if (pcs == NULL) {
