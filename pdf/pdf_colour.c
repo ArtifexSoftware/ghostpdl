@@ -630,6 +630,33 @@ pdfi_array_to_gs_matrix(pdf_context *ctx, pdf_array *array, gs_matrix *mat)
     return code;
 }
 
+/* NULL Pattern */
+static int
+pdfi_setpattern_null(pdf_context *ctx, gs_client_color *cc)
+{
+    int code = 0;
+    gs_client_pattern templat;
+    gs_matrix mat;
+
+    gs_pattern1_init(&templat);
+
+    /* Init identity matrix */
+    pdfi_array_to_gs_matrix(ctx, NULL, &mat);
+    templat.BBox.p.x = 0;
+    templat.BBox.p.y = 0;
+    templat.BBox.q.x = 1;
+    templat.BBox.q.y = 1;
+    templat.PaintProc = NULL;
+    templat.PaintType = 1;
+    templat.TilingType = 3;
+    templat.XStep = 1;
+    templat.YStep = 1;
+
+    code = gs_makepattern(cc, &templat, &mat, ctx->pgs, ctx->memory);
+
+    return code;
+}
+
 /* Type 1 (tiled) Pattern */
 static int
 pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
@@ -699,13 +726,18 @@ pdfi_setpattern_type2(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
     if (code < 0)
         goto exit;
 
-    /* TODO: Something brilliant goes here */
-    /* ... */
-    /* TODO: turn Matrix into 'mat' */
+    code = gs_gsave(ctx->pgs);
+    if (code < 0)
+        goto exit;
+    ctx->pgs->ctm = ctx->default_ctm;
+
     gs_pattern2_init(&templat);
     templat.Shading = shading;
     code = gs_make_pattern(cc, (const gs_pattern_template_t *)&templat,
                            &mat, ctx->pgs, ctx->memory);
+    code = gs_grestore(ctx->pgs);
+    if (code < 0)
+        goto exit;
 
     /* NOTE: I am pretty sure this needs to be freed much later, but haven't figured it out :( */
     //pdfi_shading_free(ctx, shading, shading_type);
@@ -1520,6 +1552,16 @@ pdfi_create_Pattern(pdf_context *ctx, pdf_array *color_array,
         code = gs_setcolorspace(ctx->pgs, pcs);
         /* release reference from construction */
         rc_decrement_only_cs(pcs, "create_Pattern");
+
+#if 0
+        /* An attempt to init a "Null" pattern, causes crashes on cluster */
+        {
+        gs_client_color cc;
+        memset(&cc, 0, sizeof(cc));
+        code = pdfi_setpattern_null(ctx, &cc);
+        code = gs_setcolor(ctx->pgs, &cc);
+        }
+#endif
     }
 
 

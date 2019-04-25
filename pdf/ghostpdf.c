@@ -1311,6 +1311,9 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
         return code;
     }
 
+    /* Save default ctm because Patterns needs it */
+    ctx->default_ctm = ctx->pgs->ctm;
+
     code = gs_setstrokeconstantalpha(ctx->pgs, 1.0);
     code = gs_setfillconstantalpha(ctx->pgs, 1.0);
     code = gs_setalphaisshape(ctx->pgs, 0);
