@@ -3186,33 +3186,6 @@ pdf_text_process(gs_text_enum_t *pte)
                 goto default_impl;
         }
 
-        /* Sepcial checks for PCL bitmap fonts, or the HP/GL-2 stick font */
-        if (penum->current_font->FontType == ft_PCL_user_defined
-            && operation & TEXT_FROM_CHARS && !pdev->type3charpath &&
-            cdata[pte->index] <= 255) {
-            /* We can only get to this point with the character already in use
-             * if we detected in process_text_return_width that the glyph had
-             * been flushed from teh cache. If this happens with PCL bitmap
-             * fonts then we assume that the 'slot' has been reused. In this
-             * case we cannot add the glyph to the current font. By not
-             * capturing at this level the bitmap will still be added to a
-             * type 3 font, but a new one. Best we can do as PS/PDF do not
-             * allow redefinition of fonts.
-             */
-            pdf_font_resource_t *pdfont;
-
-            code = pdf_attached_font_resource(pdev, (gs_font *)penum->current_font, &pdfont, NULL, NULL, NULL, NULL);
-            if (code < 0)
-                return code;
-
-            if (pdfont == 0L)
-                return gs_note_error(gs_error_invalidfont);
-
-            if (pdfont->u.simple.s.type3.cached[cdata[pte->index] >> 3] & (0x80 >> (cdata[pte->index] & 7)))
-                early_accumulator = 0;
-            else
-                early_accumulator = 1;
-        }
         if ((penum->current_font->FontType == ft_GL2_stick_user_defined ||
             penum->current_font->FontType == ft_GL2_531 || penum->current_font->FontType == ft_MicroType)
             && operation & TEXT_FROM_CHARS && !pdev->type3charpath) {

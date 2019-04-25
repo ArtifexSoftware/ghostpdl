@@ -362,6 +362,9 @@ pdf_begin_char_proc(gx_device_pdf * pdev, int w, int h, int x_width,
         code = pdf_attached_font_resource(pdev, show_enum->current_font, &font, NULL, NULL, NULL, NULL);
         if (code < 0)
             return code;
+        if (font == NULL)
+            return_error(gs_error_invalidfont);
+
         /* The text processing will have run past the glyph, so we need to 'back up'
          * by one and get it again in order to get the character code and glyph, and update
          * the pointer correctly.
