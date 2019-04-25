@@ -630,6 +630,44 @@ pdfi_array_to_gs_matrix(pdf_context *ctx, pdf_array *array, gs_matrix *mat)
     return code;
 }
 
+/* Turn an Array into a gs_rect.  If Array is NULL, makes a tiny rect */
+static int
+pdfi_array_to_gs_rect(pdf_context *ctx, pdf_array *array, gs_rect *rect)
+{
+    double number;
+    int code = 0;
+
+    /* Init to tiny rect to allow sane continuation on errors */
+    rect->p.x = 0.0;
+    rect->p.y = 0.0;
+    rect->q.x = 1.0;
+    rect->q.y = 1.0;
+
+    /* Identity matrix if no array */
+    if (array == NULL) {
+        return 0;
+    }
+    if (pdfi_array_size(array) != 4) {
+        return_error(gs_error_rangecheck);
+    }
+    code = pdfi_array_get_number(ctx, array, 0, &number);
+    if (code < 0) goto errorExit;
+    rect->p.x = (float)number;
+    code = pdfi_array_get_number(ctx, array, 1, &number);
+    if (code < 0) goto errorExit;
+    rect->p.y = (float)number;
+    code = pdfi_array_get_number(ctx, array, 2, &number);
+    if (code < 0) goto errorExit;
+    rect->q.x = (float)number;
+    code = pdfi_array_get_number(ctx, array, 3, &number);
+    if (code < 0) goto errorExit;
+    rect->q.y = (float)number;
+    return 0;
+
+ errorExit:
+    return code;
+}
+
 /* NULL Pattern */
 static int
 pdfi_setpattern_null(pdf_context *ctx, gs_client_color *cc)
@@ -637,15 +675,14 @@ pdfi_setpattern_null(pdf_context *ctx, gs_client_color *cc)
     int code = 0;
     gs_client_pattern templat;
     gs_matrix mat;
+    gs_rect rect;
 
     gs_pattern1_init(&templat);
 
     /* Init identity matrix */
     pdfi_array_to_gs_matrix(ctx, NULL, &mat);
-    templat.BBox.p.x = 0;
-    templat.BBox.p.y = 0;
-    templat.BBox.q.x = 1;
-    templat.BBox.q.y = 1;
+    pdfi_array_to_gs_rect(ctx, NULL, &rect);
+    templat.BBox = rect;
     templat.PaintProc = NULL;
     templat.PaintType = 1;
     templat.TilingType = 3;
@@ -663,9 +700,91 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
                       pdf_dict *pdict, gs_client_color *cc)
 {
     int code = 0;
+    gs_client_pattern templat;
+    gs_matrix mat;
+    gs_rect rect;
+    int64_t PaintType, TilingType;
+    pdf_array *BBox = NULL;
+    double XStep, YStep;
+    pdf_dict *Resources = NULL;
+    pdf_array *Matrix = NULL;
+
+    dbgmprintf(ctx->memory, "PATTERN: Type 1 pattern\n");
+
+    gs_pattern1_init(&templat);
+
+    /* Required */
+    code = pdfi_dict_get_int(ctx, pdict, "PaintType", &PaintType);
+    if (code < 0)
+        goto exit;
+    code = pdfi_dict_get_int(ctx, pdict, "TilingType", &TilingType);
+    if (code < 0)
+        goto exit;
+    code = pdfi_dict_get_type(ctx, pdict, "BBox", PDF_ARRAY, (pdf_obj **)&BBox);
+    if (code < 0)
+        goto exit;
+    code = pdfi_array_to_gs_rect(ctx, BBox, &rect);
+    if (code < 0)
+        goto exit;
+    code = pdfi_dict_get_number(ctx, pdict, "XStep", &XStep);
+    if (code < 0)
+        goto exit;
+    code = pdfi_dict_get_number(ctx, pdict, "YStep", &YStep);
+    if (code < 0)
+        goto exit;
+    code = pdfi_dict_get_type(ctx, pdict, "Resources", PDF_DICT, (pdf_obj **)&Resources);
+    if (code < 0)
+        goto exit;
+
+    /* (optional Matrix) */
+    code = pdfi_dict_knownget_type(ctx, pdict, "Matrix", PDF_ARRAY, (pdf_obj **)&Matrix);
+    if (code < 0)
+        goto exit;
+    code = pdfi_array_to_gs_matrix(ctx, Matrix, &mat);
+    if (code < 0)
+        goto exit;
+
+    /* Check some bounds */
+    if (pdfi_array_size(BBox) != 4) {
+        code = gs_note_error(gs_error_rangecheck);
+        goto exit;
+    }
+    if (PaintType != 1 && PaintType != 2) {
+        code = gs_note_error(gs_error_rangecheck);
+        goto exit;
+    }
+    if (TilingType != 1 && TilingType != 2 && TilingType != 3) {
+        code = gs_note_error(gs_error_rangecheck);
+        goto exit;
+    }
+
+    templat.BBox = rect;
+    /* TODO! This can't be null and I have no clue... (see zPaintProc or px_remap_pattern) */
+    templat.PaintProc = NULL;
+    templat.PaintType = PaintType;
+    templat.TilingType = TilingType;
+    templat.XStep = XStep;
+    templat.YStep = YStep;
+    templat.client_data = NULL; /* TODO: Something useful goes here.. Resources? */
+
+    code = gs_gsave(ctx->pgs);
+    if (code < 0)
+        goto exit;
+    ctx->pgs->ctm = ctx->default_ctm;
 
     dbgmprintf(ctx->memory, "WARNING: Type 1 pattern not implemented\n");
+#if 0 /* TODO: Need to figure out PaintProc */
+    code = gs_make_pattern(cc, (const gs_pattern_template_t *)&templat,
+                           &mat, ctx->pgs, ctx->memory);
+#endif
+    code = gs_grestore(ctx->pgs);
+    if (code < 0)
+        goto exit;
+
  exit:
+    pdfi_countdown(Resources);
+    pdfi_countdown(Matrix);
+    pdfi_countdown(BBox);
     return code;
 }
 
