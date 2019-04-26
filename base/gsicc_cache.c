@@ -1575,9 +1575,7 @@ gsicc_transform_named_color(const float tint_values[],
     bool found_match;
     unsigned short psrc[GS_CLIENT_COLOR_MAX_COMPONENTS];
     unsigned short psrc_cm[GS_CLIENT_COLOR_MAX_COMPONENTS];
-    unsigned short temp_lab[3];
     unsigned short *psrc_temp;
-    float temp;
     unsigned short white_lab[3] = {65535, 32767, 32767};
     gsicc_link_t *icc_link;
     cmm_profile_t *curr_output_profile;
@@ -1650,7 +1648,7 @@ gsicc_transform_named_color(const float tint_values[],
 
             /* Start with white */
             for (j = 0; j < 3; j++) {
-                psrc[j] = temp_lab[j];
+                psrc[j] = white_lab[j];
             }
 
             for (n = 0; n < num_nonnone_names; n++) {
