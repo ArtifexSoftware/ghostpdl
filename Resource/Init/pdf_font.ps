@@ -1616,7 +1616,6 @@ currentdict /CMap_read_dict undef
     dup 2 index /W2 3 -1 roll put
     .pdfMakeInternalW2 1 index /.internalW2 3 -1 roll put
   } if
-
   dup /CDevProc 1 index /CIDWProc load /exec load 3 packedarray cvx put
   exch pop
 } bind executeonly def
@@ -1864,6 +1863,12 @@ currentdict /CMap_read_dict undef
 
 % <CIDFont-resource> <CIDFontName> findCIDFont <CIDFont-resource> <font>
 %   CIDFont-resource is not modified.
+% In various places we do:
+% "findCIDFont dup /OrigFont .knownget {exch pop} if"
+% because the CIDFont we find may have been "patched" to apply metrics from
+% the PDF file (W, W2, etc). We want to avoid applying those metrics more
+% than once, hence retrieving the original, unpatched CIDFont dictionary,
+% if it exists.
 /findCIDFont {
   {
     dup /CIDFont resourcestatus {
@@ -1883,7 +1888,9 @@ currentdict /CMap_read_dict undef
       % "Light,Bold" font, don't artificially bolden further
       dup (Light) tailmatch
       {
-        pop cvn findCIDFont dup /FontName .knownget
+        pop cvn findCIDFont
+        dup /OrigFont .knownget {exch pop} if
+        dup /FontName .knownget
         {
           (Light) tailmatch exch pop
         }
@@ -1897,13 +1904,16 @@ currentdict /CMap_read_dict undef
       }
       {
         pop
-        cvn findCIDFont 0.03 makeboldfont
+        cvn findCIDFont
+        dup /OrigFont .knownget {exch pop} if
+        0.03 makeboldfont
       } ifelse
       exit
     } if
     (,Italic) tailmatch {
       exch pop
       cvn findCIDFont
+      dup /OrigFont .knownget {exch pop} if
       [ 1 0 0.3 1 0 0 ] makefont
       exit
     } if
@@ -1912,7 +1922,9 @@ currentdict /CMap_read_dict undef
       % see above
       dup (Light) tailmatch
       {
-        pop cvn findCIDFont dup /FontName .knownget
+        pop cvn findCIDFont
+        dup /OrigFont .knownget {exch pop} if
+        dup /FontName .knownget
         {
           (Light) tailmatch exch pop
         }
@@ -1926,7 +1938,9 @@ currentdict /CMap_read_dict undef
       }
       {
         pop
-        cvn findCIDFont 0.03 makeboldfont
+        cvn findCIDFont
+        dup /OrigFont .knownget {exch pop} if
+        0.03 makeboldfont
       } ifelse
       [ 1 0 0.3 1 0 0 ] makefont
       exit
