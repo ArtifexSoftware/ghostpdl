@@ -1647,24 +1647,20 @@ gsicc_transform_named_color(const float tint_values[],
                check if we even want to do this.  It is possible that the
                device directly supports this particular colorant.  One may
                want to check the alt tint transform boolean */
+
+            /* Start with white */
+            for (j = 0; j < 3; j++) {
+                psrc[j] = temp_lab[j];
+            }
+
             for (n = 0; n < num_nonnone_names; n++) {
+                /* Blend with the current color based upon current tint value */
                 for (j = 0; j < 3; j++) {
-                    temp = (float) namedcolor_table->named_color[indices[n]].lab[j] * tint_values[n]
-                            + (float) white_lab[j] * (1.0 - tint_values[n]);
-                    temp_lab[j] = (unsigned short) temp;
-                }
-                /* Blend with the current color.  Note this is just for
-                   demonstration.  Much better methods are possible for this */
-                if (n == 0) {
-                    for (j = 0; j < 3; j++) {
-                        psrc[j] = temp_lab[j];
-                    }
-                } else {
-                    psrc[0] = (psrc[0]*temp_lab[0])/white_lab[0]; /* L* */
-                    psrc[1] = (psrc[1] + temp_lab[1]) / 2; /* a* */
-                    psrc[2] = (psrc[2] + temp_lab[2]) / 2; /* b* */
+                    psrc[j] = (float) namedcolor_table->named_color[indices[n]].lab[j] * tint_values[n]
+                            + (float) psrc[j] * (1.0 - tint_values[n]);
                 }
             }
+
             /* Push LAB value through CMM to get CMYK device values */
             /* Note that there are several options here. You could us an NCLR
                icc profile to compute the device colors that you want.  For,
