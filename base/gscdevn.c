@@ -563,8 +563,8 @@ check_named_color_support(const gs_color_space * pcs, gs_gstate * pgs)
          *  Keep track of case with Alls and Nones.  We may want to do something
          *  special here.
          */
-        if (!(strncmp((char *)pname, "None", name_size) != 0 ||
-            strncmp((char *)pname, "All", name_size) != 0)) {
+        if (strncmp((char *)pname, "None", name_size) != 0 &&
+            strncmp((char *)pname, "All", name_size) != 0) {
             if (!gsicc_support_named_color(pname, name_size, pgs)) {
                 return false;
             }
