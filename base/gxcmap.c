@@ -1444,13 +1444,16 @@ cmap_separation_direct(frac all, gx_device_color * pdc, const gs_gstate * pgs,
 
 /* Routines for handling CM of CMYK components of a DeviceN color space */
 static bool
-devicen_has_cmyk(gx_device * dev)
+devicen_has_cmyk(gx_device * dev, cmm_profile_t *des_profile)
 {
     gs_devn_params *devn_params;
 
     devn_params = dev_proc(dev, ret_devn_params)(dev);
     if (devn_params == NULL) {
-        return false;
+        if (des_profile != NULL && des_profile->data_cs == gsCMYK)
+            return true;
+        else
+            return false;
     }
     return(devn_params->num_std_colorant_names == 4);
 }
@@ -1546,7 +1549,7 @@ cmap_devicen_halftoned(const frac * pcc,
     /* map to the color model */
     map_components_to_colorants(pcc, &(pgs->color_component_map), cm_comps);
     /* See comments in cmap_devicen_direct for details on below operations */
-    if (devicen_has_cmyk(dev) &&
+    if (devicen_has_cmyk(dev, des_profile) &&
         des_profile->data_cs == gsCMYK &&
         !named_color_supported(pgs)) {
         devicen_icc_cmyk(cm_comps, pgs, dev);
@@ -1608,7 +1611,7 @@ cmap_devicen_direct(const frac * pcc,
        as a CMYK color that will be color managed and specified with 10% C,
        20% M 0% Y 0% K. Hence the CMYK values should go through the same
        color management as a stand alone CMYK value.  */
-    if (devicen_has_cmyk(dev) && des_profile->data_cs == gsCMYK &&
+    if (devicen_has_cmyk(dev, des_profile) && des_profile->data_cs == gsCMYK &&
         !named_color_supported(pgs)) {
         /* We need to do a CMYK to CMYK conversion here.  This will always
            use the default CMYK profile and the device's output profile.
