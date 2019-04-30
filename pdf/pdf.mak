@@ -83,6 +83,9 @@ $(PDFOBJ)pdf_gstate.$(OBJ): $(PDFSRC)pdf_gstate.c $(PDFINCLUDES) $(PDF_MAK) $(MA
 $(PDFOBJ)pdf_colour.$(OBJ): $(PDFSRC)pdf_colour.c $(PDFINCLUDES) $(gscolor1_h) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_colour.c $(PDFO_)pdf_colour.$(OBJ)
 
+$(PDFOBJ)pdf_pattern.$(OBJ): $(PDFSRC)pdf_pattern.c $(PDFINCLUDES) $(gscolor1_h) $(PDF_MAK) $(MAKEDIRS)
+	$(PDFCCC) $(PDFSRC)pdf_pattern.c $(PDFO_)pdf_pattern.$(OBJ)
+
 $(PDFOBJ)pdf_path.$(OBJ): $(PDFSRC)pdf_path.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_path.c $(PDFO_)pdf_path.$(OBJ)
 
@@ -125,6 +128,7 @@ PDF_OBJS=\
     $(PDFOBJ)pdf_file.$(OBJ)\
     $(PDFOBJ)pdf_path.$(OBJ)\
     $(PDFOBJ)pdf_colour.$(OBJ)\
+    $(PDFOBJ)pdf_pattern.$(OBJ)\
     $(PDFOBJ)pdf_gstate.$(OBJ)\
     $(PDFOBJ)pdf_stack.$(OBJ)\
     $(PDFOBJ)pdf_image.$(OBJ)\
