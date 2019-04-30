@@ -446,7 +446,12 @@ pdf_compute_fileID(gx_device_pdf * pdev)
     if (s == NULL)
         return_error(gs_error_VMerror);
     pdev->KeyLength = 0; /* Disable encryption. Not so important though. */
-    gp_get_usertime(secs_ns);
+#ifdef CLUSTER
+    secs_ns[0] = 0;
+    secs_ns[1] = 0;
+#else
+    gp_get_realtime(secs_ns);
+#endif
     sputs(s, (byte *)secs_ns, sizeof(secs_ns), &ignore);
     sputs(s, (const byte *)pdev->fname, strlen(pdev->fname), &ignore);
     pdev->strm = s;

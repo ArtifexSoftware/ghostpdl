@@ -601,7 +601,12 @@ pdf_compute_fileID(gx_device_pdf_image * pdev, byte fileID[16], char *CreationDa
     if (s == NULL)
         return_error(gs_error_VMerror);
 
-    gp_get_usertime(secs_ns);
+#ifdef CLUSTER
+    secs_ns[0] = 0;
+    secs_ns[1] = 0;
+#else
+    gp_get_realtime(secs_ns);
+#endif
     sputs(s, (byte *)secs_ns, sizeof(secs_ns), &ignore);
     sputs(s, (const byte *)pdev->fname, strlen(pdev->fname), &ignore);
 
