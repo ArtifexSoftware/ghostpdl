@@ -221,6 +221,7 @@ typedef int (gs_callback_func_get_colorname_string)
      (const gs_memory_t *mem, gs_separation_name colorname, unsigned char **ppstr, unsigned int *plen);
 
 typedef enum { SEP_NONE, SEP_ALL, SEP_OTHER } separation_type;
+typedef enum { SEP_ENUM, SEP_MIX, SEP_PURE_RGB, SEP_PURE_CMYK } separation_colors;
 
 typedef struct gs_separation_params_s {
     gs_separation_name sep_name;
@@ -229,6 +230,7 @@ typedef struct gs_separation_params_s {
     bool use_alt_cspace;
     bool named_color_supported;
     gs_callback_func_get_colorname_string *get_colorname_string;
+    separation_colors color_type;
 } gs_separation_params;
 
 typedef struct gs_device_n_params_s {
@@ -239,6 +241,7 @@ typedef struct gs_device_n_params_s {
     bool use_alt_cspace;
     gs_callback_func_get_colorname_string *get_colorname_string;
     bool named_color_supported;
+    separation_colors color_type;
 } gs_device_n_params;
 
 /* Define an abstract type for the client color space data */

@@ -620,6 +620,50 @@ check_DeviceN_component_names(const gs_color_space * pcs, gs_gstate * pgs)
     return 0;
 }
 
+/* Check if the colorants are all process colorants and of the same type */
+static separation_colors
+gx_check_process_names_DeviceN(gs_color_space * pcs, gs_gstate * pgs)
+{
+    int i, num_comp, num_spots = 0, num_rgb_process = 0;
+    int num_cmyk_process = 0, num_other = 0;
+    const gs_separation_name *names = NULL; /* quite compiler warning*/
+    byte *pname;
+    uint name_size;
+
+    names = pcs->params.device_n.names;
+    num_comp = pcs->params.device_n.num_components;
+
+    /* Step through the color space colorants */
+    for (i = 0; i < num_comp; i++) {
+        pcs->params.device_n.get_colorname_string(pgs->memory, names[i], &pname,
+            &name_size);
+
+        /* Classify */
+        if (strncmp((char *)pname, "None", name_size) == 0) {
+            num_other++;
+        } else {
+            if (strncmp((char *)pname, "Cyan", name_size) == 0 ||
+                strncmp((char *)pname, "Magenta", name_size) == 0 ||
+                strncmp((char *)pname, "Yellow", name_size) == 0 ||
+                strncmp((char *)pname, "Black", name_size) == 0) {
+                num_cmyk_process++;
+            } else if (strncmp((char *)pname, "Red", name_size) == 0 ||
+                strncmp((char *)pname, "Green", name_size) == 0 ||
+                strncmp((char *)pname, "Blue", name_size) == 0) {
+                num_rgb_process++;
+            } else {
+                num_spots++;
+            }
+        }
+    }
+
+    if (num_cmyk_process > 0 && num_rgb_process == 0 && num_spots == 0)
+        return SEP_PURE_CMYK;
+    if (num_rgb_process > 0 && num_cmyk_process == 0 && num_spots == 0)
+        return SEP_PURE_RGB;
+    return SEP_MIX;
+}
+
 /* Install a DeviceN color space. */
 static int
 gx_install_DeviceN(gs_color_space * pcs, gs_gstate * pgs)
@@ -633,6 +677,7 @@ gx_install_DeviceN(gs_color_space * pcs, gs_gstate * pgs)
         pcs->params.device_n.named_color_supported =
             gsicc_support_named_color(pcs, pgs);
     }
+    pcs->params.device_n.color_type = gx_check_process_names_DeviceN(pcs, pgs);
 
     /* See if we have an ICC profile that we can associate with
        this DeviceN color space */
@@ -695,8 +740,7 @@ gx_set_overprint_DeviceN(const gs_color_space * pcs, gs_gstate * pgs)
             return base_type->set_overprint( pcs->base_space, pgs );
         else
             return gx_spot_colors_set_overprint( pcs->base_space, pgs);
-    }
-    else {
+    } else {
         gs_overprint_params_t   params;
 
         if ((params.retain_any_comps = pgs->overprint)) {

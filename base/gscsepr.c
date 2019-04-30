@@ -116,20 +116,54 @@ gx_concrete_space_Separation(const gs_color_space * pcs,
 static int
 check_Separation_component_name(const gs_color_space * pcs, gs_gstate * pgs);
 
+/* Check if the colorant is a process colorant */
+static separation_colors
+gx_check_process_names_Separation(gs_color_space * pcs, gs_gstate * pgs)
+{
+    const gs_separation_name name = pcs->params.separation.sep_name;
+    byte *pname;
+    uint name_size;
+
+    pcs->params.separation.get_colorname_string(pgs->memory, name, &pname, &name_size);
+
+    /* Classify */
+    if (strncmp((char *)pname, "None", name_size) == 0 ||
+        strncmp((char *)pname, "All", name_size) == 0) {
+        return SEP_ENUM;
+    } else {
+        if (strncmp((char *)pname, "Cyan", name_size) == 0 ||
+            strncmp((char *)pname, "Magenta", name_size) == 0 ||
+            strncmp((char *)pname, "Yellow", name_size) == 0 ||
+            strncmp((char *)pname, "Black", name_size) == 0) {
+            return SEP_PURE_CMYK;
+        } else if (strncmp((char *)pname, "Red", name_size) == 0 ||
+            strncmp((char *)pname, "Green", name_size) == 0 ||
+            strncmp((char *)pname, "Blue", name_size) == 0) {
+            return SEP_PURE_RGB;
+        } else {
+            return SEP_MIX;
+        }
+    }
+}
+
 /* Install a Separation color space. */
 static int
 gx_install_Separation(gs_color_space * pcs, gs_gstate * pgs)
 {
     int code;
 
+    code = check_Separation_component_name(pcs, pgs);
+    if (code < 0)
+       return code;
+
     if (pgs->icc_manager->device_named != NULL) {
         pcs->params.separation.named_color_supported =
             gsicc_support_named_color(pcs, pgs);
     }
 
-    code = check_Separation_component_name(pcs, pgs);
-    if (code < 0)
-       return code;
+    pcs->params.separation.color_type =
+        gx_check_process_names_Separation(pcs, pgs);
+
     gs_currentcolorspace_inline(pgs)->params.separation.use_alt_cspace =
         using_alt_color_space(pgs);
     if (gs_currentcolorspace_inline(pgs)->params.separation.use_alt_cspace) {
