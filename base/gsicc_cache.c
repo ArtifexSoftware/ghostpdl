@@ -1518,19 +1518,24 @@ create_named_profile(gs_memory_t *mem, cmm_profile_t *named_profile)
 }
 
 
-/* Check for support of named color at time of install of DeviceN or Sep color space */
+/* Check for support of named color at time of install of DeviceN or Sep color space.
+   This function returning false means that Process colorants (e.g. CMYK) will
+   not undergo color management. */
 bool
-gsicc_support_named_color(unsigned char *name, int len, const gs_gstate *pgs)
+gsicc_support_named_color(const gs_color_space *pcs, const gs_gstate *pgs)
 {
     cmm_profile_t *named_profile;
     gsicc_namedcolortable_t *namedcolor_table;
     unsigned int num_entries;
-    int k;
-    int code;
+    int k, code, i, num_comp, num_spots=0, num_process=0, num_other=0;
+    gs_color_space_index type = gs_color_space_get_index(pcs);
+    const gs_separation_name *names = NULL; /* quite compiler warning*/
+    gs_separation_name name = 0; /* quite compiler warning*/
+    byte *pname;
+    uint name_size;
+    bool is_supported;
 
-    if (pgs == NULL || pgs->icc_manager->device_named == NULL)
-        return false;
-
+    /* Get the data for the named profile */
     named_profile = pgs->icc_manager->device_named;
 
     if (named_profile->buffer != NULL &&
@@ -1539,20 +1544,68 @@ gsicc_support_named_color(unsigned char *name, int len, const gs_gstate *pgs)
         if (code < 0)
             return false;
     }
-
     namedcolor_table =
         (gsicc_namedcolortable_t*)named_profile->profile_handle;
     num_entries = namedcolor_table->number_entries;
 
-    for (k = 0; k < num_entries; k++) {
-        if (len == namedcolor_table->named_color[k].name_size) {
-            if (strncmp((const char *)namedcolor_table->named_color[k].colorant_name,
-                (const char *)name, len) == 0) {
-                return true;
+    /* Get the color space specifics */
+    if (type == gs_color_space_index_DeviceN) {
+        names = pcs->params.device_n.names;
+        num_comp = pcs->params.device_n.num_components;
+    } else if (type == gs_color_space_index_Separation) {
+        name = pcs->params.separation.sep_name;
+        num_comp = 1;
+    } else
+        return false;
+
+    /* Step through the color space colorants */
+    for (i = 0; i < num_comp; i++) {
+        if (type == gs_color_space_index_DeviceN)
+            pcs->params.device_n.get_colorname_string(pgs->memory, names[i], &pname, &name_size);
+        else
+            pcs->params.separation.get_colorname_string(pgs->memory, name, &pname, &name_size);
+
+        /* Classify */
+        if (strncmp((char *)pname, "None", name_size) == 0 ||
+            strncmp((char *)pname, "All", name_size) == 0) {
+            num_other++;
+        } else {
+            if (strncmp((char *)pname, "Cyan", name_size) == 0 ||
+                strncmp((char *)pname, "Magenta", name_size) == 0 ||
+                strncmp((char *)pname, "Yellow", name_size) == 0 ||
+                strncmp((char *)pname, "Black", name_size) == 0) {
+                num_process++;
+            } else {
+                num_spots++;
             }
         }
+
+        /* Check if the colorant is supported */
+        is_supported = false;
+        for (k = 0; k < num_entries; k++) {
+            if (name_size == namedcolor_table->named_color[k].name_size) {
+                if (strncmp((const char *)namedcolor_table->named_color[k].colorant_name,
+                    (const char *)pname, name_size) == 0) {
+                    is_supported = true;
+                    break;
+                }
+            }
+        }
+        if (!is_supported)
+            return false;
     }
-    return false;
+    /* If we made it this far, all the individual colorants are supported. 
+       If the names contained no spots, then let standard color management 
+       processing occur.  It may be that some applications want standard
+       processing in other cases.  For example, [Cyan Magenta Varnish] to
+       a tiffsep-like device one may want color management to occur for the
+       Cyan and Magenta but Varnish to pass to the separation device unmolested.
+       You  will then want to add "Varnish" to the list of names in the above test
+       for the Process colorants of Cyan, Magenta, Yellow and Black to avoid
+       "Varnish" being counted as a spot here */
+    if (num_spots == 0)
+        return false;
+    return true;
 }
 
 /* Function returns -1 if a name is not found.  Otherwise it will transform

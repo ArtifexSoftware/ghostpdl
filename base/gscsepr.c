@@ -115,9 +115,6 @@ gx_concrete_space_Separation(const gs_color_space * pcs,
 
 static int
 check_Separation_component_name(const gs_color_space * pcs, gs_gstate * pgs);
-static bool
-check_named_color_support(const gs_color_space * pcs, gs_gstate * pgs);
-
 
 /* Install a Separation color space. */
 static int
@@ -127,7 +124,7 @@ gx_install_Separation(gs_color_space * pcs, gs_gstate * pgs)
 
     if (pgs->icc_manager->device_named != NULL) {
         pcs->params.separation.named_color_supported =
-            check_named_color_support(pcs, pgs);
+            gsicc_support_named_color(pcs, pgs);
     }
 
     code = check_Separation_component_name(pcs, pgs);
@@ -404,31 +401,6 @@ gx_remap_concrete_Separation(const gs_color_space * pcs, const frac * pconc,
         gx_remap_concrete_separation(pconc[0], pdc, pgs, dev, select);
         return 0;
     }
-}
-
-/*
- * See if this colorant is supported for named color mapping
- */
-static bool
-check_named_color_support(const gs_color_space * pcs, gs_gstate * pgs)
-{
-    const gs_separation_name name = pcs->params.separation.sep_name;
-    byte *pname;
-    uint name_size;
-
-    /*
-     * If this is a None or All separation then return false.  We may want
-     * to handle this differently in the case of All
-     */
-    if (pcs->params.separation.sep_type != SEP_OTHER)
-        return false;
-
-    /*
-     * Get the character string and length for the component name.
-     */
-    pcs->params.separation.get_colorname_string(pgs->memory, name, &pname, &name_size);
-
-    return gsicc_support_named_color(pname, name_size, pgs);
 }
 
 /*
