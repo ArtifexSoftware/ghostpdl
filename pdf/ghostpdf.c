@@ -1311,14 +1311,18 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
         return code;
     }
 
-    /* Save default ctm because Patterns needs it */
-    ctx->default_ctm = ctx->pgs->ctm;
-
     code = gs_setstrokeconstantalpha(ctx->pgs, 1.0);
     code = gs_setfillconstantalpha(ctx->pgs, 1.0);
     code = gs_setalphaisshape(ctx->pgs, 0);
     code = gs_settextknockout(ctx->pgs, 0);
     code = gs_setblendmode(ctx->pgs, 0);
+
+    /* Init a base_pgs graphics state for Patterns */
+    if (ctx->base_pgs) {
+        gs_gstate_free(ctx->base_pgs);
+        ctx->base_pgs = NULL;
+    }
+    ctx->base_pgs = gs_gstate_copy(ctx->pgs, ctx->memory);
 
     dmprintf1(ctx->memory, "Current page transparency setting is %d\n", ctx->PageTransparencyArray[page_index] & page_bit ? 1 : 0);
 
@@ -2012,6 +2016,11 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
     if(ctx->pgs != NULL) {
         gs_gstate_free(ctx->pgs);
         ctx->pgs = NULL;
+    }
+
+    if(ctx->base_pgs != NULL) {
+        gs_gstate_free(ctx->base_pgs);
+        ctx->base_pgs = NULL;
     }
 
     if (ctx->pdfi_param_list.head != NULL)

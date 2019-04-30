@@ -188,6 +188,30 @@ pdfi_pattern_remap(const gs_client_color *pcc, gs_gstate *pgs)
     }
 }
 
+
+
+/* Setup the correct gstate for a pattern (this does a gsave) */
+static int
+pdfi_pattern_gset(pdf_context *ctx)
+{
+    int code;
+    float strokealpha, fillalpha;
+
+    code = gs_gsave(ctx->pgs);
+    if (code < 0)
+        goto exit;
+    strokealpha = gs_getstrokeconstantalpha(ctx->pgs);
+    fillalpha = gs_getfillconstantalpha(ctx->pgs);
+    code = gs_copygstate(ctx->pgs, ctx->base_pgs);
+    if (code < 0)
+        goto exit;
+    code = gs_setstrokeconstantalpha(ctx->pgs, strokealpha);
+    code = gs_setfillconstantalpha(ctx->pgs, fillalpha);
+
+ exit:
+    return code;
+}
+
 /* Type 1 (tiled) Pattern */
 static int
 pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
@@ -261,17 +285,17 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
     templat.YStep = YStep;
     templat.client_data = ctx; /* TODO: Might need to pass other things like Resource? */
 
-    code = gs_gsave(ctx->pgs);
+    code = pdfi_pattern_gset(ctx);
     if (code < 0)
         goto exit;
-    ctx->pgs->ctm = ctx->default_ctm;
 
-    code = gs_make_pattern(cc, (const gs_pattern_template_t *)&templat,
-                           &mat, ctx->pgs, ctx->memory);
+    code = gs_make_pattern(cc, (const gs_pattern_template_t *)&templat, &mat, ctx->pgs, ctx->memory);
+    if (code < 0)
+        goto exit;
+
     code = gs_grestore(ctx->pgs);
     if (code < 0)
         goto exit;
-
  exit:
     pdfi_countdown(Resources);
     pdfi_countdown(Matrix);
@@ -324,7 +348,7 @@ pdfi_setpattern_type2(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
         dbgmprintf(ctx->memory, "WARNING: Pattern ExtGState not supported, skipping\n");
     }
 
-    code = gs_gsave(ctx->pgs);
+    code = pdfi_pattern_gset(ctx);
     if (code < 0)
         goto exit;
     code = pdfi_shading_build(ctx, stream_dict, page_dict, Shading, &shading, &shading_type);
@@ -332,19 +356,12 @@ pdfi_setpattern_type2(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
         dbgmprintf(ctx->memory, "ERROR: can't build shading structure\n");
         goto exit;
     }
-    code = gs_grestore(ctx->pgs);
-    if (code < 0)
-        goto exit;
-
-    code = gs_gsave(ctx->pgs);
-    if (code < 0)
-        goto exit;
-    ctx->pgs->ctm = ctx->default_ctm;
-
     gs_pattern2_init(&templat);
     templat.Shading = shading;
-    code = gs_make_pattern(cc, (const gs_pattern_template_t *)&templat,
-                           &mat, ctx->pgs, ctx->memory);
+    code = gs_make_pattern(cc, (const gs_pattern_template_t *)&templat, &mat, ctx->pgs, ctx->memory);
+    if (code < 0)
+        goto exit;
+
     code = gs_grestore(ctx->pgs);
     if (code < 0)
         goto exit;

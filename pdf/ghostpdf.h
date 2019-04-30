@@ -156,8 +156,8 @@ typedef struct pdf_context_s
     /* Needed to determine whether we need to reset the device to handle any spots */
     bool spot_capable_device;
 
-    gs_matrix_fixed default_ctm;
     gs_gstate *pgs;
+    gs_gstate *base_pgs;
     int preserve_tr_mode; /* for avoiding charpath with pdfwrite */
 
     gs_color_space *gray_lin; /* needed for transparency */
