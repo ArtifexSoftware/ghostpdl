@@ -294,6 +294,7 @@ struct gs_color_space_s {
     gs_id                      id;
     gs_color_space             *base_space;
     gs_color_space             *icc_equivalent;
+    gs_color_space             *devn_process_space;
     client_color_space_data_t  *pclient_color_space_data;
     cmm_profile_t              *cmm_icc_profile_data;
     union {
@@ -364,6 +365,8 @@ void gs_color_space_restrict_color(gs_client_color *, const gs_color_space *);
  * color space does not have a base/alternative color space.
  */
 const gs_color_space *gs_cspace_base_space(const gs_color_space * pcspace);
+
+const gs_color_space *gs_cspace_devn_process_space(const gs_color_space * pcspace);
 
 /* Abstract the rc_increment and rc_decrement for color spaces so that we also rc_increment
    the ICC profile if there is one associated with the color space */

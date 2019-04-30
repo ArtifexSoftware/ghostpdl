@@ -102,7 +102,8 @@ gs_cspace_final(const gs_memory_t *cmem, void *vptr)
         pcs->type->final(pcs);
     if_debug2m('c', cmem, "[c]cspace final %p %d\n", pcs, (int)pcs->id);
     rc_decrement_only_cs(pcs->base_space, "gs_cspace_final");
-
+    if (pcs->devn_process_space != NULL)
+        rc_decrement_only_cs(pcs->devn_process_space, "gs_cspace_final");
     /* No need to decrement the ICC profile data.  It is handled
        by the finalize of the ICC space which is called above using
        pcs->type->final(pcs);  */
@@ -125,6 +126,7 @@ gs_cspace_alloc_with_id(gs_memory_t *mem, ulong id,
     pcs->pclient_color_space_data = NULL;
     pcs->cmm_icc_profile_data = NULL;
     pcs->icc_equivalent = NULL;
+    pcs->devn_process_space = NULL;
     return pcs;
 }
 
@@ -375,6 +377,12 @@ const gs_color_space *
 gs_cspace_base_space(const gs_color_space * pcspace)
 {
     return pcspace->base_space;
+}
+
+const gs_color_space *
+gs_cspace_devn_process_space(const gs_color_space * pcspace)
+{
+    return pcspace->devn_process_space;
 }
 
 /* Abstract the reference counting for color spaces
@@ -929,7 +937,9 @@ ENUM_PTRS_BEGIN_PROC(color_space_enum_ptrs)
         return ENUM_OBJ(pcs->pclient_color_space_data);
     if (index == 2)
         return ENUM_OBJ(pcs->icc_equivalent);
-    return ENUM_USING(*pcs->type->stype, vptr, size, index - 3);
+    if (index == 3)
+        return ENUM_OBJ(pcs->devn_process_space);
+    return ENUM_USING(*pcs->type->stype, vptr, size, index - 4);
     ENUM_PTRS_END_PROC
 }
 static
@@ -938,6 +948,7 @@ RELOC_PTRS_WITH(color_space_reloc_ptrs, gs_color_space *pcs)
     RELOC_VAR(pcs->base_space);
     RELOC_VAR(pcs->pclient_color_space_data);
     RELOC_VAR(pcs->icc_equivalent);
+    RELOC_VAR(pcs->devn_process_space);
     RELOC_USING(*pcs->type->stype, vptr, size);
 }
 RELOC_PTRS_END
