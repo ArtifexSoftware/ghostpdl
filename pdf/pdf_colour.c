@@ -694,6 +694,49 @@ pdfi_setpattern_null(pdf_context *ctx, gs_client_color *cc)
     return code;
 }
 
+static int
+pdfi_pattern_paint(const gs_client_color *pcc, gs_gstate *pgs)
+{
+    const gs_client_pattern *ppat = gs_getpattern(pcc);
+    pdf_context *ctx = (pdf_context *)ppat->client_data;
+    dbgmprintf(ctx->memory, "WARNING: pdfi_pattern_paint not implemented\n");
+    return 0;
+}
+
+static int
+pdfi_pattern_remap(const gs_client_color *pcc, gs_gstate *pgs)
+{
+    const gs_client_pattern *ppat = gs_getpattern(pcc);
+    pdf_context *ctx = (pdf_context *)ppat->client_data;
+    int code = 0;
+
+
+    /* pgs->device is the newly created pattern accumulator, but we want to test the device
+     * that is 'behind' that, the actual output device, so we use the one from
+     * the saved graphics state.
+     */
+    if (pgs->have_pattern_streams) {
+        dbgmprintf(ctx->memory, "WARNING: have_pattern_streams, but not attempting to use device accum\n");
+#if 0
+        code = dev_proc(pcc->pattern->saved->device, dev_spec_op)(pcc->pattern->saved->device,
+                                gxdso_pattern_can_accum, (void *)ppat, ppat->uid.id);
+#endif
+    }
+
+    if (code == 1) {
+        /* Device handles high-level patterns, so return 'remap'.
+         * This closes the internal accumulator device, as we no longer need
+         * it, and the error trickles back up to the PDL client. The client
+         * must then take action to start the device's accumulator, draw the
+         * pattern, close the device's accumulator and generate a cache entry.
+         * TODO: See px_high_level_pattern above.
+         */
+        return_error(gs_error_Remap_Color);
+    } else {
+        return pdfi_pattern_paint(pcc, pgs);
+    }
+}
+
 /* Type 1 (tiled) Pattern */
 static int
 pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
@@ -760,23 +803,20 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
 
     templat.BBox = rect;
     /* TODO! This can't be null and I have no clue... (see zPaintProc or px_remap_pattern) */
-    templat.PaintProc = NULL;
+    templat.PaintProc = pdfi_pattern_remap;
     templat.PaintType = PaintType;
     templat.TilingType = TilingType;
     templat.XStep = XStep;
     templat.YStep = YStep;
-    templat.client_data = NULL; /* TODO: Something useful goes here.. Resources? */
+    templat.client_data = ctx; /* TODO: Might need to pass other things like Resource? */
 
     code = gs_gsave(ctx->pgs);
     if (code < 0)
         goto exit;
     ctx->pgs->ctm = ctx->default_ctm;
 
-    dbgmprintf(ctx->memory, "WARNING: Type 1 pattern not implemented\n");
-#if 0 /* TODO: Need to figure out PaintProc */
     code = gs_make_pattern(cc, (const gs_pattern_template_t *)&templat,
                            &mat, ctx->pgs, ctx->memory);
-#endif
     code = gs_grestore(ctx->pgs);
     if (code < 0)
         goto exit;
