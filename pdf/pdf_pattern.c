@@ -35,6 +35,12 @@
 #include "strmio.h"
 #include "gscdevn.h"
 
+typedef struct {
+    pdf_context *ctx;
+    pdf_dict *page_dict;
+    pdf_dict *pat_dict;
+} pdf_pattern_context_t;
+
 /* Turn a /Matrix Array into a gs_matrix.  If Array is NULL, makes an identity matrix */
 static int
 pdfi_array_to_gs_matrix(pdf_context *ctx, pdf_array *array, gs_matrix *mat)
@@ -145,22 +151,51 @@ pdfi_setpattern_null(pdf_context *ctx, gs_client_color *cc)
     return code;
 }
 
+/* See px_paint_pattern() */
 static int
 pdfi_pattern_paint(const gs_client_color *pcc, gs_gstate *pgs)
 {
-    const gs_client_pattern *ppat = gs_getpattern(pcc);
-    pdf_context *ctx = (pdf_context *)ppat->client_data;
-    dbgmprintf(ctx->memory, "WARNING: pdfi_pattern_paint not implemented\n");
-    return 0;
+    gs_pattern1_instance_t *pinst = (gs_pattern1_instance_t *)pcc->pattern;
+    const gs_pattern1_template_t *templat = &pinst->templat;
+    pdf_pattern_context_t *context = (pdf_pattern_context_t *)templat->client_data;
+    pdf_context *ctx = context->ctx;
+    gs_gstate *curr_pgs = ctx->pgs;
+    pdf_dict *page_dict = context->page_dict;
+    pdf_dict *pat_dict = context->pat_dict;
+    int code = 0;
+    gs_offset_t savedoffset = 0;
+
+    savedoffset = pdfi_tell(ctx->main_stream);
+
+    code = gs_gsave(curr_pgs);
+    if (code < 0)
+        return code;
+    code = gs_setgstate(curr_pgs, pgs);
+    if (code < 0) {
+        gs_grestore(curr_pgs);
+        goto exit;
+    }
+
+    code = pdfi_interpret_content_stream(ctx, pat_dict, page_dict);
+    if (code < 0) {
+        dbgmprintf1(ctx->memory, "ERROR: pdfi_pattern_paint: code %d when rendering pattern\n", code);
+        goto exit;
+    }
+    gs_grestore(curr_pgs);
+
+ exit:
+    pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
+    return code;
 }
 
+/* Called from gx_pattern_load(), see px_remap_pattern()  */
 static int
 pdfi_pattern_remap(const gs_client_color *pcc, gs_gstate *pgs)
 {
-    const gs_client_pattern *ppat = gs_getpattern(pcc);
-    pdf_context *ctx = (pdf_context *)ppat->client_data;
+    const gs_client_pattern *pinst = gs_getpattern(pcc);
+    pdf_pattern_context_t *context = (pdf_pattern_context_t *)pinst->client_data;
+    pdf_context *ctx = context->ctx;
     int code = 0;
-
 
     /* pgs->device is the newly created pattern accumulator, but we want to test the device
      * that is 'behind' that, the actual output device, so we use the one from
@@ -170,7 +205,7 @@ pdfi_pattern_remap(const gs_client_color *pcc, gs_gstate *pgs)
         dbgmprintf(ctx->memory, "WARNING: have_pattern_streams, but not attempting to use device accum\n");
 #if 0
         code = dev_proc(pcc->pattern->saved->device, dev_spec_op)(pcc->pattern->saved->device,
-                                gxdso_pattern_can_accum, (void *)ppat, ppat->uid.id);
+                                gxdso_pattern_can_accum, (void *)pinst, pinst->uid.id);
 #endif
     }
 
@@ -211,6 +246,39 @@ pdfi_pattern_gset(pdf_context *ctx)
  exit:
     return code;
 }
+
+/* Setup the pattern gstate and other context */
+static int
+pdfi_pattern_setup(pdf_context *ctx, gs_pattern_template_t *templat, pdf_dict *page_dict, pdf_dict *pat_dict)
+{
+    int code = 0;
+    pdf_pattern_context_t *context = NULL;
+
+    code = pdfi_pattern_gset(ctx);
+    if (code < 0)
+        goto errorExit;
+
+    /* TODO: This needs to be freed somehow */
+    context = (pdf_pattern_context_t *) gs_alloc_bytes(ctx->memory, sizeof(*context),
+                                                       "pdfi_pattern_setup(context)");
+    if (!context) {
+        code = gs_note_error(gs_error_VMerror);
+        goto errorExit;
+    }
+    context->ctx = ctx;
+    context->page_dict = page_dict;
+    context->pat_dict = pat_dict;
+    /* TODO: Not clear when this stuff gets freed */
+    pdfi_countup(page_dict);
+    pdfi_countup(pat_dict);
+    templat->client_data = context;
+
+    return 0;
+ errorExit:
+    pdfi_countdown(context);
+    return code;
+}
+
 
 /* Type 1 (tiled) Pattern */
 static int
@@ -276,16 +344,17 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
         goto exit;
     }
 
+    /* TODO: Resources?  Maybe I should check that they are all valid before proceeding, or something? */
+
     templat.BBox = rect;
-    /* TODO! This can't be null and I have no clue... (see zPaintProc or px_remap_pattern) */
+    /* (see zPaintProc or px_remap_pattern) */
     templat.PaintProc = pdfi_pattern_remap;
     templat.PaintType = PaintType;
     templat.TilingType = TilingType;
     templat.XStep = XStep;
     templat.YStep = YStep;
-    templat.client_data = ctx; /* TODO: Might need to pass other things like Resource? */
 
-    code = pdfi_pattern_gset(ctx);
+    code = pdfi_pattern_setup(ctx, (gs_pattern_template_t *)&templat, page_dict, pdict);
     if (code < 0)
         goto exit;
 
@@ -348,7 +417,7 @@ pdfi_setpattern_type2(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
         dbgmprintf(ctx->memory, "WARNING: Pattern ExtGState not supported, skipping\n");
     }
 
-    code = pdfi_pattern_gset(ctx);
+    code = pdfi_pattern_setup(ctx, (gs_pattern_template_t *)&templat, page_dict, pdict);
     if (code < 0)
         goto exit;
     code = pdfi_shading_build(ctx, stream_dict, page_dict, Shading, &shading, &shading_type);
@@ -390,6 +459,15 @@ pdfi_pattern_set(pdf_context *ctx, pdf_dict *stream_dict,
                               page_dict, (pdf_obj **)&pdict);
     if (code < 0) {
         dbgmprintf(ctx->memory, "WARNING: Pattern object not found in resources\n");
+        goto exit;
+    }
+
+    if (pdict->type != PDF_DICT) {
+        /* NOTE: Bug696410.pdf gets a bogus pattern while trying to process pattern.
+         * Seems like a corrupted file, but this prevents crash
+         */
+        dbgmprintf(ctx->memory, "ERROR: Pattern found in resources is not a dict\n");
+        code = gs_note_error(gs_error_typecheck);
         goto exit;
     }
     dbgmprintf1(ctx->memory, "PATTERN: pdfi_setpattern: found pattern object %lu\n", pdict->object_num);
