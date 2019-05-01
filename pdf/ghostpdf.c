@@ -1270,7 +1270,7 @@ static int pdfi_output_page_info(pdf_context *ctx, uint64_t page_num)
 
 static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
 {
-    int code, spots;
+    int code;
     uint64_t page_offset = 0;
     pdf_dict *page_dict = NULL;
     bool uses_transparency = false;
@@ -1590,7 +1590,6 @@ read_root:
         pdf_dict *page_dict;
         uint64_t page_offset = 0;
         bool uses_transparency = false;
-        bool page_group_known = false;
         int spots = 0;
         uint64_t ix;
 
@@ -1602,7 +1601,7 @@ read_root:
         if (code < 0)
             return code;
 
-        pdfi_countup(ctx->SpotNames->refcnt);
+        pdfi_countup(ctx->SpotNames);
 
         for (ix=0;ix < ctx->num_pages;ix++) {
             if (ctx->pdfdebug)
@@ -1640,7 +1639,7 @@ read_root:
             /* Check the page dictionary for spots and transparency */
             code = pdfi_check_page_transparency(ctx, page_dict, &uses_transparency, &spots);
             if (code < 0) {
-                pdfi_countdown(ctx->SpotNames->refcnt);
+                pdfi_countdown(ctx->SpotNames);
                 ctx->SpotNames = NULL;
                 return code;
             }
@@ -1652,7 +1651,7 @@ read_root:
             }
         }
 
-        pdfi_countdown(ctx->SpotNames->refcnt);
+        pdfi_countdown(ctx->SpotNames);
         ctx->SpotNames = NULL;
 
         /* If there are spot colours (and by inference, the device renders spot plates) then
