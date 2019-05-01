@@ -242,6 +242,9 @@ typedef struct gs_device_n_params_s {
     gs_callback_func_get_colorname_string *get_colorname_string;
     bool named_color_supported;
     separation_colors color_type;
+    gs_memory_t *mem;
+    uint num_process_names;
+    char **process_names;
 } gs_device_n_params;
 
 /* Define an abstract type for the client color space data */

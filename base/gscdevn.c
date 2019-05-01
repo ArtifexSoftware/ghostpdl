@@ -131,6 +131,9 @@ gs_cspace_new_DeviceN(
     pcsdevn->map = NULL;
     pcsdevn->colorants = NULL;
     pcsdevn->named_color_supported = false;
+    pcsdevn->num_process_names = 0;
+    pcsdevn->process_names = NULL;
+    pcsdevn->mem = pmem->non_gc_memory;
 
     /* Allocate space for color names list. */
     code = alloc_device_n_map(&pcsdevn->map, pmem, "gs_cspace_build_DeviceN");
@@ -766,6 +769,19 @@ static void
 gx_final_DeviceN(const gs_color_space * pcs)
 {
     gs_device_n_attributes * pnextatt, * patt = pcs->params.device_n.colorants;
+    uint num_proc_names = pcs->params.device_n.num_process_names;
+    gs_memory_t *mem = pcs->params.device_n.mem->non_gc_memory;
+    char **proc_names = pcs->params.device_n.process_names;
+    int k;
+
+    if (num_proc_names > 0 && proc_names != NULL) {
+        for (k = 0; k < num_proc_names; k++) {
+            gs_free(mem, proc_names[k], strlen(proc_names[k]) + 1, 1,
+                "gx_final_DeviceN");
+        }
+        gs_free(mem, proc_names, num_proc_names, sizeof(char*),
+            "gx_final_DeviceN");
+    }
 
     rc_decrement_only(pcs->params.device_n.map, "gx_adjust_DeviceN");
     while (patt != NULL) {
