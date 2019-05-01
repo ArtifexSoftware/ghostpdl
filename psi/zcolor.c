@@ -3798,6 +3798,70 @@ static int devicencolorants_cont(i_ctx_t *i_ctx_p)
     while(1);
 }
 
+static int devicenprocess_cont(i_ctx_t *i_ctx_p)
+{
+    ref dict;
+    int index, code, stage;
+    es_ptr ep = esp, pindex, pstage;
+    os_ptr op = osp;
+
+    pindex = &ep[-2];
+    pstage = &ep[-1];
+    index = (int)pindex->value.intval;
+    stage = (int)pstage->value.intval;
+    ref_assign(&dict, ep);
+
+    if (stage == 0) {
+        code = gs_gsave(igs);
+        if (code < 0) {
+            esp -= 4;
+            return code;
+        }
+        /* If we get a continuation from a sub-procedure, we will want to come back
+         * here afterward, to do any remaining stages. We need to set up for that now.
+         * so that our continuation is ahead of the sub-proc's continuation.
+         */
+        check_estack(1);
+        push(1);
+        /* The push_op_estack macro increments esp before use, so we don't need to */
+        push_op_estack(devicenprocess_cont);
+
+        make_int(pstage, 1);
+        ref_assign(op, &dict);
+        code = zsetcolorspace(i_ctx_p);
+        if (code == 0)
+            return o_push_estack;
+
+        if (code < 0) {
+            (void)gs_grestore(igs);
+            esp -= 4;
+            return code;
+        } else
+            return code;
+    } else {
+        gs_color_space *process, *devn_cs;
+
+        stage = 0;
+
+        make_int(pindex, index);
+        make_int(pstage, stage);
+
+        process = gs_currentcolorspace_inline(igs);
+        rc_increment_cs(process);
+
+        code = gs_grestore(igs);
+        if (code < 0) {
+            esp -= 4;
+            return code;
+        }
+        devn_cs = gs_currentcolorspace_inline(igs);
+        devn_cs->devn_process_space = process;
+    }
+
+    esp -= 4;
+    return o_pop_estack;
+}
+
 static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int *cont, int CIESubst)
 {
     os_ptr  op = osp;   /* required by "push" macro */
@@ -3816,7 +3880,7 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
     *cont = 0;
     if ((*stage) == 2) {
         if (r_size(devicenspace) == 5) {
-            /* We have a Colorants dictionary from a PDF file. We need to handle this by
+            /* We may have a Colorants dictionary from a PDF file. We need to handle this by
              * temporarily setting each of the spaces in the dict, and attaching the
              * resulting space to the DeviceN array. This is complicated, because
              * each space must be fully set up, and may result in running tint transform
@@ -3862,6 +3926,47 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
         }
     }
     if ((*stage) == 3) {
+        if (r_size(devicenspace) == 5) {
+            ref *process, *cspace;
+
+            code = array_get(imemory, devicenspace, 4, &sref);
+            if (code < 0)
+                return code;
+            if (!r_has_type(&sref, t_dictionary)) {
+                *stage = 0;
+                return 0;
+            }
+            if (dict_find_string(&sref, "Process", &process) <= 0) {
+                *stage = 0;
+                return 0;
+            }
+            if (!r_has_type(process, t_dictionary)) {
+                *stage = 0;
+                return 0;
+            }
+            if (dict_find_string(process, "ColorSpace", &cspace) <= 0) {
+                *stage = 0;
+                return 0;
+            }
+            *stage = 4;
+            *cont = 1;
+            check_estack(5);
+            push_mark_estack(es_other, colour_cleanup);
+            esp++;
+            /* variable to hold index of the space we are dealing with */
+            make_int(esp, 0);
+            esp++;
+            /* variable to hold processing step */
+            make_int(esp, 0);
+            esp++;
+            /* Store a pointer to the Colorants dictionary
+             */
+            ref_assign(esp, cspace);
+            push_op_estack(devicenprocess_cont);
+            return o_push_estack;
+        }
+    }
+    if ((*stage) == 4) {
         *stage = 0;
         return 0;
     }

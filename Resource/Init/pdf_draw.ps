@@ -911,6 +911,16 @@ currentdict /csncompdict undef
           << exch { oforce resolvecolorspace } forall >>
           /Colorants exch >>		% Finish new attributes dict
         } if
+                            % devn_array devn_array <<..attributes..>>
+      1 index 4 oget /Process knownoget {
+        dup /ColorSpace knownoget {
+          1 index exch resolvecolorspace /ColorSpace exch put
+        } if
+                            % devn_array devn_array <<..attributes..>> <<..Process..>>
+        1 index
+        /Process 3 -1 roll
+        put
+      } if
       4 exch put			% Put resolved or new attributes dict
     } if
   } bind executeonly def
