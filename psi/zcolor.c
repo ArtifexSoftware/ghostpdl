@@ -3756,6 +3756,9 @@ static int devicencolorants_cont(i_ctx_t *i_ctx_p)
             make_int(pstage, 1);
             *op = space[1];
             code = zsetcolorspace(i_ctx_p);
+            if (code == 0)
+                return o_push_estack;
+
             if (code < 0) {
                 (void)gs_grestore(igs);
                 esp -= 4;
@@ -3879,6 +3882,7 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
 
     *cont = 0;
     if ((*stage) == 2) {
+        /* Check for the existence of an attributes dictionary */
         if (r_size(devicenspace) == 5) {
             /* We may have a Colorants dictionary from a PDF file. We need to handle this by
              * temporarily setting each of the spaces in the dict, and attaching the
@@ -3894,15 +3898,16 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
                 return code;
             if (!r_has_type(&sref, t_dictionary)) {
                 *stage = 0;
-                return 0;
+                return gs_note_error(gs_error_typecheck);
             }
             if (dict_find_string(&sref, "Colorants", &colorants) <= 0) {
-                *stage = 0;
+                /* Even if there is no Colorants dictionary, there may still be a /Process dictionary */
+                *stage = 3;
                 return 0;
             }
             if (!r_has_type(colorants, t_dictionary)) {
                 *stage = 0;
-                return 0;
+                return gs_note_error(gs_error_typecheck);
             }
             *stage = 3;
             *cont = 1;
@@ -3926,27 +3931,68 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
         }
     }
     if ((*stage) == 3) {
+        /* Check for the existence of an attributes dictionary */
         if (r_size(devicenspace) == 5) {
-            ref *process, *cspace;
+            ref *process, *cspace, *parr, name;
+            gs_color_space *devn_cs;
 
+            /* We have an attributes dictionary, does it contain a /Process sub-dictionary ?
+             * NB this is not optional if the Subtype is NChannel and the space includes components of
+             * a process colour space.
+             */
+            devn_cs = gs_currentcolorspace_inline(igs);
             code = array_get(imemory, devicenspace, 4, &sref);
             if (code < 0)
                 return code;
             if (!r_has_type(&sref, t_dictionary)) {
                 *stage = 0;
-                return 0;
+                return gs_note_error(gs_error_typecheck);
             }
             if (dict_find_string(&sref, "Process", &process) <= 0) {
-                *stage = 0;
+                *stage = 4;
                 return 0;
             }
             if (!r_has_type(process, t_dictionary)) {
                 *stage = 0;
-                return 0;
+                return gs_note_error(gs_error_typecheck);
             }
+            /* We have a /Process dictionary, in this case the Components entry is required */
+            if (dict_find_string(process, "Components", &parr) <= 0) {
+                *stage = 0;
+                return gs_note_error(gs_error_undefined);
+            }
+            if (!r_is_array(parr)) {
+                *stage = 0;
+                return gs_note_error(gs_error_typecheck);
+            } else {
+                int ix = 0;
+                ref name_string;
+
+                /* Pull out each of the Component names in turn from the Components array
+                 * convert them into a C string and store them in the graphics state colour
+                 * space structure. Note, using non-GC memory for storage.
+                 */
+                devn_cs->params.device_n.num_process_names = r_size(parr);
+                devn_cs->params.device_n.process_names = (char **)gs_alloc_bytes(devn_cs->params.device_n.mem->non_gc_memory, devn_cs->params.device_n.num_process_names * sizeof(char *), "DeviceN Process Components array");
+
+                for (ix = 0;ix < r_size(parr);ix++) {
+                    code = array_get(imemory, parr, ix, &name);
+                    if (code < 0) {
+                        *stage = 0;
+                        return code;
+                    }
+                    if (!r_has_type(&name, t_name)) {
+                        *stage = 0;
+                        return gs_note_error(gs_error_typecheck);
+                    }
+                    name_string_ref(devn_cs->params.device_n.mem, &name, &name_string);
+                    devn_cs->params.device_n.process_names[ix] = ref_to_string((const ref *)&name_string, devn_cs->params.device_n.mem->non_gc_memory, "Component name");
+                }
+            }
+            /* We have a /Process dictionary, in this case the ColorSpace entry is required */
             if (dict_find_string(process, "ColorSpace", &cspace) <= 0) {
                 *stage = 0;
-                return 0;
+                return gs_note_error(gs_error_undefined);
             }
             *stage = 4;
             *cont = 1;
