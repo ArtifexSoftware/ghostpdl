@@ -22,8 +22,6 @@
 
 int pdfi_pattern_set(pdf_context *ctx, pdf_dict *stream_dict,
                      pdf_dict *page_dict, pdf_name *pname, gs_client_color *cc);
-
 int pdfi_pattern_create(pdf_context *ctx, pdf_array *color_array,
                         pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs);
-
 #endif

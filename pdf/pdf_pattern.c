@@ -87,7 +87,40 @@ pdfi_array_to_gs_matrix(pdf_context *ctx, pdf_array *array, gs_matrix *mat)
     return code;
 }
 
-/* Turn an Array into a gs_rect.  If Array is NULL, makes a tiny rect */
+/* Normalize rectangle */
+static void
+pdfi_normalize_rect(pdf_context *ctx, gs_rect *rect)
+{
+    double temp;
+
+    /* Normalize the rectangle */
+    if (rect->p.x > rect->q.x) {
+        temp = rect->p.x;
+        rect->p.x = rect->q.x;
+        rect->q.x = temp;
+    }
+    if (rect->p.y > rect->q.y) {
+        temp = rect->p.y;
+        rect->p.y = rect->q.y;
+        rect->q.y = temp;
+    }
+}
+
+/* See pdf_draw.ps, FixPatternBox
+ * A BBox where width or height (or both) is 0 should still paint one pixel
+ * See the ISO 32000-2:2017 spec, section 8.7.4.3, p228 'BBox' and 8.7.3.1
+ */
+static void
+pdfi_pattern_fix_bbox(pdf_context *ctx, gs_rect *rect)
+{
+    if (rect->p.x - rect->q.x == 0)
+        rect->q.x += .00000001;
+    if (rect->p.y - rect->q.y == 0)
+        rect->q.y += .00000001;
+}
+
+/* Turn an Array into a gs_rect.  If Array is NULL, makes a tiny rect
+ */
 static int
 pdfi_array_to_gs_rect(pdf_context *ctx, pdf_array *array, gs_rect *rect)
 {
@@ -119,9 +152,26 @@ pdfi_array_to_gs_rect(pdf_context *ctx, pdf_array *array, gs_rect *rect)
     code = pdfi_array_get_number(ctx, array, 3, &number);
     if (code < 0) goto errorExit;
     rect->q.y = (float)number;
+
     return 0;
 
  errorExit:
+    return code;
+}
+
+/* Get rect from array, normalize and adjust it */
+static int
+pdfi_pattern_get_rect(pdf_context *ctx, pdf_array *array, gs_rect *rect)
+{
+    int code;
+
+    code = pdfi_array_to_gs_rect(ctx, array, rect);
+    if (code != 0)
+        return code;
+
+    pdfi_normalize_rect(ctx, rect);
+    pdfi_pattern_fix_bbox(ctx, rect);
+
     return code;
 }
 
@@ -138,7 +188,7 @@ pdfi_setpattern_null(pdf_context *ctx, gs_client_color *cc)
 
     /* Init identity matrix */
     pdfi_array_to_gs_matrix(ctx, NULL, &mat);
-    pdfi_array_to_gs_rect(ctx, NULL, &rect);
+    pdfi_pattern_get_rect(ctx, NULL, &rect);
     templat.BBox = rect;
     templat.PaintProc = NULL;
     templat.PaintType = 1;
@@ -153,6 +203,45 @@ pdfi_setpattern_null(pdf_context *ctx, gs_client_color *cc)
 
 /* See px_paint_pattern() */
 static int
+pdfi_pattern_paint_stream(pdf_context *ctx, const gs_client_color *pcc)
+{
+    gs_pattern1_instance_t *pinst = (gs_pattern1_instance_t *)pcc->pattern;
+    const gs_pattern1_template_t *templat = &pinst->templat;
+    pdf_pattern_context_t *context = (pdf_pattern_context_t *)templat->client_data;
+    pdf_dict *page_dict = context->page_dict;
+    pdf_dict *pat_dict = context->pat_dict;
+    int code = 0;
+    gs_offset_t savedoffset = 0;
+    int64_t stack_before, stack_after;
+    bool saved_stoponerror = ctx->pdfstoponerror;
+
+    savedoffset = pdfi_tell(ctx->main_stream);
+
+    /* Stop on error in substream, and also be prepared to clean up the stack */
+    ctx->pdfstoponerror = true;
+    stack_before = ctx->stack_top - ctx->stack_bot;
+    code = pdfi_interpret_content_stream(ctx, pat_dict, page_dict);
+    stack_after = ctx->stack_top - ctx->stack_bot;
+    if (stack_after > stack_before) {
+        dbgmprintf1(ctx->memory, "PATTERN stream: popping junk off stack (%ld)\n", stack_after-stack_before);
+        pdfi_pop(ctx, stack_after-stack_before);
+    }
+
+    if (code < 0) {
+        dbgmprintf1(ctx->memory, "ERROR: pdfi_pattern_paint: code %d when rendering pattern\n", code);
+        goto exit;
+    }
+
+ exit:
+    ctx->pdfstoponerror = saved_stoponerror;
+    if (!ctx->pdfstoponerror)
+        code = 0;
+    pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
+    return code;
+}
+
+/* See px_paint_pattern() */
+static int
 pdfi_pattern_paint(const gs_client_color *pcc, gs_gstate *pgs)
 {
     gs_pattern1_instance_t *pinst = (gs_pattern1_instance_t *)pcc->pattern;
@@ -160,41 +249,105 @@ pdfi_pattern_paint(const gs_client_color *pcc, gs_gstate *pgs)
     pdf_pattern_context_t *context = (pdf_pattern_context_t *)templat->client_data;
     pdf_context *ctx = context->ctx;
     gs_gstate *curr_pgs = ctx->pgs;
-    pdf_dict *page_dict = context->page_dict;
-    pdf_dict *pat_dict = context->pat_dict;
     int code = 0;
-    gs_offset_t savedoffset = 0;
-
-    savedoffset = pdfi_tell(ctx->main_stream);
 
     code = gs_gsave(curr_pgs);
     if (code < 0)
         return code;
     code = gs_setgstate(curr_pgs, pgs);
-    if (code < 0) {
-        gs_grestore(curr_pgs);
+    if (code < 0)
         goto exit;
-    }
 
-    code = pdfi_interpret_content_stream(ctx, pat_dict, page_dict);
+    dbgmprintf(ctx->memory, "PATTERN: BEGIN pattern stream\n");
+    code = pdfi_pattern_paint_stream(ctx, pcc);
+    dbgmprintf(ctx->memory, "PATTERN: END pattern stream\n");
     if (code < 0) {
         dbgmprintf1(ctx->memory, "ERROR: pdfi_pattern_paint: code %d when rendering pattern\n", code);
         goto exit;
     }
-    gs_grestore(curr_pgs);
 
  exit:
-    pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
+    gs_grestore(curr_pgs);
+    return code;
+}
+
+/* See px_high_level_pattern(), pattern_paint_prepare() */
+static int
+pdfi_pattern_paint_high_level(const gs_client_color *pcc, gs_gstate *pgs_ignore)
+{
+    gs_pattern1_instance_t *pinst = (gs_pattern1_instance_t *)pcc->pattern;
+    const gs_pattern1_template_t *templat = &pinst->templat;
+    pdf_pattern_context_t *context = (pdf_pattern_context_t *)templat->client_data;
+    pdf_context *ctx = context->ctx;
+    gs_gstate *pgs = ctx->pgs;
+    gs_matrix m;
+    gs_rect bbox;
+    gs_fixed_rect clip_box;
+    int code;
+    gx_device_color *pdc = gs_currentdevicecolor_inline(pgs);
+    pattern_accum_param_s param;
+
+    code = gx_pattern_cache_add_dummy_entry(pgs, pinst, pgs->device->color_info.depth);
+    if (code < 0)
+        return code;
+
+    code = gs_gsave(pgs);
+    if (code < 0)
+        return code;
+    code = gs_setgstate(pgs, pinst->saved);
+    if (code < 0)
+        goto errorExit;
+
+    dev_proc(pgs->device, get_initial_matrix)(pgs->device, &m);
+    gs_setmatrix(pgs, &m);
+    code = gs_bbox_transform(&templat->BBox, &ctm_only(pgs), &bbox);
+    if (code < 0)
+        goto errorExit;
+    clip_box.p.x = float2fixed(bbox.p.x);
+    clip_box.p.y = float2fixed(bbox.p.y);
+    clip_box.q.x = float2fixed(bbox.q.x);
+    clip_box.q.y = float2fixed(bbox.q.y);
+    code = gx_clip_to_rectangle(pgs, &clip_box);
+    if (code < 0)
+        goto errorExit;
+
+    param.pinst = (void *)pinst;
+    param.interpreter_memory = ctx->memory;
+    param.graphics_state = (void *)pgs;
+    param.pinst_id = pinst->id;
+
+    code = (*dev_proc(pgs->device, dev_spec_op))
+        ((gx_device *)pgs->device, gxdso_pattern_start_accum, &param, sizeof(pattern_accum_param_s));
+
+    if (code < 0)
+        goto errorExit;
+
+    dbgmprintf(ctx->memory, "PATTERN: BEGIN high level pattern stream\n");
+    code = pdfi_pattern_paint_stream(ctx, &pdc->ccolor);
+    dbgmprintf(ctx->memory, "PATTERN: END high level pattern stream\n");
+    if (code < 0)
+        goto errorExit;
+
+    code = dev_proc(pgs->device, dev_spec_op)
+        (pgs->device, gxdso_pattern_finish_accum, &param, sizeof(pattern_accum_param_s));
+    if (code < 0)
+        goto errorExit;
+
+    code = gs_grestore(pgs);
+    if (code < 0)
+        return code;
+    return gs_error_handled;
+
+ errorExit:
+    gs_grestore(pgs);
     return code;
 }
 
 /* Called from gx_pattern_load(), see px_remap_pattern()  */
 static int
-pdfi_pattern_remap(const gs_client_color *pcc, gs_gstate *pgs)
+pdfi_pattern_paintproc(const gs_client_color *pcc, gs_gstate *pgs)
 {
     const gs_client_pattern *pinst = gs_getpattern(pcc);
-    pdf_pattern_context_t *context = (pdf_pattern_context_t *)pinst->client_data;
-    pdf_context *ctx = context->ctx;
     int code = 0;
 
     /* pgs->device is the newly created pattern accumulator, but we want to test the device
@@ -202,22 +355,12 @@ pdfi_pattern_remap(const gs_client_color *pcc, gs_gstate *pgs)
      * the saved graphics state.
      */
     if (pgs->have_pattern_streams) {
-        dbgmprintf(ctx->memory, "WARNING: have_pattern_streams, but not attempting to use device accum\n");
-#if 0
         code = dev_proc(pcc->pattern->saved->device, dev_spec_op)(pcc->pattern->saved->device,
                                 gxdso_pattern_can_accum, (void *)pinst, pinst->uid.id);
-#endif
     }
 
     if (code == 1) {
-        /* Device handles high-level patterns, so return 'remap'.
-         * This closes the internal accumulator device, as we no longer need
-         * it, and the error trickles back up to the PDL client. The client
-         * must then take action to start the device's accumulator, draw the
-         * pattern, close the device's accumulator and generate a cache entry.
-         * TODO: See px_high_level_pattern above.
-         */
-        return_error(gs_error_Remap_Color);
+        return pdfi_pattern_paint_high_level(pcc, pgs);
     } else {
         return pdfi_pattern_paint(pcc, pgs);
     }
@@ -309,7 +452,7 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
     code = pdfi_dict_get_type(ctx, pdict, "BBox", PDF_ARRAY, (pdf_obj **)&BBox);
     if (code < 0)
         goto exit;
-    code = pdfi_array_to_gs_rect(ctx, BBox, &rect);
+    code = pdfi_pattern_get_rect(ctx, BBox, &rect);
     if (code < 0)
         goto exit;
     code = pdfi_dict_get_number(ctx, pdict, "XStep", &XStep);
@@ -330,11 +473,6 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
     if (code < 0)
         goto exit;
 
-    /* Check some bounds */
-    if (pdfi_array_size(BBox) != 4) {
-        code = gs_note_error(gs_error_rangecheck);
-        goto exit;
-    }
     if (PaintType != 1 && PaintType != 2) {
         code = gs_note_error(gs_error_rangecheck);
         goto exit;
@@ -348,7 +486,7 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
 
     templat.BBox = rect;
     /* (see zPaintProc or px_remap_pattern) */
-    templat.PaintProc = pdfi_pattern_remap;
+    templat.PaintProc = pdfi_pattern_paintproc;
     templat.PaintType = PaintType;
     templat.TilingType = TilingType;
     templat.XStep = XStep;

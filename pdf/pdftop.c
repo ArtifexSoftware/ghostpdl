@@ -145,6 +145,19 @@ pdf_impl_set_device(pl_interp_implementation_t *impl, gx_device *pdevice)
     if (code < 0)
         goto cleanup_setdevice;
 
+    /* TODO: Hack to do what is in the bottom of gs_pdfwr.ps
+     * This basically causes the pdfwrite device to be initialized.
+     * Not clear if it really matters but I noticed it getting initialized
+     * in a weird place during patterns if this wasn't here.
+     *
+     */
+#if 0
+    if (!strcmp(pdevice->dname, "pdfwrite")) {
+        gs_newpath(ctx->pgs);
+        gs_fill(ctx->pgs);
+    }
+#endif
+
     if (ctx->pdfi_param_list.head != NULL) {
         gs_c_param_list_release(&ctx->pdfi_param_list);
         memset(&ctx->pdfi_param_list, 0x00, sizeof(gs_c_param_list));

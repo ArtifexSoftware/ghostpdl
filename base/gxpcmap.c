@@ -1487,6 +1487,8 @@ gx_pattern_load(gx_device_color * pdc, const gs_gstate * pgs,
         dev_proc(saved->device, close_device)((gx_device *)saved->device);
         /* Freeing the state should now free the device which may be the pdf14 compositor. */
         gs_gstate_free_chain(saved);
+        if (code == gs_error_handled)
+            code = 0;
         return code;
     }
     if (pinst->templat.uses_transparency) {
