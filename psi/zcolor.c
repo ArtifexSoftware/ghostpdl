@@ -3903,6 +3903,7 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
             if (dict_find_string(&sref, "Colorants", &colorants) <= 0) {
                 /* Even if there is no Colorants dictionary, there may still be a /Process dictionary */
                 *stage = 3;
+                *cont = 1;
                 return 0;
             }
             if (!r_has_type(colorants, t_dictionary)) {
