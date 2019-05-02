@@ -6255,7 +6255,7 @@ pdf14_cmap_separation_direct(frac all, gx_device_color * pdc, const gs_gstate * 
 static	void
 pdf14_cmap_devicen_direct(const	frac * pcc,
     gx_device_color * pdc, const gs_gstate * pgs, gx_device * dev,
-    gs_color_select_t select)
+    gs_color_select_t select, const gs_color_space *pcs)
 {
     int i, ncomps = dev->color_info.num_components;
     int num_spots = pdf14_get_num_spots(dev);

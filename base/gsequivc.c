@@ -448,7 +448,8 @@ cmap_separation_capture_cmyk_color(frac all, gx_device_color * pdc,
    go ahead and just grab the cmyk portion */
 static void
 cmap_devicen_capture_cmyk_color(const frac * pcc, gx_device_color * pdc,
-     const gs_gstate * pgs, gx_device * dev, gs_color_select_t select)
+     const gs_gstate * pgs, gx_device * dev, gs_color_select_t select,
+     const gs_color_space *pcs)
 {
     equivalent_cmyk_color_params * pparams =
         ((color_capture_device *)dev)->pequiv_cmyk_colors;

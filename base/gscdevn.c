@@ -534,10 +534,10 @@ gx_remap_concrete_DeviceN(const gs_color_space * pcs, const frac * pconc,
         if (dev_profile->spotnames != NULL && code >= 0) {
             temp_val = dev_profile->spotnames->equiv_cmyk_set;
             dev_profile->spotnames->equiv_cmyk_set = false;
-            gx_remap_concrete_devicen(pconc, pdc, pgs, dev, select);
+            gx_remap_concrete_devicen(pconc, pdc, pgs, dev, select, pcs);
             dev_profile->spotnames->equiv_cmyk_set = temp_val;
         } else {
-            gx_remap_concrete_devicen(pconc, pdc, pgs, dev, select);
+            gx_remap_concrete_devicen(pconc, pdc, pgs, dev, select, pcs);
         }
         return 0;
     }

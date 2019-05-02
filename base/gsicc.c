@@ -319,7 +319,7 @@ gx_remap_concrete_icc_devicen(const gs_color_space * pcs, const frac * pconc,
         code = gsicc_set_devicen_equiv_colors(dev, pgs, dev_profile->device_profile[0]);
         dev_profile->spotnames->equiv_cmyk_set = true;
     }
-    gx_remap_concrete_devicen(pconc, pdc, pgs, dev, select);
+    gx_remap_concrete_devicen(pconc, pdc, pgs, dev, select, pcs);
     return code;
 }
 
