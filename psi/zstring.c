@@ -103,10 +103,10 @@ zanchorsearch(i_ctx_t *i_ctx_p)
     return 0;
 }
 
-/* <string> <pattern> search <post> <match> <pre> -true- */
-/* <string> <pattern> search <string> -false- */
+/* <string> <pattern> (r)search <post> <match> <pre> -true- */
+/* <string> <pattern> (r)search <string> -false- */
 static int
-zsearch(i_ctx_t *i_ctx_p)
+search_impl(i_ctx_t *i_ctx_p, bool forward)
 {
     os_ptr op = osp;
     os_ptr op1 = op - 1;
@@ -115,6 +115,7 @@ zsearch(i_ctx_t *i_ctx_p)
     byte *pat;
     byte *ptr;
     byte ch;
+    int incr = forward ? 1 : -1;
 
     check_read_type(*op1, t_string);
     check_read_type(*op, t_string);
@@ -126,12 +127,14 @@ zsearch(i_ctx_t *i_ctx_p)
     ptr = op1->value.bytes;
     if (size == 0)
         goto found;
+    if (!forward)
+        ptr += count;
     pat = op->value.bytes;
     ch = pat[0];
     do {
         if (*ptr == ch && (size == 1 || !memcmp(ptr, pat, size)))
             goto found;
-        ptr++;
+        ptr += incr;
     }
     while (count--);
     /* No match */
@@ -145,9 +148,23 @@ found:
     op[-1] = *op1;
     r_set_size(op - 1, ptr - op[-1].value.bytes);
     op1->value.bytes = ptr + size;
-    r_set_size(op1, count);
+    r_set_size(op1, count + (!forward ? (size - 1) : 0));
     make_true(op);
     return 0;
+}
+
+/* Search from the start of the string */
+static int
+zsearch(i_ctx_t *i_ctx_p)
+{
+    return search_impl(i_ctx_p, true);
+}
+
+/* Search from the end of the string */
+static int
+zrsearch(i_ctx_t *i_ctx_p)
+{
+    return search_impl(i_ctx_p, false);
 }
 
 /* <string> <charstring> .stringbreak <int|null> */
@@ -208,6 +225,7 @@ const op_def zstring_op_defs[] =
     {"2anchorsearch", zanchorsearch},
     {"1.namestring", znamestring},
     {"2search", zsearch},
+    {"2rsearch", zrsearch},
     {"1string", zstring},
     {"2.stringbreak", zstringbreak},
     {"2.stringmatch", zstringmatch},
