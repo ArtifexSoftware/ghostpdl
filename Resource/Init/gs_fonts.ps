@@ -232,6 +232,11 @@ ifelse
 FONTPATH length 0 eq { (%END FONTPATH) .skipeof } if
 /FONTPATH [ FONTPATH .pathlist ] def
 
+FONTPATH
+{
+    /PermitFileReading exch .addcontrolpath
+} forall
+
 % Scan directories looking for plausible fonts.  "Plausible" means that
 % the file begins with %!PS-AdobeFont or %!FontType1, or with \200\001
 % followed by four arbitrary bytes and then either of these strings.
