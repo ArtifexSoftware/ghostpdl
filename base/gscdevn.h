@@ -76,6 +76,6 @@ int gx_serialize_device_n_map(const gs_color_space * pcs, gs_device_n_map * m, s
  * color space is in the current (temp) gstate.  The DeviceN color space is
  * in the next gstate down in the gstate list (pgs->saved).
  */
-int gs_attachattcolorant(gs_separation_name sep_name, gs_gstate * pgs);
+int gs_attachcolorant(gs_separation_name sep_name, gs_gstate * pgs);
 
 #endif /* gscdevn_INCLUDED */

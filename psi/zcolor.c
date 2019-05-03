@@ -3934,7 +3934,7 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
     if ((*stage) == 3) {
         /* Check for the existence of an attributes dictionary */
         if (r_size(devicenspace) == 5) {
-            ref *process, *cspace, *parr, name, s2, *subtype;
+            ref *process, *cspace, *parr, name, *subtype;
             gs_color_space *devn_cs;
 
             /* We have an attributes dictionary, does it contain a /Process sub-dictionary ?
@@ -3959,9 +3959,6 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
                 if (memcmp(subtype->value.bytes, "NChannel", 8) == 0)
                     devn_cs->params.device_n.subtype = gs_devicen_NChannel;
             }
-
-            if (code < 0)
-                return code;
             if (!r_has_type(&sref, t_dictionary)) {
                 *stage = 0;
                 return gs_note_error(gs_error_typecheck);
