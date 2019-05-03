@@ -309,6 +309,27 @@ gs_main_run_start(gs_main_instance * minst)
     return run_string(minst, "systemdict /start get exec", runFlush, minst->user_errors, NULL, NULL);
 }
 
+/* For the OutputFile permission we have to deal with formattable strings
+   i.e. ones that have "%d" or similar in them. For these we want to replace
+   everything after the %d with a wildcard "*".
+   Since we do this in two places (the -s and -o cases) split it into a
+   function.
+ */
+static int
+gs_main_add_outputfile_control_path(gs_memory_t *mem, const char *fname)
+{
+    char *fp, f[gp_file_name_sizeof];
+    const int percent = 37; /* ASCII code for % */
+
+    strncpy(f, fname, strlen(fname));
+    fp = strchr(f, percent);
+    if (fp != NULL) {
+        fp[0] = '*';
+        fp[1] = '\0';
+    }
+    return gs_add_control_path(mem, gs_permit_file_writing, f);
+}
+
 /* Process switches.  Return 0 if processed, 1 for unknown switch, */
 /* <0 if error. */
 static int
@@ -514,7 +535,10 @@ run_stdin:
             }
         case 'f':               /* run file of arbitrary name */
             if (*arg != 0) {
-                code = argproc(minst, arg);
+                code = gs_add_control_path(minst->heap, gs_permit_file_reading, arg);
+                if (code > 0)
+                    code = argproc(minst, arg);
+                (void)gs_remove_control_path(minst->heap, gs_permit_file_reading, arg);
                 if (code < 0)
                     return code;
                 /* If in saved_pages_test_mode, print and flush previous job before the next file */
@@ -549,7 +573,12 @@ run_stdin:
                 uint bsize = minst->run_buffer_size;
 
                 minst->run_buffer_size = 1;
-                code = argproc(minst, arg);
+                code = gs_add_control_path(minst->heap, gs_permit_file_reading, arg);
+                if (code > 0)
+                    code = argproc(minst, arg);
+                (void)gs_remove_control_path(minst->heap, gs_permit_file_reading, arg);
+                if (code < 0)
+                    return code;
                 minst->run_buffer_size = bsize;
                 if (code < 0)
                     return code;
@@ -671,6 +700,12 @@ run_stdin:
                     adef = arg;
                 if ((code = gs_main_init1(minst)) < 0)
                     return code;
+
+                if (strlen(adef) > 0) {
+                    code = gs_main_add_outputfile_control_path(minst->heap, adef);
+                    if (code < 0) return code;
+                }
+
                 ialloc_set_space(idmemory, avm_system);
                 len = strlen(adef);
                 str = ialloc_string(len, "-o");
@@ -755,6 +790,12 @@ run_stdin:
                     uint space = icurrent_space;
 
                     *eqp++ = 0;
+
+                    if (strlen(adef) == 10 && strncmp(adef, "OutputFile", 10) == 0 && strlen(eqp) > 0) {
+                        code = gs_main_add_outputfile_control_path(minst->heap, eqp);
+                        if (code < 0) return code;
+                    }
+
                     ialloc_set_space(idmemory, avm_system);
                     if (isd) {
                         int num, i;
@@ -922,17 +963,26 @@ esc_strcat(char *dest, const char *src)
 static int
 argproc(gs_main_instance * minst, const char *arg)
 {
-    int code = gs_main_init1(minst);            /* need i_ctx_p to proceed */
+    int code1, code = gs_main_init1(minst);            /* need i_ctx_p to proceed */
 
     if (code < 0)
         return code;
+
+    code = gs_add_control_path(minst->heap, gs_permit_file_reading, arg);
+    if (code < 0) return code;
+
     if (minst->run_buffer_size) {
         /* Run file with run_string. */
-        return run_buffered(minst, arg);
+        code = run_buffered(minst, arg);
     } else {
         /* Run file directly in the normal way. */
-        return runarg(minst, "", arg, ".runfile", runInit | runFlush, minst->user_errors, NULL, NULL);
+        code = runarg(minst, "", arg, ".runfile", runInit | runFlush, minst->user_errors, NULL, NULL);
     }
+
+    code1 = gs_remove_control_path(minst->heap, gs_permit_file_reading, arg);
+    if (code >= 0 && code1 < 0) code = code1;
+
+    return code;
 }
 static int
 run_buffered(gs_main_instance * minst, const char *arg)
