@@ -49,7 +49,7 @@
 /* GC descriptors */
 gs_private_st_composite(st_color_space_DeviceN, gs_color_space,
      "gs_color_space_DeviceN", cs_DeviceN_enum_ptrs, cs_DeviceN_reloc_ptrs);
-private_st_device_n_attributes();
+private_st_device_n_colorant();
 private_st_device_n_map();
 
 /* Define the DeviceN color space type. */
@@ -185,10 +185,10 @@ alloc_device_n_map(gs_device_n_map ** ppmap, gs_memory_t * mem,
  * in the next gstate down in the gstate list (pgs->saved).
  */
 int
-gs_attachattributecolorspace(gs_separation_name sep_name, gs_gstate * pgs)
+gs_attachcolorant(gs_separation_name sep_name, gs_gstate * pgs)
 {
     gs_color_space * pdevncs;
-    gs_device_n_attributes * patt;
+    gs_device_n_colorant * patt;
 
     /* Verify that we have a DeviceN color space */
     if (!pgs->saved)
@@ -197,8 +197,8 @@ gs_attachattributecolorspace(gs_separation_name sep_name, gs_gstate * pgs)
     if (pdevncs->type != &gs_color_space_type_DeviceN)
         return_error(gs_error_rangecheck);
 
-    /* Allocate an attribute list element for our linked list of attributes */
-    rc_alloc_struct_1(patt, gs_device_n_attributes, &st_device_n_attributes,
+    /* Allocate an attribute list element for our linked list of colorants */
+    rc_alloc_struct_1(patt, gs_device_n_colorant, &st_device_n_colorant,
                         pgs->memory, return_error(gs_error_VMerror),
                         "gs_attachattributrescolorspace");
 
@@ -768,7 +768,7 @@ gx_set_overprint_DeviceN(const gs_color_space * pcs, gs_gstate * pgs)
 static void
 gx_final_DeviceN(const gs_color_space * pcs)
 {
-    gs_device_n_attributes * pnextatt, * patt = pcs->params.device_n.colorants;
+    gs_device_n_colorant * pnextatt, * patt = pcs->params.device_n.colorants;
     uint num_proc_names = pcs->params.device_n.num_process_names;
     gs_memory_t *mem = pcs->params.device_n.mem->non_gc_memory;
     char **proc_names = pcs->params.device_n.process_names;

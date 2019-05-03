@@ -968,7 +968,7 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_gstate * pgs, const
         if (pcs->params.device_n.colorants != NULL) {
             cos_dict_t *colorants  = cos_dict_alloc(pdev, "pdf_color_space(DeviceN)");
             cos_value_t v_colorants, v_separation, v_colorant_name;
-            const gs_device_n_attributes *csa;
+            const gs_device_n_colorant *csa;
             pdf_resource_t *pres_attributes;
 
             if (colorants == NULL)

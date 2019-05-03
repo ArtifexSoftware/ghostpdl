@@ -202,7 +202,7 @@ typedef struct gs_cie_def_s gs_cie_def;
 typedef struct gs_cie_defg_s gs_cie_defg;
 
 typedef struct gs_device_n_map_s gs_device_n_map;
-typedef struct gs_device_n_attributes_s gs_device_n_attributes;
+typedef struct gs_device_n_colorant_s gs_device_n_colorant;
 
 /*
  * Non-base direct color spaces: Separation and DeviceN.
@@ -233,16 +233,23 @@ typedef struct gs_separation_params_s {
     separation_colors color_type;
 } gs_separation_params;
 
+typedef enum {
+    gs_devicen_DeviceN,
+    gs_devicen_NChannel
+} gs_devicen_subtype;
+
 typedef struct gs_device_n_params_s {
     gs_separation_name *names;
     uint num_components;
     gs_device_n_map *map;
-    gs_device_n_attributes *colorants;
     bool use_alt_cspace;
     gs_callback_func_get_colorname_string *get_colorname_string;
     bool named_color_supported;
     separation_colors color_type;
+    gs_devicen_subtype subtype;
     gs_memory_t *mem;
+    gs_device_n_colorant *colorants;
+    gs_color_space       *devn_process_space;
     uint num_process_names;
     char **process_names;
 } gs_device_n_params;
@@ -297,7 +304,6 @@ struct gs_color_space_s {
     gs_id                      id;
     gs_color_space             *base_space;
     gs_color_space             *icc_equivalent;
-    gs_color_space             *devn_process_space;
     client_color_space_data_t  *pclient_color_space_data;
     cmm_profile_t              *cmm_icc_profile_data;
     union {

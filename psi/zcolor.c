@@ -3789,7 +3789,7 @@ static int devicencolorants_cont(i_ctx_t *i_ctx_p)
 
             make_int(pindex, index);
             make_int(pstage, stage);
-            gs_attachattributecolorspace(sep_name, igs);
+            gs_attachcolorant(sep_name, igs);
 
             code = gs_grestore(igs);
             if (code < 0) {
@@ -3858,7 +3858,7 @@ static int devicenprocess_cont(i_ctx_t *i_ctx_p)
             return code;
         }
         devn_cs = gs_currentcolorspace_inline(igs);
-        devn_cs->devn_process_space = process;
+        devn_cs->params.device_n.devn_process_space = process;
     }
 
     esp -= 4;
@@ -3934,7 +3934,7 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
     if ((*stage) == 3) {
         /* Check for the existence of an attributes dictionary */
         if (r_size(devicenspace) == 5) {
-            ref *process, *cspace, *parr, name;
+            ref *process, *cspace, *parr, name, s2, *subtype;
             gs_color_space *devn_cs;
 
             /* We have an attributes dictionary, does it contain a /Process sub-dictionary ?
@@ -3943,6 +3943,23 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
              */
             devn_cs = gs_currentcolorspace_inline(igs);
             code = array_get(imemory, devicenspace, 4, &sref);
+
+            devn_cs->params.device_n.subtype = gs_devicen_DeviceN;
+            code  = dict_find_string(&sref, "Subtype", &subtype);
+            if (code <= 0 && code != gs_error_undefined) {
+                *stage = 0;
+                return code;
+            }
+            if (code > 0) {
+                if (!r_has_type(subtype, t_name)) {
+                    *stage = 0;
+                    return gs_note_error(gs_error_typecheck);
+                }
+                name_string_ref(imemory, subtype, subtype);
+                if (memcmp(subtype->value.bytes, "NChannel", 8) == 0)
+                    devn_cs->params.device_n.subtype = gs_devicen_NChannel;
+            }
+
             if (code < 0)
                 return code;
             if (!r_has_type(&sref, t_dictionary)) {
