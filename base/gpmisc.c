@@ -802,8 +802,11 @@ gp_open_scratch_file_rm(const gs_memory_t *mem,
 {
     gp_file *file;
 
-    if (gp_validate_path(mem, fname, mode) != 0)
-        return NULL;
+    /* If the prefix is absolute, then we must check it's a permissible
+     * path. If not, we're OK. */
+    if (gp_file_name_is_absolute(prefix, strlen(prefix)) &&
+        gp_validate_path(mem, prefix, mode) != 0)
+            return NULL;
 
     file = gp_file_FILE_alloc(mem);
     if (file == NULL)
