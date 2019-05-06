@@ -3711,7 +3711,7 @@ static int sepinitialproc(i_ctx_t *i_ctx_p, ref *space)
 /* DeviceN */
 static int devicencolorants_cont(i_ctx_t *i_ctx_p)
 {
-    ref dict, *pdict = &dict, space[2], sname;
+    ref dict, *pdict = &dict, space[2];
     int index, code, depth, stage;
     es_ptr ep = esp, pindex, pstage;
     os_ptr op = osp;
@@ -4019,7 +4019,9 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
                         return gs_note_error(gs_error_typecheck);
                     }
                     name_string_ref(devn_cs->params.device_n.mem, &name, &name_string);
-                    devn_cs->params.device_n.process_names[ix] = ref_to_string((const ref *)&name_string, devn_cs->params.device_n.mem->non_gc_memory, "Component name");
+                    devn_cs->params.device_n.process_names[ix] = (char *)gs_alloc_bytes(devn_cs->params.device_n.mem->non_gc_memory, r_size(&name_string) + 1, "Component name");
+                    memcpy(devn_cs->params.device_n.process_names[ix], name_string.value.bytes, r_size(&name_string));
+                    devn_cs->params.device_n.process_names[ix][r_size(&name_string)] = 0x00;
                 }
             }
             /* We have a /Process dictionary, in this case the ColorSpace entry is required */
