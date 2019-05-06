@@ -36,7 +36,6 @@
 end def
 .setlanguagelevel
 
-
 % ------ End of editable parameters ------ %
 
 % Define the UniqueIDs and organization XUID assigned to Artifex.
@@ -67,6 +66,36 @@ end def
    loop
  } bind def
 
+% <dir.../base.extn> .basename <dir>
+/.splitdirname {
+    (/) rsearch { //true } { (\\) rsearch } ifelse
+  {3 -2 roll pop pop //true}{//false} ifelse
+} bind def
+
+% <dict> .addfontmappermitpaths
+% As fontmap can contain a *lot* of individual entries
+% we split off the filenames, and add directories to the
+% allowed paths.
+% We accumulate the paths in a dictionary, then iterate
+% the dictionary adding the paths to the PermitReading
+% list. This leverages the efficiency of dictionaries
+% handling duplicate keys.
+/.addfontmappermitpaths
+{
+  dup length dict begin
+  {
+    exch pop dup type /stringtype eq
+    {//.splitdirname exec {dup def} {pop} ifelse}
+    {pop}
+    ifelse
+  } forall
+  currentdict end
+  {exch pop /PermitFileReading exch .addcontrolpath}forall
+} bind def
+
+defaultfontmap_content length 0 gt
+{defaultfontmap_content .addfontmappermitpaths} if
+
 % Load a font name -> font file name map.
 userdict /Fontmap .FontDirectory maxlength dict put
 userdict /.nativeFontmap .FontDirectory maxlength dict put
@@ -76,7 +105,8 @@ userdict /.nativeFontmap .FontDirectory maxlength dict put
                 % specification that makes later entries override earlier
                 % ones within the same file.
    50 dict exch .readFontmap
-    { .definefontmap } forall
+   dup //.addfontmappermitpaths exec
+   { .definefontmap } forall
 } bind def
 /.readFontmap {         % <dict> <file> .readFontmap <dict>
     { dup token not { closefile exit } if
@@ -1297,5 +1327,5 @@ FAKEFONTS { exch } if pop def   % don't bind, .current/setglobal get redefined
  /.nametostring /.fontnamestring /.checkalias /.fontknownget /.stdsubstfont
  /.putgstringcopy
  /.definenativefontmap
- /.findfontname
+ /.findfontname /.addfontmappermitpaths /.splitdirname
 ] {systemdict exch .forceundef} forall
