@@ -315,19 +315,41 @@ gs_main_run_start(gs_main_instance * minst)
    Since we do this in two places (the -s and -o cases) split it into a
    function.
  */
+#define IS_WHITESPACE(c) ((c == 0x20) || (c == 0x9) || (c == 0xD) || (c == 0xA))
 static int
 gs_main_add_outputfile_control_path(gs_memory_t *mem, const char *fname)
 {
     char *fp, f[gp_file_name_sizeof];
-    const int percent = 37; /* ASCII code for % */
+    const int percent = 37; /* ASCII code for '%' */
+    const int pipe = 124; /* ASCII code for '|' */
+    const int len = strlen(fname);
 
-    strncpy(f, fname, strlen(fname));
+    strncpy(f, fname, len);
     fp = strchr(f, percent);
     if (fp != NULL) {
         fp[0] = '*';
         fp[1] = '\0';
+        fp = f;
+    } else {
+        int i;
+        fp = f;
+        for (i = 0; i < len; i++) {
+            if (f[i] == pipe) {
+               fp = &f[i + 1];
+               /* Because we potentially have to check file permissions at two levels
+                  for the output file (gx_device_open_output_file and the low level
+                  fopen API, if we're using a pipe, we have to add both the full string,
+                  (including the '|', and just the command to which we pipe - since at
+                  the pipe_fopen(), the leading '|' has been stripped.
+                */
+               gs_add_control_path(mem, gs_permit_file_writing, f);
+               break;
+            }
+            if (!IS_WHITESPACE(f[i]))
+                break;
+        }
     }
-    return gs_add_control_path(mem, gs_permit_file_writing, f);
+    return gs_add_control_path(mem, gs_permit_file_writing, fp);
 }
 
 /* Process switches.  Return 0 if processed, 1 for unknown switch, */
