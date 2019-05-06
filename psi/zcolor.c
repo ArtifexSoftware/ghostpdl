@@ -3715,7 +3715,7 @@ static int devicencolorants_cont(i_ctx_t *i_ctx_p)
     int index, code, depth, stage;
     es_ptr ep = esp, pindex, pstage;
     os_ptr op = osp;
-    gs_separation_name sep_name;
+    char *sep_name;
 
     pindex = &ep[-2];
     pstage = &ep[-1];
@@ -3766,27 +3766,45 @@ static int devicencolorants_cont(i_ctx_t *i_ctx_p)
             } else
                 return code;
         } else {
+            gs_memory_t *mem;
+            gs_gstate *pgs = igs;
+            gs_color_space *devn_cs;
+
             stage = 0;
 
+            /* This is a little awkward. We need the 'mem' parameter stored in
+             * the DeviceN structure, so that we can allocate the C string below in the
+             * correct memory. But the current space has been set (above) to the separation
+             * space we are handling. However, we did a gsave before that, so the saved
+             * colour space is the one we want.
+             */
+            if (!pgs->saved) {
+                esp -= 4;
+                return gs_note_error(gs_error_unknownerror);
+            }
+            devn_cs = gs_currentcolorspace_inline(pgs->saved);
+            mem = devn_cs->params.device_n.mem->non_gc_memory;
             switch (r_type(&space[0])) {
                 case t_string:
-                    code = name_from_string(imemory, &space[0], &sname);
-                    if (code < 0){
-                        (void)gs_grestore(igs);
-                        esp -= 4;
-                        return code;
-                    }
-                    sep_name = name_index(imemory, &sname);
+                    sep_name = (char *)gs_alloc_bytes(mem, r_size(&space[0]) + 1, "devicencolorants_cont");
+                    memcpy(sep_name, space[0].value.bytes, r_size(&space[0]));
+                    sep_name[r_size(&space[0])] = 0x00;
                     break;
                 case t_name:
-                    sep_name = name_index(imemory, &space[0]);
+                    {
+                        ref nref;
+
+                        name_string_ref(imemory, &space[0], &nref);
+                        sep_name = (char *)gs_alloc_bytes(mem, r_size(&nref) + 1, "devicencolorants_cont");
+                        memcpy(sep_name, nref.value.bytes, r_size(&nref));
+                        sep_name[r_size(&nref)] = 0x00;
+                    }
                     break;
                 default:
                     (void)gs_grestore(igs);
                     return_error(gs_error_typecheck);
                     break;
             }
-
             make_int(pindex, index);
             make_int(pstage, stage);
             gs_attachcolorant(sep_name, igs);

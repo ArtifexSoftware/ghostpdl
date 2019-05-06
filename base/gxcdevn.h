@@ -44,7 +44,7 @@ int alloc_device_n_map(gs_device_n_map ** ppmap, gs_memory_t * mem,
 
 struct gs_device_n_colorant_s {
     rc_header rc;
-    gs_separation_name colorant_name;
+    char *colorant_name;
     gs_color_space *cspace;
     struct gs_device_n_colorant_s * next;	/* Linked list */
 };

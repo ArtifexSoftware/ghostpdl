@@ -987,12 +987,8 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_gstate * pgs, const
                 return code;
             }
             for (csa = pcs->params.device_n.colorants; csa != NULL; csa = csa->next) {
-                code = pcs->params.device_n.get_colorname_string(pdev->memory,
-                              csa->colorant_name, &name_string, &name_string_length);
-                if (code < 0) {
-                    COS_FREE(pca, "convert DeviceN");
-                    return code;
-                }
+                name_string = (byte *)csa->colorant_name;
+                name_string_length = strlen((const char *)name_string);
                 code = pdf_color_space_named(pdev, pgs, &v_separation, NULL, csa->cspace, &pdf_color_space_names, false, NULL, 0, false);
                 if (code < 0) {
                     COS_FREE(pca, "convert DeviceN");

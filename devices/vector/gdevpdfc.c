@@ -1170,10 +1170,8 @@ pdf_color_space_named(gx_device_pdf *pdev, const gs_gstate * pgs,
                 if (code < 0)
                     return code;
                 for (csa = pcs->params.device_n.colorants; csa != NULL; csa = csa->next) {
-                    code = pcs->params.device_n.get_colorname_string(pdev->memory,
-                                  csa->colorant_name, &name_string, &name_string_length);
-                    if (code < 0)
-                        return code;
+                    name_string = (byte *)csa->colorant_name;
+                    name_string_length = strlen((const char *)name_string);
                     code = pdf_color_space_named(pdev, pgs, &v_separation, NULL, csa->cspace, pcsn, false, NULL, 0, keepICC);
                     if (code < 0)
                         return code;

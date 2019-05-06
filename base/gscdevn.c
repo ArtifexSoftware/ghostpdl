@@ -185,7 +185,7 @@ alloc_device_n_map(gs_device_n_map ** ppmap, gs_memory_t * mem,
  * in the next gstate down in the gstate list (pgs->saved).
  */
 int
-gs_attachcolorant(gs_separation_name sep_name, gs_gstate * pgs)
+gs_attachcolorant(char *sep_name, gs_gstate * pgs)
 {
     gs_color_space * pdevncs;
     gs_device_n_colorant * patt;
@@ -786,6 +786,7 @@ gx_final_DeviceN(const gs_color_space * pcs)
     rc_decrement_only(pcs->params.device_n.map, "gx_adjust_DeviceN");
     while (patt != NULL) {
         pnextatt = patt->next;
+        gs_free_object(mem, patt->colorant_name, "gx_final_DeviceN");
         rc_decrement_cs(patt->cspace, "gx_final_DeviceN");
         rc_decrement(patt, "gx_adjust_DeviceN");
         patt = pnextatt;
