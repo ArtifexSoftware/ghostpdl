@@ -308,7 +308,7 @@ gsicc_finddevicen(const gs_color_space *pcs, gsicc_manager_t *icc_manager)
     int k,j,i;
     gsicc_devicen_entry_t *curr_entry;
     int num_comps;
-    const gs_separation_name *names = pcs->params.device_n.names;
+    char **names = pcs->params.device_n.names;
     unsigned char *pname;
     unsigned int name_size;
     gsicc_devicen_t *devicen_profiles = icc_manager->device_n;
@@ -331,8 +331,8 @@ gsicc_finddevicen(const gs_color_space *pcs, gsicc_manager_t *icc_manager)
                reorganize the data prior to the transform application */
             for ( j = 0; j < num_comps; j++) {
                 /* Get the character string and length for the component name. */
-                pcs->params.device_n.get_colorname_string(icc_manager->memory,
-                                                    names[j], &pname, &name_size);
+                pname = (unsigned char *)names[j];
+                name_size = strlen(names[j]);
                 /* Compare to the jth entry in the ICC profile */
                 icc_spot_entry = curr_entry->iccprofile->spotnames->head;
                 for ( i = 0; i < num_comps; i++) {

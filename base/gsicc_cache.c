@@ -1529,7 +1529,7 @@ gsicc_support_named_color(const gs_color_space *pcs, const gs_gstate *pgs)
     unsigned int num_entries;
     int k, code, i, num_comp, num_spots=0, num_process=0, num_other=0;
     gs_color_space_index type = gs_color_space_get_index(pcs);
-    const gs_separation_name *names = NULL; /* quite compiler warning*/
+    char **names = NULL;
     gs_separation_name name = 0; /* quite compiler warning*/
     byte *pname;
     uint name_size;
@@ -1560,8 +1560,10 @@ gsicc_support_named_color(const gs_color_space *pcs, const gs_gstate *pgs)
 
     /* Step through the color space colorants */
     for (i = 0; i < num_comp; i++) {
-        if (type == gs_color_space_index_DeviceN)
-            pcs->params.device_n.get_colorname_string(pgs->memory, names[i], &pname, &name_size);
+        if (type == gs_color_space_index_DeviceN) {
+            pname = (byte *)names[i];
+            name_size = strlen(names[i]);
+        }
         else
             pcs->params.separation.get_colorname_string(pgs->memory, name, &pname, &name_size);
 

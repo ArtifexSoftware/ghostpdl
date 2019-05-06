@@ -913,14 +913,8 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_gstate * pgs, const
         }
 
         for (i = 0; i < pcs->params.device_n.num_components; ++i) {
-            code = pcs->params.device_n.get_colorname_string(
-                              pdev->memory,
-                              pcs->params.device_n.names[i], &name_string,
-                              &name_string_length);
-            if (code < 0) {
-                COS_FREE(pca, "convert DeviceN");
-                return code;
-            }
+            name_string = (byte *)pcs->params.device_n.names[i];
+            name_string_length = strlen(pcs->params.device_n.names[i]);
             code = pdf_string_to_cos_name(pdev, name_string,
                               name_string_length, &v);
             if (code < 0) {

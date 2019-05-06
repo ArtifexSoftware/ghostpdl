@@ -3892,7 +3892,7 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
     gs_color_space *pcs;
     gs_color_space * pacs;
     gs_function_t *pfn = NULL;
-    gs_separation_name *names;
+    char **names;
     gs_client_color cc;
 
     if (i_ctx_p->language_level < 3)
@@ -4150,7 +4150,6 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
     if (code < 0)
         return code;
     names = pcs->params.device_n.names;
-    pcs->params.device_n.get_colorname_string = gs_get_colorname_string;
 
     /* Pick up the names of the components */
     {
@@ -4160,15 +4159,13 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
         for (i = 0; i < num_components; ++i) {
             array_get(imemory, &namesarray, (long)i, &sname);
             switch (r_type(&sname)) {
-                case t_string:
-                    code = name_from_string(imemory, &sname, &sname);
-                    if (code < 0) {
-                        rc_decrement_cs(pcs, "setdevicenspace");
-                        return code;
-                    }
-                    /* falls through */
                 case t_name:
-                    names[i] = name_index(imemory, &sname);
+                    name_string_ref(imemory, &sname, &sname);
+                    /* falls through */
+                case t_string:
+                    names[i] = (char *)gs_alloc_bytes(pcs->params.device_n.mem->non_gc_memory, r_size(&sname) + 1, "Ink name");
+                    memcpy(names[i], sname.value.bytes, r_size(&sname));
+                    names[i][r_size(&sname)] = 0x00;
                     break;
                 default:
                     rc_decrement_cs(pcs, "setdevicenspace");
@@ -4176,7 +4173,6 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
             }
         }
     }
-
     /* Now set the current color space as DeviceN */
 
     cspace_old = istate->colorspace[0];

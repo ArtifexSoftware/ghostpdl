@@ -629,7 +629,7 @@ gs_color_select_t select)
         named_color_sep.name_size = name_size;
         named_color_ptr = &named_color_sep;
     } else if (type == gs_color_space_index_DeviceN) {
-        const gs_separation_name *names = pcs->params.device_n.names;
+        char **names = pcs->params.device_n.names;
         num_src_comps = pcs->params.device_n.num_components;
         /* Allocate and initialize name structure */
         named_color_devn =
@@ -639,8 +639,8 @@ gs_color_select_t select)
         if (named_color_devn == NULL)
             return false; /* Clearly a bigger issue. But lets not end here */
         for (k = 0; k < num_src_comps; k++) {
-            pcs->params.device_n.get_colorname_string(dev->memory, names[k],
-                &pname, &name_size);
+            pname = (byte *)names[k];
+            name_size = strlen(names[k]);
             named_color_devn[k].colorant_name = (char*)pname;
             named_color_devn[k].name_size = name_size;
         }

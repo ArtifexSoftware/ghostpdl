@@ -223,9 +223,9 @@ update_DeviceN_spot_equivalent_cmyk_colors(gx_device * pdev,
      * In this situation we exit rather than produce invalid values.
      */
      for (j = 0; j < pcs->params.device_n.num_components; j++) {
-        pcs->params.device_n.get_colorname_string
-            (pdev->memory, pcs->params.device_n.names[j],
-             &pcs_sep_name, &cs_sep_name_size);
+        pcs_sep_name = (unsigned char *)pcs->params.device_n.names[j];
+        cs_sep_name_size = strlen(pcs->params.device_n.names[j]);
+
         if (compare_color_names("None", 4, pcs_sep_name, cs_sep_name_size)) {
             /* If we are going out to a device that supports devn colors
                then it is possible that any preview that such a device creates
@@ -250,9 +250,8 @@ update_DeviceN_spot_equivalent_cmyk_colors(gx_device * pdev,
                             &(pdevn_params->separations.names[i]);
 
             for (j = 0; j < pcs->params.device_n.num_components; j++) {
-                pcs->params.device_n.get_colorname_string
-                    (pdev->memory, pcs->params.device_n.names[j], &pcs_sep_name,
-                     &cs_sep_name_size);
+                pcs_sep_name = (unsigned char *)pcs->params.device_n.names[j];
+                cs_sep_name_size = strlen(pcs->params.device_n.names[j]);
                 if (compare_color_names(dev_sep_name->data, dev_sep_name->size,
                             pcs_sep_name, cs_sep_name_size)) {
                     gs_color_space temp_cs = *pcs;

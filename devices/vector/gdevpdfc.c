@@ -1142,11 +1142,9 @@ pdf_color_space_named(gx_device_pdf *pdev, const gs_gstate * pgs,
             if (psna == 0)
                 return_error(gs_error_VMerror);
             for (i = 0; i < pcs->params.device_n.num_components; ++i) {
-                if ((code = pcs->params.device_n.get_colorname_string(
-                                  pdev->memory,
-                                  pcs->params.device_n.names[i], &name_string,
-                                  &name_string_length)) < 0 ||
-                    (code = pdf_string_to_cos_name(pdev, name_string,
+                name_string = (byte *)pcs->params.device_n.names[i];
+                name_string_length = strlen(pcs->params.device_n.names[i]);
+                if ((code = pdf_string_to_cos_name(pdev, name_string,
                                   name_string_length, &v)) < 0 ||
                     (code = cos_array_add_no_copy(psna, &v)) < 0)
                     return code;

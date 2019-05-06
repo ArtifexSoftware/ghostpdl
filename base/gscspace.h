@@ -239,15 +239,14 @@ typedef enum {
 } gs_devicen_subtype;
 
 typedef struct gs_device_n_params_s {
-    gs_separation_name *names;
+    gs_memory_t *mem;
     uint num_components;
+    char **names;
     gs_device_n_map *map;
     bool use_alt_cspace;
-    gs_callback_func_get_colorname_string *get_colorname_string;
     bool named_color_supported;
     separation_colors color_type;
     gs_devicen_subtype subtype;
-    gs_memory_t *mem;
     gs_device_n_colorant *colorants;
     gs_color_space       *devn_process_space;
     uint num_process_names;
