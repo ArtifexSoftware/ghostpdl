@@ -16,6 +16,7 @@
 
 /* Miscellaneous support for platform facilities */
 
+#include "errno_.h"
 #include "stat_.h"
 #include "unistd_.h"
 #include "fcntl_.h"
@@ -985,5 +986,9 @@ gp_validate_path(const gs_memory_t *mem,
         code = gs_note_error(gs_error_invalidfileaccess);
     }
     gs_free_object(mem->non_gc_memory, buffer, "gp_validate_path");
+#ifdef EACCES
+    if (code == gs_error_invalidfileaccess)
+        errno = EACCES;
+#endif
     return code;
 }
