@@ -87,8 +87,7 @@ s_band_read_init(stream_state * st)
     ss->b_this.band_min = 0;
     ss->b_this.band_max = 0;
     ss->b_this.pos = 0;
-    io_procs->rewind(ss->page_bfile, false, ss->page_bfname);
-    return 0;
+    return io_procs->rewind(ss->page_bfile, false, ss->page_bfname);
 }
 
 #ifdef DEBUG

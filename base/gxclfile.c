@@ -265,11 +265,12 @@ static IFILE *wrap_file(gs_memory_t *mem, gp_file *f, const char *fmode)
     return ifile;
 }
 
-static int close_file(IFILE *ifile)
+static int clist_close_file(IFILE *ifile)
 {
     int res = 0;
     if (ifile) {
-        res = gp_fclose(ifile->f);
+        if (ifile->f != NULL)
+            res = gp_fclose(ifile->f);
         if (ifile->cache != NULL)
             cl_cache_destroy(ifile->cache);
         gs_free_object(ifile->mem, ifile, "Free wrapped IFILE");
@@ -329,7 +330,7 @@ clist_unlink(const char *fname)
         /* fname is an encoded file pointer. The file will either have been
          * created with the delete-on-close option, or already have been
          * unlinked. We need only close the FILE */
-        return close_file((IFILE *)ocf) != 0 ? gs_note_error(gs_error_ioerror) : 0;
+        return clist_close_file((IFILE *)ocf) != 0 ? gs_note_error(gs_error_ioerror) : 0;
     } else {
         return (unlink(fname) != 0 ? gs_note_error(gs_error_ioerror) : 0);
     }
@@ -343,9 +344,9 @@ clist_fclose(clist_file_ptr cf, const char *fname, bool delete)
         /* fname is an encoded file pointer, and cf is the FILE used to create it.
          * We shouldn't close it unless we have been asked to delete it, in which
          * case closing it will delete it */
-        return delete ? (close_file((IFILE *)ocf) ? gs_note_error(gs_error_ioerror) : 0) : 0;
+        return delete ? (clist_close_file((IFILE *)ocf) ? gs_note_error(gs_error_ioerror) : 0) : 0;
     } else {
-        return (close_file((IFILE *) cf) != 0 ? gs_note_error(gs_error_ioerror) :
+        return (clist_close_file((IFILE *) cf) != 0 ? gs_note_error(gs_error_ioerror) :
                 delete ? clist_unlink(fname) :
                 0);
     }
@@ -468,7 +469,7 @@ clist_ftell(clist_file_ptr cf)
     return gp_can_share_fdesc() ? ifile->pos : gp_ftell(ifile->f);
 }
 
-static void
+static int
 clist_rewind(clist_file_ptr cf, bool discard_data, const char *fname)
 {
     gp_file *f = ((IFILE *)cf)->f;
@@ -482,15 +483,19 @@ clist_rewind(clist_file_ptr cf, bool discard_data, const char *fname)
         if (discard_data) {
             /* fname is an encoded ifile pointer. We can use an entirely
              * new scratch file. */
-            char tfname[gp_file_name_sizeof];
+            char tfname[gp_file_name_sizeof] = {0};
             const gs_memory_t *mem = ocf->f->memory;
             gp_fclose(ocf->f);
             ocf->f = gp_open_scratch_file_rm(mem, gp_scratch_file_name_prefix, tfname, fmode);
+            if (ocf->f == NULL)
+                return_error(gs_error_ioerror);
             /* if there was a cache, get rid of it an get a new (empty) one */
             /* When we start reading, we will allocate a cache based on the filesize */
             if (ocf->cache != NULL) {
                 cl_cache_destroy(ocf->cache);
                 ocf->cache = cl_cache_alloc(ocf->mem);
+                if (ocf->cache == NULL)
+                    return_error(gs_error_ioerror);
             }
             ((IFILE *)cf)->filesize = 0;
         }
@@ -506,13 +511,16 @@ clist_rewind(clist_file_ptr cf, bool discard_data, const char *fname)
 
             /* Opening with "w" mode deletes the contents when closing. */
             f = gp_freopen(fname, gp_fmode_wb, f);
+            if (f == NULL) return_error(gs_error_ioerror);
             ((IFILE *)cf)->f = gp_freopen(fname, fmode, f);
+            if (((IFILE *)cf)->f == NULL) return_error(gs_error_ioerror);
             ((IFILE *)cf)->pos = 0;
             ((IFILE *)cf)->filesize = 0;
         } else {
             gp_rewind(f);
         }
     }
+    return 0;
 }
 
 static int

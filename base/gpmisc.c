@@ -16,6 +16,7 @@
 
 /* Miscellaneous support for platform facilities */
 
+#include "errno_.h"
 #include "stat_.h"
 #include "unistd_.h"
 #include "fcntl_.h"
@@ -801,8 +802,11 @@ gp_open_scratch_file_rm(const gs_memory_t *mem,
 {
     gp_file *file;
 
-    if (gp_validate_path(mem, fname, mode) != 0)
-        return NULL;
+    /* If the prefix is absolute, then we must check it's a permissible
+     * path. If not, we're OK. */
+    if (gp_file_name_is_absolute(prefix, strlen(prefix)) &&
+        gp_validate_path(mem, prefix, mode) != 0)
+            return NULL;
 
     file = gp_file_FILE_alloc(mem);
     if (file == NULL)
@@ -819,17 +823,41 @@ gp_open_scratch_file_rm(const gs_memory_t *mem,
     return file;
 }
 
-static int
-ends_in(const char *first, const char *last, const char *ds, size_t len)
+int
+gp_stat(const gs_memory_t *mem, const char *path, struct stat *buf)
 {
-    while (len) {
-        if (last < first)
-            return 0; /* No match */
-        if (*last != ds[--len])
-            return 0; /* No match */
-        last--;
+    if (gp_validate_path(mem, path, "r") != 0) {
+        return -1;
     }
-    return 1;
+
+    return gp_stat_impl(mem, path, buf);
+}
+
+file_enum *
+gp_enumerate_files_init(gs_memory_t *mem, const char *pat, uint patlen)
+{
+    return gp_enumerate_files_init_impl(mem, pat, patlen);
+}
+
+uint
+gp_enumerate_files_next(gs_memory_t *mem, file_enum * pfen, char *ptr, uint maxlen)
+{
+    uint code = 0;
+
+    while (code == 0) {
+        code = gp_enumerate_files_next_impl(mem, pfen, ptr, maxlen);
+        if (code == ~0) break;
+        if (code > 0) {
+            if (gp_validate_path(mem, ptr, "r") != 0)
+                code = 0;
+        }
+    }
+    return code;
+}
+void
+gp_enumerate_files_close(gs_memory_t *mem, file_enum * pfen)
+{
+    gp_enumerate_files_close_impl(mem, pfen);
 }
 
 /* Path validation: (FIXME: Move this somewhere better)
@@ -865,6 +893,19 @@ ends_in(const char *first, const char *last, const char *ds, size_t len)
  *  foo\out*.tif      e.g. foo\out1.tif
  *  foo\out*.*.tif*   e.g. foo\out1.(Red).tif
  */
+
+static int
+ends_in(const char *first, const char *last, const char *ds, size_t len)
+{
+    while (len) {
+        if (last < first)
+            return 0; /* No match */
+        if (*last != ds[--len])
+            return 0; /* No match */
+        last--;
+    }
+    return 1;
+}
 
 static int
 validate(const gs_memory_t *mem,
@@ -948,7 +989,9 @@ gp_validate_path(const gs_memory_t *mem,
     uint rlen;
     int code = 0;
 
-    if (mem->gs_lib_ctx->core->path_control_active == 0)
+    /* mem->gs_lib_ctx can be NULL when we're called from mkromfs */
+    if (mem->gs_lib_ctx == NULL ||
+        mem->gs_lib_ctx->core->path_control_active == 0)
         return 0;
 
     len = strlen(path);
@@ -985,5 +1028,9 @@ gp_validate_path(const gs_memory_t *mem,
         code = gs_note_error(gs_error_invalidfileaccess);
     }
     gs_free_object(mem->non_gc_memory, buffer, "gp_validate_path");
+#ifdef EACCES
+    if (code == gs_error_invalidfileaccess)
+        errno = EACCES;
+#endif
     return code;
 }

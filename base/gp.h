@@ -20,6 +20,7 @@
 #ifndef gp_INCLUDED
 #  define gp_INCLUDED
 
+#include "stat_.h"
 #include "gstypes.h"
 #include "gscdefs.h"		/* for gs_serialnumber */
 /*
@@ -431,6 +432,8 @@ gp_file *gp_open_scratch_file_rm(const gs_memory_t *mem,
                                        char         fname[gp_file_name_sizeof],
                                  const char        *mode);
 
+/* gp_stat is defined in stat_.h rather than here due to macro problems */
+
 typedef enum {
     gp_combine_small_buffer = -1,
     gp_combine_cant_handle = 0,
@@ -569,8 +572,7 @@ typedef struct file_enum_s file_enum;
  * string of ?s should be interpreted as *.  Note that \ can appear in
  * the pattern also, as a quoting character.
  */
-file_enum *gp_enumerate_files_init(const char *pat, uint patlen,
-                                   gs_memory_t * memory);
+file_enum *gp_enumerate_files_init(gs_memory_t *memory, const char *pat, uint patlen);
 
 /*
  * Return the next file name in the enumeration.  The client passes in
@@ -579,7 +581,7 @@ file_enum *gp_enumerate_files_init(const char *pat, uint patlen,
  * returns max length +1.  If there are no more files, the procedure
  * returns -1.
  */
-uint gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen);
+uint gp_enumerate_files_next(gs_memory_t *memory, file_enum * pfen, char *ptr, uint maxlen);
 
 /*
  * Clean up a file enumeration.  This is only called to abandon
@@ -587,7 +589,7 @@ uint gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen);
  * no more files to enumerate.  This should deallocate the file_enum
  * structure and any subsidiary structures, strings, buffers, etc.
  */
-void gp_enumerate_files_close(file_enum * pfen);
+void gp_enumerate_files_close(gs_memory_t *memory, file_enum * pfen);
 
 /* ------ Font enumeration ------ */
 
@@ -645,8 +647,6 @@ gp_open_printer_impl(gs_memory_t *mem,
                      int         *binary_mode,
                      int          (**close)(FILE *));
 
-/* gp_stat is defined in stat_.h rather than here due to macro problems */
-
 /* Create a scratch file (utf8) (self-deleting if remove) */
 FILE *gp_open_scratch_file_impl(const gs_memory_t *mem,
                                 const char        *prefix,
@@ -656,6 +656,14 @@ FILE *gp_open_scratch_file_impl(const gs_memory_t *mem,
 
 /* Test whether this platform supports the sharing of file descriptors */
 int gp_can_share_fdesc(void);
+
+int gp_stat_impl(const gs_memory_t *mem, const char *path, struct stat *buf);
+
+file_enum *gp_enumerate_files_init_impl(gs_memory_t *memory, const char *pat, uint patlen);
+
+uint gp_enumerate_files_next_impl(gs_memory_t *memory, file_enum * pfen, char *ptr, uint maxlen);
+
+void gp_enumerate_files_close_impl(gs_memory_t *memory, file_enum * pfen);
 
 /* We don't define gp_fread_64, gp_fwrite_64,
    because (1) known platforms allow regular fread, fwrite

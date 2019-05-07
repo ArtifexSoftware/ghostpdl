@@ -36,7 +36,9 @@ const char iodev_dtype_stdio[] = "Special";
           iodev_no_delete_file, iodev_no_rename_file, iodev_no_file_status,\
           iodev_no_enumerate_files, NULL, NULL,\
           iodev_no_get_params, iodev_no_put_params\
-        }\
+        }, \
+        NULL, \
+        NULL \
 }
 
 /*

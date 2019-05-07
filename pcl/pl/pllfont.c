@@ -622,12 +622,12 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t * mem,
     if (gs_strlcat(path, "*", sizeof(path)) >= sizeof(path))
         return 0;
 
-    fe = gs_enumerate_files_init(path, strlen(path), mem);
+    fe = gs_enumerate_files_init(mem, path, strlen(path));
     if (fe == NULL)
         return 0;
 
     /* loop through the files */
-    while ((code = gs_enumerate_files_next(fe, path, sizeof(path) - 1)) >= 0) {
+    while ((code = gs_enumerate_files_next(mem, fe, path, sizeof(path) - 1)) >= 0) {
         char buffer[1024];
         pl_font_t *plfont;
         stream *in;
@@ -673,7 +673,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t * mem,
                                 gs_next_ids(mem, 1), &plfont,
                                 buffer) < 0) {
                 /* vm error */
-                gs_enumerate_files_close(fe);
+                gs_enumerate_files_close(mem, fe);
                 return gs_throw1(0,
                                  "An unrecoverable failure occurred while reading the resident font %s\n",
                                  path);
@@ -684,7 +684,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t * mem,
                 gs_free_object(mem, plfont->pfont, "pl_tt_load_font(gs_font_type42)");
                 pl_free_tt_fontfile_buffer(mem, plfont->header);
                 gs_free_object(mem, plfont, "pl_tt_load_font(pl_font_t)");
-                gs_enumerate_files_close(fe);
+                gs_enumerate_files_close(mem, fe);
                 return gs_throw1(0,
                                  "An unrecoverable failure occurred while reading the resident font %s\n",
                                  path);

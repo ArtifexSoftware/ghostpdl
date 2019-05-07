@@ -476,6 +476,9 @@ lib_path_add(gs_main_instance * minst, const char *dirs)
         while (*npath != 0 && *npath != gp_file_name_list_separator)
             npath++;
         if (npath > dpath) {
+            code = gs_add_control_path_len(minst->heap, gs_permit_file_reading, dpath, npath - dpath);
+            if (code < 0) return code;
+
             code = lib_path_insert_copy_of_string(minst, len, npath - dpath, dpath);
             if (code < 0)
                 return code;
@@ -559,6 +562,11 @@ gs_main_set_lib_paths(gs_main_instance * minst)
     if (minst->search_here_first && !minst->lib_path.first_is_current) {
         /* We should have a "gp_current_directory" at the start, and we haven't.
          * So insert one. */
+
+        code = gs_add_control_path_len(minst->heap, gs_permit_file_reading,
+                gp_current_directory_name, strlen(gp_current_directory_name));
+        if (code < 0) return code;
+
         code = lib_path_insert_copy_of_string(minst, 0,
                                               strlen(gp_current_directory_name),
                                               gp_current_directory_name);
@@ -574,6 +582,10 @@ gs_main_set_lib_paths(gs_main_instance * minst)
         --listlen;
         memmove(paths, paths + 1, listlen * sizeof(*paths));
         r_set_size(&minst->lib_path.list, listlen);
+
+        code = gs_remove_control_path_len(minst->heap, gs_permit_file_reading,
+                gp_current_directory_name, strlen(gp_current_directory_name));
+        if (code < 0) return code;
     }
     minst->lib_path.first_is_current = minst->search_here_first;
 
@@ -581,8 +593,13 @@ gs_main_set_lib_paths(gs_main_instance * minst)
     set_lib_path_length(minst, minst->lib_path.count + minst->lib_path.first_is_current);
 
     /* Now we (re)populate the end of the list. */
-    if (minst->lib_path.env != 0)
+    if (minst->lib_path.env != 0) {
         code = lib_path_add(minst, minst->lib_path.env);
+        if (code < 0) return code;
+
+        code = gs_add_control_path(minst->heap, gs_permit_file_reading, minst->lib_path.env);
+        if (code < 0) return code;
+    }
     /* now put the %rom%lib/ device path before the gs_lib_default_path on the list */
     for (i = 0; i < gx_io_device_table_count; i++) {
         const gx_io_device *iodev = gx_io_device_table[i];

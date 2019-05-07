@@ -319,6 +319,9 @@ void *gp_enumerate_fonts_init(gs_memory_t *mem)
     unix_fontenum_t *state;
     FcPattern *pat;
     FcObjectSet *os;
+    FcStrList *fdirlist = NULL;
+    FcChar8 *dirstr;
+    int code;
 
     state = (unix_fontenum_t *)malloc(sizeof(unix_fontenum_t));
     if (state == NULL)
@@ -336,6 +339,27 @@ void *gp_enumerate_fonts_init(gs_memory_t *mem)
         state = NULL;
         dmlprintf(mem, "destroyed state - fontconfig init failed");
         return NULL;  /* Failed to open fontconfig library */
+    }
+
+    fdirlist = FcConfigGetFontDirs(state->fc);
+    if (fdirlist == NULL) {
+        FcConfigDestroy(state->fc);
+        free(state);
+        return NULL;
+    }
+
+    /* We're going to trust what fontconfig tells us, and add it's known directories
+     * to our permitted read paths
+     */
+    code = 0;
+    while ((dirstr = FcStrListNext(fdirlist)) != NULL && code >= 0) {
+        code = gs_add_control_path(mem, gs_permit_file_reading, (char *)dirstr);
+    }
+    FcStrListDone(fdirlist);
+    if (code < 0) {
+        FcConfigDestroy(state->fc);
+        free(state);
+        return NULL;
     }
 
     /* load the font set that we'll iterate over */

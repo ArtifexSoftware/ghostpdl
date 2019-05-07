@@ -88,7 +88,7 @@ gs_private_st_ptrs1(st_file_enum, struct file_enum_s, "file_enum",
 
 /* Initialize an enumeration.  may NEED WORK ON HANDLING * ? \. */
 file_enum *
-gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
+gp_enumerate_files_init_impl(gs_memory_t * mem, const char *pat, uint patlen)
 {
     file_enum *pfen = gs_alloc_struct(mem, file_enum, &st_file_enum, "gp_enumerate_files");
     int pat_size = 2 * patlen + 1;
@@ -132,10 +132,11 @@ gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
 
 /* Enumerate the next file. */
 uint
-gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
+gp_enumerate_files_next_impl(gs_memory_t * mem, file_enum * pfen, char *ptr, uint maxlen)
 {
     APIRET rc;
     ULONG cFilenames = 1;
+    (void)mem;
 
     if (!isos2) {
         /* CAN'T DO IT SO JUST RETURN THE PATTERN. */
@@ -180,15 +181,16 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
 
 /* Clean up the file enumeration. */
 void
-gp_enumerate_files_close(file_enum * pfen)
+gp_enumerate_files_close_impl(gs_memory_t * mem, file_enum * pfen)
 {
-    gs_memory_t *mem = pfen->memory;
+    gs_memory_t *mem2 = pfen->memory;
+    (void)mem;
 
     if (isos2)
         DosFindClose(pfen->hdir);
-    gs_free_object(mem, pfen->pattern,
+    gs_free_object(mem2, pfen->pattern,
                    "gp_enumerate_files_close(pattern)");
-    gs_free_object(mem, pfen, "gp_enumerate_files_close");
+    gs_free_object(mem2, pfen, "gp_enumerate_files_close");
 }
 
 /* ------ File naming and accessing ------ */
@@ -261,12 +263,12 @@ gp_open_scratch_file_impl(const gs_memory_t *mem,
 
 /* Open a file with the given name, as a stream of uninterpreted bytes. */
 FILE *
-gp_fopen_impl(gs_memory_t *mem, const char *fname, const char *mode)
+gp_fopen_impl(const gs_memory_t *mem, const char *fname, const char *mode)
 {
     return fopen(fname, mode);
 }
 
-int gp_stat(const char *path, struct stat *buf)
+int gp_stat_impl(gs_memory_t *mem, const char *path, struct stat *buf)
 {
     return stat(path, buf);
 }

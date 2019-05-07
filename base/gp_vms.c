@@ -274,7 +274,7 @@ gp_fopen_impl(gs_memory_t *mem, const char *fname, const char *mode)
     return fopen(fname, mode);
 }
 
-int gp_stat(const char *path, struct stat *buf)
+int gp_stat_impl(const gs_memory_t *mem, const char *path, struct stat *buf)
 {
     return stat(path, buf);
 }
@@ -323,7 +323,7 @@ gp_free_enumeration(file_enum * pfen)
 /* Begin an enumeration.  See gp.h for details. */
 
 file_enum *
-gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
+gp_enumerate_files_init_impl(gs_memory_t * mem, const char *pat, uint patlen)
 {
     file_enum *pfen;
     uint i, len;
@@ -398,12 +398,13 @@ gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
 /* returns -1. */
 
 uint
-gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
+gp_enumerate_files_next_impl(gs_memory_t * mem, file_enum * pfen, char *ptr, uint maxlen)
 {
     char *c, filnam[NAM$C_MAXRSS];
     descrip result =
     {NAM$C_MAXRSS, DSC$K_DTYPE_T, DSC$K_CLASS_S, 0};
     uint i, len;
+    (void)mem;
 
     result.dsc$a_pointer = filnam;
 
@@ -432,8 +433,9 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
 /* structure and any subsidiary structures, strings, buffers, etc. */
 
 void
-gp_enumerate_files_close(file_enum * pfen)
+gp_enumerate_files_close_impl(gs_memory_t * mem, file_enum * pfen)
 {
+    (void)mem;
     gp_free_enumeration(pfen);
 }
 

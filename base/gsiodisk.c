@@ -133,7 +133,9 @@ const gx_io_device varname = \
      iodev_no_enumerate_files, /* Only until we have a root location */ \
      diskn_enumerate_next, diskn_enumerate_close, \
      diskn_get_params, diskn_put_params \
-    } \
+    }, \
+    NULL, \
+    NULL \
 }
 
 /*
@@ -353,8 +355,8 @@ done:
 }
 
 static file_enum *
-diskn_enumerate_files(gx_io_device * iodev, const char *pat, uint patlen,
-             gs_memory_t * mem)
+diskn_enumerate_files(gs_memory_t * mem, gx_io_device * iodev, const char *pat,
+                      uint patlen)
 {
     diskn_state * pstate = (diskn_state *)iodev->state;
     
@@ -362,14 +364,16 @@ diskn_enumerate_files(gx_io_device * iodev, const char *pat, uint patlen,
 }
 
 static void
-diskn_enumerate_close(file_enum *pfen)
+diskn_enumerate_close(gs_memory_t * mem, file_enum *pfen)
 {
+    (void)mem;
     map_file_enum_close((void *)pfen);
 }
 
 static uint
-diskn_enumerate_next(file_enum *pfen, char *ptr, uint maxlen)
+diskn_enumerate_next(gs_memory_t * mem, file_enum *pfen, char *ptr, uint maxlen)
 {
+    (void)mem;
     if (map_file_enum_next((void *)pfen, ptr))
         return strlen(ptr);
     /* If we did not find a file then clean up */

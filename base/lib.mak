@@ -315,14 +315,14 @@ $(GLOBJ)gxsync.$(OBJ) : $(GLSRC)gxsync.c $(AK) $(gx_h) $(gserrors_h)\
 ### Miscellaneous
 
 # Support for platform code
-$(GLOBJ)gpmisc.$(OBJ) : $(GLSRC)gpmisc.c $(unistd__h) $(fcntl__h) $(stat__h)\
- $(stdio__h) $(memory__h) $(string__h) $(gp_h) $(gpgetenv_h) $(gpmisc_h)\
- $(LIB_MAK) $(MAKEDIRS)
+$(GLOBJ)gpmisc.$(OBJ) : $(GLSRC)gpmisc.c $(errno__h) $(unistd__h) $(fcntl__h) \
+ $(stat__h) $(stdio__h) $(memory__h) $(string__h) $(gp_h) $(gpgetenv_h) \
+ $(gpmisc_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gpmisc.$(OBJ) $(C_) $(GLSRC)gpmisc.c
 
-$(AUX)gpmisc.$(OBJ) : $(GLSRC)gpmisc.c $(unistd__h) $(fcntl__h) $(stat__h) \
- $(stdio__h) $(memory__h) $(string__h) $(gp_h) $(gpgetenv_h) $(gpmisc_h) \
- $(LIB_MAK) $(MAKEDIRS)
+$(AUX)gpmisc.$(OBJ) : $(GLSRC)gpmisc.c $(errno__h) $(unistd__h) $(fcntl__h) \
+ $(stat__h) $(stdio__h) $(memory__h) $(string__h) $(gp_h) $(gpgetenv_h) \
+ $(gpmisc_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCCAUX) $(AUXO_)gpmisc.$(OBJ) $(C_) $(GLSRC)gpmisc.c
 
 # Command line argument list management
@@ -3770,6 +3770,7 @@ $(GLSRC)gpmisc.h:$(GLSRC)std.h
 $(GLSRC)gpmisc.h:$(GLSRC)stdpre.h
 $(GLSRC)gpmisc.h:$(GLGEN)arch.h
 $(GLSRC)gpmisc.h:$(GLSRC)gssprintf.h
+$(GLSRC)gp.h:$(GLSRC)stat_.h
 $(GLSRC)gp.h:$(GLSRC)srdline.h
 $(GLSRC)gp.h:$(GLSRC)scommon.h
 $(GLSRC)gp.h:$(GLSRC)gsstype.h
