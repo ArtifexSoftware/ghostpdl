@@ -926,6 +926,8 @@ validate(const gs_memory_t *mem,
                     goto found; /* Bingo! */
                 /* PATH=abcd pattern=abc */
                 break; /* No match */
+            } else if (*a != *b) {
+                break;
             }
             a++, b++;
         }
