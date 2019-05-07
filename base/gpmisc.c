@@ -944,6 +944,7 @@ gp_validate_path(const gs_memory_t *mem,
     char *buffer;
     size_t len;
     uint rlen;
+    int code = 0;
 
     if (mem->gs_lib_ctx->core->path_control_active == 0)
         return 0;
@@ -961,20 +962,26 @@ gp_validate_path(const gs_memory_t *mem,
     switch (mode[0])
     {
     case 'r': /* Read */
-        return validate(mem, buffer, gs_permit_file_reading);
+        code = validate(mem, buffer, gs_permit_file_reading);
+        break;
     case 'w': /* Write */
-        return validate(mem, buffer, gs_permit_file_writing);
+        code = validate(mem, buffer, gs_permit_file_writing);
+        break;
     case 'a': /* Append needs reading and writing */
-        return (validate(mem, buffer, gs_permit_file_reading) |
+        code = (validate(mem, buffer, gs_permit_file_reading) |
                 validate(mem, buffer, gs_permit_file_writing));
         break;
     case 'c': /* "Control" */
-        return validate(mem, buffer, gs_permit_file_control);
+        code =  validate(mem, buffer, gs_permit_file_control);
+        break;
     case 't': /* "Rename to" */
-        return (validate(mem, buffer, gs_permit_file_writing) |
+        code = (validate(mem, buffer, gs_permit_file_writing) |
                 validate(mem, buffer, gs_permit_file_control));
+        break;
     default:
         errprintf(mem, "gp_validate_path: Unknown mode='%s'\n", mode);
+        code = gs_note_error(gs_error_invalidfileaccess);
     }
-    return gs_error_invalidfileaccess;
+    gs_free_object(mem->non_gc_memory, buffer, "gp_validate_path");
+    return code;
 }
