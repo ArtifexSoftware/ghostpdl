@@ -805,7 +805,7 @@ static int
 gx_serialize_DeviceN(const gs_color_space * pcs, stream * s)
 {
     const gs_device_n_params * p = &pcs->params.device_n;
-    uint n;
+    uint n, m;
     int code = gx_serialize_cspace_type(pcs, s);
 
     if (code < 0)
@@ -813,9 +813,11 @@ gx_serialize_DeviceN(const gs_color_space * pcs, stream * s)
     code = sputs(s, (const byte *)&p->num_components, sizeof(p->num_components), &n);
     if (code < 0)
         return code;
-    code = sputs(s, (const byte *)&p->names[0], sizeof(p->names[0]) * p->num_components, &n);
-    if (code < 0)
-        return code;
+    for (n=0;n < p->num_components;n++) {
+        code = sputs(s, (const byte *)p->names[n], strlen(p->names[n]) + 1, &m);
+        if (code < 0)
+            return code;
+    }
     code = cs_serialize(pcs->base_space, s);
     if (code < 0)
         return code;

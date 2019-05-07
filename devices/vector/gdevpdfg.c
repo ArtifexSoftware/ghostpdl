@@ -1278,21 +1278,14 @@ int convert_separation_alternate(gx_device_pdf * pdev, const gs_gstate * pgs, co
 
     if (code >= 0) {
         csi = gs_color_space_get_index(pcs);
-        if (csi == gs_color_space_index_Indexed)
-            code = pcs->base_space->params.separation.get_colorname_string(
-                          pdev->memory,
-                          pcs->base_space->params.separation.sep_name, &name_string,
-                          &name_string_length);
-        else
-            code = pcs->params.separation.get_colorname_string(
-                          pdev->memory,
-                          pcs->params.separation.sep_name, &name_string,
-                          &name_string_length);
-        if (code < 0) {
-            COS_FREE(pca, "pdf_color_space");
-            return code;
+        if (csi == gs_color_space_index_Indexed) {
+            name_string = (byte *)pcs->base_space->params.separation.sep_name;
+            name_string_length = strlen(pcs->base_space->params.separation.sep_name);
         }
-
+        else {
+            name_string = (byte *)pcs->params.separation.sep_name;
+            name_string_length = strlen(pcs->params.separation.sep_name);
+        }
         code = pdf_string_to_cos_name(pdev, name_string,
                               name_string_length, &v);
         if (code < 0) {

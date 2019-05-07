@@ -1530,7 +1530,6 @@ gsicc_support_named_color(const gs_color_space *pcs, const gs_gstate *pgs)
     int k, code, i, num_comp, num_spots=0, num_process=0, num_other=0;
     gs_color_space_index type = gs_color_space_get_index(pcs);
     char **names = NULL;
-    gs_separation_name name = 0; /* quite compiler warning*/
     byte *pname;
     uint name_size;
     bool is_supported;
@@ -1553,7 +1552,7 @@ gsicc_support_named_color(const gs_color_space *pcs, const gs_gstate *pgs)
         names = pcs->params.device_n.names;
         num_comp = pcs->params.device_n.num_components;
     } else if (type == gs_color_space_index_Separation) {
-        name = pcs->params.separation.sep_name;
+        pname = (byte *)pcs->params.separation.sep_name;
         num_comp = 1;
     } else
         return false;
@@ -1564,8 +1563,9 @@ gsicc_support_named_color(const gs_color_space *pcs, const gs_gstate *pgs)
             pname = (byte *)names[i];
             name_size = strlen(names[i]);
         }
-        else
-            pcs->params.separation.get_colorname_string(pgs->memory, name, &pname, &name_size);
+        else {
+            name_size = strlen(pcs->params.separation.sep_name);
+        }
 
         /* Classify */
         if (strncmp((char *)pname, "None", name_size) == 0 ||

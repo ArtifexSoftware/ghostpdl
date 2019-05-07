@@ -1203,18 +1203,12 @@ pdf_color_space_named(gx_device_pdf *pdev, const gs_gstate * pgs,
         if (pfn == 0)
             return_error(gs_error_rangecheck);
         {
-            byte *name_string;
-            uint name_string_length;
-            if ((code = pcs->params.separation.get_colorname_string(
-                                  pdev->memory,
-                                  pcs->params.separation.sep_name, &name_string,
-                                  &name_string_length)) < 0 ||
-                (code = pdf_string_to_cos_name(pdev, name_string,
-                                      name_string_length, &v)) < 0 ||
+            if ((code = pdf_string_to_cos_name(pdev, (const byte *)pcs->params.separation.sep_name,
+                                      strlen(pcs->params.separation.sep_name), &v)) < 0 ||
                 (code = pdf_separation_color_space(pdev, pgs, pca, "/Separation", &v,
                                             pcs->base_space,
                                             pfn, &pdf_color_space_names, NULL)) < 0)
-                return code;
+            return code;
         }
         break;
 

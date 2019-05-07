@@ -128,9 +128,8 @@ update_Separation_spot_equivalent_cmyk_colors(gx_device * pdev,
             unsigned int cs_sep_name_size;
             unsigned char * pcs_sep_name;
 
-            pcs->params.separation.get_colorname_string
-                (pdev->memory, pcs->params.separation.sep_name, &pcs_sep_name,
-                 &cs_sep_name_size);
+            pcs_sep_name = (unsigned char *)pcs->params.separation.sep_name;
+            cs_sep_name_size = strlen(pcs->params.separation.sep_name);
             if (compare_color_names(dev_sep_name->data, dev_sep_name->size,
                             pcs_sep_name, cs_sep_name_size)) {
                 gs_color_space temp_cs = *pcs;

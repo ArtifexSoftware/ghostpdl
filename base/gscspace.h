@@ -224,12 +224,12 @@ typedef enum { SEP_NONE, SEP_ALL, SEP_OTHER } separation_type;
 typedef enum { SEP_ENUM, SEP_MIX, SEP_PURE_RGB, SEP_PURE_CMYK } separation_colors;
 
 typedef struct gs_separation_params_s {
-    gs_separation_name sep_name;
+    gs_memory_t *mem;
+    char *sep_name;
     gs_device_n_map *map;
     separation_type sep_type;
     bool use_alt_cspace;
     bool named_color_supported;
-    gs_callback_func_get_colorname_string *get_colorname_string;
     separation_colors color_type;
 } gs_separation_params;
 

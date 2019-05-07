@@ -598,7 +598,6 @@ gx_device_color * pdc, const gs_gstate * pgs, gx_device * dev,
 gs_color_select_t select)
 {
     gx_color_value device_values[GX_DEVICE_COLOR_MAX_COMPONENTS];
-    const gs_separation_name name = pcs->params.separation.sep_name;
     byte *pname;
     uint name_size;
     gsicc_rendering_param_t rendering_params;
@@ -623,10 +622,8 @@ gs_color_select_t select)
     rendering_params.cmm = gsCMM_DEFAULT;
 
     if (type == gs_color_space_index_Separation) {
-        pcs->params.separation.get_colorname_string(pgs->memory, name,
-            &pname, &name_size);
-        named_color_sep.colorant_name = (char*)pname;
-        named_color_sep.name_size = name_size;
+        named_color_sep.colorant_name = pcs->params.separation.sep_name;
+        named_color_sep.name_size = strlen(pcs->params.separation.sep_name);
         named_color_ptr = &named_color_sep;
     } else if (type == gs_color_space_index_DeviceN) {
         char **names = pcs->params.device_n.names;

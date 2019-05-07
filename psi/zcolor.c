@@ -3420,8 +3420,11 @@ static int setseparationspace(i_ctx_t * i_ctx_p, ref *sepspace, int *stage, int 
     if (code < 0)
         return code;
     pcs->params.separation.sep_type = sep_type;
-    pcs->params.separation.sep_name = name_index(imemory, &sname);
-    pcs->params.separation.get_colorname_string = gs_get_colorname_string;
+    pcs->params.separation.mem = imemory->non_gc_memory;
+    name_string_ref(imemory, &sname, &sname);
+    pcs->params.separation.sep_name = (char *)gs_alloc_bytes(pcs->params.separation.mem, r_size(&sname) + 1, "Separation name");
+    memcpy(pcs->params.separation.sep_name, sname.value.bytes, r_size(&sname));
+    pcs->params.separation.sep_name[r_size(&sname)] = 0x00;
     code = array_get(imemory, sepspace, 1, &proc);
     if (code < 0)
         return code;
@@ -4120,8 +4123,11 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
             if (code < 0)
                 return code;
             pcs->params.separation.sep_type = sep_type;
-            pcs->params.separation.sep_name = name_index(imemory, &sname);
-            pcs->params.separation.get_colorname_string = gs_get_colorname_string;
+            pcs->params.separation.mem = imemory->non_gc_memory;
+            name_string_ref(imemory, &sname, &sname);
+            pcs->params.separation.sep_name = (char *)gs_alloc_bytes(pcs->params.separation.mem, r_size(&sname) + 1, "Separation name");
+            memcpy(pcs->params.separation.sep_name, sname.value.bytes, r_size(&sname));
+            pcs->params.separation.sep_name[r_size(&sname)] = 0x00;
             code = array_get(imemory, &namesarray, (long)0, &sname);
             if (code < 0)
                 return code;
