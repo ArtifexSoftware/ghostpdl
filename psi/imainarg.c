@@ -352,6 +352,22 @@ gs_main_add_outputfile_control_path(gs_memory_t *mem, const char *fname)
     return gs_add_control_path(mem, gs_permit_file_writing, fp);
 }
 
+static int
+gs_main_add_explicit_control_path(gs_memory_t *mem, const char *arg, gs_path_control_t control)
+{
+    char *p2, *p1 = (char *)arg + 17;
+    const char *lim = arg + strlen(arg);
+    int code = 0;
+
+    while (code >= 0 && p1 < lim && (p2 = strchr(p1, (int)gp_file_name_list_separator)) != NULL) {
+        code = gs_add_control_path_len(mem, gs_permit_file_reading, p1, (int)(p2 - p1));
+        p1 = p2 + 1;
+    }
+    if (p1 < lim)
+        code = gs_add_control_path_len(mem, control, p1, (int)(lim - p1));
+    return code;
+}
+
 /* Process switches.  Return 0 if processed, 1 for unknown switch, */
 /* <0 if error. */
 static int
@@ -470,6 +486,27 @@ run_stdin:
             /* The following code is only to allow regression testing of saved-pages */
             } else if (strncmp(arg, "saved-pages-test", 16) == 0) {
                 minst->saved_pages_test_mode = true;
+                break;
+            /* Now handle the explicitly added paths to the file control lists */
+            } else if (strncmp(arg, "permit-file-read", 16) == 0) {
+                code = gs_main_add_explicit_control_path(minst->heap, arg, gs_permit_file_reading);
+                if (code < 0) return code;
+                break;
+            } else if (strncmp(arg, "permit-file-write", 17) == 0) {
+                code = gs_main_add_explicit_control_path(minst->heap, arg, gs_permit_file_writing);
+                if (code < 0) return code;
+                break;
+            } else if (strncmp(arg, "permit-file-control", 19) == 0) {
+                code = gs_main_add_explicit_control_path(minst->heap, arg, gs_permit_file_control);
+                if (code < 0) return code;
+                break;
+            } else if (strncmp(arg, "permit-file-all", 15) == 0) {
+                code = gs_main_add_explicit_control_path(minst->heap, arg, gs_permit_file_reading);
+                if (code < 0) return code;
+                code = gs_main_add_explicit_control_path(minst->heap, arg, gs_permit_file_writing);
+                if (code < 0) return code;
+                code = gs_main_add_explicit_control_path(minst->heap, arg, gs_permit_file_control);
+                if (code < 0) return code;
                 break;
             }
             /* FALLTHROUGH */
