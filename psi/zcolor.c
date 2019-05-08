@@ -530,6 +530,56 @@ zsetcolorspace(i_ctx_t * i_ctx_p)
 }
 
 /*
+ * This is a copy of the zsetcolorspace code above, but it is for *internal* use by
+ * the PostScript interpreter colour space handlign code only. It replicates the
+ * behaviour of zsetcolorspace but does not check to see if the current 'interpreter'
+ * colour space is the same as the one we are setting. That is because this code is
+ * used when setting alternate or subsidiary colour spaces, and we absolutely do
+ * not want to break out of processing the space in this case.
+ */
+static int
+absolute_setcolorspace(i_ctx_t * i_ctx_p)
+{
+    os_ptr  op = osp;
+    es_ptr ep;
+    int code, depth;
+    bool is_CIE;
+
+    /* Make sure we have an operand... */
+    check_op(1);
+    /* Check its either a name (base space) or an array */
+    if (!r_has_type(op, t_name))
+        if (!r_is_array(op))
+            return_error(gs_error_typecheck);
+
+    code = validate_spaces(i_ctx_p, op, &depth);
+    if (code < 0)
+        return code;
+
+    /* Set up for the continuation procedure which will do the work */
+    /* Make sure the exec stack has enough space */
+    check_estack(5);
+    /* Store the initial value of CIE substitution (not substituting) */
+    ep = esp += 1;
+    make_int(ep, 0);
+    /* Store the 'depth' of the space returned during checking above */
+    ep = esp += 1;
+    make_int(ep, depth);
+    /* Store the 'stage' of processing (initially 0) */
+    ep = esp += 1;
+    make_int(ep, 0);
+    /* Store a pointer to the color space stored on the operand stack
+     * as the stack may grow unpredictably making further access
+     * to the space difficult
+     */
+    ep = esp += 1;
+    *ep = *op;
+    /* Finally, the actual continuation routine */
+    push_op_estack(setcolorspace_cont);
+    return o_push_estack;
+}
+
+/*
  * A special version of the setcolorspace operation above. This sets the
  * CIE substitution flag to true before starting, which prevents any further
  * CIE substitution taking place.
@@ -3758,7 +3808,7 @@ static int devicencolorants_cont(i_ctx_t *i_ctx_p)
 
             make_int(pstage, 1);
             *op = space[1];
-            code = zsetcolorspace(i_ctx_p);
+            code = absolute_setcolorspace(i_ctx_p);
             if (code == 0)
                 return o_push_estack;
 
@@ -3852,7 +3902,7 @@ static int devicenprocess_cont(i_ctx_t *i_ctx_p)
 
         make_int(pstage, 1);
         ref_assign(op, &dict);
-        code = zsetcolorspace(i_ctx_p);
+        code = absolute_setcolorspace(i_ctx_p);
         if (code == 0)
             return o_push_estack;
 
@@ -3967,16 +4017,19 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
 
             devn_cs->params.device_n.subtype = gs_devicen_DeviceN;
             code  = dict_find_string(&sref, "Subtype", &subtype);
-            if (code <= 0 && code != gs_error_undefined) {
+            if (code < 0 && code != gs_error_undefined) {
                 *stage = 0;
                 return code;
             }
             if (code > 0) {
-                if (!r_has_type(subtype, t_name)) {
-                    *stage = 0;
-                    return gs_note_error(gs_error_typecheck);
+                if (r_has_type(subtype, t_name)) {
+                    name_string_ref(imemory, subtype, subtype);
+                } else {
+                    if (!r_has_type(subtype, t_string)) {
+                        *stage = 0;
+                        return gs_note_error(gs_error_typecheck);
+                    }
                 }
-                name_string_ref(imemory, subtype, subtype);
                 if (memcmp(subtype->value.bytes, "NChannel", 8) == 0)
                     devn_cs->params.device_n.subtype = gs_devicen_NChannel;
             }
@@ -5745,7 +5798,7 @@ static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
                             if (CIESubst)
                                 return setcolorspace_nosubst(i_ctx_p);
                             else
-                                return zsetcolorspace(i_ctx_p);
+                                return absolute_setcolorspace(i_ctx_p);
                         } else {
                             /* We have no /Alternate in the ICC space, use hte /N key to
                              * determine an 'appropriate' default space.
@@ -6442,7 +6495,7 @@ setdevicecolor_cont(i_ctx_t *i_ctx_p)
                     esp -= 3;
                     return code;
                 }
-                code = zsetcolorspace(i_ctx_p);
+                code = absolute_setcolorspace(i_ctx_p);
                 if (code < 0) {
                     esp -= 3;
                     return code;
