@@ -506,6 +506,9 @@ static int pdfi_check_Pattern_dict(pdf_context *ctx, pdf_dict *pattern_dict, pdf
         if (code < 0)
             goto error1;
 
+        if (Value->type != PDF_DICT)
+            goto transparency_exit;
+
         i = 1;
         do {
             code = pdfi_dict_knownget_type(ctx, (pdf_dict *)Value, "Resources", PDF_DICT, &o);
