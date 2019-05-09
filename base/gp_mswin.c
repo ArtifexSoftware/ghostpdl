@@ -692,7 +692,7 @@ gp_open_scratch_file_impl(const gs_memory_t *mem,
     return f;
 }
 
-int gp_stat(const char *path, struct _stat64 *buf)
+int gp_stat_impl(const gs_memory_t *mem, const char *path, struct _stat64 *buf)
 {
     int len = utf8_to_wchar(NULL, path);
     wchar_t *uni;

@@ -152,7 +152,7 @@ gp_fopen_impl(gs_memory_t *mem, const char *fname, const char *mode)
 #endif
 }
 
-int gp_stat(const char *path, struct stat *buf)
+int gp_stat_impl(const gs_memory_t *mem, const char *path, struct stat *buf)
 {
     return stat(path, buf);
 }

@@ -66,7 +66,9 @@ const gx_io_device gs_iodev_ram = {
         ram_delete, ram_rename, ram_status,
         ram_enumerate_init, ram_enumerate_next, ram_enumerate_close,
         ram_get_params, iodev_no_put_params
-    }
+    },
+    NULL,
+    NULL
 };
 
 typedef struct ramfs_state_s {

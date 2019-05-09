@@ -145,6 +145,20 @@ static inline int isbigendian(void)
     return u.c[0] != 1;
 }
 
+/* mkromfs doesn't use gp_stat, but it does link gp_misc.c which includes
+   call to gp_stat_impl(). Rather than major build upheaval for something not
+   used, just define a dummy here for Windows.
+ */
+#ifdef _WIN32
+int gp_stat_impl(const gs_memory_t *mem, const char *path, struct _stat64 *buf)
+{
+    (void)mem;
+    (void)path;
+    (void)buf;
+    return 0;
+}
+#endif
+
 /*******************************************************************************
  * The following are non-redirected printing functions to avoid the need for
  * these included from gsmisc.c (unix gp_ functions, among others, use if_debug).

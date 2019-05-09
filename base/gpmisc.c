@@ -823,6 +823,16 @@ gp_open_scratch_file_rm(const gs_memory_t *mem,
     return file;
 }
 
+int
+gp_stat(const gs_memory_t *mem, const char *path, struct stat *buf)
+{
+    if (gp_validate_path(mem, path, "r") != 0) {
+        return -1;
+    }
+
+    return gp_stat_impl(mem, path, buf);
+}
+
 static int
 ends_in(const char *first, const char *last, const char *ds, size_t len)
 {

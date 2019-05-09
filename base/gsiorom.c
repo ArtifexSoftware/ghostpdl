@@ -60,7 +60,9 @@ const gx_io_device gs_iodev_rom =
      romfs_file_status,
      romfs_enumerate_files_init, romfs_enumerate_next, romfs_enumerate_close,
      iodev_no_get_params, iodev_no_put_params
-    }
+    },
+    NULL,
+    NULL
 };
 
 /* internal state for our device */

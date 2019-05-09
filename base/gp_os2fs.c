@@ -261,12 +261,12 @@ gp_open_scratch_file_impl(const gs_memory_t *mem,
 
 /* Open a file with the given name, as a stream of uninterpreted bytes. */
 FILE *
-gp_fopen_impl(gs_memory_t *mem, const char *fname, const char *mode)
+gp_fopen_impl(const gs_memory_t *mem, const char *fname, const char *mode)
 {
     return fopen(fname, mode);
 }
 
-int gp_stat(const char *path, struct stat *buf)
+int gp_stat_impl(gs_memory_t *mem, const char *path, struct stat *buf)
 {
     return stat(path, buf);
 }

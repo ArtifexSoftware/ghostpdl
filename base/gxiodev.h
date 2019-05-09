@@ -188,6 +188,7 @@ struct gx_io_device_s {
     const char *dname;		/* the IODevice name */
     const char *dtype;		/* the type returned by currentdevparams */
     gx_io_device_procs procs;
+    gs_memory_t *memory;
     void *state;		/* (if the IODevice has state) */
 };
 

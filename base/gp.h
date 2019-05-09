@@ -20,6 +20,7 @@
 #ifndef gp_INCLUDED
 #  define gp_INCLUDED
 
+#include "stat_.h"
 #include "gstypes.h"
 #include "gscdefs.h"		/* for gs_serialnumber */
 /*
@@ -431,6 +432,8 @@ gp_file *gp_open_scratch_file_rm(const gs_memory_t *mem,
                                        char         fname[gp_file_name_sizeof],
                                  const char        *mode);
 
+/* gp_stat is defined in stat_.h rather than here due to macro problems */
+
 typedef enum {
     gp_combine_small_buffer = -1,
     gp_combine_cant_handle = 0,
@@ -645,8 +648,6 @@ gp_open_printer_impl(gs_memory_t *mem,
                      int         *binary_mode,
                      int          (**close)(FILE *));
 
-/* gp_stat is defined in stat_.h rather than here due to macro problems */
-
 /* Create a scratch file (utf8) (self-deleting if remove) */
 FILE *gp_open_scratch_file_impl(const gs_memory_t *mem,
                                 const char        *prefix,
@@ -656,6 +657,8 @@ FILE *gp_open_scratch_file_impl(const gs_memory_t *mem,
 
 /* Test whether this platform supports the sharing of file descriptors */
 int gp_can_share_fdesc(void);
+
+int gp_stat_impl(const gs_memory_t *mem, const char *path, struct stat *buf);
 
 /* We don't define gp_fread_64, gp_fwrite_64,
    because (1) known platforms allow regular fread, fwrite

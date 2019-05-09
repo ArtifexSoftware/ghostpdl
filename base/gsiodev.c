@@ -53,7 +53,9 @@ const gx_io_device gs_iodev_os =
      os_delete, os_rename, os_status,
      os_enumerate, gp_enumerate_files_next, gp_enumerate_files_close,
      os_get_params, iodev_no_put_params
-    }
+    },
+    NULL,
+    NULL
 };
 
 /* ------ Initialization ------ */
@@ -85,6 +87,7 @@ gs_iodev_init(gs_memory_t * mem)
             goto fail;
         table[i] = iodev;
         memcpy(table[i], gx_io_device_table[i], sizeof(gx_io_device));
+        iodev->memory = mem;
         libctx->io_device_table_count++;
     }
     for (;i < gx_io_device_table_count + NUM_RUNTIME_IODEVS; i++) {
@@ -315,7 +318,7 @@ static int
 os_status(gx_io_device * iodev, const char *fname, struct stat *pstat)
 {				/* The RS/6000 prototype for stat doesn't include const, */
     /* so we have to explicitly remove the const modifier. */
-    return (gp_stat((char *)fname, pstat) < 0 ? gs_error_undefinedfilename : 0);
+    return (gp_stat(iodev->memory, (char *)fname, pstat) < 0 ? gs_error_undefinedfilename : 0);
 }
 
 static file_enum *

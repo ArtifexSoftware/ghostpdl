@@ -3770,6 +3770,7 @@ $(GLSRC)gpmisc.h:$(GLSRC)std.h
 $(GLSRC)gpmisc.h:$(GLSRC)stdpre.h
 $(GLSRC)gpmisc.h:$(GLGEN)arch.h
 $(GLSRC)gpmisc.h:$(GLSRC)gssprintf.h
+$(GLSRC)gp.h:$(GLSRC)stat_.h
 $(GLSRC)gp.h:$(GLSRC)srdline.h
 $(GLSRC)gp.h:$(GLSRC)scommon.h
 $(GLSRC)gp.h:$(GLSRC)gsstype.h

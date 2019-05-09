@@ -133,7 +133,9 @@ const gx_io_device varname = \
      iodev_no_enumerate_files, /* Only until we have a root location */ \
      diskn_enumerate_next, diskn_enumerate_close, \
      diskn_get_params, diskn_put_params \
-    } \
+    }, \
+    NULL, \
+    NULL \
 }
 
 /*
