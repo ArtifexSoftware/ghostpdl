@@ -1295,17 +1295,6 @@ exit:
     return code;
 }
 
-static int
-pdfi_get_colorname_string(const gs_memory_t *mem, gs_separation_name colorname_index,
-                        unsigned char **ppstr, unsigned int *pname_size)
-{
-    pdf_name *name = (pdf_name *)colorname_index;
-
-    *ppstr = name->data;
-    *pname_size = name->length;
-    return 0;
-}
-
 static int pdfi_create_Separation(pdf_context *ctx, pdf_array *color_array, int index, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs)
 {
     pdf_obj *o = NULL;
@@ -1362,9 +1351,11 @@ static int pdfi_create_Separation(pdf_context *ctx, pdf_array *color_array, int 
     if (code < 0)
         goto pdfi_separation_error;
 
+    pcs->params.separation.mem = ctx->memory;
     pcs->params.separation.sep_type = sep_type;
-    pcs->params.separation.sep_name = (gs_separation_name)name;
-    pcs->params.separation.get_colorname_string = pdfi_get_colorname_string;
+    pcs->params.separation.sep_name = (char *)gs_alloc_bytes(ctx->memory->non_gc_memory, name->length + 1, "pdfi_setseparationspace(ink)");
+    memcpy(pcs->params.separation.sep_name, name->data, name->length);
+    pcs->params.separation.sep_name[name->length] = 0x00;
 
     code = gs_cspace_set_sepr_function(pcs, pfn);
     if (code < 0)
@@ -1381,7 +1372,7 @@ static int pdfi_create_Separation(pdf_context *ctx, pdf_array *color_array, int 
     } else {
         code = gs_setcolorspace(ctx->pgs, pcs);
         /* release reference from construction */
-        rc_decrement_only_cs(pcs, "setdevicenspace");
+        rc_decrement_only_cs(pcs, "setseparationspace");
     }
 
     pdfi_countdown(name);
@@ -1473,7 +1464,7 @@ static int pdfi_create_DeviceN(pdf_context *ctx, pdf_array *color_array, int ind
     if (code < 0)
         return code;
 
-    pcs->params.device_n.get_colorname_string = pdfi_get_colorname_string;
+    pcs->params.device_n.mem = ctx->memory;
 
     for (ix = 0;ix < pdfi_array_size(inks);ix++) {
         pdf_name *ink_name;
@@ -1481,7 +1472,9 @@ static int pdfi_create_DeviceN(pdf_context *ctx, pdf_array *color_array, int ind
         if (code < 0)
             goto pdfi_devicen_error;
 
-        pcs->params.device_n.names[ix] = (gs_separation_name)ink_name;
+        pcs->params.device_n.names[ix] = (char *)gs_alloc_bytes(ctx->memory->non_gc_memory, ink_name->length + 1, "pdfi_setdevicenspace(ink)");
+        memcpy(pcs->params.device_n.names[ix], ink_name->data, ink_name->length);
+        pcs->params.device_n.names[ix][ink_name->length] = 0x00;
     }
 
     code = gs_cspace_set_devn_function(pcs, pfn);
