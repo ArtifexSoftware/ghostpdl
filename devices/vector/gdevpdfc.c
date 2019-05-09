@@ -1176,8 +1176,9 @@ pdf_color_space_named(gx_device_pdf *pdev, const gs_gstate * pgs,
                         return gs_note_error(gs_error_typecheck);
                 }
                 code = cos_dict_put((cos_dict_t *)pres_attributes->object, (const byte *)"/Subtype", 8, &v_Subtype_name);
+                if (code < 0)
+                    return code;
             }
-#if 1
             if (pcs->params.device_n.devn_process_space != NULL) {
                 cos_dict_t *process;
                 cos_array_t *components;
@@ -1224,7 +1225,6 @@ pdf_color_space_named(gx_device_pdf *pdev, const gs_gstate * pgs,
                 }
 
             }
-#endif
             if (pcs->params.device_n.colorants != NULL) {
                 cos_dict_t *colorants  = cos_dict_alloc(pdev, "pdf_color_space(DeviceN)");
                 cos_value_t v_colorants, v_separation, v_colorant_name;
@@ -1232,12 +1232,6 @@ pdf_color_space_named(gx_device_pdf *pdev, const gs_gstate * pgs,
 
                 if (colorants == NULL)
                     return_error(gs_error_VMerror);
-#if 0
-                code = pdf_alloc_resource(pdev, resourceOther, 0, &pres_attributes, -1);
-                if (code < 0)
-                    return code;
-                cos_become(pres_attributes->object, cos_type_dict);
-#endif
 
                 COS_OBJECT_VALUE(&v_colorants, colorants);
                 code = cos_dict_put((cos_dict_t *)pres_attributes->object,

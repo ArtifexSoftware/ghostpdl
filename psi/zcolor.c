@@ -543,7 +543,6 @@ absolute_setcolorspace(i_ctx_t * i_ctx_p)
     os_ptr  op = osp;
     es_ptr ep;
     int code, depth;
-    bool is_CIE;
 
     /* Make sure we have an operand... */
     check_op(1);

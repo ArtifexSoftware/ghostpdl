@@ -771,11 +771,9 @@ gx_final_DeviceN(const gs_color_space * pcs)
 
     if (num_proc_names > 0 && proc_names != NULL) {
         for (k = 0; k < num_proc_names; k++) {
-            gs_free(mem, proc_names[k], strlen(proc_names[k]) + 1, 1,
-                "gx_final_DeviceN");
+            gs_free_object(mem, proc_names[k], "gx_final_DeviceN");
         }
-        gs_free(mem, proc_names, num_proc_names, sizeof(char*),
-            "gx_final_DeviceN");
+        gs_free_object(mem, proc_names, "gx_final_DeviceN");
     }
 
     rc_decrement_only(pcs->params.device_n.map, "gx_adjust_DeviceN");
