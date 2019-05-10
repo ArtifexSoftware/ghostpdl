@@ -78,4 +78,14 @@ int gx_serialize_device_n_map(const gs_color_space * pcs, gs_device_n_map * m, s
  */
 int gs_attachcolorant(char *sep_name, gs_gstate * pgs);
 
+/*
+ * This is the same routine as above, but more general. Instead of assuming that
+ * the current coloru space is hte colorant space, and the saved graphics state
+ * contains the DeviceN space, we pass both those in, along with the memory
+ * allocater we want the routine to use.
+ * This is for the pdfi PDF interpreter (and potentially any other non-PostScript
+ * interpreter)
+ */
+int gs_attachcolorant_to_space(char *sep_name, gs_color_space *pcs, gs_color_space *colorant_space, gs_memory_t *mem);
+
 #endif /* gscdevn_INCLUDED */

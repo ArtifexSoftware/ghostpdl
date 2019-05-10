@@ -204,6 +204,31 @@ gs_attachcolorant(char *sep_name, gs_gstate * pgs)
     return 0;
 }
 
+int
+gs_attach_colorant_to_space(char *sep_name, gs_color_space *pcs, gs_color_space *colorant_space, gs_memory_t *mem)
+{
+    gs_device_n_colorant * patt;
+
+    if (pcs->type != &gs_color_space_type_DeviceN)
+        return_error(gs_error_rangecheck);
+
+    /* Allocate an attribute list element for our linked list of colorants */
+    rc_alloc_struct_1(patt, gs_device_n_colorant, &st_device_n_colorant,
+                        mem, return_error(gs_error_VMerror),
+                        "gs_attachattributrescolorspace");
+
+    /* Point our attribute list entry to the attribute color space */
+    patt->colorant_name = sep_name;
+    patt->cspace = colorant_space;
+    rc_increment_cs(patt->cspace);
+
+    /* Link our new attribute color space to the DeviceN color space */
+    patt->next = pcs->params.device_n.colorants;
+    pcs->params.device_n.colorants = patt;
+
+    return 0;
+}
+
 #if 0 /* Unused; Unsupported by gx_serialize_device_n_map. */
 /*
  * Set the DeviceN tint transformation procedure.
