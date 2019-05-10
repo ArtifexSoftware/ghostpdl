@@ -396,8 +396,8 @@ zfilenameforall(i_ctx_t *i_ctx_p)
         pop(3);
         return 0;       /* no pattern, or device not found -- just return */
     }
-    pfen = iodev->procs.enumerate_files(iodev, (const char *)pname.fname,
-                pname.len, imemory);
+    pfen = iodev->procs.enumerate_files(imemory, iodev, (const char *)pname.fname,
+                pname.len);
     if (pfen == 0)
         return_error(gs_error_VMerror);
     push_mark_estack(es_for, file_cleanup);
@@ -432,7 +432,7 @@ file_continue(i_ctx_t *i_ctx_p)
 
     do {
         memcpy((char *)pscratch->value.bytes, iodev->dname, devlen);
-        code = iodev->procs.enumerate_next(pfen, (char *)pscratch->value.bytes + devlen,
+        code = iodev->procs.enumerate_next(imemory, pfen, (char *)pscratch->value.bytes + devlen,
                     len - devlen);
         if (code == ~(uint) 0) {    /* all done */
             esp -= 5;               /* pop proc, pfen, devlen, iodev , mark */
@@ -457,7 +457,7 @@ file_cleanup(i_ctx_t *i_ctx_p)
 {
     gx_io_device *iodev = r_ptr(esp + 2, gx_io_device);
 
-    iodev->procs.enumerate_close(r_ptr(esp + 5, file_enum));
+    iodev->procs.enumerate_close(imemory, r_ptr(esp + 5, file_enum));
     return 0;
 }
 

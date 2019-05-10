@@ -466,11 +466,11 @@ pjl_check_font_path(char *path_list, gs_memory_t * mem)
         if (gs_strlcat(path_and_pattern, pattern, sizeof(path_and_pattern)) >= sizeof(path_and_pattern))
             continue;
 
-        fe = gs_enumerate_files_init(path_and_pattern,
-                                     strlen(path_and_pattern), mem);
+        fe = gs_enumerate_files_init(mem, path_and_pattern,
+                                     strlen(path_and_pattern));
         if (fe == NULL
             ||
-            (gs_enumerate_files_next(fe, fontfilename, PJL_PATH_NAME_LENGTH))
+            (gs_enumerate_files_next(mem, fe, fontfilename, PJL_PATH_NAME_LENGTH))
             == -1) {
             pathp = NULL;
         } else {
@@ -480,7 +480,7 @@ pjl_check_font_path(char *path_list, gs_memory_t * mem)
                directory */
             while (1) {
                 int fstatus =
-                    (int)gs_enumerate_files_next(fe, fontfilename,
+                    (int)gs_enumerate_files_next(mem, fe, fontfilename,
                                                  PJL_PATH_NAME_LENGTH);
                 /* we don't care if the file does not fit (return +1) */
                 if (fstatus == -1)
@@ -732,12 +732,11 @@ pjl_search_for_file(pjl_parser_state_t * pst, char *pathname, char *filename,
     /* should check length */
     strcpy(fontfilename, pathname);
     strcat(fontfilename, "/*");
-    fe = gs_enumerate_files_init(fontfilename, strlen(fontfilename),
-                                 pst->mem);
+    fe = gs_enumerate_files_init(pst->mem, fontfilename, strlen(fontfilename));
     if (fe) {
         do {
             uint fstatus =
-                gs_enumerate_files_next(fe, fontfilename,
+                gs_enumerate_files_next(pst->mem, fe, fontfilename,
                                         PJL_PATH_NAME_LENGTH);
             /* done */
             if (fstatus == ~(uint) 0)
@@ -767,12 +766,11 @@ pjl_fsdirlist(pjl_parser_state_t * pst, char *pathname, int entry, int count)
     pjl_parsed_filename_to_string(fontfilename, pathname);
     /* if this is a directory add * for the directory listing NB fix */
     strcat(fontfilename, "/*");
-    fe = gs_enumerate_files_init(fontfilename, strlen(fontfilename),
-                                 pst->mem);
+    fe = gs_enumerate_files_init(pst->mem, fontfilename, strlen(fontfilename));
     if (fe) {
         do {
             uint fstatus =
-                gs_enumerate_files_next(fe, fontfilename,
+                gs_enumerate_files_next(pst->mem, fe, fontfilename,
                                         PJL_PATH_NAME_LENGTH);
             /* done */
             if (fstatus == ~(uint) 0)

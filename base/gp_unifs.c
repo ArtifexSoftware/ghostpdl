@@ -329,7 +329,7 @@ popdir(file_enum * pfen)
 
 /* Initialize an enumeration. */
 file_enum *
-gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
+gp_enumerate_files_init_impl(gs_memory_t * mem, const char *pat, uint patlen)
 {
 #ifdef GS_NO_FILESYSTEM
     return &dummy_enum;
@@ -423,7 +423,7 @@ fail1:
 
 /* Enumerate the next file. */
 uint
-gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
+gp_enumerate_files_next_impl(gs_memory_t * mem, file_enum * pfen, char *ptr, uint maxlen)
 {
 #ifdef GS_NO_FILESYSTEM
     return ~(uint)0;
@@ -441,7 +441,7 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
         if_debug1m('e', pfen->memory, "[e]file_enum:First-Open '%s'\n", work);
         pfen->first_time = false;
         if (pfen->dirp == 0) {  /* first opendir failed */
-            gp_enumerate_files_close(pfen);
+            gp_enumerate_files_close(mem, pfen);
             return ~(uint) 0;
         }
     }
@@ -473,7 +473,7 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
             goto top;
         } else {
             if_debug0m('e', pfen->memory, "[e]file_enum:Dirstack empty\n");
-            gp_enumerate_files_close(pfen);
+            gp_enumerate_files_close(mem, pfen);
             return ~(uint) 0;
         }
     }
@@ -588,21 +588,22 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
 
 /* Clean up the file enumeration. */
 void
-gp_enumerate_files_close(file_enum * pfen)
+gp_enumerate_files_close_impl(gs_memory_t * mem, file_enum * pfen)
 {
 #ifdef GS_NO_FILESYSTEM
     /* No cleanup necessary */
 #else
-    gs_memory_t *mem = pfen->memory;
+    gs_memory_t *mem2 = pfen->memory;
+    (void)mem;
 
-    if_debug0m('e', mem, "[e]file_enum:Cleanup\n");
+    if_debug0m('e', mem2, "[e]file_enum:Cleanup\n");
     while (popdir(pfen))        /* clear directory stack */
         DO_NOTHING;
-    gs_free_object(mem, (byte *) pfen->work,
+    gs_free_object(mem2, (byte *) pfen->work,
                    "gp_enumerate_close(work)");
-    gs_free_object(mem, (byte *) pfen->pattern,
+    gs_free_object(mem2, (byte *) pfen->pattern,
                    "gp_enumerate_files_close(pattern)");
-    gs_free_object(mem, pfen, "gp_enumerate_files_close");
+    gs_free_object(mem2, pfen, "gp_enumerate_files_close");
 #endif
 }
 

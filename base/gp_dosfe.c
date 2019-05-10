@@ -42,7 +42,7 @@ gs_private_st_ptrs1(st_file_enum, struct file_enum_s, "file_enum",
 /* Initialize an enumeration.  Note that * and ? in a directory */
 /* don't work, and \ is taken literally unless a second \ follows. */
 file_enum *
-gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
+gp_enumerate_files_init_impl(gs_memory_t * mem, const char *pat, uint patlen)
 {
     file_enum *pfen = gs_alloc_struct(mem, file_enum, &st_file_enum, "gp_enumerate_files");
     int pat_size = 2 * patlen + 1;
@@ -107,7 +107,7 @@ static const string_match_params smp_file =
 {'*', '?', -1, true, true};
 
 uint
-gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
+gp_enumerate_files_next_impl(gs_memory_t * mem, file_enum * pfen, char *ptr, uint maxlen)
 {
     int code;
     char *p, *q;
@@ -120,7 +120,7 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
     } else
         code = dos_findnext(&pfen->ffblk);
     if (code != 0) {		/* All done, clean up. */
-        gp_enumerate_files_close(pfen);
+        gp_enumerate_files_close(mem, pfen);
         return ~(uint) 0;
     }
     if (maxlen < 13 + pfen->head_size)
@@ -138,11 +138,12 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
 
 /* Clean up the file enumeration. */
 void
-gp_enumerate_files_close(file_enum * pfen)
+gp_enumerate_files_close_impl(gs_memory_t * mem, file_enum * pfen)
 {
-    gs_memory_t *mem = pfen->memory;
+    gs_memory_t *mem2 = pfen->memory;
+    (void)mem;
 
-    gs_free_object(mem, pfen->pattern,
+    gs_free_object(mem2, pfen->pattern,
                    "gp_enumerate_files_close(pattern)");
-    gs_free_object(mem, pfen, "gp_enumerate_files_close");
+    gs_free_object(mem2, pfen, "gp_enumerate_files_close");
 }

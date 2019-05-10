@@ -1685,13 +1685,13 @@ void process_path(char *path, const char *os_prefix, const char *rom_prefix,
     strcpy(rom_filename, rom_prefix);
 
     /* check for the file on the Xlist */
-    pfenum = gp_enumerate_files_init(prefixed_path, strlen(prefixed_path),
-                        (gs_memory_t *)&minimal_memory);
+    pfenum = gp_enumerate_files_init((gs_memory_t *)&minimal_memory, prefixed_path,
+                         strlen(prefixed_path));
     if (pfenum == NULL) {
         printf("gp_enumerate_files_init failed.\n");
         exit(1);
     }
-    while ((namelen=gp_enumerate_files_next(pfenum, found_path, 1024)) >= 0) {
+    while ((namelen=gp_enumerate_files_next((gs_memory_t *)&minimal_memory, pfenum, found_path, 1024)) >= 0) {
         excluded = 0;
         found_path[namelen] = 0;		/* terminate the string */
         /* check to see if the tail of the path we found matches one on the exclusion list */

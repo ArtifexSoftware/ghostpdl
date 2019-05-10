@@ -110,16 +110,16 @@ struct gx_io_device_procs_s {
     iodev_proc_file_status((*file_status));
 
 #define iodev_proc_enumerate_files(proc)\
-  file_enum *proc(gx_io_device *iodev, const char *pat, uint patlen,\
-                  gs_memory_t *mem)
+  file_enum *proc(gs_memory_t *memory, gx_io_device *iodev, \
+                  const char *pat, uint patlen)
     iodev_proc_enumerate_files((*enumerate_files));
 
 #define iodev_proc_enumerate_next(proc)\
-  uint proc(file_enum *pfen, char *ptr, uint maxlen)
+  uint proc(gs_memory_t *memory, file_enum *pfen, char *ptr, uint maxlen)
     iodev_proc_enumerate_next((*enumerate_next));
 
 #define iodev_proc_enumerate_close(proc)\
-  void proc(file_enum *pfen)
+  void proc(gs_memory_t *memory, file_enum *pfen)
     iodev_proc_enumerate_close((*enumerate_close));
 
     /* Added in release 2.9 */
@@ -174,9 +174,9 @@ int gs_fopen_errno_to_code(int);
 
 /* Interface functions for clients that want iodev independent access to */
 /* the gp_enumerate functions */
-file_enum *gs_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem);
-uint gs_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen);
-void gs_enumerate_files_close(file_enum * pfen);
+file_enum *gs_enumerate_files_init(gs_memory_t * mem, const char *pat, uint patlen);
+uint gs_enumerate_files_next(gs_memory_t * mem, file_enum * pfen, char *ptr, uint maxlen);
+void gs_enumerate_files_close(gs_memory_t * mem, file_enum * pfen);
 
 /* Test whether a string is equal to a character. */
 /* (This is used for access testing in file_open procedures.) */

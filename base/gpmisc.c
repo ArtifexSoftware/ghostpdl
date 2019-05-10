@@ -833,17 +833,31 @@ gp_stat(const gs_memory_t *mem, const char *path, struct stat *buf)
     return gp_stat_impl(mem, path, buf);
 }
 
-static int
-ends_in(const char *first, const char *last, const char *ds, size_t len)
+file_enum *
+gp_enumerate_files_init(gs_memory_t *mem, const char *pat, uint patlen)
 {
-    while (len) {
-        if (last < first)
-            return 0; /* No match */
-        if (*last != ds[--len])
-            return 0; /* No match */
-        last--;
+    return gp_enumerate_files_init_impl(mem, pat, patlen);
+}
+
+uint
+gp_enumerate_files_next(gs_memory_t *mem, file_enum * pfen, char *ptr, uint maxlen)
+{
+    uint code = 0;
+
+    while (code == 0) {
+        code = gp_enumerate_files_next_impl(mem, pfen, ptr, maxlen);
+        if (code == ~0) break;
+        if (code > 0) {
+            if (gp_validate_path(mem, ptr, "r") != 0)
+                code = 0;
+        }
     }
-    return 1;
+    return code;
+}
+void
+gp_enumerate_files_close(gs_memory_t *mem, file_enum * pfen)
+{
+    gp_enumerate_files_close_impl(mem, pfen);
 }
 
 /* Path validation: (FIXME: Move this somewhere better)
@@ -879,6 +893,19 @@ ends_in(const char *first, const char *last, const char *ds, size_t len)
  *  foo\out*.tif      e.g. foo\out1.tif
  *  foo\out*.*.tif*   e.g. foo\out1.(Red).tif
  */
+
+static int
+ends_in(const char *first, const char *last, const char *ds, size_t len)
+{
+    while (len) {
+        if (last < first)
+            return 0; /* No match */
+        if (*last != ds[--len])
+            return 0; /* No match */
+        last--;
+    }
+    return 1;
+}
 
 static int
 validate(const gs_memory_t *mem,
@@ -962,7 +989,9 @@ gp_validate_path(const gs_memory_t *mem,
     uint rlen;
     int code = 0;
 
-    if (mem->gs_lib_ctx->core->path_control_active == 0)
+    /* mem->gs_lib_ctx can be NULL when we're called from mkromfs */
+    if (mem->gs_lib_ctx == NULL ||
+        mem->gs_lib_ctx->core->path_control_active == 0)
         return 0;
 
     len = strlen(path);

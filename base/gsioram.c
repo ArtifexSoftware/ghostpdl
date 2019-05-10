@@ -487,8 +487,8 @@ ram_status(gx_io_device * iodev, const char *fname, struct stat *pstat)
 }
 
 static file_enum *
-ram_enumerate_init(gx_io_device *iodev, const char *pat, uint patlen,
-    gs_memory_t *mem)
+ram_enumerate_init(gs_memory_t * mem, gx_io_device *iodev, const char *pat,
+                   uint patlen)
 {
     gsram_enum * penum = gs_alloc_struct(
     mem, gsram_enum, &st_gsram_enum,
@@ -497,6 +497,7 @@ ram_enumerate_init(gx_io_device *iodev, const char *pat, uint patlen,
     char *pattern = (char *)gs_alloc_bytes(
     mem, patlen+1, "ram_enumerate_file_init(pattern)"
     );
+
     ramfs_enum * e = ramfs_enum_new(GETRAMFS(iodev->state));
     if(penum && pattern && e) {
     memcpy(pattern, pat, patlen);
@@ -515,18 +516,19 @@ ram_enumerate_init(gx_io_device *iodev, const char *pat, uint patlen,
 }
 
 static void
-ram_enumerate_close(file_enum *pfen)
+ram_enumerate_close(gs_memory_t * mem, file_enum *pfen)
 {
     gsram_enum *penum = (gsram_enum *)pfen;
-    gs_memory_t *mem = penum->memory;
+    gs_memory_t *mem2 = penum->memory;
+    (void)mem;
 
     ramfs_enum_end(penum->e);
-    gs_free_object(mem, penum->pattern, "ramfs_enum_init(pattern)");
-    gs_free_object(mem, penum, "ramfs_enum_init(ramfs_enum)");
+    gs_free_object(mem2, penum->pattern, "ramfs_enum_init(pattern)");
+    gs_free_object(mem2, penum, "ramfs_enum_init(ramfs_enum)");
 }
 
 static uint
-ram_enumerate_next(file_enum *pfen, char *ptr, uint maxlen)
+ram_enumerate_next(gs_memory_t * mem, file_enum *pfen, char *ptr, uint maxlen)
 {
     gsram_enum *penum = (gsram_enum *)pfen;
 
@@ -541,7 +543,7 @@ ram_enumerate_next(file_enum *pfen, char *ptr, uint maxlen)
     }
     }
     /* ran off end of list, close the enum */
-    ram_enumerate_close(pfen);
+    ram_enumerate_close(mem, pfen);
     return ~(uint)0;
 }
 
