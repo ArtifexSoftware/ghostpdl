@@ -587,12 +587,16 @@ gs_main_set_lib_paths(gs_main_instance * minst)
     for (i = 0; i < gx_io_device_table_count; i++) {
         const gx_io_device *iodev = gx_io_device_table[i];
         const char *dname = iodev->dname;
+        const char *fcheckname = "Resource/Init/gs_init.ps";
 
         if (dname && strlen(dname) == 5 && !memcmp("%rom%", dname, 5)) {
             struct stat pstat;
             /* gs_error_unregistered means no usable romfs is available */
-            int code = iodev->procs.file_status((gx_io_device *)iodev, dname, &pstat);
-            if (code != gs_error_unregistered){
+            /* gpdl always includes a real romfs, but it may or may have the Postscript
+               resources in it, so we explicitly check for a fairly vital file
+             */
+            int code = iodev->procs.file_status((gx_io_device *)iodev, fcheckname, &pstat);
+            if (code != gs_error_unregistered && code != gs_error_undefinedfilename){
                 have_rom_device = 1;
             }
             break;
@@ -604,6 +608,8 @@ gs_main_set_lib_paths(gs_main_instance * minst)
             return code;
         code = lib_path_add(minst, "%rom%lib/");
     }
+    else code = 0;
+
     if (minst->lib_path.final != NULL && code >= 0)
         code = lib_path_add(minst, minst->lib_path.final);
     return code;
