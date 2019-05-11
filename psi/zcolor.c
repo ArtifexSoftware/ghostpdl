@@ -3472,6 +3472,9 @@ static int setseparationspace(i_ctx_t * i_ctx_p, ref *sepspace, int *stage, int 
     pcs->params.separation.mem = imemory->non_gc_memory;
     name_string_ref(imemory, &sname, &sname);
     pcs->params.separation.sep_name = (char *)gs_alloc_bytes(pcs->params.separation.mem, r_size(&sname) + 1, "Separation name");
+    if (pcs->params.separation.sep_name == NULL)
+        return_error(gs_error_VMerror);
+
     memcpy(pcs->params.separation.sep_name, sname.value.bytes, r_size(&sname));
     pcs->params.separation.sep_name[r_size(&sname)] = 0x00;
     code = array_get(imemory, sepspace, 1, &proc);
@@ -3839,6 +3842,8 @@ static int devicencolorants_cont(i_ctx_t *i_ctx_p)
             switch (r_type(&space[0])) {
                 case t_string:
                     sep_name = (char *)gs_alloc_bytes(mem, r_size(&space[0]) + 1, "devicencolorants_cont");
+                    if (sep_name == NULL)
+                        return_error(gs_error_VMerror);
                     memcpy(sep_name, space[0].value.bytes, r_size(&space[0]));
                     sep_name[r_size(&space[0])] = 0x00;
                     break;
@@ -3848,6 +3853,8 @@ static int devicencolorants_cont(i_ctx_t *i_ctx_p)
 
                         name_string_ref(imemory, &space[0], &nref);
                         sep_name = (char *)gs_alloc_bytes(mem, r_size(&nref) + 1, "devicencolorants_cont");
+                        if (sep_name == NULL)
+                            return_error(gs_error_VMerror);
                         memcpy(sep_name, nref.value.bytes, r_size(&nref));
                         sep_name[r_size(&nref)] = 0x00;
                     }
@@ -4062,6 +4069,8 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
                  */
                 devn_cs->params.device_n.num_process_names = r_size(parr);
                 devn_cs->params.device_n.process_names = (char **)gs_alloc_bytes(devn_cs->params.device_n.mem->non_gc_memory, devn_cs->params.device_n.num_process_names * sizeof(char *), "DeviceN Process Components array");
+                if (devn_cs->params.device_n.process_names == NULL)
+                    return_error(gs_error_VMerror);
 
                 for (ix = 0;ix < r_size(parr);ix++) {
                     code = array_get(imemory, parr, ix, &name);
@@ -4075,6 +4084,8 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
                     }
                     name_string_ref(devn_cs->params.device_n.mem, &name, &name_string);
                     devn_cs->params.device_n.process_names[ix] = (char *)gs_alloc_bytes(devn_cs->params.device_n.mem->non_gc_memory, r_size(&name_string) + 1, "Component name");
+                    if (devn_cs->params.device_n.process_names[ix] == NULL)
+                        return_error(gs_error_VMerror);
                     memcpy(devn_cs->params.device_n.process_names[ix], name_string.value.bytes, r_size(&name_string));
                     devn_cs->params.device_n.process_names[ix][r_size(&name_string)] = 0x00;
                 }
@@ -4178,6 +4189,8 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
             pcs->params.separation.mem = imemory->non_gc_memory;
             name_string_ref(imemory, &sname, &sname);
             pcs->params.separation.sep_name = (char *)gs_alloc_bytes(pcs->params.separation.mem, r_size(&sname) + 1, "Separation name");
+            if (pcs->params.separation.sep_name == NULL)
+                return_error(gs_error_VMerror);
             memcpy(pcs->params.separation.sep_name, sname.value.bytes, r_size(&sname));
             pcs->params.separation.sep_name[r_size(&sname)] = 0x00;
             code = array_get(imemory, &namesarray, (long)0, &sname);
@@ -4222,6 +4235,8 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
                     /* falls through */
                 case t_string:
                     names[i] = (char *)gs_alloc_bytes(pcs->params.device_n.mem->non_gc_memory, r_size(&sname) + 1, "Ink name");
+                    if (names[i] == NULL)
+                        return_error(gs_error_VMerror);
                     memcpy(names[i], sname.value.bytes, r_size(&sname));
                     names[i][r_size(&sname)] = 0x00;
                     break;
