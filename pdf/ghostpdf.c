@@ -1405,46 +1405,52 @@ pdfi_report_errors(pdf_context *ctx)
 {
     int code;
 
-    if (ctx->pdf_errors == E_PDF_NOERROR)
+    if (ctx->pdf_errors == E_PDF_NOERROR && ctx->pdf_warnings == W_PDF_NOWARNING)
         return;
 
-    dmprintf(ctx->memory, "The following errors were encountered at least once while processing this file:\n");
-    if (ctx->pdf_errors & E_PDF_NOHEADER)
-        dmprintf(ctx->memory, "\tThe file does not have a valid PDF header.\n");
-    if (ctx->pdf_errors & E_PDF_NOHEADERVERSION)
-        dmprintf(ctx->memory, "\tThe file header does not contain a version number.\n");
-    if (ctx->pdf_errors & E_PDF_NOSTARTXREF)
-        dmprintf(ctx->memory, "\tThe file does contain a 'startxref' token.\n");
-    if (ctx->pdf_errors & E_PDF_BADSTARTXREF)
-        dmprintf(ctx->memory, "\tThe file contain a 'startxref' token, but it does not point to an xref table.\n");
-    if (ctx->pdf_errors & E_PDF_BADXREFSTREAM)
-        dmprintf(ctx->memory, "\tThe file uses an XRefStm, but the stream is invalid.\n");
-    if (ctx->pdf_errors & E_PDF_BADXREF)
-        dmprintf(ctx->memory, "\tThe file uses an xref table, but the table is invalid.\n");
-    if (ctx->pdf_errors & E_PDF_SHORTXREF)
-        dmprintf(ctx->memory, "\tThe file uses an xref table, but the table has ferwer entires than expected.\n");
-    if (ctx->pdf_errors & E_PDF_MISSINGENDSTREAM)
-        dmprintf(ctx->memory, "\tA content stream is missing an 'endstream' token.\n");
-    if (ctx->pdf_errors & E_PDF_MISSINGENDOBJ)
-        dmprintf(ctx->memory, "\tAn object is missing an 'endobj' token.\n");
-    if (ctx->pdf_errors & E_PDF_BAD_INLINEFILTER)
-        dmprintf(ctx->memory, "\tThe file attempted to use an inline decompression filter on an XObject.\n");
-    if (ctx->pdf_errors & E_PDF_UNKNOWNFILTER)
-        dmprintf(ctx->memory, "\tThe file attempted to use an unrecognised decompression filter.\n");
-    if (ctx->pdf_errors & E_PDF_MISSINGWHITESPACE)
-        dmprintf(ctx->memory, "\tA missing white space was detected while trying to read a number.\n");
-    if (ctx->pdf_errors & E_PDF_MALFORMEDNUMBER)
-        dmprintf(ctx->memory, "\tA malformed number was detected.\n");
-    if (ctx->pdf_errors & E_PDF_UNESCAPEDSTRING)
-        dmprintf(ctx->memory, "\tA string used a '(' character without an escape.\n");
-    if (ctx->pdf_errors & E_PDF_BADOBJNUMBER)
-        dmprintf(ctx->memory, "\tThe file contained a reference to an object number larger than the number of xref entries.\n");
-    if (ctx->pdf_errors & E_PDF_TOKENERROR)
-        dmprintf(ctx->memory, "\tAn operator in a content stream returned an error.\n");
-    if (ctx->pdf_errors & E_PDF_KEYWORDTOOLONG)
-        dmprintf(ctx->memory, "\tA keyword (outside a content stream) was too long (> 255).\n");
-    if (ctx->pdf_errors & E_PDF_BADPAGETYPE)
-        dmprintf(ctx->memory, "\tAn entry in the Pages array was a dictionary with a /Type key whose value was not /Page.\n");
+    if (ctx->pdf_errors != E_PDF_NOERROR) {
+        dmprintf(ctx->memory, "The following errors were encountered at least once while processing this file:\n");
+        if (ctx->pdf_errors & E_PDF_NOHEADER)
+            dmprintf(ctx->memory, "\tThe file does not have a valid PDF header.\n");
+        if (ctx->pdf_errors & E_PDF_NOHEADERVERSION)
+            dmprintf(ctx->memory, "\tThe file header does not contain a version number.\n");
+        if (ctx->pdf_errors & E_PDF_NOSTARTXREF)
+            dmprintf(ctx->memory, "\tThe file does contain a 'startxref' token.\n");
+        if (ctx->pdf_errors & E_PDF_BADSTARTXREF)
+            dmprintf(ctx->memory, "\tThe file contain a 'startxref' token, but it does not point to an xref table.\n");
+        if (ctx->pdf_errors & E_PDF_BADXREFSTREAM)
+            dmprintf(ctx->memory, "\tThe file uses an XRefStm, but the stream is invalid.\n");
+        if (ctx->pdf_errors & E_PDF_BADXREF)
+            dmprintf(ctx->memory, "\tThe file uses an xref table, but the table is invalid.\n");
+        if (ctx->pdf_errors & E_PDF_SHORTXREF)
+            dmprintf(ctx->memory, "\tThe file uses an xref table, but the table has ferwer entires than expected.\n");
+        if (ctx->pdf_errors & E_PDF_MISSINGENDSTREAM)
+            dmprintf(ctx->memory, "\tA content stream is missing an 'endstream' token.\n");
+        if (ctx->pdf_errors & E_PDF_MISSINGENDOBJ)
+            dmprintf(ctx->memory, "\tAn object is missing an 'endobj' token.\n");
+        if (ctx->pdf_errors & E_PDF_UNKNOWNFILTER)
+            dmprintf(ctx->memory, "\tThe file attempted to use an unrecognised decompression filter.\n");
+        if (ctx->pdf_errors & E_PDF_MISSINGWHITESPACE)
+            dmprintf(ctx->memory, "\tA missing white space was detected while trying to read a number.\n");
+        if (ctx->pdf_errors & E_PDF_MALFORMEDNUMBER)
+            dmprintf(ctx->memory, "\tA malformed number was detected.\n");
+        if (ctx->pdf_errors & E_PDF_UNESCAPEDSTRING)
+            dmprintf(ctx->memory, "\tA string used a '(' character without an escape.\n");
+        if (ctx->pdf_errors & E_PDF_BADOBJNUMBER)
+            dmprintf(ctx->memory, "\tThe file contained a reference to an object number larger than the number of xref entries.\n");
+        if (ctx->pdf_errors & E_PDF_TOKENERROR)
+            dmprintf(ctx->memory, "\tAn operator in a content stream returned an error.\n");
+        if (ctx->pdf_errors & E_PDF_KEYWORDTOOLONG)
+            dmprintf(ctx->memory, "\tA keyword (outside a content stream) was too long (> 255).\n");
+        if (ctx->pdf_errors & E_PDF_BADPAGETYPE)
+            dmprintf(ctx->memory, "\tAn entry in the Pages array was a dictionary with a /Type key whose value was not /Page.\n");
+    }
+
+    if (ctx->pdf_warnings != W_PDF_NOWARNING) {
+        dmprintf(ctx->memory, "The following warnings were encountered at least once while processing this file:\n");
+        if (ctx->pdf_warnings & W_PDF_BAD_INLINEFILTER)
+            dmprintf(ctx->memory, "\tThe file attempted to use an inline decompression filter other than on an inline image.\n");
+    }
 
     dmprintf(ctx->memory, "\n   **** This file had errors that were repaired or ignored.\n");
     if (ctx->Info) {

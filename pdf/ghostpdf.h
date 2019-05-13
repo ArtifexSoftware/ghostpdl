@@ -90,6 +90,12 @@
  * The interpreter context.
  */
 
+/* Warnings and errors. The difference between a warning and an error is that we use a warning where
+ * the file is technically illegal but we can be certain as to the real intent. At the time of writing
+ * the only case is also a perfect example; the use of an inline image filter abbreviation (eg A85)
+ * on a stream or object which is not an inline image. Although technically incorrect, its obvious
+ * how to deal with this.
+ */
 typedef enum pdf_error_flag_e {
     E_PDF_NOERROR = 0,
     E_PDF_NOHEADER = 1,
@@ -100,17 +106,21 @@ typedef enum pdf_error_flag_e {
     E_PDF_BADXREF = E_PDF_NOHEADER << 5,
     E_PDF_SHORTXREF = E_PDF_NOHEADER << 6,
     E_PDF_MISSINGENDSTREAM = E_PDF_NOHEADER << 7,
-    E_PDF_BAD_INLINEFILTER = E_PDF_NOHEADER << 8,
-    E_PDF_UNKNOWNFILTER = E_PDF_NOHEADER << 9,
-    E_PDF_MISSINGWHITESPACE = E_PDF_NOHEADER << 10,
-    E_PDF_MALFORMEDNUMBER = E_PDF_NOHEADER << 11,
-    E_PDF_UNESCAPEDSTRING = E_PDF_NOHEADER << 12,
-    E_PDF_BADOBJNUMBER = E_PDF_NOHEADER << 13,
-    E_PDF_MISSINGENDOBJ = E_PDF_NOHEADER << 14,
-    E_PDF_TOKENERROR = E_PDF_NOHEADER << 15,
-    E_PDF_KEYWORDTOOLONG = E_PDF_NOHEADER << 16,
-    E_PDF_BADPAGETYPE = E_PDF_NOHEADER << 17,
+    E_PDF_UNKNOWNFILTER = E_PDF_NOHEADER << 8,
+    E_PDF_MISSINGWHITESPACE = E_PDF_NOHEADER << 9,
+    E_PDF_MALFORMEDNUMBER = E_PDF_NOHEADER << 10,
+    E_PDF_UNESCAPEDSTRING = E_PDF_NOHEADER << 11,
+    E_PDF_BADOBJNUMBER = E_PDF_NOHEADER << 12,
+    E_PDF_MISSINGENDOBJ = E_PDF_NOHEADER << 13,
+    E_PDF_TOKENERROR = E_PDF_NOHEADER << 14,
+    E_PDF_KEYWORDTOOLONG = E_PDF_NOHEADER << 15,
+    E_PDF_BADPAGETYPE = E_PDF_NOHEADER << 16,
 } pdf_error_flag;
+
+typedef enum pdf_warning_flag_e {
+    W_PDF_NOWARNING = 0,
+    W_PDF_BAD_INLINEFILTER = 1,
+} pdf_warning_flag;
 
 #define INITIAL_STACK_SIZE 32
 #define MAX_STACK_SIZE 32767
@@ -122,6 +132,7 @@ typedef struct pdf_context_s
     void *instance;
     gs_memory_t *memory;
     pdf_error_flag pdf_errors;
+    pdf_warning_flag pdf_warnings;
 
     int first_page;             /* -dFirstPage= */
     int last_page;              /* -dLastPage= */

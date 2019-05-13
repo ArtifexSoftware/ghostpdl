@@ -686,8 +686,8 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
 
     if (pdfi_name_is(n, "AHx")) {
         if (!inline_image) {
-            ctx->pdf_errors |= E_PDF_BAD_INLINEFILTER;
-            if (ctx->pdfstoponerror)
+            ctx->pdf_warnings|= W_PDF_BAD_INLINEFILTER;
+            if (ctx->pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
         code = pdfi_simple_filter(ctx, &s_AXD_template, source, new_stream);
@@ -695,8 +695,8 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
     }
     if (pdfi_name_is(n, "A85")) {
         if (!inline_image) {
-            ctx->pdf_errors |= E_PDF_BAD_INLINEFILTER;
-            if (ctx->pdfstoponerror)
+            ctx->pdf_warnings|= W_PDF_BAD_INLINEFILTER;
+            if (ctx->pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
         code = pdfi_ASCII85_filter(ctx, decode, source, new_stream);
@@ -704,8 +704,8 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
     }
     if (pdfi_name_is(n, "LZW")) {
         if (!inline_image) {
-            ctx->pdf_errors |= E_PDF_BAD_INLINEFILTER;
-            if (ctx->pdfstoponerror)
+            ctx->pdf_warnings|= W_PDF_BAD_INLINEFILTER;
+            if (ctx->pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
         code = pdfi_LZW_filter(ctx, decode, source, new_stream);
@@ -713,8 +713,8 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
     }
     if (pdfi_name_is(n, "CCF")) {
         if (!inline_image) {
-            ctx->pdf_errors |= E_PDF_BAD_INLINEFILTER;
-            if (ctx->pdfstoponerror)
+            ctx->pdf_warnings|= W_PDF_BAD_INLINEFILTER;
+            if (ctx->pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
         code = pdfi_CCITTFax_filter(ctx, decode, source, new_stream);
@@ -722,8 +722,8 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
     }
     if (pdfi_name_is(n, "DCT")) {
         if (!inline_image) {
-            ctx->pdf_errors |= E_PDF_BAD_INLINEFILTER;
-            if (ctx->pdfstoponerror)
+            ctx->pdf_warnings|= W_PDF_BAD_INLINEFILTER;
+            if (ctx->pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
         code = pdfi_DCT_filter(ctx, decode, source, new_stream);
@@ -731,8 +731,8 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
     }
     if (pdfi_name_is(n, "Fl")) {
         if (!inline_image) {
-            ctx->pdf_errors |= E_PDF_BAD_INLINEFILTER;
-            if (ctx->pdfstoponerror)
+            ctx->pdf_warnings|= W_PDF_BAD_INLINEFILTER;
+            if (ctx->pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
         code = pdfi_Flate_filter(ctx, decode, source, new_stream);
@@ -740,8 +740,8 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
     }
     if (pdfi_name_is(n, "RL")) {
         if (!inline_image) {
-            ctx->pdf_errors |= E_PDF_BAD_INLINEFILTER;
-            if (ctx->pdfstoponerror)
+            ctx->pdf_warnings|= W_PDF_BAD_INLINEFILTER;
+            if (ctx->pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
         code = pdfi_simple_filter(ctx, &s_RLD_template, source, new_stream);
