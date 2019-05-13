@@ -446,9 +446,21 @@ pdf_compute_fileID(gx_device_pdf * pdev)
     if (s == NULL)
         return_error(gs_error_VMerror);
     pdev->KeyLength = 0; /* Disable encryption. Not so important though. */
-    gp_get_usertime(secs_ns);
+#ifdef CLUSTER
+    secs_ns[0] = 0;
+    secs_ns[1] = 0;
+#else
+    gp_get_realtime(secs_ns);
+#endif
     sputs(s, (byte *)secs_ns, sizeof(secs_ns), &ignore);
+#ifdef CLUSTER
+    /* Don't have the ID's vary by filename output in the cluster testing.
+     * This prevents us comparing gs to gpdl results, and makes it harder
+     * to manually reproduce results. */
+    sputs(s, (const byte *)"ClusterTest.pdf", strlen("ClusterTest.pdf"), &ignore);
+#else
     sputs(s, (const byte *)pdev->fname, strlen(pdev->fname), &ignore);
+#endif
     pdev->strm = s;
     code = cos_dict_elements_write(pdev->Info, pdev);
     pdev->strm = strm;

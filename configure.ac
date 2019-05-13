@@ -2033,6 +2033,7 @@ AC_SUBST(PDF_MAK)
 
 GPDL=no_gpdl
 GPDL_TARGET=
+GPDL_TARGET_VAR=
 
 GPDL_MAK="\$(GLSRCDIR)\$(D)stub.mak"
 # in order to build gpdl we need the pdls available
@@ -2050,6 +2051,15 @@ fi
 AC_SUBST(GPDL)
 AC_SUBST(GPDL_TARGET)
 AC_SUBST(GPDL_MAK)
+
+
+AC_ARG_ENABLE([gpdl], AC_HELP_STRING([--enable-gpdl],
+    [Add gpdl to the default make target list]),
+[
+    GPDL_TARGET_VAR="\$(GPDL_TARGET)"
+])
+
+AC_SUBST(GPDL_TARGET_VAR)
 
 dnl do we compile the postscript initialization files into Ghostscript?
 COMPILE_INITS="1"

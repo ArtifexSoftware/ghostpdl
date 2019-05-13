@@ -530,6 +530,55 @@ zsetcolorspace(i_ctx_t * i_ctx_p)
 }
 
 /*
+ * This is a copy of the zsetcolorspace code above, but it is for *internal* use by
+ * the PostScript interpreter colour space handlign code only. It replicates the
+ * behaviour of zsetcolorspace but does not check to see if the current 'interpreter'
+ * colour space is the same as the one we are setting. That is because this code is
+ * used when setting alternate or subsidiary colour spaces, and we absolutely do
+ * not want to break out of processing the space in this case.
+ */
+static int
+absolute_setcolorspace(i_ctx_t * i_ctx_p)
+{
+    os_ptr  op = osp;
+    es_ptr ep;
+    int code, depth;
+
+    /* Make sure we have an operand... */
+    check_op(1);
+    /* Check its either a name (base space) or an array */
+    if (!r_has_type(op, t_name))
+        if (!r_is_array(op))
+            return_error(gs_error_typecheck);
+
+    code = validate_spaces(i_ctx_p, op, &depth);
+    if (code < 0)
+        return code;
+
+    /* Set up for the continuation procedure which will do the work */
+    /* Make sure the exec stack has enough space */
+    check_estack(5);
+    /* Store the initial value of CIE substitution (not substituting) */
+    ep = esp += 1;
+    make_int(ep, 0);
+    /* Store the 'depth' of the space returned during checking above */
+    ep = esp += 1;
+    make_int(ep, depth);
+    /* Store the 'stage' of processing (initially 0) */
+    ep = esp += 1;
+    make_int(ep, 0);
+    /* Store a pointer to the color space stored on the operand stack
+     * as the stack may grow unpredictably making further access
+     * to the space difficult
+     */
+    ep = esp += 1;
+    *ep = *op;
+    /* Finally, the actual continuation routine */
+    push_op_estack(setcolorspace_cont);
+    return o_push_estack;
+}
+
+/*
  * A special version of the setcolorspace operation above. This sets the
  * CIE substitution flag to true before starting, which prevents any further
  * CIE substitution taking place.
@@ -3420,8 +3469,14 @@ static int setseparationspace(i_ctx_t * i_ctx_p, ref *sepspace, int *stage, int 
     if (code < 0)
         return code;
     pcs->params.separation.sep_type = sep_type;
-    pcs->params.separation.sep_name = name_index(imemory, &sname);
-    pcs->params.separation.get_colorname_string = gs_get_colorname_string;
+    pcs->params.separation.mem = imemory->non_gc_memory;
+    name_string_ref(imemory, &sname, &sname);
+    pcs->params.separation.sep_name = (char *)gs_alloc_bytes(pcs->params.separation.mem, r_size(&sname) + 1, "Separation name");
+    if (pcs->params.separation.sep_name == NULL)
+        return_error(gs_error_VMerror);
+
+    memcpy(pcs->params.separation.sep_name, sname.value.bytes, r_size(&sname));
+    pcs->params.separation.sep_name[r_size(&sname)] = 0x00;
     code = array_get(imemory, sepspace, 1, &proc);
     if (code < 0)
         return code;
@@ -3711,11 +3766,11 @@ static int sepinitialproc(i_ctx_t *i_ctx_p, ref *space)
 /* DeviceN */
 static int devicencolorants_cont(i_ctx_t *i_ctx_p)
 {
-    ref dict, *pdict = &dict, space[2], sname;
+    ref dict, *pdict = &dict, space[2];
     int index, code, depth, stage;
     es_ptr ep = esp, pindex, pstage;
     os_ptr op = osp;
-    gs_separation_name sep_name;
+    char *sep_name;
 
     pindex = &ep[-2];
     pstage = &ep[-1];
@@ -3755,7 +3810,10 @@ static int devicencolorants_cont(i_ctx_t *i_ctx_p)
 
             make_int(pstage, 1);
             *op = space[1];
-            code = zsetcolorspace(i_ctx_p);
+            code = absolute_setcolorspace(i_ctx_p);
+            if (code == 0)
+                return o_push_estack;
+
             if (code < 0) {
                 (void)gs_grestore(igs);
                 esp -= 4;
@@ -3763,30 +3821,52 @@ static int devicencolorants_cont(i_ctx_t *i_ctx_p)
             } else
                 return code;
         } else {
+            gs_memory_t *mem;
+            gs_gstate *pgs = igs;
+            gs_color_space *devn_cs;
+
             stage = 0;
 
+            /* This is a little awkward. We need the 'mem' parameter stored in
+             * the DeviceN structure, so that we can allocate the C string below in the
+             * correct memory. But the current space has been set (above) to the separation
+             * space we are handling. However, we did a gsave before that, so the saved
+             * colour space is the one we want.
+             */
+            if (!pgs->saved) {
+                esp -= 4;
+                return gs_note_error(gs_error_unknownerror);
+            }
+            devn_cs = gs_currentcolorspace_inline(pgs->saved);
+            mem = devn_cs->params.device_n.mem->non_gc_memory;
             switch (r_type(&space[0])) {
                 case t_string:
-                    code = name_from_string(imemory, &space[0], &sname);
-                    if (code < 0){
-                        (void)gs_grestore(igs);
-                        esp -= 4;
-                        return code;
-                    }
-                    sep_name = name_index(imemory, &sname);
+                    sep_name = (char *)gs_alloc_bytes(mem, r_size(&space[0]) + 1, "devicencolorants_cont");
+                    if (sep_name == NULL)
+                        return_error(gs_error_VMerror);
+                    memcpy(sep_name, space[0].value.bytes, r_size(&space[0]));
+                    sep_name[r_size(&space[0])] = 0x00;
                     break;
                 case t_name:
-                    sep_name = name_index(imemory, &space[0]);
+                    {
+                        ref nref;
+
+                        name_string_ref(imemory, &space[0], &nref);
+                        sep_name = (char *)gs_alloc_bytes(mem, r_size(&nref) + 1, "devicencolorants_cont");
+                        if (sep_name == NULL)
+                            return_error(gs_error_VMerror);
+                        memcpy(sep_name, nref.value.bytes, r_size(&nref));
+                        sep_name[r_size(&nref)] = 0x00;
+                    }
                     break;
                 default:
                     (void)gs_grestore(igs);
                     return_error(gs_error_typecheck);
                     break;
             }
-
             make_int(pindex, index);
             make_int(pstage, stage);
-            gs_attachattributecolorspace(sep_name, igs);
+            gs_attachcolorant(sep_name, igs);
 
             code = gs_grestore(igs);
             if (code < 0) {
@@ -3798,6 +3878,70 @@ static int devicencolorants_cont(i_ctx_t *i_ctx_p)
     while(1);
 }
 
+static int devicenprocess_cont(i_ctx_t *i_ctx_p)
+{
+    ref dict;
+    int index, code, stage;
+    es_ptr ep = esp, pindex, pstage;
+    os_ptr op = osp;
+
+    pindex = &ep[-2];
+    pstage = &ep[-1];
+    index = (int)pindex->value.intval;
+    stage = (int)pstage->value.intval;
+    ref_assign(&dict, ep);
+
+    if (stage == 0) {
+        code = gs_gsave(igs);
+        if (code < 0) {
+            esp -= 4;
+            return code;
+        }
+        /* If we get a continuation from a sub-procedure, we will want to come back
+         * here afterward, to do any remaining stages. We need to set up for that now.
+         * so that our continuation is ahead of the sub-proc's continuation.
+         */
+        check_estack(1);
+        push(1);
+        /* The push_op_estack macro increments esp before use, so we don't need to */
+        push_op_estack(devicenprocess_cont);
+
+        make_int(pstage, 1);
+        ref_assign(op, &dict);
+        code = absolute_setcolorspace(i_ctx_p);
+        if (code == 0)
+            return o_push_estack;
+
+        if (code < 0) {
+            (void)gs_grestore(igs);
+            esp -= 4;
+            return code;
+        } else
+            return code;
+    } else {
+        gs_color_space *process, *devn_cs;
+
+        stage = 0;
+
+        make_int(pindex, index);
+        make_int(pstage, stage);
+
+        process = gs_currentcolorspace_inline(igs);
+        rc_increment_cs(process);
+
+        code = gs_grestore(igs);
+        if (code < 0) {
+            esp -= 4;
+            return code;
+        }
+        devn_cs = gs_currentcolorspace_inline(igs);
+        devn_cs->params.device_n.devn_process_space = process;
+    }
+
+    esp -= 4;
+    return o_pop_estack;
+}
+
 static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int *cont, int CIESubst)
 {
     os_ptr  op = osp;   /* required by "push" macro */
@@ -3807,7 +3951,7 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
     gs_color_space *pcs;
     gs_color_space * pacs;
     gs_function_t *pfn = NULL;
-    gs_separation_name *names;
+    char **names;
     gs_client_color cc;
 
     if (i_ctx_p->language_level < 3)
@@ -3815,8 +3959,9 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
 
     *cont = 0;
     if ((*stage) == 2) {
+        /* Check for the existence of an attributes dictionary */
         if (r_size(devicenspace) == 5) {
-            /* We have a Colorants dictionary from a PDF file. We need to handle this by
+            /* We may have a Colorants dictionary from a PDF file. We need to handle this by
              * temporarily setting each of the spaces in the dict, and attaching the
              * resulting space to the DeviceN array. This is complicated, because
              * each space must be fully set up, and may result in running tint transform
@@ -3830,15 +3975,17 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
                 return code;
             if (!r_has_type(&sref, t_dictionary)) {
                 *stage = 0;
-                return 0;
+                return gs_note_error(gs_error_typecheck);
             }
             if (dict_find_string(&sref, "Colorants", &colorants) <= 0) {
-                *stage = 0;
+                /* Even if there is no Colorants dictionary, there may still be a /Process dictionary */
+                *stage = 3;
+                *cont = 1;
                 return 0;
             }
             if (!r_has_type(colorants, t_dictionary)) {
                 *stage = 0;
-                return 0;
+                return gs_note_error(gs_error_typecheck);
             }
             *stage = 3;
             *cont = 1;
@@ -3862,6 +4009,111 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
         }
     }
     if ((*stage) == 3) {
+        /* Check for the existence of an attributes dictionary */
+        if (r_size(devicenspace) == 5) {
+            ref *process, *cspace, *parr, name, *subtype;
+            gs_color_space *devn_cs;
+
+            /* We have an attributes dictionary, does it contain a /Process sub-dictionary ?
+             * NB this is not optional if the Subtype is NChannel and the space includes components of
+             * a process colour space.
+             */
+            devn_cs = gs_currentcolorspace_inline(igs);
+            code = array_get(imemory, devicenspace, 4, &sref);
+
+            devn_cs->params.device_n.subtype = gs_devicen_DeviceN;
+            code  = dict_find_string(&sref, "Subtype", &subtype);
+            if (code < 0 && code != gs_error_undefined) {
+                *stage = 0;
+                return code;
+            }
+            if (code > 0) {
+                if (r_has_type(subtype, t_name)) {
+                    name_string_ref(imemory, subtype, subtype);
+                } else {
+                    if (!r_has_type(subtype, t_string)) {
+                        *stage = 0;
+                        return gs_note_error(gs_error_typecheck);
+                    }
+                }
+                if (memcmp(subtype->value.bytes, "NChannel", 8) == 0)
+                    devn_cs->params.device_n.subtype = gs_devicen_NChannel;
+            }
+            if (!r_has_type(&sref, t_dictionary)) {
+                *stage = 0;
+                return gs_note_error(gs_error_typecheck);
+            }
+            if (dict_find_string(&sref, "Process", &process) <= 0) {
+                *stage = 4;
+                return 0;
+            }
+            if (!r_has_type(process, t_dictionary)) {
+                *stage = 0;
+                return gs_note_error(gs_error_typecheck);
+            }
+            /* We have a /Process dictionary, in this case the Components entry is required */
+            if (dict_find_string(process, "Components", &parr) <= 0) {
+                *stage = 0;
+                return gs_note_error(gs_error_undefined);
+            }
+            if (!r_is_array(parr)) {
+                *stage = 0;
+                return gs_note_error(gs_error_typecheck);
+            } else {
+                int ix = 0;
+                ref name_string;
+
+                /* Pull out each of the Component names in turn from the Components array
+                 * convert them into a C string and store them in the graphics state colour
+                 * space structure. Note, using non-GC memory for storage.
+                 */
+                devn_cs->params.device_n.num_process_names = r_size(parr);
+                devn_cs->params.device_n.process_names = (char **)gs_alloc_bytes(devn_cs->params.device_n.mem->non_gc_memory, devn_cs->params.device_n.num_process_names * sizeof(char *), "DeviceN Process Components array");
+                if (devn_cs->params.device_n.process_names == NULL)
+                    return_error(gs_error_VMerror);
+
+                for (ix = 0;ix < r_size(parr);ix++) {
+                    code = array_get(imemory, parr, ix, &name);
+                    if (code < 0) {
+                        *stage = 0;
+                        return code;
+                    }
+                    if (!r_has_type(&name, t_name)) {
+                        *stage = 0;
+                        return gs_note_error(gs_error_typecheck);
+                    }
+                    name_string_ref(devn_cs->params.device_n.mem, &name, &name_string);
+                    devn_cs->params.device_n.process_names[ix] = (char *)gs_alloc_bytes(devn_cs->params.device_n.mem->non_gc_memory, r_size(&name_string) + 1, "Component name");
+                    if (devn_cs->params.device_n.process_names[ix] == NULL)
+                        return_error(gs_error_VMerror);
+                    memcpy(devn_cs->params.device_n.process_names[ix], name_string.value.bytes, r_size(&name_string));
+                    devn_cs->params.device_n.process_names[ix][r_size(&name_string)] = 0x00;
+                }
+            }
+            /* We have a /Process dictionary, in this case the ColorSpace entry is required */
+            if (dict_find_string(process, "ColorSpace", &cspace) <= 0) {
+                *stage = 0;
+                return gs_note_error(gs_error_undefined);
+            }
+            *stage = 4;
+            *cont = 1;
+            check_estack(5);
+            push_mark_estack(es_other, colour_cleanup);
+            esp++;
+            /* variable to hold index of the space we are dealing with */
+            make_int(esp, 0);
+            esp++;
+            /* variable to hold processing step */
+            make_int(esp, 0);
+            esp++;
+            /* Store a pointer to the Colorants dictionary
+             */
+            ref_assign(esp, cspace);
+            push_op_estack(devicenprocess_cont);
+            return o_push_estack;
+        }
+    }
+    if ((*stage) == 4) {
         *stage = 0;
         return 0;
     }
@@ -3934,8 +4186,13 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
             if (code < 0)
                 return code;
             pcs->params.separation.sep_type = sep_type;
-            pcs->params.separation.sep_name = name_index(imemory, &sname);
-            pcs->params.separation.get_colorname_string = gs_get_colorname_string;
+            pcs->params.separation.mem = imemory->non_gc_memory;
+            name_string_ref(imemory, &sname, &sname);
+            pcs->params.separation.sep_name = (char *)gs_alloc_bytes(pcs->params.separation.mem, r_size(&sname) + 1, "Separation name");
+            if (pcs->params.separation.sep_name == NULL)
+                return_error(gs_error_VMerror);
+            memcpy(pcs->params.separation.sep_name, sname.value.bytes, r_size(&sname));
+            pcs->params.separation.sep_name[r_size(&sname)] = 0x00;
             code = array_get(imemory, &namesarray, (long)0, &sname);
             if (code < 0)
                 return code;
@@ -3964,7 +4221,6 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
     if (code < 0)
         return code;
     names = pcs->params.device_n.names;
-    pcs->params.device_n.get_colorname_string = gs_get_colorname_string;
 
     /* Pick up the names of the components */
     {
@@ -3974,15 +4230,15 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
         for (i = 0; i < num_components; ++i) {
             array_get(imemory, &namesarray, (long)i, &sname);
             switch (r_type(&sname)) {
-                case t_string:
-                    code = name_from_string(imemory, &sname, &sname);
-                    if (code < 0) {
-                        rc_decrement_cs(pcs, "setdevicenspace");
-                        return code;
-                    }
-                    /* falls through */
                 case t_name:
-                    names[i] = name_index(imemory, &sname);
+                    name_string_ref(imemory, &sname, &sname);
+                    /* falls through */
+                case t_string:
+                    names[i] = (char *)gs_alloc_bytes(pcs->params.device_n.mem->non_gc_memory, r_size(&sname) + 1, "Ink name");
+                    if (names[i] == NULL)
+                        return_error(gs_error_VMerror);
+                    memcpy(names[i], sname.value.bytes, r_size(&sname));
+                    names[i][r_size(&sname)] = 0x00;
                     break;
                 default:
                     rc_decrement_cs(pcs, "setdevicenspace");
@@ -3990,7 +4246,6 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
             }
         }
     }
-
     /* Now set the current color space as DeviceN */
 
     cspace_old = istate->colorspace[0];
@@ -5557,7 +5812,7 @@ static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
                             if (CIESubst)
                                 return setcolorspace_nosubst(i_ctx_p);
                             else
-                                return zsetcolorspace(i_ctx_p);
+                                return absolute_setcolorspace(i_ctx_p);
                         } else {
                             /* We have no /Alternate in the ICC space, use hte /N key to
                              * determine an 'appropriate' default space.
@@ -6254,7 +6509,7 @@ setdevicecolor_cont(i_ctx_t *i_ctx_p)
                     esp -= 3;
                     return code;
                 }
-                code = zsetcolorspace(i_ctx_p);
+                code = absolute_setcolorspace(i_ctx_p);
                 if (code < 0) {
                     esp -= 3;
                     return code;

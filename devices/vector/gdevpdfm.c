@@ -2508,7 +2508,7 @@ pdfmark_BMC(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
     code = pdf_open_contents(pdev, PDF_IN_STREAM);
     if (code < 0) return code;
 
-    pprints1(pdev->strm, "%s", tag);
+    pprints1(pdev->strm, "%s BMC\n", tag);
 
     gs_free_object(pdev->memory, tag, "pdfmark_BMC");
     return 0;

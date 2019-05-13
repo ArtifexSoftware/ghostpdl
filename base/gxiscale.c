@@ -2585,6 +2585,7 @@ image_render_interpolate_landscape_icc(gx_image_enum * penum,
     stream_cursor_read stream_r;
     stream_cursor_write stream_w;
     int abs_interp_limit = pss->params.abs_interp_limit;
+    int limited_PatchWidthOut = (pss->params.PatchWidthOut + abs_interp_limit - 1) / abs_interp_limit;
 
     if (penum->icc_link == NULL) {
         return gs_rethrow(-1, "ICC Link not created during gs_image_class_0_interpolate");
@@ -2658,10 +2659,10 @@ image_render_interpolate_landscape_icc(gx_image_enum * penum,
                 /* Set up the buffer descriptors. */
                 gsicc_init_buffer(&input_buff_desc, spp_decode, 2,
                               false, false, false, 0, width * spp_decode,
-                              1, width);
+                              1, limited_PatchWidthOut);
                 gsicc_init_buffer(&output_buff_desc, spp_cm, 2,
                               false, false, false, 0, width * spp_cm,
-                              1, width);
+                              1, limited_PatchWidthOut);
             }
         }
         for (;;) {
@@ -2712,7 +2713,9 @@ image_render_interpolate_landscape_icc(gx_image_enum * penum,
                     p_cm_interp = (unsigned short *) pinterp;
                 } else {
                     /* Transform */
+                    pinterp += (pss->params.LeftMarginOut / abs_interp_limit) * spp_decode;
                     p_cm_interp = (unsigned short *) p_cm_buff;
+                    p_cm_interp += (pss->params.LeftMarginOut / abs_interp_limit) * spp_cm;
                     (penum->icc_link->procs.map_buffer)(dev, penum->icc_link,
                                                         &input_buff_desc,
                                                         &output_buff_desc,

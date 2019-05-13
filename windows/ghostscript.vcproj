@@ -2510,10 +2510,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\base\md5main.c"
-				>
-			</File>
-			<File
 				RelativePath="..\base\memento.c"
 				>
 			</File>

@@ -71,7 +71,6 @@ const gs_color_space_type gs_color_space_type_Separation = {
 static
 ENUM_PTRS_BEGIN(cs_Separation_enum_ptrs) return 0;
     ENUM_PTR(0, gs_color_space, params.separation.map);
-    case 1 : return ENUM_NAME_INDEX_ELT(gs_color_space, params.separation.sep_name);
 ENUM_PTRS_END
 static RELOC_PTRS_BEGIN(cs_Separation_reloc_ptrs)
 {
@@ -116,6 +115,33 @@ gx_concrete_space_Separation(const gs_color_space * pcs,
 static int
 check_Separation_component_name(const gs_color_space * pcs, gs_gstate * pgs);
 
+/* Check if the colorant is a process colorant */
+static separation_colors
+gx_check_process_names_Separation(gs_color_space * pcs, gs_gstate * pgs)
+{
+    byte *pname = (byte *)pcs->params.separation.sep_name;
+    uint name_size = strlen(pcs->params.separation.sep_name);
+
+    /* Classify */
+    if (strncmp((char *)pname, "None", name_size) == 0 ||
+        strncmp((char *)pname, "All", name_size) == 0) {
+        return SEP_ENUM;
+    } else {
+        if (strncmp((char *)pname, "Cyan", name_size) == 0 ||
+            strncmp((char *)pname, "Magenta", name_size) == 0 ||
+            strncmp((char *)pname, "Yellow", name_size) == 0 ||
+            strncmp((char *)pname, "Black", name_size) == 0) {
+            return SEP_PURE_CMYK;
+        } else if (strncmp((char *)pname, "Red", name_size) == 0 ||
+            strncmp((char *)pname, "Green", name_size) == 0 ||
+            strncmp((char *)pname, "Blue", name_size) == 0) {
+            return SEP_PURE_RGB;
+        } else {
+            return SEP_MIX;
+        }
+    }
+}
+
 /* Install a Separation color space. */
 static int
 gx_install_Separation(gs_color_space * pcs, gs_gstate * pgs)
@@ -125,6 +151,15 @@ gx_install_Separation(gs_color_space * pcs, gs_gstate * pgs)
     code = check_Separation_component_name(pcs, pgs);
     if (code < 0)
        return code;
+
+    if (pgs->icc_manager->device_named != NULL) {
+        pcs->params.separation.named_color_supported =
+            gsicc_support_named_color(pcs, pgs);
+    }
+
+    pcs->params.separation.color_type =
+        gx_check_process_names_Separation(pcs, pgs);
+
     gs_currentcolorspace_inline(pgs)->params.separation.use_alt_cspace =
         using_alt_color_space(pgs);
     if (gs_currentcolorspace_inline(pgs)->params.separation.use_alt_cspace) {
@@ -180,6 +215,7 @@ gx_final_Separation(const gs_color_space * pcs)
 {
     rc_adjust_const(pcs->params.separation.map, -1,
                     "gx_adjust_Separation");
+    gs_free_object(pcs->params.separation.mem, pcs->params.separation.sep_name, "gx_final_Separation");
 }
 
 /* ------ Constructors/accessors ------ */
@@ -204,6 +240,7 @@ gs_cspace_new_Separation(
     if (pcs == NULL)
         return_error(gs_error_VMerror);
     pcs->params.separation.map = NULL;
+    pcs->params.separation.named_color_supported = false;
 
     code = alloc_device_n_map(&pcs->params.separation.map, pmem,
                               "gs_cspace_build_Separation");
@@ -405,9 +442,8 @@ gx_remap_concrete_Separation(const gs_color_space * pcs, const frac * pconc,
 static int
 check_Separation_component_name(const gs_color_space * pcs, gs_gstate * pgs)
 {
-    const gs_separation_name name = pcs->params.separation.sep_name;
     int colorant_number;
-    byte * pname;
+    byte *pname;
     uint name_size;
     gs_devicen_color_map * pcolor_component_map
         = &pgs->color_component_map;
@@ -445,7 +481,8 @@ check_Separation_component_name(const gs_color_space * pcs, gs_gstate * pgs)
     /*
      * Get the character string and length for the component name.
      */
-    pcs->params.separation.get_colorname_string(dev->memory, name, &pname, &name_size);
+    pname = (byte *)pcs->params.separation.sep_name;
+    name_size = strlen(pcs->params.separation.sep_name);
     /*
      * Compare the colorant name to the device's.  If the device's
      * compare routine returns GX_DEVICE_COLOR_MAX_COMPONENTS then the
@@ -509,7 +546,7 @@ gx_serialize_Separation(const gs_color_space * pcs, stream * s)
 
     if (code < 0)
         return code;
-    code = sputs(s, (const byte *)&p->sep_name, sizeof(p->sep_name), &n);
+    code = sputs(s, (const byte *)&p->sep_name, strlen(p->sep_name) + 1, &n);
     if (code < 0)
         return code;
     code = cs_serialize(pcs->base_space, s);

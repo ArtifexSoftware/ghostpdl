@@ -1514,7 +1514,7 @@ int rop_get_run_op(rop_run_op *op, int lop, int depth, int flags)
      */
     if (!(lop & (lop_T_transparent | lop_S_transparent)) &&
         op->flags == (rop_s_constant | rop_t_constant) &&
-        rop_usage_table[lop] == rop_usage_ST) {
+        rop_usage_table[lop & 0xff] == rop_usage_ST) {
         switch (lop & (rop3_D>>rop3_D_shift)) /* Ignore the D bits */
         {
         /* Skip 0000 as doesn't use S or T */

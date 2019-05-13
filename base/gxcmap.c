@@ -598,7 +598,6 @@ gx_device_color * pdc, const gs_gstate * pgs, gx_device * dev,
 gs_color_select_t select)
 {
     gx_color_value device_values[GX_DEVICE_COLOR_MAX_COMPONENTS];
-    const gs_separation_name name = pcs->params.separation.sep_name;
     byte *pname;
     uint name_size;
     gsicc_rendering_param_t rendering_params;
@@ -623,13 +622,11 @@ gs_color_select_t select)
     rendering_params.cmm = gsCMM_DEFAULT;
 
     if (type == gs_color_space_index_Separation) {
-        pcs->params.separation.get_colorname_string(pgs->memory, name,
-            &pname, &name_size);
-        named_color_sep.colorant_name = (char*)pname;
-        named_color_sep.name_size = name_size;
+        named_color_sep.colorant_name = pcs->params.separation.sep_name;
+        named_color_sep.name_size = strlen(pcs->params.separation.sep_name);
         named_color_ptr = &named_color_sep;
     } else if (type == gs_color_space_index_DeviceN) {
-        const gs_separation_name *names = pcs->params.device_n.names;
+        char **names = pcs->params.device_n.names;
         num_src_comps = pcs->params.device_n.num_components;
         /* Allocate and initialize name structure */
         named_color_devn =
@@ -639,8 +636,8 @@ gs_color_select_t select)
         if (named_color_devn == NULL)
             return false; /* Clearly a bigger issue. But lets not end here */
         for (k = 0; k < num_src_comps; k++) {
-            pcs->params.device_n.get_colorname_string(dev->memory, names[k],
-                &pname, &name_size);
+            pname = (byte *)names[k];
+            name_size = strlen(names[k]);
             named_color_devn[k].colorant_name = (char*)pname;
             named_color_devn[k].name_size = name_size;
         }
@@ -691,7 +688,7 @@ gs_color_select_t select)
                         return false;
                     dev_profile->spotnames->equiv_cmyk_set = true;
                 }
-                gx_remap_concrete_devicen(conc, pdc, pgs, dev, select);
+                gx_remap_concrete_devicen(conc, pdc, pgs, dev, select, pcs);
             } else {
                 gs_gstate temp_state = *((const gs_gstate *)pgs);
 
@@ -702,10 +699,10 @@ gs_color_select_t select)
                 for (k = 0; k < dev->color_info.num_components; k++)
                     temp_state.color_component_map.color_map[k] = k;
                 temp_state.color_component_map.num_components = dev->color_info.num_components;
-                gx_remap_concrete_devicen(conc, pdc, &temp_state, dev, select);
+                gx_remap_concrete_devicen(conc, pdc, &temp_state, dev, select, pcs);
             }
         } else {
-            gx_remap_concrete_devicen(conc, pdc, pgs, dev, select);
+            gx_remap_concrete_devicen(conc, pdc, pgs, dev, select, pcs);
         }
         /* Save original color space and color info into dev color */
         i = any_abs(i);
@@ -1444,19 +1441,41 @@ cmap_separation_direct(frac all, gx_device_color * pdc, const gs_gstate * pgs,
 
 /* Routines for handling CM of CMYK components of a DeviceN color space */
 static bool
-devicen_has_cmyk(gx_device * dev)
+devicen_has_cmyk(gx_device * dev, cmm_profile_t *des_profile)
 {
     gs_devn_params *devn_params;
 
     devn_params = dev_proc(dev, ret_devn_params)(dev);
     if (devn_params == NULL) {
-        return false;
+        if (des_profile != NULL && des_profile->data_cs == gsCMYK)
+            return true;
+        else
+            return false;
     }
     return(devn_params->num_std_colorant_names == 4);
 }
 
-static int
-devicen_icc_cmyk(frac cm_comps[], const gs_gstate * pgs, gx_device *dev)
+static bool
+named_color_supported(const gs_gstate * pgs)
+{
+    gs_color_space *pcs = gs_currentcolorspace_inline(pgs);
+    gs_color_space_index type = gs_color_space_get_index(pcs);
+
+    if (pgs->icc_manager->device_named == NULL)
+        return false;
+
+    if (type == gs_color_space_index_Separation && pcs->params.separation.named_color_supported)
+        return true;
+
+    if (type == gs_color_space_index_DeviceN && pcs->params.device_n.named_color_supported)
+        return true;
+
+    return false;
+}
+
+static void
+devicen_icc_cmyk(frac cm_comps[], const gs_gstate * pgs,
+    const gs_color_space * pcs, gx_device *dev)
 {
     gsicc_link_t *icc_link;
     gsicc_rendering_param_t rendering_params;
@@ -1467,10 +1486,13 @@ devicen_icc_cmyk(frac cm_comps[], const gs_gstate * pgs, gx_device *dev)
     gsicc_rendering_param_t render_cond;
     cmm_dev_profile_t *dev_profile = NULL;
     cmm_profile_t *des_profile = NULL;
+    cmm_profile_t *src_profile = pgs->icc_manager->default_cmyk;
 
     code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+
+    /* If we can't transform them, we will just leave them as is. */
     if (code < 0)
-        return code;
+        return;
 
     gsicc_extract_profile(dev->graphics_type_tag,
                           dev_profile, &des_profile, &render_cond);
@@ -1485,9 +1507,37 @@ devicen_icc_cmyk(frac cm_comps[], const gs_gstate * pgs, gx_device *dev)
     for (k = 0; k < 4; k++){
         psrc[k] = frac2cv(cm_comps[k]);
     }
-    icc_link = gsicc_get_link_profile(pgs, dev, pgs->icc_manager->default_cmyk,
-                des_profile, &rendering_params, pgs->memory,
-                dev_profile->devicegraytok);
+
+    /* Determine what src profile to use.  First choice is the attributes 
+       process color space if it is the correct type.  Second choice is
+       the alternate tint transform color space if it is the correct type.
+       Third type is default_cmyk.  If we have an issue with bad profiles then
+       the color values will just remain as they were from the source */
+    if (gs_color_space_get_index(pcs) == gs_color_space_index_DeviceN) {
+        if (pcs->params.device_n.devn_process_space != NULL &&
+            pcs->params.device_n.devn_process_space->cmm_icc_profile_data != NULL &&
+            pcs->params.device_n.devn_process_space->cmm_icc_profile_data->data_cs == gsCMYK) {
+            src_profile = pcs->params.device_n.devn_process_space->cmm_icc_profile_data;
+        } else if (pcs->base_space != NULL &&
+            pcs->base_space->cmm_icc_profile_data != NULL &&
+            pcs->base_space->cmm_icc_profile_data->data_cs == gsCMYK) {
+            src_profile = pcs->base_space->cmm_icc_profile_data;
+        }
+    }
+
+    icc_link = gsicc_get_link_profile(pgs, dev, src_profile, des_profile,
+        &rendering_params, pgs->memory, dev_profile->devicegraytok);
+
+    if (icc_link == NULL && src_profile != pgs->icc_manager->default_cmyk) {
+        icc_link = gsicc_get_link_profile(pgs, dev,
+            pgs->icc_manager->default_cmyk, des_profile,
+            &rendering_params, pgs->memory, dev_profile->devicegraytok);
+    }
+
+    /* If we can't transform them, we will just leave them as is. */
+    if (icc_link == NULL)
+        return;
+
     /* Transform the color */
     if (icc_link->is_identity) {
         psrc_temp = &(psrc[0]);
@@ -1502,7 +1552,6 @@ devicen_icc_cmyk(frac cm_comps[], const gs_gstate * pgs, gx_device *dev)
     }
     /* Release the link */
     gsicc_release_link(icc_link);
-    return(0);
 }
 
 /* ------ DeviceN color mapping */
@@ -1514,7 +1563,7 @@ devicen_icc_cmyk(frac cm_comps[], const gs_gstate * pgs, gx_device *dev)
 static void
 cmap_devicen_halftoned(const frac * pcc,
     gx_device_color * pdc, const gs_gstate * pgs, gx_device * dev,
-    gs_color_select_t select)
+    gs_color_select_t select, const gs_color_space *pcs)
 {
     uchar i, ncomps = dev->color_info.num_components;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
@@ -1528,9 +1577,10 @@ cmap_devicen_halftoned(const frac * pcc,
     /* map to the color model */
     map_components_to_colorants(pcc, &(pgs->color_component_map), cm_comps);
     /* See comments in cmap_devicen_direct for details on below operations */
-    if (devicen_has_cmyk(dev) &&
-        des_profile->data_cs == gsCMYK) {
-        devicen_icc_cmyk(cm_comps, pgs, dev);
+    if (devicen_has_cmyk(dev, des_profile) &&
+        des_profile->data_cs == gsCMYK &&
+        !named_color_supported(pgs)) {
+        devicen_icc_cmyk(cm_comps, pgs, pcs, dev);
     }
     /* apply the transfer function(s); convert to color values */
     if (pgs->effective_transfer_non_identity_count != 0) {
@@ -1557,7 +1607,7 @@ cmap_devicen_halftoned(const frac * pcc,
 static void
 cmap_devicen_direct(const frac * pcc,
     gx_device_color * pdc, const gs_gstate * pgs, gx_device * dev,
-    gs_color_select_t select)
+    gs_color_select_t select, const gs_color_space *pcs)
 {
     uchar i, ncomps = dev->color_info.num_components;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
@@ -1589,14 +1639,16 @@ cmap_devicen_direct(const frac * pcc,
        as a CMYK color that will be color managed and specified with 10% C,
        20% M 0% Y 0% K. Hence the CMYK values should go through the same
        color management as a stand alone CMYK value.  */
-    if (devicen_has_cmyk(dev) && des_profile->data_cs == gsCMYK) {
+    if (devicen_has_cmyk(dev, des_profile) && des_profile->data_cs == gsCMYK &&
+        !named_color_supported(pgs)) {
         /* We need to do a CMYK to CMYK conversion here.  This will always
            use the default CMYK profile and the device's output profile.
            We probably need to add some checking here
            and possibly permute the colorants, much as is done on the input
            side for the case when we add DeviceN icc source profiles for use
-           in PDF and PS data. */
-        devicen_icc_cmyk(cm_comps, pgs, dev);
+           in PDF and PS data. Also, don't do this if we are doing mapping
+           through the named color mapping.  */
+        devicen_icc_cmyk(cm_comps, pgs, pcs, dev);
     }
     /* apply the transfer function(s); convert to color values.
        assign directly if output device supports devn */

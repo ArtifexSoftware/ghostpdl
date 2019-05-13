@@ -202,7 +202,7 @@ typedef struct gs_cie_def_s gs_cie_def;
 typedef struct gs_cie_defg_s gs_cie_defg;
 
 typedef struct gs_device_n_map_s gs_device_n_map;
-typedef struct gs_device_n_attributes_s gs_device_n_attributes;
+typedef struct gs_device_n_colorant_s gs_device_n_colorant;
 
 /*
  * Non-base direct color spaces: Separation and DeviceN.
@@ -221,22 +221,36 @@ typedef int (gs_callback_func_get_colorname_string)
      (const gs_memory_t *mem, gs_separation_name colorname, unsigned char **ppstr, unsigned int *plen);
 
 typedef enum { SEP_NONE, SEP_ALL, SEP_OTHER } separation_type;
+typedef enum { SEP_ENUM, SEP_MIX, SEP_PURE_RGB, SEP_PURE_CMYK } separation_colors;
 
 typedef struct gs_separation_params_s {
-    gs_separation_name sep_name;
+    gs_memory_t *mem;
+    char *sep_name;
     gs_device_n_map *map;
     separation_type sep_type;
     bool use_alt_cspace;
-    gs_callback_func_get_colorname_string *get_colorname_string;
+    bool named_color_supported;
+    separation_colors color_type;
 } gs_separation_params;
 
+typedef enum {
+    gs_devicen_DeviceN,
+    gs_devicen_NChannel
+} gs_devicen_subtype;
+
 typedef struct gs_device_n_params_s {
-    gs_separation_name *names;
+    gs_memory_t *mem;
     uint num_components;
+    char **names;
     gs_device_n_map *map;
-    gs_device_n_attributes *colorants;
     bool use_alt_cspace;
-    gs_callback_func_get_colorname_string *get_colorname_string;
+    bool named_color_supported;
+    separation_colors color_type;
+    gs_devicen_subtype subtype;
+    gs_device_n_colorant *colorants;
+    gs_color_space       *devn_process_space;
+    uint num_process_names;
+    char **process_names;
 } gs_device_n_params;
 
 /* Define an abstract type for the client color space data */
@@ -359,6 +373,8 @@ void gs_color_space_restrict_color(gs_client_color *, const gs_color_space *);
  * color space does not have a base/alternative color space.
  */
 const gs_color_space *gs_cspace_base_space(const gs_color_space * pcspace);
+
+const gs_color_space *gs_cspace_devn_process_space(const gs_color_space * pcspace);
 
 /* Abstract the rc_increment and rc_decrement for color spaces so that we also rc_increment
    the ICC profile if there is one associated with the color space */

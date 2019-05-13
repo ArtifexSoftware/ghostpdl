@@ -99,4 +99,7 @@ struct gs_pattern1_instance_s {
 #define float_color_to_byte_color(float_color) ( (0.0 < float_color && float_color < 1.0) ? \
     ((unsigned char) (float_color*255.0)) :  ( (float_color <= 0.0) ? 0x00 : 0xFF  ))
 
+#define float_color_to_color16(float_color) ( (0.0 < float_color && float_color < 1.0) ? \
+    ((uint16_t) (float_color*65535.0)) :  ( (float_color <= 0.0) ? 0x00 : 0xFFFF  ))
+
 #endif /* gxcolor2_INCLUDED */

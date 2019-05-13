@@ -64,6 +64,11 @@ typedef struct {
      */
     void (* blend_saturation)(int n_chan, byte *gs_restrict dst,
                     const byte *gs_restrict backdrop, const byte *gs_restrict src);
+    /* And 16 bit variants */
+    void (* blend_luminosity16)(int n_chan, uint16_t *gs_restrict dst,
+                    const uint16_t *gs_restrict backdrop, const uint16_t *gs_restrict src);
+    void (* blend_saturation16)(int n_chan, uint16_t *gs_restrict dst,
+                    const uint16_t *gs_restrict backdrop, const uint16_t *gs_restrict src);
 } pdf14_nonseparable_blending_procs_s;
 
 typedef pdf14_nonseparable_blending_procs_s
@@ -84,16 +89,16 @@ typedef pdf14_parent_cs_params_s pdf14_parent_cs_params_t;
 
 /* This function is used for mapping Smask CMYK or RGB data to a monochrome alpha buffer */
 void smask_luminosity_mapping(int num_rows, int num_cols, int n_chan, int row_stride,
-                         int plane_stride, byte *gs_restrict src, const byte *gs_restrict des, bool isadditive,
-                            gs_transparency_mask_subtype_t SMask_SubType);
+                         int plane_stride, const byte *gs_restrict src, byte *gs_restrict des, bool isadditive,
+                            gs_transparency_mask_subtype_t SMask_SubType, bool deep);
 void smask_blend(byte *gs_restrict src, int width, int height, int rowstride,
-                 int planestride);
+                 int planestride, bool deep);
 
 void smask_copy(int num_rows, int num_cols, int row_stride,
                          byte *gs_restrict src, const byte *gs_restrict des);
 void smask_icc(gx_device *dev, int num_rows, int num_cols, int n_chan,
                int row_stride, int plane_stride, byte *gs_restrict src, const byte *gs_restrict des,
-               gsicc_link_t *icclink);
+               gsicc_link_t *icclink, bool deep);
 /* For spot colors, blend modes must be white preserving and separable */
 bool blend_valid_for_spot(gs_blend_mode_t blend_mode);
 
@@ -130,6 +135,12 @@ art_blend_pixel_8(byte *gs_restrict dst, const byte *gs_restrict backdrop,
                 const pdf14_nonseparable_blending_procs_t * pblend_procs,
                 pdf14_device *p14dev);
 
+void
+art_blend_pixel_16(uint16_t *gs_restrict dst, const uint16_t *gs_restrict backdrop,
+                   const uint16_t *gs_restrict src, int n_chan, gs_blend_mode_t blend_mode,
+                   const pdf14_nonseparable_blending_procs_t * pblend_procs,
+                   pdf14_device *p14dev);
+
 #ifdef UNUSED
 /**
  * art_pdf_union_8: Union together two alpha values.
@@ -164,6 +175,20 @@ art_pdf_union_mul_8(byte alpha1, byte alpha2, byte alpha_mask)
     return 0xff - ((tmp + (tmp >> 8)) >> 8);
 }
 
+static inline uint16_t
+art_pdf_union_mul_16(uint16_t alpha1, uint16_t alpha2_, uint16_t alpha_mask)
+{
+    int alpha2 = alpha2_;
+    if (alpha_mask != 0xffff)
+    {
+        int am = alpha_mask + (alpha_mask>>15);
+        alpha2 = (alpha2 * am + 0x8000)>>16;
+    }
+    alpha2 += alpha2>>15;
+    alpha2 = ((0xffff - alpha1) * (0x10000 - alpha2) + 0x8000)>>16;
+    return 0xffff - (alpha2 >> 16);
+}
+
 /**
  * art_pdf_composite_pixel_alpha_8: Composite two alpha pixels.
  * @dst: Where to store resulting pixel, also initially backdrop color.
@@ -195,20 +220,11 @@ art_pdf_composite_pixel_alpha_8(byte *gs_restrict dst, const byte *gs_restrict s
         const pdf14_nonseparable_blending_procs_t * pblend_procs,
         pdf14_device *p14dev);
 
-
-/*
- * art_pdf_compose_group_fn: Function pointer type for functions
- * to compose a group.
- */
-typedef void (*art_pdf_compose_group_fn)(byte *tos_ptr, bool tos_isolated, int tos_planestride, int tos_rowstride,
-                                         byte alpha, byte shape, gs_blend_mode_t blend_mode, bool tos_has_shape,
-                                         int tos_shape_offset, int tos_alpha_g_offset, int tos_tag_offset, bool tos_has_tag,
-                                         byte *nos_ptr, bool nos_isolated, int nos_planestride, int nos_rowstride,
-                                         byte *nos_alpha_g_ptr, bool nos_knockout, int nos_shape_offset, int nos_tag_offset,
-                                         byte *mask_row_ptr, int has_mask, pdf14_buf *maskbuf, byte mask_bg_alpha, byte *mask_tr_fn,
-                                         byte *backdrop_ptr, bool has_matte, int n_chan, bool additive, int num_spots, bool overprint,
-                                         gx_color_index drawn_comps, int x0, int y0, int x1, int y1,
-                                         const pdf14_nonseparable_blending_procs_t *pblend_procs, pdf14_device *pdev);
+void
+art_pdf_composite_pixel_alpha_16(uint16_t *gs_restrict dst, const uint16_t *gs_restrict src, int n_chan,
+        gs_blend_mode_t blend_mode, int first_spot,
+        const pdf14_nonseparable_blending_procs_t * pblend_procs,
+        pdf14_device *p14dev);
 
 /**
  * art_pdf_composite_knockout_8: knockout compositing.
@@ -228,6 +244,14 @@ art_pdf_composite_knockout_8(byte *gs_restrict dst,
                                     const pdf14_nonseparable_blending_procs_t * pblend_procs,
                                     pdf14_device *p14dev);
 
+void
+art_pdf_composite_knockout_16(uint16_t *gs_restrict dst,
+                                    const uint16_t *gs_restrict src,
+                                    int n_chan,
+                                    gs_blend_mode_t blend_mode,
+                                    const pdf14_nonseparable_blending_procs_t * pblend_procs,
+                                    pdf14_device *p14dev);
+
 /**
  * art_pdf_knockoutisolated_group_8: Knockout for isolated group.
  * @dst: Destination pixel.
@@ -238,6 +262,9 @@ art_pdf_composite_knockout_8(byte *gs_restrict dst,
  **/
 void
 art_pdf_knockoutisolated_group_8(byte *gs_restrict dst, const byte *gs_restrict src, int n_chan);
+
+void
+art_pdf_knockoutisolated_group_16(uint16_t *gs_restrict dst, const uint16_t *gs_restrict src, int n_chan);
 
 /**
 * art_pdf_knockoutisolated_group_8: Knockout for isolated group.
@@ -263,31 +290,50 @@ void art_blend_luminosity_rgb_8(int n_chan, byte *gs_restrict dst, const byte *g
                            const byte *gs_restrict src);
 void art_blend_saturation_rgb_8(int n_chan, byte *gs_restrict dst, const byte *gs_restrict backdrop,
                            const byte *gs_restrict src);
+void art_blend_luminosity_rgb_16(int n_chan, uint16_t *gs_restrict dst, const uint16_t *gs_restrict backdrop,
+                           const uint16_t *gs_restrict src);
+void art_blend_saturation_rgb_16(int n_chan, uint16_t *gs_restrict dst, const uint16_t *gs_restrict backdrop,
+                           const uint16_t *gs_restrict src);
 /* CMYK and CMYK + spot blending color space */
 void art_blend_saturation_cmyk_8(int n_chan, byte *gs_restrict dst, const byte *gs_restrict backdrop,
                            const byte *gs_restrict src);
 void art_blend_luminosity_cmyk_8(int n_chan, byte *gs_restrict dst, const byte *gs_restrict backdrop,
                            const byte *gs_restrict src);
+void art_blend_saturation_cmyk_16(int n_chan, uint16_t *gs_restrict dst, const uint16_t *gs_restrict backdrop,
+                           const uint16_t *gs_restrict src);
+void art_blend_luminosity_cmyk_16(int n_chan, uint16_t *gs_restrict dst, const uint16_t *gs_restrict backdrop,
+                           const uint16_t *gs_restrict src);
 /* 'Custom' i.e. unknown blending color space. */
 void art_blend_luminosity_custom_8(int n_chan, byte *gs_restrict dst, const byte *gs_restrict backdrop,
                            const byte *gs_restrict src);
 void art_blend_saturation_custom_8(int n_chan, byte *gs_restrict dst, const byte *gs_restrict backdrop,
                            const byte *gs_restrict src);
+void art_blend_luminosity_custom_16(int n_chan, uint16_t *gs_restrict dst, const uint16_t *gs_restrict backdrop,
+                           const uint16_t *gs_restrict src);
+void art_blend_saturation_custom_16(int n_chan, uint16_t *gs_restrict dst, const uint16_t *gs_restrict backdrop,
+                           const uint16_t *gs_restrict src);
 
 void pdf14_unpack_rgb_mix(int num_comp, gx_color_index color,
-                                pdf14_device * p14dev, byte * out);
-
+                          pdf14_device * p14dev, byte * out);
 void pdf14_unpack_gray_mix(int num_comp, gx_color_index color,
-    pdf14_device * p14dev, byte * out);
-
+                           pdf14_device * p14dev, byte * out);
 void pdf14_unpack_additive(int num_comp, gx_color_index color,
-                                pdf14_device * p14dev, byte * out);
+                           pdf14_device * p14dev, byte * out);
 void pdf14_unpack_subtractive(int num_comp, gx_color_index color,
-                                pdf14_device * p14dev, byte * out);
-
-
+                              pdf14_device * p14dev, byte * out);
 void pdf14_unpack_custom(int num_comp, gx_color_index color,
-                                pdf14_device * p14dev, byte * out);
+                         pdf14_device * p14dev, byte * out);
+
+void pdf14_unpack16_rgb_mix(int num_comp, gx_color_index color,
+                            pdf14_device * p14dev, uint16_t * out);
+void pdf14_unpack16_gray_mix(int num_comp, gx_color_index color,
+                             pdf14_device * p14dev, uint16_t * out);
+void pdf14_unpack16_additive(int num_comp, gx_color_index color,
+                             pdf14_device * p14dev, uint16_t * out);
+void pdf14_unpack16_subtractive(int num_comp, gx_color_index color,
+                                pdf14_device * p14dev, uint16_t * out);
+void pdf14_unpack16_custom(int num_comp, gx_color_index color,
+                           pdf14_device * p14dev, uint16_t * out);
 
 void pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool knockout_buff);
 
@@ -308,8 +354,11 @@ void pdf14_compose_alphaless_group(pdf14_buf *tos, pdf14_buf *nos,
 
 gx_color_index pdf14_encode_color(gx_device *dev, const gx_color_value colors[]);
 gx_color_index pdf14_encode_color_tag(gx_device *dev, const gx_color_value colors[]);
+gx_color_index pdf14_encode_color16(gx_device *dev, const gx_color_value colors[]);
+gx_color_index pdf14_encode_color16_tag(gx_device *dev, const gx_color_value colors[]);
 
 int pdf14_decode_color(gx_device * dev, gx_color_index color, gx_color_value * out);
+int pdf14_decode_color16(gx_device * dev, gx_color_index color, gx_color_value * out);
 void pdf14_gray_cs_to_cmyk_cm(gx_device * dev, frac gray, frac out[]);
 void pdf14_rgb_cs_to_cmyk_cm(gx_device * dev, const gs_gstate *pgs,
                            frac r, frac g, frac b, frac out[]);
@@ -326,18 +375,22 @@ void pdf14_rgb_cs_to_grayspot_cm(gx_device * dev, const gs_gstate *pgs,
 void pdf14_cmyk_cs_to_grayspot_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[]);
 
 void gx_build_blended_image_row(const byte *gs_restrict buf_ptr, int planestride,
-                           int width, int num_comp, byte bg, byte *gs_restrict linebuf);
+                                int width, int num_comp, byte bg, byte *gs_restrict linebuf);
+void gx_build_blended_image_row16(const byte *gs_restrict buf_ptr, int planestride,
+                                  int width, int num_comp, uint16_t bg, byte *gs_restrict linebuf);
 void gx_blend_image_buffer(byte *buf_ptr, int width, int height,
     int rowstride, int planestride, int num_comp, byte bg);
-void gx_blend_image_buffer16(byte *buf_ptr, unsigned short *buf_ptr_out, int width, int height,
+void gx_blend_image_buffer16(byte *buf_ptr, int width, int height,
+    int rowstride, int planestride, int num_comp, uint16_t bg);
+void gx_blend_image_buffer8to16(const byte *buf_ptr, unsigned short *buf_ptr_out, int width, int height,
         int rowstride, int planestride, int num_comp, byte bg);
 int gx_put_blended_image_cmykspot(gx_device *target, byte *buf_ptr,
                       int planestride, int rowstride,
-                      int x0, int y0, int width, int height, int num_comp, byte bg,
-                      bool has_tags, gs_int_rect rect, gs_separations *pseparations);
+                      int x0, int y0, int width, int height, int num_comp, uint16_t bg,
+                      bool has_tags, gs_int_rect rect, gs_separations *pseparations, bool deep);
 int gx_put_blended_image_custom(gx_device *target, byte *buf_ptr,
                       int planestride, int rowstride,
-                      int x0, int y0, int width, int height, int num_comp, byte bg);
+                      int x0, int y0, int width, int height, int num_comp, uint16_t bg, bool deep);
 
 /* Function moved between compilation units to allow inlining. */
 int pdf14_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
@@ -350,7 +403,10 @@ int pdf14_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 
 void dump_raw_buffer(int num_rows, int width, int n_chan,
                     int plane_stride, int rowstride,
-                    char filename[],byte *Buffer);
+                    char filename[],const byte *Buffer, bool deep);
+void dump_raw_buffer_be(int num_rows, int width, int n_chan,
+                        int plane_stride, int rowstride,
+                        char filename[],const byte *Buffer, bool deep);
 #endif
 
 #endif /* gxblend_INCLUDED */

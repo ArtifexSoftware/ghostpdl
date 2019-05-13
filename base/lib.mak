@@ -387,13 +387,8 @@ gsmd5_h=$(GLSRC)gsmd5.h
 # We have to use a slightly different compilation approach in order to
 # get std.h included when compiling md5.c.
 md5_=$(GLOBJ)gsmd5.$(OBJ)
-$(GLOBJ)gsmd5.$(OBJ) : $(GLSRC)gsmd5.c $(AK) $(gsmd5_h)\
- $(EXP)$(ECHOGS_XE) $(LIB_MAK) $(MAKEDIRS)
-	$(EXP)$(ECHOGS_XE) -w $(GLGEN)gsmd5.h -x 23 include -x 2022 memory_.h -x 22
-	$(EXP)$(ECHOGS_XE) -a $(GLGEN)gsmd5.h -+R $(GLSRC)gsmd5.h
-	$(CP_) $(GLSRC)gsmd5.c $(GLGEN)gsmd5.c
-	$(GLCC) $(GLO_)gsmd5.$(OBJ) $(C_) $(GLGEN)gsmd5.c
-	$(RM_) $(GLGEN)gsmd5.c $(GLGEN)gsmd5.h
+$(GLOBJ)gsmd5.$(OBJ) : $(GLSRC)gsmd5.c $(AK) $(gsmd5_h) $(LIB_MAK) $(MAKEDIRS)
+	$(GLCC) $(GLO_)gsmd5.$(OBJ) $(C_) $(GLSRC)gsmd5.c
 
 # SHA-256 digest
 sha2_h=$(GLSRC)sha2.h
@@ -12381,3 +12376,4 @@ $(GLSRC)gxshade4.h:$(GLSRC)gstypes.h
 $(GLSRC)gxshade4.h:$(GLSRC)stdpre.h
 $(GLSRC)gxshade4.h:$(GLGEN)arch.h
 $(GLSRC)gxshade4.h:$(GLSRC)gs_dll_call.h
+$(GLSRC)gsmd5.h:$(GLSRC)memory_.h

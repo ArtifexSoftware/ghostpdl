@@ -913,14 +913,8 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_gstate * pgs, const
         }
 
         for (i = 0; i < pcs->params.device_n.num_components; ++i) {
-            code = pcs->params.device_n.get_colorname_string(
-                              pdev->memory,
-                              pcs->params.device_n.names[i], &name_string,
-                              &name_string_length);
-            if (code < 0) {
-                COS_FREE(pca, "convert DeviceN");
-                return code;
-            }
+            name_string = (byte *)pcs->params.device_n.names[i];
+            name_string_length = strlen(pcs->params.device_n.names[i]);
             code = pdf_string_to_cos_name(pdev, name_string,
                               name_string_length, &v);
             if (code < 0) {
@@ -968,7 +962,7 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_gstate * pgs, const
         if (pcs->params.device_n.colorants != NULL) {
             cos_dict_t *colorants  = cos_dict_alloc(pdev, "pdf_color_space(DeviceN)");
             cos_value_t v_colorants, v_separation, v_colorant_name;
-            const gs_device_n_attributes *csa;
+            const gs_device_n_colorant *csa;
             pdf_resource_t *pres_attributes;
 
             if (colorants == NULL)
@@ -987,12 +981,8 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_gstate * pgs, const
                 return code;
             }
             for (csa = pcs->params.device_n.colorants; csa != NULL; csa = csa->next) {
-                code = pcs->params.device_n.get_colorname_string(pdev->memory,
-                              csa->colorant_name, &name_string, &name_string_length);
-                if (code < 0) {
-                    COS_FREE(pca, "convert DeviceN");
-                    return code;
-                }
+                name_string = (byte *)csa->colorant_name;
+                name_string_length = strlen((const char *)name_string);
                 code = pdf_color_space_named(pdev, pgs, &v_separation, NULL, csa->cspace, &pdf_color_space_names, false, NULL, 0, false);
                 if (code < 0) {
                     COS_FREE(pca, "convert DeviceN");
@@ -1288,21 +1278,14 @@ int convert_separation_alternate(gx_device_pdf * pdev, const gs_gstate * pgs, co
 
     if (code >= 0) {
         csi = gs_color_space_get_index(pcs);
-        if (csi == gs_color_space_index_Indexed)
-            code = pcs->base_space->params.separation.get_colorname_string(
-                          pdev->memory,
-                          pcs->base_space->params.separation.sep_name, &name_string,
-                          &name_string_length);
-        else
-            code = pcs->params.separation.get_colorname_string(
-                          pdev->memory,
-                          pcs->params.separation.sep_name, &name_string,
-                          &name_string_length);
-        if (code < 0) {
-            COS_FREE(pca, "pdf_color_space");
-            return code;
+        if (csi == gs_color_space_index_Indexed) {
+            name_string = (byte *)pcs->base_space->params.separation.sep_name;
+            name_string_length = strlen(pcs->base_space->params.separation.sep_name);
         }
-
+        else {
+            name_string = (byte *)pcs->params.separation.sep_name;
+            name_string_length = strlen(pcs->params.separation.sep_name);
+        }
         code = pdf_string_to_cos_name(pdev, name_string,
                               name_string_length, &v);
         if (code < 0) {

@@ -302,6 +302,10 @@ clist_setup_render_threads(gx_device *dev, int y, gx_process_page_options_t *opt
     /* this will be increased by the measured profile storage and icclinks (estimated).		  */
     int reserve_size = 2 * 1024 * 1024 + (gx_ht_cache_default_bits_size() * dev->color_info.num_components);
     clist_icctable_entry_t *curr_entry;
+    bool has_tags = device_encodes_tags(dev);
+    int bits_per_comp = ((dev->color_info.depth - has_tags*8) /
+                         dev->color_info.num_components);
+    bool deep = bits_per_comp > 8;
 
     crdev->num_render_threads = pdev->num_render_threads_requested;
 
@@ -309,7 +313,7 @@ clist_setup_render_threads(gx_device *dev, int y, gx_process_page_options_t *opt
         dmprintf1(mem, "%% %d rendering threads requested.\n", pdev->num_render_threads_requested);
 
     if (crdev->page_uses_transparency) {
-        reserve_pdf14_memory_size = (ESTIMATED_PDF14_ROW_SPACE(max(1, crdev->width), crdev->color_info.num_components) >> 3);
+        reserve_pdf14_memory_size = (ESTIMATED_PDF14_ROW_SPACE(max(1, crdev->width), crdev->color_info.num_components, deep ? 16 : 8) >> 3);
         reserve_pdf14_memory_size *= crdev->page_info.band_params.BandHeight;	/* BandHeight set by writer */
     }
     /* scan the profile table sizes to get the total each thread will need */

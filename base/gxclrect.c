@@ -920,6 +920,8 @@ clist_copy_planes(gx_device * dev,
     gx_bitmap_id orig_id = id;
     cmd_rects_enum_t re;
     int bpc = dev->color_info.depth / dev->color_info.num_components;
+    int pix_in_byte = bpc <= 8 ? 8/bpc : 1;
+    int byte_in_pix = bpc >= 8 ? bpc/8 : 1;
 
     if (rwidth <= 0 || rheight <= 0)
         return 0;
@@ -956,9 +958,9 @@ clist_copy_planes(gx_device * dev,
         byte *dp, *dp2;
         uint csize;
         byte op = (byte) cmd_op_copy_mono_planes;
-        int dx = data_x % (8/bpc);
+        int dx = data_x % pix_in_byte;
         int w1 = dx + rwidth;
-        const byte *row = data + (re.y - y0) * raster + (data_x / (8/bpc));
+        const byte *row = data + (re.y - y0) * raster + (data_x * byte_in_pix / pix_in_byte);
         int bytes_row = ((w1*bpc+7)/8 + 7) & ~7;
         int maxheight = data_bits_size / bytes_row / cdev->color_info.num_components;
         int plane;

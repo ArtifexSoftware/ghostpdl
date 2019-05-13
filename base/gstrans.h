@@ -114,7 +114,7 @@ struct gs_pdf14trans_params_s {
                               outside its own groups bounding
                               box in such a case */
     gs_function_t *transfer_function;
-    byte transfer_fn[MASK_TRANSFER_FUNCTION_SIZE];
+    byte transfer_fn[MASK_TRANSFER_FUNCTION_SIZE*2+2];
     /* Individual transparency parameters */
     gs_blend_mode_t blend_mode;
     bool text_knockout;
@@ -250,12 +250,11 @@ bool gs_getalphaisshape(gs_gstate *pgs);
 #define NUM_PDF14_BUFFERS 4     /* totally a random guess */
 #define NUM_ALPHA_CHANNELS 1    /* common, but doesn't include possible tag, shape or group alpha */
 #define NUM_COLOR_CHANNELS 4    /* CMYK is most common 'worst case' */
-#define BITS_PER_CHANNEL 8      /* currently pdf14 device is always 8-bit */
 /* The estimated size of an individual PDF 1.4 buffer row (in bits) */
-#define ESTIMATED_PDF14_ROW_SIZE(width, target_num_components) ((width) * BITS_PER_CHANNEL\
+#define ESTIMATED_PDF14_ROW_SIZE(width, target_num_components, bits) ((width) * (bits)\
         * (NUM_ALPHA_CHANNELS + max(target_num_components,NUM_COLOR_CHANNELS)))
 /* The estimated size of one row in all PDF 1.4 buffers (in bits) */
-#define ESTIMATED_PDF14_ROW_SPACE(width, target_num_components) \
-        (NUM_PDF14_BUFFERS * ESTIMATED_PDF14_ROW_SIZE(width, target_num_components))
+#define ESTIMATED_PDF14_ROW_SPACE(width, target_num_components, bits) \
+        (NUM_PDF14_BUFFERS * ESTIMATED_PDF14_ROW_SIZE(width, target_num_components, bits))
 
 #endif /* gstrans_INCLUDED */

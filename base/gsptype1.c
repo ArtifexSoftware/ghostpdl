@@ -2039,6 +2039,10 @@ gx_dc_pattern_read(
     int code, l;
     tile_trans_clist_info_t trans_info = { { { 0 } } };
     int cache_space_needed;
+    bool has_tags = device_encodes_tags(dev);
+    int bits_per_comp = ((dev->color_info.depth - has_tags*8) /
+                         dev->color_info.num_components);
+    bool deep = bits_per_comp > 8;
 
     if (offset == 0) {
         pdevc->mask.id = gx_no_bitmap_id;
@@ -2128,6 +2132,7 @@ gx_dc_pattern_read(
                 ptile->ttrans->rect.q.y = trans_info.rect.q.y;
                 ptile->ttrans->rowstride = trans_info.rowstride;
                 ptile->ttrans->width = trans_info.width;
+                ptile->ttrans->deep = deep;
                 pdevc->type = &gx_dc_pattern_trans;
                 if_debug2m('v', pgs->memory,
                            "[v*] Reading trans tile from clist into cache, uid = %ld id = %ld \n",

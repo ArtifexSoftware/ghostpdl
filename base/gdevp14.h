@@ -54,7 +54,11 @@ typedef struct {
      * output device as an image.
      */
     int (* put_image)(gx_device * dev,
-                    gs_gstate * pgs, gx_device * target);
+                      gs_gstate * pgs, gx_device * target);
+
+    /* And a 16 bit variant */
+    void (* unpack_color16)(int num_comp, gx_color_index color,
+                            pdf14_device * p14dev, uint16_t * out);
 } pdf14_procs_s;
 
 typedef pdf14_procs_s pdf14_procs_t;
@@ -126,13 +130,14 @@ struct pdf14_buf_s {
     byte *backdrop;  /* This is needed for proper non-isolated knockout support */
     bool isolated;
     bool knockout;
-    byte alpha;
-    byte shape;
+    uint16_t alpha;
+    uint16_t shape;
     gs_blend_mode_t blend_mode;
     int num_spots;  /* helpful when going between Gray+spots, RGB+spots, CMYK+spots */
     bool has_alpha_g;
     bool has_shape;
     bool has_tags;
+    bool deep; /* false => 8 bits, true => 16 bits */
 
     gs_int_rect rect;
     /* Note: the traditional GS name for rowstride is "raster" */
@@ -147,7 +152,7 @@ struct pdf14_buf_s {
     byte *data;
     byte *transfer_fn;
     int matte_num_comps;
-    byte *matte;
+    uint16_t *matte;
     gs_int_rect dirty;
     pdf14_mask_t *mask_stack;
     bool idle;
@@ -175,6 +180,7 @@ struct pdf14_ctx_s {
     int n_chan;
     int smask_depth;  /* used to catch smasks embedded in smasks.  bug691803 */
     bool smask_blend;
+    bool deep; /* If true, 16 bit data, false, 8 bit data. */
 };
 
 typedef struct gs_pdf14trans_params_s gs_pdf14trans_params_t;

@@ -46,7 +46,7 @@
                gx_device *, gs_color_select_t)
 #define cmap_proc_devicen(proc)\
   void proc(const frac *, gx_device_color *, const gs_gstate *, \
-               gx_device *, gs_color_select_t)
+               gx_device *, gs_color_select_t, const gs_color_space *)
 #define cmap_proc_is_halftoned(proc)\
   bool proc(const gs_gstate *, gx_device *)
 
@@ -146,8 +146,8 @@ void gx_set_cmap_procs(gs_gstate *, const gx_device *);
   ((pgs)->cmap_procs->map_rgb_alpha)(cr, cg, cb, ca, pdc, pgs, dev, select)
 #define gx_remap_concrete_separation(pcc, pdc, pgs, dev, select)\
   ((pgs)->cmap_procs->map_separation)(pcc, pdc, pgs, dev, select)
-#define gx_remap_concrete_devicen(pcc, pdc, pgs, dev, select)\
-  ((pgs)->cmap_procs->map_devicen)(pcc, pdc, pgs, dev, select)
+#define gx_remap_concrete_devicen(pcc, pdc, pgs, dev, select, pcs)\
+  ((pgs)->cmap_procs->map_devicen)(pcc, pdc, pgs, dev, select, pcs)
 
 /* Map a color */
 #include "gxcindex.h"
