@@ -38,6 +38,7 @@
 
 /* Forward definitions for a routine we need */
 static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_array, int index, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs, bool inline_image);
+static int pdfi_create_colorspace_by_name(pdf_context *ctx, pdf_name *name, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs, bool inline_image);
 
 /* This is used only from the page level interpreter code, we need to know the number
  * of spot colours in a PDF file, which we have to pass to the device for spot colour
@@ -1908,7 +1909,7 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
     return code;
 }
 
-int
+static int
 pdfi_create_colorspace_by_name(pdf_context *ctx, pdf_name *name,
                                pdf_dict *stream_dict, pdf_dict *page_dict,
                                gs_color_space **ppcs, bool inline_image)

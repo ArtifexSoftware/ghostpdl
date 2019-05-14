@@ -646,7 +646,7 @@ pdfi_pattern_create(pdf_context *ctx, pdf_array *color_array,
 {
     gs_color_space *pcs = NULL;
     gs_color_space *base_space;
-    pdf_name *base_name = NULL;
+    pdf_obj *base_obj = NULL;
     int code;
 
     /* TODO: should set to "the initial color is a pattern object that causes nothing to be painted."
@@ -669,10 +669,10 @@ pdfi_pattern_create(pdf_context *ctx, pdf_array *color_array,
         if (pdfi_array_size(color_array) < 2) {
             return_error(gs_error_syntaxerror);
         }
-        code = pdfi_array_get_type(ctx, color_array, 1, PDF_NAME, (pdf_obj **)&base_name);
+        code = pdfi_array_get(ctx, color_array, 1, &base_obj);
         if (code < 0)
             goto exit;
-        code = pdfi_create_colorspace_by_name(ctx, base_name, stream_dict, page_dict, &base_space, false);
+        code = pdfi_create_colorspace(ctx, base_obj, stream_dict, page_dict, &base_space, false);
         if (code < 0)
             goto exit;
         pcs->base_space = base_space;
@@ -698,6 +698,6 @@ pdfi_pattern_create(pdf_context *ctx, pdf_array *color_array,
 
 
  exit:
-    pdfi_countdown(base_name);
+    pdfi_countdown(base_obj);
     return code;
 }
