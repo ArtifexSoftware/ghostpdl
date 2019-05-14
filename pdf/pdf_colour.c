@@ -593,7 +593,7 @@ pdfi_setcolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, boo
 {
     const gs_color_space *pcs;
     gs_color_space *base_space = NULL;
-    int ncomps=0, code;
+    int ncomps=0, code = 0;
     gs_client_color cc;
     bool is_pattern = false;
     int args_on_stack = ctx->stack_top - ctx->stack_bot;
@@ -1054,7 +1054,7 @@ static int
 pdfi_seticc_cal(pdf_context *ctx, float *white, float *black, float *gamma,
            float *matrix, int num_colorants, ulong dictkey, gs_color_space **ppcs)
 {
-    int                     code;
+    int                     code = 0;
     gs_color_space *        pcs;
     int                     i;
     cmm_profile_t           *cal_profile;

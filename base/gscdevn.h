@@ -86,6 +86,6 @@ int gs_attachcolorant(char *sep_name, gs_gstate * pgs);
  * This is for the pdfi PDF interpreter (and potentially any other non-PostScript
  * interpreter)
  */
-int gs_attachcolorant_to_space(char *sep_name, gs_color_space *pcs, gs_color_space *colorant_space, gs_memory_t *mem);
+int gs_attach_colorant_to_space(char *sep_name, gs_color_space *pcs, gs_color_space *colorant_space, gs_memory_t *mem);
 
 #endif /* gscdevn_INCLUDED */

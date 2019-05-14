@@ -28,7 +28,6 @@ static int pdfi_transparency_group_common(pdf_context *ctx, pdf_dict *page_dict,
     gs_transparency_group_params_t params;
     pdf_obj *CS = NULL;
     bool b;
-    gs_color_space  *pcs = NULL;
     int code;
 
     gs_trans_group_params_init(&params);
@@ -121,5 +120,8 @@ int pdfi_end_transparency_group(pdf_context *ctx)
     int code;
 
     code = gs_grestore(ctx->pgs);
+    if (code < 0)
+        return code;
+
     return gs_end_transparency_group(ctx->pgs);
 }
