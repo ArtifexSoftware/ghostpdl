@@ -1844,14 +1844,14 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
     code = 0;
     if (pdfi_name_is(space, "G") || pdfi_name_is(space, "DeviceGray")) {
         if (pdfi_name_is(space, "G") && !inline_image) {
-            ctx->pdf_warnings|= W_PDF_BAD_INLINEFILTER;
+            ctx->pdf_warnings|= W_PDF_BAD_INLINECOLORSPACE;
             if (ctx->pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
         code = pdfi_create_DeviceGray(ctx, ppcs);
     } else if (pdfi_name_is(space, "I") || pdfi_name_is(space, "Indexed")) {
         if (pdfi_name_is(space, "I") && !inline_image) {
-            ctx->pdf_warnings|= W_PDF_BAD_INLINEFILTER;
+            ctx->pdf_warnings|= W_PDF_BAD_INLINECOLORSPACE;
             if (ctx->pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
@@ -1860,14 +1860,14 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
         code = pdfi_create_Lab(ctx, color_array, index, stream_dict, page_dict, ppcs);
     } else if (pdfi_name_is(space, "RGB") || pdfi_name_is(space, "DeviceRGB")) {
         if (pdfi_name_is(space, "RGB") && !inline_image) {
-            ctx->pdf_warnings|= W_PDF_BAD_INLINEFILTER;
+            ctx->pdf_warnings|= W_PDF_BAD_INLINECOLORSPACE;
             if (ctx->pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
         code = pdfi_create_DeviceRGB(ctx, ppcs);
     } else if (pdfi_name_is(space, "CMYK") || pdfi_name_is(space, "DeviceCMYK")) {
         if (pdfi_name_is(space, "CMYK") && !inline_image) {
-            ctx->pdf_warnings|= W_PDF_BAD_INLINEFILTER;
+            ctx->pdf_warnings|= W_PDF_BAD_INLINECOLORSPACE;
             if (ctx->pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
@@ -1918,21 +1918,21 @@ pdfi_create_colorspace_by_name(pdf_context *ctx, pdf_name *name,
 
     if (pdfi_name_is(name, "G") || pdfi_name_is(name, "DeviceGray")) {
         if (pdfi_name_is(name, "G") && !inline_image) {
-            ctx->pdf_warnings|= W_PDF_BAD_INLINEFILTER;
+            ctx->pdf_warnings|= W_PDF_BAD_INLINECOLORSPACE;
             if (ctx->pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
         code = pdfi_create_DeviceGray(ctx, ppcs);
     } else if (pdfi_name_is(name, "RGB") || pdfi_name_is(name, "DeviceRGB")) {
         if (pdfi_name_is(name, "RGB") && !inline_image) {
-            ctx->pdf_warnings|= W_PDF_BAD_INLINEFILTER;
+            ctx->pdf_warnings|= W_PDF_BAD_INLINECOLORSPACE;
             if (ctx->pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
         code = pdfi_create_DeviceRGB(ctx, ppcs);
     } else if (pdfi_name_is(name, "CMYK") || pdfi_name_is(name, "DeviceCMYK")) {
         if (pdfi_name_is(name, "CMYK") && !inline_image) {
-            ctx->pdf_warnings|= W_PDF_BAD_INLINEFILTER;
+            ctx->pdf_warnings|= W_PDF_BAD_INLINECOLORSPACE;
             if (ctx->pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }

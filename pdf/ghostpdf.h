@@ -120,6 +120,8 @@ typedef enum pdf_error_flag_e {
 typedef enum pdf_warning_flag_e {
     W_PDF_NOWARNING = 0,
     W_PDF_BAD_INLINEFILTER = 1,
+    W_PDF_BAD_INLINECOLORSPACE = W_PDF_BAD_INLINEFILTER << 1,
+    W_PDF_BAD_INLINEIMAGEKEY = W_PDF_BAD_INLINECOLORSPACE << 1,
 } pdf_warning_flag;
 
 #define INITIAL_STACK_SIZE 32

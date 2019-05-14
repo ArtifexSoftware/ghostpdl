@@ -585,6 +585,28 @@ pdfi_get_image_info(pdf_context *ctx, pdf_dict *image_dict, pdf_dict *page_dict,
     return code;
 }
 
+static int pdfi_check_inline_image_keys(pdf_context *ctx, pdf_dict *image_dict)
+{
+    bool known = false;
+
+    pdfi_dict_known(image_dict, "BPC", &known);
+    pdfi_dict_known(image_dict, "CS", &known);
+    pdfi_dict_known(image_dict, "D", &known);
+    pdfi_dict_known(image_dict, "DP", &known);
+    pdfi_dict_known(image_dict, "F", &known);
+    pdfi_dict_known(image_dict, "H", &known);
+    pdfi_dict_known(image_dict, "IM", &known);
+    pdfi_dict_known(image_dict, "I", &known);
+    pdfi_dict_known(image_dict, "W", &known);
+
+    if (known) {
+        ctx->pdf_warnings |= W_PDF_BAD_INLINEIMAGEKEY;
+        if (ctx->pdfstoponwarning)
+            return_error(gs_error_syntaxerror);
+    }
+    return 0;
+}
+
 /* Render a PDF image
  * pim can be type1 (or imagemask), type3, type4
  */
@@ -809,6 +831,16 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     pdfi_jpx_info_t jpx_info;
 
     memset(&mask_info, 0, sizeof(mask_info));
+
+    if (!inline_image) {
+        /* If we are not processing an inline image, check to see if any of the abbreviated
+         * keys are present in the image dictionary. If they are, and we need to abort, we'll
+         * get an error return, otherwise we can continue.
+         */
+        code = pdfi_check_inline_image_keys(ctx, image_dict);
+        if (code < 0)
+            return code;
+    }
 
     code = pdfi_get_image_info(ctx, image_dict, page_dict, &image_info);
     if (code < 0)

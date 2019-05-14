@@ -1450,6 +1450,10 @@ pdfi_report_errors(pdf_context *ctx)
         dmprintf(ctx->memory, "The following warnings were encountered at least once while processing this file:\n");
         if (ctx->pdf_warnings & W_PDF_BAD_INLINEFILTER)
             dmprintf(ctx->memory, "\tThe file attempted to use an inline decompression filter other than on an inline image.\n");
+        if (ctx->pdf_warnings & W_PDF_BAD_INLINECOLORSPACE)
+            dmprintf(ctx->memory, "\tThe file attempted to use an inline image coloe space other than on an inline image.\n");
+        if (ctx->pdf_warnings & W_PDF_BAD_INLINEIMAGEKEY)
+            dmprintf(ctx->memory, "\tThe file attempted to use an inline image dictionary key with an image XObject.\n");
     }
 
     dmprintf(ctx->memory, "\n   **** This file had errors that were repaired or ignored.\n");
