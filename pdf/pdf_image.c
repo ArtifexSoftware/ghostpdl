@@ -969,7 +969,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
                     name.type = PDF_NAME;
                     name.length = strlen(color_str);
                     name.data = (byte *)color_str;
-                    code = pdfi_create_colorspace(ctx, (pdf_obj *)&name, page_dict, stream_dict, &pcs);
+                    code = pdfi_create_colorspace(ctx, (pdf_obj *)&name, page_dict, stream_dict, &pcs, inline_image);
                     if (code < 0) {
                         dmprintf1(ctx->memory, "JPXDecode: Error setting colorspace %s\n", color_str);
                         goto cleanupExit;
@@ -993,7 +993,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
                 goto cleanupExit;
             }
         } else {
-            code = pdfi_create_colorspace(ctx, image_info.ColorSpace, page_dict, stream_dict, &pcs);
+            code = pdfi_create_colorspace(ctx, image_info.ColorSpace, page_dict, stream_dict, &pcs, inline_image);
             /* TODO: image_2bpp.pdf has an image in there somewhere that fails on this call (probably ColorN) */
             if (code < 0) {
                 dmprintf(ctx->memory, "WARNING: Image has unsupported ColorSpace ");

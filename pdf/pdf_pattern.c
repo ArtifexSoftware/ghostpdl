@@ -672,7 +672,7 @@ pdfi_pattern_create(pdf_context *ctx, pdf_array *color_array,
         code = pdfi_array_get_type(ctx, color_array, 1, PDF_NAME, (pdf_obj **)&base_name);
         if (code < 0)
             goto exit;
-        code = pdfi_create_colorspace_by_name(ctx, base_name, stream_dict, page_dict, &base_space);
+        code = pdfi_create_colorspace_by_name(ctx, base_name, stream_dict, page_dict, &base_space, false);
         if (code < 0)
             goto exit;
         pcs->base_space = base_space;

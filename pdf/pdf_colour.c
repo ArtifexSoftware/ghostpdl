@@ -37,7 +37,7 @@
 #include "gxcdevn.h"
 
 /* Forward definitions for a routine we need */
-static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_array, int index, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs);
+static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_array, int index, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs, bool inline_image);
 
 /* This is used only from the page level interpreter code, we need to know the number
  * of spot colours in a PDF file, which we have to pass to the device for spot colour
@@ -848,7 +848,7 @@ static int pdfi_create_iccprofile(pdf_context *ctx, pdf_dict *ICC_dict, char *cn
     return code;
 }
 
-static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int index, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs)
+static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int index, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs, bool inline_image)
 {
     pdf_dict *ICC_dict = NULL;
     pdf_array *a;
@@ -955,7 +955,7 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
             }
         }
         if (code > 0)
-            code = pdfi_create_colorspace_by_name(ctx, (pdf_name *)Alternate, stream_dict, page_dict, ppcs);
+            code = pdfi_create_colorspace_by_name(ctx, (pdf_name *)Alternate, stream_dict, page_dict, ppcs, inline_image);
             /* The Alternate should be one of the device spaces */
         pdfi_countdown(Alternate);
     }
@@ -1296,7 +1296,7 @@ exit:
     return code;
 }
 
-static int pdfi_create_Separation(pdf_context *ctx, pdf_array *color_array, int index, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs)
+static int pdfi_create_Separation(pdf_context *ctx, pdf_array *color_array, int index, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs, bool inline_image)
 {
     pdf_obj *o = NULL;
     pdf_name *name = NULL, *NamedAlternate = NULL;
@@ -1323,14 +1323,14 @@ static int pdfi_create_Separation(pdf_context *ctx, pdf_array *color_array, int 
 
     if (o->type == PDF_NAME) {
         NamedAlternate = (pdf_name *)o;
-        code = pdfi_create_colorspace_by_name(ctx, NamedAlternate, stream_dict, page_dict, &pcs_alt);
+        code = pdfi_create_colorspace_by_name(ctx, NamedAlternate, stream_dict, page_dict, &pcs_alt, inline_image);
         if (code < 0)
             goto pdfi_separation_error;
 
     } else {
         if (o->type == PDF_ARRAY) {
             ArrayAlternate = (pdf_array *)o;
-            code = pdfi_create_colorspace_by_array(ctx, ArrayAlternate, 0, stream_dict, page_dict, &pcs_alt);
+            code = pdfi_create_colorspace_by_array(ctx, ArrayAlternate, 0, stream_dict, page_dict, &pcs_alt, inline_image);
             if (code < 0)
                 goto pdfi_separation_error;
         }
@@ -1395,7 +1395,7 @@ pdfi_separation_error:
     return code;
 }
 
-static int pdfi_create_DeviceN(pdf_context *ctx, pdf_array *color_array, int index, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs)
+static int pdfi_create_DeviceN(pdf_context *ctx, pdf_array *color_array, int index, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs, bool inline_image)
 {
     pdf_obj *o = NULL;
     pdf_name *NamedAlternate = NULL;
@@ -1416,14 +1416,14 @@ static int pdfi_create_DeviceN(pdf_context *ctx, pdf_array *color_array, int ind
 
     if (o->type == PDF_NAME) {
         NamedAlternate = (pdf_name *)o;
-        code = pdfi_create_colorspace_by_name(ctx, NamedAlternate, stream_dict, page_dict, &pcs_alt);
+        code = pdfi_create_colorspace_by_name(ctx, NamedAlternate, stream_dict, page_dict, &pcs_alt, inline_image);
         if (code < 0)
             goto pdfi_devicen_error;
 
     } else {
         if (o->type == PDF_ARRAY) {
             ArrayAlternate = (pdf_array *)o;
-            code = pdfi_create_colorspace_by_array(ctx, ArrayAlternate, 0, stream_dict, page_dict, &pcs_alt);
+            code = pdfi_create_colorspace_by_array(ctx, ArrayAlternate, 0, stream_dict, page_dict, &pcs_alt, inline_image);
             if (code < 0)
                 goto pdfi_devicen_error;
         }
@@ -1531,7 +1531,7 @@ static int pdfi_create_DeviceN(pdf_context *ctx, pdf_array *color_array, int ind
             if (code < 0)
                 goto pdfi_devicen_error;
 
-            code = pdfi_create_colorspace(ctx, ColorSpace, stream_dict, page_dict, &process_space);
+            code = pdfi_create_colorspace(ctx, ColorSpace, stream_dict, page_dict, &process_space, inline_image);
             pdfi_countdown(ColorSpace);
             if (code < 0)
                 goto pdfi_devicen_error;
@@ -1600,7 +1600,7 @@ static int pdfi_create_DeviceN(pdf_context *ctx, pdf_array *color_array, int ind
                     goto pdfi_devicen_error;
                 }
 
-                code = pdfi_create_colorspace(ctx, Space, stream_dict, page_dict, &colorant_space);
+                code = pdfi_create_colorspace(ctx, Space, stream_dict, page_dict, &colorant_space, inline_image);
                 if (code < 0) {
                     pdfi_countdown(Space);
                     pdfi_countdown(Colorant);
@@ -1678,7 +1678,7 @@ pdfi_devicen_error:
  */
 static int
 pdfi_create_indexed(pdf_context *ctx, pdf_array *color_array, int index,
-                    pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs)
+                    pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs, bool inline_image)
 {
     pdf_obj *space=NULL, *lookup=NULL;
     int code;
@@ -1702,7 +1702,7 @@ pdfi_create_indexed(pdf_context *ctx, pdf_array *color_array, int index,
     if (code < 0)
         goto exit;
 
-    code = pdfi_create_colorspace(ctx, space, stream_dict, page_dict, &pcs_base);
+    code = pdfi_create_colorspace(ctx, space, stream_dict, page_dict, &pcs_base, inline_image);
     if (code < 0)
         goto exit;
 
@@ -1831,7 +1831,7 @@ static int pdfi_create_DeviceCMYK(pdf_context *ctx, gs_color_space **ppcs)
  * may mean calling pdfi_create_colorspace again....
  */
 static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_array, int index,
-                                           pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs)
+                                           pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs, bool inline_image)
 {
     int code;
     pdf_name *space = NULL;
@@ -1843,14 +1843,34 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
 
     code = 0;
     if (pdfi_name_is(space, "G") || pdfi_name_is(space, "DeviceGray")) {
+        if (pdfi_name_is(space, "G") && !inline_image) {
+            ctx->pdf_warnings|= W_PDF_BAD_INLINEFILTER;
+            if (ctx->pdfstoponwarning)
+                return_error(gs_error_syntaxerror);
+        }
         code = pdfi_create_DeviceGray(ctx, ppcs);
     } else if (pdfi_name_is(space, "I") || pdfi_name_is(space, "Indexed")) {
-        code = pdfi_create_indexed(ctx, color_array, index, stream_dict, page_dict, ppcs);
+        if (pdfi_name_is(space, "I") && !inline_image) {
+            ctx->pdf_warnings|= W_PDF_BAD_INLINEFILTER;
+            if (ctx->pdfstoponwarning)
+                return_error(gs_error_syntaxerror);
+        }
+        code = pdfi_create_indexed(ctx, color_array, index, stream_dict, page_dict, ppcs, inline_image);
     } else if (pdfi_name_is(space, "Lab")) {
         code = pdfi_create_Lab(ctx, color_array, index, stream_dict, page_dict, ppcs);
     } else if (pdfi_name_is(space, "RGB") || pdfi_name_is(space, "DeviceRGB")) {
+        if (pdfi_name_is(space, "RGB") && !inline_image) {
+            ctx->pdf_warnings|= W_PDF_BAD_INLINEFILTER;
+            if (ctx->pdfstoponwarning)
+                return_error(gs_error_syntaxerror);
+        }
         code = pdfi_create_DeviceRGB(ctx, ppcs);
     } else if (pdfi_name_is(space, "CMYK") || pdfi_name_is(space, "DeviceCMYK")) {
+        if (pdfi_name_is(space, "CMYK") && !inline_image) {
+            ctx->pdf_warnings|= W_PDF_BAD_INLINEFILTER;
+            if (ctx->pdfstoponwarning)
+                return_error(gs_error_syntaxerror);
+        }
         code = pdfi_create_DeviceCMYK(ctx, ppcs);
     } else if (pdfi_name_is(space, "CalRGB")) {
         code = pdfi_create_CalRGB(ctx, color_array, index, stream_dict, page_dict, ppcs);
@@ -1862,11 +1882,11 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
         else
             code = pdfi_pattern_create(ctx, color_array, stream_dict, page_dict, ppcs);
     } else if (pdfi_name_is(space, "DeviceN")) {
-        code = pdfi_create_DeviceN(ctx, color_array, index, stream_dict, page_dict, ppcs);
+        code = pdfi_create_DeviceN(ctx, color_array, index, stream_dict, page_dict, ppcs, inline_image);
     } else if (pdfi_name_is(space, "ICCBased")) {
-        code = pdfi_create_iccbased(ctx, color_array, index, stream_dict, page_dict, ppcs);
+        code = pdfi_create_iccbased(ctx, color_array, index, stream_dict, page_dict, ppcs, inline_image);
     } else if (pdfi_name_is(space, "Separation")) {
-        code = pdfi_create_Separation(ctx, color_array, index, stream_dict, page_dict, ppcs);
+        code = pdfi_create_Separation(ctx, color_array, index, stream_dict, page_dict, ppcs, inline_image);
     } else {
         code = pdfi_find_resource(ctx, (unsigned char *)"ColorSpace",
                                   space, stream_dict, page_dict, (pdf_obj **)&a);
@@ -1879,7 +1899,7 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
         }
 
         /* recursion */
-        code = pdfi_create_colorspace_by_array(ctx, a, 0, stream_dict, page_dict, ppcs);
+        code = pdfi_create_colorspace_by_array(ctx, a, 0, stream_dict, page_dict, ppcs, inline_image);
     }
 
  exit:
@@ -1891,16 +1911,31 @@ static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_ar
 int
 pdfi_create_colorspace_by_name(pdf_context *ctx, pdf_name *name,
                                pdf_dict *stream_dict, pdf_dict *page_dict,
-                               gs_color_space **ppcs)
+                               gs_color_space **ppcs, bool inline_image)
 {
     int code = 0;
     pdf_obj *ref_space;
 
     if (pdfi_name_is(name, "G") || pdfi_name_is(name, "DeviceGray")) {
+        if (pdfi_name_is(name, "G") && !inline_image) {
+            ctx->pdf_warnings|= W_PDF_BAD_INLINEFILTER;
+            if (ctx->pdfstoponwarning)
+                return_error(gs_error_syntaxerror);
+        }
         code = pdfi_create_DeviceGray(ctx, ppcs);
     } else if (pdfi_name_is(name, "RGB") || pdfi_name_is(name, "DeviceRGB")) {
+        if (pdfi_name_is(name, "RGB") && !inline_image) {
+            ctx->pdf_warnings|= W_PDF_BAD_INLINEFILTER;
+            if (ctx->pdfstoponwarning)
+                return_error(gs_error_syntaxerror);
+        }
         code = pdfi_create_DeviceRGB(ctx, ppcs);
     } else if (pdfi_name_is(name, "CMYK") || pdfi_name_is(name, "DeviceCMYK")) {
+        if (pdfi_name_is(name, "CMYK") && !inline_image) {
+            ctx->pdf_warnings|= W_PDF_BAD_INLINEFILTER;
+            if (ctx->pdfstoponwarning)
+                return_error(gs_error_syntaxerror);
+        }
         code = pdfi_create_DeviceCMYK(ctx, ppcs);
     } else if (pdfi_name_is(name, "Pattern")) {
         code = pdfi_pattern_create(ctx, NULL, stream_dict, page_dict, ppcs);
@@ -1910,7 +1945,7 @@ pdfi_create_colorspace_by_name(pdf_context *ctx, pdf_name *name,
             return code;
 
         /* recursion */
-        return pdfi_create_colorspace(ctx, ref_space, stream_dict, page_dict, ppcs);
+        return pdfi_create_colorspace(ctx, ref_space, stream_dict, page_dict, ppcs, inline_image);
     }
 
     /* If we got here, it's a recursion base case, and ppcs should have been set if requested */
@@ -1961,7 +1996,7 @@ pdfi_create_icc_colorspace_from_stream(pdf_context *ctx, pdf_stream *stream, gs_
     return code;
 }
 
-int pdfi_create_colorspace(pdf_context *ctx, pdf_obj *space, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs)
+int pdfi_create_colorspace(pdf_context *ctx, pdf_obj *space, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs, bool inline_image)
 {
     int code;
 
@@ -1970,10 +2005,10 @@ int pdfi_create_colorspace(pdf_context *ctx, pdf_obj *space, pdf_dict *stream_di
         return code;
 
     if (space->type == PDF_NAME) {
-        code = pdfi_create_colorspace_by_name(ctx, (pdf_name *)space, stream_dict, page_dict, ppcs);
+        code = pdfi_create_colorspace_by_name(ctx, (pdf_name *)space, stream_dict, page_dict, ppcs, inline_image);
     } else {
         if (space->type == PDF_ARRAY) {
-            code = pdfi_create_colorspace_by_array(ctx, (pdf_array *)space, 0, stream_dict, page_dict, ppcs);
+            code = pdfi_create_colorspace_by_array(ctx, (pdf_array *)space, 0, stream_dict, page_dict, ppcs, inline_image);
         } else {
             pdfi_loop_detector_cleartomark(ctx);
             return_error(gs_error_typecheck);
@@ -1988,7 +2023,7 @@ int pdfi_create_colorspace(pdf_context *ctx, pdf_obj *space, pdf_dict *stream_di
 
 int pdfi_setcolorspace(pdf_context *ctx, pdf_obj *space, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
-    return pdfi_create_colorspace(ctx, space, stream_dict, page_dict, NULL);
+    return pdfi_create_colorspace(ctx, space, stream_dict, page_dict, NULL, false);
 }
 
 /* And finally, the implementation of the actual PDF operators CS and cs */
