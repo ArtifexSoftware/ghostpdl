@@ -590,20 +590,39 @@ static int pdfi_check_inline_image_keys(pdf_context *ctx, pdf_dict *image_dict)
     bool known = false;
 
     pdfi_dict_known(image_dict, "BPC", &known);
+    if (known)
+        goto error_inline_check;
     pdfi_dict_known(image_dict, "CS", &known);
+    if (known)
+        goto error_inline_check;
     pdfi_dict_known(image_dict, "D", &known);
+    if (known)
+        goto error_inline_check;
     pdfi_dict_known(image_dict, "DP", &known);
+    if (known)
+        goto error_inline_check;
     pdfi_dict_known(image_dict, "F", &known);
+    if (known)
+        goto error_inline_check;
     pdfi_dict_known(image_dict, "H", &known);
+    if (known)
+        goto error_inline_check;
     pdfi_dict_known(image_dict, "IM", &known);
+    if (known)
+        goto error_inline_check;
     pdfi_dict_known(image_dict, "I", &known);
+    if (known)
+        goto error_inline_check;
     pdfi_dict_known(image_dict, "W", &known);
+    if (known)
+        goto error_inline_check;
 
-    if (known) {
-        ctx->pdf_warnings |= W_PDF_BAD_INLINEIMAGEKEY;
-        if (ctx->pdfstoponwarning)
-            return_error(gs_error_syntaxerror);
-    }
+    return 0;
+
+error_inline_check:
+    ctx->pdf_warnings |= W_PDF_BAD_INLINEIMAGEKEY;
+    if (ctx->pdfstoponwarning)
+        return_error(gs_error_syntaxerror);
     return 0;
 }
 
