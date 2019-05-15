@@ -1486,10 +1486,11 @@ int pdfi_close_pdf_file(pdf_context *ctx)
     if (ctx->main_stream) {
         if (ctx->main_stream->s) {
             sfclose(ctx->main_stream->s);
-            ctx->main_stream = NULL;
         }
         gs_free_object(ctx->memory, ctx->main_stream, "Closing main PDF file");
+        ctx->main_stream = NULL;
     }
+    ctx->main_stream_length = 0;
     return 0;
 }
 
@@ -1505,7 +1506,7 @@ int pdfi_process_pdf_file(pdf_context *ctx, char *filename)
 
     code = pdfi_open_pdf_file(ctx, filename);
     if (code < 0) {
-        return code;
+        goto exit;
     }
 
     code = pdfi_read_xref(ctx);
@@ -1520,17 +1521,17 @@ int pdfi_process_pdf_file(pdf_context *ctx, char *filename)
             ctx->prefer_xrefstm = false;
             code = pdfi_read_xref(ctx);
             if (code < 0)
-                return code;
+                goto exit;
         } else {
             ctx->pdf_errors |= E_PDF_BADXREF;
-            return code;
+            goto exit;
         }
     }
 
     if (ctx->Trailer) {
         code = pdfi_dict_get(ctx, ctx->Trailer, "Encrypt", &o);
         if (code < 0 && code != gs_error_undefined)
-            return code;
+            goto exit;
         if (code == 0) {
             dmprintf(ctx->memory, "Encrypted PDF files not yet supported.\n");
             return 0;
@@ -1552,19 +1553,19 @@ read_root:
                 code = pdfi_read_xref(ctx);
                 if (code < 0) {
                     ctx->pdf_errors |= E_PDF_BADXREF;
-                    return code;
+                    goto exit;
                 }
                 code = pdfi_read_Root(ctx);
                 if (code < 0)
-                    return code;
+                    goto exit;
             } else {
                 if (!ctx->repaired) {
                     code = pdfi_repair_file(ctx);
                     if (code < 0)
-                        return code;
+                        goto exit;
                     goto read_root;
                 }
-                return code;
+                goto exit;
             }
         }
     }
@@ -1573,7 +1574,7 @@ read_root:
         code = pdfi_read_Info(ctx);
         if (code < 0 && code != gs_error_undefined) {
             if (ctx->pdfstoponerror)
-                return code;
+                goto exit;
             pdfi_clearstack(ctx);
         }
     }
@@ -1585,14 +1586,14 @@ read_root:
 
     code = pdfi_read_Pages(ctx);
     if (code < 0)
-        return code;
+        goto exit;
 
     pdfi_read_OptionalRoot(ctx);
 
     if (ctx->pdfinfo) {
         code = pdfi_output_metadata(ctx);
         if (code < 0 && ctx->pdfstoponerror)
-            return code;
+            goto exit;
     }
 
     /* Loop round all the pages looking for spot colours and transparency. We only check
@@ -1612,7 +1613,7 @@ read_root:
 
         code = pdfi_alloc_object(ctx, PDF_DICT, 32, (pdf_obj **)&ctx->SpotNames);
         if (code < 0)
-            return code;
+            goto exit;
 
         pdfi_countup(ctx->SpotNames);
 
@@ -1625,12 +1626,12 @@ read_root:
             /* Get the page dictionary */
             code = pdfi_loop_detector_mark(ctx);
             if (code < 0)
-                return code;
+                goto exit;
 
             code = pdfi_loop_detector_add_object(ctx, ctx->Pages->object_num);
             if (code < 0) {
                 pdfi_loop_detector_cleartomark(ctx);
-                return code;
+                goto exit;
             }
 
             page_offset = 0;
@@ -1638,7 +1639,7 @@ read_root:
             pdfi_loop_detector_cleartomark(ctx);
             if (code < 0) {
                 if (code == gs_error_VMerror || ctx->pdfstoponerror)
-                    return code;
+                    goto exit;
                 return 0;
             }
 
@@ -1654,7 +1655,7 @@ read_root:
             if (code < 0) {
                 pdfi_countdown(ctx->SpotNames);
                 ctx->SpotNames = NULL;
-                return code;
+                goto exit;
             }
             if (uses_transparency && !ctx->notransparency) {
                 uint64_t index = ix >> 3;
@@ -1683,7 +1684,7 @@ read_root:
                         (void)gs_abort_pdf14trans_device(ctx->pgs);
                     pdfi_countdown(ctx->SpotNames);
                     pdfi_countdown(page_dict);
-                    return code;
+                    goto exit;
                 }
                 gs_erasepage(ctx->pgs);
             }
@@ -1708,13 +1709,13 @@ read_root:
             code = pdfi_render_page(ctx, i);
 
         if (code < 0 && ctx->pdfstoponerror)
-            return code;
+            goto exit;
     }
 
+ exit:
     pdfi_report_errors(ctx);
 
-    code = sfclose(ctx->main_stream->s);
-    ctx->main_stream = NULL;
+    pdfi_close_pdf_file(ctx);
     return code;
 }
 
@@ -1723,11 +1724,7 @@ static void cleanup_pdfi_open_file(pdf_context *ctx, byte *Buffer)
     if (Buffer != NULL)
         gs_free_object(ctx->memory, Buffer, "PDF interpreter - cleanup working buffer for file validation");
 
-    if (ctx->main_stream != NULL) {
-        sfclose(ctx->main_stream->s);
-        ctx->main_stream = NULL;
-    }
-    ctx->main_stream_length = 0;
+    pdfi_close_pdf_file(ctx);
 }
 
 int pdfi_open_pdf_file(pdf_context *ctx, char *filename)
@@ -1962,20 +1959,6 @@ pdfi_fontdir_purge_all(const gs_memory_t * mem, cached_char * cc, void *dummy)
 
 int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
 {
-    if (ctx->cache_entries != 0) {
-        pdf_obj_cache_entry *entry = ctx->cache_LRU, *next;
-
-        while(entry) {
-            next = entry->next;
-            pdfi_countdown(entry->o);
-            ctx->cache_entries--;
-            gs_free_object(ctx->memory, entry, "pdfi_free_context, free LRU");
-            entry = next;
-        }
-        ctx->cache_LRU = ctx->cache_MRU = NULL;
-        ctx->cache_entries = 0;
-    }
-
     if (ctx->PageTransparencyArray)
         gs_free_object(ctx->memory, ctx->PageTransparencyArray, "pdfi_free_context");
 
@@ -2015,14 +1998,36 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
         ctx->filename = NULL;
     }
 
-    if (ctx->main_stream != NULL) {
-        sfclose(ctx->main_stream->s);
-        ctx->main_stream = NULL;
-    }
+    /* This should already be closed, but lets make sure */
+    pdfi_close_pdf_file(ctx);
 
     if (ctx->memory->gs_lib_ctx->font_dir) {
         gx_purge_selected_cached_chars(ctx->memory->gs_lib_ctx->font_dir, pdfi_fontdir_purge_all, (void *)NULL);
         gs_free_object(ctx->memory, ctx->memory->gs_lib_ctx->font_dir, "pdfi_free_context");
+    }
+
+    rc_decrement_cs(ctx->gray_lin, "pdfi_free_context");
+    rc_decrement_cs(ctx->gray, "pdfi_free_context");
+    rc_decrement_cs(ctx->cmyk, "pdfi_free_context");
+    rc_decrement_cs(ctx->srgb, "pdfi_free_context");
+    rc_decrement_cs(ctx->scrgb, "pdfi_free_context");
+
+    if (ctx->cache_entries != 0) {
+        pdf_obj_cache_entry *entry = ctx->cache_LRU, *next;
+
+        while(entry) {
+            next = entry->next;
+            if (entry->o->refcnt != 1) {
+                dbgmprintf2(ctx->memory, "CLEANUP cache entry obj %ld has refcnt %d\n",
+                          entry->o->object_num, entry->o->refcnt);
+            }
+            pdfi_countdown(entry->o);
+            ctx->cache_entries--;
+            gs_free_object(ctx->memory, entry, "pdfi_free_context, free LRU");
+            entry = next;
+        }
+        ctx->cache_LRU = ctx->cache_MRU = NULL;
+        ctx->cache_entries = 0;
     }
 
     if(ctx->pgs != NULL) {
