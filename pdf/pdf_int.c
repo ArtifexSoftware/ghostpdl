@@ -562,10 +562,11 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
 
             *object = ctx->stack_top[-1];
             pdfi_pop(ctx, 1);
-            if ((*object)->object_num == obj)
+            if ((*object)->object_num == obj) {
                 pdfi_countup(*object);
-            else
+            } else {
                 return_error(gs_error_undefined);
+            }
         }
         (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
     }
@@ -2386,17 +2387,153 @@ pdfi_free_OptionalRoot(pdf_context *ctx)
     }
 }
 
+/* Handle child node processing for page_dict */
+static int
+pdfi_get_child(pdf_context *ctx, pdf_array *Kids, int i, pdf_dict **pchild)
+{
+    pdf_indirect_ref *node = NULL;
+    pdf_dict *child = NULL;
+    pdf_name *Type = NULL;
+    pdf_dict *leaf_dict = NULL;
+    pdf_name *Key = NULL, *Key1 = NULL;
+    int code = 0;
+
+    code = pdfi_array_get_no_deref(ctx, Kids, i, (pdf_obj **)&node);
+    if (code < 0)
+        goto errorExit;
+
+    if (node->type != PDF_INDIRECT && node->type != PDF_DICT) {
+        code = gs_note_error(gs_error_typecheck);
+        goto errorExit;
+    }
+
+    if (node->type == PDF_INDIRECT) {
+        code = pdfi_dereference(ctx, node->ref_object_num, node->ref_generation_num, (pdf_obj **)&child);
+        if (code < 0)
+            goto errorExit;
+        if (child->type != PDF_DICT) {
+            code = gs_note_error(gs_error_typecheck);
+            goto errorExit;
+        }
+        /* If its an intermediate node, store it in the page_table, if its a leaf node
+         * then don't store it. Instead we create a special dictionary of our own which
+         * has a /Type of /PageRef and a /PageRef key which is the indirect reference
+         * to the page. However in this case we pass on the actual page dictionary to
+         * the Kids processing below. If we didn't then we'd fall foul of the loop
+         * detection by dereferencing the same object twice.
+         * This is tedious, but it means we don't store all the page dictionaries in
+         * the Pages tree, because page dictionaries can be large and we generally
+         * only use them once. If processed in order we only dereference each page
+         * dictionary once, any other order will dereference each page twice. (or more
+         * if we render the same page multiple times).
+         */
+        code = pdfi_dict_get_type(ctx, child, "Type", PDF_NAME, (pdf_obj **)&Type);
+        if (code < 0)
+            goto errorExit;
+        if (pdfi_name_is(Type, "Pages")) {
+            code = pdfi_array_put(ctx, Kids, i, (pdf_obj *)child);
+            if (code < 0)
+                goto errorExit;
+        } else {
+            /* Bizarrely, one of the QL FTS files (FTS_07_0704.pdf) has a page diciotnary with a /Type of /Template */
+            if (!pdfi_name_is(Type, "Page"))
+                ctx->pdf_errors |= E_PDF_BADPAGETYPE;
+            /* Make a 'PageRef' entry (just stores an indirect reference to the actual page)
+             * and store that in the Kids array for future reference. But pass on the
+             * dereferenced Page dictionary, in case this is the target page.
+             */
+
+            code = pdfi_alloc_object(ctx, PDF_DICT, 0, (pdf_obj **)&leaf_dict);
+            if (code < 0)
+                goto errorExit;
+            code = pdfi_make_name(ctx, (byte *)"PageRef", 7, (pdf_obj **)&Key);
+            if (code < 0)
+                goto errorExit;
+            code = pdfi_dict_put(leaf_dict, (pdf_obj *)Key, (pdf_obj *)node);
+            if (code < 0)
+                goto errorExit;
+            code = pdfi_make_name(ctx, (byte *)"Type", 4, (pdf_obj **)&Key1);
+            if (code < 0)
+                goto errorExit;
+            code = pdfi_dict_put(leaf_dict, (pdf_obj *)Key1, (pdf_obj *)Key);
+            if (code < 0)
+                goto errorExit;
+            code = pdfi_array_put(ctx, Kids, i, (pdf_obj *)leaf_dict);
+            if (code < 0)
+                goto errorExit;
+        }
+    } else {
+        child = (pdf_dict *)node;
+        pdfi_countup(child);
+    }
+
+    *pchild = child;
+
+ errorExit:
+    pdfi_countdown(node);
+    pdfi_countdown(Type);
+    pdfi_countdown(Key);
+    pdfi_countdown(Key1);
+    return code;
+}
+
+/* Check if key is in the dictionary, and if so, copy it into the inheritable dict
+ * This will allocate an inheritable dict if it is NULL
+ */
+static int
+pdfi_check_inherited_key(pdf_context *ctx, pdf_dict *d, const char *keyname, pdf_dict **inheritable)
+{
+    int code = 0;
+    pdf_obj *Key = NULL;
+    pdf_obj *object = NULL;
+    bool known;
+
+    /* Check for inheritable keys, if we find any copy them to the 'inheritable' dictionary at this level */
+    code = pdfi_dict_known(d, keyname, &known);
+    if (code < 0)
+        goto exit;
+    if (known) {
+        if (*inheritable == NULL) {
+            code = pdfi_alloc_object(ctx, PDF_DICT, 0, (pdf_obj **)inheritable);
+            if (code < 0)
+                goto exit;
+            pdfi_countup(*inheritable);
+        }
+
+        code = pdfi_make_name(ctx, (byte *)keyname, strlen(keyname), &Key);
+        if (code < 0)
+            goto exit;
+        code = pdfi_loop_detector_mark(ctx);
+        if (code < 0){
+            goto exit;
+        }
+        code = pdfi_dict_get(ctx, d, keyname, &object);
+        if (code < 0) {
+            (void)pdfi_loop_detector_cleartomark(ctx);
+            goto exit;
+        }
+        code = pdfi_loop_detector_cleartomark(ctx);
+        if (code < 0) {
+            goto exit;
+        }
+        code = pdfi_dict_put(*inheritable, Key, object);
+    }
+
+ exit:
+    pdfi_countdown(Key);
+    pdfi_countdown(object);
+    return code;
+}
+
 int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_t *page_offset, pdf_dict **target, pdf_dict *inherited)
 {
     int i, code = 0;
     pdf_array *Kids = NULL;
-    pdf_indirect_ref *node = NULL;
     pdf_dict *child = NULL;
     pdf_name *Type = NULL;
     pdf_dict *inheritable = NULL;
     int64_t num;
     double dbl;
-    bool known;
 
     if (ctx->pdfdebug)
         dmprintf1(ctx->memory, "%% Finding page dictionary for page %"PRIi64"\n", page_num + 1);
@@ -2407,387 +2544,131 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
         if (code < 0)
             return code;
         code = pdfi_dict_copy(inheritable, inherited);
-        if (code < 0) {
-            pdfi_countdown(inheritable);
-            return code;
-        }
+        if (code < 0)
+            goto exit;
     }
 
     code = pdfi_dict_get_number(ctx, d, "Count", &dbl);
-    if (code < 0) {
-        pdfi_countdown(inheritable);
-        return code;
+    if (code < 0)
+        goto exit;
+    if (dbl != floor(dbl)) {
+        code = gs_note_error(gs_error_rangecheck);
+        goto exit;
     }
-    if (dbl != floor(dbl))
-        return_error(gs_error_rangecheck);
     num = (int)dbl;
 
     if (num < 0 || (num + *page_offset) > ctx->num_pages) {
-        pdfi_countdown(inheritable);
-        return_error(gs_error_rangecheck);
+        code = gs_note_error(gs_error_rangecheck);
+        goto exit;
     }
     if (num + *page_offset < page_num) {
-        pdfi_countdown(inheritable);
         *page_offset += num;
-        return 1;
+        code = 1;
+        goto exit;
     }
     /* The requested page is a descendant of this node */
 
-    /* Check for inheritable keys, if we find any copy them to the 'inheritable' dictionary at this level */
-    code = pdfi_dict_known(d, "Resources", &known);
+    /* Check for inheritable keys, if we find any copy them to the 'inheritable' dictionary at this level
+     * inheritable dict will be allocated if necessary
+     */
+    code = pdfi_check_inherited_key(ctx, d, "Resources", &inheritable);
+    if (code < 0)
+        goto exit;
+    code = pdfi_check_inherited_key(ctx, d, "MediaBox", &inheritable);
+    if (code < 0)
+        goto exit;
+    code = pdfi_check_inherited_key(ctx, d, "CropBox", &inheritable);
+    if (code < 0)
+        goto exit;
+    code = pdfi_check_inherited_key(ctx, d, "Rotate", &inheritable);
     if (code < 0) {
-        pdfi_countdown(inheritable);
-        return code;
-    }
-    if (known) {
-        pdf_name *Key;
-        pdf_obj *object;
-
-        if (inheritable == NULL) {
-            code = pdfi_alloc_object(ctx, PDF_DICT, 0, (pdf_obj **)&inheritable);
-            if (code < 0)
-                return code;
-        }
-
-        code = pdfi_make_name(ctx, (byte *)"Resources", 9, (pdf_obj **)&Key);
-        if (code < 0) {
-            pdfi_countdown(inheritable);
-            return code;
-        }
-        code = pdfi_dict_get(ctx, d, "Resources", &object);
-        if (code < 0) {
-            pdfi_countdown(Key);
-            pdfi_countdown(inheritable);
-            return code;
-        }
-        code = pdfi_dict_put(inheritable, (pdf_obj *)Key, object);
-        pdfi_countdown(Key);
-        pdfi_countdown(object);
-    }
-    code = pdfi_dict_known(d, "MediaBox", &known);
-    if (code < 0) {
-        pdfi_countdown(inheritable);
-        return code;
-    }
-    if (known) {
-        pdf_name *Key;
-        pdf_obj *object;
-
-        if (inheritable == NULL) {
-            code = pdfi_alloc_object(ctx, PDF_DICT, 0, (pdf_obj **)&inheritable);
-            if (code < 0)
-                return code;
-        }
-        pdfi_countup(inheritable);
-
-        code = pdfi_make_name(ctx, (byte *)"MediaBox", 8, (pdf_obj **)&Key);
-        if (code < 0) {
-            pdfi_countdown(inheritable);
-            return code;
-        }
-        code = pdfi_loop_detector_mark(ctx);
-        if (code < 0){
-            pdfi_countdown(Key);
-            pdfi_countdown(inheritable);
-            return code;
-        }
-        code = pdfi_dict_get(ctx, d, "MediaBox", &object);
-        if (code < 0) {
-            (void)pdfi_loop_detector_cleartomark(ctx);
-            pdfi_countdown(Key);
-            pdfi_countdown(inheritable);
-            return code;
-        }
-        code = pdfi_loop_detector_cleartomark(ctx);
-        if (code < 0){
-            pdfi_countdown(Key);
-            pdfi_countdown(inheritable);
-            return code;
-        }
-        code = pdfi_dict_put(inheritable, (pdf_obj *)Key, object);
-        pdfi_countdown(Key);
-        pdfi_countdown(object);
-    }
-    code = pdfi_dict_known(d, "CropBox", &known);
-    if (code < 0) {
-        pdfi_countdown(inheritable);
-        return code;
-    }
-    if (known) {
-        pdf_name *Key;
-        pdf_obj *object;
-
-        if (inheritable == NULL) {
-            code = pdfi_alloc_object(ctx, PDF_DICT, 0, (pdf_obj **)&inheritable);
-            if (code < 0)
-                return code;
-        }
-        pdfi_countup(inheritable);
-
-        code = pdfi_make_name(ctx, (byte *)"CropBox", 7, (pdf_obj **)&Key);
-        if (code < 0) {
-            pdfi_countdown(inheritable);
-            return code;
-        }
-        code = pdfi_loop_detector_mark(ctx);
-        if (code < 0){
-            pdfi_countdown(Key);
-            pdfi_countdown(inheritable);
-            return code;
-        }
-        code = pdfi_dict_get(ctx, d, "CropBox", &object);
-        if (code < 0) {
-            (void)pdfi_loop_detector_cleartomark(ctx);
-            pdfi_countdown(Key);
-            pdfi_countdown(inheritable);
-            return code;
-        }
-        code = pdfi_loop_detector_cleartomark(ctx);
-        if (code < 0){
-            pdfi_countdown(Key);
-            pdfi_countdown(inheritable);
-            return code;
-        }
-        code = pdfi_dict_put(inheritable, (pdf_obj *)Key, object);
-        pdfi_countdown(Key);
-        pdfi_countdown(object);
-    }
-    code = pdfi_dict_known(d, "Rotate", &known);
-    if (code < 0) {
-        pdfi_countdown(inheritable);
-        return code;
-    }
-    if (known) {
-        pdf_name *Key;
-        pdf_obj *object;
-
-        if (inheritable == NULL) {
-            code = pdfi_alloc_object(ctx, PDF_DICT, 0, (pdf_obj **)&inheritable);
-            if (code < 0)
-                return code;
-        }
-        pdfi_countup(inheritable);
-
-        code = pdfi_make_name(ctx, (byte *)"Rotate", 6, (pdf_obj **)&Key);
-        if (code < 0) {
-            pdfi_countdown(inheritable);
-            return code;
-        }
-        code = pdfi_dict_get(ctx, d, "Rotate", &object);
-        if (code < 0) {
-            pdfi_countdown(Key);
-            pdfi_countdown(inheritable);
-            return code;
-        }
-        code = pdfi_dict_put(inheritable, (pdf_obj *)Key, object);
-        pdfi_countdown(Key);
-        pdfi_countdown(object);
+        goto exit;
     }
 
     /* Get the Kids array */
     code = pdfi_dict_get_type(ctx, d, "Kids", PDF_ARRAY, (pdf_obj **)&Kids);
     if (code < 0) {
-        pdfi_countdown(inheritable);
-        pdfi_countdown(Kids);
-        return code;
+        goto exit;
     }
 
     /* Check each entry in the Kids array */
     for (i = 0;i < pdfi_array_size(Kids);i++) {
-        code = pdfi_array_get_no_deref(ctx, Kids, i, (pdf_obj **)&node);
+        pdfi_countdown(child);
+        child = NULL;
+        pdfi_countdown(Type);
+        Type = NULL;
+
+        code = pdfi_get_child(ctx, Kids, i, &child);
         if (code < 0) {
-            pdfi_countdown(inheritable);
-            pdfi_countdown(Kids);
-            return code;
+            goto exit;
         }
-        if (node->type != PDF_INDIRECT && node->type != PDF_DICT) {
-            pdfi_countdown(inheritable);
-            pdfi_countdown(Kids);
-            pdfi_countdown(node);
-            return_error(gs_error_typecheck);
-        }
-        if (node->type == PDF_INDIRECT) {
-            code = pdfi_dereference(ctx, node->ref_object_num, node->ref_generation_num, (pdf_obj **)&child);
-            if (code < 0) {
-                pdfi_countdown(inheritable);
-                pdfi_countdown(Kids);
-                pdfi_countdown(node);
-                return code;
-            }
-            if (child->type != PDF_DICT) {
-                pdfi_countdown(inheritable);
-                pdfi_countdown(Kids);
-                pdfi_countdown(node);
-                pdfi_countdown(child);
-                return_error(gs_error_typecheck);
-            }
-            /* If its an intermediate node, store it in the page_table, if its a leaf node
-             * then don't store it. Instead we create a special dictionary of our own which
-             * has a /Type of /PageRef and a /PageRef key which is the indirect reference
-             * to the page. However in this case we pass on the actual page dictionary to
-             * the Kids processing below. If we didn't then we'd fall foul of the loop
-             * detection by dereferencing the same object twice.
-             * This is tedious, but it means we don't store all the page dictionaries in
-             * the Pages tree, because page dictionaries can be large and we generally
-             * only use them once. If processed in order we only dereference each page
-             * dictionary once, any other order will dereference each page twice. (or more
-             * if we render the same page multiple times).
-             */
-            code = pdfi_dict_get_type(ctx, child, "Type", PDF_NAME, (pdf_obj **)&Type);
-            if (code < 0) {
-                pdfi_countdown(inheritable);
-                pdfi_countdown(Kids);
-                pdfi_countdown(child);
-                pdfi_countdown(node);
-                return code;
-            }
-            if (pdfi_name_is(Type, "Pages")) {
-                code = pdfi_array_put(ctx, Kids, i, (pdf_obj *)child);
-                if (code < 0) {
-                    pdfi_countdown(inheritable);
-                    pdfi_countdown(Kids);
-                    pdfi_countdown(child);
-                    pdfi_countdown(Type);
-                    pdfi_countdown(node);
-                    return code;
-                }
-            } else {
-                pdf_dict *leaf_dict = NULL;
-                pdf_name *Key = NULL, *Key1 = NULL;
 
-                /* Bizarrely, one of the QL FTS files (FTS_07_0704.pdf) has a page diciotnary with a /Type of /Template */
-                if (!pdfi_name_is(Type, "Page"))
-                    ctx->pdf_errors |= E_PDF_BADPAGETYPE;
-                /* Make a 'PageRef' entry (just stores an indirect reference to the actual page)
-                 * and store that in the Kids array for future reference. But pass on the
-                 * dereferenced Page dictionary, in case this is the target page.
-                 */
-
-                code = pdfi_alloc_object(ctx, PDF_DICT, 0, (pdf_obj **)&leaf_dict);
-                if (code == 0) {
-                    code = pdfi_make_name(ctx, (byte *)"PageRef", 7, (pdf_obj **)&Key);
-                    if (code == 0) {
-                        code = pdfi_dict_put(leaf_dict, (pdf_obj *)Key, (pdf_obj *)node);
-                        if (code == 0){
-                            code = pdfi_make_name(ctx, (byte *)"Type", 4, (pdf_obj **)&Key);
-                            if (code == 0){
-                                code = pdfi_make_name(ctx, (byte *)"PageRef", 7, (pdf_obj **)&Key1);
-                                if (code == 0) {
-                                    code = pdfi_dict_put(leaf_dict, (pdf_obj *)Key, (pdf_obj *)Key1);
-                                    if (code == 0)
-                                        code = pdfi_array_put(ctx, Kids, i, (pdf_obj *)leaf_dict);
-                                }
-                            }
-                        }
-                    }
-                }
-                pdfi_countdown(Key);
-                pdfi_countdown(Key1);
-                if (code < 0) {
-                    pdfi_countdown(inheritable);
-                    pdfi_countdown(Kids);
-                    pdfi_countdown(child);
-                    pdfi_countdown(Type);
-                    pdfi_countdown(node);
-                    return code;
-                }
-            }
-            pdfi_countdown(Type);
-            pdfi_countdown(node);
-        } else {
-            child = (pdf_dict *)node;
-        }
         /* Check the type, if its a Pages entry, then recurse. If its a Page entry, is it the one we want */
         code = pdfi_dict_get_type(ctx, child, "Type", PDF_NAME, (pdf_obj **)&Type);
         if (code == 0) {
             if (pdfi_name_is(Type, "Pages")) {
                 code = pdfi_dict_get_number(ctx, child, "Count", &dbl);
                 if (code == 0) {
-                    if (dbl != floor(dbl))
-                        return_error(gs_error_rangecheck);
+                    if (dbl != floor(dbl)) {
+                        code = gs_note_error(gs_error_rangecheck);
+                        goto exit;
+                    }
                     num = (int)dbl;
                     if (num < 0 || (num + *page_offset) > ctx->num_pages) {
                         code = gs_error_rangecheck;
                     } else {
                         if (num + *page_offset <= page_num) {
-                            pdfi_countdown(child);
-                            child = NULL;
-                            pdfi_countdown(Type);
-                            Type = NULL;
                             *page_offset += num;
                         } else {
                             code = pdfi_get_page_dict(ctx, child, page_num, page_offset, target, inheritable);
-                            pdfi_countdown(Type);
-                            pdfi_countdown(Kids);
-                            pdfi_countdown(child);
-                            return code;
+                            goto exit;
                         }
                     }
                 }
             } else {
                 if (pdfi_name_is(Type, "PageRef")) {
-                    pdfi_countdown(Type);
-                    Type = NULL;
                     if ((*page_offset) == page_num) {
-                        pdf_indirect_ref *o = NULL;
                         pdf_dict *d = NULL;
 
                         code = pdfi_dict_get(ctx, child, "PageRef", (pdf_obj **)&d);
-                        if (code < 0) {
-                            pdfi_countdown(child);
-                            child = NULL;
-                            pdfi_countdown(Kids);
-                            return code;
-                        }
-                        if (inheritable != NULL) {
+                        if (code < 0)
+                            goto exit;
+                        if (inheritable != NULL)
                             code = pdfi_merge_dicts(d, inheritable);
-                            pdfi_countdown(inheritable);
-                            inheritable = NULL;
-                        }
-                        pdfi_countdown(Kids);
                         *target = d;
                         pdfi_countup(*target);
                         pdfi_countdown(d);
-                        return 0;
+                        goto exit;
                     } else {
                         *page_offset += 1;
-                        pdfi_countdown(child);
                     }
                 } else {
                     if (!pdfi_name_is(Type, "Page"))
                         ctx->pdf_errors |= E_PDF_BADPAGETYPE;
-                    pdfi_countdown(Type);
-                    Type = NULL;
                     if ((*page_offset) == page_num) {
-                        if (inheritable != NULL) {
+                        if (inheritable != NULL)
                             code = pdfi_merge_dicts(child, inheritable);
-                        }
-                        if (code == 0) {
-                            pdfi_countdown(inheritable);
-                            pdfi_countdown(Kids);
-                            *target = child;
-                            pdfi_countup(*target);
-                            pdfi_countdown(child);
-                            return 0;
-                        }
+                        *target = child;
+                        pdfi_countup(*target);
+                        goto exit;
                     } else {
                         *page_offset += 1;
-                        pdfi_countdown(child);
                     }
                 }
             }
         }
-        if (code < 0) {
-            pdfi_countdown(inheritable);
-            pdfi_countdown(Kids);
-            pdfi_countdown(child);
-            pdfi_countdown(Type);
-            return code;
-        }
+        if (code < 0)
+            goto exit;
     }
     /* Positive return value indicates we did not find the target below this node, try the next one */
+    code = 1;
+
+ exit:
     pdfi_countdown(inheritable);
-    return 1;
+    pdfi_countdown(Kids);
+    pdfi_countdown(child);
+    pdfi_countdown(Type);
+    return code;
 }
 
 static int split_bogus_operator(pdf_context *ctx)

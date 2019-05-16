@@ -2012,6 +2012,19 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
     rc_decrement_cs(ctx->srgb, "pdfi_free_context");
     rc_decrement_cs(ctx->scrgb, "pdfi_free_context");
 
+    if(ctx->pgs != NULL) {
+        gs_gstate_free(ctx->pgs);
+        ctx->pgs = NULL;
+    }
+
+    if(ctx->base_pgs != NULL) {
+        gs_gstate_free(ctx->base_pgs);
+        ctx->base_pgs = NULL;
+    }
+
+    if (ctx->pdfi_param_list.head != NULL)
+        gs_c_param_list_release(&ctx->pdfi_param_list);
+
     if (ctx->cache_entries != 0) {
         pdf_obj_cache_entry *entry = ctx->cache_LRU, *next;
 
@@ -2029,19 +2042,6 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
         ctx->cache_LRU = ctx->cache_MRU = NULL;
         ctx->cache_entries = 0;
     }
-
-    if(ctx->pgs != NULL) {
-        gs_gstate_free(ctx->pgs);
-        ctx->pgs = NULL;
-    }
-
-    if(ctx->base_pgs != NULL) {
-        gs_gstate_free(ctx->base_pgs);
-        ctx->base_pgs = NULL;
-    }
-
-    if (ctx->pdfi_param_list.head != NULL)
-        gs_c_param_list_release(&ctx->pdfi_param_list);
 
     gs_free_object(ctx->memory, ctx, "pdfi_free_context");
     return 0;
