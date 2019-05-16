@@ -193,7 +193,9 @@ typedef enum
     NAME,                       /* used for pathnames */
     SIZE,                       /* size of data */
     VOLUME,                     /* volume indicator for filesystem initialization */
-    DISKLOCK
+    DISKLOCK,
+    GSSET,
+    GSSETSTRING
 } pjl_token_type_t;
 
 /* lookup table to map strings to pjl tokens */
@@ -230,6 +232,8 @@ static const pjl_lookup_table_t pjl_table[] = {
     {"COUNT", COUNT},
     {"OFFSET", OFFSET},
     {"DISKLOCK", DISKLOCK},
+    {"GSSET", GSSET},
+    {"GSSETSTRING", GSSETSTRING},
     {"", (pjl_token_type_t) 0 /* don't care */ }
 };
 
@@ -825,6 +829,33 @@ pjl_get_setting(pjl_parser_state_t * pst, pjl_token_type_t tok, char *token)
     return 0;
 }
 
+static int
+gs_set(pjl_parser_state_t *pst, const char *variable, const char *token, int string)
+{
+    int code;
+    int len1 = strlen(variable)+1;
+    int len2 = NULL ? 0 : strlen(token)+1;
+    char *buffer = (char *)gs_alloc_bytes(pst->mem, len1+len2, "gs_set buffer");
+
+    if (buffer == NULL)
+        return -1;
+
+    strcpy(buffer, variable);
+    if (len2) {
+        strcat(buffer, "=");
+        strcat(buffer, token);
+    }
+
+    if (string)
+        code = pl_main_set_string_param(pl_main_get_instance(pst->mem), buffer);
+    else
+        code = pl_main_set_param(pl_main_get_instance(pst->mem), buffer);
+    gs_free_object(pst->mem, buffer, "gs_set buffer");
+
+    return code;
+}
+
+
 /* parse and set up state for one line of pjl commands */
 static int
 pjl_parse_and_process_line(pjl_parser_state_t * pst)
@@ -872,8 +903,7 @@ pjl_parse_and_process_line(pjl_parser_state_t * pst)
 
                             strcpy(variable, token);
                             if (((tok = pjl_get_token(pst, token)) == EQUAL)
-                                && (tok =
-                                    pjl_get_token(pst, token)) == SETTING) {
+                                && (tok = pjl_get_token(pst, token)) == SETTING) {
                                 /* an unfortunate side effect - we have to
                                    identify FORMLINES being set here, for
                                    the benefit of PCL, see the
@@ -885,19 +915,45 @@ pjl_parse_and_process_line(pjl_parser_state_t * pst)
                                             (char *)"on", defaults);
                                 code = pjl_set(pst, variable, token,
                                                defaults);
-                                gs_free_object(pst->mem, variable, "2nd working buffer for PJL parsing");
-                                gs_free_object(pst->mem, token, "working buffer for PJL parsing");
-                                return code;
-                            } else {
-                                gs_free_object(pst->mem, variable, "2nd working buffer for PJL parsing");
-                                gs_free_object(pst->mem, token, "working buffer for PJL parsing");
-                                return -1;      /* syntax error */
-                            }
+                            } else
+                                code = -1; /* syntax error */
+                            gs_free_object(pst->mem, variable, "2nd working buffer for PJL parsing");
+                            gs_free_object(pst->mem, token, "working buffer for PJL parsing");
+                            return code;
                         } else
                             continue;
 
                     gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                     return 0;
+                }
+            case GSSET:
+            case GSSETSTRING:
+                {
+                    bool string;
+
+                    string = (tok == GSSETSTRING);
+                    code = 0;
+                    while ((tok = pjl_get_token(pst, token)) != DONE)
+                        if (tok == VARIABLE || tok == SETTING) {
+                            int len1 = strlen(token)+1;
+                            char *variable = (char *)gs_alloc_bytes(pst->mem, len1,
+                                                                    "2nd working buffer for PJL parsing");
+                            if (variable == NULL)
+                                code = -1;
+                            else {
+                                strcpy(variable, token);
+                                if (((tok = pjl_get_token(pst, token)) == EQUAL) &&
+                                    ((tok = pjl_get_token(pst, token)) == SETTING))
+                                    code = gs_set(pst, variable, token, string);
+                                else
+                                    code = gs_set(pst, variable, NULL, string);
+                                gs_free_object(pst->mem, variable, "2nd working buffer for PJL parsing");
+                            }
+                            break;
+                        }
+
+                    gs_free_object(pst->mem, token, "working buffer for PJL parsing");
+                    return code;
                 }
             case INITIALIZE:
                 /* set the user default environment to the factory default environment */

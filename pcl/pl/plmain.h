@@ -57,6 +57,9 @@ int pl_main_run_string_continue(pl_main_instance_t *minst, const char *str, unsi
 int pl_main_run_string_end(pl_main_instance_t *minst);
 int pl_to_exit(gs_memory_t *mem);
 
+int pl_main_set_param(pl_main_instance_t *minst, const char *arg);
+int pl_main_set_string_param(pl_main_instance_t *minst, const char *arg);
+
 /* instance accessors */
 bool pl_main_get_interpolate(const gs_memory_t *mem);
 bool pl_main_get_nocache(const gs_memory_t *mem);
