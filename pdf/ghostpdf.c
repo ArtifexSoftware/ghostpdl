@@ -1135,9 +1135,9 @@ static int pdfi_dump_box(pdf_context *ctx, pdf_dict *page_dict, const char *Key)
             dmprintf1(ctx->memory, " %s: [", Key);
             for (i = 0; i < pdfi_array_size(a); i++) {
                 code = pdfi_array_get_number(ctx, a, (uint64_t)i, &f);
-                if (code > 0) {
-                    if (i != 0)
-                        dmprintf(ctx->memory, " ");
+                if (i != 0)
+                    dmprintf(ctx->memory, " ");
+                if (code == 0) {
                     if (a->values[i]->type == PDF_INT)
                         dmprintf1(ctx->memory, "%"PRIi64"", ((pdf_num *)a->values[i])->value.i);
                     else
