@@ -1601,7 +1601,7 @@ read_root:
      * only store the transparency setting if NOTRANSPARENCY is not set
      */
     if (ctx->num_pages) {
-        pdf_dict *page_dict;
+        pdf_dict *page_dict = NULL;
         uint64_t page_offset = 0;
         bool uses_transparency = false;
         int spots = 0;
@@ -1654,6 +1654,7 @@ read_root:
             code = pdfi_check_page_transparency(ctx, page_dict, &uses_transparency, &spots);
             if (code < 0) {
                 pdfi_countdown(ctx->SpotNames);
+                pdfi_countdown(page_dict);
                 ctx->SpotNames = NULL;
                 goto exit;
             }
@@ -1663,6 +1664,7 @@ read_root:
 
                 ctx->PageTransparencyArray[index] |= value;
             }
+            pdfi_countdown(page_dict);
         }
 
         pdfi_countdown(ctx->SpotNames);
