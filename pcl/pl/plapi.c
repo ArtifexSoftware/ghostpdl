@@ -297,3 +297,11 @@ gsapi_run_string_end(void *lib)
     return pl_main_run_string_end(pl_main_get_instance(ctx->memory));
 }
     
+GSDLLEXPORT int GSDLLAPI
+gsapi_set_param(void *lib, gs_set_param_type type, const char *param, const void *value)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+    if (lib == NULL)
+        return gs_error_Fatal;
+    return pl_main_set_typed_param(pl_main_get_instance(ctx->memory), (pl_set_param_type)type, param, value);
+}

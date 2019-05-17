@@ -1248,6 +1248,58 @@ set_string_param(pl_main_instance_t * pmi, const char *arg)
 }
 
 int
+pl_main_set_typed_param(pl_main_instance_t * pmi, pl_set_param_type type, const char *param, const void *value)
+{
+    int code = 0;
+    gs_c_param_list *params = &pmi->params;
+    gs_param_string str_value;
+    bool bval;
+
+    /* First set it in the device params */
+    gs_c_param_list_write_more(params);
+    switch (type)
+    {
+    case pl_spt_null:
+        code = param_write_null((gs_param_list *) params,
+                                param);
+        break;
+    case pl_spt_bool:
+        bval = (value != NULL);
+        code = param_write_bool((gs_param_list *) params,
+                                param, &bval);
+        break;
+    case pl_spt_int:
+        code = param_write_int((gs_param_list *) params,
+                               param, (int *)value);
+        break;
+    case pl_spt_float:
+        code = param_write_float((gs_param_list *) params,
+                                 param, (float *)value);
+        break;
+    case pl_spt_name:
+        param_string_from_transient_string(str_value, value);
+        code = param_write_name((gs_param_list *) params,
+                                param, &str_value);
+        break;
+    case pl_spt_string:
+        param_string_from_transient_string(str_value, value);
+        code = param_write_string((gs_param_list *) params,
+                                  param, &str_value);
+        break;
+    default:
+        code = gs_note_error(gs_error_rangecheck);
+    }
+    if (code < 0) {
+        gs_c_param_list_release(params);
+        return code;
+    }
+    gs_c_param_list_read(params);
+
+    /* Then send it to the languages */
+    return pass_param_to_languages(pmi, type, param, value);
+}
+
+int
 pl_main_set_string_param(pl_main_instance_t * pmi, const char *arg)
 {
     int code;

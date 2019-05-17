@@ -59,6 +59,7 @@ int pl_to_exit(gs_memory_t *mem);
 
 int pl_main_set_param(pl_main_instance_t *minst, const char *arg);
 int pl_main_set_string_param(pl_main_instance_t *minst, const char *arg);
+int pl_main_set_typed_param(pl_main_instance_t *minst, pl_set_param_type type, const char *param, const void *value);
 
 /* instance accessors */
 bool pl_main_get_interpolate(const gs_memory_t *mem);
