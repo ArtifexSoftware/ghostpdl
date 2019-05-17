@@ -467,19 +467,6 @@ run_stdin:
 
                 return code;
             }
-        case 'A':               /* trace allocator */
-            switch (*arg) {
-                case 0:
-                    gs_alloc_debug = 1;
-                    break;
-                case '-':
-                    gs_alloc_debug = 0;
-                    break;
-                default:
-                    puts(minst->heap, "-A may only be followed by -");
-                    return gs_error_Fatal;
-            }
-            break;
         case 'B':               /* set run_string buffer size */
             if (*arg == '-')
                 minst->run_buffer_size = 0;
@@ -525,19 +512,6 @@ run_stdin:
                 pal->expand_ats = ats;
                 break;
             }
-        case 'E':               /* log errors */
-            switch (*arg) {
-                case 0:
-                    gs_log_errors = 1;
-                    break;
-                case '-':
-                    gs_log_errors = 0;
-                    break;
-                default:
-                    puts(minst->heap, "-E may only be followed by -");
-                    return gs_error_Fatal;
-            }
-            break;
         case 'f':               /* run file of arbitrary name */
             if (*arg != 0) {
                 code = argproc(minst, arg);

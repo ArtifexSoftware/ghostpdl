@@ -4358,37 +4358,46 @@ currentdict /set_bc_color undef
         /k  {setcmykcolor}
         /K  {setcmykcolor}
       >> def
+
       dup /DA knownoget {
         length string /tempstr exch def
         dup /DA get tempstr copy pop
+
+        gstate
+        mark
         {
-          %% This is kind of ugly, we use token to process the string
-          %% and process each token separately.
-          tempstr
-          token {
-            exch /tempstr exch def
-            %% If the token is a name
-            %%
-            dup type /nametype eq {
-              %% Is it a name we want to take actionon
-              dup DA_Action_Dict exch known {
-                DA_Action_Dict exch get exec
+          {
+            %% This is kind of ugly, we use token to process the string
+            %% and process each token separately.
+            tempstr
+            token {
+              exch /tempstr exch def
+              %% If the token is a name
+              %%
+              dup type /nametype eq {
+                %% Is it a name we want to take actionon
+                dup DA_Action_Dict exch known {
+                  DA_Action_Dict exch get exec
+                }{
+                  %% Its not a name we know, is it executable
+                  dup xcheck {exec} if
+                } ifelse
               }{
-                %% Its not a name we know, is it executable
-                dup xcheck {exec} if
-              } ifelse
+                %% Not a name, just make it executable and execute it
+                cvx exec
+              }ifelse
             }{
-              %% Not a name, just make it executable and execute it
-              cvx exec
+              exit
             }ifelse
-          }{
-            exit
-          }ifelse
-        } loop
+          } loop
+        } stopped
+        {cleartomark setgstate}
+        {cleartomark pop} ifelse
       } {
         0 setgray
         /Helvetica findfont 12 scalefont setfont
       }ifelse
+
       %% draw the border, if we don't have a border style dictionary, draw a default one.
       dup /BS knownoget {
         pop dup drawborder
@@ -4411,58 +4420,69 @@ currentdict /set_bc_color undef
       %% Get the Contents string, if we don't have one, we're done
       %%
       2 index /Contents knownoget {
-        PDFusingtransparency {
-          .begintransparencytextgroup
-        } if
-        %% Check for UTF16-BE, we probably don't work properly with this yet.
-        %%
-        dup 0 get 254 eq 1 index 1 get 255 eq and
-        {
-          /FallBackFont /Identity-UTF16-H [/CIDFallBack] composefont 12 scalefont setfont
-          dup length 2 div 1 sub 0 1 3 -1 roll {
-                                    %% llx urx (string) index
-            1 index exch 2 mul 2 getinterval        %% llx urx (string) (substring)
-            dup stringwidth pop currentpoint pop add 3 index gt {
-              currentpoint exch pop 4 index exch 12 sub moveto
-            } if
-            show
-          } for
-          pop
-        }
-        {
-          %% Heuristic to determine the height (ascender to descender) of the text
-          %% for when we move down a line.
-          gsave
-          /..TextHeight (Hy) //false charpath pathbbox exch pop exch sub exch pop def
-          grestore
-          %% and use it immediatley to start the text one line down
-          %%
-          currentpoint ..TextHeight sub moveto
+        dup length 0 gt {
+          PDFusingtransparency {
+            .begintransparencytextgroup
+          } if
+          %% Check for UTF16-BE, we probably don't work properly with this yet.
+          %% (If the string is less than 4 bytes its either not UTF16-BE or it is
+          %% but has no actual content)
+          dup length 4 ge {
+            dup 0 get 254 eq 1 index 1 get 255 eq and
+          }{
+            //false
+          } ifelse
 
-          %% Now we process each character code in the string. If we find
-          %% a /r/ or /n then we drop a line. If the character would end up
-          %% outside the Annot Rect, then we drop a line before showing it.
-          %%
-          dup length 1 sub 0 1 3 -1 roll {
-                                    %% llx urx (string) index
-            1 index exch get        %% llx urx (string) int
-            dup 10 eq 1 index 13 eq or {
-              pop
-              currentpoint exch pop 3 index exch ..TextHeight sub moveto
-            } {
-              1 string dup 0 4 -1 roll
-              put dup                 %% llx urx (string) (int) (int)
-              stringwidth pop currentpoint pop add 3 index gt {
-                currentpoint exch pop 4 index exch ..TextHeight sub moveto
+          {
+            /FallBackFont /Identity-UTF16-H [/CIDFallBack] composefont 12 scalefont setfont
+            dup length 2 div 1 sub 0 1 3 -1 roll {
+                                      %% llx urx (string) index
+             1 index exch 2 mul 2 getinterval        %% llx urx (string) (substring)
+              dup stringwidth pop currentpoint pop add 3 index gt {
+                currentpoint exch pop 4 index exch 12 sub moveto
               } if
               show
-            } ifelse
-          } for
+            } for
+            pop
+          }
+          {
+            %% Heuristic to determine the height (ascender to descender) of the text
+            %% for when we move down a line.
+            gsave
+            /..TextHeight (Hy) //false charpath pathbbox exch pop exch sub exch pop def
+            grestore
+            %% and use it immediatley to start the text one line down
+            %%
+            currentpoint ..TextHeight sub moveto
+
+            %% Now we process each character code in the string. If we find
+            %% a /r/ or /n then we drop a line. If the character would end up
+            %% outside the Annot Rect, then we drop a line before showing it.
+            %%
+            dup length 1 sub 0 1 3 -1 roll {
+                                      %% llx urx (string) index
+              1 index exch get        %% llx urx (string) int
+              dup 10 eq 1 index 13 eq or {
+                pop
+                currentpoint exch pop 3 index exch ..TextHeight sub moveto
+              } {
+                1 string dup 0 4 -1 roll
+                put dup                 %% llx urx (string) (int) (int)
+                stringwidth pop currentpoint pop add 3 index gt {
+                  currentpoint exch pop 4 index exch ..TextHeight sub moveto
+                } if
+                show
+              } ifelse
+            } for
+            pop
+          }ifelse
+          PDFusingtransparency {
+            .endtransparencytextgroup
+          } if
+        }
+        {
           pop
-        }ifelse
-        PDFusingtransparency {
-          .endtransparencytextgroup
-        } if
+        } ifelse
       } if
       pop pop
       //endannottransparency exec
