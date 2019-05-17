@@ -890,6 +890,110 @@ static int pdfi_check_page_transparency(pdf_context *ctx, pdf_dict *page_dict, b
     return 0;
 }
 
+static int pdfi_check_transparency_spots(pdf_context *ctx)
+{
+    int code = 0;
+
+    /* Loop round all the pages looking for spot colours and transparency. We only check
+     * for spot colours if the device is capable of spot colours (the code checks). We
+     * only store the transparency setting if NOTRANSPARENCY is not set
+     */
+    if (ctx->num_pages) {
+        pdf_dict *page_dict = NULL;
+        uint64_t page_offset = 0;
+        bool uses_transparency = false;
+        int spots = 0;
+        uint64_t ix;
+
+        int bytes = (int)ceil((float)ctx->num_pages / 8.0f);
+        ctx->PageTransparencyArray = (char *)gs_alloc_bytes(ctx->memory, bytes, "pdfi_process_file, allocate page transparency tracking array");
+        memset(ctx->PageTransparencyArray, 0x00, bytes);
+
+        code = pdfi_alloc_object(ctx, PDF_DICT, 32, (pdf_obj **)&ctx->SpotNames);
+        if (code < 0)
+            goto exit;
+
+        pdfi_countup(ctx->SpotNames);
+
+        for (ix=0;ix < ctx->num_pages;ix++) {
+            if (ctx->pdfdebug)
+                dmprintf1(ctx->memory, "%% Checking Page %"PRIi64" for transparency and spot plates\n", ix + 1);
+
+            uses_transparency = false;
+
+            /* Get the page dictionary */
+            code = pdfi_loop_detector_mark(ctx);
+            if (code < 0)
+                goto exit;
+
+            code = pdfi_loop_detector_add_object(ctx, ctx->Pages->object_num);
+            if (code < 0) {
+                pdfi_loop_detector_cleartomark(ctx);
+                goto exit;
+            }
+
+            page_offset = 0;
+            code = pdfi_get_page_dict(ctx, ctx->Pages, ix, &page_offset, &page_dict, NULL);
+            pdfi_loop_detector_cleartomark(ctx);
+            if (code < 0) {
+                if (code == gs_error_VMerror || ctx->pdfstoponerror)
+                    goto exit;
+                return 0;
+            }
+
+            if (code > 0)
+                /* This can happen if the number of declared pages (/Count) is larger than the number of pages in the Pages array
+                 * We'll ignore that for hte purposes of transparency checking. If the user tries to render this
+                 * page it'll fail in the page rendering code.
+                 */
+                 break;
+
+            /* Check the page dictionary for spots and transparency */
+            code = pdfi_check_page_transparency(ctx, page_dict, &uses_transparency, &spots);
+            if (code < 0) {
+                pdfi_countdown(ctx->SpotNames);
+                pdfi_countdown(page_dict);
+                ctx->SpotNames = NULL;
+                goto exit;
+            }
+            if (uses_transparency && !ctx->notransparency) {
+                uint64_t index = ix >> 3;
+                char value = 0x80 >> (ix % 8);
+
+                ctx->PageTransparencyArray[index] |= value;
+            }
+            pdfi_countdown(page_dict);
+        }
+
+        pdfi_countdown(ctx->SpotNames);
+        ctx->SpotNames = NULL;
+
+        /* If there are spot colours (and by inference, the device renders spot plates) then
+         * send the number of Spots to the device, so it can setup correctly.
+         */
+        if (spots > 0) {
+            gs_c_param_list_write(&ctx->pdfi_param_list, ctx->memory);
+            param_write_int((gs_param_list *)&ctx->pdfi_param_list, "PageSpotColors", &spots);
+            gs_c_param_list_read(&ctx->pdfi_param_list);
+            code = gs_putdeviceparams(ctx->pgs->device, (gs_param_list *)&ctx->pdfi_param_list);
+            if (code > 0) {
+                /* The device was closed, we need to reopen it */
+                code = gs_setdevice_no_erase(ctx->pgs, ctx->pgs->device);
+                if (code < 0) {
+                    if (uses_transparency)
+                        (void)gs_abort_pdf14trans_device(ctx->pgs);
+                    pdfi_countdown(ctx->SpotNames);
+                    pdfi_countdown(page_dict);
+                    goto exit;
+                }
+                gs_erasepage(ctx->pgs);
+            }
+        }
+    }
+exit:
+    return code;
+}
+
 static int pdfi_set_media_size(pdf_context *ctx, pdf_dict *page_dict)
 {
     gs_c_param_list list;
@@ -1596,102 +1700,16 @@ read_root:
             goto exit;
     }
 
-    /* Loop round all the pages looking for spot colours and transparency. We only check
-     * for spot colours if the device is capable of spot colours (the code checks). We
-     * only store the transparency setting if NOTRANSPARENCY is not set
+    /* Check all the pages in the file, and all the Resources used by those pages,
+     * to see if transparency is used. The result is stored in a bitwise array in
+     * the pdf_context, 1 bit per page with transparency. We also need to read all
+     * the resources on each page in order to discover how many spot colours are
+     * required (if supported by the device) so we do that in the same routine
+     * to avoid walking the page tree and resources twice.
      */
-    if (ctx->num_pages) {
-        pdf_dict *page_dict = NULL;
-        uint64_t page_offset = 0;
-        bool uses_transparency = false;
-        int spots = 0;
-        uint64_t ix;
-
-        int bytes = (int)ceil((float)ctx->num_pages / 8.0f);
-        ctx->PageTransparencyArray = (char *)gs_alloc_bytes(ctx->memory, bytes, "pdfi_process_file, allocate page transparency tracking array");
-        memset(ctx->PageTransparencyArray, 0x00, bytes);
-
-        code = pdfi_alloc_object(ctx, PDF_DICT, 32, (pdf_obj **)&ctx->SpotNames);
-        if (code < 0)
-            goto exit;
-
-        pdfi_countup(ctx->SpotNames);
-
-        for (ix=0;ix < ctx->num_pages;ix++) {
-            if (ctx->pdfdebug)
-                dmprintf1(ctx->memory, "%% Checking Page %"PRIi64" for transparency and spot plates\n", ix + 1);
-
-            uses_transparency = false;
-
-            /* Get the page dictionary */
-            code = pdfi_loop_detector_mark(ctx);
-            if (code < 0)
-                goto exit;
-
-            code = pdfi_loop_detector_add_object(ctx, ctx->Pages->object_num);
-            if (code < 0) {
-                pdfi_loop_detector_cleartomark(ctx);
-                goto exit;
-            }
-
-            page_offset = 0;
-            code = pdfi_get_page_dict(ctx, ctx->Pages, ix, &page_offset, &page_dict, NULL);
-            pdfi_loop_detector_cleartomark(ctx);
-            if (code < 0) {
-                if (code == gs_error_VMerror || ctx->pdfstoponerror)
-                    goto exit;
-                return 0;
-            }
-
-            if (code > 0)
-                /* This can happen if the number of declared pages (/Count) is larger than the number of pages in the Pages array
-                 * We'll ignore that for hte purposes of transparency checking. If the user tries to render this
-                 * page it'll fail in the page rendering code.
-                 */
-                 break;
-
-            /* Check the page dictionary for spots and transparency */
-            code = pdfi_check_page_transparency(ctx, page_dict, &uses_transparency, &spots);
-            if (code < 0) {
-                pdfi_countdown(ctx->SpotNames);
-                pdfi_countdown(page_dict);
-                ctx->SpotNames = NULL;
-                goto exit;
-            }
-            if (uses_transparency && !ctx->notransparency) {
-                uint64_t index = ix >> 3;
-                char value = 0x80 >> (ix % 8);
-
-                ctx->PageTransparencyArray[index] |= value;
-            }
-            pdfi_countdown(page_dict);
-        }
-
-        pdfi_countdown(ctx->SpotNames);
-        ctx->SpotNames = NULL;
-
-        /* If there are spot colours (and by inference, the device renders spot plates) then
-         * send the number of Spots to the device, so it can setup correctly.
-         */
-        if (spots > 0) {
-            gs_c_param_list_write(&ctx->pdfi_param_list, ctx->memory);
-            param_write_int((gs_param_list *)&ctx->pdfi_param_list, "PageSpotColors", &spots);
-            gs_c_param_list_read(&ctx->pdfi_param_list);
-            code = gs_putdeviceparams(ctx->pgs->device, (gs_param_list *)&ctx->pdfi_param_list);
-            if (code > 0) {
-                /* The device was closed, we need to reopen it */
-                code = gs_setdevice_no_erase(ctx->pgs, ctx->pgs->device);
-                if (code < 0) {
-                    if (uses_transparency)
-                        (void)gs_abort_pdf14trans_device(ctx->pgs);
-                    pdfi_countdown(ctx->SpotNames);
-                    pdfi_countdown(page_dict);
-                    goto exit;
-                }
-                gs_erasepage(ctx->pgs);
-            }
-        }
-    }
+    code = pdfi_check_transparency_spots(ctx);
+    if (code < 0)
+        goto exit;
 
     /* Loop over each page and either render it or output the
      * required information.
