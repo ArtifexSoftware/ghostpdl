@@ -125,7 +125,7 @@ typedef struct psdf_distiller_params_s {
         ccs_ByObjectType
     } ColorConversionStrategy;
 #define psdf_ccs_names\
-        "LeaveColorUnchanged", "UseDeviceDependentColor",\
+        "LeaveColorUnchanged", \
         "UseDeviceIndependentColor", "UseDeviceIndependentColorForImages",\
         "sRGB", "CMYK", "Gray", "RGB", "ByObjectType"
 
