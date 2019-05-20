@@ -127,6 +127,7 @@ $(PLOBJ)pjparse.$(OBJ): $(PLSRC)pjparse.c\
         $(pjparse_h)  \
         $(plfont_h)   \
         $(plver_h)    \
+        $(plmain_h)   \
         $(PL_MAK)     \
         $(MAKEDIRS)
 	$(PLCCC) $(PLSRC)pjparse.c $(PLO_)pjparse.$(OBJ)

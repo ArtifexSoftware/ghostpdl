@@ -27,6 +27,7 @@
 #include "pjparse.h"
 #include "plfont.h"
 #include "plver.h"              /* PJL_VOLUME_0 PJL_VOLUME_1 */
+#include "plmain.h"
 #include "ctype_.h"             /* for toupper() */
 #include <stdlib.h>             /* for atoi() */
 
