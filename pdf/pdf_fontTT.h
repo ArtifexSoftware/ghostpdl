@@ -13,13 +13,11 @@
    CA 94945, U.S.A., +1(415)492-9861, for further information.
 */
 
-/* Font operations for the PDF interpreter */
+/* TrueType font handling routines */
 
-#ifndef PDF_FONT_OPERATORS
-#define PDF_FONT_OPERATORS
+#ifndef PDF_TRUETYPE_FONT
+#define PDF_TRUETYPE_FONT
 
-int pdfi_d0(pdf_context *ctx);
-int pdfi_d1(pdf_context *ctx);
-int pdfi_Tf(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict);
+int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict, pdf_dict *page_dict);
 
 #endif

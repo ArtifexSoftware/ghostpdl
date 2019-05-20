@@ -2932,7 +2932,7 @@ static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_stream *source, 
                 break;
             case K2('T','f'):       /* set font and size */
                 pdfi_pop(ctx, 1);
-                code = pdfi_Tf(ctx);
+                code = pdfi_Tf(ctx, stream_dict, page_dict);
                 break;
             case K2('T','j'):       /* show text */
                 pdfi_pop(ctx, 1);

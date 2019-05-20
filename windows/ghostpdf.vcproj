@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
@@ -329,7 +329,27 @@
 				RelativePath="..\pdf\pdf_font.c"
 				>
 			</File>
-			<File
+            <File
+                RelativePath="..\pdf\pdf_font0.c"
+	  			>
+            </File>
+            <File
+                RelativePath="..\pdf\pdf_font1.c"
+	    		>
+            </File>
+            <File
+                RelativePath="..\pdf\pdf_font1C.c"
+	  			>
+            </File>
+            <File
+                RelativePath="..\pdf\pdf_font3.c"
+	    		>
+            </File>
+            <File
+                RelativePath="..\pdf\pdf_fontTT.c"
+	  			>
+            </File>
+            <File
 				RelativePath="..\pdf\pdf_func.c"
 				>
 			</File>
@@ -353,6 +373,10 @@
 				RelativePath="..\pdf\pdf_path.c"
 				>
 			</File>
+            <File
+                RelativePath="..\pdf\pdf_pattern.c"
+				>
+            </File>
 			<File
 				RelativePath="..\pdf\pdf_shading.c"
 				>
@@ -405,7 +429,27 @@
 				RelativePath="..\pdf\pdf_font.h"
 				>
 			</File>
-			<File
+            <File
+                RelativePath="..\pdf\pdf_font0.h"
+				>
+            </File>
+            <File
+                RelativePath="..\pdf\pdf_font1.h"
+				>
+            </File>
+            <File
+                RelativePath="..\pdf\pdf_font1C.h"
+				>
+            </File>
+            <File
+                RelativePath="..\pdf\pdf_font3.h"
+				>
+            </File>
+            <File
+                RelativePath="..\pdf\pdf_fontTT.h"
+				>
+            </File>
+            <File
 				RelativePath="..\pdf\pdf_func.h"
 				>
 			</File>
@@ -429,7 +473,11 @@
 				RelativePath="..\pdf\pdf_path.h"
 				>
 			</File>
-			<File
+            <File
+                RelativePath="..\pdf\pdf_pattern.h"
+				>
+            </File>
+            <File
 				RelativePath="..\pdf\pdf_shading.h"
 				>
 			</File>

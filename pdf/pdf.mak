@@ -59,6 +59,21 @@ $(PDFOBJ)pdf_xref.$(OBJ): $(PDFSRC)pdf_xref.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDI
 $(PDFOBJ)pdf_font.$(OBJ): $(PDFSRC)pdf_font.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_font.c $(PDFO_)pdf_font.$(OBJ)
 
+$(PDFOBJ)pdf_font0.$(OBJ): $(PDFSRC)pdf_font0.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
+	$(PDFCCC) $(PDFSRC)pdf_font0.c $(PDFO_)pdf_font0.$(OBJ)
+
+$(PDFOBJ)pdf_font1.$(OBJ): $(PDFSRC)pdf_font1.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
+	$(PDFCCC) $(PDFSRC)pdf_font1.c $(PDFO_)pdf_font1.$(OBJ)
+
+$(PDFOBJ)pdf_font1C.$(OBJ): $(PDFSRC)pdf_font1C.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
+	$(PDFCCC) $(PDFSRC)pdf_font1C.c $(PDFO_)pdf_font1C.$(OBJ)
+
+$(PDFOBJ)pdf_font3.$(OBJ): $(PDFSRC)pdf_font3.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
+	$(PDFCCC) $(PDFSRC)pdf_font3.c $(PDFO_)pdf_font3.$(OBJ)
+
+$(PDFOBJ)pdf_fontTT.$(OBJ): $(PDFSRC)pdf_fontTT.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
+	$(PDFCCC) $(PDFSRC)pdf_fontTT.c $(PDFO_)pdf_fontTT.$(OBJ)
+
 $(PDFOBJ)pdf_text.$(OBJ): $(PDFSRC)pdf_text.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_text.c $(PDFO_)pdf_text.$(OBJ)
 
@@ -134,6 +149,11 @@ PDF_OBJS=\
     $(PDFOBJ)pdf_image.$(OBJ)\
     $(PDFOBJ)pdf_page.$(OBJ)\
     $(PDFOBJ)pdf_font.$(OBJ)\
+    $(PDFOBJ)pdf_font0.$(OBJ)\
+    $(PDFOBJ)pdf_font1.$(OBJ)\
+    $(PDFOBJ)pdf_font1C.$(OBJ)\
+    $(PDFOBJ)pdf_font3.$(OBJ)\
+    $(PDFOBJ)pdf_fontTT.$(OBJ)\
     $(PDFOBJ)pdf_text.$(OBJ)\
     $(PDFOBJ)pdf_shading.$(OBJ)\
     $(PDFOBJ)pdf_func.$(OBJ)\
