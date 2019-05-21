@@ -1039,6 +1039,7 @@ static int pdfi_set_media_size(pdf_context *ctx, pdf_dict *page_dict)
     for (i=0;i<4;i++) {
         code = pdfi_array_get_number(ctx, a, i, &d[i]);
     }
+    pdfi_countdown(a);
 
     normalize_rectangle(d);
     memcpy(ctx->PageSize, d, 4 * sizeof(double));

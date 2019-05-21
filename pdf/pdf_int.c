@@ -2468,8 +2468,10 @@ pdfi_get_child(pdf_context *ctx, pdf_array *Kids, int i, pdf_dict **pchild)
     }
 
     *pchild = child;
+    child = NULL;
 
  errorExit:
+    pdfi_countdown(child);
     pdfi_countdown(node);
     pdfi_countdown(Type);
     pdfi_countdown(Key);

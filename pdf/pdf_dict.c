@@ -161,9 +161,10 @@ int pdfi_dict_get_no_store_R(pdf_context *ctx, pdf_dict *d, const char *Key, pdf
                     code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, o);
                     if (code < 0)
                         return code;
-                } else
+                } else {
                     *o = d->values[i];
-                pdfi_countup(*o);
+                    pdfi_countup(*o);
+                }
                 return 0;
             }
         }
@@ -706,10 +707,10 @@ int pdfi_dict_next(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, pdf_obj **Value
         *Value = o;
     } else {
         *Value = d->values[*i];
+        pdfi_countup(*Value);
     }
 
     pdfi_countup(*Key);
-    pdfi_countup(*Value);
     (*i)++;
     return 0;
 }
