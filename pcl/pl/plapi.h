@@ -219,4 +219,15 @@ GSDLLEXPORT int GSDLLAPI gsapi_run_string_continue(void *instance, const char *s
 
 GSDLLEXPORT int GSDLLAPI gsapi_run_string_end(void *instance);
 
+typedef enum {
+    gs_spt_invalid = -1,
+    gs_spt_null    = 0,   /* void * is NULL */
+    gs_spt_bool    = 1,   /* void * is NULL (false) or non-NULL (true) */
+    gs_spt_int     = 2,   /* void * is a pointer to an int */
+    gs_spt_float   = 3,   /* void * is a float * */
+    gs_spt_name    = 4,   /* void * is a char * */
+    gs_spt_string  = 5    /* void * is a char * */
+} gs_set_param_type;
+GSDLLEXPORT int GSDLLAPI gsapi_set_param(void *instance, gs_set_param_type type, const char *param, const void *value);
+
 #endif /* gsapi_INCLUDED */

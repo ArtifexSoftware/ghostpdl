@@ -991,6 +991,7 @@ pdf14_buf_new(gs_int_rect *rect, bool has_tags, bool has_alpha_g,
     result->mask_id = 0;
     result->num_spots = num_spots;
     result->deep = deep;
+    result->page_group = false;
     new_parent_color = gs_alloc_struct(memory, pdf14_parent_color_t, &st_pdf14_clr,
                                                 "pdf14_buf_new");
     if (new_parent_color == NULL) {
@@ -1232,6 +1233,10 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
     ctx->mask_stack = NULL; /* Clean the mask field for rendering this group.
                             See pdf14_pop_transparency_group how to handle it. */
     buf->saved = tos;
+
+    if (tos->saved == NULL)
+        buf->page_group = true;
+
     ctx->stack = buf;
     if (buf->data == NULL)
         return 0;
@@ -1288,7 +1293,7 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
             }
             /* Here we need to grab a back drop from a knockout parent group and
                 potentially worry about color differences. */
-            if (check == NULL) {
+            if (check == NULL || check->page_group) {
                 prev_knockout_profile = tos_profile;
                 check = tos;
             } else {

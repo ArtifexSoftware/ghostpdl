@@ -321,6 +321,17 @@ gsapi_set_device(void *instance, gx_device *pdev);
 GSDLLEXPORT int GSDLLAPI
 gsapi_exit(void *instance);
 
+typedef enum {
+    gs_spt_invalid = -1,
+    gs_spt_null    = 0,   /* void * is NULL */
+    gs_spt_bool    = 1,   /* void * is NULL (false) or non-NULL (true) */
+    gs_spt_int     = 2,   /* void * is a pointer to an int */
+    gs_spt_float   = 3,   /* void * is a float * */
+    gs_spt_name    = 4,   /* void * is a char * */
+    gs_spt_string  = 5    /* void * is a char * */
+} gs_set_param_type;
+GSDLLEXPORT int GSDLLAPI gsapi_set_param(void *instance, gs_set_param_type type, const char *param, const void *value);
+
 /* function prototypes */
 typedef int (GSDLLAPIPTR PFN_gsapi_revision)(
     gsapi_revision_t *pr, int len);
@@ -374,6 +385,7 @@ typedef int (GSDLLAPIPTR PFN_gsapi_run_fileW)(void *instance,
 typedef gs_memory_t * (GSDLLAPIPTR PFN_gsapi_get_device_memory)(void *instance);
 typedef gs_memory_t * (GSDLLAPIPTR PFN_gsapi_set_device)(void *instance, gx_device *pdev);
 typedef int (GSDLLAPIPTR PFN_gsapi_exit)(void *instance);
+typedef int (GSDLLAPIPTR PFN_gsapi_set_param)(void *instance, gs_set_param_type type, const char *param, const void *value);
 
 #ifdef __MACOS__
 #pragma export off

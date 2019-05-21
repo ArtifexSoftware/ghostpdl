@@ -71,6 +71,7 @@ typedef gs_memory_t * (*pl_interp_proc_get_device_memory_t) (pl_interp_implement
 
 /*
  * Pass a parameter/value to a language.
+ * Note: Keep this in sync with gs_set_param_type from iapi.h.
  */
 typedef enum {
     pl_spt_invalid = -1,

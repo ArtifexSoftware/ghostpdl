@@ -326,4 +326,14 @@ gsapi_exit(void *instance)
     return psapi_exit(ctx);
 }
 
+GSDLLEXPORT int GSDLLAPI
+gsapi_set_param(void *lib, gs_set_param_type type, const char *param, const void *value)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+    if (lib == NULL)
+        return gs_error_Fatal;
+    return psapi_set_param(ctx, (psapi_sptype)type, param, value);
+}
+
+
 /* end of iapi.c */
