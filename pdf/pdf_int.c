@@ -2477,11 +2477,10 @@ pdfi_get_child(pdf_context *ctx, pdf_array *Kids, int i, pdf_dict **pchild)
     return code;
 }
 
-/* Check if key is in the dictionary, and if so, copy it into the inheritable dict
- * This will allocate an inheritable dict if it is NULL
+/* Check if key is in the dictionary, and if so, copy it into the inheritable dict.
  */
 static int
-pdfi_check_inherited_key(pdf_context *ctx, pdf_dict *d, const char *keyname, pdf_dict **inheritable)
+pdfi_check_inherited_key(pdf_context *ctx, pdf_dict *d, const char *keyname, pdf_dict *inheritable)
 {
     int code = 0;
     pdf_obj *Key = NULL;
@@ -2493,13 +2492,6 @@ pdfi_check_inherited_key(pdf_context *ctx, pdf_dict *d, const char *keyname, pdf
     if (code < 0)
         goto exit;
     if (known) {
-        if (*inheritable == NULL) {
-            code = pdfi_alloc_object(ctx, PDF_DICT, 0, (pdf_obj **)inheritable);
-            if (code < 0)
-                goto exit;
-            pdfi_countup(*inheritable);
-        }
-
         code = pdfi_make_name(ctx, (byte *)keyname, strlen(keyname), &Key);
         if (code < 0)
             goto exit;
@@ -2516,7 +2508,7 @@ pdfi_check_inherited_key(pdf_context *ctx, pdf_dict *d, const char *keyname, pdf
         if (code < 0) {
             goto exit;
         }
-        code = pdfi_dict_put(*inheritable, Key, object);
+        code = pdfi_dict_put(inheritable, Key, object);
     }
 
  exit:
@@ -2525,7 +2517,9 @@ pdfi_check_inherited_key(pdf_context *ctx, pdf_dict *d, const char *keyname, pdf
     return code;
 }
 
-int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_t *page_offset, pdf_dict **target, pdf_dict *inherited)
+int
+pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_t *page_offset,
+                   pdf_dict **target, pdf_dict *inherited)
 {
     int i, code = 0;
     pdf_array *Kids = NULL;
@@ -2538,11 +2532,14 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
     if (ctx->pdfdebug)
         dmprintf1(ctx->memory, "%% Finding page dictionary for page %"PRIi64"\n", page_num + 1);
 
+    /* Allocated inheritable dict (it might stay empty) */
+    code = pdfi_alloc_object(ctx, PDF_DICT, 0, (pdf_obj **)&inheritable);
+    if (code < 0)
+        return code;
+    pdfi_countup(inheritable);
+
     /* if we are being passed any inherited values from our parent, copy them now */
     if (inherited != NULL) {
-        code = pdfi_alloc_object(ctx, PDF_DICT, pdfi_dict_entries(inherited), (pdf_obj **)&inheritable);
-        if (code < 0)
-            return code;
         code = pdfi_dict_copy(inheritable, inherited);
         if (code < 0)
             goto exit;
@@ -2568,19 +2565,17 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
     }
     /* The requested page is a descendant of this node */
 
-    /* Check for inheritable keys, if we find any copy them to the 'inheritable' dictionary at this level
-     * inheritable dict will be allocated if necessary
-     */
-    code = pdfi_check_inherited_key(ctx, d, "Resources", &inheritable);
+    /* Check for inheritable keys, if we find any copy them to the 'inheritable' dictionary at this level */
+    code = pdfi_check_inherited_key(ctx, d, "Resources", inheritable);
     if (code < 0)
         goto exit;
-    code = pdfi_check_inherited_key(ctx, d, "MediaBox", &inheritable);
+    code = pdfi_check_inherited_key(ctx, d, "MediaBox", inheritable);
     if (code < 0)
         goto exit;
-    code = pdfi_check_inherited_key(ctx, d, "CropBox", &inheritable);
+    code = pdfi_check_inherited_key(ctx, d, "CropBox", inheritable);
     if (code < 0)
         goto exit;
-    code = pdfi_check_inherited_key(ctx, d, "Rotate", &inheritable);
+    code = pdfi_check_inherited_key(ctx, d, "Rotate", inheritable);
     if (code < 0) {
         goto exit;
     }
@@ -2615,7 +2610,8 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
                     }
                     num = (int)dbl;
                     if (num < 0 || (num + *page_offset) > ctx->num_pages) {
-                        code = gs_error_rangecheck;
+                        code = gs_note_error(gs_error_rangecheck);
+                        goto exit;
                     } else {
                         if (num + *page_offset <= page_num) {
                             *page_offset += num;
@@ -2633,8 +2629,7 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
                         code = pdfi_dict_get(ctx, child, "PageRef", (pdf_obj **)&d);
                         if (code < 0)
                             goto exit;
-                        if (inheritable != NULL)
-                            code = pdfi_merge_dicts(d, inheritable);
+                        code = pdfi_merge_dicts(d, inheritable);
                         *target = d;
                         pdfi_countup(*target);
                         pdfi_countdown(d);
@@ -2646,8 +2641,7 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
                     if (!pdfi_name_is(Type, "Page"))
                         ctx->pdf_errors |= E_PDF_BADPAGETYPE;
                     if ((*page_offset) == page_num) {
-                        if (inheritable != NULL)
-                            code = pdfi_merge_dicts(child, inheritable);
+                        code = pdfi_merge_dicts(child, inheritable);
                         *target = child;
                         pdfi_countup(*target);
                         goto exit;
