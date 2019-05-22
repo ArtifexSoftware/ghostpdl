@@ -211,32 +211,11 @@ pdfi_pattern_paint_stream(pdf_context *ctx, const gs_client_color *pcc)
     pdf_dict *page_dict = context->page_dict;
     pdf_dict *pat_dict = context->pat_dict;
     int code = 0;
-    gs_offset_t savedoffset = 0;
-    int64_t stack_before, stack_after;
-    bool saved_stoponerror = ctx->pdfstoponerror;
 
-    savedoffset = pdfi_tell(ctx->main_stream);
-
-    /* Stop on error in substream, and also be prepared to clean up the stack */
-    ctx->pdfstoponerror = true;
-    stack_before = ctx->stack_top - ctx->stack_bot;
-    code = pdfi_interpret_content_stream(ctx, pat_dict, page_dict);
-    stack_after = ctx->stack_top - ctx->stack_bot;
-    if (stack_after > stack_before) {
-        dbgmprintf1(ctx->memory, "PATTERN stream: popping junk off stack (%ld)\n", stack_after-stack_before);
-        pdfi_pop(ctx, stack_after-stack_before);
-    }
-
-    if (code < 0) {
-        dbgmprintf1(ctx->memory, "ERROR: pdfi_pattern_paint: code %d when rendering pattern\n", code);
-        goto exit;
-    }
+    /* Interpret inner stream */
+    code = pdfi_interpret_inner_content_stream(ctx, pat_dict, page_dict, true, "PATTERN");
 
  exit:
-    ctx->pdfstoponerror = saved_stoponerror;
-    if (!ctx->pdfstoponerror)
-        code = 0;
-    pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
     return code;
 }
 
@@ -258,9 +237,7 @@ pdfi_pattern_paint(const gs_client_color *pcc, gs_gstate *pgs)
     if (code < 0)
         goto exit;
 
-    dbgmprintf(ctx->memory, "PATTERN: BEGIN pattern stream\n");
     code = pdfi_pattern_paint_stream(ctx, pcc);
-    dbgmprintf(ctx->memory, "PATTERN: END pattern stream\n");
     if (code < 0) {
         dbgmprintf1(ctx->memory, "ERROR: pdfi_pattern_paint: code %d when rendering pattern\n", code);
         goto exit;

@@ -1215,10 +1215,7 @@ static int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
             code = pdfi_do_image(ctx, page_dict, stream_dict, xobject_dict, ctx->main_stream, false);
             pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
         } else if (pdfi_name_is(n, "Form")) {
-            gs_offset_t savedoffset;
-
             pdfi_countdown(n);
-            savedoffset = pdfi_tell(ctx->main_stream);
             code = pdfi_dict_known(xobject_dict, "Group", &group_known);
             if (code < 0)
                 return code;
@@ -1226,20 +1223,17 @@ static int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
             if (group_known && ctx->page_has_transparency == true) {
                 code = pdfi_loop_detector_mark(ctx);
                 if (code < 0) {
-                    (void)pdfi_loop_detector_cleartomark(ctx);
                     return code;
                 }
 
                 code = pdfi_begin_group(ctx, page_dict, xobject_dict);
                 (void)pdfi_loop_detector_cleartomark(ctx);
                 if (code < 0) {
-                    (void)pdfi_loop_detector_cleartomark(ctx);
                     return code;
                 }
             }
 
-            code = pdfi_interpret_content_stream(ctx, xobject_dict, page_dict);
-            pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
+            code = pdfi_interpret_inner_content_stream(ctx, xobject_dict, page_dict, false, "FORM");
             if (group_known && ctx->page_has_transparency == true) {
                 if (code < 0)
                     (void)pdfi_end_transparency_group(ctx);
@@ -1248,7 +1242,6 @@ static int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
             }
 
             if (code < 0) {
-                (void)pdfi_loop_detector_cleartomark(ctx);
                 return code;
             }
         } else if (pdfi_name_is(n, "PS")) {
@@ -1267,40 +1260,29 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     int code = 0;
     pdf_name *n = NULL;
-    pdf_obj *o;
-
-    code = pdfi_loop_detector_mark(ctx);
+    pdf_obj *o = NULL;
 
     if (ctx->stack_top - ctx->stack_bot < 1) {
-        (void)pdfi_loop_detector_cleartomark(ctx);
-        if (ctx->pdfstoponerror) {
-            return_error(gs_error_stackunderflow);
-        }
-        return 0;
+        code = gs_note_error(gs_error_stackunderflow);
+        goto exit1;
     }
     n = (pdf_name *)ctx->stack_top[-1];
     if (n->type != PDF_NAME) {
-        pdfi_pop(ctx, 1);
-        (void)pdfi_loop_detector_cleartomark(ctx);
-        if (ctx->pdfstoponerror)
-            return_error(gs_error_typecheck);
-        return 0;
+        code = gs_note_error(gs_error_typecheck);
+        goto exit1;
     }
 
+    code = pdfi_loop_detector_mark(ctx);
     code = pdfi_find_resource(ctx, (unsigned char *)"XObject", n, stream_dict, page_dict, &o);
     if (code < 0) {
-        pdfi_pop(ctx, 1);
         (void)pdfi_loop_detector_cleartomark(ctx);
-        if (ctx->pdfstoponerror)
-            return code;
-        return 0;
+        goto exit1;
     }
+
     if (o->type != PDF_DICT) {
         (void)pdfi_loop_detector_cleartomark(ctx);
-        pdfi_countdown(o);
-        if (ctx->pdfstoponerror)
-            return_error(gs_error_typecheck);
-        return 0;
+        code = gs_note_error(gs_error_typecheck);
+        goto exit1;
     }
 
     /* The image or form might change the colour space (or indeed other aspects
@@ -1308,28 +1290,26 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
      * to prevent unexpected changes.
      */
     code = gs_gsave(ctx->pgs);
-    if (code < 0) {
-        (void)pdfi_loop_detector_cleartomark(ctx);
-        pdfi_countdown(o);
-        if (ctx->pdfstoponerror)
-            return code;
-        return 0;
-    }
     code = pdfi_do_image_or_form(ctx, stream_dict, page_dict, (pdf_dict *)o);
     if (code < 0) {
         (void)pdfi_loop_detector_cleartomark(ctx);
-        pdfi_countdown(o);
-        if (ctx->pdfstoponerror)
-            return code;
-        return 0;
+        goto exit2;
+    }
+    code = pdfi_loop_detector_cleartomark(ctx);
+    if (code < 0) {
+        goto exit2;
     }
 
-    code = gs_grestore(ctx->pgs);
+ exit2:
+    if (code < 0)
+        gs_grestore(ctx->pgs);
+    else
+        code = gs_grestore(ctx->pgs);
 
+ exit1:
     /* No need to countdown 'n' because that poitns to tht stack object, and we're going to pop that */
     pdfi_countdown(o);
     pdfi_pop(ctx, 1);
-    (void)pdfi_loop_detector_cleartomark(ctx);
     if (code < 0 && ctx->pdfstoponerror)
         return code;
     return 0;

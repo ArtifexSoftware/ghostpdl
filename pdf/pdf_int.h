@@ -45,6 +45,8 @@ int pdfi_read_Root(pdf_context *ctx);
 void pdfi_read_OptionalRoot(pdf_context *ctx);
 void pdfi_free_OptionalRoot(pdf_context *ctx);
 int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_t *page_offset, pdf_dict **target, pdf_dict *inherited);
+int pdfi_interpret_inner_content_stream(pdf_context *ctx, pdf_dict *stream_dict,
+                                        pdf_dict *page_dict, bool stoponerror, const char *desc);
 int pdfi_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict);
 
 int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_obj **o);

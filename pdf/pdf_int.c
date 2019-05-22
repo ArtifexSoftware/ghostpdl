@@ -3000,7 +3000,58 @@ static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_stream *source, 
     return code;
 }
 
-int pdfi_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
+/* Interpret a sub-content stream, with some handling of error recovery, clearing stack, etc.
+ * This temporarily turns on pdfstoponerror if requested.
+ * It will make sure the stack is cleared and the gstate is matched.
+ */
+int
+pdfi_interpret_inner_content_stream(pdf_context *ctx, pdf_dict *stream_dict,
+                                    pdf_dict *page_dict, bool stoponerror, const char *desc)
+{
+    int code = 0;
+    int64_t stack_before, stack_after;
+    bool saved_stoponerror = ctx->pdfstoponerror;
+    int old_gstate_level;
+    gs_offset_t savedoffset = 0;
+
+    savedoffset = pdfi_tell(ctx->main_stream);
+    old_gstate_level = ctx->pgs->level;
+
+    /* Stop on error in substream, and also be prepared to clean up the stack */
+    if (stoponerror)
+        ctx->pdfstoponerror = true;
+    stack_before = ctx->stack_top - ctx->stack_bot;
+    dbgmprintf1(ctx->memory, "BEGIN %s stream\n", desc);
+    code = pdfi_interpret_content_stream(ctx, stream_dict, page_dict);
+    dbgmprintf1(ctx->memory, "END %s stream\n", desc);
+    stack_after = ctx->stack_top - ctx->stack_bot;
+    if (stack_after > stack_before) {
+        dbgmprintf1(ctx->memory, "INNER stream: popping junk off stack (%ld)\n", stack_after-stack_before);
+        pdfi_pop(ctx, stack_after-stack_before);
+    }
+    if (ctx->pgs->level != old_gstate_level) {
+        dbgmprintf2(ctx->memory, "WARNING INNER stream: mismatched q/Q (old=%d, new=%d)\n",
+                    old_gstate_level, ctx->pgs->level);
+        while (ctx->pgs->level > old_gstate_level)
+            gs_grestore(ctx->pgs);
+    }
+
+    if (code < 0) {
+        dbgmprintf1(ctx->memory, "ERROR: inner_stream: code %d when rendering stream\n", code);
+        goto exit;
+    }
+
+ exit:
+    ctx->pdfstoponerror = saved_stoponerror;
+    pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
+    if (!ctx->pdfstoponerror)
+        code = 0;
+    return code;
+
+}
+
+int
+pdfi_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     int code;
     pdf_stream *compressed_stream;
