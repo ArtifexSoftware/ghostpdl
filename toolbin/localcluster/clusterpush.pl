@@ -149,7 +149,7 @@ if (!$product) {
   if ($directory eq 'mupdf') {
     $product='mupdf';
   } else {
-    $product='gs pcl xps'
+    $product='gs pcl xps gpdl'
   }
 }
 
