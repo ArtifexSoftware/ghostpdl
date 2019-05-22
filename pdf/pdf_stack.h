@@ -65,8 +65,6 @@ static inline void pdfi_countdown_impl(pdf_obj *o)
                         dmprintf2(o->memory, "Freeing object %"PRIi64", UID %"PRIi64", but there is still a cache entry!\n", o->object_num, o->UID);
                     entry = next;
                 }
-                ctx->cache_LRU = ctx->cache_MRU = NULL;
-                ctx->cache_entries = 0;
             }
             dmprintf2(o->memory, "Freeing object %"PRIi64", UID %"PRIi64"\n", o->object_num, o->UID);
 #endif
