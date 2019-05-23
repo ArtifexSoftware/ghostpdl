@@ -336,9 +336,6 @@ pcl_impl_init_job(pl_interp_implementation_t * impl,       /* interp instance to
     pcli->pcs.high_level_device = pl_main_get_high_level_device(mem);
     gs_setscanconverter(pcli->pcs.pgs, pl_main_get_scanconverter(mem));
 
-    if (code < 0)
-        goto pisdEnd;
-
     /* Set the device into the pcl_state & gstate */
     stage = Ssetdevice;
     if ((code = gs_setdevice_no_erase(pcli->pcs.pgs, device)) < 0)      /* can't erase yet */
