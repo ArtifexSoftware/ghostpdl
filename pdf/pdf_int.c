@@ -3013,9 +3013,21 @@ pdfi_interpret_inner_content_stream(pdf_context *ctx, pdf_dict *stream_dict,
     bool saved_stoponerror = ctx->pdfstoponerror;
     int old_gstate_level;
     gs_offset_t savedoffset = 0;
+#define GSAVE_HACK_LIMIT 3
+    int hacked_gstate_level;
+    int i;
 
     savedoffset = pdfi_tell(ctx->main_stream);
     old_gstate_level = ctx->pgs->level;
+
+    /* Do some extra gsave's to provide a buffer for spurious grestore's */
+    /* TODO: HACK HACK HACK -- there should be a better way to handle this */
+    hacked_gstate_level = old_gstate_level + GSAVE_HACK_LIMIT;
+    for (i=0; i<GSAVE_HACK_LIMIT; i++) {
+        code = gs_gsave(ctx->pgs);
+        if (code < 0)
+            goto exit;
+    }
 
     /* Stop on error in substream, and also be prepared to clean up the stack */
     if (stoponerror)
@@ -3029,12 +3041,25 @@ pdfi_interpret_inner_content_stream(pdf_context *ctx, pdf_dict *stream_dict,
         dbgmprintf1(ctx->memory, "INNER stream: popping junk off stack (%ld)\n", stack_after-stack_before);
         pdfi_pop(ctx, stack_after-stack_before);
     }
-    if (ctx->pgs->level != old_gstate_level) {
-        dbgmprintf2(ctx->memory, "WARNING INNER stream: mismatched q/Q (old=%d, new=%d)\n",
-                    old_gstate_level, ctx->pgs->level);
-        while (ctx->pgs->level > old_gstate_level)
-            gs_grestore(ctx->pgs);
+    if (ctx->pgs->level > hacked_gstate_level) {
+        dbgmprintf2(ctx->memory, "WARNING INNER stream: too many q operators (old=%d, new=%d)\n",
+                    hacked_gstate_level, ctx->pgs->level);
     }
+    if (ctx->pgs->level < hacked_gstate_level) {
+        dbgmprintf2(ctx->memory, "WARNING INNER stream: too many Q operators (old=%d, new=%d)\n",
+                    hacked_gstate_level, ctx->pgs->level);
+        if (ctx->pgs->level < old_gstate_level) {
+            dbgmprintf2(ctx->memory, "FATAL ERROR INNER stream: way too many Q operators (old=%d, new=%d)\n",
+                        old_gstate_level, ctx->pgs->level);
+            code = gs_note_error(gs_error_Fatal);
+            goto exit;
+        }
+    }
+    /* This will do enough grestore's to get us back to where we started.
+     * If there were more than GSAVE_HACK_LIMIT extra grestores, then this won't save us.
+     */
+    while (ctx->pgs->level > old_gstate_level)
+        gs_grestore(ctx->pgs);
 
     if (code < 0) {
         dbgmprintf1(ctx->memory, "ERROR: inner_stream: code %d when rendering stream\n", code);
