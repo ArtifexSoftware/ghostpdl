@@ -1101,7 +1101,7 @@ $error /SubstituteFont { } put
 
     } loop              % end of loop
 
- } bind executeonly odef % must be bound and hidden for .putgstringcopy
+ } bind executeonly def % must be bound and hidden for .putgstringcopy
 
 % Attempt to load a font from a file.
 /.tryloadfont {         % <fontname> .tryloadfont <font> true
@@ -1111,14 +1111,14 @@ $error /SubstituteFont { } put
   /.genericrfn where {
     pop
     pop dup //.fonttempstring /FontResourceDir getsystemparam .genericrfn
-    {//false .loadfontloop} //.internalstopped exec {//false} if {
+    {//false //.loadfontloop exec} //.internalstopped exec {//false} if {
       //true
     } {
       dup //.nametostring exec
-      {//true .loadfontloop} //.internalstopped exec {//false} if
+      {//true //.loadfontloop exec} //.internalstopped exec {//false} if
     } ifelse
   } {
-    {//true .loadfontloop} //.internalstopped exec {//false} if
+    {//true //.loadfontloop exec} //.internalstopped exec {//false} if
   } ifelse
 } bind def
 
@@ -1185,7 +1185,7 @@ $error /SubstituteFont { } put
                  {
                    1 dict begin
                  } ifelse
-                 //true .loadfontloop
+                 //true //.loadfontloop exec
                  end
                  { //true exit } if
                }
