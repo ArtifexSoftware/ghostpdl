@@ -26,9 +26,9 @@
 % Augment the FONTPATH machinery so it recognizes OpenType CFF font sets.
 
 /.scanfontheaders where {
-  pop /.scanfontheaders [
-   .scanfontheaders aload pop (OTTO*)
-  ] def
+  /.scanfontheaders [
+   /.scanfontheaders .systemvar aload pop (OTTO*)
+  ] put
 } if
 
 % Load a font file that might be an OpenType CFF font set.

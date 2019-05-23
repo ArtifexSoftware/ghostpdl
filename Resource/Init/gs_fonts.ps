@@ -309,7 +309,7 @@ FONTPATH length 0 eq { (%END FONTPATH) .skipeof } if
 /.scan1fontstring 8192 string def
 % BeginFont: is not per Adobe documentation, but a few fonts have it.
 /.scanfontheaders [(%!PS-Adobe*) (%!FontType*) (%%BeginFont:*)] def
-0 //.scanfontheaders { length .max } forall 6 add % extra for PFB header
+0 /.scanfontheaders .systemvar { length .max } forall 6 add % extra for PFB header
 /.scan1fontfirst exch string def
 /.scanfontdir           % <dirname> .scanfontdir -
  { currentglobal exch //true setglobal
@@ -349,7 +349,7 @@ FONTPATH length 0 eq { (%END FONTPATH) .skipeof } if
           { dup length 6 sub 6 exch getinterval }
          if
                 % Check for font file headers.
-         //false //.scanfontheaders
+         //false /.scanfontheaders .systemvar
           { 2 index exch .stringmatch or
           }
          forall exch pop
