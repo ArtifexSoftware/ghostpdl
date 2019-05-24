@@ -275,6 +275,14 @@ pdfi_name_cmp(const pdf_name *n1, const pdf_name *n2)
 /***********************************************************************************/
 /* Functions to dereference object references and manage the object cache          */
 
+/* given an object, create a cache entry for it. If we have too many entries
+ * then delete the leat-recently-used cache entry. Make the new entry be the
+ * most-recently-used entry. The actual entries are attached to the xref table
+ * (as well as being a double-linked list), because we detect an existing
+ * cache entry by seeing that the xref table for the object number has a non-NULL
+ * 'cache' member.
+ * So we need to update the xref as well if we add or delete cache entries.
+ */
 static int pdfi_add_to_cache(pdf_context *ctx, pdf_obj *o)
 {
     pdf_obj_cache_entry *entry;
@@ -317,6 +325,31 @@ static int pdfi_add_to_cache(pdf_context *ctx, pdf_obj *o)
     ctx->xref_table->xref[o->object_num].cache = entry;
     return 0;
 }
+
+/* Given an existing cache entry, promote it to be the most-recently-used
+ * cache entry.
+ */
+static void pdfi_promote_cache_entry(pdf_context *ctx, pdf_obj_cache_entry *cache_entry)
+{
+    if (ctx->cache_MRU && cache_entry != ctx->cache_MRU) {
+        if ((pdf_obj_cache_entry *)cache_entry->next != NULL)
+            ((pdf_obj_cache_entry *)cache_entry->next)->previous = cache_entry->previous;
+        if ((pdf_obj_cache_entry *)cache_entry->previous != NULL)
+            ((pdf_obj_cache_entry *)cache_entry->previous)->next = cache_entry->next;
+        else {
+            /* the existing entry is the current least recently used, we need to make the 'next'
+             * cache entry into the LRU.
+             */
+            ctx->cache_LRU = cache_entry->next;
+        }
+        cache_entry->next = NULL;
+        cache_entry->previous = ctx->cache_MRU;
+        ctx->cache_MRU->next = cache_entry;
+        ctx->cache_MRU = cache_entry;
+    }
+    return;
+}
+
 
 /* pdf_dereference returns an object with a reference count of at least 1, this represents the
  * reference being held by the caller (in **object) when we return from this function.
@@ -361,24 +394,13 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
     if (entry->cache != NULL){
         pdf_obj_cache_entry *cache_entry = entry->cache;
 
+#if CACHE_STATISTICS
+        ctx->hits++;
+#endif
         *object = cache_entry->o;
         pdfi_countup(*object);
-        if (ctx->cache_MRU && cache_entry != ctx->cache_MRU) {
-            if ((pdf_obj_cache_entry *)cache_entry->next != NULL)
-                ((pdf_obj_cache_entry *)cache_entry->next)->previous = cache_entry->previous;
-            if ((pdf_obj_cache_entry *)cache_entry->previous != NULL)
-                ((pdf_obj_cache_entry *)cache_entry->previous)->next = cache_entry->next;
-            else {
-                /* the existing entry is the current least recently used, we need to make the 'next'
-                 * cache entry into the LRU.
-                 */
-                ctx->cache_LRU = cache_entry->next;
-            }
-            cache_entry->next = NULL;
-            cache_entry->previous = ctx->cache_MRU;
-            ctx->cache_MRU->next = cache_entry;
-            ctx->cache_MRU = cache_entry;
-        }
+
+        pdfi_promote_cache_entry(ctx, cache_entry);
     } else {
         saved_stream_offset = pdfi_unread_tell(ctx);
 
@@ -399,6 +421,9 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
             }
 
             if (compressed_entry->cache == NULL) {
+#if CACHE_STATISTICS
+                ctx->compressed_misses++;
+#endif
                 code = pdfi_seek(ctx, ctx->main_stream, compressed_entry->u.uncompressed.offset, SEEK_SET);
                 if (code < 0) {
                     (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
@@ -415,8 +440,12 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
                 pdfi_countup(compressed_object);
                 pdfi_pop(ctx, 1);
             } else {
+#if CACHE_STATISTICS
+                ctx->compressed_hits++;
+#endif
                 compressed_object = (pdf_dict *)compressed_entry->cache->o;
                 pdfi_countup(compressed_object);
+                pdfi_promote_cache_entry(ctx, compressed_entry->cache);
             }
             /* Check its an ObjStm ! */
             code = pdfi_dict_get_type(ctx, compressed_object, "Type", PDF_NAME, &o);
@@ -548,6 +577,9 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
 
             pdfi_countdown(compressed_object);
         } else {
+#if CACHE_STATISTICS
+            ctx->misses++;
+#endif
             code = pdfi_seek(ctx, ctx->main_stream, entry->u.uncompressed.offset, SEEK_SET);
             if (code < 0) {
                 (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);

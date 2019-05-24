@@ -1432,7 +1432,7 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
     }
     ctx->base_pgs = gs_gstate_copy(ctx->pgs, ctx->memory);
 
-    dmprintf1(ctx->memory, "Current page transparency setting is %d\n", ctx->PageTransparencyArray[page_index] & page_bit ? 1 : 0);
+    dbgmprintf1(ctx->memory, "Current page transparency setting is %d\n", ctx->PageTransparencyArray[page_index] & page_bit ? 1 : 0);
 
     /* Force NOTRANSPARENCY here if required, until we can get it working... */
     ctx->page_has_transparency = ctx->PageTransparencyArray[page_index] & page_bit ? 1 : 0;
@@ -1968,6 +1968,12 @@ pdf_context *pdfi_create_context(gs_memory_t *pmem)
 #if REFCNT_DEBUG
     ctx->UID = 1;
 #endif
+#if CACHE_STATISTICS
+    ctx->hits = 0;
+    ctx->misses = 0;
+    ctx->compressed_hits = 0;
+    ctx->compressed_misses = 0;
+#endif
     return ctx;
 }
 
@@ -1980,6 +1986,21 @@ pdfi_fontdir_purge_all(const gs_memory_t * mem, cached_char * cc, void *dummy)
 
 int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
 {
+#if CACHE_STATISTICS
+    float compressed_hit_rate = 0.0, hit_rate = 0.0;
+
+    if (ctx->compressed_hits > 0 || ctx->compressed_misses > 0)
+        compressed_hit_rate = (float)ctx->compressed_hits / (float)(ctx->compressed_hits + ctx->compressed_misses);
+    if (ctx->hits > 0 || ctx->misses > 0)
+        hit_rate = (float)ctx->hits / (float)(ctx->hits + ctx->misses);
+
+    dmprintf1(ctx->memory, "Number of normal object cache hits: %"PRIi64"\n", ctx->hits);
+    dmprintf1(ctx->memory, "Number of normal object cache misses: %"PRIi64"\n", ctx->misses);
+    dmprintf1(ctx->memory, "Number of compressed object cache hits: %"PRIi64"\n", ctx->compressed_hits);
+    dmprintf1(ctx->memory, "Number of compressed object cache misses: %"PRIi64"\n", ctx->compressed_misses);
+    dmprintf1(ctx->memory, "Normal object cache hit rate: %f\n", hit_rate);
+    dmprintf1(ctx->memory, "Compressed object cache hit rate: %f\n", compressed_hit_rate);
+#endif
     if (ctx->PageTransparencyArray)
         gs_free_object(ctx->memory, ctx->PageTransparencyArray, "pdfi_free_context");
 

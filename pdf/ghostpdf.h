@@ -84,6 +84,8 @@
 
 #define BUF_SIZE 2048
 
+#define CACHE_STATISTICS 0
+
 #include "pdf_types.h"
 
 /*
@@ -229,6 +231,12 @@ typedef struct pdf_context_s
     uint64_t *loop_detection;
 #if REFCNT_DEBUG
     uint64_t UID;
+#endif
+#if CACHE_STATISTICS
+    uint64_t hits;
+    uint64_t misses;
+    uint64_t compressed_hits;
+    uint64_t compressed_misses;
 #endif
 }pdf_context;
 
