@@ -512,7 +512,7 @@ pcl_font_header(pcl_args_t * pargs, pcl_state_t * pcs)
     plfont->params.typeface_family =
         (pfh->TypefaceMSB << 8) + pfh->TypefaceLSB;
     plfont->params.pjl_font_number = pcs->pjl_dlfont_number++;
-    
+
     code = pl_dict_put(&pcs->soft_fonts, current_font_id,
                 current_font_id_size, plfont);
     if (code < 0)
@@ -787,16 +787,16 @@ typedef enum resource_type_enum
     font_resource
 } resource_type_t;
 
-/* 
+/*
  * Search the PJL file system for a macro or font resource and
- * associate it's name with the current font or macro id 
+ * associate it's name with the current font or macro id
  */
 static int
 pcl_find_resource(pcl_state_t * pcs,
                   const byte sid[],
                   int sid_size, resource_type_t resource_type)
 {
-    
+
     void *value = NULL;
     char alphaname[512 + 1];
     long int size;
@@ -820,10 +820,10 @@ pcl_find_resource(pcl_state_t * pcs,
                            (resource_type == macro_resource ?
                             sizeof(pcl_macro_t) : 0),
                            "resource");
-        
+
     if (value == NULL)
         return_error(gs_error_Fatal);
-    
+
 
     if (pjl_proc_get_named_resource(pcs->pjls, alphaname,
                                         (byte *) value +
@@ -839,18 +839,17 @@ pcl_find_resource(pcl_state_t * pcs,
     if (resource_type == font_resource) {
         stream_cursor_read r;
         pcl_parser_state_t state;
-            
+
         r.ptr = (byte *)value - 1;
         r.limit = r.ptr + size;
         state.definitions = pcs->pcl_commands;
-        pcl_process_init(&state);
-        code = pcl_process(&state, pcs, &r);
-        if (code < 0) {
+        code = pcl_process_init(&state, pcs);
+        if (code < 0 || (code = pcl_process(&state, pcs, &r) < 0)) {
             gs_free_object(pcs->memory, value, "resource");
             return_error(code);
         }
     }
-        
+
     /* The font resource was added to the dictionary when the font was
        downloaded in the recursive interpreter invocation above, so we
        don't need to add (put) it in the dictionary. */

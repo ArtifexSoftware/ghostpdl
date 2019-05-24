@@ -83,7 +83,9 @@ pcl_execute_macro(const pcl_macro_t * pmac, pcl_state_t * pcs,
     }
     state.definitions = pcs->pcl_commands;
     state.hpgl_parser_state = &gstate;
-    pcl_process_init(&state);
+    code = pcl_process_init(&state, pcs);
+    if (code < 0)
+        return code;
     r.ptr = (const byte *)(pmac + 1) - 1;
     r.limit = (const byte *)pmac + (gs_object_size(pcs->memory, pmac) - 1);
     pcs->macro_level++;

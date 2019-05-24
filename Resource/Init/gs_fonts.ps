@@ -309,7 +309,7 @@ FONTPATH length 0 eq { (%END FONTPATH) .skipeof } if
 /.scan1fontstring 8192 string def
 % BeginFont: is not per Adobe documentation, but a few fonts have it.
 /.scanfontheaders [(%!PS-Adobe*) (%!FontType*) (%%BeginFont:*)] def
-0 //.scanfontheaders { length .max } forall 6 add % extra for PFB header
+0 /.scanfontheaders .systemvar { length .max } forall 6 add % extra for PFB header
 /.scan1fontfirst exch string def
 /.scanfontdir           % <dirname> .scanfontdir -
  { currentglobal exch //true setglobal
@@ -349,7 +349,7 @@ FONTPATH length 0 eq { (%END FONTPATH) .skipeof } if
           { dup length 6 sub 6 exch getinterval }
          if
                 % Check for font file headers.
-         //false //.scanfontheaders
+         //false /.scanfontheaders .systemvar
           { 2 index exch .stringmatch or
           }
          forall exch pop
@@ -1101,7 +1101,7 @@ $error /SubstituteFont { } put
 
     } loop              % end of loop
 
- } bind executeonly odef % must be bound and hidden for .putgstringcopy
+ } bind executeonly def % must be bound and hidden for .putgstringcopy
 
 % Attempt to load a font from a file.
 /.tryloadfont {         % <fontname> .tryloadfont <font> true
@@ -1111,14 +1111,14 @@ $error /SubstituteFont { } put
   /.genericrfn where {
     pop
     pop dup //.fonttempstring /FontResourceDir getsystemparam .genericrfn
-    {//false .loadfontloop} //.internalstopped exec {//false} if {
+    {//false //.loadfontloop exec} //.internalstopped exec {//false} if {
       //true
     } {
       dup //.nametostring exec
-      {//true .loadfontloop} //.internalstopped exec {//false} if
+      {//true //.loadfontloop exec} //.internalstopped exec {//false} if
     } ifelse
   } {
-    {//true .loadfontloop} //.internalstopped exec {//false} if
+    {//true //.loadfontloop exec} //.internalstopped exec {//false} if
   } ifelse
 } bind def
 
@@ -1185,7 +1185,7 @@ $error /SubstituteFont { } put
                  {
                    1 dict begin
                  } ifelse
-                 //true .loadfontloop
+                 //true //.loadfontloop exec
                  end
                  { //true exit } if
                }

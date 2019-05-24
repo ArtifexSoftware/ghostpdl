@@ -34,6 +34,7 @@ my $w32="";
 my $win32="";
 my $nr="";
 my $pdfwrite="";
+my $nopdfwrite="";
 my $ps2write="";
 my $xpswrite="";
 my $singlePagePDF="";
@@ -67,6 +68,8 @@ while ($t1=shift) {
     $nr="nonredundant";
   } elsif ($t1 eq "pdfwrite" || $t1 eq "ps2write" || $t1 eq "xpswrite") {
     $pdfwrite="pdfwrite";
+  } elsif ($t1 eq "nopdfwrite") {
+    $nopdfwrite="nopdfwrite";
   } elsif ($t1 eq "timeout" || $t1 eq "relaxtimeout") {
     $relaxTimeout="relaxTimeout";
   } elsif ($t1=~m/^-/ || $t1=~m/^\d/) {
@@ -146,7 +149,7 @@ if (!$product) {
   if ($directory eq 'mupdf') {
     $product='mupdf';
   } else {
-    $product='gs pcl xps'
+    $product='gs pcl xps gpdl'
   }
 }
 
@@ -221,7 +224,7 @@ if ($product ne "abort" ) { #&& $product ne "bmpcmp") {
 }
 
 open(F,">cluster_command.run");
-print F "$user $product $res $w32 $win32 $nr $pdfwrite $relaxTimeout $singlePagePDF $extended $smoke $cull $avx2\n";
+print F "$user $product $res $w32 $win32 $nr $pdfwrite $nopdfwrite $relaxTimeout $singlePagePDF $extended $smoke $cull $avx2\n";
 print F "$command\n";
 print F "$filters\n";
 print F "$extras\n";

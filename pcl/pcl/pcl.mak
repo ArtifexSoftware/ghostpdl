@@ -220,6 +220,7 @@ pcparam_h   = $(PCLSRC)pcparam.h  \
 pcparse_h   = $(PCLSRC)pcparse.h  \
               $(gsmemory_h)       \
               $(scommon_h)        \
+              $(pcstate_h)        \
               $(pcommand_h)
 
 pcpatrn_h   = $(PCLSRC)pcpatrn.h  \

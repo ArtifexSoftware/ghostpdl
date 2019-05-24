@@ -325,8 +325,6 @@ pcl_impl_init_job(pl_interp_implementation_t * impl,       /* interp instance to
     { Sbegin, Ssetdevice, Sinitg, Sgsave1, Spclgsave, Sreset, Serase,
             Sdone } stage;
 
-    pcl_process_init(&pcli->pst);
-
     stage = Sbegin;
 
     /* Set parameters from the main instance */
@@ -372,10 +370,14 @@ pcl_impl_init_job(pl_interp_implementation_t * impl,       /* interp instance to
     if ((code = gs_erasepage(pcli->pcs.pgs)) < 0)
         goto pisdEnd;
 
-    /* Do device-dependent pcl inits */
+    /* Initialize the PCL interpreter and parser */
     stage = Sreset;
     if ((code = pcl_do_resets(&pcli->pcs, pcl_reset_initial)) < 0)
         goto pisdEnd;
+
+    if ((code = pcl_process_init(&pcli->pst, &pcli->pcs)) < 0)
+        goto pisdEnd;
+
     /* provide a PCL graphic state we can return to */
     stage = Spclgsave;
     if ((code = pcl_gsave(&pcli->pcs)) < 0)
@@ -476,8 +478,9 @@ pcl_impl_process_eof(pl_interp_implementation_t * impl    /* interp instance to 
     )
 {
     pcl_interp_instance_t *pcli = impl->interp_client_data;
-
-    pcl_process_init(&pcli->pst);
+    int code = pcl_process_init(&pcli->pst, &pcli->pcs);
+    if (code < 0)
+        return code;
     /* force restore & cleanup if unexpected data end was encountered */
     return pcl_end_page_if_marked(&pcli->pcs);
 }

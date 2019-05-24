@@ -31,9 +31,9 @@
 % Augment the FONTPATH machinery so it recognizes TrueType fonts.
 
 /.scanfontheaders where {
-  pop /.scanfontheaders [
-   .scanfontheaders aload pop (\000\001\000\000*) (true*) (wOFF*)
-  ] def
+  /.scanfontheaders [
+   /.scanfontheaders .systemvar aload pop (\000\001\000\000*) (true*) (wOFF*)
+  ] put
 } if
 
 % ---------------- Automatic Type 42 generation ---------------- %

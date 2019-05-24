@@ -382,7 +382,7 @@ fail:
     if (code >= 0) {
         if (gs_debug_c(':'))
             print_resource_usage(minst, &gs_imemory, "Start");
-        gp_readline_init(&minst->readline_data, imemory_system);
+        gp_readline_init(&minst->readline_data, minst->heap);
     }
 
     return code;

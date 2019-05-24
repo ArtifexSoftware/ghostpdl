@@ -141,7 +141,7 @@ pxPassthrough_init(px_state_t * pxs)
         /* disable an end page in pcl, also used to flag in snippet mode */
         global_pcs->end_page = pcl_end_page_noop;
     }
-    
+
     /* default to pcl5c */
     global_pcs->personality = 0;
     /* for now we do not support intepolation in XL passthrough mode. */
@@ -187,7 +187,7 @@ pxPassthrough_init(px_state_t * pxs)
     /* set the parser state and initialize the pcl parser */
     global_pcl_parser_state.definitions = global_pcs->pcl_commands;
     global_pcl_parser_state.hpgl_parser_state = &global_gl_parser_state;
-    pcl_process_init(&global_pcl_parser_state);
+    pcl_process_init(&global_pcl_parser_state, global_pcs);
     /* default 600 to match XL allow PCL to override */
     global_pcs->uom_cp = 7200L / 600L;
     return gs_setgray(global_pcs->pgs, 0);

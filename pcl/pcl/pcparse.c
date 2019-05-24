@@ -199,10 +199,24 @@ pcl_get_command_definition(pcl_parser_state_t * pcl_parser_state,
 /* ---------------- Parsing ---------------- */
 
 /* Initialize the parser state. */
-void
-pcl_process_init(pcl_parser_state_t * pst)
+int
+pcl_process_init(pcl_parser_state_t * pst, pcl_state_t * pcs)
 {
+    pcl_args_t args;
+    int code = 0;
     pcl_parser_init_inline(pst);
+
+    /*
+     * RTL Files should start with a PCL escape sequence to enter the
+     * GL/2 parser but many do not, so we start in HPGL.  If an escape
+     * sequence is detected the parse mode returns to PCL.
+     */
+
+    if (pcs->personality == rtl) {
+        arg_set_uint(&args, 0);
+        code = rtl_enter_hpgl_mode(&args, pcs);
+    }
+    return code;
 }
 
 /* Adjust the argument value according to the command's argument type. */
@@ -292,6 +306,14 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
 #else
 #  define do_display_functions() (!in_macro)
 #endif
+
+    if (rlimit - p < pst->min_bytes_needed) {
+        pst->min_bytes_needed = 0;
+        p = rlimit;
+        goto x;
+    } else {
+        pst->min_bytes_needed = 0;
+    }
 
     while (p < rlimit) {
         byte chr = 0x00; /* silence a compiler warning */
@@ -477,34 +499,7 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                 param_init();
                 continue;
             case scanning_none:
-                /* in rtl mode we should only reach this state if the
-                   job begins without proper initialization, starts
-                   with HPGL commands directly */
-                if (pcs->personality == rtl && !pcs->parse_other) {
-                    /* we need at least 2 bytes to make the comparison */
-                    if (p >= rlimit - 2)
-                        goto x;
-
-                    /* now check if these commands DF or IN, likely
-                       candidates to start an HPGL file. */
-                    if ((*(p + 1) == 'I' && *(p + 2) == 'N') ||
-                        (*(p + 1) == 'D' && *(p + 2) == 'F') ||
-                        (*(p + 1) == 'B' && *(p + 2) == 'P') ||
-                        (*(p + 1) == 'P' && *(p + 2) == 'G') ||
-                        (*(p + 1) == 'S' && *(p + 2) == 'P')) {
-
-                        pcl_args_t args;
-                        arg_set_uint(&args, 0);
-                        code = rtl_enter_hpgl_mode(&args, pcs);
-                        if (code < 0)
-                            goto x;
-                    }
-                }
-
-                if (pcs->parse_other) { /*
-                                         * Hand off the data stream
-                                         * to another parser (HP-GL/2).
-                                         */
+                if (pcs->parse_other) { /* HPGL/2 mode */
                     pr->ptr = p;
                     code = (*pcs->parse_other)
                         (pcs->parse_data, pcs, pr);
@@ -512,6 +507,7 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                     if (code < 0 || (code == 0 && pcs->parse_other))
                         goto x;
                 }
+
                 chr = *++p;
                 /* check for multi-byte scanning */
                 bytelen = pcl_char_bytelen(chr, pcs->text_parsing_method);
@@ -521,6 +517,7 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                 if (bytelen > 1) {
                     /* check if we need more data */
                     if ((p + bytelen - 1) > rlimit) {
+                        pst->min_bytes_needed = 2;
                         --p;
                         goto x;
                     }
@@ -571,6 +568,7 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                     }
                 } else {
                     if (p >= rlimit) {
+                        pst->min_bytes_needed = 2;
                         --p;
                         goto x;
                     }
@@ -600,6 +598,7 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                     } else {
                         if (p >= rlimit) {
                             p -= 2;
+                            pst->min_bytes_needed = 3;
                             goto x;
                         }
                         pst->param_class = chr;
@@ -647,7 +646,7 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
             /*
              * If we allocated a buffer for command data,
              * and the command didn't take possession of it,
-             * free it now.  
+             * free it now.
              */
             if (pst->args.data_on_heap && pst->args.data) {
                 gs_free_object(pcs->memory, pst->args.data, "command data");
