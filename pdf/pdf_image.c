@@ -34,8 +34,6 @@
 
 extern int pdfi_dict_from_stack(pdf_context *ctx);
 
-static int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_dict *xobject_dict);
-
 int pdfi_BI(pdf_context *ctx)
 {
     return pdfi_mark_stack(ctx, PDF_DICT_MARK);
@@ -411,6 +409,7 @@ static int
 pdfi_get_image_info(pdf_context *ctx, pdf_dict *image_dict, pdf_dict *page_dict, pdfi_image_info_t *info)
 {
     int code;
+    double temp_f;
 
     memset(info, 0, sizeof(*info));
 
@@ -425,14 +424,17 @@ pdfi_get_image_info(pdf_context *ctx, pdf_dict *image_dict, pdf_dict *page_dict,
     }
 
     /* Required */
-    code = pdfi_dict_get_int2(ctx, image_dict, "Height", "H", &info->Height);
+    code = pdfi_dict_get_number2(ctx, image_dict, "Height", "H", &temp_f);
     if (code < 0)
         goto errorExit;
+    /* This is bonkers, but... Bug695872.pdf has /W and /H which are real numbers */
+    info->Height = (int)temp_f;
 
     /* Required */
-    code = pdfi_dict_get_int2(ctx, image_dict, "Width", "W", &info->Width);
+    code = pdfi_dict_get_number2(ctx, image_dict, "Width", "W", &temp_f);
     if (code < 0)
         goto errorExit;
+    info->Width = (int)temp_f;
 
     /* Optional, default false */
     code = pdfi_dict_get_bool2(ctx, image_dict, "ImageMask", "IM", &info->ImageMask);
@@ -1178,6 +1180,7 @@ int pdfi_ID(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_st
 
     code = pdfi_dict_from_stack(ctx);
     if (code < 0)
+        /* pdfi_dict_from_stack cleans up the stack so we don't need to in case of an error */
         return code;
 
     d = (pdf_dict *)ctx->stack_top[-1];
@@ -1193,11 +1196,11 @@ int pdfi_ID(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_st
 
 int pdfi_EI(pdf_context *ctx)
 {
-    pdfi_clearstack(ctx);
+/*    pdfi_clearstack(ctx);*/
     return 0;
 }
 
-static int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
+int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
                                  pdf_dict *page_dict, pdf_dict *xobject_dict)
 {
     int code;
@@ -1262,7 +1265,7 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     pdf_name *n = NULL;
     pdf_obj *o = NULL;
 
-    if (ctx->stack_top - ctx->stack_bot < 1) {
+    if (pdfi_count_stack(ctx) < 1) {
         code = gs_note_error(gs_error_stackunderflow);
         goto exit1;
     }

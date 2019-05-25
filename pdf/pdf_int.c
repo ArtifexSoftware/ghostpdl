@@ -544,7 +544,7 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
                 return code;
             }
             if (ctx->stack_top[-1]->type == PDF_ARRAY_MARK || ctx->stack_top[-1]->type == PDF_DICT_MARK) {
-                int start_depth = ctx->stack_top - ctx->stack_bot;
+                int start_depth = pdfi_count_stack(ctx);
 
                 /* Need to read all the elements from COS objects */
                 do {
@@ -561,7 +561,7 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
                         (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                         return_error(gs_error_ioerror);
                     }
-                }while ((ctx->stack_top[-1]->type != PDF_ARRAY && ctx->stack_top[-1]->type != PDF_DICT) || ctx->stack_top - ctx->stack_bot > start_depth);
+                }while ((ctx->stack_top[-1]->type != PDF_ARRAY && ctx->stack_top[-1]->type != PDF_DICT) || pdfi_count_stack(ctx) > start_depth);
             }
 
             pdfi_close_file(ctx, compressed_stream);
@@ -1104,9 +1104,12 @@ static int pdfi_read_string(pdf_context *ctx, pdf_stream *s)
                             octal_index++;
                             continue;
                         }
-                        gs_free_object(ctx->memory, Buffer, "pdfi_read_string");
-                        return_error(gs_error_syntaxerror);
-                        break;
+                        /* PDF Reference, literal strings, if the character following a
+                         * escape \ character is not recognised, then it is ignored.
+                         */
+                        escape = false;
+                        index++;
+                        continue;
                 }
             }
         } else {
@@ -1236,7 +1239,10 @@ static int pdfi_array_from_stack(pdf_context *ctx)
     while (index) {
         o = ctx->stack_top[-1];
         code = pdfi_array_put(ctx, a, --index, o);
-        if (code < 0) return code;
+        if (code < 0) {
+            (void)pdfi_clear_to_mark(ctx);
+            return code;
+        }
         pdfi_pop(ctx, 1);
     }
 
@@ -1263,13 +1269,13 @@ int pdfi_read_dict(pdf_context *ctx, pdf_stream *s)
         return code;
     if (ctx->stack_top[-1]->type != PDF_DICT_MARK)
         return_error(gs_error_typecheck);
-    depth = ctx->stack_top - ctx->stack_bot;
+    depth = pdfi_count_stack(ctx);
 
     do {
         code = pdfi_read_token(ctx, s);
         if (code < 0)
             return code;
-    } while(ctx->stack_top - ctx->stack_bot > depth);
+    } while(pdfi_count_stack(ctx) > depth);
     return 0;
 }
 
@@ -1367,11 +1373,15 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_stream *s)
 
                 pdfi_countdown(keyword);
 
-                if(ctx->stack_top - ctx->stack_bot < 2)
+                if(pdfi_count_stack(ctx) < 2) {
+                    pdfi_clearstack(ctx);
                     return_error(gs_error_stackunderflow);
+                }
 
-                if(((pdf_obj *)ctx->stack_top[-1])->type != PDF_INT || ((pdf_obj *)ctx->stack_top[-2])->type != PDF_INT)
+                if(((pdf_obj *)ctx->stack_top[-1])->type != PDF_INT || ((pdf_obj *)ctx->stack_top[-2])->type != PDF_INT) {
+                    pdfi_clearstack(ctx);
                     return_error(gs_error_typecheck);
+                }
 
                 gen_num = ((pdf_num *)ctx->stack_top[-1])->value.i;
                 pdfi_pop(ctx, 1);
@@ -1658,8 +1668,10 @@ int pdfi_read_object(pdf_context *ctx, pdf_stream *s)
 
     do {
         code = pdfi_read_token(ctx, s);
-        if (code < 0)
+        if (code < 0) {
+            pdfi_clearstack(ctx);
             return code;
+        }
         if (s->eof)
             return_error(gs_error_syntaxerror);
     }while (ctx->stack_top[-1]->type != PDF_KEYWORD);
@@ -1668,8 +1680,10 @@ int pdfi_read_object(pdf_context *ctx, pdf_stream *s)
     if (keyword->key == PDF_ENDOBJ) {
         pdf_obj *o;
 
-        if (ctx->stack_top - ctx->stack_bot < 2)
+        if (pdfi_count_stack(ctx) < 2) {
+            pdfi_clearstack(ctx);
             return_error(gs_error_stackunderflow);
+        }
 
         o = ctx->stack_top[-2];
 
@@ -1690,7 +1704,7 @@ int pdfi_read_object(pdf_context *ctx, pdf_stream *s)
 
         pdfi_pop(ctx, 1);
 
-        if (ctx->stack_top - ctx->stack_bot < 1)
+        if (pdfi_count_stack(ctx) < 1)
             return_error(gs_error_stackunderflow);
 
         d = (pdf_dict *)ctx->stack_top[-1];
@@ -1730,7 +1744,7 @@ int pdfi_read_object(pdf_context *ctx, pdf_stream *s)
         }
 
         code = pdfi_read_token(ctx, s);
-        if (ctx->stack_top - ctx->stack_bot < 2) {
+        if (pdfi_count_stack(ctx) < 2) {
             dmprintf1(ctx->memory, "Failed to find a valid object at the end of the stream object %"PRIu64".\n", objnum);
             return 0;
         }
@@ -1759,7 +1773,7 @@ int pdfi_read_object(pdf_context *ctx, pdf_stream *s)
                 return 0;
         }
 
-        if (ctx->stack_top - ctx->stack_bot < 2)
+        if (pdfi_count_stack(ctx) < 2)
             return_error(gs_error_stackunderflow);
 
         if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
@@ -1780,7 +1794,7 @@ int pdfi_read_object(pdf_context *ctx, pdf_stream *s)
 
         ctx->pdf_errors |= E_PDF_MISSINGENDOBJ;
 
-        if (ctx->stack_top - ctx->stack_bot < 2)
+        if (pdfi_count_stack(ctx) < 2)
             return_error(gs_error_stackunderflow);
 
         o = ctx->stack_top[-2];
@@ -1942,13 +1956,13 @@ int pdfi_repair_file(pdf_context *ctx)
                 } else
                     return code;
             }
-            if (ctx->stack_top - ctx->stack_bot > 0) {
+            if (pdfi_count_stack(ctx) > 0) {
                 if (ctx->stack_top[-1]->type == PDF_KEYWORD) {
                     pdf_keyword *k = (pdf_keyword *)ctx->stack_top[-1];
                     pdf_num *n;
 
                     if (k->key == PDF_OBJ) {
-                        if (ctx->stack_top - ctx->stack_bot < 3 || ctx->stack_top[-2]->type != PDF_INT || ctx->stack_top[-2]->type != PDF_INT) {
+                        if (pdfi_count_stack(ctx) < 3 || ctx->stack_top[-2]->type != PDF_INT || ctx->stack_top[-2]->type != PDF_INT) {
                             pdfi_clearstack(ctx);
                             continue;
                         }
@@ -2046,7 +2060,7 @@ int pdfi_repair_file(pdf_context *ctx)
                             }
                     }
                 }
-                if (ctx->stack_top - ctx->stack_bot > 0 && ctx->stack_top[-1]->type != PDF_INT)
+                if (pdfi_count_stack(ctx) > 0 && ctx->stack_top[-1]->type != PDF_INT)
                     pdfi_clearstack(ctx);
             }
         } while (ctx->main_stream->eof == false);
@@ -2084,7 +2098,7 @@ int pdfi_repair_file(pdf_context *ctx)
                         continue;
                     }
                     if (k->key == PDF_ENDOBJ) {
-                        if (ctx->stack_top - ctx->stack_bot > 1) {
+                        if (pdfi_count_stack(ctx) > 1) {
                             if (ctx->stack_top[-2]->type == PDF_DICT) {
                                  pdf_dict *d = (pdf_dict *)ctx->stack_top[-2];
                                  pdf_obj *o = NULL;
@@ -2113,7 +2127,7 @@ int pdfi_repair_file(pdf_context *ctx)
                         pdf_dict *d;
                         pdf_name *n;
 
-                        if (ctx->stack_top - ctx->stack_bot <= 1) {
+                        if (pdfi_count_stack(ctx) <= 1) {
                             pdfi_clearstack(ctx);
                             break;;
                         }
@@ -2702,6 +2716,7 @@ pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_t *p
 static int split_bogus_operator(pdf_context *ctx)
 {
     /* FIXME Need to write this, place holder for now */
+    pdfi_clearstack(ctx);
     return 0;
 }
 
@@ -2752,14 +2767,14 @@ static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_stream *source, 
                 break;
             case K3('B','D','C'):   /* begin marked content sequence with property list */
                 pdfi_pop(ctx, 1);
-                if (ctx->stack_top - ctx->stack_bot >= 2) {
+                if (pdfi_count_stack(ctx) >= 2) {
                     pdfi_pop(ctx, 2);
                 } else
                     pdfi_clearstack(ctx);
                 break;
             case K3('B','M','C'):   /* begin marked content sequence */
                 pdfi_pop(ctx, 1);
-                if (ctx->stack_top - ctx->stack_bot >= 1) {
+                if (pdfi_count_stack(ctx) >= 1) {
                     pdfi_pop(ctx, 1);
                 } else
                     pdfi_clearstack(ctx);
@@ -2807,7 +2822,7 @@ static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_stream *source, 
                 break;
             case K2('D','P'):       /* define marked content point with property list */
                 pdfi_pop(ctx, 1);
-                if (ctx->stack_top - ctx->stack_bot >= 2) {
+                if (pdfi_count_stack(ctx) >= 2) {
                     pdfi_pop(ctx, 2);
                 } else
                     pdfi_clearstack(ctx);
@@ -2883,7 +2898,7 @@ static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_stream *source, 
                 break;
             case K2('M','P'):       /* define marked content point */
                 pdfi_pop(ctx, 1);
-                if (ctx->stack_top - ctx->stack_bot >= 1)
+                if (pdfi_count_stack(ctx) >= 1)
                     pdfi_pop(ctx, 1);
                 break;
             case K1('n'):           /* newpath */
@@ -2980,7 +2995,7 @@ static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_stream *source, 
                 break;
             case K2('T','r'):       /* set text rendering mode */
                 pdfi_pop(ctx, 1);
-                code = pdfi_T_star(ctx);
+                code = pdfi_Tr(ctx);
                 break;
             case K2('T','s'):       /* set text rise */
                 pdfi_pop(ctx, 1);
@@ -3041,66 +3056,66 @@ pdfi_interpret_inner_content_stream(pdf_context *ctx, pdf_dict *stream_dict,
                                     pdf_dict *page_dict, bool stoponerror, const char *desc)
 {
     int code = 0;
-    int64_t stack_before, stack_after;
     bool saved_stoponerror = ctx->pdfstoponerror;
-    int old_gstate_level;
-    gs_offset_t savedoffset = 0;
-#define GSAVE_HACK_LIMIT 3
-    int hacked_gstate_level;
-    int i;
+    stream_save local_entry_save;
 
-    savedoffset = pdfi_tell(ctx->main_stream);
-    old_gstate_level = ctx->pgs->level;
+    /* copy the 'save_stream' data from teh context to a local structure */
+    local_entry_save.stream_offset = ctx->current_stream_save.stream_offset;
+    local_entry_save.gsave_level = ctx->current_stream_save.gsave_level;
+    local_entry_save.stack_count = ctx->current_stream_save.stack_count;
+    local_entry_save.group_depth = ctx->current_stream_save.group_depth;
 
-    /* Do some extra gsave's to provide a buffer for spurious grestore's */
-    /* TODO: HACK HACK HACK -- there should be a better way to handle this */
-    hacked_gstate_level = old_gstate_level + GSAVE_HACK_LIMIT;
-    for (i=0; i<GSAVE_HACK_LIMIT; i++) {
-        code = gs_gsave(ctx->pgs);
-        if (code < 0)
-            goto exit;
-    }
+    /* Set up the values in the context to the current values */
+    ctx->current_stream_save.stream_offset = pdfi_tell(ctx->main_stream);
+    ctx->current_stream_save.gsave_level = ctx->pgs->level;
+    ctx->current_stream_save.stack_count = pdfi_count_total_stack(ctx);
 
     /* Stop on error in substream, and also be prepared to clean up the stack */
     if (stoponerror)
         ctx->pdfstoponerror = true;
-    stack_before = ctx->stack_top - ctx->stack_bot;
+
     dbgmprintf1(ctx->memory, "BEGIN %s stream\n", desc);
     code = pdfi_interpret_content_stream(ctx, stream_dict, page_dict);
     dbgmprintf1(ctx->memory, "END %s stream\n", desc);
-    stack_after = ctx->stack_top - ctx->stack_bot;
-    if (stack_after > stack_before) {
-        dbgmprintf1(ctx->memory, "INNER stream: popping junk off stack (%ld)\n", stack_after-stack_before);
-        pdfi_pop(ctx, stack_after-stack_before);
-    }
-    if (ctx->pgs->level > hacked_gstate_level) {
-        dbgmprintf2(ctx->memory, "WARNING INNER stream: too many q operators (old=%d, new=%d)\n",
-                    hacked_gstate_level, ctx->pgs->level);
-    }
-    if (ctx->pgs->level < hacked_gstate_level) {
-        dbgmprintf2(ctx->memory, "WARNING INNER stream: too many Q operators (old=%d, new=%d)\n",
-                    hacked_gstate_level, ctx->pgs->level);
-        if (ctx->pgs->level < old_gstate_level) {
-            dbgmprintf2(ctx->memory, "FATAL ERROR INNER stream: way too many Q operators (old=%d, new=%d)\n",
-                        old_gstate_level, ctx->pgs->level);
-            code = gs_note_error(gs_error_Fatal);
-            goto exit;
-        }
-    }
-    /* This will do enough grestore's to get us back to where we started.
-     * If there were more than GSAVE_HACK_LIMIT extra grestores, then this won't save us.
-     */
-    while (ctx->pgs->level > old_gstate_level)
-        gs_grestore(ctx->pgs);
 
-    if (code < 0) {
+    if (code < 0)
         dbgmprintf1(ctx->memory, "ERROR: inner_stream: code %d when rendering stream\n", code);
-        goto exit;
-    }
 
- exit:
     ctx->pdfstoponerror = saved_stoponerror;
-    pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
+
+    /* Put our state back the way it was on entry */
+#ifdef PROBE_STREAMS
+    if (ctx->pgs->level > ctx->current_stream_save.gsave_level ||
+        pdfi_count_stack(ctx) > ctx->current_stream_save.stack_count)
+        code = ((pdf_context *)0)->first_page;
+#endif
+
+    pdfi_seek(ctx, ctx->main_stream, ctx->current_stream_save.stream_offset, SEEK_SET);
+    /* The transparency group implenetation does a gsave, so the end group does a
+     * grestore. Therefore we need to do this before we check the saved gstate depth
+     */
+    if (ctx->current_stream_save.group_depth != local_entry_save.group_depth) {
+        ctx->pdf_warnings |= W_PDF_GROUPERROR;
+        while (ctx->current_stream_save.group_depth > local_entry_save.group_depth)
+            pdfi_end_transparency_group(ctx);
+    }
+    if (ctx->pgs->level > ctx->current_stream_save.gsave_level)
+        ctx->pdf_warnings |= W_PDF_TOOMANYq;
+    if (pdfi_count_stack(ctx) > ctx->current_stream_save.stack_count)
+        ctx->pdf_warnings |= W_PDF_STACKGARBAGE;
+    while (ctx->pgs->level > ctx->current_stream_save.gsave_level)
+        gs_grestore(ctx->pgs);
+    pdfi_clearstack(ctx);
+
+    /* Put the entries stored in the context back to what they were on entry
+     * We shouldn't really need to do this, the cleanup above should mean all the
+     * entries are properly reset.
+     */
+    ctx->current_stream_save.stream_offset = local_entry_save.stream_offset;
+    ctx->current_stream_save.gsave_level = local_entry_save.gsave_level;
+    ctx->current_stream_save.stack_count = local_entry_save.stack_count;
+    ctx->current_stream_save.group_depth = local_entry_save.group_depth;
+
     if (!ctx->pdfstoponerror)
         code = 0;
     return code;
@@ -3132,7 +3147,7 @@ pdfi_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict 
             continue;
         }
 
-        if (ctx->stack_top - ctx->stack_bot <= 0) {
+        if (pdfi_count_stack(ctx) <= 0) {
             if(compressed_stream->eof == true)
                 break;
         }

@@ -46,15 +46,21 @@ int pdfi_dict_from_stack(pdf_context *ctx)
     int code;
 
     code = pdfi_count_to_mark(ctx, &index);
-    if (code < 0)
+    if (code < 0) {
+        pdfi_clear_to_mark(ctx);
         return code;
+    }
 
-    if (index & 1)
+    if (index & 1) {
+        pdfi_clear_to_mark(ctx);
         return_error(gs_error_rangecheck);
+    }
 
     code = pdfi_alloc_object(ctx, PDF_DICT, index >> 1, (pdf_obj **)&d);
-    if (code < 0)
+    if (code < 0) {
+        pdfi_clear_to_mark(ctx);
         return code;
+    }
 
     d->entries = d->size;
 
@@ -69,6 +75,7 @@ int pdfi_dict_from_stack(pdf_context *ctx)
             pdfi_countup(d->values[i]);
         } else {
             pdfi_free_dict((pdf_obj *)d);
+            pdfi_clear_to_mark(ctx);
             return_error(gs_error_typecheck);
         }
 
@@ -267,6 +274,16 @@ int pdfi_dict_get_bool(pdf_context *ctx, pdf_dict *d, const char *Key, bool *val
     *val = b->value;
     pdfi_countdown(b);
     return 0;
+}
+
+int pdfi_dict_get_number2(pdf_context *ctx, pdf_dict *d, const char *Key1, const char *Key2, double *f)
+{
+    int code;
+
+    code = pdfi_dict_get_number(ctx, d, Key1, f);
+    if (code == gs_error_undefined)
+        code = pdfi_dict_get_number(ctx, d, Key2, f);
+    return code;
 }
 
 int pdfi_dict_get_number(pdf_context *ctx, pdf_dict *d, const char *Key, double *f)

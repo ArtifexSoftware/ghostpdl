@@ -1463,11 +1463,46 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
         }
     }
 
+    /* Initialise the 'save' state, when we finish the page we need to restore these */
+    ctx->current_stream_save.stream_offset = pdfi_tell(ctx->main_stream);
+    ctx->current_stream_save.gsave_level = ctx->pgs->level;
+    ctx->current_stream_save.stack_count = pdfi_count_total_stack(ctx);
+    ctx->current_stream_save.group_depth = 0;
+
     code = pdfi_process_page_contents(ctx, page_dict);
+
+    /* Put our state back the way it was before we ran the contents
+     * and check if the stream had problems
+     */
+#ifdef PROBE_STREAMS
+    if (ctx->pgs->level > ctx->current_stream_save.gsave_level ||
+        pdfi_count_stack(ctx) > ctx->current_stream_save.stack_count)
+        code = ((pdf_context *)0)->first_page;
+#endif
+
+    pdfi_seek(ctx, ctx->main_stream, ctx->current_stream_save.stream_offset, SEEK_SET);
+    /* The transparency group implenetation does a gsave, so the end group does a
+     * grestore. Therefore we need to do this before we check the saved gstate depth
+     */
+    if (ctx->current_stream_save.group_depth != 0) {
+        ctx->pdf_warnings |= W_PDF_GROUPERROR;
+        while (ctx->current_stream_save.group_depth)
+            pdfi_end_transparency_group(ctx);
+    }
+    if (ctx->pgs->level > ctx->current_stream_save.gsave_level)
+        ctx->pdf_warnings |= W_PDF_TOOMANYq;
+    if (pdfi_count_stack(ctx) > ctx->current_stream_save.stack_count)
+        ctx->pdf_warnings |= W_PDF_STACKGARBAGE;
+    while (ctx->pgs->level > ctx->current_stream_save.gsave_level)
+        gs_grestore(ctx->pgs);
+    pdfi_clearstack(ctx);
+
     if (code < 0) {
         if (ctx->page_has_transparency) {
-            gs_grestore(ctx->pgs);
+            if (page_group_known)
+                code = pdfi_end_transparency_group(ctx);
             (void)gs_abort_pdf14trans_device(ctx->pgs);
+            gs_grestore(ctx->pgs);
         }
         pdfi_countdown(ctx->SpotNames);
         pdfi_countdown(page_dict);
@@ -1549,6 +1584,8 @@ pdfi_report_errors(pdf_context *ctx)
             dmprintf(ctx->memory, "\tA keyword (outside a content stream) was too long (> 255).\n");
         if (ctx->pdf_errors & E_PDF_BADPAGETYPE)
             dmprintf(ctx->memory, "\tAn entry in the Pages array was a dictionary with a /Type key whose value was not /Page.\n");
+        if (ctx->pdf_errors & E_PDF_CIRCULARREF)
+            dmprintf(ctx->memory, "\tAn indirect object caused a circular reference to itself.\n");
     }
 
     if (ctx->pdf_warnings != W_PDF_NOWARNING) {
@@ -1559,6 +1596,16 @@ pdfi_report_errors(pdf_context *ctx)
             dmprintf(ctx->memory, "\tThe file attempted to use an inline image coloe space other than on an inline image.\n");
         if (ctx->pdf_warnings & W_PDF_BAD_INLINEIMAGEKEY)
             dmprintf(ctx->memory, "\tThe file attempted to use an inline image dictionary key with an image XObject.\n");
+        if (ctx->pdf_warnings & W_PDF_TOOMANYQ)
+            dmprintf(ctx->memory, "\tA content stream had unmatched q/Q operations (too many Q's).\n");
+        if (ctx->pdf_warnings & W_PDF_TOOMANYq)
+            dmprintf(ctx->memory, "\tA content stream had unmatched q/Q operations (too many q's).\n");
+        if (ctx->pdf_warnings & W_PDF_STACKGARBAGE)
+            dmprintf(ctx->memory, "\tA content stream left entries on the stack.\n");
+        if (ctx->pdf_warnings & W_PDF_STACKUNDERFLOW)
+            dmprintf(ctx->memory, "\tA content stream consumed too many arguments (stack underflow).\n");
+        if (ctx->pdf_warnings & W_PDF_GROUPERROR)
+            dmprintf(ctx->memory, "\tA transparency group was not terminated.\n");
     }
 
     dmprintf(ctx->memory, "\n   **** This file had errors that were repaired or ignored.\n");

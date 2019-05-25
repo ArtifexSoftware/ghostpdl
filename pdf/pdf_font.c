@@ -16,6 +16,8 @@
 /* Font operations for the PDF interpreter */
 
 #include "pdf_int.h"
+#include "pdf_dict.h"
+#include "pdf_loop_detect.h"
 #include "pdf_font.h"
 #include "pdf_stack.h"
 #include "pdf_font0.h"
@@ -27,7 +29,7 @@
 
 int pdfi_d0(pdf_context *ctx)
 {
-    if (ctx->stack_top - ctx->stack_bot >= 2)
+    if (pdfi_count_stack(ctx) >= 2)
         pdfi_pop(ctx, 2);
     else
         pdfi_clearstack(ctx);
@@ -36,7 +38,7 @@ int pdfi_d0(pdf_context *ctx)
 
 int pdfi_d1(pdf_context *ctx)
 {
-    if (ctx->stack_top - ctx->stack_bot >= 6)
+    if (pdfi_count_stack(ctx) >= 6)
         pdfi_pop(ctx, 6);
     else
         pdfi_clearstack(ctx);
@@ -50,7 +52,7 @@ int pdfi_Tf(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     int code = 0;
     pdf_dict *font_dict = NULL;
 
-    if (ctx->stack_top - ctx->stack_bot >= 2) {
+    if (pdfi_count_stack(ctx) >= 2) {
         o = ctx->stack_top[-1];
         if (o->type == PDF_INT)
             point_size = (float)((pdf_num *)o)->value.i;
@@ -137,6 +139,7 @@ int pdfi_Tf(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         pdfi_pop(ctx, 2);
     }
     else {
+        pdfi_clearstack(ctx);
         code = gs_note_error(gs_error_typecheck);
         goto Tf_error;
     }
@@ -146,6 +149,6 @@ Tf_error_o:
     pdfi_countdown(o);
 Tf_error:
     pdfi_countdown(font_dict);
-    pdfi_pop(ctx, 2);
+    pdfi_clearstack(ctx);
     return code;
 }

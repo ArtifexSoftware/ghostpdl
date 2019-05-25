@@ -110,6 +110,11 @@ int pdfi_begin_group(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_dict)
     bbox.q.y = ctx->PageSize[3];
 
     code = pdfi_transparency_group_common(ctx, page_dict, group_dict, &bbox, PDF14_BEGIN_TRANS_PAGE_GROUP);
+    if (code < 0)
+        gs_grestore(ctx->pgs);
+    else
+        ctx->current_stream_save.group_depth++;
+
     pdfi_countdown(group_dict);
     return code;
 }
@@ -119,9 +124,13 @@ int pdfi_end_transparency_group(pdf_context *ctx)
 {
     int code;
 
-    code = gs_grestore(ctx->pgs);
+    code = gs_end_transparency_group(ctx->pgs);
     if (code < 0)
-        return code;
+        gs_grestore(ctx->pgs);
+    else
+        code = gs_grestore(ctx->pgs);
 
-    return gs_end_transparency_group(ctx->pgs);
+    ctx->current_stream_save.group_depth--;
+
+    return code;
 }

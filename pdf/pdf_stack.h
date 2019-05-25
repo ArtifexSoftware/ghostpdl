@@ -85,4 +85,29 @@ static inline void pdfi_countdown_impl(pdf_obj *o)
 
 #define pdfi_countdown(x) pdfi_countdown_impl((pdf_obj *)x)
 
+/* Why two functions ? The difference is that when interpreting 'sub' streams
+ * such as the content stream for a Form XObject, we may have entries on the
+ * stack at the start of the stream interpretation, and we don't want to
+ * pop any of those off during the course of the stream. The stack depth stored in
+ * the context is used to prevent this in pdfi_pop().
+ * This means that, during the course of a stream, the stack top - bottom may
+ * not be an accurate reflection of the number of available items on the stack.
+ *
+ * So pdfi_count_stack() returns the number of available items, and
+ * pdfi_count_stack_total() returns the entire size of the stack, and is used to
+ * record the saved stack depth when we start a stream.
+ *
+ * Although these are currently simple calculations, they are abstracted in order
+ * to facilitate later replacement if required.
+ */
+static inline int pdfi_count_total_stack(pdf_context *ctx)
+{
+    return (ctx->stack_top - ctx->stack_bot);
+}
+
+static inline int pdfi_count_stack(pdf_context *ctx)
+{
+    return (pdfi_count_total_stack(ctx)) - ctx->current_stream_save.stack_count;
+}
+
 #endif

@@ -502,8 +502,10 @@ pdfi_build_function_2(pdf_context *ctx, gs_function_params_t * mnDR,
         n1 = 1;
     if (params.Range == 0)
         params.n = n0;		/* either one will do */
-    if (n0 != n1 || n0 != params.n)
+    if (n0 != n1 || n0 != params.n) {
+        code = gs_note_error(gs_error_rangecheck);
         goto function_2_error;
+    }
 
     code = gs_function_ElIn_init(ppfn, &params, ctx->memory);
     if (code < 0)

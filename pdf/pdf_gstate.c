@@ -36,10 +36,10 @@ int pdfi_concat(pdf_context *ctx)
     double Values[6];
     gs_matrix m;
 
-    if (ctx->stack_top - ctx->stack_bot < 6) {
+    if (pdfi_count_stack(ctx) < 6) {
+        pdfi_clearstack(ctx);
         if (ctx->pdfstoponerror)
             return_error(gs_error_stackunderflow);
-        pdfi_clearstack(ctx);
         return 0;
     }
 
@@ -47,12 +47,11 @@ int pdfi_concat(pdf_context *ctx)
         num = (pdf_num *)ctx->stack_top[i - 6];
         if (num->type != PDF_INT) {
             if(num->type != PDF_REAL) {
+                pdfi_pop(ctx, 6);
                 if (ctx->pdfstoponerror)
                     return_error(gs_error_typecheck);
-                else {
-                    pdfi_pop(ctx, 6);
+                else
                     return 0;
-                }
             }
             else
                 Values[i] = num->value.d;
@@ -67,8 +66,7 @@ int pdfi_concat(pdf_context *ctx)
     m.tx = (float)Values[4];
     m.ty = (float)Values[5];
     code = gs_concat(ctx->pgs, (const gs_matrix *)&m);
-    if (code == 0)
-        pdfi_pop(ctx, 6);
+    pdfi_pop(ctx, 6);
     if(code < 0 && ctx->pdfstoponerror)
         return code;
     else
@@ -90,15 +88,25 @@ int pdfi_gsave(pdf_context *ctx)
 
 int pdfi_grestore(pdf_context *ctx)
 {
-    int code = gs_grestore(ctx->pgs);
+    int code;
 
-    if(code < 0 && ctx->pdfstoponerror)
-        return code;
-    else {
-        if (ctx->page_has_transparency)
-            return gs_pop_transparency_state(ctx->pgs, false);
-        return 0;
+    /* Make sure we have encountered as many gsave operations in this
+     * stream as grestores. If not, log an error
+     */
+    if (ctx->pgs->level > ctx->current_stream_save.gsave_level) {
+        code = gs_grestore(ctx->pgs);
+
+        if(code < 0 && ctx->pdfstoponerror)
+            return code;
+        else {
+            if (ctx->page_has_transparency)
+                return gs_pop_transparency_state(ctx->pgs, false);
+        }
+    } else {
+        /* We don't throw an error here, we just ignore it and continue */
+        ctx->pdf_warnings |= W_PDF_TOOMANYQ;
     }
+    return 0;
 }
 
 int pdfi_setlinewidth(pdf_context *ctx)
@@ -107,10 +115,9 @@ int pdfi_setlinewidth(pdf_context *ctx)
     pdf_num *n1;
     double d1;
 
-    if (ctx->stack_top - ctx->stack_bot < 1) {
+    if (pdfi_count_stack(ctx) < 1) {
         if (ctx->pdfstoponerror)
             return_error(gs_error_stackunderflow);
-        pdfi_clearstack(ctx);
         return 0;
     }
 
@@ -121,17 +128,15 @@ int pdfi_setlinewidth(pdf_context *ctx)
         if (n1->type == PDF_REAL) {
             d1 = n1->value.d;
         } else {
+            pdfi_pop(ctx, 1);
             if (ctx->pdfstoponerror)
                 return_error(gs_error_typecheck);
-            else {
-                pdfi_pop(ctx, 1);
+            else
                 return 0;
-            }
         }
     }
     code = gs_setlinewidth(ctx->pgs, d1);
-    if (code == 0)
-        pdfi_pop(ctx, 1);
+    pdfi_pop(ctx, 1);
     if(code < 0 && ctx->pdfstoponerror)
         return code;
     else
@@ -143,10 +148,9 @@ int pdfi_setlinejoin(pdf_context *ctx)
     int code;
     pdf_num *n1;
 
-    if (ctx->stack_top - ctx->stack_bot < 1) {
+    if (pdfi_count_stack(ctx) < 1) {
         if (ctx->pdfstoponerror)
             return_error(gs_error_stackunderflow);
-        pdfi_clearstack(ctx);
         return 0;
     }
 
@@ -154,15 +158,13 @@ int pdfi_setlinejoin(pdf_context *ctx)
     if (n1->type == PDF_INT){
         code = gs_setlinejoin(ctx->pgs, (gs_line_join)n1->value.d);
     } else {
+        pdfi_pop(ctx, 1);
         if (ctx->pdfstoponerror)
             return_error(gs_error_typecheck);
-        else {
-            pdfi_pop(ctx, 1);
+        else
             return 0;
-        }
     }
-    if (code == 0)
-        pdfi_pop(ctx, 1);
+    pdfi_pop(ctx, 1);
     if(code < 0 && ctx->pdfstoponerror)
         return code;
     else
@@ -174,10 +176,9 @@ int pdfi_setlinecap(pdf_context *ctx)
     int code;
     pdf_num *n1;
 
-    if (ctx->stack_top - ctx->stack_bot < 1) {
+    if (pdfi_count_stack(ctx) < 1) {
         if (ctx->pdfstoponerror)
             return_error(gs_error_stackunderflow);
-        pdfi_clearstack(ctx);
         return 0;
     }
 
@@ -185,15 +186,13 @@ int pdfi_setlinecap(pdf_context *ctx)
     if (n1->type == PDF_INT){
         code = gs_setlinecap(ctx->pgs, (gs_line_cap)n1->value.d);
     } else {
+        pdfi_pop(ctx, 1);
         if (ctx->pdfstoponerror)
             return_error(gs_error_typecheck);
-        else {
-            pdfi_pop(ctx, 1);
+        else
             return 0;
-        }
     }
-    if (code == 0)
-        pdfi_pop(ctx, 1);
+    pdfi_pop(ctx, 1);
     if(code < 0 && ctx->pdfstoponerror)
         return code;
     else
@@ -206,10 +205,9 @@ int pdfi_setflat(pdf_context *ctx)
     pdf_num *n1;
     double d1;
 
-    if (ctx->stack_top - ctx->stack_bot < 1) {
+    if (pdfi_count_stack(ctx) < 1) {
         if (ctx->pdfstoponerror)
             return_error(gs_error_stackunderflow);
-        pdfi_clearstack(ctx);
         return 0;
     }
 
@@ -220,17 +218,15 @@ int pdfi_setflat(pdf_context *ctx)
         if (n1->type == PDF_REAL) {
             d1 = n1->value.d;
         } else {
+            pdfi_pop(ctx, 1);
             if (ctx->pdfstoponerror)
                 return_error(gs_error_typecheck);
-            else {
-                pdfi_pop(ctx, 1);
+            else
                 return 0;
-            }
         }
     }
     code = gs_setflat(ctx->pgs, d1);
-    if (code == 0)
-        pdfi_pop(ctx, 1);
+    pdfi_pop(ctx, 1);
     if(code < 0 && ctx->pdfstoponerror)
         return code;
     else
@@ -273,10 +269,10 @@ int pdfi_setdash(pdf_context *ctx)
     double phase_d;
     int code;
 
-    if (ctx->stack_top - ctx->stack_bot < 2) {
+    if (pdfi_count_stack(ctx) < 2) {
+        pdfi_clearstack(ctx);
         if (ctx->pdfstoponerror)
             return_error(gs_error_stackunderflow);
-        pdfi_clearstack(ctx);
         return 0;
     }
 
@@ -287,28 +283,25 @@ int pdfi_setdash(pdf_context *ctx)
         if (phase->type == PDF_REAL) {
             phase_d = phase->value.d;
         } else {
+            pdfi_pop(ctx, 2);
             if (ctx->pdfstoponerror)
                 return_error(gs_error_typecheck);
-            else {
-                pdfi_pop(ctx, 1);
+            else
                 return 0;
-            }
         }
     }
 
     a = (pdf_array *)ctx->stack_top[-2];
     if (a->type != PDF_ARRAY) {
+        pdfi_pop(ctx, 2);
         if (ctx->pdfstoponerror)
             return_error(gs_error_typecheck);
-        else {
-            pdfi_pop(ctx, 1);
+        else
             return 0;
-        }
     }
 
     code = setdash_impl(ctx, a, phase_d);
-    if (code == 0)
-        pdfi_pop(ctx, 2);
+    pdfi_pop(ctx, 2);
     if(code < 0 && ctx->pdfstoponerror)
         return code;
     else
@@ -321,10 +314,9 @@ int pdfi_setmiterlimit(pdf_context *ctx)
     pdf_num *n1;
     double d1;
 
-    if (ctx->stack_top - ctx->stack_bot < 1) {
+    if (pdfi_count_stack(ctx) < 1) {
         if (ctx->pdfstoponerror)
             return_error(gs_error_stackunderflow);
-        pdfi_clearstack(ctx);
         return 0;
     }
 
@@ -335,17 +327,15 @@ int pdfi_setmiterlimit(pdf_context *ctx)
         if (n1->type == PDF_REAL) {
             d1 = n1->value.d;
         } else {
+            pdfi_pop(ctx, 1);
             if (ctx->pdfstoponerror)
                 return_error(gs_error_typecheck);
-            else {
-                pdfi_pop(ctx, 1);
+            else
                 return 0;
-            }
         }
     }
     code = gs_setmiterlimit(ctx->pgs, d1);
-    if (code == 0)
-        pdfi_pop(ctx, 1);
+    pdfi_pop(ctx, 1);
     if(code < 0 && ctx->pdfstoponerror)
         return code;
     else
@@ -666,7 +656,6 @@ static int GS_SMask(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_d
         gs_rect bbox = { { 0, 0} , { 1, 1} };
         gs_transparency_mask_params_t params;
         pdf_array *a = NULL;
-        gs_offset_t savedoffset = 0;
         pdf_dict *G_dict = NULL;
         pdf_name *n = NULL;
         double f;
@@ -703,14 +692,9 @@ static int GS_SMask(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_d
                     return code;
                 }
                 rc_decrement_cs(gray_cs, "ExtGState /SMask");
-                savedoffset = pdfi_tell(ctx->main_stream);
                 code = gs_gsave(ctx->pgs);
-
-                pdfi_seek(ctx, ctx->main_stream, ((pdf_dict *)G_dict)->stream_offset, SEEK_SET);
-                code = pdfi_Do(ctx, (pdf_dict *)G_dict, page_dict);
-
+                code = pdfi_do_image_or_form(ctx, stream_dict, page_dict, G_dict);
                 code = gs_grestore(ctx->pgs);
-                pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
                 code = gs_end_transparency_mask(ctx->pgs, 0);
                 pdfi_countdown(G_dict);
             }
@@ -824,7 +808,7 @@ int pdfi_setgstate(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     if (code < 0)
         return code;
 
-    if (ctx->stack_top - ctx->stack_bot < 1) {
+    if (pdfi_count_stack(ctx) < 1) {
         (void)pdfi_loop_detector_cleartomark(ctx);
         return_error(gs_error_stackunderflow);
     }

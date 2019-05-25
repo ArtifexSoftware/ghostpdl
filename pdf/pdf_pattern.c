@@ -624,7 +624,7 @@ pdfi_pattern_create(pdf_context *ctx, pdf_array *color_array,
     gs_color_space *pcs = NULL;
     gs_color_space *base_space;
     pdf_obj *base_obj = NULL;
-    int code;
+    int code = 0;
 
     /* TODO: should set to "the initial color is a pattern object that causes nothing to be painted."
      * (see page 288 of PDF 1.7)

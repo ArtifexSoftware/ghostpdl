@@ -27,16 +27,14 @@ int pdfi_T_star(pdf_context *ctx)
 
 int pdfi_Tc(pdf_context *ctx)
 {
-    if (ctx->stack_top - ctx->stack_bot >= 1)
+    if (pdfi_count_stack(ctx) >= 1)
         pdfi_pop(ctx, 1);
-    else
-        pdfi_clearstack(ctx);
     return 0;
 }
 
 int pdfi_Td(pdf_context *ctx)
 {
-    if (ctx->stack_top - ctx->stack_bot >= 2)
+    if (pdfi_count_stack(ctx) >= 2)
         pdfi_pop(ctx, 2);
     else
         pdfi_clearstack(ctx);
@@ -45,7 +43,7 @@ int pdfi_Td(pdf_context *ctx)
 
 int pdfi_TD(pdf_context *ctx)
 {
-    if (ctx->stack_top - ctx->stack_bot >= 2)
+    if (pdfi_count_stack(ctx) >= 2)
         pdfi_pop(ctx, 2);
     else
         pdfi_clearstack(ctx);
@@ -54,34 +52,28 @@ int pdfi_TD(pdf_context *ctx)
 
 int pdfi_Tj(pdf_context *ctx)
 {
-    if (ctx->stack_top - ctx->stack_bot >= 1)
+    if (pdfi_count_stack(ctx) >= 1)
         pdfi_pop(ctx, 1);
-    else
-        pdfi_clearstack(ctx);
     return 0;
 }
 
 int pdfi_TJ(pdf_context *ctx)
 {
-    if (ctx->stack_top - ctx->stack_bot >= 1)
+    if (pdfi_count_stack(ctx) >= 1)
         pdfi_pop(ctx, 1);
-    else
-        pdfi_clearstack(ctx);
     return 0;
 }
 
 int pdfi_TL(pdf_context *ctx)
 {
-    if (ctx->stack_top - ctx->stack_bot >= 1)
+    if (pdfi_count_stack(ctx) >= 1)
         pdfi_pop(ctx, 1);
-    else
-        pdfi_clearstack(ctx);
     return 0;
 }
 
 int pdfi_Tm(pdf_context *ctx)
 {
-    if (ctx->stack_top - ctx->stack_bot >= 6)
+    if (pdfi_count_stack(ctx) >= 6)
         pdfi_pop(ctx, 6);
     else
         pdfi_clearstack(ctx);
@@ -90,54 +82,42 @@ int pdfi_Tm(pdf_context *ctx)
 
 int pdfi_Tr(pdf_context *ctx)
 {
-    if (ctx->stack_top - ctx->stack_bot >= 1)
+    if (pdfi_count_stack(ctx) >= 1)
         pdfi_pop(ctx, 1);
-    else
-        pdfi_clearstack(ctx);
     return 0;
 }
 
 int pdfi_Ts(pdf_context *ctx)
 {
-    if (ctx->stack_top - ctx->stack_bot >= 1)
+    if (pdfi_count_stack(ctx) >= 1)
         pdfi_pop(ctx, 1);
-    else
-        pdfi_clearstack(ctx);
     return 0;
 }
 
 int pdfi_Tw(pdf_context *ctx)
 {
-    if (ctx->stack_top - ctx->stack_bot >= 1)
+    if (pdfi_count_stack(ctx) >= 1)
         pdfi_pop(ctx, 1);
-    else
-        pdfi_clearstack(ctx);
     return 0;
 }
 
 int pdfi_Tz(pdf_context *ctx)
 {
-    if (ctx->stack_top - ctx->stack_bot >= 1)
+    if (pdfi_count_stack(ctx) >= 1)
         pdfi_pop(ctx, 1);
-    else
-        pdfi_clearstack(ctx);
     return 0;
 }
 
 int pdfi_singlequote(pdf_context *ctx)
 {
-    if (ctx->stack_top - ctx->stack_bot >= 1)
+    if (pdfi_count_stack(ctx) >= 1)
         pdfi_pop(ctx, 1);
-    else
-        pdfi_clearstack(ctx);
     return 0;
 }
 
 int pdfi_doublequote(pdf_context *ctx)
 {
-    if (ctx->stack_top - ctx->stack_bot >= 3)
+    if (pdfi_count_stack(ctx) >= 3)
         pdfi_pop(ctx, 3);
-    else
-        pdfi_clearstack(ctx);
     return 0;
 }

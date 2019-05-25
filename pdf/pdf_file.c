@@ -821,7 +821,7 @@ int pdfi_filter(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream
              * For now we will allow one duplicate (in case people do stupid things like ASCIIEncode
              * and Flate and ASCIIEncode again or something).
              */
-            for (i = 0; i < pdfi_array_size(filter_array) - 1;i++) {
+            for (i = 0; i < (int)pdfi_array_size(filter_array) - 1;i++) {
                 code = pdfi_array_get_type(ctx, filter_array, i, PDF_NAME, &o);
                 if (code < 0) {
                     pdfi_countdown(decodeparams_array);

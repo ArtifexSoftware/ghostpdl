@@ -695,7 +695,7 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     gs_offset_t savedoffset;
     int64_t type;
 
-    if (ctx->stack_top - ctx->stack_bot < 1)
+    if (pdfi_count_stack(ctx) < 1)
         return_error(gs_error_stackunderflow);
 
     savedoffset = pdfi_tell(ctx->main_stream);

@@ -117,6 +117,8 @@ typedef enum pdf_error_flag_e {
     E_PDF_TOKENERROR = E_PDF_NOHEADER << 14,
     E_PDF_KEYWORDTOOLONG = E_PDF_NOHEADER << 15,
     E_PDF_BADPAGETYPE = E_PDF_NOHEADER << 16,
+    E_PDF_CIRCULARREF = E_PDF_NOHEADER << 17,
+
 } pdf_error_flag;
 
 typedef enum pdf_warning_flag_e {
@@ -124,12 +126,26 @@ typedef enum pdf_warning_flag_e {
     W_PDF_BAD_INLINEFILTER = 1,
     W_PDF_BAD_INLINECOLORSPACE = W_PDF_BAD_INLINEFILTER << 1,
     W_PDF_BAD_INLINEIMAGEKEY = W_PDF_BAD_INLINECOLORSPACE << 1,
+    W_PDF_TOOMANYQ = W_PDF_BAD_INLINEIMAGEKEY << 1,
+    W_PDF_TOOMANYq = W_PDF_TOOMANYQ << 1,
+    W_PDF_STACKGARBAGE = W_PDF_TOOMANYq << 1,
+    W_PDF_STACKUNDERFLOW = W_PDF_STACKGARBAGE << 1,
+    W_PDF_GROUPERROR = W_PDF_STACKUNDERFLOW << 1,
 } pdf_warning_flag;
 
 #define INITIAL_STACK_SIZE 32
 #define MAX_STACK_SIZE 32767
 #define MAX_OBJECT_CACHE_SIZE 200
 #define INITIAL_LOOP_TRACKER_SIZE 32
+
+/* Items we want preserved around content stream executions */
+typedef struct stream_save_s {
+    gs_offset_t stream_offset;
+    int gsave_level;
+    int stack_count;
+    gs_matrix intial_CTM;
+    int group_depth;
+} stream_save;
 
 typedef struct pdf_context_s
 {
@@ -229,6 +245,9 @@ typedef struct pdf_context_s
     uint32_t loop_detection_size;
     uint32_t loop_detection_entries;
     uint64_t *loop_detection;
+
+    stream_save current_stream_save;
+
 #if REFCNT_DEBUG
     uint64_t UID;
 #endif

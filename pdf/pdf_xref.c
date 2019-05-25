@@ -415,9 +415,6 @@ static int pdfi_read_xref_stream_dict(pdf_context *ctx, pdf_stream *s)
                     }
                 }
             } while(1);
-
-            /* We should now have pdf_object, endobj on the stack, pop the endobj */
-            pdfi_pop(ctx, 1);
         }
     } else {
         /* Not an 'xref' and not an integer, so not a valid xref */
@@ -569,7 +566,7 @@ static int read_xref_section(pdf_context *ctx, pdf_stream *s)
     if (code < 0)
         return code;
 
-    if (ctx->stack_top - ctx->stack_bot < 1)
+    if (pdfi_count_stack(ctx) < 1)
         return_error(gs_error_stackunderflow);
 
     o = ctx->stack_top[-1];
@@ -818,7 +815,7 @@ static int read_xref(pdf_context *ctx, pdf_stream *s)
      */
     code = pdfi_dict_get_int(ctx, d, "Prev", &num);
     if (code < 0) {
-        pdfi_pop(ctx, 2);
+        pdfi_pop(ctx, 1);
         if (code == gs_error_undefined)
             return 0;
         else
@@ -894,7 +891,7 @@ int pdfi_read_xref(pdf_context *ctx)
             return(pdfi_repair_file(ctx));
         }
 
-        if (ctx->stack_top - ctx->stack_bot < 1) {
+        if (pdfi_count_stack(ctx) < 1) {
             (void)pdfi_loop_detector_cleartomark(ctx);
             return_error(gs_error_undefined);
         }

@@ -22,16 +22,21 @@
 
 int pdfi_pop(pdf_context *ctx, int num)
 {
+    int code = 0;
+    if (num < 0)
+        return_error(gs_error_rangecheck);
+
+    if (pdfi_count_stack(ctx) < num) {
+        code = gs_note_error(gs_error_stackunderflow);
+        num = pdfi_count_stack(ctx);
+        ctx->pdf_warnings |= W_PDF_STACKUNDERFLOW;
+    }
     while(num) {
-        if (ctx->stack_top > ctx->stack_bot) {
-            pdfi_countdown(ctx->stack_top[-1]);
-            ctx->stack_top--;
-        } else {
-            return_error(gs_error_stackunderflow);
-        }
+        pdfi_countdown(ctx->stack_top[-1]);
+        ctx->stack_top--;
         num--;
     }
-    return 0;
+    return code;
 }
 
 int pdfi_push(pdf_context *ctx, pdf_obj *o)
@@ -53,7 +58,7 @@ int pdfi_push(pdf_context *ctx, pdf_obj *o)
         memcpy(new_stack, ctx->stack_bot, ctx->stack_size * sizeof(pdf_obj *));
         gs_free_object(ctx->memory, ctx->stack_bot, "pdfi_push_increase_interp_stack");
 
-        entries = ctx->stack_top - ctx->stack_bot;
+        entries = pdfi_count_total_stack(ctx);
 
         ctx->stack_bot = new_stack;
         ctx->stack_top = ctx->stack_bot + entries;
@@ -83,7 +88,7 @@ int pdfi_mark_stack(pdf_context *ctx, pdf_obj_type type)
 
 void pdfi_clearstack(pdf_context *ctx)
 {
-    pdfi_pop(ctx, ctx->stack_top - ctx->stack_bot);
+    pdfi_pop(ctx, pdfi_count_stack(ctx));
 }
 
 int pdfi_count_to_mark(pdf_context *ctx, uint64_t *count)
