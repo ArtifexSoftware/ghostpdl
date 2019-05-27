@@ -469,6 +469,8 @@ ck_eol:
   out:ss->k_left = k_left;
     ss->rows_left = rows_left;
     ss->eol_count = eol_count;
+    if (ss->ErrsAsEOD && status < 0)
+        return EOFC;
     return status;
 }
 

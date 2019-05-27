@@ -34,6 +34,7 @@
         int Rows;\
         bool EndOfBlock;\
         bool BlackIs1;\
+        bool ErrsAsEOD;			/* true if we should treat errors as EOD */\
         int DamagedRowsBeforeError;	/* (Decode only) */\
         /*bool FirstBitLowOrder;*/	/* in stream_hc_state_common */\
         int DecodedByteAlign;\
@@ -64,6 +65,7 @@ typedef struct stream_CF_state_s {
    (ss)->FirstBitLowOrder = false,\
                 /* Added by us */\
    (ss)->DecodedByteAlign = 1,\
+   (ss)->ErrsAsEOD = false,\
         /* Clear pointers */\
    (ss)->lbuf = 0, (ss)->lprev = 0,\
         /* Clear errors */\
