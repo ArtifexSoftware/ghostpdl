@@ -375,15 +375,15 @@ gs_main_init2(gs_main_instance * minst)
         }
     }
 
-fail:
-    if (gs_debug_c(gs_debug_flag_init_details))
-        dmprintf2(minst->heap, "%% Init phase 2 %s, instance 0x%p\n", code < 0 ? "failed" : "done", minst);
-
     if (code >= 0) {
         if (gs_debug_c(':'))
             print_resource_usage(minst, &gs_imemory, "Start");
         gp_readline_init(&minst->readline_data, minst->heap);
     }
+
+fail:
+    if (gs_debug_c(gs_debug_flag_init_details))
+        dmprintf2(minst->heap, "%% Init phase 2 %s, instance 0x%p\n", code < 0 ? "failed" : "done", minst);
 
     return code;
 }
@@ -1348,7 +1348,6 @@ gs_main_force_resolutions(gs_main_instance * minst, const float *resolutions)
 int
 gs_main_force_dimensions(gs_main_instance *minst, const long *dimensions)
 {
-    i_ctx_t *i_ctx_p;
     ref value;
     int code = 0;
 
@@ -1356,8 +1355,6 @@ gs_main_force_dimensions(gs_main_instance *minst, const long *dimensions)
         return 0;
     if (minst == NULL)
         return gs_error_Fatal;
-
-    i_ctx_p = minst->i_ctx_p;
 
     make_true(&value);
     code = i_initial_enter_name(minst->i_ctx_p, "FIXEDMEDIA", &value);
