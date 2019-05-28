@@ -429,12 +429,26 @@ pdfi_get_image_info(pdf_context *ctx, pdf_dict *image_dict, pdf_dict *page_dict,
         goto errorExit;
     /* This is bonkers, but... Bug695872.pdf has /W and /H which are real numbers */
     info->Height = (int)temp_f;
+    if ((int)temp_f != (int)(temp_f+.5)) {
+        ctx->pdf_warnings |= W_PDF_BAD_IMAGEDICT;
+        if (ctx->pdfstoponwarning) {
+            code = gs_note_error(gs_error_rangecheck);
+            goto errorExit;
+        }
+    }
 
     /* Required */
     code = pdfi_dict_get_number2(ctx, image_dict, "Width", "W", &temp_f);
     if (code < 0)
         goto errorExit;
     info->Width = (int)temp_f;
+    if ((int)temp_f != (int)(temp_f+.5)) {
+        ctx->pdf_warnings |= W_PDF_BAD_IMAGEDICT;
+        if (ctx->pdfstoponwarning) {
+            code = gs_note_error(gs_error_rangecheck);
+            goto errorExit;
+        }
+    }
 
     /* Optional, default false */
     code = pdfi_dict_get_bool2(ctx, image_dict, "ImageMask", "IM", &info->ImageMask);

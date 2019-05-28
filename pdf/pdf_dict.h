@@ -40,6 +40,7 @@ int pdfi_dict_get_int_def(pdf_context *ctx, pdf_dict *d, const char *Key, int64_
 int pdfi_dict_get_bool2(pdf_context *ctx, pdf_dict *d, const char *Key1, const char *Key2, bool *val);
 int pdfi_dict_get_bool(pdf_context *ctx, pdf_dict *d, const char *Key, bool *val);
 int pdfi_dict_get_number(pdf_context *ctx, pdf_dict *d, const char *Key, double *f);
+int pdfi_dict_get_number2(pdf_context *ctx, pdf_dict *d, const char *Key1, const char *Key2, double *f);
 int fill_domain_from_dict(pdf_context *ctx, float *parray, int size, pdf_dict *dict);
 int fill_float_array_from_dict(pdf_context *ctx, float *parray, int size, pdf_dict *dict, const char *Key);
 int fill_bool_array_from_dict(pdf_context *ctx, bool *parray, int size, pdf_dict *dict, const char *Key);

@@ -1593,9 +1593,11 @@ pdfi_report_errors(pdf_context *ctx)
         if (ctx->pdf_warnings & W_PDF_BAD_INLINEFILTER)
             dmprintf(ctx->memory, "\tThe file attempted to use an inline decompression filter other than on an inline image.\n");
         if (ctx->pdf_warnings & W_PDF_BAD_INLINECOLORSPACE)
-            dmprintf(ctx->memory, "\tThe file attempted to use an inline image coloe space other than on an inline image.\n");
+            dmprintf(ctx->memory, "\tThe file attempted to use an inline image color space other than on an inline image.\n");
         if (ctx->pdf_warnings & W_PDF_BAD_INLINEIMAGEKEY)
             dmprintf(ctx->memory, "\tThe file attempted to use an inline image dictionary key with an image XObject.\n");
+        if (ctx->pdf_warnings & W_PDF_BAD_IMAGEDICT)
+            dmprintf(ctx->memory, "\tThe file attempted to use an image with a bad value in the image dict.\n");
         if (ctx->pdf_warnings & W_PDF_TOOMANYQ)
             dmprintf(ctx->memory, "\tA content stream had unmatched q/Q operations (too many Q's).\n");
         if (ctx->pdf_warnings & W_PDF_TOOMANYq)
