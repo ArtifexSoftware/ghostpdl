@@ -823,23 +823,6 @@ pdfi_data_image_params(pdf_context *ctx, pdfi_image_info_t *info,
     return code;
 }
 
-static void
-pdfi_flush_image(pdf_context *ctx, pdf_dict *image_dict,
-                 pdf_stream *source, pdfi_image_info_t *image_info,
-                 int comps)
-{
-    int total;
-
-    if (comps == 0) {
-        dmprintf(ctx->memory, "WARNING: Trying to flush image but comps unknown (using 3)\n");
-        comps = 3;
-    }
-
-    total = pdfi_data_size_from_image_info(image_info, comps);
-    dmprintf1(ctx->memory, "WARNING: Flushing %d bytes of image\n", total);
-    pdfi_seek(ctx, source, image_dict->stream_offset + total, SEEK_SET);
-}
-
 /* NOTE: "source" is the current input stream.
  * on exit:
  *  inline_image = TRUE, stream it will point to after the image data.
@@ -851,7 +834,6 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
 {
     pdf_stream *new_stream = NULL;
     int code = 0, comps = 0;
-    bool flush = false;
     gs_color_space  *pcs = NULL;
     gs_image1_t t1image;
     gs_image4_t t4image;
@@ -1056,7 +1038,6 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
                 gx_device *dev = gs_currentdevice_inline(ctx->pgs);
                 comps = dev->color_info.num_components;
                 pcs = NULL;
-                flush = true;
                 goto cleanupExit;
             }
         } else {
@@ -1073,7 +1054,6 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
                 } else {
                     dmprintf(ctx->memory, "(not a name)\n");
                 }
-                flush = true;
                 goto cleanupExit;
             }
             comps = gs_color_space_num_components(pcs);
@@ -1158,17 +1138,12 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
         goto cleanupExit;
     }
 
-    code = 0;
 
  cleanupExit:
-    if (flush) {
-        if (inline_image) {
-            pdfi_flush_image(ctx, image_dict, source, &image_info, comps);
-            code = 0; /* TODO: Should we flag an error instead of silently swallowing? */
-        } else {
-            code = 0; /* TODO: Should we flag an error instead of just ignoring? */
-        }
-    }
+    if (code < 0)
+        ctx->pdf_warnings |= W_PDF_IMAGE_ERROR;
+
+    code = 0;  /* suppress errors */
 
     if (new_stream)
         pdfi_close_file(ctx, new_stream);
