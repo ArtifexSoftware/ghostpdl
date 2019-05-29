@@ -617,6 +617,23 @@ static int pdfi_CCITTFax_filter(pdf_context *ctx, pdf_dict *d, stream *source, s
     return 0;
 }
 
+static int pdfi_RunLength_filter(pdf_context *ctx, pdf_dict *d, stream *source, stream **new_stream)
+{
+    stream_RLD_state ss;
+    uint min_size = 2048;
+    int code;
+
+    if (s_RLD_template.set_defaults)
+        (*s_RLD_template.set_defaults) ((stream_state *) & ss);
+
+    code = pdfi_filter_open(min_size, &s_filter_read_procs, (const stream_template *)&s_RLD_template, (const stream_state *)&ss, ctx->memory->non_gc_memory, new_stream);
+    if (code < 0)
+        return code;
+
+    (*new_stream)->strm = source;
+    return 0;
+}
+
 static int pdfi_simple_filter(pdf_context *ctx, const stream_template *tmplate, stream *source, stream **new_stream)
 {
     uint min_size = 2048;
@@ -644,7 +661,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
     }
 
     if (pdfi_name_is(n, "RunLengthDecode")) {
-        code = pdfi_simple_filter(ctx, &s_RLD_template, source, new_stream);
+        code = pdfi_RunLength_filter(ctx, decode, source, new_stream);
         return code;
     }
     if (pdfi_name_is(n, "CCITTFaxDecode")) {
@@ -744,7 +761,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
             if (ctx->pdfstoponwarning)
                 return_error(gs_error_syntaxerror);
         }
-        code = pdfi_simple_filter(ctx, &s_RLD_template, source, new_stream);
+        code = pdfi_RunLength_filter(ctx, decode, source, new_stream);
         return code;
     }
 
