@@ -86,6 +86,8 @@
 
 #include <zlib.h>
 
+int gs_log_error(int err, const char *file, int line);
+
 /*
  * The rom file system is an array of pointers to nodes, terminated by a NULL
  */
@@ -270,6 +272,17 @@ emprintf_program_ident(const gs_memory_t *mem,
         }
         epfm(mem, ": ");
     }
+}
+
+int
+gs_log_error(int err, const char *file, int line)
+{
+    if (file == NULL)
+        errprintf_nomem("Returning error %d.\n", err);
+    else
+        errprintf_nomem("%s(%d): Returning error %d.\n",
+                 (const char *)file, line, err);
+    return err;
 }
 
 /*******************************************************************************
