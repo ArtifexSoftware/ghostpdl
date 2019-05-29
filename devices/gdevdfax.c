@@ -101,8 +101,7 @@ dfax_print_page(gx_device_printer *dev, gp_file *prn_stream)
             return_error(gs_error_ioerror);
 
         hdr[24] = dfdev->pageno; hdr[25] = dfdev->pageno >> 8;
-        if (gp_fwrite(hdr+24, 2, 1, prn_stream) != 1)
-            return_error(gs_error_ioerror);
+        gp_fwrite(hdr+24, 2, 1, prn_stream);
 
         return 0;
 }
