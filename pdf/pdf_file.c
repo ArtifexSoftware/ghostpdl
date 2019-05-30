@@ -938,20 +938,32 @@ int pdfi_filter(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream
  * doesn't support the SubFileDecode filter that would mean callers having to manufacture
  * a dictionary in order to use it. That's excessively convoluted, so just supply a simple
  * means to instantiate a SubFileDecode filter.
+ *
+ * NB! The EODString can't be tracked by the stream code. The caller is responsible for
+ * managing the lifetime of this object. It must remain valid until the filter is closed.
  */
-int pdfi_apply_SubFileDecode_filter(pdf_context *ctx, int EODCount, gs_const_string *EODString, pdf_stream *source, pdf_stream **new_stream, bool inline_image)
+int pdfi_apply_SubFileDecode_filter(pdf_context *ctx, int EODCount, pdf_name *EODString, pdf_stream *source, pdf_stream **new_stream, bool inline_image)
 {
-    pdf_name SFD_name;
     int code;
+    stream_SFD_state state;
     stream *s = source->s, *new_s = NULL;
+    int min_size = EODString->length;
+
     *new_stream = NULL;
 
-    SFD_name.data = (byte *)"SubFileDecode";
-    SFD_name.length = 13;
-    code = pdfi_apply_filter(ctx, NULL, &SFD_name, NULL, s, &new_s, inline_image);
+    if (s_SFD_template.set_defaults)
+        s_SFD_template.set_defaults((stream_state *)&state);
+
+    state.eod.data = EODString->data;
+    state.eod.size = EODString->length;
+
+
+    code = pdfi_filter_open(min_size, &s_filter_read_procs, (const stream_template *)&s_SFD_template, (const stream_state *)&state, ctx->memory->non_gc_memory, &new_s);
     if (code < 0)
         return code;
+
     code = pdfi_alloc_stream(ctx, new_s, source->s, new_stream);
+    new_s->strm = source->s;
     return code;
 }
 

@@ -430,7 +430,7 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
                     return code;
                 }
 
-                code = pdfi_read_object_of_type(ctx, ctx->main_stream, PDF_DICT);
+                code = pdfi_read_object_of_type(ctx, ctx->main_stream, PDF_DICT, 0);
                 if (code < 0){
                     (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                     return code;
@@ -577,6 +577,8 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
 
             pdfi_countdown(compressed_object);
         } else {
+            pdf_stream *SubFile_stream = NULL;
+            pdf_name *EODString;
 #if CACHE_STATISTICS
             ctx->misses++;
 #endif
@@ -586,7 +588,23 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
                 return code;
             }
 
-            code = pdfi_read_object(ctx, ctx->main_stream);
+            code = pdfi_make_name(ctx, (byte *)"trailer", 6, (pdf_obj **)&EODString);
+            if (code < 0) {
+                (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
+                return code;
+            }
+
+            code = pdfi_apply_SubFileDecode_filter(ctx, 0, EODString, ctx->main_stream, &SubFile_stream, false);
+            if (code < 0) {
+                pdfi_countdown(EODString);
+                (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
+                return code;
+            }
+
+            code = pdfi_read_object(ctx, SubFile_stream, entry->u.uncompressed.offset);
+
+            pdfi_countdown(EODString);
+            pdfi_close_file(ctx, SubFile_stream);
             if (code < 0) {
                 (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                 return code;
@@ -1616,7 +1634,16 @@ int pdfi_read_token(pdf_context *ctx, pdf_stream *s)
     return 0;
 }
 
-int pdfi_read_object(pdf_context *ctx, pdf_stream *s)
+/*
+ * Technically we can accept a stream other than the main PDF file stream here. This is
+ * really for the case of compressed objects where we read tokens from the compressed
+ * stream, but it also (with some judicious tinkering) allows us to layer a SubFileDecode
+ * on top of the main file stream, which may be useful. Note that this cannot work with
+ * objects in compressed object streams! They should always pass a value of 0 for the stream_offset.
+ * The stream_offset is the offset from the start of the underlying uncompressed PDF file of
+ * the stream we are using. See the comments below when keyword is PDF_STREAM.
+ */
+int pdfi_read_object(pdf_context *ctx, pdf_stream *s, gs_offset_t stream_offset)
 {
     int code = 0;
     uint64_t objnum = 0, gen = 0;
@@ -1695,12 +1722,26 @@ int pdfi_read_object(pdf_context *ctx, pdf_stream *s)
         return code;
     }
     if (keyword->key == PDF_STREAM) {
+        /* We should never read a 'stream' keyword from a compressed object stream
+         * so this case should never end up here.
+         */
         pdf_dict *d = (pdf_dict *)ctx->stack_top[-2];
         gs_offset_t offset;
 
-        skip_eol(ctx, ctx->main_stream);
+        skip_eol(ctx, s);
 
-        offset = pdfi_unread_tell(ctx);
+        /* Strange code time....
+         * If we are using a stream which is *not* the PDF uncompressed main file stream
+         * then doing stell on it will only tell us how many bytes have been read from
+         * that stream, it won't tell us the underlying file position. So we add on the
+         * 'unread' bytes, *and* we add on the position of the start of the stream in
+         * the actual main file. This is all done so that we can check the /Length
+         * of the object. Note that this will *only* work for regular objects it can
+         * not be used for compressed object streams, but those don't need checking anyway
+         * they have a different mechanism altogether and should never get here.
+         */
+        offset = stell(s->s) - s->unread_size + stream_offset;
+        code = pdfi_seek(ctx, ctx->main_stream, offset, SEEK_SET);
 
         pdfi_pop(ctx, 1);
 
@@ -1743,7 +1784,7 @@ int pdfi_read_object(pdf_context *ctx, pdf_stream *s)
             return code;
         }
 
-        code = pdfi_read_token(ctx, s);
+        code = pdfi_read_token(ctx, ctx->main_stream);
         if (pdfi_count_stack(ctx) < 2) {
             dmprintf1(ctx->memory, "Failed to find a valid object at the end of the stream object %"PRIu64".\n", objnum);
             return 0;
@@ -1762,7 +1803,7 @@ int pdfi_read_object(pdf_context *ctx, pdf_stream *s)
         }
         pdfi_pop(ctx, 1);
 
-        code = pdfi_read_token(ctx, s);
+        code = pdfi_read_token(ctx, ctx->main_stream);
         if (code < 0) {
             if (ctx->pdfstoponerror)
                 return code;
@@ -1810,11 +1851,11 @@ int pdfi_read_object(pdf_context *ctx, pdf_stream *s)
     return_error(gs_error_syntaxerror);
 }
 
-int pdfi_read_object_of_type(pdf_context *ctx, pdf_stream *s, pdf_obj_type type)
+int pdfi_read_object_of_type(pdf_context *ctx, pdf_stream *s, pdf_obj_type type, gs_offset_t stream_offset)
 {
     int code;
 
-    code = pdfi_read_object(ctx, s);
+    code = pdfi_read_object(ctx, s, stream_offset);
     if (code < 0)
         return code;
 

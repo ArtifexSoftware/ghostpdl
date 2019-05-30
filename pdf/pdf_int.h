@@ -23,8 +23,8 @@ void normalize_rectangle(double *d);
 
 int skip_white(pdf_context *ctx, pdf_stream *s);
 int pdfi_read_token(pdf_context *ctx, pdf_stream *s);
-int pdfi_read_object(pdf_context *ctx, pdf_stream *s);
-int pdfi_read_object_of_type(pdf_context *ctx, pdf_stream *s, pdf_obj_type t);
+int pdfi_read_object(pdf_context *ctx, pdf_stream *s, gs_offset_t stream_offset);
+int pdfi_read_object_of_type(pdf_context *ctx, pdf_stream *s, pdf_obj_type t, gs_offset_t stream_offset);
 int pdfi_alloc_object(pdf_context *ctx, pdf_obj_type type, unsigned int size, pdf_obj **obj);
 void pdfi_free_object(pdf_obj *o);
 
