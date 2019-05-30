@@ -1815,8 +1815,10 @@ static int pdfi_create_DeviceCMYK(pdf_context *ctx, gs_color_space **ppcs)
  * handler will call pdfi_create_colorspace() to set the underlying space(s) which
  * may mean calling pdfi_create_colorspace again....
  */
-static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_array, int index,
-                                           pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs, bool inline_image)
+static int
+pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_array, int index,
+                                pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs,
+                                bool inline_image)
 {
     int code;
     pdf_name *space = NULL;
@@ -1899,7 +1901,6 @@ pdfi_create_colorspace_by_name(pdf_context *ctx, pdf_name *name,
                                gs_color_space **ppcs, bool inline_image)
 {
     int code = 0;
-    pdf_obj *ref_space;
 
     if (pdfi_name_is(name, "G") || pdfi_name_is(name, "DeviceGray")) {
         if (pdfi_name_is(name, "G") && !inline_image) {
@@ -1925,12 +1926,15 @@ pdfi_create_colorspace_by_name(pdf_context *ctx, pdf_name *name,
     } else if (pdfi_name_is(name, "Pattern")) {
         code = pdfi_pattern_create(ctx, NULL, stream_dict, page_dict, ppcs);
     } else {
+        pdf_obj *ref_space = NULL;
         code = pdfi_find_resource(ctx, (unsigned char *)"ColorSpace", name, stream_dict, page_dict, &ref_space);
         if (code < 0)
             return code;
 
         /* recursion */
-        return pdfi_create_colorspace(ctx, ref_space, stream_dict, page_dict, ppcs, inline_image);
+        code = pdfi_create_colorspace(ctx, ref_space, stream_dict, page_dict, ppcs, inline_image);
+        pdfi_countdown(ref_space);
+        return code;
     }
 
     /* If we got here, it's a recursion base case, and ppcs should have been set if requested */
