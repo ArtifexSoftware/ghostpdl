@@ -161,11 +161,11 @@ static Byte * currentPosition(ByteList * list);
 static void addCodedNumber(ByteList * list, short number);
 static int isThereEnoughRoom(ByteList * list, short biggest);
 static short roomLeft(ByteList * list);
-static void dumpToPrinter(ByteList * list,FILE * printStream);
+static void dumpToPrinter(ByteList * list,gp_file * printStream);
 
 /* Real Print function */
 
-static int hl7x0_print_page(gx_device_printer *, FILE *, int, int, ByteList *);
+static int hl7x0_print_page(gx_device_printer *, gp_file *, int, int, ByteList *);
 
 /* Define the default, maximum resolutions. */
 #ifdef X_DPI
@@ -280,7 +280,7 @@ hl7x0_close(gx_device *pdev)
 
     if (code < 0)
         return code;
-    fputs("@N@N@N@N@X", ppdev->file) ;
+    gp_fputs("@N@N@N@N@X", ppdev->file) ;
     return gdev_prn_close_printer(pdev);
 }
 
@@ -288,7 +288,7 @@ hl7x0_close(gx_device *pdev)
 
 /* The HL 720 can compress*/
 static int
-hl720_print_page(gx_device_printer *pdev, FILE *prn_stream)
+hl720_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {
         Byte prefix[] ={
    0x1B,'%','-','1','2','3','4','5','X'
@@ -316,7 +316,7 @@ hl720_print_page(gx_device_printer *pdev, FILE *prn_stream)
 /* Send the page to the printer.  For speed, compress each scan line, */
 /* since computer-to-printer communication time is often a bottleneck. */
 static int
-hl7x0_print_page(gx_device_printer *pdev, FILE *printStream, int ptype,
+hl7x0_print_page(gx_device_printer *pdev, gp_file *printStream, int ptype,
   int dots_per_inch, ByteList *initCommand)
 {
         /* UTILE*/
@@ -998,13 +998,13 @@ static short roomLeft(ByteList * list){
  * Dump all commands to the printer and reset the structure
  *
  */
-static void dumpToPrinter(ByteList * list,FILE * printStream){
+static void dumpToPrinter(ByteList * list,gp_file * printStream){
   short loopCounter;
   /* Actual dump */
   /* Please note that current is the first empty byte */
   for (loopCounter = 0; loopCounter < list->current; loopCounter++)
     {
-      fputc(list->data[loopCounter],printStream);
+      gp_fputc(list->data[loopCounter],printStream);
     }
 
   /* Reset of the ByteList */

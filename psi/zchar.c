@@ -68,11 +68,10 @@ zshow(i_ctx_t *i_ctx_p)
     if ((code = op_show_finish_setup(i_ctx_p, penum, 1, finish_show)) < 0) {
         /* We must restore the exec stack pointer back to the point where we entered, in case
          * we 'retry' the operation (eg having increased the operand stack).
-         * We must also free the enumerator if we created one.
+         * We'll rely on gc to handle the enumerator.
          * Bug #700618.
          */
         esp = ep;
-        ifree_object(penum, "zshow");
         return code;
     }
 
@@ -80,11 +79,10 @@ zshow(i_ctx_t *i_ctx_p)
     if (code < 0) {
         /* We must restore the exec stack pointer back to the point where we entered, in case
          * we 'retry' the operation (eg having increased the operand stack).
-         * We must also free the enumerator if we created one.
+         * We'll rely on gc to handle the enumerator.
          * Bug #700618.
          */
         esp = ep;
-        ifree_object(penum, "zshow");
     }
     return code;
 }
@@ -107,22 +105,20 @@ zashow(i_ctx_t *i_ctx_p)
     if ((code = op_show_finish_setup(i_ctx_p, penum, 3, finish_show)) < 0) {
         /* We must restore the exec stack pointer back to the point where we entered, in case
          * we 'retry' the operation (eg having increased the operand stack).
-         * We must also free the enumerator if we created one.
+         * We'll rely on gc to handle the enumerator.
          * Bug #700618.
          */
         esp = ep;
-        ifree_object(penum, "zashow");
         return code;
     }
     code = op_show_continue_pop(i_ctx_p, 3);
     if (code < 0) {
         /* We must restore the exec stack pointer back to the point where we entered, in case
          * we 'retry' the operation (eg having increased the operand stack).
-         * We must also free the enumerator if we created one.
+         * We'll rely on gc to handle the enumerator.
          * Bug #700618.
          */
         esp = ep;
-        ifree_object(penum, "zashow");
     }
     return code;
 }
@@ -154,10 +150,9 @@ widthshow_aux(i_ctx_t *i_ctx_p, bool single_byte_space)
                                    imemory_local, &penum)) < 0) {
         /* We must restore the exec stack pointer back to the point where we entered, in case
          * we 'retry' the operation (eg having increased the operand stack).
-         * We must also free the enumerator if we created one.
+         * We'll rely on gc to handle the enumerator.
          * Bug #700618.
          */
-        ifree_object(penum, "widthshow_aux");
         esp = ep;
         return code;
     }
@@ -168,11 +163,10 @@ widthshow_aux(i_ctx_t *i_ctx_p, bool single_byte_space)
     if ((code = op_show_finish_setup(i_ctx_p, penum, 4, finish_show)) < 0) {
         /* We must restore the exec stack pointer back to the point where we entered, in case
          * we 'retry' the operation (eg having increased the operand stack).
-         * We must also free the enumerator if we created one.
+         * We'll rely on gc to handle the enumerator.
          * Bug #700618.
          */
         esp = ep;
-        ifree_object(penum, "widthshow_aux");
         return code;
     }
 
@@ -180,11 +174,10 @@ widthshow_aux(i_ctx_t *i_ctx_p, bool single_byte_space)
     if (code < 0) {
         /* We must restore the exec stack pointer back to the point where we entered, in case
          * we 'retry' the operation (eg having increased the operand stack).
-         * We must also free the enumerator if we created one.
+         * We'll rely on gc to handle the enumerator.
          * Bug #700618.
          */
         esp = ep;
-        ifree_object(penum, "widthshow_aux");
     }
     return code;
 }
@@ -251,11 +244,10 @@ awidthshow_aux(i_ctx_t *i_ctx_p, bool single_byte_space)
     if ((code = op_show_finish_setup(i_ctx_p, penum, 6, finish_show)) < 0) {
         /* We must restore the exec stack pointer back to the point where we entered, in case
          * we 'retry' the operation (eg having increased the operand stack).
-         * We must also free the enumerator if we created one.
+         * We'll rely on gc to handle the enumerator.
          * Bug #700618.
          */
         esp = ep;
-        ifree_object(penum, "awidthshow_aux");
         return code;
     }
 
@@ -263,11 +255,10 @@ awidthshow_aux(i_ctx_t *i_ctx_p, bool single_byte_space)
     if (code < 0) {
         /* We must restore the exec stack pointer back to the point where we entered, in case
          * we 'retry' the operation (eg having increased the operand stack).
-         * We must also free the enumerator if we created one.
+         * We'll rely on gc to handle the enumerator.
          * Bug #700618.
          */
         esp = ep;
-        ifree_object(penum, "awidthshow_aux");
     }
     return code;
 }
@@ -312,11 +303,10 @@ zkshow(i_ctx_t *i_ctx_p)
     if ((code = op_show_finish_setup(i_ctx_p, penum, 2, finish_show)) < 0) {
         /* We must restore the exec stack pointer back to the point where we entered, in case
          * we 'retry' the operation (eg having increased the operand stack).
-         * We must also free the enumerator if we created one.
+         * We'll rely on gc to handle the enumerator.
          * Bug #700618.
          */
         esp = ep;
-        ifree_object(penum, "zkshow");
         return code;
     }
     sslot = op[-1];		/* save kerning proc */
@@ -324,11 +314,10 @@ zkshow(i_ctx_t *i_ctx_p)
     if (code < 0) {
         /* We must restore the exec stack pointer back to the point where we entered, in case
          * we 'retry' the operation (eg having increased the operand stack).
-         * We must also free the enumerator if we created one.
+         * We'll rely on gc to handle the enumerator.
          * Bug #700618.
          */
         esp = ep;
-        ifree_object(penum, "zkshow");
     }
     return code;
 }
@@ -373,22 +362,20 @@ zstringwidth(i_ctx_t *i_ctx_p)
     if ((code = op_show_finish_setup(i_ctx_p, penum, 1, finish_stringwidth)) < 0) {
         /* We must restore the exec stack pointer back to the point where we entered, in case
          * we 'retry' the operation (eg having increased the operand stack).
-         * We must also free the enumerator if we created one.
+         * We'll rely on gc to handle the enumerator.
          * Bug #700618.
          */
         esp = ep;
-        ifree_object(penum, "zstringwidth");
         return code;
     }
     code = op_show_continue_pop(i_ctx_p, 1);
     if (code < 0) {
         /* We must restore the exec stack pointer back to the point where we entered, in case
          * we 'retry' the operation (eg having increased the operand stack).
-         * We must also free the enumerator if we created one.
+         * We'll rely on gc to handle the enumerator.
          * Bug #700618.
          */
         esp = ep;
-        ifree_object(penum, "zstringwidth");
     }
     return code;
 }
@@ -413,22 +400,20 @@ zchar_path(i_ctx_t *i_ctx_p, op_proc_t proc,
     if ((code = op_show_finish_setup(i_ctx_p, penum, 2, finish_show)) < 0) {
         /* We must restore the exec stack pointer back to the point where we entered, in case
          * we 'retry' the operation (eg having increased the operand stack).
-         * We must also free the enumerator if we created one.
+         * We'll rely on gc to handle the enumerator.
          * Bug #700618.
          */
         esp = ep;
-        ifree_object(penum, "zchar_path");
         return code;
     }
     code = op_show_continue_pop(i_ctx_p, 2);
     if (code < 0) {
         /* We must restore the exec stack pointer back to the point where we entered, in case
          * we 'retry' the operation (eg having increased the operand stack).
-         * We must also free the enumerator if we created one.
+         * We'll rely on gc to handle the enumerator.
          * Bug #700618.
          */
         esp = ep;
-        ifree_object(penum, "zchar_path");
     }
     return code;
 }

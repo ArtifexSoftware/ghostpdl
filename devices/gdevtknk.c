@@ -115,7 +115,7 @@ tekink_map_color_rgb(gx_device *dev, gx_color_index color, ushort prgb[3])
 
 /* Send the page to the printer. */
 static int
-tekink_print_page(gx_device_printer *pdev,FILE *prn_stream)
+tekink_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {
     int line_size,color_line_size,scan_line,num_bytes,scan_lines,color_plane;
     int roll_paper,out_line,micro_line,pending_micro_lines,line_blank,
@@ -207,14 +207,14 @@ tekink_print_page(gx_device_printer *pdev,FILE *prn_stream)
                         (out_line/4);
                     for (micro_line=0;micro_line<pending_micro_lines;
                         micro_line++){
-                        fputs("\033A",prn_stream);
+                        gp_fputs("\033A",prn_stream);
                     }
                     out_line+=blank_lines;
                     blank_lines=0;
                 }
-                fprintf(prn_stream,"\033I%c%03d",'0'+(out_line%4)+
-                    4*color_plane,num_bytes);
-                fwrite(outdata+1,1,num_bytes,prn_stream);
+                gp_fprintf(prn_stream,"\033I%c%03d",'0'+(out_line%4)+
+                           4*color_plane,num_bytes);
+                gp_fwrite(outdata+1,1,num_bytes,prn_stream);
             }
         } /* loop over color planes */
 
@@ -229,7 +229,7 @@ tekink_print_page(gx_device_printer *pdev,FILE *prn_stream)
         else{
             if (out_line%4==3){
                 /* Write micro line feed code */
-                fputs("\033A",prn_stream);
+                gp_fputs("\033A",prn_stream);
             }
             out_line++;
         }
@@ -238,14 +238,14 @@ tekink_print_page(gx_device_printer *pdev,FILE *prn_stream)
     /* if the number of scan lines written is not a multiple of four,
        write the final micro line feed code */
     if (out_line%4){
-        fputs("\033A",prn_stream);
+        gp_fputs("\033A",prn_stream);
     }
     /* Separate this plot from the next */
     if (roll_paper){
-        fputs("\n\n\n\n\n",prn_stream);
+        gp_fputs("\n\n\n\n\n",prn_stream);
     }
     else{
-        fputs("\f",prn_stream);
+        gp_fputs("\f",prn_stream);
     }
 
     /* Deallocate temp buffer */

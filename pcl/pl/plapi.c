@@ -162,7 +162,7 @@ gsapi_get_default_device_list(void *instance, char **list, int *listlen)
     return gs_lib_ctx_get_default_device_list(ctx->memory, list, listlen);
 }
 
-static int utf16le_get_codepoint(FILE *file, const char **astr)
+static int utf16le_get_codepoint(gp_file *file, const char **astr)
 {
     int c;
     int rune;
@@ -179,10 +179,10 @@ static int utf16le_get_codepoint(FILE *file, const char **astr)
 
     do {
         if (file) {
-            rune = fgetc(file);
+            rune = gp_fgetc(file);
             if (rune == EOF)
                 return EOF;
-            c = fgetc(file);
+            c = gp_fgetc(file);
             if (c == EOF)
                 return EOF;
             rune += c<<8;
@@ -205,10 +205,10 @@ lead: /* We've just read a leading surrogate */
         rune -= 0xD800;
         rune <<= 10;
         if (file) {
-            trail = fgetc(file);
+            trail = gp_fgetc(file);
             if (trail == EOF)
                 return EOF;
-            c = fgetc(file);
+            c = gp_fgetc(file);
             if (c == EOF)
                 return EOF;
             trail += c<<8;
@@ -304,4 +304,49 @@ gsapi_set_param(void *lib, gs_set_param_type type, const char *param, const void
     if (lib == NULL)
         return gs_error_Fatal;
     return pl_main_set_typed_param(pl_main_get_instance(ctx->memory), (pl_set_param_type)type, param, value);
+}
+
+GSDLLEXPORT int GSDLLAPI
+gsapi_add_control_path(void *instance, int type, const char *path)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (ctx == NULL)
+        return gs_error_Fatal;
+    return gs_add_control_path(ctx->memory, type, path);
+}
+
+GSDLLEXPORT int GSDLLAPI
+gsapi_remove_control_path(void *instance, int type, const char *path)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (ctx == NULL)
+        return gs_error_Fatal;
+    return gs_remove_control_path(ctx->memory, type, path);
+}
+
+GSDLLEXPORT void GSDLLAPI
+gsapi_purge_control_paths(void *instance, int type)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (ctx == NULL)
+        return;
+    gs_purge_control_paths(ctx->memory, type);
+}
+
+GSDLLEXPORT void GSDLLAPI
+gsapi_activate_path_control(void *instance, int enable)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (ctx == NULL)
+        return;
+    gs_activate_path_control(ctx->memory, enable);
+}
+
+GSDLLEXPORT int GSDLLAPI
+gsapi_is_path_control_active(void *instance)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (ctx == NULL)
+        return 0;
+    return gs_is_path_control_active(ctx->memory);
 }

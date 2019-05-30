@@ -2056,7 +2056,7 @@ opvp_open(gx_device *dev)
             }
         }
 #endif
-        outputFD = fileno(pdev->file);
+        outputFD = fileno(gp_get_file(pdev->file));
     } else {
         /* open printer device */
         code = gdev_prn_open(dev);
@@ -2073,8 +2073,10 @@ opvp_open(gx_device *dev)
         if (code < 0) {
             return code;
         }
-        outputFD = fileno(rdev->file);
+        outputFD = fileno(gp_get_file(rdev->file));
     }
+    if (outputFD < 0)
+        return outputFD;
 
     /* RE-load vector driver */
     if ((code = opvp_load_vector_driver())) {
@@ -2302,7 +2304,7 @@ opvp_output_page(gx_device *dev, int num_copies, int flush)
  * print page
  */
 static  int
-oprp_print_page(gx_device_printer *pdev, FILE *prn_stream)
+oprp_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {
     int ecode = 0;
     int code = -1;

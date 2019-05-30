@@ -77,7 +77,7 @@ int tiff_set_compression(gx_device_printer *pdev,
 int tiff_set_fields_for_printer(gx_device_printer *pdev, TIFF *tif, int factor,
                                 int adjustWidth, bool writedatetime);
 
-int gdev_tiff_begin_page(gx_device_tiff *tfdev, FILE *file);
+int gdev_tiff_begin_page(gx_device_tiff *tfdev, gp_file *file);
 
 /*
  * Returns the gs_param_string that corresponds to the tiff COMPRESSION_* id.

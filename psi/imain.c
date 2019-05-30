@@ -123,7 +123,7 @@ void print_resource_usage(const gs_main_instance *,
 
 /* Initialization to be done before anything else. */
 int
-gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
+gs_main_init0(gs_main_instance * minst, gp_file * in, gp_file * out, gp_file * err,
               int max_lib_paths)
 {
     ref *array;
@@ -375,15 +375,15 @@ gs_main_init2(gs_main_instance * minst)
         }
     }
 
-fail:
-    if (gs_debug_c(gs_debug_flag_init_details))
-        dmprintf2(minst->heap, "%% Init phase 2 %s, instance 0x%p\n", code < 0 ? "failed" : "done", minst);
-
     if (code >= 0) {
         if (gs_debug_c(':'))
             print_resource_usage(minst, &gs_imemory, "Start");
         gp_readline_init(&minst->readline_data, minst->heap);
     }
+
+fail:
+    if (gs_debug_c(gs_debug_flag_init_details))
+        dmprintf2(minst->heap, "%% Init phase 2 %s, instance 0x%p\n", code < 0 ? "failed" : "done", minst);
 
     return code;
 }
@@ -476,6 +476,9 @@ lib_path_add(gs_main_instance * minst, const char *dirs)
         while (*npath != 0 && *npath != gp_file_name_list_separator)
             npath++;
         if (npath > dpath) {
+            code = gs_add_control_path_len(minst->heap, gs_permit_file_reading, dpath, npath - dpath);
+            if (code < 0) return code;
+
             code = lib_path_insert_copy_of_string(minst, len, npath - dpath, dpath);
             if (code < 0)
                 return code;
@@ -559,6 +562,11 @@ gs_main_set_lib_paths(gs_main_instance * minst)
     if (minst->search_here_first && !minst->lib_path.first_is_current) {
         /* We should have a "gp_current_directory" at the start, and we haven't.
          * So insert one. */
+
+        code = gs_add_control_path_len(minst->heap, gs_permit_file_reading,
+                gp_current_directory_name, strlen(gp_current_directory_name));
+        if (code < 0) return code;
+
         code = lib_path_insert_copy_of_string(minst, 0,
                                               strlen(gp_current_directory_name),
                                               gp_current_directory_name);
@@ -574,6 +582,10 @@ gs_main_set_lib_paths(gs_main_instance * minst)
         --listlen;
         memmove(paths, paths + 1, listlen * sizeof(*paths));
         r_set_size(&minst->lib_path.list, listlen);
+
+        code = gs_remove_control_path_len(minst->heap, gs_permit_file_reading,
+                gp_current_directory_name, strlen(gp_current_directory_name));
+        if (code < 0) return code;
     }
     minst->lib_path.first_is_current = minst->search_here_first;
 
@@ -581,8 +593,13 @@ gs_main_set_lib_paths(gs_main_instance * minst)
     set_lib_path_length(minst, minst->lib_path.count + minst->lib_path.first_is_current);
 
     /* Now we (re)populate the end of the list. */
-    if (minst->lib_path.env != 0)
+    if (minst->lib_path.env != 0) {
         code = lib_path_add(minst, minst->lib_path.env);
+        if (code < 0) return code;
+
+        code = gs_add_control_path(minst->heap, gs_permit_file_reading, minst->lib_path.env);
+        if (code < 0) return code;
+    }
     /* now put the %rom%lib/ device path before the gs_lib_default_path on the list */
     for (i = 0; i < gx_io_device_table_count; i++) {
         const gx_io_device *iodev = gx_io_device_table[i];
@@ -1222,10 +1239,10 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
     /* clean up redirected stdout */
     core = minst->heap->gs_lib_ctx->core;
     if (core->fstdout2
-        && (core->fstdout2 != core->fstdout)
-        && (core->fstdout2 != core->fstderr)) {
-        fclose(core->fstdout2);
-        core->fstdout2 = (FILE *)NULL;
+        && (gp_get_file(core->fstdout2) != core->fstdout)
+        && (gp_get_file(core->fstdout2) != core->fstderr)) {
+        gp_fclose(core->fstdout2);
+        core->fstdout2 = NULL;
     }
 
     minst->heap->gs_lib_ctx->core->stdout_is_redirected = 0;
@@ -1348,7 +1365,6 @@ gs_main_force_resolutions(gs_main_instance * minst, const float *resolutions)
 int
 gs_main_force_dimensions(gs_main_instance *minst, const long *dimensions)
 {
-    i_ctx_t *i_ctx_p;
     ref value;
     int code = 0;
 
@@ -1356,8 +1372,6 @@ gs_main_force_dimensions(gs_main_instance *minst, const long *dimensions)
         return 0;
     if (minst == NULL)
         return gs_error_Fatal;
-
-    i_ctx_p = minst->i_ctx_p;
 
     make_true(&value);
     code = i_initial_enter_name(minst->i_ctx_p, "FIXEDMEDIA", &value);

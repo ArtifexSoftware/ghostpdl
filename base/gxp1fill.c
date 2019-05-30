@@ -329,8 +329,11 @@ tile_pattern_clist(const tile_fill_state_t * ptfs,
     int code;
 
     crdev->offset_map = NULL;
-    crdev->page_info.io_procs->rewind(crdev->page_info.bfile, false, NULL);
-    crdev->page_info.io_procs->rewind(crdev->page_info.cfile, false, NULL);
+    code = crdev->page_info.io_procs->rewind(crdev->page_info.bfile, false, NULL);
+    if (code < 0) return code;
+    code = crdev->page_info.io_procs->rewind(crdev->page_info.cfile, false, NULL);
+    if (code < 0) return code;
+
     clist_render_init(cdev);
      /* Check for and get ICC profile table */
     if (crdev->icc_table == NULL) {

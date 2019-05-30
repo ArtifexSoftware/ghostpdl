@@ -14,6 +14,8 @@
 */
 
 
+#include "gp.h"
+
 /* Bytestream abstraction for Rinkj driver. */
 
 typedef struct _RinkjByteStream RinkjByteStream;
@@ -35,4 +37,4 @@ int
 rinkj_byte_stream_close (RinkjByteStream *bs);
 
 RinkjByteStream *
-rinkj_byte_stream_file_new (FILE *f);
+rinkj_byte_stream_file_new (gp_file *f);

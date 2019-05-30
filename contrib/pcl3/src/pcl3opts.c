@@ -52,7 +52,7 @@ static nl_catd catd = (nl_catd)(-1);	/* NLS message catalogue descriptor */
 
 /*****************************************************************************/
 
-static void message(FILE *f, int msg_id, const char *fmt, va_list ap)
+static void message(gp_file *f, int msg_id, const char *fmt, va_list ap)
 {
   vfprintf(f, catd == (nl_catd)(-1)? fmt: catgets(catd, 2, msg_id, fmt), ap);
 
@@ -75,7 +75,7 @@ static void emessage(int msg_id, const char *fmt, ...)
 
 /*****************************************************************************/
 
-static void imessage(FILE *f, int msg_id, const char *fmt, ...)
+static void imessage(gp_file *f, int msg_id, const char *fmt, ...)
 {
   va_list ap;
 
@@ -88,7 +88,7 @@ static void imessage(FILE *f, int msg_id, const char *fmt, ...)
 
 /*****************************************************************************/
 
-static void check_line_length(FILE *out, int *line_length, int expected)
+static void check_line_length(gp_file *out, int *line_length, int expected)
 {
   if (*line_length + expected <= 78) return;
 
@@ -103,7 +103,7 @@ static void check_line_length(FILE *out, int *line_length, int expected)
 
 /* Type for state and information collected during parsing a file */
 typedef struct {
-  FILE *out;
+  gp_file *out;
 
   /* Capability */
   pcl_bool
@@ -420,7 +420,7 @@ static void print_result(CollectedInfo *ip)		/* NLS: 10, 70 */
 
 /*****************************************************************************/
 
-static int action_PageSize(FILE *in, const pcl_Command *cmd, void *i)
+static int action_PageSize(gp_file *in, const pcl_Command *cmd, void *i)
 {
   CollectedInfo *ip = i;
 
@@ -431,7 +431,7 @@ static int action_PageSize(FILE *in, const pcl_Command *cmd, void *i)
 
 /*****************************************************************************/
 
-static int action_dry_time(FILE *in, const pcl_Command *cmd, void *i)
+static int action_dry_time(gp_file *in, const pcl_Command *cmd, void *i)
 {
   CollectedInfo *ip = i;
 
@@ -442,7 +442,7 @@ static int action_dry_time(FILE *in, const pcl_Command *cmd, void *i)
 
 /*****************************************************************************/
 
-static int action_destination(FILE *in, const pcl_Command *cmd, void *i)
+static int action_destination(gp_file *in, const pcl_Command *cmd, void *i)
 {
   CollectedInfo *ip = i;
 
@@ -453,7 +453,7 @@ static int action_destination(FILE *in, const pcl_Command *cmd, void *i)
 
 /*****************************************************************************/
 
-static int action_source(FILE *in, const pcl_Command *cmd, void *i)
+static int action_source(gp_file *in, const pcl_Command *cmd, void *i)
 {
   CollectedInfo *ip = i;
 
@@ -467,7 +467,7 @@ static int action_source(FILE *in, const pcl_Command *cmd, void *i)
 
 /*****************************************************************************/
 
-static int action_media_type(FILE *in, const pcl_Command *cmd, void *i)
+static int action_media_type(gp_file *in, const pcl_Command *cmd, void *i)
 {
   CollectedInfo *ip = i;
 
@@ -479,7 +479,7 @@ static int action_media_type(FILE *in, const pcl_Command *cmd, void *i)
 
 /*****************************************************************************/
 
-static int action_duplex(FILE *in, const pcl_Command *cmd, void *i)
+static int action_duplex(gp_file *in, const pcl_Command *cmd, void *i)
 {								/* NLS: 60 */
   CollectedInfo *ip = i;
 
@@ -507,7 +507,7 @@ static int action_duplex(FILE *in, const pcl_Command *cmd, void *i)
       message has been issued.
 */
 
-static int check_prefix(FILE *in)
+static int check_prefix(gp_file *in)
 {
   static const pcl_Octet prefix[] = "@PJL";
     /* Note that the "@PJL" prefix is required to be uppercase in PJL. */
@@ -555,7 +555,7 @@ static int check_prefix(FILE *in)
 
 #define TILE_SIZE	200
 
-static int action_UEL(FILE *in, const pcl_Command *cmd, void *i)
+static int action_UEL(gp_file *in, const pcl_Command *cmd, void *i)
 {
   CollectedInfo *ip = i;
   int c;
@@ -664,7 +664,7 @@ static int action_UEL(FILE *in, const pcl_Command *cmd, void *i)
 /*****************************************************************************/
 
                                                                 /* NLS: 20 */
-static int action_compression(FILE *in, const pcl_Command *cmd, void *i)
+static int action_compression(gp_file *in, const pcl_Command *cmd, void *i)
 {
   CollectedInfo *ip = i;
 
@@ -687,7 +687,7 @@ static int action_compression(FILE *in, const pcl_Command *cmd, void *i)
 
 /* The following function is only called for "*bV" and "*bW". */
 
-static int action_raster_data(FILE *in, const pcl_Command *cmd, void *i)
+static int action_raster_data(gp_file *in, const pcl_Command *cmd, void *i)
 {
   CollectedInfo *ip = i;
   int j;
@@ -709,7 +709,7 @@ static int action_raster_data(FILE *in, const pcl_Command *cmd, void *i)
 
 /*****************************************************************************/
 
-static void print_CRD(FILE *out, const pcl_Octet *buffer)
+static void print_CRD(gp_file *out, const pcl_Octet *buffer)
 {
   int j;
 
@@ -723,7 +723,7 @@ static void print_CRD(FILE *out, const pcl_Octet *buffer)
 
 /*****************************************************************************/
 
-static int action_CRD(FILE *in, const pcl_Command *cmd, void *i) /* NLS: 30 */
+static int action_CRD(gp_file *in, const pcl_Command *cmd, void *i) /* NLS: 30 */
 {
   CollectedInfo *ip = i;
   pcl_Octet *buffer;
@@ -811,7 +811,7 @@ static int action_CRD(FILE *in, const pcl_Command *cmd, void *i) /* NLS: 30 */
 
 /*****************************************************************************/
 
-static int action_old_quality(FILE *in, const pcl_Command *cmd, void *i)
+static int action_old_quality(gp_file *in, const pcl_Command *cmd, void *i)
 {
   CollectedInfo *ip = i;
 
@@ -828,7 +828,7 @@ static int action_old_quality(FILE *in, const pcl_Command *cmd, void *i)
 
 /*****************************************************************************/
 
-static int action_quality(FILE *in, const pcl_Command *cmd, void *i)
+static int action_quality(gp_file *in, const pcl_Command *cmd, void *i)
 {
   CollectedInfo *ip = i;
 
@@ -841,7 +841,7 @@ static int action_quality(FILE *in, const pcl_Command *cmd, void *i)
 /*****************************************************************************/
 
                                                                 /* NLS: 40 */
-static int action_colour(FILE *in, const pcl_Command *cmd, void *i)
+static int action_colour(gp_file *in, const pcl_Command *cmd, void *i)
 {
   CollectedInfo *ip = i;
 
@@ -884,7 +884,7 @@ static int action_colour(FILE *in, const pcl_Command *cmd, void *i)
 
 /*****************************************************************************/
 
-static int action_resolution(FILE *in, const pcl_Command *cmd, void *i)
+static int action_resolution(gp_file *in, const pcl_Command *cmd, void *i)
 {
   CollectedInfo *ip = i;
 
@@ -905,7 +905,7 @@ static int action_resolution(FILE *in, const pcl_Command *cmd, void *i)
 
 /*****************************************************************************/
 
-static int action_end_raster(FILE *in, const pcl_Command *cmd, void *i)
+static int action_end_raster(gp_file *in, const pcl_Command *cmd, void *i)
 {
   CollectedInfo *ip = i;
 
@@ -961,7 +961,7 @@ static int cmp_entries(const void *a, const void *b)
 
 /*****************************************************************************/
 
-static int analyzer(FILE *in, const pcl_Command *cmd, void *i)
+static int analyzer(gp_file *in, const pcl_Command *cmd, void *i)
 {
   ActionEntry key;
   const ActionEntry *entry;
@@ -1027,7 +1027,7 @@ static int analyzer(FILE *in, const pcl_Command *cmd, void *i)
 
 ******************************************************************************/
 
-static int work(FILE *in, FILE *out)				/* NLS: 50 */
+static int work(gp_file *in, gp_file *out)				/* NLS: 50 */
 {
   CollectedInfo info;
   int rc;
@@ -1065,7 +1065,7 @@ int main(int argc, char **argv)
 {
   char
     *outfile_name = NULL;
-  FILE
+  gp_file
     *outfile,
     *infile;
   int

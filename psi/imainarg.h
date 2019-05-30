@@ -49,7 +49,7 @@ int gs_main_run_start(gs_main_instance * minst);
  * Allocation should be done with the standard gs allocation functions, as
  * the returned string may be freed using the same.
  */
-typedef int (gs_arg_get_codepoint)(FILE *, const char **);
+typedef int (gs_arg_get_codepoint)(gp_file *, const char **);
 
 void gs_main_inst_arg_decode(gs_main_instance * minst,
                              gs_arg_get_codepoint *get_codepoint);

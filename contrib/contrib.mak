@@ -838,6 +838,8 @@ pcl3_src=$(pcl3_root)src$(D)
 pcl3_headers=$(eprn_headers) \
   $(pcl3_src)pclgen.h $(pcl3_src)pclcap.h $(pcl3_src)pclsize.h
 
+$(pcl3_src)pclgen.h:$(gp_h)
+
 # List of all object files needed for pcl3
 pcl3_=$(eprn_) $(DEVOBJ)gdevpcl3.$(OBJ) $(DEVOBJ)pclcap.$(OBJ) \
   $(DEVOBJ)pclgen.$(OBJ) $(DEVOBJ)pclcomp.$(OBJ) $(DEVOBJ)pclsize.$(OBJ)

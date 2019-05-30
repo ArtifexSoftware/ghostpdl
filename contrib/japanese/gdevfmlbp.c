@@ -129,19 +129,19 @@ gdev_fmlbp_paper_size(gx_device_printer *dev, char *paper)
 #endif/*FMLBP_NOPAPERSIZE*/
 
 /* move down and move across */
-static void goto_xy(FILE *prn_stream,int x,int y)
+static void goto_xy(gp_file *prn_stream,int x,int y)
   {
     unsigned char buff[20];
     unsigned char *p=buff;
 
-    fputc(CEX,prn_stream);
-    fputc('"',prn_stream);
+    gp_fputc(CEX,prn_stream);
+    gp_fputc('"',prn_stream);
     gs_sprintf((char *)buff,"%d",x);
     while (*p)
       {
-        if (!*(p+1)) fputc((*p)+0x30,prn_stream);
+        if (!*(p+1)) gp_fputc((*p)+0x30,prn_stream);
         else
-          fputc((*p)-0x10,prn_stream);
+          gp_fputc((*p)-0x10,prn_stream);
         p++;
       }
 
@@ -149,16 +149,16 @@ static void goto_xy(FILE *prn_stream,int x,int y)
     gs_sprintf((char *)buff,"%d",y);
     while (*p)
       {
-        if (!*(p+1)) fputc((*p)+0x40,prn_stream);
+        if (!*(p+1)) gp_fputc((*p)+0x40,prn_stream);
         else
-          fputc((*p)-0x10,prn_stream);
+          gp_fputc((*p)-0x10,prn_stream);
         p++;
       }
   }
 
 /* Send the page to the printer.  */
 static int
-fmlbp_print_page(gx_device_printer *pdev, FILE *prn_stream)
+fmlbp_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {
   int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
 #ifdef	FMLBP_NOPAPERSIZE
@@ -170,14 +170,14 @@ fmlbp_print_page(gx_device_printer *pdev, FILE *prn_stream)
 #endif/*FMLBP_NOPAPERSIZE*/
 
   /* initialize */
-  fwrite(can_inits, sizeof(can_inits), 1, prn_stream);
-  fprintf(prn_stream, "%c%c%d!I", PU1, 0);	/* 100% */
+  gp_fwrite(can_inits, sizeof(can_inits), 1, prn_stream);
+  gp_fprintf(prn_stream, "%c%c%d!I", PU1, 0);	/* 100% */
 #ifndef	OLD_FMLBP_400DPI
-  fprintf(prn_stream, "%c%c%d!A", PU1,
+  gp_fprintf(prn_stream, "%c%c%d!A", PU1,
           (int)(pdev->x_pixels_per_inch));	/* 240dpi or 400dpi */
 #endif/*!OLD_FMLBP_400DPI*/
 #ifndef	FMLBP_NOPAPERSIZE
-  fprintf(prn_stream, "%c%c%s!F", PU1,
+  gp_fprintf(prn_stream, "%c%c%s!F", PU1,
           gdev_fmlbp_paper_size(pdev, paper));		/* Paper size */
 #endif/*!FMLBP_NOPAPERSIZE*/
 
@@ -210,17 +210,17 @@ fmlbp_print_page(gx_device_printer *pdev, FILE *prn_stream)
                   goto_xy(prn_stream, num_cols, lnum);
 
                   /* transfer raster graphics */
-                  fprintf(prn_stream, "%c%c%d;%d;0!a",
-                          PU1, out_count, out_count*8 );
+                  gp_fprintf(prn_stream, "%c%c%d;%d;0!a",
+                             PU1, out_count, out_count*8 );
 
                   /* send the row */
-                  fwrite(out_data, sizeof(byte), out_count, prn_stream);
+                  gp_fwrite(out_data, sizeof(byte), out_count, prn_stream);
                 }
               }
       }
   /* eject page */
-  fputc(0x0c,prn_stream);
-  fflush(prn_stream);
+  gp_fputc(0x0c,prn_stream);
+  gp_fflush(prn_stream);
 #ifndef	FMLBP_NOPAPERSIZE
   gs_free(pdev->memory->non_gc_memory, (char *)data, line_size, sizeof(byte), "fmlbp_print_page(data)");
 #endif/*!FMLBP_NOPAPERSIZE*/

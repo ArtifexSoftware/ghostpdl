@@ -18,25 +18,25 @@
 
 #include "ghostxps.h"
 
-static int isfile(char *path)
+static int isfile(gs_memory_t *mem, char *path)
 {
-    FILE *file = gp_fopen(path, "rb");
+    gp_file *file = gp_fopen(mem, path, "rb");
     if (file)
     {
-        fclose(file);
+        gp_fclose(file);
         return 1;
     }
     return 0;
 }
 
-static inline int getshort(FILE *file)
+static inline int getshort(gp_file *file)
 {
     int a = xps_getc(file);
     int b = xps_getc(file);
     return a | (b << 8);
 }
 
-static inline int getlong(FILE *file)
+static inline int getlong(gp_file *file)
 {
     int a = xps_getc(file);
     int b = xps_getc(file);
@@ -428,35 +428,35 @@ xps_read_dir_part(xps_context_t *ctx, const char *name)
 {
     char buf[2048];
     xps_part_t *part;
-    FILE *file;
+    gp_file *file;
     int count, size, offset, i, n;
 
     gs_strlcpy(buf, ctx->directory, sizeof buf);
     gs_strlcat(buf, name, sizeof buf);
 
     /* All in one piece */
-    file = gp_fopen(buf, "rb");
+    file = gp_fopen(ctx->memory, buf, "rb");
     if (file)
     {
         if (xps_fseek(file, 0, SEEK_END) != 0) {
-            fclose(file);
+            gp_fclose(file);
             return NULL;
         }
 
         size = xps_ftell(file);
         if (size < 0) {
-            fclose(file);
+            gp_fclose(file);
             return NULL;
         }
 
         if (xps_fseek(file, 0, SEEK_SET) != 0) {
-            fclose(file);
+            gp_fclose(file);
             return NULL;
         }
 
         part = xps_new_part(ctx, name, size);
         count = xps_fread(part->data, 1, size, file);
-        fclose(file);
+        gp_fclose(file);
         if (count == size)
             return part;
         else
@@ -469,18 +469,18 @@ xps_read_dir_part(xps_context_t *ctx, const char *name)
     while (1)
     {
         gs_sprintf(buf, "%s%s/[%d].piece", ctx->directory, name, count);
-        file = gp_fopen(buf, "rb");
+        file = gp_fopen(ctx->memory, buf, "rb");
         if (!file)
         {
             gs_sprintf(buf, "%s%s/[%d].last.piece", ctx->directory, name, count);
-            file = gp_fopen(buf, "rb");
+            file = gp_fopen(ctx->memory, buf, "rb");
         }
         if (!file)
             break;
         count ++;
         xps_fseek(file, 0, SEEK_END);
         size += xps_ftell(file);
-        fclose(file);
+        gp_fclose(file);
     }
 
     /* Inflate the pieces */
@@ -494,10 +494,10 @@ xps_read_dir_part(xps_context_t *ctx, const char *name)
                 gs_sprintf(buf, "%s%s/[%d].piece", ctx->directory, name, i);
             else
                 gs_sprintf(buf, "%s%s/[%d].last.piece", ctx->directory, name, i);
-            file = gp_fopen(buf, "rb");
+            file = gp_fopen(ctx->memory, buf, "rb");
             n = xps_fread(part->data + offset, 1, size - offset, file);
             offset += n;
-            fclose(file);
+            gp_fclose(file);
         }
         return part;
     }
@@ -574,7 +574,7 @@ xps_process_file(xps_context_t *ctx, const char *filename)
     int code;
     char *p;
 
-    ctx->file = xps_fopen(filename, "rb");
+    ctx->file = xps_fopen(ctx->memory, filename, "rb");
     if (!ctx->file)
         return gs_throw1(-1, "cannot open file: '%s'", filename);
 
@@ -594,7 +594,7 @@ xps_process_file(xps_context_t *ctx, const char *filename)
                 break;
             gs_strlcpy(p, "/_rels/.rels", buf + sizeof buf - p);
             if_debug1m('|', ctx->memory, "zip: testing if '%s' exists\n", buf);
-            if (isfile(buf))
+            if (isfile(ctx->memory, buf))
             {
                 *p = 0;
                 ctx->directory = xps_strdup(ctx, buf);

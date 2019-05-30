@@ -72,7 +72,7 @@ typedef struct pdfimage_page_s {
 
 typedef struct PCLm_temp_file_s {
     char file_name[gp_file_name_sizeof];
-    FILE *file;
+    gp_file *file;
     stream *strm;
     stream *save;
     byte *strm_buf;
@@ -187,7 +187,7 @@ const gx_device_pdf_image gs_pdfimage32_device = {
 };
 
 static int gdev_pdf_image_begin_page(gx_device_pdf_image *pdf_dev,
-                         FILE *file)
+                         gp_file *file)
 {
     gx_device_printer *const pdev = (gx_device_printer *)pdf_dev;
     cmm_dev_profile_t *profile_struct;
@@ -717,8 +717,8 @@ static int pdf_image_finish_file(gx_device_pdf_image *pdf_dev, int PCLm)
             char Buffer[1024];
 
             sflush(pdf_dev->xref_stream.strm);
-            streamsize = gp_ftell_64(pdf_dev->xref_stream.file);
-            if (gp_fseek_64(pdf_dev->xref_stream.file, 0, SEEK_SET) != 0)
+            streamsize = gp_ftell(pdf_dev->xref_stream.file);
+            if (gp_fseek(pdf_dev->xref_stream.file, 0, SEEK_SET) != 0)
                 return_error(gs_error_ioerror);
 
             while(streamsize > 0) {
@@ -733,7 +733,7 @@ static int pdf_image_finish_file(gx_device_pdf_image *pdf_dev, int PCLm)
                     streamsize = 0;
                 }
             }
-            if (gp_fseek_64(pdf_dev->xref_stream.file, 0, SEEK_SET) != 0)
+            if (gp_fseek(pdf_dev->xref_stream.file, 0, SEEK_SET) != 0)
                 return_error(gs_error_ioerror);
 
             pprintd1(pdf_dev->strm, "trailer\n<<\n/Size %d\n/Root 1 0 R\n/ID [", pdf_dev->NextObject);
@@ -778,7 +778,7 @@ static int pdf_image_finish_file(gx_device_pdf_image *pdf_dev, int PCLm)
 }
 
 static int
-pdf_image_print_page(gx_device_printer * pdev, FILE * file)
+pdf_image_print_page(gx_device_printer * pdev, gp_file * file)
 {
     gx_device_pdf_image *const pdf_dev = (gx_device_pdf_image *)pdev;
     const char *fmt;
@@ -1061,7 +1061,7 @@ PCLm_open_temp_file(gx_device_pdf_image *pdev, PCLm_temp_file_t *ptf)
 
     strcpy(fmode, "w+");
     strcat(fmode, gp_fmode_binary_suffix);
-    ptf->file =	gp_open_scratch_file_64(pdev->memory,
+    ptf->file =	gp_open_scratch_file(pdev->memory,
                                      gp_scratch_file_name_prefix,
                                      ptf->file_name,
                                      fmode);
@@ -1074,7 +1074,7 @@ static int
 PCLm_close_temp_file(gx_device_pdf_image *pdev, PCLm_temp_file_t *ptf, int code)
 {
     int err = 0;
-    FILE *file = ptf->file;
+    gp_file *file = ptf->file;
 
     /*
      * ptf->strm == 0 or ptf->file == 0 is only possible if this procedure
@@ -1096,7 +1096,7 @@ PCLm_close_temp_file(gx_device_pdf_image *pdev, PCLm_temp_file_t *ptf, int code)
         ptf->strm = 0;
     }
     if (file) {
-        err = ferror(file) | fclose(file);
+        err = gp_ferror(file) | gp_fclose(file);
         unlink(ptf->file_name);
         ptf->file = 0;
     }
@@ -1177,7 +1177,7 @@ PCLm_open(gx_device *pdev)
 }
 
 static int gdev_PCLm_begin_page(gx_device_pdf_image *pdf_dev,
-                         FILE *file)
+                         gp_file *file)
 {
     gx_device_printer *const pdev = (gx_device_printer *)pdf_dev;
     cmm_dev_profile_t *profile_struct;
@@ -1316,7 +1316,7 @@ PCLm_downscale_and_print_page(gx_device_printer *dev, int factor,
     stream_puts(pdf_dev->strm, Buffer);
     stream_puts(pdf_dev->strm, "/Resources <<\n/XObject <<\n");
 
-    if (gp_fseek_64(pdf_dev->temp_stream.file, 0, SEEK_SET) != 0) {
+    if (gp_fseek(pdf_dev->temp_stream.file, 0, SEEK_SET) != 0) {
         gs_free_object(dev->memory, data, "pdf_image_print_page(data)");
         gx_downscaler_fin(&ds);
         return_error(gs_error_ioerror);
@@ -1338,7 +1338,7 @@ PCLm_downscale_and_print_page(gx_device_printer *dev, int factor,
         pprintd2(pdf_dev->strm, "/Im%d %d 0 R\n", row, page->ImageObjectNumber + (row * 2));
     }
     sflush(pdf_dev->temp_stream.strm);
-    stream_pos = gp_ftell_64(pdf_dev->temp_stream.file);
+    stream_pos = gp_ftell(pdf_dev->temp_stream.file);
     stream_puts(pdf_dev->strm, ">>\n>>\n>>\nendobj\n");
 
     page->PageStreamOffset = stell(pdf_dev->strm);
@@ -1346,7 +1346,7 @@ PCLm_downscale_and_print_page(gx_device_printer *dev, int factor,
     pprintd1(pdf_dev->strm, "%d 0 obj\n", page->PageStreamObjectNumber);
     pprintd1(pdf_dev->strm, "<<\n/Length %d\n>>\nstream\n", stream_pos);
 
-    if (gp_fseek_64(pdf_dev->temp_stream.file, 0, SEEK_SET) != 0) {
+    if (gp_fseek(pdf_dev->temp_stream.file, 0, SEEK_SET) != 0) {
         gs_free_object(dev->memory, data, "pdf_image_print_page(data)");
         gx_downscaler_fin(&ds);
         return_error(gs_error_ioerror);
@@ -1368,7 +1368,7 @@ PCLm_downscale_and_print_page(gx_device_printer *dev, int factor,
 
     stream_puts(pdf_dev->strm, "endstream\nendobj\n");
 
-    if (gp_fseek_64(pdf_dev->temp_stream.file, 0, SEEK_SET) != 0) {
+    if (gp_fseek(pdf_dev->temp_stream.file, 0, SEEK_SET) != 0) {
         gs_free_object(dev->memory, data, "pdf_image_print_page(data)");
         gx_downscaler_fin(&ds);
         return_error(gs_error_ioerror);
@@ -1402,7 +1402,7 @@ PCLm_downscale_and_print_page(gx_device_printer *dev, int factor,
             if (pdf_dev->temp_stream.save != pdf_dev->temp_stream.strm)
                 s_close_filters(&pdf_dev->temp_stream.strm, pdf_dev->temp_stream.save);
             sflush(pdf_dev->temp_stream.strm);
-            stream_pos = gp_ftell_64(pdf_dev->temp_stream.file);
+            stream_pos = gp_ftell(pdf_dev->temp_stream.file);
 
             page->ImageOffset = stell(pdf_dev->strm);
             write_xref_entry(pdf_dev->xref_stream.strm, page->ImageOffset);
@@ -1432,7 +1432,7 @@ PCLm_downscale_and_print_page(gx_device_printer *dev, int factor,
                     stream_puts(pdf_dev->strm, ">>\nstream\n");
                     break;
             }
-            if (gp_fseek_64(pdf_dev->temp_stream.file, 0, SEEK_SET) != 0) {
+            if (gp_fseek(pdf_dev->temp_stream.file, 0, SEEK_SET) != 0) {
                 gs_free_object(dev->memory, data, "pdf_image_print_page(data)");
                 gx_downscaler_fin(&ds);
                 return_error(gs_error_ioerror);
@@ -1454,7 +1454,7 @@ PCLm_downscale_and_print_page(gx_device_printer *dev, int factor,
 
             stream_puts(pdf_dev->strm, "\nendstream\nendobj\n");
 
-            if (gp_fseek_64(pdf_dev->temp_stream.file, 0, SEEK_SET) != 0) {
+            if (gp_fseek(pdf_dev->temp_stream.file, 0, SEEK_SET) != 0) {
                 gs_free_object(dev->memory, data, "pdf_image_print_page(data)");
                 gx_downscaler_fin(&ds);
                 return_error(gs_error_ioerror);
@@ -1502,7 +1502,7 @@ PCLm_downscale_and_print_page(gx_device_printer *dev, int factor,
         if (pdf_dev->temp_stream.save != pdf_dev->temp_stream.strm)
             s_close_filters(&pdf_dev->temp_stream.strm, pdf_dev->temp_stream.save);
         sflush(pdf_dev->temp_stream.strm);
-        stream_pos = gp_ftell_64(pdf_dev->temp_stream.file);
+        stream_pos = gp_ftell(pdf_dev->temp_stream.file);
 
         page->ImageOffset = stell(pdf_dev->strm);
         write_xref_entry(pdf_dev->xref_stream.strm, page->ImageOffset);
@@ -1532,7 +1532,7 @@ PCLm_downscale_and_print_page(gx_device_printer *dev, int factor,
                 stream_puts(pdf_dev->strm, ">>\nstream\n");
                 break;
         }
-        if (gp_fseek_64(pdf_dev->temp_stream.file, 0, SEEK_SET) != 0) {
+        if (gp_fseek(pdf_dev->temp_stream.file, 0, SEEK_SET) != 0) {
             gs_free_object(dev->memory, data, "pdf_image_print_page(data)");
             gx_downscaler_fin(&ds);
             return_error(gs_error_ioerror);
@@ -1553,7 +1553,7 @@ PCLm_downscale_and_print_page(gx_device_printer *dev, int factor,
 
         stream_puts(pdf_dev->strm, "\nendstream\nendobj\n");
 
-        if (gp_fseek_64(pdf_dev->temp_stream.file, 0, SEEK_SET) != 0) {
+        if (gp_fseek(pdf_dev->temp_stream.file, 0, SEEK_SET) != 0) {
             gs_free_object(dev->memory, data, "pdf_image_print_page(data)");
             gx_downscaler_fin(&ds);
             return_error(gs_error_ioerror);
@@ -1574,7 +1574,7 @@ PCLm_downscale_and_print_page(gx_device_printer *dev, int factor,
 }
 
 static int
-PCLm_print_page(gx_device_printer * pdev, FILE * file)
+PCLm_print_page(gx_device_printer * pdev, gp_file * file)
 {
     gx_device_pdf_image *const pdf_dev = (gx_device_pdf_image *)pdev;
     const char *fmt;

@@ -548,7 +548,7 @@ npdl_close(gx_device *pdev)
     gx_device_printer *const ppdev = (gx_device_printer *) pdev;
     int code = gdev_prn_open_printer(pdev, 1);
     if (code >= 0)
-        fputs("\033c1", ppdev->file);
+        gp_fputs("\033c1", ppdev->file);
 
     return gdev_prn_close(pdev);
 }
@@ -571,7 +571,7 @@ npdl_put_params(gx_device * pdev, gs_param_list * plist)
 /* Send the page to the printer.  For speed, compress each scan line,
    since computer-to-printer communication time is often a bottleneck. */
 static int
-npdl_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, int num_copies)
+npdl_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream, int num_copies)
 {
     gx_device_lprn *const lprn = (gx_device_lprn *) pdev;
     int line_size = gdev_prn_raster(pdev);
@@ -587,8 +587,8 @@ npdl_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, int num_copi
     if (pdev->PageCount == 0) {
 
       /* Initialize printer */
-      fputs("\033c1", prn_stream);               /* Software Reset */
-      fputs("\034d240.", prn_stream);            /* Page Printer Mode */
+      gp_fputs("\033c1", prn_stream);               /* Software Reset */
+      gp_fputs("\034d240.", prn_stream);            /* Page Printer Mode */
 
         /* Check paper size */
         switch (npdl_get_paper_size((gx_device *) pdev)) {
@@ -622,58 +622,58 @@ npdl_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, int num_copi
         }
 
         if (lprn->ManualFeed) {
-        fprintf(prn_stream, "\034f%cM0.",
-                (pdev->MediaSize[0] > pdev->MediaSize[1]) ? 'L' : 'P');
+        gp_fprintf(prn_stream, "\034f%cM0.",
+                   (pdev->MediaSize[0] > pdev->MediaSize[1]) ? 'L' : 'P');
         /* Page Orientation  P: Portrait, L: Landscape */
         } else {
-        fprintf(prn_stream, "\034f%c%s.",
-                (pdev->MediaSize[0] > pdev->MediaSize[1]) ? 'L' : 'P',
+        gp_fprintf(prn_stream, "\034f%c%s.",
+                   (pdev->MediaSize[0] > pdev->MediaSize[1]) ? 'L' : 'P',
         /* Page Orientation  P: Portrait, L: Landscape */
-                paper_command);	/* Paper Size */
+                   paper_command);	/* Paper Size */
         }
 
-        fprintf(prn_stream, "\034<1/%d,i.", x_dpi);	/* Image Resolution */
+        gp_fprintf(prn_stream, "\034<1/%d,i.", x_dpi);	/* Image Resolution */
 
         /* Duplex Setting */
         if (pdev->Duplex_set > 0) {
             if (pdev->Duplex) {
                 if (lprn->Tumble == 0)
-                  fprintf(prn_stream, "\034'B,,1,0.");
+                  gp_fprintf(prn_stream, "\034'B,,1,0.");
                 else
-                  fprintf(prn_stream, "\034'B,,2,0.");
+                  gp_fprintf(prn_stream, "\034'B,,2,0.");
             } else
-              fprintf(prn_stream, "\034'S,,,0.");
+              gp_fprintf(prn_stream, "\034'S,,,0.");
         }
     }
 
     if (num_copies > 99)
        num_copies = 99;
-    fprintf(prn_stream, "\034x%d.", num_copies);
+    gp_fprintf(prn_stream, "\034x%d.", num_copies);
 
     lprn->initialized = false;
 
     if (lprn->NegativePrint) {
-        fprintf(prn_stream, "\034e0,0.");	/* move to (0, 0) */
-        fprintf(prn_stream, "\034Y");	/* goto figure mode */
-        fprintf(prn_stream, "SU1,%d,0;", (int)pdev->x_pixels_per_inch);
+        gp_fprintf(prn_stream, "\034e0,0.");	/* move to (0, 0) */
+        gp_fprintf(prn_stream, "\034Y");	/* goto figure mode */
+        gp_fprintf(prn_stream, "SU1,%d,0;", (int)pdev->x_pixels_per_inch);
         /* Setting Printer Unit */
-        fprintf(prn_stream, "SG0,0;");	/* select black color */
-        fprintf(prn_stream, "NP;");	/* begin path */
-        fprintf(prn_stream, "PA%d,0,%d,%d,0,%d;",
-                pdev->width, pdev->width, pdev->height, pdev->height);
+        gp_fprintf(prn_stream, "SG0,0;");	/* select black color */
+        gp_fprintf(prn_stream, "NP;");	/* begin path */
+        gp_fprintf(prn_stream, "PA%d,0,%d,%d,0,%d;",
+                   pdev->width, pdev->width, pdev->height, pdev->height);
         /* draw rectangle */
-        fprintf(prn_stream, "CP");	/* close path */
-        fprintf(prn_stream, "EP;");	/* end path */
-        fprintf(prn_stream, "FL0;");	/* fill path */
-        fprintf(prn_stream, "\034Z");	/* end of figure mode */
-        fprintf(prn_stream, "\034\"R.");	/* `R'eplace Mode */
+        gp_fprintf(prn_stream, "CP");	/* close path */
+        gp_fprintf(prn_stream, "EP;");	/* end path */
+        gp_fprintf(prn_stream, "FL0;");	/* fill path */
+        gp_fprintf(prn_stream, "\034Z");	/* end of figure mode */
+        gp_fprintf(prn_stream, "\034\"R.");	/* `R'eplace Mode */
     }
     code = lprn_print_image(pdev, prn_stream);
     if (code < 0)
         return code;
 
     /* Form Feed */
-    fputs("\014", prn_stream);
+    gp_fputs("\014", prn_stream);
 
     gs_free(pdev->memory->non_gc_memory, lprn->CompBuf, line_size * maxY, sizeof(byte), "npdl_print_page_copies(CompBuf)");
     return 0;
@@ -681,13 +681,13 @@ npdl_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, int num_copi
 
 /* Output data */
 static void
-npdl_image_out(gx_device_printer * pdev, FILE * prn_stream, int x, int y, int width, int height)
+npdl_image_out(gx_device_printer * pdev, gp_file * prn_stream, int x, int y, int width, int height)
 {
     gx_device_lprn *const lprn = (gx_device_lprn *) pdev;
     int num_bytes;
     int x_dpi = (int)(pdev->x_pixels_per_inch);
 
-    fprintf(prn_stream, "\034e%d,%d.", x, y);
+    gp_fprintf(prn_stream, "\034e%d,%d.", x, y);
     /* Data compression */
     num_bytes = mh_compression(lprn->TmpBuf, lprn->CompBuf, width / 8, height);
 
@@ -695,16 +695,16 @@ npdl_image_out(gx_device_printer * pdev, FILE * prn_stream, int x, int y, int wi
      * If the compression ratio >= 100%, send uncompressed data
      */
     if (num_bytes == 0) {
-        fprintf(prn_stream, "\034i%d,%d,0,1/1,1/1,%d,%d.", width,
-                height, width * height / 8, x_dpi);
-        fwrite(lprn->TmpBuf, 1, width * height / 8, prn_stream);
+        gp_fprintf(prn_stream, "\034i%d,%d,0,1/1,1/1,%d,%d.", width,
+                   height, width * height / 8, x_dpi);
+        gp_fwrite(lprn->TmpBuf, 1, width * height / 8, prn_stream);
     }
     /*
      * If the compression ratio < 100%, send compressed data
      */
     else {
-        fprintf(prn_stream, "\034i%d,%d,1,1/1,1/1,%d,%d.", width,
-                height, num_bytes, x_dpi);
-        fwrite(lprn->CompBuf, 1, num_bytes, prn_stream);
+        gp_fprintf(prn_stream, "\034i%d,%d,1,1/1,1/1,%d,%d.", width,
+                   height, num_bytes, x_dpi);
+        gp_fwrite(lprn->CompBuf, 1, num_bytes, prn_stream);
     }
 }

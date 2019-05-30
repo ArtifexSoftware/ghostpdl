@@ -1690,14 +1690,14 @@ static int hash_cos_stream(const cos_object_t *pco0, gs_md5_state_t *md5, gs_md5
 {
     const cos_stream_t *pcs = (const cos_stream_t *)pco0;
     cos_stream_piece_t *pcsp = pcs->pieces;
-    FILE *sfile = pdev->streams.file;
+    gp_file *sfile = pdev->streams.file;
     byte *ptr;
     int64_t position_save;
     int result;
 
     sflush(pdev->strm);
     sflush(pdev->streams.strm);
-    position_save = gp_ftell_64(sfile);
+    position_save = gp_ftell(sfile);
 
     if (!pcsp)
         return -1;
@@ -1709,10 +1709,10 @@ static int hash_cos_stream(const cos_object_t *pco0, gs_md5_state_t *md5, gs_md5
             result = gs_note_error(gs_error_VMerror);
             return result;
         }
-        if (gp_fseek_64(sfile, pcsp->position, SEEK_SET) != 0)
+        if (gp_fseek(sfile, pcsp->position, SEEK_SET) != 0)
 	  return_error(gs_error_ioerror);
 
-        if (fread(ptr, 1, pcsp->size, sfile) != pcsp->size) {
+        if (gp_fread(ptr, 1, pcsp->size, sfile) != pcsp->size) {
             gs_free(pdev->memory, ptr, sizeof (byte), pcsp->size, "hash_cos_stream");
             result = gs_note_error(gs_error_ioerror);
             return result;
@@ -1722,7 +1722,7 @@ static int hash_cos_stream(const cos_object_t *pco0, gs_md5_state_t *md5, gs_md5
         pcsp = pcsp->next;
     }
     gs_md5_finish(md5, (gs_md5_byte_t *)hash);
-    if (gp_fseek_64(sfile, position_save, SEEK_SET) != 0)
+    if (gp_fseek(sfile, position_save, SEEK_SET) != 0)
       return_error(gs_error_ioerror);
 
     return 0;
@@ -1805,7 +1805,7 @@ cos_stream_contents_write(const cos_stream_t *pcs, gx_device_pdf *pdev)
     cos_stream_piece_t *pcsp;
     cos_stream_piece_t *last;
     cos_stream_piece_t *next;
-    FILE *sfile = pdev->streams.file;
+    gp_file *sfile = pdev->streams.file;
     int64_t end_pos;
     bool same_file = (pdev->sbstack_depth > 0);
     int code;
@@ -1829,13 +1829,13 @@ cos_stream_contents_write(const cos_stream_t *pcs, gx_device_pdf *pdev)
             if (code < 0)
                 return code;
         } else {
-            end_pos = gp_ftell_64(sfile);
-            if (gp_fseek_64(sfile, pcsp->position, SEEK_SET) != 0)
+            end_pos = gp_ftell(sfile);
+            if (gp_fseek(sfile, pcsp->position, SEEK_SET) != 0)
 	      return_error(gs_error_ioerror);
             code = pdf_copy_data(s, sfile, pcsp->size, ss);
             if (code < 0)
                 return code;
-            if (gp_fseek_64(sfile, end_pos, SEEK_SET) != 0)
+            if (gp_fseek(sfile, end_pos, SEEK_SET) != 0)
 	      return_error(gs_error_ioerror);
         }
     }

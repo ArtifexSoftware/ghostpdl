@@ -31,7 +31,9 @@ const gx_io_device gs_iodev_calendar = {
       iodev_no_delete_file, iodev_no_rename_file, iodev_no_file_status,
       iodev_no_enumerate_files, NULL, NULL,
       calendar_get_params, iodev_no_put_params
-    }
+    },
+    NULL,
+    NULL
 };
 
 /* Get the date and time. */

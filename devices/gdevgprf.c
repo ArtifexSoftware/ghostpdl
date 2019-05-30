@@ -562,7 +562,7 @@ gprf_get_color_comp_index(gx_device * dev, const char * pname,
 /* ------ Private definitions ------ */
 
 typedef struct {
-    FILE *f;
+    gp_file *f;
 
     int width;
     int height;
@@ -582,7 +582,7 @@ typedef struct {
 } gprf_write_ctx;
 
 static int
-gprf_setup(gprf_write_ctx *xc, gx_device_printer *pdev, FILE *file, int w, int h,
+gprf_setup(gprf_write_ctx *xc, gx_device_printer *pdev, gp_file *file, int w, int h,
            gsicc_link_t *icclink)
 {
     int i;
@@ -664,7 +664,7 @@ static int
 gprf_write(gprf_write_ctx *xc, const byte *buf, int size) {
     int code;
 
-    code = fwrite(buf, 1, size, xc->f);
+    code = gp_fwrite(buf, 1, size, xc->f);
     if (code < size)
         return_error(gs_error_ioerror);
     return 0;
@@ -702,7 +702,7 @@ gprf_write_header(gprf_write_ctx *xc)
     unsigned int offset;
     gx_devn_prn_device *dev = (gx_devn_prn_device *)xc->dev;
 
-    code = (unsigned int)ftell(xc->f);
+    code = (unsigned int)gp_ftell(xc->f);
     if (code < 0)
         return_error(gs_error_ioerror);
 
@@ -872,16 +872,16 @@ gprf_write_header(gprf_write_ctx *xc)
     /* Since MuPDF can't really use the profile and it's optional, at this point
      * we will not spend time writing out the profile. */
     /* Update header pointer to table */
-    code = (unsigned long)ftell(xc->f);
+    code = (unsigned long)gp_ftell(xc->f);
     if (code < 0)
         return_error(gs_error_ioerror);
     xc->table_offset = (unsigned int) code;
-    if (fseek(xc->f, offset+28, SEEK_SET) != 0)
+    if (gp_fseek(xc->f, offset+28, SEEK_SET) != 0)
         return_error (gs_error_ioerror);
     code = gprf_write_32(xc, xc->table_offset);
     if (code < 0)
         return code;
-    if (fseek(xc->f, xc->table_offset, SEEK_SET) != 0)
+    if (gp_fseek(xc->f, xc->table_offset, SEEK_SET) != 0)
         return_error(gs_error_ioerror);
     return 0;
 }
@@ -920,12 +920,12 @@ updateTable(gprf_write_ctx *xc)
     int offset, code;
 
     /* Read the current position of the file */
-    offset = ftell(xc->f);
+    offset = gp_ftell(xc->f);
     if (offset < 0)
         return_error(gs_error_ioerror);
 
     /* Put that value into the table */
-    if (fseek(xc->f, xc->table_offset, SEEK_SET) != 0)
+    if (gp_fseek(xc->f, xc->table_offset, SEEK_SET) != 0)
         return_error(gs_error_ioerror);
 
     code = gprf_write_32(xc, offset);
@@ -939,7 +939,7 @@ updateTable(gprf_write_ctx *xc)
     xc->table_offset += 8;
 
     /* Seek back to where we were before */
-    if (fseek(xc->f, offset, SEEK_SET) != 0)
+    if (gp_fseek(xc->f, offset, SEEK_SET) != 0)
         return_error(gs_error_ioerror);
     return 0;
 }
@@ -1309,7 +1309,7 @@ cleanup:
 }
 
 static int
-gprf_print_page(gx_device_printer *pdev, FILE *file)
+gprf_print_page(gx_device_printer *pdev, gp_file *file)
 {
     int code;
 

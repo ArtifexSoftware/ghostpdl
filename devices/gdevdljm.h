@@ -131,14 +131,14 @@
 /* Send a page to the printer. */
 int dljet_mono_print_page(
         gx_device_printer * pdev,	/* from device-specific _print_page */
-        FILE * prn_stream,		/* ibid. */
+        gp_file * prn_stream,		/* ibid. */
         int dots_per_inch,		/* may be a multiple of y resolution */
         int features,			/* as defined above */
         const char *page_init		/* page initialization string */
                              );
 int dljet_mono_print_page_copies(
         gx_device_printer * pdev,
-        FILE * prn_stream,
+        gp_file * prn_stream,
         int num_copies,
         int dots_per_inch,
         int features,

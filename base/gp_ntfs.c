@@ -56,7 +56,7 @@ gp_set_file_binary(int prnfno, int binary)
 
 /* Set a file into binary or text mode. */
 int
-gp_setmode_binary(FILE * pfile, bool binary)
+gp_setmode_binary_impl(FILE * pfile, bool binary)
 {
     /* Use non-standard fileno that almost all NT compilers offer. */
 #if defined(__STDC__) && !defined(__WATCOMC__)
@@ -152,7 +152,7 @@ static int enumerate_directory_init(gs_memory_t *mem, directory_enum *pden, cons
 /* don't work with the OS call currently used. The '\' escape	*/
 /* character is removed for the 'Find...File' function.		*/
 file_enum *
-gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
+gp_enumerate_files_init_impl(gs_memory_t * mem, const char *pat, uint patlen)
 {
     directory_enum *pden;
     file_enum *pfen;
@@ -226,14 +226,15 @@ gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
 
 /* Enumerate the next file. */
 uint
-gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
+gp_enumerate_files_next_impl(gs_memory_t * mem, file_enum * pfen, char *ptr, uint maxlen)
 {
     directory_enum *new_denum = NULL, *pden = pfen->current;
     int code = 0;
     uint len;
     char outfname[(sizeof(pden->find_data.cFileName)*3+1)/2];
+
     if (pfen->illegal) {
-        gp_enumerate_files_close(pfen);
+        gp_enumerate_files_close(mem, pfen);
         return ~(uint) 0;
     }
 
@@ -256,9 +257,9 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
                 if (pden->previous) {
                     FindClose(pden->find_handle);
                     gs_free_object(pden->memory, pden->pattern,
-                       "gp_enumerate_files_close(pattern)");
+                       "gp_enumerate_files_next(pattern)");
                     new_denum = pden->previous;
-                    gs_free_object(pden->memory, pden, "gp_enumerate_files_close");
+                    gs_free_object(pden->memory, pden, "gp_enumerate_files_next");
                     pden = new_denum;
                     pfen->current = pden;
                     continue;
@@ -273,7 +274,7 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
                 if (pden->previous) {
                     FindClose(pden->find_handle);
                     gs_free_object(pden->memory, pden->pattern,
-                       "gp_enumerate_files_close(pattern)");
+                       "gp_enumerate_files_next(pattern)");
                     new_denum = pden->previous;
                     gs_free_object(pden->memory, pden, "gp_enumerate_files_close");
                     pden = new_denum;
@@ -314,7 +315,7 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
     }
 
     if (code != 0) {		/* All done, clean up. */
-        gp_enumerate_files_close(pfen);
+        gp_enumerate_files_close(mem, pfen);
         return ~(uint) 0;
     }
     wchar_to_utf8(outfname, pden->find_data.cFileName);
@@ -331,23 +332,24 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
 
 /* Clean up the file enumeration. */
 void
-gp_enumerate_files_close(file_enum * pfen)
+gp_enumerate_files_close_impl(gs_memory_t * mem, file_enum * pfen)
 {
     directory_enum *ptenum, *pden = pfen->current;
-    gs_memory_t *mem = pden->memory;
+    gs_memory_t *mem2 = pden->memory;
+    (void)mem;
 
     while (pden) {
         if (pden->find_handle != INVALID_HANDLE_VALUE)
             FindClose(pden->find_handle);
-        gs_free_object(mem, pden->pattern,
+        gs_free_object(mem2, pden->pattern,
                    "gp_enumerate_files_close(pattern)");
         ptenum = pden->previous;
-        gs_free_object(mem, pden, "gp_enumerate_files_close");
+        gs_free_object(mem2, pden, "gp_enumerate_files_close");
         pden = ptenum;
     };
-    gs_free_object(mem, pfen->pattern,
+    gs_free_object(mem2, pfen->pattern,
          "gp_enumerate_files_close(pattern)");
-    gs_free_object(mem, pfen, "gp_enumerate_files_close");
+    gs_free_object(mem2, pfen, "gp_enumerate_files_close");
 }
 
 /* -------------- Helpers for gp_file_name_combine_generic ------------- */

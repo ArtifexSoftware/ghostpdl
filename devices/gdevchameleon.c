@@ -457,15 +457,15 @@ craprgbtocmyk(void  *arg,
 }
 
 static int
-header_4x1(FILE *file, gx_device_chameleon *pcdev)
+header_4x1(gp_file *file, gx_device_chameleon *pcdev)
 {
-    fprintf(file, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 4\nMAXVAL 255\nTUPLTYPE CMYK\nENDHDR\n",
+    gp_fprintf(file, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 4\nMAXVAL 255\nTUPLTYPE CMYK\nENDHDR\n",
         pcdev->width, pcdev->height);
     return 0;
 }
 
 static int
-write_4x1(const byte *data, int n, FILE *file)
+write_4x1(const byte *data, int n, gp_file *file)
 {
     byte b[8];
     n -= 4;
@@ -479,7 +479,7 @@ write_4x1(const byte *data, int n, FILE *file)
         b[5] = (d &   4) ? 255 : 0;
         b[6] = (d &   2) ? 255 : 0;
         b[7] = (d &   1) ? 255 : 0;
-        fwrite(b, 1, 8, file);
+        gp_fwrite(b, 1, 8, file);
         n -= 8;
     }
     if (n == 0) {
@@ -488,23 +488,23 @@ write_4x1(const byte *data, int n, FILE *file)
         b[1] = (d &  64) ? 255 : 0;
         b[2] = (d &  32) ? 255 : 0;
         b[3] = (d &  16) ? 255 : 0;
-        fwrite(b, 1, 4, file);
+        gp_fwrite(b, 1, 4, file);
     }
     return 0;
 }
 
 static int
-header_3x8(FILE *file, gx_device_chameleon *pcdev)
+header_3x8(gp_file *file, gx_device_chameleon *pcdev)
 {
-    fprintf(file, "P6\n%d %d 255\n",
+    gp_fprintf(file, "P6\n%d %d 255\n",
         pcdev->width, pcdev->height);
     return 0;
 }
 
 static int
-do_fwrite(const byte *data, int n, FILE *file)
+do_fwrite(const byte *data, int n, gp_file *file)
 {
-    return fwrite(data, 1, (n+7)>>3, file);
+    return gp_fwrite(data, 1, (n+7)>>3, file);
 }
 
 static int tiff_chunky_post_cm(void  *arg, byte **dst, byte **src, int w, int h,
@@ -552,7 +552,7 @@ static gx_downscaler_ht_t default_ht[4] =
 
 /* Send the page to the printer. */
 static int
-chameleon_print_page(gx_device_printer * pdev, FILE * prn_stream)
+chameleon_print_page(gx_device_printer * pdev, gp_file * prn_stream)
 {				/* Just dump the bits on the file. */
     gx_device_chameleon *pcdev = (gx_device_chameleon *)pdev;
     /* If the file is 'nul', don't even do the writes. */
@@ -568,8 +568,8 @@ chameleon_print_page(gx_device_printer * pdev, FILE * prn_stream)
     int mfs = pcdev->downscale.min_feature_size;
     int pxm = pcdev->output_as_pxm;
     int dst_bpp;
-    int (*write)(const byte *, int, FILE *) = do_fwrite;
-    int (*header)(FILE *, gx_device_chameleon *) = NULL;
+    int (*write)(const byte *, int, gp_file *) = do_fwrite;
+    int (*header)(gp_file *, gx_device_chameleon *) = NULL;
     int bitwidth;
     gx_downscale_cm_fn *col_convert = NULL;
     void *col_convert_arg = NULL;

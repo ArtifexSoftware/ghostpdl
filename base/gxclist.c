@@ -782,10 +782,14 @@ clist_finish_page(gx_device *dev, bool flush)
         crdev->icc_table = NULL;
     }
     if (flush) {
-        if (cdev->page_cfile != 0)
-            cdev->page_info.io_procs->rewind(cdev->page_cfile, true, cdev->page_cfname);
-        if (cdev->page_bfile != 0)
-            cdev->page_info.io_procs->rewind(cdev->page_bfile, true, cdev->page_bfname);
+        if (cdev->page_cfile != 0) {
+            code = cdev->page_info.io_procs->rewind(cdev->page_cfile, true, cdev->page_cfname);
+            if (code < 0) return code;
+        }
+        if (cdev->page_bfile != 0) {
+            code = cdev->page_info.io_procs->rewind(cdev->page_bfile, true, cdev->page_bfname);
+            if (code < 0) return code;
+        }
         cdev->page_info.bfile_end_pos = 0;
         clist_reset_page(cdev);
     } else {

@@ -85,7 +85,7 @@
 
 int GDI_BAND_WIDTH[] = {4768, 4928};
 
-static int gdi_print_page(gx_device_printer *pdev, FILE *prn_stream);
+static int gdi_print_page(gx_device_printer *pdev, gp_file *prn_stream);
 static int gdi_open(gx_device *pdev);
 static int gdi_close(gx_device *pdev);
 
@@ -114,11 +114,11 @@ gx_device_printer far_data gs_samsunggdi_device =
         1,                      /* color bit */
         gdi_print_page);
 
-static FILE *WritePJLHeaderData(gx_device_printer *pdev, FILE *fp);
-static FILE *WriteBandHeader(FILE *fp, unsigned int usBandNo,
+static gp_file *WritePJLHeaderData(gx_device_printer *pdev, gp_file *fp);
+static gp_file *WriteBandHeader(gp_file *fp, unsigned int usBandNo,
                      unsigned char ubCompMode, unsigned int usBandWidth,
                      unsigned int usBandHeight, unsigned long ulBandSize);
-static FILE *WriteTrailerData(FILE *fp);
+static gp_file *WriteTrailerData(gp_file *fp);
 static unsigned long FrameTiffComp(unsigned char *pubDest, unsigned char *pubSrc,
                                unsigned int usTotalLines, unsigned int usBytesPerLine,
                                unsigned char ubMode);
@@ -156,7 +156,7 @@ gdi_close(gx_device *pdev)
         {
               int code = gdev_prn_open_printer(pdev, 1);
               if (code >= 0)
-                    fputs("\033&l0H", ppdev->file) ;
+                    gp_fputs("\033&l0H", ppdev->file) ;
         }
         return gdev_prn_close(pdev);
 }
@@ -170,7 +170,7 @@ gdi_close(gx_device *pdev)
 /* It too needs its coordinate system translated slightly. */
 
 static int
-gdi_print_page(gx_device_printer *pdev, FILE *prn_stream)
+gdi_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {
         int band_width_bytes;
         int band_height;
@@ -320,7 +320,7 @@ gdi_print_page(gx_device_printer *pdev, FILE *prn_stream)
             prn_stream = WriteBandHeader(prn_stream, i, compression_type, (band_width_bytes * 8),
                                          band_height, ul_comp_size);
             /*dprintf2(prn_stream, "[%d] band, size : %d\n", i, ul_tiff_size);*/
-            fwrite(obp, ul_comp_size, 1, prn_stream);
+            gp_fwrite(obp, ul_comp_size, 1, prn_stream);
         }
 
         /* Trailer Output */
@@ -331,7 +331,7 @@ gdi_print_page(gx_device_printer *pdev, FILE *prn_stream)
         return code;
 }
 
-FILE *WritePJLHeaderData(gx_device_printer *pdev, FILE *fp)
+gp_file *WritePJLHeaderData(gx_device_printer *pdev, gp_file *fp)
 {
   unsigned long ulSize;
   char buffer[300];
@@ -378,13 +378,13 @@ FILE *WritePJLHeaderData(gx_device_printer *pdev, FILE *fp)
   strcat(buffer, "$PJL BITMAP START\015\012");
   /* write buffer to file.*/
   ulSize = strlen(buffer);
-  fwrite(buffer, 1, ulSize, fp );
+  gp_fwrite(buffer, 1, ulSize, fp );
   return(fp);
 } /* WritePJLHeaderData()     */
 
-FILE *WriteBandHeader
+gp_file *WriteBandHeader
 (
-FILE *fp,
+gp_file *fp,
 unsigned int  usBandNo,
 unsigned char ubCompMode,
 unsigned int  usBandWidth,
@@ -424,11 +424,11 @@ unsigned long ulBandSize
   buf[i++] = (unsigned char)((usBandWidth >> 8) & 0xff);
   buf[i++] = (unsigned char)(usBandWidth & 0xff);
 
-  fwrite(buf, 1, i, fp);
+  gp_fwrite(buf, 1, i, fp);
   return(fp);
 } /* end of WriteBandHeader()*/
 
-FILE *WriteTrailerData(FILE *fp)
+gp_file *WriteTrailerData(gp_file *fp)
 {
   unsigned long ulSize;
   unsigned long buffer[200];
@@ -442,7 +442,7 @@ FILE *WriteTrailerData(FILE *fp)
   strcat((char*)buffer, "\033%-12345X\015\012");
 
   ulSize = strlen((char*)buffer);
-  fwrite(buffer, 1, ulSize, fp);
+  gp_fwrite(buffer, 1, ulSize, fp);
 
   return(fp);
 } /* WriteTrailerData()*/

@@ -173,7 +173,7 @@ struct stream_s {
      * file streams, which are the most heavily used stream type,
      * we put their state here.
      */
-    FILE *file;			/* file handle for C library */
+    gp_file *file;		/* file handle for C library */
     gs_const_string file_name;	/* file name (optional) -- clients must */
                                 /* access only through procedures */
     uint file_modes;		/* access modes for the file, */
@@ -337,10 +337,10 @@ void s_init_state(stream_state *, const stream_template *, gs_memory_t *);
 int file_prepare_stream(const char *, uint, const char *,
                  uint, stream **, char[4], gs_memory_t *);
 
-/* Set up a file stream on an OS file.  */
-int file_init_stream(stream *, FILE *, const char *, byte *, uint);
+/* Set up a file stream on a gp_file.  */
+int file_init_stream(stream *, gp_file *, const char *, byte *, uint);
 
-/* Open a file stream, optionally on an OS file. */
+/* Open a file stream, optionally on a gp_file. */
 int file_open_stream(const char *, uint, const char *,
                  uint, stream **, gx_io_device *,
                  iodev_proc_fopen_t, gs_memory_t *);
@@ -375,9 +375,9 @@ int file_close_disable(stream *);
 void sread_string(stream *, const byte *, uint),
     sread_string_reusable(stream *, const byte *, uint),
     swrite_string(stream *, byte *, uint);
-void sread_file(stream *, FILE *, byte *, uint),
-    swrite_file(stream *, FILE *, byte *, uint);
-int  sappend_file(stream *, FILE *, byte *, uint);
+void sread_file(stream *, gp_file *, byte *, uint),
+    swrite_file(stream *, gp_file *, byte *, uint);
+int  sappend_file(stream *, gp_file *, byte *, uint);
 
 /* Confine reading to a subfile.  This is primarily for reusable streams. */
 int sread_subfile(stream *s, gs_offset_t start, gs_offset_t length);

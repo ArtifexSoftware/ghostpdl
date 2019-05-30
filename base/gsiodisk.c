@@ -133,7 +133,9 @@ const gx_io_device varname = \
      iodev_no_enumerate_files, /* Only until we have a root location */ \
      diskn_enumerate_next, diskn_enumerate_close, \
      diskn_get_params, diskn_put_params \
-    } \
+    }, \
+    NULL, \
+    NULL \
 }
 
 /*
@@ -166,10 +168,10 @@ gs_private_st_ptrs1(st_diskn_state, struct diskn_state_s, "diskn_state",
 #define InitialNumber 0
 
 typedef struct map_file_enum_s {
-    FILE *  stream;         /* stream to map file */
-    char *  pattern;        /* pattern pointer    */
-    char *  root;           /* root path pointer  */
-    gs_memory_t * memory;   /* memory structure used */
+    gp_file     *stream;   /* stream to map file */
+    char        *pattern;  /* pattern pointer    */
+    char        *root;     /* root path pointer  */
+    gs_memory_t *memory;   /* memory structure used */
 } map_file_enum;
 
 gs_private_st_ptrs2(st_map_file_enum, struct map_file_enum_s, "map_file_enum",
@@ -207,7 +209,7 @@ iodev_diskn_finit(gx_io_device * iodev, gs_memory_t * mem)
 
 static int
 iodev_diskn_fopen(gx_io_device * iodev, const char *fname, const char *access,
-               FILE ** pfile, char *rfname, uint rnamelen)
+                  gp_file ** pfile, char *rfname, uint rnamelen)
 {
     diskn_state * pstate = (diskn_state *)iodev->state;
     char *realname = (char *)gs_alloc_bytes(pstate->memory, gp_file_name_sizeof, "iodev_diskn_fopen(realname)");
@@ -353,8 +355,8 @@ done:
 }
 
 static file_enum *
-diskn_enumerate_files(gx_io_device * iodev, const char *pat, uint patlen,
-             gs_memory_t * mem)
+diskn_enumerate_files(gs_memory_t * mem, gx_io_device * iodev, const char *pat,
+                      uint patlen)
 {
     diskn_state * pstate = (diskn_state *)iodev->state;
     
@@ -362,14 +364,16 @@ diskn_enumerate_files(gx_io_device * iodev, const char *pat, uint patlen,
 }
 
 static void
-diskn_enumerate_close(file_enum *pfen)
+diskn_enumerate_close(gs_memory_t * mem, file_enum *pfen)
 {
+    (void)mem;
     map_file_enum_close((void *)pfen);
 }
 
 static uint
-diskn_enumerate_next(file_enum *pfen, char *ptr, uint maxlen)
+diskn_enumerate_next(gs_memory_t * mem, file_enum *pfen, char *ptr, uint maxlen)
 {
+    (void)mem;
     if (map_file_enum_next((void *)pfen, ptr))
         return strlen(ptr);
     /* If we did not find a file then clean up */
@@ -474,11 +478,11 @@ diskn_put_params(gx_io_device *iodev, gs_param_list *plist)
  * attributes - File attributes string
  * Returns - NULL if error, file structure pointer if no error
  */
-static FILE *
+static gp_file *
 MapFileOpen(gs_memory_t *mem, const char * rootpath, const char * filename, const char * attributes)
 {
     char *fullname = NULL;
-    FILE *f = NULL;
+    gp_file *f = NULL;
     int totlen = strlen(rootpath) + strlen(filename) + 1;
 
     if (totlen >= gp_file_name_sizeof)
@@ -504,7 +508,7 @@ MapFileOpen(gs_memory_t *mem, const char * rootpath, const char * filename, cons
  * Returns 1 if data read, else 0
  */
 static int
-MapFileReadVersion(FILE * mapfile, int * value)
+MapFileReadVersion(gp_file * mapfile, int * value)
 {
     int code = fscanf(mapfile, "FileVersion\t%d\t", value) == 1 ? 1 : 0;
     int c;
@@ -528,7 +532,7 @@ MapFileReadVersion(FILE * mapfile, int * value)
  * value - version number
  */
 static void
-MapFileWriteVersion(FILE * mapfile, int value)
+MapFileWriteVersion(gp_file * mapfile, int value)
 {
     fprintf(mapfile,
         "FileVersion\t%d\tThis file is machine generated.  Do not edit.\n",
@@ -544,7 +548,7 @@ MapFileWriteVersion(FILE * mapfile, int value)
  * Returns 1 if data read, else 0
  */
 static int
-MapFileRead(FILE * mapfile, char * namebuf, int * value)
+MapFileRead(gp_file * mapfile, char * namebuf, int * value)
 {
     int count = 0;
     int c;
@@ -575,7 +579,7 @@ MapFileRead(FILE * mapfile, char * namebuf, int * value)
  * value - file number
  */
 static void
-MapFileWrite(FILE * mapfile, const char * namebuf, int value)
+MapFileWrite(gp_file * mapfile, const char * namebuf, int value)
 {
     fprintf(mapfile, " %d\t%s\n", value, namebuf);
 }
@@ -648,7 +652,7 @@ MapFileRename(gs_memory_t *mem, const char * rootpath, const char * newfilename,
 static int
 MapToFile(gs_memory_t *mem, const char* rootpath, const char* name)
 {
-    FILE * mapfile;
+    gp_file * mapfile;
     int d = -1;
     char *filename = NULL;
     int file_version;

@@ -171,7 +171,7 @@ gdev_fax_init_fax_state(stream_CFE_state *ss, const gx_device_fax *fdev)
  * page; TIFF devices call this once per strip.
  */
 int
-gdev_fax_print_strip(gx_device_printer * pdev, FILE * prn_stream,
+gdev_fax_print_strip(gx_device_printer * pdev, gp_file * prn_stream,
                      const stream_template * temp, stream_state * ss,
                      int width, int row_first, int row_end /* last + 1 */)
 {
@@ -280,7 +280,7 @@ gdev_fax_print_strip(gx_device_printer * pdev, FILE * prn_stream,
                 break;
             case 1:             /* need to write output */
                 if (!nul)
-                    fwrite(out, 1, w.ptr + 1 - out, prn_stream);
+                    gp_fwrite(out, 1, w.ptr + 1 - out, prn_stream);
                 w.ptr = out - 1;
                 break;
         }
@@ -289,7 +289,7 @@ gdev_fax_print_strip(gx_device_printer * pdev, FILE * prn_stream,
   ok:
     /* Write out any remaining output. */
     if (!nul)
-        fwrite(out, 1, w.ptr + 1 - out, prn_stream);
+        gp_fwrite(out, 1, w.ptr + 1 - out, prn_stream);
 
   done:
     /* We only get one strip, we need to free min_feature_data without
@@ -309,7 +309,7 @@ gdev_fax_print_strip(gx_device_printer * pdev, FILE * prn_stream,
 
 /* Print a fax page.  Other fax drivers use this. */
 int
-gdev_fax_print_page(gx_device_printer * pdev, FILE * prn_stream,
+gdev_fax_print_page(gx_device_printer * pdev, gp_file * prn_stream,
                     stream_CFE_state * ss)
 {
     return gdev_fax_print_strip(pdev, prn_stream, &s_CFE_template,
@@ -319,7 +319,7 @@ gdev_fax_print_page(gx_device_printer * pdev, FILE * prn_stream,
 
 /* Print a 1-D Group 3 page. */
 static int
-faxg3_print_page(gx_device_printer * pdev, FILE * prn_stream)
+faxg3_print_page(gx_device_printer * pdev, gp_file * prn_stream)
 {
     stream_CFE_state state;
 
@@ -331,7 +331,7 @@ faxg3_print_page(gx_device_printer * pdev, FILE * prn_stream)
 
 /* Print a 2-D Group 3 page. */
 static int
-faxg32d_print_page(gx_device_printer * pdev, FILE * prn_stream)
+faxg32d_print_page(gx_device_printer * pdev, gp_file * prn_stream)
 {
     stream_CFE_state state;
 
@@ -344,7 +344,7 @@ faxg32d_print_page(gx_device_printer * pdev, FILE * prn_stream)
 
 /* Print a Group 4 page. */
 static int
-faxg4_print_page(gx_device_printer * pdev, FILE * prn_stream)
+faxg4_print_page(gx_device_printer * pdev, gp_file * prn_stream)
 {
     stream_CFE_state state;
 

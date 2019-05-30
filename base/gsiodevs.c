@@ -29,7 +29,9 @@ const char iodev_dtype_stdio[] = "Special";
           iodev_no_delete_file, iodev_no_rename_file, iodev_no_file_status,\
           iodev_no_enumerate_files, NULL, NULL,\
           iodev_no_get_params, iodev_no_put_params\
-        }\
+        }, \
+        NULL, \
+        NULL \
 }
 
 #define STDIO_BUF_SIZE 128
@@ -44,23 +46,32 @@ stdio_close_file(stream *s)
     return 0;
 }
 static int
+noclose(FILE *file)
+{
+    return 0;
+}
+static int
 stdio_open(gx_io_device * iodev, const char *access, stream ** ps,
            gs_memory_t * mem, char rw, FILE *file,
-           void (*srw_file)(stream *, FILE *, byte *, uint))
+           void (*srw_file)(stream *, gp_file *, byte *, uint))
 {
     stream *s;
     byte *buf;
+    gp_file *f;
 
     if (!streq1(access, rw))
         return_error(gs_error_invalidfileaccess);
     s = s_alloc(mem, "stdio_open(stream)");
     buf = gs_alloc_bytes(mem, STDIO_BUF_SIZE, "stdio_open(buffer)");
-    if (s == 0 || buf == 0) {
+    f = gp_file_FILE_alloc(mem);
+    if (s == 0 || buf == 0 || f == NULL) {
         gs_free_object(mem, buf, "stdio_open(buffer)");
         gs_free_object(mem, s, "stdio_open(stream)");
+        gp_file_dealloc(f);
         return_error(gs_error_VMerror);
     }
-    srw_file(s, file, buf, STDIO_BUF_SIZE);
+    gp_file_FILE_set(f, file, noclose);
+    srw_file(s, f, buf, STDIO_BUF_SIZE);
     s->procs.close = stdio_close_file;
     *ps = s;
     return 0;

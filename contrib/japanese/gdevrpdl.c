@@ -31,8 +31,8 @@ static dev_proc_open_device(rpdl_open);
 static dev_proc_close_device(rpdl_close);
 static dev_proc_print_page_copies(rpdl_print_page_copies);
 static dev_proc_image_out(rpdl_image_out);
-static void rpdl_printer_initialize(gx_device_printer * pdev, FILE * prn_stream, int num_copies);
-static void rpdl_paper_set(gx_device_printer * pdev, FILE * prn_stream);
+static void rpdl_printer_initialize(gx_device_printer * pdev, gp_file * prn_stream, int num_copies);
+static void rpdl_paper_set(gx_device_printer * pdev, gp_file * prn_stream);
 
 static gx_device_procs rpdl_prn_procs =
 lprn_procs(rpdl_open, gdev_prn_output_page, rpdl_close);
@@ -67,13 +67,13 @@ rpdl_close(gx_device * pdev)
     if (code < 0)
         return code;
     if (ppdev->Duplex && (pdev->PageCount & 1)) {
-        fprintf(ppdev->file, "\014"); /* Form Feed */
+        gp_fprintf(ppdev->file, "\014"); /* Form Feed */
     }
     return gdev_prn_close(pdev);
 }
 
 static int
-rpdl_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, int num_coipes)
+rpdl_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream, int num_coipes)
 {
     gx_device_lprn *const lprn = (gx_device_lprn *) pdev;
     int code = 0;
@@ -95,14 +95,14 @@ rpdl_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, int num_coip
 
     gs_free(pdev->memory->non_gc_memory, lprn->CompBuf, bpl * 3 / 2 + 1, maxY, "rpdl_print_page_copies(CompBuf)");
 
-    fprintf(prn_stream, "\014");	/* Form  Feed */
+    gp_fprintf(prn_stream, "\014");	/* Form  Feed */
 
     return code;
 }
 
 /* Output data */
 static void
-rpdl_image_out(gx_device_printer * pdev, FILE * prn_stream, int x, int y, int width, int height)
+rpdl_image_out(gx_device_printer * pdev, gp_file * prn_stream, int x, int y, int width, int height)
 {
     gx_device_lprn *const lprn = (gx_device_lprn *) pdev;
     int Len;
@@ -112,23 +112,23 @@ rpdl_image_out(gx_device_printer * pdev, FILE * prn_stream, int x, int y, int wi
     if (Len < width / 8 * height) {
       if (pdev->x_pixels_per_inch == 240) {
         /* Unit Size is 1/720 inch */
-        fprintf(prn_stream, "\033\022G3,%d,%d,,4,%d,%d,%d@",
+        gp_fprintf(prn_stream, "\033\022G3,%d,%d,,4,%d,%d,%d@",
                 width, height, x * 3, y * 3, Len);
       } else {
-        fprintf(prn_stream, "\033\022G3,%d,%d,,4,%d,%d,%d@",
+        gp_fprintf(prn_stream, "\033\022G3,%d,%d,,4,%d,%d,%d@",
                 width, height, x, y, Len);
       }
-      fwrite(lprn->CompBuf, 1, Len, prn_stream);
+      gp_fwrite(lprn->CompBuf, 1, Len, prn_stream);
     } else { /* compression result is bad. So, raw data is used. */
       if (pdev->x_pixels_per_inch == 240) {
         /* Unit Size is 1/720 inch */
-        fprintf(prn_stream, "\033\022G3,%d,%d,,,%d,%d@",
+        gp_fprintf(prn_stream, "\033\022G3,%d,%d,,,%d,%d@",
                 width, height, x * 3, y * 3);
-        fwrite(lprn->TmpBuf, 1, width / 8 * height, prn_stream);
+        gp_fwrite(lprn->TmpBuf, 1, width / 8 * height, prn_stream);
       } else {
-        fprintf(prn_stream, "\033\022G3,%d,%d,,,%d,%d@",
+        gp_fprintf(prn_stream, "\033\022G3,%d,%d,,,%d,%d@",
                 width, height, x, y);
-        fwrite(lprn->TmpBuf, 1, width / 8 * height, prn_stream);
+        gp_fwrite(lprn->TmpBuf, 1, width / 8 * height, prn_stream);
       }
     }
 }
@@ -138,20 +138,20 @@ rpdl_image_out(gx_device_printer * pdev, FILE * prn_stream, int x, int y, int wi
 /* ------ Internal routines ------ */
 
 static void
-rpdl_printer_initialize(gx_device_printer * pdev, FILE * prn_stream, int num_copies)
+rpdl_printer_initialize(gx_device_printer * pdev, gp_file * prn_stream, int num_copies)
 {
     gx_device_lprn *const lprn = (gx_device_lprn *) pdev;
     int xdpi = (int) pdev->x_pixels_per_inch;
 
     /* Initialize */
-    fprintf(prn_stream, "\033\022!@R00\033 "); /* Change to RPDL Mode */
-    fprintf(prn_stream, "\0334"); /* Graphic Mode kaijyo */
-    fprintf(prn_stream, "\033\022YP,2 "); /* Select RPDL Mode */
-    fprintf(prn_stream, "\033\022YB,2 "); /* Printable Area - Maximum */
-    fprintf(prn_stream, "\033\022YK,1 "); /* Left Margin - 0 mm */
-    fprintf(prn_stream, "\033\022YL,1 "); /* Top Margin - 0 mm */
-    fprintf(prn_stream, "\033\022YM,1 "); /* 100 % */
-    fprintf(prn_stream, "\033\022YQ,2 "); /* Page Length - Maximum */
+    gp_fprintf(prn_stream, "\033\022!@R00\033 "); /* Change to RPDL Mode */
+    gp_fprintf(prn_stream, "\0334"); /* Graphic Mode kaijyo */
+    gp_fprintf(prn_stream, "\033\022YP,2 "); /* Select RPDL Mode */
+    gp_fprintf(prn_stream, "\033\022YB,2 "); /* Printable Area - Maximum */
+    gp_fprintf(prn_stream, "\033\022YK,1 "); /* Left Margin - 0 mm */
+    gp_fprintf(prn_stream, "\033\022YL,1 "); /* Top Margin - 0 mm */
+    gp_fprintf(prn_stream, "\033\022YM,1 "); /* 100 % */
+    gp_fprintf(prn_stream, "\033\022YQ,2 "); /* Page Length - Maximum */
 
     /* Paper Size Selection */
     rpdl_paper_set(pdev, prn_stream);
@@ -160,26 +160,26 @@ rpdl_printer_initialize(gx_device_printer * pdev, FILE * prn_stream, int num_cop
     /* Duplex Setting */
     if (pdev->Duplex_set > 0) {
         if (pdev->Duplex) {
-            fprintf(prn_stream, "\033\02261,");
+            gp_fprintf(prn_stream, "\033\02261,");
             if (lprn->Tumble == 0)
-                fprintf(prn_stream, "\033\022YA01,2 ");
+                gp_fprintf(prn_stream, "\033\022YA01,2 ");
             else
-                fprintf(prn_stream, "\033\022YA01,1 ");
+                gp_fprintf(prn_stream, "\033\022YA01,1 ");
         } else
-            fprintf(prn_stream, "\033\02260,");
+            gp_fprintf(prn_stream, "\033\02260,");
     }
 
     /* Resolution and Unit Setting */
     /* Resolution Seting */
     switch(xdpi) {
     case 600:
-      fprintf(prn_stream, "\033\022YA04,3 ");
+      gp_fprintf(prn_stream, "\033\022YA04,3 ");
       break;
     case 400:
-      fprintf(prn_stream, "\033\022YA04,1 ");
+      gp_fprintf(prn_stream, "\033\022YA04,1 ");
       break;
     default: /* 240 dpi */
-      fprintf(prn_stream, "\033\022YA04,2 ");
+      gp_fprintf(prn_stream, "\033\022YA04,2 ");
       break;
     }
 
@@ -187,51 +187,51 @@ rpdl_printer_initialize(gx_device_printer * pdev, FILE * prn_stream, int num_cop
     /* Graphics Unit */
     switch(xdpi) {
     case 600:
-      fprintf(prn_stream, "\033\022YW,3 ");
+      gp_fprintf(prn_stream, "\033\022YW,3 ");
       break;
     case 400:
-      fprintf(prn_stream, "\033\022YW,1 ");
+      gp_fprintf(prn_stream, "\033\022YW,1 ");
       break;
     default: /* 240 dpi */
-      fprintf(prn_stream, "\033\022YW,2 ");
+      gp_fprintf(prn_stream, "\033\022YW,2 ");
       break;
     }
 
     /* Spacing Unit */
     switch(xdpi) {
     case 600:
-      fprintf(prn_stream, "\033\022Q5 ");
+      gp_fprintf(prn_stream, "\033\022Q5 ");
       break;
     case 400:
-      fprintf(prn_stream, "\033\022Q4 ");
+      gp_fprintf(prn_stream, "\033\022Q4 ");
       break;
     default: /* 240 dpi */
-      fprintf(prn_stream, "\033\022Q0 ");
+      gp_fprintf(prn_stream, "\033\022Q0 ");
       break;
     }
 
     /* Cartecian Unit */
     switch(xdpi) {
     case 600:
-      fprintf(prn_stream, "\033\022#4 ");
+      gp_fprintf(prn_stream, "\033\022#4 ");
       break;
     case 400:
-      fprintf(prn_stream, "\033\022#2 ");
+      gp_fprintf(prn_stream, "\033\022#2 ");
       break;
     }
 
     /* Paper Setting */
     if (pdev->MediaSize[0] > pdev->MediaSize[1])
-      fprintf(prn_stream, "\033\022D2 "); /* landscape */
+      gp_fprintf(prn_stream, "\033\022D2 "); /* landscape */
     else
-      fprintf(prn_stream, "\033\022D1 "); /* portrait */
+      gp_fprintf(prn_stream, "\033\022D1 "); /* portrait */
 
     /* Number of Copies */
-    fprintf(prn_stream, "\033\022N%d ", num_copies);
+    gp_fprintf(prn_stream, "\033\022N%d ", num_copies);
 }
 
 static void
-rpdl_paper_set(gx_device_printer * pdev, FILE * prn_stream)
+rpdl_paper_set(gx_device_printer * pdev, gp_file * prn_stream)
 {
     int width, height, w, h;
 
@@ -250,45 +250,45 @@ rpdl_paper_set(gx_device_printer * pdev, FILE * prn_stream)
     }
 
     if (abs(w - 1684) <= TOL && abs(h - 2380) <= TOL) /* A1 */
-      fprintf(prn_stream, "\033\02251@A1R\033 ");
+      gp_fprintf(prn_stream, "\033\02251@A1R\033 ");
     else if (abs(w - 1190) <= TOL && abs(h - 1684) <= TOL) { /* A2 */
-      fprintf(prn_stream, "\033\02251@A2R\033 ");
-      fprintf(prn_stream, "\033\02251@A2\033 ");
+      gp_fprintf(prn_stream, "\033\02251@A2R\033 ");
+      gp_fprintf(prn_stream, "\033\02251@A2\033 ");
     } else if (abs(w - 842) <= TOL && abs(h - 1190) <= TOL) { /* A3 */
-      fprintf(prn_stream, "\033\02251@A3R\033 ");
-      fprintf(prn_stream, "\033\02251@A3\033 ");
+      gp_fprintf(prn_stream, "\033\02251@A3R\033 ");
+      gp_fprintf(prn_stream, "\033\02251@A3\033 ");
     } else if (abs(w - 595) <= TOL && abs(h - 842) <= TOL) { /* A4 */
-      fprintf(prn_stream, "\033\02251@A4R\033 ");
-      fprintf(prn_stream, "\033\02251@A4\033 ");
+      gp_fprintf(prn_stream, "\033\02251@A4R\033 ");
+      gp_fprintf(prn_stream, "\033\02251@A4\033 ");
     } else if (abs(w - 421) <= TOL && abs(h - 595) <= TOL) { /* A5 */
-      fprintf(prn_stream, "\033\02251@A5R\033 ");
-      fprintf(prn_stream, "\033\02251@A5\033 ");
+      gp_fprintf(prn_stream, "\033\02251@A5R\033 ");
+      gp_fprintf(prn_stream, "\033\02251@A5\033 ");
     } else if (abs(w - 297) <= TOL && abs(h - 421) <= TOL) { /* A6 */
-      fprintf(prn_stream, "\033\02251@A6R\033 ");
-      fprintf(prn_stream, "\033\02251@A6\033 ");
+      gp_fprintf(prn_stream, "\033\02251@A6R\033 ");
+      gp_fprintf(prn_stream, "\033\02251@A6\033 ");
     } else if (abs(w - 729) <= TOL && abs(h - 1032) <= TOL) { /* B4 */
-      fprintf(prn_stream, "\033\02251@B4R\033 ");
-      fprintf(prn_stream, "\033\02251@B4\033 ");
+      gp_fprintf(prn_stream, "\033\02251@B4R\033 ");
+      gp_fprintf(prn_stream, "\033\02251@B4\033 ");
     } else if (abs(w - 516) <= TOL && abs(h - 729) <= TOL) { /* B5 */
-      fprintf(prn_stream, "\033\02251@B5R\033 ");
-      fprintf(prn_stream, "\033\02251@B5\033 ");
+      gp_fprintf(prn_stream, "\033\02251@B5R\033 ");
+      gp_fprintf(prn_stream, "\033\02251@B5\033 ");
     } else if (abs(w - 363) <= TOL && abs(h - 516) <= TOL) { /* B6 */
-      fprintf(prn_stream, "\033\02251@A6R\033 ");
-      fprintf(prn_stream, "\033\02251@A6\033 ");
+      gp_fprintf(prn_stream, "\033\02251@A6R\033 ");
+      gp_fprintf(prn_stream, "\033\02251@A6\033 ");
     } else if (abs(w - 612) <= TOL && abs(h - 792) <= TOL) { /* Letter */
-      fprintf(prn_stream, "\033\02251@LTR\033 ");
-      fprintf(prn_stream, "\033\02251@LT\033 ");
+      gp_fprintf(prn_stream, "\033\02251@LTR\033 ");
+      gp_fprintf(prn_stream, "\033\02251@LT\033 ");
     } else if (abs(w - 612) <= TOL && abs(h - 1008) <= TOL) { /* Legal */
-      fprintf(prn_stream, "\033\02251@LGR\033 ");
-      fprintf(prn_stream, "\033\02251@LG\033 ");
+      gp_fprintf(prn_stream, "\033\02251@LGR\033 ");
+      gp_fprintf(prn_stream, "\033\02251@LG\033 ");
     } else if (abs(w - 396) <= TOL && abs(h - 612) <= TOL) { /* Half Letter */
-      fprintf(prn_stream, "\033\02251@HLR\033 ");
-      fprintf(prn_stream, "\033\02251@HLT\033 ");
+      gp_fprintf(prn_stream, "\033\02251@HLR\033 ");
+      gp_fprintf(prn_stream, "\033\02251@HLT\033 ");
     } else if (abs(w - 792) <= TOL && abs(h - 1224) <= TOL) { /* Ledger */
-      fprintf(prn_stream, "\033\02251@DLT\033 ");
-      fprintf(prn_stream, "\033\02251@DLR\033 ");
+      gp_fprintf(prn_stream, "\033\02251@DLT\033 ");
+      gp_fprintf(prn_stream, "\033\02251@DLR\033 ");
     } else { /* Free Size (mm) */
-      fprintf(prn_stream, "\033\022?5%d,%d\033 ",
+      gp_fprintf(prn_stream, "\033\022?5%d,%d\033 ",
               (int)((w * 25.4) / 72),
               (int)((h * 25.4) / 72));
     }

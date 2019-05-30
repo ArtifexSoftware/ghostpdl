@@ -54,7 +54,7 @@
 /* Find permissions for file */
 /* Ideally this would defined in gp.h, but the macroisms mean it has to be
  * defined here. */
-extern int gp_stat(const char *path, struct stat *buf);
+extern int gp_stat(const gs_memory_t *mem, const char *path, struct stat *buf);
 
 /*
  * Some (System V?) systems test for directories in a slightly different way.

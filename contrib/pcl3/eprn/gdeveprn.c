@@ -1009,7 +1009,7 @@ int eprn_open_device(gx_device *device)
   /* Read the page count value */
   if (eprn->pagecount_file != NULL) {
     unsigned long count;
-    if (pcf_getcount(eprn->pagecount_file, &count) == 0)
+    if (pcf_getcount(device->memory, eprn->pagecount_file, &count) == 0)
       device->PageCount = count;
        /* unsigned to signed. The C standard permits
           an implementation to generate an overflow indication if the value is
@@ -1163,7 +1163,7 @@ int eprn_output_page(gx_device *dev, int num_copies, int flush)
   /* On success, record the number of pages printed */
   if (rc == 0 && eprn->pagecount_file != NULL) {
     assert(num_copies > 0);     /* because of signed/unsigned */
-    if (pcf_inccount(eprn->pagecount_file, num_copies) != 0) {
+    if (pcf_inccount(dev->memory, eprn->pagecount_file, num_copies) != 0) {
       /* pcf_inccount() has issued an error message. */
       eprintf(
         "  No further attempts will be made to access the page count file.\n");

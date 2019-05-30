@@ -30,10 +30,10 @@
 
 #if GS_VERSION_MAJOR >= 8
 #define lprn_dev_proc_image_out(proc)\
-    void proc(gx_device_printer *, FILE *, int, int, int, int)
+    void proc(gx_device_printer *, gp_file *, int, int, int, int)
 #else
 #define lprn_dev_proc_image_out(proc)\
-  void proc(P6(gx_device_printer *, FILE *, int, int, int, int))
+  void proc(P6(gx_device_printer *, gp_file *, int, int, int, int))
 #endif
 
 #define dev_proc_image_out(proc) lprn_dev_proc_image_out(proc)
@@ -142,4 +142,4 @@ struct gx_device_lprn_s
 dev_proc_get_params(lprn_get_params);
 dev_proc_put_params(lprn_put_params);
 
-int lprn_print_image(gx_device_printer * pdev, FILE * fp);
+int lprn_print_image(gx_device_printer * pdev, gp_file * fp);

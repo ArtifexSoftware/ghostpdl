@@ -38,7 +38,6 @@ int gp_gettmpdir(char *ptr, int *plen);
  * conditions and symlink attacks.
  */
 FILE *gp_fopentemp(const char *fname, const char *mode);
-FILE *gp_fopentemp_64(const char *fname, const char *mode);
 
 /*
  * Combine a file name with a prefix.

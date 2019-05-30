@@ -114,7 +114,7 @@ static void print_help_trailer(const gs_main_instance *);
 /* ------ Main program ------ */
 
 /* Process the command line with a given instance. */
-static FILE *
+static gp_file *
 gs_main_arg_fopen(const char *fname, void *vminst)
 {
     gs_main_set_lib_paths((gs_main_instance *) vminst);
@@ -309,6 +309,65 @@ gs_main_run_start(gs_main_instance * minst)
     return run_string(minst, "systemdict /start get exec", runFlush, minst->user_errors, NULL, NULL);
 }
 
+/* For the OutputFile permission we have to deal with formattable strings
+   i.e. ones that have "%d" or similar in them. For these we want to replace
+   everything after the %d with a wildcard "*".
+   Since we do this in two places (the -s and -o cases) split it into a
+   function.
+ */
+#define IS_WHITESPACE(c) ((c == 0x20) || (c == 0x9) || (c == 0xD) || (c == 0xA))
+static int
+gs_main_add_outputfile_control_path(gs_memory_t *mem, const char *fname)
+{
+    char *fp, f[gp_file_name_sizeof] = {0};
+    const int percent = 37; /* ASCII code for '%' */
+    const int pipe = 124; /* ASCII code for '|' */
+    const int len = strlen(fname);
+
+    strncpy(f, fname, len);
+    fp = strchr(f, percent);
+    if (fp != NULL) {
+        fp[0] = '*';
+        fp[1] = '\0';
+        fp = f;
+    } else {
+        int i;
+        fp = f;
+        for (i = 0; i < len; i++) {
+            if (f[i] == pipe) {
+               fp = &f[i + 1];
+               /* Because we potentially have to check file permissions at two levels
+                  for the output file (gx_device_open_output_file and the low level
+                  fopen API, if we're using a pipe, we have to add both the full string,
+                  (including the '|', and just the command to which we pipe - since at
+                  the pipe_fopen(), the leading '|' has been stripped.
+                */
+               gs_add_control_path(mem, gs_permit_file_writing, f);
+               break;
+            }
+            if (!IS_WHITESPACE(f[i]))
+                break;
+        }
+    }
+    return gs_add_control_path(mem, gs_permit_file_writing, fp);
+}
+
+static int
+gs_main_add_explicit_control_path(gs_memory_t *mem, const char *arg, gs_path_control_t control)
+{
+    char *p2, *p1 = (char *)arg + 17;
+    const char *lim = arg + strlen(arg);
+    int code = 0;
+
+    while (code >= 0 && p1 < lim && (p2 = strchr(p1, (int)gp_file_name_list_separator)) != NULL) {
+        code = gs_add_control_path_len(mem, gs_permit_file_reading, p1, (int)(p2 - p1));
+        p1 = p2 + 1;
+    }
+    if (p1 < lim)
+        code = gs_add_control_path_len(mem, control, p1, (int)(lim - p1));
+    return code;
+}
+
 /* Process switches.  Return 0 if processed, 1 for unknown switch, */
 /* <0 if error. */
 static int
@@ -428,6 +487,27 @@ run_stdin:
             } else if (strncmp(arg, "saved-pages-test", 16) == 0) {
                 minst->saved_pages_test_mode = true;
                 break;
+            /* Now handle the explicitly added paths to the file control lists */
+            } else if (strncmp(arg, "permit-file-read", 16) == 0) {
+                code = gs_main_add_explicit_control_path(minst->heap, arg, gs_permit_file_reading);
+                if (code < 0) return code;
+                break;
+            } else if (strncmp(arg, "permit-file-write", 17) == 0) {
+                code = gs_main_add_explicit_control_path(minst->heap, arg, gs_permit_file_writing);
+                if (code < 0) return code;
+                break;
+            } else if (strncmp(arg, "permit-file-control", 19) == 0) {
+                code = gs_main_add_explicit_control_path(minst->heap, arg, gs_permit_file_control);
+                if (code < 0) return code;
+                break;
+            } else if (strncmp(arg, "permit-file-all", 15) == 0) {
+                code = gs_main_add_explicit_control_path(minst->heap, arg, gs_permit_file_reading);
+                if (code < 0) return code;
+                code = gs_main_add_explicit_control_path(minst->heap, arg, gs_permit_file_writing);
+                if (code < 0) return code;
+                code = gs_main_add_explicit_control_path(minst->heap, arg, gs_permit_file_control);
+                if (code < 0) return code;
+                break;
             }
             /* FALLTHROUGH */
         case '+':
@@ -514,7 +594,10 @@ run_stdin:
             }
         case 'f':               /* run file of arbitrary name */
             if (*arg != 0) {
-                code = argproc(minst, arg);
+                code = gs_add_control_path(minst->heap, gs_permit_file_reading, arg);
+                if (code > 0)
+                    code = argproc(minst, arg);
+                (void)gs_remove_control_path(minst->heap, gs_permit_file_reading, arg);
                 if (code < 0)
                     return code;
                 /* If in saved_pages_test_mode, print and flush previous job before the next file */
@@ -549,7 +632,12 @@ run_stdin:
                 uint bsize = minst->run_buffer_size;
 
                 minst->run_buffer_size = 1;
-                code = argproc(minst, arg);
+                code = gs_add_control_path(minst->heap, gs_permit_file_reading, arg);
+                if (code > 0)
+                    code = argproc(minst, arg);
+                (void)gs_remove_control_path(minst->heap, gs_permit_file_reading, arg);
+                if (code < 0)
+                    return code;
                 minst->run_buffer_size = bsize;
                 if (code < 0)
                     return code;
@@ -671,6 +759,12 @@ run_stdin:
                     adef = arg;
                 if ((code = gs_main_init1(minst)) < 0)
                     return code;
+
+                if (strlen(adef) > 0) {
+                    code = gs_main_add_outputfile_control_path(minst->heap, adef);
+                    if (code < 0) return code;
+                }
+
                 ialloc_set_space(idmemory, avm_system);
                 len = strlen(adef);
                 str = ialloc_string(len, "-o");
@@ -755,6 +849,12 @@ run_stdin:
                     uint space = icurrent_space;
 
                     *eqp++ = 0;
+
+                    if (strlen(adef) == 10 && strncmp(adef, "OutputFile", 10) == 0 && strlen(eqp) > 0) {
+                        code = gs_main_add_outputfile_control_path(minst->heap, eqp);
+                        if (code < 0) return code;
+                    }
+
                     ialloc_set_space(idmemory, avm_system);
                     if (isd) {
                         int num, i;
@@ -922,22 +1022,31 @@ esc_strcat(char *dest, const char *src)
 static int
 argproc(gs_main_instance * minst, const char *arg)
 {
-    int code = gs_main_init1(minst);            /* need i_ctx_p to proceed */
+    int code1, code = gs_main_init1(minst);            /* need i_ctx_p to proceed */
 
     if (code < 0)
         return code;
+
+    code = gs_add_control_path(minst->heap, gs_permit_file_reading, arg);
+    if (code < 0) return code;
+
     if (minst->run_buffer_size) {
         /* Run file with run_string. */
-        return run_buffered(minst, arg);
+        code = run_buffered(minst, arg);
     } else {
         /* Run file directly in the normal way. */
-        return runarg(minst, "", arg, ".runfile", runInit | runFlush, minst->user_errors, NULL, NULL);
+        code = runarg(minst, "", arg, ".runfile", runInit | runFlush, minst->user_errors, NULL, NULL);
     }
+
+    code1 = gs_remove_control_path(minst->heap, gs_permit_file_reading, arg);
+    if (code >= 0 && code1 < 0) code = code1;
+
+    return code;
 }
 static int
 run_buffered(gs_main_instance * minst, const char *arg)
 {
-    FILE *in = gp_fopen(arg, gp_fmode_rb);
+    gp_file *in = gp_fopen(minst->heap, arg, gp_fmode_rb);
     int exit_code;
     ref error_object;
     int code;
@@ -948,7 +1057,7 @@ run_buffered(gs_main_instance * minst, const char *arg)
     }
     code = gs_main_init2(minst);
     if (code < 0) {
-        fclose(in);
+        gp_fclose(in);
         return code;
     }
     code = gs_main_run_string_begin(minst, minst->user_errors,
@@ -958,7 +1067,7 @@ run_buffered(gs_main_instance * minst, const char *arg)
         int count;
 
         code = gs_error_NeedInput;
-        while ((count = fread(buf, 1, minst->run_buffer_size, in)) > 0) {
+        while ((count = gp_fread(buf, 1, minst->run_buffer_size, in)) > 0) {
             code = gs_main_run_string_continue(minst, buf, count,
                                                minst->user_errors,
                                                &exit_code, &error_object);
@@ -970,7 +1079,7 @@ run_buffered(gs_main_instance * minst, const char *arg)
                                           &exit_code, &error_object);
         }
     }
-    fclose(in);
+    gp_fclose(in);
     zflush(minst->i_ctx_p);
     zflushpage(minst->i_ctx_p);
     return run_finish(minst, code, exit_code, &error_object);
@@ -1087,20 +1196,21 @@ try_stdout_redirect(gs_main_instance * minst,
          * or stderr, close it
          */
         if (core->fstdout2
-            && (core->fstdout2 != core->fstdout)
-            && (core->fstdout2 != core->fstderr)) {
-            fclose(core->fstdout2);
-            core->fstdout2 = (FILE *)NULL;
+            && (gp_get_file(core->fstdout2) != core->fstdout)
+            && (gp_get_file(core->fstdout2) != core->fstderr)) {
+            gp_fclose(core->fstdout2);
+            core->fstdout2 = NULL;
         }
         /* If stdout is being redirected, set minst->fstdout2 */
         if ( (filename != 0) && strlen(filename) &&
             strcmp(filename, "-") && strcmp(filename, "%stdout") ) {
             if (strcmp(filename, "%stderr") == 0) {
                 core->stdout_to_stderr = 1;
+            } else {
+                core->fstdout2 = gp_fopen(minst->heap, filename, "w");
+                if (core->fstdout2 == NULL)
+                    return_error(gs_error_invalidfileaccess);
             }
-            else if ((core->fstdout2 =
-                      gp_fopen(filename, "w")) == (FILE *)NULL)
-                return_error(gs_error_invalidfileaccess);
             core->stdout_is_redirected = 1;
         }
         return 0;

@@ -83,7 +83,7 @@ typedef struct pjl_parser_state_s
     int line_size;
     int bytes_to_write;         /* data processing by fsdownload */
     int bytes_to_read;          /* data processed by fsupload */
-    FILE *fp;                   /* fsdownload or fsupload file */
+    gp_file *fp;                   /* fsdownload or fsupload file */
     int pos;                    /* current position in line */
     pjl_envir_var_t *defaults;  /* the default environment (i.e. set default) */
     pjl_envir_var_t *envir;     /* the pjl environment */
@@ -466,11 +466,11 @@ pjl_check_font_path(char *path_list, gs_memory_t * mem)
         if (gs_strlcat(path_and_pattern, pattern, sizeof(path_and_pattern)) >= sizeof(path_and_pattern))
             continue;
 
-        fe = gs_enumerate_files_init(path_and_pattern,
-                                     strlen(path_and_pattern), mem);
+        fe = gs_enumerate_files_init(mem, path_and_pattern,
+                                     strlen(path_and_pattern));
         if (fe == NULL
             ||
-            (gs_enumerate_files_next(fe, fontfilename, PJL_PATH_NAME_LENGTH))
+            (gs_enumerate_files_next(mem, fe, fontfilename, PJL_PATH_NAME_LENGTH))
             == -1) {
             pathp = NULL;
         } else {
@@ -480,7 +480,7 @@ pjl_check_font_path(char *path_list, gs_memory_t * mem)
                directory */
             while (1) {
                 int fstatus =
-                    (int)gs_enumerate_files_next(fe, fontfilename,
+                    (int)gs_enumerate_files_next(mem, fe, fontfilename,
                                                  PJL_PATH_NAME_LENGTH);
                 /* we don't care if the file does not fit (return +1) */
                 if (fstatus == -1)
@@ -604,21 +604,21 @@ pjl_verify_file_operation(pjl_parser_state_t * pst, char *fname)
 static void
 pjl_warn_exists(const gs_memory_t * mem, char *fname)
 {
-    FILE *fpdownload;
+    gp_file *fpdownload;
 
     /* issue a warning if the file exists */
-    if ((fpdownload = gp_fopen(fname, gp_fmode_rb)) != NULL) {
-        fclose(fpdownload);
+    if ((fpdownload = gp_fopen(mem, fname, gp_fmode_rb)) != NULL) {
+        gp_fclose(fpdownload);
         dmprintf1(mem, "warning file exists overwriting %s\n", fname);
     }
 }
 
 /* open a file for writing or appending */
-static FILE *
+static gp_file *
 pjl_setup_file_for_writing(pjl_parser_state_t * pst, char *pathname, int size,
                            bool append)
 {
-    FILE *fp;
+    gp_file *fp;
     char fname[MAXPATHLEN];
 
     pjl_parsed_filename_to_string(fname, pathname);
@@ -631,7 +631,7 @@ pjl_setup_file_for_writing(pjl_parser_state_t * pst, char *pathname, int size,
         strcpy(fmode, gp_fmode_wb);
         if (append)
             strcat(fmode, "+");
-        if ((fp = gp_fopen(fname, gp_fmode_wb)) == NULL) {
+        if ((fp = gp_fopen(pst->mem, fname, gp_fmode_wb)) == NULL) {
             dmprintf(pst->mem, "warning file open for writing failed\n");
             return NULL;
         }
@@ -644,7 +644,7 @@ static int
 pjl_set_fs_download_state(pjl_parser_state_t * pst, char *pathname, int size)
 {
     /* somethink is wrong if the state indicates we are already writing to a file */
-    FILE *fp =
+    gp_file *fp =
         pjl_setup_file_for_writing(pst, pathname, size, false /* append */ );
     if (fp == NULL)
         return -1;
@@ -658,7 +658,7 @@ pjl_set_fs_download_state(pjl_parser_state_t * pst, char *pathname, int size)
 static int
 pjl_set_append_state(pjl_parser_state_t * pst, char *pathname, int size)
 {
-    FILE *fp =
+    gp_file *fp =
         pjl_setup_file_for_writing(pst, pathname, size, true /* append */ );
     if (fp == NULL)
         return -1;
@@ -732,12 +732,11 @@ pjl_search_for_file(pjl_parser_state_t * pst, char *pathname, char *filename,
     /* should check length */
     strcpy(fontfilename, pathname);
     strcat(fontfilename, "/*");
-    fe = gs_enumerate_files_init(fontfilename, strlen(fontfilename),
-                                 pst->mem);
+    fe = gs_enumerate_files_init(pst->mem, fontfilename, strlen(fontfilename));
     if (fe) {
         do {
             uint fstatus =
-                gs_enumerate_files_next(fe, fontfilename,
+                gs_enumerate_files_next(pst->mem, fe, fontfilename,
                                         PJL_PATH_NAME_LENGTH);
             /* done */
             if (fstatus == ~(uint) 0)
@@ -767,12 +766,11 @@ pjl_fsdirlist(pjl_parser_state_t * pst, char *pathname, int entry, int count)
     pjl_parsed_filename_to_string(fontfilename, pathname);
     /* if this is a directory add * for the directory listing NB fix */
     strcat(fontfilename, "/*");
-    fe = gs_enumerate_files_init(fontfilename, strlen(fontfilename),
-                                 pst->mem);
+    fe = gs_enumerate_files_init(pst->mem, fontfilename, strlen(fontfilename));
     if (fe) {
         do {
             uint fstatus =
-                gs_enumerate_files_next(fe, fontfilename,
+                gs_enumerate_files_next(pst->mem, fe, fontfilename,
                                         PJL_PATH_NAME_LENGTH);
             /* done */
             if (fstatus == ~(uint) 0)
@@ -795,15 +793,15 @@ pjl_write_remaining_data(pjl_parser_state_t * pst, const byte ** pptr,
     uint avail = plimit - ptr;
     uint bytes_written = min(avail, pst->bytes_to_write);
 
-    if (fwrite(ptr, 1, bytes_written, pst->fp) != bytes_written) {
+    if (gp_fwrite(ptr, 1, bytes_written, pst->fp) != bytes_written) {
         /* try to close the file before failing */
-        fclose(pst->fp);
+        gp_fclose(pst->fp);
         pst->fp = NULL;
         return -1;
     }
     pst->bytes_to_write -= bytes_written;
     if (pst->bytes_to_write == 0) {     /* done */
-        fclose(pst->fp);
+        gp_fclose(pst->fp);
         pst->fp = NULL;
     }
     /* update stream pointer */
@@ -1116,7 +1114,7 @@ pjl_parse_and_process_line(pjl_parser_state_t * pst)
 }
 
 /* get a file from 0: or 1: volume */
-static FILE *
+static gp_file *
 get_fp(pjl_parser_state_t * pst, char *name)
 {
     char result[MAXPATHLEN];
@@ -1130,7 +1128,7 @@ get_fp(pjl_parser_state_t * pst, char *name)
         if (result[0] == '\0')
             return 0;
     }
-    return gp_fopen(result, gp_fmode_rb);
+    return gp_fopen(pst->mem, result, gp_fmode_rb);
 }
 
 /* scan for a named resoource in the pcl sandbox 0: or 1: and return
@@ -1140,13 +1138,13 @@ long int
 pjl_get_named_resource_size(pjl_parser_state_t * pst, char *name)
 {
     long int size;
-    FILE *fp = get_fp(pst, name);
+    gp_file *fp = get_fp(pst, name);
 
     if (fp == NULL)
         return 0;
-    fseek(fp, 0L, SEEK_END);
-    size = ftell(fp);
-    fclose(fp);
+    gp_fseek(fp, 0L, SEEK_END);
+    size = gp_ftell(fp);
+    gp_fclose(fp);
     return size;
 }
 
@@ -1157,17 +1155,17 @@ pjl_get_named_resource(pjl_parser_state * pst, char *name, byte * data)
 {
     long int size;
     int code = 0;
-    FILE *fp = get_fp(pst, name);
+    gp_file *fp = get_fp(pst, name);
 
     if (fp == NULL)
         return 0;
-    fseek(fp, 0L, SEEK_END);
-    size = ftell(fp);
-    rewind(fp);
-    if (size < 0 || (size != fread(data, 1, size, fp))) {
+    gp_fseek(fp, 0L, SEEK_END);
+    size = gp_ftell(fp);
+    gp_rewind(fp);
+    if (size < 0 || (size != gp_fread(data, 1, size, fp))) {
         code = -1;
     }
-    fclose(fp);
+    gp_fclose(fp);
     return code;
 }
 

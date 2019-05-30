@@ -1716,6 +1716,95 @@ currentdict /jp2_csp_dict .undef
   /DecodeParms exch put                  % <resdict>
 } bind executeonly def
 
+% Add a key-value pair to the all the /DecodeParms
+% dictionaries (i.e. handle the array)
+% Copy the objects to avoid spoiling shared ones.
+% <resdict> <patch dict> -> <resdict>
+/add-to-all-params {
+  1 index                         % <resdict> <patch dict> <resdict>
+  /Filter knownoget
+  {                               % <resdict> <patch dict> </name or [array]>
+    dup type /arraytype eq
+    {
+      length                      % <resdict> <patch dict> <len>
+      dup 0 gt
+      {
+        2 index /DecodeParms
+        knownoget
+        {
+          oforce_recursive          % resolve indirect references
+          exch pop                  % <resdict> <patch dict> [array]
+          [
+            exch
+            {
+              dup type /dicttype eq
+              {
+                mark exch {} forall .dicttomark
+              }
+              {
+                pop 1 dict
+              } ifelse
+            } forall
+          ]                         % <resdict> <patch dict> [array]
+        }
+        {                           % <resdict> <patch dict> <len>
+          % create an array of dictionaries
+          [
+            0 1 4 -1 roll 1 sub
+            { pop 1 dict } for
+          ]
+                                    % <resdict> <patch dict> [array]
+        } ifelse
+        dup                         % <resdict> <patch dict> [array] [array]
+        {                           % <resdict> <patch dict> [array] [dict]
+          2 index                   % <resdict> <patch dict> [array] [dict] <patch dict>
+          {                         % <resdict> <patch dict> [array] [dict] </key> <value>
+            2 index                 % <resdict> <patch dict> [array] [dict] </key> <value> [dict]
+            3 1 roll
+            put
+          } forall
+          pop
+        } forall
+                                    % <resdict> <patch dict> [array]
+        exch pop
+                                  % <resdict> [dict/array]
+        1 index exch /DecodeParms exch put
+      }
+      {
+        pop pop
+      } ifelse
+    }
+    {                             % <resdict> <patch dict> </name>
+      pop
+      1 index
+      /DecodeParms knownoget
+      {
+        oforce_recursive
+        dup type /dicttype eq
+        {
+          mark exch {} forall .dicttomark
+        }
+        {
+          pop 1 dict
+        } ifelse
+      }
+      {
+        1 dict
+      } ifelse                    % <resdict> <patch dict> [dict]
+
+      1 index                     % <resdict> <patch dict> [dict] <patch dict>
+      {                           % <resdict> <patch dict> [dict] </key> <value>
+        2 index
+        3 1 roll put
+      } forall
+      exch pop
+                                  % <resdict> [dict/array]
+      1 index exch /DecodeParms exch put
+    } ifelse
+  }
+  {pop} ifelse
+} bind def
+
 /last-ditch-bpc-csp {
   currentdict /BitsPerComponent oknown not {
     (   **** Error: image has no /BitsPerComponent key; assuming 8 bit.\n)
@@ -1835,6 +1924,9 @@ currentdict /jp2_csp_dict .undef
                 % Even though we're going to read data,
                 % pass false to resolvestream so that
                 % it doesn't try to use Length (which may not be present).
+
+    % Bug 701083: We add a /ErrsAsEOD key to the DecodeParms here too.
+    <</ErrsAsEOD //true>> //add-to-all-params exec
     //false resolvestream /DataSource exch def
     //true
   } {
@@ -1981,89 +2073,10 @@ currentdict /jp2_csp_dict .undef
     % filter, create one and add a /Height key. This is to solve the problem
     % in Bug #695116 where a JPEG image has a bad height, which is later
     % fixed up using a DNL marker. By placing the image height from the
-    % PDF in the DeoceParms we cna use it in the DCTDecode filter to
+    % PDF in the DecodeParms we can use it in the DCTDecode filter to
     % work around this.
-    dup /Filter knownoget {              % <<stream dict>> /name or [array]
-      dup type /arraytype eq {
-                                         % <<stream dict>> [array of names]
-        length                           % <<stream dict>> number of filters
-        1 index /DecodeParms knownoget {
-          exch pop                       % drop length of Filter array, the DecodeParams has 1 entry per filter
-                                         % <<stream dict>> [array of decodeparams]
-        } {
-                                         % No deocde params, we must make an array of them
-                                         % <<stream dict>> number of filters
-          array                          % <<stream dict>> []
-          dup                            % <<stream dict>> [] []
-          2 index /DecodeParms exch      % <<stream dict>> [] [] /DecodeParms <<stream dict>>
-          3 1 roll                       % <<stream dict>> <<stream dict>> [] /DecodeParms
-          exch put                       % <<stream dict>> []
-        } ifelse
-        dup length 1 sub                 % <<stream dict>> [] arraylength-1
-        0 1 3 -1 roll                    % <<stream dict>> [] 0 1 arraylength-1
-        {                                % <<stream dict>> [] loopcount
-          1 index                        % <<stream dict>> [] loopcount []
-          2 copy                         % <<stream dict>> [] loopcount [] loopcount []
-          exch
-          get                            % <<stream dict>> [] loopcount [] <<>> or -null-
-          dup //null eq {
-            pop exch                     % <<stream dict>> [] [] loopcount
-            <</Height
-            5 index /Height oget         % <<stream dict>> [] [] loopcount << /Height Height
-            round cvi
-            >>
-            put                          % <<stream dict>> []
-          }{                             %
-            oforce_recursive             % resolve any indirect references
-            dup type /dicttype eq {
-                                         % <<stream dict>> [] loopcount [] <<>>
-              /Height                    % <<stream dict>> [] loopcount [] <<>> /Height
-              5 index /Height oget       % <<stream dict>> [] loopcount [] <<>> /Height Height
-              round
-              cvi
-              put pop pop                % <<stream dict>> []
-            }{
-              %% bogus entry, throw it away and create a new one
-              pop exch                   % <<stream dict>> [] loopcount []
-              <</Height
-              5 index /Height oget       % <<stream dict>> [] [] loopcount << /Height Height
-              round cvi
-              >>
-              put                        % <<stream dict>> []
-            } ifelse
-          }ifelse
-        } for
-        pop                              % <<stream dict>>
-      }{
-        pop                              % <<stream dict>>
-        dup /DecodeParms knownoget {
-          oforce_recursive               % resolve any indirect references
-          dup type /dicttype eq {
-                                         % <<stream dict>> <<decode parms dict>>
-            /Height 2 index              % <<stream dict>> <<decode parms dict>> /Height <<stream dict>>
-            /Height oget                  % <<stream dict>> <<decode parms dict>> /Height ImageHeight
-            round cvi
-            put                          % <<stream dict>>
-          }{
-            %% bogus entry, throw it away and create a new one
-            pop                     % <<image dict>> <<stream dict>> []
-            <</Height                    % <<stream dict>> <<image dict>> << /Height
-            2 index /Height oget         % <<stream dict>> <<image dict>> << /Height Height
-            round cvi
-            >>
-            1 index exch /DecodeParms exch put       % <<stream dict> <<image dict>>
-          } ifelse
-        }{
-          dup                            % <<stream dict>> <<stream dict>>
-          /DecodeParms <</Height         % <<stream dict>> <<stream dict>> /DecodeParms << /Height
-          3 index                        % <<stream dict>> <<stream dict>> /DecodeParms << /Height <<stream dict>>
-          /Height oget
-          round cvi
-          >>                             % <<stream dict>> <<stream dict>> /DecodeParms << /Height ImageHeight>>
-          put                            % <<stream dict>>
-        }ifelse
-      }ifelse
-    } if
+    % Bug 701083: We add a /ErrsAsEOD key to the DecodeParms here too.
+    << /Height 2 index /Height oget round cvi /ErrsAsEOD //true >>  //add-to-all-params exec
 
                 % Even though we're going to read data,
                 % pass false to resolvestream so that
@@ -2074,6 +2087,7 @@ currentdict /jp2_csp_dict .undef
 } bind executeonly def
 
 currentdict /add-to-last-param undef
+currentdict /add-to-all-params undef
 currentdict /last-ditch-bpc-csp undef
 
 /DoImage {

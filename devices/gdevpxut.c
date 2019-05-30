@@ -217,11 +217,11 @@ px_write_select_media(stream *s, const gx_device *dev,
 }
 
 /*
- * Write the file trailer.  Note that this takes a FILE *, not a stream *,
+ * Write the file trailer.  Note that this takes a gp_file *, not a stream *,
  * since it may be called after the stream is closed.
  */
 int
-px_write_file_trailer(FILE *file)
+px_write_file_trailer(gp_file *file)
 {
     static const byte file_trailer[] = {
         pxtCloseDataSource,
@@ -229,7 +229,7 @@ px_write_file_trailer(FILE *file)
         033, '%', '-', '1', '2', '3', '4', '5', 'X'
     };
 
-    fwrite(file_trailer, 1, sizeof(file_trailer), file);
+    gp_fwrite(file_trailer, 1, sizeof(file_trailer), file);
     return 0;
 }
 

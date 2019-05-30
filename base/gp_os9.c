@@ -110,14 +110,19 @@ gp_get_usertime(long *pdt)
 /* "|command" opens an output pipe. */
 /* Return NULL if the connection could not be opened. */
 FILE *
-gp_open_printer(const gs_memory_t *mem,
-                      char         fname[gp_file_name_sizeof],
-                      int          binary_mode)
+gp_open_printer_impl(gs_memory_t *mem,
+                     char         fname[gp_file_name_sizeof],
+                     int         *binary_mode,
+                     void         (**close)(FILE *))
 {
-    return
-        (strlen(fname) == 0 ? 0 :
-         fname[0] == '|' ? popen(fname + 1, "w") :
-         rbfopen(fname, "w"));
+    int pipe;
+
+    if (fname[0] == 0)
+        return NULL;
+    pipe = fname[0] == '|';
+    *close = (pipe ? pclose : fclose);
+    return (pipe ? popen(fname + 1, "w") :
+                   rbfopen(fname, "w"));
 }
 
 FILE *
@@ -131,19 +136,16 @@ rbfopen(char *fname, char *perm)
 
 /* Close the connection to the printer. */
 void
-gp_close_printer(const gs_memory_t *mem, FILE * pfile, const char *fname)
+gp_close_printer(gp_file *pfile, const char *fname)
 {
-    if (fname[0] == '|')
-        pclose(pfile);
-    else
-        fclose(pfile);
+    gp_fclose(pfile);
 }
 
 /* ------ File accessing -------- */
 
 /* Set a file into binary or text mode. */
 int
-gp_setmode_binary(FILE * pfile, bool binary)
+gp_setmode_binary_impl(FILE * pfile, bool binary)
 {
     if (binary)
         file->_flag |= _RBF;

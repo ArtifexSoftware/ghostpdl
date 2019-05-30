@@ -47,7 +47,7 @@ prn_device(prn_bg_procs, "coslwxl",	/* The print_page proc is compatible with al
 
 /* Send the page to the printer. */
 static int
-coslw_print_page(gx_device_printer * pdev, FILE * prn_stream)
+coslw_print_page(gx_device_printer * pdev, gp_file * prn_stream)
 {
     int line_size = gdev_mem_bytes_per_scan_line((gx_device *) pdev);
     int line_size_words = (line_size + W - 1) / W;
@@ -111,7 +111,7 @@ coslw_print_page(gx_device_printer * pdev, FILE * prn_stream)
                 int this_blank = 255;
                 if (num_blank_lines < this_blank)
                     this_blank = num_blank_lines;
-                fprintf(prn_stream, "\033f\001%c", this_blank);
+                gp_fprintf(prn_stream, "\033f\001%c", this_blank);
                 num_blank_lines -= this_blank;
             }
 
@@ -125,18 +125,18 @@ coslw_print_page(gx_device_printer * pdev, FILE * prn_stream)
             /* Possible change the bytes per line */
             if (bytes_per_line != out_count)
             {
-                fprintf(prn_stream, "\033D%c", out_count);
+                gp_fprintf(prn_stream, "\033D%c", out_count);
                 bytes_per_line = out_count;
             }
 
             /* Transfer the data */
-            fputs("\026", prn_stream);
-            fwrite(out_data, sizeof(byte), out_count, prn_stream);
+            gp_fputs("\026", prn_stream);
+            gp_fwrite(out_data, sizeof(byte), out_count, prn_stream);
         }
     }
 
     /* eject page */
-    fputs("\033E", prn_stream);
+    gp_fputs("\033E", prn_stream);
 
     /* free temporary storage */
     gs_free(pdev->memory, (char *)storage, storage_size_words, W, "coslw_print_page");

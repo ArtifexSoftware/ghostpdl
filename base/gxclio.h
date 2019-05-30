@@ -85,7 +85,7 @@ struct clist_io_procs_s {
      * implementation has to close and reopen the file.  (clist_fseek with
      * offset = 0 and mode = SEEK_END indicates we are about to append.)
      */
-    void (*rewind)(clist_file_ptr cf, bool discard_data, const char *fname);
+    int (*rewind)(clist_file_ptr cf, bool discard_data, const char *fname);
 
     int (*fseek)(clist_file_ptr cf, int64_t offset, int mode, const char *fname);
 };

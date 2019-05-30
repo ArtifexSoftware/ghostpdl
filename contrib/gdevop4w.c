@@ -140,8 +140,8 @@ oki4w_close(gx_device *pdev)
 /*
         if ( pdev->Duplex_set >= 0 && pdev->Duplex )
           {	gdev_prn_open_printer(pdev, 1);
-                fputs("\033$B\033\177", ppdev->file);
-                fputc(0, ppdev->file);
+                gp_fputs("\033$B\033\177", ppdev->file);
+                gp_fputc(0, ppdev->file);
                 return gdev_prn_close_printer(pdev);
           }
 */
@@ -228,7 +228,7 @@ oki_compress(byte *src, byte *dst, int count)
 /* Send the page to the printer.  For speed, compress each scan line, */
 /* since computer-to-printer communication time is often a bottleneck. */
 static int
-oki4w_print_page(gx_device_printer *pdev, FILE *prn_stream)
+oki4w_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {
         int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
         int line_size_words = (line_size + W - 1) / W;
@@ -276,7 +276,7 @@ oki4w_print_page(gx_device_printer *pdev, FILE *prn_stream)
         /* Initialize printer. */
 /*	if ( pdev->PageCount == 0 ) { */
                 /* Put out init string before page. */
-                fprintf(prn_stream, "\x1B%%-98765X\x1C\x14\x03\x41i\x10\x1C"
+                gp_fprintf(prn_stream, "\x1B%%-98765X\x1C\x14\x03\x41i\x10\x1C"
                         "\x14\x05\x41\x65%cf%c\x1C\x14\x09\x42\x61%cb\x02\x63"
                         "\x01\x65%c\x1C\x7F\x39\x1B&B\x1B&A\x07%c\x01%c"
                         "\x01%c%c%c%c\x1B$A",
@@ -317,17 +317,17 @@ oki4w_print_page(gx_device_printer *pdev, FILE *prn_stream)
                                 /* num_blank_lines += xxx */
                                 /* Skip blank lines if any */
                                 if (num_blank_lines > 0) {
-                                        fprintf(prn_stream, "\x1b*B%c%c",
-                                                num_blank_lines & 0xff,
-                                                num_blank_lines >> 8);
+                                        gp_fprintf(prn_stream, "\x1b*B%c%c",
+                                                   num_blank_lines & 0xff,
+                                                   num_blank_lines >> 8);
                                 }
                         }
                         else if ( num_blank_lines != 0 )
                         {
                                 /* Skip blank lines if any */
-                                fprintf(prn_stream, "\x1b*B%c%c",
-                                        num_blank_lines & 0xff,
-                                        num_blank_lines >> 8);
+                                gp_fprintf(prn_stream, "\x1b*B%c%c",
+                                           num_blank_lines & 0xff,
+                                           num_blank_lines >> 8);
                         }
                         num_blank_lines = 0;
 
@@ -342,17 +342,17 @@ oki4w_print_page(gx_device_printer *pdev, FILE *prn_stream)
 
                         /* Transfer the data */
                         for (i = 0; i < y_dots_per_pixel; ++i) {
-                                fprintf(prn_stream, "\033*A%c%c%c",
-                                        compress_code,
-                                        out_count & 0xff, out_count >> 8);
-                                fwrite(out_data, sizeof(byte), out_count,
-                                        prn_stream);
+                                gp_fprintf(prn_stream, "\033*A%c%c%c",
+                                           compress_code,
+                                           out_count & 0xff, out_count >> 8);
+                                gp_fwrite(out_data, sizeof(byte), out_count,
+                                           prn_stream);
                         }
                    }
         }
 
         /* end raster graphics and eject page */
-        fprintf(prn_stream, "\x1b$B\x1b\x7f%c", 0);
+        gp_fprintf(prn_stream, "\x1b$B\x1b\x7f%c", 0);
 
         /* free temporary storage */
         gs_free(pdev->memory->non_gc_memory, (char *)storage, storage_size_words, W, "oki4w_print_page");

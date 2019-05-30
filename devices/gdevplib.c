@@ -259,11 +259,11 @@ static dev_proc_put_params(plib_put_params);
 /* And of course we need our own print-page routines. */
 static dev_proc_print_page(plib_print_page);
 
-static int plib_print_page(gx_device_printer * pdev, FILE * pstream);
-static int plibm_print_page(gx_device_printer * pdev, FILE * pstream);
-static int plibg_print_page(gx_device_printer * pdev, FILE * pstream);
-static int plibc_print_page(gx_device_printer * pdev, FILE * pstream);
-static int plibk_print_page(gx_device_printer * pdev, FILE * pstream);
+static int plib_print_page(gx_device_printer * pdev, gp_file * pstream);
+static int plibm_print_page(gx_device_printer * pdev, gp_file * pstream);
+static int plibg_print_page(gx_device_printer * pdev, gp_file * pstream);
+static int plibc_print_page(gx_device_printer * pdev, gp_file * pstream);
+static int plibk_print_page(gx_device_printer * pdev, gp_file * pstream);
 
 /* The device procedures */
 
@@ -400,7 +400,7 @@ static int dump_nc;
 static int dump_l2bits;
 
 static void dump_start(int w, int h, int num_comps, int log2bits,
-                       FILE *dump_file)
+                       gp_file *dump_file)
 {
     if ((num_comps == 3) && (log2bits == 3)) {
         /* OK */
@@ -419,18 +419,18 @@ static void dump_start(int w, int h, int num_comps, int log2bits,
     if (dump_file == NULL)
         return;
     if (dump_nc == 3)
-        fprintf(dump_file, "P6 %d %d 255\n", w, h);
+        gp_fprintf(dump_file, "P6 %d %d 255\n", w, h);
     else if (dump_nc == 4) {
-        fprintf(dump_file, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 4\n"
+        gp_fprintf(dump_file, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 4\n"
                 "MAXVAL 255\nTUPLTYPE CMYK\nENDHDR\n", w, h);
     } else if (log2bits == 0)
-        fprintf(dump_file, "P4 %d %d\n", w, h);
+        gp_fprintf(dump_file, "P4 %d %d\n", w, h);
     else
-        fprintf(dump_file, "P5 %d %d 255\n", w, h);
+        gp_fprintf(dump_file, "P5 %d %d 255\n", w, h);
     dump_w = w;
 }
 
-static void dump_band(int y, FILE *dump_file)
+static void dump_band(int y, gp_file *dump_file)
 {
     byte *r = bandBufferBase;
     byte *g = r + bandBufferStride;
@@ -443,9 +443,9 @@ static void dump_band(int y, FILE *dump_file)
          while (y--) {
             int w = dump_w;
             while (w--) {
-                fputc(*r++, dump_file);
-                fputc(*g++, dump_file);
-                fputc(*b++, dump_file);
+                gp_fputc(*r++, dump_file);
+                gp_fputc(*g++, dump_file);
+                gp_fputc(*b++, dump_file);
             }
             r += bandBufferStride*3-dump_w;
             g += bandBufferStride*3-dump_w;
@@ -462,10 +462,10 @@ static void dump_band(int y, FILE *dump_file)
                     byte K = *k++;
                     int s;
                     for (s=7; s>=0; s--) {
-                        fputc(255*((C>>s)&1), dump_file);
-                        fputc(255*((M>>s)&1), dump_file);
-                        fputc(255*((Y>>s)&1), dump_file);
-                        fputc(255*((K>>s)&1), dump_file);
+                        gp_fputc(255*((C>>s)&1), dump_file);
+                        gp_fputc(255*((M>>s)&1), dump_file);
+                        gp_fputc(255*((Y>>s)&1), dump_file);
+                        gp_fputc(255*((K>>s)&1), dump_file);
                         w--;
                         if (w == 0) break;
                     }
@@ -479,10 +479,10 @@ static void dump_band(int y, FILE *dump_file)
             while (y--) {
                 int w = dump_w;
                 while (w--) {
-                    fputc(*r++, dump_file);
-                    fputc(*g++, dump_file);
-                    fputc(*b++, dump_file);
-                    fputc(*k++, dump_file);
+                    gp_fputc(*r++, dump_file);
+                    gp_fputc(*g++, dump_file);
+                    gp_fputc(*b++, dump_file);
+                    gp_fputc(*k++, dump_file);
                 }
                 r += bandBufferStride*4-dump_w;
                 g += bandBufferStride*4-dump_w;
@@ -495,7 +495,7 @@ static void dump_band(int y, FILE *dump_file)
             while (y--) {
                 int w = (dump_w+7)>>3;
                 while (w--) {
-                    fputc(*r++, dump_file);
+                    gp_fputc(*r++, dump_file);
                 }
                 r += bandBufferStride - ((dump_w+7)>>3);
             }
@@ -503,7 +503,7 @@ static void dump_band(int y, FILE *dump_file)
             while (y--) {
                 int w = dump_w;
                 while (w--) {
-                    fputc(*r++, dump_file);
+                    gp_fputc(*r++, dump_file);
                 }
                 r += bandBufferStride - dump_w;
             }
@@ -857,7 +857,7 @@ plibc_map_color_rgb(gx_device * dev, gx_color_index color,
 /* Print a page using a given row printing routine. */
 static int
 plib_print_page_loop(gx_device_printer * pdev, int log2bits, int numComps,
-                     FILE *pstream)
+                     gp_file *pstream)
 {
     gx_device_plib *pldev = (gx_device_plib *)pdev;
     int lnum;
@@ -938,7 +938,7 @@ plib_print_page_loop(gx_device_printer * pdev, int log2bits, int numComps,
 
 /* Print a monobit page. */
 static int
-plibm_print_page(gx_device_printer * pdev, FILE * pstream)
+plibm_print_page(gx_device_printer * pdev, gp_file * pstream)
 {
 #ifdef DEBUG_PRINT
     emprintf(pdev->memory, "plibm_print_page\n");
@@ -948,7 +948,7 @@ plibm_print_page(gx_device_printer * pdev, FILE * pstream)
 
 /* Print a gray-mapped page. */
 static int
-plibg_print_page(gx_device_printer * pdev, FILE * pstream)
+plibg_print_page(gx_device_printer * pdev, gp_file * pstream)
 {
 #ifdef DEBUG_PRINT
     emprintf(pdev->memory, "plibg_print_page\n");
@@ -958,7 +958,7 @@ plibg_print_page(gx_device_printer * pdev, FILE * pstream)
 
 /* Print a color-mapped page. */
 static int
-plib_print_page(gx_device_printer * pdev, FILE * pstream)
+plib_print_page(gx_device_printer * pdev, gp_file * pstream)
 {
 #ifdef DEBUG_PRINT
     emprintf(pdev->memory, "plibc_print_page\n");
@@ -968,7 +968,7 @@ plib_print_page(gx_device_printer * pdev, FILE * pstream)
 
 /* Print a 1 bit CMYK page. */
 static int
-plibk_print_page(gx_device_printer * pdev, FILE * pstream)
+plibk_print_page(gx_device_printer * pdev, gp_file * pstream)
 {
 #ifdef DEBUG_PRINT
     emprintf(pdev->memory, "plibk_print_page\n");
@@ -978,7 +978,7 @@ plibk_print_page(gx_device_printer * pdev, FILE * pstream)
 
 /* Print an 8bpc CMYK page. */
 static int
-plibc_print_page(gx_device_printer * pdev, FILE * pstream)
+plibc_print_page(gx_device_printer * pdev, gp_file * pstream)
 {
 #ifdef DEBUG_PRINT
     emprintf(pdev->memory, "plibc_print_page\n");

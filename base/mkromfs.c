@@ -86,6 +86,8 @@
 
 #include <zlib.h>
 
+int gs_log_error(int err, const char *file, int line);
+
 /*
  * The rom file system is an array of pointers to nodes, terminated by a NULL
  */
@@ -144,6 +146,20 @@ static inline int isbigendian(void)
 
     return u.c[0] != 1;
 }
+
+/* mkromfs doesn't use gp_stat, but it does link gp_misc.c which includes
+   call to gp_stat_impl(). Rather than major build upheaval for something not
+   used, just define a dummy here for Windows.
+ */
+#ifdef _WIN32
+int gp_stat_impl(const gs_memory_t *mem, const char *path, struct _stat64 *buf)
+{
+    (void)mem;
+    (void)path;
+    (void)buf;
+    return 0;
+}
+#endif
 
 /*******************************************************************************
  * The following are non-redirected printing functions to avoid the need for
@@ -256,6 +272,17 @@ emprintf_program_ident(const gs_memory_t *mem,
         }
         epfm(mem, ": ");
     }
+}
+
+int
+gs_log_error(int err, const char *file, int line)
+{
+    if (file == NULL)
+        errprintf_nomem("Returning error %d.\n", err);
+    else
+        errprintf_nomem("%s(%d): Returning error %d.\n",
+                 (const char *)file, line, err);
+    return err;
 }
 
 /*******************************************************************************
@@ -1671,13 +1698,13 @@ void process_path(char *path, const char *os_prefix, const char *rom_prefix,
     strcpy(rom_filename, rom_prefix);
 
     /* check for the file on the Xlist */
-    pfenum = gp_enumerate_files_init(prefixed_path, strlen(prefixed_path),
-                        (gs_memory_t *)&minimal_memory);
+    pfenum = gp_enumerate_files_init((gs_memory_t *)&minimal_memory, prefixed_path,
+                         strlen(prefixed_path));
     if (pfenum == NULL) {
         printf("gp_enumerate_files_init failed.\n");
         exit(1);
     }
-    while ((namelen=gp_enumerate_files_next(pfenum, found_path, 1024)) >= 0) {
+    while ((namelen=gp_enumerate_files_next((gs_memory_t *)&minimal_memory, pfenum, found_path, 1024)) >= 0) {
         excluded = 0;
         found_path[namelen] = 0;		/* terminate the string */
         /* check to see if the tail of the path we found matches one on the exclusion list */

@@ -20,7 +20,7 @@
 #include "gdevdevnprn.h"
 
 typedef struct {
-    FILE *f;
+    gp_file *f;
 
     int width;
     int height;
@@ -36,7 +36,7 @@ typedef struct {
     int image_data_off;
 } psd_write_ctx;
 
-int psd_setup(psd_write_ctx *xc, gx_devn_prn_device *dev, FILE *file, int w, int h);
+int psd_setup(psd_write_ctx *xc, gx_devn_prn_device *dev, gp_file *file, int w, int h);
 int psd_write_header(psd_write_ctx *xc, gx_devn_prn_device *pdev);
 
 int psd_write(psd_write_ctx *xc, const byte *buf, int size);

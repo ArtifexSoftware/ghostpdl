@@ -137,7 +137,7 @@ prn_putc(gx_device_printer *pdev, int c)
                 pc98_prn_out(c);
                 return 0;
         }
-        return fputc(c, pdev->file);
+        return gp_fputc(c, pdev->file);
 }
 
 static int
@@ -148,7 +148,7 @@ prn_puts(gx_device_printer *pdev, char *ptr)
                         pc98_prn_out(*ptr ++);
                 return 0;
         }
-        return fputs(ptr, pdev->file);
+        return gp_fputs(ptr, pdev->file);
 }
 
 static int
@@ -172,10 +172,10 @@ prn_flush(gx_device_printer *pdev)
 
 #else /* PC9801 */
 
-#define prn_putc(pdev, c) putc(c, pdev->file)
-#define prn_puts(pdev, ptr) fputs(ptr, pdev->file)
-#define prn_write(pdev, ptr, size) fwrite(ptr, 1, size, pdev->file)
-#define prn_flush(pdev) fflush(pdev->file)
+#define prn_putc(pdev, c) gp_fputc(c, pdev->file)
+#define prn_puts(pdev, ptr) gp_fputs(ptr, pdev->file)
+#define prn_write(pdev, ptr, size) gp_fwrite(ptr, 1, size, pdev->file)
+#define prn_flush(pdev) gp_fflush(pdev->file)
 
 #endif
 
@@ -194,7 +194,7 @@ bj10v_output_run(byte *data, int dnum, int bytes,
 
 /* Send the page to the printer. */
 static int
-bj10v_print_page(gx_device_printer *pdev, FILE *prn_stream)
+bj10v_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {	int line_size = gdev_prn_raster((gx_device *)pdev);
         int xres = pdev->x_pixels_per_inch;
         int yres = pdev->y_pixels_per_inch;

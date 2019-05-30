@@ -92,32 +92,34 @@ gp_get_usertime(long *pdt)
 
 /* ------ Printer accessing ------ */
 
+static int
+dvx_prn_close(FILE *)
+{
+    fflush(stdprn);
+}
+
 /* Open a connection to a printer.  A null file name means use the */
 /* standard printer connected to the machine, if any. */
 /* Return NULL if the connection could not be opened. */
 extern void gp_set_file_binary(int, int);
-FILE *
-gp_open_printer(const gs_memory_t *mem,
-                      char         fname[gp_file_name_sizeof],
-                      int          binary_mode)
+gp_file *
+gp_open_printer_impl(gs_memory_t *mem,
+                     char         fname[gp_file_name_sizeof],
+                     int         *binary_mode,
+                     int         (**close)(FILE *))
 {
     if (strlen(fname) == 0 || !strcmp(fname, "PRN")) {
-        if (binary_mode)
-            gp_set_file_binary(fileno(stdprn), 1);
         stdprn->_flag = _IOWRT;	/* Make stdprn buffered to improve performance */
         return stdprn;
     } else
-        return gp_fopen(fname, (binary_mode ? "wb" : "w"));
+        return gp_fopen_impl(mem, fname, (*binary_mode ? "wb" : "w"));
 }
 
 /* Close the connection to the printer. */
 void
-gp_close_printer(const gs_memory_t *mem, FILE * pfile, const char *fname)
+gp_close_printer(gp_file * pfile, const char *fname)
 {
-    if (pfile == stdprn)
-        fflush(pfile);
-    else
-        fclose(pfile);
+    pfile->close(pfile);
 }
 
 /* ------ Font enumeration ------ */

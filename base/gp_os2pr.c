@@ -69,7 +69,9 @@ const gx_io_device gs_iodev_printer = {
      iodev_no_delete_file, iodev_no_rename_file, iodev_no_file_status,
      iodev_no_enumerate_files, NULL, NULL,
      iodev_no_get_params, iodev_no_put_params
-    }
+    },
+    NULL,
+    NULL
 };
 
 typedef struct os2_printer_s {
@@ -118,7 +120,7 @@ os2_printer_fopen(gx_io_device * iodev, const char *fname, const char *access,
     strncpy(pr->queue, fname, sizeof(pr->queue)-1);
 
     /* Create a temporary file */
-    *pfile = gp_open_scratch_file(pr->memory, "gs", pr->filename, access);
+    *pfile = gp_open_scratch_file_impl(pr->memory, "gs", pr->filename, access, 0);
     if (*pfile == NULL)
         return_error(gs_fopen_errno_to_code(errno));
 

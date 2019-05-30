@@ -21,12 +21,12 @@
  * if you have any questions about this driver.
  */
 
-#define CCFILESTART(p) putc(0x02, p)
-#define CCFILEEND(p) putc(0x04, p)
-#define CCNEWPASS(p) putc(0x0c, p)
-#define CCEMPTYLINE(p) putc(0x0a, p)
-#define CCLINESTART(len,p) do{ putc(0x1b,p);putc(0x4b,p);putc(len>>8,p); \
-                               putc(len&0xff,p);} while(0)
+#define CCFILESTART(p) gp_fputc(0x02, p)
+#define CCFILEEND(p) gp_fputc(0x04, p)
+#define CCNEWPASS(p) gp_fputc(0x0c, p)
+#define CCEMPTYLINE(p) gp_fputc(0x0a, p)
+#define CCLINESTART(len,p) do{ gp_fputc(0x1b,p);gp_fputc(0x4b,p);gp_fputc(len>>8,p); \
+                               gp_fputc(len&0xff,p);} while(0)
 
 #define CPASS (0)
 #define MPASS (1)
@@ -57,7 +57,7 @@ typedef struct cmyrow_s
 static int alloc_rb( gs_memory_t *mem, cmyrow **rb, int rows);
 static int alloc_line( gs_memory_t *mem, cmyrow *row, int cols);
 static void add_cmy8(cmyrow *rb, char c, char m, char y);
-static void write_cpass(cmyrow *buf, int rows, int pass, FILE * pstream);
+static void write_cpass(cmyrow *buf, int rows, int pass, gp_file * pstream);
 static void free_rb_line( gs_memory_t *mem, cmyrow *rbuf, int rows, int cols);
 
 struct gx_device_ccr_s {
@@ -135,7 +135,7 @@ ccr_map_color_rgb(gx_device *pdev, gx_color_index color, ushort rgb[3])
 /* ------ print page routine ------ */
 
 static int
-ccr_print_page(gx_device_printer *pdev, FILE *pstream)
+ccr_print_page(gx_device_printer *pdev, gp_file *pstream)
 {
   cmyrow *linebuf;
   int line_size = gdev_prn_raster((gx_device *)pdev);
@@ -252,7 +252,7 @@ static void add_cmy8(cmyrow *rb, char c, char m, char y)
   return;
 }
 
-static void write_cpass(cmyrow *buf, int rows, int pass, FILE * pstream)
+static void write_cpass(cmyrow *buf, int rows, int pass, gp_file * pstream)
 {
   int row, len;
     for(row=0; row<rows; row++)
@@ -263,7 +263,7 @@ static void write_cpass(cmyrow *buf, int rows, int pass, FILE * pstream)
       else
         {
           CCLINESTART(len,pstream);
-          fwrite( buf[row].cmybuf[pass], len, 1, pstream);
+          gp_fwrite( buf[row].cmybuf[pass], len, 1, pstream);
         }
     }
   return;

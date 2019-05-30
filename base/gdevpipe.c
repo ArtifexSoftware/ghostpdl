@@ -34,18 +34,33 @@ const gx_io_device gs_iodev_pipe = {
      iodev_no_delete_file, iodev_no_rename_file, iodev_no_file_status,
      iodev_no_enumerate_files, NULL, NULL,
      iodev_no_get_params, iodev_no_put_params
-    }
+    },
+    NULL,
+    NULL
 };
 
 /* The file device procedures */
 
 static int
+do_pclose(FILE *file)
+{
+#ifndef GS_NO_FILESYSTEM
+    return pclose(file);
+#endif
+}
+
+static int
 pipe_fopen(gx_io_device * iodev, const char *fname, const char *access,
-           FILE ** pfile, char *rfname, uint rnamelen)
+           gp_file ** pfile, char *rfname, uint rnamelen, gs_memory_t *mem)
 {
 #ifdef GS_NO_FILESYSTEM
     return 0;
 #else
+    gp_file *file;
+
+    if (gp_validate_path(mem, fname, access) != 0)
+        return gs_error_invalidfileaccess;
+
     errno = 0;
     /*
      * Some platforms allow opening a pipe with a '+' in the access
@@ -53,24 +68,33 @@ pipe_fopen(gx_io_device * iodev, const char *fname, const char *access,
      */
     if (strchr(access, '+'))
         return_error(gs_error_invalidfileaccess);
+
+    file = gp_file_FILE_alloc(mem);
+    if (file == NULL) {
+        *pfile = NULL;
+        return gs_error_VMerror;
+    }
     /*
      * The OSF/1 1.3 library doesn't include const in the
      * prototype for popen, so we have to break const here.
      */
-    *pfile = popen((char *)fname, (char *)access);
-    if (*pfile == NULL)
+    if (gp_file_FILE_set(file, popen((char *)fname, (char *)access), do_pclose)) {
+        *pfile = NULL;
         return_error(gs_fopen_errno_to_code(errno));
-    if (rfname != NULL)
-        strcpy(rfname, fname);
+    } else {
+        if (rfname != NULL)
+            strcpy(rfname, fname);
+        *pfile = file;
+    }
     return 0;
 #endif
 }
 
 static int
-pipe_fclose(gx_io_device * iodev, FILE * file)
+pipe_fclose(gx_io_device * iodev, gp_file * file)
 {
 #ifndef GS_NO_FILESYSTEM
-    pclose(file);
+    gp_fclose(file);
 #endif
     return 0;
 }

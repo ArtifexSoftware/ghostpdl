@@ -62,7 +62,7 @@ typedef struct _RinkjByteStreamFile RinkjByteStreamFile;
 
 struct _RinkjByteStreamFile {
   RinkjByteStream super;
-  FILE *f;
+  gp_file *f;
 };
 
 static int
@@ -86,7 +86,7 @@ rinkj_byte_stream_file_write (RinkjByteStream *self, const char *buf, int size)
 #ifdef DEBUG_OUT
       return 0;
 #endif
-      status = fwrite (buf, 1, size, z->f);
+      status = gp_fwrite(buf, 1, size, z->f);
       if (status == size)
         return 0;
       else
@@ -95,7 +95,7 @@ rinkj_byte_stream_file_write (RinkjByteStream *self, const char *buf, int size)
 }
 
 RinkjByteStream *
-rinkj_byte_stream_file_new (FILE *f)
+rinkj_byte_stream_file_new (gp_file *f)
 {
   RinkjByteStreamFile *result;
 

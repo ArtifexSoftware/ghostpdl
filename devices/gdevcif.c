@@ -42,7 +42,7 @@ const gx_device_printer far_data gs_cif_device =
 
 /* Send the page to the output. */
 static int
-cif_print_page(gx_device_printer *pdev, FILE *prn_stream)
+cif_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {	int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
         int lnum;
         byte *in = (byte *)gs_malloc(pdev->memory, line_size, 1, "cif_print_page(in)");
@@ -62,7 +62,7 @@ cif_print_page(gx_device_printer *pdev, FILE *prn_stream)
 
         strncpy(s, pdev->fname, length);
         *(s + length) = '\0';
-        fprintf(prn_stream, "DS1 25 1;\n9 %s;\nLCP;\n", s);
+        gp_fprintf(prn_stream, "DS1 25 1;\n9 %s;\nLCP;\n", s);
         gs_free(pdev->memory, s, length, 1, "cif_print_page(s)");
 
    for (lnum = 0; lnum < pdev->height; lnum++) {
@@ -72,7 +72,7 @@ cif_print_page(gx_device_printer *pdev, FILE *prn_stream)
 #ifdef TILE			/* original, simple, inefficient algorithm */
          for (scanbyte = 0; scanbyte < 8; scanbyte++)
             if (((in[scanline] >> scanbyte) & 1) != 0)
-               fprintf(prn_stream, "B4 4 %d %d;\n",
+               gp_fprintf(prn_stream, "B4 4 %d %d;\n",
                   (scanline * 8 + (7 - scanbyte)) * 4,
                   (pdev->height - lnum) * 4);
 #else				/* better algorithm */
@@ -84,14 +84,14 @@ cif_print_page(gx_device_printer *pdev, FILE *prn_stream)
                length++;
             } else {
                if (length != 0)
-                  fprintf(prn_stream, "B%d 4 %d %d;\n", length * 4,
+                  gp_fprintf(prn_stream, "B%d 4 %d %d;\n", length * 4,
                            start * 4 + length * 2,
                            (pdev->height - lnum) * 4);
                length = 0;
             }
 #endif
    }
-        fprintf(prn_stream, "DF;\nC1;\nE\n");
+        gp_fprintf(prn_stream, "DF;\nC1;\nE\n");
         gs_free(pdev->memory, in, line_size, 1, "cif_print_page(in)");
         return 0;
 }

@@ -51,7 +51,7 @@
 #define Y_DPI 600
 #define LINE_SIZE ((X_DPI * 84 / 10 + 7) / 8)	/* bytes per line for letter */
 
-static int md50_print_page(gx_device_printer *, FILE *, const char *, int);
+static int md50_print_page(gx_device_printer *, gp_file *, const char *, int);
 static dev_proc_open_device(md_open);
 static dev_proc_print_page(md50m_print_page);
 static dev_proc_print_page(md50e_print_page);
@@ -166,21 +166,21 @@ md_open(gx_device *pdev)
 
 /* MD5000 monochrome mode entrance. */
 static int
-md50m_print_page(gx_device_printer *pdev, FILE *prn_stream)
+md50m_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {
   return(md50_print_page(pdev, prn_stream, init_50mono, sizeof(init_50mono)));
 }
 
 /* MD5000 Eco mode monochrome mode entrance. */
 static int
-md50e_print_page(gx_device_printer *pdev, FILE *prn_stream)
+md50e_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {
   return(md50_print_page(pdev, prn_stream, init_50eco, sizeof(init_50eco)));
 }
 
 /* MD5000 monochrome mode print. */
 static int
-md50_print_page(gx_device_printer *pdev, FILE *prn_stream,
+md50_print_page(gx_device_printer *pdev, gp_file *prn_stream,
               const char *init_str, int init_size)
 {
   int lnum;
@@ -192,8 +192,8 @@ md50_print_page(gx_device_printer *pdev, FILE *prn_stream,
   int n;
 
     /* Load Paper & Select Inc Cartridge */
-  fwrite(init_str, sizeof(char), init_size, prn_stream);
-  fflush(prn_stream);
+  gp_fwrite(init_str, sizeof(char), init_size, prn_stream);
+  gp_fflush(prn_stream);
 
   for ( lnum = 0; lnum <= pdev->height; lnum++ ) {
     byte *end_data = data + line_size;
@@ -222,27 +222,27 @@ md50_print_page(gx_device_printer *pdev, FILE *prn_stream,
       {
         if(skipping)
           {
-            fprintf(prn_stream, "%c%c%c%c%c%c", 0x1b, 0x2a, 0x62,
-                    skipping & 0xff, (skipping & 0xff00) / 0x100, 0x59);
+            gp_fprintf(prn_stream, "%c%c%c%c%c%c", 0x1b, 0x2a, 0x62,
+                       skipping & 0xff, (skipping & 0xff00) / 0x100, 0x59);
             skipping = 0;
           }
-        fprintf(prn_stream, "%c%c%c%c%c%c%c%c", 0x1b, 0x2a, 0x62,
-                nbyte & 0xff, (nbyte & 0xff00) / 0x100, 0x54,
-                nskip & 0xff, (nskip & 0xff00) / 0x100);
-        fwrite(start_data, sizeof(char), nbyte, prn_stream);
+        gp_fprintf(prn_stream, "%c%c%c%c%c%c%c%c", 0x1b, 0x2a, 0x62,
+                   nbyte & 0xff, (nbyte & 0xff00) / 0x100, 0x54,
+                   nskip & 0xff, (nskip & 0xff00) / 0x100);
+        gp_fwrite(start_data, sizeof(char), nbyte, prn_stream);
       }
   }
 
   /* Eject Page */
-  fwrite(end_md, sizeof(char), sizeof(end_md), prn_stream);
-  fflush(prn_stream);
+  gp_fwrite(end_md, sizeof(char), sizeof(end_md), prn_stream);
+  gp_fflush(prn_stream);
 
   return 0;
 }
 
 /* all? MD series monochrome mode print with data compression. */
 static int
-md1xm_print_page(gx_device_printer *pdev, FILE *prn_stream)
+md1xm_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {
   int lnum;
   int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
@@ -252,8 +252,8 @@ md1xm_print_page(gx_device_printer *pdev, FILE *prn_stream)
   int nbyte;
 
   /* Load Paper & Select Inc Cartridge */
-  fwrite(&init_md13[0], sizeof(char), sizeof(init_md13), prn_stream);
-  fflush(prn_stream);
+  gp_fwrite(&init_md13[0], sizeof(char), sizeof(init_md13), prn_stream);
+  gp_fflush(prn_stream);
 
   for ( lnum = 0; lnum <= pdev->height; lnum++ ) {
     byte *end_data = data + line_size;
@@ -278,8 +278,8 @@ md1xm_print_page(gx_device_printer *pdev, FILE *prn_stream)
       {
         if(skipping)
           {
-            fprintf(prn_stream, "%c%c%c%c%c%c", 0x1b, 0x2a, 0x62,
-                    skipping & 0xff, (skipping & 0xff00) / 0x100, 0x59);
+            gp_fprintf(prn_stream, "%c%c%c%c%c%c", 0x1b, 0x2a, 0x62,
+                       skipping & 0xff, (skipping & 0xff00) / 0x100, 0x59);
             skipping = 0;
           }
 
@@ -380,15 +380,15 @@ md1xm_print_page(gx_device_printer *pdev, FILE *prn_stream)
 
         nbyte = out_data - out_start;
 
-        fprintf(prn_stream, "%c%c%c%c%c%c", 0x1b, 0x2a, 0x62,
-                nbyte & 0xff, (nbyte & 0xff00) / 0x100, 0x57);
-        fwrite(out_start, sizeof(char), nbyte, prn_stream);
+        gp_fprintf(prn_stream, "%c%c%c%c%c%c", 0x1b, 0x2a, 0x62,
+                   nbyte & 0xff, (nbyte & 0xff00) / 0x100, 0x57);
+        gp_fwrite(out_start, sizeof(char), nbyte, prn_stream);
       }
   }
 
   /* Eject Page */
-  fwrite(end_md, sizeof(char), sizeof(end_md), prn_stream);
-  fflush(prn_stream);
+  gp_fwrite(end_md, sizeof(char), sizeof(end_md), prn_stream);
+  gp_fflush(prn_stream);
 
   return 0;
 }

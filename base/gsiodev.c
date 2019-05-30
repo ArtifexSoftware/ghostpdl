@@ -53,7 +53,9 @@ const gx_io_device gs_iodev_os =
      os_delete, os_rename, os_status,
      os_enumerate, gp_enumerate_files_next, gp_enumerate_files_close,
      os_get_params, iodev_no_put_params
-    }
+    },
+    NULL,
+    NULL
 };
 
 /* ------ Initialization ------ */
@@ -85,6 +87,7 @@ gs_iodev_init(gs_memory_t * mem)
             goto fail;
         table[i] = iodev;
         memcpy(table[i], gx_io_device_table[i], sizeof(gx_io_device));
+        iodev->memory = mem;
         libctx->io_device_table_count++;
     }
     for (;i < gx_io_device_table_count + NUM_RUNTIME_IODEVS; i++) {
@@ -227,13 +230,13 @@ iodev_no_open_file(gx_io_device * iodev, const char *fname, uint namelen,
 
 int
 iodev_no_fopen(gx_io_device * iodev, const char *fname, const char *access,
-               FILE ** pfile, char *rfname, uint rnamelen)
+               gp_file ** pfile, char *rfname, uint rnamelen, gs_memory_t *mem)
 {
     return_error(gs_error_invalidfileaccess);
 }
 
 int
-iodev_no_fclose(gx_io_device * iodev, FILE * file)
+iodev_no_fclose(gx_io_device * iodev, gp_file * file)
 {
     return_error(gs_error_ioerror);
 }
@@ -257,8 +260,8 @@ iodev_no_file_status(gx_io_device * iodev, const char *fname, struct stat *pstat
 }
 
 file_enum *
-iodev_no_enumerate_files(gx_io_device * iodev, const char *pat, uint patlen,
-                         gs_memory_t * memory)
+iodev_no_enumerate_files(gs_memory_t *mem, gx_io_device * iodev, const char *pat,
+                         uint patlen)
 {
     return NULL;
 }
@@ -280,10 +283,10 @@ iodev_no_put_params(gx_io_device * iodev, gs_param_list * plist)
 /* The fopen routine is exported for %null. */
 int
 iodev_os_gp_fopen(gx_io_device * iodev, const char *fname, const char *access,
-               FILE ** pfile, char *rfname, uint rnamelen)
+                  gp_file ** pfile, char *rfname, uint rnamelen, gs_memory_t *mem)
 {
     errno = 0;
-    *pfile = gp_fopen(fname, access);
+    *pfile = gp_fopen(mem, fname, access);
     if (*pfile == NULL)
         return_error(gs_fopen_errno_to_code(errno));
     if (rfname != NULL && rfname != fname)
@@ -293,9 +296,9 @@ iodev_os_gp_fopen(gx_io_device * iodev, const char *fname, const char *access,
 
 /* The fclose routine is exported for %null. */
 int
-iodev_os_fclose(gx_io_device * iodev, FILE * file)
+iodev_os_fclose(gx_io_device * iodev, gp_file * file)
 {
-    fclose(file);
+    gp_fclose(file);
     return 0;
 }
 
@@ -315,14 +318,14 @@ static int
 os_status(gx_io_device * iodev, const char *fname, struct stat *pstat)
 {				/* The RS/6000 prototype for stat doesn't include const, */
     /* so we have to explicitly remove the const modifier. */
-    return (gp_stat((char *)fname, pstat) < 0 ? gs_error_undefinedfilename : 0);
+    return (gp_stat(iodev->memory, (char *)fname, pstat) < 0 ? gs_error_undefinedfilename : 0);
 }
 
 static file_enum *
-os_enumerate(gx_io_device * iodev, const char *pat, uint patlen,
-             gs_memory_t * mem)
+os_enumerate(gs_memory_t * mem, gx_io_device * iodev, const char *pat,
+             uint patlen)
 {
-    return gp_enumerate_files_init(pat, patlen, mem);
+    return gp_enumerate_files_init(mem, pat, patlen);
 }
 
 static int
@@ -473,7 +476,7 @@ gs_private_st_ptrs1(st_gs_file_enum, gs_file_enum, "gs_file_enum",
                     gs_file_enum_enum_ptrs, gs_file_enum_reloc_ptrs, pfile_enum);
 
 file_enum *
-gs_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
+gs_enumerate_files_init(gs_memory_t * mem, const char *pat, uint patlen)
 {
     file_enum *pfen;
     gs_file_enum *pgs_file_enum;
@@ -491,15 +494,15 @@ gs_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
     if (pfn.len == 0 || iodev->procs.enumerate_files == iodev_no_enumerate_files) {
         return NULL;	/* no pattern, or device not found -- just return */
     }
-    pfen = iodev->procs.enumerate_files(iodev, (const char *)pfn.fname,
-                pfn.len, mem);
+    pfen = iodev->procs.enumerate_files(mem, iodev, (const char *)pfn.fname,
+                pfn.len);
     if (pfen == 0)
         return NULL;
     pgs_file_enum = gs_alloc_struct(mem, gs_file_enum, &st_gs_file_enum,
                            "gs_enumerate_files_init");
     if (pgs_file_enum == 0)
     {
-        iodev->procs.enumerate_close(pfen);
+        iodev->procs.enumerate_close(mem, pfen);
         return NULL;
     }
     pgs_file_enum->memory = mem;
@@ -510,7 +513,8 @@ gs_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
 }
 
 uint
-gs_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
+gs_enumerate_files_next(gs_memory_t * mem, file_enum * pfen, char *ptr,
+                        uint maxlen)
 {
     gs_file_enum *pgs_file_enum = (gs_file_enum *)pfen;
     int iodev_name_len;
@@ -526,23 +530,23 @@ gs_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
         return maxlen + 1;	/* signal overflow error */
     if (iodev_name_len > 0)
         memcpy(ptr, pgs_file_enum->piodev->dname, iodev_name_len);
-    return_len = pgs_file_enum->piodev->procs.enumerate_next(pgs_file_enum->pfile_enum,
+    return_len = pgs_file_enum->piodev->procs.enumerate_next(mem, pgs_file_enum->pfile_enum,
                                 ptr + iodev_name_len, maxlen - iodev_name_len);
     if (return_len == ~0) {
-        gs_memory_t *mem = pgs_file_enum->memory;
+        gs_memory_t *mem2 = pgs_file_enum->memory;
 
-        gs_free_object(mem, pgs_file_enum, "gs_enumerate_files_close");
+        gs_free_object(mem2, pgs_file_enum, "gs_enumerate_files_close");
         return ~0;
     }
     return return_len+iodev_name_len;
 }
 
 void
-gs_enumerate_files_close(file_enum * pfen)
+gs_enumerate_files_close(gs_memory_t * mem, file_enum * pfen)
 {
     gs_file_enum *pgs_file_enum = (gs_file_enum *)pfen;
-    gs_memory_t *mem = pgs_file_enum->memory;
+    gs_memory_t *mem2 = pgs_file_enum->memory;
 
-    pgs_file_enum->piodev->procs.enumerate_close(pgs_file_enum->pfile_enum);
-    gs_free_object(mem, pgs_file_enum, "gs_enumerate_files_close");
+    pgs_file_enum->piodev->procs.enumerate_close(mem, pgs_file_enum->pfile_enum);
+    gs_free_object(mem2, pgs_file_enum, "gs_enumerate_files_close");
 }

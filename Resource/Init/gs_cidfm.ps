@@ -133,9 +133,39 @@ currentdict end def
   } if
 >> def
 
+% <dir.../base.extn> .basename <dir>
+/.splitdirname {
+  (/) rsearch { //true } { (\\) rsearch } ifelse
+  {3 -2 roll pop pop //true}{//false} ifelse
+} bind def
+
+% <file> .addcidfmappath -
+/.addcidfmpermitpath
+{
+  .filename
+  {
+    //.splitdirname exec
+    {dup def} if
+  } if
+} bind def
+
 /VerifyMap  % <raw_map> VerifyMap -
 {
+  % This is where we insert the default fallback into the map
+  % checking first to see if there is a user specified alternative
+  dup /CIDFallBack known not{
+     //DefaultCIDFallBack dup /Path get status
+     {
+       pop pop pop pop
+       /CIDFallBack exch 2 index 3 1 roll put
+     }
+     {
+       pop
+     }ifelse
+  } if
+
   % Remove any mappings for which we cannot find the font file
+  dup length dict begin
   dup
   {
     % if we have a name1->name2 mapping, follow the "trail",
@@ -163,11 +193,12 @@ currentdict end def
           /Path .knownget
           {
             .libfile
-            {closefile pop}
+            {
+              dup //.addcidfmpermitpath exec closefile pop}
             {
               {(r) file} //.internalstopped exec
               {pop pop 2 index exch .undef}
-              {closefile pop} ifelse
+              {dup //.addcidfmpermitpath exec closefile pop} ifelse
             } ifelse
           }
           {2 index exch .undef}
@@ -177,19 +208,8 @@ currentdict end def
       } ifelse
     } loop
   } forall
-
-  % This is where we insert the default fallback into the map
-  % checking first to see if there is a user specified alternative
-  dup /CIDFallBack known not{
-     //DefaultCIDFallBack dup /Path get status
-     {
-       pop pop pop pop
-       /CIDFallBack exch 2 index 3 1 roll put
-     }
-     {
-       pop
-     }ifelse
-  } if
+  currentdict end
+  {exch pop /PermitFileReading exch .addcontrolpath} forall
 
   % Checks for vicious substitution cycles.
   dup length dict copy                  % <<map>>
@@ -232,6 +252,9 @@ currentdict end def
   } loop
   pop pop
 } bind def
+
+currentdict /.splitdirname undef
+currentdict /.addcidfmpermitpath undef
 
 /PreprocessRecord  % <map> <Name> <raw_record> PreprocessRecord <map> <Name> <record> <bool>
 {

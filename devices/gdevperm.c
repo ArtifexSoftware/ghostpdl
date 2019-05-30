@@ -129,7 +129,7 @@ const gx_device_perm_t gs_perm_device = {
 };
 
 static int
-perm_print_page(gx_device_printer *pdev, FILE *pstream)
+perm_print_page(gx_device_printer *pdev, gp_file *pstream)
 {
     int y;
     gx_device_perm_t * const dev = (gx_device_perm_t *)pdev;

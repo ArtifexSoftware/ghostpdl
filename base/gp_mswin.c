@@ -104,49 +104,47 @@ gp_do_exit(int exit_status)
 
 /* Forward references */
 #ifndef METRO
-static int gp_printfile(const char *, const char *);
+static int gp_printfile(const gs_memory_t *mem, const char *, const char *);
 #endif
 
 /* Open a connection to a printer.  A null file name means use the */
 /* standard printer connected to the machine, if any. */
 /* Return NULL if the connection could not be opened. */
 FILE *
-gp_open_printer(const gs_memory_t *mem,
-                      char         fname[gp_file_name_sizeof],
-                      int          binary_mode)
+gp_open_printer_impl(gs_memory_t *mem,
+                     char         fname[gp_file_name_sizeof],
+                     int         *binary_mode,
+                     int          (**close)(FILE *))
 {
 #ifdef METRO
-    return gp_fopen(fname, (binary_mode ? "wb" : "w"));
+    return gp_fopen_impl(mem, fname, (*binary_mode ? "wb" : "w"));
 #else
     if (is_printer(fname)) {
-        FILE *pfile;
-
         /* Open a scratch file, which we will send to the */
         /* actual printer in gp_close_printer. */
-        pfile = gp_open_scratch_file(mem, gp_scratch_file_name_prefix,
-                                     win_prntmp, "wb");
-        return pfile;
-    } else if (fname[0] == '|') 	/* pipe */
-        return mswin_popen(fname + 1, (binary_mode ? "wb" : "w"));
-    else if (strcmp(fname, "LPT1:") == 0)
+        return gp_open_scratch_file_impl(mem, gp_scratch_file_name_prefix,
+                                         win_prntmp, "wb", 0);
+    } else if (fname[0] == '|') { 	/* pipe */
+        return mswin_popen(fname + 1, (*binary_mode ? "wb" : "w"));
+    } else if (strcmp(fname, "LPT1:") == 0)
         return NULL;	/* not supported, use %printer%name instead  */
     else
-        return gp_fopen(fname, (binary_mode ? "wb" : "w"));
+        return gp_fopen_impl(mem, fname, (*binary_mode ? "wb" : "w"));
 #endif
 }
 
 /* Close the connection to the printer. */
 void
-gp_close_printer(const gs_memory_t *mem, FILE * pfile, const char *fname)
+gp_close_printer(gp_file * pfile, const char *fname)
 {
-#ifdef METRO
-    fclose(pfile);
-#else
-    fclose(pfile);
+    const gs_memory_t *mem = pfile->memory;
+
+    gp_fclose(pfile);
+#ifndef METRO
     if (!is_printer(fname))
         return;			/* a file, not a printer */
 
-    gp_printfile(win_prntmp, fname);
+    gp_printfile(mem, win_prntmp, fname);
     unlink(win_prntmp);
 #endif
 }
@@ -226,7 +224,7 @@ is_printer(const char *name)
 
 /* Win95, WinNT: Use OpenPrinter, WritePrinter etc. */
 #ifndef METRO
-static int gp_printfile_win32(const char *filename, char *port);
+static int gp_printfile_win32(const gs_memory_t *mem, const char *filename, char *port);
 #endif
 
 /*
@@ -242,7 +240,7 @@ static int gp_printfile_win32(const char *filename, char *port);
  */
 /* Print File */
 static int
-gp_printfile(const char *filename, const char *pmport)
+gp_printfile(const gs_memory_t *mem, const char *filename, const char *pmport)
 {
     if (strlen(pmport) == 0) {	/* get default printer */
         char buf[256];
@@ -260,12 +258,12 @@ gp_printfile(const char *filename, const char *pmport)
         wchar_to_utf8(buf, wbuf);
         if ((p = strchr(buf, ',')) != NULL)
             *p = '\0';
-        return gp_printfile_win32(filename, buf);
+        return gp_printfile_win32(mem, filename, buf);
     } else if (is_spool(pmport)) {
         if (strlen(pmport) >= 8)
-            return gp_printfile_win32(filename, (char *)pmport + 8);
+            return gp_printfile_win32(mem, filename, (char *)pmport + 8);
         else
-            return gp_printfile_win32(filename, (char *)NULL);
+            return gp_printfile_win32(mem, filename, (char *)NULL);
     } else
         return_error(gs_error_undefinedfilename);
 }
@@ -378,12 +376,12 @@ BOOL gp_OpenPrinter(char *port, LPHANDLE printer)
 #ifndef METRO
 /* True Win32 method, using OpenPrinter, WritePrinter etc. */
 static int
-gp_printfile_win32(const char *filename, char *port)
+gp_printfile_win32(const gs_memory_t *mem, const char *filename, char *port)
 {
     DWORD count;
     char *buffer;
     char portname[MAXSTR];
-    FILE *f;
+    gp_file *f;
     HANDLE printer;
     DOC_INFO_1 di;
     DWORD written;
@@ -395,7 +393,7 @@ gp_printfile_win32(const char *filename, char *port)
     if ((buffer = malloc(PRINT_BUF_SIZE)) == (char *)NULL)
         return FALSE;
 
-    if ((f = gp_fopen(filename, "rb")) == (FILE *) NULL) {
+    if ((f = gp_fopen(mem, filename, "rb")) == (gp_file *) NULL) {
         free(buffer);
         return FALSE;
     }
@@ -423,15 +421,15 @@ gp_printfile_win32(const char *filename, char *port)
         return FALSE;
     }
     /* copy file to printer */
-    while ((count = fread(buffer, 1, PRINT_BUF_SIZE, f)) != 0) {
+    while ((count = gp_fread(buffer, 1, PRINT_BUF_SIZE, f)) != 0) {
         if (!WritePrinter(printer, (LPVOID) buffer, count, &written)) {
             free(buffer);
-            fclose(f);
+            gp_fclose(f);
             AbortPrinter(printer);
             return FALSE;
         }
     }
-    fclose(f);
+    gp_fclose(f);
     free(buffer);
 
     if (!EndDocPrinter(printer)) {
@@ -568,12 +566,12 @@ FILE *mswin_popen(const char *cmd, const char *mode)
 
 /* Create and open a scratch file with a given name prefix. */
 /* Write the actual file name at fname. */
-static FILE *
-gp_open_scratch_file_generic(const gs_memory_t *mem,
-                             const char        *prefix,
-                                   char        *fname,
-                             const char        *mode,
-                                   int          remove)
+FILE *
+gp_open_scratch_file_impl(const gs_memory_t *mem,
+                          const char        *prefix,
+                                char        *fname,
+                          const char        *mode,
+                                int          remove)
 {
     UINT n;
     DWORD l;
@@ -678,8 +676,6 @@ gp_open_scratch_file_generic(const gs_memory_t *mem,
         else {
             /* Associate a C file stream with C file handle. */
             f = fdopen(fd, mode);
-            if (f == NULL)
-                _close(fd);
         }
     }
     if (f != NULL) {
@@ -696,46 +692,7 @@ gp_open_scratch_file_generic(const gs_memory_t *mem,
     return f;
 }
 
-FILE *
-gp_open_scratch_file(const gs_memory_t *mem,
-                     const char        *prefix,
-                           char        *fname,
-                     const char        *mode)
-{
-    return gp_open_scratch_file_generic(mem, prefix, fname, mode, 0);
-}
-
-FILE *
-gp_open_scratch_file_rm(const gs_memory_t *mem,
-                        const char        *prefix,
-                              char        *fname,
-                        const char        *mode)
-{
-    return gp_open_scratch_file_generic(mem, prefix, fname, mode, 1);
-}
-
-/* Open a file with the given name, as a stream of uninterpreted bytes. */
-FILE *
-gp_fopen(const char *fname, const char *mode)
-{
-    int len = utf8_to_wchar(NULL, fname);
-    wchar_t *uni;
-    wchar_t wmode[4];
-    FILE *file;
-
-    if (len <= 0)
-        return NULL;
-    uni = malloc(len*sizeof(wchar_t));
-    if (uni == NULL)
-        return NULL;
-    utf8_to_wchar(uni, fname);
-    utf8_to_wchar(wmode, mode);
-    file = _wfopen(uni, wmode);
-    free(uni);
-    return file;
-}
-
-int gp_stat(const char *path, struct _stat64 *buf)
+int gp_stat_impl(const gs_memory_t *mem, const char *path, struct _stat64 *buf)
 {
     int len = utf8_to_wchar(NULL, path);
     wchar_t *uni;
@@ -758,60 +715,6 @@ int gp_can_share_fdesc(void)
     return 1;
 }
 
-/* Create a second open FILE on the basis of a given one */
-FILE *gp_fdup(FILE *f, const char *mode)
-{
-    int fd = fileno(f);
-    if (fd < 0)
-        return NULL;
-
-    fd = dup(fd);
-    if (fd < 0)
-        return NULL;
-
-    return fdopen(fd, mode);
-}
-
-/* Read from a specified offset within a FILE into a buffer */
-int gp_fpread(char *buf, uint count, int64_t offset, FILE *f)
-{
-    OVERLAPPED overlapped;
-    DWORD ret;
-    HANDLE hnd = (HANDLE)_get_osfhandle(fileno(f));
-
-    if (hnd == INVALID_HANDLE_VALUE)
-        return -1;
-
-    memset(&overlapped, 0, sizeof(OVERLAPPED));
-    overlapped.Offset = (DWORD)offset;
-    overlapped.OffsetHigh = (DWORD)(offset >> 32);
-
-    if (!ReadFile((HANDLE)hnd, buf, count, &ret, &overlapped))
-        return -1;
-
-    return ret;
-}
-
-/* Write to a specified offset within a FILE from a buffer */
-int gp_fpwrite(char *buf, uint count, int64_t offset, FILE *f)
-{
-    OVERLAPPED overlapped;
-    DWORD ret;
-    HANDLE hnd = (HANDLE)_get_osfhandle(fileno(f));
-
-    if (hnd == INVALID_HANDLE_VALUE)
-        return -1;
-
-    memset(&overlapped, 0, sizeof(OVERLAPPED));
-    overlapped.Offset = (DWORD)offset;
-    overlapped.OffsetHigh = (DWORD)(offset >> 32);
-
-    if (!WriteFile((HANDLE)hnd, buf, count, &ret, &overlapped))
-        return -1;
-
-    return ret;
-}
-
 /* ------ Font enumeration ------ */
 
  /* This is used to query the native os for a list of font names and
@@ -831,86 +734,6 @@ int gp_enumerate_fonts_next(void *enum_state, char **fontname, char **path)
 
 void gp_enumerate_fonts_free(void *enum_state)
 {
-}
-
-/* --------- 64 bit file access ----------- */
-/* MSVC versions before 8 doen't provide big files.
-   MSVC 8 doesn't distinguish big and small files,
-   but provide special positioning functions
-   to access data behind 4GB.
-   Currently we support 64 bits file access with MSVC only.
- */
-
-FILE *gp_fopen_64(const char *filename, const char *mode)
-{
-    return gp_fopen(filename, mode);
-}
-
-FILE *gp_open_scratch_file_64(const gs_memory_t *mem,
-                              const char        *prefix,
-                                    char         fname[gp_file_name_sizeof],
-                              const char        *mode)
-{
-    return gp_open_scratch_file(mem, prefix, fname, mode);
-}
-
-FILE *gp_open_printer_64(const gs_memory_t *mem,
-                               char         fname[gp_file_name_sizeof],
-                               int          binary_mode)
-{
-#ifdef METRO
-    return NULL;
-#else
-    /* Assuming gp_open_scratch_file_64 is same as gp_open_scratch_file -
-       see the body of gp_open_printer. */
-    return gp_open_printer(mem, fname, binary_mode);
-#endif
-}
-
-#if defined(_MSC_VER) && _MSC_VER < 1400
-    int64_t _ftelli64( FILE *);
-    int _fseeki64( FILE *, int64_t, int);
-#endif
-
-gs_offset_t gp_ftell_64(FILE *strm)
-{
-#if !defined(_MSC_VER)
-    return ftell(strm);
-#elif _MSC_VER < 1200
-    return ftell(strm);
-#else
-    return (int64_t)_ftelli64(strm);
-#endif
-}
-
-int gp_fseek_64(FILE *strm, gs_offset_t offset, int origin)
-{
-#if !defined(_MSC_VER)
-    return fseek(strm, offset, origin);
-#elif _MSC_VER < 1200
-    long offset1 = (long)offset;
-
-    if (offset != offset1)
-        return -1;
-    return fseek(strm, offset1, origin);
-#else
-    return _fseeki64(strm, offset, origin);
-#endif
-}
-
-bool gp_fseekable (FILE *f)
-{
-    struct __stat64 s;
-    int fno;
-    
-    fno = fileno(f);
-    if (fno < 0)
-        return(false);
-    
-    if (_fstat64(fno, &s) < 0)
-        return(false);
-
-    return((bool)S_ISREG(s.st_mode));
 }
 
 /* -------------------------  _snprintf -----------------------------*/

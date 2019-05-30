@@ -335,5 +335,50 @@ gsapi_set_param(void *lib, gs_set_param_type type, const char *param, const void
     return psapi_set_param(ctx, (psapi_sptype)type, param, value);
 }
 
+GSDLLEXPORT int GSDLLAPI
+gsapi_add_control_path(void *instance, int type, const char *path)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (ctx == NULL)
+        return gs_error_Fatal;
+    return gs_add_control_path(ctx->memory, type, path);
+}
+
+GSDLLEXPORT int GSDLLAPI
+gsapi_remove_control_path(void *instance, int type, const char *path)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (ctx == NULL)
+        return gs_error_Fatal;
+    return gs_remove_control_path(ctx->memory, type, path);
+}
+
+GSDLLEXPORT void GSDLLAPI
+gsapi_purge_control_paths(void *instance, int type)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (ctx == NULL)
+        return;
+    gs_purge_control_paths(ctx->memory, type);
+}
+
+GSDLLEXPORT void GSDLLAPI
+gsapi_activate_path_control(void *instance, int enable)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (ctx == NULL)
+        return;
+    gs_activate_path_control(ctx->memory, enable);
+}
+
+GSDLLEXPORT int GSDLLAPI
+gsapi_is_path_control_active(void *instance)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (ctx == NULL)
+        return 0;
+    return gs_is_path_control_active(ctx->memory);
+}
+
 
 /* end of iapi.c */

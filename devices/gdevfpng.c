@@ -231,20 +231,20 @@ static void big32(unsigned char *buf, unsigned int v)
     buf[3] = (v) & 0xff;
 }
 
-static void write_big32(int v, FILE *file)
+static void write_big32(int v, gp_file *file)
 {
-    fputc(v>>24, file);
-    fputc(v>>16, file);
-    fputc(v>>8, file);
-    fputc(v>>0, file);
+    gp_fputc(v>>24, file);
+    gp_fputc(v>>16, file);
+    gp_fputc(v>>8, file);
+    gp_fputc(v>>0, file);
 }
 
-static void putchunk(const char *tag, const unsigned char *data, int size, FILE *file)
+static void putchunk(const char *tag, const unsigned char *data, int size, gp_file *file)
 {
     unsigned int sum;
     write_big32(size, file);
-    fwrite(tag, 1, 4, file);
-    fwrite(data, 1, size, file);
+    gp_fwrite(tag, 1, 4, file);
+    gp_fwrite(data, 1, size, file);
     sum = crc32(0, NULL, 0);
     sum = crc32(sum, (const unsigned char*)tag, 4);
     sum = crc32(sum, data, size);
@@ -400,7 +400,7 @@ static int fpng_process(void *arg, gx_device *dev, gx_device *bdev, const gs_int
 
 static int fpng_output(void *arg, gx_device *dev, void *buffer_)
 {
-    FILE *file = (FILE *)arg;
+    gp_file *file = (gp_file *)arg;
     fpng_buffer_t *buffer = (fpng_buffer_t *)buffer_;
 
     putchunk("IDAT", &buffer->data[0], buffer->compressed, file);
@@ -410,14 +410,14 @@ static int fpng_output(void *arg, gx_device *dev, void *buffer_)
 
 /* Write out a page in PNG format. */
 static int
-fpng_print_page(gx_device_printer *pdev, FILE *file)
+fpng_print_page(gx_device_printer *pdev, gp_file *file)
 {
     gx_device_fpng *fdev = (gx_device_fpng *)pdev;
     static const unsigned char pngsig[8] = { 137, 80, 78, 71, 13, 10, 26, 10 };
     unsigned char head[13];
     gx_process_page_options_t process = { 0 };
 
-    fwrite(pngsig, 1, 8, file); /* Signature */
+    gp_fwrite(pngsig, 1, 8, file); /* Signature */
 
     /* IHDR chunk */
     big32(&head[0], gx_downscaler_scale_rounded(pdev->width, fdev->downscale.downscale_factor));

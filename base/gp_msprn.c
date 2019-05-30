@@ -66,7 +66,9 @@ const gx_io_device gs_iodev_printer = {
      iodev_no_delete_file, iodev_no_rename_file, iodev_no_file_status,
      iodev_no_enumerate_files, NULL, NULL,
      iodev_no_get_params, iodev_no_put_params
-    }
+    },
+    NULL,
+    NULL
 };
 
 typedef struct tid_s {
@@ -155,7 +157,7 @@ mswin_printer_finit(gx_io_device * iodev, gs_memory_t * mem)
 
 static int
 mswin_printer_fopen(gx_io_device * iodev, const char *fname, const char *access,
-           FILE ** pfile, char *rfname, uint rnamelen)
+                    gp_file ** pfile, char *rfname, uint rnamelen, gs_memory_t *mem)
 {
     DWORD version = GetVersion();
     HANDLE hprinter;
@@ -164,6 +166,9 @@ mswin_printer_fopen(gx_io_device * iodev, const char *fname, const char *access,
     HANDLE hthread;
     char pname[gp_file_name_sizeof];
     unsigned long *ptid = &((tid_t *)(iodev->state))->tid;
+
+    if (gp_validate_path(mem, fname, access) != 0)
+        return gs_error_invalidfileaccess;
 
     /* Win32s supports neither pipes nor Win32 printers. */
     if (((HIWORD(version) & 0x8000) != 0) &&
@@ -175,12 +180,19 @@ mswin_printer_fopen(gx_io_device * iodev, const char *fname, const char *access,
         return_error(gs_error_invalidfileaccess);
     ClosePrinter(hprinter);
 
-    /* Create a pipe to connect a FILE pointer to a Windows printer. */
-    if (_pipe(pipeh, 4096, _O_BINARY) != 0)
-        return_error(gs_fopen_errno_to_code(errno));
+    *pfile = gp_file_FILE_alloc(mem);
+    if (*pfile == NULL)
+        return_error(gs_error_VMerror);
 
-    *pfile = fdopen(pipeh[1], (char *)access);
-    if (*pfile == NULL) {
+    /* Create a pipe to connect a FILE pointer to a Windows printer. */
+    if (_pipe(pipeh, 4096, _O_BINARY) != 0) {
+        gp_file_dealloc(*pfile);
+        *pfile = NULL;
+        return_error(gs_fopen_errno_to_code(errno));
+    }
+
+    if (gp_file_FILE_set(*pfile, fdopen(pipeh[1], (char *)access), NULL)) {
+        *pfile = NULL;
         close(pipeh[0]);
         close(pipeh[1]);
         return_error(gs_fopen_errno_to_code(errno));
@@ -189,7 +201,8 @@ mswin_printer_fopen(gx_io_device * iodev, const char *fname, const char *access,
     /* start a thread to read the pipe */
     tid = _beginthread(&mswin_printer_thread, 32768, (void *)(pipeh[0]));
     if (tid == -1) {
-        fclose(*pfile);
+        gp_fclose(*pfile);
+        *pfile = NULL;
         close(pipeh[0]);
         return_error(gs_error_invalidfileaccess);
     }
@@ -200,7 +213,8 @@ mswin_printer_fopen(gx_io_device * iodev, const char *fname, const char *access,
     if (!DuplicateHandle(GetCurrentProcess(), (HANDLE)tid,
         GetCurrentProcess(), &hthread,
         0, FALSE, DUPLICATE_SAME_ACCESS)) {
-        fclose(*pfile);
+        gp_fclose(*pfile);
+        *pfile = NULL;
         return_error(gs_error_invalidfileaccess);
     }
     *ptid = (unsigned long)hthread;
@@ -210,17 +224,17 @@ mswin_printer_fopen(gx_io_device * iodev, const char *fname, const char *access,
      * synchronisation code.
      */
     strncpy(pname, fname, sizeof(pname));
-    fwrite(pname, 1, sizeof(pname), *pfile);
+    gp_fwrite(pname, 1, sizeof(pname), *pfile);
 
     return 0;
 }
 
 static int
-mswin_printer_fclose(gx_io_device * iodev, FILE * file)
+mswin_printer_fclose(gx_io_device * iodev, gp_file * file)
 {
     unsigned long *ptid = &((tid_t *)(iodev->state))->tid;
     HANDLE hthread;
-    fclose(file);
+    gp_fclose(file);
     if (*ptid != -1) {
         /* Wait until the print thread finishes before continuing */
         hthread = (HANDLE)*ptid;

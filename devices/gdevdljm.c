@@ -45,14 +45,14 @@
 
 /* Send a page to the printer. */
 int
-dljet_mono_print_page(gx_device_printer * pdev, FILE * prn_stream,
+dljet_mono_print_page(gx_device_printer * pdev, gp_file * prn_stream,
                       int dots_per_inch, int features, const char *page_init)
 {
     return dljet_mono_print_page_copies(pdev, prn_stream, 1, dots_per_inch,
                                         features, page_init, page_init, false);
 }
 int
-dljet_mono_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
+dljet_mono_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream,
                              int num_copies, int dots_per_inch, int features,
                              const char *odd_page_init, const char *even_page_init, bool tumble)
 {
@@ -104,26 +104,26 @@ dljet_mono_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
     /* Initialize printer. */
     if (pdev->PageCount == 0) {
         if (features & HACK__IS_A_LJET4PJL) {
-            fputs("\033%-12345X@PJL\r\n@PJL ENTER LANGUAGE = PCL\r\n",
+            gp_fputs("\033%-12345X@PJL\r\n@PJL ENTER LANGUAGE = PCL\r\n",
                   prn_stream);
         }
-        fputs("\033E", prn_stream);	/* reset printer */
+        gp_fputs("\033E", prn_stream);	/* reset printer */
         /* If the printer supports it, set the paper size */
         /* based on the actual requested size. */
-        fprintf(prn_stream, "\033&l%dO", page_orientation);
+        gp_fprintf(prn_stream, "\033&l%dO", page_orientation);
         if (features & PCL_CAN_SET_PAPER_SIZE) {
-            fprintf(prn_stream, "\033&l%dA", paper_size);
+            gp_fprintf(prn_stream, "\033&l%dA", paper_size);
         }
         /* If printer can duplex, set duplex mode appropriately. */
         if (features & PCL_HAS_DUPLEX) {
             if (dupset && dup && !tumble)
-                fputs("\033&l1S", prn_stream);
+                gp_fputs("\033&l1S", prn_stream);
        else if (dupset && dup && tumble)
-                fputs("\033&l2S", prn_stream);
+                gp_fputs("\033&l2S", prn_stream);
             else if (dupset && !dup)
-                fputs("\033&l0S", prn_stream);
+                gp_fputs("\033&l0S", prn_stream);
             else		/* default to duplex for this printer */
-                fputs("\033&l1S", prn_stream);
+                gp_fputs("\033&l1S", prn_stream);
         }
     }
     /* Put out per-page initialization. */
@@ -142,37 +142,37 @@ dljet_mono_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
     if ((features & PCL_HAS_DUPLEX) && dupset && dup) {
        /* We are printing duplex, so change margins as needed */
        if (( (pdev->PageCount/num_copies)%2)==0) {
-          fprintf(prn_stream, "\033&l%dO", page_orientation);
+          gp_fprintf(prn_stream, "\033&l%dO", page_orientation);
           if (features & PCL_CAN_SET_PAPER_SIZE) {
-              fprintf(prn_stream, "\033&l%dA", paper_size);
+              gp_fprintf(prn_stream, "\033&l%dA", paper_size);
           }
-          fputs("\033&l0l0E", prn_stream);
-          fputs(odd_page_init, prn_stream);
+          gp_fputs("\033&l0l0E", prn_stream);
+          gp_fputs(odd_page_init, prn_stream);
        } else
-          fputs(even_page_init, prn_stream);
+          gp_fputs(even_page_init, prn_stream);
     } else {
-        fprintf(prn_stream, "\033&l%dO", page_orientation);
+        gp_fprintf(prn_stream, "\033&l%dO", page_orientation);
         if (features & PCL_CAN_SET_PAPER_SIZE){
-            fprintf(prn_stream, "\033&l%dA", paper_size);
+            gp_fprintf(prn_stream, "\033&l%dA", paper_size);
         }
-        fputs("\033&l0l0E", prn_stream);
-        fputs(odd_page_init, prn_stream);
+        gp_fputs("\033&l0l0E", prn_stream);
+        gp_fputs(odd_page_init, prn_stream);
     }
 
-    fprintf(prn_stream, "\033&l%dX", num_copies);	/* # of copies */
+    gp_fprintf(prn_stream, "\033&l%dX", num_copies);	/* # of copies */
 
     /* End raster graphics, position cursor at top. */
-    fputs("\033*rB\033*p0x0Y", prn_stream);
+    gp_fputs("\033*rB\033*p0x0Y", prn_stream);
 
     /* The DeskJet and DeskJet Plus reset everything upon */
     /* receiving \033*rB, so we must reinitialize graphics mode. */
     if (features & PCL_END_GRAPHICS_DOES_RESET) {
-        fputs(odd_page_init, prn_stream); /* Assume this does the right thing */
-        fprintf(prn_stream, "\033&l%dX", num_copies);	/* # of copies */
+        gp_fputs(odd_page_init, prn_stream); /* Assume this does the right thing */
+        gp_fprintf(prn_stream, "\033&l%dX", num_copies);	/* # of copies */
     }
 
     /* Set resolution. */
-    fprintf(prn_stream, "\033*t%dR", x_dpi);
+    gp_fprintf(prn_stream, "\033*t%dR", x_dpi);
 
     /* Send each scan line in turn */
     {
@@ -204,16 +204,16 @@ dljet_mono_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
                 /* We're at the top of a page. */
                 if (features & PCL_ANY_SPACING) {
                     if (num_blank_lines > 0)
-                        fprintf(prn_stream, "\033*p+%dY",
+                        gp_fprintf(prn_stream, "\033*p+%dY",
                                 num_blank_lines * y_dots_per_pixel);
                     /* Start raster graphics. */
-                    fputs("\033*r1A", prn_stream);
+                    gp_fputs("\033*r1A", prn_stream);
                 } else if (features & PCL_MODE_3_COMPRESSION) {
                     /* Start raster graphics. */
-                    fputs("\033*r1A", prn_stream);
+                    gp_fputs("\033*r1A", prn_stream);
 #if 1				/* don't waste paper */
                     if (num_blank_lines > 0)
-                        fputs("\033*b0W", prn_stream);
+                        gp_fputs("\033*b0W", prn_stream);
                     num_blank_lines = 0;
 #else
                     for (; num_blank_lines; num_blank_lines--)
@@ -221,9 +221,9 @@ dljet_mono_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
 #endif
                 } else {
                     /* Start raster graphics. */
-                    fputs("\033*r1A", prn_stream);
+                    gp_fputs("\033*r1A", prn_stream);
                     for (; num_blank_lines; num_blank_lines--)
-                        fputs("\033*bW", prn_stream);
+                        gp_fputs("\033*bW", prn_stream);
                 }
             }
             /* Skip blank lines if any */
@@ -247,27 +247,27 @@ dljet_mono_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
 
                     if (mode_3ns && compression != 2) {
                         /* Switch to mode 2 */
-                        fputs(from3to2, prn_stream);
+                        gp_fputs(from3to2, prn_stream);
                         compression = 2;
                     }
                     if (features & PCL_MODE_3_COMPRESSION) {
                         /* Must clear the seed row. */
-                        fputs("\033*b1Y", prn_stream);
+                        gp_fputs("\033*b1Y", prn_stream);
                         num_blank_lines--;
                     }
                     if (mode_3ns) {
                         for (; num_blank_lines; num_blank_lines--)
-                            fputs("\033*b0W", prn_stream);
+                            gp_fputs("\033*b0W", prn_stream);
                     } else {
                         for (; num_blank_lines; num_blank_lines--)
-                            fputs("\033*bW", prn_stream);
+                            gp_fputs("\033*bW", prn_stream);
                     }
                 } else if (features & PCL3_SPACING) {
-                    fprintf(prn_stream, "\033*p+%dY",
-                            num_blank_lines * y_dots_per_pixel);
+                    gp_fprintf(prn_stream, "\033*p+%dY",
+                               num_blank_lines * y_dots_per_pixel);
                 } else {
-                    fprintf(prn_stream, "\033*b%dY",
-                            num_blank_lines);
+                    gp_fprintf(prn_stream, "\033*b%dY",
+                               num_blank_lines);
                 }
                 /* Clear the seed row (only matters for */
                 /* mode 3 compression). */
@@ -292,13 +292,13 @@ dljet_mono_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
 
                 if (count3 + penalty3 < count2 + penalty2) {
                     if (compression != 3)
-                        fputs(from2to3, prn_stream);
+                        gp_fputs(from2to3, prn_stream);
                     compression = 3;
                     out_data = out_row;
                     out_count = count3;
                 } else {
                     if (compression != 2)
-                        fputs(from3to2, prn_stream);
+                        gp_fputs(from3to2, prn_stream);
                     compression = 2;
                     out_data = out_row_alt;
                     out_count = count2;
@@ -313,14 +313,14 @@ dljet_mono_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
             }
 
             /* Transfer the data */
-            fprintf(prn_stream, "\033*b%dW", out_count);
-            fwrite(out_data, sizeof(byte), out_count,
-                   prn_stream);
+            gp_fprintf(prn_stream, "\033*b%dW", out_count);
+            gp_fwrite(out_data, sizeof(byte), out_count,
+                      prn_stream);
         }
     }
 
     /* end raster graphics and eject page */
-    fputs("\033*rB\f", prn_stream);
+    gp_fputs("\033*rB\f", prn_stream);
 
     /* free temporary storage */
     gs_free_object(pdev->memory, storage, "hpjet_print_page");

@@ -58,7 +58,6 @@
 /* Standard headers */
 #include <assert.h>
 #include <errno.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -117,13 +116,13 @@ unsigned int pcl3_levels_to_planes(unsigned int levels)
 
 ******************************************************************************/
 
-static void send_ERG(FILE *out, pcl_Level level)
+static void send_ERG(gp_file *out, pcl_Level level)
 {
   /* PCL: End Raster Graphics/End Raster */
-  fputs("\033*r", out);
-  if (pcl_use_oldERG(level)) fputc('B', out);
-  else if (level == pcl_level_3plus_ERG_both) fputs("bC", out);
-  else fputc('C', out);
+  gp_fputs("\033*r", out);
+  if (pcl_use_oldERG(level)) gp_fputc('B', out);
+  else if (level == pcl_level_3plus_ERG_both) gp_fputs("bC", out);
+  else gp_fputc('C', out);
 
   return;
 }
@@ -149,7 +148,7 @@ static void send_ERG(FILE *out, pcl_Level level)
 
 ******************************************************************************/
 
-int pcl3_init_file(FILE *out, pcl_FileData *data)
+int pcl3_init_file(gp_file *out, pcl_FileData *data)
 {
   pcl_bool needs_CRD = (data->level == pcl_level_3plus_CRD_only);
     /* Do we need Configure Raster Data? */
@@ -163,7 +162,7 @@ int pcl3_init_file(FILE *out, pcl_FileData *data)
 
     invalid = (out == NULL || data == NULL);
     if (invalid)
-      fputs(ERRPREF "Null pointer passed to pcl3_init_file().\n", stderr);
+      errprintf(out->memory, ERRPREF "Null pointer passed to pcl3_init_file().\n");
     else {
       /* Palette und colorants */
       switch(data->palette) {
@@ -176,9 +175,8 @@ int pcl3_init_file(FILE *out, pcl_FileData *data)
         default: invalid = data->number_of_colorants <= 0;
       }
       if (invalid)
-        fputs(ERRPREF
-          "Palette specification and number of colorants are inconsistent.\n",
-          stderr);
+        errprintf(out->memory, ERRPREF
+          "Palette specification and number of colorants are inconsistent.\n");
       else {
         if (data->colorant == NULL) colorant = data->colorant_array;
         else colorant = data->colorant;
@@ -189,7 +187,7 @@ int pcl3_init_file(FILE *out, pcl_FileData *data)
         for (j = 0; j < data->number_of_colorants; j++) {
           if (colorant[j].hres <= 0 || colorant[j].vres <= 0) {
             invalid = TRUE;
-            fprintf(stderr, ERRPREF
+            errprintf(out->memory, ERRPREF
               "The resolution for colorant %d is not positive: %u x %u ppi.\n",
               j, colorant[j].hres, colorant[j].vres);
           }
@@ -201,7 +199,7 @@ int pcl3_init_file(FILE *out, pcl_FileData *data)
           }
           if (colorant[j].levels < 2 || 0xFFFF < colorant[j].levels) {
             invalid = TRUE;
-            fprintf(stderr, ERRPREF "The number of intensity levels for "
+            errprintf(out->memory, ERRPREF "The number of intensity levels for "
               "colorant %d is %u instead of at least 2 and at most 65535.\n",
               j, colorant[j].levels);
             /* Actually, DJ6/8 p. 68 requires the levels to be in the range
@@ -237,21 +235,21 @@ int pcl3_init_file(FILE *out, pcl_FileData *data)
             */
             if (colorant[j].vres % data->minvres != 0) {
               invalid = TRUE;
-              fprintf(stderr, ERRPREF
+              errprintf(out->memory, ERRPREF
                 "The vertical resolution for colorant %d (%u ppi) is not a "
                 "multiple of the lowest vertical resolution (%u ppi).\n",
                 j, colorant[j].vres, data->minvres);
             }
             if (maxhres % colorant[j].hres != 0) {
               invalid = TRUE;
-              fprintf(stderr, ERRPREF
+              errprintf(out->memory, ERRPREF
                 "The highest horizontal resolution (%u ppi) is not a multiple "
                 "of the horizontal resolution for colorant %d (%u ppi).\n",
                 maxhres, j, colorant[j].hres);
             }
             if (maxvres % colorant[j].vres != 0) {
               invalid = TRUE;
-              fprintf(stderr, ERRPREF
+              errprintf(out->memory, ERRPREF
                 "The highest vertical resolution (%u ppi) is not a multiple "
                 "of the vertical resolution for colorant %d (%u ppi).\n",
                 maxvres, j, colorant[j].vres);
@@ -262,37 +260,34 @@ int pcl3_init_file(FILE *out, pcl_FileData *data)
       if (needs_CRD && data->palette == pcl_RGB) {
         invalid = TRUE;
         if (data->level == pcl_level_3plus_CRD_only)
-          fputs(ERRPREF
-            "You can't use an RGB palette at the requested PCL level.\n",
-            stderr);
+          errprintf(out->memory, ERRPREF
+            "You can't use an RGB palette at the requested PCL level.\n");
         else
-          fputs(ERRPREF "The specified structure of resolutions and intensity "
-            "levels is not possible with an RGB palette.\n",
-            stderr);
+          errprintf(out->memory, ERRPREF "The specified structure of resolutions and intensity "
+            "levels is not possible with an RGB palette.\n");
       }
       if (needs_CRD && !pcl_has_CRD(data->level)) {
         invalid = TRUE;
-        fputs(ERRPREF "The specified structure of resolutions and intensity "
-          "levels is not possible at the requested PCL level.\n", stderr);
+        errprintf(out->memory, ERRPREF "The specified structure of resolutions and intensity "
+          "levels is not possible at the requested PCL level.\n");
       }
       if (data->palette == pcl_any_palette) {
         needs_CRD = TRUE;
         if (!pcl_has_CRD(data->level)) {
           invalid = TRUE;
-          fputs(ERRPREF "The specified palette is not possible at the "
-            "requested PCL level.\n", stderr);
+          errprintf(out->memory, ERRPREF "The specified palette is not possible at the "
+            "requested PCL level.\n");
         }
       }
       if (needs_CRD && (maxhres > 0xFFFF || maxvres > 0xFFFF)) {
-        fputs(ERRPREF "Resolutions may be at most 65535 ppi when more than one "
-          "resolution or more than two intensity levels are requested.\n",
-          stderr);
+        errprintf(out->memory, ERRPREF "Resolutions may be at most 65535 ppi when more than one "
+          "resolution or more than two intensity levels are requested.\n");
         invalid = TRUE;
       }
       if (data->order_CMYK && data->palette != pcl_CMYK) {
-        fputs(ERRPREF
+        errprintf(out->memory, ERRPREF
           "Ordering bit planes as CMYK instead of KCMY is only meaningful\n"
-          "  for a CMYK palette.\n", stderr);
+          "  for a CMYK palette.\n");
         invalid = TRUE;
       }
 
@@ -304,7 +299,7 @@ int pcl3_init_file(FILE *out, pcl_FileData *data)
            exception of '"' (PJLTRM, with some corrections). */
         while (*s != '\0' && (*s == '\t' || (32 <= *s && *s != '"'))) s++;
         if (*s != '\0') {
-          fprintf(stderr,
+          errprintf(out->memory,
             ERRPREF "Illegal character in PJL job name (code 0x%02X).\n", *s);
           invalid = TRUE;
         }
@@ -315,8 +310,7 @@ int pcl3_init_file(FILE *out, pcl_FileData *data)
            There would also be a warning for an empty string but we treat that
            case differently anyway (see below). */
         if (strlen(data->PJL_job) > 80) {
-          fputs(ERRPREF "PJL job name is too long (more than 80 characters).\n",
-            stderr);
+          errprintf(out->memory, ERRPREF "PJL job name is too long (more than 80 characters).\n");
           invalid = TRUE;
         }
       }
@@ -332,11 +326,11 @@ int pcl3_init_file(FILE *out, pcl_FileData *data)
         if (is_letter(*s)) do s++; while (is_letter(*s) || is_digit(*s));
 
         if (*data->PJL_language == '\0') {
-          fputs(ERRPREF "Empty PJL language name.\n", stderr);
+          errprintf(out->memory, ERRPREF "Empty PJL language name.\n");
           invalid = TRUE;
         }
         else if (*s != '\0') {
-          fprintf(stderr,
+          errprintf(out->memory,
             ERRPREF "Illegal character in PJL language name (code 0x%02X).\n",
             *s);
           invalid = TRUE;
@@ -351,7 +345,7 @@ int pcl3_init_file(FILE *out, pcl_FileData *data)
       600 and one even with 9600 NUL characters. This seems unnecessary
       and is undocumented, but just in case that there are situations where it
       might make a difference, this module provides the capability. */
-  for (j = 0; j < data->NULs_to_send; j++) fputc('\0', out);
+  for (j = 0; j < data->NULs_to_send; j++) gp_fputc('\0', out);
 
   /*  Issue PJL commands if requested. Most newer HP drivers for PCL-3 printers
       follow the NULs with a PJL statement to enter the PCL language
@@ -362,29 +356,29 @@ int pcl3_init_file(FILE *out, pcl_FileData *data)
       This is wrong (PJLTRM).
   */
   if (data->PJL_job != NULL || data->PJL_language != NULL) {
-    fputs("\033%-12345X", out);	/* Universal Exit Language (UEL) */
+    gp_fputs("\033%-12345X", out);	/* Universal Exit Language (UEL) */
 
     /* Start of job */
     if (data->PJL_job != NULL) {
-      fputs("@PJL JOB", out);
-      if (*data->PJL_job != '\0') fprintf(out, " NAME=\"%s\"", data->PJL_job);
-      fputc('\n', out);
+      gp_fputs("@PJL JOB", out);
+      if (*data->PJL_job != '\0') gp_fprintf(out, " NAME=\"%s\"", data->PJL_job);
+      gp_fputc('\n', out);
     }
 
     /* Switch personality */
     if (data->PJL_language != NULL)
-      fprintf(out, "@PJL ENTER LANGUAGE=%s\n", data->PJL_language);
+      gp_fprintf(out, "@PJL ENTER LANGUAGE=%s\n", data->PJL_language);
   }
 
   /* PCL: Printer Reset */
-  fputs("\033E", out);
+  gp_fputs("\033E", out);
 
   /* Additional initialization */
   if (data->init1.length > 0)
-    fwrite(data->init1.str, sizeof(pcl_Octet), data->init1.length, out);
+    gp_fwrite(data->init1.str, sizeof(pcl_Octet), data->init1.length, out);
 
   /* Page layout initialization */
-  fprintf(out,
+  gp_fprintf(out,
     "\033&l%da"	/* PCL: Page Size */
     "0o"	/* PCL: Page Orientation/Orientation: portrait */
     "0L",	/* PCL: Perforation Skip Mode: off. This also effectively sets
@@ -394,11 +388,11 @@ int pcl3_init_file(FILE *out, pcl_FileData *data)
 
   /* Media source */
   if (data->media_source != 0)
-    fprintf(out, "\033&l%dH", data->media_source);	/* PCL: Media Source */
+    gp_fprintf(out, "\033&l%dH", data->media_source);	/* PCL: Media Source */
       /*  Note that a value of zero for the Media Source command means
           "eject the current page". Hence we are losing no functionality by
           reserving 0 to mean "no Media Source request". */
-  if (data->media_source != 2 && data->manual_feed) fputs("\033&l2H", out);
+  if (data->media_source != 2 && data->manual_feed) gp_fputs("\033&l2H", out);
    /* I am using two Media Source commands here in case the value 2 means
       "manual feed from the last selected media source" on some printer. */
 
@@ -406,32 +400,32 @@ int pcl3_init_file(FILE *out, pcl_FileData *data)
       PCL-3 printer should support such a feature, the command used is the same
       as in PCL 5/6. At present, I know of no such printer. */
   if (data->media_destination != 0)
-    fprintf(out, "\033&l%dG", data->media_destination);
+    gp_fprintf(out, "\033&l%dG", data->media_destination);
      /* PCL: Paper Destination (BPL02705). A value of zero means "auto select".
       */
 
   /*  Duplex. Again, I have only PCL-5 documentation for this, but in this case
       I know that the DJ 970C uses the command. */
   if (data->duplex != -1)
-    fprintf(out, "\033&l%dS", data->duplex);	/* PCL: Simplex/Duplex Print */
+    gp_fprintf(out, "\033&l%dS", data->duplex);	/* PCL: Simplex/Duplex Print */
 
   /* Print quality */
   if (pcl_use_oldquality(data->level)) {
-    fprintf(out, "\033*r%dQ", data->raster_graphics_quality);
+    gp_fprintf(out, "\033*r%dQ", data->raster_graphics_quality);
       /* PCL: Raster Graphics Quality */
     if (data->level > pcl_level_3plus_DJ500)
-      fprintf(out, "\033*o%dQ", data->shingling);
+      gp_fprintf(out, "\033*o%dQ", data->shingling);
         /* PCL: Set Raster Graphics Shingling/Mechanical Print Quality */
     if (data->depletion != 0)
      /*	According to TRG500 p. 6-32, depletion makes no sense for monochrome
         data.  Besides, not all printers react to this command. Hence I'm
         handing the decision to the caller. Note that permitted values are 1-5.
       */
-      fprintf(out, "\033*o%dD", data->depletion);
+      gp_fprintf(out, "\033*o%dD", data->depletion);
         /* PCL: Set Raster Graphics Depletion */
   }
   else
-    fprintf(out,
+    gp_fprintf(out,
       "\033&l%dM"	/* PCL: Media Type */
       "\033*o%dM",	/* PCL: Print Quality */
       data->media_type,
@@ -444,7 +438,7 @@ int pcl3_init_file(FILE *out, pcl_FileData *data)
       the description of the value 0 ("default dry time for the current print
       quality", TRG500 p. 2-4), I'm putting the command here after the quality
       commands. */
-  if (data->dry_time >= 0) fprintf(out, "\033&b%dT", data->dry_time);
+  if (data->dry_time >= 0) gp_fprintf(out, "\033&b%dT", data->dry_time);
 
   /* End Raster Graphics. This provides a known graphics state, see
      TRG500 p. 6-25, but is probably superfluous here because of the Printer
@@ -453,7 +447,7 @@ int pcl3_init_file(FILE *out, pcl_FileData *data)
 
   if (data->level != pcl_level_3plus_CRD_only)
     /* PCL: Set Raster Graphics Resolution/Raster Resolution */
-    fprintf(out, "\033*t%uR", maxhres < maxvres? maxvres: maxhres);
+    gp_fprintf(out, "\033*t%uR", maxhres < maxvres? maxvres: maxhres);
     /* If different x and y resolutions have been demanded but the printer does
        not support the combination, choosing the larger value here will prevent
        printing beyond the sheet---provided the printer accepts this resolution.
@@ -461,7 +455,7 @@ int pcl3_init_file(FILE *out, pcl_FileData *data)
 
   /* Set PCL unit to reciprocal of largest resolution */
   if (data->level >= pcl_level_3plus_S68)
-    fprintf(out, "\033&u%uD", maxhres < maxvres? maxvres: maxhres);
+    gp_fprintf(out, "\033&u%uD", maxhres < maxvres? maxvres: maxhres);
      /* PCL: Unit of Measure. This is not documented but merely mentioned in
         DJ6/8. All HP drivers for newer printers I've looked at (admittedly not
         many) generate this command, including a driver for the DJ 540.
@@ -472,19 +466,19 @@ int pcl3_init_file(FILE *out, pcl_FileData *data)
   /* Colour planes */
   if (data->level != pcl_level_3plus_CRD_only &&
       data->palette != pcl_no_palette && data->palette != pcl_any_palette)
-    fprintf(out, "\033*r%dU",
+    gp_fprintf(out, "\033*r%dU",
         /* PCL: Set Number of Planes per Row/Simple Color */
       data->palette == pcl_RGB? 3:	/* RGB palette */
       -data->number_of_colorants);	/* (K)(CMY) palette */
 
   /* Configure Raster Data */
   if (needs_CRD) {
-    fprintf(out, "\033*g%uW"	/* PCL: Configure Raster Data */
+    gp_fprintf(out, "\033*g%uW"	/* PCL: Configure Raster Data */
       "\002%c",		/* Format 2: Complex Direct Planar */
       2 + 6*data->number_of_colorants, data->number_of_colorants);
 
     for (j = 0; j < data->number_of_colorants; j++)
-      fprintf(out, "%c%c%c%c%c%c",
+      gp_fprintf(out, "%c%c%c%c%c%c",
         /*  Note that %c expects an 'int' (and converts it to 'unsigned char').
          */
         colorant[j].hres/256,   colorant[j].hres%256,
@@ -492,15 +486,14 @@ int pcl3_init_file(FILE *out, pcl_FileData *data)
         colorant[j].levels/256, colorant[j].levels%256);
   }
 
-  if (ferror(out)) {
-    fputs(ERRPREF "Unidentified system error while writing the output file.\n",
-      stderr);
+  if (gp_ferror(out)) {
+    errprintf(out->memory, ERRPREF "Unidentified system error while writing the output file.\n");
     return -1;
   }
 
   /* Additional initialization */
   if (data->init2.length > 0)
-    fwrite(data->init2.str, sizeof(pcl_Octet), data->init2.length, out);
+    gp_fwrite(data->init2.str, sizeof(pcl_Octet), data->init2.length, out);
 
   /* Determine and set the number of bit planes */
   if (data->palette == pcl_CMY || data->palette == pcl_RGB)
@@ -525,9 +518,9 @@ int pcl3_init_file(FILE *out, pcl_FileData *data)
 
 ******************************************************************************/
 
-int pcl3_begin_page(FILE *out, pcl_FileData *global)
+int pcl3_begin_page(gp_file *out, pcl_FileData *global)
 {
-  fputs("\033*p0Y", out);
+  gp_fputs("\033*p0Y", out);
     /* PCL: Vertical Cursor Positioning by Dots/Move CAP Vertical (PCL Units) */
 
   return 0;
@@ -551,7 +544,7 @@ int pcl3_begin_page(FILE *out, pcl_FileData *global)
 
 ******************************************************************************/
 
-int pcl3_begin_raster(FILE *out, pcl_RasterData *data)
+int pcl3_begin_raster(gp_file *out, pcl_RasterData *data)
 {
   const pcl_FileData *global = NULL;
   int j;
@@ -585,8 +578,7 @@ int pcl3_begin_raster(FILE *out, pcl_RasterData *data)
     }
 
     if (invalid) {
-      fputs(ERRPREF "Invalid data structure passed to pcl3_begin_raster().\n",
-        stderr);
+      errprintf(out->memory, ERRPREF "Invalid data structure passed to pcl3_begin_raster().\n");
       return +1;
     }
   }
@@ -595,8 +587,7 @@ int pcl3_begin_raster(FILE *out, pcl_RasterData *data)
   data->seed_plane = (pcl_OctetString **)
     malloc(global->number_of_bitplanes*sizeof(pcl_OctetString *));
   if (data->seed_plane == NULL) {
-    fputs(ERRPREF "Memory allocation failure in pcl3_begin_raster().\n",
-      stderr);
+    errprintf(out->memory, ERRPREF "Memory allocation failure in pcl3_begin_raster().\n");
     return -1;
   }
   memset(data->seed_plane, 0,
@@ -653,12 +644,12 @@ int pcl3_begin_raster(FILE *out, pcl_RasterData *data)
 
   /* Start raster mode */
   if (data->width > 0) {
-    fprintf(out, "\033*r%uS", data->width);
+    gp_fprintf(out, "\033*r%uS", data->width);
     /* PCL: Set Raster Graphics Width/Source Raster Width. The value is the
        number of pixels at the lowest horizontal resolution (see DJ6/8 p. 66).
        This is reset by End Raster Graphics. */
   }
-  fputs("\033*p0X"	/* PCL: Horizontal Cursor Positioning by Dots */
+  gp_fputs("\033*p0X"	/* PCL: Horizontal Cursor Positioning by Dots */
         "\033*r1A", out);
           /* PCL: Start Raster Graphics: at current position */
 
@@ -668,7 +659,7 @@ int pcl3_begin_raster(FILE *out, pcl_RasterData *data)
     for (j = 0; j < global->number_of_bitplanes; j++)
       data->previous[j].length = 0;
 
-  fputs("\033*b", out);
+  gp_fputs("\033*b", out);
     /* We use combined escape sequences, all with this prefix. */
 
   /*  The old End Raster Graphics command (with 'B') does not reset the
@@ -680,7 +671,7 @@ int pcl3_begin_raster(FILE *out, pcl_RasterData *data)
       superfluous. */
   if (pcl_use_oldERG(global->level)) {
     /* Raster Graphics Compression Method */
-    fprintf(out, "%dm", (int)global->compression);
+    gp_fprintf(out, "%dm", (int)global->compression);
     data->current_compression = global->compression;
   }
   else data->current_compression = pcl_cm_none;
@@ -700,7 +691,7 @@ int pcl3_begin_raster(FILE *out, pcl_RasterData *data)
 
 ******************************************************************************/
 
-int pcl3_skip_groups(FILE *out, pcl_RasterData *data, unsigned int count)
+int pcl3_skip_groups(gp_file *out, pcl_RasterData *data, unsigned int count)
 {
   int j;
 
@@ -708,7 +699,7 @@ int pcl3_skip_groups(FILE *out, pcl_RasterData *data, unsigned int count)
       the command is superfluous in that case anyway I'm ignoring it. */
   if (count == 0) return 0;
 
-  fprintf(out, "%uy", count);
+  gp_fprintf(out, "%uy", count);
    /* PCL: Relative Vertical Pixel Movement/Y Offset.
       The statement in DJ6/8, p. 52, that "this command zero-fills the offset
       area" is incorrect. This can be seen when printing with an RGB palette on
@@ -750,7 +741,7 @@ int pcl3_skip_groups(FILE *out, pcl_RasterData *data, unsigned int count)
 
 static int send_plane(pcl_bool final,
   pcl_Compression method_demanded, pcl_Compression *method_used,
-  const pcl_OctetString *in, const pcl_OctetString *prev, FILE *out,
+  const pcl_OctetString *in, const pcl_OctetString *prev, gp_file *out,
   pcl_Octet *out_bf1, pcl_Octet *out_bf2, size_t out_bf_size)
 {
   int
@@ -837,8 +828,8 @@ static int send_plane(pcl_bool final,
   /* Switch compression methods, if needed */
   if (*method_used != choice) {
     /* Raster Graphics Compression Method */
-    if (fprintf(out, "%dm", (int)choice) < 0) {
-      fprintf(stderr, ERRPREF "Error from fprintf(): %s.\n", strerror(errno));
+    if (gp_fprintf(out, "%dm", (int)choice) < 0) {
+      errprintf(out->memory, ERRPREF "Error from fprintf(): %s.\n", strerror(errno));
       return -1;
     }
     *method_used = choice;
@@ -848,25 +839,25 @@ static int send_plane(pcl_bool final,
   if (send.length == 0) {
     errno = 0;
     if (final)
-      fputc('w', out);
+      gp_fputc('w', out);
       /* PCL: Transfer Raster Graphics Data by Row/Transfer Raster by Row/Block
        */
     else
-      fputc('v', out);
+      gp_fputc('v', out);
       /* PCL: Transfer Raster Graphics Data by Plane/Transfer Raster by Plane */
     if (errno != 0) {
-      fprintf(stderr, ERRPREF "Error from fputc(): %s.\n", strerror(errno));
+      errprintf(out->memory, ERRPREF "Error from fputc(): %s.\n", strerror(errno));
       return -1;
     }
   }
   else {
     /* PCL: Transfer Raster Graphics Data by Row/Block/Plane */
-    if (fprintf(out, "%d%c", send.length, final? 'w': 'v') < 0) {
-      fprintf(stderr, ERRPREF "Error from fprintf(): %s.\n", strerror(errno));
+    if (gp_fprintf(out, "%d%c", send.length, final? 'w': 'v') < 0) {
+      errprintf(out->memory, ERRPREF "Error from fprintf(): %s.\n", strerror(errno));
       return -1;
     }
-    if (fwrite(send.str, sizeof(pcl_Octet), send.length, out) != send.length) {
-      fprintf(stderr, ERRPREF "Error in fwrite(): %s.\n", strerror(errno));
+    if (gp_fwrite(send.str, sizeof(pcl_Octet), send.length, out) != send.length) {
+      errprintf(out->memory, ERRPREF "Error in fwrite(): %s.\n", strerror(errno));
       return -1;
     }
   }
@@ -900,7 +891,7 @@ static int send_plane(pcl_bool final,
 
 ******************************************************************************/
 
-int pcl3_transfer_group(FILE *out, pcl_RasterData *data)
+int pcl3_transfer_group(gp_file *out, pcl_RasterData *data)
 {
   const pcl_FileData *global = data->global;
   int
@@ -965,9 +956,9 @@ int pcl3_transfer_group(FILE *out, pcl_RasterData *data)
 
 ******************************************************************************/
 
-int pcl3_end_raster(FILE *out, pcl_RasterData *data)
+int pcl3_end_raster(gp_file *out, pcl_RasterData *data)
 {
-  fputs("0Y", out);
+  gp_fputs("0Y", out);
     /*  PCL: Relative Vertical Pixel Movement/Y Offset. This is a simple way
         to terminate the combined escape sequence started at the beginning of
         raster mode. */
@@ -992,14 +983,13 @@ int pcl3_end_raster(FILE *out, pcl_RasterData *data)
 
 ******************************************************************************/
 
-int pcl3_end_page(FILE *out, pcl_FileData *data)
+int pcl3_end_page(gp_file *out, pcl_FileData *data)
 {
   /* Eject the page */
-  fputc('\f', out);
+  gp_fputc('\f', out);
 
-  if (ferror(out)) {
-    fputs(ERRPREF "Unidentified system error while writing the output file.\n",
-      stderr);
+  if (gp_ferror(out)) {
+    errprintf(out->memory, ERRPREF "Unidentified system error while writing the output file.\n");
     return -1;
   }
 
@@ -1017,25 +1007,25 @@ int pcl3_end_page(FILE *out, pcl_FileData *data)
 
 ******************************************************************************/
 
-int pcl3_end_file(FILE *out, pcl_FileData *data)
+int pcl3_end_file(gp_file *out, pcl_FileData *data)
 {
   /* For banner printing, HP recommends to eject the page via Media Source.
      The printer then enters a paper-unloading state. */
   if (data->media_source == -1)
-    fputs("\033&l0H", out);	/* PCL: Media Source: Eject Page */
+    gp_fputs("\033&l0H", out);	/* PCL: Media Source: Eject Page */
 
   /* PCL: Printer Reset */
-  fputs("\033E", out);
+  gp_fputs("\033E", out);
 
   /* Terminate PJL */
   if (data->PJL_job != NULL || data->PJL_language != NULL) {
     /* PJL: UEL */
-    fputs("\033%-12345X", out);
+    gp_fputs("\033%-12345X", out);
 
     if (data->PJL_job != NULL) {
       /* PJL: End of Job. Some HP PCL-3 drivers using JOB omit this command.
          According to PJLTRM, it is required in that case. */
-      fputs("@PJL EOJ\n", out);
+      gp_fputs("@PJL EOJ\n", out);
 
       /* PJL: UEL. All output I've seen from HP's PCL-3 drivers using EOJ
          omits this final UEL. According to PJLTRM, it is required. In my
@@ -1043,13 +1033,12 @@ int pcl3_end_file(FILE *out, pcl_FileData *data)
          printer expects PJL in preference to other data next and the rules
          for deciding whether it's PJL or not are also the same. Note that the
          command does not influence the printer's state. */
-      fputs("\033%-12345X", out);
+      gp_fputs("\033%-12345X", out);
     }
   }
 
-  if (ferror(out)) {
-    fputs(ERRPREF "Unidentified system error while writing the output file.\n",
-      stderr);
+  if (gp_ferror(out)) {
+    errprintf(out->memory, ERRPREF "Unidentified system error while writing the output file.\n");
     return -1;
   }
 

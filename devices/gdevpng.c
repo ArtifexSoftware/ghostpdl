@@ -413,11 +413,26 @@ gdevpng_free(png_structp png, png_voidp ptr)
     gs_free_object(mem, aligned - aligned[-1], "libpng");
 }
 
+static void
+my_png_write(png_struct *png, png_bytep buf, png_size_t size)
+{
+    gp_file *file = png_get_io_ptr(png);
+
+    (void)gp_fwrite(buf, 1, size, file);
+}
+
+static void
+my_png_flush(png_struct *png)
+{
+    gp_file *file = png_get_io_ptr(png);
+
+    (void)gp_fflush(file);
+}
 
 /* Write out a page in PNG format. */
 /* This routine is used for all formats. */
 static int
-do_png_print_page(gx_device_png * pdev, FILE * file, bool monod)
+do_png_print_page(gx_device_png * pdev, gp_file * file, bool monod)
 {
     gs_memory_t *mem = pdev->memory;
     int raster = gdev_prn_raster(pdev);
@@ -485,7 +500,7 @@ do_png_print_page(gx_device_png * pdev, FILE * file, bool monod)
     }
     code = 0;			/* for normal path */
     /* set up the output control */
-    png_init_io(png_ptr, file);
+    png_set_write_fn(png_ptr, file, my_png_write, my_png_flush);
 
     /* set the file information here */
     /* resolution is in pixels per meter vs. dpi */
@@ -711,13 +726,13 @@ do_png_print_page(gx_device_png * pdev, FILE * file, bool monod)
 }
 
 static int
-png_print_page(gx_device_printer * pdev, FILE * file)
+png_print_page(gx_device_printer * pdev, gp_file * file)
 {
     return do_png_print_page((gx_device_png *)pdev, file, 0);
 }
 
 static int
-png_print_page_monod(gx_device_printer * pdev, FILE * file)
+png_print_page_monod(gx_device_printer * pdev, gp_file * file)
 {
     return do_png_print_page((gx_device_png *)pdev, file, 1);
 }

@@ -249,7 +249,7 @@ bj10e_open(gx_device *pdev)
 
 /* Send the page to the printer. */
 static int
-bj10e_print_page(gx_device_printer *pdev, FILE *prn_stream)
+bj10e_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {	int line_size = gx_device_raster((gx_device *)pdev, 0);
         int xres = (int)pdev->x_pixels_per_inch;
         int yres = (int)pdev->y_pixels_per_inch;
@@ -275,25 +275,25 @@ bj10e_print_page(gx_device_printer *pdev, FILE *prn_stream)
         /* Initialize the printer. */
 #ifdef USE_FACTORY_DEFAULTS
         /* Check for U.S. letter vs. A4 paper. */
-        fwrite(( pdev->width / pdev->x_pixels_per_inch <= 8.4 ?
+        gp_fwrite(( pdev->width / pdev->x_pixels_per_inch <= 8.4 ?
                 "\033[K\002\000\000\044"	/*A4--DIP switch defaults*/ :
                 "\033[K\002\000\004\044"	/*letter--factory defaults*/ ),
                1, 7, prn_stream);
 #else
-        fwrite("\033[K\002\000\000\044", 1, 7, prn_stream);
+        gp_fwrite("\033[K\002\000\000\044", 1, 7, prn_stream);
 #endif
 
         /* Turn off automatic carriage return, otherwise we get line feeds. */
-        fwrite("\0335\000", 1, 3, prn_stream);
+        gp_fwrite("\0335\000", 1, 3, prn_stream);
 
         /* Set vertical spacing. */
-        fwrite("\033[\\\004\000\000\000", 1, 7, prn_stream);
-        fputc(yres & 0xff, prn_stream);
-        fputc(yres >> 8, prn_stream);
+        gp_fwrite("\033[\\\004\000\000\000", 1, 7, prn_stream);
+        gp_fputc(yres & 0xff, prn_stream);
+        gp_fputc(yres >> 8, prn_stream);
 
         /* Set the page length.  This is the printable length, in inches. */
-        fwrite("\033C\000", 1, 3, prn_stream);
-        fputc((last_row + yres - 1)/yres, prn_stream);
+        gp_fwrite("\033C\000", 1, 3, prn_stream);
+        gp_fputc((last_row + yres - 1)/yres, prn_stream);
 
         /* Transfer pixels to printer.  The last row we can print is defined
            by "last_row".  Only the bottom of the print head can print at the
@@ -343,11 +343,11 @@ notz:			;
                         lnum = limit;
                     }
                 while ( skip > 255 )
-                   {	fputs("\033J\377", prn_stream);
+                   {	gp_fputs("\033J\377", prn_stream);
                         skip -= 255;
                    }
                 if ( skip )
-                        fprintf(prn_stream, "\033J%c", skip);
+                        gp_fprintf(prn_stream, "\033J%c", skip);
 
                 /* If we've printed as far as "limit", then reset "limit"
                    to "last_row" for the final printing pass. */
@@ -406,7 +406,7 @@ notz:			;
                         if (outl > out_beg)
                            {	count = (outl - out_beg) / skip_unit;
                                 if ( xres == 180 ) count <<= 1;
-                                fprintf(prn_stream, "\033d%c%c",
+                                gp_fprintf(prn_stream, "\033d%c%c",
                                         count & 0xff, count >> 8);
                            }
 
@@ -426,20 +426,20 @@ notz:			;
                                         outl += n;
                            }
                         count = outl - out_beg + 1;
-                        fprintf(prn_stream, "\033[g%c%c%c",
+                        gp_fprintf(prn_stream, "\033[g%c%c%c",
                                 count & 0xff, count >> 8, mode);
-                        fwrite(out_beg, 1, count - 1, prn_stream);
+                        gp_fwrite(out_beg, 1, count - 1, prn_stream);
                         out_beg = outl;
                         outl += n;
                    }
                 while ( out_beg < out_end );
 
-                fputc('\r', prn_stream);
+                gp_fputc('\r', prn_stream);
            }
 
         /* Eject the page */
-xit:	fputc(014, prn_stream);	/* form feed */
-        fflush(prn_stream);
+xit:	gp_fputc(014, prn_stream);	/* form feed */
+        gp_fflush(prn_stream);
 fin:	if ( out != 0 )
                 gs_free(pdev->memory, (char *)out, bits_per_column, line_size,
                         "bj10e_print_page(out)");

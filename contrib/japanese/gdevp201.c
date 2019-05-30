@@ -125,7 +125,7 @@ check_mode(const char* modename)
 
 /* Send the page to the printer. */
 static int
-pr201_print_page(gx_device_printer *pdev, FILE *prn_stream)
+pr201_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {	int line_size;
         int height;
         int bits_per_column;
@@ -161,12 +161,12 @@ pr201_print_page(gx_device_printer *pdev, FILE *prn_stream)
                 return -1;
 
         /* Initialize printer */
-        fputs("\033cl", pdev->file);	/* Software Reset */
-        fputs("\033P", pdev->file);	/* Proportional Mode */
+        gp_fputs("\033cl", pdev->file);	/* Software Reset */
+        gp_fputs("\033P", pdev->file);	/* Proportional Mode */
         if (check_mode(pdev->dname)==PR150){
-                fprintf(pdev->file, "\034d%d.", x_dpi); /* 320 dpi mode. */
+                gp_fprintf(pdev->file, "\034d%d.", x_dpi); /* 320 dpi mode. */
         }
-        fprintf(pdev->file, "\033T%d" , lr_pitch);
+        gp_fprintf(pdev->file, "\033T%d" , lr_pitch);
                                 /* 18/120 inch per line */
 
         /* Send Data to printer */
@@ -202,11 +202,11 @@ pr201_print_page(gx_device_printer *pdev, FILE *prn_stream)
 
                 /* Vertical tab to the appropriate position. */
                 while(skip > 72) {
-                        fprintf(pdev->file, "\037%c", 16 + 72);
+                        gp_fprintf(pdev->file, "\037%c", 16 + 72);
                         skip -= 72;
                 }
                 if(skip > 0) {
-                        fprintf(pdev->file, "\037%c", 16 + skip);
+                        gp_fprintf(pdev->file, "\037%c", 16 + skip);
                 }
 
                 /* Transpose in blocks of 8 scan lines. */
@@ -242,27 +242,27 @@ pr201_print_page(gx_device_printer *pdev, FILE *prn_stream)
                 out_beg -= (out_beg - out) % bytes_per_column;
 
                 /* Dot addressing */
-                fprintf(pdev->file, "\033F%04d",
-                        (out_beg - out) / bytes_per_column);
+                gp_fprintf(pdev->file, "\033F%04d",
+                           (out_beg - out) / bytes_per_column);
 
                 /* Dot graphics */
                 size = out_end - out_beg + 1;
                 if (check_mode(pdev->dname)==PR201){
-                        fprintf(pdev->file,"\033J%04d", size / bytes_per_column);
+                        gp_fprintf(pdev->file,"\033J%04d", size / bytes_per_column);
                 }else{
-                        fprintf(pdev->file,"\034bP,48,%04d.",
-                          size / bytes_per_column);
+                        gp_fprintf(pdev->file,"\034bP,48,%04d.",
+                                   size / bytes_per_column);
                 }
-                fwrite(out_beg, size, 1, pdev->file);
+                gp_fwrite(out_beg, size, 1, pdev->file);
 
                 /* Carriage Return */
-                fputc('\r', pdev->file);
+                gp_fputc('\r', pdev->file);
                 skip = 1;
         }
 
         /* Form Feed */
-        fputc('\f',pdev->file);
-        fflush(pdev->file);
+        gp_fputc('\f',pdev->file);
+        gp_fflush(pdev->file);
 
         gs_free(pdev->memory->non_gc_memory, (char *)out,
                 bits_per_column, line_size, "pr201_print_page(out)");

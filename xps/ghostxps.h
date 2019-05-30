@@ -397,7 +397,7 @@ struct xps_context_s
     gs_color_space *cmyk;
 
     char *directory;
-    FILE *file;
+    gp_file *file;
     int zip_count;
     xps_entry_t *zip_table;
 
@@ -443,17 +443,17 @@ xps_crc32(unsigned int crc, unsigned char *buf, int len);
 int xps_high_level_pattern(xps_context_t *ctx);
 
 #ifdef XPS_INDIRECTED_FILE_ACCESS
-FILE *xps_fopen(const char *filename, const char *access);
-long xps_ftell(FILE *file);
-int xps_fseek(FILE *file, long offset, int whence);
-int xps_getc(FILE *file);
-size_t xps_fread(void *ptr, size_t size, size_t n, FILE *file);
-int xps_fclose(FILE *file);
+gp_file *xps_fopen(const char *filename, const char *access);
+gs_offset_t xps_ftell(gp_file *file);
+int xps_fseek(gp_file *file, gs_offset_t offset, int whence);
+int xps_getc(gp_file *file);
+size_t xps_fread(void *ptr, size_t size, size_t n, gp_file *file);
+int xps_fclose(gp_file *file);
 #else
 #define xps_fopen gp_fopen
-#define xps_ftell ftell
-#define xps_fseek fseek
-#define xps_getc getc
-#define xps_fread fread
-#define xps_fclose fclose
+#define xps_ftell gp_ftell
+#define xps_fseek gp_fseek
+#define xps_getc gp_fgetc
+#define xps_fread gp_fread
+#define xps_fclose gp_fclose
 #endif

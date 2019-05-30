@@ -42,7 +42,7 @@ nb 1999-05-03 added dl2100 code (nick.brown@coe.int)
 #include "gdevprn.h"
 
 /* Forward references */
-static int sixel_print_page(gx_device_printer *pdev, FILE *prn_stream,
+static int sixel_print_page(gx_device_printer *pdev, gp_file *prn_stream,
                              const char *init, const char *eject);
 
 /* The device descriptor */
@@ -86,7 +86,7 @@ gx_device_printer gs_ln03_device =
 #define LN03_EJECT "\033\\\f"
 
 static int
-ln03_print_page(gx_device_printer *pdev, FILE *prn_stream)
+ln03_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {
     return (sixel_print_page(pdev,prn_stream,LN03_INIT,LN03_EJECT));
 }
@@ -110,7 +110,7 @@ gx_device_printer gs_dl2100_device =
  "\033[!p\033[11h\033[7 I\033[?52h\033[0t\033[1;2475s\033[1;3510r\033P0;0;1q\"1;1"
 
 static int
-dl2100_print_page(gx_device_printer *pdev, FILE *prn_stream)
+dl2100_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {
     return (sixel_print_page(pdev,prn_stream,DL2100_INIT,LN03_EJECT));
 }
@@ -137,7 +137,7 @@ gx_device_printer gs_la50_device =
 #define LA50_EJECT "\033\\\f"
 
 static int
-la50_print_page(gx_device_printer *pdev, FILE *prn_stream)
+la50_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {
     return (sixel_print_page(pdev,prn_stream,LA50_INIT,LA50_EJECT));
 }
@@ -163,7 +163,7 @@ gx_device_printer gs_la70_device =
 #define LA70_EJECT "\033\\\f"
 
 static int
-la70_print_page(gx_device_printer *pdev, FILE *prn_stream)
+la70_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {
     return (sixel_print_page(pdev,prn_stream,LA70_INIT,LA70_EJECT));
 }
@@ -189,7 +189,7 @@ gx_device_printer gs_la75_device =
 #define LA75_EJECT "\033\\\f"
 
 static int
-la75_print_page(gx_device_printer *pdev, FILE *prn_stream)
+la75_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {
     return (sixel_print_page(pdev,prn_stream,LA75_INIT,LA75_EJECT));
 }
@@ -223,7 +223,7 @@ gx_device_printer gs_la75plus_device =
 #define LA75PLUS_EJECT "\033\\\f"
 
 static int
-la75plus_print_page(gx_device_printer *pdev, FILE *prn_stream)
+la75plus_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {
     return (sixel_print_page(pdev,prn_stream,LA75PLUS_INIT,LA75PLUS_EJECT));
 }
@@ -250,7 +250,7 @@ gx_device_printer gs_sxlcrt_device =
 #define SXLCRT_EJECT "\033\\\033[23;0H"
 
 static int
-sxlcrt_print_page(gx_device_printer *pdev, FILE *prn_stream)
+sxlcrt_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {
     return (sixel_print_page(pdev,prn_stream,SXLCRT_INIT,SXLCRT_EJECT));
 }
@@ -270,7 +270,7 @@ sixel_output_page(gx_device *pdev, int num_copies, int flush)
 /* Send the page to the printer. */
 /* Keep all lines <= 80 chars */
 static int
-sixel_print_page(gx_device_printer *pdev, FILE *prn_stream,
+sixel_print_page(gx_device_printer *pdev, gp_file *prn_stream,
                  const char *init, const char *eject)
 {
     byte *in, *inp;
@@ -284,7 +284,7 @@ sixel_print_page(gx_device_printer *pdev, FILE *prn_stream,
     /* Check allocation */
     if (!in) return(-1);
 
-    fputs(init,prn_stream);
+    gp_fputs(init,prn_stream);
     ccount = strlen(init);
 
     /* Print lines of graphics */
@@ -323,11 +323,11 @@ sixel_print_page(gx_device_printer *pdev, FILE *prn_stream,
                         /* terminate record.
                            this LF is ignored by the LN03 */
                         if (ccount > 78) {
-                            fputc('\n', prn_stream);
+                            gp_fputc('\n', prn_stream);
                             ccount = 0;
                         }
                         /* terminate previous line */
-                        fputc('-', prn_stream);
+                        gp_fputc('-', prn_stream);
                         ccount++;
                     }
                     empty = lcount = 0;
@@ -335,22 +335,22 @@ sixel_print_page(gx_device_printer *pdev, FILE *prn_stream,
                 if (count > 3) {
                     /* use run length encoding */
                     if (ccount > 74) {
-                        fputc('\n', prn_stream);
+                        gp_fputc('\n', prn_stream);
                         ccount = 0;
                     }
                     /* we know lines will not exceed 10000 pixels */
                     ccount = ccount + 3 + (count > 9)
                                         + (count > 99)
                                         + (count > 999);
-                    fprintf(prn_stream, "!%d%c", count, oldc);
+                    gp_fprintf(prn_stream, "!%d%c", count, oldc);
                 }
                 else {
                     while (--count >= 0) {
                         if (ccount > 78) {
-                            fputc('\n', prn_stream);
+                            gp_fputc('\n', prn_stream);
                             ccount = 0;
                         }
-                        fputc(oldc, prn_stream);
+                        gp_fputc(oldc, prn_stream);
                         ccount++;
                     }
                 }
@@ -362,22 +362,22 @@ sixel_print_page(gx_device_printer *pdev, FILE *prn_stream,
            if (count > 3) {
                 /* use run length encoding */
                 if (ccount > 74) {
-                    fputc('\n', prn_stream);
+                    gp_fputc('\n', prn_stream);
                     ccount = 0;
                 }
                 /* we know lines will not exceed 10000 pixels */
                 ccount = ccount + 3 + (count > 9)
                                     + (count > 99)
                                     + (count > 999);
-                fprintf(prn_stream, "!%d%c", count, c);
+                gp_fprintf(prn_stream, "!%d%c", count, c);
             }
             else {
                 while (--count >= 0) {
                     if (ccount > 78) {
-                        fputc('\n', prn_stream);
+                        gp_fputc('\n', prn_stream);
                         ccount = 0;
                     }
-                    fputc(c, prn_stream);
+                    gp_fputc(c, prn_stream);
                     ccount++;
                 }
             }
@@ -385,9 +385,9 @@ sixel_print_page(gx_device_printer *pdev, FILE *prn_stream,
     }
 
     /* leave sixel graphics mode, eject page */
-    if (ccount + strlen(eject) > 79) fputc('\n', prn_stream);
-    fputs(eject, prn_stream);
-    fflush(prn_stream);
+    if (ccount + strlen(eject) > 79) gp_fputc('\n', prn_stream);
+    gp_fputs(eject, prn_stream);
+    gp_fflush(prn_stream);
 
     gs_free(pdev->memory->non_gc_memory, (char *)in, in_size, 1, "sixel_print_page");
 

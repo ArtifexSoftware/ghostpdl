@@ -2506,7 +2506,7 @@ do_dump_raw_buffer(int num_rows, int width, int n_chan,
                 char filename[], const byte *Buffer, bool deep, bool be)
 {
     char full_file_name[50];
-    FILE *fid;
+    gp_file *fid;
     int z,y;
     const byte *buff_ptr;
     int max_bands;

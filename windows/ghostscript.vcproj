@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
@@ -1967,6 +1967,14 @@
 			</File>
 			<File
 				RelativePath="..\base\gp_win32.c"
+				>
+			</File>
+			<File
+				RelativePath="..\base\gp_winfs.c"
+				>
+			</File>
+			<File
+				RelativePath="..\base\gp_winfs2.c"
 				>
 			</File>
 			<File

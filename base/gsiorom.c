@@ -60,7 +60,9 @@ const gx_io_device gs_iodev_rom =
      romfs_file_status,
      romfs_enumerate_files_init, romfs_enumerate_next, romfs_enumerate_close,
      iodev_no_get_params, iodev_no_put_params
-    }
+    },
+    NULL,
+    NULL
 };
 
 /* internal state for our device */
@@ -112,7 +114,7 @@ sread_block(register stream *s,  const byte *ptr, uint len, const uint32_t *node
     };
     s_std_init(s, (byte *)ptr, len, &p, s_mode_read + s_mode_seek);
     s->end_status = 0;
-    s->file = (FILE *)node;	/* convenient place to put it for %rom% files */
+    s->file = (gp_file *)node;	/* convenient place to put it for %rom% files */
     s->file_modes = s->modes;
     s->file_offset = 0;
     s->file_limit = S_FILE_LIMIT_MAX;
@@ -349,8 +351,8 @@ romfs_file_status(gx_io_device * iodev, const char *fname, struct stat *pstat)
 }
 
 static file_enum *
-romfs_enumerate_files_init(gx_io_device *iodev, const char *pat, uint patlen,
-             gs_memory_t *mem)
+romfs_enumerate_files_init(gs_memory_t * mem, gx_io_device *iodev, const char *pat,
+                           uint patlen)
 {
     romfs_file_enum *penum = gs_alloc_struct(mem, romfs_file_enum, &st_romfs_file_enum,
                                                         "romfs_enumerate_files_init(file_enum)");
@@ -361,7 +363,7 @@ romfs_enumerate_files_init(gx_io_device *iodev, const char *pat, uint patlen,
     penum->list_index = 0;		/* start at first node */
     penum->memory = mem;
     if (penum->pattern == NULL) {
-        romfs_enumerate_close((file_enum *) penum);
+        romfs_enumerate_close(mem, (file_enum *) penum);
         return NULL;
     }
     memcpy(penum->pattern, pat, patlen);	/* Copy string to buffer */
@@ -371,21 +373,23 @@ romfs_enumerate_files_init(gx_io_device *iodev, const char *pat, uint patlen,
 }
 
 static void
-romfs_enumerate_close(file_enum *pfen)
+romfs_enumerate_close(gs_memory_t * mem, file_enum *pfen)
 {
     romfs_file_enum *penum = (romfs_file_enum *)pfen;
-    gs_memory_t *mem = penum->memory;
+    gs_memory_t *mem2 = penum->memory;
+    (void)mem;
 
     if (penum->pattern)
-        gs_free_object(mem, penum->pattern, "romfs_enum_init(pattern)");
-    gs_free_object(mem, penum, "romfs_enum_init(romfs_enum)");
+        gs_free_object(mem2, penum->pattern, "romfs_enum_init(pattern)");
+    gs_free_object(mem2, penum, "romfs_enum_init(romfs_enum)");
 }
 
 static uint
-romfs_enumerate_next(file_enum *pfen, char *ptr, uint maxlen)
+romfs_enumerate_next(gs_memory_t * mem, file_enum *pfen, char *ptr, uint maxlen)
 {
     extern const uint32_t *gs_romfs[];
     romfs_file_enum *penum = (romfs_file_enum *)pfen;
+    (void)mem;
 
     while (gs_romfs[penum->list_index] != 0) {
         const uint32_t *node = gs_romfs[penum->list_index];
@@ -403,6 +407,6 @@ romfs_enumerate_next(file_enum *pfen, char *ptr, uint maxlen)
         }
     }
     /* ran off end of list, close the enum */
-    romfs_enumerate_close(pfen);
+    romfs_enumerate_close(mem, pfen);
     return ~(uint)0;
 }

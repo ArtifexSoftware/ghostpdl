@@ -60,7 +60,7 @@ static void write_usage(void)
                      depth, i&15, usage[3*i], usage[3*i+1], usage[3*i+2]);
         }
 #ifdef RECORD_BINARY
-    FILE *out = gp_fopen("ropusage2.tmp", "wb");
+    gp_file *out = gp_fopen("ropusage2.tmp", "wb");
     if (!out)
         return;
     fwrite(usage, sizeof(int), (1024<<7), out);
@@ -72,7 +72,7 @@ static void record(int rop)
 {
     if (inited == 0) {
 #ifdef RECORD_BINARY
-        FILE *in = gp_fopen("ropusage2.tmp", "r");
+        gp_file *in = gp_fopen("ropusage2.tmp", "r");
         if (!in)
             memset(usage, 0, MAX*sizeof(int));
         else {

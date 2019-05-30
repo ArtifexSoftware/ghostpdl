@@ -35,6 +35,7 @@ static const gs_param_item_t s_CF_param_items[] =
     cfp("Columns", gs_param_type_int, Columns),
     cfp("Rows", gs_param_type_int, Rows),
     cfp("EndOfBlock", gs_param_type_bool, EndOfBlock),
+    cfp("ErrsAsEOD", gs_param_type_bool, ErrsAsEOD),
     cfp("BlackIs1", gs_param_type_bool, BlackIs1),
     cfp("DamagedRowsBeforeError", gs_param_type_int, DamagedRowsBeforeError),
     cfp("FirstBitLowOrder", gs_param_type_bool, FirstBitLowOrder),

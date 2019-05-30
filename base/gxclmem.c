@@ -1047,7 +1047,7 @@ memfile_ftell(clist_file_ptr cf)
     return (((MEMFILE *) cf)->log_curr_pos);
 }
 
-static void
+static int
 memfile_rewind(clist_file_ptr cf, bool discard_data, const char *ignore_fname)
 {
     MEMFILE *f = (MEMFILE *) cf;
@@ -1061,7 +1061,7 @@ memfile_rewind(clist_file_ptr cf, bool discard_data, const char *ignore_fname)
                       "memfile_rewind(%p) with discard_data=true failed: ",
                       f);
             f->error_code = gs_note_error(gs_error_ioerror);
-            return;
+            return f->error_code;
         }
         memfile_free_mem(f);
         /* We have to call memfile_init_empty to preserve invariants. */
@@ -1071,6 +1071,7 @@ memfile_rewind(clist_file_ptr cf, bool discard_data, const char *ignore_fname)
         f->log_curr_pos = 0;
         memfile_get_pdata(f);
     }
+    return 0;
 }
 
 static int

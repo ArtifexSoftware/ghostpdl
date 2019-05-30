@@ -928,7 +928,7 @@ psd_get_color_comp_index(gx_device * dev, const char * pname,
 #endif
 
 int
-psd_setup(psd_write_ctx *xc, gx_devn_prn_device *dev, FILE *file, int w, int h)
+psd_setup(psd_write_ctx *xc, gx_devn_prn_device *dev, gp_file *file, int w, int h)
 {
     int i;
     int spot_count;
@@ -996,7 +996,7 @@ int
 psd_write(psd_write_ctx *xc, const byte *buf, int size) {
     int code;
 
-    code = fwrite(buf, 1, size, xc->f);
+    code = gp_fwrite(buf, 1, size, xc->f);
     if (code < 0)
         return code;
     return 0;
@@ -1294,10 +1294,10 @@ psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
                 memset(sep_line,255,octets_per_line);
                 psd_write(xc, sep_line, octets_per_line);
             }
-            fseek(xc->f, (xc->height-1) * octets_per_line, SEEK_CUR);
+            gp_fseek(xc->f, (xc->height-1) * octets_per_line, SEEK_CUR);
         }
         if (j < xc->height-1)
-            fseek(xc->f, -(num_comp * xc->height - 1) * octets_per_line, SEEK_CUR);
+            gp_fseek(xc->f, -(num_comp * xc->height - 1) * octets_per_line, SEEK_CUR);
     }
 
 cleanup:
@@ -1336,7 +1336,7 @@ psd_allow_multiple_pages (gx_device_printer *pdev)
 }
 
 static int
-psd_print_page(gx_device_printer *pdev, FILE *file)
+psd_print_page(gx_device_printer *pdev, gp_file *file)
 {
     psd_write_ctx xc;
     gx_devn_prn_device *devn_dev = (gx_devn_prn_device *)pdev;
