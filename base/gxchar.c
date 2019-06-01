@@ -181,8 +181,10 @@ gx_default_text_begin(gx_device * dev, gs_gstate * pgs1,
         gs_newpath(pgs);
         gx_translate_to_fixed(pgs, fixed_0, fixed_0);
         code = gx_path_add_point(pgs->path, fixed_0, fixed_0);
-        if (code < 0)
+        if (code < 0) {
+            gs_grestore(pgs);
             return code;
+        }
     }
     *ppte = (gs_text_enum_t *)penum;
     return 0;

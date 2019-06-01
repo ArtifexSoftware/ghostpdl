@@ -846,8 +846,10 @@ image_PaintProc(const gs_client_color * pcolor, gs_gstate * pgs)
     if (code < 0)
         goto fail;
     code = gs_setcolorspace(pgs, pcspace);
-    if (code < 0)
-        return code;
+    if (code < 0) {
+        gs_grestore(pgs);
+        goto fail;
+    }
     if (transparent)
         gs_image4_t_init( (gs_image4_t *) &image, pcspace);
     else
@@ -879,6 +881,8 @@ image_PaintProc(const gs_client_color * pcolor, gs_gstate * pgs)
         (code = bitmap_paint(pen, (gs_data_image_t *) & image, pbitmap, pgs)) >= 0) {
         return gs_grestore(pgs);
     }
+    /* Failed above, need to undo the gsave */
+    gs_grestore(pgs);
 
 fail:
     gs_free_object(gs_gstate_memory(pgs), pen, "image_PaintProc");
@@ -964,13 +968,17 @@ int pixmap_high_level_pattern(gs_gstate * pgs)
         code = image_PaintProc(&pdc->ccolor, pgs);
     else {
         pcs = gs_cspace_new_DeviceGray(pgs->memory);
-        if (pcs == NULL)
+        if (pcs == NULL) {
+            gs_grestore(pgs);
             return_error(gs_error_VMerror);
+        }
         gs_setcolorspace(pgs, pcs);
         code = mask_PaintProc(&pdc->ccolor, pgs);
     }
-    if (code < 0)
+    if (code < 0) {
+        gs_grestore(pgs);
         return code;
+    }
 
     code = gs_grestore(pgs);
     if (code < 0)
