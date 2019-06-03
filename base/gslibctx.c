@@ -287,7 +287,6 @@ void gs_lib_ctx_fin(gs_memory_t *mem)
 #ifndef GS_THREADSAFE
     mem_err_print = NULL;
 #endif
-    remove_ctx_pointers(ctx_mem);
 
 #ifndef MEMENTO_SQUEEZE_BUILD
     gx_monitor_enter((gx_monitor_t *)(ctx->core->monitor));
@@ -305,6 +304,7 @@ void gs_lib_ctx_fin(gs_memory_t *mem)
         gs_purge_control_paths(ctx_mem, 2);
         gs_free_object(ctx->core->memory, ctx->core, "gs_lib_ctx_fin");
     }
+    remove_ctx_pointers(ctx_mem);
 
     gs_free_object(ctx_mem, ctx, "gs_lib_ctx_init");
 }
