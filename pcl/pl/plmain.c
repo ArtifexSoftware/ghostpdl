@@ -1414,6 +1414,28 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
 #endif /* OMIT_SAVED_PAGES_TEST */
                     break;
                 }
+                /* Now handle the explicitly added paths to the file control lists */
+                else if (strncmp(arg, "permit-file-read", 16) == 0) {
+                    code = gs_add_explicit_control_path(pmi->memory, arg, gs_permit_file_reading);
+                    if (code < 0) return code;
+                    break;
+                } else if (strncmp(arg, "permit-file-write", 17) == 0) {
+                    code = gs_add_explicit_control_path(pmi->memory, arg, gs_permit_file_writing);
+                    if (code < 0) return code;
+                    break;
+                } else if (strncmp(arg, "permit-file-control", 19) == 0) {
+                    code = gs_add_explicit_control_path(pmi->memory, arg, gs_permit_file_control);
+                    if (code < 0) return code;
+                    break;
+                } else if (strncmp(arg, "permit-file-all", 15) == 0) {
+                    code = gs_add_explicit_control_path(pmi->memory, arg, gs_permit_file_reading);
+                    if (code < 0) return code;
+                    code = gs_add_explicit_control_path(pmi->memory, arg, gs_permit_file_writing);
+                    if (code < 0) return code;
+                    code = gs_add_explicit_control_path(pmi->memory, arg, gs_permit_file_control);
+                    if (code < 0) return code;
+                    break;
+                }
                 /* FALLTHROUGH */
             default:
                 dmprintf1(pmi->memory, "Unrecognized switch: %s\n", arg-2);
@@ -1602,6 +1624,9 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                         code = gs_error_undefinedfilename;
                         break;
                     }
+                    code = gs_add_outputfile_control_path(pmi->memory, adef);
+                    if (code < 0)
+                        break;
                     param_string_from_transient_string(str, adef);
                     code =
                         param_write_string((gs_param_list *) params,
@@ -1709,6 +1734,12 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                         pmi->pdefault_cmyk_icc = arg_copy(value, pmi->memory);
                     } else if (!strncmp(arg, "ICCProfileDir", strlen("ICCProfileDir"))) {
                         pmi->piccdir = arg_copy(value, pmi->memory);
+                    } else if (!strncmp(arg, "OutputFile", 10) && strlen(eqp) > 0) {
+                        code = gs_add_outputfile_control_path(pmi->memory, eqp);
+                        if (code < 0) return code;
+                        code = set_string_param(pmi, arg);
+                        if (code < 0)
+                            return code;
                     } else {
                         code = set_string_param(pmi, arg);
                         if (code < 0)
@@ -1781,7 +1812,11 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                 not_an_arg = 1;
                 continue;
             } else {
+                code = gs_add_control_path(pmi->memory, gs_permit_file_reading, arg);
+                if (code < 0)
+                    break;
                 code = pl_main_run_file_utf8(pmi, collected_commands, arg);
+                (void)gs_remove_control_path(pmi->memory, gs_permit_file_reading, arg);
                 if (code == gs_error_undefinedfilename)
                     errprintf(pmi->memory, "Failed to open file '%s'\n", arg);
                 gs_free_object(pmi->memory, collected_commands, "-c buffer");
