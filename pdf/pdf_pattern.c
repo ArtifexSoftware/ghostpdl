@@ -41,71 +41,6 @@ typedef struct {
     pdf_dict *pat_dict;
 } pdf_pattern_context_t;
 
-/* Turn a /Matrix Array into a gs_matrix.  If Array is NULL, makes an identity matrix */
-static int
-pdfi_array_to_gs_matrix(pdf_context *ctx, pdf_array *array, gs_matrix *mat)
-{
-    double number;
-    int code = 0;
-
-    /* Init to identity matrix to allow sane continuation on errors */
-    mat->xx = 1.0;
-    mat->xy = 0.0;
-    mat->yx = 0.0;
-    mat->yy = 1.0;
-    mat->tx = 0.0;
-    mat->ty = 0.0;
-
-    /* Identity matrix if no array */
-    if (array == NULL) {
-        return 0;
-    }
-    if (pdfi_array_size(array) != 6) {
-        return_error(gs_error_rangecheck);
-    }
-    code = pdfi_array_get_number(ctx, array, 0, &number);
-    if (code < 0) goto errorExit;
-    mat->xx = (float)number;
-    code = pdfi_array_get_number(ctx, array, 1, &number);
-    if (code < 0) goto errorExit;
-    mat->xy = (float)number;
-    code = pdfi_array_get_number(ctx, array, 2, &number);
-    if (code < 0) goto errorExit;
-    mat->yx = (float)number;
-    code = pdfi_array_get_number(ctx, array, 3, &number);
-    if (code < 0) goto errorExit;
-    mat->yy = (float)number;
-    code = pdfi_array_get_number(ctx, array, 4, &number);
-    if (code < 0) goto errorExit;
-    mat->tx = (float)number;
-    code = pdfi_array_get_number(ctx, array, 5, &number);
-    if (code < 0) goto errorExit;
-    mat->ty = (float)number;
-    return 0;
-
- errorExit:
-    return code;
-}
-
-/* Normalize rectangle */
-static void
-pdfi_normalize_rect(pdf_context *ctx, gs_rect *rect)
-{
-    double temp;
-
-    /* Normalize the rectangle */
-    if (rect->p.x > rect->q.x) {
-        temp = rect->p.x;
-        rect->p.x = rect->q.x;
-        rect->q.x = temp;
-    }
-    if (rect->p.y > rect->q.y) {
-        temp = rect->p.y;
-        rect->p.y = rect->q.y;
-        rect->q.y = temp;
-    }
-}
-
 /* See pdf_draw.ps, FixPatternBox
  * A BBox where width or height (or both) is 0 should still paint one pixel
  * See the ISO 32000-2:2017 spec, section 8.7.4.3, p228 'BBox' and 8.7.3.1
@@ -117,46 +52,6 @@ pdfi_pattern_fix_bbox(pdf_context *ctx, gs_rect *rect)
         rect->q.x += .00000001;
     if (rect->p.y - rect->q.y == 0)
         rect->q.y += .00000001;
-}
-
-/* Turn an Array into a gs_rect.  If Array is NULL, makes a tiny rect
- */
-static int
-pdfi_array_to_gs_rect(pdf_context *ctx, pdf_array *array, gs_rect *rect)
-{
-    double number;
-    int code = 0;
-
-    /* Init to tiny rect to allow sane continuation on errors */
-    rect->p.x = 0.0;
-    rect->p.y = 0.0;
-    rect->q.x = 1.0;
-    rect->q.y = 1.0;
-
-    /* Identity matrix if no array */
-    if (array == NULL) {
-        return 0;
-    }
-    if (pdfi_array_size(array) != 4) {
-        return_error(gs_error_rangecheck);
-    }
-    code = pdfi_array_get_number(ctx, array, 0, &number);
-    if (code < 0) goto errorExit;
-    rect->p.x = (float)number;
-    code = pdfi_array_get_number(ctx, array, 1, &number);
-    if (code < 0) goto errorExit;
-    rect->p.y = (float)number;
-    code = pdfi_array_get_number(ctx, array, 2, &number);
-    if (code < 0) goto errorExit;
-    rect->q.x = (float)number;
-    code = pdfi_array_get_number(ctx, array, 3, &number);
-    if (code < 0) goto errorExit;
-    rect->q.y = (float)number;
-
-    return 0;
-
- errorExit:
-    return code;
 }
 
 /* Get rect from array, normalize and adjust it */

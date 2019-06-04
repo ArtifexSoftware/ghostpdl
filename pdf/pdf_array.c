@@ -36,8 +36,7 @@ void pdfi_array_free(pdf_obj *o)
     gs_free_object(a->memory, a, "pdf interpreter free array");
 }
 
-int
-pdfi_array_alloc(pdf_context *ctx, uint64_t size, pdf_array **a)
+int pdfi_array_alloc(pdf_context *ctx, uint64_t size, pdf_array **a)
 {
     int code;
 
@@ -53,8 +52,7 @@ pdfi_array_alloc(pdf_context *ctx, uint64_t size, pdf_array **a)
 /* Fetch object from array, resolving indirect reference if needed
  * (Does not increment reference count, caller needs to do that if they want to)
  */
-static int
-pdfi_array_fetch(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o)
+static int pdfi_array_fetch(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o)
 {
     int code;
     pdf_obj *obj;
@@ -112,8 +110,7 @@ int pdfi_array_get(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o)
  * It looks to me like some usages need to do the checking themselves to
  * avoid circular references?  Can remove this if not really needed.
  */
-int
-pdfi_array_get_no_deref(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o)
+int pdfi_array_get_no_deref(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o)
 {
     if (index >= a->size)
         return_error(gs_error_rangecheck);
@@ -126,8 +123,7 @@ pdfi_array_get_no_deref(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj 
 /* Get value from pdfi_array without incrementing its reference count.
  * Handles type-checking and resolving indirect references.
  */
-int
-pdfi_array_peek_type(pdf_context *ctx, pdf_array *a, uint64_t index,
+int pdfi_array_peek_type(pdf_context *ctx, pdf_array *a, uint64_t index,
                      pdf_obj_type type, pdf_obj **o)
 {
     int code;
@@ -145,8 +141,7 @@ pdfi_array_peek_type(pdf_context *ctx, pdf_array *a, uint64_t index,
 /* Get value from pdfi_array, incrementing its reference count for caller.
  * Handles type-checking and resolving indirect references.
  */
-int
-pdfi_array_get_type(pdf_context *ctx, pdf_array *a, uint64_t index,
+int pdfi_array_get_type(pdf_context *ctx, pdf_array *a, uint64_t index,
                     pdf_obj_type type, pdf_obj **o)
 {
     int code;
@@ -196,8 +191,7 @@ int pdfi_array_get_number(pdf_context *ctx, pdf_array *a, uint64_t index, double
  * If index is not NULL, fill it in with the index of the object.
  * Note that this will resolve indirect references if needed.
  */
-bool
-pdfi_array_known(pdf_context *ctx, pdf_array *a, pdf_obj *o, int *index)
+bool pdfi_array_known(pdf_context *ctx, pdf_array *a, pdf_obj *o, int *index)
 {
     int i;
 
@@ -216,8 +210,7 @@ pdfi_array_known(pdf_context *ctx, pdf_array *a, pdf_obj *o, int *index)
     return false;
 }
 
-int
-pdfi_array_put(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj *o)
+int pdfi_array_put(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj *o)
 {
     if (index > a->size)
         return_error(gs_error_rangecheck);
@@ -226,4 +219,113 @@ pdfi_array_put(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj *o)
     a->values[index] = o;
     pdfi_countup(o);
     return 0;
+}
+
+/* Strictly speaking the normalize_rect isn't really part of the PDF array
+ * processing, but its very likely that any time we want to use it, the
+ * rectangle will have come from a PDF array in a PDF file so it makes
+ * sense to have it here.
+ */
+
+/* Normalize rectangle */
+void pdfi_normalize_rect(pdf_context *ctx, gs_rect *rect)
+{
+    double temp;
+
+    /* Normalize the rectangle */
+    if (rect->p.x > rect->q.x) {
+        temp = rect->p.x;
+        rect->p.x = rect->q.x;
+        rect->q.x = temp;
+    }
+    if (rect->p.y > rect->q.y) {
+        temp = rect->p.y;
+        rect->p.y = rect->q.y;
+        rect->q.y = temp;
+    }
+}
+
+/*
+ * Turn an Array into a gs_rect.  If Array is NULL, makes a tiny rect
+ */
+int pdfi_array_to_gs_rect(pdf_context *ctx, pdf_array *array, gs_rect *rect)
+{
+    double number;
+    int code = 0;
+
+    /* Init to tiny rect to allow sane continuation on errors */
+    rect->p.x = 0.0;
+    rect->p.y = 0.0;
+    rect->q.x = 1.0;
+    rect->q.y = 1.0;
+
+    /* Identity matrix if no array */
+    if (array == NULL) {
+        return 0;
+    }
+    if (pdfi_array_size(array) != 4) {
+        return_error(gs_error_rangecheck);
+    }
+    code = pdfi_array_get_number(ctx, array, 0, &number);
+    if (code < 0) goto errorExit;
+    rect->p.x = (float)number;
+    code = pdfi_array_get_number(ctx, array, 1, &number);
+    if (code < 0) goto errorExit;
+    rect->p.y = (float)number;
+    code = pdfi_array_get_number(ctx, array, 2, &number);
+    if (code < 0) goto errorExit;
+    rect->q.x = (float)number;
+    code = pdfi_array_get_number(ctx, array, 3, &number);
+    if (code < 0) goto errorExit;
+    rect->q.y = (float)number;
+
+    return 0;
+
+ errorExit:
+    return code;
+}
+
+/* Turn a /Matrix Array into a gs_matrix.  If Array is NULL, makes an identity matrix */
+int pdfi_array_to_gs_matrix(pdf_context *ctx, pdf_array *array, gs_matrix *mat)
+{
+    double number;
+    int code = 0;
+
+    /* Init to identity matrix to allow sane continuation on errors */
+    mat->xx = 1.0;
+    mat->xy = 0.0;
+    mat->yx = 0.0;
+    mat->yy = 1.0;
+    mat->tx = 0.0;
+    mat->ty = 0.0;
+
+    /* Identity matrix if no array */
+    if (array == NULL) {
+        return 0;
+    }
+    if (pdfi_array_size(array) != 6) {
+        return_error(gs_error_rangecheck);
+    }
+    code = pdfi_array_get_number(ctx, array, 0, &number);
+    if (code < 0) goto errorExit;
+    mat->xx = (float)number;
+    code = pdfi_array_get_number(ctx, array, 1, &number);
+    if (code < 0) goto errorExit;
+    mat->xy = (float)number;
+    code = pdfi_array_get_number(ctx, array, 2, &number);
+    if (code < 0) goto errorExit;
+    mat->yx = (float)number;
+    code = pdfi_array_get_number(ctx, array, 3, &number);
+    if (code < 0) goto errorExit;
+    mat->yy = (float)number;
+    code = pdfi_array_get_number(ctx, array, 4, &number);
+    if (code < 0) goto errorExit;
+    mat->tx = (float)number;
+    code = pdfi_array_get_number(ctx, array, 5, &number);
+    if (code < 0) goto errorExit;
+    mat->ty = (float)number;
+    return 0;
+
+ errorExit:
+    return code;
 }
