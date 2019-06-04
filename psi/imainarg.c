@@ -309,64 +309,6 @@ gs_main_run_start(gs_main_instance * minst)
     return run_string(minst, "systemdict /start get exec", runFlush, minst->user_errors, NULL, NULL);
 }
 
-/* For the OutputFile permission we have to deal with formattable strings
-   i.e. ones that have "%d" or similar in them. For these we want to replace
-   everything after the %d with a wildcard "*".
-   Since we do this in two places (the -s and -o cases) split it into a
-   function.
- */
-#define IS_WHITESPACE(c) ((c == 0x20) || (c == 0x9) || (c == 0xD) || (c == 0xA))
-static int
-gs_main_add_outputfile_control_path(gs_memory_t *mem, const char *fname)
-{
-    char *fp, f[gp_file_name_sizeof] = {0};
-    const int percent = 37; /* ASCII code for '%' */
-    const int pipe = 124; /* ASCII code for '|' */
-    const int len = strlen(fname);
-
-    strncpy(f, fname, len);
-    fp = strchr(f, percent);
-    if (fp != NULL) {
-        fp[0] = '*';
-        fp[1] = '\0';
-        fp = f;
-    } else {
-        int i;
-        fp = f;
-        for (i = 0; i < len; i++) {
-            if (f[i] == pipe) {
-               fp = &f[i + 1];
-               /* Because we potentially have to check file permissions at two levels
-                  for the output file (gx_device_open_output_file and the low level
-                  fopen API, if we're using a pipe, we have to add both the full string,
-                  (including the '|', and just the command to which we pipe - since at
-                  the pipe_fopen(), the leading '|' has been stripped.
-                */
-               gs_add_control_path(mem, gs_permit_file_writing, f);
-               break;
-            }
-            if (!IS_WHITESPACE(f[i]))
-                break;
-        }
-    }
-    return gs_add_control_path(mem, gs_permit_file_writing, fp);
-}
-
-static int
-gs_main_add_explicit_control_path(gs_memory_t *mem, const char *arg, gs_path_control_t control)
-{
-    char *p2, *p1 = (char *)arg + 17;
-    const char *lim = arg + strlen(arg);
-    int code = 0;
-
-    while (code >= 0 && p1 < lim && (p2 = strchr(p1, (int)gp_file_name_list_separator)) != NULL) {
-        code = gs_add_control_path_len(mem, gs_permit_file_reading, p1, (int)(p2 - p1));
-        p1 = p2 + 1;
-    }
-    if (p1 < lim)
-        code = gs_add_control_path_len(mem, control, p1, (int)(lim - p1));
-    return code;
-}
 
 /* Process switches.  Return 0 if processed, 1 for unknown switch, */
 /* <0 if error. */
@@ -489,23 +431,23 @@ run_stdin:
                 break;
             /* Now handle the explicitly added paths to the file control lists */
             } else if (strncmp(arg, "permit-file-read", 16) == 0) {
-                code = gs_main_add_explicit_control_path(minst->heap, arg, gs_permit_file_reading);
+                code = gs_add_explicit_control_path(minst->heap, arg, gs_permit_file_reading);
                 if (code < 0) return code;
                 break;
             } else if (strncmp(arg, "permit-file-write", 17) == 0) {
-                code = gs_main_add_explicit_control_path(minst->heap, arg, gs_permit_file_writing);
+                code = gs_add_explicit_control_path(minst->heap, arg, gs_permit_file_writing);
                 if (code < 0) return code;
                 break;
             } else if (strncmp(arg, "permit-file-control", 19) == 0) {
-                code = gs_main_add_explicit_control_path(minst->heap, arg, gs_permit_file_control);
+                code = gs_add_explicit_control_path(minst->heap, arg, gs_permit_file_control);
                 if (code < 0) return code;
                 break;
             } else if (strncmp(arg, "permit-file-all", 15) == 0) {
-                code = gs_main_add_explicit_control_path(minst->heap, arg, gs_permit_file_reading);
+                code = gs_add_explicit_control_path(minst->heap, arg, gs_permit_file_reading);
                 if (code < 0) return code;
-                code = gs_main_add_explicit_control_path(minst->heap, arg, gs_permit_file_writing);
+                code = gs_add_explicit_control_path(minst->heap, arg, gs_permit_file_writing);
                 if (code < 0) return code;
-                code = gs_main_add_explicit_control_path(minst->heap, arg, gs_permit_file_control);
+                code = gs_add_explicit_control_path(minst->heap, arg, gs_permit_file_control);
                 if (code < 0) return code;
                 break;
             }
@@ -761,7 +703,7 @@ run_stdin:
                     return code;
 
                 if (strlen(adef) > 0) {
-                    code = gs_main_add_outputfile_control_path(minst->heap, adef);
+                    code = gs_add_outputfile_control_path(minst->heap, adef);
                     if (code < 0) return code;
                 }
 
@@ -851,7 +793,7 @@ run_stdin:
                     *eqp++ = 0;
 
                     if (strlen(adef) == 10 && strncmp(adef, "OutputFile", 10) == 0 && strlen(eqp) > 0) {
-                        code = gs_main_add_outputfile_control_path(minst->heap, eqp);
+                        code = gs_add_outputfile_control_path(minst->heap, eqp);
                         if (code < 0) return code;
                     }
 
