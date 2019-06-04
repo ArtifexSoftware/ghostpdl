@@ -41,7 +41,7 @@ typedef struct pdf_interp_instance_s
     gs_memory_t *memory;                /* memory allocator to use */
 
     pdf_context *ctx;
-    FILE *scratch_file;
+    gp_file *scratch_file;
     char scratch_name[gp_file_name_sizeof];
 }pdf_interp_instance_t;
 
@@ -256,7 +256,7 @@ pdf_impl_process(pl_interp_implementation_t *impl, stream_cursor_read *cursor)
     }
 
     avail = cursor->limit - cursor->ptr;
-    n = fwrite(cursor->ptr + 1, 1, avail, instance->scratch_file);
+    n = gp_fwrite(cursor->ptr + 1, 1, avail, instance->scratch_file);
     if (n != avail)
     {
         gs_catch(gs_error_invalidfileaccess, "cannot write to scratch file");
@@ -295,7 +295,7 @@ pdf_impl_process_eof(pl_interp_implementation_t *impl)
     if (instance->scratch_file)
     {
         if_debug0m('|', ctx->memory, "pdf: executing scratch file\n");
-        fclose(instance->scratch_file);
+        gp_fclose(instance->scratch_file);
         instance->scratch_file = NULL;
         code = pdfi_process_pdf_file(ctx, instance->scratch_name);
         unlink(instance->scratch_name);
