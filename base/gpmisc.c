@@ -485,7 +485,7 @@ mid:
         n = vsnprintf(f->buffer, f->buffer_size, fmt, args);
         va_end(args);
     } while (n >= f->buffer_size);
-    return (f->write)(f, n, f->buffer);
+    return (f->write)(f, 1, n, f->buffer);
 }
 typedef struct {
     gp_file base;
@@ -518,19 +518,19 @@ gp_file_FILE_putc(gp_file *file_, int c)
 }
 
 static int
-gp_file_FILE_read(gp_file *file_, size_t count, void *buf)
+gp_file_FILE_read(gp_file *file_, size_t size, unsigned int count, void *buf)
 {
     gp_file_FILE *file = (gp_file_FILE *)file_;
 
-    return fread(buf, 1, count, file->file);
+    return fread(buf, size, count, file->file);
 }
 
 static int
-gp_file_FILE_write(gp_file *file_, size_t count, const void *buf)
+gp_file_FILE_write(gp_file *file_, size_t size, unsigned int count, const void *buf)
 {
     gp_file_FILE *file = (gp_file_FILE *)file_;
 
-    return fwrite(buf, 1, count, file->file);
+    return fwrite(buf, size, count, file->file);
 }
 
 static int
