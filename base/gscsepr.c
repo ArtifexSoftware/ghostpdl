@@ -197,7 +197,7 @@ gx_set_overprint_Separation(const gs_color_space * pcs, gs_gstate * pgs)
             params.retain_spot_comps = false;
             params.drawn_comps = 0;
             if (pcs->params.separation.sep_type != SEP_NONE) {
-                int     mcomp = pcmap->color_map[0];
+                int mcomp = pcmap->color_map[0];
 
                 if (mcomp >= 0)
                     gs_overprint_set_drawn_comp( params.drawn_comps, mcomp);
@@ -429,7 +429,7 @@ gx_remap_concrete_Separation(const gs_color_space * pcs, const frac * pconc,
                                 (pacs, pconc, pdc, pgs, dev, select, dev_profile);
     } else {
         /* We need to determine if we did a direct color replacement */
-        gx_remap_concrete_separation(pconc[0], pdc, pgs, dev, select);
+        gx_remap_concrete_separation(pconc[0], pdc, pgs, dev, select, pcs);
         return 0;
     }
 }

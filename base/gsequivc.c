@@ -435,7 +435,8 @@ cmap_rgb_alpha_capture_cmyk_color(frac r, frac g, frac b, frac alpha,
 
 static void
 cmap_separation_capture_cmyk_color(frac all, gx_device_color * pdc,
-     const gs_gstate * pgs, gx_device * dev, gs_color_select_t select)
+     const gs_gstate * pgs, gx_device * dev, gs_color_select_t select,
+     const gs_color_space *pcs)
 {
     dmprintf(pgs->memory, "cmap_separation_capture_cmyk_color - this routine should not be executed\n");
 }
