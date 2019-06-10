@@ -1141,8 +1141,8 @@ end readonly def
 
 /ET_NO_TXT_KO {
   currentdict /TextSaveMatrix known {
-    .currenttextrenderingmode 4 ge { .currentfilladjust2 0 dup .setfilladjust2 clip .setfilladjust2} if
-    newpath TextSaveMatrix setmatrix
+    .currenttextrenderingmode 4 ge { .currentfilladjust2 0 dup .setfilladjust2 clip .setfilladjust2 newpath} if
+    TextSaveMatrix setmatrix
     currentdict /TextSaveMatrix undef
 
     % if we were in a W/W* context, grab the dict, undefine temp entry for it,
