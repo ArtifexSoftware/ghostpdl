@@ -1738,7 +1738,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     } else if (!strncmp(arg, "ICCProfileDir", strlen("ICCProfileDir"))) {
                         pmi->piccdir = arg_copy(value, pmi->memory);
                     } else if (!strncmp(arg, "OutputFile", 10) && strlen(eqp) > 0) {
-                        code = gs_add_outputfile_control_path(pmi->memory, eqp);
+                        code = gs_add_outputfile_control_path(pmi->memory, eqp+1);
                         if (code < 0) return code;
                         code = set_string_param(pmi, arg);
                         if (code < 0)

@@ -164,8 +164,8 @@ struct gp_file_s {
     int          (*close)(gp_file *);
     int          (*getc)(gp_file *);
     int          (*putc)(gp_file *, int);
-    int          (*read)(gp_file *, size_t count, void *buf);
-    int          (*write)(gp_file *, size_t count, const void *buf);
+    int          (*read)(gp_file *, size_t size, unsigned int count, void *buf);
+    int          (*write)(gp_file *, size_t size, unsigned int count, const void *buf);
     int          (*seek)(gp_file *, gs_offset_t offset, int whence);
     gs_offset_t  (*tell)(gp_file *);
     int          (*eof)(gp_file *);
@@ -228,12 +228,12 @@ gp_fputc(int c, gp_file *f) {
 
 static inline int
 gp_fread(void *buf, size_t size, size_t count, gp_file *f) {
-    return (f->read)(f, size * count, buf);
+    return (f->read)(f, size, count, buf);
 }
 
 static inline int
 gp_fwrite(const void *buf, size_t size, size_t count, gp_file *f) {
-    return (f->write)(f, size * count, buf);
+    return (f->write)(f, size, count, buf);
 }
 
 static inline int
@@ -331,7 +331,7 @@ gp_freopen(const char *fname, const char *mode, gp_file *f) {
 static inline int
 gp_fputs(const char *string, gp_file *f) {
     size_t len = strlen(string);
-    return (f->write)(f, len, string);
+    return (f->write)(f, 1, len, string);
 }
 
 static inline int

@@ -115,7 +115,8 @@ pdf_compute_encryption_key_r6(unsigned char *password, int pwlen, unsigned char 
 		(ownerkey ? O : U) + 32,
 		ownerkey ? U : NULL, validationkey);
 	pdf_compute_hardened_hash_r6(password, pwlen,
-		U + 40, NULL, hash);
+        (ownerkey ? O : U) + 40,
+        (ownerkey ? U : NULL), hash);
 
 	memset(iv, 0, sizeof(iv));
     aes_setkey_dec(&aes, hash, 256);
