@@ -34,6 +34,9 @@
 #include "jbig2_page.h"
 #include "jbig2_segment.h"
 
+#if !defined (INT32_MAX)
+#define INT32_MAX  0x7fffffff
+#endif
 #if !defined (UINT32_MAX)
 #define UINT32_MAX 0xffffffff
 #endif
@@ -265,6 +268,9 @@ int
 jbig2_page_add_result(Jbig2Ctx *ctx, Jbig2Page *page, Jbig2Image *image, uint32_t x, uint32_t y, Jbig2ComposeOp op)
 {
     int code;
+
+    if (x > INT32_MAX || y > INT32_MAX)
+        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "unsupported image coordinates");
 
     /* ensure image exists first */
     if (page->image == NULL)
