@@ -34,6 +34,10 @@
 #include "jbig2_page.h"
 #include "jbig2_segment.h"
 
+#if !defined (UINT32_MAX)
+#define UINT32_MAX 0xffffffff
+#endif
+
 /* dump the page struct info */
 static void
 dump_page_info(Jbig2Ctx *ctx, Jbig2Segment *segment, Jbig2Page *page)
@@ -268,7 +272,12 @@ jbig2_page_add_result(Jbig2Ctx *ctx, Jbig2Page *page, Jbig2Image *image, uint32_
 
     /* grow the page to accommodate a new stripe if necessary */
     if (page->striped && page->height == 0xFFFFFFFF) {
-        uint32_t new_height = y + image->height;
+        uint32_t new_height;
+
+        if (y > UINT32_MAX - image->height)
+                return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "adding image at coordinate would grow page out of bounds");
+        new_height = y + image->height;
+
         if (page->image->height < new_height) {
             Jbig2Image *resized_image = NULL;
 
