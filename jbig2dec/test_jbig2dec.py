@@ -60,6 +60,7 @@ class KnownFileHash(SelfTest):
 
   # hashes of known test inputs
   known_NOTHING_DECODED = "da39a3ee5e6b4b0d3255bfef95601890afd80709"
+  known_WHITE_PAGE_DECODED = "28a6bd83a8a3a36910fbc1f5ce06c962e4332911"
   known_042_DECODED = "ebfdf6e2fc5ff3ee2271c2fa19de0e52712046e8"
   known_amb_DECODED = "3d4b7992d506894662b53415bd3d0d2a2f8b7953"
 
@@ -103,10 +104,10 @@ class KnownFileHash(SelfTest):
 			known_042_DECODED),
                    ('../ubc/042_13.jb2',
 			"7d428bd542f58591b254d9827f554b0552c950a7",
-			known_NOTHING_DECODED),
+			known_WHITE_PAGE_DECODED),
                    ('../ubc/042_14.jb2',
 			"c40fe3a02acb6359baf9b40fc9c49bc0800be589",
-			known_NOTHING_DECODED),
+			known_WHITE_PAGE_DECODED),
                    ('../ubc/042_15.jb2',
 			"a9e39fc1ecb178aec9f05039514d75ea3246246c",
 			known_042_DECODED),
