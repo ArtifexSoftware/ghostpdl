@@ -747,7 +747,7 @@ static int test1()
 {
     Jbig2Ctx *ctx;
     Jbig2HuffmanTable *tables[5];
-    Jbig2HuffmanState *hs;
+    Jbig2HuffmanState *hs = NULL;
     Jbig2WordStream ws;
     bool oob;
     int32_t code;
@@ -799,6 +799,7 @@ static int test1()
     success = 1;
 
 cleanup:
+    jbig2_huffman_free(ctx, hs);
     for (i = 0; i < 5; i++)
         jbig2_release_huffman_table(ctx, tables[i]);
     jbig2_ctx_free(ctx);
