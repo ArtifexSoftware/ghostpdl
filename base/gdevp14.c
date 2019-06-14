@@ -2782,11 +2782,11 @@ pdf14_set_marking_params(gx_device *dev, const gs_gstate *pgs)
     pdev->alpha = pgs->opacity.alpha * pgs->shape.alpha;
     pdev->blend_mode = pgs->blend_mode;
     pdev->overprint = pgs->overprint;
-    pdev->overprint_mode = pgs->overprint_mode;
+    pdev->effective_overprint_mode = pgs->effective_overprint_mode;
 
-    if_debug3m('v', dev->memory,
-               "[v]set_marking_params, opacity = %g, shape = %g, bm = %d\n",
-               pdev->opacity, pdev->shape, pgs->blend_mode);
+    if_debug5m('v', dev->memory,
+               "[v]set_marking_params, opacity = %g, shape = %g, bm = %d, op = %d, eop = %d\n",
+               pdev->opacity, pdev->shape, pgs->blend_mode, pgs->overprint, pgs->effective_overprint_mode);
 }
 
 static  void
@@ -2965,6 +2965,9 @@ do_pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
     bool has_shape = buf->has_shape;
     bool has_tags = buf->has_tags;
     bool knockout = buf->knockout;
+    bool tag_blend = blend_mode == BLEND_MODE_Normal ||
+        blend_mode == BLEND_MODE_Compatible ||
+        blend_mode == BLEND_MODE_CompatibleOverprint;
     int num_chan = buf->n_chan;
     int num_comp = num_chan - 1;
     int shape_off = num_chan * planestride;
@@ -3113,7 +3116,7 @@ do_pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
                 if (has_tags) {
                     /* If alpha is 100% then set to curr_tag, else or */
                     /* other than Normal BM, we always OR */
-                    if (src[num_comp] == 255 && blend_mode == BLEND_MODE_Normal) {
+                    if (src[num_comp] == 255 && tag_blend) {
                         dst_ptr[tag_off] = curr_tag;
                     } else {
                         dst_ptr[tag_off] |= curr_tag;
@@ -3142,6 +3145,9 @@ do_pdf14_copy_alpha_color_16(gx_device * dev, const byte * data, int data_x,
     uint16_t src[PDF14_MAX_PLANES];
     uint16_t dst[PDF14_MAX_PLANES] = { 0 };
     gs_blend_mode_t blend_mode = pdev->blend_mode;
+    bool tag_blend = blend_mode == BLEND_MODE_Normal ||
+        blend_mode == BLEND_MODE_Compatible ||
+        blend_mode == BLEND_MODE_CompatibleOverprint;
     bool additive = pdev->ctx->additive;
     int rowstride = buf->rowstride;
     int planestride = buf->planestride;
@@ -3301,7 +3307,7 @@ do_pdf14_copy_alpha_color_16(gx_device * dev, const byte * data, int data_x,
                 if (has_tags) {
                     /* If alpha is 100% then set to curr_tag, else or */
                     /* other than Normal BM, we always OR */
-                    if (src[num_comp] == 65535 && blend_mode == BLEND_MODE_Normal) {
+                    if (src[num_comp] == 65535 && tag_blend) {
                         dst_ptr[tag_off] = curr_tag;
                     } else {
                         dst_ptr[tag_off] |= curr_tag;
@@ -3863,7 +3869,7 @@ pdf14_set_params(gs_gstate * pgs,
     if (pparams->changed & PDF14_SET_OVERPRINT)
         pgs->overprint = pparams->overprint;
     if (pparams->changed & PDF14_SET_OVERPRINT_MODE)
-        pgs->overprint_mode = pparams->overprint_mode;
+        pgs->effective_overprint_mode = pparams->effective_overprint_mode;
     pdf14_set_marking_params(dev, pgs);
 }
 
@@ -4498,7 +4504,7 @@ pdf14_text_begin(gx_device * dev, gs_gstate * pgs,
     gs_text_enum_t *penum;
     gs_blend_mode_t blend_mode = gs_currentblendmode(pgs);
     float opacity = gs_currentopacityalpha(pgs);
-    bool blend_issue = !(blend_mode == BLEND_MODE_Normal || blend_mode == BLEND_MODE_Compatible);
+    bool blend_issue = !(blend_mode == BLEND_MODE_Normal || blend_mode == BLEND_MODE_Compatible || blend_mode == BLEND_MODE_CompatibleOverprint);
     pdf14_device *pdev = (pdf14_device*)dev;
     bool draw = !(text->operation & TEXT_DO_NONE);
 
@@ -5662,6 +5668,9 @@ do_mark_fill_rectangle_ko_simple(gx_device *dev, int x, int y, int w, int h,
     pdf14_device *pdev = (pdf14_device *)dev;
     pdf14_buf *buf = pdev->ctx->stack;
     gs_blend_mode_t blend_mode = pdev->blend_mode;
+    bool tag_blend = blend_mode == BLEND_MODE_Normal ||
+        blend_mode == BLEND_MODE_Compatible ||
+        blend_mode == BLEND_MODE_CompatibleOverprint;
     int i, j, k;
     byte *bline, *bg_ptr, *line, *dst_ptr;
     byte src[PDF14_MAX_PLANES];
@@ -5794,7 +5803,7 @@ do_mark_fill_rectangle_ko_simple(gx_device *dev, int x, int y, int w, int h,
             if (tag_off) {
                 /* If src alpha is 100% then set to curr_tag, else or */
                 /* other than Normal BM, we always OR */
-                if (src[num_comp] == 255 && blend_mode == BLEND_MODE_Normal) {
+                if (src[num_comp] == 255 && tag_blend) {
                     dst_ptr[tag_off] = curr_tag;
                 } else {
                     dst_ptr[tag_off] |= curr_tag;
@@ -5837,6 +5846,9 @@ do_mark_fill_rectangle_ko_simple16(gx_device *dev, int x, int y, int w, int h,
     pdf14_device *pdev = (pdf14_device *)dev;
     pdf14_buf *buf = pdev->ctx->stack;
     gs_blend_mode_t blend_mode = pdev->blend_mode;
+    bool tag_blend = blend_mode == BLEND_MODE_Normal ||
+        blend_mode == BLEND_MODE_Compatible ||
+        blend_mode == BLEND_MODE_CompatibleOverprint;
     int i, j, k;
     uint16_t *bline, *bg_ptr, *line, *dst_ptr;
     uint16_t src[PDF14_MAX_PLANES];
@@ -5972,7 +5984,7 @@ do_mark_fill_rectangle_ko_simple16(gx_device *dev, int x, int y, int w, int h,
             if (tag_off) {
                 /* If src alpha is 100% then set to curr_tag, else or */
                 /* other than Normal BM, we always OR */
-                if (src[num_comp] == 65535 && blend_mode == BLEND_MODE_Normal) {
+                if (src[num_comp] == 65535 && tag_blend) {
                     dst_ptr[tag_off] = curr_tag;
                 } else {
                     dst_ptr[tag_off] |= curr_tag;
@@ -6914,7 +6926,7 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
             if (pparams->changed & PDF14_SET_OVERPRINT)
                 put_value(pbuf, pparams->overprint);
             if (pparams->changed & PDF14_SET_OVERPRINT_MODE)
-                put_value(pbuf, pparams->overprint_mode);
+                put_value(pbuf, pparams->effective_overprint_mode);
             break;
         case PDF14_PUSH_TRANS_STATE:
             break;
@@ -7111,7 +7123,7 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
             if (params.changed & PDF14_SET_OVERPRINT)
                 read_value(data, params.overprint);
             if (params.changed & PDF14_SET_OVERPRINT_MODE)
-                read_value(data, params.overprint_mode);
+                read_value(data, params.effective_overprint_mode);
             break;
     }
     code = gs_create_pdf14trans(ppct, &params, mem);
@@ -8384,9 +8396,9 @@ pdf14_clist_update_params(pdf14_clist_device * pdev, const gs_gstate * pgs,
         changed |= PDF14_SET_OVERPRINT;
         params.overprint = pdev->overprint = pgs->overprint;
     }
-    if (pgs->overprint_mode != pdev->overprint_mode) {
+    if (pgs->effective_overprint_mode != pdev->effective_overprint_mode) {
         changed |= PDF14_SET_OVERPRINT_MODE;
-        params.overprint_mode = pdev->overprint_mode = pgs->overprint_mode;
+        params.effective_overprint_mode = pdev->effective_overprint_mode = pgs->effective_overprint_mode;
     }
     if (crop_blend_params) {
         params.ctm = group_params->ctm;
@@ -8542,7 +8554,7 @@ pdf14_clist_text_begin(gx_device * dev,	gs_gstate	* pgs,
     int code;
     gs_blend_mode_t blend_mode = gs_currentblendmode(pgs);
     float opacity = gs_currentopacityalpha(pgs);
-    bool blend_issue = !(blend_mode == BLEND_MODE_Normal || blend_mode == BLEND_MODE_Compatible);
+    bool blend_issue = !(blend_mode == BLEND_MODE_Normal || blend_mode == BLEND_MODE_Compatible || blend_mode == BLEND_MODE_CompatibleOverprint);
     bool draw = !(text->operation & TEXT_DO_NONE);
 
     if_debug0m('v', memory, "[v]pdf14_clist_text_begin\n");

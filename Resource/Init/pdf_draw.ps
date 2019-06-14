@@ -1396,7 +1396,6 @@ drawopdict begin
   /W* { W* } executeonly def
 
   /sh_save 1 array def
-  /sh_group  << /Subtype /Group /Isolated //true >> readonly def
 
   /do_shade {
     0 .setoverprintmode
@@ -1417,38 +1416,19 @@ drawopdict begin
         setfillstate resolvesh
         //sh_save 0 save put
         PDFusingtransparency {
-           .currentSMask //null ne {
-             //sh_group
-             1 index /BBox knownoget {
-               { oforce } forall
-             } {
-               gsave clippath pathbbox grestore
-             } ifelse
-             .begintransparencygroup
-           } if
-           dup checkOPtrans exch 1 index {
-              % We need to push a non-isolated, non-knockout transparency group and
-              % perform the operation in CompatibleOverprint mode, then end the
-              % transparency group. Do the begintransparencygroup step here.
-              mark /Subtype /Group /Isolated //false .dicttomark
-              1 index /BBox knownoget {
-                { oforce } forall
-              } {
-                gsave clippath pathbbox grestore
-              } ifelse
-              .begintransparencygroup
-               exch .currentblendmode exch .currentopacityalpha exch 4 -1 roll % save current values
-               /CompatibleOverprint .setblendmode 1 .setopacityalpha
-           } if
-           //do_shade exec
-           {
-               .endtransparencygroup .setopacityalpha .setblendmode	% end the CompatibleOverprint group
-           } if
-           .currentSMask //null ne {
-             .endtransparencygroup
-           } if
+          gsave
+          dup /BBox knownoget {
+            { oforce } forall
+            4 2 roll moveto exch 0 lineto 0 exch lineto closepath
+          } {
+            clippath
+          } ifelse
+          //null setup_trans
+          grestore
+          //do_shade exec
+          teardown_trans
         } {
-           //do_shade exec
+          //do_shade exec
         } ifelse
         //sh_save 0 get restore
       } {
@@ -2255,7 +2235,7 @@ currentdict /last-ditch-bpc-csp undef
       PDFfile exch setfileposition
       0 .endtransparencymask
     } ifelse
-       << /Subtype /Group /Isolated //true
+    << /Subtype /Group /Isolated //true
        /.image_with_SMask //true
        % pdfwrite needs : see gs/src/ztrans.c, gs/src/gdevpdft.c
        % Code to deal with a Matte in the SMask. We know the image dictionary must have an SMask
@@ -2265,7 +2245,7 @@ currentdict /last-ditch-bpc-csp undef
        % We also need to actually set the current colour space to be the same as the group
        % code only picks up the current colour space, not the space from the dictionary.
        currentdict /SMask get /Matte known {/CS currentdict /ColorSpace get dup pdfopdict /cs get exec } if
-     >> 0 0 1 1 .begintransparencygroup
+    >> 0 0 1 1 .begintransparencygroup
      doimage
     .endtransparencygroup
     % tell the compositor we're done with the SMask.
@@ -2333,15 +2313,6 @@ currentdict /last-ditch-bpc-csp undef
 
 /doimage {	% <imagemask> doimage -
                 % imagedict is currentdict, gets popped from dstack
-  //null checkOPtrans {
-     % We need to push a non-isolated, non-knockout transparency group and
-     % perform the operation in CompatibleOverprint mode, then end the
-     % transparency group. Do the begintransparencygroup step here.
-     mark /Subtype /Group /Isolated //false .dicttomark 0 0 1 1 .begintransparencygroup
-     OPsavedict dup /saveBM .currentblendmode put /saveOA .currentopacityalpha put % save current values
-     /CompatibleOverprint .setblendmode 1 .setopacityalpha
-  } if
-
   %% save the current rendering intent
   .currentrenderintent exch
 
@@ -2363,6 +2334,7 @@ currentdict /last-ditch-bpc-csp undef
       makemaskimage
   } if
                 % Stack: datasource imagemask
+  gsave 1 1 moveto 0 0 lineto /image setup_trans grestore
   { currentdict end setfillstate //true ValidateDecode { imagemask } }
   { ColorSpace setgcolorspace currentdict end setfillblend //false ValidateDecode { image } }
   ifelse
@@ -2387,10 +2359,7 @@ currentdict /last-ditch-bpc-csp undef
   %% restore the rendering intent
   .setrenderingintent
 
-  .currentblendmode /CompatibleOverprint eq {
-     .endtransparencygroup
-     OPsavedict dup /saveOA get .setopacityalpha /saveBM get .setblendmode
-  } if
+  teardown_trans
 } bind executeonly def
 
 /.paintform {	% <formdict> <resdict> <stream> .paintform -

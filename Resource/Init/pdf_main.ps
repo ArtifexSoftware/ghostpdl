@@ -2705,11 +2705,14 @@ currentdict /PDF2PS_matrix_key undef
         % (eg GSView 5) then it will not be present, so we must rescan.
   currentpagedevice /PageUsesTransparency .knownget not {dup pageusestransparency} if
   dup /PDFusingtransparency exch def {
-    % If the current device isn't CMYK, or if it is a HighLevelDevice (pdfwrite) we
-    % don't need the special handling of Overprint transparency, so disable the checking.
-    currentpagedevice dup /Colors get 4 lt exch /HighLevelDevice known or {
-      /checkOPtrans { pop //false } def	% NB: original will be restored from PDFsave
-    } if
+    % If the current device isn't CMYK, or if it is a device that (currently) supports transparency
+    % we don't need the special handling of Overprint transparency, so disable the checking.
+    currentpagedevice dup /Colors get 4 lt
+    exch /HaveTransparency .knownget not { //false } if or
+    % device needs special Oveprint handling
+    /setup_trans exch
+    { /setupSMtrans } { /setupOPtrans } ifelse
+    load def
     % Show the page within a PDF 1.4 device filter.
     0 .pushpdf14devicefilter {
       /DefaultQstate qstate store		% device has changed -- reset DefaultQstate
@@ -2737,7 +2740,7 @@ currentdict /PDF2PS_matrix_key undef
     .poppdf14devicefilter	% NB: reset to DefaultQstate will also restore transfer function
     /DefaultQstate qstate store	% device has changed -- reset DefaultQstate
   } {
-    /checkOPtrans { pop //false } def	% no-op the check if the page doesn't use transparency
+    /setup_trans { pop } def    % no-op this if the page doesn't use transparency
                                 % NB: original will be restored from PDFsave
     showpagecontents
   } ifelse

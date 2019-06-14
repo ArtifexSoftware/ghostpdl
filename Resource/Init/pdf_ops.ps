@@ -672,59 +672,127 @@ end def
   } ifelse
 } bind executeonly def
 
-/OPsavedict 2 dict def		% for saveOP, saveBM
+/OPsaveDstack 6 dict def		% for GroupPushed, saveOP, saveSA, saveBM
+//OPsaveDstack begin
+  /GroupPushed //false def
+  /ChangeBM //false def
+  /saveOA 1 def
+  /saveSA 1 def
+  /saveBM /Normal def
+  /previous 1 dict def		% for nested setup_trans levels
+end
+
+/Dpush {
+  .currentglobal //true .setglobal	% 'previous' dict must be in global VM
+  //OPsaveDstack 6 dict 1 index { 2 index 3 1 roll put } forall /previous exch put
+  .setglobal
+} def
+/Dpop { //OPsaveDstack begin previous { def } forall end } def
 
 % colorspaces that don't require special overprint transparency handling
 /okOPcs mark /DeviceGray 0 /DeviceCMYK 1 /DeviceN 2 /Separation 3 .dicttomark def
 
-/checkOPtrans	% <fillop|strokeop> checkOPtrans <bool>
-% return true if OP needs special transparency treatment
-% If the colorspace is not one where overprint makes sense, no special handling (return false)
-% NB: This will get replaced with a quick "no-op" if the device doesn't support Overprint
+% Take care of pushing a transparency group if we need it for SMask or for Overprint..
+% After pushing the group, we save the opacityalpha and shapealpha and change them
+% both to 1. For overprint if the colorspace is acceptable, also change to
+% CompatibleOverprint if the device needs it.
+
+% NB: setup_trans is defined as either setupOPtrans (for devices that can support
+%     overprint, or as setupSMtrans which pushes a group for SMask.
+% Also see 'teardown_trans' that pops the group and resets the changed values.
+/setupOPtrans	% <fillop|strokeop> setup_trans
 {  % Check OP and BM in case we need to push a group
-    okOPcs currentcolorspace 0 get dup /Indexed eq {
-       pop currentcolorspace 1 get	% use the base space
-    } if
-    known {
-       /stroke ne { .currentfilloverprint
-       } { .currentstrokeoverprint
-       } ifelse
-       .currentblendmode dup /Normal eq exch /Compatible eq or not and
-   } {
-      pop //false
-   } ifelse
+  //OPsaveDstack begin
+  //Dpush exec			% push the current OPsaveDstack values into 'previous'
+  okOPcs currentcolorspace 0 get dup /Indexed eq {
+    pop currentcolorspace 1 get	% use the base space
+  } if
+  known {
+    1 index /stroke ne { .currentfilloverprint } { .currentstrokeoverprint } ifelse
+    % Change BM to CompatibleOverprint if this has overprint true
+    dup /ChangeBM exch def
+    .currentblendmode dup /Normal eq exch /Compatible eq or
+    not and
+  } {
+    //false
+  } ifelse
+  .currentSMask //null ne or {		% push a group for OP or SMask
+    mark /Subtype /Group /Isolated .currentSMask //null ne .dicttomark
+    1 index /stroke eq {
+      % BBox needs to include line width / line join expansion.
+      gsave strokepath pathbbox grestore
+    } {
+      pathbbox     % fill/eofill cases
+    } ifelse
+    .begintransparencygroup
+    % After group pushed, set opacityalpha, shapealpha and blendmode
+    /saveOA .currentopacityalpha def
+    /saveSA .currentshapealpha def
+    1 .setopacityalpha 1 .setshapealpha
+    /GroupPushed //true def
+  } if
+  % we may change to CompatibleOverprint even if we didn't push a group.
+  ChangeBM {
+    /saveBM .currentblendmode def /CompatibleOverprint .setblendmode
+  } if
+  pop		% fillop/strokeop
+  end	% OPsaveDstack
 } bind executeonly def
 
+% Also see 'teardown_trans' that pops the group and resets the changed values.
+/setupSMtrans	% <fillop|strokeop> setup_trans
+{
+  //OPsaveDstack begin
+  //Dpush exec			% push the current OPsaveDstack values into 'previous'
+  .currentSMask //null ne 1 index /image ne and		% only push for SMask if not from image
+  {
+    mark /Subtype /Group /Isolated //true .dicttomark
+    exch /stroke eq {
+    % BBox needs to include line width / line join expansion.
+      gsave strokepath pathbbox grestore
+    } {
+      pathbbox     % fill/eofill cases
+    } ifelse
+    .begintransparencygroup
+    % After group pushed, set opacityalpha, shapealpha and blendmode
+    /saveOA .currentopacityalpha def
+    /saveSA .currentshapealpha def
+    1 .setopacityalpha 1 .setshapealpha
+    /GroupPushed //true def
+  } {
+    /GroupPushed //false def
+    pop		% fillop/strokeop
+  } ifelse
+  end	% OPsaveDstack
+} bind executeonly def
+
+% If a transparency group was pushed, pop it, and reset the settings.
+% Used after setup_trans
+/teardown_trans {
+  //OPsaveDstack begin
+  GroupPushed {
+    % pop the group, then restore the opacityalpha and shapealpha
+    .endtransparencygroup	% end the group
+    saveOA .setopacityalpha saveSA .setshapealpha
+  } if
+  % Also, if we changed the BM, restore it (AFTER the group was popped)
+  .currentblendmode /CompatibleOverprint eq {
+    % restore the blendmode
+    saveBM .setblendmode
+  } if
+  end	% OPsaveDstack
+  //Dpop exec			% load previous OPsaveDstack contents
+} bind executeonly def
+
+currentdict dup /Dpush .undef /Dpop .undef
+
+% ------------------------------------------------------------ %
 /fsexec		% <fillop|strokeop> fsexec -
 {
    PDFusingtransparency {
-      .currentSMask //null ne {
-        mark /Subtype /Group /Isolated //true .dicttomark
-        1 index /stroke eq {
-          % BBox needs to include line width / line join expansion.
-          gsave strokepath pathbbox grestore
-        } {
-          pathbbox	% fill/eofill cases
-        } ifelse
-        .begintransparencygroup
-        .currentshapealpha .currentopacityalpha 3 -1 roll % avoid double application
-        1 .setopacityalpha 1 .setshapealpha
-      } if
-      dup checkOPtrans exch 1 index {
-         % We need to push a non-isolated, non-knockout transparency group and
-         % perform the operation in CompatibleOverprint mode, then end the
-         % transparency group. Do the begintransparencygroup step here.
-         mark /Subtype /Group /Isolated //false .dicttomark pathbbox .begintransparencygroup
-         .currentblendmode .currentopacityalpha 4 -2 roll % save current values
-         /CompatibleOverprint .setblendmode 1 .setopacityalpha
-      } if
+      dup setup_trans
       cvx exec
-      {
-         .endtransparencygroup .setopacityalpha .setblendmode	% end the CompatibleOverprint group
-      } if
-      .currentSMask //null ne {
-       .endtransparencygroup .setopacityalpha .setshapealpha
-      } if
+      teardown_trans
    } {
       cvx exec
    } ifelse
@@ -1104,11 +1172,13 @@ end readonly def
 } bind executeonly odef
 
 /BT {
+  //false /illegal_BT gput
   currentdict /TextSaveMatrix known {
     (   **** Error: illegal nested BT operator detected.\n)
     pdfformaterror
     (               Output may be incorrect.\n) pdfformaterror
     ET_NO_TXT_KO  %% Does not push any compositor actions
+    //true /illegal_BT gput
   } if
 
   %% Bug #695897 see the explanation in /q defined above.
@@ -1118,6 +1188,7 @@ end readonly def
     pdfformaterror
     (               Output may be incorrect.\n) pdfformaterror
     ET_NO_TXT_KO  %% Does not push any compositor actions
+    //true /illegal_BT gput
   } if
   currentdict /n known {
     currentdict end
@@ -1139,7 +1210,9 @@ end readonly def
   %% If needed, let the pdf14 device know we are in a BT condition.  This
   %% distinguishes BT from an Annotation /FreeText show command which also
   %% can come into pdf_text_begin with an opacity not equal to 1.
-  PDFusingtransparency .currenttextknockout and {
+  PDFusingtransparency .currenttextknockout and
+  currentdict /illegal_BT get not and
+{
     .begintransparencytextgroup
   } if
 
@@ -1566,37 +1639,14 @@ end readonly def
 } bind executeonly def
 
 % If current path is not known to be valid, use the clip path
-/TextTransSetup {	% showarg path_valid TextTransSetup false showarg
-                        % showarg path_valid false TextTransSetup prev_BM prev_opacity true showarg
+/TextTransSetup {	% showarg path_valid TextTransSetup showarg
+                        % showarg path_valid false TextTransSetup showarg
    % NB: if 'show' is used, then we use the clippath, but a smaller bbox is preferred
-   .currentSMask //null ne {
-     dup mark /Subtype /Group /Isolated //true .dicttomark exch
-     { pathbbox } { gsave clippath pathbbox grestore } ifelse
-     .begintransparencygroup
-   } if
-   //null checkOPtrans {
-     % We need to push a non-isolated, non-knockout transparency group and
-     % perform the operation in CompatibleOverprint mode, then end the
-     % transparency group. Do the begintransparencygroup step here.
-     mark /Subtype /Group /Isolated //false .dicttomark exch
-     { pathbbox } { gsave clippath pathbbox grestore } ifelse
-     .begintransparencygroup
-     OPsavedict dup /saveBM .currentblendmode put /saveOA .currentopacityalpha put % save current values
-     /CompatibleOverprint .setblendmode 1 .setopacityalpha
-   } {
-     pop	% discard path_valid boolean
-   } ifelse
+   not dup { gsave clippath } if //null setup_trans { grestore } if
 } bind executeonly def
 
-/TextTransTeardown {	% stack: path_valid
-   .currentblendmode /CompatibleOverprint eq {
-     % end the CompatibleOverprint group and restore the opacity and BM
-     .endtransparencygroup
-     OPsavedict dup /saveOA get .setopacityalpha /saveBM get .setblendmode
-   } if
-   .currentSMask //null ne {
-     .endtransparencygroup
-   } if
+/TextTransTeardown {
+  teardown_trans
 } bind executeonly def
 
 /setshowstate

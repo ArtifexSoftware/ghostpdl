@@ -208,7 +208,7 @@ typedef struct pdf14_device_s {
     gs_blend_mode_t blend_mode;
     bool text_knockout;
     bool overprint;
-    bool overprint_mode;
+    bool effective_overprint_mode;
     int text_group;
     gx_color_index drawn_comps;		/* Used for overprinting.  Passed from overprint compositor */
     gx_device * pclist_device;
