@@ -6940,6 +6940,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\jbig2dec\jbig2_hufftab.c"
+				>
+			</File>
+			<File
 				RelativePath="..\jbig2dec\jbig2_hufftab.h"
 				>
 			</File>
