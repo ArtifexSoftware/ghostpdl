@@ -43,39 +43,39 @@ JBIG2OBJ=$(JBIG2OBJDIR)$(D)
 libjbig2_OBJS1=\
 	$(JBIG2OBJ)jbig2.$(OBJ) \
 	$(JBIG2OBJ)jbig2_arith.$(OBJ) \
-        $(JBIG2OBJ)jbig2_arith_iaid.$(OBJ) \
-        $(JBIG2OBJ)jbig2_arith_int.$(OBJ) \
-        $(JBIG2OBJ)jbig2_generic.$(OBJ) \
-        $(JBIG2OBJ)jbig2_refinement.$(OBJ) \
-        $(JBIG2OBJ)jbig2_huffman.$(OBJ) \
-        $(JBIG2OBJ)jbig2_image.$(OBJ) \
-        $(JBIG2OBJ)jbig2_mmr.$(OBJ)
+	$(JBIG2OBJ)jbig2_arith_iaid.$(OBJ) \
+	$(JBIG2OBJ)jbig2_arith_int.$(OBJ) \
+	$(JBIG2OBJ)jbig2_generic.$(OBJ) \
+	$(JBIG2OBJ)jbig2_refinement.$(OBJ) \
+	$(JBIG2OBJ)jbig2_huffman.$(OBJ) \
+	$(JBIG2OBJ)jbig2_image.$(OBJ) \
+	$(JBIG2OBJ)jbig2_mmr.$(OBJ)
 
 libjbig2_OBJS2=\
 	$(JBIG2OBJ)jbig2_page.$(OBJ) \
-        $(JBIG2OBJ)jbig2_segment.$(OBJ) \
-        $(JBIG2OBJ)jbig2_symbol_dict.$(OBJ) \
-        $(JBIG2OBJ)jbig2_text.$(OBJ) \
-        $(JBIG2OBJ)jbig2_halftone.$(OBJ) \
-        $(JBIG2_EXTRA_OBJS)
+	$(JBIG2OBJ)jbig2_segment.$(OBJ) \
+	$(JBIG2OBJ)jbig2_symbol_dict.$(OBJ) \
+	$(JBIG2OBJ)jbig2_text.$(OBJ) \
+	$(JBIG2OBJ)jbig2_halftone.$(OBJ) \
+	$(JBIG2_EXTRA_OBJS)
 
 libjbig2_OBJS=$(libjbig2_OBJS1) $(libjbig2_OBJS2)
 
 libjbig2_HDRS=\
-        $(JBIG2SRC)jbig2.h \
-        $(JBIG2SRC)jbig2_arith.h \
-        $(JBIG2SRC)jbig2_arith_iaid.h \
-        $(JBIG2SRC)jbig2_arith_int.h \
-        $(JBIG2SRC)jbig2_generic.h \
-        $(JBIG2SRC)jbig2_huffman.h \
-        $(JBIG2SRC)jbig2_hufftab.h \
-        $(JBIG2SRC)jbig2_image.h \
-        $(JBIG2SRC)jbig2_mmr.h \
-        $(JBIG2SRC)jbig2_priv.h \
-        $(JBIG2SRC)jbig2_symbol_dict.h \
-        $(JBIG2SRC)jbig2_text.h \
-        $(JBIG2SRC)jbig2_halftone.h \
-        $(JBIG2SRC)config_win32.h
+	$(JBIG2SRC)jbig2.h \
+	$(JBIG2SRC)jbig2_arith.h \
+	$(JBIG2SRC)jbig2_arith_iaid.h \
+	$(JBIG2SRC)jbig2_arith_int.h \
+	$(JBIG2SRC)jbig2_generic.h \
+	$(JBIG2SRC)jbig2_huffman.h \
+	$(JBIG2SRC)jbig2_hufftab.h \
+	$(JBIG2SRC)jbig2_image.h \
+	$(JBIG2SRC)jbig2_mmr.h \
+	$(JBIG2SRC)jbig2_priv.h \
+	$(JBIG2SRC)jbig2_symbol_dict.h \
+	$(JBIG2SRC)jbig2_text.h \
+	$(JBIG2SRC)jbig2_halftone.h \
+	$(JBIG2SRC)config_win32.h
 
 jbig2dec_OBJS=$(JBIG2OBJ)getopt.$(OBJ) $(JBIG2OBJ)getopt1.$(OBJ) $(JBIG2OBJ)sha1.$(OBJ)
 jbig2dec_HDRS=$(JBIG2OBJ)getopt.h $(JBIG2OBJ)sha1.h
