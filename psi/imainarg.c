@@ -578,8 +578,6 @@ run_stdin:
                 if (code > 0)
                     code = argproc(minst, arg);
                 (void)gs_remove_control_path(minst->heap, gs_permit_file_reading, arg);
-                if (code < 0)
-                    return code;
                 minst->run_buffer_size = bsize;
                 if (code < 0)
                     return code;
@@ -644,7 +642,7 @@ run_stdin:
                 long msize = 0;
                 gs_malloc_memory_t *rawheap = gs_malloc_wrapped_contents(minst->heap);
 
-                sscanf((const char *)arg, "%ld", &msize);
+                (void)sscanf((const char *)arg, "%ld", &msize);
                 if (msize <= 0 || msize > max_long >> 10) {
                     outprintf(minst->heap, "-K<numK> must have 1 <= numK <= %ld\n",
                               max_long >> 10);
@@ -657,7 +655,7 @@ run_stdin:
             {
                 unsigned msize = 0;
 
-                sscanf((const char *)arg, "%u", &msize);
+                (void)sscanf((const char *)arg, "%u", &msize);
                 if (msize <= 0 || msize >= (max_uint >> 10)) {
                     outprintf(minst->heap, "-M must be between 1 and %d\n", (int)((max_uint >> 10) - 1));
                     return gs_error_Fatal;
@@ -669,7 +667,7 @@ run_stdin:
             {
                 unsigned nsize = 0;
 
-                sscanf((const char *)arg, "%d", &nsize);
+                (void)sscanf((const char *)arg, "%d", &nsize);
                 if (nsize < 2 || nsize > (max_uint >> 10)) {
                     outprintf(minst->heap, "-N must be between 2 and %d\n", (int)(max_uint >> 10));
                     return gs_error_Fatal;

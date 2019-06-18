@@ -148,7 +148,7 @@ static void send_ERG(gp_file *out, pcl_Level level)
 
 ******************************************************************************/
 
-int pcl3_init_file(gp_file *out, pcl_FileData *data)
+int pcl3_init_file(gs_memory_t *mem, gp_file *out, pcl_FileData *data)
 {
   pcl_bool needs_CRD = (data->level == pcl_level_3plus_CRD_only);
     /* Do we need Configure Raster Data? */
@@ -162,7 +162,7 @@ int pcl3_init_file(gp_file *out, pcl_FileData *data)
 
     invalid = (out == NULL || data == NULL);
     if (invalid)
-      errprintf(out->memory, ERRPREF "Null pointer passed to pcl3_init_file().\n");
+      errprintf(mem, ERRPREF "Null pointer passed to pcl3_init_file().\n");
     else {
       /* Palette und colorants */
       switch(data->palette) {
@@ -175,7 +175,7 @@ int pcl3_init_file(gp_file *out, pcl_FileData *data)
         default: invalid = data->number_of_colorants <= 0;
       }
       if (invalid)
-        errprintf(out->memory, ERRPREF
+        errprintf(mem, ERRPREF
           "Palette specification and number of colorants are inconsistent.\n");
       else {
         if (data->colorant == NULL) colorant = data->colorant_array;
@@ -187,7 +187,7 @@ int pcl3_init_file(gp_file *out, pcl_FileData *data)
         for (j = 0; j < data->number_of_colorants; j++) {
           if (colorant[j].hres <= 0 || colorant[j].vres <= 0) {
             invalid = TRUE;
-            errprintf(out->memory, ERRPREF
+            errprintf(mem, ERRPREF
               "The resolution for colorant %d is not positive: %u x %u ppi.\n",
               j, colorant[j].hres, colorant[j].vres);
           }
@@ -199,7 +199,7 @@ int pcl3_init_file(gp_file *out, pcl_FileData *data)
           }
           if (colorant[j].levels < 2 || 0xFFFF < colorant[j].levels) {
             invalid = TRUE;
-            errprintf(out->memory, ERRPREF "The number of intensity levels for "
+            errprintf(mem, ERRPREF "The number of intensity levels for "
               "colorant %d is %u instead of at least 2 and at most 65535.\n",
               j, colorant[j].levels);
             /* Actually, DJ6/8 p. 68 requires the levels to be in the range
@@ -235,21 +235,21 @@ int pcl3_init_file(gp_file *out, pcl_FileData *data)
             */
             if (colorant[j].vres % data->minvres != 0) {
               invalid = TRUE;
-              errprintf(out->memory, ERRPREF
+              errprintf(mem, ERRPREF
                 "The vertical resolution for colorant %d (%u ppi) is not a "
                 "multiple of the lowest vertical resolution (%u ppi).\n",
                 j, colorant[j].vres, data->minvres);
             }
             if (maxhres % colorant[j].hres != 0) {
               invalid = TRUE;
-              errprintf(out->memory, ERRPREF
+              errprintf(mem, ERRPREF
                 "The highest horizontal resolution (%u ppi) is not a multiple "
                 "of the horizontal resolution for colorant %d (%u ppi).\n",
                 maxhres, j, colorant[j].hres);
             }
             if (maxvres % colorant[j].vres != 0) {
               invalid = TRUE;
-              errprintf(out->memory, ERRPREF
+              errprintf(mem, ERRPREF
                 "The highest vertical resolution (%u ppi) is not a multiple "
                 "of the vertical resolution for colorant %d (%u ppi).\n",
                 maxvres, j, colorant[j].vres);
@@ -260,32 +260,32 @@ int pcl3_init_file(gp_file *out, pcl_FileData *data)
       if (needs_CRD && data->palette == pcl_RGB) {
         invalid = TRUE;
         if (data->level == pcl_level_3plus_CRD_only)
-          errprintf(out->memory, ERRPREF
+          errprintf(mem, ERRPREF
             "You can't use an RGB palette at the requested PCL level.\n");
         else
-          errprintf(out->memory, ERRPREF "The specified structure of resolutions and intensity "
+          errprintf(mem, ERRPREF "The specified structure of resolutions and intensity "
             "levels is not possible with an RGB palette.\n");
       }
       if (needs_CRD && !pcl_has_CRD(data->level)) {
         invalid = TRUE;
-        errprintf(out->memory, ERRPREF "The specified structure of resolutions and intensity "
+        errprintf(mem, ERRPREF "The specified structure of resolutions and intensity "
           "levels is not possible at the requested PCL level.\n");
       }
       if (data->palette == pcl_any_palette) {
         needs_CRD = TRUE;
         if (!pcl_has_CRD(data->level)) {
           invalid = TRUE;
-          errprintf(out->memory, ERRPREF "The specified palette is not possible at the "
+          errprintf(mem, ERRPREF "The specified palette is not possible at the "
             "requested PCL level.\n");
         }
       }
       if (needs_CRD && (maxhres > 0xFFFF || maxvres > 0xFFFF)) {
-        errprintf(out->memory, ERRPREF "Resolutions may be at most 65535 ppi when more than one "
+        errprintf(mem, ERRPREF "Resolutions may be at most 65535 ppi when more than one "
           "resolution or more than two intensity levels are requested.\n");
         invalid = TRUE;
       }
       if (data->order_CMYK && data->palette != pcl_CMYK) {
-        errprintf(out->memory, ERRPREF
+        errprintf(mem, ERRPREF
           "Ordering bit planes as CMYK instead of KCMY is only meaningful\n"
           "  for a CMYK palette.\n");
         invalid = TRUE;
@@ -299,7 +299,7 @@ int pcl3_init_file(gp_file *out, pcl_FileData *data)
            exception of '"' (PJLTRM, with some corrections). */
         while (*s != '\0' && (*s == '\t' || (32 <= *s && *s != '"'))) s++;
         if (*s != '\0') {
-          errprintf(out->memory,
+          errprintf(mem,
             ERRPREF "Illegal character in PJL job name (code 0x%02X).\n", *s);
           invalid = TRUE;
         }
@@ -310,7 +310,7 @@ int pcl3_init_file(gp_file *out, pcl_FileData *data)
            There would also be a warning for an empty string but we treat that
            case differently anyway (see below). */
         if (strlen(data->PJL_job) > 80) {
-          errprintf(out->memory, ERRPREF "PJL job name is too long (more than 80 characters).\n");
+          errprintf(mem, ERRPREF "PJL job name is too long (more than 80 characters).\n");
           invalid = TRUE;
         }
       }
@@ -326,11 +326,11 @@ int pcl3_init_file(gp_file *out, pcl_FileData *data)
         if (is_letter(*s)) do s++; while (is_letter(*s) || is_digit(*s));
 
         if (*data->PJL_language == '\0') {
-          errprintf(out->memory, ERRPREF "Empty PJL language name.\n");
+          errprintf(mem, ERRPREF "Empty PJL language name.\n");
           invalid = TRUE;
         }
         else if (*s != '\0') {
-          errprintf(out->memory,
+          errprintf(mem,
             ERRPREF "Illegal character in PJL language name (code 0x%02X).\n",
             *s);
           invalid = TRUE;
@@ -487,7 +487,7 @@ int pcl3_init_file(gp_file *out, pcl_FileData *data)
   }
 
   if (gp_ferror(out)) {
-    errprintf(out->memory, ERRPREF "Unidentified system error while writing the output file.\n");
+    errprintf(mem, ERRPREF "Unidentified system error while writing the output file.\n");
     return -1;
   }
 

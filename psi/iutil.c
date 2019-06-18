@@ -341,7 +341,7 @@ obj_cvp(const ref * op, byte * str, uint len, uint * prlen,
             float scanned;
 
             gs_sprintf(buf, "%g", value);
-            sscanf(buf, "%f", &scanned);
+            (void)sscanf(buf, "%f", &scanned);
             if (scanned != value)
                 gs_sprintf(buf, "%.9g", value);
             ensure_dot(buf);
@@ -572,7 +572,7 @@ ensure_dot(char *buf)
     char *pe = strchr(buf, 'e');
     if (pe) {
         int i;
-        sscanf(pe + 1, "%d", &i);
+        (void)sscanf(pe + 1, "%d", &i);
         /* MSVC .net 2005 express doesn't support "%+02d" */
         if (i >= 0)
             gs_sprintf(pe + 1, "+%02d", i);

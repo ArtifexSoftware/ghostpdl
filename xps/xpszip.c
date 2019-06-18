@@ -302,7 +302,9 @@ xps_find_and_read_zip_dir(xps_context_t *ctx)
     int i, n;
     char buf[512];
 
-    xps_fseek(ctx->file, 0, SEEK_END);
+    if (xps_fseek(ctx->file, 0, SEEK_END) < 0)
+        return gs_throw(-1, "seek to end failed.");
+
     filesize = xps_ftell(ctx->file);
 
     maxback = MIN(filesize, 0xFFFF + sizeof buf);
@@ -310,7 +312,8 @@ xps_find_and_read_zip_dir(xps_context_t *ctx)
 
     while (back < maxback)
     {
-        xps_fseek(ctx->file, filesize - back, 0);
+        if (xps_fseek(ctx->file, filesize - back, 0) < 0)
+            return gs_throw1(gs_error_ioerror, "xps_fseek to %d failed.\n", filesize - back);
 
         n = xps_fread(buf, 1, sizeof buf, ctx->file);
         if (n < 0)
@@ -478,7 +481,8 @@ xps_read_dir_part(xps_context_t *ctx, const char *name)
         if (!file)
             break;
         count ++;
-        xps_fseek(file, 0, SEEK_END);
+        if (xps_fseek(file, 0, SEEK_END) < 0)
+            break;;
         size += xps_ftell(file);
         gp_fclose(file);
     }

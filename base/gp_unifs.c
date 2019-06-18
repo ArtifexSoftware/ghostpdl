@@ -107,20 +107,20 @@ gp_open_scratch_file_impl(const gs_memory_t *mem,
 
         /* save the old filename template in case mkstemp fails */
         memcpy(ofname, fname, gp_file_name_sizeof);
-#ifdef HAVE_MKSTEMP64
+#  ifdef HAVE_MKSTEMP64
         file = mkstemp64(fname);
-#else
+#  else
         file = mkstemp(fname);
-#endif
+#  endif
         if (file < -1) {
             emprintf1(mem, "**** Could not open temporary file %s\n", ofname);
             return NULL;
         }
-#if defined(O_LARGEFILE) && defined(__hpux)
+#  if defined(O_LARGEFILE) && defined(__hpux)
         fcntl(file, F_SETFD, fcntl(file, F_GETFD) | O_LARGEFILE);
-#else
+#  else
         /* Fixme : what to do with b64 and 32-bit mkstemp? Unimplemented. */
-#endif
+#  endif
 
         fp = fdopen(file, mode);
         if (fp == NULL) {

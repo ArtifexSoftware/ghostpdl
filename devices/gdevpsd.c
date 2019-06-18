@@ -1294,10 +1294,18 @@ psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
                 memset(sep_line,255,octets_per_line);
                 psd_write(xc, sep_line, octets_per_line);
             }
-            gp_fseek(xc->f, (xc->height-1) * octets_per_line, SEEK_CUR);
+            code = gp_fseek(xc->f, ((gs_offset_t)xc->height-1) * octets_per_line, SEEK_CUR);
+            if (code < 0) {
+                code = gs_note_error(gs_error_ioerror);
+                goto cleanup;
+            }
         }
         if (j < xc->height-1)
-            gp_fseek(xc->f, -(num_comp * xc->height - 1) * octets_per_line, SEEK_CUR);
+            code = gp_fseek(xc->f, -((gs_offset_t)num_comp * xc->height - 1) * octets_per_line, SEEK_CUR);
+            if (code < 0) {
+                code = gs_note_error(gs_error_ioerror);
+                goto cleanup;
+            }
     }
 
 cleanup:

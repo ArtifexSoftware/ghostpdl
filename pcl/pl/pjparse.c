@@ -1142,8 +1142,11 @@ pjl_get_named_resource_size(pjl_parser_state_t * pst, char *name)
 
     if (fp == NULL)
         return 0;
-    gp_fseek(fp, 0L, SEEK_END);
-    size = gp_ftell(fp);
+    size = gp_fseek(fp, 0L, SEEK_END);
+    if (size >= 0)
+        size = gp_ftell(fp);
+    else
+        size = 0;
     gp_fclose(fp);
     return size;
 }
@@ -1159,8 +1162,9 @@ pjl_get_named_resource(pjl_parser_state * pst, char *name, byte * data)
 
     if (fp == NULL)
         return 0;
-    gp_fseek(fp, 0L, SEEK_END);
-    size = gp_ftell(fp);
+    size = gp_fseek(fp, 0L, SEEK_END);
+    if (size >= 0)
+        size = gp_ftell(fp);
     gp_rewind(fp);
     if (size < 0 || (size != gp_fread(data, 1, size, fp))) {
         code = -1;
