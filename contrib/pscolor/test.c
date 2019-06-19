@@ -13,6 +13,9 @@
 #include <stdio.h>
 #include <malloc.h>
 
+/* prevent gp.h redefining fopen */
+#define fopen fopen
+
 #include "stdpre.h"
 #include "iapi.h"    /* Ghostscript interpreter public interface */
 #include "gdevdsp.h"
