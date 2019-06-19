@@ -57,7 +57,7 @@ gsdll_stdin(void *instance, char *buf, int len)
     fprintf(temp_fd,"%s",buf);
         fflush(temp_fd);
         fclose(temp_fd);
-        read_fd=gp_fopen("temp.ps","rb");
+        read_fd=fopen("temp.ps","rb");
 //    fprintf(stderr, "Seitenende %d %d %s\n",hlen,strlen(buf),buf);
         while( (c=fgetc(read_fd)) != EOF)
         {
@@ -66,7 +66,7 @@ gsdll_stdin(void *instance, char *buf, int len)
  //   fprintf(stderr, "Seitenende ende %d %d %s\n",hlen,strlen(buf),buf);
         fflush(choose);
         fclose(read_fd);
-        temp_fd=gp_fopen("temp.ps","wb");
+        temp_fd=fopen("temp.ps","wb");
     return (strlen(buf));
     } else if(eof!=0){
 //    fprintf(stderr, "Mittendrin %s\n",buf);
@@ -75,7 +75,7 @@ gsdll_stdin(void *instance, char *buf, int len)
     return (strlen(buf));
     } else {
     fprintf(stderr, "Dateiende\n");
-        read_fd=gp_fopen("temp.ps","rb");
+        read_fd=fopen("temp.ps","rb");
         while( (c=fgetc(read_fd)) != EOF)
         {
                 fputc(c,choose);
@@ -83,7 +83,7 @@ gsdll_stdin(void *instance, char *buf, int len)
         fflush(choose);
         fclose(read_fd);
         fclose(temp_fd);
-        temp_fd=gp_fopen("temp.ps","wb");
+        temp_fd=fopen("temp.ps","wb");
     return 0;
         }
 }
@@ -250,7 +250,7 @@ out:
         choose=black_fd;
         }
 /*
-        read_fd=gp_fopen("temp.ps","rb");
+        read_fd=fopen("temp.ps","rb");
         while( (c=fgetc(read_fd)) != EOF)
         {
                 fputc(c,choose);
@@ -258,7 +258,7 @@ out:
         fflush(choose);
         fclose(read_fd);
         fclose(temp_fd);
-        temp_fd=gp_fopen("temp.ps","wb");
+        temp_fd=fopen("temp.ps","wb");
 */
     return 0;
 }
@@ -319,9 +319,9 @@ int main(int argc, char *argv[])
     gsapi_set_stdio(minst, gsdll_stdin, gsdll_stdout, gsdll_stderr);
     gsapi_set_display_callback(minst, &display);
 
-        color_fd=gp_fopen("color.ps","wb");
-        black_fd=gp_fopen("black.ps","wb");
-        temp_fd=gp_fopen("temp.ps","wb");
+        color_fd=fopen("color.ps","wb");
+        black_fd=fopen("black.ps","wb");
+        temp_fd=fopen("temp.ps","wb");
         choose=black_fd;
 
     code = gsapi_init_with_args(minst, gsargc, gsargv);

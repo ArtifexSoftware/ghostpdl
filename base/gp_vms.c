@@ -250,7 +250,7 @@ gp_open_scratch_file_impl(const gs_memory_t *mem,
         return 0;		/* file name too long */
     strcat(fname, "XXXXXX");
     mktemp(fname);
-    f = gp_fopen(fname, mode);
+    f = gp_fopen(mem, fname, mode);
 
     if (f == NULL)
         emprintf1(mem, "**** Could not open temporary file %s\n", fname);

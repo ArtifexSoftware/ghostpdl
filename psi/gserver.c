@@ -126,7 +126,7 @@ main(int argc, char *argv[])
     int errlen;
     static const char *fnames[] =
     {"golfer.eps", 0};
-    FILE *cin = gp_fopen("stdin.tmp", "w+");
+    FILE *cin = fopen("stdin.tmp", "w+");
     int sout = open("stdout.tmp", O_WRONLY | O_CREAT | O_TRUNC,
                     S_IREAD | S_IWRITE);
     int serr = open("stderr.tmp", O_WRONLY | O_CREAT | O_TRUNC,

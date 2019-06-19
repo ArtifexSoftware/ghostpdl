@@ -238,9 +238,9 @@ struct dviprt_print_s {
 #define dviprt_getoutputbytes(p) ((unsigned long)(p)->output_bytes)
 
 #ifdef __PROTOTYPES__
-extern int dviprt_readsrc(char *,dviprt_cfg_t *,
+extern int dviprt_readsrc(const gs_memory_t *mem, char *,dviprt_cfg_t *,
                           unsigned char *,int ,unsigned char *, int);
-extern int dviprt_readcfg(char *,dviprt_cfg_t *,
+extern int dviprt_readcfg(const gs_memory_t *mem, char *,dviprt_cfg_t *,
                           unsigned char *,int , unsigned char *,int);
 
 extern int dviprt_beginpage(dviprt_print *);
@@ -316,7 +316,7 @@ extern char *dviprt_encodename[];
 
 typedef struct {
   uchar *fname;
-  FILE *file;
+  gp_file *file;
   int line_no;
 
   char temp_readbuf_f;

@@ -41,8 +41,6 @@
 /* include library header. */
 #include "dviprlib.h"
 
-extern gp_file *lib_fopen(const char *);
-
 #define LOCAL_DEBUG 0
 
 #define DEVICE_NAME "dmprt"
@@ -90,7 +88,7 @@ static dev_proc_close_device(gdev_dmprt_close);
 static void gdev_dmprt_init_printer_props(gx_device_dmprt *);
 static int gdev_dmprt_get_printer_props(gx_device_dmprt *,char *);
 static int gdev_dmprt_check_code_props(byte * ,int );
-static gp_file *gdev_dmprt_dviprt_lib_fopen(const char *,char *);
+static gp_file *gdev_dmprt_dviprt_lib_fopen(const gs_memory_t *mem,const char *,char *);
 
 static int gdev_dmprt_error_no_dviprt_to_gs(int );
 
@@ -805,7 +803,7 @@ gdev_dmprt_get_printer_props(gx_device_dmprt *pdev,char *fnamebase)
   fname = gs_malloc(pdev->memory->non_gc_memory, 256,1,"dviprt_lib_fname");
   if (fname == NULL) return_error(gs_error_VMerror);
 
-  fp = gdev_dmprt_dviprt_lib_fopen(fnamebase,fname);
+  fp = gdev_dmprt_dviprt_lib_fopen(pdev->memory,fnamebase,fname);
   if (fp == NULL) {
     return_error(gs_error_undefinedfilename);
   }
@@ -817,10 +815,10 @@ gdev_dmprt_get_printer_props(gx_device_dmprt *pdev,char *fnamebase)
   if (code == EOF)
     code = gs_error_ioerror;
   else if (code == 0xff) {
-    code = dviprt_readcfg(fname,&cfg,NULL,0,NULL,0);
+    code = dviprt_readcfg(pdev->memory,fname,&cfg,NULL,0,NULL,0);
   }
   else {
-    code = dviprt_readsrc(fname,&cfg,NULL,0,NULL,0);
+    code = dviprt_readsrc(pdev->memory,fname,&cfg,NULL,0,NULL,0);
   }
 
   if (code < 0) {
@@ -840,20 +838,24 @@ gdev_dmprt_get_printer_props(gx_device_dmprt *pdev,char *fnamebase)
 
 static const char * gp_file_name_concat_string(const char *, unsigned);
 static gp_file *
-gdev_dmprt_dviprt_lib_fopen(const char *fnamebase,char *fname)
+gdev_dmprt_dviprt_lib_fopen(const gs_memory_t *mem,const char *fnamebase,char *fname)
 {
-  gp_file *fp;
+  gp_file *fp = NULL;
   char *env;
 
   strcpy(fname,fnamebase);
-  fp = lib_fopen(fname);
-  if (fp == NULL) {
+  /* lib_fopen is no longer called like this. Use gp_fopen
+   * instead. */
+  /* fp = lib_fopen(fname); */
+  gp = gp_fopen(mem, fname, gp_fmode_rb);
+  if (fp == NULL)
+  {
     env = getenv("TEXCFG");
     if (env) {
       strcpy(fname,env);
       strcat(fname, gp_file_name_concat_string(env,strlen(env)));
       strcat(fname,fnamebase);
-      fp = gp_fopen(fname,gp_fmode_rb);
+      fp = gp_fopen(mem,fname,gp_fmode_rb);
     }
   }
   return fp;
