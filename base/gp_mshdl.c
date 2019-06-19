@@ -93,11 +93,31 @@ mswin_handle_fopen(gx_io_device * iodev, const char *fname, const char *access,
 {
     int fd;
     long hfile;	/* Correct for Win32, may be wrong for Win64 */
-    errno = 0;
+    gs_lib_ctx_t *ctx = mem->gs_lib_ctx;
+    gs_fs_list_t *fs = ctx->core->fs;
 
     if (gp_validate_path(mem, fname, access) != 0)
         return gs_error_invalidfileaccess;
 
+    /* First we try the open_handle method. */
+    /* Note that the loop condition here ensures we don't
+     * trigger on the last registered fs entry (our standard
+     * 'file' one). */
+    *pfile = NULL;
+    for (fs = ctx->core->fs; fs != NULL && fs->next != NULL; fs = fs->next)
+    {
+        int code = 0;
+        if (fs->fs.open_handle)
+            code = fs->fs.open_handle(mem, fs->secret, fname, access, pfile);
+        if (code < 0)
+            return code;
+        if (*pfile != NULL)
+            return code;
+    }
+
+    /* If nothing claimed that, then continue with the
+     * standard MS way of working. */
+    errno = 0;
     *pfile = gp_file_FILE_alloc(mem);
     if (*pfile == NULL) {
         return gs_error_VMerror;

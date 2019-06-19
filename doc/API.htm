@@ -84,7 +84,8 @@
 <li><a href="#init"><code>gsapi_init_with_args</code></a></li>
 <li><a href="#run"><code>gsapi_run_*</code></a></li>
 <li><a href="#exit"><code>gsapi_exit</code></a></li>
-<li><a href="#set_visual_tracer"><code>gsapi_set_visual_tracer</code></a></li>
+<li><a href="#add_fs"><code>gsapi_add_fs</code></a></li>
+<li><a href="#remove_fs"><code>gsapi_remove_fs</code></a></li>
 <li><a href="#return_codes">Return codes</a></li>
 </ul>
 <li><a href="#Example_usage">Example usage</a></li>
@@ -273,8 +274,16 @@ int
 
 <li><code>
 int
-<a href="#set_visual_tracer">gsapi_set_visual_tracer</a>
-(gstruct vd_trace_interface_s *I);
+<a href="#add_fs">gsapi_add_fs</a>
+(void *instance,
+    gsapi_fs_t *fs, void *secret);
+</code></li>
+
+<li><code>
+void
+<a href="#remove_fs">gsapi_remove_fs</a>
+(void *instance,
+    gsapi_fs_t *fs, void *secret);
 </code></li>
 
 </ul>
@@ -438,14 +447,27 @@ This must be called on shutdown if <code>gsapi_init_with_args()</code>
 has been called, and just before <code>gsapi_delete_instance()</code>.
 </blockquote>
 
-<h3><a name="set_visual_tracer"></a><code>gsapi_set_visual_tracer()</code></h3>
+<h3><a name="add_fs"></a><code>gsapi_add_fs()</code></h3>
 <blockquote>
-Pass visual tracer interface block to Ghostscript.
-See <a href="Lib.htm#Visual_trace"><code>Lib.htm</code></a> for reference about
-the interface block structure.
-This function is useful for debug clients only. Release clients must not call it.
+Adds a new 'Filing System' to the interpreter.
+This enables callers to implement their own filing systems. The system
+starts with just the conventional 'file' handlers installed, to allow
+access to the local filing system. Whenever files are to be opened
+from the interpreter, the file paths are offered around each registered
+filing system in turn (from most recently registered to oldest), until
+either an error is given, or the file is opened successfully.
+<p>
+Details of the <code>gsapi_fs_t</code> are given
+<a href="#gsapi_fs_t">below</a>.
 </blockquote>
 
+<h3><a name="remove_fs"></a><code>gsapi_remove_fs()</code></h3>
+<blockquote>
+Remove a previously registered 'Filing System' from the interpreter.
+Both the function pointers within the <code>gs_fs_t</code> and the
+secret value must match exactly.
+<p>
+</blockquote>
 
 <h3><a name="return_codes"></a>Return codes</h3>
 
@@ -500,6 +522,272 @@ must do this explicitly as shown in the example below.</p>
 When executing a string with <code>gsapi_run_string_*()</code>,
 <code>currentfile</code> is the input from the string.
 Reading from <code>%stdin</code> uses the stdin callback.</p>
+
+<h3><a name="gsapi_fs_t"></a>gsapi_fs_t</h3>
+<p>Each 'filing system' within gs is a structure of function
+pointers; each function pointer gives a handler from taking a
+different named resource (a file, a pipe, a printer, a scratch
+file etc) and attempts to open it.
+
+<pre>
+typedef struct
+{
+    int (*open_file)(const gs_memory_t *mem,
+                           void        *secret,
+                     const char        *fname,
+                     const char        *mode,
+                           gp_file    **file);
+    int (*open_pipe)(const gs_memory_t *mem,
+                           void        *secret,
+                     const char        *fname,
+                           char        *rfname, /* 4096 bytes */
+                     const char        *mode,
+                           gp_file    **file);
+    int (*open_scratch)(const gs_memory_t *mem,
+                              void        *secret,
+                        const char        *prefix,
+                              char        *rfname, /* 4096 bytes */
+                        const char        *mode,
+                              int          rm,
+                              gp_file    **file);
+    int (*open_printer)(const gs_memory_t *mem,
+                              void        *secret,
+                              char        *fname, /* 4096 bytes */
+                              int          binary,
+                              gp_file    **file);
+    int (*open_handle)(const gs_memory_t *mem,
+                             void        *secret,
+                             char        *fname, /* 4096 bytes */
+                       const char        *mode,
+                             gp_file    **file);
+} gsapi_fs_t;
+</pre>
+  
+<p>If the filename (always given in utf-8 format) is recognised as
+being one that the filing system handles (perhaps by the prefix used),
+then it should open the file, fill in the <code>gp_file</code>
+pointer and return 0.
+<p>If the filename is not-recognised as being one that the filing
+system handles, then returning 0 will cause the filename to be
+offered to other registered filing systems.
+<p>If an error is returned (perhaps gs_error_invalidfileaccess),
+then no other filing system will be allowed to try to open the
+file. This provides a mechanism whereby a caller to gsapi can
+completely control access to all files accessed via <code>gp_fopen</code>
+at runtime.
+<p>Note, that while most file access within ghostscript will be
+redirected via these functions, stdio will not; see the existing
+mechanisms within Ghostscript for intercepting/replacing this.
+<ul>
+<li>The <code>open_file</code> function pointer will be called when
+something (most often a call to <code>gp_fopen</code>) attempts to
+open a file.
+<li>The <code>open_pipe</code> function pointer will be called when
+something (most often a call to <code>gp_popen</code>) attempts to
+open a pipe. <code>rfname</code> points to a 4K buffer in which the
+actual name of the opened pipe should be returned.
+<li>The <code>open_scratch</code> function pointer will be called when
+something (most often a call to <code>gp_open_scratch_file</code> or
+<code>gp_open_scratch_file_rm</code>) attempts to open a temporary file.
+<code>rfname</code> points to a 4K buffer in which the actual name of
+the opened pipe should be returned. If <code>rm</code> is true, then
+the file should be set to delete itself when all handles to it are closed.
+<li>The <code>open_printer</code> function pointer will be called when
+something (most often a call to <code>gp_open_printer</code>) attempts
+to open a stream to a printer. If <code>binary</code> is true, then
+the stream should be opened as binary; most streams will be binary by
+default - this has historical meaning on OS/2.
+<li>The <code>open_handle</code> function pointer will be called when
+something (most often a call via the postscript <code>%handle%</code>
+IO device) attempts to open a Windows handle. This entry point will
+never be called on non-Windows builds.
+</ul>
+<p>Any of these which are left as NULL will never be called; a filing
+system with all of the entries left as NULL is therefore pointless.
+<p>The most complex part of the implementation of these functions
+is the creation of a <code>gp_file</code> instance to return. There are
+some helper functions for this, best explained by example.
+<p>Let us consider a hypothetical filing system that encrypts data as
+it is written, and decrypts it as it is read back. As each file is
+read and written the encryption/decryption routines will need to use
+some state, carried between calls to the filing system. We therefore
+might define a new type 'derived' from <code>gp_file</code> as follows:
+
+<pre>
+typedef struct
+{
+   gp_file base;
+   /* State private to the implementation of this file for encryption/decryption */
+   /* For example: */
+   int foo;
+   char *bar;
+} gp_file_crypt;
+</pre>
+
+<p>An implementation of <code>gs_fs_t</code> for our 'crypt' filing system
+might then look like this:
+
+<pre>
+gsapi_fs_t gs_fs_crypt =
+{
+    crypt_open_file,
+    NULL,            /* open_pipe */
+    NULL,            /* open_scratch */
+    NULL,            /* open_printer */
+    NULL             /* open_handle */
+};
+</pre>
+
+<p>In the above definition, we define a single handler, to cope with the
+opening of our input/output files. If we wanted to encrypt/decrypt
+other files too (perhaps the temporary files we produce) we'd need to
+define additional handlers (such as <code>open_scratch</code>).
+
+<p>Our handler might look as follows:
+  
+<pre>
+int crypt_open_file(const gs_memory_t  *mem,
+                          void         *secret,
+                    const char         *filename,
+                    const char         *mode,
+                          gp_file     **file)
+{
+    gp_file_crypt crypt;
+
+    /* Ignore any filename not starting with "crypt://" */
+    if (strncmp(filename, "crypt://", 8) != 0)
+        return 0;
+
+    /* Allocate us an instance (and fill in the non-crypt-specific
+     * internals) */
+    crypt = (gp_file_crypt *)gp_file_alloc(mem, &crypt_ops, sizeof(*crypt), "gp_file_crypt");
+    if (crypt == NULL)
+        return gs_error_VMerror; /* Allocation failed */
+
+    /* Setup the crypt-specific state */
+    crypt->foo = 1;
+    crypt->bar = gs_alloc_bytes(mem->non_gc_memory, 256, "bar");
+    /* If allocations fail, we need to clean up before exiting */
+    if (crypt->bar) {
+        gp_file_dealloc(crypt);
+	return gs_error_VMerror;
+    }
+
+    /* Return the new instance */
+    *file = &crypt.base;
+    return 0;
+}
+</pre>
+
+<p>The crucial part of this function is the definition of <code>crypt_ops</code>,
+an instance of the <code>gp_file_ops_t</code> type; a table of function pointers
+that implement the actual operations required.
+
+<pre>
+typedef struct {
+    int          (*close)(gp_file *);
+    int          (*getc)(gp_file *);
+    int          (*putc)(gp_file *, int);
+    int          (*read)(gp_file *, size_t size, unsigned int count, void *buf);
+    int          (*write)(gp_file *, size_t size, unsigned int count, const void *buf);
+    int          (*seek)(gp_file *, gs_offset_t offset, int whence);
+    gs_offset_t  (*tell)(gp_file *);
+    int          (*eof)(gp_file *);
+    gp_file     *(*dup)(gp_file *, const char *mode);
+    int          (*seekable)(gp_file *);
+    int          (*pread)(gp_file *, size_t count, gs_offset_t offset, void *buf);
+    int          (*pwrite)(gp_file *, size_t count, gs_offset_t offset, const void *buf);
+    int          (*is_char_buffered)(gp_file *file);
+    void         (*fflush)(gp_file *file);
+    int          (*ferror)(gp_file *file);
+    FILE        *(*get_file)(gp_file *file);
+    void         (*clearerr)(gp_file *file);
+    gp_file     *(*reopen)(gp_file *f, const char *fname, const char *mode);
+} gp_file_ops_t;
+</pre>
+
+<p>These functions generally follow the same patterns as the posix functions that match them,
+and so in many cases we will describe these with references to such.
+Whenever these routines are called, they will be passed a <code>gp_file</code> pointer.
+This pointer will have originated from the <code>crypt_open_file</code> call, and so can
+safely be cast back to a <code>gp_file_crypt</code> pointer to allow private data to be accessed.
+
+<dl>
+<dt><code>close(gp_file *)</code>
+<dd>close the given file; free any storage in the crypt specific parts of <code>gp_file_crypt</code>,
+but not the gp_file_crypt structure itself.
+
+<dt><code>int getc(gp_file *)</code>
+<dd>Get a single character from the file, returning it as an int (or -1 for EOF).
+Behaves like <code>fgetc(FILE *)</code>.
+
+<dt><code>int putc(gp_file *, int)</code>
+<dd>Put a single character to the file, returning the character on success, or
+EOF (and setting the error indicator) on error.
+Behaves like <code>fgetc(FILE *)</code>.
+
+<dt><code>int read(gp_file *, size_t size, unsigned int count, void *buf)</code>
+<dd>Reads count entries of size bytes the file into buf, returning the number
+of entries read. Behaves like <code>fread(FILE *, size, count, buf)</code>.
+
+<dt><code>int write(gp_file *, size_t size, unsigned int count, const void *buf)</code>
+<dd>Writes count entries of size bytes from buf into the file, returning the
+number of entries written. Behaves like <code>fwrite(FILE *, size, count, buf)</code>.
+
+<dt><code>int seek(gp_file *, gs_offset_t offset, int whence)</code>
+<dd>Seeks within the file. Behaves like <code>fseek(FILE *, offset, whence)</code>.
+
+<dt><code>gs_offset_t tell(gp_file *)</code>
+<dd>Returns the current offset within the file. Behaves like <code>ftell(FILE *)</code>.
+
+<dt><code>int eof(gp_file *)</code>
+<dd>Returns 1 if we are at the end of the file, 0 otherwise. Behaves like
+<code>feof(FILE *)</code>.
+
+<dt><code>gp_file * dup(gp_file *, const char *mode)</code>
+<dd>Optional function, only used if clist files are to be stored in this filing system.
+Behaves like <code>fdup(FILE *)</code>. Leave NULL if not implemented.
+
+<dt><code>int seekable(gp_file *)</code>
+<dd>Returns 1 if the file is seekable, 0 otherwise. Certain output devices will
+only work with seekable files.
+
+<dt><code>int pread(gp_file *, size_t count, gs_offset_t offset, void *buf)</code>
+<dd>Optional function, only used if clist files are to be stored in this filing system.
+Behaves like an atomic <code>fseek(FILE *, offset, 0)</code> and <code>fread(FILE *, 1, count, buf)</code>.
+Akin to <code>pread</code>.
+
+<dt><code>int pwrite(gp_file *, size_t count, gs_offset_t offset, const void *buf)</code>
+<dd>Optional function, only used if clist files are to be stored in this filing system.
+Behaves like an atomic <code>fseek(FILE *, offset, 0)</code> and <code>fwrite(FILE *, 1, count, buf)</code>.
+Akin to <code>pwrite</code>.
+
+<dt><code>int is_char_buffered(gp_file *file)</code>
+<dd>Returns 1 if the file is character buffered, 0 otherwise. Used for handling
+reading from terminals. Very unlikely to be used, so returning 0 all the time
+should be safe. Leave NULL to indicate "always 0".
+
+<dt><code>void fflush(gp_file *file)</code>
+<dd>Ensures that any buffered data is written to the file. Behaves like <code>fflush(FILE *)</code>.
+Leave NULL to indicate that no flushing is ever required.
+
+<dt><code>int ferror(gp_file *file)</code>
+<dd>Returns non-zero if there has been an error, or 0 otherwise. Behaves like <code>ferror(FILE *)</code>.
+
+<dt><code>FILE * get_file(gp_file *file)</code>
+<dd>Optional: Gets the FILE * pointer that backs this file. Required for a few devices
+that insist on working with FILE *'s direct. Generally safe to leave this set to NULL, and those
+devices will fail gracefully.
+
+<dt><code>void clearerr(gp_file *file)</code>
+<dd>Clear the error and EOF values for a file. Behaves like <code>clearerror(FILE *)</code>.
+
+<dt><code>gp_file * reopen(gp_file *f, const char *fname, const char *mode)</code>
+<dd>Optional function, only used if the <code>gp_file</code> came from an <code>open_scratch</code>
+call; can be left as NULL if the <code>open_scratch</code> pointer is set to NULL.
+Reopen a stream with a different mode. Behaves like
+<code>freopen(fname, mode, FILE *)</code>.
+</dl>
 
 <hr>
 <h2><a name="Example_usage"></a>Example Usage</h2>

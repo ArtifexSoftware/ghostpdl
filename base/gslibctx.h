@@ -44,6 +44,44 @@ typedef struct {
 } gs_path_control_set_t;
 
 typedef struct {
+    int (*open_file)(const gs_memory_t *mem,
+                           void        *secret,
+                     const char        *fname,
+                     const char        *mode,
+                           gp_file    **file);
+    int (*open_pipe)(const gs_memory_t *mem,
+                           void        *secret,
+                     const char        *fname,
+                           char        *rfname, /* 4096 bytes */
+                     const char        *mode,
+                           gp_file    **file);
+    int (*open_scratch)(const gs_memory_t *mem,
+                              void        *secret,
+                        const char        *prefix,
+                              char        *rfname, /* 4096 bytes */
+                        const char        *mode,
+                              int          rm,
+                              gp_file    **file);
+    int (*open_printer)(const gs_memory_t *mem,
+                              void        *secret,
+                              char        *fname, /* 4096 bytes */
+                              int          binary,
+                              gp_file    **file);
+    int (*open_handle)(const gs_memory_t *mem,
+                             void        *secret,
+                             char        *fname, /* 4096 bytes */
+                       const char        *access,
+                             gp_file    **file);
+} gs_fs_t;
+
+typedef struct gs_fs_list_s {
+    gs_fs_t         fs;
+    void           *secret;
+    gs_memory_t    *memory;
+    struct gs_fs_list_s *next;
+} gs_fs_list_t;
+
+typedef struct {
     void *monitor;
     int refs;
     gs_memory_t *memory;
@@ -72,6 +110,7 @@ typedef struct {
     gs_path_control_set_t permit_reading;
     gs_path_control_set_t permit_writing;
     gs_path_control_set_t permit_control;
+    gs_fs_list_t *fs;
 } gs_lib_ctx_core_t;
 
 typedef struct gs_lib_ctx_s
@@ -211,5 +250,11 @@ gs_activate_path_control(gs_memory_t *mem, int enable);
 
 int
 gs_is_path_control_active(const gs_memory_t *mem);
+
+int
+gs_add_fs(const gs_memory_t *mem, gs_fs_t *fn, void *secret);
+
+void
+gs_remove_fs(const gs_memory_t *mem, gs_fs_t *fn, void *secret);
 
 #endif /* GSLIBCTX_H */

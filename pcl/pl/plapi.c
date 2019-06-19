@@ -350,3 +350,21 @@ gsapi_is_path_control_active(void *instance)
         return 0;
     return gs_is_path_control_active(ctx->memory);
 }
+
+GSDLLEXPORT int GSDLLAPI
+gsapi_add_fs(void *instance, gsapi_fs_t *fs, void *secret)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (ctx == NULL)
+        return 0;
+    return gs_add_fs(ctx->memory, (gs_fs_t *)fs, secret);
+}
+
+GSDLLEXPORT void GSDLLAPI
+gsapi_remove_fs(void *instance, gsapi_fs_t *fs, void *secret)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (ctx == NULL)
+        return;
+    gs_remove_fs(ctx->memory, (gs_fs_t *)fs, secret);
+}

@@ -433,18 +433,18 @@ generic_pwrite(gp_file *f, size_t count, gs_offset_t offset, const void *buf)
     return c;
 }
 
-gp_file *gp_file_alloc(gs_memory_t *mem, const gp_file *prototype, size_t size, const char *cname)
+gp_file *gp_file_alloc(gs_memory_t *mem, const gp_file_ops_t *prototype, size_t size, const char *cname)
 {
     gp_file *file = (gp_file *)gs_alloc_bytes(mem->non_gc_memory, size, cname ? cname : "gp_file");
     if (file == NULL)
         return NULL;
 
     if (prototype)
-        *file = *prototype;
-    if (file->pread == NULL)
-        file->pread = generic_pread;
-    if (file->pwrite == NULL)
-        file->pwrite = generic_pwrite;
+        file->ops = *prototype;
+    if (file->ops.pread == NULL)
+        file->ops.pread = generic_pread;
+    if (file->ops.pwrite == NULL)
+        file->ops.pwrite = generic_pwrite;
     if (size > sizeof(*prototype))
         memset(((char *)file)+sizeof(*prototype),
                0,
@@ -485,7 +485,7 @@ mid:
         n = vsnprintf(f->buffer, f->buffer_size, fmt, args);
         va_end(args);
     } while (n >= f->buffer_size);
-    return (f->write)(f, 1, n, f->buffer);
+    return (f->ops.write)(f, 1, n, f->buffer);
 }
 typedef struct {
     gp_file base;
@@ -594,14 +594,6 @@ gp_file_FILE_pwrite(gp_file *file_, size_t count, gs_offset_t offset, const void
 }
 
 static int
-gp_file_FILE_setmode_binary(gp_file *file_, bool binary)
-{
-    gp_file_FILE *file = (gp_file_FILE *)file_;
-
-    return gp_setmode_binary_impl(file->file, binary);
-}
-
-static int
 gp_file_FILE_is_char_buffered(gp_file *file_)
 {
     gp_file_FILE *file = (gp_file_FILE *)file_;
@@ -657,7 +649,7 @@ gp_file_FILE_reopen(gp_file *file_, const char *fname, const char *mode)
     return file_;
 }
 
-static const gp_file gp_file_FILE_prototype =
+static const gp_file_ops_t gp_file_FILE_prototype =
 {
     gp_file_FILE_close,
     gp_file_FILE_getc,
@@ -671,7 +663,6 @@ static const gp_file gp_file_FILE_prototype =
     gp_file_FILE_seekable,
     gp_file_FILE_pread,
     gp_file_FILE_pwrite,
-    gp_file_FILE_setmode_binary,
     gp_file_FILE_is_char_buffered,
     gp_file_FILE_fflush,
     gp_file_FILE_ferror,
@@ -726,18 +717,24 @@ char *gp_fgets(char *buffer, size_t n, gp_file *f)
 gp_file *
 gp_fopen(const gs_memory_t *mem, const char *fname, const char *mode)
 {
-    gp_file *file;
-    FILE *f;
+    gp_file *file = NULL;
+    gs_lib_ctx_t *ctx = mem->gs_lib_ctx;
+    gs_fs_list_t *fs = ctx->core->fs;
 
     if (gp_validate_path(mem, fname, mode) != 0)
         return NULL;
 
-    file = gp_file_FILE_alloc(mem);
-    if (file == NULL)
-        return NULL;
-    f = gp_fopen_impl(mem->non_gc_memory, fname, mode);
-    if (gp_file_FILE_set(file, f, fclose))
-        file = NULL;
+    for (fs = ctx->core->fs; fs != NULL; fs = fs->next)
+    {
+        int code = 0;
+        if (fs->fs.open_file)
+            code = fs->fs.open_file(mem, fs->secret, fname, mode, &file);
+        if (code < 0)
+            return NULL;
+        if (file != NULL)
+            break;
+    }
+
     return file;
 }
 
@@ -747,20 +744,22 @@ gp_open_printer(const gs_memory_t *mem,
                       int          binary_mode)
 {
     gp_file *file;
-    FILE *f;
-    int (*close)(FILE *) = NULL;
+    gs_lib_ctx_t *ctx = mem->gs_lib_ctx;
+    gs_fs_list_t *fs = ctx->core->fs;
 
     if (gp_validate_path(mem, fname, binary_mode ? "wb" : "w") != 0)
         return NULL;
 
-    file = gp_file_FILE_alloc(mem);
-    if (file == NULL)
-        return NULL;
-    f = gp_open_printer_impl(mem->non_gc_memory, fname, &binary_mode, &close);
-    if (gp_file_FILE_set(file, f, close))
-        file = NULL;
-    else
-        gp_setmode_binary(file, binary_mode);
+    for (fs = ctx->core->fs; fs != NULL; fs = fs->next)
+    {
+        int code = 0;
+        if (fs->fs.open_printer)
+            code = fs->fs.open_printer(mem, fs->secret, fname, binary_mode, &file);
+        if (code < 0)
+            return NULL;
+        if (file != NULL)
+            break;
+    }
 
     return file;
 }
@@ -772,6 +771,8 @@ gp_open_scratch_file(const gs_memory_t *mem,
                      const char        *mode)
 {
     gp_file *file;
+    gs_lib_ctx_t *ctx = mem->gs_lib_ctx;
+    gs_fs_list_t *fs = ctx->core->fs;
 
     /* If the prefix is absolute, then we must check it's a permissible
      * path. If not, we're OK. */
@@ -779,17 +780,16 @@ gp_open_scratch_file(const gs_memory_t *mem,
         gp_validate_path(mem, prefix, mode) != 0)
             return NULL;
 
-    file = gp_file_FILE_alloc(mem);
-    if (file == NULL)
-        return NULL;
-    if (gp_file_FILE_set(file,
-                         gp_open_scratch_file_impl(mem,
-                                                   prefix,
-                                                   fname,
-                                                   mode,
-                                                   0),
-                         NULL))
-        return NULL;
+    for (fs = ctx->core->fs; fs != NULL; fs = fs->next)
+    {
+        int code = 0;
+        if (fs->fs.open_scratch)
+            code = fs->fs.open_scratch(mem, fs->secret, prefix, fname, mode, 0, &file);
+        if (code < 0)
+            return NULL;
+        if (file != NULL)
+            break;
+    }
 
     return file;
 }
@@ -801,6 +801,8 @@ gp_open_scratch_file_rm(const gs_memory_t *mem,
                         const char        *mode)
 {
     gp_file *file;
+    gs_lib_ctx_t *ctx = mem->gs_lib_ctx;
+    gs_fs_list_t *fs = ctx->core->fs;
 
     /* If the prefix is absolute, then we must check it's a permissible
      * path. If not, we're OK. */
@@ -808,17 +810,16 @@ gp_open_scratch_file_rm(const gs_memory_t *mem,
         gp_validate_path(mem, prefix, mode) != 0)
             return NULL;
 
-    file = gp_file_FILE_alloc(mem);
-    if (file == NULL)
-        return NULL;
-    if (gp_file_FILE_set(file,
-                         gp_open_scratch_file_impl(mem,
-                                                   prefix,
-                                                   fname,
-                                                   mode,
-                                                   1),
-                         NULL))
-        return NULL;
+    for (fs = ctx->core->fs; fs != NULL; fs = fs->next)
+    {
+        int code = 0;
+        if (fs->fs.open_scratch)
+            code = fs->fs.open_scratch(mem, fs->secret, prefix, fname, mode, 1, &file);
+        if (code < 0)
+            return NULL;
+        if (file != NULL)
+            break;
+    }
 
     return file;
 }

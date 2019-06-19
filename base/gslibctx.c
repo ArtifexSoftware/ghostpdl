@@ -142,6 +142,66 @@ gs_lib_ctx_alloc_root_structure(gs_memory_t *mem, gs_gc_root_ptr *rp)
 	return code;
 }
 
+static int
+fs_file_open_file(const gs_memory_t *mem,
+                        void        *secret,
+                  const char        *fname,
+                  const char        *mode,
+                        gp_file    **file)
+{
+    FILE *f;
+
+    *file = gp_file_FILE_alloc(mem);
+    if (*file == NULL)
+        return 0;
+    f = gp_fopen_impl(mem->non_gc_memory, fname, mode);
+    if (gp_file_FILE_set(*file, f, fclose)) {
+        *file = NULL;
+        return gs_error_VMerror;
+    }
+    return 0;
+}
+
+static int
+fs_file_open_scratch(const gs_memory_t *mem, void *secret, const char *prefix, char *rfname, const char *mode, int rm, gp_file **file)
+{
+    *file = gp_file_FILE_alloc(mem);
+    if (*file == NULL)
+        return gs_error_VMerror;
+    if (gp_file_FILE_set(*file,
+                         gp_open_scratch_file_impl(mem,
+                                                   prefix,
+                                                   rfname,
+                                                   mode,
+                                                   rm),
+                                                   NULL)) {
+        *file = NULL;
+        return gs_error_invalidfileaccess;
+    }
+
+    return 0;
+}
+
+static int
+fs_file_open_printer(const gs_memory_t *mem, void *secret, char *fname, int binary_mode, gp_file **file)
+{
+    FILE *f;
+    int (*close)(FILE *) = NULL;
+
+    *file = gp_file_FILE_alloc(mem);
+    if (*file == NULL)
+        return gs_error_VMerror;
+    f = gp_open_printer_impl(mem->non_gc_memory, fname, &binary_mode, &close);
+    if (gp_file_FILE_set(*file, f, close)) {
+        *file = NULL;
+        return gs_error_invalidfileaccess;
+    }
+    gp_setmode_binary_impl(f, binary_mode);
+
+    return 0;
+}
+
+
 int gs_lib_ctx_init(gs_lib_ctx_t *ctx, gs_memory_t *mem)
 {
     gs_lib_ctx_t *pio = NULL;
@@ -185,10 +245,27 @@ int gs_lib_ctx_init(gs_lib_ctx_t *ctx, gs_memory_t *mem)
             return -1;
         }
         memset(pio->core, 0, sizeof(*pio->core));
+        pio->core->fs = (gs_fs_list_t *)gs_alloc_bytes_immovable(mem,
+                                                                 sizeof(gs_fs_list_t),
+                                                                 "gs_lib_ctx_init(gs_fs_list_t)");
+        if (pio->core->fs == NULL) {
+            gs_free_object(mem, pio->core, "gs_lib_ctx_init");
+            gs_free_object(mem, pio, "gs_lib_ctx_init");
+            return -1;
+        }
+        pio->core->fs->fs.open_file = fs_file_open_file;
+        /* The iodev will fill this in later, if pipes are enabled */
+        pio->core->fs->fs.open_pipe = NULL;
+        pio->core->fs->fs.open_scratch = fs_file_open_scratch;
+        pio->core->fs->fs.open_printer = fs_file_open_printer;
+        pio->core->fs->secret = NULL;
+        pio->core->fs->memory = mem;
+        pio->core->fs->next   = NULL;
 
 #ifndef MEMENTO_SQUEEZE_BUILD
         pio->core->monitor = gx_monitor_alloc(mem);
         if (pio->core->monitor == NULL) {
+            gs_free_object(mem, pio->core->fs, "gs_lib_ctx_init");
             gs_free_object(mem, pio->core, "gs_lib_ctx_init");
             gs_free_object(mem, pio, "gs_lib_ctx_init");
             return -1;
@@ -265,6 +342,7 @@ void gs_lib_ctx_fin(gs_memory_t *mem)
     gs_lib_ctx_t *ctx;
     gs_memory_t *ctx_mem;
     int refs;
+    gs_fs_list_t *fs;
 
     if (!mem || !mem->gs_lib_ctx)
         return;
@@ -302,6 +380,12 @@ void gs_lib_ctx_fin(gs_memory_t *mem)
         gs_purge_control_paths(ctx_mem, 0);
         gs_purge_control_paths(ctx_mem, 1);
         gs_purge_control_paths(ctx_mem, 2);
+        fs = ctx->core->fs;
+        while (fs) {
+            gs_fs_list_t *next = fs->next;
+            gs_free_object(fs->memory, fs, "gs_lib_ctx_fin");
+            fs = next;
+        }
         gs_free_object(ctx->core->memory, ctx->core, "gs_lib_ctx_fin");
     }
     remove_ctx_pointers(ctx_mem);
@@ -665,4 +749,58 @@ gs_is_path_control_active(const gs_memory_t *mem)
         return 0;
 
     return core->path_control_active;
+}
+
+int
+gs_add_fs(const gs_memory_t *mem,
+                gs_fs_t     *fs,
+                void        *secret)
+{
+    gs_fs_list_t *fsl;
+    gs_lib_ctx_core_t *core;
+
+    if (mem == NULL || mem->gs_lib_ctx == NULL ||
+        (core = mem->gs_lib_ctx->core) == NULL)
+        return gs_error_unknownerror;
+
+    fsl = (gs_fs_list_t *)gs_alloc_bytes_immovable(mem->non_gc_memory,
+                                                   sizeof(gs_fs_list_t),
+                                                   "gs_fs_list_t");
+    if (fsl == NULL)
+        return gs_error_VMerror;
+    fsl->fs      = *fs;
+    fsl->secret  = secret;
+    fsl->memory  = mem->non_gc_memory;
+    fsl->next    = core->fs;
+    core->fs     = fsl;
+
+    return 0;
+}
+
+void
+gs_remove_fs(const gs_memory_t *mem,
+                   gs_fs_t     *rfs,
+                   void        *secret)
+{
+    gs_fs_list_t **pfs;
+    gs_lib_ctx_core_t *core;
+
+    if (mem == NULL || mem->gs_lib_ctx == NULL ||
+        (core = mem->gs_lib_ctx->core) == NULL)
+        return;
+
+    pfs = &core->fs;
+    while (pfs)
+    {
+        gs_fs_list_t *fs = *pfs;
+        if (fs->fs.open_file == rfs->open_file &&
+            fs->fs.open_pipe == rfs->open_pipe &&
+            fs->fs.open_scratch == rfs->open_scratch &&
+            fs->fs.open_printer == rfs->open_printer &&
+            fs->secret == secret) {
+            *pfs = fs->next;
+            gs_free_object(fs->memory, fs, "gs_fs_t");
+        } else
+            pfs = &(*pfs)->next;
+    }
 }

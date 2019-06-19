@@ -108,6 +108,27 @@ os2_printer_fopen(gx_io_device * iodev, const char *fname, const char *access,
 {
     os2_printer_t *pr = (os2_printer_t *)iodev->state;
     char driver_name[256];
+    gs_lib_ctx_t *ctx = mem->gs_lib_ctx;
+    gs_fs_list_t *fs = ctx->core->fs;
+
+    /* First we try the open_printer method. */
+    /* Note that the loop condition here ensures we don't
+     * trigger on the last registered fs entry (out standard
+     * file one). */
+    *pfile = NULL;
+    for (fs = ctx->core->fs; fs != NULL && fs->next != NULL; fs = fs->next)
+    {
+        int code = 0;
+        if (fs->fs.open_printer)
+            code = fs->fs.open_printer(mem, fs->secret, fname, access, pfile);
+        if (code < 0)
+            return code;
+        if (*pfile != NULL)
+            return code;
+    }
+
+    /* If nothing claimed that, then continue with the
+     * standard OS/2 way of working. */
 
     /* Make sure that printer exists. */
     if (pm_find_queue(pr->memory, fname, driver_name)) {
