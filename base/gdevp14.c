@@ -1252,7 +1252,11 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
     } else {
         if (!buf->knockout) {
             if (!cm_back_drop) {
-                pdf14_preserve_backdrop(buf, tos, false);
+                pdf14_preserve_backdrop(buf, tos, false
+#if RAW_DUMP
+                                        , ctx->memory
+#endif
+                                        );
             } else {
                 /* We must have an non-isolated group with a mismatch in color spaces.
                    In this case, we can't just copy the buffer but must CM it */
@@ -1304,7 +1308,11 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
                 }
             }
             if (!cm_back_drop) {
-                pdf14_preserve_backdrop(buf, check, false);
+                pdf14_preserve_backdrop(buf, check, false
+#if RAW_DUMP
+                                        , ctx->memory
+#endif
+                                        );
             } else {
                 /* We must have an non-isolated group with a mismatch in color spaces.
                    In this case, we can't just copy the buffer but must CM it */
@@ -1316,7 +1324,8 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
         }
 #if RAW_DUMP
         /* Dump the current buffer to see what we have. */
-        dump_raw_buffer(ctx->stack->rect.q.y-ctx->stack->rect.p.y,
+        dump_raw_buffer(ctx->memory,
+                        ctx->stack->rect.q.y-ctx->stack->rect.p.y,
                         ctx->stack->rowstride>>buf->deep, buf->n_chan,
                         ctx->stack->planestride, ctx->stack->rowstride,
                         "KnockoutBackDrop", buf->backdrop, buf->deep);
@@ -1327,7 +1336,8 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
     }
 #if RAW_DUMP
     /* Dump the current buffer to see what we have. */
-    dump_raw_buffer(ctx->stack->rect.q.y-ctx->stack->rect.p.y,
+    dump_raw_buffer(ctx->memory,
+                    ctx->stack->rect.q.y-ctx->stack->rect.p.y,
                     ctx->stack->rowstride>>buf->deep, ctx->stack->n_planes,
                     ctx->stack->planestride, ctx->stack->rowstride,
                     "TransGroupPush", ctx->stack->data, buf->deep);
@@ -1404,7 +1414,8 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
 
 #if RAW_DUMP
     /* Dump the current buffer to see what we have. */
-    dump_raw_buffer(ctx->stack->rect.q.y-ctx->stack->rect.p.y,
+    dump_raw_buffer(ctx->memory,
+                    ctx->stack->rect.q.y-ctx->stack->rect.p.y,
                     ctx->stack->rowstride>>ctx->stack->deep, ctx->stack->n_planes,
                     ctx->stack->planestride, ctx->stack->rowstride,
                     "aaTrans_Group_Pop", ctx->stack->data, ctx->stack->deep);
@@ -1449,7 +1460,8 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
 
 #if RAW_DUMP
             /* Dump the current buffer to see what we have. */
-            dump_raw_buffer(ctx->stack->rect.q.y-ctx->stack->rect.p.y,
+            dump_raw_buffer(ctx->memory,
+                            ctx->stack->rect.q.y-ctx->stack->rect.p.y,
                             ctx->stack->rowstride>>ctx->stack->deep, ctx->stack->n_chan,
                             ctx->stack->planestride, ctx->stack->rowstride,
                             "aCMTrans_Group_ColorConv", ctx->stack->data,
@@ -1545,7 +1557,8 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	uint16_t bg_alph
 #if RAW_DUMP
     /* Dump the current buffer to see what we have. */
     if (ctx->stack->planestride > 0 ){
-        dump_raw_buffer(ctx->stack->rect.q.y-ctx->stack->rect.p.y,
+        dump_raw_buffer(ctx->memory,
+                        ctx->stack->rect.q.y-ctx->stack->rect.p.y,
                         ctx->stack->rowstride>>ctx->stack->deep, ctx->stack->n_planes,
                         ctx->stack->planestride, ctx->stack->rowstride,
                         "Raw_Buf_PreSmask", ctx->stack->data, ctx->stack->deep);
@@ -1701,7 +1714,8 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_gstate *pgs, gx_device *dev)
                        (tos->data)+tos->planestride, new_data_buf);
 #if RAW_DUMP
             /* Dump the current buffer to see what we have. */
-            dump_raw_buffer(tos->rect.q.y-tos->rect.p.y,
+            dump_raw_buffer(ctx->memory,
+                            tos->rect.q.y-tos->rect.p.y,
                             tos->rowstride>>tos->deep, tos->n_planes,
                             tos->planestride, tos->rowstride,
                             "SMask_Pop_Alpha(Mask_Plane1)",tos->data,
@@ -1712,7 +1726,8 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_gstate *pgs, gx_device *dev)
             if ( icc_match == 1 || tos->n_chan == 2) {
 #if RAW_DUMP
                 /* Dump the current buffer to see what we have. */
-                dump_raw_buffer(tos->rect.q.y-tos->rect.p.y,
+                dump_raw_buffer(ctx->memory,
+                                tos->rect.q.y-tos->rect.p.y,
                                 tos->rowstride>>tos->deep, tos->n_planes,
                                 tos->planestride, tos->rowstride,
                                 "SMask_Pop_Lum(Mask_Plane0)",tos->data,
@@ -1734,7 +1749,8 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_gstate *pgs, gx_device *dev)
                             tos->planestride, tos->deep);
 #if RAW_DUMP
                 /* Dump the current buffer to see what we have. */
-                dump_raw_buffer(tos->rect.q.y-tos->rect.p.y,
+                dump_raw_buffer(ctx->memory,
+                                tos->rect.q.y-tos->rect.p.y,
                                 tos->rowstride>>tos->deep, tos->n_planes,
                                 tos->planestride, tos->rowstride,
                                 "SMask_Pop_Lum_Post_Blend",tos->data,
@@ -1751,7 +1767,11 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_gstate *pgs, gx_device *dev)
                         tos->rect.q.x - tos->rect.p.x,tos->n_chan,
                         tos->rowstride, tos->planestride,
                         tos->data,  new_data_buf, ctx->additive, tos->SMask_SubType,
-                        tos->deep);
+                        tos->deep
+#if RAW_DUMP
+                        , ctx->memory
+#endif
+                        );
                 } else {
                     /* ICC case where we use the CMM */
                     /* Request the ICC link for the transform that we will need to use */
@@ -2020,7 +2040,8 @@ pdf14_get_buffer_information(const gx_device * dev,
         dev_proc(dev, close_device)((gx_device *)dev);
 #if RAW_DUMP
         /* Dump the buffer that should be going into the pattern */;
-        dump_raw_buffer(height, width, transbuff->n_chan,
+        dump_raw_buffer(buf->memory,
+                        height, width, transbuff->n_chan,
                         transbuff->planestride, transbuff->rowstride,
                         "pdf14_pattern_buff", transbuff->transbytes,
                         transbuff->deep);
@@ -2037,7 +2058,8 @@ pdf14_get_buffer_information(const gx_device * dev,
         transbuff->rect = rect;
 #if RAW_DUMP
     /* Dump the buffer that should be going into the pattern */;
-        dump_raw_buffer(height, width, buf->n_chan,
+        dump_raw_buffer(buf->memory,
+                        height, width, buf->n_chan,
                         pdev->ctx->stack->planestride, pdev->ctx->stack->rowstride,
                         "pdf14_pattern_buff",
                         buf->data,
@@ -2141,7 +2163,8 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
                 &render_cond);
 
 #if RAW_DUMP
-            dump_raw_buffer(height, width, buf->n_planes, planestride,
+            dump_raw_buffer(pdev->ctx->memory,
+                            height, width, buf->n_planes, planestride,
                             rowstride, "pre_blend_cs", buf_ptr, deep);
             global_index++;
 #endif
@@ -2162,7 +2185,8 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
                 buf_ptr = cm_result->data;  /* Note the lack of offset */
 
 #if RAW_DUMP
-            dump_raw_buffer(height, width, buf->n_planes, planestride,
+            dump_raw_buffer(pdev->ctx->memory,
+                            height, width, buf->n_planes, planestride,
                             rowstride, "post_blend_cs", buf_ptr, deep);
             global_index++;
 #endif
@@ -2187,7 +2211,8 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
                now. Note that if we do this, and we end up in the default below,
                we only need to repack in chunky not blend */
 #if RAW_DUMP
-            dump_raw_buffer(height, width, buf->n_planes,
+            dump_raw_buffer(pdev->ctx->memory,
+                            height, width, buf->n_planes,
                             pdev->ctx->stack->planestride, pdev->ctx->stack->rowstride,
                             "pre_final_blend",buf_ptr,deep);
             global_index++;
@@ -2210,7 +2235,8 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
                                           buf->planestride, num_comp, bg>>8);
                 }
 #if RAW_DUMP
-                dump_raw_buffer_be(height, width, buf->n_planes,
+                dump_raw_buffer_be(pdev->ctx->memory,
+                                   height, width, buf->n_planes,
                                    pdev->ctx->stack->planestride, pdev->ctx->stack->rowstride,
                                    "post_final_blend", buf_ptr, deep);
                 global_index++;
@@ -2299,12 +2325,14 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
     }
 #if RAW_DUMP
     /* Dump the current buffer to see what we have. */
-    dump_raw_buffer(pdev->ctx->stack->rect.q.y-pdev->ctx->stack->rect.p.y,
+    dump_raw_buffer(pdev->ctx->memory,
+                    pdev->ctx->stack->rect.q.y-pdev->ctx->stack->rect.p.y,
                     pdev->ctx->stack->rect.q.x-pdev->ctx->stack->rect.p.x,
                     pdev->ctx->stack->n_planes,
                     pdev->ctx->stack->planestride, pdev->ctx->stack->rowstride,
                     "pdF14_putimage", pdev->ctx->stack->data, deep);
-    dump_raw_buffer(height, width, buf->n_planes,
+    dump_raw_buffer(pdev->ctx->memory,
+                    height, width, buf->n_planes,
                     pdev->ctx->stack->planestride, pdev->ctx->stack->rowstride,
                     "PDF14_PUTIMAGE_SMALL", buf_ptr, deep);
     global_index++;
@@ -2398,7 +2426,8 @@ pdf14_cmykspot_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
     buf_ptr = buf->data + rect.p.y * buf->rowstride + (rect.p.x<<deep);
 #if RAW_DUMP
     /* Dump the current buffer to see what we have. */
-    dump_raw_buffer(pdev->ctx->stack->rect.q.y-pdev->ctx->stack->rect.p.y,
+    dump_raw_buffer(pdev->ctx->memory,
+                    pdev->ctx->stack->rect.q.y-pdev->ctx->stack->rect.p.y,
                     pdev->ctx->stack->rect.q.x-pdev->ctx->stack->rect.p.x,
                     pdev->ctx->stack->n_planes,
                     pdev->ctx->stack->planestride, pdev->ctx->stack->rowstride,
@@ -2789,7 +2818,8 @@ pdf14_fill_path(gx_device *dev,	const gs_gstate *pgs,
                         ppatdev14->ctx->stack->rect.p.y *
                         ppatdev14->ctx->stack->rowstride +
                         ppatdev14->ctx->stack->rect.p.x;
-                    dump_raw_buffer((ppatdev14->ctx->stack->rect.q.y -
+                    dump_raw_buffer(ppatdev14->ctx->memory,
+                                    (ppatdev14->ctx->stack->rect.q.y -
                                      ppatdev14->ctx->stack->rect.p.y),
                                     (ppatdev14->ctx->stack->rect.q.x -
                                      ppatdev14->ctx->stack->rect.p.x),
@@ -2802,7 +2832,8 @@ pdf14_fill_path(gx_device *dev,	const gs_gstate *pgs,
                 } else {
                      gx_pattern_trans_t *patt_trans =
                                         pdcolor->colors.pattern.p_tile->ttrans;
-                     dump_raw_buffer(patt_trans->rect.q.y-patt_trans->rect.p.y,
+                     dump_raw_buffer(ppatdev14->ctx->memory,
+                                     patt_trans->rect.q.y-patt_trans->rect.p.y,
                                      patt_trans->rect.q.x-patt_trans->rect.p.x,
                                      patt_trans->n_chan,
                                      patt_trans->planestride, patt_trans->rowstride,
@@ -5746,7 +5777,8 @@ do_mark_fill_rectangle_ko_simple(gx_device *dev, int x, int y, int w, int h,
 #if 0
 /* #if RAW_DUMP */
     /* Dump the current buffer to see what we have. */
-    dump_raw_buffer(pdev->ctx->stack->rect.q.y-pdev->ctx->stack->rect.p.y,
+    dump_raw_buffer(pdev->ctx->memory,
+                    pdev->ctx->stack->rect.q.y-pdev->ctx->stack->rect.p.y,
                     pdev->ctx->stack->rect.q.x-pdev->ctx->stack->rect.p.x,
                     pdev->ctx->stack->n_planes,
                     pdev->ctx->stack->planestride, pdev->ctx->stack->rowstride,
@@ -5923,7 +5955,8 @@ do_mark_fill_rectangle_ko_simple16(gx_device *dev, int x, int y, int w, int h,
 #if 0
 /* #if RAW_DUMP */
     /* Dump the current buffer to see what we have. */
-    dump_raw_buffer(pdev->ctx->stack->rect.q.y-pdev->ctx->stack->rect.p.y,
+    dump_raw_buffer(pdev->ctx->memory,
+                    pdev->ctx->stack->rect.q.y-pdev->ctx->stack->rect.p.y,
                     pdev->ctx->stack->rect.q.x-pdev->ctx->stack->rect.p.x,
                     pdev->ctx->stack->n_planes,
                     pdev->ctx->stack->planestride, pdev->ctx->stack->rowstride,
@@ -6507,7 +6540,8 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
     p14dev->color_info.anti_alias = target->color_info.anti_alias;
 #if RAW_DUMP
     /* Dump the current buffer to see what we have. */
-    dump_raw_buffer(p14dev->ctx->stack->rect.q.y-p14dev->ctx->stack->rect.p.y,
+    dump_raw_buffer(p14dev->ctx->memory,
+                    p14dev->ctx->stack->rect.q.y-p14dev->ctx->stack->rect.p.y,
                     p14dev->ctx->stack->rect.q.x-p14dev->ctx->stack->rect.p.x,
                     p14dev->ctx->stack->n_planes,
                     p14dev->ctx->stack->planestride, p14dev->ctx->stack->rowstride,

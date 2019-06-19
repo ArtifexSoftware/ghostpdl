@@ -456,13 +456,13 @@ gsicc_vec_to_mlut(gs_vector3 *vec, unsigned short *clut)
 #if SAVEICCPROFILE
 /* Debug dump of internally created ICC profile for testing */
 static void
-save_profile(unsigned char *buffer, char filename[], int buffer_size)
+save_profile(const gs_memory_t *mem, unsigned char *buffer, char filename[], int buffer_size)
 {
     char full_file_name[50];
     gp_file *fid;
 
     gs_sprintf(full_file_name,"%d)Profile_%s.icc",icc_debug_index,filename);
-    fid = gp_fopen(full_file_name,"wb");
+    fid = gp_fopen(mem, full_file_name,"wb");
     fwrite(buffer,sizeof(unsigned char),buffer_size,fid);
     fclose(fid);
     icc_debug_index++;
@@ -1391,9 +1391,9 @@ gsicc_create_from_cal(float *white, float *black, float *gamma, float *matrix,
 #if SAVEICCPROFILE
     /* Dump the buffer to a file for testing if its a valid ICC profile */
     if (num_colors == 3)
-        save_profile(buffer,"from_calRGB",profile_size);
+        save_profile(memory,buffer,"from_calRGB",profile_size);
     else
-        save_profile(buffer,"from_calGray",profile_size);
+        save_profile(memory,buffer,"from_calGray",profile_size);
 #endif
     return result;
 }
@@ -1940,7 +1940,7 @@ gsicc_create_fromabc(const gs_color_space *pcs, unsigned char **pp_buffer_in,
 #if SAVEICCPROFILE
     /* Dump the buffer to a file for testing if its a valid ICC profile */
     if(debug_catch)
-        save_profile(*pp_buffer_in,"fromabc",header->size);
+        save_profile(memory,*pp_buffer_in,"fromabc",header->size);
 #endif
     return 0;
 }
@@ -2081,7 +2081,7 @@ gsicc_create_froma(const gs_color_space *pcs, unsigned char **pp_buffer_in,
 #if SAVEICCPROFILE
     /* Dump the buffer to a file for testing if its a valid ICC profile */
     if(debug_catch)
-        save_profile(*pp_buffer_in,"froma",header->size);
+        save_profile(memory,*pp_buffer_in,"froma",header->size);
 #endif
     return 0;
 }
@@ -2240,7 +2240,7 @@ gsicc_create_fromdefg(const gs_color_space *pcs, unsigned char **pp_buffer_in,
 #if SAVEICCPROFILE
     /* Dump the buffer to a file for testing if its a valid ICC profile */
     if(debug_catch)
-        save_profile(*pp_buffer_in,"fromdefg",header->size);
+        save_profile(memory,*pp_buffer_in,"fromdefg",header->size);
 #endif
     return code;
 }
@@ -2299,7 +2299,7 @@ gsicc_create_fromdef(const gs_color_space *pcs, unsigned char **pp_buffer_in,
 #if SAVEICCPROFILE
     /* Dump the buffer to a file for testing if its a valid ICC profile */
     if(debug_catch)
-        save_profile(*pp_buffer_in,"fromdef",header->size);
+        save_profile(memory,*pp_buffer_in,"fromdef",header->size);
 #endif
     return code;
 }
@@ -2758,7 +2758,7 @@ gsicc_create_v2input(const gs_gstate *pgs, icHeader *header, cmm_profile_t *src_
 
 #if SAVEICCPROFILE
     /* Dump the buffer to a file for testing if its a valid ICC profile */
-    save_profile(buffer, "V2InputType", profile_size);
+    save_profile(memory,buffer, "V2InputType", profile_size);
 #endif
 }
 
@@ -2902,7 +2902,7 @@ gsicc_create_v2output(const gs_gstate *pgs, icHeader *header, cmm_profile_t *src
 
 #if SAVEICCPROFILE
     /* Dump the buffer to a file for testing if its a valid ICC profile */
-    save_profile(buffer, "V2OutputType", profile_size);
+    save_profile(memory,buffer, "V2OutputType", profile_size);
 #endif
 }
 
@@ -3072,7 +3072,7 @@ gsicc_create_v2displayrgb(const gs_gstate *pgs, icHeader *header, cmm_profile_t 
 
 #if SAVEICCPROFILE
     /* Dump the buffer to a file for testing if its a valid ICC profile */
-    save_profile(buffer, "V2FromRGB", profile_size);
+    save_profile(memory,buffer, "V2FromRGB", profile_size);
 #endif
 }
 
@@ -3216,7 +3216,7 @@ get_xyzprofile(cmm_profile_t *xyz_profile)
     code = gsicc_init_profile_info(xyz_profile);
 #if SAVEICCPROFILE
     /* Dump the buffer to a file for testing if its a valid ICC profile */
-    save_profile(buffer, "XYZProfile", profile_size);
+    save_profile(memory,buffer, "XYZProfile", profile_size);
 #endif
     return code;
 }

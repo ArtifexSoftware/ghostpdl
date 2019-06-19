@@ -2033,7 +2033,8 @@ gsicc_set_gscs_profile(gs_color_space *pcs, cmm_profile_t *icc_profile,
         return -1;
 #if ICC_DUMP
     if (icc_profile->buffer) {
-        dump_icc_buffer(icc_profile->buffer_size, "set_gscs",
+        dump_icc_buffer(mem,
+                        icc_profile->buffer_size, "set_gscs",
                         icc_profile->buffer);
         global_icc_index++;
     }
@@ -2825,13 +2826,13 @@ gsicc_setrange_lab(cmm_profile_t *profile)
 #if ICC_DUMP
 /* Debug dump of ICC buffer data */
 static void
-dump_icc_buffer(int buffersize, char filename[],byte *Buffer)
+dump_icc_buffer(const gs_memory_t *mem, int buffersize, char filename[],byte *Buffer)
 {
     char full_file_name[50];
     gp_file *fid;
 
     gs_sprintf(full_file_name,"%d)%s_debug.icc",global_icc_index,filename);
-    fid = gp_fopen(full_file_name,"wb");
+    fid = gp_fopen(mem, full_file_name,"wb");
     fwrite(Buffer,sizeof(unsigned char),buffersize,fid);
     fclose(fid);
 }

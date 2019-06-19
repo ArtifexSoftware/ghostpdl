@@ -250,7 +250,11 @@ pdf14_preserve_backdrop_cm(pdf14_buf *buf, cmm_profile_t *group_profile,
             return gs_throw(gs_error_unknownerror, "ICC link failed.  Trans backdrop");
 
         if (icc_link->is_identity) {
-            pdf14_preserve_backdrop(buf, tos, knockout_buff);
+            pdf14_preserve_backdrop(buf, tos, knockout_buff
+#if RAW_DUMP
+                                    , dev->memory
+#endif
+                                    );
             gsicc_release_link(icc_link);
             return 0;
         } else {
@@ -298,7 +302,7 @@ pdf14_preserve_backdrop_cm(pdf14_buf *buf, cmm_profile_t *group_profile,
     if (x0 < x1 && y0 < y1) {
         byte *buf_plane = buf->data + ((x0 - buf->rect.p.x)<<deep) +
             (y0 - buf->rect.p.y) * buf->rowstride;
-        dump_raw_buffer(y1 - y0, x1 - x0, buf->n_planes, buf->planestride,
+        dump_raw_buffer(dev->memory, y1 - y0, x1 - x0, buf->n_planes, buf->planestride,
                         buf->rowstride, "BackDropInit_CM", buf_plane, deep);
         global_index++;
     }
@@ -307,7 +311,11 @@ pdf14_preserve_backdrop_cm(pdf14_buf *buf, cmm_profile_t *group_profile,
 }
 
 void
-pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool knockout_buff)
+pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool knockout_buff
+#if RAW_DUMP
+                        , const gs_memory_t *mem
+#endif
+                        )
 {
     /* make copy of backdrop for compositing */
     int x0 = max(buf->rect.p.x, tos->rect.p.x);
@@ -369,7 +377,7 @@ pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool knockout_buff)
         byte *buf_plane = (knockout_buff ? buf->backdrop : buf->data);
         buf_plane +=  ((x0 - buf->rect.p.x)<<buf->deep) +
             (y0 - buf->rect.p.y) * buf->rowstride;
-        dump_raw_buffer(y1 - y0, x1 - x0, buf->n_planes, buf->planestride,
+        dump_raw_buffer(mem, y1 - y0, x1 - x0, buf->n_planes, buf->planestride,
                         buf->rowstride, "BackDropInit", buf_plane, buf->deep);
         global_index++;
     }
@@ -635,7 +643,7 @@ dump_planar_rgba(gs_memory_t *mem, const pdf14_buf *pbuf)
     if (buf->data == NULL)
         return 0;
 
-    file = gp_fopen ("c:\\temp\\tmp.png", "wb");
+    file = gp_fopen (mem, "c:\\temp\\tmp.png", "wb");
 
     if_debug0m('v', mem, "[v]pnga_output_page\n");
 
@@ -1005,7 +1013,7 @@ gx_put_blended_image_cmykspot(gx_device *target, byte *buf_ptr, int planestride_
                a 16 bit device. */
 #if RAW_DUMP
             /* Dump before and after the blend to make sure we are doing that ok */
-            dump_raw_buffer(height, width, num_comp + 1, planestride, rowstride,
+            dump_raw_buffer(target->memory, height, width, num_comp + 1, planestride, rowstride,
                             "pre_final_blend", buf_ptr, deep);
             global_index++;
 #endif
@@ -1028,7 +1036,7 @@ gx_put_blended_image_cmykspot(gx_device *target, byte *buf_ptr, int planestride_
                 }
 #if RAW_DUMP
                 /* Dump before and after the blend to make sure we are doing that ok */
-                dump_raw_buffer_be(height, width, num_comp, planestride, rowstride,
+                dump_raw_buffer_be(target->memory, height, width, num_comp, planestride, rowstride,
                     "post_final_blend", buf_ptr, deep);
                 global_index++;
                 /* clist_band_count++; */

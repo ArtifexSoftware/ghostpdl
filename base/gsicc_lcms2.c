@@ -445,8 +445,8 @@ gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
         }
     }
 #if DUMP_CMS_BUFFER
-    fid_in = gp_fopen("CM_Input.raw","ab");
-    fid_out = gp_fopen("CM_Output.raw","ab");
+    fid_in = gp_fopen(dev->memory,"CM_Input.raw","ab");
+    fid_out = gp_fopen(dev->memory,"CM_Output.raw","ab");
     fwrite((unsigned char*) inputbuffer,sizeof(unsigned char),
                             input_buff_desc->row_stride,fid_in);
     fwrite((unsigned char*) outputbuffer,sizeof(unsigned char),
