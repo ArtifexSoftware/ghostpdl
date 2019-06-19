@@ -302,22 +302,6 @@ gsapi_run_fileA(void       *instance,
 }
 #endif
 
-/* Retrieve the memory allocator for the interpreter instance */
-GSDLLEXPORT gs_memory_t * GSDLLAPI
-gsapi_get_device_memory(void *instance)
-{
-    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
-    return psapi_get_device_memory(ctx);
-}
-
-/* Retrieve the memory allocator for the interpreter instance */
-GSDLLEXPORT int GSDLLAPI
-gsapi_set_device(void *instance, gx_device *pdev)
-{
-    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
-    return psapi_set_device(ctx, pdev);
-}
-
 /* Exit the interpreter */
 GSDLLEXPORT int GSDLLAPI
 gsapi_exit(void *instance)
