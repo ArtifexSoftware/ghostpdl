@@ -848,7 +848,7 @@ gp_enumerate_files_next(gs_memory_t *mem, file_enum * pfen, char *ptr, uint maxl
         code = gp_enumerate_files_next_impl(mem, pfen, ptr, maxlen);
         if (code == ~0) break;
         if (code > 0) {
-            if (gp_validate_path(mem, ptr, "r") != 0)
+            if (gp_validate_path_len(mem, ptr, code, "r") != 0)
                 code = 0;
         }
     }
@@ -980,12 +980,12 @@ found:
 }
 
 int
-gp_validate_path(const gs_memory_t *mem,
+gp_validate_path_len(const gs_memory_t *mem,
                  const char        *path,
+                 const uint         len,
                  const char        *mode)
 {
     char *buffer;
-    size_t len;
     uint rlen;
     int code = 0;
 
@@ -994,7 +994,6 @@ gp_validate_path(const gs_memory_t *mem,
         mem->gs_lib_ctx->core->path_control_active == 0)
         return 0;
 
-    len = strlen(path);
     rlen = len+1;
     buffer = (char *)gs_alloc_bytes(mem->non_gc_memory, rlen, "gp_validate_path");
     if (buffer == NULL)
@@ -1033,4 +1032,12 @@ gp_validate_path(const gs_memory_t *mem,
         errno = EACCES;
 #endif
     return code;
+}
+
+int
+gp_validate_path(const gs_memory_t *mem,
+                 const char        *path,
+                 const char        *mode)
+{
+    return gp_validate_path_len(mem, path, strlen(path), mode);
 }

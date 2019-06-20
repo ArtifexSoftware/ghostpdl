@@ -684,6 +684,12 @@ int
 gp_xpsprint(char *filename, char *printername, int *result);
 
 int
+gp_validate_path_len(const gs_memory_t *mem,
+                 const char        *path,
+                 const uint         rlen,
+                 const char        *mode);
+
+int
 gp_validate_path(const gs_memory_t *mem,
                  const char        *path,
                  const char        *mode);
