@@ -4,6 +4,7 @@
 
 import os, re
 import sys, time
+import hashlib
 
 class SelfTest:
   'generic class for self tests'
@@ -160,11 +161,18 @@ class KnownFileHash(SelfTest):
 
   def runTest(self):
     '''jbig2dec should return proper document hashes for known files'''
+    # verify that the input file hash is correct
+    sha1 = hashlib.sha1()
+    with open(self.file, 'rb') as f:
+      sha1.update(f.read())
+    self.assertEqual(self.file_hash, sha1.hexdigest())
+
     # invoke jbig2dec on our file
     instance = os.popen('./jbig2dec -q -o /dev/null --hash ' + self.file)
     lines = instance.readlines()
     exit_code = instance.close()
     self.failIf(exit_code, 'jbig2dec should exit normally')
+
     # test here for correct hash
     hash_pattern = re.compile('[0-9a-f]{%d}' % len(decode_hash))
     for line in lines:
