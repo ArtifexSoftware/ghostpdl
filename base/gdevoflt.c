@@ -337,6 +337,9 @@ obj_filter_image_plane_data(gx_image_enum_common_t * info,
 {
     obj_filter_image_enum *pie = (obj_filter_image_enum *)info;
 
+    if (height > pie->height - pie->y)
+        height = pie->height - pie->y;
+
     pie->y += height;
     *rows_used = height;
 
