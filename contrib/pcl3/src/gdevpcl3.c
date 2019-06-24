@@ -1467,7 +1467,7 @@ static int pcl3_print_page(gx_device_printer *device, gp_file *out)
      printer first */
   if (gdev_prn_file_is_new(device) || !dev->configured ||
       dev->configure_every_page) {
-    guard(pcl3_init_file(out, &dev->file_data))
+    guard(pcl3_init_file(device->memory, out, &dev->file_data))
     dev->configured = true;
   }
 

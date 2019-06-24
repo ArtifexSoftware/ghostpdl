@@ -1105,7 +1105,17 @@ pcl_cs_indexed_install(pcl_cs_indexed_t ** ppindexed, pcl_state_t * pcs)
             return code;
         pindexed = *ppindexed;
     }
-
+    /* Really, to be consistent with the other interpreter's usage of the graphics library,
+     * we should call gs_setcolorspace(pindexed->pcspace->base_space), but if we do that
+     * we get a lot of differences in halftoned output. Just calling the 'install' procedure
+     * for the base space doesn't modify pgs->color[0].ccolor elements for RGB, which
+     * gs_setcolorspace() does. I think it would be worthwhile someone investigating why this is
+     * one day, some of the differences looked like progressions.
+     */
+    code = (*pindexed->pcspace->base_space->type->install_cspace)
+        (pindexed->pcspace->base_space, pcs->pgs);
+    if (code < 0)
+        return code;
     return gs_setcolorspace(pcs->pgs, pindexed->pcspace);
 }
 

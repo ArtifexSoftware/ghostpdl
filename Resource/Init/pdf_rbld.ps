@@ -260,13 +260,26 @@
      %   'startxref' loc = end loc - remaing string length - 9 bytes
      length sub 9 sub
      % move the file to this position and read startxref and position
+     % First, read the startxref token, this should not fail.
      PDFfile exch setfileposition PDFfile token
-     pop pop PDFfile token_no_close pop
-     dup type /integertype eq not {
-       pop
-       % startxref not followed by integer.  We will search the end of the file for trailer.
+     {
+       % Discard the startxref token and read the following token, which should be the offset.
+       pop PDFfile token_no_close
+       {
+         % Now chck its an integer
+         dup type /integertype eq not {
+           pop
+           % startxref not followed by integer.  We will search the end of the file for trailer.
+           PDFfilelen
+         } if
+       } {
+         % startxref not followed by any token.  We will search the end of the file for trailer.
+         PDFfilelen
+       } ifelse
+     } {
+       % No startxref token ?  We will search the end of the file for trailer.
        PDFfilelen
-     } if
+     } ifelse
   } {
      % startxref not found.  We will search the end of the file for trailer.
      pop pop PDFfilelen

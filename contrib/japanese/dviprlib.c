@@ -42,7 +42,7 @@ static int dviprt_read_QR_cfg(dviprt_cfg_t *,dviprt_cfg_i *);
 
 /*--- library functions ---*/
 int
-dviprt_readcfg(char *ifname,dviprt_cfg_t *pcfg,uchar *pcodebuf,int codebuf_s,
+dviprt_readcfg(const gs_memory_t *mem, char *ifname,dviprt_cfg_t *pcfg,uchar *pcodebuf,int codebuf_s,
     uchar *pworkbuf,int workbuf_s)
 {
   int code;
@@ -52,19 +52,21 @@ dviprt_readcfg(char *ifname,dviprt_cfg_t *pcfg,uchar *pcodebuf,int codebuf_s,
   info.fname = ifname;
   info.line_no = -1;
   if (ifname) {
-    info.file = gp_fopen(ifname,gp_fmode_rb);
+    info.file = gp_fopen(mem,ifname,gp_fmode_rb);
     if (info.file == NULL) {
       dviprt_printcfgerror(&info,"Cannot open.\n",-1);
       return CFG_ERROR_FILE_OPEN;
     }
   }
   else {
-    info.file = stdin;
+    /* Broken, but unused in gs. Just return an error for now. */
+    /* info.file = stdin; */
+    return CFG_ERROR_FILE_OPEN;
   }
 
-  fseek(info.file,16,0);
-  ver = fgetc(info.file);
-  fseek(info.file,0,0);
+  gp_fseek(info.file,16,0);
+  ver = gp_fgetc(info.file);
+  gp_fseek(info.file,0,0);
   info.codebuf = pcodebuf;
   info.readbuf = pworkbuf;
   info.codebuf_size = codebuf_s;
@@ -72,7 +74,7 @@ dviprt_readcfg(char *ifname,dviprt_cfg_t *pcfg,uchar *pcodebuf,int codebuf_s,
   code = (ver == 'S') ? dviprt_read_S_cfg(pcfg,&info)
     : dviprt_read_QR_cfg(pcfg,&info);
 
-  if (ifname) fclose(info.file);
+  if (ifname) gp_fclose(info.file);
   return code;
 }
 
@@ -94,7 +96,7 @@ dviprt_read_S_cfg(dviprt_cfg_t *pcfg,dviprt_cfg_i *pinfo)
   ifp = pinfo->file;
   rbuf = pinfo->readbuf;
 
-  if (fread(rbuf,20,1,ifp) < 1) {
+  if (gp_fread(rbuf,20,1,ifp) < 1) {
     dviprt_printcfgerror(pinfo,"Read error.\n",-1);
   }
   if (rbuf[17] != 0xff || rbuf[18] != 0xff) {
@@ -119,9 +121,9 @@ dviprt_read_S_cfg(dviprt_cfg_t *pcfg,dviprt_cfg_i *pinfo)
   codeoff = bytes2long(rbuf+12);
 #undef bytes2long
 
-  fseek(ifp,intoff,0);
-  count = fgetc(ifp);
-  fread(rbuf,count*3,1,ifp);
+  gp_fseek(ifp,intoff,0);
+  count = gp_fgetc(ifp);
+  gp_fread(rbuf,count*3,1,ifp);
 
   pbuf = rbuf;
   for (i=0;i<count;i++) {
@@ -138,12 +140,12 @@ dviprt_read_S_cfg(dviprt_cfg_t *pcfg,dviprt_cfg_i *pinfo)
     pbuf += 3;
   }
 
-  fseek(ifp,stroff,0);
-  count = fgetc(ifp);
+  gp_fseek(ifp,stroff,0);
+  count = gp_fgetc(ifp);
   pbuf = NULL;
   for (i=0;i<count;i++) {
     int l;
-    fread(rbuf,3,1,ifp);
+    gp_fread(rbuf,3,1,ifp);
     n = rbuf[0];
     l = rbuf[1] | ((uint)rbuf[2]<<8);
     if (n >= CFG_STRINGS_TYPE_COUNT) {
@@ -162,15 +164,15 @@ dviprt_read_S_cfg(dviprt_cfg_t *pcfg,dviprt_cfg_i *pinfo)
       pcfg->strings[n] = pinfo->pcodebuf;
       pinfo->pcodebuf += (l+1);
     }
-    fread(pcfg->strings[n],l,1,ifp);
+    gp_fread(pcfg->strings[n],l,1,ifp);
     *(pcfg->strings[n]+l) = 0;
   }
 
-  fseek(ifp,codeoff,0);
-  count = fgetc(ifp);
+  gp_fseek(ifp,codeoff,0);
+  count = gp_fgetc(ifp);
   for (i=0;i<count;i++) {
     int l;
-    fread(rbuf,3,1,ifp);
+    gp_fread(rbuf,3,1,ifp);
     n = rbuf[0];
     l = rbuf[1] | ((uint)rbuf[2]<<8);
 
@@ -187,7 +189,7 @@ dviprt_read_S_cfg(dviprt_cfg_t *pcfg,dviprt_cfg_i *pinfo)
       pcfg->prtcode[n] = pinfo->pcodebuf;
       pinfo->pcodebuf += (l+1);
     }
-    fread(pcfg->prtcode[n],l,1,ifp);
+    gp_fread(pcfg->prtcode[n],l,1,ifp);
     *(pcfg->prtcode[n]+l) = 0;
     pcfg->prtcode_size[n] = l;
   }
@@ -242,7 +244,7 @@ dviprt_read_QR_cfg(dviprt_cfg_t *pcfg,dviprt_cfg_i *pinfo)
   if (ch < 0) return CFG_ERROR_MEMORY;
   dviprt_initcfg_(pcfg,pinfo);
   cfg_buf = pinfo->readbuf;
-  if (fread(cfg_buf,30,1,pinfo->file) < 1) {
+  if (gp_fread(cfg_buf,30,1,pinfo->file) < 1) {
     dviprt_printcfgerror(pinfo,"Read error.\n",-1);
   }
   if (cfg_buf[16] == 'P') {
@@ -290,7 +292,7 @@ dviprt_read_QR_cfg(dviprt_cfg_t *pcfg,dviprt_cfg_i *pinfo)
   if (cfg_buf[20])
     pcfg->integer[CFG_CONSTANT] = cfg_buf[20];
   offset = cfg_buf[19];
-  fseek(pinfo->file,offset,0);
+  gp_fseek(pinfo->file,offset,0);
 
   for (i = 0; i <= BIT_ROW_HEADER; i++) {
     uchar *pstart,*plength;
@@ -300,9 +302,9 @@ dviprt_read_QR_cfg(dviprt_cfg_t *pcfg,dviprt_cfg_i *pinfo)
     }
     pstart = pinfo->pcodebuf;
     do {
-      lens = fgetc(pinfo->file);
+      lens = gp_fgetc(pinfo->file);
       if (lens == EOF) break;
-      fread(cfg_buf,lens+3,1,pinfo->file);
+      gp_fread(cfg_buf,lens+3,1,pinfo->file);
       ptr = cfg_buf;
       f_cont = *ptr++;
       pos = *ptr++;
@@ -456,7 +458,7 @@ enum {
 
 /*--- library functions ---*/
 int
-dviprt_readsrc(char *fname,dviprt_cfg_t *pcfg,uchar *pcodebuf,int codebuf_s,
+dviprt_readsrc(const gs_memory_t *mem, char *fname,dviprt_cfg_t *pcfg,uchar *pcodebuf,int codebuf_s,
     uchar *pworkbuf,int workbuf_s)
 {
   dviprt_cfg_i info;
@@ -496,7 +498,7 @@ dviprt_readsrc(char *fname,dviprt_cfg_t *pcfg,uchar *pcodebuf,int codebuf_s,
   info.line_no = -1;
   info.fname = fname;
   if (fname) {
-    info.file = gp_fopen(fname,"r");
+    info.file = gp_fopen(mem,fname,"r");
     if (info.file == NULL) {
       dviprt_printcfgerror(&info,"Cannot open.\n",-1);
       return CFG_ERROR_FILE_OPEN;
@@ -513,7 +515,7 @@ dviprt_readsrc(char *fname,dviprt_cfg_t *pcfg,uchar *pcodebuf,int codebuf_s,
   info.readbuf_size = workbuf_s;
   /* allocate buffer */
   if (dviprt_setcfgbuffer_(&info,TEMP_READBUF_SIZE,TEMP_CODEBUF_SIZE) < 0) {
-    fclose(info.file);
+    gp_fclose(info.file);
     return CFG_ERROR_MEMORY;
   }
 
@@ -766,7 +768,7 @@ dviprt_readsrc(char *fname,dviprt_cfg_t *pcfg,uchar *pcodebuf,int codebuf_s,
   }
 
  end_process:
-  if (fname) fclose(ifp);
+  if (fname) gp_fclose(ifp);
   dviprt_resetcfgbuffer_(&info);
 
   return code;
@@ -1358,7 +1360,7 @@ dviprt_set_code(dviprt_cfg_item_t *pitem,uchar *buf,dviprt_cfg_t *pcfg,
   next_line:
     if (fgets(rbuf,pinfo->readbuf_size,pinfo->file) == NULL) break;
     if (!isspace(rbuf[0]) && rbuf[0] != ';') {
-      fseek(pinfo->file,prev_line,0);
+      gp_fseek(pinfo->file,prev_line,0);
       break;
     }
     prev_line = ftell(pinfo->file);

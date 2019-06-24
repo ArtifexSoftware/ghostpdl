@@ -479,7 +479,9 @@ scan_cmap_text(pdf_text_enum_t *pte, void *vbuf)
                         return code;
                     break;
                 }
-                case ft_user_defined: {
+                case ft_user_defined:
+                case ft_PDF_user_defined:
+                {
                     gs_string str1;
 
                     str1.data = NULL;
@@ -510,10 +512,10 @@ scan_cmap_text(pdf_text_enum_t *pte, void *vbuf)
                 return code;
             if (break_index > start_index && pdev->charproc_just_accumulated)
                 break;
-            if (subfont->FontType == ft_user_defined &&
+            if ((subfont->FontType == ft_user_defined || subfont->FontType == ft_PDF_user_defined )&&
                 (break_index > start_index || !pdev->charproc_just_accumulated) &&
                 !(pdsubf->u.simple.s.type3.cached[cid >> 3] & (0x80 >> (cid & 7)))) {
-                if (subfont0 && subfont0->FontType != ft_user_defined)
+                if (subfont0 && subfont0->FontType != ft_user_defined && subfont0->FontType != ft_PDF_user_defined)
                     /* This is hacky. By pretending to be in a type 3 font doing a charpath we force
                      * text handling to fall right back to bitmap glyphs. This is because we can't handle
                      * CIDFonts with mixed type 1/3 descendants. Ugly but it produces correct output for
@@ -551,7 +553,7 @@ scan_cmap_text(pdf_text_enum_t *pte, void *vbuf)
                 }
                 if (cid >= char_cache_size || cid >= width_cache_size)
                     return_error(gs_error_unregistered); /* Must not happen */
-                if (pdsubf->FontType == ft_user_defined  || pdsubf->FontType == ft_encrypted ||
+                if (pdsubf->FontType == ft_user_defined  || pdsubf->FontType == ft_PDF_user_defined  || pdsubf->FontType == ft_encrypted ||
                                 pdsubf->FontType == ft_encrypted2) {
                 } else {
                     pdf_font_resource_t *pdfont;
@@ -778,7 +780,7 @@ scan_cmap_text(pdf_text_enum_t *pte, void *vbuf)
             /* We thought that it should be gs_matrix_multiply(&font->FontMatrix, &subfont0->FontMatrix, &m3); */
             if (code < 0)
                 return code;
-            if (pdsubf0->FontType == ft_user_defined  || pdsubf->FontType == ft_encrypted ||
+            if (pdsubf0->FontType == ft_user_defined  || pdsubf0->FontType == ft_PDF_user_defined  || pdsubf->FontType == ft_encrypted ||
                 pdsubf->FontType == ft_encrypted2)
                     pdfont = pdsubf0;
             else {

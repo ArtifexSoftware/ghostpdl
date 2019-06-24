@@ -88,7 +88,10 @@ dfax_print_page(gx_device_printer *dev, gp_file *prn_stream)
                 { hdr[45] = 0x40; hdr[29] = 1; }	/* high res */
         else
                 { hdr[45] = hdr[29] = 0; }		/* low res */
-        gp_fseek(prn_stream, 0, SEEK_END);
+        code = gp_fseek(prn_stream, 0, SEEK_END);
+        if (code < 0)
+            return_error(gs_error_ioerror);
+
         gp_fwrite(hdr, sizeof(hdr), 1, prn_stream);
 
         /* Write the page */

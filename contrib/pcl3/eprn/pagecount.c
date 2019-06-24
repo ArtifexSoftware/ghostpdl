@@ -142,7 +142,7 @@ int pcf_getcount(const gs_memory_t *mem, const char *filename, unsigned long *co
   gp_file *f;
 
   /* Should we use a page count file? */
-  if (filename == NULL || *filename == '\0') return 0;
+  if (filename == NULL || *filename == '\0' || count == NULL) return 0;
 
   /* If the file does not exist, the page count is taken to be zero. */
   if (access(filename, F_OK) != 0) {
@@ -153,7 +153,7 @@ int pcf_getcount(const gs_memory_t *mem, const char *filename, unsigned long *co
   /* Open the file */
   if ((f = gp_fopen(mem, filename, "r")) == NULL) {
     errprintf(mem, ERRPREFIX "Cannot open page count file `%s': %s.\n",
-      filename, strerror(gp_ferror(f)));
+      filename, strerror(errno));
     return -1;
   }
 
@@ -206,7 +206,7 @@ int pcf_inccount(const gs_memory_t *mem, const char *filename, unsigned long by)
   */
   if ((f = gp_fopen(mem, filename, "a+")) == NULL) {
     errprintf(mem, ERRPREFIX "Cannot open page count file `%s': %s.\n",
-      filename, strerror(gp_ferror(f)));
+      filename, strerror(errno));
     return 1;
   }
 
@@ -239,7 +239,7 @@ int pcf_inccount(const gs_memory_t *mem, const char *filename, unsigned long by)
     if (f1 == NULL) {
       errprintf(mem, ERRPREFIX
         "Error opening page count file `%s' a second time: %s.\n",
-        filename, strerror(gp_ferror(f1)));
+        filename, strerror(errno));
       rc = 1;
     }
     else {

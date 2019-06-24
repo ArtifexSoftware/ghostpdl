@@ -615,8 +615,8 @@ typedef struct {
     int outmax;
     int buffercopy;
     int wasascii;
-    char *bufferin;
-    char *bufferout;
+    unsigned char *bufferin;
+    unsigned char *bufferout;
     psc_getc *pgetc;
     psc_ungetc *unpgetc;
     psc_feof *peof;
@@ -1026,7 +1026,7 @@ static int pscompact_isname(pscompstate *psc, int *i)
     if (psc->bufferin[0] == '/')
         off = 1;
     for (n = 0; n < sizeof(pscompact_names)/sizeof(char *); n++) {
-        if (strncmp(pscompact_names[n], &psc->bufferin[off], psc->inpos-off) == 0) {
+        if (strncmp(pscompact_names[n], (const char *)&psc->bufferin[off], psc->inpos-off) == 0) {
             /* Match! */
             if (off)
                 *i = -1-n;
@@ -1048,7 +1048,7 @@ static int pscompact_isint(pscompstate *psc, int *i)
     if (pos >= psc->inpos)
         return 0;
     if ((psc->inpos > pos+3) &&
-        (strncmp(&psc->bufferin[pos], "16#", 3) == 0)) {
+        (strncmp((const char *)&psc->bufferin[pos], "16#", 3) == 0)) {
         /* hex */
         int v = 0;
         pos += 3;
@@ -1080,12 +1080,12 @@ static int pscompact_isint(pscompstate *psc, int *i)
         psc->bufferin = realloc(psc->bufferin, psc->inmax);
     }
     psc->bufferin[psc->inpos] = 0;
-    *i = atoi(psc->bufferin);
+    *i = atoi((const char *)psc->bufferin);
 
     /* Check for 32bit overflow */
     if (psc->inpos > 9) {
         char *end;
-        double d = strtod(psc->bufferin, &end);
+        double d = strtod((const char *)psc->bufferin, &end);
         if (d != (double)(int)*i)
             return 0;
     }
@@ -1121,7 +1121,7 @@ static int pscompact_isfloat(pscompstate *psc, float *f)
         psc->bufferin = realloc(psc->bufferin, psc->inmax);
     }
     psc->bufferin[psc->inpos] = 0;
-    *f = atof(psc->bufferin);
+    *f = atof((const char *)psc->bufferin);
     return 1;
 }
 
@@ -1337,7 +1337,7 @@ static unsigned long pscompact_getcompactedblock(pscompstate *psc, unsigned char
                         }
                     }
                     if ((psc->inpos == 4) &&
-                        (strncmp(psc->bufferin, "true", 4) == 0)) {
+                        (strncmp((const char *)psc->bufferin, "true", 4) == 0)) {
                         /* Encode as a 32 bit integer */
                         psc->bufferout[0] = 141;
                         psc->bufferout[1] = 1;
@@ -1350,7 +1350,7 @@ static unsigned long pscompact_getcompactedblock(pscompstate *psc, unsigned char
                         break;
                     }
                     if ((psc->inpos == 5) &&
-                        (strncmp(psc->bufferin, "false", 5) == 0)) {
+                        (strncmp((const char *)psc->bufferin, "false", 5) == 0)) {
                         /* Encode as a 32 bit integer */
                         psc->bufferout[0] = 141;
                         psc->bufferout[1] = 0;
@@ -1568,7 +1568,7 @@ static unsigned long pscompact_getcompactedblock(pscompstate *psc, unsigned char
                 c = psc->pgetc(psc->file);
                 if ((c == 13) || (c == 10)) {
                     if ((psc->inpos >= 3) &&
-                        (strncmp(psc->bufferin, "END", 3) == 0)) {
+                        (strncmp((const char *)psc->bufferin, "END", 3) == 0)) {
                         /* Special comment to retain */
                         pscompact_bufferatstart(psc, '%');
                         pscompact_buffer(psc, 10);
@@ -1576,7 +1576,7 @@ static unsigned long pscompact_getcompactedblock(pscompstate *psc, unsigned char
                         break;
                     }
                     if ((psc->inpos >= 7) &&
-                        (strncmp(psc->bufferin, "NAMESOK", 7) == 0)) {
+                        (strncmp((const char *)psc->bufferin, "NAMESOK", 7) == 0)) {
                         psc->names = 1;
                         pscompact_bufferatstart(psc, '%');
                         pscompact_buffer(psc, 10);
@@ -1584,7 +1584,7 @@ static unsigned long pscompact_getcompactedblock(pscompstate *psc, unsigned char
                         break;
                     }
                     if ((psc->inpos >= 8) &&
-                        (strncmp(psc->bufferin, "BINARYOK", 8) == 0)) {
+                        (strncmp((const char *)psc->bufferin, "BINARYOK", 8) == 0)) {
                         psc->binary = 1;
                         pscompact_bufferatstart(psc, '%');
                         pscompact_buffer(psc, 10);

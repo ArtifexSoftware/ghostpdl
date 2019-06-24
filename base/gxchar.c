@@ -596,6 +596,7 @@ set_cache_device(gs_show_enum * penum, gs_gstate * pgs, double llx, double lly,
             gx_path box_path;
 
             if (penum->current_font->FontType != ft_user_defined &&
+                penum->current_font->FontType != ft_PDF_user_defined &&
                 penum->current_font->FontType != ft_PCL_user_defined &&
                 penum->current_font->FontType != ft_GL2_stick_user_defined &&
                 penum->current_font->FontType != ft_CID_user_defined) {

@@ -1267,17 +1267,17 @@ dump_raw_pattern(int height, int width, int n_chan, int depth,
         gs_sprintf(full_file_name, "%d)PATTERN_CHUNK_%dx%dx%d.raw", global_pat_index,
                 width, height, max_bands);
     }
-    fid = gp_fopen(full_file_name,"wb");
+    fid = gp_fopen(mdev,full_file_name,"wb");
     if (depth >= 8) {
         /* Contone data. */
         if (is_planar) {
             for (m = 0; m < max_bands; m++) {
                 curr_ptr = mdev->line_ptrs[m*mdev->height];
-                fwrite(curr_ptr, 1, mdev->height * mdev->raster, fid);
+                gp_fwrite(curr_ptr, 1, mdev->height * mdev->raster, fid);
             }
         } else {
             /* Just dump it like it is */
-            fwrite(Buffer, 1, max_bands * height * width, fid);
+            gp_fwrite(Buffer, 1, max_bands * height * width, fid);
         }
     } else {
         /* Binary Data. Lets get to 8 bit for debugging.  We have to
@@ -1293,7 +1293,7 @@ dump_raw_pattern(int height, int width, int n_chan, int depth,
                         current_byte = curr_ptr[j*(mdev->raster) + byte_number];
                         bit_position = 7 - (k -  byte_number*8);
                         output_val = ((current_byte >> bit_position) & 0x1) * 255;
-                        fwrite(&output_val,1,1,fid);
+                        gp_fwrite(&output_val,1,1,fid);
                     }
                 }
             }
@@ -1314,13 +1314,13 @@ dump_raw_pattern(int height, int width, int n_chan, int depth,
                         /* extract and create byte */
                         output_val =
                                 ((current_byte >> bit_position) & 0x1) * 255;
-                        fwrite(&output_val,1,1,fid);
+                        gp_fwrite(&output_val,1,1,fid);
                     }
                 }
             }
         }
     }
-    fclose(fid);
+    gp_fclose(fid);
 }
 #endif
 

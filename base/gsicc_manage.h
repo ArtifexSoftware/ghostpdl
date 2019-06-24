@@ -161,6 +161,6 @@ uint gsicc_currentcoloraccuracy(gs_memory_t *mem);
 void gsicc_setcoloraccuracy(gs_memory_t *mem, uint level);
 
 #if ICC_DUMP
-static void dump_icc_buffer(int buffersize, char filename[],byte *Buffer);
+static void dump_icc_buffer(const gs_memory_t *mem, int buffersize, char filename[],byte *Buffer);
 #endif
 #endif

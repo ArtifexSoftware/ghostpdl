@@ -410,7 +410,7 @@ extern int pcl_compress(pcl_Compression method, const pcl_OctetString *in,
   const pcl_OctetString *prev, pcl_OctetString *out);
 
 /* File and page functions */
-extern int pcl3_init_file(gp_file *out, pcl_FileData *global);
+extern int pcl3_init_file(gs_memory_t *mem, gp_file *out, pcl_FileData *global);
 extern int pcl3_begin_page(gp_file *out, pcl_FileData *global);
 extern int pcl3_end_page(gp_file *out, pcl_FileData *global);
 extern int pcl3_end_file(gp_file *out, pcl_FileData *global);

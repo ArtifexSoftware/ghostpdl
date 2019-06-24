@@ -1454,7 +1454,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                 if (*arg == 0)
                     gs_debug['#'] = 1;
                 else
-                    sscanf(arg, "%d", &pmi->error_report);
+                    (void)sscanf(arg, "%d", &pmi->error_report);
                 break;
             case 'f':
                 code = arg_next(pal, (const char **)&arg, pmi->memory);

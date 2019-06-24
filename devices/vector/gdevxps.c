@@ -726,7 +726,7 @@ zip_close_archive_file(gx_device_xps *xps_dev, const char *filename)
             return gs_throw_code(gs_error_Fatal);
 
         crc = crc32(0L, Z_NULL, 0);
-        gp_fseek(fp, 0, SEEK_SET);
+        gp_rewind(fp);
         while (!gp_feof(fp)) {
             nread = gp_fread(buf, 1, sizeof(buf), fp);
             crc = crc32(crc, buf, nread);

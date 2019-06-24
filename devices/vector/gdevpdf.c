@@ -1587,7 +1587,7 @@ rewrite_object(gx_device_pdf *const pdev, pdf_linearisation_t *linear_params, in
                 target--;
             }while (*target >= '0' && *target <= '9');
             target++;
-            sscanf(target, "%d 0 R", &ID);
+            (void)sscanf(target, "%d 0 R", &ID);
             gp_fwrite(source, target - source, 1, linear_params->Lin_File.file);
             gs_sprintf(Buf, "%d 0 R", pdev->ResourceUsage[ID].NewObjectNumber);
             gp_fwrite(Buf, strlen(Buf), 1, linear_params->Lin_File.file);

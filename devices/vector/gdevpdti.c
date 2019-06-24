@@ -55,7 +55,7 @@ struct pdf_char_proc_ownership_s {
     pdf_font_resource_t *font;
     gs_char char_code;                /* Character code in PDF font. */
     gs_glyph glyph;                /* Glyph id in Postscript font. */
-    gs_const_string char_name;
+    gs_string char_name;
     bool duplicate_char_name;
 };
 gs_private_st_strings1_ptrs4(st_pdf_char_proc_ownership, pdf_char_proc_ownership_t,
@@ -291,8 +291,12 @@ pdf_attach_charproc(gx_device_pdf * pdev, pdf_font_resource_t *pdfont, pdf_char_
     if (gnstr == NULL) {
         pcpo->char_name.data = 0;
         pcpo->char_name.size = 0;
-    } else
-        pcpo->char_name = *gnstr;
+    } else {
+        pcpo->char_name.data = gs_alloc_bytes(pdev->pdf_memory->non_gc_memory, gnstr->size, "storage for charproc name");
+        memcpy(pcpo->char_name.data, gnstr->data, gnstr->size);
+        pcpo->char_name.size = gnstr->size;
+//        pcpo->char_name = *gnstr;
+    }
     pcpo->duplicate_char_name = duplicate_char_name;
     return 0;
 }
@@ -305,6 +309,7 @@ pdf_free_charproc_ownership(gx_device_pdf * pdev, pdf_resource_t *pres)
     while (pcpo) {
         next = pcpo->char_next;
         if(pcpo->char_name.size != 0 && pcpo->char_name.data) {
+            gs_free_object(pdev->pdf_memory->non_gc_memory, pcpo->char_name.data, "free storage for charproc naem");
             /* This causes PCL some trouble, don't know why yet FIXME-MEMORY
             gs_free_string(pdev->pdf_memory, (byte *)pcpo->char_name.data, pcpo->char_name.size, "Free CharProc name");*/
             pcpo->char_name.data = (byte *)0L;
@@ -350,6 +355,7 @@ pdf_begin_char_proc(gx_device_pdf * pdev, int w, int h, int x_width,
      * go back to collecting the bitmap into our fallback font.
      */
     if ((show_enum->current_font->FontType == ft_user_defined ||
+        show_enum->current_font->FontType == ft_PDF_user_defined ||
         show_enum->current_font->FontType == ft_PCL_user_defined ||
         show_enum->current_font->FontType == ft_MicroType ||
         show_enum->current_font->FontType == ft_GL2_stick_user_defined ||
@@ -506,6 +512,7 @@ pdf_mark_glyph_names(const pdf_font_resource_t *pdfont, const gs_memory_t *memor
                 pdfont->mark_glyph(memory, pdfont->u.simple.Encoding[i].glyph, pdfont->mark_glyph_data);
      }
     if (pdfont->FontType == ft_user_defined ||
+        pdfont->FontType == ft_PDF_user_defined ||
         pdfont->FontType == ft_PCL_user_defined ||
         pdfont->FontType == ft_MicroType ||
         pdfont->FontType == ft_GL2_stick_user_defined ||

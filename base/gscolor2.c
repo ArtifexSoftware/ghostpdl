@@ -267,8 +267,7 @@ gx_polarity_Indexed(const gs_color_space * pcs)
 static int
 gx_install_Indexed(gs_color_space * pcs, gs_gstate * pgs)
 {
-    return (*pcs->base_space->type->install_cspace)
-        (pcs->base_space, pgs);
+    return 0;
 }
 
 /* Color space overprint setting ditto. */

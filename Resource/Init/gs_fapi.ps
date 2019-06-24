@@ -372,7 +372,7 @@ bind def
   { (\nFAPIhook ) print 1 index = flush } //FAPI_hook_debug exec
   dup /FAPI known {
     { //PrintFontRef exec ( is mapped to FAPI=) print dup /FAPI get = flush } //FAPI_hook_debug exec
-    //true //.FAPIrebuildfont //ChooseDecoding exec
+    //true .FAPIrebuildfont //ChooseDecoding exec
   } {
     dup /PathLoad known dup {
       { (PathLoad known for the font ) print //PrintFontRef exec (.\n) print flush} //FAPI_hook_debug exec
@@ -403,9 +403,9 @@ bind def
     } ifelse
 
     { { (Trying to render the font ) print //PrintFontRef exec ( with FAPI...\n) print flush } //FAPI_hook_debug exec
-      //.FAPIpassfont {
+      .FAPIpassfont {
         { //PrintFontRef exec ( is being rendered with FAPI=) print dup /FAPI get = flush } //FAPI_hook_debug exec
-        //false //.FAPIrebuildfont //ChooseDecoding exec
+        //false .FAPIrebuildfont //ChooseDecoding exec
       } {
         { (Can't render ) print //PrintFontRef exec ( with FAPI, will do with native GS renderer.\n) print flush } //FAPI_hook_warn exec
       } ifelse
@@ -429,7 +429,7 @@ bind def
 % ------------------ Redefine .buildfont* with FAPI : -----------------------
 
 /.buildfont1
-{ //.buildfont1 exec exec //FAPIhook exec
+{ //.buildfont1 exec //FAPIhook exec
 } bind % 'odef' is below.
 
 /.buildfont2

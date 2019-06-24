@@ -89,8 +89,12 @@ typedef pdf14_parent_cs_params_s pdf14_parent_cs_params_t;
 
 /* This function is used for mapping Smask CMYK or RGB data to a monochrome alpha buffer */
 void smask_luminosity_mapping(int num_rows, int num_cols, int n_chan, int row_stride,
-                         int plane_stride, const byte *gs_restrict src, byte *gs_restrict des, bool isadditive,
-                            gs_transparency_mask_subtype_t SMask_SubType, bool deep);
+                              int plane_stride, const byte *gs_restrict src, byte *gs_restrict des, bool isadditive,
+                              gs_transparency_mask_subtype_t SMask_SubType, bool deep
+#if RAW_DUMP
+                              , const gs_memory_t *mem
+#endif
+                              );
 void smask_blend(byte *gs_restrict src, int width, int height, int rowstride,
                  int planestride, bool deep);
 
@@ -335,7 +339,11 @@ void pdf14_unpack16_subtractive(int num_comp, gx_color_index color,
 void pdf14_unpack16_custom(int num_comp, gx_color_index color,
                            pdf14_device * p14dev, uint16_t * out);
 
-void pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool knockout_buff);
+void pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool knockout_buff
+#if RAW_DUMP
+                             , gs_memory_t *mem
+#endif
+                             );
 
 int pdf14_preserve_backdrop_cm(pdf14_buf *buf, cmm_profile_t *group_profile,
                                pdf14_buf *tos, cmm_profile_t *tos_profile,
@@ -401,10 +409,12 @@ int pdf14_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 
 #if RAW_DUMP
 
-void dump_raw_buffer(int num_rows, int width, int n_chan,
-                    int plane_stride, int rowstride,
-                    char filename[],const byte *Buffer, bool deep);
-void dump_raw_buffer_be(int num_rows, int width, int n_chan,
+void dump_raw_buffer(const gs_memory_t *mem,
+                     int num_rows, int width, int n_chan,
+                     int plane_stride, int rowstride,
+                     char filename[],const byte *Buffer, bool deep);
+void dump_raw_buffer_be(const gs_memory_t *mem, 
+                        int num_rows, int width, int n_chan,
                         int plane_stride, int rowstride,
                         char filename[],const byte *Buffer, bool deep);
 #endif

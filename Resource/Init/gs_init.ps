@@ -965,7 +965,6 @@ currentdict /runlibfile0 .undef
 /.errorhandler		% <command> <errorname> .errorhandler -
   {		% Detect an internal 'stopped'.
     1 .instopped { //null eq { pop pop stop } if } if
-    (I) //false .setdebug
     $error /.inerror get 1 .instopped { pop } { pop //true } ifelse
      { //.unstoppederrorhandler exec
      } if	% detect error recursion

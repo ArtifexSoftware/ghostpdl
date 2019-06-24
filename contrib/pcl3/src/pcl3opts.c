@@ -30,6 +30,9 @@
 #include <string.h>
 #include <unistd.h>
 
+/* prevent gp.h redefining fopen */
+#define fopen fopen
+
 /* Application headers */
 #include "pclsize.h"
 #include "pclgen.h"

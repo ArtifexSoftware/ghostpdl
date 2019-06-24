@@ -70,7 +70,11 @@ static void
 do_smask_luminosity_mapping(int num_rows, int num_cols, int n_chan, int row_stride,
                             int plane_stride, const byte *gs_restrict src,
                             byte *gs_restrict dst, bool isadditive,
-                            gs_transparency_mask_subtype_t SMask_SubType)
+                            gs_transparency_mask_subtype_t SMask_SubType
+#if RAW_DUMP
+                            , const gs_memory_t *mem
+#endif
+                            )
 {
     int x,y;
     int mask_alpha_offset,mask_C_offset,mask_M_offset,mask_Y_offset,mask_K_offset;
@@ -78,7 +82,7 @@ do_smask_luminosity_mapping(int num_rows, int num_cols, int n_chan, int row_stri
     byte *dstptr;
 
 #if RAW_DUMP
-    dump_raw_buffer(num_rows, row_stride, n_chan,
+    dump_raw_buffer(mem, num_rows, row_stride, n_chan,
                     plane_stride, row_stride,
                    "Raw_Mask", src, 0);
 
@@ -183,7 +187,11 @@ static void
 do_smask_luminosity_mapping_16(int num_rows, int num_cols, int n_chan, int row_stride,
                                int plane_stride, const uint16_t *gs_restrict src,
                                uint16_t *gs_restrict dst, bool isadditive,
-                               gs_transparency_mask_subtype_t SMask_SubType)
+                               gs_transparency_mask_subtype_t SMask_SubType
+#if RAW_DUMP
+                               , const gs_memory_t *mem
+#endif
+                               )
 {
     int x,y;
     int mask_alpha_offset,mask_C_offset,mask_M_offset,mask_Y_offset,mask_K_offset;
@@ -191,9 +199,9 @@ do_smask_luminosity_mapping_16(int num_rows, int num_cols, int n_chan, int row_s
     uint16_t *dstptr;
 
 #if RAW_DUMP
-    dump_raw_buffer(num_rows, row_stride, n_chan,
-                    plane_stride, row_stride,
-                   "Raw_Mask", src, 0);
+    dump_raw_buffer_be(mem, num_rows, row_stride, n_chan,
+                       plane_stride, row_stride,
+                       "Raw_Mask", (const byte *)src, 0);
 
     global_index++;
 #endif
@@ -296,15 +304,27 @@ void
 smask_luminosity_mapping(int num_rows, int num_cols, int n_chan, int row_stride,
                          int plane_stride, const byte *gs_restrict src,
                          byte *gs_restrict dst, bool isadditive,
-                         gs_transparency_mask_subtype_t SMask_SubType, bool deep)
+                         gs_transparency_mask_subtype_t SMask_SubType, bool deep
+#if RAW_DUMP
+                         , const gs_memory_t *mem
+#endif
+                         )
 {
     if (deep)
         do_smask_luminosity_mapping_16(num_rows, num_cols, n_chan, row_stride>>1,
                                        plane_stride>>1, (const uint16_t *)(const void *)src,
-                                       (uint16_t *)(void *)dst, isadditive, SMask_SubType);
+                                       (uint16_t *)(void *)dst, isadditive, SMask_SubType
+#if RAW_DUMP
+                                       , mem
+#endif
+                                       );
     else
         do_smask_luminosity_mapping(num_rows, num_cols, n_chan, row_stride,
-                                    plane_stride, src, dst, isadditive, SMask_SubType);
+                                    plane_stride, src, dst, isadditive, SMask_SubType
+#if RAW_DUMP
+                                    , mem
+#endif
+                                    );
 }
 
 /* soft mask gray buffer should be blended with its transparency planar data
@@ -387,7 +407,7 @@ void smask_icc(gx_device *dev, int num_rows, int num_cols, int n_chan,
     gsicc_bufferdesc_t output_buff_desc;
 
 #if RAW_DUMP
-    dump_raw_buffer(num_rows, row_stride>>deep, n_chan,
+    dump_raw_buffer(dev->memory, num_rows, row_stride>>deep, n_chan,
                     plane_stride, row_stride,
                     "Raw_Mask_ICC", src, deep);
     global_index++;
@@ -2501,9 +2521,9 @@ art_pdf_composite_knockout_16(uint16_t *gs_restrict dst,
    planar form with global indexing and tag information in
    file name */
 static void
-do_dump_raw_buffer(int num_rows, int width, int n_chan,
-                int plane_stride, int rowstride,
-                char filename[], const byte *Buffer, bool deep, bool be)
+do_dump_raw_buffer(const gs_memory_t *mem, int num_rows, int width, int n_chan,
+                   int plane_stride, int rowstride,
+                   char filename[], const byte *Buffer, bool deep, bool be)
 {
     char full_file_name[50];
     gp_file *fid;
@@ -2522,7 +2542,7 @@ do_dump_raw_buffer(int num_rows, int width, int n_chan,
         int x;
         dlprintf2("%02d)%s.pam\n",global_index,filename);dflush();
         gs_sprintf(full_file_name,"%02d)%s.pam",global_index,filename);
-        fid = gp_fopen(full_file_name,"wb");
+        fid = gp_fopen(mem,full_file_name,"wb");
         fprintf(fid, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 2\nMAXVAL %d\nTUPLTYPE GRAYSCALE_ALPHA\nENDHDR\n",
                 width, num_rows, deep ? 65535 : 255);
         if (deep) {
@@ -2530,42 +2550,42 @@ do_dump_raw_buffer(int num_rows, int width, int n_chan,
                 for(x=0; x<width; x++)
                     for(z=0; z<2; z++) {
                         /* This assumes a little endian host. Sue me. */
-                        fputc(Buffer[z*plane_stride + y*rowstride + x*2 + be^1], fid);
-                        fputc(Buffer[z*plane_stride + y*rowstride + x*2 + be  ], fid);
+                        gp_fputc(Buffer[z*plane_stride + y*rowstride + x*2 + be^1], fid);
+                        gp_fputc(Buffer[z*plane_stride + y*rowstride + x*2 + be  ], fid);
                     }
         } else {
             for(y=0; y<num_rows; y++)
                 for(x=0; x<width; x++)
                     for(z=0; z<2; z++)
-                        fputc(Buffer[z*plane_stride + y*rowstride + x], fid);
+                        gp_fputc(Buffer[z*plane_stride + y*rowstride + x], fid);
         }
-        fclose(fid);
+        gp_fclose(fid);
         if (n_chan == 3) {
             dlprintf2("%02d)%s_shape.pgm\n",global_index,filename);dflush();
             gs_sprintf(full_file_name,"%02d)%s_shape.pgm",global_index,filename);
-            fid = gp_fopen(full_file_name,"wb");
+            fid = gp_fopen(mem,full_file_name,"wb");
             fprintf(fid, "P5\n%d %d %d\n",
                     width, num_rows, deep ? 65535 : 255);
             if (deep) {
                 for(y=0; y<num_rows; y++)
                     for(x=0; x<width; x++) {
                         /* This assumes a little endian host. Sue me. */
-                        fputc(Buffer[2*plane_stride + y*rowstride + x * 2 + be^1], fid);
-                        fputc(Buffer[2*plane_stride + y*rowstride + x * 2 + be  ], fid);
+                        gp_fputc(Buffer[2*plane_stride + y*rowstride + x * 2 + be^1], fid);
+                        gp_fputc(Buffer[2*plane_stride + y*rowstride + x * 2 + be  ], fid);
                     }
             } else {
                 for(y=0; y<num_rows; y++)
                     for(x=0; x<width; x++)
-                        fputc(Buffer[2*plane_stride + y*rowstride + x], fid);
+                        gp_fputc(Buffer[2*plane_stride + y*rowstride + x], fid);
             }
-            fclose(fid);
+            gp_fclose(fid);
         }
     }
     if ((n_chan == 4) || (n_chan == 5) || (n_chan == 6)) {
         int x;
         dprintf2("%02d)%s.pam\n",global_index,filename);dflush();
         gs_sprintf(full_file_name,"%02d)%s.pam",global_index,filename);
-        fid = gp_fopen(full_file_name,"wb");
+        fid = gp_fopen(mem,full_file_name,"wb");
         fprintf(fid, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 4\nMAXVAL %d\nTUPLTYPE RGB_ALPHA\nENDHDR\n",
                 width, num_rows, deep ? 65535 : 255);
         if (deep) {
@@ -2573,49 +2593,49 @@ do_dump_raw_buffer(int num_rows, int width, int n_chan,
                 for(x=0; x<width; x++)
                     for(z=0; z<4; z++) {
                         /* This assumes a little endian host. Sue me. */
-                        fputc(Buffer[z*plane_stride + y*rowstride + x*2 + be^1], fid);
-                        fputc(Buffer[z*plane_stride + y*rowstride + x*2 + be  ], fid);
+                        gp_fputc(Buffer[z*plane_stride + y*rowstride + x*2 + be^1], fid);
+                        gp_fputc(Buffer[z*plane_stride + y*rowstride + x*2 + be  ], fid);
                     }
         } else {
             for(y=0; y<num_rows; y++)
                 for(x=0; x<width; x++)
                     for(z=0; z<4; z++)
-                        fputc(Buffer[z*plane_stride + y*rowstride + x], fid);
+                        gp_fputc(Buffer[z*plane_stride + y*rowstride + x], fid);
         }
-        fclose(fid);
+        gp_fclose(fid);
         if (n_chan > 4) {
             gs_sprintf(full_file_name,"%02d)%s_shape.pgm",global_index,filename);
-            fid = gp_fopen(full_file_name,"wb");
+            fid = gp_fopen(mem,full_file_name,"wb");
             fprintf(fid, "P5\n%d %d %d\n",
                     width, num_rows, deep ? 65535 : 255);
             if (deep) {
                 for(y=0; y<num_rows; y++)
                     for(x=0; x<width; x++) {
                         /* This assumes a little endian host. Sue me. */
-                        fputc(Buffer[4*plane_stride + y*rowstride + x*2 + be^1], fid);
-                        fputc(Buffer[4*plane_stride + y*rowstride + x*2 + be  ], fid);
+                        gp_fputc(Buffer[4*plane_stride + y*rowstride + x*2 + be^1], fid);
+                        gp_fputc(Buffer[4*plane_stride + y*rowstride + x*2 + be  ], fid);
                     }
             } else {
                 for(y=0; y<num_rows; y++)
                     for(x=0; x<width; x++)
-                        fputc(Buffer[4*plane_stride + y*rowstride + x], fid);
+                        gp_fputc(Buffer[4*plane_stride + y*rowstride + x], fid);
             }
-            fclose(fid);
+            gp_fclose(fid);
         }
         if (n_chan == 6) {
             gs_sprintf(full_file_name,"%02d)%s_tags.pgm",global_index,filename);
-            fid = gp_fopen(full_file_name,"wb");
+            fid = gp_fopen(mem, full_file_name,"wb");
             fprintf(fid, "P5\n%d %d 255\n", width, num_rows);
             if (deep) {
                 for(y=0; y<num_rows; y++)
                     for(x=0; x<width; x++)
-                        fputc(Buffer[5*plane_stride + y*rowstride + x*2 + be ], fid);
+                        gp_fputc(Buffer[5*plane_stride + y*rowstride + x*2 + be ], fid);
             } else {
                 for(y=0; y<num_rows; y++)
                     for(x=0; x<width; x++)
-                        fputc(Buffer[5*plane_stride + y*rowstride + x], fid);
+                        gp_fputc(Buffer[5*plane_stride + y*rowstride + x], fid);
             }
-            fclose(fid);
+            gp_fclose(fid);
         }
         return;
     }
@@ -2623,35 +2643,35 @@ do_dump_raw_buffer(int num_rows, int width, int n_chan,
     max_bands = ( n_chan < 57 ? n_chan : 56);   /* Photoshop handles at most 56 bands */
     dlprintf6("%02d)%s_%dx%dx%dx%d.raw\n",global_index,filename,width,num_rows,deep ? 16 : 8,max_bands);dflush();
     gs_sprintf(full_file_name,"%02d)%s_%dx%dx%dx%d.raw",global_index,filename,width,num_rows,deep ? 16 : 8,max_bands);
-    fid = gp_fopen(full_file_name,"wb");
+    fid = gp_fopen(mem, full_file_name,"wb");
 
     for (z = 0; z < max_bands; ++z) {
         /* grab pointer to the next plane */
         buff_ptr = &(Buffer[z*plane_stride]);
         for ( y = 0; y < num_rows; y++ ) {
             /* write out each row */
-            fwrite(buff_ptr,sizeof(unsigned char),width<<deep,fid);
+            gp_fwrite(buff_ptr,sizeof(unsigned char),width<<deep,fid);
             buff_ptr += rowstride;
         }
     }
-    fclose(fid);
+    gp_fclose(fid);
 }
 
 void
-dump_raw_buffer(int num_rows, int width, int n_chan,
+dump_raw_buffer(const gs_memory_t *mem, int num_rows, int width, int n_chan,
                 int plane_stride, int rowstride,
                 char filename[],const byte *Buffer, bool deep)
 {
-    do_dump_raw_buffer(num_rows, width, n_chan, plane_stride,
+    do_dump_raw_buffer(mem, num_rows, width, n_chan, plane_stride,
                        rowstride, filename, Buffer, deep, 0);
 }
 
 void
-dump_raw_buffer_be(int num_rows, int width, int n_chan,
+dump_raw_buffer_be(const gs_memory_t *mem, int num_rows, int width, int n_chan,
                    int plane_stride, int rowstride,
                    char filename[],const byte *Buffer, bool deep)
 {
-    do_dump_raw_buffer(num_rows, width, n_chan, plane_stride,
+    do_dump_raw_buffer(mem, num_rows, width, n_chan, plane_stride,
                        rowstride, filename, Buffer, deep, 1);
 }
 #endif
@@ -3292,12 +3312,12 @@ do_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
     n_chan--; /* Now the true number of colorants (i.e. not including alpha)*/
 #if RAW_DUMP
     composed_ptr = nos_ptr;
-    dump_raw_buffer(y1-y0, width, tos->n_planes, tos_planestride, tos->rowstride,
+    dump_raw_buffer(memory, y1-y0, width, tos->n_planes, tos_planestride, tos->rowstride,
                     "bImageTOS", tos_ptr, tos->deep);
-    dump_raw_buffer(y1-y0, width, nos->n_planes, nos_planestride, nos->rowstride,
+    dump_raw_buffer(memory, y1-y0, width, nos->n_planes, nos_planestride, nos->rowstride,
                     "cImageNOS", nos_ptr, tos->deep);
     if (maskbuf !=NULL && maskbuf->data != NULL) {
-        dump_raw_buffer(maskbuf->rect.q.y - maskbuf->rect.p.y,
+        dump_raw_buffer(memory, maskbuf->rect.q.y - maskbuf->rect.p.y,
                         maskbuf->rect.q.x - maskbuf->rect.p.x, maskbuf->n_planes,
                         maskbuf->planestride, maskbuf->rowstride, "dMask",
                         maskbuf->data, maskbuf->deep);
@@ -3373,7 +3393,7 @@ do_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                   pblend_procs, pdev);
 
 #if RAW_DUMP
-    dump_raw_buffer(y1-y0, width, nos->n_planes, nos_planestride, nos->rowstride,
+    dump_raw_buffer(memory, y1-y0, width, nos->n_planes, nos_planestride, nos->rowstride,
                     "eComposed", composed_ptr, nos->deep);
     global_index++;
 #endif
@@ -4049,12 +4069,12 @@ do_compose_group16(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
     n_chan--; /* Now the true number of colorants (i.e. not including alpha)*/
 #if RAW_DUMP
     composed_ptr = nos_ptr;
-    dump_raw_buffer(y1-y0, width, tos->n_planes, tos_planestride, tos->rowstride,
+    dump_raw_buffer(memory, y1-y0, width, tos->n_planes, tos_planestride, tos->rowstride,
                     "bImageTOS", (byte *)tos_ptr, tos->deep);
-    dump_raw_buffer(y1-y0, width, nos->n_planes, nos_planestride, nos->rowstride,
+    dump_raw_buffer(memory, y1-y0, width, nos->n_planes, nos_planestride, nos->rowstride,
                     "cImageNOS", (byte *)nos_ptr, tos->deep);
     if (maskbuf !=NULL && maskbuf->data != NULL) {
-        dump_raw_buffer(maskbuf->rect.q.y - maskbuf->rect.p.y,
+        dump_raw_buffer(memory, maskbuf->rect.q.y - maskbuf->rect.p.y,
                         maskbuf->rect.q.x - maskbuf->rect.p.x, maskbuf->n_planes,
                         maskbuf->planestride, maskbuf->rowstride, "dMask",
                         maskbuf->data, maskbuf->deep);
@@ -4137,7 +4157,7 @@ do_compose_group16(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                   pblend_procs, pdev);
 
 #if RAW_DUMP
-    dump_raw_buffer(y1-y0, width, nos->n_planes, nos_planestride<<1, nos->rowstride,
+    dump_raw_buffer(memory, y1-y0, width, nos->n_planes, nos_planestride<<1, nos->rowstride,
                     "eComposed", (byte *)composed_ptr, nos->deep);
     global_index++;
 #endif
@@ -4231,9 +4251,9 @@ do_compose_alphaless_group(pdf14_buf *tos, pdf14_buf *nos,
     n_chan--; /* Now the true number of colorants (i.e. not including alpha)*/
 #if RAW_DUMP
     composed_ptr = nos_ptr;
-    dump_raw_buffer(y1-y0, width, tos->n_planes, tos_planestride, tos->rowstride,
+    dump_raw_buffer(memory, y1-y0, width, tos->n_planes, tos_planestride, tos->rowstride,
                     "bImageTOS", tos_ptr, tos->deep);
-    dump_raw_buffer(y1-y0, width, nos->n_planes, nos_planestride, nos->rowstride,
+    dump_raw_buffer(memory, y1-y0, width, nos->n_planes, nos_planestride, nos->rowstride,
                     "cImageNOS", nos_ptr, nos->deep);
     /* maskbuf is NULL in here */
 #endif
@@ -4284,7 +4304,7 @@ do_compose_alphaless_group(pdf14_buf *tos, pdf14_buf *nos,
                   pdev->blend_procs, pdev);
 
 #if RAW_DUMP
-    dump_raw_buffer(y1-y0, width, nos->n_planes, nos_planestride, nos->rowstride,
+    dump_raw_buffer(memory, y1-y0, width, nos->n_planes, nos_planestride, nos->rowstride,
                     "eComposed", composed_ptr, nos->deep);
     global_index++;
 #endif
@@ -4363,9 +4383,9 @@ do_compose_alphaless_group16(pdf14_buf *tos, pdf14_buf *nos,
     n_chan--; /* Now the true number of colorants (i.e. not including alpha)*/
 #if RAW_DUMP
     composed_ptr = nos_ptr;
-    dump_raw_buffer_be(y1-y0, width, tos->n_planes, tos_planestride, tos->rowstride,
+    dump_raw_buffer_be(memory, y1-y0, width, tos->n_planes, tos_planestride, tos->rowstride,
                        "bImageTOS", (byte *)tos_ptr, tos->deep);
-    dump_raw_buffer(y1-y0, width, nos->n_planes, nos_planestride, nos->rowstride,
+    dump_raw_buffer(memory, y1-y0, width, nos->n_planes, nos_planestride, nos->rowstride,
                     "cImageNOS", (byte *)nos_ptr, nos->deep);
     /* maskbuf is NULL in here */
 #endif
@@ -4416,7 +4436,7 @@ do_compose_alphaless_group16(pdf14_buf *tos, pdf14_buf *nos,
                   pdev->blend_procs, pdev);
 
 #if RAW_DUMP
-    dump_raw_buffer(y1-y0, width, nos->n_planes, nos_planestride, nos->rowstride,
+    dump_raw_buffer(memory, y1-y0, width, nos->n_planes, nos_planestride, nos->rowstride,
                     "eComposed", (byte *)composed_ptr, nos->deep);
     global_index++;
 #endif
@@ -4980,7 +5000,8 @@ do_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     /* Dump the current buffer to see what we have. */
 
     if(global_index/10.0 == (int) (global_index/10.0) )
-        dump_raw_buffer(pdev->ctx->stack->rect.q.y-pdev->ctx->stack->rect.p.y,
+        dump_raw_buffer(pdev->ctx->mem,
+                        pdev->ctx->stack->rect.q.y-pdev->ctx->stack->rect.p.y,
                         pdev->ctx->stack->rect.q.x-pdev->ctx->stack->rect.p.x,
                         pdev->ctx->stack->n_planes,
                         pdev->ctx->stack->planestride, pdev->ctx->stack->rowstride,
@@ -5575,7 +5596,8 @@ do_mark_fill_rectangle16(gx_device * dev, int x, int y, int w, int h,
     /* Dump the current buffer to see what we have. */
 
     if(global_index/10.0 == (int) (global_index/10.0) )
-        dump_raw_buffer(pdev->ctx->stack->rect.q.y-pdev->ctx->stack->rect.p.y,
+        dump_raw_buffer(pdev->ctx->mem,
+                        pdev->ctx->stack->rect.q.y-pdev->ctx->stack->rect.p.y,
                         pdev->ctx->stack->rect.q.x-pdev->ctx->stack->rect.p.x,
                         pdev->ctx->stack->n_planes,
                         pdev->ctx->stack->planestride, pdev->ctx->stack->rowstride,

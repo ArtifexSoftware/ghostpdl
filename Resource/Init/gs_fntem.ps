@@ -270,7 +270,8 @@ currentdict end def
 .dicttomark def
 
 /ChooseDecoding  % <font> ChooseDecoding <font>
-{ { % A loop for 'exit' context.
+{
+  { % A loop for 'exit' context.
     dup /Decoding .knownget {
       dup type /nametype eq {
         1 index /CIDFontType known { /CIDDecoding } { /Decoding } ifelse
@@ -305,6 +306,7 @@ currentdict end def
       {
         % unknown encoding, or an encoding for which we don't have a
         % predefined decoding, convert it to decoding :
+        currentglobal 3 1 roll 2 index gcheck setglobal
         dup length dict begin
         /.notdef 0 def
         0 1 currentdict length 1 sub
@@ -317,6 +319,7 @@ currentdict end def
         } for
         pop
         currentdict end
+        3 -1 roll setglobal
         1 index exch /Decoding exch put
       } if
     } ifelse
