@@ -68,6 +68,7 @@ pdf_process_string_aux(pdf_text_enum_t *penum, gs_string *pstr,
     case ft_encrypted:
     case ft_encrypted2:
     case ft_user_defined:
+    case ft_PDF_user_defined:
     case ft_PCL_user_defined:
     case ft_GL2_stick_user_defined:
     case ft_GL2_531:
@@ -211,6 +212,7 @@ pdf_used_charproc_resources(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
     if (pdev->CompatibilityLevel >= 1.2)
         return 0;
     if (pdfont->FontType == ft_user_defined ||
+        pdfont->FontType == ft_PDF_user_defined ||
         pdfont->FontType == ft_PCL_user_defined ||
         pdfont->FontType == ft_MicroType ||
         pdfont->FontType == ft_GL2_stick_user_defined ||
@@ -263,6 +265,7 @@ pdf_encode_string_element(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_
     if (code < 0)
         return code;	/* can't get name of glyph */
     if (font->FontType != ft_user_defined &&
+        font->FontType != ft_PDF_user_defined &&
         font->FontType != ft_PCL_user_defined &&
         font->FontType != ft_MicroType &&
         font->FontType != ft_GL2_stick_user_defined &&
@@ -879,6 +882,7 @@ pdf_char_widths(gx_device_pdf *const pdev,
     if (pwidths == 0)
         pwidths = &widths;
     if ((font->FontType != ft_user_defined &&
+        font->FontType != ft_PDF_user_defined &&
         font->FontType != ft_PCL_user_defined &&
         font->FontType != ft_MicroType &&
         font->FontType != ft_GL2_stick_user_defined &&
@@ -915,7 +919,7 @@ pdf_char_widths(gx_device_pdf *const pdev,
     } else {
         if (font->FontType == ft_user_defined || font->FontType == ft_PCL_user_defined ||
             font->FontType == ft_MicroType || font->FontType == ft_GL2_stick_user_defined ||
-            font->FontType == ft_GL2_531) {
+            font->FontType == ft_GL2_531 || font->FontType == ft_PDF_user_defined ) {
             if (!(pdfont->used[ch >> 3] & 0x80 >> (ch & 7)))
 	      return_error(gs_error_undefined); /* The charproc was not accumulated. */
             if (!pdev->charproc_just_accumulated &&
@@ -925,7 +929,7 @@ pdf_char_widths(gx_device_pdf *const pdev,
 	      return_error(gs_error_undefined);
             }
         }
-        if (pdev->charproc_just_accumulated && font->FontType == ft_user_defined) {
+        if (pdev->charproc_just_accumulated && (font->FontType == ft_user_defined || font->FontType == ft_PDF_user_defined)) {
             pwidths->BBox.p.x = pdev->charproc_BBox.p.x;
             pwidths->BBox.p.y = pdev->charproc_BBox.p.y;
             pwidths->BBox.q.x = pdev->charproc_BBox.q.x;
@@ -937,7 +941,7 @@ pdf_char_widths(gx_device_pdf *const pdev,
         pwidths->ignore_wmode = false;
         if (font->FontType == ft_user_defined || font->FontType == ft_PCL_user_defined ||
             font->FontType == ft_MicroType || font->FontType == ft_GL2_stick_user_defined ||
-            font->FontType == ft_GL2_531) {
+            font->FontType == ft_GL2_531 || font->FontType == ft_PDF_user_defined) {
             pwidths->real_width.w = real_widths[ch * 2];
             pwidths->Width.xy.x = pwidths->Width.w;
             pwidths->Width.xy.y = 0;
@@ -971,6 +975,7 @@ pdf_char_widths_to_uts(pdf_font_resource_t *pdfont /* may be NULL for non-Type3 
                        pdf_glyph_widths_t *pwidths)
 {
     if (pdfont && (pdfont->FontType == ft_user_defined ||
+        pdfont->FontType == ft_PDF_user_defined ||
         pdfont->FontType == ft_PCL_user_defined ||
         pdfont->FontType == ft_MicroType ||
         pdfont->FontType == ft_GL2_stick_user_defined ||
@@ -1032,6 +1037,7 @@ process_text_return_width(const pdf_text_enum_t *pte, gs_font_base *font,
                 return code;
         }
         if ((font->FontType == ft_user_defined ||
+            font->FontType == ft_PDF_user_defined ||
             font->FontType == ft_PCL_user_defined ||
             font->FontType == ft_GL2_stick_user_defined ||
             font->FontType == ft_MicroType ||
@@ -1151,6 +1157,7 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
     int code;
 
     if (font->FontType == ft_user_defined ||
+        font->FontType == ft_PDF_user_defined ||
         font->FontType == ft_PCL_user_defined ||
         font->FontType == ft_MicroType ||
         font->FontType == ft_GL2_stick_user_defined ||
@@ -1195,7 +1202,7 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
         if (composite) { /* from process_cmap_text */
             gs_font *subfont = pte1.fstack.items[pte1.fstack.depth].font;
 
-            if (subfont->FontType == ft_user_defined) {
+            if (subfont->FontType == ft_user_defined || subfont->FontType == ft_PDF_user_defined ) {
                 pdf_font_resource_t *pdfont;
 
                 FontType = subfont->FontType;
@@ -1354,7 +1361,7 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
                 did.x += tpt.x;
                 did.y += tpt.y;
             }
-            if (composite && FontType == ft_user_defined)
+            if (composite && (FontType == ft_user_defined || FontType == ft_PDF_user_defined))
                 code = pdf_append_chars(pdev, composite_type3_text, 1, did.x, did.y, composite);
             else
                 code = pdf_append_chars(pdev, pstr->data + index, pte->index - index, did.x, did.y, composite);
