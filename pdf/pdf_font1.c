@@ -19,7 +19,7 @@
 #include "pdf_font1.h"
 #include "pdf_font_types.h"
 
-int pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict, pdf_dict *page_dict)
+int pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict, pdf_dict *page_dict, float point_size)
 {
-    return 0;
+    return_error(gs_error_invalidfont);
 }

@@ -32,7 +32,7 @@
 #include "pdf_xref.h"
 #include "pdf_dict.h"
 #include "pdf_array.h"
-
+#include "pdf_trans.h"
 
 /***********************************************************************************/
 /* Functions to create the various kinds of 'PDF objects', Created objects have a  */
@@ -237,6 +237,9 @@ void pdfi_free_object(pdf_obj *o)
         case PDF_XREF_TABLE:
             pdfi_free_xref_table(o);
             break;
+        case PDF_FONT:
+            pdfi_free_font(o);
+            break;
         default:
             dbgmprintf(o->memory, "!!! Attempting to free unknown obect type !!!\n");
             break;
@@ -350,6 +353,29 @@ static void pdfi_promote_cache_entry(pdf_context *ctx, pdf_obj_cache_entry *cach
     return;
 }
 
+int replace_cache_entry(pdf_context *ctx, pdf_obj *o)
+{
+    xref_entry *entry;
+    pdf_obj_cache_entry *cache_entry;
+
+    /* Limited error checking here, we assume that things like the
+     * validity of the object (eg not a free oobject) have already been handled.
+     */
+
+    entry = &ctx->xref_table->xref[o->object_num];
+    cache_entry = entry->cache;
+
+    if (cache_entry == NULL) {
+        return(pdfi_add_to_cache(ctx, o));
+    } else {
+        if (cache_entry->o != NULL)
+            pdfi_countdown(cache_entry->o);
+        cache_entry->o = o;
+        pdfi_countup(o);
+        pdfi_promote_cache_entry(ctx, cache_entry);
+    }
+    return 0;
+}
 
 /* pdf_dereference returns an object with a reference count of at least 1, this represents the
  * reference being held by the caller (in **object) when we return from this function.
@@ -2821,6 +2847,8 @@ static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_stream *source, 
                     pdfi_clearstack(ctx);
                 break;
             case K2('B','T'):       /* begin text */
+                code = pdfi_BT(ctx);
+                break;
             case K2('B','X'):       /* begin compatibility section */
                 pdfi_pop(ctx, 1);
                 break;
@@ -2868,8 +2896,11 @@ static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_stream *source, 
                 } else
                     pdfi_clearstack(ctx);
                 break;
-            case K3('E','M','C'):   /* end marked content sequence */
             case K2('E','T'):       /* end text */
+                pdfi_pop(ctx, 1);
+                code = pdfi_ET(ctx);
+                break;
+            case K3('E','M','C'):   /* end marked content sequence */
             case K2('E','X'):       /* end compatibility section */
                 pdfi_pop(ctx, 1);
                 break;
@@ -3262,16 +3293,45 @@ int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name, pd
                 return code;
         }
     }
-    code = pdfi_dict_get(ctx, page_dict, "Resources", (pdf_obj **)&Resources);
-    if (code < 0)
-        return code;
 
-    code = pdfi_dict_get(ctx, Resources, (const char *)Type, (pdf_obj **)&TypedResources);
-    pdfi_countdown(Resources);
-    if (code < 0)
-        return code;
+    /* Normally page_dict can't be (or shouldn't be) NULL. However, if we are processing
+     * a TYpe 3 font, then the 'page dict' is the Resources dictionary of that font. If
+     * the font inherits Resources from its page (which it should not) then its possible
+     * that the 'page dict' could be NULL here. We need to guard against that. Its possible
+     * there may be other, similar, cases (eg Patterns within Patterns). In addition we
+     * do need to be able to check the real page dictionary for inhereited resources, and
+     * in the case of a type 3 font BuildChar at least there is no easy way to do that.
+     * So we'll store the page dictionary for the current page in the context as a
+     * last-ditch resource to check.
+     */
+    if (page_dict != NULL) {
+        code = pdfi_dict_get(ctx, page_dict, "Resources", (pdf_obj **)&Resources);
+        if (code < 0)
+            return code;
 
-    code = pdfi_dict_get_no_store_R(ctx, TypedResources, Key, o);
-    pdfi_countdown(TypedResources);
+        code = pdfi_dict_get(ctx, Resources, (const char *)Type, (pdf_obj **)&TypedResources);
+        pdfi_countdown(Resources);
+        if (code < 0)
+            return code;
+
+        code = pdfi_dict_get_no_store_R(ctx, TypedResources, Key, o);
+        pdfi_countdown(TypedResources);
+        return code;
+    }
+
+    if (ctx->CurrentPageDict != NULL) {
+        code = pdfi_dict_get(ctx, ctx->CurrentPageDict, "Resources", (pdf_obj **)&Resources);
+        if (code < 0)
+            return code;
+
+        code = pdfi_dict_get(ctx, Resources, (const char *)Type, (pdf_obj **)&TypedResources);
+        pdfi_countdown(Resources);
+        if (code < 0)
+            return code;
+
+        code = pdfi_dict_get_no_store_R(ctx, TypedResources, Key, o);
+        pdfi_countdown(TypedResources);
+        return code;
+    }
     return code;
 }

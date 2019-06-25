@@ -18,6 +18,8 @@
 #ifndef PDF_TEXT_OPERATORS
 #define PDF_TEXT_OPERATORS
 
+int pdfi_BT(pdf_context *ctx);
+int pdfi_ET(pdf_context *ctx);
 int pdfi_T_star(pdf_context *ctx);
 int pdfi_Tc(pdf_context *ctx);
 int pdfi_Td(pdf_context *ctx);

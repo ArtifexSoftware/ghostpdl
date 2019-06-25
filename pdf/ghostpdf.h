@@ -79,6 +79,8 @@
 
 #include "gxdevsop.h"       /* For special ops */
 
+#include "gstext.h"         /* for gs_text_enum_t */
+
 #ifndef PDF_CONTEXT
 #define PDF_CONTEXT
 
@@ -153,9 +155,12 @@ typedef struct pdf_context_s
 {
     void *instance;
     gs_memory_t *memory;
+
+    /* Bitfields recording whether any errors or warnings were encoutnered */
     pdf_error_flag pdf_errors;
     pdf_warning_flag pdf_warnings;
 
+    /* These are various command line switches, the list is not yet complete */
     int first_page;             /* -dFirstPage= */
     int last_page;              /* -dLastPage= */
     bool pdfdebug;
@@ -180,17 +185,35 @@ typedef struct pdf_context_s
     char *PDFPassword;
     char *PageList;
 
+    gs_text_enum_t *current_text_enum;
+
+    /* The HeaderVersion is the declared version from the PDF header, but this
+     * can be overridden by later trailer dictionaries, so the FinalVersion is
+     * the version as finally read from the file. Note we don't currently use
+     * these for anything, we might in future emit warnings if PDF files use features
+     * inconsistent with the FinalVersion.
+     */
     float HeaderVersion, FinalVersion;
 
-    /* Needed for communicating with the devie. I'm not sure if its legitimate
+    /* Needed for communicating with the device. I'm not sure if its legitimate
      * to keep one, and read/write it all the time, but there's one way to find out....
      */
     gs_c_param_list pdfi_param_list;
-    /* Needed to determine whether we need to reset the device to handle any spots */
+    /* Needed to determine whether we need to reset the device to handle any spots
+     * and whether we need to prescan the PDF file to determine how many spot colourants
+     * (if any) are used in the file.
+     */
     bool spot_capable_device;
 
+    /* We need a gs_font_dir for gs_definefotn() */
+    gs_font_dir * font_dir;
+    /* Obviously we need a graphics state */
     gs_gstate *pgs;
+    /* This is currently used for Patterns, but I suspect needs to be changed to use
+     * 'the enclosing context'
+     */
     gs_gstate *base_pgs;
+
     int preserve_tr_mode; /* for avoiding charpath with pdfwrite */
 
     gs_color_space *gray_lin; /* needed for transparency */
@@ -199,11 +222,13 @@ typedef struct pdf_context_s
     gs_color_space *scrgb;
     gs_color_space *cmyk;
 
-    char *directory;
+    /* The input PDF filename and the stream for it */
     char *filename;
     pdf_stream *main_stream;
-    gs_offset_t main_stream_length;
 
+    /* Length of the main file */
+    gs_offset_t main_stream_length;
+    /* offset to the xref table */
     gs_offset_t startxref;
 
     /* Track whether file is a hybrid. Initially prefer XRefStm but
@@ -215,12 +240,19 @@ typedef struct pdf_context_s
     /* If we've already repaired the file once, and it still fails, don't try to repair it again */
     bool repaired;
 
-    /* Global toggle for transparency */
+    /* This tracks whether the current page uses transparency features */
     bool page_has_transparency;
+    /* The transparencyArray has 1 bit per page determing whether any
+     * given page has transparency operators, it is filled in by
+     * prescanning teh file at startup, unless -dNOTRANSPARENCY is set.
+     */
+    char *PageTransparencyArray;
+
     double PageSize[4];
 
     /* Page level PDF objects */
     pdf_dict *SpotNames;
+    pdf_dict *CurrentPageDict;      /* Last-ditch resource lookup */
 
     /* Document level PDF objects */
     xref_table *xref_table;
@@ -229,7 +261,6 @@ typedef struct pdf_context_s
     pdf_dict *Info;
     pdf_dict *Pages;
     uint64_t num_pages;
-    char *PageTransparencyArray;
 
     /* Optional things from Root */
     pdf_dict *OCProperties;

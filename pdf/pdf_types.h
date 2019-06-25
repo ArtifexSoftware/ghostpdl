@@ -32,6 +32,7 @@ typedef enum pdf_obj_type_e {
     PDF_INDIRECT = 'R',
     PDF_BOOL = 'b',
     PDF_KEYWORD = 'K',
+    PDF_FONT = 'F',
     /* The following aren't PDF object types, but are objects we either want to
      * reference count, or store on the stack.
      */

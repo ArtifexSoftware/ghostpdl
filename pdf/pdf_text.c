@@ -20,6 +20,19 @@
 #include "pdf_image.h"
 #include "pdf_stack.h"
 
+int pdfi_BT(pdf_context *ctx)
+{
+    int code;
+
+    code = gs_moveto(ctx->pgs, 0, 0);
+    return code;
+}
+
+int pdfi_ET(pdf_context *ctx)
+{
+    return 0;
+}
+
 int pdfi_T_star(pdf_context *ctx)
 {
     return 0;
@@ -52,9 +65,36 @@ int pdfi_TD(pdf_context *ctx)
 
 int pdfi_Tj(pdf_context *ctx)
 {
-    if (pdfi_count_stack(ctx) >= 1)
+    int code;
+    gs_text_enum_t *penum;
+    gs_text_params_t text;
+    pdf_string *s = NULL;
+
+    if (pdfi_count_stack(ctx) < 1)
+        return_error(gs_error_stackunderflow);
+
+    s = (pdf_string *)ctx->stack_top[-1];
+    if (s->type != PDF_STRING)
+        return_error(gs_error_typecheck);
+
+    if (ctx->pgs->font == NULL) {
         pdfi_pop(ctx, 1);
-    return 0;
+        return_error(gs_error_invalidfont);
+    }
+
+    text.operation = TEXT_FROM_STRING | TEXT_DO_DRAW | TEXT_RETURN_WIDTH;
+    text.data.chars = (const gs_char *)s->data;
+    text.size = s->length;
+    code = gs_text_begin(ctx->pgs, &text, ctx->memory, &penum);
+    if (code >= 0) {
+        ctx->current_text_enum = penum;
+        code = gs_text_process(penum);
+        gs_text_release(penum, "pdfi_Tj");
+        ctx->current_text_enum = NULL;
+    }
+    pdfi_pop(ctx, 1);
+
+    return code;
 }
 
 int pdfi_TJ(pdf_context *ctx)

@@ -20,6 +20,7 @@
 #include "pdf_loop_detect.h"
 #include "pdf_font.h"
 #include "pdf_stack.h"
+#include "pdf_font_types.h"
 #include "pdf_font0.h"
 #include "pdf_font1.h"
 #include "pdf_font1C.h"
@@ -29,20 +30,76 @@
 
 int pdfi_d0(pdf_context *ctx)
 {
-    if (pdfi_count_stack(ctx) >= 2)
-        pdfi_pop(ctx, 2);
+    int code = 0;
+    double width[2];
+
+    if (pdfi_count_stack(ctx) < 2) {
+        code = gs_note_error(gs_error_stackunderflow);
+        goto d0_error;
+    }
+
+    if (ctx->stack_top[-1]->type != PDF_INT && ctx->stack_top[-1]->type != PDF_REAL) {
+        code = gs_note_error(gs_error_typecheck);
+        goto d0_error;
+    }
+    if (ctx->stack_top[-2]->type != PDF_INT && ctx->stack_top[-2]->type != PDF_REAL) {
+        code = gs_note_error(gs_error_typecheck);
+        goto d0_error;
+    }
+    if(ctx->current_text_enum == NULL) {
+        code = gs_note_error(gs_error_undefined);
+        goto d0_error;
+    }
+
+    if (ctx->stack_top[-1]->type == PDF_INT)
+        width[0] = (double)((pdf_num *)ctx->stack_top[-1])->value.i;
     else
-        pdfi_clearstack(ctx);
+        width[0] = ((pdf_num *)ctx->stack_top[-1])->value.d;
+    if (ctx->stack_top[-2]->type == PDF_INT)
+        width[1] = (double)((pdf_num *)ctx->stack_top[-1])->value.i;
+    else
+        width[1] = ((pdf_num *)ctx->stack_top[-1])->value.d;
+
+    code = gs_text_setcharwidth(ctx->current_text_enum, width);
+    if (code < 0)
+        goto d0_error;
+    pdfi_pop(ctx, 2);
     return 0;
+
+d0_error:
+    pdfi_clearstack(ctx);
+    return code;
 }
 
 int pdfi_d1(pdf_context *ctx)
 {
-    if (pdfi_count_stack(ctx) >= 6)
-        pdfi_pop(ctx, 6);
-    else
-        pdfi_clearstack(ctx);
+    int code = 0, i;
+    double wbox[6];
+
+    if (pdfi_count_stack(ctx) < 2) {
+        code = gs_note_error(gs_error_stackunderflow);
+        goto d1_error;
+    }
+
+    for (i=-6;i < 0;i++) {
+        if (ctx->stack_top[i]->type != PDF_INT && ctx->stack_top[i]->type != PDF_REAL) {
+            code = gs_note_error(gs_error_typecheck);
+            goto d1_error;
+        }
+        if (ctx->stack_top[i]->type == PDF_INT)
+            wbox[i + 6] = (double)((pdf_num *)ctx->stack_top[i])->value.i;
+        else
+            wbox[i + 6] = ((pdf_num *)ctx->stack_top[i])->value.d;
+    }
+    code = gs_text_setcachedevice(ctx->current_text_enum, wbox);
+    if (code < 0)
+        goto d1_error;
+    pdfi_pop(ctx, 6);
     return 0;
+
+d1_error:
+    pdfi_clearstack(ctx);
+    return code;
 }
 
 int pdfi_Tf(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
@@ -106,22 +163,22 @@ int pdfi_Tf(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
             goto Tf_error_o;
 
         if (pdfi_name_is((const pdf_name *)o, "Type0")) {
-            code = pdfi_read_type0_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict);
+            code = pdfi_read_type0_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, point_size);
             if (code < 0)
                 goto Tf_error_o;
         } else {
             if (pdfi_name_is((const pdf_name *)o, "Type1")) {
-                code = pdfi_read_type1_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict);
+                code = pdfi_read_type1_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, point_size);
                 if (code < 0)
                     goto Tf_error_o;
             } else {
                 if (pdfi_name_is((const pdf_name *)o, "Type1C")) {
-                    code = pdfi_read_type1C_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict);
+                    code = pdfi_read_type1C_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, point_size);
                     if (code < 0)
                         goto Tf_error_o;
                 } else {
                     if (pdfi_name_is((const pdf_name *)o, "Type3")) {
-                        code = pdfi_read_type3_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict);
+                        code = pdfi_read_type3_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, point_size);
                         if (code < 0)
                             goto Tf_error_o;
                     } else {
@@ -135,6 +192,8 @@ int pdfi_Tf(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
             }
         }
         pdfi_countdown(o);
+
+        pdfi_countdown(font_dict);
 
         pdfi_pop(ctx, 2);
     }
@@ -151,4 +210,27 @@ Tf_error:
     pdfi_countdown(font_dict);
     pdfi_clearstack(ctx);
     return code;
+}
+
+int pdfi_free_font(pdf_obj *font)
+{
+    pdf_font *f = (pdf_font *)font;
+
+    switch (f->pdfi_font_type) {
+        case e_pdf_font_type0:
+        case e_pdf_font_type1:
+        case e_pdf_font_cff:
+        case e_pdf_font_type3:
+            return pdfi_free_font_type3((pdf_obj *)font);
+            break;
+        case e_pdf_cidfont_type0:
+        case e_pdf_cidfont_type1:
+        case e_pdf_cidfont_type2:
+        case e_pdf_cidfont_type4:
+        case e_pdf_font_truetype:
+        default:
+            return gs_note_error(gs_error_typecheck);
+            break;
+    }
+    return 0;
 }

@@ -24,6 +24,7 @@
 #include "pdf_file.h"
 #include "pdf_loop_detect.h"
 #include "pdf_image.h"
+#include "pdf_font.h"
 
 #include "gsmatrix.h"
 #include "gslparam.h"
@@ -75,11 +76,14 @@ int pdfi_concat(pdf_context *ctx)
 
 int pdfi_gsave(pdf_context *ctx)
 {
-    int code = gs_gsave(ctx->pgs);
+    int code;
+
+    code = gs_gsave(ctx->pgs);
 
     if(code < 0 && ctx->pdfstoponerror)
         return code;
     else {
+        pdfi_countup_current_font(ctx);
         if (ctx->page_has_transparency)
             return gs_push_transparency_state(ctx->pgs);
         return 0;
@@ -94,6 +98,7 @@ int pdfi_grestore(pdf_context *ctx)
      * stream as grestores. If not, log an error
      */
     if (ctx->pgs->level > ctx->current_stream_save.gsave_level) {
+        pdfi_countdown_current_font(ctx);
         code = gs_grestore(ctx->pgs);
 
         if(code < 0 && ctx->pdfstoponerror)

@@ -946,7 +946,7 @@ int pdfi_apply_SubFileDecode_filter(pdf_context *ctx, int EODCount, pdf_name *EO
 {
     int code;
     stream_SFD_state state;
-    stream *s = source->s, *new_s = NULL;
+    stream *new_s = NULL;
     int min_size = EODString->length;
 
     *new_stream = NULL;

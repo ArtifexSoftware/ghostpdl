@@ -27,6 +27,7 @@
 #include "stream.h"
 #include "strmio.h"
 #include "pdf_colour.h"
+#include "pdf_font.h"
 
 /* This routine is slightly misnamed, as it also checks ColorSpaces for spot colours.
  * This is done at the page level, so we maintain a dictionary of the spot colours
@@ -1557,6 +1558,10 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
         return code;
     }
 
+    pdfi_countdown(ctx->CurrentPageDict);
+    ctx->CurrentPageDict = page_dict;
+    pdfi_countup(ctx->CurrentPageDict);
+
     code = gs_setstrokeconstantalpha(ctx->pgs, 1.0);
     code = gs_setfillconstantalpha(ctx->pgs, 1.0);
     code = gs_setalphaisshape(ctx->pgs, 0);
@@ -1634,6 +1639,9 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
     while (ctx->pgs->level > ctx->current_stream_save.gsave_level)
         gs_grestore(ctx->pgs);
     pdfi_clearstack(ctx);
+
+    pdfi_countdown(ctx->CurrentPageDict);
+    ctx->CurrentPageDict = NULL;
 
     if (code < 0) {
         if (ctx->page_has_transparency) {
@@ -2104,7 +2112,9 @@ pdf_context *pdfi_create_context(gs_memory_t *pmem)
 
     memset(ctx, 0, sizeof(pdf_context));
 
-    ctx->stack_bot = (pdf_obj **)gs_alloc_bytes(pmem->non_gc_memory, INITIAL_STACK_SIZE * sizeof (pdf_obj *), "pdf_imp_allocate_interp_stack");
+    ctx->memory = pmem->non_gc_memory;
+
+    ctx->stack_bot = (pdf_obj **)gs_alloc_bytes(ctx->memory, INITIAL_STACK_SIZE * sizeof (pdf_obj *), "pdf_imp_allocate_interp_stack");
     if (ctx->stack_bot == NULL) {
         gs_free_object(pmem->non_gc_memory, ctx, "pdf_create_context");
         gs_gstate_free(pgs);
@@ -2124,15 +2134,25 @@ pdf_context *pdfi_create_context(gs_memory_t *pmem)
         return NULL;
     }
 
-    code = gsicc_init_iccmanager(pgs);
-    if (code < 0) {
+    ctx->font_dir = gs_font_dir_alloc2(ctx->memory, ctx->memory);
+    if (ctx->font_dir == NULL) {
+        gs_free_object(pmem->non_gc_memory, pmem->gs_lib_ctx->font_dir, "pdf_create_context");
         gs_free_object(pmem->non_gc_memory, ctx->stack_bot, "pdf_create_context");
         gs_free_object(pmem->non_gc_memory, ctx, "pdf_create_context");
         gs_gstate_free(pgs);
         return NULL;
     }
 
-    ctx->memory = pmem->non_gc_memory;
+    code = gsicc_init_iccmanager(pgs);
+    if (code < 0) {
+        gs_free_object(pmem->non_gc_memory, ctx->font_dir, "pdf_create_context");
+        gs_free_object(pmem->non_gc_memory, pmem->gs_lib_ctx->font_dir, "pdf_create_context");
+        gs_free_object(pmem->non_gc_memory, ctx->stack_bot, "pdf_create_context");
+        gs_free_object(pmem->non_gc_memory, ctx, "pdf_create_context");
+        gs_gstate_free(pgs);
+        return NULL;
+    }
+
     ctx->pgs = pgs;
     /* Declare PDL client support for high level patterns, for the benefit
      * of pdfwrite and other high-level devices
@@ -2244,6 +2264,8 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
     rc_decrement_cs(ctx->scrgb, "pdfi_free_context");
 
     if(ctx->pgs != NULL) {
+        if (ctx->pgs->font)
+            pdfi_countdown_current_font(ctx);
         gs_gstate_free(ctx->pgs);
         ctx->pgs = NULL;
     }
@@ -2256,9 +2278,12 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
     if (ctx->pdfi_param_list.head != NULL)
         gs_c_param_list_release(&ctx->pdfi_param_list);
 
+    gs_free_object(pmem->non_gc_memory, ctx->font_dir, "pdf_create_context");
+    gs_free_object(pmem->non_gc_memory, pmem->gs_lib_ctx->font_dir, "pdf_create_context");
+
     if (ctx->cache_entries != 0) {
-        pdf_obj_cache_entry *entry = ctx->cache_LRU, *next, *prev;
         int count;
+        pdf_obj_cache_entry *entry = ctx->cache_LRU, *prev, *next;
 
 #ifdef DEBUG
         bool stop = true;

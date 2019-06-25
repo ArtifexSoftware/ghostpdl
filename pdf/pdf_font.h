@@ -15,11 +15,35 @@
 
 /* Font operations for the PDF interpreter */
 
+#include "pdf_font_types.h"
+#include "pdf_stack.h"
+
 #ifndef PDF_FONT_OPERATORS
 #define PDF_FONT_OPERATORS
 
 int pdfi_d0(pdf_context *ctx);
 int pdfi_d1(pdf_context *ctx);
 int pdfi_Tf(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict);
+int pdfi_free_font(pdf_obj *font);
+
+static inline void pdfi_countup_current_font(pdf_context *ctx)
+{
+    pdf_font *font;
+
+    if (ctx->pgs->font != NULL) {
+        font = (pdf_font *)ctx->pgs->font->client_data;
+        pdfi_countup(font);
+    }
+}
+
+static inline void pdfi_countdown_current_font(pdf_context *ctx)
+{
+    pdf_font *font;
+
+    if (ctx->pgs->font != NULL) {
+        font = (pdf_font *)ctx->pgs->font->client_data;
+        pdfi_countdown(font);
+    }
+}
 
 #endif
