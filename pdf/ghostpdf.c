@@ -2319,7 +2319,7 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
             next = entry->next;
             count = entry->o->refcnt;
             dbgmprintf1(ctx->memory, "CLEANUP cache entry obj %ld", entry->o->object_num);
-            dbgmprintf1(ctx->memory, " has refcnt %ld\n", count);
+            dbgmprintf1(ctx->memory, " has refcnt %d\n", count);
             entry = next;
         }
 #else

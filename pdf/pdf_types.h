@@ -44,7 +44,7 @@ typedef enum pdf_obj_type_e {
 
 #if REFCNT_DEBUG
 #define pdf_obj_common \
-    void *ctx;\
+    void *refcnt_ctx;                     \
     pdf_obj_type type;\
     char flags;\
     unsigned int refcnt;\

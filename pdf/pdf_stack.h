@@ -55,7 +55,7 @@ static inline void pdfi_countdown_impl(pdf_obj *o)
 #endif
         if (o->refcnt == 0) {
 #if REFCNT_DEBUG
-            pdf_context *ctx = (pdf_context *)o->ctx;
+            pdf_context *ctx = (pdf_context *)o->refcnt_ctx;
             if (ctx != NULL && ctx->cache_entries != 0) {
                 pdf_obj_cache_entry *entry = ctx->cache_LRU, *next;
 
