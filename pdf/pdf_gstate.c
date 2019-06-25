@@ -625,9 +625,11 @@ static int GS_BM(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict
 
     for (p = blend_mode_names; *p; ++p) {
         if (pdfi_name_is(n, *p)) {
+            pdfi_countdown(n);
             return gs_setblendmode(ctx->pgs, p - blend_mode_names);
         }
     }
+    pdfi_countdown(n);
     return_error(gs_error_undefined);
 }
 
