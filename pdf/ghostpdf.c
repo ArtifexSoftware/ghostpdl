@@ -2309,6 +2309,7 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
                     if (next)
                         next->previous = prev;
                     ctx->cache_entries--;
+                    gs_free_object(ctx->memory, entry, "pdfi_free_context, free LRU");
                 }
                 entry = next;
             }
