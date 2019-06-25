@@ -1852,6 +1852,27 @@ AC_SUBST(JPXDIR)
 AC_SUBST(SHARE_JPX)
 AC_SUBST(JPXDEVS)
 
+AC_ARG_WITH([cal], AC_HELP_STRING([--without-cal],
+    [do not try to use the CAL library for acceleration]))
+
+
+CALSRCDIR=$srcdir/cal
+if test x$with_cal != xno; then
+  AC_MSG_CHECKING([for local CAL library source])
+  if test -d $srcdir/cal; then
+    AC_MSG_RESULT([yes])
+    WITH_CAL=1
+  else
+    WITH_CAL=0
+    AC_MSG_RESULT([no])
+  fi
+else
+  WITH_CAL=0
+fi
+
+AC_SUBST(CALSRCDIR)
+AC_SUBST(WITH_CAL)
+
 dnl check if we can/should build the gtk loader
 AC_ARG_ENABLE([gtk], AC_HELP_STRING([--disable-gtk],
     [Do not build the gtk loader]))

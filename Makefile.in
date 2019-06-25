@@ -63,7 +63,6 @@ GPDLSRCDIR=@srcdir@/gpdl
 GPDLGENDIR=./$(BUILDDIRPREFIX)@OBJDIR_BSDMAKE_WORKAROUND@
 GPDLOBJDIR=./$(BUILDDIRPREFIX)@OBJDIR_BSDMAKE_WORKAROUND@
 
-
 CONTRIBDIR=@srcdir@/contrib
 
 # Do not edit the next group of lines.
@@ -207,6 +206,10 @@ DEBUGDIRPREFIX=debug
 MEMENTODIRPREFIX=mem
 SANITIZEDIRPREFIX=san
 PGDIRPREFIX=pg
+
+# Are we include the CAL library?
+WITH_CAL=@WITH_CAL@
+CALSRCDIR=@CALSRCDIR@
 
 # Define whether to compile in the FreeType library, and if so, where
 # the source tree is location. Otherwise, what library name to use
@@ -563,7 +566,7 @@ FEATURE_DEVS=$(GLD)pipe.dev $(GLD)gsnogc.dev $(GLD)htxlib.dev $(GLD)psl3lib.dev 
 	     $(GLD)seprlib.dev $(GLD)translib.dev $(GLD)cidlib.dev $(GLD)psf0lib.dev $(GLD)psf1lib.dev\
              $(GLD)psf2lib.dev $(GLD)lzwd.dev $(GLD)sicclib.dev \
              $(GLD)sjbig2.dev $(GLD)sjpx.dev $(GLD)ramfs.dev \
-             $(GLD)pwgd.dev
+             $(GLD)pwgd.dev $(GLD)siscale.dev
 
 #FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev
 #FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)ttfont.dev $(GLD)pipe.dev
@@ -732,6 +735,7 @@ include $(GLSRCDIR)/jbig2.mak
 include $(GLSRCDIR)/ldf_jb2.mak
 include $(GLSRCDIR)/lwf_jp2.mak
 include $(GLSRCDIR)/openjpeg.mak
+include $(GLSRCDIR)/cal.mak
 
 include $(GLSRCDIR)/jpegxr.mak
 include $(GLSRCDIR)/expat.mak

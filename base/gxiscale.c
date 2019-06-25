@@ -338,6 +338,15 @@ gs_image_class_0_interpolate(gx_image_enum * penum, irender_proc_t *render_fn)
                                                                dw / penum->Width));
         iss.LeftMarginOut = fixed2int_pixround_perfect((fixed)((int64_t)(penum->rrect.x - penum->rect.x) *
                                                                dw / penum->Width));
+        iss.TopMarginOut2 = fixed2int_pixround_perfect((fixed)((int64_t)penum->rrect.y *
+                                                              dh / penum->Height));
+        iss.PatchHeightOut2 = fixed2int_pixround_perfect((fixed)((int64_t)(penum->rrect.y + penum->rrect.h) *
+                                                                dh / penum->Height))
+                           - iss.TopMarginOut2;
+        iss.pad_y = iss.TopMarginOut2
+                  - fixed2int_pixround_perfect(
+                                 (fixed)((int64_t)penum->rect.y *
+                                         dh / penum->Height));
     } else {
         fixed dw = any_abs(penum->dst_width);
         fixed dh = any_abs(penum->dst_height);
@@ -362,6 +371,12 @@ gs_image_class_0_interpolate(gx_image_enum * penum, irender_proc_t *render_fn)
                                                                dh / penum->Width));
         iss.LeftMarginOut = fixed2int_pixround_perfect((fixed)((int64_t)(penum->rrect.x - penum->rect.x) *
                                                                dh / penum->Width));
+        iss.TopMarginOut2 = fixed2int_pixround_perfect((fixed)((int64_t)penum->rrect.y *
+                                                              dw / penum->Height));
+        iss.PatchHeightOut2 = fixed2int_pixround_perfect((fixed)((int64_t)(penum->rrect.y + penum->rrect.h) *
+                                                                dw / penum->Height))
+                           - iss.TopMarginOut2;
+        iss.pad_y = 0;
     }
     iss.PatchWidthOut = any_abs(iss.PatchWidthOut);
     if (iss.LeftMarginOut + iss.PatchWidthOut >= iss.WidthOut) {

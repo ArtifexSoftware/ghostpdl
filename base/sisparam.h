@@ -100,17 +100,17 @@
  *
  * <--------------------EntireWidthOut---------------------->
  * +--------------------------------------------------------+  ^
- * | Conceptual Destination Image                 ^         |  |
- * |                                              |         |  |
- * |                                             DY         |  |
- * |                                              |         |  |
- * |<-DX-><---------------WidthOut--------------> v         |  |
- * |      +-------------------------------------+ ^         |  |
- * |      |                    ^                | |         | EntireHeightOut
- * |      |                    |                | |         |  |
- * |      |               TopMarginOut          | |         |  |
- * |      |                    |                | |         |  |
- * |      |                    v                | |         |  |
+ * | Conceptual Destination Image       ^         ^         |  |
+ * |                                    |         |         |  |
+ * |                                    |        DY         |  |
+ * |                                    |         |         |  |
+ * |<-DX-><---------------WidthOut------|-------> v         |  |
+ * |      +-----------------------------|-------+ ^         |  |
+ * |      |                 ^           |       | |         | EntireHeightOut
+ * |      |                 |           |       | |         |  |
+ * |      |         TopMarginOut  TopMarginOut2 | |         |  |
+ * |      |                 |           |       | |         |  |
+ * |      |                 v           v       | |         |  |
  * |      |                 +-penum->rrect*--+  | |         |  |
  * |      |                 |    ^           |  | HeightOut |  |
  * |      |                 |    |           |  | |         |  |
@@ -160,6 +160,9 @@ typedef struct stream_image_scale_params_s {
     int LeftMarginOut;
     int TopMarginIn;
     int TopMarginOut;
+    int TopMarginOut2;
+    int PatchHeightOut2;
+    int pad_y;
     int Active;
     gx_dda_fixed_point scale_dda;	/* used to scale limited interpolation up to actual size */
 } stream_image_scale_params_t;

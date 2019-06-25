@@ -678,6 +678,7 @@ include $(GLSRCDIR)/jbig2.mak
 include $(GLSRCDIR)/ldf_jb2.mak
 include $(GLSRCDIR)/lwf_jp2.mak
 include $(GLSRCDIR)/openjpeg.mak
+include $(GLSRCDIR)/cal.mak
 
 include $(GLSRCDIR)/jpegxr.mak
 include $(GLSRCDIR)/expat.mak

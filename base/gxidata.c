@@ -22,6 +22,9 @@
 #include "gxcpath.h"
 #include "gximage.h"
 #include "gsicc_cache.h"
+#ifdef WITH_CAL
+#include "cal.h"
+#endif
 
 /* Forward declarations */
 static void update_strip(gx_image_enum *penum);
@@ -519,6 +522,15 @@ gx_image1_end_image(gx_image_enum_common_t * info, bool draw_last)
     }
     gs_free_object(mem, penum->line, "image line");
     gs_free_object(mem, penum->buffer, "image buffer");
+
+#ifdef WITH_CAL
+    if (penum->cal_ht != NULL) {
+        cal_halftone_fin(penum->cal_ht, mem->non_gc_memory);
+    }
+    if (penum->cal_ctx != NULL) {
+        cal_fin(penum->cal_ctx, mem->non_gc_memory);
+    }
+#endif
     gx_image_free_enum(&info);
     return 0;
 }

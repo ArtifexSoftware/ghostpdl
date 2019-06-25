@@ -294,6 +294,11 @@ struct gx_image_enum_s {
     gx_image_icc_setup_t icc_setup;
     bool use_cie_range;   /* Needed potentially if CS was PS CIE based */
     void *tpr_state;
+    /* The following 2 pointers are only used if the CAL library is
+     * in place, but it's too much makefile upheaval to only have them
+     * here in CAL builds, so we live with them in all builds. */
+    void *cal_ht;   /* CAL halftone state pointer */
+    void *cal_ctx;  /* CAL context pointer */
 };
 
 /* Enumerate the pointers in an image enumerator. */

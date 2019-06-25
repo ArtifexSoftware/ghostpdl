@@ -59,7 +59,139 @@ iclass_proc(gs_image_class_4_color);
 
 static irender_proc(image_render_color_DeviceN);
 static irender_proc(image_render_color_icc_tpr);
+#ifndef WITH_CAL
 static irender_proc(image_render_color_thresh);
+#else
+static irender_proc(image_render_color_ht_cal);
+
+static void *
+cal_do_malloc(void *opaque, size_t size)
+{
+    gs_memory_t *mem = (gs_memory_t *)opaque;
+    return gs_alloc_bytes(mem, size, "cal_do_malloc");
+}
+
+static void *
+cal_do_realloc(void *opaque, void *ptr, size_t newsize)
+{
+    gs_memory_t *mem = (gs_memory_t *)opaque;
+    return gs_resize_object(mem, ptr, newsize, "cal_do_malloc");
+}
+
+static void
+cal_do_free(void *opaque, void *ptr)
+{
+    gs_memory_t *mem = (gs_memory_t *)opaque;
+    gs_free_object(mem, ptr, "cal_do_malloc");
+}
+
+static cal_allocators cal_allocs =
+{
+    cal_do_malloc,
+    cal_do_realloc,
+    cal_do_free
+};
+
+static void
+color_halftone_callback(cal_halftone_data_t *ht, void *arg)
+{
+    gx_device *dev = arg;
+    gx_color_index dev_white = gx_device_white(dev);
+    gx_color_index dev_black = gx_device_black(dev);
+
+    if (dev->is_planar) {
+        (*dev_proc(dev, copy_planes)) (dev, ht->data, ht->x + (ht->offset_x<<3), ht->raster,
+            gx_no_bitmap_id, ht->x, ht->y, ht->w, ht->h,
+            ht->plane_raster);
+    } else {
+        (*dev_proc(dev, copy_mono)) (dev, ht->data, ht->x + (ht->offset_x<<3), ht->raster,
+            gx_no_bitmap_id, ht->x, ht->y, ht->w, ht->h, dev_white,
+            dev_black);
+    }
+}
+
+static cal_halftone*
+color_halftone_init(gx_image_enum *penum)
+{
+    void *callback;
+    void *args;
+    int ox;
+    int dd_curr_y;
+    int dev_width;
+    cal_halftone *cal_ht = NULL;
+    gx_dda_fixed dda_ht;
+    cal_context *ctx;
+    int k;
+    gx_ht_order *d_order;
+    int code;
+    byte *cache = (penum->color_cache != NULL ? penum->color_cache->device_contone : NULL);
+    cal_matrix matrix;
+    int clip_x, clip_y;
+
+    if (!gx_device_must_halftone(penum->dev))
+        return NULL;
+
+    if (penum->pgs == NULL || penum->pgs->dev_ht == NULL)
+        return NULL;
+    ctx = cal_init(&cal_allocs, penum->memory->non_gc_memory);
+    if (ctx == NULL)
+        return NULL;
+    penum->cal_ctx = ctx;
+    dda_ht = penum->dda.pixel0.x;
+    if (penum->dxx > 0)
+        dda_translate(dda_ht, -fixed_epsilon);
+    ox = dda_current(dda_ht);
+    dd_curr_y = dda_current(penum->dda.pixel0.y);
+    dev_width = gxht_dda_length(&dda_ht, penum->rect.w);
+    matrix.xx = penum->matrix.xx;
+    matrix.xy = penum->matrix.xy;
+    matrix.yx = penum->matrix.yx;
+    matrix.yy = penum->matrix.yy;
+    matrix.tx = penum->matrix.tx + matrix.xx * penum->rect.x + matrix.yx * penum->rect.y;
+    matrix.ty = penum->matrix.ty + matrix.xy * penum->rect.x + matrix.yy * penum->rect.y;
+    clip_x = fixed2int(penum->clip_outer.p.x);
+    clip_y = fixed2int(penum->clip_outer.p.y);
+    cal_ht = cal_halftone_init(ctx,
+                               penum->memory->non_gc_memory,
+                               penum->rect.w,
+                               penum->rect.h,
+                               &matrix,
+                               penum->dev->color_info.num_components,
+                               cache,
+                               clip_x,
+                               clip_y,
+                               fixed2int_ceiling(penum->clip_outer.q.x) - clip_x,
+                               fixed2int_ceiling(penum->clip_outer.q.y) - clip_y,
+                               penum->adjust);
+    if (cal_ht == NULL)
+        goto fail;
+
+    for (k = 0; k < penum->pgs->dev_ht->num_comp; k++) {
+        d_order = &(penum->pgs->dev_ht->components[k].corder);
+        code = gx_ht_construct_threshold(d_order, penum->dev, penum->pgs, k);
+        if (code < 0)
+            goto fail;
+        if (cal_halftone_add_screen(ctx,
+                                    penum->memory->non_gc_memory,
+                                    cal_ht,
+                                    penum->pgs->dev_ht->components[k].corder.threshold_inverted,
+                                    penum->pgs->dev_ht->components[k].corder.width,
+                                    penum->pgs->dev_ht->components[k].corder.full_height,
+                                    -penum->pgs->screen_phase[k].x,
+                                    -penum->pgs->screen_phase[k].y,
+                                    penum->pgs->dev_ht->components[k].corder.threshold) < 0)
+            goto fail;
+    }
+
+    return cal_ht;
+
+fail:
+    cal_halftone_fin(cal_ht, penum->memory->non_gc_memory);
+    cal_fin(ctx, penum->memory->non_gc_memory);
+    penum->cal_ctx = NULL;
+    return NULL;
+}
+#endif
 
 static int image_skip_color_icc_tpr(gx_image_enum *penum, gx_device *dev);
 
@@ -190,6 +322,14 @@ gs_image_class_4_color(gx_image_enum * penum, irender_proc_t *render_fn)
         if ((bpc == 1) && transfer_is_monotonic &&
             (penum->dev->color_info.num_components == 1 || penum->dev->is_planar) &&
             penum->bps == 8) {
+#ifdef WITH_CAL
+            penum->cal_ht = color_halftone_init(penum);
+            if (penum->cal_ht != NULL)
+            {
+                penum->skip_render = image_render_color_ht_cal;
+                return code;
+            }
+#else
             code = gxht_thresh_image_init(penum);
             if (code == 0) {
                  /* NB: transfer function is pickled into the threshold arrray */
@@ -197,6 +337,7 @@ gs_image_class_4_color(gx_image_enum * penum, irender_proc_t *render_fn)
                  *render_fn = &image_render_color_thresh;
                  return code;
             }
+#endif
         }
     }
     {
@@ -469,9 +610,41 @@ image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w,
     return 0;
 }
 
+#ifdef WITH_CAL
+static int
+image_render_color_ht_cal(gx_image_enum *penum, const byte *buffer, int data_x,
+                          uint w, int h, gx_device * dev)
+{
+    const byte *psrc = buffer + data_x;
+    int code = 0;
+    int spp_cm = 0;
+    byte *psrc_cm = NULL, *psrc_cm_start = NULL;
+    byte *bufend = NULL;
+    byte *input[GX_DEVICE_COLOR_MAX_COMPONENTS];    /* to ensure 128 bit boundary */
+
+    if (h == 0 || penum->line_size == 0)      /* line_size == 0, nothing to do */
+        return 0;
+
+    /* Get the buffer into the device color space */
+    code = image_color_icc_prep(penum, psrc, w, dev, &spp_cm, &psrc_cm,
+                                &psrc_cm_start,  &bufend, true);
+    if (code < 0)
+        return code;
+
+    code = cal_halftone_process_planar(penum->cal_ht, penum->memory->non_gc_memory,
+                                       input, halftone_callback, dev);
+
+    /* Free cm buffer, if it was used */
+    if (psrc_cm_start != NULL) {
+        gs_free_object(penum->pgs->memory, (byte *)psrc_cm_start,
+                       "image_render_color_thresh");
+    }
+    return code;
+}
+#else
 static int
 image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int data_x,
-                   uint w, int h, gx_device * dev)
+                          uint w, int h, gx_device * dev)
 {
     gx_image_enum *penum = penum_orig; /* const within proc */
     image_posture posture = penum->posture;
@@ -884,7 +1057,7 @@ flush:
     thresh_align = penum->thresh_buffer + offset_threshold;
     code = gxht_thresh_planes(penum, xrun, dest_width, dest_height,
                               thresh_align, dev, offset_contone,
-                               contone_stride);
+                              contone_stride);
     /* Free cm buffer, if it was used */
     if (psrc_cm_start != NULL) {
         gs_free_object(penum->pgs->memory, (byte *)psrc_cm_start,
@@ -892,9 +1065,10 @@ flush:
     }
     return code;
 }
+#endif
 
 /* Render a color image with 8 or fewer bits per sample using ICC profile. */
-static int 
+static int
 image_skip_color_icc_tpr(gx_image_enum *penum, gx_device *dev)
 {
     transform_pixel_region_data data;

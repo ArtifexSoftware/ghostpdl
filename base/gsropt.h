@@ -20,6 +20,9 @@
 #  define gsropt_INCLUDED
 
 #include "stdpre.h"
+#ifdef HAVE_SSE2
+#include <emmintrin.h>
+#endif
 
 /*
  * This file defines the types for some library extensions that are
@@ -352,6 +355,10 @@ struct rop_run_op_s {
     const void *tcolors;
     void (*release)(rop_run_op *);
     void *opaque;
+#ifdef HAVE_SSE2
+    __m128i mm_s;
+    __m128i mm_t;
+#endif
 };
 
 /* Flags for passing into rop_get_run_op */
