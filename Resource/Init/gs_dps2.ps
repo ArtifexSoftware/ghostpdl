@@ -220,21 +220,21 @@ currentdict /.fixcurrenthalftonescreen undef
     .UserObjects 3 .argindex 1 add 10 .max .localvmarray put
   } ifelse
   .UserObjects get 2 .argindex 2 index put pop pop
-} bind odef
+} .bind odef
 /execuserobject {		% <index> execuserobject -
   dup type /integertype ne {
     % Adobe validates the argument before accessing UserObjects - CET 31-03
     /execuserobject .systemvar /typecheck signalerror
   } if
   .UserObjects get 1 .argindex get exch pop exec
-} bind odef
+} .bind odef
 /undefineuserobject {		% <index> undefineuserobject -
   dup type /integertype ne {
     % Adobe validates the argument before accessing UserObjects - CET 31-11
     /undefineuserobject .systemvar /typecheck signalerror
   } if
   .UserObjects get 1 .argindex //null put pop
-} bind odef
+} .bind odef
 currentdict /.UserObjects undef
 
 % ------ Cache control ------ %

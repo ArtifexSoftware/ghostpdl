@@ -90,7 +90,7 @@ dup 7 -1 put
    {
      ofile
    } ifelse
-} bind //.odef exec
+} .bind //.odef exec
 currentdict /ofile undef
 
 % One QL job (23-12B.PS) effectively does:
@@ -113,7 +113,7 @@ currentdict /ofile undef
     {
       osetfileposition
     } ifelse
-} bind //.odef exec
+} .bind //.odef exec
 currentdict /osetfileposition undef
 
 setglobal

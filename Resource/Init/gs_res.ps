@@ -240,10 +240,10 @@ def
         % Stack: <template> <proc> <scratch> <category> proc
         exch pop		% pop the category
         exec end
-} bind executeonly def
+} .bind executeonly def
 /resourceforall {	% <template> <proc> <scratch> <category> resourceforall1 -
         //resourceforall1 exec		% see above
-} bind executeonly odef
+} .bind executeonly odef
 /resourcestatus {	% <key> <category> resourcestatus <status> <size> true
                         % <key> <category> resourcestatus false
   {
@@ -259,7 +259,7 @@ def
     % for error reporting. CET 23-26
     /resourcestatus cvx $error /errorname get signalerror
   } if
-} bind executeonly odef
+} .bind executeonly odef
 /undefineresource {	% <key> <category> undefineresource -
   0 .argindex type /nametype ne {
     /undefinedresource cvx /typecheck signaloperror
@@ -272,7 +272,7 @@ def
     % here but uses operator for the errors above. CET 23-33
     /undefineresource cvx $error /errorname get signalerror
   } if
-} bind executeonly odef
+} .bind executeonly odef
 
 % Define the system parameters used for the Generic implementation of
 % ResourceFileName.
@@ -458,7 +458,7 @@ status {
            { 2 copy .Instances exch exec
            }
           if .LocalInstances exch exec
-        } bind executeonly
+        } .bind executeonly
 % Because of some badly designed code in Adobe's CID font downloader that
 % makes findresource and resourcestatus deliberately inconsistent with each
 % other, the default FindResource must not call ResourceStatus if there is
@@ -484,7 +484,7 @@ status {
            /findresource cvx //.undefinedresource exec
           } ifelse
         } ifelse
-} bind executeonly
+} .bind executeonly
 % Because of some badly designed code in Adobe's CID font downloader, the
 % definition of ResourceStatus for Generic and Font must be the same (!).
 % We patch around this by using an intermediate .ResourceFileStatus procedure.
@@ -494,7 +494,7 @@ status {
         } {
           .ResourceFileStatus
         } ifelse
-} bind executeonly
+} .bind executeonly
 /.ResourceFileStatus {
         .ResourceFile { closefile 2 -1 //true } { pop //false } ifelse
 } bind executeonly
@@ -555,7 +555,7 @@ status {
         3 2 roll pop % args
         { forall } 0 get
         currentdict end 2 .execn begin
-} bind executeonly
+} .bind executeonly
 
 /ResourceFileName  {                          % /in (scr) --> (p/c/n)
   exch //.rfnstring cvs                       % (scr) (n)
@@ -587,7 +587,7 @@ status {
     ifelse
   } ifelse
   exch copy                                   % (p/c/n)
-} bind executeonly
+} .bind executeonly
 
                 % Additional entries
 
@@ -1012,7 +1012,7 @@ currentdict /.fontstatusaux .undef
 /ResourceForAll {
         { //.scannextfontdir exec not { exit } if } loop
         /Generic /Category findresource /ResourceForAll get exec
-} bind executeonly
+} .bind executeonly
 /.ResourceFileStatus {
         .fontstatus { pop 2 -1 //true } { pop //false } ifelse
 } bind executeonly
@@ -1176,8 +1176,7 @@ end				% level2dict
     /.default_resource_dir
     /.resource_dir_name
     /.fonttempstring /.scannextfontdir % from gs_fonts.ps
-]
-{systemdict exch .forceundef} forall
+] systemdict .undefinternalnames
 
 [
     /.definedefaultcs
@@ -1192,5 +1191,5 @@ end				% level2dict
     /.resourceexec
     /.undefinedresource
     /.vmused
-]
-{level2dict exch .forceundef} forall
+] dup level2dict .undefinternalnames
+systemdict .undefinternalnames

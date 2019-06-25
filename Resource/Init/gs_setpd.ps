@@ -674,7 +674,7 @@ SETPDDEBUG { (Result of putting.) = pstack flush } if
      } ifelse
   }
   forall pop
-} bind executeonly odef
+} .bind executeonly odef
 
 currentdict /0Policy undef
 currentdict /1Policy undef
@@ -1003,7 +1003,7 @@ SETPDDEBUG { (Installing.) = pstack flush } if
     //.postinstall exec
   } ifelse
   setglobal           % return to original VM allocation mode
-} bind executeonly odef
+} .bind executeonly odef
 
 % We break out the code after calling the Install procedure into a
 % separate procedure, since it is executed even if Install causes an error.
@@ -1035,9 +1035,10 @@ SETPDDEBUG { (Installing.) = pstack flush } if
     /.makecurrentpagedevice
     /.mergespecial
     /.requiredattrs
+    /.applypolicies
 %    /.uninstallpagedevice % (called from C code)
-]
-{currentdict exch .forceundef} forall
+] dup currentdict .undefinternalnames
+systemdict .undefinternalnames
 
 end				% level2dict
 .setlanguagelevel
