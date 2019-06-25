@@ -2988,14 +2988,20 @@ static int install_charproc_accumulator(gx_device_pdf *pdev, gs_text_enum_t *pte
 
         /* Choose a character code to use with the charproc. */
         code = pdf_choose_output_char_code(pdev, penum, &penum->output_char_code);
-        if (code < 0)
+        if (code < 0) {
+            (void)pdf_exit_substream(pdev);
             return code;
+        }
         code = pdf_attached_font_resource(pdev, penum->current_font, &pdfont, NULL, NULL, NULL, NULL);
-        if (code < 0)
+        if (code < 0) {
+            (void)pdf_exit_substream(pdev);
             return code;
+        }
         pdev->font3 = (pdf_resource_t *)pdfont;
-        if (pdfont == 0L)
+        if (pdfont == 0L) {
+            (void)pdf_exit_substream(pdev);
             return gs_note_error(gs_error_invalidfont);
+        }
 
         pdev->substream_Resources = pdfont->u.simple.s.type3.Resources;
         penum->charproc_accum = true;
@@ -3331,6 +3337,7 @@ pdf_text_process(gs_text_enum_t *pte)
                 pdev->pte = (gs_text_enum_t *)penum; /* CAUTION: See comment in gdevpdfx.h . */
                 code = gs_text_process(pte_default);
                 if (code < 0) {
+                    (void)complete_charproc(pdev, pte, pte_default, penum, false);
                     gs_grestore(pgs);
                     return code;
                 }
@@ -3347,6 +3354,7 @@ pdf_text_process(gs_text_enum_t *pte)
                 penum->returned.current_glyph = pte_default->returned.current_glyph;
                 code = pdf_choose_output_char_code(pdev, penum, &penum->output_char_code);
                 if (code < 0) {
+                    (void)complete_charproc(pdev, pte, pte_default, penum, false);
                     gs_grestore(pgs);
                     return code;
                 }
