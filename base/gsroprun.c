@@ -153,6 +153,8 @@ static void invert_rop_run1(rop_run_op *op, byte *d, int len)
 #define TEMPLATE_NAME          invert_rop_run8
 #define SPECIFIC_ROP           0x55
 #define SPECIFIC_CODE(O,D,S,T) do { O = ~D; } while (0)
+#define MM_SETUP() __m128i mm_constant_ones = _mm_cmpeq_epi32(mm_constant_ones, mm_constant_ones);
+#define MM_SPECIFIC_CODE(O,D,S,T) do { _mm_storeu_si128(O,_mm_xor_si128(_mm_loadu_si128(D),mm_constant_ones)); } while (0 == 1)
 #define S_CONST
 #define T_CONST
 #include "gsroprun8.h"
@@ -408,6 +410,7 @@ static void xor_rop_run1_const_t(rop_run_op *op, byte *d, int len)
 #define TEMPLATE_NAME          xor_rop_run8_const_st
 #define SPECIFIC_ROP           0x66
 #define SPECIFIC_CODE(O,D,S,T) do { O = D^S; } while (0)
+#define MM_SPECIFIC_CODE(O,D,S,T) do { _mm_storeu_si128(O,_mm_xor_si128(_mm_loadu_si128(D),S)); } while (0 == 1)
 #define S_CONST
 #define T_CONST
 #include "gsroprun8.h"
@@ -534,6 +537,7 @@ static void sets_rop_run1(rop_run_op *op, byte *d, int len)
 #define TEMPLATE_NAME          sets_rop_run8
 #define SPECIFIC_ROP           0xCC
 #define SPECIFIC_CODE(O,D,S,T) do { O = S; } while (0)
+#define MM_SPECIFIC_CODE(O,D,S,T) do { _mm_storeu_si128(O,S); } while (0 == 1)
 #define S_CONST
 #define T_CONST
 #include "gsroprun8.h"

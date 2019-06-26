@@ -108,7 +108,7 @@ static void TEMPLATE_NAME(rop_run_op *op, byte *d, int len)
 #ifdef S_CONST
     byte         S = op->s.c;
 #ifdef MM_SPECIFIC_CODE
-    __m128i      MM_S = op->mm_s;
+    __m128i      MM_S = _mm_set1_epi8(S);
 #endif
 #else /* !defined(S_CONST) */
     const byte  *s = op->s.b.ptr;
@@ -132,7 +132,7 @@ static void TEMPLATE_NAME(rop_run_op *op, byte *d, int len)
 #ifdef T_CONST
     byte         T = op->t.c;
 #ifdef MM_SPECIFIC_CODE
-    __m128i      MM_T = op->mm_t;
+    __m128i      MM_T = _mm_set1_epi8(T);
 #endif
 #else /* !defined(T_CONST) */
     const byte  *t = op->t.b.ptr;
@@ -200,7 +200,9 @@ static void TEMPLATE_NAME(rop_run_op *op, byte *d, int len)
     if (troll == 0)
 #endif
     {
+#ifdef MM_SETUP
         MM_SETUP();
+#endif
         while (len > 16)
         {
 #if defined(S_USED) && !defined(S_CONST)
