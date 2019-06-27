@@ -2847,6 +2847,7 @@ static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_stream *source, 
                     pdfi_clearstack(ctx);
                 break;
             case K2('B','T'):       /* begin text */
+                pdfi_pop(ctx, 1);
                 code = pdfi_BT(ctx);
                 break;
             case K2('B','X'):       /* begin compatibility section */

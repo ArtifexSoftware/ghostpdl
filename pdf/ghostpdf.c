@@ -1451,54 +1451,53 @@ static int pdfi_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
         o = o1;
     }
 
+    code = pdfi_gsave(ctx);
+    if (code < 0) {
+        pdfi_countdown(o);
+        return code;
+    }
+
     if (o->type == PDF_ARRAY) {
         pdf_array *a = (pdf_array *)o;
 
         for (i=0;i < pdfi_array_size(a); i++) {
             pdf_indirect_ref *r;
             code = pdfi_array_get_no_deref(ctx, a, i, (pdf_obj **)&r);
-            if (code < 0) {
-                pdfi_countdown(o);
-                return code;
-            }
+            if (code < 0)
+                goto page_error;
             if (r->type == PDF_DICT) {
                 code = pdfi_interpret_content_stream(ctx, (pdf_dict *)r, page_dict);
                 pdfi_countdown(r);
-                if (code < 0) {
-                    pdfi_countdown(o);
-                    return(code);
-                }
+                if (code < 0)
+                    goto page_error;
             } else {
                 if (r->type != PDF_INDIRECT) {
-                    pdfi_countdown(o);
-                    pdfi_countdown(r);
-                    return_error(gs_error_typecheck);
+                        pdfi_countdown(r);
+                        code = gs_note_error(gs_error_typecheck);
+                        goto page_error;
                 } else {
                     if (r->ref_object_num == page_dict->object_num) {
-                        pdfi_countdown(o);
                         pdfi_countdown(r);
-                        return_error(gs_error_circular_reference);
+                        code = gs_note_error(gs_error_circular_reference);
+                        goto page_error;
                     }
                     code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, &o1);
                     pdfi_countdown(r);
                     if (code < 0) {
-                        pdfi_countdown(o);
-                        if (code == gs_error_VMerror || ctx->pdfstoponerror)
-                            return code;
-                        else
-                            return 0;
+                        if (code != gs_error_VMerror || ctx->pdfstoponerror == false)
+                            code = 0;
+                        goto page_error;
                     }
                     if (o1->type != PDF_DICT) {
-                        pdfi_countdown(o);
-                        return_error(gs_error_typecheck);
+                        pdfi_countdown(o1);
+                        code = gs_note_error(gs_error_typecheck);
+                        goto page_error;
                     }
                     code = pdfi_interpret_content_stream(ctx, (pdf_dict *)o1, page_dict);
                     pdfi_countdown(o1);
                     if (code < 0) {
-                        if (code == gs_error_VMerror || ctx->pdfstoponerror == true) {
-                            pdfi_countdown(o);
-                            return code;
-                        }
+                        if (code == gs_error_VMerror || ctx->pdfstoponerror == true)
+                            goto page_error;
                     }
                 }
             }
@@ -1511,6 +1510,8 @@ static int pdfi_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
             return_error(gs_error_typecheck);
         }
     }
+page_error:
+    pdfi_grestore(ctx);
     pdfi_countdown(o);
     return code;
 }

@@ -104,7 +104,7 @@ d1_error:
 
 int pdfi_Tf(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
-    float point_size = 0;
+    double point_size = 0;
     pdf_obj *o = NULL;
     int code = 0;
     pdf_dict *font_dict = NULL;
@@ -112,14 +112,18 @@ int pdfi_Tf(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     if (pdfi_count_stack(ctx) >= 2) {
         o = ctx->stack_top[-1];
         if (o->type == PDF_INT)
-            point_size = (float)((pdf_num *)o)->value.i;
-        else
+            point_size = (double)((pdf_num *)o)->value.i;
+        else {
             if (o->type == PDF_REAL)
                 point_size = ((pdf_num *)o)->value.d;
             else {
                 code = gs_note_error(gs_error_typecheck);
                 goto Tf_error;
             }
+        }
+        code = gs_setPDFfontsize(ctx->pgs, point_size);
+        if (code < 0)
+            goto Tf_error;
 
         o = ctx->stack_top[-2];
         if (o->type != PDF_NAME) {
@@ -140,8 +144,19 @@ int pdfi_Tf(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         o = NULL;
 
         if (font_dict->type != PDF_DICT) {
-            code = gs_note_error(gs_error_typecheck);
-            goto Tf_error;
+            pdf_font *font = (pdf_font *)font_dict;
+
+            if (font_dict->type != PDF_FONT) {
+                code = gs_note_error(gs_error_typecheck);
+                goto Tf_error;
+            }
+            /* Don't swap fonts if this is already the current font */
+            if (font->pfont != ctx->pgs->font)
+                code = gs_setfont(ctx->pgs, (gs_font *)font->pfont);
+            else
+                pdfi_countdown(font_dict);
+            pdfi_pop(ctx, 2);
+            return code;
         }
 
         code = pdfi_dict_knownget_type(ctx, font_dict, "Type", PDF_NAME, &o);

@@ -108,6 +108,13 @@ static int alloc_type3_font(pdf_context *ctx, pdf_font_type3 **font)
     (t3font)->memory = ctx->memory;
     (t3font)->type = PDF_FONT;
 
+#if REFCNT_DEBUG
+    (t3font)->refcnt_ctx = (void *)ctx;
+    (t3font)->UID = ctx->UID++;
+    dmprintf2(ctx->memory, "Allocated object of type %c with UID %"PRIi64"\n", t3font->type, t3font->UID);
+#endif
+
+
     pdfi_countup(t3font);
 
     t3font->pfont = gs_alloc_struct(ctx->memory, gs_font_base, &st_gs_font_base,
@@ -173,6 +180,9 @@ int pdfi_free_font_type3(pdf_obj *font)
         gs_free_object(t3font->memory, t3font->pfont, "Free type 3 font");
     }
     gs_free_object(font->memory, font, "Free type 3 font");
+    pdfi_countdown(t3font->Resources);
+    pdfi_countdown(t3font->CharProcs);
+    pdfi_countdown(t3font->Encoding);
     return 0;
 }
 
@@ -282,6 +292,7 @@ int pdfi_read_type3_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     code = pdfi_alloc_object(ctx, PDF_ARRAY, 256, (pdf_obj **)&font->Encoding);
     if (code < 0)
         goto font3_error;
+    pdfi_countup(font->Encoding);
 
     if (obj->type == PDF_NAME) {
         code = pdfi_build_Encoding(ctx, (pdf_name *)obj, font->Encoding);
