@@ -31,12 +31,6 @@
  * per-pixel "render algorithm" information.
  */
 
-/*
- * Define whether we implement transparency correctly, or whether we
- * implement it as documented in the H-P manuals.
- */
-#define TRANSPARENCY_PER_H_P
-
 /* Raster ops are explained in Chapter 5 of "The PCL 5 Color Technical
  * Reference Manual", but essentially, they provide a way of mixing
  * various bitmaps together. The most general form is where a texture
@@ -226,31 +220,21 @@ typedef enum {
 #define lop_T_transparent 0x200
 #define lop_pdf14 0x400
 
-/* RJW: A comment from 1998 in gdevrop.c indicates that
- * if we are given a LOP that says "S is transparent", and
- * S isn't used, then we should ignore that flag. (Similarly
- * for T). Tests seem to indicate that this is indeed true
- * (See page 12 of C425.bin for an example).
- *
- * Unfortunately, when we start 'folding' LOPs down onto simpler
- * ones, we can start with a LOP where S (or T) matters, and
- * end up with one where it looks like it doesn't. As such we
- * introduce another flag so we can avoid trying to remove
- * the S/T transparency flags after we have started to fold the
- * rop down.
- */
-#define lop_transparency_checked 0x800
-
 static inline int
 lop_sanitize(int lop)
 {
-    if (lop & lop_transparency_checked)
-        return lop;
-    lop |= lop_transparency_checked;
-    if (!rop3_uses_S(lop))
-        lop &= ~lop_S_transparent;
-    if (!rop3_uses_T(lop))
-        lop &= ~lop_T_transparent;
+    int olop = lop;
+
+    /* Nobble transparency using ROP conversion */
+    /* The T transparency flag only has an effect if
+     * we aren't on the leading diagonal. */
+    if (olop & lop_T_transparent &&
+        ((lop & 0xF0)>>4) != (lop & 0x0F))
+        lop = (lop & 0xCF) | 0x20;
+    if (olop & lop_S_transparent)
+        lop = (lop & 0x33) | 0x88;
+    /* Preserve the PDF14 bit */
+    lop |= (olop & lop_pdf14);
 
     return lop;
 }
@@ -263,13 +247,8 @@ typedef uint gs_logical_operation_t;
    (pattern_transparent_default ? lop_T_transparent : 0))
 
      /* Test whether a logical operation uses S or T. */
-#ifdef TRANSPARENCY_PER_H_P     /* bizarre but necessary definition */
 #define lop_uses_S(lop)\
   (rop3_uses_S(lop) || ((lop) & (lop_S_transparent | lop_T_transparent)))
-#else                           /* reasonable definition */
-#define lop_uses_S(lop)\
-  (rop3_uses_S(lop) || ((lop) & lop_S_transparent))
-#endif
 #define lop_uses_T(lop)\
   (rop3_uses_T(lop) || ((lop) & lop_T_transparent))
 /* Test whether a logical operation just sets D = x if y = 0. */

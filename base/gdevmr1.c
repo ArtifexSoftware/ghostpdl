@@ -45,7 +45,7 @@ mem_mono_strip_copy_rop(gx_device * dev, const byte * sdata,
                         gs_logical_operation_t lop)
 {
     gx_device_memory *mdev = (gx_device_memory *) dev;
-    gs_rop3_t rop = gs_transparent_rop(lop);	/* handle transparency */
+    gs_rop3_t rop = lop_sanitize(lop);	/* handle transparency */
     bool invert;
 
     /* If map_rgb_color isn't the default one for monobit memory */

@@ -1884,6 +1884,7 @@ mem_planar_strip_copy_rop2(gx_device * dev,
     gx_device_memory * const mdev = (gx_device_memory *)dev;
     int code;
 
+    lop = lop_sanitize(lop);
     if (planar_height != 0) {
         /* S is in planar format; expand it to a temporary buffer, then
          * call ourselves back with a modified rop to use it, then free
@@ -2026,8 +2027,7 @@ mem_planar_strip_copy_rop2(gx_device * dev,
             }
             return 0;
         }
-        if ((mdev->color_info.num_components == 4) && (mdev->plane_depth == 1) &&
-            ((lop & (lop_S_transparent | lop_T_transparent)) == 0))
+        if ((mdev->color_info.num_components == 4) && (mdev->plane_depth == 1))
         {
             lop = cmykrop[lop & 0xff] | (lop & ~0xff);
             return planar_cmyk4bit_strip_copy_rop(mdev, sdata, sourcex,
@@ -2039,8 +2039,7 @@ mem_planar_strip_copy_rop2(gx_device * dev,
         }
     }
     if (!tcolors && !scolors &&
-        (mdev->color_info.num_components == 4) && (mdev->plane_depth == 1) &&
-        ((lop & (lop_S_transparent | lop_T_transparent)) == 0)) {
+        (mdev->color_info.num_components == 4) && (mdev->plane_depth == 1)) {
         lop = cmykrop[lop & 0xff] | (lop & ~0xff);
         return planar_cmyk4bit_strip_copy_rop(mdev, sdata, sourcex,
                                               sraster, id, scolors,

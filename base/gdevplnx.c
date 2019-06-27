@@ -751,7 +751,7 @@ plane_strip_copy_rop(gx_device *dev,
 {
     gx_device_plane_extract * const edev = (gx_device_plane_extract *)dev;
     gx_device * const plane_dev = edev->plane_dev;
-    gs_rop3_t rop = lop_rop(lop);
+    gs_rop3_t rop = lop_sanitize(lop);
     struct crp_ {
         gx_color_index pixels[2];
         gx_color_index *colors;
@@ -765,11 +765,6 @@ plane_strip_copy_rop(gx_device *dev,
     const gx_strip_bitmap *plane_textures = NULL;
     int code;
 
-    /* We should do better than this on transparency.... */
-    if (lop & (lop_S_transparent | lop_T_transparent))
-        return gx_default_strip_copy_rop(dev, sdata, sourcex, sraster, id,
-                                         scolors, textures, tcolors,
-                                         x, y, w, h, phase_x, phase_y, lop);
     if (!rop3_uses_S(rop)) {
         sdata = 0;
         source.colors = 0;
@@ -800,7 +795,7 @@ plane_strip_copy_rop(gx_device *dev,
         if (code < 0)
             return gx_default_strip_copy_rop(dev, sdata, sourcex, sraster, id,
                                              scolors, textures, tcolors,
-                                             x, y, w, h, phase_x, phase_y, lop);
+                                             x, y, w, h, phase_x, phase_y, rop);
         plane_source = source.state.buffer.data;
         plane_raster = source.state.buffer.raster;
     } else
@@ -828,7 +823,7 @@ plane_strip_copy_rop(gx_device *dev,
         code = dev_proc(plane_dev, strip_copy_rop)
             (plane_dev, plane_source, sourcex, plane_raster, gx_no_bitmap_id,
              source.colors, plane_textures, texture.colors,
-             x, y, w, h, phase_x, phase_y, lop);
+             x, y, w, h, phase_x, phase_y, rop);
     } while (code >= 0 && sdata && next_tile(&source.state));
     if (textures)
         end_tiling(&texture.state);
@@ -982,10 +977,7 @@ plane_begin_typed_image(gx_device * dev,
         goto fail;
     }
     pim = (const gs_pixel_image_t *)pic;
-    if ((lop & lop_S_transparent) ||
-        ((uses_color || pim->CombineWithColor) && (lop & lop_T_transparent))
-        )
-        goto fail;
+    lop = lop_sanitize(lop);
     if (uses_color || (pim->CombineWithColor && lop_uses_T(lop))) {
         if (reduce_drawing_color(&dcolor, edev, pdcolor, &lop) ==
             REDUCE_FAILED)

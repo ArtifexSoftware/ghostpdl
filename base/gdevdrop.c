@@ -216,7 +216,8 @@ gx_default_strip_copy_rop2(gx_device * dev,
     pmdev->is_open = true; /* not sure why we need this, but we do. */
     if (code < 0)
         return code;
-    if (rop3_uses_D(gs_transparent_rop(lop))) {
+    lop = lop_sanitize(lop);
+    if (rop3_uses_D(lop)) {
         row = gs_alloc_bytes(mem, draster * block_height, "copy_rop row");
         if (row == 0) {
             code = gs_note_error(gs_error_VMerror);
@@ -651,7 +652,7 @@ mem_default_strip_copy_rop(gx_device * dev,
                            const gx_color_index * tcolors,
                            int x, int y, int width, int height,
                            int phase_x, int phase_y,
-                           gs_logical_operation_t lop)
+                           gs_logical_operation_t olop)
 {
     int depth = dev->color_info.depth;
     int rop_depth = (gx_device_has_color(dev) ? 24 : 8);
@@ -676,10 +677,10 @@ mem_default_strip_copy_rop(gx_device * dev,
     union { long l; void *p; } mdev_storage[20];
     uint row_raster = bitmap_raster(width * depth);
     ulong size_from_mem_device;
-    gs_rop3_t trans_rop = gs_transparent_rop(lop);
-    bool uses_d = rop3_uses_D(trans_rop);
-    bool uses_s = rop3_uses_S(trans_rop);
-    bool uses_t = rop3_uses_T(trans_rop);
+    gs_logical_operation_t lop = lop_sanitize(olop);
+    bool uses_d = rop3_uses_D(lop);
+    bool uses_s = rop3_uses_S(lop);
+    bool uses_t = rop3_uses_T(lop);
     bool expand_s, expand_t;
     byte *row = 0;
     union { long l; void *p; } dest_buffer[16];
@@ -992,60 +993,6 @@ gx_strip_copy_rop_unaligned(gx_device * dev,
 }
 
 /* ---------------- Internal routines ---------------- */
-
-/* Compute the effective RasterOp for the 1-bit case, */
-/* taking transparency into account. */
-gs_rop3_t
-gs_transparent_rop(gs_logical_operation_t lop)
-{
-    gs_rop3_t rop = lop_rop(lop);
-
-    /*
-     * The algorithm for computing an effective RasterOp is presented,
-     * albeit obfuscated, in the H-P PCL5 technical documentation.
-     * Define So ("source opaque") and Po ("pattern opaque") as masks
-     * that have 1-bits precisely where the source or pattern
-     * respectively are not white (transparent).
-     * One applies the original RasterOp to compute an intermediate
-     * result R, and then computes the final result as
-     * (R & M) | (D & ~M) where M depends on transparencies as follows:
-     *      s_tr    p_tr    M
-     *       0       0      1
-     *       0       1      ~So | Po (? Po ?)
-     *       1       0      So
-     *       1       1      So & Po
-     * The s_tr = 0, p_tr = 1 case seems wrong, but it's clearly
-     * specified that way in the "PCL 5 Color Technical Reference
-     * Manual."
-     *
-     * In the 1-bit case, So = ~S and Po = ~P, so we can apply the
-     * above table directly.
-     */
-#define So rop3_not(rop3_S)
-#define Po rop3_not(rop3_T)
-#ifdef TRANSPARENCY_PER_H_P
-/*
- * Believe it or not, MPo depends on S in this case even if the original
- * RasterOp didn't depend on S.
- */
-#  define MPo (rop3_not(So) | Po)
-#else
-#  define MPo Po
-#endif
-    /*
-     * If the operation doesn't use S or T, we must disregard the
-     * corresponding transparency flag.
-     */
-#define source_transparent ((lop & lop_S_transparent) && rop3_uses_S(rop))
-#define pattern_transparent ((lop & lop_T_transparent) && rop3_uses_T(rop))
-    gs_rop3_t mask =
-    (source_transparent ?
-     (pattern_transparent ? So & Po : So) :
-     (pattern_transparent ? MPo : rop3_1));
-
-#undef MPo
-    return (rop & mask) | (rop3_D & ~mask);
-}
 
 typedef enum {
     transform_pixel_region_portrait,

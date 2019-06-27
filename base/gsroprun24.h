@@ -39,12 +39,6 @@
  *                               being a pointer to a 1 bit bitmap to choose
  *                               between scolors[0] and [1]. If set to 1, the
  *                               code will assume that this is the case.
- *   S_TRANS       (Optional)    If set, the code will cope with S maybe
- *                               being transparent. If set to 1, the code
- *                               will assume that this is the case.
- *   T_TRANS       (Optional)    If set, the code will cope with T maybe
- *                               being transparent. If set to 1, the code
- *                               will assume that this is the case.
  */
 
 #if defined(TEMPLATE_NAME)
@@ -99,13 +93,6 @@ static void TEMPLATE_NAME(rop_run_op *op, byte *d, int len)
 #else /* !defined(S_CONST) */
     const byte  *s = op->s.b.ptr;
 #endif /* !defined(S_CONST) */
-#ifdef S_TRANS
-#if S_TRANS
-    const rop_operand  strans = 0xFFFFFF;
-#else /* !S_TRANS */
-    const rop_operand  strans = (op->rop & lop_S_transparent ? 0xFFFFFF : -1);
-#endif /* !S_TRANS */
-#endif /* defined(S_TRANS) */
 #ifdef S_1BIT
     int          sroll;
     rop_operand  sc[2];
@@ -120,31 +107,14 @@ static void TEMPLATE_NAME(rop_run_op *op, byte *d, int len)
 #else /* !defined(T_CONST) */
     const byte  *t = op->t.b.ptr;
 #endif /* !defined(T_CONST) */
-#ifdef T_TRANS
-#if T_TRANS
-    const rop_operand  ttrans = 0xFFFFFF;
-#else /* !T_TRANS */
-    const rop_operand  ttrans = (op->rop & lop_T_transparent ? 0xFFFFFF : -1);
-#endif /* !T_TRANS */
-#endif /* defined(T_TRANS) */
 #ifdef T_1BIT
     int          troll;
     rop_operand  tc[2];
-#endif /* T_TRANS */
+#endif /* T_1BIT */
 #else /* !defined(T_USED) */
 #define T 0
 #undef T_CONST
 #endif /* !defined(T_USED) */
-
-#if defined(S_TRANS) && defined(S_CONST)
-    if (S == strans)
-        return;
-#endif
-
-#if defined(T_TRANS) && defined(T_CONST)
-    if (T == ttrans)
-        return;
-#endif
 
 #ifdef S_1BIT
 #if S_1BIT == MAYBE
@@ -217,14 +187,7 @@ static void TEMPLATE_NAME(rop_run_op *op, byte *d, int len)
             }
 #endif /* T_1BIT */
         }
-        if (1
-#if defined(S_TRANS) && !defined(S_CONST)
-            && (S != strans)
-#endif /* defined(S_TRANS) && !defined(S_CONST) */
-#if defined(T_TRANS) && !defined(T_CONST)
-            && (T != ttrans)
-#endif /* defined(T_TRANS) && !defined(T_TRANS) */
-            ) {
+        {
             rop_operand D;
             SPECIFIC_CODE(D, GET24(d), S, T);
             PUT24(d, D);
@@ -242,14 +205,12 @@ static void TEMPLATE_NAME(rop_run_op *op, byte *d, int len)
 #undef S_1BIT
 #undef S_USED
 #undef S_CONST
-#undef S_TRANS
 #undef SPECIFIC_CODE
 #undef SPECIFIC_ROP
 #undef T
 #undef T_1BIT
 #undef T_USED
 #undef T_CONST
-#undef T_TRANS
 #undef TEMPLATE_NAME
 
 #else
