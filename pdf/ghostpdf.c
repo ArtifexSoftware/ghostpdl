@@ -2253,11 +2253,6 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
     /* This should already be closed, but lets make sure */
     pdfi_close_pdf_file(ctx);
 
-    if (ctx->memory->gs_lib_ctx->font_dir) {
-        gx_purge_selected_cached_chars(ctx->memory->gs_lib_ctx->font_dir, pdfi_fontdir_purge_all, (void *)NULL);
-        gs_free_object(ctx->memory, ctx->memory->gs_lib_ctx->font_dir, "pdfi_free_context");
-    }
-
     rc_decrement_cs(ctx->gray_lin, "pdfi_free_context");
     rc_decrement_cs(ctx->gray, "pdfi_free_context");
     rc_decrement_cs(ctx->cmyk, "pdfi_free_context");
@@ -2278,9 +2273,6 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
 
     if (ctx->pdfi_param_list.head != NULL)
         gs_c_param_list_release(&ctx->pdfi_param_list);
-
-    gs_free_object(pmem->non_gc_memory, ctx->font_dir, "pdf_create_context");
-    gs_free_object(pmem->non_gc_memory, pmem->gs_lib_ctx->font_dir, "pdf_create_context");
 
     if (ctx->cache_entries != 0) {
         int count;
@@ -2336,6 +2328,18 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
         ctx->cache_LRU = ctx->cache_MRU = NULL;
         ctx->cache_entries = 0;
     }
+
+    /* We can't free the font directory before the graphics library fonts fonts are freed, as they refrence the font_dir.
+     * graphcccis library fonts are refrenced from pdf_font objects, and those may be in the cache, which means they
+     * won't be freed until we empty the cache. So we can't free 'font_dir' until after the cache has been cleared.
+     */
+    if (ctx->memory->gs_lib_ctx->font_dir) {
+        gx_purge_selected_cached_chars(ctx->memory->gs_lib_ctx->font_dir, pdfi_fontdir_purge_all, (void *)NULL);
+        gs_free_object(ctx->memory, ctx->memory->gs_lib_ctx->font_dir, "pdfi_free_context");
+    }
+
+    gs_free_object(pmem->non_gc_memory, pmem->gs_lib_ctx->font_dir, "pdf_create_context");
+
 
     gs_free_object(ctx->memory, ctx, "pdfi_free_context");
     return 0;
