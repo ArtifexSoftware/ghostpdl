@@ -179,10 +179,10 @@ int pdfi_free_font_type3(pdf_obj *font)
     if (t3font->pfont) {
         gs_free_object(t3font->memory, t3font->pfont, "Free type 3 font");
     }
-    gs_free_object(font->memory, font, "Free type 3 font");
     pdfi_countdown(t3font->Resources);
     pdfi_countdown(t3font->CharProcs);
     pdfi_countdown(t3font->Encoding);
+    gs_free_object(font->memory, font, "Free type 3 font");
     return 0;
 }
 
