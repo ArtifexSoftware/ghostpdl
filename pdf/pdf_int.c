@@ -3120,6 +3120,56 @@ static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_stream *source, 
     return code;
 }
 
+void local_save_stream_state(pdf_context *ctx, stream_save *local_save)
+{
+    /* copy the 'save_stream' data from the context to a local structure */
+    local_save->stream_offset = ctx->current_stream_save.stream_offset;
+    local_save->gsave_level = ctx->current_stream_save.gsave_level;
+    local_save->stack_count = ctx->current_stream_save.stack_count;
+    local_save->group_depth = ctx->current_stream_save.group_depth;
+}
+
+void cleanup_context_interpretation(pdf_context *ctx, stream_save *local_save)
+{
+    pdfi_seek(ctx, ctx->main_stream, ctx->current_stream_save.stream_offset, SEEK_SET);
+    /* The transparency group implenetation does a gsave, so the end group does a
+     * grestore. Therefore we need to do this before we check the saved gstate depth
+     */
+    if (ctx->current_stream_save.group_depth != local_save->group_depth) {
+        ctx->pdf_warnings |= W_PDF_GROUPERROR;
+        while (ctx->current_stream_save.group_depth > local_save->group_depth)
+            pdfi_end_transparency_group(ctx);
+    }
+    if (ctx->pgs->level > ctx->current_stream_save.gsave_level)
+        ctx->pdf_warnings |= W_PDF_TOOMANYq;
+    if (pdfi_count_stack(ctx) > ctx->current_stream_save.stack_count)
+        ctx->pdf_warnings |= W_PDF_STACKGARBAGE;
+    while (ctx->pgs->level > ctx->current_stream_save.gsave_level)
+        gs_grestore(ctx->pgs);
+    pdfi_clearstack(ctx);
+}
+
+void local_restore_stream_state(pdf_context *ctx, stream_save *local_save)
+{
+    /* Put the entries stored in the context back to what they were on entry
+     * We shouldn't really need to do this, the cleanup above should mean all the
+     * entries are properly reset.
+     */
+    ctx->current_stream_save.stream_offset = local_save->stream_offset;
+    ctx->current_stream_save.gsave_level = local_save->gsave_level;
+    ctx->current_stream_save.stack_count = local_save->stack_count;
+    ctx->current_stream_save.group_depth = local_save->group_depth;
+
+}
+
+void initialise_stream_save(pdf_context *ctx)
+{
+    /* Set up the values in the context to the current values */
+    ctx->current_stream_save.stream_offset = pdfi_tell(ctx->main_stream);
+    ctx->current_stream_save.gsave_level = ctx->pgs->level;
+    ctx->current_stream_save.stack_count = pdfi_count_total_stack(ctx);
+}
+
 /* Interpret a sub-content stream, with some handling of error recovery, clearing stack, etc.
  * This temporarily turns on pdfstoponerror if requested.
  * It will make sure the stack is cleared and the gstate is matched.
@@ -3132,16 +3182,8 @@ pdfi_interpret_inner_content_stream(pdf_context *ctx, pdf_dict *stream_dict,
     bool saved_stoponerror = ctx->pdfstoponerror;
     stream_save local_entry_save;
 
-    /* copy the 'save_stream' data from teh context to a local structure */
-    local_entry_save.stream_offset = ctx->current_stream_save.stream_offset;
-    local_entry_save.gsave_level = ctx->current_stream_save.gsave_level;
-    local_entry_save.stack_count = ctx->current_stream_save.stack_count;
-    local_entry_save.group_depth = ctx->current_stream_save.group_depth;
-
-    /* Set up the values in the context to the current values */
-    ctx->current_stream_save.stream_offset = pdfi_tell(ctx->main_stream);
-    ctx->current_stream_save.gsave_level = ctx->pgs->level;
-    ctx->current_stream_save.stack_count = pdfi_count_total_stack(ctx);
+    local_save_stream_state(ctx, &local_entry_save);
+    initialise_stream_save(ctx);
 
     /* Stop on error in substream, and also be prepared to clean up the stack */
     if (stoponerror)
@@ -3163,32 +3205,8 @@ pdfi_interpret_inner_content_stream(pdf_context *ctx, pdf_dict *stream_dict,
         code = ((pdf_context *)0)->first_page;
 #endif
 
-    pdfi_seek(ctx, ctx->main_stream, ctx->current_stream_save.stream_offset, SEEK_SET);
-    /* The transparency group implenetation does a gsave, so the end group does a
-     * grestore. Therefore we need to do this before we check the saved gstate depth
-     */
-    if (ctx->current_stream_save.group_depth != local_entry_save.group_depth) {
-        ctx->pdf_warnings |= W_PDF_GROUPERROR;
-        while (ctx->current_stream_save.group_depth > local_entry_save.group_depth)
-            pdfi_end_transparency_group(ctx);
-    }
-    if (ctx->pgs->level > ctx->current_stream_save.gsave_level)
-        ctx->pdf_warnings |= W_PDF_TOOMANYq;
-    if (pdfi_count_stack(ctx) > ctx->current_stream_save.stack_count)
-        ctx->pdf_warnings |= W_PDF_STACKGARBAGE;
-    while (ctx->pgs->level > ctx->current_stream_save.gsave_level)
-        gs_grestore(ctx->pgs);
-    pdfi_clearstack(ctx);
-
-    /* Put the entries stored in the context back to what they were on entry
-     * We shouldn't really need to do this, the cleanup above should mean all the
-     * entries are properly reset.
-     */
-    ctx->current_stream_save.stream_offset = local_entry_save.stream_offset;
-    ctx->current_stream_save.gsave_level = local_entry_save.gsave_level;
-    ctx->current_stream_save.stack_count = local_entry_save.stack_count;
-    ctx->current_stream_save.group_depth = local_entry_save.group_depth;
-
+    cleanup_context_interpretation(ctx, &local_entry_save);
+    local_restore_stream_state(ctx, &local_entry_save);
     if (!ctx->pdfstoponerror)
         code = 0;
     return code;

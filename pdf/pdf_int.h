@@ -47,6 +47,10 @@ int pdfi_read_Root(pdf_context *ctx);
 void pdfi_read_OptionalRoot(pdf_context *ctx);
 void pdfi_free_OptionalRoot(pdf_context *ctx);
 int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_t *page_offset, pdf_dict **target, pdf_dict *inherited);
+void local_save_stream_state(pdf_context *ctx, stream_save *local_save);
+void local_restore_stream_state(pdf_context *ctx, stream_save *local_save);
+void cleanup_context_interpretation(pdf_context *ctx, stream_save *local_save);
+void initialise_stream_save(pdf_context *ctx);
 int pdfi_interpret_inner_content_stream(pdf_context *ctx, pdf_dict *stream_dict,
                                         pdf_dict *page_dict, bool stoponerror, const char *desc);
 int pdfi_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict);
