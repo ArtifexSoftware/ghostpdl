@@ -1525,6 +1525,10 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
     bool page_group_known = false;
     int page_index = page_num >> 3;
     char page_bit = 0x80 >> (page_num % 8);
+    stream_save local_entry_save;
+
+    /* Save the current stream state, for later cleanup, in a local variable */
+    local_save_stream_state(ctx, &local_entry_save);
 
     if (page_num > ctx->num_pages)
         return_error(gs_error_rangecheck);
@@ -1581,8 +1585,9 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
     /* Force NOTRANSPARENCY here if required, until we can get it working... */
     ctx->page_has_transparency = ctx->PageTransparencyArray[page_index] & page_bit ? 1 : 0;
 
+    pdfi_gsave(ctx);
+
     if (ctx->page_has_transparency) {
-        code = gs_gsave(ctx->pgs);
         if (code >= 0) {
             code = gs_push_pdf14trans_device(ctx->pgs, false);
             if (code >= 0) {
@@ -1596,7 +1601,6 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
                 /* Couldn't push the transparency compositor.
                  * This is probably fatal, but attempt to recover by abandoning transparency
                  */
-                gs_grestore(ctx->pgs);
                 ctx->page_has_transparency = uses_transparency = false;
             }
         } else {
@@ -1607,11 +1611,7 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
         }
     }
 
-    /* Initialise the 'save' state, when we finish the page we need to restore these */
-    ctx->current_stream_save.stream_offset = pdfi_tell(ctx->main_stream);
-    ctx->current_stream_save.gsave_level = ctx->pgs->level;
-    ctx->current_stream_save.stack_count = pdfi_count_total_stack(ctx);
-    ctx->current_stream_save.group_depth = 0;
+    initialise_stream_save(ctx);
 
     code = pdfi_process_page_contents(ctx, page_dict);
 
@@ -1624,22 +1624,8 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
         code = ((pdf_context *)0)->first_page;
 #endif
 
-    pdfi_seek(ctx, ctx->main_stream, ctx->current_stream_save.stream_offset, SEEK_SET);
-    /* The transparency group implenetation does a gsave, so the end group does a
-     * grestore. Therefore we need to do this before we check the saved gstate depth
-     */
-    if (ctx->current_stream_save.group_depth != 0) {
-        ctx->pdf_warnings |= W_PDF_GROUPERROR;
-        while (ctx->current_stream_save.group_depth)
-            pdfi_end_transparency_group(ctx);
-    }
-    if (ctx->pgs->level > ctx->current_stream_save.gsave_level)
-        ctx->pdf_warnings |= W_PDF_TOOMANYq;
-    if (pdfi_count_stack(ctx) > ctx->current_stream_save.stack_count)
-        ctx->pdf_warnings |= W_PDF_STACKGARBAGE;
-    while (ctx->pgs->level > ctx->current_stream_save.gsave_level)
-        gs_grestore(ctx->pgs);
-    pdfi_clearstack(ctx);
+    cleanup_context_interpretation(ctx, &local_entry_save);
+    local_restore_stream_state(ctx, &local_entry_save);
 
     pdfi_countdown(ctx->CurrentPageDict);
     ctx->CurrentPageDict = NULL;
@@ -1649,9 +1635,8 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
             if (page_group_known)
                 code = pdfi_end_transparency_group(ctx);
             (void)gs_abort_pdf14trans_device(ctx->pgs);
-            gs_grestore(ctx->pgs);
         }
-        pdfi_countdown(ctx->SpotNames);
+        pdfi_grestore(ctx);
         pdfi_countdown(page_dict);
         return code;
     }
@@ -1661,8 +1646,7 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
             code = pdfi_end_transparency_group(ctx);
             if (code < 0) {
                 (void)gs_abort_pdf14trans_device(ctx->pgs);
-                gs_grestore(ctx->pgs);
-                pdfi_countdown(ctx->SpotNames);
+                pdfi_grestore(ctx);
                 pdfi_countdown(page_dict);
                 return code;
             }
@@ -1670,17 +1654,13 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
 
         code = gs_pop_pdf14trans_device(ctx->pgs, false);
         if (code < 0) {
-            gs_grestore(ctx->pgs);
-            pdfi_countdown(ctx->SpotNames);
+            pdfi_grestore(ctx);
             pdfi_countdown(page_dict);
             return code;
         }
-        gs_grestore(ctx->pgs);
     }
 
-    pdfi_countdown(ctx->SpotNames);
-    ctx->SpotNames = NULL;
-
+    pdfi_grestore(ctx);
     pdfi_countdown(page_dict);
 
     return pl_finish_page(ctx->memory->gs_lib_ctx->top_of_system,
