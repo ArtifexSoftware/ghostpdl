@@ -46,4 +46,15 @@ static inline void pdfi_countdown_current_font(pdf_context *ctx)
     }
 }
 
+static inline pdf_font *pdfi_get_current_pdf_font(pdf_context *ctx)
+{
+    pdf_font *font;
+
+    if (ctx->pgs->font != NULL) {
+        font = (pdf_font *)ctx->pgs->font->client_data;
+        return(font);
+    }
+    return NULL;
+}
+
 #endif

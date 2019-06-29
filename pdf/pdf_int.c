@@ -3145,7 +3145,7 @@ void cleanup_context_interpretation(pdf_context *ctx, stream_save *local_save)
     if (pdfi_count_stack(ctx) > ctx->current_stream_save.stack_count)
         ctx->pdf_warnings |= W_PDF_STACKGARBAGE;
     while (ctx->pgs->level > ctx->current_stream_save.gsave_level)
-        gs_grestore(ctx->pgs);
+        pdfi_grestore(ctx);
     pdfi_clearstack(ctx);
 }
 

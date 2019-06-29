@@ -17,6 +17,7 @@
 
 #include "pdf_int.h"
 #include "pdf_stack.h"
+#include "pdf_gstate.h"
 #include "pdf_shading.h"
 #include "pdf_dict.h"
 #include "pdf_array.h"
@@ -703,7 +704,7 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     if (code < 0)
         return code;
 
-    code = gs_gsave(ctx->pgs);
+    code = pdfi_gsave(ctx);
     if (code < 0)
         return code;
 
@@ -731,7 +732,7 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         code = gs_shfill(ctx->pgs, psh);
     }
 
-    code1 = gs_grestore(ctx->pgs);
+    code1 = pdfi_grestore(ctx);
 
     if (psh) {
         pdfi_shading_free(ctx, psh, type);
@@ -743,7 +744,7 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     return code1;
 
 shading_error:
-    code1 = gs_grestore(ctx->pgs);
+    code1 = pdfi_grestore(ctx);
     pdfi_pop(ctx, 1);
     (void)pdfi_loop_detector_cleartomark(ctx);
     pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);

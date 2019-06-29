@@ -16,6 +16,7 @@
 /* Path operations for the PDF interpreter */
 
 #include "pdf_int.h"
+#include "pdf_gstate.h"
 #include "pdf_path.h"
 #include "pdf_stack.h"
 #include "gstypes.h"
@@ -322,7 +323,7 @@ int pdfi_b(pdf_context *ctx)
 
     code = gs_closepath(ctx->pgs);
     if (code >= 0) {
-        code = gs_gsave(ctx->pgs);
+        code = pdfi_gsave(ctx);
         if (code >= 0) {
             gs_swapcolors(ctx->pgs);
             code = gs_setopacityalpha(ctx->pgs, ctx->pgs->fillconstantalpha);
@@ -330,13 +331,13 @@ int pdfi_b(pdf_context *ctx)
                 code = gs_fill(ctx->pgs);
             gs_swapcolors(ctx->pgs);
             if (code >= 0) {
-                code = gs_grestore(ctx->pgs);
+                code = pdfi_grestore(ctx);
                 if (code >= 0)
                     code = gs_setopacityalpha(ctx->pgs, ctx->pgs->strokeconstantalpha);
                 if (code >= 0)
                     code = gs_stroke(ctx->pgs);
             } else
-                (void)gs_grestore(ctx->pgs);
+                (void)pdfi_grestore(ctx);
         }
     }
     if (code >= 0)
@@ -355,7 +356,7 @@ int pdfi_b_star(pdf_context *ctx)
 
     code = gs_closepath(ctx->pgs);
     if (code >= 0) {
-        code = gs_gsave(ctx->pgs);
+        code = pdfi_gsave(ctx);
         if (code >= 0) {
             gs_swapcolors(ctx->pgs);
             code = gs_setopacityalpha(ctx->pgs, ctx->pgs->fillconstantalpha);
@@ -363,13 +364,13 @@ int pdfi_b_star(pdf_context *ctx)
                 code = gs_eofill(ctx->pgs);
             gs_swapcolors(ctx->pgs);
             if (code >= 0) {
-                code = gs_grestore(ctx->pgs);
+                code = pdfi_grestore(ctx);
                 if (code >= 0)
                     code = gs_setopacityalpha(ctx->pgs, ctx->pgs->strokeconstantalpha);
                 if (code >= 0)
                     code = gs_stroke(ctx->pgs);
             } else
-                (void)gs_grestore(ctx->pgs);
+                (void)pdfi_grestore(ctx);
         }
     }
     if (code >= 0)
@@ -386,7 +387,7 @@ int pdfi_B(pdf_context *ctx)
 {
     int code;
 
-    code = gs_gsave(ctx->pgs);
+    code = pdfi_gsave(ctx);
     if (code >= 0) {
         gs_swapcolors(ctx->pgs);
         code = gs_setopacityalpha(ctx->pgs, ctx->pgs->fillconstantalpha);
@@ -394,16 +395,16 @@ int pdfi_B(pdf_context *ctx)
             code = gs_fill(ctx->pgs);
         gs_swapcolors(ctx->pgs);
         if (code >= 0) {
-            code = gs_grestore(ctx->pgs);
+            code = pdfi_grestore(ctx);
             if (code >= 0)
                 code = gs_setopacityalpha(ctx->pgs, ctx->pgs->strokeconstantalpha);
             if (code >= 0)
                 code = gs_stroke(ctx->pgs);
         } else {
-            (void)gs_grestore(ctx->pgs);
+            (void)pdfi_grestore(ctx);
         }
     } else {
-        (void)gs_grestore(ctx->pgs);
+        (void)pdfi_grestore(ctx);
     }
     if (code >= 0)
        code = gs_newpath(ctx->pgs);
@@ -419,7 +420,7 @@ int pdfi_B_star(pdf_context *ctx)
 {
     int code;
 
-    code = gs_gsave(ctx->pgs);
+    code = pdfi_gsave(ctx);
     if (code >= 0) {
         gs_swapcolors(ctx->pgs);
         code = gs_setopacityalpha(ctx->pgs, ctx->pgs->fillconstantalpha);
@@ -427,16 +428,16 @@ int pdfi_B_star(pdf_context *ctx)
             code = gs_eofill(ctx->pgs);
         gs_swapcolors(ctx->pgs);
         if (code >= 0) {
-            code = gs_grestore(ctx->pgs);
+            code = pdfi_grestore(ctx);
             if (code >= 0)
                 code = gs_setopacityalpha(ctx->pgs, ctx->pgs->strokeconstantalpha);
             if (code >= 0)
                 code = gs_stroke(ctx->pgs);
         } else {
-            (void)gs_grestore(ctx->pgs);
+            (void)pdfi_grestore(ctx);
         }
     } else {
-        (void)gs_grestore(ctx->pgs);
+        (void)pdfi_grestore(ctx);
     }
     if (code >= 0)
        code = gs_newpath(ctx->pgs);

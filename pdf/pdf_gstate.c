@@ -93,13 +93,19 @@ int pdfi_gsave(pdf_context *ctx)
 int pdfi_grestore(pdf_context *ctx)
 {
     int code;
+    pdf_font *font, *font1;
 
     /* Make sure we have encountered as many gsave operations in this
      * stream as grestores. If not, log an error
      */
     if (ctx->pgs->level > ctx->current_stream_save.gsave_level) {
-        pdfi_countdown_current_font(ctx);
+        font = pdfi_get_current_pdf_font(ctx);
+
         code = gs_grestore(ctx->pgs);
+
+        font1 = pdfi_get_current_pdf_font(ctx);
+        if (font != NULL && (font != font1 || ((pdf_obj *)font)->refcnt > 1))
+            pdfi_countdown_current_font(ctx);
 
         if(code < 0 && ctx->pdfstoponerror)
             return code;
@@ -699,9 +705,9 @@ static int GS_SMask(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_d
                     return code;
                 }
                 rc_decrement_cs(gray_cs, "ExtGState /SMask");
-                code = gs_gsave(ctx->pgs);
+                code = pdfi_gsave(ctx);
                 code = pdfi_do_image_or_form(ctx, stream_dict, page_dict, G_dict);
-                code = gs_grestore(ctx->pgs);
+                code = pdfi_grestore(ctx);
                 code = gs_end_transparency_mask(ctx->pgs, 0);
                 pdfi_countdown(G_dict);
             }

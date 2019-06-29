@@ -30,7 +30,7 @@
 
 int pdfi_d0(pdf_context *ctx)
 {
-    int code = 0;
+    int code = 0, gsave_level = 0;
     double width[2];
 
     if (pdfi_count_stack(ctx) < 2) {
@@ -60,7 +60,29 @@ int pdfi_d0(pdf_context *ctx)
     else
         width[1] = ((pdf_num *)ctx->stack_top[-1])->value.d;
 
+    gsave_level = ctx->pgs->level;
+
     code = gs_text_setcharwidth(ctx->current_text_enum, width);
+
+    /* Nasty hackery. setcachedevice potentially pushes a new device into the graphics state
+     * and there's no way to remove that device again without grestore'ing back to a point
+     * before the device was loaded. To facilitate this, setcachedevice will do a gs_gsave()
+     * before changing the device. Note, the grestore for this is done back in show_update()
+     * which is not reached until after the CharProc has been executed.
+     *
+     * This is a problem for us when running a PDF content stream, because after running the
+     * stream we check the gsave level and, if its not the same as it was when we started
+     * the stream, we pdfi_grestore() back until it is. This mismatch of the gsave levels
+     * causes all sorts of trouble with the font and we can end up counting the pdf_font
+     * object down and discarding the font we're tryign to use.
+     *
+     * The solution (ugly though it is) is to patch up the saved gsave_level in the
+     * context to expect that we have one more gsave level on exit. That wasy we won't
+     * try and pdf_grestore() back to an earlier point.
+     */
+    if (ctx->pgs->level > gsave_level)
+        ctx->current_stream_save.gsave_level += ctx->pgs->level - gsave_level;
+
     if (code < 0)
         goto d0_error;
     pdfi_pop(ctx, 2);
@@ -73,7 +95,7 @@ d0_error:
 
 int pdfi_d1(pdf_context *ctx)
 {
-    int code = 0, i;
+    int code = 0, i, gsave_level;
     double wbox[6];
 
     if (pdfi_count_stack(ctx) < 2) {
@@ -91,7 +113,15 @@ int pdfi_d1(pdf_context *ctx)
         else
             wbox[i + 6] = ((pdf_num *)ctx->stack_top[i])->value.d;
     }
+
+    gsave_level = ctx->pgs->level;
+
     code = gs_text_setcachedevice(ctx->current_text_enum, wbox);
+
+    /* See the comment immediately after gs_text_setcachedvice() in pdfi_d0 above */
+    if (ctx->pgs->level > gsave_level)
+        ctx->current_stream_save.gsave_level += ctx->pgs->level - gsave_level;
+
     if (code < 0)
         goto d1_error;
     pdfi_pop(ctx, 6);

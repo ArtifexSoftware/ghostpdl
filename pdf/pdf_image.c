@@ -17,6 +17,7 @@
 
 #include "pdf_int.h"
 #include "pdf_stack.h"
+#include "pdf_gstate.h"
 #include "pdf_page.h"
 #include "pdf_image.h"
 #include "pdf_file.h"
@@ -933,7 +934,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
         }
         rc_decrement_cs(gray_cs, "pdfi image /SMask");
         savedoffset = pdfi_tell(ctx->main_stream);
-        code = gs_gsave(ctx->pgs);
+        code = pdfi_gsave(ctx);
 
         gs_setopacityalpha(ctx->pgs, 1.0);
         gs_setshapealpha(ctx->pgs, 1.0);
@@ -944,7 +945,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
         pdfi_seek(ctx, ctx->main_stream, ((pdf_dict *)image_info.SMask)->stream_offset, SEEK_SET);
         code = pdfi_do_image_or_form(ctx, stream_dict, page_dict, (pdf_dict *)image_info.SMask);
 
-        code = gs_grestore(ctx->pgs);
+        code = pdfi_grestore(ctx);
         pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
         code = gs_end_transparency_mask(ctx->pgs, 0);
     }
@@ -1281,7 +1282,7 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
      * of the graphics state, if its a Form XObject. So gsave/grestore round it
      * to prevent unexpected changes.
      */
-    code = gs_gsave(ctx->pgs);
+    code = pdfi_gsave(ctx);
     code = pdfi_do_image_or_form(ctx, stream_dict, page_dict, (pdf_dict *)o);
     if (code < 0) {
         (void)pdfi_loop_detector_cleartomark(ctx);
@@ -1294,9 +1295,9 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 
  exit2:
     if (code < 0)
-        gs_grestore(ctx->pgs);
+        pdfi_grestore(ctx);
     else
-        code = gs_grestore(ctx->pgs);
+        code = pdfi_grestore(ctx);
 
  exit1:
     /* No need to countdown 'n' because that poitns to tht stack object, and we're going to pop that */
