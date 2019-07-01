@@ -124,10 +124,10 @@ pdfi_pattern_paint(const gs_client_color *pcc, gs_gstate *pgs)
     gs_gstate *curr_pgs = ctx->pgs;
     int code = 0;
 
-    code = gs_gsave(curr_pgs);
+    code = pdfi_gsave(ctx);
     if (code < 0)
         return code;
-    code = gs_setgstate(curr_pgs, pgs);
+    code = gs_setgstate(ctx->pgs, pgs);
     if (code < 0)
         goto exit;
 
@@ -138,7 +138,7 @@ pdfi_pattern_paint(const gs_client_color *pcc, gs_gstate *pgs)
     }
 
  exit:
-    gs_grestore(curr_pgs);
+    pdfi_grestore(ctx);
     return code;
 }
 
@@ -162,10 +162,10 @@ pdfi_pattern_paint_high_level(const gs_client_color *pcc, gs_gstate *pgs_ignore)
     if (code < 0)
         return code;
 
-    code = gs_gsave(pgs);
+    code = pdfi_gsave(ctx);
     if (code < 0)
         return code;
-    code = gs_setgstate(pgs, pinst->saved);
+    code = gs_setgstate(ctx->pgs, pinst->saved);
     if (code < 0)
         goto errorExit;
 
@@ -204,13 +204,13 @@ pdfi_pattern_paint_high_level(const gs_client_color *pcc, gs_gstate *pgs_ignore)
     if (code < 0)
         goto errorExit;
 
-    code = gs_grestore(pgs);
+    code = pdfi_grestore(ctx);
     if (code < 0)
         return code;
     return gs_error_handled;
 
  errorExit:
-    gs_grestore(pgs);
+    pdfi_grestore(ctx);
     return code;
 }
 
@@ -243,17 +243,22 @@ pdfi_pattern_paintproc(const gs_client_color *pcc, gs_gstate *pgs)
 static int
 pdfi_pattern_gset(pdf_context *ctx)
 {
-    int code;
+    int code, level = ctx->pgs->level;
     float strokealpha, fillalpha;
 
-    code = gs_gsave(ctx->pgs);
-    if (code < 0)
-        goto exit;
     strokealpha = gs_getstrokeconstantalpha(ctx->pgs);
     fillalpha = gs_getfillconstantalpha(ctx->pgs);
     code = gs_copygstate(ctx->pgs, ctx->base_pgs);
     if (code < 0)
         goto exit;
+    /* gs_copygstate also copies the save depth, this seems to me like a bad idea!
+     * It certainly causes problems for us because we pay attention to the save depth
+     * when processing pdfi_gsave/pdfi_grestore and also at the end of processing
+     * content streams. Becasue we now use pdfi_gsave/grestore instead of the
+     * graphics library gs_gsave/grestore, we must ensure that the save level
+     * doesn't get overwritten.
+     */
+    ctx->pgs->level = level;
     code = gs_setstrokeconstantalpha(ctx->pgs, strokealpha);
     code = gs_setfillconstantalpha(ctx->pgs, fillalpha);
 
@@ -363,15 +368,23 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
     templat.XStep = XStep;
     templat.YStep = YStep;
 
-    code = pdfi_pattern_setup(ctx, (gs_pattern_template_t *)&templat, page_dict, pdict);
+    code = pdfi_gsave(ctx);
     if (code < 0)
         goto exit;
+
+    code = pdfi_pattern_setup(ctx, (gs_pattern_template_t *)&templat, page_dict, pdict);
+    if (code < 0) {
+        (void) pdfi_grestore(ctx);
+        goto exit;
+    }
 
     code = gs_make_pattern(cc, (const gs_pattern_template_t *)&templat, &mat, ctx->pgs, ctx->memory);
-    if (code < 0)
+    if (code < 0) {
+        (void) pdfi_grestore(ctx);
         goto exit;
+    }
 
-    code = gs_grestore(ctx->pgs);
+    code = pdfi_grestore(ctx);
     if (code < 0)
         goto exit;
  exit:
@@ -426,21 +439,30 @@ pdfi_setpattern_type2(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
         dbgmprintf(ctx->memory, "WARNING: Pattern ExtGState not supported, skipping\n");
     }
 
-    code = pdfi_pattern_setup(ctx, (gs_pattern_template_t *)&templat, page_dict, pdict);
+    code = pdfi_gsave(ctx);
     if (code < 0)
         goto exit;
+
+    code = pdfi_pattern_setup(ctx, (gs_pattern_template_t *)&templat, page_dict, pdict);
+    if (code < 0) {
+        (void) pdfi_grestore(ctx);
+        goto exit;
+    }
     code = pdfi_shading_build(ctx, stream_dict, page_dict, Shading, &shading, &shading_type);
     if (code != 0) {
+        (void) pdfi_grestore(ctx);
         dbgmprintf(ctx->memory, "ERROR: can't build shading structure\n");
         goto exit;
     }
     gs_pattern2_init(&templat);
     templat.Shading = shading;
     code = gs_make_pattern(cc, (const gs_pattern_template_t *)&templat, &mat, ctx->pgs, ctx->memory);
-    if (code < 0)
+    if (code < 0) {
+        (void) pdfi_grestore(ctx);
         goto exit;
+    }
 
-    code = gs_grestore(ctx->pgs);
+    code = pdfi_grestore(ctx);
     if (code < 0)
         goto exit;
 
