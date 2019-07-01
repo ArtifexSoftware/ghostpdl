@@ -284,7 +284,8 @@ check_pattern_rendering(pcl_state_t * pcs, pcl_pattern_t * pptrn, bool use_frgrn
     pcl_ccolor_t *pccolor = 0;
 
     /* check the common parameters first */
-    if ((pptrn->orient != pcs->pat_orient) ||
+    if ((pptrn == NULL) ||
+        (pptrn->orient != pcs->pat_orient) ||
         (pptrn->ref_pt.x != pcs->pat_ref_pt.x) ||
         (pptrn->ref_pt.y != pcs->pat_ref_pt.y))
         return false;
