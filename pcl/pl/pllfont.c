@@ -717,9 +717,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t * mem,
                 }
             }
             if (code < 0) {
-                gs_free_object(mem, plfont->pfont, "pl_tt_load_font(gs_font_type42)");
-                pl_free_tt_fontfile_buffer(mem, plfont->header);
-                gs_free_object(mem, plfont, "pl_tt_load_font(pl_font_t)");
+                /* on error, pl_dict_put consumes plfont */
                 continue;
             }
             found = true;

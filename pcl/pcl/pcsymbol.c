@@ -281,7 +281,7 @@ pcl_load_built_in_symbol_sets(pcl_state_t * pcs)
             symsetp->storage = pcds_internal;
 
             if (pl_dict_put(&pcs->built_in_symbol_sets, mapp->id, 2, symsetp) < 0) {
-                gs_free_object(pcs->memory, symsetp, "symset init dict value");
+                /* on error, pl_dict_put consumes symsetp */
                 return_error(gs_error_VMerror);
             }
         }
