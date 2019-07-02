@@ -962,9 +962,15 @@ validate(const gs_memory_t *mem,
                 /* Continue matching */
                 a--;
             } else if (*b == 0) {
-                if (ends_in(control->paths[i], b, ds, dslen))
-                    /* PATH=abc/? pattern=abc/ */
-                    goto found; /* Bingo! */
+                if (ends_in(control->paths[i], b - 1, ds, dslen)) {
+                    const char *a2 = a;
+                    const char *aend = path + strlen(path);
+                    while (aend - a2 >= dslen && memcmp(a2, ds, dslen))
+                      a2++;
+                    if (aend - a2 < dslen)
+                      /* PATH=abc/? pattern=abc/ */
+                      goto found; /* Bingo! */
+                 }
                 /* PATH=abcd pattern=abc */
                 break; /* No match */
             } else if (*a != *b) {
