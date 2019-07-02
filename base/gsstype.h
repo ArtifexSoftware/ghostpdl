@@ -82,8 +82,16 @@ typedef struct enum_ptr_s {
  */
 typedef struct struct_shared_procs_s struct_shared_procs_t;
 
+/*
+ * Objects within the 'obj' allocator are currently limited to be uint's,
+ * even though the interface allows for size_t's. This means that gc'd
+ * allocations are never bigger than 4Gig. To change this, change the
+ * following type, at the cost of more overhead for each object.
+ */
+typedef uint obj_size_t;
+
 struct gs_memory_struct_type_s {
-        uint ssize;
+        obj_size_t ssize;
         struct_name_t sname;
 
         /* ------ Procedures shared among many structure types. ------ */

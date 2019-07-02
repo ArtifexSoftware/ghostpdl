@@ -90,7 +90,7 @@ static const gs_memory_procs_t gs_malloc_memory_procs =
 #define malloc_block_data\
         gs_malloc_block_t *next;\
         gs_malloc_block_t *prev;\
-        uint size;\
+        size_t size;\
         gs_memory_type_ptr_t type;\
         client_name_t cname
 struct malloc_block_data_s {
@@ -165,7 +165,7 @@ heap_available()
 
 /* Allocate various kinds of blocks. */
 static byte *
-gs_heap_alloc_bytes(gs_memory_t * mem, uint size, client_name_t cname)
+gs_heap_alloc_bytes(gs_memory_t * mem, size_t size, client_name_t cname)
 {
     gs_malloc_memory_t *mmem = (gs_malloc_memory_t *) mem;
     byte *ptr = 0;
@@ -186,7 +186,7 @@ gs_heap_alloc_bytes(gs_memory_t * mem, uint size, client_name_t cname)
         /* Definitely too large to allocate; also avoids overflow. */
         set_msg("exceeded limit");
     } else {
-        uint added = size + sizeof(gs_malloc_block_t);
+        size_t added = size + sizeof(gs_malloc_block_t);
 
         if (added <= size || mmem->limit - added < mmem->used)
             set_msg("exceeded limit");
@@ -223,7 +223,7 @@ gs_heap_alloc_bytes(gs_memory_t * mem, uint size, client_name_t cname)
         gs_alloc_fill(ptr, gs_alloc_fill_alloc, size);
 #ifdef DEBUG
     if (gs_debug_c('a') || msg != ok_msg)
-        dmlprintf6(mem, "[a+]gs_malloc(%s)(%u) = 0x%lx: %s, used=%ld, max=%ld\n",
+        dmlprintf6(mem, "[a+]gs_malloc(%s)(%"PRIuSIZE") = 0x%lx: %s, used=%ld, max=%ld\n",
                    client_name_string(cname), size, (ulong) ptr, msg, mmem->used, mmem->max_used);
 #endif
     return ptr;
@@ -242,17 +242,17 @@ gs_heap_alloc_struct(gs_memory_t * mem, gs_memory_type_ptr_t pstype,
     return ptr;
 }
 static byte *
-gs_heap_alloc_byte_array(gs_memory_t * mem, uint num_elements, uint elt_size,
+gs_heap_alloc_byte_array(gs_memory_t * mem, size_t num_elements, size_t elt_size,
                          client_name_t cname)
 {
-    ulong lsize = (ulong) num_elements * elt_size;
+    size_t lsize = (size_t) num_elements * elt_size;
 
-    if (lsize != (uint) lsize)
+    if (elt_size != 0 && lsize/elt_size != num_elements)
         return 0;
-    return gs_heap_alloc_bytes(mem, (uint) lsize, cname);
+    return gs_heap_alloc_bytes(mem, (size_t) lsize, cname);
 }
 static void *
-gs_heap_alloc_struct_array(gs_memory_t * mem, uint num_elements,
+gs_heap_alloc_struct_array(gs_memory_t * mem, size_t num_elements,
                            gs_memory_type_ptr_t pstype, client_name_t cname)
 {
     void *ptr =
@@ -265,14 +265,14 @@ gs_heap_alloc_struct_array(gs_memory_t * mem, uint num_elements,
     return ptr;
 }
 static void *
-gs_heap_resize_object(gs_memory_t * mem, void *obj, uint new_num_elements,
+gs_heap_resize_object(gs_memory_t * mem, void *obj, size_t new_num_elements,
                       client_name_t cname)
 {
     gs_malloc_memory_t *mmem = (gs_malloc_memory_t *) mem;
     gs_malloc_block_t *ptr = (gs_malloc_block_t *) obj - 1;
     gs_memory_type_ptr_t pstype = ptr->type;
-    uint old_size = gs_object_size(mem, obj) + sizeof(gs_malloc_block_t);
-    uint new_size =
+    size_t old_size = gs_object_size(mem, obj) + sizeof(gs_malloc_block_t);
+    size_t new_size =
         gs_struct_type_size(pstype) * new_num_elements +
         sizeof(gs_malloc_block_t);
     gs_malloc_block_t *new_ptr;
@@ -300,7 +300,7 @@ gs_heap_resize_object(gs_memory_t * mem, void *obj, uint new_num_elements,
                       gs_alloc_fill_alloc, new_size - old_size);
     return new_ptr + 1;
 }
-static uint
+static size_t
 gs_heap_object_size(gs_memory_t * mem, const void *ptr)
 {
     return ((const gs_malloc_block_t *)ptr)[-1].size;
@@ -318,7 +318,7 @@ gs_heap_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
     gs_memory_type_ptr_t pstype;
     struct_proc_finalize((*finalize));
 
-    if_debug3m('a', mem, "[a-]gs_free(%s) 0x%lx(%u)\n",
+    if_debug3m('a', mem, "[a-]gs_free(%s) 0x%lx(%"PRIuSIZE")\n",
                client_name_string(cname), (ulong) ptr,
                (ptr == 0 ? 0 : ((gs_malloc_block_t *) ptr)[-1].size));
     if (ptr == 0)
@@ -403,12 +403,12 @@ gs_heap_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 #endif
 }
 static byte *
-gs_heap_alloc_string(gs_memory_t * mem, uint nbytes, client_name_t cname)
+gs_heap_alloc_string(gs_memory_t * mem, size_t nbytes, client_name_t cname)
 {
     return gs_heap_alloc_bytes(mem, nbytes, cname);
 }
 static byte *
-gs_heap_resize_string(gs_memory_t * mem, byte * data, uint old_num, uint new_num,
+gs_heap_resize_string(gs_memory_t * mem, byte * data, size_t old_num, size_t new_num,
                       client_name_t cname)
 {
     if (gs_heap_object_type(mem, data) != &st_bytes)
@@ -417,7 +417,7 @@ gs_heap_resize_string(gs_memory_t * mem, byte * data, uint old_num, uint new_num
     return gs_heap_resize_object(mem, data, new_num, cname);
 }
 static void
-gs_heap_free_string(gs_memory_t * mem, byte * data, uint nbytes,
+gs_heap_free_string(gs_memory_t * mem, byte * data, size_t nbytes,
                     client_name_t cname)
 {
     /****** SHOULD CHECK SIZE IF DEBUGGING ******/
@@ -503,7 +503,7 @@ gs_heap_free_all(gs_memory_t * mem, uint free_mask, client_name_t cname)
 
         for (; bp != 0; bp = np) {
             np = bp->next;
-            if_debug3m('a', mem, "[a]gs_heap_free_all(%s) 0x%lx(%u)\n",
+            if_debug3m('a', mem, "[a]gs_heap_free_all(%s) 0x%lx(%"PRIuSIZE")\n",
                        client_name_string(bp->cname), (ulong) (bp + 1),
                        bp->size);
             gs_alloc_fill(bp + 1, gs_alloc_fill_free, bp->size);

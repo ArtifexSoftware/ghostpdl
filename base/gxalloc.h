@@ -319,8 +319,8 @@ typedef struct ref_s ref;
 struct gs_ref_memory_s {
     /* The following are set at initialization time. */
     gs_memory_common;
-    uint clump_size;
-    uint large_size;		/* min size to give large object */
+    size_t clump_size;
+    size_t large_size;		/* min size to give large object */
                                 /* its own clump: must be */
                                 /* 1 mod obj_align_mod */
     uint space;			/* a_local, a_global, a_system */
@@ -333,20 +333,20 @@ struct gs_ref_memory_s {
     /* The following are updated dynamically. */
     bool is_controlled;		/* if true, this allocator doesn't manage */
                                 /* its own clumps */
-    ulong limit;		/* signal a VMerror when total */
+    size_t limit;		/* signal a VMerror when total */
                                 /* allocated exceeds this */
     clump_t *root;		/* root of clump splay tree */
     clump_t *cc;		/* current clump */
     clump_locator_t cfreed;	/* clump where last object freed */
-    ulong allocated;		/* total size of all clumps */
+    size_t allocated;		/* total size of all clumps */
                                 /* allocated at this save level */
-    ulong gc_allocated;		/* value of (allocated + */
+    size_t gc_allocated;	/* value of (allocated + */
                                 /* previous_status.allocated) after last GC */
     struct lost_ {		/* space freed and 'lost' (not put on a */
                                 /* freelist) */
-        ulong objects;
-        ulong refs;
-        ulong strings;
+        size_t objects;
+        size_t refs;
+        size_t strings;
     } lost;
     /*
      * The following are for the interpreter's convenience: the
@@ -369,7 +369,7 @@ struct gs_ref_memory_s {
     struct alloc_save_s *reloc_saved;	/* for GC */
     gs_memory_status_t previous_status;		/* total allocated & used */
                                 /* in outer save levels */
-    uint largest_free_size;	/* largest (aligned) size on large block list */
+    size_t largest_free_size;	/* largest (aligned) size on large block list */
     /* We put the freelists last to keep the scalar offsets small. */
     obj_header_t *freelists[num_freelists];
 };

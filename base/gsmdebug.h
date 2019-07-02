@@ -35,12 +35,12 @@ extern const byte
 #define gs_alloc_debug gs_debug['@']
 
 /* Conditionally fill unoccupied blocks with a pattern. */
-extern void gs_alloc_memset(void *, int /*byte */ , ulong);
+extern void gs_alloc_memset(void *, int /*byte */ , size_t);
 
 #ifdef DEBUG
 #  define gs_alloc_fill(ptr, fill, len)                              \
      BEGIN                                                           \
-     if ( gs_alloc_debug ) gs_alloc_memset(ptr, fill, (ulong)(len)); \
+     if ( gs_alloc_debug ) gs_alloc_memset(ptr, fill, (size_t)(len)); \
      VALGRIND_MAKE_MEM_UNDEFINED(ptr,(ulong)(len));                  \
      END
 #else

@@ -966,71 +966,71 @@ chunk_obj_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_n
 }
 
 static byte *
-chunk_alloc_bytes_immovable(gs_memory_t * mem, uint size, client_name_t cname)
+chunk_alloc_bytes_immovable(gs_memory_t * mem, size_t size, client_name_t cname)
 {
     return chunk_obj_alloc(mem, size, &st_bytes, cname);
 }
 
 static byte *
-chunk_alloc_bytes(gs_memory_t * mem, uint size, client_name_t cname)
+chunk_alloc_bytes(gs_memory_t * mem, size_t size, client_name_t cname)
 {
     return chunk_obj_alloc(mem, size, &st_bytes, cname);
 }
 
 static void *
 chunk_alloc_struct_immovable(gs_memory_t * mem, gs_memory_type_ptr_t pstype,
-                         client_name_t cname)
+                             client_name_t cname)
 {
     return chunk_obj_alloc(mem, pstype->ssize, pstype, cname);
 }
 
 static void *
 chunk_alloc_struct(gs_memory_t * mem, gs_memory_type_ptr_t pstype,
-               client_name_t cname)
+                   client_name_t cname)
 {
     return chunk_obj_alloc(mem, pstype->ssize, pstype, cname);
 }
 
 static byte *
-chunk_alloc_byte_array_immovable(gs_memory_t * mem, uint num_elements,
-                             uint elt_size, client_name_t cname)
+chunk_alloc_byte_array_immovable(gs_memory_t * mem, size_t num_elements,
+                                 size_t elt_size, client_name_t cname)
 {
     return chunk_alloc_bytes(mem, num_elements * elt_size, cname);
 }
 
 static byte *
-chunk_alloc_byte_array(gs_memory_t * mem, uint num_elements, uint elt_size,
+chunk_alloc_byte_array(gs_memory_t * mem, size_t num_elements, size_t elt_size,
                    client_name_t cname)
 {
     return chunk_alloc_bytes(mem, num_elements * elt_size, cname);
 }
 
 static void *
-chunk_alloc_struct_array_immovable(gs_memory_t * mem, uint num_elements,
-                           gs_memory_type_ptr_t pstype, client_name_t cname)
+chunk_alloc_struct_array_immovable(gs_memory_t * mem, size_t num_elements,
+                                   gs_memory_type_ptr_t pstype, client_name_t cname)
 {
     return chunk_obj_alloc(mem, num_elements * pstype->ssize, pstype, cname);
 }
 
 static void *
-chunk_alloc_struct_array(gs_memory_t * mem, uint num_elements,
-                     gs_memory_type_ptr_t pstype, client_name_t cname)
+chunk_alloc_struct_array(gs_memory_t * mem, size_t num_elements,
+                         gs_memory_type_ptr_t pstype, client_name_t cname)
 {
     return chunk_obj_alloc(mem, num_elements * pstype->ssize, pstype, cname);
 }
 
 static void *
-chunk_resize_object(gs_memory_t * mem, void *ptr, uint new_num_elements, client_name_t cname)
+chunk_resize_object(gs_memory_t * mem, void *ptr, size_t new_num_elements, client_name_t cname)
 {
     /* This isn't particularly efficient, but it is rarely used */
     chunk_obj_node_t *obj = (chunk_obj_node_t *)(((byte *)ptr) - SIZEOF_ROUND_ALIGN(chunk_obj_node_t));
-    ulong new_size = (obj->type->ssize * new_num_elements);
-    ulong old_size = obj->size - obj->padding;
+    size_t new_size = (obj->type->ssize * new_num_elements);
+    size_t old_size = obj->size - obj->padding;
     /* get the type from the old object */
     gs_memory_type_ptr_t type = obj->type;
     void *new_ptr;
     gs_memory_chunk_t *cmem = (gs_memory_chunk_t *)mem;
-    ulong save_max_used = cmem->max_used;
+    size_t save_max_used = cmem->max_used;
 
     if (new_size == old_size)
         return ptr;
@@ -1048,7 +1048,7 @@ static void
 chunk_free_object(gs_memory_t *mem, void *ptr, client_name_t cname)
 {
     gs_memory_chunk_t * const cmem = (gs_memory_chunk_t *)mem;
-    int obj_node_size;
+    size_t obj_node_size;
     chunk_obj_node_t *obj;
     struct_proc_finalize((*finalize));
     chunk_free_node_t **ap, **gtp, **ltp;
@@ -1296,30 +1296,30 @@ chunk_free_object(gs_memory_t *mem, void *ptr, client_name_t cname)
 }
 
 static byte *
-chunk_alloc_string_immovable(gs_memory_t * mem, uint nbytes, client_name_t cname)
+chunk_alloc_string_immovable(gs_memory_t * mem, size_t nbytes, client_name_t cname)
 {
     /* we just alloc bytes here */
     return chunk_alloc_bytes(mem, nbytes, cname);
 }
 
 static byte *
-chunk_alloc_string(gs_memory_t * mem, uint nbytes, client_name_t cname)
+chunk_alloc_string(gs_memory_t * mem, size_t nbytes, client_name_t cname)
 {
     /* we just alloc bytes here */
     return chunk_alloc_bytes(mem, nbytes, cname);
 }
 
 static byte *
-chunk_resize_string(gs_memory_t * mem, byte * data, uint old_num, uint new_num,
-                client_name_t cname)
+chunk_resize_string(gs_memory_t * mem, byte * data, size_t old_num, size_t new_num,
+                    client_name_t cname)
 {
     /* just resize object - ignores old_num */
     return chunk_resize_object(mem, data, new_num, cname);
 }
 
 static void
-chunk_free_string(gs_memory_t * mem, byte * data, uint nbytes,
-              client_name_t cname)
+chunk_free_string(gs_memory_t * mem, byte * data, size_t nbytes,
+                  client_name_t cname)
 {
     chunk_free_object(mem, data, cname);
 }
@@ -1393,7 +1393,7 @@ chunk_consolidate_free(gs_memory_t *mem)
 }
 
 /* accessors to get size and type given the pointer returned to the client */
-static uint
+static size_t
 chunk_object_size(gs_memory_t * mem, const void *ptr)
 {
     chunk_obj_node_t *obj = (chunk_obj_node_t *)(((byte *)ptr) - SIZEOF_ROUND_ALIGN(chunk_obj_node_t));

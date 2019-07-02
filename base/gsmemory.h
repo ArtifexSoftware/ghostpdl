@@ -76,13 +76,13 @@ typedef struct gs_memory_status_s {
      * the parent of the memory manager.  It includes space used for
      * allocated data, space available for allocation, and overhead.
      */
-    ulong allocated;
+    size_t allocated;
     /*
      * "Used" space is the amount of space used by allocated data
      * plus overhead.
      */
-    ulong used;
-    ulong max_used;
+    size_t used;
+    size_t max_used;
     /* used when wrapping if underlying allocator must be thread safe */
     bool is_thread_safe;
 } gs_memory_status_t;
@@ -97,7 +97,7 @@ typedef struct gs_memory_status_s {
                  */
 
 #define gs_memory_t_proc_alloc_bytes(proc, mem_t)\
-  byte *proc(mem_t *mem, uint nbytes, client_name_t cname)
+  byte *proc(mem_t *mem, size_t nbytes, client_name_t cname)
 
 #define gs_alloc_bytes_immovable(mem, nbytes, cname)\
   ((mem)->procs.alloc_bytes_immovable(mem, nbytes, cname))
@@ -114,7 +114,7 @@ typedef struct gs_memory_status_s {
                  */
 
 #define gs_memory_t_proc_resize_object(proc, mem_t)\
-  void *proc(mem_t *mem, void *obj, uint new_num_elements,\
+  void *proc(mem_t *mem, void *obj, size_t new_num_elements,\
              client_name_t cname)
 
 #define gs_resize_object(mem, obj, newn, cname)\
@@ -260,7 +260,7 @@ typedef struct gs_memory_procs_s {
      */
 
 #define gs_memory_proc_alloc_byte_array(proc)\
-  byte *proc(gs_memory_t *mem, uint num_elements, uint elt_size,\
+  byte *proc(gs_memory_t *mem, size_t num_elements, size_t elt_size,\
     client_name_t cname)
 #define gs_alloc_byte_array(mem, nelts, esize, cname)\
   (*(mem)->procs.alloc_byte_array)(mem, nelts, esize, cname)
@@ -274,7 +274,7 @@ typedef struct gs_memory_procs_s {
      */
 
 #define gs_memory_proc_alloc_struct_array(proc)\
-  void *proc(gs_memory_t *mem, uint num_elements,\
+  void *proc(gs_memory_t *mem, size_t num_elements,\
     gs_memory_type_ptr_t pstype, client_name_t cname)
 #define gs_alloc_struct_array(mem, nelts, typ, pstype, cname)\
   (typ *)(*(mem)->procs.alloc_struct_array)(mem, nelts, pstype, cname)
@@ -288,7 +288,7 @@ typedef struct gs_memory_procs_s {
      */
 
 #define gs_memory_proc_object_size(proc)\
-  uint proc(gs_memory_t *mem, const void *obj)
+  size_t proc(gs_memory_t *mem, const void *obj)
 #define gs_object_size(mem, obj)\
   (*(mem)->procs.object_size)(mem, obj)
     gs_memory_proc_object_size((*object_size));
@@ -310,7 +310,7 @@ typedef struct gs_memory_procs_s {
      */
 
 #define gs_memory_proc_alloc_string(proc)\
-  byte *proc(gs_memory_t *mem, uint nbytes, client_name_t cname)
+  byte *proc(gs_memory_t *mem, size_t nbytes, client_name_t cname)
 #define gs_alloc_string(mem, nbytes, cname)\
   (*(mem)->procs.alloc_string)(mem, nbytes, cname)
     gs_memory_proc_alloc_string((*alloc_string));
@@ -324,7 +324,7 @@ typedef struct gs_memory_procs_s {
      */
 
 #define gs_memory_proc_resize_string(proc)\
-  byte *proc(gs_memory_t *mem, byte *data, uint old_num, uint new_num,\
+  byte *proc(gs_memory_t *mem, byte *data, size_t old_num, size_t new_num,\
     client_name_t cname)
 #define gs_resize_string(mem, data, oldn, newn, cname)\
   (*(mem)->procs.resize_string)(mem, data, oldn, newn, cname)
@@ -335,7 +335,7 @@ typedef struct gs_memory_procs_s {
      */
 
 #define gs_memory_proc_free_string(proc)\
-  void proc(gs_memory_t *mem, byte *data, uint nbytes,\
+  void proc(gs_memory_t *mem, byte *data, size_t nbytes,\
     client_name_t cname)
 #define gs_free_string(mem, data, nbytes, cname)\
   (*(mem)->procs.free_string)(mem, data, nbytes, cname)
@@ -411,7 +411,7 @@ typedef struct gs_memory_procs_s {
  */
 void gs_free_const_object(gs_memory_t *mem, const void *data,
                           client_name_t cname);
-void gs_free_const_string(gs_memory_t *mem, const byte *data, uint nbytes,
+void gs_free_const_string(gs_memory_t *mem, const byte *data, size_t nbytes,
                           client_name_t cname);
 
 /*
@@ -427,7 +427,7 @@ void gs_free_const_bytestring(gs_memory_t *mem, gs_const_bytestring *pbs,
  * Either allocate (if obj == 0) or resize (if obj != 0) a structure array.
  * If obj != 0, pstype is used only for checking (in DEBUG configurations).
  */
-void *gs_resize_struct_array(gs_memory_t *mem, void *obj, uint num_elements,
+void *gs_resize_struct_array(gs_memory_t *mem, void *obj, size_t num_elements,
                              gs_memory_type_ptr_t pstype,
                              client_name_t cname);
 

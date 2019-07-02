@@ -62,7 +62,7 @@ gs_id get_mem_hdr_id (void *ptr)
 static int
 alloc_trace_space(const gs_ref_memory_t *imem)
 {
-    return imem->space + (imem->stable_memory == (const gs_memory_t *)imem);
+    return (int)(imem->space + (imem->stable_memory == (const gs_memory_t *)imem));
 }
 static void
 alloc_trace(const char *chars, gs_ref_memory_t * imem, client_name_t cname,
@@ -125,14 +125,14 @@ typedef enum {
 
 /* Forward references */
 static void remove_range_from_freelist(gs_ref_memory_t *mem, void* bottom, void* top);
-static obj_header_t *large_freelist_alloc(gs_ref_memory_t *mem, uint size);
+static obj_header_t *large_freelist_alloc(gs_ref_memory_t *mem, obj_size_t size);
 static obj_header_t *scavenge_low_free(gs_ref_memory_t *mem, unsigned request_size);
-static ulong compute_free_objects(gs_ref_memory_t *);
-static obj_header_t *alloc_obj(gs_ref_memory_t *, ulong, gs_memory_type_ptr_t, alloc_flags_t, client_name_t);
+static size_t compute_free_objects(gs_ref_memory_t *);
+static obj_header_t *alloc_obj(gs_ref_memory_t *, obj_size_t, gs_memory_type_ptr_t, alloc_flags_t, client_name_t);
 static void consolidate_clump_free(clump_t *cp, gs_ref_memory_t *mem);
-static void trim_obj(gs_ref_memory_t *mem, obj_header_t *obj, uint size, clump_t *cp);
-static clump_t *alloc_acquire_clump(gs_ref_memory_t *, ulong, bool, client_name_t);
-static clump_t *alloc_add_clump(gs_ref_memory_t *, ulong, client_name_t);
+static void trim_obj(gs_ref_memory_t *mem, obj_header_t *obj, obj_size_t size, clump_t *cp);
+static clump_t *alloc_acquire_clump(gs_ref_memory_t *, size_t, bool, client_name_t);
+static clump_t *alloc_add_clump(gs_ref_memory_t *, size_t, client_name_t);
 void alloc_close_clump(gs_ref_memory_t *);
 
 /*
@@ -1043,7 +1043,7 @@ i_free_all(gs_memory_t * mem, uint free_mask, client_name_t cname)
 /* ================ Accessors ================ */
 
 /* Get the size of an object from the header. */
-static uint
+static size_t
 i_object_size(gs_memory_t * mem, const void /*obj_header_t */ *obj)
 {
     return pre_obj_contents_size((const obj_header_t *)obj - 1);
@@ -1073,7 +1073,7 @@ gs_memory_set_gc_status(gs_ref_memory_t * mem, const gs_memory_gc_status_t * pst
 
 /* Set VM threshold. */
 void
-gs_memory_set_vm_threshold(gs_ref_memory_t * mem, long val)
+gs_memory_set_vm_threshold(gs_ref_memory_t * mem, size_t val)
 {
     gs_memory_gc_status_t stat;
     gs_ref_memory_t * stable = (gs_ref_memory_t *)mem->stable_memory;
@@ -1113,7 +1113,7 @@ gs_memory_set_vm_reclaim(gs_ref_memory_t * mem, bool enabled)
            )\
         {	ptr = *pfl;\
                 *pfl = *(obj_header_t **)ptr;\
-                ptr[-1].o_size = size;\
+                ptr[-1].o_size = (obj_size_t)size;\
                 ptr[-1].o_type = pstype;\
                 ASSIGN_HDR_ID(ptr);\
                 /* If debugging, clear the block in an attempt to */\
@@ -1138,7 +1138,7 @@ gs_memory_set_vm_reclaim(gs_ref_memory_t * mem, bool enabled)
         {	imem->cc->cbot = (byte *)ptr + obj_size_round(size);\
                 ptr->o_pad = 0;\
                 ptr->o_alone = 0;\
-                ptr->o_size = size;\
+                ptr->o_size = (obj_size_t)size;\
                 ptr->o_type = pstype;\
                 ptr++;\
                 ASSIGN_HDR_ID(ptr);\
@@ -1150,22 +1150,26 @@ gs_memory_set_vm_reclaim(gs_ref_memory_t * mem, bool enabled)
         else
 
 static byte *
-i_alloc_bytes(gs_memory_t * mem, uint size, client_name_t cname)
+i_alloc_bytes(gs_memory_t * mem, size_t ssize, client_name_t cname)
 {
     gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     obj_header_t *obj;
     obj_header_t **pfl;
+    obj_size_t size = (obj_size_t)ssize;
 
 #ifdef MEMENTO
     if (Memento_failThisEvent())
         return NULL;
 #endif
 
+    if ((size_t)size != ssize)
+        return NULL;
+
     IF_FREELIST_ALLOC(obj, imem, size, &st_bytes, pfl)
         alloc_trace(":+bf", imem, cname, NULL, size, obj);
     ELSEIF_BIG_FREELIST_ALLOC(obj, imem, size, &st_bytes)
         alloc_trace(":+bF", imem, cname, NULL, size, obj);
-    ELSEIF_LIFO_ALLOC(obj, imem, size, &st_bytes)
+    ELSEIF_LIFO_ALLOC(obj, imem, (uint)size, &st_bytes)
         alloc_trace(":+b ", imem, cname, NULL, size, obj);
     ELSE_ALLOC
     {
@@ -1180,15 +1184,19 @@ i_alloc_bytes(gs_memory_t * mem, uint size, client_name_t cname)
     return (byte *) obj;
 }
 static byte *
-i_alloc_bytes_immovable(gs_memory_t * mem, uint size, client_name_t cname)
+i_alloc_bytes_immovable(gs_memory_t * mem, size_t ssize, client_name_t cname)
 {
     gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     obj_header_t *obj;
+    obj_size_t size = (obj_size_t)ssize;
 
 #ifdef MEMENTO
     if (Memento_failThisEvent())
         return NULL;
 #endif
+
+    if ((size_t)size != ssize)
+        return NULL;
 
     obj = alloc_obj(imem, size, &st_bytes,
                     ALLOC_IMMOVABLE | ALLOC_DIRECT, cname);
@@ -1202,7 +1210,7 @@ i_alloc_struct(gs_memory_t * mem, gs_memory_type_ptr_t pstype,
                client_name_t cname)
 {
     gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
-    uint size = pstype->ssize;
+    obj_size_t size = pstype->ssize;
     obj_header_t *obj;
     obj_header_t **pfl;
 
@@ -1235,7 +1243,7 @@ i_alloc_struct_immovable(gs_memory_t * mem, gs_memory_type_ptr_t pstype,
                          client_name_t cname)
 {
     gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
-    uint size = pstype->ssize;
+    obj_size_t size = pstype->ssize;
     obj_header_t *obj;
 
 #ifdef MEMENTO
@@ -1250,68 +1258,89 @@ i_alloc_struct_immovable(gs_memory_t * mem, gs_memory_type_ptr_t pstype,
 }
 
 static inline bool
-alloc_array_check_size(ulong num_elements, ulong elt_size, ulong *lsize)
+alloc_array_check_size(size_t num_elements, size_t elt_size, size_t *lsize)
 {
-    int64_t s = (int64_t)num_elements * elt_size;
-    if (s > max_uint) {
-        return false;
+    int shift0, shift1;
+    size_t m, n;
+
+    /* Avoid the loops in the overwhelming number of cases. */
+    if ((num_elements | elt_size) >= 65536) {
+        /* Slightly conservative, but it'll work for our purposes. */
+        /* m is the maximum unsigned value representable in shift0 bits */
+        for (m=0, shift0 = 0; m < num_elements; m = (m<<1)+1, shift0++);
+        /* n is the maximum unsigned value representable in shift1 bits */
+        for (n=0, shift1 = 0; n < elt_size; n = (n<<1)+1, shift1++);
+        /* An shift0 bit unsigned number multiplied by an shift1 bit
+         * unsigned number is guaranteed to fit in n+m-1 bits. */
+        if (shift0+shift1-1 > 8*sizeof(size_t))
+            return false; /* Overflow */
     }
-    *lsize = (ulong)s;
+
+    *lsize = num_elements * elt_size;
     return true;
 }
 
 static byte *
-i_alloc_byte_array(gs_memory_t * mem, uint num_elements, uint elt_size,
+i_alloc_byte_array(gs_memory_t * mem, size_t num_elements, size_t elt_size,
                    client_name_t cname)
 {
     gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     obj_header_t *obj;
-    ulong lsize;
+    size_t slsize;
+    obj_size_t lsize;
 #ifdef MEMENTO
     if (Memento_failThisEvent())
         return NULL;
 #endif
-    if (alloc_array_check_size(num_elements, elt_size, &lsize) == false)
+    if (alloc_array_check_size(num_elements, elt_size, &slsize) == false)
+        return NULL;
+    lsize = (obj_size_t)slsize;
+    if ((size_t)lsize != slsize)
         return NULL;
     obj = alloc_obj(imem, lsize,
                     &st_bytes, ALLOC_DIRECT, cname);
 
-    if_debug6m('A', mem, "[a%d:+b.]%s -bytes-*(%lu=%u*%u) = 0x%lx\n",
+    if_debug6m('A', mem, "[a%d:+b.]%s -bytes-*(%"PRIuSIZE"=%"PRIuSIZE"*%"PRIuSIZE") = 0x%lx\n",
                alloc_trace_space(imem), client_name_string(cname),
-               (ulong) num_elements * elt_size,
+               num_elements * elt_size,
                num_elements, elt_size, (ulong) obj);
     return (byte *) obj;
 }
 static byte *
-i_alloc_byte_array_immovable(gs_memory_t * mem, uint num_elements,
-                             uint elt_size, client_name_t cname)
+i_alloc_byte_array_immovable(gs_memory_t * mem, size_t num_elements,
+                             size_t elt_size, client_name_t cname)
 {
     gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     obj_header_t *obj;
-    ulong lsize;
+    size_t slsize;
+    obj_size_t lsize;
 #ifdef MEMENTO
     if (Memento_failThisEvent())
         return NULL;
 #endif
-    if (alloc_array_check_size(num_elements, elt_size, &lsize) == false)
+    if (alloc_array_check_size(num_elements, elt_size, &slsize) == false)
+        return NULL;
+    lsize = (obj_size_t)slsize;
+    if ((size_t)lsize != slsize)
         return NULL;
     obj = alloc_obj(imem, lsize,
                     &st_bytes, ALLOC_IMMOVABLE | ALLOC_DIRECT,
                     cname);
 
-    if_debug6m('A', mem, "[a%d|+b.]%s -bytes-*(%lu=%u*%u) = 0x%lx\n",
+    if_debug6m('A', mem, "[a%d|+b.]%s -bytes-*(%"PRIuSIZE"=%"PRIuSIZE"*%"PRIuSIZE") = 0x%lx\n",
                alloc_trace_space(imem), client_name_string(cname),
-               (ulong) num_elements * elt_size,
+               num_elements * elt_size,
                num_elements, elt_size, (ulong) obj);
     return (byte *) obj;
 }
 static void *
-i_alloc_struct_array(gs_memory_t * mem, uint num_elements,
+i_alloc_struct_array(gs_memory_t * mem, size_t num_elements,
                      gs_memory_type_ptr_t pstype, client_name_t cname)
 {
     gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     obj_header_t *obj;
-    ulong lsize;
+    size_t slsize;
+    obj_size_t lsize;
 #ifdef MEMENTO
     if (Memento_failThisEvent())
         return NULL;
@@ -1325,50 +1354,57 @@ i_alloc_struct_array(gs_memory_t * mem, uint num_elements,
         return NULL;		/* fail */
     }
 #endif
-    if (alloc_array_check_size(num_elements, pstype->ssize, &lsize) == false)
+    if (alloc_array_check_size(num_elements, pstype->ssize, &slsize) == false)
+        return NULL;
+    lsize = (obj_size_t)slsize;
+    if ((size_t)lsize != slsize)
         return NULL;
     obj = alloc_obj(imem, lsize, pstype, ALLOC_DIRECT, cname);
-    if_debug7m('A', mem, "[a%d:+<.]%s %s*(%lu=%u*%u) = 0x%lx\n",
+    if_debug7m('A', mem, "[a%d:+<.]%s %s*(%"PRIuSIZE"=%"PRIuSIZE"*%u) = 0x%lx\n",
                alloc_trace_space(imem), client_name_string(cname),
                struct_type_name_string(pstype),
-               (ulong) num_elements * pstype->ssize,
+               num_elements * pstype->ssize,
                num_elements, pstype->ssize, (ulong) obj);
     return (char *)obj;
 }
 static void *
-i_alloc_struct_array_immovable(gs_memory_t * mem, uint num_elements,
-                           gs_memory_type_ptr_t pstype, client_name_t cname)
+i_alloc_struct_array_immovable(gs_memory_t * mem, size_t num_elements,
+                               gs_memory_type_ptr_t pstype, client_name_t cname)
 {
     gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     obj_header_t *obj;
-    ulong lsize;
+    size_t slsize;
+    obj_size_t lsize;
 #ifdef MEMENTO
     if (Memento_failThisEvent())
         return NULL;
 #endif
 
     ALLOC_CHECK_SIZE(mem,pstype);
-    if (alloc_array_check_size(num_elements, pstype->ssize, &lsize) == false)
+    if (alloc_array_check_size(num_elements, pstype->ssize, &slsize) == false)
+        return NULL;
+    lsize = (obj_size_t)slsize;
+    if ((size_t)lsize != slsize)
         return NULL;
     obj = alloc_obj(imem, lsize, pstype, ALLOC_IMMOVABLE | ALLOC_DIRECT, cname);
-    if_debug7m('A', mem, "[a%d|+<.]%s %s*(%lu=%u*%u) = 0x%lx\n",
+    if_debug7m('A', mem, "[a%d|+<.]%s %s*(%"PRIuSIZE"=%"PRIuSIZE"*%u) = 0x%lx\n",
                alloc_trace_space(imem), client_name_string(cname),
                struct_type_name_string(pstype),
-               (ulong) num_elements * pstype->ssize,
+               num_elements * pstype->ssize,
                num_elements, pstype->ssize, (ulong) obj);
     return (char *)obj;
 }
 static void *
-i_resize_object(gs_memory_t * mem, void *obj, uint new_num_elements,
+i_resize_object(gs_memory_t * mem, void *obj, size_t new_num_elements,
                 client_name_t cname)
 {
     gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     obj_header_t *pp = (obj_header_t *) obj - 1;
     gs_memory_type_ptr_t pstype = pp->o_type;
-    ulong old_size = pre_obj_contents_size(pp);
-    ulong new_size = (ulong) pstype->ssize * new_num_elements;
-    ulong old_size_rounded = obj_align_round(old_size);
-    ulong new_size_rounded = obj_align_round(new_size);
+    size_t old_size = pre_obj_contents_size(pp);
+    size_t new_size = pstype->ssize * new_num_elements;
+    size_t old_size_rounded = obj_align_round(old_size);
+    size_t new_size_rounded = obj_align_round(new_size);
     void *new_obj = NULL;
 
 #ifdef MEMENTO
@@ -1376,22 +1412,25 @@ i_resize_object(gs_memory_t * mem, void *obj, uint new_num_elements,
         return NULL;
 #endif
 
+    if (new_size_rounded != (obj_size_t)new_size_rounded)
+        return NULL;
+
     if (old_size_rounded == new_size_rounded) {
-        pp->o_size = new_size;
+        pp->o_size = (obj_size_t)new_size;
         new_obj = obj;
     } else
         if (imem->cc && (byte *)obj + old_size_rounded == imem->cc->cbot &&
             imem->cc->ctop - (byte *)obj >= new_size_rounded ) {
             imem->cc->cbot = (byte *)obj + new_size_rounded;
-            pp->o_size = new_size;
+            pp->o_size = (obj_size_t)new_size;
             new_obj = obj;
         } else /* try and trim the object -- but only if room for a dummy header */
             if (new_size_rounded + sizeof(obj_header_t) <= old_size_rounded) {
-                trim_obj(imem, obj, new_size, (clump_t *)0);
+                trim_obj(imem, obj, (obj_size_t)new_size, (clump_t *)0);
                 new_obj = obj;
             }
     if (new_obj) {
-        if_debug8m('A', mem, "[a%d:%c%c ]%s %s(%lu=>%lu) 0x%lx\n",
+        if_debug8m('A', mem, "[a%d:%c%c ]%s %s(%"PRIuSIZE"=>%"PRIuSIZE") 0x%lx\n",
                    alloc_trace_space(imem),
                    (new_size > old_size ? '>' : '<'),
                    (pstype == &st_bytes ? 'b' : '<'),
@@ -1418,7 +1457,7 @@ i_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
     gs_memory_struct_type_t saved_stype;
 
     struct_proc_finalize((*finalize));
-    uint size, rounded_size;
+    size_t size, rounded_size;
 
     if (ptr == 0)
         return;
@@ -1570,7 +1609,7 @@ i_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
     imem->lost.objects += obj_size_round(size);
 }
 static byte *
-i_alloc_string(gs_memory_t * mem, uint nbytes, client_name_t cname)
+i_alloc_string(gs_memory_t * mem, size_t nbytes, client_name_t cname)
 {
     gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     byte *str;
@@ -1582,7 +1621,7 @@ i_alloc_string(gs_memory_t * mem, uint nbytes, client_name_t cname)
      */
     clump_t *cp = clump_splay_walk_init_mid(&sw, imem->cc);
 
-    if (nbytes + (uint)HDR_ID_OFFSET < nbytes)
+    if (nbytes + (size_t)HDR_ID_OFFSET < nbytes)
         return NULL;
 
     nbytes += HDR_ID_OFFSET;
@@ -1598,7 +1637,7 @@ i_alloc_string(gs_memory_t * mem, uint nbytes, client_name_t cname)
     }
 top:
     if (imem->cc && !imem->cc->c_alone && imem->cc->ctop - imem->cc->cbot > nbytes) {
-        if_debug4m('A', mem, "[a%d:+> ]%s(%u) = 0x%lx\n",
+        if_debug4m('A', mem, "[a%d:+> ]%s(%"PRIuSIZE") = 0x%lx\n",
                    alloc_trace_space(imem), client_name_string(cname), nbytes,
                    (ulong) (imem->cc->ctop - nbytes));
         str = imem->cc->ctop -= nbytes;
@@ -1617,7 +1656,7 @@ top:
         alloc_open_clump(imem);
         goto top;
     }
-    if (nbytes > string_space_quanta(max_uint - sizeof(clump_head_t)) *
+    if (nbytes > string_space_quanta(SIZE_MAX - sizeof(clump_head_t)) *
         string_data_quantum
         ) {			/* Can't represent the size in a uint! */
         return 0;
@@ -1637,11 +1676,11 @@ top:
     }
 }
 static byte *
-i_alloc_string_immovable(gs_memory_t * mem, uint nbytes, client_name_t cname)
+i_alloc_string_immovable(gs_memory_t * mem, size_t nbytes, client_name_t cname)
 {
     gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     byte *str;
-    uint asize;
+    size_t asize;
     clump_t *cp;
 
     nbytes += HDR_ID_OFFSET;
@@ -1652,15 +1691,14 @@ i_alloc_string_immovable(gs_memory_t * mem, uint nbytes, client_name_t cname)
 #endif
     /* Give it a clump all its own. */
     asize = string_clump_space(nbytes) + sizeof(clump_head_t);
-    cp = alloc_acquire_clump(imem, (ulong) asize, true,
-                                      "large string clump");
+    cp = alloc_acquire_clump(imem, asize, true, "large string clump");
 
     if (cp == 0)
         return 0;
     cp->c_alone = true;
 
     str = cp->ctop = cp->climit - nbytes;
-    if_debug4m('a', mem, "[a%d|+>L]%s(%u) = 0x%lx\n",
+    if_debug4m('a', mem, "[a%d|+>L]%s(%"PRIuSIZE") = 0x%lx\n",
                alloc_trace_space(imem), client_name_string(cname), nbytes,
                (ulong) str);
     gs_alloc_fill(str, gs_alloc_fill_alloc, nbytes);
@@ -1671,7 +1709,7 @@ i_alloc_string_immovable(gs_memory_t * mem, uint nbytes, client_name_t cname)
 }
 
 static byte *
-i_resize_string(gs_memory_t * mem, byte * data, uint old_num, uint new_num,
+i_resize_string(gs_memory_t * mem, byte * data, size_t old_num, size_t new_num,
                 client_name_t cname)
 {
     gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
@@ -1689,7 +1727,7 @@ i_resize_string(gs_memory_t * mem, byte * data, uint old_num, uint new_num,
          imem->cc->ctop - imem->cc->cbot > new_num - old_num)
         ) {			/* Resize in place. */
         ptr = data + old_num - new_num;
-        if_debug6m('A', mem, "[a%d:%c> ]%s(%u->%u) 0x%lx\n",
+        if_debug6m('A', mem, "[a%d:%c> ]%s(%"PRIuSIZE"->%"PRIuSIZE") 0x%lx\n",
                    alloc_trace_space(imem),
                    (new_num > old_num ? '>' : '<'),
                    client_name_string(cname), old_num, new_num,
@@ -1712,7 +1750,7 @@ i_resize_string(gs_memory_t * mem, byte * data, uint old_num, uint new_num,
             imem->lost.strings += old_num - new_num;
             gs_alloc_fill(data + new_num, gs_alloc_fill_free,
                           old_num - new_num);
-            if_debug5m('A', mem, "[a%d:<> ]%s(%u->%u) 0x%lx\n",
+            if_debug5m('A', mem, "[a%d:<> ]%s(%"PRIuSIZE"->%"PRIuSIZE") 0x%lx\n",
                        alloc_trace_space(imem), client_name_string(cname),
                        old_num, new_num, (ulong)ptr);
             ptr += HDR_ID_OFFSET;
@@ -1733,7 +1771,7 @@ i_resize_string(gs_memory_t * mem, byte * data, uint old_num, uint new_num,
 }
 
 static void
-i_free_string(gs_memory_t * mem, byte * data, uint nbytes,
+i_free_string(gs_memory_t * mem, byte * data, size_t nbytes,
               client_name_t cname)
 {
     gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
@@ -1742,12 +1780,12 @@ i_free_string(gs_memory_t * mem, byte * data, uint nbytes,
         data -= HDR_ID_OFFSET;
         nbytes += HDR_ID_OFFSET;
         if (imem->cc && data == imem->cc->ctop) {
-            if_debug4m('A', mem, "[a%d:-> ]%s(%u) 0x%lx\n",
+            if_debug4m('A', mem, "[a%d:-> ]%s(%"PRIuSIZE") 0x%lx\n",
                        alloc_trace_space(imem), client_name_string(cname), nbytes,
                        (ulong) data);
             imem->cc->ctop += nbytes;
         } else {
-            if_debug4m('A', mem, "[a%d:->#]%s(%u) 0x%lx\n",
+            if_debug4m('A', mem, "[a%d:->#]%s(%"PRIuSIZE") 0x%lx\n",
                        alloc_trace_space(imem), client_name_string(cname), nbytes,
                        (ulong) data);
             imem->lost.strings += nbytes;
@@ -1766,8 +1804,8 @@ static void
 i_status(gs_memory_t * mem, gs_memory_status_t * pstat)
 {
     gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
-    ulong unused = imem->lost.refs + imem->lost.strings;
-    ulong inner = 0;
+    size_t unused = imem->lost.refs + imem->lost.strings;
+    size_t inner = 0;
     clump_splay_walker sw;
     clump_t *cp;
 
@@ -1818,10 +1856,10 @@ static void i_defer_frees(gs_memory_t *mem, int defer)
 /* ------ Internal procedures ------ */
 
 /* Compute the amount of free object space by scanning free lists. */
-static ulong
+static size_t
 compute_free_objects(gs_ref_memory_t * mem)
 {
-    ulong unused = mem->lost.objects;
+    size_t unused = mem->lost.objects;
     int i;
 
     /* Add up space on free lists. */
@@ -1838,26 +1876,26 @@ compute_free_objects(gs_ref_memory_t * mem)
 
 /* Allocate an object from the large-block freelist. */
 static obj_header_t *	/* rets obj if allocated, else 0 */
-large_freelist_alloc(gs_ref_memory_t *mem, uint size)
+large_freelist_alloc(gs_ref_memory_t *mem, obj_size_t size)
 {
     /* Scan large object freelist. We'll grab an object up to 1/8 bigger */
     /* right away, else use best fit of entire scan. */
-    uint aligned_size = obj_align_round(size);
-    uint aligned_min_size = aligned_size + sizeof(obj_header_t);
-    uint aligned_max_size =
+    obj_size_t aligned_size = obj_align_round(size);
+    size_t aligned_min_size = aligned_size + sizeof(obj_header_t);
+    size_t aligned_max_size =
         aligned_min_size + obj_align_round(aligned_min_size / 8);
     obj_header_t *best_fit = 0;
-    obj_header_t **best_fit_prev = NULL; /* Initialize against indeteminizm. */
-    uint best_fit_size = max_uint;
+    obj_header_t **best_fit_prev = NULL; /* Initialize against indeterminism. */
+    obj_size_t best_fit_size = (obj_size_t)SIZE_MAX;
     obj_header_t *pfree;
     obj_header_t **ppfprev = &mem->freelists[LARGE_FREELIST_INDEX];
-    uint largest_size = 0;
+    size_t largest_size = 0;
 
     if (aligned_size > mem->largest_free_size)
         return 0;		/* definitely no block large enough */
 
     while ((pfree = *ppfprev) != 0) {
-        uint free_size = obj_align_round(pfree[-1].o_size);
+        obj_size_t free_size = obj_align_round(pfree[-1].o_size);
 
         if (free_size == aligned_size ||
             (free_size >= aligned_min_size && free_size < best_fit_size)
@@ -1894,7 +1932,7 @@ large_freelist_alloc(gs_ref_memory_t *mem, uint size)
 
 /* Allocate an object.  This handles all but the fastest, simplest case. */
 static obj_header_t *
-alloc_obj(gs_ref_memory_t *mem, ulong lsize, gs_memory_type_ptr_t pstype,
+alloc_obj(gs_ref_memory_t *mem, obj_size_t lsize, gs_memory_type_ptr_t pstype,
           alloc_flags_t flags, client_name_t cname)
 {
     obj_header_t *ptr;
@@ -1904,20 +1942,14 @@ alloc_obj(gs_ref_memory_t *mem, ulong lsize, gs_memory_type_ptr_t pstype,
          * Give the object a clump all its own.  Note that this case does
          * not occur if is_controlled is true.
          */
-        ulong asize =
+        obj_size_t asize =
             ((lsize + obj_align_mask) & -obj_align_mod) +
             sizeof(obj_header_t);
         clump_t *cp =
             alloc_acquire_clump(mem, asize + sizeof(clump_head_t), false,
                                 "large object clump");
 
-        if (
-#if ARCH_SIZEOF_LONG > ARCH_SIZEOF_INT
-            asize > max_uint
-#else
-            asize < lsize
-#endif
-            )
+        if (asize < lsize)
             return 0;
         if (cp == 0)
             return 0;
@@ -1926,7 +1958,7 @@ alloc_obj(gs_ref_memory_t *mem, ulong lsize, gs_memory_type_ptr_t pstype,
         cp->cbot += asize;
         ptr->o_pad = 0;
         ptr->o_alone = 1;
-        ptr->o_size = lsize;
+        ptr->o_size = (obj_size_t)lsize;
     } else {
         /*
          * Cycle through the clumps at the current save level, starting
@@ -1934,7 +1966,7 @@ alloc_obj(gs_ref_memory_t *mem, ulong lsize, gs_memory_type_ptr_t pstype,
          */
         clump_splay_walker sw;
         clump_t *cp = clump_splay_walk_init_mid(&sw, mem->cc);
-        uint asize = obj_size_round((uint) lsize);
+        obj_size_t asize = obj_size_round(lsize);
         bool allocate_success = false;
 
         if (lsize > max_freelist_size && (flags & ALLOC_DIRECT)) {
@@ -2008,7 +2040,7 @@ alloc_obj(gs_ref_memory_t *mem, ulong lsize, gs_memory_type_ptr_t pstype,
         if (!allocate_success) {
             /* Add another clump. */
             clump_t *cp =
-                alloc_add_clump(mem, (ulong)mem->clump_size, "clump");
+                alloc_add_clump(mem, mem->clump_size, "clump");
 
             if (cp) {
                 /* mem->cc == cp */
@@ -2026,11 +2058,11 @@ alloc_obj(gs_ref_memory_t *mem, ulong lsize, gs_memory_type_ptr_t pstype,
         if (allocate_success)
             mem->cc->cbot = (byte *) ptr + asize;
         else if (!mem->is_controlled ||
-                 (ptr = scavenge_low_free(mem, (uint)lsize)) == 0)
+                 (ptr = scavenge_low_free(mem, lsize)) == 0)
             return 0;	/* allocation failed */
         ptr->o_pad = 0;
         ptr->o_alone = 0;
-        ptr->o_size = (uint) lsize;
+        ptr->o_size = lsize;
     }
 done:
     ptr->o_type = pstype;
@@ -2125,7 +2157,7 @@ typedef struct
     uint need_free;
     obj_header_t *found_pre;
     gs_ref_memory_t *mem;
-    unsigned request_size;
+    obj_size_t request_size;
 } scavenge_data;
 
 static splay_app_result_t
@@ -2133,7 +2165,7 @@ scavenge(clump_t *cp, void *arg)
 {
     scavenge_data *sd = (scavenge_data *)arg;
     obj_header_t *begin_free = NULL;
-    uint found_free = 0;
+    obj_size_t found_free = 0;
 
     sd->found_pre = NULL;
 
@@ -2171,11 +2203,11 @@ scavenge(clump_t *cp, void *arg)
 
 /* try to free-up given amount of space from freespace below clump base */
 static obj_header_t *	/* returns uninitialized object hdr, NULL if none found */
-scavenge_low_free(gs_ref_memory_t *mem, unsigned request_size)
+scavenge_low_free(gs_ref_memory_t *mem, obj_size_t request_size)
 {
     /* find 1st range of memory that can be glued back together to fill request */
     scavenge_data sd;
-    uint request_size_rounded = obj_size_round(request_size);
+    obj_size_t request_size_rounded = obj_size_round(request_size);
 
     sd.found_pre = 0;
     sd.need_free = request_size_rounded + sizeof(obj_header_t);    /* room for GC's dummy hdr */
@@ -2193,9 +2225,9 @@ remove_range_from_freelist(gs_ref_memory_t *mem, void* bottom, void* top)
     int num_free[num_freelists];
     int smallest = num_freelists, largest = -1;
     const obj_header_t *cur;
-    uint size;
+    obj_size_t size;
     int i;
-    uint removed = 0;
+    obj_size_t removed = 0;
 
     /*
      * Scan from bottom to top, a range containing only free objects,
@@ -2261,15 +2293,15 @@ remove_range_from_freelist(gs_ref_memory_t *mem, void* bottom, void* top)
 
 /* Trim a memory object down to a given size */
 static void
-trim_obj(gs_ref_memory_t *mem, obj_header_t *obj, uint size, clump_t *cp)
+trim_obj(gs_ref_memory_t *mem, obj_header_t *obj, obj_size_t size, clump_t *cp)
 /* Obj must have rounded size == req'd size, or have enough room for */
 /* trailing dummy obj_header */
 {
-    uint rounded_size = obj_align_round(size);
+    obj_size_t rounded_size = obj_align_round(size);
     obj_header_t *pre_obj = obj - 1;
     obj_header_t *excess_pre = (obj_header_t*)((char*)obj + rounded_size);
-    uint old_rounded_size = obj_align_round(pre_obj->o_size);
-    uint excess_size = old_rounded_size - rounded_size - sizeof(obj_header_t);
+    obj_size_t old_rounded_size = obj_align_round(pre_obj->o_size);
+    obj_size_t excess_size = old_rounded_size - rounded_size - sizeof(obj_header_t);
 
     /* trim object's size to desired */
     pre_obj->o_size = size;
@@ -2398,7 +2430,7 @@ alloc_link_clump(clump_t * cp, gs_ref_memory_t * imem)
 
 /* Add a clump for ordinary allocation. */
 static clump_t *
-alloc_add_clump(gs_ref_memory_t * mem, ulong csize, client_name_t cname)
+alloc_add_clump(gs_ref_memory_t * mem, size_t csize, client_name_t cname)
 {
     clump_t *cp = alloc_acquire_clump(mem, csize, true, cname);
 
@@ -2416,7 +2448,7 @@ alloc_add_clump(gs_ref_memory_t * mem, ulong csize, client_name_t cname)
 /* return 0; if we would exceed the VMThreshold but psignal is valid, */
 /* just set the signal and return successfully. */
 static clump_t *
-alloc_acquire_clump(gs_ref_memory_t * mem, ulong csize, bool has_strings,
+alloc_acquire_clump(gs_ref_memory_t * mem, size_t csize, bool has_strings,
                     client_name_t cname)
 {
     gs_memory_t *parent = mem->non_gc_memory;
@@ -2437,7 +2469,7 @@ alloc_acquire_clump(gs_ref_memory_t * mem, ulong csize, bool has_strings,
      */
     if( mem->gc_status.signal_value != 0) {
         /* we have a garbage collector */
-        if ((ulong) (mem->allocated) >= mem->limit) {
+        if (mem->allocated >= mem->limit) {
             mem->gc_status.requested += csize;
             if (mem->limit >= mem->gc_status.max_vm) {
                 gs_free_object(parent, cp, cname);

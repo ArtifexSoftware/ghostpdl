@@ -289,30 +289,30 @@ gs_log_error(int err, const char *file, int line)
  * The following is a REALLY minimal gs_memory_t for use by the gp_ functions
  *******************************************************************************/
 
-byte *minimal_alloc_bytes(gs_memory_t * mem, uint size, client_name_t cname);
-byte *minimal_alloc_byte_array(gs_memory_t * mem, uint num_elements,
-                             uint elt_size, client_name_t cname);
+byte *minimal_alloc_bytes(gs_memory_t * mem, size_t size, client_name_t cname);
+byte *minimal_alloc_byte_array(gs_memory_t * mem, size_t num_elements,
+                               size_t elt_size, client_name_t cname);
 void *minimal_alloc_struct(gs_memory_t * mem, gs_memory_type_ptr_t pstype,
-               client_name_t cname);
+                           client_name_t cname);
 void minimal_free_object(gs_memory_t * mem, void * data, client_name_t cname);
-void minimal_free_string(gs_memory_t * mem, byte * data, uint nbytes, client_name_t cname);
+void minimal_free_string(gs_memory_t * mem, byte * data, size_t nbytes, client_name_t cname);
 
 byte *
-minimal_alloc_bytes(gs_memory_t * mem, uint size, client_name_t cname)
+minimal_alloc_bytes(gs_memory_t * mem, size_t size, client_name_t cname)
 {
     return malloc(size);
 }
 
 byte *
-minimal_alloc_byte_array(gs_memory_t * mem, uint num_elements,
-                             uint elt_size, client_name_t cname)
+minimal_alloc_byte_array(gs_memory_t * mem, size_t num_elements,
+                         size_t elt_size, client_name_t cname)
 {
     return malloc(num_elements * elt_size);
 }
 
 void *
 minimal_alloc_struct(gs_memory_t * mem, gs_memory_type_ptr_t pstype,
-               client_name_t cname)
+                     client_name_t cname)
 {
     return malloc(pstype->ssize);
 }
@@ -325,7 +325,7 @@ minimal_free_object(gs_memory_t * mem, void * data, client_name_t cname)
 }
 
 void
-minimal_free_string(gs_memory_t * mem, byte * data, uint nbytes, client_name_t cname)
+minimal_free_string(gs_memory_t * mem, byte * data, size_t nbytes, client_name_t cname)
 {
     free(data);
     return;

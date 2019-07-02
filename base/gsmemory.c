@@ -82,9 +82,9 @@ reloc_const_bytestring(gs_const_bytestring *pbs, gc_state_t *gcst)
 /* Fill an unoccupied block with a pattern. */
 /* Note that the block size may be too large for a single memset. */
 void
-gs_alloc_memset(void *ptr, int /*byte */ fill, ulong lsize)
+gs_alloc_memset(void *ptr, int /*byte */ fill, size_t lsize)
 {
-    ulong msize = lsize;
+    size_t msize = lsize;
     char *p = ptr;
     int isize;
 
@@ -99,7 +99,7 @@ gs_alloc_memset(void *ptr, int /*byte */ fill, ulong lsize)
  * If obj != 0, pstype is used only for checking (in DEBUG configurations).
  */
 void *
-gs_resize_struct_array(gs_memory_t *mem, void *obj, uint num_elements,
+gs_resize_struct_array(gs_memory_t *mem, void *obj, size_t num_elements,
                        gs_memory_type_ptr_t pstype, client_name_t cname)
 {
     if (obj == 0)
@@ -133,7 +133,7 @@ gs_ignore_free_object(gs_memory_t * mem, void *data, client_name_t cname)
 {
 }
 void
-gs_ignore_free_string(gs_memory_t * mem, byte * data, uint nbytes,
+gs_ignore_free_string(gs_memory_t * mem, byte * data, size_t nbytes,
                       client_name_t cname)
 {
 }
@@ -149,7 +149,7 @@ gs_free_const_object(gs_memory_t * mem, const void *data, client_name_t cname)
     gs_free_object(mem, u.w, cname);
 }
 void
-gs_free_const_string(gs_memory_t * mem, const byte * data, uint nbytes,
+gs_free_const_string(gs_memory_t * mem, const byte * data, size_t nbytes,
                      client_name_t cname)
 {
     union { const byte *r; byte *w; } u;
