@@ -84,8 +84,9 @@ nodict readonly pop
   % inigraphics sets the gstate colorspace and color correctly
   % *but* pdfwrite's transparency handling can get upset if we
   % don't explicitly set color and space here.
-  currentcolorspace .setstrokecolorspace  currentcolor .setstrokecolor
-  currentcolorspace .setfillcolorspace  currentcolor .setfillcolor
+  currentcolor currentcolor currentcolorspace dup
+  .setfillcolorspace .setstrokecolorspace
+  .setfillcolor .setstrokecolor
   //false op  //false OP  0 OPM
   1 ca  1 CA //null SMask //false AIS  /Compatible BM //true TK
 } bind executeonly def
