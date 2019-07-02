@@ -297,7 +297,7 @@ pdf_get_docinfo_item(gx_device_pdf *pdev, const char *key, char *buf, int buf_le
 }
 
 static inline byte
-decode_escape(const byte *data, int data_length, int *index)
+decode_escape(const byte *data, int data_length, size_t *index)
 {
     byte c;
 
@@ -351,14 +351,14 @@ decode_escape(const byte *data, int data_length, int *index)
  */
 static const char firstByteMark[7] = { 0x00, 0x00, 0xC0, 0xE0, 0xF0, 0xF8, 0xFC };
 
-static int gs_ConvertUTF16(unsigned char *UTF16, int UTF16Len, unsigned char **UTF8Start, int UTF8Len)
+static int gs_ConvertUTF16(unsigned char *UTF16, size_t UTF16Len, unsigned char **UTF8Start, int UTF8Len)
 {
-    int i, bytes = 0;
+    size_t i, bytes = 0;
     unsigned short U16;
     unsigned char *UTF8 = *UTF8Start;
     unsigned char *UTF8End = UTF8 + UTF8Len;
 
-    if (fabs(UTF16Len % sizeof(short)) != 0)
+    if (UTF16Len % sizeof(short) != 0)
         return gs_note_error(gs_error_rangecheck);
 
     for (i=0;i<UTF16Len / sizeof(short);i++)
@@ -414,7 +414,7 @@ static int
 pdf_xmp_write_translated(gx_device_pdf *pdev, stream *s, const byte *data, int data_length,
                          void(*write)(stream *s, const byte *data, int data_length))
 {
-    int i, j=0;
+    size_t i, j=0;
     unsigned char *buf0;
 
     if (data_length == 0)
@@ -424,7 +424,7 @@ pdf_xmp_write_translated(gx_device_pdf *pdev, stream *s, const byte *data, int d
                     "pdf_xmp_write_translated");
     if (buf0 == NULL)
         return_error(gs_error_VMerror);
-    for (i = 0; i < data_length; i++) {
+    for (i = 0; i < (size_t)data_length; i++) {
         byte c = data[i];
 
         if (c == '\\')
