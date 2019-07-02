@@ -30,6 +30,6 @@ int pm_find_queue(const gs_memory_t *mem, char *queue_name, char *driver_name);
 /* Spool file to queue */
 /* Return 0 if successful, non-zero if error. */
 /* If filename is NULL, return 0 if spool queue is valid, non-zero if error */
-int pm_spool(const gs_memory_t *mem, char *filename, const char *queue);
+int pm_spool(const gs_memory_t *mem, const char *filename, const char *queue);
 
 #endif /* gp_os2_INCLUDED */

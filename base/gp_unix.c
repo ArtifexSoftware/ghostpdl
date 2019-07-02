@@ -213,7 +213,7 @@ gp_fopen_unix(const gs_memory_t *mem, const char *fname, const char *mode, int p
 /* Open a connection to a printer.  See gp.h for details. */
 FILE *
 gp_open_printer_impl(gs_memory_t *mem,
-                     char         fname[gp_file_name_sizeof],
+                     const char  *fname,
                      int         *binary_mode,
                      int          (**close)(FILE *))
 {

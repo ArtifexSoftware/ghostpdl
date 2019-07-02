@@ -176,17 +176,21 @@ mswin_printer_fopen(gx_io_device * iodev, const char *fname, const char *access,
     /* Note that the loop condition here ensures we don't
      * trigger on the last registered fs entry (our standard
      * 'file' one). */
-    *pfile = NULL;
-    for (fs = ctx->core->fs; fs != NULL && fs->next != NULL; fs = fs->next)
+    if (access[0] == 'w' || access[0] == 'a')
     {
-        int code = 0;
-        if (fs->fs.open_printer)
-            code = fs->fs.open_printer(mem, fs->secret, fname, access, pfile);
-        if (code < 0)
-            return code;
-        if (*pfile != NULL)
-            return code;
-    }
+        *pfile = NULL;
+        for (fs = ctx->core->fs; fs != NULL && fs->next != NULL; fs = fs->next)
+        {
+            int code = 0;
+            if (fs->fs.open_printer)
+                code = fs->fs.open_printer(mem, fs->secret, fname, 1, pfile);
+            if (code < 0)
+                return code;
+            if (*pfile != NULL)
+                return code;
+        }
+    } else
+        return gs_error_invalidfileaccess;
 
     /* If nothing claimed that, then continue with the
      * standard MS way of working. */

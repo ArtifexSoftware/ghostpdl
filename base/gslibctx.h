@@ -64,12 +64,12 @@ typedef struct {
                               gp_file    **file);
     int (*open_printer)(const gs_memory_t *mem,
                               void        *secret,
-                              char        *fname, /* 4096 bytes */
+                        const char        *fname, /* 4096 bytes */
                               int          binary,
                               gp_file    **file);
     int (*open_handle)(const gs_memory_t *mem,
                              void        *secret,
-                             char        *fname, /* 4096 bytes */
+                       const char        *fname, /* 4096 bytes */
                        const char        *access,
                              gp_file    **file);
 } gs_fs_t;

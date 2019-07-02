@@ -636,7 +636,7 @@ int gp_setmode_binary_impl(FILE * pfile, bool mode);
 
 FILE *
 gp_open_printer_impl(gs_memory_t *mem,
-                     char         fname[gp_file_name_sizeof],
+                     const char  *fname,
                      int         *binary_mode,
                      int          (**close)(FILE *));
 
