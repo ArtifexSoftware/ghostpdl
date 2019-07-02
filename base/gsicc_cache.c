@@ -1709,8 +1709,9 @@ gsicc_transform_named_color(const float tint_values[],
             for (n = 0; n < num_nonnone_names; n++) {
                 /* Blend with the current color based upon current tint value */
                 for (j = 0; j < 3; j++) {
-                    psrc[j] = (float) namedcolor_table->named_color[indices[n]].lab[j] * tint_values[n]
-                            + (float) psrc[j] * (1.0 - tint_values[n]);
+                    psrc[j] = (unsigned short)
+                              ((float) namedcolor_table->named_color[indices[n]].lab[j] * tint_values[n]
+                             + (float) psrc[j] * (1.0 - tint_values[n]));
                 }
             }
 
