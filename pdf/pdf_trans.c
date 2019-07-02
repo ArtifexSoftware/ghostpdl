@@ -20,6 +20,7 @@
 #include "pdf_trans.h"
 #include "pdf_dict.h"
 #include "pdf_colour.h"
+#include "pdf_gstate.h"
 
 #include "gstparam.h"
 
