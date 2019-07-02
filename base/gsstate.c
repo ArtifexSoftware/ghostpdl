@@ -65,7 +65,7 @@ static void clip_stack_rc_adjust(gx_clip_stack_t *cs, int delta, client_name_t c
  *      is independent of the gstate.  These are garbage collected, not
  *      reference counted, so we don't need to do anything special with them
  *      when manipulating gstates.  Currently this includes:
- *              font, device
+ *              font
  *
  * (3) Objects that are referenced directly by the gstate, may be shared
  *      among gstates, and should disappear when no gstates reference them.
@@ -110,7 +110,7 @@ static void clip_stack_rc_adjust(gx_clip_stack_t *cs, int delta, client_name_t c
  *      The individual routines that manipulate these are responsible
  *      for doing the right kind of reference counting or whatever.
  *      Currently:
- *              path, clip_path, and (if different from both clip_path
+ *              devices, path, clip_path, and (if different from both clip_path
  *                and view_clip) effective_clip.path require
  *                gx_path_assign/free, which uses a reference count;
  *              color_space and ccolor require cs_adjust_color/cspace_count
