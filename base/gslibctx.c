@@ -183,7 +183,7 @@ fs_file_open_scratch(const gs_memory_t *mem, void *secret, const char *prefix, c
 }
 
 static int
-fs_file_open_printer(const gs_memory_t *mem, void *secret, char *fname, int binary_mode, gp_file **file)
+fs_file_open_printer(const gs_memory_t *mem, void *secret, const char *fname, int binary_mode, gp_file **file)
 {
     FILE *f;
     int (*close)(FILE *) = NULL;
