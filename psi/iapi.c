@@ -34,9 +34,9 @@
 #include "gp.h"
 #include "gsargs.h"
 
-typedef struct { int a[GS_ARG_ENCODING_LOCAL   == PS_ARG_ENCODING_LOCAL   ? 1 : -1]; } compile_time_assert_0;
-typedef struct { int a[GS_ARG_ENCODING_UTF8    == PS_ARG_ENCODING_UTF8    ? 1 : -1]; } compile_time_assert_1;
-typedef struct { int a[GS_ARG_ENCODING_UTF16LE == PS_ARG_ENCODING_UTF16LE ? 1 : -1]; } compile_time_assert_2;
+typedef struct { int a[(int)GS_ARG_ENCODING_LOCAL   == (int)PS_ARG_ENCODING_LOCAL   ? 1 : -1]; } compile_time_assert_0;
+typedef struct { int a[(int)GS_ARG_ENCODING_UTF8    == (int)PS_ARG_ENCODING_UTF8    ? 1 : -1]; } compile_time_assert_1;
+typedef struct { int a[(int)GS_ARG_ENCODING_UTF16LE == (int)PS_ARG_ENCODING_UTF16LE ? 1 : -1]; } compile_time_assert_2;
 
 /* Return revision numbers and strings of Ghostscript. */
 /* Used for determining if wrong GSDLL loaded. */
