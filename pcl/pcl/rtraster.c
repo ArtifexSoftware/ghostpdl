@@ -1439,6 +1439,9 @@ transfer_raster_row(pcl_args_t * pargs, pcl_state_t * pcs)
             process_row((pcl_raster_t *) pcs->raster_state.pcur_raster,
                         comp_mode);
 
+    if (code < 0)
+        (void)pcl_grestore(pcs);
+
     return code;
 }
 
