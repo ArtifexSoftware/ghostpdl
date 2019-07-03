@@ -1782,7 +1782,7 @@ int pdfi_close_pdf_file(pdf_context *ctx)
 int pdfi_process_pdf_file(pdf_context *ctx, char *filename)
 {
     int code = 0, i;
-    pdf_obj *o;
+    pdf_obj *o = NULL;
 
     ctx->filename = (char *)gs_alloc_bytes(ctx->memory, strlen(filename) + 1, "copy of filename");
     if (ctx->filename == NULL)
@@ -1819,7 +1819,7 @@ int pdfi_process_pdf_file(pdf_context *ctx, char *filename)
             goto exit;
         if (code == 0) {
             dmprintf(ctx->memory, "Encrypted PDF files not yet supported.\n");
-            return 0;
+            goto exit;
         }
     }
 
@@ -1914,6 +1914,7 @@ read_root:
     }
 
  exit:
+    pdfi_countdown(o);
     pdfi_report_errors(ctx);
 
     pdfi_close_pdf_file(ctx);
