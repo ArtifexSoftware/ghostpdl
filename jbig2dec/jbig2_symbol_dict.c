@@ -1034,7 +1034,7 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
             jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to allocate arithmetic decoder states for generic regions");
             goto cleanup;
         }
-        memset(GB_stats, 0, stats_size);
+        memset(GB_stats, 0, sizeof (Jbig2ArithCx) * stats_size);
 
         stats_size = params.SDRTEMPLATE ? 1 << 10 : 1 << 13;
         GR_stats = jbig2_new(ctx, Jbig2ArithCx, stats_size);
