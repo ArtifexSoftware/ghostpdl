@@ -138,6 +138,17 @@ typedef unsigned long long uint64_t;
 #  define PRIu32 "I32u"
 #  define PRIu64 "I64u"
 #  define PRIx64 "I64x"
+#  if ARCH_SIZEOF_SIZE_T == 4
+#   define PRIxSIZE "x"
+#   define PRIuSIZE "u"
+#   define PRIdSIZE "d"
+#   define PRIiSIZE "i"
+#  else
+#   define PRIxSIZE "I64x"
+#   define PRIuSIZE "I64u"
+#   define PRIdSIZE "I64d"
+#   define PRIiSIZE "I64i"
+#  endif
 # endif
 #endif
 
@@ -166,8 +177,56 @@ typedef unsigned long long uint64_t;
 #  define PRIu64 "llu"
 # endif
 
-# ifndef PRIx64
-#  define PRIx64 "llx"
+# if ARCH_SIZEOF_SIZE_T == 4
+#  ifndef PRIxSIZE
+#   define PRIxSIZE "x"
+#  endif
+
+#  ifndef PRIuSIZE
+#   define PRIuSIZE "u"
+#  endif
+
+#  ifndef PRIdSIZE
+#   define PRIdSIZE "d"
+#  endif
+
+#  ifndef PRIiSIZE
+#   define PRIuSIZE "i"
+#  endif
+# else
+#  if ARCH_SIZEOF_LONG == 8
+#   ifndef PRIxSIZE
+#    define PRIxSIZE "lx"
+#   endif
+
+#   ifndef PRIuSIZE
+#    define PRIuSIZE "lu"
+#   endif
+
+#   ifndef PRIdSIZE
+#    define PRIdSIZE "ld"
+#   endif
+
+#   ifndef PRIiSIZE
+#    define PRIiSIZE "li"
+#   endif
+#  else
+#   ifndef PRIxSIZE
+#    define PRIxSIZE "llx"
+#   endif
+
+#   ifndef PRIuSIZE
+#    define PRIuSIZE "llu"
+#   endif
+
+#   ifndef PRIdSIZE
+#    define PRIdSIZE "lld"
+#   endif
+
+#   ifndef PRIiSIZE
+#    define PRIiSIZE "lli"
+#   endif
+#  endif
 # endif
 
 #endif /* stdint__INCLUDED */
