@@ -537,7 +537,7 @@ gsicc_findcachelink(gsicc_hashlink_t hash, gsicc_link_cache_t *icc_link_cache,
             }
             /* bump the ref_count since we will be using this one */
             curr->ref_count++;
-            if_debug3m('^', curr->memory, "[^]%s 0x%p ++ => %ld\n",
+            if_debug3m('^', curr->memory, "[^]%s 0x%p ++ => %d\n",
                        "icclink", curr, curr->ref_count);
             while (curr->valid == false) {
 #ifndef MEMENTO_SQUEEZE_BUILD
@@ -890,8 +890,8 @@ gsicc_alloc_link_entry(gsicc_link_cache_t *icc_link_cache,
         while (link != NULL ) {
             if (link->ref_count == 0) {
                 /* we will use this one */
-                if_debug3m('^', cache_mem, "[^]%s 0x%lx ++ => %ld\n",
-                           "icclink", link, link->ref_count);
+                if_debug3m('^', cache_mem, "[^]%s 0x%lx ++ => %d\n",
+                           "icclink", (ulong)link, link->ref_count);
                 break;
             }
             link = link->next;
@@ -1281,7 +1281,7 @@ gsicc_get_link_profile(const gs_gstate *pgs, gx_device *dev,
         /* This could result in an infinite loop if other threads are waiting	*/
         /* for it to be made valid. (see gsicc_findcachelink).			*/
         link->ref_count--;	/* this thread no longer using this link entry	*/
-        if_debug2m('^', link->memory, "[^]icclink 0x%p -- => %ld\n",
+        if_debug2m('^', link->memory, "[^]icclink 0x%p -- => %d\n",
                    link, link->ref_count);
 
 #ifndef MEMENTO_SQUEEZE_BUILD
@@ -1451,7 +1451,7 @@ create_named_profile(gs_memory_t *mem, cmm_profile_t *named_profile)
         return -1;
     }
     namedcolor_data =
-        (gsicc_namedcolor_t*)gs_malloc(mem, num_entries, 
+        (gsicc_namedcolor_t*)gs_malloc(mem, num_entries,
             sizeof(gsicc_namedcolor_t), "create_named_profile");
     if (namedcolor_data == NULL) {
         gs_free(mem, namedcolor_table, num_entries,
@@ -1596,8 +1596,8 @@ gsicc_support_named_color(const gs_color_space *pcs, const gs_gstate *pgs)
         if (!is_supported)
             return false;
     }
-    /* If we made it this far, all the individual colorants are supported. 
-       If the names contained no spots, then let standard color management 
+    /* If we made it this far, all the individual colorants are supported.
+       If the names contained no spots, then let standard color management
        processing occur.  It may be that some applications want standard
        processing in other cases.  For example, [Cyan Magenta Varnish] to
        a tiffsep-like device one may want color management to occur for the
@@ -1657,7 +1657,7 @@ gsicc_transform_named_color(const float tint_values[],
             namedcolor_table =
                     (gsicc_namedcolortable_t*)named_profile->profile_handle;
             num_entries = namedcolor_table->number_entries;
- 
+
             /* Go through each of our spot names, getting the color value for
                each one. */
             num_nonnone_names = num_names;
@@ -1772,7 +1772,7 @@ void
 gsicc_release_link(gsicc_link_t *icclink)
 {
     gsicc_link_cache_t *icc_link_cache;
-    
+
     if (icclink == NULL)
         return;
 
@@ -1781,7 +1781,7 @@ gsicc_release_link(gsicc_link_t *icclink)
 #ifndef MEMENTO_SQUEEZE_BUILD
     gx_monitor_enter(icc_link_cache->lock);
 #endif
-    if_debug2m('^', icclink->memory, "[^]icclink 0x%p -- => %ld\n",
+    if_debug2m('^', icclink->memory, "[^]icclink 0x%p -- => %d\n",
                icclink, icclink->ref_count - 1);
     /* Decrement the reference count */
     if (--(icclink->ref_count) == 0) {

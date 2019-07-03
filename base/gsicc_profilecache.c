@@ -114,7 +114,7 @@ gsicc_add_cs(gs_gstate * pgs, gs_color_space * colorspace, uint64_t dictkey)
     rc_increment(colorspace);
     result->key = dictkey;
     if_debug2m(gs_debug_flag_icc, memory,
-               "[icc] Add cs to cache = 0x%p, hash = %lld \n",
+               "[icc] Add cs to cache = 0x%p, hash = %"PRIu64"\n",
                result->color_space, (uint64_t)result->key);
     profile_cache->num_entries++;
 }
@@ -129,7 +129,7 @@ gsicc_find_cs(uint64_t key_test, gs_gstate * pgs)
     while (curr != NULL ){
         if (curr->key == key_test){
             if_debug2m(gs_debug_flag_icc, pgs->memory,
-                       "[icc] Found cs = 0x%p, hash = %lld \n",
+                       "[icc] Found cs = 0x%p, hash = %"PRIu64"\n",
                        curr->color_space, (uint64_t)curr->key);
             /* If not already at head of list, move this one there */
             if (curr != profile_cache->head) {
@@ -182,7 +182,7 @@ gsicc_remove_cs_entry(gsicc_profile_cache_t *profile_cache)
     /* If found again in the source document, it will be regenerated
        and added back into the cache. */
     if_debug2m(gs_debug_flag_icc, memory,
-               "[icc] Remove cs from cache = 0x%p, hash = %lld \n",
+               "[icc] Remove cs from cache = 0x%p, hash = %"PRIu64"\n",
                curr->color_space, (uint64_t)curr->key);
     rc_decrement(curr->color_space, "gsicc_remove_cs_entry");
     gs_free_object(memory->stable_memory, curr, "gsicc_remove_cs_entry");
