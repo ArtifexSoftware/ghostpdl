@@ -161,7 +161,7 @@ bool gs_currenttextknockout(const gs_gstate *);
  * We have to abbreviate the procedure name because procedure names are
  * only unique to 23 characters on VMS.
  */
-int gs_push_pdf14trans_device(gs_gstate * pgs, bool is_pattern);
+int gs_push_pdf14trans_device(gs_gstate * pgs, bool is_pattern, bool retain);
 
 int gs_pop_pdf14trans_device(gs_gstate * pgs, bool is_pattern);
 

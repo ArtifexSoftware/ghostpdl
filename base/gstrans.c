@@ -155,7 +155,7 @@ check_for_nontrans_pattern(gs_gstate *pgs, unsigned char *comp_name)
  * compositor device.
  */
 static int
-gs_gstate_update_pdf14trans(gs_gstate * pgs, gs_pdf14trans_params_t * pparams)
+gs_gstate_update_pdf14trans2(gs_gstate * pgs, gs_pdf14trans_params_t * pparams, bool retain_on_create)
 {
     gx_device * dev = pgs->device;
     gx_device *pdf14dev = NULL;
@@ -174,6 +174,7 @@ gs_gstate_update_pdf14trans(gs_gstate * pgs, gs_pdf14trans_params_t * pparams)
      */
     if (pdf14dev != dev) {
         gx_set_device_only(pgs, pdf14dev);
+        gx_device_retain(pdf14dev, retain_on_create);
     }
 
     /* If we had a color space change and we are in overprint, then we need to
@@ -183,6 +184,12 @@ gs_gstate_update_pdf14trans(gs_gstate * pgs, gs_pdf14trans_params_t * pparams)
     }
 
     return code;
+}
+
+static int
+gs_gstate_update_pdf14trans(gs_gstate * pgs, gs_pdf14trans_params_t * pparams)
+{
+    return gs_gstate_update_pdf14trans2(pgs, pparams, true);
 }
 
 void
@@ -787,7 +794,7 @@ get_num_pdf14_spot_colors(gs_gstate * pgs)
 }
 
 int
-gs_push_pdf14trans_device(gs_gstate * pgs, bool is_pattern)
+gs_push_pdf14trans_device(gs_gstate * pgs, bool is_pattern, bool retain)
 {
     gs_pdf14trans_params_t params = { 0 };
     cmm_profile_t *icc_profile;
@@ -818,7 +825,7 @@ gs_push_pdf14trans_device(gs_gstate * pgs, bool is_pattern)
         params.iccprofile = pgs->icc_manager->default_rgb;
     }
     /* Note: Other parameters not used */
-    return gs_gstate_update_pdf14trans(pgs, &params);
+    return gs_gstate_update_pdf14trans2(pgs, &params, retain);
 }
 
 int
