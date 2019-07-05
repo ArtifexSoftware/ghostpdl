@@ -93,13 +93,21 @@ int pdfi_gsave(pdf_context *ctx)
 int pdfi_grestore(pdf_context *ctx)
 {
     int code;
-    pdf_font *font, *font1;
+    pdf_font *font = NULL, *font1 = NULL;
+    gs_color_space *pcs0, *pcs1;
 
     /* Make sure we have encountered as many gsave operations in this
      * stream as grestores. If not, log an error
      */
     if (ctx->pgs->level > ctx->current_stream_save.gsave_level) {
         font = pdfi_get_current_pdf_font(ctx);
+        pcs0 = ctx->pgs->color[0].color_space;
+        pcs1 = ctx->pgs->color[1].color_space;
+
+        if (ctx->pgs->color[0].color_space->type->index == gs_color_space_index_Pattern && ctx->pgs->color[0].color_space->rc.ref_count == 1)
+            (void)pdfi_pattern_cleanup(ctx->pgs->color[0].ccolor);
+        if (ctx->pgs->color[1].color_space->type->index == gs_color_space_index_Pattern && ctx->pgs->color[1].color_space->rc.ref_count == 1)
+            (void)pdfi_pattern_cleanup(ctx->pgs->color[1].ccolor);
 
         code = gs_grestore(ctx->pgs);
 

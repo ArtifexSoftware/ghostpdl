@@ -30,7 +30,6 @@
 #include "pdf_loop_detect.h"
 #include "pdf_func.h"
 #include "pdf_shading.h"
-#include "pdf_gstate.h"
 #include "gscsepr.h"
 #include "stream.h"
 #include "strmio.h"
@@ -95,6 +94,40 @@ pdfi_setpattern_null(pdf_context *ctx, gs_client_color *cc)
     code = gs_makepattern(cc, &templat, &mat, ctx->pgs, ctx->memory);
 
     return code;
+}
+
+/*
+ * Pattern lifetime management turns out to be more complex than we would ideally like. Although
+ * Patterns are reference counted, and contain a client_data pointer, they don't have a gs_notify
+ * setup. This means that there's no simlpe way for us to be informed when a Pattern is released
+ * We could patch up the Pattern finalize() method, replacing it with one of our own which calls
+ * the original finalize() but that seems like a really nasty hack.
+ * For the time being we put code in pdfi_grestore() to check for Pattern colour spaces being
+ * restored away, but we also need to check for Pattern spaces being replaced in the current
+ * graphics state. We define 'pdfi' variants of several graphics library colour management
+ * functions to 'wrap' these with code to check for replacement of Patterns.
+ * This comment is duplicated in pdf_color.c
+ */
+int pdfi_pattern_cleanup(const gs_client_color *pcc)
+{
+    gs_pattern1_instance_t *pinst = (gs_pattern1_instance_t *)pcc->pattern;
+    gs_pattern1_template_t *templat;
+    pdf_pattern_context_t *context;
+
+    if (pinst == NULL)
+        return 0;
+    templat = &pinst->templat;
+    if (templat == NULL)
+        return 0;
+    context = (pdf_pattern_context_t *)templat->client_data;
+
+    if (context != NULL) {
+        pdfi_countdown(context->page_dict);
+        pdfi_countdown(context->pat_dict);
+        gs_free_object(context->ctx->memory, context, "Free pattern context");
+        templat->client_data = NULL;
+    }
+    return 0;
 }
 
 /* See px_paint_pattern() */
@@ -278,20 +311,22 @@ pdfi_pattern_setup(pdf_context *ctx, gs_pattern_template_t *templat, pdf_dict *p
     if (code < 0)
         goto errorExit;
 
-    /* TODO: This needs to be freed somehow */
-    context = (pdf_pattern_context_t *) gs_alloc_bytes(ctx->memory, sizeof(*context),
-                                                       "pdfi_pattern_setup(context)");
-    if (!context) {
-        code = gs_note_error(gs_error_VMerror);
-        goto errorExit;
+    if (templat->PatternType == 1) {
+        /* TODO: This needs to be freed somehow */
+        context = (pdf_pattern_context_t *) gs_alloc_bytes(ctx->memory, sizeof(*context),
+                                                           "pdfi_pattern_setup(context)");
+        if (!context) {
+            code = gs_note_error(gs_error_VMerror);
+            goto errorExit;
+        }
+        context->ctx = ctx;
+        context->page_dict = page_dict;
+        context->pat_dict = pat_dict;
+        /* TODO: Not clear when this stuff gets freed */
+        pdfi_countup(page_dict);
+        pdfi_countup(pat_dict);
+        templat->client_data = context;
     }
-    context->ctx = ctx;
-    context->page_dict = page_dict;
-    context->pat_dict = pat_dict;
-    /* TODO: Not clear when this stuff gets freed */
-    pdfi_countup(page_dict);
-    pdfi_countup(pat_dict);
-    templat->client_data = context;
 
     return 0;
  errorExit:
@@ -444,6 +479,7 @@ pdfi_setpattern_type2(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
     if (code < 0)
         goto exit;
 
+    gs_pattern2_init(&templat);
     code = pdfi_pattern_setup(ctx, (gs_pattern_template_t *)&templat, page_dict, pdict);
     if (code < 0) {
         (void) pdfi_grestore(ctx);
@@ -455,7 +491,7 @@ pdfi_setpattern_type2(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
         dbgmprintf(ctx->memory, "ERROR: can't build shading structure\n");
         goto exit;
     }
-    gs_pattern2_init(&templat);
+
     templat.Shading = shading;
     code = gs_make_pattern(cc, (const gs_pattern_template_t *)&templat, &mat, ctx->pgs, ctx->memory);
     if (code < 0) {

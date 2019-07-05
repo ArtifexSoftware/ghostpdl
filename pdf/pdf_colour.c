@@ -277,6 +277,46 @@ int pdfi_ri(pdf_context *ctx)
     return 0;
 }
 
+/*
+ * Pattern lifetime management turns out to be more complex than we would ideally like. Although
+ * Patterns are reference counted, and contain a client_data pointer, they don't have a gs_notify
+ * setup. This means that there's no simlpe way for us to be informed when a Pattern is released
+ * We could patch up the Pattern finalize() method, replacing it with one of our own which calls
+ * the original finalize() but that seems like a really nasty hack.
+ * For the time being we put code in pdfi_grestore() to check for Pattern colour spaces being
+ * restored away, but we also need to check for Pattern spaces being replaced in the current
+ * graphics state. We define 'pdfi' variants of several graphics library colour management
+ * functions to 'wrap' these with code to check for replacement of Patterns.
+ * This comment is duplicated in pdf_pattern.c
+ */
+static int pdfi_gs_setgray(gs_gstate *pgs, double d)
+{
+    if (pgs->color[0].color_space->type->index == gs_color_space_index_Pattern && pgs->color[0].color_space->rc.ref_count == 1)
+        (void)pdfi_pattern_cleanup(pgs->color[0].ccolor);
+    return gs_setgray(pgs, d);
+}
+
+static int pdfi_gs_setrgbcolor(gs_gstate *pgs, double r, double g, double b)
+{
+    if (pgs->color[0].color_space->type->index == gs_color_space_index_Pattern && pgs->color[0].color_space->rc.ref_count == 1)
+        (void)pdfi_pattern_cleanup(pgs->color[0].ccolor);
+    return gs_setrgbcolor(pgs, r, g, b);
+}
+
+static int pdfi_gs_setcmykcolor(gs_gstate *pgs, double c, double m, double y, double k)
+{
+    if (pgs->color[0].color_space->type->index == gs_color_space_index_Pattern && pgs->color[0].color_space->rc.ref_count == 1)
+        (void)pdfi_pattern_cleanup(pgs->color[0].ccolor);
+    return gs_setcmykcolor(pgs, c, m, y, k);
+}
+
+static int pdfi_gs_setcolorspace(gs_gstate *pgs, gs_color_space *pcs)
+{
+    if (pgs->color[0].color_space->type->index == gs_color_space_index_Pattern && pgs->color[0].color_space->rc.ref_count == 1)
+        (void)pdfi_pattern_cleanup(pgs->color[0].ccolor);
+    return gs_setcolorspace(pgs, pcs);
+}
+
 /* Start with the simple cases, where we set the colour space and colour in a single operation */
 int pdfi_setgraystroke(pdf_context *ctx)
 {
@@ -304,7 +344,7 @@ int pdfi_setgraystroke(pdf_context *ctx)
                 return 0;
         }
     }
-    code = gs_setgray(ctx->pgs, d1);
+    code = pdfi_gs_setgray(ctx->pgs, d1);
     pdfi_pop(ctx, 1);
     if(code < 0 && ctx->pdfstoponerror)
         return code;
@@ -339,7 +379,7 @@ int pdfi_setgrayfill(pdf_context *ctx)
         }
     }
     gs_swapcolors(ctx->pgs);
-    code = gs_setgray(ctx->pgs, d1);
+    code = pdfi_gs_setgray(ctx->pgs, d1);
     gs_swapcolors(ctx->pgs);
     pdfi_pop(ctx, 1);
     if(code < 0 && ctx->pdfstoponerror)
@@ -377,7 +417,7 @@ int pdfi_setrgbstroke(pdf_context *ctx)
             Values[i] = (double)num->value.i;
         }
     }
-    code = gs_setrgbcolor(ctx->pgs, Values[0], Values[1], Values[2]);
+    code = pdfi_gs_setrgbcolor(ctx->pgs, Values[0], Values[1], Values[2]);
     pdfi_pop(ctx, 3);
     if(code < 0 && ctx->pdfstoponerror)
         return code;
@@ -415,7 +455,7 @@ int pdfi_setrgbfill(pdf_context *ctx)
         }
     }
     gs_swapcolors(ctx->pgs);
-    code = gs_setrgbcolor(ctx->pgs, Values[0], Values[1], Values[2]);
+    code = pdfi_gs_setrgbcolor(ctx->pgs, Values[0], Values[1], Values[2]);
     gs_swapcolors(ctx->pgs);
     pdfi_pop(ctx, 3);
     if(code < 0 && ctx->pdfstoponerror)
@@ -453,7 +493,7 @@ int pdfi_setcmykstroke(pdf_context *ctx)
             Values[i] = (double)num->value.i;
         }
     }
-    code = gs_setcmykcolor(ctx->pgs, Values[0], Values[1], Values[2], Values[3]);
+    code = pdfi_gs_setcmykcolor(ctx->pgs, Values[0], Values[1], Values[2], Values[3]);
     pdfi_pop(ctx, 4);
     if(code < 0 && ctx->pdfstoponerror)
         return code;
@@ -491,7 +531,7 @@ int pdfi_setcmykfill(pdf_context *ctx)
         }
     }
     gs_swapcolors(ctx->pgs);
-    code = gs_setcmykcolor(ctx->pgs, Values[0], Values[1], Values[2], Values[3]);
+    code = pdfi_gs_setcmykcolor(ctx->pgs, Values[0], Values[1], Values[2], Values[3]);
     gs_swapcolors(ctx->pgs);
     pdfi_pop(ctx, 4);
     if(code < 0 && ctx->pdfstoponerror)
@@ -786,7 +826,7 @@ static int pdfi_create_icc(pdf_context *ctx, char *Name, stream *s, int ncomps, 
     if (ppcs!= NULL){
         *ppcs = pcs;
     } else {
-        code = gs_setcolorspace(ctx->pgs, pcs);
+        code = pdfi_gs_setcolorspace(ctx->pgs, pcs);
         rc_decrement_only_cs(pcs, "pdfi_seticc_cal");
     }
 
@@ -991,7 +1031,7 @@ pdfi_seticc_lab(pdf_context *ctx, float *range_buff, gs_color_space **ppcs)
     if (ppcs!= NULL){
         *ppcs = pcs;
     } else {
-        code = gs_setcolorspace(ctx->pgs, pcs);
+        code = pdfi_gs_setcolorspace(ctx->pgs, pcs);
         rc_decrement_only_cs(pcs, "pdfi_seticc_lab");
     }
 
@@ -1087,7 +1127,7 @@ pdfi_seticc_cal(pdf_context *ctx, float *white, float *black, float *gamma,
     if (ppcs!= NULL){
         *ppcs = pcs;
     } else {
-        code = gs_setcolorspace(ctx->pgs, pcs);
+        code = pdfi_gs_setcolorspace(ctx->pgs, pcs);
         rc_decrement_only_cs(pcs, "pdfi_seticc_cal");
     }
 
@@ -1353,10 +1393,10 @@ static int pdfi_create_Separation(pdf_context *ctx, pdf_array *color_array, int 
          * files with images in a /Separation colour space come out incorrectly. Even surrounding
          * this with a gsave/grestore pair causes differences.
          */
-        code = gs_setcolorspace(ctx->pgs, pcs);
+        code = pdfi_gs_setcolorspace(ctx->pgs, pcs);
         *ppcs = pcs;
     } else {
-        code = gs_setcolorspace(ctx->pgs, pcs);
+        code = pdfi_gs_setcolorspace(ctx->pgs, pcs);
         /* release reference from construction */
         rc_decrement_only_cs(pcs, "setseparationspace");
     }
@@ -1629,7 +1669,7 @@ static int pdfi_create_DeviceN(pdf_context *ctx, pdf_array *color_array, int ind
     if (ppcs!= NULL){
         *ppcs = pcs;
     } else {
-        code = gs_setcolorspace(ctx->pgs, pcs);
+        code = pdfi_gs_setcolorspace(ctx->pgs, pcs);
         /* release reference from construction */
         rc_decrement_only_cs(pcs, "setdevicenspace");
     }
@@ -1753,7 +1793,7 @@ pdfi_create_indexed(pdf_context *ctx, pdf_array *color_array, int index,
     if (ppcs != NULL)
         *ppcs = pcs;
     else {
-        code = gs_setcolorspace(ctx->pgs, pcs);
+        code = pdfi_gs_setcolorspace(ctx->pgs, pcs);
         /* release reference from construction */
         rc_decrement_only_cs(pcs, "setindexedspace");
     }
@@ -1775,7 +1815,7 @@ static int pdfi_create_DeviceGray(pdf_context *ctx, gs_color_space **ppcs)
         if (*ppcs == NULL)
             code = gs_note_error(gs_error_VMerror);
     } else {
-        code = gs_setgray(ctx->pgs, 1);
+        code = pdfi_gs_setgray(ctx->pgs, 1);
     }
     return code;
 }
@@ -1789,7 +1829,7 @@ static int pdfi_create_DeviceRGB(pdf_context *ctx, gs_color_space **ppcs)
         if (*ppcs == NULL)
             code = gs_note_error(gs_error_VMerror);
     } else {
-        code = gs_setrgbcolor(ctx->pgs, 0, 0, 0);
+        code = pdfi_gs_setrgbcolor(ctx->pgs, 0, 0, 0);
     }
     return code;
 }
@@ -1803,7 +1843,7 @@ static int pdfi_create_DeviceCMYK(pdf_context *ctx, gs_color_space **ppcs)
         if (*ppcs == NULL)
             code = gs_note_error(gs_error_VMerror);
     } else {
-        code = gs_setcmykcolor(ctx->pgs, 0, 0, 0, 1);
+        code = pdfi_gs_setcmykcolor(ctx->pgs, 0, 0, 0, 1);
     }
     return code;
 }
