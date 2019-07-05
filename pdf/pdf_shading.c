@@ -556,6 +556,8 @@ static int get_shading_common(pdf_context *ctx, pdf_dict *shading_dict, gs_shadi
     } else {
         params->have_BBox = false;
     }
+    pdfi_countdown(a);
+    a = NULL;
 
     code = pdfi_dict_get_bool(ctx, shading_dict, "AntiAlias", &params->AntiAlias);
     if (code < 0 && code != gs_error_undefined)
@@ -631,6 +633,7 @@ pdfi_shading_build(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
     }
 
  shading_error:
+    pdfi_countdown(cspace);
     if (code >= 0) {
         *ppsh = psh;
         *ptype = type;
