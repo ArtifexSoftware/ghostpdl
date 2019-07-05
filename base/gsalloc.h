@@ -28,17 +28,17 @@ typedef struct gs_ref_memory_s gs_ref_memory_t;
  */
 typedef struct gs_memory_gc_status_s {
         /* Set by client */
-    long vm_threshold;		/* GC interval */
-    long max_vm;		/* maximum allowed allocation */
+    size_t vm_threshold;		/* GC interval */
+    size_t max_vm;		/* maximum allowed allocation */
 
     int signal_value;		/* value to store in gs_lib_ctx->gcsignal */
     bool enabled;		/* auto GC enabled if true */
         /* Set by allocator */
-    long requested;		/* amount of last failing request */
+    size_t requested;		/* amount of last failing request */
 } gs_memory_gc_status_t;
 void gs_memory_gc_status(const gs_ref_memory_t *, gs_memory_gc_status_t *);
 void gs_memory_set_gc_status(gs_ref_memory_t *, const gs_memory_gc_status_t *);
-void gs_memory_set_vm_threshold(gs_ref_memory_t * mem, long val);
+void gs_memory_set_vm_threshold(gs_ref_memory_t * mem, size_t val);
 void gs_memory_set_vm_reclaim(gs_ref_memory_t * mem, bool enabled);
 
 /* ------ Initialization ------ */

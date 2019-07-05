@@ -24,26 +24,26 @@
 
 /* String allocations reduces to simple byte allocations. */
 static byte *
-nogc_alloc_string(gs_memory_t * mem, uint nbytes, client_name_t cname)
+nogc_alloc_string(gs_memory_t * mem, size_t nbytes, client_name_t cname)
 {
     return gs_alloc_bytes(mem, nbytes, cname);
 }
 
 /* Free a string. */
 static void
-nogc_free_string(gs_memory_t * mem, byte * str, uint size, client_name_t cname)
+nogc_free_string(gs_memory_t * mem, byte * str, size_t size, client_name_t cname)
 {
     gs_free_object(mem, str, cname);
 }
 
 static byte *
-nogc_alloc_string_immovable(gs_memory_t * mem, uint nbytes, client_name_t cname)
+nogc_alloc_string_immovable(gs_memory_t * mem, size_t nbytes, client_name_t cname)
 {
     return gs_alloc_bytes(mem, nbytes, cname);
 }
 
 static byte *
-nogc_resize_string(gs_memory_t * mem, byte * data, uint old_num, uint new_num, client_name_t cname)
+nogc_resize_string(gs_memory_t * mem, byte * data, size_t old_num, size_t new_num, client_name_t cname)
 {
     return gs_resize_object(mem, data, new_num, cname);
 }

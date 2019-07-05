@@ -68,12 +68,6 @@ mem_gray8_rgb24_strip_copy_rop(gx_device * dev,
     gx_color_index local_scolors[2];
     gx_color_index local_tcolors[2];
 
-#if !defined(USE_RUN_ROP) || defined(COMPARE_AND_CONTRAST)
-    gx_color_index strans =
-        (lop & lop_S_transparent ? all_ones : gx_no_color_index);
-    gx_color_index ttrans =
-        (lop & lop_T_transparent ? all_ones : gx_no_color_index);
-#endif
 #ifdef USE_RUN_ROP
     rop_run_op ropper;
 #ifdef COMPARE_AND_CONTRAST
@@ -84,7 +78,7 @@ mem_gray8_rgb24_strip_copy_rop(gx_device * dev,
 #endif
 
     /* Check for constant source. */
-    if (!rop3_uses_S(lop) && (lop & lop_S_transparent) == 0) {
+    if (!rop3_uses_S(lop)) {
         const_source = 0;       /* arbitrary */
     } else if (scolors != 0 && scolors[0] == scolors[1]) {
         /* Constant source */
@@ -92,14 +86,12 @@ mem_gray8_rgb24_strip_copy_rop(gx_device * dev,
         if (const_source == gx_device_black(dev))
             lop = lop_know_S_0(lop);
         else if (const_source == gx_device_white(dev)) {
-            if (lop & lop_S_transparent)
-                return 0;
             lop = lop_know_S_1(lop);
         }
     }
 
     /* Check for constant texture. */
-    if (!rop3_uses_T(lop) && (lop & lop_T_transparent) == 0)
+    if (!rop3_uses_T(lop))
         const_texture = 0;      /* arbitrary */
     else if (tcolors != 0 && tcolors[0] == tcolors[1]) {
         /* Constant texture */
@@ -107,8 +99,6 @@ mem_gray8_rgb24_strip_copy_rop(gx_device * dev,
         if (const_texture == gx_device_black(dev))
             lop = lop_know_T_0(lop);
         else if (const_texture == gx_device_white(dev)) {
-            if (lop & lop_T_transparent)
-                return 0;
             lop = lop_know_T_1(lop);
         }
     }
@@ -142,12 +132,8 @@ bw:         if (bw_pixel == 0x00)
         case rop3_D:
             break;
         case rop3_S:
-            if (lop & lop_S_transparent)
-                goto df;
             break;
         case rop3_T:
-            if (lop & lop_T_transparent)
-                goto df;
             break;
         default:
 df:         return mem_default_strip_copy_rop(dev,
@@ -157,7 +143,7 @@ df:         return mem_default_strip_copy_rop(dev,
                                               phase_x, phase_y, lop);
         }
         /* Put the updated rop back into the lop */
-        lop = rop | (lop & (lop_S_transparent | lop_T_transparent));
+        lop = rop;
     }
 
     /* Adjust coordinates to be in bounds. */
@@ -209,10 +195,6 @@ df:         return mem_default_strip_copy_rop(dev,
   (dbit(base, i) ? (byte)colors[1] : (byte)colors[0])
 #ifdef COMPARE_AND_CONTRAST
 #define rop_body_8(s_pixel, t_pixel)\
-  if ( (s_pixel) == strans ||   /* So = 0, s_tr = 1 */\
-       (t_pixel) == ttrans      /* Po = 0, p_tr = 1 */\
-     )\
-    continue;\
   *dptr = (*rop_proc_table[rop])(*dptr, s_pixel, t_pixel)
 #endif
 /* 24-bit */
@@ -226,10 +208,6 @@ df:         return mem_default_strip_copy_rop(dev,
   (dbit(base, i) ? colors[1] : colors[0])
 #ifdef COMPARE_AND_CONTRAST
 #define rop_body_24(s_pixel, t_pixel)\
-  if ( (s_pixel) == strans ||   /* So = 0, s_tr = 1 */\
-       (t_pixel) == ttrans      /* Po = 0, p_tr = 1 */\
-     )\
-    continue;\
   { gx_color_index d_pixel = get24(dptr);\
     d_pixel = (*rop_proc_table[rop])(d_pixel, s_pixel, t_pixel);\
     put24(dptr, d_pixel);\
@@ -625,10 +603,6 @@ df:         return mem_default_strip_copy_rop(dev,
 #define cbit8(base, i, colors)\
   (dbit(base, i) ? (byte)colors[1] : (byte)colors[0])
 #define rop_body_8(s_pixel, t_pixel)\
-  if ( (s_pixel) == strans ||   /* So = 0, s_tr = 1 */\
-       (t_pixel) == ttrans      /* Po = 0, p_tr = 1 */\
-     )\
-    continue;\
   *dptr = (*rop_proc_table[rop])(*dptr, s_pixel, t_pixel)
 /* 24-bit */
 #define get24(ptr)\
@@ -640,10 +614,6 @@ df:         return mem_default_strip_copy_rop(dev,
 #define cbit24(base, i, colors)\
   (dbit(base, i) ? colors[1] : colors[0])
 #define rop_body_24(s_pixel, t_pixel)\
-  if ( (s_pixel) == strans ||   /* So = 0, s_tr = 1 */\
-       (t_pixel) == ttrans      /* Po = 0, p_tr = 1 */\
-     )\
-    continue;\
   { gx_color_index d_pixel = get24(dptr);\
     d_pixel = (*rop_proc_table[rop])(d_pixel, s_pixel, t_pixel);\
     put24(dptr, d_pixel);\

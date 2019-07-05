@@ -23,12 +23,6 @@
 #include "gxdevcli.h"
 #include "gximage.h"
 
-/*
- * Compute the effective RasterOp for the 1-bit case,
- * taking transparency into account.
- */
-gs_rop3_t gs_transparent_rop(gs_logical_operation_t lop);
-
 #ifdef DEBUG
 /* Trace a [strip_]copy_rop call. */
 void trace_copy_rop(const char *cname, gx_device * dev,

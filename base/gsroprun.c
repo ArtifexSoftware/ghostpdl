@@ -153,6 +153,8 @@ static void invert_rop_run1(rop_run_op *op, byte *d, int len)
 #define TEMPLATE_NAME          invert_rop_run8
 #define SPECIFIC_ROP           0x55
 #define SPECIFIC_CODE(O,D,S,T) do { O = ~D; } while (0)
+#define MM_SETUP() __m128i mm_constant_ones = _mm_cmpeq_epi32(mm_constant_ones, mm_constant_ones);
+#define MM_SPECIFIC_CODE(O,D,S,T) do { _mm_storeu_si128(O,_mm_xor_si128(_mm_loadu_si128(D),mm_constant_ones)); } while (0 == 1)
 #define S_CONST
 #define T_CONST
 #include "gsroprun8.h"
@@ -160,30 +162,6 @@ static void invert_rop_run1(rop_run_op *op, byte *d, int len)
 static void invert_rop_run8(rop_run_op *op, byte *d, int len)
 {
     do {
-        *d = ~*d;
-        d++;
-    }
-    while (--len);
-}
-#endif
-
-/* Rop 0x55 = Invert   dep=24  (all cases) */
-#ifdef USE_TEMPLATES
-#define TEMPLATE_NAME          invert_rop_run24
-#define SPECIFIC_ROP           0x55
-#define SPECIFIC_CODE(O,D,S,T) do { O = ~D; } while (0)
-#define S_CONST
-#define T_CONST
-#include "gsroprun24.h"
-#else
-static void invert_rop_run24(rop_run_op *op, byte *d, int len)
-{
-    do
-    {
-        *d = ~*d;
-        d++;
-        *d = ~*d;
-        d++;
         *d = ~*d;
         d++;
     }
@@ -432,6 +410,7 @@ static void xor_rop_run1_const_t(rop_run_op *op, byte *d, int len)
 #define TEMPLATE_NAME          xor_rop_run8_const_st
 #define SPECIFIC_ROP           0x66
 #define SPECIFIC_CODE(O,D,S,T) do { O = D^S; } while (0)
+#define MM_SPECIFIC_CODE(O,D,S,T) do { _mm_storeu_si128(O,_mm_xor_si128(_mm_loadu_si128(D),S)); } while (0 == 1)
 #define S_CONST
 #define T_CONST
 #include "gsroprun8.h"
@@ -558,6 +537,7 @@ static void sets_rop_run1(rop_run_op *op, byte *d, int len)
 #define TEMPLATE_NAME          sets_rop_run8
 #define SPECIFIC_ROP           0xCC
 #define SPECIFIC_CODE(O,D,S,T) do { O = S; } while (0)
+#define MM_SPECIFIC_CODE(O,D,S,T) do { _mm_storeu_si128(O,S); } while (0 == 1)
 #define S_CONST
 #define T_CONST
 #include "gsroprun8.h"
@@ -719,70 +699,6 @@ static void generic_rop_run8(rop_run_op *op, byte *d, int len)
 #endif
 
 #ifdef USE_TEMPLATES
-#define TEMPLATE_NAME          generic_rop_run8_trans_S
-#define S_TRANS YES
-#include "gsroprun8.h"
-#else
-static void generic_rop_run8_trans_S(rop_run_op *op, byte *d, int len)
-{
-    rop_proc    proc = rop_proc_table[lop_rop(op->rop)];
-    const byte *s = op->s.b.ptr;
-    const byte *t = op->t.b.ptr;
-    do {
-        rop_operand S = *s++;
-        if (S != 255)
-            *d = proc(*d, S, *t);
-        t++;
-        d++;
-    }
-    while (--len);
-}
-#endif
-
-#ifdef USE_TEMPLATES
-#define TEMPLATE_NAME          generic_rop_run8_trans_T
-#define T_TRANS YES
-#include "gsroprun8.h"
-#else
-static void generic_rop_run8_trans_T(rop_run_op *op, byte *d, int len)
-{
-    rop_proc    proc = rop_proc_table[lop_rop(op->rop)];
-    const byte *s = op->s.b.ptr;
-    const byte *t = op->t.b.ptr;
-    do {
-        rop_operand T = *t++;
-        if (T != 255)
-            *d = proc(*d, *s, T);
-        s++;
-        d++;
-    }
-    while (--len);
-}
-#endif
-
-#ifdef USE_TEMPLATES
-#define TEMPLATE_NAME          generic_rop_run8_trans_ST
-#define S_TRANS YES
-#define T_TRANS YES
-#include "gsroprun8.h"
-#else
-static void generic_rop_run8_trans_ST(rop_run_op *op, byte *d, int len)
-{
-    rop_proc    proc = rop_proc_table[lop_rop(op->rop)];
-    const byte *s = op->s.b.ptr;
-    const byte *t = op->t.b.ptr;
-    do {
-        rop_operand S = *s++;
-        rop_operand T = *t++;
-        if ((S != 255) && (T != 255))
-            *d = proc(*d, S, T);
-        d++;
-    }
-    while (--len);
-}
-#endif
-
-#ifdef USE_TEMPLATES
 #define TEMPLATE_NAME          generic_rop_run8_1bit
 #define S_TRANS MAYBE
 #define T_TRANS MAYBE
@@ -795,8 +711,6 @@ static void generic_rop_run8_1bit(rop_run_op *op, byte *d, int len)
     rop_proc     proc = rop_proc_table[lop_rop(op->rop)];
     const byte  *s = op->s.b.ptr;
     const byte  *t = op->t.b.ptr;
-    rop_operand  strans = (op->rop & lop_S_transparent ? 255 : -1);
-    rop_operand  ttrans = (op->rop & lop_T_transparent ? 255 : -1);
     int          sroll, troll;
     const gx_color_index *scolors = op->scolors;
     const gx_color_index *tcolors = op->tcolors;
@@ -832,8 +746,7 @@ static void generic_rop_run8_1bit(rop_run_op *op, byte *d, int len)
                 t++;
             }
         }
-        if ((S != strans) && (T != ttrans))
-            *d = proc(*d, S, T);
+        *d = proc(*d, S, T);
         d++;
     }
     while (--len);
@@ -862,35 +775,6 @@ static void generic_rop_run24(rop_run_op *op, byte *d, int len)
 #endif
 
 #ifdef USE_TEMPLATES
-#define TEMPLATE_NAME          generic_rop_run24_trans
-#define T_TRANS MAYBE
-#define S_TRANS MAYBE
-#include "gsroprun24.h"
-#else
-static void generic_rop_run24_trans(rop_run_op *op, byte *d, int len)
-{
-    rop_proc    proc = rop_proc_table[lop_rop(op->rop)];
-    const byte *s = op->s.b.ptr;
-    const byte *t = op->t.b.ptr;
-    rop_operand  strans = (op->rop & lop_S_transparent ? 0xFFFFFF : -1);
-    rop_operand  ttrans = (op->rop & lop_T_transparent ? 0xFFFFFF : -1);
-    do
-    {
-        rop_operand S = get24(s);
-        rop_operand T = get24(t);
-        if ((S != strans) && (T != ttrans)) {
-            rop_operand D = proc(get24(d), S, T);
-            put24(d, D);
-        }
-        s += 3;
-        t += 3;
-        d += 3;
-    }
-    while (--len);
-}
-#endif
-
-#ifdef USE_TEMPLATES
 #define TEMPLATE_NAME          generic_rop_run24_1bit
 #define S_TRANS MAYBE
 #define T_TRANS MAYBE
@@ -903,8 +787,6 @@ static void generic_rop_run24_1bit(rop_run_op *op, byte *d, int len)
     rop_proc     proc = rop_proc_table[lop_rop(op->rop)];
     const byte  *s = op->s.b.ptr;
     const byte  *t = op->t.b.ptr;
-    rop_operand  strans = (op->rop & lop_S_transparent ? 0xFFFFFF : -1);
-    rop_operand  ttrans = (op->rop & lop_T_transparent ? 0xFFFFFF : -1);
     int          sroll, troll;
     const gx_color_index *scolors = op->scolors;
     const gx_color_index *tcolors = op->tcolors;
@@ -942,7 +824,7 @@ static void generic_rop_run24_1bit(rop_run_op *op, byte *d, int len)
                 t++;
             }
         }
-        if ((S != strans) && (T != ttrans)) {
+        {
             rop_operand D = proc(get24(d), S, T);
             put24(d, D);
         }
@@ -1054,34 +936,6 @@ static void generic_rop_run8_const_t(rop_run_op *op, byte *d, int len)
 #endif
 
 #ifdef USE_TEMPLATES
-#define TEMPLATE_NAME          generic_rop_run8_const_t_trans
-#define S_TRANS MAYBE
-#define T_CONST
-#define T_TRANS MAYBE
-#include "gsroprun8.h"
-#else
-static void generic_rop_run8_const_t_trans(rop_run_op *op, byte *d, int len)
-{
-    rop_proc     proc = rop_proc_table[lop_rop(op->rop)];
-    const byte  *s = op->s.b.ptr;
-    byte         T = op->t.c;
-    rop_operand  strans = (op->rop & lop_S_transparent ? 255 : -1);
-    rop_operand  ttrans = (op->rop & lop_T_transparent ? 255 : -1);
-    if (T == ttrans)
-        return;
-
-    do
-    {
-        rop_operand S = *s++;
-        if (S != strans)
-            *d = proc(*d, S, T);
-        d++;
-    }
-    while (--len);
-}
-#endif
-
-#ifdef USE_TEMPLATES
 #define TEMPLATE_NAME          generic_rop_run8_1bit_const_t
 #define S_TRANS MAYBE
 #define S_1BIT YES
@@ -1093,12 +947,8 @@ static void generic_rop_run8_1bit_const_t(rop_run_op *op, byte *d, int len)
     rop_proc     proc = rop_proc_table[lop_rop(op->rop)];
     byte         T = op->t.c;
     const byte  *s = op->s.b.ptr;
-    rop_operand  strans = (op->rop & lop_S_transparent ? 255 : -1);
-    rop_operand  ttrans = (op->rop & lop_T_transparent ? 255 : -1);
     int          sroll;
     const byte  *scolors = op->scolors;
-    if (T == ttrans)
-        return;
     s = op->s.b.ptr + (op->s.b.pos>>3);
     sroll = 8-(op->s.b.pos & 7);
     do {
@@ -1109,9 +959,7 @@ static void generic_rop_run8_1bit_const_t(rop_run_op *op, byte *d, int len)
             sroll = 8;
             s++;
         }
-        if ((S != strans))
-            *d = proc(*d, S, T);
-        d++;
+        *d++ = proc(*d, S, T);
     }
     while (--len);
 }
@@ -1139,37 +987,6 @@ static void generic_rop_run24_const_t(rop_run_op *op, byte *d, int len)
 #endif
 
 #ifdef USE_TEMPLATES
-#define TEMPLATE_NAME          generic_rop_run24_const_t_trans
-#define S_TRANS MAYBE
-#define T_CONST
-#define T_TRANS MAYBE
-#include "gsroprun24.h"
-#else
-static void generic_rop_run24_const_t_trans(rop_run_op *op, byte *d, int len)
-{
-    rop_proc     proc = rop_proc_table[lop_rop(op->rop)];
-    const byte  *s = op->s.b.ptr;
-    rop_operand  T = op->t.c;
-    rop_operand  strans = (op->rop & lop_S_transparent ? 0xFFFFFF : -1);
-    rop_operand  ttrans = (op->rop & lop_T_transparent ? 0xFFFFFF : -1);
-    if (T == ttrans)
-        return;
-    do
-    {
-        rop_operand S = get24(s);
-        rop_operand D;
-        if (S != strans) {
-            D = proc(get24(d), get24(s), T);
-            put24(d, D);
-        }
-        s += 3;
-        d += 3;
-    }
-    while (--len);
-}
-#endif
-
-#ifdef USE_TEMPLATES
 #define TEMPLATE_NAME          generic_rop_run24_1bit_const_t
 #define S_1BIT YES
 #define S_TRANS MAYBE
@@ -1182,29 +999,23 @@ static void generic_rop_run24_1bit_const_t(rop_run_op *op, byte *d, int len)
     rop_proc     proc = rop_proc_table[lop_rop(op->rop)];
     rop_operand  T = op->t.c;
     const byte  *s = op->s.b.ptr;
-    rop_operand  strans = (op->rop & lop_S_transparent ? 0xFFFFFF : -1);
-    rop_operand  ttrans = (op->rop & lop_T_transparent ? 0xFFFFFF : -1);
     int          sroll;
     const byte  *scolors = op->scolors;
     rop_operand  sc[2];
-    if (T == ttrans)
-        return;
     s = op->s.b.ptr + (op->s.b.pos>>3);
     sroll = 8-(op->s.b.pos & 7);
     sc[0] = ((const gx_color_index *)op->scolors)[0];
     sc[1] = ((const gx_color_index *)op->scolors)[3];
     do {
-        rop_operand S;
+        rop_operand S, D;
         --sroll;
         S = sc[(*s >> sroll) & 1];
         if (sroll == 0) {
             sroll = 8;
             s++;
         }
-        if ((S != strans)) {
-            rop_operand D = proc(get24(d), S, T);
-            put24(d, D);
-        }
+        D = proc(get24(d), S, T);
+        put24(d, D);
         d += 3;
     }
     while (--len);
@@ -1297,32 +1108,6 @@ static void generic_rop_run8_const_st(rop_run_op *op, byte *d, int len)
 #endif
 
 #ifdef USE_TEMPLATES
-#define TEMPLATE_NAME          generic_rop_run8_const_st_trans
-#define S_CONST
-#define T_CONST
-#define S_TRANS MAYBE
-#define T_TRANS MAYBE
-#include "gsroprun8.h"
-#else
-static void generic_rop_run8_const_st_trans(rop_run_op *op, byte *d, int len)
-{
-    rop_proc    proc   = rop_proc_table[lop_rop(op->rop)];
-    byte        s      = op->s.c;
-    byte        t      = op->t.c;
-    rop_operand strans = (op->rop & lop_S_transparent ? 0xFF : -1);
-    rop_operand ttrans = (op->rop & lop_T_transparent ? 0xFF : -1);
-    if ((s == strans) || (t == ttrans))
-        return;
-    do
-    {
-        *d = proc(*d, s, t);
-        d++;
-    }
-    while (--len);
-}
-#endif
-
-#ifdef USE_TEMPLATES
 #define TEMPLATE_NAME          generic_rop_run24_const_st
 #define S_CONST
 #define T_CONST
@@ -1333,33 +1118,6 @@ static void generic_rop_run24_const_st(rop_run_op *op, byte *d, int len)
     rop_proc    proc = rop_proc_table[op->rop];
     rop_operand s    = op->s.c;
     rop_operand t    = op->t.c;
-    do
-    {
-        rop_operand D = proc(get24(d), s, t);
-        put24(d, D);
-        d += 3;
-    }
-    while (--len);
-}
-#endif
-
-#ifdef USE_TEMPLATES
-#define TEMPLATE_NAME          generic_rop_run24_const_st_trans
-#define S_CONST
-#define T_CONST
-#define S_TRANS MAYBE
-#define T_TRANS MAYBE
-#include "gsroprun24.h"
-#else
-static void generic_rop_run24_const_st_trans(rop_run_op *op, byte *d, int len)
-{
-    rop_proc    proc = rop_proc_table[lop_rop(op->rop)];
-    rop_operand s    = op->s.c;
-    rop_operand t    = op->t.c;
-    rop_operand strans = (op->rop & lop_S_transparent ? 0xFFFFFF : -1);
-    rop_operand ttrans = (op->rop & lop_T_transparent ? 0xFFFFFF : -1);
-    if ((s == strans) || (t == ttrans))
-        return;
     do
     {
         rop_operand D = proc(get24(d), s, t);
@@ -1389,6 +1147,7 @@ static void record_run(rop_run_op *op, byte *d, int len)
     local.dpos    = op->dpos;
     local.release = op->release;
     local.opaque  = op->opaque;
+    local.mul     = op->mul;
 
     op->runswap(&local, d, len);
 }
@@ -1414,6 +1173,7 @@ static void rop_run_swapped(rop_run_op *op, byte *d, int len)
     local.dpos    = op->dpos;
     local.release = op->release;
     local.opaque  = op->opaque;
+    local.mul     = op->mul;
 
     op->runswap(&local, d, len);
 }
@@ -1440,45 +1200,13 @@ int rop_get_run_op(rop_run_op *op, int lop, int depth, int flags)
 
     /* If the lop ignores either S or T, then we might as well set them to
      * be constants; will save us slaving through memory. */
-    if (!rop3_uses_S(lop) && (lop & lop_S_transparent) == 0) {
+    if (!rop3_uses_S(lop)) {
         flags |= rop_s_constant;
         flags &= ~rop_s_1bit;
     }
-    if (!rop3_uses_T(lop) && (lop & lop_T_transparent) == 0) {
+    if (!rop3_uses_T(lop)) {
         flags |= rop_t_constant;
         flags &= ~rop_t_1bit;
-    }
-
-    /* Cull transparency if we can */
-    if (depth != 1) {
-        if (lop & lop_S_transparent) {
-            gx_color_index v = (depth == 8 ? 0xff : 0xffffff);
-            if (flags & rop_s_constant) {
-                if (op->s.c == v) {
-                    op->run = nop_rop_const_st;
-                    return 0;
-                } else
-                    lop &= ~lop_S_transparent;
-            } else if ((flags & rop_s_1bit) &&
-                       ((const gx_color_index *)op->scolors)[0] != v &&
-                       ((const gx_color_index *)op->scolors)[1] != v) {
-                lop &= ~lop_S_transparent;
-            }
-        }
-        if (lop & lop_T_transparent) {
-            gx_color_index v = (depth == 8 ? 0xff : 0xffffff);
-            if (flags & rop_t_constant) {
-                if (op->t.c == v) {
-                    op->run = nop_rop_const_st;
-                    return 0;
-                } else
-                    lop &= ~lop_T_transparent;
-            } else if ((flags & rop_t_1bit) &&
-                       ((const gx_color_index *)op->tcolors)[0] != v &&
-                       ((const gx_color_index *)op->tcolors)[1] != v) {
-                lop &= ~lop_T_transparent;
-            }
-        }
     }
 
     /* Cut down the number of cases. */
@@ -1509,15 +1237,55 @@ int rop_get_run_op(rop_run_op *op, int lop, int depth, int flags)
      * that S >= T.
      */
 
+    /* Can we fold down from 24bit to 8bit? */
+    op->mul = 1;
+    if (depth == 24) {
+        switch (flags & (rop_s_constant | rop_s_1bit))
+        {
+        case 0: /* s is a bitmap. No good. */
+        case rop_s_1bit: /* s is 1 bit data. No good. */
+            goto no_fold_24_to_8;
+        case rop_s_constant: /* constant or unused */
+        {
+            rop_operand s = swap ? op->t.c : op->s.c;
+            if ((rop_usage_table[lop & 0xff] & rop_usage_S) &&
+                ((s & 0xff) != ((s>>8) & 0xff) ||
+                 (s & 0xff) != ((s>>16) & 0xff)))
+                /* USED, and a colour that doesn't work out the same in 8bits */
+                goto no_fold_24_to_8;
+            break;
+        }
+        }
+        switch (flags & (rop_t_constant | rop_t_1bit))
+        {
+        case 0: /* t is a bitmap. No good. */
+        case rop_t_1bit: /* t is 1 bit data. No good. */
+            goto no_fold_24_to_8;
+        case rop_t_constant: /* constant or unused */
+        {
+            rop_operand t = swap ? op->s.c : op->t.c;
+            if ((rop_usage_table[lop & 0xff] & rop_usage_T) &&
+                ((t & 0xff) != ((t>>8) & 0xff) ||
+                 (t & 0xff) != ((t>>16) & 0xff)))
+                /* USED, and a colour that doesn't work out the same in 8bits */
+                goto no_fold_24_to_8;
+            break;
+        }
+        }
+        /* We can safely fold down from 24 to 8 */
+        op->mul = 3;
+        depth = 8;
+    no_fold_24_to_8:{}
+    }
+
     op->flags   = (flags & (rop_s_constant | rop_t_constant | rop_s_1bit | rop_t_1bit));
     op->depth   = (byte)depth;
     op->release = NULL;
 
-    /* If no transparency, and S and T are constant, and the lop uses both of them, we can combine them.
+    /* If S and T are constant, and the lop uses both of them, we can combine them.
      * Currently this only works for cases where D is unused.
      */
-    if (!(lop & (lop_T_transparent | lop_S_transparent)) &&
-        op->flags == (rop_s_constant | rop_t_constant) &&
+    if (op->flags == (rop_s_constant | rop_t_constant) &&
         rop_usage_table[lop & 0xff] == rop_usage_ST) {
         switch (lop & (rop3_D>>rop3_D_shift)) /* Ignore the D bits */
         {
@@ -1563,7 +1331,7 @@ int rop_get_run_op(rop_run_op *op, int lop, int depth, int flags)
         }
         lop = (lop & ~0xff) | rop3_S;
     }
-    op->rop     = lop & (0xFF | lop_S_transparent | lop_T_transparent);
+    op->rop     = lop & 0xFF;
 
 #define ROP_SPECIFIC_KEY(lop, depth, flags) (((lop)<<7)+(1<<6)+((depth>>3)<<4)+(flags))
 #define KEY_IS_ROP_SPECIFIC(key)            (key & (1<<6))
@@ -1590,11 +1358,8 @@ retry:
         op->t.b.pos = 0;
         op->dpos    = 0;
         break;
-    case ROP_SPECIFIC_KEY(0x55, 8, rop_s_constant | rop_t_constant):
+    case ROP_SPECIFIC_KEY(0x55, 8, rop_s_constant | rop_t_constant): /* S & T UNUSED */
         op->run     = invert_rop_run8;
-        break;
-    case ROP_SPECIFIC_KEY(0x55, 24, rop_s_constant | rop_t_constant):
-        op->run     = invert_rop_run24;
         break;
     /* 0x66 = D xor S */
     case ROP_SPECIFIC_KEY(0x66, 1, rop_t_constant):
@@ -1633,26 +1398,14 @@ retry:
         op->dpos    = 0;
         break;
     case KEY(8, 0):
-        if (lop & lop_S_transparent)
-            if (lop & lop_T_transparent)
-                op->run = generic_rop_run8_trans_ST;
-            else
-                op->run = generic_rop_run8_trans_S;
-        else
-            if (lop & lop_T_transparent)
-                op->run = generic_rop_run8_trans_T;
-            else
-                op->run = generic_rop_run8;
+        op->run = generic_rop_run8;
         break;
     case KEY(8, rop_s_1bit):
     case KEY(8, rop_s_1bit | rop_t_1bit ):
         op->run = generic_rop_run8_1bit;
         break;
     case KEY(24, 0):
-        if (lop & (lop_S_transparent | lop_T_transparent))
-            op->run   = generic_rop_run24_trans;
-        else
-            op->run   = generic_rop_run24;
+        op->run   = generic_rop_run24;
         break;
     case KEY(24, rop_s_1bit):
     case KEY(24, rop_s_1bit | rop_t_1bit ):
@@ -1665,19 +1418,13 @@ retry:
         op->dpos    = 0;
         break;
     case KEY(8, rop_t_constant):
-        if (lop & (lop_S_transparent | lop_T_transparent))
-            op->run   = generic_rop_run8_const_t_trans;
-        else
-            op->run   = generic_rop_run8_const_t;
+        op->run   = generic_rop_run8_const_t;
         break;
     case KEY(8, rop_s_1bit | rop_t_constant):
         op->run = generic_rop_run8_1bit_const_t;
         break;
     case KEY(24, rop_t_constant):
-        if (lop & (lop_S_transparent | lop_T_transparent))
-            op->run   = generic_rop_run24_const_t_trans;
-        else
-            op->run   = generic_rop_run24_const_t;
+        op->run   = generic_rop_run24_const_t;
         break;
     case KEY(24, rop_s_1bit | rop_t_constant):
         op->run = generic_rop_run24_1bit_const_t;
@@ -1689,16 +1436,10 @@ retry:
         op->dpos    = 0;
         break;
     case KEY(8, rop_s_constant | rop_t_constant):
-        if (lop & (lop_S_transparent | lop_T_transparent))
-            op->run   = generic_rop_run8_const_st_trans;
-        else
-            op->run   = generic_rop_run8_const_st;
+        op->run   = generic_rop_run8_const_st;
         break;
     case KEY(24, rop_s_constant | rop_t_constant):
-        if (lop & (lop_S_transparent | lop_T_transparent))
-            op->run   = generic_rop_run24_const_st_trans;
-        else
-            op->run   = generic_rop_run24_const_st;
+        op->run   = generic_rop_run24_const_st;
         break;
     default:
         /* If we failed to find a specific one for this rop value, try again

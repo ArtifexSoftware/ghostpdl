@@ -257,7 +257,7 @@ currentpacking //false setpacking
         } ifelse
       } ifelse
       RESMPDEBUG { (resmp FindResource end) = } if
-    } bind def
+    } .bind def
 
     /ResourceStatus   % <Name> ResourceStatus <status> <size> true
                       % <Name> ResourceStatus false
@@ -292,7 +292,7 @@ currentpacking //false setpacking
         } ifelse
       } ifelse
       RESMPDEBUG { (resmp ResourceStatus end) = } if
-    } bind def
+    } .bind def
 
     /ResourceFileName  % <Name> <scratch> ResourceFileName <string>
     { RESMPDEBUG { (resmp ResourceFileName beg ) print 1 index = } if
@@ -314,7 +314,7 @@ currentpacking //false setpacking
         RESMPDEBUG { (resmp ResourceFileName : retrieving ) print dup = } if
       } ifelse
       RESMPDEBUG { (resmp ResourceFileName end) = } if
-    } bind def
+    } .bind def
 
     /ResourceForAll  % <template> <proc> <scratch> ResourceForAll -
     { RESMPDEBUG { (resmp ResourceForAll beg ) print CategoryName =string cvs print ( ) print 2 index = } if
@@ -367,7 +367,7 @@ currentpacking //false setpacking
       % Make the enumerator and apply it :
       //MakeResourceEnumerator exec exec
       RESMPDEBUG { (resmp ResourceForAll end)= } if
-    } bind def
+    } .bind def
 
     /GetCIDSystemInfoFromMap   % <Name> GetCIDSystemInfoFromMap <Name>
                                % <Name> GetCIDSystemInfoFromMap <dict>

@@ -536,7 +536,7 @@ zpushpdf14devicefilter(i_ctx_t *i_ctx_p)
         if ((code = gs_erasepage(igs)) < 0)
             return code;
     }
-    code = gs_push_pdf14trans_device(igs, false);
+    code = gs_push_pdf14trans_device(igs, false, true);
     if (code < 0)
         return code;
     pop(1);

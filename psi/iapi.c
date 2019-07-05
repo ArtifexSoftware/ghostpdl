@@ -34,9 +34,9 @@
 #include "gp.h"
 #include "gsargs.h"
 
-typedef struct { int a[GS_ARG_ENCODING_LOCAL   == PS_ARG_ENCODING_LOCAL   ? 1 : -1]; } compile_time_assert_0;
-typedef struct { int a[GS_ARG_ENCODING_UTF8    == PS_ARG_ENCODING_UTF8    ? 1 : -1]; } compile_time_assert_1;
-typedef struct { int a[GS_ARG_ENCODING_UTF16LE == PS_ARG_ENCODING_UTF16LE ? 1 : -1]; } compile_time_assert_2;
+typedef struct { int a[(int)GS_ARG_ENCODING_LOCAL   == (int)PS_ARG_ENCODING_LOCAL   ? 1 : -1]; } compile_time_assert_0;
+typedef struct { int a[(int)GS_ARG_ENCODING_UTF8    == (int)PS_ARG_ENCODING_UTF8    ? 1 : -1]; } compile_time_assert_1;
+typedef struct { int a[(int)GS_ARG_ENCODING_UTF16LE == (int)PS_ARG_ENCODING_UTF16LE ? 1 : -1]; } compile_time_assert_2;
 
 /* Return revision numbers and strings of Ghostscript. */
 /* Used for determining if wrong GSDLL loaded. */
@@ -364,5 +364,22 @@ gsapi_is_path_control_active(void *instance)
     return gs_is_path_control_active(ctx->memory);
 }
 
+GSDLLEXPORT int GSDLLAPI
+gsapi_add_fs(void *instance, gsapi_fs_t *fs, void *secret)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (ctx == NULL)
+        return 0;
+    return gs_add_fs(ctx->memory, (gs_fs_t *)fs, secret);
+}
+
+GSDLLEXPORT void GSDLLAPI
+gsapi_remove_fs(void *instance, gsapi_fs_t *fs, void *secret)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (ctx == NULL)
+        return;
+    gs_remove_fs(ctx->memory, (gs_fs_t *)fs, secret);
+}
 
 /* end of iapi.c */

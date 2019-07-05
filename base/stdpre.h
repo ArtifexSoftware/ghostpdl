@@ -23,7 +23,10 @@
  * gp_ prefixed versions of fgetc, fread, fwrite, fseek, ftell
  * fclose, etc.
  */
+#ifndef gp_file_DEFINED
+#  define gp_file_DEFINED
 typedef struct gp_file_s gp_file;
+#endif
 
 /* if we define _LARGEFILE64_SOURCE zlib tries to include unistd.h */
 #ifndef _MSC_VER

@@ -3518,7 +3518,6 @@ end			% pdfdict
 %% Since each operator is a potential security vulnerability, and any operator listed here
 %% is not required once the initislisation is complete and functions are bound, we undefine
 %% the ones that aren't needed at runtime.
-/.PDF_UNDEF_OPLIST
 [
 /.pdfawidthshow /.pdfwidthshow /.currentblackptcomp /.setblackptcomp
 /.setfillcolor /.setfillcolorspace /.setstrokecolor /.setstrokecolorspace /.currentrenderingintent /.setrenderingintent
@@ -3544,10 +3543,4 @@ end			% pdfdict
 % undefining these causes errors/incorrect output
 %/.settextrenderingmode /.setblendmode /.begintransparencygroup /.settextknockout /.setstrokeoverprint /.setfilloverprint
 %/.currentstrokeoverprint /.currentfilloverprint /.currentfillconstantalpha /.currentstrokeconstantalpha
-] def
-
-DELAYBIND not {
-.PDF_UNDEF_OPLIST
-{systemdict exch .undef} forall
-systemdict /.PDF_UNDEF_OPLIST .undef
-} if
+] systemdict .undefinternalnames

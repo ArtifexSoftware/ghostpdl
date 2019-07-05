@@ -157,15 +157,19 @@ pcl_define_symbol_set(pcl_args_t * pargs, pcl_state_t * pcs)
                                                       sizeof
                                                       (pcl_symbol_set_t),
                                                       "symset dict value");
-        if (!symsetp)
+        if (!symsetp) {
+            gs_free_object(mem, header, "pcl_font_header(header)");
             return_error(e_Memory);
+        }
         for (gx = plgv_MSL; gx < plgv_next; gx++)
             symsetp->maps[gx] = NULL;
         symsetp->storage = pcds_temporary;
         code = pl_dict_put(&pcs->soft_symbol_sets, id_key(pcs->symbol_set_id),
                     2, symsetp);
-        if (code < 0)
+        if (code < 0) {
+            gs_free_object(mem, header, "pcl_font_header(header)");
             return code;
+        }
     }
     symsetp->maps[gv] = header;
 
@@ -277,7 +281,7 @@ pcl_load_built_in_symbol_sets(pcl_state_t * pcs)
             symsetp->storage = pcds_internal;
 
             if (pl_dict_put(&pcs->built_in_symbol_sets, mapp->id, 2, symsetp) < 0) {
-                gs_free_object(pcs->memory, symsetp, "symset init dict value");
+                /* on error, pl_dict_put consumes symsetp */
                 return_error(gs_error_VMerror);
             }
         }

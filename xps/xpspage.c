@@ -250,7 +250,7 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
 
     if (ctx->use_transparency && ctx->has_transparency)
     {
-        code = gs_push_pdf14trans_device(ctx->pgs, false);
+        code = gs_push_pdf14trans_device(ctx->pgs, false, false);
         if (code < 0)
         {
             gs_grestore(ctx->pgs);

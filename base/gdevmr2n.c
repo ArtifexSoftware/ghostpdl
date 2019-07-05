@@ -91,8 +91,8 @@ mem_gray_strip_copy_rop(gx_device * dev,
                        id, scolors, textures, tcolors,
                        x, y, width, height, phase_x, phase_y, lop);
 #endif
+    lop = lop_sanitize(lop);
     if (gx_device_has_color(dev) ||
-        (lop & (lop_S_transparent | lop_T_transparent)) ||
         (scolors &&		/* must be (0,0) or (max,max) */
          ((scolors[0] | scolors[1]) != 0) &&
          ((scolors[0] & scolors[1]) != max_pixel)) ||

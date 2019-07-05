@@ -153,14 +153,7 @@ void gp_readline_finit(void *readline_data);
 
 /* ------ File access functions ------ */
 
-/* Secret Section: */
-
-/* The following definition is exposed here purely so we can
- * implement the API as static inlines for speed. We do not
- * expect callers of the API to access the internals of the
- * structure directly. */
-
-struct gp_file_s {
+typedef struct {
     int          (*close)(gp_file *);
     int          (*getc)(gp_file *);
     int          (*putc)(gp_file *, int);
@@ -173,14 +166,16 @@ struct gp_file_s {
     int          (*seekable)(gp_file *);
     int          (*pread)(gp_file *, size_t count, gs_offset_t offset, void *buf);
     int          (*pwrite)(gp_file *, size_t count, gs_offset_t offset, const void *buf);
-    int          (*set_binary)(gp_file *file, bool binary);
     int          (*is_char_buffered)(gp_file *file);
     void         (*fflush)(gp_file *file);
     int          (*ferror)(gp_file *file);
     FILE        *(*get_file)(gp_file *file);
     void         (*clearerr)(gp_file *file);
     gp_file     *(*reopen)(gp_file *f, const char *fname, const char *mode);
-    /* New API functions should be added above here */
+} gp_file_ops_t;
+
+struct gp_file_s {
+    gp_file_ops_t ops;
 
     gs_memory_t *memory;
     char        *buffer;
@@ -196,7 +191,7 @@ struct gp_file_s {
 /* Allocate a structure based on a gp_file, initialise it with the
  * given prototype, and zero the rest of it. Returns NULL on failure
  * to allocate. */
-gp_file *gp_file_alloc(gs_memory_t *mem, const gp_file *prototype, size_t size, const char *cname);
+gp_file *gp_file_alloc(gs_memory_t *mem, const gp_file_ops_t *prototype, size_t size, const char *cname);
 
 /* Called automatically by gp_fclose. May be needed for implementers to
  * clear up allocations if errors occur while opening files. */
@@ -218,120 +213,118 @@ int gp_file_FILE_set(gp_file *file, FILE *f, int (*close)(FILE *));
 
 static inline int
 gp_fgetc(gp_file *f) {
-    return (f->getc)(f);
+    return (f->ops.getc)(f);
 }
 
 static inline int
 gp_fputc(int c, gp_file *f) {
-    return (f->putc)(f, c);
+    return (f->ops.putc)(f, c);
 }
 
 static inline int
 gp_fread(void *buf, size_t size, size_t count, gp_file *f) {
-    return (f->read)(f, size, count, buf);
+    return (f->ops.read)(f, size, count, buf);
 }
 
 static inline int
 gp_fwrite(const void *buf, size_t size, size_t count, gp_file *f) {
-    return (f->write)(f, size, count, buf);
+    return (f->ops.write)(f, size, count, buf);
 }
 
 static inline int
 gp_fseek(gp_file *f, gs_offset_t offset, int whence) {
-    if (f->seek == NULL)
+    if (f->ops.seek == NULL)
         return -1;
-    return (f->seek)(f, offset, whence);
+    return (f->ops.seek)(f, offset, whence);
 }
 
 static inline gs_offset_t
 gp_ftell(gp_file *f) {
-    if (f->tell == NULL)
+    if (f->ops.tell == NULL)
         return -1;
-    return (f->tell)(f);
+    return (f->ops.tell)(f);
 }
 
 static inline int
 gp_feof(gp_file *f) {
-    return f->eof(f);
+    return f->ops.eof(f);
 }
 
 static inline int
 gp_fclose(gp_file *f) {
-    int ret = (f->close)(f);
+    int ret = (f->ops.close)(f);
     gp_file_dealloc(f);
     return ret;
 }
 
 static inline gp_file *
 gp_fdup(gp_file *f, const char *mode) {
-    if (f == NULL || f->dup == NULL)
+    if (f == NULL || f->ops.dup == NULL)
         return NULL;
 
-    return (f->dup)(f, mode);
+    return (f->ops.dup)(f, mode);
 }
 
 static inline int
 gp_fseekable(gp_file *f) {
-    if (f == NULL || f->seekable == NULL)
+    if (f == NULL || f->ops.seekable == NULL)
         return 0;
-    return f->seekable(f);
+    return f->ops.seekable(f);
 }
 
 static inline int
 gp_fpread(void *buf, size_t count, gs_offset_t offset, gp_file *f) {
-    return (f->pread)(f, count, offset, buf);
+    return (f->ops.pread)(f, count, offset, buf);
 }
 
 static inline int
 gp_fpwrite(void *buf, size_t count, gs_offset_t offset, gp_file *f) {
-    return (f->pwrite)(f, count, offset, buf);
-}
-
-static inline int
-gp_setmode_binary(gp_file * f, bool mode) {
-    return (f->set_binary)(f, mode);
+    return (f->ops.pwrite)(f, count, offset, buf);
 }
 
 static inline int
 gp_file_is_char_buffered(gp_file *f) {
-    return (f->is_char_buffered)(f);
+    if (f->ops.is_char_buffered == NULL)
+        return 0;
+    return (f->ops.is_char_buffered)(f);
 }
 
 static inline void
 gp_fflush(gp_file *f) {
-    (f->fflush)(f);
+    if (f->ops.fflush)
+        (f->ops.fflush)(f);
 }
 
 static inline int
 gp_ferror(gp_file *f) {
-    return (f->ferror)(f);
+    return (f->ops.ferror)(f);
 }
 
 static inline FILE *
 gp_get_file(gp_file *f) {
-    if (f->get_file == NULL)
+    if (f->ops.get_file == NULL)
         return NULL;
-    return (f->get_file)(f);
+    return (f->ops.get_file)(f);
 }
 
 static inline void
 gp_clearerr(gp_file *f) {
-    if (f->clearerr)
-        (f->clearerr)(f);
+    if (f->ops.clearerr)
+        (f->ops.clearerr)(f);
 }
 
 /* fname is always in utf8 format */
 static inline gp_file *
 gp_freopen(const char *fname, const char *mode, gp_file *f) {
-    if (f->reopen == NULL)
+    if (f->ops.reopen == NULL)
         return NULL;
-    return (f->reopen)(f, fname, mode);
+    return (f->ops.reopen)(f, fname, mode);
 }
 
 static inline int
 gp_fputs(const char *string, gp_file *f) {
     size_t len = strlen(string);
-    return (f->write)(f, 1, len, string);
+    return (f->ops.write)(f, 1, len, string);
 }
 
 static inline int
@@ -643,7 +636,7 @@ int gp_setmode_binary_impl(FILE * pfile, bool mode);
 
 FILE *
 gp_open_printer_impl(gs_memory_t *mem,
-                     char         fname[gp_file_name_sizeof],
+                     const char  *fname,
                      int         *binary_mode,
                      int          (**close)(FILE *));
 
@@ -682,6 +675,12 @@ gp_local_arg_encoding_get_codepoint(gp_file *file, const char **astr);
 
 int
 gp_xpsprint(char *filename, char *printername, int *result);
+
+int
+gp_validate_path_len(const gs_memory_t *mem,
+                 const char        *path,
+                 const uint         rlen,
+                 const char        *mode);
 
 int
 gp_validate_path(const gs_memory_t *mem,

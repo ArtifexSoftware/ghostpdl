@@ -1328,4 +1328,4 @@ FAKEFONTS { exch } if pop def   % don't bind, .current/setglobal get redefined
  /.putgstringcopy
  /.definenativefontmap
  /.findfontname /.addfontmappermitpaths /.splitdirname
-] {systemdict exch .forceundef} forall
+] systemdict .undefinternalnames

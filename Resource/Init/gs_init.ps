@@ -335,6 +335,59 @@ DELAYBIND
     } .bind def
 } executeonly if
 
+.currentglobal //true .setglobal
+/.undefinternalnameslist 10 dict def
+.setglobal
+
+% Under normal operation .undefinternalnames simply removes
+% the keys in the array parameter from the dictionary parameter.
+% Under DELAYBIND operation, we accumulate the names in dictionaries,
+% stored in .undefinternalnameslist, and then .bindow calls
+% .applyundefinternalnames once all binds have been applied.
+% The .undefinternalnameslist dictionary is a little odd in that it
+% uses the dictionary from which the keys should be undefined as the
+% 'key' and then the value is a dictionary whose key/value pairs are
+% both the names to be undefined.
+%
+% [array of names] <<dict from which to undef>> .undefinternalnames -
+/.undefinternalnames
+{
+  DELAYBIND
+  {
+    .currentglobal //true .setglobal 3 1 roll
+    dup //.undefinternalnameslist exch .knownget not
+    {
+      128 dict dup 3 1 roll
+      //.undefinternalnameslist 3 1 roll put
+    }{exch pop} ifelse
+    exch
+    {
+      dup 2 index 3 1 roll put
+    } forall
+    pop
+    .setglobal
+  }
+  {
+    exch
+    {
+      1 index exch .forceundef
+    } executeonly forall
+    pop
+  } executeonly ifelse
+} .bind executeonly def
+
+/.applyundefinternalnames
+{
+  //.undefinternalnameslist
+  {
+    {
+      pop
+      1 index exch .forceundef
+    } executeonly forall
+    pop
+  } executeonly forall
+} .bind executeonly def
+
 %**************** BACKWARD COMPATIBILITY ****************
 /hwsizedict mark /HWSize //null .dicttomark readonly def
 /copyscanlines {		% <device> <y> <string> copyscanlines <substr>
@@ -2382,7 +2435,7 @@ SAFER {
   /.localvmarray /.localvmdict /.localvmpackedarray /.localvmstring /.systemvmarray /.systemvmdict /.systemvmpackedarray /.systemvmstring /.systemvmfile /.systemvmlibfile
   /.systemvmSFD /.settrapparams /.currentsystemparams /.currentuserparams /.getsystemparam /.getuserparam /.setsystemparams /.setuserparams
   /.checkpassword /.locale_to_utf8 /.currentglobal /.gcheck /.imagepath /.currentoutputdevice
-  /.type /.writecvs /.setSMask /.currentSMask /.needinput /.countexecstack /.execstack /.applypolicies
+  /.type /.writecvs /.setSMask /.currentSMask /.needinput /.countexecstack /.execstack
   /filterdict /.cidfonttypes /.colorrenderingtypes
   /.formtypes /.halftonetypes /.imagetypes /.imagemasktypes
   /.patterntypes /.shadingtypes /.wheredict /.renderingintentdict
@@ -2479,15 +2532,6 @@ SAFER {
   //systemdict /UndefinePostScriptOperators .forceundef
 } .bind executeonly def % must be bound and hidden for .forceundef
 
-% Undefine operators that are used by PDF internally.
-% This list is maintained in pdf_main.ps
-/UndefinePDFOperators {
-  .PDF_UNDEF_OPLIST
-  {//systemdict exch .forceundef} forall
-  //systemdict /.PDF_UNDEF_OPLIST .forceundef
-  //systemdict /UndefinePDFOperators .forceundef
-} .bind def
-
 % If we delayed binding, make it possible to do it later.
 /.bindnow {
   currentuserparams /IdiomRecognition .knownget {
@@ -2500,21 +2544,24 @@ SAFER {
   0 1 .delaycount 1 sub { .delaybind exch get .bind pop } for
   //systemdict /.delaybind {} .forceput	% reclaim the space
   //systemdict /.bindnow .forceundef	% ditto
+  .applyundefinternalnames
   put
   SAFER {
     //systemdict /SAFERUndefinePostScriptOperators get exec
   } if
   //systemdict /UndefinePostScriptOperators get exec
-  //systemdict /UndefinePDFOperators get exec
   //systemdict /.forcecopynew .forceundef	% remove temptation
   //systemdict /.forceput .forceundef		% ditto
   //systemdict /.undef .forceundef		    % ditto
   //systemdict /.bindoperators .forceundef
   //systemdict /.forceundef .forceundef		% ditto
+  //systemdict /.undefinternalnames .forceundef
+  //systemdict /.applyundefinternalnames .forceundef
+  //systemdict /.undefinternalnameslist .forceundef
   currentuserparams /IdiomRecognition known {
     1 dict dup /IdiomRecognition 4 -1 roll put setuserparams
   } if
-} .bind odef
+} .bind def
 
 % Turn off array packing, since some PostScript code assumes that
 % procedures are writable.
@@ -2593,7 +2640,6 @@ DELAYBIND not {
     //systemdict /SAFERUndefinePostScriptOperators get exec
   } if
   //systemdict /UndefinePostScriptOperators get exec
-  //systemdict /UndefinePDFOperators .forceundef
 } if
 end
 
@@ -2618,6 +2664,9 @@ DELAYBIND not {
   systemdict /.forcecopynew .undef	% remove temptation
   systemdict /.forceput .undef		% ditto
   systemdict /.forceundef .undef	% ditto
+  systemdict /.undefinternalnames .undef
+  systemdict /.applyundefinternalnames .undef
+  systemdict /.undefinternalnameslist .undef
 } if
 
 % Can't remove this one until the last minute :-)

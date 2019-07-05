@@ -1237,7 +1237,7 @@ gx_device_open_output_file(const gx_device * dev, char *fname,
         }
         gp_file_FILE_set(*pfile, dev->memory->gs_lib_ctx->core->fstdout, noclose);
         /* Force stdout to binary. */
-        code = gp_setmode_binary(*pfile, true);
+        code = gp_setmode_binary_impl(dev->memory->gs_lib_ctx->core->fstdout, true);
 	goto done;
     } else if (parsed.iodev && !strcmp(parsed.iodev->dname, "%pipe%")) {
         positionable = false;

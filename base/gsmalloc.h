@@ -27,9 +27,9 @@ typedef struct gs_malloc_block_s gs_malloc_block_t;
 typedef struct gs_malloc_memory_s {
     gs_memory_common;
     gs_malloc_block_t *allocated;
-    ulong limit;
-    ulong used;
-    ulong max_used;
+    size_t limit;
+    size_t used;
+    size_t max_used;
     gx_monitor_t *monitor;	/* monitor to serialize access to functions */
 } gs_malloc_memory_t;
 

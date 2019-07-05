@@ -554,7 +554,7 @@ pssystemparams  /MaxDisplayAndSourceList 160000 .forceput
     /.makehalftone7 /.sethalftone6 /.sethalftone10 /.sethalftone16
     /.readbytestring /.bigstring
 ]
-dup {currentdict exch .forceundef} forall
-{systemdict exch .forceundef} forall
+dup currentdict .undefinternalnames
+systemdict .undefinternalnames
 
 end			% ll3dict

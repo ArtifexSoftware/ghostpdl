@@ -90,13 +90,19 @@ gsapi_revision_t rv;
 
     /* DLL is now loaded */
     /* Get pointers to functions */
-    gsdll->revision = (PFN_gsapi_revision) GetProcAddress(gsdll->hmodule,
-        "gsapi_revision");
-    if (gsdll->revision == NULL) {
-        strncpy(last_error, "Can't find gsapi_revision\n", len-1);
-        unload_dll(gsdll);
-        return 1;
-    }
+#define ASSIGN_API_FN(A) \
+    do { \
+        gsdll->A = (PFN_gsapi_##A) GetProcAddress(gsdll->hmodule,\
+                                                 "gsapi_" # A);\
+	if (gsdll->A == NULL) {\
+            strncpy(last_error, "Can't find gsapi_" # A "\n", len-1);\
+            unload_dll(gsdll);\
+            return 1;\
+        }\
+    } while (0)
+
+    ASSIGN_API_FN(revision);
+
     /* check DLL version */
     if (gsdll->revision(&rv, sizeof(rv)) != 0) {
         sprintf(fullname, "Unable to identify Ghostscript DLL revision - it must be newer than needed.\n");
@@ -112,93 +118,31 @@ gsapi_revision_t rv;
     }
 
     /* continue loading other functions */
-    gsdll->new_instance = (PFN_gsapi_new_instance) GetProcAddress(gsdll->hmodule,
-        "gsapi_new_instance");
-    if (gsdll->new_instance == NULL) {
-        strncpy(last_error, "Can't find gsapi_new_instance\n", len-1);
-        unload_dll(gsdll);
-        return 1;
-    }
-
-    gsdll->delete_instance = (PFN_gsapi_delete_instance) GetProcAddress(gsdll->hmodule,
-        "gsapi_delete_instance");
-    if (gsdll->delete_instance == NULL) {
-        strncpy(last_error, "Can't find gsapi_delete_instance\n", len-1);
-        unload_dll(gsdll);
-        return 1;
-    }
-
-    gsdll->set_stdio = (PFN_gsapi_set_stdio) GetProcAddress(gsdll->hmodule,
-        "gsapi_set_stdio");
-    if (gsdll->set_stdio == NULL) {
-        strncpy(last_error, "Can't find gsapi_set_stdio\n", len-1);
-        unload_dll(gsdll);
-        return 1;
-    }
-
-    gsdll->set_poll = (PFN_gsapi_set_poll) GetProcAddress(gsdll->hmodule,
-        "gsapi_set_poll");
-    if (gsdll->set_poll == NULL) {
-        strncpy(last_error, "Can't find gsapi_set_poll\n", len-1);
-        unload_dll(gsdll);
-        return 1;
-    }
-
-    gsdll->set_display_callback = (PFN_gsapi_set_display_callback)
-        GetProcAddress(gsdll->hmodule, "gsapi_set_display_callback");
-    if (gsdll->set_display_callback == NULL) {
-        strncpy(last_error, "Can't find gsapi_set_display_callback\n", len-1);
-        unload_dll(gsdll);
-        return 1;
-    }
-
-    gsdll->get_default_device_list = (PFN_gsapi_get_default_device_list)
-        GetProcAddress(gsdll->hmodule, "gsapi_get_default_device_list");
-    if (gsdll->get_default_device_list == NULL) {
-        strncpy(last_error, "Can't find gsapi_get_default_device_list\n", len-1);
-        unload_dll(gsdll);
-        return 1;
-    }
-
-    gsdll->set_default_device_list = (PFN_gsapi_set_default_device_list)
-        GetProcAddress(gsdll->hmodule, "gsapi_set_default_device_list");
-    if (gsdll->set_default_device_list == NULL) {
-        strncpy(last_error, "Can't find gsapi_set_default_device_list\n", len-1);
-        unload_dll(gsdll);
-        return 1;
-    }
-
-    gsdll->init_with_args = (PFN_gsapi_init_with_args)
-        GetProcAddress(gsdll->hmodule, "gsapi_init_with_args");
-    if (gsdll->init_with_args == NULL) {
-        strncpy(last_error, "Can't find gsapi_init_with_args\n", len-1);
-        unload_dll(gsdll);
-        return 1;
-    }
-
-    gsdll->set_arg_encoding = (PFN_gsapi_set_arg_encoding)
-        GetProcAddress(gsdll->hmodule, "gsapi_set_arg_encoding");
-    if (gsdll->set_arg_encoding == NULL) {
-        strncpy(last_error, "Can't find gsapi_set_arg_encoding\n", len-1);
-        unload_dll(gsdll);
-        return 1;
-    }
-
-    gsdll->run_string = (PFN_gsapi_run_string) GetProcAddress(gsdll->hmodule,
-        "gsapi_run_string");
-    if (gsdll->run_string == NULL) {
-        strncpy(last_error, "Can't find gsapi_run_string\n", len-1);
-        unload_dll(gsdll);
-        return 1;
-    }
-
-    gsdll->exit = (PFN_gsapi_exit) GetProcAddress(gsdll->hmodule,
-        "gsapi_exit");
-    if (gsdll->exit == NULL) {
-        strncpy(last_error, "Can't find gsapi_exit\n", len-1);
-        unload_dll(gsdll);
-        return 1;
-    }
+    ASSIGN_API_FN(new_instance);
+    ASSIGN_API_FN(delete_instance);
+    ASSIGN_API_FN(set_stdio);
+    ASSIGN_API_FN(set_poll);
+    ASSIGN_API_FN(set_display_callback);
+    ASSIGN_API_FN(get_default_device_list);
+    ASSIGN_API_FN(set_default_device_list);
+    ASSIGN_API_FN(init_with_args);
+    ASSIGN_API_FN(set_arg_encoding);
+    ASSIGN_API_FN(run_string);
+    ASSIGN_API_FN(exit);
+    ASSIGN_API_FN(set_arg_encoding);
+    ASSIGN_API_FN(run_file);
+    ASSIGN_API_FN(run_string_begin);
+    ASSIGN_API_FN(run_string_continue);
+    ASSIGN_API_FN(run_string_end);
+    ASSIGN_API_FN(run_string_with_length);
+    ASSIGN_API_FN(set_param);
+    ASSIGN_API_FN(add_control_path);
+    ASSIGN_API_FN(remove_control_path);
+    ASSIGN_API_FN(purge_control_paths);
+    ASSIGN_API_FN(activate_path_control);
+    ASSIGN_API_FN(is_path_control_active);
+    ASSIGN_API_FN(add_fs);
+    ASSIGN_API_FN(remove_fs);
 
     return 0;
 }

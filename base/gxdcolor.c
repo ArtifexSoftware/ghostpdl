@@ -857,7 +857,7 @@ gx_dc_pure_fill_masked(const gx_device_color * pdevc, const byte * data,
         return (*dev_proc(dev, strip_copy_rop))
             (dev, data, data_x, raster, id, scolors,
              NULL, tcolors, x, y, w, h, 0, 0,
-             lop | lop_S_transparent);
+             lop_sanitize(lop | lop_S_transparent));
     }
 }
 

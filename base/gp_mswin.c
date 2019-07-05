@@ -112,7 +112,7 @@ static int gp_printfile(const gs_memory_t *mem, const char *, const char *);
 /* Return NULL if the connection could not be opened. */
 FILE *
 gp_open_printer_impl(gs_memory_t *mem,
-                     char         fname[gp_file_name_sizeof],
+                     const char  *fname,
                      int         *binary_mode,
                      int          (**close)(FILE *))
 {

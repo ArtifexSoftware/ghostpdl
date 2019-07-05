@@ -156,7 +156,7 @@ gc_locate(const void *ptr, gc_state_t * gcst)
 /* Define the structure for temporarily saving allocator state. */
 typedef struct alloc_temp_save_s {
         clump_t *cc;
-        uint rsize;
+        obj_size_t rsize;
         ref rlast;
 } alloc_temp_save_t;
 /* Temporarily save the state of an allocator. */
@@ -266,7 +266,7 @@ ialloc_validate_memory(const gs_ref_memory_t * mem, gc_state_t * gcst)
             for (pfree = mem->freelists[i]; pfree != 0;
                  pfree = *(const obj_header_t * const *)pfree
                 ) {
-                uint size = pfree[-1].o_size;
+                obj_size_t size = pfree[-1].o_size;
 
                 if (pfree[-1].o_type != &st_free) {
                     mlprintf3((gs_memory_t *)mem, "Non-free object 0x%lx(%u) on freelist %i!\n",
@@ -277,7 +277,7 @@ ialloc_validate_memory(const gs_ref_memory_t * mem, gc_state_t * gcst)
                  (i != LARGE_FREELIST_INDEX &&
                  (size < free_size - obj_align_mask || size > free_size))) {
                     mlprintf3((gs_memory_t *)mem, "Object 0x%lx(%u) size wrong on freelist %i!\n",
-                              (ulong) pfree, size, i);
+                              (ulong) pfree, (uint)size, i);
                     break;
                 }
             }

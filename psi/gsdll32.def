@@ -31,3 +31,11 @@ EXPORTS
 		gsapi_set_arg_encoding
                 gsapi_set_default_device_list
                 gsapi_get_default_device_list
+                gsapi_set_param
+                gsapi_add_control_path
+                gsapi_remove_control_path
+                gsapi_purge_control_paths
+                gsapi_activate_path_control
+                gsapi_is_path_control_active
+                gsapi_add_fs
+                gsapi_remove_fs

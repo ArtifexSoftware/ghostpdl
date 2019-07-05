@@ -1971,9 +1971,10 @@ pclxl_strip_copy_rop(gx_device * dev, const byte * sdata, int sourcex,
                      int x, int y, int width, int height,
                      int phase_x, int phase_y, gs_logical_operation_t lop)
 {
+    lop = lop_sanitize(lop);
     /* Improvements possible here using PXL ROP3
        for some combinations of args; use gx_default for now */
-    if (!rop3_uses_D(gs_transparent_rop(lop)))  /* gx_default() cannot cope with D ops */
+    if (!rop3_uses_D(lop))  /* gx_default() cannot cope with D ops */
         return gx_default_strip_copy_rop(dev, sdata, sourcex,
                                          sraster, id,
                                          scolors,

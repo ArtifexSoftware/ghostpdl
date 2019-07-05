@@ -172,6 +172,8 @@ pdf_convert_image4_to_image1(gx_device_pdf *pdev,
             gs_logical_operation_t lop = pgs->log_op;
             int black_or_white = color_is_black_or_white(dev, pdcolor);
 
+            lop = lop_sanitize(lop);
+
             switch (black_or_white) {
             case 0: lop = lop_know_S_0(lop); break;
             case 1: lop = lop_know_S_1(lop); break;
@@ -199,8 +201,6 @@ pdf_convert_image4_to_image1(gx_device_pdf *pdev,
             default:
                 return -1;
             }
-            if ((lop & lop_S_transparent) && black_or_white == 1)
-                return -1;
         }
 
         /* All conditions are met.  Convert to a masked image. */

@@ -297,6 +297,7 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
     if ((code = gx_image_compute_mat(pgs, pmat, &(pim->ImageMatrix), &mat)) < 0) {
         return code;
     }
+    lop = lop_sanitize(lop);
     /* Grid fit: A common construction in postscript/PDF files is for images
      * to be constructed as a series of 'stacked' 1 pixel high images.
      * Furthermore, many of these are implemented as an imagemask plotted on
@@ -700,7 +701,7 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
         /* Try to transform non-default RasterOps to something */
         /* that we implement less expensively. */
         if (!pim->CombineWithColor)
-            lop = rop3_know_T_0(lop) & ~lop_T_transparent;
+            lop = rop3_know_T_0(lop);
         else if ((rop3_uses_T(lop) && color_draws_b_w(dev, pdcolor) == 0))
             lop = rop3_know_T_0(lop);
 

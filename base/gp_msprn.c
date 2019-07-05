@@ -166,9 +166,34 @@ mswin_printer_fopen(gx_io_device * iodev, const char *fname, const char *access,
     HANDLE hthread;
     char pname[gp_file_name_sizeof];
     unsigned long *ptid = &((tid_t *)(iodev->state))->tid;
+    gs_lib_ctx_t *ctx = mem->gs_lib_ctx;
+    gs_fs_list_t *fs = ctx->core->fs;
 
     if (gp_validate_path(mem, fname, access) != 0)
         return gs_error_invalidfileaccess;
+
+    /* First we try the open_printer method. */
+    /* Note that the loop condition here ensures we don't
+     * trigger on the last registered fs entry (our standard
+     * 'file' one). */
+    if (access[0] == 'w' || access[0] == 'a')
+    {
+        *pfile = NULL;
+        for (fs = ctx->core->fs; fs != NULL && fs->next != NULL; fs = fs->next)
+        {
+            int code = 0;
+            if (fs->fs.open_printer)
+                code = fs->fs.open_printer(mem, fs->secret, fname, 1, pfile);
+            if (code < 0)
+                return code;
+            if (*pfile != NULL)
+                return code;
+        }
+    } else
+        return gs_error_invalidfileaccess;
+
+    /* If nothing claimed that, then continue with the
+     * standard MS way of working. */
 
     /* Win32s supports neither pipes nor Win32 printers. */
     if (((HIWORD(version) & 0x8000) != 0) &&

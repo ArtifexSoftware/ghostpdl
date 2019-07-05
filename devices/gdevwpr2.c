@@ -1002,16 +1002,26 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
         wchar_t unidrvbuf[sizeof(driverbuf)];
         wchar_t *devices;
         wchar_t *p;
+        int devices_size = 128, returned_length = 0;
         wchar_t *unidev = malloc(utf8_to_wchar(NULL, device)*sizeof(wchar_t));
         if (unidev == NULL)
             return FALSE;
         utf8_to_wchar(unidev, device);
-        devices = gs_malloc(wdev->memory, 8192, 1, "win_pr2_getdc");
-        if (devices == (wchar_t *)NULL) {
-            free(unidev);
-            return FALSE;
-        }
-        GetProfileStringW(L"Devices", NULL, L"", devices, 8192);
+        do {
+            devices = gs_malloc(wdev->memory, devices_size, 1, "win_pr2_getdc");
+            if (devices == (wchar_t *)NULL) {
+                free(unidev);
+                return FALSE;
+            }
+            returned_length = GetProfileStringW(L"Devices", NULL, L"", devices, devices_size / sizeof(wchar_t));
+            returned_length *= sizeof(wchar_t);
+            if (returned_length >= devices_size - 2 * sizeof(wchar_t)) {
+                gs_free(wdev->memory, devices, devices_size, 1, "win_pr2_getdc");
+                devices_size += 4096;
+            }
+            else
+                break;
+        } while (1);
         p = devices;
         while (*p) {
             if (wcsicmp(p, unidev) == 0)
@@ -1020,7 +1030,7 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
         }
         if (*p == '\0')
             p = NULL;
-        gs_free(wdev->memory, devices, 8192, 1, "win_pr2_getdc");
+        gs_free(wdev->memory, devices, devices_size, 1, "win_pr2_getdc");
         if (p == NULL) {
             free(unidev);
             return FALSE;  /* doesn't match an available printer */

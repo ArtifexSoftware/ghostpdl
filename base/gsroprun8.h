@@ -39,12 +39,6 @@
  *                               being a pointer to a 1 bit bitmap to choose
  *                               between scolors[0] and [1]. If set to 1, the
  *                               code will assume that this is the case.
- *   S_TRANS       (Optional)    If set, the code will cope with S maybe
- *                               being transparent. If set to 1, the code
- *                               will assume that this is the case.
- *   T_TRANS       (Optional)    If set, the code will cope with T maybe
- *                               being transparent. If set to 1, the code
- *                               will assume that this is the case.
  *
  * To make use of SSE here, you must also define:
  *
@@ -108,18 +102,11 @@ static void TEMPLATE_NAME(rop_run_op *op, byte *d, int len)
 #ifdef S_CONST
     byte         S = op->s.c;
 #ifdef MM_SPECIFIC_CODE
-    __m128i      MM_S = op->mm_s;
+    __m128i      MM_S = _mm_set1_epi8(S);
 #endif
 #else /* !defined(S_CONST) */
     const byte  *s = op->s.b.ptr;
 #endif /* !defined(S_CONST) */
-#ifdef S_TRANS
-#if S_TRANS
-    const rop_operand  strans = 0xFF;
-#else /* !S_TRANS */
-    const rop_operand  strans = (op->rop & lop_S_transparent ? 0xFF : -1);
-#endif /* !S_TRANS */
-#endif /* defined(S_TRANS) */
 #ifdef S_1BIT
     int          sroll;
     const gx_color_index *scolors = op->scolors;
@@ -132,36 +119,21 @@ static void TEMPLATE_NAME(rop_run_op *op, byte *d, int len)
 #ifdef T_CONST
     byte         T = op->t.c;
 #ifdef MM_SPECIFIC_CODE
-    __m128i      MM_T = op->mm_t;
+    __m128i      MM_T = _mm_set1_epi8(T);
 #endif
 #else /* !defined(T_CONST) */
     const byte  *t = op->t.b.ptr;
 #endif /* !defined(T_CONST) */
-#ifdef T_TRANS
-#if T_TRANS
-    const rop_operand  ttrans = 0xFF;
-#else /* !T_TRANS */
-    const rop_operand  ttrans = (op->rop & lop_T_transparent ? 0xFF : -1);
-#endif /* !T_TRANS */
-#endif /* defined(T_TRANS) */
 #ifdef T_1BIT
     int          troll;
     const gx_color_index *tcolors = op->tcolors;
-#endif /* T_TRANS */
+#endif /* T_1BIT */
 #else /* !defined(T_USED) */
 #define T 0
 #undef T_CONST
 #endif /* !defined(T_USED) */
 
-#if defined(S_TRANS) && defined(S_CONST)
-    if (S == strans)
-        return;
-#endif
-
-#if defined(T_TRANS) && defined(T_CONST)
-    if (T == ttrans)
-        return;
-#endif
+    len *= op->mul;
 
 #ifdef S_1BIT
 #if S_1BIT == MAYBE
@@ -189,8 +161,7 @@ static void TEMPLATE_NAME(rop_run_op *op, byte *d, int len)
     /* Setup all done, now go for the loops */
 
     /* SSE version - doesn't do 1 bit (for now at least) */
-    /* Also doesn't do transparency (except for constant transparency which has been handled above already */
-#if defined(MM_SPECIFIC_CODE) && (!defined(S_TRANS) || defined(S_CONST)) && (!defined(T_TRANS) || defined(T_CONST))
+#if defined(MM_SPECIFIC_CODE)
 #if defined(S_1_BIT)
     if (sroll == 0)
 #endif
@@ -198,7 +169,9 @@ static void TEMPLATE_NAME(rop_run_op *op, byte *d, int len)
     if (troll == 0)
 #endif
     {
+#ifdef MM_SETUP
         MM_SETUP();
+#endif
         while (len > 16)
         {
 #if defined(S_USED) && !defined(S_CONST)
@@ -298,16 +271,7 @@ static void TEMPLATE_NAME(rop_run_op *op, byte *d, int len)
             }
 #endif /* T_1BIT */
         }
-        if (1
-#if defined(S_TRANS) && !defined(S_CONST)
-            && (S != strans)
-#endif /* defined(S_TRANS) && !defined(S_CONST) */
-#if defined(T_TRANS) && !defined(T_CONST)
-            && (T != ttrans)
-#endif /* defined(T_TRANS) && !defined(T_TRANS) */
-            ) {
-            SPECIFIC_CODE(*d, *d, S, T);
-        }
+        SPECIFIC_CODE(*d, *d, S, T);
         d++;
     }
     while (--len);
@@ -319,14 +283,12 @@ static void TEMPLATE_NAME(rop_run_op *op, byte *d, int len)
 #undef S_1BIT
 #undef S_USED
 #undef S_CONST
-#undef S_TRANS
 #undef SPECIFIC_CODE
 #undef SPECIFIC_ROP
 #undef T
 #undef T_1BIT
 #undef T_USED
 #undef T_CONST
-#undef T_TRANS
 #undef TEMPLATE_NAME
 #undef MM_SETUP
 #undef MM_SPECIFIC_CODE

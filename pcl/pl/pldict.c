@@ -188,8 +188,12 @@ pl_dict_put(pl_dict_t * pdict, const byte * kdata, uint ksize, void *value)
 
     if (!ppde) {
         void *link = 0;
+        int code = pl_dict_build_new_entry(pdict, kdata, ksize, value, link);
 
-        return pl_dict_build_new_entry(pdict, kdata, ksize, value, link);
+        if (code < 0)
+            (*pdict->free_proc) (pdict->memory, value, "pl_dict_put(new value)");
+
+        return code;
     } else {                    /* Replace the value in an existing entry. */
         pl_dict_entry_t *pde;
 

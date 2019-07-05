@@ -87,6 +87,16 @@
 typedef struct display_callback_s display_callback;
 #endif
 
+#ifndef gs_memory_DEFINED
+#  define gs_memory_DEFINED
+typedef struct gs_memory_s gs_memory_t;
+#endif
+
+#ifndef gp_file_DEFINED
+#  define gp_file_DEFINED
+typedef struct gp_file_s gp_file;
+#endif
+
 #ifdef _Windows
 GSDLLEXPORT int GSDLLAPI
 pl_wchar_to_utf8(char *out, const void *in);
@@ -253,5 +263,47 @@ gsapi_activate_path_control(void *instance, int enable);
 
 GSDLLEXPORT int GSDLLAPI
 gsapi_is_path_control_active(void *instance);
+
+/* Details of gp_file can be found in gp.h.
+ * Users wanting to use this function should include
+ * that file. Not included here to avoid bloating the
+ * API inclusions for the majority of people who won't
+ * want it. */
+typedef struct {
+    int (*open_file)(const gs_memory_t *mem,
+                           void        *secret,
+                     const char        *fname,
+                     const char        *mode,
+                           gp_file    **file);
+    int (*open_pipe)(const gs_memory_t *mem,
+                           void        *secret,
+                     const char        *fname,
+                           char        *rfname, /* 4096 bytes */
+                     const char        *mode,
+                           gp_file    **file);
+    int (*open_scratch)(const gs_memory_t *mem,
+                              void        *secret,
+                        const char        *prefix,
+                              char        *rfname, /* 4096 bytes */
+                        const char        *mode,
+                              int          rm,
+                              gp_file    **file);
+    int (*open_printer)(const gs_memory_t *mem,
+                              void        *secret,
+                              char        *fname, /* 4096 bytes */
+                              int          binary,
+                              gp_file    **file);
+    int (*open_handle)(const gs_memory_t *mem,
+                             void        *secret,
+                             char        *fname, /* 4096 bytes */
+                       const char        *mode,
+                             gp_file    **file);
+} gsapi_fs_t;
+
+GSDLLEXPORT int GSDLLAPI
+gsapi_add_fs(void *instance, gsapi_fs_t *fs, void *secret);
+
+GSDLLEXPORT void GSDLLAPI
+gsapi_remove_fs(void *instance, gsapi_fs_t *fs, void *secret);
 
 #endif /* gsapi_INCLUDED */
