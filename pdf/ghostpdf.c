@@ -1590,9 +1590,9 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
 
     if (ctx->page_has_transparency) {
         if (code >= 0) {
-            code = gs_push_pdf14trans_device(ctx->pgs, false);
+            /* We don't retain the PDF14 device */
+            code = gs_push_pdf14trans_device(ctx->pgs, false, false);
             if (code >= 0) {
-                ctx->transparency_device = ctx->pgs->device;
                 if (page_group_known) {
                     code = pdfi_begin_page_group(ctx, page_dict);
                     /* If setting the page group failed for some reason, abandon the page group, but continue with the page */
@@ -2231,14 +2231,6 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
     rc_decrement_cs(ctx->cmyk, "pdfi_free_context");
     rc_decrement_cs(ctx->srgb, "pdfi_free_context");
     rc_decrement_cs(ctx->scrgb, "pdfi_free_context");
-
-    /* NOTE: This fixes memory leak of the pdf14 device, and is fine for running the 'gpdf' executable.
-     * It may not work right when pdfi is run in gpdl or gs, because of garbage collection.  The
-     * whole issue of memory management of the transparency device needs to be revisited.
-     * See also the bug 701284.
-     */
-    if (ctx->transparency_device)
-        rc_decrement(ctx->transparency_device, "pdfi_free_context");
 
     if(ctx->pgs != NULL) {
         if (ctx->pgs->font)

@@ -280,7 +280,6 @@ typedef struct pdf_context_s
     uint64_t *loop_detection;
 
     stream_save current_stream_save;
-    gx_device *transparency_device;
 
 #if REFCNT_DEBUG
     uint64_t UID;
