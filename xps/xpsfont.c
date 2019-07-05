@@ -103,11 +103,14 @@ xps_new_font(xps_context_t *ctx, byte *buf, int buflen, int index)
 void
 xps_free_font(xps_context_t *ctx, xps_font_t *font)
 {
+    if (font == NULL)
+        return;
     if (font->font)
     {
         gs_font_finalize(ctx->memory, font->font);
         gs_free_object(ctx->memory, font->font, "font object");
     }
+    xps_free(ctx, font->data);
     xps_free(ctx, font);
 }
 
