@@ -591,14 +591,11 @@ pdfi_pattern_create(pdf_context *ctx, pdf_array *color_array,
     if (pcs == NULL) {
         return_error(gs_error_VMerror);
     }
-    if (color_array == NULL) {
+    if (color_array == NULL || pdfi_array_size(color_array) == 1) {
         pcs->base_space = NULL;
         pcs->params.pattern.has_base_space = false;
     } else {
         dbgmprintf(ctx->memory, "PATTERN: with base space! pdfi_create_Pattern\n");
-        if (pdfi_array_size(color_array) < 2) {
-            return_error(gs_error_syntaxerror);
-        }
         code = pdfi_array_get(ctx, color_array, 1, &base_obj);
         if (code < 0)
             goto exit;
@@ -612,9 +609,6 @@ pdfi_pattern_create(pdf_context *ctx, pdf_array *color_array,
         *ppcs = pcs;
     } else {
         code = gs_setcolorspace(ctx->pgs, pcs);
-        /* release reference from construction */
-        rc_decrement_only_cs(pcs, "create_Pattern");
-
 #if 0
         /* An attempt to init a "Null" pattern, causes crashes on cluster */
         {
@@ -628,6 +622,8 @@ pdfi_pattern_create(pdf_context *ctx, pdf_array *color_array,
 
 
  exit:
+    /* release reference from construction */
+    rc_decrement_only_cs(pcs, "create_Pattern");
     pdfi_countdown(base_obj);
     return code;
 }
