@@ -3607,6 +3607,7 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_gstate * pgs,
         memcpy(p14dev, &save_pdf14_dev, sizeof(pdf14_device));
         p14dev->pclist_device = NULL;
     }
+    gx_cpath_free(&cpath_intersection, "pdf14_tile_pattern_fill");
     return code;
 }
 
