@@ -886,6 +886,8 @@ ensure_pattern_cache(gs_gstate * pgs)
 void
 gx_pattern_cache_free(gx_pattern_cache *pcache)
 {
+    if (pcache == NULL)
+        return;
     pattern_cache_free_all(pcache);
     gs_free_object(pcache->memory, pcache->tiles, "gx_pattern_cache_free");
     pcache->tiles = NULL;
