@@ -409,8 +409,10 @@ xps_impl_deallocate_interp_instance(pl_interp_implementation_t *impl)
     rc_decrement_cs(ctx->srgb, "xps_impl_deallocate_interp_instance");
     rc_decrement_cs(ctx->scrgb, "xps_impl_deallocate_interp_instance");
 
+    gx_pattern_cache_free(ctx->pgs->pattern_cache);
     gs_gstate_free(ctx->pgs);
 
+    gs_free_object(mem, ctx->start_part, "xps_impl_deallocate_interp_instance");
     gs_free_object(mem, ctx->fontdir, "xps_impl_deallocate_interp_instance");
     gs_free_object(mem, ctx, "xps_impl_deallocate_interp_instance");
     gs_free_object(mem, instance, "xps_impl_deallocate_interp_instance");
