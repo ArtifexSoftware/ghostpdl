@@ -77,8 +77,10 @@ xps_decode_jpeg(xps_context_t *ctx, byte *rbuf, int rlen, xps_image_t *image)
     jpeg_save_markers(&(jddp.dinfo), 0xe2, 0xFFFF);
 
     code = s_DCTD_template.process((stream_state*)&state, &rp, &wp, true);
-    if (code != 1)
-        return gs_throw(-1, "premature EOF or error in jpeg");
+    if (code != 1) {
+        code = gs_throw(-1, "premature EOF or error in jpeg");
+        goto error;
+    }
 
     /* Check if we had an ICC profile */
     curr_marker = jddp.dinfo.marker_list;
@@ -131,8 +133,10 @@ xps_decode_jpeg(xps_context_t *ctx, byte *rbuf, int rlen, xps_image_t *image)
 
     wlen = image->stride * image->height;
     wbuf = xps_alloc(ctx, wlen);
-    if (!wbuf)
-        return gs_throw1(gs_error_VMerror, "out of memory allocating samples: %d", wlen);
+    if (!wbuf) {
+        code = gs_throw1(gs_error_VMerror, "out of memory allocating samples: %d", wlen);
+        goto error;
+    }
 
     image->samples = wbuf;
 
@@ -140,10 +144,19 @@ xps_decode_jpeg(xps_context_t *ctx, byte *rbuf, int rlen, xps_image_t *image)
     wp.limit = wbuf + wlen - 1;
 
     code = s_DCTD_template.process((stream_state*)&state, &rp, &wp, true);
-    if (code != EOFC)
-        return gs_throw1(-1, "error in jpeg (code = %d)", code);
+    if (code != EOFC) {
+        code = gs_throw1(-1, "error in jpeg (code = %d)", code);
+        goto error;
+    }
 
+    code = gs_okay;
+error:
     gs_jpeg_destroy(&state);
+    if (jddp.scanline_buffer != NULL) {
+        gs_free_object(gs_memory_stable(ctx->memory),
+                       jddp.scanline_buffer,
+                       "xps_decode_jpeg");
+    }
 
     return gs_okay;
 }
