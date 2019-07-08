@@ -342,6 +342,7 @@ gx_cpath_assign_preserve(gx_clip_path * pcpto, gx_clip_path * pcpfrom)
         rc_decrement(pcpto->rect_list, "gx_cpath_assign");
     }
     rc_increment(pcpfrom->path_list);
+    rc_decrement(pcpto->path_list, "gx_cpath_assign");
     path = pcpto->path, *pcpto = *pcpfrom, pcpto->path = path;
     return 0;
 }
@@ -410,6 +411,7 @@ gx_cpath_path_list_new(gs_memory_t *mem, gx_clip_path *pcpath, int rule,
     if (code < 0)
         return code;
     pcplist->next = next;
+    rc_increment(next);
     pcplist->rule = rule;
     *pnew = pcplist;
     return 0;
@@ -720,11 +722,14 @@ gx_cpath_intersect_with_params(gx_clip_path *pcpath, /*const*/ gx_path *ppath_or
             /* gx_cpath_intersect_path_slow NULLs pcpath->path_list, so
              * remember it here. */
             next = pcpath->path_list;
+            rc_increment(next);
         }
         code = gx_cpath_intersect_path_slow(pcpath, (params != NULL ? ppath_orig : ppath),
                             rule, pgs, params);
-        if (code < 0)
+        if (code < 0) {
+            rc_decrement(next, "gx_cpath_clip");
             goto ex;
+        }
         if (path_valid) {
             gx_path_assign_preserve(&pcpath->path, ppath_orig);
             pcpath->path_valid = true;
@@ -733,6 +738,7 @@ gx_cpath_intersect_with_params(gx_clip_path *pcpath, /*const*/ gx_path *ppath_or
             code = gx_cpath_path_list_new(pcpath->path.memory, NULL, rule,
                                           ppath_orig, next, &pcpath->path_list);
         }
+        rc_decrement(next, "gx_cpath_clip");
     }
 ex:
     if (ppath != ppath_orig)

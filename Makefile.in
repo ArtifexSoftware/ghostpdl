@@ -210,6 +210,7 @@ PGDIRPREFIX=pg
 # Are we include the CAL library?
 WITH_CAL=@WITH_CAL@
 CALSRCDIR=@CALSRCDIR@
+CAL_CFLAGS=@CAL_CFLAGS@
 
 # Define whether to compile in the FreeType library, and if so, where
 # the source tree is location. Otherwise, what library name to use
@@ -676,7 +677,7 @@ AK=
 
 # Define the compilation rules and flags.
 
-CCFLAGS=$(GENOPT) $(CAPOPT) $(CFLAGS)
+CCFLAGS=$(GENOPT) $(CAPOPT) $(CFLAGS) $(CAL_CFLAGS)
 CC_=$(CC) $(CCFLAGS)
 CC_LEAF=$(CC_)
 

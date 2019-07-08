@@ -1855,7 +1855,6 @@ AC_SUBST(JPXDEVS)
 AC_ARG_WITH([cal], AC_HELP_STRING([--without-cal],
     [do not try to use the CAL library for acceleration]))
 
-
 CALSRCDIR=$srcdir/cal
 if test x$with_cal != xno; then
   AC_MSG_CHECKING([for local CAL library source])
@@ -1870,8 +1869,76 @@ else
   WITH_CAL=0
 fi
 
+if test x$WITH_CAL != x0; then
+  dnl --------------------------------------------------
+  dnl check for sse4.2 or neon
+  dnl --------------------------------------------------
+  AC_MSG_CHECKING([sse4.2 support])
+  save_cflags=$CFLAGS
+  CFLAGS="$CFLAGS $OPT_CFLAGS -msse4.2"
+
+  HAVE_SSE4_2=""
+  AC_LINK_IFELSE(
+    [AC_LANG_PROGRAM([#include <emmintrin.h>
+    #include <smmintrin.h>], [
+    __m128i input1;
+    unsigned char buf1[[128]];
+    input1 = _mm_loadu_si128((const __m128i *)buf1);
+    input1 = _mm_hadd_epi32(input1, input1);
+    return(0);
+    ])],
+    [HAVE_SSE4_2="-DHAVE_SSE4_2"], [HAVE_SSE4_2=""])
+
+  #AC_ARG_ENABLE([sse4.2], AC_HELP_STRING([--disable-sse4.2],
+  #       [Do not use sse4.2 instrinsics]), [
+  #             if test "x$enable_sse4.2" = xno; then
+  #                HAVE_SSE4_2=""
+  #             fi])
+
+  if test "x$HAVE_SSE4_2" != x; then
+    AC_MSG_RESULT(yes)
+  else
+    AC_MSG_RESULT(no)
+  fi
+
+  AC_MSG_CHECKING([neon support])
+  CFLAGS="$save_cflags $OPT_CFLAGS -mfpu=neon -mcpu=cortex-a53"
+  HAVE_NEON=""
+  AC_LINK_IFELSE(
+    [AC_LANG_PROGRAM([#include "arm_neon.h"], [
+    int32x4_t round = vdupq_n_s32(10);
+    return(0);
+    ])],
+    [HAVE_NEON="-DHAVE_NEON"], [HAVE_NEON=""])
+
+  #AC_ARG_ENABLE([neon], AC_HELP_STRING([--disable-neon],
+  #       [Do not use neon instrinsics]), [
+  #             if test "x$enable_neon" = xno; then
+  #                HAVE_NEON=""
+  #             fi])
+
+  if test "x$HAVE_NEON" != x; then
+    AC_MSG_RESULT(yes)
+  else
+    AC_MSG_RESULT(no)
+  fi
+
+  #AC_SUBST(HAVE_SSE4_2)
+  #AC_SUBST(HAVE_NEON)
+  CFLAGS=$save_cflags
+
+  if test "x$HAVE_SSE4_2" != x; then
+    CAL_CFLAGS="-msse4.2"
+  else
+    if test "x$HAVE_NEON" != x; then
+      CAL_CFLAGS="-mfpu=neon -mcpu=cortex-a53"
+    fi
+  fi
+fi
+
 AC_SUBST(CALSRCDIR)
 AC_SUBST(WITH_CAL)
+AC_SUBST(CAL_CFLAGS)
 
 dnl check if we can/should build the gtk loader
 AC_ARG_ENABLE([gtk], AC_HELP_STRING([--disable-gtk],
