@@ -670,6 +670,11 @@ pdfi_setcolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, boo
         goto cleanupExit;
     if (is_pattern) {
         code = gs_setcolor(ctx->pgs, &cc);
+        /* cc is a local scope variable, holding a reference to a pattern.
+         * We need to count the refrence down before the variable goes out of scope
+         * in order to prevent the pattern leaking.
+         */
+        rc_decrement(cc.pattern, "pdfi_setcolorN");
     } else {
         code = gs_setcolor(ctx->pgs, &cc);
     }

@@ -39,6 +39,7 @@ typedef struct {
     pdf_context *ctx;
     pdf_dict *page_dict;
     pdf_dict *pat_dict;
+    gs_shading_t *shading;
 } pdf_pattern_context_t;
 
 /* See pdf_draw.ps, FixPatternBox
@@ -124,6 +125,8 @@ int pdfi_pattern_cleanup(const gs_client_color *pcc)
     if (context != NULL) {
         pdfi_countdown(context->page_dict);
         pdfi_countdown(context->pat_dict);
+        if (context->shading)
+            pdfi_shading_free(context->ctx, context->shading);
         gs_free_object(context->ctx->memory, context, "Free pattern context");
         templat->client_data = NULL;
     }
@@ -311,26 +314,23 @@ pdfi_pattern_setup(pdf_context *ctx, gs_pattern_template_t *templat, pdf_dict *p
     if (code < 0)
         goto errorExit;
 
-    if (templat->PatternType == 1) {
-        /* TODO: This needs to be freed somehow */
-        context = (pdf_pattern_context_t *) gs_alloc_bytes(ctx->memory, sizeof(*context),
-                                                           "pdfi_pattern_setup(context)");
-        if (!context) {
-            code = gs_note_error(gs_error_VMerror);
-            goto errorExit;
-        }
-        context->ctx = ctx;
-        context->page_dict = page_dict;
-        context->pat_dict = pat_dict;
-        /* TODO: Not clear when this stuff gets freed */
-        pdfi_countup(page_dict);
-        pdfi_countup(pat_dict);
-        templat->client_data = context;
+    context = (pdf_pattern_context_t *) gs_alloc_bytes(ctx->memory, sizeof(*context),
+                                                       "pdfi_pattern_setup(context)");
+    if (!context) {
+        code = gs_note_error(gs_error_VMerror);
+        goto errorExit;
     }
+    context->ctx = ctx;
+    context->page_dict = page_dict;
+    context->pat_dict = pat_dict;
+    context->shading = NULL;
+    pdfi_countup(page_dict);
+    pdfi_countup(pat_dict);
+    templat->client_data = context;
 
     return 0;
  errorExit:
-    pdfi_countdown(context);
+    gs_free_object(ctx->memory, context, "pdfi_pattern_setup(context)");
     return code;
 }
 
@@ -441,8 +441,8 @@ pdfi_setpattern_type2(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
     pdf_array *Matrix = NULL;
     gs_matrix mat;
     gs_shading_t *shading;
-    int64_t shading_type;
     gs_pattern2_template_t templat;
+    pdf_pattern_context_t *context = NULL;
 
     /* See zbuildshadingpattern() */
 
@@ -480,17 +480,27 @@ pdfi_setpattern_type2(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
         goto exit;
 
     gs_pattern2_init(&templat);
-    code = pdfi_pattern_setup(ctx, (gs_pattern_template_t *)&templat, page_dict, pdict);
+
+    code = pdfi_pattern_setup(ctx, (gs_pattern_template_t *)&templat, NULL, NULL);
     if (code < 0) {
         (void) pdfi_grestore(ctx);
         goto exit;
     }
-    code = pdfi_shading_build(ctx, stream_dict, page_dict, Shading, &shading, &shading_type);
+
+    code = pdfi_shading_build(ctx, stream_dict, page_dict, Shading, &shading);
     if (code != 0) {
         (void) pdfi_grestore(ctx);
         dbgmprintf(ctx->memory, "ERROR: can't build shading structure\n");
         goto exit;
     }
+
+    /* We need to call pdfi_pattern_setup before (in order to create hte ColorSpace) before
+     * we call pdfi_shading_build. So we can't pass the shading dicti0onray to pdfi_pattern_setup
+     * in the same way as the type 1 pattern passes its persistent data, so we need to do it
+     * ourselves here.
+     */
+    context = (pdf_pattern_context_t *)templat.client_data;
+    context->shading = shading;
 
     templat.Shading = shading;
     code = gs_make_pattern(cc, (const gs_pattern_template_t *)&templat, &mat, ctx->pgs, ctx->memory);
@@ -502,9 +512,6 @@ pdfi_setpattern_type2(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
     code = pdfi_grestore(ctx);
     if (code < 0)
         goto exit;
-
-    /* NOTE: I am pretty sure this needs to be freed much later, but haven't figured it out :( */
-    //pdfi_shading_free(ctx, shading, shading_type);
 
  exit:
     pdfi_countdown(Shading);

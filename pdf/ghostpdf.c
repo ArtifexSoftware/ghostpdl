@@ -2233,6 +2233,7 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
     rc_decrement_cs(ctx->scrgb, "pdfi_free_context");
 
     if(ctx->pgs != NULL) {
+        gx_pattern_cache_free(ctx->pgs->pattern_cache);
         if (ctx->pgs->font)
             pdfi_countdown_current_font(ctx);
         gs_gstate_free(ctx->pgs);
