@@ -665,7 +665,7 @@ AK=
 
 # Define the compilation rules and flags.
 
-CCFLAGS=$(GENOPT) $(CAPOPT) $(CFLAGS) $(CAL_CFLAGS)
+CCFLAGS=$(GENOPT) $(CAPOPT) $(CFLAGS)
 CC_=$(CC) $(CCFLAGS)
 CC_LEAF=$(CC_)
 

@@ -54,7 +54,7 @@ $(GLOBJ)cal.dev : $(ECHOGS_XE) $(cal_OBJS) \
 	$(SETMOD) $(GLOBJ)cal $(cal_OBJS)
 
 # define our specific compiler
-CAL_CC=$(CC) $(CFLAGS) $(D_)OPJ_STATIC$(_D) $(D_)STANDARD_SLOW_VERSION$(_D) $(I_)$(CAL_GEN)$(_I) $(I_)$(CAL_SRC)$(_I)
+CAL_CC=$(CC) $(CFLAGS) $(CAL_CFLAGS) $(D_)OPJ_STATIC$(_D) $(D_)STANDARD_SLOW_VERSION$(_D) $(I_)$(CAL_GEN)$(_I) $(I_)$(CAL_SRC)$(_I)
 CAL_O=$(O_)$(CAL_OBJ)$(CAL_PREFIX)
 
 CAL_DEP=$(AK) $(CAL_MAK) $(MAKEDIRS)
