@@ -3473,6 +3473,7 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_gstate * pgs,
                 return code;
             code = gx_cpath_intersect(&cpath_intersection, &path_ttrans,
                                       params->rule, pgs_noconst);
+            gx_path_free(&path_ttrans, "pdf14_tile_pattern_fill(path_ttrans)");
             if (code < 0)
                 return code;
         }
