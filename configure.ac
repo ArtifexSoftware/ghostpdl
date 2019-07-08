@@ -1902,11 +1902,11 @@ if test x$WITH_CAL != x0; then
   fi
 
   AC_MSG_CHECKING([neon support])
-  CFLAGS="$save_cflags $OPT_CFLAGS -mneon"
+  CFLAGS="$save_cflags $OPT_CFLAGS -mfpu=neon -mcpu=cortex-a53"
   HAVE_NEON=""
   AC_LINK_IFELSE(
     [AC_LANG_PROGRAM([#include "arm_neon.h"], [
-    int32x4_t round = vdup_n_s32(10);
+    int32x4_t round = vdupq_n_s32(10);
     return(0);
     ])],
     [HAVE_NEON="-DHAVE_NEON"], [HAVE_NEON=""])
@@ -1931,7 +1931,7 @@ if test x$WITH_CAL != x0; then
     CAL_CFLAGS="-msse4.2"
   else
     if test "x$HAVE_NEON" != x; then
-      CAL_CFLAGS="-mneon"
+      CAL_CFLAGS="-mfpu=neon -mcpu=cortex-a53"
     fi
   fi
 fi
