@@ -663,7 +663,7 @@ in:                             /* Initialize for a new page. */
             } else {
                 code = top_up_cbuf(&cbuf, &cbp);
                 if (code < 0)
-                    return code;
+                    goto top_up_failed;
             }
         }
         op = *cbp++;
@@ -1037,7 +1037,7 @@ in:                             /* Initialize for a new page. */
                         if (cbp + out_bytes >= cbuf.warn_limit) {
                             code = top_up_cbuf(&cbuf, &cbp);
                             if (code < 0)
-                                return code;
+                                goto top_up_failed;
                         }
                         if (pln)
                             compression = *cbp++;
@@ -1062,7 +1062,7 @@ in:                             /* Initialize for a new page. */
 #                               ifdef DEBUG
                                     code = top_up_offset_map(st, cbuf.data, cbp, cbuf.end);
                                     if (code < 0)
-                                        return code;
+                                        goto top_up_failed;
 #                               endif
                                 memmove(cbuf.data, cbp, cleft);
                                 cbuf.end_status = sgets(s, cbuf.data + cleft, nread, &nread);
@@ -1428,7 +1428,7 @@ ibegin:                 if_debug0m('L', mem, "\n");
                                         2 * cmd_max_intsize(sizeof(uint))) {
                                         code = top_up_cbuf(&cbuf, &cbp);
                                         if (code < 0)
-                                            return code;
+                                            goto top_up_failed;
                                     }
                                     cmd_getw(planes[plane].raster, cbp)                                ;
                                     if ((raster1 = planes[plane].raster) != 0)
@@ -1477,7 +1477,7 @@ idata:                  data_size = 0;
                         if (cbuf.end - cbp < data_size) {
                             code = top_up_cbuf(&cbuf, &cbp);
                             if (code < 0)
-                                return code;
+                                goto top_up_failed;
                         }
                         if (cbuf.end - cbp >= data_size) {
                             planes[0].data = cbp;
@@ -1823,7 +1823,7 @@ idata:                  data_size = 0;
                                         if (cbuf.warn_limit - cbp < (int)left) {  /* cbp can be past warn_limit */
                                             code = top_up_cbuf(&cbuf, &cbp);
                                             if (code < 0)
-                                                return code;
+                                                goto top_up_failed;
                                         }
                                         l = min(left, cbuf.end - cbp);
                                         code = pdct->read(pdcolor, &gs_gstate,
@@ -2034,7 +2034,7 @@ idata:                  data_size = 0;
                                     if (cbuf.end - cbp < 5 * cmd_max_intsize(sizeof(frac31))) {
                                         code = top_up_cbuf(&cbuf, &cbp);
                                         if (code < 0)
-                                            return code;
+                                            goto top_up_failed;
                                     }
                                     cmd_getw(clip.p.x, cbp);
                                     cmd_getw(clip.p.y, cbp);
@@ -2060,7 +2060,7 @@ idata:                  data_size = 0;
                                             if (cbuf.end - cbp < num_components * cmd_max_intsize(sizeof(frac31))) {
                                                 code = top_up_cbuf(&cbuf, &cbp);
                                                 if (code < 0)
-                                                    return code;
+                                                    goto top_up_failed;
                                             }
                                             cc[i] = c[i];
                                             for (j = 0; j < num_components; j++)
@@ -2329,6 +2329,9 @@ idata:                  data_size = 0;
     if (code < 0) {
         if (pfs.dev != NULL)
             term_patch_fill_state(&pfs);
+        gx_cpath_free(&clip_path, "clist_playback_band");
+        if (pcpath != &clip_path)
+            gx_cpath_free(pcpath, "clist_playback_band");
         return_error(code);
     }
     /* Check whether we have more pages to process. */
@@ -2339,6 +2342,14 @@ idata:                  data_size = 0;
     if (pfs.dev != NULL)
         term_patch_fill_state(&pfs);
     gs_free_object(mem, cbuf_storage, "clist_playback_band(cbuf_storage)");
+    gx_cpath_free(&clip_path, "clist_playback_band");
+    if (pcpath != &clip_path)
+        gx_cpath_free(pcpath, "clist_playback_band");
+    return code;
+top_up_failed:
+    gx_cpath_free(&clip_path, "clist_playback_band");
+    if (pcpath != &clip_path)
+        gx_cpath_free(pcpath, "clist_playback_band");
     return code;
 }
 
