@@ -459,6 +459,7 @@ pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
     pdf_copy_color_bits(piw->binary[0].strm, row_base, sourcex, row_step, w, h,
                         bytes_per_pixel);
     pdf_end_image_binary(pdev, piw, piw->height);
+    rc_decrement(pcs, "pdf_copy_color_data");
     return pdf_end_write_image(pdev, piw);
 }
 
