@@ -1382,6 +1382,7 @@ static int pdfi_create_Separation(pdf_context *ctx, pdf_array *color_array, int 
     if (code < 0)
         goto pdfi_separation_error;
 
+    rc_decrement(pcs_alt, "pdfi_create_Separation");
     pcs->params.separation.mem = ctx->memory;
     pcs->params.separation.sep_type = sep_type;
     pcs->params.separation.sep_name = (char *)gs_alloc_bytes(ctx->memory->non_gc_memory, name->length + 1, "pdfi_setseparationspace(ink)");
@@ -1498,6 +1499,7 @@ static int pdfi_create_DeviceN(pdf_context *ctx, pdf_array *color_array, int ind
     if (code < 0)
         return code;
 
+    rc_decrement(pcs_alt, "pdfi_create_DeviceN");
     pcs->params.device_n.mem = ctx->memory;
 
     for (ix = 0;ix < pdfi_array_size(inks);ix++) {
