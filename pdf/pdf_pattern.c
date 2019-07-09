@@ -20,6 +20,7 @@
 #include "pdf_pattern.h"
 #include "pdf_stack.h"
 #include "pdf_array.h"
+#include "pdf_gstate.h"
 #include "gsicc_manage.h"
 #include "gsicc_profilecache.h"
 #include "gsicc_create.h"
@@ -100,7 +101,7 @@ pdfi_setpattern_null(pdf_context *ctx, gs_client_color *cc)
 /*
  * Pattern lifetime management turns out to be more complex than we would ideally like. Although
  * Patterns are reference counted, and contain a client_data pointer, they don't have a gs_notify
- * setup. This means that there's no simlpe way for us to be informed when a Pattern is released
+ * setup. This means that there's no simple way for us to be informed when a Pattern is released.
  * We could patch up the Pattern finalize() method, replacing it with one of our own which calls
  * the original finalize() but that seems like a really nasty hack.
  * For the time being we put code in pdfi_grestore() to check for Pattern colour spaces being
@@ -158,7 +159,6 @@ pdfi_pattern_paint(const gs_client_color *pcc, gs_gstate *pgs)
     const gs_pattern1_template_t *templat = &pinst->templat;
     pdf_pattern_context_t *context = (pdf_pattern_context_t *)templat->client_data;
     pdf_context *ctx = context->ctx;
-    gs_gstate *curr_pgs = ctx->pgs;
     int code = 0;
 
     code = pdfi_gsave(ctx);
@@ -276,7 +276,7 @@ pdfi_pattern_paintproc(const gs_client_color *pcc, gs_gstate *pgs)
 
 
 
-/* Setup the correct gstate for a pattern (this does a gsave) */
+/* Setup the correct gstate for a pattern */
 static int
 pdfi_pattern_gset(pdf_context *ctx)
 {
@@ -291,7 +291,7 @@ pdfi_pattern_gset(pdf_context *ctx)
     /* gs_copygstate also copies the save depth, this seems to me like a bad idea!
      * It certainly causes problems for us because we pay attention to the save depth
      * when processing pdfi_gsave/pdfi_grestore and also at the end of processing
-     * content streams. Becasue we now use pdfi_gsave/grestore instead of the
+     * content streams. Because we now use pdfi_gsave/grestore instead of the
      * graphics library gs_gsave/grestore, we must ensure that the save level
      * doesn't get overwritten.
      */
@@ -494,8 +494,8 @@ pdfi_setpattern_type2(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
         goto exit;
     }
 
-    /* We need to call pdfi_pattern_setup before (in order to create hte ColorSpace) before
-     * we call pdfi_shading_build. So we can't pass the shading dicti0onray to pdfi_pattern_setup
+    /* We need to call pdfi_pattern_setup (in order to create the ColorSpace) before
+     * we call pdfi_shading_build. So we can't pass the shading dictionary to pdfi_pattern_setup
      * in the same way as the type 1 pattern passes its persistent data, so we need to do it
      * ourselves here.
      */
