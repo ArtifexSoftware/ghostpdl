@@ -59,7 +59,6 @@ xps_parse_gradient_stops(xps_context_t *ctx, char *base_uri, xps_item_t *node,
     unsigned short sample_in[8], sample_out[8]; /* XPS allows up to 8 bands */
     gsicc_rendering_param_t rendering_params;
     gsicc_link_t *icclink = 0;
-    gs_color_space *colorspace;
     float sample[8];
     int before, after;
     int count;
@@ -77,6 +76,8 @@ xps_parse_gradient_stops(xps_context_t *ctx, char *base_uri, xps_item_t *node,
             char *color = xps_att(node, "Color");
             if (offset && color)
             {
+                gs_color_space *colorspace;
+
                 stops[count].offset = atof(offset);
                 stops[count].index = count;
 
@@ -116,6 +117,7 @@ xps_parse_gradient_stops(xps_context_t *ctx, char *base_uri, xps_item_t *node,
                     stops[count].color[2] = sample[2];
                     stops[count].color[3] = sample[3];
                 }
+                rc_decrement(colorspace, "xps_parse_gradient_stops");
 
                 count ++;
             }

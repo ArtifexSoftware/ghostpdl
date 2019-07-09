@@ -64,19 +64,21 @@ static int count_commas(char *s)
 
 void
 xps_parse_color(xps_context_t *ctx, char *base_uri, char *string,
-        gs_color_space **csp, float *samples)
+                gs_color_space **csp, float *samples)
 {
     char *p;
     int i, n;
     char buf[1024];
     char *profile;
-
-    *csp = ctx->srgb;
+    gs_color_space *cs;
 
     samples[0] = 1.0;
     samples[1] = 0.0;
     samples[2] = 0.0;
     samples[3] = 0.0;
+
+    if (csp)
+        *csp = NULL;
 
     if (string[0] == '#')
     {
@@ -99,18 +101,20 @@ xps_parse_color(xps_context_t *ctx, char *base_uri, char *string,
         samples[1] /= 255.0;
         samples[2] /= 255.0;
         samples[3] /= 255.0;
-    }
 
+        cs = ctx->srgb;
+        rc_increment(cs);
+    }
     else if (string[0] == 's' && string[1] == 'c' && string[2] == '#')
     {
-        *csp = ctx->scrgb;
+        cs = ctx->scrgb;
+        rc_increment(cs);
 
         if (count_commas(string) == 2)
             sscanf(string, "sc#%g,%g,%g", samples + 1, samples + 2, samples + 3);
         if (count_commas(string) == 3)
             sscanf(string, "sc#%g,%g,%g,%g", samples, samples + 1, samples + 2, samples + 3);
     }
-
     else if (strstr(string, "ContextColor ") == string)
     {
         /* Crack the string for profile name and sample values */
@@ -155,19 +159,29 @@ xps_parse_color(xps_context_t *ctx, char *base_uri, char *string,
             samples[i++] = 0.0;
         }
 
-        *csp = xps_read_icc_colorspace(ctx, base_uri, profile);
-        if (!*csp)
+        cs = xps_read_icc_colorspace(ctx, base_uri, profile);
+        if (!cs)
         {
             /* Default fallbacks if the ICC stuff fails */
             switch (n)
             {
-            case 2: *csp = ctx->gray; break; /* alpha + tint */
-            case 4: *csp = ctx->srgb; break; /* alpha + RGB */
-            case 5: *csp = ctx->cmyk; break; /* alpha + CMYK */
-            default: *csp = ctx->gray; break;
+            case 2: cs = ctx->gray; break; /* alpha + tint */
+            case 4: cs = ctx->srgb; break; /* alpha + RGB */
+            case 5: cs = ctx->cmyk; break; /* alpha + CMYK */
+            default: cs = ctx->gray; break;
             }
+            rc_increment(cs);
         }
     }
+    else
+    {
+        cs = ctx->srgb;
+        rc_increment(cs);
+    }
+    if (csp)
+        *csp = cs;
+    else
+        rc_decrement(cs, "xps_parse_color");
 }
 
 gs_color_space *
@@ -203,6 +217,10 @@ xps_read_icc_colorspace(xps_context_t *ctx, char *base_uri, char *profilename)
         profile->buffer = part->data;
         profile->buffer_size = part->size;
 
+        /* Steal the buffer data before freeing the part */
+        part->data = NULL;
+        xps_free_part(ctx, part);
+
         /* Parse */
         code = gsicc_init_profile_info(profile);
 
@@ -215,16 +233,21 @@ xps_read_icc_colorspace(xps_context_t *ctx, char *base_uri, char *profilename)
         }
 
         /* Create a new colorspace and associate with the profile */
-        gs_cspace_build_ICC(&space, NULL, ctx->memory);
+        if (gs_cspace_build_ICC(&space, NULL, ctx->memory) < 0)
+        {
+            /* FIXME */
+            return NULL;
+        }
         space->cmm_icc_profile_data = profile;
 
-        /* Steal the buffer data before freeing the part */
-        part->data = NULL;
-        xps_free_part(ctx, part);
-
         /* Add colorspace to xps color cache. */
-        xps_hash_insert(ctx, ctx->colorspace_table, xps_strdup(ctx, partname), space);
+        if (xps_hash_insert(ctx, ctx->colorspace_table, xps_strdup(ctx, partname), space) < 0)
+        {
+            /* FIXME */
+            return NULL;
+        }
     }
+    rc_increment(space);
 
     return space;
 }
@@ -240,7 +263,6 @@ xps_parse_solid_color_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *
     color_att = xps_att(node, "Color");
     opacity_att = xps_att(node, "Opacity");
 
-    colorspace = ctx->srgb;
     samples[0] = 1.0;
     samples[1] = 0.0;
     samples[2] = 0.0;
@@ -248,11 +270,17 @@ xps_parse_solid_color_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *
 
     if (color_att)
         xps_parse_color(ctx, base_uri, color_att, &colorspace, samples);
+    else
+    {
+        colorspace = ctx->srgb;
+        rc_increment(colorspace);
+    }
 
     if (opacity_att)
         samples[0] = atof(opacity_att);
 
     xps_set_color(ctx, colorspace, samples);
+    rc_decrement(colorspace, "xps_parse_solid_color_brush");
 
     xps_fill(ctx);
 

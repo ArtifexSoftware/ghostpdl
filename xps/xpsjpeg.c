@@ -108,12 +108,18 @@ xps_decode_jpeg(xps_context_t *ctx, byte *rbuf, int rlen, xps_image_t *image)
     image->bits = 8;
     image->stride = image->width * image->comps;
 
-    if (image->comps == 1)
+    if (image->comps == 1) {
+        rc_increment(ctx->gray);
         image->colorspace = ctx->gray;
-    if (image->comps == 3)
+    }
+    if (image->comps == 3) {
+        rc_increment(ctx->srgb);
         image->colorspace = ctx->srgb;
-    if (image->comps == 4)
+    }
+    if (image->comps == 4) {
+        rc_increment(ctx->cmyk);
         image->colorspace = ctx->cmyk;
+    }
 
     if (jddp.dinfo.density_unit == 1)
     {
@@ -158,5 +164,5 @@ error:
                        "xps_decode_jpeg");
     }
 
-    return gs_okay;
+    return code;
 }

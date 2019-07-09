@@ -628,6 +628,7 @@ xps_decode_tiff_strips(xps_context_t *ctx, xps_tiff_t *tiff, xps_image_t *image)
     unsigned row;
     unsigned strip;
     unsigned i;
+    gs_color_space *old_cs;
 
     if (!tiff->rowsperstrip || !tiff->stripoffsets || !tiff->rowsperstrip)
         return gs_throw(-1, "no image data in tiff; maybe it is tiled");
@@ -641,6 +642,7 @@ xps_decode_tiff_strips(xps_context_t *ctx, xps_tiff_t *tiff, xps_image_t *image)
     image->bits = tiff->bitspersample;
     image->stride = (image->width * image->comps * image->bits + 7) / 8;
 
+    old_cs = image->colorspace;
     switch (tiff->photometric)
     {
     case 0: /* WhiteIsZero -- inverted */
@@ -665,6 +667,8 @@ xps_decode_tiff_strips(xps_context_t *ctx, xps_tiff_t *tiff, xps_image_t *image)
     default:
         return gs_throw1(-1, "unknown photometric: %d", tiff->photometric);
     }
+    rc_increment(image->colorspace);
+    rc_decrement(old_cs, "xps_decode_tiff_strips");
 
     switch (tiff->resolutionunit)
     {

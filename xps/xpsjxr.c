@@ -91,6 +91,7 @@ xps_decode_jpegxr_block(jxr_image_t image, int mx, int my, int *data)
 
     if (!output->samples)
     {
+        gs_color_space *old_cs;
         output->width = jxr_get_IMAGE_WIDTH(image);
         output->height = jxr_get_IMAGE_HEIGHT(image);
         output->comps = jxr_get_IMAGE_CHANNELS(image);
@@ -103,6 +104,7 @@ xps_decode_jpegxr_block(jxr_image_t image, int mx, int my, int *data)
             return;
         }
 
+        old_cs = output->colorspace;
         switch (output->comps)
         {
         default:
@@ -110,6 +112,8 @@ xps_decode_jpegxr_block(jxr_image_t image, int mx, int my, int *data)
         case 3: output->colorspace = ctx->srgb; break;
         case 4: output->colorspace = ctx->cmyk; break;
         }
+        rc_increment(output->colorspace);
+        rc_decrement(old_cs, "xps_decode_jpegxr_block");
     }
 
     depth = jxr_get_OUTPUT_BITDEPTH(image);

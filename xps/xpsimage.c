@@ -174,9 +174,10 @@ xps_decode_image(xps_context_t *ctx, xps_part_t *part, xps_image_t *image)
         if (profile == NULL)
             return gs_throw(gs_error_VMerror, "Profile allocation failed");
 
-        /* Set buffer */
+        /* Set buffer - profile takes ownership! */
         profile->buffer = image->profile;
         profile->buffer_size = image->profilesize;
+        image->profile = NULL;
 
         /* Parse */
         code = gsicc_init_profile_info(profile);
@@ -194,7 +195,7 @@ xps_decode_image(xps_context_t *ctx, xps_part_t *part, xps_image_t *image)
             if ((image->comps - image->hasalpha) == gsicc_getsrc_channel_count(profile))
             {
                 /* Create a new colorspace and associate with the profile */
-                // TODO: refcount image->colorspace
+                rc_decrement(image->colorspace, "xps_decode_image");
                 gs_cspace_build_ICC(&image->colorspace, NULL, ctx->memory);
                 image->colorspace->cmm_icc_profile_data = profile;
             }
@@ -410,7 +411,8 @@ xps_find_image_brush_source_part(xps_context_t *ctx, char *base_uri, xps_item_t 
         return gs_rethrow1(-1, "cannot find image resource part '%s'", partname);
 
     *partp = part;
-    *profilep = xps_strdup(ctx, profile_name);
+    if (profilep)
+        *profilep = xps_strdup(ctx, profile_name);
 
     return 0;
 }
@@ -421,7 +423,7 @@ xps_parse_image_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, 
     xps_part_t *part;
     xps_image_t *image;
     gs_color_space *colorspace;
-    char *profilename;
+    char *profilename = NULL;
     int code;
 
     code = xps_find_image_brush_source_part(ctx, base_uri, root, &part, &profilename);
@@ -442,9 +444,11 @@ xps_parse_image_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, 
         colorspace = xps_read_icc_colorspace(ctx, base_uri, profilename);
         if (colorspace && cs_num_components(colorspace) == cs_num_components(image->colorspace))
         {
-            // TODO: refcount image->colorspace
+            rc_decrement(image->colorspace, "xps_parse_image_brush");
             image->colorspace = colorspace;
         }
+        else
+            rc_decrement(colorspace, "xps_parse_image_brush");
     }
 
     code = xps_parse_tiling_brush(ctx, base_uri, dict, root, xps_paint_image_brush, image);
@@ -465,9 +469,8 @@ xps_image_brush_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t 
     xps_part_t *imagepart;
     int code;
     int has_alpha;
-    char *profilename;
 
-    code = xps_find_image_brush_source_part(ctx, base_uri, root, &imagepart, &profilename);
+    code = xps_find_image_brush_source_part(ctx, base_uri, root, &imagepart, NULL);
     if (code < 0)
     {
         gs_catch(code, "cannot find image source");
@@ -484,7 +487,7 @@ xps_image_brush_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t 
 void
 xps_free_image(xps_context_t *ctx, xps_image_t *image)
 {
-    // TODO: refcount image->colorspace
+    rc_decrement(image->colorspace, "xps_free_image");
     if (image->samples)
         xps_free(ctx, image->samples);
     if (image->alpha)

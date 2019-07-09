@@ -262,21 +262,25 @@ xps_decode_png(xps_context_t *ctx, byte *rbuf, int rlen, xps_image_t *image)
     switch (png_get_color_type(png, info))
     {
     case PNG_COLOR_TYPE_GRAY:
+        rc_increment(ctx->gray);
         image->colorspace = ctx->gray;
         image->hasalpha = 0;
         break;
 
     case PNG_COLOR_TYPE_RGB:
+        rc_increment(ctx->srgb);
         image->colorspace = ctx->srgb;
         image->hasalpha = 0;
         break;
 
     case PNG_COLOR_TYPE_GRAY_ALPHA:
+        rc_increment(ctx->gray);
         image->colorspace = ctx->gray;
         image->hasalpha = 1;
         break;
 
     case PNG_COLOR_TYPE_RGB_ALPHA:
+        rc_increment(ctx->srgb);
         image->colorspace = ctx->srgb;
         image->hasalpha = 1;
         break;

@@ -772,6 +772,7 @@ xps_parse_glyphs(xps_context_t *ctx,
         if (fill_opacity_att)
             samples[0] *= atof(fill_opacity_att);
         xps_set_color(ctx, colorspace, samples);
+        rc_decrement(colorspace, "xps_parse_glyphs");
 
         if (sim_bold)
         {
