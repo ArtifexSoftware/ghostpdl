@@ -2092,7 +2092,7 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
     gs_int_rect rect = buf->rect;
     int y;
     int num_comp = buf->n_chan - 1;
-    byte *linebuf;
+    byte *linebuf, *linebuf_unaligned;
     gs_color_space *pcs;
     int x1, y1, width, height;
     byte *buf_ptr, *buf16_ptr = NULL;
@@ -2340,7 +2340,11 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
         clist_band_count++;
     }
 #endif
-    linebuf = gs_alloc_bytes(pdev->memory, width * num_comp<<deep, "pdf14_put_image");
+#define SSE_ALIGN 16
+    linebuf_unaligned = gs_alloc_bytes(pdev->memory, width * (num_comp<<deep) + SSE_ALIGN, "pdf14_put_image");
+    if (linebuf_unaligned == NULL)
+        return gs_error_VMerror;
+    linebuf = linebuf_unaligned + ((-(intptr_t)linebuf_unaligned) & (SSE_ALIGN-1));
     for (y = 0; y < height; y++) {
         gx_image_plane_t planes;
         int rows_used,k,x;
@@ -2376,7 +2380,7 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
         /* todo: check return value */
         buf_ptr += buf->rowstride;
     }
-    gs_free_object(pdev->memory, linebuf, "pdf14_put_image");
+    gs_free_object(pdev->memory, linebuf_unaligned, "pdf14_put_image");
     info->procs->end_image(info, true);
     /* This will also decrement the device profile */
     rc_decrement_only_cs(pcs, "pdf14_put_image");
