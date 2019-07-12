@@ -18,7 +18,7 @@
 #ifndef PDF_TYPE3_FONT
 #define PDF_TYPE3_FONT
 
-int pdfi_read_type3_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict, pdf_dict *page_dict, float point_size);
+int pdfi_read_type3_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict, pdf_dict *page_dict, float point_size, gs_font **pfont);
 int pdfi_free_font_type3(pdf_obj *font);
 
 #endif

@@ -34,12 +34,16 @@ pdfi_type3_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
     pdf_name *GlyphName = NULL;
     pdf_dict *CharProc = NULL;
     byte *Key = NULL;
+    int SavedTextBlockDepth = 0;
 
     font = (pdf_font_type3 *)pfont->client_data;
 
+    SavedTextBlockDepth = font->ctx->TextBlockDepth;
     code = pdfi_array_get(font->ctx, font->Encoding, (uint64_t)chr, (pdf_obj **)&GlyphName);
     if (code < 0)
         return code;
+
+//    font->ctx->current_chr = chr;
 
     Key = gs_alloc_bytes(font->ctx->memory, GlyphName->length + 1, "working buffer for BuildChar");
     if (Key == NULL)
@@ -51,7 +55,15 @@ pdfi_type3_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
         goto build_char_error;
     gs_free_object(font->ctx->memory, Key, "working buffer for BuildChar");
 
+    font->ctx->TextBlockDepth = 0;
+    font->ctx->inside_CharProc = true;
+    font->ctx->CharProc_is_d1 = false;
+    pdfi_gsave(font->ctx);
     code = pdfi_interpret_inner_content_stream(font->ctx, CharProc, font->Resources, true, "CharProc");
+    pdfi_grestore(font->ctx);
+    font->ctx->inside_CharProc = false;
+    font->ctx->CharProc_is_d1 = false;
+    font->ctx->TextBlockDepth = SavedTextBlockDepth;
     if (code < 0)
         goto build_char_error;
 
@@ -176,9 +188,13 @@ int pdfi_free_font_type3(pdf_obj *font)
 {
     pdf_font_type3 *t3font = (pdf_font_type3 *)font;
 
-    if (t3font->pfont) {
+    if (t3font->pfont)
         gs_free_object(t3font->memory, t3font->pfont, "Free type 3 font");
-    }
+
+    if (t3font->Widths)
+        gs_free_object(t3font->memory, t3font->Widths, "Free type 3 font Widths array");
+
+    pdfi_countdown(t3font->FontDescriptor);
     pdfi_countdown(t3font->Resources);
     pdfi_countdown(t3font->CharProcs);
     pdfi_countdown(t3font->Encoding);
@@ -226,15 +242,16 @@ static int pdfi_build_Encoding(pdf_context *ctx, pdf_name *name, pdf_array *Enco
     return 0;
 }
 
-int pdfi_read_type3_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict, pdf_dict *page_dict, float point_size)
+int pdfi_read_type3_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict, pdf_dict *page_dict, float point_size, gs_font **ppfont)
 {
-    int code = 0, i;
+    int code = 0, i, num_chars = 0;
     pdf_font_type3 *font = NULL;
     pdf_obj *obj = NULL;
     gs_font *old = NULL;
     double f;
     gs_matrix mat;
 
+    *ppfont = NULL;
     code = alloc_type3_font(ctx, &font);
     if (code < 0)
         return code;
@@ -285,6 +302,35 @@ int pdfi_read_type3_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
         goto font3_error;
     font->LastChar = (int)f;
 
+    num_chars = (font->LastChar - font->FirstChar) + 1;
+    code = pdfi_dict_knownget_type(ctx, font_dict, "FontDescriptor", PDF_DICT, (pdf_obj **)&font->FontDescriptor);
+    if (code < 0)
+        goto font3_error;
+
+    code = pdfi_dict_knownget_type(ctx, font_dict, "Widths", PDF_ARRAY, (pdf_obj **)&obj);
+    if (code < 0)
+        goto font3_error;
+    if (code > 0) {
+        if (num_chars != pdfi_array_size((pdf_array *)obj)) {
+            code = gs_note_error(gs_error_rangecheck);
+            goto font3_error;
+        }
+
+        font->Widths = (double *)gs_alloc_bytes(ctx->memory, sizeof(double) * num_chars, "type 3 font Widths array");
+        if (font->Widths == NULL) {
+            code = gs_note_error(gs_error_VMerror);
+            goto font3_error;
+        }
+        memset(font->Widths, 0x00, sizeof(double) * num_chars);
+        for (i = 0; i < num_chars; i++) {
+            code = pdfi_array_get_number(ctx, (pdf_array *)obj, (uint64_t)i, &font->Widths[i]);
+            if (code < 0)
+                goto font3_error;
+        }
+    }
+    pdfi_countdown(obj);
+    obj = NULL;
+
     code = pdfi_dict_get(ctx, font_dict, "Encoding", &obj);
     if (code < 0)
         goto font3_error;
@@ -298,6 +344,8 @@ int pdfi_read_type3_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
         code = pdfi_build_Encoding(ctx, (pdf_name *)obj, font->Encoding);
         if (code < 0)
             goto font3_error;
+        pdfi_countdown(obj);
+        obj = NULL;
     } else {
         if (obj->type == PDF_DICT) {
             pdf_name *n = NULL;
@@ -360,16 +408,8 @@ int pdfi_read_type3_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     if (code < 0)
         goto font3_error;
 
-    old = ctx->pgs->font;
+    *ppfont = (gs_font *)font->pfont;
 
-    code = gs_setfont(ctx->pgs, (gs_font *)font->pfont);
-    if (code < 0)
-        goto font3_error;
-
-    if (old != NULL) {
-        font = (pdf_font_type3 *)old->client_data;
-        pdfi_countdown(font);
-    }
     return code;
 
 font3_error:

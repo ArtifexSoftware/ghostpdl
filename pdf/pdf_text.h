@@ -18,6 +18,16 @@
 #ifndef PDF_TEXT_OPERATORS
 #define PDF_TEXT_OPERATORS
 
+typedef struct pdf_text_tracking_s
+{
+    int text_block_depth;
+    gs_matrix initial_CTM;
+    gs_matrix saved_Tm;
+    gs_matrix saved_Tl;
+    int initial_gsave_depth;
+    void *next_block;
+} pdf_text_tracking;
+
 int pdfi_BT(pdf_context *ctx);
 int pdfi_ET(pdf_context *ctx);
 int pdfi_T_star(pdf_context *ctx);

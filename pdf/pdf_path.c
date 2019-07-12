@@ -27,6 +27,9 @@ int pdfi_moveto (pdf_context *ctx)
     int code;
     double x, y;
 
+    if (ctx->TextBlockDepth != 0)
+        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+
     if (pdfi_count_stack(ctx) < 2) {
         pdfi_clearstack(ctx);
         if (ctx->pdfstoponerror)
@@ -76,6 +79,9 @@ int pdfi_lineto (pdf_context *ctx)
     int code;
     double x, y;
 
+    if (ctx->TextBlockDepth != 0)
+        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+
     if (pdfi_count_stack(ctx) < 2) {
         pdfi_clearstack(ctx);
         if (ctx->pdfstoponerror)
@@ -123,6 +129,9 @@ int pdfi_fill(pdf_context *ctx)
 {
     int code;
 
+    if (ctx->TextBlockDepth != 0)
+        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+
     gs_swapcolors(ctx->pgs);
     code = gs_setopacityalpha(ctx->pgs, ctx->pgs->fillconstantalpha);
     if (code == 0)
@@ -137,6 +146,9 @@ int pdfi_fill(pdf_context *ctx)
 int pdfi_eofill(pdf_context *ctx)
 {
     int code;
+
+    if (ctx->TextBlockDepth != 0)
+        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
     gs_swapcolors(ctx->pgs);
     code = gs_setopacityalpha(ctx->pgs, ctx->pgs->fillconstantalpha);
@@ -153,6 +165,9 @@ int pdfi_stroke(pdf_context *ctx)
 {
     int code = gs_setopacityalpha(ctx->pgs, ctx->pgs->strokeconstantalpha);
 
+    if (ctx->TextBlockDepth != 0)
+        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+
     if (code == 0)
         code = gs_stroke(ctx->pgs);
     if(code < 0 && ctx->pdfstoponerror)
@@ -164,6 +179,10 @@ int pdfi_stroke(pdf_context *ctx)
 int pdfi_closepath_stroke(pdf_context *ctx)
 {
     int code;
+
+    if (ctx->TextBlockDepth != 0)
+        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+
     code = gs_closepath(ctx->pgs);
     if (code == 0)
         code = gs_setopacityalpha(ctx->pgs, ctx->pgs->strokeconstantalpha);
@@ -205,6 +224,10 @@ int pdfi_curveto(pdf_context *ctx)
             Values[i] = (double)num->value.i;
         }
     }
+
+    if (ctx->TextBlockDepth != 0)
+        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+
     code = gs_curveto(ctx->pgs, Values[0], Values[1], Values[2], Values[3], Values[4], Values[5]);
     pdfi_pop(ctx, 6);
     if(code < 0 && ctx->pdfstoponerror)
@@ -243,6 +266,10 @@ int pdfi_v_curveto(pdf_context *ctx)
             Values[i] = (double)num->value.i;
         }
     }
+
+    if (ctx->TextBlockDepth != 0)
+        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+
     code = gs_currentpoint(ctx->pgs, &pt);
     if (code < 0) {
         pdfi_pop(ctx, 4);
@@ -289,6 +316,10 @@ int pdfi_y_curveto(pdf_context *ctx)
             Values[i] = (double)num->value.i;
         }
     }
+
+    if (ctx->TextBlockDepth != 0)
+        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+
     code = gs_curveto(ctx->pgs, Values[0], Values[1], Values[2], Values[3], Values[2], Values[3]);
     pdfi_pop(ctx, 4);
     if(code < 0 && ctx->pdfstoponerror)
@@ -301,6 +332,9 @@ int pdfi_closepath(pdf_context *ctx)
 {
     int code = gs_closepath(ctx->pgs);
 
+    if (ctx->TextBlockDepth != 0)
+        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+
     if(code < 0 && ctx->pdfstoponerror)
         return code;
     else
@@ -311,6 +345,9 @@ int pdfi_newpath(pdf_context *ctx)
 {
     int code = gs_newpath(ctx->pgs);
 
+    if (ctx->TextBlockDepth != 0)
+        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+
     if(code < 0 && ctx->pdfstoponerror)
         return code;
     else
@@ -320,6 +357,9 @@ int pdfi_newpath(pdf_context *ctx)
 int pdfi_b(pdf_context *ctx)
 {
     int code;
+
+    if (ctx->TextBlockDepth != 0)
+        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
     code = gs_closepath(ctx->pgs);
     if (code >= 0) {
@@ -354,6 +394,9 @@ int pdfi_b_star(pdf_context *ctx)
 {
     int code;
 
+    if (ctx->TextBlockDepth != 0)
+        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+
     code = gs_closepath(ctx->pgs);
     if (code >= 0) {
         code = pdfi_gsave(ctx);
@@ -386,6 +429,9 @@ int pdfi_b_star(pdf_context *ctx)
 int pdfi_B(pdf_context *ctx)
 {
     int code;
+
+    if (ctx->TextBlockDepth != 0)
+        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
     code = pdfi_gsave(ctx);
     if (code >= 0) {
@@ -420,6 +466,9 @@ int pdfi_B_star(pdf_context *ctx)
 {
     int code;
 
+    if (ctx->TextBlockDepth != 0)
+        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+
     code = pdfi_gsave(ctx);
     if (code >= 0) {
         gs_swapcolors(ctx->pgs);
@@ -450,6 +499,9 @@ int pdfi_clip(pdf_context *ctx)
 {
     int code = gs_clip(ctx->pgs);
 
+    if (ctx->TextBlockDepth != 0)
+        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+
     if(code < 0 && ctx->pdfstoponerror)
         return code;
     else
@@ -459,6 +511,9 @@ int pdfi_clip(pdf_context *ctx)
 int pdfi_eoclip(pdf_context *ctx)
 {
     int code = gs_eoclip(ctx->pgs);
+
+    if (ctx->TextBlockDepth != 0)
+        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
     if(code < 0 && ctx->pdfstoponerror)
         return code;
@@ -495,6 +550,10 @@ int pdfi_rectpath(pdf_context *ctx)
             Values[i] = (double)num->value.i;
         }
     }
+
+    if (ctx->TextBlockDepth != 0)
+        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+
     code = gs_moveto(ctx->pgs, Values[0], Values[1]);
     if (code == 0) {
         code = gs_lineto(ctx->pgs, Values[0], Values[1] + Values[3]);

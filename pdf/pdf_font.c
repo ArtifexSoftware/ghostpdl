@@ -32,6 +32,15 @@ int pdfi_d0(pdf_context *ctx)
 {
     int code = 0, gsave_level = 0;
     double width[2];
+    pdf_font *font;
+
+    if (ctx->inside_CharProc == false)
+        ctx->pdf_warnings |= W_PDF_NOTINCHARPROC;
+
+    if (ctx->pgs->font != NULL && ctx->pgs->font->client_data != NULL)
+        font = (pdf_font *)ctx->pgs->font->client_data;
+    else
+        font = NULL;
 
     if (pdfi_count_stack(ctx) < 2) {
         code = gs_note_error(gs_error_stackunderflow);
@@ -61,6 +70,13 @@ int pdfi_d0(pdf_context *ctx)
         width[1] = ((pdf_num *)ctx->stack_top[-1])->value.d;
 
     gsave_level = ctx->pgs->level;
+
+    /*
+     * We don't intend to retain this, instead we will use (effectively) xyshow to apply
+     * width overrides at the text level.
+    if (font && font->Widths && ctx->current_chr >= font->FirstChar && ctx->current_chr <= font->LastChar)
+        width[0] = font->Widths[font->ctx->current_chr - font->FirstChar];
+     */
 
     code = gs_text_setcharwidth(ctx->current_text_enum, width);
 
@@ -97,6 +113,16 @@ int pdfi_d1(pdf_context *ctx)
 {
     int code = 0, i, gsave_level;
     double wbox[6];
+    pdf_font *font;
+
+    if (ctx->inside_CharProc == false)
+        ctx->pdf_warnings |= W_PDF_NOTINCHARPROC;
+
+    ctx->CharProc_is_d1 = true;
+    if (ctx->pgs->font != NULL && ctx->pgs->font->client_data != NULL)
+        font = (pdf_font *)ctx->pgs->font->client_data;
+    else
+        font = NULL;
 
     if (pdfi_count_stack(ctx) < 2) {
         code = gs_note_error(gs_error_stackunderflow);
@@ -113,6 +139,13 @@ int pdfi_d1(pdf_context *ctx)
         else
             wbox[i + 6] = ((pdf_num *)ctx->stack_top[i])->value.d;
     }
+
+    /*
+     * We don't intend to retain this, instead we will use (effectively) xyshow to apply
+     * width overrides at the text level.
+    if (font && font->Widths && ctx->current_chr >= font->FirstChar && ctx->current_chr <= font->LastChar)
+        wbox[0] = font->Widths[font->ctx->current_chr - font->FirstChar];
+     */
 
     gsave_level = ctx->pgs->level;
 
@@ -132,12 +165,25 @@ d1_error:
     return code;
 }
 
+static int pdfi_gs_setfont(pdf_context *ctx, gs_font *pfont)
+{
+    int code = 0;
+    pdf_font *old_font = pdfi_get_current_pdf_font(ctx);
+
+    code = gs_setfont(ctx->pgs, pfont);
+    if (code >= 0)
+        pdfi_countdown(old_font);
+
+    return code;
+}
+
 int pdfi_Tf(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     double point_size = 0;
     pdf_obj *o = NULL;
     int code = 0;
     pdf_dict *font_dict = NULL;
+    gs_font *pfont = NULL;
 
     if (pdfi_count_stack(ctx) >= 2) {
         o = ctx->stack_top[-1];
@@ -181,8 +227,10 @@ int pdfi_Tf(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
                 goto Tf_error;
             }
             /* Don't swap fonts if this is already the current font */
-            if (font->pfont != (gs_font_base *)ctx->pgs->font)
-                code = gs_setfont(ctx->pgs, (gs_font *)font->pfont);
+            if (font->pfont != (gs_font_base *)ctx->pgs->font) {
+                pdf_font *old_font = pdfi_get_current_pdf_font(ctx);
+                code = pdfi_gs_setfont(ctx, (gs_font *)font->pfont);
+            }
             else
                 pdfi_countdown(font_dict);
             pdfi_pop(ctx, 2);
@@ -208,26 +256,27 @@ int pdfi_Tf(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
             goto Tf_error_o;
 
         if (pdfi_name_is((const pdf_name *)o, "Type0")) {
-            code = pdfi_read_type0_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, point_size);
+            code = pdfi_read_type0_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, point_size, &pfont);
             if (code < 0)
                 goto Tf_error_o;
         } else {
             if (pdfi_name_is((const pdf_name *)o, "Type1")) {
-                code = pdfi_read_type1_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, point_size);
+                code = pdfi_read_type1_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, point_size, &pfont);
                 if (code < 0)
                     goto Tf_error_o;
             } else {
                 if (pdfi_name_is((const pdf_name *)o, "Type1C")) {
-                    code = pdfi_read_type1C_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, point_size);
+                    code = pdfi_read_type1C_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, point_size, &pfont);
                     if (code < 0)
                         goto Tf_error_o;
                 } else {
                     if (pdfi_name_is((const pdf_name *)o, "Type3")) {
-                        code = pdfi_read_type3_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, point_size);
+                        code = pdfi_read_type3_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, point_size, &pfont);
                         if (code < 0)
                             goto Tf_error_o;
                     } else {
                         if (pdfi_name_is((const pdf_name *)o, "TrueType")) {
+                            code = pdfi_read_truetype_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, point_size, &pfont);
                         } else {
                             code = gs_note_error(gs_error_undefined);
                                 goto Tf_error_o;
@@ -236,6 +285,11 @@ int pdfi_Tf(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
                 }
             }
         }
+
+        code = pdfi_gs_setfont(ctx, pfont);
+        if (code < 0)
+            goto Tf_error_o;
+
         pdfi_countdown(o);
 
         pdfi_countdown(font_dict);
@@ -252,6 +306,7 @@ int pdfi_Tf(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 Tf_error_o:
     pdfi_countdown(o);
 Tf_error:
+    code = pdfi_gs_setfont(ctx, NULL);
     pdfi_countdown(font_dict);
     pdfi_clearstack(ctx);
     return code;

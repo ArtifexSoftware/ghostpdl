@@ -29,6 +29,7 @@
 #include "strmio.h"
 #include "pdf_colour.h"
 #include "pdf_font.h"
+#include "pdf_text.h"
 
 /* This routine is slightly misnamed, as it also checks ColorSpaces for spot colours.
  * This is done at the page level, so we maintain a dictionary of the spot colours
@@ -1573,6 +1574,12 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
     code = gs_setalphaisshape(ctx->pgs, 0);
     code = gs_settextknockout(ctx->pgs, 0);
     code = gs_setblendmode(ctx->pgs, 0);
+    code = gs_settextspacing(ctx->pgs, (double)0.0);
+    code = gs_settextleading(ctx->pgs, (double)0.0);
+    gs_settextrenderingmode(ctx->pgs, 0);
+    code = gs_setwordspacing(ctx->pgs, (double)0.0);
+    code = gs_settexthscaling(ctx->pgs, (double)100.0);
+    ctx->TextBlockDepth = 0;
 
     /* Init a base_pgs graphics state for Patterns */
     if (ctx->base_pgs) {
@@ -1739,6 +1746,16 @@ pdfi_report_errors(pdf_context *ctx)
             dmprintf(ctx->memory, "\tA content stream consumed too many arguments (stack underflow).\n");
         if (ctx->pdf_warnings & W_PDF_GROUPERROR)
             dmprintf(ctx->memory, "\tA transparency group was not terminated.\n");
+        if (ctx->pdf_warnings & W_PDF_OPINVALIDINTEXT)
+            dmprintf(ctx->memory, "\tAn operator (eg q/Q) was used in a text block where it is not permitted.\n");
+        if (ctx->pdf_warnings & W_PDF_NOTINCHARPROC)
+            dmprintf(ctx->memory, "\tA d0 or d1 operator was encountered outside a CharProc.\n");
+        if (ctx->pdf_warnings & W_PDF_NESTEDTEXTBLOCK)
+            dmprintf(ctx->memory, "\tEncountered a BT while already in a text block.\n");
+        if (ctx->pdf_warnings & W_PDF_ETNOTEXTBLOCK)
+            dmprintf(ctx->memory, "\tEncountered an ET while not in a text block.\n");
+        if (ctx->pdf_warnings & W_PDF_TEXTOPNOBT)
+            dmprintf(ctx->memory, "\tEncountered a text position or show operator without a prior BT operator.\n");
     }
 
     dmprintf(ctx->memory, "\n   **** This file had errors that were repaired or ignored.\n");
@@ -2187,7 +2204,6 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
     if (ctx->PageTransparencyArray)
         gs_free_object(ctx->memory, ctx->PageTransparencyArray, "pdfi_free_context");
 
-
     if (ctx->PDFPassword)
         gs_free_object(ctx->memory, ctx->PDFPassword, "pdfi_free_context");
 
@@ -2285,6 +2301,7 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
         entry = ctx->cache_LRU;
         while(entry) {
             next = entry->next;
+            prev = entry->previous;
             count = entry->o->refcnt;
             dbgmprintf1(ctx->memory, "CLEANUP cache entry obj %ld", entry->o->object_num);
             dbgmprintf1(ctx->memory, " has refcnt %d\n", count);

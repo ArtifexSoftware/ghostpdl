@@ -26,7 +26,10 @@
 int pdfi_BT(pdf_context *ctx)
 {
     int code;
-    gs_matrix m;
+    gs_matrix m, mat, mat1;
+
+    if (ctx->TextBlockDepth != 0)
+        ctx->pdf_warnings |= W_PDF_NESTEDTEXTBLOCK;
 
     gs_make_identity(&m);
     code = gs_settextmatrix(ctx->pgs, &m);
@@ -37,35 +40,30 @@ int pdfi_BT(pdf_context *ctx)
     if (code < 0)
         return code;
 
-    code = gs_settextspacing(ctx->pgs, (double)0.0);
-    if (code < 0)
-        return code;
-
-    code = gs_settextleading(ctx->pgs, (double)0.0);
-    if (code < 0)
-        return code;
-
-    gs_settextrenderingmode(ctx->pgs, 0);
-
-    code = gs_setwordspacing(ctx->pgs, (double)0.0);
-    if (code < 0)
-        return code;
-
-    code = gs_settexthscaling(ctx->pgs, (double)100.0);
-    if (code < 0)
-        return code;
-
     code = gs_moveto(ctx->pgs, 0, 0);
+    ctx->TextBlockDepth++;
     return code;
 }
 
 int pdfi_ET(pdf_context *ctx)
 {
-    return 0;
+    int code = 0;
+    gs_matrix mat, mat1;
+
+    if (ctx->TextBlockDepth == 0) {
+        ctx->pdf_warnings |= W_PDF_ETNOTEXTBLOCK;
+        return_error(gs_error_syntaxerror);
+    }
+
+    ctx->TextBlockDepth--;
+    return code;
 }
 
 int pdfi_T_star(pdf_context *ctx)
 {
+    if (ctx->TextBlockDepth == 0) {
+        ctx->pdf_warnings |= W_PDF_TEXTOPNOBT;
+    }
     return 0;
 }
 
@@ -92,15 +90,91 @@ int pdfi_Tc(pdf_context *ctx)
 
 int pdfi_Td(pdf_context *ctx)
 {
+    int code;
+    pdf_num *Tx = NULL, *Ty = NULL;
+    gs_matrix m, mat, mat1;
+
     if (pdfi_count_stack(ctx) >= 2)
         pdfi_pop(ctx, 2);
     else
         pdfi_clearstack(ctx);
     return 0;
+
+    if (pdfi_count_stack(ctx) < 2)
+        return_error(gs_error_stackunderflow);
+
+    gs_make_identity(&m);
+
+    Tx = (pdf_num *)ctx->stack_top[-1];
+    Ty = (pdf_num *)ctx->stack_top[-2];
+
+    if (Tx->type == PDF_INT) {
+        m.tx = (float)Tx->value.i;
+    } else {
+        if (Tx->type == PDF_REAL) {
+            m.tx = (float)Tx->value.d;
+        } else {
+            code = gs_note_error(gs_error_typecheck);
+            goto Td_error;
+        }
+    }
+
+    if (Ty->type == PDF_INT) {
+        m.ty = (float)Ty->value.i;
+    } else {
+        if (Ty->type == PDF_REAL) {
+            m.ty = (float)Ty->value.d;
+        } else {
+            code = gs_note_error(gs_error_typecheck);
+            goto Td_error;
+        }
+    }
+
+    if (ctx->TextBlockDepth == 0) {
+        ctx->pdf_warnings |= W_PDF_TEXTOPNOBT;
+
+        gs_make_identity(&mat);
+        code = gs_settextmatrix(ctx->pgs, &mat);
+        if (code < 0)
+            return code;
+
+        code = gs_settextlinematrix(ctx->pgs, &mat);
+        if (code < 0)
+            return code;
+    }
+
+    code = gs_matrix_multiply(&ctx->pgs->textlinematrix, (const gs_matrix *)&m, &mat);
+    if (code < 0)
+        goto Td_error;
+
+    code = gs_settextmatrix(ctx->pgs, (gs_matrix *)&mat);
+    if (code < 0)
+        goto Td_error;
+
+    code = gs_settextlinematrix(ctx->pgs, (gs_matrix *)&mat);
+    if (code < 0)
+        goto Td_error;
+
+    code = gs_concat(ctx->pgs, &mat);
+    if (code < 0)
+        goto Td_error;
+
+    code = gs_moveto(ctx->pgs, 0, 0);
+
+    pdfi_pop(ctx, 2);
+    return code;
+
+Td_error:
+    pdfi_pop(ctx, 2);
+    return code;
 }
 
 int pdfi_TD(pdf_context *ctx)
 {
+    if (ctx->TextBlockDepth == 0) {
+        ctx->pdf_warnings |= W_PDF_TEXTOPNOBT;
+    }
+
     if (pdfi_count_stack(ctx) >= 2)
         pdfi_pop(ctx, 2);
     else
@@ -114,6 +188,7 @@ int pdfi_Tj(pdf_context *ctx)
     gs_text_enum_t *penum;
     gs_text_params_t text;
     pdf_string *s = NULL;
+    gs_matrix saved, inverse, mat;
 
     if (pdfi_count_stack(ctx) < 1)
         return_error(gs_error_stackunderflow);
@@ -122,10 +197,20 @@ int pdfi_Tj(pdf_context *ctx)
     if (s->type != PDF_STRING)
         return_error(gs_error_typecheck);
 
+    if (ctx->TextBlockDepth == 0) {
+        ctx->pdf_warnings |= W_PDF_TEXTOPNOBT;
+    }
+
     if (ctx->pgs->font == NULL) {
         pdfi_pop(ctx, 1);
         return_error(gs_error_invalidfont);
     }
+
+    saved = ctm_only(ctx->pgs);
+    code = gs_matrix_invert(&ctm_only(ctx->pgs), &inverse);
+
+    gs_concat(ctx->pgs, &ctx->pgs->textlinematrix);
+    code = gs_moveto(ctx->pgs, 0, 0);
 
     text.operation = TEXT_FROM_STRING | TEXT_DO_DRAW | TEXT_RETURN_WIDTH;
     text.data.chars = (const gs_char *)s->data;
@@ -137,6 +222,11 @@ int pdfi_Tj(pdf_context *ctx)
         gs_text_release(penum, "pdfi_Tj");
         ctx->current_text_enum = NULL;
     }
+
+    code = gs_matrix_multiply(&ctm_only(ctx->pgs), &inverse, &mat);
+    gs_settextlinematrix(ctx->pgs, &mat);
+    gs_setmatrix(ctx->pgs, &saved);
+
     pdfi_pop(ctx, 1);
 
     return code;
@@ -144,6 +234,10 @@ int pdfi_Tj(pdf_context *ctx)
 
 int pdfi_TJ(pdf_context *ctx)
 {
+    if (ctx->TextBlockDepth == 0) {
+        ctx->pdf_warnings |= W_PDF_TEXTOPNOBT;
+    }
+
     if (pdfi_count_stack(ctx) >= 1)
         pdfi_pop(ctx, 1);
     return 0;
@@ -173,8 +267,9 @@ int pdfi_TL(pdf_context *ctx)
 int pdfi_Tm(pdf_context *ctx)
 {
     int code = 0, i;
-    double m[6];
+    float m[6];
     pdf_num *n = NULL;
+    gs_matrix mat, mat1;
 
     if (pdfi_count_stack(ctx) < 6) {
         pdfi_clearstack(ctx);
@@ -183,10 +278,10 @@ int pdfi_Tm(pdf_context *ctx)
     for (i = 1;i < 7;i++) {
         n = (pdf_num *)ctx->stack_top[-1 * i];
         if (n->type == PDF_INT)
-            m[6 - i] = (double)n->value.i;
+            m[6 - i] = (float)n->value.i;
         else {
             if (n->type == PDF_REAL)
-                m[6 - i] = n->value.d;
+                m[6 - i] = (float)n->value.d;
             else {
                 pdfi_pop(ctx, 6);
                 return_error(gs_error_typecheck);
@@ -194,11 +289,28 @@ int pdfi_Tm(pdf_context *ctx)
         }
     }
     pdfi_pop(ctx, 6);
+
+    if (ctx->TextBlockDepth == 0) {
+        ctx->pdf_warnings |= W_PDF_TEXTOPNOBT;
+
+        gs_make_identity(&mat);
+        code = gs_settextmatrix(ctx->pgs, &mat);
+        if (code < 0)
+            return code;
+
+        code = gs_settextlinematrix(ctx->pgs, &mat);
+        if (code < 0)
+            return code;
+    }
+
     code = gs_settextmatrix(ctx->pgs, (gs_matrix *)&m);
     if (code < 0)
         return code;
 
     code = gs_settextlinematrix(ctx->pgs, (gs_matrix *)&m);
+    if (code < 0)
+        return code;
+
     return code;
 }
 
@@ -296,6 +408,10 @@ int pdfi_Tz(pdf_context *ctx)
 
 int pdfi_singlequote(pdf_context *ctx)
 {
+    if (ctx->TextBlockDepth == 0) {
+        ctx->pdf_warnings |= W_PDF_TEXTOPNOBT;
+    }
+
     if (pdfi_count_stack(ctx) >= 1)
         pdfi_pop(ctx, 1);
     return 0;
@@ -303,6 +419,10 @@ int pdfi_singlequote(pdf_context *ctx)
 
 int pdfi_doublequote(pdf_context *ctx)
 {
+    if (ctx->TextBlockDepth == 0) {
+        ctx->pdf_warnings |= W_PDF_TEXTOPNOBT;
+    }
+
     if (pdfi_count_stack(ctx) >= 3)
         pdfi_pop(ctx, 3);
     return 0;

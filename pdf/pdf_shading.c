@@ -706,6 +706,9 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     if (pdfi_count_stack(ctx) < 1)
         return_error(gs_error_stackunderflow);
 
+    if (ctx->TextBlockDepth != 0)
+        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+
     savedoffset = pdfi_tell(ctx->main_stream);
     code = pdfi_loop_detector_mark(ctx);
     if (code < 0)

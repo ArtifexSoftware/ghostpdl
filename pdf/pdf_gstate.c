@@ -44,6 +44,9 @@ int pdfi_concat(pdf_context *ctx)
         return 0;
     }
 
+    if (ctx->TextBlockDepth != 0)
+        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+
     for (i=0;i < 6;i++){
         num = (pdf_num *)ctx->stack_top[i - 6];
         if (num->type != PDF_INT) {
@@ -113,7 +116,7 @@ int pdfi_grestore(pdf_context *ctx)
 
         font1 = pdfi_get_current_pdf_font(ctx);
         if (font != NULL && (font != font1 || ((pdf_obj *)font)->refcnt > 1))
-            pdfi_countdown_current_font(ctx);
+            pdfi_countdown(font);
 
         if(code < 0 && ctx->pdfstoponerror)
             return code;

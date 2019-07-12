@@ -37,6 +37,9 @@ extern int pdfi_dict_from_stack(pdf_context *ctx);
 
 int pdfi_BI(pdf_context *ctx)
 {
+    if (ctx->TextBlockDepth != 0)
+        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+
     return pdfi_mark_stack(ctx, PDF_DICT_MARK);
 }
 
@@ -1168,6 +1171,9 @@ int pdfi_ID(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_st
     pdf_dict *d = NULL;
     int code;
 
+    if (ctx->TextBlockDepth != 0)
+        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+
     code = pdfi_dict_from_stack(ctx);
     if (code < 0)
         /* pdfi_dict_from_stack cleans up the stack so we don't need to in case of an error */
@@ -1186,6 +1192,9 @@ int pdfi_ID(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_st
 
 int pdfi_EI(pdf_context *ctx)
 {
+    if (ctx->TextBlockDepth != 0)
+        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+
 /*    pdfi_clearstack(ctx);*/
     return 0;
 }
@@ -1264,6 +1273,9 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         code = gs_note_error(gs_error_typecheck);
         goto exit1;
     }
+
+    if (ctx->TextBlockDepth != 0)
+        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
     code = pdfi_loop_detector_mark(ctx);
     code = pdfi_find_resource(ctx, (unsigned char *)"XObject", n, stream_dict, page_dict, &o);

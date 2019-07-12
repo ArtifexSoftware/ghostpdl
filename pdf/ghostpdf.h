@@ -135,6 +135,11 @@ typedef enum pdf_warning_flag_e {
     W_PDF_STACKGARBAGE = W_PDF_TOOMANYq << 1,
     W_PDF_STACKUNDERFLOW = W_PDF_STACKGARBAGE << 1,
     W_PDF_GROUPERROR = W_PDF_STACKUNDERFLOW << 1,
+    W_PDF_OPINVALIDINTEXT = W_PDF_GROUPERROR << 1,
+    W_PDF_NOTINCHARPROC = W_PDF_GROUPERROR << 1,
+    W_PDF_NESTEDTEXTBLOCK = W_PDF_NOTINCHARPROC << 1,
+    W_PDF_ETNOTEXTBLOCK = W_PDF_NESTEDTEXTBLOCK << 1,
+    W_PDF_TEXTOPNOBT = W_PDF_ETNOTEXTBLOCK  << 1,
 } pdf_warning_flag;
 
 #define INITIAL_STACK_SIZE 32
@@ -156,7 +161,7 @@ typedef struct pdf_context_s
     void *instance;
     gs_memory_t *memory;
 
-    /* Bitfields recording whether any errors or warnings were encoutnered */
+    /* Bitfields recording whether any errors or warnings were encountered */
     pdf_error_flag pdf_errors;
     pdf_warning_flag pdf_warnings;
 
@@ -185,7 +190,24 @@ typedef struct pdf_context_s
     char *PDFPassword;
     char *PageList;
 
+    /* Text and text state parameters */
+    /* we need the text enumerator in order to call gs_text_setcharwidth() for d0 and d1 */
     gs_text_enum_t *current_text_enum;
+    /* And also for d0 and d1, we need to know the character code of the glyph description
+     * (CharProc) we are running, so that we can find the relevant entry in the /Widths
+     * array (if present) of the font.
+    gs_char current_chr;
+     */
+    int TextBlockDepth;
+    /* This is to determine if we get Type 3 Charproc operators (d0 and d1) outside
+     * a Type 3 BuildChar.
+     */
+    bool inside_CharProc;
+    /* We need to know if we're in a type 3 CharProc which has executed a 'd1' operator.
+     * Colour operators are technically invalid if we are in a 'd1' context and we must
+     * ignore them.
+     */
+    bool CharProc_is_d1;
 
     /* The HeaderVersion is the declared version from the PDF header, but this
      * can be overridden by later trailer dictionaries, so the FinalVersion is
