@@ -441,7 +441,8 @@ const pdf14_device gs_pdf14_Gray_device	= {
     NULL,			/* target */
     { 0 },			/* devn_params - not used */
     &gray_pdf14_procs,
-    &gray_blending_procs
+    &gray_blending_procs,
+    1
 };
 
 const pdf14_device gs_pdf14_RGB_device = {
@@ -452,7 +453,8 @@ const pdf14_device gs_pdf14_RGB_device = {
     NULL,			/* target */
     { 0 },			/* devn_params - not used */
     &rgb_pdf14_procs,
-    &rgb_blending_procs
+    &rgb_blending_procs,
+    3
 };
 
 const pdf14_device gs_pdf14_CMYK_device	= {
@@ -463,7 +465,8 @@ const pdf14_device gs_pdf14_CMYK_device	= {
     NULL,			/* target */
     { 0 },			/* devn_params - not used */
     &cmyk_pdf14_procs,
-    &cmyk_blending_procs
+    &cmyk_blending_procs,
+    4
 };
 
 const pdf14_device gs_pdf14_CMYKspot_device	= {
@@ -486,7 +489,8 @@ const pdf14_device gs_pdf14_CMYKspot_device	= {
       {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
     },
     &cmykspot_pdf14_procs,
-    &cmyk_blending_procs
+    &cmyk_blending_procs,
+    4
 };
 
 const pdf14_device gs_pdf14_RGBspot_device = {
@@ -509,7 +513,8 @@ const pdf14_device gs_pdf14_RGBspot_device = {
     { 0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
     },
     &rgbspot_pdf14_procs,
-    &rgbspot_blending_procs
+    &rgbspot_blending_procs,
+    3
 };
 
 const pdf14_device gs_pdf14_Grayspot_device = {
@@ -532,7 +537,8 @@ const pdf14_device gs_pdf14_Grayspot_device = {
     { 0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
     },
     &grayspot_pdf14_procs,
-    &grayspot_blending_procs
+    &grayspot_blending_procs,
+    1
 };
 
 /*
@@ -566,7 +572,8 @@ const pdf14_device gs_pdf14_custom_device = {
       {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
     },
     &custom_pdf14_procs,
-    &custom_blending_procs
+    &custom_blending_procs,
+    4
 };
 
 /* Devices used for pdf14-accum-* device, one for  each image colorspace, */
@@ -1104,13 +1111,21 @@ pdf14_ctx_new(gs_int_rect *rect, int n_chan, bool additive, gx_device *dev, bool
     gs_memory_t	*memory = dev->memory->stable_memory;
     bool has_tags = device_encodes_tags(dev);
     pdf14_device *pdev = (pdf14_device *)dev;
+    int num_spots;
 
     result = gs_alloc_struct(memory, pdf14_ctx, &st_pdf14_ctx, "pdf14_ctx_new");
     if (result == NULL)
         return result;
     /* Note:  buffer creation expects alpha to be in number of channels */
+    /* Old code here used num_spots = pdev->devn_params.page_spot_colors,
+     * but this fails for devices like psdcmykog, which does not expand
+     * to take on new spot colors, over and above the 2 it has built in.
+     * Accordingly, we calculate the number of spot colors to be the
+     * number of channels we've been asked for, less the number of
+     * 'standard' colorants. */
+    num_spots = n_chan - pdev->num_std_colorants;
     buf = pdf14_buf_new(rect, has_tags, false, false, false, n_chan + 1,
-                        pdev->devn_params.page_spot_colors, memory, deep);
+                        num_spots, memory, deep);
     if (buf == NULL) {
         gs_free_object(memory, result, "pdf14_ctx_new");
         return NULL;
@@ -1206,7 +1221,6 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
     /* We are going to use the shape in the knockout computation.  If previous
        buffer has a shape or if this is a knockout then we will have a shape here */
     has_shape = tos->has_shape || tos->knockout;
-   // has_shape = false;
     /* If previous buffer has tags, then add tags here */
     has_tags = tos->has_tags;
 

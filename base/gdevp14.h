@@ -197,6 +197,7 @@ typedef struct pdf14_device_s {
     gs_devn_params devn_params;    /* Must follow gx_device_forward_common */
     const pdf14_procs_t * pdf14_procs;	   /* Must follow devn_params. */
     const pdf14_nonseparable_blending_procs_t * blend_procs; /* Must follow pdf14_procs */
+    int num_std_colorants;
 
     pdf14_ctx *ctx;
     pdf14_smaskcolor_t *smaskcolor;
