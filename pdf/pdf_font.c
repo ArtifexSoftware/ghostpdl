@@ -290,6 +290,10 @@ int pdfi_Tf(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         if (code < 0)
             goto Tf_error_o;
 
+        code = gs_setPDFfontsize(ctx->pgs, point_size);
+        if (code < 0)
+            goto Tf_error_o;
+
         pdfi_countdown(o);
 
         pdfi_countdown(font_dict);

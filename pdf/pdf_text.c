@@ -61,10 +61,26 @@ int pdfi_ET(pdf_context *ctx)
 
 int pdfi_T_star(pdf_context *ctx)
 {
+    int code;
+    gs_matrix m, mat;
+
     if (ctx->TextBlockDepth == 0) {
         ctx->pdf_warnings |= W_PDF_TEXTOPNOBT;
     }
-    return 0;
+
+    gs_make_identity(&m);
+    m.ty = ctx->pgs->textleading;
+
+    code = gs_matrix_multiply(&ctx->pgs->textlinematrix, (const gs_matrix *)&m, &mat);
+    if (code < 0)
+        return code;
+
+    code = gs_settextmatrix(ctx->pgs, (gs_matrix *)&mat);
+    if (code < 0)
+        return code;
+
+    code = gs_settextlinematrix(ctx->pgs, (gs_matrix *)&mat);
+    return code;
 }
 
 int pdfi_Tc(pdf_context *ctx)
@@ -92,13 +108,7 @@ int pdfi_Td(pdf_context *ctx)
 {
     int code;
     pdf_num *Tx = NULL, *Ty = NULL;
-    gs_matrix m, mat, mat1;
-
-    if (pdfi_count_stack(ctx) >= 2)
-        pdfi_pop(ctx, 2);
-    else
-        pdfi_clearstack(ctx);
-    return 0;
+    gs_matrix m, mat;
 
     if (pdfi_count_stack(ctx) < 2)
         return_error(gs_error_stackunderflow);
@@ -136,11 +146,11 @@ int pdfi_Td(pdf_context *ctx)
         gs_make_identity(&mat);
         code = gs_settextmatrix(ctx->pgs, &mat);
         if (code < 0)
-            return code;
+            goto Td_error;
 
         code = gs_settextlinematrix(ctx->pgs, &mat);
         if (code < 0)
-            return code;
+            goto Td_error;
     }
 
     code = gs_matrix_multiply(&ctx->pgs->textlinematrix, (const gs_matrix *)&m, &mat);
@@ -155,12 +165,6 @@ int pdfi_Td(pdf_context *ctx)
     if (code < 0)
         goto Td_error;
 
-    code = gs_concat(ctx->pgs, &mat);
-    if (code < 0)
-        goto Td_error;
-
-    code = gs_moveto(ctx->pgs, 0, 0);
-
     pdfi_pop(ctx, 2);
     return code;
 
@@ -171,15 +175,75 @@ Td_error:
 
 int pdfi_TD(pdf_context *ctx)
 {
-    if (ctx->TextBlockDepth == 0) {
-        ctx->pdf_warnings |= W_PDF_TEXTOPNOBT;
+    int code;
+    pdf_num *Tx = NULL, *Ty = NULL;
+    gs_matrix m, mat;
+
+    if (pdfi_count_stack(ctx) < 2)
+        return_error(gs_error_stackunderflow);
+
+    gs_make_identity(&m);
+
+    Tx = (pdf_num *)ctx->stack_top[-1];
+    Ty = (pdf_num *)ctx->stack_top[-2];
+
+    if (Tx->type == PDF_INT) {
+        m.tx = (float)Tx->value.i;
+    } else {
+        if (Tx->type == PDF_REAL) {
+            m.tx = (float)Tx->value.d;
+        } else {
+            code = gs_note_error(gs_error_typecheck);
+            goto TD_error;
+        }
     }
 
-    if (pdfi_count_stack(ctx) >= 2)
-        pdfi_pop(ctx, 2);
-    else
-        pdfi_clearstack(ctx);
-    return 0;
+    if (Ty->type == PDF_INT) {
+        m.ty = (float)Ty->value.i;
+    } else {
+        if (Ty->type == PDF_REAL) {
+            m.ty = (float)Ty->value.d;
+        } else {
+            code = gs_note_error(gs_error_typecheck);
+            goto TD_error;
+        }
+    }
+
+    if (ctx->TextBlockDepth == 0) {
+        ctx->pdf_warnings |= W_PDF_TEXTOPNOBT;
+
+        gs_make_identity(&mat);
+        code = gs_settextmatrix(ctx->pgs, &mat);
+        if (code < 0)
+            goto TD_error;
+
+        code = gs_settextlinematrix(ctx->pgs, &mat);
+        if (code < 0)
+            goto TD_error;
+    }
+
+    code = gs_settextleading(ctx->pgs, m.ty * -1.0f);
+    if (code < 0)
+        goto TD_error;
+
+    code = gs_matrix_multiply(&ctx->pgs->textlinematrix, (const gs_matrix *)&m, &mat);
+    if (code < 0)
+        goto TD_error;
+
+    code = gs_settextmatrix(ctx->pgs, (gs_matrix *)&mat);
+    if (code < 0)
+        goto TD_error;
+
+    code = gs_settextlinematrix(ctx->pgs, (gs_matrix *)&mat);
+    if (code < 0)
+        goto TD_error;
+
+    pdfi_pop(ctx, 2);
+    return code;
+
+TD_error:
+    pdfi_pop(ctx, 2);
+    return code;
 }
 
 int pdfi_Tj(pdf_context *ctx)
@@ -209,7 +273,7 @@ int pdfi_Tj(pdf_context *ctx)
     saved = ctm_only(ctx->pgs);
     code = gs_matrix_invert(&ctm_only(ctx->pgs), &inverse);
 
-    gs_concat(ctx->pgs, &ctx->pgs->textlinematrix);
+    gs_concat(ctx->pgs, &ctx->pgs->textmatrix);
     code = gs_moveto(ctx->pgs, 0, 0);
 
     text.operation = TEXT_FROM_STRING | TEXT_DO_DRAW | TEXT_RETURN_WIDTH;
@@ -224,7 +288,7 @@ int pdfi_Tj(pdf_context *ctx)
     }
 
     code = gs_matrix_multiply(&ctm_only(ctx->pgs), &inverse, &mat);
-    gs_settextlinematrix(ctx->pgs, &mat);
+    gs_settextmatrix(ctx->pgs, &mat);
     gs_setmatrix(ctx->pgs, &saved);
 
     pdfi_pop(ctx, 1);
