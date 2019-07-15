@@ -89,8 +89,8 @@ typedef struct gx_saved_page_s {
     byte *paramlist;		/* serialized device param list */
     /* for DeviceN devices, we need the spot colors collected during parsing */
     int num_separations;
-    int separation_name_sizes[GS_SOFT_MAX_SPOTS];
-    byte *separation_names[GS_SOFT_MAX_SPOTS];	/* AKA Spot Color names */
+    int separation_name_sizes[GX_DEVICE_MAX_SEPARATIONS];
+    byte *separation_names[GX_DEVICE_MAX_SEPARATIONS];	/* AKA Spot Color names */
 } gx_saved_page;
 
 /*
