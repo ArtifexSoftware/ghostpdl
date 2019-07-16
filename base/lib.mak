@@ -346,10 +346,18 @@ $(AUX)gsmisc.$(OBJ) : $(GLSRC)gsmisc.c $(AK) $(gx_h) $(gserrors_h)\
  $(gdbflags_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCCAUX) $(C_) $(AUXO_)gsmisc.$(OBJ) $(GLSRC)gsmisc.c
 
-$(GLOBJ)gslibctx.$(OBJ) : $(GLSRC)gslibctx.c  $(AK) $(gp_h) $(gsmemory_h)\
+$(GLOBJ)gslibctx_1.$(OBJ) : $(GLSRC)gslibctx.c  $(AK) $(gp_h) $(gsmemory_h)\
   $(gslibctx_h) $(stdio__h) $(string__h) $(gsicc_manage_h) $(gserrors_h)\
   $(gscdefs_h) $(gsstruct_h)
-	$(GLCC) $(GLO_)gslibctx.$(OBJ) $(C_) $(GLSRC)gslibctx.c
+	$(GLCC) $(D_)WITH_CAL$(_D) $(I_)$(CALSRCDIR)$(_I) $(GLO_)gslibctx_1.$(OBJ) $(C_) $(GLSRC)gslibctx.c
+
+$(GLOBJ)gslibctx_0.$(OBJ) : $(GLSRC)gslibctx.c  $(AK) $(gp_h) $(gsmemory_h)\
+  $(gslibctx_h) $(stdio__h) $(string__h) $(gsicc_manage_h) $(gserrors_h)\
+  $(gscdefs_h) $(gsstruct_h)
+	$(GLCC) $(GLO_)gslibctx_0.$(OBJ) $(C_) $(GLSRC)gslibctx.c
+
+$(GLOBJ)gslibctx.$(OBJ) : $(GLOBJ)gslibctx_$(WITH_CAL).$(OBJ)  $(AK) $(gp_h)
+	$(CP_) $(GLOBJ)gslibctx_$(WITH_CAL).$(OBJ) $(GLOBJ)gslibctx.$(OBJ)
 
 $(AUX)gslibctx.$(OBJ) : $(GLSRC)gslibctx.c  $(AK) $(gp_h) $(gsmemory_h)\
   $(gslibctx_h) $(stdio__h) $(string__h) $(gsicc_manage_h) $(gserrors_h)\
@@ -763,7 +771,7 @@ $(GLOBJ)gxidata_0.$(OBJ) : $(GLSRC)gxidata.c $(AK) $(gx_h) $(gserrors_h)\
 $(GLOBJ)gxidata_1.$(OBJ) : $(GLSRC)gxidata.c $(AK) $(cal_h) $(gx_h) $(gserrors_h)\
  $(memory__h) $(gxcpath_h) $(gxdevice_h) $(gximage_h) $(gsicc_cache_h)\
  $(LIB_MAK) $(MAKEDIRS)
-	$(GLCC) -DWITH_CAL $(I_)$(CALSRCDIR)$(_I) $(GLO_)gxidata_1.$(OBJ) $(C_) $(GLSRC)gxidata.c
+	$(GLCC) $(D_)WITH_CAL$(_D) $(I_)$(CALSRCDIR)$(_I) $(GLO_)gxidata_1.$(OBJ) $(C_) $(GLSRC)gxidata.c
 
 $(GLOBJ)gxidata.$(OBJ) : $(GLOBJ)gxidata_$(WITH_CAL).$(OBJ) $(AK) $(gx_h) $(gserrors_h)\
  $(memory__h) $(gxcpath_h) $(gxdevice_h) $(gximage_h) $(gsicc_cache_h)\
@@ -800,7 +808,7 @@ $(GLOBJ)gximono_1.$(OBJ) : $(GLSRC)gximono.c $(AK) $(cal_h) $(gx_h) $(gserrors_h
  $(gxdevmem_h) $(gxfixed_h) $(gximage_h) $(gxgstate_h) $(gxmatrix_h)\
  $(gzht_h) $(gsicc_h) $(gsicc_cache_h)  $(gsicc_cms_h)\
  $(gxcie_h) $(gscie_h) $(gxht_thresh_h) $(gxdda_h) $(gxdevsop_h) $(LIB_MAK) $(MAKEDIRS)
-	$(GLCC) -DWITH_CAL $(I_)$(CALSRCDIR)$(_I) $(GLO_)gximono_1.$(OBJ) $(C_) $(GLSRC)gximono.c
+	$(GLCC) $(D_)WITH_CAL$(_D) $(I_)$(CALSRCDIR)$(_I) $(GLO_)gximono_1.$(OBJ) $(C_) $(GLSRC)gximono.c
 
 $(GLOBJ)gximono.$(OBJ) : $(GLOBJ)gximono_$(WITH_CAL).$(OBJ) $(AK) $(gx_h) $(gserrors_h)\
  $(memory__h) $(gpcheck_h) $(gdevmem_h) $(gsccolor_h) $(gspaint_h) $(gsutil_h)\
@@ -2374,7 +2382,7 @@ $(GLOBJ)gdevdrop_1.$(OBJ) : $(GLSRC)gdevdrop.c $(AK) $(gx_h) $(gserrors_h) \
  $(memory__h) $(gxdevsop_h) $(gsbittab_h) $(gsropt_h) $(gxcindex_h) \
  $(gxdcolor_h) $(gxdevice_h) $(gxdevmem_h) $(gxdevrop_h) $(gxgetbit_h) \
  $(gdevmem_h) $(gdevmrop_h) $(gdevmpla_h) $(stdint__h) $(LIB_MAK) $(MAKEDIRS)
-	$(GLCC) -DWITH_CAL $(I_)$(CALSRCDIR)$(_I) $(GLO_)gdevdrop_1.$(OBJ) $(C_) $(GLSRC)gdevdrop.c
+	$(GLCC) $(D_)WITH_CAL$(_D) $(I_)$(CALSRCDIR)$(_I) $(GLO_)gdevdrop_1.$(OBJ) $(C_) $(GLSRC)gdevdrop.c
 
 $(GLOBJ)gdevdrop_0.$(OBJ) : $(GLSRC)gdevdrop.c $(AK) $(gx_h) $(gserrors_h) \
  $(memory__h) $(gxdevsop_h) $(gsbittab_h) $(gsropt_h) $(gxcindex_h) \

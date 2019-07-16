@@ -66,34 +66,6 @@ static irender_proc(image_render_mono_ht);
 static irender_proc(image_render_mono_ht_cal);
 static int image_render_mono_ht_cal_skip_line(gx_image_enum *penum);
 
-static void *
-cal_do_malloc(void *opaque, size_t size)
-{
-    gs_memory_t *mem = (gs_memory_t *)opaque;
-    return gs_alloc_bytes(mem, size, "cal_do_malloc");
-}
-
-static void *
-cal_do_realloc(void *opaque, void *ptr, size_t newsize)
-{
-    gs_memory_t *mem = (gs_memory_t *)opaque;
-    return gs_resize_object(mem, ptr, newsize, "cal_do_malloc");
-}
-
-static void
-cal_do_free(void *opaque, void *ptr)
-{
-    gs_memory_t *mem = (gs_memory_t *)opaque;
-    gs_free_object(mem, ptr, "cal_do_malloc");
-}
-
-static cal_allocators cal_allocs =
-{
-    cal_do_malloc,
-    cal_do_realloc,
-    cal_do_free
-};
-
 static void
 halftone_callback(cal_halftone_data_t *ht, void *arg)
 {
@@ -117,7 +89,6 @@ halftone_init(gx_image_enum *penum)
 {
     cal_halftone *cal_ht = NULL;
     gx_dda_fixed dda_ht;
-    cal_context *ctx;
     int k;
     gx_ht_order *d_order;
     int code;
@@ -130,10 +101,6 @@ halftone_init(gx_image_enum *penum)
 
     if (penum->pgs == NULL || penum->pgs->dev_ht == NULL)
         return NULL;
-    ctx = cal_init(&cal_allocs, penum->memory->non_gc_memory);
-    if (ctx == NULL)
-        return NULL;
-    penum->cal_ctx = ctx;
     dda_ht = penum->dda.pixel0.x;
     if (penum->dxx > 0)
         dda_translate(dda_ht, -fixed_epsilon);
@@ -146,7 +113,7 @@ halftone_init(gx_image_enum *penum)
 
     clip_x = fixed2int(penum->clip_outer.p.x);
     clip_y = fixed2int(penum->clip_outer.p.y);
-    cal_ht = cal_halftone_init(ctx,
+    cal_ht = cal_halftone_init(penum->memory->gs_lib_ctx->core->cal_ctx,
                                penum->memory->non_gc_memory,
                                penum->rect.w,
                                penum->rect.h,
@@ -166,7 +133,7 @@ halftone_init(gx_image_enum *penum)
         code = gx_ht_construct_threshold(d_order, penum->dev, penum->pgs, k);
         if (code < 0)
             goto fail;
-        if (cal_halftone_add_screen(ctx,
+        if (cal_halftone_add_screen(penum->memory->gs_lib_ctx->core->cal_ctx,
                                     penum->memory->non_gc_memory,
                                     cal_ht,
                                     penum->pgs->dev_ht->components[k].corder.threshold_inverted,
@@ -182,8 +149,6 @@ halftone_init(gx_image_enum *penum)
 
 fail:
     cal_halftone_fin(cal_ht, penum->memory->non_gc_memory);
-    cal_fin(ctx, penum->memory->non_gc_memory);
-    penum->cal_ctx = NULL;
     return NULL;
 }
 #endif

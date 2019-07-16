@@ -32,35 +32,6 @@
 #include "stdint_.h"
 #ifdef WITH_CAL
 #include "cal.h"
-
-static void *
-cal_do_malloc(void *opaque, size_t size)
-{
-    gs_memory_t *mem = (gs_memory_t *)opaque;
-    return gs_alloc_bytes(mem, size, "cal_do_malloc");
-}
-
-static void *
-cal_do_realloc(void *opaque, void *ptr, size_t newsize)
-{
-    gs_memory_t *mem = (gs_memory_t *)opaque;
-    return gs_resize_object(mem, ptr, newsize, "cal_do_malloc");
-}
-
-static void
-cal_do_free(void *opaque, void *ptr)
-{
-    gs_memory_t *mem = (gs_memory_t *)opaque;
-    gs_free_object(mem, ptr, "cal_do_malloc");
-}
-
-static cal_allocators cal_allocs =
-{
-    cal_do_malloc,
-    cal_do_realloc,
-    cal_do_free
-};
-
 #endif
 
 /*
@@ -1783,10 +1754,7 @@ mem_transform_pixel_region_begin(gx_device *dev, int w, int h, int spp,
             }
             if (l < state->clip.p.x || r > state->clip.q.x)
                 goto no_cal;
-            state->cal_ctx = cal_init(&cal_allocs, mem);
-            if (state->cal_ctx == NULL)
-                goto no_cal;
-            state->cal_dbl = cal_doubler_init(state->cal_ctx,
+            state->cal_dbl = cal_doubler_init(mem->gs_lib_ctx->core->cal_ctx,
                                               mem,
                                               w,
                                               h,
@@ -1795,11 +1763,8 @@ mem_transform_pixel_region_begin(gx_device *dev, int w, int h, int spp,
                                               spp,
                                               &in_lines);
             /* assert(in_lines == 1) */
-            if (state->cal_dbl == NULL) {
-                cal_fin(state->cal_ctx, mem);
-                state->cal_ctx = NULL;
+            if (state->cal_dbl == NULL)
                 goto no_cal;
-            }
         } else
 no_cal:
 #endif

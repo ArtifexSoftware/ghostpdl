@@ -111,6 +111,10 @@ typedef struct {
     gs_path_control_set_t permit_writing;
     gs_path_control_set_t permit_control;
     gs_fs_list_t *fs;
+    /* Ideally this pointer would only be present in CAL builds,
+     * but that's too hard to arrange, so we live with it in
+     * all builds. */
+    void *cal_ctx;
 } gs_lib_ctx_core_t;
 
 typedef struct gs_lib_ctx_s

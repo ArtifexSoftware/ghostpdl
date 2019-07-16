@@ -64,34 +64,6 @@ static irender_proc(image_render_color_thresh);
 #else
 static irender_proc(image_render_color_ht_cal);
 
-static void *
-cal_do_malloc(void *opaque, size_t size)
-{
-    gs_memory_t *mem = (gs_memory_t *)opaque;
-    return gs_alloc_bytes(mem, size, "cal_do_malloc");
-}
-
-static void *
-cal_do_realloc(void *opaque, void *ptr, size_t newsize)
-{
-    gs_memory_t *mem = (gs_memory_t *)opaque;
-    return gs_resize_object(mem, ptr, newsize, "cal_do_malloc");
-}
-
-static void
-cal_do_free(void *opaque, void *ptr)
-{
-    gs_memory_t *mem = (gs_memory_t *)opaque;
-    gs_free_object(mem, ptr, "cal_do_malloc");
-}
-
-static cal_allocators cal_allocs =
-{
-    cal_do_malloc,
-    cal_do_realloc,
-    cal_do_free
-};
-
 static void
 color_halftone_callback(cal_halftone_data_t *ht, void *arg)
 {
@@ -120,7 +92,7 @@ color_halftone_init(gx_image_enum *penum)
     int dev_width;
     cal_halftone *cal_ht = NULL;
     gx_dda_fixed dda_ht;
-    cal_context *ctx;
+    cal_context *ctx = penum->memory->gs_lib_ctx->core->cal_ctx;
     int k;
     gx_ht_order *d_order;
     int code;
@@ -133,10 +105,6 @@ color_halftone_init(gx_image_enum *penum)
 
     if (penum->pgs == NULL || penum->pgs->dev_ht == NULL)
         return NULL;
-    ctx = cal_init(&cal_allocs, penum->memory->non_gc_memory);
-    if (ctx == NULL)
-        return NULL;
-    penum->cal_ctx = ctx;
     dda_ht = penum->dda.pixel0.x;
     if (penum->dxx > 0)
         dda_translate(dda_ht, -fixed_epsilon);
@@ -187,8 +155,6 @@ color_halftone_init(gx_image_enum *penum)
 
 fail:
     cal_halftone_fin(cal_ht, penum->memory->non_gc_memory);
-    cal_fin(ctx, penum->memory->non_gc_memory);
-    penum->cal_ctx = NULL;
     return NULL;
 }
 #endif
