@@ -1545,24 +1545,26 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
     code = pdfi_loop_detector_add_object(ctx, ctx->Pages->object_num);
     if (code < 0) {
         pdfi_loop_detector_cleartomark(ctx);
-        return code;
+        goto exit2;
     }
 
     code = pdfi_get_page_dict(ctx, ctx->Pages, page_num, &page_offset, &page_dict, NULL);
     pdfi_loop_detector_cleartomark(ctx);
     if (code < 0) {
         if (code == gs_error_VMerror || ctx->pdfstoponerror)
-            return code;
-        return 0;
+            goto exit2;
+        code = 0;
+        goto exit2;
     }
 
-    if (code > 0)
-        return_error(gs_error_unknownerror);
+    if (code > 0) {
+        code = gs_note_error(gs_error_unknownerror);
+        goto exit2;
+    }
 
     code = pdfi_set_media_size(ctx, page_dict);
     if (code < 0) {
-        pdfi_countdown(page_dict);
-        return code;
+        goto exit2;
     }
 
     pdfi_countdown(ctx->CurrentPageDict);
@@ -1645,9 +1647,7 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
                 code = pdfi_end_transparency_group(ctx);
             (void)gs_abort_pdf14trans_device(ctx->pgs);
         }
-        pdfi_grestore(ctx);
-        pdfi_countdown(page_dict);
-        return code;
+        goto exit1;
     }
 
     if (ctx->page_has_transparency) {
@@ -1655,25 +1655,24 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
             code = pdfi_end_transparency_group(ctx);
             if (code < 0) {
                 (void)gs_abort_pdf14trans_device(ctx->pgs);
-                pdfi_grestore(ctx);
-                pdfi_countdown(page_dict);
-                return code;
+                goto exit1;
             }
         }
 
         code = gs_pop_pdf14trans_device(ctx->pgs, false);
         if (code < 0) {
-            pdfi_grestore(ctx);
-            pdfi_countdown(page_dict);
-            return code;
+            goto exit1;
         }
     }
 
+ exit1:
     pdfi_grestore(ctx);
+ exit2:
     pdfi_countdown(page_dict);
 
-    return pl_finish_page(ctx->memory->gs_lib_ctx->top_of_system,
-                          ctx->pgs, 1, true);
+    if (code == 0)
+        code = pl_finish_page(ctx->memory->gs_lib_ctx->top_of_system, ctx->pgs, 1, true);
+    return code;
 }
 
 static void
