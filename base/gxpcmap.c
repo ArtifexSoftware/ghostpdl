@@ -1022,7 +1022,7 @@ gx_pattern_cache_update_used(gs_gstate *pgs, ulong used)
  * device, but it may zero out the bitmap_memory pointers to prevent
  * the accumulated bitmaps from being freed when the device is closed.
  */
-static void make_bitmap(gx_strip_bitmap *, const gx_device_memory *, gx_bitmap_id);
+static void make_bitmap(gx_strip_bitmap *, const gx_device_memory *, gx_bitmap_id, const gs_memory_t *);
 int
 gx_pattern_cache_add_entry(gs_gstate * pgs,
                    gx_device_forward * fdev, gx_color_tile ** pctile)
@@ -1139,12 +1139,12 @@ gx_pattern_cache_add_entry(gs_gstate * pgs,
         ctile->blending_mode = 0;
     if (dev_proc(fdev, open_device) != pattern_clist_open_device) {
         if (mbits != 0) {
-            make_bitmap(&ctile->tbits, mbits, gs_next_ids(pgs->memory, 1));
+            make_bitmap(&ctile->tbits, mbits, gs_next_ids(pgs->memory, 1), pgs->memory);
             mbits->bitmap_memory = 0;   /* don't free the bits */
         } else
             ctile->tbits.data = 0;
         if (mmask != 0) {
-            make_bitmap(&ctile->tmask, mmask, id);
+            make_bitmap(&ctile->tmask, mmask, id, pgs->memory);
             mmask->bitmap_memory = 0;   /* don't free the bits */
         } else
             ctile->tmask.data = 0;
@@ -1247,7 +1247,8 @@ gx_pattern_cache_add_dummy_entry(gs_gstate *pgs,
    file name */
 static void
 dump_raw_pattern(int height, int width, int n_chan, int depth,
-                byte *Buffer, int raster, const gx_device_memory * mdev)
+                byte *Buffer, int raster, const gx_device_memory * mdev,
+                const gs_memory_t *memory)
 {
     char full_file_name[50];
     gp_file *fid;
@@ -1269,7 +1270,7 @@ dump_raw_pattern(int height, int width, int n_chan, int depth,
         gs_sprintf(full_file_name, "%d)PATTERN_CHUNK_%dx%dx%d.raw", global_pat_index,
                 width, height, max_bands);
     }
-    fid = gp_fopen(mdev,full_file_name,"wb");
+    fid = gp_fopen(memory,full_file_name,"wb");
     if (depth >= 8) {
         /* Contone data. */
         if (is_planar) {
@@ -1328,7 +1329,7 @@ dump_raw_pattern(int height, int width, int n_chan, int depth,
 
 static void
 make_bitmap(register gx_strip_bitmap * pbm, const gx_device_memory * mdev,
-            gx_bitmap_id id)
+            gx_bitmap_id id, const gs_memory_t *memory)
 {
     pbm->data = mdev->base;
     pbm->raster = mdev->raster;
@@ -1345,7 +1346,7 @@ make_bitmap(register gx_strip_bitmap * pbm, const gx_device_memory * mdev,
                         mdev->color_info.num_components,
                         mdev->color_info.depth,
                         (unsigned char*) mdev->base,
-                        pbm->raster, mdev);
+                        pbm->raster, mdev, memory);
 
         global_pat_index++;
 
