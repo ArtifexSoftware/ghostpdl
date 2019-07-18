@@ -2780,11 +2780,224 @@ pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_t *p
     return code;
 }
 
-static int split_bogus_operator(pdf_context *ctx)
+static char op_table_3[5][3] = {
+    "BDC", "BMC", "EMC", "SCN", "scn"
+};
+
+static char op_table_2[39][2] = {
+    "b*", "BI", "BT", "BX", "cm", "CS", "cs", "EI", "d0", "d1", "Do", "DP", "ET", "EX", "f*", "gs", "ID", "MP", "re", "RG",
+    "rg", "ri", "SC", "sc", "sh", "T*", "Tc", "Td", "TD", "Tf", "Tj", "TJ", "TL", "Tm", "Tr", "Ts", "Tw", "Tz", "W*",
+};
+
+static char op_table_1[27][1] = {
+    "b", "B", "c", "d", "f", "F", "G", "g", "h", "i", "j", "J", "K", "k", "l", "m", "n", "q", "Q", "s", "S", "v", "w", "W",
+    "y", "'", "\""
+};
+
+/* forward definition for the 'split_bogus_operator' function to use */
+static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_stream *source, pdf_dict *stream_dict, pdf_dict *page_dict);
+
+static int search_table_3(pdf_context *ctx, unsigned char *str, pdf_keyword **key)
 {
-    /* FIXME Need to write this, place holder for now */
-    pdfi_clearstack(ctx);
+    int i, code = 0;
+
+    for (i = 0; i < 5; i++) {
+        if (memcmp(str, op_table_3[i], 3) == 0) {
+            code = pdfi_alloc_object(ctx, PDF_KEYWORD, 3, (pdf_obj **)key);
+            if (code < 0)
+                return code;
+            memcpy((*key)->data, str, 3);
+            (*key)->key = PDF_NOT_A_KEYWORD;
+            pdfi_countup(*key);
+            return 1;
+        }
+    }
     return 0;
+}
+
+static int search_table_2(pdf_context *ctx, unsigned char *str, pdf_keyword **key)
+{
+    int i, code = 0;
+
+    for (i = 0; i < 39; i++) {
+        if (memcmp(str, op_table_2[i], 2) == 0) {
+            code = pdfi_alloc_object(ctx, PDF_KEYWORD, 2, (pdf_obj **)key);
+            if (code < 0)
+                return code;
+            memcpy((*key)->data, str, 2);
+            (*key)->key = PDF_NOT_A_KEYWORD;
+            pdfi_countup(*key);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+static int search_table_1(pdf_context *ctx, unsigned char *str, pdf_keyword **key)
+{
+    int i, code = 0;
+
+    for (i = 0; i < 39; i++) {
+        if (memcmp(str, op_table_1[i], 1) == 0) {
+            code = pdfi_alloc_object(ctx, PDF_KEYWORD, 1, (pdf_obj **)key);
+            if (code < 0)
+                return code;
+            memcpy((*key)->data, str, 1);
+            (*key)->key = PDF_NOT_A_KEYWORD;
+            pdfi_countup(*key);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+static int split_bogus_operator(pdf_context *ctx, pdf_stream *source, pdf_dict *stream_dict, pdf_dict *page_dict)
+{
+    int code;
+    pdf_keyword *keyword = (pdf_keyword *)ctx->stack_top[-1], *key1 = NULL, *key2 = NULL;
+
+    if (keyword->length > 6) {
+        /* Longer than 2 3-character operators, we only allow for up to two
+         * operators. Check to see if it includes an endstream or endobj.
+         */
+        if (memcmp(&keyword->data[keyword->length - 6], "endobj", 6) == 0) {
+            code = pdfi_alloc_object(ctx, PDF_KEYWORD, keyword->length - 6, (pdf_obj **)&key1);
+            if (code < 0)
+                goto error_exit;
+            memcpy(key1->data, keyword->data, key1->length);
+            pdfi_pop(ctx, 1);
+            pdfi_push(ctx, (pdf_obj *)key1);
+            code = pdfi_interpret_stream_operator(ctx, source, stream_dict, page_dict);
+            if (code < 0)
+                goto error_exit;
+            code = pdfi_alloc_object(ctx, PDF_KEYWORD, 6, (pdf_obj **)&key1);
+            if (code < 0)
+                goto error_exit;
+            memcpy(key1->data, "endobj", 6);
+            key1->key = PDF_ENDOBJ;
+            pdfi_push(ctx, (pdf_obj *)key1);
+            return 0;
+        } else {
+            if (keyword->length > 9 && memcmp(&keyword->data[keyword->length - 9], "endstream", 9) == 0) {
+                code = pdfi_alloc_object(ctx, PDF_KEYWORD, keyword->length - 9, (pdf_obj **)&key1);
+                if (code < 0)
+                    goto error_exit;
+                memcpy(key1->data, keyword->data, key1->length);
+                pdfi_pop(ctx, 1);
+                pdfi_push(ctx, (pdf_obj *)key1);
+                code = pdfi_interpret_stream_operator(ctx, source, stream_dict, page_dict);
+                if (code < 0)
+                    goto error_exit;
+                code = pdfi_alloc_object(ctx, PDF_KEYWORD, 9, (pdf_obj **)&key1);
+                if (code < 0)
+                    goto error_exit;
+                memcpy(key1->data, "endstream", 9);
+                key1->key = PDF_ENDSTREAM;
+                pdfi_push(ctx, (pdf_obj *)key1);
+                return 0;
+            } else {
+                pdfi_clearstack(ctx);
+                return 0;
+            }
+        }
+    }
+
+    if (keyword->length > 3) {
+        code = search_table_3(ctx, keyword->data, &key1);
+        if (code < 0)
+            goto error_exit;
+
+        if (code > 0) {
+            pdfi_countup(key1);
+            switch(keyword->length - 3) {
+                case 1:
+                    code = search_table_1(ctx, &keyword->data[key1->length], &key2);
+                    break;
+                case 2:
+                    code = search_table_1(ctx, &keyword->data[key1->length], &key2);
+                    break;
+                case 3:
+                    code = search_table_1(ctx, &keyword->data[key1->length], &key2);
+                    break;
+                default:
+                    goto error_exit;
+            }
+        }
+        if (code <= 0)
+            goto error_exit;
+        pdfi_countup(key2);
+    }
+
+    if (keyword->length > 5 || keyword->length < 2)
+        goto error_exit;
+
+    code = search_table_2(ctx, keyword->data, &key1);
+    if (code < 0)
+        goto error_exit;
+
+    if (code > 0) {
+        pdfi_countup(key1);
+        switch(keyword->length - 2) {
+            case 1:
+                code = search_table_1(ctx, &keyword->data[key1->length], &key2);
+                break;
+            case 2:
+                code = search_table_1(ctx, &keyword->data[key1->length], &key2);
+                break;
+            case 3:
+                code = search_table_1(ctx, &keyword->data[key1->length], &key2);
+                break;
+            default:
+                goto error_exit;
+        }
+        if (code <= 0)
+            goto error_exit;
+        pdfi_countup(key2);
+    }
+
+    if (keyword->length > 4)
+        goto error_exit;
+
+    code = search_table_1(ctx, keyword->data, &key1);
+    if (code <= 0)
+        goto error_exit;
+
+    if (code > 0) {
+        pdfi_countup(key1);
+        switch(keyword->length - 1) {
+            case 1:
+                code = search_table_1(ctx, &keyword->data[key1->length], &key2);
+                break;
+            case 2:
+                code = search_table_1(ctx, &keyword->data[key1->length], &key2);
+                break;
+            case 3:
+                code = search_table_1(ctx, &keyword->data[key1->length], &key2);
+                break;
+            default:
+                goto error_exit;
+        }
+        if (code <= 0)
+            goto error_exit;
+        pdfi_countup(key2);
+    }
+
+    /* If we get here, we have two PDF_KEYWORD objects. We push them on the stack
+     * one at a time, and execute them.
+     */
+    pdfi_push(ctx, (pdf_obj *)key1);
+    code = pdfi_interpret_stream_operator(ctx, source, stream_dict, page_dict);
+    if (code < 0)
+        goto error_exit;
+
+    pdfi_push(ctx, (pdf_obj *)key2);
+    code = pdfi_interpret_stream_operator(ctx, source, stream_dict, page_dict);
+
+error_exit:
+    pdfi_countdown(key1);
+    pdfi_countdown(key2);
+    pdfi_clearstack(ctx);
+    return code;
 }
 
 #define K1(a) (a)
@@ -2804,9 +3017,15 @@ static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_stream *source, 
          * out of the mangled one. Note this will also be done below in the 'default'
          * case where we don't recognise a keyword with 3 or fewer characters.
          */
-        code = split_bogus_operator(ctx);
+        code = split_bogus_operator(ctx, source, stream_dict, page_dict);
         if (code < 0)
             return code;
+        if (pdfi_count_stack(ctx) > 0) {
+            keyword = (pdf_keyword *)ctx->stack_top[-1];
+            if (keyword->key != PDF_NOT_A_KEYWORD)
+                return gs_error_repaired_keyword;
+        } else
+            return 0;
     } else {
         for (i=0;i < keyword->length;i++) {
             op = (op << 8) + keyword->data[i];
@@ -3111,9 +3330,14 @@ static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_stream *source, 
                 code = pdfi_doublequote(ctx);
                 break;
             default:
-                code = split_bogus_operator(ctx);
+                code = split_bogus_operator(ctx, source, stream_dict, page_dict);
                 if (code < 0)
                     return code;
+                if (pdfi_count_stack(ctx) > 0) {
+                    keyword = (pdf_keyword *)ctx->stack_top[-1];
+                    if (keyword->key != PDF_NOT_A_KEYWORD)
+                        return gs_error_repaired_keyword;
+                }
                 break;
        }
     }
@@ -3244,6 +3468,7 @@ pdfi_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict 
         }
 
         if (ctx->stack_top[-1]->type == PDF_KEYWORD) {
+repaired_keyword:
             keyword = (pdf_keyword *)ctx->stack_top[-1];
 
             switch(keyword->key) {
@@ -3263,6 +3488,9 @@ pdfi_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict 
                 case PDF_NOT_A_KEYWORD:
                     code = pdfi_interpret_stream_operator(ctx, compressed_stream, stream_dict, page_dict);
                     if (code < 0) {
+                        if (code == gs_error_repaired_keyword)
+                            goto repaired_keyword;
+
                         ctx->pdf_errors |= E_PDF_TOKENERROR;
                         if (ctx->pdfstoponerror) {
                             pdfi_close_file(ctx, compressed_stream);
