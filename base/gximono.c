@@ -64,7 +64,8 @@ static irender_proc(image_render_mono);
 static irender_proc(image_render_mono_ht);
 #else
 static irender_proc(image_render_mono_ht_cal);
-static int image_render_mono_ht_cal_skip_line(gx_image_enum *penum);
+static int image_render_mono_ht_cal_skip_line(gx_image_enum *penum,
+					      gx_device *dev);
 
 static void
 halftone_callback(cal_halftone_data_t *ht, void *arg)
@@ -984,7 +985,9 @@ err:
 }
 
 #ifdef WITH_CAL
-static int image_render_mono_ht_cal_skip_line(gx_image_enum *penum)
+static int
+image_render_mono_ht_cal_skip_line(gx_image_enum *penum,
+                                   gx_device     *dev)
 {
     return !cal_halftone_next_line_required(penum->cal_ht);
 }

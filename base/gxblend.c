@@ -3380,7 +3380,10 @@ do_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                     if (is_ident && !has_matte) {
                         fn = compose_group_nonknockout_nonblend_isolated_allmask_common;
 #ifdef WITH_CAL
-			fn = cal_get_compose_group(memory->gs_lib_ctx->core->cal_ctx, fn, tos->n_chan-1);
+			fn = (art_pdf_compose_group_fn)cal_get_compose_group(
+					 memory->gs_lib_ctx->core->cal_ctx,
+					 (cal_composer_proc_t *)fn,
+					 tos->n_chan-1);
 #endif
                     } else {
                         fn = compose_group_nonknockout_nonblend_isolated_allmask_common;
