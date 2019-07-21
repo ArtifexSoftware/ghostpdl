@@ -23,6 +23,21 @@
 #       CALGENDIR - generated (.dev) file directory
 #
 
+# Rather than detecting the capabilities of the machine at compile-time
+# and then only building the required source, we build the "best"
+# CAL library we can, and then select from the available functions at
+# run-time.
+#
+# This means we detect architecture at build time (and just build the
+# appropriate files), but build all the different cores that the given
+# compiler will understand.
+#
+# Unfortunately, this brings us some problems; if you build SSE code
+# with -mavx2, then the sse2 code is built differently than if it is
+# built with -msse4.2, leading to "illegal instruction" crashes on
+# machines that do not support AVX2. We therefore need to build each
+# core routine with *just* the machine flags that it needs.
+
 CAL_MAK=$(GLSRC)cal.mak $(TOP_MAKEFILES)
 
 CAL_GEN=$(CALOBJDIR)$(D)
@@ -72,28 +87,28 @@ $(CAL_OBJ)$(CAL_PREFIX)cal.$(OBJ) : $(CAL_SRC)cal.c $(cal_HDRS) $(CAL_DEP)
 	$(CAL_CC) $(CAL_O)cal.$(OBJ) $(C_) $(CAL_SRC)cal.c
 
 $(CAL_OBJ)$(CAL_PREFIX)rescale.$(OBJ) : $(CAL_SRC)rescale.c $(cal_HDRS) $(CAL_DEP) $(CAL_SRC)rescale_c.h $(CAL_SRC)rescale_sse.h
-	$(CAL_CC) $(CAL_O)rescale.$(OBJ) $(C_) $(CAL_SRC)rescale.c
+	$(CAL_CC) $(CAL_SSE4_2_CFLAGS) $(CAL_NEON_CFLAGS) $(CAL_O)rescale.$(OBJ) $(C_) $(CAL_SRC)rescale.c
 
 $(CAL_OBJ)$(CAL_PREFIX)halftone.$(OBJ) : $(CAL_SRC)halftone.c $(cal_HDRS) $(CAL_DEP) $(CAL_SRC)halftone_c.h $(CAL_SRC)halftone_sse.h
-	$(CAL_CC) $(CAL_O)halftone.$(OBJ) $(C_) $(CAL_SRC)halftone.c
+	$(CAL_CC) $(CAL_SSE4_2_CFLAGS) $(CAL_NEON_CFLAGS) $(CAL_O)halftone.$(OBJ) $(C_) $(CAL_SRC)halftone.c
 
 $(CAL_OBJ)$(CAL_PREFIX)doubler.$(OBJ) : $(CAL_SRC)doubler.c $(cal_HDRS) $(CAL_DEP) $(CAL_SRC)double_c.h $(CAL_SRC)double_sse.h
-	$(CAL_CC) $(CAL_O)doubler.$(OBJ) $(C_) $(CAL_SRC)doubler.c
+	$(CAL_CC) $(CAL_SSE4_2_CFLAGS) $(CAL_NEON_CFLAGS) $(CAL_O)doubler.$(OBJ) $(C_) $(CAL_SRC)doubler.c
 
 $(CAL_OBJ)$(CAL_PREFIX)cmsavx2.$(OBJ) : $(CAL_SRC)cmsavx2.c $(cal_HDRS) $(CAL_DEP)
-	$(CAL_CC) $(I_)$(LCMS2MTSRCDIR)$(D)include $(I_)$(LCMS2MTSRCDIR)$(D)src $(CAL_O)cmsavx2.$(OBJ) $(C_) $(CAL_SRC)cmsavx2.c
+	$(CAL_CC) $(CAL_AVX2_CFLAGS) $(I_)$(LCMS2MTSRCDIR)$(D)include $(I_)$(LCMS2MTSRCDIR)$(D)src $(CAL_O)cmsavx2.$(OBJ) $(C_) $(CAL_SRC)cmsavx2.c
 
 $(CAL_OBJ)$(CAL_PREFIX)cmssse42.$(OBJ) : $(CAL_SRC)cmssse42.c $(cal_HDRS) $(CAL_DEP)
-	$(CAL_CC) $(I_)$(LCMS2MTSRCDIR)$(D)include $(I_)$(LCMS2MTSRCDIR)$(D)src $(CAL_O)cmssse42.$(OBJ) $(C_) $(CAL_SRC)cmssse42.c
+	$(CAL_CC) $(CAL_SSE4_2_CFLAGS) $(I_)$(LCMS2MTSRCDIR)$(D)include $(I_)$(LCMS2MTSRCDIR)$(D)src $(CAL_O)cmssse42.$(OBJ) $(C_) $(CAL_SRC)cmssse42.c
 
 $(CAL_OBJ)$(CAL_PREFIX)lcms2mt_cal.$(OBJ) : $(CAL_SRC)lcms2mt_cal.c $(cal_HDRS) $(CAL_DEP) $(gsmemory_h)
 	$(CAL_CC) $(I_)$(LCMS2MTSRCDIR)$(D)include $(I_)$(GLSRC) $(I_)$(LCMS2MTSRCDIR)$(D)src $(CAL_O)lcms2mt_cal.$(OBJ) $(C_) $(CAL_SRC)lcms2mt_cal.c
 
 $(CAL_OBJ)$(CAL_PREFIX)blendavx2.$(OBJ) : $(CAL_SRC)blendavx2.c $(cal_HDRS) $(CAL_DEP) $(gxblend_h)
-	$(CAL_CC) $(I_)$(GLSRC) $(CAL_O)blendavx2.$(OBJ) $(C_) $(CAL_SRC)blendavx2.c
+	$(CAL_CC) $(CAL_AVX2_CFLAGS) $(I_)$(GLSRC) $(CAL_O)blendavx2.$(OBJ) $(C_) $(CAL_SRC)blendavx2.c
 
 $(CAL_OBJ)$(CAL_PREFIX)blendsse42.$(OBJ) : $(CAL_SRC)blendsse42.c $(cal_HDRS) $(CAL_DEP) $(gxblend_h)
-	$(CAL_CC) $(I_)$(GLSRC) $(CAL_O)blendsse42.$(OBJ) $(C_) $(CAL_SRC)blendsse42.c
+	$(CAL_CC) $(CAL_SSE4_2_CFLAGS) $(I_)$(GLSRC) $(CAL_O)blendsse42.$(OBJ) $(C_) $(CAL_SRC)blendsse42.c
 
 $(CAL_OBJ)$(CAL_PREFIX)blend.$(OBJ) : $(CAL_SRC)blend.c $(cal_HDRS) $(CAL_DEP) $(gsmemory_h)
 	$(CAL_CC) $(I_)$(GLSRC) $(CAL_O)blend.$(OBJ) $(C_) $(CAL_SRC)blend.c
