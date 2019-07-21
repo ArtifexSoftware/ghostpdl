@@ -203,6 +203,9 @@ PGDIRPREFIX=pg
 WITH_CAL=@WITH_CAL@
 CALSRCDIR=@CALSRCDIR@
 CAL_CFLAGS=@CAL_CFLAGS@
+CAL_SSE4_2_CFLAGS=@CAL_SSE4_2_CFLAGS@
+CAL_AVX2_CFLAGS=@CAL_AVX2_CFLAGS@
+CAL_NEON_CFLAGS=@CAL_NEON_CFLAGS@
 
 # Define whether to compile in the FreeType library, and if so, where
 # the source tree is location. Otherwise, what library name to use

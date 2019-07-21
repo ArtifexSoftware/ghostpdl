@@ -1954,20 +1954,26 @@ if test x$WITH_CAL != x0; then
   CFLAGS=$save_cflags
 
   CAL_CFLAGS=""
+  CAL_SSE4_2_CFLAGS=""
+  CAL_AVX2_CFLAGS=""
+  CAL_NEON_CFLAGS=""
   if test "x$HAVE_SSE4_2" != x; then
-    CAL_CFLAGS="$CAL_CFLAGS -msse4.2"
+    CAL_SSE4_2_CFLAGS="-msse4.2"
   fi
   if test "x$HAVE_AVX2" != x; then
-    CAL_CFLAGS="$CAL_CFLAGS -mavx2"
+    CAL_AVX2_CFLAGS="-mavx2"
   fi
   if test "x$HAVE_NEON" != x; then
-    CAL_CFLAGS="$CAL_CFLAGS -mfpu=neon -mcpu=cortex-a53"
+    CAL_NEON_CFLAGS="-mfpu=neon -mcpu=cortex-a53"
   fi
 fi
 
 AC_SUBST(CALSRCDIR)
 AC_SUBST(WITH_CAL)
 AC_SUBST(CAL_CFLAGS)
+AC_SUBST(CAL_SSE4_2_CFLAGS)
+AC_SUBST(CAL_AVX2_CFLAGS)
+AC_SUBST(CAL_NEON_CFLAGS)
 
 dnl check if we can/should build the gtk loader
 AC_ARG_ENABLE([gtk], AC_HELP_STRING([--disable-gtk],
