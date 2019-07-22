@@ -1339,11 +1339,18 @@ pclxl_setdash(gx_device_vector * vdev, const float *pattern, uint count,
         return_error(gs_error_limitcheck);
     else {
         uint i;
-
+        uint pattern_length = 0;
         /*
          * Astoundingly, PCL XL doesn't allow real numbers here.
          * Do the best we can.
          */
+
+        /* check if the resulting total pattern length will be 0 */
+        for (i = 0; i < count; ++i)
+            pattern_length += (uint) (pattern[i]);
+        if (pattern_length == 0)
+            return_error(gs_error_rangecheck);
+        
         spputc(s, pxt_uint16_array);
         px_put_ub(s, (byte) count);
         for (i = 0; i < count; ++i)
