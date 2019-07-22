@@ -890,6 +890,22 @@ show_move(gs_show_enum * penum)
 {
     gs_gstate *pgs = penum->pgs;
     int code;
+    double dx = 0, dy = 0;
+
+    /* Specifically for applying PDF word spacing, if single_byte_space == true
+       we'll only apply the delta for single byte character codes == space.s_char
+       See psi/zchar.c zpdfwidthshow and zpdfawidthshow for more detail
+     */
+    if (SHOW_IS_ADD_TO_SPACE(penum)
+        && (!penum->single_byte_space
+        || penum->bytes_decoded == 1)) {
+        gs_char chr = gx_current_char((const gs_text_enum_t *)penum);
+
+        if (chr == penum->text.space.s_char) {
+            dx = penum->text.delta_space.x;
+            dy = penum->text.delta_space.y;
+        }
+    }
 
     if (SHOW_IS(penum, TEXT_REPLACE_WIDTHS)) {
         gs_point dpt;
@@ -897,25 +913,12 @@ show_move(gs_show_enum * penum)
         code = gs_text_replaced_width(&penum->text, penum->xy_index - 1, &dpt);
         if (code < 0)
             return code;
+        dpt.x += dx;
+        dpt.y += dy;
         code = gs_distance_transform2fixed(&pgs->ctm, dpt.x, dpt.y, &penum->wxy);
         if (code < 0)
             return code;
     } else {
-        double dx = 0, dy = 0;
-        /* Specifically for applying PDF word spacing, if single_byte_space == true
-           we'll only apply the delta for single byte character codes == space.s_char
-           See psi/zchar.c zpdfwidthshow and zpdfawidthshow for more detail
-         */
-        if (SHOW_IS_ADD_TO_SPACE(penum)
-            && (!penum->single_byte_space
-            || penum->bytes_decoded == 1)) {
-            gs_char chr = gx_current_char((const gs_text_enum_t *)penum);
-
-            if (chr == penum->text.space.s_char) {
-                dx = penum->text.delta_space.x;
-                dy = penum->text.delta_space.y;
-            }
-        }
         if (SHOW_IS_ADD_TO_ALL(penum)) {
             dx += penum->text.delta_all.x;
             dy += penum->text.delta_all.y;
