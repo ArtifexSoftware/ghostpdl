@@ -256,27 +256,27 @@ int pdfi_Tf(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
             goto Tf_error_o;
 
         if (pdfi_name_is((const pdf_name *)o, "Type0")) {
-            code = pdfi_read_type0_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, point_size, &pfont);
+            code = pdfi_read_type0_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, &pfont);
             if (code < 0)
                 goto Tf_error_o;
         } else {
             if (pdfi_name_is((const pdf_name *)o, "Type1")) {
-                code = pdfi_read_type1_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, point_size, &pfont);
+                code = pdfi_read_type1_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, &pfont);
                 if (code < 0)
                     goto Tf_error_o;
             } else {
                 if (pdfi_name_is((const pdf_name *)o, "Type1C")) {
-                    code = pdfi_read_type1C_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, point_size, &pfont);
+                    code = pdfi_read_type1C_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, &pfont);
                     if (code < 0)
                         goto Tf_error_o;
                 } else {
                     if (pdfi_name_is((const pdf_name *)o, "Type3")) {
-                        code = pdfi_read_type3_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, point_size, &pfont);
+                        code = pdfi_read_type3_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, &pfont);
                         if (code < 0)
                             goto Tf_error_o;
                     } else {
                         if (pdfi_name_is((const pdf_name *)o, "TrueType")) {
-                            code = pdfi_read_truetype_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, point_size, &pfont);
+                            code = pdfi_read_truetype_font(ctx, (pdf_dict *)font_dict, stream_dict, page_dict, &pfont);
                         } else {
                             code = gs_note_error(gs_error_undefined);
                                 goto Tf_error_o;
@@ -287,10 +287,6 @@ int pdfi_Tf(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         }
 
         code = pdfi_gs_setfont(ctx, pfont);
-        if (code < 0)
-            goto Tf_error_o;
-
-        code = gs_setPDFfontsize(ctx->pgs, point_size);
         if (code < 0)
             goto Tf_error_o;
 

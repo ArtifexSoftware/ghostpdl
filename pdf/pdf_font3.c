@@ -24,6 +24,7 @@
 #include "gscencs.h"
 #include "gscedata.h"       /* For the encoding arrays */
 #include "gsccode.h"        /* For the Encoding indices */
+#include "gsuid.h"          /* For no_UniqueID */
 
 static int
 pdfi_type3_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
@@ -35,6 +36,7 @@ pdfi_type3_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
     pdf_dict *CharProc = NULL;
     byte *Key = NULL;
     int SavedTextBlockDepth = 0;
+    char Notdef[8] = {".notdef"};
 
     font = (pdf_font_type3 *)pfont->client_data;
 
@@ -43,14 +45,28 @@ pdfi_type3_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
     if (code < 0)
         return code;
 
-//    font->ctx->current_chr = chr;
-
     Key = gs_alloc_bytes(font->ctx->memory, GlyphName->length + 1, "working buffer for BuildChar");
     if (Key == NULL)
         goto build_char_error;
     memset(Key, 0x00, GlyphName->length + 1);
     memcpy(Key, GlyphName->data, GlyphName->length);
     code = pdfi_dict_get(font->ctx, font->CharProcs, (const char *)Key, (pdf_obj **)&CharProc);
+    if (code == gs_error_undefined) {
+        /* Can't find the named glyph, try to find a /.notdef as a substitute */
+        pdfi_countdown(GlyphName);
+        gs_free_object(font->ctx->memory, Key, "working buffer for BuildChar");
+
+        Key = gs_alloc_bytes(font->ctx->memory, 8, "working buffer for BuildChar");
+        if (Key == NULL)
+            goto build_char_error;
+        memset(Key, 0x00, 8);
+        memcpy(Key, Notdef, 8);
+        code = pdfi_dict_get(font->ctx, font->CharProcs, (const char *)Key, (pdf_obj **)&CharProc);
+        if (code == gs_error_undefined) {
+            gs_free_object(font->ctx->memory, Key, "working buffer for BuildChar");
+            return 0;
+        }
+    }
     if (code < 0)
         goto build_char_error;
     gs_free_object(font->ctx->memory, Key, "working buffer for BuildChar");
@@ -59,7 +75,7 @@ pdfi_type3_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
     font->ctx->inside_CharProc = true;
     font->ctx->CharProc_is_d1 = false;
     pdfi_gsave(font->ctx);
-    code = pdfi_interpret_inner_content_stream(font->ctx, CharProc, font->Resources, true, "CharProc");
+    code = pdfi_interpret_inner_content_stream(font->ctx, CharProc, font->PDF_font, true, "CharProc");
     pdfi_grestore(font->ctx);
     font->ctx->inside_CharProc = false;
     font->ctx->CharProc_is_d1 = false;
@@ -179,6 +195,9 @@ static int alloc_type3_font(pdf_context *ctx, pdf_font_type3 **font)
     t3font->pfont->nearest_encoding_index = 1;          /****** WRONG ******/
 
     t3font->pfont->client_data = (void *)t3font;
+    t3font->pfont->id = gs_next_ids(ctx->memory, 1);
+    t3font->pfont->UID.id = no_UniqueID;
+    t3font->pfont->UID.xvalues = NULL;
 
     *font = (pdf_font_type3 *)t3font;
     return 0;
@@ -194,8 +213,11 @@ int pdfi_free_font_type3(pdf_obj *font)
     if (t3font->Widths)
         gs_free_object(t3font->memory, t3font->Widths, "Free type 3 font Widths array");
 
+    pdfi_countdown(t3font->PDF_font);
     pdfi_countdown(t3font->FontDescriptor);
+#if 0
     pdfi_countdown(t3font->Resources);
+#endif
     pdfi_countdown(t3font->CharProcs);
     pdfi_countdown(t3font->Encoding);
     gs_free_object(font->memory, font, "Free type 3 font");
@@ -242,7 +264,7 @@ static int pdfi_build_Encoding(pdf_context *ctx, pdf_name *name, pdf_array *Enco
     return 0;
 }
 
-int pdfi_read_type3_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict, pdf_dict *page_dict, float point_size, gs_font **ppfont)
+int pdfi_read_type3_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict, pdf_dict *page_dict, gs_font **ppfont)
 {
     int code = 0, i, num_chars = 0;
     pdf_font_type3 *font = NULL;
@@ -277,7 +299,8 @@ int pdfi_read_type3_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     pdfi_countdown(obj);
     obj = NULL;
 
-    code = gs_make_scaling(point_size, point_size, &mat);
+//    code = gs_make_scaling(ctx->pgs->PDFfontsize, ctx->pgs->PDFfontsize, &mat);
+    code = gs_make_scaling(1, 1, &mat);
     if (code < 0)
         goto font3_error;
     code = gs_matrix_multiply(&font->pfont->orig_FontMatrix, &mat, &font->pfont->FontMatrix);
@@ -288,9 +311,11 @@ int pdfi_read_type3_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     if (code < 0)
         goto font3_error;
 
+#if 0
     code = pdfi_dict_knownget(ctx, font_dict, "Resources", (pdf_obj **)&font->Resources);
     if (code < 0)
         goto font3_error;
+#endif
 
     code = pdfi_dict_get_number(ctx, font_dict, "FirstChar", &f);
     if (code < 0)
@@ -399,6 +424,9 @@ int pdfi_read_type3_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
             goto font3_error;
         }
     }
+
+    font->PDF_font = font_dict;
+    pdfi_countup(font_dict);
 
     code = replace_cache_entry(ctx, (pdf_obj *)font);
     if (code < 0)

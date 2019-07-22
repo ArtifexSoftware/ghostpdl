@@ -18,6 +18,6 @@
 #ifndef PDF_TYPE0_FONT
 #define PDF_TYPE0_FONT
 
-int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict, pdf_dict *page_dict, float point_size, gs_font **pfont);
+int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict, pdf_dict *page_dict, gs_font **pfont);
 
 #endif

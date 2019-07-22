@@ -81,6 +81,7 @@ typedef enum pdf_font_type_e {
     pdf_context *ctx;               /* We may need access to the PDF level from the font */\
     gs_font_base *pfont;            /* Graphics library font structure */\
     pdf_font_type pdfi_font_type;   /* See above */\
+    pdf_dict *PDF_font;             /* The original font dictionary from the PDF file */\
     pdf_obj *BaseFont;              /* Should be a name object, but best allow for strings as well */\
     pdf_dict *FontDescriptor        /* For PDF up to 1.4 this may be absent for the base 14 */
 
@@ -115,7 +116,6 @@ typedef struct pdf_font_type3_s {
     pdf_array *FontBBox;
     pdf_array *FontMatrix;
     pdf_dict *CharProcs;
-    pdf_dict *Resources;
 } pdf_font_type3;
 
 typedef struct pdf_font_truetype_s {
