@@ -40,6 +40,7 @@ my $xpswrite="";
 my $singlePagePDF="";
 my $relaxTimeout="";
 my $extended="";
+my $cal="";
 my $smoke="";
 my $cull="";
 my $avx2="";
@@ -58,6 +59,8 @@ while ($t1=shift) {
     $win32="win32";
   } elsif ($t1 eq "extended") {
     $extended="extended";
+  } elsif ($t1 eq "cal") {
+    $extended="cal";
   } elsif ($t1 eq "smoke") {
     $smoke="smoke";
   } elsif ($t1 eq "cull") {
@@ -224,7 +227,7 @@ if ($product ne "abort" ) { #&& $product ne "bmpcmp") {
 }
 
 open(F,">cluster_command.run");
-print F "$user $product $res $w32 $win32 $nr $pdfwrite $nopdfwrite $relaxTimeout $singlePagePDF $extended $smoke $cull $avx2\n";
+print F "$user $product $res $w32 $win32 $nr $pdfwrite $nopdfwrite $relaxTimeout $singlePagePDF $extended $smoke $cull $avx2 $cal\n";
 print F "$command\n";
 print F "$filters\n";
 print F "$extras\n";

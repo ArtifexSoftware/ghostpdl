@@ -30,7 +30,6 @@ typedef struct stream_IScale_cal_state_s {
     /* The client sets the params values before initialization. */
     stream_image_scale_state_common;  /* = state_common + params */
     /* The init procedure sets the following. */
-    cal_context *context;
     cal_rescaler *rescaler;
     uint8_t *src;
     uint8_t *dst;
@@ -63,34 +62,6 @@ s_IScale_cal_set_defaults(stream_state * st)
 
     ss->rescaler = NULL;
 }
-
-static void *
-cal_do_malloc(void *opaque, size_t size)
-{
-    gs_memory_t *mem = (gs_memory_t *)opaque;
-    return gs_alloc_bytes(mem, size, "cal_do_malloc");
-}
-
-static void *
-cal_do_realloc(void *opaque, void *ptr, size_t newsize)
-{
-    gs_memory_t *mem = (gs_memory_t *)opaque;
-    return gs_resize_object(mem, ptr, newsize, "cal_do_malloc");
-}
-
-static void
-cal_do_free(void *opaque, void *ptr)
-{
-    gs_memory_t *mem = (gs_memory_t *)opaque;
-    gs_free_object(mem, ptr, "cal_do_malloc");
-}
-
-static cal_allocators cal_allocs =
-{
-    cal_do_malloc,
-    cal_do_realloc,
-    cal_do_free
-};
 
 /*
 
@@ -134,10 +105,6 @@ s_IScale_cal_init(stream_state * st)
     int dst_bytes_per_pixel = ss->params.BitsPerComponentOut / 8;
     int src_bytes_per_pixel = ss->params.BitsPerComponentIn / 8;
 
-    ss->context = cal_init(&cal_allocs, mem->non_gc_memory);
-    if (ss->context == NULL)
-        return ERRC;
-
     ss->src_offset = 0;
     ss->src_size = ss->params.WidthIn * ss->params.spp_interp * src_bytes_per_pixel;
     ss->dst_offset = 0;
@@ -155,7 +122,7 @@ s_IScale_cal_init(stream_state * st)
     if (ss->src == NULL)
         goto fail;
 
-    ss->rescaler = cal_rescaler_init(ss->context,
+    ss->rescaler = cal_rescaler_init(mem->gs_lib_ctx->core->cal_ctx,
                                      mem->non_gc_memory,
                                      ss->params.EntireWidthIn,
                                      ss->params.EntireHeightIn,
@@ -188,8 +155,6 @@ s_IScale_cal_init(stream_state * st)
 fail:
     if (ss->rescaler)
         cal_rescaler_fin(ss->rescaler, mem->non_gc_memory);
-    if (ss->context != NULL)
-        cal_fin(ss->context, mem->non_gc_memory);
     gs_free_object(mem, ss->src, "image_scale src");
     gs_free_object(mem, ss->dst, "image_scale dst");
     return ERRC;
@@ -374,11 +339,6 @@ s_IScale_cal_release(stream_state * st)
     {
         cal_rescaler_fin(ss->rescaler, mem->non_gc_memory);
         ss->rescaler = NULL;
-    }
-    if (ss->context != NULL)
-    {
-        cal_fin(ss->context, mem->non_gc_memory);
-        ss->context = NULL;
     }
     gs_free_object(mem, ss->src, "image_scale src");
     ss->src = NULL;

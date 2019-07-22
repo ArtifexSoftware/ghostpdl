@@ -1193,7 +1193,7 @@ s_IScale_release(stream_state * st)
     ss->dst = 0;
     gs_free_object(mem, ss->items, "image_scale contrib[*]");
     ss->items = 0;
-    gs_free_object(mem, ss->items, "image_scale contrib_dst[*]");
+    gs_free_object(mem, ss->dst_items, "image_scale contrib_dst[*]");
     ss->dst_items = 0;
     gs_free_object(mem, ss->contrib, "image_scale contrib");
     ss->contrib = 0;

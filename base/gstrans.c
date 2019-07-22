@@ -40,7 +40,7 @@ gs_setblendmode(gs_gstate *pgs, gs_blend_mode_t mode)
     if (gs_debug_c('v')) {
         static const char *const bm_names[] = { GS_BLEND_MODE_NAMES };
 
-        dmlprintf1(pgs->memory, "[v](0x%lx)blend_mode = ", (ulong)pgs);
+        dmlprintf1(pgs->memory, "[v](0x%lx)blend_mode = ", (long)pgs);
         if (mode >= 0 && mode < countof(bm_names))
             dmprintf1(pgs->memory, "%s\n", bm_names[mode]);
         else

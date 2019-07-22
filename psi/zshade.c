@@ -229,8 +229,10 @@ build_shading(i_ctx_t *i_ctx_p, build_shading_proc_t proc)
         goto fail;
     if (gx_color_space_needs_cie_caches(psh->params.ColorSpace)) {
         rc_decrement(psh->params.cie_joint_caches, "build_shading");
-        psh->params.cie_joint_caches = gx_currentciecaches(igs);
-        rc_increment(psh->params.cie_joint_caches);
+        /* gx_currentciecaches_for_mem passes us a new reference */
+        psh->params.cie_joint_caches = gx_get_cie_caches_ref(igs, imemory);
+        if (psh->params.cie_joint_caches == NULL)
+            return gs_error_VMerror;
     }
     make_istruct_new(op, 0, psh);
     return code;

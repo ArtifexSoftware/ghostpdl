@@ -58,6 +58,9 @@
 #include "gsmatrix.h"
 #include "gxdevsop.h"
 #include "gsicc.h"
+#ifdef WITH_CAL
+#include "cal.h"
+#endif
 
 #if RAW_DUMP
 unsigned int global_index = 0;
@@ -441,7 +444,8 @@ const pdf14_device gs_pdf14_Gray_device	= {
     NULL,			/* target */
     { 0 },			/* devn_params - not used */
     &gray_pdf14_procs,
-    &gray_blending_procs
+    &gray_blending_procs,
+    1
 };
 
 const pdf14_device gs_pdf14_RGB_device = {
@@ -452,7 +456,8 @@ const pdf14_device gs_pdf14_RGB_device = {
     NULL,			/* target */
     { 0 },			/* devn_params - not used */
     &rgb_pdf14_procs,
-    &rgb_blending_procs
+    &rgb_blending_procs,
+    3
 };
 
 const pdf14_device gs_pdf14_CMYK_device	= {
@@ -463,7 +468,8 @@ const pdf14_device gs_pdf14_CMYK_device	= {
     NULL,			/* target */
     { 0 },			/* devn_params - not used */
     &cmyk_pdf14_procs,
-    &cmyk_blending_procs
+    &cmyk_blending_procs,
+    4
 };
 
 const pdf14_device gs_pdf14_CMYKspot_device	= {
@@ -486,7 +492,8 @@ const pdf14_device gs_pdf14_CMYKspot_device	= {
       {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
     },
     &cmykspot_pdf14_procs,
-    &cmyk_blending_procs
+    &cmyk_blending_procs,
+    4
 };
 
 const pdf14_device gs_pdf14_RGBspot_device = {
@@ -509,7 +516,8 @@ const pdf14_device gs_pdf14_RGBspot_device = {
     { 0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
     },
     &rgbspot_pdf14_procs,
-    &rgbspot_blending_procs
+    &rgbspot_blending_procs,
+    3
 };
 
 const pdf14_device gs_pdf14_Grayspot_device = {
@@ -532,7 +540,8 @@ const pdf14_device gs_pdf14_Grayspot_device = {
     { 0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
     },
     &grayspot_pdf14_procs,
-    &grayspot_blending_procs
+    &grayspot_blending_procs,
+    1
 };
 
 /*
@@ -566,7 +575,8 @@ const pdf14_device gs_pdf14_custom_device = {
       {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
     },
     &custom_pdf14_procs,
-    &custom_blending_procs
+    &custom_blending_procs,
+    4
 };
 
 /* Devices used for pdf14-accum-* device, one for  each image colorspace, */
@@ -984,6 +994,7 @@ pdf14_buf_new(gs_int_rect *rect, bool has_tags, bool has_alpha_g,
     result->n_planes = n_planes;
     result->rowstride = rowstride;
     result->transfer_fn = NULL;
+    result->is_ident = true;
     result->matte_num_comps = 0;
     result->matte = NULL;
     result->mask_stack = NULL;
@@ -1104,13 +1115,21 @@ pdf14_ctx_new(gs_int_rect *rect, int n_chan, bool additive, gx_device *dev, bool
     gs_memory_t	*memory = dev->memory->stable_memory;
     bool has_tags = device_encodes_tags(dev);
     pdf14_device *pdev = (pdf14_device *)dev;
+    int num_spots;
 
     result = gs_alloc_struct(memory, pdf14_ctx, &st_pdf14_ctx, "pdf14_ctx_new");
     if (result == NULL)
         return result;
     /* Note:  buffer creation expects alpha to be in number of channels */
+    /* Old code here used num_spots = pdev->devn_params.page_spot_colors,
+     * but this fails for devices like psdcmykog, which does not expand
+     * to take on new spot colors, over and above the 2 it has built in.
+     * Accordingly, we calculate the number of spot colors to be the
+     * number of channels we've been asked for, less the number of
+     * 'standard' colorants. */
+    num_spots = n_chan - pdev->num_std_colorants;
     buf = pdf14_buf_new(rect, has_tags, false, false, false, n_chan + 1,
-                        pdev->devn_params.page_spot_colors, memory, deep);
+                        num_spots, memory, deep);
     if (buf == NULL) {
         gs_free_object(memory, result, "pdf14_ctx_new");
         return NULL;
@@ -1206,7 +1225,6 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
     /* We are going to use the shape in the knockout computation.  If previous
        buffer has a shape or if this is a knockout then we will have a shape here */
     has_shape = tos->has_shape || tos->knockout;
-   // has_shape = false;
     /* If previous buffer has tags, then add tags here */
     has_tags = tos->has_tags;
 
@@ -1503,8 +1521,9 @@ exit:
  */
 static	int
 pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	uint16_t bg_alpha,
-                             byte *transfer_fn, bool idle, bool replacing,
-                             uint mask_id, gs_transparency_mask_subtype_t subtype,
+                             byte *transfer_fn, bool is_ident, bool idle,
+                             bool replacing, uint mask_id,
+                             gs_transparency_mask_subtype_t subtype,
                              int numcomps, int Background_components,
                              const float Background[], int Matte_components,
                              const float Matte[], const float GrayBackground)
@@ -1529,6 +1548,7 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	uint16_t bg_alph
     if (buf == NULL)
         return_error(gs_error_VMerror);
     buf->alpha = bg_alpha;
+    buf->is_ident = is_ident;
     /* fill in, but these values aren't really used */
     buf->isolated = true;
     buf->knockout = false;
@@ -2070,6 +2090,9 @@ pdf14_get_buffer_information(const gx_device * dev,
     return(0);
 }
 
+typedef void(*blend_image_row_proc_t) (const byte *gs_restrict buf_ptr,
+    int planestride, int width, int num_comp, uint16_t bg, byte *gs_restrict linebuf);
+
 /**
  * pdf14_put_image: Put rendered image to target device.
  * @pdev: The PDF 1.4 rendering device.
@@ -2092,7 +2115,7 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
     gs_int_rect rect = buf->rect;
     int y;
     int num_comp = buf->n_chan - 1;
-    byte *linebuf;
+    byte *linebuf, *linebuf_unaligned;
     gs_color_space *pcs;
     int x1, y1, width, height;
     byte *buf_ptr, *buf16_ptr = NULL;
@@ -2109,6 +2132,7 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
     bool expand = (!deep && bits_per_comp > 8);
     int planestride = buf->planestride;
     int rowstride = buf->rowstride;
+    blend_image_row_proc_t blend_row;
 
     /* Make sure that this is the only item on the stack. Fuzzing revealed a
        potential problem. Bug 694190 */
@@ -2340,7 +2364,23 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
         clist_band_count++;
     }
 #endif
-    linebuf = gs_alloc_bytes(pdev->memory, width * num_comp<<deep, "pdf14_put_image");
+    /* Allocate on 32-byte border for AVX CMYK case. Four byte overflow for RGB case */
+#define SSE_ALIGN 32
+#define SSE_OVERFLOW 4
+    linebuf_unaligned = gs_alloc_bytes(pdev->memory, width * (num_comp<<deep) + SSE_ALIGN + SSE_OVERFLOW, "pdf14_put_image");
+    if (linebuf_unaligned == NULL)
+        return gs_error_VMerror;
+    linebuf = linebuf_unaligned + ((-(intptr_t)linebuf_unaligned) & (SSE_ALIGN-1));
+
+    blend_row = deep ? gx_build_blended_image_row16 :
+                       gx_build_blended_image_row;
+#ifdef WITH_CAL
+    blend_row = cal_get_blend_row(pdev->memory->gs_lib_ctx->core->cal_ctx,
+				  blend_row, num_comp, deep);
+#endif
+
+    if (!deep)
+        bg >>= 8;
     for (y = 0; y < height; y++) {
         gx_image_plane_t planes;
         int rows_used,k,x;
@@ -2362,13 +2402,9 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
                 }
             }
         } else {
-            if (deep) {
-                gx_build_blended_image_row16(buf_ptr, buf->planestride, width,
-                                             num_comp, bg, linebuf);
-            } else
-                gx_build_blended_image_row(buf_ptr, buf->planestride, width,
-                                           num_comp, bg>>8, linebuf);
+            blend_row(buf_ptr, buf->planestride, width, num_comp, bg, linebuf);
         }
+
         planes.data = linebuf;
         planes.data_x = 0;
         planes.raster = width * num_comp;
@@ -2376,7 +2412,7 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
         /* todo: check return value */
         buf_ptr += buf->rowstride;
     }
-    gs_free_object(pdev->memory, linebuf, "pdf14_put_image");
+    gs_free_object(pdev->memory, linebuf_unaligned, "pdf14_put_image");
     info->procs->end_image(info, true);
     /* This will also decrement the device profile */
     rc_decrement_only_cs(pcs, "pdf14_put_image");
@@ -5555,7 +5591,8 @@ pdf14_begin_transparency_mask(gx_device	*dev,
     /* Note that the soft mask always follows the group color requirements even
        when we have a separable device */
     return pdf14_push_transparency_mask(pdev->ctx, &rect, bg_alpha,
-                                        transfer_fn, ptmp->idle, ptmp->replacing,
+                                        transfer_fn, ptmp->function_is_identity,
+                                        ptmp->idle, ptmp->replacing,
                                         ptmp->mask_id, ptmp->subtype,
                                         group_color_numcomps,
                                         ptmp->Background_components,

@@ -1068,10 +1068,8 @@ get_color_handler(gx_image_enum *penum, int spp_decode,
                   bool islab, const cmm_dev_profile_t *dev_profile,
                   const gs_color_space **pconc)
 {
-    const gs_color_space *pconcs;
     const gs_gstate *pgs = penum->pgs;
     const gs_color_space *pcs = penum->pcs;
-    bool device_color = false;
     bool is_index_space;
 
     if (pcs == NULL)
@@ -1080,19 +1078,18 @@ get_color_handler(gx_image_enum *penum, int spp_decode,
     is_index_space = (pcs->type->index == gs_color_space_index_Indexed);
     /* If we are in a non device space then work from the pcs not from the
     concrete space also handle index case, where base case was device type */
-    if (pcs->type->index == gs_color_space_index_Indexed)
+    /* We'll have done the interpolation in the base space, not the indexed
+     * space, so allow for that here. */
+    if (is_index_space)
         pcs = pcs->base_space;
-    pconcs = cs_concrete_space(pcs, pgs);
-    if (pconcs && pconcs->cmm_icc_profile_data != NULL) {
-        if (pconcs->cmm_icc_profile_data != NULL && dev_profile->usefastcolor == false) {
-            device_color = false;
-        } else {
-            device_color = (pconcs == pcs);
+    if (dev_profile->usefastcolor &&
+        gsicc_is_default_profile(pcs->cmm_icc_profile_data) &&
+        dev_profile->device_profile[0]->num_comps == spp_decode) {
+        const gs_color_space * pconcs = cs_concrete_space(pcs, pgs);
+        if (pconcs && pconcs == pcs) {
+            *pconc = pconcs;
+            return handle_device_color;
         }
-    }
-    if (device_color) {
-        *pconc = pconcs;
-        return handle_device_color;
     }
 
     *pconc = pcs;

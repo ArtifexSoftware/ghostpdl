@@ -769,9 +769,19 @@ gx_unshare_cie_caches(gs_gstate * pgs)
 }
 
 gx_cie_joint_caches *
-gx_currentciecaches(gs_gstate * pgs)
+gx_get_cie_caches_ref(gs_gstate * pgs, gs_memory_t * mem)
 {
-    return pgs->cie_joint_caches;
+    gx_cie_joint_caches *pjc = pgs->cie_joint_caches;
+
+    /* Take a reference here, to allow for the one that
+     * rc_unshare_struct might drop if it has to copy it.
+     * Whatever happens we will have taken 1 net new
+     * reference which we return to the caller. */
+    rc_increment(pgs->cie_joint_caches);
+    rc_unshare_struct(pjc, gx_cie_joint_caches,
+                      &st_joint_caches, mem,
+                      return NULL, "gx_unshare_cie_caches");
+    return pjc;
 }
 
 /* Compute the parameters for loading a cache, setting base and factor. */

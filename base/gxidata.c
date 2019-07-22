@@ -527,9 +527,6 @@ gx_image1_end_image(gx_image_enum_common_t * info, bool draw_last)
     if (penum->cal_ht != NULL) {
         cal_halftone_fin(penum->cal_ht, mem->non_gc_memory);
     }
-    if (penum->cal_ctx != NULL) {
-        cal_fin(penum->cal_ctx, mem->non_gc_memory);
-    }
 #endif
     gx_image_free_enum(&info);
     return 0;

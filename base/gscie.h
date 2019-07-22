@@ -675,7 +675,7 @@ void gs_cie_def_complete(gs_cie_def *);
 void gs_cie_abc_complete(gs_cie_abc *);
 void gs_cie_a_complete(gs_cie_a *);
 gx_cie_joint_caches *gx_unshare_cie_caches(gs_gstate *);
-gx_cie_joint_caches *gx_currentciecaches(gs_gstate *);
+gx_cie_joint_caches *gx_get_cie_caches_ref(gs_gstate *, gs_memory_t *);
 const gs_cie_common *gs_cie_cs_common(const gs_gstate *);
 int gs_cie_cs_complete(gs_gstate *, bool);
 int gs_cie_jc_complete(const gs_gstate *, const gs_color_space *);

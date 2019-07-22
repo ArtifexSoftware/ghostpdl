@@ -890,6 +890,22 @@ show_move(gs_show_enum * penum)
 {
     gs_gstate *pgs = penum->pgs;
     int code;
+    double dx = 0, dy = 0;
+
+    /* Specifically for applying PDF word spacing, if single_byte_space == true
+       we'll only apply the delta for single byte character codes == space.s_char
+       See psi/zchar.c zpdfwidthshow and zpdfawidthshow for more detail
+     */
+    if (SHOW_IS_ADD_TO_SPACE(penum)
+        && (!penum->single_byte_space
+        || penum->bytes_decoded == 1)) {
+        gs_char chr = gx_current_char((const gs_text_enum_t *)penum);
+
+        if (chr == penum->text.space.s_char) {
+            dx = penum->text.delta_space.x;
+            dy = penum->text.delta_space.y;
+        }
+    }
 
     if (SHOW_IS(penum, TEXT_REPLACE_WIDTHS)) {
         gs_point dpt;
@@ -897,25 +913,12 @@ show_move(gs_show_enum * penum)
         code = gs_text_replaced_width(&penum->text, penum->xy_index - 1, &dpt);
         if (code < 0)
             return code;
+        dpt.x += dx;
+        dpt.y += dy;
         code = gs_distance_transform2fixed(&pgs->ctm, dpt.x, dpt.y, &penum->wxy);
         if (code < 0)
             return code;
     } else {
-        double dx = 0, dy = 0;
-        /* Specifically for applying PDF word spacing, if single_byte_space == true
-           we'll only apply the delta for single byte character codes == space.s_char
-           See psi/zchar.c zpdfwidthshow and zpdfawidthshow for more detail
-         */
-        if (SHOW_IS_ADD_TO_SPACE(penum)
-            && (!penum->single_byte_space
-            || penum->bytes_decoded == 1)) {
-            gs_char chr = gx_current_char((const gs_text_enum_t *)penum);
-
-            if (chr == penum->text.space.s_char) {
-                dx = penum->text.delta_space.x;
-                dy = penum->text.delta_space.y;
-            }
-        }
         if (SHOW_IS_ADD_TO_ALL(penum)) {
             dx += penum->text.delta_all.x;
             dy += penum->text.delta_all.y;
@@ -955,6 +958,18 @@ show_move(gs_show_enum * penum)
     }
     return 0;
 }
+
+static inline int
+get_next_char_glyph(gs_show_enum * penum, gs_char *chr, gs_glyph *glyph)
+{
+    gs_font *rfont =
+        (penum->fstack.depth < 0 ? penum->pgs->font : penum->fstack.items[0].font);
+    penum->xy_index++;
+
+    return rfont->procs.next_char_glyph((gs_text_enum_t *)penum, chr, glyph);
+}
+
+
 /* Process next character */
 static int
 show_proceed(gs_show_enum * penum)
@@ -965,10 +980,6 @@ show_proceed(gs_show_enum * penum)
     gs_font *rfont =
         (penum->fstack.depth < 0 ? pgs->font : penum->fstack.items[0].font);
     int wmode = rfont->WMode;
-    font_proc_next_char_glyph((*next_char_glyph)) =
-        rfont->procs.next_char_glyph;
-#define get_next_char_glyph(pte, pchr, pglyph)\
-  (++(penum->xy_index), next_char_glyph(pte, pchr, pglyph))
     gs_char chr;
     gs_glyph glyph;
     int code, start;
@@ -990,9 +1001,7 @@ show_proceed(gs_show_enum * penum)
         /* Loop with cache */
         for (;;) {
             start = penum->index;
-            switch ((code = get_next_char_glyph((gs_text_enum_t *)penum,
-                                                &chr, &glyph))
-                    ) {
+            switch ((code = get_next_char_glyph(penum, &chr, &glyph))) {
                 default:        /* error */
                     return code;
                 case 2: /* done */
@@ -1119,9 +1128,7 @@ show_proceed(gs_show_enum * penum)
     } else {
         start = penum->index;
         /* Can't use cache */
-        switch ((code = get_next_char_glyph((gs_text_enum_t *)penum,
-                                            &chr, &glyph))
-                ) {
+        switch ((code = get_next_char_glyph(penum, &chr, &glyph))) {
             default:
                 return code;
             case 2:
@@ -1208,8 +1215,8 @@ show_proceed(gs_show_enum * penum)
             gs_settocharmatrix(pgs);
             fpx = fixed2float(cpt.x) + (pgs->ctm.tx - tx);
             fpy = fixed2float(cpt.y) + (pgs->ctm.ty - ty);
-#define f_fits_in_fixed(f) f_fits_in_bits(f, fixed_int_bits)
-            if (!(f_fits_in_fixed(fpx) && f_fits_in_fixed(fpy))) {
+            if (!(f_fits_in_bits(fpx, fixed_int_bits)
+                && f_fits_in_bits(fpy, fixed_int_bits))) {
                 gs_note_error(code = gs_error_limitcheck);
                 goto rret;
             }
@@ -1262,7 +1269,6 @@ rret:
         gs_grestore(pgs);
     }
     return code;
-#undef get_next_char_glyph
 }
 
 /*

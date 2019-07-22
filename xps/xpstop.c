@@ -366,6 +366,12 @@ static void xps_free_font_func(xps_context_t *ctx, void *ptr)
     xps_free_font(ctx, ptr);
 }
 
+static void xps_free_hashed_colorspace(xps_context_t *ctx, void *ptr)
+{
+    gs_color_space *cs = (gs_color_space *)ptr;
+    rc_decrement(cs, "xps_free_hashed_colorspace");
+}
+
 /* Wrap up interp instance after a "job" */
 static int
 xps_impl_dnit_job(pl_interp_implementation_t *impl)
@@ -386,7 +392,7 @@ xps_impl_dnit_job(pl_interp_implementation_t *impl)
 
     /* TODO: free resources too */
     xps_hash_free(ctx, ctx->font_table, xps_free_key_func, xps_free_font_func);
-    xps_hash_free(ctx, ctx->colorspace_table, xps_free_key_func, NULL);
+    xps_hash_free(ctx, ctx->colorspace_table, xps_free_key_func, xps_free_hashed_colorspace);
 
     xps_free_fixed_pages(ctx);
     xps_free_fixed_documents(ctx);

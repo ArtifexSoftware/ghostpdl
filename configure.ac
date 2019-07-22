@@ -1871,7 +1871,7 @@ fi
 
 if test x$WITH_CAL != x0; then
   dnl --------------------------------------------------
-  dnl check for sse4.2 or neon
+  dnl check for sse4.2, avx2 or neon
   dnl --------------------------------------------------
   AC_MSG_CHECKING([sse4.2 support])
   save_cflags=$CFLAGS
@@ -1896,6 +1896,32 @@ if test x$WITH_CAL != x0; then
   #             fi])
 
   if test "x$HAVE_SSE4_2" != x; then
+    AC_MSG_RESULT(yes)
+  else
+    AC_MSG_RESULT(no)
+  fi
+
+  AC_MSG_CHECKING([avx2 support])
+  CFLAGS="$save_cflags $OPT_CFLAGS -mavx2"
+
+  HAVE_AVX2=""
+  AC_LINK_IFELSE(
+    [AC_LANG_PROGRAM([#include <immintrin.h>], [
+    __m256i input1;
+    unsigned char buf1[[256]];
+    input1 = _mm256_loadu_si256((const __m256i *)buf1);
+    input1 = _mm256_adds_epu8(input1, input1);
+    return(0);
+    ])],
+    [HAVE_AVX2="-DHAVE_AVX2"], [HAVE_AVX2=""])
+
+  #AC_ARG_ENABLE([sse4.2], AC_HELP_STRING([--disable-sse4.2],
+  #       [Do not use sse4.2 instrinsics]), [
+  #             if test "x$enable_sse4.2" = xno; then
+  #                HAVE_SSE4_2=""
+  #             fi])
+
+  if test "x$HAVE_AVX2" != x; then
     AC_MSG_RESULT(yes)
   else
     AC_MSG_RESULT(no)
@@ -1927,12 +1953,15 @@ if test x$WITH_CAL != x0; then
   #AC_SUBST(HAVE_NEON)
   CFLAGS=$save_cflags
 
+  CAL_CFLAGS=""
   if test "x$HAVE_SSE4_2" != x; then
-    CAL_CFLAGS="-msse4.2"
-  else
-    if test "x$HAVE_NEON" != x; then
-      CAL_CFLAGS="-mfpu=neon -mcpu=cortex-a53"
-    fi
+    CAL_CFLAGS="$CAL_CFLAGS -msse4.2"
+  fi
+  if test "x$HAVE_AVX2" != x; then
+    CAL_CFLAGS="$CAL_CFLAGS -mavx2"
+  fi
+  if test "x$HAVE_NEON" != x; then
+    CAL_CFLAGS="$CAL_CFLAGS -mfpu=neon -mcpu=cortex-a53"
   fi
 fi
 

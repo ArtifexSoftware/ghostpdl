@@ -723,7 +723,7 @@ dump_planar_rgba(gs_memory_t *mem, const pdf14_buf *pbuf)
 
 void
 gx_build_blended_image_row(const byte *gs_restrict buf_ptr, int planestride,
-                           int width, int num_comp, byte bg, byte *gs_restrict linebuf)
+                           int width, int num_comp, uint16_t bg, byte *gs_restrict linebuf)
 {
     int inc = planestride * num_comp;
 
@@ -927,7 +927,7 @@ gx_blend_image_buffer8to16(const byte *buf_ptr_in, unsigned short *buf_ptr_out, 
                     comp = ((comp & 0xff) << 8) + ((comp & 0xff00) >> 8);
                     buf_ptr_out[position + planestride * comp_num] = comp;
                 }
-            } 
+            }
             position += 1;
         }
     }

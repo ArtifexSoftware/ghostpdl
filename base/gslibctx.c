@@ -27,6 +27,9 @@
 #include "gserrors.h"
 #include "gscdefs.h"            /* for gs_lib_device_list */
 #include "gsstruct.h"           /* for gs_gc_root_t */
+#ifdef WITH_CAL
+#include "cal.h"
+#endif
 
 /* Include the extern for the device list. */
 extern_gs_lib_device_list();
@@ -201,6 +204,35 @@ fs_file_open_printer(const gs_memory_t *mem, void *secret, const char *fname, in
     return 0;
 }
 
+#ifdef WITH_CAL
+static void *
+cal_do_malloc(void *opaque, size_t size)
+{
+    gs_memory_t *mem = (gs_memory_t *)opaque;
+    return gs_alloc_bytes(mem, size, "cal_do_malloc");
+}
+
+static void *
+cal_do_realloc(void *opaque, void *ptr, size_t newsize)
+{
+    gs_memory_t *mem = (gs_memory_t *)opaque;
+    return gs_resize_object(mem, ptr, newsize, "cal_do_malloc");
+}
+
+static void
+cal_do_free(void *opaque, void *ptr)
+{
+    gs_memory_t *mem = (gs_memory_t *)opaque;
+    gs_free_object(mem, ptr, "cal_do_malloc");
+}
+
+static cal_allocators cal_allocs =
+{
+    cal_do_malloc,
+    cal_do_realloc,
+    cal_do_free
+};
+#endif
 
 int gs_lib_ctx_init(gs_lib_ctx_t *ctx, gs_memory_t *mem)
 {
@@ -253,6 +285,15 @@ int gs_lib_ctx_init(gs_lib_ctx_t *ctx, gs_memory_t *mem)
             gs_free_object(mem, pio, "gs_lib_ctx_init");
             return -1;
         }
+#ifdef WITH_CAL
+        pio->core->cal_ctx = cal_init(&cal_allocs, mem);
+        if (pio->core->cal_ctx == NULL) {
+            gs_free_object(mem, pio->core->fs, "gs_lib_ctx_init");
+            gs_free_object(mem, pio->core, "gs_lib_ctx_init");
+            gs_free_object(mem, pio, "gs_lib_ctx_init");
+            return -1;
+        }
+#endif
         pio->core->fs->fs.open_file = fs_file_open_file;
         /* The iodev will fill this in later, if pipes are enabled */
         pio->core->fs->fs.open_pipe = NULL;
@@ -265,6 +306,9 @@ int gs_lib_ctx_init(gs_lib_ctx_t *ctx, gs_memory_t *mem)
 #ifndef MEMENTO_SQUEEZE_BUILD
         pio->core->monitor = gx_monitor_alloc(mem);
         if (pio->core->monitor == NULL) {
+#ifdef WITH_CAL
+            cal_fin(pio->core->cal_ctx, mem);
+#endif
             gs_free_object(mem, pio->core->fs, "gs_lib_ctx_init");
             gs_free_object(mem, pio->core, "gs_lib_ctx_init");
             gs_free_object(mem, pio, "gs_lib_ctx_init");
@@ -376,6 +420,9 @@ void gs_lib_ctx_fin(gs_memory_t *mem)
     if (refs == 0) {
 #ifndef MEMENTO_SQUEEZE_BUILD
         gx_monitor_free((gx_monitor_t *)(ctx->core->monitor));
+#endif
+#ifdef WITH_CAL
+        cal_fin(ctx->core->cal_ctx, mem);
 #endif
         gs_purge_control_paths(ctx_mem, 0);
         gs_purge_control_paths(ctx_mem, 1);

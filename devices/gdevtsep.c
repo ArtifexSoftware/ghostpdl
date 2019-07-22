@@ -297,7 +297,7 @@ tiffgray_print_page(gx_device_printer * pdev, gp_file * file)
     gx_device_tiff *const tfdev = (gx_device_tiff *)pdev;
     int code;
 
-    if (tfdev->Compression==COMPRESSION_NONE &&
+    if (!tfdev->UseBigTIFF && tfdev->Compression==COMPRESSION_NONE &&
         pdev->height > ((unsigned long) 0xFFFFFFFF - gp_ftell(file))/(pdev->width)) /* note width is never 0 in print_page */
         return_error(gs_error_rangecheck);  /* this will overflow 32 bits */
 
@@ -589,7 +589,7 @@ tiffcmyk_print_page(gx_device_printer * pdev, gp_file * file)
     gx_device_tiff *const tfdev = (gx_device_tiff *)pdev;
     int code;
 
-    if (tfdev->Compression==COMPRESSION_NONE &&
+    if (!tfdev->UseBigTIFF && tfdev->Compression==COMPRESSION_NONE &&
         pdev->height > ((unsigned long) 0xFFFFFFFF - gp_ftell(file))/(pdev->width)) /* note width is never 0 in print_page */
         return_error(gs_error_rangecheck);  /* this will overflow 32 bits */
 
@@ -2345,7 +2345,7 @@ tiffsep_print_page(gx_device_printer * pdev, gp_file * file)
     /* Write the page directory for the CMYK equivalent file. */
     if (!tfdev->comp_file) {
         pdev->color_info.depth = dst_bpc*4;        /* Create directory for 32 bit cmyk */
-        if (tfdev->Compression==COMPRESSION_NONE &&
+        if (!tfdev->UseBigTIFF && tfdev->Compression==COMPRESSION_NONE &&
             height > ((unsigned long) 0xFFFFFFFF - (file ? gp_ftell(file) : 0))/(width*4)) { /* note width is never 0 in print_page */
             dmprintf(pdev->memory, "CMYK composite file would be too large! Reduce resolution or enable compression.\n");
             return_error(gs_error_rangecheck);  /* this will overflow 32 bits */
@@ -2423,7 +2423,7 @@ tiffsep_print_page(gx_device_printer * pdev, gp_file * file)
 
             pdev->color_info.depth = dst_bpc;     /* Create files for 8 bit gray */
             pdev->color_info.num_components = 1;
-            if (tfdev->Compression == COMPRESSION_NONE &&
+            if (!tfdev->UseBigTIFF && tfdev->Compression == COMPRESSION_NONE &&
                 height * 8 / dst_bpc > ((unsigned long)0xFFFFFFFF - (file ? gp_ftell(file) : 0)) / width) /* note width is never 0 in print_page */
             {
                 code = gs_note_error(gs_error_rangecheck);  /* this will overflow 32 bits */

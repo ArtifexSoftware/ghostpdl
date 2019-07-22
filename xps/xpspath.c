@@ -884,7 +884,6 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
     float linewidth;
     float miterlimit;
     float samples[XPS_MAX_COLORS];
-    gs_color_space *colorspace;
 
     bool opacity_pushed = false;
     bool uses_stroke = false;
@@ -1066,6 +1065,8 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
     }
     if (fill_att)
     {
+        gs_color_space *colorspace;
+
         if (data_att)
             xps_parse_abbreviated_geometry(ctx, data_att);
         if (data_tag)
@@ -1083,6 +1084,7 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
         if (fill_opacity_att)
             samples[0] *= atof(fill_opacity_att);
         xps_set_color(ctx, colorspace, samples);
+        rc_decrement(colorspace, "xps_parse_path");
 
         opacity_pushed = true;
         xps_fill(ctx);
@@ -1116,6 +1118,8 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
 
     if (stroke_att)
     {
+        gs_color_space *colorspace;
+
         if (data_att)
             xps_parse_abbreviated_geometry(ctx, data_att);
         if (data_tag)
@@ -1136,6 +1140,7 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
         if (stroke_opacity_att)
             samples[0] *= atof(stroke_opacity_att);
         xps_set_color(ctx, colorspace, samples);
+        rc_decrement(colorspace, "xps_parse_path");
 
         gs_stroke(ctx->pgs);
     }

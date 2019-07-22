@@ -191,7 +191,7 @@ typedef unsigned long long uint64_t;
 #  endif
 
 #  ifndef PRIiSIZE
-#   define PRIuSIZE "i"
+#   define PRIiSIZE "i"
 #  endif
 # else
 #  if ARCH_SIZEOF_LONG == 8

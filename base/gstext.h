@@ -50,7 +50,10 @@
    !((op) & TEXT_DO_ANY) ||\
    TEXT_HAS_MORE_THAN_ONE_(op, TEXT_FROM_ANY) ||\
    TEXT_HAS_MORE_THAN_ONE_(op, TEXT_DO_ANY) ||\
-   (((op) & TEXT_ADD_ANY) && ((op) & TEXT_REPLACE_WIDTHS))\
+   /* We permit TEXT_ADD_TO_SPACE_WIDTHS (used to implement PDF Tw state in pdfi) \
+    * with TEXT_REPLACE_WIDTHS (used to implement xyshow and the Widths override in pdfi) \
+    */\
+   (((op) & TEXT_ADD_TO_ALL_WIDTHS) && ((op) & TEXT_REPLACE_WIDTHS))\
    )
 #define TEXT_PARAMS_ARE_INVALID(params)\
   (TEXT_OPERATION_IS_INVALID((params)->operation) ||\

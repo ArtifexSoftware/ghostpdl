@@ -112,6 +112,7 @@ cmm_profile_t* gsicc_get_gscs_profile(gs_color_space *gs_colorspace,
 int gsicc_init_profile_info(cmm_profile_t *profile);
 int gsicc_initialize_default_profile(cmm_profile_t *icc_profile);
 gs_color_space_index gsicc_get_default_type(cmm_profile_t *profile_data);
+bool gsicc_is_default_profile(cmm_profile_t *profile_data);
 bool gsicc_profile_from_ps(cmm_profile_t *profile_data);
 void gsicc_adjust_profile_rc(cmm_profile_t *profile_data, int delta, const char *name_str);
  int gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc,
