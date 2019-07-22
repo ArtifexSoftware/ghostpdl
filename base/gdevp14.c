@@ -2365,8 +2365,9 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
     }
 #endif
     /* Allocate on 32-byte border for AVX CMYK case. Four byte overflow for RGB case */
+    /* 28 byte overflow for AVX CMYK case. */
 #define SSE_ALIGN 32
-#define SSE_OVERFLOW 4
+#define SSE_OVERFLOW 28
     linebuf_unaligned = gs_alloc_bytes(pdev->memory, width * (num_comp<<deep) + SSE_ALIGN + SSE_OVERFLOW, "pdf14_put_image");
     if (linebuf_unaligned == NULL)
         return gs_error_VMerror;
