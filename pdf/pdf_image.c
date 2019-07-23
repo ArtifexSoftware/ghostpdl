@@ -1217,6 +1217,9 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
             code = pdfi_do_image(ctx, page_dict, stream_dict, xobject_dict, ctx->main_stream, false);
             pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
         } else if (pdfi_name_is(n, "Form")) {
+            pdf_array *FormMatrix = NULL;
+            gs_matrix m;
+
             pdfi_countdown(n);
             code = pdfi_dict_known(xobject_dict, "Group", &group_known);
             if (code < 0)
@@ -1235,7 +1238,35 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
                 }
             }
 
+            code = pdfi_dict_knownget_type(ctx, xobject_dict, "Matrix", PDF_ARRAY, (pdf_obj **)&FormMatrix);
+            if (code < 0)
+                return code;
+            code = pdfi_array_to_gs_matrix(ctx, FormMatrix, &m);
+            if (code < 0) {
+                pdfi_countdown(FormMatrix);
+                return code;
+            }
+
+            code = pdfi_gsave(ctx);
+            if (code < 0) {
+                pdfi_countdown(FormMatrix);
+                return code;
+            }
+
+            code = gs_concat(ctx->pgs, &m);
+            if (code < 0) {
+                pdfi_grestore(ctx);
+                pdfi_countdown(FormMatrix);
+                return code;
+            }
+
             code = pdfi_interpret_inner_content_stream(ctx, xobject_dict, page_dict, false, "FORM");
+
+            if (code != 0)
+                (void)pdfi_grestore(ctx);
+            else
+                code = pdfi_grestore(ctx);
+
             if (group_known && ctx->page_has_transparency == true) {
                 if (code < 0)
                     (void)pdfi_end_transparency_group(ctx);
@@ -1295,6 +1326,11 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
      * to prevent unexpected changes.
      */
     code = pdfi_gsave(ctx);
+    if (code < 0) {
+        (void)pdfi_loop_detector_cleartomark(ctx);
+        goto exit1;
+    }
+
     code = pdfi_do_image_or_form(ctx, stream_dict, page_dict, (pdf_dict *)o);
     if (code < 0) {
         (void)pdfi_loop_detector_cleartomark(ctx);
