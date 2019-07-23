@@ -371,7 +371,7 @@ int pdfi_Tj(pdf_context *ctx)
     int code;
     pdf_string *s = NULL;
     gs_matrix saved, Trm;
-    gs_point initial_point, current_point;
+    gs_point initial_point, current_point, pt;
 
     if (pdfi_count_stack(ctx) < 1)
         return_error(gs_error_stackunderflow);
@@ -401,12 +401,19 @@ int pdfi_Tj(pdf_context *ctx)
     code = pdfi_show(ctx, s);
 
     /* Update the Text matrix with the current point, for the next operation
-     * Because we always start from 0,0 we can just use the currentpoint directly.
      */
     gs_currentpoint(ctx->pgs, &current_point);
-    gs_distance_transform(current_point.x, 0, &ctm_only(ctx->pgs), &current_point);
-    ctx->pgs->textmatrix.tx += current_point.x;
-    ctx->pgs->textmatrix.ty += current_point.y;
+    Trm.xx = ctx->pgs->PDFfontsize * (ctx->pgs->texthscaling / 100);
+    Trm.xy = 0;
+    Trm.yx = 0;
+    Trm.yy = ctx->pgs->PDFfontsize;
+    Trm.tx = 0;
+    Trm.ty = 0;
+    gs_matrix_multiply(&Trm, &ctx->pgs->textmatrix, &Trm);
+
+    gs_distance_transform(current_point.x, current_point.y, &Trm, &pt);
+    ctx->pgs->textmatrix.tx += pt.x;
+    ctx->pgs->textmatrix.ty += pt.y;
 
 Tj_error:
     /* Restore the CTM to the saved value */
@@ -425,7 +432,7 @@ int pdfi_TJ(pdf_context *ctx)
     pdf_obj *o;
     double dx = 0, dy = 0;
     gs_point pt;
-    gs_matrix saved, Trm;
+    gs_matrix saved, Trm, inverse;
     gs_point initial_point, current_point;
 
     if (ctx->TextBlockDepth == 0) {
@@ -445,6 +452,9 @@ int pdfi_TJ(pdf_context *ctx)
     saved = ctm_only(ctx->pgs);
     gs_currentpoint(ctx->pgs, &initial_point);
 
+    /* Calculate the text rendering matrix, see section 1.7 PDF Reference
+     * page 409, section 5.3.3 Text Space details.
+     */
     Trm.xx = ctx->pgs->PDFfontsize * (ctx->pgs->texthscaling / 100);
     Trm.xy = 0;
     Trm.yx = 0;
@@ -454,6 +464,7 @@ int pdfi_TJ(pdf_context *ctx)
 
     gs_matrix_multiply(&Trm, &ctx->pgs->textmatrix, &Trm);
     gs_matrix_multiply(&Trm, &ctm_only(ctx->pgs), &Trm);
+
     gs_setmatrix(ctx->pgs, &Trm);
     code = gs_moveto(ctx->pgs, 0, 0);
     if (code < 0)
@@ -486,11 +497,19 @@ int pdfi_TJ(pdf_context *ctx)
     }
 
     /* Update the Text matrix with the current point, for the next operation
-     * Because we always start from 0,0 we can just use the currentpoint directly.
      */
     gs_currentpoint(ctx->pgs, &current_point);
-    ctx->pgs->textmatrix.tx += current_point.x;
-    ctx->pgs->textmatrix.ty += current_point.y;
+    Trm.xx = ctx->pgs->PDFfontsize * (ctx->pgs->texthscaling / 100);
+    Trm.xy = 0;
+    Trm.yx = 0;
+    Trm.yy = ctx->pgs->PDFfontsize;
+    Trm.tx = 0;
+    Trm.ty = 0;
+    gs_matrix_multiply(&Trm, &ctx->pgs->textmatrix, &Trm);
+
+    gs_distance_transform(current_point.x, current_point.y, &Trm, &pt);
+    ctx->pgs->textmatrix.tx += pt.x;
+    ctx->pgs->textmatrix.ty += pt.y;
 
 TJ_error:
     /* Restore the CTM to the saved value */
