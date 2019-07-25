@@ -324,11 +324,13 @@ int pdfi_free_font(pdf_obj *font)
         case e_pdf_font_type3:
             return pdfi_free_font_type3((pdf_obj *)font);
             break;
+        case e_pdf_font_truetype:
+            return pdfi_free_font_truetype((pdf_obj *)font);
+            break;
         case e_pdf_cidfont_type0:
         case e_pdf_cidfont_type1:
         case e_pdf_cidfont_type2:
         case e_pdf_cidfont_type4:
-        case e_pdf_font_truetype:
         default:
             return gs_note_error(gs_error_typecheck);
             break;

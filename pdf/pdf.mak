@@ -56,6 +56,9 @@ $(PDFOBJ)pdf_array.$(OBJ): $(PDFSRC)pdf_array.c $(PDFINCLUDES) $(PDF_MAK) $(MAKE
 $(PDFOBJ)pdf_xref.$(OBJ): $(PDFSRC)pdf_xref.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_xref.c $(PDFO_)pdf_xref.$(OBJ)
 
+$(PDFOBJ)pdf_fapi.$(OBJ): $(PDFSRC)pdf_fapi.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
+	$(PDFCCC) $(PDFSRC)pdf_fapi.c $(PDFO_)pdf_fapi.$(OBJ)
+
 $(PDFOBJ)pdf_font.$(OBJ): $(PDFSRC)pdf_font.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_font.c $(PDFO_)pdf_font.$(OBJ)
 
@@ -148,6 +151,7 @@ PDF_OBJS=\
     $(PDFOBJ)pdf_stack.$(OBJ)\
     $(PDFOBJ)pdf_image.$(OBJ)\
     $(PDFOBJ)pdf_page.$(OBJ)\
+    $(PDFOBJ)pdf_fapi.$(OBJ)\
     $(PDFOBJ)pdf_font.$(OBJ)\
     $(PDFOBJ)pdf_font0.$(OBJ)\
     $(PDFOBJ)pdf_font1.$(OBJ)\

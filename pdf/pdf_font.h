@@ -61,4 +61,12 @@ int pdfi_create_Encoding(pdf_context *ctx, pdf_obj *pdf_Encoding, pdf_obj **Enco
 gs_glyph pdfi_encode_char(gs_font * pfont, gs_char chr, gs_glyph_space_t not_used);
 int pdfi_glyph_name(gs_font * pfont, gs_glyph glyph, gs_const_string * pstr);
 int pdfi_decode_glyph(gs_font * font, gs_glyph glyph, int ch, ushort *unicode_return, unsigned int length);
+
+/* This is in pdf_fapi.c, but since it is the only exported function
+   from that module (so far) it doesn't seem worth a new header
+ */
+int
+pdfi_fapi_passfont(pdf_font *font, int subfont, char *fapi_request,
+                 char *file_name, byte * font_data, int font_data_len);
+
 #endif
