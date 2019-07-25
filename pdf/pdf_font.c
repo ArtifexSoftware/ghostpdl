@@ -18,6 +18,7 @@
 #include "pdf_int.h"
 #include "pdf_dict.h"
 #include "pdf_loop_detect.h"
+#include "pdf_array.h"
 #include "pdf_font.h"
 #include "pdf_stack.h"
 #include "pdf_font_types.h"
@@ -332,5 +333,161 @@ int pdfi_free_font(pdf_obj *font)
             return gs_note_error(gs_error_typecheck);
             break;
     }
+    return 0;
+}
+
+/*
+ * Routine to fill in an array with each of the glyph names from a given
+ * 'standard' Encoding.
+ */
+static int pdfi_build_Encoding(pdf_context *ctx, pdf_name *name, pdf_array *Encoding)
+{
+    int i, code = 0;
+    unsigned char gs_encoding;
+    gs_glyph temp;
+    gs_const_string str;
+    pdf_name *n = NULL;
+
+    if (pdfi_array_size(Encoding) < 256)
+        return gs_note_error(gs_error_rangecheck);
+
+    if (pdfi_name_is(name, "StandardEncoding")) {
+        gs_encoding = ENCODING_INDEX_STANDARD;
+    } else {
+        if (pdfi_name_is(name, "WinAnsiEncoding")){
+            gs_encoding = ENCODING_INDEX_WINANSI;
+        } else {
+            if (pdfi_name_is(name, "MacRomanEncoding")){
+                gs_encoding = ENCODING_INDEX_MACROMAN;
+            } else {
+                if (pdfi_name_is(name, "MacExpertEncoding")){
+                    gs_encoding = ENCODING_INDEX_MACEXPERT;
+                } else {
+                    return_error(gs_error_undefined);
+                }
+            }
+        }
+    }
+    i = 0;
+    for (i=0;i<256;i++) {
+        temp = gs_c_known_encode(i, gs_encoding);
+        gs_c_glyph_name(temp, &str);
+        code = pdfi_make_name(ctx, (byte *)str.data, str.size, (pdf_obj **)&n);
+        if (code < 0)
+            return code;
+        code = pdfi_array_put(ctx, Encoding, (uint64_t)i, (pdf_obj *)n);
+        pdfi_countdown(n);
+        if (code < 0)
+            return code;
+    }
+    return 0;
+}
+
+/*
+ * Create and fill in a pdf_array with an Encoding for a font. pdf_Encoding must be either
+ * a name (eg StandardEncoding) or a dictionary. If its a name we use that to create the
+ * entries, if its a dictionary we start by getting the BaseEncoding and using that to
+ * create an array of glyph names as above. We then get the Differences array from the
+ * dictionary and use that to refine the Encoding.
+ */
+int pdfi_create_Encoding(pdf_context *ctx, pdf_obj *pdf_Encoding, pdf_obj **Encoding)
+{
+    int code = 0, i;
+
+    code = pdfi_alloc_object(ctx, PDF_ARRAY, 256, Encoding);
+    if (code < 0)
+        return code;
+    pdfi_countup(Encoding);
+
+    if (pdf_Encoding->type == PDF_NAME) {
+        code = pdfi_build_Encoding(ctx, (pdf_name *)pdf_Encoding, (pdf_array *)*Encoding);
+        if (code < 0)
+            return code;
+    } else {
+        if (pdf_Encoding->type == PDF_DICT) {
+            pdf_name *n = NULL;
+            pdf_array *a = NULL;
+            pdf_obj *o = NULL;
+            int offset = 0;
+
+            code = pdfi_dict_get(ctx, (pdf_dict *)pdf_Encoding, "BaseEncoding", (pdf_obj **)&n);
+            if (code < 0) {
+                code = pdfi_make_name(ctx, (byte *)"StandardEncoding", 16, (pdf_obj **)&n);
+                if (code < 0)
+                    return code;
+            }
+            code = pdfi_build_Encoding(ctx, n, (pdf_array *)*Encoding);
+            if (code < 0) {
+                pdfi_countdown(n);
+                    return code;
+            }
+            pdfi_countdown(n);
+            code = pdfi_dict_knownget_type(ctx, (pdf_dict *)pdf_Encoding, "Differences", PDF_ARRAY, (pdf_obj **)&a);
+            if (code < 0)
+                return code;
+            for (i=0;i < pdfi_array_size(a);i++) {
+                code = pdfi_array_get(ctx, a, (uint64_t)i, &o);
+                if (code < 0)
+                    break;
+                if (o->type == PDF_NAME) {
+                    code = pdfi_array_put(ctx, *Encoding, (uint64_t)offset, o);
+                    pdfi_countdown(o);
+                    offset++;
+                    if (code < 0)
+                        break;
+                } else {
+                    if (o->type == PDF_INT) {
+                        offset = ((pdf_num *)o)->value.i;
+                        pdfi_countdown(o);
+                    } else {
+                        code = gs_note_error(gs_error_typecheck);
+                        pdfi_countdown(o);
+                        break;
+                    }
+                }
+            }
+            pdfi_countdown(a);
+            if (code < 0)
+                return code;
+        } else {
+            return gs_note_error(gs_error_typecheck);
+        }
+    }
+    return 0;
+}
+
+/*
+ * Only suitable for simple fonts, I think, we just return the character code as a
+ * glyph ID.
+ */
+gs_glyph pdfi_encode_char(gs_font * pfont, gs_char chr, gs_glyph_space_t not_used)
+{
+    return chr;
+}
+
+/* Get the unicode valude for a glyph FIXME - not written yet
+ */
+int pdfi_decode_glyph(gs_font * font, gs_glyph glyph, int ch, ushort *unicode_return, unsigned int length)
+{
+    return 0;
+}
+
+/*
+ * For simple fonts (ie not CIDFonts), given a character code, look up the
+ * Encoding array and return the glyph name
+ */
+int pdfi_glyph_name(gs_font * pfont, gs_glyph glyph, gs_const_string * pstr)
+{
+    int code;
+    pdf_font_type3 *font;
+    pdf_name *GlyphName = NULL;
+
+    font = (pdf_font_type3 *)pfont->client_data;
+    code = pdfi_array_get(font->ctx, font->Encoding, (uint64_t)glyph, (pdf_obj **)&GlyphName);
+    if (code < 0)
+        return code;
+
+    pstr->data = GlyphName->data;
+    pstr->size = GlyphName->length;
     return 0;
 }
