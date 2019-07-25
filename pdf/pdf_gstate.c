@@ -26,10 +26,65 @@
 #include "pdf_image.h"
 #include "pdf_pattern.h"
 #include "pdf_font.h"
+#include "pdf_pattern.h"
 
 #include "gsmatrix.h"
 #include "gslparam.h"
 #include "gstparam.h"
+
+/* Allocate the interpreter's part of a graphics state. */
+static void *
+pdfi_gstate_alloc(gs_memory_t * mem)
+{
+    pdfi_int_gstate *igs;
+
+    igs = (pdfi_int_gstate *)gs_alloc_bytes(mem, sizeof(pdfi_int_gstate), "pdfi_gstate_alloc");
+    if (igs == NULL)
+        return NULL;
+    memset(igs, 0, sizeof(pdfi_int_gstate));
+    return igs;
+}
+
+/* Copy the interpreter's part of a graphics state. */
+static int
+pdfi_gstate_copy(void *to, const void *from)
+{
+    const pdfi_int_gstate *igs_from = (const pdfi_int_gstate *)from;
+    pdfi_int_gstate *igs_to = (pdfi_int_gstate *)to;
+
+    *(pdfi_int_gstate *) igs_to = *igs_from;
+    if (igs_from->SMask)
+        pdfi_countup(igs_from->SMask);
+    return 0;
+}
+
+/* Free the interpreter's part of a graphics state. */
+static void
+pdfi_gstate_free(void *old, gs_memory_t * mem)
+{
+    pdfi_int_gstate *igs = (pdfi_int_gstate *)old;
+    if (old == NULL)
+        return;
+    pdfi_countdown(igs->SMask);
+    gs_free_object(mem, igs, "pdfi_gstate_free");
+}
+
+static const gs_gstate_client_procs pdfi_gstate_procs = {
+    pdfi_gstate_alloc,
+    pdfi_gstate_copy,
+    pdfi_gstate_free,
+    NULL,			/* copy_for */
+};
+
+int
+pdfi_gstate_set_client(pdf_context *ctx)
+{
+    pdfi_int_gstate *igs;
+
+    igs = pdfi_gstate_alloc(ctx->memory);
+    gs_gstate_set_client(ctx->pgs, igs, &pdfi_gstate_procs, true /* TODO: client_has_pattern_streams ? */);
+    return 0;
+}
 
 int pdfi_concat(pdf_context *ctx)
 {
@@ -78,6 +133,36 @@ int pdfi_concat(pdf_context *ctx)
         return 0;
 }
 
+int pdfi_op_q(pdf_context *ctx)
+{
+    int code;
+
+    code = pdfi_gsave(ctx);
+
+    if (code < 0 && ctx->pdfstoponerror)
+        return code;
+    else {
+        if (ctx->page_has_transparency)
+            return gs_push_transparency_state(ctx->pgs);
+    }
+    return 0;
+}
+
+int pdfi_op_Q(pdf_context *ctx)
+{
+    int code;
+
+    code = pdfi_grestore(ctx);
+
+    if (code < 0 && ctx->pdfstoponerror)
+        return code;
+    else {
+        if (ctx->page_has_transparency)
+            return gs_pop_transparency_state(ctx->pgs, false);
+    }
+    return 0;
+}
+
 int pdfi_gsave(pdf_context *ctx)
 {
     int code;
@@ -88,8 +173,6 @@ int pdfi_gsave(pdf_context *ctx)
         return code;
     else {
         pdfi_countup_current_font(ctx);
-        if (ctx->page_has_transparency)
-            return gs_push_transparency_state(ctx->pgs);
         return 0;
     }
 }
@@ -118,10 +201,8 @@ int pdfi_grestore(pdf_context *ctx)
 
         if(code < 0 && ctx->pdfstoponerror)
             return code;
-        else {
-            if (ctx->page_has_transparency)
-                return gs_pop_transparency_state(ctx->pgs, false);
-        }
+        else
+            return 0;
     } else {
         /* We don't throw an error here, we just ignore it and continue */
         ctx->pdf_warnings |= W_PDF_TOOMANYQ;
@@ -674,55 +755,12 @@ static int GS_SMask(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_d
     }
 
     if (o->type == PDF_DICT) {
-        gs_color_space *gray_cs = gs_cspace_new_DeviceGray(ctx->memory);
-        gs_rect bbox = { { 0, 0} , { 1, 1} };
-        gs_transparency_mask_params_t params;
-        pdf_array *a = NULL;
-        pdf_dict *G_dict = NULL;
-        pdf_name *n = NULL;
-        double f;
+        pdfi_int_gstate *igs = (pdfi_int_gstate *)ctx->pgs->client_data;
 
-        code = pdfi_dict_knownget_type(ctx, (pdf_dict *)o, "Type", PDF_NAME, (pdf_obj **)&n);
-        if (code > 0 && pdfi_name_is(n, "Mask")) {
-            pdfi_countdown(n);
-            n = NULL;
-            code = pdfi_dict_knownget_type(ctx, (pdf_dict *)o, "G", PDF_DICT, (pdf_obj **)&G_dict);
-            if (code > 0) {
-                code = pdfi_dict_knownget_type(ctx, (pdf_dict *)G_dict, "Matte", PDF_ARRAY, (pdf_obj **)&a);
-                if (code > 0) {
-                    int ix;
-
-                    for (ix = 0; ix < pdfi_array_size(a); ix++) {
-                        code = pdfi_array_get_number(ctx, a, (uint64_t)ix, &f);
-                        if (code < 0)
-                            break;
-                        params.Matte[ix] = f;
-                    }
-                    if (ix >= pdfi_array_size(a))
-                        params.Matte_components = pdfi_array_size(a);
-                    else
-                        params.Matte_components = 0;
-                }
-                pdfi_countdown(a);
-                gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Luminosity);
-
-                code = gs_begin_transparency_mask(ctx->pgs, &params, &bbox, true);
-                if (code < 0) {
-                    pdfi_countdown(o);
-                    pdfi_countdown(G_dict);
-                    rc_decrement_cs(gray_cs, "ExtGState /SMask");
-                    return code;
-                }
-                rc_decrement_cs(gray_cs, "ExtGState /SMask");
-                code = pdfi_gsave(ctx);
-                code = pdfi_do_image_or_form(ctx, stream_dict, page_dict, G_dict);
-                code = pdfi_grestore(ctx);
-                code = gs_end_transparency_mask(ctx->pgs, 0);
-                pdfi_countdown(G_dict);
-            }
-        } else {
-            /* take action on a /Mask entry. What does this mean ? What do we need to do */
-        }
+        if (igs->SMask)
+            pdfi_countdown(igs->SMask);
+        igs->SMask = (pdf_dict *)o;
+        pdfi_countup(o);
     }
 
     pdfi_countdown(o);

@@ -321,4 +321,8 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx);
 int pdfi_open_pdf_file(pdf_context *ctx, char *filename);
 int pdfi_process_pdf_file(pdf_context *ctx, char *filename);
 int pdfi_close_pdf_file(pdf_context *ctx);
+
+/* Transparency stuff, should be moved */
+int pdfi_check_Pattern(pdf_context *ctx, pdf_dict *pattern, pdf_dict *page_dict, bool *transparent, int *num_spots);
+
 #endif

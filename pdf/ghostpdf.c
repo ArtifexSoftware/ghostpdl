@@ -498,7 +498,7 @@ error1:
  * This routine checks a Pattern dictionary to see if it contains any spot
  * colour definitions, or transparency usage.
  */
-static int pdfi_check_Pattern(pdf_context *ctx, pdf_dict *pattern, pdf_dict *page_dict, bool *transparent, int *num_spots)
+int pdfi_check_Pattern(pdf_context *ctx, pdf_dict *pattern, pdf_dict *page_dict, bool *transparent, int *num_spots)
 {
     int code = 0;
     pdf_obj *o = NULL;
@@ -1520,7 +1520,7 @@ page_error:
 
 static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
 {
-    int code;
+    int code, code1=0;
     uint64_t page_offset = 0;
     pdf_dict *page_dict = NULL;
     bool uses_transparency = false;
@@ -1528,6 +1528,7 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
     int page_index = page_num >> 3;
     char page_bit = 0x80 >> (page_num % 8);
     stream_save local_entry_save;
+    pdf_dict *group_dict = NULL;
 
     /* Save the current stream state, for later cleanup, in a local variable */
     local_save_stream_state(ctx, &local_entry_save);
@@ -1567,6 +1568,12 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
         goto exit2;
     }
 
+    code = pdfi_dict_knownget_type(ctx, page_dict, "Group", PDF_DICT, (pdf_obj **)&group_dict);
+    if (code < 0)
+        goto exit2;
+    if (group_dict != NULL)
+        page_group_known = true;
+
     pdfi_countdown(ctx->CurrentPageDict);
     ctx->CurrentPageDict = page_dict;
     pdfi_countup(ctx->CurrentPageDict);
@@ -1574,8 +1581,8 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
     code = gs_setstrokeconstantalpha(ctx->pgs, 1.0);
     code = gs_setfillconstantalpha(ctx->pgs, 1.0);
     code = gs_setalphaisshape(ctx->pgs, 0);
-    code = gs_settextknockout(ctx->pgs, 0);
-    code = gs_setblendmode(ctx->pgs, 0);
+    code = gs_setblendmode(ctx->pgs, BLEND_MODE_Compatible);
+    code = gs_settextknockout(ctx->pgs, true);
     code = gs_settextspacing(ctx->pgs, (double)0.0);
     code = gs_settextleading(ctx->pgs, (double)0.0);
     gs_settextrenderingmode(ctx->pgs, 0);
@@ -1603,7 +1610,7 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
             code = gs_push_pdf14trans_device(ctx->pgs, false, false);
             if (code >= 0) {
                 if (page_group_known) {
-                    code = pdfi_begin_page_group(ctx, page_dict);
+                    code = pdfi_trans_begin_page_group(ctx, page_dict, group_dict);
                     /* If setting the page group failed for some reason, abandon the page group, but continue with the page */
                     if (code < 0)
                         page_group_known = false;
@@ -1635,28 +1642,20 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
         code = ((pdf_context *)0)->first_page;
 #endif
 
+    if (ctx->page_has_transparency && page_group_known) {
+        code1 = pdfi_trans_end_group(ctx);
+    }
+
     cleanup_context_interpretation(ctx, &local_entry_save);
     local_restore_stream_state(ctx, &local_entry_save);
 
     pdfi_countdown(ctx->CurrentPageDict);
     ctx->CurrentPageDict = NULL;
 
-    if (code < 0) {
-        if (ctx->page_has_transparency) {
-            if (page_group_known)
-                code = pdfi_end_transparency_group(ctx);
-            (void)gs_abort_pdf14trans_device(ctx->pgs);
-        }
-        goto exit1;
-    }
-
     if (ctx->page_has_transparency) {
-        if (page_group_known) {
-            code = pdfi_end_transparency_group(ctx);
-            if (code < 0) {
-                (void)gs_abort_pdf14trans_device(ctx->pgs);
-                goto exit1;
-            }
+        if (code1 < 0) {
+            (void)gs_abort_pdf14trans_device(ctx->pgs);
+            goto exit1;
         }
 
         code = gs_pop_pdf14trans_device(ctx->pgs, false);
@@ -1669,6 +1668,7 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
     pdfi_grestore(ctx);
  exit2:
     pdfi_countdown(page_dict);
+    pdfi_countdown(group_dict);
 
     if (code == 0)
         code = pl_finish_page(ctx->memory->gs_lib_ctx->top_of_system, ctx->pgs, 1, true);
@@ -2111,7 +2111,6 @@ pdf_context *pdfi_create_context(gs_memory_t *pmem)
     }
 
     memset(ctx, 0, sizeof(pdf_context));
-
     ctx->memory = pmem->non_gc_memory;
 
     ctx->stack_bot = (pdf_obj **)gs_alloc_bytes(ctx->memory, INITIAL_STACK_SIZE * sizeof (pdf_obj *), "pdf_imp_allocate_interp_stack");
@@ -2144,6 +2143,7 @@ pdf_context *pdfi_create_context(gs_memory_t *pmem)
     }
 
     ctx->pgs = pgs;
+    pdfi_gstate_set_client(ctx);
     /* Declare PDL client support for high level patterns, for the benefit
      * of pdfwrite and other high-level devices
      */

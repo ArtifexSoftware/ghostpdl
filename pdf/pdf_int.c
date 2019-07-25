@@ -3199,11 +3199,11 @@ static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_stream *source, 
                 break;
             case K1('q'):           /* gsave */
                 pdfi_pop(ctx, 1);
-                code = pdfi_gsave(ctx);
+                code = pdfi_op_q(ctx);
                 break;
             case K1('Q'):           /* grestore */
                 pdfi_pop(ctx, 1);
-                code = pdfi_grestore(ctx);
+                code = pdfi_op_Q(ctx);
                 break;
             case K2('r','e'):       /* append rectangle */
                 pdfi_pop(ctx, 1);
@@ -3362,7 +3362,7 @@ void cleanup_context_interpretation(pdf_context *ctx, stream_save *local_save)
     if (ctx->current_stream_save.group_depth != local_save->group_depth) {
         ctx->pdf_warnings |= W_PDF_GROUPERROR;
         while (ctx->current_stream_save.group_depth > local_save->group_depth)
-            pdfi_end_transparency_group(ctx);
+            pdfi_trans_end_group(ctx);
     }
     if (ctx->pgs->level > ctx->current_stream_save.gsave_level)
         ctx->pdf_warnings |= W_PDF_TOOMANYq;

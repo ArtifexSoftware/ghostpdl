@@ -349,6 +349,7 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
     double XStep, YStep;
     pdf_dict *Resources = NULL;
     pdf_array *Matrix = NULL;
+    bool transparency;
 
     dbgmprintf(ctx->memory, "PATTERN: Type 1 pattern\n");
 
@@ -394,6 +395,11 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
         goto exit;
     }
 
+    /* See if pattern uses transparency */
+    code = pdfi_check_Pattern(ctx, pdict, page_dict, &transparency, NULL);
+    if (code < 0)
+        goto exit;
+
     /* TODO: Resources?  Maybe I should check that they are all valid before proceeding, or something? */
 
     templat.BBox = rect;
@@ -403,6 +409,8 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
     templat.TilingType = TilingType;
     templat.XStep = XStep;
     templat.YStep = YStep;
+    templat.uses_transparency = transparency;
+    //templat.uses_transparency = false; /* disable */
 
     code = pdfi_gsave(ctx);
     if (code < 0)

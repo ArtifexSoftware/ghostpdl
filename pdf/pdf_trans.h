@@ -16,8 +16,9 @@
 #ifndef PDF_TRANSPARENCY_OPERATORS
 #define PDF_TRANSPARENCY_OPERATORS
 
-int pdfi_begin_page_group(pdf_context *ctx, pdf_dict *page_dict);
-int pdfi_begin_group(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_dict);
-int pdfi_end_transparency_group(pdf_context *ctx);
+int pdfi_trans_begin_page_group(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *group_dict);
+int pdfi_trans_begin_group(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_dict);
+int pdfi_trans_end_group(pdf_context *ctx);
+int pdfi_trans_set_params(pdf_context *ctx, double alpha);
 
 #endif

@@ -1199,6 +1199,122 @@ int pdfi_EI(pdf_context *ctx)
     return 0;
 }
 
+/* see .execgroup */
+int pdfi_form_execgroup(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *xobject_dict)
+{
+    int code;
+    pdf_array *FormMatrix = NULL;
+    gs_matrix m;
+    pdfi_int_gstate *igs = (pdfi_int_gstate *)ctx->pgs->client_data;
+
+    code = pdfi_dict_knownget_type(ctx, xobject_dict, "Matrix", PDF_ARRAY, (pdf_obj **)&FormMatrix);
+    if (code < 0)
+        goto exit;
+    code = pdfi_array_to_gs_matrix(ctx, FormMatrix, &m);
+    if (code < 0)
+        goto exit;
+
+    code = pdfi_gsave(ctx);
+    if (code < 0)
+        goto exit;
+
+    pdfi_countdown(igs->SMask);
+    igs->SMask = NULL;
+
+    gs_setopacityalpha(ctx->pgs, 1.0);
+    gs_setshapealpha(ctx->pgs, 1.0);
+    gs_setblendmode(ctx->pgs, BLEND_MODE_Compatible);
+
+    code = gs_concat(ctx->pgs, &m);
+    if (code < 0) {
+        goto exit2;
+    }
+
+    code = pdfi_interpret_inner_content_stream(ctx, xobject_dict, page_dict, false, "FORM");
+
+ exit2:
+    if (code != 0)
+        (void)pdfi_grestore(ctx);
+    else
+        code = pdfi_grestore(ctx);
+ exit:
+    pdfi_countdown(FormMatrix);
+    return code;
+}
+
+static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_dict)
+{
+    int code;
+    bool group_known = false;
+    bool do_group = false;
+    pdf_array *FormMatrix = NULL;
+    gs_matrix m;
+
+    code = pdfi_dict_known(form_dict, "Group", &group_known);
+    if (code < 0)
+        return code;
+    if (group_known && ctx->page_has_transparency)
+        do_group = true;
+
+    if (do_group) {
+        code = pdfi_loop_detector_mark(ctx);
+        if (code < 0) {
+            return code;
+        }
+
+        code = pdfi_trans_begin_group(ctx, page_dict, form_dict);
+        (void)pdfi_loop_detector_cleartomark(ctx);
+        if (code < 0) {
+            return code;
+        }
+    }
+
+    code = pdfi_dict_knownget_type(ctx, form_dict, "Matrix", PDF_ARRAY, (pdf_obj **)&FormMatrix);
+    if (code < 0)
+        return code;
+    code = pdfi_array_to_gs_matrix(ctx, FormMatrix, &m);
+    if (code < 0) {
+        pdfi_countdown(FormMatrix);
+        return code;
+    }
+
+    code = pdfi_gsave(ctx);
+    if (code < 0) {
+        pdfi_countdown(FormMatrix);
+        return code;
+    }
+
+    code = gs_concat(ctx->pgs, &m);
+    if (code < 0) {
+        pdfi_grestore(ctx);
+        pdfi_countdown(FormMatrix);
+        return code;
+    }
+
+    if (do_group) {
+        code = pdfi_form_execgroup(ctx, page_dict, form_dict);
+    } else {
+        code = pdfi_interpret_inner_content_stream(ctx, form_dict, page_dict, false, "FORM");
+    }
+
+    if (code != 0)
+        (void)pdfi_grestore(ctx);
+    else
+        code = pdfi_grestore(ctx);
+
+    if (do_group) {
+        if (code < 0)
+            (void)pdfi_trans_end_group(ctx);
+        else
+            code = pdfi_trans_end_group(ctx);
+    }
+
+    if (code < 0) {
+        return code;
+    }
+    return 0;
+}
+
 int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
                                  pdf_dict *page_dict, pdf_dict *xobject_dict)
 {
@@ -1207,8 +1323,6 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
 
     code = pdfi_dict_get(ctx, (pdf_dict *)xobject_dict, "Subtype", (pdf_obj **)&n);
     if (code == 0) {
-        bool group_known = false;
-
         if (pdfi_name_is(n, "Image")) {
             gs_offset_t savedoffset;
 
@@ -1217,63 +1331,8 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
             code = pdfi_do_image(ctx, page_dict, stream_dict, xobject_dict, ctx->main_stream, false);
             pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
         } else if (pdfi_name_is(n, "Form")) {
-            pdf_array *FormMatrix = NULL;
-            gs_matrix m;
-
             pdfi_countdown(n);
-            code = pdfi_dict_known(xobject_dict, "Group", &group_known);
-            if (code < 0)
-                return code;
-
-            if (group_known && ctx->page_has_transparency == true) {
-                code = pdfi_loop_detector_mark(ctx);
-                if (code < 0) {
-                    return code;
-                }
-
-                code = pdfi_begin_group(ctx, page_dict, xobject_dict);
-                (void)pdfi_loop_detector_cleartomark(ctx);
-                if (code < 0) {
-                    return code;
-                }
-            }
-
-            code = pdfi_dict_knownget_type(ctx, xobject_dict, "Matrix", PDF_ARRAY, (pdf_obj **)&FormMatrix);
-            if (code < 0)
-                return code;
-            code = pdfi_array_to_gs_matrix(ctx, FormMatrix, &m);
-            if (code < 0) {
-                pdfi_countdown(FormMatrix);
-                return code;
-            }
-
-            code = pdfi_gsave(ctx);
-            if (code < 0) {
-                pdfi_countdown(FormMatrix);
-                return code;
-            }
-
-            code = gs_concat(ctx->pgs, &m);
-            if (code < 0) {
-                pdfi_grestore(ctx);
-                pdfi_countdown(FormMatrix);
-                return code;
-            }
-
-            code = pdfi_interpret_inner_content_stream(ctx, xobject_dict, page_dict, false, "FORM");
-
-            if (code != 0)
-                (void)pdfi_grestore(ctx);
-            else
-                code = pdfi_grestore(ctx);
-
-            if (group_known && ctx->page_has_transparency == true) {
-                if (code < 0)
-                    (void)pdfi_end_transparency_group(ctx);
-                else
-                    code = pdfi_end_transparency_group(ctx);
-            }
-
+            code = pdfi_do_form(ctx, page_dict, xobject_dict);
             if (code < 0) {
                 return code;
             }
@@ -1329,6 +1388,12 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     if (code < 0) {
         (void)pdfi_loop_detector_cleartomark(ctx);
         goto exit1;
+    }
+
+    code = pdfi_trans_set_params(ctx, ctx->pgs->fillconstantalpha);
+    if (code < 0) {
+        (void)pdfi_loop_detector_cleartomark(ctx);
+        goto exit2;
     }
 
     code = pdfi_do_image_or_form(ctx, stream_dict, page_dict, (pdf_dict *)o);

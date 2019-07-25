@@ -18,9 +18,18 @@
 #ifndef PDF_GSTATE_OPERATORS
 #define PDF_GSTATE_OPERATORS
 
+/* Interpreter graphics state things (see igstate.h/int_gstate) */
+typedef struct int_gstate_s {
+    pdf_dict *SMask; /* PDF only, null | dictionary | true */
+} pdfi_int_gstate;
+
+int pdfi_gstate_set_client(pdf_context *ctx);
+
 int pdfi_concat(pdf_context *ctx);
 int pdfi_gsave(pdf_context *ctx);
 int pdfi_grestore(pdf_context *ctx);
+int pdfi_op_q(pdf_context *ctx);
+int pdfi_op_Q(pdf_context *ctx);
 int pdfi_setlinewidth(pdf_context *ctx);
 int pdfi_setlinejoin(pdf_context *ctx);
 int pdfi_setlinecap(pdf_context *ctx);
