@@ -215,10 +215,29 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
             code = pdfi_array_get_number(ctx, (pdf_array *)obj, (uint64_t)i, &font->Widths[i]);
             if (code < 0)
                 goto error;
+            font->Widths[i] /= 1000;
         }
     }
     pdfi_countdown(obj);
     obj = NULL;
+
+    code = pdfi_dict_get_int(ctx, font->FontDescriptor, "Flags", &font->descflags);
+    if (code < 0)
+        font->descflags = 0;
+
+    /* A symbolic font should not have and Encoding, but previous experience suggests
+       the presence of the encoding has an effect - still have to deal with that
+     */
+    if (!(font->descflags & 4)) {
+        code = pdfi_dict_get(ctx, font_dict, "Encoding", &obj);
+        if (code < 0)
+            code = pdfi_make_name(ctx, (byte *)"StandardEncoding", 16, (pdf_obj **)&obj);
+
+        code = pdfi_create_Encoding(ctx, obj, (pdf_obj **)&font->Encoding);
+        if (code < 0)
+            goto error;
+        pdfi_countdown(obj);
+    }
 
     code = gs_definefont(ctx->font_dir, (gs_font *)font->pfont);
     if (code < 0) {

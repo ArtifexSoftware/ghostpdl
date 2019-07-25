@@ -34,7 +34,7 @@ static ulong
 pdfi_fapi_get_long(gs_fapi_font * ff, gs_fapi_font_feature var_id, int index);
 
 static int
-pdfi_fapi_get_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_string * charstring,
+pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_string * charstring,
                 gs_string * name, int ccode, gs_string * enc_char_name,
                 char *font_file_path, gs_fapi_char_ref * cr, bool bCID);
 
@@ -73,7 +73,7 @@ static const gs_fapi_font pdfi_ff_stub = {
     false,                      /* is_mtx_skipped */
     false,                      /* is_vertical */
     false,                      /* metrics_only */
-    {{3, 10}, {3, 1}, {-1, -1}, {-1, -1}, {-1, -1}},    /* ttf_cmap_req */
+    {{3, 1}, {1, 0}, {3, 0}, {3, 10}, {-1, -1}},    /* ttf_cmap_req */
     0,                          /* client_ctx_p */
     0,                          /* client_font_data */
     0,                          /* client_font_data2 */
@@ -93,7 +93,7 @@ static const gs_fapi_font pdfi_ff_stub = {
     NULL,                       /* get_charstring */
     NULL,                       /* get_charstring_name */
     pdfi_get_glyphdirectory_data, /* get_GlyphDirectory_data_ptr */
-    pdfi_fapi_get_cid,            /* get_glyphname_or_cid */
+    pdfi_fapi_get_glyphname_or_cid, /* get_glyphname_or_cid */
     pdfi_fapi_get_metrics,        /* fapi_get_metrics */
     pdfi_fapi_set_cache           /* fapi_set_cache */
 };
@@ -108,11 +108,19 @@ pdfi_fapi_get_long(gs_fapi_font * ff, gs_fapi_font_feature var_id, int index)
 }
 
 static int
-pdfi_fapi_get_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_string * charstring,
+pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_string * charstring,
                 gs_string * name, int ccode, gs_string * enc_char_name,
                 char *font_file_path, gs_fapi_char_ref * cr, bool bCID)
 {
-    return (0);
+    if (pbfont->FontType == ft_TrueType) {
+        pdf_font_truetype *font = (pdf_font_truetype *)pbfont->client_data;
+        cr->client_char_code = ccode;
+        if (font->descflags & 4){
+            cr->is_glyph_index = false;
+            return 0;
+        }
+    }
+    return pbfont->procs.glyph_name((gs_font *)pbfont, ccode, enc_char_name);
 }
 
 static int
@@ -149,6 +157,29 @@ pdfi_fapi_set_cache(gs_text_enum_t * penum, const gs_font_base * pbfont,
                   const double Metrics2_sbw_default[4], bool * imagenow)
 {
     int code = 0;
+    gs_gstate *pgs = penum->pgs;
+    float w2[6];
+
+    w2[0] = pwidth[0];
+    w2[1] = pwidth[1];
+    w2[2] = pbbox->p.x;
+    w2[3] = pbbox->p.y;
+    w2[4] = pbbox->q.x;
+    w2[5] = pbbox->q.y;
+
+    if (pbfont->PaintType) {
+        double expand = max(1.415,
+                            gs_currentmiterlimit(pgs)) *
+            gs_currentlinewidth(pgs) / 2;
+
+        w2[2] -= expand;
+        w2[3] -= expand;
+        w2[4] += expand;
+        w2[5] += expand;
+    }
+    if ((code = gs_setcachedevice((gs_show_enum *) penum, pgs, w2)) < 0) {
+        return (code);
+    }
     *imagenow = true;
     return (code);
 }
@@ -197,6 +228,9 @@ pdfi_fapi_passfont(pdf_font *font, int subfont, char *fapi_request,
     int code = 0;
     gs_string fdata;
     gs_font *pfont = (gs_font *)font->pfont;
+    gs_fapi_font local_pdf_ff_stub = pdfi_ff_stub;
+    gs_fapi_ttf_cmap_request symbolic_req[GS_FAPI_NUM_TTF_CMAP_REQ] = {{1, 0}, {3, 0}, {3, 1}, {3, 10}, {-1, -1}};
+    gs_fapi_ttf_cmap_request nonsymbolic_req[GS_FAPI_NUM_TTF_CMAP_REQ] = {{-1, -1}, {-1, -1}, {-1, -1}, {-1, -1}, {-1, -1}};
 
     if (!gs_fapi_available(pfont->memory, NULL)) {
         return (code);
@@ -205,6 +239,14 @@ pdfi_fapi_passfont(pdf_font *font, int subfont, char *fapi_request,
     fdata.data = font_data;
     fdata.size = font_data_len;
 
+    if (font->pdfi_font_type == e_pdf_font_truetype) {
+        pdf_font_truetype *ttfont = (pdf_font_truetype *)font;
+        *local_pdf_ff_stub.ttf_cmap_req = (ttfont->descflags & 4) ? *symbolic_req : *nonsymbolic_req;
+    }
+    else {
+        /* doesn't really matter for non-ttf */
+        *local_pdf_ff_stub.ttf_cmap_req = *nonsymbolic_req;
+    }
     /* The plfont should contain everything we need, but setting the client data for the server
      * to pbfont makes as much sense as setting it to NULL.
      */

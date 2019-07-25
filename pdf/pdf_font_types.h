@@ -120,6 +120,8 @@ typedef struct pdf_font_type3_s {
 
 typedef struct pdf_font_truetype_s {
     pdf_font_common;
+    gs_string sfnt;
+    int64_t descflags;
 } pdf_font_truetype;
 
 typedef struct pdf_cidfont {
