@@ -272,6 +272,7 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
     pdf_font *current_font = NULL;
     float *x_widths = NULL, *y_widths = NULL, width;
     double Tw = 0, Tc = 0;
+    int Trmode = 0;
 
     if (ctx->TextBlockDepth == 0) {
         ctx->pdf_warnings |= W_PDF_TEXTOPNOBT;
@@ -279,15 +280,10 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
 
     current_font = pdfi_get_current_pdf_font(ctx);
 
-    if (current_font == NULL || gs_currenttextrenderingmode(ctx->pgs) == 3) {
+    if (current_font == NULL) {
         pdfi_pop(ctx, 1);
         return_error(gs_error_invalidfont);
     }
-
-    /* Text is filled, so select the fill colour.
-     * FIXME: when we implement text rendering modes, this will change
-     */
-    gs_swapcolors(ctx->pgs);
 
     if (current_font->pdfi_font_type == e_pdf_font_type1 ||
         current_font->pdfi_font_type == e_pdf_font_cff ||
@@ -334,7 +330,7 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
                 /* Add any Tc value */
                 x_widths[i] += Tc;
             }
-            text.operation = TEXT_FROM_STRING | TEXT_DO_DRAW | TEXT_RETURN_WIDTH | TEXT_REPLACE_WIDTHS;
+            text.operation = TEXT_FROM_STRING | TEXT_RETURN_WIDTH | TEXT_REPLACE_WIDTHS;
             text.x_widths = x_widths;
             text.y_widths = y_widths;
             text.widths_size = s->length * 2;
@@ -348,6 +344,26 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
         }
         text.data.chars = (const gs_char *)s->data;
         text.size = s->length;
+
+        Trmode = gs_currenttextrenderingmode(ctx->pgs);
+        if (current_font->pdfi_font_type == e_pdf_font_type3 && Trmode != 0 && Trmode != 3)
+            Trmode = 0;
+
+        if (Trmode != 0 && Trmode != 3 && !ctx->preserve_tr_mode) {
+            text.operation |= TEXT_DO_FALSE_CHARPATH;
+            pdfi_gsave(ctx);
+            gs_newpath(ctx->pgs);
+            gs_moveto(ctx->pgs, 0, 0);
+        } else {
+            if (Trmode == 3)
+                text.operation = TEXT_DO_NONE | TEXT_RENDER_MODE_3;
+            else
+                text.operation |= TEXT_DO_DRAW;
+            /* Text is filled, so select the fill colour.
+             */
+            gs_swapcolors(ctx->pgs);
+        }
+
         code = gs_text_begin(ctx->pgs, &text, ctx->memory, &penum);
         if (code >= 0) {
             ctx->current_text_enum = penum;
@@ -359,8 +375,72 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
         /* CID fonts, multi-byte encodings. Not implemented yet. */
     }
 
+    if (!ctx->preserve_tr_mode) {
+        switch(Trmode) {
+            case 0:
+                /* Text has been drawn, put the colours back again */
+                gs_swapcolors(ctx->pgs);
+                break;
+            case 1:
+                gs_stroke(ctx->pgs);
+                pdfi_grestore(ctx);
+                break;
+            case 2:
+                gs_swapcolors(ctx->pgs);
+                pdfi_gsave(ctx);
+                gs_fill(ctx->pgs);
+                pdfi_grestore(ctx);
+                gs_swapcolors(ctx->pgs);
+                gs_stroke(ctx->pgs);
+                pdfi_grestore(ctx);
+                break;
+            case 3:
+                /* Can't happen, we drop out earlier in this case */
+                break;
+            /* FIXME: Need to think about this. The text is supposed to accumulate
+             * a path until we hit a ET operator, only then is it supposed to execute
+             * an actual clip. Even though potentially we could be required to fill
+             * or stroke some portions of it in the middle.
+             */
+            case 4:
+                gs_swapcolors(ctx->pgs);
+                pdfi_gsave(ctx);
+                gs_fill(ctx->pgs);
+                pdfi_grestore(ctx);
+                gs_swapcolors(ctx->pgs);
+                pdfi_grestore(ctx);
+                gs_clip(ctx->pgs);
+                break;
+            case 5:
+                pdfi_gsave(ctx);
+                gs_stroke(ctx->pgs);
+                pdfi_grestore(ctx);
+                pdfi_grestore(ctx);
+                gs_clip(ctx->pgs);
+                break;
+            case 6:
+                gs_swapcolors(ctx->pgs);
+                pdfi_gsave(ctx);
+                gs_fill(ctx->pgs);
+                pdfi_grestore(ctx);
+                gs_swapcolors(ctx->pgs);
+                pdfi_gsave(ctx);
+                gs_stroke(ctx->pgs);
+                pdfi_grestore(ctx);
+                pdfi_grestore(ctx);
+                gs_clip(ctx->pgs);
+                break;
+            case 7:
+                pdfi_grestore(ctx);
+                gs_clip(ctx->pgs);
+                break;
+            default:
+                pdfi_grestore(ctx);
+                break;
+        }
+    }
+
 show_error:
-    gs_swapcolors(ctx->pgs);
     gs_free_object(ctx->memory, x_widths, "Free X widths array on error");
     gs_free_object(ctx->memory, y_widths, "Free Y widths array on error");
     return code;
@@ -372,6 +452,7 @@ int pdfi_Tj(pdf_context *ctx)
     pdf_string *s = NULL;
     gs_matrix saved, Trm;
     gs_point initial_point, current_point, pt;
+    double linewidth = ctx->pgs->line_params.half_width;
 
     if (pdfi_count_stack(ctx) < 1)
         return_error(gs_error_stackunderflow);
@@ -392,6 +473,10 @@ int pdfi_Tj(pdf_context *ctx)
     Trm.ty = ctx->pgs->textrise;
 
     gs_matrix_multiply(&Trm, &ctx->pgs->textmatrix, &Trm);
+
+    gs_distance_transform_inverse(linewidth, 0, &Trm, &pt);
+    ctx->pgs->line_params.half_width = sqrt((pt.x * pt.x) + (pt.y + pt.y));
+
     gs_matrix_multiply(&Trm, &ctm_only(ctx->pgs), &Trm);
     gs_setmatrix(ctx->pgs, &Trm);
     code = gs_moveto(ctx->pgs, 0, 0);
@@ -400,6 +485,7 @@ int pdfi_Tj(pdf_context *ctx)
 
     code = pdfi_show(ctx, s);
 
+    ctx->pgs->line_params.half_width = linewidth;
     /* Update the Text matrix with the current point, for the next operation
      */
     gs_currentpoint(ctx->pgs, &current_point);
