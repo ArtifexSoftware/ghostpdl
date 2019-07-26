@@ -2264,11 +2264,12 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
         gs_c_param_list_release(&ctx->pdfi_param_list);
 
     if (ctx->cache_entries != 0) {
-        int count;
-        pdf_obj_cache_entry *entry = ctx->cache_LRU, *prev, *next;
+        pdf_obj_cache_entry *entry = ctx->cache_LRU, *next;
 
 #ifdef DEBUG
+        int count;
         bool stop = true;
+        pdf_obj_cache_entry *prev;
 
         do {
             entry = ctx->cache_LRU;

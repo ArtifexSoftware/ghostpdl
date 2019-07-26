@@ -19,6 +19,7 @@
 #include "pdf_stack.h"
 #include "pdf_array.h"
 #include "pdf_dict.h"
+#include "pdf_gstate.h"
 #include "pdf_font.h"
 #include "pdf_font3.h"
 #include "pdf_font_types.h"
@@ -198,9 +199,7 @@ int pdfi_read_type3_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     int code = 0, i, num_chars = 0;
     pdf_font_type3 *font = NULL;
     pdf_obj *obj = NULL;
-    gs_font *old = NULL;
     double f;
-    gs_matrix mat;
 
     *ppfont = NULL;
     code = alloc_type3_font(ctx, &font);
@@ -225,15 +224,11 @@ int pdfi_read_type3_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     code = pdfi_array_to_gs_matrix(ctx, (pdf_array *)obj, &font->pfont->orig_FontMatrix);
     if (code < 0)
         goto font3_error;
+    code = pdfi_array_to_gs_matrix(ctx, (pdf_array *)obj, &font->pfont->FontMatrix);
+    if (code < 0)
+        goto font3_error;
     pdfi_countdown(obj);
     obj = NULL;
-
-    code = gs_make_scaling(1, 1, &mat);
-    if (code < 0)
-        goto font3_error;
-    code = gs_matrix_multiply(&font->pfont->orig_FontMatrix, &mat, &font->pfont->FontMatrix);
-    if (code < 0)
-        goto font3_error;
 
     code = pdfi_dict_get(ctx, font_dict, "CharProcs", (pdf_obj **)&font->CharProcs);
     if (code < 0)

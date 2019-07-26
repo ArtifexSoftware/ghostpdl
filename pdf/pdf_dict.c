@@ -26,7 +26,9 @@ void pdfi_free_dict(pdf_obj *o)
 {
     pdf_dict *d = (pdf_dict *)o;
     int i;
+#ifdef DEBUG
     pdf_name *name;
+#endif
 
     for (i=0;i < d->entries;i++) {
 #ifdef DEBUG
@@ -48,7 +50,7 @@ int pdfi_dict_from_stack(pdf_context *ctx)
     pdf_dict *d = NULL;
     uint64_t i = 0;
     int code;
-#if DEBUG
+#ifdef DEBUG
     pdf_name *key;
 #endif
 

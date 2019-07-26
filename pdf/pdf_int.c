@@ -2853,7 +2853,7 @@ static int search_table_1(pdf_context *ctx, unsigned char *str, pdf_keyword **ke
 
 static int split_bogus_operator(pdf_context *ctx, pdf_stream *source, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
-    int code;
+    int code = 0;
     pdf_keyword *keyword = (pdf_keyword *)ctx->stack_top[-1], *key1 = NULL, *key2 = NULL;
 
     if (keyword->length > 6) {

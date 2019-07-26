@@ -20,6 +20,7 @@
 #include "pdf_text.h"
 #include "pdf_image.h"
 #include "pdf_stack.h"
+#include "pdf_gstate.h"
 #include "pdf_font.h"
 #include "pdf_font_types.h"
 
@@ -31,7 +32,7 @@ static int pdfi_set_TL(pdf_context *ctx, double TL);
 int pdfi_BT(pdf_context *ctx)
 {
     int code;
-    gs_matrix m, mat, mat1;
+    gs_matrix m;
 
     if (ctx->TextBlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_NESTEDTEXTBLOCK;
@@ -53,7 +54,6 @@ int pdfi_BT(pdf_context *ctx)
 int pdfi_ET(pdf_context *ctx)
 {
     int code = 0;
-    gs_matrix mat, mat1;
 
     if (ctx->TextBlockDepth == 0) {
         ctx->pdf_warnings |= W_PDF_ETNOTEXTBLOCK;
@@ -265,10 +265,10 @@ TD_error:
 
 static int pdfi_show(pdf_context *ctx, pdf_string *s)
 {
-    int code, i;
+    int code = 0, i;
     gs_text_enum_t *penum;
     gs_text_params_t text;
-    gs_matrix inverse, inverse_Tm, mat;
+    gs_matrix mat;
     pdf_font *current_font = NULL;
     float *x_widths = NULL, *y_widths = NULL, width;
     double Tw = 0, Tc = 0;
@@ -516,9 +516,9 @@ int pdfi_TJ(pdf_context *ctx)
     int code = 0, i;
     pdf_array *a = NULL;
     pdf_obj *o;
-    double dx = 0, dy = 0;
+    double dx = 0;
     gs_point pt;
-    gs_matrix saved, Trm, inverse;
+    gs_matrix saved, Trm;
     gs_point initial_point, current_point;
 
     if (ctx->TextBlockDepth == 0) {
@@ -641,7 +641,7 @@ int pdfi_Tm(pdf_context *ctx)
     int code = 0, i;
     float m[6];
     pdf_num *n = NULL;
-    gs_matrix mat, mat1;
+    gs_matrix mat;
     gs_point pt;
 
     if (pdfi_count_stack(ctx) < 6) {

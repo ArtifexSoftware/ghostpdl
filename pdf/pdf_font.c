@@ -27,6 +27,7 @@
 #include "pdf_font1C.h"
 #include "pdf_font3.h"
 #include "pdf_fontTT.h"
+#include "gscencs.h"            /* For gs_c_known_encode and gs_c_glyph_name */
 
 
 int pdfi_d0(pdf_context *ctx)
@@ -229,7 +230,6 @@ int pdfi_Tf(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
             }
             /* Don't swap fonts if this is already the current font */
             if (font->pfont != (gs_font_base *)ctx->pgs->font) {
-                pdf_font *old_font = pdfi_get_current_pdf_font(ctx);
                 code = pdfi_gs_setfont(ctx, (gs_font *)font->pfont);
             }
             else
@@ -397,7 +397,7 @@ int pdfi_create_Encoding(pdf_context *ctx, pdf_obj *pdf_Encoding, pdf_obj **Enco
     code = pdfi_alloc_object(ctx, PDF_ARRAY, 256, Encoding);
     if (code < 0)
         return code;
-    pdfi_countup(Encoding);
+    pdfi_countup(*Encoding);
 
     if (pdf_Encoding->type == PDF_NAME) {
         code = pdfi_build_Encoding(ctx, (pdf_name *)pdf_Encoding, (pdf_array *)*Encoding);
@@ -430,7 +430,7 @@ int pdfi_create_Encoding(pdf_context *ctx, pdf_obj *pdf_Encoding, pdf_obj **Enco
                 if (code < 0)
                     break;
                 if (o->type == PDF_NAME) {
-                    code = pdfi_array_put(ctx, *Encoding, (uint64_t)offset, o);
+                    code = pdfi_array_put(ctx, (pdf_array *)*Encoding, (uint64_t)offset, o);
                     pdfi_countdown(o);
                     offset++;
                     if (code < 0)
