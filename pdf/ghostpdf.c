@@ -1755,6 +1755,10 @@ pdfi_report_errors(pdf_context *ctx)
             dmprintf(ctx->memory, "\tEncountered an ET while not in a text block.\n");
         if (ctx->pdf_warnings & W_PDF_TEXTOPNOBT)
             dmprintf(ctx->memory, "\tEncountered a text position or show operator without a prior BT operator.\n");
+        if (ctx->pdf_warnings & W_PDF_BADICC_USE_ALT)
+            dmprintf(ctx->memory, "\tCouldn't set ICC profile space, used Alternate space instead.\n");
+        if (ctx->pdf_warnings & W_PDF_BADICC_USECOMPS)
+            dmprintf(ctx->memory, "\tCouldn't set ICC profile space, used number of profile components to select a space.\n");
     }
 
     dmprintf(ctx->memory, "\n   **** This file had errors that were repaired or ignored.\n");

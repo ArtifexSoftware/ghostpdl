@@ -975,8 +975,10 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
         if (image_info.ColorSpace == NULL) {
             if (image_info.is_JPXDecode) {
                 if (jpx_info.iccbased) {
+                    int dummy; /* Used to return the number of components read from the ICC profile, we ignore this here */
+
                     code = pdfi_create_icc_colorspace_from_stream(ctx, source, jpx_info.icc_offset,
-                                                                  jpx_info.icc_length, jpx_info.comps,
+                                                                  jpx_info.icc_length, jpx_info.comps, &dummy,
                                                                   &pcs);
                     if (code < 0) {
                         dmprintf2(ctx->memory,

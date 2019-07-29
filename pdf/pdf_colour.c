@@ -706,7 +706,7 @@ pdfi_setcolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, boo
 /* Starting with the ICCBased colour space */
 
 /* This routine is mostly a copy of seticc() in zicc.c */
-static int pdfi_create_icc(pdf_context *ctx, char *Name, stream *s, int ncomps, float *range_buff, gs_color_space **ppcs)
+static int pdfi_create_icc(pdf_context *ctx, char *Name, stream *s, int ncomps, int *icc_N, float *range_buff, gs_color_space **ppcs)
 {
     int                     code, k;
     gs_color_space *        pcs;
@@ -719,6 +719,9 @@ static int pdfi_create_icc(pdf_context *ctx, char *Name, stream *s, int ncomps, 
     static const char *const icc_std_profile_keys[] = {
             GSICC_STANDARD_PROFILES_KEYS
         };
+
+    if (ppcs!= NULL)
+        *ppcs = NULL;
 
     code = gs_cspace_build_ICC(&pcs, NULL, gs_gstate_memory(ctx->pgs));
     if (code < 0)
@@ -758,7 +761,6 @@ static int pdfi_create_icc(pdf_context *ctx, char *Name, stream *s, int ncomps, 
         rc_decrement(pcs,"pdfi_create_icc");
         return code;
     }
-    picc_profile->num_comps = ncomps;
 
     picc_profile->data_cs =
         gscms_get_profile_data_space(picc_profile->profile_handle,
@@ -780,11 +782,20 @@ static int pdfi_create_icc(pdf_context *ctx, char *Name, stream *s, int ncomps, 
         case gsUNDEFINED:        /* Silence warnings */
             break;
     }
+    /* Return the number of components the ICC profile has */
+    *icc_N = expected;
+    if (expected != ncomps)
+        ncomps = expected;
+
+#if 0
     if (!expected || ncomps != expected) {
         rc_decrement(picc_profile,"pdfi_create_icc");
         rc_decrement(pcs,"pdfi_create_icc");
         return_error(gs_error_rangecheck);
     }
+#endif
+
+    picc_profile->num_comps = ncomps;
     /* Lets go ahead and get the hash code and check if we match one of the default spaces */
     /* Later we may want to delay this, but for now lets go ahead and do it */
     gsicc_init_hash_cs(picc_profile, ctx->pgs);
@@ -857,7 +868,7 @@ static int pdfi_create_icc(pdf_context *ctx, char *Name, stream *s, int ncomps, 
     return code;
 }
 
-static int pdfi_create_iccprofile(pdf_context *ctx, pdf_dict *ICC_dict, char *cname, int64_t Length, int N, float *range, gs_color_space **ppcs)
+static int pdfi_create_iccprofile(pdf_context *ctx, pdf_dict *ICC_dict, char *cname, int64_t Length, int N, int *icc_N, float *range, gs_color_space **ppcs)
 {
     pdf_stream *profile_stream = NULL;
     byte *profile_buffer;
@@ -882,7 +893,7 @@ static int pdfi_create_iccprofile(pdf_context *ctx, pdf_dict *ICC_dict, char *cn
     }
 
     /* Now, finally, we can call the code to create and set the profile */
-    code = pdfi_create_icc(ctx, cname, profile_stream->s, (int)N, range, ppcs);
+    code = pdfi_create_icc(ctx, cname, profile_stream->s, (int)N, icc_N, range, ppcs);
 
     code1 = pdfi_close_memory_stream(ctx, profile_buffer, profile_stream);
 
@@ -904,6 +915,7 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
     int code;
     bool known;
     float range[8];
+    int icc_N;
 
     code = pdfi_array_get_type(ctx, color_array, index + 1, PDF_DICT, (pdf_obj **)&ICC_dict);
     if (code < 0)
@@ -968,44 +980,85 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
         }
     }
 
-    code = pdfi_create_iccprofile(ctx, ICC_dict, cname, Length, N, range, ppcs);
+    code = pdfi_create_iccprofile(ctx, ICC_dict, cname, Length, N, &icc_N, range, ppcs);
 
     gs_free_object(ctx->memory, cname, "pdfi_create_iccbased (profile name)");
+
+    /* This is just plain hackery for the benefit of Bug696690.pdf. The old PostScript PDF interpreter says:
+     * %% This section is to deal with the horrible pair of files in Bug #696690 and Bug #696120
+     * %% These files have ICCBased spaces where the value of /N and the number of components
+     * %% in the profile differ. In addition the profile in Bug #696690 is invalid. In the
+     * %% case of Bug #696690 the /N value is correct, and the profile is wrong, in the case
+     * %% of Bug #696120 the /N value is incorrect and the profile is correct.
+     * %% We 'suspect' that Acrobat uses the fact that Bug #696120 is a pure image to detect
+     * %% that the /N is incorrect, we can't be sure whether it uses the profile or just uses
+     * %% the /N to decide on a device space.
+     * We can't precisely duplicate the PostScript approach, but we now set the actual ICC profile
+     * and therefore use the number of components in the profile. However, we pass back the number
+     * of components in icc_N. We then check to see if N and icc_N are the same, if they are not we
+     * try to set a devcie colour using the profile. If that fails (bad profile) then we enter the fallback
+     * just as if we had failed to set the profile.
+     */
+    if (code >= 0 && N != icc_N) {
+        gs_client_color cc;
+        int i;
+
+        gs_gsave(ctx->pgs);
+        code = gs_setcolorspace(ctx->pgs, *ppcs);
+        if (code == 0) {
+            cc.pattern = 0;
+            for (i = 0;i < icc_N; i++)
+                cc.paint.values[i] = 0;
+            code = gs_setcolor(ctx->pgs, &cc);
+            if (code == 0)
+                code = gx_set_dev_color(ctx->pgs);
+        }
+        gs_grestore(ctx->pgs);
+    }
 
     if (code < 0) {
         pdf_obj *Alternate = NULL;
 
+        if (ppcs != NULL && *ppcs != NULL)
+            rc_decrement(*ppcs,"pdfi_create_iccbased");
+
         /* Failed to set the ICCBased space, attempt to use the Alternate */
         code = pdfi_dict_knownget(ctx, ICC_dict, "Alternate", &Alternate);
-        if (code == 0) {
-            /* Use the number of components (N) to set a space.... */
-            switch(N) {
-                case 1:
-                    *ppcs = gs_cspace_new_DeviceGray(ctx->memory);
-                    if (*ppcs == NULL)
-                        code = gs_note_error(gs_error_VMerror);
-                    break;
-                case 3:
-                    *ppcs = gs_cspace_new_DeviceRGB(ctx->memory);
-                    if (*ppcs == NULL)
-                        code = gs_note_error(gs_error_VMerror);
-                    break;
-                case 4:
-                    *ppcs = gs_cspace_new_DeviceCMYK(ctx->memory);
-                    if (*ppcs == NULL)
-                        code = gs_note_error(gs_error_VMerror);
-                    break;
-                default:
-                    code = gs_note_error(gs_error_undefined);
-                    break;
-            }
+        if (code > 0) {
+            /* The Alternate should be one of the device spaces, therefore a Name object. If its not, fallback to using /N */
+            if (Alternate->type == PDF_NAME)
+                code = pdfi_create_colorspace_by_name(ctx, (pdf_name *)Alternate, stream_dict, page_dict, ppcs, inline_image);
+                pdfi_countdown(Alternate);
+                if (code == 0) {
+                    ctx->pdf_warnings |= W_PDF_BADICC_USE_ALT;
+                    goto done;
+                }
         }
-        if (code > 0)
-            code = pdfi_create_colorspace_by_name(ctx, (pdf_name *)Alternate, stream_dict, page_dict, ppcs, inline_image);
-            /* The Alternate should be one of the device spaces */
-        pdfi_countdown(Alternate);
+        /* Use the number of components *from the profile* to set a space.... */
+        ctx->pdf_warnings |= W_PDF_BADICC_USECOMPS;
+        switch(N) {
+            case 1:
+                *ppcs = gs_cspace_new_DeviceGray(ctx->memory);
+                if (*ppcs == NULL)
+                    code = gs_note_error(gs_error_VMerror);
+                break;
+            case 3:
+                *ppcs = gs_cspace_new_DeviceRGB(ctx->memory);
+                if (*ppcs == NULL)
+                    code = gs_note_error(gs_error_VMerror);
+                break;
+            case 4:
+                *ppcs = gs_cspace_new_DeviceCMYK(ctx->memory);
+                if (*ppcs == NULL)
+                    code = gs_note_error(gs_error_VMerror);
+                break;
+            default:
+                code = gs_note_error(gs_error_undefined);
+                break;
+        }
     }
 
+done:
     pdfi_countdown(ICC_dict);
     return code;
 }
@@ -2014,7 +2067,7 @@ pdfi_create_colorspace_by_name(pdf_context *ctx, pdf_name *name,
  */
 int
 pdfi_create_icc_colorspace_from_stream(pdf_context *ctx, pdf_stream *stream, gs_offset_t offset,
-                                       unsigned int length, int comps, gs_color_space **ppcs)
+                                       unsigned int length, int comps, int *icc_N, gs_color_space **ppcs)
 {
     pdf_stream *profile_stream = NULL;
     byte *profile_buffer;
@@ -2038,7 +2091,7 @@ pdfi_create_icc_colorspace_from_stream(pdf_context *ctx, pdf_stream *stream, gs_
     }
 
     /* Now, finally, we can call the code to create and set the profile */
-    code = pdfi_create_icc(ctx, NULL, profile_stream->s, comps, range, ppcs);
+    code = pdfi_create_icc(ctx, NULL, profile_stream->s, comps, icc_N, range, ppcs);
 
     code1 = pdfi_close_memory_stream(ctx, profile_buffer, profile_stream);
 

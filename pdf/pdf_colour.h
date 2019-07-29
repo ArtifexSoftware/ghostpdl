@@ -37,7 +37,7 @@ int pdfi_ri(pdf_context *ctx);
 int pdfi_setcolorspace(pdf_context *ctx, pdf_obj *space, pdf_dict *stream_dict, pdf_dict *page_dict);
 int pdfi_create_colorspace(pdf_context *ctx, pdf_obj *space, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs, bool inline_image);
 int pdfi_create_icc_colorspace_from_stream(pdf_context *ctx, pdf_stream *stream, gs_offset_t offset,
-                                           unsigned int length, int comps, gs_color_space **ppcs);
+                                           unsigned int length, int comps, int *icc_N, gs_color_space **ppcs);
 
 /* Page level spot colour detection and enumeration */
 int pdfi_check_ColorSpace_for_spots(pdf_context *ctx, pdf_obj *space, pdf_dict *parent_dict, pdf_dict *page_dict, int *num_spots);
