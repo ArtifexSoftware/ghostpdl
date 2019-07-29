@@ -3522,8 +3522,9 @@ repaired_keyword:
 int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_obj **o)
 {
     char Key[256];
-    pdf_dict *Resources, *TypedResources;
+    pdf_dict *Resources, *TypedResources, *Parent;
     int code;
+    bool known = false;
 
     *o = NULL;
     memcpy(Key, name->data, name->length);
@@ -3539,6 +3540,17 @@ int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name, pd
             if (code != gs_error_undefined)
                 return code;
         }
+    }
+
+    code = pdfi_dict_known(stream_dict, "Parent", &known);
+    if (code == 0 && known) {
+        code = pdfi_dict_get_type(ctx, stream_dict, "Parent", PDF_DICT, (pdf_obj **)&Parent);
+        if (code == 0 && Parent->object_num != ctx->CurrentPageDict->object_num) {
+            code = pdfi_find_resource(ctx, Type, name, Parent, page_dict, o);
+            if (code != gs_error_undefined)
+                return code;
+        }
+        pdfi_countdown(Parent);
     }
 
     /* Normally page_dict can't be (or shouldn't be) NULL. However, if we are processing
