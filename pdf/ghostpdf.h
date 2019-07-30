@@ -143,6 +143,7 @@ typedef enum pdf_warning_flag_e {
     W_PDF_DEGENERATETM = W_PDF_TEXTOPNOBT << 1,
     W_PDF_BADICC_USE_ALT = W_PDF_DEGENERATETM << 1,
     W_PDF_BADICC_USECOMPS = W_PDF_BADICC_USE_ALT << 1,
+    W_PDF_BADTRSWITCH = W_PDF_BADICC_USECOMPS << 1,
 } pdf_warning_flag;
 
 #define INITIAL_STACK_SIZE 32

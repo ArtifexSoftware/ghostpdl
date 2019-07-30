@@ -720,8 +720,15 @@ int pdfi_Tr(pdf_context *ctx)
 
     if (mode < 0 || mode > 7)
         code = gs_note_error(gs_error_rangecheck);
-    else
+    else {
+        /* Detect attempts to switch fomr a clipping mode to a non-clipping
+         * mode, this is defined as invalid in the spec.
+         */
+        if (gs_currenttextrenderingmode(ctx->pgs) > 3 && mode < 4)
+            ctx->pdf_warnings != W_PDF_BADTRSWITCH;
+
         gs_settextrenderingmode(ctx->pgs, mode);
+    }
 
     return code;
 }
