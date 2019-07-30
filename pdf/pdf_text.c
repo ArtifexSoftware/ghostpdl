@@ -725,7 +725,7 @@ int pdfi_Tr(pdf_context *ctx)
          * mode, this is defined as invalid in the spec.
          */
         if (gs_currenttextrenderingmode(ctx->pgs) > 3 && mode < 4)
-            ctx->pdf_warnings != W_PDF_BADTRSWITCH;
+            ctx->pdf_warnings |= W_PDF_BADTRSWITCH;
 
         gs_settextrenderingmode(ctx->pgs, mode);
     }
