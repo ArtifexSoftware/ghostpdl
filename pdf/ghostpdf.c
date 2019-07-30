@@ -1530,9 +1530,6 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
     stream_save local_entry_save;
     pdf_dict *group_dict = NULL;
 
-    /* Save the current stream state, for later cleanup, in a local variable */
-    local_save_stream_state(ctx, &local_entry_save);
-
     if (page_num > ctx->num_pages)
         return_error(gs_error_rangecheck);
 
@@ -1629,6 +1626,8 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
         }
     }
 
+    /* Save the current stream state, for later cleanup, in a local variable */
+    local_save_stream_state(ctx, &local_entry_save);
     initialise_stream_save(ctx);
 
     code = pdfi_process_page_contents(ctx, page_dict);
@@ -1642,12 +1641,12 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
         code = ((pdf_context *)0)->first_page;
 #endif
 
+    cleanup_context_interpretation(ctx, &local_entry_save);
+    local_restore_stream_state(ctx, &local_entry_save);
+
     if (ctx->page_has_transparency && page_group_known) {
         code1 = pdfi_trans_end_group(ctx);
     }
-
-    cleanup_context_interpretation(ctx, &local_entry_save);
-    local_restore_stream_state(ctx, &local_entry_save);
 
     pdfi_countdown(ctx->CurrentPageDict);
     ctx->CurrentPageDict = NULL;
