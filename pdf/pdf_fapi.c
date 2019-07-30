@@ -27,7 +27,9 @@
 #include "gscoord.h"
 #include "gspath.h"
 #include "pdf_int.h"
+#include "pdf_array.h"
 #include "pdf_font.h"
+#include "pdf_agl.h"
 
 /* forward declarations for the pdfi_ff_stub definition */
 static ulong
@@ -107,18 +109,70 @@ pdfi_fapi_get_long(gs_fapi_font * ff, gs_fapi_font_feature var_id, int index)
     return (value);
 }
 
+extern pdfi_single_glyph_list_t *pdfi_SingleGlyphList;
+
 static int
 pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_string * charstring,
                 gs_string * name, int ccode, gs_string * enc_char_name,
                 char *font_file_path, gs_fapi_char_ref * cr, bool bCID)
 {
     if (pbfont->FontType == ft_TrueType) {
-        pdf_font_truetype *font = (pdf_font_truetype *)pbfont->client_data;
+        pdf_font_truetype *ttfont = (pdf_font_truetype *)pbfont->client_data;
+
         cr->client_char_code = ccode;
-        if (font->descflags & 4){
-            cr->is_glyph_index = false;
-            return 0;
+        cr->is_glyph_index = false;
+
+        if ((ttfont->descflags & 4) == 0) {
+            pdf_name *GlyphName = NULL;
+            int code = pdfi_array_get(ttfont->ctx, ttfont->Encoding, (uint64_t)ccode, (pdf_obj **)&GlyphName);
+            if (code >= 0) {
+                int i;
+                pdfi_single_glyph_list_t *sgl = (pdfi_single_glyph_list_t *)&(pdfi_SingleGlyphList);
+                /* Not to spec, but... if we get a "uni..." formatted name, use
+                   the hex value from that.
+                 */
+                if (GlyphName->length > 5 && !strncmp(GlyphName->data, "uni", 3)) {
+                    unsigned int cc;
+                    sscanf(GlyphName->data + 3, "%x", &cc);
+                    cr->char_codes[0] = cc;
+                }
+                else {
+                    /* Slow linear search, we could binary chop it */
+                    for (i = 0; sgl[i].Glyph != 0x00; i++) {
+                        if (sgl[i].Glyph[0] == GlyphName->data[0]
+                            && strlen(sgl[i].Glyph) == GlyphName->length
+                            && !strcmp(sgl[i].Glyph, GlyphName->data))
+                            break;
+                    }
+                    if (sgl[i].Glyph == NULL) {
+                        gs_font_type42 *pfonttt = (gs_font_type42 *)pbfont;
+                        gs_string gname = {0};
+
+                        /* This is a very slow implementation, we may benefit from creating a
+                         * a reverse post table upfront */
+                        for (i = 0; i < pfonttt->data.numGlyphs; i++) {
+                            code = gs_type42_find_post_name(pfonttt, (gs_glyph)i, &gname);
+                            if (code >= 0) {
+                                if (gname.data[0] == GlyphName->data[0]
+                                    && gname.size == GlyphName->length
+                                    && !strncmp(gname.data, GlyphName->data, GlyphName->length))
+                                {
+                                    cr->char_codes[0] = i;
+                                    cr->is_glyph_index = false;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    else {
+                        cr->char_codes[0] = sgl[i].Unicode;
+                        cr->is_glyph_index = false;
+                    }
+                }
+                pdfi_countdown(GlyphName);
+            }
         }
+        return 0;
     }
     return pbfont->procs.glyph_name((gs_font *)pbfont, ccode, enc_char_name);
 }
@@ -230,7 +284,7 @@ pdfi_fapi_passfont(pdf_font *font, int subfont, char *fapi_request,
     gs_font *pfont = (gs_font *)font->pfont;
     gs_fapi_font local_pdf_ff_stub = pdfi_ff_stub;
     gs_fapi_ttf_cmap_request symbolic_req[GS_FAPI_NUM_TTF_CMAP_REQ] = {{1, 0}, {3, 0}, {3, 1}, {3, 10}, {-1, -1}};
-    gs_fapi_ttf_cmap_request nonsymbolic_req[GS_FAPI_NUM_TTF_CMAP_REQ] = {{-1, -1}, {-1, -1}, {-1, -1}, {-1, -1}, {-1, -1}};
+    gs_fapi_ttf_cmap_request nonsymbolic_req[GS_FAPI_NUM_TTF_CMAP_REQ] = {{3, 1}, {1, 0}, {-1, -1}, {-1, -1}, {-1, -1}};
 
     if (!gs_fapi_available(pfont->memory, NULL)) {
         return (code);
@@ -267,4 +321,20 @@ pdfi_fapi_passfont(pdf_font *font, int subfont, char *fapi_request,
     pfont->procs.build_char = pdfi_fapi_build_char;
 
     return (code);
+}
+
+int
+pdfi_fapi_check_cmap_for_GID(gs_font *pfont, uint *c)
+{
+    if (pfont->FontType == ft_TrueType) {
+        gs_font_base *pbfont = (gs_font_base *)pfont;
+        gs_fapi_server *I = pbfont->FAPI;
+
+        if (I) {
+            I->ff.server_font_data = pbfont->FAPI_font_data;
+            I->check_cmap_for_GID(I, c);
+            return 0;
+        }
+    }
+    return_error(gs_error_invalidfont);
 }

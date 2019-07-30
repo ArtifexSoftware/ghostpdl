@@ -42,6 +42,18 @@ pdfi_ttf_string_proc(gs_font_type42 * pfont, ulong offset, uint length,
     return code;
 }
 
+static gs_glyph
+pdfi_tt_encode_char(gs_font * pfont, gs_char chr, gs_glyph_space_t not_used)
+{
+    gs_glyph c = chr;
+    gs_string str;
+#if 0
+    int code = pdfi_fapi_check_cmap_for_GID(pfont, (uint *)&c);
+    if (code < 0) c = GS_NO_CHAR;
+#endif
+    return c;
+}
+
 static int
 pdfi_alloc_tt_font(pdf_context *ctx, pdf_font_truetype **font, bool is_cid)
 {
@@ -101,7 +113,7 @@ pdfi_alloc_tt_font(pdf_context *ctx, pdf_font_truetype **font, bool is_cid)
     uid_set_UniqueID(&pfont->UID, gs_next_ids(ctx->memory, 1));
     /* The buildchar proc will be filled in by FAPI -
        we won't worry about working without FAPI */
-    pfont->procs.encode_char = pdfi_encode_char;
+    pfont->procs.encode_char = pdfi_tt_encode_char;
     pfont->data.string_proc = pdfi_ttf_string_proc;
     pfont->procs.glyph_name = pdfi_glyph_name;
     pfont->procs.decode_glyph = pdfi_decode_glyph;
@@ -131,13 +143,13 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
     int64_t buflen;
     pdf_obj *fontdesc = NULL;
     pdf_obj *fontfile = NULL;
-    pdf_obj *obj;
+    pdf_obj *obj = NULL;
     double f;
 
     *ppfont = NULL;
 
     code = pdfi_dict_knownget_type(ctx, font_dict, "FontDescriptor", PDF_DICT, &fontdesc);
-    if (code < 0)
+    if (code <= 0)
         return_error(gs_error_invalidfont);
 
     code = pdfi_dict_get_type(ctx, (pdf_dict *)fontdesc, "FontFile2", PDF_DICT, &fontfile);
@@ -152,6 +164,8 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
     }
     font->FontDescriptor = (pdf_dict *)fontdesc;
     fontdesc = NULL;
+    font->object_num = font_dict->object_num;
+    font->pfont->id = font_dict->object_num;
 
     code = pdfi_dict_get_number(ctx, font_dict, "FirstChar", &f);
     if (code < 0) {
@@ -174,11 +188,6 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
     }
     font->sfnt.data = buf;
     font->sfnt.size = buflen;
-
-    code = gs_type42_font_init((gs_font_type42 *)font->pfont, 0);
-    if (code < 0) {
-        goto error;
-    }
 
     /* Strictly speaking BaseFont is required, but we can continue without one */
     code = pdfi_dict_knownget_type(ctx, font_dict, "BaseFont", PDF_NAME, (pdf_obj **)&obj);
@@ -226,17 +235,29 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
         font->descflags = 0;
 
     /* A symbolic font should not have and Encoding, but previous experience suggests
-       the presence of the encoding has an effect - still have to deal with that
+       the presence of the encoding has an effect - still have to deal with that.
+       Also, pdfwrite seems to expect an encoding.
      */
-    if (!(font->descflags & 4)) {
-        code = pdfi_dict_get(ctx, font_dict, "Encoding", &obj);
-        if (code < 0)
-            code = pdfi_make_name(ctx, (byte *)"StandardEncoding", 16, (pdf_obj **)&obj);
+    code = pdfi_dict_get(ctx, font_dict, "Encoding", &obj);
+    if (code < 0)
+        code = pdfi_make_name(ctx, (byte *)"MacRomanEncoding", 16, (pdf_obj **)&obj);
 
-        code = pdfi_create_Encoding(ctx, obj, (pdf_obj **)&font->Encoding);
-        if (code < 0)
-            goto error;
-        pdfi_countdown(obj);
+    code = pdfi_create_Encoding(ctx, obj, (pdf_obj **)&font->Encoding);
+    if (code < 0)
+        goto error;
+    pdfi_countdown(obj);
+    obj = NULL;
+
+    font->fake_glyph_names = (gs_string *)gs_alloc_bytes(font->memory, font->LastChar * sizeof(gs_string), "pdfi_read_truetype_font: fake_glyph_names");
+    if (!font->fake_glyph_names) {
+        code = gs_note_error(gs_error_VMerror);
+        goto error;
+    }
+    memset(font->fake_glyph_names, 0x00, font->LastChar * sizeof(gs_string));
+
+    code = gs_type42_font_init((gs_font_type42 *)font->pfont, 0);
+    if (code < 0) {
+        goto error;
     }
 
     code = gs_definefont(ctx->font_dir, (gs_font *)font->pfont);
@@ -265,12 +286,20 @@ error:
 int pdfi_free_font_truetype(pdf_obj *font)
 {
     pdf_font_truetype *ttfont = (pdf_font_truetype *)font;
+    int i;
     if (ttfont->pfont)
         gs_free_object(ttfont->memory, ttfont->pfont, "Free TrueType gs_font");
 
     if (ttfont->Widths)
         gs_free_object(ttfont->memory, ttfont->Widths, "Free TrueType font Widths array");
 
+    if (ttfont->fake_glyph_names != NULL) {
+        for (i = 0; i < ttfont->LastChar; i++) {
+            if (ttfont->fake_glyph_names[i].data != NULL)
+                gs_free_object(ttfont->memory, ttfont->fake_glyph_names[i].data, "Free TrueType fake_glyph_name");
+        }
+    }
+    gs_free_object(ttfont->memory, ttfont->fake_glyph_names, "Free TrueType fake_glyph_names");
     gs_free_object(ttfont->memory, ttfont->sfnt.data, "Free TrueType font sfnt buffer");
 
     pdfi_countdown(ttfont->FontDescriptor);

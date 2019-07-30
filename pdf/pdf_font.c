@@ -425,7 +425,7 @@ int pdfi_create_Encoding(pdf_context *ctx, pdf_obj *pdf_Encoding, pdf_obj **Enco
             }
             pdfi_countdown(n);
             code = pdfi_dict_knownget_type(ctx, (pdf_dict *)pdf_Encoding, "Differences", PDF_ARRAY, (pdf_obj **)&a);
-            if (code < 0)
+            if (code <= 0)
                 return code;
             for (i=0;i < pdfi_array_size(a);i++) {
                 code = pdfi_array_get(ctx, a, (uint64_t)i, &o);
@@ -480,16 +480,38 @@ int pdfi_decode_glyph(gs_font * font, gs_glyph glyph, int ch, ushort *unicode_re
  */
 int pdfi_glyph_name(gs_font * pfont, gs_glyph glyph, gs_const_string * pstr)
 {
-    int code;
-    pdf_font_type3 *font;
+    int code = 0;
+    pdf_font *font;
     pdf_name *GlyphName = NULL;
 
-    font = (pdf_font_type3 *)pfont->client_data;
-    code = pdfi_array_get(font->ctx, font->Encoding, (uint64_t)glyph, (pdf_obj **)&GlyphName);
-    if (code < 0)
+    font = (pdf_font *)pfont->client_data;
+    if (font->Encoding != NULL)
+        code = pdfi_array_get(font->ctx, font->Encoding, (uint64_t)glyph, (pdf_obj **)&GlyphName);
+    if (code < 0 && !font->fake_glyph_names)
         return code;
+
+    /* For the benefit of the vector devices, if a glyph index is outside the encoding, we create a fake name */
+    if (GlyphName == NULL) {
+        int i;
+        char cid_name[5 + sizeof(gs_glyph) * 3 + 1];
+        for (i = 0; i < font->LastChar; i++)
+            if (font->fake_glyph_names[i].data == NULL) break;
+
+         if (i == font->LastChar) return_error(gs_error_invalidfont);
+
+         gs_sprintf(cid_name, "glyph%lu", (ulong) glyph);
+
+         pstr->data = font->fake_glyph_names[i].data =
+                       gs_alloc_bytes(font->memory, strlen(cid_name) + 1, "pdfi_glyph_name: fake name");
+         if (font->fake_glyph_names[i].data == NULL)
+             return_error(gs_error_VMerror);
+         pstr->size = font->fake_glyph_names[i].size = strlen(cid_name);
+         memcpy(font->fake_glyph_names[i].data, cid_name, strlen(cid_name) + 1);
+         return 0;
+    }
 
     pstr->data = GlyphName->data;
     pstr->size = GlyphName->length;
+    pdfi_countdown(GlyphName);
     return 0;
 }

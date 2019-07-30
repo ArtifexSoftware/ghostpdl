@@ -92,7 +92,8 @@ typedef enum pdf_font_type_e {
     unsigned int LastChar;          /* For PDF up to 1.4 this may be absent for the base 14 */\
     double *Widths;                  /* For PDF up to 1.4 this may be absent for the base 14 */\
     pdf_array *Encoding;            /* Array built from name or dictionary */\
-    pdf_obj *ToUnicode              /* Name or stream (technically should be a stream, but we've seen Identity names */
+    pdf_obj *ToUnicode;             /* Name or stream (technically should be a stream, but we've seen Identity names */ \
+    gs_string *fake_glyph_names     /* For when we encounter a glyph not in the Encoding */
 
 typedef struct pdf_font_s {
     pdf_font_common;
