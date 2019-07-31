@@ -834,10 +834,10 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_gstate * pgs, const
             memset (&conc, 0x00, sizeof(frac) * GS_CLIENT_COLOR_MAX_COMPONENTS);
             sep_space->type->concretize_color(&cc, sep_space, conc, pgs, (gx_device *)pdev);
 
-            if (pdev->params.TransferFunctionInfo == tfi_Apply) {
-                for (i = 0;i < pdev->color_info.num_components;i++)
-                    cc1.paint.values[i] = frac2float(conc[i]);
+            for (i = 0;i < pdev->color_info.num_components;i++)
+                cc1.paint.values[i] = frac2float(conc[i]);
 
+            if (pdev->params.TransferFunctionInfo == tfi_Apply) {
                 switch (pdev->params.ColorConversionStrategy) {
                     case ccs_Gray:
                         code = apply_transfer_gray(pdev, pgs, &cc1, &cc1);
@@ -857,12 +857,9 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_gstate * pgs, const
                     COS_FREE(pca, "pdf_color_space");
                     return code;
                 }
-                for (j = 0;j < pdev->color_info.num_components;j++)
-                    data_buff[(loop * pdev->color_info.num_components) + j] = (int)(cc1.paint.values[j] * 255);
-            } else {
-                for (j = 0;j < pdev->color_info.num_components;j++)
-                    data_buff[(loop * pdev->color_info.num_components) + j] = (int)(frac2float(conc[j]) * 255);
             }
+            for (j = 0;j < pdev->color_info.num_components;j++)
+                data_buff[(loop * pdev->color_info.num_components) + j] = (int)(cc1.paint.values[j] * 255);
         }
         /* Put back the values we hacked in order to force the colour management code
          * to do what we want.
@@ -1168,10 +1165,10 @@ int convert_separation_alternate(gx_device_pdf * pdev, const gs_gstate * pgs, co
         cc.paint.values[0] = 0;
         sep_space->type->concretize_color(&cc, sep_space, conc, pgs, (gx_device *)pdev);
 
-        if (pdev->params.TransferFunctionInfo == tfi_Apply) {
-            for (i = 0;i < pdev->color_info.num_components;i++)
-                cc.paint.values[i] = frac2float(conc[i]);
+        for (i = 0;i < pdev->color_info.num_components;i++)
+            cc.paint.values[i] = frac2float(conc[i]);
 
+        if (pdev->params.TransferFunctionInfo == tfi_Apply) {
             switch (pdev->params.ColorConversionStrategy) {
                 case ccs_Gray:
                     code = apply_transfer_gray(pdev, pgs, &cc, &cc);
@@ -1213,10 +1210,10 @@ int convert_separation_alternate(gx_device_pdf * pdev, const gs_gstate * pgs, co
         memset (&conc, 0x00, sizeof(frac) * GS_CLIENT_COLOR_MAX_COMPONENTS);
         sep_space->type->concretize_color(&cc, sep_space, conc, pgs, (gx_device *)pdev);
 
-        if (pdev->params.TransferFunctionInfo == tfi_Apply) {
-            for (i = 0;i < pdev->color_info.num_components;i++)
-                cc.paint.values[i] = frac2float(conc[i]);
+        for (i = 0;i < pdev->color_info.num_components;i++)
+            cc.paint.values[i] = frac2float(conc[i]);
 
+        if (pdev->params.TransferFunctionInfo == tfi_Apply) {
             switch (pdev->params.ColorConversionStrategy) {
                 case ccs_Gray:
                     code = apply_transfer_gray(pdev, pgs, &cc, &cc);
