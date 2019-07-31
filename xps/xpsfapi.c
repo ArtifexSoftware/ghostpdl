@@ -67,6 +67,7 @@ static const gs_fapi_font pl_ff_stub = {
     {3,10}, {3,1},{3,5},{3,4},\
       {3,3},{3,2},{3,0},{1,0},
       {-1,-1}},                 /* ttf_cmap_req */
+    {-1, -1},                   /* ttf_cmap_selected */
     0,                          /* client_ctx_p */
     0,                          /* client_font_data */
     0,                          /* client_font_data2 */

@@ -105,6 +105,7 @@ static const gs_fapi_font pl_ff_stub = {
     false,                      /* is_vertical */
     false,                      /* metrics_only */
     {{3, 10}, {3, 1}, {-1, -1}, {-1, -1}, {-1, -1}},    /* ttf_cmap_req */
+    {-1 , -1},                                          /* ttf_cmap_selected */
     0,                          /* client_ctx_p */
     0,                          /* client_font_data */
     0,                          /* client_font_data2 */

@@ -1384,6 +1384,21 @@ gs_fapi_ft_get_scaled_font(gs_fapi_server * a_server, gs_fapi_font * a_font,
                  */
                 (void)FT_Select_Charmap(face->ft_face, ft_encoding_unicode);
             }
+            /* For PDF, we have to know which cmap table actually was selected */
+            if (face->ft_face->charmap != NULL) {
+                a_font->ttf_cmap_selected.platform_id = face->ft_face->charmap->platform_id;
+                a_font->ttf_cmap_selected.encoding_id = face->ft_face->charmap->encoding_id;
+            }
+            else {
+                /* Just in case */
+                a_font->ttf_cmap_selected.platform_id = -1;
+                a_font->ttf_cmap_selected.encoding_id = -1;
+            }
+        }
+        else {
+            /* Just in case */
+            a_font->ttf_cmap_selected.platform_id = -1;
+            a_font->ttf_cmap_selected.encoding_id = -1;
         }
     }
 
