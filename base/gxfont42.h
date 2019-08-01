@@ -24,6 +24,12 @@
 #include "gxmatrix.h"
 #include "gxfcache.h"
 
+typedef struct
+{
+  const int ccode;
+  const char * const name;
+} mac_glyph_ordering_t;
+
 /* This is the type-specific information for a Type 42 (TrueType) font. */
 typedef struct gs_type42_data_s gs_type42_data;
 
@@ -77,6 +83,7 @@ struct gs_type42_data_s {
     ulong loca;			/* offset to loca table */
     ulong name_offset;		/* offset to name table */
     ulong os2_offset;		/* offset to OS/2 table */
+    ulong post_offset;          /* Offset to the post table */
     /*
      * TrueType fonts specify the number of glyphs in two different ways:
      * the size of the loca table, and an explicit value in maxp.  Currently
@@ -128,6 +135,9 @@ int gs_type42_font_init(gs_font_type42 *pfont, int subfontid);
 
 /* Read data from sfnts. */
 int gs_type42_read_data(gs_font_type42 * pfont, ulong pos, uint length, byte *buf);
+
+/* Use the name table to find a glyph name */
+int gs_type42_find_post_name(gs_font_type42 * pfont, gs_glyph glyph, gs_string *gname);
 
 /* Read data from sfnts. */
 /* A temporary macro for simplifying the old code change. */
