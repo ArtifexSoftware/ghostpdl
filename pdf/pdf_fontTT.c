@@ -42,18 +42,6 @@ pdfi_ttf_string_proc(gs_font_type42 * pfont, ulong offset, uint length,
     return code;
 }
 
-static gs_glyph
-pdfi_tt_encode_char(gs_font * pfont, gs_char chr, gs_glyph_space_t not_used)
-{
-    gs_glyph c = chr;
-    gs_string str;
-#if 0
-    int code = pdfi_fapi_check_cmap_for_GID(pfont, (uint *)&c);
-    if (code < 0) c = GS_NO_CHAR;
-#endif
-    return c;
-}
-
 static int
 pdfi_alloc_tt_font(pdf_context *ctx, pdf_font_truetype **font, bool is_cid)
 {
@@ -113,7 +101,7 @@ pdfi_alloc_tt_font(pdf_context *ctx, pdf_font_truetype **font, bool is_cid)
     uid_set_UniqueID(&pfont->UID, gs_next_ids(ctx->memory, 1));
     /* The buildchar proc will be filled in by FAPI -
        we won't worry about working without FAPI */
-    pfont->procs.encode_char = pdfi_tt_encode_char;
+    pfont->procs.encode_char = pdfi_encode_char;
     pfont->data.string_proc = pdfi_ttf_string_proc;
     pfont->procs.glyph_name = pdfi_glyph_name;
     pfont->procs.decode_glyph = pdfi_decode_glyph;
@@ -164,8 +152,14 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
     }
     font->FontDescriptor = (pdf_dict *)fontdesc;
     fontdesc = NULL;
-    font->object_num = font_dict->object_num;
-    font->pfont->id = font_dict->object_num;
+    if (font_dict->object_num != 0) {
+        font->object_num = font_dict->object_num;
+        font->pfont->id = font_dict->object_num;
+    }
+    else {
+        /* For now, anyway */
+        font->pfont->id = font->pfont->UID.id;
+    }
 
     code = pdfi_dict_get_number(ctx, font_dict, "FirstChar", &f);
     if (code < 0) {
@@ -270,9 +264,12 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
         goto error;
     }
 
-    code = replace_cache_entry(ctx, (pdf_obj *)font);
-    if (code < 0)
-        goto error;
+    /* object_num can be zero if the dictionary was defined inline */
+    if (font->object_num != 0) {
+        code = replace_cache_entry(ctx, (pdf_obj *)font);
+        if (code < 0)
+            goto error;
+    }
 
     if (font)
         *ppfont = (gs_font *)font->pfont;

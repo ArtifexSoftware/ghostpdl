@@ -119,10 +119,19 @@ typedef struct pdf_font_type3_s {
     pdf_dict *CharProcs;
 } pdf_font_type3;
 
+typedef enum {
+    pdfi_truetype_cmap_none,
+    pdfi_truetype_cmap_10,
+    pdfi_truetype_cmap_30,
+    pdfi_truetype_cmap_31,
+    pdfi_truetype_cmap_310
+} pdfi_truetype_cmap;
+
 typedef struct pdf_font_truetype_s {
     pdf_font_common;
     gs_string sfnt;
     int64_t descflags;
+    pdfi_truetype_cmap cmap;
 } pdf_font_truetype;
 
 typedef struct pdf_cidfont {
