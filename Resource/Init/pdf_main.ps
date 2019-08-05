@@ -1560,7 +1560,11 @@ currentdict /xref-char-dict undef
    { stop } if
 
    % Check for recursion in the page tree. Bug 689954, MOAB-06-01-2007
+   % Make sure that the operand stack is cleaned up in case there's
+   % an error and we ignore it (bug #700953)
+   mark
    verify_page_tree
+   cleartomark
 
    currentdict end
  } bind executeonly def
@@ -1996,6 +2000,11 @@ currentdict /xref-char-dict undef
 % Check for loops in the 'page tree' but accept an acyclic graph.
 % - verify_page_tree -
 /verify_page_tree {
+  % Run the verification inside a 'stopped' context. Bug #700953
+  % has a peculiarly constructed page tree, and a huge number of
+  % pages, which recurses to a depth beyond the level we can cope
+  % with on the exec stack. If we ignore that error then we can
+  {
   Trailer /Root knownoget {
     /Pages knownoget {
       10 dict begin
@@ -2027,6 +2036,16 @@ currentdict /xref-char-dict undef
       verify_page_tree_recursive
       end
     } if
+  } if
+  } stopped
+  {
+    %% Specific check for syntax error, in this case assume we found a loop in the Pages tree.
+    %% (see above). Otherwise, just try to process the file anyway.
+    $error /errorname get /syntaxerror eq {
+      /verify_page_tree cvx /syntaxerror signalerror
+    } {
+      (   **** Error: Something went wrong while checking for recursion in the Page tree. Giving up checking.\n               This PDF file may not terminate, if there is a loop in the Pages tree.\n) pdfformaterror
+    } ifelse
   } if
 } bind executeonly def
 
