@@ -786,6 +786,19 @@ struct gx_device_pdf_s {
     int PatternDepth;
     gs_matrix AccumulatedPatternMatrix;
 
+    /* Normally the PDF itnerpreter doesn't call execform to pass a From XObject to
+     * pdfwrite, but it *does* create forms (and increment FormDepth) for transparent
+     * Groups, which are handled as Form XObjects. Because of the way that Pattterns work,
+     * the first pattern after a Form uses the Form co-ordinate system, but if the Pattern
+     * itself uses Patterns, then the nested Pattern needs to use the co-ordinate system
+     * of the parent Pattern. Unless, of course, we have another Form!
+     * So essentially we need to know the Pattern depth, since the last form was executed.
+     * If its 0, then we want to apply the current CTM, if its more than that then we want
+     * to undo the pdfwrite scaling (see gdevpdfv.c, pdf_store_pattern1_params() at about line
+     * 239.
+     */
+    int PatternsSinceForm;
+
     /* Accessories */
     cos_dict_t *substream_Resources;     /* Substream resources */
     gs_color_space_index pcm_color_info_index; /* Index of the ProcessColorModel space. */

@@ -195,6 +195,7 @@ pdf_begin_transparency_group(gs_gstate * pgs, gx_device_pdf * pdev,
            See doimagesmask in gs/lib/pdf_draw.ps .
            Just set a flag for skipping pdf_end_transparency_group. */
         pdev->image_with_SMask |= 1 << ++pdev->FormDepth;
+        pdev->PatternsSinceForm = 0;
     } else {
         pdf_resource_t *pres, *pres_gstate = NULL;
         cos_dict_t *pcd = NULL, *pcd_Resources = NULL;
@@ -210,6 +211,7 @@ pdf_begin_transparency_group(gs_gstate * pgs, gx_device_pdf * pdev,
         if (code < 0)
             return code;
         pdev->FormDepth++;
+        pdev->PatternsSinceForm = 0;
         code = pdf_make_form_dict(pdev, pparams, pgs, group_dict, (cos_dict_t *)pres->object);
         if (code < 0)
             return code;
@@ -237,6 +239,7 @@ pdf_end_transparency_group(gs_gstate * pgs, gx_device_pdf * pdev)
         /* An internal group for the image implementation.
            See pdf_begin_transparency_group. */
         pdev->image_with_SMask &= ~(1 << pdev->FormDepth--);
+        pdev->PatternsSinceForm = 0;
         return 0;
     } else if (pdev->sbstack_depth == bottom) {
         /* We're closing the page group. */
@@ -249,6 +252,7 @@ pdf_end_transparency_group(gs_gstate * pgs, gx_device_pdf * pdev)
         uint ignore;
 
         pdev->FormDepth--;
+        pdev->PatternsSinceForm = 0;
         code = pdf_exit_substream(pdev);
         if (code < 0)
             return code;
@@ -381,6 +385,7 @@ pdf_end_transparency_mask(gs_gstate * pgs, gx_device_pdf * pdev,
          * the FormDepth ourselves.
          */
         pdev->FormDepth--;
+        pdev->PatternsSinceForm = 0;
     }
     return 0;
 }

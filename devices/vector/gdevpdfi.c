@@ -2539,6 +2539,7 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                 pprintg2(pdev->strm, "%g 0 0 %g 0 0 cm\n",
                          72.0 / pdev->HWResolution[0], 72.0 / pdev->HWResolution[1]);
                 pdev->PatternDepth++;
+                pdev->PatternsSinceForm++;
             }
             return 1;
         case gxdso_pattern_finish_accum:
@@ -2578,6 +2579,7 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
             } else if (pres->object->id < 0)
                 pdf_reserve_object_id(pdev, pres, 0);
             pdev->PatternDepth--;
+            pdev->PatternsSinceForm--;
             return 1;
         case gxdso_pattern_load:
             pres = pdf_find_resource_by_gs_id(pdev, resourcePattern, id);

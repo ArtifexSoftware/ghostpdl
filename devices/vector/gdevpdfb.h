@@ -235,6 +235,7 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  0,             /* HighLevelForm */
  0,				/* PatternDepth */
  {0,0,0,0,0,0},                 /* AccumulatedPatternMatrix */
+ 0,             /* PatternsSinceForm */
  0,				/* substream_Resources */
  1,				/* pcm_color_info_index == DeviceRGB */
  false,				/* skip_colors */
