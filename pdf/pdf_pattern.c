@@ -161,21 +161,39 @@ pdfi_pattern_paint(const gs_client_color *pcc, gs_gstate *pgs)
     pdf_context *ctx = context->ctx;
     int code = 0;
 
-    code = pdfi_op_q(ctx);
+    dbgmprintf(ctx->memory, "BEGIN PATTERN PaintProc\n");
+    code = pdfi_gsave(ctx); /* TODO: This might be redundant? */
     if (code < 0)
         return code;
     code = gs_setgstate(ctx->pgs, pgs);
     if (code < 0)
         goto exit;
 
+    /* TODO: This hack here is to emulate some stuff that happens in the PS code.
+     * Basically gx_pattern_load() gets called twice in PS code path, which causes this
+     * flag to end up being set, which changes some transparency stuff that might matter, to happen.
+     * By forcing this flag here, it makes the trace more closely follow what the PS code
+     * does.  It could turn out to be a meaningless side-effect, or it might be important.
+     * (sometime in the future, try taking this out and see what happens :)
+     */
+    if (pinst->templat.uses_transparency) {
+        dbgmprintf(ctx->memory, "pdfi_pattern_paint forcing trans_flags.xtate_change = TRUE\n");
+        ctx->pgs->trans_flags.xstate_change = true;
+    }
+    code = pdfi_op_q(ctx);
+    if (code < 0)
+        goto exit;
+
     code = pdfi_pattern_paint_stream(ctx, pcc);
+    pdfi_op_Q(ctx);
     if (code < 0) {
         dbgmprintf1(ctx->memory, "ERROR: pdfi_pattern_paint: code %d when rendering pattern\n", code);
         goto exit;
     }
 
  exit:
-    pdfi_op_Q(ctx);
+    pdfi_grestore(ctx);
+    dbgmprintf(ctx->memory, "END PATTERN PaintProc\n");
     return code;
 }
 
