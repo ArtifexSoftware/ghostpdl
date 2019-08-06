@@ -2220,10 +2220,12 @@ readonly def
   [
     //tempfilepaths (*) .generate_dir_list_templates
     /FONTPATH .systemvar (*) .generate_dir_list_templates
-    .languagelevel 2 ge {
+    /level2dict where {
+        pop
         % Default resources :
       [ currentsystemparams /GenericResourceDir get] (*) .generate_dir_list_templates
     } if
+    /LIBPATH  .systemvar (*) .generate_dir_list_templates
     currentuserparams /ICCProfilesDir known {
       [currentuserparams /ICCProfilesDir get] (*)
       .generate_dir_list_templates
