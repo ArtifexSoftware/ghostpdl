@@ -827,6 +827,81 @@ pdfi_data_image_params(pdf_context *ctx, pdfi_image_info_t *info,
     return code;
 }
 
+/* See ztrans.c/zbegintransparencymaskimage() and pdf_draw.ps/doimagesmask */
+static int
+pdfi_do_image_smask(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict,
+                    pdf_stream *source, pdfi_image_info_t *image_info)
+{
+    gs_rect bbox = { { 0, 0} , { 1, 1} };
+    gs_transparency_mask_params_t params;
+    pdf_array *a = NULL;
+    gs_offset_t savedoffset = 0;
+    double f;
+    int code;
+    pdfi_int_gstate *igs = (pdfi_int_gstate *)ctx->pgs->client_data;
+
+    /* TODO: We should check for the /PreserveSMask device parameter here. If this is
+     * true (currently pdfwite only) then the device will process the SMask from the
+     * image and we need do nothinng here.
+     */
+
+    gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Luminosity);
+
+    code = pdfi_dict_knownget_type(ctx, (pdf_dict *)image_info->SMask, "Matte",
+                                   PDF_ARRAY, (pdf_obj **)&a);
+    if (code > 0) {
+        int ix;
+
+        for (ix = 0; ix < pdfi_array_size(a); ix++) {
+            code = pdfi_array_get_number(ctx, a, (uint64_t)ix, &f);
+            if (code < 0)
+                break;
+            params.Matte[ix] = f;
+        }
+        if (ix >= pdfi_array_size(a))
+            params.Matte_components = pdfi_array_size(a);
+        else
+            params.Matte_components = 0;
+    }
+
+    //        params.image_with_SMask = true; /* TODO: Not sure... */
+
+    code = gs_begin_transparency_mask(ctx->pgs, &params, &bbox, true);
+    if (code < 0)
+        goto exit;
+    savedoffset = pdfi_tell(ctx->main_stream);
+    code = pdfi_gsave(ctx);
+
+    /* Disable SMask for inner image */
+    pdfi_countdown(igs->SMask);
+    igs->SMask = NULL;
+
+    gs_setopacityalpha(ctx->pgs, 1.0);
+    gs_setshapealpha(ctx->pgs, 1.0);
+    gs_setstrokeconstantalpha(ctx->pgs, 1.0);
+    gs_setfillconstantalpha(ctx->pgs, 1.0);
+    gs_setblendmode(ctx->pgs, BLEND_MODE_Compatible);
+
+    pdfi_seek(ctx, ctx->main_stream, ((pdf_dict *)image_info->SMask)->stream_offset, SEEK_SET);
+    code = pdfi_do_image_or_form(ctx, stream_dict, page_dict, (pdf_dict *)image_info->SMask);
+    pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
+
+    if (code < 0) {
+        (void)pdfi_grestore(ctx);
+        (void)gs_end_transparency_mask(ctx->pgs, 0);
+    } else {
+        code = pdfi_grestore(ctx);
+        if (code < 0)
+            (void)gs_end_transparency_mask(ctx->pgs, 0);
+        else
+            code = gs_end_transparency_mask(ctx->pgs, 0);
+    }
+
+ exit:
+    pdfi_countdown(a);
+    return code;
+}
+
 /* NOTE: "source" is the current input stream.
  * on exit:
  *  inline_image = TRUE, stream it will point to after the image data.
@@ -900,57 +975,9 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     }
 
     if (ctx->page_has_transparency == true && image_info.SMask != NULL) {
-        /* We should check for the /PreserveSMask device parameter here. If this is
-         * true (currently pdfwite only) then the device will process the SMask from the
-         * image and we need do nothinng here.
-         */
-        gs_color_space *gray_cs = gs_cspace_new_DeviceGray(ctx->memory);
-        gs_rect bbox = { { 0, 0} , { 1, 1} };
-        gs_transparency_mask_params_t params;
-        pdf_array *a = NULL;
-        gs_offset_t savedoffset = 0;
-        double f;
-
-        code = pdfi_dict_knownget_type(ctx, (pdf_dict *)image_info.SMask, "Matte",
-                                       PDF_ARRAY, (pdf_obj **)&a);
-        if (code > 0) {
-            int ix;
-
-            for (ix = 0; ix < pdfi_array_size(a); ix++) {
-                code = pdfi_array_get_number(ctx, a, (uint64_t)ix, &f);
-                if (code < 0)
-                    break;
-                params.Matte[ix] = f;
-            }
-            if (ix >= pdfi_array_size(a))
-                params.Matte_components = pdfi_array_size(a);
-            else
-                params.Matte_components = 0;
-        }
-        pdfi_countdown(a);
-        gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Luminosity);
-
-        code = gs_begin_transparency_mask(ctx->pgs, &params, &bbox, true);
-        if (code < 0) {
-            rc_decrement_cs(gray_cs, "pdfi image /SMask");
-            return code;
-        }
-        rc_decrement_cs(gray_cs, "pdfi image /SMask");
-        savedoffset = pdfi_tell(ctx->main_stream);
-        code = pdfi_gsave(ctx);
-
-        gs_setopacityalpha(ctx->pgs, 1.0);
-        gs_setshapealpha(ctx->pgs, 1.0);
-        gs_setstrokeconstantalpha(ctx->pgs, 1.0);
-        gs_setfillconstantalpha(ctx->pgs, 1.0);
-        gs_setblendmode(ctx->pgs, BLEND_MODE_Compatible);
-
-        pdfi_seek(ctx, ctx->main_stream, ((pdf_dict *)image_info.SMask)->stream_offset, SEEK_SET);
-        code = pdfi_do_image_or_form(ctx, stream_dict, page_dict, (pdf_dict *)image_info.SMask);
-
-        code = pdfi_grestore(ctx);
-        pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
-        code = gs_end_transparency_mask(ctx->pgs, 0);
+        code = pdfi_do_image_smask(ctx, page_dict, stream_dict, source, &image_info);
+        if (code < 0)
+            goto cleanupExit;
     }
 
     if (image_info.SMask == NULL && image_info.Mask != NULL) {
@@ -1254,63 +1281,69 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_di
 
     code = pdfi_dict_known(form_dict, "Group", &group_known);
     if (code < 0)
-        return code;
+        goto exit;
     if (group_known && ctx->page_has_transparency)
         do_group = true;
 
+#if 0 /* TODO:  (causes problem with tests_private/comparefiles/demo.ai.pdf) */
+    code = pdfi_op_q(ctx);
+    if (code < 0)
+        goto exit1;
+#endif
+
     if (do_group) {
         code = pdfi_loop_detector_mark(ctx);
-        if (code < 0) {
-            return code;
-        }
+        if (code < 0)
+            goto exit1;
 
         code = pdfi_trans_begin_group(ctx, page_dict, form_dict);
         (void)pdfi_loop_detector_cleartomark(ctx);
-        if (code < 0) {
-            return code;
-        }
+        if (code < 0)
+            goto exit1;
     }
 
     code = pdfi_dict_knownget_type(ctx, form_dict, "Matrix", PDF_ARRAY, (pdf_obj **)&FormMatrix);
     if (code < 0)
-        return code;
+        goto exit1;
     code = pdfi_array_to_gs_matrix(ctx, FormMatrix, &m);
-    if (code < 0) {
-        pdfi_countdown(FormMatrix);
-        return code;
-    }
+    if (code < 0)
+        goto exit1;
 
     code = pdfi_gsave(ctx);
-    if (code < 0) {
-        pdfi_countdown(FormMatrix);
-        return code;
-    }
+    if (code < 0)
+        goto exit1;
 
     code = gs_concat(ctx->pgs, &m);
     if (code < 0) {
-        pdfi_grestore(ctx);
-        pdfi_countdown(FormMatrix);
-        return code;
+        goto exit2;
     }
 
     if (do_group) {
         code = pdfi_form_execgroup(ctx, page_dict, form_dict);
+        if (code < 0)
+            (void)pdfi_trans_end_group(ctx);
+        else
+            code = pdfi_trans_end_group(ctx);
     } else {
         code = pdfi_interpret_inner_content_stream(ctx, form_dict, page_dict, false, "FORM");
     }
 
+ exit2:
     if (code != 0)
         (void)pdfi_grestore(ctx);
     else
         code = pdfi_grestore(ctx);
 
-    if (do_group) {
-        if (code < 0)
-            (void)pdfi_trans_end_group(ctx);
-        else
-            code = pdfi_trans_end_group(ctx);
-    }
+ exit1:
+#if 0
+    if (code != 0)
+        (void)pdfi_op_Q(ctx);
+    else
+        code = pdfi_op_Q(ctx);
+#endif
 
+ exit:
+    pdfi_countdown(FormMatrix);
     if (code < 0) {
         return code;
     }
@@ -1322,6 +1355,10 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
 {
     int code;
     pdf_name *n = NULL;
+
+    code = pdfi_trans_set_params(ctx, ctx->pgs->fillconstantalpha);
+    if (code < 0)
+        return code;
 
     code = pdfi_dict_get(ctx, (pdf_dict *)xobject_dict, "Subtype", (pdf_obj **)&n);
     if (code == 0) {
@@ -1390,12 +1427,6 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     if (code < 0) {
         (void)pdfi_loop_detector_cleartomark(ctx);
         goto exit1;
-    }
-
-    code = pdfi_trans_set_params(ctx, ctx->pgs->fillconstantalpha);
-    if (code < 0) {
-        (void)pdfi_loop_detector_cleartomark(ctx);
-        goto exit2;
     }
 
     code = pdfi_do_image_or_form(ctx, stream_dict, page_dict, (pdf_dict *)o);
