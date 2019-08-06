@@ -238,7 +238,7 @@ typedef struct pdf_context_s
     /* This is currently used for Patterns, but I suspect needs to be changed to use
      * 'the enclosing context'
      */
-    gs_gstate *base_pgs;
+    gs_gstate *DefaultQState;
 
     int preserve_tr_mode; /* for avoiding charpath with pdfwrite */
 

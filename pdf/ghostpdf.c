@@ -1587,13 +1587,6 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
     code = gs_settexthscaling(ctx->pgs, (double)100.0);
     ctx->TextBlockDepth = 0;
 
-    /* Init a base_pgs graphics state for Patterns */
-    if (ctx->base_pgs) {
-        gs_gstate_free(ctx->base_pgs);
-        ctx->base_pgs = NULL;
-    }
-    ctx->base_pgs = gs_gstate_copy(ctx->pgs, ctx->memory);
-
     dbgmprintf1(ctx->memory, "Current page transparency setting is %d\n", ctx->PageTransparencyArray[page_index] & page_bit ? 1 : 0);
 
     /* Force NOTRANSPARENCY here if required, until we can get it working... */
@@ -1625,6 +1618,11 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
             ctx->page_has_transparency = uses_transparency = false;
         }
     }
+
+    /* Init a base_pgs graphics state for Patterns
+     * (this has to be after transparency device pushed, if applicable)
+     */
+    pdfi_set_DefaultQState(ctx, ctx->pgs);
 
     /* Save the current stream state, for later cleanup, in a local variable */
     local_save_stream_state(ctx, &local_entry_save);
@@ -2260,10 +2258,7 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
         ctx->pgs = NULL;
     }
 
-    if(ctx->base_pgs != NULL) {
-        gs_gstate_free(ctx->base_pgs);
-        ctx->base_pgs = NULL;
-    }
+    pdfi_free_DefaultQState(ctx);
 
     if (ctx->pdfi_param_list.head != NULL)
         gs_c_param_list_release(&ctx->pdfi_param_list);

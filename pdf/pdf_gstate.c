@@ -912,3 +912,26 @@ int pdfi_setgstate(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     pdfi_countdown(o);
     return code;
 }
+
+
+int pdfi_free_DefaultQState(pdf_context *ctx)
+{
+    int code = 0;
+
+    if (ctx->DefaultQState)
+        code = gs_gstate_free(ctx->DefaultQState);
+    ctx->DefaultQState = NULL;
+    return code;
+}
+
+int pdfi_set_DefaultQState(pdf_context *ctx, gs_gstate *pgs)
+{
+    pdfi_free_DefaultQState(ctx);
+    ctx->DefaultQState = gs_gstate_copy(ctx->pgs, ctx->memory);
+    return 0;
+}
+
+gs_gstate *pdfi_get_DefaultQState(pdf_context *ctx)
+{
+    return ctx->DefaultQState;
+}
