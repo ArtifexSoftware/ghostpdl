@@ -280,27 +280,14 @@ pdfi_pattern_paintproc(const gs_client_color *pcc, gs_gstate *pgs)
 static int
 pdfi_pattern_gset(pdf_context *ctx)
 {
-    int code, level;
+    int code;
     float strokealpha, fillalpha;
 
     strokealpha = gs_getstrokeconstantalpha(ctx->pgs);
     fillalpha = gs_getfillconstantalpha(ctx->pgs);
 
-    /* TODO: Apparently gs_copygstate() isn't really the right thing, especially considering
-       ken's comment below.  Need to figure this out!
-    */
-    /* gs_copygstate also copies the save depth, this seems to me like a bad idea!
-     * It certainly causes problems for us because we pay attention to the save depth
-     * when processing pdfi_gsave/pdfi_grestore and also at the end of processing
-     * content streams. Because we now use pdfi_gsave/grestore instead of the
-     * graphics library gs_gsave/grestore, we must ensure that the save level
-     * doesn't get overwritten.
-     */
-    /* TODO: Hack? Save the things we don't want to overwrite... */
-    level = ctx->pgs->level;
-    code = gs_copygstate(ctx->pgs, pdfi_get_DefaultQState(ctx));
-    /* TODO: Hack? Put back the things we don't want to overwrite... */
-    ctx->pgs->level = level;
+    /* This will preserve the ->level and a couple other things */
+    code = gs_setgstate(ctx->pgs, pdfi_get_DefaultQState(ctx));
 
     if (code < 0)
         goto exit;
