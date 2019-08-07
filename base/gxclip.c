@@ -491,7 +491,7 @@ clip_fill_rectangle_t1(gx_device * dev, int x, int y, int w, int h,
         INCR(in_y);
         if (x >= rptr->xmin && xe <= rptr->xmax) {
             INCR(in);
-            return dev_proc(tdev, fill_rectangle)(tdev, x, y, w, h, color);
+            return dev_proc(tdev, fill_rectangle)(tdev, y, x, w, h, color);
         }
         else if ((rptr->prev == 0 || rptr->prev->ymax != rptr->ymax) &&
                  (rptr->next == 0 || rptr->next->ymax != rptr->ymax)
@@ -503,7 +503,7 @@ clip_fill_rectangle_t1(gx_device * dev, int x, int y, int w, int h,
                 xe = rptr->xmax;
             if (x >= xe)
                  return 0;
-            return dev_proc(tdev, fill_rectangle)(tdev, y, x, h, xe - x, color);
+            return dev_proc(tdev, fill_rectangle)(tdev, y, x, w, xe - x, color);
         }
     }
     ccdata.tdev = tdev;
@@ -565,7 +565,7 @@ clip_fill_rectangle_s1(gx_device * dev, int x, int y, int w, int h,
     h -= y;
     if (w <= 0 || h <= 0)
         return 0;
-    return dev_proc(tdev, fill_rectangle)(tdev, y, x, h, w, color);
+    return dev_proc(tdev, fill_rectangle)(tdev, x, y, w, h, color);
 }
 static int
 clip_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
@@ -1423,10 +1423,35 @@ clip_get_clipping_box(gx_device * dev, gs_fixed_rect * pbox)
                 cbox.q.y = int2fixed(rdev->list.single.ymax);
             } else {
                 /* The head and tail elements are dummies.... */
-                cbox.p.x = int2fixed(rdev->list.xmin);
-                cbox.p.y = int2fixed(rdev->list.head->next->ymin);
-                cbox.q.x = int2fixed(rdev->list.xmax);
-                cbox.q.y = int2fixed(rdev->list.tail->prev->ymax);
+                gx_clip_rect *curr = rdev->list.head->next;
+
+                cbox.p.x = cbox.p.y = max_int;
+                cbox.q.x = cbox.q.y = min_int;
+                /* scan the list for the outer bbox */
+                while (curr->next != NULL) {	/* stop before tail */
+                    if (curr->xmin < cbox.p.x)
+                        cbox.p.x = curr->xmin;
+                    if (curr->xmax > cbox.q.x)
+                        cbox.q.x = curr->xmax;
+                    if (curr->ymin < cbox.p.y)
+                        cbox.p.y = curr->ymin;
+                    if (curr->ymax > cbox.q.y)
+                        cbox.q.y = curr->ymax;
+                    curr = curr->next;
+                }
+                cbox.p.x = int2fixed(cbox.p.x);
+                cbox.q.x = int2fixed(cbox.q.x);
+                cbox.p.y = int2fixed(cbox.p.y);
+                cbox.q.y = int2fixed(cbox.q.y);
+            }
+            if (rdev->list.transpose) {
+                fixed temp = cbox.p.x;
+
+                cbox.p.x = cbox.p.y;
+                cbox.p.y = temp;
+                temp = cbox.q.x;
+                cbox.q.x = cbox.q.y;
+                cbox.q.y = temp;
             }
             rect_intersect(tbox, cbox);
         }
