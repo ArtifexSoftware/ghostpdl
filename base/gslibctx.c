@@ -628,7 +628,7 @@ gs_add_explicit_control_path(gs_memory_t *mem, const char *arg, gs_path_control_
     int code = 0;
 
     while (code >= 0 && p1 < lim && (p2 = strchr(p1, (int)gp_file_name_list_separator)) != NULL) {
-        code = gs_add_control_path_len(mem, gs_permit_file_reading, p1, (int)(p2 - p1));
+        code = gs_add_control_path_len(mem, control, p1, (int)(p2 - p1));
         p1 = p2 + 1;
     }
     if (p1 < lim)
