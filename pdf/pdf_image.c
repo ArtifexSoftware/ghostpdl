@@ -416,12 +416,17 @@ pdfi_scan_jpxfilter(pdf_context *ctx, pdf_stream *source, int length, pdfi_jpx_i
 
 /* Get image info out of dict into more convenient form, enforcing some requirements from the spec */
 static int
-pdfi_get_image_info(pdf_context *ctx, pdf_dict *image_dict, pdf_dict *page_dict, pdfi_image_info_t *info)
+pdfi_get_image_info(pdf_context *ctx, pdf_dict *image_dict,
+                    pdf_dict *page_dict, pdf_dict *stream_dict, bool inline_image,
+                    pdfi_image_info_t *info)
 {
     int code;
     double temp_f;
 
     memset(info, 0, sizeof(*info));
+    info->page_dict = page_dict;
+    info->stream_dict = stream_dict;
+    info->inline_image = inline_image;
 
     /* Not Handled: "ID", "OPI" */
 
@@ -1058,12 +1063,9 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
             return code;
     }
 
-    code = pdfi_get_image_info(ctx, image_dict, page_dict, &image_info);
+    code = pdfi_get_image_info(ctx, image_dict, page_dict, stream_dict, inline_image, &image_info);
     if (code < 0)
         goto cleanupExit;
-    image_info.page_dict = page_dict;
-    image_info.stream_dict = stream_dict;
-    image_info.inline_image = inline_image;
 
     /* If there is an OC dictionary, see if we even need to render this */
     if (image_info.OC) {
@@ -1083,7 +1085,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
         if (alt_dict != NULL) {
             image_dict = alt_dict;
             pdfi_free_image_info_components(&image_info);
-            code = pdfi_get_image_info(ctx, image_dict, page_dict, &image_info);
+            code = pdfi_get_image_info(ctx, image_dict, page_dict, stream_dict, inline_image, &image_info);
             if (code < 0)
                 goto cleanupExit;
         }
@@ -1108,7 +1110,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
             mask_array = (pdf_array *)image_info.Mask;
         } else if (image_info.Mask->type == PDF_DICT) {
             mask_dict = (pdf_dict *)image_info.Mask;
-            code = pdfi_get_image_info(ctx, mask_dict, page_dict, &mask_info);
+            code = pdfi_get_image_info(ctx, mask_dict, page_dict, stream_dict, inline_image, &mask_info);
             if (code < 0)
                 goto cleanupExit;
         } else {
