@@ -2639,6 +2639,36 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
             pdev->PassThroughWriter = 0;
             return 0;
             break;
+        case gxdso_event_info:
+            {
+                dev_param_req_t *request = (dev_param_req_t *)data;
+                if (memcmp(request->Param, "SubstitutedFont", 15) == 0 && pdev->PDFA) {
+                    switch (pdev->PDFACompatibilityPolicy) {
+                        case 0:
+                        case 1:
+                            emprintf(pdev->memory,
+                             "\n **** A font missing from the input PDF has been substituted with a different font.\n\tWidths may differ, reverting to normal PDF output!\n");
+                            pdev->AbortPDFAX = true;
+                            pdev->PDFX = 0;
+                            break;
+                        case 2:
+                            emprintf(pdev->memory,
+                             "\n **** A font missing from the input PDF has been substituted with a different font.\n\tWidths may differ, aborting conversion!\n");
+                            pdev->AbortPDFAX = true;
+                            pdev->PDFX = 0;
+                            return gs_note_error(gs_error_unknownerror);
+                            break;
+                        default:
+                            emprintf(pdev->memory,
+                             "\n **** A font missing from the input PDF has been substituted with a different font.\n\tWidths may differ, unknown PDFACompatibilityPolicy, reverting to normal PDF output!\n");
+                            pdev->AbortPDFAX = true;
+                            pdev->PDFX = 0;
+                            break;
+                    }
+                }
+                return 0;
+            }
+            break;
         case gxdso_get_dev_param:
             {
                 int code;

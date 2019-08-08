@@ -1062,6 +1062,9 @@ gx_default_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
                 return 0;
             return (dev_proc(pdev, encode_color) == gx_default_encode_color ||
                     dev_proc(pdev, encode_color) == gx_default_rgb_map_rgb_color);
+        /* Just ignore information about events */
+        case gxdso_event_info:
+            return 0;
     }
     return_error(gs_error_undefined);
 }

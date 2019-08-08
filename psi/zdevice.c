@@ -588,7 +588,8 @@ struct spec_op_s {
  * in the main code to execute the required spec_op code.
  */
 spec_op_t spec_op_defs[] = {
-    {(char *)"GetDeviceParam", 0}
+    {(char *)"GetDeviceParam", 0},
+    {(char *)"EventInfo", 1},
 };
 
 /* <any> <any> .... /spec_op name .special_op <any> <any> .....
@@ -675,6 +676,50 @@ zspec_op(i_ctx_t *i_ctx_p)
                     op = osp;
                     push(1);
                     make_bool(op, 1);
+                }
+            }
+            break;
+        case 1:
+            {
+                stack_param_list list;
+                dev_param_req_t request;
+                ref rkeys;
+                /* Get a single device parameter, we should be supplied with
+                 * the name of the paramter, as a name object.
+                 */
+                check_op(1);
+                if (!r_has_type(op, t_name))
+                    return_error(gs_error_typecheck);
+
+                ref_assign(&opname, op);
+                name_string_ref(imemory, &opname, &namestr);
+
+                data = (char *)gs_alloc_bytes(imemory, r_size(&namestr) + 1, "temporary special_op string");
+                if (data == 0)
+                    return_error(gs_error_VMerror);
+                memset(data, 0x00, r_size(&namestr) + 1);
+                memcpy(data, namestr.value.bytes, r_size(&namestr));
+
+                /* Discard the parameter name now, we're done with it */
+                pop (1);
+                /* Make a null object so that the stack param list won't check for requests */
+                make_null(&rkeys);
+                stack_param_list_write(&list, &o_stack, &rkeys, iimemory);
+                /* Stuff the data into a structure for passing to the spec_op */
+                request.Param = data;
+                request.list = &list;
+
+                code = dev_proc(dev, dev_spec_op)(dev, gxdso_event_info, &request, sizeof(dev_param_req_t));
+
+                gs_free_object(imemory, data, "temporary special_op string");
+
+                if (code < 0) {
+                    if (code == gs_error_undefined) {
+                        op = osp;
+                        push(1);
+                        make_bool(op, 0);
+                    } else
+                        return_error(code);
                 }
             }
             break;

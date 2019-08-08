@@ -348,6 +348,12 @@ enum {
     /* Private dso used to check that a printer device properly forwards to the default */
     gxdso_debug_printer_check,
 #endif
+    /* Used to send a warning to pdfwrite that some event has happened we want to know about.
+     * Currently this is used in pdf_font.ps to signal that a substittue font has been
+     * used. If we are emitting PDF/A then we need to abort it, as the Widths array of
+     * the PDF font may not match the widths of the glyphs in the font.
+     */
+    gxdso_event_info,
     /* Add new gxdso_ keys above this. */
     gxdso_pattern__LAST
 };

@@ -908,9 +908,16 @@ setglobal
                 % No available good substitution, use the standard one.
         pop 1 index .substitutefont
       } if
-      dup 3 index ne QUIET not and {
+      dup 3 index ne {
+        QUIET not {
         (Substituting font ) print dup =only
         ( for ) print 2 index =only (.) = flush
+        } if
+        % Send a warning to the device, in case its pdfwrite and we are in PDF/A mode
+        % In that case the substituted font may not (probably doesn't) have glyphs which
+        % match the /Widths of the original font, and that will cause a fault with PDF/A
+        % so we need to let the device know.
+        /SubstitutedFont /EventInfo .special_op
       } if
       pdffindcachedfont
                 % Stack: font-res fontname fontdesc font
