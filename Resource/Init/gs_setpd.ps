@@ -497,7 +497,7 @@ SETPDDEBUG { (Result of putting.) = pstack flush } if
   dup length dict exch {
     dup type /dicttype eq { .copytree } if 2 index 3 1 roll put
   } forall
-} bind def
+} def
 
 /currentpagedevice {
   .currentpagedevice {
@@ -1030,12 +1030,12 @@ SETPDDEBUG { (Installing.) = pstack flush } if
     /.trysetparams
     /.installpagedevice
     /.postinstall
-    /.copytree
     /.defaultdeviceparams
     /.makecurrentpagedevice
     /.mergespecial
     /.requiredattrs
     /.applypolicies
+%    /.copytree
 %    /.uninstallpagedevice % (called from C code)
 ] dup currentdict .undefinternalnames
 systemdict .undefinternalnames
