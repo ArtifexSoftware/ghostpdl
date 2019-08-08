@@ -152,14 +152,13 @@ int pdfi_op_Q(pdf_context *ctx)
 {
     int code;
 
-    code = pdfi_grestore(ctx);
+    if (ctx->page_has_transparency)
+        code = gs_pop_transparency_state(ctx->pgs, false);
 
     if (code < 0 && ctx->pdfstoponerror)
         return code;
-    else {
-        if (ctx->page_has_transparency)
-            return gs_pop_transparency_state(ctx->pgs, false);
-    }
+    else
+        return pdfi_grestore(ctx);
     return 0;
 }
 
