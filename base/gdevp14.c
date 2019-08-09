@@ -6438,20 +6438,28 @@ pdf14_dev_spec_op(gx_device *pdev, int dev_spec_op,
             return 0;
         }
     }
-    /* This code seems wrong to everyone. Why do we pass certain specific spec_ops to the
-     * target device, and not all of them ? This should be regarded as a FIXME and I'll
-     * look into it as time permits. For now, add gxdso_warning_trigger to the list of
-     * spec_ops we pass on.
-     */
-    if (dev_spec_op == gxdso_get_dev_param || dev_spec_op == gxdso_restrict_bbox
-        || dev_spec_op == gxdso_current_output_device || dev_spec_op == gxdso_event_info) {
-        return dev_proc(p14dev->target, dev_spec_op)(p14dev->target, dev_spec_op, data, size);
-    }
     if (dev_spec_op == gxdso_is_encoding_direct)
         return 1;
 
-    return gx_default_dev_spec_op(pdev, dev_spec_op, data, size);
+    /* We don't want to pass on these spec_ops either, because the child might respond
+     * with an inappropriate response when the PDF14 device is active. For example; the
+     * JPEG passthrough will give utterly wrong results if we pass that to a device which
+     * supports JPEG passthrough, because the pdf14 device needs to render the image.
+     */
+    if (dev_spec_op == gxdso_in_pattern_accumulator)
+        return 0;
+    if (dev_spec_op == gxdso_copy_color_is_fast)
+        return 0;
+    if(dev_spec_op == gxdso_pattern_handles_clip_path)
+        return 0;
+    if(dev_spec_op == gxdso_supports_hlcolor)
+        return 0;
+    if(dev_spec_op == gxdso_pattern_can_accum)
+        return 0;
+    if(dev_spec_op == gxdso_JPEG_passthrough_query)
+        return 0;
 
+     return dev_proc(p14dev->target, dev_spec_op)(p14dev->target, dev_spec_op, data, size);
 }
 
 /* Needed to set color monitoring in the target device's profile */
