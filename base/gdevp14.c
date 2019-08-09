@@ -3308,15 +3308,68 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
     if (code < 0)
         return code;
 
-    /* Push a non-isolated knockout group. Do not change the alpha or
-        blend modes */
-    params.Isolated = false;
-    params.Knockout = true;
-    params.group_color = UNKNOWN;
+	/* See if overprint is enabled and if ca == CA */
+	if (pgs->fillconstantalpha == pgs->strokeconstantalpha &&
+		(((pdf14_device*)dev)->overprint || ((pdf14_device*)dev)->stroke_overprint)) {
+		/* Push a non-isolated non-knockout group with alpha = 1.0 and
+		   compatible overprint mode.  Group will be composited with
+		   original alpha and blend mode */
+		params.Isolated = false;
+		params.group_color = UNKNOWN;
+		params.Knockout = false;
+
+		/* non-isolated non-knockout group pushed with original alpha and blend mode */
+		code = pdf14_begin_transparency_group(dev, &params, &group_stroke_box, pgs,
+			dev->memory);
+		if (code < 0)
+			return code;
+
+		/* Change alpha to 1.0 and blend mode to compatible overprint for actual drawing */
+
+
+
+	} else {
+		/* Push a non-isolated knockout group. Do not change the alpha or
+			blend modes */
+		float alpha = pgs->fillconstantalpha;
+
+		params.Isolated = false;
+		params.group_color = UNKNOWN;
+		params.Knockout = true;
+
+		/* non-isolated knockout group is pushed with alpha = 1.0 and Normal blend mode */
+		code = gs_setopacityalpha(pgs, 1.0);
+		if (code < 0)
+			goto cleanup;
+		code = gs_setblendmode(pgs, BLEND_MODE_Normal);
+		if (code < 0)
+			goto cleanup;
+
+		code = pdf14_begin_transparency_group(dev, &params, &group_stroke_box, pgs,
+			dev->memory);
+		if (code < 0)
+			return code;
+
+		/* restore opacity and blend mode for actual drawing in the group */
+		code = gs_setblendmode(pgs, blend_mode);
+		if (code < 0)
+			goto cleanup;
+		code = gs_setopacityalpha(pgs, alpha);
+		if (code < 0)
+			goto cleanup;
+	}
+
+
+
     code = pdf14_begin_transparency_group(dev, &params, &group_stroke_box, pgs,
         dev->memory);
     if (code < 0)
         return code;
+
+	/* Change blend mode and alpha for actual drawing in the group*/
+	if (params.Knockout == false) {
+
+	}
 
     if (pgs->fillconstantalpha > 0.0) {
         code = gs_setopacityalpha(pgs, pgs->fillconstantalpha);
