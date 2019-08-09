@@ -1,6 +1,8 @@
 %!PS
 %   Postscript that uses Ghostscript extensions to do simple transparency
 
+/PageUsesTransparency true def
+
 systemdict /.pushpdf14devicefilter known not
 {
     (\n\n%%%% WARNING: Transparency operations ignored - probably due to using -dSAFER\n\n) print flush
@@ -10,11 +12,12 @@ systemdict /.pushpdf14devicefilter known not
     /.poppdf14devicefilter {} bind def
     /.setopacityalpha {pop} bind def
     /.setshapealpha {pop} bind def
+    /PageUsesTransparency false def
 } if
 
 
 <<
-   /PageUsesTransparency true	% needed if we are using transparency
+   /PageUsesTransparency PageUsesTransparency	% needed if we are using transparency
    /CompatibilityLevel 1.4
    /PageSpotColors 0
 >> setpagedevice % in case we are going to pdfwrite
