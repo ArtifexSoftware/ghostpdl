@@ -5042,18 +5042,17 @@ currentdict /drawannottypes undef
 currentdict end readonly def
 
 /preserveannot {		% <annot> preserveannot -
-
   dup /.gs.pdfobj# known {
     dup /.gs.pdfobj# undef
   } if
 
-  dup annotvisible {
-    gsave
-    dup dup /Subtype knownoget {
-      dup //.PDFDrawAnnotType? exec
+  gsave
+  dup dup /Subtype knownoget {
+    dup //.PDFDrawAnnotType? exec
+    {
+      //preserveannottypes exch .knownget { exec } { //true } ifelse
       {
-        //preserveannottypes exch .knownget { exec } { //true } ifelse
-        {
+        dup annotvisible {
           dup calc_annot_scale 2 copy mul 0 ne
           {
             3 -1 roll drawwidget
@@ -5062,18 +5061,20 @@ currentdict end readonly def
             (   **** Error: ignoring annotation with scale factor of 0\n) pdfformaterror
             (               Output may be incorrect.\n) pdfformaterror
           }ifelse % Draw rejected annots as widgets
-        } if
-      }
-      {pop} ifelse
-      % type known
-    } {
-      pop
-      (   **** Error: Ignoring /Annot dict without required /Subtype entry.\n)
-      pdfformaterror
-      (               Output may be incorrect.\n) pdfformaterror
-    } ifelse
-    grestore
-  } if pop			% annotvisible
+        } {
+            pop
+        }ifelse
+      } if
+    }
+    {pop} ifelse
+    % type known
+  } {
+    pop
+    (   **** Error: Ignoring /Annot dict without required /Subtype entry.\n)
+    pdfformaterror
+    (               Output may be incorrect.\n) pdfformaterror
+  } ifelse
+  grestore
 } bind executeonly def
 
 currentdict /preserveannottypes undef
