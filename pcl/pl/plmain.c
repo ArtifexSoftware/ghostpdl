@@ -180,6 +180,7 @@ pl_main_init_with_args(pl_main_instance_t *inst, int argc, char *argv[])
 {
     gs_memory_t *mem = inst->memory;
     pl_interp_implementation_t *pjli;
+    int code;
 
     gp_init();
     /* debug flags we reset this out of gs_lib_init0 which sets these
@@ -210,8 +211,9 @@ pl_main_init_with_args(pl_main_instance_t *inst, int argc, char *argv[])
     gs_c_param_list_write(&inst->params, mem);
     gs_param_list_set_persistent_keys((gs_param_list *)&inst->params, false);
 
-    arg_init(&inst->args, (const char **)argv, argc, pl_main_arg_fopen, mem,
-             inst->get_codepoint, mem);
+    if (arg_init(&inst->args, (const char **)argv, argc, pl_main_arg_fopen, mem,
+                 inst->get_codepoint, mem) < 0)
+        return gs_error_Fatal;
 
     /* Create PDL instances, etc */
     if (pl_main_languages_init(mem, inst) < 0) {
@@ -973,6 +975,9 @@ handle_dash_c(pl_main_instance_t *pmi, arg_list *pal, char **collected_commands,
             ((*arg)[0] == '-' && !isdigit((unsigned char)(*arg)[1]))
             )
             break;
+        code = gs_lib_ctx_stash_sanitized_arg(pmi->memory->gs_lib_ctx, "?");
+        if (code < 0)
+            return code;
         arglen = strlen(*arg);
         if (*collected_commands == NULL) {
             *collected_commands = (char *)gs_alloc_bytes(pmi->memory, arglen+1,
@@ -1339,6 +1344,9 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
     while (arg != NULL || (code = arg_next(pal, (const char **)&arg, pmi->memory)) > 0) {
         if (*arg != '-') /* Stop when we hit something that isn't an option */
             break;
+        code = gs_lib_ctx_stash_sanitized_arg(pmi->memory->gs_lib_ctx, arg);
+        if (code < 0)
+            return code;
         if (arg[1] == 0) {
             /* Stdin, not an option! */
             not_an_arg = 1;
@@ -1466,6 +1474,9 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     dmprintf(pmi->memory, "-f must be followed by a filename\n");
                     continue;
                 }
+                code = gs_lib_ctx_stash_sanitized_arg(pmi->memory->gs_lib_ctx, "?");
+                if (code < 0)
+                    return code;
                 goto out;
             case 'g':
                 {
@@ -1515,6 +1526,9 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
 
                     if (arg[0] == 0) {
                         code = arg_next(pal, (const char **)&path, pmi->memory);
+                        if (code < 0)
+                            return code;
+                        code = gs_lib_ctx_stash_sanitized_arg(pmi->memory->gs_lib_ctx, "?");
                         if (code < 0)
                             return code;
                     } else
@@ -1617,6 +1631,9 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                         code = arg_next(pal, (const char **)&adef, pmi->memory);
                         if (code < 0)
                             break;
+                        code = gs_lib_ctx_stash_sanitized_arg(pmi->memory->gs_lib_ctx, "?");
+                        if (code < 0)
+                            return code;
                     } else
                         adef = arg;
                     if (adef == NULL)
@@ -1794,7 +1811,17 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
          * a '-', they'll do "-f -blah". The - of the "-blah" must not be accepted
          * by the arg processing in the loop below. We use 'not_an_arg' to handle
          * this. */
-        do {
+        while (1) {
+            if (arg == NULL) {
+                code = arg_next(pal, (const char **)&arg, pmi->memory);
+                if (code < 0)
+                    break;
+                if (arg == NULL)
+                    break;
+                code = gs_lib_ctx_stash_sanitized_arg(pmi->memory->gs_lib_ctx, arg);
+                if (code < 0)
+                    return code;
+            }
             if (!not_an_arg && arg[0] == '-' && arg[1] == 'c') {
                 code = handle_dash_c(pmi, pal, &collected_commands, &arg);
                 if (code < 0)
@@ -1809,6 +1836,9 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     dmprintf(pmi->memory, "-f must be followed by a filename\n");
                     continue;
                 }
+                code = gs_lib_ctx_stash_sanitized_arg(pmi->memory->gs_lib_ctx, "?");
+                if (code < 0)
+                    return code;
                 not_an_arg = 1;
                 continue;
             } else {
@@ -1826,7 +1856,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
             }
             arg = NULL;
             not_an_arg = 0;
-        } while (arg != NULL || (code = arg_next(pal, (const char **)&arg, pmi->memory)) > 0);
+        }
     }
 
     if (code == 0 && collected_commands != NULL) {

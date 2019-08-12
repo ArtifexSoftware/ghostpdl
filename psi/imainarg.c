@@ -138,10 +138,13 @@ gs_main_init_with_args01(gs_main_instance * minst, int argc, char *argv[])
     int code;
     int have_dumped_args = 0;
 
-    arg_init(&args, (const char **)argv, argc,
-             gs_main_arg_fopen, (void *)minst,
-             minst->get_codepoint,
-             minst->heap);
+    /* Now we actually process them */
+    code = arg_init(&args, (const char **)argv, argc,
+                    gs_main_arg_fopen, (void *)minst,
+                    minst->get_codepoint,
+                    minst->heap);
+    if (code < 0)
+        return code;
     code = gs_main_init0(minst, 0, 0, 0, GS_MAX_LIB_DIRS);
     if (code < 0)
         return code;
@@ -213,6 +216,9 @@ gs_main_init_with_args01(gs_main_instance * minst, int argc, char *argv[])
         }
     }
     while ((code = arg_next(&args, (const char **)&arg, minst->heap)) > 0) {
+        code = gs_lib_ctx_stash_sanitized_arg(minst->heap->gs_lib_ctx, arg);
+        if (code < 0)
+            return code;
         switch (*arg) {
             case '-':
                 code = swproc(minst, arg, &args);
@@ -460,6 +466,7 @@ run_stdin:
                 char *psarg;
 
                 code = arg_next(pal, (const char **)&psarg, minst->heap);
+                /* Don't stash the @ file name */
 
                 if (code < 0)
                     return gs_error_Fatal;
@@ -477,6 +484,9 @@ run_stdin:
                     code = run_string(minst, "userdict/ARGUMENTS[", 0, minst->user_errors, NULL, NULL);
                 if (code >= 0)
                     while ((code = arg_next(pal, (const char **)&arg, minst->heap)) > 0) {
+                        code = gs_lib_ctx_stash_sanitized_arg(minst->heap->gs_lib_ctx, arg);
+                        if (code < 0)
+                            break;
                         code = runarg(minst, "", arg, "", runInit, minst->user_errors, NULL, NULL);
                         if (code < 0)
                             break;
@@ -519,6 +529,9 @@ run_stdin:
                         (arg[0] == '-' && !isdigit((unsigned char)arg[1]))
                         )
                         break;
+                    code = gs_lib_ctx_stash_sanitized_arg(minst->heap->gs_lib_ctx, "?");
+                    if (code < 0)
+                        return code;
                     code = runarg(minst, "", arg, ".runstring", 0, minst->user_errors, NULL, NULL);
                     if (code < 0)
                         return code;
@@ -624,6 +637,9 @@ run_stdin:
                     code = arg_next(pal, (const char **)&path, minst->heap);
                     if (code < 0)
                         return code;
+                    code = gs_lib_ctx_stash_sanitized_arg(minst->heap->gs_lib_ctx, "?");
+                    if (code < 0)
+                        return code;
                 } else
                     path = arg;
                 if (path == NULL)
@@ -689,6 +705,9 @@ run_stdin:
                         return code;
                     if (code == 0)
                         return gs_error_undefinedfilename;
+                    code = gs_lib_ctx_stash_sanitized_arg(minst->heap->gs_lib_ctx, "?");
+                    if (code < 0)
+                        return code;
                 } else
                     adef = arg;
                 if ((code = gs_main_init1(minst)) < 0)

@@ -116,7 +116,7 @@ lead: /* We've just read a byte >= 0x80, presumably a leading byte */
 }
 
 /* Initialize an arg list. */
-void
+int
 arg_init(arg_list     * pal,
          const char  **argv,
          int           argc,
@@ -125,18 +125,27 @@ arg_init(arg_list     * pal,
          int           (*get_codepoint)(gp_file *file, const char **astr),
          gs_memory_t  *memory)
 {
+    int code;
+    const char *arg;
+
     pal->expand_ats = true;
     pal->arg_fopen = arg_fopen;
     pal->fopen_data = fopen_data;
     pal->get_codepoint = (get_codepoint ? get_codepoint : get_codepoint_utf8);
     pal->memory = memory;
-    pal->argp = argv + 1;
-    pal->argn = argc - 1;
+    pal->argp = argv;
+    pal->argn = argc;
     pal->depth = 0;
     pal->sources[0].is_file = 0;
     pal->sources[0].u.s.memory = NULL;
     pal->sources[0].u.s.decoded = 0;
     pal->sources[0].u.s.parsed = 0;
+
+    /* Stash the 0th one */
+    code = arg_next(pal, &arg, memory);
+    if (code < 0)
+        return code;
+    return gs_lib_ctx_stash_exe(memory->gs_lib_ctx, arg);
 }
 
 /* Push a string onto an arg list. */
