@@ -4613,7 +4613,7 @@ template_mark_fill_rect(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restri
                         } else if (dest_alpha != pdst[num_comp]) {
                             /* We need val_new = (val_old * old_alpha) / new_alpha */
                             if (pdst[num_comp] != 0) {
-                                int val = floor(((float)dest_alpha / (float)pdst[num_comp]) * (255 - pdst[k]) + 0.5);
+                                int val = (int)floor(((float)dest_alpha / (float)pdst[num_comp]) * (255 - pdst[k]) + 0.5);
                                 if (val < 0)
                                     val = 0;
                                 else if (val > 255)
