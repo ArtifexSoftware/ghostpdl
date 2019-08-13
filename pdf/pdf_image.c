@@ -674,6 +674,15 @@ pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim, pdf_stream *image_str
     gs_const_string plane_data[GS_IMAGE_MAX_COMPONENTS];
     int main_plane, mask_plane;
 
+    dmprintf(ctx->memory, "pdfi_render_image BEGIN\n");
+    code = pdfi_trans_set_params(ctx, ctx->pgs->fillconstantalpha);
+    if (code < 0)
+        return code;
+
+    code = pdfi_gsave(ctx);
+    if (code < 0)
+        return code;
+
     penum = gs_image_enum_alloc(ctx->memory, "pdfi_render_image (gs_image_enum_alloc)");
     if (!penum) {
         code = gs_note_error(gs_error_VMerror);
@@ -777,6 +786,8 @@ pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim, pdf_stream *image_str
         gs_swapcolors(ctx->pgs);
     if (penum)
         gs_image_cleanup_and_free_enum(penum, ctx->pgs);
+    pdfi_grestore(ctx);
+    dmprintf(ctx->memory, "pdfi_render_image END\n");
     return code;
 }
 
@@ -855,6 +866,7 @@ pdfi_do_image_smask(pdf_context *ctx, pdf_stream *source, pdfi_image_info_t *ima
      * image and we need do nothinng here.
      */
 
+    dmprintf(ctx->memory, "pdfi_do_image_smask BEGIN\n");
     gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Luminosity);
 
     code = pdfi_dict_knownget_type(ctx, (pdf_dict *)image_info->SMask, "Matte",
@@ -910,6 +922,7 @@ pdfi_do_image_smask(pdf_context *ctx, pdf_stream *source, pdfi_image_info_t *ima
 
  exit:
     pdfi_countdown(a);
+    dmprintf(ctx->memory, "pdfi_do_image_smask END\n");
     return code;
 }
 
@@ -1050,7 +1063,11 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     pdf_array *mask_array = NULL;
     unsigned char *mask_buffer = NULL;
     uint64_t mask_size = 0;
+    pdfi_int_gstate *igs = (pdfi_int_gstate *)ctx->pgs->client_data;
+    bool transparency_group = false;
+    bool has_smask = false;
 
+    dmprintf(ctx->memory, "pdfi_do_image BEGIN\n");
     memset(&mask_info, 0, sizeof(mask_info));
 
     if (!inline_image) {
@@ -1103,6 +1120,18 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
         code = pdfi_do_image_smask(ctx, source, &image_info);
         if (code < 0)
             goto cleanupExit;
+        code = pdfi_trans_begin_isolated_group(ctx, true);
+        if (code < 0)
+            goto cleanupExit;
+        transparency_group = true;
+        has_smask = true;
+    } else {
+        if (igs->SMask) {
+            code = pdfi_trans_begin_isolated_group(ctx, false);
+            if (code < 0)
+                goto cleanupExit;
+            transparency_group = true;
+        }
     }
 
     if (image_info.SMask == NULL && image_info.Mask != NULL) {
@@ -1208,6 +1237,12 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
 
     code = 0;  /* suppress errors */
 
+    if (transparency_group) {
+        pdfi_trans_end_isolated_group(ctx);
+        if (has_smask)
+            pdfi_trans_end_smask_notify(ctx);
+    }
+
     if (new_stream)
         pdfi_close_file(ctx, new_stream);
     if (mask_buffer)
@@ -1222,6 +1257,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     if (pcs != NULL)
         rc_decrement_only_cs(pcs, "pdfi_do_image");
 
+    dmprintf(ctx->memory, "pdfi_do_image END\n");
     return code;
 }
 
@@ -1386,6 +1422,7 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
     int code;
     pdf_name *n = NULL;
 
+    dmprintf(ctx->memory, "pdfi_do_image_or_form BEGIN\n");
     code = pdfi_trans_set_params(ctx, ctx->pgs->fillconstantalpha);
     if (code < 0)
         return code;
@@ -1414,6 +1451,7 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
             code = gs_error_typecheck;
         }
     }
+    dmprintf(ctx->memory, "pdfi_do_image_or_form BEGIN\n");
     return 0;
 }
 

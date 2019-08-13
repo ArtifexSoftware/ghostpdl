@@ -227,6 +227,51 @@ int pdfi_trans_end_group(pdf_context *ctx)
     return code;
 }
 
+
+int pdfi_trans_begin_isolated_group(pdf_context *ctx, bool image_with_SMask)
+{
+    gs_transparency_group_params_t params;
+    gs_rect bbox;
+
+    gs_trans_group_params_init(&params);
+
+    params.ColorSpace = NULL;
+    params.Isolated = true;
+    params.Knockout = false;
+    params.image_with_SMask = image_with_SMask;
+    bbox.p.x = 0;
+    bbox.p.y = 0;
+    bbox.q.x = 1;
+    bbox.q.y = 1;
+
+    return gs_begin_transparency_group(ctx->pgs, &params, &bbox, PDF14_BEGIN_TRANS_GROUP);
+}
+
+int pdfi_trans_end_isolated_group(pdf_context *ctx)
+{
+    return gs_end_transparency_group(ctx->pgs);
+}
+
+
+/* This notifies the compositor that we're done with an smask.  Seems hacky.
+ * See pdf_draw.ps/doimagesmask.
+ */
+int pdfi_trans_end_smask_notify(pdf_context *ctx)
+{
+    gs_transparency_mask_params_t params;
+    gs_rect bbox;
+
+    gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_None);
+    params.replacing = true;
+
+    bbox.p.x = 0;
+    bbox.p.y = 0;
+    bbox.q.x = 0;
+    bbox.q.y = 0;
+
+    return gs_begin_transparency_mask(ctx->pgs, &params, &bbox, false);
+}
+
 int pdfi_trans_set_params(pdf_context *ctx, double alpha)
 {
     pdfi_int_gstate *igs = (pdfi_int_gstate *)ctx->pgs->client_data;
