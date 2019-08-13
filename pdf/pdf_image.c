@@ -213,7 +213,7 @@ get_box(pdf_context *ctx, pdf_stream *source, int length, uint32_t *box_len, uin
     *box_val = READ32BE(blob);
 
     if(ctx->pdfdebug)
-        dmprintf3(ctx->memory, "JPXFilter: BOX: l:%d, v:%x (%4.4s)\n", *box_len, *box_val, blob);
+        dbgmprintf3(ctx->memory, "JPXFilter: BOX: l:%d, v:%x (%4.4s)\n", *box_len, *box_val, blob);
     return 8;
 }
 
@@ -235,7 +235,7 @@ pdfi_scan_jpxfilter(pdf_context *ctx, pdf_stream *source, int length, pdfi_jpx_i
     bool got_color = false;
 
     if (ctx->pdfdebug)
-        dmprintf1(ctx->memory, "JPXFilter: Image length %d\n", length);
+        dbgmprintf1(ctx->memory, "JPXFilter: Image length %d\n", length);
 
     /* Clear out the info param */
     memset(info, 0, sizeof(pdfi_jpx_info_t));
@@ -296,12 +296,12 @@ pdfi_scan_jpxfilter(pdf_context *ctx, pdf_stream *source, int length, pdfi_jpx_i
     avail -= LEN_IHDR;
     comps = READ16BE(ihdr_data+8);
     if (ctx->pdfdebug)
-        dmprintf1(ctx->memory, "    COMPS: %d\n", comps);
+        dbgmprintf1(ctx->memory, "    COMPS: %d\n", comps);
     bpc = ihdr_data[10];
     if (bpc != 255)
         bpc += 1;
     if (ctx->pdfdebug)
-        dmprintf1(ctx->memory, "    BPC: %d\n", bpc);
+        dbgmprintf1(ctx->memory, "    BPC: %d\n", bpc);
 
     /* Parse the rest of the things */
     while (avail > 0) {
@@ -317,7 +317,7 @@ pdfi_scan_jpxfilter(pdf_context *ctx, pdf_stream *source, int length, pdfi_jpx_i
         /* Re-alloc buffer if it wasn't big enough (unlikely) */
         if (box_len > data_buf_len) {
             if (ctx->pdfdebug)
-                dmprintf2(ctx->memory, "data buffer (size %d) was too small, reallocing to size %d\n",
+                dbgmprintf2(ctx->memory, "data buffer (size %d) was too small, reallocing to size %d\n",
                       data_buf_len, box_len);
             gs_free_object(ctx->memory, data, "pdfi_scan_jpxfilter (data)");
             data_buf_len = box_len;
@@ -348,13 +348,13 @@ pdfi_scan_jpxfilter(pdf_context *ctx, pdf_stream *source, int length, pdfi_jpx_i
                 }
                 bpc = bpc2+1;
                 if (ctx->pdfdebug)
-                    dmprintf1(ctx->memory, "    BPCC: %d\n", bpc);
+                    dbgmprintf1(ctx->memory, "    BPCC: %d\n", bpc);
             }
             break;
         case K4('c','o','l','r'):
             if (got_color) {
                 if (ctx->pdfdebug)
-                    dmprintf(ctx->memory, "JPXFilter: Ignore extra COLR specs\n");
+                    dbgmprintf(ctx->memory, "JPXFilter: Ignore extra COLR specs\n");
                 break;
             }
             cs_meth = data[0];
@@ -369,27 +369,27 @@ pdfi_scan_jpxfilter(pdf_context *ctx, pdf_stream *source, int length, pdfi_jpx_i
                 info->icc_offset = pdfi_tell(source) - (box_len-3);
                 info->icc_length = box_len - 3;
                 if (ctx->pdfdebug)
-                    dmprintf4(ctx->memory, "JPXDecode: COLR Meth 2 at offset %d(0x%x), length %d(0x%x)\n",
+                    dbgmprintf4(ctx->memory, "JPXDecode: COLR Meth 2 at offset %d(0x%x), length %d(0x%x)\n",
                           info->icc_offset, info->icc_offset, info->icc_length, info->icc_length);
                 cs_enum = 0;
             } else {
                 if (ctx->pdfdebug)
-                    dmprintf1(ctx->memory, "JPXDecode: COLR unexpected method %d\n", cs_meth);
+                    dbgmprintf1(ctx->memory, "JPXDecode: COLR unexpected method %d\n", cs_meth);
                 cs_enum = 0;
             }
             if (ctx->pdfdebug)
-                dmprintf2(ctx->memory, "    COLR: M:%d, ENUM:%d\n", cs_meth, cs_enum);
+                dbgmprintf2(ctx->memory, "    COLR: M:%d, ENUM:%d\n", cs_meth, cs_enum);
             got_color = true;
             break;
         case K4('p','c','l','r'):
             /* Apparently we just grab the BPC out of this */
             if (ctx->pdfdebug)
-                dmprintf7(ctx->memory, "    PCLR Data: %x %x %x %x %x %x %x\n",
+                dbgmprintf7(ctx->memory, "    PCLR Data: %x %x %x %x %x %x %x\n",
                       data[0], data[1], data[2], data[3], data[4], data[5], data[6]);
             bpc = data[3];
             bpc = (bpc & 0x7) + 1;
             if (ctx->pdfdebug)
-                dmprintf1(ctx->memory, "    PCLR BPC: %d\n", bpc);
+                dbgmprintf1(ctx->memory, "    PCLR BPC: %d\n", bpc);
             break;
         case K4('c','d','e','f'):
             dbgmprintf(ctx->memory, "JPXDecode: CDEF not supported yet\n");
@@ -674,7 +674,7 @@ pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim, pdf_stream *image_str
     gs_const_string plane_data[GS_IMAGE_MAX_COMPONENTS];
     int main_plane, mask_plane;
 
-    dmprintf(ctx->memory, "pdfi_render_image BEGIN\n");
+    dbgmprintf(ctx->memory, "pdfi_render_image BEGIN\n");
     code = pdfi_trans_set_params(ctx, ctx->pgs->fillconstantalpha);
     if (code < 0)
         return code;
@@ -787,7 +787,7 @@ pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim, pdf_stream *image_str
     if (penum)
         gs_image_cleanup_and_free_enum(penum, ctx->pgs);
     pdfi_grestore(ctx);
-    dmprintf(ctx->memory, "pdfi_render_image END\n");
+    dbgmprintf(ctx->memory, "pdfi_render_image END\n");
     return code;
 }
 
@@ -866,7 +866,7 @@ pdfi_do_image_smask(pdf_context *ctx, pdf_stream *source, pdfi_image_info_t *ima
      * image and we need do nothinng here.
      */
 
-    dmprintf(ctx->memory, "pdfi_do_image_smask BEGIN\n");
+    dbgmprintf(ctx->memory, "pdfi_do_image_smask BEGIN\n");
     gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Luminosity);
 
     code = pdfi_dict_knownget_type(ctx, (pdf_dict *)image_info->SMask, "Matte",
@@ -922,7 +922,7 @@ pdfi_do_image_smask(pdf_context *ctx, pdf_stream *source, pdfi_image_info_t *ima
 
  exit:
     pdfi_countdown(a);
-    dmprintf(ctx->memory, "pdfi_do_image_smask END\n");
+    dbgmprintf(ctx->memory, "pdfi_do_image_smask END\n");
     return code;
 }
 
@@ -950,7 +950,7 @@ pdfi_image_get_color(pdf_context *ctx, pdf_stream *source, pdfi_image_info_t *im
                                                               pcs);
                 if (code < 0) {
                     dmprintf2(ctx->memory,
-                              "JPXDecode: Error setting icc colorspace (offset=%d,len=%d)\n",
+                              "WARNING JPXDecode: Error setting icc colorspace (offset=%d,len=%d)\n",
                               jpx_info->icc_offset, jpx_info->icc_length);
                     goto cleanupExit;
                 }
@@ -977,12 +977,14 @@ pdfi_image_get_color(pdf_context *ctx, pdf_stream *source, pdfi_image_info_t *im
                      * (should probably look at num comps, but gs code doesn't)
                      */
                     if (ctx->pdfdebug)
-                        dmprintf1(ctx->memory, "JPXDecode: Unsupported EnumCS %d, assuming DeviceRGB\n",
+                        dmprintf1(ctx->memory,
+                                  "WARNING JPXDecode: Unsupported EnumCS %d, assuming DeviceRGB\n",
                                   jpx_info->cs_enum);
                     color_str = (char *)"DeviceRGB";
                     break;
                 default:
-                    dmprintf1(ctx->memory, "JPXDecode: Unsupported EnumCS %d\n", jpx_info->cs_enum);
+                    dmprintf1(ctx->memory,
+                              "WARNING JPXDecode: Unsupported EnumCS %d\n", jpx_info->cs_enum);
                     goto cleanupExit;
                 }
 
@@ -996,7 +998,7 @@ pdfi_image_get_color(pdf_context *ctx, pdf_stream *source, pdfi_image_info_t *im
                                               image_info->page_dict, image_info->stream_dict,
                                               pcs, image_info->inline_image);
                 if (code < 0) {
-                    dmprintf1(ctx->memory, "JPXDecode: Error setting colorspace %s\n", color_str);
+                    dmprintf1(ctx->memory, "WARNING JPXDecode: Error setting colorspace %s\n", color_str);
                     goto cleanupExit;
                 }
             }
@@ -1067,7 +1069,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     bool transparency_group = false;
     bool has_smask = false;
 
-    dmprintf(ctx->memory, "pdfi_do_image BEGIN\n");
+    dbgmprintf(ctx->memory, "pdfi_do_image BEGIN\n");
     memset(&mask_info, 0, sizeof(mask_info));
 
     if (!inline_image) {
@@ -1257,7 +1259,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     if (pcs != NULL)
         rc_decrement_only_cs(pcs, "pdfi_do_image");
 
-    dmprintf(ctx->memory, "pdfi_do_image END\n");
+    dbgmprintf(ctx->memory, "pdfi_do_image END\n");
     return code;
 }
 
@@ -1422,7 +1424,7 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
     int code;
     pdf_name *n = NULL;
 
-    dmprintf(ctx->memory, "pdfi_do_image_or_form BEGIN\n");
+    dbgmprintf(ctx->memory, "pdfi_do_image_or_form BEGIN\n");
     code = pdfi_trans_set_params(ctx, ctx->pgs->fillconstantalpha);
     if (code < 0)
         return code;
@@ -1451,7 +1453,7 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
             code = gs_error_typecheck;
         }
     }
-    dmprintf(ctx->memory, "pdfi_do_image_or_form BEGIN\n");
+    dbgmprintf(ctx->memory, "pdfi_do_image_or_form BEGIN\n");
     return 0;
 }
 
