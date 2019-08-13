@@ -363,6 +363,8 @@ int gs_lib_ctx_init(gs_lib_ctx_t *ctx, gs_memory_t *mem)
 
     if (gs_lib_ctx_alloc_root_structure(mem, &pio->font_dir_root))
         goto Failure;
+    if (gs_add_control_path(mem, gs_permit_file_writing, gp_null_file_name) < 0)
+        goto Failure;
 
     return 0;
 
