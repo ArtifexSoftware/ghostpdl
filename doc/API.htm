@@ -337,6 +337,10 @@ now, certain devices are known not to be (particularly the contrib
 devices). The makefiles currently make no attempt to exclude these
 from builds. If you enable GS_THREADSAFE then you should check to ensure
 that you do not rely on such devices (check for global variable use).</p>
+<p>
+The first parameter, is a pointer to an opaque pointer (&quot;<code>void **</code>&quot;).
+The opaque pointer (&quot;<code>void *</code>&quot;) must be initialised to <code>NULL</code> before
+the call to <code>gsapi_new_instance()</code>. See <a href="#Example_1">Example 1</a>.
 </blockquote>
 
 
@@ -799,7 +803,7 @@ by adding their location (the <tt>src</tt> directory in the Ghostscript source
 distribution) to the project's search path, or by copying ierrors.h and iapi.h into the
 same directory as the example source.</p>
 
-<h3>Example 1</h3>
+<h3><a name="Example_1"></a>Example 1</h3>
 <pre>
 /* Example of using GS DLL as a ps2pdf converter.  */
 
@@ -817,24 +821,21 @@ same directory as the example source.</p>
 #include "ierrors.h"
 #include "iapi.h"
 
-void *minst;
+void *minst = NULL;
 
 int main(int argc, char *argv[])
 {
     int code, code1;
-    const char * gsargv[10];
+    const char * gsargv[7];
     int gsargc;
-    gsargv[0] = "ps2pdf";    /* actual value doesn't matter */
+    gsargv[0] = "";
     gsargv[1] = "-dNOPAUSE";
     gsargv[2] = "-dBATCH";
     gsargv[3] = "-dSAFER";
     gsargv[4] = "-sDEVICE=pdfwrite";
     gsargv[5] = "-sOutputFile=out.pdf";
-    gsargv[6] = "-c";
-    gsargv[7] = ".setpdfwrite";
-    gsargv[8] = "-f";
-    gsargv[9] = "input.ps";
-    gsargc=10;
+    gsargv[6] = "input.ps";
+    gsargc=7;
 
     code = gsapi_new_instance(&amp;minst, NULL);
     if (code &lt; 0)
@@ -906,7 +907,7 @@ gsdll_stderr(void *instance, const char *str, int len)
     return len;
 }
 
-void *minst;
+void *minst = NULL;
 const char start_string[] = "systemdict /start get exec\n";
 
 int main(int argc, char *argv[])

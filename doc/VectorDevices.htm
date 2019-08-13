@@ -528,7 +528,7 @@ For example, including the PostScript string in your file <tt>in.ps</tt>:
 is equivalent to invoking:
 
 <blockquote><code>gs -dBATCH -dSAFER -DNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=out.pdf -c
-'.setpdfwrite &lt;&lt;/AlwaysEmbed [/Helvetica /Times-Roman]&gt;&gt; setdistillerparams' -f
+'&lt;&lt;/AlwaysEmbed [/Helvetica /Times-Roman]&gt;&gt; setdistillerparams' -f
 in.ps</code></blockquote>
 
 or using the extra parameters in a file:

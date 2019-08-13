@@ -600,13 +600,14 @@ a ...<code>show</code>, <code>stringwidth</code>, or
 in the font dictionary to find a procedure to run.  If it does not find
 this name, and if the <code>FontType</code> is 1, the interpreter
 instead uses the value (looked up on the dictionary stack in the usual way)
-of the name <code>%Type1BuildChar</code>.</dd>
+of the name <code>%Type1BuildChar</code>.
 
 <p>
 The standard definition of <code>%Type1BuildChar</code> is in the
 initialization file <code>gs_type1.ps</code>.  Users should not need to
 redefine <code>%Type1BuildChar</code>, except perhaps for tracing or
 debugging.</p>
+</dd>
 </dl>
 
 <dl>
@@ -703,11 +704,8 @@ E.g., if <code>&lt;prefix_string&gt;</code> is
 <code>/my/tmpdir/zza1234</code>.</li>
 <p>
 When running in <code>SAFER</code> mode, the absolute path must
-be one of the strings on the list given by the <code>PermitFileWriting</code>
-userparameter. Temporary files created with <code>.tempfile</code> can
-be deleted when in SAFER mode, and can be renamed to one of the paths
-that is on <b>both</b> the PermitFileControl and PermitFileWriting
-paths.</p>
+be one of the strings on the permit file writing list
+(see <a href="Use.htm#Safer"><b>-dSAFER</b></a>) .</p>
 </ul>
 
 </dl>
@@ -774,7 +772,7 @@ the DELAYBIND flag.</dd>
 <dt><code>- .bindnow -</code></dt>
 <dd>Applies <code>bind</code> operator to all saved procedures after binding has been
 deferred through -dDELAYBIND. Note that idiom recognition has no effect for the deferred
-binding because the value returned from <code>bind</code> is discarded.</dd>
+binding because the value returned from <code>bind</code> is discarded.
 <p>
 Since v. 8.12 <code>.bindnow</code> undefines itself and restores standard definition of
 <code>bind</code> operator. In earlier versions after calling <code>.bindnow</code>,
@@ -786,6 +784,7 @@ the postscript <code>bind</code> operator needs to be rebound to the internal im
 } if
 </tt></pre></blockquote>
 This is necessary for correct behavior with later code that uses the <code>bind</code> operator.</p>
+</dd>
 </dl>
 
 <dl>
@@ -802,7 +801,7 @@ false.</dd>
 <code>&lt;string&gt;</code> based on the value of
 <code>&lt;boolean&gt;</code>. These correspond to the debug
 flags set by <code>-Z</code> on the command line and enable
-debug and tracing output from various internal modules.</dd>
+debug and tracing output from various internal modules.
 
 <p>Note that most tracing output is only produced if the Ghostscript
 interpreter was built with the <code>DEBUG</code> preprocessor
@@ -817,6 +816,7 @@ array, indexed by character value. The <code>zsetdebug</code> function will
 be entered, and <code>gs_debug[]</code> updated, whether or not Ghostscript
 is built with the <code>DEBUG</code> preprocessor symbol defined, so this
 is useful even with release builds.</p>
+</dd>
 </dl>
 
 <dl>
@@ -824,6 +824,8 @@ is useful even with release builds.</p>
 <dd>If Ghostscript is started with <code>-dNOSAFER</code> or
 <code>-dDELAYSAFER</code>, this operator can be used to enter <b>SAFER</b>
 mode (see <a href="Use.htm#Safer"><b>-dSAFER</b></a>)</dd>
+<p>
+<strong>The following is deprecated, see <a href="Use.htm#Safer"><b>-dSAFER</b></a></strong>
 <p>
 Since <b>SAFER</b> mode is implemented with userparameters and device parameters,
 it is possible to use <code>save</code> and <code>restore</code> before
@@ -839,11 +841,14 @@ will be erased as a side effect of this operator</b></p>
 <dl>
 <dt><code>- .locksafe -</code></dt>
 <dd>
+<p>
+<strong>The following is deprecated, see <a href="Use.htm#Safer"><b>-dSAFER</b></a></strong>
+<p>
 This operator sets the current device's <code>.LockSafetyParams</code>
 and the <code>LockFilePermissions</code> userparameter true as well as
 adding the paths on LIBPATH and FONTPATH and the paths given by the
 system params /GenericResourceDir and /FontResourceDir to the current
-PermitFileReading list of paths.</dd>
+PermitFileReading list of paths.
 <p>
 If Ghostscript is started with <code>-dNOSAFER</code> or
 <code>-dDELAYSAFER</code>, this operator can be used to enter <b>SAFER</b>
@@ -871,14 +876,50 @@ will be erased as a side effect of this operator</b></p>
 <p>
 See also <a href="#LockSafetyParams">.LockSafetyParams</a> and
 <a href="#User_parameters">User Parameters</a>.</p>
+</dd>
+</dl>
+
+<dl>
+<dt><a name="#addcontrolpath"></a>
+<code>&lt;name&gt; &lt;string&gt; .addcontrolpath</code></dt>
+<dd>
+Adds a single path to the file access control lists.
+<p>The &lt;name&gt; parameter can be one of:
+<ul>
+<li>
+<p><code>/PermitFileReading</code>
+</li>
+<li>
+<p><code>/PermitFileWriting</code>
+</li>
+<li>
+<p><code>/PermitFileControl</code>
+</li>
+</ul>
+<p>Whilst the string paramater is the path to be added to the requested list.
+<p><strong>NOTE: Any attempt to call this operator after <a href="#activatepathcontrol">.activatepathcontrol</a>
+has been called will result in a <code>Fatal</code> error, and the interpreter
+will immediately exit.</strong>
+</dd>
+</dl>
+
+<dl>
+<dt><a name="#activatepathcontrol"></a>
+<code>.activatepathcontrol</code></dt>
+<dd>
+Activates file access controls. Once activated, these access controls remain
+in place until the interpreter shuts down.
+</dd>
 </dl>
 
 <dl>
 <dt><a name=".setpdfwrite"></a>
 <code>.setpdfwrite</code></dt>
-<dd>This operator conditions the environment for the <tt>pdfwrite</tt> output device.
+<dd>
+<strong>This operator is now deprecated, and its use is discouraged</strong>
+<p>This operator conditions the environment for the <tt>pdfwrite</tt> output device.
 It is a shorthand for setting parameters that have been deemed benificial. While not strictly necessary, it is usually helpful to set call this when using the pdfwrite device.
-For example, this is how the ps2pdf script calls Ghostscript:</dd>
+For example, this is how the ps2pdf script calls Ghostscript:
 <blockquote><code>
 gs -q -dSAFER -dNOPAUSE -dBATCH -sOutputFile=file.pdf </code><em>[more options]</em><code> \<br>
 &nbsp;&nbsp;-sDEVICE=pdfwrite -c .setpdfwrite -f </code><em>source1.ps [more files]</em>
@@ -886,6 +927,7 @@ gs -q -dSAFER -dNOPAUSE -dBATCH -sOutputFile=file.pdf </code><em>[more options]<
 <p>Currently, the operator just sets a minimum 3&nbsp;MB vmthreshold to allow for
 accumulating shared object data and to reduce the incidence of garbage
 collection as a performance improvement. Additional settings may be added in the future.</p>
+</dd>
 </dl>
 
 <dl>
@@ -894,7 +936,7 @@ collection as a performance improvement. Additional settings may be added in the
 <dt><code>&lt;dict&gt; .genordered &lt;string&gt;</code> (/OutputType /ThreshString).</dt>
 <dt><code>&lt;dict&gt; .genordered &lt;array&gt;</code> (/OutputType /TOSArray).</dt>
 <dd>This operator creates an ordered dither screening pattern with the parameters from the dictionary, returning (by default) a PostScript HalftoneType 3 (threshold array based) dictionary suitable for use with  <code>sethalftone</code> or as a component Halftone of a <code>HalftoneType 5</code> Halftone dictionary. The /OutputType parameter can also select other than Halftone Type 3 as the return paramter,
-<code>&lt;dict&gt;</code> has the following keys (all are optional):</dd>
+<code>&lt;dict&gt;</code> has the following keys (all are optional):
 <dl>
 <dt><code>/Frequency</code></dt>
 <dd>Integer; default value = 75</dd>
@@ -915,18 +957,30 @@ collection as a performance improvement. Additional settings may be added in the
 <dd>SuperCellSize may need to be specified large enough to achieve the requested number of gray levels.</dd>
 <dt><code>/OutputType</code></dt>
 <dd>Name; default value = /Type3 (HalftoneType 3 dictionary). Other shapes available are:</dd>
+<dt><code>/ThreshString</code></dt>
+<dd>
+First two bytes are width (high byte first), next two bytes are height, followed by the
+threshold array bytes (same as /Thresholds of the Type3 dictionary).
+</dd>
+<dt><code>/TOSArray</code></dt>
+<dd>
+First element is the width, next is the height, followed by pairs X, then Y, of the turn-on-sequence of the threshold array. This information can be used to construct a threshold array with a transfer function "pickled into" the threshold array, which is useful if the turn-on-sequence has more than 256 pairs. Refer to toolbin/halftone/thresh_remap for more information.</dt>
+</dd>
 <dl>
-<dt>/ThreshString: first two bytes are width (high byte first), next two bytes are height, followed by the
-threshold array bytes (same as /Thresholds of the Type3 dictionary).</dt>
-<dt>/TOSArray: first element is the width, next is the height, followed by pairs X, then Y, of the turn-on-sequence of the threshold array. This information can be used to construct a threshold array with a transfer function "pickled into" the threshold array, which is useful if the turn-on-sequence has more than 256 pairs. Refer to toolbin/halftone/thresh_remap for more information.</dt>
 </dl>
 </dl>
+</dd>
 </dl>
 
 <dl>
 <dt><a name=".shellarguments"></a>
 <code>.shellarguments</code></dt>
-<dd>This operator is used to access the ARGUMENTS command line option.  See examples in lib for more information.</dd>
+<dd>
+<p>This operator is used to access the ARGUMENTS command line option.
+<p>Relies on Ghostscript being called with the &quot;--&quot; command
+line option - see <a href="Use.htm#Input_control">Input Control</a>
+<p>See examples in lib for more information.
+</dd>
 </dl>
 
 
@@ -975,7 +1029,7 @@ palette must contain exactly 2, 4, 16, or 256 entries, and must contain an
 entry for black and an entry for white; if it contains any entries that
 aren't black, white, or gray, it must contain at least the six primary
 colors (red, green, blue, and their complements cyan, magenta, and yellow);
-aside from this, its contents are arbitrary.</dd>
+aside from this, its contents are arbitrary.
 
 <p>
 Alternatively, palette can be 16, 24, 32, or null (equivalent to 24).
@@ -1001,6 +1055,7 @@ These are interpreted as:</p>
 Note that one can also make an image device (with the same palette as an
 existing image device) by copying a device using the
 <code>copydevice</code> operator.</p>
+</dd>
 </dl>
 
 <dl>
@@ -1183,7 +1238,7 @@ See the Adobe <a href="http://partners.adobe.com/public/developer/pdf/index_refe
 <dt><code>&lt;source&gt; &lt;dict&gt; /PNGPredictorDecode filter &lt;file&gt;</code></dt>
 <p><dd>Implements the "filter" algorithms of the
 <a href="http://www.libpng.org/pub/png/">Portable Network Graphics (PNG)
-graphics format</a>.  Recognized keys are:</dd></p>
+graphics format</a>.  Recognized keys are:</p>
 
 <blockquote><table>
 <tr><th colspan="5">Keys recognized in PNG filter algorithms</th></tr>
@@ -1225,6 +1280,7 @@ specification</p>
 <blockquote>
 <a href="http://www.w3.org/TR/WD-png-960128.html">http://www.w3.org/TR/WD-png-960128.html</a>
 </blockquote>
+</dd>
 </dl>
 
 <dl>
@@ -1378,9 +1434,10 @@ or the implementation.</dd>
 <dt><code>TextAlphaBits, GraphicsAlphaBits (usually read-only)</code></dt>
 <dd>The number of bits of anti-aliasing information for text or graphics
 respectively.  Legal values are 1 (no anti-aliasing, the default for most
-devices), 2, or 4.</dd>
+devices), 2, or 4.
 <p>Because this feature relies upon rendering the input it is incompatible, and will generate
 an error on attempted use, with any of the vector output devices.</p>
+</dd>
 </dl>
 
 <p>
@@ -1428,11 +1485,12 @@ For raster printers and image format (jpeg*, tiff*, png* ...) devices these
 page device parameters are also defined:</b></p>
 <dl>
 <dt><code>MaxBitmap &lt;integer&gt;</code></dt>
-<dd>Maximum space for a full page raster image (bitmap) in memory.</dd>
+<dd>Maximum space for a full page raster image (bitmap) in memory.
 <p>This value includes the space for padding raster lines and for an array of
 pointers for each raster line, thus the <code>MaxBitmap</code> value to allow
 a given PageSize of a specific number of bits per pixel to be rendered in a
 full page buffer may be somewhat larger than the bitmap size alone.</p>
+</dd>
 </dl>
 
 <dl>
@@ -1441,13 +1499,14 @@ full page buffer may be somewhat larger than the bitmap size alone.</p>
 Since <code>memory</code> is always included, specifying <code>-sBandListStorage=memory</code>
 when the default is <code>file</code> will use memory based storage for the
 band list of the page. This is primarily intended for testing, but if the disk I/O is
-slow, band list storage in memory may be faster.</dd>
+slow, band list storage in memory may be faster.
+</dd>
 </dl>
 
 <dl>
 <dt><code>BufferSpace &lt;integer&gt;</code></dt>
 <dd>Size of the buffer space for band lists, if the full page raster image
-(bitmap) is larger than <code>MaxBitmap</code> (see above.)</dd>
+(bitmap) is larger than <code>MaxBitmap</code> (see above.)
 
 <p>The buffer space is used to collect display list (clist) commands for the
 bands and then to consolidate those commands when writing the clist to the
@@ -1457,6 +1516,7 @@ is large enough, the display list (clist) will consist of a single band.</p>
 <p>The  <code>BufferSpace</code> will determine the size of the 'consolidation'
 buffer (above) even if the <code>MaxBitmap</code> value is low enough to force
 banding/clist mode.</p>
+</dd>
 </dl>
 
 <dl>
@@ -1465,7 +1525,7 @@ banding/clist mode.</p>
 the page rendering and output can be performed in a background thread.
 The default value, <code>false</code>, causes the rendering and printing to be
 done in the same thread as the parser. When <code>-dBGPrint=true</code>, the
-page output will be overlapped with parsing and writing the clist for the next page.</dd>
+page output will be overlapped with parsing and writing the clist for the next page.
 <p>If the device does not support background printing, rendering and printing will
 be performed as if <code>-dBGPrint=false</code>.</p>
 <p>Note that  the background printing thread will allocate a band buffer (size determined
@@ -1476,6 +1536,7 @@ will use the specified number of rendering threads as children of the background
 thread. The background printing thread will perform any processing of the raster data
 delivered by the rendering threads. Note that BGPrint is disabled for vector devices such as pdfwrite
 and NumRenderingThreads has no effect on these devices eitehr.</p>
+</dd>
 </dl>
 
 <dl>
@@ -1485,7 +1546,7 @@ during writing of the clist, the color processing logic collects information abo
 colors used <b>before</b> the device color profile is applied. This allows special devices
 that examine <code>dev-&gt;icc_struct-&gt;pageneutralcolor</code> with the information that all
 colors on the page are near <i>neutral</i>, i.e. monochrome, and converting the rendered
-raster to gray may be used to reduce the use of color toners/inks.</dd>
+raster to gray may be used to reduce the use of color toners/inks.
 <p>
 Since the determination of whether or not the page uses colors is determined before the
 conversion to device colors, this information is independent of the device output profile.
@@ -1529,6 +1590,7 @@ for no benefit.</p>
 <p>
 Since GrayDetection=true is only effective when in clist (banding) mode, it is recommended
 to also force banding. For example: <b><tt>-dGrayDetection=true -dMaxBitmap=0</tt></b></p>
+</dd>
 </dl>
 
 <dl>
@@ -1537,7 +1599,7 @@ to also force banding. For example: <b><tt>-dGrayDetection=true -dMaxBitmap=0</t
 in separate threads. The default value, 0, causes the rendering of bands to be
 done in the same thread as the parser and device driver. <code>NumRenderingThreads</code>
 of 1 or higher results in bands rendering in the specified number of 'background'
-threads.</dd>
+threads.
 <p>The number of threads should generally be set to the number of available
 processor cores for best throughput.</p>
 <p>Note that each thread will allocate a band buffer (size determined by the
@@ -1547,6 +1609,7 @@ the band buffer in the 'main' thread.</p>
 render to a bitmap output, such as the vector devices (eg pdfwrite) and has no effect
 when rendering, but not using a clist. See <a href="Use.htm#Improving_performance">Improving_performance</a>
 </p>
+</dd>
 </dl>
 
 <dl>
@@ -1556,10 +1619,11 @@ the file name for output; <code>%d</code> is replaced by the page number
 for page-oriented output devices;
 on Unix systems <code>%pipe%</code><em>command</em> writes to a pipe.
 (<code>|</code><em>command</em> also writes to a pipe, but is now
-deprecated).  Also see the <code>-o</code> parameter.</dd>
+deprecated).  Also see the <code>-o</code> parameter.
 <p>
 Attempts to set this parameter if <code>.LockSafetyParams</code> is true
 will signal an <code>invalidaccess</code> error.</p>
+</dd>
 </dl>
 
 <dl>
@@ -1643,7 +1707,7 @@ parameters cannot be changed. Attempts to change any of the values
 when LockFilePermissions is <tt>true</tt> will signal <code>invalidaccess</code>.
 Also, when this value is <tt>true</tt>, the <code>file</code> operator
 will give <code>invalidaccess</code> when attempting to open files
-(processes) using the <code>%pipe</code> device.</dd>
+(processes) using the <code>%pipe</code> device.
 <p>
 Also when <code>LockFilePermissions</code> is <tt>true</tt>, strings
 cannot reference the parent directory (platform specific). For example
@@ -1652,6 +1716,7 @@ and Macintosh, and <code>([.#.#.XYZ])</code> is illegal on VMS.</p>
 <p>
 This parameter is set <tt>true</tt> by the <code>.setsafe</code> and
 <code>.locksafe</code> operators.</p>
+</dd>
 </dl>
 
 <dl>
@@ -1664,7 +1729,7 @@ operations are <code>deletefile</code> and <code>renamefile</code>.
 For <code>renamefile</code>, the filename for the current filename
 must match one of the paths on the PermitFileControl list, and the
 new filename must be on <b>both</b> the PermitFileControl and the
-PermitFileWriting lists of paths.</dd>
+PermitFileWriting lists of paths.
 <p>
 The strings can contain wildcard characters as for the <code>filenameforall</code>
 operator and unless specifying a single file, will end with a <b>*</b>
@@ -1689,6 +1754,7 @@ anywhere and cannot be deleted or renamed except for files created with the
 SAFER mode in release versions before 7.11 and corresponds to the use of
 <code>-dPARANOIDSAFER</code> in version 7.04 (up to and not including
 version 7.10) and GPL versions 6.53 (up to and not including 6.60).</p>
+</dd>
 </dl>
 
 <dl>
@@ -1710,7 +1776,7 @@ may be overridden by the command line argument
 <dd>Control the use of True Type grid fitting.
 Ghostscript, by default, uses Freetype for rendering Truetype (and most other) glyphs
 (but other scaler/renderer libraries can be used), thus has access to a complete Truetype
-bytecode interpreter.</dd>
+bytecode interpreter.
 <p>
 This parameter controls the hinting of Truetype glyphs.</p>
 <ul>
@@ -1737,6 +1803,7 @@ With Freetype, a value of 3 is effectively equivalent to 1.
 This parameter defaults to 1, but this
 may be overridden on the command line with
 <code>-dGridFitTT=n</code>.</p>
+</dd>
 </dl>
 
 <hr>
