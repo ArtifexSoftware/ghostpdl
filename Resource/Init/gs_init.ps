@@ -182,8 +182,7 @@ currentdict /DELAYSAFER known { /DELAYSAFER //true def /NOSAFER //true def } if
 /SAFER currentdict /NOSAFER known {
   //false
 } {
-  currentdict /SAFER known
-  currentdict /PARANOIDSAFER known or	% PARANOIDSAFER is equivalent
+  //true
 }
 ifelse def
 
@@ -2286,13 +2285,7 @@ currentdict /tempfilepaths undef
 
 %% --- These are documented extensions ---
 /.locksafe {
-  OLDSAFER
-  {
-    //.locksafe_userparams exec
-  }
-  {
-    //.lockfileaccess exec
-  } ifelse
+  //.locksafe_userparams exec
   //systemdict /getenv {pop //false} .forceput
   % setpagedevice has the side effect of clearing the page, but
   % we will just document that. Using setpagedevice keeps the device
@@ -2306,15 +2299,19 @@ currentdict /tempfilepaths undef
 
 /.setsafe
 {
-  SAFETY /safe get not {
-    <<
-      /PermitFileReading [ ]
-      /PermitFileWriting [ ]
-      /PermitFileControl [ ]
-    >> setuserparams
+  OLDSAFER {
+    SAFETY /safe get not {
+      <<
+        /PermitFileReading [ ]
+        /PermitFileWriting [ ]
+        /PermitFileControl [ ]
+      >> setuserparams
+    }
+    if
+    .locksafe
   }
-  if
-  .locksafe
+  {//.lockfileaccess exec}
+  ifelse
 } .bind executeonly odef
 %% --- End documented extensions ---
 
@@ -2325,19 +2322,7 @@ currentdict /tempfilepaths undef
 % in gs_setpd.ps)
 %
 /.locksafeglobal {
-  OLDSAFER
-  {
-    //.locksafe_userparams exec
-  }
-  {
-    <<
-      /PermitFileReading [(*)]
-      /PermitFileWriting [(*)]
-      /PermitFileControl [(*)]
-    >> setuserparams
-    //.lockfileaccess exec
-  } ifelse
-
+  //.locksafe_userparams exec
   systemdict /getenv {pop //false} put
   % setpagedevice has the side effect of clearing the page, but
   % we will just document that. Using setpagedevice keeps the device
@@ -2354,15 +2339,20 @@ currentdict /tempfilepaths undef
 % See /.locksafeglobal above.
 %
 /.setsafeglobal {
-  SAFETY /safe get not {
-    <<
-      /PermitFileReading [ ]
-      /PermitFileWriting [ ]
-      /PermitFileControl [ ]
-    >> setuserparams
+  OLDSAFER
+  {
+    SAFETY /safe get not {
+      <<
+        /PermitFileReading [ ]
+        /PermitFileWriting [ ]
+        /PermitFileControl [ ]
+      >> setuserparams
+    }
+    if
+    //.locksafeglobal exec
   }
-  if
-  //.locksafeglobal exec
+  {//.lockfileaccess exec}
+  ifelse
 } .bind def
 
 % If we are running in SAFER mode, lock things down
