@@ -536,10 +536,7 @@ run_stdin:
             }
         case 'f':               /* run file of arbitrary name */
             if (*arg != 0) {
-                code = gs_add_control_path(minst->heap, gs_permit_file_reading, arg);
-                if (code > 0)
-                    code = argproc(minst, arg);
-                (void)gs_remove_control_path(minst->heap, gs_permit_file_reading, arg);
+                code = argproc(minst, arg);
                 if (code < 0)
                     return code;
                 /* If in saved_pages_test_mode, print and flush previous job before the next file */
@@ -574,10 +571,7 @@ run_stdin:
                 uint bsize = minst->run_buffer_size;
 
                 minst->run_buffer_size = 1;
-                code = gs_add_control_path(minst->heap, gs_permit_file_reading, arg);
-                if (code > 0)
-                    code = argproc(minst, arg);
-                (void)gs_remove_control_path(minst->heap, gs_permit_file_reading, arg);
+                code = argproc(minst, arg);
                 minst->run_buffer_size = bsize;
                 if (code < 0)
                     return code;

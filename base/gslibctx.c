@@ -593,6 +593,8 @@ gs_add_outputfile_control_path(gs_memory_t *mem, const char *fname)
         fp = f;
         for (i = 0; i < len; i++) {
             if (f[i] == pipe) {
+               int code;
+
                fp = &f[i + 1];
                /* Because we potentially have to check file permissions at two levels
                   for the output file (gx_device_open_output_file and the low level
@@ -600,7 +602,9 @@ gs_add_outputfile_control_path(gs_memory_t *mem, const char *fname)
                   (including the '|', and just the command to which we pipe - since at
                   the pipe_fopen(), the leading '|' has been stripped.
                 */
-               gs_add_control_path(mem, gs_permit_file_writing, f);
+               code = gs_add_control_path(mem, gs_permit_file_writing, f);
+               if (code < 0)
+                   return code;
                break;
             }
             if (!IS_WHITESPACE(f[i]))
