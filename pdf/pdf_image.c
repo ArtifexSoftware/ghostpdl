@@ -1327,7 +1327,7 @@ int pdfi_form_execgroup(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *xobject
         goto exit2;
     }
 
-    code = pdfi_interpret_inner_content_stream(ctx, xobject_dict, page_dict, false, "FORM");
+    code = pdfi_run_context(ctx, xobject_dict, page_dict, false, "FORM");
 
  exit2:
     if (code != 0)
@@ -1347,6 +1347,7 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_di
     pdf_array *FormMatrix = NULL;
     gs_matrix m;
 
+    dbgmprintf(ctx->memory, "pdfi_do_form BEGIN\n");
     code = pdfi_dict_known(form_dict, "Group", &group_known);
     if (code < 0)
         goto exit;
@@ -1364,7 +1365,7 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_di
         if (code < 0)
             goto exit1;
 
-        code = pdfi_trans_begin_group(ctx, page_dict, form_dict);
+        code = pdfi_trans_begin_form_group(ctx, page_dict, form_dict);
         (void)pdfi_loop_detector_cleartomark(ctx);
         if (code < 0)
             goto exit1;
@@ -1415,6 +1416,7 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_di
     if (code < 0) {
         return code;
     }
+    dbgmprintf(ctx->memory, "pdfi_do_form END\n");
     return 0;
 }
 

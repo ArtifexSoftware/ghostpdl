@@ -41,5 +41,7 @@ int pdfi_setgstate(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 int pdfi_free_DefaultQState(pdf_context *ctx);
 int pdfi_set_DefaultQState(pdf_context *ctx, gs_gstate *pgs);
 gs_gstate *pdfi_get_DefaultQState(pdf_context *ctx);
+int pdfi_copy_DefaultQState(pdf_context *ctx, gs_gstate **pgs);
+int pdfi_restore_DefaultQState(pdf_context *ctx, gs_gstate **pgs);
 
 #endif

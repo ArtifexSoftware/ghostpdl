@@ -305,6 +305,8 @@ pdfi_pattern_gset(pdf_context *ctx)
     fillalpha = gs_getfillconstantalpha(ctx->pgs);
 
     /* This will preserve the ->level and a couple other things */
+    dbgmprintf2(ctx->memory, "PATTERN setting DefaultQState, old device=%s, new device=%s\n",
+                ctx->pgs->device->dname, ctx->DefaultQState->device->dname);
     code = gs_setgstate(ctx->pgs, pdfi_get_DefaultQState(ctx));
 
     if (code < 0)
@@ -362,7 +364,7 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
     double XStep, YStep;
     pdf_dict *Resources = NULL;
     pdf_array *Matrix = NULL;
-    bool transparency;
+    bool transparency = false;
 
     dbgmprintf(ctx->memory, "PATTERN: Type 1 pattern\n");
 
@@ -409,9 +411,11 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
     }
 
     /* See if pattern uses transparency */
-    code = pdfi_check_Pattern(ctx, pdict, page_dict, &transparency, NULL);
-    if (code < 0)
-        goto exit;
+    if (ctx->page_has_transparency) {
+        code = pdfi_check_Pattern(ctx, pdict, page_dict, &transparency, NULL);
+        if (code < 0)
+            goto exit;
+    }
 
     /* TODO: Resources?  Maybe I should check that they are all valid before proceeding, or something? */
 

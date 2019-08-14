@@ -36,8 +36,9 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdf_dict *SMask)
     pdf_array *BBox = NULL;
     pdf_array *a = NULL;
     pdf_dict *G_dict = NULL;
+    pdf_dict *Group = NULL;
     pdf_name *n = NULL;
-    pdf_name *CS = NULL;
+    pdf_obj *CS = NULL;
     double f;
 
     code = pdfi_dict_knownget_type(ctx, SMask, "Type", PDF_NAME, (pdf_obj **)&n);
@@ -74,18 +75,30 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdf_dict *SMask)
 
             /* TODO: GroupGState, GMatrix ? */
 
-            /* TODO: Stuff with colorspace, see .execmaskgroup */
-            code = pdfi_dict_knownget_type(ctx, G_dict, "CS", PDF_NAME, (pdf_obj **)&CS);
+            /* CS is in the dict "Group" inside the dict "G" */
+            /* TODO: Not sure if this is a required thing or just one possibility */
+            code = pdfi_dict_knownget_type(ctx, G_dict, "Group", PDF_DICT, (pdf_obj **)&Group);
             if (code < 0)
                 goto exit;
             if (code > 0) {
-                code = pdfi_create_colorspace(ctx, (pdf_obj *)CS, (pdf_dict *)ctx->main_stream,
-                                              ctx->CurrentPageDict, &pcs, false);
-                params.ColorSpace = pcs;
+                /* TODO: Stuff with colorspace, see .execmaskgroup */
+                code = pdfi_dict_knownget(ctx, Group, "CS", &CS);
                 if (code < 0)
                     goto exit;
+                if (code > 0) {
+                    code = pdfi_create_colorspace(ctx, CS, (pdf_dict *)ctx->main_stream,
+                                              ctx->CurrentPageDict, &pcs, false);
+                    params.ColorSpace = pcs;
+                    if (code < 0)
+                        goto exit;
+                } else {
+                    /* Inherit current colorspace */
+                    params.ColorSpace = ctx->pgs->color[0].color_space; /* 0 or 1 ? */
+                }
             } else {
-                /* Inherit current colorspace */
+                /* TODO: Is this an error or what?
+                   Inherit current colorspace
+                */
                 params.ColorSpace = ctx->pgs->color[0].color_space; /* 0 or 1 ? */
             }
 
@@ -104,6 +117,7 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdf_dict *SMask)
     if (pcs)
         rc_decrement_cs(pcs, "pdfi_trans_set_mask");
     pdfi_countdown(n);
+    pdfi_countdown(Group);
     pdfi_countdown(G_dict);
     pdfi_countdown(a);
     pdfi_countdown(BBox);
@@ -185,10 +199,11 @@ int pdfi_trans_begin_page_group(pdf_context *ctx, pdf_dict *page_dict, pdf_dict 
     return code;
 }
 
-int pdfi_trans_begin_group(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_dict)
+int pdfi_trans_begin_form_group(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_dict)
 {
     pdf_dict *group_dict = NULL;
     gs_rect bbox;
+    pdf_array *BBox = NULL;
     int code;
 
     code = pdfi_dict_get_type(ctx, form_dict, "Group", PDF_DICT, (pdf_obj **)&group_dict);
@@ -196,10 +211,19 @@ int pdfi_trans_begin_group(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form
         return_error(code);
 
     code = pdfi_gsave(ctx);
-    bbox.p.x = ctx->PageSize[0];
-    bbox.p.y = ctx->PageSize[1];
-    bbox.q.x = ctx->PageSize[2];
-    bbox.q.y = ctx->PageSize[3];
+    code = pdfi_dict_knownget_type(ctx, form_dict, "BBox", PDF_ARRAY, (pdf_obj **)&BBox);
+    if (code < 0)
+        goto exit;
+    if (code > 0) {
+        code = pdfi_array_to_gs_rect(ctx, BBox, &bbox);
+        if (code < 0)
+            goto exit;
+    } else {
+        bbox.p.x = 0;
+        bbox.p.y = 0;
+        bbox.q.x = 0;
+        bbox.q.y = 0;
+    }
 
     code = pdfi_transparency_group_common(ctx, page_dict, group_dict, &bbox, PDF14_BEGIN_TRANS_GROUP);
     if (code < 0)
@@ -207,6 +231,8 @@ int pdfi_trans_begin_group(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form
     else
         ctx->current_stream_save.group_depth++;
 
+ exit:
+    pdfi_countdown(BBox);
     pdfi_countdown(group_dict);
     return code;
 }

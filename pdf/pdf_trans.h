@@ -17,7 +17,7 @@
 #define PDF_TRANSPARENCY_OPERATORS
 
 int pdfi_trans_begin_page_group(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *group_dict);
-int pdfi_trans_begin_group(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_dict);
+int pdfi_trans_begin_form_group(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_dict);
 int pdfi_trans_end_group(pdf_context *ctx);
 int pdfi_trans_set_params(pdf_context *ctx, double alpha);
 int pdfi_trans_begin_isolated_group(pdf_context *ctx, bool image_with_SMask);

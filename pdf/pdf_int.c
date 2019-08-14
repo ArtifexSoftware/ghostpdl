@@ -3383,7 +3383,6 @@ void local_restore_stream_state(pdf_context *ctx, stream_save *local_save)
     ctx->current_stream_save.gsave_level = local_save->gsave_level;
     ctx->current_stream_save.stack_count = local_save->stack_count;
     ctx->current_stream_save.group_depth = local_save->group_depth;
-
 }
 
 void initialise_stream_save(pdf_context *ctx)
@@ -3393,6 +3392,21 @@ void initialise_stream_save(pdf_context *ctx)
     ctx->current_stream_save.gsave_level = ctx->pgs->level;
     ctx->current_stream_save.stack_count = pdfi_count_total_stack(ctx);
 }
+
+/* Run a stream in a sub-context (saves/restores DefaultQState) */
+int pdfi_run_context(pdf_context *ctx, pdf_dict *stream_dict,
+                     pdf_dict *page_dict, bool stoponerror, const char *desc)
+{
+    int code;
+    gs_gstate *DefaultQState;
+
+    pdfi_copy_DefaultQState(ctx, &DefaultQState);
+    pdfi_set_DefaultQState(ctx, ctx->pgs);
+    code = pdfi_interpret_inner_content_stream(ctx, stream_dict, page_dict, stoponerror, desc);
+    pdfi_restore_DefaultQState(ctx, &DefaultQState);
+    return code;
+}
+
 
 /* Interpret a sub-content stream, with some handling of error recovery, clearing stack, etc.
  * This temporarily turns on pdfstoponerror if requested.

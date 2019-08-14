@@ -927,10 +927,32 @@ int pdfi_set_DefaultQState(pdf_context *ctx, gs_gstate *pgs)
 {
     pdfi_free_DefaultQState(ctx);
     ctx->DefaultQState = gs_gstate_copy(ctx->pgs, ctx->memory);
+    if (ctx->DefaultQState == NULL)
+        return_error(gs_error_VMerror);
     return 0;
 }
 
 gs_gstate *pdfi_get_DefaultQState(pdf_context *ctx)
 {
     return ctx->DefaultQState;
+}
+
+int pdfi_copy_DefaultQState(pdf_context *ctx, gs_gstate **pgs)
+{
+    *pgs = gs_gstate_copy(ctx->DefaultQState, ctx->memory);
+    if (*pgs == NULL)
+        return_error(gs_error_VMerror);
+    return 0;
+}
+
+int pdfi_restore_DefaultQState(pdf_context *ctx, gs_gstate **pgs)
+{
+    int code;
+
+    code = pdfi_set_DefaultQState(ctx, *pgs);
+    if (code < 0)
+        return code;
+    code = gs_gstate_free(*pgs);
+    *pgs = NULL;
+    return code;
 }
