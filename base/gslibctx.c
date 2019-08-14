@@ -422,11 +422,11 @@ void gs_lib_ctx_fin(gs_memory_t *mem)
         gx_monitor_free((gx_monitor_t *)(ctx->core->monitor));
 #endif
 #ifdef WITH_CAL
-        cal_fin(ctx->core->cal_ctx, mem);
+        cal_fin(ctx->core->cal_ctx, ctx->core->memory);
 #endif
-        gs_purge_control_paths(ctx_mem, 0);
-        gs_purge_control_paths(ctx_mem, 1);
-        gs_purge_control_paths(ctx_mem, 2);
+        gs_purge_control_paths(ctx->core->memory, 0);
+        gs_purge_control_paths(ctx->core->memory, 1);
+        gs_purge_control_paths(ctx->core->memory, 2);
         fs = ctx->core->fs;
         while (fs) {
             gs_fs_list_t *next = fs->next;
