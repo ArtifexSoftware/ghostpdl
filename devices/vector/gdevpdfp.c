@@ -662,6 +662,12 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
     }
     /* Handle the float/double mismatch. */
     pdev->CompatibilityLevel = (int)(cl * 10 + 0.5) / 10.0;
+
+    if (pdev->ForOPDFRead && pdev->OwnerPassword.size != 0) {
+        emprintf(pdev->memory, "\n\tSetting OwnerPassword for PostScript output would result in an encrypted\n\tunusable PostScript file, ignoring.\n");
+        pdev->OwnerPassword.size = 0;
+    }
+
     if(pdev->OwnerPassword.size != save_dev->OwnerPassword.size ||
         (pdev->OwnerPassword.size != 0 &&
          memcmp(pdev->OwnerPassword.data, save_dev->OwnerPassword.data,
