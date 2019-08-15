@@ -996,6 +996,10 @@ void pdf_reset_text(gx_device_pdf *pdev);
 
 /* ------ Document ------ */
 
+/* Utility functions to write args into the file as comments */
+int pdfwrite_fwrite_args_comment(gx_device_pdf *pdev, gp_file *f);
+int pdfwrite_write_args_comment(gx_device_pdf *pdev, stream *s);
+
 /* Write a DSC compliant header to the file */
 int ps2write_dsc_header(gx_device_pdf * pdev, int pages);
 

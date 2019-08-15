@@ -1782,6 +1782,7 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
     gp_fwrite(Header, strlen(Header), 1, linear_params->Lin_File.file);
     if (pdev->binary_ok)
         gp_fwrite(Binary, strlen(Binary), 1, linear_params->Lin_File.file);
+    pdfwrite_fwrite_args_comment(pdev, linear_params->Lin_File.file);
 
     pdf_record_usage(pdev, linear_params->LastResource + 1, resource_usage_part1_structure);
     pdev->ResourceUsage[linear_params->LastResource + 1].OriginalOffset = 0;
