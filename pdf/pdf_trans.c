@@ -26,9 +26,10 @@
 
 #include "gstparam.h"
 
-static int pdfi_trans_set_mask(pdf_context *ctx, pdf_dict *SMask)
+static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs)
 {
     int code;
+    pdf_dict *SMask = igs->SMask;
     //    gs_color_space *gray_cs = gs_cspace_new_DeviceGray(ctx->memory);
     gs_color_space *pcs = NULL;
     gs_rect bbox = { { 0, 0} , { 1, 1} };
@@ -73,7 +74,11 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdf_dict *SMask)
             gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Luminosity);
             params.replacing = true;
 
-            /* TODO: GroupGState, GMatrix ? */
+            /* Need to set just the ctm (GroupMat) from the saved GroupGState, to
+               have gs_begin_transparency_mask work correctly.  Or at least that's
+               what the PS code comments claim (see pdf_draw.ps/.execmaskgroup)
+            */
+            gs_setmatrix(ctx->pgs, &igs->GroupGState->ctm);
 
             /* CS is in the dict "Group" inside the dict "G" */
             /* TODO: Not sure if this is a required thing or just one possibility */
@@ -105,7 +110,7 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdf_dict *SMask)
             code = gs_begin_transparency_mask(ctx->pgs, &params, &bbox, true);
             if (code < 0)
                 goto exit;
-            code = pdfi_form_execgroup(ctx, ctx->CurrentPageDict, G_dict);
+            code = pdfi_form_execgroup(ctx, ctx->CurrentPageDict, G_dict, igs->GroupGState);
             code = gs_end_transparency_mask(ctx->pgs, 0);
         }
     } else {
@@ -311,7 +316,7 @@ int pdfi_trans_set_params(pdf_context *ctx, double alpha)
             gs_setopacityalpha(ctx->pgs, alpha);
         }
         if (igs->SMask) {
-            pdfi_trans_set_mask(ctx, igs->SMask);
+            pdfi_trans_set_mask(ctx, igs);
         }
     }
 

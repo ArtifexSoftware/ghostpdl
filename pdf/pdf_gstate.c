@@ -32,9 +32,34 @@
 #include "gslparam.h"
 #include "gstparam.h"
 
+void pdfi_gstate_smask_install(pdfi_int_gstate *igs, gs_memory_t *memory, pdf_dict *SMask, gs_gstate *gstate)
+{
+    void *client_data_save;
+
+    if (!SMask)
+        return;
+    igs->memory = memory;
+    igs->SMask = SMask;
+    pdfi_countup(SMask);
+    client_data_save = gstate->client_data;
+    gstate->client_data = NULL;
+    igs->GroupGState = gs_gstate_copy(gstate, memory);
+    gstate->client_data = client_data_save;
+}
+
+void pdfi_gstate_smask_free(pdfi_int_gstate *igs)
+{
+    pdfi_countdown(igs->SMask);
+    igs->SMask = NULL;
+    if (igs->GroupGState)
+        gs_gstate_free(igs->GroupGState);
+    igs->GroupGState = NULL;
+}
+
+
 /* Allocate the interpreter's part of a graphics state. */
 static void *
-pdfi_gstate_alloc(gs_memory_t * mem)
+pdfi_gstate_alloc_cb(gs_memory_t * mem)
 {
     pdfi_int_gstate *igs;
 
@@ -47,32 +72,31 @@ pdfi_gstate_alloc(gs_memory_t * mem)
 
 /* Copy the interpreter's part of a graphics state. */
 static int
-pdfi_gstate_copy(void *to, const void *from)
+pdfi_gstate_copy_cb(void *to, const void *from)
 {
     const pdfi_int_gstate *igs_from = (const pdfi_int_gstate *)from;
     pdfi_int_gstate *igs_to = (pdfi_int_gstate *)to;
 
     *(pdfi_int_gstate *) igs_to = *igs_from;
-    if (igs_from->SMask)
-        pdfi_countup(igs_from->SMask);
+    pdfi_gstate_smask_install(igs_to, igs_from->memory, igs_from->SMask, igs_from->GroupGState);
     return 0;
 }
 
 /* Free the interpreter's part of a graphics state. */
 static void
-pdfi_gstate_free(void *old, gs_memory_t * mem)
+pdfi_gstate_free_cb(void *old, gs_memory_t * mem)
 {
     pdfi_int_gstate *igs = (pdfi_int_gstate *)old;
     if (old == NULL)
         return;
-    pdfi_countdown(igs->SMask);
+    pdfi_gstate_smask_free(igs);
     gs_free_object(mem, igs, "pdfi_gstate_free");
 }
 
 static const gs_gstate_client_procs pdfi_gstate_procs = {
-    pdfi_gstate_alloc,
-    pdfi_gstate_copy,
-    pdfi_gstate_free,
+    pdfi_gstate_alloc_cb,
+    pdfi_gstate_copy_cb,
+    pdfi_gstate_free_cb,
     NULL,			/* copy_for */
 };
 
@@ -81,7 +105,7 @@ pdfi_gstate_set_client(pdf_context *ctx)
 {
     pdfi_int_gstate *igs;
 
-    igs = pdfi_gstate_alloc(ctx->memory);
+    igs = pdfi_gstate_alloc_cb(ctx->memory);
     gs_gstate_set_client(ctx->pgs, igs, &pdfi_gstate_procs, true /* TODO: client_has_pattern_streams ? */);
     return 0;
 }
@@ -137,6 +161,7 @@ int pdfi_op_q(pdf_context *ctx)
 {
     int code;
 
+    dbgmprintf(ctx->memory, "(doing q)\n"); /* TODO: Spammy, delete me at some point */
     code = pdfi_gsave(ctx);
 
     if (code < 0 && ctx->pdfstoponerror)
@@ -152,6 +177,7 @@ int pdfi_op_Q(pdf_context *ctx)
 {
     int code;
 
+    dbgmprintf(ctx->memory, "(doing Q)\n"); /* TODO: Spammy, delete me at some point */
     if (ctx->page_has_transparency)
         code = gs_pop_transparency_state(ctx->pgs, false);
 
@@ -757,9 +783,8 @@ static int GS_SMask(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_d
         pdfi_int_gstate *igs = (pdfi_int_gstate *)ctx->pgs->client_data;
 
         if (igs->SMask)
-            pdfi_countdown(igs->SMask);
-        igs->SMask = (pdf_dict *)o;
-        pdfi_countup(o);
+            pdfi_gstate_smask_free(igs);
+        pdfi_gstate_smask_install(igs, ctx->memory, (pdf_dict *)o, ctx->pgs);
     }
 
     pdfi_countdown(o);

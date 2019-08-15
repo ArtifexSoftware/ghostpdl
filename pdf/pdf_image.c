@@ -895,8 +895,7 @@ pdfi_do_image_smask(pdf_context *ctx, pdf_stream *source, pdfi_image_info_t *ima
     code = pdfi_gsave(ctx);
 
     /* Disable SMask for inner image */
-    pdfi_countdown(igs->SMask);
-    igs->SMask = NULL;
+    pdfi_gstate_smask_free(igs);
 
     gs_setopacityalpha(ctx->pgs, 1.0);
     gs_setshapealpha(ctx->pgs, 1.0);
@@ -1297,7 +1296,7 @@ int pdfi_EI(pdf_context *ctx)
 }
 
 /* see .execgroup */
-int pdfi_form_execgroup(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *xobject_dict)
+int pdfi_form_execgroup(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *xobject_dict, gs_gstate *GroupGState)
 {
     int code;
     pdf_array *FormMatrix = NULL;
@@ -1315,8 +1314,14 @@ int pdfi_form_execgroup(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *xobject
     if (code < 0)
         goto exit;
 
-    pdfi_countdown(igs->SMask);
-    igs->SMask = NULL;
+    if (GroupGState) {
+        code = gs_setgstate(ctx->pgs, GroupGState);
+        if (code < 0)
+            goto exit;
+    }
+
+    /* Disable the SMask */
+    pdfi_gstate_smask_free(igs);
 
     gs_setopacityalpha(ctx->pgs, 1.0);
     gs_setshapealpha(ctx->pgs, 1.0);
@@ -1388,7 +1393,7 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_di
     }
 
     if (do_group) {
-        code = pdfi_form_execgroup(ctx, page_dict, form_dict);
+        code = pdfi_form_execgroup(ctx, page_dict, form_dict, NULL);
         if (code < 0)
             (void)pdfi_trans_end_group(ctx);
         else

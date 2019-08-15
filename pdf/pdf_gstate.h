@@ -21,9 +21,13 @@
 /* Interpreter graphics state things (see igstate.h/int_gstate) */
 typedef struct int_gstate_s {
     pdf_dict *SMask; /* PDF only, null | dictionary | true */
+    gs_gstate *GroupGState; /* gstate associated with the SMask */
+    gs_memory_t *memory;
 } pdfi_int_gstate;
 
 int pdfi_gstate_set_client(pdf_context *ctx);
+void pdfi_gstate_smask_install(pdfi_int_gstate *igs, gs_memory_t *memory, pdf_dict *SMask, gs_gstate *gstate);
+void pdfi_gstate_smask_free(pdfi_int_gstate *igs);
 
 int pdfi_concat(pdf_context *ctx);
 int pdfi_gsave(pdf_context *ctx);
