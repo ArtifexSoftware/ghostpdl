@@ -217,7 +217,7 @@ Function CJKGen
     ${StrRep} $0 "$FONTS" "\" "/"
     ${StrRep} $1 "$INSTDIR\lib\cidfmap" "\" "/"
     ${StrRep} $2 "$INSTDIR\lib\mkcidfm.ps" "\" "/"
-    ExecWait '"$INSTDIR\bin\gswin${WINTYPE}c.exe" -q -dBATCH "-sFONTDIR=$0" "-sCIDFMAP=$1" "$2"'
+    ExecWait '"$INSTDIR\bin\gswin${WINTYPE}c.exe" -q -dNOSAFER -dBATCH "-sFONTDIR=$0" "-sCIDFMAP=$1" "$2"'
 FunctionEnd
 
 Function .onInit
