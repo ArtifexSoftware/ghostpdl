@@ -96,34 +96,28 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h2><a name="Version9.27"></a>Version 9.27 (2019-04-04)</h2>
-<p><strong>IMPORTANT:</strong> It is our intention, within the next 12 months (ideally sooner,
-in time for the next release) to make SAFER the default mode of operation. For many users
-this will have no effect, since they use SAFER explicitly, but some niche uses which rely
-on SAFER being disabled may need to start explicitly adding the &quot;-dNOSAFER&quot; option.
+<h2><a name="Version9.50"></a>Version 9.50 (2019-09-30)</h2>
 <p> Highlights in this release include:
 <ul>
 <li>
-<p>We have extensively cleaned up the Postscript name space: removing access to internal
-and/or undocumented Postscript operators, procedures and data. This has benefits for security
-and maintainability.
+<p>The change to version 9.50 (rather than the intended 9.28) follows recognition
+of the extent and importance of the file access control redesign/reimplementation
+outlined below.
 </li>
 <li>
-<p>We have added a new &quot;product&quot;: &quot;gpdl&quot;. This is a rethink/redesign of the old
-&quot;language_switch&quot; product (pspcl6), and includes all the interpreters we
-develop based on the Ghostscript graphics library: Postscript, PDF, PCL6, PXL and XPS.
-This is experimental, and should be considered of beta testing quality, and thus is not
-built by default: it can be built by using the &quot;experimental&quot; target.
-<p><code>gpdl</code> uses a heuristic to judge the file type being passed to it. In general,
-it supports most of the widely used command line options for each interpreter, but
-compatibility is not complete (the practicalities of swapping interpreters means it is
-unlikely that full parity of command line options will be possible).
-</li>
-<li>
-<p>Fontmap can now reference invidual fonts in a TrueType Collection for font subsitution.
-Previously, a Fontmap entry could only reference a TrueType collection and use the default
-(first) font. Now, the Fontmap syntax allows for specifying a specific index in a TTC.
-See the comments at the top of (the default) Fontmap.GS for details.
+<p>The file access control capability (enable with <code>-dSAFER</code>) has been
+completely rewritten, with a ground-up rethink of the design. For more details,
+see: <a href="Use.htm#Safer">SAFER</a>.
+<p>It is important to note that <code>-dSAFER</code> now <strong>only</strong> enables
+the file access controls, and no longer applies restrictions to standard Postscript
+functionality (specifically, restrictions on <code>setpagedevice</code>. If your
+application relies on these Postscript restrictions, see <a href="Use.htm#OldSafer">OLDSAFER</a>,
+and please get in touch, as we do plan to remove those Postscript restrictions
+unless we have reason not to.
+<p><strong>IMPORTANT:</strong> File access controls are now enabled by default. In
+order to run Ghostscript without these controls, see <a href="Use.htm#NoSafer">NOSAFER</a>
+<p><strong>Important Note for Windows Users</strong>: See below under
+<a href="#28_Incompatible_changes">Incompatible Changes</a>
 </li>
 <li>
 <p>IMPORTANT: We are in the process of forking LittleCMS. LCMS2 is not thread safe, and
@@ -135,26 +129,46 @@ Our fork will be available as its own package separately from Ghostscript (and M
 <li>
 <p>The usual round of bug fixes, compatibility changes, and incremental improvements.
 </li>
+<li>
+<p>Special thanks to Akira Kakuto, Paul Wessel, William Bader, Nelson H. F. Beebe and
+everyone else who put time and effort into testing this new release.
+</li>
 </ul>
 <p>For a list of open issues, or to report problems,
 please visit <a href="http://bugs.ghostscript.com/">bugs.ghostscript.com</a>.
-<h3><a name="9.27_Incompatible_changes"></a>Incompatible changes</h3>
+<h3><a name="9.50_Incompatible_changes"></a>Incompatible changes</h3>
 <ul>
 <li>
+<p>There are a couple of subtle incompatibilities between the old and new SAFER
+implementations. Firstly, as mentioned above, SAFER now leaves standard Postcript
+functionality unchanged (except for the file access limitations). Secondly,
+the interaction with <code>save</code>&sol;<code>restore</code> operations, see
+<a href="Use.htm#Safer">SAFER</a>.
+<p><strong>Important Note for Windows Users</strong>:
+<br>
+The file/path pattern matching is case sensitive, even on Windows. This is a
+change in behaviour compared to the old code which, on Windows, was case
+<i>in</i>sensitive. This is in recognition of changes in Windows behaviour,
+in that it now supports (although does not enforce) case sensitivity.
+</li>
+<li>
+<p>The following is not strictly speaking new to 9.50, as not much has changed since
+9.27 in this area, but for those who don't upgrade with every release:
 <p>The process of &quot;tidying&quot; the Postscript name space should have removed
 only non-standard and undocumented operators. Nevertheless, it is possible that
 any integrations or utilities that rely on those non-standard and undocumented
 operators may stop working, or may change behaviour.
 <p>If you encounter such a case, please contact us (either the #ghostscript IRC channel,
 or the gs-devel mailing list would be best), and we'll work with you to either find an
-alternative solution.
+alternative solution or return the previous functionality, if there is genuinely no other
+option.
 <p>One case we know this has occurred is GSView 5 (and earlier). GSView 5 support for PDF
 files relied upon internal use only features which are no longer available. GSView 5 will
 still work as previously for Postscript files. For PDF files, users are encouraged to look
 at <a href="https://www.mupdf.com">MuPDF</a>.
 </li>
 </ul>
-<h3><a name="9.27_changelog"></a>Changelog</h3>
+<h3><a name="9.50_changelog"></a>Changelog</h3>
 
 <p>See the <a href="History9.htm">history file</a> for complete log
 of changes.
@@ -179,7 +193,7 @@ or contact Artifex Software, Inc.,  1305 Grant Avenue - Suite 200,
 Novato, CA 94945, U.S.A., +1(415)492-9861, for further information.
 
 <p>
-<small>Ghostscript version 9.27, 4 April 2019
+<small>Ghostscript version 9.50, 15 October 2019
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
