@@ -634,6 +634,7 @@ x_set_buffer(gx_device_X * xdev)
             xdev->buffer = buffer;
             mdev->width = xdev->width;
             mdev->height = xdev->height;
+            rc_decrement(mdev->icc_struct, "x_set_buffer");
             mdev->icc_struct = xdev->icc_struct;
             rc_increment(xdev->icc_struct);
             mdev->color_info = xdev->orig_color_info;
@@ -939,6 +940,8 @@ gdev_x_put_params(gx_device * dev, gs_param_list * plist)
 int
 gdev_x_close(gx_device_X *xdev)
 {
+    long MaxBitmap = xdev->space_params.MaxBitmap;
+
     if (xdev->ghostview)
         gdev_x_send_event(xdev, xdev->DONE);
     if (xdev->vinfo) {
@@ -952,5 +955,10 @@ gdev_x_close(gx_device_X *xdev)
         XFreeGC(xdev->dpy, xdev->gc);
 
     XCloseDisplay(xdev->dpy);
+    /* MaxBitmap == 0 ensures x_set_buffer() configures as non-buffering */
+    xdev->space_params.MaxBitmap = 0;
+    x_set_buffer(xdev);
+    xdev->space_params.MaxBitmap = MaxBitmap;
+
     return 0;
 }
