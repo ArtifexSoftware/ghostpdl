@@ -43,7 +43,7 @@ inline static void process_at_pixel(ClapTrap      * gs_restrict ct,
     /* Use local vars to avoid pointer aliasing */
     int            width        = ct->width;
     int            height       = ct->height;
-    int            num_comps    = ct->num_comps;
+    int            num_comp_lim = ct->num_comps;
     int            max_x_offset = ct->max_x_offset;
     int            max_y_offset = ct->max_y_offset;
     int            span         = ct->span;
@@ -60,7 +60,7 @@ inline static void process_at_pixel(ClapTrap      * gs_restrict ct,
     unsigned char *ppc;
 
     assert((first_comp != 1) ^ (prev_comp == -1));
-    assert((last_comp != 1) ^ (comp == ct->comp_order[num_comps-1]));
+    assert((last_comp != 1) ^ (comp == ct->comp_order[num_comp_lim]));
 
     /* Work out the search region bounds */
     sy = y - max_y_offset;
@@ -150,6 +150,7 @@ int ClapTrap_GetLinePlanar(ClapTrap       * gs_restrict ct,
     int x;
     int line_offset;
     unsigned char *process;
+    int num_comp_lim = ct->num_comps;
 
     /* Read in as many lines as we need */
     max_y = ct->y + ct->max_y_offset;
@@ -192,7 +193,7 @@ int ClapTrap_GetLinePlanar(ClapTrap       * gs_restrict ct,
         {
             process_at_pixel(ct, buffer[comp], x, 1, 1, 1, 0, -1, comp, line_offset, p++);
         }
-        for (comp_idx = 1; comp_idx < ct->num_comps-1; comp_idx++)
+        for (comp_idx = 1; comp_idx < num_comp_lim; comp_idx++)
         {
             prev_comp = comp;
             p = process;
@@ -243,7 +244,7 @@ int ClapTrap_GetLinePlanar(ClapTrap       * gs_restrict ct,
         {
             process_at_pixel(ct, buffer[comp], x, 1, 0, 1, 0, -1, comp, line_offset, p++);
         }
-        for (comp_idx = 1; comp_idx < ct->num_comps-1; comp_idx++)
+        for (comp_idx = 1; comp_idx < num_comp_lim; comp_idx++)
         {
             prev_comp = comp;
             p = process;
