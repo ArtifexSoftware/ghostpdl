@@ -1300,12 +1300,13 @@ psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
                 goto cleanup;
             }
         }
-        if (j < xc->height-1)
+        if (j < xc->height-1) {
             code = gp_fseek(xc->f, -((gs_offset_t)num_comp * xc->height - 1) * octets_per_line, SEEK_CUR);
             if (code < 0) {
                 code = gs_note_error(gs_error_ioerror);
                 goto cleanup;
             }
+	}
     }
 
 cleanup:
