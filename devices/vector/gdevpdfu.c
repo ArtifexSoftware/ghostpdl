@@ -402,10 +402,11 @@ encode(stream **s, const stream_template *t, gs_memory_t *mem)
 int
 pdfwrite_fwrite_args_comment(gx_device_pdf *pdev, gp_file *f)
 {
-    char **argv = NULL, *arg;
+    const char * const *argv = NULL;
+    const char *arg;
     int towrite, length, i, j, argc;
 
-    argc = gs_lib_ctx_get_args(pdev->memory->gs_lib_ctx, (const char ***)&argv);
+    argc = gs_lib_ctx_get_args(pdev->memory->gs_lib_ctx, &argv);
 
     gp_fwrite("%%Invocation:", 13, 1, f);
     length = 12;
@@ -450,10 +451,11 @@ pdfwrite_fwrite_args_comment(gx_device_pdf *pdev, gp_file *f)
 int
 pdfwrite_write_args_comment(gx_device_pdf *pdev, stream *s)
 {
-    char **argv = NULL, *arg;
+    const char * const *argv = NULL;
+    const char *arg;
     int towrite, length, i, j, argc;
 
-    argc = gs_lib_ctx_get_args(pdev->memory->gs_lib_ctx, (const char ***)&argv);
+    argc = gs_lib_ctx_get_args(pdev->memory->gs_lib_ctx, &argv);
 
     stream_write(s, (byte *)"%%Invocation:", 13);
     length = 12;
