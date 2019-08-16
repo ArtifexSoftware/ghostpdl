@@ -180,7 +180,6 @@ pl_main_init_with_args(pl_main_instance_t *inst, int argc, char *argv[])
 {
     gs_memory_t *mem = inst->memory;
     pl_interp_implementation_t *pjli;
-    int code;
 
     gp_init();
     /* debug flags we reset this out of gs_lib_init0 which sets these

@@ -272,6 +272,6 @@ gs_lib_ctx_stash_sanitized_arg(gs_lib_ctx_t *ctx, const char *argv);
 int
 gs_lib_ctx_stash_exe(gs_lib_ctx_t *ctx, const char *argv);
 
-int gs_lib_ctx_get_args(gs_lib_ctx_t *ctx, const char ***argv);
+int gs_lib_ctx_get_args(gs_lib_ctx_t *ctx, const char * const **argv);
 
 #endif /* GSLIBCTX_H */
