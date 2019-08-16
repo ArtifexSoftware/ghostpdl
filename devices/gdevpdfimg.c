@@ -189,10 +189,11 @@ const gx_device_pdf_image gs_pdfimage32_device = {
 static int
 pdfimage_write_args_comment(gx_device_pdf_image *pdev, stream *s)
 {
-    char **argv = NULL, *arg;
+    const char * const *argv = NULL;
+    const char *arg;
     int towrite, length, i, j, argc;
 
-    argc = gs_lib_ctx_get_args(pdev->memory->gs_lib_ctx, (const char ***)&argv);
+    argc = gs_lib_ctx_get_args(pdev->memory->gs_lib_ctx, &argv);
 
     stream_write(s, (byte *)"%%Invocation:", 13);
     length = 12;

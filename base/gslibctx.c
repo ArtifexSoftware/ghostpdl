@@ -900,7 +900,7 @@ gs_lib_ctx_stash_sanitized_arg(gs_lib_ctx_t *ctx, const char *arg)
             if (arg[2] == 0)
                 break;
             p = arg+2;
-            while (p == 32)
+            while (*p == 32)
                 p++;
             elide = 1;
             break;
@@ -1044,7 +1044,7 @@ gs_lib_ctx_stash_exe(gs_lib_ctx_t *ctx, const char *arg)
     return 0;
 }
 
-int gs_lib_ctx_get_args(gs_lib_ctx_t *ctx, const char ***argv)
+int gs_lib_ctx_get_args(gs_lib_ctx_t *ctx, const char * const **argv)
 {
     gs_lib_ctx_core_t *core;
 
