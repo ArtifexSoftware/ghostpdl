@@ -72,6 +72,8 @@ typedef struct TEXTWINDOW_S {
 
     int x, y, cx, cy;	/* window position */
     int utf8shift;
+    TCHAR** szFiles;
+    int cFiles;
 } TW;
 
 /* Create new TW structure */
