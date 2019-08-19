@@ -50,6 +50,10 @@
 #define M_COPY_CLIP 1
 #define M_PASTE_CLIP 2
 
+/* These two are defined in dwmain.c/dwmainc.c because they need access to the gsdll and instance */
+int dwmain_add_file_control_path(const TCHAR *pathfile);
+void dwmain_remove_file_control_path(const TCHAR *pathfile);
+
 LRESULT CALLBACK WndTextProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 static void text_error(char *message);
 static void text_new_line(TW *tw);
@@ -736,33 +740,52 @@ int ch;
 void
 text_drag_drop(TW *tw, HDROP hdrop)
 {
-    TCHAR *szFile;
-    int i, cFiles;
+    int i, cFiles, code;
     unsigned int Len, error;
     const char *p;
     const TCHAR *t;
     if ( (tw->DragPre==NULL) || (tw->DragPost==NULL) )
             return;
 
+    for (i = 0; tw->szFiles && i < tw->cFiles; i++) {
+        if (tw->szFiles[i] != NULL) {
+            dwmain_remove_file_control_path(tw->szFiles[i]);
+            free(tw->szFiles[i]);
+            tw->szFiles[i] = NULL;
+        }
+    }
+
     cFiles = DragQueryFile(hdrop, (UINT)(-1), (LPTSTR)NULL, 0);
+    if (tw->cFiles < cFiles) {
+        free(tw->szFiles);
+        tw->szFiles = malloc(cFiles * sizeof(char*));
+        if (tw->szFiles == NULL) {
+            tw->cFiles = 0;
+            return;
+        }
+        memset(tw->szFiles, 0x00, cFiles * sizeof(char*));
+        tw->cFiles = cFiles;
+    }
     for (i=0; i<cFiles; i++) {
         Len = DragQueryFile(hdrop, i, NULL, 0);
-        szFile = (TCHAR *)malloc((Len+1)*sizeof(TCHAR));
-        if (szFile != 0) {
-            error = DragQueryFile(hdrop, i, szFile, Len+1);
+        tw->szFiles[i] = (TCHAR *)malloc((Len+1)*sizeof(TCHAR));
+        if (tw->szFiles[i] != 0) {
+            error = DragQueryFile(hdrop, i, tw->szFiles[i], Len+1);
             if (error != 0) {
-                for (p=tw->DragPre; *p; p++)
-                    SendMessage(tw->hwnd,WM_CHAR,*p,1L);
-                for (t=szFile; *t; t++) {
-                    if (*t == '\\')
-                        SendMessage(tw->hwnd,WM_CHAR,'/',1L);
-                    else
-                        SendMessage(tw->hwnd,WM_CHAR,*t,1L);
+                code = dwmain_add_file_control_path(tw->szFiles[i]);
+                if (code >= 0) {
+                    for (p=tw->DragPre; *p; p++)
+                        SendMessage(tw->hwnd,WM_CHAR,*p,1L);
+                    for (t=tw->szFiles[i]; *t; t++) {
+                        if (*t == '\\')
+                            SendMessage(tw->hwnd,WM_CHAR,'/',1L);
+                        else
+                            SendMessage(tw->hwnd,WM_CHAR,*t,1L);
+                    }
+                    for (p=tw->DragPost; *p; p++)
+                        SendMessage(tw->hwnd,WM_CHAR,*p,1L);
                 }
-                for (p=tw->DragPost; *p; p++)
-                    SendMessage(tw->hwnd,WM_CHAR,*p,1L);
             }
-            free(szFile);
         }
     }
     DragFinish(hdrop);
@@ -1155,6 +1178,17 @@ WndTextProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
             if (tw->hfont)
                 DeleteFont(tw->hfont);
             tw->hfont = (HFONT)0;
+            {/* Remove left over drag'n'drop file names */
+                int i;
+                for (i = 0; tw->szFiles != NULL && i < tw->cFiles; i++) {
+                    dwmain_remove_file_control_path(tw->szFiles[i]);
+                    free(tw->szFiles[i]);
+                    tw->szFiles[i] = NULL;
+                }
+                free(tw->szFiles);
+                tw->szFiles = NULL;
+                tw->cFiles = 0;
+            }
             tw->quitnow = TRUE;
             PostQuitMessage(0);
             break;

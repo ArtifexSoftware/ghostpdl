@@ -97,6 +97,45 @@ static int GSDLLCALL gsdll_poll(void *handle)
 {
     return poll();
 }
+
+/* make a file readable, for drag'n'drop */
+int dwmain_add_file_control_path(const TCHAR *pathfile)
+{
+    LPSTR p;
+    int code, i;
+    p = malloc(wchar_to_utf8(NULL, (wchar_t *)pathfile));
+    if (p) {
+        wchar_to_utf8(p, (wchar_t *)pathfile);
+        for (i = 0; i < strlen(p); i++) {
+            if (p[i] == '\\') {
+                p[i] = '/';
+            }
+        }
+        code = gsdll.add_control_path(instance, GS_PERMIT_FILE_READING, p);
+        free(p);
+    }
+    else {
+        code = -1;
+    }
+    return code;
+}
+void dwmain_remove_file_control_path(const TCHAR *pathfile)
+{
+    LPSTR p;
+    int i;
+    p = malloc(wchar_to_utf8(NULL, (wchar_t *)pathfile));
+    if (p) {
+        wchar_to_utf8(p, (wchar_t *)pathfile);
+        for (i = 0; i < strlen(p); i++) {
+            if (p[i] == '\\') {
+                p[i] = '/';
+            }
+        }
+        gsdll.remove_control_path(instance, GS_PERMIT_FILE_READING, p);
+        free(p);
+    }
+}
+
 /*********************************************************************/
 
 /* new dll display device */
