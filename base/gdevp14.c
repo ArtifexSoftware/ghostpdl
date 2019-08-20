@@ -2056,8 +2056,6 @@ pdf14_get_buffer_information(const gx_device * dev,
             transbuff->mem = buf->memory;
             buf->data = NULL;  /* So that the buffer is not freed */
         }
-        /* Go ahead and free up the pdf14 device */
-        dev_proc(dev, close_device)((gx_device *)dev);
 #if RAW_DUMP
         /* Dump the buffer that should be going into the pattern */;
         dump_raw_buffer(buf->memory,
@@ -2067,6 +2065,8 @@ pdf14_get_buffer_information(const gx_device * dev,
                         transbuff->deep);
         global_index++;
 #endif
+        /* Go ahead and free up the pdf14 device */
+        dev_proc(dev, close_device)((gx_device *)dev);
     } else {
         /* Here we are coming from one of the fill image / pattern / mask
            operations */
@@ -2869,7 +2869,7 @@ pdf14_fill_path(gx_device *dev,	const gs_gstate *pgs,
                 } else {
                      gx_pattern_trans_t *patt_trans =
                                         pdcolor->colors.pattern.p_tile->ttrans;
-                     dump_raw_buffer(ppatdev14->ctx->memory,
+                     dump_raw_buffer(patt_trans->mem,
                                      patt_trans->rect.q.y-patt_trans->rect.p.y,
                                      patt_trans->rect.q.x-patt_trans->rect.p.x,
                                      patt_trans->n_chan,
