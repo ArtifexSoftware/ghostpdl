@@ -780,7 +780,7 @@ tile_rect_trans_simple(int xmin, int ymin, int xmax, int ymax,
     left_copy_width = left_copy_rem_end - left_copy_start;
     if (left_copy_width < 0)
         left_copy_width = 0;
-    left_copy_offset = left_copy_start-ptile->ttrans->rect.p.x;
+    left_copy_offset = (left_copy_start-ptile->ttrans->rect.p.x)<<deep;
 
     /* Now the middle part */
     num_full_tiles = (int)fastfloor((float) (w - left_width)/ (float) tile_width);
