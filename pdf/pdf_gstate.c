@@ -221,8 +221,17 @@ int pdfi_grestore(pdf_context *ctx)
         code = gs_grestore(ctx->pgs);
 
         font1 = pdfi_get_current_pdf_font(ctx);
-        if (font != NULL && (font != font1 || ((pdf_obj *)font)->refcnt > 1))
-            pdfi_countdown(font);
+        if (font != NULL && (font != font1 || ((pdf_obj *)font)->refcnt > 1)) {
+#if REFCNT_DEBUG
+            dbgmprintf2(ctx->memory, "pdfi_grestore() counting down font UID %ld, refcnt %d\n",
+                        font->UID, font->refcnt);
+#endif
+            /* TODO: Disabling this countdown because it causes dangling pointer and segfault in
+             * some cases.  This needs to be addressed properly.
+             */
+            dbgmprintf(ctx->memory, "WARNING pdfi_grestore() DISABLED pdfi_countdown (FIXME!)\n");
+            //pdfi_countdown(font);
+        }
 
         if(code < 0 && ctx->pdfstoponerror)
             return code;
