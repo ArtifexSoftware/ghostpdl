@@ -158,7 +158,7 @@ end
     {
       pop pop
     } ifelse
-  } forall
+  } executeonly forall
         % A context switch might have occurred during the above loop,
         % causing the interpreter-level parameters to be reset.
         % Set them again to the new values.  From here on, we are safe,
@@ -229,9 +229,9 @@ end
        { pop pop
        }
       ifelse
-    }
+    } executeonly
    forall pop
-} .bind odef
+} .bind executeonly odef
 
 % Initialize the passwords.
 % NOTE: the names StartJobPassword and SystemParamsPassword are known to
