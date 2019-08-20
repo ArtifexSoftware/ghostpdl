@@ -1920,7 +1920,7 @@ art_pdf_composite_pixel_alpha_16_inline(uint16_t *gs_restrict dst, uint16_t *gs_
     /* todo: verify that a_r is nonzero in all cases */
 
     /* Compute a_s / a_r in 16.16 format */
-    src_scale = ((a_s << 16) + (a_r >> 1)) / a_r;
+    src_scale = ((unsigned int)((a_s << 16) + (a_r >> 1))) / a_r;
 
     if (first_spot != 0) {
         /* Do compositing with blending */
@@ -2184,7 +2184,7 @@ art_pdf_recomposite_group_16(uint16_t *gs_restrict *dstp, uint16_t *gs_restrict 
         if (src_alpha_g != 65535 && dst_alpha != 0) {
             /* Uncomposite the color. In other words, solve
                "src = (src, src_alpha_g) over dst" for src */
-            scale = (dst_alpha * 65535 + (src_alpha_g>>1)) / src_alpha_g -
+            scale = ((unsigned int)(dst_alpha * 65535 + (src_alpha_g>>1))) / src_alpha_g -
                 dst_alpha;
             for (i = 0; i < n_chan; i++) {
                 int si, di;
