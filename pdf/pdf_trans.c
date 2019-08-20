@@ -41,6 +41,7 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs)
     pdf_name *n = NULL;
     pdf_obj *CS = NULL;
     double f;
+    gs_matrix save_matrix, GroupMat;
 
     code = pdfi_dict_knownget_type(ctx, SMask, "Type", PDF_NAME, (pdf_obj **)&n);
     if (code > 0 && pdfi_name_is(n, "Mask")) {
@@ -78,7 +79,9 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs)
                have gs_begin_transparency_mask work correctly.  Or at least that's
                what the PS code comments claim (see pdf_draw.ps/.execmaskgroup)
             */
-            gs_setmatrix(ctx->pgs, &igs->GroupGState->ctm);
+            gs_currentmatrix(ctx->pgs, &save_matrix);
+            gs_currentmatrix(igs->GroupGState, &GroupMat);
+            gs_setmatrix(ctx->pgs, &GroupMat);
 
             /* CS is in the dict "Group" inside the dict "G" */
             /* TODO: Not sure if this is a required thing or just one possibility */
@@ -110,8 +113,13 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs)
             code = gs_begin_transparency_mask(ctx->pgs, &params, &bbox, true);
             if (code < 0)
                 goto exit;
+            /* TODO: Error handling... */
             code = pdfi_form_execgroup(ctx, ctx->CurrentPageDict, G_dict, igs->GroupGState);
             code = gs_end_transparency_mask(ctx->pgs, 0);
+            /* Put back the matrix (we couldn't just rely on gsave/grestore for whatever reason,
+             * according to PS code anyway...
+             */
+            gs_setmatrix(ctx->pgs, &save_matrix);
         }
     } else {
         /* take action on a non-/Mask entry. What does this mean ? What do we need to do */
