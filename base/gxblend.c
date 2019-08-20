@@ -1934,6 +1934,8 @@ art_pdf_composite_pixel_alpha_16_inline(uint16_t *gs_restrict dst, uint16_t *gs_
                 dst[i] += (src_scale * (blend[i] - dst[i]) + 0x8000) >> 16;
             }
         } else {
+            int a_b2 = a_b>>1;
+            int ss2 = src_scale>>1;
             for (i = 0; i < first_spot; i++) {
                 int c_bl;		/* Result of blend function */
 
@@ -1941,8 +1943,8 @@ art_pdf_composite_pixel_alpha_16_inline(uint16_t *gs_restrict dst, uint16_t *gs_
                 c_b = dst[i];
                 c_bl = blend[i];
 
-                c_s += (a_b * (c_bl - c_s) + 0x8000) >> 16;
-                c_b += (src_scale * (c_s - c_b) + 0x8000) >> 16;
+                c_s += (a_b2 * (c_bl - c_s) + 0x4000) >> 15;
+                c_b += (ss2 * (c_s - c_b) + 0x4000) >> 15;
                 dst[i] = c_b;
             }
         }
