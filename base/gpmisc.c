@@ -974,7 +974,12 @@ validate(const gs_memory_t *mem,
                  }
                 /* PATH=abcd pattern=abc */
                 break; /* No match */
-            } else if (*a != *b) {
+            } else if (*a != *b
+                       && gs_file_name_check_separator(a, 1, a)
+                       != gs_file_name_check_separator(b, 1, b)) {
+                /* On Windows we can get random combinations of "/" and "\" as directory
+                 * separators, and we want "C:\" to match C:/" hence using the pair of
+                 * gs_file_name_check_separator() calls */
                 break;
             }
             a++, b++;
