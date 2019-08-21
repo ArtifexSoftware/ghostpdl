@@ -192,14 +192,14 @@ currentdict /gput_always_allow .undef
         .setglobal
         pdfformaterror
       } executeonly ifelse
-    }
+    } executeonly
     {
       currentglobal //pdfdict gcheck .setglobal
       //pdfdict /.Qqwarning_issued //true .forceput
       .setglobal
       pdfformaterror
     } executeonly ifelse
-  } if
+  } executeonly if
 } bind executeonly odef
 
 % Save PDF gstate
@@ -446,11 +446,12 @@ currentdict /gput_always_allow .undef
   dup type /booleantype eq {
     .currentSMask type /dicttype eq {
       .currentSMask /Processed 2 index .forceput
+    } executeonly
+    {
+      .setSMask
+    }ifelse
   } executeonly
   {
-      .setSMask
-  }ifelse
-  }{
   .setSMask
   }ifelse
 
