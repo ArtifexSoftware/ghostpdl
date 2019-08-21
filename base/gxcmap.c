@@ -37,6 +37,15 @@
 #include "gsicc.h"
 #include "gxdevsop.h"
 
+/* If enabled, this makes use of the alternate transform
+   ICC profile for mapping separation and
+   DeviceN colorants from CMYK to output
+   ICC color space iff the profiles make
+   sense.  We should probably make this yet
+   another color command line option. Disabling
+   it for now for the current release. */
+#define USE_ALT_MAP 0
+
 /* Structure descriptor */
 public_st_device_color();
 static
@@ -1366,13 +1375,15 @@ devicen_sep_icc_cmyk(frac cm_comps[], const gs_gstate * pgs,
             src_profile = pcs->params.device_n.devn_process_space->cmm_icc_profile_data;
         } else if (pcs->base_space != NULL &&
             pcs->base_space->cmm_icc_profile_data != NULL &&
-            pcs->base_space->cmm_icc_profile_data->data_cs == gsCMYK) {
+            pcs->base_space->cmm_icc_profile_data->data_cs == gsCMYK &&
+            USE_ALT_MAP) {
             src_profile = pcs->base_space->cmm_icc_profile_data;
         }
     } else if (gs_color_space_get_index(pcs) == gs_color_space_index_Separation) {
         if (pcs->base_space != NULL &&
             pcs->base_space->cmm_icc_profile_data != NULL &&
-            pcs->base_space->cmm_icc_profile_data->data_cs == gsCMYK) {
+            pcs->base_space->cmm_icc_profile_data->data_cs == gsCMYK &&
+            USE_ALT_MAP) {
             src_profile = pcs->base_space->cmm_icc_profile_data;
         }
     }
