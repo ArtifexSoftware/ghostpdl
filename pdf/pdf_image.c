@@ -1359,11 +1359,9 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_di
     if (group_known && ctx->page_has_transparency)
         do_group = true;
 
-#if 0 /* TODO:  (causes problem with tests_private/comparefiles/demo.ai.pdf) */
     code = pdfi_op_q(ctx);
     if (code < 0)
         goto exit1;
-#endif
 
     if (do_group) {
         code = pdfi_loop_detector_mark(ctx);
@@ -1394,10 +1392,6 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_di
 
     if (do_group) {
         code = pdfi_form_execgroup(ctx, page_dict, form_dict, NULL);
-        if (code < 0)
-            (void)pdfi_trans_end_group(ctx);
-        else
-            code = pdfi_trans_end_group(ctx);
     } else {
         code = pdfi_interpret_inner_content_stream(ctx, form_dict, page_dict, false, "FORM");
     }
@@ -1408,13 +1402,18 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_di
     else
         code = pdfi_grestore(ctx);
 
+    if (do_group) {
+        if (code < 0)
+            (void)pdfi_trans_end_group(ctx);
+        else
+            code = pdfi_trans_end_group(ctx);
+    }
+
  exit1:
-#if 0
     if (code != 0)
         (void)pdfi_op_Q(ctx);
     else
         code = pdfi_op_Q(ctx);
-#endif
 
  exit:
     pdfi_countdown(FormMatrix);
@@ -1460,7 +1459,7 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
             code = gs_error_typecheck;
         }
     }
-    dbgmprintf(ctx->memory, "pdfi_do_image_or_form BEGIN\n");
+    dbgmprintf(ctx->memory, "pdfi_do_image_or_form END\n");
     return 0;
 }
 
@@ -1469,61 +1468,57 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     int code = 0;
     pdf_name *n = NULL;
     pdf_obj *o = NULL;
+    bool clear_loop_detect = false;
 
     if (pdfi_count_stack(ctx) < 1) {
         code = gs_note_error(gs_error_stackunderflow);
-        goto exit1;
+        goto exit;
     }
     n = (pdf_name *)ctx->stack_top[-1];
     if (n->type != PDF_NAME) {
         code = gs_note_error(gs_error_typecheck);
-        goto exit1;
+        goto exit;
     }
 
     if (ctx->TextBlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
     code = pdfi_loop_detector_mark(ctx);
+    if (code < 0)
+        goto exit;
+    clear_loop_detect = true;
     code = pdfi_find_resource(ctx, (unsigned char *)"XObject", n, stream_dict, page_dict, &o);
-    if (code < 0) {
-        (void)pdfi_loop_detector_cleartomark(ctx);
-        goto exit1;
-    }
+    if (code < 0)
+        goto exit;
 
     if (o->type != PDF_DICT) {
-        (void)pdfi_loop_detector_cleartomark(ctx);
         code = gs_note_error(gs_error_typecheck);
-        goto exit1;
+        goto exit;
     }
 
-    /* The image or form might change the colour space (or indeed other aspects
+    /* NOTE: Used to have a pdfi_gsave/pdfi_grestore around this, but it actually makes
+     * things render incorrectly (and isn't in the PS code).
+     * It also causes demo.ai.pdf to crash.
+     * I don't really understand... (all transparency related, though, so nothing surprises me...)
+     * (there are some q/Q and gsave/grestore in the code under this)
+     *
+     * Original Comment:
+     * The image or form might change the colour space (or indeed other aspects
      * of the graphics state, if its a Form XObject. So gsave/grestore round it
      * to prevent unexpected changes.
      */
-    code = pdfi_gsave(ctx);
-    if (code < 0) {
-        (void)pdfi_loop_detector_cleartomark(ctx);
-        goto exit1;
-    }
-
     code = pdfi_do_image_or_form(ctx, stream_dict, page_dict, (pdf_dict *)o);
-    if (code < 0) {
-        (void)pdfi_loop_detector_cleartomark(ctx);
-        goto exit2;
-    }
-    code = pdfi_loop_detector_cleartomark(ctx);
-    if (code < 0) {
-        goto exit2;
-    }
-
- exit2:
     if (code < 0)
-        pdfi_grestore(ctx);
-    else
-        code = pdfi_grestore(ctx);
+        goto exit;
 
- exit1:
-    /* No need to countdown 'n' because that poitns to tht stack object, and we're going to pop that */
+ exit:
+    if (clear_loop_detect) {
+        if (code < 0)
+            (void)pdfi_loop_detector_cleartomark(ctx);
+        else
+            code = pdfi_loop_detector_cleartomark(ctx);
+    }
+    /* No need to countdown 'n' because that points to the stack object, and we're going to pop that */
     pdfi_countdown(o);
     pdfi_pop(ctx, 1);
     if (code < 0 && ctx->pdfstoponerror)
