@@ -157,7 +157,7 @@ currentdict /num-chars-dict .undef
     {
       dup ==only () = flush
     } ifelse % PDFSTEP
-  } if % PDFDEBUG
+  } executeonly if % PDFDEBUG
   2 copy .knownget {
     exch pop exch pop exch pop exec
   } {

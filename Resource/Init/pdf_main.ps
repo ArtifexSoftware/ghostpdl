@@ -2771,15 +2771,15 @@ currentdict /PDF2PS_matrix_key undef
           .setglobal
           pdfformaterror
         } executeonly ifelse
-      }
+      } executeonly
       {
         currentglobal //pdfdict gcheck .setglobal
         //pdfdict /.Qqwarning_issued //true .forceput
         .setglobal
         pdfformaterror
       } executeonly ifelse
-    } if
-  } if
+    } executeonly if
+  } executeonly if
   pop
   count PDFexecstackcount sub { pop } repeat
   (after exec) VMDEBUG

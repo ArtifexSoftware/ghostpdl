@@ -638,7 +638,7 @@ currentdict end readonly def
                   currentglobal 2 index dup gcheck setglobal
                   /FontInfo 5 dict dup 5 1 roll .forceput
                   setglobal
-                } if
+                } executeonly if
                 dup /GlyphNames2Unicode .knownget not {
                   //true                        % No existing G2U, make one
                 } {
@@ -668,10 +668,12 @@ currentdict end readonly def
                 pop                                     % font-res font-dict encoding|null font-info
                 pop                                     % font-res font-dict encoding|null
                 //false                                 % We built a GlyphNames2Unicode table, don't need to process further
-              }{
+              } executeonly
+              {
                 //true                                  % name is not Identity-V or H, fail by falling through
               }ifelse
-          } {
+          } executeonly
+          {
             //true
           } ifelse                                      % not a name, try as a dictionary (as specified)
 
@@ -759,9 +761,9 @@ currentdict end readonly def
           PDFDEBUG {
             (.processToUnicode end) =
           } if
-        } if
-      } if
-    } stopped
+        } executeonly if
+      } executeonly if
+    } executeonly stopped
     {
       .dstackdepth 1 countdictstack 1 sub
       {pop end} for
@@ -1298,19 +1300,20 @@ currentdict /eexec_pdf_param_dict .undef
                 //pdfdict /.Qqwarning_issued //true .forceput
               } executeonly if
               Q
-            } repeat
+            } executeonly repeat
             Q
-          } PDFfile fileposition 2 .execn % Keep pdfcount valid.
+          } executeonly PDFfile fileposition 2 .execn % Keep pdfcount valid.
           PDFfile exch setfileposition
-        } ifelse
-      } {
+        } executeonly ifelse
+      } executeonly
+      {
         % PDF Type 3 fonts don't use .notdef
         % d1 implementation adjusts the width as needed
         0 0 0 0 0 0
         pdfopdict /d1 get exec
       } ifelse
       end end
-    } bdef
+    } executeonly bdef
     dup currentdict Encoding .processToUnicode
     currentdict end .completefont exch pop
 } bind executeonly odef
@@ -2124,9 +2127,9 @@ currentdict /CMap_read_dict undef
           (Will continue, but content may be missing.) = flush
         } ifelse
       } if
-    } if
+    } executeonly if
     /findresource cvx /undefined signalerror
-  } loop
+  } executeonly loop
 } bind executeonly odef
 
 /buildCIDType0 {	% <CIDFontType0-font-resource> buildCIDType0 <font>
