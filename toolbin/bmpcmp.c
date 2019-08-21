@@ -1255,7 +1255,8 @@ static void *psd_read(ImageReader *im,
             }
             ptr += *span * h + 1;
         } else if (n == 3) {
-            /* RGB */
+            /* RGB (reverse to get BGR) */
+            ptr += 2;
             for (z = 0; z < n; z++)
             {
                 for (y = 0; y < h; y++)
@@ -1269,8 +1270,9 @@ static void *psd_read(ImageReader *im,
                     ptr -= w*N + *span;
                     line -= w;
                 }
-                ptr += *span * h + 1;
+                ptr += *span * h - 1;
             }
+            ptr += 4;
             for (y = 0; y < h; y++)
             {
                 for (x = 0; x < w; x++)
@@ -1320,7 +1322,8 @@ static void *psd_read(ImageReader *im,
             }
             ptr += *span * h + 1;
         } else if (n == 3) {
-            /* RGB */
+            /* RGB (reverse to get BGR) */
+            ptr += 2;
             for (z = 0; z < n; z++)
             {
                 for (y = 0; y < h; y++)
@@ -1335,8 +1338,9 @@ static void *psd_read(ImageReader *im,
                     ptr -= w*N + *span;
                     line -= w*2;
                 }
-                ptr += *span * h + 1;
+                ptr += *span * h - 1;
             }
+            ptr += 4;
             for (y = 0; y < h; y++)
             {
                 for (x = 0; x < w; x++)
@@ -2515,7 +2519,7 @@ static void untag_bmp(unsigned char *bmp,
         for (x = 0; x < w; x++)
         {
             int R, G, B, T, r, g, b;
- 
+
             T = *bmp++;
             R = *bmp++;
             G = *bmp++;
