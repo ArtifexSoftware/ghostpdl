@@ -501,8 +501,8 @@ end
       (        Output may be incorrect.\n) pdfformaterror
       //pdfdict /.gs_warning_issued //true .forceput
       PDFSTOPONERROR { /gs /undefined signalerror } if
-    } if
-  }
+    } executeonly if
+  } executeonly
   ifelse
 } bind executeonly def
 
@@ -1152,7 +1152,7 @@ currentdict end readonly def
           .setglobal
           pdfformaterror
         } executeonly ifelse
-      }
+      } executeonly
       {
         currentglobal //pdfdict gcheck .setglobal
         //pdfdict /.Qqwarning_issued //true .forceput
@@ -1160,8 +1160,8 @@ currentdict end readonly def
         pdfformaterror
       } executeonly ifelse
       end
-    } ifelse
-  } loop
+    } executeonly ifelse
+  } executeonly loop
   {
     (\n   **** Error: File has unbalanced q/Q operators \(too many q's\)\n               Output may be incorrect.\n)
     //pdfdict /.Qqwarning_issued .knownget
@@ -1175,14 +1175,14 @@ currentdict end readonly def
         .setglobal
         pdfformaterror
       } executeonly ifelse
-    }
+    } executeonly
     {
       currentglobal //pdfdict gcheck .setglobal
       //pdfdict /.Qqwarning_issued //true .forceput
       .setglobal
       pdfformaterror
     } executeonly ifelse
-  } if
+  } executeonly if
   pop
 
   % restore pdfemptycount
