@@ -960,7 +960,7 @@ int pdfi_free_DefaultQState(pdf_context *ctx)
 int pdfi_set_DefaultQState(pdf_context *ctx, gs_gstate *pgs)
 {
     pdfi_free_DefaultQState(ctx);
-    ctx->DefaultQState = gs_gstate_copy(ctx->pgs, ctx->memory);
+    ctx->DefaultQState = gs_gstate_copy(pgs, ctx->memory);
     if (ctx->DefaultQState == NULL)
         return_error(gs_error_VMerror);
     return 0;

@@ -146,7 +146,7 @@ pdfi_pattern_paint_stream(pdf_context *ctx, const gs_client_color *pcc)
     int code = 0;
 
     /* Interpret inner stream */
-    code = pdfi_interpret_inner_content_stream(ctx, pat_dict, page_dict, true, "PATTERN");
+    code = pdfi_run_context(ctx, pat_dict, page_dict, true, "PATTERN");
 
     return code;
 }
