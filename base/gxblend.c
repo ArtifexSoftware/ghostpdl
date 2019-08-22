@@ -1743,7 +1743,7 @@ art_pdf_composite_pixel_alpha_16(uint16_t *gs_restrict dst, const uint16_t *gs_r
 {
     int a_b, a_s;
     unsigned int a_r;
-    int tmp;
+    unsigned int tmp;
     int src_scale;
     int c_b, c_s;
     int i;
@@ -1771,7 +1771,7 @@ art_pdf_composite_pixel_alpha_16(uint16_t *gs_restrict dst, const uint16_t *gs_r
     /* todo: verify that a_r is nonzero in all cases */
 
     /* Compute a_s / a_r in 16.16 format */
-    src_scale = ((a_s << 16) + (a_r >> 1)) / a_r;
+    src_scale = ((unsigned int)((a_s << 16) + (a_r >> 1))) / a_r;
 
     if (first_spot != 0) {
         /* Do compositing with blending */
