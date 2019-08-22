@@ -329,3 +329,39 @@ int pdfi_array_to_gs_matrix(pdf_context *ctx, pdf_array *array, gs_matrix *mat)
  errorExit:
     return code;
 }
+
+/* Transform a BBox by a matrix (from zmatrix.c/zbbox_transform())*/
+void
+pdfi_bbox_transform(pdf_context *ctx, gs_rect *bbox, gs_matrix *matrix)
+{
+    gs_point aa, az, za, zz;
+    double temp;
+
+    gs_point_transform(bbox->p.x, bbox->p.y, matrix, &aa);
+    gs_point_transform(bbox->p.x, bbox->q.y, matrix, &az);
+    gs_point_transform(bbox->q.x, bbox->p.y, matrix, &za);
+    gs_point_transform(bbox->q.x, bbox->q.y, matrix, &zz);
+
+    if ( aa.x > az.x)
+        temp = aa.x, aa.x = az.x, az.x = temp;
+    if ( za.x > zz.x)
+        temp = za.x, za.x = zz.x, zz.x = temp;
+    if ( za.x < aa.x)
+        aa.x = za.x;  /* min */
+    if ( az.x > zz.x)
+        zz.x = az.x;  /* max */
+
+    if ( aa.y > az.y)
+        temp = aa.y, aa.y = az.y, az.y = temp;
+    if ( za.y > zz.y)
+        temp = za.y, za.y = zz.y, zz.y = temp;
+    if ( za.y < aa.y)
+        aa.y = za.y;  /* min */
+    if ( az.y > zz.y)
+        zz.y = az.y;  /* max */
+
+    bbox->p.x = aa.x;
+    bbox->p.y = aa.y;
+    bbox->q.x = zz.x;
+    bbox->q.y = zz.y;
+}

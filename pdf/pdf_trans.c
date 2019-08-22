@@ -30,21 +30,21 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs)
 {
     int code;
     pdf_dict *SMask = igs->SMask;
-    //    gs_color_space *gray_cs = gs_cspace_new_DeviceGray(ctx->memory);
     gs_color_space *pcs = NULL;
-    gs_rect bbox = { { 0, 0} , { 1, 1} };
+    gs_rect bbox;
     gs_transparency_mask_params_t params;
     pdf_array *BBox = NULL;
+    pdf_array *Matrix = NULL;
     pdf_array *a = NULL;
     pdf_dict *G_dict = NULL;
     pdf_dict *Group = NULL;
     pdf_name *n = NULL;
     pdf_obj *CS = NULL;
     double f;
-    gs_matrix save_matrix, GroupMat;
+    gs_matrix save_matrix, GroupMat, group_Matrix;
 
     code = pdfi_dict_knownget_type(ctx, SMask, "Type", PDF_NAME, (pdf_obj **)&n);
-    if (code > 0 && pdfi_name_is(n, "Mask")) {
+    if (code == 0 || (code > 0 && pdfi_name_is(n, "Mask"))) {
         code = pdfi_dict_knownget_type(ctx, SMask, "G", PDF_DICT, (pdf_obj **)&G_dict);
         if (code > 0) {
             code = pdfi_dict_knownget_type(ctx, G_dict, "Matte", PDF_ARRAY, (pdf_obj **)&a);
@@ -66,11 +66,9 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs)
             code = pdfi_dict_knownget_type(ctx, G_dict, "BBox", PDF_ARRAY, (pdf_obj **)&BBox);
             if (code < 0)
                 goto exit;
-            if (code > 0) {
-                code = pdfi_array_to_gs_rect(ctx, BBox, &bbox);
-                if (code < 0)
-                    goto exit;
-            }
+            code = pdfi_array_to_gs_rect(ctx, BBox, &bbox);
+            if (code < 0)
+                goto exit;
 
             gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Luminosity);
             params.replacing = true;
@@ -82,6 +80,16 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs)
             gs_currentmatrix(ctx->pgs, &save_matrix);
             gs_currentmatrix(igs->GroupGState, &GroupMat);
             gs_setmatrix(ctx->pgs, &GroupMat);
+
+            code = pdfi_dict_knownget_type(ctx, G_dict, "Matrix", PDF_ARRAY, (pdf_obj **)&Matrix);
+            if (code < 0)
+                goto exit;
+            code = pdfi_array_to_gs_matrix(ctx, Matrix, &group_Matrix);
+            if (code < 0)
+                goto exit;
+
+            /* Transform the BBox by the Matrix */
+            pdfi_bbox_transform(ctx, &bbox, &group_Matrix);
 
             /* CS is in the dict "Group" inside the dict "G" */
             /* TODO: Not sure if this is a required thing or just one possibility */
@@ -134,6 +142,7 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs)
     pdfi_countdown(G_dict);
     pdfi_countdown(a);
     pdfi_countdown(BBox);
+    pdfi_countdown(Matrix);
     pdfi_countdown(CS);
     return code;
 }

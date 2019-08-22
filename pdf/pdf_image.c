@@ -1507,7 +1507,9 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
      * of the graphics state, if its a Form XObject. So gsave/grestore round it
      * to prevent unexpected changes.
      */
+    //    pdfi_gsave(ctx);
     code = pdfi_do_image_or_form(ctx, stream_dict, page_dict, (pdf_dict *)o);
+    //    pdfi_grestore(ctx);
     if (code < 0)
         goto exit;
 
