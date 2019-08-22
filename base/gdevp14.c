@@ -1973,6 +1973,17 @@ pdf14_grayspot_get_color_mapping_procs(const gx_device * dev)
     return &pdf14_DeviceGrayspot_procs;
 }
 
+static void
+be_rev_cpy(uint16_t *dst,const uint16_t *src,int n)
+{
+    for (; n != 0; n--) {
+        uint16_t in = *src++;
+        ((byte *)dst)[0] = in>>8;
+        ((byte *)dst)[1] = in;
+        dst++;
+    }
+}
+
 /* Used to pass along information about the buffer created by the
    pdf14 device.  This is used by the pattern accumulator when the
    pattern contains transparency.  Note that if free_device is true then
@@ -2035,14 +2046,28 @@ pdf14_get_buffer_information(const gx_device * dev,
                 return gs_error_VMerror;
 
             transbuff->mem = mem;
-            for (j = 0; j < transbuff->n_chan; j++) {
-                buff_ptr_src = buf->data + j * buf->planestride +
-                           buf->rowstride * rect.p.y + (rect.p.x<<buf->deep);
-                buff_ptr_des = transbuff->transbytes + j * planestride;
-                for (k = 0; k < height; k++) {
-                    memcpy(buff_ptr_des, buff_ptr_src, rowstride);
-                    buff_ptr_des += rowstride;
-                    buff_ptr_src += buf->rowstride;
+            if (transbuff->deep) {
+                /* FIXME: */
+                for (j = 0; j < transbuff->n_chan; j++) {
+                    buff_ptr_src = buf->data + j * buf->planestride +
+                               buf->rowstride * rect.p.y + (rect.p.x<<buf->deep);
+                    buff_ptr_des = transbuff->transbytes + j * planestride;
+                    for (k = 0; k < height; k++) {
+                        be_rev_cpy((uint16_t *)buff_ptr_des, (const uint16_t *)buff_ptr_src, rowstride>>1);
+                        buff_ptr_des += rowstride;
+                        buff_ptr_src += buf->rowstride;
+                    }
+                }
+            } else {
+                for (j = 0; j < transbuff->n_chan; j++) {
+                    buff_ptr_src = buf->data + j * buf->planestride +
+                               buf->rowstride * rect.p.y + (rect.p.x<<buf->deep);
+                    buff_ptr_des = transbuff->transbytes + j * planestride;
+                    for (k = 0; k < height; k++) {
+                        memcpy(buff_ptr_des, buff_ptr_src, rowstride);
+                        buff_ptr_des += rowstride;
+                        buff_ptr_src += buf->rowstride;
+                    }
                 }
             }
 
@@ -2055,14 +2080,33 @@ pdf14_get_buffer_information(const gx_device * dev,
             transbuff->transbytes = buf->data;
             transbuff->mem = buf->memory;
             buf->data = NULL;  /* So that the buffer is not freed */
+            if (transbuff->deep) {
+                /* We have the data in native endian. We need it in big endian. Do an in-place conversion. */
+                /* FIXME: This is a nop on big endian machines. Is the compiler smart enough to spot that? */
+                uint16_t *buff_ptr;
+                int j, k, z;
+                int rowstride = transbuff->rowstride>>1;
+                int planestride = transbuff->planestride;
+                for (j = 0; j < transbuff->n_chan; j++) {
+                    buff_ptr = (uint16_t *)(transbuff->transbytes + j * planestride);
+                    for (k = 0; k < height; k++) {
+                        for (z = 0; z < width; z++) {
+                            uint16_t in = buff_ptr[z];
+                            ((byte *)(&buff_ptr[z]))[0] = in>>8;
+                            ((byte *)(&buff_ptr[z]))[1] = in;
+                        }
+                        buff_ptr += rowstride;
+                    }
+                }
+            }
         }
 #if RAW_DUMP
         /* Dump the buffer that should be going into the pattern */;
-        dump_raw_buffer(buf->memory,
-                        height, width, transbuff->n_chan,
-                        transbuff->planestride, transbuff->rowstride,
-                        "pdf14_pattern_buff", transbuff->transbytes,
-                        transbuff->deep);
+        dump_raw_buffer_be(buf->memory,
+                           height, width, transbuff->n_chan,
+                           transbuff->planestride, transbuff->rowstride,
+                           "pdf14_pattern_buff", transbuff->transbytes,
+                           transbuff->deep);
         global_index++;
 #endif
         /* Go ahead and free up the pdf14 device */
@@ -3592,7 +3636,7 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_gstate * pgs,
                                curr_clip_rect->ymax-curr_clip_rect->ymin, (int)ptile->id);
                     code = gx_trans_pattern_fill_rect(curr_clip_rect->xmin, curr_clip_rect->ymin,
                                                       curr_clip_rect->xmax, curr_clip_rect->ymax, ptile,
-                                                      fill_trans_buffer, phase, pdev, pdevc);
+                                                      fill_trans_buffer, phase, pdev, pdevc, 1);
                     curr_clip_rect = curr_clip_rect->next;
                 }
             } else if (cpath_intersection.rect_list->list.count == 1) {
@@ -3610,7 +3654,7 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_gstate * pgs,
                                                   cpath_intersection.rect_list->list.single.ymin,
                                                   cpath_intersection.rect_list->list.single.xmax,
                                                   cpath_intersection.rect_list->list.single.ymax,
-                                                  ptile, fill_trans_buffer, phase, pdev, pdevc);
+                                                  ptile, fill_trans_buffer, phase, pdev, pdevc, 1);
             }
         } else {
             /* Clist pattern with transparency.  Create a clip device from our
@@ -3626,7 +3670,7 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_gstate * pgs,
             phase.y = pdevc->phase.y;
             code = gx_trans_pattern_fill_rect(rect.p.x, rect.p.y, rect.q.x, rect.q.y,
                                               ptile, fill_trans_buffer, phase,
-                                              dev, pdevc);
+                                              dev, pdevc, 1);
 
         }
         /* We're done drawing with the pattern, remove the reference to the
