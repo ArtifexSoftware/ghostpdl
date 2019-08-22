@@ -3548,6 +3548,21 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 	  if (score > 0)
 	    best_size = size;
 	}
+#ifdef CUPS_DEBUG
+	dmprintf1(pdev->memory, "DEBUG2: Checking against PPD page size: %s\n",
+		  size->name);
+	dmprintf2(pdev->memory, "DEBUG2:    Width: %8.2f; Height: %8.2f\n",
+		  size->width, size->length);
+	dmprintf4(pdev->memory, "DEBUG2:    Margins: Left: %8.2f; Right: %8.2f; Top: %8.2f; Bottom: %8.2f\n",
+		  size->left, size->right, size->top, size->bottom);
+	dmprintf4(pdev->memory, "DEBUG2:    Size mismatch: Long Edge (%8.2f): %8.2f; Short Edge (%8.2f): %8.2f\n",
+		  LONG_EDGE_LENGTH_MATCH_LIMIT, long_edge_mismatch,
+		  SHORT_EDGE_LENGTH_MATCH_LIMIT, short_edge_mismatch);
+	dmprintf3(pdev->memory, "DEBUG2:    Match: Name: %d; Size: %d; Margins: %d\n",
+		  name_matched, size_matched, margins_matched);
+	dmprintf2(pdev->memory, "DEBUG2:    Score: %ld; Best Score: %ld\n",
+		  score, best_score);
+#endif /* CUPS_DEBUG */
       }
 
       if (best_size)
@@ -3670,6 +3685,21 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 	    if (score > 0)
 	      best_size = size;
 	  }
+#ifdef CUPS_DEBUG
+	  dmprintf1(pdev->memory, "DEBUG2: Checking against PPD page size: %s\n",
+		    size->name);
+	  dmprintf2(pdev->memory, "DEBUG2:    Width: %8.2f; Height: %8.2f\n",
+		    size->width, size->length);
+	  dmprintf4(pdev->memory, "DEBUG2:    Margins: Left: %8.2f; Right: %8.2f; Top: %8.2f; Bottom: %8.2f\n",
+		    size->left, size->right, size->top, size->bottom);
+	  dmprintf4(pdev->memory, "DEBUG2:    Size mismatch: Long Edge (%8.2f): %8.2f; Short Edge (%8.2f): %8.2f\n",
+		    LONG_EDGE_LENGTH_MATCH_LIMIT, long_edge_mismatch,
+		    SHORT_EDGE_LENGTH_MATCH_LIMIT, short_edge_mismatch);
+	  dmprintf3(pdev->memory, "DEBUG2:    Match: Name: %d; Size: %d; Margins: %d\n",
+		    name_matched, size_matched, margins_matched);
+	  dmprintf2(pdev->memory, "DEBUG2:    Score: %ld; Best Score: %ld\n",
+		    score, best_score);
+#endif /* CUPS_DEBUG */
 	}
 
 	if (best_size)
