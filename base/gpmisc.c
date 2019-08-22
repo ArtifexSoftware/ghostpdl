@@ -974,12 +974,22 @@ validate(const gs_memory_t *mem,
                  }
                 /* PATH=abcd pattern=abc */
                 break; /* No match */
-            } else if (*a != *b
-                       && (gs_file_name_check_separator(a, 1, a) == 1
-                       && gs_file_name_check_separator(b, 1, b) == 1)) {
+            } else if (gs_file_name_check_separator(a, 1, a) == 1
+                        && gs_file_name_check_separator(b, 1, b) == 1) {
                 /* On Windows we can get random combinations of "/" and "\" as directory
                  * separators, and we want "C:\" to match C:/" hence using the pair of
-                 * gs_file_name_check_separator() calls */
+                 * gs_file_name_check_separator() calls above */
+                 /* Annoyingly, we can also end up with a combination of explicitly escaped
+                  * '\' characters, and not escaped. So we also need "C:\\" to match "C:\"
+                  * and "C:/" - hence we need to check for, and skip over the
+                  * the extra '\' character - I'm reticent to change the upstream code that
+                  * adds the explicit escape, because that could have unforeseen side effects
+                  * elsewhere. */
+                 if (*(a + 1) != 0 && gs_file_name_check_separator(a + 1, 1, a + 1) == 1)
+                     a++;
+                 if (*(b + 1) != 0 && gs_file_name_check_separator(b + 1, 1, b + 1) == 1)
+                     b++;
+            } else if (*a != *b) {
                 break;
             }
             a++, b++;
