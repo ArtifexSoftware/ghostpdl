@@ -3485,9 +3485,9 @@ operation of <code>setpagedevice</code>, and because this capability is <i>extre
 rarely used, we feel the improvement in security warrants the small reduction in
 flexibility.
 <p>
-Path matching is simple: we do not implement full featured &quot;globbing&quot; or
-regular expression matching (such complexity would significantly and negatively
-impact performance). The following cases are handled:
+Path matching is simple: it is case sensitive, and we do not implement full featured
+&quot;globbing&quot; or regular expression matching (such complexity would significantly
+and negatively impact performance). The following cases are handled:
 <ul>
 <li>
 <dt><code>&quot;&sol;path&sol;to&sol;file&quot;</code></dt>
@@ -3503,6 +3503,12 @@ impact performance). The following cases are handled:
 any child of that directory.
 </li>
 </ul>
+<p><strong>Important Note for Windows Users</strong>:
+<br>
+The file/path pattern matching is case sensitive, even on Windows. This is a
+change in behaviour compared to the old code which, on Windows, was case
+<i>in</i>sensitive. This is in recognition of changes in Windows behaviour,
+in that it now supports (although does not enforce) case sensitivity.
 <p>
 Four command line parameters permit explicit control of the paths included in
 the access control lists:
