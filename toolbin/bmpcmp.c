@@ -16,6 +16,13 @@
 #include <png.h>
 #endif
 
+#ifndef BETTER_CMYK
+#define BETTER_CMYK 1
+#endif
+#if BETTER_CMYK
+#include "bmpcmptab.h"
+#endif
+
 #define DEBUG_BBOX(A) /* do {(A);} while(0==1) */
 
 /* Values in map field:
@@ -2463,6 +2470,207 @@ static void fuzzy_diff(unsigned char *bmp,
         fuzzy_diff_n(bmp, bmp2, map, bbox2, params);
 }
 
+#if BETTER_CMYK
+/* This lookup routine is stolen and horribly hacked about from lcms2 */
+static inline int toFixedDomain(int a)
+{
+  return a + ((a + 0x7fff) / 0xffff);
+}
+
+#define FIXED_TO_INT(x)         ((x)>>16)
+#define FIXED_REST_TO_INT(x)    ((x)&0xFFFFU)
+#define ROUND_FIXED_TO_INT(x)   (((x)+0x8000)>>16)
+
+static inline int LinearInterp(int a, int l, int h)
+{
+    int dif = (h - l) * a + 0x8000;
+    dif = (dif >> 16) + l;
+    return (dif);
+}
+
+#define DENS(i,j,k) (LutTable[(i)+(j)+(k)+OutChan])
+static inline void
+lookup(int c, int m, int y, int k,
+       int *r, int *g, int *b)
+{
+    const unsigned short* LutTable;
+    int fk;
+    int k0, rk;
+    int K0, K1;
+    int fx, fy, fz;
+    int rx, ry, rz;
+    int x0, y0, z0;
+    int X0, X1, Y0, Y1, Z0, Z1;
+    int i;
+    int c0, c1, c2, c3, Rest;
+    int OutChan;
+    int Tmp1[3], Tmp2[3];
+
+    c += (c<<8);
+    m += (m<<8);
+    y += (y<<8);
+    k += (k<<8);
+    fk  = toFixedDomain(c*22);
+    fx  = toFixedDomain(m*22);
+    fy  = toFixedDomain(y*22);
+    fz  = toFixedDomain(k*22);
+
+    k0  = FIXED_TO_INT(fk);
+    x0  = FIXED_TO_INT(fx);
+    y0  = FIXED_TO_INT(fy);
+    z0  = FIXED_TO_INT(fz);
+
+    rk  = FIXED_REST_TO_INT(fk);
+    rx  = FIXED_REST_TO_INT(fx);
+    ry  = FIXED_REST_TO_INT(fy);
+    rz  = FIXED_REST_TO_INT(fz);
+
+    K0 = 3 * 23 * 23 * 23 * k0;
+    K1 = K0 + (c == 0xFFFFU ? 0 : 3 * 23 * 23 * 23);
+
+    X0 = 3 * 23 * 23 * x0;
+    X1 = X0 + (m == 0xFFFFU ? 0 : 3 * 23 * 23);
+
+    Y0 = 3 * 23 * y0;
+    Y1 = Y0 + (y == 0xFFFFU ? 0 : 3 * 23);
+
+    Z0 = 3 * z0;
+    Z1 = Z0 + (k == 0xFFFFU ? 0 : 3);
+
+    LutTable = cmyk2rgb_lut;
+    LutTable += K0;
+
+    for (OutChan=0; OutChan < 3; OutChan++) {
+
+        c0 = DENS(X0, Y0, Z0);
+
+        if (rx >= ry && ry >= rz) {
+
+            c1 = DENS(X1, Y0, Z0) - c0;
+            c2 = DENS(X1, Y1, Z0) - DENS(X1, Y0, Z0);
+            c3 = DENS(X1, Y1, Z1) - DENS(X1, Y1, Z0);
+
+        }
+        else
+            if (rx >= rz && rz >= ry) {
+
+                c1 = DENS(X1, Y0, Z0) - c0;
+                c2 = DENS(X1, Y1, Z1) - DENS(X1, Y0, Z1);
+                c3 = DENS(X1, Y0, Z1) - DENS(X1, Y0, Z0);
+
+            }
+            else
+                if (rz >= rx && rx >= ry) {
+
+                    c1 = DENS(X1, Y0, Z1) - DENS(X0, Y0, Z1);
+                    c2 = DENS(X1, Y1, Z1) - DENS(X1, Y0, Z1);
+                    c3 = DENS(X0, Y0, Z1) - c0;
+
+                }
+                else
+                    if (ry >= rx && rx >= rz) {
+
+                        c1 = DENS(X1, Y1, Z0) - DENS(X0, Y1, Z0);
+                        c2 = DENS(X0, Y1, Z0) - c0;
+                        c3 = DENS(X1, Y1, Z1) - DENS(X1, Y1, Z0);
+
+                    }
+                    else
+                        if (ry >= rz && rz >= rx) {
+
+                            c1 = DENS(X1, Y1, Z1) - DENS(X0, Y1, Z1);
+                            c2 = DENS(X0, Y1, Z0) - c0;
+                            c3 = DENS(X0, Y1, Z1) - DENS(X0, Y1, Z0);
+
+                        }
+                        else
+                            if (rz >= ry && ry >= rx) {
+
+                                c1 = DENS(X1, Y1, Z1) - DENS(X0, Y1, Z1);
+                                c2 = DENS(X0, Y1, Z1) - DENS(X0, Y0, Z1);
+                                c3 = DENS(X0, Y0, Z1) - c0;
+
+                            }
+                            else {
+                                c1 = c2 = c3 = 0;
+                            }
+
+        Rest = c1 * rx + c2 * ry + c3 * rz;
+
+        Tmp1[OutChan] = (c0 + ROUND_FIXED_TO_INT(toFixedDomain(Rest)));
+    }
+
+
+    LutTable = cmyk2rgb_lut;
+    LutTable += K1;
+
+    for (OutChan=0; OutChan < 3; OutChan++) {
+
+        c0 = DENS(X0, Y0, Z0);
+
+        if (rx >= ry && ry >= rz) {
+
+            c1 = DENS(X1, Y0, Z0) - c0;
+            c2 = DENS(X1, Y1, Z0) - DENS(X1, Y0, Z0);
+            c3 = DENS(X1, Y1, Z1) - DENS(X1, Y1, Z0);
+
+        }
+        else
+            if (rx >= rz && rz >= ry) {
+
+                c1 = DENS(X1, Y0, Z0) - c0;
+                c2 = DENS(X1, Y1, Z1) - DENS(X1, Y0, Z1);
+                c3 = DENS(X1, Y0, Z1) - DENS(X1, Y0, Z0);
+
+            }
+            else
+                if (rz >= rx && rx >= ry) {
+
+                    c1 = DENS(X1, Y0, Z1) - DENS(X0, Y0, Z1);
+                    c2 = DENS(X1, Y1, Z1) - DENS(X1, Y0, Z1);
+                    c3 = DENS(X0, Y0, Z1) - c0;
+
+                }
+                else
+                    if (ry >= rx && rx >= rz) {
+
+                        c1 = DENS(X1, Y1, Z0) - DENS(X0, Y1, Z0);
+                        c2 = DENS(X0, Y1, Z0) - c0;
+                        c3 = DENS(X1, Y1, Z1) - DENS(X1, Y1, Z0);
+
+                    }
+                    else
+                        if (ry >= rz && rz >= rx) {
+
+                            c1 = DENS(X1, Y1, Z1) - DENS(X0, Y1, Z1);
+                            c2 = DENS(X0, Y1, Z0) - c0;
+                            c3 = DENS(X0, Y1, Z1) - DENS(X0, Y1, Z0);
+
+                        }
+                        else
+                            if (rz >= ry && ry >= rx) {
+
+                                c1 = DENS(X1, Y1, Z1) - DENS(X0, Y1, Z1);
+                                c2 = DENS(X0, Y1, Z1) - DENS(X0, Y0, Z1);
+                                c3 = DENS(X0, Y0, Z1) - c0;
+
+                            }
+                            else  {
+                                c1 = c2 = c3 = 0;
+                            }
+
+        Rest = c1 * rx + c2 * ry + c3 * rz;
+
+        Tmp2[OutChan] = (c0 + ROUND_FIXED_TO_INT(toFixedDomain(Rest)));
+    }
+
+    *r = LinearInterp(rk, Tmp1[0], Tmp2[0])>>8;
+    *g = LinearInterp(rk, Tmp1[1], Tmp2[1])>>8;
+    *b = LinearInterp(rk, Tmp1[2], Tmp2[2])>>8;
+}
+#undef DENS
+#endif
+
 static void uncmyk_bmp(unsigned char *bmp,
                        BBox          *bbox,
                        int            span)
@@ -2484,7 +2692,9 @@ static void uncmyk_bmp(unsigned char *bmp,
             m = *bmp++;
             y = *bmp++;
             k = *bmp++;
-
+#if BETTER_CMYK
+	    lookup(c,m,y,k,&r,&g,&b);
+#else
             r = (255-c-k);
             if (r < 0)
                 r = 0;
@@ -2494,6 +2704,7 @@ static void uncmyk_bmp(unsigned char *bmp,
             b = (255-y-k);
             if (b < 0)
                 b = 0;
+#endif
             bmp[-1] = 0;
             bmp[-2] = r;
             bmp[-3] = g;
