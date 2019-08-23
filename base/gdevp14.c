@@ -4878,7 +4878,6 @@ pdf14_begin_transparency_group(gx_device *dev,
     if_debug0m('v', dev->memory, "[v]Transparency group color space update\n");
     if (code < 0)
         return code;
-    /* FIXME: deep */
     code = pdf14_push_transparency_group(pdev->ctx, &rect, isolated, ptgp->Knockout,
                                          (uint16_t)floor (65535 * alpha + 0.5),
                                          (uint16_t)floor (65535 * pgs->shape.alpha + 0.5),

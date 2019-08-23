@@ -2524,7 +2524,8 @@ art_pdf_composite_knockout_16(uint16_t *gs_restrict dst,
                               pdf14_device *p14dev)
 {
     uint16_t src_shape = src[n_chan];
-    int i, tmp;
+    int i;
+    unsigned int tmp;
 
     if (blend_mode == BLEND_MODE_Normal) {
         /* Do simple compositing of source over backdrop */
@@ -2542,14 +2543,17 @@ art_pdf_composite_knockout_16(uint16_t *gs_restrict dst,
             tmp = (65535 - dst_alpha) * src_shape + 0x8000;
             result_alpha = dst_alpha + ((tmp + (tmp >> 16)) >> 16);
 
-            if (result_alpha != 0)
+            if (result_alpha != 0) {
+                dst_alpha += dst_alpha>>15;
                 for (i = 0; i < n_chan; i++) {
                     /* todo: optimize this - can strength-reduce so that
                        inner loop is a single interpolation */
-                    tmp = dst[i] * dst_alpha * (65535 - src_shape) +
-                        ((int)src[i]) * 65535 * src_shape + (result_alpha << 15);
-                    dst[i] = tmp / (result_alpha * 65535);
+                    tmp = dst[i] * dst_alpha;
+                    tmp = (tmp>>16) * (65535 - src_shape) +
+                           src[i] * src_shape + (result_alpha>>1);
+                    dst[i] = tmp / result_alpha;
                 }
+            }
             dst[n_chan] = result_alpha;
         }
     } else {
