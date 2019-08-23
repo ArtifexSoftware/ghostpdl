@@ -3470,8 +3470,8 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
       * Find the matching page size...
       */
 
-#define LONG_EDGE_LENGTH_MATCH_LIMIT  0.07
-#define SHORT_EDGE_LENGTH_MATCH_LIMIT 0.05
+#define LONG_EDGE_LENGTH_MATCH_LIMIT  0.01
+#define SHORT_EDGE_LENGTH_MATCH_LIMIT 0.01
 #define PAGESIZE_SCORE_NAME           3
 #define PAGESIZE_SCORE_SIZE_MARGINS   2
 #define PAGESIZE_SCORE_SIZE           1
