@@ -3076,7 +3076,10 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
                 gs_param_list *plist)	/* I - Parameter list */
 {
   int			i;		/* Looping var */
+  float			mediasize[2];	/* Physical size of print */
   float			margins[4];	/* Physical margins of print */
+  float			cups_mediasize[2]; /* Media size to use in Raster */
+  float			cups_margins[4]; /* Margins to use in Raster */
   ppd_size_t		*size;		/* Page size */
   int			code;		/* Error code */
   int			intval;		/* Integer value */
@@ -3102,9 +3105,9 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   long                  best_score = -1,
                         score = 0;
   ppd_size_t            *best_size = NULL;
-  int                   name_matched = 0,
-                        size_matched = 0,
-                        margins_matched = 0;
+  int                   size_matched = 0,
+                        margins_matched = 0,
+                        imageable_area_matched = 0;
   float long_edge_mismatch, short_edge_mismatch;
   gs_param_string icc_pro_dummy;
   int old_cmps = cups->color_info.num_components;
@@ -3472,7 +3475,6 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 
 #define LONG_EDGE_LENGTH_MATCH_LIMIT  0.01
 #define SHORT_EDGE_LENGTH_MATCH_LIMIT 0.01
-#define PAGESIZE_SCORE_NAME           3
 #define PAGESIZE_SCORE_SIZE_MARGINS   2
 #define PAGESIZE_SCORE_SIZE           1
 
@@ -3485,21 +3487,16 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 	if (size->length == 0 || size->width == 0) continue;
 
 	score = 0;
-	name_matched = 0;
 	size_matched = 0;
 	margins_matched = 0;
-
-#ifdef CUPS_RASTER_SYNCv1
-	/* Match the size requested as default (cupsPageSizeName) */
-	if ((strlen(cups->header.cupsPageSizeName) != 0) &&
-	    (strcasecmp(cups->header.cupsPageSizeName, size->name) == 0))
-	  name_matched = 1;
-#endif
+	imageable_area_matched = 0;
 
 	long_edge_mismatch =
-	  fabs(cups->MediaSize[1] - size->length)/size->length;
+	  fabs(cups->MediaSize[1] - size->length)/size->length +
+	  LONG_EDGE_LENGTH_MATCH_LIMIT / 100;
 	short_edge_mismatch =
-	  fabs(cups->MediaSize[0] - size->width)/size->width;
+	  fabs(cups->MediaSize[0] - size->width)/size->width +
+	  SHORT_EDGE_LENGTH_MATCH_LIMIT / 100;
 	if (size->length < size->width)
 	{
 	  swap = long_edge_mismatch;
@@ -3508,7 +3505,7 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 	}
 
 	if (long_edge_mismatch < LONG_EDGE_LENGTH_MATCH_LIMIT &&
-	      short_edge_mismatch < SHORT_EDGE_LENGTH_MATCH_LIMIT)
+	    short_edge_mismatch < SHORT_EDGE_LENGTH_MATCH_LIMIT)
 	{
 	  size_matched = 1;
 	  /* If two sizes match within the limits, take the one with less
@@ -3533,11 +3530,37 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 		(fabs(cups->HWMargins[1] - size->length + size->top) < 1.0 &&
 		 fabs(cups->HWMargins[3] - size->bottom) < 1.0))))
 	    margins_matched = 1;
+	} else {
+	  /* Compare the dimensions of the imageable area against the
+	     the input page size */
+	  long_edge_mismatch =
+	    fabs(cups->MediaSize[1] - size->top + size->bottom)/size->length +
+	    LONG_EDGE_LENGTH_MATCH_LIMIT / 100;
+	  short_edge_mismatch =
+	    fabs(cups->MediaSize[0] - size->right + size->left)/size->width +
+	    SHORT_EDGE_LENGTH_MATCH_LIMIT / 100;
+	  if (size->length < size->width)
+	  {
+	    swap = long_edge_mismatch;
+	    long_edge_mismatch = short_edge_mismatch;
+	    short_edge_mismatch = swap;
+	  }
+
+	  if (long_edge_mismatch < LONG_EDGE_LENGTH_MATCH_LIMIT &&
+	      short_edge_mismatch < SHORT_EDGE_LENGTH_MATCH_LIMIT)
+	  {
+	    imageable_area_matched = 1;
+	    /* If two sizes match within the limits, take the one with less
+	       mismatch */
+	    score = (long)(4999.0 -
+			   long_edge_mismatch * short_edge_mismatch * 4999.0 /
+			   LONG_EDGE_LENGTH_MATCH_LIMIT /
+			   SHORT_EDGE_LENGTH_MATCH_LIMIT);
+	    if (score < 0) score = 0;
+	  }
 	}
 
-	if (name_matched && size_matched)
-	  score += PAGESIZE_SCORE_NAME * 10000;
-	else if (margins_matched)
+        if (margins_matched)
 	  score += PAGESIZE_SCORE_SIZE_MARGINS * 10000;
 	else if (size_matched)
 	  score += PAGESIZE_SCORE_SIZE * 10000;
@@ -3549,17 +3572,17 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 	    best_size = size;
 	}
 #ifdef CUPS_DEBUG
-	dmprintf1(pdev->memory, "DEBUG2: Checking against PPD page size: %s\n",
+	dmprintf1(pdev->memory, "DEBUG2: Checking against PPD page size (portrait): %s\n",
 		  size->name);
-	dmprintf2(pdev->memory, "DEBUG2:    Width: %8.2f; Height: %8.2f\n",
+	dmprintf2(pdev->memory, "DEBUG2:    Width: %.2f; Height: %.2f\n",
 		  size->width, size->length);
-	dmprintf4(pdev->memory, "DEBUG2:    Margins: Left: %8.2f; Right: %8.2f; Top: %8.2f; Bottom: %8.2f\n",
+	dmprintf4(pdev->memory, "DEBUG2:    Margins: Left: %.2f; Right: %.2f; Top: %.2f; Bottom: %.2f\n",
 		  size->left, size->right, size->top, size->bottom);
-	dmprintf4(pdev->memory, "DEBUG2:    Size mismatch: Long Edge (%8.2f): %8.2f; Short Edge (%8.2f): %8.2f\n",
+	dmprintf4(pdev->memory, "DEBUG2:    Size mismatch: Long Edge (%.3f): %.5f; Short Edge (%.3f): %.5f\n",
 		  LONG_EDGE_LENGTH_MATCH_LIMIT, long_edge_mismatch,
 		  SHORT_EDGE_LENGTH_MATCH_LIMIT, short_edge_mismatch);
-	dmprintf3(pdev->memory, "DEBUG2:    Match: Name: %d; Size: %d; Margins: %d\n",
-		  name_matched, size_matched, margins_matched);
+	dmprintf3(pdev->memory, "DEBUG2:    Match: Size: %d; Margins: %d; Imageable Area: %d\n",
+		  size_matched, margins_matched, imageable_area_matched);
 	dmprintf2(pdev->memory, "DEBUG2:    Score: %ld; Best Score: %ld\n",
 		  score, best_score);
 #endif /* CUPS_DEBUG */
@@ -3575,11 +3598,17 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 	dmprintf1(pdev->memory, "DEBUG: size = %s\n", best_size->name);
 #endif /* CUPS_DEBUG */
 
-	gx_device_set_media_size(pdev, best_size->width, best_size->length);
+	mediasize[0] = best_size->width;
+	mediasize[1] = best_size->length;
 
 	cups->landscape = 0;
 
 #ifdef CUPS_RASTER_SYNCv1
+	strncpy(cups->header.cupsPageSizeName, best_size->name,
+		sizeof(cups->header.cupsPageSizeName));
+	cups->header.cupsPageSizeName[sizeof(cups->header.cupsPageSizeName) - 1] =
+	  '\0';
+
 	if (strcasecmp(cups->header.MediaClass, "PwgRaster") != 0)
 	{
 #endif
@@ -3622,21 +3651,16 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 	  if (size->length == 0 || size->width == 0) continue;
 
 	  score = 0;
-	  name_matched = 0;
 	  size_matched = 0;
 	  margins_matched = 0;
-
-#ifdef CUPS_RASTER_SYNCv1
-	  /* Match the size requested as default (cupsPageSizeName) */
-	  if ((strlen(cups->header.cupsPageSizeName) != 0) &&
-	      (strcasecmp(cups->header.cupsPageSizeName, size->name) == 0))
-	    name_matched = 1;
-#endif
+	  imageable_area_matched = 0;
 
 	  long_edge_mismatch =
-	    fabs(cups->MediaSize[0] - size->length)/size->length;
+	    fabs(cups->MediaSize[0] - size->length)/size->length +
+	    LONG_EDGE_LENGTH_MATCH_LIMIT / 100;
 	  short_edge_mismatch =
-	    fabs(cups->MediaSize[1] - size->width)/size->width;
+	    fabs(cups->MediaSize[1] - size->width)/size->width +
+	    SHORT_EDGE_LENGTH_MATCH_LIMIT / 100;
 	  if (size->length < size->width)
 	  {
 	    swap = long_edge_mismatch;
@@ -3670,11 +3694,37 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 		  (fabs(cups->HWMargins[0] - size->length + size->top) < 1.0 &&
 		   fabs(cups->HWMargins[2] - size->bottom) < 1.0))))
 	      margins_matched = 1;
+	  } else {
+	    /* Compare the dimensions of the imageable area against the
+	       the input page size */
+	    long_edge_mismatch =
+	      fabs(cups->MediaSize[0] - size->top + size->bottom)/size->length +
+	      LONG_EDGE_LENGTH_MATCH_LIMIT / 100;
+	    short_edge_mismatch =
+	      fabs(cups->MediaSize[1] - size->right + size->left)/size->width +
+	      SHORT_EDGE_LENGTH_MATCH_LIMIT / 100;
+	    if (size->length < size->width)
+	    {
+	      swap = long_edge_mismatch;
+	      long_edge_mismatch = short_edge_mismatch;
+	      short_edge_mismatch = swap;
+	    }
+
+	    if (long_edge_mismatch < LONG_EDGE_LENGTH_MATCH_LIMIT &&
+		short_edge_mismatch < SHORT_EDGE_LENGTH_MATCH_LIMIT)
+	    {
+	      imageable_area_matched = 1;
+	      /* If two sizes match within the limits, take the one with less
+		 mismatch */
+	      score = (long)(4999.0 -
+			     long_edge_mismatch * short_edge_mismatch * 4999.0 /
+			     LONG_EDGE_LENGTH_MATCH_LIMIT /
+			     SHORT_EDGE_LENGTH_MATCH_LIMIT);
+	      if (score < 0) score = 0;
+	    }
 	  }
 
-	  if (name_matched && size_matched)
-	    score += PAGESIZE_SCORE_NAME * 10000;
-	  else if (margins_matched)
+	  if (margins_matched)
 	    score += PAGESIZE_SCORE_SIZE_MARGINS * 10000;
 	  else if (size_matched)
 	    score += PAGESIZE_SCORE_SIZE * 10000;
@@ -3686,17 +3736,17 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 	      best_size = size;
 	  }
 #ifdef CUPS_DEBUG
-	  dmprintf1(pdev->memory, "DEBUG2: Checking against PPD page size: %s\n",
+	  dmprintf1(pdev->memory, "DEBUG2: Checking against PPD page size (landscape): %s\n",
 		    size->name);
-	  dmprintf2(pdev->memory, "DEBUG2:    Width: %8.2f; Height: %8.2f\n",
+	  dmprintf2(pdev->memory, "DEBUG2:    Width: %.2f; Height: %.2f\n",
 		    size->width, size->length);
-	  dmprintf4(pdev->memory, "DEBUG2:    Margins: Left: %8.2f; Right: %8.2f; Top: %8.2f; Bottom: %8.2f\n",
+	  dmprintf4(pdev->memory, "DEBUG2:    Margins: Left: %.2f; Right: %.2f; Top: %.2f; Bottom: %.2f\n",
 		    size->left, size->right, size->top, size->bottom);
-	  dmprintf4(pdev->memory, "DEBUG2:    Size mismatch: Long Edge (%8.2f): %8.2f; Short Edge (%8.2f): %8.2f\n",
+	  dmprintf4(pdev->memory, "DEBUG2:    Size mismatch: Long Edge (%.3f): %.5f; Short Edge (%.3f): %.5f\n",
 		    LONG_EDGE_LENGTH_MATCH_LIMIT, long_edge_mismatch,
 		    SHORT_EDGE_LENGTH_MATCH_LIMIT, short_edge_mismatch);
-	  dmprintf3(pdev->memory, "DEBUG2:    Match: Name: %d; Size: %d; Margins: %d\n",
-		    name_matched, size_matched, margins_matched);
+	  dmprintf3(pdev->memory, "DEBUG2:    Match: Size: %d; Margins: %d; Imageable Area: %d\n",
+		    size_matched, margins_matched, imageable_area_matched);
 	  dmprintf2(pdev->memory, "DEBUG2:    Score: %ld; Best Score: %ld\n",
 		    score, best_score);
 #endif /* CUPS_DEBUG */
@@ -3712,11 +3762,17 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 	  dmprintf1(pdev->memory, "DEBUG: landscape size = %s\n", best_size->name);
 #endif /* CUPS_DEBUG */
 
-	  gx_device_set_media_size(pdev, best_size->length, best_size->width);
+	  mediasize[0] = best_size->length;
+	  mediasize[1] = best_size->width;
 
           cups->landscape = 1;
 
 #ifdef CUPS_RASTER_SYNCv1
+	  strncpy(cups->header.cupsPageSizeName, best_size->name,
+		  sizeof(cups->header.cupsPageSizeName));
+	  cups->header.cupsPageSizeName[sizeof(cups->header.cupsPageSizeName) - 1] =
+	    '\0';
+
 	  if (strcasecmp(cups->header.MediaClass, "PwgRaster") != 0)
 	  {
 #endif
@@ -3753,6 +3809,13 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
           dmprintf(pdev->memory, "DEBUG: size = Custom\n");
 #endif /* CUPS_DEBUG */
 
+#ifdef CUPS_RASTER_SYNCv1
+	  snprintf(cups->header.cupsPageSizeName,
+		   sizeof(cups->header.cupsPageSizeName),
+		   "Custom.%.2fx%.2f",
+		   cups->MediaSize[0], cups->MediaSize[1]);
+#endif
+
 	  /* Rotate page if it only fits into the printer's dimensions
 	     when rotated */
 	  if (((cups->MediaSize[0] > cups->PPD->custom_max[0]) ||
@@ -3760,8 +3823,8 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 	      ((cups->MediaSize[0] <= cups->PPD->custom_max[1]) &&
 	      (cups->MediaSize[1] <= cups->PPD->custom_max[0]))) {
 	    /* Rotate */
-	    gx_device_set_media_size(pdev, cups->MediaSize[1],
-				     cups->MediaSize[0]);
+	    mediasize[0] = cups->MediaSize[1];
+	    mediasize[1] = cups->MediaSize[0];
 
 	    cups->landscape = 1;
 
@@ -3795,6 +3858,9 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 	  else
 	  {
 	    /* Do not rotate */
+	    mediasize[0] = cups->MediaSize[0];
+	    mediasize[1] = cups->MediaSize[1];
+
 	    cups->landscape = 0;
 
 #ifdef CUPS_RASTER_SYNCv1
@@ -3832,6 +3898,9 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
     }
     else
     {
+      /* No PPD file available */
+      mediasize[0] = cups->MediaSize[0];
+      mediasize[1] = cups->MediaSize[1];
 #ifdef CUPS_RASTER_SYNCv1
       if (strcasecmp(cups->header.MediaClass, "PwgRaster") != 0)
       {
@@ -3857,10 +3926,28 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
     }
 
    /*
-    * Set the margins to update the bitmap size...
+    * Set the media size and margins to update the bitmap size...
     */
 
+    for (i = 0; i < 2; i ++)
+      cups_mediasize[i] = mediasize[i];
+    for (i = 0; i < 4; i ++)
+      cups_margins[i] = margins[i] * 72.0;
+    if (score > 0 && score < 5000) {
+      /* Page size matched by imageable area */
+      for (i = 0; i < 2; i ++)
+	mediasize[i] = cups->MediaSize[i];
+      for (i = 0; i < 4; i ++)
+	margins[i] = 0.0;
+    }
+    gx_device_set_media_size(pdev, mediasize[0], mediasize[1]);
     gx_device_set_margins(pdev, margins, false);
+  } else {
+    /* No size change, use the current size in CUPS Raster header */
+    for (i = 0; i < 2; i ++)
+      cups_mediasize[i] = pdev->MediaSize[i];
+    for (i = 0; i < 4; i ++)
+      cups_margins[i] = pdev->HWMargins[i];
   }
 
  /*
@@ -3960,29 +4047,29 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 
   if (cups->landscape)
   {
-    cups->header.cupsPageSize[0] = pdev->MediaSize[1];
-    cups->header.cupsPageSize[1] = pdev->MediaSize[0];
+    cups->header.cupsPageSize[0] = cups_mediasize[1];
+    cups->header.cupsPageSize[1] = cups_mediasize[0];
 
     if ((sf = cups->header.cupsBorderlessScalingFactor) < 1.0)
       sf = 1.0;
 
-    cups->header.PageSize[0] = (pdev->MediaSize[1] * sf) + 0.5;
-    cups->header.PageSize[1] = (pdev->MediaSize[0] * sf) + 0.5;
+    cups->header.PageSize[0] = (cups_mediasize[1] * sf) + 0.5;
+    cups->header.PageSize[1] = (cups_mediasize[0] * sf) + 0.5;
 
     if (strcasecmp(cups->header.MediaClass, "PwgRaster") != 0)
     {
-      cups->header.Margins[0] = (pdev->HWMargins[1] * sf) + 0.5;
-      cups->header.Margins[1] = (pdev->HWMargins[2] * sf) + 0.5;
-      cups->header.ImagingBoundingBox[0] = (pdev->HWMargins[1] * sf) + 0.5;
-      cups->header.ImagingBoundingBox[1] = (pdev->HWMargins[2] * sf) + 0.5;
-      cups->header.ImagingBoundingBox[2] = ((pdev->MediaSize[1] -
-					     pdev->HWMargins[3]) * sf) + 0.5;
-      cups->header.ImagingBoundingBox[3] = ((pdev->MediaSize[0] -
-					     pdev->HWMargins[0]) * sf) + 0.5;
-      cups->header.cupsImagingBBox[0] = pdev->HWMargins[1];
-      cups->header.cupsImagingBBox[1] = pdev->HWMargins[2];
-      cups->header.cupsImagingBBox[2] = pdev->MediaSize[1] - pdev->HWMargins[3];
-      cups->header.cupsImagingBBox[3] = pdev->MediaSize[0] - pdev->HWMargins[0];
+      cups->header.Margins[0] = (cups_margins[1] * sf) + 0.5;
+      cups->header.Margins[1] = (cups_margins[2] * sf) + 0.5;
+      cups->header.ImagingBoundingBox[0] = (cups_margins[1] * sf) + 0.5;
+      cups->header.ImagingBoundingBox[1] = (cups_margins[2] * sf) + 0.5;
+      cups->header.ImagingBoundingBox[2] = ((cups_mediasize[1] -
+					     cups_margins[3]) * sf) + 0.5;
+      cups->header.ImagingBoundingBox[3] = ((cups_mediasize[0] -
+					     cups_margins[0]) * sf) + 0.5;
+      cups->header.cupsImagingBBox[0] = cups_margins[1];
+      cups->header.cupsImagingBBox[1] = cups_margins[2];
+      cups->header.cupsImagingBBox[2] = cups_mediasize[1] - cups_margins[3];
+      cups->header.cupsImagingBBox[3] = cups_mediasize[0] - cups_margins[0];
     }
     else
     {
@@ -3997,29 +4084,29 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   }
   else
   {
-    cups->header.cupsPageSize[0] = pdev->MediaSize[0];
-    cups->header.cupsPageSize[1] = pdev->MediaSize[1];
+    cups->header.cupsPageSize[0] = cups_mediasize[0];
+    cups->header.cupsPageSize[1] = cups_mediasize[1];
 
     if ((sf = cups->header.cupsBorderlessScalingFactor) < 1.0)
       sf = 1.0;
 
-    cups->header.PageSize[0] = (pdev->MediaSize[0] * sf) + 0.5;
-    cups->header.PageSize[1] = (pdev->MediaSize[1] * sf) + 0.5;
+    cups->header.PageSize[0] = (cups_mediasize[0] * sf) + 0.5;
+    cups->header.PageSize[1] = (cups_mediasize[1] * sf) + 0.5;
 
     if (strcasecmp(cups->header.MediaClass, "PwgRaster") != 0)
     {
-      cups->header.Margins[0] = (pdev->HWMargins[0] * sf) + 0.5;
-      cups->header.Margins[1] = (pdev->HWMargins[1] * sf) + 0.5;
-      cups->header.ImagingBoundingBox[0] = (pdev->HWMargins[0] * sf) + 0.5;
-      cups->header.ImagingBoundingBox[1] = (pdev->HWMargins[1] * sf) + 0.5;
-      cups->header.ImagingBoundingBox[2] = ((pdev->MediaSize[0] -
-					     pdev->HWMargins[2]) * sf) + 0.5;
-      cups->header.ImagingBoundingBox[3] = ((pdev->MediaSize[1] -
-					     pdev->HWMargins[3]) * sf) + 0.5;
-      cups->header.cupsImagingBBox[0] = pdev->HWMargins[0];
-      cups->header.cupsImagingBBox[1] = pdev->HWMargins[1];
-      cups->header.cupsImagingBBox[2] = pdev->MediaSize[0] - pdev->HWMargins[2];
-      cups->header.cupsImagingBBox[3] = pdev->MediaSize[1] - pdev->HWMargins[3];
+      cups->header.Margins[0] = (cups_margins[0] * sf) + 0.5;
+      cups->header.Margins[1] = (cups_margins[1] * sf) + 0.5;
+      cups->header.ImagingBoundingBox[0] = (cups_margins[0] * sf) + 0.5;
+      cups->header.ImagingBoundingBox[1] = (cups_margins[1] * sf) + 0.5;
+      cups->header.ImagingBoundingBox[2] = ((cups_mediasize[0] -
+					     cups_margins[2]) * sf) + 0.5;
+      cups->header.ImagingBoundingBox[3] = ((cups_mediasize[1] -
+					     cups_margins[3]) * sf) + 0.5;
+      cups->header.cupsImagingBBox[0] = cups_margins[0];
+      cups->header.cupsImagingBBox[1] = cups_margins[1];
+      cups->header.cupsImagingBBox[2] = cups_mediasize[0] - cups_margins[2];
+      cups->header.cupsImagingBBox[3] = cups_mediasize[1] - cups_margins[3];
     }
     else
     {
@@ -4037,19 +4124,19 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 
   if (cups->landscape)
   {
-    cups->header.PageSize[0] = pdev->MediaSize[1] + 0.5;
-    cups->header.PageSize[1] = pdev->MediaSize[0] + 0.5;
+    cups->header.PageSize[0] = cups_mediasize[1] + 0.5;
+    cups->header.PageSize[1] = cups_mediasize[0] + 0.5;
 
     if (strcasecmp(cups->header.MediaClass, "PwgRaster") != 0)
     {
-      cups->header.Margins[0] = (pdev->HWMargins[1]) + 0.5;
-      cups->header.Margins[1] = (pdev->HWMargins[2]) + 0.5;
-      cups->header.ImagingBoundingBox[0] = (pdev->HWMargins[1]) + 0.5;
-      cups->header.ImagingBoundingBox[1] = (pdev->HWMargins[0]) + 0.5;
-      cups->header.ImagingBoundingBox[2] = (pdev->MediaSize[1] -
-					    pdev->HWMargins[3]) + 0.5;
-      cups->header.ImagingBoundingBox[3] = (pdev->MediaSize[0] -
-					    pdev->HWMargins[2]) + 0.5;
+      cups->header.Margins[0] = (cups_margins[1]) + 0.5;
+      cups->header.Margins[1] = (cups_margins[2]) + 0.5;
+      cups->header.ImagingBoundingBox[0] = (cups_margins[1]) + 0.5;
+      cups->header.ImagingBoundingBox[1] = (cups_margins[0]) + 0.5;
+      cups->header.ImagingBoundingBox[2] = (cups_mediasize[1] -
+					    cups_margins[3]) + 0.5;
+      cups->header.ImagingBoundingBox[3] = (cups_mediasize[0] -
+					    cups_margins[2]) + 0.5;
     }
     else
     {
@@ -4061,19 +4148,19 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   }
   else
   {
-    cups->header.PageSize[0] = pdev->MediaSize[0] + 0.5;
-    cups->header.PageSize[1] = pdev->MediaSize[1] + 0.5;
+    cups->header.PageSize[0] = cups_mediasize[0] + 0.5;
+    cups->header.PageSize[1] = cups_mediasize[1] + 0.5;
 
     if (strcasecmp(cups->header.MediaClass, "PwgRaster") != 0)
     {
-      cups->header.Margins[0] = (pdev->HWMargins[0]) + 0.5;
-      cups->header.Margins[1] = (pdev->HWMargins[1]) + 0.5;
-      cups->header.ImagingBoundingBox[0] = (pdev->HWMargins[0]) + 0.5;
-      cups->header.ImagingBoundingBox[1] = (pdev->HWMargins[3]) + 0.5;
-      cups->header.ImagingBoundingBox[2] = (pdev->MediaSize[0] -
-					    pdev->HWMargins[2]) + 0.5;
-      cups->header.ImagingBoundingBox[3] = (pdev->MediaSize[1] -
-					    pdev->HWMargins[1]) + 0.5;
+      cups->header.Margins[0] = (cups_margins[0]) + 0.5;
+      cups->header.Margins[1] = (cups_margins[1]) + 0.5;
+      cups->header.ImagingBoundingBox[0] = (cups_margins[0]) + 0.5;
+      cups->header.ImagingBoundingBox[1] = (cups_margins[3]) + 0.5;
+      cups->header.ImagingBoundingBox[2] = (cups_mediasize[0] -
+					    cups_margins[2]) + 0.5;
+      cups->header.ImagingBoundingBox[3] = (cups_mediasize[1] -
+					    cups_margins[1]) + 0.5;
     }
     else
     {
@@ -4089,12 +4176,19 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   cups->header.cupsHeight = cups->height;
 
 #ifdef CUPS_DEBUG
+  if (size_set) {
+    dmprintf2(pdev->memory, "DEBUG2: mediasize = [ %.3f %.3f ]\n",
+              mediasize[0], mediasize[1]);
+    dmprintf4(pdev->memory, "DEBUG2: margins = [ %.3f %.3f %.3f %.3f ]\n",
+              margins[0], margins[1], margins[2], margins[3]);
+  }
+  dmprintf2(pdev->memory, "DEBUG2: cups_mediasize = [ %.3f %.3f ]\n",
+	    cups_mediasize[0], cups_mediasize[1]);
+  dmprintf4(pdev->memory, "DEBUG2: cups_margins = [ %.3f %.3f %.3f %.3f ]\n",
+	    cups_margins[0], cups_margins[1], cups_margins[2], cups_margins[3]);
   dmprintf1(pdev->memory, "DEBUG2: ppd = %p\n", cups->PPD);
   dmprintf2(pdev->memory, "DEBUG2: PageSize = [ %.3f %.3f ]\n",
             pdev->MediaSize[0], pdev->MediaSize[1]);
-  if (size_set)
-    dmprintf4(pdev->memory, "DEBUG2: margins = [ %.3f %.3f %.3f %.3f ]\n",
-              margins[0], margins[1], margins[2], margins[3]);
   dmprintf2(pdev->memory, "DEBUG2: HWResolution = [ %.3f %.3f ]\n",
             pdev->HWResolution[0], pdev->HWResolution[1]);
   dmprintf2(pdev->memory, "DEBUG2: width = %d, height = %d\n",
@@ -4102,6 +4196,24 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   dmprintf4(pdev->memory, "DEBUG2: HWMargins = [ %.3f %.3f %.3f %.3f ]\n",
             pdev->HWMargins[0], pdev->HWMargins[1],
             pdev->HWMargins[2], pdev->HWMargins[3]);
+  dmprintf2(pdev->memory, "DEBUG2: cups->header.cupsWidth = %d, cups->header.cupsHeight = %d\n",
+            cups->header.cupsWidth, cups->header.cupsHeight);
+  dmprintf2(pdev->memory, "DEBUG2: cups->header.PageSize[0] = %d, cups->header.PageSize[1] = %d\n",
+            cups->header.PageSize[0], cups->header.PageSize[1]);
+  dmprintf4(pdev->memory, "DEBUG2: cups->header.ImagingBoundingBox = [ %d %d %d %d ]\n",
+            cups->header.ImagingBoundingBox[0],
+	    cups->header.ImagingBoundingBox[1],
+            cups->header.ImagingBoundingBox[2],
+	    cups->header.ImagingBoundingBox[3]);
+#ifdef CUPS_RASTER_SYNCv1
+  dmprintf2(pdev->memory, "DEBUG2: cups->header.cupsPageSize[0] = %.3f, cups->header.cupsPageSize[1] = %.3f\n",
+            cups->header.cupsPageSize[0], cups->header.cupsPageSize[1]);
+  dmprintf4(pdev->memory, "DEBUG2: cups->header.cupsImagingBBox = [ %.3f %.3f %.3f %.3f ]\n",
+            cups->header.cupsImagingBBox[0], cups->header.cupsImagingBBox[1],
+            cups->header.cupsImagingBBox[2], cups->header.cupsImagingBBox[3]);
+  dmprintf1(pdev->memory, "DEBUG2: cups->header.cupsBorderlessScalingFactor = %.3f\n",
+            cups->header.cupsBorderlessScalingFactor);
+#endif /* CUPS_RASTER_SYNCv1 */
 #endif /* CUPS_DEBUG */
 
 done:
