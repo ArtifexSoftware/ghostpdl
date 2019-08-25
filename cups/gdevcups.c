@@ -4543,18 +4543,18 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
 
     cups->EncodeLUT[i] = j;
 
-#ifdef CUPS_DEBUG
+#ifdef CUPS_DEBUG2
     if (i == 0 || cups->EncodeLUT[i] != cups->EncodeLUT[i - 1])
       dmprintf2(pdev->memory, "DEBUG2: cups->EncodeLUT[%d] = %d\n", i,
                 (int)cups->EncodeLUT[i]);
-#endif /* CUPS_DEBUG */
+#endif /* CUPS_DEBUG2 */
   }
 
-#ifdef CUPS_DEBUG
+#ifdef CUPS_DEBUG2
   dmprintf1(pdev->memory, "DEBUG2: cups->EncodeLUT[0] = %d\n", (int)cups->EncodeLUT[0]);
   dmprintf2(pdev->memory, "DEBUG2: cups->EncodeLUT[%d] = %d\n", gx_max_color_value,
             (int)cups->EncodeLUT[gx_max_color_value]);
-#endif /* CUPS_DEBUG */
+#endif /* CUPS_DEBUG2 */
 
   for (i = 0; i < cups->color_info.dither_grays; i ++) {
     j = i;
