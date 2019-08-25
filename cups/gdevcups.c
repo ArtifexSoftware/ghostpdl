@@ -307,6 +307,7 @@ typedef struct gx_device_cups_s
   int			Matrix[3][3][CUPS_MAX_VALUE + 1];/* Color transform matrix LUT */
   int                   user_icc;
   int                   cupsRasterVersion;
+  char                  pageSizeRequested[64];
 
   /* Used by cups_put_params(): */
 } gx_device_cups;
@@ -516,7 +517,8 @@ private gx_device_procs	cups_procs =
    {{0x00},{0x00},{0x00}},\
    {{0x00},{0x00},{0x00}}},                /* Matrix */\
   0,                                       /* user_icc */\
-  3                                     /* cupsRasterVersion */
+  3,                                     /* cupsRasterVersion */\
+  ""                                     /* pageSizeRequested */
 
 gx_device_cups	gs_cups_device = { gs_xxx_device("cups", "") };
 gx_device_cups	gs_pwgraster_device = { gs_xxx_device("pwgraster",
@@ -2857,6 +2859,14 @@ cups_open(gx_device *pdev)		/* I - Device info */
   if (cups->PPD == NULL)
     cups->PPD = ppdOpenFile(getenv("PPD"));
 
+  if (cups->pageSizeRequested[0] == '\0') {
+    strncpy(cups->pageSizeRequested, cups->header.cupsPageSizeName, 64);
+#ifdef CUPS_DEBUG
+    dmprintf1(pdev->memory, "DEBUG: Page size requested: %s\n",
+	      cups->header.cupsPageSizeName);
+#endif /* CUPS_DEBUG */
+  }
+
   return (0);
 }
 
@@ -3107,7 +3117,8 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   ppd_size_t            *best_size = NULL;
   int                   size_matched = 0,
                         margins_matched = 0,
-                        imageable_area_matched = 0;
+                        imageable_area_matched = 0,
+                        name_requested_matched = 0;
   float long_edge_mismatch, short_edge_mismatch;
   gs_param_string icc_pro_dummy;
   int old_cmps = cups->color_info.num_components;
@@ -3490,6 +3501,7 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 	size_matched = 0;
 	margins_matched = 0;
 	imageable_area_matched = 0;
+	name_requested_matched = 0;
 
 	long_edge_mismatch =
 	  fabs(cups->MediaSize[1] - size->length)/size->length +
@@ -3565,6 +3577,13 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 	else if (size_matched)
 	  score += PAGESIZE_SCORE_SIZE * 10000;
 
+	if (size_matched || imageable_area_matched) {
+	  if (!strcasecmp(cups->pageSizeRequested, size->name))
+	    name_requested_matched = 1;
+	  else
+	    score -= 1000;
+	}
+
 	if (score > best_score)
 	{
 	  best_score = score;
@@ -3581,8 +3600,9 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 	dmprintf4(pdev->memory, "DEBUG2:    Size mismatch: Long Edge (%.3f): %.5f; Short Edge (%.3f): %.5f\n",
 		  LONG_EDGE_LENGTH_MATCH_LIMIT, long_edge_mismatch,
 		  SHORT_EDGE_LENGTH_MATCH_LIMIT, short_edge_mismatch);
-	dmprintf3(pdev->memory, "DEBUG2:    Match: Size: %d; Margins: %d; Imageable Area: %d\n",
-		  size_matched, margins_matched, imageable_area_matched);
+	dmprintf4(pdev->memory, "DEBUG2:    Match: Size: %d; Margins: %d; Imageable Area: %d; Name requested: %d\n",
+		  size_matched, margins_matched, imageable_area_matched,
+		  name_requested_matched);
 	dmprintf2(pdev->memory, "DEBUG2:    Score: %ld; Best Score: %ld\n",
 		  score, best_score);
 #endif /* CUPS_DEBUG */
@@ -3654,6 +3674,7 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 	  size_matched = 0;
 	  margins_matched = 0;
 	  imageable_area_matched = 0;
+	  name_requested_matched = 0;
 
 	  long_edge_mismatch =
 	    fabs(cups->MediaSize[0] - size->length)/size->length +
@@ -3729,6 +3750,13 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 	  else if (size_matched)
 	    score += PAGESIZE_SCORE_SIZE * 10000;
 
+	  if (size_matched || imageable_area_matched) {
+	    if (!strcasecmp(cups->pageSizeRequested, size->name))
+	      name_requested_matched = 1;
+	    else
+	      score -= 1000;
+	  }
+
 	  if (score > best_score)
 	  {
 	    best_score = score;
@@ -3745,8 +3773,9 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 	  dmprintf4(pdev->memory, "DEBUG2:    Size mismatch: Long Edge (%.3f): %.5f; Short Edge (%.3f): %.5f\n",
 		    LONG_EDGE_LENGTH_MATCH_LIMIT, long_edge_mismatch,
 		    SHORT_EDGE_LENGTH_MATCH_LIMIT, short_edge_mismatch);
-	  dmprintf3(pdev->memory, "DEBUG2:    Match: Size: %d; Margins: %d; Imageable Area: %d\n",
-		    size_matched, margins_matched, imageable_area_matched);
+	  dmprintf4(pdev->memory, "DEBUG2:    Match: Size: %d; Margins: %d; Imageable Area: %d; Name requested: %d\n",
+		    size_matched, margins_matched, imageable_area_matched,
+		    name_requested_matched);
 	  dmprintf2(pdev->memory, "DEBUG2:    Score: %ld; Best Score: %ld\n",
 		    score, best_score);
 #endif /* CUPS_DEBUG */
