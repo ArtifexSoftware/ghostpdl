@@ -3933,7 +3933,10 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
       cups_mediasize[i] = mediasize[i];
     for (i = 0; i < 4; i ++)
       cups_margins[i] = margins[i] * 72.0;
-    if (score > 0 && score < 5000) {
+    if (best_score > 0 && best_score < 5000) {
+#ifdef CUPS_DEBUG
+      dmputs(pdev->memory, "DEBUG: Imageable area fit!\n");
+#endif /* CUPS_DEBUG */
       /* Page size matched by imageable area */
       for (i = 0; i < 2; i ++)
 	mediasize[i] = cups->MediaSize[i];
