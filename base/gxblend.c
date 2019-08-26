@@ -2189,13 +2189,16 @@ art_pdf_recomposite_group_16(uint16_t *gs_restrict *dstp, uint16_t *gs_restrict 
                "src = (src, src_alpha_g) over dst" for src */
             scale = ((unsigned int)(dst_alpha * 65535 + (src_alpha_g>>1))) / src_alpha_g -
                 dst_alpha;
+            /* scale is NOT in 16.16 form here. I've seen values of 0xfefe01, for example. */
             for (i = 0; i < n_chan; i++) {
                 int si, di;
+                int64_t tmp64;
 
                 si = src[i];
                 di = dst[i];
-                tmp = (si - di) * scale + 0x8000;
-                tmp = si + (tmp >> 16);
+                /* RJW: Nasty that we have to resort to 64bit here, but we'll live with it. */
+                tmp64 = (si - di) * (int64_t)scale + 0x8000;
+                tmp = si + (tmp64 >> 16);
 
                 /* todo: it should be possible to optimize these cond branches */
                 if (tmp < 0)
