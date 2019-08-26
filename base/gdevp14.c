@@ -6798,7 +6798,7 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
     int pdf14_needed = cdev->pdf14_needed;
     int trans_group_level = cdev->pdf14_trans_group_level;
     int smask_level = cdev->pdf14_smask_level;
-    bool deep = device_is_deep(cdev);
+    bool deep = device_is_deep((gx_device *)cdev);
 
     code = dev_proc((gx_device *) cdev, get_profile)((gx_device *) cdev,
                                                      &dev_profile);
