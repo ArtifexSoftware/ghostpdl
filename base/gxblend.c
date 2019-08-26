@@ -1360,9 +1360,12 @@ art_blend_pixel_16_inline(uint16_t *gs_restrict dst, const uint16_t *gs_restrict
             for (i = 0; i < n_chan; i++) {
                 b = backdrop[i];
                 s = src[i];
-                if (s <= 0x8000) {
-                    int b2 = b + (b>>15);
-                    dst[i] = b - (((0xffff - (s<<1)) * b2 * (0x10000 - b2))>>16);
+                if (s < 0x8000) {
+                    unsigned int b2 = ((unsigned int)(b * (b + (b>>15))))>>16;
+                    b2 = b - b2;
+                    b2 += b2>>15;
+                    t = ((0xffff - (s << 1)) * b2) + 0x8000;
+                    dst[i] = b - (t >> 16);
                 } else {
 #define art_blend_soft_light_16(B) (art_blend_soft_light_8[(B)>>8]*0x101)
                     t = ((s << 1) - 0xffff) * art_blend_soft_light_16(b) + 0x8000;
