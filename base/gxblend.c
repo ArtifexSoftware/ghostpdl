@@ -1395,7 +1395,7 @@ art_blend_pixel_16_inline(uint16_t *gs_restrict dst, const uint16_t *gs_restrict
                 else if (b >= s)
                     dst[i] = 0xffff;
                 else
-                    dst[i] = (unsigned int)(0xffff * b + (s>>1)) / (unsigned int)s;
+                    dst[i] = ((unsigned int)(0xffff * b + (s>>1))) / s;
             }
             break;
         case BLEND_MODE_ColorBurn:
@@ -1407,7 +1407,7 @@ art_blend_pixel_16_inline(uint16_t *gs_restrict dst, const uint16_t *gs_restrict
                 else if (b >= s)
                     dst[i] = 0;
                 else
-                    dst[i] = 0xffff - (unsigned int)(0xffff * b + (s>>1)) / (unsigned int)s;
+                    dst[i] = 0xffff - ((unsigned int)(0xffff * b + (s>>1))) / s;
             }
             break;
         case BLEND_MODE_Darken:
@@ -2582,12 +2582,13 @@ art_pdf_composite_knockout_16(uint16_t *gs_restrict dst,
         for (i = 0; i < n_chan; i++) {
             int c_bl;		/* Result of blend function */
             int c_mix;		/* Blend result mixed with source color */
+            int stmp;
 
             c_s = src[i];
             c_b = dst[i];
             c_bl = blend[i];
-            tmp = a_b * (c_bl - ((int)c_s)) + 0x8000;
-            c_mix = c_s + (((tmp >> 16) + tmp) >> 16);
+            stmp = (a_b>>1) * (c_bl - ((int)c_s)) + 0x4000;
+            c_mix = c_s + (((stmp >> 16) + stmp) >> 15);
             tmp = (c_b << 16) + src_scale * (c_mix - c_b) + 0x8000;
             dst[i] = tmp >> 16;
         }
