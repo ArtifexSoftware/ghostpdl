@@ -1835,6 +1835,21 @@ static inline bool device_encodes_tags(const gx_device *dev)
     return (dev->graphics_type_tag & GS_DEVICE_ENCODES_TAGS) != 0;
 }
 
+static inline bool device_is_deep(const gx_device *dev)
+{
+    bool has_tags = device_encodes_tags(dev);
+    int bits_per_comp = ((dev->color_info.depth - has_tags*8) /
+                         dev->color_info.num_components);
+    if (bits_per_comp > 16)
+        return 1;
+    if (bits_per_comp == 16 && dev->color_info.num_components > 1)
+        return 1;
+    if (bits_per_comp == 8)
+        return 0;
+    return (dev->color_info.max_color > 255 ||
+            dev->color_info.max_gray > 255);
+}
+
 /* A null device.  This is used to temporarily disable output. */
 struct gx_device_null_s {
     gx_device_forward_common;

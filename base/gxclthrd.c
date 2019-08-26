@@ -302,10 +302,7 @@ clist_setup_render_threads(gx_device *dev, int y, gx_process_page_options_t *opt
     /* this will be increased by the measured profile storage and icclinks (estimated).		  */
     int reserve_size = 2 * 1024 * 1024 + (gx_ht_cache_default_bits_size() * dev->color_info.num_components);
     clist_icctable_entry_t *curr_entry;
-    bool has_tags = device_encodes_tags(dev);
-    int bits_per_comp = ((dev->color_info.depth - has_tags*8) /
-                         dev->color_info.num_components);
-    bool deep = bits_per_comp > 8;
+    bool deep = device_is_deep(dev);
 
     crdev->num_render_threads = pdev->num_render_threads_requested;
 

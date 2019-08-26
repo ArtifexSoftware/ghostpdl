@@ -558,10 +558,7 @@ gs_begin_transparency_mask(gs_gstate * pgs,
     int i, code;
     gs_color_space *blend_color_space;
     gsicc_manager_t *icc_manager = pgs->icc_manager;
-    bool has_tags = device_encodes_tags(pgs->device);
-    int bits_per_comp = ((pgs->device->color_info.depth - has_tags*8) /
-                         pgs->device->color_info.num_components);
-    int deep = bits_per_comp > 8;
+    bool deep = device_is_deep(pgs->device);
 
     if (check_for_nontrans_pattern(pgs,
                   (unsigned char *)"gs_pop_transparency_state")) {
