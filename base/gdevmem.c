@@ -387,10 +387,7 @@ gdev_mem_max_height(const gx_device_memory * dev, int width, ulong size,
     int height;
     ulong max_height;
     ulong data_size;
-    bool has_tags = device_encodes_tags((gx_device *)dev);
-    int bits_per_comp = ((dev->color_info.depth - has_tags*8) /
-                          dev->color_info.num_components);
-    bool deep = bits_per_comp > 8;
+    bool deep = device_is_deep(dev);
 
     if (page_uses_transparency) {
         /*

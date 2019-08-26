@@ -2047,10 +2047,7 @@ gx_dc_pattern_read(
     int code, l;
     tile_trans_clist_info_t trans_info = { { { 0 } } };
     int cache_space_needed;
-    bool has_tags = device_encodes_tags(dev);
-    int bits_per_comp = ((dev->color_info.depth - has_tags*8) /
-                         dev->color_info.num_components);
-    bool deep = bits_per_comp > 8;
+    bool deep = device_is_deep(dev);
 
     if (offset == 0) {
         pdevc->mask.id = gx_no_bitmap_id;

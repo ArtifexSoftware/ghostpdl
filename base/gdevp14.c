@@ -3371,10 +3371,7 @@ pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
                       gx_color_index color, const gx_device_color *pdc,
                       int depth, bool devn)
 {
-    bool has_tags = device_encodes_tags(dev);
-    int bits_per_comp = ((dev->color_info.depth - has_tags*8) /
-                         dev->color_info.num_components);
-    bool deep = bits_per_comp > 8;
+    bool deep = device_is_deep(dev);
 
     if (deep)
         return do_pdf14_copy_alpha_color_16(dev, data, data_x, aa_raster,
@@ -4130,10 +4127,7 @@ get_pdf14_device_proto(gx_device * dev, pdf14_device ** pdevproto,
     pdf14_default_colorspace_t dev_cs =
                 pdf14_determine_default_blend_cs(dev, use_pdf14_accum,
                                                  &using_blend_cs);
-    bool has_tags = device_encodes_tags(dev);
-    int bits_per_comp = ((dev->color_info.depth - has_tags*8) /
-                         dev->color_info.num_components);
-    bool deep = bits_per_comp > 8;
+    bool deep = device_is_deep(dev);
 
     switch (dev_cs) {
         case PDF14_DeviceGray:
@@ -4232,10 +4226,7 @@ pdf14_ok_to_optimize(gx_device *dev)
     int tag_depth = device_encodes_tags(dev) ? 8 : 0;
     cmm_dev_profile_t *dev_profile;
     int code = dev_proc(dev, get_profile)(dev,  &dev_profile);
-    bool has_tags = device_encodes_tags(dev);
-    int bits_per_comp = ((dev->color_info.depth - has_tags*8) /
-                         dev->color_info.num_components);
-    bool deep = bits_per_comp > 8;
+    bool deep = device_is_deep(dev);
 
     if (code < 0)
         return false;
@@ -4295,9 +4286,7 @@ pdf14_recreate_device(gs_memory_t *mem,	gs_gstate	* pgs,
     pdf14_device temp_dev_proto;
     bool has_tags = device_encodes_tags(dev);
     int code;
-    int bits_per_comp = ((dev->color_info.depth - has_tags*8) /
-                         dev->color_info.num_components);
-    bool deep = bits_per_comp > 8;
+    bool deep = device_is_deep(dev);
 
     if_debug0m('v', dev->memory, "[v]pdf14_recreate_device\n");
 
@@ -5215,9 +5204,7 @@ pdf14_update_device_color_procs_push_c(gx_device               *dev,
     cmm_profile_t *icc_profile_dev = NULL;
     gsicc_rendering_param_t render_cond;
     cmm_dev_profile_t *dev_profile;
-    int bits_per_comp = ((dev->color_info.depth - has_tags*8) /
-                         dev->color_info.num_components);
-    int deep = bits_per_comp > 8;
+    bool deep = device_is_deep(dev);
 
     memset(comp_bits, 0, GX_DEVICE_COLOR_MAX_COMPONENTS);
     memset(comp_shift, 0, GX_DEVICE_COLOR_MAX_COMPONENTS);
@@ -5572,10 +5559,7 @@ pdf14_begin_transparency_mask(gx_device	*dev,
     int code;
     int group_color_numcomps;
     gs_transparency_color_t group_color;
-    bool has_tags = device_encodes_tags(dev);
-    int bits_per_comp = ((dev->color_info.depth - has_tags*8) /
-                         dev->color_info.num_components);
-    int deep = bits_per_comp > 8;
+    bool deep = device_is_deep(dev);
 
     if (ptmp->subtype == TRANSPARENCY_MASK_None) {
         pdf14_ctx *ctx = pdev->ctx;
@@ -6533,7 +6517,6 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
     uchar k;
     int max_bitmap;
     bool use_pdf14_accum = false;
-    int bits_per_comp;
     bool deep;
 
     /* Guard against later seg faults, this should not be possible */
@@ -6541,9 +6524,7 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
         return gs_throw_code(gs_error_Fatal);
 
     has_tags = device_encodes_tags(target);
-    bits_per_comp = ((target->color_info.depth - has_tags*8) /
-                      target->color_info.num_components);
-    deep = bits_per_comp > 8;
+    deep = device_is_deep(target);
     max_bitmap = target->space_params.MaxBitmap == 0 ? MAX_BITMAP :
                                  target->space_params.MaxBitmap;
     /* If the device is not a printer class device, it won't support saved-pages */
@@ -6817,10 +6798,7 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
     int pdf14_needed = cdev->pdf14_needed;
     int trans_group_level = cdev->pdf14_trans_group_level;
     int smask_level = cdev->pdf14_smask_level;
-    bool has_tags = device_encodes_tags((gx_device *)cdev);
-    int bits_per_comp = ((cdev->color_info.depth - has_tags*8) /
-                         cdev->color_info.num_components);
-    bool deep = bits_per_comp > 8;
+    bool deep = device_is_deep(cdev);
 
     code = dev_proc((gx_device *) cdev, get_profile)((gx_device *) cdev,
                                                      &dev_profile);
@@ -7746,9 +7724,7 @@ get_pdf14_clist_device_proto(gx_device * dev, pdf14_clist_device ** pdevproto,
                 pdf14_determine_default_blend_cs(dev, use_pdf14_accum,
                                                  &using_blend_cs);
     bool has_tags = device_encodes_tags(dev);
-    int bits_per_comp = ((dev->color_info.depth - has_tags*8) /
-                         dev->color_info.num_components);
-    bool deep = bits_per_comp > 8;
+    bool deep = device_is_deep(dev);
 
     switch (dev_cs) {
         case PDF14_DeviceGray:
@@ -7866,9 +7842,7 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_gstate * pgs,
     gsicc_rendering_param_t render_cond;
     cmm_dev_profile_t *dev_profile;
     uchar k;
-    int bits_per_comp = ((target->color_info.depth - has_tags*8) /
-                         target->color_info.num_components);
-    bool deep = bits_per_comp > 8;
+    bool deep = device_is_deep(target);
 
     code = dev_proc(target, get_profile)(target,  &dev_profile);
     if (code < 0)
@@ -8099,10 +8073,7 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
     pdf14_clist_device * pdev = (pdf14_clist_device *)dev;
     int code, is_pdf14_compositor;
     const gs_pdf14trans_t * pdf14pct = (const gs_pdf14trans_t *) pct;
-    bool has_tags = device_encodes_tags(dev);
-    int bits_per_comp = ((pdev->color_info.depth - has_tags*8) /
-                         pdev->color_info.num_components);
-    bool deep = bits_per_comp > 8;
+    bool deep = device_is_deep(dev);
 
     /* We only handle a few PDF 1.4 transparency operations */
     if ((is_pdf14_compositor = gs_is_pdf14trans_compositor(pct)) != 0) {

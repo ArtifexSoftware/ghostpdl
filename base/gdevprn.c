@@ -384,10 +384,7 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
     gs_memory_t *buffer_memory =
         (ppdev->buffer_memory == 0 ? pdev->memory->non_gc_memory :
          ppdev->buffer_memory);
-    bool has_tags = device_encodes_tags(pdev);
-    int bits_per_comp = ((pdev->color_info.depth - has_tags*8) /
-                         pdev->color_info.num_components);
-    bool deep = bits_per_comp > 8;
+    bool deep = device_is_deep(pdev);
 
     /* If reallocate, find allocated memory & tear down buffer device */
     if (reallocate)
