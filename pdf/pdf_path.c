@@ -134,7 +134,7 @@ int pdfi_fill(pdf_context *ctx)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
     gs_swapcolors(ctx->pgs);
-    code = pdfi_trans_set_params(ctx, ctx->pgs->fillconstantalpha);
+    code = pdfi_trans_set_params(ctx, gs_getfillconstantalpha(ctx->pgs));
     if (code == 0)
         code = gs_fill(ctx->pgs);
     gs_swapcolors(ctx->pgs);
@@ -152,7 +152,7 @@ int pdfi_eofill(pdf_context *ctx)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
     gs_swapcolors(ctx->pgs);
-    code = pdfi_trans_set_params(ctx, ctx->pgs->fillconstantalpha);
+    code = pdfi_trans_set_params(ctx, gs_getfillconstantalpha(ctx->pgs));
     if (code == 0)
         code = gs_eofill(ctx->pgs);
     gs_swapcolors(ctx->pgs);
@@ -367,7 +367,7 @@ int pdfi_b(pdf_context *ctx)
         code = pdfi_gsave(ctx);
         if (code >= 0) {
             gs_swapcolors(ctx->pgs);
-            code = pdfi_trans_set_params(ctx, ctx->pgs->fillconstantalpha);
+            code = pdfi_trans_set_params(ctx, gs_getfillconstantalpha(ctx->pgs));
             if (code == 0)
                 code = gs_fill(ctx->pgs);
             gs_swapcolors(ctx->pgs);
@@ -403,14 +403,14 @@ int pdfi_b_star(pdf_context *ctx)
         code = pdfi_gsave(ctx);
         if (code >= 0) {
             gs_swapcolors(ctx->pgs);
-            code = pdfi_trans_set_params(ctx, ctx->pgs->fillconstantalpha);
+            code = pdfi_trans_set_params(ctx, gs_getfillconstantalpha(ctx->pgs));
             if (code == 0)
                 code = gs_eofill(ctx->pgs);
             gs_swapcolors(ctx->pgs);
             if (code >= 0) {
                 code = pdfi_grestore(ctx);
                 if (code >= 0)
-                    code = pdfi_trans_set_params(ctx, ctx->pgs->fillconstantalpha);
+                    code = pdfi_trans_set_params(ctx, gs_getfillconstantalpha(ctx->pgs));
                 if (code >= 0)
                     code = gs_stroke(ctx->pgs);
             } else
@@ -437,14 +437,14 @@ int pdfi_B(pdf_context *ctx)
     code = pdfi_gsave(ctx);
     if (code >= 0) {
         gs_swapcolors(ctx->pgs);
-        code = pdfi_trans_set_params(ctx, ctx->pgs->fillconstantalpha);
+        code = pdfi_trans_set_params(ctx, gs_getfillconstantalpha(ctx->pgs));
         if (code == 0)
             code = gs_fill(ctx->pgs);
         gs_swapcolors(ctx->pgs);
         if (code >= 0) {
             code = pdfi_grestore(ctx);
             if (code >= 0)
-                code = pdfi_trans_set_params(ctx, ctx->pgs->fillconstantalpha);
+                code = pdfi_trans_set_params(ctx, gs_getfillconstantalpha(ctx->pgs));
             if (code >= 0)
                 code = gs_stroke(ctx->pgs);
         } else {
@@ -473,14 +473,14 @@ int pdfi_B_star(pdf_context *ctx)
     code = pdfi_gsave(ctx);
     if (code >= 0) {
         gs_swapcolors(ctx->pgs);
-        code = pdfi_trans_set_params(ctx, ctx->pgs->fillconstantalpha);
+        code = pdfi_trans_set_params(ctx, gs_getfillconstantalpha(ctx->pgs));
         if (code == 0)
             code = gs_eofill(ctx->pgs);
         gs_swapcolors(ctx->pgs);
         if (code >= 0) {
             code = pdfi_grestore(ctx);
             if (code >= 0)
-                code = pdfi_trans_set_params(ctx, ctx->pgs->fillconstantalpha);
+                code = pdfi_trans_set_params(ctx, gs_getfillconstantalpha(ctx->pgs));
             if (code >= 0)
                 code = gs_stroke(ctx->pgs);
         } else {

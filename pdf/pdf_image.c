@@ -675,7 +675,7 @@ pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim, pdf_stream *image_str
     int main_plane, mask_plane;
 
     dbgmprintf(ctx->memory, "pdfi_render_image BEGIN\n");
-    code = pdfi_trans_set_params(ctx, ctx->pgs->fillconstantalpha);
+    code = pdfi_trans_set_params(ctx, gs_getfillconstantalpha(ctx->pgs));
     if (code < 0)
         return code;
 
@@ -1431,7 +1431,7 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
     pdf_name *n = NULL;
 
     dbgmprintf(ctx->memory, "pdfi_do_image_or_form BEGIN\n");
-    code = pdfi_trans_set_params(ctx, ctx->pgs->fillconstantalpha);
+    code = pdfi_trans_set_params(ctx, gs_getfillconstantalpha(ctx->pgs));
     if (code < 0)
         return code;
 
