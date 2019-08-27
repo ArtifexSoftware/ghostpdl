@@ -941,41 +941,43 @@ gx_shade_trapezoid(patch_fill_state_t *pfs, const gs_fixed_point q[4],
             } else if (le.start.x > xleft)
                 xleft = le.start.x;
 
+            ybot = max(ybot, min(le.start.y, re.start.y));
+            ytop = min(ytop, max(le.end.y, re.end.y));
+#if 0
+            /* RJW: I've disabled this code a) because it doesn't make any
+             * difference in the cluster tests, and b) because I think it's wrong.
+             * Taking the first case as an example; just because the le.start.x
+             * is > xright, does not mean that we can simply truncate the edge at
+             * xright, as this may throw away part of the trap between ybot and
+             * the new le.start.y. */
             /* Reduce the edges to the left/right of the clipping region. */
             /* Only in the 4 cases which can bring ytop/ybot closer */
             if (le.start.x > xright) {
                 le.start.y += (fixed)((int64_t)(le.end.y-le.start.y)*
                                       (int64_t)(le.start.x-xright)/
                                       (int64_t)(le.start.x-le.end.x));
-                if (le.start.y > ybot) {
-                    ybot = le.start.y;
-                }
                 le.start.x = xright;
             }
             if (re.start.x < xleft) {
                 re.start.y += (fixed)((int64_t)(re.end.y-re.start.y)*
                                       (int64_t)(xleft-re.start.x)/
                                       (int64_t)(re.end.x-re.start.x));
-                if (re.start.y > ybot)
-                    ybot = re.start.y;
                 re.start.x = xleft;
             }
             if (le.end.x > xright) {
                 le.end.y -= (fixed)((int64_t)(le.end.y-le.start.y)*
                                     (int64_t)(le.end.x-xright)/
                                     (int64_t)(le.end.x-le.start.x));
-                if (le.end.y < ytop)
-                    ytop = le.end.y;
                 le.end.x = xright;
             }
             if (re.end.x < xleft) {
                 re.end.y -= (fixed)((int64_t)(re.end.y-re.start.y)*
                                     (int64_t)(xleft-re.end.x)/
                                     (int64_t)(re.start.x-re.end.x));
-                if (re.end.y < ytop)
-                    ytop = re.end.y;
                 re.end.x = xleft;
             }
+#endif
+
             if (ybot >= ytop)
                 return 0;
             /* Follow the edges in, so that le.start.y == ybot etc. */
