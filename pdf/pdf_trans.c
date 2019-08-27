@@ -26,7 +26,7 @@
 
 #include "gstparam.h"
 
-static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs)
+static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int colorindex)
 {
     int code;
     pdf_dict *SMask = igs->SMask;
@@ -109,13 +109,13 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs)
                         goto exit;
                 } else {
                     /* Inherit current colorspace */
-                    params.ColorSpace = ctx->pgs->color[0].color_space; /* 0 or 1 ? */
+                    params.ColorSpace = ctx->pgs->color[colorindex].color_space;
                 }
             } else {
                 /* TODO: Is this an error or what?
                    Inherit current colorspace
                 */
-                params.ColorSpace = ctx->pgs->color[0].color_space; /* 0 or 1 ? */
+                params.ColorSpace = ctx->pgs->color[colorindex].color_space;
             }
 
             code = gs_begin_transparency_mask(ctx->pgs, &params, &bbox, true);
@@ -323,17 +323,20 @@ int pdfi_trans_end_smask_notify(pdf_context *ctx)
 int pdfi_trans_set_params(pdf_context *ctx, double alpha)
 {
     pdfi_int_gstate *igs = (pdfi_int_gstate *)ctx->pgs->client_data;
+    int colorindex;
 
     if (ctx->page_has_transparency) {
         if (gs_getalphaisshape(ctx->pgs)) {
             gs_setshapealpha(ctx->pgs, alpha);
             gs_setopacityalpha(ctx->pgs, 1.0);
+            colorindex = 1;
         } else {
             gs_setshapealpha(ctx->pgs, 1.0);
             gs_setopacityalpha(ctx->pgs, alpha);
+            colorindex = 0;
         }
         if (igs->SMask) {
-            pdfi_trans_set_mask(ctx, igs);
+            pdfi_trans_set_mask(ctx, igs, colorindex);
         }
     }
 
