@@ -1038,13 +1038,21 @@ $error /SubstituteFont { } put
         % check <libflag>
         {
           findlibfile not
-        } {
+        }
+        {
+          //true
+        } ifelse
+
+        % if findlibfile didn't work, try just opening the file direcly.
+        {
           dup (r) { file } stopped {
             pop pop //true
           } {
             //false
           } ifelse
-        } ifelse {
+        } if
+
+        {
           QUIET not
             { (Can't find \(or can't open\) font file ) print dup print
               (.) = flush
@@ -1173,7 +1181,7 @@ $error /SubstituteFont { } put
          { exch pop //true //false }
          {
            % if we can't load by name check the native font map
-           dup .nativeFontmap exch .knownget
+           .nativeFontmap exch .knownget
            { //true //true }
            { //false //false } ifelse
          } ifelse
