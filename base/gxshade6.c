@@ -976,7 +976,7 @@ gx_shade_trapezoid(patch_fill_state_t *pfs, const gs_fixed_point q[4],
                     ytop = re.end.y;
                 re.end.x = xleft;
             }
-            if (ybot > ytop)
+            if (ybot >= ytop)
                 return 0;
             /* Follow the edges in, so that le.start.y == ybot etc. */
             if (le.start.y < ybot) {
@@ -1039,7 +1039,7 @@ gx_shade_trapezoid(patch_fill_state_t *pfs, const gs_fixed_point q[4],
                                     (int64_t)(le.start.x-le.end.x));
                     le.start.x = re.start.x;
                 }
-                if (ybot > ytop)
+                if (ybot >= ytop)
                     return 0;
                 le.start.y = ybot;
                 re.start.y = ybot;
@@ -1056,7 +1056,7 @@ gx_shade_trapezoid(patch_fill_state_t *pfs, const gs_fixed_point q[4],
                                     (int64_t)(le.end.x-le.start.x));
                     le.end.x = re.end.x;
                 }
-                if (ybot > ytop)
+                if (ybot >= ytop)
                     return 0;
                 le.end.y = ytop;
                 re.end.y = ytop;
