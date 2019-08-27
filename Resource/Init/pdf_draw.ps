@@ -2128,13 +2128,15 @@ currentdict /last-ditch-bpc-csp undef
     1 BitsPerComponent bitshift 1 sub //false 2 index {
       % stack: max_value result_bool value
       dup 0 lt exch 3 index gt or or
-    } forall exch pop {
+    } forall exch pop
+    {
       (   **** Error: Some elements of Mask array are out of range.\n)
       pdfformaterror
       (               Output may be incorrect.\n) pdfformaterror
 
       ColorSpace dup type /arraytype eq { 0 oget } if /Indexed eq
-      BitsPerComponent 1 eq and {
+      BitsPerComponent 1 eq and
+      {
         % AR9 treats Indexed 1 bpc images specially. Bug 692852 see also 697919 and 689717.
         dup 0 oget
         dup 0 lt exch 1 BitsPerComponent bitshift ge or {
@@ -2144,37 +2146,37 @@ currentdict /last-ditch-bpc-csp undef
           % Second component is invalid; AR9 replaces it with 1.
           [ exch 0 oget 1 ]
         } ifelse
-      } {
-        % AR5, AR9 do this for most cases. Bug 690786.
-        [ exch { 1 BitsPerComponent bitshift 1 sub and } forall ]
-      } ifelse
-    } {
-      ColorSpace dup type /arraytype eq { 0 oget } if /DeviceGray eq
-      BitsPerComponent 1 eq and {
-        %% For DeviceGray, try clamping the values to 0 and 1 respectively
-        dup 0 oget
-        dup 0 lt exch 1 gt or {
-          dup 0 oget
-          dup 0 lt {
-            pop dup 0 0 put
+      }
+      {
+        BitsPerComponent 1 eq {
+          dup length 2 gt {
+            % There are too many Mask entries, discard the Mask array
+            pop //null
           }{
-            dup 0 1 put
+            % Bug 701468 and 689717, the latter requires us to set the Mask values
+            % so that the value is calculated from the BPC, the other requires us
+            % to ignore the Mask. The only difference between the two files is the
+            % actual range of the Mask values. This may yet need more work.
+            % Note! Both files are technically invalid....
+
+            aload 3 1 roll eq {
+              % There's only one Mask value, but its illegal, substitute with the
+              % calculated maximum.
+              [ exch { 1 BitsPerComponent bitshift 1 sub and } forall ]
+            } {
+              % The Mask values are not the same. This is a 2 colour image, if
+              % we mask off any range then the result will be blank, so ignore the Mask
+              pop //null
+            } ifelse
           } ifelse
-        } if
-        dup 1 oget
-        dup 0 lt exch 1 gt or {
-          dup 1 oget
-          dup 0 lt {
-            pop dup 0 0 put
-          }{
-            dup 0 1 put
-          } ifelse
-        } if
-      }{
-        % AR5, AR9 do this for most cases. Bug 690786.
-        [ exch { 1 BitsPerComponent bitshift 1 sub and } forall ]
+        } {
+          % We think AR5, AR9 do this for most other cases. Originally Bug 690786,
+          % but that is actually handled in the /Indexed case above.
+          [ exch { 1 BitsPerComponent bitshift 1 sub and } forall ]
+        } ifelse
       } ifelse
-    } ifelse
+    } if
+
     dup //null ne {
       /MaskColor exch def
     } {
