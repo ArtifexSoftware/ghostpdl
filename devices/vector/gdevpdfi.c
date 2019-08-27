@@ -1367,6 +1367,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
             if (code < 0)
                 goto fail_and_fallback;
             image[0].pixel.ColorSpace = pcs_device;
+            image[0].pixel.BitsPerComponent = 8;
             code = pdf_color_space_named(pdev, pgs, &cs_value, &pranges, pcs_device, names,
                                      in_line, NULL, 0, false);
             if (code < 0)
@@ -1508,6 +1509,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
 
     if (convert_to_process_colors) {
         image[0].pixel.ColorSpace = pcs_orig;
+        image[0].pixel.BitsPerComponent = pim->BitsPerComponent;
         code = psdf_setup_image_colors_filter(&pie->writer.binary[0],
                     (gx_device_psdf *)pdev, &image[0].pixel, pgs);
         if (code < 0)
