@@ -26,6 +26,7 @@
 
 #include "gstparam.h"
 
+/* (see pdf_draw.ps/execmaskgroup) */
 static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int colorindex)
 {
     int code;
@@ -36,99 +37,145 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
     pdf_array *BBox = NULL;
     pdf_array *Matrix = NULL;
     pdf_array *a = NULL;
+    pdf_array *BC = NULL;
     pdf_dict *G_dict = NULL;
     pdf_dict *Group = NULL;
     pdf_name *n = NULL;
+    pdf_name *S = NULL;
     pdf_obj *CS = NULL;
     double f;
     gs_matrix save_matrix, GroupMat, group_Matrix;
+    gs_transparency_mask_subtype_t subtype = TRANSPARENCY_MASK_Luminosity;
 
+    dbgmprintf(ctx->memory, "pdfi_trans_set_mask (.execmaskgroup) BEGIN\n");
+
+    /* See pdf1.7 pg 553 (pain in the butt to find this!) */
     code = pdfi_dict_knownget_type(ctx, SMask, "Type", PDF_NAME, (pdf_obj **)&n);
     if (code == 0 || (code > 0 && pdfi_name_is(n, "Mask"))) {
+        /* G is transparency group XObject (required) */
         code = pdfi_dict_knownget_type(ctx, SMask, "G", PDF_DICT, (pdf_obj **)&G_dict);
+        if (code <= 0) {
+            dmprintf(ctx->memory, "WARNING: Missing 'G' in SMask, ignoring.\n");
+            pdfi_trans_end_smask_notify(ctx);
+            code = 0;
+            goto exit;
+        }
+        /* S is a subtype name (required) */
+        code = pdfi_dict_knownget_type(ctx, SMask, "S", PDF_NAME, (pdf_obj **)&S);
+        if (code <= 0) {
+            dmprintf(ctx->memory, "WARNING: Missing 'S' in SMask (defaulting to Luminosity)\n");
+        }
+        if (pdfi_name_is(S, "Luminosity")) {
+            subtype = TRANSPARENCY_MASK_Luminosity;
+        } else if (pdfi_name_is(S, "Alpha")) {
+            subtype = TRANSPARENCY_MASK_Alpha;
+        } else {
+            dmprintf(ctx->memory, "WARNING: Unknown subtype 'S' in SMask (defaulting to Luminosity)\n");
+        }
+
+        /* BC is Background Color array (Optional) */
+        code = pdfi_dict_knownget_type(ctx, SMask, "BC", PDF_ARRAY, (pdf_obj **)&BC);
+        if (code < 0)
+            goto exit;
+
+        code = pdfi_dict_knownget_type(ctx, G_dict, "Matte", PDF_ARRAY, (pdf_obj **)&a);
         if (code > 0) {
-            code = pdfi_dict_knownget_type(ctx, G_dict, "Matte", PDF_ARRAY, (pdf_obj **)&a);
-            if (code > 0) {
-                int ix;
+            int ix;
 
-                for (ix = 0; ix < pdfi_array_size(a); ix++) {
-                    code = pdfi_array_get_number(ctx, a, (uint64_t)ix, &f);
-                    if (code < 0)
-                        break;
-                    params.Matte[ix] = f;
-                }
-                if (ix >= pdfi_array_size(a))
-                    params.Matte_components = pdfi_array_size(a);
-                else
-                    params.Matte_components = 0;
+            for (ix = 0; ix < pdfi_array_size(a); ix++) {
+                code = pdfi_array_get_number(ctx, a, (uint64_t)ix, &f);
+                if (code < 0)
+                    break;
+                params.Matte[ix] = f;
             }
+            if (ix >= pdfi_array_size(a))
+                params.Matte_components = pdfi_array_size(a);
+            else
+                params.Matte_components = 0;
+        }
 
-            code = pdfi_dict_knownget_type(ctx, G_dict, "BBox", PDF_ARRAY, (pdf_obj **)&BBox);
-            if (code < 0)
-                goto exit;
-            code = pdfi_array_to_gs_rect(ctx, BBox, &bbox);
-            if (code < 0)
-                goto exit;
+        code = pdfi_dict_knownget_type(ctx, G_dict, "BBox", PDF_ARRAY, (pdf_obj **)&BBox);
+        if (code < 0)
+            goto exit;
+        code = pdfi_array_to_gs_rect(ctx, BBox, &bbox);
+        if (code < 0)
+            goto exit;
 
-            gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Luminosity);
-            params.replacing = true;
+        gs_trans_mask_params_init(&params, subtype);
+        params.replacing = true;
 
-            /* Need to set just the ctm (GroupMat) from the saved GroupGState, to
-               have gs_begin_transparency_mask work correctly.  Or at least that's
-               what the PS code comments claim (see pdf_draw.ps/.execmaskgroup)
-            */
-            gs_currentmatrix(ctx->pgs, &save_matrix);
-            gs_currentmatrix(igs->GroupGState, &GroupMat);
-            gs_setmatrix(ctx->pgs, &GroupMat);
+        /* Need to set just the ctm (GroupMat) from the saved GroupGState, to
+           have gs_begin_transparency_mask work correctly.  Or at least that's
+           what the PS code comments claim (see pdf_draw.ps/.execmaskgroup)
+        */
+        gs_currentmatrix(ctx->pgs, &save_matrix);
+        gs_currentmatrix(igs->GroupGState, &GroupMat);
+        gs_setmatrix(ctx->pgs, &GroupMat);
 
-            code = pdfi_dict_knownget_type(ctx, G_dict, "Matrix", PDF_ARRAY, (pdf_obj **)&Matrix);
-            if (code < 0)
-                goto exit;
-            code = pdfi_array_to_gs_matrix(ctx, Matrix, &group_Matrix);
-            if (code < 0)
-                goto exit;
+        code = pdfi_dict_knownget_type(ctx, G_dict, "Matrix", PDF_ARRAY, (pdf_obj **)&Matrix);
+        if (code < 0)
+            goto exit;
+        code = pdfi_array_to_gs_matrix(ctx, Matrix, &group_Matrix);
+        if (code < 0)
+            goto exit;
 
-            /* Transform the BBox by the Matrix */
-            pdfi_bbox_transform(ctx, &bbox, &group_Matrix);
+        /* Transform the BBox by the Matrix */
+        pdfi_bbox_transform(ctx, &bbox, &group_Matrix);
 
-            /* CS is in the dict "Group" inside the dict "G" */
-            /* TODO: Not sure if this is a required thing or just one possibility */
-            code = pdfi_dict_knownget_type(ctx, G_dict, "Group", PDF_DICT, (pdf_obj **)&Group);
+        /* CS is in the dict "Group" inside the dict "G" */
+        /* TODO: Not sure if this is a required thing or just one possibility */
+        code = pdfi_dict_knownget_type(ctx, G_dict, "Group", PDF_DICT, (pdf_obj **)&Group);
+        if (code < 0)
+            goto exit;
+        if (code > 0) {
+            /* TODO: Stuff with colorspace, see .execmaskgroup */
+            code = pdfi_dict_knownget(ctx, Group, "CS", &CS);
             if (code < 0)
                 goto exit;
             if (code > 0) {
-                /* TODO: Stuff with colorspace, see .execmaskgroup */
-                code = pdfi_dict_knownget(ctx, Group, "CS", &CS);
+                code = pdfi_create_colorspace(ctx, CS, (pdf_dict *)ctx->main_stream,
+                                              ctx->CurrentPageDict, &pcs, false);
+                params.ColorSpace = pcs;
                 if (code < 0)
                     goto exit;
-                if (code > 0) {
-                    code = pdfi_create_colorspace(ctx, CS, (pdf_dict *)ctx->main_stream,
-                                              ctx->CurrentPageDict, &pcs, false);
-                    params.ColorSpace = pcs;
-                    if (code < 0)
-                        goto exit;
-                } else {
-                    /* Inherit current colorspace */
-                    params.ColorSpace = ctx->pgs->color[colorindex].color_space;
-                }
             } else {
-                /* TODO: Is this an error or what?
-                   Inherit current colorspace
-                */
+                /* Inherit current colorspace */
                 params.ColorSpace = ctx->pgs->color[colorindex].color_space;
             }
-
-            code = gs_begin_transparency_mask(ctx->pgs, &params, &bbox, true);
-            if (code < 0)
-                goto exit;
-            /* TODO: Error handling... */
-            code = pdfi_form_execgroup(ctx, ctx->CurrentPageDict, G_dict, igs->GroupGState);
-            code = gs_end_transparency_mask(ctx->pgs, 0);
-            /* Put back the matrix (we couldn't just rely on gsave/grestore for whatever reason,
-             * according to PS code anyway...
-             */
-            gs_setmatrix(ctx->pgs, &save_matrix);
+        } else {
+            /* TODO: Is this an error or what?
+               Inherit current colorspace
+            */
+            params.ColorSpace = ctx->pgs->color[colorindex].color_space;
         }
+
+        /* If there's a BC, put it in the params */
+        if (BC) {
+            int i;
+            double num;
+            for (i=0; i<pdfi_array_size(BC); i++) {
+                if (i > GS_CLIENT_COLOR_MAX_COMPONENTS)
+                    break;
+                code = pdfi_array_get_number(ctx, BC, i, &num);
+                if (code < 0)
+                    break;
+                params.Background[i] = (float)num;
+                if (i == 0)
+                    params.GrayBackground = (float)num;
+            }
+            params.Background_components = pdfi_array_size(BC);
+        }
+
+        code = gs_begin_transparency_mask(ctx->pgs, &params, &bbox, true);
+        if (code < 0)
+            goto exit;
+        /* TODO: Error handling... */
+        code = pdfi_form_execgroup(ctx, ctx->CurrentPageDict, G_dict, igs->GroupGState);
+        code = gs_end_transparency_mask(ctx->pgs, 0);
+        /* Put back the matrix (we couldn't just rely on gsave/grestore for whatever reason,
+         * according to PS code anyway...
+         */
+        gs_setmatrix(ctx->pgs, &save_matrix);
     } else {
         /* take action on a non-/Mask entry. What does this mean ? What do we need to do */
         dmprintf(ctx->memory, "Warning: Type is not /Mask, entry ignored in pdfi_set_trans_mask\n");
@@ -138,12 +185,15 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
     if (pcs)
         rc_decrement_cs(pcs, "pdfi_trans_set_mask");
     pdfi_countdown(n);
+    pdfi_countdown(S);
     pdfi_countdown(Group);
     pdfi_countdown(G_dict);
     pdfi_countdown(a);
+    pdfi_countdown(BC);
     pdfi_countdown(BBox);
     pdfi_countdown(Matrix);
     pdfi_countdown(CS);
+    dbgmprintf(ctx->memory, "pdfi_trans_set_mask (.execmaskgroup) END\n");
     return code;
 }
 
