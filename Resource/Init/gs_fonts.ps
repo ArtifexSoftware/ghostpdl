@@ -1043,6 +1043,7 @@ $error /SubstituteFont { } put
           //true
         } ifelse
 
+
         % if findlibfile didn't work, try just opening the file direcly.
         {
           dup (r) { file } stopped {
@@ -1050,7 +1051,10 @@ $error /SubstituteFont { } put
           } {
             //false
           } ifelse
-        } if
+        }
+        {
+          //false
+        }ifelse
 
         {
           QUIET not
