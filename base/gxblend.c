@@ -744,10 +744,9 @@ art_blend_saturation_rgb_16(int n_chan, uint16_t *gs_restrict dst, const uint16_
     int minb, maxb;
     int mins, maxs;
     int y;
-    int scale;
+    int64_t scale;
     int r, g, b;
 
-    /* FIXME: Check this! */
     minb = rb < gb ? rb : gb;
     minb = minb < bb ? minb : bb;
     maxb = rb > gb ? rb : gb;
@@ -765,14 +764,14 @@ art_blend_saturation_rgb_16(int n_chan, uint16_t *gs_restrict dst, const uint16_
     maxs = rs > gs ? rs : gs;
     maxs = maxs > bs ? maxs : bs;
 
-    scale = ((maxs - mins) << 16) / (maxb - minb);
+    scale = (((int64_t)(maxs - mins)) << 16) / (maxb - minb);
     y = (rb * 77 + gb * 151 + bb * 28 + 0x80) >> 8;
     r = y + ((((rb - y) * scale) + 0x8000) >> 16);
     g = y + ((((gb - y) * scale) + 0x8000) >> 16);
     b = y + ((((bb - y) * scale) + 0x8000) >> 16);
 
     if ((r | g | b) & 0x10000) {
-        int scalemin, scalemax;
+        int64_t scalemin, scalemax;
         int min, max;
 
         min = r < g ? r : g;
@@ -781,12 +780,12 @@ art_blend_saturation_rgb_16(int n_chan, uint16_t *gs_restrict dst, const uint16_
         max = max > b ? max : b;
 
         if (min < 0)
-            scalemin = (y << 16) / (y - min);
+            scalemin = ((int64_t)(y << 16)) / (y - min);
         else
             scalemin = 0x10000;
 
         if (max > 65535)
-            scalemax = ((65535 - y) << 16) / (max - y);
+            scalemax = (((int64_t)(65535 - y)) << 16) / (max - y);
         else
             scalemax = 0x10000;
 
