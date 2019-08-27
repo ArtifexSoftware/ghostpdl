@@ -532,10 +532,7 @@ void check_device_compatible_encoding(gx_device *dev)
     gx_color_index mul, color_index;
     int i, j;
     gx_color_value colorants[GX_DEVICE_COLOR_MAX_COMPONENTS];
-    bool has_tags = device_encodes_tags(dev);
-    int bits_per_comp = ((dev->color_info.depth - has_tags*8) /
-                         dev->color_info.num_components);
-    bool deep = bits_per_comp > 8;
+    bool deep = device_is_deep(dev);
 
     if (pinfo->separable_and_linear == GX_CINFO_UNKNOWN_SEP_LIN)
         check_device_separable(dev);
@@ -1062,6 +1059,9 @@ gx_default_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
                 return 0;
             return (dev_proc(pdev, encode_color) == gx_default_encode_color ||
                     dev_proc(pdev, encode_color) == gx_default_rgb_map_rgb_color);
+        /* Just ignore information about events */
+        case gxdso_event_info:
+            return 0;
     }
     return_error(gs_error_undefined);
 }

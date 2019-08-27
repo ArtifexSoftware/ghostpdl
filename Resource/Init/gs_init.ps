@@ -34,7 +34,7 @@
 % Interpreter library version number
 % NOTE: the interpreter code requires that the first non-comment token
 % in this file be an integer, and that it match the compiled-in version!
-928
+929
 
 % Check the interpreter revision.
 dup revision ne
@@ -182,8 +182,7 @@ currentdict /DELAYSAFER known { /DELAYSAFER //true def /NOSAFER //true def } if
 /SAFER currentdict /NOSAFER known {
   //false
 } {
-  currentdict /SAFER known
-  currentdict /PARANOIDSAFER known or	% PARANOIDSAFER is equivalent
+  //true
 }
 ifelse def
 
@@ -2220,10 +2219,12 @@ readonly def
   [
     //tempfilepaths (*) .generate_dir_list_templates
     /FONTPATH .systemvar (*) .generate_dir_list_templates
-    .languagelevel 2 ge {
+    /level2dict where {
+        pop
         % Default resources :
       [ currentsystemparams /GenericResourceDir get] (*) .generate_dir_list_templates
     } if
+    /LIBPATH  .systemvar (*) .generate_dir_list_templates
     currentuserparams /ICCProfilesDir known {
       [currentuserparams /ICCProfilesDir get] (*)
       .generate_dir_list_templates
@@ -2284,13 +2285,7 @@ currentdict /tempfilepaths undef
 
 %% --- These are documented extensions ---
 /.locksafe {
-  OLDSAFER
-  {
-    //.locksafe_userparams exec
-  }
-  {
-    //.lockfileaccess exec
-  } ifelse
+  //.locksafe_userparams exec
   //systemdict /getenv {pop //false} .forceput
   % setpagedevice has the side effect of clearing the page, but
   % we will just document that. Using setpagedevice keeps the device
@@ -2304,15 +2299,19 @@ currentdict /tempfilepaths undef
 
 /.setsafe
 {
-  SAFETY /safe get not {
-    <<
-      /PermitFileReading [ ]
-      /PermitFileWriting [ ]
-      /PermitFileControl [ ]
-    >> setuserparams
+  OLDSAFER {
+    SAFETY /safe get not {
+      <<
+        /PermitFileReading [ ]
+        /PermitFileWriting [ ]
+        /PermitFileControl [ ]
+      >> setuserparams
+    }
+    if
+    .locksafe
   }
-  if
-  .locksafe
+  {//.lockfileaccess exec}
+  ifelse
 } .bind executeonly odef
 %% --- End documented extensions ---
 
@@ -2323,19 +2322,7 @@ currentdict /tempfilepaths undef
 % in gs_setpd.ps)
 %
 /.locksafeglobal {
-  OLDSAFER
-  {
-    //.locksafe_userparams exec
-  }
-  {
-    <<
-      /PermitFileReading [(*)]
-      /PermitFileWriting [(*)]
-      /PermitFileControl [(*)]
-    >> setuserparams
-    //.lockfileaccess exec
-  } ifelse
-
+  //.locksafe_userparams exec
   systemdict /getenv {pop //false} put
   % setpagedevice has the side effect of clearing the page, but
   % we will just document that. Using setpagedevice keeps the device
@@ -2352,15 +2339,20 @@ currentdict /tempfilepaths undef
 % See /.locksafeglobal above.
 %
 /.setsafeglobal {
-  SAFETY /safe get not {
-    <<
-      /PermitFileReading [ ]
-      /PermitFileWriting [ ]
-      /PermitFileControl [ ]
-    >> setuserparams
+  OLDSAFER
+  {
+    SAFETY /safe get not {
+      <<
+        /PermitFileReading [ ]
+        /PermitFileWriting [ ]
+        /PermitFileControl [ ]
+      >> setuserparams
+    }
+    if
+    //.locksafeglobal exec
   }
-  if
-  //.locksafeglobal exec
+  {//.lockfileaccess exec}
+  ifelse
 } .bind def
 
 % If we are running in SAFER mode, lock things down

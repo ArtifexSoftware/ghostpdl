@@ -186,6 +186,51 @@ const gx_device_pdf_image gs_pdfimage32_device = {
     0    /* JPEGQ */
 };
 
+static int
+pdfimage_write_args_comment(gx_device_pdf_image *pdev, stream *s)
+{
+    const char * const *argv = NULL;
+    const char *arg;
+    int towrite, length, i, j, argc;
+
+    argc = gs_lib_ctx_get_args(pdev->memory->gs_lib_ctx, &argv);
+
+    stream_write(s, (byte *)"%%Invocation:", 13);
+    length = 12;
+    for (i=0;i < argc; i++) {
+        arg = argv[i];
+
+        if ((strlen(arg) + length) > 255) {
+            stream_write(s, (byte *)"\n%%+ ", 5);
+            length = 5;
+        } else {
+            stream_write(s, (byte *)" ", 1);
+            length++;
+        }
+
+        if (strlen(arg) > 250)
+            towrite = 250;
+        else
+            towrite = strlen(arg);
+
+        length += towrite;
+
+        for (j=0;j < towrite;j++) {
+            if (arg[j] == 0x0A) {
+                stream_write(s, (byte *)"<0A>", 4);
+            } else {
+                if (arg[j] == 0x0D) {
+                    stream_write(s, (byte *)"<0D>", 4);
+                } else {
+                    stream_write(s, (byte *)&arg[j], 1);
+                }
+            }
+        }
+    }
+    stream_write(s, (byte *)"\n", 1);
+    return 0;
+}
+
 static int gdev_pdf_image_begin_page(gx_device_pdf_image *pdf_dev,
                          gp_file *file)
 {
@@ -251,6 +296,7 @@ static int gdev_pdf_image_begin_page(gx_device_pdf_image *pdf_dev,
 
         stream_puts(pdf_dev->strm, "%PDF-1.3\n");
         stream_puts(pdf_dev->strm, "%\307\354\217\242\n");
+        pdfimage_write_args_comment(pdf_dev, pdf_dev->strm);
         pdf_dev->Pages = page;
     } else {
         pdfimage_page *current = pdf_dev->Pages;

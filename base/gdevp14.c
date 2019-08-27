@@ -1973,6 +1973,17 @@ pdf14_grayspot_get_color_mapping_procs(const gx_device * dev)
     return &pdf14_DeviceGrayspot_procs;
 }
 
+static void
+be_rev_cpy(uint16_t *dst,const uint16_t *src,int n)
+{
+    for (; n != 0; n--) {
+        uint16_t in = *src++;
+        ((byte *)dst)[0] = in>>8;
+        ((byte *)dst)[1] = in;
+        dst++;
+    }
+}
+
 /* Used to pass along information about the buffer created by the
    pdf14 device.  This is used by the pattern accumulator when the
    pattern contains transparency.  Note that if free_device is true then
@@ -2035,14 +2046,28 @@ pdf14_get_buffer_information(const gx_device * dev,
                 return gs_error_VMerror;
 
             transbuff->mem = mem;
-            for (j = 0; j < transbuff->n_chan; j++) {
-                buff_ptr_src = buf->data + j * buf->planestride +
-                           buf->rowstride * rect.p.y + (rect.p.x<<buf->deep);
-                buff_ptr_des = transbuff->transbytes + j * planestride;
-                for (k = 0; k < height; k++) {
-                    memcpy(buff_ptr_des, buff_ptr_src, rowstride);
-                    buff_ptr_des += rowstride;
-                    buff_ptr_src += buf->rowstride;
+            if (transbuff->deep) {
+                /* FIXME: */
+                for (j = 0; j < transbuff->n_chan; j++) {
+                    buff_ptr_src = buf->data + j * buf->planestride +
+                               buf->rowstride * rect.p.y + (rect.p.x<<buf->deep);
+                    buff_ptr_des = transbuff->transbytes + j * planestride;
+                    for (k = 0; k < height; k++) {
+                        be_rev_cpy((uint16_t *)buff_ptr_des, (const uint16_t *)buff_ptr_src, rowstride>>1);
+                        buff_ptr_des += rowstride;
+                        buff_ptr_src += buf->rowstride;
+                    }
+                }
+            } else {
+                for (j = 0; j < transbuff->n_chan; j++) {
+                    buff_ptr_src = buf->data + j * buf->planestride +
+                               buf->rowstride * rect.p.y + (rect.p.x<<buf->deep);
+                    buff_ptr_des = transbuff->transbytes + j * planestride;
+                    for (k = 0; k < height; k++) {
+                        memcpy(buff_ptr_des, buff_ptr_src, rowstride);
+                        buff_ptr_des += rowstride;
+                        buff_ptr_src += buf->rowstride;
+                    }
                 }
             }
 
@@ -2055,18 +2080,37 @@ pdf14_get_buffer_information(const gx_device * dev,
             transbuff->transbytes = buf->data;
             transbuff->mem = buf->memory;
             buf->data = NULL;  /* So that the buffer is not freed */
+            if (transbuff->deep) {
+                /* We have the data in native endian. We need it in big endian. Do an in-place conversion. */
+                /* FIXME: This is a nop on big endian machines. Is the compiler smart enough to spot that? */
+                uint16_t *buff_ptr;
+                int j, k, z;
+                int rowstride = transbuff->rowstride>>1;
+                int planestride = transbuff->planestride;
+                for (j = 0; j < transbuff->n_chan; j++) {
+                    buff_ptr = (uint16_t *)(transbuff->transbytes + j * planestride);
+                    for (k = 0; k < height; k++) {
+                        for (z = 0; z < width; z++) {
+                            uint16_t in = buff_ptr[z];
+                            ((byte *)(&buff_ptr[z]))[0] = in>>8;
+                            ((byte *)(&buff_ptr[z]))[1] = in;
+                        }
+                        buff_ptr += rowstride;
+                    }
+                }
+            }
         }
-        /* Go ahead and free up the pdf14 device */
-        dev_proc(dev, close_device)((gx_device *)dev);
 #if RAW_DUMP
         /* Dump the buffer that should be going into the pattern */;
-        dump_raw_buffer(buf->memory,
-                        height, width, transbuff->n_chan,
-                        transbuff->planestride, transbuff->rowstride,
-                        "pdf14_pattern_buff", transbuff->transbytes,
-                        transbuff->deep);
+        dump_raw_buffer_be(buf->memory,
+                           height, width, transbuff->n_chan,
+                           transbuff->planestride, transbuff->rowstride,
+                           "pdf14_pattern_buff", transbuff->transbytes,
+                           transbuff->deep);
         global_index++;
 #endif
+        /* Go ahead and free up the pdf14 device */
+        dev_proc(dev, close_device)((gx_device *)dev);
     } else {
         /* Here we are coming from one of the fill image / pattern / mask
            operations */
@@ -2782,11 +2826,11 @@ pdf14_set_marking_params(gx_device *dev, const gs_gstate *pgs)
     pdev->alpha = pgs->opacity.alpha * pgs->shape.alpha;
     pdev->blend_mode = pgs->blend_mode;
     pdev->overprint = pgs->overprint;
-    pdev->overprint_mode = pgs->overprint_mode;
+    pdev->effective_overprint_mode = pgs->effective_overprint_mode;
 
-    if_debug3m('v', dev->memory,
-               "[v]set_marking_params, opacity = %g, shape = %g, bm = %d\n",
-               pdev->opacity, pdev->shape, pgs->blend_mode);
+    if_debug5m('v', dev->memory,
+               "[v]set_marking_params, opacity = %g, shape = %g, bm = %d, op = %d, eop = %d\n",
+               pdev->opacity, pdev->shape, pgs->blend_mode, pgs->overprint, pgs->effective_overprint_mode);
 }
 
 static  void
@@ -2869,7 +2913,7 @@ pdf14_fill_path(gx_device *dev,	const gs_gstate *pgs,
                 } else {
                      gx_pattern_trans_t *patt_trans =
                                         pdcolor->colors.pattern.p_tile->ttrans;
-                     dump_raw_buffer(ppatdev14->ctx->memory,
+                     dump_raw_buffer(patt_trans->mem,
                                      patt_trans->rect.q.y-patt_trans->rect.p.y,
                                      patt_trans->rect.q.x-patt_trans->rect.p.x,
                                      patt_trans->n_chan,
@@ -2965,6 +3009,9 @@ do_pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
     bool has_shape = buf->has_shape;
     bool has_tags = buf->has_tags;
     bool knockout = buf->knockout;
+    bool tag_blend = blend_mode == BLEND_MODE_Normal ||
+        blend_mode == BLEND_MODE_Compatible ||
+        blend_mode == BLEND_MODE_CompatibleOverprint;
     int num_chan = buf->n_chan;
     int num_comp = num_chan - 1;
     int shape_off = num_chan * planestride;
@@ -3113,7 +3160,7 @@ do_pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
                 if (has_tags) {
                     /* If alpha is 100% then set to curr_tag, else or */
                     /* other than Normal BM, we always OR */
-                    if (src[num_comp] == 255 && blend_mode == BLEND_MODE_Normal) {
+                    if (src[num_comp] == 255 && tag_blend) {
                         dst_ptr[tag_off] = curr_tag;
                     } else {
                         dst_ptr[tag_off] |= curr_tag;
@@ -3142,6 +3189,9 @@ do_pdf14_copy_alpha_color_16(gx_device * dev, const byte * data, int data_x,
     uint16_t src[PDF14_MAX_PLANES];
     uint16_t dst[PDF14_MAX_PLANES] = { 0 };
     gs_blend_mode_t blend_mode = pdev->blend_mode;
+    bool tag_blend = blend_mode == BLEND_MODE_Normal ||
+        blend_mode == BLEND_MODE_Compatible ||
+        blend_mode == BLEND_MODE_CompatibleOverprint;
     bool additive = pdev->ctx->additive;
     int rowstride = buf->rowstride;
     int planestride = buf->planestride;
@@ -3301,7 +3351,7 @@ do_pdf14_copy_alpha_color_16(gx_device * dev, const byte * data, int data_x,
                 if (has_tags) {
                     /* If alpha is 100% then set to curr_tag, else or */
                     /* other than Normal BM, we always OR */
-                    if (src[num_comp] == 65535 && blend_mode == BLEND_MODE_Normal) {
+                    if (src[num_comp] == 65535 && tag_blend) {
                         dst_ptr[tag_off] = curr_tag;
                     } else {
                         dst_ptr[tag_off] |= curr_tag;
@@ -3321,10 +3371,7 @@ pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
                       gx_color_index color, const gx_device_color *pdc,
                       int depth, bool devn)
 {
-    bool has_tags = device_encodes_tags(dev);
-    int bits_per_comp = ((dev->color_info.depth - has_tags*8) /
-                         dev->color_info.num_components);
-    bool deep = bits_per_comp > 8;
+    bool deep = device_is_deep(dev);
 
     if (deep)
         return do_pdf14_copy_alpha_color_16(dev, data, data_x, aa_raster,
@@ -3586,7 +3633,7 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_gstate * pgs,
                                curr_clip_rect->ymax-curr_clip_rect->ymin, (int)ptile->id);
                     code = gx_trans_pattern_fill_rect(curr_clip_rect->xmin, curr_clip_rect->ymin,
                                                       curr_clip_rect->xmax, curr_clip_rect->ymax, ptile,
-                                                      fill_trans_buffer, phase, pdev, pdevc);
+                                                      fill_trans_buffer, phase, pdev, pdevc, 1);
                     curr_clip_rect = curr_clip_rect->next;
                 }
             } else if (cpath_intersection.rect_list->list.count == 1) {
@@ -3604,7 +3651,7 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_gstate * pgs,
                                                   cpath_intersection.rect_list->list.single.ymin,
                                                   cpath_intersection.rect_list->list.single.xmax,
                                                   cpath_intersection.rect_list->list.single.ymax,
-                                                  ptile, fill_trans_buffer, phase, pdev, pdevc);
+                                                  ptile, fill_trans_buffer, phase, pdev, pdevc, 1);
             }
         } else {
             /* Clist pattern with transparency.  Create a clip device from our
@@ -3620,7 +3667,7 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_gstate * pgs,
             phase.y = pdevc->phase.y;
             code = gx_trans_pattern_fill_rect(rect.p.x, rect.p.y, rect.q.x, rect.q.y,
                                               ptile, fill_trans_buffer, phase,
-                                              dev, pdevc);
+                                              dev, pdevc, 1);
 
         }
         /* We're done drawing with the pattern, remove the reference to the
@@ -3863,7 +3910,7 @@ pdf14_set_params(gs_gstate * pgs,
     if (pparams->changed & PDF14_SET_OVERPRINT)
         pgs->overprint = pparams->overprint;
     if (pparams->changed & PDF14_SET_OVERPRINT_MODE)
-        pgs->overprint_mode = pparams->overprint_mode;
+        pgs->effective_overprint_mode = pparams->effective_overprint_mode;
     pdf14_set_marking_params(dev, pgs);
 }
 
@@ -4080,10 +4127,7 @@ get_pdf14_device_proto(gx_device * dev, pdf14_device ** pdevproto,
     pdf14_default_colorspace_t dev_cs =
                 pdf14_determine_default_blend_cs(dev, use_pdf14_accum,
                                                  &using_blend_cs);
-    bool has_tags = device_encodes_tags(dev);
-    int bits_per_comp = ((dev->color_info.depth - has_tags*8) /
-                         dev->color_info.num_components);
-    bool deep = bits_per_comp > 8;
+    bool deep = device_is_deep(dev);
 
     switch (dev_cs) {
         case PDF14_DeviceGray:
@@ -4182,10 +4226,7 @@ pdf14_ok_to_optimize(gx_device *dev)
     int tag_depth = device_encodes_tags(dev) ? 8 : 0;
     cmm_dev_profile_t *dev_profile;
     int code = dev_proc(dev, get_profile)(dev,  &dev_profile);
-    bool has_tags = device_encodes_tags(dev);
-    int bits_per_comp = ((dev->color_info.depth - has_tags*8) /
-                         dev->color_info.num_components);
-    bool deep = bits_per_comp > 8;
+    bool deep = device_is_deep(dev);
 
     if (code < 0)
         return false;
@@ -4245,9 +4286,7 @@ pdf14_recreate_device(gs_memory_t *mem,	gs_gstate	* pgs,
     pdf14_device temp_dev_proto;
     bool has_tags = device_encodes_tags(dev);
     int code;
-    int bits_per_comp = ((dev->color_info.depth - has_tags*8) /
-                         dev->color_info.num_components);
-    bool deep = bits_per_comp > 8;
+    bool deep = device_is_deep(dev);
 
     if_debug0m('v', dev->memory, "[v]pdf14_recreate_device\n");
 
@@ -4498,7 +4537,7 @@ pdf14_text_begin(gx_device * dev, gs_gstate * pgs,
     gs_text_enum_t *penum;
     gs_blend_mode_t blend_mode = gs_currentblendmode(pgs);
     float opacity = gs_currentopacityalpha(pgs);
-    bool blend_issue = !(blend_mode == BLEND_MODE_Normal || blend_mode == BLEND_MODE_Compatible);
+    bool blend_issue = !(blend_mode == BLEND_MODE_Normal || blend_mode == BLEND_MODE_Compatible || blend_mode == BLEND_MODE_CompatibleOverprint);
     pdf14_device *pdev = (pdf14_device*)dev;
     bool draw = !(text->operation & TEXT_DO_NONE);
 
@@ -4828,7 +4867,6 @@ pdf14_begin_transparency_group(gx_device *dev,
     if_debug0m('v', dev->memory, "[v]Transparency group color space update\n");
     if (code < 0)
         return code;
-    /* FIXME: deep */
     code = pdf14_push_transparency_group(pdev->ctx, &rect, isolated, ptgp->Knockout,
                                          (uint16_t)floor (65535 * alpha + 0.5),
                                          (uint16_t)floor (65535 * pgs->shape.alpha + 0.5),
@@ -5166,9 +5204,7 @@ pdf14_update_device_color_procs_push_c(gx_device               *dev,
     cmm_profile_t *icc_profile_dev = NULL;
     gsicc_rendering_param_t render_cond;
     cmm_dev_profile_t *dev_profile;
-    int bits_per_comp = ((dev->color_info.depth - has_tags*8) /
-                         dev->color_info.num_components);
-    int deep = bits_per_comp > 8;
+    bool deep = device_is_deep(dev);
 
     memset(comp_bits, 0, GX_DEVICE_COLOR_MAX_COMPONENTS);
     memset(comp_shift, 0, GX_DEVICE_COLOR_MAX_COMPONENTS);
@@ -5523,10 +5559,7 @@ pdf14_begin_transparency_mask(gx_device	*dev,
     int code;
     int group_color_numcomps;
     gs_transparency_color_t group_color;
-    bool has_tags = device_encodes_tags(dev);
-    int bits_per_comp = ((dev->color_info.depth - has_tags*8) /
-                         dev->color_info.num_components);
-    int deep = bits_per_comp > 8;
+    bool deep = device_is_deep(dev);
 
     if (ptmp->subtype == TRANSPARENCY_MASK_None) {
         pdf14_ctx *ctx = pdev->ctx;
@@ -5662,6 +5695,9 @@ do_mark_fill_rectangle_ko_simple(gx_device *dev, int x, int y, int w, int h,
     pdf14_device *pdev = (pdf14_device *)dev;
     pdf14_buf *buf = pdev->ctx->stack;
     gs_blend_mode_t blend_mode = pdev->blend_mode;
+    bool tag_blend = blend_mode == BLEND_MODE_Normal ||
+        blend_mode == BLEND_MODE_Compatible ||
+        blend_mode == BLEND_MODE_CompatibleOverprint;
     int i, j, k;
     byte *bline, *bg_ptr, *line, *dst_ptr;
     byte src[PDF14_MAX_PLANES];
@@ -5794,7 +5830,7 @@ do_mark_fill_rectangle_ko_simple(gx_device *dev, int x, int y, int w, int h,
             if (tag_off) {
                 /* If src alpha is 100% then set to curr_tag, else or */
                 /* other than Normal BM, we always OR */
-                if (src[num_comp] == 255 && blend_mode == BLEND_MODE_Normal) {
+                if (src[num_comp] == 255 && tag_blend) {
                     dst_ptr[tag_off] = curr_tag;
                 } else {
                     dst_ptr[tag_off] |= curr_tag;
@@ -5837,6 +5873,9 @@ do_mark_fill_rectangle_ko_simple16(gx_device *dev, int x, int y, int w, int h,
     pdf14_device *pdev = (pdf14_device *)dev;
     pdf14_buf *buf = pdev->ctx->stack;
     gs_blend_mode_t blend_mode = pdev->blend_mode;
+    bool tag_blend = blend_mode == BLEND_MODE_Normal ||
+        blend_mode == BLEND_MODE_Compatible ||
+        blend_mode == BLEND_MODE_CompatibleOverprint;
     int i, j, k;
     uint16_t *bline, *bg_ptr, *line, *dst_ptr;
     uint16_t src[PDF14_MAX_PLANES];
@@ -5972,7 +6011,7 @@ do_mark_fill_rectangle_ko_simple16(gx_device *dev, int x, int y, int w, int h,
             if (tag_off) {
                 /* If src alpha is 100% then set to curr_tag, else or */
                 /* other than Normal BM, we always OR */
-                if (src[num_comp] == 65535 && blend_mode == BLEND_MODE_Normal) {
+                if (src[num_comp] == 65535 && tag_blend) {
                     dst_ptr[tag_off] = curr_tag;
                 } else {
                     dst_ptr[tag_off] |= curr_tag;
@@ -6426,15 +6465,28 @@ pdf14_dev_spec_op(gx_device *pdev, int dev_spec_op,
             return 0;
         }
     }
-    if (dev_spec_op == gxdso_get_dev_param || dev_spec_op == gxdso_restrict_bbox
-        || dev_spec_op == gxdso_current_output_device) {
-        return dev_proc(p14dev->target, dev_spec_op)(p14dev->target, dev_spec_op, data, size);
-    }
     if (dev_spec_op == gxdso_is_encoding_direct)
         return 1;
 
-    return gx_default_dev_spec_op(pdev, dev_spec_op, data, size);
+    /* We don't want to pass on these spec_ops either, because the child might respond
+     * with an inappropriate response when the PDF14 device is active. For example; the
+     * JPEG passthrough will give utterly wrong results if we pass that to a device which
+     * supports JPEG passthrough, because the pdf14 device needs to render the image.
+     */
+    if (dev_spec_op == gxdso_in_pattern_accumulator)
+        return 0;
+    if (dev_spec_op == gxdso_copy_color_is_fast)
+        return 0;
+    if(dev_spec_op == gxdso_pattern_handles_clip_path)
+        return 0;
+    if(dev_spec_op == gxdso_supports_hlcolor)
+        return 0;
+    if(dev_spec_op == gxdso_pattern_can_accum)
+        return 0;
+    if(dev_spec_op == gxdso_JPEG_passthrough_query)
+        return 0;
 
+     return dev_proc(p14dev->target, dev_spec_op)(p14dev->target, dev_spec_op, data, size);
 }
 
 /* Needed to set color monitoring in the target device's profile */
@@ -6465,7 +6517,6 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
     uchar k;
     int max_bitmap;
     bool use_pdf14_accum = false;
-    int bits_per_comp;
     bool deep;
 
     /* Guard against later seg faults, this should not be possible */
@@ -6473,9 +6524,7 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
         return gs_throw_code(gs_error_Fatal);
 
     has_tags = device_encodes_tags(target);
-    bits_per_comp = ((target->color_info.depth - has_tags*8) /
-                      target->color_info.num_components);
-    deep = bits_per_comp > 8;
+    deep = device_is_deep(target);
     max_bitmap = target->space_params.MaxBitmap == 0 ? MAX_BITMAP :
                                  target->space_params.MaxBitmap;
     /* If the device is not a printer class device, it won't support saved-pages */
@@ -6749,10 +6798,7 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
     int pdf14_needed = cdev->pdf14_needed;
     int trans_group_level = cdev->pdf14_trans_group_level;
     int smask_level = cdev->pdf14_smask_level;
-    bool has_tags = device_encodes_tags((gx_device *)cdev);
-    int bits_per_comp = ((cdev->color_info.depth - has_tags*8) /
-                         cdev->color_info.num_components);
-    bool deep = bits_per_comp > 8;
+    bool deep = device_is_deep((gx_device *)cdev);
 
     code = dev_proc((gx_device *) cdev, get_profile)((gx_device *) cdev,
                                                      &dev_profile);
@@ -6914,7 +6960,7 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
             if (pparams->changed & PDF14_SET_OVERPRINT)
                 put_value(pbuf, pparams->overprint);
             if (pparams->changed & PDF14_SET_OVERPRINT_MODE)
-                put_value(pbuf, pparams->overprint_mode);
+                put_value(pbuf, pparams->effective_overprint_mode);
             break;
         case PDF14_PUSH_TRANS_STATE:
             break;
@@ -7111,7 +7157,7 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
             if (params.changed & PDF14_SET_OVERPRINT)
                 read_value(data, params.overprint);
             if (params.changed & PDF14_SET_OVERPRINT_MODE)
-                read_value(data, params.overprint_mode);
+                read_value(data, params.effective_overprint_mode);
             break;
     }
     code = gs_create_pdf14trans(ppct, &params, mem);
@@ -7678,9 +7724,7 @@ get_pdf14_clist_device_proto(gx_device * dev, pdf14_clist_device ** pdevproto,
                 pdf14_determine_default_blend_cs(dev, use_pdf14_accum,
                                                  &using_blend_cs);
     bool has_tags = device_encodes_tags(dev);
-    int bits_per_comp = ((dev->color_info.depth - has_tags*8) /
-                         dev->color_info.num_components);
-    bool deep = bits_per_comp > 8;
+    bool deep = device_is_deep(dev);
 
     switch (dev_cs) {
         case PDF14_DeviceGray:
@@ -7798,9 +7842,7 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_gstate * pgs,
     gsicc_rendering_param_t render_cond;
     cmm_dev_profile_t *dev_profile;
     uchar k;
-    int bits_per_comp = ((target->color_info.depth - has_tags*8) /
-                         target->color_info.num_components);
-    bool deep = bits_per_comp > 8;
+    bool deep = device_is_deep(target);
 
     code = dev_proc(target, get_profile)(target,  &dev_profile);
     if (code < 0)
@@ -8031,10 +8073,7 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
     pdf14_clist_device * pdev = (pdf14_clist_device *)dev;
     int code, is_pdf14_compositor;
     const gs_pdf14trans_t * pdf14pct = (const gs_pdf14trans_t *) pct;
-    bool has_tags = device_encodes_tags(dev);
-    int bits_per_comp = ((pdev->color_info.depth - has_tags*8) /
-                         pdev->color_info.num_components);
-    bool deep = bits_per_comp > 8;
+    bool deep = device_is_deep(dev);
 
     /* We only handle a few PDF 1.4 transparency operations */
     if ((is_pdf14_compositor = gs_is_pdf14trans_compositor(pct)) != 0) {
@@ -8384,9 +8423,9 @@ pdf14_clist_update_params(pdf14_clist_device * pdev, const gs_gstate * pgs,
         changed |= PDF14_SET_OVERPRINT;
         params.overprint = pdev->overprint = pgs->overprint;
     }
-    if (pgs->overprint_mode != pdev->overprint_mode) {
+    if (pgs->effective_overprint_mode != pdev->effective_overprint_mode) {
         changed |= PDF14_SET_OVERPRINT_MODE;
-        params.overprint_mode = pdev->overprint_mode = pgs->overprint_mode;
+        params.effective_overprint_mode = pdev->effective_overprint_mode = pgs->effective_overprint_mode;
     }
     if (crop_blend_params) {
         params.ctm = group_params->ctm;
@@ -8542,7 +8581,7 @@ pdf14_clist_text_begin(gx_device * dev,	gs_gstate	* pgs,
     int code;
     gs_blend_mode_t blend_mode = gs_currentblendmode(pgs);
     float opacity = gs_currentopacityalpha(pgs);
-    bool blend_issue = !(blend_mode == BLEND_MODE_Normal || blend_mode == BLEND_MODE_Compatible);
+    bool blend_issue = !(blend_mode == BLEND_MODE_Normal || blend_mode == BLEND_MODE_Compatible || blend_mode == BLEND_MODE_CompatibleOverprint);
     bool draw = !(text->operation & TEXT_DO_NONE);
 
     if_debug0m('v', memory, "[v]pdf14_clist_text_begin\n");

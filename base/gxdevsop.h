@@ -314,7 +314,7 @@ enum {
      * device.   In this case, we may want to not use the alternate tint
      * tranform even if the blending color space is RGB or Gray. */
     gxdso_pdf14_sep_device,
-    /* Used only by pdfwrite to paa a Form Appearance Name, so that
+    /* Used only by pdfwrite to pass a Form Appearance Name, so that
      * we can use the name in a pdfmark.
      */
     gxdso_pdf_form_name,
@@ -342,6 +342,16 @@ enum {
      * 0 otherwise.
      */
     gxdso_is_encoding_direct,
+    /* gxdso_event_info:
+     *     data = dev_param_req_t
+     *     size = sizeof(dev_param-req_t
+     * Passes a single name in request->Param, naming the event which occurred.
+     * Used to send a warning to pdfwrite that some event has happened we want to know about.
+     * Currently this is used in pdf_font.ps to signal that a substittue font has been
+     * used. If we are emitting PDF/A then we need to abort it, as the Widths array of
+     * the PDF font may not match the widths of the glyphs in the font.
+     */
+    gxdso_event_info,
 
     /* Debug only dsos follow here */
 #ifdef DEBUG

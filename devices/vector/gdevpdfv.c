@@ -242,7 +242,7 @@ pdf_store_pattern1_params(gx_device_pdf *pdev, pdf_resource_t *pres,
      * form is nested inside a form, the default space is the space of the
      * first form, and therefore we do *not* remove the resolution scaling.
      */
-    if (pdev->FormDepth == 0) {
+    if (pdev->FormDepth == 0 || (pdev->FormDepth > 0 && pdev->PatternsSinceForm > 0)) {
         gs_matrix scaled;
 
         gs_make_scaling(1 / scale_x, 1 / scale_y, &scaled);

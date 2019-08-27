@@ -1228,11 +1228,28 @@ pdf_find_type0_font_resource(gx_device_pdf *pdev, const pdf_font_resource_t *pds
                 continue;
             if (pdfont->u.type0.font_index != font_index)
                 continue;
-            if (pdfont->BaseFont.size != pdsubf->BaseFont.size + CMapName->size + 1)
-                continue;
-            if (memcmp(pdfont->BaseFont.data + pdsubf->BaseFont.size + 1,
-                        CMapName->data, CMapName->size))
-                continue;
+
+            /* Check to see if the PDF font name is of the form FontName-CMapName
+             * If it is, check the name and cmap against the BaseFont Name and CMap
+             * I'm not certain this is *ever* true.
+             */
+            if (pdfont->BaseFont.size == pdsubf->BaseFont.size + CMapName->size + 1) {
+                if (memcmp(pdfont->BaseFont.data + pdsubf->BaseFont.size + 1,
+                            CMapName->data, CMapName->size))
+                    continue;
+            } else {
+                /* Otherwise, check the PDF font name against the subfont name, and the
+                 * CMap used with the PDF font against the requested CMap. If either differs
+                 * then this PDF font is not usable.
+                 */
+                if (pdfont->BaseFont.size != pdsubf->BaseFont.size)
+                    continue;
+                if (pdfont->u.type0.CMapName.size != CMapName->size)
+                    continue;
+                if (memcmp(pdfont->u.type0.CMapName.data, CMapName->data, CMapName->size))
+                    continue;
+            }
+
             *ppdfont = pdfont;
             return 1;
         }

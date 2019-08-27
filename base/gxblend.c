@@ -1217,8 +1217,57 @@ art_blend_pixel_8_inline(byte *gs_restrict dst, const byte *gs_restrict backdrop
                  * compositor is that it always has CMYK + spots with spots after
                  * the CMYK colorants (see gx_put_blended_image_cmykspot).
                  * that way we don't have to worry about where the process colors
-                 * are. */
-                if (p14dev->overprint_mode && p14dev->color_info.num_components > 3
+                 * are.
+
+                 * Note:  The spec claims the following:
+
+                 If the overprint mode is 1 (nonzero overprint mode) and the
+                 current color space and group color space are both DeviceCMYK,
+                 then only process color components with nonzero values replace
+                 the corresponding component values of the backdrop. All other
+                 component values leave the existing backdrop value unchanged.
+                 That is, the value of the blend function B(Cb,Cs) is the source
+                 component cs for any process (DeviceCMYK) color component whose
+                 (subtractive) color value is nonzero; otherwise it is the
+                 backdrop component cb. For spot color components, the value is
+                 always cb.
+
+                 The equation for compositing is
+
+                    ar*Cr = (1-as)*Cb + as*[(1-ab)*Cs+ab*B(Cb,Cs)]
+
+                 Now if I simply set B(cb,cs) to cb for the case when the
+                 DevieCMYK value (with opm true) is zero I get
+
+                 ar*Cr = (1-as)*Cb + as*[(1-ab)*Cs+ab*Cb]
+
+                 But what I am seeing with AR is
+                    ar*Cr = (1-as)*Cb + as*[(1-ab)*Cb+ab*Cb] = (1-as)*Cb + as*Cb = Cb
+                 which is what I think we want.
+
+                 The description in the spec is confusing as it says
+                "then only process color components with nonzero values replace
+                 the corresponding component values of the backdrop. All other
+                 component values leave the existing backdrop value unchanged"
+
+                 which makes sense for overprinting,
+
+                 vs.
+
+                 "That is, the value of the blend function B(Cb,Cs) is the source
+                 component cs for any process (DeviceCMYK) color component whose
+                 (subtractive) color value is nonzero; otherwise it is the
+                 backdrop component cb."
+
+                 Which is NOT the same thing as leaving the backdrop unchanged
+                 with the compositing equation
+                 ar*Cr = (1-as)*Cb + as*[(1-ab)*Cs+ab*B(Cb,Cs)]
+
+                 For this to work, we need to carry out the operation during
+                 the mixing of the source with the blend result.  Essentially
+                 replacing that mixing with the color we have here.
+                 */
+                if (p14dev->effective_overprint_mode && p14dev->color_info.num_components > 3
                     && !(p14dev->ctx->additive)) {
                     for (i = 0; i < 4; i++) {
                         b = backdrop[i];
@@ -1232,7 +1281,7 @@ art_blend_pixel_8_inline(byte *gs_restrict dst, const byte *gs_restrict backdrop
                     /* Otherwise we have B(cb, cs)= cs if cs is specified in
                      * the current color space all other color should get cb.
                      * Essentially the standard overprint case. */
-                    for (i = 0, comps = drawn_comps; comps != 0; ++i, comps >>= 1) {
+                    for (i = 0, comps = drawn_comps; i < n_chan; ++i, comps >>= 1) {
                         if ((comps & 0x1) != 0) {
                             dst[i] = src[i];
                         } else {
@@ -1311,9 +1360,12 @@ art_blend_pixel_16_inline(uint16_t *gs_restrict dst, const uint16_t *gs_restrict
             for (i = 0; i < n_chan; i++) {
                 b = backdrop[i];
                 s = src[i];
-                if (s <= 0x8000) {
-                    int b2 = b + (b>>15);
-                    dst[i] = b - (((0xffff - (s<<1)) * b2 * (0x10000 - b2))>>16);
+                if (s < 0x8000) {
+                    unsigned int b2 = ((unsigned int)(b * (b + (b>>15))))>>16;
+                    b2 = b - b2;
+                    b2 += b2>>15;
+                    t = ((0xffff - (s << 1)) * b2) + 0x8000;
+                    dst[i] = b - (t >> 16);
                 } else {
 #define art_blend_soft_light_16(B) (art_blend_soft_light_8[(B)>>8]*0x101)
                     t = ((s << 1) - 0xffff) * art_blend_soft_light_16(b) + 0x8000;
@@ -1343,7 +1395,7 @@ art_blend_pixel_16_inline(uint16_t *gs_restrict dst, const uint16_t *gs_restrict
                 else if (b >= s)
                     dst[i] = 0xffff;
                 else
-                    dst[i] = (unsigned int)(0xffff * b + (s>>1)) / (unsigned int)s;
+                    dst[i] = ((unsigned int)(0xffff * b + (s>>1))) / s;
             }
             break;
         case BLEND_MODE_ColorBurn:
@@ -1355,7 +1407,7 @@ art_blend_pixel_16_inline(uint16_t *gs_restrict dst, const uint16_t *gs_restrict
                 else if (b >= s)
                     dst[i] = 0;
                 else
-                    dst[i] = 0xffff - (unsigned int)(0xffff * b + (s>>1)) / (unsigned int)s;
+                    dst[i] = 0xffff - ((unsigned int)(0xffff * b + (s>>1))) / s;
             }
             break;
         case BLEND_MODE_Darken:
@@ -1421,7 +1473,7 @@ art_blend_pixel_16_inline(uint16_t *gs_restrict dst, const uint16_t *gs_restrict
                  * the CMYK colorants (see gx_put_blended_image_cmykspot).
                  * that way we don't have to worry about where the process colors
                  * are. */
-                if (p14dev->overprint_mode && p14dev->color_info.num_components > 3
+                if (p14dev->effective_overprint_mode && p14dev->color_info.num_components > 3
                     && !(p14dev->ctx->additive)) {
                     for (i = 0; i < 4; i++) {
                         b = backdrop[i];
@@ -1694,7 +1746,7 @@ art_pdf_composite_pixel_alpha_16(uint16_t *gs_restrict dst, const uint16_t *gs_r
 {
     int a_b, a_s;
     unsigned int a_r;
-    int tmp;
+    unsigned int tmp;
     int src_scale;
     int c_b, c_s;
     int i;
@@ -1722,7 +1774,7 @@ art_pdf_composite_pixel_alpha_16(uint16_t *gs_restrict dst, const uint16_t *gs_r
     /* todo: verify that a_r is nonzero in all cases */
 
     /* Compute a_s / a_r in 16.16 format */
-    src_scale = ((a_s << 16) + (a_r >> 1)) / a_r;
+    src_scale = ((unsigned int)((a_s << 16) + (a_r >> 1))) / a_r;
 
     if (first_spot != 0) {
         /* Do compositing with blending */
@@ -1798,17 +1850,26 @@ art_pdf_composite_pixel_alpha_8_inline(byte *gs_restrict dst, byte *gs_restrict 
         byte blend[ART_MAX_CHAN];
 
         art_blend_pixel_8_inline(blend, dst, src, first_spot, blend_mode, pblend_procs, p14dev);
-        for (i = 0; i < first_spot; i++) {
-            int c_bl;		/* Result of blend function */
-            int c_mix;		/* Blend result mixed with source color */
 
-            c_s = src[i];
-            c_b = dst[i];
-            c_bl = blend[i];
-            tmp = a_b * (c_bl - ((int)c_s)) + 0x80;
-            c_mix = c_s + (((tmp >> 8) + tmp) >> 8);
-            tmp = (c_b << 16) + src_scale * (c_mix - c_b) + 0x8000;
-            dst[i] = tmp >> 16;
+        if (blend_mode == BLEND_MODE_CompatibleOverprint) {
+            for (i = 0; i < first_spot; i++) {
+                /* No mixing.  Blend[i] is backdrop or src */
+                tmp = (dst[i] << 16) + src_scale * (blend[i] - dst[i]) + 0x8000;
+                dst[i] = tmp >> 16;
+            }
+        } else {
+            for (i = 0; i < first_spot; i++) {
+                int c_bl;		/* Result of blend function */
+                int c_mix;		/* Blend result mixed with source color */
+
+                c_s = src[i];
+                c_b = dst[i];
+                c_bl = blend[i];
+                tmp = a_b * (c_bl - ((int)c_s)) + 0x80;
+                c_mix = c_s + (((tmp >> 8) + tmp) >> 8);
+                tmp = (c_b << 16) + src_scale * (c_mix - c_b) + 0x8000;
+                dst[i] = tmp >> 16;
+            }
         }
     }
     dst[n_chan] = a_r;
@@ -1862,22 +1923,33 @@ art_pdf_composite_pixel_alpha_16_inline(uint16_t *gs_restrict dst, uint16_t *gs_
     /* todo: verify that a_r is nonzero in all cases */
 
     /* Compute a_s / a_r in 16.16 format */
-    src_scale = ((a_s << 16) + (a_r >> 1)) / a_r;
+    src_scale = ((unsigned int)((a_s << 16) + (a_r >> 1))) / a_r;
 
     if (first_spot != 0) {
         /* Do compositing with blending */
         uint16_t blend[ART_MAX_CHAN];
 
         art_blend_pixel_16_inline(blend, dst, src, first_spot, blend_mode, pblend_procs, p14dev);
-        for (i = 0; i < first_spot; i++) {
-            int c_bl;		/* Result of blend function */
 
-            c_s = src[i];
-            c_b = dst[i];
-            c_bl = blend[i];
-            c_s += (a_b * (c_bl - c_s) + 0x8000)>>16;
-            c_b += (src_scale * (c_s - c_b) + 0x8000)>>16;
-            dst[i] = c_b;
+        if (blend_mode == BLEND_MODE_CompatibleOverprint) {
+            for (i = 0; i < first_spot; i++) {
+                /* No mixing.  Blend[i] is backdrop or src */
+                dst[i] += (src_scale * (blend[i] - dst[i]) + 0x8000) >> 16;
+            }
+        } else {
+            int a_b2 = a_b>>1;
+            int ss2 = src_scale>>1;
+            for (i = 0; i < first_spot; i++) {
+                int c_bl;		/* Result of blend function */
+
+                c_s = src[i];
+                c_b = dst[i];
+                c_bl = blend[i];
+
+                c_s += (a_b2 * (c_bl - c_s) + 0x4000) >> 15;
+                c_b += (ss2 * (c_s - c_b) + 0x4000) >> 15;
+                dst[i] = c_b;
+            }
         }
     }
     dst[n_chan] = a_r;
@@ -2115,7 +2187,7 @@ art_pdf_recomposite_group_16(uint16_t *gs_restrict *dstp, uint16_t *gs_restrict 
         if (src_alpha_g != 65535 && dst_alpha != 0) {
             /* Uncomposite the color. In other words, solve
                "src = (src, src_alpha_g) over dst" for src */
-            scale = (dst_alpha * 65535 + (src_alpha_g>>1)) / src_alpha_g -
+            scale = ((unsigned int)(dst_alpha * 65535 + (src_alpha_g>>1))) / src_alpha_g -
                 dst_alpha;
             for (i = 0; i < n_chan; i++) {
                 int si, di;
@@ -2455,7 +2527,8 @@ art_pdf_composite_knockout_16(uint16_t *gs_restrict dst,
                               pdf14_device *p14dev)
 {
     uint16_t src_shape = src[n_chan];
-    int i, tmp;
+    int i;
+    unsigned int tmp;
 
     if (blend_mode == BLEND_MODE_Normal) {
         /* Do simple compositing of source over backdrop */
@@ -2473,14 +2546,17 @@ art_pdf_composite_knockout_16(uint16_t *gs_restrict dst,
             tmp = (65535 - dst_alpha) * src_shape + 0x8000;
             result_alpha = dst_alpha + ((tmp + (tmp >> 16)) >> 16);
 
-            if (result_alpha != 0)
+            if (result_alpha != 0) {
+                dst_alpha += dst_alpha>>15;
                 for (i = 0; i < n_chan; i++) {
                     /* todo: optimize this - can strength-reduce so that
                        inner loop is a single interpolation */
-                    tmp = dst[i] * dst_alpha * (65535 - src_shape) +
-                        ((int)src[i]) * 65535 * src_shape + (result_alpha << 15);
-                    dst[i] = tmp / (result_alpha * 65535);
+                    tmp = dst[i] * dst_alpha;
+                    tmp = (tmp>>16) * (65535 - src_shape) +
+                           src[i] * src_shape + (result_alpha>>1);
+                    dst[i] = tmp / result_alpha;
                 }
+            }
             dst[n_chan] = result_alpha;
         }
     } else {
@@ -2506,12 +2582,13 @@ art_pdf_composite_knockout_16(uint16_t *gs_restrict dst,
         for (i = 0; i < n_chan; i++) {
             int c_bl;		/* Result of blend function */
             int c_mix;		/* Blend result mixed with source color */
+            int stmp;
 
             c_s = src[i];
             c_b = dst[i];
             c_bl = blend[i];
-            tmp = a_b * (c_bl - ((int)c_s)) + 0x8000;
-            c_mix = c_s + (((tmp >> 16) + tmp) >> 16);
+            stmp = (a_b>>1) * (c_bl - ((int)c_s)) + 0x4000;
+            c_mix = c_s + (((stmp >> 16) + stmp) >> 15);
             tmp = (c_b << 16) + src_scale * (c_mix - c_b) + 0x8000;
             dst[i] = tmp >> 16;
         }
@@ -3260,6 +3337,8 @@ do_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
     bool has_mask = false;
     byte *backdrop_ptr = NULL;
     pdf14_device *pdev = (pdf14_device *)dev;
+
+
 #if RAW_DUMP
     byte *composed_ptr = NULL;
     int width = x1 - x0;
@@ -4473,17 +4552,21 @@ pdf14_compose_alphaless_group(pdf14_buf *tos, pdf14_buf *nos,
 typedef void (*pdf14_mark_fill_rect_fn)(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restrict src, int num_comp, int num_spots, int first_blend_spot,
                byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
                bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
-               int alpha_g_off, int shape_off, byte shape);
+               int alpha_g_off, int shape_off, byte shape, bool isolated);
 
 static forceinline void
 template_mark_fill_rect(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restrict src, int num_comp, int num_spots, int first_blend_spot,
                byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
                bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
-               int alpha_g_off, int shape_off, byte shape)
+               int alpha_g_off, int shape_off, byte shape, bool isolated)
 {
     int i, j, k;
     gx_color_index comps;
     byte dst[PDF14_MAX_PLANES] = { 0 };
+    byte dest_alpha;
+    bool tag_blend = blend_mode == BLEND_MODE_Normal ||
+        blend_mode == BLEND_MODE_Compatible ||
+        blend_mode == BLEND_MODE_CompatibleOverprint;
 
     for (j = h; j > 0; --j) {
         for (i = w; i > 0; --i) {
@@ -4524,15 +4607,29 @@ template_mark_fill_rect(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restri
                     }
                 }
                 dst[num_comp] = dst_ptr[num_comp * planestride];
+                dest_alpha = dst[num_comp];
                 pdst = art_pdf_composite_pixel_alpha_8_inline(dst, src, num_comp, blend_mode, first_blend_spot,
                             pdev->blend_procs, pdev);
                 /* Until I see otherwise in AR or the spec, do not fool
                    with spot overprinting while we are in an RGB or Gray
                    blend color space. */
                 if (!additive && overprint) {
+                    /* If this is an overprint case, and alpha_r is different
+                       than alpha_d then we will need to adjust
+                       the colors of the non-drawn components here too */
                     for (k = 0, comps = drawn_comps; comps != 0; ++k, comps >>= 1) {
                         if ((comps & 0x1) != 0) {
                             dst_ptr[k * planestride] = 255 - pdst[k];
+                        } else if (dest_alpha != pdst[num_comp]) {
+                            /* We need val_new = (val_old * old_alpha) / new_alpha */
+                            if (pdst[num_comp] != 0) {
+                                int val = (int)floor(((float)dest_alpha / (float)pdst[num_comp]) * (255 - pdst[k]) + 0.5);
+                                if (val < 0)
+                                    val = 0;
+                                else if (val > 255)
+                                    val = 255;
+                                dst_ptr[k * planestride] = val;
+                            }
                         }
                     }
                 } else {
@@ -4559,7 +4656,7 @@ template_mark_fill_rect(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restri
             if (tag_off) {
                 /* If src alpha is 100% then set to curr_tag, else or */
                 /* other than Normal BM, we always OR */
-                if (src[num_comp] == 255 && blend_mode == BLEND_MODE_Normal) {
+                if (src[num_comp] == 255 && tag_blend) {
                     dst_ptr[tag_off] = curr_tag;
                 } else {
                     dst_ptr[tag_off] |= curr_tag;
@@ -4583,7 +4680,7 @@ static void
 mark_fill_rect_alpha0(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restrict src, int num_comp, int num_spots, int first_blend_spot,
                byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
                bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
-               int alpha_g_off, int shape_off, byte shape)
+               int alpha_g_off, int shape_off, byte shape, bool isolated)
 {
     int i, j;
 
@@ -4607,19 +4704,19 @@ static void
 mark_fill_rect(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restrict src, int num_comp, int num_spots, int first_blend_spot,
                byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
                bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
-               int alpha_g_off, int shape_off, byte shape)
+               int alpha_g_off, int shape_off, byte shape, bool isolated)
 {
     template_mark_fill_rect(w, h, dst_ptr, src, num_comp, num_spots, first_blend_spot,
                src_alpha, rowstride, planestride, additive, pdev, blend_mode,
                overprint, drawn_comps, tag_off, curr_tag,
-               alpha_g_off, shape_off, shape);
+               alpha_g_off, shape_off, shape, isolated);
 }
 
 static void
 mark_fill_rect_sub4_fast(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restrict src, int num_comp, int num_spots, int first_blend_spot,
                byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
                bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
-               int alpha_g_off, int shape_off, byte shape)
+               int alpha_g_off, int shape_off, byte shape, bool isolated)
 {
     int i, j, k;
 
@@ -4663,43 +4760,43 @@ static void
 mark_fill_rect_add_nospots(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restrict src, int num_comp, int num_spots, int first_blend_spot,
                byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
                bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
-               int alpha_g_off, int shape_off, byte shape)
+               int alpha_g_off, int shape_off, byte shape, bool isolated)
 {
     template_mark_fill_rect(w, h, dst_ptr, src, num_comp, /*num_spots*/0, first_blend_spot,
                src_alpha, rowstride, planestride, /*additive*/1, pdev, blend_mode,
                /*overprint*/0, /*drawn_comps*/0, tag_off, curr_tag,
-               alpha_g_off, shape_off, shape);
+               alpha_g_off, shape_off, shape, /*isolated*/ 0);
 }
 
 static void
 mark_fill_rect_add_nospots_common(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restrict src, int num_comp, int num_spots, int first_blend_spot,
                byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
                bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
-               int alpha_g_off, int shape_off, byte shape)
+               int alpha_g_off, int shape_off, byte shape, bool isolated)
 {
     template_mark_fill_rect(w, h, dst_ptr, src, num_comp, /*num_spots*/0, /*first_blend_spot*/0,
                src_alpha, rowstride, planestride, /*additive*/1, pdev, /*blend_mode*/BLEND_MODE_Normal,
                /*overprint*/0, /*drawn_comps*/0, /*tag_off*/0, curr_tag,
-               alpha_g_off, /*shape_off*/0, shape);
+               alpha_g_off, /*shape_off*/0, shape, /*isolated*/ 0);
 }
 
 static void
 mark_fill_rect_add_nospots_common_no_alpha_g(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restrict src, int num_comp, int num_spots, int first_blend_spot,
                byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
                bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
-               int alpha_g_off, int shape_off, byte shape)
+               int alpha_g_off, int shape_off, byte shape, bool isolated)
 {
     template_mark_fill_rect(w, h, dst_ptr, src, num_comp, /*num_spots*/0, /*first_blend_spot*/0,
                src_alpha, rowstride, planestride, /*additive*/1, pdev, /*blend_mode*/BLEND_MODE_Normal,
                /*overprint*/0, /*drawn_comps*/0, /*tag_off*/0, curr_tag,
-               /*alpha_g_off*/0, /*shape_off*/0, shape);
+               /*alpha_g_off*/0, /*shape_off*/0, shape, /*isolated*/ 0);
 }
 
 static void
 mark_fill_rect_add3_common(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restrict src, int num_comp, int num_spots, int first_blend_spot,
                byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
                bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
-               int alpha_g_off, int shape_off, byte shape)
+               int alpha_g_off, int shape_off, byte shape, bool isolated)
 {
     int i, j, k;
 
@@ -4743,9 +4840,12 @@ static void
 mark_fill_rect_add1_no_spots(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restrict src, int num_comp, int num_spots, int first_blend_spot,
                byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
                bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
-               int alpha_g_off, int shape_off, byte shape)
+               int alpha_g_off, int shape_off, byte shape, bool isolated)
 {
     int i;
+    bool tag_blend = blend_mode == BLEND_MODE_Normal ||
+        blend_mode == BLEND_MODE_Compatible ||
+        blend_mode == BLEND_MODE_CompatibleOverprint;
 
     for (; h > 0; --h) {
         for (i = w; i > 0; --i) {
@@ -4762,7 +4862,7 @@ mark_fill_rect_add1_no_spots(int w, int h, byte *gs_restrict dst_ptr, byte *gs_r
             if (tag_off) {
                 /* If src alpha is 100% then set to curr_tag, else or */
                 /* other than Normal BM, we always OR */
-                if (blend_mode == BLEND_MODE_Normal && a_s == 255) {
+                if (tag_blend && a_s == 255) {
                      dst_ptr[tag_off] = curr_tag;
                 } else {
                     dst_ptr[tag_off] |= curr_tag;
@@ -4786,7 +4886,7 @@ static void
 mark_fill_rect_add1_no_spots_normal(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restrict src, int num_comp, int num_spots, int first_blend_spot,
                byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
                bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
-               int alpha_g_off, int shape_off, byte shape)
+               int alpha_g_off, int shape_off, byte shape, bool isolated)
 {
     int i;
 
@@ -4840,7 +4940,7 @@ static void
 mark_fill_rect_add1_no_spots_fast(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restrict src, int num_comp, int num_spots, int first_blend_spot,
                byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
                bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
-               int alpha_g_off, int shape_off, byte shape)
+               int alpha_g_off, int shape_off, byte shape, bool isolated)
 {
     int i;
 
@@ -4905,6 +5005,7 @@ do_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     int num_spots = buf->num_spots;
     int first_blend_spot = num_comp;
     pdf14_mark_fill_rect_fn fn;
+    bool isolated = buf->isolated;
 
     if (num_spots > 0 && !blend_valid_for_spot(blend_mode))
         first_blend_spot = num_comp - num_spots;
@@ -5010,7 +5111,7 @@ do_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 
     fn(w, h, dst_ptr, src, num_comp, num_spots, first_blend_spot, src_alpha,
        rowstride, planestride, additive, pdev, blend_mode, overprint,
-       drawn_comps, tag_off, curr_tag, alpha_g_off, shape_off, shape);
+       drawn_comps, tag_off, curr_tag, alpha_g_off, shape_off, shape, isolated);
 
 #if 0
 /* #if RAW_DUMP */
@@ -5046,6 +5147,9 @@ template_mark_fill_rect16(int w, int h, uint16_t *gs_restrict dst_ptr, uint16_t 
     /* Expand src_alpha and shape to be 0...0x10000 rather than 0...0xffff */
     int src_alpha = src_alpha_ + (src_alpha_>>15);
     int shape = shape_ + (shape_>>15);
+    bool tag_blend = blend_mode == BLEND_MODE_Normal ||
+        blend_mode == BLEND_MODE_Compatible ||
+        blend_mode == BLEND_MODE_CompatibleOverprint;
 
     for (j = h; j > 0; --j) {
         for (i = w; i > 0; --i) {
@@ -5121,7 +5225,7 @@ template_mark_fill_rect16(int w, int h, uint16_t *gs_restrict dst_ptr, uint16_t 
             if (tag_off) {
                 /* If src alpha is 100% then set to curr_tag, else or */
                 /* other than Normal BM, we always OR */
-                if (src[num_comp] == 65535 && blend_mode == BLEND_MODE_Normal) {
+                if (src[num_comp] == 65535 && tag_blend) {
                     dst_ptr[tag_off] = curr_tag;
                 } else {
                     dst_ptr[tag_off] |= curr_tag;
@@ -5323,6 +5427,9 @@ mark_fill_rect16_add1_no_spots(int w, int h, uint16_t *gs_restrict dst_ptr, uint
     int i;
     int src_alpha = src_alpha_;
     int shape = shape_;
+    bool tag_blend = blend_mode == BLEND_MODE_Normal ||
+        blend_mode == BLEND_MODE_Compatible ||
+        blend_mode == BLEND_MODE_CompatibleOverprint;
 
     src_alpha += src_alpha>>15;
     shape += shape>>15;
@@ -5341,7 +5448,7 @@ mark_fill_rect16_add1_no_spots(int w, int h, uint16_t *gs_restrict dst_ptr, uint
             if (tag_off) {
                 /* If src alpha is 100% then set to curr_tag, else or */
                 /* other than Normal BM, we always OR */
-                if (blend_mode == BLEND_MODE_Normal && a_s == 65535) {
+                if (tag_blend && a_s == 65535) {
                      dst_ptr[tag_off] = curr_tag;
                 } else {
                     dst_ptr[tag_off] |= curr_tag;

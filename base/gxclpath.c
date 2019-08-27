@@ -391,12 +391,12 @@ cmd_check_fill_known(gx_device_clist_writer *cdev, const gs_gstate *pgs,
      * though both parameters are passed in the state as well, this usually
      * has no effect.
      */
-    if (state_neq(overprint) || state_neq(overprint_mode) ||
+    if (state_neq(overprint) || state_neq(effective_overprint_mode) ||
         state_neq(blend_mode) || state_neq(text_knockout) ||
         state_neq(renderingintent)) {
         *punknown |= op_bm_tk_known;
         state_update(overprint);
-        state_update(overprint_mode);
+        state_update(effective_overprint_mode);
         state_update(blend_mode);
         state_update(text_knockout);
         state_update(renderingintent);

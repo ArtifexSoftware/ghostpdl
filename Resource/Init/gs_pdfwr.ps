@@ -282,6 +282,12 @@ languagelevel 2 .setlanguagelevel
 % The ps2pdf* scripts invoke this.
 /.setpdfwrite {		% - .setpdfwrite -
                 % Set a large VM threshold to reduce garbage collection.
+  (\n**** WARNING: The .setpdfwrite operator has been deprecated and will be removed entirely\n) print
+  (              in the next release of Ghostscript. The functionality of this operator has\n) print
+  (              been reduced to increasing the size of the VM threshold. If you believe you\n) print
+  (              have a real need for this then you should replace your call to .setpdfwrite\n) print
+  (              with:\n\n) print
+  (                  3000000 setvmthreshold\n\n) print
   currentuserparams /VMThreshold get 3000000 .max setvmthreshold
 } bind def
 
@@ -652,11 +658,11 @@ currentdict /.pdfmarkparams .undef
           systemdict /.pdf_hooked_DSC_Creator //true .forceput
         } executeonly if
         pop
-      } if
+      } executeonly if
     } {
       pop
     } ifelse
-  }
+  } executeonly
   {
     pop
   } ifelse

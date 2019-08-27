@@ -58,13 +58,13 @@ typedef struct arg_list_s {
 int codepoint_to_utf8(char *cstr, int rune);
 
 /* Initialize an arg list. */
-void arg_init(arg_list    *pal,
-              const char **argv,
-              int          argc,
-              gp_file     *(*arg_fopen)(const char *fname, void *fopen_data),
-              void        *fopen_data,
-              int          (*get_codepoint)(gp_file *file, const char **astr),
-              gs_memory_t *mem);
+int arg_init(arg_list    *pal,
+             const char **argv,
+             int          argc,
+             gp_file     *(*arg_fopen)(const char *fname, void *fopen_data),
+             void        *fopen_data,
+             int          (*get_codepoint)(gp_file *file, const char **astr),
+             gs_memory_t *mem);
 
 /*
  * Push a string onto an arg list.

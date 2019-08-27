@@ -126,7 +126,7 @@ struct gs_pdf14trans_params_s {
     gs_matrix ctm;
     bool replacing;
     bool overprint;
-    bool overprint_mode;
+    bool effective_overprint_mode;
     bool idle; /* For clist reader.*/
     uint mask_id; /* For clist reader.*/
     int group_color_numcomps;

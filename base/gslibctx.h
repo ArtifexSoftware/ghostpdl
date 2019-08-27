@@ -115,6 +115,11 @@ typedef struct {
      * but that's too hard to arrange, so we live with it in
      * all builds. */
     void *cal_ctx;
+
+    /* Stashed args */
+    int arg_max;
+    int argc;
+    char **argv;
 } gs_lib_ctx_core_t;
 
 typedef struct gs_lib_ctx_s
@@ -260,5 +265,13 @@ gs_add_fs(const gs_memory_t *mem, gs_fs_t *fn, void *secret);
 
 void
 gs_remove_fs(const gs_memory_t *mem, gs_fs_t *fn, void *secret);
+
+int
+gs_lib_ctx_stash_sanitized_arg(gs_lib_ctx_t *ctx, const char *argv);
+
+int
+gs_lib_ctx_stash_exe(gs_lib_ctx_t *ctx, const char *argv);
+
+int gs_lib_ctx_get_args(gs_lib_ctx_t *ctx, const char * const **argv);
 
 #endif /* GSLIBCTX_H */

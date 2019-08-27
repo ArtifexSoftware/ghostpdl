@@ -22,7 +22,7 @@ rem appears before other options.
 :run
 echo -sOutputFile#%2 >>"%TEMP%\_.at"2
 copy /b /y "%TEMP%\_.at"2+"%TEMP%\_.at" "%TEMP%\_.at"2 >NUL
-echo -c .setpdfwrite -f%1 >>"%TEMP%\_.at"2
+echo %1 >>"%TEMP%\_.at"2
 %GSC% @"%TEMP%\_.at" @"%TEMP%\_.at"2
 goto end
 

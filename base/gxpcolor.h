@@ -167,7 +167,8 @@ struct gx_pattern_trans_s {
     void *buf;
     void (* pat_trans_fill)(int xmin, int ymin, int xmax, int ymax, int px,
                             int py, const gx_color_tile *ptile,
-                            gx_pattern_trans_t *fill_trans_buffer);
+                            gx_pattern_trans_t *fill_trans_buffer,
+                            int native16);
     int (* image_render)(gx_image_enum * penum, const byte * buffer,
                             int data_x, uint w, int h, gx_device * dev);
 };
@@ -336,20 +337,23 @@ int gx_trans_pattern_fill_rect(int xmin, int ymin, int xmax, int ymax,
                                gx_color_tile *ptile,
                                gx_pattern_trans_t *fill_trans_buffer,
                                gs_int_point phase, gx_device *dev,
-                               const gx_device_color * pdevc);
+                               const gx_device_color * pdevc,
+                               int native16);
 
 gx_pattern_trans_t* new_pattern_trans_buff(gs_memory_t *mem);
 
 void tile_rect_trans_simple(int xmin, int ymin, int xmax, int ymax, int px,
                             int py, const gx_color_tile *ptile,
-                            gx_pattern_trans_t *fill_trans_buffer);
+                            gx_pattern_trans_t *fill_trans_buffer,
+                            int native16);
 
 /* This is used for the case when we may have overlapping tiles.
    We need to get better detection for this as
    it would be best to avoid doing it if not needed. */
 void tile_rect_trans_blend(int xmin, int ymin, int xmax, int ymax, int px,
                            int py, const gx_color_tile *ptile,
-                           gx_pattern_trans_t *fill_trans_buffer);
+                           gx_pattern_trans_t *fill_trans_buffer,
+                           int native16);
 
 /* File a colored pattern with white */
 int gx_erase_colored_pattern(gs_gstate *pgs);

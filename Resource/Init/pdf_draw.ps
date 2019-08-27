@@ -501,8 +501,8 @@ end
       (        Output may be incorrect.\n) pdfformaterror
       //pdfdict /.gs_warning_issued //true .forceput
       PDFSTOPONERROR { /gs /undefined signalerror } if
-    } if
-  }
+    } executeonly if
+  } executeonly
   ifelse
 } bind executeonly def
 
@@ -1152,7 +1152,7 @@ currentdict end readonly def
           .setglobal
           pdfformaterror
         } executeonly ifelse
-      }
+      } executeonly
       {
         currentglobal //pdfdict gcheck .setglobal
         //pdfdict /.Qqwarning_issued //true .forceput
@@ -1160,8 +1160,8 @@ currentdict end readonly def
         pdfformaterror
       } executeonly ifelse
       end
-    } ifelse
-  } loop
+    } executeonly ifelse
+  } executeonly loop
   {
     (\n   **** Error: File has unbalanced q/Q operators \(too many q's\)\n               Output may be incorrect.\n)
     //pdfdict /.Qqwarning_issued .knownget
@@ -1175,14 +1175,14 @@ currentdict end readonly def
         .setglobal
         pdfformaterror
       } executeonly ifelse
-    }
+    } executeonly
     {
       currentglobal //pdfdict gcheck .setglobal
       //pdfdict /.Qqwarning_issued //true .forceput
       .setglobal
       pdfformaterror
     } executeonly ifelse
-  } if
+  } executeonly if
   pop
 
   % restore pdfemptycount
@@ -1396,7 +1396,6 @@ drawopdict begin
   /W* { W* } executeonly def
 
   /sh_save 1 array def
-  /sh_group  << /Subtype /Group /Isolated //true >> readonly def
 
   /do_shade {
     0 .setoverprintmode
@@ -1417,38 +1416,19 @@ drawopdict begin
         setfillstate resolvesh
         //sh_save 0 save put
         PDFusingtransparency {
-           .currentSMask //null ne {
-             //sh_group
-             1 index /BBox knownoget {
-               { oforce } forall
-             } {
-               gsave clippath pathbbox grestore
-             } ifelse
-             .begintransparencygroup
-           } if
-           dup checkOPtrans exch 1 index {
-              % We need to push a non-isolated, non-knockout transparency group and
-              % perform the operation in CompatibleOverprint mode, then end the
-              % transparency group. Do the begintransparencygroup step here.
-              mark /Subtype /Group /Isolated //false .dicttomark
-              1 index /BBox knownoget {
-                { oforce } forall
-              } {
-                gsave clippath pathbbox grestore
-              } ifelse
-              .begintransparencygroup
-               exch .currentblendmode exch .currentopacityalpha exch 4 -1 roll % save current values
-               /CompatibleOverprint .setblendmode 1 .setopacityalpha
-           } if
-           //do_shade exec
-           {
-               .endtransparencygroup .setopacityalpha .setblendmode	% end the CompatibleOverprint group
-           } if
-           .currentSMask //null ne {
-             .endtransparencygroup
-           } if
+          gsave
+          dup /BBox knownoget {
+            { oforce } forall
+            4 2 roll moveto exch 0 lineto 0 exch lineto closepath
+          } {
+            clippath
+          } ifelse
+          //null setup_trans
+          grestore
+          //do_shade exec
+          teardown_trans
         } {
-           //do_shade exec
+          //do_shade exec
         } ifelse
         //sh_save 0 get restore
       } {
@@ -2148,13 +2128,15 @@ currentdict /last-ditch-bpc-csp undef
     1 BitsPerComponent bitshift 1 sub //false 2 index {
       % stack: max_value result_bool value
       dup 0 lt exch 3 index gt or or
-    } forall exch pop {
+    } forall exch pop
+    {
       (   **** Error: Some elements of Mask array are out of range.\n)
       pdfformaterror
       (               Output may be incorrect.\n) pdfformaterror
 
       ColorSpace dup type /arraytype eq { 0 oget } if /Indexed eq
-      BitsPerComponent 1 eq and {
+      BitsPerComponent 1 eq and
+      {
         % AR9 treats Indexed 1 bpc images specially. Bug 692852 see also 697919 and 689717.
         dup 0 oget
         dup 0 lt exch 1 BitsPerComponent bitshift ge or {
@@ -2164,37 +2146,37 @@ currentdict /last-ditch-bpc-csp undef
           % Second component is invalid; AR9 replaces it with 1.
           [ exch 0 oget 1 ]
         } ifelse
-      } {
-        % AR5, AR9 do this for most cases. Bug 690786.
-        [ exch { 1 BitsPerComponent bitshift 1 sub and } forall ]
-      } ifelse
-    } {
-      ColorSpace dup type /arraytype eq { 0 oget } if /DeviceGray eq
-      BitsPerComponent 1 eq and {
-        %% For DeviceGray, try clamping the values to 0 and 1 respectively
-        dup 0 oget
-        dup 0 lt exch 1 gt or {
-          dup 0 oget
-          dup 0 lt {
-            pop dup 0 0 put
+      }
+      {
+        BitsPerComponent 1 eq {
+          dup length 2 gt {
+            % There are too many Mask entries, discard the Mask array
+            pop //null
           }{
-            dup 0 1 put
+            % Bug 701468 and 689717, the latter requires us to set the Mask values
+            % so that the value is calculated from the BPC, the other requires us
+            % to ignore the Mask. The only difference between the two files is the
+            % actual range of the Mask values. This may yet need more work.
+            % Note! Both files are technically invalid....
+
+            aload 3 1 roll eq {
+              % There's only one Mask value, but its illegal, substitute with the
+              % calculated maximum.
+              [ exch { 1 BitsPerComponent bitshift 1 sub and } forall ]
+            } {
+              % The Mask values are not the same. This is a 2 colour image, if
+              % we mask off any range then the result will be blank, so ignore the Mask
+              pop //null
+            } ifelse
           } ifelse
-        } if
-        dup 1 oget
-        dup 0 lt exch 1 gt or {
-          dup 1 oget
-          dup 0 lt {
-            pop dup 0 0 put
-          }{
-            dup 0 1 put
-          } ifelse
-        } if
-      }{
-        % AR5, AR9 do this for most cases. Bug 690786.
-        [ exch { 1 BitsPerComponent bitshift 1 sub and } forall ]
+        } {
+          % We think AR5, AR9 do this for most other cases. Originally Bug 690786,
+          % but that is actually handled in the /Indexed case above.
+          [ exch { 1 BitsPerComponent bitshift 1 sub and } forall ]
+        } ifelse
       } ifelse
-    } ifelse
+    } if
+
     dup //null ne {
       /MaskColor exch def
     } {
@@ -2255,7 +2237,7 @@ currentdict /last-ditch-bpc-csp undef
       PDFfile exch setfileposition
       0 .endtransparencymask
     } ifelse
-       << /Subtype /Group /Isolated //true
+    << /Subtype /Group /Isolated //true
        /.image_with_SMask //true
        % pdfwrite needs : see gs/src/ztrans.c, gs/src/gdevpdft.c
        % Code to deal with a Matte in the SMask. We know the image dictionary must have an SMask
@@ -2265,7 +2247,7 @@ currentdict /last-ditch-bpc-csp undef
        % We also need to actually set the current colour space to be the same as the group
        % code only picks up the current colour space, not the space from the dictionary.
        currentdict /SMask get /Matte known {/CS currentdict /ColorSpace get dup pdfopdict /cs get exec } if
-     >> 0 0 1 1 .begintransparencygroup
+    >> 0 0 1 1 .begintransparencygroup
      doimage
     .endtransparencygroup
     % tell the compositor we're done with the SMask.
@@ -2333,15 +2315,6 @@ currentdict /last-ditch-bpc-csp undef
 
 /doimage {	% <imagemask> doimage -
                 % imagedict is currentdict, gets popped from dstack
-  //null checkOPtrans {
-     % We need to push a non-isolated, non-knockout transparency group and
-     % perform the operation in CompatibleOverprint mode, then end the
-     % transparency group. Do the begintransparencygroup step here.
-     mark /Subtype /Group /Isolated //false .dicttomark 0 0 1 1 .begintransparencygroup
-     OPsavedict dup /saveBM .currentblendmode put /saveOA .currentopacityalpha put % save current values
-     /CompatibleOverprint .setblendmode 1 .setopacityalpha
-  } if
-
   %% save the current rendering intent
   .currentrenderintent exch
 
@@ -2363,6 +2336,7 @@ currentdict /last-ditch-bpc-csp undef
       makemaskimage
   } if
                 % Stack: datasource imagemask
+  gsave 1 1 moveto 0 0 lineto /image setup_trans grestore
   { currentdict end setfillstate //true ValidateDecode { imagemask } }
   { ColorSpace setgcolorspace currentdict end setfillblend //false ValidateDecode { image } }
   ifelse
@@ -2387,10 +2361,7 @@ currentdict /last-ditch-bpc-csp undef
   %% restore the rendering intent
   .setrenderingintent
 
-  .currentblendmode /CompatibleOverprint eq {
-     .endtransparencygroup
-     OPsavedict dup /saveOA get .setopacityalpha /saveBM get .setblendmode
-  } if
+  teardown_trans
 } bind executeonly def
 
 /.paintform {	% <formdict> <resdict> <stream> .paintform -
@@ -5073,18 +5044,17 @@ currentdict /drawannottypes undef
 currentdict end readonly def
 
 /preserveannot {		% <annot> preserveannot -
-
   dup /.gs.pdfobj# known {
     dup /.gs.pdfobj# undef
   } if
 
-  dup annotvisible {
-    gsave
-    dup dup /Subtype knownoget {
-      dup //.PDFDrawAnnotType? exec
+  gsave
+  dup dup /Subtype knownoget {
+    dup //.PDFDrawAnnotType? exec
+    {
+      //preserveannottypes exch .knownget { exec } { //true } ifelse
       {
-        //preserveannottypes exch .knownget { exec } { //true } ifelse
-        {
+        dup annotvisible {
           dup calc_annot_scale 2 copy mul 0 ne
           {
             3 -1 roll drawwidget
@@ -5093,18 +5063,20 @@ currentdict end readonly def
             (   **** Error: ignoring annotation with scale factor of 0\n) pdfformaterror
             (               Output may be incorrect.\n) pdfformaterror
           }ifelse % Draw rejected annots as widgets
-        } if
-      }
-      {pop} ifelse
-      % type known
-    } {
-      pop
-      (   **** Error: Ignoring /Annot dict without required /Subtype entry.\n)
-      pdfformaterror
-      (               Output may be incorrect.\n) pdfformaterror
-    } ifelse
-    grestore
-  } if pop			% annotvisible
+        } {
+            pop
+        }ifelse
+      } if
+    }
+    {pop} ifelse
+    % type known
+  } {
+    pop
+    (   **** Error: Ignoring /Annot dict without required /Subtype entry.\n)
+    pdfformaterror
+    (               Output may be incorrect.\n) pdfformaterror
+  } ifelse
+  grestore
 } bind executeonly def
 
 currentdict /preserveannottypes undef

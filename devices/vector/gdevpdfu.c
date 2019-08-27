@@ -394,6 +394,105 @@ encode(stream **s, const stream_template *t, gs_memory_t *mem)
 
 /* ------ Document ------ */
 
+/* Write out the arguments used to invoke GS as a comment in the PDF/PS
+ * file. We don't write out paths, passwords, or any unrecognised string
+ * parameters (all sanitised by the arg code) for privacy/security
+ * reasons. This routine is only called by the PDF linearisation code.
+ */
+int
+pdfwrite_fwrite_args_comment(gx_device_pdf *pdev, gp_file *f)
+{
+    const char * const *argv = NULL;
+    const char *arg;
+    int towrite, length, i, j, argc;
+
+    argc = gs_lib_ctx_get_args(pdev->memory->gs_lib_ctx, &argv);
+
+    gp_fwrite("%%Invocation:", 13, 1, f);
+    length = 12;
+    for (i=0;i < argc; i++) {
+        arg = argv[i];
+
+        if ((strlen(arg) + length) > 255) {
+            gp_fwrite("\n%%+ ", 5, 1, f);
+            length = 5;
+        } else {
+            gp_fwrite(" ", 1, 1, f);
+            length++;
+        }
+
+        if (strlen(arg) > 250)
+            towrite = 250;
+        else
+            towrite = strlen(arg);
+
+        length += towrite;
+
+        for (j=0;j < towrite;j++) {
+            if (arg[j] == 0x0A) {
+                gp_fwrite("<0A>", 4, 1, f);
+            } else {
+                if (arg[j] == 0x0D) {
+                    gp_fwrite("<0D>", 4, 1, f);
+                } else {
+                    gp_fwrite(&arg[j], 1, 1, f);
+                }
+            }
+        }
+    }
+    gp_fwrite("\n", 1, 1, f);
+    return 0;
+}
+
+/* Exactly the same as pdfwrite_fwrite_args_comment() above, but uses a stream
+ * instead of a gp_file *, because of course we aren't consistent.... This
+ * routine is called by the regular PDF or PS file output code.
+ */
+int
+pdfwrite_write_args_comment(gx_device_pdf *pdev, stream *s)
+{
+    const char * const *argv = NULL;
+    const char *arg;
+    int towrite, length, i, j, argc;
+
+    argc = gs_lib_ctx_get_args(pdev->memory->gs_lib_ctx, &argv);
+
+    stream_write(s, (byte *)"%%Invocation:", 13);
+    length = 12;
+    for (i=0;i < argc; i++) {
+        arg = argv[i];
+
+        if ((strlen(arg) + length) > 255) {
+            stream_write(s, (byte *)"\n%%+ ", 5);
+            length = 5;
+        } else {
+            stream_write(s, (byte *)" ", 1);
+            length++;
+        }
+
+        if (strlen(arg) > 250)
+            towrite = 250;
+        else
+            towrite = strlen(arg);
+
+        length += towrite;
+
+        for (j=0;j < towrite;j++) {
+            if (arg[j] == 0x0A) {
+                stream_write(s, (byte *)"<0A>", 4);
+            } else {
+                if (arg[j] == 0x0D) {
+                    stream_write(s, (byte *)"<0D>", 4);
+                } else {
+                    stream_write(s, (byte *)&arg[j], 1);
+                }
+            }
+        }
+    }
+    stream_write(s, (byte *)"\n", 1);
+    return 0;
+}
+
 int ps2write_dsc_header(gx_device_pdf * pdev, int pages)
 {
     stream *s = pdev->strm;
@@ -407,6 +506,7 @@ int ps2write_dsc_header(gx_device_pdf * pdev, int pages)
             stream_write(s, (byte *)"%!PS-Adobe-3.0 EPSF-3.0\n", 24);
         else
             stream_write(s, (byte *)"%!PS-Adobe-3.0\n", 15);
+        pdfwrite_write_args_comment(pdev, s);
         /* We need to calculate the document BoundingBox which is a 'high water'
          * mark derived from the BoundingBox of all the individual pages.
          */
@@ -553,6 +653,7 @@ pdfwrite_pdf_open_document(gx_device_pdf * pdev)
             pprintd2(s, "%%PDF-%d.%d\n", level / 10, level % 10);
             if (pdev->binary_ok)
                 stream_puts(s, "%\307\354\217\242\n");
+            pdfwrite_write_args_comment(pdev, s);
         }
     }
     /*

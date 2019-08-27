@@ -30,6 +30,7 @@
 #ifdef WITH_CAL
 #include "cal.h"
 #endif
+#include "gsargs.h"
 
 /* Include the extern for the device list. */
 extern_gs_lib_device_list();
@@ -362,6 +363,8 @@ int gs_lib_ctx_init(gs_lib_ctx_t *ctx, gs_memory_t *mem)
 
     if (gs_lib_ctx_alloc_root_structure(mem, &pio->font_dir_root))
         goto Failure;
+    if (gs_add_control_path(mem, gs_permit_file_writing, gp_null_file_name) < 0)
+        goto Failure;
 
     return 0;
 
@@ -385,7 +388,7 @@ void gs_lib_ctx_fin(gs_memory_t *mem)
 {
     gs_lib_ctx_t *ctx;
     gs_memory_t *ctx_mem;
-    int refs;
+    int refs, i;
     gs_fs_list_t *fs;
 
     if (!mem || !mem->gs_lib_ctx)
@@ -422,17 +425,23 @@ void gs_lib_ctx_fin(gs_memory_t *mem)
         gx_monitor_free((gx_monitor_t *)(ctx->core->monitor));
 #endif
 #ifdef WITH_CAL
-        cal_fin(ctx->core->cal_ctx, mem);
+        cal_fin(ctx->core->cal_ctx, ctx->core->memory);
 #endif
-        gs_purge_control_paths(ctx_mem, 0);
-        gs_purge_control_paths(ctx_mem, 1);
-        gs_purge_control_paths(ctx_mem, 2);
+        gs_purge_control_paths(ctx->core->memory, gs_permit_file_reading);
+        gs_purge_control_paths(ctx->core->memory, gs_permit_file_writing);
+        gs_purge_control_paths(ctx->core->memory, gs_permit_file_control);
+
         fs = ctx->core->fs;
         while (fs) {
             gs_fs_list_t *next = fs->next;
             gs_free_object(fs->memory, fs, "gs_lib_ctx_fin");
             fs = next;
         }
+
+        for (i = 0; i < ctx->core->argc; i++)
+            gs_free_object(ctx->core->memory, ctx->core->argv[i], "gs_lib_ctx_arg");
+        gs_free_object(ctx->core->memory, ctx->core->argv, "gs_lib_ctx_args");
+
         gs_free_object(ctx->core->memory, ctx->core, "gs_lib_ctx_fin");
     }
     remove_ctx_pointers(ctx_mem);
@@ -593,6 +602,8 @@ gs_add_outputfile_control_path(gs_memory_t *mem, const char *fname)
         fp = f;
         for (i = 0; i < len; i++) {
             if (f[i] == pipe) {
+               int code;
+
                fp = &f[i + 1];
                /* Because we potentially have to check file permissions at two levels
                   for the output file (gx_device_open_output_file and the low level
@@ -600,7 +611,9 @@ gs_add_outputfile_control_path(gs_memory_t *mem, const char *fname)
                   (including the '|', and just the command to which we pipe - since at
                   the pipe_fopen(), the leading '|' has been stripped.
                 */
-               gs_add_control_path(mem, gs_permit_file_writing, f);
+               code = gs_add_control_path(mem, gs_permit_file_writing, f);
+               if (code < 0)
+                   return code;
                break;
             }
             if (!IS_WHITESPACE(f[i]))
@@ -618,7 +631,7 @@ gs_add_explicit_control_path(gs_memory_t *mem, const char *arg, gs_path_control_
     int code = 0;
 
     while (code >= 0 && p1 < lim && (p2 = strchr(p1, (int)gp_file_name_list_separator)) != NULL) {
-        code = gs_add_control_path_len(mem, gs_permit_file_reading, p1, (int)(p2 - p1));
+        code = gs_add_control_path_len(mem, control, p1, (int)(p2 - p1));
         p1 = p2 + 1;
     }
     if (p1 < lim)
@@ -850,4 +863,195 @@ gs_remove_fs(const gs_memory_t *mem,
         } else
             pfs = &(*pfs)->next;
     }
+}
+
+int
+gs_lib_ctx_stash_sanitized_arg(gs_lib_ctx_t *ctx, const char *arg)
+{
+    gs_lib_ctx_core_t *core;
+    size_t len;
+    const char *p;
+    int elide = 0;
+
+    if (ctx == NULL || ctx->core == NULL || arg == NULL)
+        return 0;
+
+    /* Sanitize arg */
+    switch(*arg)
+    {
+    case '-':
+        switch (arg[1])
+        {
+        case 0:   /* We can let - through unchanged */
+        case 'd': /* We can let -dFoo=<whatever> through unchanged */
+        case 'D': /* We can let -DFoo=<whatever> through unchanged */
+        case 'r': /* We can let -r through unchanged */
+        case 'Z': /* We can let -Z through unchanged */
+        case 'g': /* We can let -g through unchanged */
+        case 'P': /* We can let -P through unchanged */
+        case '-': /* We can let -- through unchanged */
+        case '+': /* We can let -+ through unchanged */
+        case '_': /* We can let -_ through unchanged */
+        case 'u': /* We can let -u through unchanged */
+        case 'q': /* We can let -q through unchanged */
+            break;
+        case 'I': /* Let through the I, but hide anything else */
+        case 'f': /* Let through the I, but hide anything else */
+            if (arg[2] == 0)
+                break;
+            p = arg+2;
+            while (*p == 32)
+                p++;
+            elide = 1;
+            break;
+        case 's':
+        case 'S':
+            /* By default, we want to keep the key, but lose the value */
+            p = arg+2;
+            while (*p && *p != '=')
+                p++;
+            if (*p == '=')
+                p++;
+            if (*p == 0)
+                break; /* No value to elide */
+            /* Check for our whitelisted values here */
+            if (!memcmp("DEFAULTPAPERSIZE", arg+2, p-arg-3))
+                break;
+            if (!memcmp("DEVICE", arg+2, p-arg-3))
+                break;
+            if (!memcmp("PAPERSIZE", arg+2, p-arg-3))
+                break;
+            if (!memcmp("SUBSTFONT", arg+2, p-arg-3))
+                break;
+            if (!memcmp("ColorConversionStrategy", arg+2, p-arg-3))
+                break;
+            if (!memcmp("PageList", arg+2, p-arg-3))
+                break;
+            if (!memcmp("ProcessColorModel", arg+2, p-arg-3))
+                break;
+            /* Didn't match a whitelisted value, so elide it. */
+            elide = 1;
+            break;
+        default:
+            /* Shouldn't happen, but elide it just in case */
+            arg = "?";
+            break;
+        }
+        break;
+    case '@':
+        /* Shouldn't happen */
+    default:
+        /* Anything else should be elided */
+        arg = "?";
+        break;
+    }
+
+    core = ctx->core;
+    if (elide)
+        len = p-arg;
+    else 
+        len = strlen(arg);
+
+    if (core->arg_max == core->argc) {
+        char **argv;
+        int newlen = core->arg_max * 2;
+        if (newlen == 0)
+            newlen = 4;
+        argv = (char **)gs_alloc_bytes(ctx->core->memory, sizeof(char *) * newlen,
+                                       "gs_lib_ctx_args");
+        if (argv == NULL)
+            return gs_error_VMerror;
+        if (core->argc > 0) {
+            memcpy(argv, core->argv, sizeof(char *) * core->argc);
+            gs_free_object(ctx->memory, core->argv, "gs_lib_ctx_args");
+        }
+        core->argv = argv;
+        core->arg_max = newlen;
+    }
+
+    core->argv[core->argc] = (char *)gs_alloc_bytes(ctx->core->memory, len+1+elide,
+                                                    "gs_lib_ctx_arg");
+    if (core->argv[core->argc] == NULL)
+        return gs_error_VMerror;
+    memcpy(core->argv[core->argc], arg, len);
+    if (elide) {
+        core->argv[core->argc][len] = '?';
+    }
+    core->argv[core->argc][len+elide] = 0;
+    core->argc++;
+
+    return 0;
+}
+
+int
+gs_lib_ctx_stash_exe(gs_lib_ctx_t *ctx, const char *arg)
+{
+    gs_lib_ctx_core_t *core;
+    size_t len;
+    const char *p, *word;
+    const char *sep = gp_file_name_directory_separator();
+    size_t seplen = strlen(sep);
+
+    if (ctx == NULL || ctx->core == NULL || arg == NULL)
+        return 0;
+
+    /* Sanitize arg */
+    p = arg;
+    word = NULL;
+    for (p = arg; *p; p++) {
+        if (memcmp(sep, p, seplen) == 0) {
+            word = p+seplen;
+            p += seplen-1;
+        }
+#if defined(__WIN32__) || defined(__OS2__) || defined(METRO)
+        if (*p == '\\')
+            word = p+1;
+#endif
+    }
+    len = p - (word ? word : arg) + 1;
+    if (word)
+        len += 5;
+
+    core = ctx->core;
+    if (core->arg_max == core->argc) {
+        char **argv;
+        int newlen = core->arg_max * 2;
+        if (newlen == 0)
+            newlen = 4;
+        argv = (char **)gs_alloc_bytes(ctx->core->memory, sizeof(char *) * newlen,
+                                       "gs_lib_ctx_args");
+        if (argv == NULL)
+            return gs_error_VMerror;
+        if (core->argc > 0) {
+            memcpy(argv, core->argv, sizeof(char *) * core->argc);
+            gs_free_object(ctx->memory, core->argv, "gs_lib_ctx_args");
+        }
+        core->argv = argv;
+        core->arg_max = newlen;
+    }
+
+    core->argv[core->argc] = (char *)gs_alloc_bytes(ctx->core->memory, len,
+                                                    "gs_lib_ctx_arg");
+    if (core->argv[core->argc] == NULL)
+        return gs_error_VMerror;
+    if (word)
+        strcpy(core->argv[core->argc], "path/");
+    else
+        core->argv[core->argc][0] = 0;
+    strcat(core->argv[core->argc], word ? word : arg);
+    core->argc++;
+
+    return 0;
+}
+
+int gs_lib_ctx_get_args(gs_lib_ctx_t *ctx, const char * const **argv)
+{
+    gs_lib_ctx_core_t *core;
+
+    if (ctx == NULL || ctx->core == NULL || argv == NULL)
+        return 0;
+
+    core = ctx->core;
+    *argv = core->argv;
+    return core->argc;
 }

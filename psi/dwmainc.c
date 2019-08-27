@@ -109,6 +109,44 @@ gsdll_stderr(void *instance, const char *str, int len)
     return len;
 }
 
+/* make a file readable, for drag'n'drop */
+/* In this version (for the console app) TCHAR is just char */
+int dwmain_add_file_control_path(const TCHAR *pathfile)
+{
+    int i, code;
+    char *p = (char *)pathfile;
+
+    for (i = 0; i < strlen(p); i++) {
+        if (p[i] == '\\') {
+            p[i] = '/';
+        }
+    }
+    code = gsdll.add_control_path(instance, GS_PERMIT_FILE_READING, (const char *)p);
+    for (i = 0; i < strlen(p); i++) {
+        if (p[i] == '/') {
+            p[i] = '\\';
+        }
+    }
+    return code;
+}
+void dwmain_remove_file_control_path(const TCHAR *pathfile)
+{
+    int i;
+    char *p = (char *)pathfile;
+
+    for (i = 0; i < strlen(p); i++) {
+        if (p[i] == '\\') {
+            p[i] = '/';
+        }
+    }
+    gsdll.remove_control_path(instance, GS_PERMIT_FILE_READING, (const char *)p);
+    for (i = 0; i < strlen(p); i++) {
+        if (p[i] == '/') {
+            p[i] = '\\';
+        }
+    }
+}
+
 /* stdio functions - versions that translate to/from utf-8 */
 static int GSDLLCALL
 gsdll_stdin_utf8(void *instance, char *buf, int len)

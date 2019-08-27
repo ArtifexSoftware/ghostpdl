@@ -1367,6 +1367,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
             if (code < 0)
                 goto fail_and_fallback;
             image[0].pixel.ColorSpace = pcs_device;
+            image[0].pixel.BitsPerComponent = 8;
             code = pdf_color_space_named(pdev, pgs, &cs_value, &pranges, pcs_device, names,
                                      in_line, NULL, 0, false);
             if (code < 0)
@@ -1508,6 +1509,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
 
     if (convert_to_process_colors) {
         image[0].pixel.ColorSpace = pcs_orig;
+        image[0].pixel.BitsPerComponent = pim->BitsPerComponent;
         code = psdf_setup_image_colors_filter(&pie->writer.binary[0],
                     (gx_device_psdf *)pdev, &image[0].pixel, pgs);
         if (code < 0)
@@ -2539,6 +2541,7 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                 pprintg2(pdev->strm, "%g 0 0 %g 0 0 cm\n",
                          72.0 / pdev->HWResolution[0], 72.0 / pdev->HWResolution[1]);
                 pdev->PatternDepth++;
+                pdev->PatternsSinceForm++;
             }
             return 1;
         case gxdso_pattern_finish_accum:
@@ -2578,11 +2581,12 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
             } else if (pres->object->id < 0)
                 pdf_reserve_object_id(pdev, pres, 0);
             pdev->PatternDepth--;
+            pdev->PatternsSinceForm--;
             return 1;
         case gxdso_pattern_load:
             pres = pdf_find_resource_by_gs_id(pdev, resourcePattern, id);
             if (pres == 0)
-	      return_error(gs_error_undefined);
+                return 0;
             pres = pdf_substitute_pattern(pres);
             pres->where_used |= pdev->used_mask;
             code = pdf_add_resource(pdev, pdev->substream_Resources, "/Pattern", pres);
@@ -2636,6 +2640,36 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
             pdev->JPEG_PassThrough = 0;
             pdev->PassThroughWriter = 0;
             return 0;
+            break;
+        case gxdso_event_info:
+            {
+                dev_param_req_t *request = (dev_param_req_t *)data;
+                if (memcmp(request->Param, "SubstitutedFont", 15) == 0 && pdev->PDFA) {
+                    switch (pdev->PDFACompatibilityPolicy) {
+                        case 0:
+                        case 1:
+                            emprintf(pdev->memory,
+                             "\n **** A font missing from the input PDF has been substituted with a different font.\n\tWidths may differ, reverting to normal PDF output!\n");
+                            pdev->AbortPDFAX = true;
+                            pdev->PDFX = 0;
+                            break;
+                        case 2:
+                            emprintf(pdev->memory,
+                             "\n **** A font missing from the input PDF has been substituted with a different font.\n\tWidths may differ, aborting conversion!\n");
+                            pdev->AbortPDFAX = true;
+                            pdev->PDFX = 0;
+                            return gs_note_error(gs_error_unknownerror);
+                            break;
+                        default:
+                            emprintf(pdev->memory,
+                             "\n **** A font missing from the input PDF has been substituted with a different font.\n\tWidths may differ, unknown PDFACompatibilityPolicy, reverting to normal PDF output!\n");
+                            pdev->AbortPDFAX = true;
+                            pdev->PDFX = 0;
+                            break;
+                    }
+                }
+                return 0;
+            }
             break;
         case gxdso_get_dev_param:
             {

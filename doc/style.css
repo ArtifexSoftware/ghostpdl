@@ -43,6 +43,10 @@ p {
 	font-size: 14px;
 }
 
+dt {
+	font-weight: 600;
+	}
+
 h1 { 
 	margin-top: 0px; 
 	margin-bottom: 14px; 

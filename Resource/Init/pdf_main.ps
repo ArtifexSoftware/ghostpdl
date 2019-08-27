@@ -1560,7 +1560,11 @@ currentdict /xref-char-dict undef
    { stop } if
 
    % Check for recursion in the page tree. Bug 689954, MOAB-06-01-2007
+   % Make sure that the operand stack is cleaned up in case there's
+   % an error and we ignore it (bug #700953)
+   mark
    verify_page_tree
+   cleartomark
 
    currentdict end
  } bind executeonly def
@@ -1996,6 +2000,11 @@ currentdict /xref-char-dict undef
 % Check for loops in the 'page tree' but accept an acyclic graph.
 % - verify_page_tree -
 /verify_page_tree {
+  % Run the verification inside a 'stopped' context. Bug #700953
+  % has a peculiarly constructed page tree, and a huge number of
+  % pages, which recurses to a depth beyond the level we can cope
+  % with on the exec stack. If we ignore that error then we can
+  {
   Trailer /Root knownoget {
     /Pages knownoget {
       10 dict begin
@@ -2027,6 +2036,16 @@ currentdict /xref-char-dict undef
       verify_page_tree_recursive
       end
     } if
+  } if
+  } stopped
+  {
+    %% Specific check for syntax error, in this case assume we found a loop in the Pages tree.
+    %% (see above). Otherwise, just try to process the file anyway.
+    $error /errorname get /syntaxerror eq {
+      /verify_page_tree cvx /syntaxerror signalerror
+    } {
+      (   **** Error: Something went wrong while checking for recursion in the Page tree. Giving up checking.\n               This PDF file may not terminate, if there is a loop in the Pages tree.\n) pdfformaterror
+    } ifelse
   } if
 } bind executeonly def
 
@@ -2686,11 +2705,14 @@ currentdict /PDF2PS_matrix_key undef
         % (eg GSView 5) then it will not be present, so we must rescan.
   currentpagedevice /PageUsesTransparency .knownget not {dup pageusestransparency} if
   dup /PDFusingtransparency exch def {
-    % If the current device isn't CMYK, or if it is a HighLevelDevice (pdfwrite) we
-    % don't need the special handling of Overprint transparency, so disable the checking.
-    currentpagedevice dup /Colors get 4 lt exch /HighLevelDevice known or {
-      /checkOPtrans { pop //false } def	% NB: original will be restored from PDFsave
-    } if
+    % If the current device isn't CMYK, or if it is a device that (currently) supports transparency
+    % we don't need the special handling of Overprint transparency, so disable the checking.
+    currentpagedevice dup /Colors get 4 lt
+    exch /HaveTransparency .knownget not { //false } if or
+    % device needs special Oveprint handling
+    /setup_trans exch
+    { /setupSMtrans } { /setupOPtrans } ifelse
+    load def
     % Show the page within a PDF 1.4 device filter.
     0 .pushpdf14devicefilter {
       /DefaultQstate qstate store		% device has changed -- reset DefaultQstate
@@ -2718,7 +2740,7 @@ currentdict /PDF2PS_matrix_key undef
     .poppdf14devicefilter	% NB: reset to DefaultQstate will also restore transfer function
     /DefaultQstate qstate store	% device has changed -- reset DefaultQstate
   } {
-    /checkOPtrans { pop //false } def	% no-op the check if the page doesn't use transparency
+    /setup_trans { pop } def    % no-op this if the page doesn't use transparency
                                 % NB: original will be restored from PDFsave
     showpagecontents
   } ifelse
@@ -2749,15 +2771,15 @@ currentdict /PDF2PS_matrix_key undef
           .setglobal
           pdfformaterror
         } executeonly ifelse
-      }
+      } executeonly
       {
         currentglobal //pdfdict gcheck .setglobal
         //pdfdict /.Qqwarning_issued //true .forceput
         .setglobal
         pdfformaterror
       } executeonly ifelse
-    } if
-  } if
+    } executeonly if
+  } executeonly if
   pop
   count PDFexecstackcount sub { pop } repeat
   (after exec) VMDEBUG

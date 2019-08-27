@@ -1138,6 +1138,11 @@ _cmsTRANSFORM* AllocEmptyTransform(cmsContext ContextID, cmsPipeline* lut,
        // Let's see if any plug-in want to do the transform by itself
        if (core->Lut != NULL) {
 
+           // First, optimise the pipeline. This may cause us to recognise that the Luts are
+           // identity.
+           _cmsOptimizePipeline(ContextID, &core->Lut, Intent, InputFormat, OutputFormat, dwFlags);
+
+           if (_cmsLutIsIdentity(core->Lut) == FALSE) {
               for (Plugin = ctx->TransformCollection;
                      Plugin != NULL;
                      Plugin = Plugin->Next) {
@@ -1170,9 +1175,8 @@ _cmsTRANSFORM* AllocEmptyTransform(cmsContext ContextID, cmsPipeline* lut,
                             return p;
                      }
               }
+          }
 
-              // Not suitable for the transform plug-in, let's check the pipeline plug-in
-              _cmsOptimizePipeline(ContextID, &core->Lut, Intent, InputFormat, OutputFormat, dwFlags);
        }
 
     // Check whatever this is a true floating point transform

@@ -626,12 +626,13 @@ Ghostscript is normally built to interpret both PostScript and PDF files, examin
 <dd>Rather than selecting a PageSize given by the PDF MediaBox, BleedBox (see -dUseBleedBox),
 TrimBox (see -dUseTrimBox), ArtBox (see -dUseArtBox), or CropBox (see -dUseCropBox),
 the PDF file will be scaled to fit the current device page size
-(usually the default page size).</dd>
+(usually the default page size).
 <p>
 This is useful for creating fixed size images of PDF files that may have
 a variety of page sizes, for example thumbnail images.</p>
 <p>
 This option is also set by the <code>-dFitPage</code> option.</p>
+</dd>
 </dl>
 
 <dl>
@@ -759,21 +760,21 @@ be drawn, whilst those not listed will not be drawn.</p>
 </dl>
 
 <dl>
-    <dt><code>-sPageList=</code><em>pagenumber</em>
-    <dd>There are three possible values for this; even, odd or a list of pages to be processed.
-    A list can include single pages or ranges of pages.
-    Ranges of pages use the minus sign '-', individual pages and ranges of pages are separated
-    by commas ','. A trailing minus '-' means process all remaining pages. For example;</dd></dt>
+    <dt><code>-sPageList=</code><em>pagenumber</em></dt>
+
+<dd>There are three possible values for this; even, odd or a list of pages to be processed.
+A list can include single pages or ranges of pages.
+Ranges of pages use the minus sign '-', individual pages and ranges of pages are separated
+by commas ','. A trailing minus '-' means process all remaining pages. For example;
 <p><blockquote><pre>
 -sPageList=1,3,5 indicates that pages 1, 3 and 5 should be processed.
 -sPageList=5-10 indicates that pages 5, 6, 7, 8, 9 and 10 should be processed.
 -sPageList=1,5-10,12- indicates that pages 1, 5, 6, 7, 8, 9, 10 and 12 onwards should be processed.
 </pre></blockquote>
-<dd>Note: Use of PageList overrides FirstPage and/or LastPage, if you set these as well as PageList they will be ignored. The
+Note: Use of PageList overrides FirstPage and/or LastPage, if you set these as well as PageList they will be ignored. The
  list of pages should be given in increasing order, you cannot process pages out of order and inserting higher numbered pages before lower numbered
- pages in the list will generate an error. </dd>
+ pages in the list will generate an error.
 </p>
-</dl>
 
 <p>The PDF interpreter and the other language interpreters handle these in slightly different ways. Because
 PDF files enable random access to pages in the document the PDF inerpreter only interprets and renders
@@ -795,6 +796,8 @@ is applied to each PDF file separately. So if you were to set <code>-sPageList=1
  exercise caution when using this switch, and probably should not use it at all when processing a mixture of PostScript
  and PDF files on the same command line.
 </p>
+</dd>
+</dl>
 
 <h3><a name="PDF_problems"></a>Problems interpreting a PDF file</h3>
 
@@ -2203,12 +2206,13 @@ contains just the word "<code>quit</code>", then
 <code>-c&nbsp;quit</code> on the command line is equivalent to
 <code>quit.ps</code> there.  Each argument must be valid PostScript,
 either individual tokens as defined by the <code>token</code> operator,
-    or a string containing valid PostScript.</dd>
+    or a string containing valid PostScript.
 <p>
 Because Ghostscript must initialize the PostScript environment
 before executing the commands specified by this option it should
 be specified after other setup options.  Specifically this option
 'bind's all operations and sets the systemdict to readonly.</p>
+</dd>
 </dl>
 
 <dl>
@@ -2297,8 +2301,7 @@ whereas <code>-sXYZ=35</code> is equivalent to</p>
 
 <dl>
     <dt><code>-u</code><em>name</em></dt>
-    <dd>Un-define a name, cancelling <code>-d</code> or <code>-s</code>.</dd>
-</dl>
+    <dd>Un-define a name, cancelling <code>-d</code> or <code>-s</code>.
 
 <p>
 Note that the initialization file <code>gs_init.ps</code> makes
@@ -2309,6 +2312,8 @@ superseded by definitions in <code>userdict</code> or other dictionaries.
 However, device parameters set this way (<code>PageSize</code>,
 <code>Margins</code>, etc.) are <em>not</em> read-only, and <em>can</em>
 be changed by code in PostScript files.</p>
+</dd>
+</dl>
 
 <dl>
     <dt><code>-g</code><em>number1</em><code>x</code><em>number2</em></dt>
@@ -2317,7 +2322,8 @@ be changed by code in PostScript files.</p>
 width and height in pixels for the benefit of devices such as X11 windows
 and VESA displays that require (or allow) you to specify width and height.
 Note that this causes documents of other sizes to be clipped, not scaled:
-    see <code>-dFIXEDMEDIA</code> below.</dd>
+    see <code>-dFIXEDMEDIA</code> below.
+</dd>
 </dl>
 
 <dl>
@@ -2381,7 +2387,7 @@ the actual device resolution.  Reasonable values for <em>lpi</em> are
 
 <dl>
     <dt><code>-dInterpolateControl=</code><em>control_value</em></dt>
-    <dd>This allows control of the image interpolation.</dd>
+    <dd>This allows control of the image interpolation.
 
 <p>
 By default <code>InterpolateControl</code> is 1 and the image rendering
@@ -2424,22 +2430,26 @@ to scale the contributions for each output pixel. When upscaling, every output
 pixel ends up being the weighted sum of 16 input pixels, When downscaling more
 source pixels will contribute to the interpolated pixels. Every source pixel has
 some effect on the output pixels.</p>
+</dd>
 </dl>
 <dl>
-<code>-dDOINTERPOLATE</code>
+<dt><code>-dDOINTERPOLATE</code></dt>
 <dd>This option still works, but is deprecated, and is the equivalent of
     <code>-dInterpolateControl=-1</code>.</dd>
 </dl>
 <dl>
-<code>-dNOINTERPOLATE</code> This option still works, but is deprecated and is
+<dt><code>-dNOINTERPOLATE</code></dt>
+<dd>
+This option still works, but is deprecated and is
 the equivalent of <code>-dInterpolateControl=0</code>
+</dd>
 </dl>
 
 <dl>
     <dt><code>-dTextAlphaBits=</code><em>n</em></dt>
     <dt><code>-dGraphicsAlphaBits=</code><em>n</em></dt>
 <dd>These options control the use of subsample antialiasing. Their use is highly recommended for producing high quality rasterizations. The subsampling box size <em>n</em> should be 4 for optimum output, but smaller values can be used for faster rendering. Antialiasing is enabled separately for text and graphics content.
-    Allowed values are 1, 2 or 4.</dd>
+    Allowed values are 1, 2 or 4.
 <p>
 Note that because of the way antialiasing blends the edges of shapes into the background when
 they are drawn some files that rely on joining separate filled polygons together to cover
@@ -2448,6 +2458,7 @@ strange lines within solid areas, try rendering that file again with
 <code>-dGraphicsAlphaBits=1</code>.</p>
 <p>Further note; because this feature relies upon rendering the input it is incompatible, and will generate
 an error on attempted use, with any of the vector output devices.</p>
+</dd>
 </dl>
 
 <dl>
@@ -2457,7 +2468,7 @@ or to subpixels (value 0). Subpixels are a smaller raster grid
 which is used internally for text antialiasing.
 The number of subpixels in a pixel usually is <code>2^TextAlphaBits</code>,
 but this may be automatically reduced for big characters to save space
-    in character cache.</dd>
+    in character cache.
 
 <p>
 The parameter has no effect if <code>-dTextAlphaBits=1</code>.
@@ -2466,6 +2477,7 @@ Default value is 0.</p>
 <p>
 Setting <code>-dAlignToPixels=0</code> can improve rendering
 of poorly hinted fonts, but may impair the appearance of well-hinted fonts.</p>
+</dd>
 </dl>
 
 <dl>
@@ -2572,18 +2584,17 @@ processing of PostScript source files. Note: in releases 7.30 and
 </dl>
 
 <dl>
-<dt><code>-sPageList=</code><em>pagenumber</em>
-There are three possible values for this; even, odd or a list of pages to be processed.
+<dt><code>-sPageList=</code><em>pagenumber</em></dt>
+<dd>There are three possible values for this; even, odd or a list of pages to be processed.
 A list can include single pages or ranges of pages.
 Ranges of pages use the minus sign '-', individual pages and ranges of pages are separated
-    by commas ','. A trailing minus '-' means process all remaining pages. For example;</dt>
+    by commas ','. A trailing minus '-' means process all remaining pages. For example;
 <p><blockquote><pre>
 -sPageList=1,3,5 indicates that pages 1, 3 and 5 should be processed.
 -sPageList=5-10 indicates that pages 5, 6, 7, 8, 9 and 10 should be processed.
 -sPageList=1, 5-10, 12- indicates that pages 1, 5, 6, 7, 8, 9, 10 and 12 onwards should be processed.
 </pre></blockquote>
 </p>
-</dl>
 
 <p>The PDF interpreter and the other language interpreters handle these in slightly different ways. Because
 PDF files enable random access to pages in the document the PDF inerpreter only interprets and renders
@@ -2605,6 +2616,8 @@ is applied to each PDF file separately. So if you were to set <code>-sPageList=1
  exercise caution when using this switch, and probably should not use it at all when processing a mixture of PostScript
  and PDF files on the same command line.
 </p>
+</dd>
+</dl>
 
 <dl>
     <dt><a name="FIXEDMEDIA"></a><code>-dFIXEDMEDIA</code></dt>
@@ -2629,10 +2642,11 @@ or one of the older  <code>statusdict</code> page size operators (such as
 <code>letter</code> or <code>a4</code>) will be rotated, scaled and centered on the
 "best fit" page size from those availiable in the InputAttributes list.
 The <code>-dPSFitPage</code> is most easily used to fit pages when used with the
-    <code>-dFIXEDMEDIA</code> option.</dd>
+    <code>-dFIXEDMEDIA</code> option.
 
 <p>
 This option is also set by the <code>-dFitPage</code> option.</p>
+</dd>
 </dl>
 
 <dl>
@@ -2671,10 +2685,11 @@ the default size).
 <dl>
     <dt><code>-dFitPage</code></dt>
 <dd>This is a "convenience" operator that sets the various options to perform
-    page fitting for specific file types.</dd>
+    page fitting for specific file types.
 <p>
 This option sets the <code>-dEPSFitPage</code>, <code>-dPDFFitPage</code>, and
 the <code>-dFitPage</code> options.</p>
+</dd>
 </dl>
 <h4><a name="Font_related_parameters"></a>Font-related parameters</h4>
 
@@ -2749,20 +2764,12 @@ limiting all future users of the document to the same approximate
     rendering.</dd>
 </dl>
 
-<dl>
-    <dt><code>-dOLDCFF</code></dt>
-<dd>Reverts to using the old, sequential, PostScript CFF parser.
-New CFF parser is coded in C and uses direct access to the font data.
-This option and the old parser will be removed when the new parser
-    proves its reliability.</dd>
-</dl>
-
 <h4><a name="Resource_related_parameters"></a>Resource-related parameters</h4>
 
 <dl>
     <dt><a name="GenericResourceDir"></a><code>-sGenericResourceDir=path</code></dt>
 <dd>Specifies a path to resource files.
-    The value is platform dependent. It must end with a directory separator.</dd>
+    The value is platform dependent. It must end with a directory separator.
 <p>
 <b><font size="+1">
 A note for Windows users, Artifex recommends the use of the
@@ -2788,16 +2795,18 @@ The extended search method does not call <code>ResourceFileName</code> .</p>
 <p>
 Default value is <code>(./Resource/)</code> for Unix, and an equivalent one on other
 platforms.</p>
+</dd>
 </dl>
 
 <dl>
     <dt><a name="FontResourceDir"></a><code>-sFontResourceDir=path</code></dt>
 <dd>Specifies a path where font files are installed.
-    It's meaning is similar to <code>GenericResourceDir</code>.</dd>
+    It's meaning is similar to <code>GenericResourceDir</code>.
 
 <p>
 Default value is <code>(./Font/)</code> for Unix, and an equivalent one on other
 platforms.</p>
+</dd>
 </dl>
 
 
@@ -2852,12 +2861,13 @@ directly into Ghostscript, as long as the data doesn't refer to
 <code>stderr</code>, to avoid it being mixed with device stdout.
 To redirect stdout to stderr use <code>-sstdout=%stderr</code>.
 To cancel redirection of stdout use <code>-sstdout=%stdout</code>
-    or <code>-sstdout=-</code>.</dd>
+    or <code>-sstdout=-</code>.
 <p>
 Note that this redirects PostScript output to %stdout but <b>does not</b>
 change the destination FILE of device output as with <code>-sOutputFile=-</code>
 or even <code>-sOutputFile=%stdout</code> since devices write directly using
 the stdout FILE * pointer with C function calls such as fwrite or fputs.</p>
+</dd>
 </dl>
 
 <dl>
@@ -2867,14 +2877,6 @@ Causes Ghostscript to read a character from <code>/dev/tty</code>,
 rather than standard input, at the end of each page.  This may be useful if
 input is coming from a pipe.  Note that <code>-dTTYPAUSE</code>
 overrides <code>-dNOPAUSE</code>.
-
-Also note that <code>-dTTYPAUSE</code> requires opening the terminal
-device directly, and may cause problems in combination with -dSAFER.
-Permission errors  can be avoided by adding the device to the permitted
-reading list before invoking safer mode. For example:
-<code>gs -dTTYPAUSE -dDELAYSAFER
--c '&lt;&lt; /PermitFileReading [ (/dev/tty)] &gt;&gt;
-    setuserparams .locksafe' -dSAFER</code></dd>
 </dl>
 
 <h4><a name="Output_selection_parameters"></a>Device and output selection parameters</h4>
@@ -2914,7 +2916,7 @@ ignore a request to print multiple copies, giving more consistent
 <dd>Raster printers and image formats that can use the "command list" (clist)
 to store a representation of the page prior to rendering can use the
 <code>--saved-pages=</code><em>string</em> on the command line for
-    deferred rendering of pages.</dd>
+    deferred rendering of pages.
 <p>
 Pages that are <em>saved</em> instead of printed are retained until the
 list of saved pages is emptied by the <code>flush</code> command of the
@@ -2927,6 +2929,7 @@ printed multiple times, in any order.</p>
 <p>
 Refer to the <a href="SavedPages.htm">SavedPages</a> document for
 details.</p>
+</dd>
 </dl>
 
 <h4><a name="EPS_parameters"></a>EPS parameters</h4>
@@ -2940,16 +2943,18 @@ details.</p>
 <dl>
     <dt><code>-dEPSFitPage</code></dt>
 <dd>Resize an EPS file to fit the page.
-    This is useful for shrinking or enlarging an EPS file to fit the paper size when printing.</dd>
+    This is useful for shrinking or enlarging an EPS file to fit the paper size when printing.
 <p>
 This option is also set by the <code>-dFitPage</code> option.</p>
+</dd>
 </dl>
 
 <dl>
     <dt><code>-dNOEPS</code></dt>
 <dd>Prevent special processing of EPS files.
 This is useful when EPS files have incorrect Document
-    Structuring Convention comments.</dd>
+    Structuring Convention comments.
+</dd>
 </dl>
 
 <h4><a name="ICC_color_parameters"></a>ICC color parameters</h4>
@@ -3285,7 +3290,7 @@ not make use of these output intents.  Instead, if desired, these standard
 <dl>
     <dt><code>-sUseOutputIntent=</code><em>string</em></dt>
 <dd>Like <code>UsePDFX3Profile</code> above, this option enables rendering with an output intent defined in the
-    PDF source file.</dd>
+    PDF source file.
 <p>
 This option behaves the same way as the <code>UsePDFX3Profile</code>, but the selection criteria are different.
 Because its possible (as of PDF 2.0) for each page to have a different array, its not sufficient just to supply
@@ -3297,12 +3302,13 @@ then it should be Custom and the <code>UseOutputIntent</code> string will be mat
 <code>Info</code> key instead. If the <code>OutputConditionIdentifier</code> or <code>Info</code> matches the
 value of <code>UseOuttpuIntent</code>, then that OutputIntent is selected <b>if</b> the OutputIntent contains
 a <code>DestOutputProfile</code> key.</p>
+</dd>
 </dl>
 
 <dl>
     <dt><code>-sICCProfilesDir=</code><em>path</em></dt>
 <dd>Set a directory in which to search for the above profiles.
-    The directory path must end with a file system delimiter.</dd>
+    The directory path must end with a file system delimiter.
 <p>
 If the user doesn't use the -sICCProfilesDir= command line option,
 Ghostscript creates a default value for it by looking on the
@@ -3327,6 +3333,7 @@ the Microsoft C startup code.  See
 <a href="http://msdn.microsoft.com/en-us/library/a1y7w461.aspx">Parsing C Command-Line Arguments</a>
 for more information.
 </font></b></p>
+</dd>
 </dl>
 
 <h4><a name="Other_parameters"></a>Other parameters</h4>
@@ -3375,7 +3382,7 @@ server. The <code>-dNOOUTERSAVE</code> switch is ignored if <code>-dJOBSERVER</c
 is specified since job servers <b>always</b> execute the input PostScript
 under a save level, although the <code>exitserver</code> operator can
 be used to escape from the encapsulated job and execute as if the
-    <code>-dNOOUTERSAVE</code> was specified.</dd>
+    <code>-dNOOUTERSAVE</code> was specified.
 <p>
 This also requires that the input be from stdin, otherwise an error will
 result (<code>Error: /invalidrestore in --restore--</code>).</p>
@@ -3391,6 +3398,7 @@ Binary Communication Protocol) to cause an out-of-band <code>^D</code> to
 signal EOF in a stream input data. This means that direct file actions
 on stdin such as <code>flushfile</code> and <code>closefile</code>
 will affect processing of data beyond the <code>^D</code> in the stream.</p>
+</dd>
 </dl>
 
 <dl>
@@ -3425,17 +3433,131 @@ system permissions.</dd>
 <p><b>This mode should be used with caution, and <code>.setsafe</code> should be
     run prior to running any PostScript file with unknown contents.</b></p>
 </dl>
-
 <a name="Safer"></a>
 <dl>
     <dt><code>-dSAFER</code></dt>
-<dd>Disables the <code>deletefile</code> and <code>renamefile</code>
+<dd>
+Enables access controls on files. Access controls fall into three catagories,
+files from which Ghostscript is permitted to read, ones to which it is permitted
+to write, and ones over which it has &quot;control&quot; (i.e. delete/rename). These
+access controls apply to <strong>all</strong> files accessed via Ghostscript's internal
+interface to the C library file handling. Whilst we have taken considerable pains to
+ensure that all the code we maintain (as well as the so called &quot;contrib&quot; devices,
+that are devices included in our release packages, but not strictly maintained by the
+Ghostscript development team) uses this interface, we have no control over thirdparty
+code.
+<p>
+This is an entirely new implementation of <code>SAFER</code> for Ghostscript versions
+9.28 and later. Earlier versions (see "<a href="#OldSafer">-dOLDSAFER</a>") relied on
+storing the file permission lists in Postscript VM (Virtual Memory), and only applied
+file access permissions to the Postscript file related operators. It relied on restricting
+the function of <code>setpagedevice</code> to avoid the device code from being manipulated
+into opening arbitrary files. The application of the file permissions was done within the
+internal context of the Postscript interpreter, and some other aspects of the Postscript
+restrictions were applied in the Postscript environment. With so many of the feature's
+capabilities relying on the Postscript context and environment, by using other (Ghostscript
+specific) features maliciously, the restrictions could be overridden.
+<p>
+Whilst the path storage and application of the permissions is implemented entirely in C,
+it is still possible for Postscript to add and remove paths from the permissions lists
+(see <a href="Language.htm#.addcontrolpath">.addcontrolpath</a>) until such time as the
+access controls are enabled (see <a href="Language.htm#.activatepathcontrol">.activatepathcontrol</a>),
+any call to <code>.addcontrolpath</code> after <code>.activatepathcontrol</code> will result in a
+<code>Fatal</code> error causing the interpreter to immediately exit.
+<p>
+An incompatibility exists between the pre-9.28 and 9.28 and later <code>SAFER</code>.
+By removing storage and application entirely from the Postscript language
+environment and internal context, SAFER is no longer affected by Postscript
+<code>save</code>&sol;<code>restore</code> operations. Previously, it was possible
+to do the equivalent of:
+<blockquote>
+<br><code>save</code>
+<br><code>.setsafe</code>
+<br><code>Postscript ops</code>
+<br><code>restore</code>
+</blockquote>
+<p>
+In that sequence, then <code>Postscript ops</code> would run with <code>SAFER</code> protection
+but after the restore, <code>SAFER</code> would no longer be in force. This is no longer the case.
+After the call to <code>.setsafe</code> the file controls are in force until the
+interpter exits. As the 9.28 and later implementation no longer restricts the
+operation of <code>setpagedevice</code>, and because this capability is <i>extremely</i>
+rarely used, we feel the improvement in security warrants the small reduction in
+flexibility.
+<p>
+Path matching is simple: we do not implement full featured &quot;globbing&quot; or
+regular expression matching (such complexity would significantly and negatively
+impact performance). The following cases are handled:
+<ul>
+<li>
+<dt><code>&quot;&sol;path&sol;to&sol;file&quot;</code></dt>
+<p>Permits access only to the file: &quot;&sol;path&sol;to&sol;file&quot;
+</li>
+<li>
+<dt><code>&quot;&sol;path&sol;to&sol;directory&sol;&quot;</code></dt>
+<p>Permits access to any file in, and only in, the directory: &quot;&sol;path&sol;to&sol;directory&quot;
+</li>
+<li>
+<dt><code>&quot;&sol;path&sol;to&sol;directory&sol;*&quot;</code></dt>
+<p>Permits access to any file in the directory: &quot;&sol;path&sol;to&sol;directory&quot; and
+any child of that directory.
+</li>
+</ul>
+<p>
+Four command line parameters permit explicit control of the paths included in
+the access control lists:
+<ul>
+<li><dt><code>--permit-file-read<code></dt>
+<p> Adds a path, or list of paths, to the "permit read" list. A list
+of paths is a series of paths separated by the appropriate path list separator
+for your platform (for example, on Unix-like systems it is &quot;&colon;&quot;
+and on MS Windows it is &quot;;&quot;).
+</li>
+<li><dt><code>--permit-file-write<code></dt>
+<p> Adds a path, or list of paths, to the "permit write" list. A list
+of paths is a series of paths separated by the appropriate path list separator
+for your platform (for example, on Unix-like systems it is &quot;&colon;&quot;
+and on MS Windows it is &quot;;&quot;).
+</li>
+<li><dt><code>--permit-file-control<code></dt>
+<p> Adds a path, or list of paths, to the "permit control" list. A list
+of paths is a series of paths separated by the appropriate path list separator
+for your platform (for example, on Unix-like systems it is &quot;&colon;&quot;
+and on MS Windows it is &quot;;&quot;).
+</li>
+<li><dt><code>--permit-file-all<code></dt>
+<p> Adds a path, or list of paths, to the all the above lists. A list
+of paths is a series of paths separated by the appropriate path list separator
+for your platform (for example, on Unix-like systems it is &quot;&colon;&quot;
+and on MS Windows it is &quot;;&quot;).
+</li>
+</ul>
+<p>
+Finally, paths supplied on the command line (such as those in <code>-I</code>,
+<code>-sFONTPATH</code> parameters) are added to the permitted reading list.
+Similarly, paths read during initialisation from <code>Fontmap</code>, <code>cidfmap</code>,
+and the platform specific font file enumeration (i.e. <code>fontconfig</code> on Unix systems)
+are automatically added to the permit read lists.
+</dd>
+</dl>
+<br>
+<a name="OldSafer"></a>
+<dl>
+    <dt><code>-dOLDSAFER</code></dt>
+<dd>
+<strong>NOTE: This enables deprecated code which will shortly be removed</strong>
+<p>Used in combination with <code>-dSAFER</code> (or <code>.setsafe</code>) enables
+the pre-9.28 SAFER implementation. It is included (for now) in case any users find
+a case where the 9.28 and later <code>SAFER</code> does not work for them. It means
+such users can keep working until we have assessed the issue, and distributed a solution.
+<p>
+Disables the <code>deletefile</code> and <code>renamefile</code>
 operators, and the ability to open piped commands (<code>%pipe%</code><em>cmd</em>)
 at all. Only <code>%stdout</code> and <code>%stderr</code> can be opened
 for writing.  Disables reading of files other than <code>%stdin</code>,
 those given as a command line argument, or those contained on one of the paths
 given by LIBPATH and FONTPATH and specified by the system params /FontResourceDir
-    and /GenericResourceDir.</dd>
+    and /GenericResourceDir.
 <p>
 This mode also sets the <a href="Language.htm#LockSafetyParams">.LockSafetyParams</a>
 parameter of the default device, or the device specified with the <code>-sDEVICE= </code>
@@ -3456,6 +3578,7 @@ When running -dNOSAFER it is possible to perform a <code>save</code>,
 followed by <code>.setsafe</code>, execute a file or procedure in SAFER mode,
 then use <code>restore</code> to return to NOSAFER mode. It is possible that the
 a crafted foreign file could restore back to a point when NOSAFER was in operation.</p>
+</dd>
 </dl>
 
 <dl>
