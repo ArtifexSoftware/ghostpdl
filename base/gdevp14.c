@@ -2047,7 +2047,6 @@ pdf14_get_buffer_information(const gx_device * dev,
 
             transbuff->mem = mem;
             if (transbuff->deep) {
-                /* FIXME: */
                 for (j = 0; j < transbuff->n_chan; j++) {
                     buff_ptr_src = buf->data + j * buf->planestride +
                                buf->rowstride * rect.p.y + (rect.p.x<<buf->deep);
@@ -3435,7 +3434,6 @@ pdf14_fill_mask(gx_device * orig_dev,
             group_rect.q.x = x + w;
             group_rect.q.y = y + h;
             if (!(w <= 0 || h <= 0)) {
-                /* FIXME: 255's here? should allow for deep */
                 code = pdf14_push_transparency_group(p14dev->ctx, &group_rect,
                      1, 0, 65535, 65535, ptile->blending_mode, 0, 0,
                      ptile->ttrans->n_chan-1, false, NULL, NULL, NULL, NULL);
@@ -3830,7 +3828,6 @@ pdf14_patt_trans_image_fill(gx_device * dev, const gs_gstate * pgs,
         if_debug2m('v', p14dev->ctx->memory,
                    "[v*] Pushing trans group patt_trans_image_fill, uid = %ld id = %ld \n",
                    ptile->uid.id, ptile->id);
-        /* FIXME: 255s should allow for deep */
         code = pdf14_push_transparency_group(p14dev->ctx, &group_rect, 1, 0, 65535, 65535,
                                              pgs->blend_mode, 0, 0,
                                              ptile->ttrans->n_chan-1, false, NULL,
