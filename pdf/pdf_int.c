@@ -3400,10 +3400,12 @@ int pdfi_run_context(pdf_context *ctx, pdf_dict *stream_dict,
     int code;
     gs_gstate *DefaultQState;
 
+    dbgmprintf(ctx->memory, "pdfi_run_context BEGIN\n");
     pdfi_copy_DefaultQState(ctx, &DefaultQState);
     pdfi_set_DefaultQState(ctx, ctx->pgs);
     code = pdfi_interpret_inner_content_stream(ctx, stream_dict, page_dict, stoponerror, desc);
     pdfi_restore_DefaultQState(ctx, &DefaultQState);
+    dbgmprintf(ctx->memory, "pdfi_run_context END\n");
     return code;
 }
 

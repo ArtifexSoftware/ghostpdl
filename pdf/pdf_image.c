@@ -1221,6 +1221,11 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     if (code < 0)
         goto cleanupExit;
 
+    /* Setup the fill state (pdf_draw.ps/doimage, setfillstate) */
+    code = pdfi_trans_set_params(ctx, gs_getfillconstantalpha(ctx->pgs));
+    if (code < 0)
+        return code;
+
     /* Render the image */
     code = pdfi_render_image(ctx, pim, new_stream,
                              mask_buffer, mask_size,
@@ -1326,6 +1331,8 @@ int pdfi_form_execgroup(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *xobject
     gs_setopacityalpha(ctx->pgs, 1.0);
     gs_setshapealpha(ctx->pgs, 1.0);
     gs_setblendmode(ctx->pgs, BLEND_MODE_Compatible);
+    gs_setstrokeconstantalpha(ctx->pgs, 1.0);
+    gs_setfillconstantalpha(ctx->pgs, 1.0);
 
     code = gs_concat(ctx->pgs, &m);
     if (code < 0) {
