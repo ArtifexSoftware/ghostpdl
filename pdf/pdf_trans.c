@@ -160,10 +160,15 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
                 if (code < 0)
                     break;
                 params.Background[i] = (float)num;
-                if (i == 0)
-                    params.GrayBackground = (float)num;
             }
             params.Background_components = pdfi_array_size(BC);
+
+            /* TODO: Not sure how to handle this...  recheck PS code (pdf_draw.ps/gssmask) */
+            /* This should be "currentgray" for the color that we put in params.ColorSpace,
+             * It looks super-convoluted to actually get this value.  Really?
+             * (see zcurrentgray())
+             */
+            params.GrayBackground = 0; /* TODO */
         }
 
         code = gs_begin_transparency_mask(ctx->pgs, &params, &bbox, true);
