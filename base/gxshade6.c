@@ -1025,12 +1025,15 @@ gx_shade_trapezoid(patch_fill_state_t *pfs, const gs_fixed_point q[4],
                 re.start.y = ybot;
                 re.end.y   = ytop;
             }
-            /* Now, check whether the left and right edges cross. This can
-             * only happen (for well formed input) in the case where one of
-             * the edges was completely out of range and has now been pulled
-             * in to the edge of the clip region. */
+            /* Now, check whether the left and right edges cross. Previously
+             * this comment said: "This can only happen (for well formed
+             * input) in the case where one of the edges was completely out
+             * of range and has now been pulled in to the edge of the clip
+             * region." I now do not believe this to be true. */
             if (le.start.x > re.start.x) {
                 if (le.start.x == le.end.x) {
+                    if (re.start.x == re.end.x)
+                        return 0;
                     ybot += (fixed)((int64_t)(re.end.y-re.start.y)*
                                     (int64_t)(le.start.x-re.start.x)/
                                     (int64_t)(re.end.x-re.start.x));
@@ -1048,6 +1051,8 @@ gx_shade_trapezoid(patch_fill_state_t *pfs, const gs_fixed_point q[4],
             }
             if (le.end.x > re.end.x) {
                 if (le.start.x == le.end.x) {
+                    if (re.start.x == re.end.x)
+                        return 0;
                     ytop -= (fixed)((int64_t)(re.end.y-re.start.y)*
                                     (int64_t)(le.end.x-re.end.x)/
                                     (int64_t)(re.start.x-re.end.x));
