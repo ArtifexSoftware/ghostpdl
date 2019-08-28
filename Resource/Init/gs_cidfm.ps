@@ -209,7 +209,7 @@ currentdict end def
     } loop
   } forall
   currentdict end
-  {exch pop /PermitFileReading exch .addcontrolpath} forall
+  {exch pop (/) concatstrings /PermitFileReading exch .addcontrolpath} forall
 
   % Checks for vicious substitution cycles.
   dup length dict copy                  % <<map>>
