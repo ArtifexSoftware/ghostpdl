@@ -29,6 +29,8 @@ int pdfi_gstate_set_client(pdf_context *ctx);
 void pdfi_gstate_smask_install(pdfi_int_gstate *igs, gs_memory_t *memory, pdf_dict *SMask, gs_gstate *gstate);
 void pdfi_gstate_smask_free(pdfi_int_gstate *igs);
 
+int pdfi_get_blend_mode(pdf_context *ctx, pdf_name *name, gs_blend_mode_t *mode);
+
 int pdfi_concat(pdf_context *ctx);
 int pdfi_gsave(pdf_context *ctx);
 int pdfi_grestore(pdf_context *ctx);

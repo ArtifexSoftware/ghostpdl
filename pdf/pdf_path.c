@@ -128,15 +128,20 @@ int pdfi_lineto (pdf_context *ctx)
 
 int pdfi_fill(pdf_context *ctx)
 {
-    int code;
+    int code, code1;
+    pdfi_trans_state_t state;
 
     if (ctx->TextBlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
     gs_swapcolors(ctx->pgs);
-    code = pdfi_trans_set_params(ctx, gs_getfillconstantalpha(ctx->pgs));
-    if (code == 0)
+    code = pdfi_trans_setup(ctx, &state, TRANSPARENCY_Caller_Fill, gs_getfillconstantalpha(ctx->pgs));
+    if (code == 0) {
         code = gs_fill(ctx->pgs);
+        code1 = pdfi_trans_teardown(ctx, &state);
+        if (code == 0)
+            code = code1;
+    }
     gs_swapcolors(ctx->pgs);
     if(code < 0 && ctx->pdfstoponerror)
         return code;
@@ -146,15 +151,20 @@ int pdfi_fill(pdf_context *ctx)
 
 int pdfi_eofill(pdf_context *ctx)
 {
-    int code;
+    int code, code1;
+    pdfi_trans_state_t state;
 
     if (ctx->TextBlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
     gs_swapcolors(ctx->pgs);
-    code = pdfi_trans_set_params(ctx, gs_getfillconstantalpha(ctx->pgs));
-    if (code == 0)
+    code = pdfi_trans_setup(ctx, &state, TRANSPARENCY_Caller_EOFill, gs_getfillconstantalpha(ctx->pgs));
+    if (code == 0) {
         code = gs_eofill(ctx->pgs);
+        code1 = pdfi_trans_teardown(ctx, &state);
+        if (code == 0)
+            code = code1;
+    }
     gs_swapcolors(ctx->pgs);
     if(code < 0 && ctx->pdfstoponerror)
         return code;
@@ -164,13 +174,19 @@ int pdfi_eofill(pdf_context *ctx)
 
 int pdfi_stroke(pdf_context *ctx)
 {
-    int code = pdfi_trans_set_params(ctx, ctx->pgs->strokeconstantalpha);
+    int code, code1;
+    pdfi_trans_state_t state;
 
     if (ctx->TextBlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
-    if (code == 0)
+    code = pdfi_trans_setup(ctx, &state, TRANSPARENCY_Caller_Stroke, gs_getstrokeconstantalpha(ctx->pgs));
+    if (code == 0) {
         code = gs_stroke(ctx->pgs);
+        code1 = pdfi_trans_teardown(ctx, &state);
+        if (code == 0)
+            code = code1;
+    }
     if(code < 0 && ctx->pdfstoponerror)
         return code;
     else
@@ -186,10 +202,7 @@ int pdfi_closepath_stroke(pdf_context *ctx)
 
     code = gs_closepath(ctx->pgs);
     if (code == 0)
-        code = pdfi_trans_set_params(ctx, ctx->pgs->strokeconstantalpha);
-    if (code == 0) {
-        code = gs_stroke(ctx->pgs);
-    }
+        code = pdfi_stroke(ctx);
     if(code < 0 && ctx->pdfstoponerror)
         return code;
     else
@@ -363,28 +376,8 @@ int pdfi_b(pdf_context *ctx)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
     code = gs_closepath(ctx->pgs);
-    if (code >= 0) {
-        code = pdfi_gsave(ctx);
-        if (code >= 0) {
-            gs_swapcolors(ctx->pgs);
-            code = pdfi_trans_set_params(ctx, gs_getfillconstantalpha(ctx->pgs));
-            if (code == 0)
-                code = gs_fill(ctx->pgs);
-            gs_swapcolors(ctx->pgs);
-            if (code >= 0) {
-                code = pdfi_grestore(ctx);
-                if (code >= 0)
-                    code = pdfi_trans_set_params(ctx, ctx->pgs->strokeconstantalpha);
-                if (code >= 0)
-                    code = gs_stroke(ctx->pgs);
-            } else
-                (void)pdfi_grestore(ctx);
-        }
-    }
     if (code >= 0)
-       code = gs_newpath(ctx->pgs);
-    else
-        (void)gs_newpath(ctx->pgs);
+        code = pdfi_B(ctx);
     if(code < 0 && ctx->pdfstoponerror)
         return code;
     else
@@ -399,28 +392,73 @@ int pdfi_b_star(pdf_context *ctx)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
     code = gs_closepath(ctx->pgs);
-    if (code >= 0) {
-        code = pdfi_gsave(ctx);
-        if (code >= 0) {
-            gs_swapcolors(ctx->pgs);
-            code = pdfi_trans_set_params(ctx, gs_getfillconstantalpha(ctx->pgs));
-            if (code == 0)
-                code = gs_eofill(ctx->pgs);
-            gs_swapcolors(ctx->pgs);
-            if (code >= 0) {
-                code = pdfi_grestore(ctx);
-                if (code >= 0)
-                    code = pdfi_trans_set_params(ctx, gs_getfillconstantalpha(ctx->pgs));
-                if (code >= 0)
-                    code = gs_stroke(ctx->pgs);
-            } else
-                (void)pdfi_grestore(ctx);
-        }
-    }
     if (code >= 0)
-       code = gs_newpath(ctx->pgs);
+        code = pdfi_B_star(ctx);
+    if(code < 0 && ctx->pdfstoponerror)
+        return code;
     else
-        (void)gs_newpath(ctx->pgs);
+        return 0;
+}
+
+/* common code for B and B* */
+static int pdfi_B_inner(pdf_context *ctx, bool use_eofill)
+{
+    int code, code1;
+    pdfi_trans_state_t state;
+    bool started_group = false;
+
+    if (ctx->TextBlockDepth != 0)
+        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+
+#if 1
+    if (ctx->page_has_transparency) {
+        code = gs_setopacityalpha(ctx->pgs, 1.0);
+        if (code < 0)
+            return code;
+        code = pdfi_trans_begin_group(ctx, true, true, true);
+        if (code < 0)
+            return code;
+        started_group = true;
+    }
+#endif
+
+    code = pdfi_gsave(ctx);
+    if (code < 0)
+        goto exit;
+    gs_swapcolors(ctx->pgs);
+    code = pdfi_trans_set_params(ctx, gs_getfillconstantalpha(ctx->pgs));
+    if (code == 0) {
+        if (use_eofill)
+            code = gs_eofill(ctx->pgs);
+        else
+            code = gs_fill(ctx->pgs);
+    }
+    gs_swapcolors(ctx->pgs);
+    code1 = pdfi_grestore(ctx);
+    if (code == 0)
+        code = code1;
+    if (code < 0)
+        goto exit;
+
+    code = pdfi_trans_set_params(ctx, gs_getstrokeconstantalpha(ctx->pgs));
+    if (code < 0)
+        goto exit;
+    code = pdfi_trans_setup(ctx, &state, TRANSPARENCY_Caller_Stroke, gs_getstrokeconstantalpha(ctx->pgs));
+    if (code >= 0)
+        code = gs_stroke(ctx->pgs);
+    code1 = pdfi_trans_teardown(ctx, &state);
+    if (code == 0)
+        code = code1;
+
+ exit:
+    if (started_group)
+        code1 = pdfi_trans_end_simple_group(ctx);
+    if (code == 0)
+        code = code1;
+
+    if (code < 0)
+        gs_newpath(ctx->pgs);
+
     if(code < 0 && ctx->pdfstoponerror)
         return code;
     else
@@ -429,71 +467,12 @@ int pdfi_b_star(pdf_context *ctx)
 
 int pdfi_B(pdf_context *ctx)
 {
-    int code;
-
-    if (ctx->TextBlockDepth != 0)
-        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
-
-    code = pdfi_gsave(ctx);
-    if (code >= 0) {
-        gs_swapcolors(ctx->pgs);
-        code = pdfi_trans_set_params(ctx, gs_getfillconstantalpha(ctx->pgs));
-        if (code == 0)
-            code = gs_fill(ctx->pgs);
-        gs_swapcolors(ctx->pgs);
-        if (code >= 0) {
-            code = pdfi_grestore(ctx);
-            if (code >= 0)
-                code = pdfi_trans_set_params(ctx, gs_getfillconstantalpha(ctx->pgs));
-            if (code >= 0)
-                code = gs_stroke(ctx->pgs);
-        } else {
-            (void)pdfi_grestore(ctx);
-        }
-    } else {
-        (void)pdfi_grestore(ctx);
-    }
-    if (code >= 0)
-       code = gs_newpath(ctx->pgs);
-    else
-        (void)gs_newpath(ctx->pgs);
-    if(code < 0 && ctx->pdfstoponerror)
-        return code;
-    else
-        return 0;
+    return pdfi_B_inner(ctx, false);
 }
 
 int pdfi_B_star(pdf_context *ctx)
 {
-    int code;
-
-    if (ctx->TextBlockDepth != 0)
-        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
-
-    code = pdfi_gsave(ctx);
-    if (code >= 0) {
-        gs_swapcolors(ctx->pgs);
-        code = pdfi_trans_set_params(ctx, gs_getfillconstantalpha(ctx->pgs));
-        if (code == 0)
-            code = gs_eofill(ctx->pgs);
-        gs_swapcolors(ctx->pgs);
-        if (code >= 0) {
-            code = pdfi_grestore(ctx);
-            if (code >= 0)
-                code = pdfi_trans_set_params(ctx, gs_getfillconstantalpha(ctx->pgs));
-            if (code >= 0)
-                code = gs_stroke(ctx->pgs);
-        } else {
-            (void)pdfi_grestore(ctx);
-        }
-    } else {
-        (void)pdfi_grestore(ctx);
-    }
-    if (code >= 0)
-       code = gs_newpath(ctx->pgs);
-    else
-        (void)gs_newpath(ctx->pgs);
-    return code;
+    return pdfi_B_inner(ctx, true);
 }
 
 int pdfi_clip(pdf_context *ctx)

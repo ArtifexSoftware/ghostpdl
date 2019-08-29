@@ -32,6 +32,23 @@
 #include "gslparam.h"
 #include "gstparam.h"
 
+static const char *blend_mode_names[] = {
+    GS_BLEND_MODE_NAMES, 0
+};
+
+int pdfi_get_blend_mode(pdf_context *ctx, pdf_name *name, gs_blend_mode_t *mode)
+{
+    const char **p;
+
+    for (p = blend_mode_names; *p; ++p) {
+        if (pdfi_name_is(name, *p)) {
+            *mode = p - blend_mode_names;
+            return 0;
+        }
+    }
+    return -1;
+}
+
 void pdfi_gstate_smask_install(pdfi_int_gstate *igs, gs_memory_t *memory, pdf_dict *SMask, gs_gstate *gstate)
 {
     void *client_data_save;
@@ -741,27 +758,20 @@ static int GS_SA(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict
     return 0;
 }
 
-static const char *blend_mode_names[] = {
-    GS_BLEND_MODE_NAMES, 0
-};
-
 static int GS_BM(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     pdf_name *n;
-    const char **p;
     int code;
+    gs_blend_mode_t mode;
 
     code = pdfi_dict_get_type(ctx, GS, "BM", PDF_NAME, (pdf_obj **)&n);
     if (code < 0)
         return code;
 
-    for (p = blend_mode_names; *p; ++p) {
-        if (pdfi_name_is(n, *p)) {
-            pdfi_countdown(n);
-            return gs_setblendmode(ctx->pgs, p - blend_mode_names);
-        }
-    }
+    code = pdfi_get_blend_mode(ctx, n, &mode);
     pdfi_countdown(n);
+    if (code == 0)
+        return gs_setblendmode(ctx->pgs, mode);
     return_error(gs_error_undefined);
 }
 

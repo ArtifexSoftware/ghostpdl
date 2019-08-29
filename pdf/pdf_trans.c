@@ -253,6 +253,26 @@ static int pdfi_transparency_group_common(pdf_context *ctx, pdf_dict *page_dict,
     return gs_begin_transparency_group(ctx->pgs, &params, (const gs_rect *)bbox, group_type);
 }
 
+int pdfi_trans_begin_group(pdf_context *ctx, bool stroked_bbox, bool isolated, bool knockout)
+{
+    gs_transparency_group_params_t params;
+    gs_rect bbox;
+    int code;
+
+    gs_trans_group_params_init(&params);
+    params.Isolated = isolated;
+    params.Knockout = knockout;
+
+    code = pdfi_get_current_bbox(ctx, &bbox, stroked_bbox);
+    if (code < 0)
+        return code;
+
+    code = gs_begin_transparency_group(ctx->pgs, &params, &bbox, PDF14_BEGIN_TRANS_GROUP);
+    if (code >=  0)
+        ctx->current_stream_save.group_depth++;
+    return code;
+}
+
 int pdfi_trans_begin_page_group(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *group_dict)
 {
     gs_rect bbox;
@@ -330,6 +350,17 @@ int pdfi_trans_end_group(pdf_context *ctx)
     return code;
 }
 
+/* Ends group with no grestore (needs a better name, but whatever) */
+int pdfi_trans_end_simple_group(pdf_context *ctx)
+{
+    int code;
+
+    code = gs_end_transparency_group(ctx->pgs);
+    ctx->current_stream_save.group_depth--;
+
+    return code;
+}
+
 
 int pdfi_trans_begin_isolated_group(pdf_context *ctx, bool image_with_SMask)
 {
@@ -375,6 +406,62 @@ int pdfi_trans_end_smask_notify(pdf_context *ctx)
     return gs_begin_transparency_mask(ctx->pgs, &params, &bbox, false);
 }
 
+int pdfi_trans_setup(pdf_context *ctx, pdfi_trans_state_t *state,
+                     pdfi_transparency_caller_t caller, double alpha)
+{
+    pdfi_int_gstate *igs = (pdfi_int_gstate *)ctx->pgs->client_data;
+    int code;
+    bool stroked_bbox;
+
+    memset(state, 0, sizeof(*state));
+
+    if (!ctx->page_has_transparency)
+        return 0;
+
+    code = pdfi_trans_set_params(ctx, alpha);
+    if (code != 0)
+        return 0;
+
+    if (igs->SMask == NULL || caller == TRANSPARENCY_Caller_Image) {
+        state->GroupPushed = false;
+        return 0;
+    }
+
+    /* TODO: error handling... */
+    stroked_bbox = (caller == TRANSPARENCY_Caller_Stroke);
+    code = pdfi_trans_begin_group(ctx, stroked_bbox, true, false);
+    state->GroupPushed = true;
+    state->saveOA = gs_currentopacityalpha(ctx->pgs);
+    state->saveSA = gs_currentshapealpha(ctx->pgs);
+    code = gs_setopacityalpha(ctx->pgs, 1.0);
+    code = gs_setshapealpha(ctx->pgs, 1.0);
+    return code;
+}
+
+int pdfi_trans_teardown(pdf_context *ctx, pdfi_trans_state_t *state)
+{
+    int code = 0;
+
+    if (!ctx->page_has_transparency)
+        return 0;
+
+    if (state->GroupPushed) {
+        code = pdfi_trans_end_group(ctx);
+        code = gs_setopacityalpha(ctx->pgs, state->saveOA);
+        code = gs_setshapealpha(ctx->pgs, state->saveSA);
+    }
+
+    /* TODO:
+  % Also, if we changed the BM, restore it (AFTER the group was popped)
+  .currentblendmode /CompatibleOverprint eq {
+    % restore the blendmode
+    saveBM .setblendmode
+  } if
+    */
+
+    return code;
+}
+
 int pdfi_trans_set_params(pdf_context *ctx, double alpha)
 {
     pdfi_int_gstate *igs = (pdfi_int_gstate *)ctx->pgs->client_data;
@@ -396,4 +483,28 @@ int pdfi_trans_set_params(pdf_context *ctx, double alpha)
     }
 
     return 0;
+}
+
+/* Get current bbox, possibly from stroking current path (utility function) */
+int pdfi_get_current_bbox(pdf_context *ctx, gs_rect *bbox, bool stroked)
+{
+    int code, code1;
+
+    if (stroked) {
+        code = pdfi_gsave(ctx);
+        if (code < 0)
+            return code;
+        code = gs_strokepath(ctx->pgs);
+        if (code < 0)
+            goto exit;
+    }
+    code = gs_upathbbox(ctx->pgs, bbox, false);
+
+ exit:
+    if (stroked) {
+        code1 = pdfi_grestore(ctx);
+        if (code == 0)
+            code = code1;
+    }
+    return code;
 }

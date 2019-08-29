@@ -16,12 +16,38 @@
 #ifndef PDF_TRANSPARENCY_OPERATORS
 #define PDF_TRANSPARENCY_OPERATORS
 
+/* these names are to match the PS code (pdf_ops.ps/OPSaveDstack, setup_trans, teardown_trans) */
+typedef struct {
+    bool GroupPushed;
+    bool ChangeBM;
+    float saveOA;
+    float saveSA;
+    gs_blend_mode_t saveBM;
+} pdfi_trans_state_t;
+
+typedef enum {
+    TRANSPARENCY_CALLER_Other,
+    TRANSPARENCY_Caller_Image,
+    TRANSPARENCY_Caller_Stroke,
+    TRANSPARENCY_Caller_Fill,
+    TRANSPARENCY_Caller_EOFill
+} pdfi_transparency_caller_t;
+
+int pdfi_trans_setup(pdf_context *ctx, pdfi_trans_state_t *state, pdfi_transparency_caller_t caller,
+                     double alpha);
+int pdfi_trans_teardown(pdf_context *ctx, pdfi_trans_state_t *state);
+
+int pdfi_trans_begin_group(pdf_context *ctx, bool stroked_bbox, bool isolated, bool knockout);
 int pdfi_trans_begin_page_group(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *group_dict);
 int pdfi_trans_begin_form_group(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_dict);
 int pdfi_trans_end_group(pdf_context *ctx);
+int pdfi_trans_end_simple_group(pdf_context *ctx);
 int pdfi_trans_set_params(pdf_context *ctx, double alpha);
 int pdfi_trans_begin_isolated_group(pdf_context *ctx, bool image_with_SMask);
 int pdfi_trans_end_isolated_group(pdf_context *ctx);
 int pdfi_trans_end_smask_notify(pdf_context *ctx);
+
+/* Utility func that probably goes somewhere else */
+int pdfi_get_current_bbox(pdf_context *ctx, gs_rect *bbox, bool stroked);
 
 #endif
