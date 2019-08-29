@@ -1636,13 +1636,14 @@ art_pdf_knockout_composite_pixel_alpha_16(uint16_t *gs_restrict backdrop, uint16
     /* Compute a_s / a_r in 16.16 format */
     src_scale = ((a_s << 16) + (a_r >> 1)) / a_r;
 
+    src_scale >>= 1; /* Lose a bit to avoid overflow */
     if (blend_mode == BLEND_MODE_Normal) {
         /* Do simple compositing of source over backdrop */
         for (i = 0; i < n_chan; i++) {
             c_s = src[i];
             c_b = backdrop[i];
-            tmp = src_scale * (c_s - c_b) + 0x8000;
-            dst[i] = c_b + (tmp >> 16);
+            tmp = src_scale * (c_s - c_b) + 0x4000;
+            dst[i] = c_b + (tmp >> 15);
         }
     } else {
         /* Do compositing with blending */
@@ -1650,6 +1651,7 @@ art_pdf_knockout_composite_pixel_alpha_16(uint16_t *gs_restrict backdrop, uint16
 
         art_blend_pixel_16(blend, backdrop, src, n_chan, blend_mode, pblend_procs,
                            p14dev);
+        a_b >>= 1; /* Lose a bit to avoid overflow */
         for (i = 0; i < n_chan; i++) {
             int c_bl;		/* Result of blend function */
             int c_mix;		/* Blend result mixed with source color */
@@ -1657,10 +1659,10 @@ art_pdf_knockout_composite_pixel_alpha_16(uint16_t *gs_restrict backdrop, uint16
             c_s = src[i];
             c_b = backdrop[i];
             c_bl = blend[i];
-            tmp = a_b * (c_bl - c_s) + 0x8000;
-            c_mix = c_s + (tmp >> 16);
-            tmp = src_scale * (c_mix - c_b) + 0x8000;
-            dst[i] = c_b + (tmp >> 16);
+            tmp = a_b * (c_bl - c_s) + 0x4000;
+            c_mix = c_s + (tmp >> 15);
+            tmp = src_scale * (c_mix - c_b) + 0x4000;
+            dst[i] = c_b + (tmp >> 15);
         }
     }
     dst[n_chan] = a_r;
@@ -1775,10 +1777,12 @@ art_pdf_composite_pixel_alpha_16(uint16_t *gs_restrict dst, const uint16_t *gs_r
     /* Compute a_s / a_r in 16.16 format */
     src_scale = ((unsigned int)((a_s << 16) + (a_r >> 1))) / a_r;
 
+    src_scale >>= 1; /* Lose a bit to avoid overflow */
     if (first_spot != 0) {
         /* Do compositing with blending */
         uint16_t blend[ART_MAX_CHAN];
 
+        a_b >>= 1; /* Lose a bit to avoid overflow */
         art_blend_pixel_16(blend, dst, src, first_spot, blend_mode, pblend_procs, p14dev);
         for (i = 0; i < first_spot; i++) {
             int c_bl;		/* Result of blend function */
@@ -1787,10 +1791,10 @@ art_pdf_composite_pixel_alpha_16(uint16_t *gs_restrict dst, const uint16_t *gs_r
             c_s = src[i];
             c_b = dst[i];
             c_bl = blend[i];
-            tmp = a_b * (c_bl - ((int)c_s)) + 0x8000;
-            c_mix = c_s + (((tmp >> 16) + tmp) >> 16);
-            tmp = (c_b << 16) + src_scale * (c_mix - c_b) + 0x8000;
-            dst[i] = tmp >> 16;
+            tmp = a_b * (c_bl - ((int)c_s)) + 0x4000;
+            c_mix = c_s + (((tmp >> 16) + tmp) >> 15);
+            tmp = src_scale * (c_mix - c_b) + 0x4000;
+            dst[i] = c_b + (tmp >> 15);
         }
     }
     dst[n_chan] = a_r;
@@ -1805,8 +1809,8 @@ art_pdf_composite_pixel_alpha_16(uint16_t *gs_restrict dst, const uint16_t *gs_r
     for (i = 0; i < n_chan; i++) {
         c_s = src[i];
         c_b = dst[i];
-        tmp = (c_b << 16) + src_scale * (c_s - c_b) + 0x8000;
-        dst[i] = tmp >> 16;
+        tmp = src_scale * (c_s - c_b) + 0x4000;
+        dst[i] = c_b + (tmp >> 15);
     }
 }
 
@@ -1924,6 +1928,7 @@ art_pdf_composite_pixel_alpha_16_inline(uint16_t *gs_restrict dst, uint16_t *gs_
     /* Compute a_s / a_r in 16.16 format */
     src_scale = ((unsigned int)((a_s << 16) + (a_r >> 1))) / a_r;
 
+    src_scale >>= 1; /* Lose a bit to avoid overflow */
     if (first_spot != 0) {
         /* Do compositing with blending */
         uint16_t blend[ART_MAX_CHAN];
@@ -1933,11 +1938,10 @@ art_pdf_composite_pixel_alpha_16_inline(uint16_t *gs_restrict dst, uint16_t *gs_
         if (blend_mode == BLEND_MODE_CompatibleOverprint) {
             for (i = 0; i < first_spot; i++) {
                 /* No mixing.  Blend[i] is backdrop or src */
-                dst[i] += (src_scale * (blend[i] - dst[i]) + 0x8000) >> 16;
+                dst[i] += (src_scale * (blend[i] - dst[i]) + 0x4000) >> 15;
             }
         } else {
-            int a_b2 = a_b>>1;
-            int ss2 = src_scale>>1;
+            a_b >>= 1; /* Lose a bit to avoid overflow */
             for (i = 0; i < first_spot; i++) {
                 int c_bl;		/* Result of blend function */
 
@@ -1945,8 +1949,8 @@ art_pdf_composite_pixel_alpha_16_inline(uint16_t *gs_restrict dst, uint16_t *gs_
                 c_b = dst[i];
                 c_bl = blend[i];
 
-                c_s += (a_b2 * (c_bl - c_s) + 0x4000) >> 15;
-                c_b += (ss2 * (c_s - c_b) + 0x4000) >> 15;
+                c_s += (a_b * (c_bl - c_s) + 0x4000) >> 15;
+                c_b += (src_scale * (c_s - c_b) + 0x4000) >> 15;
                 dst[i] = c_b;
             }
         }
@@ -1963,7 +1967,7 @@ art_pdf_composite_pixel_alpha_16_inline(uint16_t *gs_restrict dst, uint16_t *gs_
     for (i = 0; i < n_chan; i++) {
         c_s = src[i];
         c_b = dst[i];
-        c_b += (src_scale * (c_s - c_b) + 0x8000)>>16;
+        c_b += (src_scale * (c_s - c_b) + 0x4000)>>15;
         dst[i] = c_b;
     }
     return dst - first_spot;
@@ -2045,6 +2049,8 @@ art_pdf_composite_pixel_alpha_16_fast_mono(uint16_t *gs_restrict dst, const uint
     /* Compute a_s / a_r in 16.16 format */
     src_scale = ((a_s << 16) + (a_r >> 1)) / a_r;
 
+    src_scale >>= 1; /* Lose a bit to avoid overflow */
+    a_b >>= 1; /* Lose a bit to avoid overflow */
     /* Do compositing with blending */
     art_blend_pixel_16(blend, dst, src, 1, blend_mode, pblend_procs, p14dev);
     {
@@ -2053,9 +2059,9 @@ art_pdf_composite_pixel_alpha_16_fast_mono(uint16_t *gs_restrict dst, const uint
         c_s = src[0];
         c_b = dst[0];
         c_bl = blend[0];
-        tmp = a_b * (c_bl - c_s) + 0x8000;
-        c_s += (tmp>>16);
-        dst[0] = c_b + ((src_scale * (c_s - c_b) + 0x8000)>>16);
+        tmp = a_b * (c_bl - c_s) + 0x4000;
+        c_s += (tmp>>15);
+        dst[0] = c_b + ((src_scale * (c_s - c_b) + 0x4000)>>15);
     }
     dst[stride] = a_r;
 }
@@ -2580,6 +2586,8 @@ art_pdf_composite_knockout_16(uint16_t *gs_restrict dst,
         /* Compute a_s / a_r in 16.16 format */
         src_scale = ((a_s << 16) + (a_r >> 1)) / a_r;
 
+        src_scale >>= 1; /* Lose a bit to avoid overflow */
+        a_b >>= 1; /* Lose a bit to avoid overflow */
         art_blend_pixel_16(blend, dst, src, n_chan, blend_mode, pblend_procs, p14dev);
         for (i = 0; i < n_chan; i++) {
             int c_bl;		/* Result of blend function */
@@ -2589,10 +2597,10 @@ art_pdf_composite_knockout_16(uint16_t *gs_restrict dst,
             c_s = src[i];
             c_b = dst[i];
             c_bl = blend[i];
-            stmp = (a_b>>1) * (c_bl - ((int)c_s)) + 0x4000;
+            stmp = a_b * (c_bl - ((int)c_s)) + 0x4000;
             c_mix = c_s + (((stmp >> 16) + stmp) >> 15);
-            tmp = (c_b << 16) + src_scale * (c_mix - c_b) + 0x8000;
-            dst[i] = tmp >> 16;
+            tmp = src_scale * (c_mix - c_b) + 0x4000;
+            dst[i] = c_b + (tmp >> 15);
         }
         dst[n_chan] = a_r;
     }
@@ -2727,13 +2735,29 @@ do_dump_raw_buffer(const gs_memory_t *mem, int num_rows, int width, int n_chan,
     gs_sprintf(full_file_name,"%02d)%s_%dx%dx%dx%d.raw",global_index,filename,width,num_rows,deep ? 16 : 8,max_bands);
     fid = gp_fopen(mem, full_file_name,"wb");
 
-    for (z = 0; z < max_bands; ++z) {
-        /* grab pointer to the next plane */
-        buff_ptr = &(Buffer[z*plane_stride]);
-        for ( y = 0; y < num_rows; y++ ) {
-            /* write out each row */
-            gp_fwrite(buff_ptr,sizeof(unsigned char),width<<deep,fid);
-            buff_ptr += rowstride;
+    if (be && deep) {
+        for (z = 0; z < max_bands; ++z) {
+            /* grab pointer to the next plane */
+            buff_ptr = &(Buffer[z*plane_stride]);
+            for ( y = 0; y < num_rows; y++ ) {
+                /* write out each row */
+                int x;
+                for (x = 0; x < width; x++ ) {
+                    gp_fputc(buff_ptr[x*2 + be^1], fid);
+                    gp_fputc(buff_ptr[x*2 + be  ], fid);
+                }
+                buff_ptr += rowstride;
+            }
+        }
+    } else {
+        for (z = 0; z < max_bands; ++z) {
+            /* grab pointer to the next plane */
+            buff_ptr = &(Buffer[z*plane_stride]);
+            for ( y = 0; y < num_rows; y++ ) {
+                /* write out each row */
+                gp_fwrite(buff_ptr,sizeof(unsigned char),width<<deep,fid);
+                buff_ptr += rowstride;
+            }
         }
     }
     gp_fclose(fid);
@@ -3098,8 +3122,8 @@ compose_group_nonknockout_nonblend_isolated_allmask_common(byte *tos_ptr, bool t
                     for (i = 0; i < n_chan; i++) {
                         int c_s = tos_ptr[i * tos_planestride];
                         int c_b = nos_ptr[i * nos_planestride];
-                        tmp = (c_b << 16) + src_scale * (c_s - c_b) + 0x8000;
-                        nos_ptr[i * nos_planestride] = tmp >> 16;
+                        tmp = src_scale * (c_s - c_b) + 0x8000;
+                        nos_ptr[i * nos_planestride] = c_b + (tmp >> 16);
                     }
                 }
             }
@@ -3825,11 +3849,11 @@ compose_group16_nonknockout_nonblend_isolated_allmask_common(uint16_t *tos_ptr, 
     for (y = y1 - y0; y > 0; --y) {
         uint16_t *gs_restrict mask_curr_ptr = mask_row_ptr;
         for (x = 0; x < width; x++) {
-            int mask = interp16(mask_tr_fn, *mask_curr_ptr++);
+            unsigned int mask = interp16(mask_tr_fn, *mask_curr_ptr++);
             uint16_t src_alpha = tos_ptr[n_chan * tos_planestride];
             if (src_alpha != 0) {
                 uint16_t a_b;
-                int pix_alpha;
+                unsigned int pix_alpha;
 
                 mask += mask>>15;
                 pix_alpha = (alpha * mask + 0x8000)>>16;
@@ -3861,11 +3885,12 @@ compose_group16_nonknockout_nonblend_isolated_allmask_common(uint16_t *tos_ptr, 
 
                     nos_ptr[n_chan * nos_planestride] = a_r;
 
+                    src_scale >>= 1; /* Will overflow unless we lose a bit */
                     /* Do simple compositing of source over backdrop */
                     for (i = 0; i < n_chan; i++) {
                         int c_s = tos_ptr[i * tos_planestride];
                         int c_b = nos_ptr[i * nos_planestride];
-                        nos_ptr[i * nos_planestride] = c_b + ((src_scale * (c_s - c_b) + 0x8000) >> 16);
+                        nos_ptr[i * nos_planestride] = c_b + ((src_scale * (c_s - c_b) + 0x4000) >> 15);
                     }
                 }
             }
@@ -3915,7 +3940,7 @@ compose_group16_nonknockout_nonblend_isolated_mask_common(uint16_t *tos_ptr, boo
 
             if (mask_curr_ptr != NULL) {
                 if (in_mask_rect) {
-                    int mask = interp16(mask_tr_fn, *mask_curr_ptr++);
+                    unsigned int mask = interp16(mask_tr_fn, *mask_curr_ptr++);
                     mask += mask>>15;
                     pix_alpha = (pix_alpha * mask + 0x8000)>>16;
                 } else {
@@ -3954,11 +3979,12 @@ compose_group16_nonknockout_nonblend_isolated_mask_common(uint16_t *tos_ptr, boo
 
                     nos_ptr[n_chan * nos_planestride] = a_r;
 
+                    src_scale >>= 1; /* Need to lose a bit to avoid overflow */
                     /* Do simple compositing of source over backdrop */
                     for (i = 0; i < n_chan; i++) {
                         int c_s = tos_ptr[i * tos_planestride];
                         int c_b = nos_ptr[i * nos_planestride];
-                        nos_ptr[i * nos_planestride] = c_b + ((src_scale * (c_s - c_b) + 0x8000) >> 16);
+                        nos_ptr[i * nos_planestride] = c_b + ((src_scale * (c_s - c_b) + 0x4000) >> 15);
                     }
                 }
             }
@@ -5321,12 +5347,13 @@ mark_fill_rect16_sub4_fast(int w, int h, uint16_t *gs_restrict dst_ptr, uint16_t
 
                 dst_ptr[4 * planestride] = a_r;
 
+                src_scale >>= 1; /* Lose a bit to avoid overflow */
                 /* Do simple compositing of source over backdrop */
                 for (k = 0; k < 4; k++) {
                     int c_s = src[k];
                     int c_b = 65535 - dst_ptr[k * planestride];
-                    tmp = src_scale * (c_s - c_b) + 0x8000;
-                    dst_ptr[k * planestride] = 0xffff - c_b - (tmp >> 16);
+                    tmp = src_scale * (c_s - c_b) + 0x4000;
+                    dst_ptr[k * planestride] = 0xffff - c_b - (tmp >> 15);
                 }
             }
             ++dst_ptr;
@@ -5406,12 +5433,13 @@ mark_fill_rect16_add3_common(int w, int h, uint16_t *gs_restrict dst_ptr, uint16
 
                 dst_ptr[3 * planestride] = a_r;
 
+                src_scale >>= 1; /* Lose a bit to avoid overflow */
                 /* Do simple compositing of source over backdrop */
                 for (k = 0; k < 3; k++) {
                     int c_s = src[k];
                     int c_b = dst_ptr[k * planestride];
-                    tmp = src_scale * (c_s - c_b) + 0x8000;
-                    dst_ptr[k * planestride] = c_b + (tmp >> 16);
+                    tmp = src_scale * (c_s - c_b) + 0x4000;
+                    dst_ptr[k * planestride] = c_b + (tmp >> 15);
                 }
             }
             ++dst_ptr;
@@ -5503,11 +5531,12 @@ mark_fill_rect16_add1_no_spots_normal(int w, int h, uint16_t *gs_restrict dst_pt
                 /* Compute a_s / a_r in 16.16 format */
                 src_scale = ((a_s << 16) + (a_r >> 1)) / a_r;
 
+                src_scale >>= 1; /* Lose a bit to avoid overflow */
                 /* Do simple compositing of source over backdrop */
                 c_s = src[0];
                 c_b = dst_ptr[0];
-                tmp = src_scale * (c_s - c_b) + 0x8000;
-                dst_ptr[0] = c_b + (tmp >> 16);
+                tmp = src_scale * (c_s - c_b) + 0x4000;
+                dst_ptr[0] = c_b + (tmp >> 15);
                 dst_ptr[planestride] = a_r;
             }
             if (tag_off) {
@@ -5561,11 +5590,12 @@ mark_fill_rect16_add1_no_spots_fast(int w, int h, uint16_t *gs_restrict dst_ptr,
                 /* Compute a_s / a_r in 16.16 format */
                 src_scale = ((a_s << 16) + (a_r >> 1)) / a_r;
 
+                src_scale >>= 1; /* Lose a bit to avoid overflow */
                 /* Do simple compositing of source over backdrop */
                 c_s = src[0];
                 c_b = dst_ptr[0];
-                tmp = src_scale * (c_s - c_b) + 0x8000;
-                dst_ptr[0] = c_b + (tmp >> 16);
+                tmp = src_scale * (c_s - c_b) + 0x4000;
+                dst_ptr[0] = c_b + (tmp >> 15);
                 dst_ptr[planestride] = a_r;
             }
             ++dst_ptr;
