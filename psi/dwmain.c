@@ -383,7 +383,7 @@ int new_main(int argc, char *argv[])
         text_puts(tw, "*** C stack overflow. Quiting...\n");
     }
 #endif
-
+    text_clear_drag_and_drop_list(tw, 1);
     gsdll.delete_instance(instance);
 
     unload_dll(&gsdll);

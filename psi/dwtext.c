@@ -736,8 +736,26 @@ int ch;
     return (dest-line);
 }
 
-/* Windows 3.1 drag-drop feature */
 void
+text_clear_drag_and_drop_list(TW* tw, int freelist)
+{
+    int i;
+    for (i = 0; tw->szFiles && i < tw->cFiles; i++) {
+        if (tw->szFiles[i] != NULL) {
+            dwmain_remove_file_control_path(tw->szFiles[i]);
+            free(tw->szFiles[i]);
+            tw->szFiles[i] = NULL;
+        }
+    }
+    if (freelist != 0) {
+        free(tw->szFiles);
+        tw->szFiles = NULL;
+        tw->cFiles = 0;
+    }
+}
+
+/* Windows 3.1 drag-drop feature */
+static void
 text_drag_drop(TW *tw, HDROP hdrop)
 {
     int i, cFiles, code;
@@ -746,15 +764,7 @@ text_drag_drop(TW *tw, HDROP hdrop)
     const TCHAR *t;
     if ( (tw->DragPre==NULL) || (tw->DragPost==NULL) )
             return;
-
-    for (i = 0; tw->szFiles && i < tw->cFiles; i++) {
-        if (tw->szFiles[i] != NULL) {
-            dwmain_remove_file_control_path(tw->szFiles[i]);
-            free(tw->szFiles[i]);
-            tw->szFiles[i] = NULL;
-        }
-    }
-
+    text_clear_drag_and_drop_list(tw, 0);
     cFiles = DragQueryFile(hdrop, (UINT)(-1), (LPTSTR)NULL, 0);
     if (tw->cFiles < cFiles) {
         free(tw->szFiles);
@@ -1178,17 +1188,6 @@ WndTextProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
             if (tw->hfont)
                 DeleteFont(tw->hfont);
             tw->hfont = (HFONT)0;
-            {/* Remove left over drag'n'drop file names */
-                int i;
-                for (i = 0; tw->szFiles != NULL && i < tw->cFiles; i++) {
-                    dwmain_remove_file_control_path(tw->szFiles[i]);
-                    free(tw->szFiles[i]);
-                    tw->szFiles[i] = NULL;
-                }
-                free(tw->szFiles);
-                tw->szFiles = NULL;
-                tw->cFiles = 0;
-            }
             tw->quitnow = TRUE;
             PostQuitMessage(0);
             break;

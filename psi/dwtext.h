@@ -144,6 +144,10 @@ int text_getpos(TW *tw, int *px, int *py, int *pcx, int *pcy);
  */
 void text_drag(TW *tw, const char *pre_drag, const char *post_drag);
 
+/* Clear the list of files/paths from the drag and drop stuff */
+void
+text_clear_drag_and_drop_list(TW* tw, int freelist);
+
 /* provide access to window handle */
 HWND text_get_handle(TW *tw);
 
