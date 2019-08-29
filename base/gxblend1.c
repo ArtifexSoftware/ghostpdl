@@ -877,11 +877,12 @@ gx_blend_image_buffer16(byte *buf_ptr_, int width, int height, int rowstride,
                 }
             } else {
                 a ^= 0xffff;
-                a += a>>15;
+                a += a>>15; /* a is now 0 to 0x10000 */
+                a >>= 1; /* We can only use 15 bits as bg-comp has a sign bit we can't lose */
                 for (comp_num = 0; comp_num < num_comp; comp_num++) {
                     comp  = buf_ptr[position + planestride * comp_num];
-                    tmp = ((bg - comp) * a) + 0x8000;
-                    comp += (tmp >> 16); /* Errors in bit 16 upwards will be ignored */
+                    tmp = (((int)bg - comp) * a) + 0x4000;
+                    comp += (tmp >> 15); /* Errors in bit 16 upwards will be ignored */
                     /* Store as big endian */
                     ((byte *)&buf_ptr[position + planestride * comp_num])[0] = comp>>8;
                     ((byte *)&buf_ptr[position + planestride * comp_num])[1] = comp;
