@@ -494,22 +494,22 @@ art_blend_luminosity_rgb_16(int n_chan, uint16_t *gs_restrict dst, const uint16_
     b = bb + delta_y;
     if ((r | g | b) & 0x10000) {
         int y;
-        int scale;
+        int64_t scale;
 
-        /* FIXME: Check this! */
+        /* Resort to 64 bit to avoid calculations with scale overflowing */
         y = (rs * 77 + gs * 151 + bs * 28 + 0x80) >> 8;
         if (delta_y > 0) {
             int max;
 
             max = r > g ? r : g;
             max = b > max ? b : max;
-            scale = ((65535 - y) << 16) / (max - y);
+            scale = ((65535 - (int64_t)y) << 16) / (max - y);
         } else {
             int min;
 
             min = r < g ? r : g;
             min = b < min ? b : min;
-            scale = (y << 16) / (y - min);
+            scale = (((int64_t)y) << 16) / (y - min);
         }
         r = y + (((r - y) * scale + 0x8000) >> 16);
         g = y + (((g - y) * scale + 0x8000) >> 16);
@@ -596,9 +596,9 @@ art_blend_luminosity_custom_16(int n_chan, uint16_t *gs_restrict dst, const uint
 
     if (test & 0x10000) {
         int y;
-        int scale;
+        int64_t scale;
 
-        /* FIXME: Check this! */
+        /* Resort to 64bit to avoid calculations with scale overflowing */
         /* Assume that the luminosity is simply the average of the backdrop. */
         y = src[0];
         for (i = 1; i < n_chan; i++)
@@ -611,14 +611,14 @@ art_blend_luminosity_custom_16(int n_chan, uint16_t *gs_restrict dst, const uint
             max = r[0];
             for (i = 1; i < n_chan; i++)
                 max = max(max, r[i]);
-            scale = ((65535 - y) << 16) / (max - y);
+            scale = ((65535 - (int64_t)y) << 16) / (max - y);
         } else {
             int min;
 
             min = r[0];
             for (i = 1; i < n_chan; i++)
                 min = min(min, r[i]);
-            scale = (y << 16) / (y - min);
+            scale = (((int64_t)y) << 16) / (y - min);
         }
         for (i = 0; i < n_chan; i++)
             r[i] = y + (((r[i] - y) * scale + 0x8000) >> 16);
