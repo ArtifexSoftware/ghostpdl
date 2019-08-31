@@ -1486,7 +1486,7 @@ art_blend_pixel_16_inline(uint16_t *gs_restrict dst, const uint16_t *gs_restrict
                     /* Otherwise we have B(cb, cs)= cs if cs is specified in
                      * the current color space all other color should get cb.
                      * Essentially the standard overprint case. */
-                    for (i = 0, comps = drawn_comps; comps != 0; ++i, comps >>= 1) {
+                    for (i = 0, comps = drawn_comps; i < n_chan; ++i, comps >>= 1) {
                         if ((comps & 0x1) != 0) {
                             dst[i] = src[i];
                         } else {
