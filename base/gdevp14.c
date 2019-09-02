@@ -708,10 +708,12 @@ resolve_matte(pdf14_buf *maskbuf, byte *src_data, int src_planestride, int src_r
                 int      b   = mask_tr_fn[top+1]-a;
                 uint16_t matte_alpha = a + ((0x80 + b*(idx & 0xff))>>8);
 
+                /* matte's happen rarely enough that we allow ourselves to
+                 * resort to 64bit here. */
                 if (matte_alpha != 0 && matte_alpha != 0xffff) {
                     for (i = 0; i < src_profile->num_comps; i++) {
                         int val = src_curr_ptr[i * src_planestride] - maskbuf->matte[i];
-                        int temp = ((unsigned int)(val * 0xffff) / matte_alpha) + maskbuf->matte[i];
+                        int temp = (((int64_t)val) * 0xffff / matte_alpha) + maskbuf->matte[i];
 
                         /* clip */
                         if (temp > 0xffff)
