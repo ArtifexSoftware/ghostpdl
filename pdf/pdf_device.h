@@ -16,4 +16,6 @@
 #ifndef PDF_DEVICE
 #define PDF_DEVICE
 
+bool pdfi_device_check_param_bool(gx_device *dev, const char *param);
+
 #endif

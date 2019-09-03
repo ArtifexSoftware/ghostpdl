@@ -1634,6 +1634,11 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
     /* Force NOTRANSPARENCY here if required, until we can get it working... */
     ctx->page_has_transparency = ctx->PageTransparencyArray[page_index] & page_bit ? 1 : 0;
 
+    /* Set whether device needs OP support
+     * This needs to be before transparency device is pushed, if applicable
+     */
+    pdfi_trans_set_needs_OP(ctx);
+
     pdfi_gsave(ctx);
 
     if (ctx->page_has_transparency) {

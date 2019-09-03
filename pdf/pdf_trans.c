@@ -23,6 +23,7 @@
 #include "pdf_gstate.h"
 #include "pdf_array.h"
 #include "pdf_image.h"
+#include "pdf_device.h"
 
 #include "gstparam.h"
 
@@ -404,6 +405,30 @@ int pdfi_trans_end_smask_notify(pdf_context *ctx)
     bbox.q.y = 0;
 
     return gs_begin_transparency_mask(ctx->pgs, &params, &bbox, false);
+}
+
+/* Setup whether or not we need to support overprint (for device)
+ * Check for:
+ *   1) whether or not it is a CMYK device, and
+ *   2) whether it is a device that has transparency support
+ * Based on pdf_main.ps/pdfshowpage_finish
+ */
+void pdfi_trans_set_needs_OP(pdf_context *ctx)
+{
+    bool is_cmyk;
+    bool have_transparency = false;
+
+    /* PS code checks for >= 4 components... */
+    is_cmyk = ctx->pgs->device->color_info.num_components >= 4;
+
+    have_transparency = pdfi_device_check_param_bool(ctx->pgs->device, "HaveTransparency");
+
+    if (!is_cmyk || have_transparency)
+        ctx->page_needs_OP = false;
+    else
+        ctx->page_needs_OP = true;
+    dbgmprintf1(ctx->memory, "Page %s Overprint\n", ctx->page_needs_OP ?
+                "NEEDS" : "does NOT NEED");
 }
 
 int pdfi_trans_setup(pdf_context *ctx, pdfi_trans_state_t *state,

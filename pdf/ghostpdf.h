@@ -280,6 +280,9 @@ typedef struct pdf_context_s
      */
     char *PageTransparencyArray;
 
+    /* Does this page need overprint support? */
+    bool page_needs_OP;
+
     double PageSize[4];
 
     /* Page level PDF objects */
