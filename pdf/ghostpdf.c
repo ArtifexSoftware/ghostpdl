@@ -1587,6 +1587,48 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
     code = gs_settexthscaling(ctx->pgs, (double)100.0);
     ctx->TextBlockDepth = 0;
 
+    if (ctx->pgs->set_transfer.red == 0x00) {
+        ctx->DefaultTransfers[0].proc = gs_identity_transfer;
+        memset(ctx->DefaultTransfers[0].values, 0x00, transfer_map_size * sizeof(frac));
+    } else {
+        ctx->DefaultTransfers[0].proc = ctx->pgs->set_transfer.red->proc;
+        memcpy(ctx->DefaultTransfers[0].values, ctx->pgs->set_transfer.red->values, transfer_map_size * sizeof(frac));
+    }
+    if (ctx->pgs->set_transfer.green == 0x00) {
+        ctx->DefaultTransfers[1].proc = gs_identity_transfer;
+        memset(ctx->DefaultTransfers[1].values, 0x00, transfer_map_size * sizeof(frac));
+    } else {
+        ctx->DefaultTransfers[1].proc = ctx->pgs->set_transfer.green->proc;
+        memcpy(ctx->DefaultTransfers[1].values, ctx->pgs->set_transfer.green->values, transfer_map_size * sizeof(frac));
+    }
+    if (ctx->pgs->set_transfer.blue == 0x00) {
+        ctx->DefaultTransfers[2].proc = gs_identity_transfer;
+        memset(ctx->DefaultTransfers[2].values, 0x00, transfer_map_size * sizeof(frac));
+    } else {
+        ctx->DefaultTransfers[2].proc = ctx->pgs->set_transfer.blue->proc;
+        memcpy(ctx->DefaultTransfers[2].values, ctx->pgs->set_transfer.blue->values, transfer_map_size * sizeof(frac));
+    }
+    if (ctx->pgs->set_transfer.gray == 0x00) {
+        ctx->DefaultTransfers[3].proc = gs_identity_transfer;
+        memset(ctx->DefaultTransfers[3].values, 0x00, transfer_map_size * sizeof(frac));
+    } else {
+        ctx->DefaultTransfers[3].proc = ctx->pgs->set_transfer.gray->proc;
+        memcpy(ctx->DefaultTransfers[3].values, ctx->pgs->set_transfer.gray->values, transfer_map_size * sizeof(frac));
+    }
+    if (ctx->pgs->black_generation == 0x00) {
+        ctx->DefaultBG.proc = gs_identity_transfer;
+        memset(ctx->DefaultBG.values, 0x00, transfer_map_size * sizeof(frac));
+    } else {
+        ctx->DefaultBG.proc = ctx->pgs->black_generation->proc;
+        memcpy(ctx->DefaultBG.values, ctx->pgs->black_generation->values, transfer_map_size * sizeof(frac));
+    }
+    if (ctx->pgs->undercolor_removal == 0x00) {
+        ctx->DefaultUCR.proc = gs_identity_transfer;
+        memset(ctx->DefaultUCR.values, 0x00, transfer_map_size * sizeof(frac));
+    } else {
+        ctx->DefaultUCR.proc = ctx->pgs->undercolor_removal->proc;
+        memcpy(ctx->DefaultUCR.values, ctx->pgs->undercolor_removal->values, transfer_map_size * sizeof(frac));
+    }
     dbgmprintf1(ctx->memory, "Current page transparency setting is %d\n", ctx->PageTransparencyArray[page_index] & page_bit ? 1 : 0);
 
     /* Force NOTRANSPARENCY here if required, until we can get it working... */

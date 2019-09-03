@@ -76,10 +76,11 @@
 #include "gscms.h"
 #include "gsicc_cache.h"
 #include "gxpcolor.h"
-
 #include "gxdevsop.h"       /* For special ops */
-
 #include "gstext.h"         /* for gs_text_enum_t */
+
+#include "gxtmap.h"
+#include "gxfmap.h"
 
 #ifndef PDF_CONTEXT
 #define PDF_CONTEXT
@@ -150,6 +151,11 @@ typedef enum pdf_warning_flag_e {
 #define MAX_STACK_SIZE 32767
 #define MAX_OBJECT_CACHE_SIZE 200
 #define INITIAL_LOOP_TRACKER_SIZE 32
+
+typedef struct pdf_transfer_s {
+    gs_mapping_proc proc;	/* typedef is in gxtmap.h */
+    frac values[transfer_map_size];
+} pdf_transfer;
 
 /* Items we want preserved around content stream executions */
 typedef struct stream_save_s {
@@ -279,6 +285,11 @@ typedef struct pdf_context_s
     /* Page level PDF objects */
     pdf_dict *SpotNames;
     pdf_dict *CurrentPageDict;      /* Last-ditch resource lookup */
+
+    /* Page leve 'Default' transfer functions, black generation and under colour removal */
+    pdf_transfer DefaultTransfers[4];
+    pdf_transfer DefaultBG;
+    pdf_transfer DefaultUCR;
 
     /* Document level PDF objects */
     xref_table *xref_table;

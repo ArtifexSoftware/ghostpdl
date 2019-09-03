@@ -648,66 +648,398 @@ static int GS_Font(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_di
     return 0;
 }
 
+static int pdfi_set_blackgeneration(pdf_context *ctx, pdf_obj *obj, pdf_dict *stream_dict, pdf_dict *page_dict, bool is_BG)
+{
+    int code = 0, i;
+    gs_function_t *pfn;
+
+    if (obj->type == PDF_NAME) {
+        if (pdfi_name_is((const pdf_name *)obj, "Identity")) {
+            code = gs_setblackgeneration_remap(ctx->pgs, gs_identity_transfer, false);
+            goto exit;
+        } else {
+            if (!is_BG && pdfi_name_is((const pdf_name *)obj, "Default")) {
+                code = gs_setblackgeneration_remap(ctx->pgs, ctx->DefaultBG.proc, false);
+                memcpy(ctx->pgs->black_generation->values, ctx->DefaultBG.values, transfer_map_size * sizeof(frac));
+                goto exit;
+            } else {
+                code = gs_note_error(gs_error_rangecheck);
+                goto exit;
+            }
+        }
+    } else {
+        if (obj->type != PDF_DICT)
+            return_error(gs_error_typecheck);
+
+        code = pdfi_build_function(ctx, &pfn, NULL, 1, (pdf_dict *)obj, page_dict);
+        if (code < 0)
+            return code;
+
+        gs_setblackgeneration_remap(ctx->pgs, gs_mapped_transfer, false);
+        for (i = 0; i < transfer_map_size; i++) {
+            float v, f;
+
+            f = (1.0f / transfer_map_size) * i;
+
+            code = gs_function_evaluate(pfn, (const float *)&f, &v);
+            if (code < 0) {
+                pdfi_free_function(ctx, pfn);
+                return code;
+            }
+
+            ctx->pgs->black_generation->values[i] =
+                (v < 0.0 ? float2frac(0.0) :
+                 v >= 1.0 ? frac_1 :
+                 float2frac(v));
+        }
+        code = pdfi_free_function(ctx, pfn);
+    }
+exit:
+    return code;
+}
+
 static int GS_BG(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
-    return 0;
+    int code;
+    pdf_obj *obj = NULL;
+
+    /* If the dictionary also has a BG2, then we must use that */
+    code = pdfi_dict_get(ctx, GS, "BG2", &obj);
+    if (code == 0) {
+        pdfi_countdown(obj);
+        return 0;
+    }
+
+    code = pdfi_dict_get(ctx, GS, "BG", &obj);
+    if (code < 0)
+        return code;
+
+    code = pdfi_set_blackgeneration(ctx, obj, stream_dict, page_dict, true);
+
+    pdfi_countdown(obj);
+
+    return code;
 }
 
 static int GS_BG2(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
-    return 0;
+    int code;
+    pdf_obj *obj = NULL;
+
+    code = pdfi_dict_get(ctx, GS, "BG2", &obj);
+    if (code < 0)
+        return code;
+
+    code = pdfi_set_blackgeneration(ctx, obj, stream_dict, page_dict, false);
+
+    pdfi_countdown(obj);
+
+    return code;
+}
+
+static int pdfi_set_undercolorremoval(pdf_context *ctx, pdf_obj *obj, pdf_dict *stream_dict, pdf_dict *page_dict, bool is_BG)
+{
+    int code = 0, i;
+    gs_function_t *pfn;
+
+    if (obj->type == PDF_NAME) {
+        if (pdfi_name_is((const pdf_name *)obj, "Identity")) {
+            code = gs_setundercolorremoval_remap(ctx->pgs, gs_identity_transfer, false);
+            goto exit;
+        } else {
+            if (!is_BG && pdfi_name_is((const pdf_name *)obj, "Default")) {
+                code = gs_setundercolorremoval_remap(ctx->pgs, ctx->DefaultUCR.proc, false);
+                memcpy(ctx->pgs->undercolor_removal->values, ctx->DefaultUCR.values, transfer_map_size * sizeof(frac));
+                goto exit;
+            } else {
+                code = gs_note_error(gs_error_rangecheck);
+                goto exit;
+            }
+        }
+    } else {
+        if (obj->type != PDF_DICT)
+            return_error(gs_error_typecheck);
+
+        code = pdfi_build_function(ctx, &pfn, NULL, 1, (pdf_dict *)obj, page_dict);
+        if (code < 0)
+            return code;
+
+        gs_setundercolorremoval_remap(ctx->pgs, gs_mapped_transfer, false);
+        for (i = 0; i < transfer_map_size; i++) {
+            float v, f;
+
+            f = (1.0f / transfer_map_size) * i;
+
+            code = gs_function_evaluate(pfn, (const float *)&f, &v);
+            if (code < 0) {
+                pdfi_free_function(ctx, pfn);
+                return code;
+            }
+
+            ctx->pgs->undercolor_removal->values[i] =
+                (v < 0.0 ? float2frac(0.0) :
+                 v >= 1.0 ? frac_1 :
+                 float2frac(v));
+        }
+        code = pdfi_free_function(ctx, pfn);
+    }
+exit:
+    return code;
 }
 
 static int GS_UCR(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
-    return 0;
+    int code;
+    pdf_obj *obj = NULL;
+
+    /* If the dictionary also has a UCR2, then we must use that and ignore the UCR */
+    code = pdfi_dict_get(ctx, GS, "UCR2", &obj);
+    if (code == 0) {
+        pdfi_countdown(obj);
+        return 0;
+    }
+
+    code = pdfi_dict_get(ctx, GS, "UCR", &obj);
+    if (code < 0)
+        return code;
+
+    code = pdfi_set_undercolorremoval(ctx, obj, stream_dict, page_dict, true);
+
+    pdfi_countdown(obj);
+
+    return code;
 }
 
 static int GS_UCR2(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
-    return 0;
+    int code;
+    pdf_obj *obj = NULL;
+
+    code = pdfi_dict_get(ctx, GS, "UCR2", &obj);
+    if (code < 0)
+        return code;
+
+    code = pdfi_set_undercolorremoval(ctx, obj, stream_dict, page_dict, false);
+
+    pdfi_countdown(obj);
+
+    return code;
+}
+
+typedef enum pdf_transfer_function_type_e {
+    E_IDENTITY,
+    E_DEFAULT,
+    E_FUNCTION
+};
+
+/* We use this for both TR and TR2, is_TR is true if this is a TR, in which case we don't want
+ * to permit /Default names for fucntions.
+ */
+static int pdfi_set_all_transfers(pdf_context *ctx, pdf_array *a, pdf_dict *page_dict, bool is_TR)
+{
+    int code = 0, i, j;
+    pdf_obj *o = NULL;
+    int proc_types[4];
+    gs_mapping_proc map_procs[4];
+    gs_function_t *pfn[4];
+
+    memset(pfn, 0x00, 4 * sizeof(gs_function_t *));
+    memset(map_procs, 0x00, 4 * sizeof(gs_mapping_proc *));
+
+    /* Two passes, the first one is to find the appropriate transfer procedures
+     * and do the majorty of the error checking;
+     */
+    for (i = 0; i < 4; i++) {
+        code = pdfi_array_get(ctx, a, (uint64_t)i, &o);
+        if (code < 0)
+            goto exit;
+        if (o->type == PDF_NAME) {
+            if (pdfi_name_is((const pdf_name *)o, "Identity")) {
+                proc_types[i] = E_IDENTITY;
+                map_procs[i] = gs_identity_transfer;
+            } else {
+                if (!is_TR && pdfi_name_is((const pdf_name *)o, "Default")) {
+                    proc_types[i] = E_DEFAULT;
+                    map_procs[i] = ctx->DefaultTransfers[i].proc;
+                } else {
+                    pdfi_countdown(o);
+                    code = gs_note_error(gs_error_typecheck);
+                    goto exit;
+                }
+            }
+        } else {
+            if (o->type == PDF_DICT) {
+                proc_types[i] = E_FUNCTION;
+                map_procs[i] = gs_mapped_transfer;
+                code = pdfi_build_function(ctx, &pfn[i], NULL, 1, (pdf_dict *)o, page_dict);
+                if (code < 0) {
+                    pdfi_countdown(o);
+                    goto exit;
+                }
+            } else {
+                pdfi_countdown(o);
+                code = gs_note_error(gs_error_typecheck);
+                goto exit;
+            }
+        }
+        pdfi_countdown(o);
+    }
+    code = gs_setcolortransfer_remap(ctx->pgs, map_procs[0], map_procs[1], map_procs[2], map_procs[3], false);
+    if (code < 0)
+        goto exit;
+
+    /* Second pass is to evaluate and set the transfer maps */
+    for (j = 0; j < 4; j++) {
+        if (proc_types[j] == E_DEFAULT) {
+            switch(j) {
+                case 0:
+                    memcpy(ctx->pgs->set_transfer.red->values, ctx->DefaultTransfers[j].values, transfer_map_size * sizeof(frac));
+                    break;
+                case 1:
+                    memcpy(ctx->pgs->set_transfer.green->values, ctx->DefaultTransfers[j].values, transfer_map_size * sizeof(frac));
+                    break;
+                case 2:
+                    memcpy(ctx->pgs->set_transfer.blue->values, ctx->DefaultTransfers[j].values, transfer_map_size * sizeof(frac));
+                    break;
+                case 3:
+                    memcpy(ctx->pgs->set_transfer.gray->values, ctx->DefaultTransfers[j].values, transfer_map_size * sizeof(frac));
+                    break;
+            }
+        }
+        if (proc_types[j] == E_FUNCTION) {
+            for (i = 0; i < transfer_map_size; i++) {
+                float v, f;
+                frac value;
+
+                f = (1.0f / transfer_map_size) * i;
+
+                code = gs_function_evaluate(pfn[j], (const float *)&f, &v);
+                if (code < 0)
+                    goto exit;
+
+                value =
+                    (v < 0.0 ? float2frac(0.0) :
+                     v >= 1.0 ? frac_1 :
+                     float2frac(v));
+                switch(j) {
+                    case 0:
+                        ctx->pgs->set_transfer.red->values[i] = value;
+                        break;
+                    case 1:
+                        ctx->pgs->set_transfer.green->values[i] = value;
+                        break;
+                    case 2:
+                        ctx->pgs->set_transfer.blue->values[i] = value;
+                        break;
+                    case 3:
+                        ctx->pgs->set_transfer.gray->values[i] = value;
+                        break;
+                }
+            }
+        }
+    }
+ exit:
+//    (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
+    for (i = 0; i < 4; i++) {
+        pdfi_free_function(ctx, pfn[i]);
+    }
+    return code;
+}
+
+static int pdfi_set_gray_transfer(pdf_context *ctx, pdf_dict *d, pdf_dict *page_dict)
+{
+    int code = 0, i;
+    gs_function_t *pfn;
+
+    if (d->type != PDF_DICT)
+        return_error(gs_error_typecheck);
+
+    code = pdfi_build_function(ctx, &pfn, NULL, 1, d, page_dict);
+    if (code < 0)
+        return code;
+
+    gs_settransfer_remap(ctx->pgs, gs_mapped_transfer, false);
+    for (i = 0; i < transfer_map_size; i++) {
+        float v, f;
+
+        f = (1.0f / transfer_map_size) * i;
+
+        code = gs_function_evaluate(pfn, (const float *)&f, &v);
+        if (code < 0) {
+            pdfi_free_function(ctx, pfn);
+            return code;
+        }
+
+        ctx->pgs->set_transfer.gray->values[i] =
+            (v < 0.0 ? float2frac(0.0) :
+             v >= 1.0 ? frac_1 :
+             float2frac(v));
+    }
+    return pdfi_free_function(ctx, pfn);
+}
+
+static int pdfi_set_transfer(pdf_context *ctx, pdf_obj *obj, pdf_dict *stream_dict, pdf_dict *page_dict, bool is_TR)
+{
+    int code = 0;
+
+    if (obj->type == PDF_NAME) {
+        if (pdfi_name_is((const pdf_name *)obj, "Identity")) {
+            code = gs_settransfer_remap(ctx->pgs, gs_identity_transfer, false);
+            goto exit;
+        } else {
+            if (!is_TR && pdfi_name_is((const pdf_name *)obj, "Default")) {
+                code = gs_settransfer_remap(ctx->pgs, ctx->DefaultTransfers[3].proc, false);
+                memcpy(ctx->pgs->set_transfer.gray->values, ctx->DefaultTransfers[3].values, transfer_map_size * sizeof(frac));
+                goto exit;
+            } else {
+                code = gs_note_error(gs_error_rangecheck);
+                goto exit;
+            }
+        }
+    }
+
+    if (obj->type == PDF_ARRAY) {
+        if (pdfi_array_size((pdf_array *)obj) != 4) {
+            code = gs_note_error(gs_error_rangecheck);
+            goto exit;
+        } else {
+            code = pdfi_set_all_transfers(ctx, (pdf_array *)obj, page_dict, false);
+        }
+    } else
+        code = pdfi_set_gray_transfer(ctx, (pdf_dict *)obj, page_dict);
+
+exit:
+    return code;
 }
 
 static int GS_TR(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
-    return 0;
+    int code;
+    pdf_obj *obj = NULL;
+
+    code = pdfi_dict_get(ctx, GS, "TR", &obj);
+    if (code < 0)
+        return code;
+
+    code = pdfi_set_transfer(ctx, obj, stream_dict, page_dict, true);
+
+    pdfi_countdown(obj);
+
+    return code;
 }
 
 static int GS_TR2(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
-    int code;
+    int code, i, j;
     pdf_obj *obj = NULL;
     gs_offset_t saved_stream_offset;
-
     code = pdfi_dict_get(ctx, GS, "TR2", &obj);
     if (code < 0)
         return code;
 
-    saved_stream_offset = pdfi_unread_tell(ctx);
-    if (obj->type == PDF_NAME) {
-        /* TODO */
-        goto exit;
-    }
+    code = pdfi_set_transfer(ctx, obj, stream_dict, page_dict, false);
 
-    if (obj->type == PDF_ARRAY) {
-        /* TODO */
-    } else {
-        if (obj->type == PDF_DICT) {
-            gs_function_t *pfn;
-
-            code = pdfi_build_function(ctx, &pfn, NULL, 1, (pdf_dict *)obj, page_dict);
-            if (code < 0) {
-                goto exit;
-            }
-            /* TODO: incomplete code, pfn is built but need to do something with it? */
-            /* (so this probably causes a memory leak?) */
-        }
-    }
-
- exit:
-    (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
     pdfi_countdown(obj);
-    dbgmprintf(ctx->memory, "ExtGState TR2 not yet implemented\n");
 
     return code;
 }
