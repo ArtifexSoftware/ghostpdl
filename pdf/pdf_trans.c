@@ -432,35 +432,77 @@ void pdfi_trans_set_needs_OP(pdf_context *ctx)
                 "NEEDS" : "does NOT NEED");
 }
 
+/* Figures out if current colorspace is okay for Overprint */
+static bool pdfi_trans_okOPcs(pdf_context *ctx)
+{
+    /* TODO: Need to figure out insane pdf colorspace stuff */
+    /* See pdf_ops.ps/okOPcs , /setupOPtrans */
+    return true;
+}
+
 int pdfi_trans_setup(pdf_context *ctx, pdfi_trans_state_t *state,
                      pdfi_transparency_caller_t caller, double alpha)
 {
     pdfi_int_gstate *igs = (pdfi_int_gstate *)ctx->pgs->client_data;
     int code;
     bool stroked_bbox;
+    bool current_overprint;
+    bool okOPcs = false;
+    bool ChangeBM = false;
+    gs_blend_mode_t mode;
+    bool need_group = false;
 
     memset(state, 0, sizeof(*state));
 
     if (!ctx->page_has_transparency)
         return 0;
 
+    if (ctx->page_needs_OP) {
+        okOPcs = pdfi_trans_okOPcs(ctx);
+        if (okOPcs) {
+            if (caller == TRANSPARENCY_Caller_Stroke)
+                current_overprint = gs_currentstrokeoverprint(ctx->pgs);
+            else
+                current_overprint = gs_currentfilloverprint(ctx->pgs);
+            ChangeBM = current_overprint;
+            mode = gs_currentblendmode(ctx->pgs);
+            if (mode != BLEND_MODE_Normal && mode != BLEND_MODE_Compatible)
+                need_group = ChangeBM;
+            else
+                need_group = false;
+        } else {
+            need_group = false;
+        }
+    } else {
+        if (caller == TRANSPARENCY_Caller_Image || igs->SMask == NULL)
+            need_group = false;
+        else
+            need_group = true;
+    }
+
+
     code = pdfi_trans_set_params(ctx, alpha);
     if (code != 0)
         return 0;
 
-    if (igs->SMask == NULL || caller == TRANSPARENCY_Caller_Image) {
-        state->GroupPushed = false;
+    if (!need_group && !ChangeBM)
         return 0;
-    }
 
     /* TODO: error handling... */
-    stroked_bbox = (caller == TRANSPARENCY_Caller_Stroke);
-    code = pdfi_trans_begin_group(ctx, stroked_bbox, true, false);
-    state->GroupPushed = true;
-    state->saveOA = gs_currentopacityalpha(ctx->pgs);
-    state->saveSA = gs_currentshapealpha(ctx->pgs);
-    code = gs_setopacityalpha(ctx->pgs, 1.0);
-    code = gs_setshapealpha(ctx->pgs, 1.0);
+    if (need_group) {
+        stroked_bbox = (caller == TRANSPARENCY_Caller_Stroke);
+        code = pdfi_trans_begin_group(ctx, stroked_bbox, true, false);
+        state->GroupPushed = true;
+        state->saveOA = gs_currentopacityalpha(ctx->pgs);
+        state->saveSA = gs_currentshapealpha(ctx->pgs);
+        code = gs_setopacityalpha(ctx->pgs, 1.0);
+        code = gs_setshapealpha(ctx->pgs, 1.0);
+    }
+    if (ChangeBM) {
+        state->saveBM = mode;
+        state->ChangeBM = true;
+        code = gs_setblendmode(ctx->pgs, BLEND_MODE_CompatibleOverprint);
+    }
     return code;
 }
 
@@ -477,13 +519,8 @@ int pdfi_trans_teardown(pdf_context *ctx, pdfi_trans_state_t *state)
         code = gs_setshapealpha(ctx->pgs, state->saveSA);
     }
 
-    /* TODO:
-  % Also, if we changed the BM, restore it (AFTER the group was popped)
-  .currentblendmode /CompatibleOverprint eq {
-    % restore the blendmode
-    saveBM .setblendmode
-  } if
-    */
+    if (gs_currentblendmode(ctx->pgs) == BLEND_MODE_CompatibleOverprint)
+        code = gs_setblendmode(ctx->pgs, state->saveBM);
 
     return code;
 }
