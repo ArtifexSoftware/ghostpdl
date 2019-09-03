@@ -3073,6 +3073,17 @@ Separation and DeviceN colors.  For the general user this command option
 </dl>
 
 <dl>
+    <dt><code>-sBlendColorProfile=</code><em>filename</em></dt>
+<dd>With the PDF transparency imaging model, a color space can
+be specified within which the color blending operations are to
+take place. Some files lack this specification, in which case
+the blending occurs in the output device's native color space.  This
+dependency of blending color space on the device color model 
+can be avoided by using the above command to force a specific
+color space in which to perform the blending. </dd>
+</dl>
+
+<dl>
     <dt><code>-dColorAccuracy=</code><em>0/1/2</em></dt>
 <dd>Set the level of accuracy that should be used.  A setting of 0 will result in less accurate
 color rendering compared to a setting of 2.  However, the creation of a transformation
