@@ -915,20 +915,23 @@ gs_lib_ctx_stash_sanitized_arg(gs_lib_ctx_t *ctx, const char *arg)
             if (*p == 0)
                 break; /* No value to elide */
             /* Check for our whitelisted values here */
-            if (!memcmp("DEFAULTPAPERSIZE", arg+2, p-arg-3))
+#define ARG_MATCHES(STR, ARG, LEN) \
+    (strlen(STR) == LEN && !memcmp(STR, ARG, LEN))
+            if (ARG_MATCHES("DEFAULTPAPERSIZE", arg+2, p-arg-3))
                 break;
-            if (!memcmp("DEVICE", arg+2, p-arg-3))
+            if (ARG_MATCHES("DEVICE", arg+2, p-arg-3))
                 break;
-            if (!memcmp("PAPERSIZE", arg+2, p-arg-3))
+            if (ARG_MATCHES("PAPERSIZE", arg+2, p-arg-3))
                 break;
-            if (!memcmp("SUBSTFONT", arg+2, p-arg-3))
+            if (ARG_MATCHES("SUBSTFONT", arg+2, p-arg-3))
                 break;
-            if (!memcmp("ColorConversionStrategy", arg+2, p-arg-3))
+            if (ARG_MATCHES("ColorConversionStrategy", arg+2, p-arg-3))
                 break;
-            if (!memcmp("PageList", arg+2, p-arg-3))
+            if (ARG_MATCHES("PageList", arg+2, p-arg-3))
                 break;
-            if (!memcmp("ProcessColorModel", arg+2, p-arg-3))
+            if (ARG_MATCHES("ProcessColorModel", arg+2, p-arg-3))
                 break;
+#undef ARG_MATCHES
             /* Didn't match a whitelisted value, so elide it. */
             elide = 1;
             break;
