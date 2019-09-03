@@ -846,26 +846,24 @@ void TetrahedralInterp16(cmsContext ContextID, register const cmsUInt16Number In
 }
 
 
-#define DENS(i,j,k) (LutTable[(i)+(j)+(k)+OutChan])
+/* Hyper-Pentahedral Interpolation */
 static CMS_NO_SANITIZE
 void Eval4Inputs(cmsContext ContextID, register const cmsUInt16Number Input[],
                      register cmsUInt16Number Output[],
                      register const cmsInterpParams* p16)
 {
-    const cmsUInt16Number* LutTable;
-    cmsS15Fixed16Number fk;
-    cmsS15Fixed16Number k0, rk;
-    int K0, K1;
-    cmsS15Fixed16Number    fx, fy, fz;
-    cmsS15Fixed16Number    rx, ry, rz;
-    int                    x0, y0, z0;
-    cmsS15Fixed16Number    X0, X1, Y0, Y1, Z0, Z1;
-    cmsUInt32Number i;
-    cmsS15Fixed16Number    c0, c1, c2, c3, Rest;
+    const cmsUInt16Number *LutTable;
+    cmsS15Fixed16Number    fx, fy, fz, fk;
+    cmsS15Fixed16Number    rx, ry, rz, rk;
+    cmsS15Fixed16Number    m1, m2, m3, m4;
+    int                    x0, y0, z0, k0;
+    cmsS15Fixed16Number    X0, X1, Y0, Y1, Z0, Z1, K0, K1;
+    cmsS15Fixed16Number    o1, o2, o3, o4;
+    cmsS15Fixed16Number    c0, c1, c2, c3, c4, Rest;
     cmsUInt32Number        OutChan;
-    cmsUInt16Number        Tmp1[MAX_STAGE_CHANNELS], Tmp2[MAX_STAGE_CHANNELS];
+    cmsUInt16Number       *Out = Output;
+    int                    which;
     cmsUNUSED_PARAMETER(ContextID);
-
 
     fk  = _cmsToFixedDomain((int) Input[0] * p16 -> Domain[0]);
     fx  = _cmsToFixedDomain((int) Input[1] * p16 -> Domain[1]);
@@ -883,199 +881,225 @@ void Eval4Inputs(cmsContext ContextID, register const cmsUInt16Number Input[],
     rz  = FIXED_REST_TO_INT(fz);
 
     K0 = p16 -> opta[3] * k0;
-    K1 = K0 + (Input[0] == 0xFFFFU ? 0 : p16->opta[3]);
+    K1 = (Input[0] == 0xFFFFU ? 0 : p16->opta[3]);
 
     X0 = p16 -> opta[2] * x0;
-    X1 = X0 + (Input[1] == 0xFFFFU ? 0 : p16->opta[2]);
+    X1 = (Input[1] == 0xFFFFU ? 0 : p16->opta[2]);
 
     Y0 = p16 -> opta[1] * y0;
-    Y1 = Y0 + (Input[2] == 0xFFFFU ? 0 : p16->opta[1]);
+    Y1 = (Input[2] == 0xFFFFU ? 0 : p16->opta[1]);
 
     Z0 = p16 -> opta[0] * z0;
-    Z1 = Z0 + (Input[3] == 0xFFFFU ? 0 : p16->opta[0]);
+    Z1 = (Input[3] == 0xFFFFU ? 0 : p16->opta[0]);
 
     LutTable = (cmsUInt16Number*) p16 -> Table;
-    LutTable += K0;
+    LutTable += K0 + X0 + Y0 + Z0;
 
-    for (OutChan=0; OutChan < p16 -> nOutputs; OutChan++) {
-
-        c0 = DENS(X0, Y0, Z0);
-
-        if (rx >= ry && ry >= rz) {
-
-            c1 = DENS(X1, Y0, Z0) - c0;
-            c2 = DENS(X1, Y1, Z0) - DENS(X1, Y0, Z0);
-            c3 = DENS(X1, Y1, Z1) - DENS(X1, Y1, Z0);
-
-        }
-        else
-            if (rx >= rz && rz >= ry) {
-
-                c1 = DENS(X1, Y0, Z0) - c0;
-                c2 = DENS(X1, Y1, Z1) - DENS(X1, Y0, Z1);
-                c3 = DENS(X1, Y0, Z1) - DENS(X1, Y0, Z0);
-
-            }
-            else
-                if (rz >= rx && rx >= ry) {
-
-                    c1 = DENS(X1, Y0, Z1) - DENS(X0, Y0, Z1);
-                    c2 = DENS(X1, Y1, Z1) - DENS(X1, Y0, Z1);
-                    c3 = DENS(X0, Y0, Z1) - c0;
-
-                }
-                else
-                    if (ry >= rx && rx >= rz) {
-
-                        c1 = DENS(X1, Y1, Z0) - DENS(X0, Y1, Z0);
-                        c2 = DENS(X0, Y1, Z0) - c0;
-                        c3 = DENS(X1, Y1, Z1) - DENS(X1, Y1, Z0);
-
-                    }
-                    else
-                        if (ry >= rz && rz >= rx) {
-
-                            c1 = DENS(X1, Y1, Z1) - DENS(X0, Y1, Z1);
-                            c2 = DENS(X0, Y1, Z0) - c0;
-                            c3 = DENS(X0, Y1, Z1) - DENS(X0, Y1, Z0);
-
-                        }
-                        else
-                            if (rz >= ry && ry >= rx) {
-
-                                c1 = DENS(X1, Y1, Z1) - DENS(X0, Y1, Z1);
-                                c2 = DENS(X0, Y1, Z1) - DENS(X0, Y0, Z1);
-                                c3 = DENS(X0, Y0, Z1) - c0;
-
-                            }
-                            else {
-                                c1 = c2 = c3 = 0;
-                            }
-
-        Rest = c1 * rx + c2 * ry + c3 * rz;
-
-        Tmp1[OutChan] = (cmsUInt16Number)(c0 + ROUND_FIXED_TO_INT(_cmsToFixedDomain(Rest)));
+    which = (ry > rx ?  1 : 0) +
+            (rz > rx ?  2 : 0) +
+            (rk > rx ?  4 : 0) +
+            (rz > ry ?  8 : 0) +
+            (rk > ry ? 16 : 0) +
+            (rk > rz ? 32 : 0);
+    /* This gives us 24 possible cases:
+     * which                        Tetrahedral corners
+     * 0x00  rx >= ry >= rz >= rk   (0,0,0,0) (1,0,0,0) (1,1,0,0) (1,1,1,0) (1,1,1,1)
+     * 0x01  ry >  rx >= rz >= rk   (0,0,0,0) (0,1,0,0) (1,1,0,0) (1,1,1,0) (1,1,1,1)
+     * 0x03  ry >= rz >  rx >= rk   (0,0,0,0) (0,1,0,0) (0,1,1,0) (1,1,1,0) (1,1,1,1)
+     * 0x07  ry >= rz >= rk >  rx   (0,0,0,0) (0,1,0,0) (0,1,1,0) (0,1,1,1) (1,1,1,1)
+     * 0x08  rx >= rz >  ry >= rk   (0,0,0,0) (1,0,0,0) (1,0,1,0) (1,1,1,0) (1,1,1,1)
+     * 0x0a  rz >  rx >= ry >= rk   (0,0,0,0) (0,0,1,0) (1,0,1,0) (1,1,1,0) (1,1,1,1)
+     * 0x0b  rz >  ry >  rx >= rk   (0,0,0,0) (0,0,1,0) (0,1,1,0) (1,1,1,0) (1,1,1,1)
+     * 0x0f  rz >  ry >= rk >  rx   (0,0,0,0) (0,0,1,0) (0,1,1,0) (0,1,1,1) (1,1,1,1)
+     * 0x18  rx >= rz >= rk >  ry   (0,0,0,0) (1,0,0,0) (1,0,1,0) (1,0,1,1) (1,1,1,1)
+     * 0x1a  rz >  rx >= rk >  ry   (0,0,0,0) (0,0,1,0) (1,0,1,0) (1,0,1,1) (1,1,1,1)
+     * 0x1e  rz >= rk >  rx >= ry   (0,0,0,0) (0,0,1,0) (0,0,1,1) (1,0,1,1) (1,1,1,1)
+     * 0x1f  rz >= rk >  ry >  rx   (0,0,0,0) (0,0,1,0) (0,0,1,1) (0,1,1,1) (1,1,1,1)
+     * 0x20  rx >= ry >= rk >  rz   (0,0,0,0) (1,0,0,0) (1,1,0,0) (1,1,0,1) (1,1,1,1)
+     * 0x21  ry >  rx >= rk >  rz   (0,0,0,0) (0,1,0,0) (1,1,0,0) (1,1,0,1) (1,1,1,1)
+     * 0x25  ry >= rk >  rx >= rz   (0,0,0,0) (0,1,0,0) (0,1,0,1) (1,1,0,1) (1,1,1,1)
+     * 0x27  ry >= rk >  rz >  rx   (0,0,0,0) (0,1,0,0) (0,1,0,1) (0,1,1,1) (1,1,1,1)
+     * 0x30  rx >= rk >  ry >= rz   (0,0,0,0) (1,0,0,0) (1,0,0,1) (1,1,0,1) (1,1,1,1)
+     * 0x34  rk >  rx >= ry >= rz   (0,0,0,0) (0,0,0,1) (1,0,0,1) (1,1,0,1) (1,1,1,1)
+     * 0x35  rk >  ry >  rx >= rz   (0,0,0,0) (0,0,0,1) (0,1,0,1) (1,1,0,1) (1,1,1,1)
+     * 0x37  rk >  ry >= rz >  rx   (0,0,0,0) (0,0,0,1) (0,1,0,1) (0,1,1,1) (1,1,1,1)
+     * 0x38  rx >= rk >  rz >  ry   (0,0,0,0) (1,0,0,0) (1,0,0,1) (1,0,1,1) (1,1,1,1)
+     * 0x3c  rk >  rx >= rz >  ry   (0,0,0,0) (0,0,0,1) (1,0,0,1) (1,0,1,1) (1,1,1,1)
+     * 0x3e  rk >  rz >  rx >= ry   (0,0,0,0) (0,0,0,1) (0,0,1,1) (1,0,1,1) (1,1,1,1)
+     * 0x3f  rk >  rz >  ry  > rx   (0,0,0,0) (0,0,0,1) (0,0,1,1) (0,1,1,1) (1,1,1,1)
+     */
+    
+    o4 = X1+Y1+Z1+K1;
+    switch(which)
+    {
+        default: /* Never happens, but stops the compiler complaining of uninitialised vars */
+        case 0x00: o1 = X1; o2 = Y1; o3 = Z1; m1 = rx; m2 = ry; m3 = rz; m4 = rk; break;
+        case 0x01: o1 = Y1; o2 = X1; o3 = Z1; m1 = ry; m2 = rx; m3 = rz; m4 = rk; break;
+        case 0x03: o1 = Y1; o2 = Z1; o3 = X1; m1 = ry; m2 = rz; m3 = rx; m4 = rk; break;
+        case 0x07: o1 = Y1; o2 = Z1; o3 = K1; m1 = ry; m2 = rz; m3 = rk; m4 = rx; break;
+        case 0x08: o1 = X1; o2 = Z1; o3 = Y1; m1 = rx; m2 = rz; m3 = ry; m4 = rk; break;
+        case 0x0a: o1 = Z1; o2 = X1; o3 = Y1; m1 = rz; m2 = rx; m3 = ry; m4 = rk; break;
+        case 0x0b: o1 = Z1; o2 = Y1; o3 = X1; m1 = rz; m2 = ry; m3 = rx; m4 = rk; break;
+        case 0x0f: o1 = Z1; o2 = Y1; o3 = K1; m1 = rz; m2 = ry; m3 = rk; m4 = rx; break;
+        case 0x18: o1 = X1; o2 = Z1; o3 = K1; m1 = rx; m2 = rz; m3 = rk; m4 = ry; break;
+        case 0x1a: o1 = Z1; o2 = X1; o3 = K1; m1 = rz; m2 = rx; m3 = rk; m4 = ry; break;
+        case 0x1e: o1 = Z1; o2 = K1; o3 = X1; m1 = rz; m2 = rk; m3 = rx; m4 = ry; break;
+        case 0x1f: o1 = Z1; o2 = K1; o3 = Y1; m1 = rz; m2 = rk; m3 = ry; m4 = rx; break;
+        case 0x20: o1 = X1; o2 = Y1; o3 = K1; m1 = rx; m2 = ry; m3 = rk; m4 = rz; break;
+        case 0x21: o1 = Y1; o2 = X1; o3 = K1; m1 = ry; m2 = rx; m3 = rk; m4 = rz; break;
+        case 0x25: o1 = Y1; o2 = K1; o3 = X1; m1 = ry; m2 = rk; m3 = rx; m4 = rz; break;
+        case 0x27: o1 = Y1; o2 = K1; o3 = Z1; m1 = ry; m2 = rk; m3 = rz; m4 = rx; break;
+        case 0x30: o1 = X1; o2 = K1; o3 = Y1; m1 = rx; m2 = rk; m3 = ry; m4 = rz; break;
+        case 0x34: o1 = K1; o2 = X1; o3 = Y1; m1 = rk; m2 = rx; m3 = ry; m4 = rz; break;
+        case 0x35: o1 = K1; o2 = Y1; o3 = X1; m1 = rk; m2 = ry; m3 = rx; m4 = rz; break;
+        case 0x37: o1 = K1; o2 = Y1; o3 = Z1; m1 = rk; m2 = ry; m3 = rz; m4 = rx; break;
+        case 0x38: o1 = X1; o2 = K1; o3 = Z1; m1 = rx; m2 = rk; m3 = rz; m4 = ry; break;
+        case 0x3c: o1 = K1; o2 = X1; o3 = Z1; m1 = rk; m2 = rx; m3 = rz; m4 = ry; break;
+        case 0x3e: o1 = K1; o2 = Z1; o3 = X1; m1 = rk; m2 = rz; m3 = rx; m4 = ry; break;
+        case 0x3f: o1 = K1; o2 = Z1; o3 = Y1; m1 = rk; m2 = rz; m3 = ry; m4 = rx; break;
     }
+    o2 += o1;
+    o3 += o2;
+    for (OutChan=p16 -> nOutputs; OutChan != 0; OutChan--) {
+        c1 = LutTable[o1];
+        c2 = LutTable[o2];
+        c3 = LutTable[o3];
+        c4 = LutTable[o4] - c3;
+        c0 = *LutTable++;
+        c3 -= c2;
+        c2 -= c1;
+        c1 -= c0;
 
+        Rest = c1 * m1 + c2 * m2 + c3 * m3 + c4 * m4;
 
-    LutTable = (cmsUInt16Number*) p16 -> Table;
-    LutTable += K1;
-
-    for (OutChan=0; OutChan < p16 -> nOutputs; OutChan++) {
-
-        c0 = DENS(X0, Y0, Z0);
-
-        if (rx >= ry && ry >= rz) {
-
-            c1 = DENS(X1, Y0, Z0) - c0;
-            c2 = DENS(X1, Y1, Z0) - DENS(X1, Y0, Z0);
-            c3 = DENS(X1, Y1, Z1) - DENS(X1, Y1, Z0);
-
-        }
-        else
-            if (rx >= rz && rz >= ry) {
-
-                c1 = DENS(X1, Y0, Z0) - c0;
-                c2 = DENS(X1, Y1, Z1) - DENS(X1, Y0, Z1);
-                c3 = DENS(X1, Y0, Z1) - DENS(X1, Y0, Z0);
-
-            }
-            else
-                if (rz >= rx && rx >= ry) {
-
-                    c1 = DENS(X1, Y0, Z1) - DENS(X0, Y0, Z1);
-                    c2 = DENS(X1, Y1, Z1) - DENS(X1, Y0, Z1);
-                    c3 = DENS(X0, Y0, Z1) - c0;
-
-                }
-                else
-                    if (ry >= rx && rx >= rz) {
-
-                        c1 = DENS(X1, Y1, Z0) - DENS(X0, Y1, Z0);
-                        c2 = DENS(X0, Y1, Z0) - c0;
-                        c3 = DENS(X1, Y1, Z1) - DENS(X1, Y1, Z0);
-
-                    }
-                    else
-                        if (ry >= rz && rz >= rx) {
-
-                            c1 = DENS(X1, Y1, Z1) - DENS(X0, Y1, Z1);
-                            c2 = DENS(X0, Y1, Z0) - c0;
-                            c3 = DENS(X0, Y1, Z1) - DENS(X0, Y1, Z0);
-
-                        }
-                        else
-                            if (rz >= ry && ry >= rx) {
-
-                                c1 = DENS(X1, Y1, Z1) - DENS(X0, Y1, Z1);
-                                c2 = DENS(X0, Y1, Z1) - DENS(X0, Y0, Z1);
-                                c3 = DENS(X0, Y0, Z1) - c0;
-
-                            }
-                            else  {
-                                c1 = c2 = c3 = 0;
-                            }
-
-        Rest = c1 * rx + c2 * ry + c3 * rz;
-
-        Tmp2[OutChan] = (cmsUInt16Number) (c0 + ROUND_FIXED_TO_INT(_cmsToFixedDomain(Rest)));
-    }
-
-
-
-    for (i=0; i < p16 -> nOutputs; i++) {
-        Output[i] = LinearInterp(rk, Tmp1[i], Tmp2[i]);
+        *Out++ = (cmsUInt16Number)(c0 + ROUND_FIXED_TO_INT(_cmsToFixedDomain(Rest)));
     }
 }
-#undef DENS
-
-
-// For more that 3 inputs (i.e., CMYK)
-// evaluate two 3-dimensional interpolations and then linearly interpolate between them.
-
 
 static
 void Eval4InputsFloat(cmsContext ContextID, const cmsFloat32Number Input[],
                       cmsFloat32Number Output[],
                       const cmsInterpParams* p)
 {
-       const cmsFloat32Number* LutTable = (cmsFloat32Number*) p -> Table;
-       cmsFloat32Number rest;
-       cmsFloat32Number pk;
-       int k0, K0, K1;
-       const cmsFloat32Number* T;
-       cmsUInt32Number i;
-       cmsFloat32Number Tmp1[MAX_STAGE_CHANNELS], Tmp2[MAX_STAGE_CHANNELS];
-       cmsInterpParams p1;
+    const cmsFloat32Number* LutTable = (cmsFloat32Number*) p -> Table;
+    cmsFloat32Number     px, py, pz, pk;
+    int                  x0, y0, z0, k0;
+    int                  X0, Y0, Z0, K0, X1, Y1, Z1, K1;
+    cmsFloat32Number     rx, ry, rz, rk;
+    cmsFloat32Number     m1, m2, m3, m4;
+    cmsFloat32Number     c0, c1, c2, c3, c4;
+    int                  o1, o2, o3, o4;
+    int                  OutChan, TotalOut;
+    cmsFloat32Number    *Out = Output;
+    int                  which;
+    cmsUNUSED_PARAMETER(ContextID);
 
-       pk = fclamp(Input[0]) * p->Domain[0];
-       k0 = _cmsQuickFloor(pk);
-       rest = pk - (cmsFloat32Number) k0;
+    TotalOut   = p -> nOutputs;
 
-       K0 = p -> opta[3] * k0;
-       K1 = K0 + (fclamp(Input[0]) >= 1.0 ? 0 : p->opta[3]);
+    // We need some clipping here
+    pk = fclamp(Input[0]) * p->Domain[0];
+    px = fclamp(Input[1]) * p->Domain[1];
+    py = fclamp(Input[2]) * p->Domain[2];
+    pz = fclamp(Input[3]) * p->Domain[3];
 
-       p1 = *p;
-       memmove(&p1.Domain[0], &p ->Domain[1], 3*sizeof(cmsUInt32Number));
+    k0 = (int) floor(pk); rk = (pk - (cmsFloat32Number) k0);
+    x0 = (int) floor(px); rx = (px - (cmsFloat32Number) x0);  // We need full floor functionality here
+    y0 = (int) floor(py); ry = (py - (cmsFloat32Number) y0);
+    z0 = (int) floor(pz); rz = (pz - (cmsFloat32Number) z0);
 
-       T = LutTable + K0;
-       p1.Table = T;
+    K0 = p -> opta[3] * k0;
+    K1 = (fclamp(Input[0]) >= 1.0 ? 0 : p->opta[3]);
 
-       TetrahedralInterpFloat(ContextID, Input + 1,  Tmp1, &p1);
+    X0 = p -> opta[2] * x0;
+    X1 = (fclamp(Input[1]) >= 1.0 ? 0 : p->opta[2]);
 
-       T = LutTable + K1;
-       p1.Table = T;
-       TetrahedralInterpFloat(ContextID, Input + 1,  Tmp2, &p1);
+    Y0 = p -> opta[1] * y0;
+    Y1 = (fclamp(Input[2]) >= 1.0 ? 0 : p->opta[1]);
 
-       for (i=0; i < p -> nOutputs; i++)
-       {
-              cmsFloat32Number y0 = Tmp1[i];
-              cmsFloat32Number y1 = Tmp2[i];
+    Z0 = p -> opta[0] * z0;
+    Z1 = (fclamp(Input[3]) >= 1.0 ? 0 : p->opta[0]);
 
-              Output[i] = y0 + (y1 - y0) * rest;
-       }
+    LutTable = (cmsFloat32Number*) p -> Table;
+    LutTable += K0 + X0 + Y0 + Z0;
+
+    which = (ry > rx ?  1 : 0) +
+            (rz > rx ?  2 : 0) +
+            (rk > rx ?  4 : 0) +
+            (rz > ry ?  8 : 0) +
+            (rk > ry ? 16 : 0) +
+            (rk > rz ? 32 : 0);
+    /* This gives us 24 possible cases:
+     * which                        Tetrahedral corners
+     * 0x00  rx >= ry >= rz >= rk   (0,0,0,0) (1,0,0,0) (1,1,0,0) (1,1,1,0) (1,1,1,1)
+     * 0x01  ry >  rx >= rz >= rk   (0,0,0,0) (0,1,0,0) (1,1,0,0) (1,1,1,0) (1,1,1,1)
+     * 0x03  ry >= rz >  rx >= rk   (0,0,0,0) (0,1,0,0) (0,1,1,0) (1,1,1,0) (1,1,1,1)
+     * 0x07  ry >= rz >= rk >  rx   (0,0,0,0) (0,1,0,0) (0,1,1,0) (0,1,1,1) (1,1,1,1)
+     * 0x08  rx >= rz >  ry >= rk   (0,0,0,0) (1,0,0,0) (1,0,1,0) (1,1,1,0) (1,1,1,1)
+     * 0x0a  rz >  rx >= ry >= rk   (0,0,0,0) (0,0,1,0) (1,0,1,0) (1,1,1,0) (1,1,1,1)
+     * 0x0b  rz >  ry >  rx >= rk   (0,0,0,0) (0,0,1,0) (0,1,1,0) (1,1,1,0) (1,1,1,1)
+     * 0x0f  rz >  ry >= rk >  rx   (0,0,0,0) (0,0,1,0) (0,1,1,0) (0,1,1,1) (1,1,1,1)
+     * 0x18  rx >= rz >= rk >  ry   (0,0,0,0) (1,0,0,0) (1,0,1,0) (1,0,1,1) (1,1,1,1)
+     * 0x1a  rz >  rx >= rk >  ry   (0,0,0,0) (0,0,1,0) (1,0,1,0) (1,0,1,1) (1,1,1,1)
+     * 0x1e  rz >= rk >  rx >= ry   (0,0,0,0) (0,0,1,0) (0,0,1,1) (1,0,1,1) (1,1,1,1)
+     * 0x1f  rz >= rk >  ry >  rx   (0,0,0,0) (0,0,1,0) (0,0,1,1) (0,1,1,1) (1,1,1,1)
+     * 0x20  rx >= ry >= rk >  rz   (0,0,0,0) (1,0,0,0) (1,1,0,0) (1,1,0,1) (1,1,1,1)
+     * 0x21  ry >  rx >= rk >  rz   (0,0,0,0) (0,1,0,0) (1,1,0,0) (1,1,0,1) (1,1,1,1)
+     * 0x25  ry >= rk >  rx >= rz   (0,0,0,0) (0,1,0,0) (0,1,0,1) (1,1,0,1) (1,1,1,1)
+     * 0x27  ry >= rk >  rz >  rx   (0,0,0,0) (0,1,0,0) (0,1,0,1) (0,1,1,1) (1,1,1,1)
+     * 0x30  rx >= rk >  ry >= rz   (0,0,0,0) (1,0,0,0) (1,0,0,1) (1,1,0,1) (1,1,1,1)
+     * 0x34  rk >  rx >= ry >= rz   (0,0,0,0) (0,0,0,1) (1,0,0,1) (1,1,0,1) (1,1,1,1)
+     * 0x35  rk >  ry >  rx >= rz   (0,0,0,0) (0,0,0,1) (0,1,0,1) (1,1,0,1) (1,1,1,1)
+     * 0x37  rk >  ry >= rz >  rx   (0,0,0,0) (0,0,0,1) (0,1,0,1) (0,1,1,1) (1,1,1,1)
+     * 0x38  rx >= rk >  rz >  ry   (0,0,0,0) (1,0,0,0) (1,0,0,1) (1,0,1,1) (1,1,1,1)
+     * 0x3c  rk >  rx >= rz >  ry   (0,0,0,0) (0,0,0,1) (1,0,0,1) (1,0,1,1) (1,1,1,1)
+     * 0x3e  rk >  rz >  rx >= ry   (0,0,0,0) (0,0,0,1) (0,0,1,1) (1,0,1,1) (1,1,1,1)
+     * 0x3f  rk >  rz >  ry  > rx   (0,0,0,0) (0,0,0,1) (0,0,1,1) (0,1,1,1) (1,1,1,1)
+     */
+
+    o4 = X1+Y1+Z1+K1;
+    switch(which)
+    {
+        default: /* Never happens, but stops the compiler complaining of uninitialised vars */
+        case 0x00: o1 = X1; o2 = Y1; o3 = Z1; m1 = rx; m2 = ry; m3 = rz; m4 = rk; break;
+        case 0x01: o1 = Y1; o2 = X1; o3 = Z1; m1 = ry; m2 = rx; m3 = rz; m4 = rk; break;
+        case 0x03: o1 = Y1; o2 = Z1; o3 = X1; m1 = ry; m2 = rz; m3 = rx; m4 = rk; break;
+        case 0x07: o1 = Y1; o2 = Z1; o3 = K1; m1 = ry; m2 = rz; m3 = rk; m4 = rx; break;
+        case 0x08: o1 = X1; o2 = Z1; o3 = Y1; m1 = rx; m2 = rz; m3 = ry; m4 = rk; break;
+        case 0x0a: o1 = Z1; o2 = X1; o3 = Y1; m1 = rz; m2 = rx; m3 = ry; m4 = rk; break;
+        case 0x0b: o1 = Z1; o2 = Y1; o3 = X1; m1 = rz; m2 = ry; m3 = rx; m4 = rk; break;
+        case 0x0f: o1 = Z1; o2 = Y1; o3 = K1; m1 = rz; m2 = ry; m3 = rk; m4 = rx; break;
+        case 0x18: o1 = X1; o2 = Z1; o3 = K1; m1 = rx; m2 = rz; m3 = rk; m4 = ry; break;
+        case 0x1a: o1 = Z1; o2 = X1; o3 = K1; m1 = rz; m2 = rx; m3 = rk; m4 = ry; break;
+        case 0x1e: o1 = Z1; o2 = K1; o3 = X1; m1 = rz; m2 = rk; m3 = rx; m4 = ry; break;
+        case 0x1f: o1 = Z1; o2 = K1; o3 = Y1; m1 = rz; m2 = rk; m3 = ry; m4 = rx; break;
+        case 0x20: o1 = X1; o2 = Y1; o3 = K1; m1 = rx; m2 = ry; m3 = rk; m4 = rz; break;
+        case 0x21: o1 = Y1; o2 = X1; o3 = K1; m1 = ry; m2 = rx; m3 = rk; m4 = rz; break;
+        case 0x25: o1 = Y1; o2 = K1; o3 = X1; m1 = ry; m2 = rk; m3 = rx; m4 = rz; break;
+        case 0x27: o1 = Y1; o2 = K1; o3 = Z1; m1 = ry; m2 = rk; m3 = rz; m4 = rx; break;
+        case 0x30: o1 = X1; o2 = K1; o3 = Y1; m1 = rx; m2 = rk; m3 = ry; m4 = rz; break;
+        case 0x34: o1 = K1; o2 = X1; o3 = Y1; m1 = rk; m2 = rx; m3 = ry; m4 = rz; break;
+        case 0x35: o1 = K1; o2 = Y1; o3 = X1; m1 = rk; m2 = ry; m3 = rx; m4 = rz; break;
+        case 0x37: o1 = K1; o2 = Y1; o3 = Z1; m1 = rk; m2 = ry; m3 = rz; m4 = rx; break;
+        case 0x38: o1 = X1; o2 = K1; o3 = Z1; m1 = rx; m2 = rk; m3 = rz; m4 = ry; break;
+        case 0x3c: o1 = K1; o2 = X1; o3 = Z1; m1 = rk; m2 = rx; m3 = rz; m4 = ry; break;
+        case 0x3e: o1 = K1; o2 = Z1; o3 = X1; m1 = rk; m2 = rz; m3 = rx; m4 = ry; break;
+        case 0x3f: o1 = K1; o2 = Z1; o3 = Y1; m1 = rk; m2 = rz; m3 = ry; m4 = rx; break;
+    }
+    o2 += o1;
+    o3 += o2;
+    for (OutChan=TotalOut; OutChan != 0; OutChan--) {
+        c1 = LutTable[o1];
+        c2 = LutTable[o2];
+        c3 = LutTable[o3];
+        c4 = LutTable[o4] - c3;
+        c0 = *LutTable++;
+        c3 -= c2;
+        c2 -= c1;
+        c1 -= c0;
+
+        *Out++ = c0 + c1 * m1 + c2 * m2 + c3 * m3 + c4 * m4;
+    }
 }
-
 
 static CMS_NO_SANITIZE
 void Eval5Inputs(cmsContext ContextID, register const cmsUInt16Number Input[],
