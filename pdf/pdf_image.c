@@ -926,6 +926,28 @@ pdfi_do_image_smask(pdf_context *ctx, pdf_stream *source, pdfi_image_info_t *ima
     return code;
 }
 
+
+/* Setup for transparency (see pdf_draw.ps/doimage) */
+static int
+pdfi_image_setup_trans(pdf_context *ctx, pdfi_trans_state_t *state)
+{
+    int code;
+
+    code = pdfi_gsave(ctx);
+    if (code < 0)
+        return code;
+    code = gs_moveto(ctx->pgs, 1.0, 1.0);
+    if (code < 0)
+        goto exit;
+    code = gs_lineto(ctx->pgs, 0., 0.);
+    if (code < 0)
+        goto exit;
+    code = pdfi_trans_setup(ctx, state, TRANSPARENCY_Caller_Image, gs_getfillconstantalpha(ctx->pgs));
+ exit:
+    pdfi_grestore(ctx);
+    return code;
+}
+
 static int
 pdfi_image_get_color(pdf_context *ctx, pdf_stream *source, pdfi_image_info_t *image_info,
                      int *comps, gs_color_space **pcs)
@@ -1068,6 +1090,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     pdfi_int_gstate *igs = (pdfi_int_gstate *)ctx->pgs->client_data;
     bool transparency_group = false;
     bool has_smask = false;
+    pdfi_trans_state_t trans_state;
 
     dbgmprintf(ctx->memory, "pdfi_do_image BEGIN\n");
     memset(&mask_info, 0, sizeof(mask_info));
@@ -1091,6 +1114,9 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
         if (!pdfi_page_is_ocg_visible(ctx, image_info.OC))
             goto cleanupExit;
     }
+
+    /* TODO: Save current rendering intent, set it to what is in image, and add a restore in the
+     * cleanup of this function (see pdf_draw.ps/doimage) */
 
     /* If there is an alternate, swap it in */
     /* If image_info.Alternates, look in the array, see if any of them are flagged as "DefaultForPrinting"
@@ -1222,8 +1248,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     if (code < 0)
         goto cleanupExit;
 
-    /* Setup the fill state (pdf_draw.ps/doimage, setfillstate) */
-    code = pdfi_trans_set_params(ctx, gs_getfillconstantalpha(ctx->pgs));
+    code = pdfi_image_setup_trans(ctx, &trans_state);
     if (code < 0)
         return code;
 
@@ -1237,6 +1262,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
         goto cleanupExit;
     }
 
+    code = pdfi_trans_teardown(ctx, &trans_state);
 
  cleanupExit:
     if (code < 0)
