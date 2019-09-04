@@ -37,6 +37,9 @@
 #include "gdevmem.h"
 #include "gdevp14.h"
 #include "gdevprn.h"		/* for prn_device structures */
+#include "gdevppla.h"		/* for gdev_prn_open_planar */
+#include "gdevdevnprn.h"
+#include "gscdevn.h"
 #include "gsovrc.h"
 #include "gxcmap.h"
 #include "gscolor1.h"
@@ -584,6 +587,10 @@ const pdf14_device gs_pdf14_custom_device = {
 /* are set from the target device: width, height, xdpi, ydpi, MaxBitmap.  */
 
 static dev_proc_print_page(no_print_page);
+static  dev_proc_ret_devn_params(pdf14_accum_ret_devn_params);
+static  dev_proc_get_color_comp_index(pdf14_accum_get_color_comp_index);
+static  dev_proc_get_color_mapping_procs(pdf14_accum_get_color_mapping_procs);
+static  dev_proc_update_spot_equivalent_colors(pdf14_accum_update_spot_equivalent_colors);
 
 static int
 no_print_page(gx_device_printer *pdev, gp_file *prn_stream)
@@ -592,15 +599,14 @@ no_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 }
 
 struct gx_device_pdf14_accum_s {
-    gx_device_common;
-    gx_prn_device_common;
+    gx_devn_prn_device_common;
     gx_device *save_p14dev;		/* the non-clist pdf14 deivce saved for after accum */
 };
 typedef struct gx_device_pdf14_accum_s gx_device_pdf14_accum;
 
-gs_public_st_suffix_add1_final(st_pdf14_accum, gx_device_pdf14_accum,
-        "gx_device_pdf14_accum", pdf14_accum_enum_ptrs, pdf14_accum_reloc_ptrs,
-                          gx_device_finalize, st_device_printer, save_p14dev);
+gs_private_st_suffix_add1_final(st_gx_devn_accum_device, gx_device_pdf14_accum,
+        "gx_device_pdf14_accum", pdf14_accum_device_enum_ptrs, pdf14_accum_device_reloc_ptrs,
+                          gx_devn_prn_device_finalize, st_gx_devn_prn_device, save_p14dev);
 
 static const gx_device_procs pdf14_accum_Gray_procs =
     prn_color_procs(gdev_prn_open, NULL, gdev_prn_close,
@@ -608,12 +614,14 @@ static const gx_device_procs pdf14_accum_Gray_procs =
 
 const gx_device_pdf14_accum pdf14_accum_Gray = {
     prn_device_stype_body(gx_device_pdf14_accum, pdf14_accum_Gray_procs, "pdf14-accum-Gray",
-                    &st_pdf14_accum,
+                    &st_gx_devn_accum_device,
                     0/*width*/, 0/*height*/, 300/*xdpi*/, 300/*ydpi*/,
                     0/*lm*/, 0/*bm*/, 0/*rm*/, 0/*tm*/,
                     1/*ncomp*/, 8/*depth*/, 255/*max_gray*/, 0/*max_color*/,
                     256/*dither_grays*/, 0/*dither_colors*/,
                     no_print_page),
+    { 0 },			/* devn_params - not used */
+    { 0 },			/* equivalent_cmyk_color_params - not used */
     0/*save_p14dev*/
 };
 
@@ -623,12 +631,14 @@ static const gx_device_procs pdf14_accum_RGB_procs =
 
 const gx_device_pdf14_accum pdf14_accum_RGB = {
     prn_device_stype_body(gx_device_pdf14_accum, pdf14_accum_RGB_procs, "pdf14-accum-RGB",
-                    &st_pdf14_accum,
+                    &st_gx_devn_accum_device,
                     0/*width*/, 0/*height*/, 300/*xdpi*/, 300/*ydpi*/,
                     0/*lm*/, 0/*bm*/, 0/*rm*/, 0/*tm*/,
                     3/*ncomp*/, 24/*depth*/, 0/*max_gray*/, 255/*max_color*/,
                     1/*dither_grays*/, 256/*dither_colors*/,
                     no_print_page),
+    { 0 },			/* devn_params - not used */
+    { 0 },			/* equivalent_cmyk_color_params - not used */
     0/*save_p14dev*/
 };
 
@@ -638,12 +648,112 @@ static const gx_device_procs pdf14_accum_CMYK_procs =
 
 const gx_device_pdf14_accum pdf14_accum_CMYK = {
     prn_device_stype_body(gx_device_pdf14_accum, pdf14_accum_CMYK_procs, "pdf14-accum-CMYK",
-                    &st_pdf14_accum,
+                    &st_gx_devn_accum_device,
                     0/*width*/, 0/*height*/, 300/*xdpi*/, 300/*ydpi*/,
                     0/*lm*/, 0/*bm*/, 0/*rm*/, 0/*tm*/,
                     4/*ncomp*/, 32/*depth*/, 255/*max_gray*/, 255/*max_color*/,
                     256/*dither_grays*/, 256/*dither_colors*/,
                     no_print_page),
+    { 0 },			/* devn_params - not used */
+    { 0 },			/* equivalent_cmyk_color_params - not used */
+    0/*save_p14dev*/
+};
+
+static const gx_device_procs pdf14_accum_CMYKspot_procs =
+{\
+        gdev_prn_open,			/* open */\
+        NULL,				/* get_initial_matrix */\
+        NULL,				/* sync_output */\
+        NULL,				/* output_page */\
+        gdev_prn_close,			/* close */\
+        cmyk_8bit_map_cmyk_color,	/* rgb_map_rgb_color */\
+        cmyk_8bit_map_color_cmyk,	/* gx_default_rgb_map_color_rgb */\
+        NULL,				/* fill_rectangle */\
+        NULL,				/* tile_rectangle */\
+        NULL,				/* copy_mono */\
+        NULL,				/* copy_color */\
+        NULL,				/* draw_line */\
+        NULL,				/* get_bits */\
+        NULL,				/* get_params */\
+        NULL,				/* put_params */\
+        NULL,				/* map_cmyk_color */\
+        NULL,				/* get_xfont_procs */\
+        NULL,				/* get_xfont_device */\
+        NULL,				/* map_rgb_alpha_color */\
+        NULL,				/* get_page_device */\
+        NULL,				/* get_alpha_bits */\
+        NULL		,		/* copy_alpha */\
+        NULL,				/* get_band */\
+        NULL,				/* copy_rop */\
+        NULL,				/* fill_path */\
+        NULL,				/* stroke_path */\
+        NULL,				/* fill_mask */\
+        NULL,				/* fill_trapezoid */\
+        NULL,				/* fill_parallelogram */\
+        NULL,				/* fill_triangle */\
+        NULL,				/* draw_thin_line */\
+        NULL,				/* begin_image */\
+        NULL,				/* image_data */\
+        NULL,				/* end_image */\
+        NULL,				/* strip_tile_rectangle */\
+        NULL,				/* strip_copy_rop, */\
+        NULL,				/* get_clipping_box */\
+        NULL,				/* begin_typed_image */\
+        NULL,				/* get_bits_rectangle */\
+        NULL,				/* map_color_rgb_alpha */\
+        NULL,				/* create_compositor */\
+        NULL,				/* get_hardware_params */\
+        NULL,				/* text_begin */\
+        NULL,  				/* finish_copydevice */\
+        NULL,				/* begin_transparency_group */\
+        NULL,				/* end_transparency_group */\
+        NULL,				/* begin_transparency_mask */\
+        NULL,				/* end_transparency_mask */\
+        NULL,				/* discard_trans_layer */\
+        pdf14_accum_get_color_mapping_procs,	/* get_color_mapping_procs */\
+        pdf14_accum_get_color_comp_index,	/* get_color_comp_index */\
+        cmyk_8bit_map_cmyk_color,	/* encode_color */\
+        cmyk_8bit_map_color_cmyk,	/* decode_color */\
+        NULL,                           /* pattern_manage */\
+        NULL,				/* fill_rectangle_hl_color */\
+        NULL,				/* include_color_space */\
+        NULL,				/* fill_linear_color_scanline */\
+        NULL,				/* fill_linear_color_trapezoid */\
+        NULL,				/* fill_linear_color_triangle */\
+        pdf14_accum_update_spot_equivalent_colors,	/* update spot */\
+        pdf14_accum_ret_devn_params,	/* DevN params */\
+        NULL,                           /* fill page */\
+        NULL,				/* push_transparency_state */\
+        NULL,				/* pop_transparency_state */\
+        NULL,                           /* put_image */\
+        NULL,				/* dev_spec_op */\
+        NULL,				/* copy_planes */\
+        NULL,                           /*  */\
+        NULL,				/* set_graphics_type_tag */\
+        NULL,                           /* strip_copy_rop2 */\
+        NULL,                           /* strip_tile_rect_devn */\
+        NULL				/* copy_alpha_hl_color */\
+};
+
+const gx_device_pdf14_accum pdf14_accum_CMYKspot = {
+    prn_device_stype_body(gx_device_pdf14_accum, pdf14_accum_CMYKspot_procs, "pdf14-accum-CMYKspot",
+                    &st_gx_devn_accum_device,
+                    0/*width*/, 0/*height*/, 300/*xdpi*/, 300/*ydpi*/,
+                    0/*lm*/, 0/*bm*/, 0/*rm*/, 0/*tm*/,
+                    4/*ncomp*/, 32/*depth*/, 255/*max_gray*/, 255/*max_color*/,
+                    256/*dither_grays*/, 256/*dither_colors*/,
+                    no_print_page),
+    /* DeviceN parameters */
+    { 8,			/* Not used - Bits per color */
+      DeviceCMYKComponents,	/* Names of color model colorants */
+      4,			/* Number colorants for CMYK */
+      0,			/* MaxSeparations has not been specified */
+      -1,			/* PageSpotColors has not been specified */
+      { 0 },			/* SeparationNames */
+      0,			/* SeparationOrder names */
+      {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
+    },
+    { true },			/* equivalent_cmyk_color_params */
     0/*save_p14dev*/
 };
 
@@ -779,7 +889,7 @@ static forceinline pdf14_buf*
 template_transform_color_buffer(gs_gstate *pgs, pdf14_ctx *ctx, gx_device *dev,
     pdf14_buf *src_buf, byte *src_data, cmm_profile_t *src_profile,
     cmm_profile_t *des_profile, int x0, int y0, int width, int height, bool *did_alloc,
-				bool has_matte, bool deep)
+    bool has_matte, bool deep)
 {
     gsicc_rendering_param_t rendering_params;
     gsicc_link_t *icc_link;
@@ -2422,7 +2532,7 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
                        gx_build_blended_image_row;
 #ifdef WITH_CAL
     blend_row = cal_get_blend_row(pdev->memory->gs_lib_ctx->core->cal_ctx,
-				  blend_row, num_comp, deep);
+                                  blend_row, num_comp, deep);
 #endif
 
     if (!deep)
@@ -6788,11 +6898,12 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
         gx_device *new_target = NULL;
         gx_device_color pdcolor;
         frac pconc_white = frac_1;
+        bool UsePlanarBuffer = false;
 
         if_debug0m('v', mem, "[v]gs_pdf14_device_push: Inserting clist device.\n");
 
         /* get the prototype for the accumulator device based on colorspace */
-        switch (target->color_info.num_components) {
+        switch (target->color_info.max_components) {	/* use max_components in case is devn device */
             case 1:
                 accum_proto = &pdf14_accum_Gray;
                 break;
@@ -6803,8 +6914,8 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
                 accum_proto = &pdf14_accum_CMYK;
                 break;
             default:
-                /* FIXME: DeviceN ?? */
-                break;		/* accum_proto will be NULL, so no accum device */
+                accum_proto = &pdf14_accum_CMYKspot;
+                UsePlanarBuffer = true;
         }
         if (accum_proto == NULL ||
             (code = gs_copydevice(&new_target, (gx_device *)accum_proto, mem->stable_memory)) < 0)
@@ -6812,8 +6923,9 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
 
         ((gx_device_pdf14_accum *)new_target)->save_p14dev = (gx_device *)p14dev;  /* non-clist p14dev */
         /* Fill in values from the target device before opening */
+        new_target->color_info = p14dev->color_info;
+        ((gx_device_pdf14_accum *)new_target)->devn_params = p14dev->devn_params;
         new_target->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
-        new_target->color_info.anti_alias = p14dev->color_info.anti_alias;
         set_linear_color_bits_mask_shift(new_target);
         gs_pdf14_device_copy_params(new_target, target);
         ((gx_device_pdf14_accum *)new_target)->page_uses_transparency = true;
@@ -6821,18 +6933,19 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
 
         memcpy(&(new_target->space_params), &(target->space_params), sizeof(gdev_space_params));
         max_bitmap = max(target->space_params.MaxBitmap, target->space_params.BufferSpace);
-        new_target->space_params.BufferSpace = max_bitmap;
+        ((gx_device_pdf14_accum *)new_target)->space_params.BufferSpace = max_bitmap;
 
         new_target->PageHandlerPushed = true;
         new_target->ObjectHandlerPushed = true;
 
-        if ((code = gdev_prn_open(new_target)) < 0 ||
+        /* UsePlanarBuffer is true in case this is CMYKspot */
+        if ((code = gdev_prn_open_planar(new_target, UsePlanarBuffer)) < 0 ||
              !PRINTER_IS_CLIST((gx_device_printer *)new_target)) {
             gs_free_object(mem->stable_memory, new_target, "pdf14-accum");
             goto no_clist_accum;
         }
         /* Do the initial fillpage into the pdf14-accum device we just created */
-        dev_proc(new_target, set_graphics_type_tag)(new_target, GS_UNTOUCHED_TAG);
+        dev_proc(new_target, set_graphics_type_tag)((gx_device *)new_target, GS_UNTOUCHED_TAG);
         if ((code = gx_remap_concrete_DGray(gs_currentcolorspace_inline((gs_gstate *)pgs),
                                             &pconc_white,
                                             &pdcolor, pgs, new_target, gs_color_select_all,
@@ -8135,6 +8248,96 @@ pdf14_ret_devn_params(gx_device *pdev)
 }
 
 /*
+ * devicen params
+ */
+gs_devn_params *
+pdf14_accum_ret_devn_params(gx_device *pdev)
+{
+    gx_device_pdf14_accum *p14dev = (gx_device_pdf14_accum *)pdev;
+
+    return(&(p14dev->devn_params));
+}
+
+static int
+pdf14_accum_get_color_comp_index(gx_device * dev,
+    const char * pname, int name_size, int component_type)
+{
+    pdf14_device *p14dev = (pdf14_device *)(((gx_device_pdf14_accum *)dev)->save_p14dev);
+    gx_device *target = p14dev->target;
+    int colorant_number = devn_get_color_comp_index(dev,
+                &(((gx_device_pdf14_accum *)dev)->devn_params),
+                &(((gx_device_pdf14_accum *)dev)->equiv_cmyk_colors),
+                pname, name_size, component_type, ENABLE_AUTO_SPOT_COLORS);
+
+    if (target != NULL)
+        /* colorant_number returned here _should_ be the same as from above */
+        colorant_number = (*dev_proc(target, get_color_comp_index))
+                              (target, (const char *)pname, name_size, component_type);
+    return colorant_number;
+}
+
+/*
+ * The following procedures are used to map the standard color spaces into
+ * the separation color components for the pdf14_accum device.
+ */
+static void
+pdf14_accum_gray_cs_to_cmyk_cm(gx_device * dev, frac gray, frac out[])
+{
+    int * map =
+      (int *)(&((gx_device_pdf14_accum *) dev)->devn_params.separation_order_map);
+
+    gray_cs_to_devn_cm(dev, map, gray, out);
+}
+
+static void
+pdf14_accum_rgb_cs_to_cmyk_cm(gx_device * dev,
+    const gs_gstate *pgs, frac r, frac g, frac b, frac out[])
+{
+    int * map =
+      (int *)(&((gx_device_pdf14_accum *) dev)->devn_params.separation_order_map);
+
+    rgb_cs_to_devn_cm(dev, map, pgs, r, g, b, out);
+}
+
+static void
+pdf14_accum_cmyk_cs_to_cmyk_cm(gx_device * dev,
+    frac c, frac m, frac y, frac k, frac out[])
+{
+    const int * map =
+      (int *)(&((gx_device_pdf14_accum *) dev)->devn_params.separation_order_map);
+
+    cmyk_cs_to_devn_cm(dev, map, c, m, y, k, out);
+}
+
+static const gx_cm_color_map_procs pdf14_accum_cm_procs = {
+    pdf14_accum_gray_cs_to_cmyk_cm,
+    pdf14_accum_rgb_cs_to_cmyk_cm,
+    pdf14_accum_cmyk_cs_to_cmyk_cm
+};
+
+static const gx_cm_color_map_procs *
+pdf14_accum_get_color_mapping_procs(const gx_device * dev)
+{
+    return &pdf14_accum_cm_procs;
+}
+
+/*
+ *  Device proc for updating the equivalent CMYK color for spot colors.
+ */
+static int
+pdf14_accum_update_spot_equivalent_colors(gx_device * dev, const gs_gstate * pgs)
+{
+    gx_device_pdf14_accum *pdev = (gx_device_pdf14_accum *)dev;
+    gx_device *tdev = ((pdf14_device *)(pdev->save_p14dev))->target;
+    int code = update_spot_equivalent_cmyk_colors(dev, pgs, &pdev->devn_params,
+                                              &pdev->equiv_cmyk_colors);
+
+    if (code >= 0 && tdev != NULL)
+        code = dev_proc(tdev, update_spot_equivalent_colors)(tdev, pgs);
+    return code;
+}
+
+/*
  * Retrieve a list of spot color names for the PDF14 device.
  */
 int
@@ -8406,45 +8609,85 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
     /* If we were accumulating into a pdf14-clist-accum device, */
     /* we now have to render the page into it's target device */
     if (is_pdf14_compositor && pdf14pct->params.pdf14_op == PDF14_POP_DEVICE &&
-        pdev->target->stype == &st_pdf14_accum) {
+        pdev->target->stype == &st_gx_devn_accum_device) {
 
-        int y, rows_used;
-        byte *linebuf = gs_alloc_bytes(mem, gx_device_raster((gx_device *)pdev, true), "pdf14-clist_accum pop dev");
+        int i, y, rows_used;
+        byte *linebuf;
         byte *actual_data;
-        gx_device *tdev = pdev->target;     /* the printer class clist device used to accumulate */
+        gx_device_pdf14_accum *tdev = (gx_device_pdf14_accum *)(pdev->target);     /* the printer class clist device used to accumulate */
         /* get the target device we want to send the image to */
-        gx_device *target = ((pdf14_device *)((gx_device_pdf14_accum *)(tdev))->save_p14dev)->target;
+        gx_device *target = ((pdf14_device *)(tdev->save_p14dev))->target;
         gs_image1_t image;
         gs_color_space *pcs;
         gx_image_enum_common_t *info;
         gx_image_plane_t planes;
         gsicc_rendering_param_t render_cond;
         cmm_dev_profile_t *dev_profile;
+        bool save_planar = pdev->is_planar;
+        gs_devn_params *target_devn_params = dev_proc(target, ret_devn_params)(target);
+        int save_num_separations;
 
-        /*
-         * Set color space in preparation for sending an image.
+        pdev->is_planar = false;		/* so gx_device_raster is for entire chunky pixel line */
+        linebuf = gs_alloc_bytes(mem, gx_device_raster((gx_device *)pdev, true), "pdf14-clist_accum pop dev");
+        pdev->is_planar = save_planar;
+
+        /* As long as we don't have spot colors, we can use ICC colorspace, but spot
+         * colors do require devn support
          */
-        code = gs_cspace_build_ICC(&pcs, NULL, pgs->memory);
-        if (linebuf == NULL || pcs == NULL)
-            goto put_accum_error;
+        if (tdev->color_info.num_components <= 4 ||
+             dev_proc(target, dev_spec_op)(target, gxdso_supports_devn, NULL, 0) <= 0) {
+            /*
+             * Set color space in preparation for sending an image.
+             */
+            code = gs_cspace_build_ICC(&pcs, NULL, pgs->memory);
 
-        /* Need to set this to avoid color management during the
-           image color render operation.  Exception is for the special case
-           when the destination was CIELAB.  Then we need to convert from
-           default RGB to CIELAB in the put image operation.  That will happen
-           here as we should have set the profile for the pdf14 device to RGB
-           and the target will be CIELAB */
-        code = dev_proc(dev, get_profile)(dev,  &dev_profile);
-        if (code < 0) {
-            rc_decrement_only_cs(pcs, "pdf14_put_image");
-            return code;
+            /* Need to set this to avoid color management during the
+               image color render operation.  Exception is for the special case
+               when the destination was CIELAB.  Then we need to convert from
+               default RGB to CIELAB in the put image operation.  That will happen
+               here as we should have set the profile for the pdf14 device to RGB
+               and the target will be CIELAB */
+            code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+            if (code < 0) {
+                rc_decrement_only_cs(pcs, "pdf14_put_image");
+                return code;
+            }
+            gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile,
+                                  &(pcs->cmm_icc_profile_data), &render_cond);
+            /* pcs takes a reference to the profile data it just retrieved. */
+            gsicc_adjust_profile_rc(pcs->cmm_icc_profile_data, 1, "pdf14_clist_create_compositor");
+            gsicc_set_icc_range(&(pcs->cmm_icc_profile_data));
+        } else {
+             /* DeviceN case -- need to handle spot colors */
+            code = gs_cspace_new_DeviceN(&pcs, tdev->color_info.num_components,
+                                         gs_currentcolorspace(pgs), pgs->memory);
+            if (code < 0)
+                goto put_accum_error;
+            /* set up a usable DeviceN space with info from the tdev->devn_params */
+            pcs->params.device_n.use_alt_cspace = false;
+
+            if ((code = pcs->type->install_cspace(pcs, pgs)) < 0) {
+                goto put_accum_error;
+            }
+            /* One last thing -- we need to fudge the pgs->color_component_map */
+            for (i=0; i < tdev->color_info.num_components; i++)
+                pgs->color_component_map.color_map[i] = i;	/* enable all components in normal order */
+            /* copy devn_params that were accumulated into the target device's devn_params */
+            target_devn_params->bitspercomponent = tdev->devn_params.bitspercomponent;
+            target_devn_params->std_colorant_names = tdev->devn_params.std_colorant_names;
+            target_devn_params->num_std_colorant_names = tdev->devn_params.num_std_colorant_names;
+            target_devn_params->max_separations = tdev->devn_params.max_separations;
+            target_devn_params->page_spot_colors = tdev->devn_params.page_spot_colors;
+            target_devn_params->num_separation_order_names = tdev->devn_params.num_separation_order_names;
+            target_devn_params->separations = tdev->devn_params.separations;
+            memcpy(target_devn_params->separation_order_map, tdev->devn_params.separation_order_map,
+                   sizeof(gs_separation_map));
+            target_devn_params->pdf14_separations = tdev->devn_params.pdf14_separations;
         }
-        gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile,
-                              &(pcs->cmm_icc_profile_data), &render_cond);
-        /* pcs takes a reference to the profile data it just retrieved. */
-        gsicc_adjust_profile_rc(pcs->cmm_icc_profile_data, 1, "pdf14_clist_create_compositor");
-        gsicc_set_icc_range(&(pcs->cmm_icc_profile_data));
-
+        if (linebuf == NULL || pcs == NULL) {
+            code = gs_error_VMerror;
+            goto put_accum_error;
+        }
         gs_image_t_init_adjust(&image, pcs, false);
         image.ImageMatrix.xx = (float)pdev->width;
         image.ImageMatrix.yy = (float)pdev->height;
@@ -8465,30 +8708,39 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
         if (code < 0)
             goto put_accum_error;
         for (y=0; y < tdev->height; y++) {
-            code = dev_proc(tdev, get_bits)(tdev, y, linebuf, &actual_data);
+            code = dev_proc(tdev, get_bits)((gx_device *)tdev, y, linebuf, &actual_data);
+            if (code < 0)
+                goto put_accum_error;
             planes.data = actual_data;
             planes.data_x = 0;
             planes.raster = tdev->width * tdev->color_info.num_components;
             if ((code = info->procs->plane_data(info, &planes, 1, &rows_used)) < 0)
                 goto put_accum_error;
         }
-        info->procs->end_image(info, true);
+        code = info->procs->end_image(info, true);
 
 put_accum_error:
         gs_free_object(pdev->memory, linebuf, "pdf14_put_image");
         /* This will also decrement the device profile */
         rc_decrement_only_cs(pcs, "pdf14_put_image");
-        dev_proc(tdev, close_device)(tdev);	/* frees the prn_device memory */
+        dev_proc(tdev, close_device)((gx_device *)tdev);	/* frees the prn_device memory */
         /* Now unhook the clist device and hook to the original so we can clean up */
         gx_device_set_target((gx_device_forward *)pdev,
                              ((gx_device_pdf14_accum *)(pdev->target))->save_p14dev);
-        pdev->pclist_device = pdev->target;         /* FIXME: is this kosher ? */
+        pdev->pclist_device = pdev->target;
         *pcdev = pdev->target;			    /* pass upwards to switch devices */
         pdev->color_info = target->color_info;      /* same as in pdf14_disable_clist */
+        if (target_devn_params != NULL) {
+            /* prevent devn_free_params from freeing names still in use by target device */
+            save_num_separations = tdev->devn_params.separations.num_separations;
+            tdev->devn_params.separations.num_separations = 0;
+        }
         gs_free_object(tdev->memory, tdev, "popdevice pdf14-accum");
-        return 0;		/* DON'T perform set_target */
+        if (target_devn_params != NULL) {
+            target_devn_params->separations.num_separations = save_num_separations;
+        }
+        return code;		/* DON'T perform set_target */
     }
-
     if (*pcdev != pdev->target)
         gx_device_set_target((gx_device_forward *)pdev, *pcdev);
     *pcdev = dev;
