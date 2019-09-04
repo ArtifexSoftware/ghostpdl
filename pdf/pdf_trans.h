@@ -48,7 +48,4 @@ int pdfi_trans_end_isolated_group(pdf_context *ctx);
 int pdfi_trans_end_smask_notify(pdf_context *ctx);
 void pdfi_trans_set_needs_OP(pdf_context *ctx);
 
-/* Utility func that probably goes somewhere else */
-int pdfi_get_current_bbox(pdf_context *ctx, gs_rect *bbox, bool stroked);
-
 #endif

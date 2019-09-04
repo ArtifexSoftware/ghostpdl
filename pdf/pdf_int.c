@@ -21,6 +21,7 @@
 #include "pdf_loop_detect.h"
 #include "strmio.h"
 #include "stream.h"
+#include "pdf_misc.h"
 #include "pdf_path.h"
 #include "pdf_colour.h"
 #include "pdf_image.h"
@@ -245,35 +246,6 @@ void pdfi_free_object(pdf_obj *o)
             break;
     }
 }
-
-/***********************************************************************************/
-/* Utility Functions                                                               */
-int
-pdfi_name_strcmp(const pdf_name *n, const char *s)
-{
-    int len = strlen(s);
-    if (n->length == len)
-        return memcmp(n->data, s, len);
-    return -1;
-}
-
-bool
-pdfi_name_is(const pdf_name *n, const char *s)
-{
-    int len = strlen(s);
-    if (n->length == len)
-        return (memcmp(n->data, s, len) == 0);
-    return false;
-}
-
-int
-pdfi_name_cmp(const pdf_name *n1, const pdf_name *n2)
-{
-    if (n1->length != n2->length)
-        return -1;
-    return memcmp(n1->data, n2->data, n1->length);
-}
-
 
 /***********************************************************************************/
 /* Functions to dereference object references and manage the object cache          */

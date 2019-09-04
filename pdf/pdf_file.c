@@ -20,6 +20,7 @@
 #include "pdf_file.h"
 #include "pdf_int.h"
 #include "pdf_array.h"
+#include "pdf_misc.h"
 #include "stream.h"
 #include "strimpl.h"
 #include "strmio.h"

@@ -20,6 +20,7 @@
 #include "pdf_pattern.h"
 #include "pdf_stack.h"
 #include "pdf_array.h"
+#include "pdf_misc.h"
 #include "gsicc_manage.h"
 #include "gsicc_profilecache.h"
 #include "gsicc_create.h"

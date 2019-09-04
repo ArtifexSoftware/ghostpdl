@@ -20,6 +20,7 @@
 #include "pdf_dict.h"
 #include "pdf_array.h"
 #include "pdf_int.h"
+#include "pdf_misc.h"
 #include "pdf_stack.h"
 #include "pdf_file.h"
 #include "pdf_loop_detect.h"

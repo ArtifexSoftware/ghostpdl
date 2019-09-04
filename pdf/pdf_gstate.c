@@ -22,6 +22,7 @@
 #include "pdf_array.h"
 #include "pdf_func.h"
 #include "pdf_file.h"
+#include "pdf_misc.h"
 #include "pdf_loop_detect.h"
 #include "pdf_image.h"
 #include "pdf_pattern.h"
@@ -826,11 +827,11 @@ static int GS_UCR2(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_di
     return code;
 }
 
-typedef enum pdf_transfer_function_type_e {
+typedef enum {
     E_IDENTITY,
     E_DEFAULT,
     E_FUNCTION
-};
+} pdf_transfer_function_type_e;
 
 /* We use this for both TR and TR2, is_TR is true if this is a TR, in which case we don't want
  * to permit /Default names for fucntions.
@@ -1030,9 +1031,8 @@ static int GS_TR(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict
 
 static int GS_TR2(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
-    int code, i, j;
+    int code;
     pdf_obj *obj = NULL;
-    gs_offset_t saved_stream_offset;
     code = pdfi_dict_get(ctx, GS, "TR2", &obj);
     if (code < 0)
         return code;

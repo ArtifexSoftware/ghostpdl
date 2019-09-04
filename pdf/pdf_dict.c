@@ -21,6 +21,7 @@
 #include "pdf_array.h"
 #include "pdf_int.h"
 #include "pdf_loop_detect.h"
+#include "pdf_misc.h"
 
 void pdfi_free_dict(pdf_obj *o)
 {

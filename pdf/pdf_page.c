@@ -24,6 +24,7 @@
 #include "pdf_loop_detect.h"
 #include "pdf_colour.h"
 #include "pdf_trans.h"
+#include "pdf_misc.h"
 
 #include "gsiparm4.h"
 #include "gsiparm3.h"

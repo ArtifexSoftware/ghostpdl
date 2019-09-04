@@ -26,6 +26,7 @@
 #include "pdf_loop_detect.h"
 #include "pdf_colour.h"
 #include "pdf_trans.h"
+#include "pdf_misc.h"
 #include "stream.h"     /* for stell() */
 
 #include "gsiparm4.h"

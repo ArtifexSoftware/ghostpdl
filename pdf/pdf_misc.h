@@ -16,5 +16,9 @@
 #ifndef PDF_MISC
 #define PDF_MISC
 
+int pdfi_get_current_bbox(pdf_context *ctx, gs_rect *bbox, bool stroked);
+int pdfi_name_strcmp(const pdf_name *n, const char *s);
+bool pdfi_name_is(const pdf_name *n, const char *s);
+int pdfi_name_cmp(const pdf_name *n1, const pdf_name *n2);
 
 #endif
