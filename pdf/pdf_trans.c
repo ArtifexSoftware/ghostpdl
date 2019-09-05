@@ -432,12 +432,32 @@ void pdfi_trans_set_needs_OP(pdf_context *ctx)
                 "NEEDS" : "does NOT NEED");
 }
 
-/* Figures out if current colorspace is okay for Overprint */
+/* Figures out if current colorspace is okay for Overprint (see pdf_ops.ps/okOPcs and setupOPtrans) */
 static bool pdfi_trans_okOPcs(pdf_context *ctx)
 {
-    /* TODO: Need to figure out insane pdf colorspace stuff */
-    /* See pdf_ops.ps/okOPcs , /setupOPtrans */
-    return true;
+    gs_color_space_index csi;
+
+    csi = pdfi_currentcolorspace(ctx, 0);
+
+    switch (csi) {
+#if 0 /* TODO? */
+    case gs_color_space_index_DeviceGray:
+#endif
+    case gs_color_space_index_DeviceCMYK:
+    case gs_color_space_index_DeviceN:
+    case gs_color_space_index_Separation:
+        /* These are colorspaces that don't require special handling for overprint.
+         * (pdf1.7 pg 259,578 may apply)
+         * TODO: Unclear if DeviceGray should be included?  Mvrhel says it shouldn't be (9-5-19)
+         */
+        dbgmprintf1(ctx->memory, "Colorspace is %d, OKAY for OVERPRINT\n", csi);
+        return true;
+    default:
+        dbgmprintf1(ctx->memory, "Colorspace is %d, NOT OKAY for OVERPRINT\n", csi);
+        return false;
+    }
+
+    return false;
 }
 
 int pdfi_trans_setup(pdf_context *ctx, pdfi_trans_state_t *state,

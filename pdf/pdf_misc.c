@@ -44,6 +44,42 @@ int pdfi_get_current_bbox(pdf_context *ctx, gs_rect *bbox, bool stroked)
     return code;
 }
 
+/* Get the current color space (the base one) from a color space
+ */
+gs_color_space_index pdfi_get_color_space_index(pdf_context *ctx, const gs_color_space *pcs)
+{
+    gs_color_space_index csi;
+
+    /* Get the color space index */
+    csi = gs_color_space_get_index(pcs);
+
+    /* If its an Indexed space, then use the base space */
+    if (csi == gs_color_space_index_Indexed)
+        csi = gs_color_space_get_index(pcs->base_space);
+
+    /* If its ICC, see if its a substitution for one of the device
+     * spaces. If so then we will want to behave as if we were using the
+     * device space.
+     */
+    if (csi == gs_color_space_index_ICC)
+        csi = gsicc_get_default_type(pcs->cmm_icc_profile_data);
+
+    return csi;
+}
+
+/* Get the current color space (the base one) from current graphics state.
+ * index -- tells whether to pull from 0 or 1 (probably 0)
+ */
+gs_color_space_index pdfi_currentcolorspace(pdf_context *ctx, int index)
+{
+    const gs_color_space *pcs;
+
+    pcs = ctx->pgs->color[index].color_space;
+
+    return pdfi_get_color_space_index(ctx, pcs);
+}
+
+
 int
 pdfi_name_strcmp(const pdf_name *n, const char *s)
 {
