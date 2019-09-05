@@ -179,7 +179,8 @@ pdf_impl_set_device(pl_interp_implementation_t *impl, gx_device *pdevice)
 //        return code;
 
     gs_setaccuratecurves(ctx->pgs, true); /* NB not sure */
-    gs_setfilladjust(ctx->pgs, 0, 0);
+    /* Not sure if we should do this at all here, but it seems it should be .3, not 0 */
+    gs_setfilladjust(ctx->pgs, .3, .3);
 
     gs_setscanconverter(ctx->pgs, pl_main_get_scanconverter(ctx->memory));
 
