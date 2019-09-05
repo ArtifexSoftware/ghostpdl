@@ -410,17 +410,15 @@ static int pdfi_B_inner(pdf_context *ctx, bool use_eofill)
     if (ctx->TextBlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
-#if 1
     if (ctx->page_has_transparency) {
         code = gs_setopacityalpha(ctx->pgs, 1.0);
         if (code < 0)
             return code;
-        code = pdfi_trans_begin_group(ctx, true, true, true);
+        code = pdfi_trans_begin_simple_group(ctx, true, true, true);
         if (code < 0)
             return code;
         started_group = true;
     }
-#endif
 
     code = pdfi_gsave(ctx);
     if (code < 0)

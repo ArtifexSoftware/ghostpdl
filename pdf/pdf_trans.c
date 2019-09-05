@@ -255,7 +255,7 @@ static int pdfi_transparency_group_common(pdf_context *ctx, pdf_dict *page_dict,
     return gs_begin_transparency_group(ctx->pgs, &params, (const gs_rect *)bbox, group_type);
 }
 
-int pdfi_trans_begin_group(pdf_context *ctx, bool stroked_bbox, bool isolated, bool knockout)
+int pdfi_trans_begin_simple_group(pdf_context *ctx, bool stroked_bbox, bool isolated, bool knockout)
 {
     gs_transparency_group_params_t params;
     gs_rect bbox;
@@ -352,7 +352,7 @@ int pdfi_trans_end_group(pdf_context *ctx)
     return code;
 }
 
-/* Ends group with no grestore (needs a better name, but whatever) */
+/* Ends group with no grestore */
 int pdfi_trans_end_simple_group(pdf_context *ctx)
 {
     int code;
@@ -511,7 +511,7 @@ int pdfi_trans_setup(pdf_context *ctx, pdfi_trans_state_t *state,
     /* TODO: error handling... */
     if (need_group) {
         stroked_bbox = (caller == TRANSPARENCY_Caller_Stroke);
-        code = pdfi_trans_begin_group(ctx, stroked_bbox, true, false);
+        code = pdfi_trans_begin_simple_group(ctx, stroked_bbox, true, false);
         state->GroupPushed = true;
         state->saveOA = gs_currentopacityalpha(ctx->pgs);
         state->saveSA = gs_currentshapealpha(ctx->pgs);
@@ -534,7 +534,7 @@ int pdfi_trans_teardown(pdf_context *ctx, pdfi_trans_state_t *state)
         return 0;
 
     if (state->GroupPushed) {
-        code = pdfi_trans_end_group(ctx);
+        code = pdfi_trans_end_simple_group(ctx);
         code = gs_setopacityalpha(ctx->pgs, state->saveOA);
         code = gs_setshapealpha(ctx->pgs, state->saveSA);
     }
