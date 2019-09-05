@@ -127,6 +127,7 @@ typedef struct gs_gstate_color_s {
     gs_color_space *color_space; /* after substitution */
     gs_client_color *ccolor;
     gx_device_color *dev_color;
+    bool effective_opm;
 } gs_gstate_color;
 
 /*
@@ -201,6 +202,7 @@ typedef struct gs_xstate_trans_flags {
 #define gs_currentcolor_inline(pgs)       ((pgs)->color[0].ccolor)
 #define gs_currentcolorspace_inline(pgs)  ((pgs)->color[0].color_space)
 #define gs_altdevicecolor_inline(pgs)     ((pgs)->color[1].dev_color)
+#define gs_currentcolor_eopm(pgs)         ((pgs)->color[0].effective_opm)
 
 #define char_tm_only(pgs) *(gs_matrix *)&(pgs)->char_tm
 
@@ -249,7 +251,6 @@ struct gs_gstate_s {
     gx_device *trans_device;  /* trans device has all mappings to group color space */
     bool overprint;
     int overprint_mode;
-    int effective_overprint_mode;
     bool stroke_overprint;
     float flatness;
     gs_fixed_point fill_adjust; /* A path expansion for fill; -1 = dropout prevention*/
@@ -303,7 +304,7 @@ struct gs_gstate_s {
     gs_matrix textmatrix;
     /* Current colors (non-stroking, and stroking) */
     gs_gstate_color color[2];
-    bool color_is_stroke;
+    int is_fill_color;
     /* Font: */
     gs_font *font;
     gs_font *root_font;
@@ -325,7 +326,7 @@ struct gs_gstate_s {
    { (float)(scale), 0.0, 0.0, (float)(-(scale)), 0.0, 0.0 },\
   false, {0, 0}, {0, 0}, false, \
   lop_default, gx_max_color_value, BLEND_MODE_Compatible,\
-{ 1.0 }, { 1.0 }, {0, 0}, 0, 0/*false*/, 0, 0/*false*/, 0, 0/*false*/, 0, 0, 0/*false*/, 1.0,  \
+{ 1.0 }, { 1.0 }, {0, 0}, 0, 0/*false*/, 0, 0/*false*/, 0, 0/*false*/, 0, 0/*false*/, 1.0,  \
    { fixed_half, fixed_half }, 0/*false*/, 1/*true*/, 0/*false*/, 1.0,\
   1, 1/* bpt true */, 0, 0, 0, INIT_CUSTOM_COLOR_PTR	/* 'Custom color' callback pointer */  \
   gx_default_get_cmap_procs
@@ -355,7 +356,6 @@ struct gs_gstate_s {
     s->trans_device = __state_init.trans_device; \
     s->overprint = __state_init.overprint; \
     s->overprint_mode = __state_init.overprint_mode; \
-    s->effective_overprint_mode = __state_init.effective_overprint_mode; \
     s->stroke_overprint = __state_init.stroke_overprint; \
     s->flatness = __state_init.flatness; \
     s->fill_adjust = __state_init.fill_adjust; \
@@ -370,7 +370,7 @@ struct gs_gstate_s {
     s->icc_profile_cache = __state_init.icc_profile_cache; \
     s->get_cmap_procs = __state_init.get_cmap_procs; \
     s->show_gstate = NULL; \
-    s->color_is_stroke = false; \
+    s->is_fill_color = 1; \
   } while (0)
 
 struct_proc_finalize(gs_gstate_finalize);

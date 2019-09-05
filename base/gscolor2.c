@@ -36,6 +36,7 @@ gs_setcolorspace_only(gs_gstate * pgs, gs_color_space * pcs)
     int             code = 0;
     gs_color_space  *cs_old = pgs->color[0].color_space;
     gs_client_color cc_old = *pgs->color[0].ccolor;
+    bool op = pgs->overprint || pgs->stroke_overprint;
 
     if (pgs->in_cachedevice)
         return_error(gs_error_undefined);
@@ -43,8 +44,8 @@ gs_setcolorspace_only(gs_gstate * pgs, gs_color_space * pcs)
     if (pcs->id != cs_old->id) {
         rc_increment_cs(pcs);
         pgs->color[0].color_space = pcs;
-        if ( (code = pcs->type->install_cspace(pcs, pgs)) < 0          ||
-              (pgs->overprint && (code = gs_do_set_overprint(pgs)) < 0)  ) {
+        if ( (code = pcs->type->install_cspace(pcs, pgs)) < 0 ||
+              (op && (code = gs_do_set_overprint(pgs)) < 0)  ) {
             pgs->color[0].color_space = cs_old;
             rc_decrement_only_cs(pcs, "gs_setcolorspace");
         } else {
@@ -86,6 +87,7 @@ gs_setcolor(gs_gstate * pgs, const gs_client_color * pcc)
     gs_client_color     cc_old = *pgs->color[0].ccolor;
     gx_device_color *dev_color = pgs->color[0].dev_color;
     bool do_unset  = true;
+    bool op;
 
     if (pgs->in_cachedevice)
         return_error(gs_error_undefined); /* PLRM3 page 215. */
@@ -104,6 +106,18 @@ gs_setcolor(gs_gstate * pgs, const gs_client_color * pcc)
     *pgs->color[0].ccolor = *pcc;
     (*pcs->type->restrict_color)(pgs->color[0].ccolor, pcs);
     (*pcs->type->adjust_color_count)(&cc_old, pcs, -1);
+
+    /* If we are in a situation where we are doing overprint 
+       with OPM, then we need to update the overprint
+       compositor as these values can affect what is drawn */
+    op = pgs->is_fill_color ? pgs->overprint : pgs->stroke_overprint;
+    if (pgs->color[0].effective_opm && op) {
+        if (pgs->is_fill_color) {
+            gs_setoverprint(pgs, op);
+        } else {
+            gs_setstrokeoverprint(pgs, op);
+        }
+    }
 
     return 0;
 }

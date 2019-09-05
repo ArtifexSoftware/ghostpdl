@@ -1898,7 +1898,6 @@ gdev_pdf_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
             return code;
         return gdev_pdf_stroke_path(dev, pgs, ppath, stroke_params, pdcolor_stroke, pcpath);
     } else {
-        pdf_resource_t *pres = 0;
         bool set_ctm;
         gs_matrix mat;
         double scale, path_scale;
@@ -2029,17 +2028,17 @@ gdev_pdf_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
             if (code < 0)
                 return code;
             /* Swap colors to make sure the pgs colorspace is correct for stroke */
-            gs_swapcolors(pgs);
+            gs_swapcolors((gs_gstate*) pgs);
             code = gdev_pdf_stroke_path(dev, pgs, ppath, stroke_params, pdcolor_stroke, pcpath);
-            gs_swapcolors(pgs);
+            gs_swapcolors((gs_gstate*) pgs);
             return code;
         }
 
         /* Swap colors to make sure the pgs colorspace is correct for stroke */
-        gs_swapcolors(pgs);
+        gs_swapcolors((gs_gstate*) pgs);
         code = gdev_vector_prepare_stroke((gx_device_vector *)pdev, pgs, stroke_params,
                                           pdcolor_stroke, scale);
-        gs_swapcolors(pgs);
+        gs_swapcolors((gs_gstate*) pgs);
         if (code < 0) {
             code = gdev_pdf_fill_path(dev, pgs, ppath, fill_params, pdcolor_fill, pcpath);
             if (code < 0)

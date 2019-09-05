@@ -612,6 +612,10 @@ in:                             /* Initialize for a new page. */
     GS_STATE_INIT_VALUES_CLIST((&gs_gstate));
     code = gs_gstate_initialize(&gs_gstate, mem);
     gs_gstate.device = tdev;
+    gs_gstate.view_clip = NULL; /* Avoid issues in pdf14 fill stroke */
+    gs_gstate.clip_path = NULL;
+    gs_gstate.color[0].color_space = NULL;
+    gs_gstate.color[1].color_space = NULL;
     /* Remove the ICC link cache and replace with the device link cache
        so that we share the cache across bands */
     rc_decrement(gs_gstate.icc_link_cache,"clist_playback_band");
@@ -2700,7 +2704,6 @@ read_set_misc2(command_buf_t *pcb, gs_gstate *pgs, segment_notes *pnotes)
         /* the following usually have no effect; see gxclpath.c */
         cb = *cbp++;
         pgs->overprint_mode = (cb >> 2) & 1;
-        pgs->effective_overprint_mode = pgs->overprint_mode;
         pgs->stroke_overprint = (cb >> 1) & 1;
         pgs->overprint = cb & 1;
         cb = *cbp++;
@@ -2731,7 +2734,7 @@ read_set_misc2(command_buf_t *pcb, gs_gstate *pgs, segment_notes *pnotes)
 }
 
 static int
-read_set_color_space(command_buf_t *pcb, gs_gstate *pgs,
+read_set_color_space(command_buf_t *pcb, gs_gstate *pgs, gs_color_space** ppcs,
                      gx_device_clist_reader *cdev, gs_memory_t *mem)
 {
     const byte *cbp = pcb->ptr;
@@ -2741,6 +2744,8 @@ read_set_color_space(command_buf_t *pcb, gs_gstate *pgs,
     int code = 0;
     cmm_profile_t *picc_profile;
     clist_icc_color_t icc_information;
+
+    ppcs = &pcs;
 
     if_debug3m('L', mem, " %d%s%s\n", index,
                (b & 8 ? " (indexed)" : ""),
@@ -2847,7 +2852,8 @@ read_set_color_space(command_buf_t *pcb, gs_gstate *pgs,
     }
 
     /* Release reference to old color space before installing new one. */
-    rc_decrement_only_cs(pgs->color[0].color_space, "read_set_color_space");
+    if (pgs->color[0].color_space != NULL)
+        rc_decrement_only_cs(pgs->color[0].color_space, "read_set_color_space");
     pgs->color[0].color_space = pcs;
 out:
     pcb->ptr = cbp;

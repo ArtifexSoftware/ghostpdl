@@ -372,9 +372,9 @@ cmd_check_clip_path(gx_device_clist_writer * cldev, const gx_clip_path * pcpath)
  (cj_ac_sa_known | flatness_known | op_bm_tk_known | opacity_alpha_known |\
   shape_alpha_known | fill_adjust_known | alpha_known | clip_path_known)
 static void
-cmd_check_fill_known(gx_device_clist_writer *cdev, const gs_gstate *pgs,
-                     double flatness, const gs_fixed_point *padjust,
-                     const gx_clip_path *pcpath, uint *punknown)
+cmd_check_fill_known(gx_device_clist_writer* cdev, const gs_gstate* pgs,
+    double flatness, const gs_fixed_point* padjust,
+    const gx_clip_path* pcpath, uint* punknown)
 {
     /*
      * stroke_adjust is not needed for fills, and none of these are needed
@@ -398,12 +398,12 @@ cmd_check_fill_known(gx_device_clist_writer *cdev, const gs_gstate *pgs,
      * though both parameters are passed in the state as well, this usually
      * has no effect.
      */
-    if (state_neq(overprint) || state_neq(effective_overprint_mode) ||
+    if (state_neq(overprint) || state_neq(overprint_mode) ||
         state_neq(blend_mode) || state_neq(text_knockout) ||
         state_neq(stroke_overprint) || state_neq(renderingintent)) {
         *punknown |= op_bm_tk_known;
         state_update(overprint);
-        state_update(effective_overprint_mode);
+        state_update(overprint_mode);
         state_update(blend_mode);
         state_update(text_knockout);
         state_update(stroke_overprint);

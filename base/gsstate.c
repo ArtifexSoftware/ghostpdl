@@ -366,7 +366,8 @@ gs_grestore_only(gs_gstate * pgs)
     gs_gstate tmp_gstate;
     void *pdata = pgs->client_data;
     void *sdata;
-    bool prior_overprint = pgs->overprint;
+    bool prior_fill_overprint = pgs->overprint;
+    bool prior_stroke_overprint = pgs->stroke_overprint;
 
     if_debug2m('g', pgs->memory, "[g]grestore 0x%lx, level was %d\n",
                (ulong) saved, pgs->level);
@@ -389,7 +390,8 @@ gs_grestore_only(gs_gstate * pgs)
     gs_free_object(pgs->memory, saved, "gs_grestore");
 
     /* update the overprint compositor, if necessary */
-    if (prior_overprint || pgs->overprint)
+    if (prior_fill_overprint || prior_stroke_overprint ||
+        pgs->overprint || pgs->stroke_overprint)
     {
         return gs_do_set_overprint(pgs);
     }
@@ -526,7 +528,7 @@ gs_setgstate(gs_gstate * pgs, const gs_gstate * pfrom)
     /* may skip over states where overprint was set, so the prior state can    */
     /* not be relied on to avoid this call. setgstate is not as commonly used  */
     /* as grestore, so the overhead of the compositor call is acceptable.      */
-    return(gs_do_set_overprint(pgs));
+    return gs_do_set_overprint(pgs);
 }
 
 /* Get the allocator pointer of a graphics state. */
@@ -636,24 +638,42 @@ gs_do_set_overprint(gs_gstate * pgs)
     {
         /* The spaces that do not allow opm (e.g. ones that are not ICC or DeviceCMYK)
            will blow away any true setting later. But we have to be prepared
-           in case this is an CMYK ICC space for example. Hence we set effective mode
+           in case this is a CMYK ICC space for example. Hence we set effective mode
            to mode here (Bug 698721)*/
-        pgs->effective_overprint_mode = pgs->overprint_mode;
+        pgs->color[0].effective_opm = pgs->overprint_mode;
+
+        if_debug2m(gs_debug_flag_overprint, pgs->memory,
+            "[overprint] gs_do_set_overprint. Preset effective mode. pgs->color[0].effective_opm = %d pgs->color[1].effective_opm = %d\n",
+            pgs->color[0].effective_opm, pgs->color[1].effective_opm);
+
         pcs->type->set_overprint(pcs, pgs);
     }
     return code;
 }
 
-/* setoverprint */
+/* setoverprint (non-stroke case) interpreter code
+   ensures that this is called when appropriate */
 void
 gs_setoverprint(gs_gstate * pgs, bool ovp)
 {
-    bool    prior_ovp = pgs->overprint;
+    bool prior_ovp = pgs->overprint;
+
+    if_debug2m(gs_debug_flag_overprint, pgs->memory,
+        "[overprint] gs_setoverprint. prior_ovp = %d new_ovp = %d\n",
+        prior_ovp, ovp);
 
     pgs->overprint = ovp;
-    pgs->stroke_overprint = ovp;
-    if (prior_ovp != ovp)
-        (void)gs_do_set_overprint(pgs);
+
+    /* We have to consider simply a color change if pgs->color[pgs->is_fill_color].effective_opm
+       is true */
+    if (prior_ovp != ovp || (pgs->color[!(pgs->is_fill_color)].effective_opm && ovp)) {
+        if (!pgs->is_fill_color) {
+            gs_swapcolors_quick(pgs);
+            (void)gs_do_set_overprint(pgs);
+            gs_swapcolors_quick(pgs);
+        } else
+            (void)gs_do_set_overprint(pgs);
+    }
 }
 
 /* currentoverprint */
@@ -668,15 +688,22 @@ void
 gs_setstrokeoverprint(gs_gstate * pgs, bool ovp)
 {
     bool prior_ovp = pgs->stroke_overprint;
-    bool prior_cis = pgs->color_is_stroke;
+ 
+    if_debug2m(gs_debug_flag_overprint, pgs->memory,
+        "[overprint] gs_setstrokeoverprint. prior_ovp = %d new_ovp = %d\n",
+        prior_ovp, ovp);
 
     pgs->stroke_overprint = ovp;
-    if (prior_ovp != ovp) {
-        if (prior_cis == false)
-            gs_swapcolors_quick(pgs);	/* current was fill */
-        (void)gs_do_set_overprint(pgs);
-        if (prior_cis == false)
+
+    /* We have to consider simply a color change if pgs->color[pgs->is_fill_color].effective_opm
+       is true */
+    if (prior_ovp != ovp || (pgs->color[pgs->is_fill_color].effective_opm && ovp)) {
+        if (pgs->is_fill_color) {
             gs_swapcolors_quick(pgs);
+            (void)gs_do_set_overprint(pgs);
+            gs_swapcolors_quick(pgs);
+        } else
+            (void)gs_do_set_overprint(pgs);
     }
 }
 
@@ -692,15 +719,21 @@ void
 gs_setfilloverprint(gs_gstate * pgs, bool ovp)
 {
     bool prior_ovp = pgs->overprint;
-    bool prior_cis = pgs->color_is_stroke;
+
+    if_debug2m(gs_debug_flag_overprint, pgs->memory,
+        "[overprint] gs_setfilloverprint. prior_ovp = %d new_ovp = %d\n",
+        prior_ovp, ovp);
 
     pgs->overprint = ovp;
+
     if (prior_ovp != ovp) {
-        if (prior_cis)
-            gs_swapcolors_quick(pgs);	/* current was stroke */
-        (void)gs_do_set_overprint(pgs);
-        if (prior_cis)
-            gs_swapcolors_quick(pgs);	/* swap back */
+        if (pgs->is_fill_color)
+            (void)gs_do_set_overprint(pgs);
+        else {
+            gs_swapcolors_quick(pgs);
+            (void)gs_do_set_overprint(pgs);
+            gs_swapcolors_quick(pgs);
+        }
     }
 }
 
@@ -715,14 +748,29 @@ gs_currentfilloverprint(const gs_gstate * pgs)
 int
 gs_setoverprintmode(gs_gstate * pgs, int mode)
 {
-    int     prior_mode = pgs->effective_overprint_mode;
+    int     prior_mode;
     int     code = 0;
+
+    prior_mode = gs_currentcolor_eopm(pgs);
+
+    if_debug3m(gs_debug_flag_overprint, pgs->memory,
+        "[overprint] gs_setoverprintmode. is_fill_color = %d prior_mode = %d new_mode = %d\n",
+        pgs->is_fill_color, prior_mode, mode);
+
+    if_debug2m(gs_debug_flag_overprint, pgs->memory,
+        "[overprint] gs_setoverprintmode. Incoming pgs->color[0].effective_opm = %d pgs->color[1].effective_opm = %d\n",
+        pgs->color[0].effective_opm, pgs->color[1].effective_opm);
 
     if (mode < 0 || mode > 1)
         return_error(gs_error_rangecheck);
     pgs->overprint_mode = mode;
     if (pgs->overprint && prior_mode != mode)
         code = gs_do_set_overprint(pgs);
+
+    if_debug2m(gs_debug_flag_overprint, pgs->memory,
+        "[overprint] gs_setoverprintmode. Exiting pgs->color[0].effective_opm = %d pgs->color[1].effective_opm = %d\n",
+        pgs->color[0].effective_opm, pgs->color[1].effective_opm);
+
     return code;
 }
 
@@ -1462,6 +1510,11 @@ void gs_swapcolors_quick(gs_gstate *pgs)
     pgs->color[0].color_space = pgs->color[1].color_space;
     pgs->color[1].color_space = tmp_cs;
 
+    /* Overprint and effective_op vary with stroke/fill and cs */
+    tmp                         = pgs->color[0].effective_opm;
+    pgs->color[0].effective_opm = pgs->color[1].effective_opm;
+    pgs->color[1].effective_opm = tmp;
+
     /* Swap the bits of the gs_gstate that depend on the current color */
     tmp_cie                   = pgs->cie_joint_caches;
     pgs->cie_joint_caches     = pgs->cie_joint_caches_alt;
@@ -1471,16 +1524,13 @@ void gs_swapcolors_quick(gs_gstate *pgs)
     pgs->color_component_map     = pgs->color_component_map_alt;
     pgs->color_component_map_alt = tmp_ccm;
 
-    tmp                = pgs->overprint;
-    pgs->overprint     = pgs->stroke_overprint;
-    pgs->stroke_overprint = tmp;
-
-    pgs->color_is_stroke = !(pgs->color_is_stroke);	/* used by overprint for fill_stroke */
+    pgs->is_fill_color = !(pgs->is_fill_color);	/* used by overprint for fill_stroke */
 }
 
 int gs_swapcolors(gs_gstate *pgs)
 {
-    int prior_overprint = pgs->overprint;
+    int prior_fill_overprint = pgs->overprint;
+    int prior_stroke_overprint = pgs->stroke_overprint;
 
     gs_swapcolors_quick(pgs);
 
@@ -1496,8 +1546,8 @@ int gs_swapcolors(gs_gstate *pgs)
      * So instead, we call whenever at least one of them had overprint
      * turned on.
      */
-    if (prior_overprint || pgs->overprint)
-    {
+    if (prior_fill_overprint || pgs->overprint ||
+        prior_stroke_overprint || pgs->stroke_overprint) {
         return gs_do_set_overprint(pgs);
     }
     return 0;

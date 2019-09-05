@@ -75,6 +75,7 @@ typedef enum {
 #define PDF14_SET_OVERPRINT_MODE (1 << 5)
 #define PDF14_SET_FILLCONSTANTALPHA (1 << 6)
 #define PDF14_SET_STROKECONSTANTALPHA (1 << 7)
+#define PDF14_SET_STROKEOVERPRINT (1 << 8)
 
 /* Used for keeping track of the text group madness, since we have the pdf14
    device needs to know if we are int an BT/ET group vs. a FreeText Annotation
@@ -131,7 +132,9 @@ struct gs_pdf14trans_params_s {
     gs_matrix ctm;
     bool replacing;
     bool overprint;
+    bool stroke_overprint;
     bool effective_overprint_mode;
+    bool stroke_effective_op_mode;
     bool idle; /* For clist reader.*/
     uint mask_id; /* For clist reader.*/
     int group_color_numcomps;

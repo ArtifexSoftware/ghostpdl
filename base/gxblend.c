@@ -1207,8 +1207,8 @@ art_blend_pixel_8_inline(byte *gs_restrict dst, const byte *gs_restrict backdrop
              * PDF specification */
         case BLEND_MODE_CompatibleOverprint:
             {
-                gx_color_index drawn_comps = p14dev->color_is_stroke ?
-                                             p14dev->drawn_comps_stroke : p14dev->drawn_comps_fill;
+                gx_color_index drawn_comps = p14dev->is_fill_color ?
+                                             p14dev->drawn_comps_fill : p14dev->drawn_comps_stroke;
                 gx_color_index comps;
                 /* If overprint mode is true and the current color space and
                  * the group color space are CMYK (or CMYK and spots), then
@@ -1463,8 +1463,8 @@ art_blend_pixel_16_inline(uint16_t *gs_restrict dst, const uint16_t *gs_restrict
              * PDF specification */
         case BLEND_MODE_CompatibleOverprint:
             {
-                gx_color_index drawn_comps = p14dev->color_is_stroke ?
-                                             p14dev->drawn_comps_stroke : p14dev->drawn_comps_fill;
+                gx_color_index drawn_comps = p14dev->is_fill_color ?
+                                             p14dev->drawn_comps_fill : p14dev->drawn_comps_stroke;
                 gx_color_index comps;
                 /* If overprint mode is true and the current color space and
                  * the group color space are CMYK (or CMYK and spots), then
@@ -2994,15 +2994,9 @@ template_compose_group(byte *gs_restrict tos_ptr, bool tos_isolated,
                     }
                 } else {
                     /* Pure subtractive */
-                    /* If we were running in the compatible overprint blend mode
-                    * and popping the group, we don't need to fool with the
-                    * drawn components as that should have already have been
-                    * handled during the blending within our special non-isolated
-                    * group.  So in other words, if the blend mode is normal
-                    * (or compatible) and we are doing overprint, the overprint
-                    * has NOT been handled by compatible overprint mode and we
-                    * need to take care of it now */
-                    if (overprint) {
+                    /* Compatible overprint should have taken care of all
+                       of the blending issues if we were not isolated */
+                    if (overprint && tos_isolated) {
                         for (i = 0, comps = drawn_comps; comps != 0; ++i, comps >>= 1) {
                             if ((comps & 0x1) != 0) {
                                 nos_ptr[i * nos_planestride] = 255 - dst[i];
@@ -4312,10 +4306,10 @@ do_compose_alphaless_group(pdf14_buf *tos, pdf14_buf *nos,
                            gs_memory_t *memory, gx_device *dev)
 {
     pdf14_device *pdev = (pdf14_device *)dev;
-    bool overprint = pdev->overprint;
+    bool overprint = pdev->is_fill_color ? pdev->overprint : pdev->stroke_overprint;
     bool additive = pdev->ctx->additive;
-    gx_color_index drawn_comps = pdev->color_is_stroke ?
-                                     pdev->drawn_comps_stroke : pdev->drawn_comps_fill;
+    gx_color_index drawn_comps = pdev->is_fill_color ?
+                                     pdev->drawn_comps_fill : pdev->drawn_comps_stroke;
     int n_chan = nos->n_chan;
     int num_spots = tos->num_spots;
     byte alpha = tos->alpha>>8;
@@ -4443,10 +4437,10 @@ do_compose_alphaless_group16(pdf14_buf *tos, pdf14_buf *nos,
                              gs_memory_t *memory, gx_device *dev)
 {
     pdf14_device *pdev = (pdf14_device *)dev;
-    bool overprint = pdev->overprint;
+    bool overprint = pdev->is_fill_color ? pdev->overprint : pdev->stroke_overprint;
     bool additive = pdev->ctx->additive;
-    gx_color_index drawn_comps = pdev->color_is_stroke ?
-                                     pdev->drawn_comps_stroke : pdev->drawn_comps_fill;
+    gx_color_index drawn_comps = pdev->is_fill_color ?
+                                     pdev->drawn_comps_fill : pdev->drawn_comps_stroke;
     int n_chan = nos->n_chan;
     int num_spots = tos->num_spots;
     uint16_t alpha = tos->alpha;
@@ -4593,9 +4587,7 @@ template_mark_fill_rect(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restri
                int alpha_g_off, int shape_off, byte shape, bool isolated)
 {
     int i, j, k;
-    gx_color_index comps;
     byte dst[PDF14_MAX_PLANES] = { 0 };
-    byte dest_alpha;
     bool tag_blend = blend_mode == BLEND_MODE_Normal ||
         blend_mode == BLEND_MODE_Compatible ||
         blend_mode == BLEND_MODE_CompatibleOverprint;
@@ -4639,47 +4631,24 @@ template_mark_fill_rect(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restri
                     }
                 }
                 dst[num_comp] = dst_ptr[num_comp * planestride];
-                dest_alpha = dst[num_comp];
                 pdst = art_pdf_composite_pixel_alpha_8_inline(dst, src, num_comp, blend_mode, first_blend_spot,
                             pdev->blend_procs, pdev);
-                /* Until I see otherwise in AR or the spec, do not fool
-                   with spot overprinting while we are in an RGB or Gray
-                   blend color space. */
-                if (!additive && overprint) {
-                    /* If this is an overprint case, and alpha_r is different
-                       than alpha_d then we will need to adjust
-                       the colors of the non-drawn components here too */
-                    for (k = 0, comps = drawn_comps; comps != 0; ++k, comps >>= 1) {
-                        if ((comps & 0x1) != 0) {
-                            dst_ptr[k * planestride] = 255 - pdst[k];
-                        } else if (dest_alpha != pdst[num_comp]) {
-                            /* We need val_new = (val_old * old_alpha) / new_alpha */
-                            if (pdst[num_comp] != 0) {
-                                int val = (int)floor(((float)dest_alpha / (float)pdst[num_comp]) * (255 - pdst[k]) + 0.5);
-                                if (val < 0)
-                                    val = 0;
-                                else if (val > 255)
-                                    val = 255;
-                                dst_ptr[k * planestride] = val;
-                            }
-                        }
-                    }
-                } else {
-                    /* Post blend complement for subtractive */
-                    if (!additive) {
-                        /* Pure subtractive */
-                        for (k = 0; k < num_comp; ++k)
-                            dst_ptr[k * planestride] = 255 - pdst[k];
+                /* Overprint drawncomps is handled in the blending
+                    procedure, by the compatible overprint blend */
+                /* Post blend complement for subtractive */
+                if (!additive) {
+                    /* Pure subtractive */
+                    for (k = 0; k < num_comp; ++k)
+                        dst_ptr[k * planestride] = 255 - pdst[k];
 
-                    } else {
-                        /* Hybrid case, additive with subtractive spots */
-                        for (k = 0; k < (num_comp - num_spots); k++) {
-                            dst_ptr[k * planestride] = pdst[k];
-                        }
-                        for (k = 0; k < num_spots; k++) {
-                            dst_ptr[(k + num_comp - num_spots) * planestride] =
-                                    255 - pdst[k + num_comp - num_spots];
-                        }
+                } else {
+                    /* Hybrid case, additive with subtractive spots */
+                    for (k = 0; k < (num_comp - num_spots); k++) {
+                        dst_ptr[k * planestride] = pdst[k];
+                    }
+                    for (k = 0; k < num_spots; k++) {
+                        dst_ptr[(k + num_comp - num_spots) * planestride] =
+                                255 - pdst[k + num_comp - num_spots];
                     }
                 }
                 /* The alpha channel */
@@ -5028,9 +4997,9 @@ do_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     int shape_off = num_chan * planestride;
     int alpha_g_off = shape_off + (has_shape ? planestride : 0);
     int tag_off = alpha_g_off + (has_alpha_g ? planestride : 0);
-    bool overprint = pdev->overprint;
-    gx_color_index drawn_comps = pdev->color_is_stroke ?
-                                     pdev->drawn_comps_stroke : pdev->drawn_comps_fill;
+    bool overprint = pdev->is_fill_color ? pdev->overprint : pdev->stroke_overprint;
+    gx_color_index drawn_comps = pdev->is_fill_color ?
+                                     pdev->drawn_comps_fill : pdev->drawn_comps_stroke;
     byte shape = 0; /* Quiet compiler. */
     byte src_alpha;
     const gx_color_index mask = ((gx_color_index)1 << 8) - 1;
@@ -5175,7 +5144,6 @@ template_mark_fill_rect16(int w, int h, uint16_t *gs_restrict dst_ptr, uint16_t 
                int alpha_g_off, int shape_off, uint16_t shape_)
 {
     int i, j, k;
-    gx_color_index comps;
     uint16_t dst[PDF14_MAX_PLANES] = { 0 };
     /* Expand src_alpha and shape to be 0...0x10000 rather than 0...0xffff */
     int src_alpha = src_alpha_ + (src_alpha_>>15);
@@ -5225,31 +5193,23 @@ template_mark_fill_rect16(int w, int h, uint16_t *gs_restrict dst_ptr, uint16_t 
                 dst[num_comp] = dst_ptr[num_comp * planestride];
                 pdst = art_pdf_composite_pixel_alpha_16_inline(dst, src, num_comp, blend_mode, first_blend_spot,
                             pdev->blend_procs, pdev);
-                /* Until I see otherwise in AR or the spec, do not fool
-                   with spot overprinting while we are in an RGB or Gray
-                   blend color space. */
-                if (!additive && overprint) {
-                    for (k = 0, comps = drawn_comps; comps != 0; ++k, comps >>= 1) {
-                        if ((comps & 0x1) != 0) {
-                            dst_ptr[k * planestride] = 65535 - pdst[k];
-                        }
-                    }
-                } else {
-                    /* Post blend complement for subtractive */
-                    if (!additive) {
-                        /* Pure subtractive */
-                        for (k = 0; k < num_comp; ++k)
-                            dst_ptr[k * planestride] = 65535 - pdst[k];
 
-                    } else {
-                        /* Hybrid case, additive with subtractive spots */
-                        for (k = 0; k < (num_comp - num_spots); k++) {
-                            dst_ptr[k * planestride] = pdst[k];
-                        }
-                        for (k = 0; k < num_spots; k++) {
-                            dst_ptr[(k + num_comp - num_spots) * planestride] =
-                                    65535 - pdst[k + num_comp - num_spots];
-                        }
+                /* Overprint drawncomps is handled in the blending
+                   procedure, by the compatible overprint blend */
+                /* Post blend complement for subtractive */
+                if (!additive) {
+                    /* Pure subtractive */
+                    for (k = 0; k < num_comp; ++k)
+                        dst_ptr[k * planestride] = 65535 - pdst[k];
+
+                } else {
+                    /* Hybrid case, additive with subtractive spots */
+                    for (k = 0; k < (num_comp - num_spots); k++) {
+                        dst_ptr[k * planestride] = pdst[k];
+                    }
+                    for (k = 0; k < num_spots; k++) {
+                        dst_ptr[(k + num_comp - num_spots) * planestride] =
+                            65535 - pdst[k + num_comp - num_spots];
                     }
                 }
                 /* The alpha channel */
@@ -5632,13 +5592,11 @@ do_mark_fill_rectangle16(gx_device * dev, int x, int y, int w, int h,
     int shape_off = num_chan * planestride;
     int alpha_g_off = shape_off + (has_shape ? planestride : 0);
     int tag_off = alpha_g_off + (has_alpha_g ? planestride : 0);
-    bool overprint = pdev->overprint;
-    gx_color_index drawn_comps = pdev->color_is_stroke ?
-                                 pdev->drawn_comps_stroke : pdev->drawn_comps_fill;
+    bool overprint = pdev->is_fill_color ? pdev->overprint : pdev->stroke_overprint;
+    gx_color_index drawn_comps = pdev->is_fill_color ?
+                                 pdev->drawn_comps_fill : pdev->drawn_comps_stroke;
     byte shape = 0; /* Quiet compiler. */
     byte src_alpha;
-    const gx_color_index mask = ((gx_color_index)1 << 8) - 1;
-    const int shift = 8;
     int num_spots = buf->num_spots;
     int first_blend_spot = num_comp;
     pdf14_mark_fill_rect16_fn fn;
