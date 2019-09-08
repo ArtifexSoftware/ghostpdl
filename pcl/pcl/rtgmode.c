@@ -333,7 +333,10 @@ pcl_enter_graphics_mode(pcl_state_t * pcs, pcl_gmode_entry_t mode)
     if (code < 0) return code;
     code = pcl_set_drawing_color(pcs, pcs->pattern_type, pcs->current_pattern_id,
                           true);
-    if (code < 0) return code;
+    if (code < 0) {
+        (void)pcl_grestore(pcs);
+        return code;
+    }
     gs_setmatrix(pcs->pgs, &rst2dev);
 
     /* translate the origin of the forward transformation */
