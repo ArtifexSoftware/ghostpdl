@@ -1061,69 +1061,81 @@ void Eval4InputsFloat(cmsContext ContextID, const cmsFloat32Number Input[],
     LutTable = (cmsFloat32Number*) p -> Table;
     LutTable += K0 + X0 + Y0 + Z0;
 
-    which = (ry > rx ?  1 : 0) +
-            (rz > rx ?  2 : 0) +
-            (rk > rx ?  4 : 0) +
-            (rz > ry ?  8 : 0) +
-            (rk > ry ? 16 : 0) +
-            (rk > rz ? 32 : 0);
-    /* This gives us 24 possible cases:
-     * which                        Tetrahedral corners
-     * 0x00  rx >= ry >= rz >= rk   (0,0,0,0) (1,0,0,0) (1,1,0,0) (1,1,1,0) (1,1,1,1)
-     * 0x01  ry >  rx >= rz >= rk   (0,0,0,0) (0,1,0,0) (1,1,0,0) (1,1,1,0) (1,1,1,1)
-     * 0x03  ry >= rz >  rx >= rk   (0,0,0,0) (0,1,0,0) (0,1,1,0) (1,1,1,0) (1,1,1,1)
-     * 0x07  ry >= rz >= rk >  rx   (0,0,0,0) (0,1,0,0) (0,1,1,0) (0,1,1,1) (1,1,1,1)
-     * 0x08  rx >= rz >  ry >= rk   (0,0,0,0) (1,0,0,0) (1,0,1,0) (1,1,1,0) (1,1,1,1)
-     * 0x0a  rz >  rx >= ry >= rk   (0,0,0,0) (0,0,1,0) (1,0,1,0) (1,1,1,0) (1,1,1,1)
-     * 0x0b  rz >  ry >  rx >= rk   (0,0,0,0) (0,0,1,0) (0,1,1,0) (1,1,1,0) (1,1,1,1)
-     * 0x0f  rz >  ry >= rk >  rx   (0,0,0,0) (0,0,1,0) (0,1,1,0) (0,1,1,1) (1,1,1,1)
-     * 0x18  rx >= rz >= rk >  ry   (0,0,0,0) (1,0,0,0) (1,0,1,0) (1,0,1,1) (1,1,1,1)
-     * 0x1a  rz >  rx >= rk >  ry   (0,0,0,0) (0,0,1,0) (1,0,1,0) (1,0,1,1) (1,1,1,1)
-     * 0x1e  rz >= rk >  rx >= ry   (0,0,0,0) (0,0,1,0) (0,0,1,1) (1,0,1,1) (1,1,1,1)
-     * 0x1f  rz >= rk >  ry >  rx   (0,0,0,0) (0,0,1,0) (0,0,1,1) (0,1,1,1) (1,1,1,1)
-     * 0x20  rx >= ry >= rk >  rz   (0,0,0,0) (1,0,0,0) (1,1,0,0) (1,1,0,1) (1,1,1,1)
-     * 0x21  ry >  rx >= rk >  rz   (0,0,0,0) (0,1,0,0) (1,1,0,0) (1,1,0,1) (1,1,1,1)
-     * 0x25  ry >= rk >  rx >= rz   (0,0,0,0) (0,1,0,0) (0,1,0,1) (1,1,0,1) (1,1,1,1)
-     * 0x27  ry >= rk >  rz >  rx   (0,0,0,0) (0,1,0,0) (0,1,0,1) (0,1,1,1) (1,1,1,1)
-     * 0x30  rx >= rk >  ry >= rz   (0,0,0,0) (1,0,0,0) (1,0,0,1) (1,1,0,1) (1,1,1,1)
-     * 0x34  rk >  rx >= ry >= rz   (0,0,0,0) (0,0,0,1) (1,0,0,1) (1,1,0,1) (1,1,1,1)
-     * 0x35  rk >  ry >  rx >= rz   (0,0,0,0) (0,0,0,1) (0,1,0,1) (1,1,0,1) (1,1,1,1)
-     * 0x37  rk >  ry >= rz >  rx   (0,0,0,0) (0,0,0,1) (0,1,0,1) (0,1,1,1) (1,1,1,1)
-     * 0x38  rx >= rk >  rz >  ry   (0,0,0,0) (1,0,0,0) (1,0,0,1) (1,0,1,1) (1,1,1,1)
-     * 0x3c  rk >  rx >= rz >  ry   (0,0,0,0) (0,0,0,1) (1,0,0,1) (1,0,1,1) (1,1,1,1)
-     * 0x3e  rk >  rz >  rx >= ry   (0,0,0,0) (0,0,0,1) (0,0,1,1) (1,0,1,1) (1,1,1,1)
-     * 0x3f  rk >  rz >  ry  > rx   (0,0,0,0) (0,0,0,1) (0,0,1,1) (0,1,1,1) (1,1,1,1)
-     */
+    /* We carefully choose the following tests, a) cos these
+     * work nicely in SSE (see CAL), and b) because, as well
+     * as the standard 24 pentachorons, we get some useful
+     * special cases. */
+    which = (rx > ry ?  1 : 0) +
+            (ry > rz ?  2 : 0) +
+            (rz > rk ?  4 : 0) +
+            (rk > rx ?  8 : 0) +
+            (rz > rx ? 16 : 0) +
+            (rk > ry ? 32 : 0);
 
     o4 = X1+Y1+Z1+K1;
     switch(which)
     {
-        default: /* Never happens, but stops the compiler complaining of uninitialised vars */
-        case 0x00: o1 = X1; o2 = Y1; o3 = Z1; m1 = rx; m2 = ry; m3 = rz; m4 = rk; break;
-        case 0x01: o1 = Y1; o2 = X1; o3 = Z1; m1 = ry; m2 = rx; m3 = rz; m4 = rk; break;
-        case 0x03: o1 = Y1; o2 = Z1; o3 = X1; m1 = ry; m2 = rz; m3 = rx; m4 = rk; break;
-        case 0x07: o1 = Y1; o2 = Z1; o3 = K1; m1 = ry; m2 = rz; m3 = rk; m4 = rx; break;
-        case 0x08: o1 = X1; o2 = Z1; o3 = Y1; m1 = rx; m2 = rz; m3 = ry; m4 = rk; break;
-        case 0x0a: o1 = Z1; o2 = X1; o3 = Y1; m1 = rz; m2 = rx; m3 = ry; m4 = rk; break;
-        case 0x0b: o1 = Z1; o2 = Y1; o3 = X1; m1 = rz; m2 = ry; m3 = rx; m4 = rk; break;
-        case 0x0f: o1 = Z1; o2 = Y1; o3 = K1; m1 = rz; m2 = ry; m3 = rk; m4 = rx; break;
-        case 0x18: o1 = X1; o2 = Z1; o3 = K1; m1 = rx; m2 = rz; m3 = rk; m4 = ry; break;
-        case 0x1a: o1 = Z1; o2 = X1; o3 = K1; m1 = rz; m2 = rx; m3 = rk; m4 = ry; break;
-        case 0x1e: o1 = Z1; o2 = K1; o3 = X1; m1 = rz; m2 = rk; m3 = rx; m4 = ry; break;
-        case 0x1f: o1 = Z1; o2 = K1; o3 = Y1; m1 = rz; m2 = rk; m3 = ry; m4 = rx; break;
-        case 0x20: o1 = X1; o2 = Y1; o3 = K1; m1 = rx; m2 = ry; m3 = rk; m4 = rz; break;
-        case 0x21: o1 = Y1; o2 = X1; o3 = K1; m1 = ry; m2 = rx; m3 = rk; m4 = rz; break;
-        case 0x25: o1 = Y1; o2 = K1; o3 = X1; m1 = ry; m2 = rk; m3 = rx; m4 = rz; break;
-        case 0x27: o1 = Y1; o2 = K1; o3 = Z1; m1 = ry; m2 = rk; m3 = rz; m4 = rx; break;
-        case 0x30: o1 = X1; o2 = K1; o3 = Y1; m1 = rx; m2 = rk; m3 = ry; m4 = rz; break;
-        case 0x34: o1 = K1; o2 = X1; o3 = Y1; m1 = rk; m2 = rx; m3 = ry; m4 = rz; break;
-        case 0x35: o1 = K1; o2 = Y1; o3 = X1; m1 = rk; m2 = ry; m3 = rx; m4 = rz; break;
-        case 0x37: o1 = K1; o2 = Y1; o3 = Z1; m1 = rk; m2 = ry; m3 = rz; m4 = rx; break;
-        case 0x38: o1 = X1; o2 = K1; o3 = Z1; m1 = rx; m2 = rk; m3 = rz; m4 = ry; break;
-        case 0x3c: o1 = K1; o2 = X1; o3 = Z1; m1 = rk; m2 = rx; m3 = rz; m4 = ry; break;
-        case 0x3e: o1 = K1; o2 = Z1; o3 = X1; m1 = rk; m2 = rz; m3 = rx; m4 = ry; break;
-        case 0x3f: o1 = K1; o2 = Z1; o3 = Y1; m1 = rk; m2 = rz; m3 = ry; m4 = rx; break;
+        default:    /* Never happens, but stops the compiler complaining of uninitialised vars */
+        case 0x00:  /* x == y == z == k - special case */
+            m1 = rx; goto one_lerp;
+        case 0x01:  /* x >  k == z == y - special case */
+            o1 = X1;       m1 = rx; m2 = ry; goto two_lerps;
+        case 0x18:  /* y == z == k >  x - special case */
+            o1 = Y1+Z1+K1; m1 = ry; m2 = rx; goto two_lerps;
+        case 0x04:  /* z == y == x >  k - special case */
+            o1 = X1+Y1+Z1; m1 = ry; m2 = rk; goto two_lerps;
+        case 0x28:  /* k >  z == y == x - special case */
+            o1 = K1;       m1 = rk; m2 = ry; goto two_lerps;
+        case 0x02:  /* y >= x >= k >= z */
+            o1 = Y1; o2 = X1; o3 = K1; m1 = ry; m2 = rx; m3 = rk; m4 = rz; break;
+        case 0x03:  /* x >  y >= k >= z */
+            o1 = X1; o2 = Y1; o3 = K1; m1 = rx; m2 = ry; m3 = rk; m4 = rz; break;
+        case 0x05:  /* x >= z >= y >= k */
+            o1 = X1; o2 = Z1; o3 = Y1; m1 = rx; m2 = rz; m3 = ry; m4 = rk; break;
+        case 0x06:  /* y >= x >= z >  k */
+            o1 = Y1; o2 = X1; o3 = Z1; m1 = ry; m2 = rx; m3 = rz; m4 = rk; break;
+        case 0x07:  /* x >  y >  z >  k */
+            o1 = X1; o2 = Y1; o3 = Z1; m1 = rx; m2 = ry; m3 = rz; m4 = rk; break;
+        case 0x0a:  /* y >= k >  x >= z */
+            o1 = Y1; o2 = K1; o3 = X1; m1 = ry; m2 = rk; m3 = rx; m4 = rz; break;
+        case 0x14:  /* z >= y >= x >= k */
+            o1 = Z1; o2 = Y1; o3 = X1; m1 = rz; m2 = ry; m3 = rx; m4 = rk; break;
+        case 0x15:  /* z >  x >= y >= k */
+            o1 = Z1; o2 = X1; o3 = Y1; m1 = rz; m2 = rx; m3 = ry; m4 = rk; break;
+        case 0x16:  /* y >= z >  x >= k */
+            o1 = Y1; o2 = Z1; o3 = X1; m1 = ry; m2 = rz; m3 = rx; m4 = rk; break;
+        case 0x1a:  /* y >= k >= z >  x */
+            o1 = Y1; o2 = K1; o3 = Z1; m1 = ry; m2 = rk; m3 = rz; m4 = rx; break;
+        case 0x1c:  /* z >= y >= k >  x */
+            o1 = Z1; o2 = Y1; o3 = K1; m1 = rz; m2 = ry; m3 = rk; m4 = rx; break;
+        case 0x1e:  /* y >  z >  k >  x */
+            o1 = Y1; o2 = Z1; o3 = K1; m1 = ry; m2 = rz; m3 = rk; m4 = rx; break;
+        case 0x21:  /* x >= k >= z >= y */
+            o1 = X1; o2 = K1; o3 = Z1; m1 = rx; m2 = rk; m3 = rz; m4 = ry; break;
+        case 0x23:  /* x >= k >  y >  z */
+            o1 = X1; o2 = K1; o3 = Y1; m1 = rx; m2 = rk; m3 = ry; m4 = rz; break;
+        case 0x25:  /* x >= z >  k >  y */
+            o1 = X1; o2 = Z1; o3 = K1; m1 = rx; m2 = rz; m3 = rk; m4 = ry; break;
+        case 0x29:  /* k >  x >= z >= y */
+            o1 = K1; o2 = X1; o3 = Z1; m1 = rk; m2 = rx; m3 = rz; m4 = ry; break;
+        case 0x2a:  /* k >  y >= x >= z */
+            o1 = K1; o2 = Y1; o3 = X1; m1 = rk; m2 = ry; m3 = rx; m4 = rz; break;
+        case 0x2b:  /* k >  x >  y >  z */
+            o1 = K1; o2 = X1; o3 = Y1; m1 = rk; m2 = rx; m3 = ry; m4 = rz; break;
+        case 0x35:  /* z >  x >= k >  y */
+            o1 = Z1; o2 = X1; o3 = K1; m1 = rz; m2 = rx; m3 = rk; m4 = ry; break;
+        case 0x38:  /* k >= z >= y >= x */
+            o1 = K1; o2 = Z1; o3 = Y1; m1 = rk; m2 = rz; m3 = ry; m4 = rx; break;
+        case 0x39:  /* k >= z >  x >  y */
+            o1 = K1; o2 = Z1; o3 = X1; m1 = rk; m2 = rz; m3 = rx; m4 = ry; break;
+        case 0x3a:  /* k >  y >  z >  x */
+            o1 = K1; o2 = Y1; o3 = Z1; m1 = rk; m2 = ry; m3 = rz; m4 = rx; break;
+        case 0x3c:  /* z >  k >  y >= x */
+            o1 = Z1; o2 = K1; o3 = Y1; m1 = rz; m2 = rk; m3 = ry; m4 = rx; break;
+        case 0x3d:  /* z >  k >  x >  y */
+            o1 = Z1; o2 = K1; o3 = X1; m1 = rz; m2 = rk; m3 = rx; m4 = ry; break;
     }
+    assert(m1 >= m2 && m2 >= m3 && m3 >= m4);
     o2 += o1;
     o3 += o2;
     for (OutChan=TotalOut; OutChan != 0; OutChan--) {
@@ -1138,6 +1150,29 @@ void Eval4InputsFloat(cmsContext ContextID, const cmsFloat32Number Input[],
 
         *Out++ = c0 + c1 * m1 + c2 * m2 + c3 * m3 + c4 * m4;
     }
+    return;
+
+two_lerps:
+    assert(m1 >= m2);
+    for (OutChan=TotalOut; OutChan != 0; OutChan--) {
+        c1 = LutTable[o1];
+        c2 = LutTable[o4] - c1;
+        c0 = *LutTable++;
+        c1 -= c0;
+
+        *Out++ = c0 + c1 * m1 + c2 * m2;
+    }
+    return;
+
+one_lerp:
+    for (OutChan=TotalOut; OutChan != 0; OutChan--) {
+        c1 = LutTable[o4];
+        c0 = *LutTable++;
+        c1 -= c0;
+
+        *Out++ = c0 + c1 * m1;
+    }
+    return;
 }
 
 static CMS_NO_SANITIZE
