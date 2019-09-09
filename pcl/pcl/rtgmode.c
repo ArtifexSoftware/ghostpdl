@@ -362,7 +362,7 @@ pcl_enter_graphics_mode(pcl_state_t * pcs, pcl_gmode_entry_t mode)
     if ((code = pcl_start_raster(src_wid, src_hgt, pcs)) >= 0)
         prstate->graphics_mode = true;
     else
-        code = pcl_grestore(pcs);
+        (void)pcl_grestore(pcs);
     return code;
 }
 
