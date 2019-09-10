@@ -482,6 +482,7 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                             if (pst->args.data == 0) {
                                 --p;
                                 code = gs_note_error(e_Memory);
+                                (void)pcl_grestore(pcs);
                                 goto x;
                             }
                             pst->args.data_on_heap = true;
