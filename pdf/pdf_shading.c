@@ -699,7 +699,7 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     int code, code1;
     pdf_name *n = NULL;
-    pdf_obj *o;
+    pdf_obj *o = NULL;
     gs_shading_t *psh = NULL;
     gs_offset_t savedoffset;
 
@@ -709,6 +709,10 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     if (ctx->TextBlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
+    n = (pdf_name *)ctx->stack_top[-1];
+    if (n->type != PDF_NAME)
+        return_error(gs_error_typecheck);
+
     savedoffset = pdfi_tell(ctx->main_stream);
     code = pdfi_loop_detector_mark(ctx);
     if (code < 0)
@@ -716,45 +720,33 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 
     code = pdfi_gsave(ctx);
     if (code < 0)
-        return code;
-
-    n = (pdf_name *)ctx->stack_top[-1];
-    if (n->type != PDF_NAME) {
-        code = gs_error_typecheck;
-        goto shading_error;
-    }
+        goto exit1;
 
     code = pdfi_find_resource(ctx, (unsigned char *)"Shading", n, stream_dict, page_dict, &o);
     if (code < 0)
-        goto shading_error;
+        goto exit2;
 
     if (o->type != PDF_DICT) {
-        code = gs_error_typecheck;
-        goto shading_error;
+        code = gs_note_error(gs_error_typecheck);
+        goto exit2;
     }
 
     code = pdfi_shading_build(ctx, stream_dict, page_dict, (pdf_dict *)o, &psh);
-    pdfi_countdown(o);
-    pdfi_pop(ctx, 1);
-    (void)pdfi_loop_detector_cleartomark(ctx);
+    if (code < 0)
+        goto exit2;
 
-    if (code >= 0) {
-        code = gs_shfill(ctx->pgs, psh);
-    }
-
-    code1 = pdfi_grestore(ctx);
+    code = gs_shfill(ctx->pgs, psh);
 
     if (psh) {
         pdfi_shading_free(ctx, psh);
     }
 
-    pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
-    if (code1 == 0)
-        return code;
-    return code1;
-
-shading_error:
+ exit2:
+    pdfi_countdown(o);
     code1 = pdfi_grestore(ctx);
+    if (code == 0)
+        code = code1;
+ exit1:
     pdfi_pop(ctx, 1);
     (void)pdfi_loop_detector_cleartomark(ctx);
     pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
