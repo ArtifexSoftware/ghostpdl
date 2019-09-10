@@ -414,7 +414,7 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
             gs_offset_t offset = 0;
 
             if (ctx->pdfdebug) {
-                dmprintf1(ctx->memory, "%% Reading compressed object %"PRIi64, obj);
+                dmprintf1(ctx->memory, "%% Reading compressed object (%"PRIi64" 0 obj)", obj);
                 dmprintf1(ctx->memory, " from ObjStm with object number %"PRIi64"\n", compressed_entry->object_num);
             }
 

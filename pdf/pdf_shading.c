@@ -25,6 +25,7 @@
 #include "pdf_file.h"
 #include "pdf_loop_detect.h"
 #include "pdf_colour.h"
+#include "pdf_trans.h"
 
 #include "gxshade.h"
 #include "gsptype2.h"
@@ -695,13 +696,51 @@ pdfi_shading_free(pdf_context *ctx, gs_shading_t *psh)
     gs_free_object(ctx->memory, psh, "Free shading, finished");
 }
 
+/* Setup for transparency (see pdf_draw.ps/sh) */
+static int
+pdfi_shading_setup_trans(pdf_context *ctx, pdfi_trans_state_t *state, pdf_dict *shading)
+{
+    int code;
+    gs_rect bbox;
+    pdf_array *BBox = NULL;
+
+    code = pdfi_gsave(ctx);
+    if (code < 0)
+        return code;
+
+    code = pdfi_dict_knownget_type(ctx, shading, "BBox", PDF_ARRAY, (pdf_obj **)&BBox);
+    if (code > 0) {
+        pdfi_array_to_gs_rect(ctx, BBox, &bbox);
+        code = gs_moveto(ctx->pgs, bbox.p.x, bbox.p.y);
+        if (code < 0)
+            goto exit;
+        code = gs_lineto(ctx->pgs, bbox.q.x, 0.);
+        if (code < 0)
+            goto exit;
+        code = gs_lineto(ctx->pgs, 0., bbox.q.y);
+        if (code < 0)
+            goto exit;
+        code = gs_closepath(ctx->pgs);
+    } else {
+        code = gs_clippath(ctx->pgs);
+    }
+
+
+    code = pdfi_trans_setup(ctx, state, TRANSPARENCY_Caller_Other, gs_getfillconstantalpha(ctx->pgs));
+ exit:
+    pdfi_countdown(BBox);
+    pdfi_grestore(ctx);
+    return code;
+}
+
 int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     int code, code1;
     pdf_name *n = NULL;
-    pdf_obj *o = NULL;
+    pdf_dict *Shading = NULL;
     gs_shading_t *psh = NULL;
     gs_offset_t savedoffset;
+    pdfi_trans_state_t trans_state;
 
     if (pdfi_count_stack(ctx) < 1)
         return_error(gs_error_stackunderflow);
@@ -722,27 +761,39 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     if (code < 0)
         goto exit1;
 
-    code = pdfi_find_resource(ctx, (unsigned char *)"Shading", n, stream_dict, page_dict, &o);
+    code = pdfi_find_resource(ctx, (unsigned char *)"Shading", n, stream_dict, page_dict,
+                              (pdf_obj **)&Shading);
     if (code < 0)
         goto exit2;
 
-    if (o->type != PDF_DICT) {
+    if (Shading->type != PDF_DICT) {
         code = gs_note_error(gs_error_typecheck);
         goto exit2;
     }
 
-    code = pdfi_shading_build(ctx, stream_dict, page_dict, (pdf_dict *)o, &psh);
+    code = pdfi_shading_build(ctx, stream_dict, page_dict, Shading, &psh);
     if (code < 0)
         goto exit2;
 
+    if (ctx->page_has_transparency) {
+        code = pdfi_shading_setup_trans(ctx, &trans_state, Shading);
+        if (code < 0)
+            goto exit2;
+    }
+
     code = gs_shfill(ctx->pgs, psh);
 
-    if (psh) {
-        pdfi_shading_free(ctx, psh);
+    if (ctx->page_has_transparency) {
+        code1 = pdfi_trans_teardown(ctx, &trans_state);
+        if (code == 0)
+            code = code1;
     }
 
  exit2:
-    pdfi_countdown(o);
+    if (psh)
+        pdfi_shading_free(ctx, psh);
+
+    pdfi_countdown(Shading);
     code1 = pdfi_grestore(ctx);
     if (code == 0)
         code = code1;

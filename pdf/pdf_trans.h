@@ -26,7 +26,7 @@ typedef struct {
 } pdfi_trans_state_t;
 
 typedef enum {
-    TRANSPARENCY_CALLER_Other,
+    TRANSPARENCY_Caller_Other,
     TRANSPARENCY_Caller_Image,
     TRANSPARENCY_Caller_Stroke,
     TRANSPARENCY_Caller_Fill,
