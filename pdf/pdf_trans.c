@@ -440,15 +440,14 @@ static bool pdfi_trans_okOPcs(pdf_context *ctx)
     csi = pdfi_currentcolorspace(ctx, 0);
 
     switch (csi) {
-#if 0 /* TODO? */
     case gs_color_space_index_DeviceGray:
-#endif
     case gs_color_space_index_DeviceCMYK:
     case gs_color_space_index_DeviceN:
     case gs_color_space_index_Separation:
         /* These are colorspaces that don't require special handling for overprint.
          * (pdf1.7 pg 259,578 may apply)
-         * TODO: Unclear if DeviceGray should be included?  Mvrhel says it shouldn't be (9-5-19)
+         * According to mvrhel, DeviceGray should also be included (see comment in gx_set_overprint_ICC()).
+         * Sample: 030_Gray_K_black_OP_x1a.pdf (??)
          */
         dbgmprintf1(ctx->memory, "Colorspace is %d, OKAY for OVERPRINT\n", csi);
         return true;
