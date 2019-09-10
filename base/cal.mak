@@ -103,7 +103,7 @@ $(CAL_OBJ)$(CAL_PREFIX)cmssse42.$(OBJ) : $(CAL_SRC)cmssse42.c $(cal_HDRS) $(CAL_
 	$(CAL_CC) $(CAL_SSE4_2_CFLAGS) $(I_)$(LCMS2MTSRCDIR)$(D)include $(I_)$(LCMS2MTSRCDIR)$(D)src $(CAL_O)cmssse42.$(OBJ) $(C_) $(CAL_SRC)cmssse42.c
 
 $(CAL_OBJ)$(CAL_PREFIX)cmsneon.$(OBJ) : $(CAL_SRC)cmsneon.c $(cal_HDRS) $(CAL_DEP)
-	$(CAL_CC) $(CAL_SSE4_2_CFLAGS) $(CAL_NEON_CFLAGS) $(CAL_O)cmsneon.$(OBJ) $(C_) $(CAL_SRC)cmsneon.c
+	$(CAL_CC) $(CAL_SSE4_2_CFLAGS) $(CAL_NEON_CFLAGS) $(I_)$(LCMS2MTSRCDIR)$(D)include $(I_)$(LCMS2MTSRCDIR)$(D)src $(CAL_O)cmsneon.$(OBJ) $(C_) $(CAL_SRC)cmsneon.c
 
 $(CAL_OBJ)$(CAL_PREFIX)lcms2mt_cal.$(OBJ) : $(CAL_SRC)lcms2mt_cal.c $(cal_HDRS) $(CAL_DEP) $(gsmemory_h)
 	$(CAL_CC) $(I_)$(LCMS2MTSRCDIR)$(D)include $(I_)$(GLSRC) $(I_)$(LCMS2MTSRCDIR)$(D)src $(CAL_O)lcms2mt_cal.$(OBJ) $(C_) $(CAL_SRC)lcms2mt_cal.c
