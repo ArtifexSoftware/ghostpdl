@@ -438,9 +438,6 @@ static int pdfi_B_inner(pdf_context *ctx, bool use_eofill)
     if (code < 0)
         goto exit;
 
-    code = pdfi_trans_set_params(ctx, gs_getstrokeconstantalpha(ctx->pgs));
-    if (code < 0)
-        goto exit;
     code = pdfi_trans_setup(ctx, &state, TRANSPARENCY_Caller_Stroke, gs_getstrokeconstantalpha(ctx->pgs));
     if (code >= 0)
         code = gs_stroke(ctx->pgs);
