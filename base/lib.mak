@@ -340,18 +340,18 @@ $(GLOBJ)gsmisc.$(OBJ) : $(GLSRC)gsmisc.c $(AK) $(gx_h) $(gserrors_h)\
  $(gdbflags_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsmisc.$(OBJ) $(C_) $(GLSRC)gsmisc.c
 
-$(AUX)gsmisc.$(OBJ) : $(GLSRC)gsmisc.c $(AK) $(gx_h) $(gserrors_h)\
+$(AUX)gsmisc.$(OBJ) : $(GLSRC)gsmisc.c $(AK) $(gx_h) $(gpmisc_h) $(gserrors_h)\
  $(vmsmath_h) $(std_h)  $(ctype__h) $(malloc__h) $(math__h) $(memory__h)\
  $(string__h) $(gpcheck_h) $(gxfarith_h) $(gxfixed_h) $(stdint__h) $(stdio__h)\
  $(gdbflags_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCCAUX) $(C_) $(AUXO_)gsmisc.$(OBJ) $(GLSRC)gsmisc.c
 
-$(GLOBJ)gslibctx_1.$(OBJ) : $(GLSRC)gslibctx.c  $(AK) $(gp_h) $(gsmemory_h)\
+$(GLOBJ)gslibctx_1.$(OBJ) : $(GLSRC)gslibctx.c  $(AK) $(gp_h) $(gpmisc_h) $(gsmemory_h)\
   $(gslibctx_h) $(stdio__h) $(string__h) $(gsicc_manage_h) $(gserrors_h)\
   $(gscdefs_h) $(gsstruct_h)
 	$(GLCC) $(D_)WITH_CAL$(_D) $(I_)$(CALSRCDIR)$(_I) $(GLO_)gslibctx_1.$(OBJ) $(C_) $(GLSRC)gslibctx.c
 
-$(GLOBJ)gslibctx_0.$(OBJ) : $(GLSRC)gslibctx.c  $(AK) $(gp_h) $(gsmemory_h)\
+$(GLOBJ)gslibctx_0.$(OBJ) : $(GLSRC)gslibctx.c  $(AK) $(gp_h) $(gpmisc_h) $(gsmemory_h)\
   $(gslibctx_h) $(stdio__h) $(string__h) $(gsicc_manage_h) $(gserrors_h)\
   $(gscdefs_h) $(gsstruct_h)
 	$(GLCC) $(GLO_)gslibctx_0.$(OBJ) $(C_) $(GLSRC)gslibctx.c
