@@ -1541,7 +1541,7 @@ clist_strip_copy_rop2(gx_device * dev,
                         tile_with_id.id = gs_next_ids(dev->memory, 1);
                         tiles = &tile_with_id;
                     }
-                    code = clist_change_tile(cdev, re.pcls, tiles,
+                    code = clist_change_bits(cdev, re.pcls, tiles,
                                             (tcolors != 0 ? 1 :
                                                  cdev->clist_color_info.depth));
                     if (code < 0 && !(code == gs_error_limitcheck))
