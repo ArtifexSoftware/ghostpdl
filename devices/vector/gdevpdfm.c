@@ -266,54 +266,16 @@ pdfmark_make_rect(char str[MAX_RECT_STRING], const gs_rect * prect)
     str[stell(&s)] = 0;
 }
 
+#define MAX_BORDER_STRING 100
 /* Write a transformed Border value on a stream. */
 static int
 pdfmark_write_border(stream *s, const gs_param_string *str,
                      const gs_matrix *pctm)
 {
-    /*
-     * We don't preserve the entire CTM in the output, and it isn't clear
-     * what CTM is applicable to annotations anyway: we only attempt to
-     * handle well-behaved CTMs here.
-     */
-    uint size = str->size;
-#define MAX_BORDER_STRING 100
-    char chars[MAX_BORDER_STRING + 1];
-    double bx, by, c;
-    gs_point bpt, cpt;
-    const char *next;
+    int i;
 
-    if (str->size > MAX_BORDER_STRING)
-        return_error(gs_error_limitcheck);
-    memcpy(chars, str->data, size);
-    chars[size] = 0;
-    if (sscanf(chars, "[%lg %lg %lg", &bx, &by, &c) != 3)
-        return_error(gs_error_rangecheck);
-    gs_distance_transform(bx, by, pctm, &bpt);
-    gs_distance_transform(0.0, c, pctm, &cpt);
-    pprintg3(s, "[%g %g %g", fabs(bpt.x), fabs(bpt.y), fabs(cpt.x + cpt.y));
-    /*
-     * We don't attempt to do 100% reliable syntax checking here --
-     * it's just not worth the trouble.
-     */
-    next = strchr(chars + 1, ']');
-    if (next == 0)
-        return_error(gs_error_rangecheck);
-    if (next[1] != 0) {
-        /* Handle a dash array.  This is tiresome. */
-        double v;
-
-        stream_putc(s, '[');
-        while (next != 0 && sscanf(++next, "%lg", &v) == 1) {
-            gs_point vpt;
-
-            gs_distance_transform(0.0, v, pctm, &vpt);
-            pprintg1(s, "%g ", fabs(vpt.x + vpt.y));
-            next = strchr(next, ' ');
-        }
-        stream_putc(s, ']');
-    }
-    stream_putc(s, ']');
+    for (i = 0; i < str->size; i++)
+        stream_putc(s, str->data[i]);
     return 0;
 }
 
