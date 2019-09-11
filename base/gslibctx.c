@@ -23,6 +23,7 @@
 #include "stdio_.h"
 #include "string_.h" /* memset */
 #include "gp.h"
+#include "gpmisc.h"
 #include "gsicc_manage.h"
 #include "gserrors.h"
 #include "gscdefs.h"            /* for gs_lib_device_list */
@@ -645,6 +646,8 @@ gs_add_control_path_len(const gs_memory_t *mem, gs_path_control_t type, const ch
     gs_path_control_set_t *control;
     unsigned int n, i;
     gs_lib_ctx_core_t *core;
+    char *buffer;
+    uint rlen;
 
     if (mem == NULL || mem->gs_lib_ctx == NULL ||
         (core = mem->gs_lib_ctx->core) == NULL)
@@ -664,12 +667,23 @@ gs_add_control_path_len(const gs_memory_t *mem, gs_path_control_t type, const ch
             return gs_error_rangecheck;
     }
 
+    rlen = len+1;
+    buffer = (char *)gs_alloc_bytes(core->memory, rlen, "gp_validate_path");
+    if (buffer == NULL)
+        return gs_error_VMerror;
+
+    if (gp_file_name_reduce(path, (uint)len, buffer, &rlen) != gp_combine_success)
+        return gs_error_invalidfileaccess;
+    buffer[rlen] = 0;
+
     n = control->num;
     for (i = 0; i < n; i++)
     {
-        if (strncmp(control->paths[i], path, len) == 0 &&
-            control->paths[i][len] == 0)
+        if (strncmp(control->paths[i], buffer, rlen) == 0 &&
+            control->paths[i][rlen] == 0) {
+            gs_free_object(core->memory, buffer, "gs_add_control_path_len");
             return 0; /* Already there! */
+        }
     }
 
     if (control->num == control->max) {
@@ -681,17 +695,16 @@ gs_add_control_path_len(const gs_memory_t *mem, gs_path_control_t type, const ch
             p = (char **)gs_alloc_bytes(core->memory, sizeof(*p)*n, "gs_lib_ctx(paths)");
         } else
             p = (char **)gs_resize_object(core->memory, control->paths, sizeof(*p)*n, "gs_lib_ctx(paths)");
-        if (p == NULL)
+        if (p == NULL) {
+            gs_free_object(core->memory, buffer, "gs_add_control_path_len");
             return gs_error_VMerror;
+        }
         control->paths = p;
         control->max = n;
     }
 
     n = control->num;
-    control->paths[n] = (char *)gs_alloc_bytes(core->memory, len+1, "gs_lib_ctx(path)");
-    if (control->paths[n] == NULL)
-        return gs_error_VMerror;
-    memcpy(control->paths[n], path, len);
+    control->paths[n] = buffer;
     control->paths[n][len] = 0;
     control->num++;
 
@@ -710,6 +723,8 @@ gs_remove_control_path_len(const gs_memory_t *mem, gs_path_control_t type, const
     gs_path_control_set_t *control;
     unsigned int n, i;
     gs_lib_ctx_core_t *core;
+    char *buffer;
+    uint rlen;
 
     if (mem == NULL || mem->gs_lib_ctx == NULL ||
         (core = mem->gs_lib_ctx->core) == NULL)
@@ -729,12 +744,22 @@ gs_remove_control_path_len(const gs_memory_t *mem, gs_path_control_t type, const
             return gs_error_rangecheck;
     }
 
+    rlen = len+1;
+    buffer = (char *)gs_alloc_bytes(core->memory, rlen, "gp_validate_path");
+    if (buffer == NULL)
+        return gs_error_VMerror;
+
+    if (gp_file_name_reduce(path, (uint)len, buffer, &rlen) != gp_combine_success)
+        return gs_error_invalidfileaccess;
+    buffer[rlen] = 0;
+
     n = control->num;
     for (i = 0; i < n; i++) {
-        if (strncmp(control->paths[i], path, len) == 0 &&
+        if (strncmp(control->paths[i], buffer, len) == 0 &&
             control->paths[i][len] == 0)
             break;
     }
+    gs_free_object(core->memory, buffer, "gs_remove_control_path_len");
     if (i == n)
         return 0;
 
