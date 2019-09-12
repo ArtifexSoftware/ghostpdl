@@ -377,8 +377,9 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                     }
                     if (do_display_functions()) {
                         if (chr == CR) {
-                            pcl_do_CR(pcs);
-                            code = pcl_do_LF(pcs);
+                            code = pcl_do_CR(pcs);
+                            if (code >= 0)
+                                code = pcl_do_LF(pcs);
                         } else {
                             pst->args.command = chr;
                             code = pcl_plain_char(&pst->args, pcs);

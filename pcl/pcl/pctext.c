@@ -874,8 +874,12 @@ pcl_show_chars_slow(pcl_state_t * pcs,
                        function. */
                     pcs->cap.x = (coord) cpt.x;
                     pcs->cap.y = (coord) cpt.y;
-                    pcl_do_CR(pcs);
-                    pcl_do_LF(pcs);
+                    code = pcl_do_CR(pcs);
+                    if (code < 0)
+                        return code;
+                    code = pcl_do_LF(pcs);
+                    if (code < 0)
+                        return code;
                     cpt.x = pcs->cap.x;
                     cpt.y = pcs->cap.y;
                     use_rmargin = true;

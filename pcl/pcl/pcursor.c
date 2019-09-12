@@ -329,13 +329,17 @@ do_vertical_move(pcl_state_t * pcs, pcl_args_t * pargs, float mul,
  *
  * Note: CR always "breaks" an underline, even if it is a movement to the right.
  */
-void
+int
 pcl_do_CR(pcl_state_t * pcs)
 {
+    int code = 0;
+
     pcl_break_underline(pcs);
     pcl_set_cap_x(pcs, pcs->margins.left, false, false);
     pcl_continue_underline(pcs);
     pcs->cursor_moved = true;
+
+    return code;
 }
 
 int
@@ -549,7 +553,9 @@ static int
 cmd_CR(pcl_args_t * pargs,      /* ignored */
        pcl_state_t * pcs)
 {
-    pcl_do_CR(pcs);
+    int code = pcl_do_CR(pcs);
+    if (code < 0)
+        return code;
     return ((pcs->line_termination & 1) != 0 ? pcl_do_LF(pcs) : 0);
 }
 
@@ -645,8 +651,11 @@ static int
 cmd_LF(pcl_args_t * pargs,      /* ignored */
        pcl_state_t * pcs)
 {
-    if ((pcs->line_termination & 2) != 0)
-        pcl_do_CR(pcs);
+    if ((pcs->line_termination & 2) != 0) {
+        int code = pcl_do_CR(pcs);
+        if (code < 0)
+            return code;
+    }
     return pcl_do_LF(pcs);
 }
 
@@ -657,8 +666,11 @@ static int
 cmd_FF(pcl_args_t * pargs,      /* ignored */
        pcl_state_t * pcs)
 {
-    if ((pcs->line_termination & 2) != 0)
-        pcl_do_CR(pcs);
+    if ((pcs->line_termination & 2) != 0) {
+        int code = pcl_do_CR(pcs);
+        if (code < 0)
+            return code;
+    }
     return pcl_do_FF(pcs);
 }
 

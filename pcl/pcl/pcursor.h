@@ -53,7 +53,7 @@ int pcl_set_cap_y(pcl_state_t * pcs, coord y,   /* position or distance */
                   bool by_row_command   /* ESC & a <rows> R special case. */
     );
 
-void pcl_do_CR(pcl_state_t * pcs);
+int pcl_do_CR(pcl_state_t * pcs);
 
 int pcl_do_FF(pcl_state_t * pcs);
 
