@@ -233,6 +233,7 @@ gdev_prn_setup_as_command_list(gx_device *pdev, gs_memory_t *buffer_memory,
     gx_device_clist_common * const pcldev = &pclist_dev->common;
     bool reallocate = *the_memory != 0;
     byte *base;
+    bool save_is_open = pdev->is_open;	/* Save around temporary failure in open_c loop */
 
     while (target->parent != NULL) {
         target = target->parent;
@@ -303,8 +304,10 @@ open_c:
                                    "cmd list buf(retry open)");
             }
             ppdev->buf = *the_memory;
-            if (base != 0)
+            if (base != 0) {
+                pdev->is_open = save_is_open;	/* allow for success when we loop */
                 goto open_c;
+            }
         }
         /* Failure. */
         if (!reallocate) {

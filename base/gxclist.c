@@ -703,19 +703,22 @@ clist_open(gx_device *dev)
 
     code = clist_init(dev);
     if (code < 0)
-        return code;
+        goto errxit;
+
     cdev->icc_cache_list_len = 0;
     cdev->icc_cache_list = NULL;
     code = clist_open_output_file(dev);
     if ( code >= 0)
         code = clist_emit_page_header(dev);
     if (code >= 0) {
-       dev->is_open = save_is_open;
-    } else {
-        gs_free_object(cdev->memory->non_gc_memory, cdev->cache_chunk, "free tile cache for clist");
-        cdev->cache_chunk = NULL;
+        dev->is_open = save_is_open;
+        return code;		/* success */
     }
-
+    /* fall through to clean up and return error code */
+errxit:
+    /* prevent leak */
+    gs_free_object(cdev->memory->non_gc_memory, cdev->cache_chunk, "free tile cache for clist");
+    cdev->cache_chunk = NULL;
     return code;
 }
 
