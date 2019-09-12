@@ -859,7 +859,7 @@ pdfi_do_image_smask(pdf_context *ctx, pdf_stream *source, pdfi_image_info_t *ima
     pdf_array *a = NULL;
     gs_offset_t savedoffset = 0;
     double f;
-    int code;
+    int code, code1;
     pdfi_int_gstate *igs = (pdfi_int_gstate *)ctx->pgs->client_data;
 
     /* TODO: We should check for the /PreserveSMask device parameter here. If this is
@@ -868,6 +868,7 @@ pdfi_do_image_smask(pdf_context *ctx, pdf_stream *source, pdfi_image_info_t *ima
      */
 
     dbgmprintf(ctx->memory, "pdfi_do_image_smask BEGIN\n");
+
     gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Luminosity);
 
     code = pdfi_dict_knownget_type(ctx, (pdf_dict *)image_info->SMask, "Matte",
@@ -909,16 +910,12 @@ pdfi_do_image_smask(pdf_context *ctx, pdf_stream *source, pdfi_image_info_t *ima
                                  image_info->page_dict, (pdf_dict *)image_info->SMask);
     pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
 
-    if (code < 0) {
-        (void)pdfi_grestore(ctx);
-        (void)gs_end_transparency_mask(ctx->pgs, 0);
-    } else {
-        code = pdfi_grestore(ctx);
-        if (code < 0)
-            (void)gs_end_transparency_mask(ctx->pgs, 0);
-        else
-            code = gs_end_transparency_mask(ctx->pgs, 0);
-    }
+    code1 = pdfi_grestore(ctx);
+    if (code < 0)
+        code = code1;
+    code1 = gs_end_transparency_mask(ctx->pgs, TRANSPARENCY_CHANNEL_Opacity);
+    if (code < 0)
+        code = code1;
 
  exit:
     pdfi_countdown(a);
