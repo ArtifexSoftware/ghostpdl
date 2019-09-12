@@ -59,7 +59,13 @@ enum {
     state_gt_012,
 
     /* -n bytes into a repeated run, n0 and n1 read. */
-    state_lt_01
+    state_lt_01,
+
+    /* We have reached the end of data, but not written the marker. */
+    state_eod_unmarked,
+
+    /* We have reached the end of data, and written the marker. */
+    state_eod
 };
 
 #ifdef DEBUG_RLE
@@ -294,43 +300,49 @@ run_len_0_n0_read:
                 }
             }
         }
-    }
-    /* n1 is never valid here */
+        /* n1 is never valid here */
 
-    if (last) {
-        if (run_len == 0) {
-            /* EOD */
+        if (last) {
+            if (run_len == 0) {
+                /* EOD */
+                if (wlimit - q < 1) {
+                    ss->state = state_0;
+                    goto no_output_room;
+                }
+            } else if (run_len > 0) {
+                /* Flush literal run + EOD */
+                if (wlimit - q < run_len+2) {
+                    ss->state = state_0;
+                    goto no_output_room;
+                }
+                *++q = run_len;
+                memcpy(q+1, ss->literals, run_len);
+                q += run_len;
+                *++q = n0;
+            } else if (run_len < 0) {
+                /* Flush repeated run + EOD */
+                if (wlimit - q < 3) {
+                    ss->state = state_0;
+                    goto no_output_room;
+                }
+                *++q = 257+run_len; /* Repeated run */
+                *++q = n0;
+            }
+    case state_eod_unmarked:
             if (wlimit - q < 1) {
-                ss->state = state_0;
+                ss->state = state_eod_unmarked;
                 goto no_output_room;
             }
-        } else if (run_len > 0) {
-            /* Flush literal run + EOD */
-            if (wlimit - q < run_len+2) {
-                ss->state = state_0;
-                goto no_output_room;
-            }
-            *++q = run_len;
-            memcpy(q+1, ss->literals, run_len);
-            q += run_len;
-            *++q = n0;
-        } else if (run_len < 0) {
-            /* Flush repeated run + EOD */
-            if (wlimit - q < 3) {
-                ss->state = state_0;
-                goto no_output_room;
-            }
-            *++q = 257+run_len; /* Repeated run */
-            *++q = n0;
+            *++q = 128; /* EOD */
+    case state_eod:
+            ss->run_len = 0;
+            ss->state = state_0;
+            pr->ptr = p;
+            pw->ptr = q;
+            ss->record_left = rlimit - p;
+            debug_ate(pinit, p, qinit, q, EOFC);
+            return EOFC;
         }
-        *++q = 128; /* EOD */
-        ss->run_len = 0;
-        ss->state = state_0;
-        pr->ptr = p;
-        pw->ptr = q;
-        ss->record_left = rlimit - p;
-        debug_ate(pinit, p, qinit, q, EOFC);
-        return EOFC;
     }
 
     /* Normal exit */
