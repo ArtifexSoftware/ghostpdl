@@ -178,7 +178,7 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
             goto exit;
         /* TODO: Error handling... */
         code = pdfi_form_execgroup(ctx, ctx->CurrentPageDict, G_dict, igs->GroupGState);
-        code = gs_end_transparency_mask(ctx->pgs, 0);
+        code = gs_end_transparency_mask(ctx->pgs, colorindex);
         /* Put back the matrix (we couldn't just rely on gsave/grestore for whatever reason,
          * according to PS code anyway...
          */
@@ -547,20 +547,20 @@ int pdfi_trans_teardown(pdf_context *ctx, pdfi_trans_state_t *state)
 int pdfi_trans_set_params(pdf_context *ctx, double alpha)
 {
     pdfi_int_gstate *igs = (pdfi_int_gstate *)ctx->pgs->client_data;
-    int colorindex;
+    gs_transparency_channel_selector_t csel;
 
     if (ctx->page_has_transparency) {
         if (gs_getalphaisshape(ctx->pgs)) {
             gs_setshapealpha(ctx->pgs, alpha);
             gs_setopacityalpha(ctx->pgs, 1.0);
-            colorindex = 1;
+            csel = TRANSPARENCY_CHANNEL_Shape;
         } else {
             gs_setshapealpha(ctx->pgs, 1.0);
             gs_setopacityalpha(ctx->pgs, alpha);
-            colorindex = 0;
+            csel = TRANSPARENCY_CHANNEL_Opacity;
         }
         if (igs->SMask) {
-            pdfi_trans_set_mask(ctx, igs, colorindex);
+            pdfi_trans_set_mask(ctx, igs, csel);
         }
     }
 
