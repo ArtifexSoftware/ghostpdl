@@ -1791,12 +1791,24 @@ pjl_process_init(gs_memory_t * mem)
         pathlen = 0;
         if ((code = gp_getenv("PCLFONTSOURCE", (char *)0, &pathlen)) < 0) {
             char *path =
-                (char *)gs_alloc_bytes(mem, pathlen, "pjl_font_path");
+                (char *)gs_alloc_bytes(mem, pathlen + 1, "pjl_font_path");
             /* if the allocation fails we use the pjl fontsource */
             if (path == NULL)
                 pjlstate->environment_font_path = NULL;
             else {
+                const char * const sepr = gp_file_name_separator();
+                const int lsepr = strlen(sepr);
                 gp_getenv("PCLFONTSOURCE", path, &pathlen);     /* can't fail */
+
+                /* We want to ensure a trailing "/" is present */
+                if (gs_file_name_check_separator(path + (pathlen - (lsepr + 1)), lsepr, path + pathlen - 1) != 1) {
+                    strncat(path, gp_file_name_separator(), pathlen + 1);
+                }
+                code = gs_add_control_path(mem, gs_permit_file_reading, path);
+                if (code < 0) {
+                    gs_free_object(mem, path, "pjl_font_path");
+                    goto fail1;
+                }
                 pjlstate->environment_font_path = path;
             }
         } else                  /* environmet variable does not exist use pjl fontsource */
