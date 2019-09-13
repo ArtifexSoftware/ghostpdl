@@ -676,7 +676,7 @@ pcl_flush_all_pages(pcl_args_t * pargs, pcl_state_t * pcs)
                 int code = pcl_end_page_if_marked(pcs);
 
                 if (code >= 0)
-                    pcl_home_cursor(pcs);
+                    code = pcl_home_cursor(pcs);
                 return code;
             }
         default:

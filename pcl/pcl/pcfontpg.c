@@ -74,7 +74,9 @@ process_font(pcl_state_t * pcs, pl_font_t * fp)
             return gs_rethrow(code, "failed to display font");
 
         /* go to approx center of the page */
-        pcl_set_cap_x(pcs, pcs->margins.right / 2, false, false);
+        code = pcl_set_cap_x(pcs, pcs->margins.right / 2, false, false);
+        if (code < 0)
+            return gs_rethrow(code, "failed to set cap x\n");
 
         pcl_decache_font(pcs, -1, true);
 
@@ -93,8 +95,10 @@ process_font(pcl_state_t * pcs, pl_font_t * fp)
         if (code < 0)
             return gs_rethrow(code, "failed to display font");
 
-        pcl_set_cap_x(pcs, (coord) (pcs->margins.right / (16.0 / 15.0)),
+        code = pcl_set_cap_x(pcs, (coord) (pcs->margins.right / (16.0 / 15.0)),
                       false, false);
+        if (code < 0)
+            return gs_rethrow(code, "failed to set cap x\n");
         gs_sprintf(buff, "%d", fp->params.pjl_font_number);
 
         code = pcl_text((byte *) buff, strlen(buff), pcs, false);
@@ -132,7 +136,9 @@ pcl_print_font_page(pcl_args_t * pargs, pcl_state_t * pcs)
         /* assume the pcl font list string is 1 inch 7200 units */
         uint pos = pcs->margins.right / 2 - 7200 / 2;
 
-        pcl_set_cap_x(pcs, pos, false, false);
+        code = pcl_set_cap_x(pcs, pos, false, false);
+        if (code < 0)
+            return gs_rethrow(code, "failed to set cap x\n");
         code = pcl_text((byte *) header_str, hlen, pcs, false);
         if (code < 0)
             return gs_rethrow(code, "printing PCL Font List failed\n");
@@ -142,7 +148,9 @@ pcl_print_font_page(pcl_args_t * pargs, pcl_state_t * pcs)
         code = pcl_text((byte *) sample_str, strlen(sample_str), pcs, false);
         if (code < 0)
             return gs_rethrow(code, "printing Sample failed\n");
-        pcl_set_cap_x(pcs, pcs->margins.right / 2, false, false);
+        code = pcl_set_cap_x(pcs, pcs->margins.right / 2, false, false);
+        if (code < 0)
+            return gs_rethrow(code, "failed to set cap x\n");
         code = pcl_text((byte *) select_str, strlen(select_str), pcs, false);
         if (code < 0)
             return gs_rethrow(code, "printing Font Selection Command failed\n");

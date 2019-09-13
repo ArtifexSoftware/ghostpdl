@@ -104,7 +104,9 @@ pcl_simplex_duplex_print(pcl_args_t * pargs, pcl_state_t * pcs)
     code = pcl_end_page_if_marked(pcs);
     if (code < 0)
         return code;
-    pcl_home_cursor(pcs);
+    code = pcl_home_cursor(pcs);
+    if (code < 0)
+        return code;
     switch (int_arg(pargs)) {
         case 0:
             pcs->duplex = false;
@@ -175,7 +177,11 @@ pcl_duplex_page_side_select(pcl_args_t * pargs, pcl_state_t * pcs)
         return 0;
 
     /* home the cursor even if the command has no effect */
-    pcl_home_cursor(pcs);
+    if (code >= 0) {
+        int errcode = pcl_home_cursor(pcs);
+        if (errcode < 0)
+            return errcode;
+    }
     
     /* if there is an error (code < 0) or the page is unmarked (code
        == 0) then nothing to update */

@@ -401,7 +401,8 @@ new_page_size(pcl_state_t * pcs,
      * an underline to be put out.
      */
     pcs->underline_enabled = false;
-    pcl_home_cursor(pcs);
+    code = pcl_home_cursor(pcs);
+    if (code < 0) return code;
     /*
      * this is were we initialized the cursor position
      */
@@ -694,7 +695,9 @@ set_page_size(pcl_args_t * pargs, pcl_state_t * pcs)
     code = pcl_end_page_if_marked(pcs);
     if (code < 0)
         return code;
-    pcl_home_cursor(pcs);
+    code = pcl_home_cursor(pcs);
+    if (code < 0)
+        return code;
 
     for (i = 0; i < pcl_paper_type_count; i++) {
         if (tag == PAPER_SIZES[i].tag) {
@@ -724,7 +727,9 @@ set_paper_source(pcl_args_t * pargs, pcl_state_t * pcs)
 
     if (code < 0)
         return code;
-    pcl_home_cursor(pcs);
+    code = pcl_home_cursor(pcs);
+    if (code < 0)
+        return code;
     /* Do not change the page side if the wanted paper source is the same as the actual one */
     if (pcs->paper_source != i) {
         pcs->back_side = false;
@@ -856,9 +861,9 @@ set_left_margin(pcl_args_t * pargs, pcl_state_t * pcs)
     if (lmarg < pcs->margins.right) {
         pcs->margins.left = lmarg;
         if (pcs->cap.x < lmarg)
-            pcl_set_cap_x(pcs, lmarg, false, false);
+            code = pcl_set_cap_x(pcs, lmarg, false, false);
     }
-    return 0;
+    return code;
 }
 
 /*
@@ -881,10 +886,10 @@ set_right_margin(pcl_args_t * pargs, pcl_state_t * pcs)
     if (rmarg > pcs->margins.left) {
         pcs->margins.right = rmarg;
         if (pcs->cap.x > rmarg)
-            pcl_set_cap_x(pcs, rmarg, false, false);
+            code = pcl_set_cap_x(pcs, rmarg, false, false);
     }
 
-    return 0;
+    return code;
 }
 
 /*
@@ -980,7 +985,7 @@ pcl_media_type(pcl_args_t * pargs, pcl_state_t * pcs)
         int code = pcl_end_page_if_marked(pcs);
 
         if (code >= 0)
-            pcl_home_cursor(pcs);
+            code = pcl_home_cursor(pcs);
         return (code < 0 ? code : e_Unimplemented);
     } else
         return e_Range;
@@ -1147,7 +1152,7 @@ pcl_print_quality(pcl_args_t * pargs, pcl_state_t * pcs)
         int code = pcl_end_page_if_marked(pcs);
 
         if (code >= 0)
-            pcl_home_cursor(pcs);
+            code = pcl_home_cursor(pcs);
         return (code < 0 ? code : 0);
     } else
         return e_Range;

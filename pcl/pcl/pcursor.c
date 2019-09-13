@@ -187,9 +187,10 @@ pcl_cursor_at_home_pos(pcl_state_t * pcs)
     return ((pcs->cap.y == HOME_Y(pcs)) && (pcs->cap.x == HOME_X(pcs)));
 }
 
-void
+int
 pcl_set_cap_x(pcl_state_t * pcs, coord x, bool relative, bool use_margins)
 {
+    int code = 0;
     coord old_x = pcs->cap.x;
 
     if (relative)
@@ -217,6 +218,8 @@ pcl_set_cap_x(pcl_state_t * pcs, coord x, bool relative, bool use_margins)
         pcl_continue_underline(pcs);
     } else
         pcs->cap.x = x;
+
+    return code;
 }
 
 int
@@ -295,14 +298,13 @@ motion_args(pcl_args_t * pargs, bool truncate)
 
 /* some convenient short-hand for the cursor movement commands */
 
-static inline void
+static inline int
 do_horiz_motion(pcl_args_t * pargs,
                 pcl_state_t * pcs, coord mul, bool truncate_arg)
 {
-    pcl_set_cap_x(pcs, (coord) (motion_args(pargs, truncate_arg) * mul),
-                  arg_is_signed(pargs), false);
     pcs->cursor_moved = true;
-    return;
+    return pcl_set_cap_x(pcs, (coord) (motion_args(pargs, truncate_arg) * mul),
+                  arg_is_signed(pargs), false);
 }
 
 static inline int
@@ -335,9 +337,11 @@ pcl_do_CR(pcl_state_t * pcs)
     int code = 0;
 
     pcl_break_underline(pcs);
-    pcl_set_cap_x(pcs, pcs->margins.left, false, false);
-    pcl_continue_underline(pcs);
-    pcs->cursor_moved = true;
+    code = pcl_set_cap_x(pcs, pcs->margins.left, false, false);
+    if (code >= 0) {
+        pcl_continue_underline(pcs);
+        pcs->cursor_moved = true;
+    }
 
     return code;
 }
@@ -370,11 +374,13 @@ pcl_do_FF(pcl_state_t * pcs)
 /*
  * Return the cursor to its "home" position
  */
-void
+int
 pcl_home_cursor(pcl_state_t * pcs)
 {
-    pcl_set_cap_x(pcs, pcs->margins.left, false, false);
-    pcl_set_cap_y(pcs, 0L, false, false, true, false);
+    int code = pcl_set_cap_x(pcs, pcs->margins.left, false, false);
+    if (code < 0)
+        return code;
+    return pcl_set_cap_y(pcs, 0L, false, false, true, false);
 }
 
 int pcl_update_hmi_cp(pcl_state_t * pcs)
@@ -452,6 +458,7 @@ set_horiz_motion_index(pcl_args_t * pargs, pcl_state_t * pcs)
 static int
 set_vert_motion_index(pcl_args_t * pargs, pcl_state_t * pcs)
 {
+    int code = 0;
     /* LMI :== 48.0 / lpi;  ie 0.16 = 48/300;
      * convert to pcl_coord_scale (7200), roundup the float prior to truncation.
      */
@@ -471,8 +478,8 @@ set_vert_motion_index(pcl_args_t * pargs, pcl_state_t * pcs)
        coordinate (horizontal position) cause the command to not take
        effect. */
     if (cursor_at_home)
-        pcl_home_cursor(pcs);
-    return 0;
+        code = pcl_home_cursor(pcs);
+    return code;
 }
 
 #undef HP_VERT_MOTION_NEW
@@ -486,6 +493,7 @@ set_vert_motion_index(pcl_args_t * pargs, pcl_state_t * pcs)
 static int
 set_line_spacing(pcl_args_t * pargs, pcl_state_t * pcs)
 {
+    int code = 0;
     uint lpi = uint_arg(pargs);
     bool cursor_at_home = pcl_cursor_at_home_pos(pcs);
 
@@ -494,8 +502,8 @@ set_line_spacing(pcl_args_t * pargs, pcl_state_t * pcs)
     if ((48 % lpi) == 0)        /* lpi must divide 48 */
         pcs->vmi_cp = inch2coord(1.0 / lpi);
     if (cursor_at_home)
-        pcl_home_cursor(pcs);
-    return 0;
+        code = pcl_home_cursor(pcs);
+    return code;
 }
 
 /*
@@ -521,9 +529,7 @@ horiz_cursor_pos_columns(pcl_args_t * pargs, pcl_state_t * pcs)
     if (code < 0)
         return code;
 
-    do_horiz_motion(pargs, pcs, pcs->hmi_cp, false);
-
-    return 0;
+    return do_horiz_motion(pargs, pcs, pcs->hmi_cp, false);
 }
 
 /*
@@ -532,8 +538,7 @@ horiz_cursor_pos_columns(pcl_args_t * pargs, pcl_state_t * pcs)
 static int
 horiz_cursor_pos_decipoints(pcl_args_t * pargs, pcl_state_t * pcs)
 {
-    do_horiz_motion(pargs, pcs, (coord) 10.0, false);
-    return 0;
+    return do_horiz_motion(pargs, pcs, (coord) 10.0, false);
 }
 
 /*
@@ -542,8 +547,7 @@ horiz_cursor_pos_decipoints(pcl_args_t * pargs, pcl_state_t * pcs)
 static int
 horiz_cursor_pos_units(pcl_args_t * pargs, pcl_state_t * pcs)
 {
-    do_horiz_motion(pargs, pcs, pcs->uom_cp, true);
-    return 0;
+    return do_horiz_motion(pargs, pcs, pcs->uom_cp, true);
 }
 
 /*
@@ -566,10 +570,9 @@ static int
 cmd_BS(pcl_args_t * pargs,      /* ignored */
        pcl_state_t * pcs)
 {
-    pcl_set_cap_x(pcs, (coord) - pcs->last_width, true, true);
     pcs->last_was_BS = true;
     pcs->cursor_moved = true;
-    return 0;
+    return pcl_set_cap_x(pcs, (coord) - pcs->last_width, true, true);
 }
 
 /*
@@ -597,9 +600,9 @@ cmd_HT(pcl_args_t * pargs,      /* ignored */
         else
             x = 0L;
     }
-    pcl_set_cap_x(pcs, x, true, true);
+
     pcs->cursor_moved = true;
-    return 0;
+    return pcl_set_cap_x(pcs, x, true, true);
 }
 
 /*
@@ -684,6 +687,7 @@ cmd_FF(pcl_args_t * pargs,      /* ignored */
 static int
 push_pop_cursor(pcl_args_t * pargs, pcl_state_t * pcs)
 {
+    int code = 0;
     int type = uint_arg(pargs);
 
     if ((type == 0) && (pcs->cursor_stk_size < countof(pcs->cursor_stk))) {
@@ -699,13 +703,15 @@ push_pop_cursor(pcl_args_t * pargs, pcl_state_t * pcs)
 
         pcl_invert_mtx(&(pcs->xfm_state.pd2lp_mtx), &lp2pd);
         gs_point_transform(ppt->x, ppt->y, &lp2pd, ppt);
-        pcl_set_cap_x(pcs, (coord) ppt->x, false, false);
-        pcl_set_cap_y(pcs,
+        code = pcl_set_cap_x(pcs, (coord) ppt->x, false, false);
+        if (code < 0)
+            return code;
+        code = pcl_set_cap_y(pcs,
                       (coord) ppt->y - pcs->margins.top,
                       false, false, false, false);
     }
 
-    return 0;
+    return code;
 }
 
 static int
@@ -844,8 +850,8 @@ pcursor_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
             pcs->cap.x = pcs->cap.y = 0;
         }
     }
-    pcl_home_cursor(pcs);
-    return 0;
+
+    return pcl_home_cursor(pcs);
 }
 
 const pcl_init_t pcursor_init =

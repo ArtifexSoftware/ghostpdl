@@ -388,8 +388,9 @@ pcl_end_graphics_mode(pcl_state_t * pcs)
     /* transform the new point back to "pseudo print direction" space */
     pcl_invert_mtx(&(pcs->xfm_state.pd2dev_mtx), &dev2pd);
     gs_point_transform(cur_pt.x, cur_pt.y, &dev2pd, &cur_pt);
-    pcl_set_cap_x(pcs, (coord) (cur_pt.x + 0.5) - adjust_pres_mode(pcs),
+    code = pcl_set_cap_x(pcs, (coord) (cur_pt.x + 0.5) - adjust_pres_mode(pcs),
                   false, false);
+    if (code < 0) return code;
     return pcl_set_cap_y(pcs, (coord) (cur_pt.y + 0.5) - pcs->margins.top,
                          false, false, false, false);
 }
