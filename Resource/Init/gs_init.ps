@@ -331,7 +331,7 @@ DELAYBIND
        { pop /.bind cvx exec
        }
       ifelse
-    } .bind def
+    } .bind odef
 } executeonly if
 
 .currentglobal //true .setglobal
@@ -2201,6 +2201,23 @@ systemdict /EPSBoundingBoxInit .forceundef
 readonly def
 .setglobal
 
+/SAFERUndefinePostScriptOperators {
+  [
+  % Used by our own test suite files
+  /.pushpdf14devicefilter    % transparency-example.ps
+  /.poppdf14devicefilter     % transparency-example.ps
+  /.setopacityalpha          % transparency-example.ps
+  /.setshapealpha            % transparency-example.ps
+  /.endtransparencygroup     % transparency-example.ps
+  /.setdotlength             % Bug687720.ps
+  /.sort /.setdebug /.mementolistnewblocks /getenv
+  /unread
+  ]
+  {systemdict exch .forceundef} forall
+
+  //systemdict /SAFERUndefinePostScriptOperators .forceundef
+} .bind executeonly def % must be bound and hidden for .forceundef
+
 /tempfilepaths
 [
   (TMPDIR) getenv not
@@ -2310,7 +2327,12 @@ currentdict /tempfilepaths undef
     if
     .locksafe
   }
-  {//.lockfileaccess exec}
+  {
+    //.lockfileaccess exec
+    DELAYBIND not {
+        //systemdict /SAFERUndefinePostScriptOperators get exec
+    } if
+  }
   ifelse
 } .bind executeonly odef
 %% --- End documented extensions ---
@@ -2351,7 +2373,12 @@ currentdict /tempfilepaths undef
     if
     //.locksafeglobal exec
   }
-  {//.lockfileaccess exec}
+  {
+    //.lockfileaccess exec
+    DELAYBIND not {
+        //systemdict /SAFERUndefinePostScriptOperators get exec
+    } if
+  }
   ifelse
 } .bind def
 
@@ -2360,25 +2387,6 @@ SAFER { .setsafeglobal } if
 currentdict /.locksafe_userparams .undef
 currentdict /.setsafeglobal .undef
 currentdict /.locksafeglobal .undef
-
-SAFER {
-/SAFERUndefinePostScriptOperators {
-  [
-  % Used by our own test suite files
-  /.pushpdf14devicefilter    % transparency-example.ps
-  /.poppdf14devicefilter     % transparency-example.ps
-  /.setopacityalpha          % transparency-example.ps
-  /.setshapealpha            % transparency-example.ps
-  /.endtransparencygroup     % transparency-example.ps
-  /.setdotlength             % Bug687720.ps
-  /.sort /.setdebug /.mementolistnewblocks /getenv
-  /unread
-  ]
-  {systemdict exch .forceundef} forall
-
-  //systemdict /SAFERUndefinePostScriptOperators .forceundef
-} .bind executeonly def % must be bound and hidden for .forceundef
-} if
 
 %% ---------------- SAFER stuff END -------------------%%
 
@@ -2628,9 +2636,6 @@ FontDirectory readonly pop
 % If we are using DELAYBIND we have to defer the undefinition
 % until .bindnow.
 DELAYBIND not {
-  SAFER {
-    //systemdict /SAFERUndefinePostScriptOperators get exec
-  } if
   //systemdict /UndefinePostScriptOperators get exec
 } if
 end
