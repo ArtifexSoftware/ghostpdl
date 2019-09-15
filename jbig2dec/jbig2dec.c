@@ -65,11 +65,15 @@ typedef struct {
     SHA1_CTX *hash_ctx;
     char *output_filename;
     jbig2dec_format output_format;
+} jbig2dec_params_t;
+
+typedef struct {
+    int verbose;
     char *last_message;
     Jbig2Severity severity;
     char *type;
     long repeats;
-} jbig2dec_params_t;
+} jbig2dec_error_callback_state_t;
 
 static int print_version(void);
 static int print_usage(void);
@@ -251,7 +255,7 @@ print_usage(void)
 static void
 error_callback(void *error_callback_data, const char *buf, Jbig2Severity severity, int32_t seg_idx)
 {
-    jbig2dec_params_t *params = (jbig2dec_params_t *) error_callback_data;
+    jbig2dec_error_callback_state_t *state = (jbig2dec_error_callback_state_t *) error_callback_data;
     char *type;
     char segment[22];
     int len;
@@ -259,17 +263,17 @@ error_callback(void *error_callback_data, const char *buf, Jbig2Severity severit
 
     switch (severity) {
     case JBIG2_SEVERITY_DEBUG:
-        if (params->verbose < 3)
+        if (state->verbose < 3)
             return;
         type = "DEBUG";
         break;
     case JBIG2_SEVERITY_INFO:
-        if (params->verbose < 2)
+        if (state->verbose < 2)
             return;
         type = "info";
         break;
     case JBIG2_SEVERITY_WARNING:
-        if (params->verbose < 1)
+        if (state->verbose < 1)
             return;
         type = "WARNING";
         break;
@@ -302,34 +306,34 @@ error_callback(void *error_callback_data, const char *buf, Jbig2Severity severit
         return;
     }
 
-    if (params->last_message != NULL && strcmp(message, params->last_message)) {
-        if (params->repeats > 1)
-            fprintf(stderr, "jbig2dec %s last message repeated %ld times\n", params->type, params->repeats);
+    if (state->last_message != NULL && strcmp(message, state->last_message)) {
+        if (state->repeats > 1)
+            fprintf(stderr, "jbig2dec %s last message repeated %ld times\n", state->type, state->repeats);
         fprintf(stderr, "%s\n", message);
-        free(params->last_message);
-        params->last_message = message;
-        params->severity = severity;
-        params->type = type;
-        params->repeats = 0;
-    } else if (params->last_message != NULL) {
-        params->repeats++;
-        if (params->repeats % 1000000 == 0)
-            fprintf(stderr, "jbig2dec %s last message repeated %ld times so far\n", params->type, params->repeats);
+        free(state->last_message);
+        state->last_message = message;
+        state->severity = severity;
+        state->type = type;
+        state->repeats = 0;
+    } else if (state->last_message != NULL) {
+        state->repeats++;
+        if (state->repeats % 1000000 == 0)
+            fprintf(stderr, "jbig2dec %s last message repeated %ld times so far\n", state->type, state->repeats);
         free(message);
-    } else if (params->last_message == NULL) {
+    } else if (state->last_message == NULL) {
         fprintf(stderr, "%s\n", message);
-        params->last_message = message;
-        params->severity = severity;
-        params->type = type;
-        params->repeats = 0;
+        state->last_message = message;
+        state->severity = severity;
+        state->type = type;
+        state->repeats = 0;
     }
 }
 
 static void
-flush_errors(jbig2dec_params_t *params)
+flush_errors(jbig2dec_error_callback_state_t *state)
 {
-    if (params->repeats > 1) {
-        fprintf(stderr, "jbig2dec last message repeated %ld times\n", params->repeats);
+    if (state->repeats > 1) {
+        fprintf(stderr, "jbig2dec last message repeated %ld times\n", state->repeats);
     }
 }
 
@@ -426,6 +430,7 @@ main(int argc, char **argv)
     Jbig2Ctx *ctx = NULL;
     uint8_t buf[4096];
     jbig2dec_params_t params;
+    jbig2dec_error_callback_state_t error_callback_state;
     int filearg;
     int result = 1;
     int code;
@@ -437,8 +442,6 @@ main(int argc, char **argv)
     params.output_filename = NULL;
     params.output_format = jbig2dec_format_none;
     params.embedded = 0;
-    params.last_message = NULL;
-    params.repeats = 0;
 
     filearg = parse_options(argc, argv, &params);
 
@@ -487,7 +490,11 @@ main(int argc, char **argv)
             goto cleanup;
         }
 
-        ctx = jbig2_ctx_new(NULL, (Jbig2Options)(f_page != NULL || params.embedded ? JBIG2_OPTIONS_EMBEDDED : 0), NULL, error_callback, &params);
+        error_callback_state.verbose = params.verbose;
+        error_callback_state.last_message = NULL;
+        error_callback_state.repeats = 0;
+
+        ctx = jbig2_ctx_new(NULL, (Jbig2Options)(f_page != NULL || params.embedded ? JBIG2_OPTIONS_EMBEDDED : 0), NULL, error_callback, &error_callback_state);
         if (ctx == NULL) {
             fclose(f);
             if (f_page)
@@ -510,7 +517,7 @@ main(int argc, char **argv)
         if (f_page != NULL) {
             Jbig2GlobalCtx *global_ctx = jbig2_make_global_ctx(ctx);
 
-            ctx = jbig2_ctx_new(NULL, JBIG2_OPTIONS_EMBEDDED, global_ctx, error_callback, &params);
+            ctx = jbig2_ctx_new(NULL, JBIG2_OPTIONS_EMBEDDED, global_ctx, error_callback, &error_callback_state);
             if (ctx != NULL) {
                 for (;;) {
                     int n_bytes = fread(buf, 1, sizeof(buf), f_page);
@@ -586,17 +593,16 @@ main(int argc, char **argv)
                 write_document_hash(&params);
         }
 
-
     }                           /* end params.mode switch */
 
     /* fin */
     result = 0;
 
 cleanup:
-    flush_errors(&params);
+    flush_errors(&error_callback_state);
     jbig2_ctx_free(ctx);
-    if (params.last_message)
-        free(params.last_message);
+    if (error_callback_state.last_message)
+        free(error_callback_state.last_message);
     if (params.output_filename)
         free(params.output_filename);
     if (params.hash)
