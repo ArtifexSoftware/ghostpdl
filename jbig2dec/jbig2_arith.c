@@ -53,8 +53,8 @@ struct _Jbig2ArithState {
   invitation to bitrot.
 */
 
-static void
-jbig2_arith_bytein(Jbig2ArithState *as)
+static int
+jbig2_arith_bytein(Jbig2Ctx *ctx, Jbig2ArithState *as)
 {
     int new_bytes;
     byte B;
@@ -86,7 +86,10 @@ jbig2_arith_bytein(Jbig2ArithState *as)
         if (as->next_word_bytes == 1) {
             Jbig2WordStream *ws = as->ws;
 
-            new_bytes = ws->get_next_word(ws, as->offset, &as->next_word);
+            new_bytes = ws->get_next_word(ctx, ws, as->offset, &as->next_word);
+            if (new_bytes < 0) {
+                return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to read from underlying stream during arithmetic decoding");
+            }
             as->next_word_bytes = new_bytes;
             as->offset += new_bytes;
 
@@ -134,13 +137,18 @@ jbig2_arith_bytein(Jbig2ArithState *as)
         if (as->next_word_bytes == 0) {
             Jbig2WordStream *ws = as->ws;
 
-            new_bytes = ws->get_next_word(ws, as->offset, &as->next_word);
+            new_bytes = ws->get_next_word(ctx, ws, as->offset, &as->next_word);
+            if (new_bytes < 0) {
+                return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to read from underlying stream during arithmetic decoding");
+            }
             as->offset += new_bytes;
             as->next_word_bytes = new_bytes;
         }
         B = (byte)((as->next_word >> 24) & 0xFF);
         as->C += 0xFF00 - (B << 8);
     }
+
+    return 0;
 }
 
 /** Allocate and initialize a new arithmetic coding state
@@ -161,14 +169,26 @@ jbig2_arith_new(Jbig2Ctx *ctx, Jbig2WordStream *ws)
 
     result->ws = ws;
 
-    new_bytes = ws->get_next_word(ws, 0, &result->next_word);
+    new_bytes = ws->get_next_word(ctx, ws, 0, &result->next_word);
+    if (new_bytes < 0) {
+        jbig2_free(ctx->allocator, result);
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to initialize underlying stream of arithmetic decoder");
+        return NULL;
+    }
     result->next_word_bytes = new_bytes;
     result->offset = new_bytes;
 
     /* Figure F.1 */
     result->C = (~(result->next_word >> 8)) & 0xFF0000;
 
-    jbig2_arith_bytein(result);
+    /* Figure E.20 (2) */
+    if (jbig2_arith_bytein(ctx, result) < 0) {
+        jbig2_free(ctx->allocator, result);
+        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to read second byte from underlying stream when initializing arithmetic decoder");
+        return NULL;
+    }
+
+    /* Figure E.20 (3) */
     result->C <<= 7;
     result->CT -= 7;
     result->A = 0x8000;
@@ -235,29 +255,33 @@ static const Jbig2ArithQe jbig2_arith_Qe[MAX_QE_ARRAY_SIZE] = {
     {0x5601, 46 ^ 46, 46 ^ 46}
 };
 
-static void
-jbig2_arith_renormd(Jbig2ArithState *as)
+static int
+jbig2_arith_renormd(Jbig2Ctx *ctx, Jbig2ArithState *as)
 {
     /* Figure E.18 */
     do {
-        if (as->CT == 0)
-            jbig2_arith_bytein(as);
+        if (as->CT == 0 && jbig2_arith_bytein(ctx, as) < 0) {
+            return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to read byte from compressed data stream");
+        }
         as->A <<= 1;
         as->C <<= 1;
         as->CT--;
     } while ((as->A & 0x8000) == 0);
+
+    return 0;
 }
 
 int
-jbig2_arith_decode(Jbig2ArithState *as, Jbig2ArithCx *pcx)
+jbig2_arith_decode(Jbig2Ctx *ctx, Jbig2ArithState *as, Jbig2ArithCx *pcx)
 {
     Jbig2ArithCx cx = *pcx;
     const Jbig2ArithQe *pqe;
     unsigned int index = cx & 0x7f;
     bool D;
 
-    if (index >= MAX_QE_ARRAY_SIZE)
-        return -1; /* Error */
+    if (index >= MAX_QE_ARRAY_SIZE) {
+        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to determine probability estimate because index out of range");
+    }
 
     pqe = &jbig2_arith_Qe[index];
 
@@ -273,7 +297,10 @@ jbig2_arith_decode(Jbig2ArithState *as, Jbig2ArithCx *pcx)
                 D = cx >> 7;
                 *pcx ^= pqe->mps_xor;
             }
-            jbig2_arith_renormd(as);
+            if (jbig2_arith_renormd(ctx, as) < 0) {
+                return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to renormalize decoder");
+            }
+
             return D;
         } else {
             return cx >> 7;
@@ -290,7 +317,10 @@ jbig2_arith_decode(Jbig2ArithState *as, Jbig2ArithCx *pcx)
             D = 1 - (cx >> 7);
             *pcx ^= pqe->lps_xor;
         }
-        jbig2_arith_renormd(as);
+        if (jbig2_arith_renormd(ctx, as) < 0) {
+            return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to renormalize decoder");
+        }
+
         return D;
     }
 }
@@ -313,7 +343,7 @@ jbig2_arith_trace(Jbig2ArithState *as, Jbig2ArithCx cx)
 #endif
 
 static int
-test_get_word(Jbig2WordStream *self, size_t offset, uint32_t *word)
+test_get_word(Jbig2Ctx *ctx, Jbig2WordStream *self, size_t offset, uint32_t *word)
 {
     uint32_t val = 0;
     int ret = 0;
@@ -362,11 +392,11 @@ main(int argc, char **argv)
 
     for (i = 0; i < 256; i++) {
 #ifdef JBIG2_DEBUG_ARITH
-        bool D =
+        int D =
 #else
         (void)
 #endif
-            jbig2_arith_decode(as, &cx);
+            jbig2_arith_decode(ctx, as, &cx);
 
 #ifdef JBIG2_DEBUG_ARITH
         fprintf(stderr, "%3d: D = %d, ", i, D);

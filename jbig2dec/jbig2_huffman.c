@@ -58,7 +58,7 @@ struct _Jbig2HuffmanState {
 };
 
 #define huff_get_next_word(hs, offset, word) \
-    (hs)->ws->get_next_word((hs)->ws, (offset), (word))
+    (hs)->ws->get_next_word((hs)->ctx, (hs)->ws, (offset), (word))
 
 /** Allocate and initialize a new huffman coding state
  *  the returned pointer can simply be freed; this does
@@ -718,7 +718,7 @@ static const byte test_stream[] = { 0xe9, 0xcb, 0xf4, 0x00 };
 static const byte test_tabindex[] = { 4, 2, 2, 1 };
 
 static int
-test_get_word1(Jbig2WordStream *self, size_t offset, uint32_t *word)
+test_get_word1(Jbig2Ctx *ctx, Jbig2WordStream *self, size_t offset, uint32_t *word)
 {
     uint32_t val = 0;
     int ret = 0;
@@ -2029,7 +2029,7 @@ typedef struct test_stream {
 } test_stream_t;
 
 static int
-test_get_word2(Jbig2WordStream *self, size_t offset, uint32_t *word)
+test_get_word2(Jbig2Ctx *ctx, Jbig2WordStream *self, size_t offset, uint32_t *word)
 {
     test_stream_t *st = (test_stream_t *) self;
     uint32_t val = 0;

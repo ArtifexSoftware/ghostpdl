@@ -461,14 +461,15 @@ typedef struct {
 } Jbig2WordStreamBuf;
 
 static int
-jbig2_word_stream_buf_get_next_word(Jbig2WordStream *self, size_t offset, uint32_t *word)
+jbig2_word_stream_buf_get_next_word(Jbig2Ctx *ctx, Jbig2WordStream *self, size_t offset, uint32_t *word)
 {
     Jbig2WordStreamBuf *z = (Jbig2WordStreamBuf *) self;
     uint32_t val = 0;
     int ret = 0;
 
-    if (self == NULL || word == NULL)
-        return -1;
+    if (self == NULL || word == NULL) {
+        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to read next word of stream because stream or output missing");
+    }
     if (offset >= z->size) {
         *word = 0;
         return 0;
