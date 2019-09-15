@@ -78,7 +78,7 @@ jbig2_arith_bytein(Jbig2ArithState *as)
      * that fact for the next byte we read.
      */
 
-    /* Figure G.3 */
+    /* Figure F.3 */
     B = (byte)((as->next_word >> 24) & 0xFF);
     if (B == 0xFF) {
         byte B1;
@@ -165,7 +165,7 @@ jbig2_arith_new(Jbig2Ctx *ctx, Jbig2WordStream *ws)
     result->next_word_bytes = new_bytes;
     result->offset = new_bytes;
 
-    /* Figure E.20 */
+    /* Figure F.1 */
     result->C = (~(result->next_word >> 8)) & 0xFF0000;
 
     jbig2_arith_bytein(result);
@@ -261,7 +261,7 @@ jbig2_arith_decode(Jbig2ArithState *as, Jbig2ArithCx *pcx)
 
     pqe = &jbig2_arith_Qe[index];
 
-    /* Figure E.15 */
+    /* Figure F.2 */
     as->A -= pqe->Qe;
     if ((as->C >> 16) < as->A) {
         if ((as->A & 0x8000) == 0) {

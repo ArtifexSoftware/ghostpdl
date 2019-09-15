@@ -282,6 +282,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
             jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate for symbol bitmap");
             goto cleanup;
         }
+        /* 6.5.5 (2) */
         if (!params->SDREFAGG) {
             SDNEWSYMWIDTHS = jbig2_new(ctx, uint32_t, params->SDNUMNEWSYMS);
             if (SDNEWSYMWIDTHS == NULL) {
@@ -347,6 +348,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
     tparams.SBDSOFFSET = 0;
     tparams.SBRTEMPLATE = params->SDRTEMPLATE;
 
+    /* 6.5.5 (1) */
     SDNEWSYMS = jbig2_sd_new(ctx, params->SDNUMNEWSYMS);
     if (SDNEWSYMS == NULL) {
         jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate new symbols (%u)", params->SDNUMNEWSYMS);

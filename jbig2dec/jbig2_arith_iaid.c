@@ -72,6 +72,7 @@ jbig2_arith_iaid_decode(Jbig2Ctx *ctx, Jbig2ArithIaidCtx *actx, Jbig2ArithState 
 {
     Jbig2ArithCx *IAIDx = actx->IAIDx;
     int SBSYMCODELEN = actx->SBSYMCODELEN;
+    /* A.3 (1) */
     int PREV = 1;
     int D;
     int i;
