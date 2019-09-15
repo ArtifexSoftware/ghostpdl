@@ -428,14 +428,24 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                 break;
             }
 
-            SYMWIDTH = SYMWIDTH + DW;
-            TOTWIDTH = TOTWIDTH + SYMWIDTH;
-            if ((int32_t) SYMWIDTH < 0) {
-                code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "invalid SYMWIDTH value (%d) at symbol %d", SYMWIDTH, NSYMSDECODED + 1);
+            if (DW < 0 && SYMWIDTH < (uint32_t) -DW) {
+                code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "DW value (%d) would make SYMWIDTH (%u) negative at symbol %u", DW, SYMWIDTH, NSYMSDECODED + 1);
                 goto cleanup;
             }
+            if (DW > 0 && DW > UINT32_MAX - SYMWIDTH) {
+                code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "DW value (%d) would make SYMWIDTH (%u) too large at symbol %u", DW, SYMWIDTH, NSYMSDECODED + 1);
+                goto cleanup;
+            }
+
+            SYMWIDTH = SYMWIDTH + DW;
+            if (SYMWIDTH > UINT32_MAX - TOTWIDTH) {
+                code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "SYMWIDTH value (%u) would make TOTWIDTH (%u) too large at symbol %u", SYMWIDTH, TOTWIDTH, NSYMSDECODED + 1);
+                goto cleanup;
+            }
+
+            TOTWIDTH = TOTWIDTH + SYMWIDTH;
 #ifdef JBIG2_DEBUG
-            jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, "SYMWIDTH = %d TOTWIDTH = %d", SYMWIDTH, TOTWIDTH);
+            jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, "SYMWIDTH = %u TOTWIDTH = %u", SYMWIDTH, TOTWIDTH);
 #endif
             /* 6.5.5 (4c.ii) */
             if (!params->SDHUFF || params->SDREFAGG) {
