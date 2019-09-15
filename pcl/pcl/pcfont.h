@@ -35,15 +35,9 @@ void pcl_decache_font(pcl_state_t * pcs, int set, bool id_select_disable);
  */
 int pcl_recompute_font(pcl_state_t * pcs, bool internal_only);
 
-/*
- * Do any underlining just before a break in motion (vertical motion or
- * negative horizontal motion)...
- */
-#define	pcl_break_underline(pcs)   \
-    BEGIN                           \
-    if (pcs->underline_enabled)    \
-        pcl_do_underline(pcs);     \
-    END
+
+int pcl_break_underline(pcl_state_t * pcs);
+
 
 /* ...and then, after repositioning, restart underlining if necessary... */
 #define	pcl_continue_underline(pcs)        \
@@ -52,7 +46,7 @@ int pcl_recompute_font(pcl_state_t * pcs, bool internal_only);
         pcs->underline_start = pcs->cap;    \
     END
 
-void pcl_do_underline(pcl_state_t * pcs);
+int pcl_do_underline(pcl_state_t * pcs);
 
 /* Define the common structure of downloaded font headers. */
 typedef struct pcl_font_header_s

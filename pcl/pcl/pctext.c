@@ -1104,28 +1104,45 @@ pcl_plain_char(pcl_args_t * pargs, pcl_state_t * pcs)
 }
 
 /*
+ * Do any underlining just before a break in motion (vertical motion or
+ * negative horizontal motion)...
+ */
+int pcl_break_underline(pcl_state_t * pcs)
+{
+    int code = 0;
+
+    if (pcs->underline_enabled)
+        code = pcl_do_underline(pcs);
+
+    return code;
+}
+
+/*
  * draw underline up to current point, adjust status
  */
-void
+int
 pcl_do_underline(pcl_state_t * pcs)
 {
+    int code = 0;
+
     if (pcs->underline_start.x != pcs->cap.x) {
         gs_gstate *pgs = pcs->pgs;
         float y = pcs->underline_start.y + pcs->underline_position;
-        int code;
 
-        /* save the grapics state */
+        /* save the graphics state */
         code = pcl_gsave(pcs);
         if (code < 0)
-            return;
+            return code;
 
         code = pcl_set_drawing_color(pcs,
                                      pcs->pattern_type,
                                      pcs->current_pattern_id, false);
         if (code >= 0)
             code = pcl_set_graphics_state(pcs);
-        if (code < 0)
-            return;
+        if (code < 0) {
+            (void)pcl_grestore(pcs);
+            return code;
+        }
 
         /*
          * TRM says (8-34) that underline is 3 dots.  In a victory for
@@ -1136,10 +1153,13 @@ pcl_do_underline(pcl_state_t * pcs)
         if ((gs_moveto(pgs, pcs->underline_start.x, y) < 0) ||
             (gs_lineto(pgs, pcs->cap.x, y) < 0) ||
             (gs_stroke(pgs) < 0)) {
-            return;
+            (void)pcl_grestore(pcs);
+            return code;
         }
 
-        pcl_grestore(pcs);
+        code = pcl_grestore(pcs);
+        if (code < 0)
+            return code;
     }
 
     /*
@@ -1148,6 +1168,7 @@ pcl_do_underline(pcl_state_t * pcs)
      */
     pcs->underline_start = pcs->cap;
     pcs->underline_position = pcs->underline_floating ? 0.0 : dots(5);
+    return code;
 }
 
 /* ------ Commands ------ */
@@ -1209,14 +1230,16 @@ pcl_enable_underline(pcl_args_t * pargs, pcl_state_t * pcs)
 static int
 pcl_disable_underline(pcl_args_t * pargs, pcl_state_t * pcs)
 {
+    int code = 0;
+
     /* apparently disabling underlining has the side effect of
        flushing any pending underlines.  This side effect is not
        documented */
     if (pcs->underline_enabled == true) {
-        pcl_do_underline(pcs);
+        code = pcl_do_underline(pcs);
         pcs->underline_enabled = false;
     }
-    return 0;
+    return code;
 }
 
 /* (From PCL5 Comparison Guide, p. 1-56) */

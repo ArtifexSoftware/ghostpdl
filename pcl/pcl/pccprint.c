@@ -39,11 +39,12 @@ pcl_logical_operation(pcl_args_t * pargs, pcl_state_t * pcs)
     if (rop > 255)
         return e_Range;
 
-    pcl_break_underline(pcs);   /* use the 5c convention; in 5e, the
-                                 * underline is not broken by a change in
-                                 * the logical operation */
     pcs->logical_op = rop;
-    return 0;
+
+    /* use the 5c convention; in 5e, the
+     * underline is not broken by a change in
+     * the logical operation */
+    return pcl_break_underline(pcs);
 }
 
 /*

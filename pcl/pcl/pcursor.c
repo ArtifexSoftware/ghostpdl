@@ -213,7 +213,7 @@ pcl_set_cap_x(pcl_state_t * pcs, coord x, bool relative, bool use_margins)
 
     /* leftward motion "breaks" an underline */
     if (x < old_x) {
-        pcl_break_underline(pcs);
+        code = pcl_break_underline(pcs);
         pcs->cap.x = x;
         pcl_continue_underline(pcs);
     } else
@@ -228,6 +228,7 @@ pcl_set_cap_y(pcl_state_t * pcs,
               bool relative,
               bool use_margins, bool by_row, bool by_row_command)
 {
+    int code = 0;
     coord lim_y = pcs->xfm_state.pd_size.y;
     coord max_y = pcs->margins.top + pcs->margins.length;
     bool page_eject = by_row && relative;
@@ -249,7 +250,9 @@ pcl_set_cap_y(pcl_state_t * pcs,
         y += (by_row ? HOME_Y(pcs) : pcs->margins.top);
 
     /* vertical moves always "break" underlines */
-    pcl_break_underline(pcs);
+    code = pcl_break_underline(pcs);
+    if (code < 0)
+        return code;
 
     max_y = (use_margins ? max_y : lim_y);
     if (y < 0L)
@@ -283,7 +286,7 @@ pcl_set_cap_y(pcl_state_t * pcs,
     }
 
     pcl_continue_underline(pcs);
-    return 0;
+    return code;
 }
 
 static inline float
@@ -334,9 +337,10 @@ do_vertical_move(pcl_state_t * pcs, pcl_args_t * pargs, float mul,
 int
 pcl_do_CR(pcl_state_t * pcs)
 {
-    int code = 0;
+    int code =  pcl_break_underline(pcs);
+    if (code < 0)
+        return code;
 
-    pcl_break_underline(pcs);
     code = pcl_set_cap_x(pcs, pcs->margins.left, false, false);
     if (code >= 0) {
         pcl_continue_underline(pcs);

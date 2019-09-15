@@ -603,9 +603,9 @@ pcl_cursor_moved(pcl_state_t * pcs)
 int
 pcl_end_page(pcl_state_t * pcs, pcl_print_condition_t condition)
 {
-    int code = 0;
-
-    pcl_break_underline(pcs);   /* (could mark page) */
+    int code = pcl_break_underline(pcs);   /* (could mark page) */
+    if (code < 0)
+        return code;
 
     /* If we are conditionally printing (normal case) check if the
        page is marked */
@@ -827,7 +827,9 @@ set_print_direction(pcl_args_t * pargs, pcl_state_t * pcs)
     if ((i <= 270) && (i % 90 == 0)) {
         i /= 90;
         if (i != pcs->xfm_state.print_dir) {
-            pcl_break_underline(pcs);
+            int code = pcl_break_underline(pcs);
+            if (code < 0)
+                return code;
             pcs->xfm_state.print_dir = i;
             update_xfm_state(pcs, 0);
             pcl_continue_underline(pcs);

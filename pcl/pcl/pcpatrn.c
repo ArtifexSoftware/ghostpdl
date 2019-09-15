@@ -1128,13 +1128,14 @@ set_pattern_id(pcl_args_t * pargs, pcl_state_t * pcs)
 static int
 set_source_transparency_mode(pcl_args_t * pargs, pcl_state_t * pcs)
 {
+    int code = 0;
     uint i = uint_arg(pargs);
 
     if (i <= 1) {
-        pcl_break_underline(pcs);
+        code = pcl_break_underline(pcs);
         pcs->source_transparent = (i == 0);
     }
-    return 0;
+    return code;
 }
 
 /*
@@ -1145,13 +1146,14 @@ set_source_transparency_mode(pcl_args_t * pargs, pcl_state_t * pcs)
 static int
 set_pattern_transparency_mode(pcl_args_t * pargs, pcl_state_t * pcs)
 {
+    int code = 0;
     uint i = uint_arg(pargs);
 
     if (i <= 1) {
-        pcl_break_underline(pcs);
+        code = pcl_break_underline(pcs);
         pcs->pcl_pattern_transparent = (i == 0);
     }
-    return 0;
+    return code;
 }
 
 /*
@@ -1162,14 +1164,15 @@ set_pattern_transparency_mode(pcl_args_t * pargs, pcl_state_t * pcs)
 static int
 select_current_pattern(pcl_args_t * pargs, pcl_state_t * pcs)
 {
+    int code = 0;
     uint i = uint_arg(pargs);
 
     if (i <= (int)pcl_pattern_user_defined) {
-        pcl_break_underline(pcs);
+        code = pcl_break_underline(pcs);
         pcs->current_pattern_id = pcs->pattern_id;
         pcs->pattern_type = (pcl_pattern_source_t) i;
     }
-    return 0;
+    return code;
 }
 
 /*
