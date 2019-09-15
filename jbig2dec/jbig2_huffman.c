@@ -80,13 +80,13 @@ jbig2_huffman_new(Jbig2Ctx *ctx, Jbig2WordStream *ws)
         result->ctx = ctx;
         code = huff_get_next_word(result, 0, &result->this_word);
         if (code < 0) {
-            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed read first huffman word");
+            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to read first huffman word");
             jbig2_huffman_free(ctx, result);
             return NULL;
         }
         code = huff_get_next_word(result, 4, &result->next_word);
         if (code < 0) {
-            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed read second huffman word");
+            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to read second huffman word");
             jbig2_huffman_free(ctx, result);
             return NULL;
         }
