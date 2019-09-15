@@ -70,7 +70,7 @@ void
 jbig2_dump_symbol_dict(Jbig2Ctx *ctx, Jbig2Segment *segment)
 {
     Jbig2SymbolDict *dict = (Jbig2SymbolDict *) segment->result;
-    int index;
+    uint32_t index;
     char filename[24];
     int code;
 
