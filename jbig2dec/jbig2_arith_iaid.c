@@ -44,9 +44,18 @@ struct _Jbig2ArithIaidCtx {
 Jbig2ArithIaidCtx *
 jbig2_arith_iaid_ctx_new(Jbig2Ctx *ctx, int SBSYMCODELEN)
 {
-    Jbig2ArithIaidCtx *result = jbig2_new(ctx, Jbig2ArithIaidCtx, 1);
-    int ctx_size = 1 << SBSYMCODELEN;
+    Jbig2ArithIaidCtx *result;
+    size_t ctx_size;
 
+    if (sizeof(ctx_size) * 8 <= SBSYMCODELEN)
+    {
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "requested IAID arithmetic coding state size too large");
+        return NULL;
+    }
+
+    ctx_size = 1 << SBSYMCODELEN;
+
+    result = jbig2_new(ctx, Jbig2ArithIaidCtx, 1);
     if (result == NULL) {
         jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate IAID arithmetic coding state");
         return NULL;
