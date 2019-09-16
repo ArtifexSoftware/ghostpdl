@@ -1145,6 +1145,13 @@ To create a PDF/X-3 document from a Postscript or a PDF file, you should :
 </ul>
 
 <p>
+NOTE: Unless <code>-dNOSAFER</code> is specified (NOT reccomended!)
+the ICC profile will be read using the <code>SAFER</code> file permissions; you must ensure that the profile is
+in a directory which is readable according to the <code>SAFER</code> permissions, or that the file itself
+is specifically made readable. See Use.htm for details of how to set file permissions for <code>SAFER</code>.
+</p>
+
+<p>
 As mentioned above, the PDF/X definition file provides special information,
 which the PDF/X-3 standard requires. You can find a sample file in
 <code>gs/lib/PDFX_def.ps</code>, and edit it according to your needs.
