@@ -3449,7 +3449,7 @@ system permissions.</dd>
 <dl>
     <dt><code>-dSAFER</code></dt>
 <dd>
-Enables access controls on files. Access controls fall into three catagories,
+Enables access controls on files. Access controls fall into three categories,
 files from which Ghostscript is permitted to read, ones to which it is permitted
 to write, and ones over which it has &quot;control&quot; (i.e. delete/rename). These
 access controls apply to <strong>all</strong> files accessed via Ghostscript's internal
@@ -3489,10 +3489,10 @@ to do the equivalent of:
 <br><code>restore</code>
 </blockquote>
 <p>
-In that sequence, then <code>Postscript ops</code> would run with <code>SAFER</code> protection
+In that sequence, the <code>Postscript ops</code> would run with <code>SAFER</code> protection
 but after the restore, <code>SAFER</code> would no longer be in force. This is no longer the case.
 After the call to <code>.setsafe</code> the file controls are in force until the
-interpter exits. As the 9.28 and later implementation no longer restricts the
+interpreter exits. As the 9.28 and later implementation no longer restricts the
 operation of <code>setpagedevice</code>, and because this capability is <i>extremely</i>
 rarely used, we feel the improvement in security warrants the small reduction in
 flexibility.
@@ -3554,7 +3554,7 @@ and on MS Windows it is &quot;;&quot;).
 Finally, paths supplied on the command line (such as those in <code>-I</code>,
 <code>-sFONTPATH</code> parameters) are added to the permitted reading list.
 Similarly, paths read during initialisation from <code>Fontmap</code>, <code>cidfmap</code>,
-and the platform specific font file enumeration (i.e. <code>fontconfig</code> on Unix systems)
+and the platform specific font file enumeration (e.g. <code>fontconfig</code> on Unix systems)
 are automatically added to the permit read lists.
 </dd>
 </dl>
