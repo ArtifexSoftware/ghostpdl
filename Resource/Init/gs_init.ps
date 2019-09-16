@@ -315,7 +315,7 @@ DELAYBIND
        (               have selected DELAYBIND. Unless you use this option with\n) print
        (               care \(and specifically, remember to call .bindnow\) it is\n) print
        (               possible that malicious code may be able to evade the\n) print
-       (               limited security offered by the SAFER option.\n) print
+       (               limited security offered by the SAFER option.\n) print flush
    } if
    .currentglobal //false .setglobal
    systemdict /.delaybind 2000 array .forceput
@@ -2679,7 +2679,7 @@ WRITESYSTEMDICT {
        (               care and specifically, remember to execute code like:\n) print
        (                      "systemdict readonly pop"\n) print
        (               it is possible that malicious code may be able to evade the\n) print
-       (               limited security offered by the SAFER option.\n) print
+       (               limited security offered by the SAFER option.\n) print flush
    }if
 }
 {
