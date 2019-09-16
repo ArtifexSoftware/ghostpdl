@@ -618,8 +618,10 @@ show_char_background(pcl_state_t * pcs, const gs_char * pbuff)
         return code;
     if (pcs->pattern_transparent) {
         code = pcl_set_drawing_color(pcs, pcl_pattern_solid_white, 0, false);
-        if (code < 0)
+        if (code < 0) {
+            (void)pcl_grestore(pcs);
             return code;
+        }
     }
     if (((code = gs_setrasterop(pgs, (gs_rop3_t) rop3_know_S_1((int)rop))) < 0) ||
         ((code = gs_currentpoint(pgs, &pt)) < 0)) {
@@ -645,7 +647,7 @@ show_char_background(pcl_state_t * pcs, const gs_char * pbuff)
             gs_image_enum_alloc(gs_gstate_memory(pgs),
                                 "bitmap font background");
         if (pen == 0) {
-            pcl_grestore(pcs);
+            (void)pcl_grestore(pcs);
             return e_Memory;
         }
 
@@ -670,11 +672,12 @@ show_char_background(pcl_state_t * pcs, const gs_char * pbuff)
     } else {
         gs_text_params_t text;
         gs_rect bbox;
-        gs_text_enum_t *penum;
+        gs_text_enum_t *penum = NULL;
 
         /* clear the path; start the new one from the current point */
         if (((code = gs_newpath(pgs)) < 0) ||
             ((code = gs_moveto(pgs, pt.x, pt.y)) < 0)) {
+            (void)pcl_grestore(pcs);
             return code;
         }
         text.data.chars = pbuff;
@@ -690,10 +693,13 @@ show_char_background(pcl_state_t * pcs, const gs_char * pbuff)
                 (code = gs_rectappend(pgs, &bbox, 1)) >= 0 &&
                 (code = gs_eofill(pgs)) >= 0)
             {
-                gs_text_release(penum, "show_char_background");
+                /* fall through */
             }
-            else
-                return code;
+        }
+        gs_text_release(penum, "show_char_background");
+        if (code < 0) {
+            (void)pcl_grestore(pcs);
+            return code;
         }
     }
 
