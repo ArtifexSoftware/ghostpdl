@@ -196,8 +196,10 @@ define_pcl_ptrn(pcl_state_t * pcs, int id, pcl_pattern_t * pptrn, bool gl2)
     id_set_value(key, id);
     if (pptrn == 0)
         pl_dict_undef(pd, id_key(key), 2);
-    else if (pl_dict_put(pd, id_key(key), 2, pptrn) < 0)
+    else if (pl_dict_put(pd, id_key(key), 2, pptrn) < 0) {
+        /* on error, pl_dict_put consumes pptrn */
         return e_Memory;
+    }
 
     if (gl2) {
         if (pcs->last_gl2_RF_indx == id)
@@ -432,10 +434,7 @@ download_pcl_pattern(pcl_args_t * pargs, pcl_state_t * pcs)
     /* place the pattern into the pattern dictionary */
     if ((code < 0) ||
         ((code = define_pcl_ptrn(pcs, pcs->pattern_id, pptrn, false)) < 0)) {
-        if (pptrn != 0)
-            pcl_pattern_free_pattern(pcs->memory, pptrn,
-                                     "download PCL pattern");
-        else
+        if (pptrn == NULL)
             gs_free_object(pcs->memory,
                            (void *)pixinfo.data, "download PCL pattern");
     }
