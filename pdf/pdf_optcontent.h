@@ -13,24 +13,9 @@
    CA 94945, U.S.A., +1(415)492-9861, for further information.
 */
 
-/* Page-level operations for the PDF interpreter */
+#ifndef PDF_OPTCONTENT
+#define PDF_OPTCONTENT
 
-#include "pdf_int.h"
-#include "pdf_stack.h"
-#include "pdf_page.h"
-#include "pdf_file.h"
-#include "pdf_dict.h"
-#include "pdf_array.h"
-#include "pdf_loop_detect.h"
-#include "pdf_colour.h"
-#include "pdf_trans.h"
-#include "pdf_misc.h"
+bool pdfi_oc_is_ocg_visible(pdf_context *ctx, pdf_dict *ocdict);
 
-#include "gsiparm4.h"
-#include "gsiparm3.h"
-
-#include "gstrans.h"
-
-/* NOTE: I used to have the OC stuff here, moved it to pdf_optcontent.c
- * Maybe this file will have other things at some point, else it could be deleted.
- */
+#endif

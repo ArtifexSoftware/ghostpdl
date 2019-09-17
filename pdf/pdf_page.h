@@ -18,6 +18,6 @@
 #ifndef PDF_PAGE_OPERATORS
 #define PDF_PAGE_OPERATORS
 
-bool pdfi_page_is_ocg_visible(pdf_context *ctx, pdf_dict *ocdict);
+/* NOTE: used to have OC stuff here, moved to pdf_optcontent.h */
 
 #endif

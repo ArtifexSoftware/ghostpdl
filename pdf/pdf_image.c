@@ -27,6 +27,7 @@
 #include "pdf_colour.h"
 #include "pdf_trans.h"
 #include "pdf_misc.h"
+#include "pdf_optcontent.h"
 #include "stream.h"     /* for stell() */
 
 #include "gsiparm4.h"
@@ -1108,7 +1109,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
 
     /* If there is an OC dictionary, see if we even need to render this */
     if (image_info.OC) {
-        if (!pdfi_page_is_ocg_visible(ctx, image_info.OC))
+        if (!pdfi_oc_is_ocg_visible(ctx, image_info.OC))
             goto cleanupExit;
     }
 
@@ -1461,7 +1462,7 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
     int code;
     pdf_name *n = NULL;
 
-    dbgmprintf(ctx->memory, "pdfi_do_image_or_form BEGIN\n");
+    dbgmprintf1(ctx->memory, "pdfi_do_image_or_form BEGIN (OBJ = %ld)\n", xobject_dict->object_num);
     code = pdfi_trans_set_params(ctx, gs_getfillconstantalpha(ctx->pgs));
     if (code < 0)
         return code;
