@@ -521,6 +521,10 @@ int pdfi_TJ(pdf_context *ctx)
     gs_matrix saved, Trm;
     gs_point initial_point, current_point;
 
+    /* TODO: for ken -- check pdfi_oc_is_off() and skip the actual rendering...
+     * (see gs code pdf_ops.ps/TJ OFFlevels for appropriate logic)
+     */
+
     if (ctx->TextBlockDepth == 0) {
         ctx->pdf_warnings |= W_PDF_TEXTOPNOBT;
     }

@@ -1107,6 +1107,9 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     if (code < 0)
         goto cleanupExit;
 
+    /* Don't render this if turned off */
+    if (pdfi_oc_is_off(ctx))
+        goto cleanupExit;
     /* If there is an OC dictionary, see if we even need to render this */
     if (image_info.OC) {
         if (!pdfi_oc_is_ocg_visible(ctx, image_info.OC))

@@ -31,6 +31,7 @@
 #include "pdf_colour.h"
 #include "pdf_font.h"
 #include "pdf_text.h"
+#include "pdf_optcontent.h"
 
 /* This routine is slightly misnamed, as it also checks ColorSpaces for spot colours.
  * This is done at the page level, so we maintain a dictionary of the spot colours
@@ -1639,6 +1640,7 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
      * This needs to be before transparency device is pushed, if applicable
      */
     pdfi_trans_set_needs_OP(ctx);
+    pdfi_oc_init(ctx);
 
     pdfi_gsave(ctx);
 

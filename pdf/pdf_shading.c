@@ -26,6 +26,7 @@
 #include "pdf_loop_detect.h"
 #include "pdf_colour.h"
 #include "pdf_trans.h"
+#include "pdf_optcontent.h"
 
 #include "gxshade.h"
 #include "gsptype2.h"
@@ -747,6 +748,9 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 
     if (ctx->TextBlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+
+    if (pdfi_oc_is_off(ctx))
+        return 0;
 
     n = (pdf_name *)ctx->stack_top[-1];
     if (n->type != PDF_NAME)

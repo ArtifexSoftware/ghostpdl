@@ -309,3 +309,184 @@ pdfi_oc_is_ocg_visible(pdf_context *ctx, pdf_dict *ocdict)
     }
     return is_visible;
 }
+
+#define INIT_CONTENT_LEVELS 100
+typedef struct {
+    byte *flags;
+    uint64_t num_off;
+    uint64_t max_flags;
+} pdfi_oc_levels_t;
+
+static int pdfi_oc_levels_init(pdf_context *ctx, pdfi_oc_levels_t **levels)
+{
+    byte *data;
+    pdfi_oc_levels_t *new;
+
+    *levels = NULL;
+
+    new = (pdfi_oc_levels_t *)gs_alloc_bytes(ctx->memory, sizeof(pdfi_oc_levels_t),
+                                             "pdfi_oc_levels_init (levels)");
+    if (!new)
+        return_error(gs_error_VMerror);
+
+    data = (byte *)gs_alloc_bytes(ctx->memory, INIT_CONTENT_LEVELS, "pdfi_oc_levels_init (data)");
+    if (!data) {
+        gs_free_object(ctx->memory, new, "pdfi_oc_levels_init (levels (error))");
+        return_error(gs_error_VMerror);
+    }
+    memset(data, 0, INIT_CONTENT_LEVELS);
+
+    new->flags = data;
+    new->num_off = 0;
+    new->max_flags = INIT_CONTENT_LEVELS;
+    *levels = new;
+
+    return 0;
+}
+
+static int pdfi_oc_levels_free(pdf_context *ctx, pdfi_oc_levels_t *levels)
+{
+    gs_free_object(ctx->memory, levels->flags, "pdfi_oc_levels_free (flags)");
+    gs_free_object(ctx->memory, levels, "pdfi_oc_levels_free (levels)");
+
+    return 0;
+}
+
+static int pdfi_oc_levels_set(pdf_context *ctx, pdfi_oc_levels_t *levels, uint64_t index)
+{
+    byte *new = NULL;
+    uint64_t newmax;
+
+    if (index > levels->max_flags) {
+        /* Expand the flags buffer */
+        newmax = levels->max_flags + INIT_CONTENT_LEVELS;
+        if (index > newmax)
+            return_error(gs_error_Fatal); /* shouldn't happen */
+        new = gs_alloc_bytes(ctx->memory, newmax, "pdfi_oc_levels_set (new data)");
+        if (!new)
+            return_error(gs_error_VMerror);
+        memset(new, 0, newmax);
+        memcpy(new, levels->flags, levels->max_flags);
+        gs_free_object(ctx->memory, levels->flags, "pdfi_oc_levels_set (old data)");
+        levels->flags = new;
+    }
+
+    if (levels->flags[index] == 0)
+        levels->num_off ++;
+    levels->flags[index] = 1;
+    return 0;
+}
+
+static int pdfi_oc_levels_clear(pdf_context *ctx, pdfi_oc_levels_t *levels, uint64_t index)
+{
+    if (index > levels->max_flags)
+        return -1;
+    if (levels->flags[index] != 0)
+        levels->num_off --;
+    levels->flags[index] = 0;
+    return 0;
+}
+
+
+/* Test if content is turned off for this element.
+ */
+bool pdfi_oc_is_off(pdf_context *ctx)
+{
+    pdfi_oc_levels_t *levels = (pdfi_oc_levels_t *)ctx->OFFlevels;
+    uint64_t num_off = levels->num_off;
+
+    return (num_off != 0);
+}
+
+int pdfi_oc_init(pdf_context *ctx)
+{
+    int code;
+
+    ctx->BMClevel = 0;
+    if (ctx->OFFlevels) {
+        pdfi_oc_levels_free(ctx, ctx->OFFlevels);
+        ctx->OFFlevels = NULL;
+    }
+    code = pdfi_oc_levels_init(ctx, (pdfi_oc_levels_t **)&ctx->OFFlevels);
+    if (code < 0)
+        return code;
+
+    return 0;
+}
+
+/* begin marked content sequence */
+/* TODO: Incomplete implementation, it is ignoring the argument */
+int pdfi_op_BMC(pdf_context *ctx)
+{
+    if (pdfi_count_stack(ctx) >= 1) {
+        pdfi_pop(ctx, 1);
+    } else
+        pdfi_clearstack(ctx);
+    ctx->BMClevel ++;
+    return 0;
+}
+
+/* begin marked content sequence with property list */
+/* TODO: Incomplete implementation, only tries to do something sensible for OC */
+int pdfi_op_BDC(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
+{
+    pdf_name *tag = NULL;
+    pdf_name *properties = NULL;
+    pdf_dict *oc_dict = NULL;
+    int code = 0;
+    bool ocg_is_visible;
+
+    if (pdfi_count_stack(ctx) < 2) {
+        /* TODO: Flag error? */
+        pdfi_clearstack(ctx);
+        return 0;
+    }
+
+    ctx->BMClevel ++;
+
+    /* Check if second arg is OC and handle it if so */
+    tag = (pdf_name *)ctx->stack_top[-2];
+    if (tag->type != PDF_NAME)
+        goto exit;
+    if (!pdfi_name_is(tag, "OC"))
+        goto exit;
+
+    /* Check if first arg is a name and handle it if so */
+    /* TODO: spec says it could also be an inline dict that we should be able to handle,
+     * but I am just matching what gs does for now, and it doesn't handle that case.
+     */
+    properties = (pdf_name *)ctx->stack_top[-1];
+    if (tag->type != PDF_NAME)
+        goto exit;
+
+    /* If it's a name, look it up in Properties */
+    code = pdfi_find_resource(ctx, (unsigned char *)"Properties", properties,
+                              stream_dict, page_dict, (pdf_obj **)&oc_dict);
+    if (code != 0)
+        goto exit;
+    if (oc_dict->type != PDF_DICT)
+        goto exit;
+
+    /* Now we have an OC dict, see if it's visible */
+    ocg_is_visible = pdfi_oc_is_ocg_visible(ctx, oc_dict);
+    if (!ocg_is_visible)
+        code = pdfi_oc_levels_set(ctx, ctx->OFFlevels, ctx->BMClevel);
+
+ exit:
+    pdfi_pop(ctx, 2); /* pop args */
+    pdfi_countdown(oc_dict);
+    return code;
+}
+
+/* end marked content sequence */
+int pdfi_op_EMC(pdf_context *ctx)
+{
+    int code;
+
+    code = pdfi_oc_levels_clear(ctx, ctx->OFFlevels, ctx->BMClevel);
+
+    /* TODO: Should we flag error on too many EMC? */
+    if (ctx->BMClevel > 0)
+        ctx->BMClevel --;
+    return code;
+}

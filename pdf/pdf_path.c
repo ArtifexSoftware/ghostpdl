@@ -21,6 +21,7 @@
 #include "pdf_stack.h"
 #include "pdf_trans.h"
 #include "gstypes.h"
+#include "pdf_optcontent.h"
 
 int pdfi_moveto (pdf_context *ctx)
 {
@@ -126,7 +127,7 @@ int pdfi_lineto (pdf_context *ctx)
         return 0;
 }
 
-int pdfi_fill(pdf_context *ctx)
+static int pdfi_fill_inner(pdf_context *ctx, bool use_eofill)
 {
     int code, code1;
     pdfi_trans_state_t state;
@@ -134,10 +135,18 @@ int pdfi_fill(pdf_context *ctx)
     if (ctx->TextBlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
+    if (pdfi_oc_is_off(ctx)) {
+        code = gs_newpath(ctx->pgs);
+        return code;
+    }
+
     gs_swapcolors(ctx->pgs);
     code = pdfi_trans_setup(ctx, &state, TRANSPARENCY_Caller_Fill, gs_getfillconstantalpha(ctx->pgs));
     if (code == 0) {
-        code = gs_fill(ctx->pgs);
+        if (use_eofill)
+            code = gs_eofill(ctx->pgs);
+        else
+            code = gs_fill(ctx->pgs);
         code1 = pdfi_trans_teardown(ctx, &state);
         if (code == 0)
             code = code1;
@@ -149,27 +158,14 @@ int pdfi_fill(pdf_context *ctx)
         return 0;
 }
 
+int pdfi_fill(pdf_context *ctx)
+{
+    return pdfi_fill_inner(ctx, false);
+}
+
 int pdfi_eofill(pdf_context *ctx)
 {
-    int code, code1;
-    pdfi_trans_state_t state;
-
-    if (ctx->TextBlockDepth != 0)
-        ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
-
-    gs_swapcolors(ctx->pgs);
-    code = pdfi_trans_setup(ctx, &state, TRANSPARENCY_Caller_EOFill, gs_getfillconstantalpha(ctx->pgs));
-    if (code == 0) {
-        code = gs_eofill(ctx->pgs);
-        code1 = pdfi_trans_teardown(ctx, &state);
-        if (code == 0)
-            code = code1;
-    }
-    gs_swapcolors(ctx->pgs);
-    if(code < 0 && ctx->pdfstoponerror)
-        return code;
-    else
-        return 0;
+    return pdfi_fill_inner(ctx, true);
 }
 
 int pdfi_stroke(pdf_context *ctx)
@@ -179,6 +175,11 @@ int pdfi_stroke(pdf_context *ctx)
 
     if (ctx->TextBlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+
+    if (pdfi_oc_is_off(ctx)) {
+        code = gs_newpath(ctx->pgs);
+        return code;
+    }
 
     code = pdfi_trans_setup(ctx, &state, TRANSPARENCY_Caller_Stroke, gs_getstrokeconstantalpha(ctx->pgs));
     if (code == 0) {
@@ -409,6 +410,11 @@ static int pdfi_B_inner(pdf_context *ctx, bool use_eofill)
 
     if (ctx->TextBlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
+
+    if (pdfi_oc_is_off(ctx)) {
+        code = gs_newpath(ctx->pgs);
+        return code;
+    }
 
     if (ctx->page_has_transparency) {
         code = gs_setopacityalpha(ctx->pgs, 1.0);

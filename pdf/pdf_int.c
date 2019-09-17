@@ -34,6 +34,7 @@
 #include "pdf_dict.h"
 #include "pdf_array.h"
 #include "pdf_trans.h"
+#include "pdf_optcontent.h"
 
 /***********************************************************************************/
 /* Functions to create the various kinds of 'PDF objects', Created objects have a  */
@@ -3025,17 +3026,11 @@ static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_stream *source, 
                 break;
             case K3('B','D','C'):   /* begin marked content sequence with property list */
                 pdfi_pop(ctx, 1);
-                if (pdfi_count_stack(ctx) >= 2) {
-                    pdfi_pop(ctx, 2);
-                } else
-                    pdfi_clearstack(ctx);
+                code = pdfi_op_BDC(ctx, stream_dict, page_dict);
                 break;
             case K3('B','M','C'):   /* begin marked content sequence */
                 pdfi_pop(ctx, 1);
-                if (pdfi_count_stack(ctx) >= 1) {
-                    pdfi_pop(ctx, 1);
-                } else
-                    pdfi_clearstack(ctx);
+                code = pdfi_op_BMC(ctx);
                 break;
             case K2('B','T'):       /* begin text */
                 pdfi_pop(ctx, 1);
@@ -3093,6 +3088,9 @@ static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_stream *source, 
                 code = pdfi_ET(ctx);
                 break;
             case K3('E','M','C'):   /* end marked content sequence */
+                pdfi_pop(ctx, 1);
+                code = pdfi_op_EMC(ctx);
+                break;
             case K2('E','X'):       /* end compatibility section */
                 pdfi_pop(ctx, 1);
                 break;

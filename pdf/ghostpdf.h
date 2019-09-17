@@ -305,6 +305,10 @@ typedef struct pdf_context_s
     /* Optional things from Root */
     pdf_dict *OCProperties;
 
+    /* Optional/Marked Content stuff */
+    void *OFFlevels;
+    uint64_t BMClevel;
+
     /* Interpreter level PDF objects */
     uint32_t stack_size;
     pdf_obj **stack_bot;
