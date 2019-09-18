@@ -314,8 +314,10 @@ pcmacros_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
         id_set_value(pcs->macro_id, 0);
         pcs->alpha_macro_id.id = 0;
     }
-    if (type & pcl_reset_permanent)
+    if (type & pcl_reset_permanent) {
+        gs_free_object(pcs->memory, pcs->macro_definition, "begin macro definition");
         pl_dict_release(&pcs->macros);
+    }
 
     return 0;
 }

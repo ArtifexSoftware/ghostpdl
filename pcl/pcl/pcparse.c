@@ -257,16 +257,18 @@ pcl_adjust_arg(pcl_args_t * pargs, const pcl_command_definition_t * pdefn)
 static int
 append_macro(const byte * from, const byte * to, pcl_state_t * pcs)
 {
-    uint count = to - from;
-    uint size = gs_object_size(pcs->memory, pcs->macro_definition);
-    byte *new_defn =
-        gs_resize_object(pcs->memory, pcs->macro_definition, size + count,
-                         "append_macro");
+    if (pcs->macro_definition != NULL) {
+        uint count = to - from;
+        uint size = gs_object_size(pcs->memory, pcs->macro_definition);
+        byte *new_defn =
+            gs_resize_object(pcs->memory, pcs->macro_definition, size + count,
+                             "append_macro");
 
-    if (new_defn == 0)
-        return_error(e_Memory);
-    memcpy(new_defn + size, from + 1, count);
-    pcs->macro_definition = new_defn;
+        if (new_defn == 0)
+            return_error(e_Memory);
+        memcpy(new_defn + size, from + 1, count);
+        pcs->macro_definition = new_defn;
+    }
     return 0;
 }
 

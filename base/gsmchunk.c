@@ -1022,25 +1022,29 @@ chunk_alloc_struct_array(gs_memory_t * mem, size_t num_elements,
 static void *
 chunk_resize_object(gs_memory_t * mem, void *ptr, size_t new_num_elements, client_name_t cname)
 {
-    /* This isn't particularly efficient, but it is rarely used */
-    chunk_obj_node_t *obj = (chunk_obj_node_t *)(((byte *)ptr) - SIZEOF_ROUND_ALIGN(chunk_obj_node_t));
-    size_t new_size = (obj->type->ssize * new_num_elements);
-    size_t old_size = obj->size - obj->padding;
-    /* get the type from the old object */
-    gs_memory_type_ptr_t type = obj->type;
-    void *new_ptr;
-    gs_memory_chunk_t *cmem = (gs_memory_chunk_t *)mem;
-    size_t save_max_used = cmem->max_used;
+    void *new_ptr = NULL;
 
-    if (new_size == old_size)
-        return ptr;
-    if ((new_ptr = chunk_obj_alloc(mem, new_size, type, cname)) == 0)
-        return 0;
-    memcpy(new_ptr, ptr, min(old_size, new_size));
-    chunk_free_object(mem, ptr, cname);
-    cmem->max_used = save_max_used;
-    if (cmem->used > cmem->max_used)
-        cmem->max_used = cmem->used;
+    if (ptr != NULL) {
+        /* This isn't particularly efficient, but it is rarely used */
+        chunk_obj_node_t *obj = (chunk_obj_node_t *)(((byte *)ptr) - SIZEOF_ROUND_ALIGN(chunk_obj_node_t));
+        size_t new_size = (obj->type->ssize * new_num_elements);
+        size_t old_size = obj->size - obj->padding;
+        /* get the type from the old object */
+        gs_memory_type_ptr_t type = obj->type;
+        gs_memory_chunk_t *cmem = (gs_memory_chunk_t *)mem;
+        size_t save_max_used = cmem->max_used;
+
+        if (new_size == old_size)
+            return ptr;
+        if ((new_ptr = chunk_obj_alloc(mem, new_size, type, cname)) == 0)
+            return NULL;
+        memcpy(new_ptr, ptr, min(old_size, new_size));
+        chunk_free_object(mem, ptr, cname);
+        cmem->max_used = save_max_used;
+        if (cmem->used > cmem->max_used)
+            cmem->max_used = cmem->used;
+    }
+
     return new_ptr;
 }
 
@@ -1396,9 +1400,13 @@ chunk_consolidate_free(gs_memory_t *mem)
 static size_t
 chunk_object_size(gs_memory_t * mem, const void *ptr)
 {
-    chunk_obj_node_t *obj = (chunk_obj_node_t *)(((byte *)ptr) - SIZEOF_ROUND_ALIGN(chunk_obj_node_t));
+    if (ptr != NULL) {
+        chunk_obj_node_t *obj = (chunk_obj_node_t *)(((byte *)ptr) - SIZEOF_ROUND_ALIGN(chunk_obj_node_t));
 
-    return obj->size - obj->padding;
+        return obj->size - obj->padding;
+    }
+
+    return 0;
 }
 
 static gs_memory_type_ptr_t
