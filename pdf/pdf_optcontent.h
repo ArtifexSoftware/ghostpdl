@@ -19,6 +19,7 @@
 bool pdfi_oc_is_ocg_visible(pdf_context *ctx, pdf_dict *ocdict);
 
 int pdfi_oc_init(pdf_context *ctx);
+int pdfi_oc_free(pdf_context *ctx);
 bool pdfi_oc_is_off(pdf_context *ctx);
 int pdfi_op_BMC(pdf_context *ctx);
 int pdfi_op_BDC(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict);

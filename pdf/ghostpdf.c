@@ -883,6 +883,7 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
     }
 
     pdfi_free_DefaultQState(ctx);
+    pdfi_oc_free(ctx);
 
     if (ctx->pdfi_param_list.head != NULL)
         gs_c_param_list_release(&ctx->pdfi_param_list);

@@ -310,7 +310,7 @@ pdfi_oc_is_ocg_visible(pdf_context *ctx, pdf_dict *ocdict)
     return is_visible;
 }
 
-#define INIT_CONTENT_LEVELS 100
+#define NUM_CONTENT_LEVELS 100
 typedef struct {
     byte *flags;
     uint64_t num_off;
@@ -329,16 +329,16 @@ static int pdfi_oc_levels_init(pdf_context *ctx, pdfi_oc_levels_t **levels)
     if (!new)
         return_error(gs_error_VMerror);
 
-    data = (byte *)gs_alloc_bytes(ctx->memory, INIT_CONTENT_LEVELS, "pdfi_oc_levels_init (data)");
+    data = (byte *)gs_alloc_bytes(ctx->memory, NUM_CONTENT_LEVELS, "pdfi_oc_levels_init (data)");
     if (!data) {
         gs_free_object(ctx->memory, new, "pdfi_oc_levels_init (levels (error))");
         return_error(gs_error_VMerror);
     }
-    memset(data, 0, INIT_CONTENT_LEVELS);
+    memset(data, 0, NUM_CONTENT_LEVELS);
 
     new->flags = data;
     new->num_off = 0;
-    new->max_flags = INIT_CONTENT_LEVELS;
+    new->max_flags = NUM_CONTENT_LEVELS;
     *levels = new;
 
     return 0;
@@ -359,7 +359,7 @@ static int pdfi_oc_levels_set(pdf_context *ctx, pdfi_oc_levels_t *levels, uint64
 
     if (index > levels->max_flags) {
         /* Expand the flags buffer */
-        newmax = levels->max_flags + INIT_CONTENT_LEVELS;
+        newmax = levels->max_flags + NUM_CONTENT_LEVELS;
         if (index > newmax)
             return_error(gs_error_Fatal); /* shouldn't happen */
         new = gs_alloc_bytes(ctx->memory, newmax, "pdfi_oc_levels_set (new data)");
@@ -369,6 +369,7 @@ static int pdfi_oc_levels_set(pdf_context *ctx, pdfi_oc_levels_t *levels, uint64
         memcpy(new, levels->flags, levels->max_flags);
         gs_free_object(ctx->memory, levels->flags, "pdfi_oc_levels_set (old data)");
         levels->flags = new;
+        levels->max_flags += NUM_CONTENT_LEVELS;
     }
 
     if (levels->flags[index] == 0)
@@ -412,6 +413,15 @@ int pdfi_oc_init(pdf_context *ctx)
         return code;
 
     return 0;
+}
+
+int pdfi_oc_free(pdf_context *ctx)
+{
+    int code;
+
+    code = pdfi_oc_levels_free(ctx, (pdfi_oc_levels_t *)ctx->OFFlevels);
+    ctx->OFFlevels = NULL;
+    return code;
 }
 
 /* begin marked content sequence */
