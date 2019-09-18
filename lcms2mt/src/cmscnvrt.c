@@ -546,6 +546,8 @@ cmsPipeline* DefaultICCintents(cmsContext       ContextID,
     Result = cmsPipelineAlloc(ContextID, 0, 0);
     if (Result == NULL) return NULL;
 
+    ContextID->dwFlags = dwFlags;
+
     CurrentColorSpace = cmsGetColorSpace(ContextID, hProfiles[0]);
 
     for (i=0; i < nProfiles; i++) {
@@ -653,9 +655,13 @@ cmsPipeline* DefaultICCintents(cmsContext       ContextID,
 
     }
 
+    ContextID->dwFlags = 0;
+
     return Result;
 
 Error:
+
+    ContextID->dwFlags = 0;
 
     if (Lut != NULL) cmsPipelineFree(ContextID, Lut);
     if (Result != NULL) cmsPipelineFree(ContextID, Result);

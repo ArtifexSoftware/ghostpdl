@@ -85,6 +85,10 @@ cmsBool  _cmsRegisterInterpPlugin(cmsContext ContextID, cmsPluginBase* Data)
 cmsBool _cmsSetInterpolationRoutine(cmsContext ContextID, cmsInterpParams* p)
 {
     _cmsInterpPluginChunkType* ptr = (_cmsInterpPluginChunkType*) _cmsContextGetClientChunk(ContextID, InterpPlugin);
+    cmsUInt32Number flags = 0;
+
+    if (ContextID->dwFlags & cmsFLAGS_FORCE_LINEARINTERP)
+        flags = CMS_LERP_FLAGS_TRILINEAR;
 
     p ->Interpolation.Lerp16 = NULL;
 
@@ -95,7 +99,7 @@ cmsBool _cmsSetInterpolationRoutine(cmsContext ContextID, cmsInterpParams* p)
     // If unsupported by the plug-in, go for the LittleCMS default.
     // If happens only if an extern plug-in is being used
     if (p ->Interpolation.Lerp16 == NULL)
-        p ->Interpolation = DefaultInterpolatorsFactory(p ->nInputs, p ->nOutputs, p ->dwFlags);
+        p ->Interpolation = DefaultInterpolatorsFactory(p ->nInputs, p ->nOutputs, p ->dwFlags | flags);
 
     // Check for valid interpolator (we just check one member of the union)
     if (p ->Interpolation.Lerp16 == NULL) {
@@ -588,6 +592,149 @@ void TrilinearInterp16(cmsContext ContextID, register const cmsUInt16Number Inpu
         d110 = DENS(X1, Y1, Z0);
         d111 = DENS(X1, Y1, Z1);
 
+
+        dx00 = LERP(rx, d000, d100);
+        dx01 = LERP(rx, d001, d101);
+        dx10 = LERP(rx, d010, d110);
+        dx11 = LERP(rx, d011, d111);
+
+        dxy0 = LERP(ry, dx00, dx10);
+        dxy1 = LERP(ry, dx01, dx11);
+
+        dxyz = LERP(rz, dxy0, dxy1);
+
+        Output[OutChan] = (cmsUInt16Number) dxyz;
+    }
+
+
+#   undef LERP
+#   undef DENS
+}
+
+static
+void QuadrilinearInterpFloat(cmsContext        ContextID,
+                       const cmsFloat32Number  Input[],
+                             cmsFloat32Number  Output[],
+                       const cmsInterpParams  *p)
+
+{
+    cmsFloat32Number rest;
+    cmsFloat32Number pk;
+    int k0;
+    cmsUInt32Number i, n;
+    cmsFloat32Number Tmp[MAX_STAGE_CHANNELS];
+    cmsInterpParams p1 = *p;
+    cmsFloat32Number i0 = fclamp(Input[0]);
+
+    pk = i0 * p->Domain[0];
+    k0 = _cmsQuickFloor(pk);
+    rest = pk - (cmsFloat32Number) k0;
+
+    memmove(&p1.Domain[0], &p ->Domain[1], 3*sizeof(cmsUInt32Number));
+    p1.Table = ((cmsFloat32Number*) p -> Table) + p -> opta[3] * k0;
+
+    TrilinearInterpFloat(ContextID, Input + 1,  Output, &p1);
+
+    if (i0 == 1.0)
+        return;
+
+    p1.Table = ((cmsFloat32Number*) p1.Table) + p->opta[3];
+    TrilinearInterpFloat(ContextID, Input + 1,  Tmp, &p1);
+
+    n = p -> nOutputs;
+    for (i=0; i < n; i++) {
+        cmsFloat32Number y0 = Output[i];
+        cmsFloat32Number y1 = Tmp[i];
+
+        Output[i] = y0 + (y1 - y0) * rest;
+    }
+}
+
+static CMS_NO_SANITIZE
+void QuadrilinearInterp16(cmsContext       ContextID,
+           register const cmsUInt16Number  Input[],
+           register cmsUInt16Number        Output[],
+           register const cmsInterpParams *p)
+
+{
+#define DENS(i,j,k,l) (LutTable[(i)+(j)+(k)+(l)+OutChan])
+#define LERP(a,l,h)     (cmsUInt16Number) (l + ROUND_FIXED_TO_INT(((h-l)*a)))
+
+           const cmsUInt16Number* LutTable = (cmsUInt16Number*) p ->Table;
+           int                    OutChan, TotalOut;
+           cmsS15Fixed16Number    fx, fy, fz, fk;
+  register int                    rx, ry, rz, rk;
+           int                    x0, y0, z0, k0;
+  register int                    X0, X1, Y0, Y1, Z0, Z1, K0, K1;
+           int                    d0000, d0001, d0010, d0011,
+                                  d0100, d0101, d0110, d0111,
+                                  d1000, d1001, d1010, d1011,
+                                  d1100, d1101, d1110, d1111,
+                                  d000, d001, d010, d011,
+                                  d100, d101, d110, d111,
+                                  dx00, dx01, dx10, dx11,
+                                  dxy0, dxy1, dxyz;
+           cmsUNUSED_PARAMETER(ContextID);
+
+    TotalOut   = p -> nOutputs;
+
+    fx = _cmsToFixedDomain((int) Input[0] * p -> Domain[0]);
+    x0  = FIXED_TO_INT(fx);
+    rx  = FIXED_REST_TO_INT(fx);    // Rest in 0..1.0 domain
+
+
+    fy = _cmsToFixedDomain((int) Input[1] * p -> Domain[1]);
+    y0  = FIXED_TO_INT(fy);
+    ry  = FIXED_REST_TO_INT(fy);
+
+    fz = _cmsToFixedDomain((int) Input[2] * p -> Domain[2]);
+    z0 = FIXED_TO_INT(fz);
+    rz = FIXED_REST_TO_INT(fz);
+
+    fk = _cmsToFixedDomain((int) Input[3] * p -> Domain[3]);
+    k0 = FIXED_TO_INT(fk);
+    rk = FIXED_REST_TO_INT(fk);
+
+
+    X0 = p -> opta[3] * x0;
+    X1 = X0 + (Input[0] == 0xFFFFU ? 0 : p->opta[3]);
+
+    Y0 = p -> opta[2] * y0;
+    Y1 = Y0 + (Input[1] == 0xFFFFU ? 0 : p->opta[2]);
+
+    Z0 = p -> opta[1] * z0;
+    Z1 = Z0 + (Input[2] == 0xFFFFU ? 0 : p->opta[1]);
+
+    K0 = p -> opta[0] * k0;
+    K1 = K0 + (Input[3] == 0xFFFFU ? 0 : p->opta[0]);
+
+    for (OutChan = 0; OutChan < TotalOut; OutChan++) {
+
+        d0000 = DENS(X0, Y0, Z0, K0);
+        d0001 = DENS(X0, Y0, Z0, K1);
+        d000  = LERP(rk, d0000, d0001);
+        d0010 = DENS(X0, Y0, Z1, K0);
+        d0011 = DENS(X0, Y0, Z1, K1);
+        d001  = LERP(rk, d0010, d0011);
+        d0100 = DENS(X0, Y1, Z0, K0);
+        d0101 = DENS(X0, Y1, Z0, K1);
+        d010  = LERP(rk, d0100, d0101);
+        d0110 = DENS(X0, Y1, Z1, K0);
+        d0111 = DENS(X0, Y1, Z1, K1);
+        d011  = LERP(rk, d0110, d0111);
+
+        d1000 = DENS(X1, Y0, Z0, K0);
+        d1001 = DENS(X1, Y0, Z0, K1);
+        d100  = LERP(rk, d1000, d1001);
+        d1010 = DENS(X1, Y0, Z1, K0);
+        d1011 = DENS(X1, Y0, Z1, K1);
+        d101  = LERP(rk, d1010, d1011);
+        d1100 = DENS(X1, Y1, Z0, K0);
+        d1101 = DENS(X1, Y1, Z0, K1);
+        d110  = LERP(rk, d1100, d1101);
+        d1110 = DENS(X1, Y1, Z1, K0);
+        d1111 = DENS(X1, Y1, Z1, K1);
+        d111  = LERP(rk, d1110, d1111);
 
         dx00 = LERP(rx, d000, d100);
         dx01 = LERP(rx, d001, d101);
@@ -1508,10 +1655,17 @@ cmsInterpFunction DefaultInterpolatorsFactory(cmsUInt32Number nInputChannels, cm
 
            case 4:  // CMYK lut
 
-               if (IsFloat)
-                   Interpolation.LerpFloat =  Eval4InputsFloat;
-               else
-                   Interpolation.Lerp16    =  Eval4Inputs;
+               if (IsTrilinear) {
+                   if (IsFloat)
+                       Interpolation.LerpFloat =  QuadrilinearInterpFloat;
+                   else
+                       Interpolation.Lerp16    =  QuadrilinearInterp16;
+               } else {
+                   if (IsFloat)
+                       Interpolation.LerpFloat =  Eval4InputsFloat;
+                   else
+                       Interpolation.Lerp16    =  Eval4Inputs;
+               }
                break;
 
            case 5: // 5 Inks
