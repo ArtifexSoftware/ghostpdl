@@ -31,6 +31,7 @@
 #include "pdf_loop_detect.h"
 #include "pdf_func.h"
 #include "pdf_shading.h"
+#include "pdf_check.h"
 #include "gscsepr.h"
 #include "stream.h"
 #include "strmio.h"

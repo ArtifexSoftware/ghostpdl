@@ -13,11 +13,12 @@
    CA 94945, U.S.A., +1(415)492-9861, for further information.
 */
 
-/* Page-level operations for the PDF interpreter */
+#ifndef PDF_CHECK
+#define PDF_CHECK
 
-#ifndef PDF_PAGE_OPERATORS
-#define PDF_PAGE_OPERATORS
+int pdfi_check_transparency_spots(pdf_context *ctx);
+int pdfi_check_page_transparency(pdf_context *ctx, pdf_dict *page_dict, bool *transparent, int *spots);
 
-int pdfi_page_render(pdf_context *ctx, uint64_t page_num);
+int pdfi_check_Pattern(pdf_context *ctx, pdf_dict *pattern, pdf_dict *page_dict, bool *transparent, int *num_spots);
 
 #endif

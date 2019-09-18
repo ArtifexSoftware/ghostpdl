@@ -131,6 +131,9 @@ $(PDFOBJ)pdf_misc.$(OBJ): $(PDFSRC)pdf_misc.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDI
 $(PDFOBJ)pdf_optcontent.$(OBJ): $(PDFSRC)pdf_optcontent.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_optcontent.c $(PDFO_)pdf_optcontent.$(OBJ)
 
+$(PDFOBJ)pdf_check.$(OBJ): $(PDFSRC)pdf_check.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
+	$(PDFCCC) $(PDFSRC)pdf_check.c $(PDFO_)pdf_check.$(OBJ)
+
 $(PDFGEN)pdfimpl.c: $(PLSRC)plimpl.c $(PDF_MAK) $(MAKEDIRS)
 	$(CP_) $(PLSRC)plimpl.c $(PDFGEN)pdfimpl.c
 
@@ -178,6 +181,7 @@ PDF_OBJS=\
     $(PDFOBJ)pdf_device.$(OBJ)\
     $(PDFOBJ)pdf_misc.$(OBJ)\
     $(PDFOBJ)pdf_optcontent.$(OBJ)\
+    $(PDFOBJ)pdf_check.$(OBJ)\
 
 
 # NB - note this is a bit squirrely.  Right now the pjl interpreter is
