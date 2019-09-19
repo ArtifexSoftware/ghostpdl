@@ -346,6 +346,8 @@ static int pdfi_oc_levels_init(pdf_context *ctx, pdfi_oc_levels_t **levels)
 
 static int pdfi_oc_levels_free(pdf_context *ctx, pdfi_oc_levels_t *levels)
 {
+    if (!levels)
+        return 0;
     gs_free_object(ctx->memory, levels->flags, "pdfi_oc_levels_free (flags)");
     gs_free_object(ctx->memory, levels, "pdfi_oc_levels_free (levels)");
 
