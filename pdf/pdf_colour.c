@@ -66,7 +66,7 @@ static int pdfi_check_for_spots_by_name(pdf_context *ctx, pdf_name *name,
     } else if (pdfi_name_is(name, "DeviceCMYK")) {
         return 0;
     } else if (pdfi_name_is(name, "Pattern")) {
-        dbgmprintf(ctx->memory, "WARNING: pdfi_check_for_spots_by_name: Pattern is not supported\n");
+        /* TODO: I think this is fine... */
         return 0;
     } else {
         code = pdfi_find_resource(ctx, (unsigned char *)"ColorSpace", name, parent_dict, page_dict, &ref_space);
@@ -102,6 +102,27 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
             (void)pdfi_countdown(base_space);
         }
         goto exit;
+    } else if (pdfi_name_is(space, "Pattern")) {
+        pdf_obj *base_space = NULL;
+        uint64_t size = pdfi_array_size(color_array);
+
+        /* Array of size 1 "[ /Pattern ]" is okay, just do nothing. */
+        if (size == 1)
+            goto exit;
+        /* Array of size > 2 we don't handle (shouldn't happen?) */
+        if (size != 2) {
+            dbgmprintf1(ctx->memory,
+                        "WARNING: checking Pattern for spots, expected array size 2, got %lu\n",
+                        size);
+            goto exit;
+        }
+        /* "[/Pattern base_space]" */
+        code = pdfi_array_get(ctx, color_array, 1, &base_space);
+        if (code == 0) {
+            code = pdfi_check_ColorSpace_for_spots(ctx, base_space, parent_dict, page_dict, num_spots);
+            (void)pdfi_countdown(base_space);
+        }
+        goto exit;
     } else if (pdfi_name_is(space, "Lab")) {
         goto exit;
     } else if (pdfi_name_is(space, "RGB")) {
@@ -111,9 +132,6 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
     } else if (pdfi_name_is(space, "CalRGB")) {
         goto exit;
     } else if (pdfi_name_is(space, "CalGray")) {
-        goto exit;
-    } else if (pdfi_name_is(space, "Pattern")) {
-        dbgmprintf(ctx->memory, "WARNING: pdfi_check_for_spots_by_array: Pattern is not supported\n");
         goto exit;
     } else if (pdfi_name_is(space, "ICCBased")) {
         goto exit;
