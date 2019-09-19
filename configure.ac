@@ -1621,6 +1621,7 @@ if test x$with_luratech != xno; then
 fi
 
 JB2_STDINT_TYPES_IN=
+JBIG2DEC_REQ=0.16
 
 if test "x$JBIG2_DECODER" = x; then
   dnl look for jbig2dec
@@ -1680,7 +1681,6 @@ if test "x$JBIG2_DECODER" = x; then
       # autoconf macro and b) requires pkg-config on the system, which is
       # NOT standard on ANY OS, including Linux!
       if test "x$PKGCONFIG" != x; then
-        JBIG2DEC_REQ=0.16
         AC_MSG_CHECKING(for jbig2dec $JBIG2DEC_REQ with pkg-config)
         if $PKGCONFIG --atleast-version=$JBIG2DEC_REQ jbig2dec; then
           AC_MSG_RESULT(yes)
@@ -1688,17 +1688,14 @@ if test "x$JBIG2_DECODER" = x; then
           JBIG2DEC_LIBS="`$PKGCONFIG --libs jbig2dec`"
           SHARE_JBIG2=1
         else
-          AC_MSG_RESULT(no)
-          AC_MSG_WARN([disabling support for JBIG2 files])
-          with_jbig2dec=no
+          AC_MSG_ERROR([jbig2 decoder not found, or too old])
         fi
       else
         AC_MSG_CHECKING(for jbig2dec library)
         AC_CHECK_LIB([jbig2dec], [jbig2_page_out], [
             SHARE_JBIG2=1
         ], [
-            AC_MSG_WARN([disabling support for JBIG2 files])
-            with_jbig2dec=no
+            AC_MSG_ERROR([jbig2 decoder not found, or too old])
         ])
       fi
       if test x$with_jbig2dec != xno; then
