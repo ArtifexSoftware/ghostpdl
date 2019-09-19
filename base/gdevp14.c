@@ -4494,9 +4494,9 @@ pdf14_create_compositor(gx_device * dev, gx_device * * pcdev,
 }
 
 static int
-pdf14_push_text_group(gx_device *dev, gs_gstate *pgs, gx_path *path,
-    const gx_clip_path *pcpath, gs_blend_mode_t blend_mode, float opacity,
-    bool is_clist)
+pdf14_push_text_group(gx_device *dev, gs_gstate *pgs,
+                      gs_blend_mode_t blend_mode, float opacity,
+                      bool is_clist)
 {
     int code;
     gs_transparency_group_params_t params = { 0 };
@@ -4562,7 +4562,7 @@ pdf14_text_begin(gx_device * dev, gs_gstate * pgs,
         gs_currenttextrenderingmode(pgs) != 3 && /* don't bother with invisible text */
         pdev->text_group == PDF14_TEXTGROUP_BT_NOT_PUSHED)
         if (draw) {
-            code = pdf14_push_text_group(dev, pgs, path, pcpath, blend_mode, opacity,
+            code = pdf14_push_text_group(dev, pgs, blend_mode, opacity,
                 false);
         }
     *ppenum = (gs_text_enum_t *)penum;
@@ -8611,7 +8611,7 @@ pdf14_clist_text_begin(gx_device * dev,	gs_gstate	* pgs,
         gs_currenttextrenderingmode(pgs) != 3 && /* don't bother with invisible text */
         pdev->text_group == PDF14_TEXTGROUP_BT_NOT_PUSHED) {
         if (draw) {
-            code = pdf14_push_text_group(dev, pgs, path, pcpath, blend_mode, opacity, true);
+            code = pdf14_push_text_group(dev, pgs, blend_mode, opacity, true);
             if (code == 0)
                 pdev->text_group = PDF14_TEXTGROUP_BT_PUSHED;  /* Needed during clist writing */
         }
