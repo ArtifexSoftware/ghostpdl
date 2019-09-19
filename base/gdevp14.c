@@ -2870,15 +2870,68 @@ update_lop_for_pdf14(gs_gstate *pgs, const gx_drawing_color *pdcolor)
     }
 }
 
-static	int
+static int
+push_shfill_group(pdf14_clist_device *pdev, 
+                  gs_gstate *pgs,
+                  gs_fixed_rect *box)
+{
+    gs_transparency_group_params_t params = { 0 };
+    int code;
+    gs_rect cb;
+    gs_gstate fudged_pgs = *pgs;
+
+    /* gs_begin_transparency_group takes a bbox that it then
+     * transforms by ctm. Our bbox has already been transformed,
+     * so clear out the ctm. */
+    fudged_pgs.ctm.xx = 1.0;
+    fudged_pgs.ctm.xy = 0;
+    fudged_pgs.ctm.yx = 0;
+    fudged_pgs.ctm.yy = 1.0;
+    fudged_pgs.ctm.tx = 0;
+    fudged_pgs.ctm.ty = 0;
+    cb.p.x = fixed2int_pixround(box->p.x);
+    cb.p.y = fixed2int_pixround(box->p.y);
+    cb.q.x = fixed2int_pixround(box->q.x);
+    cb.q.y = fixed2int_pixround(box->q.y);
+
+    params.Isolated = false;
+    params.Knockout = true;
+    code = gs_begin_transparency_group(&fudged_pgs, &params, &cb, PDF14_BEGIN_TRANS_GROUP);
+
+    /* We have the group handle the blendmode and the opacity,
+     * and continue with the existing graphics state reset
+     * to normal, opaque operation. We could do it the other
+     * way around, but this way means that if we push a knockout
+     * group for a stroke, and then the code calls back into
+     * the fill operation as part of doing the stroking, we don't
+     * push another one. */
+    gs_setblendmode(pgs, BLEND_MODE_Normal);
+    gs_setopacityalpha(pgs, 1.0);
+    if (pdev) {
+        code = pdf14_clist_update_params(pdev, pgs, false, NULL);
+        if (code < 0)
+            return code;
+    }
+
+    return code;
+}
+
+static int
+pop_shfill_group(gs_gstate *pgs)
+{
+     return gs_end_transparency_group(pgs);
+}
+
+static int
 pdf14_fill_path(gx_device *dev,	const gs_gstate *pgs,
                            gx_path *ppath, const gx_fill_params *params,
                            const gx_drawing_color *pdcolor,
                            const gx_clip_path *pcpath)
 {
     gs_gstate new_pgs = *pgs;
-    int code;
+    int code = 0;
     gs_pattern2_instance_t *pinst = NULL;
+    int push_group = 0;
 
     if (pdcolor == NULL)
        return_error(gs_error_unknownerror);	/* color must be defined */
@@ -2936,20 +2989,52 @@ pdf14_fill_path(gx_device *dev,	const gs_gstate *pgs,
         }
     }
     if (gx_dc_is_pattern2_color(pdcolor)) {
+        /* Non-idempotent blends require a transparency
+         * group to be pushed because shadings might
+         * paint several pixels twice. */
+        push_group = gs_currentopacityalpha(pgs) != 1.0 ||
+               !blend_is_idempotent(gs_currentblendmode(pgs));
         pinst =
             (gs_pattern2_instance_t *)pdcolor->ccolor.pattern;
-           pinst->saved->has_transparency = true;
-           /* The transparency color space operations are driven
-              by the pdf14 clist writer device.  */
-           pinst->saved->trans_device = dev;
+        pinst->saved->has_transparency = true;
+        /* The transparency color space operations are driven
+           by the pdf14 clist writer device.  */
+        pinst->saved->trans_device = dev;
     }
-    update_lop_for_pdf14(&new_pgs, pdcolor);
-    pdf14_set_marking_params(dev, pgs);
-    new_pgs.trans_device = dev;
-    new_pgs.has_transparency = true;
-    code = gx_default_fill_path(dev, &new_pgs, ppath, params, pdcolor, pcpath);
-    new_pgs.trans_device = NULL;
-    new_pgs.has_transparency = false;
+    if (push_group) {
+        gs_fixed_rect box;
+        if (pcpath)
+            gx_cpath_outer_box(pcpath, &box);
+        else
+            (*dev_proc(dev, get_clipping_box)) (dev, &box);
+        if (ppath) {
+            gs_fixed_rect path_box;
+
+            gx_path_bbox(ppath, &path_box);
+            if (box.p.x < path_box.p.x)
+                box.p.x = path_box.p.x;
+            if (box.p.y < path_box.p.y)
+                box.p.y = path_box.p.y;
+            if (box.q.x > path_box.q.x)
+                box.q.x = path_box.q.x;
+            if (box.q.y > path_box.q.y)
+                box.q.y = path_box.q.y;
+        }
+        code = push_shfill_group(NULL, &new_pgs, &box);
+    } else
+        update_lop_for_pdf14(&new_pgs, pdcolor);
+    pdf14_set_marking_params(dev, &new_pgs);
+    if (code >= 0) {
+        new_pgs.trans_device = dev;
+        new_pgs.has_transparency = true;
+        code = gx_default_fill_path(dev, &new_pgs, ppath, params, pdcolor, pcpath);
+        new_pgs.trans_device = NULL;
+        new_pgs.has_transparency = false;
+    }
+    if (code >= 0 && push_group) {
+        code = pop_shfill_group(&new_pgs);
+        pdf14_set_marking_params(dev, pgs);
+    }
     if (pinst != NULL){
         pinst->saved->trans_device = NULL;
     }
@@ -2963,11 +3048,72 @@ pdf14_stroke_path(gx_device *dev, const	gs_gstate	*pgs,
                              const gx_clip_path *pcpath)
 {
     gs_gstate new_pgs = *pgs;
+    int push_group = 0;
+    int code = 0;
 
-    update_lop_for_pdf14(&new_pgs, pdcolor);
-    pdf14_set_marking_params(dev, pgs);
-    return gx_default_stroke_path(dev, &new_pgs, ppath, params, pdcolor,
-                                  pcpath);
+    if (pdcolor == NULL)
+       return_error(gs_error_unknownerror);	/* color must be defined */
+    if (gx_dc_is_pattern2_color(pdcolor)) {
+        /* Non-idempotent blends require a transparency
+         * group to be pushed because shadings might
+         * paint several pixels twice. */
+        push_group = gs_currentopacityalpha(pgs) != 1.0 ||
+               !blend_is_idempotent(gs_currentblendmode(pgs));
+    }
+    if (push_group) {
+        gs_fixed_rect box;
+        if (pcpath)
+            gx_cpath_outer_box(pcpath, &box);
+        else
+            (*dev_proc(dev, get_clipping_box)) (dev, &box);
+        if (ppath) {
+            gs_fixed_rect path_box;
+            gs_fixed_point expansion;
+
+            gx_path_bbox(ppath, &path_box);
+            /* Expand the path bounding box by the scaled line width. */
+            if (gx_stroke_path_expansion(pgs, ppath, &expansion) < 0) {
+                /* The expansion is so large it caused a limitcheck. */
+                path_box.p.x = path_box.p.y = min_fixed;
+                path_box.q.x = path_box.q.y = max_fixed;
+            } else {
+                expansion.x += pgs->fill_adjust.x;
+                expansion.y += pgs->fill_adjust.y;
+                /*
+                 * It's theoretically possible for the following computations to
+                 * overflow, so we need to check for this.
+                 */
+                path_box.p.x = (path_box.p.x < min_fixed + expansion.x ? min_fixed :
+                                path_box.p.x - expansion.x);
+                path_box.p.y = (path_box.p.y < min_fixed + expansion.y ? min_fixed :
+                                path_box.p.y - expansion.y);
+                path_box.q.x = (path_box.q.x > max_fixed - expansion.x ? max_fixed :
+                                path_box.q.x + expansion.x);
+                path_box.q.y = (path_box.q.y > max_fixed - expansion.y ? max_fixed :
+                                path_box.q.y + expansion.y);
+            }
+            if (box.p.x < path_box.p.x)
+                box.p.x = path_box.p.x;
+            if (box.p.y < path_box.p.y)
+                box.p.y = path_box.p.y;
+            if (box.q.x > path_box.q.x)
+                box.q.x = path_box.q.x;
+            if (box.q.y > path_box.q.y)
+                box.q.y = path_box.q.y;
+        }
+        code = push_shfill_group(NULL, &new_pgs, &box);
+    } else
+        update_lop_for_pdf14(&new_pgs, pdcolor);
+    pdf14_set_marking_params(dev, &new_pgs);
+    if (code >= 0)
+        code = gx_default_stroke_path(dev, &new_pgs, ppath, params, pdcolor,
+                                      pcpath);
+    if (code >= 0 && push_group) {
+        code = pop_shfill_group(&new_pgs);
+        pdf14_set_marking_params(dev, &pgs);
+    }
+
+    return code;
 }
 
 static int
@@ -8462,6 +8608,7 @@ pdf14_clist_fill_path(gx_device	*dev, const gs_gstate *pgs,
     cmm_dev_profile_t *dev_profile, *fwd_profile;
     gsicc_rendering_param_t render_cond;
     cmm_profile_t *icc_profile_fwd, *icc_profile_dev;
+    int push_group = 0;
 
     code = dev_proc(dev, get_profile)(dev,  &dev_profile);
     if (code < 0)
@@ -8493,6 +8640,11 @@ pdf14_clist_fill_path(gx_device	*dev, const gs_gstate *pgs,
        mapping to the transparency group color space. */
 
     if (pdcolor != NULL && gx_dc_is_pattern2_color(pdcolor)) {
+        /* Non-idempotent blends require a transparency
+         * group to be pushed because shadings might
+         * paint several pixels twice. */
+        push_group = gs_currentopacityalpha(pgs) != 1.0 ||
+               !blend_is_idempotent(gs_currentblendmode(pgs));
         pinst =
             (gs_pattern2_instance_t *)pdcolor->ccolor.pattern;
            pinst->saved->has_transparency = true;
@@ -8500,12 +8652,40 @@ pdf14_clist_fill_path(gx_device	*dev, const gs_gstate *pgs,
               clist writer device.  */
            pinst->saved->trans_device = dev;
     }
-    update_lop_for_pdf14(&new_pgs, pdcolor);
-    new_pgs.trans_device = dev;
-    new_pgs.has_transparency = true;
-    code = gx_forward_fill_path(dev, &new_pgs, ppath, params, pdcolor, pcpath);
-    new_pgs.trans_device = NULL;
-    new_pgs.has_transparency = false;
+    if (push_group) {
+        gs_fixed_rect box;
+        if (pcpath)
+            gx_cpath_outer_box(pcpath, &box);
+        else
+            (*dev_proc(dev, get_clipping_box)) (dev, &box);
+        if (ppath) {
+            gs_fixed_rect path_box;
+
+            gx_path_bbox(ppath, &path_box);
+            if (box.p.x < path_box.p.x)
+                box.p.x = path_box.p.x;
+            if (box.p.y < path_box.p.y)
+                box.p.y = path_box.p.y;
+            if (box.q.x > path_box.q.x)
+                box.q.x = path_box.q.x;
+            if (box.q.y > path_box.q.y)
+                box.q.y = path_box.q.y;
+        }
+        code = push_shfill_group(pdev, &new_pgs, &box);
+    } else
+        update_lop_for_pdf14(&new_pgs, pdcolor);
+    if (code >= 0) {
+        new_pgs.trans_device = dev;
+        new_pgs.has_transparency = true;
+        code = gx_forward_fill_path(dev, &new_pgs, ppath, params, pdcolor, pcpath);
+        new_pgs.trans_device = NULL;
+        new_pgs.has_transparency = false;
+    }
+    if (code >= 0 && push_group) {
+        code = pop_shfill_group(&new_pgs);
+        if (code >= 0)
+            code = pdf14_clist_update_params(pdev, pgs, false, NULL);
+    }
     if (pinst != NULL){
         pinst->saved->trans_device = NULL;
     }
@@ -8524,8 +8704,9 @@ pdf14_clist_stroke_path(gx_device *dev,	const gs_gstate *pgs,
 {
     pdf14_clist_device * pdev = (pdf14_clist_device *)dev;
     gs_gstate new_pgs = *pgs;
-    int code;
+    int code = 0;
     gs_pattern2_instance_t *pinst = NULL;
+    int push_group = 0;
 
     /*
      * Ensure that that the PDF 1.4 reading compositor will have the current
@@ -8540,25 +8721,80 @@ pdf14_clist_stroke_path(gx_device *dev,	const gs_gstate *pgs,
        different color space, then we need to get the proper device information
        passed along so that we use the correct color procs and colorinfo about
        the transparency device and not the final target device */
-    if (pdcolor != NULL && gx_dc_is_pattern2_color(pdcolor) &&
-        pdev->trans_group_parent_cmap_procs != NULL) {
-        pinst =
-            (gs_pattern2_instance_t *)pdcolor->ccolor.pattern;
-           pinst->saved->has_transparency = true;
-           /* The transparency color space operations are driven
+    if (pdcolor != NULL && gx_dc_is_pattern2_color(pdcolor)) {
+        /* Non-idempotent blends require a transparency
+         * group to be pushed because shadings might
+         * paint several pixels twice. */
+        push_group = gs_currentopacityalpha(pgs) != 1.0 ||
+               !blend_is_idempotent(gs_currentblendmode(pgs));
+        if (pdev->trans_group_parent_cmap_procs != NULL) {
+            pinst =
+                (gs_pattern2_instance_t *)pdcolor->ccolor.pattern;
+            pinst->saved->has_transparency = true;
+            /* The transparency color space operations are driven
               by the pdf14 clist writer device.  */
-           pinst->saved->trans_device = dev;
+            pinst->saved->trans_device = dev;
+        }
     }
+    if (push_group) {
+        gs_fixed_rect box;
+        if (pcpath)
+            gx_cpath_outer_box(pcpath, &box);
+        else
+            (*dev_proc(dev, get_clipping_box)) (dev, &box);
+        if (ppath) {
+            gs_fixed_rect path_box;
+            gs_fixed_point expansion;
 
-    update_lop_for_pdf14(&new_pgs, pdcolor);
-    new_pgs.trans_device = dev;
-    new_pgs.has_transparency = true;
-    code = gx_forward_stroke_path(dev, &new_pgs, ppath, params, pdcolor, pcpath);
-    new_pgs.trans_device = NULL;
-    new_pgs.has_transparency = false;
-    if (pinst != NULL){
-        pinst->saved->trans_device = NULL;
+            gx_path_bbox(ppath, &path_box);
+            /* Expand the path bounding box by the scaled line width. */
+            if (gx_stroke_path_expansion(pgs, ppath, &expansion) < 0) {
+                /* The expansion is so large it caused a limitcheck. */
+                path_box.p.x = path_box.p.y = min_fixed;
+                path_box.q.x = path_box.q.y = max_fixed;
+            } else {
+                expansion.x += pgs->fill_adjust.x;
+                expansion.y += pgs->fill_adjust.y;
+                /*
+                 * It's theoretically possible for the following computations to
+                 * overflow, so we need to check for this.
+                 */
+                path_box.p.x = (path_box.p.x < min_fixed + expansion.x ? min_fixed :
+                                path_box.p.x - expansion.x);
+                path_box.p.y = (path_box.p.y < min_fixed + expansion.y ? min_fixed :
+                                path_box.p.y - expansion.y);
+                path_box.q.x = (path_box.q.x > max_fixed - expansion.x ? max_fixed :
+                                path_box.q.x + expansion.x);
+                path_box.q.y = (path_box.q.y > max_fixed - expansion.y ? max_fixed :
+                                path_box.q.y + expansion.y);
+            }
+            if (box.p.x < path_box.p.x)
+                box.p.x = path_box.p.x;
+            if (box.p.y < path_box.p.y)
+                box.p.y = path_box.p.y;
+            if (box.q.x > path_box.q.x)
+                box.q.x = path_box.q.x;
+            if (box.q.y > path_box.q.y)
+                box.q.y = path_box.q.y;
+        }
+        code = push_shfill_group(pdev, &new_pgs, &box);
+    } else
+        update_lop_for_pdf14(&new_pgs, pdcolor);
+
+    if (code >= 0) {
+        new_pgs.trans_device = dev;
+        new_pgs.has_transparency = true;
+        code = gx_forward_stroke_path(dev, &new_pgs, ppath, params, pdcolor, pcpath);
+        new_pgs.trans_device = NULL;
+        new_pgs.has_transparency = false;
     }
+    if (code >= 0 && push_group) {
+        code = pop_shfill_group(&new_pgs);
+        if (code >= 0)
+            code = pdf14_clist_update_params(pdev, pgs, false, NULL);
+    }
+    if (pinst != NULL)
+        pinst->saved->trans_device = NULL;
     return code;
 }
 
