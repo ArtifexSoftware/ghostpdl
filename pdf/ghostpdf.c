@@ -33,6 +33,7 @@
 #include "pdf_text.h"
 #include "pdf_page.h"
 #include "pdf_check.h"
+#include "pdf_optcontent.h"
 
 /*
  * Convenience routine to check if a given string exists in a dictionary
@@ -190,7 +191,7 @@ static int pdfi_dump_box(pdf_context *ctx, pdf_dict *page_dict, const char *Key)
  */
 static int pdfi_output_page_info(pdf_context *ctx, uint64_t page_num)
 {
-    int code, spots;
+    int code, spots = 0;
     bool known = false, transparent = false;
     double f;
     uint64_t page_offset = 0;
