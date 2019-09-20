@@ -627,10 +627,13 @@ gs_add_outputfile_control_path(gs_memory_t *mem, const char *fname)
 int
 gs_add_explicit_control_path(gs_memory_t *mem, const char *arg, gs_path_control_t control)
 {
-    char *p2, *p1 = (char *)arg + 17;
-    const char *lim = arg + strlen(arg);
+    char *p2, *p1 = (char *)arg;
+    const char *lim;
     int code = 0;
 
+    if (arg == NULL)
+        return 0;
+    lim = arg + strlen(arg);
     while (code >= 0 && p1 < lim && (p2 = strchr(p1, (int)gp_file_name_list_separator)) != NULL) {
         code = gs_add_control_path_len(mem, control, p1, (int)(p2 - p1));
         p1 = p2 + 1;
@@ -649,18 +652,21 @@ gs_add_control_path_len(const gs_memory_t *mem, gs_path_control_t type, const ch
     char *buffer;
     uint rlen;
 
+    if (path == NULL || len == 0)
+        return 0;
+
     if (mem == NULL || mem->gs_lib_ctx == NULL ||
         (core = mem->gs_lib_ctx->core) == NULL)
         return gs_error_unknownerror;
 
     switch(type) {
-        case 0:
+        case gs_permit_file_reading:
             control = &core->permit_reading;
             break;
-        case 1:
+        case gs_permit_file_writing:
             control = &core->permit_writing;
             break;
-        case 2:
+        case gs_permit_file_control:
             control = &core->permit_control;
             break;
         default:
@@ -714,6 +720,9 @@ gs_add_control_path_len(const gs_memory_t *mem, gs_path_control_t type, const ch
 int
 gs_add_control_path(const gs_memory_t *mem, gs_path_control_t type, const char *path)
 {
+    if (path == NULL)
+        return 0;
+
     return gs_add_control_path_len(mem, type, path, strlen(path));
 }
 
@@ -725,6 +734,9 @@ gs_remove_control_path_len(const gs_memory_t *mem, gs_path_control_t type, const
     gs_lib_ctx_core_t *core;
     char *buffer;
     uint rlen;
+
+    if (path == NULL || len == 0)
+        return 0;
 
     if (mem == NULL || mem->gs_lib_ctx == NULL ||
         (core = mem->gs_lib_ctx->core) == NULL)
@@ -774,6 +786,9 @@ gs_remove_control_path_len(const gs_memory_t *mem, gs_path_control_t type, const
 int
 gs_remove_control_path(const gs_memory_t *mem, gs_path_control_t type, const char *path)
 {
+    if (path == NULL)
+        return 0;
+
     return gs_remove_control_path_len(mem, type, path, strlen(path));
 }
 
