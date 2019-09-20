@@ -1323,6 +1323,24 @@ pl_main_set_string_param(pl_main_instance_t * pmi, const char *arg)
 }
 
 static int
+do_arg_match(const char **arg, const char *match, size_t match_len)
+{
+    const char *s = *arg;
+    if (strncmp(s, match, match_len) != 0)
+        return 0;
+    s += match_len;
+    if (*s == '=')
+        *arg = ++s;
+    else if (*s != 0)
+        return 0;
+    else
+        *arg = NULL;
+    return 1;
+}
+
+#define arg_match(A, B) do_arg_match(A, B, sizeof(B)-1)
+
+static int
 pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                         pl_interp_implementation_t * pjli)
 {
@@ -1422,19 +1440,19 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     break;
                 }
                 /* Now handle the explicitly added paths to the file control lists */
-                else if (strncmp(arg, "permit-file-read", 16) == 0) {
+                else if (arg_match(&arg, "permit-file-read")) {
                     code = gs_add_explicit_control_path(pmi->memory, arg, gs_permit_file_reading);
                     if (code < 0) return code;
                     break;
-                } else if (strncmp(arg, "permit-file-write", 17) == 0) {
+                } else if (arg_match(&arg, "permit-file-write")) {
                     code = gs_add_explicit_control_path(pmi->memory, arg, gs_permit_file_writing);
                     if (code < 0) return code;
                     break;
-                } else if (strncmp(arg, "permit-file-control", 19) == 0) {
+                } else if (arg_match(&arg, "permit-file-control")) {
                     code = gs_add_explicit_control_path(pmi->memory, arg, gs_permit_file_control);
                     if (code < 0) return code;
                     break;
-                } else if (strncmp(arg, "permit-file-all", 15) == 0) {
+                } else if (arg_match(&arg, "permit-file-all")) {
                     code = gs_add_explicit_control_path(pmi->memory, arg, gs_permit_file_reading);
                     if (code < 0) return code;
                     code = gs_add_explicit_control_path(pmi->memory, arg, gs_permit_file_writing);
