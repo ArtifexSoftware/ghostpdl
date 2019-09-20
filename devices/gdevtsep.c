@@ -1360,6 +1360,8 @@ tiffsep1_prn_close(gx_device * pdev)
                 goto done;
             }
             code = gx_device_close_output_file(pdev, name, tfdev->sep_file[comp_num]);
+            if (code >= 0)
+                code = gs_remove_control_path(pdev->memory, gs_permit_file_writing, name);
             if (code < 0) {
                 goto done;
             }
@@ -1868,6 +1870,8 @@ tiffsep_prn_close(gx_device * pdev)
                 goto done;
             }
             code = tiffsep_close_sep_file(pdevn, name, comp_num);
+            if (code >= 0)
+                code = gs_remove_control_path(pdevn->memory, gs_permit_file_writing, name);
             if (code < 0) {
                 goto done;
             }
@@ -2402,11 +2406,17 @@ tiffsep_print_page(gx_device_printer * pdev, gp_file * file)
              */
             if (tfdev->sep_file[comp_num] != NULL && fmt != NULL) {
                 code = tiffsep_close_sep_file(tfdev, name, comp_num);
+                if (code >= 0)
+                    code = gs_remove_control_path(tfdev->memory, gs_permit_file_writing, name);
                 if (code < 0)
                     return code;
             }
             /* Open the separation file, if not already open */
             if (tfdev->sep_file[comp_num] == NULL) {
+                code = gs_add_control_path(tfdev->memory, gs_permit_file_writing, name);
+                if (code < 0) {
+                    goto done;
+                }
                 code = gx_device_open_output_file((gx_device *)pdev, name,
                     true, true, &(tfdev->sep_file[comp_num]));
                 if (code < 0) {
@@ -2626,6 +2636,8 @@ cleanup:
                         continue;
                     }
                     code = tiffsep_close_sep_file(tfdev, name, comp_num);
+                    if (code >= 0)
+                        code = gs_remove_control_path(tfdev->memory, gs_permit_file_writing, name);
                     if (code < 0) {
                         code1 = code;
                     }
@@ -2738,6 +2750,10 @@ tiffsep1_print_page(gx_device_printer * pdev, gp_file * file)
 
         /* Open the separation file, if not already open */
         if (tfdev->sep_file[comp_num] == NULL) {
+            code = gs_add_control_path(tfdev->memory, gs_permit_file_writing, name);
+            if (code < 0) {
+                goto done;
+            }
             code = gx_device_open_output_file((gx_device *)pdev, name,
                     true, true, &(tfdev->sep_file[comp_num]));
             if (code < 0) {
@@ -2896,6 +2912,8 @@ tiffsep1_print_page(gx_device_printer * pdev, gp_file * file)
                     continue;
                 }
                 code = tiffsep_close_sep_file((tiffsep_device *)tfdev, name, comp_num);
+                if (code >= 0)
+                    code = gs_remove_control_path(tfdev->memory, gs_permit_file_writing, name);
                 if (code < 0) {
                     code1 = code;
                 }
