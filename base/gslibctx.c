@@ -1095,6 +1095,6 @@ int gs_lib_ctx_get_args(gs_lib_ctx_t *ctx, const char * const **argv)
         return 0;
 
     core = ctx->core;
-    *argv = core->argv;
+    *argv = (const char * const *)core->argv;
     return core->argc;
 }
