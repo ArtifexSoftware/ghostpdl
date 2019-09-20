@@ -839,7 +839,7 @@ set_debug_flags(const char *arg, char *flags)
  * number of arguments requested in the parameter arg_count.
  */
 static int
-parse_floats(gs_memory_t * mem, uint arg_count, char *arg, float *f)
+parse_floats(gs_memory_t * mem, uint arg_count, const char *arg, float *f)
 {
     int float_index = 0;
     char *tok, *l = NULL;
@@ -961,7 +961,7 @@ pl_main_post_args_init(pl_main_instance_t * pmi)
 }
 
 static int
-handle_dash_c(pl_main_instance_t *pmi, arg_list *pal, char **collected_commands, char **arg)
+handle_dash_c(pl_main_instance_t *pmi, arg_list *pal, char **collected_commands, const char **arg)
 {
     bool ats = pal->expand_ats;
     int code = 0;
@@ -1346,7 +1346,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
 {
     int code = 0;
     bool help = false;
-    char *arg = NULL;
+    const char *arg = NULL;
     gs_c_param_list *params = &pmi->params;
     int device_index = -1;
     char *collected_commands = NULL;
