@@ -90,15 +90,15 @@ pcl_execute_macro(const pcl_macro_t * pmac, pcl_state_t * pcs,
     r.limit = (const byte *)pmac + (gs_object_size(pcs->memory, pmac) - 1);
     pcs->macro_level++;
     code = pcl_process(&state, pcs, &r);
-    if (code < 0)
-        return code;
     pcs->macro_level--;
     if (after) {
-        code = do_copies(&saved, pcs, after);
-        if (code < 0)
-            return code;
+        int errcode = do_copies(&saved, pcs, after);
+        if (errcode < 0)
+            return errcode;
         memcpy(pcs, &saved, sizeof(*pcs));
     }
+    if (code < 0)
+        return code;
 #ifdef DEBUG
     if (gs_debug_c('i')) {
         pcl_dump_current_macro(pcs, "Finished macro execution");
