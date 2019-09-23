@@ -1207,13 +1207,10 @@ gx_device_open_output_file(const gx_device * dev, char *fname,
     char *pfname = (char *)gs_alloc_bytes(dev->memory, gp_file_name_sizeof, "gx_device_open_output_file(pfname)");
     int code;
 
-    if (gp_validate_path(dev->memory, fname, binary ? "wb" : "w") != 0)
-        return gs_error_invalidfileaccess;
-
     if (pfname == NULL) {
         code = gs_note_error(gs_error_VMerror);
 	goto done;
-     }
+    }
 
     if (strlen(fname) == 0) {
         code = gs_note_error(gs_error_undefinedfilename);
