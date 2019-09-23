@@ -683,6 +683,46 @@ gs_add_outputfile_control_path(gs_memory_t *mem, const char *fname)
 }
 
 int
+gs_remove_outputfile_control_path(gs_memory_t *mem, const char *fname)
+{
+    char *fp, f[gp_file_name_sizeof];
+    const int pipe = 124; /* ASCII code for '|' */
+    const int len = strlen(fname);
+
+    /* Be sure the string copy will fit */
+    if (len >= gp_file_name_sizeof)
+        return gs_error_rangecheck;
+    strcpy(f, fname);
+    fp = f;
+    /* Try to rewrite any %d (or similar) in the string */
+    if (!rewrite_percent_specifiers(f)) {
+        /* No %d found, so check for pipes */
+        int i;
+        fp = f;
+        for (i = 0; i < len; i++) {
+            if (f[i] == pipe) {
+               int code;
+
+               fp = &f[i + 1];
+               /* Because we potentially have to check file permissions at two levels
+                  for the output file (gx_device_open_output_file and the low level
+                  fopen API, if we're using a pipe, we have to add both the full string,
+                  (including the '|', and just the command to which we pipe - since at
+                  the pipe_fopen(), the leading '|' has been stripped.
+                */
+               code = gs_remove_control_path(mem, gs_permit_file_writing, f);
+               if (code < 0)
+                   return code;
+               break;
+            }
+            if (!IS_WHITESPACE(f[i]))
+                break;
+        }
+    }
+    return gs_remove_control_path(mem, gs_permit_file_writing, fp);
+}
+
+int
 gs_add_explicit_control_path(gs_memory_t *mem, const char *arg, gs_path_control_t control)
 {
     char *p2, *p1 = (char *)arg;
