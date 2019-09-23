@@ -946,22 +946,37 @@ validate(const gs_memory_t *mem,
                     /* PATH=abc pattern=abcd */
                     break; /* No match */
             } else if (*b == '*') {
-                /* Skip over multiple '*'s - this is intended to
-                 * make life easier for the code constructing
-                 * patterns from OutputFile definitions. */
-                while (b[1] == '*')
+                if (b[1] == '*') {
+                    /* Multiple '*'s are taken to mean the
+                     * output from a printf. */
                     b++;
-                if (b[1] == 0)
-                    /* PATH=abc???? pattern=abc* */
-                    goto found;
-                /* Skip over anything except NUL, directory
-                 * separator, and the next char to match. */
-                while (*a && *a != ds[0] && *a != b[1])
-                    a++;
-                if (*a == 0 || *a == ds[0])
-                    break; /* No match */
+                    while (b[1] == '*')
+                        b++;
+                    /* Skip over the permissible matching chars */
+                    while (*a &&
+                           ((*a == ' ' || *a == '-' || *a == '+' ||
+                             (*a >= '0' && *a <= '9') ||
+                             (*a >= 'a' && *a <= 'f') ||
+                             (*a >= 'A' && *a <= 'F'))))
+                            a++;
+                    if (b[1] == 0 && *a == 0)
+                        /* PATH=abc<%d> pattern=abc** */
+                        goto found;
+                    if (*a == 0)
+                        break; /* No match */
+                } else {
+                    if (b[1] == 0)
+                        /* PATH=abc???? pattern=abc* */
+                        goto found;
+                    /* Skip over anything except NUL, directory
+                     * separator, and the next char to match. */
+                    while (*a && *a != ds[0] && *a != b[1])
+                        a++;
+                    if (*a == 0 || *a == ds[0])
+                        break; /* No match */
+                }
                 /* Continue matching */
-                a--;
+                a--; /* Subtract 1 as the loop will increment it again later */
             } else if (*b == 0) {
                 if (ends_in(control->paths[i], b - 1, ds, dslen)) {
                     const char *a2 = a;
