@@ -577,6 +577,64 @@ gs_check_file_permission (gs_memory_t *mem, const char *fname, const int len, co
     return code;
 }
 
+static int
+rewrite_percent_specifiers(char *s)
+{
+    char *match_start;
+
+    while (*s)
+    {
+        int flags;
+        /* Find a % */
+        while (*s && *s != '%')
+            s++;
+        if (*s == 0)
+            return 0;
+        match_start = s;
+        s++;
+        /* Skip over flags (just one instance of any given flag, in any order) */
+        flags = 0;
+        while (*s) {
+            if (*s == '-' && (flags & 1) == 0)
+                flags |= 1;
+            else if (*s == '+' && (flags & 2) == 0)
+                flags |= 2;
+            else if (*s == ' ' && (flags & 4) == 0)
+                flags |= 4;
+            else if (*s == '0' && (flags & 8) == 0)
+                flags |= 8;
+            else if (*s == '#' && (flags & 16) == 0)
+                flags |= 16;
+            else
+                break;
+            s++;
+        }
+        /* Skip over width */
+        while (*s >= '0' && *s <= '9')
+            s++;
+        /* Skip over .precision */
+        if (*s == '.' && s[1] >= '0' && s[1] <= '9') {
+            s++;
+            while (*s >= '0' && *s <= '9')
+                s++;
+        }
+        /* Skip over 'l' */
+        if (*s == 'l')
+            s++;
+        if (*s == 'd' ||
+            *s == 'i' ||
+            *s == 'u' ||
+            *s == 'o' ||
+            *s == 'x' ||
+            *s == 'X') {
+            /* Success! */
+            memset(match_start, '*', s - match_start + 1);
+            return 1;
+        }
+    }
+    return 0;
+}
+
 /* For the OutputFile permission we have to deal with formattable strings
    i.e. ones that have "%d" or similar in them. For these we want to replace
    everything after the %d with a wildcard "*".
@@ -587,18 +645,18 @@ gs_check_file_permission (gs_memory_t *mem, const char *fname, const int len, co
 int
 gs_add_outputfile_control_path(gs_memory_t *mem, const char *fname)
 {
-    char *fp, f[gp_file_name_sizeof] = {0};
-    const int percent = 37; /* ASCII code for '%' */
+    char *fp, f[gp_file_name_sizeof];
     const int pipe = 124; /* ASCII code for '|' */
     const int len = strlen(fname);
 
-    strncpy(f, fname, len);
-    fp = strchr(f, percent);
-    if (fp != NULL) {
-        fp[0] = '*';
-        fp[1] = '\0';
-        fp = f;
-    } else {
+    /* Be sure the string copy will fit */
+    if (len >= gp_file_name_sizeof)
+        return gs_error_rangecheck;
+    strcpy(f, fname);
+    fp = f;
+    /* Try to rewrite any %d (or similar) in the string */
+    if (!rewrite_percent_specifiers(f)) {
+        /* No %d found, so check for pipes */
         int i;
         fp = f;
         for (i = 0; i < len; i++) {
