@@ -444,6 +444,12 @@ pcl_font_header(pcl_args_t * pargs, pcl_state_t * pcs)
                     goto fail;
                 }
 
+                code =
+                    pl_fill_in_font((gs_font *) pfont, plfont, pcs->font_dir,
+                                    mem, "nameless_font");
+                if (code < 0)
+                    goto fail;
+
                 {
                     uint num_chars = pl_get_uint16(pfh->LastCode);
 
@@ -456,11 +462,6 @@ pcl_font_header(pcl_args_t * pargs, pcl_state_t * pcs)
                     if (code < 0)
                         goto fail;
                 }
-                code =
-                    pl_fill_in_font((gs_font *) pfont, plfont, pcs->font_dir,
-                                    mem, "nameless_font");
-                if (code < 0)
-                    goto fail;
                 code = pl_fill_in_tt_font(pfont, NULL, gs_next_ids(mem, 1));
                 if (code < 0)
                     goto fail;
@@ -515,8 +516,10 @@ pcl_font_header(pcl_args_t * pargs, pcl_state_t * pcs)
 
     code = pl_dict_put(&pcs->soft_fonts, current_font_id,
                 current_font_id_size, plfont);
-    if (code < 0)
-        goto fail;
+    if (code < 0) {
+        /* on error, pl_dict_put consumes plfont */
+        return code;
+    }
     plfont->pfont->procs.define_font = gs_no_define_font;
 
     if ((code = gs_definefont(pcs->font_dir, plfont->pfont)) != 0) {
@@ -525,6 +528,8 @@ pcl_font_header(pcl_args_t * pargs, pcl_state_t * pcs)
 
     if (plfont->scaling_technology == plfst_TrueType)
         code = pl_fapi_passfont(plfont, 0, NULL, NULL, NULL, 0);
+
+    return code;
 
 fail:
     if (code < 0)
