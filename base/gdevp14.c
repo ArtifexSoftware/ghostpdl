@@ -5827,6 +5827,8 @@ do_mark_fill_rectangle_ko_simple(gx_device *dev, int x, int y, int w, int h,
                 dst_ptr[num_comp * planestride] = dst[num_comp];
             }
             if (tag_off) {
+                /* FIXME: As we are knocking out, possibly, we should be
+                 * always overwriting tag values here? */
                 /* If src alpha is 100% then set to curr_tag, else or */
                 /* other than Normal BM, we always OR */
                 if (src[num_comp] == 255 && tag_blend) {
@@ -5835,14 +5837,11 @@ do_mark_fill_rectangle_ko_simple(gx_device *dev, int x, int y, int w, int h,
                     dst_ptr[tag_off] |= curr_tag;
                 }
             }
-            if (alpha_g_off) {
-                int tmp = (255 - dst_ptr[alpha_g_off]) * src_alpha + 0x80;
-                dst_ptr[alpha_g_off] = 255 - ((tmp + (tmp >> 8)) >> 8);
-            }
-            if (shape_off) {
-                int tmp = (255 - dst_ptr[shape_off]) * shape + 0x80;
-                dst_ptr[shape_off] = 255 - ((tmp + (tmp >> 8)) >> 8);
-            }
+            /* Knockout group alpha and shape too */
+            if (alpha_g_off)
+                dst_ptr[alpha_g_off] = 255 - src_alpha;
+            if (shape_off)
+                dst_ptr[shape_off] = 255 - shape;
             ++dst_ptr;
             ++bg_ptr;
         }
@@ -6008,6 +6007,8 @@ do_mark_fill_rectangle_ko_simple16(gx_device *dev, int x, int y, int w, int h,
                 dst_ptr[num_comp * planestride] = dst[num_comp];
             }
             if (tag_off) {
+                /* FIXME: As we are knocking out, possibly, we should be
+                 * always overwriting tag values here? */
                 /* If src alpha is 100% then set to curr_tag, else or */
                 /* other than Normal BM, we always OR */
                 if (src[num_comp] == 65535 && tag_blend) {
@@ -6016,14 +6017,11 @@ do_mark_fill_rectangle_ko_simple16(gx_device *dev, int x, int y, int w, int h,
                     dst_ptr[tag_off] |= curr_tag;
                 }
             }
-            if (alpha_g_off) {
-                int tmp = (65535 - dst_ptr[alpha_g_off]) * src_alpha + 0x8000;
-                dst_ptr[alpha_g_off] = 65535 - ((tmp + (tmp >> 16)) >> 16);
-            }
-            if (shape_off) {
-                int tmp = (65535 - dst_ptr[shape_off]) * shape + 0x8000;
-                dst_ptr[shape_off] = 65535 - ((tmp + (tmp >> 16)) >> 16);
-            }
+            /* Knockout group alpha and shape too */
+            if (alpha_g_off)
+                dst_ptr[alpha_g_off] = 65535 - src_alpha;
+            if (shape_off)
+                dst_ptr[shape_off] = 65535 - shape;
             ++dst_ptr;
             ++bg_ptr;
         }
