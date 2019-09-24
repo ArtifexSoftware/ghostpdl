@@ -2216,30 +2216,37 @@ readonly def
 ] def
 
 /.lockfileaccess {
-  [
-    //tempfilepaths (*) .generate_dir_list_templates
-    /FONTPATH .systemvar (*) .generate_dir_list_templates
-    /level2dict where {
-        pop
-        % Default resources :
-      [ currentsystemparams /GenericResourceDir get] (*) .generate_dir_list_templates
-    } if
-    /LIBPATH  .systemvar (*) .generate_dir_list_templates
-    currentuserparams /ICCProfilesDir known {
-      [currentuserparams /ICCProfilesDir get] (*)
-      .generate_dir_list_templates
-    } if
-  ] {/PermitFileReading exch .addcontrolpath} forall
+  .currentpathcontrolstate
+  {
+    (\n **** WARNING: .lockfileaccess or .setsafe called ****\n) print
+    ( **** when file access controls are already active ****\n) print flush
+  }
+  {
+    [
+      //tempfilepaths (*) .generate_dir_list_templates
+      /FONTPATH .systemvar (*) .generate_dir_list_templates
+      /level2dict where {
+          pop
+          % Default resources :
+        [ currentsystemparams /GenericResourceDir get] (*) .generate_dir_list_templates
+      } if
+      /LIBPATH  .systemvar (*) .generate_dir_list_templates
+      currentuserparams /ICCProfilesDir known {
+        [currentuserparams /ICCProfilesDir get] (*)
+        .generate_dir_list_templates
+      } if
+    ] {/PermitFileReading exch .addcontrolpath} forall
 
-  [
-    //tempfilepaths (*) .generate_dir_list_templates
-  ] {/PermitFileWriting exch .addcontrolpath} forall
+    [
+      //tempfilepaths (*) .generate_dir_list_templates
+    ] {/PermitFileWriting exch .addcontrolpath} forall
 
-  [
-    //tempfilepaths (*) .generate_dir_list_templates
-  ] {/PermitFileControl exch .addcontrolpath} forall
+    [
+      //tempfilepaths (*) .generate_dir_list_templates
+    ] {/PermitFileControl exch .addcontrolpath} forall
 
-  .activatepathcontrol
+    .activatepathcontrol
+  } ifelse
 } bind def
 
 /.locksafe_userparams {
@@ -2310,7 +2317,12 @@ currentdict /tempfilepaths undef
     if
     .locksafe
   }
-  {//.lockfileaccess exec}
+  {
+    //.lockfileaccess exec
+    DELAYBIND not {
+        //systemdict /SAFERUndefinePostScriptOperators .knownget {exec} if
+    } if
+  }
   ifelse
 } .bind executeonly odef
 %% --- End documented extensions ---
@@ -2351,9 +2363,14 @@ currentdict /tempfilepaths undef
     if
     //.locksafeglobal exec
   }
-  {//.lockfileaccess exec}
+  {
+    //.lockfileaccess exec
+    DELAYBIND not {
+        //systemdict /SAFERUndefinePostScriptOperators .knownget {exec} if
+    } if
+  }
   ifelse
-} .bind def
+} .bind executeonly odef
 
 % If we are running in SAFER mode, lock things down
 SAFER { .setsafeglobal } if
