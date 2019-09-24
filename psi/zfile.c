@@ -918,6 +918,18 @@ static int zactivatepathcontrol(i_ctx_t *i_ctx_p)
     gs_activate_path_control(imemory, 1);
     return 0;
 }
+static int zcurrentpathcontrolstate(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    push(1);
+    if (gs_is_path_control_active(imemory)) {
+        make_true(op);
+    }
+    else {
+        make_false(op);
+    }
+    return 0;
+}
 
 /* ------ Initialization procedure ------ */
 
@@ -940,6 +952,7 @@ const op_def zfile_op_defs[] =
     /* Control path operators */
     {"2.addcontrolpath", zaddcontrolpath},
     {"0.activatepathcontrol", zactivatepathcontrol},
+    {"0.currentpathcontrolstate", zcurrentpathcontrolstate},
     op_def_end(0)
 };
 
