@@ -3110,7 +3110,7 @@ pdf14_stroke_path(gx_device *dev, const	gs_gstate	*pgs,
                                       pcpath);
     if (code >= 0 && push_group) {
         code = pop_shfill_group(&new_pgs);
-        pdf14_set_marking_params(dev, &pgs);
+        pdf14_set_marking_params(dev, pgs);
     }
 
     return code;
