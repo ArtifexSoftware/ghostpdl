@@ -20,6 +20,7 @@
 #define gxfapiu_INCLUDED
 
 #include "gp.h"
+#include "ufstport.h"
 
 /* Set UFST callbacks. */
 /* Warning : the language switch project doesn't guarantee

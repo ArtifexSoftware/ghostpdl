@@ -20,9 +20,6 @@
 #ifndef gdevx_INCLUDED
 #  define gdevx_INCLUDED
 
-/* Define the type of an X pixel. */
-typedef unsigned long x_pixel;
-
 #include "gdevbbox.h"
 #include "gdevxcmp.h"
 
