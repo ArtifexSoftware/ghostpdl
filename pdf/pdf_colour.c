@@ -1592,7 +1592,7 @@ static int pdfi_create_DeviceN(pdf_context *ctx, pdf_array *color_array, int ind
 
     for (ix = 0;ix < pdfi_array_size(inks);ix++) {
         pdf_name *ink_name;
-        code = pdfi_array_get_type(ctx, inks, 0, PDF_NAME, (pdf_obj **)&ink_name);
+        code = pdfi_array_get_type(ctx, inks, ix, PDF_NAME, (pdf_obj **)&ink_name);
         if (code < 0)
             goto pdfi_devicen_error;
 
