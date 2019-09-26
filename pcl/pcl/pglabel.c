@@ -1539,9 +1539,15 @@ hpgl_LB(hpgl_args_t * pargs, hpgl_state_t * pgls)
         if (GL_LB_CH == CR && !pgls->g.transparent_data) {
             gs_point lo_offsets;
 
-            hpgl_call(hpgl_process_buffer(pgls, &lo_offsets));
+            code = hpgl_process_buffer(pgls, &lo_offsets);
             hpgl_destroy_label_buffer(pgls);
-            hpgl_call(hpgl_init_label_buffer(pgls));
+            if (code < 0)
+                return code;
+            code = hpgl_init_label_buffer(pgls);
+            if (code < 0) {
+                hpgl_free_stick_fonts(pgls);
+                return code;
+            }
         }
     }
     pargs->source.ptr = p;
