@@ -212,9 +212,11 @@ gs_tifsErrorHandlerEx(thandle_t client_data, const char* module, const char* fmt
 
 void tiff_set_handlers (void)
 {
-    /* Bad things happen if multiple callers are using libtiff
-     * with custom error/warning callbacks, so set them to NULL
-     * if we're using a libtiff shared lib
+    /* Bad things happen if we set custom error/warning
+     * handlers, and multiple callers are using the shared
+     * libtiff - our handlers may be triggered in the
+     * context of the other caller(s) meaning it's not
+     * our client_data being passed in.
      */
     (void)TIFFSetErrorHandler(NULL);
     (void)TIFFSetWarningHandler(NULL);
