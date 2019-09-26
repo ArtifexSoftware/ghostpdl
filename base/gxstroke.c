@@ -1053,9 +1053,9 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
         gx_path_free(&stroke_path_body, "gx_stroke_path_only error");   /* (only needed if error) */
     if (to_path_reverse == &stroke_path_reverse)
         gx_path_free(&stroke_path_reverse, "gx_stroke_path_only error");
+  exf:
     if (dash_count)
         gx_path_free(&dpath, "gx_stroke_path exit(dash path)");
-  exf:
     if (ppath->curve_count)
         gx_path_free(&fpath, "gx_stroke_path exit(flattened path)");
     return code;
