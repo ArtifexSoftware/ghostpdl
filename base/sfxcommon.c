@@ -82,8 +82,15 @@ file_open_stream(const char *fname, uint len, const char *file_access,
         return code;
     if (fname == 0)
         return 0;
-    if (fname[0] == 0)		/* fopen_proc gets NUL terminated string, not len */
-        return 0;		/* so this is the same as len == 0, so return NULL */
+    if (fname[0] == 0) {        /* fopen_proc gets NUL terminated string, not len */
+                                /* so this is the same as len == 0, so return NULL */
+        /* discard the stuff we allocated to keep from accumulating stuff needing GC */
+        gs_free_object(mem, (*ps)->cbuf, "file_close(buffer)");
+        gs_free_object(mem, *ps, "file_prepare_stream(stream)");
+        *ps = NULL;
+
+        return 0;
+    }
     code = (*fopen_proc)(iodev, (char *)(*ps)->cbuf, fmode, &file,
                          (char *)(*ps)->cbuf, (*ps)->bsize, mem);
     if (code < 0) {

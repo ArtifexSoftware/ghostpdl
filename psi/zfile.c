@@ -282,6 +282,8 @@ zfile(i_ctx_t *i_ctx_p)
     }
     if (code < 0)
         return code;
+    if (s == NULL)
+        return_error(gs_error_undefinedfilename);
     code = ssetfilename(s, op[-1].value.const_bytes, r_size(op - 1));
     if (code < 0) {
         sclose(s);
@@ -667,6 +669,7 @@ zlibfile(i_ctx_t *i_ctx_p)
         pname.iodev = iodev_dflt;
     if (pname.iodev != iodev_dflt) { /* Non-OS devices don't have search paths (yet). */
         code = zopen_file(i_ctx_p, &pname, "r", &s, imemory);
+        if (s == NULL) code = gs_note_error(gs_error_undefinedfilename);
         if (code >= 0) {
             code = ssetfilename(s, op->value.const_bytes, r_size(op));
             if (code < 0) {
