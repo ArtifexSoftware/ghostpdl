@@ -1909,6 +1909,13 @@ static int pdfi_create_DeviceGray(pdf_context *ctx, gs_color_space **ppcs)
         *ppcs = gs_cspace_new_DeviceGray(ctx->memory);
         if (*ppcs == NULL)
             code = gs_note_error(gs_error_VMerror);
+        else {
+            code = ((gs_color_space *)*ppcs)->type->install_cspace(*ppcs, ctx->pgs);
+            if (code < 0) {
+                rc_decrement_only_cs(*ppcs, "pdfi_create_DeviceGray");
+                *ppcs = NULL;
+            }
+        }
     } else {
         code = pdfi_gs_setgray(ctx, 1);
     }
@@ -1923,6 +1930,13 @@ static int pdfi_create_DeviceRGB(pdf_context *ctx, gs_color_space **ppcs)
         *ppcs = gs_cspace_new_DeviceRGB(ctx->memory);
         if (*ppcs == NULL)
             code = gs_note_error(gs_error_VMerror);
+        else {
+            code = ((gs_color_space *)*ppcs)->type->install_cspace(*ppcs, ctx->pgs);
+            if (code < 0) {
+                rc_decrement_only_cs(*ppcs, "pdfi_create_DeviceRGB");
+                *ppcs = NULL;
+            }
+        }
     } else {
         code = pdfi_gs_setrgbcolor(ctx, 0, 0, 0);
     }
@@ -1937,6 +1951,13 @@ static int pdfi_create_DeviceCMYK(pdf_context *ctx, gs_color_space **ppcs)
         *ppcs = gs_cspace_new_DeviceCMYK(ctx->memory);
         if (*ppcs == NULL)
             code = gs_note_error(gs_error_VMerror);
+        else {
+            code = ((gs_color_space *)*ppcs)->type->install_cspace(*ppcs, ctx->pgs);
+            if (code < 0) {
+                rc_decrement_only_cs(*ppcs, "pdfi_create_DeviceCMYK");
+                *ppcs = NULL;
+            }
+        }
     } else {
         code = pdfi_gs_setcmykcolor(ctx, 0, 0, 0, 1);
     }
