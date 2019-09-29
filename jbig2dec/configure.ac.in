@@ -27,7 +27,7 @@ AC_PROG_LIBTOOL
 
 # platform specific compiler flags
 if test "x$GCC" = xyes; then
-  CFLAGS="$CFLAGS -Wall"
+  CFLAGS="$CFLAGS -Wall -Wsign-compare"
 fi
 
 # Checks for libraries.
