@@ -236,7 +236,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
     uint32_t SYMWIDTH, TOTWIDTH;
     uint32_t HCFIRSTSYM;
     uint32_t *SDNEWSYMWIDTHS = NULL;
-    int SBSYMCODELEN = 0;
+    uint8_t SBSYMCODELEN = 0;
     Jbig2WordStream *ws = NULL;
     Jbig2HuffmanState *hs = NULL;
     Jbig2ArithState *as = NULL;
@@ -270,6 +270,8 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
         jbig2_word_stream_buf_free(ctx, ws);
         return NULL;
     }
+
+    for (SBSYMCODELEN = 0; ((uint64_t) 1 << SBSYMCODELEN) < ((uint64_t) params->SDNUMINSYMS + params->SDNUMNEWSYMS); SBSYMCODELEN++);
 
     if (params->SDHUFF) {
         jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, "huffman coded symbol dictionary");
@@ -311,7 +313,6 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
             jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate symbol bitmap");
             goto cleanup;
         }
-        for (SBSYMCODELEN = 0; ((uint64_t) 1 << SBSYMCODELEN) < ((uint64_t) params->SDNUMINSYMS + params->SDNUMNEWSYMS); SBSYMCODELEN++);
         tparams.IAID = jbig2_arith_iaid_ctx_new(ctx, SBSYMCODELEN);
         tparams.IARDX = jbig2_arith_int_ctx_new(ctx);
         tparams.IARDY = jbig2_arith_int_ctx_new(ctx);
@@ -432,7 +433,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                 code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "DW value (%d) would make SYMWIDTH (%u) negative at symbol %u", DW, SYMWIDTH, NSYMSDECODED + 1);
                 goto cleanup;
             }
-            if (DW > 0 && DW > UINT32_MAX - SYMWIDTH) {
+            if (DW > 0 && (uint32_t) DW > UINT32_MAX - SYMWIDTH) {
                 code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "DW value (%d) would make SYMWIDTH (%u) too large at symbol %u", DW, SYMWIDTH, NSYMSDECODED + 1);
                 goto cleanup;
             }

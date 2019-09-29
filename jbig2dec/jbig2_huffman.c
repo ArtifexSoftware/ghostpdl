@@ -2072,13 +2072,13 @@ static int test2()
         return 0;
     }
 
-    for (i = 0; i < countof(tests); i++) {
+    for (i = 0; i < (int) countof(tests); i++) {
         Jbig2HuffmanTable *table;
         Jbig2HuffmanState *hs;
         test_stream_t st;
         int32_t code;
         bool oob;
-        int j;
+        size_t j;
 
         st.ws.get_next_word = test_get_word2;
         st.h = &tests[i];

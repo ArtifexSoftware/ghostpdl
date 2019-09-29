@@ -37,12 +37,12 @@
 #include "jbig2_arith_iaid.h"
 
 struct _Jbig2ArithIaidCtx {
-    int SBSYMCODELEN;
+    uint8_t SBSYMCODELEN;
     Jbig2ArithCx *IAIDx;
 };
 
 Jbig2ArithIaidCtx *
-jbig2_arith_iaid_ctx_new(Jbig2Ctx *ctx, int SBSYMCODELEN)
+jbig2_arith_iaid_ctx_new(Jbig2Ctx *ctx, uint8_t SBSYMCODELEN)
 {
     Jbig2ArithIaidCtx *result;
     size_t ctx_size;
@@ -80,7 +80,7 @@ int
 jbig2_arith_iaid_decode(Jbig2Ctx *ctx, Jbig2ArithIaidCtx *actx, Jbig2ArithState *as, int32_t *p_result)
 {
     Jbig2ArithCx *IAIDx = actx->IAIDx;
-    int SBSYMCODELEN = actx->SBSYMCODELEN;
+    uint8_t SBSYMCODELEN = actx->SBSYMCODELEN;
     /* A.3 (1) */
     int PREV = 1;
     int D;

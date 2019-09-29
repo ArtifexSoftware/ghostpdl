@@ -31,7 +31,7 @@
 
 struct _Jbig2ArithState {
     uint32_t C;
-    int A;
+    uint32_t A;
 
     int CT;
 
@@ -228,7 +228,7 @@ jbig2_arith_new(Jbig2Ctx *ctx, Jbig2WordStream *ws)
 
 /* could put bit fields in to minimize memory usage */
 typedef struct {
-    unsigned short Qe;
+    uint16_t Qe;
     byte mps_xor;               /* mps_xor = index ^ NMPS */
     byte lps_xor;               /* lps_xor = index ^ NLPS ^ (SWITCH << 7) */
 } Jbig2ArithQe;

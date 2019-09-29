@@ -23,7 +23,7 @@
 typedef struct {
     int n_patterns;
     Jbig2Image **patterns;
-    int HPW, HPH;
+    uint32_t HPW, HPH;
 } Jbig2PatternDict;
 
 /* Table 24 */
