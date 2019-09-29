@@ -376,7 +376,6 @@ error_callback(void *error_callback_data, const char *buf, Jbig2Severity severit
 {
     jbig2dec_error_callback_state_t *state = (jbig2dec_error_callback_state_t *) error_callback_data;
     char *type;
-    char segment[22];
     int len;
     char *message;
 
@@ -403,27 +402,25 @@ error_callback(void *error_callback_data, const char *buf, Jbig2Severity severit
         type = "unknown message";
         break;
     }
-    if (seg_idx == -1)
-        segment[0] = '\0';
-    else
-        snprintf(segment, sizeof(segment), "(segment 0x%02x)", seg_idx);
 
-    len = snprintf(NULL, 0, "jbig2dec %s %s %s", type, buf, segment);
-    if (len < 0) {
-        return;
-    }
+    /* Worst case length using format "jbig2dec %s %s (segment 0x%02x)".
+    strlen("jbig2dec ") +
+    strlen(type) + strlen(" ") +
+    strlen(buf) + strlen(" ") +
+    strlen("(segment 0x") + strlen("2147483648") + strlen(")") +
+    1 for trailing NUL. The constant parts amount to 45 bytes. */
+    len = 45;
+    len += strlen(type);
+    len += strlen(buf);
 
     message = malloc(len + 1);
     if (message == NULL) {
         return;
     }
-
-    len = snprintf(message, len + 1, "jbig2dec %s %s %s", type, buf, segment);
-    if (len < 0)
-    {
-        free(message);
-        return;
-    }
+    if (seg_idx == -1)
+        snprintf(message, len + 1, "jbig2dec %s %s", type, buf);
+    else
+        snprintf(message, len + 1, "jbig2dec %s %s (segment 0x%02x)", type, buf, seg_idx);
 
     if (state->last_message != NULL && strcmp(message, state->last_message)) {
         if (state->repeats > 1)
