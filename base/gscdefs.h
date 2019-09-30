@@ -37,7 +37,7 @@
 
 #ifndef GS_PRODUCT
 #  define GS_PRODUCT\
-        GS_PRODUCTFAMILY " RELEASE CANDIDATE 3"
+        GS_PRODUCTFAMILY " RELEASE CANDIDATE 4"
 #endif
 
 /* Prototypes for configuration definitions in gconfig.c. */
