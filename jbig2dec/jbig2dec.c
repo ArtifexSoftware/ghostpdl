@@ -458,6 +458,7 @@ make_output_filename(const char *input_filename, const char *extension)
 {
     char *output_filename;
     const char *c, *e;
+    int extlen;
     int len;
 
     if (extension == NULL) {
@@ -488,16 +489,18 @@ make_output_filename(const char *input_filename, const char *extension)
     if (e != NULL)
         len -= strlen(e);
 
+    extlen = strlen(extension);
+
     /* allocate enough space for the base + ext */
-    output_filename = (char *)malloc(len + strlen(extension) + 1);
+    output_filename = (char *)malloc(len + extlen + 1);
     if (output_filename == NULL) {
         fprintf(stderr, "failed to allocate memory for output filename\n");
         exit(1);
     }
 
-    strncpy(output_filename, c, len);
-    strncpy(output_filename + len, extension, strlen(extension));
-    *(output_filename + len + strlen(extension)) = '\0';
+    memcpy(output_filename, c, len);
+    memcpy(output_filename + len, extension, extlen);
+    *(output_filename + len + extlen) = '\0';
 
     /* return the new string */
     return (output_filename);
