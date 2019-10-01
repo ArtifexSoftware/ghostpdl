@@ -775,6 +775,10 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         goto exit2;
     }
 
+    code = pdfi_trans_set_params(ctx, gs_getfillconstantalpha(ctx->pgs));
+    if (code < 0)
+        goto exit2;
+
     code = pdfi_shading_build(ctx, stream_dict, page_dict, Shading, &psh);
     if (code < 0)
         goto exit2;
