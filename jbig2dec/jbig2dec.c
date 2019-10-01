@@ -589,6 +589,8 @@ main(int argc, char **argv)
 cleanup:
     flush_errors(&params);
     jbig2_ctx_free(ctx);
+    if (params.last_message)
+        free(params.last_message);
     if (params.output_filename)
         free(params.output_filename);
     if (params.hash)

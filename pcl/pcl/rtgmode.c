@@ -333,7 +333,10 @@ pcl_enter_graphics_mode(pcl_state_t * pcs, pcl_gmode_entry_t mode)
     if (code < 0) return code;
     code = pcl_set_drawing_color(pcs, pcs->pattern_type, pcs->current_pattern_id,
                           true);
-    if (code < 0) return code;
+    if (code < 0) {
+        (void)pcl_grestore(pcs);
+        return code;
+    }
     gs_setmatrix(pcs->pgs, &rst2dev);
 
     /* translate the origin of the forward transformation */
@@ -359,7 +362,7 @@ pcl_enter_graphics_mode(pcl_state_t * pcs, pcl_gmode_entry_t mode)
     if ((code = pcl_start_raster(src_wid, src_hgt, pcs)) >= 0)
         prstate->graphics_mode = true;
     else
-        code = pcl_grestore(pcs);
+        (void)pcl_grestore(pcs);
     return code;
 }
 
@@ -385,8 +388,9 @@ pcl_end_graphics_mode(pcl_state_t * pcs)
     /* transform the new point back to "pseudo print direction" space */
     pcl_invert_mtx(&(pcs->xfm_state.pd2dev_mtx), &dev2pd);
     gs_point_transform(cur_pt.x, cur_pt.y, &dev2pd, &cur_pt);
-    pcl_set_cap_x(pcs, (coord) (cur_pt.x + 0.5) - adjust_pres_mode(pcs),
+    code = pcl_set_cap_x(pcs, (coord) (cur_pt.x + 0.5) - adjust_pres_mode(pcs),
                   false, false);
+    if (code < 0) return code;
     return pcl_set_cap_y(pcs, (coord) (cur_pt.y + 0.5) - pcs->margins.top,
                          false, false, false, false);
 }

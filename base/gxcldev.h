@@ -42,6 +42,7 @@
 #define cmd_compress_const 3
 #define cmd_mask_compress_any\
   ((1 << cmd_compress_rle) | (1 << cmd_compress_cfe) | (1 << cmd_compress_const))
+
 /* Exported by gxclutil.c */
 void clist_rle_init(stream_RLE_state *ss);
 void clist_rld_init(stream_RLD_state *ss);
@@ -593,6 +594,10 @@ int cmd_write_page_rect_cmd(gx_device_clist_writer * cldev, int op);
  * greater than cmd_max_short_width_bytes (see above).
  */
 #define decompress_spread 0x200
+
+/* clist_copy_mono and clist_copy_color have a max_size, but tiles to the */
+/* cache do not (clist_change_bits and clist_change_tile).		  */
+#define allow_large_bitmap 0x400
 
 int cmd_put_bits(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                  const byte * data, uint width_bits, uint height,

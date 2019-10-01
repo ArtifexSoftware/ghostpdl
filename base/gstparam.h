@@ -55,6 +55,17 @@ typedef enum {
   "HardLight", "Overlay", "SoftLight", "Luminosity", "Hue",\
   "Saturation", "Color", "CompatibleOverprint", "Compatible"
 
+#define blend_is_idempotent(B)       \
+    (((((1<<BLEND_MODE_Multiply)   | \
+        (1<<BLEND_MODE_Screen)     | \
+        (1<<BLEND_MODE_Overlay)    | \
+        (1<<BLEND_MODE_ColorDodge) | \
+        (1<<BLEND_MODE_ColorBurn)  | \
+        (1<<BLEND_MODE_HardLight)  | \
+        (1<<BLEND_MODE_SoftLight)  | \
+        (1<<BLEND_MODE_Difference) | \
+        (1<<BLEND_MODE_Exclusion)) >> (B)) & 1) == 0)
+
 /* Define the parameter structure for a transparency group. */
 /* (Update gs_trans_group_params_init if these change.) */
 typedef struct gs_transparency_group_params_s {

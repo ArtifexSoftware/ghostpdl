@@ -243,6 +243,9 @@ int
 gs_add_outputfile_control_path(gs_memory_t *mem, const char *fname);
 
 int
+gs_remove_outputfile_control_path(gs_memory_t *mem, const char *fname);
+
+int
 gs_add_explicit_control_path(gs_memory_t *mem, const char *arg, gs_path_control_t control);
 
 int

@@ -469,7 +469,7 @@ gx_general_fill_path(gx_device * pdev, const gs_gstate * pgs,
                                         fo.fixed_flat,
                                         params->rule,
                                         pdevc,
-                                        (!fill_by_trapezoids && fo.fill_direct) ? -1 : (int)pgs->log_op);
+                                       (!fill_by_trapezoids && fo.fill_direct) ? -1 : (int)pgs->log_op);
         if (ppath == &ffpath)
             gx_path_free(ppath, "gx_general_fill_path");
         return code;

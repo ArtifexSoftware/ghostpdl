@@ -290,20 +290,6 @@ jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src, int x, int 
     h = src->height;
     ss = src->data;
 
-    if (x < 0) {
-        if (w < (uint32_t) -x)
-            w = 0;
-        else
-            w += x;
-        x = 0;
-    }
-    if (y < 0) {
-        if (h < (uint32_t) -y)
-            h = 0;
-        else
-            h += y;
-        y = 0;
-    }
     w = ((uint32_t) x + w < dst->width) ? w : ((dst->width >= (uint32_t) x) ? dst->width - (uint32_t) x : 0);
     h = ((uint32_t) y + h < dst->height) ? h : ((dst->height >= (uint32_t) y) ? dst->height - (uint32_t) y : 0);
 #ifdef JBIG2_DEBUG

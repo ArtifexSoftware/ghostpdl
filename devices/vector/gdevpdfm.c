@@ -266,54 +266,16 @@ pdfmark_make_rect(char str[MAX_RECT_STRING], const gs_rect * prect)
     str[stell(&s)] = 0;
 }
 
+#define MAX_BORDER_STRING 100
 /* Write a transformed Border value on a stream. */
 static int
 pdfmark_write_border(stream *s, const gs_param_string *str,
                      const gs_matrix *pctm)
 {
-    /*
-     * We don't preserve the entire CTM in the output, and it isn't clear
-     * what CTM is applicable to annotations anyway: we only attempt to
-     * handle well-behaved CTMs here.
-     */
-    uint size = str->size;
-#define MAX_BORDER_STRING 100
-    char chars[MAX_BORDER_STRING + 1];
-    double bx, by, c;
-    gs_point bpt, cpt;
-    const char *next;
+    int i;
 
-    if (str->size > MAX_BORDER_STRING)
-        return_error(gs_error_limitcheck);
-    memcpy(chars, str->data, size);
-    chars[size] = 0;
-    if (sscanf(chars, "[%lg %lg %lg", &bx, &by, &c) != 3)
-        return_error(gs_error_rangecheck);
-    gs_distance_transform(bx, by, pctm, &bpt);
-    gs_distance_transform(0.0, c, pctm, &cpt);
-    pprintg3(s, "[%g %g %g", fabs(bpt.x), fabs(bpt.y), fabs(cpt.x + cpt.y));
-    /*
-     * We don't attempt to do 100% reliable syntax checking here --
-     * it's just not worth the trouble.
-     */
-    next = strchr(chars + 1, ']');
-    if (next == 0)
-        return_error(gs_error_rangecheck);
-    if (next[1] != 0) {
-        /* Handle a dash array.  This is tiresome. */
-        double v;
-
-        stream_putc(s, '[');
-        while (next != 0 && sscanf(++next, "%lg", &v) == 1) {
-            gs_point vpt;
-
-            gs_distance_transform(0.0, v, pctm, &vpt);
-            pprintg1(s, "%g ", fabs(vpt.x + vpt.y));
-            next = strchr(next, ' ');
-        }
-        stream_putc(s, ']');
-    }
-    stream_putc(s, ']');
+    for (i = 0; i < str->size; i++)
+        stream_putc(s, str->data[i]);
     return 0;
 }
 
@@ -1969,18 +1931,11 @@ pdfmark_DOCINFO(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
      */
     cos_dict_t *const pcd = pdev->Info;
     int code = 0, i;
-    gs_memory_t *mem = pdev->pdf_memory;
 
     if (count & 1)
         return_error(gs_error_rangecheck);
     for (i = 0; code >= 0 && i < count; i += 2) {
         const gs_param_string *pair = pairs + i;
-        gs_param_string alt_pair[2];
-        const byte *vdata;	/* alt_pair[1].data */
-        uint vsize;		/* alt_pair[1].size */
-        byte *str = 0;
-
-        vsize = 0x0badf00d; /* Quiet compiler. */
 
         if (pdev->CompatibilityLevel >= 2.0) {
             if (!pdf_key_eq(pairs + i, "/ModDate") && !pdf_key_eq(pairs + i, "/CreationDate"))
@@ -2017,55 +1972,16 @@ pdfmark_DOCINFO(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
             }
         }
         if (pdf_key_eq(pairs + i, "/Producer")) {
-            /*
-             * If the string "Distiller" appears anywhere in the Producer,
-             * replace the Producer (or the part after a " + ") with our
-             * own name.
-             */
             string_match_params params;
-
-            memcpy(alt_pair, pairs + i, sizeof(alt_pair));
-            vdata = alt_pair[1].data;
-            vsize = alt_pair[1].size;
             params = string_match_params_default;
             params.ignore_case = true;
-            if (string_match(vdata, vsize, (const byte *)"*Distiller*",
-                             11, &params) ||
-                string_match(vdata, vsize,
-             (const byte *)"*\000D\000i\000s\000t\000i\000l\000l\000e\000r*",
-                             20, &params)
-                ) {
-                uint j;
-                char buf[PDF_MAX_PRODUCER];
-                int len;
 
-                for (j = vsize; j > 0 && vdata[--j] != '+'; )
-                    DO_NOTHING;
-                if (vsize - j > 2 && vdata[j] == '+') {
-                    ++j;
-                    while (j < vsize && vdata[j] == ' ')
-                        ++j;
-                }
-                /*
-                 * Replace vdata[j .. vsize) with our name.  Note that both
-                 * vdata/vstr and the default producer string are enclosed
-                 * in ().
-                 */
-                pdf_store_default_Producer(buf);
-                len = strlen(buf) - 1;
-                str = gs_alloc_string(mem, j + len, "Producer");
-                if (str == 0)
-                    return_error(gs_error_VMerror);
-                memcpy(str, vdata, j);
-                memcpy(str + j, buf + 1, len);
-                alt_pair[1].data = str;
-                alt_pair[1].size = vsize = j + len;
-                pair = alt_pair;
-            }
-        }
-        code = pdfmark_put_pair(pcd, pair);
-        if (str)
-            gs_free_string(mem, str, vsize, "Producer");
+            if (!string_match((const byte *)GS_PRODUCTFAMILY, strlen(GS_PRODUCTFAMILY), (const byte *)"GPL Ghostscript", 15, &params))
+                code = pdfmark_put_pair(pcd, pair);
+        } else
+            code = pdfmark_put_pair(pcd, pair);
+        if (code < 0)
+            break;
     }
     return code;
 }

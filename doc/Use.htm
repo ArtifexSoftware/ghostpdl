@@ -3073,6 +3073,17 @@ Separation and DeviceN colors.  For the general user this command option
 </dl>
 
 <dl>
+    <dt><code>-sBlendColorProfile=</code><em>filename</em></dt>
+<dd>With the PDF transparency imaging model, a color space can
+be specified within which the color blending operations are to
+take place. Some files lack this specification, in which case
+the blending occurs in the output device's native color space.  This
+dependency of blending color space on the device color model 
+can be avoided by using the above command to force a specific
+color space in which to perform the blending. </dd>
+</dl>
+
+<dl>
     <dt><code>-dColorAccuracy=</code><em>0/1/2</em></dt>
 <dd>Set the level of accuracy that should be used.  A setting of 0 will result in less accurate
 color rendering compared to a setting of 2.  However, the creation of a transformation
@@ -3437,7 +3448,7 @@ system permissions.</dd>
 <dl>
     <dt><code>-dSAFER</code></dt>
 <dd>
-Enables access controls on files. Access controls fall into three catagories,
+Enables access controls on files. Access controls fall into three categories,
 files from which Ghostscript is permitted to read, ones to which it is permitted
 to write, and ones over which it has &quot;control&quot; (i.e. delete/rename). These
 access controls apply to <strong>all</strong> files accessed via Ghostscript's internal
@@ -3477,17 +3488,17 @@ to do the equivalent of:
 <br><code>restore</code>
 </blockquote>
 <p>
-In that sequence, then <code>Postscript ops</code> would run with <code>SAFER</code> protection
+In that sequence, the <code>Postscript ops</code> would run with <code>SAFER</code> protection
 but after the restore, <code>SAFER</code> would no longer be in force. This is no longer the case.
 After the call to <code>.setsafe</code> the file controls are in force until the
-interpter exits. As the 9.28 and later implementation no longer restricts the
+interpreter exits. As the 9.28 and later implementation no longer restricts the
 operation of <code>setpagedevice</code>, and because this capability is <i>extremely</i>
 rarely used, we feel the improvement in security warrants the small reduction in
 flexibility.
 <p>
-Path matching is simple: we do not implement full featured &quot;globbing&quot; or
-regular expression matching (such complexity would significantly and negatively
-impact performance). The following cases are handled:
+Path matching is simple: it is case sensitive, and we do not implement full featured
+&quot;globbing&quot; or regular expression matching (such complexity would significantly
+and negatively impact performance). The following cases are handled:
 <ul>
 <li>
 <dt><code>&quot;&sol;path&sol;to&sol;file&quot;</code></dt>
@@ -3503,29 +3514,35 @@ impact performance). The following cases are handled:
 any child of that directory.
 </li>
 </ul>
+<p><strong>Important Note for Windows Users</strong>:
+<br>
+The file/path pattern matching is case sensitive, even on Windows. This is a
+change in behaviour compared to the old code which, on Windows, was case
+<i>in</i>sensitive. This is in recognition of changes in Windows behaviour,
+in that it now supports (although does not enforce) case sensitivity.
 <p>
 Four command line parameters permit explicit control of the paths included in
 the access control lists:
 <ul>
-<li><dt><code>--permit-file-read<code></dt>
+<li><dt><code>--permit-file-read=<code><em>pathlist</em></dt>
 <p> Adds a path, or list of paths, to the "permit read" list. A list
 of paths is a series of paths separated by the appropriate path list separator
 for your platform (for example, on Unix-like systems it is &quot;&colon;&quot;
 and on MS Windows it is &quot;;&quot;).
 </li>
-<li><dt><code>--permit-file-write<code></dt>
+<li><dt><code>--permit-file-write=<code><em>pathlist</em></dt>
 <p> Adds a path, or list of paths, to the "permit write" list. A list
 of paths is a series of paths separated by the appropriate path list separator
 for your platform (for example, on Unix-like systems it is &quot;&colon;&quot;
 and on MS Windows it is &quot;;&quot;).
 </li>
-<li><dt><code>--permit-file-control<code></dt>
+<li><dt><code>--permit-file-control=<code><em>pathlist</em></dt>
 <p> Adds a path, or list of paths, to the "permit control" list. A list
 of paths is a series of paths separated by the appropriate path list separator
 for your platform (for example, on Unix-like systems it is &quot;&colon;&quot;
 and on MS Windows it is &quot;;&quot;).
 </li>
-<li><dt><code>--permit-file-all<code></dt>
+<li><dt><code>--permit-file-all=<code><em>pathlist</em></dt>
 <p> Adds a path, or list of paths, to the all the above lists. A list
 of paths is a series of paths separated by the appropriate path list separator
 for your platform (for example, on Unix-like systems it is &quot;&colon;&quot;
@@ -3533,10 +3550,14 @@ and on MS Windows it is &quot;;&quot;).
 </li>
 </ul>
 <p>
+'*' may be used as a wildcard in the above paths to mean "any
+character other than the directory separator. Do not use two
+or more *'s without intervening characters.
+<p>
 Finally, paths supplied on the command line (such as those in <code>-I</code>,
 <code>-sFONTPATH</code> parameters) are added to the permitted reading list.
 Similarly, paths read during initialisation from <code>Fontmap</code>, <code>cidfmap</code>,
-and the platform specific font file enumeration (i.e. <code>fontconfig</code> on Unix systems)
+and the platform specific font file enumeration (e.g. <code>fontconfig</code> on Unix systems)
 are automatically added to the permit read lists.
 </dd>
 </dl>

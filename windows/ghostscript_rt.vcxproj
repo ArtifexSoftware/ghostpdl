@@ -1028,6 +1028,7 @@
     <ClCompile Include="..\jbig2dec\jbig2_arith_int.c" />
     <ClCompile Include="..\jbig2dec\jbig2_generic.c" />
     <ClCompile Include="..\jbig2dec\jbig2_huffman.c" />
+    <ClCompile Include="..\jbig2dec\jbig2_hufftab.c" />
     <ClCompile Include="..\jbig2dec\jbig2_image.c" />
     <ClCompile Include="..\jbig2dec\jbig2_image_pbm.c" />
     <ClCompile Include="..\jbig2dec\jbig2_image_png.c" />

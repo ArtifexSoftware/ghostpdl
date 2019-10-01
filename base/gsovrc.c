@@ -1055,9 +1055,19 @@ overprint_copy_planes(gx_device * dev, const byte * data, int data_x, int raster
                                                x, y, w, h, plane_height);
     }
 }
+static void
+my_memset16_be(uint16_t *dst, uint16_t col, size_t w)
+{
+#if !ARCH_IS_BIG_ENDIAN
+    col = (col>>8) | (col<<8);
+#endif
+    while (w--) {
+        *dst++ = col;
+    }
+}
 
 /* Currently we really should only be here if the target device is planar
-   AND it supports devn colors AND is 8 bit. */
+   AND it supports devn colors AND is 8 or 16 bit. */
 static int
 overprint_fill_rectangle_hl_color(gx_device *dev,
     const gs_fixed_rect *rect, const gs_gstate *pgs,
@@ -1078,6 +1088,7 @@ overprint_fill_rectangle_hl_color(gx_device *dev,
     gx_color_index          comps = opdev->drawn_comps;
     gx_color_index          mask;
     int                     shift;
+    int                     deep;
 
     if (tdev == 0)
         return 0;
@@ -1094,6 +1105,7 @@ overprint_fill_rectangle_hl_color(gx_device *dev,
     byte_depth = depth / num_comps;
     mask = ((gx_color_index)1 << byte_depth) - 1;
     shift = 16 - byte_depth;
+    deep = byte_depth == 16;
 
     /* allocate a buffer for the returned data */
     raster = bitmap_raster(w * byte_depth);
@@ -1141,8 +1153,12 @@ overprint_fill_rectangle_hl_color(gx_device *dev,
                 operation we would just get the ones needed and set those. */
             if ((comps & 0x01) == 1) {
                 /* Not sure if a loop or a memset is better here */
-                memset(gb_params.data[k],
-                        ((pdcolor->colors.devn.values[k]) >> shift & mask), w);
+                if (deep)
+                    my_memset16_be((uint16_t *)(gb_params.data[k]),
+                                   pdcolor->colors.devn.values[k], w);
+                else
+                    memset(gb_params.data[k],
+                           ((pdcolor->colors.devn.values[k]) >> shift & mask), w);
             }
             comps >>= 1;
         }

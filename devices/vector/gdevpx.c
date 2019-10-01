@@ -714,6 +714,7 @@ pclxl_write_image_data_RLE(gx_device_pclxl * xdev, const byte * base,
     uint num_bytes = ROUND_UP(width_bytes, 4) * height;
     bool compress = num_bytes >= 8;
     int i;
+    int code;
 
     /* cannot handle data_bit not multiple of 8, but we don't invoke this routine that way */
     int offset = data_bit >> 3;
@@ -752,19 +753,20 @@ pclxl_write_image_data_RLE(gx_device_pclxl * xdev, const byte * base,
             r.ptr = data + i * raster - 1;
             r.limit = r.ptr + width_bytes;
             if ((*s_RLE_template.process)
-                ((stream_state *) & rlstate, &r, &w, true) != 0 ||
+                ((stream_state *) & rlstate, &r, &w, false) != 0 ||
                 r.ptr != r.limit)
                 goto ncfree;
             r.ptr = (const byte *)"\000\000\000\000\000";
             r.limit = r.ptr + (-(int)width_bytes & 3);
             if ((*s_RLE_template.process)
-                ((stream_state *) & rlstate, &r, &w, true) != 0 ||
+                ((stream_state *) & rlstate, &r, &w, false) != 0 ||
                 r.ptr != r.limit)
                 goto ncfree;
         }
         r.ptr = r.limit;
-        if ((*s_RLE_template.process)
-            ((stream_state *) & rlstate, &r, &w, true) != 0)
+        code = (*s_RLE_template.process)
+            ((stream_state *) & rlstate, &r, &w, true);
+        if (code != EOFC && code != 0)
             goto ncfree;
         {
             uint count = w.ptr + 1 - buf;

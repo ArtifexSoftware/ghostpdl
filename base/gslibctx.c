@@ -23,6 +23,7 @@
 #include "stdio_.h"
 #include "string_.h" /* memset */
 #include "gp.h"
+#include "gpmisc.h"
 #include "gsicc_manage.h"
 #include "gserrors.h"
 #include "gscdefs.h"            /* for gs_lib_device_list */
@@ -576,6 +577,64 @@ gs_check_file_permission (gs_memory_t *mem, const char *fname, const int len, co
     return code;
 }
 
+static int
+rewrite_percent_specifiers(char *s)
+{
+    char *match_start;
+
+    while (*s)
+    {
+        int flags;
+        /* Find a % */
+        while (*s && *s != '%')
+            s++;
+        if (*s == 0)
+            return 0;
+        match_start = s;
+        s++;
+        /* Skip over flags (just one instance of any given flag, in any order) */
+        flags = 0;
+        while (*s) {
+            if (*s == '-' && (flags & 1) == 0)
+                flags |= 1;
+            else if (*s == '+' && (flags & 2) == 0)
+                flags |= 2;
+            else if (*s == ' ' && (flags & 4) == 0)
+                flags |= 4;
+            else if (*s == '0' && (flags & 8) == 0)
+                flags |= 8;
+            else if (*s == '#' && (flags & 16) == 0)
+                flags |= 16;
+            else
+                break;
+            s++;
+        }
+        /* Skip over width */
+        while (*s >= '0' && *s <= '9')
+            s++;
+        /* Skip over .precision */
+        if (*s == '.' && s[1] >= '0' && s[1] <= '9') {
+            s++;
+            while (*s >= '0' && *s <= '9')
+                s++;
+        }
+        /* Skip over 'l' */
+        if (*s == 'l')
+            s++;
+        if (*s == 'd' ||
+            *s == 'i' ||
+            *s == 'u' ||
+            *s == 'o' ||
+            *s == 'x' ||
+            *s == 'X') {
+            /* Success! */
+            memset(match_start, '*', s - match_start + 1);
+            return 1;
+        }
+    }
+    return 0;
+}
+
 /* For the OutputFile permission we have to deal with formattable strings
    i.e. ones that have "%d" or similar in them. For these we want to replace
    everything after the %d with a wildcard "*".
@@ -586,18 +645,18 @@ gs_check_file_permission (gs_memory_t *mem, const char *fname, const int len, co
 int
 gs_add_outputfile_control_path(gs_memory_t *mem, const char *fname)
 {
-    char *fp, f[gp_file_name_sizeof] = {0};
-    const int percent = 37; /* ASCII code for '%' */
+    char *fp, f[gp_file_name_sizeof];
     const int pipe = 124; /* ASCII code for '|' */
     const int len = strlen(fname);
 
-    strncpy(f, fname, len);
-    fp = strchr(f, percent);
-    if (fp != NULL) {
-        fp[0] = '*';
-        fp[1] = '\0';
-        fp = f;
-    } else {
+    /* Be sure the string copy will fit */
+    if (len >= gp_file_name_sizeof)
+        return gs_error_rangecheck;
+    strcpy(f, fname);
+    fp = f;
+    /* Try to rewrite any %d (or similar) in the string */
+    if (!rewrite_percent_specifiers(f)) {
+        /* No %d found, so check for pipes */
         int i;
         fp = f;
         for (i = 0; i < len; i++) {
@@ -624,12 +683,55 @@ gs_add_outputfile_control_path(gs_memory_t *mem, const char *fname)
 }
 
 int
+gs_remove_outputfile_control_path(gs_memory_t *mem, const char *fname)
+{
+    char *fp, f[gp_file_name_sizeof];
+    const int pipe = 124; /* ASCII code for '|' */
+    const int len = strlen(fname);
+
+    /* Be sure the string copy will fit */
+    if (len >= gp_file_name_sizeof)
+        return gs_error_rangecheck;
+    strcpy(f, fname);
+    fp = f;
+    /* Try to rewrite any %d (or similar) in the string */
+    if (!rewrite_percent_specifiers(f)) {
+        /* No %d found, so check for pipes */
+        int i;
+        fp = f;
+        for (i = 0; i < len; i++) {
+            if (f[i] == pipe) {
+               int code;
+
+               fp = &f[i + 1];
+               /* Because we potentially have to check file permissions at two levels
+                  for the output file (gx_device_open_output_file and the low level
+                  fopen API, if we're using a pipe, we have to add both the full string,
+                  (including the '|', and just the command to which we pipe - since at
+                  the pipe_fopen(), the leading '|' has been stripped.
+                */
+               code = gs_remove_control_path(mem, gs_permit_file_writing, f);
+               if (code < 0)
+                   return code;
+               break;
+            }
+            if (!IS_WHITESPACE(f[i]))
+                break;
+        }
+    }
+    return gs_remove_control_path(mem, gs_permit_file_writing, fp);
+}
+
+int
 gs_add_explicit_control_path(gs_memory_t *mem, const char *arg, gs_path_control_t control)
 {
-    char *p2, *p1 = (char *)arg + 17;
-    const char *lim = arg + strlen(arg);
+    char *p2, *p1 = (char *)arg;
+    const char *lim;
     int code = 0;
 
+    if (arg == NULL)
+        return 0;
+    lim = arg + strlen(arg);
     while (code >= 0 && p1 < lim && (p2 = strchr(p1, (int)gp_file_name_list_separator)) != NULL) {
         code = gs_add_control_path_len(mem, control, p1, (int)(p2 - p1));
         p1 = p2 + 1;
@@ -645,71 +747,11 @@ gs_add_control_path_len(const gs_memory_t *mem, gs_path_control_t type, const ch
     gs_path_control_set_t *control;
     unsigned int n, i;
     gs_lib_ctx_core_t *core;
+    char *buffer;
+    uint rlen;
 
-    if (mem == NULL || mem->gs_lib_ctx == NULL ||
-        (core = mem->gs_lib_ctx->core) == NULL)
-        return gs_error_unknownerror;
-
-    switch(type) {
-        case 0:
-            control = &core->permit_reading;
-            break;
-        case 1:
-            control = &core->permit_writing;
-            break;
-        case 2:
-            control = &core->permit_control;
-            break;
-        default:
-            return gs_error_rangecheck;
-    }
-
-    n = control->num;
-    for (i = 0; i < n; i++)
-    {
-        if (strncmp(control->paths[i], path, len) == 0 &&
-            control->paths[i][len] == 0)
-            return 0; /* Already there! */
-    }
-
-    if (control->num == control->max) {
-        char **p;
-
-        n = control->max * 2;
-        if (n == 0) {
-            n = 4;
-            p = (char **)gs_alloc_bytes(core->memory, sizeof(*p)*n, "gs_lib_ctx(paths)");
-        } else
-            p = (char **)gs_resize_object(core->memory, control->paths, sizeof(*p)*n, "gs_lib_ctx(paths)");
-        if (p == NULL)
-            return gs_error_VMerror;
-        control->paths = p;
-        control->max = n;
-    }
-
-    n = control->num;
-    control->paths[n] = (char *)gs_alloc_bytes(core->memory, len+1, "gs_lib_ctx(path)");
-    if (control->paths[n] == NULL)
-        return gs_error_VMerror;
-    memcpy(control->paths[n], path, len);
-    control->paths[n][len] = 0;
-    control->num++;
-
-    return 0;
-}
-
-int
-gs_add_control_path(const gs_memory_t *mem, gs_path_control_t type, const char *path)
-{
-    return gs_add_control_path_len(mem, type, path, strlen(path));
-}
-
-int
-gs_remove_control_path_len(const gs_memory_t *mem, gs_path_control_t type, const char *path, size_t len)
-{
-    gs_path_control_set_t *control;
-    unsigned int n, i;
-    gs_lib_ctx_core_t *core;
+    if (path == NULL || len == 0)
+        return 0;
 
     if (mem == NULL || mem->gs_lib_ctx == NULL ||
         (core = mem->gs_lib_ctx->core) == NULL)
@@ -729,12 +771,105 @@ gs_remove_control_path_len(const gs_memory_t *mem, gs_path_control_t type, const
             return gs_error_rangecheck;
     }
 
+    rlen = len+1;
+    buffer = (char *)gs_alloc_bytes(core->memory, rlen, "gp_validate_path");
+    if (buffer == NULL)
+        return gs_error_VMerror;
+
+    if (gp_file_name_reduce(path, (uint)len, buffer, &rlen) != gp_combine_success)
+        return gs_error_invalidfileaccess;
+    buffer[rlen] = 0;
+
+    n = control->num;
+    for (i = 0; i < n; i++)
+    {
+        if (strncmp(control->paths[i], buffer, rlen) == 0 &&
+            control->paths[i][rlen] == 0) {
+            gs_free_object(core->memory, buffer, "gs_add_control_path_len");
+            return 0; /* Already there! */
+        }
+    }
+
+    if (control->num == control->max) {
+        char **p;
+
+        n = control->max * 2;
+        if (n == 0) {
+            n = 4;
+            p = (char **)gs_alloc_bytes(core->memory, sizeof(*p)*n, "gs_lib_ctx(paths)");
+        } else
+            p = (char **)gs_resize_object(core->memory, control->paths, sizeof(*p)*n, "gs_lib_ctx(paths)");
+        if (p == NULL) {
+            gs_free_object(core->memory, buffer, "gs_add_control_path_len");
+            return gs_error_VMerror;
+        }
+        control->paths = p;
+        control->max = n;
+    }
+
+    n = control->num;
+    control->paths[n] = buffer;
+    control->paths[n][len] = 0;
+    control->num++;
+
+    return 0;
+}
+
+int
+gs_add_control_path(const gs_memory_t *mem, gs_path_control_t type, const char *path)
+{
+    if (path == NULL)
+        return 0;
+
+    return gs_add_control_path_len(mem, type, path, strlen(path));
+}
+
+int
+gs_remove_control_path_len(const gs_memory_t *mem, gs_path_control_t type, const char *path, size_t len)
+{
+    gs_path_control_set_t *control;
+    unsigned int n, i;
+    gs_lib_ctx_core_t *core;
+    char *buffer;
+    uint rlen;
+
+    if (path == NULL || len == 0)
+        return 0;
+
+    if (mem == NULL || mem->gs_lib_ctx == NULL ||
+        (core = mem->gs_lib_ctx->core) == NULL)
+        return gs_error_unknownerror;
+
+    switch(type) {
+        case gs_permit_file_reading:
+            control = &core->permit_reading;
+            break;
+        case gs_permit_file_writing:
+            control = &core->permit_writing;
+            break;
+        case gs_permit_file_control:
+            control = &core->permit_control;
+            break;
+        default:
+            return gs_error_rangecheck;
+    }
+
+    rlen = len+1;
+    buffer = (char *)gs_alloc_bytes(core->memory, rlen, "gp_validate_path");
+    if (buffer == NULL)
+        return gs_error_VMerror;
+
+    if (gp_file_name_reduce(path, (uint)len, buffer, &rlen) != gp_combine_success)
+        return gs_error_invalidfileaccess;
+    buffer[rlen] = 0;
+
     n = control->num;
     for (i = 0; i < n; i++) {
-        if (strncmp(control->paths[i], path, len) == 0 &&
+        if (strncmp(control->paths[i], buffer, len) == 0 &&
             control->paths[i][len] == 0)
             break;
     }
+    gs_free_object(core->memory, buffer, "gs_remove_control_path_len");
     if (i == n)
         return 0;
 
@@ -749,6 +884,9 @@ gs_remove_control_path_len(const gs_memory_t *mem, gs_path_control_t type, const
 int
 gs_remove_control_path(const gs_memory_t *mem, gs_path_control_t type, const char *path)
 {
+    if (path == NULL)
+        return 0;
+
     return gs_remove_control_path_len(mem, type, path, strlen(path));
 }
 
@@ -915,20 +1053,23 @@ gs_lib_ctx_stash_sanitized_arg(gs_lib_ctx_t *ctx, const char *arg)
             if (*p == 0)
                 break; /* No value to elide */
             /* Check for our whitelisted values here */
-            if (!memcmp("DEFAULTPAPERSIZE", arg+2, p-arg-3))
+#define ARG_MATCHES(STR, ARG, LEN) \
+    (strlen(STR) == LEN && !memcmp(STR, ARG, LEN))
+            if (ARG_MATCHES("DEFAULTPAPERSIZE", arg+2, p-arg-3))
                 break;
-            if (!memcmp("DEVICE", arg+2, p-arg-3))
+            if (ARG_MATCHES("DEVICE", arg+2, p-arg-3))
                 break;
-            if (!memcmp("PAPERSIZE", arg+2, p-arg-3))
+            if (ARG_MATCHES("PAPERSIZE", arg+2, p-arg-3))
                 break;
-            if (!memcmp("SUBSTFONT", arg+2, p-arg-3))
+            if (ARG_MATCHES("SUBSTFONT", arg+2, p-arg-3))
                 break;
-            if (!memcmp("ColorConversionStrategy", arg+2, p-arg-3))
+            if (ARG_MATCHES("ColorConversionStrategy", arg+2, p-arg-3))
                 break;
-            if (!memcmp("PageList", arg+2, p-arg-3))
+            if (ARG_MATCHES("PageList", arg+2, p-arg-3))
                 break;
-            if (!memcmp("ProcessColorModel", arg+2, p-arg-3))
+            if (ARG_MATCHES("ProcessColorModel", arg+2, p-arg-3))
                 break;
+#undef ARG_MATCHES
             /* Didn't match a whitelisted value, so elide it. */
             elide = 1;
             break;
@@ -1052,6 +1193,6 @@ int gs_lib_ctx_get_args(gs_lib_ctx_t *ctx, const char * const **argv)
         return 0;
 
     core = ctx->core;
-    *argv = core->argv;
+    *argv = (const char * const *)core->argv;
     return core->argc;
 }

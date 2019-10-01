@@ -384,7 +384,7 @@ jbig2_data_in(Jbig2Ctx *ctx, const unsigned char *data, size_t size)
             if (ctx->state == JBIG2_FILE_RANDOM_BODIES) {
                 if (ctx->segment_index == ctx->n_segments)
                     ctx->state = JBIG2_FILE_EOF;
-            } else {            /* JBIG2_FILE_SEQUENCIAL_BODY */
+            } else {            /* JBIG2_FILE_SEQUENTIAL_BODY */
                 ctx->state = JBIG2_FILE_SEQUENTIAL_HEADER;
             }
             if (code < 0) {

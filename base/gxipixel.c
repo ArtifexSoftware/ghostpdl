@@ -970,7 +970,7 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
         code = gx_alloc_rop_texture_device(&rtdev, mem,
                                            "image RasterOp");
         if (code < 0)
-            return code;
+            goto fail;
         /* The 'target' must not be NULL for gx_make_rop_texture_device */
         if (!penum->clip_dev && !dev)
             return_error(gs_error_undefined);
@@ -1036,6 +1036,7 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
 fail:
     gs_free_object(mem, buffer, "image buffer");
     gs_free_object(mem, penum->clues, "gx_image_enum_begin");
+    gs_free_object(mem, penum->clip_dev, "image clipper");
     gs_free_object(mem, penum, "gx_begin_image1");
     return code;
 }

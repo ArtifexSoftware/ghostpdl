@@ -583,6 +583,11 @@ jbig2_table(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data)
                     code_table_flags, HTOOB, HTPS, HTRS, HTLOW, HTHIGH);
 #endif
 
+        if (HTLOW >= HTHIGH) {
+            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "invalid Huffman Table range");
+            goto error_exit;
+        }
+
         /* allocate HuffmanParams & HuffmanLine */
         params = jbig2_new(ctx, Jbig2HuffmanParams, 1);
         if (params == NULL) {
@@ -747,7 +752,7 @@ static int test1()
 {
     Jbig2Ctx *ctx;
     Jbig2HuffmanTable *tables[5];
-    Jbig2HuffmanState *hs;
+    Jbig2HuffmanState *hs = NULL;
     Jbig2WordStream ws;
     bool oob;
     int32_t code;
@@ -799,6 +804,7 @@ static int test1()
     success = 1;
 
 cleanup:
+    jbig2_huffman_free(ctx, hs);
     for (i = 0; i < 5; i++)
         jbig2_release_huffman_table(ctx, tables[i]);
     jbig2_ctx_free(ctx);

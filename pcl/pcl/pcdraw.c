@@ -92,7 +92,7 @@ pcl_set_drawing_color(pcl_state_t * pcs,
             code = pixmap_high_level_pattern(pcs->pgs);
         return code;
     }
-    return 0;
+    return code;
 }
 
 /*

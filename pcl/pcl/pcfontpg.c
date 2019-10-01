@@ -31,13 +31,21 @@
 #include "pllfont.h"
 
 /* utility procedure to print n blank lines */
-static inline void
+static int
 print_blank_lines(pcl_state_t * pcs, int count)
 {
+    int code = 0;
+
     while (count--) {
-        pcl_do_CR(pcs);
-        pcl_do_LF(pcs);
+        code = pcl_do_CR(pcs);
+        if (code < 0)
+            return code;
+        code = pcl_do_LF(pcs);
+        if (code < 0)
+            return code;
     }
+
+    return code;
 }
 
 static int
@@ -66,7 +74,9 @@ process_font(pcl_state_t * pcs, pl_font_t * fp)
             return gs_rethrow(code, "failed to display font");
 
         /* go to approx center of the page */
-        pcl_set_cap_x(pcs, pcs->margins.right / 2, false, false);
+        code = pcl_set_cap_x(pcs, pcs->margins.right / 2, false, false);
+        if (code < 0)
+            return gs_rethrow(code, "failed to set cap x\n");
 
         pcl_decache_font(pcs, -1, true);
 
@@ -85,15 +95,19 @@ process_font(pcl_state_t * pcs, pl_font_t * fp)
         if (code < 0)
             return gs_rethrow(code, "failed to display font");
 
-        pcl_set_cap_x(pcs, (coord) (pcs->margins.right / (16.0 / 15.0)),
+        code = pcl_set_cap_x(pcs, (coord) (pcs->margins.right / (16.0 / 15.0)),
                       false, false);
+        if (code < 0)
+            return gs_rethrow(code, "failed to set cap x\n");
         gs_sprintf(buff, "%d", fp->params.pjl_font_number);
 
         code = pcl_text((byte *) buff, strlen(buff), pcs, false);
         if (code < 0)
             return gs_rethrow(code, "failed to display font number");
     }
-    print_blank_lines(pcs, 2);
+    code = print_blank_lines(pcs, 2);
+    if (code < 0)
+        return gs_rethrow(code, "failed to print blank lines");
     return 0;
 }
 
@@ -122,19 +136,27 @@ pcl_print_font_page(pcl_args_t * pargs, pcl_state_t * pcs)
         /* assume the pcl font list string is 1 inch 7200 units */
         uint pos = pcs->margins.right / 2 - 7200 / 2;
 
-        pcl_set_cap_x(pcs, pos, false, false);
+        code = pcl_set_cap_x(pcs, pos, false, false);
+        if (code < 0)
+            return gs_rethrow(code, "failed to set cap x\n");
         code = pcl_text((byte *) header_str, hlen, pcs, false);
         if (code < 0)
             return gs_rethrow(code, "printing PCL Font List failed\n");
-        print_blank_lines(pcs, 2);
+        code = print_blank_lines(pcs, 2);
+        if (code < 0)
+            return gs_rethrow(code, "failed to print blank lines");
         code = pcl_text((byte *) sample_str, strlen(sample_str), pcs, false);
         if (code < 0)
             return gs_rethrow(code, "printing Sample failed\n");
-        pcl_set_cap_x(pcs, pcs->margins.right / 2, false, false);
+        code = pcl_set_cap_x(pcs, pcs->margins.right / 2, false, false);
+        if (code < 0)
+            return gs_rethrow(code, "failed to set cap x\n");
         code = pcl_text((byte *) select_str, strlen(select_str), pcs, false);
         if (code < 0)
             return gs_rethrow(code, "printing Font Selection Command failed\n");
-        print_blank_lines(pcs, 2);
+        code = print_blank_lines(pcs, 2);
+        if (code < 0)
+            return gs_rethrow(code, "failed to print blank lines");
     }
 
     /* enumerate all non-resident fonts. */

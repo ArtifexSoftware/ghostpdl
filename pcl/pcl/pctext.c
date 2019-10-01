@@ -618,8 +618,10 @@ show_char_background(pcl_state_t * pcs, const gs_char * pbuff)
         return code;
     if (pcs->pattern_transparent) {
         code = pcl_set_drawing_color(pcs, pcl_pattern_solid_white, 0, false);
-        if (code < 0)
+        if (code < 0) {
+            (void)pcl_grestore(pcs);
             return code;
+        }
     }
     if (((code = gs_setrasterop(pgs, (gs_rop3_t) rop3_know_S_1((int)rop))) < 0) ||
         ((code = gs_currentpoint(pgs, &pt)) < 0)) {
@@ -645,7 +647,7 @@ show_char_background(pcl_state_t * pcs, const gs_char * pbuff)
             gs_image_enum_alloc(gs_gstate_memory(pgs),
                                 "bitmap font background");
         if (pen == 0) {
-            pcl_grestore(pcs);
+            (void)pcl_grestore(pcs);
             return e_Memory;
         }
 
@@ -670,11 +672,12 @@ show_char_background(pcl_state_t * pcs, const gs_char * pbuff)
     } else {
         gs_text_params_t text;
         gs_rect bbox;
-        gs_text_enum_t *penum;
+        gs_text_enum_t *penum = NULL;
 
         /* clear the path; start the new one from the current point */
         if (((code = gs_newpath(pgs)) < 0) ||
             ((code = gs_moveto(pgs, pt.x, pt.y)) < 0)) {
+            (void)pcl_grestore(pcs);
             return code;
         }
         text.data.chars = pbuff;
@@ -690,10 +693,13 @@ show_char_background(pcl_state_t * pcs, const gs_char * pbuff)
                 (code = gs_rectappend(pgs, &bbox, 1)) >= 0 &&
                 (code = gs_eofill(pgs)) >= 0)
             {
-                gs_text_release(penum, "show_char_background");
+                /* fall through */
             }
-            else
-                return code;
+        }
+        gs_text_release(penum, "show_char_background");
+        if (code < 0) {
+            (void)pcl_grestore(pcs);
+            return code;
         }
     }
 
@@ -874,8 +880,12 @@ pcl_show_chars_slow(pcl_state_t * pcs,
                        function. */
                     pcs->cap.x = (coord) cpt.x;
                     pcs->cap.y = (coord) cpt.y;
-                    pcl_do_CR(pcs);
-                    pcl_do_LF(pcs);
+                    code = pcl_do_CR(pcs);
+                    if (code < 0)
+                        return code;
+                    code = pcl_do_LF(pcs);
+                    if (code < 0)
+                        return code;
                     cpt.x = pcs->cap.x;
                     cpt.y = pcs->cap.y;
                     use_rmargin = true;
@@ -1100,28 +1110,45 @@ pcl_plain_char(pcl_args_t * pargs, pcl_state_t * pcs)
 }
 
 /*
+ * Do any underlining just before a break in motion (vertical motion or
+ * negative horizontal motion)...
+ */
+int pcl_break_underline(pcl_state_t * pcs)
+{
+    int code = 0;
+
+    if (pcs->underline_enabled)
+        code = pcl_do_underline(pcs);
+
+    return code;
+}
+
+/*
  * draw underline up to current point, adjust status
  */
-void
+int
 pcl_do_underline(pcl_state_t * pcs)
 {
+    int code = 0;
+
     if (pcs->underline_start.x != pcs->cap.x) {
         gs_gstate *pgs = pcs->pgs;
         float y = pcs->underline_start.y + pcs->underline_position;
-        int code;
 
-        /* save the grapics state */
+        /* save the graphics state */
         code = pcl_gsave(pcs);
         if (code < 0)
-            return;
+            return code;
 
         code = pcl_set_drawing_color(pcs,
                                      pcs->pattern_type,
                                      pcs->current_pattern_id, false);
         if (code >= 0)
             code = pcl_set_graphics_state(pcs);
-        if (code < 0)
-            return;
+        if (code < 0) {
+            (void)pcl_grestore(pcs);
+            return code;
+        }
 
         /*
          * TRM says (8-34) that underline is 3 dots.  In a victory for
@@ -1132,10 +1159,13 @@ pcl_do_underline(pcl_state_t * pcs)
         if ((gs_moveto(pgs, pcs->underline_start.x, y) < 0) ||
             (gs_lineto(pgs, pcs->cap.x, y) < 0) ||
             (gs_stroke(pgs) < 0)) {
-            return;
+            (void)pcl_grestore(pcs);
+            return code;
         }
 
-        pcl_grestore(pcs);
+        code = pcl_grestore(pcs);
+        if (code < 0)
+            return code;
     }
 
     /*
@@ -1144,6 +1174,7 @@ pcl_do_underline(pcl_state_t * pcs)
      */
     pcs->underline_start = pcs->cap;
     pcs->underline_position = pcs->underline_floating ? 0.0 : dots(5);
+    return code;
 }
 
 /* ------ Commands ------ */
@@ -1205,14 +1236,16 @@ pcl_enable_underline(pcl_args_t * pargs, pcl_state_t * pcs)
 static int
 pcl_disable_underline(pcl_args_t * pargs, pcl_state_t * pcs)
 {
+    int code = 0;
+
     /* apparently disabling underlining has the side effect of
        flushing any pending underlines.  This side effect is not
        documented */
     if (pcs->underline_enabled == true) {
-        pcl_do_underline(pcs);
+        code = pcl_do_underline(pcs);
         pcs->underline_enabled = false;
     }
-    return 0;
+    return code;
 }
 
 /* (From PCL5 Comparison Guide, p. 1-56) */

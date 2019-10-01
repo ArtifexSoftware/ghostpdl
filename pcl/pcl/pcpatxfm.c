@@ -282,17 +282,18 @@ pcl_xfm_gl_set_pat_ref_pt(pcl_state_t * pcs)
 static int
 set_pat_ref_pt(pcl_args_t * pargs, pcl_state_t * pcs)
 {
+    int code = 0;
     uint rotate = uint_arg(pargs);
 
     if (rotate <= 1) {
-        pcl_break_underline(pcs);
+        code = pcl_break_underline(pcs);
         gs_point_transform((double) pcs->cap.x,
                            (double) pcs->cap.y,
                            &(pcs->xfm_state.pd2lp_mtx), &(pcs->pcl_pat_ref_pt)
             );
         pcs->rotate_patterns = (rotate == 0);
     }
-    return 0;
+    return code;
 }
 
 /*

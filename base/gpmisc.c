@@ -896,19 +896,6 @@ gp_enumerate_files_close(gs_memory_t *mem, file_enum * pfen)
  */
 
 static int
-ends_in(const char *first, const char *last, const char *ds, size_t len)
-{
-    while (len) {
-        if (last < first)
-            return 0; /* No match */
-        if (*last != ds[--len])
-            return 0; /* No match */
-        last--;
-    }
-    return 1;
-}
-
-static int
 validate(const gs_memory_t *mem,
          const char        *path,
          gs_path_control_t  type)
@@ -916,8 +903,6 @@ validate(const gs_memory_t *mem,
     gs_lib_ctx_core_t *core = mem->gs_lib_ctx->core;
     const gs_path_control_set_t *control;
     unsigned int i, n;
-    const char *ds = gp_file_name_directory_separator();
-    size_t dslen = strlen(ds);
 
     switch (type) {
         case gs_permit_file_reading:
@@ -946,29 +931,45 @@ validate(const gs_memory_t *mem,
                     /* PATH=abc pattern=abcd */
                     break; /* No match */
             } else if (*b == '*') {
-                /* Skip over multiple '*'s - this is intended to
-                 * make life easier for the code constructing
-                 * patterns from OutputFile definitions. */
-                while (b[1] == '*')
+                if (b[1] == '*') {
+                    /* Multiple '*'s are taken to mean the
+                     * output from a printf. */
                     b++;
-                if (b[1] == 0)
-                    /* PATH=abc???? pattern=abc* */
-                    goto found;
-                /* Skip over anything except NUL, directory
-                 * separator, and the next char to match. */
-                while (*a && *a != ds[0] && *a != b[1])
-                    a++;
-                if (*a == 0 || *a == ds[0])
-                    break; /* No match */
+                    while (b[1] == '*')
+                        b++;
+                    /* Skip over the permissible matching chars */
+                    while (*a &&
+                           ((*a == ' ' || *a == '-' || *a == '+' ||
+                             (*a >= '0' && *a <= '9') ||
+                             (*a >= 'a' && *a <= 'f') ||
+                             (*a >= 'A' && *a <= 'F'))))
+                            a++;
+                    if (b[1] == 0 && *a == 0)
+                        /* PATH=abc<%d> pattern=abc** */
+                        goto found;
+                    if (*a == 0)
+                        break; /* No match */
+                } else {
+                    if (b[1] == 0)
+                        /* PATH=abc???? pattern=abc* */
+                        goto found;
+                    /* Skip over anything except NUL, directory
+                     * separator, and the next char to match. */
+                    while (*a && !gs_file_name_check_separator(a, 1, a) && *a != b[1])
+                        a++;
+                    if (*a == 0 || *a == gs_file_name_check_separator(a, 1, a))
+                        break; /* No match */
+                }
                 /* Continue matching */
-                a--;
+                a--; /* Subtract 1 as the loop will increment it again later */
             } else if (*b == 0) {
-                if (ends_in(control->paths[i], b - 1, ds, dslen)) {
+                if (b != control->paths[i] &&
+                    gs_file_name_check_separator(b, -1, b)) {
                     const char *a2 = a;
                     const char *aend = path + strlen(path);
-                    while (aend - a2 >= dslen && memcmp(a2, ds, dslen))
+                    while (aend != a2 && !gs_file_name_check_separator(a2, 1, a2))
                       a2++;
-                    if (aend - a2 < dslen)
+                    if (aend != a2)
                       /* PATH=abc/? pattern=abc/ */
                       goto found; /* Bingo! */
                  }

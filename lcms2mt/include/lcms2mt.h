@@ -1644,6 +1644,8 @@ CMSAPI cmsUInt32Number  CMSEXPORT cmsGetSupportedIntents(cmsContext ContextID,
 // Copy alpha channels when transforming
 #define cmsFLAGS_COPY_ALPHA               0x04000000 // Alpha channels are copied on cmsDoTransform()
 
+#define cmsFLAGS_FORCE_LINEARINTERP       0x08000000 // Force slower but more accurate interpolation
+
 // Fine-tune control over number of gridpoints
 #define cmsFLAGS_GRIDPOINTS(n)           (((n) & 0xFF) << 16)
 

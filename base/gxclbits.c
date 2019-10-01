@@ -150,6 +150,7 @@ cmd_compress_bitmap(stream_state * st, const byte * data, uint width_bits,
  * Return <0 if error, otherwise the compression method.
  * A return value of gs_error_limitcheck means that the bitmap was too big
  * to fit in the command reading buffer.
+ * This won't happen if the compression_mask has allow_large_bitmap set.
  * Note that this leaves room for the command and initial arguments,
  * but doesn't fill them in.
  */
@@ -159,15 +160,14 @@ cmd_put_bits(gx_device_clist_writer * cldev, gx_clist_state * pcls,
              int compression_mask, byte ** pdp, uint * psize)
 {
     uint short_raster, full_raster;
-    uint short_size =
-    clist_bitmap_bytes(width_bits, height,
-                       compression_mask & ~cmd_mask_compress_any,
-                       &short_raster, &full_raster);
+    uint short_size = clist_bitmap_bytes(width_bits, height,
+                          compression_mask & ~cmd_mask_compress_any,
+                          &short_raster, &full_raster);
     uint uncompressed_raster;
-    uint uncompressed_size =
-    clist_bitmap_bytes(width_bits, height, compression_mask,
+    uint uncompressed_size = clist_bitmap_bytes(width_bits, height, compression_mask,
                        &uncompressed_raster, &full_raster);
-    uint max_size = data_bits_size - op_size;
+    uint max_size = (compression_mask & allow_large_bitmap) ? 0x7fffffff :
+                        data_bits_size - op_size;
     gs_memory_t *mem = cldev->memory;
     byte *dp;
     int compress = 0;
@@ -699,13 +699,15 @@ clist_change_tile(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                 if (tiles->num_planes != 1)
                     pdepth /= tiles->num_planes;
 
+                /* put the bits, but don't restrict to a single buffer */
                 code = cmd_put_bits(cldev, pcls, ts_bits(cldev, loc.tile),
                                     tiles->rep_width * pdepth,
                                     tiles->rep_height * tiles->num_planes,
                                     loc.tile->cb_raster, rsize,
-                                    (cldev->tile_params.size.x > tiles->rep_width ?
-                                     decompress_elsewhere | decompress_spread :
-                                     decompress_elsewhere),
+                                    allow_large_bitmap |
+                                        (cldev->tile_params.size.x > tiles->rep_width ?
+                                             decompress_elsewhere | decompress_spread :
+                                             decompress_elsewhere),
                                     &dp, &csize);
 
                 if (code < 0)
@@ -790,11 +792,13 @@ clist_change_bits(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                     pdepth /= loc.tile->num_planes;
             if (loc.tile->num_bands == CHAR_ALL_BANDS_COUNT)
                 bit_pcls = NULL;
+            /* put the bits, but don't restrict to a single buffer */
             code = cmd_put_bits(cldev, bit_pcls, ts_bits(cldev, loc.tile),
                                 loc.tile->width * pdepth,
                                 loc.tile->height * loc.tile->num_planes, loc.tile->cb_raster,
                                 rsize,
-                              decompress_elsewhere | (cldev->target->BLS_force_memory ? (1 << cmd_compress_cfe) : 0),
+                                decompress_elsewhere |
+                                    (cldev->target->BLS_force_memory ? (1 << cmd_compress_cfe) : 0),
                                 &dp, &csize);
 
             if (code < 0)

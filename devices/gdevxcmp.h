@@ -23,6 +23,9 @@
 #include "std.h"
 #include "gxcvalue.h"
 
+/* Define the type of an X pixel. */
+typedef unsigned long x_pixel;
+
 /*
  * The structure defined in this file is used in only one place, in the
  * gx_device_X structure defined in gdevx.h.  We define it as a separate

@@ -501,8 +501,8 @@ string_continue(i_ctx_t *i_ctx_p)
     es_ptr obj = esp - 1;
 
     if (r_size(obj)) {		/* continue */
-        r_dec_size(obj, 1);
-        push(1);
+        push(1);		/* check for result space on stack BEFORE changing string size */
+        r_dec_size(obj, 1);	/* Bug 701550 :-O */
         make_int(op, *obj->value.bytes);
         obj->value.bytes++;
         esp += 2;

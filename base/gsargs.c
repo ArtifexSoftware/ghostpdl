@@ -357,7 +357,12 @@ arg_next(arg_list * pal, const char **argstr, const gs_memory_t *errmem)
                 return_error(gs_error_Fatal);
             }
             fname = (char *)*argstr + 1; /* skip @ */
+
+            if (gs_add_control_path(pal->memory, gs_permit_file_reading, fname) < 0)
+                return_error(gs_error_Fatal);
+
             f = (*pal->arg_fopen) (fname, pal->fopen_data);
+            DISCARD(gs_remove_control_path(pal->memory, gs_permit_file_reading, fname));
             if (f == NULL) {
                 errprintf(errmem, "Unable to open command line file %s\n", *argstr);
                 return_error(gs_error_Fatal);

@@ -195,7 +195,7 @@ typedef struct {
     byte lps_xor;               /* lps_xor = index ^ NLPS ^ (SWITCH << 7) */
 } Jbig2ArithQe;
 
-const Jbig2ArithQe jbig2_arith_Qe[MAX_QE_ARRAY_SIZE] = {
+static const Jbig2ArithQe jbig2_arith_Qe[MAX_QE_ARRAY_SIZE] = {
     {0x5601, 1 ^ 0, 1 ^ 0 ^ 0x80},
     {0x3401, 2 ^ 1, 6 ^ 1},
     {0x1801, 3 ^ 2, 9 ^ 2},

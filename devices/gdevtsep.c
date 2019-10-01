@@ -96,7 +96,7 @@ tiffscaled_spec_op(gx_device *dev_, int op, void *data, int datasize)
     if (op == gxdso_supports_iccpostrender) {
         return true;
     }
-    return gx_default_dev_spec_op(dev_, op, data, datasize);
+    return gdev_prn_dev_spec_op(dev_, op, data, datasize);
 }
 
 /* ------ The tiffscaled device ------ */
@@ -524,7 +524,7 @@ tiffsep_spec_op(gx_device *dev_, int op, void *data, int datasize)
     if (op == gxdso_supports_iccpostrender || op == gxdso_supports_devn) {
         return true;
     }
-    return gx_default_dev_spec_op(dev_, op, data, datasize);
+    return gdev_prn_dev_spec_op(dev_, op, data, datasize);
 }
 
 /* ------ The cmyk devices ------ */
@@ -1360,6 +1360,8 @@ tiffsep1_prn_close(gx_device * pdev)
                 goto done;
             }
             code = gx_device_close_output_file(pdev, name, tfdev->sep_file[comp_num]);
+            if (code >= 0)
+                code = gs_remove_outputfile_control_path(pdev->memory, name);
             if (code < 0) {
                 goto done;
             }
@@ -1505,7 +1507,7 @@ copy_separation_name(tiffsep_device * pdev,
  * name.
  */
 static int
-length_base_file_name(tiffsep_device * pdev)
+length_base_file_name(tiffsep_device * pdev, bool *double_f)
 {
     int base_filename_length = strlen(pdev->fname);
 
@@ -1515,8 +1517,19 @@ length_base_file_name(tiffsep_device * pdev)
         pdev->fname[base_filename_length - 4] == '.'  &&
         toupper(pdev->fname[base_filename_length - 3]) == 'T'  &&
         toupper(pdev->fname[base_filename_length - 2]) == 'I'  &&
-        toupper(pdev->fname[base_filename_length - 1]) == 'F')
+        toupper(pdev->fname[base_filename_length - 1]) == 'F') {
         base_filename_length -= 4;
+        *double_f = false;
+    }
+    else if (base_filename_length > 5 &&
+        pdev->fname[base_filename_length - 5] == '.'  &&
+        toupper(pdev->fname[base_filename_length - 4]) == 'T'  &&
+        toupper(pdev->fname[base_filename_length - 3]) == 'I'  &&
+        toupper(pdev->fname[base_filename_length - 2]) == 'F'  &&
+        toupper(pdev->fname[base_filename_length - 1]) == 'F') {
+        base_filename_length -= 5;
+        *double_f = true;
+    }
 #endif
 #undef REMOVE_TIF_FROM_BASENAME
 
@@ -1530,7 +1543,8 @@ static int
 create_separation_file_name(tiffsep_device * pdev, char * buffer,
                                 uint max_size, int sep_num, bool use_sep_name)
 {
-    uint base_filename_length = length_base_file_name(pdev);
+    bool double_f = false;
+    uint base_filename_length = length_base_file_name(pdev, &double_f);
 
     /*
      * In most cases it is more convenient if we append '.tif' to the end
@@ -1564,9 +1578,16 @@ create_separation_file_name(tiffsep_device * pdev, char * buffer,
         strcat(buffer, ")");
 
 #if APPEND_TIF_TO_NAME
-    if (max_size < strlen(buffer) + SUFFIX_SIZE)
-        return_error(gs_error_rangecheck);
-    strcat(buffer, ".tif");
+    if (double_f) {
+        if (max_size < strlen(buffer) + SUFFIX_SIZE + 1)
+            return_error(gs_error_rangecheck);
+        strcat(buffer, ".tiff");
+    }
+    else {
+        if (max_size < strlen(buffer) + SUFFIX_SIZE)
+            return_error(gs_error_rangecheck);
+        strcat(buffer, ".tif");
+    }
 #endif
     return 0;
 }
@@ -1868,6 +1889,8 @@ tiffsep_prn_close(gx_device * pdev)
                 goto done;
             }
             code = tiffsep_close_sep_file(pdevn, name, comp_num);
+            if (code >= 0)
+                code = gs_remove_outputfile_control_path(pdevn->memory, name);
             if (code < 0) {
                 goto done;
             }
@@ -2300,7 +2323,8 @@ tiffsep_print_page(gx_device_printer * pdev, gp_file * file)
     int num_comp, comp_num, sep_num, code = 0, code1 = 0;
     cmyk_composite_map cmyk_map[GX_DEVICE_COLOR_MAX_COMPONENTS];
     char *name = NULL;
-    int base_filename_length = length_base_file_name(tfdev);
+    bool double_f = false;
+    int base_filename_length = length_base_file_name(tfdev, &double_f);
     int save_depth = pdev->color_info.depth;
     int save_numcomps = pdev->color_info.num_components;
     const char *fmt;
@@ -2402,11 +2426,17 @@ tiffsep_print_page(gx_device_printer * pdev, gp_file * file)
              */
             if (tfdev->sep_file[comp_num] != NULL && fmt != NULL) {
                 code = tiffsep_close_sep_file(tfdev, name, comp_num);
+                if (code >= 0)
+                    code = gs_remove_outputfile_control_path(tfdev->memory, name);
                 if (code < 0)
                     return code;
             }
             /* Open the separation file, if not already open */
             if (tfdev->sep_file[comp_num] == NULL) {
+                code = gs_add_outputfile_control_path(tfdev->memory, name);
+                if (code < 0) {
+                    goto done;
+                }
                 code = gx_device_open_output_file((gx_device *)pdev, name,
                     true, true, &(tfdev->sep_file[comp_num]));
                 if (code < 0) {
@@ -2626,6 +2656,8 @@ cleanup:
                         continue;
                     }
                     code = tiffsep_close_sep_file(tfdev, name, comp_num);
+                    if (code >= 0)
+                        code = gs_remove_outputfile_control_path(tfdev->memory, name);
                     if (code < 0) {
                         code1 = code;
                     }
@@ -2738,6 +2770,10 @@ tiffsep1_print_page(gx_device_printer * pdev, gp_file * file)
 
         /* Open the separation file, if not already open */
         if (tfdev->sep_file[comp_num] == NULL) {
+            code = gs_add_outputfile_control_path(tfdev->memory, name);
+            if (code < 0) {
+                goto done;
+            }
             code = gx_device_open_output_file((gx_device *)pdev, name,
                     true, true, &(tfdev->sep_file[comp_num]));
             if (code < 0) {
@@ -2896,6 +2932,8 @@ tiffsep1_print_page(gx_device_printer * pdev, gp_file * file)
                     continue;
                 }
                 code = tiffsep_close_sep_file((tiffsep_device *)tfdev, name, comp_num);
+                if (code >= 0)
+                    code = gs_remove_outputfile_control_path(tfdev->memory, name);
                 if (code < 0) {
                     code1 = code;
                 }

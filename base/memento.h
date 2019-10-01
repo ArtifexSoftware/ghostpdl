@@ -75,8 +75,7 @@
  * An example:
  *    Suppose we have a gs invocation that crashes with memory corruption.
  *     * Build with -DMEMENTO.
- *     * In your debugger put breakpoints on Memento_inited and
- *       Memento_Breakpoint.
+ *     * In your debugger put a breakpoint on Memento_breakpoint.
  *     * Run the program. It will stop in Memento_inited.
  *     * Execute Memento_setParanoia(1);  (In VS use Ctrl-Alt-Q). (Note #1)
  *     * Continue execution.
@@ -92,9 +91,9 @@
  *       and 1458 - so if we rerun and stop the program at 1457, we can then
  *       step through, possibly with a data breakpoint at 0x172e710 and see
  *       when it occurs.
- *     * So restart the program from the beginning. When we hit Memento_inited
- *       execute Memento_breakAt(1457); (and maybe Memento_setParanoia(1), or
- *       Memento_setParanoidAt(1457))
+ *     * So restart the program from the beginning. When we stop after
+ *       initialisation execute Memento_breakAt(1457); (and maybe
+ *       Memento_setParanoia(1), or Memento_setParanoidAt(1457))
  *     * Continue execution until we hit Memento_breakpoint.
  *     * Now you can step through and watch the memory corruption happen.
  *

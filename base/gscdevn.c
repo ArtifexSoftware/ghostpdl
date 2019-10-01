@@ -110,7 +110,7 @@ gs_cspace_new_DeviceN(
     gs_color_space *pcs;
     gs_device_n_params *pcsdevn;
     char **pnames;
-    int code;
+    int i, code;
 
     if (palt_cspace == 0 || !palt_cspace->type->can_be_alt_space)
         return_error(gs_error_rangecheck);
@@ -134,12 +134,13 @@ gs_cspace_new_DeviceN(
         return code;
     }
     pnames = (char **)gs_alloc_bytes(pcsdevn->mem, num_components * sizeof(char *), "gs_cspace_new_DeviceN");
-    memset(pnames, 0x00, num_components * sizeof(char *));
     if (pnames == 0) {
         gs_free_object(pmem, pcsdevn->map, ".gs_cspace_build_DeviceN(map)");
         gs_free_object(pmem, pcs, "gs_cspace_new_DeviceN");
         return_error(gs_error_VMerror);
     }
+    for (i=0; i<num_components; i++)
+        pnames[i] = (char *)"";		/* empty string for check_DeviceN_component_names */
     pcs->base_space = palt_cspace;
     rc_increment_cs(palt_cspace);
     pcsdevn->names = pnames;

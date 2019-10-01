@@ -855,13 +855,11 @@ display_put_params(gx_device * dev, gs_param_list * plist)
     int old_height = dev->height;
     int old_format = ddev->nFormat;
     void *old_handle = ddev->pHandle;
-
     gs_devn_params *pdevn_params = &ddev->devn_params;
     equivalent_cmyk_color_params *pequiv_colors = &ddev->equiv_cmyk_colors;
     /* Save current data in case we have a problem */
     gs_devn_params saved_devn_params = *pdevn_params;
     equivalent_cmyk_color_params saved_equiv_colors = *pequiv_colors;
-
     int format;
     void *handle;
     int found_string_handle = 0;
@@ -1015,11 +1013,11 @@ display_put_params(gx_device * dev, gs_param_list * plist)
         /* Use utility routine to handle devn parameters */
         ecode = devn_put_params(dev, plist, pdevn_params, pequiv_colors);
         /*
-         * Setting MaxSeparations changes color_info.depth in
-         * devn_put_params, but we always use 64bpp,
-         * so reset it to the the correct value.
+         * If we support_devn, setting MaxSeparations or PageSpotColors changed the
+         * color_info.depth in devn_put_params, but we always use 64bpp, so reset it
+         * to the correct value.
          */
-        dev->color_info.depth = ARCH_SIZEOF_COLOR_INDEX * 8;
+        ddev->color_info.depth = ARCH_SIZEOF_COLOR_INDEX * 8;
     }
 
     if (ecode >= 0) {
@@ -1100,7 +1098,15 @@ display_put_params(gx_device * dev, gs_param_list * plist)
             ddev->nFormat, ddev->mdev->base) < 0)
             return_error(gs_error_rangecheck);
     }
-
+        /*
+         * Make the color_info.depth correct for the bpc and num_components since
+         * devn mode always has the display bitmap set up for 64-bits, but others,
+         * such as pdf14 compositor expect it to match (for "deep" detection).
+         */
+        if (ddev->icc_struct && ddev->icc_struct->supports_devn) {
+            ddev->color_info.depth = ddev->devn_params.bitspercomponent *
+                                         ddev->color_info.num_components;
+        }
     return 0;
 }
 
@@ -1402,6 +1408,7 @@ display_alloc_bitmap(gx_device_display * ddev, gx_device * param_dev)
 {
     int ccode;
     const gx_device_memory *mdproto;
+
     if (ddev->callback == NULL)
         return gs_error_Fatal;
 
@@ -1467,6 +1474,10 @@ display_alloc_bitmap(gx_device_display * ddev, gx_device * param_dev)
         display_free_bitmap(ddev);
 
     /* erase bitmap - before display gets redrawn */
+    /*
+     * Note that this will fill all 64 bits even if we've reset depth in the
+     * devn case, since the underlying mdev is 64-bit (see above).
+     */
     if (ccode == 0) {
         int i;
         gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
@@ -1856,6 +1867,7 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
                 maxvalue, maxvalue);
             if ((nFormat & DISPLAY_DEPTH_MASK) == DISPLAY_DEPTH_8) {
                 ddev->devn_params.bitspercomponent = bpc;
+                ddev->icc_struct->supports_devn = true;
                 set_color_procs(pdev,
                     display_separation_encode_color,
                     display_separation_decode_color,

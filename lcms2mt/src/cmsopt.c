@@ -695,8 +695,10 @@ cmsBool OptimizeByResampling(cmsContext ContextID, cmsPipeline** Lut, cmsUInt32N
         }
     }
 
+    ContextID->dwFlags = *dwFlags;
     // Allocate the CLUT
     CLUT = cmsStageAllocCLut16bit(ContextID, nGridPoints, Src ->InputChannels, Src->OutputChannels, NULL);
+    ContextID->dwFlags = 0;
     if (CLUT == NULL) goto Error;
 
     // Add the CLUT to the destination LUT

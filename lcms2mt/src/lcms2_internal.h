@@ -517,6 +517,8 @@ struct _cmsContext_struct {
                                       // If NULL, then it reverts to global Context0
 
     _cmsMemPluginChunkType DefaultMemoryManager;  // The allocators used for creating the context itself. Cannot be overridden
+
+    cmsUInt32Number dwFlags;          // Horrid, but safe hack
 };
 
 // Returns a pointer to a valid context structure, including the global one if id is zero.
