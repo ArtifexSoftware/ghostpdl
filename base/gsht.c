@@ -985,7 +985,8 @@ gx_gstate_dev_ht_install(
             gx_ht_order *           p_s_order = &p_s_comp->corder;
             int                     comp_num = p_s_comp->comp_number;
 
-            if (comp_num >= 0 && comp_num < GX_DEVICE_COLOR_MAX_COMPONENTS) {
+            if (comp_num >= 0 && comp_num < GX_DEVICE_COLOR_MAX_COMPONENTS &&
+                comp_num < dht.num_comp) {
                 gx_ht_order *   p_d_order = &dht.components[comp_num].corder;
 
                 /* indicate that this order has been filled in */
