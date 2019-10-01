@@ -31,7 +31,7 @@
 /* (see pdf_draw.ps/execmaskgroup) */
 static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int colorindex)
 {
-    int code;
+    int code = 0, code1 = 0;
     pdf_dict *SMask = igs->SMask;
     gs_color_space *pcs = NULL;
     gs_rect bbox;
@@ -63,13 +63,20 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
     }
     /* If /Processed not in the dict, put it there */
     if (code == 0) {
+        /* the cleanup at end of this routine assumes both Key and Processed have a ref */
         code = pdfi_alloc_object(ctx, PDF_BOOL, 0, (pdf_obj **)&Processed);
         if (code < 0)
             goto exit;
         Processed->value = false;
+        /* pdfi_alloc_object() doesn't grab a ref */
         pdfi_countup(Processed);
+        /* pdfi_make_name() does grab a ref, so no need to countup */
         code = pdfi_make_name(ctx, (byte *)"Processed", strlen("Processed"), &Key);
+        if (code < 0)
+            goto exit;
         code = pdfi_dict_put(SMask, Key, (pdf_obj *)Processed);
+        if (code < 0)
+            goto exit;
     }
 
     /* See pdf1.7 pg 553 (pain in the butt to find this!) */
@@ -198,9 +205,11 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
         if (code < 0)
             goto exit;
 
-        /* TODO: Error handling... */
         code = pdfi_form_execgroup(ctx, ctx->CurrentPageDict, G_dict, igs->GroupGState);
-        code = gs_end_transparency_mask(ctx->pgs, colorindex);
+        code1 = gs_end_transparency_mask(ctx->pgs, colorindex);
+        if (code != 0)
+            code = code1;
+
         /* Put back the matrix (we couldn't just rely on gsave/grestore for whatever reason,
          * according to PS code anyway...
          */
