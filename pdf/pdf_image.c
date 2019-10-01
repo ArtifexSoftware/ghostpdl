@@ -30,6 +30,7 @@
 #include "pdf_optcontent.h"
 #include "stream.h"     /* for stell() */
 
+#include "gspath2.h"
 #include "gsiparm4.h"
 #include "gsiparm3.h"
 
@@ -1386,6 +1387,8 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_di
     bool do_group = false;
     pdf_array *FormMatrix = NULL;
     gs_matrix m;
+    gs_rect bbox;
+    pdf_array *BBox;
 
     dbgmprintf(ctx->memory, "pdfi_do_form BEGIN\n");
     code = pdfi_dict_known(form_dict, "Group", &group_known);
@@ -1416,6 +1419,13 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_di
     if (code < 0)
         goto exit1;
 
+    code = pdfi_dict_knownget_type(ctx, form_dict, "BBox", PDF_ARRAY, (pdf_obj **)&BBox);
+    if (code < 0)
+        goto exit1;
+    code = pdfi_array_to_gs_rect(ctx, BBox, &bbox);
+    if (code < 0)
+        goto exit1;
+
     code = pdfi_gsave(ctx);
     if (code < 0)
         goto exit1;
@@ -1424,6 +1434,10 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_di
     if (code < 0) {
         goto exit2;
     }
+
+    code = gs_rectclip(ctx->pgs, &bbox, 1);
+    if (code < 0)
+        goto exit1;
 
     if (do_group) {
         code = pdfi_form_execgroup(ctx, page_dict, form_dict, NULL);
@@ -1452,10 +1466,10 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_di
 
  exit:
     pdfi_countdown(FormMatrix);
-    if (code < 0) {
-        return code;
-    }
+    pdfi_countdown(BBox);
     dbgmprintf(ctx->memory, "pdfi_do_form END\n");
+    if (code < 0)
+        return code;
     return 0;
 }
 
