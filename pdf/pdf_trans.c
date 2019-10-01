@@ -48,8 +48,29 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
     double f;
     gs_matrix save_matrix, GroupMat, group_Matrix;
     gs_transparency_mask_subtype_t subtype = TRANSPARENCY_MASK_Luminosity;
+    pdf_bool *Processed = NULL;
+    pdf_obj *Key = NULL;
 
     dbgmprintf(ctx->memory, "pdfi_trans_set_mask (.execmaskgroup) BEGIN\n");
+
+    /* Following the logic of the ps code, cram a /Processed key in the SMask dict to
+     * track whether it's already been processed.
+     */
+    code = pdfi_dict_knownget_type(ctx, SMask, "Processed", PDF_BOOL, (pdf_obj **)&Processed);
+    if (code > 0 && Processed->value) {
+        dbgmprintf(ctx->memory, "SMask already built, skipping\n");
+        goto exit;
+    }
+    /* If /Processed not in the dict, put it there */
+    if (code == 0) {
+        code = pdfi_alloc_object(ctx, PDF_BOOL, 0, (pdf_obj **)&Processed);
+        if (code < 0)
+            goto exit;
+        Processed->value = false;
+        pdfi_countup(Processed);
+        code = pdfi_make_name(ctx, (byte *)"Processed", strlen("Processed"), &Key);
+        code = pdfi_dict_put(SMask, Key, (pdf_obj *)Processed);
+    }
 
     /* See pdf1.7 pg 553 (pain in the butt to find this!) */
     code = pdfi_dict_knownget_type(ctx, SMask, "Type", PDF_NAME, (pdf_obj **)&n);
@@ -176,12 +197,15 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
         code = gs_begin_transparency_mask(ctx->pgs, &params, &bbox, true);
         if (code < 0)
             goto exit;
+
         /* TODO: Error handling... */
         code = pdfi_form_execgroup(ctx, ctx->CurrentPageDict, G_dict, igs->GroupGState);
         code = gs_end_transparency_mask(ctx->pgs, colorindex);
         /* Put back the matrix (we couldn't just rely on gsave/grestore for whatever reason,
          * according to PS code anyway...
          */
+        if (Processed)
+            Processed->value = true;
         gs_setmatrix(ctx->pgs, &save_matrix);
     } else {
         /* take action on a non-/Mask entry. What does this mean ? What do we need to do */
@@ -200,6 +224,8 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
     pdfi_countdown(BBox);
     pdfi_countdown(Matrix);
     pdfi_countdown(CS);
+    pdfi_countdown(Processed);
+    pdfi_countdown(Key);
     dbgmprintf(ctx->memory, "pdfi_trans_set_mask (.execmaskgroup) END\n");
     return code;
 }
