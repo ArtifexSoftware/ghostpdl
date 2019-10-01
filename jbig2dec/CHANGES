@@ -1,14 +1,14 @@
-Version 0.17 (2019 September 16)
+Version 0.17 (2019 October 1)
 
-* Improved test suite by verifying input file contents and adding
-  all ubc test streams. Fixed bugs where previously missing ubc
-  test streams were decoded incorrectly.
-
-* Bug fixes for a few issues reported by Coverity.
+* Updated documentation with accurate contact information.
 
 * Moved version number to jbig2.h, and adapted configure
   correspondingly. Added pkg-config file to be installed
-  along side library.
+  along side library. Added run-time check of version
+  number so that the correct header is used with the matching
+  binary library.
+
+* Bug fixes.
 
 Version 0.16 (2019 April 04)
 
