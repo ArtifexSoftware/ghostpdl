@@ -1330,19 +1330,11 @@ int pdfi_EI(pdf_context *ctx)
 }
 
 /* see .execgroup */
-int pdfi_form_execgroup(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *xobject_dict, gs_gstate *GroupGState)
+int pdfi_form_execgroup(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *xobject_dict,
+                        gs_gstate *GroupGState, gs_matrix *matrix)
 {
     int code;
-    pdf_array *FormMatrix = NULL;
-    gs_matrix m;
     pdfi_int_gstate *igs = (pdfi_int_gstate *)ctx->pgs->client_data;
-
-    code = pdfi_dict_knownget_type(ctx, xobject_dict, "Matrix", PDF_ARRAY, (pdf_obj **)&FormMatrix);
-    if (code < 0)
-        goto exit;
-    code = pdfi_array_to_gs_matrix(ctx, FormMatrix, &m);
-    if (code < 0)
-        goto exit;
 
     code = pdfi_gsave(ctx);
     if (code < 0)
@@ -1351,7 +1343,7 @@ int pdfi_form_execgroup(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *xobject
     if (GroupGState) {
         code = gs_setgstate(ctx->pgs, GroupGState);
         if (code < 0)
-            goto exit;
+            goto exit2;
     }
 
     /* Disable the SMask */
@@ -1363,11 +1355,11 @@ int pdfi_form_execgroup(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *xobject
     gs_setstrokeconstantalpha(ctx->pgs, 1.0);
     gs_setfillconstantalpha(ctx->pgs, 1.0);
 
-    code = gs_concat(ctx->pgs, &m);
+    if (matrix)
+        code = gs_concat(ctx->pgs, matrix);
     if (code < 0) {
         goto exit2;
     }
-
     code = pdfi_run_context(ctx, xobject_dict, page_dict, false, "FORM");
 
  exit2:
@@ -1376,13 +1368,12 @@ int pdfi_form_execgroup(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *xobject
     else
         code = pdfi_grestore(ctx);
  exit:
-    pdfi_countdown(FormMatrix);
     return code;
 }
 
 static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_dict)
 {
-    int code;
+    int code, code1 = 0;
     bool group_known = false;
     bool do_group = false;
     pdf_array *FormMatrix = NULL;
@@ -1401,17 +1392,6 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_di
     if (code < 0)
         goto exit1;
 
-    if (do_group) {
-        code = pdfi_loop_detector_mark(ctx);
-        if (code < 0)
-            goto exit1;
-
-        code = pdfi_trans_begin_form_group(ctx, page_dict, form_dict);
-        (void)pdfi_loop_detector_cleartomark(ctx);
-        if (code < 0)
-            goto exit1;
-    }
-
     code = pdfi_dict_knownget_type(ctx, form_dict, "Matrix", PDF_ARRAY, (pdf_obj **)&FormMatrix);
     if (code < 0)
         goto exit1;
@@ -1426,13 +1406,9 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_di
     if (code < 0)
         goto exit1;
 
-    code = pdfi_gsave(ctx);
-    if (code < 0)
-        goto exit1;
-
     code = gs_concat(ctx->pgs, &m);
     if (code < 0) {
-        goto exit2;
+        goto exit1;
     }
 
     code = gs_rectclip(ctx->pgs, &bbox, 1);
@@ -1440,22 +1416,20 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_di
         goto exit1;
 
     if (do_group) {
-        code = pdfi_form_execgroup(ctx, page_dict, form_dict, NULL);
+        code = pdfi_loop_detector_mark(ctx);
+        if (code < 0)
+            goto exit1;
+
+        code = pdfi_trans_begin_form_group(ctx, page_dict, form_dict);
+        (void)pdfi_loop_detector_cleartomark(ctx);
+        if (code < 0)
+            goto exit1;
+        code = pdfi_form_execgroup(ctx, page_dict, form_dict, NULL, NULL);
+        code1 = pdfi_trans_end_group(ctx);
+        if (code < 0)
+            code = code1;
     } else {
         code = pdfi_interpret_inner_content_stream(ctx, form_dict, page_dict, false, "FORM");
-    }
-
- exit2:
-    if (code != 0)
-        (void)pdfi_grestore(ctx);
-    else
-        code = pdfi_grestore(ctx);
-
-    if (do_group) {
-        if (code < 0)
-            (void)pdfi_trans_end_group(ctx);
-        else
-            code = pdfi_trans_end_group(ctx);
     }
 
  exit1:

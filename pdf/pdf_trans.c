@@ -205,7 +205,7 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
         if (code < 0)
             goto exit;
 
-        code = pdfi_form_execgroup(ctx, ctx->CurrentPageDict, G_dict, igs->GroupGState);
+        code = pdfi_form_execgroup(ctx, ctx->CurrentPageDict, G_dict, igs->GroupGState, &group_Matrix);
         code1 = gs_end_transparency_mask(ctx->pgs, colorindex);
         if (code != 0)
             code = code1;
