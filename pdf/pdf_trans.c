@@ -25,8 +25,19 @@
 #include "pdf_image.h"
 #include "pdf_device.h"
 #include "pdf_misc.h"
+#include "pdf_func.h"
 
 #include "gstparam.h"
+
+/* Implement the TransferFunction using a Function. */
+static int
+pdfi_tf_using_function(double in_val, float *out, void *proc_data)
+{
+    float in = in_val;
+    gs_function_t *const pfn = proc_data;
+
+    return gs_function_evaluate(pfn, &in, out);
+}
 
 /* (see pdf_draw.ps/execmaskgroup) */
 static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int colorindex)
@@ -42,6 +53,8 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
     pdf_array *BC = NULL;
     pdf_dict *G_dict = NULL;
     pdf_dict *Group = NULL;
+    pdf_obj *TR;
+    gs_function_t *gsfunc = NULL;
     pdf_name *n = NULL;
     pdf_name *S = NULL;
     pdf_obj *CS = NULL;
@@ -103,6 +116,22 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
             dmprintf(ctx->memory, "WARNING: Unknown subtype 'S' in SMask (defaulting to Luminosity)\n");
         }
 
+        /* TR is transfer function (Optional) */
+        code = pdfi_dict_knownget(ctx, SMask, "TR", (pdf_obj **)&TR);
+        if (code > 0) {
+            if (TR->type == PDF_DICT) {
+                code = pdfi_build_function(ctx, &gsfunc, NULL, 1, (pdf_dict *)TR, NULL);
+                if (code < 0)
+                    goto exit;
+            } else if (TR->type == PDF_NAME) {
+                if (!pdfi_name_is((pdf_name *)TR, "Identity")) {
+                    dmprintf(ctx->memory, "WARNING: Unknown TR in SMask\n");
+                }
+            } else {
+                dmprintf(ctx->memory, "WARNING: Ignoring invalid TR in SMask\n");
+            }
+        }
+
         /* BC is Background Color array (Optional) */
         code = pdfi_dict_knownget_type(ctx, SMask, "BC", PDF_ARRAY, (pdf_obj **)&BC);
         if (code < 0)
@@ -133,6 +162,10 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
 
         gs_trans_mask_params_init(&params, subtype);
         params.replacing = true;
+        if (gsfunc) {
+            params.TransferFunction = pdfi_tf_using_function;
+            params.TransferFunction_data = gsfunc;
+        }
 
         /* Need to set just the ctm (GroupMat) from the saved GroupGState, to
            have gs_begin_transparency_mask work correctly.  Or at least that's
@@ -222,6 +255,8 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
     }
 
  exit:
+    if (gsfunc)
+        pdfi_free_function(ctx, gsfunc);
     if (pcs)
         rc_decrement_cs(pcs, "pdfi_trans_set_mask");
     pdfi_countdown(n);
