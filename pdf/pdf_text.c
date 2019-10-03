@@ -61,6 +61,8 @@ int pdfi_ET(pdf_context *ctx)
     }
 
     ctx->TextBlockDepth--;
+    if (gs_currenttextrenderingmode(ctx->pgs) >= 4)
+        gs_clip(ctx->pgs);
     return code;
 }
 
@@ -377,9 +379,11 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
     } else {
         if (Trmode != 0 && Trmode != 3 && !ctx->preserve_tr_mode) {
             text.operation |= TEXT_DO_FALSE_CHARPATH;
-            pdfi_gsave(ctx);
-            gs_newpath(ctx->pgs);
-            gs_moveto(ctx->pgs, 0, 0);
+            if (Trmode < 4) {
+                pdfi_gsave(ctx);
+                gs_newpath(ctx->pgs);
+                gs_moveto(ctx->pgs, 0, 0);
+            }
         } else {
             if (Trmode == 3)
                 text.operation = TEXT_DO_NONE | TEXT_RENDER_MODE_3;
@@ -396,6 +400,19 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
             code = gs_text_process(penum);
             gs_text_release(penum, "pdfi_Tj");
             ctx->current_text_enum = NULL;
+        }
+
+        if (Trmode >= 4) {
+            pdfi_gsave(ctx);
+            gs_newpath(ctx->pgs);
+            gs_moveto(ctx->pgs, 0, 0);
+            code = gs_text_begin(ctx->pgs, &text, ctx->memory, &penum);
+            if (code >= 0) {
+                ctx->current_text_enum = penum;
+                code = gs_text_process(penum);
+                gs_text_release(penum, "pdfi_Tj");
+                ctx->current_text_enum = NULL;
+            }
         }
 
         switch(Trmode) {
@@ -431,14 +448,14 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
                 pdfi_grestore(ctx);
                 gs_swapcolors(ctx->pgs);
                 pdfi_grestore(ctx);
-                gs_clip(ctx->pgs);
+//                gs_clip(ctx->pgs);
                 break;
             case 5:
                 pdfi_gsave(ctx);
                 gs_stroke(ctx->pgs);
                 pdfi_grestore(ctx);
                 pdfi_grestore(ctx);
-                gs_clip(ctx->pgs);
+//                gs_clip(ctx->pgs);
                 break;
             case 6:
                 gs_swapcolors(ctx->pgs);
@@ -450,11 +467,11 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
                 gs_stroke(ctx->pgs);
                 pdfi_grestore(ctx);
                 pdfi_grestore(ctx);
-                gs_clip(ctx->pgs);
+//                gs_clip(ctx->pgs);
                 break;
             case 7:
                 pdfi_grestore(ctx);
-                gs_clip(ctx->pgs);
+//                gs_clip(ctx->pgs);
                 break;
             default:
                 pdfi_grestore(ctx);
