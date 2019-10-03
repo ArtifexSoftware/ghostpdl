@@ -352,7 +352,29 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
         Trmode = gs_currenttextrenderingmode(ctx->pgs);
         if (current_font->pdfi_font_type == e_pdf_font_type3 && Trmode != 0 && Trmode != 3)
             Trmode = 0;
+    } else {
+        /* CID fonts, multi-byte encodings. Not implemented yet. */
+        return 0;
+    }
 
+    if (ctx->preserve_tr_mode) {
+        if (Trmode == 3)
+            text.operation = TEXT_DO_NONE | TEXT_RENDER_MODE_3;
+        else
+            text.operation |= TEXT_DO_DRAW;
+        /* Text is filled, so select the fill colour.
+         */
+        gs_swapcolors(ctx->pgs);
+
+        code = gs_text_begin(ctx->pgs, &text, ctx->memory, &penum);
+        if (code >= 0) {
+            ctx->current_text_enum = penum;
+            code = gs_text_process(penum);
+            gs_text_release(penum, "pdfi_Tj");
+            ctx->current_text_enum = NULL;
+        }
+        gs_swapcolors(ctx->pgs);
+    } else {
         if (Trmode != 0 && Trmode != 3 && !ctx->preserve_tr_mode) {
             text.operation |= TEXT_DO_FALSE_CHARPATH;
             pdfi_gsave(ctx);
@@ -375,11 +397,7 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
             gs_text_release(penum, "pdfi_Tj");
             ctx->current_text_enum = NULL;
         }
-    } else {
-        /* CID fonts, multi-byte encodings. Not implemented yet. */
-    }
 
-    if (!ctx->preserve_tr_mode) {
         switch(Trmode) {
             case 0:
                 /* Text has been drawn, put the colours back again */
