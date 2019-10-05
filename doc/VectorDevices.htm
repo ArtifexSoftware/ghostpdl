@@ -771,6 +771,20 @@ to the old behaviour, or find that the new behaviour leads to problems, you can 
 inserted into the page content stream, instead of preserved as annotations.
 </dd>
 </dt>
+<d<p> In addition, finer control is available by defining an array
+<code>/PreserveAnnotTypes</code>. Annotation types listed in this array will
+be preserved, whilst those not listed will be drawn according to the setting os ShowAnnots and ShowAnnotTypes.
+By using the controls PreserveAnnots, PreserveAnnotTypes, ShowAnnots and ShowAnnotTypes it is possible to select
+by annotation type whether annotations are preserved as annotations, drawn into the page, or simply dropped.
+</p>
+<p> To use this feature:
+<code>-c "/PreserveAnnotTypes [....] def" -f &ltinput file&gt</code>
+<br> Where the array can contain one or more of the following names:
+<code>/Stamp</code>, <code>/Squiggly</code>, <code>/Underline</code>, <code>/Link</code>, <code>/Text</code>, <code>/Highlight</code>, <code>/Ink</code>, <code>/FreeText</code>, <code>/StrikeOut</code> and <code>/stamp_dict</code>.</p>
+<p> For example, adding the follow to the command line:
+<code>-c "/PreserveAnnotTypes [/Text /UnderLine] def" -f &ltinput file&gt</code>
+    <br> would preserve only annotations with the subtypes &quotText&quot and &quotUnderLine&quot</p>
+</d1>
 
 <p>
 The following options are useful for creating PDF 1.2 files:

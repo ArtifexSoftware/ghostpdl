@@ -700,18 +700,18 @@ This option is also set by the <code>-dFitPage</code> option.</p>
 <dl>
     <dt><code>-dShowAnnots=false</code></dt>
     <dd>
-    Don't enumerate anntoations associated with the page objects through
-    <code>Annots</code> attribute. Annotations are shown by default.</dd>
+    Don't enumerate annotations associated with the page
+    <code>Annots</code> key. Annotations are shown by default.</dd>
 <p> In addition, finer control is available by defining an array
-<code>/ShowAnnotTypes</code>. Annoation types listed in this array will
+<code>/ShowAnnotTypes</code>. Annotation types listed in this array will
 be drawn, whilst those not listed will not be drawn.</p>
 <p> To use this feature:
-<code>-c "/ShowAnnotTypes [....]" -f &ltinput file&gt</code>
+<code>-c "/ShowAnnotTypes [....] def" -f &ltinput file&gt</code>
 <br> Where the array can contain one or more of the following names:
 <code>/Stamp</code>, <code>/Squiggly</code>, <code>/Underline</code>, <code>/Link</code>, <code>/Text</code>, <code>/Highlight</code>, <code>/Ink</code>, <code>/FreeText</code>, <code>/StrikeOut</code> and <code>/stamp_dict</code>.</p>
 <p> For example, adding the follow to the command line:
-<code>-c "/ShowAnnotTypes [/Text /UnderLine]" -f &ltinput file&gt</code>
-    <br> would draw only annoations with the subtypes &quotText&quot and &quotUnderLine&quot</p>
+<code>-c "/ShowAnnotTypes [/Text /UnderLine] def" -f &ltinput file&gt</code>
+    <br> would draw only annotations with the subtypes &quotText&quot and &quotUnderLine&quot</p>
 </dl>
 
 <dl>

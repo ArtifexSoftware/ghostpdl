@@ -4748,6 +4748,25 @@ currentdict end readonly def
    ifelse
 } bind executeonly def
 
+/.PDFPreserveAnnotType?
+{
+    //false exch
+    /PreserveAnnotTypes where
+    {
+      /PreserveAnnotTypes get
+      {
+        dup /* eq exch 2 index eq or
+        {
+          pop //true exch
+          exit
+        } if
+     } forall
+     pop
+   }
+   {pop pop //true}
+   ifelse
+} bind executeonly def
+
 /drawannot {		% <annot> drawannot -
   dup annotvisible {
     gsave
@@ -5050,7 +5069,7 @@ currentdict end readonly def
 
   gsave
   dup dup /Subtype knownoget {
-    dup //.PDFDrawAnnotType? exec
+    dup //.PDFPreserveAnnotType? exec
     {
       //preserveannottypes exch .knownget { exec } { //true } ifelse
       {
@@ -5068,7 +5087,13 @@ currentdict end readonly def
         }ifelse
       } if
     }
-    {pop} ifelse
+    {
+      % Not preserving this type of annotation
+      % discard teh Subtype
+      pop
+      % copy the Annot dictionary and try drawing it instead
+      dup drawannot
+    } ifelse
     % type known
   } {
     pop
