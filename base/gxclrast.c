@@ -613,9 +613,17 @@ in:                             /* Initialize for a new page. */
     code = gs_gstate_initialize(&gs_gstate, mem);
     gs_gstate.device = tdev;
     gs_gstate.view_clip = NULL; /* Avoid issues in pdf14 fill stroke */
-    gs_gstate.clip_path = NULL;
-    gs_gstate.color[0].color_space = NULL;
-    gs_gstate.color[1].color_space = NULL;
+    gs_gstate.clip_path = &clip_path;
+    pcs = gs_cspace_new_DeviceGray(mem);
+    if (pcs == NULL) {
+        code = gs_note_error(gs_error_VMerror);
+        goto out;
+    }
+    pcs->type->install_cspace(pcs, &gs_gstate);
+    gs_gstate.color[0].color_space = pcs;
+    rc_increment_cs(pcs);
+    gs_gstate.color[1].color_space = pcs;
+    rc_increment_cs(pcs);
     /* Remove the ICC link cache and replace with the device link cache
        so that we share the cache across bands */
     rc_decrement(gs_gstate.icc_link_cache,"clist_playback_band");
@@ -635,11 +643,6 @@ in:                             /* Initialize for a new page. */
 #ifdef DEBUG
     halftone_type = ht_type_none;
 #endif
-    pcs = gs_cspace_new_DeviceGray(mem);
-    if (pcs == NULL) {
-        code = gs_note_error(gs_error_VMerror);
-        goto out;
-    }
     fill_color.ccolor_valid = false;
     color_unset(&fill_color);
     data_bits = gs_alloc_bytes(mem, data_bits_size,
@@ -2360,6 +2363,7 @@ idata:                  data_size = 0;
         goto in;
     if (pfs.dev != NULL)
         term_patch_fill_state(&pfs);
+    gs_free_object(mem, pcs, "clist_playback_band(pcs)");
     gs_free_object(mem, cbuf_storage, "clist_playback_band(cbuf_storage)");
     gx_cpath_free(&clip_path, "clist_playback_band");
     if (pcpath != &clip_path)
