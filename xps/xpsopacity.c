@@ -79,6 +79,8 @@ xps_begin_opacity(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
         opacity = atof(opacity_att);
     gs_setblendmode(ctx->pgs, BLEND_MODE_Normal);
     gs_setopacityalpha(ctx->pgs, opacity);
+    gs_setfillconstantalpha(ctx->pgs, opacity);
+    gs_setstrokeconstantalpha(ctx->pgs, opacity);
 
     code = xps_bounds_in_user_space_path_clip(ctx, &bbox, use_path, is_stroke);
     if (code < 0)

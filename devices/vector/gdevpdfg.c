@@ -2869,7 +2869,7 @@ pdf_update_transfer(gx_device_pdf *pdev, const gs_gstate *pgs,
  */
 static int
 pdf_update_alpha(gx_device_pdf *pdev, const gs_gstate *pgs,
-                 pdf_resource_t **ppres)
+                 pdf_resource_t **ppres, bool for_text)
 {
     bool ais;
     double alpha;
@@ -2933,12 +2933,19 @@ pdf_update_alpha(gx_device_pdf *pdev, const gs_gstate *pgs,
     code = cos_dict_put_c_key_bool(resource_dict(*ppres), "/AIS", ais);
     if (code < 0)
         return code;
+    if (!for_text) {
     /* we never do the 'both' operations (b, B, b*, B*) so we set both */
     /* CA and ca the same so that we stay in sync with state.*.alpha   */
     code = cos_dict_put_c_key_real(resource_dict(*ppres), "/CA", alpha);
     if (code < 0)
         return code;
     return cos_dict_put_c_key_real(resource_dict(*ppres), "/ca", alpha);
+    } else {
+        code = cos_dict_put_c_key_real(resource_dict(*ppres), "/CA", pgs->strokeconstantalpha);
+        if (code < 0)
+            return code;
+        return cos_dict_put_c_key_real(resource_dict(*ppres), "/ca", pgs->fillconstantalpha);
+    }
 }
 
 /*
@@ -2946,7 +2953,7 @@ pdf_update_alpha(gx_device_pdf *pdev, const gs_gstate *pgs,
  */
 int
 pdf_prepare_drawing(gx_device_pdf *pdev, const gs_gstate *pgs,
-                    pdf_resource_t **ppres)
+                    pdf_resource_t **ppres, bool for_text)
 {
     int code = 0;
     int bottom;
@@ -2966,7 +2973,7 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_gstate *pgs,
                 return code;
             pdev->state.blend_mode = pgs->blend_mode;
         }
-        code = pdf_update_alpha(pdev, pgs, ppres);
+        code = pdf_update_alpha(pdev, pgs, ppres, for_text);
         if (code < 0)
             return code;
     } else {
@@ -3136,10 +3143,10 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_gstate *pgs,
 
 /* Update the graphics state for filling. */
 int
-pdf_try_prepare_fill(gx_device_pdf *pdev, const gs_gstate *pgs)
+pdf_try_prepare_fill(gx_device_pdf *pdev, const gs_gstate *pgs, bool for_text)
 {
     pdf_resource_t *pres = 0;
-    int code = pdf_prepare_drawing(pdev, pgs, &pres);
+    int code = pdf_prepare_drawing(pdev, pgs, &pres, for_text);
 
     if (code < 0)
         return code;
@@ -3167,27 +3174,27 @@ pdf_try_prepare_fill(gx_device_pdf *pdev, const gs_gstate *pgs)
     return pdf_end_gstate(pdev, pres);
 }
 int
-pdf_prepare_fill(gx_device_pdf *pdev, const gs_gstate *pgs)
+pdf_prepare_fill(gx_device_pdf *pdev, const gs_gstate *pgs, bool for_text)
 {
     int code;
 
     if (pdev->context != PDF_IN_STREAM) {
-        code = pdf_try_prepare_fill(pdev, pgs);
+        code = pdf_try_prepare_fill(pdev, pgs, for_text);
         if (code != gs_error_interrupt) /* See pdf_open_gstate */
             return code;
         code = pdf_open_contents(pdev, PDF_IN_STREAM);
         if (code < 0)
             return code;
     }
-    return pdf_try_prepare_fill(pdev, pgs);
+    return pdf_try_prepare_fill(pdev, pgs, for_text);
 }
 
 /* Update the graphics state for stroking. */
 static int
-pdf_try_prepare_stroke(gx_device_pdf *pdev, const gs_gstate *pgs)
+pdf_try_prepare_stroke(gx_device_pdf *pdev, const gs_gstate *pgs, bool for_text)
 {
     pdf_resource_t *pres = 0;
-    int code = pdf_prepare_drawing(pdev, pgs, &pres);
+    int code = pdf_prepare_drawing(pdev, pgs, &pres, for_text);
 
     if (code < 0)
         return code;
@@ -3225,19 +3232,19 @@ pdf_try_prepare_stroke(gx_device_pdf *pdev, const gs_gstate *pgs)
     return pdf_end_gstate(pdev, pres);
 }
 int
-pdf_prepare_stroke(gx_device_pdf *pdev, const gs_gstate *pgs)
+pdf_prepare_stroke(gx_device_pdf *pdev, const gs_gstate *pgs, bool for_text)
 {
     int code;
 
     if (pdev->context != PDF_IN_STREAM) {
-        code = pdf_try_prepare_stroke(pdev, pgs);
+        code = pdf_try_prepare_stroke(pdev, pgs, for_text);
         if (code != gs_error_interrupt) /* See pdf_open_gstate */
             return code;
         code = pdf_open_contents(pdev, PDF_IN_STREAM);
         if (code < 0)
             return code;
     }
-    return pdf_try_prepare_stroke(pdev, pgs);
+    return pdf_try_prepare_stroke(pdev, pgs, for_text);
 }
 
 /* Update the graphics state for an image other than an ImageType 1 mask. */
@@ -3248,7 +3255,7 @@ pdf_prepare_image(gx_device_pdf *pdev, const gs_gstate *pgs)
      * As it turns out, this requires updating the same parameters as for
      * filling.
      */
-    return pdf_prepare_fill(pdev, pgs);
+    return pdf_prepare_fill(pdev, pgs, false);
 }
 
 /* Update the graphics state for an ImageType 1 mask. */

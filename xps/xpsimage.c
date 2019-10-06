@@ -316,6 +316,8 @@ xps_paint_image_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, 
 
         /* You do not want the opacity to be used in the image soft mask filling */
         gs_setopacityalpha(ctx->pgs, 1.0);
+        gs_setfillconstantalpha(ctx->pgs, 1.0);
+        gs_setstrokeconstantalpha(ctx->pgs, 1.0);
         gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Luminosity);
         gs_begin_transparency_mask(ctx->pgs, &params, &bbox, 0);
         code = xps_paint_image_brush_imp(ctx, image, 1);
