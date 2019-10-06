@@ -3150,12 +3150,29 @@ pdf_try_prepare_fill(gx_device_pdf *pdev, const gs_gstate *pgs, bool for_text)
 
     if (code < 0)
         return code;
+    if (pdev->rendering_intent != pgs->renderingintent && !pdev->ForOPDFRead) {
+        static const char *const ri_names[] = { "Perceptual", "RelativeColorimetric", "Saturation", "AbsoluteColorimetric" };
+        char buf[32];
+
+        code = pdf_open_gstate(pdev, &pres);
+        if (code < 0)
+            return code;
+
+        buf[0] = '/';
+        strncpy(buf + 1, ri_names[pgs->renderingintent], sizeof(buf) - 2);
+        code = cos_dict_put_string_copy(resource_dict(pres), "/RI", buf);
+        if (code < 0)
+            return code;
+        pdev->rendering_intent = pgs->renderingintent;
+    }
+
     /* Update overprint. */
     if (pdev->params.PreserveOverprintSettings &&
         (pdev->fill_overprint != pgs->overprint ||
         pdev->font3) &&	!pdev->skip_colors
         ) {
-        code = pdf_open_gstate(pdev, &pres);
+        if (pres == 0)
+            code = pdf_open_gstate(pdev, &pres);
         if (code < 0)
             return code;
         /* PDF 1.2 only has a single overprint setting. */
@@ -3198,12 +3215,28 @@ pdf_try_prepare_stroke(gx_device_pdf *pdev, const gs_gstate *pgs, bool for_text)
 
     if (code < 0)
         return code;
+    if (pdev->rendering_intent != pgs->renderingintent && !pdev->ForOPDFRead) {
+        static const char *const ri_names[] = { "Perceptual", "RelativeColorimetric", "Saturation", "AbsoluteColorimetric" };
+        char buf[32];
+
+        code = pdf_open_gstate(pdev, &pres);
+        if (code < 0)
+            return code;
+
+        buf[0] = '/';
+        strncpy(buf + 1, ri_names[pgs->renderingintent], sizeof(buf) - 2);
+        code = cos_dict_put_string_copy(resource_dict(pres), "/RI", buf);
+        if (code < 0)
+            return code;
+        pdev->rendering_intent = pgs->renderingintent;
+    }
     /* Update overprint, stroke adjustment. */
     if (pdev->params.PreserveOverprintSettings &&
         pdev->stroke_overprint != pgs->overprint &&
         !pdev->skip_colors
         ) {
-        code = pdf_open_gstate(pdev, &pres);
+        if (pres == 0)
+            code = pdf_open_gstate(pdev, &pres);
         if (code < 0)
             return code;
         code = cos_dict_put_c_key_bool(resource_dict(pres), "/OP", pgs->overprint);

@@ -162,6 +162,7 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  {-1, -1},			/* page_dsc_info */
  0 /*false*/,			/* fill_overprint */
  0 /*false*/,			/* stroke_overprint */
+ 1 /* Absolute Colorimetric */, /* rendering intent */
  0 /*false*/,                   /* remap_fill_coilor */
  0 /*false*/,                   /* remap_stroke_coilor */
  0,				/* overprint_mode */
