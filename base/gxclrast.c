@@ -1339,6 +1339,7 @@ set_phase:      /*
                     case cmd_opv_set_color_space:
                         cbuf.ptr = cbp;
                         code = read_set_color_space(&cbuf, &gs_gstate, &pcs, cdev, mem);
+                        pcs = gs_gstate.color[0].color_space;
                         cbp = cbuf.ptr;
                         if (code < 0) {
                             if (code == gs_error_rangecheck)
