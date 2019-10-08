@@ -87,7 +87,7 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
     bool devicegraytok = true;  /* Default if device profile stuct not set */
     bool graydetection = false;
     bool usefastcolor = false;  /* set for unmanaged color */
-    bool sim_overprint = false;  /* By default do not simulate overprinting */
+    bool sim_overprint = true;  /* By default simulate overprinting (only valid with cmyk devices) */
     bool prebandthreshold = true, temp_bool = false;
 
     if(strcmp(Param, "OutputDevice") == 0){
@@ -506,7 +506,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
     bool devicegraytok = true;  /* Default if device profile stuct not set */
     bool graydetection = false;
     bool usefastcolor = false;  /* set for unmanaged color */
-    bool sim_overprint = false;  /* By default do not simulate overprinting */
+    bool sim_overprint = true;  /* By default simulate overprinting */
     bool prebandthreshold = true, temp_bool;
     int k;
     int color_accuracy = MAX_COLOR_ACCURACY;
@@ -1421,7 +1421,7 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
     bool devicegraytok = true;
     bool graydetection = false;
     bool usefastcolor = false;
-    bool sim_overprint = false;
+    bool sim_overprint = true;
     bool prebandthreshold = false;
     bool use_antidropout = dev->color_info.use_antidropout_downscaler;
     bool temp_bool;

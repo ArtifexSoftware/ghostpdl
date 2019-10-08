@@ -634,8 +634,14 @@ gs_do_set_overprint(gs_gstate * pgs)
 
     if (cs_num_components(pcs) < 0 && pcc->pattern != 0)
         code = pcc->pattern->type->procs.set_color(pcc, pgs);
-    else
-    {
+    else {
+        gx_device* dev = pgs->device;
+        cmm_dev_profile_t* dev_profile;
+
+        dev_proc(dev, get_profile)(dev, &dev_profile);
+        if (!dev_profile->sim_overprint || dev_profile->device_profile[0]->data_cs != gsCMYK)
+            return code;
+
         /* The spaces that do not allow opm (e.g. ones that are not ICC or DeviceCMYK)
            will blow away any true setting later. But we have to be prepared
            in case this is a CMYK ICC space for example. Hence we set effective mode
