@@ -1109,7 +1109,8 @@ static int GS_BM(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict
 
 static int GS_SMask(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
-    pdf_obj *o;
+    pdf_obj *o = NULL;
+    pdfi_int_gstate *igs = (pdfi_int_gstate *)ctx->pgs->client_data;
     int code;
 
     if (ctx->page_has_transparency == false || ctx->notransparency == true)
@@ -1122,9 +1123,10 @@ static int GS_SMask(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_d
     if (o->type == PDF_NAME) {
         pdf_name *n = (pdf_name *)o;
 
-        if (n->length == 4 && memcmp(n->data, "None", 4) == 0) {
-            pdfi_countdown(n);
-            return 0;
+        if (pdfi_name_is(n, "None")) {
+            if (igs->SMask)
+                pdfi_gstate_smask_free(igs);
+            goto exit;
         }
         code = pdfi_find_resource(ctx, (unsigned char *)"ExtGState", n, stream_dict, page_dict, &o);
         pdfi_countdown(n);
@@ -1133,13 +1135,12 @@ static int GS_SMask(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_d
     }
 
     if (o->type == PDF_DICT) {
-        pdfi_int_gstate *igs = (pdfi_int_gstate *)ctx->pgs->client_data;
-
         if (igs->SMask)
             pdfi_gstate_smask_free(igs);
         pdfi_gstate_smask_install(igs, ctx->memory, (pdf_dict *)o, ctx->pgs);
     }
 
+ exit:
     pdfi_countdown(o);
     return 0;
 }
