@@ -3795,7 +3795,7 @@ currentdict /set_bc_color undef
       fillborderpath
       grestore
     } bind executeonly def
-    /None {} bind executeonly def
+    /None {pop} bind executeonly def
     /Butt {
       dup
       /BS knownoget {
@@ -3881,15 +3881,23 @@ currentdict /set_bc_color undef
       gsave
       //startannottransparency exec
       dup /L knownoget {
-        1 index /LE knownoget {
+        1 index /LE knownoget { % <annot> [x1 y1 x2 y2] [LE1 LE2]
           gsave
-          1 index aload pop  % x1 y1 x2 y2
-          3 -1 roll sub      % x1 x2 dy
-          3 1 roll exch sub  % dy dx
+          1 index aload pop     % <annot> [x1 y1 x2 y2] [LE1 LE2] x1 y1 x2 y2
+          3 -1 roll sub         % <annot> [x1 y1 x2 y2] [LE1 LE2] x1 x2 dy
+          3 1 roll exch sub     % <annot> [x1 y1 x2 y2] [LE1 LE2] dy dx
           2 copy translate
-          atan
+          atan                  % <annot> [x1 y1 x2 y2] [LE1 LE2]
           rotate
-          dup 0 get dup //LineEnd_dict exch known not {pop /None} if //LineEnd_dict exch get 3 index exch exec
+          dup 0 get             % <annot> [x1 y1 x2 y2] [LE1 LE2] LE1
+          dup //LineEnd_dict exch known not
+          {
+            pop /None
+          } if
+          //LineEnd_dict exch   % <annot> [x1 y1 x2 y2] [LE1 LE2] <dict> LE1
+          get                   % <annot> [x1 y1 x2 y2] [LE1 LE2] {}
+          3 index exch          % <annot> [x1 y1 x2 y2] [LE1 LE2] <annot> {}
+          exec
           grestore
           gsave
           1 index aload pop  % x1 y1 x2 y2
