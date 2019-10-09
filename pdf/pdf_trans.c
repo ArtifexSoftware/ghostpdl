@@ -65,6 +65,7 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
     pdf_obj *Key = NULL;
 
     dbgmprintf(ctx->memory, "pdfi_trans_set_mask (.execmaskgroup) BEGIN\n");
+    memset(&params, 0, sizeof(params));
 
     /* Following the logic of the ps code, cram a /Processed key in the SMask dict to
      * track whether it's already been processed.
@@ -562,13 +563,13 @@ int pdfi_trans_setup(pdf_context *ctx, pdfi_trans_state_t *state,
         } else {
             need_group = false;
         }
+        need_group = need_group || (igs->SMask != NULL);
     } else {
         if (caller == TRANSPARENCY_Caller_Image || igs->SMask == NULL)
             need_group = false;
         else
             need_group = true;
     }
-
 
     code = pdfi_trans_set_params(ctx, alpha);
     if (code != 0)

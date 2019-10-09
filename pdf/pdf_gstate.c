@@ -28,6 +28,7 @@
 #include "pdf_pattern.h"
 #include "pdf_font.h"
 #include "pdf_pattern.h"
+#include "pdf_trans.h"
 
 #include "gsmatrix.h"
 #include "gslparam.h"
@@ -196,6 +197,12 @@ int pdfi_op_Q(pdf_context *ctx)
     int code;
 
     dbgmprintf(ctx->memory, "(doing Q)\n"); /* TODO: Spammy, delete me at some point */
+    if (ctx->pgs->level <= ctx->current_stream_save.gsave_level) {
+        /* We don't throw an error here, we just ignore it and continue */
+        ctx->pdf_warnings |= W_PDF_TOOMANYQ;
+        dbgmprintf(ctx->memory, "WARNING: Too many q/Q (too many Q's) -- ignoring Q\n");
+        return 0;
+    }
     if (ctx->page_has_transparency)
         code = gs_pop_transparency_state(ctx->pgs, false);
 
@@ -1124,8 +1131,10 @@ static int GS_SMask(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_d
         pdf_name *n = (pdf_name *)o;
 
         if (pdfi_name_is(n, "None")) {
-            if (igs->SMask)
+            if (igs->SMask) {
                 pdfi_gstate_smask_free(igs);
+                code = pdfi_trans_end_smask_notify(ctx);
+            }
             goto exit;
         }
         code = pdfi_find_resource(ctx, (unsigned char *)"ExtGState", n, stream_dict, page_dict, &o);
