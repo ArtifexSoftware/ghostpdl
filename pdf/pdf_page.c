@@ -307,6 +307,7 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num)
     gs_settextrenderingmode(ctx->pgs, 0);
     code = gs_setwordspacing(ctx->pgs, (double)0.0);
     code = gs_settexthscaling(ctx->pgs, (double)100.0);
+    code = gs_setsmoothness(ctx->pgs, 0.02); /* Match gs code */
     ctx->TextBlockDepth = 0;
 
     if (ctx->pgs->set_transfer.red == 0x00) {
