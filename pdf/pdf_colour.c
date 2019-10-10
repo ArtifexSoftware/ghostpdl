@@ -1875,8 +1875,8 @@ pdfi_create_indexed(pdf_context *ctx, pdf_array *color_array, int index,
     else
         pcs = gs_cspace_alloc(ctx->memory, &gs_color_space_type_Indexed);
 
+    /* NOTE: we don't need to increment the reference to pcs_base, since it is already 1 */
     pcs->base_space = pcs_base;
-    rc_increment_cs(pcs_base);
 
     pcs->params.indexed.lookup.table.size = num_values;
     pcs->params.indexed.use_proc = 0;
