@@ -969,7 +969,11 @@ validate(const gs_memory_t *mem,
                     const char *aend = path + strlen(path);
                     while (aend != a2 && !gs_file_name_check_separator(a2, 1, a2))
                       a2++;
-                    if (aend != a2)
+                    /* If the control path ends in a directory separator and we've scanned
+                       to the end of the candidate path with no further directory separators
+                       found, we have a match
+                     */
+                    if (aend == a2)
                       /* PATH=abc/? pattern=abc/ */
                       goto found; /* Bingo! */
                  }
