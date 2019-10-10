@@ -3318,108 +3318,150 @@ end
 %    } if
 %  } if
 
-  dup /AP knownoget {
-    dup /N known not {
-      (   **** Error: Appearance dictionary (AP) lacks the mandatory normal (N) appearance.\n)
-      pdfformaterror
-      (               Output may be incorrect.\n) pdfformaterror
+  % Acrobat doesn't draw Widget annotations unles they have both /FT
+  % (which is defined as required) and /T keys present. Annoyingly
+  % these can either be inherited from the Form Definition Field
+  % dictionary (via the AcroForm tree) or present directly in the
+  % annotation, so we need to check the annotation to make sure its
+  % a Widget, then follow any /Parent key up to the root node
+  % extracting and storing any FT or T keys as we go (we only care if
+  % these are present, their value is immaterial). If after all that
+  % both keys are not present, then we don't draw the annotation.
+
+  dup /Subtype get /Widget eq {
+    dup /FT known 1 index /T known and not {
+      dup
+      {
+        dup /FT knownoget {
+          /FT exch 3 index 3 1 roll put
+        } if
+        dup /T knownoget {
+          /T exch 3 index 3 1 roll put
+        } if
+        /Parent knownoget not {
+          exit
+        } if
+      } loop
     } if
-    //false
-    [/N /R /D] {
-        % stack: scalex scaley annot appearance false key
-      2 index exch knownogetdict {
-        exch not exit
+    dup /FT known 1 index /T known and {
+      //true
+    } {
+      (   **** Warning: A Widget annotation dictionary lacks either the FT or T key.\n)
+      pdfformaterror
+      (               Acrobat ignores such annotations, annotation will not be rendered.\n)
+      pdfformaterror
+      (               Output may not be as expected.\n) pdfformaterror
+      //false
+    } ifelse
+  } {
+    //true
+  }ifelse
+
+  {
+    dup /AP knownoget {
+      dup /N known not {
+        (   **** Error: Appearance dictionary (AP) lacks the mandatory normal (N) appearance.\n)
+        pdfformaterror
+        (               Output may be incorrect.\n) pdfformaterror
       } if
-    } forall
-        % stack: scalex scaley annot appearance value true
-        % stack: scalex scaley annot appearance false
-    dup {
-      pop exch pop
+      //false
+      [/N /R /D] {
+          % stack: scalex scaley annot appearance false key
+        2 index exch knownogetdict {
+          exch not exit
+        } if
+      } forall
+          % stack: scalex scaley annot appearance value true
+          % stack: scalex scaley annot appearance false
+      dup {
+        pop exch pop
                 % Acrobat Distiller produces files in which this Form
                 % XObject lacks Type and Subtype keys.  This is illegal,
                 % but Acrobat Reader accepts it.  The only way we can
                 % tell whether this is a Form or a set of sub-appearances
                 % is by testing for the stream Length or File key.
                 % If the stream lacks Length key, try File key.
-      dup /Length knownoget { type /integertype eq } { //false } ifelse
-      1 index /File knownoget { type /filetype eq or } if {
-                % If this is a form then simply use it
-        //true
-      } {
-        1 index /AS knownoget not {
-                % If we do not have AS then use any appearance
-          { exch pop oforce exit } forall //true
+        dup /Length knownoget { type /integertype eq } { //false } ifelse
+        1 index /File knownoget { type /filetype eq or } if {
+                  % If this is a form then simply use it
+          //true
         } {
-                % Stack: annot Ndict AS
-                % Get the specified appearance.  If no appearance, then
-                % display nothing - set stack = false.
-          knownoget
+          1 index /AS knownoget not {
+                  % If we do not have AS then use any appearance
+            { exch pop oforce exit } forall //true
+          } {
+                  % Stack: annot Ndict AS
+                  % Get the specified appearance.  If no appearance, then
+                  % display nothing - set stack = false.
+            knownoget
+          } ifelse
         } ifelse
+      } {
+        exch pop	% discard useless AP dictionary
       } ifelse
-    } {
-      exch pop	% discard useless AP dictionary
-    } ifelse
 
                 % Stack: scalex scaley annot appearance true
                 % Stack: scalex scaley annot false
-    {
-      dup type /dicttype eq {
+      {
+        dup type /dicttype eq {
                 % Draw appearance
                 % Initialize graphic following "7.4.4 Appearance Streams"
-        q graphicsbeginpage textbeginpage
-        1 index annotrect pop pop translate
-        3 index 3 index scale	% Apply scale factors
-        dup /BBox knownoget {
-          1 index /Matrix knownoget not { {1 0 0 1 0 0} } if
-          .bbox_transform pop pop
-          % Compensate for non-zero origin of BBox
-          neg exch neg exch translate
+          q graphicsbeginpage textbeginpage
+          1 index annotrect pop pop translate
+          3 index 3 index scale	% Apply scale factors
+          dup /BBox knownoget {
+            1 index /Matrix knownoget not { {1 0 0 1 0 0} } if
+            .bbox_transform pop pop
+            % Compensate for non-zero origin of BBox
+            neg exch neg exch translate
+          } if
+          DoForm Q
+        } {
+          (   **** Error: Annotation's appearance is not a dictionary.\n)
+          pdfformaterror
+          (               Output may be incorrect.\n) pdfformaterror
+        } ifelse
+      } if
+    } {
+      dup /MK knownoget {    % mk
+        dup /BG knownoget {  % mk bg
+          dup length         % mk bg len
+          //set_bc_color exch .knownget {
+             gsave
+             exec
+             3 index 3 index scale
+             1 index annotrect rectfill
+             grestore
+          } {
+            pop
+          } ifelse
         } if
-        DoForm Q
-      } {
-        (   **** Error: Annotation's appearance is not a dictionary.\n)
-        pdfformaterror
-        (               Output may be incorrect.\n) pdfformaterror
-      } ifelse
-    } if
-  } {
-    dup /MK knownoget {    % mk
-      dup /BG knownoget {  % mk bg
-        dup length         % mk bg len
-        //set_bc_color exch .knownget {
-           gsave
-           exec
-           3 index 3 index scale
-           1 index annotrect rectfill
-           grestore
-        } {
-          pop
-        } ifelse
+        dup /BC knownoget {
+          dup length
+          //set_bc_color exch .knownget {
+             gsave
+             exec
+             1 setlinewidth
+             3 index 3 index scale
+             1 index annotrect rectstroke
+             grestore
+          } {
+            pop
+          } ifelse
+        } if
+        pop
       } if
-      dup /BC knownoget {
-        dup length
-        //set_bc_color exch .knownget {
-           gsave
-           exec
-           1 setlinewidth
-           3 index 3 index scale
-           1 index annotrect rectstroke
-           grestore
-        } {
-          pop
-        } ifelse
-      } if
-      pop
-    } if
 
-    dup can-regenerate-ap {
-      make_tx_da
-      dup /UpdatedAP //true put
-      3 copy drawwidget
-    } if
-  } ifelse
+      dup can-regenerate-ap {
+        make_tx_da
+        dup /UpdatedAP //true put
+        3 copy drawwidget
+      } if
+    } ifelse
+  } if
   pop pop pop
 } bind executeonly def
+
 
 currentdict /set_bc_color undef
 
