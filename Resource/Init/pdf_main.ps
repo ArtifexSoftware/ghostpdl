@@ -2339,8 +2339,20 @@ end readonly def
 
 /get_media_box { % <pagedict> get_media_box <box> <bool>
   /MediaBox pget {
-    oforce_array //true
-  } {
+    oforce_array
+    dup length 4 eq {
+      //true
+    }
+    {
+      pop
+      (   **** Error: Page has an invalid /MediaBox attribute. Using the current page size.\n)
+      pdfformaterror
+      (               Output may be incorrect.\n) pdfformaterror
+      [ 0 0 currentpagedevice /PageSize get aload pop ]
+      //false
+    }ifelse
+  }
+  {
     (   **** Error: Page has no /MediaBox attribute. Using the current page size.\n)
     pdfformaterror
     (               Output may be incorrect.\n) pdfformaterror
