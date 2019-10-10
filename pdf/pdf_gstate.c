@@ -68,6 +68,8 @@ void pdfi_gstate_smask_install(pdfi_int_gstate *igs, gs_memory_t *memory, pdf_di
 
 void pdfi_gstate_smask_free(pdfi_int_gstate *igs)
 {
+    if (!igs->SMask)
+        return;
     pdfi_countdown(igs->SMask);
     igs->SMask = NULL;
     if (igs->GroupGState)
@@ -96,6 +98,10 @@ pdfi_gstate_copy_cb(void *to, const void *from)
     const pdfi_int_gstate *igs_from = (const pdfi_int_gstate *)from;
     pdfi_int_gstate *igs_to = (pdfi_int_gstate *)to;
 
+    /* Need to free destination contents before overwriting.
+     *  On grestore, they might be non-empty.
+     */
+    pdfi_gstate_smask_free(igs_to);
     *(pdfi_int_gstate *) igs_to = *igs_from;
     pdfi_gstate_smask_install(igs_to, igs_from->memory, igs_from->SMask, igs_from->GroupGState);
     return 0;
@@ -116,7 +122,7 @@ static const gs_gstate_client_procs pdfi_gstate_procs = {
     pdfi_gstate_alloc_cb,
     pdfi_gstate_copy_cb,
     pdfi_gstate_free_cb,
-    NULL,			/* copy_for */
+    NULL, /* copy_for */
 };
 
 int
