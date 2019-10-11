@@ -2882,9 +2882,11 @@ pdf_update_alpha(gx_device_pdf *pdev, const gs_gstate *pgs,
             code = pdf_open_contents(pdev, PDF_IN_STREAM);
             if (code < 0)
                 return code;
-            code = pdf_restore_viewer_state(pdev, pdev->strm);
-            if (code < 0)
-                return code;
+            if (pdev->vgstack_depth > pdev->vgstack_bottom) {
+                code = pdf_restore_viewer_state(pdev, pdev->strm);
+                if (code < 0)
+                    return code;
+            }
         }
         else{
             gs_sprintf(buf, "%ld 0 R", pgs->soft_mask_id);
