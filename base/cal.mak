@@ -64,6 +64,7 @@ cal_OBJS = \
 cal_HDRS = \
 	$(CAL_SRC)cal.h		\
 	$(CAL_SRC)cal-impl.h	\
+	$(arch_h)
 
 # external link .dev - empty, as we add the lib to LDFLAGS
 #$(GLOBJ)cal.dev : $(CAL_MAK) $(ECHOGS_XE) \
