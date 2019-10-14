@@ -949,16 +949,20 @@ int pdfi_apply_SubFileDecode_filter(pdf_context *ctx, int EODCount, pdf_name *EO
     int code;
     stream_SFD_state state;
     stream *new_s = NULL;
-    int min_size = EODString->length;
+    int min_size = EODCount;
 
     *new_stream = NULL;
 
     if (s_SFD_template.set_defaults)
         s_SFD_template.set_defaults((stream_state *)&state);
 
-    state.eod.data = EODString->data;
-    state.eod.size = EODString->length;
+    if (EODString != NULL) {
+        state.eod.data = EODString->data;
+        state.eod.size = EODString->length;
+        min_size = EODString->length;
+    }
 
+    state.count = EODCount;
 
     code = pdfi_filter_open(min_size, &s_filter_read_procs, (const stream_template *)&s_SFD_template, (const stream_state *)&state, ctx->memory->non_gc_memory, &new_s);
     if (code < 0)
@@ -1205,7 +1209,7 @@ int pdfi_read_bytes(pdf_context *ctx, byte *Buffer, uint32_t size, uint32_t coun
     uint32_t bytes = 0;
     int32_t code;
 
-    if (s->eof)
+    if (s->eof && s->unread_size == 0)
         return 0;
 
     if (s->unread_size) {
@@ -1222,6 +1226,8 @@ int pdfi_read_bytes(pdf_context *ctx, byte *Buffer, uint32_t size, uint32_t coun
             Buffer += s->unread_size;
             i = s->unread_size;
             s->unread_size = 0;
+            if (s->eof)
+                return i;
         }
     }
     if (total) {
