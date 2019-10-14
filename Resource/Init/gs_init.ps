@@ -2218,8 +2218,11 @@ readonly def
 /.lockfileaccess {
   .currentpathcontrolstate
   {
-    (\n **** WARNING: .lockfileaccess or .setsafe called ****\n) print
-    ( **** when file access controls are already active ****\n) print flush
+    //QUIET not
+    {
+      (\n **** WARNING: .lockfileaccess or .setsafe called ****\n) print
+      ( **** when file access controls are already active ****\n) print flush
+    } if
   }
   {
     [
