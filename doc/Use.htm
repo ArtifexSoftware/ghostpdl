@@ -3449,6 +3449,8 @@ system permissions.</dd>
 <dl>
     <dt><code>-dSAFER</code></dt>
 <dd>
+<strong>IMPORTANT NOTE:</strong> Ghostscript now (as of 9.50) defaults to SAFER being active.
+<p>
 Enables access controls on files. Access controls fall into three categories,
 files from which Ghostscript is permitted to read, ones to which it is permitted
 to write, and ones over which it has &quot;control&quot; (i.e. delete/rename). These
@@ -3579,7 +3581,7 @@ at all. Only <code>%stdout</code> and <code>%stderr</code> can be opened
 for writing.  Disables reading of files other than <code>%stdin</code>,
 those given as a command line argument, or those contained on one of the paths
 given by LIBPATH and FONTPATH and specified by the system params /FontResourceDir
-    and /GenericResourceDir.
+and /GenericResourceDir.
 <p>
 This mode also sets the <a href="Language.htm#LockSafetyParams">.LockSafetyParams</a>
 parameter of the default device, or the device specified with the <code>-sDEVICE= </code>
@@ -3590,11 +3592,6 @@ the <code>-sOutputFile=...</code> on the command line is unrestricted.</p>
 <p>
 SAFER mode also prevents changing the /GenericResourceDir, /FontResourceDir
 and either the /SystemParamsPassword or the /StartJobPassword.</p>
-<p>
-<b>Note: </b>While SAFER mode is not the default, in a subsequent release of
-Ghostscript, SAFER mode will be the default thus scripts or programs that need
-to open files or set restricted parameters will require the <code>-dNOSAFER</code>
-command line option.</p>
 <p>
 When running -dNOSAFER it is possible to perform a <code>save</code>,
 followed by <code>.setsafe</code>, execute a file or procedure in SAFER mode,
