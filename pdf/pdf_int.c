@@ -408,9 +408,9 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
 
             xref_entry *compressed_entry = &ctx->xref_table->xref[entry->u.compressed.compressed_stream_num];
             pdf_dict *compressed_object;
-            pdf_stream *compressed_stream;
+            pdf_stream *compressed_stream, *SubFile_stream, *Object_stream;
             char Buffer[256];
-            int i = 0;
+            int i = 0, object_length = 0;
             int64_t num_entries;
             gs_offset_t offset = 0;
 
@@ -481,7 +481,20 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
                 return code;
             }
 
-            code = pdfi_filter(ctx, compressed_object, ctx->main_stream, &compressed_stream, false);
+            code = pdfi_dict_get_type(ctx, compressed_object, "Length", PDF_INT, &o);
+            if (code < 0) {
+                pdfi_countdown(compressed_object);
+                (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
+                return code;
+            }
+
+            code = pdfi_apply_SubFileDecode_filter(ctx, ((pdf_num *)o)->value.i, NULL, ctx->main_stream, &SubFile_stream, false);
+            if (code < 0) {
+                (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
+                return code;
+            }
+
+            code = pdfi_filter(ctx, compressed_object, SubFile_stream, &compressed_stream, false);
             if (code < 0) {
                 pdfi_countdown(compressed_object);
                 (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
@@ -523,9 +536,12 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
                 }
                 if (i == entry->u.compressed.object_index)
                     offset = ((pdf_num *)o)->value.i;
+                if (i == entry->u.compressed.object_index + 1)
+                    object_length = ((pdf_num *)o)->value.i - offset;
                 pdfi_pop(ctx, 1);
             }
 
+            /* Skip to the offset of the object we want to read */
             for (i=0;i < offset;i++)
             {
                 code = pdfi_read_bytes(ctx, (byte *)&Buffer[0], 1, 1, compressed_stream);
@@ -535,9 +551,26 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
                 }
             }
 
-            code = pdfi_read_token(ctx, compressed_stream);
+            /* If object_length is not 0, then we want to apply a SubFileDecode filter to limit
+             * the number of bytes we read to the declared size of the object (difference between
+             * the offsets of the object we want to read, and the next object). If it is 0 then
+             * we're reading the last object in the stream, so we just rely on the SubFileDecode
+             * we set up when we created compressed_stream to limit the bytes to the length of
+             * that stream.
+             */
+            if (object_length > 0) {
+                code = pdfi_apply_SubFileDecode_filter(ctx, object_length, NULL, compressed_stream, &Object_stream, false);
+                if (code < 0) {
+                    (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
+                    return code;
+                }
+            } else {
+                Object_stream = compressed_stream;
+            }
+
+            code = pdfi_read_token(ctx, Object_stream);
             if (code < 0) {
-                pdfi_close_file(ctx, compressed_stream);
+                pdfi_close_file(ctx, Object_stream);
                 pdfi_countdown(compressed_object);
                 (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                 return code;
@@ -547,15 +580,15 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
 
                 /* Need to read all the elements from COS objects */
                 do {
-                    code = pdfi_read_token(ctx, compressed_stream);
+                    code = pdfi_read_token(ctx, Object_stream);
                     if (code < 0) {
-                        pdfi_close_file(ctx, compressed_stream);
+                        pdfi_close_file(ctx, Object_stream);
                         pdfi_countdown(compressed_object);
                         (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                         return code;
                     }
                     if (compressed_stream->eof == true) {
-                        pdfi_close_file(ctx, compressed_stream);
+                        pdfi_close_file(ctx, Object_stream);
                         pdfi_countdown(compressed_object);
                         (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                         return_error(gs_error_ioerror);
@@ -563,7 +596,7 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
                 }while ((ctx->stack_top[-1]->type != PDF_ARRAY && ctx->stack_top[-1]->type != PDF_DICT) || pdfi_count_stack(ctx) > start_depth);
             }
 
-            pdfi_close_file(ctx, compressed_stream);
+            pdfi_close_file(ctx, Object_stream);
 
             *object = ctx->stack_top[-1];
             /* For compressed objects we don't get a 'obj gen obj' sequence which is what sets
