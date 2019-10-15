@@ -219,10 +219,10 @@ gx_set_device_color_1(gs_gstate * pgs)
 
     /* Get the current overprint setting so that it can be properly restored.
        No need to fool with the mode */
-    int overprint = pgs->overprint;
+    int overprint = pgs->is_fill_color ? pgs->overprint : pgs->stroke_overprint;
 
     if (overprint)
-        gs_setoverprint(pgs, false);
+        pgs->is_fill_color ? gs_setoverprint(pgs, false) : gs_setstrokeoverprint(pgs, false);
     pcs = gs_cspace_new_DeviceGray(pgs->memory);
     if (pcs) {
         gs_setcolorspace(pgs, pcs);
@@ -236,7 +236,7 @@ gx_set_device_color_1(gs_gstate * pgs)
 
     /* If we changed the overprint condition, restore */
     if (overprint)
-        gs_setoverprint(pgs, true);
+        pgs->is_fill_color ? gs_setoverprint(pgs, true) : gs_setstrokeoverprint(pgs, true);
 
     return 0;
 }
