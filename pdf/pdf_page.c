@@ -120,6 +120,23 @@ page_error:
     return code;
 }
 
+/* Just dealing with UserUnit for now.
+ * See pdf_PDF2PS_matrix and .pdfshowpage_Install
+ */
+static void pdfi_set_ctm(pdf_context *ctx)
+{
+    gs_matrix mat;
+
+    mat.xx = ctx->UserUnit;
+    mat.xy = 0;
+    mat.yx = 0;
+    mat.yy = ctx->UserUnit;
+    mat.tx = 0;
+    mat.ty = 0;
+
+    gs_concat(ctx->pgs, &mat);
+}
+
 static int pdfi_set_media_size(pdf_context *ctx, pdf_dict *page_dict)
 {
     gs_c_param_list list;
@@ -130,6 +147,7 @@ static int pdfi_set_media_size(pdf_context *ctx, pdf_dict *page_dict)
     int code;
     uint64_t i;
     int64_t rotate = 0;
+    double userunit = 1.0;
 
     gs_c_param_list_write(&list, ctx->memory);
 
@@ -162,8 +180,14 @@ static int pdfi_set_media_size(pdf_context *ctx, pdf_dict *page_dict)
     if (a == NULL)
         a = default_media;
 
+    if (!ctx->nouserunit) {
+        (void)pdfi_dict_knownget_number(ctx, page_dict, "UserUnit", &userunit);
+    }
+    ctx->UserUnit = userunit;
+
     for (i=0;i<4;i++) {
         code = pdfi_array_get_number(ctx, a, i, &d[i]);
+        d[i] *= userunit;
     }
     pdfi_countdown(a);
 
@@ -286,6 +310,7 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num)
     if (code < 0) {
         goto exit2;
     }
+    pdfi_set_ctm(ctx);
 
     code = pdfi_dict_knownget_type(ctx, page_dict, "Group", PDF_DICT, (pdf_obj **)&group_dict);
     if (code < 0)

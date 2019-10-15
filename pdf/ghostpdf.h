@@ -284,6 +284,7 @@ typedef struct pdf_context_s
     bool page_needs_OP;
 
     double PageSize[4];
+    double UserUnit;
 
     /* Page level PDF objects */
     pdf_dict *SpotNames;
