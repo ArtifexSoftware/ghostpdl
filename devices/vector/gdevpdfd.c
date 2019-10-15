@@ -1930,7 +1930,7 @@ gdev_pdf_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
             if (code < 0)
                 return code;
         }
-        code = pdf_prepare_fill_stroke(pdev, pgs);
+        code = pdf_prepare_fill_stroke(pdev, pgs, false);
         if (code < 0)
             return code;
 

@@ -3283,10 +3283,10 @@ pdf_prepare_stroke(gx_device_pdf *pdev, const gs_gstate *pgs, bool for_text)
 }
 
 static int
-pdf_try_prepare_fill_stroke(gx_device_pdf *pdev, const gs_gstate *pgs)
+pdf_try_prepare_fill_stroke(gx_device_pdf *pdev, const gs_gstate *pgs, bool for_text)
 {
     pdf_resource_t *pres = 0;
-    int code = pdf_prepare_drawing(pdev, pgs, &pres);
+    int code = pdf_prepare_drawing(pdev, pgs, &pres, for_text);
 
     if (code < 0)
         return code;
@@ -3346,19 +3346,19 @@ pdf_try_prepare_fill_stroke(gx_device_pdf *pdev, const gs_gstate *pgs)
 }
 
 int
-pdf_prepare_fill_stroke(gx_device_pdf *pdev, const gs_gstate *pgs)
+pdf_prepare_fill_stroke(gx_device_pdf *pdev, const gs_gstate *pgs, bool for_text)
 {
     int code;
 
     if (pdev->context != PDF_IN_STREAM) {
-        code = pdf_try_prepare_fill_stroke(pdev, pgs);
+        code = pdf_try_prepare_fill_stroke(pdev, pgs, for_text);
         if (code != gs_error_interrupt) /* See pdf_open_gstate */
             return code;
         code = pdf_open_contents(pdev, PDF_IN_STREAM);
         if (code < 0)
             return code;
     }
-    return pdf_try_prepare_fill_stroke(pdev, pgs);
+    return pdf_try_prepare_fill_stroke(pdev, pgs, for_text);
 }
 
 /* Update the graphics state for an image other than an ImageType 1 mask. */
