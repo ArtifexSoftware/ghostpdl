@@ -1184,7 +1184,7 @@ tiffsep_put_params(gx_device * pdev, gs_param_list * plist)
     }
     switch (code = param_read_int(plist, (param_name = "MaxSpots"), &max_spots)) {
         case 0:
-            if ((max_spots >= 0) || (max_spots <= GS_CLIENT_COLOR_MAX_COMPONENTS-4)) {
+            if ((max_spots >= 0) && (max_spots <= GS_CLIENT_COLOR_MAX_COMPONENTS-4)) {
                 pdevn->max_spots = max_spots;
                 break;
             }
