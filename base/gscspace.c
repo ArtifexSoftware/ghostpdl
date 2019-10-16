@@ -465,6 +465,24 @@ gx_install_DeviceCMYK(gs_color_space * pcs, gs_gstate * pgs)
 }
 
 /*
+ * Communicate to the overprint compositor that this particular
+ * state overprint is not enabled.  This could be due to a 
+ * mismatched color space, or that overprint is false or the
+ * device does not support it.
+ */
+int
+gx_set_no_overprint(gs_gstate* pgs)
+{
+    gs_overprint_params_t   params = { 0 };
+
+    params.retain_any_comps = false;
+    params.is_fill_color = pgs->is_fill_color;
+    pgs->color[0].effective_opm = 0;
+
+    return gs_gstate_update_overprint(pgs, &params);
+}
+
+/*
  * Push an overprint compositor onto the current device indicating that,
  * at most, the spot color parameters are to be preserved.
  *

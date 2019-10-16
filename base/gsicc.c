@@ -659,7 +659,7 @@ gx_set_overprint_ICC(const gs_color_space * pcs, gs_gstate * pgs)
     bool op = pgs->is_fill_color ? pgs->overprint : pgs->stroke_overprint;
 
     if (dev == 0 || pcinfo == NULL)
-        return gx_spot_colors_set_overprint(pcs, pgs);
+        return gx_set_no_overprint(pgs);
 
     dev_proc(dev, get_profile)(dev, &dev_profile);
     gray_to_k = dev_profile->devicegraytok;
@@ -675,7 +675,7 @@ gx_set_overprint_ICC(const gs_color_space * pcs, gs_gstate * pgs)
         cs_ok, pgs->is_fill_color, pgs->overprint, pgs->stroke_overprint);
 
     if (!op || pcinfo->opmode == GX_CINFO_OPMODE_NOT || !cs_ok)
-        return gx_spot_colors_set_overprint(pcs, pgs);
+        return gx_set_no_overprint(pgs);
     else
         return gx_set_overprint_cmyk(pcs, pgs);
 }
