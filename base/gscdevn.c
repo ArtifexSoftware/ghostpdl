@@ -734,7 +734,7 @@ gx_set_overprint_DeviceN(const gs_color_space * pcs, gs_gstate * pgs)
         if ( base_type->index == gs_color_space_index_DeviceCMYK )
             return base_type->set_overprint( pcs->base_space, pgs );
         else
-            return gx_spot_colors_set_overprint(pcs->base_space, pgs);
+            return gx_set_no_overprint(pgs);
     } else {
         gs_overprint_params_t   params;
 
@@ -752,7 +752,6 @@ gx_set_overprint_DeviceN(const gs_color_space * pcs, gs_gstate * pgs)
 
         /* Only DeviceCMYK can use overprint mode */
         pgs->color[0].effective_opm = 0;
-
         return gs_gstate_update_overprint(pgs, &params);
     }
 }

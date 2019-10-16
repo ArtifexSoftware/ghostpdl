@@ -186,7 +186,7 @@ gx_set_overprint_Separation(const gs_color_space * pcs, gs_gstate * pgs)
     gs_devicen_color_map *  pcmap = &pgs->color_component_map;
 
     if (pcmap->use_alt_cspace)
-        return gx_spot_colors_set_overprint(pcs->base_space, pgs);
+        return gx_set_no_overprint(pgs);
     else {
         gs_overprint_params_t   params;
 
