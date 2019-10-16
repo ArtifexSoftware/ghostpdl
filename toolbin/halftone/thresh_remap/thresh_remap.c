@@ -192,7 +192,7 @@ main( int argc, char *argv[]) {
         fprintf(ofile,"%%%%EOF\n");
     } else {
         /* Just dump the binary data (suitable for Scanvec */
-        fprintf(ofile, "%c%c", width/256, width>>256);
+        fprintf(ofile, "%c%c", width/256, width % 256);
         for (i=0; i<num_pix; i++)
             fprintf(ofile, "%c", thresh[i]);
     }
