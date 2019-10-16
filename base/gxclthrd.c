@@ -416,7 +416,7 @@ clist_setup_render_threads(gx_device *dev, int y, gx_process_page_options_t *opt
         if ((code = gdev_create_buf_device(cdev->buf_procs.create_buf_device,
                                 &(thread->bdev), ndev,
                                 band*crdev->page_band_height, NULL,
-                                thread->memory, &(crdev->color_usage_array[0])) < 0))
+                                thread->memory, &(crdev->color_usage_array[0]))) < 0)
             break;
         if ((thread->sema_this = gx_semaphore_label(gx_semaphore_alloc(thread->memory), "Band")) == NULL ||
             (thread->sema_group = gx_semaphore_label(gx_semaphore_alloc(thread->memory), "Group")) == NULL) {
