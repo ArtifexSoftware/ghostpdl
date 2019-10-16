@@ -961,11 +961,19 @@ overprint_generic_fill_rectangle(
 
     if (tdev == 0)
         return 0;
-    else
+    else {
+        /* See if we even need to do any overprinting.  We have to maintain
+           the compositor active for fill/stroke cases even if we are only
+           doing a fill or a stroke */
+        if ((opdev->is_fill_color && opdev->retain_none_fill) ||
+            (!opdev->is_fill_color && opdev->retain_none_stroke))
+            return (*dev_proc(tdev, fill_rectangle)) (tdev, x, y, width, height, color);
+
         return gx_overprint_generic_fill_rectangle(tdev,
-                                                   opdev->is_fill_color ?
-                                                   opdev->drawn_comps_fill : opdev->drawn_comps_stroke,
-                                                   x, y, width, height, color, dev->memory);
+            opdev->is_fill_color ?
+            opdev->drawn_comps_fill : opdev->drawn_comps_stroke,
+            x, y, width, height, color, dev->memory);
+    }
 }
 
 static int
@@ -1131,6 +1139,13 @@ overprint_fill_rectangle_hl_color(gx_device *dev,
     if (tdev == 0)
         return 0;
 
+    /* See if we even need to do any overprinting.  We have to maintain
+       the compositor active for fill/stroke cases even if we are only
+       doing a fill or a stroke */
+    if ((opdev->is_fill_color && opdev->retain_none_fill) ||
+        (!opdev->is_fill_color && opdev->retain_none_stroke))
+        return (*dev_proc(tdev, fill_rectangle_hl_color)) (tdev, rect, pgs, pdcolor, pcpath);
+
     depth = tdev->color_info.depth;
     num_comps = tdev->color_info.num_components;
 
@@ -1224,6 +1239,13 @@ overprint_sep_fill_rectangle(
         return 0;
     else {
         int     depth = tdev->color_info.depth;
+
+        /* See if we even need to do any overprinting.  We have to maintain
+           the compositor active for fill/stroke cases even if we are only
+           doing a fill or a stroke */
+        if ((opdev->is_fill_color && opdev->retain_none_fill) ||
+            (!opdev->is_fill_color && opdev->retain_none_stroke))
+            return (*dev_proc(tdev, fill_rectangle)) (tdev, x, y, width, height, color);
 
         /*
          * Swap the color index into the order required by a byte-oriented
