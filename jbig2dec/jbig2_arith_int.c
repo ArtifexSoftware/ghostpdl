@@ -130,8 +130,11 @@ jbig2_arith_int_decode(Jbig2Ctx *ctx, Jbig2ArithIntCtx *actx, Jbig2ArithState *a
         V = (V << 1) | bit;
     }
 
-    /* make sure not to underflow/overflow 32 bit value */
-    if (V < INT32_MAX - 4436 || V > INT32_MIN + 4436)
+    /* offset is always >=0, so underflow can't happen. */
+    /* avoid overflow by clamping 32 bit value. */
+    if (V > INT32_MAX - offset)
+        V = INT32_MAX;
+    else
         V += offset;
     V = S ? -V : V;
     *p_result = V;
