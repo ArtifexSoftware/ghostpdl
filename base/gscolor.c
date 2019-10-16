@@ -217,12 +217,14 @@ gx_set_device_color_1(gs_gstate * pgs)
 {
     gs_color_space  *pcs;
 
-    /* Get the current overprint setting so that it can be properly restored.
-       No need to fool with the mode */
-    int overprint = pgs->is_fill_color ? pgs->overprint : pgs->stroke_overprint;
+    /*  We need to set the stroke *and* the fill overprint off
+       to ensure the op compositor is disabled.  They will be
+       restored when the graphic state is restored */
+    if (pgs->stroke_overprint)
+        gs_setstrokeoverprint(pgs, false);
+    if (pgs->overprint)
+        gs_setoverprint(pgs, false);
 
-    if (overprint)
-        pgs->is_fill_color ? gs_setoverprint(pgs, false) : gs_setstrokeoverprint(pgs, false);
     pcs = gs_cspace_new_DeviceGray(pgs->memory);
     if (pcs) {
         gs_setcolorspace(pgs, pcs);
@@ -233,10 +235,6 @@ gx_set_device_color_1(gs_gstate * pgs)
     }
     set_nonclient_dev_color(gs_currentdevicecolor_inline(pgs), 1);
     pgs->log_op = lop_default;
-
-    /* If we changed the overprint condition, restore */
-    if (overprint)
-        pgs->is_fill_color ? gs_setoverprint(pgs, true) : gs_setstrokeoverprint(pgs, true);
 
     return 0;
 }
