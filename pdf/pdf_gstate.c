@@ -324,7 +324,7 @@ int pdfi_setlinejoin(pdf_context *ctx)
 
     n1 = (pdf_num *)ctx->stack_top[-1];
     if (n1->type == PDF_INT){
-        code = gs_setlinejoin(ctx->pgs, (gs_line_join)n1->value.d);
+        code = gs_setlinejoin(ctx->pgs, n1->value.i);
     } else {
         pdfi_pop(ctx, 1);
         if (ctx->pdfstoponerror)
@@ -352,7 +352,7 @@ int pdfi_setlinecap(pdf_context *ctx)
 
     n1 = (pdf_num *)ctx->stack_top[-1];
     if (n1->type == PDF_INT){
-        code = gs_setlinecap(ctx->pgs, (gs_line_cap)n1->value.d);
+        code = gs_setlinecap(ctx->pgs, n1->value.i);
     } else {
         pdfi_pop(ctx, 1);
         if (ctx->pdfstoponerror)
