@@ -393,6 +393,14 @@ int pdfi_setflat(pdf_context *ctx)
                 return 0;
         }
     }
+    /* PDF spec says the value is 1-100, with 0 meaning "use the default"
+     * But gs code (and now our code) forces the value to be <= 1
+     * This matches what Adobe and evince seem to do (see Bug 555657).
+     * Apparently mupdf implements this as a no-op, which is essentially
+     * what this does now.
+     */
+    if (d1 > 1.0)
+        d1 = 1.0;
     code = gs_setflat(ctx->pgs, d1);
     pdfi_pop(ctx, 1);
     if(code < 0 && ctx->pdfstoponerror)
