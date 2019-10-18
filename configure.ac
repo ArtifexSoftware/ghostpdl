@@ -24,13 +24,15 @@ AC_PREREQ(2.63)
 AC_LANG(C)
 AC_CONFIG_SRCDIR(psi/gs.c)
 
+AC_CANONICAL_HOST
+
 dnl Inherit compiler flags from the environment...
 CFLAGS="${CFLAGS:=}"
 CPPFLAGS="${CPPFLAGS:=}"
 CXXFLAGS="${CXXFLAGS:=}"
 LDFLAGS="${LDFLAGS:=}"
 
-if test x"$cross_compiling" = x"yes"; then
+if test x"$host" != x"$build" ; then
   CFLAGSAUX="${CFLAGSAUX:=}"
   LDFLAGSAUX="${LDFLAGSAUX:=}"
 else
@@ -125,8 +127,11 @@ AUXEXTRALIBSTMP="\$(EXTRALIBS)"
 
 # purposefully do not include "help" output for this
 AC_ARG_ENABLE([save_confaux])
+AC_ARG_ENABLE([auxtools_only])
 
-if test x"$CCAUX" != x"" ; then
+absolute_source_path=$(cd "$(dirname "$0")" && pwd)
+
+if test x"$host" != x"$build" ; then
   # rerun configure for the AUX tools, disabling a load of tests not relevant for CCAUX
   olddir=`pwd`
   if test x"$enable_save_confaux" = x"yes"; then
@@ -146,9 +151,10 @@ if test x"$CCAUX" != x"" ; then
   echo $AUXFLAGS_MAK_LINE06 >> $AUXFLAGS_MAK.in
   echo $AUXFLAGS_MAK_LINE07 >> $AUXFLAGS_MAK.in
 
-  ../$0 CC="$CCAUX" CFLAGS="$CFLAGSAUX" LDFLAGS="$LDFLAGSAUX" CCAUX= CFLAGSAUX= CFLAGSAUX= MAKEFILE=$AUXFLAGS_MAK --host= --build= --without-libtiff --disable-contrib --disable-fontconfig --disable-dbus --disable-freetype --disable-fapi --disable-cups --disable-openjpeg --disable-gtk --with-libiconv=no --without-libidn --without-libpaper --without-pdftoraster --without-ijs --without-luratech --without-jbig2dec --without-x --with-drivers=""
+  AC_MSG_NOTICE([Begin recursive call to configure script (for auxiliary tools)])
+  "$absolute_source_path/configure" CC="$CCAUX" CFLAGS="$CFLAGSAUX" LDFLAGS="$LDFLAGSAUX" CCAUX= CFLAGSAUX= CFLAGSAUX= MAKEFILE=$AUXFLAGS_MAK --host=$build --build=$build --enable-auxtools_only --disable-hidden-visibility --with-local-zlib --without-libtiff --disable-contrib --disable-fontconfig --disable-dbus --disable-freetype --disable-fapi --disable-cups --disable-openjpeg --disable-gtk --with-libiconv=no --without-libidn --without-libpaper --without-pdftoraster --without-ijs --without-luratech --without-jbig2dec --without-x --with-drivers=""
   status=$?
-  cp config.log ../configaux.log
+  cp config.log "$olddir/configaux.log"
   if test $status -eq 0 ; then
     CCAUX=$(grep CCAUX $AUXFLAGS_MAK | sed "s/CCAUX=//g")
     GCFLAGSAUXTMP=$(grep GCFLAGSAUX $AUXFLAGS_MAK | sed "s/GCFLAGSAUX=//g")
@@ -159,14 +165,16 @@ if test x"$CCAUX" != x"" ; then
     LDFLAGSAUXTMP=$(grep LDFLAGSAUX $AUXFLAGS_MAK | sed "s/LDFLAGSAUX=//g")
     AUXEXTRALIBSTMP=$(grep AUXEXTRALIBS$ $AUXFLAGS_MAK | sed "s/AUXEXTRALIBS$=//g")
   fi
-  cd $olddir
+  cd "$olddir"
 
   if test x"$enable_save_confaux" != x"yes"; then
     rm -rf $CONFAUXDIR
   fi
 
   if test $status -ne 0 ; then
-    AC_MSG_ERROR([Recursive call to configure (for auxiliary tools) script failed], $status)
+    AC_MSG_ERROR([Recursive call to configure script failed], $status)
+  else
+    AC_MSG_NOTICE([Recursive call to configure script succeeded])
   fi
 fi
 
@@ -204,7 +212,7 @@ AC_PATH_TOOL(PKGCONFIG, pkg-config)
 # but if we are cross compiling, and there isn't a matching
 # pkconfig for the --host setting, then don't use the 'local'
 # pkconfig at all
-if test x"$cross_compiling" = x"yes"; then
+if test x"$host" != x"$build" ; then
   AC_PATH_PROG(BUILD_PKGCONFIG, pkg-config)
   if test x"$BUILD_PKGCONFIG" = x"$PKGCONFIG" ; then
     PKGCONFIG=
@@ -217,7 +225,7 @@ AC_PATH_TOOL(STRIP_XE, strip)
 # but if we are cross compiling, and there isn't a matching
 # pkconfig for the --host setting, then don't use the 'local'
 # pkconfig at all
-if test x"$cross_compiling" = x"yes"; then
+if test x"$host" != x"$build" ; then
   AC_PATH_PROG(BUILD_STRIP_XE, strip)
   if test x"$BUILD_STRIP_XE" = x"$STRIP_XE" ; then
     STRIP_XE=
@@ -234,18 +242,14 @@ CONTRIBINCLUDE="include $srcdir/contrib/contrib.mak"
 INSTALL_CONTRIB="install-contrib-extras"
 
 if test x"$enable_contrib" = x; then
-  if test x"$cross_compiling" = x"yes"; then
-    enable_contrib=
-  else
-    case `uname` in
-      MINGW*|MSYS*)
+    case $host in
+      *-mingw*|*-msys*|*-cygwin*)
         AC_MSG_WARN([disabling contrib devices])
         enable_contrib=no
       ;;
       *)
       ;;
     esac
-  fi
 fi
 
 if test x"$enable_contrib" != x"no"; then
@@ -269,39 +273,40 @@ dnl --------------------------------------------------
 dnl Set build flags based on environment
 dnl --------------------------------------------------
 
-#AC_CANONICAL_HOST
-
 CC_OPT_FLAGS_TO_TRY="-O"
 SET_DT_SONAME="-soname="
+CFLAGS_LARGEFILE=""
 
-if test x"$cross_compiling" = x"yes"; then
-  if test $ac_cv_prog_gcc = yes; then
-      CC_OPT_FLAGS_TO_TRY="-O2"
-      CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
-  fi
-else
-  case `uname` in
-        Linux*|GNU*)
+case $host in
+        *-linux*|*-gnu)
         if test $ac_cv_prog_gcc = yes; then
             CC_OPT_FLAGS_TO_TRY="-O2"
             CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
         fi
         ;;
-        *BSD)
+        *bsd*)
         if test $ac_cv_prog_gcc = yes; then
             CC_OPT_FLAGS_TO_TRY="-O2"
             CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
         fi
         ;;
-        Darwin*)
+        *-darwin*)
         if test $ac_cv_prog_gcc = yes; then
             CC_OPT_FLAGS_TO_TRY="-O2"
             CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
         fi
         SET_DT_SONAME=""
         ;;
-        SunOS)
+        *-mingw*|*-msys*|*-cygwin*)
+        if test $ac_cv_prog_gcc = yes; then
+            CC_OPT_FLAGS_TO_TRY="-O2"
+            CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
+        fi
+        SET_DT_SONAME=""
+        ;;
+        *-sun*)
         CC_OPT_FLAGS_TO_TRY="-O2"
+        CFLAGS_LARGEFILE="-D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64"
         # the trailing space is required!
         if test $ac_cv_prog_gcc = no; then
             SET_DT_SONAME="-h "
@@ -313,15 +318,14 @@ else
             CC_DBG_FLAGS_TO_TRY="-g -O0"
         fi
         ;;
-        AIX)
+        *-aix*)
         if test $ac_cv_prog_gcc = yes; then
             CC_OPT_FLAGS_TO_TRY="-O2"
             CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
             SET_DT_SONAME="so"
         fi
         ;;
-  esac
-fi
+esac
 
 AC_SUBST(SET_DT_SONAME)
 
@@ -330,11 +334,11 @@ if test $ac_cv_prog_gcc = yes; then
     cflags_to_try="-Wall -Wstrict-prototypes -Wundef \
 -Wmissing-declarations -Wmissing-prototypes -Wwrite-strings \
 -fno-strict-aliasing -Werror=declaration-after-statement \
--fno-builtin -fno-common -Werror=return-type"
+-fno-builtin -fno-common -Werror=return-type $CFLAGS_LARGEFILE"
     optflags_to_try="$CC_OPT_FLAGS_TO_TRY"
     dbgflags_to_try="$CC_DBG_FLAGS_TO_TRY"
 else
-    cflags_to_try=
+    cflags_to_try="$CFLAGS_LARGEFILE"
     optflags_to_try="$CC_OPT_FLAGS_TO_TRY"
     dbgflags_to_try="$CC_DBG_FLAGS_TO_TRY"
 fi
@@ -368,18 +372,25 @@ AC_ARG_WITH([arch_h], AC_HELP_STRING([--with-arch_h=<arch.h to use>],
 ARCH_CONF_HEADER=
 
 if test x"$with_arch_h" = x""; then
-  if test x"$cross_compiling" = x"yes"; then
-    ARCH_CONF_HEADER="\$(GLSRCDIR)/../$ARCH_AUTOCONF_HEADER"
-  else
-    case `uname` in
-          Darwin*)
+    case $host in
+          x86_64*-mingw*|x86_64*-msys*|x86_64*-cygwin*)
+            ARCH_CONF_HEADER="\$(GLSRCDIR)/../arch/windows-x64-msvc.h"
+          ;;
+          *-mingw*|*-msys*|*-cygwin*)
+            ARCH_CONF_HEADER="\$(GLSRCDIR)/../arch/windows-x86-msvc.h"
+          ;;
+          *-darwin*)
             ARCH_CONF_HEADER="\$(GLSRCDIR)/../arch/osx-x86-x86_64-ppc-gcc.h"
           ;;
           *)
             ARCH_CONF_HEADER=
+            if test x"$host" != x"$build"; then
+              ARCH_CONF_HEADER="\$(GLSRCDIR)/../$ARCH_AUTOCONF_HEADER"
+            else
+              ARCH_CONF_HEADER=
+            fi
           ;;
     esac
-  fi
 else
   ARCH_CONF_HEADER=$with_arch_h
 fi
@@ -395,7 +406,7 @@ AC_SUBST(ARCH_CONF_HEADER)
 #fi
 
 # NOTE: To correctly disable GCC's strict aliasing with '-fno-strict-aliasing'
-#       option, the 'cflags_to_try' have to checked after 'optflags_to_try'.
+#       option, the 'cflags_to_try' have to be checked after 'optflags_to_try'.
 AC_MSG_CHECKING([supported compiler flags])
 old_cflags=$CFLAGS
 
@@ -506,18 +517,30 @@ AC_HEADER_STDC
 AC_CHECK_HEADERS([errno.h fcntl.h limits.h malloc.h memory.h stdlib.h string.h strings.h sys/ioctl.h sys/param.h sys/time.h sys/times.h syslog.h unistd.h dirent.h ndir.h sys/dir.h sys/ndir.h inttypes.h])
 
 dnl --------------------------------------------------
-dnl Check for *BSD and apply BSD Make workaround
-dnl - BSD Make treats obj special and cd into it first.
+dnl Sun, BSD possibly other makes don't have quite the
+dnl feature set of GNU make. We still prefer GNU make,
+dnl but......
 dnl --------------------------------------------------
 
 OBJDIR_BSDMAKE_WORKAROUND=obj
+SUB_MAKE_OPTION=
+ORDER_ONLY=""
 
-case `uname` in
-        *BSD)
-        OBJDIR_BSDMAKEWORKAOROUND="notobj"
-        ;;
-esac
+AC_MSG_CHECKING(if make is GNU make)
+if make --version 2> /dev/null | grep GNU 2>&1 > /dev/null ; then
+  AC_MSG_RESULT(yes)
+  SUB_MAKE_OPTION="-f \$(MAKEFILE)"
+  ORDER_ONLY="|"
+else
+  AC_MSG_RESULT(no)
+  # BSD Make treats obj special and cd into it first
+  OBJDIR_BSDMAKEWORKAOROUND="notobj"
+fi
+
 AC_SUBST(OBJDIR_BSDMAKE_WORKAROUND)
+AC_SUBST(ORDER_ONLY)
+AC_SUBST(SUB_MAKE_OPTION)
+
 AC_CHECK_HEADER([sys/window.h])
 
 dnl --------------------------------------------------
@@ -658,15 +681,15 @@ dnl Set options that we want to pass into all other
 dnl configure scripts we might call
 dnl --------------------------------------------------
 
-SUBCONFIG_OPTS=""
+SUBCONFIG_OPTS="--build=$build --host=$host"
 
-if test x"$build_alias" != x""; then
-  SUBCONFIG_OPTS="$SUBCONFIG_OPTS --build=$build_alias"
-fi
-
-if test x"$host_alias" != x""; then
-  SUBCONFIG_OPTS="$SUBCONFIG_OPTS --host=$host_alias"
-fi
+#SUBCONFIG_OPTS=""
+#if test x"$build_alias" != x""; then
+#  SUBCONFIG_OPTS="$SUBCONFIG_OPTS --build=$build_alias"
+#fi
+#if test x"$host_alias" != x""; then
+#  SUBCONFIG_OPTS="$SUBCONFIG_OPTS --host=$host_alias"
+#fi
 
 dnl --------------------------------------------------
 dnl Check for libraries
@@ -701,11 +724,12 @@ AC_ARG_ENABLE([threading], AC_HELP_STRING([--disable-threading],
 # if you haven't got pread/pwrite, we can't use multithreading
 if test "x$HAVE_PREAD_PWRITE" != "x"; then
   if test "$enable_threading" != "no"; then
+    mutex_result="no"
     AC_CHECK_LIB(pthread, pthread_create, [
       SYNC=posync;
       PTHREAD_LIBS="-lpthread"
     ])
-    AC_MSG_CHECKING([recursive mutexes.......])
+    AC_MSG_CHECKING([for recursive mutexes])
     AC_TRY_COMPILE([#include <pthread.h>],
          [
             static int k = PTHREAD_MUTEX_RECURSIVE;
@@ -719,7 +743,8 @@ if test "x$HAVE_PREAD_PWRITE" != "x"; then
             ;
             return 0;
           ],
-         [RECURSIVE_MUTEXATTR="-DGS_RECURSIVE_MUTEXATTR=PTHREAD_MUTEX_RECURSIVE"],
+         [RECURSIVE_MUTEXATTR="-DGS_RECURSIVE_MUTEXATTR=PTHREAD_MUTEX_RECURSIVE"
+          mutex_result="PTHREAD_MUTEX_RECURSIVE"],
          [AC_TRY_COMPILE([#include <pthread.h>],
             [
               static int k = PTHREAD_MUTEX_RECURSIVE_NP;
@@ -733,7 +758,9 @@ if test "x$HAVE_PREAD_PWRITE" != "x"; then
               ;
               return 0;
             ],
-            [RECURSIVE_MUTEXATTR="-DGS_RECURSIVE_MUTEXATTR=PTHREAD_MUTEX_RECURSIVE_NP"])])
+            [RECURSIVE_MUTEXATTR="-DGS_RECURSIVE_MUTEXATTR=PTHREAD_MUTEX_RECURSIVE_NP"
+             mutex_result="PTHREAD_MUTEX_RECURSIVE_NP"])])
+    AC_MSG_RESULT($mutex_result)
   fi
 fi
 
@@ -1047,46 +1074,59 @@ AC_SUBST(FTSRCDIR)
 AC_SUBST(FT_CFLAGS)
 AC_SUBST(FT_LIBS)
 
-AC_MSG_CHECKING([for local jpeg library source])
-dnl At present, we give the local source priority over the shared
-dnl build, so that the D_MAX_BLOCKS_IN_MCU patch will be applied.
-dnl A more sophisticated approach would be to test the shared lib
-dnl to see whether it has already been patched.
-LIBJPEGDIR=src
-if test -f $srcdir/jpeg/jpeglib.h; then
-        AC_MSG_RESULT([jpeg])
-        SHARE_LIBJPEG=0
-        LIBJPEGDIR=$srcdir/jpeg
-elif test -f $srcdir/jpeg-6b/jpeglib.h; then
-        AC_MSG_RESULT([jpeg-6b])
-        SHARE_LIBJPEG=0
-        LIBJPEGDIR=$srcdir/jpeg-6b
+if test x"$enable_auxtools_only" = x"yes" ; then
+  LIBJPEGDIR=
+  SHARE_LIBJPEG=0
+  AC_DEFINE([DONT_HAVE_JMEMSYS_H], 1, [])
+  AC_SUBST(SHARE_LIBJPEG)
+  AC_SUBST(LIBJPEGDIR)
 else
-        AC_MSG_RESULT([no])
-        AC_CHECK_LIB(jpeg, jpeg_set_defaults, [
-          AC_CHECK_HEADERS([jpeglib.h], [SHARE_LIBJPEG=1])
-        ])
+  AC_MSG_CHECKING([for local jpeg library source])
+  dnl At present, we give the local source priority over the shared
+  dnl build, so that the D_MAX_BLOCKS_IN_MCU patch will be applied.
+  dnl A more sophisticated approach would be to test the shared lib
+  dnl to see whether it has already been patched.
+  LIBJPEGDIR=src
+  if test -f $srcdir/jpeg/jpeglib.h; then
+          AC_MSG_RESULT([jpeg])
+          SHARE_LIBJPEG=0
+          LIBJPEGDIR=$srcdir/jpeg
+  elif test -f $srcdir/jpeg-6b/jpeglib.h; then
+          AC_MSG_RESULT([jpeg-6b])
+          SHARE_LIBJPEG=0
+          LIBJPEGDIR=$srcdir/jpeg-6b
+  else
+          AC_MSG_RESULT([no])
+          AC_CHECK_LIB(jpeg, jpeg_set_defaults, [
+            AC_CHECK_HEADERS([jpeglib.h], [SHARE_LIBJPEG=1])
+          ])
+  fi
+  if test -z "$SHARE_LIBJPEG"; then
+    AC_MSG_ERROR([I wasn't able to find a copy
+    of the jpeg library. This is required for compiling
+    ghostscript. Please download a copy of the source,
+    e.g. from http://www.ijg.org/, unpack it at the
+    top level of the gs source tree, and rename
+    the directory to 'jpeg'.
+    ])
+  fi
+  AC_SUBST(SHARE_LIBJPEG)
+  AC_SUBST(LIBJPEGDIR)
+  dnl check for the internal jpeg memory header
+  AC_MSG_CHECKING([for jmemsys.h])
+  if test -r $LIBJPEGDIR/jmemsys.h; then
+    AC_MSG_RESULT([yes])
+  else
+    AC_MSG_RESULT([no])
+    AC_DEFINE([DONT_HAVE_JMEMSYS_H], 1,
+      [define if the libjpeg memory system prototypes aren't available])
+  fi
 fi
-if test -z "$SHARE_LIBJPEG"; then
-  AC_MSG_ERROR([I wasn't able to find a copy
-  of the jpeg library. This is required for compiling
-  ghostscript. Please download a copy of the source,
-  e.g. from http://www.ijg.org/, unpack it at the
-  top level of the gs source tree, and rename
-  the directory to 'jpeg'.
-  ])
-fi
-AC_SUBST(SHARE_LIBJPEG)
-AC_SUBST(LIBJPEGDIR)
-dnl check for the internal jpeg memory header
-AC_MSG_CHECKING([for jmemsys.h])
-if test -r $LIBJPEGDIR/jmemsys.h; then
-  AC_MSG_RESULT([yes])
-else
-  AC_MSG_RESULT([no])
-  AC_DEFINE([DONT_HAVE_JMEMSYS_H], 1,
-    [define if the libjpeg memory system prototypes aren't available])
-fi
+
+# this option is useful if you're cross-compiling and want to use
+# your toolchain's zlib for $host but the local one for $build
+AC_ARG_WITH([local-zlib], AC_HELP_STRING([--without-local-zlib],
+  [do not check for local zlib sources (has no effect on AUX toolchain when cross-building)]))
 
 AC_MSG_CHECKING([for local zlib source])
 dnl zlib is needed for language level 3, and libpng
@@ -1096,7 +1136,13 @@ ZLIBDIR=src
 AUX_SHARED_ZLIB=
 ZLIBCFLAGS=""
 
-if test -d $srcdir/zlib; then
+if test x"$with_local_zlib" = x"no" ; then
+  AC_MSG_RESULT([skip])
+  AC_CHECK_LIB(z, deflate, [
+    AC_CHECK_HEADERS(zlib.h, [SHARE_ZLIB=1; AUX_SHARED_ZLIB="-l\$(ZLIB_NAME)"])
+  ])
+else
+  if test -d $srcdir/zlib; then
         AC_MSG_RESULT([yes])
         SHARE_ZLIB=0
         ZLIBDIR=$srcdir/zlib
@@ -1104,11 +1150,12 @@ if test -d $srcdir/zlib; then
         if test x"$ac_cv_prog_gcc" = x"yes"; then
           ZLIBCFLAGS="-Wno-write-strings"
         fi
-else
+  else
         AC_MSG_RESULT([no])
         AC_CHECK_LIB(z, deflate, [
           AC_CHECK_HEADERS(zlib.h, [SHARE_ZLIB=1; AUX_SHARED_ZLIB="-l\$(ZLIB_NAME)"])
         ])
+  fi
 fi
 if test -z "$SHARE_ZLIB"; then
   AC_MSG_ERROR([I did not find a copy of zlib on your system.
@@ -1136,26 +1183,31 @@ AC_SUBST(ZLIBDIR)
 AC_SUBST(FT_SYS_ZLIB)
 
 dnl png for the png output device; it also requires zlib
-LIBPNGDIR=src
-PNGDEVS=''
-PNGDEVS_ALL='png48 png16m pnggray pngmono pngmonod png256 png16 pngalpha'
-AC_MSG_CHECKING([for local png library source])
-if test -f $srcdir/libpng/pngread.c; then
-        AC_MSG_RESULT([yes])
-        SHARE_LIBPNG=0
-        LIBPNGDIR=$srcdir/libpng
-        PNGDEVS="$PNGDEVS_ALL"
+if test x"$enable_auxtools_only" = x"yes" ; then
+  LIBPNGDIR=""
+  SHARE_LIBPNG=0
 else
-        AC_MSG_RESULT([no])
-        AC_CHECK_LIB(png, png_create_write_struct, [
-          AC_CHECK_HEADERS(png.h, [
-                SHARE_LIBPNG=1
-                PNGDEVS="$PNGDEVS_ALL"
-          ], [SHARE_LIBPNG=0])
-        ], [SHARE_LIBPNG=0], [-lz])
-fi
-if test -z "$PNGDEVS"; then
-  AC_MSG_NOTICE([disabling png output devices])
+  LIBPNGDIR=src
+  PNGDEVS=''
+  PNGDEVS_ALL='png48 png16m pnggray pngmono pngmonod png256 png16 pngalpha'
+  AC_MSG_CHECKING([for local png library source])
+  if test -f $srcdir/libpng/pngread.c; then
+          AC_MSG_RESULT([yes])
+          SHARE_LIBPNG=0
+          LIBPNGDIR=$srcdir/libpng
+          PNGDEVS="$PNGDEVS_ALL"
+  else
+          AC_MSG_RESULT([no])
+          AC_CHECK_LIB(png, png_create_write_struct, [
+            AC_CHECK_HEADERS(png.h, [
+                  SHARE_LIBPNG=1
+                  PNGDEVS="$PNGDEVS_ALL"
+            ], [SHARE_LIBPNG=0])
+          ], [SHARE_LIBPNG=0], [-lz])
+  fi
+  if test -z "$PNGDEVS"; then
+    AC_MSG_NOTICE([disabling png output devices])
+  fi
 fi
 AC_SUBST(SHARE_LIBPNG)
 AC_SUBST(LIBPNGDIR)
@@ -1167,24 +1219,29 @@ AC_MSG_CHECKING([for local lcms2mt library source])
 LCMS2DIR=src
 LCMS2MTDIR=src
 
+if test x"$enable_auxtools_only" = x"yes" ; then
+  SHARELCMS=0
+  LCMS2DIR=
+  LCMS2MTDIR=
+else
 # First check for Artifex version
-LCMS2MTSRC=$srcdir/lcms2mt
-if test -f $LCMS2MTSRC/include/lcms2mt.h; then
+  LCMS2MTSRC=$srcdir/lcms2mt
+  if test -f $LCMS2MTSRC/include/lcms2mt.h; then
       AC_MSG_RESULT([yes])
       SHARELCMS=0
       WHICHLCMS=lcms2mt
       LCMS2MTDIR=$LCMS2MTSRC
-else
-  AC_MSG_RESULT([no])
-  # Now check for local lcms2 (non-Artifex)
-  AC_MSG_CHECKING([for local lcms2 library source])
-  LCMS2SRC=$srcdir/lcms2
-  if test -f $LCMS2SRC/include/lcms2.h; then
+  else
+    AC_MSG_RESULT([no])
+    # Now check for local lcms2 (non-Artifex)
+    AC_MSG_CHECKING([for local lcms2 library source])
+    LCMS2SRC=$srcdir/lcms2
+    if test -f $LCMS2SRC/include/lcms2.h; then
       AC_MSG_RESULT([yes])
       SHARELCMS=0
       WHICHLCMS=lcms2
       LCMS2DIR=$LCMS2SRC
-  else
+    else
       # See if we have system library of lcms2
       AC_MSG_RESULT([no])
       AC_MSG_CHECKING([for system lcms2 library])
@@ -1194,7 +1251,8 @@ else
       if test x$WHICHLCMS = x; then
          AC_MSG_ERROR([lcms2 not found, or too old])
       fi
-   fi
+     fi
+  fi
 fi
 
 AC_SUBST(SHARELCMS)
@@ -1328,7 +1386,7 @@ if test x"$SHARE_LIBTIFF" = x"0" ; then
       if ! test -d "$LIBTIFFCONFDIR" ; then
         mkdir "$LIBTIFFCONFDIR"
       fi
-      cd "$LIBTIFFCONFDIR" && ../"$LIBTIFFDIR"/configure --disable-jbig --disable-lzma $SUBCONFIG_OPTS
+      cd "$LIBTIFFCONFDIR" && "$absolute_source_path/$LIBTIFFDIR/configure" --disable-jbig --disable-lzma $SUBCONFIG_OPTS
       status=$?
       if test $status -ne 0 ; then
         AC_MSG_ERROR([libtiff configure script failed], $status)
@@ -1355,7 +1413,7 @@ EXPATDIR=src
 EXPAT_CFLAGS=
 EXPAT_LIBS=
 
-if test x"$with_xps" != x"no" ; then
+if test x"$with_xps" != x"no" -a x"$enable_auxtools_only" != x"yes" ; then
   if test -f $srcdir/xps/xps.mak; then
     AC_MSG_CHECKING([for local expat library source])
     if test -f $srcdir/expat/lib/expat.h ; then
@@ -1388,7 +1446,6 @@ if test x"$with_xps" != x"no" ; then
     fi
   fi
 fi
-
 
 AC_SUBST(SHARE_EXPAT)
 AC_SUBST(EXPATDIR)
@@ -1432,13 +1489,22 @@ CUPS_DIR=""
 SHARELCUPS=1
 SHARELCUPSI=1
 
+case $host in
+    *-mingw*|*-msys*|*-cygwin*)
+        AC_MSG_WARN([disabling cups])
+        enable_cups=no
+    ;;
+    *)
+    ;;
+esac
+
 if ( test -f $srcdir/cups/gdevcups.c ); then
     CUPS_DIR="$srcdir/cups"
     if test x$enable_cups != xno; then
         if test x$with_local_cups != xyes; then
             if test x"$CUPSCONFIG" = x""; then
               AC_PATH_TOOL(CUPSCONFIG,cups-config)
-              if test x"$cross_compiling" = x"yes"; then
+              if test x"$build" != x"$host"; then
                 AC_PATH_PROG(BUILD_CUPSCONFIG, cups-config)
                 if test x"$BUILD_CUPSCONFIG" = x"$CUPSCONFIG" ; then
                   CUPSCONFIG=
@@ -1534,16 +1600,14 @@ dnl look for IJS implementation
 AC_ARG_WITH([ijs], AC_HELP_STRING([--without-ijs],
     [disable IJS driver support]))
 
-if test x"$cross_compiling" != x"yes"; then
-  case `uname` in
-    MINGW*|MSYS*)
-      AC_MSG_WARN([disabling the ijs device])
-      with_ijs=no
+case $host in
+    *-mingw*|*-msys*|*-cygwin*)
+        AC_MSG_WARN([disabling the ijs device])
+        with_ijs=no
     ;;
     *)
     ;;
-  esac
-fi
+esac
 
 dnl set safe defaults
     IJSDIR=src
@@ -1595,18 +1659,18 @@ if test x$with_luratech != xno; then
     SHARE_JBIG2=0
     JBIG2DIR=$srcdir/luratech/ldf_jb2
 
-    if test x"$cross_compiling" = x"yes"; then
-        if test x"$JBIG2_CFLAGS" != x""; then
-          JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -fsigned-char $JBIG2_CFLAGS"
-        else
-          JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -fsigned-char -DLINUX=1 -DFORTE"
-        fi
-    else
-      case `uname` in
-        Darwin*)
+    #if test x"$cross_compiling" = x"yes"; then
+    #    if test x"$JBIG2_CFLAGS" != x""; then
+    #      JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -fsigned-char $JBIG2_CFLAGS"
+    #    else
+    #      JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -fsigned-char -DLINUX=1 -DFORTE"
+    #    fi
+    #else
+      case $host in
+        *-darwin*)
           JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -DMAC -DMAC_OS_X_BUILD -fsigned-char"
         ;;
-        AIX)
+        *-aix*)
           if test $ac_cv_prog_gcc = yes; then
             JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -fsigned-char -DLINUX=1 -DFORTE"
           else
@@ -1617,7 +1681,7 @@ if test x$with_luratech != xno; then
           JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -fsigned-char -DLINUX=1 -DFORTE"
         ;;
       esac
-    fi
+    #fi
 
     JBIG2FILEDEVS='$(DD)gdevjbig2.dev'
     JBIG2DEVS='$(PSD)jbig2.dev'
@@ -1740,18 +1804,18 @@ if test x$with_luratech != xno; then
     SHARE_JPX=0
     JPXDIR=$srcdir/luratech/lwf_jp2
 
-    if test x"$cross_compiling" = x"yes"; then
-        if test x"$JPX_CFLAGS" != x""; then
-          JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 $JPX_CFLAGS"
-        else
-          JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -DLINUX=1 -DFORTE"
-        fi
-    else
-      case `uname` in
-        Darwin*)
+    #if test x"$cross_compiling" = x"yes"; then
+    #    if test x"$JPX_CFLAGS" != x""; then
+    #      JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 $JPX_CFLAGS"
+    #    else
+    #      JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -DLINUX=1 -DFORTE"
+    #    fi
+    #else
+      case $host in
+        *-darwin*)
           JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -DMAC -DMAC_OS_X_BUILD"
         ;;
-        AIX)
+        *-aix*)
           if test $ac_cv_prog_gcc = yes; then
             JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -fsigned-char -DLINUX=1 -DFORTE"
           else
@@ -1762,7 +1826,7 @@ if test x$with_luratech != xno; then
           JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -DLINUX=1 -DFORTE"
         ;;
       esac
-    fi
+    #fi
     JPXDEVS='$(PSD)jpx.dev'
   else
     AC_MSG_RESULT([no])
@@ -1821,11 +1885,17 @@ if test "x$JPX_DECODER" = "x"; then
         JPX_AUTOCONF_CFLAGS="-D\"memalign(a,b)=malloc(b)\""
       fi
 
-      JPX_AUTOCONF_CFLAGS="$JPX_AUTOCONF_CFLAGS -DMUTEX_pthread=0 $OPJ_LRINTF_SUBST -DUSE_JPIP -DUSE_OPENJPEG_JP2 $CFLAGS_OPJ_HAVE_STDINT_H $CFLAGS_OPJ_HAVE_INTTYPES_H $CFLAGS_OPJ_BIGENDIAN $CFLAGS_OPJ_HAVE_FSEEKO"
+      CFLAGS_old="$CFLAGS"
+      CFLAGS="-Wno-attributes"
+      AC_TRY_COMPILE([], [return 0;], [JPX_AUTOCONF_CFLAGS="$JPX_AUTOCONF_CFLAGS -Wno-attributes"])
+      CFLAGS="$CFLAGS_old"
+
+      JPX_AUTOCONF_CFLAGS="$JPX_AUTOCONF_CFLAGS -DOPJ_STATIC -DMUTEX_pthread=0 $OPJ_LRINTF_SUBST -DUSE_JPIP -DUSE_OPENJPEG_JP2 $CFLAGS_OPJ_HAVE_STDINT_H $CFLAGS_OPJ_HAVE_INTTYPES_H $CFLAGS_OPJ_BIGENDIAN $CFLAGS_OPJ_HAVE_FSEEKO"
 
       JPXDEVS='$(PSD)jpx.dev'
     else
       AC_MSG_RESULT([no])
+      check_for_opj_stream_set_user_data=no
       if test x"$PKGCONFIG" != x""; then
         AC_MSG_CHECKING(for OpenJPEG2)
         if $PKGCONFIG --exists libopenjp2; then
@@ -1836,8 +1906,12 @@ if test "x$JPX_DECODER" = "x"; then
           AC_MSG_RESULT([yes])
         else
           AC_MSG_RESULT([no])
+          check_for_opj_stream_set_user_data=yes
         fi
       else
+        check_for_opj_stream_set_user_data=yes
+      fi
+      if test x"$check_for_opj_stream_set_user_data" != x"no"; then
         AC_CHECK_LIB(openjp2, opj_stream_set_user_data,
             [JPX_AUTOCONF_CFLAGS="$JPX_AUTOCONF_CFLAGS $OPJ_LRINTF_SUBST -DUSE_JPIP -DUSE_OPENJPEG_JP2 $CFLAGS_OPJ_HAVE_STDINT_H $CFLAGS_OPJ_HAVE_INTTYPES_H $CFLAGS_OPJ_BIGENDIAN $CFLAGS_OPJ_HAVE_FSEEKO";
              JPX_AUTOCONF_LIBS="-lopenjp2";
@@ -2048,7 +2122,11 @@ AC_SUBST(SOC_LIBS)
 AC_SUBST(SOC_LOADER)
 
 dnl optional X11 for display devices
-AC_PATH_XTRA
+if test x"$enable_auxtools_only" = x"yes" ; then
+  no_x=yes
+else
+  AC_PATH_XTRA
+fi
 
 X_LDFLAGS=""
 X_CFLAGS=""
@@ -2062,9 +2140,14 @@ if test x$no_x != xyes; then
         fi
         if test ! "$x_libraries" = "NONE" -a ! "$x_libraries" = ""; then
                 X_LDFLAGS="-L$x_libraries"
-                if test "$uname" = "SunOS"; then
+                case $host in
+                    *-sun*)
                         X_LDFLAGS="$X_LDFLAGS -R$x_libraries"
-                fi
+                    ;;
+                    *)
+                    ;;
+                esac
+
         fi
 
         if test "$x_includes" = "/usr/include"; then
@@ -2557,23 +2640,40 @@ SO_LIB_EXT=".so"
 DLL_EXT=""
 SO_LIB_VERSION_SEPARATOR="."
 
-if test x"$cross_compiling" = x"yes"; then
-  DYNAMIC_CFLAGS="-fPIC"
-  GS_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GS_SONAME_MAJOR)"
-  PCL_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(PCL_SONAME_MAJOR)"
-  XPS_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(XPS_SONAME_MAJOR)"
-  PDL_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GPDL_SONAME_MAJOR)"
-  if test $ac_cv_prog_gcc = yes; then
-    # GCC high level flag
-    DYNAMIC_LIBS="-rdynamic"
-  else
-    DYNAMIC_LIBS=""
-  fi
-  SO_LIB_EXT=".so"
-else
-  case `uname` in
-    Linux*|GNU*)
-      DYNAMIC_CFLAGS="-fPIC"
+libname1="_SO_BASE)\$(GS_SOEXT)\$(DLL_EXT)"
+libname2="_SO_BASE)\$(GS_SOEXT)\$(SO_LIB_VERSION_SEPARATOR)\$(GS_VERSION_MAJOR)\$(DLL_EXT)"
+libname3="_SO_BASE)\$(GS_SOEXT)\$(SO_LIB_VERSION_SEPARATOR)\$(GS_VERSION_MAJOR)\$(SO_LIB_VERSION_SEPARATOR)\$(GS_VERSION_MINOR)\$(DLL_EXT)"
+GS_SONAME="lib\$(GS${libname1}"
+GS_SONAME_MAJOR="lib\$(GS${libname2}"
+GS_SONAME_MAJOR_MINOR="lib\$(GS${libname3}"
+PCL_SONAME="lib\$(PCL${libname1}"
+PCL_SONAME_MAJOR="lib\$(PCL${libname2}"
+PCL_SONAME_MAJOR_MINOR="lib\$(PCL${libname3}"
+XPS_SONAME="lib\$(XPS${libname1}"
+XPS_SONAME_MAJOR="lib\$(XPS${libname2}"
+XPS_SONAME_MAJOR_MINOR="lib\$(XPS${libname3}"
+GPDL_SONAME="lib\$(GPDL${libname1}"
+GPDL_SONAME_MAJOR="lib\$(GPDL${libname2}"
+GPDL_SONAME_MAJOR_MINOR="lib\$(GPDL${libname3}"
+
+hide_symbols=no
+attr_default=
+attr_hidden=
+_ldflags=
+
+AC_ARG_ENABLE([hidden-visibility],
+    AC_HELP_STRING([--enable-hidden-visibility],
+        [hide all shared library symbols which are not part of its public API]),
+    [hide_symbols=yes])
+
+if test x$hide_symbols = xyes -a $ac_cv_prog_gcc = yes; then
+    attr_default="__attribute__((visibility(\\\"default\\\")))"
+    attr_hidden="__attribute__((visibility(\\\"hidden\\\")))"
+fi
+
+case $host in
+    *-linux*|*-gnu)
+      DYNAMIC_CFLAGS="-fPIC $DYNAMIC_CFLAGS"
       GS_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GS_SONAME_MAJOR)"
       PCL_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(PCL_SONAME_MAJOR)"
       XPS_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(XPS_SONAME_MAJOR)"
@@ -2586,55 +2686,80 @@ else
       fi
       SO_LIB_EXT=".so"
     ;;
-    MINGW*|MSYS*)
-      DYNAMIC_CFLAGS=""
-      GS_DYNAMIC_LDFLAGS="-shared  -Wl,--out-implib=\$(BINDIR)/lib\$(GS_SO_BASE).dll.a -Wl,--export-all-symbols -Wl,--enable-auto-import"
-      PCL_DYNAMIC_LDFLAGS="-shared  -Wl,--out-implib=\$(BINDIR)/lib\$(PCL_SO_BASE).dll.a -Wl,--export-all-symbols -Wl,--enable-auto-import"
-      XPS_DYNAMIC_LDFLAGS="-shared  -Wl,--out-implib=\$(BINDIR)/lib\$(XPS_SO_BASE).dll.a -Wl,--export-all-symbols -Wl,--enable-auto-import"
-      PDL_DYNAMIC_LDFLAGS="-shared  -Wl,--out-implib=\$(BINDIR)/lib\$(PDL_SO_BASE).dll.a -Wl,--export-all-symbols -Wl,--enable-auto-import"
+    *-mingw*|*-msys*|*-cygwin*)
+      if test x$hide_symbols = xyes; then
+        attr_default="__declspec(dllexport)"
+        attr_hidden=""
+      else
+        _ldflags="-Wl,--export-all-symbols"
+      fi
+      _ldflags="$_ldflags -Wl,--enable-auto-import"
+      GS_DYNAMIC_LDFLAGS="-shared -Wl,--out-implib=\$(BINDIR)/lib\$(GS_SO_BASE).dll.a $_ldflags"
+      PCL_DYNAMIC_LDFLAGS="-shared -Wl,--out-implib=\$(BINDIR)/lib\$(PCL_SO_BASE).dll.a $_ldflags"
+      XPS_DYNAMIC_LDFLAGS="-shared -Wl,--out-implib=\$(BINDIR)/lib\$(XPS_SO_BASE).dll.a $_ldflags"
+      PDL_DYNAMIC_LDFLAGS="-shared -Wl,--out-implib=\$(BINDIR)/lib\$(PDL_SO_BASE).dll.a $_ldflags"
       SO_LIB_EXT=""
       DLL_EXT=".dll"
       SO_LIB_VERSION_SEPARATOR="-"
+      # make sure the import library doesn't link a program against the DLL with the minor version in it
+      GS_SONAME="lib\$(GS${libname1}"
+      GS_SONAME_MAJOR="lib\$(GS${libname3}"
+      GS_SONAME_MAJOR_MINOR="lib\$(GS${libname2}"
+      PCL_SONAME="lib\$(PCL${libname1}"
+      PCL_SONAME_MAJOR="lib\$(PCL${libname3}"
+      PCL_SONAME_MAJOR_MINOR="lib\$(PCL${libname2}"
+      XPS_SONAME="lib\$(XPS${libname1}"
+      XPS_SONAME_MAJOR="lib\$(XPS${libname3}"
+      XPS_SONAME_MAJOR_MINOR="lib\$(XPS${libname2}"
+      GPDL_SONAME="lib\$(GPDL${libname1}"
+      GPDL_SONAME_MAJOR="lib\$(GPDL${libname3}"
+      GPDL_SONAME_MAJOR_MINOR="lib\$(GPDL${libname2}"
     ;;
-    *BSD)
-      DYNAMIC_CFLAGS="-fPIC"
+    *bsd*)
+      DYNAMIC_CFLAGS="-fPIC $DYNAMIC_CFLAGS"
       GS_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GS_SONAME_MAJOR)"
       PCL_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(PCL_SONAME_MAJOR)"
       XPS_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(XPS_SONAME_MAJOR)"
       DYNAMIC_LIBS=""
       SO_LIB_EXT=".so"
     ;;
-    Darwin*)
-      GS_DYNAMIC_LDFLAGS="-dynamiclib -install_name \$(GS_SONAME_MAJOR_MINOR)"
+    *-darwin*)
+      DYNAMIC_CFLAGS="-fPIC $DYNAMIC_CFLAGS"
       PCL_DYNAMIC_LDFLAGS="-dynamiclib -install_name \$(PCL_SONAME_MAJOR_MINOR)"
       XPS_DYNAMIC_LDFLAGS="-dynamiclib -install_name \$(XPS_SONAME_MAJOR_MINOR)"
       PDL_DYNAMIC_LDFLAGS="-dynamiclib -install_name \$(GPDL_SONAME_MAJOR_MINOR)"
       DYNAMIC_LIBS=""
       SO_LIB_EXT=".dylib"
     ;;
-    SunOS)
+    *-sun*)
       if test $ac_cv_prog_gcc = yes; then
-        DYNAMIC_CFLAGS="-fPIC"
+        DYNAMIC_CFLAGS="-fPIC $DYNAMIC_CFLAGS"
       else
-        DYNAMIC_CFLAGS="-KPIC"
+        DYNAMIC_CFLAGS="-KPIC $DYNAMIC_CFLAGS"
+        #if test x$hide_symbols = xyes; then
+        #  attr_default="__global"
+        #  attr_hidden="__hidden"
+        #  _ldflags="-xldscope=hidden"
+        #fi
+        # ^^^ untested
       fi
-      GS_DYNAMIC_LDFLAGS="-G -shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GS_SONAME_MAJOR)"
-      PCL_DYNAMIC_LDFLAGS="-G -shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(PCL_SONAME_MAJOR)"
-      XPS_DYNAMIC_LDFLAGS="-G -shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(XPS_SONAME_MAJOR)"
-      PDL_DYNAMIC_LDFLAGS="-G -shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GPDL_SONAME_MAJOR)"
+      GS_DYNAMIC_LDFLAGS="-G -shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GS_SONAME_MAJOR) $_ldflags"
+      PCL_DYNAMIC_LDFLAGS="-G -shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(PCL_SONAME_MAJOR) $_ldflags"
+      XPS_DYNAMIC_LDFLAGS="-G -shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(XPS_SONAME_MAJOR) $_ldflags"
+      PDL_DYNAMIC_LDFLAGS="-G -shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GPDL_SONAME_MAJOR) $_ldflags"
       DYNAMIC_LIBS=""
       SO_LIB_EXT=".so"
-      ;;
-    AIX)
+    ;;
+    *-aix*)
       if test $ac_cv_prog_gcc = yes; then
-        DYNAMIC_CFLAGS="-fPIC"
+        DYNAMIC_CFLAGS="-fPIC $DYNAMIC_CFLAGS"
         GCFLAGS="-Wl,-brtl -D_LARGE_FILES $GCFLAGS"
         GS_DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
         PCL_DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
         XPS_DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
         PDL_DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
       else
-        DYNAMIC_CFLAGS=""
+        DYNAMIC_CFLAGS="$DYNAMIC_CFLAGS"
         GCFLAGS="-Wl,-brtl -D_LARGE_FILES $GCFLAGS"
         GS_DYNAMIC_LDFLAGS="-G -qmkshrobj -Wl,-brtl,-G"
         PCL_DYNAMIC_LDFLAGS="-G -qmkshrobj -Wl,-brtl,-G"
@@ -2642,48 +2767,73 @@ else
       fi
       SO_LIB_EXT=".so"
       ;;
-  esac
+esac
+
+if test x$hide_symbols = xyes ; then
+  if test $ac_cv_prog_gcc = yes; then
+    DYNAMIC_CFLAGS="$DYNAMIC_CFLAGS -fvisibility=hidden"
+  fi
+  DYNAMIC_CFLAGS="$DYNAMIC_CFLAGS -DGSDLLEXPORT=\"$attr_default\""
+  if test "x$FT_BRIDGE" = x1 -a "x$SHARE_FT" = x0 ; then
+    DYNAMIC_CFLAGS="$DYNAMIC_CFLAGS -D\"FT_EXPORT(x)\"=\"$attr_hidden x\""
+  fi
+  if test "x$SHARE_EXPAT" = x0 ; then
+    DYNAMIC_CFLAGS="$DYNAMIC_CFLAGS -DXML_STATIC -DXMLIMPORT=\"$attr_hidden\""
+  fi
 fi
+
+AC_SUBST(GS_SONAME)
+AC_SUBST(GS_SONAME_MAJOR)
+AC_SUBST(GS_SONAME_MAJOR_MINOR)
+AC_SUBST(PCL_SONAME)
+AC_SUBST(PCL_SONAME_MAJOR)
+AC_SUBST(PCL_SONAME_MAJOR_MINOR)
+AC_SUBST(XPS_SONAME)
+AC_SUBST(XPS_SONAME_MAJOR)
+AC_SUBST(XPS_SONAME_MAJOR_MINOR)
+AC_SUBST(GPDL_SONAME)
+AC_SUBST(GPDL_SONAME_MAJOR)
+AC_SUBST(GPDL_SONAME_MAJOR_MINOR)
 
 AC_ARG_ENABLE([dynamic], AC_HELP_STRING([--enable-dynamic],
     [Enable dynamically loaded drivers]),
 [
   if test "x$enable_dynamic" != xno; then
-    case `uname` in
-      Linux*|GNU*)
-      INSTALL_SHARED="install-shared"
-      if test "x$X_DEVS" != x; then
-              DYNAMIC_DEVS="\$(GLOBJDIR)/X11.so"
-      else
-              DYNAMIC_DEVS=""
-      fi
-      DYNAMIC_FLAGS="-DGS_DEVS_SHARED -DGS_DEVS_SHARED_DIR=\\\"\$(gssharedir)\\\""
-      X11_DEVS=""
-      OPT_CFLAGS="$DYNAMIC_CFLAGS $OPT_CFLAGS"
-      DBG_CFLAGS="$DYNAMIC_CFLAGS $DBG_CFLAGS"
+    case $host in
+      *-linux*|*-gnu)
+        INSTALL_SHARED="install-shared"
+        if test "x$X_DEVS" != x; then
+                DYNAMIC_DEVS="\$(GLOBJDIR)/X11.so"
+        else
+                DYNAMIC_DEVS=""
+        fi
+        DYNAMIC_FLAGS="-DGS_DEVS_SHARED -DGS_DEVS_SHARED_DIR=\\\"\$(gssharedir)\\\""
+        X11_DEVS=""
+        OPT_CFLAGS="$DYNAMIC_CFLAGS $OPT_CFLAGS"
+        DBG_CFLAGS="$DYNAMIC_CFLAGS $DBG_CFLAGS"
       ;;
-      *BSD)
-      DYNAMIC_DEVS="\$(GLOBJDIR)/X11.so"
-      DYNAMIC_FLAGS="-DGS_DEVS_SHARED -DGS_DEVS_SHARED_DIR=\\\"\$(gssharedir)\\\""
-      X11_DEVS=""
-      OPT_CFLAGS="$DYNAMIC_CFLAGS $OPT_CFLAGS"
-      DBG_CFLAGS="$DYNAMIC_CFLAGS $DBG_CFLAGS"
+      *bsd*)
+        DYNAMIC_DEVS="\$(GLOBJDIR)/X11.so"
+        DYNAMIC_FLAGS="-DGS_DEVS_SHARED -DGS_DEVS_SHARED_DIR=\\\"\$(gssharedir)\\\""
+        X11_DEVS=""
+        OPT_CFLAGS="$DYNAMIC_CFLAGS $OPT_CFLAGS"
+        DBG_CFLAGS="$DYNAMIC_CFLAGS $DBG_CFLAGS"
       ;;
-      Darwin*)
-      INSTALL_SHARED="install-shared"
-      DYNAMIC_FLAGS="-DGS_DEVS_SHARED -DGS_DEVS_SHARED_DIR=\\\"\$(gssharedir)\\\""
-      X11_DEVS=""
-      OPT_CFLAGS="$DYNAMIC_CFLAGS $OPT_CFLAGS"
-      DBG_CFLAGS="$DYNAMIC_CFLAGS $DBG_CFLAGS"
+      *-darwin*)
+        INSTALL_SHARED="install-shared"
+        DYNAMIC_FLAGS="-DGS_DEVS_SHARED -DGS_DEVS_SHARED_DIR=\\\"\$(gssharedir)\\\""
+        X11_DEVS=""
+        OPT_CFLAGS="$DYNAMIC_CFLAGS $OPT_CFLAGS"
+        DBG_CFLAGS="$DYNAMIC_CFLAGS $DBG_CFLAGS"
       ;;
-      SunOS)
-      DYNAMIC_DEVS="\$(GLOBJDIR)/X11.so"
-      DYNAMIC_FLAGS="-DGS_DEVS_SHARED -DGS_DEVS_SHARED_DIR=\\\"\$(gssharedir)\\\""
-      OPT_CFLAGS="$DYNAMIC_CFLAGS $OPT_CFLAGS"
-      DBG_CFLAGS="$DYNAMIC_CFLAGS $DBG_CFLAGS"
+      *-sun*)
+        DYNAMIC_DEVS="\$(GLOBJDIR)/X11.so"
+        DYNAMIC_FLAGS="-DGS_DEVS_SHARED -DGS_DEVS_SHARED_DIR=\\\"\$(gssharedir)\\\""
+        OPT_CFLAGS="$DYNAMIC_CFLAGS $OPT_CFLAGS"
+        DBG_CFLAGS="$DYNAMIC_CFLAGS $DBG_CFLAGS"
       ;;
       *)
-      AC_MSG_ERROR([Sorry, dynamic driver support not available on this platform!])
+        AC_MSG_ERROR([Sorry, dynamic driver support not available on this platform!])
       ;;
     esac
   fi
@@ -2786,7 +2936,7 @@ dnl --------------------------------------------------
 dnl disable the memory header ID code on SPARC
 dnl --------------------------------------------------
 
-case `uname -a` in
+case $host in
         *sparc*)
 	  GCFLAGS="$GCFLAGS -DGS_USE_MEMORY_HEADER_ID=0"
         ;;
@@ -2863,19 +3013,13 @@ AC_ARG_WITH(memory-alignment,
             [GS_MEMPTR_ALIGNMENT=$with_memory_alignment],[GS_MEMPTR_ALIGNMENT=check])
 
 if test x"$GS_MEMPTR_ALIGNMENT" = xcheck ; then
-  if test x"$cross_compiling" = x"no"; then
-    case `uname` in
-      HP-UX)
-       GS_MEMPTR_ALIGNMENT=8
-      ;;
-      SunOS)
-       GS_MEMPTR_ALIGNMENT=8
-      ;;
-      AIX)
-       GS_MEMPTR_ALIGNMENT=8
-      ;;
-    esac
-  fi
+  case $host in
+    *hpux*|*-sun*|*-aix*)
+     GS_MEMPTR_ALIGNMENT=8
+    ;;
+    *)
+    ;;
+  esac
 fi
 
 if test x"$GS_MEMPTR_ALIGNMENT" = xcheck ; then
@@ -2999,12 +3143,12 @@ AC_SUBST(SUB_MAKE_OPTION)
 # mingw, add the same prefix as the VS build uses
 # --------------------------------------------------
 AUXDIRPOSTFIX=""
-case `uname` in
-    MINGW*|MSYS*)
+case $build in
+    *-mingw*|*-msys*|*-cygwin*)
     AUXDIRPOSTFIX="_"
-    if test x"$cross_compiling" != x"yes"; then
-      CFLAGS="-DGS_NO_UTF8=1 $CFLAGS"
-    fi
+    #if test x"$cross_compiling" != x"yes"; then
+    #  CFLAGS="-DGS_NO_UTF8=1 $CFLAGS"
+    #fi
     ;;
 esac
 AC_SUBST(AUXDIRPOSTFIX)
@@ -3015,22 +3159,39 @@ AC_SUBST(AUXDIRPOSTFIX)
 # --------------------------------------------------
 EXEEXT=""
 
-AC_ARG_WITH([exe-ext],  AC_HELP_STRING([--with-exe-ext=EXT],
-    [set the file name executable extension (must include any separator e.g. the period in ".exe")]),[], [exe_ext=])
+case $host in
+    *-mingw*|*-msys*|*-cygwin*)
+      EXEEXT=".exe"
+    ;;
+    *)
+    ;;
+esac
 
-if test "x"$with_exe_ext != "x"; then
-  EXEEXT="$with_exe_ext"
-else
-  if test x"$cross_compiling" != x"yes"; then
-    case `uname` in
-      MINGW*|MSYS*)
-        EXEEXT=".exe"
-      ;;
-    esac
-  fi
-fi
+AC_ARG_WITH([exe-ext],  AC_HELP_STRING([--with-exe-ext=EXT],
+    [set the file name executable extension (must include any separator e.g. the period in ".exe")]),
+    [EXEEXT="$with_exe_ext"])
 
 AC_SUBST(EXEEXT)
+
+# --------------------------------------------------
+# Set executable name extention for aux binaries
+# usually empty on Unix-like systems
+# --------------------------------------------------
+AUXEXEEXT=""
+
+case $build in
+    *-mingw*|*-msys*|*-cygwin*)
+      AUXEXEEXT=".exe"
+    ;;
+    *)
+    ;;
+esac
+
+AC_ARG_WITH([aux-exe-ext],  AC_HELP_STRING([--with-aux-exe-ext=EXT],
+    [set the file name executable extension for auxiliary binaries (must include any separator e.g. the period in ".exe")]),
+    [AUXEXEEXT="$with_aux_exe_ext"])
+
+AC_SUBST(AUXEXEEXT)
 
 # --------------------------------------------------
 # Check for disabling of versioned path option.
@@ -3085,7 +3246,7 @@ fi
 
 AC_SUBST(CLUSTER_CFLAGS)
 
-if test x"$CCAUX" != x"$CC"; then
+if test x"$build" != x"$host"; then
 
   ilog2()
   {
@@ -3221,11 +3382,11 @@ AC_SUBST(CFLAGSAUX_DEBUG)
 AC_SUBST(CFLAGSAUX_PROFILE)
 AC_SUBST(LDFLAGSAUX)
 AC_SUBST(AUXEXTRALIBS)
-
+AC_SUBST(ARCH_AUTOCONF_HEADER)
 
 CONFIG_FILES_LIST="$CONFIG_FILES_LIST $THEMAKEFILE"
 
-if test x"$THEMAKEFILE" != x"$MAKEFILE" && test x"$CCAUX" = x"$CC"; then
+if test x"$THEMAKEFILE" != x"$MAKEFILE" && test x"$build" = x"$host"; then
   CONFIG_FILES_LIST="$CONFIG_FILES_LIST"
 fi
 

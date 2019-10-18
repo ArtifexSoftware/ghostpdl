@@ -89,10 +89,13 @@ gs/jbig2dec/config.h
 gs/jbig2dec/configure.lineno
 gs/jbig2dec/libtool
 
+config.guess
 config.log
 config.mak
 config.status
+config.sub
 configure
+install-sh
 tiff
 tiff-config
 

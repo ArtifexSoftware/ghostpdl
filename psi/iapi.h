@@ -68,6 +68,11 @@ extern "C" {
 #    define GSDLLEXPORT
 #  endif
 # endif
+# ifdef __MINGW32__
+/* export stdcall functions as "name" instead of "_name@ordinal" */
+#  undef GSDLLAPI
+#  define GSDLLAPI
+# endif
 # ifndef GSDLLAPI
 #  define GSDLLAPI __stdcall
 # endif
@@ -90,7 +95,11 @@ extern "C" {
 #endif
 
 #ifndef GSDLLEXPORT
-# define GSDLLEXPORT
+# ifdef __GNUC__
+#   define GSDLLEXPORT __attribute__ ((visibility ("default")))
+# else
+#   define GSDLLEXPORT
+# endif
 #endif
 #ifndef GSDLLAPI
 # define GSDLLAPI
