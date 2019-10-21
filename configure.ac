@@ -204,18 +204,22 @@ AC_SUBST(SED_EXTENDED_REGEX_OPT)
 AC_PROG_RANLIB
 #AC_PROG_INSTALL
 
-
-dnl pkg-config is used for several tests now...
-AC_PATH_TOOL(PKGCONFIG, pkg-config)
-
+# If the caller has gives a specific pkg-config to use, then
+# use it, and skip the tests.
+if test x"$PKGCONFIG" != x"" ; then
+    AC_MSG_NOTICE([Using $PKGCONFIG])
+else
 # this is an unpleasant hack
 # but if we are cross compiling, and there isn't a matching
 # pkconfig for the --host setting, then don't use the 'local'
 # pkconfig at all
-if test x"$host" != x"$build" ; then
-  AC_PATH_PROG(BUILD_PKGCONFIG, pkg-config)
-  if test x"$BUILD_PKGCONFIG" = x"$PKGCONFIG" ; then
-    PKGCONFIG=
+  AC_PATH_TOOL(PKGCONFIG, pkg-config)
+  if test x"$host" != x"$build" ; then
+    dnl pkg-config is used for several tests now...
+    AC_PATH_PROG(BUILD_PKGCONFIG, pkg-config)
+    if test x"$BUILD_PKGCONFIG" = x"$PKGCONFIG" ; then
+      PKGCONFIG=
+    fi
   fi
 fi
 
@@ -1486,6 +1490,8 @@ CUPSVERSION="0"
 CUPSPDFTORASTER="0"
 CUPS_DIR=""
 
+cups_hard_fail=0
+
 SHARELCUPS=1
 SHARELCUPSI=1
 
@@ -1500,6 +1506,10 @@ esac
 
 if ( test -f $srcdir/cups/gdevcups.c ); then
     CUPS_DIR="$srcdir/cups"
+#   If the user explicitly enabled cups, hard fail if not found
+    if test x"$enable_cups" = x"yes"; then
+      cups_hard_fail=1
+    fi
     if test x$enable_cups != xno; then
         if test x$with_local_cups != xyes; then
             if test x"$CUPSCONFIG" = x""; then
@@ -1510,6 +1520,10 @@ if ( test -f $srcdir/cups/gdevcups.c ); then
                   CUPSCONFIG=
                 fi
               fi
+            else
+#             We were given a cups-config on the command line, assume the user intends to
+#             include cups, and make not finding a hard fail.
+              cups_hard_fail=1
             fi
             # check for a libcups header
             AC_CHECK_HEADER([cups/cups.h],[],[CUPSCONFIG=""])
@@ -1562,6 +1576,10 @@ if ( test -f $srcdir/cups/gdevcups.c ); then
                     if test "$CUPSVERSION" ">" "1.2"; then
                         CUPSPDFTORASTER="1"
                     fi
+                fi
+            else
+                if test x"$cups_hard_fail" = x"1" ; then
+                  AC_MSG_ERROR([libcups/libcupsimage not found])
                 fi
             fi
         else
