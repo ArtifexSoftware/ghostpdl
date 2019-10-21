@@ -19,7 +19,12 @@
 #include "string_.h"
 #include "gdevprn.h"
 #include "assert_.h"
+
+#ifdef WITH_CAL
+#include "cal_ets.h"
+#else
 #include "ets.h"
+#endif
 
 /* Nasty inline declaration, as gxht_thresh.h requires penum */
 void gx_ht_threshold_row_bit_sub(byte *contone,  byte *threshold_strip,
@@ -1799,6 +1804,57 @@ static int check_trapping(gs_memory_t *memory, int trap_w, int trap_h,
     return 0;
 }
 
+static void
+find_aspect_ratio(float *res, int *a, int *b)
+{
+    float xres = res[0];
+    float yres = res[1];
+    float f;
+
+    if (xres == yres) {
+        *a = *b = 1;
+        return;
+    }
+    else if (xres > yres)
+    {
+        xres /= yres;
+        f = xres - (int)xres;
+        if (f >= 0.2 && f < 0.3)
+            xres *= 4, yres = 4;
+        else if (f >= 0.3 && f < 0.4)
+            xres *= 3, yres = 3;
+        else if (f >= 0.4 && f < 0.6)
+            xres *= 2, yres = 2;
+        else if (f >= 0.6 && f < 0.7)
+            xres *= 3, yres = 3;
+        else if (f >= 0.7 && f < 0.8)
+            xres *= 4, yres = 4;
+        else
+            yres = 1;
+        *a = (int)(xres + 0.5);
+        *b = (int)yres;
+    }
+    else
+    {
+        yres /= xres;
+        f = yres - (int)yres;
+        if (f >= 0.2 && f < 0.3)
+            yres *= 4, xres = 4;
+        else if (f >= 0.3 && f < 0.4)
+            yres *= 3, xres = 3;
+        else if (f >= 0.4 && f < 0.6)
+            yres *= 2, xres = 2;
+        else if (f >= 0.6 && f < 0.7)
+            yres *= 3, xres = 3;
+        else if (f >= 0.7 && f < 0.8)
+            yres *= 4, xres = 4;
+        else
+            xres = 1;
+        *a = (int)xres;
+        *b = (int)(yres + 0.5);
+    }
+}
+
 static int init_ets(gx_downscaler_t *ds, int num_planes, gx_downscale_core *downscale_core)
 {
     ETS_Params params = { 0 };
@@ -1831,13 +1887,15 @@ static int init_ets(gx_downscaler_t *ds, int num_planes, gx_downscale_core *down
     for (i = 0; i < num_planes; i++)
         rs_luts[i] = rs_lut;
 
+#ifdef WITH_CAL
+    params.context = ds->dev->memory->gs_lib_ctx->core->cal_ctx;
+#endif
     params.width = ds->width;
     params.n_planes = num_planes;
     params.levels = 2;
     params.luts = luts;
     params.distscale = 0;
-    params.aspect_x = 1;
-    params.aspect_y = 1;
+    find_aspect_ratio(ds->dev->HWResolution, &params.aspect_x, &params.aspect_y);
     params.strengths = strengths;
     params.rand_scale = 0;
     params.c1_scale = c1_scale;

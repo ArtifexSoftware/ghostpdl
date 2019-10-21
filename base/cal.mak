@@ -118,5 +118,11 @@ $(CAL_OBJ)$(CAL_PREFIX)blendsse42.$(OBJ) : $(CAL_SRC)blendsse42.c $(cal_HDRS) $(
 $(CAL_OBJ)$(CAL_PREFIX)blend.$(OBJ) : $(CAL_SRC)blend.c $(cal_HDRS) $(CAL_DEP) $(gsmemory_h)
 	$(CAL_CC) $(I_)$(GLSRC) $(CAL_O)blend.$(OBJ) $(C_) $(CAL_SRC)blend.c
 
+cal_ets_h=$(CAL_SRC)cal_ets.h
+ca_ets_tm_h=$(CAL_SRC)cal_ets_tm.h
+$(GLOBJ)ets_1.$(OBJ) : $(CAL_SRC)cal_ets.c $(CAL_SRC)ets_template.c $(AK) \
+ $(cal_ets_h) $(cal_ets_tm_h) $(LIB_MAK) $(MAKEDIRS)
+	$(GLCC) $(GLO_)ets_1.$(OBJ) $(C_) $(CAL_SRC)cal_ets.c
+
 
 # end of file

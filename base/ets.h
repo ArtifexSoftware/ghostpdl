@@ -120,6 +120,7 @@ ets_line(ETS_Ctx *ctx, unsigned char **dest, const ETS_SrcPixel * const * gs_res
 void
 ets_destroy(void *malloc_arg, ETS_Ctx *ctx);
 
+/* These are called from ETS and must be implemented by the calling code. */
 void *
 ets_malloc(void *malloc_arg, int size);
 

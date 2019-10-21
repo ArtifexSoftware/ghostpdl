@@ -1363,18 +1363,29 @@ ets_h=$(GLSRC)ets.h
 ets_tm_h=$(GLSRC)ets_tm.h
 ets=$(GLOBJ)ets.$(OBJ)
 
-$(GLOBJ)ets.$(OBJ) : $(GLSRC)ets.c $(AK) \
+$(GLOBJ)ets_0.$(OBJ) : $(GLSRC)ets.c $(AK) \
  $(ets_h) $(ets_tm_h) $(LIB_MAK) $(MAKEDIRS)
-	$(GLCC) $(GLO_)ets.$(OBJ) $(C_) $(GLSRC)ets.c
+	$(GLCC) $(GLO_)ets_0.$(OBJ) $(C_) $(GLSRC)ets.c
+
+$(GLOBJ)ets.$(OBJ) : $(GLOBJ)ets_$(WITH_CAL).$(OBJ)  $(AK) $(gp_h)
+	$(CP_) $(GLOBJ)ets_$(WITH_CAL).$(OBJ) $(GLOBJ)ets.$(OBJ)
 
 # ----------- Downsampling routines ------------ #
 gxdownscale_h=$(GLSRC)gxdownscale.h
 downscale_=$(GLOBJ)gxdownscale.$(OBJ) $(claptrap) $(ets)
 
-$(GLOBJ)gxdownscale.$(OBJ) : $(GLSRC)gxdownscale.c $(AK) $(string__h)\
+$(GLOBJ)gxdownscale_0.$(OBJ) : $(GLSRC)gxdownscale.c $(AK) $(string__h)\
  $(gxdownscale_h) $(gserrors_h) $(gdevprn_h) $(assert__h) $(ets_h)\
  $(LIB_MAK) $(MAKEDIRS)
-	$(GLCC) $(GLO_)gxdownscale.$(OBJ) $(C_) $(GLSRC)gxdownscale.c
+	$(GLCC) $(GLO_)gxdownscale_0.$(OBJ) $(C_) $(GLSRC)gxdownscale.c
+
+$(GLOBJ)gxdownscale_1.$(OBJ) : $(GLSRC)gxdownscale.c $(AK) $(string__h)\
+ $(gxdownscale_h) $(gserrors_h) $(gdevprn_h) $(assert__h) $(ets_h)\
+ $(LIB_MAK) $(MAKEDIRS)
+	$(GLCC) $(D_)WITH_CAL$(_D) $(I_)$(CALSRCDIR)$(_I) $(GLO_)gxdownscale_1.$(OBJ) $(C_) $(GLSRC)gxdownscale.c
+
+$(GLOBJ)gxdownscale.$(OBJ) : $(GLOBJ)gxdownscale_$(WITH_CAL).$(OBJ) $(AK) $(gp_h)
+	$(CP_) $(GLOBJ)gxdownscale_$(WITH_CAL).$(OBJ) $(GLOBJ)gxdownscale.$(OBJ)
 
 ###### Create a pseudo-"feature" for the entire graphics library.
 
