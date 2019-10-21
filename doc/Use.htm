@@ -2561,8 +2561,10 @@ files from Corel 9 and Illustrator 88 do not operate properly if these operators
 
 <dl>
     <dt><code>-dDOPS</code></dt>
-<dd>Enables processing of DoPS directives in PDF files. DoPS has in
-fact been deprecated for some time. Use of this option is not
+<dd>Enables processing of Subtype /PS streams in PDF files and the DoPS operator.
+DoPS has in fact been deprecated for some time. Also the "PS" operator that was
+removed from the 1.3 2nd edition specification is also disabled by default, and
+enabled by <code>-dDOPS</code>. Use of this option is <b>NOT</b>
 recommended in security-conscious applications, as it increases the
 scope for malicious code. <code>-dDOPS</code> has no effect on
 processing of PostScript source files. Note: in releases 7.30 and

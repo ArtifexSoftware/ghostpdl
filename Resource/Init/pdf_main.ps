@@ -47,7 +47,7 @@ userdict /GS_PDF_ProcSet undef
         % PDF 1.1 operators
   /BX { /BXlevel BXlevel 1 add store } bind executeonly
   /EX { /BXlevel BXlevel 1 sub store } bind executeonly
-  /PS { cvx exec } bind executeonly
+  /PS { DOPS { cvx exec } { pop } ifelse } bind executeonly	% PS disabled by default, as in pdf_draw.ps DoPS
         % PDF 1.2 operators
   /BMC {
     /BMClevel BMClevel 1 add store
