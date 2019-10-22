@@ -285,7 +285,7 @@ int pdfi_ri(pdf_context *ctx)
         code = gs_setrenderingintent(ctx->pgs, 2);
     } else if (pdfi_name_is(n, "RelativeColorimetric")) {
         code = gs_setrenderingintent(ctx->pgs, 1);
-    } else if (pdfi_name_is(n, "AbsoluteColoimetric")) {
+    } else if (pdfi_name_is(n, "AbsoluteColorimetric")) {
         code = gs_setrenderingintent(ctx->pgs, 3);
     } else {
         code = gs_error_undefined;
