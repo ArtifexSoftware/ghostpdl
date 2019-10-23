@@ -279,8 +279,8 @@ currentdict /gput_always_allow .undef
   /DeviceCMYK { [0 0 0 1] cvx } bind executeonly
   /CIEBasedA { 0 } bind executeonly
   /CIEBasedABC { [0 0 0] cvx } bind executeonly
-  /CalGray { pop /DeviceGray 0 } bind executeonly
-  /CalRGB { pop /DeviceRGB [0 0 0] cvx } bind executeonly
+  /CalGray { 0 } bind executeonly
+  /CalRGB { [0 0 0] cvx } bind executeonly
   /Lab {[0 0 0] cvx } bind executeonly
   /ICCBased { [ 1 index 1 oget /N get { 0 } repeat ] cvx } bind executeonly
   /Separation { 1 } bind executeonly
