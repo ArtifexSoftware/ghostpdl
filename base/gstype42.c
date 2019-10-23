@@ -775,14 +775,14 @@ gs_type42_find_post_name(gs_font_type42 * pfont, gs_glyph glyph, gs_string *gnam
                        for (i = 0; i < numglyphs; i++) {
                            byte len;
                            if (i == gind) {
-                               READ_SFNTS(pfont, offs, 1, &len);
+                               READ_SFNTS(pfont, offs, 1, len);
                                code = pfont->data.string_proc(pfont, offs + 1, len, (const byte **)&(gname->data));
                                if (code > 0)
                                    gname->size = len;
                                break;
                            }
                            else {
-                               READ_SFNTS(pfont, offs, 1, &len);
+                               READ_SFNTS(pfont, offs, 1, len);
                                offs += len + 1;
                            }
                        }
