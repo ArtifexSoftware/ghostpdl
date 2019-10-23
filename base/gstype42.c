@@ -773,17 +773,16 @@ gs_type42_find_post_name(gs_font_type42 * pfont, gs_glyph glyph, gs_string *gnam
                     if (gind < numglyphs) {
                         offs = pfont->data.post_offset + 34 + numglyphs * 2;
                        for (i = 0; i < numglyphs; i++) {
-                           byte len;
                            if (i == gind) {
-                               READ_SFNTS(pfont, offs, 1, len);
-                               code = pfont->data.string_proc(pfont, offs + 1, len, (const byte **)&(gname->data));
+                               READ_SFNTS(pfont, offs, 1, val);
+                               code = pfont->data.string_proc(pfont, offs + 1, (uint)val[0], (const byte **)&(gname->data));
                                if (code > 0)
-                                   gname->size = len;
+                                   gname->size = val[0];
                                break;
                            }
                            else {
-                               READ_SFNTS(pfont, offs, 1, len);
-                               offs += len + 1;
+                               READ_SFNTS(pfont, offs, 1, val);
+                               offs += (uint)val[0] + 1;
                            }
                        }
                     }
