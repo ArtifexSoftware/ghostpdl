@@ -16,7 +16,7 @@
 # makefile for contributed device drivers.
 
 # Define the name of this makefile.
-CONTRIB_MAK=$(DEVSRC)contrib.mak $(TOP_MAKEFILES)
+DCONTRIB_MAK=$(DEVSRC)contrib.mak $(TOP_MAKEFILES)
 
 ###### --------------------------- Catalog -------------------------- ######
 
@@ -123,10 +123,10 @@ CONTRIB_MAK=$(DEVSRC)contrib.mak $(TOP_MAKEFILES)
 ###   please contact narf@media-lab.media.mit.edu if you have questions.  ###
 
 pe_=$(DEVOBJ)gdevpe.$(OBJ)
-$(DD)pe.dev : $(pe_) $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)pe.dev : $(pe_) $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETDEV) $(DD)pe $(pe_)
 
-$(DEVOBJ)gdevpe.$(OBJ) : $(DEVSRC)gdevpe.c $(GDEV) $(memory__h) $(CONTRIB_MAK) $(MAKEDIRS)
+$(DEVOBJ)gdevpe.$(OBJ) : $(DEVSRC)gdevpe.c $(GDEV) $(memory__h) $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevpe.$(OBJ) $(C_) $(DEVSRC)gdevpe.c
 
 ###### ----------------------- Other displays ------------------------ ######
@@ -137,10 +137,10 @@ $(DEVOBJ)gdevpe.$(OBJ) : $(DEVSRC)gdevpe.c $(GDEV) $(memory__h) $(CONTRIB_MAK) $
 
 # This is implemented as a 'printer' device.
 sonyfb_=$(DEVOBJ)gdevsnfb.$(OBJ)
-$(DD)sonyfb.dev : $(sonyfb_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)sonyfb.dev : $(sonyfb_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)sonyfb $(sonyfb_)
 
-$(DEVOBJ)gdevsnfb.$(OBJ) : $(DEVSRC)gdevsnfb.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIRS)
+$(DEVOBJ)gdevsnfb.$(OBJ) : $(DEVSRC)gdevsnfb.c $(PDEVH) $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevsnfb.$(OBJ) $(C_) $(DEVSRC)gdevsnfb.c
 
 ###### --------------- Memory-buffered printer devices --------------- ######
@@ -149,13 +149,13 @@ $(DEVOBJ)gdevsnfb.$(OBJ) : $(DEVSRC)gdevsnfb.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIR
 
 bj10e_=$(DEVOBJ)gdevbj10.$(OBJ)
 
-$(DD)bj10e.dev : $(bj10e_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)bj10e.dev : $(bj10e_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)bj10e $(bj10e_)
 
-$(DD)bj200.dev : $(bj10e_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)bj200.dev : $(bj10e_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)bj200 $(bj10e_)
 
-$(DEVOBJ)gdevbj10.$(OBJ) : $(DEVSRC)gdevbj10.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIRS)
+$(DEVOBJ)gdevbj10.$(OBJ) : $(DEVSRC)gdevbj10.c $(PDEVH) $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevbj10.$(OBJ) $(C_) $(DEVSRC)gdevbj10.c
 
 ### ------------- The CalComp Raster Format ----------------------------- ###
@@ -164,10 +164,10 @@ $(DEVOBJ)gdevbj10.$(OBJ) : $(DEVSRC)gdevbj10.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIR
 ###       questions.                                                      ###
 
 ccr_=$(DEVOBJ)gdevccr.$(OBJ)
-$(DD)ccr.dev : $(ccr_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)ccr.dev : $(ccr_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)ccr $(ccr_)
 
-$(DEVOBJ)gdevccr.$(OBJ) : $(DEVSRC)gdevccr.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIRS)
+$(DEVOBJ)gdevccr.$(OBJ) : $(DEVSRC)gdevccr.c $(PDEVH) $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevccr.$(OBJ) $(C_) $(DEVSRC)gdevccr.c
 
 ### The H-P DeskJet, PaintJet, and DesignJet family color printer devices.###
@@ -186,48 +186,48 @@ $(DEVOBJ)gdevccr.$(OBJ) : $(DEVSRC)gdevccr.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIRS)
 
 cdeskjet_=$(DEVOBJ)gdevcdj.$(OBJ) $(HPPCL)
 
-$(DD)cdeskjet.dev : $(cdeskjet_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)cdeskjet.dev : $(cdeskjet_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)cdeskjet $(cdeskjet_)
 
-$(DD)cdjcolor.dev : $(cdeskjet_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)cdjcolor.dev : $(cdeskjet_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)cdjcolor $(cdeskjet_)
 
-$(DD)cdjmono.dev : $(cdeskjet_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)cdjmono.dev : $(cdeskjet_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)cdjmono $(cdeskjet_)
 
-$(DD)cdj500.dev : $(cdeskjet_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)cdj500.dev : $(cdeskjet_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)cdj500 $(cdeskjet_)
 
-$(DD)cdj550.dev : $(cdeskjet_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)cdj550.dev : $(cdeskjet_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)cdj550 $(cdeskjet_)
 
-$(DD)declj250.dev : $(cdeskjet_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)declj250.dev : $(cdeskjet_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)declj250 $(cdeskjet_)
 
-$(DD)dnj650c.dev : $(cdeskjet_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)dnj650c.dev : $(cdeskjet_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)dnj650c $(cdeskjet_)
 
-$(DD)lj4dith.dev : $(cdeskjet_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)lj4dith.dev : $(cdeskjet_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)lj4dith $(cdeskjet_)
 
-$(DD)pj.dev : $(cdeskjet_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)pj.dev : $(cdeskjet_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)pj $(cdeskjet_)
 
-$(DD)pjxl.dev : $(cdeskjet_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)pjxl.dev : $(cdeskjet_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)pjxl $(cdeskjet_)
 
 # Note: the pjxl300 driver also works for the CopyJet.
-$(DD)pjxl300.dev : $(cdeskjet_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)pjxl300.dev : $(cdeskjet_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)pjxl300 $(cdeskjet_)
 
 # Note: the BJC600 driver also works for the BJC4000.
-$(DD)bjc600.dev : $(cdeskjet_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)bjc600.dev : $(cdeskjet_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)bjc600 $(cdeskjet_)
 
-$(DD)bjc800.dev : $(cdeskjet_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)bjc800.dev : $(cdeskjet_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)bjc800 $(cdeskjet_)
 
-$(DD)escp.dev : $(cdeskjet_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)escp.dev : $(cdeskjet_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)escp $(cdeskjet_)
 
 # NB: you can also customise the build if required, using
@@ -238,15 +238,15 @@ gdevbjc_h=$(DEVSRC)gdevbjc.h
 
 $(DEVOBJ)gdevcdj.$(OBJ) : $(DEVSRC)gdevcdj.c $(std_h) $(PDEVH)\
  $(gsparam_h) $(gsstate_h) $(gxlum_h)\
- $(gdevbjc_h) $(gdevpcl_h) $(CONTRIB_MAK) $(MAKEDIRS)
+ $(gdevbjc_h) $(gdevpcl_h) $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevcdj.$(OBJ) $(C_) $(DEVSRC)gdevcdj.c
 
 djet500c_=$(DEVOBJ)gdevdjtc.$(OBJ) $(HPPCL)
-$(DD)djet500c.dev : $(djet500c_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)djet500c.dev : $(djet500c_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)djet500c $(djet500c_)
 
 $(DEVOBJ)gdevdjtc.$(OBJ) : $(DEVSRC)gdevdjtc.c $(PDEVH) $(malloc__h) $(gdevpcl_h) \
- $(CONTRIB_MAK) $(MAKEDIRS)
+ $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevdjtc.$(OBJ) $(C_) $(DEVSRC)gdevdjtc.c
 
 ### -------------------- The H-P Color LaserJet 5/5M -------------------- ###
@@ -262,24 +262,24 @@ $(DEVOBJ)gdevdjtc.$(OBJ) : $(DEVSRC)gdevdjtc.c $(PDEVH) $(malloc__h) $(gdevpcl_h
 
 cljet5_=$(DEVOBJ)gdevclj.$(OBJ) $(HPPCL)
 
-$(DD)cljet5.dev : $(DEVS_MAK) $(cljet5_) $(GLD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)cljet5.dev : $(DEVS_MAK) $(cljet5_) $(GLD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)cljet5 $(cljet5_)
 
 # The cljet5pr driver has hacks for trying to handle page rotation.
 # The hacks only work with one special PCL interpreter.  Don't use it!
-$(DD)cljet5pr.dev : $(DEVS_MAK) $(cljet5_) $(GLD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)cljet5pr.dev : $(DEVS_MAK) $(cljet5_) $(GLD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)cljet5pr $(cljet5_)
 
 $(DEVOBJ)gdevclj.$(OBJ) : $(DEVSRC)gdevclj.c $(math__h) $(PDEVH)\
- $(gx_h) $(gsparam_h) $(gdevpcl_h) $(CONTRIB_MAK) $(MAKEDIRS)
+ $(gx_h) $(gsparam_h) $(gdevpcl_h) $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevclj.$(OBJ) $(C_) $(DEVSRC)gdevclj.c
 
 cljet5c_=$(DEVOBJ)gdevcljc.$(OBJ) $(HPPCL)
-$(DD)cljet5c.dev : $(DEVS_MAK) $(cljet5c_) $(GLD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)cljet5c.dev : $(DEVS_MAK) $(cljet5c_) $(GLD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)cljet5c $(cljet5c_)
 
 $(DEVOBJ)gdevcljc.$(OBJ) : $(DEVSRC)gdevcljc.c $(math__h) $(PDEVH) $(gdevpcl_h) \
- $(CONTRIB_MAK) $(MAKEDIRS)
+ $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevcljc.$(OBJ) $(C_) $(DEVSRC)gdevcljc.c
 
 ### --------------- The H-P LaserJet 3100 software device --------------- ###
@@ -291,17 +291,17 @@ $(DEVOBJ)gdevcljc.$(OBJ) : $(DEVSRC)gdevcljc.c $(math__h) $(PDEVH) $(gdevpcl_h) 
 ###       Ulrich Schmid (uschmid@mail.hh.provi.de) if you have questions. ###
 
 lj3100sw_=$(DEVOBJ)gdevl31s.$(OBJ) $(DEVOBJ)gdevmeds.$(OBJ)
-$(DD)lj3100sw.dev : $(lj3100sw_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)lj3100sw.dev : $(lj3100sw_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)lj3100sw $(lj3100sw_)
 
 gdevmeds_h=$(DEVSRC)gdevmeds.h
 
 $(DEVOBJ)gdevl31s.$(OBJ) : $(DEVSRC)gdevl31s.c $(gdevmeds_h) $(PDEVH) \
- $(CONTRIB_MAK) $(MAKEDIRS)
+ $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevl31s.$(OBJ) $(C_) $(DEVSRC)gdevl31s.c
 
 $(DEVOBJ)gdevmeds.$(OBJ) : $(DEVSRC)gdevmeds.c $(AK) $(gdevmeds_h) \
- $(CONTRIB_MAK) $(MAKEDIRS)
+ $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevmeds.$(OBJ) $(C_) $(DEVSRC)gdevmeds.c
 
 ### ------ CoStar LabelWriter II II/Plus device ------ ###
@@ -309,13 +309,13 @@ $(DEVOBJ)gdevmeds.$(OBJ) : $(DEVSRC)gdevmeds.c $(AK) $(gdevmeds_h) \
 
 coslw_=$(DEVOBJ)gdevcslw.$(OBJ)
 
-$(DD)coslw2p.dev : $(coslw_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)coslw2p.dev : $(coslw_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)coslw2p $(coslw_)
 
-$(DD)coslwxl.dev : $(coslw_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)coslwxl.dev : $(coslw_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)coslwxl $(coslw_)
 
-$(DEVOBJ)gdevcslw.$(OBJ) : $(DEVSRC)gdevcslw.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIRS)
+$(DEVOBJ)gdevcslw.$(OBJ) : $(DEVSRC)gdevcslw.c $(PDEVH) $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevcslw.$(OBJ) $(C_) $(DEVSRC)gdevcslw.c
 
 ### ----------------- The generic Epson printer device ----------------- ###
@@ -327,21 +327,21 @@ $(DEVOBJ)gdevcslw.$(OBJ) : $(DEVSRC)gdevcslw.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIR
 
 epson_=$(DEVOBJ)gdevepsn.$(OBJ)
 
-$(DD)epson.dev : $(epson_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)epson.dev : $(epson_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)epson $(epson_)
 
-$(DD)eps9mid.dev : $(epson_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)eps9mid.dev : $(epson_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)eps9mid $(epson_)
 
-$(DD)eps9high.dev : $(epson_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)eps9high.dev : $(epson_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)eps9high $(epson_)
 
-$(DEVOBJ)gdevepsn.$(OBJ) : $(DEVSRC)gdevepsn.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIRS)
+$(DEVOBJ)gdevepsn.$(OBJ) : $(DEVSRC)gdevepsn.c $(PDEVH) $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevepsn.$(OBJ) $(C_) $(DEVSRC)gdevepsn.c
 
 ### ----------------- The IBM Proprinter printer device ---------------- ###
 
-$(DD)ibmpro.dev : $(epson_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)ibmpro.dev : $(epson_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)ibmpro $(epson_)
 
 ### -------------- The Epson LQ-2550 color printer device -------------- ###
@@ -349,10 +349,10 @@ $(DD)ibmpro.dev : $(epson_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
 ###       Dave St. Clair (dave@exlog.com) if you have questions.         ###
 
 epsonc_=$(DEVOBJ)gdevepsc.$(OBJ)
-$(DD)epsonc.dev : $(epsonc_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)epsonc.dev : $(epsonc_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)epsonc $(epsonc_)
 
-$(DEVOBJ)gdevepsc.$(OBJ) : $(DEVSRC)gdevepsc.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIRS)
+$(DEVOBJ)gdevepsc.$(OBJ) : $(DEVSRC)gdevepsc.c $(PDEVH) $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevepsc.$(OBJ) $(C_) $(DEVSRC)gdevepsc.c
 
 ### ------------- The Epson ESC/P 2 language printer devices ------------- ###
@@ -364,36 +364,36 @@ $(DEVOBJ)gdevepsc.$(OBJ) : $(DEVSRC)gdevepsc.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIR
 
 ESCP2=$(DEVOBJ)gdevescp.$(OBJ)
 
-$(DEVOBJ)gdevescp.$(OBJ) : $(DEVSRC)gdevescp.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIRS)
+$(DEVOBJ)gdevescp.$(OBJ) : $(DEVSRC)gdevescp.c $(PDEVH) $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevescp.$(OBJ) $(C_) $(DEVSRC)gdevescp.c
 
-$(DD)ap3250.dev : $(ESCP2) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)ap3250.dev : $(ESCP2) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)ap3250 $(ESCP2)
 
-$(DD)st800.dev : $(ESCP2) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)st800.dev : $(ESCP2) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)st800 $(ESCP2)
 
 stcolor1_=$(DEVOBJ)gdevstc.$(OBJ) $(DEVOBJ)gdevstc1.$(OBJ) $(DEVOBJ)gdevstc2.$(OBJ)
 stcolor2_=$(DEVOBJ)gdevstc3.$(OBJ) $(DEVOBJ)gdevstc4.$(OBJ)
-$(DD)stcolor.dev : $(stcolor1_) $(stcolor2_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)stcolor.dev : $(stcolor1_) $(stcolor2_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)stcolor $(stcolor1_)
 	$(ADDMOD) $(DD)stcolor -obj $(stcolor2_)
 
 gdevstc_h=$(DEVSRC)gdevstc.h
 
-$(DEVOBJ)gdevstc.$(OBJ) : $(DEVSRC)gdevstc.c $(gdevstc_h) $(PDEVH) $(CONTRIB_MAK) $(MAKEDIRS)
+$(DEVOBJ)gdevstc.$(OBJ) : $(DEVSRC)gdevstc.c $(gdevstc_h) $(PDEVH) $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevstc.$(OBJ) $(C_) $(DEVSRC)gdevstc.c
 
-$(DEVOBJ)gdevstc1.$(OBJ) : $(DEVSRC)gdevstc1.c $(gdevstc_h) $(PDEVH) $(CONTRIB_MAK) $(MAKEDIRS)
+$(DEVOBJ)gdevstc1.$(OBJ) : $(DEVSRC)gdevstc1.c $(gdevstc_h) $(PDEVH) $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevstc1.$(OBJ) $(C_) $(DEVSRC)gdevstc1.c
 
-$(DEVOBJ)gdevstc2.$(OBJ) : $(DEVSRC)gdevstc2.c $(gdevstc_h) $(PDEVH) $(CONTRIB_MAK) $(MAKEDIRS)
+$(DEVOBJ)gdevstc2.$(OBJ) : $(DEVSRC)gdevstc2.c $(gdevstc_h) $(PDEVH) $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevstc2.$(OBJ) $(C_) $(DEVSRC)gdevstc2.c
 
-$(DEVOBJ)gdevstc3.$(OBJ) : $(DEVSRC)gdevstc3.c $(gdevstc_h) $(PDEVH) $(CONTRIB_MAK) $(MAKEDIRS)
+$(DEVOBJ)gdevstc3.$(OBJ) : $(DEVSRC)gdevstc3.c $(gdevstc_h) $(PDEVH) $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevstc3.$(OBJ) $(C_) $(DEVSRC)gdevstc3.c
 
-$(DEVOBJ)gdevstc4.$(OBJ) : $(DEVSRC)gdevstc4.c $(gdevstc_h) $(PDEVH) $(CONTRIB_MAK) $(MAKEDIRS)
+$(DEVOBJ)gdevstc4.$(OBJ) : $(DEVSRC)gdevstc4.c $(gdevstc_h) $(PDEVH) $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevstc4.$(OBJ) $(C_) $(DEVSRC)gdevstc4.c
 
 ### --------------- Ugly/Update -> Unified Printer Driver ---------------- ###
@@ -401,10 +401,10 @@ $(DEVOBJ)gdevstc4.$(OBJ) : $(DEVSRC)gdevstc4.c $(gdevstc_h) $(PDEVH) $(CONTRIB_M
 ###        Gunther Hess (gunther@elmos.de)                                 ###
 
 uniprint_=$(DEVOBJ)gdevupd.$(OBJ)
-$(DD)uniprint.dev : $(uniprint_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)uniprint.dev : $(uniprint_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)uniprint $(uniprint_)
 
-$(DEVOBJ)gdevupd.$(OBJ) : $(DEVSRC)gdevupd.c $(PDEVH) $(gsparam_h) $(CONTRIB_MAK) $(MAKEDIRS)
+$(DEVOBJ)gdevupd.$(OBJ) : $(DEVSRC)gdevupd.c $(PDEVH) $(gsparam_h) $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevupd.$(OBJ) $(C_) $(DEVSRC)gdevupd.c
 
 ### ------------ The H-P PaintJet color printer device ----------------- ###
@@ -415,16 +415,16 @@ $(DEVOBJ)gdevupd.$(OBJ) : $(DEVSRC)gdevupd.c $(PDEVH) $(gsparam_h) $(CONTRIB_MAK
 
 PJET=$(DEVOBJ)gdevpjet.$(OBJ) $(HPPCL)
 
-$(DEVOBJ)gdevpjet.$(OBJ) : $(DEVSRC)gdevpjet.c $(PDEVH) $(gdevpcl_h) $(CONTRIB_MAK) $(MAKEDIRS)
+$(DEVOBJ)gdevpjet.$(OBJ) : $(DEVSRC)gdevpjet.c $(PDEVH) $(gdevpcl_h) $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevpjet.$(OBJ) $(C_) $(DEVSRC)gdevpjet.c
 
-$(DD)lj250.dev : $(PJET) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)lj250.dev : $(PJET) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)lj250 $(PJET)
 
-$(DD)paintjet.dev : $(PJET) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)paintjet.dev : $(PJET) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)paintjet $(PJET)
 
-$(DD)pjetxl.dev : $(PJET) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)pjetxl.dev : $(PJET) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)pjetxl $(PJET)
 
 ###--------------------- The Brother HL 7x0 printer --------------------- ### 
@@ -435,10 +435,10 @@ $(DD)pjetxl.dev : $(PJET) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
 ###         for questions about usage with the MFC6550MC Fax Machine.     ###
 
 hl7x0_=$(DEVOBJ)gdevhl7x.$(OBJ)
-$(DD)hl7x0.dev : $(hl7x0_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)hl7x0.dev : $(hl7x0_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)hl7x0 $(hl7x0_)
 
-$(DEVOBJ)gdevhl7x.$(OBJ) : $(DEVSRC)gdevhl7x.c $(PDEVH) $(gdevpcl_h) $(CONTRIB_MAK) $(MAKEDIRS)
+$(DEVOBJ)gdevhl7x.$(OBJ) : $(DEVSRC)gdevhl7x.c $(PDEVH) $(gdevpcl_h) $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevhl7x.$(OBJ) $(C_) $(DEVSRC)gdevhl7x.c
 
 ### -------------- Imagen ImPress Laser Printer device ----------------- ###
@@ -449,13 +449,13 @@ $(DEVOBJ)gdevhl7x.$(OBJ) : $(DEVSRC)gdevhl7x.c $(PDEVH) $(gdevpcl_h) $(CONTRIB_M
 ### You may also add -DA4 if needed for A4 paper.			 ###
 
 imagen_=$(DEVOBJ)gdevimgn.$(OBJ)
-$(DD)imagen.dev : $(imagen_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)imagen.dev : $(imagen_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)imagen $(imagen_)
 
 # Uncomment the first line for the ipr spooler, the second line for parallel.
 IMGN_OPT=
 #IMGN_OPT=-DUSE_BYTE_STREAM
-$(DEVOBJ)gdevimgn.$(OBJ) : $(DEVSRC)gdevimgn.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIRS)
+$(DEVOBJ)gdevimgn.$(OBJ) : $(DEVSRC)gdevimgn.c $(PDEVH) $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(IMGN_OPT) $(DEVO_)gdevimgn.$(OBJ) $(C_) $(DEVSRC)gdevimgn.c
 
 ### ------- The IBM 3852 JetPrinter color inkjet printer device -------- ###
@@ -466,10 +466,10 @@ $(DEVOBJ)gdevimgn.$(OBJ) : $(DEVSRC)gdevimgn.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIR
 ###   width of the jetprinter itself.)                                   ###
 
 jetp3852_=$(DEVOBJ)gdev3852.$(OBJ)
-$(DD)jetp3852.dev : $(jetp3852_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)jetp3852.dev : $(jetp3852_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)jetp3852 $(jetp3852_)
 
-$(DEVOBJ)gdev3852.$(OBJ) : $(DEVSRC)gdev3852.c $(PDEVH) $(gdevpcl_h) $(CONTRIB_MAK) $(MAKEDIRS)
+$(DEVOBJ)gdev3852.$(OBJ) : $(DEVSRC)gdev3852.c $(PDEVH) $(gdevpcl_h) $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdev3852.$(OBJ) $(C_) $(DEVSRC)gdev3852.c
 
 ### ---------- The Canon LBP-8II and LIPS III printer devices ---------- ###
@@ -478,13 +478,13 @@ $(DEVOBJ)gdev3852.$(OBJ) : $(DEVSRC)gdev3852.c $(PDEVH) $(gdevpcl_h) $(CONTRIB_M
 ###       Lauri Paatero, lauri.paatero@paatero.pp.fi                     ###
 
 lbp8_=$(DEVOBJ)gdevlbp8.$(OBJ)
-$(DD)lbp8.dev : $(lbp8_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)lbp8.dev : $(lbp8_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)lbp8 $(lbp8_)
 
-$(DD)lips3.dev : $(lbp8_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)lips3.dev : $(lbp8_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)lips3 $(lbp8_)
 
-$(DEVOBJ)gdevlbp8.$(OBJ) : $(DEVSRC)gdevlbp8.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIRS)
+$(DEVOBJ)gdevlbp8.$(OBJ) : $(DEVSRC)gdevlbp8.c $(PDEVH) $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevlbp8.$(OBJ) $(C_) $(DEVSRC)gdevlbp8.c
 
 ### -------------- The Epson LP-8000 laser printer device -------------- ###
@@ -492,10 +492,10 @@ $(DEVOBJ)gdevlbp8.$(OBJ) : $(DEVSRC)gdevlbp8.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIR
 ###       Oleg Fat'yanov <faty1@rlem.titech.ac.jp> if you have questions.###
 
 lp8000_=$(DEVOBJ)gdevlp8k.$(OBJ)
-$(DD)lp8000.dev : $(lp8000_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)lp8000.dev : $(lp8000_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)lp8000 $(lp8000_)
 
-$(DEVOBJ)gdevlp8k.$(OBJ) : $(DEVSRC)gdevlp8k.c $(PDEVH)  $(CONTRIB_MAK) $(MAKEDIRS)
+$(DEVOBJ)gdevlp8k.$(OBJ) : $(DEVSRC)gdevlp8k.c $(PDEVH)  $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevlp8k.$(OBJ) $(C_) $(DEVSRC)gdevlp8k.c
 
 ### -------------- The C.Itoh M8510 printer device --------------------- ###
@@ -503,10 +503,10 @@ $(DEVOBJ)gdevlp8k.$(OBJ) : $(DEVSRC)gdevlp8k.c $(PDEVH)  $(CONTRIB_MAK) $(MAKEDI
 ###       Smith <bob@snuffy.penfield.ny.us> if you have questions.       ###
 
 m8510_=$(DEVOBJ)gdev8510.$(OBJ)
-$(DD)m8510.dev : $(m8510_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)m8510.dev : $(m8510_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)m8510 $(m8510_)
 
-$(DEVOBJ)gdev8510.$(OBJ) : $(DEVSRC)gdev8510.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIRS)
+$(DEVOBJ)gdev8510.$(OBJ) : $(DEVSRC)gdev8510.c $(PDEVH) $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdev8510.$(OBJ) $(C_) $(DEVSRC)gdev8510.c
 
 ### -------------- 24pin Dot-matrix printer with 360DPI ---------------- ###
@@ -517,13 +517,13 @@ $(DEVOBJ)gdev8510.$(OBJ) : $(DEVSRC)gdev8510.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIR
 ###      questions about the Epson LQ850.                                ###
 
 dm24_=$(DEVOBJ)gdevdm24.$(OBJ)
-$(DD)necp6.dev : $(dm24_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)necp6.dev : $(dm24_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)necp6 $(dm24_)
 
-$(DD)lq850.dev : $(dm24_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)lq850.dev : $(dm24_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)lq850 $(dm24_)
 
-$(DEVOBJ)gdevdm24.$(OBJ) : $(DEVSRC)gdevdm24.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIRS)
+$(DEVOBJ)gdevdm24.$(OBJ) : $(DEVSRC)gdevdm24.c $(PDEVH) $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevdm24.$(OBJ) $(C_) $(DEVSRC)gdevdm24.c
 
 ### ----------------- Lexmark 5700 printer ----------------------------- ###
@@ -531,10 +531,10 @@ $(DEVOBJ)gdevdm24.$(OBJ) : $(DEVSRC)gdevdm24.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIR
 ###   Stephen Taylor (setaylor@ma.ultranet.com) if you have questions.   ###
 
 lxm5700m_=$(DEVOBJ)gdevlxm.$(OBJ)
-$(DD)lxm5700m.dev : $(lxm5700m_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)lxm5700m.dev : $(lxm5700m_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)lxm5700m $(lxm5700m_)
 
-$(DEVOBJ)gdevlxm.$(OBJ) : $(DEVSRC)gdevlxm.c $(PDEVH) $(gsparams_h) $(CONTRIB_MAK) $(MAKEDIRS)
+$(DEVOBJ)gdevlxm.$(OBJ) : $(DEVSRC)gdevlxm.c $(PDEVH) $(gsparams_h) $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevlxm.$(OBJ) $(C_) $(DEVSRC)gdevlxm.c
 
 ### ----------------- The Okidata MicroLine 182 device ----------------- ###
@@ -542,10 +542,10 @@ $(DEVOBJ)gdevlxm.$(OBJ) : $(DEVSRC)gdevlxm.c $(PDEVH) $(gsparams_h) $(CONTRIB_MA
 ###       Maarten Koning (smeg@bnr.ca) if you have questions.            ###
 
 oki182_=$(DEVOBJ)gdevo182.$(OBJ)
-$(DD)oki182.dev : $(oki182_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)oki182.dev : $(oki182_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)oki182 $(oki182_)
 
-$(DEVOBJ)gdevo182.$(OBJ) : $(DEVSRC)gdevo182.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIRS)
+$(DEVOBJ)gdevo182.$(OBJ) : $(DEVSRC)gdevo182.c $(PDEVH) $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevo182.$(OBJ) $(C_) $(DEVSRC)gdevo182.c
 
 ### ------------- The Okidata IBM compatible printer device ------------ ###
@@ -553,10 +553,10 @@ $(DEVOBJ)gdevo182.$(OBJ) : $(DEVSRC)gdevo182.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIR
 ###       Charles Mack (chasm@netcom.com) if you have questions.         ###
 
 okiibm_=$(DEVOBJ)gdevokii.$(OBJ)
-$(DD)okiibm.dev : $(okiibm_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)okiibm.dev : $(okiibm_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)okiibm $(okiibm_)
 
-$(DEVOBJ)gdevokii.$(OBJ) : $(DEVSRC)gdevokii.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIRS)
+$(DEVOBJ)gdevokii.$(OBJ) : $(DEVSRC)gdevokii.c $(PDEVH) $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevokii.$(OBJ) $(C_) $(DEVSRC)gdevokii.c
 
 ### ------------------ The Epson Stylus Photo devices ------------------ ###
@@ -564,10 +564,10 @@ $(DEVOBJ)gdevokii.$(OBJ) : $(DEVSRC)gdevokii.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIR
 ###	Zoltan Kocsi (zoltan@bendor.com.au) if you have questions.       ###
 
 photoex_=$(DEVOBJ)gdevphex.$(OBJ)
-$(DD)photoex.dev : $(photoex_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)photoex.dev : $(photoex_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)photoex $(photoex_)
 
-$(DEVOBJ)gdevphex.$(OBJ) : $(DEVSRC)gdevphex.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIRS)
+$(DEVOBJ)gdevphex.$(OBJ) : $(DEVSRC)gdevphex.c $(PDEVH) $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevphex.$(OBJ) $(C_) $(DEVSRC)gdevphex.c
 
 ### ------------- The Ricoh 4081 laser printer device ------------------ ###
@@ -575,11 +575,11 @@ $(DEVOBJ)gdevphex.$(OBJ) : $(DEVSRC)gdevphex.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIR
 ###       please contact kdw@oasis.icl.co.uk if you have questions.      ###
 
 r4081_=$(DEVOBJ)gdev4081.$(OBJ)
-$(DD)r4081.dev : $(r4081_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)r4081.dev : $(r4081_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)r4081 $(r4081_)
 
 
-$(DEVOBJ)gdev4081.$(OBJ) : $(DEVSRC)gdev4081.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIRS)
+$(DEVOBJ)gdev4081.$(OBJ) : $(DEVSRC)gdev4081.c $(PDEVH) $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdev4081.$(OBJ) $(C_) $(DEVSRC)gdev4081.c
 
 ### -------------------- Sony NWP533 printer device -------------------- ###
@@ -587,10 +587,10 @@ $(DEVOBJ)gdev4081.$(OBJ) : $(DEVSRC)gdev4081.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIR
 ###       Kivinen (kivinen@joker.cs.hut.fi) if you have questions.       ###
 
 nwp533_=$(DEVOBJ)gdevn533.$(OBJ)
-$(DD)nwp533.dev : $(nwp533_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)nwp533.dev : $(nwp533_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)nwp533 $(nwp533_)
 
-$(DEVOBJ)gdevn533.$(OBJ) : $(DEVSRC)gdevn533.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIRS)
+$(DEVOBJ)gdevn533.$(OBJ) : $(DEVSRC)gdevn533.c $(PDEVH) $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevn533.$(OBJ) $(C_) $(DEVSRC)gdevn533.c
 
 ### ----------------- The StarJet SJ48 device -------------------------- ###
@@ -599,7 +599,7 @@ $(DEVOBJ)gdevn533.$(OBJ) : $(DEVSRC)gdevn533.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIR
 ###       please contact Mats Akerblom (f86ma@dd.chalmers.se).           ###
 
 sj48_=$(DEVOBJ)gdevsj48.$(OBJ)
-$(DD)sj48.dev : $(sj48_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)sj48.dev : $(sj48_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)sj48 $(sj48_)
 
 $(DEVOBJ)gdevsj48.$(OBJ) : $(DEVSRC)gdevsj48.c $(PDEVH)
@@ -611,16 +611,16 @@ $(DEVOBJ)gdevsj48.$(OBJ) : $(DEVSRC)gdevsj48.c $(PDEVH)
 ###       if you have questions.                                         ###
 
 t4693d_=$(DEVOBJ)gdev4693.$(OBJ)
-$(DD)t4693d2.dev : $(t4693d_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)t4693d2.dev : $(t4693d_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)t4693d2 $(t4693d_)
 
-$(DD)t4693d4.dev : $(t4693d_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)t4693d4.dev : $(t4693d_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)t4693d4 $(t4693d_)
 
-$(DD)t4693d8.dev : $(t4693d_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)t4693d8.dev : $(t4693d_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)t4693d8 $(t4693d_)
 
-$(DEVOBJ)gdev4693.$(OBJ) : $(DEVSRC)gdev4693.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIRS)
+$(DEVOBJ)gdev4693.$(OBJ) : $(DEVSRC)gdev4693.c $(PDEVH) $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdev4693.$(OBJ) $(C_) $(DEVSRC)gdev4693.c
 
 ### -------------------- Tektronix ink-jet printers -------------------- ###
@@ -628,10 +628,10 @@ $(DEVOBJ)gdev4693.$(OBJ) : $(DEVSRC)gdev4693.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIR
 ###       Karsten Spang (spang@nbivax.nbi.dk) if you have questions.     ###
 
 tek4696_=$(DEVOBJ)gdevtknk.$(OBJ)
-$(DD)tek4696.dev : $(tek4696_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)tek4696.dev : $(tek4696_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)tek4696 $(tek4696_)
 
-$(DEVOBJ)gdevtknk.$(OBJ) : $(DEVSRC)gdevtknk.c $(PDEVH) $(malloc__h) $(CONTRIB_MAK) $(MAKEDIRS)
+$(DEVOBJ)gdevtknk.$(OBJ) : $(DEVSRC)gdevtknk.c $(PDEVH) $(malloc__h) $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevtknk.$(OBJ) $(C_) $(DEVSRC)gdevtknk.c
 
 ###### ------------------------- Fax devices ------------------------- ######
@@ -642,12 +642,12 @@ $(DEVOBJ)gdevtknk.$(OBJ) : $(DEVSRC)gdevtknk.c $(PDEVH) $(malloc__h) $(CONTRIB_M
 
 cfax_=$(DEVOBJ)gdevcfax.$(OBJ)
 
-$(DD)cfax.dev : $(cfax_) $(DD)fax.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)cfax.dev : $(cfax_) $(DD)fax.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETDEV) $(DD)cfax $(cfax_)
 	$(ADDMOD) $(DD)cfax -include $(DD)fax
 
 $(DEVOBJ)gdevcfax.$(OBJ) : $(DEVSRC)gdevcfax.c $(PDEVH)\
- $(gdevfax_h) $(scfx_h) $(strimpl_h) $(CONTRIB_MAK) $(MAKEDIRS)
+ $(gdevfax_h) $(scfx_h) $(strimpl_h) $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevcfax.$(OBJ) $(C_) $(DEVSRC)gdevcfax.c
 
 ### ------------------------- The DigiFAX device ------------------------ ###
@@ -659,16 +659,16 @@ $(DEVOBJ)gdevcfax.$(OBJ) : $(DEVSRC)gdevcfax.c $(PDEVH)\
 
 dfax_=$(DEVOBJ)gdevdfax.$(OBJ)
 
-$(DD)dfaxlow.dev : $(dfax_) $(DD)tfax.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)dfaxlow.dev : $(dfax_) $(DD)tfax.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETDEV) $(DD)dfaxlow $(dfax_)
 	$(ADDMOD) $(DEVGEN)dfaxlow -include $(DD)tfax
 
-$(DD)dfaxhigh.dev : $(dfax_) $(DD)tfax.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)dfaxhigh.dev : $(dfax_) $(DD)tfax.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETDEV) $(DD)dfaxhigh $(dfax_)
 	$(ADDMOD) $(DEVGEN)dfaxhigh -include $(DD)tfax
 
 $(DEVOBJ)gdevdfax.$(OBJ) : $(DEVSRC)gdevdfax.c $(PDEVH)\
- $(gdevfax_h) $(gdevtfax_h) $(scfx_h) $(strimpl_h) $(CONTRIB_MAK) $(MAKEDIRS)
+ $(gdevfax_h) $(gdevtfax_h) $(scfx_h) $(strimpl_h) $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevdfax.$(OBJ) $(C_) $(DEVSRC)gdevdfax.c
 
 ###### --------------------- Raster file formats --------------------- ######
@@ -678,10 +678,10 @@ $(DEVOBJ)gdevdfax.$(OBJ) : $(DEVSRC)gdevdfax.c $(PDEVH)\
 ###       Frederic Petrot (petrot@masi.ibp.fr) if you have questions.    ###
 
 cif_=$(DEVOBJ)gdevcif.$(OBJ)
-$(DD)cif.dev : $(cif_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)cif.dev : $(cif_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)cif $(cif_)
 
-$(DEVOBJ)gdevcif.$(OBJ) : $(DEVSRC)gdevcif.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIRS)
+$(DEVOBJ)gdevcif.$(OBJ) : $(DEVSRC)gdevcif.c $(PDEVH) $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevcif.$(OBJ) $(C_) $(DEVSRC)gdevcif.c
 
 ### ------------------------- Inferno bitmaps -------------------------- ###
@@ -689,11 +689,11 @@ $(DEVOBJ)gdevcif.$(OBJ) : $(DEVSRC)gdevcif.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIRS)
 ###       Russ Cox <rsc@plan9.bell-labs.com> if you have questions.      ###
 
 inferno_=$(DEVOBJ)gdevifno.$(OBJ)
-$(DD)inferno.dev : $(inferno_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)inferno.dev : $(inferno_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)inferno $(inferno_)
 
 $(DEVOBJ)gdevifno.$(OBJ) : $(DEVSRC)gdevifno.c $(PDEVH)\
- $(gsparam_h) $(CONTRIB_MAK) $(MAKEDIRS)
+ $(gsparam_h) $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevifno.$(OBJ) $(C_) $(DEVSRC)gdevifno.c
 
 ### --------------------------- MGR devices ---------------------------- ###
@@ -705,25 +705,25 @@ MGR=$(DEVOBJ)gdevmgr.$(OBJ) $(DEVOBJ)gdevpccm.$(OBJ)
 gdevmgr_h=$(DEVSRC)gdevmgr.h
 
 $(DEVOBJ)gdevmgr.$(OBJ) : $(DEVSRC)gdevmgr.c $(PDEVH)\
- $(gdevmgr_h) $(gdevpccm_h) $(CONTRIB_MAK) $(MAKEDIRS)
+ $(gdevmgr_h) $(gdevpccm_h) $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevmgr.$(OBJ) $(C_) $(DEVSRC)gdevmgr.c
 
-$(DD)mgrmono.dev : $(MGR) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)mgrmono.dev : $(MGR) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)mgrmono $(MGR)
 
-$(DD)mgrgray2.dev : $(MGR) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)mgrgray2.dev : $(MGR) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)mgrgray2 $(MGR)
 
-$(DD)mgrgray4.dev : $(MGR) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)mgrgray4.dev : $(MGR) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)mgrgray4 $(MGR)
 
-$(DD)mgrgray8.dev : $(MGR) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)mgrgray8.dev : $(MGR) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)mgrgray8 $(MGR)
 
-$(DD)mgr4.dev : $(MGR) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)mgr4.dev : $(MGR) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)mgr4 $(MGR)
 
-$(DD)mgr8.dev : $(MGR) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)mgr8.dev : $(MGR) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)mgr8 $(MGR)
 
 #########################################################################
@@ -733,16 +733,16 @@ $(DD)mgr8.dev : $(MGR) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
 ### These drivers are based on patches on existing device drivers in the
 ### src/ directory, therefore they are not in addons/
 
-$(DD)ljet4pjl.dev : $(HPMONO) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)ljet4pjl.dev : $(HPMONO) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)ljet4pjl $(HPMONO)
 
-$(DD)lj4dithp.dev : $(cdeskjet_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)lj4dithp.dev : $(cdeskjet_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)lj4dithp $(cdeskjet_)
 
-$(DD)dj505j.dev : $(cdeskjet_) $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)dj505j.dev : $(cdeskjet_) $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)dj505j $(cdeskjet_)
 
-$(DD)picty180.dev : $(cdeskjet_) $(CONTRIB_MAK) $(MAKEDIRS)
+$(DD)picty180.dev : $(cdeskjet_) $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)picty180 $(cdeskjet_)
 
 #########################################################################
