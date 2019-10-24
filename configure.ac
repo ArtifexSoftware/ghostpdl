@@ -2174,6 +2174,7 @@ AC_ARG_ENABLE([compile-inits], AC_HELP_STRING([--disable-compile-inits],
 AC_SUBST(COMPILE_INITS)
 
 dnl look for drivers to compile...
+APPLE_DEVICES_REQUESTED="no"
 AC_ARG_WITH(drivers,
 [  --with-drivers=LIST     Drivers to support, separated by commas.
                           Either list the drivers or use aliases:
@@ -2216,6 +2217,10 @@ if test "x$driversfile" != x; then
         drivers="`tr '\n' ',' <$driversfile`"
 fi
 
+if echo $drivers | grep 'APPLE\|iwhi\|iwlo\|iwlq' >/dev/null; then
+   APPLE_DEVICES_REQUESTED="yes"
+fi
+
 dnl Check which drivers we'd like to support.
 P_DEVS0=""
 F_DEVS0=""
@@ -2234,6 +2239,7 @@ EPSON_DEVS='eps9high eps9mid epson epsonc escp lp8000 lq850 photoex st800 stcolo
 CANON_DEVS='bj10e bj200 bjc600 bjc800 lbp8 lips3 bjcmono bjcgray bjccmyk bjccolor'
 LEXMARK_DEVS='lxm5700m lxm3200 lex2050 lex3200 lex5700 lex7000'
 BROTHER_DEVS='hl7x0 hl1240 hl1250'
+APPLE_DEVS='appledmp iwhi iwlo iwlq'
 IBM_DEVS='ibmpro jetp3852'
 OKI_DEVS='oki182 okiibm oki4w'
 JAPAN_DEVS='lips4 lips4v ljet4pjl lj4dithp dj505j picty180 lips2p bjc880j pr201 pr150 pr1000 pr1000_4 jj100 bj10v bj10vh mj700v2c mj500c mj6000c mj8000c fmpr fmlbp ml600 lbp310 lbp320 md50Mono md50Eco md1xMono escpage lp2000 npdl rpdl'
@@ -2276,7 +2282,7 @@ while test -n "$drivers"; do
                 fi
                 ;;
         PRINTERS)
-                P_DEVS0="$P_DEVS0 $CANON_DEVS $EPSON_DEVS $HP_DEVS $LEXMARK_DEVS $BROTHER_DEVS $IBM_DEVS $OKI_DEVS $JAPAN_DEVS $MISC_PDEVS $ETS_HALFTONING_DEVS"
+                P_DEVS0="$P_DEVS0 $CANON_DEVS $EPSON_DEVS $HP_DEVS $LEXMARK_DEVS $BROTHER_DEVS $APPLE_DEVS $IBM_DEVS $OKI_DEVS $JAPAN_DEVS $MISC_PDEVS $ETS_HALFTONING_DEVS"
                 IJS_DEVS0="$IJSDEVS"
                 if test x$ac_cv_lib_dl_dlopen != xno -a x$found_iconv != xno; then
                         P_DEVS0="$P_DEVS0 $OPVP_DEVS"
@@ -2289,6 +2295,10 @@ while test -n "$drivers"; do
                 CUPS_DEVS0="$CUPSDEV"
                 JBIG2_DEVS="$JBIG2FILEDEVS"
                 PNG_DEVS0="$PNGDEVS"
+                ;;
+        APPLE)
+                # All Apple printers
+                P_DEVS0="$P_DEVS0 $APPLE_DEVS"
                 ;;
         BMP)
                 # BMP file format
@@ -2479,6 +2489,14 @@ fi
 
 if test -n "$X11_DEVS0"; then
     X11_DEVS=`(for i in $X11_DEVS0; do d='$(DD)'${i}.dev; if ( grep '^'$d $noncontribmakefiles  2>&1 >/dev/null) || ( ! test -z "$CONTRIBINCLUDE" ); then echo $d; fi; done) | sort | uniq | tr '\012\015' '  '`
+fi
+
+# if the user explicitly requested the Apple devices, then hard fail if they aren't available
+if test x"$APPLE_DEVICES_REQUESTED" = x"yes" ; then
+  APDEVS=`echo $P_DEVS | grep 'APPLE\|iwhi\|iwlo\|iwlq'`
+  if test -z "$APDEVS" ; then
+    AC_MSG_ERROR([Requested Apple device(s) not available (iwhi, iwlo, and/or iwlq)])
+  fi
 fi
 
 AC_SUBST(P_DEVS)
