@@ -363,10 +363,13 @@ pdfi_scan_jpxfilter(pdf_context *ctx, pdf_stream *source, int length, pdfi_jpx_i
             cs_meth = data[0];
             if (cs_meth == 1)
                 cs_enum = READ32BE(data+3);
-            else if (cs_meth == 2) {
+            else if (cs_meth == 2 || cs_meth == 3) {
                 /* This is an ICCBased color space just sitting there in the buffer.
                  * TODO: I could create the colorspace now while I have the buffer,
                  * but code flow is more consistent if I do it later.  Could change this.
+                 *
+                 * NOTE: cs_meth == 3 is apparently treated the same as 2.
+                 * No idea why... it's really not documented anywhere.
                  */
                 info->iccbased = true;
                 info->icc_offset = pdfi_tell(source) - (box_len-3);
