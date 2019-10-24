@@ -537,11 +537,11 @@ int pdfi_rectpath(pdf_context *ctx)
 
     code = gs_moveto(ctx->pgs, Values[0], Values[1]);
     if (code == 0) {
-        code = gs_lineto(ctx->pgs, Values[0], Values[1] + Values[3]);
+        code = gs_rlineto(ctx->pgs, Values[2], 0);
         if (code == 0){
-            code = gs_lineto(ctx->pgs, Values[0] + Values[2], Values[1] + Values[3]);
+            code = gs_rlineto(ctx->pgs, 0, Values[3]);
             if (code == 0) {
-                code = gs_lineto(ctx->pgs, Values[0] + Values[2], Values[1]);
+                code = gs_rlineto(ctx->pgs, -Values[2], 0);
                 if (code == 0){
                     code = gs_closepath(ctx->pgs);
                 }
