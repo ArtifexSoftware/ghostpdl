@@ -45,6 +45,7 @@ int atexit(void (*)(void));
 #ifndef _MSC_VER
 #include <stdint.h>
 #include <limits.h>
+#include <unistd.h>
 #endif
 
 #include <stdlib.h>
@@ -535,7 +536,30 @@ static void print_stack_libbt(void *addr)
 
 static void print_stack_libbt_failed(void *addr)
 {
-    char **strings = backtrace_symbols(&addr, 1);
+    char **strings;
+#if 0
+    /* Let's use a hack from Julian Smith to call gdb to extract the information */
+    /* Disabled for now, as I can't make this work. */
+    static char command[1024];
+    int e;
+    static int gdb_invocation_failed = 0;
+
+    if (gdb_invocation_failed == 0)
+    {
+        snprintf(command, sizeof(command),
+                 //"gdb -q --batch -p=%i -ex 'info line *%p' -ex quit 2>/dev/null",
+                 "gdb -q --batch -p=%i -ex 'info line *%p' -ex quit 2>/dev/null| egrep -v '(Thread debugging using)|(Using host libthread_db library)|(A debugging session is active)|(will be detached)|(Quit anyway)|(No such file or directory)|(^0x)|(^$)'",
+                 getpid(), addr);
+	printf("%s\n", command);
+        e = system(command);
+        if (e == 0)
+            return; /* That'll do! */
+        gdb_invocation_failed = 1; /* If it's failed once, it'll probably keep failing. */
+    }
+#endif
+
+    /* We couldn't even get gdb! Make do. */
+    strings = backtrace_symbols(&addr, 1);
 
     if (strings == NULL || strings[0] == NULL)
     {
@@ -553,6 +577,12 @@ static void print_stack_libbt_failed(void *addr)
 
 static int init_libbt(void)
 {
+    static int libbt_inited = 0;
+
+    if (libbt_inited)
+        return 0;
+    libbt_inited = 1;
+
     libbt = dlopen("libbacktrace.so", RTLD_LAZY);
     if (libbt == NULL)
         libbt = dlopen("/opt/lib/libbacktrace.so", RTLD_LAZY);
@@ -588,6 +618,9 @@ static int init_libbt(void)
     return 1;
 
  fail:
+    fprintf(stderr,
+	    "MEMENTO: libbacktrace.so failed to load; backtraces will be sparse.\n"
+	    "MEMENTO: See memento.h for how to rectify this.\n");
     libbt = NULL;
     backtrace_create_state = NULL;
     backtrace_syminfo = NULL;
@@ -614,8 +647,8 @@ static void print_stack_default(void *addr)
         {
             memcpy(backtrace_exe, strings[0], s - strings[0]);
             backtrace_exe[s-strings[0]] = 0;
-            if (init_libbt())
-                print_stack_value(addr);
+            init_libbt();
+            print_stack_value(addr);
         }
     }
 #endif
