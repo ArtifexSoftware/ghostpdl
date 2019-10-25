@@ -272,7 +272,14 @@ hpgl_arg(const gs_memory_t * mem, hpgl_parser_state_t * pst)
                         pvalue->v_n.r = 0;
                         break;
                     case 1:
-                        pvalue->v_n.r = pvalue->v_n.i;
+                    {
+                       /* Strictly speaking assigning one element of union
+                        * to another, overlapping element of a different size is
+                        * undefined behavior, hence assign to an intermediate variable
+                        */
+                        double r = (double)pvalue->v_n.i;
+                        pvalue->v_n.r = r;
+                    }
                 }
                 parg->have_value = 2;
                 parg->frac_scale = 1.0;

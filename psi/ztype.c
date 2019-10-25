@@ -304,7 +304,14 @@ zcvr(i_ctx_t *i_ctx_p)
 
     switch (r_type(op)) {
         case t_integer:
-            make_real(op, (float)op->value.intval);
+        {
+            /* Strictly speaking assigning one element of union
+             * to another, overlapping element of a different size is
+             * undefined behavior, hence assign to an intermediate variable
+             */
+            float fl = (float)op->value.intval;
+            make_real(op, fl);
+        }
         case t_real:
             return 0;
         default:

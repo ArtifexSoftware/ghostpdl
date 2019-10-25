@@ -171,15 +171,25 @@ param_coerce_typed(gs_param_typed_value * pvalue, gs_param_type req_type,
      * right now we can't.  However, a 0-length heterogenous array
      * will satisfy a request for any specific type.
      */
+    /* Strictly speaking assigning one element of union
+     * to another, overlapping element of a different size is
+     * undefined behavior, hence assign to intermediate variables
+     */
     switch (pvalue->type /* actual type */ ) {
         case gs_param_type_int:
             switch (req_type) {
                 case gs_param_type_long:
-                    pvalue->value.l = pvalue->value.i;
+                {
+                    long l = (long)pvalue->value.i;
+                    pvalue->value.l = l;
                     goto ok;
+                }
                 case gs_param_type_float:
-                    pvalue->value.f = (float)pvalue->value.l;
+                {
+                    float fl = (float)pvalue->value.l;
+                    pvalue->value.f = fl;
                     goto ok;
+                }
                 default:
                     break;
             }
@@ -187,15 +197,22 @@ param_coerce_typed(gs_param_typed_value * pvalue, gs_param_type req_type,
         case gs_param_type_long:
             switch (req_type) {
                 case gs_param_type_int:
+                {
+                    int int1;
 #if ARCH_SIZEOF_INT < ARCH_SIZEOF_LONG
                     if (pvalue->value.l != (int)pvalue->value.l)
                         return_error(gs_error_rangecheck);
 #endif
-                    pvalue->value.i = (int)pvalue->value.l;
+                    int1 = (int)pvalue->value.l;
+                    pvalue->value.i = int1;
                     goto ok;
+                }
                 case gs_param_type_float:
-                    pvalue->value.f = (float)pvalue->value.l;
+                {
+                    float fl = (float)pvalue->value.l;
+                    pvalue->value.f = fl;
                     goto ok;
+                }
                 default:
                     break;
             }
