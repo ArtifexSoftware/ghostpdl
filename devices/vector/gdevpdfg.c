@@ -776,7 +776,7 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_gstate * pgs, const
         return_error(gs_error_VMerror);
 
     samples = (unsigned int)pow(2, pcs->params.device_n.num_components);
-    data_buff = gs_alloc_bytes(pdev->memory, pdev->color_info.num_components * samples, "Convert DeviceN");
+    data_buff = gs_alloc_bytes(pdev->memory, (unsigned long)pdev->color_info.num_components * samples, "Convert DeviceN");
     if (data_buff == 0) {
         COS_FREE(pca, "convert DeviceN");
         return_error(gs_error_VMerror);
