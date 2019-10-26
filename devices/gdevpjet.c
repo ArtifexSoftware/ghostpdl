@@ -117,6 +117,7 @@ pj_common_print_page(gx_device_printer *pdev, gp_file *prn_stream, int y_origin,
                                 "paintjet_print_page(plane_data)");
                 return_error(gs_error_VMerror);
         }
+        memset(data, 0x00, DATA_SIZE);
 
         /* set raster graphics resolution -- 90 or 180 dpi */
         gp_fprintf(prn_stream, "\033*t%dR", X_DPI);
