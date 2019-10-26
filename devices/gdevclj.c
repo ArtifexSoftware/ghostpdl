@@ -254,7 +254,7 @@ clj_media_size(float mediasize[2], gs_param_list *plist)
     gs_param_int_array hwsize;
     int have_pagesize = 0;
 
-    if ( (param_read_float_array(plist, "HWResolution", &fres) == 0) &&
+    if ( param_read_float_array(plist, "HWResolution", &fres) != 0 ||
           !is_supported_resolution(fres.data) )
         return_error(gs_error_rangecheck);
 
