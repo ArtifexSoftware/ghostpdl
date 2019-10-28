@@ -77,6 +77,13 @@ jetp3852_print_page(gx_device_printer *pdev, gp_file *prn_stream)
         int lnum;
         int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
         int num_blank_lines = 0;
+
+        if (line_size > DATA_SIZE) {
+            emprintf2(pdev->memory, "invalid resolution and/or width gives line_size = %d, max. is %d\n",
+                      line_size, DATA_SIZE);
+            return_error(gs_error_rangecheck);
+        }
+
         for ( lnum = 0; lnum < pdev->height; lnum++ ) {
             byte *end_data = data + line_size;
             gdev_prn_copy_scan_lines(pdev, lnum,
