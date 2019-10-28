@@ -203,6 +203,7 @@ my $cmd="rsync -avxcz ".
 " --exclude bin64 --exclude obj64 --exclude debugobj64 --exclude pgobj64".
 " --exclude membin --exclude memobj --exclude membin64 --exclude memobj64".
 " --exclude profbin --exclude profobj --exclude profbin64 --exclude profobj64".
+" --exclude sanbin --exclude sanobj --exclude sanbin64 --exclude sanobj64".
 " --exclude sobin --exclude soobj --exclude debugbin".
 " --exclude ufst --exclude ufst-obj --exclude ufst-debugobj".
 " --exclude config.log --exclude .png".
