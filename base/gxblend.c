@@ -3476,7 +3476,7 @@ do_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
              overprint == 0) {
              /* Additive vs Subtractive makes no difference in normal blend mode with no spots */
         if (tos_isolated) {
-            if (has_mask || maskbuf) {/* 7% */
+            if (has_mask && maskbuf) {/* 7% */
                 /* AirPrint test case hits this */
                 if (maskbuf && maskbuf->rect.p.x <= x0 && maskbuf->rect.p.y <= y0 &&
                     maskbuf->rect.q.x >= x1 && maskbuf->rect.q.y >= y1) {
@@ -4246,7 +4246,7 @@ do_compose_group16(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
              overprint == 0) {
              /* Additive vs Subtractive makes no difference in normal blend mode with no spots */
         if (tos_isolated) {
-            if (has_mask || maskbuf) {/* 7% */
+            if (has_mask && maskbuf) {/* 7% */
                 /* AirPrint test case hits this */
                 if (maskbuf && maskbuf->rect.p.x <= x0 && maskbuf->rect.p.y <= y0 &&
                     maskbuf->rect.q.x >= x1 && maskbuf->rect.q.y >= y1)
