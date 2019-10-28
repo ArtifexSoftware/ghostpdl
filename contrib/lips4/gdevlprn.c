@@ -334,9 +334,16 @@ lprn_is_black(gx_device_printer * pdev, int r, int h, int bx)
     y0 = (r + h - bh) % maxY;
     for (y = 0; y < bh; y++) {
         p = &lprn->ImageBuf[(y0 + y) * bpl + bx * lprn->nBw];
-        for (x = 0; x < lprn->nBw; x++)
+        for (x = 0; x < lprn->nBw; x++) {
+            /* bpl isn't necessarily a multiple of lprn->nBw, so
+            we need to explicitly stop after the last byte in this
+            line to avoid accessing either the next line's data or
+            going off the end of our buffer completely. This avoids
+            https://bugs.ghostscript.com/show_bug.cgi?id=701785. */
+            if (bx * lprn->nBw + x >= bpl)  break;
             if (p[x] != 0)
                 return 1;
+        }
     }
     return 0;
 }
