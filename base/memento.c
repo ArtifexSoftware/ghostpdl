@@ -1629,6 +1629,9 @@ static void Memento_init(void)
     env = getenv("MEMENTO_FAILAT");
     memento.failAt = (env ? atoi(env) : 0);
 
+    env = getenv("MEMENTO_BREAKAT");
+    memento.breakAt = (env ? atoi(env) : 0);
+
     env = getenv("MEMENTO_PARANOIA");
     memento.paranoia = (env ? atoi(env) : 0);
     if (memento.paranoia == 0)
