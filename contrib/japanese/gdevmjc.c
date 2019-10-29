@@ -667,7 +667,7 @@ mj_raster_cmd(int c_id, int in_size, byte* in, byte* buf2,
        ** walk forward, looking for matches:
        */
 
-      for( q++ ; *q == *p && q < in_end ; q++ ) {
+      for( q++ ; q < in_end && *q == *p ; q++ ) {
         if( (q-p) >= 128 ) {
           if( p > inp ) {
             count = p - inp;
