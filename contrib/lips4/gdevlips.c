@@ -145,7 +145,7 @@ GetNumSameData(const byte * curPtr, const int maxnum)
     if (1 == maxnum) {
         return (1);
     }
-    while (*curPtr == *(curPtr + count) && maxnum > count) {
+    while (maxnum > count && *curPtr == *(curPtr + count)) {
         count++;
     }
 
@@ -160,7 +160,7 @@ GetNumWrongData(const byte * curPtr, const int maxnum)
     if (1 == maxnum) {
         return (1);
     }
-    while (*(curPtr + count) != *(curPtr + count + 1) && maxnum > count) {
+    while (maxnum > count+1 && *(curPtr + count) != *(curPtr + count + 1)) {
         count++;
     }
 
