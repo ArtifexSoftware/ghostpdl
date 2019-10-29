@@ -1504,7 +1504,10 @@ mj_color_correct(gx_color_value *Rptr ,gx_color_value *Gptr , gx_color_value *Bp
         if (Y<0)
                 Y=0;
 
-        if(H>256 && H<1024){		/* green correct */
+        /* 2019-10-29 this used to be 'if(H>256 && H<1024)', which can then go
+        beyond bounds of the 512-element grnsep2[]. So have patched up to avoid
+        this, but without any proper idea about what's going on. */
+        if(H>256 && H<768){		/* green correct */
                 short	work;
                 work=(((long)grnsep[M]*(long)grnsep2[H-256])>>16);
                 C+=work;
