@@ -155,13 +155,20 @@ static const char end_md[] = {
 static int
 md_open(gx_device *pdev)
 {
-        static const float md_margins[4] =
-         {	MD_SIDE_MARGIN, MD_BOTTOM_MARGIN,
-                MD_SIDE_MARGIN, MD_TOP_MARGIN
-         };
+    static const float md_margins[4] =
+    {
+        MD_SIDE_MARGIN, MD_BOTTOM_MARGIN,
+        MD_SIDE_MARGIN, MD_TOP_MARGIN
+    };
 
-        gx_device_set_margins(pdev, md_margins, true);
-        return gdev_prn_open(pdev);
+    if (pdev->HWResolution[0] != 600)
+    {
+        emprintf(pdev->memory, "device must have an X resolution of 600dpi\n");
+        return_error(gs_error_rangecheck);
+    }
+
+    gx_device_set_margins(pdev, md_margins, true);
+    return gdev_prn_open(pdev);
 }
 
 /* MD5000 monochrome mode entrance. */
