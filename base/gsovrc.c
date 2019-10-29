@@ -928,7 +928,11 @@ overprint_create_compositor(
 
         params.idle = pct->idle;
         /* device must already exist, so just update the parameters if settings change */
-        if (params.idle != opdev->is_idle || 
+        if_debug7m(gs_debug_flag_overprint, opdev->memory,
+            "[overprint] overprint_create_compositor test for change. params.idle = %d vs. opdev->is_idle = %d \n  params.is_fill_color = %d vs. opdev->is_fill_color = %d \n params.drawn_comps = 0x%x vs. opdev->drawn_comps_fill =  0x%x OR opdev->drawn_comps_stroke = 0x%x\n",
+            params.idle, opdev->is_idle, params.is_fill_color, opdev->is_fill_color, params.drawn_comps, opdev->drawn_comps_fill, opdev->drawn_comps_stroke);
+
+        if (!params.retain_any_comps || params.idle != opdev->is_idle ||
             params.is_fill_color != opdev->is_fill_color ||
             params.drawn_comps != (params.is_fill_color ?
             opdev->drawn_comps_fill : opdev->drawn_comps_stroke)
