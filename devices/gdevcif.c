@@ -58,12 +58,12 @@ cif_print_page(gx_device_printer *pdev, gp_file *prn_stream)
                 length = strlen(pdev->fname) + 1;
         else
                 length = s - pdev->fname;
-        s = (char *)gs_malloc(pdev->memory, length, sizeof(char), "cif_print_page(s)");
+        s = (char *)gs_malloc(pdev->memory, length+1, sizeof(char), "cif_print_page(s)");
 
         strncpy(s, pdev->fname, length);
         *(s + length) = '\0';
         gp_fprintf(prn_stream, "DS1 25 1;\n9 %s;\nLCP;\n", s);
-        gs_free(pdev->memory, s, length, 1, "cif_print_page(s)");
+        gs_free(pdev->memory, s, length+1, 1, "cif_print_page(s)");
 
    for (lnum = 0; lnum < pdev->height; lnum++) {
       gdev_prn_copy_scan_lines(pdev, lnum, in, line_size);
