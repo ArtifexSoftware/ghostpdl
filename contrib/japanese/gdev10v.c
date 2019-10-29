@@ -68,13 +68,26 @@ static dev_proc_print_page(bj10v_print_page);
 static dev_proc_get_initial_matrix(bj10v_get_initial_matrix);
 #endif
 
+static int
+bj10v_open(gx_device * pdev)
+{
+    if (pdev->HWResolution[0] < 180 ||
+        pdev->HWResolution[1] < 180)
+    {
+        emprintf("device requires a resolution of at least 180dpi\n");
+        return_error(gs_error_rangecheck);
+    }
+    return gdev_prn_open(pdev);
+}
+
+
 #if 0
 gx_device_procs prn_bj10v_procs =
   prn_matrix_procs(gdev_prn_open, bj10v_get_initial_matrix,
     gdev_prn_output_page, gdev_prn_close);
 #endif
 gx_device_procs prn_bj10v_procs =
-  prn_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close);
+  prn_procs(bj10v_open, gdev_prn_output_page, gdev_prn_close);
 
 gx_device_printer gs_bj10v_device =
   prn_device(prn_bj10v_procs, "bj10v",
