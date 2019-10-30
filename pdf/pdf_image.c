@@ -1070,19 +1070,16 @@ pdfi_image_get_color(pdf_context *ctx, pdf_stream *source, pdfi_image_info_t *im
 
 /* Make a fake SMask dict from a JPX SMaskInData */
 static int
-pdfi_make_smask_dict(pdf_context *ctx, pdf_dict *image_dict, pdfi_image_info_t *image_info)
+pdfi_make_smask_dict(pdf_context *ctx, pdf_dict *image_dict, pdfi_image_info_t *image_info,
+                     int comps)
 {
-    int code;
+    int code = 0;
     pdf_dict *smask_dict = NULL;
     pdf_array *array = NULL;
+    pdf_array *matte = NULL;
 
     if (image_info->SMask != NULL) {
         dmprintf(ctx->memory, "ERROR SMaskInData when there is already an SMask?\n");
-        goto exit;
-    }
-
-    if (image_info->SMaskInData != 1) {
-        dmprintf1(ctx->memory, "Unsupported SMaskInData = %ld\n", image_info->SMaskInData);
         goto exit;
     }
 
@@ -1122,13 +1119,32 @@ pdfi_make_smask_dict(pdf_context *ctx, pdf_dict *image_dict, pdfi_image_info_t *
     code = pdfi_dict_put(ctx, smask_dict, "Decode", (pdf_obj *)array);
     if (code < 0) goto exit;
 
+    /* Make Matte array if needed */
+    /* This just makes an array [0,0,0...] of size 'comps'
+     * See pdf_draw.ps/makeimagekeys
+     * TODO: The only sample in our test suite that triggers this path is fts_17_1718.pdf
+     * and this code being there or not makes no difference on that sample, so.. ???
+     */
+    if (image_info->SMaskInData == 2) {
+        int i;
+        code = pdfi_array_alloc(ctx, comps, &matte);
+        if (code < 0) goto exit;
+        pdfi_countup(matte);
+        for (i=0; i<comps; i++) {
+            code = pdfi_array_put_int(ctx, matte, i, 0);
+            if (code < 0) goto exit;
+        }
+        code = pdfi_dict_put(ctx, smask_dict, "Matte", (pdf_obj *)matte);
+        if (code < 0) goto exit;
+    }
+
     image_info->SMask = (pdf_obj *)smask_dict;
 
  exit:
-    if (code < 0) {
+    if (code < 0)
         pdfi_countdown(smask_dict);
-        pdfi_countdown(array);
-    }
+    pdfi_countdown(array);
+    pdfi_countdown(matte);
     return code;
 }
 
@@ -1212,11 +1228,17 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
         code = pdfi_scan_jpxfilter(ctx, source, image_info.Length, &image_info.jpx_info);
         if (code < 0)
             goto cleanupExit;
-        if (ctx->page_has_transparency && image_info.SMaskInData != 0) {
-            code = pdfi_make_smask_dict(ctx, image_dict, &image_info);
-            if (code < 0)
-                goto cleanupExit;
-        }
+    }
+
+    /* Get the color for this image */
+    code = pdfi_image_get_color(ctx, source, &image_info, &comps, &pcs);
+    if (code < 0)
+        goto cleanupExit;
+
+    if (ctx->page_has_transparency && image_info.is_JPXDecode && image_info.SMaskInData != 0) {
+        code = pdfi_make_smask_dict(ctx, image_dict, &image_info, comps);
+        if (code < 0)
+            goto cleanupExit;
     }
 
     if (ctx->page_has_transparency == true && image_info.SMask != NULL) {
@@ -1250,11 +1272,6 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
             goto cleanupExit;
         }
     }
-
-    /* Get the color for this image */
-    code = pdfi_image_get_color(ctx, source, &image_info, &comps, &pcs);
-    if (code < 0)
-        goto cleanupExit;
 
     /* Get the image into a supported gs type (type1, type3, type4) */
     if (!image_info.Mask) { /* Type 1 and ImageMask */
