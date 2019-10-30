@@ -1200,15 +1200,15 @@ $(DD)rpdl.dev : $(rpdl_) $(DD)page.dev \
 ### ---------- RICOH RPDL IV(600dpi) printer devices ---------- ###
 #rpdl_=$(DEVOBJ)gdevrpdl.$(OBJ)
 #$(DEVOBJ)gdevrpdl.$(OBJ) : $(JAPSRC)gdevrpdl.c \
-                           $(CONTRIB_MAK) $(MAKEDIRS)
+#                           $(CONTRIB_MAK) $(MAKEDIRS)
 #	$(DEVCC) $(DEVO_)gdevrpdl.$(OBJ) $(C_) $(JAPSRC)gdevrpdl.c
 #
 #$(DD)nx100f.dev : $(rpdl_) $(DD)page.dev \
-                           $(CONTRIB_MAK) $(MAKEDIRS)
+#                           $(CONTRIB_MAK) $(MAKEDIRS)
 #	$(SETPDEV2) $(DD)nx100f $(rpdl_)
 #
 #$(DD)nx100v.dev : $(rpdl_) $(DD)page.dev \
-                           $(CONTRIB_MAK) $(MAKEDIRS)
+#                           $(CONTRIB_MAK) $(MAKEDIRS)
 #	$(SETPDEV2) $(DD)nx100v $(rpdl_)
 
 ### ------------ The ALPS Micro Dry printer devices ------------ ###
