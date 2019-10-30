@@ -1301,7 +1301,7 @@ clist_put_polyfill(gx_device *dev, fixed px, fixed py,
     do {
         RECT_STEP_INIT(re);
         if ((code = cmd_update_lop(cdev, re.pcls, lop)) < 0 ||
-            (code = cmd_put_drawing_color(cdev, re.pcls, pdcolor, &re, devn_not_tile_stroke)) < 0)
+            (code = cmd_put_drawing_color(cdev, re.pcls, pdcolor, &re, devn_not_tile_fill)) < 0)
             goto out;
         re.pcls->color_usage.slow_rop |= slow_rop;
         code = cmd_put_path(cdev, re.pcls, &path,
