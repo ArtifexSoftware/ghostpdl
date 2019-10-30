@@ -554,7 +554,8 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
     {
     case 0:
         /* Initial entry, or restart after loading stroke color. */
-        gs_swapcolors_quick(pgs);
+        if (pgs->is_fill_color)
+            gs_swapcolors_quick(pgs);
         break;
     case 1: /* restart after loading fill color. NB: color is still fill. */
         break;
