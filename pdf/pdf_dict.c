@@ -529,7 +529,8 @@ int make_int_array_from_dict(pdf_context *ctx, int **parray, pdf_dict *dict, con
     return array_size;
 }
 
-int pdfi_dict_put(pdf_dict *d, pdf_obj *Key, pdf_obj *value)
+/* Put into dictionary with key as object */
+int pdfi_dict_put_obj(pdf_dict *d, pdf_obj *Key, pdf_obj *value)
 {
     uint64_t i;
     pdf_obj **new_keys, **new_values;
@@ -595,12 +596,67 @@ int pdfi_dict_put(pdf_dict *d, pdf_obj *Key, pdf_obj *value)
     return 0;
 }
 
+/* Put into dictionary with key as string */
+int pdfi_dict_put(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj *value)
+{
+    int code;
+    pdf_obj *key = NULL;
+
+    code = pdfi_make_name(ctx, (byte *)Key, strlen(Key), &key);
+    if (code < 0)
+        return code;
+
+    code = pdfi_dict_put_obj(d, key, value);
+    pdfi_countdown(key); /* get rid of extra ref */
+    return code;
+}
+
+int pdfi_dict_put_int(pdf_context *ctx, pdf_dict *d, const char *key, int64_t value)
+{
+    int code;
+    pdf_num *obj;
+
+    code = pdfi_alloc_object(ctx, PDF_INT, 0, (pdf_obj **)&obj);
+    obj->value.i = value;
+    if (code < 0)
+        return code;
+
+    return pdfi_dict_put(ctx, d, key, (pdf_obj *)obj);
+}
+
+int pdfi_dict_put_bool(pdf_context *ctx, pdf_dict *d, const char *key, bool value)
+{
+    int code;
+    pdf_bool *obj = NULL;
+
+    code = pdfi_alloc_object(ctx, PDF_BOOL, 0, (pdf_bool **)&obj);
+    if (code < 0)
+        return code;
+
+    obj->value = value;
+    return pdfi_dict_put(ctx, d, key, (pdf_bool *)obj);
+}
+
+int pdfi_dict_put_name(pdf_context *ctx, pdf_dict *d, const char *key, const char *name)
+{
+    int code;
+    pdf_obj *obj = NULL;
+
+    code = pdfi_make_name(ctx, (byte *)name, strlen(name), &obj);
+    if (code < 0)
+        return code;
+
+    code = pdfi_dict_put(ctx, d, key, obj);
+    pdfi_countdown(obj); /* get rid of extra ref */
+    return code;
+}
+
 int pdfi_dict_copy(pdf_dict *target, pdf_dict *source)
 {
     int i=0, code = 0;
 
     for (i=0;i< source->entries;i++) {
-        code = pdfi_dict_put(target, source->keys[i], source->values[i]);
+        code = pdfi_dict_put_obj(target, source->keys[i], source->values[i]);
         if (code < 0)
             return code;
     }
@@ -763,7 +819,7 @@ int pdfi_merge_dicts(pdf_dict *target, pdf_dict *source)
         if (code < 0)
             return code;
         if (!known) {
-            code = pdfi_dict_put(target, source->keys[i], source->values[i]);
+            code = pdfi_dict_put_obj(target, source->keys[i], source->values[i]);
             if (code < 0)
                 return code;
         }

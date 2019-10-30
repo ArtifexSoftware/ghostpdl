@@ -178,7 +178,7 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
             if (code < 0)
                 goto exit;
 
-            code = pdfi_dict_put(ctx->SpotNames, name, dummy);
+            code = pdfi_dict_put_obj(ctx->SpotNames, name, dummy);
             pdfi_countdown(name);
             if (code < 0)
                 break;
@@ -206,7 +206,7 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
         if (code < 0)
             goto exit;
 
-        code = pdfi_dict_put(ctx->SpotNames, (pdf_obj *)space, dummy);
+        code = pdfi_dict_put_obj(ctx->SpotNames, (pdf_obj *)space, dummy);
         *num_spots += 1;
         goto exit;
     } else {

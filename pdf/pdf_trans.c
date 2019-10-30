@@ -62,7 +62,6 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
     gs_matrix save_matrix, GroupMat, group_Matrix;
     gs_transparency_mask_subtype_t subtype = TRANSPARENCY_MASK_Luminosity;
     pdf_bool *Processed = NULL;
-    pdf_obj *Key = NULL;
 
     dbgmprintf(ctx->memory, "pdfi_trans_set_mask (.execmaskgroup) BEGIN\n");
     memset(&params, 0, sizeof(params));
@@ -77,18 +76,14 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
     }
     /* If /Processed not in the dict, put it there */
     if (code == 0) {
-        /* the cleanup at end of this routine assumes both Key and Processed have a ref */
+        /* the cleanup at end of this routine assumes Processed has a ref */
         code = pdfi_alloc_object(ctx, PDF_BOOL, 0, (pdf_obj **)&Processed);
         if (code < 0)
             goto exit;
         Processed->value = false;
         /* pdfi_alloc_object() doesn't grab a ref */
         pdfi_countup(Processed);
-        /* pdfi_make_name() does grab a ref, so no need to countup */
-        code = pdfi_make_name(ctx, (byte *)"Processed", strlen("Processed"), &Key);
-        if (code < 0)
-            goto exit;
-        code = pdfi_dict_put(SMask, Key, (pdf_obj *)Processed);
+        code = pdfi_dict_put(ctx, SMask, "Processed", (pdf_obj *)Processed);
         if (code < 0)
             goto exit;
     }
@@ -270,7 +265,6 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
     pdfi_countdown(Matrix);
     pdfi_countdown(CS);
     pdfi_countdown(Processed);
-    pdfi_countdown(Key);
     dbgmprintf(ctx->memory, "pdfi_trans_set_mask (.execmaskgroup) END\n");
     return code;
 }

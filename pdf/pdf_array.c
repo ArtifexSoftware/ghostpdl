@@ -221,6 +221,19 @@ int pdfi_array_put(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj *o)
     return 0;
 }
 
+int pdfi_array_put_int(pdf_context *ctx, pdf_array *a, uint64_t index, int64_t val)
+{
+    int code;
+    pdf_num *obj;
+
+    code = pdfi_alloc_object(ctx, PDF_INT, 0, (pdf_obj **)&obj);
+    obj->value.i = val;
+    if (code < 0)
+        return code;
+
+    return pdfi_array_put(ctx, a, index, (pdf_obj *)obj);
+}
+
 /* Strictly speaking the normalize_rect isn't really part of the PDF array
  * processing, but its very likely that any time we want to use it, the
  * rectangle will have come from a PDF array in a PDF file so it makes

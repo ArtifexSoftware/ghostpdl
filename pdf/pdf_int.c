@@ -2294,8 +2294,6 @@ int pdfi_read_Root(pdf_context *ctx)
         return code;
 
     if (o1->type == PDF_INDIRECT) {
-        pdf_obj *name;
-
         code = pdfi_dereference(ctx, ((pdf_indirect_ref *)o1)->ref_object_num,  ((pdf_indirect_ref *)o1)->ref_generation_num, &o);
         pdfi_countdown(o1);
         if (code < 0)
@@ -2306,16 +2304,7 @@ int pdfi_read_Root(pdf_context *ctx)
             return_error(gs_error_typecheck);
         }
 
-        code = pdfi_make_name(ctx, (byte *)"Root", 4, &name);
-        if (code < 0) {
-            pdfi_countdown(o);
-            return code;
-        }
-        code = pdfi_dict_put(ctx->Trailer, name, o);
-        /* pdfi_make_name created a name with a reference count of 1, the local object
-         * is going out of scope, so decrement the reference coutn.
-         */
-        pdfi_countdown(name);
+        code = pdfi_dict_put(ctx, ctx->Trailer, "Root", o);
         if (code < 0) {
             pdfi_countdown(o);
             return code;
@@ -2362,8 +2351,6 @@ int pdfi_read_Info(pdf_context *ctx)
         return code;
 
     if (o1->type == PDF_INDIRECT) {
-        pdf_obj *name;
-
         code = pdfi_dereference(ctx, ((pdf_indirect_ref *)o1)->ref_object_num,  ((pdf_indirect_ref *)o1)->ref_generation_num, &o);
         pdfi_countdown(o1);
         if (code < 0)
@@ -2374,16 +2361,7 @@ int pdfi_read_Info(pdf_context *ctx)
             return_error(gs_error_typecheck);
         }
 
-        code = pdfi_make_name(ctx, (byte *)"Info", 4, &name);
-        if (code < 0) {
-            pdfi_countdown(o);
-            return code;
-        }
-        code = pdfi_dict_put(ctx->Trailer, name, o);
-        /* pdfi_make_name created a name with a reference count of 1, the local object
-         * is going out of scope, so decrement the reference coutn.
-         */
-        pdfi_countdown(name);
+        code = pdfi_dict_put(ctx, ctx->Trailer, "Info", o);
         if (code < 0) {
             pdfi_countdown(o);
             return code;
@@ -2419,8 +2397,6 @@ int pdfi_read_Pages(pdf_context *ctx)
         return code;
 
     if (o1->type == PDF_INDIRECT) {
-        pdf_obj *name;
-
         code = pdfi_dereference(ctx, ((pdf_indirect_ref *)o1)->ref_object_num,  ((pdf_indirect_ref *)o1)->ref_generation_num, &o);
         pdfi_countdown(o1);
         if (code < 0)
@@ -2431,16 +2407,7 @@ int pdfi_read_Pages(pdf_context *ctx)
             return_error(gs_error_typecheck);
         }
 
-        code = pdfi_make_name(ctx, (byte *)"Pages", 5, &name);
-        if (code < 0) {
-            pdfi_countdown(o);
-            return code;
-        }
-        code = pdfi_dict_put(ctx->Root, name, o);
-        /* pdfi_make_name created a name with a reference count of 1, the local object
-         * is going out of scope, so decrement the reference coutn.
-         */
-        pdfi_countdown(name);
+        code = pdfi_dict_put(ctx, ctx->Root, "Pages", o);
         if (code < 0) {
             pdfi_countdown(o);
             return code;
@@ -2514,7 +2481,7 @@ pdfi_get_child(pdf_context *ctx, pdf_array *Kids, int i, pdf_dict **pchild)
     pdf_dict *child = NULL;
     pdf_name *Type = NULL;
     pdf_dict *leaf_dict = NULL;
-    pdf_name *Key = NULL, *Key1 = NULL;
+    pdf_name *Key = NULL;
     int code = 0;
 
     code = pdfi_array_get_no_deref(ctx, Kids, i, (pdf_obj **)&node);
@@ -2568,13 +2535,10 @@ pdfi_get_child(pdf_context *ctx, pdf_array *Kids, int i, pdf_dict **pchild)
             code = pdfi_make_name(ctx, (byte *)"PageRef", 7, (pdf_obj **)&Key);
             if (code < 0)
                 goto errorExit;
-            code = pdfi_dict_put(leaf_dict, (pdf_obj *)Key, (pdf_obj *)node);
+            code = pdfi_dict_put_obj(leaf_dict, (pdf_obj *)Key, (pdf_obj *)node);
             if (code < 0)
                 goto errorExit;
-            code = pdfi_make_name(ctx, (byte *)"Type", 4, (pdf_obj **)&Key1);
-            if (code < 0)
-                goto errorExit;
-            code = pdfi_dict_put(leaf_dict, (pdf_obj *)Key1, (pdf_obj *)Key);
+            code = pdfi_dict_put(ctx, leaf_dict, "Type", (pdf_obj *)Key);
             if (code < 0)
                 goto errorExit;
             code = pdfi_array_put(ctx, Kids, i, (pdf_obj *)leaf_dict);
@@ -2594,7 +2558,6 @@ pdfi_get_child(pdf_context *ctx, pdf_array *Kids, int i, pdf_dict **pchild)
     pdfi_countdown(node);
     pdfi_countdown(Type);
     pdfi_countdown(Key);
-    pdfi_countdown(Key1);
     return code;
 }
 
@@ -2604,7 +2567,6 @@ static int
 pdfi_check_inherited_key(pdf_context *ctx, pdf_dict *d, const char *keyname, pdf_dict *inheritable)
 {
     int code = 0;
-    pdf_obj *Key = NULL;
     pdf_obj *object = NULL;
     bool known;
 
@@ -2613,9 +2575,6 @@ pdfi_check_inherited_key(pdf_context *ctx, pdf_dict *d, const char *keyname, pdf
     if (code < 0)
         goto exit;
     if (known) {
-        code = pdfi_make_name(ctx, (byte *)keyname, strlen(keyname), &Key);
-        if (code < 0)
-            goto exit;
         code = pdfi_loop_detector_mark(ctx);
         if (code < 0){
             goto exit;
@@ -2629,11 +2588,10 @@ pdfi_check_inherited_key(pdf_context *ctx, pdf_dict *d, const char *keyname, pdf
         if (code < 0) {
             goto exit;
         }
-        code = pdfi_dict_put(inheritable, Key, object);
+        code = pdfi_dict_put(ctx, inheritable, keyname, object);
     }
 
  exit:
-    pdfi_countdown(Key);
     pdfi_countdown(object);
     return code;
 }

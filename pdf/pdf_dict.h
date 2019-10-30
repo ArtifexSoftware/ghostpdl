@@ -28,7 +28,11 @@ int pdfi_dict_knownget(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj *
 int pdfi_dict_knownget_type(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj_type type, pdf_obj **o);
 int pdfi_dict_knownget_number(pdf_context *ctx, pdf_dict *d, const char *Key, double *f);
 int pdfi_merge_dicts(pdf_dict *target, pdf_dict *source);
-int pdfi_dict_put(pdf_dict *d, pdf_obj *Key, pdf_obj *value);
+int pdfi_dict_put_obj(pdf_dict *d, pdf_obj *Key, pdf_obj *value);
+int pdfi_dict_put(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj *value);
+int pdfi_dict_put_int(pdf_context *ctx, pdf_dict *d, const char *Key, int64_t value);
+int pdfi_dict_put_bool(pdf_context *ctx, pdf_dict *d, const char *Key, bool value);
+int pdfi_dict_put_name(pdf_context *ctx, pdf_dict *d, const char *Key, const char *name);
 int pdfi_dict_get2(pdf_context *ctx, pdf_dict *d, const char *Key1, const char *Key2, pdf_obj **o);
 int pdfi_dict_get(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj **o);
 int pdfi_dict_get_no_store_R(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj **o);
