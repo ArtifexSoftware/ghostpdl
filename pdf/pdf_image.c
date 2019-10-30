@@ -375,8 +375,9 @@ pdfi_scan_jpxfilter(pdf_context *ctx, pdf_stream *source, int length, pdfi_jpx_i
                 info->icc_offset = pdfi_tell(source) - (box_len-3);
                 info->icc_length = box_len - 3;
                 if (ctx->pdfdebug)
-                    dbgmprintf4(ctx->memory, "JPXDecode: COLR Meth 2 at offset %d(0x%x), length %d(0x%x)\n",
-                          info->icc_offset, info->icc_offset, info->icc_length, info->icc_length);
+                    dbgmprintf5(ctx->memory, "JPXDecode: COLR Meth %d at offset %d(0x%x), length %d(0x%x)\n",
+                                cs_meth, info->icc_offset, info->icc_offset,
+                                info->icc_length, info->icc_length);
                 cs_enum = 0;
             } else {
                 if (ctx->pdfdebug)
@@ -1067,6 +1068,70 @@ pdfi_image_get_color(pdf_context *ctx, pdf_stream *source, pdfi_image_info_t *im
     return code;
 }
 
+/* Make a fake SMask dict from a JPX SMaskInData */
+static int
+pdfi_make_smask_dict(pdf_context *ctx, pdf_dict *image_dict, pdfi_image_info_t *image_info)
+{
+    int code;
+    pdf_dict *smask_dict = NULL;
+    pdf_array *array = NULL;
+
+    if (image_info->SMask != NULL) {
+        dmprintf(ctx->memory, "ERROR SMaskInData when there is already an SMask?\n");
+        goto exit;
+    }
+
+    if (image_info->SMaskInData != 1) {
+        dmprintf1(ctx->memory, "Unsupported SMaskInData = %ld\n", image_info->SMaskInData);
+        goto exit;
+    }
+
+    code = pdfi_alloc_object(ctx, PDF_DICT, 32, (pdf_obj **)&smask_dict);
+    if (code < 0) goto exit;
+    pdfi_countup(&smask_dict);
+
+    /* Copy everything from the image_dict */
+    code = pdfi_dict_copy(smask_dict, image_dict);
+    smask_dict->stream_offset = image_dict->stream_offset;
+
+    code = pdfi_dict_put_int(ctx, smask_dict, "SMaskInData", 0);
+    if (code < 0) goto exit;
+
+    code = pdfi_dict_put_name(ctx, smask_dict, "ColorSpace", "DeviceGray");
+    if (code < 0) goto exit;
+
+    /* BPC needs to come from the jpxinfo */
+    code = pdfi_dict_put_int(ctx, smask_dict, "BitsPerComponent", image_info->jpx_info.bpc);
+    if (code < 0) goto exit;
+
+    /* "Alpha" is a non-standard thing that gs code uses to tell
+     * the jpxfilter that it is doing an SMask.  I guess we can do
+     * the same, since we're making this dictionary anyway.
+     */
+    code = pdfi_dict_put_bool(ctx, smask_dict, "Alpha", true);
+    if (code < 0) goto exit;
+
+    /* Make an array [0,1] */
+    code = pdfi_array_alloc(ctx, 2, &array);
+    if (code < 0) goto exit;
+    pdfi_countup(array);
+    code = pdfi_array_put_int(ctx, array, 0, 0);
+    if (code < 0) goto exit;
+    code = pdfi_array_put_int(ctx, array, 1, 1);
+    if (code < 0) goto exit;
+    code = pdfi_dict_put(ctx, smask_dict, "Decode", (pdf_obj *)array);
+    if (code < 0) goto exit;
+
+    image_info->SMask = (pdf_obj *)smask_dict;
+
+ exit:
+    if (code < 0) {
+        pdfi_countdown(smask_dict);
+        pdfi_countdown(array);
+    }
+    return code;
+}
+
 /* NOTE: "source" is the current input stream.
  * on exit:
  *  inline_image = TRUE, stream it will point to after the image data.
@@ -1147,6 +1212,11 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
         code = pdfi_scan_jpxfilter(ctx, source, image_info.Length, &image_info.jpx_info);
         if (code < 0)
             goto cleanupExit;
+        if (ctx->page_has_transparency && image_info.SMaskInData != 0) {
+            code = pdfi_make_smask_dict(ctx, image_dict, &image_info);
+            if (code < 0)
+                goto cleanupExit;
+        }
     }
 
     if (ctx->page_has_transparency == true && image_info.SMask != NULL) {

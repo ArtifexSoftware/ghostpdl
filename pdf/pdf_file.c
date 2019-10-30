@@ -366,13 +366,22 @@ pdfi_JPX_filter(pdf_context *ctx, pdf_dict *dict, pdf_dict *decode,
     int code;
     pdf_obj *csobj = NULL;
     pdf_name *csname = NULL;
+    bool alpha;
 
     state.memory = ctx->memory->non_gc_memory;
     if (s_jpxd_template.set_defaults)
       (*s_jpxd_template.set_defaults)((stream_state *)&state);
 
     /* Pull some extra params out of the image dict */
-    /* TODO: Alpha -- this seems to be a hack that PS implementation did, need to get equiv */
+    if (dict) {
+        /* This Alpha is a thing that gs code uses to tell that we
+         * are doing an SMask.  It's a bit of a hack, but
+         * I guess we can do the same.
+         */
+        code = pdfi_dict_get_bool(ctx, dict, "Alpha", &alpha);
+        if (code == 0)
+            state.alpha = alpha;
+    }
     if (dict && pdfi_dict_get(ctx, dict, "ColorSpace", &csobj) == 0) {
         /* parse the value */
         if (csobj->type == PDF_ARRAY) {
