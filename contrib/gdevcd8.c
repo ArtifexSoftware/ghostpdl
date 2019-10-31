@@ -3817,7 +3817,7 @@ gdev_pcl_map_color_rgb(gx_device * pdev, gx_color_index color,
         break;
         case 16:
         {
-            gx_color_value c = (gx_color_value) color ^ 0xffff;
+            gx_color_index c = (gx_color_index) color ^ 0xffff;
             ushort value = c >> 11;
 
             prgb[0] = ((value << 11) + (value << 6) + (value << 1) +
@@ -3832,7 +3832,7 @@ gdev_pcl_map_color_rgb(gx_device * pdev, gx_color_index color,
         break;
         case 24:
         {
-            gx_color_value c = (gx_color_value) color ^ 0xffffff;
+            gx_color_index c = (gx_color_index) color ^ 0xffffff;
 
             prgb[0] = gx_color_value_from_byte(c >> 16);
             prgb[1] = gx_color_value_from_byte((c >> 8) & 0xff);

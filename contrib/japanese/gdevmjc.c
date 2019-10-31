@@ -1616,12 +1616,12 @@ gdev_mjc_map_color_rgb(gx_device *pdev, gx_color_index color,
           prgb[2] = -(c >> 2);
         }
       else
-        { gx_color_value value = (gx_color_value)color ^ 0xff;
+        { gx_color_index value = (gx_color_index)color ^ 0xff;
           prgb[0] = prgb[1] = prgb[2] = (value << 8) + value;
         }
     break;
   case 16:
-    { gx_color_value c = (gx_color_value)color ^ 0xffff;
+    { gx_color_index c = (gx_color_index)color ^ 0xffff;
       ushort value = c >> 11;
       prgb[0] = ((value << 11) + (value << 6) + (value << 1) +
                  (value >> 4)) >> (16 - gx_color_value_bits);
@@ -1634,7 +1634,7 @@ gdev_mjc_map_color_rgb(gx_device *pdev, gx_color_index color,
     }
     break;
   case 24:
-    { gx_color_value c = (gx_color_value)color ^ 0xffffff;
+    { gx_color_index c = (gx_color_index)color ^ 0xffffff;
       prgb[0] = gx_color_value_from_byte(c >> 16);
       prgb[1] = gx_color_value_from_byte((c >> 8) & 0xff);
       prgb[2] = gx_color_value_from_byte(c & 0xff);
