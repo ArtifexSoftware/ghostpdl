@@ -654,7 +654,14 @@ pdf_compute_fileID(gx_device_pdf_image * pdev, byte fileID[16], char *CreationDa
     gp_get_realtime(secs_ns);
 #endif
     sputs(s, (byte *)secs_ns, sizeof(secs_ns), &ignore);
+#ifdef CLUSTER
+    /* Don't have the ID's vary by filename output in the cluster testing.
+     * This prevents us comparing gs to gpdl results, and makes it harder
+     * to manually reproduce results. */
+    sputs(s, (const byte *)"ClusterTest.pdf", strlen("ClusterTest.pdf"), &ignore);
+#else
     sputs(s, (const byte *)pdev->fname, strlen(pdev->fname), &ignore);
+#endif
 
     stream_puts(s, "/ModDate ");
     stream_puts(s, CreationDate);
