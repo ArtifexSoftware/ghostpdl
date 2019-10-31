@@ -47,7 +47,7 @@
 #define ctm_known		(1<<11)
 #define dash_known		(1<<12)
 #define clip_path_known		(1<<13)
-#define stroke_all_known	((1<<14)-1)
+#define STROKE_ALL_KNOWN	((1<<14)-1)
 #define color_space_known	(1<<14)
 /*#define all_known             ((1<<15)-1) */
 

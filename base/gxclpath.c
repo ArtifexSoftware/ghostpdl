@@ -1006,7 +1006,7 @@ clist_fill_stroke_path(gx_device * pdev, const gs_gstate * pgs,
         gs_int_rect trans_bbox;
         int rx = fixed2int(bbox.p.x) - 1;
         int rwidth = fixed2int_ceiling(bbox.q.x) - rx + 1;
-        unknown |= stroke_all_known;
+        unknown |= STROKE_ALL_KNOWN;
 
         fit_fill_w(cdev, rx, rwidth);
         trans_bbox.p.x = rx;
@@ -1027,7 +1027,7 @@ clist_fill_stroke_path(gx_device * pdev, const gs_gstate * pgs,
         fixed ymin, ymax;
 
         RECT_STEP_INIT(re);
-        if ((code = cmd_do_write_unknown(cdev, re.pcls, unknown)) < 0)
+        if ((code = cmd_do_write_unknown(cdev, re.pcls, STROKE_ALL_KNOWN | FILL_KNOWN)) < 0)
             return code;
         if ((code = cmd_do_enable_clip(cdev, re.pcls, pcpath != NULL)) < 0)
             return code;
@@ -1199,7 +1199,7 @@ clist_stroke_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
 
         RECT_STEP_INIT(re);
         CMD_CHECK_LAST_OP_BLOCK_DEFINED(cdev);
-        if ((code = cmd_do_write_unknown(cdev, re.pcls, stroke_all_known)) < 0 ||
+        if ((code = cmd_do_write_unknown(cdev, re.pcls, STROKE_ALL_KNOWN)) < 0 ||
             (code = cmd_do_enable_clip(cdev, re.pcls, pcpath != NULL)) < 0 ||
             (code = cmd_update_lop(cdev, re.pcls, lop)) < 0
             )
