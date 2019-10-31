@@ -33,7 +33,7 @@
 
  */
 
-#include <string.h>
+#include <stdlib.h>		/* for abs() and free */
 
 /* Get this definition in before we read memento.h */
 static void
@@ -44,6 +44,7 @@ unvectored_free(void *x)
 
 #if ( 6 > GS_VERSION_MAJOR )
 
+#include <string.h>
 #include <sys/utsname.h>	/* for uname(2) */
 #include <ctype.h>		/* for toupper(3) */
 
@@ -67,7 +68,6 @@ unvectored_free(void *x)
 #else /* 6 <= GS_VERSION_MAJOR */
 
 #include "math_.h"
-#include <stdlib.h>		/* for abs() */
 #include <sys/utsname.h>	/* for uname(2) */
 #include <ctype.h>		/* for toupper(3) */
 
