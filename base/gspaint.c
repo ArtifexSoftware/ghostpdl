@@ -547,22 +547,10 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
     bool devn;
     float orig_width, scale, orig_flatness;
 
-    /* We alsways restart with fill_color swapped in. If this is */
-    /* the first pass (or restarted after error_Remap_Color,     */
-    /* swap to the stroke color */
-    switch (*restart)
-    {
-    case 0:
-        /* Initial entry, or restart after loading stroke color. */
-        if (pgs->is_fill_color)
-            gs_swapcolors_quick(pgs);
-        break;
-    case 1: /* restart after loading fill color. NB: color is still fill. */
-        break;
-    default:
-        assert("This should never happen" == NULL);
-        break;
-    }
+    /* If fill (due to startup or failure during fill setup due
+       to pattern for fill) then switch to stroke */
+    if (pgs->is_fill_color)
+        gs_swapcolors_quick(pgs);
 
     /* We need to distinguish text from vectors to set the object tag.
 
