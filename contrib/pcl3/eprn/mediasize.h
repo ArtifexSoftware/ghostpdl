@@ -20,10 +20,10 @@
    All these macros resolve to floating point numbers. */
 
 /* Millimetres per inch */
-#define MM_PER_IN	25.4
+#define MM_PER_IN	25.4f
 
 /* Big points (units in PostScript's default user space) per inch */
-#define BP_PER_IN	72.0
+#define BP_PER_IN	72.0f
 
 /* Big points per millimetre */
 #define BP_PER_MM	(BP_PER_IN/MM_PER_IN)

@@ -48,8 +48,8 @@ lprn_device(gx_device_lprn, rpdl_prn_procs, "rpdl",
 static int
 rpdl_open(gx_device * pdev)
 {
-    int xdpi = pdev->x_pixels_per_inch;
-    int ydpi = pdev->y_pixels_per_inch;
+    int xdpi = (int)pdev->x_pixels_per_inch;
+    int ydpi = (int)pdev->y_pixels_per_inch;
 
     /* Resolution Check */
     if (xdpi != ydpi)
@@ -238,8 +238,8 @@ rpdl_paper_set(gx_device_printer * pdev, gp_file * prn_stream)
     /* Page size match tolerance in points */
     #define TOL 5
 
-    width = pdev->MediaSize[0];
-    height = pdev->MediaSize[1];
+    width = (int)pdev->MediaSize[0];
+    height = (int)pdev->MediaSize[1];
 
     if (width < height) {
         w = width;

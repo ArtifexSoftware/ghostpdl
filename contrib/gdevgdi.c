@@ -71,8 +71,8 @@
 #define GDI_COMP_MODITIFF 6
 #define GDI_COMP_NOSEND   0x7f
 
-#define GDI_MARGINS_A4	        0.167, 0.167, 0.167, 0.167
-#define GDI_MARGINS_LETTER	0.167, 0.167, 0.167, 0.167
+#define GDI_MARGINS_A4	        0.167f, 0.167f, 0.167f, 0.167f
+#define GDI_MARGINS_LETTER	0.167f, 0.167f, 0.167f, 0.167f
 /*#define GDI_MARGINS_A4	0.0, 0.0, 0.0, 0.0*/
 /*#define GDI_MARGINS_LETTER	0.0, 0.0, 0.0, 0.0*/
 

@@ -289,8 +289,8 @@ static int cdj970_write_trailer(gx_device *, gp_file *);
 
 #define DESKJET_PRINT_LIMIT  0.04       /* 'real' top margin? */
 /* Margins are left, bottom, right, top. */
-#define DESKJET_MARGINS_LETTER   0.25, 0.50, 0.25, 0.167
-#define DESKJET_MARGINS_A4       0.13, 0.46, 0.13, 0.04
+#define DESKJET_MARGINS_LETTER   0.25f, 0.50f, 0.25f, 0.167f
+#define DESKJET_MARGINS_A4       0.13f, 0.46f, 0.13f, 0.04f
 /* Define bits-per-pixel - default is 32-bit cmyk-mode */
 #ifndef BITSPERPIXEL
 #  define BITSPERPIXEL 32
@@ -652,18 +652,18 @@ cdj970_put_params(gx_device * pdev, gs_param_list * plist)
     code = cdj_put_param_int(plist, "Papertype", &papertype, 0, 4, code);
     code = cdj_put_param_int(plist, "Duplex", &duplex, 0, 2, code);
     code =
-        cdj_put_param_float(plist, "MasterGamma", &mastergamma, 0.1, 9.0,
+        cdj_put_param_float(plist, "MasterGamma", &mastergamma, 0.1f, 9.0f,
                             code);
     code =
-        cdj_put_param_float(plist, "GammaValC", &gammavalc, 0.0, 9.0, code);
+        cdj_put_param_float(plist, "GammaValC", &gammavalc, 0.0f, 9.0f, code);
     code =
-        cdj_put_param_float(plist, "GammaValM", &gammavalm, 0.0, 9.0, code);
+        cdj_put_param_float(plist, "GammaValM", &gammavalm, 0.0f, 9.0f, code);
     code =
-        cdj_put_param_float(plist, "GammaValY", &gammavaly, 0.0, 9.0, code);
+        cdj_put_param_float(plist, "GammaValY", &gammavaly, 0.0f, 9.0f, code);
     code =
-        cdj_put_param_float(plist, "GammaValK", &gammavalk, 0.0, 9.0, code);
+        cdj_put_param_float(plist, "GammaValK", &gammavalk, 0.0f, 9.0f, code);
     code =
-        cdj_put_param_float(plist, "BlackCorrect", &blackcorrect, 0.0, 9.0,
+        cdj_put_param_float(plist, "BlackCorrect", &blackcorrect, 0.0f, 9.0f,
                             code);
 
     if (code < 0)
@@ -986,7 +986,7 @@ send_scan_lines(gx_device_printer * pdev,
     word rmask =
         ~(word) 0 << ((-pdev->width * misc_vars->storage_bpp) & (W * 8 - 1));
 
-    lend = pdev->height - (dev_t_margin(pdev) + dev_b_margin(pdev)) * y_dpi;
+    lend = (int)(pdev->height - (dev_t_margin(pdev) + dev_b_margin(pdev)) * y_dpi);
 
     error_values->c = error_values->m = error_values->y = error_values->k = 0;
 
@@ -1298,8 +1298,8 @@ do_black_correction(float kvalue, int kcorrect[256])
   *col4 += ucr;  /* add removed black to black */\
   kadd  = ucr + *(kcorrect + ucr);\
   uca_fac = 1.0 + (kadd/255.0);\
-  *col1 *= uca_fac;\
-  *col2 *= uca_fac;\
+  *col1 = (byte)(*col1 * uca_fac);\
+  *col2 = (byte)(*col2 * uca_fac);\
 }
 
 /* do_gcr: Since resolution can be different on different planes, we need to
@@ -2000,12 +2000,12 @@ cdj970_start_raster_mode(gx_device_printer * pdev,
     init.a[25] = cdj970->intensities;   /* Intensity levels yellow */
 
     /* black plane resolution */
-    assign_dpi(cdj970->x_pixels_per_inch, init.a + 2);
-    assign_dpi(cdj970->y_pixels_per_inch, init.a + 4);
+    assign_dpi((int)cdj970->x_pixels_per_inch, init.a + 2);
+    assign_dpi((int)cdj970->y_pixels_per_inch, init.a + 4);
 
     /* color plane resolution */
-    xres = cdj970->x_pixels_per_inch / (cdj970->xscal + 1);
-    yres = cdj970->y_pixels_per_inch / (cdj970->yscal + 1);
+    xres = (int)(cdj970->x_pixels_per_inch / (cdj970->xscal + 1));
+    yres = (int)(cdj970->y_pixels_per_inch / (cdj970->yscal + 1));
 
     /* cyan */
     assign_dpi(xres, init.a + 8);

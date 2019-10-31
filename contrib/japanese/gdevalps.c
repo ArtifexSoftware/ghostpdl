@@ -43,9 +43,9 @@
 /* Alps Micro Dry 600dpi monochrome printer driver */
 #include "gdevprn.h"
 
-#define MD_TOP_MARGIN		0.47
-#define MD_BOTTOM_MARGIN	0.59
-#define MD_SIDE_MARGIN		0.13
+#define MD_TOP_MARGIN		0.47f
+#define MD_BOTTOM_MARGIN	0.59f
+#define MD_SIDE_MARGIN		0.13f
 
 #define X_DPI 600
 #define Y_DPI 600

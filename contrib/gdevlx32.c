@@ -239,12 +239,12 @@ static void print_photo_page(pagedata *gendata);
  * it's quite hard to know, from inside a printer driver, if we are
  * printing on envelopes or on standard paper, so we just ignore that.
  */
-#define LXM3200_TOP_MARGIN           0.070
-#define LXM3200_BOTTOM_MARGIN        0.200
-#define LXM3200_A4_LEFT_MARGIN       0.135
-#define LXM3200_LETTER_LEFT_MARGIN   0.250
-#define LXM3200_A4_RIGHT_MARGIN      0.135
-#define LXM3200_LETTER_RIGHT_MARGIN  0.250
+#define LXM3200_TOP_MARGIN           0.070f
+#define LXM3200_BOTTOM_MARGIN        0.200f
+#define LXM3200_A4_LEFT_MARGIN       0.135f
+#define LXM3200_LETTER_LEFT_MARGIN   0.250f
+#define LXM3200_A4_RIGHT_MARGIN      0.135f
+#define LXM3200_LETTER_RIGHT_MARGIN  0.250f
 
 /* Offsets for the top and bootom start of the printing frame. */
 #define LXM3200_A4_TOPOFFSET       84

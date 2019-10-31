@@ -110,15 +110,15 @@ static const eprn_PageDescription
         Note that BPD05054 gives different margins.
     */
     {ms_Letter,
-      0.25*BP_PER_IN, (0.5-0.08)*BP_PER_IN, 0.25*BP_PER_IN, 0.08*BP_PER_IN},
+      0.25f*BP_PER_IN, (0.5f-0.08f)*BP_PER_IN, 0.25f*BP_PER_IN, 0.08f*BP_PER_IN},
     {ms_Legal,
-      0.25*BP_PER_IN, (0.5-0.08)*BP_PER_IN, 0.25*BP_PER_IN, 0.08*BP_PER_IN},
+      0.25f*BP_PER_IN, (0.5f-0.08f)*BP_PER_IN, 0.25f*BP_PER_IN, 0.08f*BP_PER_IN},
     {ms_A4,
-      0.125*BP_PER_IN, (0.5-0.08)*BP_PER_IN, 3.6*BP_PER_MM, 0.08*BP_PER_IN},
+      0.125f*BP_PER_IN, (0.5f-0.08f)*BP_PER_IN, 3.6f*BP_PER_MM, 0.08f*BP_PER_IN},
     {ms_Executive,
-      0.25*BP_PER_IN, (0.5-0.08)*BP_PER_IN, 0.25*BP_PER_IN, 0.08*BP_PER_IN},
+      0.25f*BP_PER_IN, (0.5f-0.08f)*BP_PER_IN, 0.25f*BP_PER_IN, 0.08f*BP_PER_IN},
     {ms_JISB5,
-      3.175*BP_PER_MM, (0.5-0.08)*BP_PER_IN, 3.25*BP_PER_MM, 0.08*BP_PER_IN},
+      3.175f*BP_PER_MM, (0.5f-0.08f)*BP_PER_IN, 3.25f*BP_PER_MM, 0.08f*BP_PER_IN},
     /*  DJ3/4 p. 21: "Envelopes are printed in the landscape mode". As the
         margins are given such that the largest value is designated as "bottom"
         and the bottom is designated on page 19 as a long edge, I conclude that
@@ -126,9 +126,9 @@ static const eprn_PageDescription
         dimensions for Env10 in portrait and EnvDL in landscape orientation.
      */
     {ms_Env10 | MS_TRANSVERSE_FLAG,
-      0.125*BP_PER_IN, (0.5-0.08)*BP_PER_IN, 0.08*BP_PER_IN, 0.08*BP_PER_IN},
+      0.125f*BP_PER_IN, (0.5f-0.08f)*BP_PER_IN, 0.08f*BP_PER_IN, 0.08f*BP_PER_IN},
     {ms_EnvDL | MS_TRANSVERSE_FLAG,
-      0.125*BP_PER_IN, (0.5-0.08)*BP_PER_IN, 0.11*BP_PER_IN, 0.08*BP_PER_IN},
+      0.125f*BP_PER_IN, (0.5f-0.08f)*BP_PER_IN, 0.11f*BP_PER_IN, 0.08f*BP_PER_IN},
     {ms_none}
   },
   hpdj500_sizes[] = {
@@ -139,13 +139,13 @@ static const eprn_PageDescription
         well.
         Order of margins: left, bottom, right, top. */
     {ms_Letter,
-      0.25*BP_PER_IN, 0.57*BP_PER_IN, 0.25*BP_PER_IN, 0.1*BP_PER_IN},
+      0.25f*BP_PER_IN, 0.57f*BP_PER_IN, 0.25f*BP_PER_IN, 0.1f*BP_PER_IN},
     {ms_Legal,
-      0.25*BP_PER_IN, 0.57*BP_PER_IN, 0.25*BP_PER_IN, 0.1*BP_PER_IN},
+      0.25f*BP_PER_IN, 0.57f*BP_PER_IN, 0.25f*BP_PER_IN, 0.1f*BP_PER_IN},
     {ms_A4,
-      3.1*BP_PER_MM, 0.57*BP_PER_IN, 3.6*BP_PER_MM, 0.1*BP_PER_IN},
+      3.1f*BP_PER_MM, 0.57f*BP_PER_IN, 3.6f*BP_PER_MM, 0.1f*BP_PER_IN},
     {ms_Env10 | MS_TRANSVERSE_FLAG, /* Margins from BPD05054 */
-      0.75*BP_PER_IN, 0.57*BP_PER_IN, 0.75*BP_PER_IN, 0.1*BP_PER_IN},
+      0.75f*BP_PER_IN, 0.57f*BP_PER_IN, 0.75f*BP_PER_IN, 0.1f*BP_PER_IN},
     {ms_none}
   },
   hpdj500c_sizes[] = {
@@ -156,16 +156,16 @@ static const eprn_PageDescription
         0.17 inches more at the bottom.
         Order of margins: left, bottom, right, top. */
     {ms_Letter,
-      0.25*BP_PER_IN, 0.4*BP_PER_IN, 0.25*BP_PER_IN, 0.1*BP_PER_IN},
+      0.25f*BP_PER_IN, 0.4f*BP_PER_IN, 0.25f*BP_PER_IN, 0.1f*BP_PER_IN},
     {ms_Legal,
-      0.25*BP_PER_IN, 0.4*BP_PER_IN, 0.25*BP_PER_IN, 0.1*BP_PER_IN},
+      0.25f*BP_PER_IN, 0.4f*BP_PER_IN, 0.25f*BP_PER_IN, 0.1f*BP_PER_IN},
     {ms_A4,
-      3.1*BP_PER_MM, 0.4*BP_PER_IN, 3.6*BP_PER_MM, 0.1*BP_PER_IN},
+      3.1f*BP_PER_MM, 0.4f*BP_PER_IN, 3.6f*BP_PER_MM, 0.1f*BP_PER_IN},
     {ms_Env10 | MS_TRANSVERSE_FLAG,
        /* Margins from BPD05054, but I've chosen 0.4 in for the bottom margin
           instead of 0.57 in as listed there because it looks to me like the
           colour bottom. Compare with the DJ 500. */
-      0.75*BP_PER_IN, 0.4*BP_PER_IN, 0.75*BP_PER_IN, 0.1*BP_PER_IN},
+      0.75f*BP_PER_IN, 0.4f*BP_PER_IN, 0.75f*BP_PER_IN, 0.1f*BP_PER_IN},
     {ms_none}
   },
   common_sizes[] = { /* DJs 510, 520, 550C und 560C for printing in black */
@@ -175,19 +175,19 @@ static const eprn_PageDescription
         For colour, the bottom margin must be increased by 0.13 inches.
         Order of margins: left, bottom, right, top. */
     {ms_Letter,
-      0.25*BP_PER_IN, 0.46*BP_PER_IN, 0.25*BP_PER_IN, 0.04*BP_PER_IN},
+      0.25f*BP_PER_IN, 0.46f*BP_PER_IN, 0.25f*BP_PER_IN, 0.04f*BP_PER_IN},
     {ms_Legal,
-      0.25*BP_PER_IN, 0.46*BP_PER_IN, 0.25*BP_PER_IN, 0.04*BP_PER_IN},
+      0.25f*BP_PER_IN, 0.46f*BP_PER_IN, 0.25f*BP_PER_IN, 0.04f*BP_PER_IN},
     {ms_Executive,
-      0.25*BP_PER_IN, 0.46*BP_PER_IN, 0.20*BP_PER_IN, 0.04*BP_PER_IN},
+      0.25f*BP_PER_IN, 0.46f*BP_PER_IN, 0.20f*BP_PER_IN, 0.04f*BP_PER_IN},
     {ms_A4,
-      3.1*BP_PER_MM, 0.46*BP_PER_IN, 3.6*BP_PER_MM, 0.04*BP_PER_IN},
+      3.1f*BP_PER_MM, 0.46f*BP_PER_IN, 3.6f*BP_PER_MM, 0.04f*BP_PER_IN},
     /* Envelopes are supported according the TRG500, the margins are from
        BPD05054. */
     {ms_Env10,	/* given in landscape by HP */
-      0.123*BP_PER_IN, 0.71*BP_PER_IN, 0.125*BP_PER_IN, 0.04*BP_PER_IN},
+      0.123f*BP_PER_IN, 0.71f*BP_PER_IN, 0.125f*BP_PER_IN, 0.04f*BP_PER_IN},
     {ms_EnvDL,	/* given in landscape by HP */
-      3.1*BP_PER_MM, 18.0*BP_PER_MM, 3.6*BP_PER_MM, 1.0*BP_PER_MM},
+      3.1f*BP_PER_MM, 18.0f*BP_PER_MM, 3.6f*BP_PER_MM, 1.0f*BP_PER_MM},
     {ms_none}
   },
   hpdj540_sizes[] = {
@@ -197,25 +197,25 @@ static const eprn_PageDescription
         colour, the resulting data agree with those in the DG, pp. 65-66.
         Order of margins: left, bottom, right, top. */
     {ms_Executive,
-      0.25*BP_PER_IN, 0.46*BP_PER_IN, 0.25*BP_PER_IN, 0.04*BP_PER_IN},
-    {ms_Letter,	0.25*BP_PER_IN, 0.46*BP_PER_IN, 0.25*BP_PER_IN, 0.04*BP_PER_IN},
-    {ms_Legal,	0.25*BP_PER_IN, 0.46*BP_PER_IN, 0.25*BP_PER_IN, 0.04*BP_PER_IN},
-    {ms_A4,	3.2*BP_PER_MM, 11.7*BP_PER_MM, 3.2*BP_PER_MM, 0.04*BP_PER_IN},
-    {ms_A5,	3.2*BP_PER_MM, 18.0*BP_PER_MM, 3.2*BP_PER_MM, 0.04*BP_PER_IN},
-    {ms_JISB5,	4.2*BP_PER_MM, 11.7*BP_PER_MM, 4.2*BP_PER_MM, 0.04*BP_PER_IN},
+      0.25f*BP_PER_IN, 0.46f*BP_PER_IN, 0.25f*BP_PER_IN, 0.04f*BP_PER_IN},
+    {ms_Letter,	0.25f*BP_PER_IN, 0.46f*BP_PER_IN, 0.25f*BP_PER_IN, 0.04f*BP_PER_IN},
+    {ms_Legal,	0.25f*BP_PER_IN, 0.46f*BP_PER_IN, 0.25f*BP_PER_IN, 0.04f*BP_PER_IN},
+    {ms_A4,	3.2f*BP_PER_MM, 11.7f*BP_PER_MM, 3.2f*BP_PER_MM, 0.04f*BP_PER_IN},
+    {ms_A5,	3.2f*BP_PER_MM, 18.0f*BP_PER_MM, 3.2f*BP_PER_MM, 0.04f*BP_PER_IN},
+    {ms_JISB5,	4.2f*BP_PER_MM, 11.7f*BP_PER_MM, 4.2f*BP_PER_MM, 0.04f*BP_PER_IN},
     {ms_Index4x6in,
-      0.13*BP_PER_IN, 0.71*BP_PER_IN, 0.13*BP_PER_IN, 0.04*BP_PER_IN},
+      0.13f*BP_PER_IN, 0.71f*BP_PER_IN, 0.13f*BP_PER_IN, 0.04f*BP_PER_IN},
     {ms_Index5x8in,
-      0.13*BP_PER_IN, 0.71*BP_PER_IN, 0.13*BP_PER_IN, 0.04*BP_PER_IN},
+      0.13f*BP_PER_IN, 0.71f*BP_PER_IN, 0.13f*BP_PER_IN, 0.04f*BP_PER_IN},
     {ms_A6 | PCL_CARD_FLAG,
-      3.2*BP_PER_MM, 18.0*BP_PER_MM, 3.2*BP_PER_MM, 0.04*BP_PER_IN},
-    {ms_Env10,	0.13*BP_PER_IN, 0.71*BP_PER_IN, 0.13*BP_PER_IN, 0.04*BP_PER_IN},
+      3.2f*BP_PER_MM, 18.0f*BP_PER_MM, 3.2f*BP_PER_MM, 0.04f*BP_PER_IN},
+    {ms_Env10,	0.13f*BP_PER_IN, 0.71f*BP_PER_IN, 0.13f*BP_PER_IN, 0.04f*BP_PER_IN},
       /* given in landscape by HP */
-    {ms_EnvDL,	0.13*BP_PER_IN, 0.71*BP_PER_IN, 0.13*BP_PER_IN, 0.04*BP_PER_IN},
+    {ms_EnvDL,	0.13f*BP_PER_IN, 0.71f*BP_PER_IN, 0.13f*BP_PER_IN, 0.04f*BP_PER_IN},
       /* given in landscape by HP */
-    {ms_EnvC6,	0.13*BP_PER_IN, 0.71*BP_PER_IN, 0.13*BP_PER_IN, 0.04*BP_PER_IN},
+    {ms_EnvC6,	0.13f*BP_PER_IN, 0.71f*BP_PER_IN, 0.13f*BP_PER_IN, 0.04f*BP_PER_IN},
       /* given in landscape by HP */
-    {ms_Postcard, 4.2*BP_PER_MM, 18.0*BP_PER_MM, 4.2*BP_PER_MM, 0.04*BP_PER_IN},
+    {ms_Postcard, 4.2f*BP_PER_MM, 18.0f*BP_PER_MM, 4.2f*BP_PER_MM, 0.04f*BP_PER_IN},
     {ms_none}
   },
   hpdj660c_sizes[] = {
@@ -228,34 +228,34 @@ static const eprn_PageDescription
         contradiction with DG because BPD02519 gives different values for
         printing from Windows.
     */
-    {ms_Letter,	0.25*BP_PER_IN, 0.46*BP_PER_IN, 0.25*BP_PER_IN, 0.04*BP_PER_IN},
-    {ms_Legal,	0.25*BP_PER_IN, 0.46*BP_PER_IN, 0.25*BP_PER_IN, 0.04*BP_PER_IN},
+    {ms_Letter,	0.25f*BP_PER_IN, 0.46f*BP_PER_IN, 0.25f*BP_PER_IN, 0.04f*BP_PER_IN},
+    {ms_Legal,	0.25f*BP_PER_IN, 0.46f*BP_PER_IN, 0.25f*BP_PER_IN, 0.04f*BP_PER_IN},
     {ms_Executive,
-      0.25*BP_PER_IN, 0.46*BP_PER_IN, 0.25*BP_PER_IN, 0.04*BP_PER_IN},
-    {ms_A4,	0.13*BP_PER_IN, 0.46*BP_PER_IN, 0.13*BP_PER_IN, 0.04*BP_PER_IN},
-    {ms_A5,	0.13*BP_PER_IN, 0.71*BP_PER_IN, 0.13*BP_PER_IN, 0.04*BP_PER_IN},
-    {ms_JISB5,	0.17*BP_PER_IN, 0.46*BP_PER_IN, 0.17*BP_PER_IN, 0.04*BP_PER_IN},
+      0.25f*BP_PER_IN, 0.46f*BP_PER_IN, 0.25f*BP_PER_IN, 0.04f*BP_PER_IN},
+    {ms_A4,	0.13f*BP_PER_IN, 0.46f*BP_PER_IN, 0.13f*BP_PER_IN, 0.04f*BP_PER_IN},
+    {ms_A5,	0.13f*BP_PER_IN, 0.71f*BP_PER_IN, 0.13f*BP_PER_IN, 0.04f*BP_PER_IN},
+    {ms_JISB5,	0.17f*BP_PER_IN, 0.46f*BP_PER_IN, 0.17f*BP_PER_IN, 0.04f*BP_PER_IN},
      /* The bottom margin for JISB5 is given with large differences. BPD02519
         specifies it as 0.46 in for black from DOS, 0.59 in DOS/colour (agreeing
         with +0.13 in for 'bottom_increment') and the same for Windows black or
         colour. BPD05054 gives 0.84 in without distinguishing between black and
         colour, and the DG gives 0.59 in. */
-    {ms_Env10,	0.13*BP_PER_IN, 0.71*BP_PER_IN, 0.13*BP_PER_IN, 0.04*BP_PER_IN},
+    {ms_Env10,	0.13f*BP_PER_IN, 0.71f*BP_PER_IN, 0.13f*BP_PER_IN, 0.04f*BP_PER_IN},
       /* given in landscape by HP */
-    {ms_EnvDL,	0.13*BP_PER_IN, 0.71*BP_PER_IN, 0.13*BP_PER_IN, 0.04*BP_PER_IN},
+    {ms_EnvDL,	0.13f*BP_PER_IN, 0.71f*BP_PER_IN, 0.13f*BP_PER_IN, 0.04f*BP_PER_IN},
       /* given in landscape by HP */
-    {ms_EnvC6,	0.13*BP_PER_IN, 0.71*BP_PER_IN, 0.13*BP_PER_IN, 0.04*BP_PER_IN},
+    {ms_EnvC6,	0.13f*BP_PER_IN, 0.71f*BP_PER_IN, 0.13f*BP_PER_IN, 0.04f*BP_PER_IN},
       /* given in landscape by HP */
     {ms_Index4x6in,
-      0.13*BP_PER_IN, 0.71*BP_PER_IN, 0.13*BP_PER_IN, 0.04*BP_PER_IN},
+      0.13f*BP_PER_IN, 0.71f*BP_PER_IN, 0.13f*BP_PER_IN, 0.04f*BP_PER_IN},
     {ms_Index5x8in,
-      0.13*BP_PER_IN, 0.71*BP_PER_IN, 0.13*BP_PER_IN, 0.04*BP_PER_IN},
+      0.13f*BP_PER_IN, 0.71f*BP_PER_IN, 0.13f*BP_PER_IN, 0.04f*BP_PER_IN},
     {ms_A6 | PCL_CARD_FLAG,
-      0.13*BP_PER_IN, 0.71*BP_PER_IN, 0.13*BP_PER_IN, 0.04*BP_PER_IN},
+      0.13f*BP_PER_IN, 0.71f*BP_PER_IN, 0.13f*BP_PER_IN, 0.04f*BP_PER_IN},
     {ms_Postcard,
-      0.17*BP_PER_IN, 0.71*BP_PER_IN, 0.17*BP_PER_IN, 0.04*BP_PER_IN},
+      0.17f*BP_PER_IN, 0.71f*BP_PER_IN, 0.17f*BP_PER_IN, 0.04f*BP_PER_IN},
     {ms_EnvUS_A2,
-      0.13*BP_PER_IN, 0.71*BP_PER_IN, 0.13*BP_PER_IN, 0.04*BP_PER_IN},
+      0.13f*BP_PER_IN, 0.71f*BP_PER_IN, 0.13f*BP_PER_IN, 0.04f*BP_PER_IN},
        /* Supported (BPD02925, BPD05054, DG), margins from BPD05054 agreeing
           with DG p. 70 */
     {ms_none}
@@ -276,30 +276,30 @@ static const eprn_PageDescription
       (0.83 in vs. 0.59 in).
       The DJ 690C does support banner printing (DJ6/8 p. 9).
     */
-    {ms_Letter,	0.25*BP_PER_IN, 0.46*BP_PER_IN, 0.25*BP_PER_IN, 0.04*BP_PER_IN},
-    {ms_A4,	0.13*BP_PER_IN, 0.46*BP_PER_IN, 0.13*BP_PER_IN, 0.04*BP_PER_IN},
-    {ms_Legal,	0.25*BP_PER_IN, 0.46*BP_PER_IN, 0.25*BP_PER_IN, 0.04*BP_PER_IN},
-    {ms_Env10,	0.13*BP_PER_IN, 0.71*BP_PER_IN, 0.13*BP_PER_IN, 0.04*BP_PER_IN},
+    {ms_Letter,	0.25f*BP_PER_IN, 0.46f*BP_PER_IN, 0.25f*BP_PER_IN, 0.04f*BP_PER_IN},
+    {ms_A4,	0.13f*BP_PER_IN, 0.46f*BP_PER_IN, 0.13f*BP_PER_IN, 0.04f*BP_PER_IN},
+    {ms_Legal,	0.25f*BP_PER_IN, 0.46f*BP_PER_IN, 0.25f*BP_PER_IN, 0.04f*BP_PER_IN},
+    {ms_Env10,	0.13f*BP_PER_IN, 0.71f*BP_PER_IN, 0.13f*BP_PER_IN, 0.04f*BP_PER_IN},
     {ms_Executive,
-      0.25*BP_PER_IN, 0.46*BP_PER_IN, 0.25*BP_PER_IN, 0.04*BP_PER_IN},
-    {ms_EnvDL,	0.13*BP_PER_IN, 0.71*BP_PER_IN, 0.13*BP_PER_IN, 0.04*BP_PER_IN},
-    {ms_A5,	0.13*BP_PER_IN, 0.71*BP_PER_IN, 0.13*BP_PER_IN, 0.04*BP_PER_IN},
-    {ms_JISB5,	0.17*BP_PER_IN, 0.46*BP_PER_IN, 0.17*BP_PER_IN, 0.04*BP_PER_IN},
-    {ms_EnvC6,	0.13*BP_PER_IN, 0.71*BP_PER_IN, 0.13*BP_PER_IN, 0.04*BP_PER_IN},
+      0.25f*BP_PER_IN, 0.46f*BP_PER_IN, 0.25f*BP_PER_IN, 0.04f*BP_PER_IN},
+    {ms_EnvDL,	0.13f*BP_PER_IN, 0.71f*BP_PER_IN, 0.13f*BP_PER_IN, 0.04f*BP_PER_IN},
+    {ms_A5,	0.13f*BP_PER_IN, 0.71f*BP_PER_IN, 0.13f*BP_PER_IN, 0.04f*BP_PER_IN},
+    {ms_JISB5,	0.17f*BP_PER_IN, 0.46f*BP_PER_IN, 0.17f*BP_PER_IN, 0.04f*BP_PER_IN},
+    {ms_EnvC6,	0.13f*BP_PER_IN, 0.71f*BP_PER_IN, 0.13f*BP_PER_IN, 0.04f*BP_PER_IN},
     {ms_Index4x6in,
-      0.13*BP_PER_IN, 0.71*BP_PER_IN, 0.13*BP_PER_IN, 0.04*BP_PER_IN},
+      0.13f*BP_PER_IN, 0.71f*BP_PER_IN, 0.13f*BP_PER_IN, 0.04f*BP_PER_IN},
     {ms_Index5x8in,
-      0.13*BP_PER_IN, 0.71*BP_PER_IN, 0.13*BP_PER_IN, 0.04*BP_PER_IN},
+      0.13f*BP_PER_IN, 0.71f*BP_PER_IN, 0.13f*BP_PER_IN, 0.04f*BP_PER_IN},
     {ms_A6 | PCL_CARD_FLAG,
-      0.13*BP_PER_IN, 0.71*BP_PER_IN, 0.13*BP_PER_IN, 0.04*BP_PER_IN},
+      0.13f*BP_PER_IN, 0.71f*BP_PER_IN, 0.13f*BP_PER_IN, 0.04f*BP_PER_IN},
     {ms_Postcard,
-      0.17*BP_PER_IN, 0.71*BP_PER_IN, 0.17*BP_PER_IN, 0.04*BP_PER_IN},
+      0.17f*BP_PER_IN, 0.71f*BP_PER_IN, 0.17f*BP_PER_IN, 0.04f*BP_PER_IN},
     {ms_EnvUS_A2,
-      0.13*BP_PER_IN, 0.71*BP_PER_IN, 0.13*BP_PER_IN, 0.04*BP_PER_IN},
+      0.13f*BP_PER_IN, 0.71f*BP_PER_IN, 0.13f*BP_PER_IN, 0.04f*BP_PER_IN},
     {ms_Letter | MS_BIG_FLAG,	/* banner */
-      0.25*BP_PER_IN, 0.0, 0.25*BP_PER_IN, 0.0},
+      0.25f*BP_PER_IN, 0.0f, 0.25f*BP_PER_IN, 0.0f},
     {ms_A4 | MS_BIG_FLAG,	/* banner */
-      0.13*BP_PER_IN, 0.0, 0.13*BP_PER_IN, 0.0},
+      0.13f*BP_PER_IN, 0.0f, 0.13f*BP_PER_IN, 0.0f},
       /* BPD05054 claims left and right margins of 0.25 in. */
     {ms_none}
   },
@@ -311,27 +311,27 @@ static const eprn_PageDescription
       series 800 DeskJets.
     */
     {ms_Executive,
-      0.25*BP_PER_IN, 0.46*BP_PER_IN, 0.25*BP_PER_IN, 0.04*BP_PER_IN},
-    {ms_Letter,	0.25*BP_PER_IN, 0.46*BP_PER_IN, 0.25*BP_PER_IN, 0.04*BP_PER_IN},
-    {ms_Legal,	0.25*BP_PER_IN, 0.46*BP_PER_IN, 0.25*BP_PER_IN, 0.04*BP_PER_IN},
-    {ms_A5,	0.13*BP_PER_IN, 0.71*BP_PER_IN, 0.13*BP_PER_IN, 0.04*BP_PER_IN},
-    {ms_A4,	0.13*BP_PER_IN, 0.46*BP_PER_IN, 0.13*BP_PER_IN, 0.04*BP_PER_IN},
-    {ms_JISB5,	0.17*BP_PER_IN, 0.46*BP_PER_IN, 0.17*BP_PER_IN, 0.04*BP_PER_IN},
+      0.25f*BP_PER_IN, 0.46f*BP_PER_IN, 0.25f*BP_PER_IN, 0.04f*BP_PER_IN},
+    {ms_Letter,	0.25f*BP_PER_IN, 0.46f*BP_PER_IN, 0.25f*BP_PER_IN, 0.04f*BP_PER_IN},
+    {ms_Legal,	0.25f*BP_PER_IN, 0.46f*BP_PER_IN, 0.25f*BP_PER_IN, 0.04f*BP_PER_IN},
+    {ms_A5,	0.13f*BP_PER_IN, 0.71f*BP_PER_IN, 0.13f*BP_PER_IN, 0.04f*BP_PER_IN},
+    {ms_A4,	0.13f*BP_PER_IN, 0.46f*BP_PER_IN, 0.13f*BP_PER_IN, 0.04f*BP_PER_IN},
+    {ms_JISB5,	0.17f*BP_PER_IN, 0.46f*BP_PER_IN, 0.17f*BP_PER_IN, 0.04f*BP_PER_IN},
     {ms_Postcard,
-      0.17*BP_PER_IN, 0.71*BP_PER_IN, 0.17*BP_PER_IN, 0.04*BP_PER_IN},
+      0.17f*BP_PER_IN, 0.71f*BP_PER_IN, 0.17f*BP_PER_IN, 0.04f*BP_PER_IN},
     {ms_DoublePostcard,	/* not present in 'hpdj660c_sizes[]'; guessed */
-      0.17*BP_PER_IN, 0.71*BP_PER_IN, 0.17*BP_PER_IN, 0.04*BP_PER_IN},
+      0.17f*BP_PER_IN, 0.71f*BP_PER_IN, 0.17f*BP_PER_IN, 0.04f*BP_PER_IN},
     {ms_A6 | PCL_CARD_FLAG,
-      0.13*BP_PER_IN, 0.71*BP_PER_IN, 0.13*BP_PER_IN, 0.04*BP_PER_IN},
+      0.13f*BP_PER_IN, 0.71f*BP_PER_IN, 0.13f*BP_PER_IN, 0.04f*BP_PER_IN},
     {ms_Index4x6in,
-      0.13*BP_PER_IN, 0.71*BP_PER_IN, 0.13*BP_PER_IN, 0.04*BP_PER_IN},
+      0.13f*BP_PER_IN, 0.71f*BP_PER_IN, 0.13f*BP_PER_IN, 0.04f*BP_PER_IN},
     {ms_Index5x8in,
-      0.13*BP_PER_IN, 0.71*BP_PER_IN, 0.13*BP_PER_IN, 0.04*BP_PER_IN},
-    {ms_Env10,	0.13*BP_PER_IN, 0.71*BP_PER_IN, 0.13*BP_PER_IN, 0.04*BP_PER_IN},
-    {ms_EnvDL,	0.13*BP_PER_IN, 0.71*BP_PER_IN, 0.13*BP_PER_IN, 0.04*BP_PER_IN},
-    {ms_EnvC6,	0.13*BP_PER_IN, 0.71*BP_PER_IN, 0.13*BP_PER_IN, 0.04*BP_PER_IN},
+      0.13f*BP_PER_IN, 0.71f*BP_PER_IN, 0.13f*BP_PER_IN, 0.04f*BP_PER_IN},
+    {ms_Env10,	0.13f*BP_PER_IN, 0.71f*BP_PER_IN, 0.13f*BP_PER_IN, 0.04f*BP_PER_IN},
+    {ms_EnvDL,	0.13f*BP_PER_IN, 0.71f*BP_PER_IN, 0.13f*BP_PER_IN, 0.04f*BP_PER_IN},
+    {ms_EnvC6,	0.13f*BP_PER_IN, 0.71f*BP_PER_IN, 0.13f*BP_PER_IN, 0.04f*BP_PER_IN},
     {ms_EnvUS_A2,
-      0.13*BP_PER_IN, 0.71*BP_PER_IN, 0.13*BP_PER_IN, 0.04*BP_PER_IN},
+      0.13f*BP_PER_IN, 0.71f*BP_PER_IN, 0.13f*BP_PER_IN, 0.04f*BP_PER_IN},
     {ms_none}
   },
   hpdj850c_sizes[] = {
@@ -347,11 +347,11 @@ static const eprn_PageDescription
       First some shorthand notation for margin types. The order is:
         left, bottom, right, top.
     */
-#define type1	6.4*BP_PER_MM, 11.7*BP_PER_MM, 6.4*BP_PER_MM, 1.0*BP_PER_MM
-#define type2	3.4*BP_PER_MM, 11.7*BP_PER_MM, 3.4*BP_PER_MM, 1.0*BP_PER_MM
-#define type3	3.4*BP_PER_MM, 11.7*BP_PER_MM, 3.4*BP_PER_MM, 11.7*BP_PER_MM
-#define type4	3.2*BP_PER_MM, 11.7*BP_PER_MM, 3.2*BP_PER_MM, 1.0*BP_PER_MM
-#define type5	3.2*BP_PER_MM, 22.0*BP_PER_MM, 3.2*BP_PER_MM, 1.0*BP_PER_MM
+#define type1	6.4f*BP_PER_MM, 11.7f*BP_PER_MM, 6.4f*BP_PER_MM, 1.0f*BP_PER_MM
+#define type2	3.4f*BP_PER_MM, 11.7f*BP_PER_MM, 3.4f*BP_PER_MM, 1.0f*BP_PER_MM
+#define type3	3.4f*BP_PER_MM, 11.7f*BP_PER_MM, 3.4f*BP_PER_MM, 11.7f*BP_PER_MM
+#define type4	3.2f*BP_PER_MM, 11.7f*BP_PER_MM, 3.2f*BP_PER_MM, 1.0f*BP_PER_MM
+#define type5	3.2f*BP_PER_MM, 22.0f*BP_PER_MM, 3.2f*BP_PER_MM, 1.0f*BP_PER_MM
     {ms_Letter,		type1},
     {ms_Legal,		type1},
     {ms_Executive,	type1},
@@ -388,70 +388,70 @@ static const eprn_PageDescription
   hpdj1120c_sizes[] = {
    /* These values are from DJ1120C, pp. 11-12, and from BPD05567. I don't
       consider them particularly trustworthy. */
-    {ms_Executive,	0.25*BP_PER_IN, 0.46*BP_PER_IN, 0.25*BP_PER_IN,
-                        0.12*BP_PER_IN},
-    {ms_Letter,		0.25*BP_PER_IN, 0.46*BP_PER_IN, 0.25*BP_PER_IN,
-                        0.12*BP_PER_IN},
-    {ms_Legal,		0.25*BP_PER_IN, 0.46*BP_PER_IN, 0.25*BP_PER_IN,
-                        0.12*BP_PER_IN},
-    {ms_Tabloid,	0.20*BP_PER_IN, 0.46*BP_PER_IN, 0.20*BP_PER_IN,
-                        0.12*BP_PER_IN},
-    {ms_Statement,	0.20*BP_PER_IN, 0.46*BP_PER_IN, 0.20*BP_PER_IN,
-                        0.12*BP_PER_IN},	/* Not in BPD05567. */
-    {ms_HPSuperB,	0.20*BP_PER_IN, 0.46*BP_PER_IN, 0.20*BP_PER_IN,
-                        0.12*BP_PER_IN},
-    {ms_A6,		0.125*BP_PER_IN, 0.46*BP_PER_IN, 0.125*BP_PER_IN,
-                        0.12*BP_PER_IN},	/* Not in BPD05567. */
-    {ms_A5,		0.125*BP_PER_IN, 0.46*BP_PER_IN, 0.125*BP_PER_IN,
-                        0.12*BP_PER_IN},
+    {ms_Executive,	0.25f*BP_PER_IN, 0.46f*BP_PER_IN, 0.25f*BP_PER_IN,
+                        0.12f*BP_PER_IN},
+    {ms_Letter,		0.25f*BP_PER_IN, 0.46f*BP_PER_IN, 0.25f*BP_PER_IN,
+                        0.12f*BP_PER_IN},
+    {ms_Legal,		0.25f*BP_PER_IN, 0.46f*BP_PER_IN, 0.25f*BP_PER_IN,
+                        0.12f*BP_PER_IN},
+    {ms_Tabloid,	0.20f*BP_PER_IN, 0.46f*BP_PER_IN, 0.20f*BP_PER_IN,
+                        0.12f*BP_PER_IN},
+    {ms_Statement,	0.20f*BP_PER_IN, 0.46f*BP_PER_IN, 0.20f*BP_PER_IN,
+                        0.12f*BP_PER_IN},	/* Not in BPD05567. */
+    {ms_HPSuperB,	0.20f*BP_PER_IN, 0.46f*BP_PER_IN, 0.20f*BP_PER_IN,
+                        0.12f*BP_PER_IN},
+    {ms_A6,		0.125f*BP_PER_IN, 0.46f*BP_PER_IN, 0.125f*BP_PER_IN,
+                        0.12f*BP_PER_IN},	/* Not in BPD05567. */
+    {ms_A5,		0.125f*BP_PER_IN, 0.46f*BP_PER_IN, 0.125f*BP_PER_IN,
+                        0.12f*BP_PER_IN},
       /* BPD05567: 0.12 in, 0.46 in, 0.12 in, 0.12 in. */
-    {ms_A4,		0.20*BP_PER_IN, 0.46*BP_PER_IN, 0.20*BP_PER_IN,
-                        0.12*BP_PER_IN},
+    {ms_A4,		0.20f*BP_PER_IN, 0.46f*BP_PER_IN, 0.20f*BP_PER_IN,
+                        0.12f*BP_PER_IN},
       /* BPD05567: 0.13 in, 0.46 in, 0.13 in, 0.12 in. */
-    {ms_A3,		0.20*BP_PER_IN, 0.46*BP_PER_IN, 0.20*BP_PER_IN,
-                        0.12*BP_PER_IN},	/* Only in BPD05567. */
-    {ms_JISB5,		0.125*BP_PER_IN, 0.46*BP_PER_IN, 0.125*BP_PER_IN,
-                        0.12*BP_PER_IN},
+    {ms_A3,		0.20f*BP_PER_IN, 0.46f*BP_PER_IN, 0.20f*BP_PER_IN,
+                        0.12f*BP_PER_IN},	/* Only in BPD05567. */
+    {ms_JISB5,		0.125f*BP_PER_IN, 0.46f*BP_PER_IN, 0.125f*BP_PER_IN,
+                        0.12f*BP_PER_IN},
       /* BPD05567: 0.12 in, 0.46 in, 0.12 in, 0.12 in. */
-    {ms_JISB4,		0.20*BP_PER_IN, 0.46*BP_PER_IN, 0.20*BP_PER_IN,
-                        0.12*BP_PER_IN},	/* Not in BPD05567. */
-    {ms_Postcard,	0.125*BP_PER_IN, 0.46*BP_PER_IN, 0.125*BP_PER_IN,
-                        0.12*BP_PER_IN},
+    {ms_JISB4,		0.20f*BP_PER_IN, 0.46f*BP_PER_IN, 0.20f*BP_PER_IN,
+                        0.12f*BP_PER_IN},	/* Not in BPD05567. */
+    {ms_Postcard,	0.125f*BP_PER_IN, 0.46f*BP_PER_IN, 0.125f*BP_PER_IN,
+                        0.12f*BP_PER_IN},
       /* BPD05567: 0.12 in, 0.46 in, 0.12 in, 0.12 in. */
-    {ms_A6 | PCL_CARD_FLAG, 0.125*BP_PER_IN, 0.46*BP_PER_IN, 0.125*BP_PER_IN,
-                        0.12*BP_PER_IN},
+    {ms_A6 | PCL_CARD_FLAG, 0.125f*BP_PER_IN, 0.46f*BP_PER_IN, 0.125f*BP_PER_IN,
+                        0.12f*BP_PER_IN},
       /* BPD05567: 0.12 in, 0.46 in, 0.12 in, 0.12 in. */
-    {ms_Index4x6in,	0.125*BP_PER_IN, 0.46*BP_PER_IN, 0.125*BP_PER_IN,
-                        0.12*BP_PER_IN},
+    {ms_Index4x6in,	0.125f*BP_PER_IN, 0.46f*BP_PER_IN, 0.125f*BP_PER_IN,
+                        0.12f*BP_PER_IN},
       /* BPD05567: 0.12 in, 0.46 in, 0.12 in, 0.12 in. */
-    {ms_Index5x8in,	0.125*BP_PER_IN, 0.46*BP_PER_IN, 0.125*BP_PER_IN,
-                        0.12*BP_PER_IN},
+    {ms_Index5x8in,	0.125f*BP_PER_IN, 0.46f*BP_PER_IN, 0.125f*BP_PER_IN,
+                        0.12f*BP_PER_IN},
       /* BPD05567: 0.12 in, 0.46 in, 0.12 in, 0.12 in. */
-    {ms_Env10,		0.125*BP_PER_IN, 0.46*BP_PER_IN, 0.125*BP_PER_IN,
-                        0.12*BP_PER_IN},
+    {ms_Env10,		0.125f*BP_PER_IN, 0.46f*BP_PER_IN, 0.125f*BP_PER_IN,
+                        0.12f*BP_PER_IN},
       /* BPD05567: 0.12 in, 0.46 in, 0.12 in, 0.12 in. */
-    {ms_EnvDL,		0.125*BP_PER_IN, 0.46*BP_PER_IN, 0.125*BP_PER_IN,
-                        0.12*BP_PER_IN},
+    {ms_EnvDL,		0.125f*BP_PER_IN, 0.46f*BP_PER_IN, 0.125f*BP_PER_IN,
+                        0.12f*BP_PER_IN},
       /* BPD05567: 0.12 in, 0.46 in, 0.12 in, 0.12 in. */
-    {ms_EnvC6,		0.125*BP_PER_IN, 0.46*BP_PER_IN, 0.125*BP_PER_IN,
-                        0.12*BP_PER_IN},
+    {ms_EnvC6,		0.125f*BP_PER_IN, 0.46f*BP_PER_IN, 0.125f*BP_PER_IN,
+                        0.12f*BP_PER_IN},
       /* BPD05567: 0.12 in, 0.46 in, 0.12 in, 0.12 in. */
-    {ms_EnvUS_A2,	0.125*BP_PER_IN, 0.46*BP_PER_IN, 0.125*BP_PER_IN,
-                        0.12*BP_PER_IN},
+    {ms_EnvUS_A2,	0.125f*BP_PER_IN, 0.46f*BP_PER_IN, 0.125f*BP_PER_IN,
+                        0.12f*BP_PER_IN},
       /* BPD05567: 0.12 in, 0.46 in, 0.12 in, 0.12 in. */
-    {ms_EnvChou3,	0.125*BP_PER_IN, 0.46*BP_PER_IN, 0.125*BP_PER_IN,
-                        0.12*BP_PER_IN},
+    {ms_EnvChou3,	0.125f*BP_PER_IN, 0.46f*BP_PER_IN, 0.125f*BP_PER_IN,
+                        0.12f*BP_PER_IN},
       /* BPD05567: 0.12 in, 0.46 in, 0.12 in, 0.12 in. */
-    {ms_EnvChou4,	0.125*BP_PER_IN, 0.46*BP_PER_IN, 0.125*BP_PER_IN,
-                        0.12*BP_PER_IN},
+    {ms_EnvChou4,	0.125f*BP_PER_IN, 0.46f*BP_PER_IN, 0.125f*BP_PER_IN,
+                        0.12f*BP_PER_IN},
       /* BPD05567: 0.12 in, 0.46 in, 0.12 in, 0.12 in. */
-    {ms_EnvKaku2,	0.20*BP_PER_IN, 0.46*BP_PER_IN, 0.20*BP_PER_IN,
-                        0.12*BP_PER_IN},	/* Not in BPD05567. */
+    {ms_EnvKaku2,	0.20f*BP_PER_IN, 0.46f*BP_PER_IN, 0.20f*BP_PER_IN,
+                        0.12f*BP_PER_IN},	/* Not in BPD05567. */
     /* Banners are listed only in BPD05567: */
     {ms_Letter | MS_BIG_FLAG,
-      0.25*BP_PER_IN, 0, 0.25*BP_PER_IN, 0.04*BP_PER_IN},
+      0.25f*BP_PER_IN, 0, 0.25f*BP_PER_IN, 0.04f*BP_PER_IN},
     {ms_A4 | MS_BIG_FLAG,
-      0.13*BP_PER_IN, 0, 0.13*BP_PER_IN, 0.04*BP_PER_IN},
+      0.13f*BP_PER_IN, 0, 0.13f*BP_PER_IN, 0.04f*BP_PER_IN},
     {ms_none}
   };
 
@@ -480,13 +480,13 @@ static const eprn_CustomPageDescription
     */
     { /* Page width 7.12 to 8.5 in */
       ms_CustomPageSize,
-      0.13*BP_PER_IN, 0.46*BP_PER_IN, 0.125*BP_PER_IN, 0.04*BP_PER_IN,
-      7.12*BP_PER_IN, 8.5*BP_PER_IN, 5.83*BP_PER_IN, 14*BP_PER_IN
+      0.13f*BP_PER_IN, 0.46f*BP_PER_IN, 0.125f*BP_PER_IN, 0.04f*BP_PER_IN,
+      7.12f*BP_PER_IN, 8.5f*BP_PER_IN, 5.83f*BP_PER_IN, 14*BP_PER_IN
     },
     { /* Page width 5 to 7.12 in */
       ms_CustomPageSize,
-      0.13*BP_PER_IN, 0.71*BP_PER_IN, 0.125*BP_PER_IN, 0.04*BP_PER_IN,
-      5*BP_PER_IN, 7.12*BP_PER_IN, 5.83*BP_PER_IN, 14*BP_PER_IN
+      0.13f*BP_PER_IN, 0.71f*BP_PER_IN, 0.125f*BP_PER_IN, 0.04f*BP_PER_IN,
+      5*BP_PER_IN, 7.12f*BP_PER_IN, 5.83f*BP_PER_IN, 14*BP_PER_IN
     },
     {ms_none,  0, 0, 0, 0,  0, 0, 0, 0}
   },
@@ -494,8 +494,8 @@ static const eprn_CustomPageDescription
     /* Ranges from DJ6/8 p. 23, margins from A4 for the DJ 660C (BPD02519) */
     {
       ms_CustomPageSize,
-      0.13*BP_PER_IN, 0.46*BP_PER_IN, 0.13*BP_PER_IN, 0.04*BP_PER_IN,
-      5*BP_PER_IN, 8.5*BP_PER_IN,  148*BP_PER_MM, 14*BP_PER_IN
+      0.13f*BP_PER_IN, 0.46f*BP_PER_IN, 0.13f*BP_PER_IN, 0.04f*BP_PER_IN,
+      5*BP_PER_IN, 8.5f*BP_PER_IN,  148*BP_PER_MM, 14*BP_PER_IN
     },
     {ms_none,  0, 0, 0, 0,  0, 0, 0, 0}
   },
@@ -520,7 +520,7 @@ static const eprn_CustomPageDescription
     {  /* Taken from DJ1120C pp. 10 and 12. The minimum sizes are guessed
           (smallest supported discrete dimensions) */
       ms_CustomPageSize,
-      0.125*BP_PER_IN, 0.46*BP_PER_IN, 0.125*BP_PER_IN, 0.12*BP_PER_IN,
+      0.125f*BP_PER_IN, 0.46f*BP_PER_IN, 0.125f*BP_PER_IN, 0.12f*BP_PER_IN,
       90*BP_PER_MM, 13*BP_PER_IN, 146*BP_PER_MM, 19*BP_PER_IN,
     },
     {ms_none,  0, 0, 0, 0,  0, 0, 0, 0}
@@ -533,7 +533,7 @@ static const eprn_CustomPageDescription
     {
       ms_CustomPageSize,
       type2,	/* use DJ 850C margins */
-      1.0E-37, 1.0E37,  1.0E-37, 1.0E37
+      1.0E-37f, 1.0E37f,  1.0E-37f, 1.0E37f
     },
     {ms_none,  0, 0, 0, 0,  0, 0, 0, 0}
   };
@@ -731,36 +731,36 @@ const pcl_PrinterDescription pcl3_printers[] = {
   { HPDJ500,	pcl_level_3plus_DJ500,
     {"HP DeskJet 500", hpdj500_sizes, NULL, 0.0, ci_old_mono } },
   { HPDJ500C,	pcl_level_3plus_S5,
-    { "HP DeskJet 500C", hpdj500c_sizes, NULL, 0.17*BP_PER_IN, ci_hpdj500c } },
+    { "HP DeskJet 500C", hpdj500c_sizes, NULL, 0.17f*BP_PER_IN, ci_hpdj500c } },
   { HPDJ510,	pcl_level_3plus_S5,
     { "HP DeskJet 510", common_sizes, NULL, 0.0, ci_old_mono } },
   { HPDJ520,	pcl_level_3plus_S5,
     { "HP DeskJet 520", common_sizes, NULL, 0.0, ci_old_mono } },
   { HPDJ540,	pcl_level_3plus_S68,
     { "HP DeskJet 540", hpdj540_sizes, hpdj540_custom_sizes,
-      0.13*BP_PER_IN, ci_hpdj540 } },
+      0.13f*BP_PER_IN, ci_hpdj540 } },
   { HPDJ550C,	pcl_level_3plus_S5,
-    { "HP DeskJet 550C", common_sizes, NULL, 0.13*BP_PER_IN, ci_hpdj5xx_cmyk }},
+    { "HP DeskJet 550C", common_sizes, NULL, 0.13f*BP_PER_IN, ci_hpdj5xx_cmyk }},
   { HPDJ560C,	pcl_level_3plus_S5,
-    { "HP DeskJet 560C", common_sizes, NULL, 0.13*BP_PER_IN, ci_hpdj5xx_cmyk }},
+    { "HP DeskJet 560C", common_sizes, NULL, 0.13f*BP_PER_IN, ci_hpdj5xx_cmyk }},
   { pcl3_generic_old, pcl_level_3plus_ERG_both,
     { "unspecified PCL-3+ printer (old)", common_sizes, NULL, 0.0, ci_any } },
   { HPDJ600,	pcl_level_3plus_S68,
     { "HP DeskJet 600", hpdj6xx_and_8xx_sizes, hpdj_6xx_and_8xx_custom_sizes,
-      0.13*BP_PER_IN, ci_hpdj600 } },
+      0.13f*BP_PER_IN, ci_hpdj600 } },
   { HPDJ660C,	pcl_level_3plus_S68,
     { "HP DeskJet 660C", hpdj660c_sizes, hpdj_6xx_and_8xx_custom_sizes,
-      0.13*BP_PER_IN, ci_hpdj6xx } },
+      0.13f*BP_PER_IN, ci_hpdj6xx } },
   { HPDJ670C,	pcl_level_3plus_S68,
     { "HP DeskJet 670C", hpdj660c_sizes, hpdj_6xx_and_8xx_custom_sizes,
-      0.13*BP_PER_IN, ci_hpdj6xx } },
+      0.13f*BP_PER_IN, ci_hpdj6xx } },
     /* This printer can be treated as the DJ 660C (DJ6/8 p. 2). */
   { HPDJ680C,	pcl_level_3plus_S68,
     { "HP DeskJet 680C", hpdj680c_sizes, hpdj_6xx_and_8xx_custom_sizes,
-      0.13*BP_PER_IN, ci_hpdj6xx } },
+      0.13f*BP_PER_IN, ci_hpdj6xx } },
   { HPDJ690C,	pcl_level_3plus_S68,
     { "HP DeskJet 690C", hpdj680c_sizes, hpdj_6xx_and_8xx_custom_sizes,
-      0.13*BP_PER_IN, ci_hpdj6xx } },
+      0.13f*BP_PER_IN, ci_hpdj6xx } },
   { HPDJ850C,	pcl_level_3plus_S68,
     { "HP DeskJet 850C", hpdj850c_sizes, hpdj850c_custom_sizes,
       0.0, ci_hpdj85x } },

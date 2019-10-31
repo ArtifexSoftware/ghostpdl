@@ -135,8 +135,8 @@ typedef struct gx_device_bjc_printer_s gx_device_bjc_printer;
           xdpi, ydpi,\
           ncomp, depth, mg, mc, dg, dc,\
           -(lo) * (xdpi), -(to) * (ydpi),\
-          (lm) * 72.0, (bm) * 72.0,\
-          (rm) * 72.0, (tm) * 72.0\
+          (lm) * 72.0f, (bm) * 72.0f,\
+          (rm) * 72.0f, (tm) * 72.0f\
         ),\
         prn_device_body_rest_(print_page)
 

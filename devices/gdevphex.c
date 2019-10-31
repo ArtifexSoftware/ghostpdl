@@ -1347,10 +1347,10 @@ float	margins[ 4 ];						/* L, B, R, T					*/
 
         width  = pdev->width  / pdev->x_pixels_per_inch;
 
-        margins[ 0 ] = 0.12;
-        margins[ 1 ] = 0.5;
-        margins[ 2 ] = 0.12;
-        margins[ 3 ] = ( width > 11.46+0.12 ) ? width - (11.46+0.12) : 0.12;
+        margins[ 0 ] = 0.12f;
+        margins[ 1 ] = 0.5f;
+        margins[ 2 ] = 0.12f;
+        margins[ 3 ] = ( width > 11.46f+0.12f ) ? width - (11.46f+0.12f) : 0.12f;
 
         gx_device_set_margins( pdev, margins, true );
         return( gdev_prn_open( pdev ) );
@@ -1399,7 +1399,7 @@ int		i;
         m = 255 - ( g >> ( gx_color_value_bits - 8 ) );
         y = 255 - ( b >> ( gx_color_value_bits - 8 ) );
 
-        k = xtrans[ min( c, min( m, y ) ) ] * 0.8; /* FIXME:empirical constant */
+        k = (int)(xtrans[ min( c, min( m, y ) ) ] * 0.8); /* FIXME:empirical constant */
         c -= k;
         m -= k;
         y -= k;
@@ -1454,15 +1454,15 @@ CVAL	r, g, b;
 
         if ( MAP_RGB_ADOBE ) {
 
-                r = gx_max_color_value * ( 1.0 - min( 1.0, (c / 255.0 + k / 255.0) ) );
-                g = gx_max_color_value * ( 1.0 - min( 1.0, (m / 255.0 + k / 255.0) ) );
-                b = gx_max_color_value * ( 1.0 - min( 1.0, (y / 255.0 + k / 255.0) ) );
+                r = (CVAL)(gx_max_color_value * ( 1.0 - min( 1.0, (c / 255.0 + k / 255.0) ) ));
+                g = (CVAL)(gx_max_color_value * ( 1.0 - min( 1.0, (m / 255.0 + k / 255.0) ) ));
+                b = (CVAL)(gx_max_color_value * ( 1.0 - min( 1.0, (y / 255.0 + k / 255.0) ) ));
         }
         else {
 
-                r = gx_max_color_value * ( 1.0 - c / 255.0 ) * ( 1.0 - k / 255.0);
-                g = gx_max_color_value * ( 1.0 - m / 255.0 ) * ( 1.0 - k / 255.0);
-                b = gx_max_color_value * ( 1.0 - y / 255.0 ) * ( 1.0 - k / 255.0);
+                r = (CVAL)(gx_max_color_value * ( 1.0 - c / 255.0 ) * ( 1.0 - k / 255.0));
+                g = (CVAL)(gx_max_color_value * ( 1.0 - m / 255.0 ) * ( 1.0 - k / 255.0));
+                b = (CVAL)(gx_max_color_value * ( 1.0 - y / 255.0 ) * ( 1.0 - k / 255.0));
         }
 
         prgb[ 0 ] = r;
@@ -1709,7 +1709,7 @@ double		psize;
         /* Check if the requested width is within device limits.
            The calculations are in 1440 dpi units. */
 
-        start = 1440.0 * dev_l_margin( device );
+        start = (int)(1440.0 * dev_l_margin( device ));
 
         x = xres == 360 ? 4 : xres == 720 ? 2 : 1;
 
@@ -1772,9 +1772,9 @@ double		psize;
 
         /* Set up papersize and margins */
 
-        SendPaper( stream, device->height / device->y_pixels_per_inch * unit );
-        SendMargin( stream, ( psize - dev_b_margin( device ) ) * unit,
-                                            dev_t_margin( device ) * unit );
+        SendPaper( stream, (int)(device->height / device->y_pixels_per_inch * unit) );
+        SendMargin( stream, (int)(( psize - dev_b_margin( device ) ) * unit),
+                            (int)(          dev_t_margin( device )   * unit) );
 
         /* Dot size as per user setting */
 

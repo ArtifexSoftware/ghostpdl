@@ -209,8 +209,8 @@ bj10v_output_run(byte *data, int dnum, int bytes,
 static int
 bj10v_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {	int line_size = gdev_prn_raster((gx_device *)pdev);
-        int xres = pdev->x_pixels_per_inch;
-        int yres = pdev->y_pixels_per_inch;
+        int xres = (int)pdev->x_pixels_per_inch;
+        int yres = (int)pdev->y_pixels_per_inch;
         const char *mode = (yres == 180 ?
                       (xres == 180 ? "\052\047" : "\052\050") :
                       "|*");
