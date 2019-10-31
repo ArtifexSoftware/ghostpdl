@@ -969,7 +969,11 @@ escv_beginpage(gx_device_vector * vdev)
     {
       time_t t;
 
+#ifdef CLUSTER
+      memset(&t, 0, sizeof(t));
+#else
       time(&t);
+#endif
 
       lputs(s, " DATE=\"");
       {
@@ -977,7 +981,11 @@ escv_beginpage(gx_device_vector * vdev)
         char   str[32];
         size_t i;
 
+#ifdef CLUSTER
+        memset(&tm, 0, sizeof(tm));
+#else
         tm =  localtime( &t );
+#endif
         i = strftime(str, 30, "%Y/%m/%d %H:%M:%S", tm);
         if ( 30 >= i )
           str[i] = '\0';

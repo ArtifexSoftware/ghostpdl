@@ -723,6 +723,12 @@ static int pdf_image_finish_file(gx_device_pdf_image *pdf_dev, int PCLm)
 
         stream_puts(pdf_dev->strm, "]\n/Type /Pages\n>>\nendobj\n");
 
+#ifdef CLUSTER
+        memset(&t, 0, sizeof(t));
+        memset(&tms, 0, sizeof(tms));
+        timesign = 'Z';
+        timeoffset = 0;
+#else
         time(&t);
         tms = *gmtime(&t);
         tms.tm_isdst = -1;
@@ -730,6 +736,7 @@ static int pdf_image_finish_file(gx_device_pdf_image *pdf_dev, int PCLm)
         timesign = (timeoffset == 0 ? 'Z' : timeoffset < 0 ? '-' : '+');
         timeoffset = any_abs(timeoffset) / 60;
         tms = *localtime(&t);
+#endif
 
         gs_sprintf(CreationDate, "(D:%04d%02d%02d%02d%02d%02d%c%02d\'%02d\')",
             tms.tm_year + 1900, tms.tm_mon + 1, tms.tm_mday,

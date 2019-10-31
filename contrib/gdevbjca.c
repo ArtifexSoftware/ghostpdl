@@ -466,7 +466,11 @@ uint bjc_rand(gx_device_bjc_printer *dev)
 
 void bjc_init_tresh(gx_device_bjc_printer *dev, int rnd)
 {
+#ifdef CLUSTER
+    int i=0;
+#else
     int i=(int)(time(NULL) & 0x0ff);
+#endif
     float delta=40.64*rnd;
     for(;i>0;i--) bjc_rand(dev);
     for(i=-512; i<512; i++) dev->bjc_treshold[i+512] =

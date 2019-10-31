@@ -186,8 +186,13 @@ psw_begin_file_header(gp_file *f, const gx_device *dev, const gs_rect *pbbox,
         time_t t;
         struct tm tms;
 
+#ifdef CLUSTER
+        memset(&t, 0, sizeof(t));
+        memset(&tms, 0, sizeof(tms));
+#else
         time(&t);
         tms = *localtime(&t);
+#endif
         fprintf(f, "%%%%CreationDate: %d/%02d/%02d %02d:%02d:%02d\n",
                 tms.tm_year + 1900, tms.tm_mon + 1, tms.tm_mday,
                 tms.tm_hour, tms.tm_min, tms.tm_sec);
