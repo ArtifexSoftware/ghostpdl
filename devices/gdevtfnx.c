@@ -146,12 +146,16 @@ tiff12_print_page(gx_device_printer * pdev, gp_file * file)
     {
         int y;
         int size = gdev_prn_raster(pdev);
-        byte *data = gs_alloc_bytes(pdev->memory, size, "tiff12_print_page");
+
+        /* We allocate an extra 5 bytes to avoid buffer overflow when accessing
+        src[5] below, if size if not multiple of 6. This fixes bug-701807. */
+        int size_alloc = size + 5;
+        byte *data = gs_alloc_bytes(pdev->memory, size_alloc, "tiff12_print_page");
 
         if (data == 0)
             return_error(gs_error_VMerror);
 
-        memset(data, 0, size);
+        memset(data, 0, size_alloc);
 
         for (y = 0; y < pdev->height; ++y) {
             const byte *src;
