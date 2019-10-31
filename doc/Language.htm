@@ -438,8 +438,15 @@ The garbage collector doesn't reclaim portions of arrays obtained with
 
 <h3><a name="Graphics_and_text"></a>Graphics and text operators</h3>
 
-<h4><a name="Transparency"></a>Transparency</h4>
-
+<h4><u><a name="Transparency"></a>Transparency</u></h4>
+<p><b><u>NOTE:</u></b> The following paragraphs describe non-standard operators
+for accessing the PDF 1.4 and later transparent imaging model through Postscript.
+If used incorrectly, they can have unexpected side effects and result in undefined
+behavior. As a result, these operators are disabled when <a href="Use.htm#Safer"><b>SAFER</b></a>
+is in force (as it is by default from version 9.50 onwards). To utilise these operators
+you will either have to disable <code>SAFER</code> (<code>-dNOSAFER</code>) or use
+the command line parameter <code>-dALLOWPSTRANSPARENCY</code>. The latter will make
+the custom operators available, but leave the file access controls active.
 <p>
 Ghostscript provides a set of operators for implementing the transparency
 and compositing facilities of PDF 1.4.  These are defined only if the
@@ -459,6 +466,26 @@ shape.</p>
 
 <h5><a name="Transparency_graphics_state_operators"></a>Graphics state
 operators</h5>
+
+<p>Pushing the compositor device must be done before any other marking
+operations are made on the current page, and must be done per page.
+Popping the compositor should be done after the last marking operation
+of the page, and before the call to <code>showpage</code>. Any marking
+operations made after the compositor is popped will bypass the transparent
+imaging model, and may produce unexpected output.
+
+<dl>
+<dt><code>&lt;depth&gt; .pushpdf14devicefilter -</code></dt>
+<dd>Installs the transparency compositor device into the graphics state. At
+present the <code>depth</code> parameter should always be zero (<b>Subject
+To Change.</b>)
+</dl>
+<dl>
+<dt><code>- .popdf14devicefilter -</code></dt>
+<dd>Removes (or, more accuracately, disables) the transparency compositor in
+graphics state.
+</dl>
+
 
 <dl>
 <dt><code>&lt;modename&gt; .setblendmode -</code></dt>
@@ -496,7 +523,7 @@ accumulate only a coverage value.  Layers must be properly nested, i.e., the
 'end' or 'discard' operator must match the corresponding 'begin' operator.</p>
 
 <p>
-Beginning and ending layers must nest properly with respect to
+Beginning and ending groups must nest properly with respect to
 <code>save</code> and <code>restore</code>: <code>save</code> and
 <code>restore</code> do not save and restore the layer stack.  Currently,
 layers are not required to nest with respect to <code>gsave</code> and
