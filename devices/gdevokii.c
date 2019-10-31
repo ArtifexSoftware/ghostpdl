@@ -96,22 +96,40 @@ okiibm_print_page1(gx_device_printer *pdev, gp_file *prn_stream, int y_9pin_high
         -1, 0 /*60*/, 1 /*120*/, -1, 3 /*240*/
         };
 
-        int in_y_mult = (y_9pin_high ? 2 : 1);
-        int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
-        /* Note that in_size is a multiple of 8. */
-        int in_size = line_size * (8 * in_y_mult);
-        byte *buf1 = (byte *)gs_malloc(pdev->memory, in_size, 1, "okiibm_print_page(buf1)");
-        byte *buf2 = (byte *)gs_malloc(pdev->memory, in_size, 1, "okiibm_print_page(buf2)");
-        byte *in = buf1;
-        byte *out = buf2;
-        int out_y_mult = 1;
-        int x_dpi = pdev->x_pixels_per_inch;
-        char start_graphics = graphics_modes_9[x_dpi / 60];
-        int first_pass = (start_graphics == 3 ? 1 : 0);
-        int last_pass = first_pass * 2;
-        int y_passes = (y_9pin_high ? 2 : 1);
+        int in_y_mult;
+        int line_size;
+        int in_size;
+        byte *buf1;
+        byte *buf2;
+        byte *in;
+        byte *out;
+        int out_y_mult;
+        int x_dpi;
+        char start_graphics;
+        int first_pass;
+        int last_pass;
+        int y_passes;
         int skip = 0, lnum = 0, pass, ypass;
         int y_step = 0;
+
+        x_dpi = pdev->x_pixels_per_inch;
+        if (x_dpi / 60 >= sizeof(graphics_modes_9)/sizeof(graphics_modes_9[0])) {
+            return_error(gs_error_rangecheck);
+        }
+        in_y_mult = (y_9pin_high ? 2 : 1);
+        line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
+        /* Note that in_size is a multiple of 8. */
+        in_size = line_size * (8 * in_y_mult);
+        buf1 = (byte *)gs_malloc(pdev->memory, in_size, 1, "okiibm_print_page(buf1)");
+        buf2 = (byte *)gs_malloc(pdev->memory, in_size, 1, "okiibm_print_page(buf2)");
+        in = buf1;
+        out = buf2;
+        out_y_mult = 1;
+        start_graphics = graphics_modes_9[x_dpi / 60];
+        first_pass = (start_graphics == 3 ? 1 : 0);
+        last_pass = first_pass * 2;
+        y_passes = (y_9pin_high ? 2 : 1);
+        y_step = 0;
 
         /* Check allocations */
         if ( buf1 == 0 || buf2 == 0 )
