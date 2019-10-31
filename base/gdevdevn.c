@@ -1382,7 +1382,11 @@ spotcmyk_print_page(gx_device_printer * pdev, gp_file * prn_stream)
     /* Open the output files for the spot colors */
     for(i = 0; i < nspot; i++) {
         gs_sprintf(spotname, "%ss%d", pdevn->fname, i);
+        code = gs_add_control_path(pdev->memory, gs_permit_file_writing, spotname);
+        if (code < 0)
+            goto prn_done;
         spot_file[i] = gp_fopen(pdev->memory, spotname, "wb");
+        (void)gs_remove_control_path(pdev->memory, gs_permit_file_writing, spotname);
         if (spot_file[i] == NULL) {
             code = gs_note_error(gs_error_VMerror);
             goto prn_done;
