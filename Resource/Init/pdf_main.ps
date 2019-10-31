@@ -3557,24 +3557,33 @@ end			% pdfdict
 /.setfillcolor /.setfillcolorspace /.setstrokecolor /.setstrokecolorspace /.currentrenderingintent /.setrenderingintent
 /.currenttextrenderingmode /.settextspacing /.currenttextspacing /.settextleading /.currenttextleading
 /.settextrise /.currenttextrise /.setwordspacing /.currentwordspacing /.settexthscaling /.currenttexthscaling
-/.settextlinematrix /.currenttextlinematrix /.currenttextmatrix /.settextmatrix /.currentblendmode
-/.currentopacityalpha /.currentshapealpha /.currenttextknockout
-/.pushextendedgstate /.popextendedgstate /.begintransparencytextgroup
-/.endtransparencytextgroup /.begintransparencymaskgroup /.begintransparencymaskimage /.endtransparencymask /.image3x
-/.abortpdf14devicefilter /.pdfinkpath /.pdfFormName /.setstrokeconstantalpha
-/.setfillconstantalpha /.setalphaisshape /.currentalphaisshape
-/.settextspacing /.currenttextspacing /.settextleading /.currenttextleading /.settextrise /.currenttextrise
-/.setwordspacing /.currentwordspacing /.settexthscaling /.currenttexthscaling /.setPDFfontsize /.currentPDFfontsize
-/.setdistillerparams
+/.settextlinematrix /.currenttextlinematrix /.currenttextmatrix /.settextmatrix /.pushextendedgstate
+/.popextendedgstate
 
-% Used by our own test suite files
-%/.pushpdf14devicefilter    % transparency-example.ps
-%/.poppdf14devicefilter     % transparency-example.ps
-%/.setopacityalpha          % transparency-example.ps
-%/.setshapealpha            % transparency-example.ps
-%/.endtransparencygroup     % transparency-example.ps
+/.pdfinkpath /.pdfFormName /.settextspacing /.currenttextspacing /.settextleading /.currenttextleading
+/.settextrise /.currenttextrise /.setwordspacing /.currentwordspacing /.settexthscaling /.currenttexthscaling
+/.setPDFfontsize /.currentPDFfontsize /.setdistillerparams
 
 % undefining these causes errors/incorrect output
-%/.settextrenderingmode /.setblendmode /.begintransparencygroup /.settextknockout /.setstrokeoverprint /.setfilloverprint
-%/.currentstrokeoverprint /.currentfilloverprint /.currentfillconstantalpha /.currentstrokeconstantalpha
+%/.settextrenderingmode
 ] systemdict .undefinternalnames
+
+% The following are split out allowing control via ALLOWPSTRANSPARENCY command line param
+[
+  /.currentblendmode /.currentopacityalpha /.currentshapealpha /.currenttextknockout /.begintransparencytextgroup
+  /.endtransparencytextgroup /.begintransparencymaskgroup /.begintransparencymaskimage /.begintransparencypagegroup
+  /.endtransparencymask /.image3x /.abortpdf14devicefilter /.setfillconstantalpha /.setalphaisshape /.currentalphaisshape
+
+  % Used by our own test suite files
+  %/.pushpdf14devicefilter    % transparency-example.ps
+  %/.poppdf14devicefilter     % transparency-example.ps
+  %/.setopacityalpha          % transparency-example.ps
+  %/.setshapealpha            % transparency-example.ps
+  %/.endtransparencygroup     % transparency-example.ps
+
+  % undefining these causes errors/incorrect output
+  %/.setblendmode /.begintransparencygroup /.settextknockout /.setstrokeoverprint /.setfilloverprint
+  %/.currentstrokeoverprint /.currentfilloverprint /.currentfillconstantalpha /.currentstrokeconstantalpha
+  %/.setstrokeconstantalpha /.setfillconstantalpha /.setSMask /.currentSMask
+
+] systemdict dup /ALLOWPSTRANSPARENCY get {pop pop}{.undefinternalnames}ifelse
