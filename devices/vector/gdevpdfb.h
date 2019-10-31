@@ -106,6 +106,7 @@ const gx_device_pdf PDF_DEVICE_IDENT =
   NULL,             /* strip_tile_rect_devn */
   NULL,             /* copy_alpha_hl_color */
   NULL,             /* process_page */
+  NULL,             /* transform_pixel_region */
   gdev_pdf_fill_stroke_path /* fill_stroke_path */
  },
  psdf_initial_values(PSDF_VERSION_INITIAL, 0 /*false */ ),  /* (!ASCII85EncodePages) */
