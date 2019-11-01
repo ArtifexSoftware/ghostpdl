@@ -480,8 +480,9 @@ struct pdf_font_cache_elem_s {
 typedef struct pdf_viewer_state_s {
     int transfer_not_identity;        /* bitmask */
     gs_id transfer_ids[4];
-    float opacity_alpha; /* state.opacity.alpha */
-    float shape_alpha; /* state.shape.alpha */
+    float strokeconstantalpha;
+    float fillconstantalpha;
+    bool alphaisshape;
     gs_blend_mode_t blend_mode; /* state.blend_mode */
     gs_id halftone_id;
     gs_id black_generation_id;

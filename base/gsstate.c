@@ -233,6 +233,9 @@ gs_gstate_alloc(gs_memory_t * mem)
     if (code < 0)
         goto fail;
     gs_setalpha(pgs, 1.0);
+    gs_setfillconstantalpha(pgs, 1.0);
+    gs_setstrokeconstantalpha(pgs, 1.0);
+    gs_setalphaisshape(pgs, false);
     gs_settransfer(pgs, gs_identity_transfer);
     gs_setflat(pgs, 1.0);
     gs_setfilladjust(pgs, 0.3, 0.3);
