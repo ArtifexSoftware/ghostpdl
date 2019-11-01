@@ -557,7 +557,7 @@ do_png_print_page(gx_device_png * pdev, gp_file * file, bool monod)
         case 1:
             bit_depth = 1;
             color_type = PNG_COLOR_TYPE_GRAY;
-            /* invert monocrome pixels */
+            /* invert monochrome pixels */
             if (!monod) {
                 invert = true;
             }
@@ -700,9 +700,21 @@ do_png_print_page(gx_device_png * pdev, gp_file * file, bool monod)
                               depth/dst_bpc, factor, mfs, NULL, 0);
     if (code >= 0)
     {
+#ifdef CLUSTER
+        int bitlen = width*dst_bpc;
+        int end = bitlen>>3;
+        int mask = 255>>(bitlen&7);
+        if (bitlen & 7)
+            mask = ~mask;
+        else
+            end--;
+#endif
         /* Write the contents of the image. */
         for (y = 0; y < height; y++) {
             gx_downscaler_getbits(&ds, row, y);
+#ifdef CLUSTER
+            row[end] &= mask;
+#endif
             png_write_rows(png_ptr, &row, 1);
         }
         gx_downscaler_fin(&ds);
