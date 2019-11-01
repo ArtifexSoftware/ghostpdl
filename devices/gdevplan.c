@@ -248,7 +248,16 @@ static void dump_row_pnmc(int w, byte **data, gp_file *dump_file)
 static void dump_row_pbm(int w, byte **data, gp_file *dump_file)
 {
     byte *r = data[0];
-    int mask = ~(255>>(w&7));
+#ifdef CLUSTER
+    int end = w>>3;
+    byte mask = 255>>(w&7);
+    if (w & 7)
+        mask = ~mask;
+    else
+        end--;
+#else
+    byte mask = 255;
+#endif
 
     if (dump_file == NULL)
         return;
