@@ -248,13 +248,17 @@ static void dump_row_pnmc(int w, byte **data, gp_file *dump_file)
 static void dump_row_pbm(int w, byte **data, gp_file *dump_file)
 {
     byte *r = data[0];
+    int mask = ~(255>>(w&7));
 
     if (dump_file == NULL)
         return;
+    if (w == 0)
+        return;
     w = (w+7)>>3;
-    while (w--) {
+    while (--w) {
         gp_fputc(*r++, dump_file);
     }
+    gp_fputc(mask & *r, dump_file);
 }
 
 static void dump_row_pgm(int w, byte **data, gp_file *dump_file)
