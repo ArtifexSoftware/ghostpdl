@@ -2365,6 +2365,7 @@ tiffsep_print_page(gx_device_printer * pdev, gp_file * file)
                 "\nUse of the %%d format is required to output more than one page to tiffsep.\n"
                 "See doc/Devices.htm#TIFF for details.\n\n");
        code = gs_note_error(gs_error_ioerror);
+       goto done;
     }
     /* Write the page directory for the CMYK equivalent file. */
     if (!tfdev->comp_file) {
@@ -2726,6 +2727,7 @@ tiffsep1_print_page(gx_device_printer * pdev, gp_file * file)
                 "\nUse of the %%d format is required to output more than one page to tiffsep1.\n"
                 "See doc/Devices.htm#TIFF for details.\n\n");
        code = gs_note_error(gs_error_ioerror);
+       goto done;
     }
     /* If the output file is on disk and the name contains a page #, */
     /* then delete the previous file. */
