@@ -69,6 +69,10 @@ jetp3852_print_page(gx_device_printer *pdev, gp_file *prn_stream)
     byte data[DATA_SIZE];
     byte plane_data[LINE_SIZE * 3];
 
+    /* Initialise data to zeros, otherwise later on, uninitialised bytes in
+    dp[] can be greater than 7, which breaks spr8[dp[]]. */
+    memset(data, 0x00, DATA_SIZE);
+
     /* Set initial condition for printer */
     gp_fputs("\033@",prn_stream);
 
@@ -98,10 +102,6 @@ jetp3852_print_page(gx_device_printer *pdev, gp_file *prn_stream)
                 int i;
                 byte *odp;
                 byte *row;
-
-                /* Pad with 0s to fill out the last */
-                /* block of 8 bytes. */
-                memset(end_data, 0, 7);
 
                 /* Transpose the data to get pixel planes. */
                 for ( i = 0, odp = plane_data; i < DATA_SIZE;
