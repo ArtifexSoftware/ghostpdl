@@ -370,6 +370,8 @@ static dev_proc_get_page_device(overprint_get_page_device);
 static dev_proc_create_compositor(overprint_create_compositor);
 static dev_proc_get_color_comp_index(overprint_get_color_comp_index);
 static dev_proc_fill_stroke_path(overprint_fill_stroke_path);
+static dev_proc_fill_path(overprint_fill_path);
+static dev_proc_stroke_path(overprint_stroke_path);
 
 static const gx_device_procs no_overprint_procs = {
     overprint_open_device,              /* open_device */
@@ -508,8 +510,8 @@ static const gx_device_procs generic_overprint_procs = {
     gx_default_copy_alpha,              /* copy alpha */
     0,                                  /* get_band */
     gx_default_copy_rop,                /* copy_rop */
-    gx_default_fill_path,               /* fill_path */
-    gx_default_stroke_path,             /* stroke_path */
+    overprint_fill_path,                /* fill_path */
+    overprint_stroke_path,              /* stroke_path */
     gx_default_fill_mask,               /* fill_mask */
     gx_default_fill_trapezoid,          /* fill_trapezoid */
     gx_default_fill_parallelogram,      /* fill_parallelogram */
@@ -586,8 +588,8 @@ static const gx_device_procs sep_overprint_procs = {
     gx_default_copy_alpha,              /* copy alpha */
     0,                                  /* get_band */
     gx_default_copy_rop,                /* copy_rop */
-    gx_default_fill_path,               /* fill_path */
-    gx_default_stroke_path,             /* stroke_path */
+    overprint_fill_path,                /* fill_path */
+    overprint_stroke_path,              /* stroke_path */
     gx_default_fill_mask,               /* fill_mask */
     gx_default_fill_trapezoid,          /* fill_trapezoid */
     gx_default_fill_parallelogram,      /* fill_parallelogram */
@@ -1286,6 +1288,40 @@ overprint_sep_fill_rectangle(
                                                      x, y, width, height,
                                                      color, dev->memory);
     }
+}
+
+/* We need this to ensure the device knows we are doing a fill */
+int 
+overprint_fill_path(gx_device* pdev, const gs_gstate* pgs,
+    gx_path* ppath, const gx_fill_params* params_fill,
+    const gx_device_color* pdcolor, const gx_clip_path* pcpath)
+{
+    overprint_device_t* opdev = (overprint_device_t*)pdev;
+
+    opdev->is_fill_color = true;
+    return gx_default_fill_path(pdev, pgs, ppath, params_fill,
+                                         pdcolor, pcpath);
+}
+
+/* We need this to ensure the device knows we are doing a stroke */
+int
+overprint_stroke_path(gx_device* pdev, const gs_gstate* pgs,
+    gx_path* ppath, const gx_stroke_params* params_stroke,
+    const gx_device_color* pdcolor, const gx_clip_path* pcpath)
+{
+    overprint_device_t* opdev = (overprint_device_t*)pdev;
+    int code;
+
+    opdev->is_fill_color = false;
+
+    /* Stroke methods use fill path so set that to default to
+       avoid mix up of is_fill_color */
+    opdev->procs.fill_path = gx_default_fill_path;
+    code = gx_default_stroke_path(pdev, pgs, ppath, params_stroke,
+        pdcolor, pcpath);
+    opdev->procs.fill_path = overprint_fill_path;
+
+    return code;
 }
 
 /*
