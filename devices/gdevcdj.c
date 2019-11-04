@@ -1969,7 +1969,7 @@ ep_print_image(gp_file *prn_stream, ep_globals *eg, char cmd, byte *data, int si
           /* p2 is the head of non zero image. */
           p2 = p3;
         redo:
-          for (p3 += row_bytes; memcmp(p3, zeros, row_bytes); p3 += row_bytes);
+          for (p3 += row_bytes; p3 < outp && memcmp(p3, zeros, row_bytes); p3 += row_bytes);
           if (p3 < outp && memcmp(p3+row_bytes, zeros, row_bytes)) goto redo;
         } else p1 = p2 = outp;
 
