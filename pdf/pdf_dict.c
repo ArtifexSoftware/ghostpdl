@@ -629,12 +629,12 @@ int pdfi_dict_put_bool(pdf_context *ctx, pdf_dict *d, const char *key, bool valu
     int code;
     pdf_bool *obj = NULL;
 
-    code = pdfi_alloc_object(ctx, PDF_BOOL, 0, (pdf_bool **)&obj);
+    code = pdfi_alloc_object(ctx, PDF_BOOL, 0, (pdf_obj **)&obj);
     if (code < 0)
         return code;
 
     obj->value = value;
-    return pdfi_dict_put(ctx, d, key, (pdf_bool *)obj);
+    return pdfi_dict_put(ctx, d, key, (pdf_obj *)obj);
 }
 
 int pdfi_dict_put_name(pdf_context *ctx, pdf_dict *d, const char *key, const char *name)
