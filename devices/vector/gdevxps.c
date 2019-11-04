@@ -152,9 +152,12 @@ typedef struct xps_image_enum_s {
     gp_file *fid;
 } xps_image_enum_t;
 
-gs_private_st_suffix_add4(st_xps_image_enum, xps_image_enum_t,
+static void
+xps_image_enum_finalize(const gs_memory_t *cmem, void *vptr);
+
+gs_private_st_suffix_add4_final(st_xps_image_enum, xps_image_enum_t,
     "xps_image_enum_t", xps_image_enum_enum_ptrs,
-    xps_image_enum_reloc_ptrs, st_vector_image_enum,
+    xps_image_enum_reloc_ptrs, xps_image_enum_finalize, st_vector_image_enum,
     buffer, devc_buffer, pcs, pgs);
 
 typedef struct gx_device_xps_s {
@@ -1424,6 +1427,11 @@ xps_finish_image_path(gx_device_vector *vdev)
     const char *fmt;
     gs_matrix matrix;
 
+    /* If an error occurs during an image, we can get here after the enumerator
+     * has been freed - if that's the case, just bail out immediately
+     */
+    if (xps->xps_pie == NULL)
+        return;
     /* Path is started.  Do the image brush image brush and close the path */
     write_str_to_current_page(xps, "\t<Path.Fill>\n");
     write_str_to_current_page(xps, "\t\t<ImageBrush ");
@@ -2214,17 +2222,6 @@ xps_image_end_image(gx_image_enum_common_t * info, bool draw_last)
     code = xps_add_image_relationship(pie);
 
 exit:
-    if (pie->pcs != NULL)
-        rc_decrement(pie->pcs, "xps_image_end_image (pcs)");
-    if (pie->buffer != NULL)
-        gs_free_object(pie->memory, pie->buffer, "xps_image_end_image");
-    if (pie->devc_buffer != NULL)
-        gs_free_object(pie->memory, pie->devc_buffer, "xps_image_end_image");
-
-    /* ICC clean up */
-    if (pie->icc_link != NULL)
-        gsicc_release_link(pie->icc_link);
-
     return code;
 }
 
@@ -2484,4 +2481,24 @@ tiff_from_name(gx_device_xps *dev, const char *name, int big_endian, bool usebig
         xps_tifsCloseProc, (TIFFSizeProc)xps_tifsSizeProc, xps_tifsDummyMapProc,
         xps_tifsDummyUnmapProc);
     return t;
+}
+
+static void
+xps_image_enum_finalize(const gs_memory_t *cmem, void *vptr)
+{
+    xps_image_enum_t *xpie = (xps_image_enum_t *)vptr;
+    gx_device_xps *xdev = (gx_device_xps *)xpie->dev;
+
+    xpie->dev = NULL;
+    if (xpie->pcs != NULL)
+        rc_decrement(xpie->pcs, "xps_image_end_image (pcs)");
+    if (xpie->buffer != NULL)
+        gs_free_object(xpie->memory, xpie->buffer, "xps_image_end_image");
+    if (xpie->devc_buffer != NULL)
+        gs_free_object(xpie->memory, xpie->devc_buffer, "xps_image_end_image");
+
+    /* ICC clean up */
+    if (xpie->icc_link != NULL)
+        gsicc_release_link(xpie->icc_link);
+    xdev->xps_pie = NULL;
 }
