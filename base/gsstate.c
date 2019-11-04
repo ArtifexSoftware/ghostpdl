@@ -393,10 +393,21 @@ gs_grestore_only(gs_gstate * pgs)
     gs_free_object(pgs->memory, saved, "gs_grestore");
 
     /* update the overprint compositor, if necessary */
-    if (prior_fill_overprint || prior_stroke_overprint ||
-        pgs->overprint || pgs->stroke_overprint)
-    {
-        return gs_do_set_overprint(pgs);
+    if (prior_fill_overprint != pgs->overprint) {
+        if (!pgs->is_fill_color) {
+            gs_swapcolors_quick(pgs);
+            (void)gs_do_set_overprint(pgs);
+            gs_swapcolors_quick(pgs);
+        } else
+            (void)gs_do_set_overprint(pgs);
+    }
+    if (prior_stroke_overprint != pgs->stroke_overprint) {
+        if (pgs->is_fill_color) {
+            gs_swapcolors_quick(pgs);
+            (void)gs_do_set_overprint(pgs);
+            gs_swapcolors_quick(pgs);
+        } else
+            (void)gs_do_set_overprint(pgs);
     }
     return 0;
 }
