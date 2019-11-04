@@ -245,13 +245,21 @@ quit_ignomiously: /* and a goto into an if statement is pretty ignomious! */
         outp = swipeBuf;
 
         /* macro, not fcn call.  Space penalty is modest, speed helps */
-#define buffer_store(x) if(outp-swipeBuf>=swipeBuf_size) {\
-            gs_free(pdev->memory, (char *)swipeBuf, swipeBuf_size, 1, "lxm_print_page(swipeBuf)");\
-            swipeBuf_size*=2;\
-            swipeBuf = (byte *)gs_malloc(pdev->memory, swipeBuf_size, 1, "lxm_print_page(swipeBuf)");\
-            if (swipeBuf == 0) goto quit_ignomiously;\
-            break;}\
-        else *outp++ = (x)
+#define buffer_store(x)\
+        {\
+            if (outp-swipeBuf>=swipeBuf_size) {\
+                size_t  outp_offset = outp - swipeBuf;\
+                size_t  swipeBuf_size_new = swipeBuf_size * 2;\
+                byte*   swipeBuf_new = gs_malloc(pdev->memory, swipeBuf_size_new, 1, "lxm_print_page(swipeBuf_new)");\
+                if (!swipeBuf_new) goto quit_ignomiously;\
+                memcpy(swipeBuf_new, swipeBuf, swipeBuf_size);\
+                gs_free(pdev->memory, swipeBuf, swipeBuf_size, 1, "lxm_print_page(swipeBuf)");\
+                swipeBuf_size = swipeBuf_size_new;\
+                swipeBuf = swipeBuf_new;\
+                outp = swipeBuf + outp_offset;\
+            }\
+            *outp++ = (x);\
+        }
 
             {/* work out the bytes to store for this swipe*/
 
