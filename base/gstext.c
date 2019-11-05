@@ -271,6 +271,7 @@ gs_text_begin(gs_gstate * pgs, const gs_text_params_t * text,
 {
     gx_clip_path *pcpath = 0;
     int code;
+    gs_overprint_params_t op_params = { 0 };
 
     /*
      * Detect nocurrentpoint now, even if the string is empty, for Adobe
@@ -310,6 +311,24 @@ gs_text_begin(gs_gstate * pgs, const gs_text_params_t * text,
     code = gs_gstate_color_load(pgs);
     if (code < 0)
         return code;
+
+    /* If overprint is true, push the compositor action to set the op device state */
+    if (pgs->overprint || pgs->stroke_overprint) {
+        gx_device* dev = pgs->device;
+        cmm_dev_profile_t* dev_profile;
+
+        dev_proc(dev, get_profile)(dev, &dev_profile);
+        if (dev_profile->sim_overprint && dev_profile->device_profile[0]->data_cs == gsCMYK) {
+            if (pgs->overprint && (pgs->text_rendering_mode == 0)) {
+                op_params.op_state = OP_STATE_FILL;
+                gs_gstate_update_overprint(pgs, &op_params);
+            } else if (pgs->stroke_overprint && (pgs->text_rendering_mode == 1)) {
+                op_params.op_state = OP_STATE_STROKE;
+                gs_gstate_update_overprint(pgs, &op_params);
+            }
+        }
+    }
+
     pgs->device->sgr.stroke_stored = false;
     return gx_device_text_begin(pgs->device, pgs,
                                 text, pgs->font, pgs->path,

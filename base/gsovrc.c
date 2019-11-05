@@ -109,6 +109,7 @@ c_overprint_equal(const gs_composite_t * pct0, const gs_composite_t * pct1)
 
         pparams0 = &((const gs_overprint_t *)(pct0))->params;
         pparams1 = &((const gs_overprint_t *)(pct1))->params;
+
         if (pparams0->is_fill_color != pparams1->is_fill_color)
             return true;		/* this changed */
         if (!pparams0->retain_any_comps)
@@ -124,8 +125,8 @@ c_overprint_equal(const gs_composite_t * pct0, const gs_composite_t * pct1)
  * representation of an overprint compositor.
  */
 #define OVERPRINT_ANY_COMPS           1
-#define OVERPRINT_SPOT_COMPS          2
-#define OVERPRINT_IS_FILL_COLOR       4
+#define OVERPRINT_IS_FILL_COLOR       2
+#define OVERPRINT_SET_FILL_COLOR      0xc
 
 /*
  * Convert an overprint compositor to string form for use by the command
@@ -139,9 +140,11 @@ c_overprint_write(const gs_composite_t * pct, byte * data, uint * psize, gx_devi
     int                             used = 1, avail = *psize;
 
     /* encoded the booleans in a single byte */
-    if (pparams->retain_any_comps || pparams->is_fill_color) {
+    if (pparams->retain_any_comps || pparams->is_fill_color || pparams->op_state) {
         flags |= (pparams->retain_any_comps) ? OVERPRINT_ANY_COMPS : 0;
         flags |= (pparams->is_fill_color) ? OVERPRINT_IS_FILL_COLOR : 0;
+        flags |= (pparams->op_state) ? OVERPRINT_SET_FILL_COLOR : 0;
+
         /* write out the component bits */
         if (pparams->retain_any_comps) {
             uint tmp_size = (avail > 0 ? avail - 1 : 0);
@@ -186,6 +189,7 @@ c_overprint_read(
     if_debug1m('v', mem, "[v]c_overprint_read(%d)", flags);
     params.retain_any_comps = (flags & OVERPRINT_ANY_COMPS) != 0;
     params.is_fill_color = (flags & OVERPRINT_IS_FILL_COLOR) != 0;
+    params.op_state = (flags & OVERPRINT_SET_FILL_COLOR) != 0;
     params.idle = 0;
     params.drawn_comps = 0;
 
@@ -197,6 +201,8 @@ c_overprint_read(
         nbytes += code;
         if_debug0m('v', mem, ", drawn_comps read");
     }
+    if_debug1m('v', mem, ", retain_any_comps=%d", params.retain_any_comps);
+    if_debug1m('v', mem, ", is_fill_color=%d", params.is_fill_color);
     if_debug1m('v', mem, ", drawn_comps=0x%x", params.drawn_comps);
     if_debug0m('v', mem, "\n");
     code = gs_create_overprint(ppct, &params, mem);
@@ -294,7 +300,7 @@ typedef struct overprint_device_s {
      * target color space is not separable and linear.  It is also used
      * for the devn color values since we may need more than 8 components
      */
-    bool is_fill_color;					    /* used to select drawn_comps, fill or stroke */
+    OP_FS_STATE op_state;					/* used to select drawn_comps, fill or stroke */
     gx_color_index  drawn_comps_fill;
     gx_color_index	drawn_comps_stroke;		/* pparams->is_fill_color determines which to set */
     bool retain_none_stroke;                /* These are used to know when we can set the procs to forward */
@@ -755,6 +761,12 @@ update_overprint_params(
        we will turn it off when setting one and turn on
        when setting the other (or vice versa) */
 
+    /* Note if pparams is to set the opdev fill stroke state.  Do that now and exit */
+    if (pparams->op_state != OP_STATE_NONE) {
+        opdev->op_state = pparams->op_state;
+        return 0;
+    }
+
     if_debug4m(gs_debug_flag_overprint, opdev->memory,
         "[overprint] update_overprint_params enter. retain_any_comps = %d, idle = %d, drawn_comps = 0x%x, is_fill_color = %d\n",
         pparams->retain_any_comps, pparams->idle, pparams->drawn_comps, pparams->is_fill_color);
@@ -927,9 +939,9 @@ overprint_create_compositor(
 
         params.idle = pct->idle;
         /* device must already exist, so just update the parameters if settings change */
-        if_debug7m(gs_debug_flag_overprint, opdev->memory,
-            "[overprint] overprint_create_compositor test for change. params.idle = %d vs. opdev->is_idle = %d \n  params.is_fill_color = %d vs. opdev->is_fill_color = %d \n params.drawn_comps = 0x%x vs. opdev->drawn_comps_fill =  0x%x OR opdev->drawn_comps_stroke = 0x%x\n",
-            params.idle, opdev->is_idle, params.is_fill_color, opdev->is_fill_color, params.drawn_comps, opdev->drawn_comps_fill, opdev->drawn_comps_stroke);
+        if_debug6m(gs_debug_flag_overprint, opdev->memory,
+            "[overprint] overprint_create_compositor test for change. params.idle = %d vs. opdev->is_idle = %d \n  params.is_fill_color = %d: params.drawn_comps = 0x%x vs. opdev->drawn_comps_fill =  0x%x OR opdev->drawn_comps_stroke = 0x%x\n",
+            params.idle, opdev->is_idle, params.is_fill_color, params.drawn_comps, opdev->drawn_comps_fill, opdev->drawn_comps_stroke);
 
         if (!params.retain_any_comps || params.idle != opdev->is_idle ||
             params.drawn_comps != (params.is_fill_color ?
@@ -967,12 +979,12 @@ overprint_generic_fill_rectangle(
         /* See if we even need to do any overprinting.  We have to maintain
            the compositor active for fill/stroke cases even if we are only
            doing a fill or a stroke */
-        if ((opdev->is_fill_color && opdev->retain_none_fill) ||
-            (!opdev->is_fill_color && opdev->retain_none_stroke))
+        if ((opdev->op_state == OP_STATE_FILL && opdev->retain_none_fill) ||
+            (opdev->op_state == OP_STATE_STROKE && opdev->retain_none_stroke))
             return (*dev_proc(tdev, fill_rectangle)) (tdev, x, y, width, height, color);
 
         return gx_overprint_generic_fill_rectangle(tdev,
-            opdev->is_fill_color ?
+            opdev->op_state == OP_STATE_FILL ?
             opdev->drawn_comps_fill : opdev->drawn_comps_stroke,
             x, y, width, height, color, dev->memory);
     }
@@ -1020,7 +1032,7 @@ overprint_copy_planes(gx_device * dev, const byte * data, int data_x, int raster
     uchar                   num_comps;
     uchar                   k,j;
     gs_memory_t *           mem = dev->memory;
-    gx_color_index          comps = opdev->is_fill_color ? opdev->drawn_comps_fill : opdev->drawn_comps_stroke;
+    gx_color_index          comps = opdev->op_state == OP_STATE_FILL ? opdev->drawn_comps_fill : opdev->drawn_comps_stroke;
     byte                    *curr_data = (byte *) data + data_x;
     int                     row, offset;
 
@@ -1144,8 +1156,8 @@ overprint_fill_rectangle_hl_color(gx_device *dev,
     /* See if we even need to do any overprinting.  We have to maintain
        the compositor active for fill/stroke cases even if we are only
        doing a fill or a stroke */
-    if ((opdev->is_fill_color && opdev->retain_none_fill) ||
-        (!opdev->is_fill_color && opdev->retain_none_stroke))
+    if ((opdev->op_state == OP_STATE_FILL && opdev->retain_none_fill) ||
+        (opdev->op_state == OP_STATE_STROKE && opdev->retain_none_stroke))
         return (*dev_proc(tdev, fill_rectangle_hl_color)) (tdev, rect, pgs, pdcolor, pcpath);
 
     depth = tdev->color_info.depth;
@@ -1188,7 +1200,7 @@ overprint_fill_rectangle_hl_color(gx_device *dev,
     while (h-- > 0 && code >= 0) {
         gb_rect.p.y = y++;
         gb_rect.q.y = y;
-        comps = opdev->is_fill_color ? opdev->drawn_comps_fill : opdev->drawn_comps_stroke;
+        comps = opdev->op_state == OP_STATE_FILL ? opdev->drawn_comps_fill : opdev->drawn_comps_stroke;
         /* And now through each plane */
         for (k = 0; k < tdev->color_info.num_components; k++) {
             /* First set the params to zero for all planes except the one we want */
@@ -1245,8 +1257,8 @@ overprint_sep_fill_rectangle(
         /* See if we even need to do any overprinting.  We have to maintain
            the compositor active for fill/stroke cases even if we are only
            doing a fill or a stroke */
-        if ((opdev->is_fill_color && opdev->retain_none_fill) ||
-            (!opdev->is_fill_color && opdev->retain_none_stroke))
+        if ((opdev->op_state == OP_STATE_FILL && opdev->retain_none_fill) ||
+            (opdev->op_state == OP_STATE_STROKE && opdev->retain_none_stroke))
             return (*dev_proc(tdev, fill_rectangle)) (tdev, x, y, width, height, color);
 
         /*
@@ -1274,12 +1286,12 @@ overprint_sep_fill_rectangle(
          * depth < 8 * sizeof(mono_fill_chunk).
          */
         if ( depth <= 8 * sizeof(mono_fill_chunk) && (depth & (depth - 1)) == 0)
-            return gx_overprint_sep_fill_rectangle_1(tdev, opdev->is_fill_color ?
+            return gx_overprint_sep_fill_rectangle_1(tdev, opdev->op_state == OP_STATE_FILL ?
                                                      opdev->retain_mask_fill : opdev->retain_mask_stroke,
                                                      x, y, width, height,
                                                      color, dev->memory);
         else
-            return gx_overprint_sep_fill_rectangle_2(tdev, opdev->is_fill_color ?
+            return gx_overprint_sep_fill_rectangle_2(tdev, opdev->op_state == OP_STATE_FILL ?
                                                      opdev->retain_mask_fill : opdev->retain_mask_stroke,
                                                      x, y, width, height,
                                                      color, dev->memory);
@@ -1294,7 +1306,7 @@ overprint_fill_path(gx_device* pdev, const gs_gstate* pgs,
 {
     overprint_device_t* opdev = (overprint_device_t*)pdev;
 
-    opdev->is_fill_color = true;
+    opdev->op_state = OP_STATE_FILL;
     return gx_default_fill_path(pdev, pgs, ppath, params_fill,
                                          pdcolor, pcpath);
 }
@@ -1308,7 +1320,7 @@ overprint_stroke_path(gx_device* pdev, const gs_gstate* pgs,
     overprint_device_t* opdev = (overprint_device_t*)pdev;
     int code;
 
-    opdev->is_fill_color = false;
+    opdev->op_state = OP_STATE_STROKE;
 
     /* Stroke methods use fill path so set that to default to
        avoid mix up of is_fill_color */
@@ -1335,14 +1347,14 @@ overprint_fill_stroke_path(gx_device * pdev, const gs_gstate * pgs,
     int code;
     overprint_device_t *opdev = (overprint_device_t *)pdev;
 
-    opdev->is_fill_color = true;
+    opdev->op_state = OP_STATE_FILL;
     code = dev_proc(pdev, fill_path)(pdev, pgs, ppath, params_fill, pdevc_fill, pcpath);
     if (code < 0)
         return code;
+
     /* Set up for stroke */
-    opdev->is_fill_color = false;
+    opdev->op_state = OP_STATE_STROKE;
     code = dev_proc(pdev, stroke_path)(pdev, pgs, ppath, params_stroke, pdevc_stroke, pcpath);
-    opdev->is_fill_color = true;
     return code;
 }
 
@@ -1357,9 +1369,9 @@ overprint_text_begin(gx_device* dev, gs_gstate* pgs,
     overprint_device_t* opdev = (overprint_device_t*)dev;
 
     if (pgs->text_rendering_mode == 0)
-        opdev->is_fill_color = true;
+        opdev->op_state = OP_STATE_FILL;
     else if (pgs->text_rendering_mode == 1)
-        opdev->is_fill_color = false;
+        opdev->op_state = OP_STATE_STROKE;
 
     return gx_default_text_begin(dev, pgs, text, font,
         path, pdcolor, pcpath, mem, ppte);

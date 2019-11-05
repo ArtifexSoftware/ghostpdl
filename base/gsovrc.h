@@ -216,6 +216,12 @@
  *     closing of a device is not itself used as an error indication.
  */
 
+typedef enum {
+    OP_STATE_NONE = 0,
+    OP_STATE_FILL,
+    OP_STATE_STROKE,
+} OP_FS_STATE;
+
 typedef struct gs_overprint_params_s    gs_overprint_params_t;
 
 struct gs_overprint_params_s {
@@ -248,7 +254,8 @@ struct gs_overprint_params_s {
      * it is to be left unaffected.
      */
     gx_color_index  drawn_comps;
-    bool is_fill_color;            /* for fill_stroke_path we differentiate */
+    bool is_fill_color;      /* This tells us what the current color is for our set up */
+    OP_FS_STATE op_state;   /* This sets the state of the device for an upcoming command */
 };
 
 /*
