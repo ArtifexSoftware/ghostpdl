@@ -1572,9 +1572,15 @@ static int Memento_nonLeakBlocksLeaked(void)
     Memento_BlkHeader *blk = memento.used.head;
     while (blk)
     {
-        if ((blk->flags & Memento_Flag_KnownLeak) == 0)
+        Memento_BlkHeader *next;
+        int leaked;
+        VALGRIND_MAKE_MEM_DEFINED(blk, sizeof(*blk));
+        leaked = ((blk->flags & Memento_Flag_KnownLeak) == 0);
+        next = blk->next;
+        VALGRIND_MAKE_MEM_DEFINED(blk, sizeof(*blk));
+        if (leaked)
             return 1;
-        blk = blk->next;
+        blk = next;
     }
     return 0;
 }
@@ -1589,7 +1595,6 @@ void Memento_fin(void)
             Memento_listBlocks();
 #ifdef MEMENTO_DETAILS
             fprintf(stderr, "\n");
-            Memento_listBlockInfo();
 #endif
             Memento_breakpoint();
         }
