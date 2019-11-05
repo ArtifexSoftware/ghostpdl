@@ -1304,7 +1304,7 @@ currentdict /.pickcmap_with_no_xlatmap .undef
           TTFDEBUG { (\n1 setting alias: ) print dup ==only
                 ( to be the same as  ) print 2 index //== exec } if
 
-          7 index 2 index 3 -1 roll exch .forceput
+          7 index 2 index 3 -1 roll exch put
         } forall
         pop pop pop
       }
@@ -1322,7 +1322,7 @@ currentdict /.pickcmap_with_no_xlatmap .undef
           exch pop
           TTFDEBUG { (\n2 setting alias: ) print 1 index ==only
                      ( to use glyph index: ) print dup //== exec } if
-          5 index 3 1 roll .forceput
+          5 index 3 1 roll put
           //false
         }
         {
@@ -1339,7 +1339,7 @@ currentdict /.pickcmap_with_no_xlatmap .undef
         {                            %  CharStrings(dict) isunicode(boolean) cmap(dict) RAGL(dict) gname(name) codep(integer) gindex(integer)
           TTFDEBUG { (\3 nsetting alias: ) print 1 index ==only
                 ( to be index: ) print dup //== exec } if
-          exch pop 5 index 3 1 roll .forceput
+          exch pop 5 index 3 1 roll put
         }
         {
           pop pop
@@ -1369,7 +1369,7 @@ currentdict /.pickcmap_with_no_xlatmap .undef
       } ifelse
     ]
   TTFDEBUG { (Encoding: ) print dup === flush } if
-} .bind executeonly odef		% hides .forceput
+} .bind odef
 
 % ---------------- CIDFontType 2 font loading ---------------- %
 
