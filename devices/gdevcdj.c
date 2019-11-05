@@ -1787,7 +1787,7 @@ bjc_compress(const byte *row, const byte *end_row, byte *compressed)
     register byte test, test2;
 
     test = *exam;
-    while ( exam < end_row ) {
+    while ( exam + 1 < end_row ) {
       test2 = *++exam;
       if ( test == test2 )
           break;
