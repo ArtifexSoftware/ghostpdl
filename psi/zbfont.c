@@ -272,7 +272,7 @@ gs_font_map_glyph_to_unicode(gs_font *font, gs_glyph glyph, int ch, ushort *u, u
          * can't be a default value for FontInfo.GlyphNames2Unicode .
          */
     }
-    if (glyph <= GS_MIN_CID_GLYPH) {
+    if (glyph <= GS_MIN_CID_GLYPH && glyph != GS_NO_GLYPH) {
         UnicodeDecoding = zfont_get_to_unicode_map(font->dir);
         if (UnicodeDecoding != NULL && r_type(UnicodeDecoding) == t_dictionary)
             return gs_font_map_glyph_by_dict(font->memory, UnicodeDecoding, glyph, u, length);
