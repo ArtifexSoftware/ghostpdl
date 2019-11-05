@@ -2550,6 +2550,19 @@ incorrect) rendering of pages containing PDF 1.4 transparency and
 </dl>
 
 <dl>
+    <dt><code>-dALLOWPSTRANSPARENCY</code></dt>
+<dd>
+Enables the use of the Ghostscript custom transparency operators
+(<a href="Language.htm#Transparency">Transparency</a>) from
+Postscript input. Normally, these operators are not accessible from Postscript
+jobs, being primarily intended to be called by the PDF interpreter. Using
+<code>-dALLOWPSTRANSPARENCY</code> leaves them available. It is important that
+these operators are used correctly, especially the order in which they are called,
+otherwise unintended, even undefined behavior may result.
+</dd>
+</dl>
+
+<dl>
     <dt><code>-dNO_TN5044</code></dt>
 <dd>Turns off the TN 5044 psuedo operators. These psuedo operators are not a part
 of the official Postscript specification. However they are defined in <i>Technical
