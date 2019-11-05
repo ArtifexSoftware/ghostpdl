@@ -714,10 +714,10 @@ swap_color_index(int depth, gx_color_index color)
  * is separable.
  */
 static void
-set_retain_mask(overprint_device_t * opdev)
+set_retain_mask(overprint_device_t * opdev, bool is_fill_color)
 {
     uchar i, ncomps = opdev->color_info.num_components;
-    gx_color_index  drawn_comps = opdev->is_fill_color ?
+    gx_color_index  drawn_comps = is_fill_color ?
                                   opdev->drawn_comps_fill : opdev->drawn_comps_stroke;
     gx_color_index retain_mask = 0;
 #if !ARCH_IS_BIG_ENDIAN
@@ -732,7 +732,7 @@ set_retain_mask(overprint_device_t * opdev)
     if (depth > 8)
         retain_mask = swap_color_index(depth, retain_mask);
 #endif
-    if (opdev->is_fill_color)
+    if (is_fill_color)
         opdev->retain_mask_fill = retain_mask;
     else
         opdev->retain_mask_stroke = retain_mask;
@@ -817,7 +817,7 @@ update_overprint_params(
 
     /* if appropriate, update the retain_mask field */
     if (colors_are_separable_and_linear(&opdev->color_info))
-        set_retain_mask(opdev);
+        set_retain_mask(opdev, pparams->is_fill_color);
 
     return 0;
 }
