@@ -645,7 +645,10 @@ lips4type_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream, int 
       {
         if (!(lprn->CompBuf = gs_malloc(pdev->memory->non_gc_memory, bpl * 3 / 2 + 1, maxY, "(CompBuf)")))
           return_error(gs_error_VMerror);
-        if (!(lprn->CompBuf2 = gs_malloc(pdev->memory->non_gc_memory, bpl * 3 / 2 + 1, maxY, "(CompBuf2)")))
+        
+        /* This buffer is used by lips_rle_encode(), which can require double
+        input size plus 2 bytes. */
+        if (!(lprn->CompBuf2 = gs_malloc(pdev->memory->non_gc_memory, bpl * 2 + 2, maxY, "(CompBuf2)")))
           return_error(gs_error_VMerror);
 
         if (lprn->NegativePrint) {
