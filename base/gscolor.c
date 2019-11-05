@@ -223,7 +223,7 @@ gx_set_device_color_1(gs_gstate * pgs)
     if (pgs->stroke_overprint)
         gs_setstrokeoverprint(pgs, false);
     if (pgs->overprint)
-        gs_setoverprint(pgs, false);
+        gs_setfilloverprint(pgs, false);
 
     pcs = gs_cspace_new_DeviceGray(pgs->memory);
     if (pcs) {

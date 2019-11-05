@@ -372,6 +372,7 @@ static dev_proc_get_color_comp_index(overprint_get_color_comp_index);
 static dev_proc_fill_stroke_path(overprint_fill_stroke_path);
 static dev_proc_fill_path(overprint_fill_path);
 static dev_proc_stroke_path(overprint_stroke_path);
+static dev_proc_text_begin(overprint_text_begin);
 
 static const gx_device_procs no_overprint_procs = {
     overprint_open_device,              /* open_device */
@@ -528,7 +529,7 @@ static const gx_device_procs generic_overprint_procs = {
     0,                                  /* map_color_rgb_alpha */
     overprint_create_compositor,        /* create_compositor */
     0,                                  /* get_hardware_params */
-    gx_default_text_begin,              /* text_begin */
+    overprint_text_begin,              /* text_begin */
     0,                                  /* gx_finish_copydevice */
     0,                                  /* begin_transparency_group */
     0,                                  /* end_transparency_group */
@@ -606,7 +607,7 @@ static const gx_device_procs sep_overprint_procs = {
     0,                                  /* map_color_rgb_alpha */
     overprint_create_compositor,        /* create_compositor */
     0,                                  /* get_hardware_params */
-    gx_default_text_begin,              /* text_begin */
+    overprint_text_begin,               /* text_begin */
     0,                                  /* gx_finish_copydevice */
     0,                                  /* begin_transparency_group */
     0,                                  /* end_transparency_group */
@@ -749,14 +750,10 @@ update_overprint_params(
     overprint_device_t* opdev,
     const gs_overprint_params_t* pparams)
 {
-    /* Let the overprint device know if this was a stroke
-       or a fill color.  If the index was 0 then it was
-       a stroke color.  Otherwise it was a fill.  Also,
-       we can only turn off the overprint compositor if
+    /* We can only turn off the overprint compositor if
        BOTH the stroke and fill op are false.  Otherwise
        we will turn it off when setting one and turn on
        when setting the other (or vice versa) */
-    opdev->is_fill_color = pparams->is_fill_color;
 
     if_debug4m(gs_debug_flag_overprint, opdev->memory,
         "[overprint] update_overprint_params enter. retain_any_comps = %d, idle = %d, drawn_comps = 0x%x, is_fill_color = %d\n",
@@ -764,7 +761,7 @@ update_overprint_params(
 
     /* check if overprint is to be turned off */
     if (!pparams->retain_any_comps || pparams->idle) {
-        if (opdev->is_fill_color) {
+        if (pparams->is_fill_color) {
             opdev->retain_none_fill = true;
             opdev->drawn_comps_fill = 
                 ((gx_color_index)1 << (opdev->color_info.num_components)) - (gx_color_index)1;
@@ -806,7 +803,7 @@ update_overprint_params(
             "[overprint] overprint procs set to generic\n");
     }
 
-    if (opdev->is_fill_color) {
+    if (pparams->is_fill_color) {
         opdev->retain_none_fill = false;
         opdev->drawn_comps_fill = pparams->drawn_comps;
     } else {
@@ -935,7 +932,6 @@ overprint_create_compositor(
             params.idle, opdev->is_idle, params.is_fill_color, opdev->is_fill_color, params.drawn_comps, opdev->drawn_comps_fill, opdev->drawn_comps_stroke);
 
         if (!params.retain_any_comps || params.idle != opdev->is_idle ||
-            params.is_fill_color != opdev->is_fill_color ||
             params.drawn_comps != (params.is_fill_color ?
             opdev->drawn_comps_fill : opdev->drawn_comps_stroke)
             )
@@ -1348,6 +1344,25 @@ overprint_fill_stroke_path(gx_device * pdev, const gs_gstate * pgs,
     code = dev_proc(pdev, stroke_path)(pdev, pgs, ppath, params_stroke, pdevc_stroke, pcpath);
     opdev->is_fill_color = true;
     return code;
+}
+
+/* We need to make sure we are set up properly based upon the text mode */
+int
+overprint_text_begin(gx_device* dev, gs_gstate* pgs,
+    const gs_text_params_t* text, gs_font* font,
+    gx_path* path, const gx_device_color* pdcolor,
+    const gx_clip_path* pcpath,
+    gs_memory_t* mem, gs_text_enum_t** ppte)
+{
+    overprint_device_t* opdev = (overprint_device_t*)dev;
+
+    if (pgs->text_rendering_mode == 0)
+        opdev->is_fill_color = true;
+    else if (pgs->text_rendering_mode == 1)
+        opdev->is_fill_color = false;
+
+    return gx_default_text_begin(dev, pgs, text, font,
+        path, pdcolor, pcpath, mem, ppte);
 }
 
 /* complete a procedure set */
