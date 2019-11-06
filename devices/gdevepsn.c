@@ -159,10 +159,10 @@ eps_print_page(gx_device_printer *pdev, gp_file *prn_stream, int y_9pin_high,
         int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
         /* Note that in_size is a multiple of 8. */
         int in_size = line_size * (8 * in_y_mult);
-        byte *buf1 = (byte *)gs_malloc(pdev->memory, in_size, 1, "eps_print_page(buf1)");
-        byte *buf2 = (byte *)gs_malloc(pdev->memory, in_size, 1, "eps_print_page(buf2)");
-        byte *in = buf1;
-        byte *out = buf2;
+        byte *buf1;
+        byte *buf2;
+        byte *in;
+        byte *out;
         int out_y_mult = (y_24pin ? 3 : 1);
         int x_dpi = (int)pdev->x_pixels_per_inch;
         char start_graphics =
@@ -174,6 +174,17 @@ eps_print_page(gx_device_printer *pdev, gp_file *prn_stream, int y_9pin_high,
         int bytes_per_space = dots_per_space * out_y_mult;
         int tab_min_pixels = x_dpi * MIN_TAB_10THS / 10;
         int skip = 0, lnum = 0, pass, ypass;
+        
+        if (bytes_per_space == 0) {
+            /* This avoids divide by zero later on, bug 701843. */
+            return_error(gs_error_rangecheck);
+        }
+        
+        buf1 = (byte *)gs_malloc(pdev->memory, in_size, 1, "eps_print_page(buf1)");
+        buf2 = (byte *)gs_malloc(pdev->memory, in_size, 1, "eps_print_page(buf2)");
+        in = buf1;
+        out = buf2;
+        
 
         /* Check allocations */
         if ( buf1 == 0 || buf2 == 0 )
