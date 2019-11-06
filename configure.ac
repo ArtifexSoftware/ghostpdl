@@ -3301,6 +3301,7 @@ if test x"$build" != x"$host"; then
   AC_CHECK_ALIGNOF([short])
   AC_CHECK_ALIGNOF([int])
   AC_CHECK_ALIGNOF([long])
+  AC_CHECK_ALIGNOF([size_t])
   AC_CHECK_ALIGNOF([void *])
   AC_CHECK_ALIGNOF([float])
   AC_CHECK_ALIGNOF([double])
@@ -3308,6 +3309,7 @@ if test x"$build" != x"$host"; then
   AC_SUBST(ARCH_ALIGN_SHORT_MOD, $ac_cv_alignof_short)
   AC_SUBST(ARCH_ALIGN_INT_MOD, $ac_cv_alignof_int)
   AC_SUBST(ARCH_ALIGN_LONG_MOD, $ac_cv_alignof_long)
+  AC_SUBST(ARCH_ALIGN_SIZE_T_MOD, $ac_cv_alignof_size_t)
   AC_SUBST(ARCH_ALIGN_PTR_MOD, $ac_cv_alignof_void_p)
   AC_SUBST(ARCH_ALIGN_FLOAT_MOD, $ac_cv_alignof_float)
   AC_SUBST(ARCH_ALIGN_DOUBLE_MOD, $ac_cv_alignof_double)
@@ -3317,6 +3319,7 @@ if test x"$build" != x"$host"; then
   AC_CHECK_SIZEOF([int])
   AC_CHECK_SIZEOF([long])
   AC_CHECK_SIZEOF([long long])
+  AC_CHECK_SIZEOF([size_t])
   AC_CHECK_SIZEOF([void *])
   AC_CHECK_SIZEOF([float])
   AC_CHECK_SIZEOF([double])
@@ -3335,6 +3338,10 @@ if test x"$build" != x"$host"; then
 
   ilog2 $ac_cv_sizeof_long_long
   AC_SUBST(ARCH_LOG2_SIZEOF_LONG_LONG, $?)
+
+  ilog2 $ac_cv_sizeof_size_t
+  AC_SUBST(ARCH_LOG2_SIZEOF_SIZE_T, $?)
+  AC_SUBST(ARCH_SIZEOF_SIZE_T, $ac_cv_sizeof_size_t)
 
   AC_SUBST(ARCH_SIZEOF_PTR, $ac_cv_sizeof_void_p)
   ilog2 $ac_cv_sizeof_void_p
