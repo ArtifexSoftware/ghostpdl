@@ -202,19 +202,23 @@ epsc_print_page(gx_device_printer * pdev, gp_file * prn_stream)
         return_error(gs_error_rangecheck);
     }
     
-    in =
-        (byte *) gs_malloc(pdev->memory, in_size + 1, 1,
-                           "epsc_print_page(in)");
-    out =
-        (byte *) gs_malloc(pdev->memory, out_size + 1, 1,
-                           "epsc_print_page(out)");
-
     start_graphics = (char)
         ((y_24pin ? graphics_modes_24 : graphics_modes_9)[x_dpi / 60]);
     first_pass = (start_graphics & DD ? 1 : 0);
     last_pass = first_pass * 2;
     dots_per_space = x_dpi / 10;    /* pica space = 1/10" */
     bytes_per_space = dots_per_space * y_mult;
+    if (bytes_per_space == 0) {
+        /* This avoids divide by zero later on, bug 701843. */
+        return_error(gs_error_rangecheck);
+    }
+
+    in =
+        (byte *) gs_malloc(pdev->memory, in_size + 1, 1,
+                           "epsc_print_page(in)");
+    out =
+        (byte *) gs_malloc(pdev->memory, out_size + 1, 1,
+                           "epsc_print_page(out)");
 
     /* declare color buffer and related vars */
     spare_bits = (pdev->width % 8); /* left over bits to go to margin */
