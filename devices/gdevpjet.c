@@ -24,10 +24,6 @@
 #define X_DPI 180
 #define Y_DPI 180
 
-/* We round up LINE_SIZE to a multiple of 8 bytes */
-/* because that's the unit of transposition from pixels to planes. */
-#define LINE_SIZE ((X_DPI * 85 / 10 + 63) / 64 * 8)
-
 /* The device descriptors */
 static dev_proc_print_page(lj250_print_page);
 static dev_proc_print_page(paintjet_print_page);
@@ -101,29 +97,45 @@ static int
 pj_common_print_page(gx_device_printer *pdev, gp_file *prn_stream, int y_origin,
   const char *end_page)
 {
-#define DATA_SIZE (LINE_SIZE * 8)
-        byte *data =
-                (byte *)gs_malloc(pdev->memory, DATA_SIZE, 1,
+        int line_size;
+        int data_size;
+        byte *data;
+        byte *plane_data;
+        byte *temp;
+
+        /* We round up line_size to a multiple of 8 bytes */
+        /* because that's the unit of transposition from pixels to planes. */
+        line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
+        line_size = (line_size + 7) / 8 * 8;
+        data_size = line_size * 8;
+
+        data =
+                (byte *)gs_malloc(pdev->memory, data_size, 1,
                                   "paintjet_print_page(data)");
-        byte *plane_data =
-                (byte *)gs_malloc(pdev->memory, LINE_SIZE * 3, 1,
+        plane_data =
+                (byte *)gs_malloc(pdev->memory, line_size * 3, 1,
                                   "paintjet_print_page(plane_data)");
-        if ( data == 0 || plane_data == 0 )
+        temp = gs_malloc(pdev->memory, line_size * 2, 1, "paintjet_print_page(temp)");
+
+        if ( data == 0 || plane_data == 0 || temp == 0)
         {	if ( data )
-                        gs_free(pdev->memory, (char *)data, DATA_SIZE, 1,
+                        gs_free(pdev->memory, (char *)data, data_size, 1,
                                 "paintjet_print_page(data)");
                 if ( plane_data )
-                        gs_free(pdev->memory, (char *)plane_data, LINE_SIZE * 3, 1,
+                        gs_free(pdev->memory, (char *)plane_data, line_size * 3, 1,
                                 "paintjet_print_page(plane_data)");
+                if (temp)
+                        gs_free(pdev->memory, temp, line_size * 2, 1,
+                                "paintjet_print_page(temp)");
                 return_error(gs_error_VMerror);
         }
-        memset(data, 0x00, DATA_SIZE);
+        memset(data, 0x00, data_size);
 
         /* set raster graphics resolution -- 90 or 180 dpi */
         gp_fprintf(prn_stream, "\033*t%dR", X_DPI);
 
         /* set the line width */
-        gp_fprintf(prn_stream, "\033*r%dS", DATA_SIZE);
+        gp_fprintf(prn_stream, "\033*r%dS", data_size);
 
         /* set the number of color planes */
         gp_fprintf(prn_stream, "\033*r%dU", 3);		/* always 3 */
@@ -139,7 +151,6 @@ pj_common_print_page(gx_device_printer *pdev, gp_file *prn_stream, int y_origin,
 
         /* Send each scan line in turn */
            {	int lnum;
-                int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
                 int num_blank_lines = 0;
                 for ( lnum = 0; lnum < pdev->height; lnum++ )
                    {	byte *end_data = data + line_size;
@@ -162,7 +173,7 @@ pj_common_print_page(gx_device_printer *pdev, gp_file *prn_stream, int y_origin,
                                 memset(end_data, 0, 7);
 
                                 /* Transpose the data to get pixel planes. */
-                                for ( i = 0, odp = plane_data; i < DATA_SIZE;
+                                for ( i = 0, odp = plane_data; i < data_size;
                                       i += 8, odp++
                                     )
                                  { /* The following is for 16-bit machines */
@@ -182,8 +193,8 @@ pj_common_print_page(gx_device_printer *pdev, gp_file *prn_stream, int y_origin,
                                      (spr2[dp[6]]) +
                                      (spr2[dp[7]] >> 1);
                                    odp[0] = (byte)(pword >> 16);
-                                   odp[LINE_SIZE] = (byte)(pword >> 8);
-                                   odp[LINE_SIZE*2] = (byte)(pword);
+                                   odp[line_size] = (byte)(pword >> 8);
+                                   odp[line_size*2] = (byte)(pword);
                                  }
                                 /* Skip blank lines if any */
                                 if ( num_blank_lines > 0 )
@@ -195,11 +206,11 @@ pj_common_print_page(gx_device_printer *pdev, gp_file *prn_stream, int y_origin,
 
                                 /* Transfer raster graphics */
                                 /* in the order R, G, B. */
-                                for ( row = plane_data + LINE_SIZE * 2, i = 0;
-                                      i < 3; row -= LINE_SIZE, i++
+                                for ( row = plane_data + line_size * 2, i = 0;
+                                      i < 3; row -= line_size, i++
                                     )
-                                   {	byte temp[LINE_SIZE * 2];
-                                        int count = compress1_row(row, row + LINE_SIZE, temp);
+                                   {
+                                        int count = compress1_row(row, row + line_size, temp);
                                         gp_fprintf(prn_stream, "\033*b%d%c",
                                                    count, "VVW"[i]);
                                         gp_fwrite(temp, sizeof(byte),
@@ -212,8 +223,9 @@ pj_common_print_page(gx_device_printer *pdev, gp_file *prn_stream, int y_origin,
         /* end the page */
         gp_fputs(end_page, prn_stream);
 
-        gs_free(pdev->memory, (char *)data, DATA_SIZE, 1, "paintjet_print_page(data)");
-        gs_free(pdev->memory, (char *)plane_data, LINE_SIZE * 3, 1, "paintjet_print_page(plane_data)");
+        gs_free(pdev->memory, (char *)data, data_size, 1, "paintjet_print_page(data)");
+        gs_free(pdev->memory, (char *)plane_data, line_size * 3, 1, "paintjet_print_page(plane_data)");
+        gs_free(pdev->memory, temp, line_size * 2, 1, "paintjet_print_page(temp)");
 
         return 0;
 }
