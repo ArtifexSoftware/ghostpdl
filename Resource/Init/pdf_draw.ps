@@ -2315,6 +2315,9 @@ currentdict /last-ditch-bpc-csp undef
 
 /doimage {	% <imagemask> doimage -
                 % imagedict is currentdict, gets popped from dstack
+  %% We must save the colour space, in case it gets changed. I did try doing this
+  %% at a higher level (/Do) but that caused numerous problems with pdfwrite.
+  currentcolorspace exch
   %% save the current rendering intent
   .currentrenderintent exch
 
@@ -2360,6 +2363,13 @@ currentdict /last-ditch-bpc-csp undef
 
   %% restore the rendering intent
   .setrenderingintent
+
+  %% and restore the colour space. We need to do this in a stopped context because
+  %% if we are rendering a glyph, the cache device will throw an error if we try
+  %% to change colour space (even when the new space is the same as the old space)
+  %% We can't tell if we are rendering a bitmap for a glyph, and its hard to compare
+  %% colour spaces, so just ignore errors for now.
+  {setcolorspace} stopped {pop} if
 
   teardown_trans
 } bind executeonly def
@@ -3043,7 +3053,7 @@ end
       } ifelse
     } ifelse
   }
-  { 0 setgray //true} ifelse
+  { //false } ifelse
 } bind executeonly def
 
 % Draw the border.  Currently, we ignore requests for beveling, and we
