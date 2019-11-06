@@ -901,7 +901,7 @@ if test "$enable_fontconfig" != "no"; then
                 if $PKGCONFIG --exists fontconfig; then
                         AC_MSG_RESULT(yes)
                         FONTCONFIG_CFLAGS="$CFLAGS `$PKGCONFIG --cflags fontconfig`"
-                        FONTCONFIG_LIBS="`$PKGCONFIG --libs fontconfig`"
+                        FONTCONFIG_LIBS="`$PKGCONFIG --libs-only-l fontconfig`"
                         HAVE_FONTCONFIG=-DHAVE_FONTCONFIG
                 else
                         AC_MSG_RESULT(no)
@@ -1041,7 +1041,7 @@ if test x"$enable_fapi" != xno; then
             if $PKGCONFIG --atleast-version=12.0.6 freetype2; then
                 AC_MSG_RESULT(yes)
                 FT_CFLAGS="$CFLAGS `$PKGCONFIG --cflags freetype2`"
-                FT_LIBS="`$PKGCONFIG --libs freetype2`"
+                FT_LIBS="`$PKGCONFIG --libs-only-l freetype2`"
                 FT_BRIDGE=1
                 SHARE_FT=1
             else
