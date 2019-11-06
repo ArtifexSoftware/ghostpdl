@@ -185,7 +185,10 @@ lp8000_print_page(gx_device_printer *pdev, gp_file *prn_stream)
         unsigned int report_size;
 
         byte *buf1 = (byte *)gs_malloc(pdev->memory, in_size, 1, "lp8000_print_page(buf1)");
-        byte *buf2 = (byte *)gs_malloc(pdev->memory, in_size, 1, "lp8000_print_page(buf2)");
+
+        /* Worst case for rle compression below is 3 bytes for each 2 bytes of
+        input, with extra final byte. */
+        byte *buf2 = (byte *)gs_malloc(pdev->memory, in_size * 3 / 2 + 2, 1, "lp8000_print_page(buf2)");
         byte *in = buf1;
         byte *out = buf2;
 
