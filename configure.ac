@@ -822,23 +822,38 @@ AC_ARG_WITH(libidn,
             [AC_HELP_STRING([--without-libidn],
                                [Do not use libidn to support Unicode passwords])],,
             [with_libidn=maybe])
+
 if test x$with_libidn != xno; then
-  AC_CHECK_LIB(idn, stringprep, [
-    with_libidn=no
-    AC_CHECK_HEADER([stringprep.h], [with_libidn=yes])
-    ], [
-    if test x$with_libidn != xmaybe; then
-      AC_MSG_ERROR([libidn not found])
+  if test x"$PKGCONFIG" != x""; then
+    AC_MSG_CHECKING(for libidn with pkg-config)
+    if $PKGCONFIG --exists libidn; then
+            AC_MSG_RESULT(yes)
+            LIBS="$LIBS `$PKGCONFIG --libs libidn`"
+            HAVE_LIBIDN=-DHAVE_LIBIDN
+    else
+            AC_MSG_RESULT(no)
     fi
-    with_libidn=no
-  ])
+  fi
+  if test -z "$HAVE_LIBIDN"; then
+    AC_CHECK_LIB(idn, stringprep, [
+        with_libidn=no
+        AC_CHECK_HEADER([stringprep.h],
+        [
+          with_libidn=yes
+          HAVE_LIBIDN="-DHAVE_LIBIDN"
+          LIBS="$LIBS -lidn"
+        ])
+        ], [
+        if test x$with_libidn != xmaybe; then
+          AC_MSG_ERROR([libidn not found])
+        fi
+        with_libidn=no
+    ])
+  fi
 fi
-HAVE_LIBIDN=''
+
 UTF8DEVS=''
 if test x$with_libidn != xno; then
-  HAVE_LIBIDN=-DHAVE_LIBIDN
-  LIBS="$LIBS -lidn"
-
   if test x$found_iconv != xno; then
     UTF8DEVS='$(PSD)utf8.dev'
   fi
