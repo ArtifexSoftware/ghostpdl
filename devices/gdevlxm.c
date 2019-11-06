@@ -296,17 +296,26 @@ quit_ignomiously: /* and a goto into an if statement is pretty ignomious! */
                     sxBy8 = sx/8;
                     sxMask = 0x80>>(sx%8);
 
-                    /* loop through all the swipeHeight bits of this column */
-                    for (i = 0, b=1, y= sxBy8+j1*line_size; i < directorySize; i++,b<<=1) {
-                        sum = false;
-                        for (j=j1,c=c1 /*,y=i*16*line_size+sxBy8*/; j<16; j+=2, y+=2*line_size, c>>=2) {
-                            f = (in[y]&sxMask);
-                            if (f) {
-                                words[i] |= c;
-                                sum |= f;
+                    /* loop through all the swipeHeight bits of this column.
+                    
+                    Note that <sx> looks like it can get out of range, so we
+                    check for this here. This fixes bug 701842.
+
+                    [An alternative might be to change above code from 'maxX
+                    = (maxX+3)&-2' to 'maxX = (maxX+1)&-2', but that might be
+                    risky. */
+                    if (sx < pdev->width) {
+                        for (i = 0, b=1, y= sxBy8+j1*line_size; i < directorySize; i++,b<<=1) {
+                            sum = false;
+                            for (j=j1,c=c1 /*,y=i*16*line_size+sxBy8*/; j<16; j+=2, y+=2*line_size, c>>=2) {
+                                f = (in[y]&sxMask);
+                                if (f) {
+                                    words[i] |= c;
+                                    sum |= f;
+                                }
                             }
+                            if (!sum) directory |=b;
                         }
-                        if (!sum) directory |=b;
                     }
                     retval+=2;
                     buffer_store(directory>>8); buffer_store(directory&0xff);
