@@ -60,12 +60,12 @@ int hpgl_print_error(const gs_memory_t * mem,
 /* syntactically. */
 
 #define hpgl_call_and_check(mem, call, if_check_else)\
-do {						\
-  int code; 					\
-  if ((code = (call)) < 0)			\
-    { if_check_else()				\
-        return hpgl_call_note_error(mem, code);	\
-    }						\
+do {\
+  int hpgl_call_and_check_code;\
+  if ((hpgl_call_and_check_code = (call)) < 0)\
+    { if_check_else()\
+        return hpgl_call_note_error(mem, hpgl_call_and_check_code);\
+    }\
 } while (0)
 
 /* Ordinary function calls */

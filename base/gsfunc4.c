@@ -305,9 +305,16 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
             vsp->value.f = gs_cos_degrees(vsp->value.f);
             continue;
         case PtCr_cvi:
-            vsp->value.i = (int)(vsp->value.f);
+        {
+           /* Strictly speaking assigning one element of union
+            * to another, overlapping element of a different size is
+            * undefined behavior, hence assign to an intermediate variable
+            */
+            int int1 = (int)(vsp->value.f);
+            vsp->value.i = int1;
             vsp->type = CVT_INT;
             continue;
+        }
         case PtCr_cvr:
             continue;	/* prepare handled it */
         case PtCr_div:

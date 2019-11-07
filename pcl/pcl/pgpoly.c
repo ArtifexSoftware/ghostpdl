@@ -177,13 +177,24 @@ hpgl_EP(hpgl_args_t * pargs, hpgl_state_t * pgls)
 {
     /* preserve the current path and copy the polygon buffer to
        the current path */
-    hpgl_call(hpgl_gsave(pgls));
-    hpgl_call(hpgl_copy_polygon_buffer_to_current_path(pgls));
+    int code = hpgl_gsave(pgls);
+    if (code < 0)
+        return code;
+
+    code = hpgl_copy_polygon_buffer_to_current_path(pgls);
+    if (code < 0)
+        goto fail;
+
     hpgl_set_hpgl_path_mode(pgls, true);
-    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector_no_close));
+    code = hpgl_draw_current_path(pgls, hpgl_rm_vector_no_close);
+    if (code < 0)
+        goto fail;
     hpgl_set_hpgl_path_mode(pgls, false);
-    hpgl_call(hpgl_grestore(pgls));
-    return 0;
+    return hpgl_grestore(pgls);
+
+fail:
+    (void)hpgl_grestore(pgls);
+    return code;
 }
 
 /* ER dx,dy; */

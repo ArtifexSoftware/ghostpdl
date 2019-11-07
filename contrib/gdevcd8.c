@@ -438,10 +438,10 @@ static int (* const rescale_color_plane[2][2]) (int, const byte *, const byte *,
  * Drivers stuff.
  *
  */
-#define DESKJET_PRINT_LIMIT  0.04	/* 'real' top margin? */
+#define DESKJET_PRINT_LIMIT  0.04f	/* 'real' top margin? */
 /* Margins are left, bottom, right, top. */
-#define DESKJET_MARGINS_LETTER   0.25, 0.50, 0.25, 0.167
-#define DESKJET_MARGINS_A4       0.13, 0.46, 0.13, 0.04
+#define DESKJET_MARGINS_LETTER   0.25f, 0.50f, 0.25f, 0.167f
+#define DESKJET_MARGINS_A4       0.13f, 0.46f, 0.13f, 0.04f
 /* Define bits-per-pixel - default is 32-bit cmyk-mode */
 #ifndef BITSPERPIXEL
 #  define BITSPERPIXEL 32
@@ -891,20 +891,20 @@ hp_colour_open(gx_device * pdev)
 
     /* margins for DJ1600C from manual */
     static const float m_cdj1600[4] = {
-        0.25, 0.5, 0.25, 0.5
+        0.25f, 0.5f, 0.25f, 0.5f
     };
 
     /* margins for HP2200C */
     static const float chp2200_a4[4] = {
-        0.13, 0.46, 0.13, 0.08
+        0.13f, 0.46f, 0.13f, 0.08f
     };
     static const float chp2200_letter[4] = {
-        0.25, 0.46, 0.25, 0.08
+        0.25f, 0.46f, 0.25f, 0.08f
     };
 
     /* margins for DNJ500C */
     static const float cdnj500[4] = {
-        0.00, 0.00, 0.00, 0.00
+        0.00f, 0.00f, 0.00f, 0.00f
     };
 
     const float *m = (float *)0;
@@ -1091,13 +1091,13 @@ cdj850_put_params(gx_device * pdev, gs_param_list * plist)
     code = cdj_put_param_int(plist, "BitsPerPixel", &bpp, 1, 32, code);
     code = cdj_put_param_int(plist, "Quality", &quality, 0, 2, code);
     code = cdj_put_param_int(plist, "Papertype", &papertype, 0, 4, code);
-    code = cdj_put_param_float(plist, "MasterGamma", &mastergamma, 0.1, 9.0, code);
-    code = cdj_put_param_float(plist, "GammaValC", &gammavalc, 0.0, 9.0, code);
-    code = cdj_put_param_float(plist, "GammaValM", &gammavalm, 0.0, 9.0, code);
-    code = cdj_put_param_float(plist, "GammaValY", &gammavaly, 0.0, 9.0, code);
-    code = cdj_put_param_float(plist, "GammaValK", &gammavalk, 0.0, 9.0, code);
-    code = cdj_put_param_float(plist, "BlackCorrect", &blackcorrect, 0.0,
-                               9.0, code);
+    code = cdj_put_param_float(plist, "MasterGamma", &mastergamma, 0.1f, 9.0f, code);
+    code = cdj_put_param_float(plist, "GammaValC", &gammavalc, 0.0f, 9.0f, code);
+    code = cdj_put_param_float(plist, "GammaValM", &gammavalm, 0.0f, 9.0f, code);
+    code = cdj_put_param_float(plist, "GammaValY", &gammavaly, 0.0f, 9.0f, code);
+    code = cdj_put_param_float(plist, "GammaValK", &gammavalk, 0.0f, 9.0f, code);
+    code = cdj_put_param_float(plist, "BlackCorrect", &blackcorrect, 0.0f,
+                               9.0f, code);
 
     if (code < 0)
         return code;
@@ -1830,8 +1830,8 @@ cdnj500_print_page(gx_device_printer * pdev, gp_file * prn_stream)
     /*                      |Horz Res   |Vert Rez   |compr|orien|bits |planes*/
 
     /* x,y resolution for color planes, assume x=y */
-    int xres = cdj850->x_pixels_per_inch;
-    int yres = cdj850->y_pixels_per_inch;
+    int xres = (int)cdj850->x_pixels_per_inch;
+    int yres = (int)cdj850->y_pixels_per_inch;
 
     gs_memory_t *mem = pdev->memory;
     int width_in_pixels = pdev->width;
@@ -2002,7 +2002,7 @@ send_scan_lines(gx_device_printer * pdev,
     word rmask =
     ~(word) 0 << ((-pdev->width * misc_vars->storage_bpp) & (W * 8 - 1));
 
-    lend = pdev->height - (dev_t_margin(pdev) + dev_b_margin(pdev)) * y_dpi;
+    lend = (int)(pdev->height - (dev_t_margin(pdev) + dev_b_margin(pdev)) * y_dpi);
 
     error_values->c = error_values->m = error_values->y =
         error_values->k = 0;
@@ -3136,11 +3136,11 @@ cdj850_start_raster_mode(gx_device_printer * pdev, int paper_size,
     init.a[25] = cdj850->intensities;	/* Intensity levels yellow */
 
     /* black plane resolution */
-    assign_dpi(cdj850->x_pixels_per_inch, init.a + 2);
-    assign_dpi(cdj850->y_pixels_per_inch, init.a + 4);
+    assign_dpi((int)cdj850->x_pixels_per_inch, init.a + 2);
+    assign_dpi((int)cdj850->y_pixels_per_inch, init.a + 4);
     /* color plane resolution */
-    xres = cdj850->x_pixels_per_inch / (cdj850->xscal + 1);
-    yres = cdj850->y_pixels_per_inch / (cdj850->yscal + 1);
+    xres = (int)(cdj850->x_pixels_per_inch / (cdj850->xscal + 1));
+    yres = (int)(cdj850->y_pixels_per_inch / (cdj850->yscal + 1));
     /* cyan */
     assign_dpi(xres, init.a + 8);
     assign_dpi(yres, init.a + 10);
@@ -3195,11 +3195,11 @@ cdj880_start_raster_mode(gx_device_printer * pdev, int paper_size,
     init.a[25] = cdj850->intensities;	/* Intensity levels yellow */
 
     /* black plane resolution */
-    assign_dpi(cdj850->x_pixels_per_inch, init.a + 2);
-    assign_dpi(cdj850->y_pixels_per_inch, init.a + 4);
+    assign_dpi((int)cdj850->x_pixels_per_inch, init.a + 2);
+    assign_dpi((int)cdj850->y_pixels_per_inch, init.a + 4);
     /* color plane resolution */
-    xres = cdj850->x_pixels_per_inch / (cdj850->xscal + 1);
-    yres = cdj850->y_pixels_per_inch / (cdj850->yscal + 1);
+    xres = (int)(cdj850->x_pixels_per_inch / (cdj850->xscal + 1));
+    yres = (int)(cdj850->y_pixels_per_inch / (cdj850->yscal + 1));
     /* cyan */
     assign_dpi(xres, init.a + 8);
     assign_dpi(yres, init.a + 10);
@@ -3261,8 +3261,8 @@ chp2200_start_raster_mode(gx_device_printer * pdev, int paper_size,
     /*                      |Horz Res   |Vert Rez   |compr|orien|bits |planes*/
 
     /* x,y resolution for color planes, assume x=y */
-    int xres = cdj850->x_pixels_per_inch;
-    int yres = cdj850->y_pixels_per_inch;
+    int xres = (int)cdj850->x_pixels_per_inch;
+    int yres = (int)cdj850->y_pixels_per_inch;
     int width_in_pixels = cdj850->width;
 
     /* Exit from any previous language */
@@ -3322,7 +3322,7 @@ cdnj500_start_raster_mode(gx_device_printer * pdev, int paper_size,
                          gp_file * prn_stream)
 {
     /* x,y resolution for color planes, assume x=y */
-    int xres = cdj850->x_pixels_per_inch;
+    int xres = (int)cdj850->x_pixels_per_inch;
     float x = pdev->width  / pdev->x_pixels_per_inch * 10;
     float y = pdev->height / pdev->y_pixels_per_inch * 10;
 
@@ -3817,7 +3817,7 @@ gdev_pcl_map_color_rgb(gx_device * pdev, gx_color_index color,
         break;
         case 16:
         {
-            gx_color_value c = (gx_color_value) color ^ 0xffff;
+            gx_color_index c = (gx_color_index) color ^ 0xffff;
             ushort value = c >> 11;
 
             prgb[0] = ((value << 11) + (value << 6) + (value << 1) +
@@ -3832,7 +3832,7 @@ gdev_pcl_map_color_rgb(gx_device * pdev, gx_color_index color,
         break;
         case 24:
         {
-            gx_color_value c = (gx_color_value) color ^ 0xffffff;
+            gx_color_index c = (gx_color_index) color ^ 0xffffff;
 
             prgb[0] = gx_color_value_from_byte(c >> 16);
             prgb[1] = gx_color_value_from_byte((c >> 8) & 0xff);
@@ -3998,8 +3998,9 @@ static void
 cdj1600_start_raster_mode(gx_device_printer * pdev, int paper_size,
                           gp_file * prn_stream)
 {
-    uint raster_width = pdev->width -
-    pdev->x_pixels_per_inch * (dev_l_margin(pdev) + dev_r_margin(pdev));
+    uint raster_width = (int)(pdev->width -
+                              pdev->x_pixels_per_inch *
+                              (dev_l_margin(pdev) + dev_r_margin(pdev)));
 
     /* switch to PCL control language */
     gp_fputs("\033%-12345X@PJL enter language = PCL\n", prn_stream);

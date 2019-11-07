@@ -46,7 +46,7 @@ cif_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {	int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
         int lnum;
         byte *in = (byte *)gs_malloc(pdev->memory, line_size, 1, "cif_print_page(in)");
-        char *s;
+        char *s, *fname;
         int scanline, scanbyte;
         int length, start; /* length is the number of successive 1 bits, */
                            /* start is the set of 1 bit start position */
@@ -54,16 +54,22 @@ cif_print_page(gx_device_printer *pdev, gp_file *prn_stream)
         if (in == 0)
                 return_error(gs_error_VMerror);
 
-        if ((s = strchr(pdev->fname, '.')) == NULL)
-                length = strlen(pdev->fname) + 1;
+#ifdef CLUSTER
+        fname = "clusterout";
+#else
+        fname = pdev->fname;
+#endif
+        if ((s = strchr(fname, '.')) == NULL)
+                length = strlen(fname) + 1;
         else
-                length = s - pdev->fname;
-        s = (char *)gs_malloc(pdev->memory, length, sizeof(char), "cif_print_page(s)");
-
-        strncpy(s, pdev->fname, length);
+                length = s - fname;
+        s = (char *)gs_malloc(pdev->memory, length+1, sizeof(char), "cif_print_page(s)");
+        if (s == NULL)
+            return_error(gs_error_VMerror);
+        strncpy(s, fname, length);
         *(s + length) = '\0';
         gp_fprintf(prn_stream, "DS1 25 1;\n9 %s;\nLCP;\n", s);
-        gs_free(pdev->memory, s, length, 1, "cif_print_page(s)");
+        gs_free(pdev->memory, s, length+1, 1, "cif_print_page(s)");
 
    for (lnum = 0; lnum < pdev->height; lnum++) {
       gdev_prn_copy_scan_lines(pdev, lnum, in, line_size);

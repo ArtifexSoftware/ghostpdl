@@ -1667,8 +1667,14 @@ undelta(ref *ops, unsigned int cnt)
     unsigned int i;
 
     for (i = 0; i < cnt; i++) {
-        if (!r_has_type(&ops[i], t_real))
-            make_real(&ops[i], (float)ops[i].value.intval);
+        if (!r_has_type(&ops[i], t_real)) {
+            /* Strictly speaking assigning one element of union
+             * to another, overlapping element of a different size is
+             * undefined behavior, hence assign to an intermediate variable
+             */
+            float fl = (float)ops[i].value.intval;
+            make_real(&ops[i], fl);
+        }
     }
     for (i = 1; i < cnt; i++) {
         make_real(&ops[i], ops[i].value.realval + ops[i - 1].value.realval);

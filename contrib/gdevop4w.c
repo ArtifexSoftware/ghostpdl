@@ -81,8 +81,8 @@
  * inexact paperlength which is set to 117 10ths.
  * Somebody should check for letter sized paper. I left it at 0.07".
  */
-#define OKI4W_MARGINS_LETTER	0.125, 0.25, 0.125, 0.07
-#define OKI4W_MARGINS_A4	0.125, 0.25, 0.125, 0.07
+#define OKI4W_MARGINS_LETTER	0.125f, 0.25f, 0.125f, 0.07f
+#define OKI4W_MARGINS_A4	0.125f, 0.25f, 0.125f, 0.07f
 
 /* We round up the LINE_SIZE to a multiple of a ulong for faster scanning. */
 #define word ulong
@@ -241,8 +241,8 @@ oki4w_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 #define data ((byte *)data_words)
 #define out_row ((byte *)out_row_words)
         byte *out_data;
-        int x_dpi = pdev->x_pixels_per_inch;
-        int y_dpi = pdev->y_pixels_per_inch;
+        int x_dpi = (int)pdev->x_pixels_per_inch;
+        int y_dpi = (int)pdev->y_pixels_per_inch;
         int y_dots_per_pixel = x_dpi / y_dpi;
         int dpi_code, compress_code;
         int num_rows = dev_print_scan_lines(pdev);

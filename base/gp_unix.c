@@ -370,6 +370,12 @@ void *gp_enumerate_fonts_init(gs_memory_t *mem)
     os = FcObjectSetBuild(FC_FILE, FC_OUTLINE,
             FC_FAMILY, FC_WEIGHT, FC_SLANT,
             NULL);
+    /* We free the data allocated by FcFontList() when
+    gp_enumerate_fonts_free() calls FcFontSetDestroy(), but FcFontSetDestroy()
+    has been seen to leak blocks according to valgrind and asan. E.g. this can
+    be seen by running:
+        ./sanbin/gs -dNODISPLAY -dBATCH -dNOPAUSE -c "/A_Font findfont"
+    */
     state->font_list = FcFontList(0, pat, os);
     FcPatternDestroy(pat);
     FcObjectSetDestroy(os);

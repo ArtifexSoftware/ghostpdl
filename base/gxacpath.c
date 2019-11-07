@@ -228,8 +228,8 @@ gx_cpath_accum_end(gx_device_cpath_accum * padev, gx_clip_path * pcpath)
     apath.path_valid = false;
     apath.id = gs_next_ids(padev->list_memory, 1);	/* path changed => change id */
     apath.cached = NULL;
-    gx_cpath_assign_free(pcpath, &apath);
-    return 0;
+    code = gx_cpath_assign_free(pcpath, &apath);
+    return code;
 }
 
 /* Discard an accumulator in case of error. */

@@ -815,7 +815,7 @@ int pdf_set_PaintType0_params (gx_device_pdf *pdev, gs_gstate *pgs, float size,
             if (code < 0)
                 return code;
             if (pdev->text->text_state->in.render_mode == ptsv->render_mode){
-                code = pdf_prepare_stroke(pdev, pgs);
+                code = pdf_prepare_stroke(pdev, pgs, false);
                 if (code >= 0)
                     code = gdev_vector_prepare_stroke((gx_device_vector *)pdev,
                                               pgs, NULL, NULL, 1);

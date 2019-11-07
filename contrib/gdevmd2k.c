@@ -28,11 +28,11 @@
 #include <stdlib.h>
 #include <limits.h>
 
-#define MM_PER_INCH 25.4
-#define TOP_MARGIN    12. / MM_PER_INCH
-#define BOTTOM_MARGIN 15. / MM_PER_INCH
-#define LEFT_MARGIN   3.4 / MM_PER_INCH
-#define RIGHT_MARGIN  3.4 / MM_PER_INCH
+#define MM_PER_INCH 25.4f
+#define TOP_MARGIN    12.f / MM_PER_INCH
+#define BOTTOM_MARGIN 15.f / MM_PER_INCH
+#define LEFT_MARGIN   3.4f / MM_PER_INCH
+#define RIGHT_MARGIN  3.4f / MM_PER_INCH
 
 /* The device descriptor */
 static dev_proc_open_device(alps_open);
@@ -110,8 +110,8 @@ typedef enum {
 static int
 alps_open(gx_device *pdev)
 {
-    int xdpi = pdev->x_pixels_per_inch;
-    int ydpi = pdev->y_pixels_per_inch;
+    int xdpi = (int)pdev->x_pixels_per_inch;
+    int ydpi = (int)pdev->y_pixels_per_inch;
     const float margins[4] = {
         LEFT_MARGIN,
         BOTTOM_MARGIN,
@@ -129,10 +129,10 @@ alps_open(gx_device *pdev)
         return_error(gs_error_rangecheck);
 
     density = (xdpi == 300 ? 0.75 : xdpi == 600 ? 0.44 : 0.4);
-    dev_alps->cyan    *= density;
-    dev_alps->magenta *= density;
-    dev_alps->yellow  *= density;
-    dev_alps->black   *= density;
+    dev_alps->cyan    = (int)(dev_alps->cyan    * density);
+    dev_alps->magenta = (int)(dev_alps->magenta * density);
+    dev_alps->yellow  = (int)(dev_alps->yellow  * density);
+    dev_alps->black   = (int)(dev_alps->black   * density);
 
     return gdev_prn_open(pdev);
 }
@@ -449,8 +449,8 @@ alps_init(gx_device_printer *pdev, gp_file *prn_stream, alps_printer_type ptype)
             : pdev->x_pixels_per_inch == 600 ? 3 : 4), prn_stream);
     gp_fputc(0122, prn_stream);
 
-    height = (pdev->MediaSize[1] - pdev->HWMargins[1] - pdev->HWMargins[3])
-            * pdev->y_pixels_per_inch / 72.;
+    height = (short)((pdev->MediaSize[1] - pdev->HWMargins[1] - pdev->HWMargins[3])
+            * pdev->y_pixels_per_inch / 72.);
     alps_cmd("\033\046\154", height, 0120, prn_stream);
 
     /* if -dReverseSide ... */

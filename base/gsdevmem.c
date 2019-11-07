@@ -223,7 +223,7 @@ gs_makewordimagedevice(gx_device ** pnew_dev, const gs_matrix * pmat,
 {
     int code;
     gx_device_memory *pnew =
-    gs_alloc_struct(mem, gx_device_memory, &st_device_memory,
+    gs_alloc_struct_immovable(mem, gx_device_memory, &st_device_memory,
                     "gs_makeimagedevice(device)");
 
     if (pnew == 0)

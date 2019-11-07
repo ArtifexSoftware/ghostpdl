@@ -1876,6 +1876,11 @@ transform_pixel_region_render_portrait(gx_device *dev, gx_default_transform_pixe
         }
         out = state->line;
 
+        if (minx < 0)
+            minx = 0;
+        if (maxx > dev->width)
+            maxx = dev->width;
+
         if (pending_left < minx)
             pending_left = minx;
         else if (pending_left > maxx)

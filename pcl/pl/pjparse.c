@@ -550,12 +550,13 @@ pjl_parsed_filename_to_string(char *fnamep, const char *pathname)
         return;                 /* bad input pjl file */
 
     if (pathname[1] == '0' && pathname[2] == ':') {
-        /* copy pjl_volume string in */
-        strncpy(fnamep, PJL_VOLUME_0, strlen(PJL_VOLUME_0));
+        /* copy pjl_volume string in. use strlen+1 to ensure that strncpy()
+        appends '\0', to keep coverity quiet. */
+        strncpy(fnamep, PJL_VOLUME_0, strlen(PJL_VOLUME_0)+1);
         fnamep += strlen(PJL_VOLUME_0);
     } else if (pathname[1] == '1' && pathname[2] == ':') {
         /* copy pjl_volume string in */
-        strncpy(fnamep, PJL_VOLUME_1, strlen(PJL_VOLUME_1));
+        strncpy(fnamep, PJL_VOLUME_1, strlen(PJL_VOLUME_1)+1);
         fnamep += strlen(PJL_VOLUME_1);
     } else
         return;                 /* bad input pjl file */

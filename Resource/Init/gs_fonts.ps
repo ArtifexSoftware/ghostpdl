@@ -1056,6 +1056,25 @@ $error /SubstituteFont { } put
           //false
         }ifelse
 
+        % If just opening the file didn't work, try opening the file name
+        % in the font resource directory
+        {
+          dup
+          //.fonttempstring /FontResourceDir getsystemparam .genericrfn
+          (r) { file } stopped {
+            pop pop //true
+          } {
+            dup .filename
+            { 3 -1 roll pop exch }
+            { pop }
+            ifelse
+            //false
+          } ifelse
+        }
+        {
+          //false
+        }ifelse
+
         {
           QUIET not
             { (Can't find \(or can't open\) font file ) print dup print

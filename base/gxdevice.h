@@ -52,8 +52,8 @@
 #define DEFAULT_WIDTH_10THS_US_LETTER 85
 #define DEFAULT_HEIGHT_10THS_US_LETTER 110
 /* A4 paper (210mm x 297mm), we use 595pt x 842pt. */
-#define DEFAULT_WIDTH_10THS_A4 82.6389
-#define DEFAULT_HEIGHT_10THS_A4 116.9444
+#define DEFAULT_WIDTH_10THS_A4 82.6389f
+#define DEFAULT_HEIGHT_10THS_A4 116.9444f
 /* Choose a default.  A4 may be set in the makefile. */
 #ifdef A4
 #  define DEFAULT_WIDTH_10THS DEFAULT_WIDTH_10THS_A4

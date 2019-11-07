@@ -922,7 +922,7 @@ to build the executable.</p>
 
 <h3><a name="Microsoft_build"></a>Microsoft Visual Studio</h3>
 
-<h4><a name="Using_the_MS_Development_Environment"> </a>Using Microsoft Visual Studio</h4>
+<h4><a name="Using_the_MS_Development_Environment"> </a><u>Using Microsoft Visual Studio</u></h4>
 <p>
 The Ghostscript source distribution ships with <code>project</code> and <code>solution</code>
 files for Visual Studio 2005 and later. These can be found in the <code>windows</code> directory.
@@ -936,6 +936,16 @@ is if you have to make changes to build options beyond those available in the de
 configurations. In that case, you need to find the <code>Nmake</code> tab in the project
 <code>Property Pages</code> and modify the appropriate entry: <code>Build Command Line</code>,
 <code>Rebuild All Command Line</code> and/or <code>Clean Command Line</code>.</p>
+<p>
+As mentioned above, <code>nmake</code> does not support parallel builds. If you
+have downloaded and are building the <code>GhostPDL</code> source archive (which contains
+Ghostscript, GhostPCL, GhostXPS, and GhostPDL "products"), the <code>GhostPDL.sln</code>
+contains individual projects for each product but, as a result of the limitations of <code>nmake</code>
+the products cannot be built in parallel, because <code>nmake's</code> lack of parallel build
+awareness means it cannot manage the dependencies shared between the products, and may fail as multiple
+builds attempt to access the same dependencies.
+<p> To build all the products in one action, use the <code>All</code> &quot;pseudo-project&quot;. The
+<code>All</code> project uses a single <code>nmake</code> invocation to build all the supported products.
 <p>
 NOTE: changing the <code>Output</code> property in the <code>Nmake</code> properties will not
 change the name of the executable - to do that requires editing of the <code>psi/msvc.mak</code>
@@ -1512,12 +1522,12 @@ implied.
 
 This software is distributed under license and may not be copied, modified
 or distributed except as expressly authorized under the terms of that
-license.  Refer to licensing information at http://www.artifex.com/
+license.  Refer to licensing information at <a href="https://www.artifex.com">https://www.artifex.com</a>
 or contact Artifex Software, Inc.,  1305 Grant Avenue - Suite 200,
 Novato, CA 94945, U.S.A., +1(415)492-9861, for further information.
 
 <p>
-<small>Ghostscript version 9.27, 4 April 2019
+<small>Ghostscript version 9.50, 15 October 2019
 
 <!-- [3.0 end visible trailer] ============================================= -->
 

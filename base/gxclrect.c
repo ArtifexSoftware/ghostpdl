@@ -314,8 +314,9 @@ clist_fillpage(gx_device * dev, gs_gstate *pgs, gx_drawing_color *pdcolor)
     int code;
 
     /* flush previous contents */
-    if ((code = clist_close_writer_and_init_reader(cldev) < 0) ||
-        (code = clist_finish_page(dev, true)) < 0)
+    if ((code = clist_close_writer_and_init_reader(cldev) < 0))
+        return code;;
+    if ((code = clist_finish_page(dev, true)) < 0)
         return code;;
 
     pcls = cdev->states; /* Use any. */

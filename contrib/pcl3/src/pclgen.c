@@ -469,7 +469,7 @@ int pcl3_init_file(gs_memory_t *mem, gp_file *out, pcl_FileData *data)
     gp_fprintf(out, "\033*r%dU",
         /* PCL: Set Number of Planes per Row/Simple Color */
       data->palette == pcl_RGB? 3:	/* RGB palette */
-      -data->number_of_colorants);	/* (K)(CMY) palette */
+      -(int)data->number_of_colorants);	/* (K)(CMY) palette */
 
   /* Configure Raster Data */
   if (needs_CRD) {

@@ -289,8 +289,8 @@ static int cdj970_write_trailer(gx_device *, gp_file *);
 
 #define DESKJET_PRINT_LIMIT  0.04       /* 'real' top margin? */
 /* Margins are left, bottom, right, top. */
-#define DESKJET_MARGINS_LETTER   0.25, 0.50, 0.25, 0.167
-#define DESKJET_MARGINS_A4       0.13, 0.46, 0.13, 0.04
+#define DESKJET_MARGINS_LETTER   0.25f, 0.50f, 0.25f, 0.167f
+#define DESKJET_MARGINS_A4       0.13f, 0.46f, 0.13f, 0.04f
 /* Define bits-per-pixel - default is 32-bit cmyk-mode */
 #ifndef BITSPERPIXEL
 #  define BITSPERPIXEL 32
@@ -574,26 +574,55 @@ static int cdj_set_bpp(gx_device *, int, int);
 static int
 hp_colour_open(gx_device * pdev)
 {
-    int retCode;
+    int retCode = 0;
+
+    /* Change the margins if necessary. */
+    static const float dj_a4[4] = {
+        DESKJET_MARGINS_A4
+    };
+
+    static const float dj_letter[4] = {
+        DESKJET_MARGINS_LETTER
+    };
+    const float *m = (float *)0;
 
     cdj970->PageCtr = 0;
 
+    /* quality setup */
+    if (cdj970->quality == DRAFT) {
+        gx_device_set_resolution((gx_device *) pdev, 300.0, 300.0);
+        cdj970->xscal = 0;
+        cdj970->yscal = 0;
+        cdj970->intensities = 2;
+    } else if (cdj970->quality == NORMAL) {
+        gx_device_set_resolution((gx_device *) pdev, 600.0, 600.0);
+        cdj970->xscal = 1;
+        cdj970->yscal = 1;
+        /* intensities = 4 from initialization */
+    } else {                    /* quality == PRESENTATION */
+        gx_device_set_resolution((gx_device *) pdev, 600.0, 600.0);
+        cdj970->xscal = 0;
+        cdj970->yscal = 0;
+        /* intensities = 4 from initialization */
+    }
+
+    m = (gdev_pcl_paper_size((gx_device *) pdev) ==
+         PAPER_SIZE_A4 ? dj_a4 : dj_letter);
+
+    gx_device_set_margins((gx_device *) pdev, m, true);
+
     /* Set up colour params if put_params has not already done so */
     if (pdev->color_info.num_components == 0) {
-        int code = cdj_set_bpp(pdev, pdev->color_info.depth,
+        retCode = cdj_set_bpp(pdev, pdev->color_info.depth,
                                pdev->color_info.num_components);
 
-        if (code < 0)
-            return code;
+        if (retCode < 0)
+            return retCode;
     }
 
     retCode = gdev_prn_open(pdev);
-    if (retCode < 0)
-        return (retCode);
-    else {
+    if (retCode >= 0) {
         retCode = gdev_prn_open_printer(pdev, true);
-        if (retCode < 0)
-            return (retCode);
     }
 
     return 0;
@@ -647,26 +676,25 @@ cdj970_put_params(gx_device * pdev, gs_param_list * plist)
     int bpp = 0;
     int code = 0;
 
-    code = cdj_put_param_int(plist, "BitsPerPixel", &bpp, 1, 32, code);
-    code = cdj_put_param_int(plist, "Quality", &quality, 0, 2, code);
-    code = cdj_put_param_int(plist, "Papertype", &papertype, 0, 4, code);
-    code = cdj_put_param_int(plist, "Duplex", &duplex, 0, 2, code);
-    code =
-        cdj_put_param_float(plist, "MasterGamma", &mastergamma, 0.1, 9.0,
-                            code);
-    code =
-        cdj_put_param_float(plist, "GammaValC", &gammavalc, 0.0, 9.0, code);
-    code =
-        cdj_put_param_float(plist, "GammaValM", &gammavalm, 0.0, 9.0, code);
-    code =
-        cdj_put_param_float(plist, "GammaValY", &gammavaly, 0.0, 9.0, code);
-    code =
-        cdj_put_param_float(plist, "GammaValK", &gammavalk, 0.0, 9.0, code);
-    code =
-        cdj_put_param_float(plist, "BlackCorrect", &blackcorrect, 0.0, 9.0,
-                            code);
-
-    if (code < 0)
+    if ((code = cdj_put_param_int(plist, "BitsPerPixel", &bpp, 1, 32, code)) < 0)
+        return code;
+    if ((code = cdj_put_param_int(plist, "Quality", &quality, 0, 2, code)) < 0)
+        return code;
+    if ((code = cdj_put_param_int(plist, "Papertype", &papertype, 0, 4, code)) < 0)
+        return code;
+    if ((code = cdj_put_param_int(plist, "Duplex", &duplex, 0, 2, code)) < 0)
+        return code;
+    if ((code = cdj_put_param_float(plist, "MasterGamma", &mastergamma, 0.1, 9.0, code)) < 0)
+        return code;
+    if ((code = cdj_put_param_float(plist, "GammaValC", &gammavalc, 0.0, 9.0, code)) < 0)
+        return code;
+    if ((code = cdj_put_param_float(plist, "GammaValM", &gammavalm, 0.0, 9.0, code)) < 0)
+        return code;
+    if ((code = cdj_put_param_float(plist, "GammaValY", &gammavaly, 0.0, 9.0, code)) < 0)
+        return code;
+    if ((code = cdj_put_param_float(plist, "GammaValK", &gammavalk, 0.0, 9.0, code)) < 0)
+        return code;
+    if ((code = cdj_put_param_float(plist, "BlackCorrect", &blackcorrect, 0.0, 9.0, code)) < 0)
         return code;
 
     code = cdj_put_param_bpp(pdev, plist, bpp, bpp, 0);
@@ -674,7 +702,11 @@ cdj970_put_params(gx_device * pdev, gs_param_list * plist)
     if (code < 0)
         return code;
 
-    cdj970->quality = quality;
+    if (cdj970->quality != quality) {
+        if (pdev->is_open)
+            gs_closedevice(pdev);		/* quality can change resolution, force re-open */
+        cdj970->quality = quality;
+    }
     cdj970->papertype = papertype;
     cdj970->duplex = duplex;
     cdj970->mastergamma = mastergamma;
@@ -684,7 +716,7 @@ cdj970_put_params(gx_device * pdev, gs_param_list * plist)
     cdj970->gammavalk = gammavalk;
     cdj970->blackcorrect = blackcorrect;
 
-    return 0;
+    return code;
 }
 
 /**********************************************************************************/
@@ -783,47 +815,6 @@ cdj970_terminate_page(gx_device_printer * pdev, gp_file * prn_stream)
     gp_fputs("\033*rC\f\033&l-2H", prn_stream);    /* End Graphics, Reset */
 }
 
-/* cdj970_one_time_initialisation:
-----------------------------------------------------------------------------------*/
-static void
-cdj970_one_time_initialisation(gx_device_printer * pdev)
-{
-    /* Change the margins if necessary. */
-    static const float dj_a4[4] = {
-        DESKJET_MARGINS_A4
-    };
-
-    static const float dj_letter[4] = {
-        DESKJET_MARGINS_LETTER
-    };
-    const float *m = (float *)0;
-
-    /* quality setup */
-    if (cdj970->quality == DRAFT) {
-        gx_device_set_resolution((gx_device *) pdev, 300.0, 300.0);
-        cdj970->xscal = 0;
-        cdj970->yscal = 0;
-        cdj970->intensities = 2;
-    } else if (cdj970->quality == NORMAL) {
-        gx_device_set_resolution((gx_device *) pdev, 600.0, 600.0);
-        cdj970->xscal = 1;
-        cdj970->yscal = 1;
-        /* intensities = 4 from initialization */
-    } else {                    /* quality == PRESENTATION */
-        gx_device_set_resolution((gx_device *) pdev, 600.0, 600.0);
-        cdj970->xscal = 0;
-        cdj970->yscal = 0;
-        /* intensities = 4 from initialization */
-    }
-
-    m = (gdev_pcl_paper_size((gx_device *) pdev) ==
-         PAPER_SIZE_A4 ? dj_a4 : dj_letter);
-
-    gx_device_set_margins((gx_device *) pdev, m, true);
-
-    cdj970_write_header((gx_device *) pdev, pdev->file);
-}
-
 /* cdj970_print_page: Here comes the hp970 output routine
 ----------------------------------------------------------------------------------*/
 static int
@@ -836,7 +827,7 @@ cdj970_print_page(gx_device_printer * pdev, gp_file * prn_stream)
     Gamma gamma;
 
     if (cdj970->PageCtr == 0 && cdj970->ptype == DJ970C) {
-        cdj970_one_time_initialisation(pdev);
+        cdj970_write_header((gx_device *)pdev, prn_stream);
     }
 
     /* make a local writable copy of the Gamma tables */
@@ -986,7 +977,7 @@ send_scan_lines(gx_device_printer * pdev,
     word rmask =
         ~(word) 0 << ((-pdev->width * misc_vars->storage_bpp) & (W * 8 - 1));
 
-    lend = pdev->height - (dev_t_margin(pdev) + dev_b_margin(pdev)) * y_dpi;
+    lend = (int)(pdev->height - (dev_t_margin(pdev) + dev_b_margin(pdev)) * y_dpi);
 
     error_values->c = error_values->m = error_values->y = error_values->k = 0;
 
@@ -1298,8 +1289,8 @@ do_black_correction(float kvalue, int kcorrect[256])
   *col4 += ucr;  /* add removed black to black */\
   kadd  = ucr + *(kcorrect + ucr);\
   uca_fac = 1.0 + (kadd/255.0);\
-  *col1 *= uca_fac;\
-  *col2 *= uca_fac;\
+  *col1 = (byte)(*col1 * uca_fac);\
+  *col2 = (byte)(*col2 * uca_fac);\
 }
 
 /* do_gcr: Since resolution can be different on different planes, we need to
@@ -2000,12 +1991,12 @@ cdj970_start_raster_mode(gx_device_printer * pdev,
     init.a[25] = cdj970->intensities;   /* Intensity levels yellow */
 
     /* black plane resolution */
-    assign_dpi(cdj970->x_pixels_per_inch, init.a + 2);
-    assign_dpi(cdj970->y_pixels_per_inch, init.a + 4);
+    assign_dpi((int)cdj970->x_pixels_per_inch, init.a + 2);
+    assign_dpi((int)cdj970->y_pixels_per_inch, init.a + 4);
 
     /* color plane resolution */
-    xres = cdj970->x_pixels_per_inch / (cdj970->xscal + 1);
-    yres = cdj970->y_pixels_per_inch / (cdj970->yscal + 1);
+    xres = (int)(cdj970->x_pixels_per_inch / (cdj970->xscal + 1));
+    yres = (int)(cdj970->y_pixels_per_inch / (cdj970->yscal + 1));
 
     /* cyan */
     assign_dpi(xres, init.a + 8);
@@ -2279,6 +2270,10 @@ cdj_set_bpp(gx_device * pdev, int bpp, int ccomps)
         ci->dither_colors = (bpp >= 8 ? 5 : bpp > 1 ? 2 : 0);
     }
 
+    if (ci->depth != ((bpp > 1) && (bpp < 8) ? 8 : bpp)) {
+        if (pdev->is_open)
+            gs_closedevice(pdev); 	/* depth changed, make sure we re-open */
+    }
     ci->depth = ((bpp > 1) && (bpp < 8) ? 8 : bpp);
 
     return (0);
@@ -2548,7 +2543,7 @@ gdev_pcl_map_color_rgb(gx_device * pdev,
             }
             break;
         case 16:{
-                gx_color_value c = (gx_color_value) color ^ 0xffff;
+                gx_color_index c = (gx_color_index) color ^ 0xffff;
                 ushort value = c >> 11;
 
                 prgb[0] = ((value << 11) + (value << 6) + (value << 1) +
@@ -2563,7 +2558,7 @@ gdev_pcl_map_color_rgb(gx_device * pdev,
             break;
 
         case 24:{
-                gx_color_value c = (gx_color_value) color ^ 0xffffff;
+                gx_color_index c = (gx_color_index) color ^ 0xffffff;
 
                 prgb[0] = gx_color_value_from_byte(c >> 16);
                 prgb[1] = gx_color_value_from_byte((c >> 8) & 0xff);
@@ -2572,7 +2567,7 @@ gdev_pcl_map_color_rgb(gx_device * pdev,
             break;
 
         case 32:{
-                gx_color_value w =
+                gx_color_index w =
                     gx_maxcol - gx_color_value_from_byte(color >> 24);
 
                 prgb[0] = w - gx_color_value_from_byte((color >> 16) & 0xff);
@@ -2597,16 +2592,16 @@ cdj_put_param_bpp(gx_device * pdev,
                   gs_param_list * plist,
                   int new_bpp, int real_bpp, int ccomps)
 {
-    if (new_bpp == 0 && ccomps == 0)
-        return gdev_prn_put_params(pdev, plist);
-    else {
-        gx_device_color_info save_info;
-        int save_bpp;
-        int code;
+    int code = 0;
+    int save_bpp;
+    gx_device_color_info save_info;
 
-        save_info = pdev->color_info;
-        save_bpp = save_info.depth;
+    save_info = pdev->color_info;
+    save_bpp = save_info.depth;
 
+    if (new_bpp == 0 && ccomps == 0) {
+       code = gdev_prn_put_params(pdev, plist);
+    } else {
         if (save_bpp == 8 && save_ccomps == 3 && !cprn_device->cmyk)
             save_bpp = 3;
 
@@ -2630,12 +2625,21 @@ cdj_put_param_bpp(gx_device * pdev,
         if ((cdj970->color_info.depth != save_bpp
              || (ccomps != 0 && ccomps != save_ccomps))
             && pdev->is_open)
-            return (gs_closedevice(pdev));
+            gs_closedevice(pdev);
+    }
 
-        return (0);
+    /* check for valid resolutions */
+    if (pdev->HWResolution[0] != pdev->HWResolution[1] ||
+        (pdev->HWResolution[0] != 300.0 && pdev->HWResolution[0] != 600.0) ) {
+        param_signal_error(plist, "HWResolution", gs_error_rangecheck);
+        emprintf1(pdev->memory, "\ncdj970: Invalid resolution: '%f'. Only 300 or 600 supported.\n\n",
+                  pdev->HWResolution[0]);
+        cdj_set_bpp(pdev, save_bpp, save_ccomps);
+        return gs_error_rangecheck;
+    }
+    return code;
 
 #undef save_ccomps
-    }
 }
 
 /* cdj970_write_header:

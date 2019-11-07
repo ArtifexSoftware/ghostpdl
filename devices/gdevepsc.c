@@ -174,27 +174,55 @@ epsc_print_page(gx_device_printer * pdev, gp_file * prn_stream)
     int y_mult = (y_24pin ? 3 : 1);
     int line_size = (pdev->width + 7) >> 3;     /* always mono */
     int in_size = line_size * (8 * y_mult);
-    byte *in =
-        (byte *) gs_malloc(pdev->memory, in_size + 1, 1,
-                           "epsc_print_page(in)");
     int out_size = ((pdev->width + 7) & -8) * y_mult;
-    byte *out =
-        (byte *) gs_malloc(pdev->memory, out_size + 1, 1,
-                           "epsc_print_page(out)");
+    byte *in;
+    byte *out;
     int x_dpi = (int)pdev->x_pixels_per_inch;
-    char start_graphics = (char)
-        ((y_24pin ? graphics_modes_24 : graphics_modes_9)[x_dpi / 60]);
-    int first_pass = (start_graphics & DD ? 1 : 0);
-    int last_pass = first_pass * 2;
-    int dots_per_space = x_dpi / 10;    /* pica space = 1/10" */
-    int bytes_per_space = dots_per_space * y_mult;
+
+    char start_graphics;
+    int first_pass;
+    int last_pass;
+    int dots_per_space; 
+    int bytes_per_space;
     int skip = 0, lnum = 0, pass;
 
-/* declare color buffer and related vars */
     byte *color_in;
     int color_line_size, color_in_size;
-    int spare_bits = (pdev->width % 8); /* left over bits to go to margin */
-    int whole_bits = pdev->width - spare_bits;
+    int spare_bits;
+    int whole_bits;
+
+    int max_dpi = 60 * (
+            (y_24pin) ?
+            sizeof(graphics_modes_24) / sizeof(graphics_modes_24[0])
+            :
+            sizeof(graphics_modes_9) / sizeof(graphics_modes_9[0])
+            )
+            - 1;
+    if (x_dpi > max_dpi) {
+        return_error(gs_error_rangecheck);
+    }
+    
+    start_graphics = (char)
+        ((y_24pin ? graphics_modes_24 : graphics_modes_9)[x_dpi / 60]);
+    first_pass = (start_graphics & DD ? 1 : 0);
+    last_pass = first_pass * 2;
+    dots_per_space = x_dpi / 10;    /* pica space = 1/10" */
+    bytes_per_space = dots_per_space * y_mult;
+    if (bytes_per_space == 0) {
+        /* This avoids divide by zero later on, bug 701843. */
+        return_error(gs_error_rangecheck);
+    }
+
+    in =
+        (byte *) gs_malloc(pdev->memory, in_size + 1, 1,
+                           "epsc_print_page(in)");
+    out =
+        (byte *) gs_malloc(pdev->memory, out_size + 1, 1,
+                           "epsc_print_page(out)");
+
+    /* declare color buffer and related vars */
+    spare_bits = (pdev->width % 8); /* left over bits to go to margin */
+    whole_bits = pdev->width - spare_bits;
 
     /* Check allocations */
     if (in == 0 || out == 0) {

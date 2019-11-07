@@ -200,7 +200,7 @@ pdf_begin_transparency_group(gs_gstate * pgs, gx_device_pdf * pdev,
         pdf_resource_t *pres, *pres_gstate = NULL;
         cos_dict_t *pcd = NULL, *pcd_Resources = NULL;
 
-        code = pdf_prepare_drawing(pdev, pgs, &pres_gstate);
+        code = pdf_prepare_drawing(pdev, pgs, &pres_gstate, false);
         if (code < 0)
             return code;
         code = pdf_end_gstate(pdev, pres_gstate);
@@ -282,7 +282,7 @@ pdf_begin_transparency_mask(gs_gstate * pgs, gx_device_pdf * pdev,
          * changed, and so doesn't write out the GState
          */
         pgs->soft_mask_id = 0;
-        code = pdf_prepare_drawing(pdev, pgs, &pres);
+        code = pdf_prepare_drawing(pdev, pgs, &pres, false);
         if (code == gs_error_interrupt) {
             /* Not in an appropriate context, ignore it but restore
              * the old soft_mask_id. Not sure this is correct, but it works for now.

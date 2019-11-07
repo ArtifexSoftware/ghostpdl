@@ -40,7 +40,6 @@ problems
 
 #define X_DPI 300
 #define Y_DPI 300
-#define LINE_SIZE ((X_DPI * 85 / 10 + 7) / 8)	/* bytes per line */
 
 /* The device descriptors */
 static dev_proc_print_page(lbp8_print_page);
@@ -105,20 +104,26 @@ static int
 can_print_page(gx_device_printer *pdev, gp_file *prn_stream,
   const char *init, int init_size, const char *end, int end_size)
 {
-        char data[LINE_SIZE*2];
+        char *data;
         char *out_data;
         int last_line_nro = 0;
+        int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
+
+        data = (char *)gs_alloc_bytes(pdev->memory,
+                                      line_size*2,
+                                      "lbp8_line_buffer");
+        if (data == NULL)
+            return_error(gs_error_VMerror);
 
         gp_fwrite(init, init_size, 1, prn_stream);		/* initialize */
 
         /* Send each scan line in turn */
         {
             int lnum;
-            int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
             byte rmask = (byte)(0xff << (-pdev->width & 7));
 
             for ( lnum = 0; lnum < pdev->height; lnum++ ) {
-                char *end_data = data + LINE_SIZE;
+                char *end_data = data + line_size;
                 gdev_prn_copy_scan_lines(pdev, lnum,
                                          (byte *)data, line_size);
                 /* Mask off 1-bits beyond the line width. */
@@ -193,6 +198,8 @@ can_print_page(gx_device_printer *pdev, gp_file *prn_stream,
         /* terminate */
         if (end != NULL)
             (void)gp_fwrite(end, end_size, 1, prn_stream);
+
+        gs_free_object(pdev->memory, data, "lbp8_line_buffer");
 
         return 0;
 }

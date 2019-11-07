@@ -64,6 +64,7 @@ cal_OBJS = \
 cal_HDRS = \
 	$(CAL_SRC)cal.h		\
 	$(CAL_SRC)cal-impl.h	\
+	$(arch_h)
 
 # external link .dev - empty, as we add the lib to LDFLAGS
 #$(GLOBJ)cal.dev : $(CAL_MAK) $(ECHOGS_XE) \
@@ -116,6 +117,12 @@ $(CAL_OBJ)$(CAL_PREFIX)blendsse42.$(OBJ) : $(CAL_SRC)blendsse42.c $(cal_HDRS) $(
 
 $(CAL_OBJ)$(CAL_PREFIX)blend.$(OBJ) : $(CAL_SRC)blend.c $(cal_HDRS) $(CAL_DEP) $(gsmemory_h)
 	$(CAL_CC) $(I_)$(GLSRC) $(CAL_O)blend.$(OBJ) $(C_) $(CAL_SRC)blend.c
+
+cal_ets_h=$(CAL_SRC)cal_ets.h
+ca_ets_tm_h=$(CAL_SRC)cal_ets_tm.h
+$(GLOBJ)ets_1.$(OBJ) : $(CAL_SRC)cal_ets.c $(CAL_SRC)ets_template.c $(AK) \
+ $(cal_ets_h) $(cal_ets_tm_h) $(LIB_MAK) $(MAKEDIRS)
+	$(GLCC) $(CAL_SSE4_2_CFLAGS) $(CAL_NEON_CFLAGS) $(GLO_)ets_1.$(OBJ) $(C_) $(CAL_SRC)cal_ets.c
 
 
 # end of file

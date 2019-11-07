@@ -4308,5 +4308,5 @@ treble_glyph_list_t TrebleGlyphList[] = {
 
 quad_glyph_list_t QuadGlyphList[] = {
     {"rehyehaleflamarabic", {0x0631, 0xFEF3, 0xFE8E, 0x0644}},
-    {0x00, {0,0,0}}
+    {0x00, {0,0,0,0}}
 };

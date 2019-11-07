@@ -247,15 +247,24 @@ clj_get_params(gx_device *pdev, gs_param_list *plist)
  * on error.
  */
 static int
-clj_media_size(float mediasize[2], gs_param_list *plist)
+clj_media_size(float mediasize[2], gs_param_list *plist, gx_device *dev)
 {
     gs_param_float_array fres;
     gs_param_float_array fsize;
     gs_param_int_array hwsize;
     int have_pagesize = 0;
+    float res[2];
 
-    if ( (param_read_float_array(plist, "HWResolution", &fres) == 0) &&
-          !is_supported_resolution(fres.data) )
+    if ( param_read_float_array(plist, "HWResolution", &fres) == 0) {
+        res[0] = fres.data[0];
+        res[1] = fres.data[1];
+    }
+    else
+    {
+        res[0] = dev->HWResolution[0];
+        res[1] = dev->HWResolution[1];
+    }
+    if (!is_supported_resolution(res) )
         return_error(gs_error_rangecheck);
 
     if ( (param_read_float_array(plist, "PageSize", &fsize) == 0) ||
@@ -266,8 +275,8 @@ clj_media_size(float mediasize[2], gs_param_list *plist)
     }
 
     if (param_read_int_array(plist, "HWSize", &hwsize) == 0) {
-        mediasize[0] = ((float)hwsize.data[0]) * 72 / fres.data[0];
-        mediasize[1] = ((float)hwsize.data[1]) * 72 / fres.data[1];
+        mediasize[0] = ((float)hwsize.data[0]) * 72 / res[0];
+        mediasize[1] = ((float)hwsize.data[1]) * 72 / res[1];
         have_pagesize = 1;
     }
 
@@ -286,7 +295,7 @@ clj_put_params(
 {
     float		    mediasize[2];
     bool                    rotate = false;
-    int                     have_pagesize = clj_media_size(mediasize, plist);
+    int                     have_pagesize = clj_media_size(mediasize, plist, pdev);
 
     if (have_pagesize < 0)
         return have_pagesize;
@@ -623,7 +632,7 @@ clj_pr_put_params(
     float		    mediasize[2];
     int                     code = 0;
     bool                    rotate = false;
-    int                     have_pagesize = clj_media_size(mediasize, plist);
+    int                     have_pagesize = clj_media_size(mediasize, plist, pdev);
 
     if (have_pagesize < 0)
         return have_pagesize;

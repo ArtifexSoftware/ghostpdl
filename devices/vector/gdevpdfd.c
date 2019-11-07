@@ -846,7 +846,7 @@ prepare_fill_with_clip(gx_device_pdf *pdev, const gs_gstate * pgs,
         if (code < 0)
             return code;
     }
-    code = pdf_prepare_fill(pdev, pgs);
+    code = pdf_prepare_fill(pdev, pgs, false);
     if (code < 0)
         return code;
     return pdf_put_clip_path(pdev, pcpath);
@@ -1743,7 +1743,7 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_gstate * pgs,
         code = pdf_open_page(pdev, PDF_IN_STREAM);
     if (code < 0)
         return code;
-    code = pdf_prepare_stroke(pdev, pgs);
+    code = pdf_prepare_stroke(pdev, pgs, false);
     if (code == gs_error_rangecheck) {
         /* Fallback to the default implermentation for handling
            a transparency with CompatibilityLevel<=1.3 . */

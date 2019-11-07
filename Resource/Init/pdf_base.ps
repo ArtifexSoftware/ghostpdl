@@ -781,103 +781,116 @@ currentdict /token_nofail_dict .undef
     count counttomark 1 add index gt {
       (   **** Error: Incorrect object count in object stream (too many objects).\n) pdfformaterror
       (               Output may be incorrect.\n) pdfformaterror
+    } if
 
-      % Having too many objects in an ObjStm is not illegal, dumb but not illegal. We can
-      % recover from this, but its complicated. The extra object could be any of the ones
-      % from the stream, the only way to find out is to process each object individually.
-      % Unfortunately, my attempts to come up with a version of .pdfrun which only tokenised
-      % one object got rapidly bogged down. So a new approach was needed.
-      %
-      % The idea is simple; turn the underlying file into a ReusableStream, then we can
-      % reposition it. Build an array of the object offsets, reposition the file to the
-      % start of each object in turn. For all except the last object, create a sub file
-      % using SubFileDeocde with an empty string, and an EODCount which is the difference
-      % between the offset of this object and the offset of the next.
-      % For the last object we just read from the offset to the end of the stream.
-      %
-      % Then call .pdfrun on that sub file, or the main stream, which will tokenise all the
-      % objects from that point onwards. Then discard all but the first object read.
-      %
-      % The complications arise from the fact that we need to end up with the objects on
-      % the stack, in the right order, preceded by a mark, a count, and an array containing
-      % all the object numbers.
+    % Its possible for us to end up here with a valid file. The way we work is to read the
+    % stream and tokenise all the objects, but that assumes there will be delimiters or
+    % whitespace between each object in the stream. We can easily think of cases where
+    % that is not true; eg two consecutive numbers 123 456 would be tokenised as a
+    % single number with the value 123456.
+    % In this case we can use the approach below to read each object individually and
+    % that will define the correct number of objects. After we've collected all the
+    % objects we'll check the number of objects recovered again, and see if there
+    % are still too few. We should probably raise an error in that case, but lets wait
+    % until we see a case.
 
-      % First, discard everything we read up to now; we can reuse the mark which was placed
-      % by the preceding code to do this, as long as we remember to replace that mark.
-      % Handily this will leave the count and the array which contains the object numbers in place.
-      cleartomark
+    % Having too many objects in an ObjStm is not illegal, dumb but not illegal. We can
+    % recover from this, but its complicated. The extra object could be any of the ones
+    % from the stream, the only way to find out is to process each object individually.
+    % Unfortunately, my attempts to come up with a version of .pdfrun which only tokenised
+    % one object got rapidly bogged down. So a new approach was needed.
+    %
+    % The idea is simple; turn the underlying file into a ReusableStream, then we can
+    % reposition it. Build an array of the object offsets, reposition the file to the
+    % start of each object in turn. For all except the last object, create a sub file
+    % using SubFileDeocde with an empty string, and an EODCount which is the difference
+    % between the offset of this object and the offset of the next.
+    % For the last object we just read from the offset to the end of the stream.
+    %
+    % Then call .pdfrun on that sub file, or the main stream, which will tokenise all the
+    % objects from that point onwards. Then discard all but the first object read.
+    %
+    % The complications arise from the fact that we need to end up with the objects on
+    % the stack, in the right order, preceded by a mark, a count, and an array containing
+    % all the object numbers.
 
-      % Replace the mark consumed by conttomark above, so that we match what the code following this error handling expects.
-      mark
+    % First, discard everything we read up to now; we can reuse the mark which was placed
+    % by the preceding code to do this, as long as we remember to replace that mark.
+    % Handily this will leave the count and the array which contains the object numbers in place.
+    cleartomark
 
-      % copy the ObjStm dictionary and then copy the count of objects expected
-      4 index 4 index
+    % Replace the mark consumed by conttomark above, so that we match what the code following this error handling expects.
+    mark
 
-      % Copy the ObjStm dictionary, and create a file from it
-      1 index //false resolvestream	        % Convert stream dict into a stream
+    % copy the ObjStm dictionary and then copy the count of objects expected
+    4 index 4 index
 
-      /ReusableStreamDecode filter	        % We need to be able to re-position the stream
+    % Copy the ObjStm dictionary, and create a file from it
+    1 index //false resolvestream	        % Convert stream dict into a stream
 
-      1 index array                         % Create array for holding offsets
+    /ReusableStreamDecode filter	        % We need to be able to re-position the stream
 
-      % Get the object offsets, these are stored at teh start of the stream, interleaved
-      % between the object numbers. We know reading these can't fail, because we've already
-      % done this to create the array of object numbers, above.
-      0 1                                   % starting index (0), increment (1) for loop
-      4 index 1 sub                         % limit of loop is object count-1 (because we start at 0)
-      {
-        1 index 1 index                     % copy array and index
-        4 index                             % copy the file object
-        token pop pop                       % read a token (object number) and discard it
-        4 index token                       % read another token (offset)
-        pop put pop                         % put the offset into the array at the new index
-      } for
+    1 index array                         % Create array for holding offsets
 
-      % We now have an array with all the object offsets in it
-      % So we need to reposition the file to the start of each object and read
-      % from that point. We use the difference between two offsets to setup
-      % a SubFileDecode filter to only read as many bytes as there are
-      % between the objects. Normally this should result in us reading one object,
-      % if there are extra objects then we'll discard the extras. By doing this
-      % we avoid tokenising the same data multiple times.
+    % Get the object offsets, these are stored at teh start of the stream, interleaved
+    % between the object numbers. We know reading these can't fail, because we've already
+    % done this to create the array of object numbers, above.
+    0 1                                   % starting index (0), increment (1) for loop
+    4 index 1 sub                         % limit of loop is object count-1 (because we start at 0)
+    {
+      1 index 1 index                     % copy array and index
+      4 index                             % copy the file object
+      token pop pop                       % read a token (object number) and discard it
+      4 index token                       % read another token (offset)
+      pop put pop                         % put the offset into the array at the new index
+    } for
 
-      % Set the loop to be from 0 to the  number of objects minus 1 (starts from 0), step 1.
-      2 index 1 sub 0 1 3 -1 roll
-      {
-        dup                                         % copy the loop index
-        2 index length 2 sub lt                     % Check if index + 1 exceeds array size (it will on last iteration)
+    % We now have an array with all the object offsets in it
+    % So we need to reposition the file to the start of each object and read
+    % from that point. We use the difference between two offsets to setup
+    % a SubFileDecode filter to only read as many bytes as there are
+    % between the objects. Normally this should result in us reading one object,
+    % if there are extra objects then we'll discard the extras. By doing this
+    % we avoid tokenising the same data multiple times.
 
-        {                                           % Not the last iteration
-          dup                                       % copy the loop index
-          2 index exch get 5 index /First get add   % get the object offset, and add the value of First from the dictionary.
-          exch 1 add                                % add one to the loop index
-          2 index exch get 5 index /First get add   % and get the offset to the start of the next object
+    % Set the loop to be from 0 to the  number of objects minus 1 (starts from 0), step 1.
+    2 index 1 sub 0 1 3 -1 roll
+    {
+      dup                                         % copy the loop index
+      2 index length 2 sub lt                     % Check if index + 1 exceeds array size (it will on last iteration)
 
-          1 index sub                               % copy the first offset and subtract from the second to get the length
-          exch
-          3 index dup 3 -1 roll setfileposition     % copy the file and position it to the offset of the object
-          exch
-          << /EODCount 3 -1 roll /EODString () >>   % Set up a dictionary for the filter
-          /SubFileDecode filter                     % and apply it to limit the number of bytes read.
-        }
-        {                                           % On the last iteration, simly read from the file, we don't need another SubFileDecode.
-          1 index exch get 4 index /First get add   % get the offset, and add the value of First from the dictionary.
-          2 index dup 3 -1 roll setfileposition     % copy the stream, and position it at that point
-        }ifelse
+      {                                           % Not the last iteration
+        dup                                       % copy the loop index
+        2 index exch get 5 index /First get add   % get the object offset, and add the value of First from the dictionary.
+        exch 1 add                                % add one to the loop index
+        2 index exch get 5 index /First get add   % and get the offset to the start of the next object
 
-        mark exch resolveobjstreamopdict .pdfrun    % make a mark and then tokenise all the objects from there to the end of stream (or sub file)
-        counttomark 2 sub                           % Find out how many objects we created (less two, one for the count and one for the first object)
-        0 1 3 -1 roll {pop pop} for                 % pop that many objects off the stack
-        6 1 roll pop                                % roll the new object to be behind our working objects on the stack and pop the mark
-      } for
+        1 index sub                               % copy the first offset and subtract from the second to get the length
+        exch
+        3 index dup 3 -1 roll setfileposition     % copy the file and position it to the offset of the object
+        exch
+        << /EODCount 3 -1 roll /EODString () >>   % Set up a dictionary for the filter
+        /SubFileDecode filter                     % and apply it to limit the number of bytes read.
+      }
+      {                                           % On the last iteration, simly read from the file, we don't need another SubFileDecode.
+        1 index exch get 4 index /First get add   % get the offset, and add the value of First from the dictionary.
+        2 index dup 3 -1 roll setfileposition     % copy the stream, and position it at that point
+      }ifelse
 
-      % pop the working objects (array, file, count of objects and ObjStrm dictionary)
-      pop pop pop pop
-    }{
+      mark exch resolveobjstreamopdict .pdfrun    % make a mark and then tokenise all the objects from there to the end of stream (or sub file)
+      counttomark 2 sub                           % Find out how many objects we created (less two, one for the count and one for the first object)
+      0 1 3 -1 roll {pop pop} for                 % pop that many objects off the stack
+      6 1 roll pop                                % roll the new object to be behind our working objects on the stack and pop the mark
+    } for
+
+    % pop most of the working objects (array, file, and ObjStrm dictionary)
+    % but leave count of objects. Check that aginst the number of objects
+    % retrieved. If we got too few then issue a warning.
+
+    pop pop exch pop counttomark 1 sub lt {
       (   **** Error: Incorrect object count in object stream (too few objects).\n) pdfformaterror
       (               Output may be incorrect.\n) pdfformaterror
-      /resolveobjectstream cvx /rangecheck signalerror
-    } ifelse
+    } if
   } if
 
                 % We have the object data

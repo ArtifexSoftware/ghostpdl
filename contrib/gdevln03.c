@@ -239,7 +239,7 @@ gx_device_printer gs_sxlcrt_device =
                "sxlcrt",
                180,
                110,
-               42.6667, 32.0,
+               42.6667f, 32.0,
                0, 0, 0, 0,
                1, sxlcrt_print_page);
 

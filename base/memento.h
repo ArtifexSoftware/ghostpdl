@@ -156,6 +156,30 @@
  *    Both Windows and GCC provide separate new[] and delete[] operators
  *    for arrays. Apparently some systems do not. If this is the case for
  *    your system, define MEMENTO_CPP_NO_ARRAY_CONSTRUCTORS.
+ *
+ * "libbacktrace.so failed to load"
+ *
+ *    In order to give nice backtraces on unix, Memento will try to use
+ *    a libbacktrace dynamic library. If it can't find it, you'll see
+ *    that warning, and your backtraces won't include file/line information.
+ *
+ *    To fix this you'll need to build your own libbacktrace. Don't worry
+ *    it's really easy:
+ *       git clone git://github.com/ianlancetaylor/libbacktrace
+ *       cd libbacktrace
+ *       ./configure
+ *       make
+ *
+ *    This leaves the build .so as .libs/libbacktrace.so
+ *
+ *    Memento will look for this on LD_LIBRARY_PATH, or in /opt/lib/,
+ *    or in /lib/, or  in /usr/lib/, or in /usr/local/lib/. I recommend
+ *    using /opt/lib/ as this won't conflict with anything that you
+ *    get via a package manager like apt.
+ *
+ *       sudo mkdir /opt
+ *       sudo mkdir /opt/lib
+ *       sudo cp .libs/libbacktrace.so /opt/lib/
  */
 
 #ifndef MEMENTO_H

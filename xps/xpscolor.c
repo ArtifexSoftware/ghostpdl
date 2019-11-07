@@ -29,6 +29,8 @@ xps_set_color(xps_context_t *ctx, gs_color_space *cs, float *samples)
     if (ctx->opacity_only)
     {
         gs_setopacityalpha(ctx->pgs, 1.0);
+        gs_setfillconstantalpha(ctx->pgs, 1.0);
+        gs_setstrokeconstantalpha(ctx->pgs, 1.0);
         gs_setgray(ctx->pgs, samples[0]);
     }
     else
@@ -39,6 +41,8 @@ xps_set_color(xps_context_t *ctx, gs_color_space *cs, float *samples)
             cc.paint.values[i] = samples[i + 1];
 
         gs_setopacityalpha(ctx->pgs, samples[0]);
+        gs_setfillconstantalpha(ctx->pgs, samples[0]);
+        gs_setstrokeconstantalpha(ctx->pgs, samples[0]);
         gs_setcolorspace(ctx->pgs, cs);
         gs_setcolor(ctx->pgs, &cc);
     }

@@ -34,7 +34,7 @@
 % Interpreter library version number
 % NOTE: the interpreter code requires that the first non-comment token
 % in this file be an integer, and that it match the compiled-in version!
-929
+951
 
 % Check the interpreter revision.
 dup revision ne
@@ -196,6 +196,11 @@ currentdict /NOSAFERERRORS known
 {
   currentdict /SAFERERRORS known
 } ifelse def
+
+currentdict /ALLOWPSTRANSPARENCY known not
+{
+  /ALLOWPSTRANSPARENCY //false def
+} if
 
 currentdict /SHORTERRORS known   /SHORTERRORS exch def
 currentdict /TTYPAUSE known   /TTYPAUSE exch def
@@ -2204,11 +2209,6 @@ readonly def
 /SAFERUndefinePostScriptOperators {
   [
   % Used by our own test suite files
-  /.pushpdf14devicefilter    % transparency-example.ps
-  /.poppdf14devicefilter     % transparency-example.ps
-  /.setopacityalpha          % transparency-example.ps
-  /.setshapealpha            % transparency-example.ps
-  /.endtransparencygroup     % transparency-example.ps
   /.setdotlength             % Bug687720.ps
   /.sort /.setdebug /.mementolistnewblocks /getenv
   /unread
@@ -2235,8 +2235,11 @@ readonly def
 /.lockfileaccess {
   .currentpathcontrolstate
   {
-    (\n **** WARNING: .lockfileaccess or .setsafe called ****\n) print
-    ( **** when file access controls are already active ****\n) print flush
+    //QUIET not
+    {
+      (\n **** WARNING: .lockfileaccess or .setsafe called ****\n) print
+      ( **** when file access controls are already active ****\n) print flush
+    } if
   }
   {
     [

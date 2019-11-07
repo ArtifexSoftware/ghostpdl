@@ -2930,6 +2930,7 @@ pdf_close(gx_device * dev)
                     code = cos_write(pres->object, pdev, pres->object->id);
                     stream_puts(pdev->strm, "endobj\n");
                     pres->object->written = true;
+                    stream_puts(pdev->strm, "%%PageTrailer\n");
                 }
         }
         code1 = pdf_free_resource_objects(pdev, resourcePage);

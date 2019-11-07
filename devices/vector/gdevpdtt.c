@@ -416,7 +416,7 @@ pdf_prepare_text_drawing(gx_device_pdf *const pdev, gs_text_enum_t *pte)
             code = 0;
         if (code < 0)
             return code;
-        code = pdf_prepare_fill(pdev, pgs);
+        code = pdf_prepare_fill(pdev, pgs, true);
         if (code < 0)
             return code;
     }
@@ -2535,7 +2535,7 @@ pdf_set_text_process_state(gx_device_pdf *pdev,
         if (code < 0)
             return code;
 
-        code = pdf_prepare_stroke(pdev, pgs);
+        code = pdf_prepare_stroke(pdev, pgs, true);
         if (code >= 0) {
             code = gdev_vector_prepare_stroke((gx_device_vector *)pdev,
                                               pgs, NULL, NULL, 1);

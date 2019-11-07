@@ -66,8 +66,8 @@ static const char *epson_remote_start = "\033\001@EJL \r\n";
 static int
 escpage_open(gx_device * pdev)
 {
-    int xdpi = pdev->x_pixels_per_inch;
-    int ydpi = pdev->y_pixels_per_inch;
+    int xdpi = (int)pdev->x_pixels_per_inch;
+    int ydpi = (int)pdev->y_pixels_per_inch;
 
     /* Resolution Check */
     if (xdpi != ydpi)
@@ -81,8 +81,8 @@ escpage_open(gx_device * pdev)
 static int
 lp2000_open(gx_device * pdev)
 {
-    int xdpi = pdev->x_pixels_per_inch;
-    int ydpi = pdev->y_pixels_per_inch;
+    int xdpi = (int)pdev->x_pixels_per_inch;
+    int ydpi = (int)pdev->y_pixels_per_inch;
 
     /* Resolution Check */
     if (xdpi != ydpi)
@@ -273,21 +273,21 @@ escpage_paper_set(gx_device_printer * pdev, gp_file * fp)
     int width, height, w, h, wp, hp, bLandscape;
     EpagPaperTable *pt;
 
-    width = pdev->MediaSize[0];
-    height = pdev->MediaSize[1];
+    width = (int)pdev->MediaSize[0];
+    height = (int)pdev->MediaSize[1];
 
     if (width < height) {
         bLandscape = 0;
         w = width;
         h = height;
-        wp = width / 72.0 * pdev->x_pixels_per_inch;
-        hp = height / 72.0 * pdev->y_pixels_per_inch;
+        wp = (int)(width / 72.0 * pdev->x_pixels_per_inch);
+        hp = (int)(height / 72.0 * pdev->y_pixels_per_inch);
     } else {
         bLandscape = 1;
         w = height;
         h = width;
-        wp = height / 72.0 * pdev->y_pixels_per_inch;
-        hp = width / 72.0 * pdev->x_pixels_per_inch;
+        wp = (int)(height / 72.0 * pdev->y_pixels_per_inch);
+        hp = (int)(width / 72.0 * pdev->x_pixels_per_inch);
     }
 
     for (pt = epagPaperTable; pt->escpage > 0; pt++)

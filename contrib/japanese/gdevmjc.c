@@ -113,9 +113,9 @@ copies.  */
 
 /* Margins are left, bottom, right, top. */
 /* left bottom right top */
-#define MJ700V2C_MARGINS_A4      0.118, 0.52, 0.118, 0.33465
-#define MJ6000C_MARGINS_A2      0.948, 0.52, 1.969, 0.33465
-#define MJ8000C_MARGINS_A2      0.194, 0.52, 0.194, 0.33465
+#define MJ700V2C_MARGINS_A4     0.118f, 0.52f, 0.118f, 0.33465f
+#define MJ6000C_MARGINS_A2      0.948f, 0.52f, 1.969f, 0.33465f
+#define MJ8000C_MARGINS_A2      0.194f, 0.52f, 0.194f, 0.33465f
 
 /* Define bits-per-pixel for generic drivers - default is 24-bit mode */
 #ifndef BITSPERPIXEL
@@ -296,8 +296,8 @@ mjcmyk_device(mj8000c_procs, "mj8000c", 360, 360, BITSPERPIXEL,
 static int
 gdev_mjc_paper_size(gx_device *dev)
 {
-  int width = dev->MediaSize[0];
-  int height = dev->MediaSize[1];
+  int width = (int)dev->MediaSize[0];
+  int height = (int)dev->MediaSize[1];
 
   if (width == 1190 && height == 1684)
     return PAPER_SIZE_A2;
@@ -333,8 +333,8 @@ mj8000c_open(gx_device * pdev)
 static int
 mj_open(gx_device *pdev, int ptype)
 {       /* Change the margins if necessary. */
-  int xdpi = pdev->x_pixels_per_inch;
-  int ydpi = pdev->y_pixels_per_inch;
+  int xdpi = (int)pdev->x_pixels_per_inch;
+  int ydpi = (int)pdev->y_pixels_per_inch;
 
   static const float mj_margin[4] = { MJ700V2C_MARGINS_A4 };
   static const float mj6000c_a2[4] = { MJ6000C_MARGINS_A2 };
@@ -365,7 +365,7 @@ mj_open(gx_device *pdev, int ptype)
   gx_device_set_margins(pdev, m, true);
 
   if (mj->colorcomp == 3)
-    mj->density = mj->density * 720 / ydpi * 1.5;
+    mj->density = (int)(mj->density * 720 / ydpi * 1.5);
   else
     mj->density = mj->density * 720 / ydpi;
 
@@ -667,7 +667,7 @@ mj_raster_cmd(int c_id, int in_size, byte* in, byte* buf2,
        ** walk forward, looking for matches:
        */
 
-      for( q++ ; *q == *p && q < in_end ; q++ ) {
+      for( q++ ; q < in_end && *q == *p ; q++ ) {
         if( (q-p) >= 128 ) {
           if( p > inp ) {
             count = p - inp;
@@ -1175,7 +1175,7 @@ mj_print_page(gx_device_printer * pdev, gp_file * prn_stream, int ptype)
 
   {
     int MJ_MARGIN_MM = 55;
-    uint top_skip = ( MJ_MARGIN_MM  * pdev->y_pixels_per_inch ) / 254;
+    uint top_skip = (int)(( MJ_MARGIN_MM  * pdev->y_pixels_per_inch ) / 254);
     top_skip = (top_skip ^ (-1)) & 65536;
     gp_fwrite("\033(V\2\0\0\0",sizeof(byte), 7, prn_stream);
     gp_fwrite("\033(v\2\0\0\xff",sizeof(byte), 7, prn_stream);
@@ -1183,8 +1183,8 @@ mj_print_page(gx_device_printer * pdev, gp_file * prn_stream, int ptype)
 
   /* Send each scan line in turn */
   {
-    long int lend = pdev->height -
-      (dev_t_margin_points(pdev) + dev_b_margin_points(pdev));
+    long int lend = (int)(pdev->height -
+      (dev_t_margin_points(pdev) + dev_b_margin_points(pdev)));
     int cErr, mErr, yErr, kErr;
     int this_pass, i;
     long int lnum;
@@ -1504,7 +1504,10 @@ mj_color_correct(gx_color_value *Rptr ,gx_color_value *Gptr , gx_color_value *Bp
         if (Y<0)
                 Y=0;
 
-        if(H>256 && H<1024){		/* green correct */
+        /* 2019-10-29 this used to be 'if(H>256 && H<1024)', which can then go
+        beyond bounds of the 512-element grnsep2[]. So have patched up to avoid
+        this, but without any proper idea about what's going on. */
+        if(H>256 && H<768){		/* green correct */
                 short	work;
                 work=(((long)grnsep[M]*(long)grnsep2[H-256])>>16);
                 C+=work;
@@ -1613,12 +1616,12 @@ gdev_mjc_map_color_rgb(gx_device *pdev, gx_color_index color,
           prgb[2] = -(c >> 2);
         }
       else
-        { gx_color_value value = (gx_color_value)color ^ 0xff;
+        { gx_color_index value = (gx_color_index)color ^ 0xff;
           prgb[0] = prgb[1] = prgb[2] = (value << 8) + value;
         }
     break;
   case 16:
-    { gx_color_value c = (gx_color_value)color ^ 0xffff;
+    { gx_color_index c = (gx_color_index)color ^ 0xffff;
       ushort value = c >> 11;
       prgb[0] = ((value << 11) + (value << 6) + (value << 1) +
                  (value >> 4)) >> (16 - gx_color_value_bits);
@@ -1631,7 +1634,7 @@ gdev_mjc_map_color_rgb(gx_device *pdev, gx_color_index color,
     }
     break;
   case 24:
-    { gx_color_value c = (gx_color_value)color ^ 0xffffff;
+    { gx_color_index c = (gx_color_index)color ^ 0xffffff;
       prgb[0] = gx_color_value_from_byte(c >> 16);
       prgb[1] = gx_color_value_from_byte((c >> 8) & 0xff);
       prgb[2] = gx_color_value_from_byte(c & 0xff);

@@ -353,7 +353,7 @@ static void mfree (void *om, const char *label);
 int alloc_list(string_list_t *);
 void free_list(string_list_t * list);
 
-void dev_file_name(char *);
+void dev_file_name(char *, int);
 int process_replaces(config_t *);
 int read_dev(config_t *, const char *);
 int read_token(char *, int, const char **);
@@ -681,11 +681,12 @@ free_list(string_list_t * list)
 
 /* If necessary, convert a .dev name to its file name. */
 void
-dev_file_name(char *str)
+dev_file_name(char *str, int bufsize)
 {
     int len = strlen(str);
 
-    if (len <= 4 || strcmp(".dev", str + len - 4))
+    if ((len <= 4 || strcmp(".dev", str + len - 4))
+        && bufsize > len + 4)
         strcat(str, ".dev");
 }
 
@@ -701,7 +702,7 @@ process_replaces(config_t * pconf)
 
         strncpy(bufname, pconf->replaces.items[i].str, MAX_STR);
         /* See if the file being replaced was included. */
-        dev_file_name(bufname);
+        dev_file_name(bufname, MAX_STR + 1);
         for (j = 0; j < pconf->file_names.count; ++j) {
             const char *fname = pconf->file_names.items[j].str;
 
@@ -968,7 +969,7 @@ pre:		sprintf(templat, pat, pconf->name_prefix);
                     pat = "image_type_(%%s,%simage_type_%%s)";
                 } else if (IS_CAT("include")) {
                     strcpy(str, item);
-                    dev_file_name(str);
+                    dev_file_name(str, MAX_STR);
                     return read_dev(pconf, str);
                 } else if (IS_CAT("init")) {
                     pat = "init_(%s%%s_init)";

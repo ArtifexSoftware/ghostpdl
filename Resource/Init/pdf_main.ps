@@ -47,7 +47,7 @@ userdict /GS_PDF_ProcSet undef
         % PDF 1.1 operators
   /BX { /BXlevel BXlevel 1 add store } bind executeonly
   /EX { /BXlevel BXlevel 1 sub store } bind executeonly
-  /PS { cvx exec } bind executeonly
+  /PS { DOPS { cvx exec } { pop } ifelse } bind executeonly	% PS disabled by default, as in pdf_draw.ps DoPS
         % PDF 1.2 operators
   /BMC {
     /BMClevel BMClevel 1 add store
@@ -2339,8 +2339,20 @@ end readonly def
 
 /get_media_box { % <pagedict> get_media_box <box> <bool>
   /MediaBox pget {
-    oforce_array //true
-  } {
+    oforce_array
+    dup length 4 eq {
+      //true
+    }
+    {
+      pop
+      (   **** Error: Page has an invalid /MediaBox attribute. Using the current page size.\n)
+      pdfformaterror
+      (               Output may be incorrect.\n) pdfformaterror
+      [ 0 0 currentpagedevice /PageSize get aload pop ]
+      //false
+    }ifelse
+  }
+  {
     (   **** Error: Page has no /MediaBox attribute. Using the current page size.\n)
     pdfformaterror
     (               Output may be incorrect.\n) pdfformaterror
@@ -3545,24 +3557,33 @@ end			% pdfdict
 /.setfillcolor /.setfillcolorspace /.setstrokecolor /.setstrokecolorspace /.currentrenderingintent /.setrenderingintent
 /.currenttextrenderingmode /.settextspacing /.currenttextspacing /.settextleading /.currenttextleading
 /.settextrise /.currenttextrise /.setwordspacing /.currentwordspacing /.settexthscaling /.currenttexthscaling
-/.settextlinematrix /.currenttextlinematrix /.currenttextmatrix /.settextmatrix /.currentblendmode
-/.currentopacityalpha /.currentshapealpha /.currenttextknockout
-/.pushextendedgstate /.popextendedgstate /.begintransparencytextgroup
-/.endtransparencytextgroup /.begintransparencymaskgroup /.begintransparencymaskimage /.endtransparencymask /.image3x
-/.abortpdf14devicefilter /.pdfinkpath /.pdfFormName /.setstrokeconstantalpha
-/.setfillconstantalpha /.setalphaisshape /.currentalphaisshape
-/.settextspacing /.currenttextspacing /.settextleading /.currenttextleading /.settextrise /.currenttextrise
-/.setwordspacing /.currentwordspacing /.settexthscaling /.currenttexthscaling /.setPDFfontsize /.currentPDFfontsize
-/.setdistillerparams
+/.settextlinematrix /.currenttextlinematrix /.currenttextmatrix /.settextmatrix /.pushextendedgstate
+/.popextendedgstate
 
-% Used by our own test suite files
-%/.pushpdf14devicefilter    % transparency-example.ps
-%/.poppdf14devicefilter     % transparency-example.ps
-%/.setopacityalpha          % transparency-example.ps
-%/.setshapealpha            % transparency-example.ps
-%/.endtransparencygroup     % transparency-example.ps
+/.pdfinkpath /.pdfFormName /.settextspacing /.currenttextspacing /.settextleading /.currenttextleading
+/.settextrise /.currenttextrise /.setwordspacing /.currentwordspacing /.settexthscaling /.currenttexthscaling
+/.setPDFfontsize /.currentPDFfontsize /.setdistillerparams
 
 % undefining these causes errors/incorrect output
-%/.settextrenderingmode /.setblendmode /.begintransparencygroup /.settextknockout /.setstrokeoverprint /.setfilloverprint
-%/.currentstrokeoverprint /.currentfilloverprint /.currentfillconstantalpha /.currentstrokeconstantalpha
+%/.settextrenderingmode
 ] systemdict .undefinternalnames
+
+% The following are split out allowing control via ALLOWPSTRANSPARENCY command line param
+[
+  /.currentblendmode /.currentopacityalpha /.currentshapealpha /.currenttextknockout /.begintransparencytextgroup
+  /.endtransparencytextgroup /.begintransparencymaskgroup /.begintransparencymaskimage /.begintransparencypagegroup
+  /.endtransparencymask /.image3x /.abortpdf14devicefilter /.setfillconstantalpha /.setalphaisshape /.currentalphaisshape
+
+  % Used by our own test suite files
+  %/.pushpdf14devicefilter    % transparency-example.ps
+  %/.poppdf14devicefilter     % transparency-example.ps
+  %/.setopacityalpha          % transparency-example.ps
+  %/.setshapealpha            % transparency-example.ps
+  %/.endtransparencygroup     % transparency-example.ps
+
+  % undefining these causes errors/incorrect output
+  %/.setblendmode /.begintransparencygroup /.settextknockout /.setstrokeoverprint /.setfilloverprint
+  %/.currentstrokeoverprint /.currentfilloverprint /.currentfillconstantalpha /.currentstrokeconstantalpha
+  %/.setstrokeconstantalpha /.setfillconstantalpha /.setSMask /.currentSMask
+
+] systemdict dup /ALLOWPSTRANSPARENCY get {pop pop}{.undefinternalnames}ifelse

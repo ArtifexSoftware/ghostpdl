@@ -235,7 +235,7 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
             bbox.p.x = bbox.p.y = bbox.q.x = bbox.q.y = 0;
         } else {
             /* Check for singular stepping matrix. */
-            if (fabs(inst.step_matrix.xx * inst.step_matrix.yy - inst.step_matrix.xy * inst.step_matrix.yx) < 1.0e-6) {
+            if (fabs(inst.step_matrix.xx * inst.step_matrix.yy - inst.step_matrix.xy * inst.step_matrix.yx) < 1.0e-9) {
                 code = gs_note_error(gs_error_rangecheck);
                 goto fsaved;
             }

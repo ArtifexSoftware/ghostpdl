@@ -858,6 +858,8 @@ static int
 hpgl_polyfill_using_current_line_type(hpgl_state_t * pgls,
                                       hpgl_rendering_mode_t render_mode)
 {
+    int code;
+
     /* gsave and grestore used to preserve the clipping region */
     hpgl_call(hpgl_gsave(pgls));
 
@@ -866,13 +868,17 @@ hpgl_polyfill_using_current_line_type(hpgl_state_t * pgls,
      * beginning at the anchor corner replicate lines
      */
     if (pgls->g.fill_type == hpgl_even_odd_rule)
-        hpgl_call(gs_eoclip(pgls->pgs));
+        code = gs_eoclip(pgls->pgs);
     else
-        hpgl_call(gs_clip(pgls->pgs));
-    hpgl_call(hpgl_fill_polyfill_background(pgls));
-    hpgl_call(hpgl_polyfill(pgls, render_mode));
-    hpgl_call(hpgl_grestore(pgls));
-    return 0;
+        code = gs_clip(pgls->pgs);
+    if (code >= 0)  code = hpgl_fill_polyfill_background(pgls);
+    if (code >= 0)  code = hpgl_polyfill(pgls, render_mode);
+
+    {
+        int code2 = hpgl_grestore(pgls);
+        if (code >= 0)  code = code2;
+        return code;
+    }
 }
 
 static gs_rop3_t
@@ -1587,11 +1593,17 @@ hpgl_draw_current_path(hpgl_state_t * pgls, hpgl_rendering_mode_t render_mode)
                         if ((pgls->g.fill.type != hpgl_FT_pattern_one_line) &&
                             (pgls->g.fill.type !=
                              hpgl_FT_pattern_two_lines)) {
+                            int code2 = 0;
                             hpgl_call(hpgl_gsave(pgls));
                             /* all character fills appear to have 0 fill adjustment */
                             gs_setfilladjust(pgls->pgs, 0, 0);
-                            hpgl_call((*fill) (pgs));
-                            hpgl_call(hpgl_grestore(pgls));
+                            /* Always restore before handling any error. */
+                            code = (*fill) (pgs);
+                            code2 = hpgl_grestore(pgls);
+                            if (code >=0 && code2 < 0) {
+                                code = code2;
+                            }
+                            hpgl_call(code);
                         }
                         if ((pgls->g.bitmap_fonts_allowed) || (hpgl_is_currentfont_stick_or_arc(pgls))) /* no edging */
                             hpgl_call(hpgl_clear_current_path(pgls));

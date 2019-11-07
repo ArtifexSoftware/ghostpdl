@@ -786,16 +786,16 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
                                     *(devc_contone_gray+1) = *psrc_temp;
                             }
                         } else {
-                        /* Mono case, forward */
-                        psrc_temp = psrc_cm;
-                        for (k=0; k<src_size; k++) {
-                            dda_next(dda_ht);
-                            xn = fixed2int_var_rounded(dda_current(dda_ht));
-                            while (xr < xn) {
-                                *devc_contone_gray++ = *psrc_temp;
-                                xr++;
-                            }           /* at loop exit xn will be >= xr */
-                            psrc_temp++;
+                            /* Mono case, forward */
+                            psrc_temp = psrc_cm;
+                            for (k=0; k<src_size; k++) {
+                                dda_next(dda_ht);
+                                xn = fixed2int_var_rounded(dda_current(dda_ht));
+                                while (xr < xn) {
+                                    *devc_contone_gray++ = *psrc_temp;
+                                    xr++;
+                                }           /* at loop exit xn will be >= xr */
+                                psrc_temp++;
                             }
                         }
                     } else {
@@ -810,7 +810,7 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
                                 xr--;
                             }           /* at loop exit xn will be >= xr */
                             psrc_temp++;
-                            }
+                        }
                     }
                     break;
                 /* Monochrome landscape */
@@ -953,10 +953,9 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
                             dda_next(dda_ht);
                             xn = fixed2int_var_rounded(dda_current(dda_ht));
                             while (xr > xn) {
-                                for (j = 0; j < spp_out; j++) {
+                                for (j = 0; j < spp_out; j++)
                                     *(devc_contone[j] + position) = (psrc_plane[j])[i];
-                                    position -= LAND_BITS;
-                                }
+                                position -= LAND_BITS;
                                 xr--;
                             }           /* at loop exit xn will be <= xr */
                             i++;
@@ -967,9 +966,8 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
                            and 2x scaling which we will run into in 300 and
                            600dpi devices and content */
                         /* Apply initial offset */
-                        for (k = 0; k < spp_out; k++) {
+                        for (k = 0; k < spp_out; k++)
                             devc_contone[k] = devc_contone[k] + position;
-                        }
                         if (src_size == dest_height) {
                             for (k = 0; k < data_length; k++) {
                                 /* Is it better to unwind this?  We know it is 4 */
@@ -995,10 +993,9 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
                                 dda_next(dda_ht);
                                 xn = fixed2int_var_rounded(dda_current(dda_ht));
                                 while (xr > xn) {
-                                    for (j = 0; j < spp_out; j++) {
+                                    for (j = 0; j < spp_out; j++)
                                         *(devc_contone[j] + position) = (psrc_plane[j])[i];
-                                        position -= LAND_BITS;
-                                    }
+                                    position -= LAND_BITS;
                                     xr--;
                                 }           /* at loop exit xn will be <= xr */
                                 i++;

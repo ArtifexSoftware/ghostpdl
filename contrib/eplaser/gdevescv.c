@@ -33,6 +33,15 @@
 
  */
 
+#include <stdlib.h>		/* for abs() and free */
+
+/* Get this definition in before we read memento.h */
+static void
+unvectored_free(void *x)
+{
+  free(x);
+}
+
 #if ( 6 > GS_VERSION_MAJOR )
 
 #include <string.h>
@@ -59,7 +68,6 @@
 #else /* 6 <= GS_VERSION_MAJOR */
 
 #include "math_.h"
-#include <stdlib.h>		/* for abs() */
 #include <sys/utsname.h>	/* for uname(2) */
 #include <ctype.h>		/* for toupper(3) */
 
@@ -969,7 +977,11 @@ escv_beginpage(gx_device_vector * vdev)
     {
       time_t t;
 
+#ifdef CLUSTER
+      memset(&t, 0, sizeof(t));
+#else
       time(&t);
+#endif
 
       lputs(s, " DATE=\"");
       {
@@ -977,8 +989,14 @@ escv_beginpage(gx_device_vector * vdev)
         char   str[32];
         size_t i;
 
+#ifdef CLUSTER
+        memset(&tm, 0, sizeof(tm));
+        strcpy(str, "1970/01/01 00:00:00");
+        i = strlen(str);
+#else
         tm =  localtime( &t );
         i = strftime(str, 30, "%Y/%m/%d %H:%M:%S", tm);
+#endif
         if ( 30 >= i )
           str[i] = '\0';
 
@@ -1014,7 +1032,8 @@ escv_beginpage(gx_device_vector * vdev)
       if (sysname)
         {
           lputs(s, sysname );
-          free (sysname);
+          /* Carefully avoid memento interfering here. */
+          unvectored_free(sysname);
           sysname = NULL;
         }
     }

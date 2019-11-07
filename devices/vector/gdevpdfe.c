@@ -202,8 +202,13 @@ pdf_xmp_time(char *buf, int buf_length)
     time_t t;
     char buf1[4+1+2+1+2+1]; /* yyyy-mm-dd\0 */
 
+#ifdef CLUSTER
+    memset(&t, 0, sizeof(t));
+    memset(&tms, 0, sizeof(tms));
+#else
     time(&t);
     tms = *localtime(&t);
+#endif
     gs_sprintf(buf1,
             "%04d-%02d-%02d",
             tms.tm_year + 1900, tms.tm_mon + 1, tms.tm_mday);

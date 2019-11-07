@@ -342,12 +342,14 @@ bjc_compress(const byte *row, uint raster, byte *compressed)
     register byte test, test2;
 
     test = *exam;
-    while ( exam < end_row ) {
-      test2 = *++exam;
+    while ( ++exam < end_row ) {
+      test2 = *exam;
       if ( test == test2 )
           break;
       test = test2;
     }
+    /* exam points to the byte that didn't match, or end_row
+     * if we ran out of data. */
 
     /* Find out how long the run is */
     end_dis = exam - 1;
@@ -464,7 +466,11 @@ uint bjc_rand(gx_device_bjc_printer *dev)
 
 void bjc_init_tresh(gx_device_bjc_printer *dev, int rnd)
 {
+#ifdef CLUSTER
+    int i=0;
+#else
     int i=(int)(time(NULL) & 0x0ff);
+#endif
     float delta=40.64*rnd;
     for(;i>0;i--) bjc_rand(dev);
     for(i=-512; i<512; i++) dev->bjc_treshold[i+512] =
@@ -655,12 +661,15 @@ FloydSteinbergDitheringC(gx_device_bjc_printer *dev,
         for( i=width; i>0; i--, row+=4, err_vect+=3) { /*separate components */
 
 /*                                               C     +       K           */
-            err_corrC = dev->bjc_gamma_tableC[ (*row)    + (*(row+3))]
-                          + dev->FloydSteinbergC;
-            err_corrM = dev->bjc_gamma_tableM[(*(row+1)) + (*(row+3))]
-                          + dev->FloydSteinbergM;
-            err_corrY = dev->bjc_gamma_tableY[(*(row+2)) + (*(row+3))]
-                          + dev->FloydSteinbergY;
+            int v = row[0] + row[3];
+            if (v > 255) v = 255;
+            err_corrC = dev->bjc_gamma_tableC[v] + dev->FloydSteinbergC;
+            v = row[1] + row[3];
+            if (v > 255) v = 255;
+            err_corrM = dev->bjc_gamma_tableM[v] + dev->FloydSteinbergM;
+            v = row[2] + row[3];
+            if (v > 255) v = 255;
+            err_corrY = dev->bjc_gamma_tableY[v] + dev->FloydSteinbergY;
 
             if(err_corrC > 4080 && limit_extr) err_corrC = 4080;
             if(err_corrM > 4080 && limit_extr) err_corrM = 4080;
@@ -751,12 +760,15 @@ FloydSteinbergDitheringC(gx_device_bjc_printer *dev,
 
         for( i=width; i>0; i--, row-=4, err_vect-=3) {
 
-            err_corrC = dev->bjc_gamma_tableC[  (*row)   + (*(row+3))]
-                          + dev->FloydSteinbergC;
-            err_corrM = dev->bjc_gamma_tableM[(*(row+1)) + (*(row+3))]
-                          + dev->FloydSteinbergM;
-            err_corrY = dev->bjc_gamma_tableY[(*(row+2)) + (*(row+3))]
-                          + dev->FloydSteinbergY;
+            int v = row[0] + row[3];
+            if (v > 255) v = 255;
+            err_corrC = dev->bjc_gamma_tableC[v] + dev->FloydSteinbergC;
+            v = row[1] + row[3];
+            if (v > 255) v = 255;
+            err_corrM = dev->bjc_gamma_tableM[v] + dev->FloydSteinbergM;
+            v = row[2] + row[3];
+            if (v > 255) v = 255;
+            err_corrY = dev->bjc_gamma_tableY[v] + dev->FloydSteinbergY;
 
             if(err_corrC > 4080 && limit_extr) err_corrC = 4080;
             if(err_corrM > 4080 && limit_extr) err_corrM = 4080;

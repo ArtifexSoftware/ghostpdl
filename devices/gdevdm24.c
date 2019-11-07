@@ -51,20 +51,39 @@ static void dot24_improve_bitmap (byte *, int);
 static int
 dot24_print_page (gx_device_printer *pdev, gp_file *prn_stream, char *init_string, int init_len)
 {
-  int xres = (int)pdev->x_pixels_per_inch;
-  int yres = (int)pdev->y_pixels_per_inch;
-  int x_high = (xres == 360);
-  int y_high = (yres == 360);
-  int bits_per_column = (y_high ? 48 : 24);
-  uint line_size = gdev_prn_raster (pdev);
-  uint in_size = line_size * bits_per_column;
-  byte *in = (byte *) gs_malloc (pdev->memory, in_size, 1, "dot24_print_page (in)");
-  uint out_size = ((pdev->width + 7) & -8) * 3;
-  byte *out = (byte *) gs_malloc (pdev->memory, out_size, 1, "dot24_print_page (out)");
-  int y_passes = (y_high ? 2 : 1);
-  int dots_per_space = xres / 10;	/* pica space = 1/10" */
-  int bytes_per_space = dots_per_space * 3;
+  int xres;
+  int yres;
+  int x_high;
+  int y_high;
+  int bits_per_column;
+  uint line_size;
+  uint in_size;
+  byte *in;
+  uint out_size;
+  byte *out;
+  int y_passes;
+  int dots_per_space;
+  int bytes_per_space;
   int skip = 0, lnum = 0, ypass;
+
+  xres = (int)pdev->x_pixels_per_inch;
+  yres = (int)pdev->y_pixels_per_inch;
+  x_high = (xres == 360);
+  y_high = (yres == 360);
+  dots_per_space = xres / 10;       /* pica space = 1/10" */
+  bytes_per_space = dots_per_space * 3;
+  if (bytes_per_space == 0) {
+    /* We divide by bytes_per_space later on. */
+    return_error(gs_error_rangecheck);
+  }
+  
+  bits_per_column = (y_high ? 48 : 24);
+  line_size = gdev_prn_raster (pdev);
+  in_size = line_size * bits_per_column;
+  in = (byte *) gs_malloc (pdev->memory, in_size, 1, "dot24_print_page (in)");
+  out_size = ((pdev->width + 7) & -8) * 3;
+  out = (byte *) gs_malloc (pdev->memory, out_size, 1, "dot24_print_page (out)");
+  y_passes = (y_high ? 2 : 1);
 
   /* Check allocations */
   if (in == 0 || out == 0)

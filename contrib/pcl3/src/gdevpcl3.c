@@ -1378,8 +1378,8 @@ static int pcl3_open_device(gx_device *device)
 
     /* Per-colorant information */
     for (j = 0; j < data->number_of_colorants; j++) {
-      data->colorant_array[j].hres = dev->HWResolution[0] + 0.5;
-      data->colorant_array[j].vres = dev->HWResolution[1] + 0.5;
+      data->colorant_array[j].hres = (int)(dev->HWResolution[0] + 0.5);
+      data->colorant_array[j].vres = (int)(dev->HWResolution[1] + 0.5);
     }
     if (data->palette == pcl_CMY || data->palette == pcl_RGB)
       for (j = 0; j < 3; j++)

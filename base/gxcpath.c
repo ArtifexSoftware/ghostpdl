@@ -325,8 +325,10 @@ gx_cpath_assign_preserve(gx_clip_path * pcpto, gx_clip_path * pcpfrom)
             int code = cpath_alloc_list(&tolist, tolist->rc.memory,
                                         "gx_cpath_assign");
 
-            if (code < 0)
+            if (code < 0) {
+                rc_decrement(pcpto->path.segments, "gx_path_assign");
                 return code;
+            }
             rc_decrement(pcpto->rect_list, "gx_cpath_assign");
         } else {
             /* Use pcpto's list object. */
@@ -354,7 +356,7 @@ gx_cpath_assign_free(gx_clip_path * pcpto, gx_clip_path * pcpfrom)
     int code = gx_cpath_assign_preserve(pcpto, pcpfrom);
 
     if (code < 0)
-        return 0;
+        return code;
     gx_cpath_free(pcpfrom, "gx_cpath_assign_free");
     return 0;
 }

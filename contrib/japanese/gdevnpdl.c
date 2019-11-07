@@ -71,45 +71,45 @@
  * The commented values are from the PC-PR1000E/4 User's Manual.
  */
 /* margins of A3 paper */
-#define L_MARGIN_A3 0.20
-#define B_MARGIN_A3 0.24
-#define R_MARGIN_A3 0.20
-#define T_MARGIN_A3 0.20
+#define L_MARGIN_A3 0.20f
+#define B_MARGIN_A3 0.24f
+#define R_MARGIN_A3 0.20f
+#define T_MARGIN_A3 0.20f
 /* margins of A4 paper */
-#define L_MARGIN_A4 0.31
-#define B_MARGIN_A4 0.20
-#define R_MARGIN_A4 0.16
-#define T_MARGIN_A4 0.20
+#define L_MARGIN_A4 0.31f
+#define B_MARGIN_A4 0.20f
+#define R_MARGIN_A4 0.16f
+#define T_MARGIN_A4 0.20f
 /* margins of A5 paper */
-#define L_MARGIN_A5 0.31
-#define B_MARGIN_A5 0.16
-#define R_MARGIN_A5 0.16
-#define T_MARGIN_A5 0.20
+#define L_MARGIN_A5 0.31f
+#define B_MARGIN_A5 0.16f
+#define R_MARGIN_A5 0.16f
+#define T_MARGIN_A5 0.20f
 /* margins of B4 paper */
-#define L_MARGIN_B4 0.31
-#define B_MARGIN_B4 0.24
-#define R_MARGIN_B4 0.31
-#define T_MARGIN_B4 0.20
+#define L_MARGIN_B4 0.31f
+#define B_MARGIN_B4 0.24f
+#define R_MARGIN_B4 0.31f
+#define T_MARGIN_B4 0.20f
 /* margins of B5 paper */
-#define L_MARGIN_B5 0.31
-#define B_MARGIN_B5 0.24
-#define R_MARGIN_B5 0.16
-#define T_MARGIN_B5 0.20
+#define L_MARGIN_B5 0.31f
+#define B_MARGIN_B5 0.24f
+#define R_MARGIN_B5 0.16f
+#define T_MARGIN_B5 0.20f
 /* margins of letter size paper */
-#define L_MARGIN_LETTER 0.31
-#define B_MARGIN_LETTER 0.24
-#define R_MARGIN_LETTER 0.20
-#define T_MARGIN_LETTER 0.20
+#define L_MARGIN_LETTER 0.31f
+#define B_MARGIN_LETTER 0.24f
+#define R_MARGIN_LETTER 0.20f
+#define T_MARGIN_LETTER 0.20f
 /* margins of postcard size paper */
-#define L_MARGIN_POSTCARD 0.31
-#define B_MARGIN_POSTCARD 0.12
-#define R_MARGIN_POSTCARD 0.24
-#define T_MARGIN_POSTCARD 0.20
+#define L_MARGIN_POSTCARD 0.31f
+#define B_MARGIN_POSTCARD 0.12f
+#define R_MARGIN_POSTCARD 0.24f
+#define T_MARGIN_POSTCARD 0.20f
 /* margins of env4 size paper */
-#define L_MARGIN_ENV4 0.20
-#define B_MARGIN_ENV4 0.20
-#define R_MARGIN_ENV4 0.20
-#define T_MARGIN_ENV4 0.20
+#define L_MARGIN_ENV4 0.20f
+#define B_MARGIN_ENV4 0.20f
+#define R_MARGIN_ENV4 0.20f
+#define T_MARGIN_ENV4 0.20f
 
 /* The device descriptors */
 static dev_proc_open_device(npdl_open);
@@ -527,8 +527,8 @@ npdl_set_page_layout(gx_device * dev)
 static int
 npdl_open(gx_device * dev)
 {
-    int xdpi = dev->x_pixels_per_inch;
-    int ydpi = dev->y_pixels_per_inch;
+    int xdpi = (int)dev->x_pixels_per_inch;
+    int ydpi = (int)dev->y_pixels_per_inch;
 
     /* Print Resolution Check */
     if (xdpi != ydpi)
