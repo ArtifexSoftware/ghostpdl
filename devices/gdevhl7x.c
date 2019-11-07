@@ -108,7 +108,7 @@ typedef struct {
 
 typedef struct {
   short  previousSize;
-  Byte   previousData[1500]; /* Size bigger than any possible line */
+  Byte*  previousData;
   short  nbBlankLines;
   short  nbLinesSent;
   short  pageWidth;
@@ -139,7 +139,9 @@ static int dumpPage(gx_device_printer * pSource,
                       ByteList          * pCommandList,
                       Summary           * pSummary
                       );
-static void initSummary(Summary * s,short pw, short ph, short resolution);
+static int initSummary(gx_device_printer* pdev, Summary * s,short pw, short ph, short resolution);
+
+static void freeSummary(gx_device_printer* pdev, Summary * s);
 
 static void resetPreviousData(Summary * s);
 
@@ -319,6 +321,7 @@ static int
 hl7x0_print_page(gx_device_printer *pdev, gp_file *printStream, int ptype,
   int dots_per_inch, ByteList *initCommand)
 {
+  int code;
         /* UTILE*/
   /* Command for a formFeed (we can't use strings because of the zeroes...)*/
   Byte FormFeed[] = {'@','G',0x00,0x00,0x01,0xFF,'@','F'};
@@ -338,12 +341,17 @@ hl7x0_print_page(gx_device_printer *pdev, gp_file *printStream, int ptype,
         /* bool dupset = pdev->Duplex_set >= 0; */
         Summary pageSummary;
         ByteList commandsBuffer;
-        initSummary(&pageSummary,
+        if ( storage == 0 )	/* can't allocate working area */
+                return_error(gs_error_VMerror);
+        code = initSummary(pdev,
+                    &pageSummary,
                     line_size,
                     num_rows,
                     x_dpi);
-        if ( storage == 0 )	/* can't allocate working area */
-                return_error(gs_error_VMerror);
+        if (code < 0) {
+            gs_free(pdev->memory, (char *)storage, storage_size_words, 1, "hl7X0_print_page");
+            return code;
+        }
         initByteList(&commandsBuffer, storage, sizeOfBuffer,0 );
         /* PLUS A MOI */
         if ( pdev->PageCount == 0 )
@@ -370,6 +378,7 @@ hl7x0_print_page(gx_device_printer *pdev, gp_file *printStream, int ptype,
         dumpToPrinter(&formFeedCommand, printStream);
 
         /* free temporary storage */
+        freeSummary(pdev, &pageSummary);
         gs_free(pdev->memory, (char *)storage, storage_size_words, 1, "hl7X0_print_page");
 
         return 0; /* If we reach this line, it means there was no error */
@@ -413,14 +422,23 @@ return (((LETTER_WIDTH * resolution/600 - pixWidth) + pixOffset * 2) + 7) / 8;
 /*
  * First values in a Summary
  */
-static void initSummary(Summary * s,short pw, short ph, short resolution){
+static int initSummary(gx_device_printer* pdev, Summary * s,short pw, short ph, short resolution){
   s->previousSize = -1 ;
+  s->previousData = gs_malloc(pdev->memory, pw, 1, "initSummary");
   s->nbBlankLines = 1;
   s->nbLinesSent = 0;
   s->pageWidth = pw; /* In Bytes */
   s->pageHeight = ph;
   s->horizontalOffset = horizontalOffset( pw * 8,LEFT_MARGIN, resolution) ;
   s->resolution = resolution;
+  if (!s->previousData) {
+    return_error(gs_error_VMerror);
+  }
+  return 0;
+}
+
+static void freeSummary(gx_device_printer* pdev, Summary * s) {
+  gs_free(pdev->memory, s->previousData, s->pageWidth, 1, "freeSummary");
 }
 
 /*
