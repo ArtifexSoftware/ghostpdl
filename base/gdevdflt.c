@@ -2123,7 +2123,8 @@ transform_pixel_region_render_skew(gx_device *dev, gx_default_transform_pixel_re
     return (code < 0 ? code : 1);
     /* Save position if error, in case we resume. */
 err:
-    buffer[0] = prev;
+    /* Only set buffer[0] if we've managed to set prev to something valid. */
+    if (prev != &initial_run[0]) buffer[0] = prev;
     return code;
 }
 
