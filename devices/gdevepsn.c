@@ -165,16 +165,31 @@ eps_print_page(gx_device_printer *pdev, gp_file *prn_stream, int y_9pin_high,
         byte *out;
         int out_y_mult = (y_24pin ? 3 : 1);
         int x_dpi = (int)pdev->x_pixels_per_inch;
-        char start_graphics =
-                (y_24pin ? graphics_modes_24 : graphics_modes_9)[x_dpi / 60];
-        int first_pass = (start_graphics & DD ? 1 : 0);
-        int last_pass = first_pass * (y_9pin_high == 2 ? 1 : 2);
         int y_passes = (y_9pin_high ? 3 : 1);
         int dots_per_space = x_dpi / 10;	/* pica space = 1/10" */
         int bytes_per_space = dots_per_space * out_y_mult;
         int tab_min_pixels = x_dpi * MIN_TAB_10THS / 10;
         int skip = 0, lnum = 0, pass, ypass;
         
+        char start_graphics;
+        int first_pass;
+        int last_pass;
+
+        if (y_24pin) {
+            if (x_dpi / 60 >= sizeof(graphics_modes_24) / sizeof(graphics_modes_24[0])) {
+                return_error(gs_error_rangecheck);
+                start_graphics = graphics_modes_24[x_dpi / 60];
+            }
+        }
+        else {
+            if (x_dpi / 60 >= sizeof(graphics_modes_9) / sizeof(graphics_modes_9[0])) {
+                return_error(gs_error_rangecheck);
+                start_graphics = graphics_modes_9[x_dpi / 60];
+            }
+        }
+        first_pass = (start_graphics & DD ? 1 : 0);
+        last_pass = first_pass * (y_9pin_high == 2 ? 1 : 2);
+
         if (bytes_per_space == 0) {
             /* This avoids divide by zero later on, bug 701843. */
             return_error(gs_error_rangecheck);
