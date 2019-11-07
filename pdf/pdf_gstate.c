@@ -1070,7 +1070,7 @@ static int GS_TR2(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dic
     return code;
 }
 
-static char *spot_functions[] = {
+static const char *spot_functions[] = {
     "{dup mul exch dup mul add 1 exch sub}",        /* SimpleDot */
     "{dup mul exch dup mul add 1 sub}",             /* InvertedSimpleDot */
     "{360 mul sin 2 div exch 360 mul sin 2 div add",/* DoubleDot */
@@ -1114,7 +1114,7 @@ static char *spot_functions[] = {
      ifelse} ifelse}"                               /* Diamond */
 };
 
-static char *spot_table[] = {
+static const char *spot_table[] = {
     "SimpleDot",
     "InvertedSimpleDot",
     "DoubleDot",
@@ -1343,7 +1343,7 @@ static int build_type1_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
     if (code < 0)
         goto error;
 
-    phtc->comp_number = gs_cname_to_colorant_number(ctx->pgs, name, len, 1);
+    phtc->comp_number = gs_cname_to_colorant_number(ctx->pgs, (byte *)name, len, 1);
 
     code = gs_screen_order_init_memory(order, ctx->pgs, &phtc->params.spot.screen,
                                        gs_currentaccuratescreens(ctx->memory), ctx->memory);
@@ -1392,19 +1392,17 @@ error:
     return code;
 }
 
-static int pdfi_free_halftone(gs_memory_t *memory, void *data, client_name_t cname)
+static void pdfi_free_halftone(gs_memory_t *memory, void *data, client_name_t cname)
 {
     gs_halftone *pht = (gs_halftone *)data;
 
     gs_free_object(memory, pht->params.multiple.components, "pdfi_free_halftone");
-    return 0;
 }
 
 static int pdfi_do_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict *page_dict)
 {
     int code;
     int64_t type;
-    pdf_obj *obj = NULL;
     gs_halftone *pht = NULL;
     gx_device_halftone *pdht = NULL;
     gs_halftone_component *phtc = NULL;
@@ -1487,9 +1485,7 @@ error:
 static int GS_HT(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     int code;
-    int64_t type;
     pdf_obj *obj = NULL;
-    bool error = false;
 
     code = pdfi_dict_get(ctx, GS, "HT", &obj);
     if (code < 0)
