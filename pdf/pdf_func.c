@@ -413,8 +413,10 @@ pdfi_build_function_0(pdf_context *ctx, gs_function_params_t * mnDR,
         else
             goto function_0_error;
     }
-    if (code != 2 * params.m)
+    if (code != 2 * params.m) {
+        code = gs_error_rangecheck;
         goto function_0_error;
+    }
 
     code = make_float_array_from_dict(ctx, (float **)&params.Decode, function_dict, "Decode");
     if (code < 0) {
@@ -607,20 +609,28 @@ static int pdfi_build_sub_function(pdf_context *ctx, gs_function_t ** ppfn, cons
     if (code < 0)
         return code;
 
-    if (code & 1)
+    if (code & 1) {
+        code = gs_error_rangecheck;
         goto sub_function_error;
+    }
 
     for (i=0;i<code;i+=2) {
-        if (params.Domain[i] > params.Domain[i+1])
+        if (params.Domain[i] > params.Domain[i+1]) {
+            code = gs_error_rangecheck;
             goto sub_function_error;
+        }
     }
     if (shading_domain) {
-        if (num_inputs != code >> 1)
+        if (num_inputs != code >> 1) {
+            code = gs_error_rangecheck;
             goto sub_function_error;
+        }
 
         for (i=0;i<2*num_inputs;i+=2) {
-            if (params.Domain[i] > shading_domain[i] || params.Domain[i+1] < shading_domain[i+1])
+            if (params.Domain[i] > shading_domain[i] || params.Domain[i+1] < shading_domain[i+1]) {
+                code = gs_error_rangecheck;
                 goto sub_function_error;
+            }
         }
     }
 
@@ -679,4 +689,95 @@ int pdfi_free_function(pdf_context *ctx, gs_function_t *pfn)
 int pdfi_build_function(pdf_context *ctx, gs_function_t ** ppfn, const float *shading_domain, int num_inputs, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     return pdfi_build_sub_function(ctx, ppfn, shading_domain, num_inputs, stream_dict, page_dict);
+}
+
+int pdfi_build_halftone_function(pdf_context *ctx, gs_function_t ** ppfn, byte *Buffer, int64_t Length)
+{
+    gs_function_PtCr_params_t params;
+    pdf_stream *function_stream = NULL;
+    int code;
+    byte *data_source_buffer;
+    byte *ops = NULL;
+    unsigned int size;
+    float *pfloat;
+    byte *stream_buffer = NULL;
+
+    memset(&params, 0x00, sizeof(gs_function_PtCr_params_t));
+    params.ops.data = 0;	/* in case of failure */
+    params.ops.size = 0;	/* ditto */
+
+    stream_buffer = gs_alloc_bytes(ctx->memory, Length, "pdfi_build_halftone_function(stream_buffer))");
+    if (stream_buffer == NULL)
+        goto halftone_function_error;
+
+    memcpy(stream_buffer, Buffer, Length);
+
+    code = pdfi_open_memory_stream_from_memory(ctx, Length, stream_buffer, &function_stream);
+    if (code < 0)
+        goto halftone_function_error;
+
+    size = 0;
+    code = pdfi_parse_type4_func_stream(ctx, function_stream, 0, NULL, &size);
+    if (code < 0)
+        goto halftone_function_error;
+
+    ops = gs_alloc_string(ctx->memory, size + 1, "pdfi_build_halftone_function(ops)");
+    if (ops == NULL) {
+        code = gs_error_VMerror;
+        goto halftone_function_error;
+    }
+
+    code = pdfi_seek(ctx, function_stream, 0, SEEK_SET);
+    if (code < 0)
+        goto halftone_function_error;
+
+    size = 0;
+    code = pdfi_parse_type4_func_stream(ctx, function_stream, 0, ops, &size);
+    if (code < 0)
+        goto halftone_function_error;
+    ops[size] = PtCr_return;
+
+    code = pdfi_close_memory_stream(ctx, stream_buffer, function_stream);
+    if (code < 0) {
+        function_stream = NULL;
+        goto halftone_function_error;
+    }
+
+    params.ops.data = (const byte *)ops;
+    params.ops.size = size + 1;
+    params.m = 2;
+    params.n = 1;
+    pfloat = (float *)gs_alloc_byte_array(ctx->memory, 4, sizeof(float), "pdfi_build_halftone_function(Domain)");
+    if (pfloat == NULL) {
+        code = gs_error_VMerror;
+        goto halftone_function_error;
+    }
+    pfloat[0] = -1;
+    pfloat[1] = 1;
+    pfloat[2] = -1;
+    pfloat[3] = 1;
+    params.Domain = (const float *)pfloat;
+    pfloat = (float *)gs_alloc_byte_array(ctx->memory, 2, sizeof(float), "pdfi_build_halftone_function(Domain)");
+    if (pfloat == NULL) {
+        code = gs_error_VMerror;
+        goto halftone_function_error;
+    }
+    pfloat[0] = -1;
+    pfloat[1] = 1;
+    params.Range = (const float *)pfloat;
+
+    code = gs_function_PtCr_init(ppfn, &params, ctx->memory);
+    if (code < 0)
+        goto halftone_function_error;
+
+    return 0;
+
+halftone_function_error:
+    if (function_stream)
+        (void)pdfi_close_memory_stream(ctx, stream_buffer, function_stream);
+
+    gs_function_PtCr_free_params(&params, ctx->memory);
+    if (ops)
+        gs_free_const_string(ctx->memory, ops, size, "pdfi_build_function_4(ops)");
+    return code;
 }
