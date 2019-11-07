@@ -166,6 +166,13 @@ typedef struct stream_save_s {
     int group_depth;
 } stream_save;
 
+typedef struct name_entry {
+    char *name;
+    int len;
+    unsigned int index;
+    void *next;
+} pdfi_name_entry;
+
 typedef struct pdf_context_s
 {
     void *instance;
@@ -236,6 +243,9 @@ typedef struct pdf_context_s
      * (if any) are used in the file.
      */
     bool spot_capable_device;
+
+    /* A name table :-( */
+    pdfi_name_entry *name_table;
 
     /* We need a gs_font_dir for gs_definefotn() */
     gs_font_dir * font_dir;
@@ -340,6 +350,8 @@ typedef struct pdf_context_s
 pdf_context *pdfi_create_context(gs_memory_t *pmem);
 int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx);
 
+int pdfi_get_name_index(pdf_context *ctx, char *name, int len, unsigned int *returned);
+int pdfi_name_from_index(const gs_memory_t *mem, gs_separation_name index, unsigned char **name, unsigned int *len);
 int pdfi_open_pdf_file(pdf_context *ctx, char *filename);
 int pdfi_process_pdf_file(pdf_context *ctx, char *filename);
 int pdfi_close_pdf_file(pdf_context *ctx);

@@ -406,6 +406,90 @@ pdfi_report_errors(pdf_context *ctx)
     dmprintf(ctx->memory, "   **** specification.\n\n");
 }
 
+/* Name table
+ * I've been trying to avoid this for as long as possible, but it seems it cannot
+ * be evaded. We need functions to get an index for a given string (which will
+ * add the string to the table if its not present) and to cleear up the table
+ * on finishing a PDF file.
+ */
+
+int pdfi_get_name_index(pdf_context *ctx, char *name, int len, unsigned int *returned)
+{
+    pdfi_name_entry *e = NULL, *last_entry = NULL, *new_entry = NULL;
+    int index = 0;
+
+    if (ctx->name_table == NULL) {
+        e = NULL;
+    } else {
+        e = ctx->name_table;
+    }
+
+    while(e != NULL) {
+        if (e->len == len) {
+            if (memcmp(e->name, name, e->len) == 0) {
+                *returned = e->index;
+                return 0;
+            }
+        }
+        last_entry = e;
+        index = e->index;
+    }
+
+    new_entry = (pdfi_name_entry *)gs_alloc_bytes(ctx->memory, sizeof(pdfi_name_entry), "Alloc name table entry");
+    if (new_entry == NULL)
+        return_error(gs_error_VMerror);
+    memset(new_entry, 0x00, sizeof(pdfi_name_entry));
+    new_entry->name = (char *)gs_alloc_bytes(ctx->memory, len+1, "Alloc name table name");
+    if (new_entry->name == NULL) {
+        gs_free_object(ctx->memory, new_entry, "Failed to allocate name entry");
+            return_error(gs_error_VMerror);
+    }
+    memset(new_entry->name, 0x00, len+1);
+    memcpy(new_entry->name, name, len);
+    new_entry->len = len;
+    new_entry->index = ++index;
+
+    if (last_entry)
+        last_entry->next = new_entry;
+    else
+        ctx->name_table = new_entry;
+
+    *returned = new_entry->index;
+    return 0;
+}
+
+static int pdfi_free_name_table(pdf_context *ctx)
+{
+    if (ctx->name_table) {
+        pdfi_name_entry *next = NULL, *e = (pdfi_name_entry *)ctx->name_table;
+
+        while (e != NULL) {
+            next = (pdfi_name_entry *)e->next;
+            gs_free_object(ctx->memory, e->name, "free name table entries");
+            gs_free_object(ctx->memory, e, "free name table entries");
+            e = next;
+        }
+    }
+    ctx->name_table = NULL;
+    return 0;
+}
+
+int pdfi_name_from_index(const gs_memory_t *mem, gs_separation_name index, unsigned char **name, unsigned int *len)
+{
+    pdf_context *ctx = (pdf_context *)mem->gs_lib_ctx;
+    pdfi_name_entry *next = NULL, *e = (pdfi_name_entry *)ctx->name_table;
+
+    while (e != NULL) {
+        if (e->index == index) {
+            *name = (unsigned char *)e->name;
+            *len = e->len;
+        }
+        e = e->next;
+    }
+
+    return_error(gs_error_undefined);
+}
+
 /* These functions are used by the 'PL' implementation, eventually we will */
 /* need to have custom PostScript operators to process the file or at      */
 /* (least pages from it).                                                  */
@@ -420,6 +504,7 @@ int pdfi_close_pdf_file(pdf_context *ctx)
         ctx->main_stream = NULL;
     }
     ctx->main_stream_length = 0;
+    pdfi_free_name_table(ctx);
     return 0;
 }
 
