@@ -242,6 +242,16 @@ URFGENDIR=$(GLGENDIR)
 URFOBJDIR=$(GLOBJDIR)
 !endif
 
+!ifndef IMGSRCDIR
+IMGSRCDIR=.\gpdl\img
+!endif
+!ifndef IMGGENDIR
+IMGGENDIR=$(GLGENDIR)
+!endif
+!ifndef IMGOBJDIR
+IMGOBJDIR=$(GLOBJDIR)
+!endif
+
 CONTRIBDIR=.\contrib
 
 # Can we build PCL and XPS
