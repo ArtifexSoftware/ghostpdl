@@ -358,7 +358,7 @@ $(PSOBJ)zfilter.$(OBJ) : $(PSSRC)zfilter.c $(OP) $(memory__h)\
  $(files_h) $(ialloc_h) $(idict_h) $(idparam_h) $(ifilter_h) $(ilevel_h)\
  $(sfilter_h) $(srlx_h) $(sstring_h) $(stream_h) $(strimpl_h)\
  $(INT_MAK) $(MAKEDIRS)
-	$(PSCC) $(PSO_)zfilter.$(OBJ) $(C_) $(PSSRC)zfilter.c
+	$(PSCC) $(ENABLE_URF) $(URF_INCLUDE) $(PSO_)zfilter.$(OBJ) $(C_) $(PSSRC)zfilter.c
 
 $(PSOBJ)zfproc.$(OBJ) : $(PSSRC)zfproc.c $(GH) $(memory__h) $(stat__h)\
  $(oper_h)\

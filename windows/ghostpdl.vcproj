@@ -310,6 +310,14 @@
 				>
 			</File>
 		</Filter>
+		<Filter
+			Name="urf"
+			>
+			<File
+				RelativePath="..\gpdl\urf\urftop.c"
+				>
+			</File>
+		</Filter>
 	</Files>
 	<Globals>
 	</Globals>

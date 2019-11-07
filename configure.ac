@@ -1849,6 +1849,33 @@ AC_SUBST(JPXDIR)
 AC_SUBST(SHARE_JPX)
 AC_SUBST(JPXDEVS)
 
+ENABLEURF=
+URF_DEVS=''
+URF_INCLUDE=
+URF_DEV=
+SURFX_H=
+AC_ARG_WITH([urf], AC_HELP_STRING([--without-urf],
+    [do not try to include URF support]))
+
+if test x$with_urf != xno; then
+  AC_MSG_CHECKING([for URF support])
+  if test -d $srcdir/urf; then
+    AC_MSG_RESULT([yes])
+    ENABLEURF="$(D_)URF_INCLUDED$(_D)"
+    URF_DEVS='urfgray urfrgb urfcmyk'
+    GPDL_URF_TOP_OBJ=$(GPDLOBJ)/$(GPDL_URF_TOP_OBJ_FILE)
+    URF_INCLUDE=$(I_)$(URFSRCDIR)$(_I)
+    URF_DEV=$(GLD)urfd.dev
+    SURFX_H=SURFX_H=$(URFSRCDIR)$(D)surfx.h
+fi
+fi
+
+AC_SUBST(ENABLEURF)
+AC_SUBST(GPDL_URF_TOP_OBJ)
+AC_SUBST(URF_INCLUDE)
+AC_SUBST(URF_DEV)
+AC_SUBST(SURFX_H)
+
 AC_ARG_WITH([cal], AC_HELP_STRING([--without-cal],
     [do not try to use the CAL library for acceleration]))
 
@@ -2282,7 +2309,7 @@ while test -n "$drivers"; do
                 fi
                 ;;
         PRINTERS)
-                P_DEVS0="$P_DEVS0 $CANON_DEVS $EPSON_DEVS $HP_DEVS $LEXMARK_DEVS $BROTHER_DEVS $APPLE_DEVS $IBM_DEVS $OKI_DEVS $JAPAN_DEVS $MISC_PDEVS $ETS_HALFTONING_DEVS"
+                P_DEVS0="$P_DEVS0 $CANON_DEVS $EPSON_DEVS $HP_DEVS $LEXMARK_DEVS $BROTHER_DEVS $APPLE_DEVS $IBM_DEVS $OKI_DEVS $JAPAN_DEVS $MISC_PDEVS $ETS_HALFTONING_DEVS $URF_DEVS"
                 IJS_DEVS0="$IJSDEVS"
                 if test x$ac_cv_lib_dl_dlopen != xno -a x$found_iconv != xno; then
                         P_DEVS0="$P_DEVS0 $OPVP_DEVS"

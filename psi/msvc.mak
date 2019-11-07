@@ -232,6 +232,16 @@ GPDLGENDIR=$(GLGENDIR)
 GPDLOBJDIR=$(GLOBJDIR)
 !endif
 
+!ifndef URFSRCDIR
+URFSRCDIR=.\urf
+!endif
+!ifndef URFGENDIR
+URFGENDIR=$(GLGENDIR)
+!endif
+!ifndef URFOBJDIR
+URFOBJDIR=$(GLOBJDIR)
+!endif
+
 CONTRIBDIR=.\contrib
 
 # Can we build PCL and XPS
@@ -545,6 +555,28 @@ WITH_CUPS=0
 !endif
 !else
 WITH_CUPS=0
+!endif
+
+# Should we build URF...
+!ifdef WITH_URF
+!if "$(WITH_URF)"!="0"
+WITH_URF=1
+!else
+WITH_URF=0
+!endif
+!else
+!if exist ("$(URFSRCDIR)")
+WITH_URF=1
+!else
+WITH_URF=0
+!endif
+!endif
+!if "$(WITH_URF)"=="1"
+ENABLE_URF=$(D_)URF_INCLUDED$(_D)
+GPDL_URF_TOP_OBJ=$(GPDLOBJ)/$(GPDL_URF_TOP_OBJ_FILE)
+URF_INCLUDE=$(I_)$(URFSRCDIR)$(_I)
+URF_DEV=$(GLD)urfd.dev
+SURFX_H=$(URFSRCDIR)$(D)surfx.h
 !endif
 
 # Should we build using CAL....
@@ -1424,7 +1456,7 @@ FEATURE_DEVS=$(GLD)pipe.dev $(GLD)gsnogc.dev $(GLD)htxlib.dev $(GLD)psl3lib.dev 
 	     $(GLD)seprlib.dev $(GLD)translib.dev $(GLD)cidlib.dev $(GLD)psf0lib.dev $(GLD)psf1lib.dev\
              $(GLD)psf2lib.dev $(GLD)lzwd.dev $(GLD)sicclib.dev $(GLD)mshandle.dev $(GLD)mspoll.dev \
              $(GLD)ramfs.dev $(GLD)sjpx.dev $(GLD)sjbig2.dev \
-             $(GLD)pwgd.dev $(GLD)siscale.dev
+             $(GLD)pwgd.dev $(GLD)siscale.dev $(URF_DEV)
 
 
 !ifndef METRO
@@ -1486,6 +1518,9 @@ DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)ps2write.dev $(DD)eps2write.dev $(DD)txtwri
 DEVICE_DEVS16=$(DD)bbox.dev $(DD)plib.dev $(DD)plibg.dev $(DD)plibm.dev $(DD)plibc.dev $(DD)plibk.dev $(DD)plan.dev $(DD)plang.dev $(DD)planm.dev $(DD)planc.dev $(DD)plank.dev $(DD)planr.dev
 !if "$(WITH_CUPS)" == "1"
 DEVICE_DEVS16=$(DEVICE_DEVS16) $(DD)cups.dev
+!endif
+!if "$(WITH_URF)" == "1"
+DEVICE_DEVS16=$(DEVICE_DEVS16) $(DD)urfgray.dev $(DD)urfrgb.dev $(DD)urfcmyk.dev
 !endif
 # Overflow for DEVS3,4,5,6,9
 DEVICE_DEVS17=$(DD)ljet3.dev $(DD)ljet3d.dev $(DD)ljet4.dev $(DD)ljet4d.dev

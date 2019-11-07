@@ -59,6 +59,10 @@ GPDLSRCDIR=@srcdir@/gpdl
 GPDLGENDIR=./$(BUILDDIRPREFIX)@OBJDIR_BSDMAKE_WORKAROUND@
 GPDLOBJDIR=./$(BUILDDIRPREFIX)@OBJDIR_BSDMAKE_WORKAROUND@
 
+URFSRCDIR=@srcdir@/urf
+URFGENDIR=./$(BUILDDIRPREFIX)@OBJDIR_BSDMAKE_WORKAROUND@
+URFOBJDIR=./$(BUILDDIRPREFIX)@OBJDIR_BSDMAKE_WORKAROUND@
+
 CONTRIBDIR=@srcdir@/contrib
 
 # Do not edit the next group of lines.
@@ -328,6 +332,12 @@ LCMS2_CFLAGS=-DSHARE_LCMS=$(SHARE_LCMS) @LCMS2_ENDIAN@ @SQRTF_SUBST@  @LCMS2_PTR
 # Options are currently lcms or lcms2
 WHICH_CMS=@WHICHLCMS@
 
+# Do we have URF support?
+ENABLE_URF=@ENABLEURF@
+GPDL_URF_TOP_OBJ=@GPDL_URF_TOP_OBJ@
+URF_INCLUDE=@URF_INCLUDE@
+URF_DEV=@URF_DEV@
+SURFX_H=@SURFX_H@
 
 EXPATSRCDIR=@EXPATDIR@
 EXPAT_CFLAGS=@EXPAT_CFLAGS@
@@ -558,7 +568,7 @@ FEATURE_DEVS=$(GLD)pipe.dev $(GLD)gsnogc.dev $(GLD)htxlib.dev $(GLD)psl3lib.dev 
 	     $(GLD)seprlib.dev $(GLD)translib.dev $(GLD)cidlib.dev $(GLD)psf0lib.dev $(GLD)psf1lib.dev\
              $(GLD)psf2lib.dev $(GLD)lzwd.dev $(GLD)sicclib.dev \
              $(GLD)sjbig2.dev $(GLD)sjpx.dev $(GLD)ramfs.dev \
-             $(GLD)pwgd.dev $(GLD)siscale.dev
+             $(GLD)pwgd.dev $(GLD)siscale.dev $(URF_DEV)
 
 #FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev
 #FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)ttfont.dev $(GLD)pipe.dev
