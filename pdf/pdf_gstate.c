@@ -34,6 +34,11 @@
 #include "gslparam.h"
 #include "gstparam.h"
 
+#include "gxdht.h"
+#include "gxht.h"
+#include "gzht.h"
+#include "gsht.h"
+
 static const char *blend_mode_names[] = {
     GS_BLEND_MODE_NAMES, 0
 };
@@ -200,7 +205,7 @@ int pdfi_op_q(pdf_context *ctx)
 
 int pdfi_op_Q(pdf_context *ctx)
 {
-    int code;
+    int code = 0;
 
     dbgmprintf(ctx->memory, "(doing Q)\n"); /* TODO: Spammy, delete me at some point */
     if (ctx->pgs->level <= ctx->current_stream_save.gsave_level) {
@@ -1065,10 +1070,450 @@ static int GS_TR2(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dic
     return code;
 }
 
+static char *spot_functions[] = {
+    "{dup mul exch dup mul add 1 exch sub}",        /* SimpleDot */
+    "{dup mul exch dup mul add 1 sub}",             /* InvertedSimpleDot */
+    "{360 mul sin 2 div exch 360 mul sin 2 div add",/* DoubleDot */
+    "360 mul sin 2 div exch 360 mul\
+     sin 2 div add neg}",                           /* InvertedDoubleDot */
+    "{180 mul cos exch 180 mul cos add 2 div}",     /* CosineDot */
+    "{360 mul sin 2 div exch 2 div \
+     360 mul sin 2 div add}",                       /* Double */
+    "{360 mul sin 2 div exch 2 div \
+     360 mul sin 2 div add neg}",                   /* InvertedDouble */
+    "{exch pop abs neg}",                           /* Line */
+    "{pop}",                                        /* LineX */
+    "{exch pop}",                                   /* LineY */
+    "{abs exch abs 2 copy add 1.0 le\
+     {dup mul exch dup mul add 1 exch sub}\
+     {1 sub dup mul exch 1 sub dup mul add 1 sub}\
+     ifelse}",                                      /* Round */
+    "{abs exch abs 2 copy 3 mul exch 4 mul\
+     add 3 sub dup 0 lt\
+     {pop dup mul exch 0.75 div dup mul add\
+     4 div 1 exch sub}\
+     {dup 1 gt\
+     {pop 1 exch sub dup mul exch 1 exch sub\
+     0.75 div dup mul add 4 div 1 sub}\
+     {0.5 exch sub exch pop exch pop}}\
+     ifelse}ifelse}}",                              /* Ellipse */
+    "{dup mul 0.9 mul exch dup mul add 1 exch sub}",/* EllipseA */
+    "{dup mul 0.9 mul exch dup mul add 1 sub}",     /* InvertedEllipseA */
+    "{dup 5 mul 8 div mul exch dup mul exch add\
+     sqrt 1 exch sub}",                             /* EllipseB */
+    "{dup mul exch dup mul 0.9 mul add 1 exch sub}",/* EllipseC */
+    "{dup mul exch dup mul 0.9 mul add 1 sub}",     /* InvertedEllipseC */
+    "{abs exch abs 2 copy lt {exch} if pop neg}",   /* Square */
+    "{abs exch abs 2 copy gt {exch} if pop neg}",   /* Cross */
+    "{abs exch abs 0.9 mul add 2 div}",             /* Rhomboid */
+    "{abs exch abs 2 copy add 0.75 le\
+     {dup mul exch dup mul add 1 exch sub}\
+     {1 copy add 1.23 le\
+     {0.85 mul add 1 exch sub}\
+     {1 sub dup mul exch 1 sub dup mul add 1 sub}\
+     ifelse} ifelse}"                               /* Diamond */
+};
+
+static char *spot_table[] = {
+    "SimpleDot",
+    "InvertedSimpleDot",
+    "DoubleDot",
+    "InvertedDoubleDot",
+    "CosineDot",
+    "Double",
+    "InvertedDouble",
+    "Line",
+    "LineX",
+    "LineY",
+    "Round",
+    "Ellipse",
+    "EllipseA",
+    "InvertedEllipseA",
+    "EllipseB",
+    "EllipseC",
+    "InvertedEllipseC",
+    "Square",
+    "Cross",
+    "Rhomboid",
+    "Diamond"
+};
+
+#if 0
+static int pdfi_set_halftone(pdf_context *ctx, pdf_obj *obj, pdf_dict *stream_dict, pdf_dict *page_dict, bool is_TR)
+{
+    int code = 0;
+
+    if (obj->type == PDF_NAME) {
+            if (pdfi_name_is((const pdf_name *)obj, "Default")) {
+                goto exit;
+            } else {
+                code = gs_note_error(gs_error_rangecheck);
+                goto exit;
+            }
+    }
+
+    if (obj->type == PDF_ARRAY) {
+        if (pdfi_array_size((pdf_array *)obj) != 4) {
+            code = gs_note_error(gs_error_rangecheck);
+            goto exit;
+        } else {
+            code = pdfi_set_all_transfers(ctx, (pdf_array *)obj, page_dict, false);
+        }
+    } else
+        code = pdfi_set_gray_transfer(ctx, (pdf_dict *)obj, page_dict);
+
+exit:
+    return code;
+}
+
+int do_screen(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict *stream_dict, pdf_dict *page_dict)
+{
+    gs_screen_enum *penum = NULL;
+    gs_point pt;
+    int code;
+    gs_screen_halftone screen;
+    gx_ht_order order;
+    pdf_obj *obj = NULL;
+    double f, a;
+    float values[2] = {0, 0}, domain[2] = {-1, 1}, out;
+    gs_function_t *pfn = NULL;
+
+    memset(&screen, 0x00, sizeof(gs_screen_halftone));
+
+    code = pdfi_dict_get_number(ctx, halftone_dict, "Frequency", &f);
+    if (code < 0)
+        return code;
+
+    code = pdfi_dict_get_number(ctx, halftone_dict, "Angle", &a);
+    if (code < 0)
+        return code;
+
+    code = pdfi_dict_get(ctx, halftone_dict, "SpotFunction", &obj);
+    if (code < 0)
+        return code;
+
+    if (obj->type == PDF_NAME) {
+        if (pdfi_name_is((pdf_name *)obj, "Default")) {
+            return 0;
+        } else {
+            int i;
+
+            for (i = 0; i < sizeof(spot_table); i++){
+                if (pdfi_name_is((pdf_name *)obj, spot_table[i]))
+                    break;
+            }
+            if (i > sizeof(spot_table))
+                return gs_note_error(gs_error_rangecheck);
+            code = pdfi_build_halftone_function(ctx, &pfn, (byte *)spot_functions[i], strlen(spot_functions[i]));
+            if (code < 0)
+                goto error;
+        }
+    } else {
+        if (obj->type == PDF_DICT) {
+            code = pdfi_build_function(ctx, &pfn, (const float *)domain, 2, (pdf_dict *)obj, page_dict);
+            if (code < 0)
+                goto error;
+        } else
+            return gs_note_error(gs_error_typecheck);
+    }
+
+    screen.frequency = f;
+    screen.angle = a;
+
+    code = gs_screen_order_init_memory(&order, ctx->pgs, &screen,
+                                       gs_currentaccuratescreens(ctx->memory), ctx->memory);
+    if (code < 0)
+        goto error;
+
+    penum = gs_screen_enum_alloc(ctx->memory, "HT");
+    if (penum == 0) {
+        code = gs_error_VMerror;
+        goto error;
+    }
+
+    code = gs_screen_enum_init_memory(penum, &order, ctx->pgs, &screen, ctx->memory);
+    if (code < 0)
+        goto error;
+
+    do {
+        /* Generate x and y, the parameteric variables */
+        code = gs_screen_currentpoint(penum, &pt);
+        if (code < 0)
+            goto error;
+
+        if (code == 1)
+            break;
+
+        /* Process sample */
+        values[0] = pt.x, values[1] = pt.y;
+        code = gs_function_evaluate(pfn, (const float *)&values, &out);
+        if (code < 0)
+            goto error;
+
+        /* Store the sample */
+        code = gs_screen_next(penum, out);
+        if (code < 0)
+            goto error;
+
+    } while (1);
+    code = 0;
+
+    gs_screen_install(penum);
+
+error:
+    pdfi_countdown(obj);
+    pdfi_free_function(ctx, pfn);
+    gs_free_object(ctx->memory, penum, "HT");
+    return code;
+}
+#endif
+
+/* Dummy spot function */
+static float
+pdfi_spot1_dummy(double x, double y)
+{
+    return (x + y) / 2;
+}
+
+static int build_type1_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict *page_dict, gx_device_halftone *pdht, gs_halftone_component *phtc, char *name, int len)
+{
+    int code;
+    pdf_obj *obj = NULL;
+    double f, a;
+    float values[2] = {0, 0}, domain[4] = {-1, 1, -1, 1}, out;
+    gs_function_t *pfn = NULL;
+    gx_ht_order *order = NULL;
+    gs_screen_enum *penum = NULL;
+    gs_point pt;
+
+    code = pdfi_dict_get_number(ctx, halftone_dict, "Frequency", &f);
+    if (code < 0)
+        return code;
+
+    code = pdfi_dict_get_number(ctx, halftone_dict, "Angle", &a);
+    if (code < 0)
+        return code;
+
+    code = pdfi_dict_get(ctx, halftone_dict, "SpotFunction", &obj);
+    if (code < 0)
+        return code;
+
+    order = (gx_ht_order *)gs_alloc_bytes(ctx->memory, sizeof(gx_ht_order), "build_type1_halftone");
+    if (order == NULL) {
+        code = gs_note_error(gs_error_VMerror);
+        goto error;
+    }
+
+    if (obj->type == PDF_NAME) {
+        if (pdfi_name_is((pdf_name *)obj, "Default")) {
+            code = 0;
+            goto error;
+        } else {
+            int i;
+
+            for (i = 0; i < sizeof(spot_table); i++){
+                if (pdfi_name_is((pdf_name *)obj, spot_table[i]))
+                    break;
+            }
+            if (i > sizeof(spot_table))
+                return gs_note_error(gs_error_rangecheck);
+            code = pdfi_build_halftone_function(ctx, &pfn, (byte *)spot_functions[i], strlen(spot_functions[i]));
+            if (code < 0)
+                goto error;
+        }
+    } else {
+        if (obj->type == PDF_DICT) {
+            code = pdfi_build_function(ctx, &pfn, (const float *)domain, 2, (pdf_dict *)obj, page_dict);
+            if (code < 0)
+                goto error;
+        } else {
+            code = gs_note_error(gs_error_typecheck);
+            goto error;
+        }
+    }
+
+    phtc->params.spot.screen.frequency = f;
+    phtc->params.spot.screen.angle = a;
+    phtc->params.spot.screen.spot_function = pdfi_spot1_dummy;
+    phtc->params.spot.transfer = (code > 0 ? (gs_mapping_proc) 0 : gs_mapped_transfer);
+    phtc->params.spot.transfer_closure.proc = 0;
+    phtc->params.spot.transfer_closure.data = 0;
+    phtc->type = ht_type_spot;
+    code = pdfi_get_name_index(ctx, name, len, (unsigned int *)&phtc->cname);
+    if (code < 0)
+        goto error;
+
+    phtc->comp_number = gs_cname_to_colorant_number(ctx->pgs, name, len, 1);
+
+    code = gs_screen_order_init_memory(order, ctx->pgs, &phtc->params.spot.screen,
+                                       gs_currentaccuratescreens(ctx->memory), ctx->memory);
+    if (code < 0)
+        goto error;
+
+    penum = gs_screen_enum_alloc(ctx->memory, "build_type1_halftone");
+    if (penum == 0) {
+        code = gs_error_VMerror;
+        goto error;
+    }
+
+    code = gs_screen_enum_init_memory(penum, order, ctx->pgs, &phtc->params.spot.screen, ctx->memory);
+    if (code < 0)
+        goto error;
+
+    do {
+        /* Generate x and y, the parameteric variables */
+        code = gs_screen_currentpoint(penum, &pt);
+        if (code < 0)
+            goto error;
+
+        if (code == 1)
+            break;
+
+        /* Process sample */
+        values[0] = pt.x, values[1] = pt.y;
+        code = gs_function_evaluate(pfn, (const float *)&values, &out);
+        if (code < 0)
+            goto error;
+
+        /* Store the sample */
+        code = gs_screen_next(penum, out);
+        if (code < 0)
+            goto error;
+
+    } while (1);
+    code = 0;
+    pdht->order = penum->order;
+
+error:
+    pdfi_countdown(obj);
+    pdfi_free_function(ctx, pfn);
+    gs_free_object(ctx->memory, order, "build_type1_halftone");
+    gs_free_object(ctx->memory, penum, "build_type1_halftone");
+    return code;
+}
+
+static int pdfi_free_halftone(gs_memory_t *memory, void *data, client_name_t cname)
+{
+    gs_halftone *pht = (gs_halftone *)data;
+
+    gs_free_object(memory, pht->params.multiple.components, "pdfi_free_halftone");
+    return 0;
+}
+
+static int pdfi_do_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict *page_dict)
+{
+    int code;
+    int64_t type;
+    pdf_obj *obj = NULL;
+    gs_halftone *pht = NULL;
+    gx_device_halftone *pdht = NULL;
+    gs_halftone_component *phtc = NULL;
+
+    code = pdfi_dict_get_int(ctx, halftone_dict, "HalftoneType", &type);
+    if (code < 0)
+        return code;
+
+    pht = (gs_halftone *)gs_alloc_bytes(ctx->memory, sizeof(gs_halftone), "pdfi_do_halftone");
+    if (pht == 0) {
+        code = gs_note_error(gs_error_VMerror);
+        goto error;
+    }
+    memset(pht, 0x00, sizeof(gs_halftone));
+    pht->rc.memory = ctx->memory;
+    pht->rc.free = pdfi_free_halftone;
+
+    pdht = (gx_device_halftone *)gs_alloc_bytes(ctx->memory, sizeof(gx_device_halftone), "pdfi_do_halftone");
+    if (pdht == 0) {
+        code = gs_note_error(gs_error_VMerror);
+        goto error;
+    }
+    memset(pdht, 0x00, sizeof(gx_device_halftone));
+    pdht->num_dev_comp = ctx->pgs->device->color_info.num_components;
+
+    switch(type) {
+        case 1:
+            phtc = (gs_halftone_component *)gs_alloc_bytes(ctx->memory, sizeof(gs_halftone_component), "pdfi_do_halftone");
+            if (phtc == 0) {
+                code = gs_note_error(gs_error_VMerror);
+                goto error;
+            }
+
+            code = build_type1_halftone(ctx, halftone_dict, page_dict, pdht, phtc, "Default", 7);
+            if (code < 0)
+                goto error;
+
+            pht->type = 1;
+            pht->params.multiple.components = phtc;
+            pht->params.multiple.num_comp = 1;
+            pht->params.multiple.get_colorname_string = pdfi_name_from_index;
+            code = gx_gstate_dev_ht_install(ctx->pgs, pdht, pht->type, gs_currentdevice_inline(ctx->pgs));
+            if (code < 0)
+                goto error;
+
+            gx_device_halftone_release(pdht, pdht->rc.memory);
+            ctx->pgs->halftone = pht;
+            rc_increment(ctx->pgs->halftone);
+            gx_unset_both_dev_colors(ctx->pgs);
+            break;
+        case 5:
+            /* The only case involving multiple halftones, we need to enumerate each entry
+             * in the dictionary
+             */
+            /* Type 5 halftone dictionaries are required to have a Default */
+            code = pdfi_dict_get_int(ctx, halftone_dict, "Default", &type);
+            if (code < 0)
+                return code;
+            break;
+        case 6:
+            break;
+        case 10:
+            break;
+        case 16:
+            break;
+        default:
+            return_error(gs_error_rangecheck);
+            break;
+    }
+    gs_free_object(ctx->memory, pdht, "pdfi_do_halftone");
+    return 0;
+
+error:
+    gs_free_object(ctx->memory, pht, "pdfi_do_halftone");
+    gs_free_object(ctx->memory, phtc, "pdfi_do_halftone");
+    gs_free_object(ctx->memory, pdht, "pdfi_do_halftone");
+    return code;
+}
+
 static int GS_HT(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
-    dbgmprintf(ctx->memory, "ExtGState HT not yet implemented\n");
-    return 0;
+    int code;
+    int64_t type;
+    pdf_obj *obj = NULL;
+    bool error = false;
+
+    code = pdfi_dict_get(ctx, GS, "HT", &obj);
+    if (code < 0)
+        return code;
+
+
+    if (obj->type == PDF_NAME) {
+        if (pdfi_name_is((const pdf_name *)obj, "Default")) {
+            goto exit;
+        } else {
+            code = gs_note_error(gs_error_rangecheck);
+            goto exit;
+        }
+    } else {
+        if (obj->type != PDF_DICT) {
+            code = gs_note_error(gs_error_typecheck);
+            goto exit;
+        }
+        code = pdfi_do_halftone(ctx, (pdf_dict *)obj, page_dict);
+    }
+
+exit:
+    pdfi_countdown(obj);
+    return code;
 }
 
 static int GS_FL(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
