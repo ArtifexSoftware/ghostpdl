@@ -468,7 +468,13 @@ static void t1_hinter__compute_rat_transform_coef(t1_hinter * self)
 
 static inline void t1_hinter__adjust_matrix_precision(t1_hinter * self, fixed xx, fixed yy)
 {   fixed x = any_abs(xx), y = any_abs(yy);
-    fixed c = (x > y ? x : y);
+    fixed tc = (x > y ? x : y);
+    ufixed c;
+
+    /* Protect against signed overflow -
+     * note max_import_coord below is unsigned
+     */
+    c = (ufixed)(tc < 0 ? -tc : c);
 
     while (c >= self->max_import_coord) {
         /* Reduce the precision of ctmf to allow products to fit into 32 bits : */
