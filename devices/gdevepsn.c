@@ -178,14 +178,14 @@ eps_print_page(gx_device_printer *pdev, gp_file *prn_stream, int y_9pin_high,
         if (y_24pin) {
             if (x_dpi / 60 >= sizeof(graphics_modes_24) / sizeof(graphics_modes_24[0])) {
                 return_error(gs_error_rangecheck);
-                start_graphics = graphics_modes_24[x_dpi / 60];
             }
+            start_graphics = graphics_modes_24[x_dpi / 60];
         }
         else {
             if (x_dpi / 60 >= sizeof(graphics_modes_9) / sizeof(graphics_modes_9[0])) {
                 return_error(gs_error_rangecheck);
-                start_graphics = graphics_modes_9[x_dpi / 60];
             }
+            start_graphics = graphics_modes_9[x_dpi / 60];
         }
         first_pass = (start_graphics & DD ? 1 : 0);
         last_pass = first_pass * (y_9pin_high == 2 ? 1 : 2);
