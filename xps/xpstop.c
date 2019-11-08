@@ -127,6 +127,7 @@ xps_impl_allocate_interp_instance(pl_interp_implementation_t *impl,
         return gs_error_VMerror;
     }
 
+    /* FIXME: check return value */
     gsicc_init_iccmanager(pgs);
     memset(ctx, 0, sizeof(xps_context_t));
 
