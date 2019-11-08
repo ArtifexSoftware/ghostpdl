@@ -209,7 +209,12 @@ unshare_indexed_cspace(pcl_cs_indexed_t ** ppindexed)
     memcpy(pnew->pen_widths, pindexed->pen_widths,
            num_entries * sizeof(float));
     memcpy(pnew->norm, pindexed->norm, 3 * sizeof(pindexed->norm[0]));
-    memcpy(pnew->Decode, pindexed->Decode, 6 * sizeof(float));
+
+    /* Coverity thinks next memcpy() might need to be memmove(), so we
+    explicitly check for the buffers being equal. */
+    if (pnew->Decode != pindexed->Decode) {
+        memcpy(pnew->Decode, pindexed->Decode, 6 * sizeof(float));
+    }
 
     return 0;
 }
