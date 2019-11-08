@@ -1537,7 +1537,7 @@ create_lutAtoBprofile(unsigned char **pp_buffer_in, icHeader *header,
     /* Multiply the matrix in the AtoB object by the cam so that the data
        is in D50 */
     if (lutatobparts->matrix == NULL) {
-        gsicc_create_copy_matrix3(cam, &(temp_matrix.cu.u));
+        gsicc_create_copy_matrix3(cam, (float*) &temp_matrix);
         lutatobparts->matrix = &temp_matrix;
     } else {
         if (yonly) {
