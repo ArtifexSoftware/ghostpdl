@@ -2473,23 +2473,22 @@ currentdict /bndef undef
       % if the font was defined in-line, we won't have a object number
       dup /.gs.pdfobj# .knownget not { //null } if
     } {
-        dup /FontDescriptor knownoget {
           % if the font was defined in-line, we won't have a object number
-          dup /.gs.pdfobj# .knownget not { //null }if
-          dup //null eq {
-            exch pop
-          }{
-            exch dup /FontFile knownoget not {
-             dup /FontFile2 knownoget not {
-                dup /FontFile3 knownoget not {
-                  pop pop //null
-                } {pop pop}ifelse
+      dup /.gs.pdfobj# .knownget not { //null }if
+      dup //null eq not {
+         1 index /FontDescriptor knownoget {
+           dup /FontFile knownoget not {
+           dup /FontFile2 knownoget not {
+              dup /FontFile3 knownoget not {
+                pop pop //null
               } {pop pop}ifelse
-            }{pop pop}ifelse
-          }ifelse
-        }{
-          //null
-        } ifelse
+            } {pop pop}ifelse
+           }{pop pop}ifelse
+         }
+         {
+           pop //null
+         } ifelse
+      }if
     } ifelse
     3 1 roll
 
