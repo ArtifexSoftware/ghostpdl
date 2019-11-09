@@ -608,6 +608,7 @@ in:                             /* Initialize for a new page. */
     }
     if (target != 0)
         (*dev_proc(target, get_clipping_box))(target, &target_box);
+    memset(&gs_gstate, 0, sizeof(gs_gstate));
     GS_STATE_INIT_VALUES_CLIST((&gs_gstate));
     code = gs_gstate_initialize(&gs_gstate, mem);
     /* Remove the ICC link cache and replace with the device link cache
