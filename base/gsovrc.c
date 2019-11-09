@@ -489,6 +489,7 @@ static dev_proc_fill_rectangle(overprint_sep_fill_rectangle);
 static dev_proc_fill_rectangle_hl_color(overprint_fill_rectangle_hl_color);
 static dev_proc_copy_planes(overprint_copy_planes);
 static dev_proc_copy_alpha_hl_color(overprint_copy_alpha_hl_color);
+static dev_proc_begin_image(overprint_begin_image);
 
 /* other low-level overprint_sep_* rendering methods prototypes go here */
 
@@ -524,7 +525,7 @@ static const gx_device_procs generic_overprint_procs = {
     gx_default_fill_parallelogram,      /* fill_parallelogram */
     gx_default_fill_triangle,           /* fill_triangle */
     gx_default_draw_thin_line,          /* draw_thin_line */
-    gx_default_begin_image,             /* begin_image */
+    overprint_begin_image,              /* begin_image */
     0,                                  /* image_data (obsolete) */
     0,                                  /* end_image (obsolete) */
     gx_default_strip_tile_rectangle,    /* strip_tile_rectangle */
@@ -602,7 +603,7 @@ static const gx_device_procs sep_overprint_procs = {
     gx_default_fill_parallelogram,      /* fill_parallelogram */
     gx_default_fill_triangle,           /* fill_triangle */
     gx_default_draw_thin_line,          /* draw_thin_line */
-    gx_default_begin_image,             /* begin_image */
+    overprint_begin_image,              /* begin_image */
     0,                                  /* image_data (obsolete) */
     0,                                  /* end_image (obsolete) */
     gx_default_strip_tile_rectangle,    /* strip_tile_rectangle */
@@ -1298,8 +1299,22 @@ overprint_sep_fill_rectangle(
     }
 }
 
+static int
+overprint_begin_image(gx_device* dev,
+    const gs_gstate* pgs, const gs_image_t* pim,
+    gs_image_format_t format, const gs_int_rect* prect,
+    const gx_drawing_color* pdcolor, const gx_clip_path* pcpath,
+    gs_memory_t* memory, gx_image_enum_common_t** pinfo)
+{
+    overprint_device_t* opdev = (overprint_device_t*)dev;
+
+    opdev->op_state = OP_STATE_FILL;
+    return gx_default_begin_image(dev, pgs, pim, format, prect,
+        pdcolor, pcpath, memory, pinfo);
+}
+
 /* We need this to ensure the device knows we are doing a fill */
-int 
+static int 
 overprint_fill_path(gx_device* pdev, const gs_gstate* pgs,
     gx_path* ppath, const gx_fill_params* params_fill,
     const gx_device_color* pdcolor, const gx_clip_path* pcpath)
@@ -1312,7 +1327,7 @@ overprint_fill_path(gx_device* pdev, const gs_gstate* pgs,
 }
 
 /* We need this to ensure the device knows we are doing a stroke */
-int
+static int
 overprint_stroke_path(gx_device* pdev, const gs_gstate* pgs,
     gx_path* ppath, const gx_stroke_params* params_stroke,
     const gx_device_color* pdcolor, const gx_clip_path* pcpath)
@@ -1335,7 +1350,7 @@ overprint_stroke_path(gx_device* pdev, const gs_gstate* pgs,
 /*
  *	Cannot use default_fill_stroke_path because we need to set the is_fill_color
  */
-int
+static int
 overprint_fill_stroke_path(gx_device * pdev, const gs_gstate * pgs,
                            gx_path * ppath,
                            const gx_fill_params * params_fill,
@@ -1359,7 +1374,7 @@ overprint_fill_stroke_path(gx_device * pdev, const gs_gstate * pgs,
 }
 
 /* We need to make sure we are set up properly based upon the text mode */
-int
+static int
 overprint_text_begin(gx_device* dev, gs_gstate* pgs,
     const gs_text_params_t* text, gs_font* font,
     gx_path* path, const gx_device_color* pdcolor,
