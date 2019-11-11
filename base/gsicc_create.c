@@ -1759,7 +1759,7 @@ gsicc_create_abc_merge(gsicc_lutatob *atob_parts, gs_matrix3 *matrixLMN,
        to the mapping of X=Y by the identity table.  If there are b_curves
        these have an output that is 16 bit. */
     if (atob_parts->b_curves == NULL) {
-        scale_matrix(&(atob_parts->matrix->cu.u), 2.0);
+        scale_matrix((float*) atob_parts->matrix, 2.0);
     }
     return 0;
 }
