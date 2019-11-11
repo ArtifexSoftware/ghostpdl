@@ -284,7 +284,7 @@ systemdict begin
     dup .file_name_current eq {
       pop
     } {
-      (Resource) search {
+      (Resource) rsearch {
         exch concatstrings
         exch pop
         .file_name_separator concatstrings exit
