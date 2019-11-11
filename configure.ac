@@ -919,9 +919,6 @@ UFST_CFLAGS=
 UFST_LIB_EXT=
 FAPIUFST_MAK="\$(GLSRCDIR)\$(D)stub.mak"
 
-AC_ARG_ENABLE([fapi], AC_HELP_STRING([--disable-fapi],
-       [Force use of the (deprecated) Artifex font scaler/renderer]))
-
 if test x"$enable_fapi" != xno; then
 
   dnl UFST detection
@@ -989,7 +986,7 @@ if test x"$enable_fapi" != xno; then
 
     if test x"$FTSRCDIR" = x"src"; then
       AC_MSG_RESULT([no])
-      if test "x$PKGCONFIG" != x; then
+      if test x"$PKGCONFIG" != x""; then
         AC_MSG_CHECKING(for system freetype2 >= 2.4.2 with pkg-config)
             # pkg-config needs the libtool version, which != the freetype2 version <sigh!>
             # There is a table of corresponding ft2<->libtool numbers in freetype/docs/VERSION.DLL
@@ -1001,7 +998,6 @@ if test x"$enable_fapi" != xno; then
                 SHARE_FT=1
             else
                 AC_MSG_RESULT(no)
-                AC_MSG_WARN([freetype library source not found...using native rasterizer])
                 AFS=1
             fi
       else
@@ -1033,6 +1029,10 @@ if test x"$enable_fapi" != xno; then
       fi
     fi
   fi
+fi
+
+if test x"$FT_BRIDGE" != x"1"; then
+  AC_MSG_ERROR([No usable Freetype source or library found])
 fi
 
 AC_SUBST(INSERT_UFST_BRIDGE_EQUAL_ONE)
