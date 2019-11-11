@@ -800,7 +800,7 @@ gp_open_scratch_file_rm(const gs_memory_t *mem,
                         char              *fname,
                         const char        *mode)
 {
-    gp_file *file;
+    gp_file *file = NULL;
     gs_lib_ctx_t *ctx = mem->gs_lib_ctx;
     gs_fs_list_t *fs = ctx->core->fs;
 
