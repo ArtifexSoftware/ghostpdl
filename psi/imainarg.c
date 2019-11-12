@@ -509,7 +509,9 @@ run_stdin:
                             break;
                     }
                 if (code >= 0)
-                    code = runarg(minst, "]put", psarg, ".runfile", runInit | runFlush, minst->user_errors, NULL, NULL);
+                    code = run_string(minst, "]put", 0, minst->user_errors, NULL, NULL);
+                if (code >= 0)
+                    code = argproc(minst, psarg);
                 arg_free((char *)psarg, minst->heap);
                 if (code >= 0)
                     code = gs_error_Quit;
