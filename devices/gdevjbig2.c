@@ -89,7 +89,7 @@ jbig2_print_page(gx_device_printer * pdev, gp_file * prn_stream)
     swrite_file(&fstrm, prn_stream, fbuf, fbuf_size);
     s_init(&cstrm, mem);
     s_std_init(&cstrm, jbuf, jbuf_size, &s_filter_write_procs,
-               s_mode_write);
+               s_devices/gdevescp.cmode_write);
     cstrm.state = (stream_state *) & state;
     cstrm.procs.process = state.templat->process;
     cstrm.strm = &fstrm;
@@ -108,7 +108,9 @@ jbig2_print_page(gx_device_printer * pdev, gp_file * prn_stream)
             code = gs_note_error(gs_error_ioerror);
             goto done;
         }
-        gdev_prn_get_bits(pdev, lnum, in, &data);        
+        code = gdev_prn_get_bits(pdev, lnum, in, &data);
+        if (code < 0)
+            goto done;
         sputs(&cstrm, data, state.stride, &ignore_used);
     }
 

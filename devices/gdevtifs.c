@@ -331,6 +331,9 @@ int gdev_tiff_begin_page(gx_device_tiff *tfdev,
                     profile_struct->device_profile[0], profile_struct->postren_profile,
                     &rendering_params);
             }
+            if (tfdev->icclink == NULL) {
+                return_error(gs_error_VMerror);
+            }
             /* If it is identity, release it now and set link to NULL */
             if (tfdev->icclink->is_identity) {
                 tfdev->icclink->procs.free_link(tfdev->icclink);
@@ -477,7 +480,7 @@ tiff_print_page(gx_device_printer *dev, TIFF *tif, int min_feature_size)
     for (row = 0; row < dev->height && code >= 0; row++) {
         code = gdev_prn_copy_scan_lines(dev, row, data, size);
         if (code < 0)
-            break;
+            goto cleanup;
         if (min_feature_size > 1) {
             filtered_count = min_feature_size_process(data, min_feature_data);
             if (filtered_count == 0)

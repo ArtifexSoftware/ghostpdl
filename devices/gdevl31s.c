@@ -180,6 +180,8 @@ lj3100sw_print_page_copies(gx_device_printer *pdev, gp_file *prn_stream, int num
         gs_memory_t *mem = pdev->memory;
         byte *in = (byte *)gs_malloc(mem, line_size, 1, "lj3100sw_print_page");
         byte *data;
+        int ecode = 0;
+
         if (in == 0)
                 return_error(gs_error_VMerror);
         if (gdev_prn_file_is_new(pdev)) {
@@ -211,7 +213,10 @@ lj3100sw_print_page_copies(gx_device_printer *pdev, gp_file *prn_stream, int num
                         int count = 0;
                         int bit_index = 0;
                         uint tmp = 0;
-                        gdev_prn_get_bits(pdev, i, in, &data);
+
+                        ecode = gdev_prn_get_bits(pdev, i, in, &data);
+                        if (ecode < 0)
+                            goto xit;
                         for (j = 0; j <= printer_width; j++) {
                                 int xoffset = (printer_width - paper_width) / 2;
                                 int newcolor = 0;
@@ -261,8 +266,9 @@ lj3100sw_print_page_copies(gx_device_printer *pdev, gp_file *prn_stream, int num
         for (i = 0; i < 4 * ppdev->NumCopies; i++)
                 lj3100sw_output_section_header(prn_stream, 54, 0, 0);
 
+xit:
         gs_free(mem, (char *)in, line_size, 1, "lj3100sw_print_page");
-        return 0;
+        return ecode;
 }
 
 static int

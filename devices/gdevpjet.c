@@ -99,9 +99,10 @@ pj_common_print_page(gx_device_printer *pdev, gp_file *prn_stream, int y_origin,
 {
         int line_size;
         int data_size;
-        byte *data;
-        byte *plane_data;
-        byte *temp;
+        byte *data = NULL;
+        byte *plane_data = NULL;
+        byte *temp = NULL;
+        int code = 0;
 
         /* We round up line_size to a multiple of 8 bytes */
         /* because that's the unit of transposition from pixels to planes. */
@@ -154,8 +155,10 @@ pj_common_print_page(gx_device_printer *pdev, gp_file *prn_stream, int y_origin,
                 int num_blank_lines = 0;
                 for ( lnum = 0; lnum < pdev->height; lnum++ )
                    {	byte *end_data = data + line_size;
-                        gdev_prn_copy_scan_lines(pdev, lnum,
+                        code = gdev_prn_copy_scan_lines(pdev, lnum,
                                                  (byte *)data, line_size);
+                        if (code < 0)
+                            goto xit;
                         /* Remove trailing 0s. */
                         while ( end_data > data && end_data[-1] == 0 )
                                 end_data--;
@@ -223,11 +226,12 @@ pj_common_print_page(gx_device_printer *pdev, gp_file *prn_stream, int y_origin,
         /* end the page */
         gp_fputs(end_page, prn_stream);
 
+xit:
         gs_free(pdev->memory, (char *)data, data_size, 1, "paintjet_print_page(data)");
         gs_free(pdev->memory, (char *)plane_data, line_size * 3, 1, "paintjet_print_page(plane_data)");
         gs_free(pdev->memory, temp, line_size * 2, 1, "paintjet_print_page(temp)");
 
-        return 0;
+        return code;
 }
 
 /*

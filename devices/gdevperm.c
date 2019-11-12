@@ -135,8 +135,8 @@ perm_print_page(gx_device_printer *pdev, gp_file *pstream)
     gx_device_perm_t * const dev = (gx_device_perm_t *)pdev;
     int ncomp = dev->num_std_colorant_names;
     int raw_raster = pdev->width * ncomp;
-    byte *raw_line;
-    byte *cooked_line;
+    byte *raw_line = NULL;
+    byte *cooked_line = NULL;
     byte *row;
     int code = 0;
     int mode = dev->mode;
@@ -145,9 +145,15 @@ perm_print_page(gx_device_printer *pdev, gp_file *pstream)
     fprintf(pstream, "P6\n%d %d\n255\n", dev->width, dev->height);
     raw_line = gs_alloc_bytes(pdev->memory, raw_raster, "perm_print_page");
     cooked_line = gs_alloc_bytes(pdev->memory, dev->width * 3, "perm_print_page");
+    if (raw_line == NULL || cooked_line == NULL) {
+        gs_free_object(pdev->memory, raw_line, "perm_print_page");
+        return_error(gs_error_VMerror);
+    }
     for (y = 0; y < dev->height; y++) {
         int x;
         code = gdev_prn_get_bits(pdev, y, raw_line, &row);
+        if (code < 0)
+            break;
         for (x = 0; x < dev->width; x++) {
             int c, m, y, k;
             int r, g, b;

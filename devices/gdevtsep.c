@@ -1796,6 +1796,9 @@ tiffsep_prn_open(gx_device * pdev)
                 profile_struct->device_profile[0], profile_struct->postren_profile,
                 &rendering_params);
         }
+        if (pdev_sep->icclink == NULL) {
+            return_error(gs_error_VMerror);
+        }
         /* If it is identity, release it now and set link to NULL */
         if (pdev_sep->icclink->is_identity) {
             pdev_sep->icclink->procs.free_link(pdev_sep->icclink);

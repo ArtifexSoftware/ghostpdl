@@ -1054,6 +1054,8 @@ pnmcmyk_print_page(gx_device_printer *pdev, gp_file *pstream)
             !strncmp(pdev->fname, "/dev/null", min(strlen(pdev->fname), 9));
         int (*row_proc) (gx_device_printer *, byte *, int, gp_file *);
 
+        if (data == NULL)
+            return_error(gs_error_VMerror);
         if (!output_is_nul) {
             if (gp_fprintf(pstream, "P5\n") < 0) {	/* PGM raw */
                 code = gs_note_error(gs_error_ioerror);

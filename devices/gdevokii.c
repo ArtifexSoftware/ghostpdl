@@ -111,6 +111,7 @@ okiibm_print_page1(gx_device_printer *pdev, gp_file *prn_stream, int y_9pin_high
         int y_passes;
         int skip = 0, lnum = 0, pass, ypass;
         int y_step = 0;
+        int code = 0;
 
         x_dpi = pdev->x_pixels_per_inch;
         if (x_dpi / 60 >= sizeof(graphics_modes_9)/sizeof(graphics_modes_9[0])) {
@@ -132,12 +133,9 @@ okiibm_print_page1(gx_device_printer *pdev, gp_file *prn_stream, int y_9pin_high
         y_step = 0;
 
         /* Check allocations */
-        if ( buf1 == 0 || buf2 == 0 )
-        {	if ( buf1 )
-                  gs_free(pdev->memory, (char *)buf1, in_size, 1, "okiibm_print_page(buf1)");
-                if ( buf2 )
-                  gs_free(pdev->memory, (char *)buf2, in_size, 1, "okiibm_print_page(buf2)");
-                return_error(gs_error_VMerror);
+        if ( buf1 == 0 || buf2 == 0 ) {
+            code = gs_error_VMerror;
+            goto xit;
         }
 
         /* Initialize the printer. */
@@ -153,7 +151,9 @@ okiibm_print_page1(gx_device_printer *pdev, gp_file *prn_stream, int y_9pin_high
                 int lcnt;
 
                 /* Copy 1 scan line and test for all zero. */
-                gdev_prn_get_bits(pdev, lnum, in, &in_data);
+                code = gdev_prn_get_bits(pdev, lnum, in, &in_data);
+                if (code < 0)
+                    goto xit;
                 if ( in_data[0] == 0 &&
                      !memcmp((char *)in_data, (char *)in_data + 1, line_size - 1)
                    )
@@ -264,8 +264,13 @@ okiibm_print_page1(gx_device_printer *pdev, gp_file *prn_stream, int y_9pin_high
         gp_fwrite(end_string, 1, end_length, prn_stream);
         gp_fflush(prn_stream);
 
-        gs_free(pdev->memory, (char *)buf2, in_size, 1, "okiibm_print_page(buf2)");
-        gs_free(pdev->memory, (char *)buf1, in_size, 1, "okiibm_print_page(buf1)");
+xit:
+        if ( buf1 )
+            gs_free(pdev->memory, (char *)buf1, in_size, 1, "okiibm_print_page(buf1)");
+        if ( buf2 )
+            gs_free(pdev->memory, (char *)buf2, in_size, 1, "okiibm_print_page(buf2)");
+        if (code < 0)
+            return_error(code);
         return 0;
 }
 

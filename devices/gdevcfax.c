@@ -149,7 +149,9 @@ cfax_stream_print_page_width(gx_device_printer * pdev, gp_file * prn_stream,
         if (code < 0)
             return_error(gs_error_limitcheck);
         /* Now, get the bits and encode them */
-        gdev_prn_copy_scan_lines(pdev, lnum, in, in_size);
+        code = gdev_prn_copy_scan_lines(pdev, lnum, in, in_size);
+        if (code < 0)
+            goto done;
         if (col_size > in_size) {
             memset(in + in_size , 0, col_size - in_size);
         }

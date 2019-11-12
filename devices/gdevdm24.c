@@ -64,7 +64,7 @@ dot24_print_page (gx_device_printer *pdev, gp_file *prn_stream, char *init_strin
   int y_passes;
   int dots_per_space;
   int bytes_per_space;
-  int skip = 0, lnum = 0, ypass;
+  int skip = 0, lnum = 0, code = 0, ypass;
 
   xres = (int)pdev->x_pixels_per_inch;
   yres = (int)pdev->y_pixels_per_inch;
@@ -76,7 +76,7 @@ dot24_print_page (gx_device_printer *pdev, gp_file *prn_stream, char *init_strin
     /* We divide by bytes_per_space later on. */
     return_error(gs_error_rangecheck);
   }
-  
+
   bits_per_column = (y_high ? 48 : 24);
   line_size = gdev_prn_raster (pdev);
   in_size = line_size * bits_per_column;
@@ -111,7 +111,9 @@ dot24_print_page (gx_device_printer *pdev, gp_file *prn_stream, char *init_strin
       int lcnt;
 
       /* Copy 1 scan line and test for all zero. */
-      gdev_prn_copy_scan_lines (pdev, lnum, in, line_size);
+      code = gdev_prn_copy_scan_lines (pdev, lnum, in, line_size);
+      if (code < 0)
+          goto xit;
       if (in[0] == 0
           && !memcmp ((char *) in, (char *) in + 1, line_size - 1))
         {
@@ -138,27 +140,40 @@ dot24_print_page (gx_device_printer *pdev, gp_file *prn_stream, char *init_strin
       /* Copy the rest of the scan lines. */
       if (y_high)
         {
+          /* NOTE: even though fixed to not ignore return < 0 from gdev_prn_copy_scan_lines, */
+          /*       this code seems wrong -- it doesn't seem to match the 'else' method.      */
           inp = in + line_size;
-          for (lcnt = 1; lcnt < 24; lcnt++, inp += line_size)
-            if (!gdev_prn_copy_scan_lines (pdev, lnum + lcnt * 2, inp,
-                                           line_size))
+          for (lcnt = 1; lcnt < 24; lcnt++, inp += line_size) {
+            code = gdev_prn_copy_scan_lines (pdev, lnum + lcnt * 2, inp, line_size);
+            if (code < 0)
+                goto xit;
+            if (code == 0)
               {
+                /* Pad with lines of zeros. */
                 memset (inp, 0, (24 - lcnt) * line_size);
                 break;
               }
+          }
           inp = in + line_size * 24;
-          for (lcnt = 0; lcnt < 24; lcnt++, inp += line_size)
-            if (!gdev_prn_copy_scan_lines (pdev, lnum + lcnt * 2 + 1, inp,
-                                           line_size))
+          for (lcnt = 0; lcnt < 24; lcnt++, inp += line_size) {
+            code = gdev_prn_copy_scan_lines (pdev, lnum + lcnt * 2 + 1, inp, line_size);
+            if (code < 0)
+                goto xit;
+            if (code == 0)
               {
+                /* Pad with lines of zeros. */
                 memset (inp, 0, (24 - lcnt) * line_size);
                 break;
               }
+          }
         }
       else
         {
-          lcnt = 1 + gdev_prn_copy_scan_lines (pdev, lnum + 1, in + line_size,
+          code = gdev_prn_copy_scan_lines (pdev, lnum + 1, in + line_size,
                                                in_size - line_size);
+          if (code < 0)
+              goto xit;
+          lcnt = code + 1;	/* FIXME: why +1 */
           if (lcnt < 24)
             /* Pad with lines of zeros. */
             memset (in + lcnt * line_size, 0, in_size - lcnt * line_size);
@@ -242,10 +257,11 @@ dot24_print_page (gx_device_printer *pdev, gp_file *prn_stream, char *init_strin
   gp_fputs ("\f\033@", prn_stream);
   gp_fflush (prn_stream);
 
+xit:
   gs_free (pdev->memory, (char *) out, out_size, 1, "dot24_print_page (out)");
   gs_free (pdev->memory, (char *) in, in_size, 1, "dot24_print_page (in)");
 
-  return 0;
+  return code;
 }
 
 /* Output a single graphics command. */

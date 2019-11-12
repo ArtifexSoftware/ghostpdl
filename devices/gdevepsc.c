@@ -184,7 +184,7 @@ epsc_print_page(gx_device_printer * pdev, gp_file * prn_stream)
     int last_pass;
     int dots_per_space; 
     int bytes_per_space;
-    int skip = 0, lnum = 0, pass;
+    int skip = 0, lnum = 0, code = 0, pass;
 
     byte *color_in;
     int color_line_size, color_in_size;
@@ -232,7 +232,7 @@ epsc_print_page(gx_device_printer * pdev, gp_file * prn_stream)
         if (out)
             gs_free(pdev->memory, (char *)out, out_size + 1, 1,
                     "epsc_print_page(out)");
-        return -1;
+        return_error(gs_error_VMerror);
     }
 
     /* Initialize the printer and reset the margins. */
@@ -248,7 +248,7 @@ epsc_print_page(gx_device_printer * pdev, gp_file * prn_stream)
                     "epsc_print_page(in)");
             gs_free(pdev->memory, (char *)out, out_size + 1, 1,
                     "epsc_print_page(out)");
-            return (-1);
+            return_error(gs_error_VMerror);
         }
     } else {
         color_in = in;
@@ -263,7 +263,9 @@ epsc_print_page(gx_device_printer * pdev, gp_file * prn_stream)
         byte *nextmono = NULL;  /* position to map next color */
 
         /* Copy 1 scan line and test for all zero. */
-        gdev_prn_copy_scan_lines(pdev, lnum, color_in, color_line_size);
+        code = gdev_prn_copy_scan_lines(pdev, lnum, color_in, color_line_size);
+        if (code < 0)
+            goto xit;
 
         if (color_in[0] == 0 &&
             !memcmp((char *)color_in, (char *)color_in + 1,
@@ -283,9 +285,12 @@ epsc_print_page(gx_device_printer * pdev, gp_file * prn_stream)
             gp_fprintf(prn_stream, "\033J%c", skip);
 
         /* Copy the rest of the scan lines. */
-        lcnt = 1 + gdev_prn_copy_scan_lines(pdev, lnum + 1,
+        code = gdev_prn_copy_scan_lines(pdev, lnum + 1,
                                             color_in + color_line_size,
                                             color_in_size - color_line_size);
+         if (code < 0)
+             goto xit;
+         lcnt = code + 1;
 
         if (lcnt < 8 * y_mult) {
             memset((char *)(color_in + lcnt * color_line_size), 0,
@@ -453,13 +458,14 @@ epsc_print_page(gx_device_printer * pdev, gp_file * prn_stream)
     /* Eject the page and reinitialize the printer */
     gp_fputs("\f\033@", prn_stream);
 
+xit:
     gs_free(pdev->memory, (char *)out, out_size + 1, 1,
             "epsc_print_page(out)");
     gs_free(pdev->memory, (char *)in, in_size + 1, 1, "epsc_print_page(in)");
     if (gx_device_has_color(pdev))
         gs_free(pdev->memory, (char *)color_in, color_in_size + 1, 1,
                 "epsc_print_page(rin)");
-    return 0;
+    return code;
 }
 
 /* Output a single graphics command. */

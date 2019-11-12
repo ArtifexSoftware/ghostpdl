@@ -1270,11 +1270,18 @@ xcf_write_image_data(xcf_write_ctx *xc, gx_device_printer *pdev)
     tile_data = (byte **)gs_alloc_bytes(pdev->memory,
                                         xc->n_tiles_x * sizeof(byte *),
                                         "xcf_write_image_data");
+    if (line == NULL || tile_data ==  NULL) {
+        code = gs_error_VMerror;
+        goto xit;
+    }
+    memset(tile_data, 0, xc->n_tiles_x * sizeof(byte *));
     for (tile_i = 0; tile_i < xc->n_tiles_x; tile_i++) {
         int tile_bytes = xcf_tile_sizeof(xc, tile_i) * bytes_pp;
 
         tile_data[tile_i] = gs_alloc_bytes(pdev->memory, tile_bytes,
                                            "xcf_write_image_data");
+        if (tile_data[tile_i] == NULL)
+            goto xit;
     }
     for (tile_j = 0; tile_j < xc->n_tiles_y; tile_j++) {
         int y0, y1;
@@ -1285,6 +1292,8 @@ xcf_write_image_data(xcf_write_ctx *xc, gx_device_printer *pdev)
         y1 = min(xc->height, y0 + TILE_HEIGHT);
         for (y = y0; y < y1; y++) {
             code = gdev_prn_get_bits(pdev, y, line, &row);
+            if (code < 0)
+                goto xit;
             if (link == NULL)
                 xcf_shuffle_to_tile(xc, tile_data, row, y);
             else
@@ -1303,9 +1312,12 @@ xcf_write_image_data(xcf_write_ctx *xc, gx_device_printer *pdev)
         }
     }
 
-    for (tile_i = 0; tile_i < xc->n_tiles_x; tile_i++) {
-        gs_free_object(pdev->memory, tile_data[tile_i],
-                "xcf_write_image_data");
+xit:
+    if (tile_data != NULL) {
+        for (tile_i = 0; tile_i < xc->n_tiles_x; tile_i++) {
+            gs_free_object(pdev->memory, tile_data[tile_i],
+                    "xcf_write_image_data");
+        }
     }
     gs_free_object(pdev->memory, tile_data, "xcf_write_image_data");
     gs_free_object(pdev->memory, line, "xcf_write_image_data");

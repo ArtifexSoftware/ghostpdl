@@ -192,7 +192,7 @@ ljet5_print_page(gx_device_printer * pdev, gp_file * prn_stream)
 
         code = gdev_prn_copy_scan_lines(pdev, lnum, (byte *) line, line_size);
         if (code < 0)
-            goto fin;
+            goto done;
         px_put_us(s, lnum);
         PX_PUT_LIT(s, line_header);
         ncompr = gdev_pcl_mode2compress_padded(line, line + line_size_words,
@@ -202,7 +202,6 @@ ljet5_print_page(gx_device_printer * pdev, gp_file * prn_stream)
     }
 
     /* Finish up. */
-  fin:
     spputc(s, pxtEndImage);
     spputc(s, pxtEndPage);
     sflush(s);

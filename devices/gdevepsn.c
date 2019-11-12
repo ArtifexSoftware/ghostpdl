@@ -159,8 +159,8 @@ eps_print_page(gx_device_printer *pdev, gp_file *prn_stream, int y_9pin_high,
         int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
         /* Note that in_size is a multiple of 8. */
         int in_size = line_size * (8 * in_y_mult);
-        byte *buf1;
-        byte *buf2;
+        byte *buf1 = NULL;
+        byte *buf2 = NULL;
         byte *in;
         byte *out;
         int out_y_mult = (y_24pin ? 3 : 1);
@@ -170,6 +170,7 @@ eps_print_page(gx_device_printer *pdev, gp_file *prn_stream, int y_9pin_high,
         int bytes_per_space = dots_per_space * out_y_mult;
         int tab_min_pixels = x_dpi * MIN_TAB_10THS / 10;
         int skip = 0, lnum = 0, pass, ypass;
+        int code = 0;
         
         char start_graphics;
         int first_pass;
@@ -202,12 +203,9 @@ eps_print_page(gx_device_printer *pdev, gp_file *prn_stream, int y_9pin_high,
         
 
         /* Check allocations */
-        if ( buf1 == 0 || buf2 == 0 )
-        {	if ( buf1 )
-                  gs_free(pdev->memory, (char *)buf1, in_size, 1, "eps_print_page(buf1)");
-                if ( buf2 )
-                  gs_free(pdev->memory, (char *)buf2, in_size, 1, "eps_print_page(buf2)");
-                return_error(gs_error_VMerror);
+        if ( buf1 == 0 || buf2 == 0 ) {
+            code = gs_error_VMerror;
+            goto xit;
         }
 
         /* Initialize the printer and reset the margins. */
@@ -233,7 +231,9 @@ eps_print_page(gx_device_printer *pdev, gp_file *prn_stream, int y_9pin_high,
                 int lcnt;
 
                 /* Copy 1 scan line and test for all zero. */
-                gdev_prn_get_bits(pdev, lnum, in, &in_data);
+                code = gdev_prn_get_bits(pdev, lnum, in, &in_data);
+                if (code < 0)
+                    goto xit;
                 if ( in_data[0] == 0 &&
                      !memcmp((char *)in_data, (char *)in_data + 1, line_size - 1)
                    )
@@ -255,7 +255,9 @@ eps_print_page(gx_device_printer *pdev, gp_file *prn_stream, int y_9pin_high,
                 }
 
                 /* Copy the the scan lines. */
-                lcnt = gdev_prn_copy_scan_lines(pdev, lnum, in, in_size);
+                code = lcnt = gdev_prn_copy_scan_lines(pdev, lnum, in, in_size);
+                if (code < 0)
+                    goto xit;
                 if ( lcnt < 8 * in_y_mult )
                 {	/* Pad with lines of zeros. */
                         memset(in + lcnt * line_size, 0,
@@ -417,9 +419,14 @@ eps_print_page(gx_device_printer *pdev, gp_file *prn_stream, int y_9pin_high,
         gp_fputs(end_string, prn_stream);
         gp_fflush(prn_stream);
 
-        gs_free(pdev->memory, (char *)buf2, in_size, 1, "eps_print_page(buf2)");
-        gs_free(pdev->memory, (char *)buf1, in_size, 1, "eps_print_page(buf1)");
-        return 0;
+xit:
+        if ( buf1 )
+            gs_free(pdev->memory, (char *)buf1, in_size, 1, "eps_print_page(buf1)");
+        if ( buf2 )
+            gs_free(pdev->memory, (char *)buf2, in_size, 1, "eps_print_page(buf2)");
+        if (code < 0)
+            return_error(code);
+        return code;
 }
 
 /* Output a single graphics command. */

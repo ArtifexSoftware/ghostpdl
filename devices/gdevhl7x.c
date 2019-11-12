@@ -366,9 +366,11 @@ hl7x0_print_page(gx_device_printer *pdev, gp_file *printStream, int ptype,
                             storage + sizeOfBuffer, /* The line buffer is after the dump buffer */
                             &commandsBuffer,
                             &pageSummary);
+            if (result < 0)
+                goto xit;
           dumpToPrinter(&commandsBuffer,printStream);
 
-        } while (result == DumpContinue);
+        } while (result == DumpContinue);	/* NB: at end  of page, result will be DumpFinished == 0 */
 
         /* end raster graphics and eject page */
         initByteList(&formFeedCommand,
@@ -377,11 +379,12 @@ hl7x0_print_page(gx_device_printer *pdev, gp_file *printStream, int ptype,
                      sizeof(FormFeed)); /* First free byte */
         dumpToPrinter(&formFeedCommand, printStream);
 
+xit:
         /* free temporary storage */
         freeSummary(pdev, &pageSummary);
         gs_free(pdev->memory, (char *)storage, storage_size_words, 1, "hl7X0_print_page");
 
-        return 0; /* If we reach this line, it means there was no error */
+        return result; /* If we reach this line, it means there was no error */
 }
 
 /*
@@ -463,6 +466,8 @@ static int dumpPage(gx_device_printer * pSource,
   short  lineNB;
   short usefulLength;
   short tmpLength;
+  int code = 0;
+
   /* Initializations */
   /* Make room for size of commands buffer */
   pSaveCommandStart = currentPosition(pCommandList);
@@ -472,10 +477,12 @@ static int dumpPage(gx_device_printer * pSource,
   for (lineNB = pSummary->nbLinesSent /*ERROR? + nbBlankLines */ ;
        lineNB < pSummary->pageHeight ; lineNB ++ ) {
     /* Fetch the line and put it into the buffer */
-    gdev_prn_copy_scan_lines(pSource,
+    code = gdev_prn_copy_scan_lines(pSource,
                              lineNB,
                              pLineTmp,
                              pSummary->pageWidth);
+    if (code < 0)
+        return code;
 
     usefulLength =  stripTrailingBlanks(pLineTmp,pSummary->pageWidth);
     if (usefulLength != 0) {

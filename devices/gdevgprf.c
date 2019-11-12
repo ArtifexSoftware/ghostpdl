@@ -372,6 +372,8 @@ gprf_prn_open(gx_device * pdev)
         pdev_gprf->icclink = gsicc_alloc_link_dev(pdev_gprf->memory,
             profile_struct->device_profile[0], profile_struct->postren_profile,
             &rendering_params);
+        if (pdev_gprf->icclink == NULL)
+            code = gs_error_VMerror;
     }
     return code;
 }

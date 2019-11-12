@@ -68,7 +68,7 @@ cljc_print_page(gx_device_printer * pdev, gp_file * prn_stream)
 
         code = gdev_prn_copy_scan_lines(pdev, i, (byte *) data, raster);
         if (code < 0)
-            break;
+            goto out;
         compressed_size = gdev_pcl_mode3compress(raster, data, prow, cdata);
         gp_fprintf(prn_stream, "\033*b%dW", compressed_size);
         gp_fwrite(cdata, sizeof(byte), compressed_size, prn_stream);

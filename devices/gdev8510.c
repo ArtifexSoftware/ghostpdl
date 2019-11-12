@@ -68,9 +68,13 @@ m8510_print_page(gx_device_printer *pdev, gp_file *prn_stream)
         while ( lnum < pdev->height ) {
                 /* get a raster */
                 for (i = 7; i >= 0; i--) {
-                        gdev_prn_copy_scan_lines(pdev, lnum, &in1[i*line_size], line_size);
+                        code = gdev_prn_copy_scan_lines(pdev, lnum, &in1[i*line_size], line_size);
+                        if (code < 0)
+                            goto out;
                         lnum++;
-                        gdev_prn_copy_scan_lines(pdev, lnum, &in2[i*line_size], line_size);
+                        code = gdev_prn_copy_scan_lines(pdev, lnum, &in2[i*line_size], line_size);
+                        if (code < 0)
+                            goto out;
                         lnum++;
                 }
 

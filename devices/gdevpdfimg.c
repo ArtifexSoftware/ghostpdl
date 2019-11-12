@@ -271,6 +271,10 @@ static int gdev_pdf_image_begin_page(gx_device_pdf_image *pdf_dev,
                     profile_struct->device_profile[0], profile_struct->postren_profile,
                     &rendering_params);
             }
+            if (pdf_dev->icclink == NULL) {
+                gs_free_object(pdf_dev->memory->non_gc_memory, page, "pdfimage create new page");
+                return_error(gs_error_VMerror);
+            }
             /* If it is identity, release it now and set link to NULL */
             if (pdf_dev->icclink->is_identity) {
                 pdf_dev->icclink->procs.free_link(pdf_dev->icclink);
@@ -281,8 +285,10 @@ static int gdev_pdf_image_begin_page(gx_device_pdf_image *pdf_dev,
 
         /* Set up the stream and insert the file header */
         pdf_dev->strm = s_alloc(pdf_dev->memory->non_gc_memory, "pdfimage_open_temp_stream(strm)");
-        if (pdf_dev->strm == 0)
+        if (pdf_dev->strm == 0) {
+            gs_free_object(pdf_dev->memory->non_gc_memory, page, "pdfimage create new page");
             return_error(gs_error_VMerror);
+        }
         pdf_dev->strm_buf = gs_alloc_bytes(pdf_dev->memory->non_gc_memory, pdf_dev->width * (pdf_dev->color_info.depth / 8),
                                        "pdfimage_open_temp_stream(strm_buf)");
         if (pdf_dev->strm_buf == 0) {
@@ -290,6 +296,7 @@ static int gdev_pdf_image_begin_page(gx_device_pdf_image *pdf_dev,
             gs_free_object(pdf_dev->memory->non_gc_memory, pdf_dev->strm,
                            "pdfimage_open_temp_stream(strm)");
             pdf_dev->strm = 0;
+            gs_free_object(pdf_dev->memory->non_gc_memory, page, "pdfimage create new page");
             return_error(gs_error_VMerror);
         }
         swrite_file(pdf_dev->strm, pdf_dev->file, pdf_dev->strm_buf, pdf_dev->width * (pdf_dev->color_info.depth / 8));
@@ -1276,6 +1283,10 @@ static int gdev_PCLm_begin_page(gx_device_pdf_image *pdf_dev,
                     profile_struct->device_profile[0], profile_struct->postren_profile,
                     &rendering_params);
             }
+            if (pdf_dev->icclink == NULL) {
+                gs_free_object(pdf_dev->memory->non_gc_memory, page, "pdfimage create new page");
+                return_error(gs_error_VMerror);
+            }
             /* If it is identity, release it now and set link to NULL */
             if (pdf_dev->icclink->is_identity) {
                 pdf_dev->icclink->procs.free_link(pdf_dev->icclink);
@@ -1286,8 +1297,10 @@ static int gdev_PCLm_begin_page(gx_device_pdf_image *pdf_dev,
 
         /* Set up the stream and insert the file header */
         pdf_dev->strm = s_alloc(pdf_dev->memory->non_gc_memory, "pdfimage_open_temp_stream(strm)");
-        if (pdf_dev->strm == 0)
+        if (pdf_dev->strm == 0) {
+            gs_free_object(pdf_dev->memory->non_gc_memory, page, "pdfimage create new page");
             return_error(gs_error_VMerror);
+        }
         pdf_dev->strm_buf = gs_alloc_bytes(pdf_dev->memory->non_gc_memory, 512,
                                        "pdfimage_open_temp_stream(strm_buf)");
         if (pdf_dev->strm_buf == 0) {
@@ -1295,6 +1308,7 @@ static int gdev_PCLm_begin_page(gx_device_pdf_image *pdf_dev,
             gs_free_object(pdf_dev->memory->non_gc_memory, pdf_dev->strm,
                            "pdfimage_open_temp_stream(strm)");
             pdf_dev->strm = 0;
+            gs_free_object(pdf_dev->memory->non_gc_memory, page, "pdfimage create new page");
             return_error(gs_error_VMerror);
         }
         swrite_file(pdf_dev->strm, pdf_dev->file, pdf_dev->strm_buf, 512);

@@ -134,13 +134,16 @@ alloc_std_cmap(gx_device_X *xdev, bool colored)
 
 /* Allocate the dynamic color table, if needed and possible. */
 /* Uses: vinfo, cman.num_rgb.  Sets: cman.dynamic.*. */
-static void
+/* Return true if the allocation was successful. */
+static bool
 alloc_dynamic_colors(gx_device_X * xdev, int num_colors)
 {
     if (num_colors > 0) {
         xdev->cman.dynamic.colors = (x11_color_t **)
             gs_malloc(xdev->memory, sizeof(x11_color_t *), xdev->cman.num_rgb,
                       "x11 cman.dynamic.colors");
+        if (xdev->cman.dynamic.colors == NULL)
+            return false;
         if (xdev->cman.dynamic.colors) {
             int i;
 
@@ -152,6 +155,7 @@ alloc_dynamic_colors(gx_device_X * xdev, int num_colors)
             xdev->cman.dynamic.used = 0;
         }
     }
+    return true;
 }
 
 /* Allocate an X color, updating the reverse map. */
@@ -388,8 +392,9 @@ gdev_x_setup_colors(gx_device_X * xdev)
         }
 
         /* Allocate the dynamic color table. */
-        alloc_dynamic_colors(xdev, CUBE(xdev->cman.num_rgb) -
-                             CUBE(xdev->color_info.dither_colors));
+        if (!alloc_dynamic_colors(xdev, CUBE(xdev->cman.num_rgb) -
+                             CUBE(xdev->color_info.dither_colors)))
+            return_error(gs_error_VMerror);
 #undef CUBE
 #undef CBRT
         break;
@@ -436,8 +441,9 @@ grayscale:
         }
 
         /* Allocate the dynamic color table. */
-        alloc_dynamic_colors(xdev, xdev->cman.num_rgb -
-                             xdev->color_info.dither_grays);
+        if (!alloc_dynamic_colors(xdev, xdev->cman.num_rgb -
+                             xdev->color_info.dither_grays))
+            return_error(gs_error_VMerror);
         break;
     case 'M':
 monochrome:
