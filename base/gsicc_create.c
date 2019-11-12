@@ -1206,7 +1206,7 @@ add_lutAtoBtype(unsigned char *input_ptr, gsicc_lutatob *lutatobparts)
     }
     /* Then the matrix */
     if (lutatobparts->matrix != NULL) {
-        add_matrixwithbias(curr_ptr,&(lutatobparts->matrix->cu.u),true);
+        add_matrixwithbias(curr_ptr,(float*) lutatobparts->matrix,true);
         curr_ptr += (12*4);
         /* M curves */
         if (lutatobparts->m_curves != NULL) {
