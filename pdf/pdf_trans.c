@@ -39,6 +39,37 @@ pdfi_tf_using_function(double in_val, float *out, void *proc_data)
     return gs_function_evaluate(pfn, &in, out);
 }
 
+static void
+pdfi_set_GrayBackground(gs_transparency_mask_params_t *params)
+{
+    float num;
+
+    /* This uses definition from PLRM2 6.2.1 and 6.2.2 */
+    /* TODO: We are assuming 3 components is RGB and 4 components is CMYK,
+       which might not strictly be true?  But it provides a better
+       estimated value than doing nothing.
+    */
+    switch(params->Background_components) {
+    case 3:
+        /* RGB: currentgray = 0.3*R + 0.59*G + 0.11*B */
+        params->GrayBackground = (0.3 * params->Background[0] +
+                                  0.59 * params->Background[1] +
+                                  0.11 * params->Background[2]);
+        break;
+    case 4:
+        /* CMYK: currentgray = 1.0 – min (1.0, .3*C + .59*M + .11*Y + K)
+        */
+        num = 0.3*params->Background[1] + 0.59*params->Background[1] +
+            0.11*params->Background[2] + params->Background[3];
+        if (num > 1)
+            num = 1;
+        params->GrayBackground = 1 - num;
+    default:
+        /* No clue... */
+        params->GrayBackground = 0;
+    }
+}
+
 /* (see pdf_draw.ps/execmaskgroup) */
 static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int colorindex)
 {
@@ -226,8 +257,9 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
             /* This should be "currentgray" for the color that we put in params.ColorSpace,
              * It looks super-convoluted to actually get this value.  Really?
              * (see zcurrentgray())
+             * For now, use simple definition from PLRM2 and assume it is RGB or CMYK
              */
-            params.GrayBackground = 0; /* TODO */
+            pdfi_set_GrayBackground(&params);
         }
 
         code = gs_begin_transparency_mask(ctx->pgs, &params, &bbox, true);
