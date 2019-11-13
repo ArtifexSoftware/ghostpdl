@@ -1009,7 +1009,7 @@ int pdfi_open_memory_stream_from_stream(pdf_context *ctx, unsigned int size, byt
         return code;
     }
 
-    sread_string(new_stream, *Buffer, size);
+    sread_string_reusable(new_stream, *Buffer, size);
 
     code = pdfi_alloc_stream(ctx, new_stream, source->s, new_pdf_stream);
     if (code < 0) {
