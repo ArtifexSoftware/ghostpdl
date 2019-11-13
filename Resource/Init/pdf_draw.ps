@@ -3104,7 +3104,10 @@ end
       % Scaling due to -dPDFFitPage is not undone, to keep the correct border width
       % compared to the size of the surrounding marks.
       //systemdict /NoUserUnit .knownget not { //false } if not
-      //systemdict /PDFFitPage known not and {	% UserUnit is ignored if -dPDFFitPage
+      //systemdict /PDFFitPage known not and
+      % Don't apply USerUnit if we are passing it to the device
+      /PassUserUnit /GetDeviceParam .special_op {exch pop} {//false} ifelse not and
+      {	% UserUnit is ignored if -dPDFFitPage
         Page /UserUnit knownoget { div } if
       } if
       {} 2 index /S knownoget {
@@ -3148,7 +3151,10 @@ end
       % Scaling due to -dPDFFitPage is not undone, to keep the correct border width
       % compared to the size of the surrounding marks.
       //systemdict /NoUserUnit .knownget not { //false } if not
-      //systemdict /PDFFitPage known not and {	% UserUnit is ignored if -dPDFFitPage
+      //systemdict /PDFFitPage known not and
+      % Don't apply USerUnit if we are passing it to the device
+      /PassUserUnit /GetDeviceParam .special_op {exch pop} {//false} ifelse not and
+      {	% UserUnit is ignored if -dPDFFitPage
         Page /UserUnit knownoget { div } if
       } if
       {} 2 index /S knownoget {

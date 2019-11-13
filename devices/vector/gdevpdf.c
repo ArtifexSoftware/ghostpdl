@@ -1020,6 +1020,7 @@ pdf_close_page(gx_device_pdf * pdev, int num_copies)
         page->contents_id = pdev->contents_id;
         page->NumCopies_set = pdev->NumCopies_set;
         page->NumCopies = pdev->NumCopies;
+        page->UserUnit = pdev->UserUnit;
         pdf_record_usage(pdev, pdev->contents_id, pdev->next_page);
         pdf_record_usage(pdev, pdev->contents_length_id, pdev->next_page);
         pdf_record_usage(pdev, page->Page->id, pdev->next_page);
@@ -1337,6 +1338,9 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
                 bleedbox[0], bleedbox[1], bleedbox[2], bleedbox[3]);
     }
     pdf_print_orientation(pdev, page);
+    if (page->UserUnit != 1)
+        pprintg1(s, "/UserUnit %g\n", page->UserUnit);
+
     pprintld1(s, "/Parent %ld 0 R\n", pdev->Pages->id);
     if (pdev->ForOPDFRead && pdev->DoNumCopies && !pdev->ProduceDSC) {
         if (page->NumCopies_set)

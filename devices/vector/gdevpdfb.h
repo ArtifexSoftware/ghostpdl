@@ -289,7 +289,8 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  -1,                    /* Last Form ID, start with -1 which means 'none' */
  0,                     /* ExtensionMetadata */
  0,                     /* PDFFormName */
- 0                      /* PassThroughWriter */
+ 0,                     /* PassThroughWriter */
+ 1.0                    /* UserUnit */
 };
 
 #else
