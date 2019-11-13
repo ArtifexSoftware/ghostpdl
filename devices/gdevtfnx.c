@@ -126,13 +126,6 @@ tiff12_print_page(gx_device_printer * pdev, gp_file * file)
     gx_device_tiff *const tfdev = (gx_device_tiff *)pdev;
     int code;
 
-    /* open the TIFF device */
-    if (gdev_prn_file_is_new(pdev)) {
-        tfdev->tif = tiff_from_filep(pdev, pdev->dname, file, tfdev->BigEndian, tfdev->UseBigTIFF);
-        if (!tfdev->tif)
-            return_error(gs_error_invalidfileaccess);
-    }
-
     code = gdev_tiff_begin_page(tfdev, file);
     if (code < 0)
         return code;
@@ -188,13 +181,6 @@ tiff_rgb_print_page(gx_device_printer * pdev, gp_file * file)
 {
     gx_device_tiff *const tfdev = (gx_device_tiff *)pdev;
     int code;
-
-    /* open the TIFF device */
-    if (gdev_prn_file_is_new(pdev)) {
-        tfdev->tif = tiff_from_filep(pdev, pdev->dname, file, tfdev->BigEndian, tfdev->UseBigTIFF);
-        if (!tfdev->tif)
-            return_error(gs_error_invalidfileaccess);
-    }
 
     code = gdev_tiff_begin_page(tfdev, file);
     if (code < 0)
