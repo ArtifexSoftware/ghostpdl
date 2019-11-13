@@ -438,7 +438,6 @@ int gs_currentscreenphase_pgs(const gs_gstate *, gs_int_point *, gs_color_select
     (pgs)->current_point.x = xx;\
     (pgs)->current_point.y = yy;
 
-int gs_swapcolors(gs_gstate *);
 void gs_swapcolors_quick(gs_gstate *);
 
 /* Set the graphics_type_tag iff the requested tag bit is not set in the dev_color and	*/

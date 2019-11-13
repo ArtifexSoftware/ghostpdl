@@ -365,6 +365,9 @@ struct gx_device_clist_writer_s {
                                            access to the graphic state information in those
                                            routines, this is the logical place to put this
                                            information */
+    bool op_fill_active;   /* Needed so we know state during clist writing */
+    bool op_stroke_active; /* Needed so we know state during clist writing  */
+
 };
 
 /* Bits for gx_device_clist_writer.disable_mask. Bit set disables behavior */

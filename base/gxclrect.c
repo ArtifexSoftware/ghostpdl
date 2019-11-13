@@ -618,6 +618,10 @@ clist_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
             ibox->q.y = cwdev->cropping_max;
         return 0;
     }
+    if (dev_spec_op == gxdso_overprint_active) {
+        gx_device_clist_writer* cwdev = &((gx_device_clist*)pdev)->writer;
+        return cwdev->op_fill_active || cwdev->op_stroke_active;
+    }
     /* forward to the appropriate super class */
     if (cdev->is_printer)
         return gdev_prn_forwarding_dev_spec_op(pdev, dev_spec_op, data, size);

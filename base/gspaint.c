@@ -304,6 +304,21 @@ static int do_fill(gs_gstate *pgs, int rule)
     code = gs_gstate_color_load(pgs);
     if (code < 0)
         return code;
+
+    if (pgs->overprint || (!pgs->overprint && dev_proc(pgs->device, dev_spec_op)(pgs->device,
+        gxdso_overprint_active, NULL, 0))) {
+        gs_overprint_params_t op_params = { 0 };
+
+        if_debug0m(gs_debug_flag_overprint, pgs->memory,
+            "[overprint] Fill Overprint\n");
+        code = gs_do_set_overprint(pgs);
+        if (code < 0)
+            return code;
+
+        op_params.op_state = OP_STATE_FILL;
+        gs_gstate_update_overprint(pgs, &op_params);
+    }
+
     abits = 0;
     {
         gx_device_color *col = gs_currentdevicecolor_inline(pgs);
@@ -408,6 +423,21 @@ do_stroke(gs_gstate * pgs)
     code = gs_gstate_color_load(pgs);
     if (code < 0)
         return code;
+
+    if (pgs->stroke_overprint || (!pgs->stroke_overprint && dev_proc(pgs->device, dev_spec_op)(pgs->device,
+        gxdso_overprint_active, NULL, 0))) {
+        gs_overprint_params_t op_params = { 0 };
+
+        if_debug0m(gs_debug_flag_overprint, pgs->memory,
+            "[overprint] Stroke Overprint\n");
+        code = gs_do_set_overprint(pgs);
+        if (code < 0)
+            return code;
+
+        op_params.op_state = OP_STATE_STROKE;
+        gs_gstate_update_overprint(pgs, &op_params);
+    }
+
     abits = 0;
     {
         gx_device_color *col = gs_currentdevicecolor_inline(pgs);
@@ -580,6 +610,16 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
     code = gs_gstate_color_load(pgs);	/* FIXME: needed for stroke_color ?? */
     if (code < 0)
         return code;
+
+    if (pgs->stroke_overprint || (!pgs->stroke_overprint && dev_proc(pgs->device, dev_spec_op)(pgs->device,
+        gxdso_overprint_active, NULL, 0))) {
+        if_debug0m(gs_debug_flag_overprint, pgs->memory,
+            "[overprint] StrokeFill Stroke Set Overprint\n");
+        code = gs_do_set_overprint(pgs);
+        if (code < 0)
+            return code;
+    }
+
     *restart = 1;		/* finished, successfully with stroke_color */
     gs_swapcolors_quick(pgs);	/* switch to fill color */
     code = gx_set_dev_color(pgs);
@@ -595,6 +635,16 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
         *restart = 2;	/* we shouldn't re-enter with '2' */
         return code;
     }
+
+    if (pgs->overprint || (!pgs->overprint && dev_proc(pgs->device, dev_spec_op)(pgs->device,
+        gxdso_overprint_active, NULL, 0))) {
+        if_debug0m(gs_debug_flag_overprint, pgs->memory,
+            "[overprint] StrokeFill Fill Set Overprint\n");
+        code = gs_do_set_overprint(pgs);
+        if (code < 0)
+            return code;
+    }
+
     abits = 0;
     {
         gx_device_color *col_fill = gs_currentdevicecolor_inline(pgs);

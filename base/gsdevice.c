@@ -605,7 +605,7 @@ gs_setdevice_no_init(gs_gstate * pgs, gx_device * dev)
     }
     rc_assign(pgs->device, dev, "gs_setdevice_no_init");
     gs_gstate_update_device(pgs, dev);
-    return pgs->overprint ? gs_do_set_overprint(pgs) : 0;
+    return 0;
 }
 
 /* Initialize a just-allocated device. */

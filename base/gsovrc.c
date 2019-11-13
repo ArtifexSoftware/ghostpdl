@@ -29,6 +29,8 @@
 #include "gxoprect.h"
 #include "gsbitops.h"
 #include "gxgstate.h"
+#include "gxdevsop.h"
+#include "gxcldev.h"
 
 /* GC descriptor for gs_overprint_t */
 private_st_gs_overprint_t();
@@ -139,11 +141,27 @@ c_overprint_write(const gs_composite_t * pct, byte * data, uint * psize, gx_devi
     byte                            flags = 0;
     int                             used = 1, avail = *psize;
 
+    /* Clist writer needs to store active state of op device so that
+       we know when to send compositor actions to disable it */
+    if (pparams->op_state == OP_STATE_NONE) {
+        if (pparams->is_fill_color) {
+            if (pparams->retain_any_comps)
+                cdev->op_fill_active = true;
+            else
+                cdev->op_fill_active = false;
+        } else {
+            if (pparams->retain_any_comps)
+                cdev->op_stroke_active = true;
+            else
+                cdev->op_stroke_active = false;
+        }
+    }
+
     /* encoded the booleans in a single byte */
     if (pparams->retain_any_comps || pparams->is_fill_color || pparams->op_state) {
         flags |= (pparams->retain_any_comps) ? OVERPRINT_ANY_COMPS : 0;
         flags |= (pparams->is_fill_color) ? OVERPRINT_IS_FILL_COLOR : 0;
-        flags |= (pparams->op_state) ? OVERPRINT_SET_FILL_COLOR : 0;
+        flags |= (pparams->op_state) << 2;
 
         /* write out the component bits */
         if (pparams->retain_any_comps) {
@@ -189,7 +207,7 @@ c_overprint_read(
     if_debug1m('v', mem, "[v]c_overprint_read(%d)", flags);
     params.retain_any_comps = (flags & OVERPRINT_ANY_COMPS) != 0;
     params.is_fill_color = (flags & OVERPRINT_IS_FILL_COLOR) != 0;
-    params.op_state = (flags & OVERPRINT_SET_FILL_COLOR) != 0;
+    params.op_state = (flags & OVERPRINT_SET_FILL_COLOR) >> 2;
     params.idle = 0;
     params.drawn_comps = 0;
 
@@ -379,6 +397,7 @@ static dev_proc_fill_stroke_path(overprint_fill_stroke_path);
 static dev_proc_fill_path(overprint_fill_path);
 static dev_proc_stroke_path(overprint_stroke_path);
 static dev_proc_text_begin(overprint_text_begin);
+static  dev_proc_dev_spec_op(overprint_dev_spec_op);
 
 static const gx_device_procs no_overprint_procs = {
     overprint_open_device,              /* open_device */
@@ -446,7 +465,7 @@ static const gx_device_procs no_overprint_procs = {
     0,                                  /* push_transparency_state */
     0,                                  /* pop_transparency_state */
     0,                                  /* put_image */
-    0,                                  /* dev_spec_op */
+    overprint_dev_spec_op,              /* dev_spec_op */
     gx_forward_copy_planes,
     0,                                  /* get profile */
     0,                                  /* set graphics type tag */
@@ -525,7 +544,7 @@ static const gx_device_procs generic_overprint_procs = {
     gx_default_fill_parallelogram,      /* fill_parallelogram */
     gx_default_fill_triangle,           /* fill_triangle */
     gx_default_draw_thin_line,          /* draw_thin_line */
-    overprint_begin_image,              /* begin_image */
+    gx_default_begin_image,             /* begin_image */
     0,                                  /* image_data (obsolete) */
     0,                                  /* end_image (obsolete) */
     gx_default_strip_tile_rectangle,    /* strip_tile_rectangle */
@@ -559,7 +578,7 @@ static const gx_device_procs generic_overprint_procs = {
     0,                                  /* push_transparency_state */
     0,                                  /* pop_transparency_state */
     0,                                  /* put_image */
-    0,                                  /* dev_spec_op */
+    overprint_dev_spec_op,              /* dev_spec_op */
     gx_forward_copy_planes,
     0,                                  /* get profile */
     0,                                  /* set graphics type tag */
@@ -603,7 +622,7 @@ static const gx_device_procs sep_overprint_procs = {
     gx_default_fill_parallelogram,      /* fill_parallelogram */
     gx_default_fill_triangle,           /* fill_triangle */
     gx_default_draw_thin_line,          /* draw_thin_line */
-    overprint_begin_image,              /* begin_image */
+    gx_default_begin_image,              /* begin_image */
     0,                                  /* image_data (obsolete) */
     0,                                  /* end_image (obsolete) */
     gx_default_strip_tile_rectangle,    /* strip_tile_rectangle */
@@ -637,7 +656,7 @@ static const gx_device_procs sep_overprint_procs = {
     0,                                  /* push_transparency_state */
     0,                                  /* pop_transparency_state */
     0,                                  /* put_image */
-    0,                                  /* dev_spec_op */
+    overprint_dev_spec_op,              /* dev_spec_op */
     overprint_copy_planes,              /* copy planes */
     0,                                  /* get profile */
     0,                                  /* set graphics type tag */
@@ -937,6 +956,14 @@ overprint_create_compositor(
         gs_overprint_params_t params = ((const gs_overprint_t *)pct)->params;
         overprint_device_t *opdev = (overprint_device_t *)dev;
         int     code = 0;
+        bool update;
+
+        if (params.is_fill_color)
+            update = (params.drawn_comps != opdev->drawn_comps_fill) ||
+            ((!params.retain_any_comps) != opdev->retain_none_fill);
+        else
+            update = (params.drawn_comps != opdev->drawn_comps_stroke) ||
+            ((!params.retain_any_comps) != opdev->retain_none_stroke);
 
         params.idle = pct->idle;
         /* device must already exist, so just update the parameters if settings change */
@@ -944,10 +971,7 @@ overprint_create_compositor(
             "[overprint] overprint_create_compositor test for change. params.idle = %d vs. opdev->is_idle = %d \n  params.is_fill_color = %d: params.drawn_comps = 0x%x vs. opdev->drawn_comps_fill =  0x%x OR opdev->drawn_comps_stroke = 0x%x\n",
             params.idle, opdev->is_idle, params.is_fill_color, params.drawn_comps, opdev->drawn_comps_fill, opdev->drawn_comps_stroke);
 
-        if (!params.retain_any_comps || params.idle != opdev->is_idle ||
-            params.drawn_comps != (params.is_fill_color ?
-            opdev->drawn_comps_fill : opdev->drawn_comps_stroke)
-            )
+        if (update || params.idle != opdev->is_idle || params.op_state != OP_STATE_NONE)
             code = update_overprint_params(opdev, &params);
         if (code >= 0)
             *pcdev = dev;
@@ -1299,20 +1323,6 @@ overprint_sep_fill_rectangle(
     }
 }
 
-static int
-overprint_begin_image(gx_device* dev,
-    const gs_gstate* pgs, const gs_image_t* pim,
-    gs_image_format_t format, const gs_int_rect* prect,
-    const gx_drawing_color* pdcolor, const gx_clip_path* pcpath,
-    gs_memory_t* memory, gx_image_enum_common_t** pinfo)
-{
-    overprint_device_t* opdev = (overprint_device_t*)dev;
-
-    opdev->op_state = OP_STATE_FILL;
-    return gx_default_begin_image(dev, pgs, pim, format, prect,
-        pdcolor, pcpath, memory, pinfo);
-}
-
 /* We need this to ensure the device knows we are doing a fill */
 static int 
 overprint_fill_path(gx_device* pdev, const gs_gstate* pgs,
@@ -1390,6 +1400,22 @@ overprint_text_begin(gx_device* dev, gs_gstate* pgs,
 
     return gx_default_text_begin(dev, pgs, text, font,
         path, pdcolor, pcpath, mem, ppte);
+}
+
+static int
+overprint_dev_spec_op(gx_device* pdev, int dev_spec_op,
+    void* data, int size)
+{
+    overprint_device_t* opdev = (overprint_device_t*)pdev;
+    gx_device* tdev = opdev->target;
+
+    if (tdev == 0)
+        return 0;
+
+    if (dev_spec_op == gxdso_overprint_active)
+        return !opdev->is_idle;
+ 
+    return dev_proc(tdev, dev_spec_op)(tdev, dev_spec_op, data, size);
 }
 
 /* complete a procedure set */

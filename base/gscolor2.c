@@ -36,7 +36,6 @@ gs_setcolorspace_only(gs_gstate * pgs, gs_color_space * pcs)
     int             code = 0;
     gs_color_space  *cs_old = pgs->color[0].color_space;
     gs_client_color cc_old = *pgs->color[0].ccolor;
-    bool op = pgs->overprint || pgs->stroke_overprint;
 
     if (pgs->in_cachedevice)
         return_error(gs_error_undefined);
@@ -44,8 +43,7 @@ gs_setcolorspace_only(gs_gstate * pgs, gs_color_space * pcs)
     if (pcs->id != cs_old->id) {
         rc_increment_cs(pcs);
         pgs->color[0].color_space = pcs;
-        if ( (code = pcs->type->install_cspace(pcs, pgs)) < 0 ||
-              (op && (code = gs_do_set_overprint(pgs)) < 0)  ) {
+        if ( (code = pcs->type->install_cspace(pcs, pgs)) < 0) {
             pgs->color[0].color_space = cs_old;
             rc_decrement_only_cs(pcs, "gs_setcolorspace");
         } else {

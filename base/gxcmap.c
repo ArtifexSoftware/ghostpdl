@@ -570,9 +570,6 @@ gx_remap_color(gs_gstate * pgs)
                                           pcs, gs_currentdevicecolor_inline(pgs),
                                           (gs_gstate *) pgs, pgs->device,
                                           gs_color_select_texture);
-    /* if overprint mode is in effect, update the overprint information */
-   if (code >= 0 && pgs->overprint)
-        code = gs_do_set_overprint(pgs);
     return code;
 }
 

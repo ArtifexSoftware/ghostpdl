@@ -2951,7 +2951,6 @@ pdf14_set_marking_params(gx_device *dev, const gs_gstate *pgs)
     pdev->effective_overprint_mode = pgs->color[!pgs->is_fill_color].effective_opm;
     pdev->stroke_effective_op_mode = pgs->color[!pgs->is_fill_color].effective_opm;
     pdev->stroke_overprint = pgs->stroke_overprint;
-    pdev->is_fill_color = pgs->is_fill_color;
     pdev->fillconstantalpha = pgs->fillconstantalpha;
     pdev->strokeconstantalpha = pgs->strokeconstantalpha;
 
@@ -3333,13 +3332,13 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
         if (code < 0)
             goto cleanup;
 
-        ((pdf14_device*)dev)->is_fill_color = true;
+        ((pdf14_device*)dev)->op_state = PDF14_OP_STATE_FILL;
         code = pdf14_fill_path(dev, pgs, ppath, fill_params, pdcolor_fill, pcpath);
         if (code < 0)
             goto cleanup;
 
         gs_swapcolors_quick((gs_gstate *) pgs);	/* flips stroke_color_index (to stroke) */
-        ((pdf14_device*)dev)->is_fill_color = pgs->is_fill_color;
+        ((pdf14_device*)dev)->op_state = PDF14_OP_STATE_STROKE;
         code = pdf14_stroke_path(dev, pgs, ppath, stroke_params, pdcolor_stroke, pcpath);
         gs_swapcolors_quick((gs_gstate*) pgs);	/* this flips pgs->stroke_color_index back as well */
         if (code < 0)
@@ -3374,7 +3373,7 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
             code = gs_setopacityalpha((gs_gstate*) pgs, pgs->fillconstantalpha);
             if (code < 0)
                 goto cleanup;
-            ((pdf14_device*)dev)->is_fill_color = true;
+            ((pdf14_device*)dev)->op_state = PDF14_OP_STATE_FILL;
 
             /* If we are in an overprint situation, set the blend mode to compatible
                overprint */
@@ -3392,7 +3391,7 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
             if (code < 0)
                 goto cleanup;
             gs_swapcolors_quick((gs_gstate*) pgs);
-            ((pdf14_device*)dev)->is_fill_color = false;
+            ((pdf14_device*)dev)->op_state = PDF14_OP_STATE_STROKE;
             if (pgs->stroke_overprint)
                 code = gs_setblendmode((gs_gstate*) pgs, BLEND_MODE_CompatibleOverprint);
             code = pdf14_stroke_path(dev, pgs, ppath, stroke_params, pdcolor_stroke, pcpath);
@@ -3421,7 +3420,6 @@ cleanup:
     }
 
     /* Restore if there were any changes */
-    ((pdf14_device*)dev)->is_fill_color = save_is_fill_color;
     code2 = gs_setopacityalpha((gs_gstate*) pgs, opacity);
     if (code2 < 0)
         return code2;
@@ -3480,8 +3478,8 @@ do_pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
     int shape_off = num_chan * planestride;
     int alpha_g_off = shape_off + (has_shape ? planestride : 0);
     int tag_off = alpha_g_off + (has_alpha_g ? planestride : 0);
-    bool overprint = pdev->is_fill_color ? pdev->overprint : pdev->stroke_overprint;
-    gx_color_index drawn_comps = pdev->is_fill_color ?
+    bool overprint = pdev->op_state == PDF14_OP_STATE_FILL ? pdev->overprint : pdev->stroke_overprint;
+    gx_color_index drawn_comps = pdev->op_state == PDF14_OP_STATE_FILL ?
                                  pdev->drawn_comps_fill : pdev->drawn_comps_stroke;
     gx_color_index comps;
     byte shape = 0; /* Quiet compiler. */
@@ -3669,8 +3667,8 @@ do_pdf14_copy_alpha_color_16(gx_device * dev, const byte * data, int data_x,
     int shape_off = num_chan * planestride;
     int alpha_g_off = shape_off + (has_shape ? planestride : 0);
     int tag_off = alpha_g_off + (has_alpha_g ? planestride : 0);
-    bool overprint = pdev->is_fill_color ? pdev->overprint : pdev->stroke_overprint;
-    gx_color_index drawn_comps = pdev->is_fill_color ?
+    bool overprint = pdev->op_state == PDF14_OP_STATE_FILL ? pdev->overprint : pdev->stroke_overprint;
+    gx_color_index drawn_comps = pdev->op_state == PDF14_OP_STATE_FILL ?
         pdev->drawn_comps_fill : pdev->drawn_comps_stroke;
     gx_color_index comps;
     uint16_t shape = 0; /* Quiet compiler. */
@@ -4956,18 +4954,22 @@ pdf14_create_compositor(gx_device * dev, gx_device * * pcdev,
                 const gs_overprint_t * op_pct = (const gs_overprint_t *) pct;
                 gx_color_index drawn_comps;
 
-                if (op_pct->params.retain_any_comps) {
-                    drawn_comps = op_pct->params.drawn_comps;
-                } else {
-                    /* Draw everything. If this parameter was not set, clist does
-                       not fill it in.  */
-                    drawn_comps = ( (gx_color_index) 1 << (p14dev->color_info.num_components)) - (gx_color_index) 1;
+                p14dev->op_state = op_pct->params.op_state;
+
+                if (!p14dev->op_state) {
+                    if (op_pct->params.retain_any_comps) {
+                        drawn_comps = op_pct->params.drawn_comps;
+                    } else {
+                        /* Draw everything. If this parameter was not set, clist does
+                           not fill it in.  */
+                        drawn_comps = ((gx_color_index)1 << (p14dev->color_info.num_components)) - (gx_color_index)1;
+                    }
+
+                    if (op_pct->params.is_fill_color)
+                        p14dev->drawn_comps_fill = drawn_comps;
+                    else
+                        p14dev->drawn_comps_stroke = drawn_comps;
                 }
-                p14dev->is_fill_color = op_pct->params.is_fill_color;
-                if (p14dev->is_fill_color)
-                    p14dev->drawn_comps_fill = drawn_comps;
-                else
-                    p14dev->drawn_comps_stroke = drawn_comps;
                 *pcdev = dev;
                 return 0;
     } else
@@ -6213,8 +6215,8 @@ do_mark_fill_rectangle_ko_simple(gx_device *dev, int x, int y, int w, int h,
     int shift = 8;
     byte shape = 0; /* Quiet compiler. */
     byte src_alpha;
-    bool overprint = pdev->is_fill_color ? pdev->overprint : pdev->stroke_overprint;
-    gx_color_index drawn_comps = pdev->is_fill_color ?
+    bool overprint = pdev->op_state == PDF14_OP_STATE_FILL ? pdev->overprint : pdev->stroke_overprint;
+    gx_color_index drawn_comps = pdev->op_state == PDF14_OP_STATE_FILL ?
         pdev->drawn_comps_fill : pdev->drawn_comps_stroke;
     gx_color_index comps;
 
@@ -6398,8 +6400,8 @@ do_mark_fill_rectangle_ko_simple16(gx_device *dev, int x, int y, int w, int h,
     gs_graphics_type_tag_t curr_tag = GS_UNKNOWN_TAG;  /* Quiet compiler */
     uint16_t shape = 0; /* Quiet compiler. */
     uint16_t src_alpha;
-    bool overprint = pdev->is_fill_color ? pdev->overprint : pdev->stroke_overprint;
-    gx_color_index drawn_comps = pdev->is_fill_color ?
+    bool overprint = pdev->op_state == PDF14_OP_STATE_FILL ? pdev->overprint : pdev->stroke_overprint;
+    gx_color_index drawn_comps = pdev->op_state == PDF14_OP_STATE_FILL ?
         pdev->drawn_comps_fill : pdev->drawn_comps_stroke;
     gx_color_index comps;
 
