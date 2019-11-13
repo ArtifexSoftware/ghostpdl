@@ -46,7 +46,8 @@ cif_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {	int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
         int lnum;
         byte *in = (byte *)gs_malloc(pdev->memory, line_size, 1, "cif_print_page(in)");
-        char *s, *fname;
+        char *s;
+        const char *fname;
         int scanline, scanbyte;
         int length, start; /* length is the number of successive 1 bits, */
                            /* start is the set of 1 bit start position */
@@ -58,7 +59,7 @@ cif_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 #ifdef CLUSTER
         fname = "clusterout";
 #else
-        fname = (char *)(pdev->fname);
+        fname = (const char *)(pdev->fname);
 #endif
         if ((s = strchr(fname, '.')) == NULL)
                 length = strlen(fname) + 1;
