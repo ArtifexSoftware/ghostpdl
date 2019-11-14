@@ -73,6 +73,7 @@ pdfi_pattern_get_rect(pdf_context *ctx, pdf_array *array, gs_rect *rect)
     return code;
 }
 
+#if 0 /* Not currently using, not sure if needed (and it didn't work anyway) */
 /* NULL Pattern */
 static int
 pdfi_setpattern_null(pdf_context *ctx, gs_client_color *cc)
@@ -98,6 +99,7 @@ pdfi_setpattern_null(pdf_context *ctx, gs_client_color *cc)
 
     return code;
 }
+#endif
 
 /*
  * Pattern lifetime management turns out to be more complex than we would ideally like. Although

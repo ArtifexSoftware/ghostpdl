@@ -696,7 +696,6 @@ int pdfi_build_halftone_function(pdf_context *ctx, gs_function_t ** ppfn, byte *
     gs_function_PtCr_params_t params;
     pdf_stream *function_stream = NULL;
     int code;
-    byte *data_source_buffer;
     byte *ops = NULL;
     unsigned int size;
     float *pfloat;

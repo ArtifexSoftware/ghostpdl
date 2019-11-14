@@ -1436,7 +1436,7 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict 
                 goto error;
             }
 
-            code = build_type1_halftone(ctx, halftone_dict, page_dict, pdht, phtc, "Default", 7);
+            code = build_type1_halftone(ctx, halftone_dict, page_dict, pdht, phtc, (char *)"Default", 7);
             if (code < 0)
                 goto error;
 

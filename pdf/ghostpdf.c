@@ -477,7 +477,7 @@ static int pdfi_free_name_table(pdf_context *ctx)
 int pdfi_name_from_index(const gs_memory_t *mem, gs_separation_name index, unsigned char **name, unsigned int *len)
 {
     pdf_context *ctx = (pdf_context *)mem->gs_lib_ctx;
-    pdfi_name_entry *next = NULL, *e = (pdfi_name_entry *)ctx->name_table;
+    pdfi_name_entry *e = (pdfi_name_entry *)ctx->name_table;
 
     while (e != NULL) {
         if (e->index == index) {
