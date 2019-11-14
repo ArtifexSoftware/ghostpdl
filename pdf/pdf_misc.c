@@ -105,3 +105,22 @@ pdfi_name_cmp(const pdf_name *n1, const pdf_name *n2)
         return -1;
     return memcmp(n1->data, n2->data, n1->length);
 }
+
+/* Set rendering intent, translating from name to number */
+int pdfi_setrenderingintent(pdf_context *ctx, pdf_name *n)
+{
+    int code = 0;
+
+    if (pdfi_name_is(n, "Perceptual")) {
+        code = gs_setrenderingintent(ctx->pgs, 0);
+    } else if (pdfi_name_is(n, "Saturation")) {
+        code = gs_setrenderingintent(ctx->pgs, 2);
+    } else if (pdfi_name_is(n, "RelativeColorimetric")) {
+        code = gs_setrenderingintent(ctx->pgs, 1);
+    } else if (pdfi_name_is(n, "AbsoluteColorimetric")) {
+        code = gs_setrenderingintent(ctx->pgs, 3);
+    } else {
+        code = gs_error_undefined;
+    }
+    return code;
+}

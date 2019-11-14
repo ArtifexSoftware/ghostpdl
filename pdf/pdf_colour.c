@@ -279,17 +279,7 @@ int pdfi_ri(pdf_context *ctx)
         return 0;
     }
     n = (pdf_name *)ctx->stack_top[-1];
-    if (pdfi_name_is(n, "Perceptual")) {
-            code = gs_setrenderingintent(ctx->pgs, 0);
-    } else if (pdfi_name_is(n, "Saturation")) {
-        code = gs_setrenderingintent(ctx->pgs, 2);
-    } else if (pdfi_name_is(n, "RelativeColorimetric")) {
-        code = gs_setrenderingintent(ctx->pgs, 1);
-    } else if (pdfi_name_is(n, "AbsoluteColorimetric")) {
-        code = gs_setrenderingintent(ctx->pgs, 3);
-    } else {
-        code = gs_error_undefined;
-    }
+    code = pdfi_setrenderingintent(ctx, n);
     pdfi_pop(ctx, 1);
     if (code < 0 && ctx->pdfstoponerror)
         return code;

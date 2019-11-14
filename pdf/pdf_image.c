@@ -69,7 +69,7 @@ typedef struct {
     pdf_obj *Mask;
     pdf_obj *SMask;
     pdf_obj *ColorSpace;
-    pdf_obj *Intent;
+    pdf_name *Intent;
     pdf_obj *Alternates;
     pdf_obj *Name; /* obsolete, do we still support? */
     pdf_obj *Decode;
@@ -553,7 +553,7 @@ pdfi_get_image_info(pdf_context *ctx, pdf_dict *image_dict,
 
     /* Optional (default is to use from graphics state) */
     /* (no abbreviation for inline) */
-    code = pdfi_dict_get(ctx, image_dict, "Intent", &info->Intent);
+    code = pdfi_dict_get_type(ctx, image_dict, "Intent", PDF_NAME, (pdf_obj **)&info->Intent);
     if (code < 0) {
         if (code != gs_error_undefined)
             goto errorExit;
@@ -1174,6 +1174,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     bool transparency_group = false;
     bool has_smask = false;
     pdfi_trans_state_t trans_state;
+    int saved_intent;
 
     dbgmprintf(ctx->memory, "pdfi_do_image BEGIN\n");
     memset(&mask_info, 0, sizeof(mask_info));
@@ -1188,6 +1189,9 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
             return code;
     }
 
+    /* Save current rendering intent so we can put it back if it is modified */
+    saved_intent = gs_currentrenderingintent(ctx->pgs);
+
     code = pdfi_get_image_info(ctx, image_dict, page_dict, stream_dict, inline_image, &image_info);
     if (code < 0)
         goto cleanupExit;
@@ -1200,9 +1204,6 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
         if (!pdfi_oc_is_ocg_visible(ctx, image_info.OC))
             goto cleanupExit;
     }
-
-    /* TODO: Save current rendering intent, set it to what is in image, and add a restore in the
-     * cleanup of this function (see pdf_draw.ps/doimage) */
 
     /* If there is an alternate, swap it in */
     /* If image_info.Alternates, look in the array, see if any of them are flagged as "DefaultForPrinting"
@@ -1228,6 +1229,16 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
         code = pdfi_scan_jpxfilter(ctx, source, image_info.Length, &image_info.jpx_info);
         if (code < 0)
             goto cleanupExit;
+    }
+
+    /* Set the rendering intent if applicable */
+    if (image_info.Intent) {
+        code = pdfi_setrenderingintent(ctx, image_info.Intent);
+        if (code < 0) {
+            /* TODO: Flag a warning on this?  Sample fts_17_1706.pdf has misspelled Intent
+               which gs renders without flagging an error */
+            dbgmprintf(ctx->memory, "WARNING: Image with unexpected Intent\n");
+        }
     }
 
     /* Get the color for this image */
@@ -1381,6 +1392,9 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
 
     if (pcs != NULL)
         rc_decrement_only_cs(pcs, "pdfi_do_image");
+
+    /* Restore the rendering intent */
+    gs_setrenderingintent(ctx->pgs, saved_intent);
 
     dbgmprintf(ctx->memory, "pdfi_do_image END\n");
     return code;

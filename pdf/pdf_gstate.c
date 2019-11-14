@@ -613,17 +613,7 @@ static int GS_RI(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict
     if (code < 0)
         return code;
 
-    if (pdfi_name_is(n, "Perceptual")) {
-            code = gs_setrenderingintent(ctx->pgs, 0);
-    } else if (pdfi_name_is(n, "Saturation")) {
-        code = gs_setrenderingintent(ctx->pgs, 2);
-    } else if (pdfi_name_is(n, "RelativeColorimetric")) {
-        code = gs_setrenderingintent(ctx->pgs, 1);
-    } else if (pdfi_name_is(n, "AbsoluteColorimetric")) {
-        code = gs_setrenderingintent(ctx->pgs, 3);
-    } else {
-        code = gs_error_undefined;
-    }
+    code = pdfi_setrenderingintent(ctx, n);
     pdfi_countdown(n);
     return code;
 }

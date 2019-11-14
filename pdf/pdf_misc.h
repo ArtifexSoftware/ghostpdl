@@ -23,5 +23,6 @@ int pdfi_name_cmp(const pdf_name *n1, const pdf_name *n2);
 
 gs_color_space_index pdfi_get_color_space_index(pdf_context *ctx, const gs_color_space *pcs);
 gs_color_space_index pdfi_currentcolorspace(pdf_context *ctx, int index);
+int pdfi_setrenderingintent(pdf_context *ctx, pdf_name *n);
 
 #endif
