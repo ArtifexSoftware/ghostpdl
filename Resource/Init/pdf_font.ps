@@ -857,176 +857,222 @@ setglobal
 /.pdfdfndict mark
   /defaultfontname /Helvetica
 .dicttomark readonly def
-/pdffindfont {		% <font-resource> <fontname> pdffindfont <font>
-                % If the font isn't available, synthesize one based on
-                % its descriptor.
-  dup /Font resourcestatus {
-    pop pop pdffindcachedfont
-  } {
-    1 index /FontDescriptor knownoget {
-                % Stack: font-res fontname fontdesc
-      dup /Flags oget
-      dup 16#40 and -6 bitshift		% 1, oblique/italic
-      1 index 16#40000 and -17 bitshift add	% 2, bold
-      exch 16#2 and 2 bitshift add	% 8, serif
-                % We should look at the fixed flag, too.
-                % Stack: font-res fontname fontdesc properties
 
-                % Even though /FontName is a required key in FontDescriptor dict
-                % (As of the PDF 1.4 Reference Manual), In the case of missing
-                % /FontName key, we substitue /BaseFont for the value of /FontName.
-                % Yet another case of broken PDF's that Adobe Reader accepts.
-      1 index dup /FontName known {
-        /FontName oget
-        dup type /nametype ne {
-          (   **** Error: /FontName in FontDescriptor is not a name.\n)
-          pdfformaterror
-          (               Output may be incorrect.\n) pdfformaterror
-          cvn
-        } if
-      } {
-        (   **** Error: FontDescriptor missing required /FontName key. BaseFont name used.\n)
-        pdfformaterror
-        (               Output may be incorrect.\n) pdfformaterror
-        pop 2 index		% grab the BaseFont from the stack.
-      } ifelse
-      .remove_font_name_prefix
-      exch
-                % Analyzes font name and extract "Bold" and "Narrow" properties
-                % which are not described by the FontDescriptor Flags.
-                % We also allow the font name analysis to override the Flags setting
-                % for Italic/Oblique as this gives us results more consistent with
-                % Acrobat.
-      0 2 index //.fontnameproperties exec 7 and or
-                % Rebind the default font name to Helvetica so that
-                % fonts with no properties are handled correctly.
-      //.pdfdfndict begin .substitutefontname end
-                % Stack: font-res fontname fontdesc substname|null
-      Fontmap 1 index known
-      {//false}
-      { .buildnativefontmap pop NativeFontmap 1 index known not} ifelse
+% This code attempts to use the FontName and FontDescriptor to find a
+% 'better' match for a missing font than the default font. There
+% are a list of fonts and mappings here (TTfonts) and in gs_font.ps
+% (.substitutefaces) which we can use to map from a requested font
+% family name to a substitute family. If that fails we check the
+% FontDescriptor Flags to attempt a (very slightly) better match.
+% We use Times-Roman for serif fonts and Helvetica for non-serif.
+% This all seems pretty poor to me, but its long-standing, so we
+% won't attempt to meddle with it.
+/pdfsubstitutefont {
+  % Stack: font-res fontname fontdesc
 
+  dup /Flags oget
+  dup 16#40 and -6 bitshift		% 1, oblique/italic
+  1 index 16#40000 and -17 bitshift add	% 2, bold
+  exch 16#2 and 2 bitshift add	% 8, serif
+
+  % We should look at the fixed flag, too.
+  % Stack: font-res fontname fontdesc properties
+
+  % Even though /FontName is a required key in FontDescriptor dict
+  % (As of the PDF 1.4 Reference Manual), In the case of missing
+  % /FontName key, we substitue /BaseFont for the value of /FontName.
+  % Yet another case of broken PDF's that Adobe Reader accepts.
+  1 index dup /FontName known
+  {
+    /FontName oget
+    dup type /nametype ne
+    {
+      (   **** Error: /FontName in FontDescriptor is not a name.\n)
+      pdfformaterror
+      (               Output may be incorrect.\n) pdfformaterror
+      cvn
+    } if
+  }
+  {
+    (   **** Error: FontDescriptor missing required /FontName key. BaseFont name used.\n)
+    pdfformaterror
+    (               Output may be incorrect.\n) pdfformaterror
+    pop 2 index		% grab the BaseFont from the stack.
+  } ifelse
+  .remove_font_name_prefix
+  exch
+
+  % Analyzes font name and extract "Bold" and "Narrow" properties
+  % which are not described by the FontDescriptor Flags.
+  % We also allow the font name analysis to override the Flags setting
+  % for Italic/Oblique as this gives us results more consistent with
+  % Acrobat.
+  0 2 index //.fontnameproperties exec 7 and or
+
+  % Rebind the default font name to Helvetica so that
+  % fonts with no properties are handled correctly.
+  //.pdfdfndict begin .substitutefontname end
+
+  % Stack: font-res fontname fontdesc substname|null
+  Fontmap 1 index known
+  {//false}
+  { .buildnativefontmap pop NativeFontmap 1 index known not}
+  ifelse
+
+  {
+    % No available good substitution, use the standard one.
+    pop 1 index .substitutefont
+  } if
+
+  dup 3 index ne
+  {
+    QUIET not
+    {
+      (Substituting font ) print dup =only
+      ( for ) print 2 index =only (.) = flush
+    } if
+    % Send a warning to the device, in case its pdfwrite and we are in PDF/A mode
+    % In that case the substituted font may not (probably doesn't) have glyphs which
+    % match the /Widths of the original font, and that will cause a fault with PDF/A
+    % so we need to let the device know.
+    /SubstitutedFont /EventInfo .special_op
+  } if
+
+  pdffindcachedfont
+  % Stack: font-res fontname fontdesc font
+
+  % Some non-compliant files are missing FirstChar/LastChar,
+  % despite referencing a non-base14 font
+  3 index /FirstChar knownoget
+  {
+    0                                       % push an initial value for accumating the Widths
+    0 string                                % and an empty string to interrogate the font
+    7 index /Widths knownoget
+    {
+      0 1 2 index length 1 sub
       {
-                % No available good substitution, use the standard one.
-        pop 1 index .substitutefont
-      } if
-      dup 3 index ne {
-        QUIET not {
-        (Substituting font ) print dup =only
-        ( for ) print 2 index =only (.) = flush
-        } if
-        % Send a warning to the device, in case its pdfwrite and we are in PDF/A mode
-        % In that case the substituted font may not (probably doesn't) have glyphs which
-        % match the /Widths of the original font, and that will cause a fault with PDF/A
-        % so we need to let the device know.
-        /SubstitutedFont /EventInfo .special_op
-      } if
-      pdffindcachedfont
-                % Stack: font-res fontname fontdesc font
-
-      % Some non-compliant files are missing FirstChar/LastChar,
-      % despite referencing a non-base14 font
-      3 index /FirstChar knownoget
-      {
-        0                                       % push an initial value for accumating the Widths
-        0 string                                % and an empty string to interrogate the font
-        7 index /Widths knownoget
+        dup 2 index exch get
+        dup type /packedarraytype eq {exec} if % Handle entries which are indirect references (seriously ? !!)
+        dup 0 gt                              % We ignore entries of zero in the widths array
         {
-          0 1 2 index length 1 sub
+          exch 5 index add                    % add FirstChar to the idx to get a char code
+          dup 64 gt 1 index 91 lt and         % we only want to consider A~Z and....
+          1 index 96 gt 2 index 123 lt and or % ... a~z
           {
-            dup 2 index exch get
-            dup type /packedarraytype eq {exec} if % Handle entries which are indirect references (seriously ? !!)
-            dup 0 gt                              % We ignore entries of zero in the widths array
-            {
-              exch 5 index add                    % add FirstChar to the idx to get a char code
-              dup 64 gt 1 index 91 lt and         % we only want to consider A~Z and....
-              1 index 96 gt 2 index 123 lt and or % ... a~z
-              {
-                exch
-                5 -1 roll add 4 1 roll            % add the width to the accumulator on the stack
-                1 string dup 0 4 -1 roll put
-                3 -1 roll concatstrings exch      % add the char code to the string
-              }
-              {
-                pop pop
-              } ifelse
-            }
-            {
-               pop pop
-            } ifelse
-          } for
-          pop           % get rid of the Widths array
-          3 -1 roll pop % get rid of the FirstChar value
-          dup length dup 0 gt
-          {
-            3 -1 roll exch div % calculate an average width from the Widths array
-
-            gsave
-            2 index 10 scalefont setfont
-            exch dup length exch stringwidth
-            grestore
-            pop 100 mul exch div div
-            % Only make the font smaller/narrower, not larger/wider
-            dup 1.0 lt
-            {
-              0 0 2 index 0 0 6 array astore
-              exch //true .copyfontdict
-              dup /FontMatrix get 3 -1 roll matrix concatmatrix
-              exch dup 3 -1 roll /FontMatrix exch put
-              % we don't need to definfont here, we can leave that to .completefont below
-            }
-            {
-              pop
-            } ifelse
+            exch
+            5 -1 roll add 4 1 roll            % add the width to the accumulator on the stack
+            1 string dup 0 4 -1 roll put
+            3 -1 roll concatstrings exch      % add the char code to the string
           }
           {
-            % no suitable Widths entries - carry on and hope for the best......
-            pop pop pop
+            pop pop
           } ifelse
         }
         {
-          % Broken file: no Widths array for non-base14 font - carry on and hope for the best......
-          (   **** Warning: Widths array missing in FontDescriptor for non-base14 font\n)
-          pdfformatwarning
-          pop pop pop
+           pop pop
+        } ifelse
+      } for
+      pop           % get rid of the Widths array
+      3 -1 roll pop % get rid of the FirstChar value
+      dup length dup 0 gt
+      {
+        3 -1 roll exch div  % calculate an average width from the Widths array
+        gsave
+        2 index 10 scalefont setfont
+        exch dup length exch stringwidth
+        grestore
+        pop 100 mul exch div div
+        % Only make the font smaller/narrower, not larger/wider
+        dup 1.0 lt
+        {
+          0 0 2 index 0 0 6 array astore
+          exch //true .copyfontdict
+          dup /FontMatrix get 3 -1 roll matrix concatmatrix
+          exch dup 3 -1 roll /FontMatrix exch put
+          % we don't need to definfont here, we can leave that to .completefont below
+        }
+        {
+          pop
         } ifelse
       }
       {
-        (   **** Warning: FirstChar value missing in FontDescriptor for non-base14 font\n)
-        pdfformatwarning
+        % no suitable Widths entries - carry on and hope for the best......
+        pop pop pop
       } ifelse
-                % Stack: font-res fontname fontdesc font
-                % If this is a small-caps font, replace the CharString
-                % entries for a..z.
+    }
+    {
+      % Broken file: no Widths array for non-base14 font - carry on and hope for the best......
+      (   **** Warning: Widths array missing in FontDescriptor for non-base14 font\n)
+      pdfformatwarning
+      pop pop pop
+    } ifelse
+  }
+  {
+    (   **** Warning: FirstChar value missing in FontDescriptor for non-base14 font\n)
+    pdfformatwarning
+  } ifelse
+  % Stack: font-res fontname fontdesc font
 
-      exch /Flags oget 16#20000 and 0 ne {
-        //true .copyfontdict
-        dup /CharStrings 2 copy get dup length dict .copydict
-        % stack: font-res fontname font font /CharStrings CharStringsdict
-        5 index /FirstChar get 97 .max
-        6 index /LastChar get 122 .min 1 exch {
-                % Stack: font-res fontname font' font' /CharStrings charstrings code
-                % Note that this only remaps a-z, not accented characters.
-          6 index /Widths oget 1 index 8 index /FirstChar get sub oget
-          1 string dup 0 5 -1 roll put
-                % Stack: font-res font' font' /CharStrings charstrings code
-                %   width (x)
-          2 index exch dup cvn exch
-          dup 0 2 copy get 32 sub put 4 -1 roll {
-                        % Stack: operand (X) width
-            0 setcharwidth exch pop
-            currentfont /FontMatrix get matrix invertmatrix concat
-            0.7 dup scale 0 0 moveto show
-          } /exec cvx 4 packedarray cvx put
-        } for put
-      } if
-      dup /FontName get 2 index ne {
-        //true .copyfontdict
-        2 copy exch /FontName exch put
-      } if
-      exch pop .completefont
-    } {
-                % No descriptor available, use the default algorithm.
+  % If this is a small-caps font, replace the CharString
+  % entries for a..z.
+  exch /Flags oget 16#20000 and 0 ne
+  {
+    //true .copyfontdict
+    dup /CharStrings 2 copy get dup length dict .copydict
+    % stack: font-res fontname font font /CharStrings CharStringsdict
+    5 index /FirstChar get 97 .max
+    6 index /LastChar get 122 .min 1 exch
+    {
+
+      % Stack: font-res fontname font' font' /CharStrings charstrings code
+      % Note that this only remaps a-z, not accented characters.
+      6 index /Widths oget 1 index 8 index /FirstChar get sub oget
+      1 string dup 0 5 -1 roll put
+
+      % Stack: font-res font' font' /CharStrings charstrings code
+      %   width (x)
+      2 index exch dup cvn exch
+      dup 0 2 copy get 32 sub put 4 -1 roll
+      {
+        % Stack: operand (X) width
+        0 setcharwidth exch pop
+        currentfont /FontMatrix get matrix invertmatrix concat
+        0.7 dup scale 0 0 moveto show
+      } /exec cvx 4 packedarray cvx put
+    } for put
+  } if
+
+  dup /FontName get 2 index ne
+  {
+    //true .copyfontdict
+    2 copy exch /FontName exch put
+  } if
+  exch pop .completefont
+} bind executeonly def
+
+/pdffindfont {		% <font-resource> <fontname> pdffindfont <font>
+  % If the font isn't available, synthesize one based on
+  % its descriptor.
+  dup /Font resourcestatus
+  {
+    pop pop pdffindcachedfont
+  }
+  {
+    1 index /FontDescriptor knownoget {
+      /SUBSTFONT where not
+      {
+        pdfsubstitutefont
+      }
+      {
+        % User has defined SUBSTFONT, use the defined substitute font, do not
+        % try to be clever
+        pop                 % the dictionary containing SUBSTFONT
+        pop                 % the FontDescriptor
+        pdffindcachedfont
+      }ifelse
+    }
+    {
+      % No descriptor available, use the default algorithm.
       pdffindcachedfont
     } ifelse
   } ifelse
