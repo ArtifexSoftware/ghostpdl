@@ -255,7 +255,7 @@ pl_fill_in_mt_font(gs_font_base * pfont, pl_font_t * plfont, ushort handle,
             pfont->FontBBox.p.x = pfont->FontBBox.p.y =
                 pfont->FontBBox.q.x = pfont->FontBBox.q.y = 0;
 
-            uid_set_UniqueID(&pfont->UID, unique_id | (handle << 16));
+            uid_set_UniqueID(&pfont->UID, unique_id | ( ((long) handle) << 16));
             pfont->encoding_index = 1;      /****** WRONG ******/
             pfont->nearest_encoding_index = 1;      /****** WRONG ******/
         }
