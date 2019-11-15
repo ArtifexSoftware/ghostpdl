@@ -465,6 +465,27 @@ AC_LINK_IFELSE(
 CFLAGS="$CFLAGS_SAVED"
 
 AC_MSG_RESULT([ ...done.])
+
+
+dnl ----------------------------
+dnl check for sanitize build warnings support
+dnl ----------------------------
+AC_MSG_CHECKING([compiler/linker address santizer build warnings support])
+
+CFLAGS_SANITIZE_TRY="$CFLAGS_SANITIZE -W -Wall -Wno-unused-parameter -Wno-sign-compare -Wno-implicit-fallthrough -Wno-missing-field-initializers -Wno-shift-negative-value -Wno-old-style-declaration -Wno-unused-but-set-parameter"
+CFLAGS_SAVED="$CFLAGS"
+CFLAGS="$CFLAGS_SANITIZE_TRY"
+
+AC_LINK_IFELSE(
+  [AC_LANG_PROGRAM([#include <stdio.h>], [
+  return(0);
+  ])],
+  [CFLAGS_SANITIZE="$CFLAGS"], [echo 'extra warnings not supported'])
+
+CFLAGS="$CFLAGS_SAVED"
+AC_MSG_RESULT([ ...done.])
+
+
 dnl ----------------------------
 dnl check for big/little endian
 dnl ----------------------------
