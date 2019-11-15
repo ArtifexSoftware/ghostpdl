@@ -990,8 +990,8 @@ pcl_font_scale(pcl_state_t * pcs, gs_point * pscale)
 {
     /* set up the font transformation */
     if (pcs->font->scaling_technology == plfst_bitmap) {
-        pscale->x = pcl_coord_scale / pcs->font->resolution.x;
-        pscale->y = pcl_coord_scale / pcs->font->resolution.y;
+        pscale->x = (double) pcl_coord_scale / pcs->font->resolution.x;
+        pscale->y = (double) pcl_coord_scale / pcs->font->resolution.y;
     } else {
         /*
          * Outline fonts are 1-point; the font height is given in
