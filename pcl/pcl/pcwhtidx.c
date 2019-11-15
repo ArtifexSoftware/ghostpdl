@@ -217,7 +217,8 @@ pcl_cmap_map_raster(const pcl_cs_indexed_t * pindexed,
 
     /* allocate a new raster if necessary (pack scanlines) */
     if (must_copy) {
-        long nbytes = pin_pixinfo->size.x * pin_pixinfo->pix_depth;
+        /* Cast to long to avoid coverity warning about sign extension. */
+        long nbytes = (long) pin_pixinfo->size.x * pin_pixinfo->pix_depth;
 
         nbytes = ((nbytes + 7) / 8);
         pout_pixinfo->raster = nbytes;
