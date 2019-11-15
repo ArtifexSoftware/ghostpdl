@@ -440,7 +440,7 @@ hpgl_set_graphics_line_attribute_state(hpgl_state_t * pgls,
      * is not documented PCLTRM.  Pen widths are maintained in
      * plotter units
      */
-    if (render_mode != hpgl_rm_character && pen_wid <= 14.0) {
+    if (pen_wid <= 14.0) {
         hpgl_call(gs_setlinejoin(pgls->pgs, gs_join_none));
         hpgl_call(gs_setlinecap(pgls->pgs, gs_cap_butt));
         hpgl_call(gs_setlinewidth(pgls->pgs, pen_wid));
@@ -450,7 +450,6 @@ hpgl_set_graphics_line_attribute_state(hpgl_state_t * pgls,
 
     switch (render_mode) {
 
-        case hpgl_rm_character:
         case hpgl_rm_polygon:
         case hpgl_rm_clip_and_fill_polygon:
             hpgl_call(gs_setlinejoin(pgls->pgs, gs_join_round));
