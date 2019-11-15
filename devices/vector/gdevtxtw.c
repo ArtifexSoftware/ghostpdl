@@ -1710,10 +1710,10 @@ static int get_unicode(textw_text_enum_t *penum, gs_font *font, gs_glyph glyph, 
                 }
             }
             if (length == 0) {
-                single_glyph_list_t *sentry = (single_glyph_list_t *)&SingleGlyphList;
-                double_glyph_list_t *dentry = (double_glyph_list_t *)&DoubleGlyphList;
-                treble_glyph_list_t *tentry = (treble_glyph_list_t *)&TrebleGlyphList;
-                quad_glyph_list_t *qentry = (quad_glyph_list_t *)&QuadGlyphList;
+                single_glyph_list_t *sentry = SingleGlyphList;
+                double_glyph_list_t *dentry = DoubleGlyphList;
+                treble_glyph_list_t *tentry = TrebleGlyphList;
+                quad_glyph_list_t *qentry = QuadGlyphList;
 
                 /* Search glyph to single Unicode value table */
                 while (sentry->Glyph != 0) {

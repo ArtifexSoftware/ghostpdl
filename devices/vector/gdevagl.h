@@ -33,5 +33,5 @@ typedef struct treble_glyph_list_s {
 
 typedef struct quad_glyph_list_s {
   const char *Glyph;
-  short Unicode[4];
+  unsigned short Unicode[4];
 } quad_glyph_list_t;
