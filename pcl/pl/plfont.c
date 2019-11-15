@@ -406,7 +406,7 @@ pl_glyph_name(gs_font * pfont, gs_glyph glyph, gs_const_string * pstr)
         }
         /* skip over the post header */
         numGlyphs = u16(postp + 32);
-        if (glyph < 0 || glyph > numGlyphs - 1) {
+        if (glyph > numGlyphs - 1) {
             if_debug1m('=', pfont->memory,
                        "[=]glyph index %lx out of range\n", glyph);
             return -1;
@@ -414,7 +414,7 @@ pl_glyph_name(gs_font * pfont, gs_glyph glyph, gs_const_string * pstr)
         /* glyph name index starts at post + 34 each entry is 2 bytes */
         glyph_name_index = u16(postp + 34 + (glyph * 2));
         /* this shouldn't happen */
-        if (glyph_name_index < 0 && glyph_name_index > 0x7fff)
+        if (glyph_name_index > 0x7fff)
             return -1;
         /* mac easy */
         if (glyph_name_index < 258) {
