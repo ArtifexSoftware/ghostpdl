@@ -120,7 +120,12 @@ currentdict end def
       (DroidSansFallback.ttf)
     } if
   } if
-  concatstrings
+  % If CIDFSubstFont looks like a path/file (rather than just file)
+  % use it without the CIDFSubstPath string
+  dup .file_name_directory_separator rsearch
+  {pop pop pop exch pop}
+  {pop concatstrings}
+  ifelse
   % The CSI data just has to be valid, the substition machinery will
   % generally overwrite it with appropriate values for the missing font.
   /CSI  [(Identity) 0]
