@@ -684,7 +684,7 @@ cdj970_put_params(gx_device * pdev, gs_param_list * plist)
         return code;
     if ((code = cdj_put_param_int(plist, "Duplex", &duplex, 0, 2, code)) < 0)
         return code;
-    if ((code = cdj_put_param_float(plist, "MasterGamma", &mastergamma, 0.1, 9.0, code)) < 0)
+    if ((code = cdj_put_param_float(plist, "MasterGamma", &mastergamma, 0.1f, 9.0, code)) < 0)
         return code;
     if ((code = cdj_put_param_float(plist, "GammaValC", &gammavalc, 0.0, 9.0, code)) < 0)
         return code;
