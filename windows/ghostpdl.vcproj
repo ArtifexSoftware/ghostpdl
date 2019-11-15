@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
@@ -323,6 +323,14 @@
 			>
 			<File
 				RelativePath="..\gpdl\image\imagetop.c"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="pwg"
+			>
+			<File
+				RelativePath="..\gpdl\pwg\pwgtop.c"
 				>
 			</File>
 		</Filter>
