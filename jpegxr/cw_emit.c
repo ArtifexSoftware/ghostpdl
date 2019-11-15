@@ -133,7 +133,7 @@ int jxrc_set_separate_alpha_image_plane(jxr_container_t cp, unsigned int alpha_p
 
 static void emit_ifd(jxr_container_t cp)
 {
-    unsigned long ifd_mark;
+    unsigned long ifd_mark = 0;
     int idx;
     struct ifd_table ifd[64];
     unsigned char buf[1024];
