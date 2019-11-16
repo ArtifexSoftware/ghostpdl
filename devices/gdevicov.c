@@ -92,7 +92,7 @@ cov_write_page(gx_device_printer *pdev, gp_file *file)
         }
     }
 
-    return (code < 0) ? ecode : 0;
+    return (code > 0) ? ecode : 0;
 }
 
 /*  cov_write_page2 gave ink coverage values not ratecoverage */
@@ -163,7 +163,7 @@ static int cov_write_page_ink(gx_device_printer *pdev, gp_file *file)
         }
     }
 
-    return (code < 0) ? ecode : 0;
+    return (code > 0) ? ecode : 0;
 }
 
 static const gx_device_procs cov_procs =
