@@ -1034,8 +1034,11 @@ clist_fill_stroke_path(gx_device * pdev, const gs_gstate * pgs,
         if ((code = cmd_update_lop(cdev, re.pcls, lop)) < 0)
             return code;
         code = cmd_put_drawing_color(cdev, re.pcls, pdevc_fill, &re, devn_not_tile_fill);
-        if (code < 0)
-            return code;
+        if (code < 0) {
+            /* Something went wrong, use the default implementation. */
+            return gx_default_fill_stroke_path(pdev, pgs, ppath, params_fill, pdevc_fill,
+                params_stroke, pdevc_stroke, pcpath);
+        }
         code = cmd_put_drawing_color(cdev, re.pcls, pdevc_stroke, &re, devn_not_tile_stroke);
         if (code < 0) {
             /* Something went wrong, use the default implementation. */
