@@ -952,9 +952,9 @@ $(GLOBJ)gscicach.$(OBJ) : $(GLSRC)gscicach.c $(AK) $(gx_h)\
 	$(GLCC) $(GLO_)gscicach.$(OBJ) $(C_) $(GLSRC)gscicach.c
 
 $(GLOBJ)gsovrc.$(OBJ) : $(GLSRC)gsovrc.c $(AK) $(gx_h) $(gserrors_h)\
- $(memory__h) $(gsutil_h) $(gxcomp_h) $(gxdevice_h) $(gsdevice_h) $(gxgetbit_h)\
- $(gsovrc_h) $(gxdcolor_h) $(gxoprect_h) $(gsbitops_h) $(gxgstate_h) $(gxdevsop_h)\
- $(gxcldev_h) $(LIB_MAK) $(MAKEDIRS)
+ $(assert__h) $(memory__h) $(gsutil_h) $(gxcomp_h) $(gxdevice_h) $(gsdevice_h)\
+ $(gxgetbit_h) $(gsovrc_h) $(gxdcolor_h) $(gxoprect_h) $(gsbitops_h) $(gxgstate_h)\
+ $(gxdevsop_h) $(gxcldev_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsovrc.$(OBJ) $(C_) $(GLSRC)gsovrc.c
 
 $(GLOBJ)gxoprect.$(OBJ) : $(GLSRC)gxoprect.c $(AK) $(gx_h)\

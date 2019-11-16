@@ -16,6 +16,7 @@
 
 /* overprint/overprint mode compositor implementation */
 
+#include "assert_.h"
 #include "memory_.h"
 #include "gx.h"
 #include "gserrors.h"
@@ -1001,6 +1002,9 @@ overprint_generic_fill_rectangle(
     if (tdev == 0)
         return 0;
     else {
+
+        assert(opdev->op_state != 0);
+
         /* See if we even need to do any overprinting.  We have to maintain
            the compositor active for fill/stroke cases even if we are only
            doing a fill or a stroke */
@@ -1178,6 +1182,8 @@ overprint_fill_rectangle_hl_color(gx_device *dev,
     if (tdev == 0)
         return 0;
 
+    assert(opdev->op_state != 0);
+
     /* See if we even need to do any overprinting.  We have to maintain
        the compositor active for fill/stroke cases even if we are only
        doing a fill or a stroke */
@@ -1278,6 +1284,8 @@ overprint_sep_fill_rectangle(
         return 0;
     else {
         int     depth = tdev->color_info.depth;
+
+        assert(opdev->op_state != 0);
 
         /* See if we even need to do any overprinting.  We have to maintain
            the compositor active for fill/stroke cases even if we are only

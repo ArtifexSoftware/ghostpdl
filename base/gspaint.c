@@ -577,39 +577,43 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
     bool devn;
     float orig_width, scale, orig_flatness;
 
-    /* If fill (due to startup or failure during fill setup due
-       to pattern for fill) then switch to stroke */
+    /* It is either our first time, or the stroke was a pattern and
+       we are coming back from the error if restart < 1 (0 is first
+       time, 1 stroke is set, and we only need to finish out fill */
     if (pgs->is_fill_color)
         gs_swapcolors_quick(pgs);
 
-    /* We need to distinguish text from vectors to set the object tag.
+    if (*restart < 1) {
 
-       To make that determination, we check for the show graphics state being stored
-       in the current graphics state. This works even in the case of a glyph from a
-       Type 3 Postscript/PDF font which has multiple, nested gsave/grestore pairs in
-       the BuildGlyph/BuildChar procedure. Also, it works in the case of operating
-       without a glyph cache or bypassing the cache because the glyph is too large or
-       the cache being already full.
+        /* We need to distinguish text from vectors to set the object tag.
 
-       Note that it doesn't work for a construction like:
-       "(xyz) true charpath fill/stroke"
-       where the show machinations have completed before we get to the fill operation.
-       This has implications for how we handle PDF text rendering modes 1 and 2. To
-       handle that, we'll have to add a flag to the path structure, or to the path
-       segment structure (depending on how fine grained we require it to be).
-     */
-    if (pgs->show_gstate == NULL)
-        ensure_tag_is_set(pgs, pgs->device, GS_PATH_TAG);	/* NB: may unset_dev_color */
-    else
-        ensure_tag_is_set(pgs, pgs->device, GS_TEXT_TAG);	/* NB: may unset_dev_color */
+           To make that determination, we check for the show graphics state being stored
+           in the current graphics state. This works even in the case of a glyph from a
+           Type 3 Postscript/PDF font which has multiple, nested gsave/grestore pairs in
+           the BuildGlyph/BuildChar procedure. Also, it works in the case of operating
+           without a glyph cache or bypassing the cache because the glyph is too large or
+           the cache being already full.
 
-    /* if we are at restart == 0, we set the stroke color. */
-    code = gx_set_dev_color(pgs);
-    if (code != 0)
-        return code;		/* may be gs_error_Remap_color or real error */
-    code = gs_gstate_color_load(pgs);	/* FIXME: needed for stroke_color ?? */
-    if (code < 0)
-        return code;
+           Note that it doesn't work for a construction like:
+           "(xyz) true charpath fill/stroke"
+           where the show machinations have completed before we get to the fill operation.
+           This has implications for how we handle PDF text rendering modes 1 and 2. To
+           handle that, we'll have to add a flag to the path structure, or to the path
+           segment structure (depending on how fine grained we require it to be).
+         */
+        if (pgs->show_gstate == NULL)
+            ensure_tag_is_set(pgs, pgs->device, GS_PATH_TAG);	/* NB: may unset_dev_color */
+        else
+            ensure_tag_is_set(pgs, pgs->device, GS_TEXT_TAG);	/* NB: may unset_dev_color */
+
+        /* if we are at restart == 0, we set the stroke color. */
+        code = gx_set_dev_color(pgs);
+        if (code != 0)
+            return code;		/* may be gs_error_Remap_color or real error */
+        code = gs_gstate_color_load(pgs);	/* FIXME: needed for stroke_color ?? */
+        if (code < 0)
+            return code;
+    }
 
     if (pgs->stroke_overprint || (!pgs->stroke_overprint && dev_proc(pgs->device, dev_spec_op)(pgs->device,
         gxdso_overprint_active, NULL, 0))) {
@@ -619,13 +623,11 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
         if (code < 0)
             return code;
     }
-
     *restart = 1;		/* finished, successfully with stroke_color */
+
     gs_swapcolors_quick(pgs);	/* switch to fill color */
     code = gx_set_dev_color(pgs);
     if (code != 0) {
-        /* If we exit here, because of needing to Remap the colors,
-         * the color is set for fill, so don't need to swap */
         return code;
     }
     code = gs_gstate_color_load(pgs);
@@ -649,8 +651,8 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
     {
         gx_device_color *col_fill = gs_currentdevicecolor_inline(pgs);
         gx_device_color *col_stroke = gs_altdevicecolor_inline(pgs);
-        devn = color_is_devn(col_fill);
-        assert(devn == color_is_devn(col_stroke));
+        devn = color_is_devn(col_fill) && color_is_devn(col_stroke);
+        /* could be devn and masked_devn */
         if (color_is_pure(col_fill) || color_is_pure(col_stroke) || devn)
             abits = alpha_buffer_bits(pgs);
     }
