@@ -581,6 +581,7 @@ lxmgen_print_page(gx_device_printer *pdev, gp_file *prn_stream)
    int lr_shift=((lxm_device*)pdev)->headSeparation;
    byte *obp[LX7_BSW_H];    /* pointers to buffer lines */
    int bufHeight;
+   int code = 0;
 
    /* initiate vres mapping variable */
    vres=LXR_600; /* default vertical resolution */
@@ -689,19 +690,24 @@ lxmgen_print_page(gx_device_printer *pdev, gp_file *prn_stream)
       int c1200;     /* testing empty line for 1200dpi... */
 
       /* copy one line & test for all zeroes */
-      gdev_prn_get_bits(pdev, pheight-prest, /* current line No. */
+      code = gdev_prn_get_bits(pdev, pheight-prest, /* current line No. */
             pbuf,                /* our buffer if needed */
             &ppbuf);             /* returns pointer to scanline
                                   * either our buffer or
                                   * gs internal data buffer
                                   */
+      if (code < 0)
+          goto error;
+
       if (vres==LXR_1200 && (pheight-prest+LXH_DSKIP1<pheight))
       {
-         gdev_prn_get_bits(pdev, pheight-prest+LXH_DSKIP1,
+         code = gdev_prn_get_bits(pdev, pheight-prest+LXH_DSKIP1,
                                   /* current line No. */
             pbuf+bwidth,                /* our buffer if needed */
             &ppbuf2);
        c1200=LX_LINE_EMPTY(ppbuf2,bwidth);
+         if (code < 0)
+             goto error;
       }
       else
          c1200=1;
@@ -791,13 +797,14 @@ lxmgen_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 
    /* eject page */
    lex_eject(prn_stream);
+error:
    gs_free(pdev->memory->non_gc_memory, (char*)pbuf,rpbufsize, 1, "lxmgen_print_page(pbuf)");
    gs_free(pdev->memory->non_gc_memory, (char*)outbuf,OUT_BUF_SIZE, 1, "lxmgen_print_page(outbuf)");
 
 #ifdef DEBUG
    dprintf1("[%s] print_page() end\n",pdev->dname);
 #endif
-   return 0;
+   return code;
 }
 
    static int
