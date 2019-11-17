@@ -1710,10 +1710,10 @@ static int get_unicode(textw_text_enum_t *penum, gs_font *font, gs_glyph glyph, 
                 }
             }
             if (length == 0) {
-                single_glyph_list_t *sentry = SingleGlyphList;
-                double_glyph_list_t *dentry = DoubleGlyphList;
-                treble_glyph_list_t *tentry = TrebleGlyphList;
-                quad_glyph_list_t *qentry = QuadGlyphList;
+                single_glyph_list_t *sentry = (single_glyph_list_t *)&SingleGlyphList;
+                double_glyph_list_t *dentry = (double_glyph_list_t *)&DoubleGlyphList;
+                treble_glyph_list_t *tentry = (treble_glyph_list_t *)&TrebleGlyphList;
+                quad_glyph_list_t *qentry = (quad_glyph_list_t *)&QuadGlyphList;
 
                 /* Search glyph to single Unicode value table */
                 while (sentry->Glyph != 0) {
@@ -2111,7 +2111,8 @@ txt_add_fragment(gx_device_txtwrite_t *tdev, textw_text_enum_t *penum)
         penum->TextBufferIndex, sizeof(float), "txtwrite alloc widths array");
     if (!penum->text_state->Widths)
         return gs_note_error(gs_error_VMerror);
-    memcpy(penum->text_state->Widths, penum->Widths, penum->TextBufferIndex * sizeof(float));
+    memset(penum->text_state->Widths, 0x00, penum->TextBufferIndex * sizeof(float));
+    memcpy(penum->text_state->Widths, penum->Widths, penum->text.size * sizeof(float));
 
     unsorted_entry->Unicode_Text = (unsigned short *)gs_malloc(tdev->memory->stable_memory,
         penum->TextBufferIndex, sizeof(unsigned short), "txtwrite alloc sorted text buffer");
@@ -2123,7 +2124,8 @@ txt_add_fragment(gx_device_txtwrite_t *tdev, textw_text_enum_t *penum)
         penum->TextBufferIndex, sizeof(float), "txtwrite alloc widths array");
     if (!unsorted_entry->Widths)
         return gs_note_error(gs_error_VMerror);
-    memcpy(unsorted_entry->Widths, penum->Widths, penum->TextBufferIndex * sizeof(float));
+    memset(unsorted_entry->Widths, 0x00, penum->TextBufferIndex * sizeof(float));
+    memcpy(unsorted_entry->Widths, penum->Widths, penum->text.size * sizeof(float));
 
     unsorted_entry->FontName = (char *)gs_malloc(tdev->memory->stable_memory,
         (strlen(penum->text_state->FontName) + 1), sizeof(unsigned char), "txtwrite alloc sorted text buffer");
