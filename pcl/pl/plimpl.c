@@ -37,7 +37,7 @@ extern pl_interp_implementation_t ps_implementation;
 
 extern pl_interp_implementation_t urf_implementation;
 
-extern pl_interp_implementation_t img_implementation;
+extern pl_interp_implementation_t jpg_implementation;
 
 extern pl_interp_implementation_t pwg_implementation;
 
@@ -57,8 +57,8 @@ pl_interp_implementation_t *pdl_implementations[] = {
 #ifdef URF_INCLUDED
     &urf_implementation,
 #endif
-#ifdef IMG_INCLUDED
-    &img_implementation,
+#ifdef JPG_INCLUDED
+    &jpg_implementation,
 #endif
 #ifdef PWG_INCLUDED
     &pwg_implementation,
