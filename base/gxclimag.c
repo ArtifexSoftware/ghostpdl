@@ -999,7 +999,9 @@ clist_image_plane_data(gx_image_enum_common_t * info,
     sbox.p.y = (y0 = y_orig) - pie->support.y;
     sbox.q.x = pie->rect.q.x + pie->support.x;
     sbox.q.y = (y1 = pie->y += yh_used) + pie->support.y;
-    gs_bbox_transform(&sbox, &pie->matrix, &dbox);
+    code = gs_bbox_transform(&sbox, &pie->matrix, &dbox);
+    if (code < 0)
+        return code;
     /*
      * In order to keep the band list consistent, we must write out
      * the image data in precisely those bands whose begin_image
