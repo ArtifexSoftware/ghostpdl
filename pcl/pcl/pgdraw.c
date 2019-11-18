@@ -1570,7 +1570,7 @@ hpgl_draw_current_path(hpgl_state_t * pgls, hpgl_rendering_mode_t render_mode)
                                        min(scale.x,
                                            scale.y) * 0.0375 * 0.2835));
                         }
-                        pcl_mark_page_for_path(pgls);
+                        hpgl_call(pcl_mark_page_for_path(pgls));
                         hpgl_call(gs_stroke(pgls->pgs));
                         break;
 
