@@ -202,7 +202,9 @@ atx_print_page(gx_device_printer *pdev, gp_file *f, int max_width_bytes)
         byte *end;
         int count;
 
-        gdev_prn_get_bits(pdev, lnum, buf, &row);
+        code = gdev_prn_get_bits(pdev, lnum, buf, &row);
+        if (code < 0)
+            goto done;
         /* Clear any trailing padding bits */
         row[endidx] &= mask;
         /* Find the end of the non-blank data. */

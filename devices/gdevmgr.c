@@ -131,18 +131,20 @@ mgr_begin_page(gx_device_mgr *bdev, gp_file *pstream, mgr_cursor *pcur)
         return 0;
 }
 
-/* Advance to the next row.  Return 0 if more, 1 if done. */
+/* Advance to the next row.  Return 0 if more, 1 if done. <0 if error */
 static int
 mgr_next_row(mgr_cursor *pcur)
-{	if ( pcur->lnum >= pcur->dev->height )
+{	int code = 0;
+
+        if ( pcur->lnum >= pcur->dev->height )
         {	gs_free(((gx_device_printer *)pcur->dev)->memory,
                         (char *)pcur->data, pcur->line_size, 1,
                         "mgr_next_row(done)");
                 return 1;
-           }
-        gdev_prn_copy_scan_lines((gx_device_printer *)pcur->dev,
+         }
+        code = gdev_prn_copy_scan_lines((gx_device_printer *)pcur->dev,
                                  pcur->lnum++, pcur->data, pcur->line_size);
-        return 0;
+        return code < 0 ? code : 0;
 }
 
 /* ------ Individual page printing routines ------ */
@@ -219,6 +221,8 @@ mgrN_print_page(gx_device_printer *pdev, gp_file *pstream)
 
         if ( bdev->mgr_depth != 8 )
             data = (byte *)gs_malloc(pdev->memory, mgr_line_size, 1, "mgrN_print_page");
+        if (data == NULL)
+            return_error(gs_error_VMerror);
 
         while ( !(code = mgr_next_row(&cur)) )
            {
@@ -306,6 +310,8 @@ cmgrN_print_page(gx_device_printer *pdev, gp_file *pstream)
 	}
         mgr_line_size = mgr_wide / (8 / bdev->mgr_depth);
         data = (byte *)gs_malloc(pdev->memory, mgr_line_size, 1, "cmgrN_print_page");
+        if (data == NULL)
+            return_error(gs_error_VMerror);
 
         if ( bdev->mgr_depth == 8 ) {
             memset( table, 0, sizeof(table) );

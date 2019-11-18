@@ -428,6 +428,7 @@ clj_print_page(
     double                  fs_res = pdev->HWResolution[0] / 72.0;
     double                  ss_res = pdev->HWResolution[1] / 72.0;
     int			    imageable_width, imageable_height;
+    int                     code = 0;
 
     /* no paper size at this point is a serious error */
     if (psize == 0)
@@ -479,7 +480,9 @@ clj_print_page(
     for (i = 0; i < imageable_height; i++) {
         int     clen[3];
 
-        gdev_prn_copy_scan_lines(pdev, i, data, lsize);
+        code = gdev_prn_copy_scan_lines(pdev, i, data, lsize);
+        if (code < 0)
+            goto xit;
 
         /* The 'lsize' bytes of data have the blank margin area at the end due	*/
         /* to the 'initial_matrix' offsets that are applied.			*/
@@ -503,11 +506,12 @@ clj_print_page(
     /* PCL will take care of blank lines at the end */
     gp_fputs("\033*rC\f", prn_stream);
 
+xit:
     /* free the buffers used */
     gs_free_object(mem, cdata[0], "clj_print_page(cdata)");
     gs_free_object(mem, data, "clj_print_page(data)");
 
-    return 0;
+    return code;
 }
 
 /* CLJ device methods */

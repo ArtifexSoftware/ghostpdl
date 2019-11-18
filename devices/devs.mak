@@ -1947,6 +1947,25 @@ $(DEVOBJ)gdevpdfimg.$(OBJ) : $(DEVSRC)gdevpdfimg.c $(AK) $(gdevkrnlsclass_h) \
   $(slzwx_h) $(szlibx_h) $(jpeglib__h) $(sdct_h) $(srlx_h) $(gsicc_cache_h) $(sjpeg_h)
 	$(DEVCC) $(DEVO_)gdevpdfimg.$(OBJ) $(C_) $(DEVSRC)gdevpdfimg.c
 
+### -------- URF device --------------------- ###
+urf=$(DEVOBJ)gdevurf.$(OBJ)
+$(DD)urfgray.dev : $(urf) $(GLD)page.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
+	$(SETPDEV2) $(DD)urfgray $(urf)
+	$(ADDMOD) $(DD)urfgray -include $(GLD)page
+
+$(DD)urfrgb.dev : $(urf) $(GLD)page.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
+	$(SETPDEV2) $(DD)urfrgb $(urf)
+	$(ADDMOD) $(DD)urfrgb -include $(GLD)page
+
+$(DD)urfcmyk.dev : $(urf) $(GLD)page.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
+	$(SETPDEV2) $(DD)urfcmyk $(urf)
+	$(ADDMOD) $(DD)urfcmyk -include $(GLD)page
+
+$(DEVOBJ)gdevurf.$(OBJ) : $(URFSRCDIR)$(D)gdevurf.c $(AK) $(PDEVH) \
+ $(gsparam_h) $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gxlum_h) $(gxdcconv_h)\
+ $(gsutil_h) $(DEVS_MAK) $(MAKEDIRS)
+	$(DEVCC) $(DEVO_)gdevurf.$(OBJ) $(C_) $(URFSRCDIR)$(D)gdevurf.c
+
 # Dependencies:
 $(DEVSRC)gxfcopy.h:$(GLSRC)gsfont.h
 $(DEVSRC)gxfcopy.h:$(GLSRC)gsmatrix.h

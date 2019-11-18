@@ -163,7 +163,7 @@ nwp533_close(gx_device *dev)
 static int
 nwp533_print_page(gx_device_printer *dev, gp_file *prn_stream)
 {
-  int lnum;
+  int lnum, code = 0;
   int line_size = gdev_mem_bytes_per_scan_line(dev);
   byte *in;
   int printer_file;
@@ -174,6 +174,8 @@ nwp533_print_page(gx_device_printer *dev, gp_file *prn_stream)
       line_size += 4 - (line_size % 4);
     }
   in = (byte *) gs_malloc(dev->memory, line_size, 1, "nwp533_output_page(in)");
+  if (in == NULL)
+      return_error(gs_error_VMerror);
  restart:
   if(ioctl(printer_file, LBIOCSTOP, 0) < 0)
     {
@@ -186,7 +188,9 @@ nwp533_print_page(gx_device_printer *dev, gp_file *prn_stream)
 
   for ( lnum = 0; lnum < dev->height; lnum++)
     {
-      gdev_prn_copy_scan_lines(prn_dev, lnum, in, line_size);
+      code = gdev_prn_copy_scan_lines(prn_dev, lnum, in, line_size);
+      if (code < 0)
+          goto xit;
       if(write(printer_file, in, line_size) != line_size)
         {
           perror("Writting to output");
@@ -201,7 +205,8 @@ nwp533_print_page(gx_device_printer *dev, gp_file *prn_stream)
       perror("Starting print");
       return_error(gs_error_ioerror);
     }
+xit:
   gs_free(dev->memory, in, line_size, 1, "nwp533_output_page(in)");
 
-  return 0;
+  return code;
 }

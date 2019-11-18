@@ -37,18 +37,20 @@
 static int
 cov_write_page(gx_device_printer *pdev, gp_file *file)
 {
-    int code = 0;
+    int code = 0, ecode = 0;
     int raster = gdev_prn_raster(pdev);
     int height = pdev->height;
     byte *line = gs_alloc_bytes(pdev->memory, raster, "ink coverage plugin buffer");
     int y;
     uint64_t c_pix = 0, m_pix = 0, y_pix = 0, k_pix = 0, total_pix = 0;
 
+    if (line == NULL)
+        return gs_error_VMerror;
     for (y = 0; y < height; y++) {
         byte *row, *end;
 
-        code = gdev_prn_get_bits(pdev, y, line, &row);
-        if (code < 0)
+        ecode = gdev_prn_get_bits(pdev, y, line, &row);
+        if (ecode < 0)
             break;
         end = row + raster;
 
@@ -90,14 +92,14 @@ cov_write_page(gx_device_printer *pdev, gp_file *file)
         }
     }
 
-    return 0;
+    return (code > 0) ? ecode : 0;
 }
 
 /*  cov_write_page2 gave ink coverage values not ratecoverage */
 
 static int cov_write_page_ink(gx_device_printer *pdev, gp_file *file)
 {
-    int code = 0;
+    int code = 0, ecode = 0;
     int raster = gdev_prn_raster(pdev);
     int height = pdev->height;
 	double dc_pix=0;
@@ -109,11 +111,13 @@ static int cov_write_page_ink(gx_device_printer *pdev, gp_file *file)
     int y;
     uint64_t  total_pix = 0;
 
+    if (line == NULL)
+        return gs_error_VMerror;
     for (y = 0; y < height; y++) {
         byte *row, *end;
 
-        code = gdev_prn_get_bits(pdev, y, line, &row);
-        if (code < 0)
+        ecode = gdev_prn_get_bits(pdev, y, line, &row);
+        if (ecode < 0)
             break;
         end = row + raster;
 
@@ -159,7 +163,7 @@ static int cov_write_page_ink(gx_device_printer *pdev, gp_file *file)
         }
     }
 
-    return 0;
+    return (code > 0) ? ecode : 0;
 }
 
 static const gx_device_procs cov_procs =

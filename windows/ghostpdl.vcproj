@@ -310,6 +310,30 @@
 				>
 			</File>
 		</Filter>
+		<Filter
+			Name="urf"
+			>
+			<File
+				RelativePath="..\gpdl\urf\urftop.c"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="image"
+			>
+			<File
+				RelativePath="..\gpdl\image\imagetop.c"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="pwg"
+			>
+			<File
+				RelativePath="..\gpdl\pwg\pwgtop.c"
+				>
+			</File>
+		</Filter>
 	</Files>
 	<Globals>
 	</Globals>

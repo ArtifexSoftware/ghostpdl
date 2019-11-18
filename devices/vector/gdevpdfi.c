@@ -1878,7 +1878,7 @@ pdf_image_end_image_data(gx_image_enum_common_t * info, bool draw_last,
     pdf_image_enum *pie = (pdf_image_enum *)info;
     int height = pie->writer.height;
     int data_height = height - pie->rows_left;
-    int code = 0;
+    int code = 0, ecode;
 
     if (pie->writer.pres)
         ((pdf_x_object_t *)pie->writer.pres)->data_height = data_height;
@@ -1919,6 +1919,12 @@ pdf_image_end_image_data(gx_image_enum_common_t * info, bool draw_last,
     }
     if (pie->initial_colorspace != pdev->pcm_color_info_index)
         pdf_set_process_color_model(pdev, pie->initial_colorspace);
+
+    /* Clean up any outstanding streams before freeing the enumerator */
+    while (pie->writer.alt_writer_count-- > 0) {
+        ecode = psdf_end_binary(&(pie->writer.binary[pie->writer.alt_writer_count]));
+        if (ecode < 0 && code >= 0) code  = ecode;
+    }
 
     gx_image_free_enum(&info);
     return code;

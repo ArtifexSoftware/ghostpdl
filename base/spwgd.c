@@ -171,8 +171,17 @@ data_produced:
     }
 }
 
+static void
+s_PWGD_release(stream_state * st)
+{
+    stream_PWGD_state *const ss = (stream_PWGD_state *) st;
+
+    gs_free_object(st->memory, ss->line_buffer, "PWGD(close)");
+    ss->line_buffer = NULL;
+}
+
 /* Stream template */
 const stream_template s_PWGD_template = {
-    &st_PWGD_state, s_PWGD_init, s_PWGD_process, 1, 1, NULL,
+    &st_PWGD_state, s_PWGD_init, s_PWGD_process, 1, 1, s_PWGD_release,
     s_PWGD_set_defaults
 };

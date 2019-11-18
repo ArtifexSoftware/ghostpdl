@@ -463,6 +463,10 @@ Ghostscript's model generalizes that of PDF 1.4 in that Ghostscript
 maintains separate alpha and mask values for opacity and shape, rather than
 a single value with a Boolean that says whether it represents opacity or
 shape.</p>
+<p>
+What follows is a subset of all the custom operators related to transparency, but
+covers the most useful, most common requirements.
+</p>
 
 <h5><a name="Transparency_graphics_state_operators"></a>Graphics state
 operators</h5>
@@ -495,9 +499,19 @@ the blending mode is <code>/Compatible</code>.</dd>
 </dl>
 
 <dl>
+<dt><code>- .currentblendmode &lt;modename&gt;</code></dt>
+<dd>Returns the graphics state blend mode on the stack.
+</dl>
+
+<dl>
 <dt><code>&lt;0..1&gt; .setopacityalpha -</code></dt>
 <dd>Sets the opacity alpha value in the graphics state.
 The initial opacity alpha value is 1.</dd>
+</dl>
+
+<dl>
+<dt><code>- .currentopacityalpha &lt;0..1&gt;</code></dt>
+<dd>Returns the graphics state opacity alpha on the stack.</dd>
 </dl>
 
 <dl>
@@ -507,9 +521,19 @@ The initial shape alpha value is 1.</dd>
 </dl>
 
 <dl>
+<dt><code>- .currentshapealpha &lt;0..1&gt;</code></dt>
+<dd>Returns the graphics state shape alpha on the stack.</dd>
+</dl>
+
+<dl>
 <dt><code>&lt;bool&gt; .settextknockout -</code></dt>
 <dd>Sets the text knockout flag in the graphics state.
 The initial value of the text knockout flag is <code>true</code>.</dd>
+</dl>
+
+<dl>
+<dt><code>- .currenttextknockout &lt;bool&gt;</code></dt>
+<dd>Returns the graphics state text knockout on the stack..</dd>
 </dl>
 
 <h5><a name="Transparency_rendering_stack_operators"></a>Rendering stack

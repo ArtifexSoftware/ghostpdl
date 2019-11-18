@@ -326,6 +326,7 @@ typedef struct pdf_page_s {
     pdf_page_dsc_info_t dsc_info;
     bool NumCopies_set; /* ps2write only. */
     int NumCopies;      /* ps2write only. */
+    float UserUnit;     /* pdfwrite only */
 } pdf_page_t;
 #define private_st_pdf_page()        /* in gdevpdf.c */\
   gs_private_st_ptrs2(st_pdf_page, pdf_page_t, "pdf_page_t",\
@@ -901,6 +902,7 @@ struct gx_device_pdf_s {
                                      * doing JPEG pass through we write the JPEG data here, and don't write
                                      * anything in the image processing routines.
                                      */
+    float UserUnit;
 };
 
 #define is_in_page(pdev)\

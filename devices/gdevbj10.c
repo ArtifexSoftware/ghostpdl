@@ -312,7 +312,8 @@ bj10e_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 
                 /* Copy 1 scan line and test for all zero. */
                 code = gdev_prn_get_bits(pdev, lnum, in, &in_data);
-                if ( code < 0 ) goto xit;
+                if ( code < 0 )
+                    goto fin;
                 /* The mem... or str... functions should be faster than */
                 /* the following code, but all systems seem to implement */
                 /* them so badly that this code is faster. */

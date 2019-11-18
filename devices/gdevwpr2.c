@@ -571,9 +571,12 @@ win_pr2_print_page(gx_device_printer * pdev, gp_file * file)
             lines = scan_lines - y;
         else
             lines = yslice;
-        for (i = 0; i < lines; i++)
-            gdev_prn_copy_scan_lines(pdev, y + i,
+        for (i = 0; i < lines; i++) {
+            code = gdev_prn_copy_scan_lines(pdev, y + i,
                               row + (bmp_raster * (lines - 1 - i)), raster);
+            if (code < 0)
+                goto xit;
+        }
 
         if (ratio > 1) {
             StretchDIBits(wdev->hdcprn, 0, y*ratio, pdev->width*ratio, lines*ratio,
@@ -618,6 +621,7 @@ win_pr2_print_page(gx_device_printer * pdev, gp_file * file)
             ShowWindow(wdev->hDlgModeless, SW_HIDE);
     }
 
+xit:
     GlobalUnlock(hrow);
     GlobalFree(hrow);
 

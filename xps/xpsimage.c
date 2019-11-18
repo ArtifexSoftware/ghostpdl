@@ -264,6 +264,7 @@ xps_paint_image_brush_imp(xps_context_t *ctx, xps_image_t *image, int alpha)
 
     gsimage.Interpolate = 1;
 
+    /* FIXME: leak enum in case of error */
     penum = gs_image_enum_alloc(ctx->memory, "xps_parse_image_brush (gs_image_enum_alloc)");
     if (!penum)
         return gs_throw(gs_error_VMerror, "gs_enum_allocate failed");

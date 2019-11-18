@@ -281,6 +281,7 @@ inferno_print_page(gx_device_printer *pdev, gp_file *f)
         int gsbpl;
         ulong u;
         ushort us;
+        int code = 0;
 
         inferno_device *bdev = (inferno_device *) pdev;
         Rectangle r;
@@ -319,7 +320,10 @@ inferno_print_page(gx_device_printer *pdev, gp_file *f)
          * to save all the ldepth lookups.
          */
         for(y=0; y<pdev->height; y++) {
-                gdev_prn_get_bits(pdev, y, buf, &p);
+
+                code = gdev_prn_get_bits(pdev, y, buf, &p);
+                if (code < 0)
+                    goto xit;
                 for(x=0; x<pdev->width; x++) {
                         us = (p[2*x]<<8) | p[2*x+1];
 
@@ -372,12 +376,13 @@ inferno_print_page(gx_device_printer *pdev, gp_file *f)
                         return_error(gs_error_Fatal);
                 }
         }
-        gs_free_object(bdev->memory, buf, "inferno line buffer");
         if(writeimageblock(w, nil, 0, bdev->memory) == ERROR) {
                 return_error(gs_error_Fatal);
         }
+xit:
+        gs_free_object(bdev->memory, buf, "inferno line buffer");
 
-        return 0;
+        return code;
 }
 
 /*

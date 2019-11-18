@@ -947,8 +947,8 @@ static	void	ScheduleMiddle( SCHEDUL *p );
 static	void	ScheduleTrailing( SCHEDUL *p );
 static	void	ScheduleBand( SCHEDUL *p, int mask );
 
-static	void	RenderPage( RENDER *p );
-static	void	RenderLine( RENDER *p, int line );
+static	int	RenderPage( RENDER *p );
+static	int	RenderLine( RENDER *p, int line );
 static	int		IsScanlineEmpty( RENDER *p, byte *line );
 
 static	int		RleCompress( RAWLINE *raw, int min, int max, byte *rle_data );
@@ -1682,6 +1682,7 @@ static	int		photoex_print_page( PDEV *device, gp_file *stream )
 {
 int			pixels;						/* Length of the line 				*/
 int			x;							/* Work vars						*/
+int			code = 0;
 EDEV		*dev;						/* Our device						*/
 RENDER		*render;					/* Rendering info					*/
 
@@ -1791,7 +1792,9 @@ double		psize;
 
         /* Render the page and send image data to printer */
 
-        RenderPage( render );
+        code = RenderPage( render );
+        if (code < 0)
+            goto xit;
 
         /* Eject the paper, reset printer */
 
@@ -1799,10 +1802,10 @@ double		psize;
         SendReset( stream );
 
         /* Release the memory and return */
-
+xit:
         gs_free( dev->memory, render->dbuff, pixels, sizeof( long ), "PhotoEX" );
         gs_free( dev->memory, render, 1, sizeof( RENDER ), "PhotoEX" );
-        return( 0 );
+        return( code );
 }
 
 /*
@@ -1810,7 +1813,7 @@ double		psize;
 *	~~~~~~~~~~~~~~
 */
 
-static	void	RenderPage( RENDER *p )
+static	int	RenderPage( RENDER *p )
 {
 int		last_done;					/* The last line rendered				*/
 int		last_need;					/* The largest line number we need		*/
@@ -1819,6 +1822,7 @@ int		last_band;					/* Indicates the last band				*/
 int		min, max;					/* Min/max active bytes in a raw line	*/
 int		phase;						/* 1440dpi X weave offset				*/
 int		i, j, l, col;
+int		code = 0;
 
         p->htone_thold = HalftoneThold( p );
         p->htone_last  = -1 - p->htone_thold;
@@ -1842,7 +1846,11 @@ int		i, j, l, col;
                 last_need = last_done;
                 for ( i = NOZZLES-1 ; i >= 0 && p->schedule.head[ i ] == -1 ; i-- );
                 if ( i >= 0 ) last_need = p->schedule.head[ i ];
-                while ( last_need > last_done ) RenderLine( p, ++last_done );
+                while ( last_need > last_done ) {
+                    code = RenderLine( p, ++last_done );
+                    if (code < 0)
+                       return code;	/* punt */
+                }
 
                 /* Now loop through the colours and build the data stream */
 
@@ -1932,6 +1940,8 @@ int		i, j, l, col;
                 move_down += p->schedule.down;
 
         } while	( ! last_band );
+
+        return code;
 }
 
 /*
@@ -1944,14 +1954,16 @@ int		i, j, l, col;
 *	When it sees a nonempty line again, it restarts the renderer.
 */
 
-static	void	RenderLine( RENDER *p, int line )
+static	int	RenderLine( RENDER *p, int line )
 {
 byte	*data;
-int		i;
+int		i, code = 0;
 
         /* Get the line from Ghostscript and see if its empty */
 
-        gdev_prn_get_bits( (PDEV *) p->dev, line, p->dbuff, &data );
+        code = gdev_prn_get_bits( (PDEV *) p->dev, line, p->dbuff, &data );
+        if (code < 0)
+            return code;
 
         if ( IsScanlineEmpty( p, data ) ) {
 
@@ -1994,6 +2006,7 @@ int		i;
                 HalftoneLine( p, line, data );
                 p->htone_last = line;
         }
+        return 0;
 }
 
 /*

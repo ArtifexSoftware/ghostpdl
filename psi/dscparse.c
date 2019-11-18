@@ -3822,7 +3822,7 @@ dsc_dcs2_fixup(CDSC *dsc)
         DSC_OFFSET *pbegin;
         DSC_OFFSET *pend;
         DSC_OFFSET end;
-        CDCS2 *pdcs = dsc->dcs2;
+        CDCS2 *pdcs = NULL;
         /* Now treat the initial EPS file as a single page without
          * headers or trailer, so page extraction will fetch the
          * the correct separation. */
@@ -3887,6 +3887,14 @@ dsc_dcs2_fixup(CDSC *dsc)
         if (*pbegin == 999999999)
             *pbegin = *pend;
         end = 0;	/* end of composite is start of first separation */
+
+        /* we used to do this where the pointer is declared, but Coverity points out
+         * that dsc_alloc_string can call dsc_reset which can free dsc and dsc->dcs2.
+         * By deferring the initialisation to here we can ensure we don't have a
+         * dangling pointer. This makes me suspiciouos that DCS (not DSC!) comments
+         * have never worked properly.
+         */
+        pdcs = dsc->dcs2;
 
         while (pdcs) {
             page_number = dsc->page_count;

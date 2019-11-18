@@ -595,6 +595,7 @@ spprint_h=$(GLSRC)spprint.h
 spsdf_h=$(GLSRC)spsdf.h
 srlx_h=$(GLSRC)srlx.h
 spwgx_h=$(GLSRC)spwgx.h
+surfx_h=$(SURFX_H)
 sstring_h=$(GLSRC)sstring.h
 strimpl_h=$(GLSRC)strimpl.h
 szlibx_h=$(GLSRC)szlibx.h
@@ -1941,6 +1942,16 @@ $(GLD)pwgd.dev : $(LIB_MAK) $(ECHOGS_XE) $(pwgd_) $(LIB_MAK) $(MAKEDIRS)
 $(GLOBJ)spwgd.$(OBJ) : $(GLSRC)spwgd.c $(AK) $(stdio__h) $(memory__h)\
  $(spwgx_h) $(strimpl_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)spwgd.$(OBJ) $(C_) $(GLSRC)spwgd.c
+
+# ---------------- URF RunLength decode filter ---------------- #
+
+urfd_=$(GLOBJ)surfd.$(OBJ)
+$(GLD)urfd.dev : $(LIB_MAK) $(ECHOGS_XE) $(urfd_) $(LIB_MAK) $(MAKEDIRS)
+	$(SETMOD) $(GLD)urfd $(urfd_)
+
+$(GLOBJ)surfd.$(OBJ) : $(URFSRCDIR)$(D)surfd.c $(AK) $(stdio__h) $(memory__h)\
+ $(surfx_h) $(strimpl_h) $(LIB_MAK) $(MAKEDIRS)
+	$(GLCC) $(GLO_)surfd.$(OBJ) $(C_) $(URFSRCDIR)$(D)surfd.c
 
 # ---------------- String encoding/decoding filters ---------------- #
 # These are used by the PostScript and PDF writers, and also by the

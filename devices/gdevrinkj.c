@@ -818,6 +818,9 @@ rinkj_add_lut(rinkj_device *rdev, rinkj_lutset *lutset, char plane, gp_file *f)
     if (n_graph < 0 || n_graph > 256)
         return -1;
     chain = (rinkj_lutchain *)gs_alloc_bytes(rdev->memory, sizeof(rinkj_lutchain), "rinkj_add_lut");
+    if (chain == NULL) {
+        return -1;
+    }
     chain->next = NULL;
     chain->n_graph = n_graph;
     chain->graph_x = (double *)gs_alloc_bytes(rdev->memory, sizeof(double) * n_graph, "rinkj_add_lut");
@@ -972,14 +975,23 @@ rinkj_write_image_data(gx_device_printer *pdev, RinkjDevice *cmyk_dev)
     n_planes = n_planes_in + rdev->separation_names.num_names;
     if_debug1m('r', rdev->memory, "[r]n_planes = %d\n", n_planes);
     xsb = pdev->width;
-    for (i = 0; i < n_planes_out; i++)
+    for (i = 0; i < n_planes_out; i++) {
         plane_data[i] = gs_alloc_bytes(pdev->memory, xsb, "rinkj_write_image_data");
-
+        if (plane_data[i] == NULL) {
+            while (--i >= 0)
+                gs_free_object(pdev->memory, plane_data[i], "rinkj_write_image_data");
+            return_error(gs_error_VMerror);
+        }
+    }
     if (rdev->icc_link != NULL) {
 
         cache = (rinkj_color_cache_entry *)gs_alloc_bytes(pdev->memory, RINKJ_CCACHE_SIZE * sizeof(rinkj_color_cache_entry), "rinkj_write_image_data");
-        if (cache == NULL)
-            return gs_note_error(gs_error_VMerror);
+        if (cache == NULL) {
+            /* i == n_planes_out from above */
+            while (--i >= 0)
+                gs_free_object(pdev->memory, plane_data[i], "rinkj_write_image_data");
+            return_error(gs_error_VMerror);
+        }
 
         /* Set up cache so that none of the keys will hit. */
 
@@ -999,11 +1011,15 @@ rinkj_write_image_data(gx_device_printer *pdev, RinkjDevice *cmyk_dev)
     split_plane_data[6] = plane_data[3];
 
     line = gs_alloc_bytes(pdev->memory, raster, "rinkj_write_image_data");
+    if (line == NULL)
+        goto xit;
     for (y = 0; y < pdev->height; y++) {
         byte *row;
         int x;
 
         code = gdev_prn_get_bits(pdev, y, line, &row);
+        if (code < 0)
+            goto xit;
 
         if (rdev->icc_link == NULL) {
             int rowix = 0;
@@ -1115,6 +1131,7 @@ rinkj_write_image_data(gx_device_printer *pdev, RinkjDevice *cmyk_dev)
     }
 
     rinkj_device_write(cmyk_dev, NULL);
+xit:
     for (i = 0; i < n_planes_in; i++)
         gs_free_object(pdev->memory, plane_data[i], "rinkj_write_image_data");
     gs_free_object(pdev->memory, line, "rinkj_write_image_data");

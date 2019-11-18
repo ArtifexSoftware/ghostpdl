@@ -137,8 +137,8 @@ BoundImage(gx_device_printer *pDev, struct bounding *pBox)
                 height*10/Yres < 98 ? a5 :\
                 height*10/Yres < 109 ? b5 :\
                 height*10/Yres < 116 ? letter : a4;
-        Xsize = Xres * mm_to_inch(PaperInfo[paper].w-100) / 160;
-        Ysize = Yres * mm_to_inch(PaperInfo[paper].h-100) / 10;
+        Xsize = (int)(Xres * mm_to_inch(PaperInfo[paper].w-100) / 160);
+        Ysize = (int)(Yres * mm_to_inch(PaperInfo[paper].h-100) / 10);
         /* ----==== Allocate momory ====---- */
         if (LineSize < Xsize*2+1) {
                 LineSize = Xsize*2+1;

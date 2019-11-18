@@ -9628,6 +9628,26 @@
 				>
 			</File>
 		</Filter>
+		<Filter
+			Name="urf"
+			>
+			<File
+				RelativePath="..\urf\gdevurf.c"
+				>
+			</File>
+			<File
+				RelativePath="..\urf\surfd.c"
+				>
+			</File>
+			<File
+				RelativePath="..\urf\surfx.h"
+				>
+			</File>
+			<File
+				RelativePath="..\urf\urffilter.c"
+				>
+			</File>
+		</Filter>
 	</Files>
 	<Globals>
 	</Globals>

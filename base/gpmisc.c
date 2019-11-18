@@ -743,7 +743,7 @@ gp_open_printer(const gs_memory_t *mem,
                       char         fname[gp_file_name_sizeof],
                       int          binary_mode)
 {
-    gp_file *file;
+    gp_file *file = NULL;
     gs_lib_ctx_t *ctx = mem->gs_lib_ctx;
     gs_fs_list_t *fs = ctx->core->fs;
 
@@ -770,7 +770,7 @@ gp_open_scratch_file(const gs_memory_t *mem,
                      char              *fname,
                      const char        *mode)
 {
-    gp_file *file;
+    gp_file *file = NULL;
     gs_lib_ctx_t *ctx = mem->gs_lib_ctx;
     gs_fs_list_t *fs = ctx->core->fs;
 
@@ -800,7 +800,7 @@ gp_open_scratch_file_rm(const gs_memory_t *mem,
                         char              *fname,
                         const char        *mode)
 {
-    gp_file *file;
+    gp_file *file = NULL;
     gs_lib_ctx_t *ctx = mem->gs_lib_ctx;
     gs_fs_list_t *fs = ctx->core->fs;
 

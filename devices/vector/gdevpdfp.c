@@ -127,6 +127,7 @@ static const gs_param_item_t pdf_param_items[] = {
     pi("FastWebView", gs_param_type_bool, Linearise),
     pi("NoOutputFonts", gs_param_type_bool, FlattenFonts),
     pi("WantsPageLabels", gs_param_type_bool, WantsPageLabels),
+    pi("UserUnit", gs_param_type_float, UserUnit),
 #undef pi
     gs_param_item_end
 };
@@ -236,6 +237,14 @@ gdev_pdf_get_param(gx_device *dev, char *Param, void *list)
     }
     if (strcmp(Param, "ForOPDFRead") == 0) {
         return(param_write_bool(plist, "ForOPDFRead", &pdev->ForOPDFRead));
+    }
+    if (strcmp(Param, "PassUserUnit") == 0) {
+        bool dummy;
+        if (pdev->CompatibilityLevel > 1.5)
+            dummy = true;
+        else
+            dummy = false;
+        return(param_write_bool(plist, "PassUserUnit", &dummy));
     }
     if (!pdev->is_ps2write) {
         if (strcmp(Param, "pdfmark")  == 0){
@@ -559,6 +568,16 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
     if (cl < 1.2) {
         pdev->HaveCFF = false;
     }
+
+    ecode = param_read_float(plist, "UserUnit", &pdev->UserUnit);
+    if (ecode < 0)
+        goto fail;
+    if (pdev->UserUnit == 0 || (pdev->UserUnit != 1 && pdev->CompatibilityLevel < 1.6)) {
+        ecode = gs_note_error(gs_error_rangecheck);
+        param_signal_error(plist, "UserUnit", ecode);
+        goto fail;
+    }
+
     ecode = gdev_psdf_put_params(dev, plist);
     if (ecode < 0)
         goto fail;

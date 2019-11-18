@@ -38,21 +38,19 @@ r4081_print_page(gx_device_printer *pdev, gp_file *prn_stream)
         int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
         int out_size = ((pdev->width + 7) & -8) ;
         byte *out = (byte *)gs_malloc(pdev->memory, out_size, 1, "r4081_print_page(out)");
-        int lnum = 0;
+        int lnum = 0, code = 0;
         int last = pdev->height;
 
         /* Check allocations */
         if ( out == 0 )
-        {	if ( out )
-                        gs_free(pdev->memory, (char *)out, out_size, 1,
-                                "r4081_print_page(out)");
-                return -1;
-        }
+                return_error(gs_error_VMerror);
 
         /* find the first line which has something to print */
         while ( lnum < last )
         {
-                gdev_prn_copy_scan_lines(pdev, lnum, (byte *)out, line_size);
+                code = gdev_prn_copy_scan_lines(pdev, lnum, (byte *)out, line_size);
+                if (code < 0)
+                     goto xit;
                 if ( out[0] != 0 ||
                      memcmp((char *)out, (char *)out+1, line_size-1)
                    )
@@ -62,7 +60,9 @@ r4081_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 
         /* find the last line which has something to print */
         while (last > lnum) {
-                gdev_prn_copy_scan_lines(pdev, last-1, (byte *)out, line_size);
+                code = gdev_prn_copy_scan_lines(pdev, last-1, (byte *)out, line_size);
+                if (code < 0)
+                     goto xit;
                 if ( out[0] != 0 ||
                      memcmp((char *)out, (char *)out+1, line_size-1)
                    )
@@ -77,7 +77,9 @@ r4081_print_page(gx_device_printer *pdev, gp_file *prn_stream)
         /* Print lines of graphics */
         while ( lnum < last )
            {
-                gdev_prn_copy_scan_lines(pdev, lnum, (byte *)out, line_size);
+                code = gdev_prn_copy_scan_lines(pdev, lnum, (byte *)out, line_size);
+                if (code < 0)
+                     goto xit;
                 gp_fwrite(out, sizeof(char), line_size, prn_stream);
                 lnum ++;
            }
@@ -85,6 +87,7 @@ r4081_print_page(gx_device_printer *pdev, gp_file *prn_stream)
         /* Eject the page and reinitialize the printer */
         gp_fputs("\f\033\rP", prn_stream);
 
+xit:
         gs_free(pdev->memory, (char *)out, out_size, 1, "r4081_print_page(out)");
-        return 0;
+        return code;
 }

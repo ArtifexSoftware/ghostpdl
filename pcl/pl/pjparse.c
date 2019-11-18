@@ -731,8 +731,7 @@ pjl_search_for_file(pjl_parser_state_t * pst, char *pathname, char *filename,
     struct stat stbuf;
 
     /* should check length */
-    strcpy(fontfilename, pathname);
-    strcat(fontfilename, "/*");
+    snprintf(fontfilename, sizeof(fontfilename), "%s/*", pathname);
     fe = gs_enumerate_files_init(pst->mem, fontfilename, strlen(fontfilename));
     if (fe) {
         do {

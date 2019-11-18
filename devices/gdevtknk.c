@@ -125,6 +125,7 @@ tekink_print_page(gx_device_printer *pdev, gp_file *prn_stream)
     register byte bdata,mdata,ydata,cdata;
     register byte mask,inbyte;
     register byte *indataend,*outdataend;
+    int code = 0;
 
     /* Allocate a temporary buffer for color separation.
        The buffer is partitioned into an input buffer and four
@@ -134,7 +135,8 @@ tekink_print_page(gx_device_printer *pdev, gp_file *prn_stream)
     line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
     color_line_size=(pdev->width+7)/8;
     indata1=(byte *)malloc(line_size+4*(color_line_size+1));
-    if (indata1==NULL) return -1;
+    if (indata1==NULL)
+        return_error(gs_error_VMerror);
     /* pointers to the partions */
     indataend=indata1+line_size;
     bdata1=indataend;
@@ -150,7 +152,9 @@ tekink_print_page(gx_device_printer *pdev, gp_file *prn_stream)
     scan_lines=pdev->height;
     for (scan_line=0;scan_line<scan_lines;scan_line++){
         /* get data */
-        gdev_prn_copy_scan_lines(pdev,scan_line,indata1,line_size);
+        code = gdev_prn_copy_scan_lines(pdev,scan_line,indata1,line_size);
+        if (code < 0)
+            goto xit;
         /* Separate data into color planes */
         bdatap = bdata1+1;
         mdatap = mdata1+1;
@@ -248,7 +252,8 @@ tekink_print_page(gx_device_printer *pdev, gp_file *prn_stream)
         gp_fputs("\f",prn_stream);
     }
 
+xit:
     /* Deallocate temp buffer */
     free(indata1);
-    return 0;
+    return code;
 }

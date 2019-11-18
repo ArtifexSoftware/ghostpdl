@@ -203,7 +203,11 @@ xps_decode_jpegxr(xps_context_t *ctx, byte *buf, int len, xps_image_t *output)
         xps_free(ctx, name);
         return gs_throw(gs_error_invalidfileaccess, "cannot write to scratch file");
     }
-    xps_fseek(file, 0, SEEK_SET);
+    rc = xps_fseek(file, 0, SEEK_SET);
+    if (rc != 0) {
+        xps_free(ctx, name);
+        return gs_throw(gs_error_invalidfileaccess, "cannot write to scratch file");
+    }
 
     container = jxr_create_container();
     rc = jxr_read_image_container(container, gp_get_file(file));
@@ -236,11 +240,19 @@ xps_decode_jpegxr(xps_context_t *ctx, byte *buf, int len, xps_image_t *output)
     state.output = output;
     jxr_set_user_data(image, &state);
 
-    xps_fseek(file, offset, SEEK_SET);
+    rc = xps_fseek(file, offset, SEEK_SET);
+    if (rc != 0) {
+        xps_free(ctx, name);
+        jxr_destroy_container(container);
+        jxr_destroy(image);
+        return gs_throw1(-1, "jxr_read_image_bitstream: %s", jxr_error_string(rc));
+    }
+
     rc = jxr_read_image_bitstream(image, gp_get_file(file));
     if (rc < 0) {
         xps_free(ctx, name);
         jxr_destroy_container(container);
+        jxr_destroy(image);
         return gs_throw1(-1, "jxr_read_image_bitstream: %s", jxr_error_string(rc));
     }
 
@@ -265,11 +277,19 @@ xps_decode_jpegxr(xps_context_t *ctx, byte *buf, int len, xps_image_t *output)
         state.output = output;
         jxr_set_user_data(image, &state);
 
-        xps_fseek(file, alpha_offset, SEEK_SET);
+        rc = xps_fseek(file, alpha_offset, SEEK_SET);
+        if (rc != 0) {
+            xps_free(ctx, name);
+            jxr_destroy_container(container);
+            jxr_destroy(image);
+            return gs_throw1(-1, "jxr_read_image_bitstream: %s", jxr_error_string(rc));
+        }
+
         rc = jxr_read_image_bitstream(image, gp_get_file(file));
         if (rc < 0) {
             xps_free(ctx, name);
             jxr_destroy_container(container);
+            jxr_destroy(image);
             return gs_throw1(-1, "jxr_read_image_bitstream: %s", jxr_error_string(rc));
         }
 

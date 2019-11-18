@@ -37,6 +37,12 @@ extern pl_interp_implementation_t svg_implementation;
 
 extern pl_interp_implementation_t ps_implementation;
 
+extern pl_interp_implementation_t urf_implementation;
+
+extern pl_interp_implementation_t img_implementation;
+
+extern pl_interp_implementation_t pwg_implementation;
+
 /* Zero-terminated list of pointers to implementations */
 pl_interp_implementation_t *pdl_implementations[] = {
     &pjl_implementation,
@@ -53,6 +59,15 @@ pl_interp_implementation_t *pdl_implementations[] = {
 #ifdef PDF_INCLUDED
     &pdf_implementation,
 #endif
+#ifdef URF_INCLUDED
+    &urf_implementation,
+#endif
+#ifdef IMG_INCLUDED
+    &img_implementation,
+#endif
+#ifdef PWG_INCLUDED
+    &pwg_implementation,
+#endif
     0
 };
 
@@ -66,4 +81,3 @@ const gs_ptr_procs_t ptr_string_procs = { NULL, NULL, NULL };
 const gs_ptr_procs_t ptr_const_string_procs = { NULL, NULL, NULL };
 const gs_ptr_procs_t ptr_name_index_procs = { NULL, NULL, NULL };
 #endif
-

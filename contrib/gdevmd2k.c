@@ -486,7 +486,7 @@ alps_print_page(gx_device_printer *pdev, gp_file *prn_stream,
     int c_comp, num_comp = pdev->color_info.num_components;
     int n_comp = (dev_alps->mediaType == 1 ? 3 : num_comp);
     int *error, *ep;
-    int i, j;
+    int i, j, code = 0;
 
     /* allocate memory */
     work = (byte *)gs_malloc(pdev->memory->non_gc_memory, 3+sizeof(int), line_size,
@@ -528,7 +528,9 @@ alps_print_page(gx_device_printer *pdev, gp_file *prn_stream,
         for(y = 0; y < y_height; y ++) {
             uint len = line_size;
 
-            gdev_prn_get_bits(pdev, y, in, &dp);
+            code = gdev_prn_get_bits(pdev, y, in, &dp);
+            if (code < 0)
+                return code;
 
             switch (pdev->color_info.depth) {
             case 4:

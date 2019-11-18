@@ -792,19 +792,22 @@ bit_print_page(gx_device_printer * pdev, gp_file * prn_stream)
     int bottom = ((gx_device_bit *)pdev)->LastLine >= pdev->height ?  pdev->height - 1 :
                  ((gx_device_bit *)pdev)->LastLine;
     int line_count = any_abs(bottom - lnum);
-    int i, step = lnum > bottom ? -1 : 1;
+    int code = 0, i, step = lnum > bottom ? -1 : 1;
 
     if (in == 0)
         return_error(gs_error_VMerror);
     if ((lnum == 0) && (bottom == 0))
         line_count = pdev->height - 1;		/* default when LastLine == 0, FirstLine == 0 */
     for (i = 0; i <= line_count; i++, lnum += step) {
-        gdev_prn_get_bits(pdev, lnum, in, &data);
+        code = gdev_prn_get_bits(pdev, lnum, in, &data);
+        if (code < 0)
+            goto done;
         if (!nul)
             gp_fwrite(data, 1, line_size, prn_stream);
     }
+done:
     gs_free_object(pdev->memory, in, "bit_print_page(in)");
-    return 0;
+    return code;
 }
 
 /* For tags device go ahead and add in the size so that we can strip and create
@@ -835,10 +838,11 @@ bittags_print_page(gx_device_printer * pdev, gp_file * prn_stream)
         line_count = pdev->height - 1;		/* default when LastLine == 0, FirstLine == 0 */
     for (i = 0; i <= line_count; i++, lnum += step) {
         if ((code = gdev_prn_get_bits(pdev, lnum, in, &data)) < 0)
-            return code;
+            goto done;
         if (!nul)
             gp_fwrite(data, 1, line_size, prn_stream);
     }
+done:
     gs_free_object(pdev->memory, in, "bit_print_page(in)");
     return 0;
 }

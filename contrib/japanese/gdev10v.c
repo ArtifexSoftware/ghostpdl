@@ -219,7 +219,8 @@ bj10v_print_page(gx_device_printer *pdev, gp_file *prn_stream)
         int x_skip_unit = bytes_per_column * (xres / 180);
         int y_skip_unit = (yres / 180);
         byte *in = (byte *)gs_malloc(pdev->memory->non_gc_memory, 8, line_size, "bj10v_print_page(in)");
-        byte *out = (byte *)gs_malloc(pdev->memory->non_gc_memory, bits_per_column, line_size, "bj10v_print_page(out)");
+        /* We need one extra byte in <out> for our sentinel. */
+        byte *out = (byte *)gs_malloc(pdev->memory->non_gc_memory, bits_per_column * line_size + 1, 1, "bj10v_print_page(out)");
         int lnum = 0;
         int y_skip = 0;
         int code = 0;

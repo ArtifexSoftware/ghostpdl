@@ -2220,7 +2220,7 @@ static int
 fill_mono_buffer(pagedata *gendata, int vline)
 {
         byte *in_data, *data;
-        int i, ret, ofs;
+        int i, ret, ofs, code = 0;
 
         /* Initialize the "data" pointer, that will be used to
          * scan all the lines in the buffer, and the "ofs" pointer
@@ -2242,8 +2242,10 @@ fill_mono_buffer(pagedata *gendata, int vline)
         while(vline < gendata->numvlines)
         {
                 /* Ask Ghostscript for one rasterized line */
-                gdev_prn_get_bits((gx_device_printer *)gendata->dev,
+                code = gdev_prn_get_bits((gx_device_printer *)gendata->dev,
                                                                                         vline, data+ofs, &in_data);
+                if (code < 0)
+                    return code;
 
                 /* And check if it's all zero: if not, break out of
                  * the loop. This nice trick with memcpy it's by Stephen
@@ -2301,8 +2303,10 @@ fill_mono_buffer(pagedata *gendata, int vline)
                         /* If we are not at the end of the page, copy one more
                          * scanline into the buffer.
                          */
-                        gdev_prn_get_bits((gx_device_printer *)gendata->dev,
+                        code = gdev_prn_get_bits((gx_device_printer *)gendata->dev,
                                                                                                 vline, data+ofs, &in_data);
+                        if (code < 0)
+                            return code;
                         if(in_data != data+ofs)memcpy(data+ofs, in_data, gendata->numrbytes);
                 }
 
@@ -2333,7 +2337,7 @@ static int
 init_buffer(pagedata *gendata)
 {
         byte *in_data, *data;
-        int i, ret, p1, p2, ofs;
+        int i, ret, p1, p2, ofs, code = 0;
 
         data = gendata->scanbuf;
         ofs = gendata->goffset;
@@ -2375,8 +2379,11 @@ init_buffer(pagedata *gendata)
 
                 if(i < gendata->numvlines)
                 {
-                        gdev_prn_get_bits((gx_device_printer *)gendata->dev,
+                        code = gdev_prn_get_bits((gx_device_printer *)gendata->dev,
                                                                                                 i, data+ofs, &in_data);
+                        if (code < 0)
+                            return code;
+
                         if(in_data != data+ofs)memcpy(data+ofs, in_data, gendata->numrbytes);
                 }
 

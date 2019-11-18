@@ -143,7 +143,7 @@ static int
 psmono_print_page(gx_device_printer * pdev, gp_file * prn_stream)
 {
     int line_size = gdev_mem_bytes_per_scan_line((gx_device *) pdev);
-    int lnum;
+    int lnum, code = 0;
     byte *line = gs_alloc_bytes(pdev->memory, line_size, "psmono_print_page");
     byte invert = (pdev->color_info.depth == 1 ? 0xff : 0);
     gx_device_pswrite_common_t pswrite_common;
@@ -167,7 +167,9 @@ psmono_print_page(gx_device_printer * pdev, gp_file * prn_stream)
         int left = line_size;
         byte *data;
 
-        gdev_prn_get_bits(pdev, lnum, line, &data);
+        code = gdev_prn_get_bits(pdev, lnum, line, &data);
+        if (code < 0)
+            goto xit;
         p = data;
         /* Loop invariant: p + left = data + line_size. */
 #define min_repeat_run 10
@@ -216,10 +218,11 @@ psmono_print_page(gx_device_printer * pdev, gp_file * prn_stream)
     /* Clean up and return. */
     fputs("\n", prn_stream);
     psw_write_page_trailer(prn_stream, 1, true);
+xit:
     gs_free_object(pdev->memory, line, "psmono_print_page");
     if (ferror(prn_stream))
         return_error(gs_error_ioerror);
-    return 0;
+    return code;
 }
 
 /* Close the file. */
@@ -307,7 +310,7 @@ psrgb_print_page(gx_device_printer * pdev, gp_file * prn_stream)
     int width = pdev->width;
     byte *lbuf = gs_alloc_bytes(mem, width * 3,
                                 "psrgb_print_page(lbuf)");
-    int lnum;
+    int lnum, code = 0;
     stream fs, a85s, rls;
     stream_A85E_state a85state;
     stream_RLE_state rlstate;
@@ -354,7 +357,9 @@ psrgb_print_page(gx_device_printer * pdev, gp_file * prn_stream)
         byte *data;
         int i, c;
 
-        gdev_prn_get_bits(pdev, lnum, lbuf, &data);
+        code = gdev_prn_get_bits(pdev, lnum, lbuf, &data);
+        if (code < 0)
+            goto xit;
         for (c = 0; c < 3; ++c) {
             const byte *p;
 
@@ -369,7 +374,10 @@ psrgb_print_page(gx_device_printer * pdev, gp_file * prn_stream)
     sflush(&fs);
     fputs("\n", prn_stream);
     psw_write_page_trailer(prn_stream, 1, true);
+xit:
     gs_free_object(mem, lbuf, "psrgb_print_page(lbuf)");
+    if (code < 0)
+        return_error(code);
     if (ferror(prn_stream))
         return_error(gs_error_ioerror);
     return 0;

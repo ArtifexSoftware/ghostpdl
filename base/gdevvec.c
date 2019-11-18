@@ -630,6 +630,11 @@ gdev_vector_dopath_init(gdev_vector_dopath_state_t *state,
         gs_make_scaling(vdev->scale.x, vdev->scale.y, &state->scale_mat);
     }
     state->first = true;
+
+    /* This is purely to prevent Coverity from thinking gdev_vector_dopath()
+    could use uninitialised state->start.x. */
+    state->start.x = 0;
+    state->start.y = 0;
 }
 
 /*

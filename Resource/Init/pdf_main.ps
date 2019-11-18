@@ -2505,9 +2505,26 @@ end readonly def
       1
     } {
       1 index /UserUnit knownoget {
-        PDFDEBUG { (Scaling due to UserUnit by ) print dup = flush } if
+        /PassUserUnit /GetDeviceParam .special_op {
+          exch pop dup {
+            [ /UserUnit 4 -1 roll .pdfputparams pop pop 1 exch
+          } if
+        }{
+          //false
+        }ifelse
+
+        not {
+          PDFDEBUG { (Scaling due to UserUnit by ) print dup = flush } if
+        } if
       } {
-        1
+        /PassUserUnit /GetDeviceParam .special_op {
+          exch pop {
+            [ /UserUnit 1 .pdfputparams pop pop
+          } if
+          1
+        }{
+          1
+        } ifelse
       } ifelse
     } ifelse
   } ifelse
@@ -2585,8 +2602,23 @@ currentdict /PDF2PS_matrix_key undef
     % Set the page size.
     //systemdict /NoUserUnit .knownget not { //false } if not {
       3 index /UserUnit knownoget {
-        dup 4 -1 roll mul 3 1 roll mul
-      } if
+        /PassUserUnit /GetDeviceParam .special_op {
+          exch pop dup {
+            [ /UserUnit 4 -1 roll .pdfputparams pop pop
+          } if
+        }{
+          //false
+        }ifelse
+        not {
+          dup 4 -1 roll mul 3 1 roll mul
+        } if
+      } {
+        /PassUserUnit /GetDeviceParam .special_op {
+          exch pop {
+            [ /UserUnit 1 .pdfputparams pop pop
+          } if
+        }if
+      } ifelse
     } if
   } ifelse
   2 array astore /PageSize exch def

@@ -162,7 +162,9 @@ bmp_print_page(gx_device_printer * pdev, gp_file * file)
     /* BMP files want the image in bottom-to-top order! */
 
     for (y = pdev->height - 1; y >= 0; y--) {
-        gdev_prn_copy_scan_lines(pdev, y, row, raster);
+        code = gdev_prn_copy_scan_lines(pdev, y, row, raster);
+        if (code < 0)
+            goto done;
         gp_fwrite((const char *)row, bmp_raster, 1, file);
     }
 

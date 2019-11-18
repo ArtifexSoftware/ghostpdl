@@ -362,6 +362,7 @@ stc_print_page(gx_device_printer * pdev, gp_file *prn_stream)
 
    int    prt_pixels;    /* Number of pixels printed */
    byte  *col_line;      /* A Line with a byte per pixel */
+   int   code = 0;
 
 #define OK4GO        ((flags &   STCOK4GO)              != 0)
 #define SORRY        ( flags &= ~STCOK4GO)
@@ -591,7 +592,11 @@ stc_print_page(gx_device_printer * pdev, gp_file *prn_stream)
 
                   if(sd->stc.buf_y < sd->stc.prt_scans) {  /* Test for White */
 
-                     gdev_prn_get_bits(pdev,sd->stc.buf_y,ext_line,&ext_data);
+                     code = gdev_prn_get_bits(pdev,sd->stc.buf_y,ext_line,&ext_data);
+                     if (code < 0) {
+                         SORRY;
+                         goto xit;
+                    }
 
                      color = stc_iswhite(sd,prt_pixels,ext_data) ? ext_size : 0;
 
@@ -747,6 +752,7 @@ stc_print_page(gx_device_printer * pdev, gp_file *prn_stream)
  *** Release the dynamic memory
  ***/
 
+xit:
    if(ext_line != NULL)
       gs_free(sd->memory, ext_line,ext_size,1,"stc_print_page/ext_line");
 

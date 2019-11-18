@@ -75,6 +75,7 @@ djet500c_print_page(gx_device_printer *pdev, gp_file *fprn)
     byte *plane3=NULL;
     int bitSize=0;
     int planeSize=0;
+    int code = 0;
 
     /* select the most compressed mode available & clear tmp storage */
     /* put printer in known state */
@@ -122,7 +123,9 @@ djet500c_print_page(gx_device_printer *pdev, gp_file *fprn)
         {
             byte *endData;
 
-            gdev_prn_copy_scan_lines(pdev, lnum, bitData, lineSize);
+            code = gdev_prn_copy_scan_lines(pdev, lnum, bitData, lineSize);
+            if (code < 0)
+                goto xit;
 
             /* Identify and skip blank lines */
             endData = bitData + lineSize;
@@ -149,6 +152,10 @@ djet500c_print_page(gx_device_printer *pdev, gp_file *fprn)
                     plane1=(byte*)malloc(planeSize+8);
                     plane2=(byte*)malloc(planeSize+8);
                     plane3=(byte*)malloc(planeSize+8);
+                    if (plane1 == NULL || plane2 == NULL || plane3 == NULL) {
+                        code = gs_error_VMerror;
+                        goto xit;
+                    }
                 }
                 /* Transpose the data to get pixel planes. */
                 for (k=i=0; k<lineLen; i+=8, k++)
@@ -207,13 +214,14 @@ djet500c_print_page(gx_device_printer *pdev, gp_file *fprn)
     /* eject page */
     gp_fputs("\033&l0H", fprn);
 
+xit:
     /* release allocated memory */
     if (bitData) free(bitData);
     if (plane1) free(plane1);
     if (plane2) free(plane2);
     if (plane3) free(plane3);
 
-    return 0;
+    return code;
 }
 
 /*

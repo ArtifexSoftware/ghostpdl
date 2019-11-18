@@ -255,7 +255,7 @@ pl_fill_in_mt_font(gs_font_base * pfont, pl_font_t * plfont, ushort handle,
             pfont->FontBBox.p.x = pfont->FontBBox.p.y =
                 pfont->FontBBox.q.x = pfont->FontBBox.q.y = 0;
 
-            uid_set_UniqueID(&pfont->UID, unique_id | (handle << 16));
+            uid_set_UniqueID(&pfont->UID, unique_id | ( ((long) handle) << 16));
             pfont->encoding_index = 1;      /****** WRONG ******/
             pfont->nearest_encoding_index = 1;      /****** WRONG ******/
         }
@@ -308,7 +308,7 @@ pl_load_ufst_lineprinter(gs_memory_t * mem, pl_dict_t * pfontdict,
             if (use_unicode_names_for_keys)
                 code = pl_dict_put(pfontdict,
                             (const byte *)resident_table[i].unicode_fontname,
-                            32, pplfont);
+                            sizeof(resident_table[i].unicode_fontname), pplfont);
             else {
                 byte key[3];
 
@@ -540,8 +540,9 @@ pl_load_built_in_mtype_fonts(const char *pathname, gs_memory_t * mem,
                     }
                     if (use_unicode_names_for_keys)
                         code = pl_dict_put(pfontdict,
-                                    (const byte *)resident_table[j].
-                                    unicode_fontname, 32, plfont);
+                                    (const byte *)resident_table[j].unicode_fontname,
+                                    sizeof(resident_table[j].unicode_fontname),
+                                    plfont);
                     else {
                         key[2] = (byte) j;
                         key[0] = key[1] = 0;
@@ -702,7 +703,8 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t * mem,
                    residentp->character_complement, 8);
             if (use_unicode_names_for_keys)
                 code = pl_dict_put(pfontdict,
-                                   (const byte *)residentp->unicode_fontname, 32,
+                                   (const byte *)residentp->unicode_fontname,
+                                   sizeof(residentp->unicode_fontname),
                                    plfont);
             else {
                 key[2] = (byte) (residentp - resident_table);

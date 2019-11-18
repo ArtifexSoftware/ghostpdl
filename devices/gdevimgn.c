@@ -379,6 +379,7 @@ imagen_print_page(gx_device_printer *pdev, gp_file *prn_stream)
   /* page totals */
   int totalBlankSwatches;
   int totalGreySwatches;
+  int code = 0;
 
   /* ----------------------------------------- */
   /* Start of routine                          */
@@ -406,8 +407,8 @@ imagen_print_page(gx_device_printer *pdev, gp_file *prn_stream)
   swatchMap = (byte *)gs_malloc(pdev->memory, BIGSIZE,swatchCount / BIGSIZE + 1,
         "imagen_print_page(swatchMap)" );
 
-  if ( in == 0 || out == 0 )
-    return -1;
+  if ( in == 0 || out == 0 || swatchMap == 0)
+    goto xit;
 
   /* Initialize the page */
   iWrite(prn_stream,iPAGE);
@@ -450,7 +451,9 @@ imagen_print_page(gx_device_printer *pdev, gp_file *prn_stream)
       } /* for temp */
 
       /* get one line */
-      gdev_prn_copy_scan_lines(pdev, lnum + swatchLine, in, line_size);
+      code = gdev_prn_copy_scan_lines(pdev, lnum + swatchLine, in, line_size);
+      if (code < 0)
+          goto xit;
       DebugMsg(5,"Got scan line %d ", lnum + swatchLine);
       DebugMsg(5,"line %d \n", swatchLine);
 
@@ -553,6 +556,7 @@ imagen_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 
   gp_fflush(prn_stream);
 
+xit:
   gs_free(pdev->memory, (char *)out, TotalBytesPerSw, swatchCount+1, "imagen_print_page(out)");
   gs_free(pdev->memory, (char *)swatchMap, BIGSIZE, swatchCount / BIGSIZE + 1,
         "imagen_print_page(swatchMap)" );
@@ -564,6 +568,6 @@ imagen_print_page(gx_device_printer *pdev, gp_file *prn_stream)
   DebugMsg(1,"%s\n","End of imagen_print_page");
 
   /* ----------------------------------------- */
-  return 0;
+  return code;
 
 } /* imagen_print_page */

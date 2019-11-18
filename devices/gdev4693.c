@@ -83,7 +83,7 @@ t4693d_print_page(gx_device_printer *dev, gp_file *ps_stream)
         char *p;
         ushort data_size = line_size/prn_dev->width;
         int checksum;
-        int lnum;
+        int lnum, code = 0;
         int i;
 #if !ARCH_IS_BIG_ENDIAN
         byte swap;
@@ -121,12 +121,14 @@ t4693d_print_page(gx_device_printer *dev, gp_file *ps_stream)
         /* write header */
         if (gp_fwrite(header,1,22,ps_stream) != 22) {
                 errprintf(dev->memory, "Could not write header (t4693d).\n");
-                gs_free(dev->memory, data, line_size, 1, "t4693d_print_page");
-                return_error(gs_error_ioerror);
+                code = gs_note_error(gs_error_ioerror);
+                goto xit;
         }
 
         for (lnum = 0; lnum < prn_dev->height; lnum++) {
-                gdev_prn_copy_scan_lines(prn_dev,lnum,data,line_size);
+                code = gdev_prn_copy_scan_lines(prn_dev,lnum,data,line_size);
+                if (code < 0)
+                    goto xit;
 
                 for (i = 0; i < line_size; i += data_size) {
 
@@ -147,32 +149,33 @@ t4693d_print_page(gx_device_printer *dev, gp_file *ps_stream)
                                 break;
                         default:
                                 errprintf(dev->memory,"Bad depth (%d) t4693d.\n",depth);
-                                gs_free(dev->memory, data, line_size, 1, "t4693d_print_page");
-                                return_error(gs_error_rangecheck);
+                                code = gs_note_error(gs_error_rangecheck);
+                                goto xit;
                         }
 
                         if (gp_fwrite(&data[i],1,data_size,ps_stream) != data_size) {
                                 errprintf(dev->memory,"Could not write pixel (t4693d).\n");
-                                gs_free(dev->memory, data, line_size, 1, "t4693d_print_page");
-                                return_error(gs_error_ioerror);
+                                code = gs_note_error(gs_error_ioerror);
+                                goto xit;
                         }
 
                 }
 
                 if (gp_fputc(0x02,ps_stream) != 0x02) {
                         errprintf(dev->memory,"Could not write EOL (t4693d).\n");
-                        gs_free(dev->memory, data, line_size, 1, "t4693d_print_page");
-                        return_error(gs_error_ioerror);
+                        code = gs_note_error(gs_error_ioerror);
+                        goto xit;
                 }
 
         }
 
         if (gp_fputc(0x01,ps_stream) != 0x01) {
                 errprintf(dev->memory,"Could not write EOT (t4693d).\n");
-                gs_free(dev->memory, data, line_size, 1, "t4693d_print_page");
-                return_error(gs_error_ioerror);
+                code = gs_note_error(gs_error_ioerror);
+                /* fall through to xit: */
         }
 
+xit:
         gs_free(dev->memory, data, line_size, 1, "t4693d_print_page");
-        return(0);
+        return(code);
 }

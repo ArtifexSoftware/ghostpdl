@@ -17,6 +17,9 @@ GPDL_MAK=$(GPDLSRCDIR)$(D)gpdl.mak
 
 GPDLSRC=$(GPDLSRCDIR)$(D)
 GPDLPSISRC=$(GPDLSRCDIR)$(D)psi$(D)
+GPDLURFSRC=$(URFSRCDIR)$(D)
+GPDLIMGSRC=$(GPDLSRCDIR)$(D)image$(D)
+GPDLPWGSRC=$(GPDLSRCDIR)$(D)pwg$(D)
 
 GPDLOBJ=$(GPDLOBJDIR)$(D)
 GPDLGEN=$(GPDLGENDIR)$(D)
@@ -26,9 +29,18 @@ GLGEN=$(GLGENDIR)$(D)
 GPDL_PSI_TOP_OBJ_FILE=psitop.$(OBJ)
 GPDL_PSI_TOP_OBJ=$(GPDLOBJ)/$(GPDL_PSI_TOP_OBJ_FILE)
 
-GPDL_PSI_TOP_OBJS=$(GPDL_PSI_TOP_OBJ) $(GPDLOBJ)gpdlimpl.$(OBJ)
+GPDL_URF_TOP_OBJ_FILE=urftop.$(OBJ)
 
-LANG_CFLAGS=$(D_)PCL_INCLUDED$(_D) $(D_)PSI_INCLUDED$(_D) $(D_)XPS_INCLUDED$(_D)
+GPDL_IMG_TOP_OBJ_FILE=imagetop.$(OBJ)
+GPDL_IMG_TOP_OBJ=$(GPDLOBJ)/$(GPDL_IMG_TOP_OBJ_FILE)
+
+GPDL_PWG_TOP_OBJ_FILE=pwgtop.$(OBJ)
+GPDL_PWG_TOP_OBJ=$(GPDLOBJ)/$(GPDL_PWG_TOP_OBJ_FILE)
+
+GPDL_PSI_TOP_OBJS=$(GPDL_PWG_TOP_OBJ) $(GPDL_IMG_TOP_OBJ) $(GPDL_URF_TOP_OBJ) $(GPDL_PSI_TOP_OBJ) $(GPDLOBJ)gpdlimpl.$(OBJ)
+
+LANG_CFLAGS=$(D_)PCL_INCLUDED$(_D) $(D_)PSI_INCLUDED$(_D) $(D_)XPS_INCLUDED$(_D) $(ENABLE_URF) $(D_)IMG_INCLUDED$(_D) $(D_)PWG_INCLUDED$(_D)
+
 
 GPDLCC=$(CC_) $(LANG_CFLAGS) $(I_)$(PSSRCDIR)$(_I) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(DEVSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I) $(C_)
 
@@ -50,3 +62,21 @@ $(GPDL_PSI_TOP_OBJ): $(GPDLPSISRC)psitop.c $(AK) $(stdio__h)\
  $(gsnogc_h) $(pltop_h) $(psitop_h) $(plparse_h) $(gsicc_manage_h)\
  $(plfont_h) $(uconfig_h)
 	$(GPDLCC) $(GPDLPSISRC)psitop.c $(GPDLO_)$(GPDL_PSI_TOP_OBJ_FILE)
+
+# Note that we don't use $(GPDL_URF_TOP_OBJ) as the target of the
+# next make rule, as this expands to "" in builds that don't use
+# URF.
+$(GPDLOBJ)/$(GPDL_URF_TOP_OBJ_FILE): $(GPDLURFSRC)urftop.c $(AK)\
+ $(gxdevice_h) $(gserrors_h) $(gsstate_h) $(surfx_h) $(strimpl_h)\
+ $(gscoord_h) $(pltop_h)
+	$(GPDLCC) $(GPDLURFSRC)urftop.c $(GPDLO_)$(GPDL_URF_TOP_OBJ_FILE)
+
+$(GPDL_IMG_TOP_OBJ): $(GPDLIMGSRC)imagetop.c $(AK)\
+ $(gxdevice_h) $(gserrors_h) $(gsstate_h) $(strimpl_h) $(gscoord_h)\
+ $(jpeglib_h) $(setjmp__h) $(sjpeg_h) $(pltop_h)
+	$(GPDLCC) $(II)$(JI_)$(_I) $(GPDLIMGSRC)imagetop.c $(GPDLO_)$(GPDL_IMG_TOP_OBJ_FILE)
+
+$(GPDL_PWG_TOP_OBJ): $(GPDLPWGSRC)pwgtop.c $(AK)\
+ $(gxdevice_h) $(gserrors_h) $(gsstate_h) $(spwgx_h) $(strimpl_h)\
+ $(gscoord_h) $(pltop_h)
+	$(GPDLCC) $(II)$(JI_)$(_I) $(GPDLPWGSRC)pwgtop.c $(GPDLO_)$(GPDL_PWG_TOP_OBJ_FILE)

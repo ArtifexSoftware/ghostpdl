@@ -65,6 +65,7 @@ jetp3852_print_page(gx_device_printer *pdev, gp_file *prn_stream)
     unsigned int count,tempcnt;
     unsigned char vtp,cntc1,cntc2;
     int line_size_color_plane;
+    int code = 0;
 
     byte data[DATA_SIZE];
     byte plane_data[LINE_SIZE * 3];
@@ -90,8 +91,10 @@ jetp3852_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 
         for ( lnum = 0; lnum < pdev->height; lnum++ ) {
             byte *end_data = data + line_size;
-            gdev_prn_copy_scan_lines(pdev, lnum,
+            code = gdev_prn_copy_scan_lines(pdev, lnum,
                                      (byte *)data, line_size);
+            if (code < 0)
+                break;
             /* Remove trailing 0s. */
             while ( end_data > data && end_data[-1] == 0 )
                 end_data--;
@@ -173,5 +176,5 @@ jetp3852_print_page(gx_device_printer *pdev, gp_file *prn_stream)
     /* eject page */
     gp_fputs("\014", prn_stream);
 
-    return 0;
+    return code;;
 }

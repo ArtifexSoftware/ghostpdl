@@ -1678,25 +1678,35 @@ end readonly def
                         % operations when the CTM is singular.
                         % Work around this here.
                   {
-                    matrix currentmatrix dup dup
-                    dup 0 get 0 eq 1 index 1 get 0 eq and {
-                      dup dup 2 get 0 eq { 0 }{ 1 } ifelse 1 put
-                    } if
-                    dup 2 get 0 eq 1 index 3 get 0 eq and {
-                      dup dup 1 get 0 eq { 3 }{ 2 } ifelse 1 put
-                    } if
-                    setmatrix
-                    currentpoint
-                    % don't worry about transparency for invisible text
-                    4 index settextfillstate show % Tr was set to graphic state.
-                    moveto
-                    setmatrix
-                    % now set the currentpoint using the original matrix
-                    gsave
-                    setmatrix
-                    //false charpath currentpoint newpath
-                    grestore
-                    moveto
+                    matrix currentmatrix
+                    % Previously we tested specifically for a scale factor of 0,
+                    % but bug #701875 has a CTM which is minute, but not zero. If
+                    % we try to use that at anything except low resolution FreeType
+                    % ends up trying to deal with glyph metrics where one dimension is 0
+                    % and it throws an error. So instead of looking for zero, we'll look
+                    % for a really tiny CTM.
+                    % We also used to patch up the CTM, and still use it, but frankly
+                    % this is too much trouble. If the CTM is tiny then the displacement
+                    % due to drawing the text will also be tiny. Negligible in fact.
+                    % So if its that small then lets just ignore it.
+                    dup 0 get abs 0.00001 lt 1 index 1 get 0.00001 abs lt and not {
+                      dup 2 get abs 0.00001 lt 1 index 3 get abs 0.00001 lt and not {
+                        pop
+                        currentpoint
+                        % don't worry about transparency for invisible text
+                        2 index settextfillstate show % Tr was set to graphic state.
+                        moveto
+                        % now set the currentpoint using the original matrix
+                        gsave
+                        //false charpath currentpoint newpath
+                        grestore
+                        moveto
+                      } {
+                        pop pop
+                      }ifelse
+                    } {
+                      pop pop
+                    }ifelse
                   }
                 } {
                   { //false charpath textrenderingprocs .currenttextrenderingmode  get exec }

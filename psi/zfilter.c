@@ -32,6 +32,10 @@
 #include "ifilter.h"
 #include "files.h"		/* for filter_open, file_d'_buffer_size */
 
+#ifdef URF_INCLUDED
+#include "urffilter.c"
+#endif
+
 /* <source> ASCIIHexEncode/filter <file> */
 /* <source> <dict> ASCIIHexEncode/filter <file> */
 static int
@@ -497,6 +501,9 @@ const op_def zfilter_op_defs[] = {
     {"2RunLengthEncode", zRLE},
     {"1RunLengthDecode", zRLD},
     {"1PWGDecode", zPWGD},
+#ifdef URF_INCLUDED
+    {"1URFDecode", zURFD},
+#endif
     {"3SubFileDecode", zSFD},
     {"1.EOFDecode", zEOFD},
     op_def_end(0)

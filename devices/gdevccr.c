@@ -145,6 +145,7 @@ ccr_print_page(gx_device_printer *pdev, gp_file *pstream)
   int cmy, c, m, y;
   byte *in;
   byte *data;
+  int code = 0;
 
   if((in = (byte *)gs_malloc(pdev->memory, line_size, 1, "gsline")) == NULL)
      return_error(gs_error_VMerror);
@@ -156,7 +157,9 @@ ccr_print_page(gx_device_printer *pdev, gp_file *pstream)
     }
 
   for ( l = 0; l < lnum; l++ )
-     {	gdev_prn_get_bits(pdev, l, in, &data);
+     {  code = gdev_prn_get_bits(pdev, l, in, &data);
+        if (code < 0)
+            goto xit;
         if(alloc_line(pdev->memory, &linebuf[l], pixnum))
           {
             gs_free(pdev->memory, in, line_size, 1, "gsline");
@@ -191,9 +194,10 @@ write_cpass(linebuf, lnum, CPASS, pstream);
 CCFILEEND(pstream);
 
 /* clean up */
+xit:
 gs_free(pdev->memory, in, line_size, 1, "gsline");
 free_rb_line( pdev->memory, linebuf, lnum, pixnum );
-return 0;
+return code;
 }
 
 /* ------ Internal routines ------ */

@@ -1204,6 +1204,7 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
             int scaled_x_prev = 0;
             gx_dda_fixed save_x_dda = pss->params.scale_dda.x;
 
+            devc.type = gx_dc_type_none; /* Needed for coverity, in call to color_is_pure() if color_handler is NULL. */
             stream_w.limit = out + pss->params.WidthOut *
                 max(spp_decode * sizeofPixelOut, ARCH_SIZEOF_COLOR_INDEX) - 1;
             stream_w.ptr = stream_w.limit - width * spp_decode * sizeofPixelOut;

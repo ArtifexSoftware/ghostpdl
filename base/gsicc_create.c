@@ -1206,7 +1206,7 @@ add_lutAtoBtype(unsigned char *input_ptr, gsicc_lutatob *lutatobparts)
     }
     /* Then the matrix */
     if (lutatobparts->matrix != NULL) {
-        add_matrixwithbias(curr_ptr,&(lutatobparts->matrix->cu.u),true);
+        add_matrixwithbias(curr_ptr,(float*) lutatobparts->matrix,true);
         curr_ptr += (12*4);
         /* M curves */
         if (lutatobparts->m_curves != NULL) {
@@ -1537,7 +1537,7 @@ create_lutAtoBprofile(unsigned char **pp_buffer_in, icHeader *header,
     /* Multiply the matrix in the AtoB object by the cam so that the data
        is in D50 */
     if (lutatobparts->matrix == NULL) {
-        gsicc_create_copy_matrix3(cam, &(temp_matrix.cu.u));
+        gsicc_create_copy_matrix3(cam, (float*) &temp_matrix);
         lutatobparts->matrix = &temp_matrix;
     } else {
         if (yonly) {
@@ -1759,7 +1759,7 @@ gsicc_create_abc_merge(gsicc_lutatob *atob_parts, gs_matrix3 *matrixLMN,
        to the mapping of X=Y by the identity table.  If there are b_curves
        these have an output that is 16 bit. */
     if (atob_parts->b_curves == NULL) {
-        scale_matrix(&(atob_parts->matrix->cu.u), 2.0);
+        scale_matrix((float*) atob_parts->matrix, 2.0);
     }
     return 0;
 }

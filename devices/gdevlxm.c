@@ -146,6 +146,7 @@ lxm5700m_print_page(gx_device_printer *pdev, gp_file *prn_stream)
     int lnum,minX, maxX, i, l, highestX, leastX, extent;
     int direction = RIGHTWARD;
     int lastY = 0;
+    int code = 0;
 
     int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
     /* Note that in_size is a multiple of 8. */
@@ -158,12 +159,8 @@ lxm5700m_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 
     /* Check allocations */
     if ( buf1 == 0 || swipeBuf == 0 ) {
-        if ( buf1 )
-quit_ignomiously: /* and a goto into an if statement is pretty ignomious! */
-        gs_free(pdev->memory, (char *)buf1, in_size, 1, "lxm_print_page(buf1)");
-        if ( swipeBuf )
-            gs_free(pdev->memory, (char *)swipeBuf, swipeBuf_size, 1, "lxm_print_page(swipeBuf)");
-        return_error(gs_error_VMerror);
+        code = gs_error_VMerror;
+        goto xit;
     }
 
     {	/* Initialize the printer and reset the margins. */
@@ -186,7 +183,9 @@ quit_ignomiously: /* and a goto into an if statement is pretty ignomious! */
 
             for (l=lnum; l<pdev->height; l++) {
                 /* Copy 1 scan line and test for all zero. */
-                gdev_prn_get_bits(pdev, l, in, &in_data);
+                code = gdev_prn_get_bits(pdev, l, in, &in_data);
+                if (code < 0)
+                    goto xit;
                 if ( in_data[0] != 0 ||
                      memcmp((char *)in_data, (char *)in_data + 1, line_size - 1)
                      ) {
@@ -211,7 +210,9 @@ quit_ignomiously: /* and a goto into an if statement is pretty ignomious! */
         }
 
         /* Copy the the scan lines. */
-        lcnt = gdev_prn_copy_scan_lines(pdev, lnum, in, in_size);
+        code = lcnt = gdev_prn_copy_scan_lines(pdev, lnum, in, in_size);
+        if (code < 0)
+            goto xit;
         if ( lcnt < swipeHeight ) {
             /* Pad with lines of zeros. */
             memset(in + lcnt * line_size, 0,
@@ -251,7 +252,7 @@ quit_ignomiously: /* and a goto into an if statement is pretty ignomious! */
                 size_t  outp_offset = outp - swipeBuf;\
                 size_t  swipeBuf_size_new = swipeBuf_size * 2;\
                 byte*   swipeBuf_new = gs_malloc(pdev->memory, swipeBuf_size_new, 1, "lxm_print_page(swipeBuf_new)");\
-                if (!swipeBuf_new) goto quit_ignomiously;\
+                if (!swipeBuf_new) { code = gs_error_VMerror; goto xit; }\
                 memcpy(swipeBuf_new, swipeBuf, swipeBuf_size);\
                 gs_free(pdev->memory, swipeBuf, swipeBuf_size, 1, "lxm_print_page(swipeBuf)");\
                 swipeBuf_size = swipeBuf_size_new;\
@@ -372,9 +373,14 @@ quit_ignomiously: /* and a goto into an if statement is pretty ignomious! */
     }
     gp_fflush(prn_stream);
 
-    gs_free(pdev->memory, (char *)swipeBuf, swipeBuf_size, 1, "lxm_print_page(swipeBuf)");
-    gs_free(pdev->memory, (char *)buf1, in_size, 1, "lxm_print_page(buf1)");
-    return 0;
+xit:
+    if ( buf1 )
+        gs_free(pdev->memory, (char *)buf1, in_size, 1, "lxm_print_page(buf1)");
+    if ( swipeBuf )
+        gs_free(pdev->memory, (char *)swipeBuf, swipeBuf_size, 1, "lxm_print_page(swipeBuf)");
+    if (code < 0)
+        return_error(code);
+    return code;
 }
 
 /*

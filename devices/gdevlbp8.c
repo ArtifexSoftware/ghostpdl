@@ -108,6 +108,7 @@ can_print_page(gx_device_printer *pdev, gp_file *prn_stream,
         char *out_data;
         int last_line_nro = 0;
         int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
+        int code = 0;
 
         data = (char *)gs_alloc_bytes(pdev->memory,
                                       line_size*2,
@@ -124,8 +125,10 @@ can_print_page(gx_device_printer *pdev, gp_file *prn_stream,
 
             for ( lnum = 0; lnum < pdev->height; lnum++ ) {
                 char *end_data = data + line_size;
-                gdev_prn_copy_scan_lines(pdev, lnum,
-                                         (byte *)data, line_size);
+                code = gdev_prn_copy_scan_lines(pdev, lnum,
+                                               (byte *)data, line_size);
+                if (code < 0)
+                    goto xit;
                 /* Mask off 1-bits beyond the line width. */
                 end_data[-1] &= rmask;
                 /* Remove trailing 0s. */
@@ -199,9 +202,10 @@ can_print_page(gx_device_printer *pdev, gp_file *prn_stream,
         if (end != NULL)
             (void)gp_fwrite(end, end_size, 1, prn_stream);
 
+xit:
         gs_free_object(pdev->memory, data, "lbp8_line_buffer");
 
-        return 0;
+        return code;
 }
 
 /* Print an LBP-8 page. */

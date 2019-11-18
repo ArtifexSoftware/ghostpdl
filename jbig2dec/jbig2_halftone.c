@@ -50,6 +50,12 @@ jbig2_hd_new(Jbig2Ctx *ctx, const Jbig2PatternDictParams *params, Jbig2Image *im
     uint32_t i;
     int j;
 
+    if (N == 0) {
+        /* We've wrapped. */
+        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "params->GRAYMAX out of range");
+        return NULL;
+    }
+
     /* allocate a new struct */
     new = jbig2_new(ctx, Jbig2PatternDict, 1);
     if (new != NULL) {

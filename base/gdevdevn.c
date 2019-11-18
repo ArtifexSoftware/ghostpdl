@@ -1395,7 +1395,9 @@ spotcmyk_print_page(gx_device_printer * pdev, gp_file * prn_stream)
 
     /* Now create the output bit image files */
     for (; lnum < bottom; ++lnum) {
-        gdev_prn_get_bits(pdev, lnum, in, &data);
+        code = gdev_prn_get_bits(pdev, lnum, in, &data);
+        if (code < 0)
+            goto prn_done;
         /* Now put the pcm data into the output file */
         if (npcmcolors) {
             first_bit = bpc * (ncomp - npcmcolors);
