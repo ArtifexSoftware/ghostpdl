@@ -65,13 +65,6 @@ pcl_downloaded_and_bound(const pl_font_t * plfont)
     return (plfont->storage != pcds_internal && pl_font_is_bound(plfont));
 }
 
-/* uncomment the following definition to treat map type 0 as defined
-   in the specification.  The default is to use the behavior we have
-   observed on several HP devices.  Map type 0 is treated as map type
-   1. */
-
-/* #define USE_MAP_TYPE_IN_SPECIFICATION */
-
 /*
  * Check if a character code is considered "printable" by given symbol set.
  */
@@ -100,14 +93,15 @@ char_is_printable(const pl_font_t *font, const pl_symbol_map_t *map, gs_char chr
                 map_type = map->type;
             }
 
-#ifndef USE_MAP_TYPE_IN_SPECIFICATION
-            if (map_type == 0)
+            /* We do not treat map type as defined in the
+            specification. Instead the default is to use the behavior we have
+            observed on several HP devices: Map type 0 is treated as map type
+            1. */
+            if (map_type == 0) {
                 map_type = 1;
-#endif /* USE_MAP_TYPE_IN_SPECIFICATION */
+            }
 
-            if (map_type == 0)
-                printable = (chr >= ' ') && (chr <= '\177');
-            else if (map_type == 1) {
+            if (map_type == 1) {
                 chr &= 0x7f;
                 printable = (chr >= ' ');   /* 0-31 and 128-159 are not printable */
             } else if (map_type >= 2) {
