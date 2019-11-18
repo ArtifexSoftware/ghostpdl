@@ -1229,7 +1229,6 @@ set_string_param(pl_main_instance_t * pmi, const char *arg)
                         strlen("DefaultCMYKProfile"))) {
         dmprintf(pmi->memory, "DefaultCMYKProfile can only be set on the command line!\n");
         return -1;
-        pmi->pdefault_cmyk_icc = arg_copy(value, pmi->memory);
     } else if (!strncmp(arg, "ICCProfileDir", strlen("ICCProfileDir"))) {
         dmprintf(pmi->memory, "ICCProfileDir can only be set on the command line!\n");
         return -1;
