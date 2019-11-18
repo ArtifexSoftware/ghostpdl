@@ -272,7 +272,7 @@ eps_print_page(gx_device_printer *pdev, gp_file *prn_stream, int y_9pin_high,
                         /* can't print neighboring dots. */
                         int i;
                         for ( i = 0; i < line_size * in_y_mult; ++i )
-                                in_data[i] |= in_data[i + line_size];
+                                in[i] |= in[i + line_size];
                 }
 
                 if ( y_9pin_high )
