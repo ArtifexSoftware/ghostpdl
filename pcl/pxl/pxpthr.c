@@ -80,15 +80,20 @@ pcl_end_page_noop(pcl_state_t * pcs, int num_copies, int flush)
 
 /* set variables other than setting the page device that do not
    default to pcl reset values */
-void
+int
 pxPassthrough_pcl_state_nonpage_exceptions(px_state_t * pxs)
 {
     /* xl cursor -> pcl cursor position */
     gs_point xlcp, pclcp, dp;
-
+    int code;
+    
     /* make the pcl ctm active, after resets the hpgl/2 ctm is
        active. */
-    pcl_set_graphics_state(global_pcs);
+    code = pcl_set_graphics_state(global_pcs);
+    if (code < 0) {
+        return code;
+    }
+
     /* xl current point -> device point -> pcl current
        point.  If anything fails we assume the current
        point is not valid and use the cap from the pcl
@@ -123,6 +128,7 @@ pxPassthrough_pcl_state_nonpage_exceptions(px_state_t * pxs)
     global_char_scale.y = pxs->pxgs->char_scale.y;
     global_char_bold_value = pxs->pxgs->char_bold_value;
 
+    return 0;
 }
 
 /* retrieve the current pcl state and initialize pcl */
@@ -268,13 +274,18 @@ pxPassthrough(px_args_t * par, px_state_t * pxs)
                 code = pxPassthrough_setpagestate(pxs);
                 if (code < 0)
                     return code;
-                pxPassthrough_pcl_state_nonpage_exceptions(pxs);
+                code = pxPassthrough_pcl_state_nonpage_exceptions(pxs);
+                if (code < 0)
+                    return code;
                 global_pass_first = false;
             } else {
                 /* there was a previous passthrough check if there were
                    any intervening XL commands */
-                if (global_this_pass_contiguous == false)
-                    pxPassthrough_pcl_state_nonpage_exceptions(pxs);
+                if (global_this_pass_contiguous == false) {
+                    code = pxPassthrough_pcl_state_nonpage_exceptions(pxs);
+                    if (code < 0)
+                        return code;
+                }
             }
             par->source.phase = 1;
         }
@@ -393,13 +404,18 @@ pxpcl_selectfont(px_args_t * par, px_state_t * pxs)
         code = pxPassthrough_setpagestate(pxs);
         if (code < 0)
             return code;
-        pxPassthrough_pcl_state_nonpage_exceptions(pxs);
+        code = pxPassthrough_pcl_state_nonpage_exceptions(pxs);
+        if (code < 0)
+            return code;
         global_pass_first = false;
     } else {
         /* there was a previous passthrough check if there were
            any intervening XL commands */
-        if (global_this_pass_contiguous == false)
-            pxPassthrough_pcl_state_nonpage_exceptions(pxs);
+        if (global_this_pass_contiguous == false) {
+            code = pxPassthrough_pcl_state_nonpage_exceptions(pxs);
+            if (code < 0)
+                return code;
+        }
     }
     r.ptr = str - 1;
     r.limit = str + len - 1;
