@@ -1652,7 +1652,7 @@ template_mem_transform_pixel_region_render_landscape(gx_device *dev, mem_transfo
             goto err;
         data = run;
     }
-    return (code < 0 ? code : 1);
+    return 1;
     /* Save position if error, in case we resume. */
 err:
     buffer[0] = run;
