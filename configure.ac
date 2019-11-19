@@ -1694,13 +1694,9 @@ if test x$with_luratech != xno; then
     SHARE_JBIG2=0
     JBIG2DIR=$srcdir/luratech/ldf_jb2
 
-    #if test x"$cross_compiling" = x"yes"; then
-    #    if test x"$JBIG2_CFLAGS" != x""; then
-    #      JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -fsigned-char $JBIG2_CFLAGS"
-    #    else
-    #      JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -fsigned-char -DLINUX=1 -DFORTE"
-    #    fi
-    #else
+    if test x"$JBIG2_CFLAGS" != x""; then
+      JBIG2_AUTOCONF_CFLAGS="$JBIG2_CFLAGS"
+    else
       case $host in
         *-darwin*)
           JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -DMAC -DMAC_OS_X_BUILD -fsigned-char"
@@ -1716,7 +1712,7 @@ if test x$with_luratech != xno; then
           JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -fsigned-char -DLINUX=1 -DFORTE"
         ;;
       esac
-    #fi
+    fi
 
     JBIG2FILEDEVS='$(DD)gdevjbig2.dev'
     JBIG2DEVS='$(PSD)jbig2.dev'
@@ -1839,13 +1835,9 @@ if test x$with_luratech != xno; then
     SHARE_JPX=0
     JPXDIR=$srcdir/luratech/lwf_jp2
 
-    #if test x"$cross_compiling" = x"yes"; then
-    #    if test x"$JPX_CFLAGS" != x""; then
-    #      JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 $JPX_CFLAGS"
-    #    else
-    #      JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -DLINUX=1 -DFORTE"
-    #    fi
-    #else
+    if test x"$JPX_CFLAGS" != x""; then
+      JPX_AUTOCONF_CFLAGS="$JPX_CFLAGS"
+    else
       case $host in
         *-darwin*)
           JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -DMAC -DMAC_OS_X_BUILD"
@@ -1861,7 +1853,7 @@ if test x$with_luratech != xno; then
           JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -DLINUX=1 -DFORTE"
         ;;
       esac
-    #fi
+    fi
     JPXDEVS='$(PSD)jpx.dev'
   else
     AC_MSG_RESULT([no])
@@ -3181,9 +3173,6 @@ AUXDIRPOSTFIX=""
 case $build in
     *-mingw*|*-msys*|*-cygwin*)
     AUXDIRPOSTFIX="_"
-    #if test x"$cross_compiling" != x"yes"; then
-    #  CFLAGS="-DGS_NO_UTF8=1 $CFLAGS"
-    #fi
     ;;
 esac
 AC_SUBST(AUXDIRPOSTFIX)
