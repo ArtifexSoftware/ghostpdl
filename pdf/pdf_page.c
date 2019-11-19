@@ -28,6 +28,7 @@
 #include "pdf_gstate.h"
 #include "pdf_misc.h"
 #include "pdf_optcontent.h"
+#include "pdf_annot.h"
 
 static int pdfi_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
 {
@@ -117,6 +118,37 @@ static int pdfi_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
 page_error:
     pdfi_grestore(ctx);
     pdfi_countdown(o);
+    return code;
+}
+
+/* Render one page (including annotations) (see pdf_main.ps/showpagecontents) */
+static int pdfi_process_one_page(pdf_context *ctx, pdf_dict *page_dict)
+{
+    stream_save local_entry_save;
+    int code, code1;
+
+    /* Save the current stream state, for later cleanup, in a local variable */
+    local_save_stream_state(ctx, &local_entry_save);
+    initialise_stream_save(ctx);
+
+    code = pdfi_process_page_contents(ctx, page_dict);
+
+    /* Put our state back the way it was before we ran the contents
+     * and check if the stream had problems
+     */
+#ifdef PROBE_STREAMS
+    if (ctx->pgs->level > ctx->current_stream_save.gsave_level ||
+        pdfi_count_stack(ctx) > ctx->current_stream_save.stack_count)
+        code = ((pdf_context *)0)->first_page;
+#endif
+
+    cleanup_context_interpretation(ctx, &local_entry_save);
+    local_restore_stream_state(ctx, &local_entry_save);
+
+    code1 = pdfi_do_annotations(ctx, page_dict);
+    if (code > 0)
+        code = code1;
+
     return code;
 }
 
@@ -264,6 +296,53 @@ static int pdfi_set_media_size(pdf_context *ctx, pdf_dict *page_dict)
     return 0;
 }
 
+/* Setup default transfer functions */
+static void pdfi_setup_transfers(pdf_context *ctx)
+{
+    if (ctx->pgs->set_transfer.red == 0x00) {
+        ctx->DefaultTransfers[0].proc = gs_identity_transfer;
+        memset(ctx->DefaultTransfers[0].values, 0x00, transfer_map_size * sizeof(frac));
+    } else {
+        ctx->DefaultTransfers[0].proc = ctx->pgs->set_transfer.red->proc;
+        memcpy(ctx->DefaultTransfers[0].values, ctx->pgs->set_transfer.red->values, transfer_map_size * sizeof(frac));
+    }
+    if (ctx->pgs->set_transfer.green == 0x00) {
+        ctx->DefaultTransfers[1].proc = gs_identity_transfer;
+        memset(ctx->DefaultTransfers[1].values, 0x00, transfer_map_size * sizeof(frac));
+    } else {
+        ctx->DefaultTransfers[1].proc = ctx->pgs->set_transfer.green->proc;
+        memcpy(ctx->DefaultTransfers[1].values, ctx->pgs->set_transfer.green->values, transfer_map_size * sizeof(frac));
+    }
+    if (ctx->pgs->set_transfer.blue == 0x00) {
+        ctx->DefaultTransfers[2].proc = gs_identity_transfer;
+        memset(ctx->DefaultTransfers[2].values, 0x00, transfer_map_size * sizeof(frac));
+    } else {
+        ctx->DefaultTransfers[2].proc = ctx->pgs->set_transfer.blue->proc;
+        memcpy(ctx->DefaultTransfers[2].values, ctx->pgs->set_transfer.blue->values, transfer_map_size * sizeof(frac));
+    }
+    if (ctx->pgs->set_transfer.gray == 0x00) {
+        ctx->DefaultTransfers[3].proc = gs_identity_transfer;
+        memset(ctx->DefaultTransfers[3].values, 0x00, transfer_map_size * sizeof(frac));
+    } else {
+        ctx->DefaultTransfers[3].proc = ctx->pgs->set_transfer.gray->proc;
+        memcpy(ctx->DefaultTransfers[3].values, ctx->pgs->set_transfer.gray->values, transfer_map_size * sizeof(frac));
+    }
+    if (ctx->pgs->black_generation == 0x00) {
+        ctx->DefaultBG.proc = gs_identity_transfer;
+        memset(ctx->DefaultBG.values, 0x00, transfer_map_size * sizeof(frac));
+    } else {
+        ctx->DefaultBG.proc = ctx->pgs->black_generation->proc;
+        memcpy(ctx->DefaultBG.values, ctx->pgs->black_generation->values, transfer_map_size * sizeof(frac));
+    }
+    if (ctx->pgs->undercolor_removal == 0x00) {
+        ctx->DefaultUCR.proc = gs_identity_transfer;
+        memset(ctx->DefaultUCR.values, 0x00, transfer_map_size * sizeof(frac));
+    } else {
+        ctx->DefaultUCR.proc = ctx->pgs->undercolor_removal->proc;
+        memcpy(ctx->DefaultUCR.values, ctx->pgs->undercolor_removal->values, transfer_map_size * sizeof(frac));
+    }
+}
+
 int pdfi_page_render(pdf_context *ctx, uint64_t page_num)
 {
     int code, code1=0;
@@ -273,7 +352,6 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num)
     bool page_group_known = false;
     int page_index = page_num >> 3;
     char page_bit = 0x80 >> (page_num % 8);
-    stream_save local_entry_save;
     pdf_dict *group_dict = NULL;
 
     if (page_num > ctx->num_pages)
@@ -335,48 +413,8 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num)
     code = gs_setsmoothness(ctx->pgs, 0.02); /* Match gs code */
     ctx->TextBlockDepth = 0;
 
-    if (ctx->pgs->set_transfer.red == 0x00) {
-        ctx->DefaultTransfers[0].proc = gs_identity_transfer;
-        memset(ctx->DefaultTransfers[0].values, 0x00, transfer_map_size * sizeof(frac));
-    } else {
-        ctx->DefaultTransfers[0].proc = ctx->pgs->set_transfer.red->proc;
-        memcpy(ctx->DefaultTransfers[0].values, ctx->pgs->set_transfer.red->values, transfer_map_size * sizeof(frac));
-    }
-    if (ctx->pgs->set_transfer.green == 0x00) {
-        ctx->DefaultTransfers[1].proc = gs_identity_transfer;
-        memset(ctx->DefaultTransfers[1].values, 0x00, transfer_map_size * sizeof(frac));
-    } else {
-        ctx->DefaultTransfers[1].proc = ctx->pgs->set_transfer.green->proc;
-        memcpy(ctx->DefaultTransfers[1].values, ctx->pgs->set_transfer.green->values, transfer_map_size * sizeof(frac));
-    }
-    if (ctx->pgs->set_transfer.blue == 0x00) {
-        ctx->DefaultTransfers[2].proc = gs_identity_transfer;
-        memset(ctx->DefaultTransfers[2].values, 0x00, transfer_map_size * sizeof(frac));
-    } else {
-        ctx->DefaultTransfers[2].proc = ctx->pgs->set_transfer.blue->proc;
-        memcpy(ctx->DefaultTransfers[2].values, ctx->pgs->set_transfer.blue->values, transfer_map_size * sizeof(frac));
-    }
-    if (ctx->pgs->set_transfer.gray == 0x00) {
-        ctx->DefaultTransfers[3].proc = gs_identity_transfer;
-        memset(ctx->DefaultTransfers[3].values, 0x00, transfer_map_size * sizeof(frac));
-    } else {
-        ctx->DefaultTransfers[3].proc = ctx->pgs->set_transfer.gray->proc;
-        memcpy(ctx->DefaultTransfers[3].values, ctx->pgs->set_transfer.gray->values, transfer_map_size * sizeof(frac));
-    }
-    if (ctx->pgs->black_generation == 0x00) {
-        ctx->DefaultBG.proc = gs_identity_transfer;
-        memset(ctx->DefaultBG.values, 0x00, transfer_map_size * sizeof(frac));
-    } else {
-        ctx->DefaultBG.proc = ctx->pgs->black_generation->proc;
-        memcpy(ctx->DefaultBG.values, ctx->pgs->black_generation->values, transfer_map_size * sizeof(frac));
-    }
-    if (ctx->pgs->undercolor_removal == 0x00) {
-        ctx->DefaultUCR.proc = gs_identity_transfer;
-        memset(ctx->DefaultUCR.values, 0x00, transfer_map_size * sizeof(frac));
-    } else {
-        ctx->DefaultUCR.proc = ctx->pgs->undercolor_removal->proc;
-        memcpy(ctx->DefaultUCR.values, ctx->pgs->undercolor_removal->values, transfer_map_size * sizeof(frac));
-    }
+    pdfi_setup_transfers(ctx);
+
     dbgmprintf1(ctx->memory, "Current page transparency setting is %d\n", ctx->PageTransparencyArray[page_index] & page_bit ? 1 : 0);
 
     /* Force NOTRANSPARENCY here if required, until we can get it working... */
@@ -420,23 +458,8 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num)
      */
     pdfi_set_DefaultQState(ctx, ctx->pgs);
 
-    /* Save the current stream state, for later cleanup, in a local variable */
-    local_save_stream_state(ctx, &local_entry_save);
-    initialise_stream_save(ctx);
-
-    code = pdfi_process_page_contents(ctx, page_dict);
-
-    /* Put our state back the way it was before we ran the contents
-     * and check if the stream had problems
-     */
-#ifdef PROBE_STREAMS
-    if (ctx->pgs->level > ctx->current_stream_save.gsave_level ||
-        pdfi_count_stack(ctx) > ctx->current_stream_save.stack_count)
-        code = ((pdf_context *)0)->first_page;
-#endif
-
-    cleanup_context_interpretation(ctx, &local_entry_save);
-    local_restore_stream_state(ctx, &local_entry_save);
+    /* Render one page (including annotations) */
+    code = pdfi_process_one_page(ctx, page_dict);
 
     if (ctx->page_has_transparency && page_group_known) {
         code1 = pdfi_trans_end_group(ctx);
