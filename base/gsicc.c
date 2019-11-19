@@ -623,6 +623,9 @@ gs_cspace_build_ICC(
     gs_memory_t *       pmem )
 {
     gs_color_space *pcspace = gs_cspace_alloc(pmem, &gs_color_space_type_ICC);
+    if (!pcspace) {
+        return_error(gs_error_VMerror);
+    }
     *ppcspace = pcspace;
 
     return 0;

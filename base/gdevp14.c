@@ -2460,8 +2460,6 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
     rowstride = buf->rowstride;
 
     code = gs_cspace_build_ICC(&pcs, NULL, pgs->memory);
-    if (pcs == NULL)
-        return_error(gs_error_VMerror);
     if (code < 0)
         return code;
     /* Need to set this to avoid color management during the image color render
@@ -8640,6 +8638,8 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
              * Set color space in preparation for sending an image.
              */
             code = gs_cspace_build_ICC(&pcs, NULL, pgs->memory);
+            if (code < 0)
+                goto put_accum_error;
 
             /* Need to set this to avoid color management during the
                image color render operation.  Exception is for the special case
@@ -8648,10 +8648,8 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
                here as we should have set the profile for the pdf14 device to RGB
                and the target will be CIELAB */
             code = dev_proc(dev, get_profile)(dev,  &dev_profile);
-            if (code < 0) {
-                rc_decrement_only_cs(pcs, "pdf14_put_image");
-                return code;
-            }
+            if (code < 0)
+                goto put_accum_error;
             gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile,
                                   &(pcs->cmm_icc_profile_data), &render_cond);
             /* pcs takes a reference to the profile data it just retrieved. */
@@ -8684,7 +8682,7 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
                    sizeof(gs_separation_map));
             target_devn_params->pdf14_separations = tdev->devn_params.pdf14_separations;
         }
-        if (linebuf == NULL || pcs == NULL) {
+        if (linebuf == NULL) {
             code = gs_error_VMerror;
             goto put_accum_error;
         }
