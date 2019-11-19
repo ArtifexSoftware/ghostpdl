@@ -212,7 +212,7 @@ const char gp_current_directory_name[] = "[]";
 
 /* Define the string to be concatenated with the file mode */
 /* for opening files without end-of-line conversion. */
-const char gp_fmode_binary_suffix[] = "";
+const char* gp_fmode_binary_suffix = "";
 
 /* Define the file modes for binary reading or writing. */
 const char gp_fmode_rb[] = "r";
