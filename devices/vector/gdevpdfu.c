@@ -51,7 +51,7 @@
 #include "gs_mgl_e.h"
 #include "gs_mro_e.h"
 
-extern single_glyph_list_t *SingleGlyphList;
+extern single_glyph_list_t SingleGlyphList[];
 
     /* Define the size of internal stream buffers. */
 /* (This is not a limitation, it only affects performance.) */
@@ -339,7 +339,7 @@ static int write_tt_encodings(stream *s, bool HaveTrueTypes)
 
     if (HaveTrueTypes) {
         char Buffer[256];
-        single_glyph_list_t *entry = (single_glyph_list_t *)&SingleGlyphList;
+        single_glyph_list_t *entry = SingleGlyphList;
 
         gs_sprintf(Buffer, "/AdobeGlyphList mark\n");
         stream_write(s, Buffer, strlen(Buffer));
