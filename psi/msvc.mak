@@ -660,6 +660,7 @@ TIFFCONFDIR=$(TIFFSRCDIR)
 TIFFCONFIG_SUFFIX=.vc
 TIFFPLATFORM=win32
 TIFFCFLAGS="-DJPEG_LIB_MK1_OR_12BIT=0"
+ENABLE_TIFF=$(D_)TIFF_INCLUDED$(_D)
 !endif
 
 # Define the directory where the zlib sources are stored.

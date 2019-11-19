@@ -1234,6 +1234,7 @@ case "x$with_system_libtiff" in
             LIBTIFFCONFDIR=tiff-config
             HAVE_LOCAL_LIBTIFF=1
             SHARE_LIBTIFF=0
+            ENABLETIFF="\$(D_)TIFF_INCLUDED\$(_D)"
         else
             # We MUST NOT use PKG_CHECK_MODULES since it is a) not a standard
             # autoconf macro and b) requires pkg-config on the system, which is
@@ -1259,6 +1260,7 @@ case "x$with_system_libtiff" in
             TIFFDEVS="$TIFFDEVS_ALL"
             FAX_DEVS="$FAX_DEVS_ALL"
             XPSWRITEDEVICE='xpswrite'
+            ENABLETIFF="\$(D_)TIFF_INCLUDED\$(_D)"
         fi
         ;;
     xyes)
@@ -1284,6 +1286,7 @@ case "x$with_system_libtiff" in
             TIFFDEVS="$TIFFDEVS_ALL"
             FAX_DEVS="$FAX_DEVS_ALL"
             XPSWRITEDEVICE='xpswrite'
+            ENABLETIFF="\$(D_)TIFF_INCLUDED\$(_D)"
        else
             AC_MSG_NOTICE([Could not find a copy of libtiff on your system. Disabling tiff and xps output devices.])
         fi
@@ -1298,6 +1301,7 @@ case "x$with_system_libtiff" in
             TIFFDEVS="$TIFFDEVS_ALL"
             FAX_DEVS="$FAX_DEVS_ALL"
             XPSWRITEDEVICE='xpswrite'
+            ENABLETIFF="\$(D_)TIFF_INCLUDED\$(_D)"
         else
             AC_MSG_RESULT([no])
             AC_MSG_NOTICE([Could not find local copy of libtiff. Disabling tiff and xps output devices.])
@@ -1343,6 +1347,8 @@ AC_SUBST(SHARE_LIBTIFF)
 AC_SUBST(LIBTIFFDIR)
 AC_SUBST(LIBTIFFCONFDIR)
 AC_SUBST(TIFFCFLAGS)
+AC_SUBST(ENABLETIFF)
+
 
 SHARE_EXPAT=0
 EXPATDIR=src
@@ -1861,7 +1867,7 @@ if test x$with_urf != xno; then
   AC_MSG_CHECKING([for URF support])
   if test -d $srcdir/urf; then
     AC_MSG_RESULT([yes])
-    ENABLEURF="$(D_)URF_INCLUDED$(_D)"
+    ENABLEURF="\$(D_)URF_INCLUDED\$(_D)"
     URF_DEVS='urfgray urfrgb urfcmyk'
     GPDL_URF_TOP_OBJ=$(GPDLOBJ)/$(GPDL_URF_TOP_OBJ_FILE)
     URF_INCLUDE=$(I_)$(URFSRCDIR)$(_I)

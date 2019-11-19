@@ -35,7 +35,11 @@ GPDL_JPG_TOP_OBJ=$(GPDLOBJ)/$(GPDL_JPG_TOP_OBJ_FILE)
 GPDL_PWG_TOP_OBJ_FILE=pwgtop.$(OBJ)
 GPDL_PWG_TOP_OBJ=$(GPDLOBJ)/$(GPDL_PWG_TOP_OBJ_FILE)
 
+GPDL_TIFF_TOP_OBJ_FILE=tifftop.$(OBJ)
+GPDL_TIFF_TOP_OBJ=$(GPDLOBJ)/$(GPDL_TIFF_TOP_OBJ_FILE)
+
 GPDL_PSI_TOP_OBJS=\
+	$(GPDL_TIFF_TOP_OBJ)\
 	$(GPDL_PWG_TOP_OBJ)\
 	$(GPDL_JPG_TOP_OBJ)\
 	$(GPDL_URF_TOP_OBJ)\
@@ -48,7 +52,8 @@ LANG_CFLAGS=\
 	$(D_)XPS_INCLUDED$(_D)\
 	$(ENABLE_URF)\
 	$(D_)JPG_INCLUDED$(_D)\
-	$(D_)PWG_INCLUDED$(_D)
+	$(D_)PWG_INCLUDED$(_D)\
+	$(ENABLE_TIFF)
 
 GPDLCC=$(CC_) $(LANG_CFLAGS) $(I_)$(PSSRCDIR)$(_I) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(DEVSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I) $(C_)
 
@@ -88,3 +93,8 @@ $(GPDL_PWG_TOP_OBJ): $(GPDLSRC)pwgtop.c $(AK)\
  $(gxdevice_h) $(gserrors_h) $(gsstate_h) $(strimpl_h) $(gscoord_h)\
  $(spwgx_h) $(pltop_h)
 	$(GPDLCC) $(GPDLSRC)pwgtop.c $(GPDLO_)$(GPDL_PWG_TOP_OBJ_FILE)
+
+$(GPDL_TIFF_TOP_OBJ): $(GPDLSRC)tifftop.c $(AK)\
+ $(gxdevice_h) $(gserrors_h) $(gsstate_h) $(strimpl_h) $(gscoord_h)\
+ $(pltop_h)
+	$(GPDLCC) $(II)$(TI_)$(_I) $(GPDLSRC)tifftop.c $(GPDLO_)$(GPDL_TIFF_TOP_OBJ_FILE)
