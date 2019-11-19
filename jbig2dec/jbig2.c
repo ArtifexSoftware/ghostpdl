@@ -199,6 +199,7 @@ jbig2_get_int32(const byte *bptr)
 }
 
 // coverity[ -tainted_data_return ]
+// coverity[ -tainted_data_argument : arg-0 ]
 uint32_t
 jbig2_get_uint32(const byte *bptr)
 {
