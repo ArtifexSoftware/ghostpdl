@@ -87,4 +87,4 @@ $(GPDL_JPG_TOP_OBJ): $(GPDLSRC)jpgtop.c $(AK)\
 $(GPDL_PWG_TOP_OBJ): $(GPDLSRC)pwgtop.c $(AK)\
  $(gxdevice_h) $(gserrors_h) $(gsstate_h) $(strimpl_h) $(gscoord_h)\
  $(spwgx_h) $(pltop_h)
-	$(GPDLCC) $(II)$(JI_)$(_I) $(GPDLSRC)pwgtop.c $(GPDLO_)$(GPDL_PWG_TOP_OBJ_FILE)
+	$(GPDLCC) $(GPDLSRC)pwgtop.c $(GPDLO_)$(GPDL_PWG_TOP_OBJ_FILE)
