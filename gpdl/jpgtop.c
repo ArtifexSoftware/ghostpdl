@@ -585,17 +585,16 @@ jpg_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr)
 
             /* Scale to fit, if too large. */
             scale = 1.0f;
-            if (jpg->width * 72 > jpg->dev->width * jpg->xresolution)
-                scale = ((float)jpg->dev->width * jpg->xresolution) / (jpg->width * 72);
-            if (scale * jpg->height * 72 > jpg->dev->height * jpg->yresolution)
-                scale = ((float)jpg->dev->height * jpg->yresolution) / (jpg->height * 72);
+            if (jpg->width * jpg->dev->HWResolution[0] > jpg->dev->width * jpg->xresolution)
+                scale = ((float)jpg->dev->width * jpg->xresolution) / (jpg->width * jpg->dev->HWResolution[0]);
+            if (scale * jpg->height * jpg->dev->HWResolution[1] > jpg->dev->height * jpg->yresolution)
+                scale = ((float)jpg->dev->height * jpg->yresolution) / (jpg->height * jpg->dev->HWResolution[1]);
 
-            /* Centre */
+            /* Centre - Extents and offsets are all calculated in points (1/72 of an inch) */
             xext = ((float)jpg->width * 72 * scale / jpg->xresolution);
-            xoffset = (jpg->dev->width - xext)/2;
+            xoffset = (jpg->dev->width * 72 / jpg->dev->HWResolution[0] - xext)/2;
             yext = ((float)jpg->height * 72 * scale / jpg->yresolution);
-            yoffset = (jpg->dev->height - yext)/2;
-
+            yoffset = (jpg->dev->height * 72 / jpg->dev->HWResolution[1] - yext)/2;
 
             /* Now we've got the data from the image header, we can
              * make the gs image instance */
@@ -610,9 +609,24 @@ jpg_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr)
             }
             gs_initmatrix(jpg->pgs);
 
-            code = gs_translate(jpg->pgs, xoffset, jpg->dev->height-yoffset);
+            /* By default the ctm is set to:
+             *   xres/72   0
+             *   0         -yres/72
+             *   0         dev->height * yres/72
+             * i.e. it moves the origin from being top right to being bottom left.
+             * We want to move it back, as without this, the image will be displayed
+             * upside down.
+             */
+            code = gs_translate(jpg->pgs, 0.0, jpg->dev->height * 72 / jpg->dev->HWResolution[1]);
+            if (code >= 0)
+                code = gs_translate(jpg->pgs, xoffset, -yoffset);
             if (code >= 0)
                 code = gs_scale(jpg->pgs, scale, -scale);
+            /* At this point, the ctm is set to:
+             *   xres/72  0
+             *   0        yres/72
+             *   0        0
+             */
             if (code >= 0)
                 code = gs_erasepage(jpg->pgs);
             if (code < 0) {
@@ -632,8 +646,8 @@ jpg_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr)
             jpg->image.Width = jpg->width;
             jpg->image.Height = jpg->height;
 
-            jpg->image.ImageMatrix.xx = jpg->xresolution / 72.0;
-            jpg->image.ImageMatrix.yy = jpg->yresolution / 72.0;
+            jpg->image.ImageMatrix.xx = jpg->xresolution / 72.0f;
+            jpg->image.ImageMatrix.yy = jpg->yresolution / 72.0f;
 
             jpg->penum = gs_image_enum_alloc(jpg->memory, "jpg_impl_process(penum)");
             if (jpg->penum == NULL) {

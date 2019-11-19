@@ -498,9 +498,22 @@ bad_header:
                 goto early_flush;
             gs_initmatrix(pwg->pgs);
 
-            code = gs_scale(pwg->pgs, 1.0, -1.0);
+            /* By default the ctm is set to:
+             *   xres/72   0
+             *   0         -yres/72
+             *   0         dev->height * yres/72
+             * i.e. it moves the origin from being top right to being bottom left.
+             * We want to move it back, as without this, the image will be displayed
+             * upside down.
+             */
+            code = gs_translate(pwg->pgs, 0.0, -pwg->dev->height * 72 / pwg->dev->HWResolution[1]);
             if (code >= 0)
-                code = gs_translate(pwg->pgs, 0.0, -pwg->dev->height);
+                code = gs_scale(pwg->pgs, 1, -1);
+            /* At this point, the ctm is set to:
+             *   xres/72  0
+             *   0        yres/72
+             *   0        0
+             */
             if (code >= 0)
                 code = gs_erasepage(pwg->pgs);
             if (code < 0)
@@ -512,8 +525,8 @@ bad_header:
             pwg->image.Width = pwg->width;
             pwg->image.Height = pwg->height;
 
-            pwg->image.ImageMatrix.xx = pwg->xresolution / 72.0;
-            pwg->image.ImageMatrix.yy = pwg->yresolution / 72.0;
+            pwg->image.ImageMatrix.xx = pwg->xresolution / 72.0f;
+            pwg->image.ImageMatrix.yy = pwg->yresolution / 72.0f;
 
             pwg->penum = gs_image_enum_alloc(pwg->memory, "pwg_impl_process(penum)");
             if (pwg->penum == NULL) {
