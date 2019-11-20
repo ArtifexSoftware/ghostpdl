@@ -55,8 +55,6 @@ typedef struct tiff_interp_instance_s {
     /* Tiff parser state machine */
     ii_state           state;
 
-    int                pages;
-
     uint32_t           bpp;
     uint32_t           bpc;
     uint32_t           cs;
@@ -69,9 +67,6 @@ typedef struct tiff_interp_instance_s {
 
     uint32_t           num_comps;
     uint32_t           byte_width;
-    uint32_t           y;
-
-    uint32_t           bytes_available_on_entry;
 
     gs_image_t         image;
     gs_image_enum     *penum;
@@ -357,24 +352,6 @@ bytes_until_uel(const stream_cursor_read *pr)
     }
 
     return pr->limit - pr->ptr;
-}
-
-static int
-get32be(stream_cursor_read *pr)
-{
-    int v = pr->ptr[1] << 24;
-    v |= pr->ptr[2] << 16;
-    v |= pr->ptr[3] << 8;
-    v |= pr->ptr[4];
-    pr->ptr += 4;
-
-    return v;
-}
-
-static int
-get8(stream_cursor_read *pr)
-{
-    return *++(pr->ptr);
 }
 
 static tmsize_t tifsReadProc(thandle_t  tiff_,
