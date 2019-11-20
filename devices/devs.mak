@@ -1237,30 +1237,6 @@ $(DEVOBJ)gdevpsd.$(OBJ) : $(DEVSRC)gdevpsd.c $(PDEVH) $(math__h)\
  $(gdevppla_h) $(gxiodev_h) $(gdevpsd_h) $(gxdevsop_h) $(DEVS_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevpsd.$(OBJ) $(C_) $(DEVSRC)gdevpsd.c
 
-### --------------------------- The GPRF device ------------------------- ###
-
-gprf_=$(DEVOBJ)gdevgprf.$(OBJ) $(GLOBJ)gdevdevn.$(OBJ) $(GLOBJ)gsequivc.$(OBJ) $(DEVOBJ)gdevppla.$(OBJ)
-
-$(DD)gprf.dev : $(gprf_) $(GLD)page.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
-	$(SETDEV) $(DD)gprf $(gprf_)
-
-$(DEVOBJ)gdevgprf_1.$(OBJ) : $(DEVSRC)gdevgprf.c $(PDEVH) $(math__h)\
- $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gsparam_h) $(gxlum_h)\
- $(gstypes_h) $(gxdcconv_h) $(gdevdevn_h) $(gsequivc_h) \
- $(gscms_h) $(gsicc_cache_h) $(gsicc_manage_h) $(gxgetbit_h)\
- $(gdevppla_h) $(gxdevsop_h) $(DEVS_MAK) $(MAKEDIRS)
-	$(DEVCC) $(DEVO_)gdevgprf_1.$(OBJ) $(II)$(ZI_)$(_I) $(C_) $(DEVSRC)gdevgprf.c
-
-$(DEVOBJ)gdevgprf_0.$(OBJ) : $(DEVSRC)gdevgprf.c $(PDEVH) $(math__h)\
- $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gsparam_h) $(gxlum_h)\
- $(gstypes_h) $(gxdcconv_h) $(gdevdevn_h) $(gsequivc_h) $(zlib_h)\
- $(gscms_h) $(gsicc_cache_h) $(gsicc_manage_h) $(gxgetbit_h)\
- $(gdevppla_h) $(gxdevsop_h) $(DEVS_MAK) $(MAKEDIRS)
-	$(DEVCC) $(DEVO_)gdevgprf_0.$(OBJ) $(II)$(ZI_)$(_I) $(C_) $(DEVSRC)gdevgprf.c
-
-$(DEVOBJ)gdevgprf.$(OBJ) : $(DEVOBJ)gdevgprf_$(SHARE_ZLIB).$(OBJ) $(DEVS_MAK) $(MAKEDIRS)
-	$(CP_) $(DEVOBJ)gdevgprf_$(SHARE_ZLIB).$(OBJ) $(DEVOBJ)gdevgprf.$(OBJ)
-
 ### ----------------------- The permutation device --------------------- ###
 
 perm_=$(DEVOBJ)gdevperm.$(OBJ)

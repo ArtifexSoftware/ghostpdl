@@ -5766,10 +5766,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\devices\gdevgprf.c"
-				>
-			</File>
-			<File
 				RelativePath="..\devices\gdevhl7x.c"
 				>
 			</File>

@@ -25,24 +25,32 @@
 #define get_int16(bptr)\
   (((int)get_uint16(bptr) ^ 0x8000) - 0x8000)
 
+/* coverity[ -tainted_data_return ] */
+/* coverity[ -tainted_data_argument : arg-0 ] */
 int
 pl_get_int16(const byte * bptr)
 {
     return get_int16(bptr);
 }
 
+/* coverity[ -tainted_data_return ] */
+/* coverity[ -tainted_data_argument : arg-0 ] */
 uint
 pl_get_uint16(const byte * bptr)
 {
     return get_uint16(bptr);
 }
 
+/* coverity[ -tainted_data_return ] */
+/* coverity[ -tainted_data_argument : arg-0 ] */
 long
 pl_get_int32(const byte * bptr)
 {
     return ((long)get_int16(bptr) << 16) | get_uint16(bptr + 2);
 }
 
+/* coverity[ -tainted_data_return ] */
+/* coverity[ -tainted_data_argument : arg-0 ] */
 ulong
 pl_get_uint32(const byte * bptr)
 {

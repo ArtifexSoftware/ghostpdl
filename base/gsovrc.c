@@ -966,7 +966,8 @@ overprint_copy_planes(gx_device * dev, const byte * data, int data_x, int raster
     byte *                  gb_buff = 0;
     gs_get_bits_params_t    gb_params;
     gs_int_rect             gb_rect;
-    int                     code = 0, raster;
+    int                     code = 0;
+    unsigned int            raster;
     int                     byte_depth;
     int                     depth;
     uchar                   num_comps;
@@ -1078,7 +1079,8 @@ overprint_fill_rectangle_hl_color(gx_device *dev,
     byte *                  gb_buff = 0;
     gs_get_bits_params_t    gb_params;
     gs_int_rect             gb_rect;
-    int                     code = 0, raster;
+    int                     code = 0;
+    unsigned int            raster;
     int                     byte_depth;
     int                     depth;
     uchar                   num_comps;
