@@ -35,15 +35,9 @@ int pdfi_d0(pdf_context *ctx)
 {
     int code = 0, gsave_level = 0;
     double width[2];
-    pdf_font *font;
 
     if (ctx->inside_CharProc == false)
         ctx->pdf_warnings |= W_PDF_NOTINCHARPROC;
-
-    if (ctx->pgs->font != NULL && ctx->pgs->font->client_data != NULL)
-        font = (pdf_font *)ctx->pgs->font->client_data;
-    else
-        font = NULL;
 
     if (pdfi_count_stack(ctx) < 2) {
         code = gs_note_error(gs_error_stackunderflow);
@@ -116,16 +110,11 @@ int pdfi_d1(pdf_context *ctx)
 {
     int code = 0, i, gsave_level;
     double wbox[6];
-    pdf_font *font;
 
     if (ctx->inside_CharProc == false)
         ctx->pdf_warnings |= W_PDF_NOTINCHARPROC;
 
     ctx->CharProc_is_d1 = true;
-    if (ctx->pgs->font != NULL && ctx->pgs->font->client_data != NULL)
-        font = (pdf_font *)ctx->pgs->font->client_data;
-    else
-        font = NULL;
 
     if (pdfi_count_stack(ctx) < 2) {
         code = gs_note_error(gs_error_stackunderflow);
