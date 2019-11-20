@@ -86,7 +86,7 @@ pxPassthrough_pcl_state_nonpage_exceptions(px_state_t * pxs)
     /* xl cursor -> pcl cursor position */
     gs_point xlcp, pclcp, dp;
     int code;
-    
+
     /* make the pcl ctm active, after resets the hpgl/2 ctm is
        active. */
     code = pcl_set_graphics_state(global_pcs);

@@ -548,7 +548,7 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
             tiff->xresolution = (uint32_t)(f+0.5);
             TIFFGetField(tiff->handle, TIFFTAG_YRESOLUTION, &f);
             tiff->yresolution = (uint32_t)(f+0.5);
-            
+
             if (TIFFIsTiled(tiff->handle)) {
                 int x, y;
                 tiff->samples = gs_alloc_bytes(tiff->memory, TIFFTileSize(tiff->handle), "tiff_tile");

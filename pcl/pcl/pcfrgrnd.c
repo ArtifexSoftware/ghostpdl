@@ -82,7 +82,7 @@ build_foreground(pcl_state_t * pcs,
     int num_entries;
     bool is_default = false;
     int code = 0;
-    
+
     if (!pindexed) {
         return_error(gs_error_invalidaccess);
     }
