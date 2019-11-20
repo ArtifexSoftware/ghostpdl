@@ -128,10 +128,10 @@ gp_open_scratch_file_impl(const gs_memory_t *mem,
 	}
     }
 #else
-    /* Coverity thinks that any use of mktemp() is insecure. But if we reach
-    here then there is no mkstemp() alternative available, so there's not much
-    we can do. So we disable Coverity SECURE_TEMP explicitly. */
-    // coverity[SECURE_TEMP]
+    /* Coverity thinks that any use of mktemp() is insecure. But if we
+    reach here then there is no mkstemp() alternative available, so there's
+    not much we can do. Haven't been able to disable this - e.g. '//
+    coverity[SECURE_TEMP]' doesn't have any affect. */
     mktemp(fname);
     fp = gp_fopentemp(fname, mode);
 #endif
