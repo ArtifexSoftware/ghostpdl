@@ -379,7 +379,7 @@ pattern_paint_finish(i_ctx_t *i_ctx_p)
                 }
             }
         }
-        code = gx_pattern_cache_add_entry(igs, pdev, &ctile);
+        code = gx_pattern_cache_add_entry(igs, pdev, &ctile, igs);
         if (code < 0)
             return code;
     }

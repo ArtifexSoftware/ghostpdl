@@ -1074,7 +1074,9 @@ pl_tt_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
         gs_make_scaling(scale, scale, &smat);
         sbox.p.x = w2[2], sbox.p.y = w2[3];
         sbox.q.x = w2[4], sbox.q.y = w2[5];
-        gs_bbox_transform(&sbox, &smat, &sbox);
+        code = gs_bbox_transform(&sbox, &smat, &sbox);
+        if (code < 0)
+            return code;
         ipx = (int)sbox.p.x, ipy = (int)sbox.p.y;
         iqx = (int)ceil(sbox.q.x), iqy = (int)ceil(sbox.q.y);
         /* Set up the memory device for the bitmap.  NB should check code. */

@@ -1561,7 +1561,6 @@ template_mem_transform_pixel_region_render_landscape(gx_device *dev, mem_transfo
     int h = state->h;
     const byte *data = buffer[0] + data_x * spp;
     const byte *bufend = NULL;
-    int code = 0;
     const byte *run;
     int k;
     gx_color_value *conc = &cmapper->conc[0];
@@ -1648,15 +1647,9 @@ template_mem_transform_pixel_region_render_landscape(gx_device *dev, mem_transfo
                 }
             }
         }
-        if (code < 0)
-            goto err;
         data = run;
     }
-    return (code < 0 ? code : 1);
-    /* Save position if error, in case we resume. */
-err:
-    buffer[0] = run;
-    return code;
+    return 1;
 }
 
 static int

@@ -65,13 +65,6 @@ pcl_downloaded_and_bound(const pl_font_t * plfont)
     return (plfont->storage != pcds_internal && pl_font_is_bound(plfont));
 }
 
-/* uncomment the following definition to treat map type 0 as defined
-   in the specification.  The default is to use the behavior we have
-   observed on several HP devices.  Map type 0 is treated as map type
-   1. */
-
-/* #define USE_MAP_TYPE_IN_SPECIFICATION */
-
 /*
  * Check if a character code is considered "printable" by given symbol set.
  */
@@ -83,42 +76,43 @@ char_is_printable(const pl_font_t *font, const pl_symbol_map_t *map, gs_char chr
     if (literal) {              /* transparent data */
         printable = true;
     } else {
-    if (is_stick) {
-        printable = (chr >= ' ') && (chr <= 0xff);
-    } else {
-        int map_type = 0;
-        if (map == 0 || pcl_downloaded_and_bound(font)) {
-        /* PCL TRM 11-18 */
-            if (font)
-            {
-            map_type = font->font_type;
-        }
+        if (is_stick) {
+            printable = (chr >= ' ') && (chr <= 0xff);
         } else {
-        /* PCL TRM 10-7
-         * symbol map type overrides, font map type
-         */
-        map_type = map->type;
-        }
+            int map_type = 0;
+            if (map == 0 || pcl_downloaded_and_bound(font)) {
+                /* PCL TRM 11-18 */
+                if (font)
+                {
+                    map_type = font->font_type;
+                }
+            } else {
+                /* PCL TRM 10-7
+                 * symbol map type overrides, font map type
+                 */
+                map_type = map->type;
+            }
 
-#ifndef USE_MAP_TYPE_IN_SPECIFICATION
-        if (map_type == 0)
-        map_type = 1;
-#endif /* USE_MAP_TYPE_IN_SPECIFICATION */
+            /* We do not treat map type as defined in the
+            specification. Instead the default is to use the behavior we have
+            observed on several HP devices: Map type 0 is treated as map type
+            1. */
+            if (map_type == 0) {
+                map_type = 1;
+            }
 
-        if (map_type == 0)
-        printable = (chr >= ' ') && (chr <= '\177');
-        else if (map_type == 1) {
-        chr &= 0x7f;
-        printable = (chr >= ' ');   /* 0-31 and 128-159 are not printable */
-        } else if (map_type >= 2) {
-        /* 2 is correct but will force all types above 2 here */
-        if ((chr == 0) || (chr == '\033') ||
-            ((chr >= '\007') && (chr <= '\017')))
-            printable = false;
-        else
-            printable = true;
+            if (map_type == 1) {
+                chr &= 0x7f;
+                printable = (chr >= ' ');   /* 0-31 and 128-159 are not printable */
+            } else if (map_type >= 2) {
+                /* 2 is correct but will force all types above 2 here */
+                if ((chr == 0) || (chr == '\033') ||
+                    ((chr >= '\007') && (chr <= '\017')))
+                    printable = false;
+                else
+                    printable = true;
+            }
         }
-    }
     }
     return printable;
 }
@@ -990,8 +984,8 @@ pcl_font_scale(pcl_state_t * pcs, gs_point * pscale)
 {
     /* set up the font transformation */
     if (pcs->font->scaling_technology == plfst_bitmap) {
-        pscale->x = pcl_coord_scale / pcs->font->resolution.x;
-        pscale->y = pcl_coord_scale / pcs->font->resolution.y;
+        pscale->x = (double) pcl_coord_scale / pcs->font->resolution.x;
+        pscale->y = (double) pcl_coord_scale / pcs->font->resolution.y;
     } else {
         /*
          * Outline fonts are 1-point; the font height is given in

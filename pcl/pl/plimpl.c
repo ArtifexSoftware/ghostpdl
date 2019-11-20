@@ -39,9 +39,11 @@ extern pl_interp_implementation_t ps_implementation;
 
 extern pl_interp_implementation_t urf_implementation;
 
-extern pl_interp_implementation_t img_implementation;
+extern pl_interp_implementation_t jpg_implementation;
 
 extern pl_interp_implementation_t pwg_implementation;
+
+extern pl_interp_implementation_t tiff_implementation;
 
 /* Zero-terminated list of pointers to implementations */
 pl_interp_implementation_t *pdl_implementations[] = {
@@ -62,11 +64,14 @@ pl_interp_implementation_t *pdl_implementations[] = {
 #ifdef URF_INCLUDED
     &urf_implementation,
 #endif
-#ifdef IMG_INCLUDED
-    &img_implementation,
+#ifdef JPG_INCLUDED
+    &jpg_implementation,
 #endif
 #ifdef PWG_INCLUDED
     &pwg_implementation,
+#endif
+#ifdef TIFF_INCLUDED
+    &tiff_implementation,
 #endif
     0
 };

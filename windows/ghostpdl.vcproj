@@ -303,10 +303,22 @@
 	</References>
 	<Files>
 		<Filter
-			Name="pdlpsi"
+			Name="gpdl"
 			>
 			<File
-				RelativePath="..\gpdl\psi\psitop.c"
+				RelativePath="..\gpdl\jpgtop.c"
+				>
+			</File>
+			<File
+				RelativePath="..\gpdl\psitop.c"
+				>
+			</File>
+			<File
+				RelativePath="..\gpdl\pwgtop.c"
+				>
+			</File>
+			<File
+				RelativePath="..\gpdl\tifftop.c"
 				>
 			</File>
 		</Filter>

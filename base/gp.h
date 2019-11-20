@@ -388,7 +388,7 @@ extern const char gp_current_directory_name[];
 /* Define the string to be concatenated with the file mode */
 /* for opening files without end-of-line conversion. */
 /* This is always either "" or "b". */
-extern const char gp_fmode_binary_suffix[];
+extern const char* gp_fmode_binary_suffix;
 
 /* Define the file modes for binary reading or writing. */
 /* (This is just a convenience: they are "r" or "w" + the suffix.) */

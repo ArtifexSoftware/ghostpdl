@@ -1726,6 +1726,19 @@ encode_bw_buf(pagedata *gendata)
                 left = gendata->left - csep;
                 right = gendata->right + 2*csep;
         }
+        /* Make sure we don't try to write data to the left of 0, or the right of the
+         * media. In the absence of a physical pritner to try this on, we'll have to
+         * hope the comment above is correct and we can simply not bother with the
+         * optimisation for accelerating the print head. The right edge one seems
+         * bonkers, why would we care about accelerating the head when we have
+         * already started printing ?
+         * This is to fix bug #701905, accessing beyond the end of gendata->outdata
+         * in 'convbuf' because right - left > number bytes in scan line.
+         */
+        if (left < 0)
+            left = 0;
+        if (right > gendata->numbytes)
+            right = gendata->numbytes;
 
         /* Number of columns in a full row */
         numcols = right - left;
