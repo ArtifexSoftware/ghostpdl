@@ -175,6 +175,14 @@ struct px_state_s
     bool                this_pass_contiguous;
 
     bool                pass_first;
+
+    /* store away the current font attributes PCL can't set these,
+     * they persist for XL */
+    gs_point            char_shear;
+    gs_point            char_scale;
+    float               char_bold_value;
+    float               char_angle;
+
 };
 
 /* Allocate a px_state_t. */

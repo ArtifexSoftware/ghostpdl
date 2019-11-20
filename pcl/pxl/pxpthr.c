@@ -42,15 +42,6 @@
 #include "pjtop.h"
 #include "pxptable.h"
 
-/* NB - globals needing cleanup
- */
-
-/* store away the current font attributes PCL can't set these,
- * they persist for XL */
-gs_point global_char_shear;
-gs_point global_char_scale;
-float global_char_bold_value;
-float global_char_angle;
 
 /* forward decl */
 void pxpcl_release(px_state_t* pxs);
@@ -108,12 +99,12 @@ pxPassthrough_pcl_state_nonpage_exceptions(px_state_t * pxs)
         pxs->pcs->underline_start = pxs->pcs->cap;
 
 
-    global_char_angle = pxs->pxgs->char_angle;
-    global_char_shear.x = pxs->pxgs->char_shear.x;
-    global_char_shear.y = pxs->pxgs->char_shear.y;
-    global_char_scale.x = pxs->pxgs->char_scale.x;
-    global_char_scale.y = pxs->pxgs->char_scale.y;
-    global_char_bold_value = pxs->pxgs->char_bold_value;
+    pxs->char_angle = pxs->pxgs->char_angle;
+    pxs->char_shear.x = pxs->pxgs->char_shear.x;
+    pxs->char_shear.y = pxs->pxgs->char_shear.y;
+    pxs->char_scale.x = pxs->pxgs->char_scale.x;
+    pxs->char_scale.y = pxs->pxgs->char_scale.y;
+    pxs->char_bold_value = pxs->pxgs->char_bold_value;
 
     return 0;
 }
@@ -335,12 +326,12 @@ pxpcl_release(px_state_t * pxs)
         pxs->pcs = NULL;
         pxs->this_pass_contiguous = false;
         pxs->pass_first = true;
-        global_char_angle = 0;
-        global_char_shear.x = 0;
-        global_char_shear.y = 0;
-        global_char_scale.x = 1.0;
-        global_char_scale.y = 1.0;
-        global_char_bold_value = 0.0;
+        pxs->char_angle = 0;
+        pxs->char_shear.x = 0;
+        pxs->char_shear.y = 0;
+        pxs->char_scale.x = 1.0;
+        pxs->char_scale.y = 1.0;
+        pxs->char_bold_value = 0.0;
     }
 }
 
@@ -365,12 +356,12 @@ pxpcl_endpassthroughcontiguous(px_state_t * pxs)
         pxBeginPageFromPassthrough(pxs);
     }
 
-    pxs->pxgs->char_angle = global_char_angle;
-    pxs->pxgs->char_shear.x = global_char_shear.x;
-    pxs->pxgs->char_shear.y = global_char_shear.y;
-    pxs->pxgs->char_scale.x = global_char_scale.x;
-    pxs->pxgs->char_scale.y = global_char_scale.y;
-    pxs->pxgs->char_bold_value = global_char_bold_value;
+    pxs->pxgs->char_angle = pxs->char_angle;
+    pxs->pxgs->char_shear.x = pxs->char_shear.x;
+    pxs->pxgs->char_shear.y = pxs->char_shear.y;
+    pxs->pxgs->char_scale.x = pxs->char_scale.x;
+    pxs->pxgs->char_scale.y = pxs->char_scale.y;
+    pxs->pxgs->char_bold_value = pxs->char_bold_value;
 }
 int
 pxpcl_selectfont(px_args_t * par, px_state_t * pxs)
