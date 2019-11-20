@@ -1025,7 +1025,7 @@ gx_pattern_cache_update_used(gs_gstate *pgs, ulong used)
 static void make_bitmap(gx_strip_bitmap *, const gx_device_memory *, gx_bitmap_id, const gs_memory_t *);
 int
 gx_pattern_cache_add_entry(gs_gstate * pgs,
-                   gx_device_forward * fdev, gx_color_tile ** pctile)
+                   gx_device_forward * fdev, gx_color_tile ** pctile, gs_gstate* saved)
 {
     gx_pattern_cache *pcache;
     const gs_pattern1_instance_t *pinst;
@@ -1133,8 +1133,10 @@ gx_pattern_cache_add_entry(gs_gstate * pgs,
     ctile->is_simple = pinst->is_simple;
     ctile->has_overlap = pinst->has_overlap;
     ctile->is_dummy = false;
-    if (pinst->templat.uses_transparency)
-        ctile->blending_mode = ((pdf14_device *)(pgs->device))->blend_mode;
+    if (pinst->templat.uses_transparency) {
+        /* to work with pdfi get the blend mode out of the saved pgs device */
+        ctile->blending_mode = ((pdf14_device*)(saved->device))->blend_mode;
+    }
     else
         ctile->blending_mode = 0;
     if (dev_proc(fdev, open_device) != pattern_clist_open_device) {
@@ -1537,7 +1539,7 @@ gx_pattern_load(gx_device_color * pdc, const gs_gstate * pgs,
     }
     /* We REALLY don't like the following cast.... */
     code = gx_pattern_cache_add_entry((gs_gstate *)pgs,
-                adev, &ctile);
+                adev, &ctile, saved);
     if (code >= 0) {
         if (!gx_pattern_cache_lookup(pdc, pgs, dev, select)) {
             mlprintf(mem, "Pattern cache lookup failed after insertion!\n");
