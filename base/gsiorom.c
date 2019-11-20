@@ -83,6 +83,8 @@ gs_private_st_ptrs1(st_romfs_file_enum, struct romfs_file_enum_s, "romfs_file_en
 
 static uint32_t get_u32_big_endian(const uint32_t *a);
 
+/* coverity[ -tainted_data_return ] */
+/* coverity[ -tainted_data_argument : arg-0 ] */
 static uint32_t
 get_u32_big_endian(const uint32_t *a)
 {
