@@ -4641,7 +4641,11 @@ gx_update_pdf14_compositor(gx_device * pdev, gs_gstate * pgs,
             code = gx_end_transparency_group(pgs, pdev);
             break;
         case PDF14_BEGIN_TRANS_TEXT_GROUP:
-            p14dev->text_group = PDF14_TEXTGROUP_BT_NOT_PUSHED;
+            if (p14dev->text_group == PDF14_TEXTGROUP_BT_PUSHED) {
+                p14dev->text_group = PDF14_TEXTGROUP_MISSING_ET;
+                emprintf(p14dev->memory, "Warning: Text group pushed but no ET found\n");
+            } else
+                p14dev->text_group = PDF14_TEXTGROUP_BT_NOT_PUSHED;
             break;
         case PDF14_END_TRANS_TEXT_GROUP:
             if (p14dev->text_group == PDF14_TEXTGROUP_BT_PUSHED)
@@ -4812,6 +4816,19 @@ pdf14_text_begin(gx_device * dev, gs_gstate * pgs,
        Special note:  If text-knockout is set to false while we are within a
        BT ET pair, we should pop the group.  I need to create a test file for
        this case.  */
+
+       /* Catch case where we already pushed a group and are trying to push another one.
+       In that case, we will pop the current one first, as we don't want to be left
+       with it. Note that if we have a BT and no other BTs or ETs then this issue
+       will not be caught until we do the put_image and notice that the stack is not
+       empty. */
+    if (pdev->text_group == PDF14_TEXTGROUP_MISSING_ET) {
+        code = gs_end_transparency_group(pgs);
+        if (code < 0)
+            return code;
+        pdev->text_group = PDF14_TEXTGROUP_BT_NOT_PUSHED;
+    }
+
     if (gs_currenttextknockout(pgs) && (blend_issue || opacity != 1.0) &&
         gs_currenttextrenderingmode(pgs) != 3 && /* don't bother with invisible text */
         pdev->text_group == PDF14_TEXTGROUP_BT_NOT_PUSHED)
@@ -8554,7 +8571,11 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
                   So, if needed change the masks bounding box at this time */
                 break;
             case PDF14_BEGIN_TRANS_TEXT_GROUP:
-                pdev->text_group = PDF14_TEXTGROUP_BT_NOT_PUSHED;
+                if (pdev->text_group == PDF14_TEXTGROUP_BT_PUSHED) {
+                    emprintf(pdev->memory, "Warning: Text group pushed but no ET found\n");
+                    pdev->text_group = PDF14_TEXTGROUP_MISSING_ET;
+                } else
+                    pdev->text_group = PDF14_TEXTGROUP_BT_NOT_PUSHED;
                 *pcdev = dev;
                 return 0; /* Never put into clist. Only used during writing */
             case PDF14_END_TRANS_TEXT_GROUP:
@@ -9082,6 +9103,18 @@ pdf14_clist_text_begin(gx_device * dev,	gs_gstate	* pgs,
                                 pdcolor, pcpath, memory, &penum);
     if (code < 0)
         return code;
+
+   /* Catch case where we already pushed a group and are trying to push another one.
+   In that case, we will pop the current one first, as we don't want to be left
+   with it. Note that if we have a BT and no other BTs or ETs then this issue
+   will not be caught until we do the put_image and notice that the stack is not
+   empty. */
+    if (pdev->text_group == PDF14_TEXTGROUP_MISSING_ET) {
+        code = gs_end_transparency_group(pgs);
+        if (code < 0)
+            return code;
+        pdev->text_group = PDF14_TEXTGROUP_BT_NOT_PUSHED;
+    }
 
     /* We may need to push a non-isolated transparency group if the following
     is true.

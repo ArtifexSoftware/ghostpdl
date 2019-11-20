@@ -81,7 +81,8 @@ typedef enum {
 typedef enum {
     PDF14_TEXTGROUP_NO_BT,  /* We are not in a BT/ET.  Avoids Annotation Texts */
     PDF14_TEXTGROUP_BT_NOT_PUSHED, /* We are in a BT/ET but no group pushed */
-    PDF14_TEXTGROUP_BT_PUSHED   /* We are in a BT/ET section and group was pushed */
+    PDF14_TEXTGROUP_BT_PUSHED,   /* We are in a BT/ET section and group was pushed */
+    PDF14_TEXTGROUP_MISSING_ET   /* We pushed a group already and then had another BT occur */
 } pdf14_text_group_state;
 
 typedef struct gs_transparency_source_s {
