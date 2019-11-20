@@ -21,7 +21,7 @@
 #  define pxpthr_INCLUDED
 
 /* set passthrough contiguous mode */
-void pxpcl_passthroughcontiguous(bool contiguous);
+void pxpcl_passthroughcontiguous(px_state_t * pxs, bool contiguous);
 
 /* end passthrough contiguous mode */
 void pxpcl_endpassthroughcontiguous(px_state_t * pxs);

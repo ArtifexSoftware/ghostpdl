@@ -51,6 +51,8 @@ px_state_alloc(gs_memory_t * memory)
         goto fail;
 
     pxs->pcs = NULL;
+    pxs->this_pass_contiguous = false;
+    pxs->pass_first = true;
 
     return pxs;
 

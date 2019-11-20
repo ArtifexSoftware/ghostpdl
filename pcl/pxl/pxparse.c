@@ -559,7 +559,7 @@ px_process(px_parser_state_t * st, px_state_t * pxs, stream_cursor_read * pr)
                    preceded by another passthrough operator or a
                    different xl operator */
                 if (tag == pxtPassThrough) {
-                    pxpcl_passthroughcontiguous(st->last_operator == tag);
+                    pxpcl_passthroughcontiguous(pxs, st->last_operator == tag);
                 } else if (st->last_operator == pxtPassThrough) {
                     pxpcl_endpassthroughcontiguous(pxs);
                 }

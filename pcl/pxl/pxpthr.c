@@ -45,18 +45,6 @@
 /* NB - globals needing cleanup
  */
 
-static pcl_parser_state_t global_pcl_parser_state;
-
-static hpgl_parser_state_t global_gl_parser_state;
-
-/* if this is a contiguous passthrough meaning that 2 passtrough
-   operators have been given back to back and pxl should not regain
-   control. */
-static bool global_this_pass_contiguous = false;
-
-/* this is the first passthrough on this page */
-static bool global_pass_first = true;
-
 /* store away the current font attributes PCL can't set these,
  * they persist for XL */
 gs_point global_char_shear;
@@ -190,9 +178,9 @@ pxPassthrough_init(px_state_t * pxs)
     pxs->pcs->xfm_state.paper_size = pcl_get_default_paper(pxs->pcs);
     pcl_do_resets(pxs->pcs, pcl_reset_initial);
     /* set the parser state and initialize the pcl parser */
-    global_pcl_parser_state.definitions = pxs->pcs->pcl_commands;
-    global_pcl_parser_state.hpgl_parser_state = &global_gl_parser_state;
-    pcl_process_init(&global_pcl_parser_state, pxs->pcs);
+    pxs->pcl_parser_state.definitions = pxs->pcs->pcl_commands;
+    pxs->pcl_parser_state.hpgl_parser_state = &pxs->gl_parser_state;
+    pcl_process_init(&pxs->pcl_parser_state, pxs->pcs);
     /* default 600 to match XL allow PCL to override */
     pxs->pcs->uom_cp = 7200L / 600L;
     return gs_setgray(pxs->pcs->pgs, 0);
@@ -269,18 +257,18 @@ pxPassthrough(px_args_t * par, px_state_t * pxs)
                 pxPassthrough_init(pxs);
 
             /* this is the first passthrough on this page */
-            if (global_pass_first) {
+            if (pxs->pass_first) {
                 code = pxPassthrough_setpagestate(pxs);
                 if (code < 0)
                     return code;
                 code = pxPassthrough_pcl_state_nonpage_exceptions(pxs);
                 if (code < 0)
                     return code;
-                global_pass_first = false;
+                pxs->pass_first = false;
             } else {
                 /* there was a previous passthrough check if there were
                    any intervening XL commands */
-                if (global_this_pass_contiguous == false) {
+                if (pxs->this_pass_contiguous == false) {
                     code = pxPassthrough_pcl_state_nonpage_exceptions(pxs);
                     if (code < 0)
                         return code;
@@ -294,7 +282,7 @@ pxPassthrough(px_args_t * par, px_state_t * pxs)
     /* set pcl data stream pointers to xl's and process this batch of data. */
     r.ptr = par->source.data - 1;
     r.limit = par->source.data + par->source.available - 1;
-    code = pcl_process(&global_pcl_parser_state, pxs->pcs, &r);
+    code = pcl_process(&pxs->pcl_parser_state, pxs->pcs, &r);
     /* updata xl's parser position to reflect what pcl has consumed. */
     used = (r.ptr + 1 - par->source.data);
     par->source.available -= used;
@@ -322,7 +310,7 @@ pxPassthrough(px_args_t * par, px_state_t * pxs)
 void
 pxpcl_pagestatereset(px_state_t* pxs)
 {
-    global_pass_first = true;
+    pxs->pass_first = true;
     if (pxs->pcs) {
         pxs->pcs->xfm_state.left_offset_cp = 0.0;
         pxs->pcs->xfm_state.top_offset_cp = 0.0;
@@ -345,8 +333,8 @@ pxpcl_release(px_state_t * pxs)
         pxs->pcs->end_page = pcl_end_page_top;        /* pcl_end_page handling */
         pxpcl_pagestatereset(pxs);
         pxs->pcs = NULL;
-        global_this_pass_contiguous = false;
-        global_pass_first = true;
+        pxs->this_pass_contiguous = false;
+        pxs->pass_first = true;
         global_char_angle = 0;
         global_char_shear.x = 0;
         global_char_shear.y = 0;
@@ -358,9 +346,9 @@ pxpcl_release(px_state_t * pxs)
 
 /* the pxl parser must give us this information */
 void
-pxpcl_passthroughcontiguous(bool cont)
+pxpcl_passthroughcontiguous(px_state_t * pxs, bool cont)
 {
-    global_this_pass_contiguous = cont;
+    pxs->this_pass_contiguous = cont;
 }
 
 /* copy state from pcl to pxl after a non-snippet passthrough
@@ -399,18 +387,18 @@ pxpcl_selectfont(px_args_t * par, px_state_t * pxs)
         pxPassthrough_init(pxs);
 
     /* this is the first passthrough on this page */
-    if (global_pass_first) {
+    if (pxs->pass_first) {
         code = pxPassthrough_setpagestate(pxs);
         if (code < 0)
             return code;
         code = pxPassthrough_pcl_state_nonpage_exceptions(pxs);
         if (code < 0)
             return code;
-        global_pass_first = false;
+        pxs->pass_first = false;
     } else {
         /* there was a previous passthrough check if there were
            any intervening XL commands */
-        if (global_this_pass_contiguous == false) {
+        if (pxs->this_pass_contiguous == false) {
             code = pxPassthrough_pcl_state_nonpage_exceptions(pxs);
             if (code < 0)
                 return code;
@@ -419,7 +407,7 @@ pxpcl_selectfont(px_args_t * par, px_state_t * pxs)
     r.ptr = str - 1;
     r.limit = str + len - 1;
 
-    code = pcl_process(&global_pcl_parser_state, pxs->pcs, &r);
+    code = pcl_process(&pxs->pcl_parser_state, pxs->pcs, &r);
     if (code < 0)
         return code;
 
