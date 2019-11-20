@@ -43,6 +43,8 @@ extern pl_interp_implementation_t pwg_implementation;
 
 extern pl_interp_implementation_t tiff_implementation;
 
+extern pl_interp_implementation_t jbig2_implementation;
+
 /* Zero-terminated list of pointers to implementations */
 pl_interp_implementation_t *pdl_implementations[] = {
     &pjl_implementation,
@@ -67,6 +69,9 @@ pl_interp_implementation_t *pdl_implementations[] = {
 #endif
 #ifdef TIFF_INCLUDED
     &tiff_implementation,
+#endif
+#ifdef JBIG2_INCLUDED
+    &jbig2_implementation,
 #endif
     0
 };

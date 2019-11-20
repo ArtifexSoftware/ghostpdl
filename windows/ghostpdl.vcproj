@@ -306,6 +306,10 @@
 			Name="gpdl"
 			>
 			<File
+				RelativePath="..\gpdl\jbig2top.c"
+				>
+			</File>
+			<File
 				RelativePath="..\gpdl\jpgtop.c"
 				>
 			</File>
