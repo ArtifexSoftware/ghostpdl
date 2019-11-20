@@ -159,6 +159,8 @@ struct px_state_s
     pl_interp_implementation_t *pjls;
     /* ---------------- PCL state -------------------- */
     pl_interp_implementation_t *pcls;
+
+    struct pcl_state_s *pcs;
 };
 
 /* Allocate a px_state_t. */

@@ -146,7 +146,7 @@ px_end_page_cleanup(px_state_t * pxs)
     pxPopGS(NULL, pxs);
     pxNewPath(NULL, pxs);
     px_purge_pattern_cache(pxs, ePagePattern);
-    pxpcl_pagestatereset();
+    pxpcl_pagestatereset(pxs);
 }
 
 /* Purge all */
@@ -187,7 +187,7 @@ px_end_session_cleanup(px_state_t * pxs)
     px_dict_release(&pxs->stream_dict);
     /* delete downloaded fonts on end of session */
     px_dict_release(&pxs->font_dict);
-    pxpcl_release();
+    pxpcl_release(pxs);
 }
 
 /* ---------------- Non-operator procedures ---------------- */

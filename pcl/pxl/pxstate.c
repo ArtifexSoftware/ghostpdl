@@ -50,6 +50,8 @@ px_state_alloc(gs_memory_t * memory)
     if (pxs->font_dir == 0)
         goto fail;
 
+    pxs->pcs = NULL;
+
     return pxs;
 
 fail:
