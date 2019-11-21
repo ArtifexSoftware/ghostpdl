@@ -1423,8 +1423,12 @@ drawopdict begin
           } {
             clippath
           } ifelse
-          //null setup_trans
+          % If we get an error, just emit an empty box
+          { pathbbox } stopped { 0 0 0 0 } if
+          4 array astore
           grestore
+          //null
+          setup_trans
           //do_shade exec
           teardown_trans
         } {
@@ -2247,7 +2251,8 @@ currentdict /last-ditch-bpc-csp undef
        % We also need to actually set the current colour space to be the same as the group
        % code only picks up the current colour space, not the space from the dictionary.
        currentdict /SMask get /Matte known {/CS currentdict /ColorSpace get dup pdfopdict /cs get exec } if
-    >> 0 0 1 1 .begintransparencygroup
+    >> 0 0 1 1
+    .begintransparencygroup
      doimage
     .endtransparencygroup
     % tell the compositor we're done with the SMask.
@@ -2258,7 +2263,8 @@ currentdict /last-ditch-bpc-csp undef
   } {
     .currentSMask //null ne {
       % the image doesn't have an SMask, but the ExtGState does, force a group.
-      << /Subtype /Group /Isolated //true >> 0 0 1 1 .begintransparencygroup
+      << /Subtype /Group /Isolated //true >> 0 0 1 1
+      .begintransparencygroup
       doimage
       .endtransparencygroup
     }
@@ -2339,7 +2345,12 @@ currentdict /last-ditch-bpc-csp undef
       makemaskimage
   } if
                 % Stack: datasource imagemask
-  gsave 1 1 moveto 0 0 lineto /image setup_trans grestore
+  gsave 1 1 moveto 0 0 lineto
+  % If we get an error, just emit an empty box
+  { pathbbox } stopped { 0 0 0 0 } if
+  4 array astore grestore
+  /image
+  setup_trans
   { currentdict end setfillstate //true ValidateDecode { imagemask } }
   { ColorSpace setgcolorspace currentdict end setfillblend //false ValidateDecode { image } }
   ifelse
@@ -4236,7 +4247,9 @@ currentdict /set_bc_color undef
         } repeat
         PDFusingtransparency {
           //emptydict
-          pathbbox 2 index add exch 3 index add exch .begintransparencygroup
+          % If we get an error, just emit an empty box
+          { pathbbox } stopped { 0 0 0 0 } if
+          2 index add exch 3 index add exch .begintransparencygroup
           /Multiply .setblendmode
           fill
           .endtransparencygroup
