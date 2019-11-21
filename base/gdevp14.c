@@ -7515,7 +7515,7 @@ find_opening_op(int opening_op, gs_composite_t **ppcte,
             if (op != PDF14_SET_BLEND_PARAMS) {
                 if (opening_op == PDF14_BEGIN_TRANS_MASK)
                     return COMP_ENQUEUE;
-                if (opening_op == PDF14_BEGIN_TRANS_GROUP || opening_op == PDF14_BEGIN_TRANS_PAGE_GROUP || opening_op == PDF14_BEGIN_TRANS_PAGE_GROUP) {
+                if (opening_op == PDF14_BEGIN_TRANS_GROUP || opening_op == PDF14_BEGIN_TRANS_PAGE_GROUP) {
                     if (op != PDF14_BEGIN_TRANS_MASK && op != PDF14_END_TRANS_MASK)
                         return COMP_ENQUEUE;
                 }
