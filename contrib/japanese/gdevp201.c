@@ -242,7 +242,7 @@ pr201_print_page(gx_device_printer *pdev, gp_file *prn_stream)
                 out_beg -= (out_beg - out) % bytes_per_column;
 
                 /* Dot addressing */
-                gp_fprintf(pdev->file, "\033F%04d",
+                gp_fprintf(pdev->file, "\033F%04" PRIdSIZE,
                            (out_beg - out) / bytes_per_column);
 
                 /* Dot graphics */
