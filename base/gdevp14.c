@@ -2813,6 +2813,7 @@ gs_pdf14_device_copy_params(gx_device *dev, const gx_device *target)
     cmm_dev_profile_t *profile_targ;
     cmm_dev_profile_t *profile_dev14;
     pdf14_device *pdev = (pdf14_device*) dev;
+    int k;
 
     COPY_PARAM(width);
     COPY_PARAM(height);
@@ -2837,17 +2838,24 @@ gs_pdf14_device_copy_params(gx_device *dev, const gx_device *target)
         profile_dev14 = dev->icc_struct;
         dev_proc((gx_device *) target, get_profile)((gx_device *) target,
                                           &(profile_targ));
-        gsicc_adjust_profile_rc(profile_targ->device_profile[0], 1, "gs_pdf14_device_copy_params");
-        if (profile_dev14->device_profile[0] != NULL) {
-            gsicc_adjust_profile_rc(profile_dev14->device_profile[0], -1, "gs_pdf14_device_copy_params");
+
+        for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
+            if (profile_targ->device_profile[k] != NULL) {
+                gsicc_adjust_profile_rc(profile_targ->device_profile[k], 1, "gs_pdf14_device_copy_params");
+            }
+            if (profile_dev14->device_profile[k] != NULL) {
+                gsicc_adjust_profile_rc(profile_dev14->device_profile[k], -1, "gs_pdf14_device_copy_params");
+            }
+            profile_dev14->device_profile[k] = profile_targ->device_profile[k];
+            profile_dev14->rendercond[k] = profile_targ->rendercond[k];
         }
-        profile_dev14->device_profile[0] = profile_targ->device_profile[0];
+
         dev->icc_struct->devicegraytok = profile_targ->devicegraytok;
         dev->icc_struct->graydetection = profile_targ->graydetection;
         dev->icc_struct->pageneutralcolor = profile_targ->pageneutralcolor;
         dev->icc_struct->supports_devn = profile_targ->supports_devn;
         dev->icc_struct->usefastcolor = profile_targ->usefastcolor;
-        profile_dev14->rendercond[0] = profile_targ->rendercond[0];
+
         if (pdev->using_blend_cs) {
             /* Swap the device profile and the blend profile. */
             gsicc_adjust_profile_rc(profile_targ->device_profile[0], 1, "gs_pdf14_device_copy_params");
