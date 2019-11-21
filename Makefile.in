@@ -561,6 +561,9 @@ SO_LIB_VERSION_SEPARATOR=@SO_LIB_VERSION_SEPARATOR@
 #CAIRO_CFLAGS	=	@CAIRO_CFLAGS@
 #CAIRO_LIBS	=	@CAIRO_LIBS@
 
+# AUX Tools flags
+MKROMFS_FLAGS=@MKROMFS_FLAGS@
+
 # ------ Devices and features ------ #
 
 # Choose the language feature(s) to include.  See gs.mak for details.

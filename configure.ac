@@ -3407,6 +3407,14 @@ if test x"$build" != x"$host"; then
 fi
 
 dnl --------------------------------------------------
+dnl AUX tool options
+dnl --------------------------------------------------
+AC_ARG_ENABLE([mkromfs-quiet], AC_HELP_STRING([--enable-mkromfs-quiet],
+       [Do not emit mkromfs verbose output]), [MKROMFS_FLAGS="-q $MKROMFS_FLAGS"])
+
+AC_SUBST(MKROMFS_FLAGS)
+
+dnl --------------------------------------------------
 dnl Do substitutions
 dnl --------------------------------------------------
 SRCDIR="$srcdir"
