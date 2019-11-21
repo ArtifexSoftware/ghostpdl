@@ -131,7 +131,20 @@ with the names of font <em>files</em>, such as
 aliases for font names, so that for instance,
 <code>/NimbusNo9L-Regu</code> means the same font as
 <code>/Times-Roman</code>.</p>
-
+<p>Where a mapping in <code>Fontmap</code> maps a font name to a path/file,
+the directory containing the font file is automatically added to the <code>permit
+file read</code> list. For example:
+<br>
+<code>/Arial           (/usr/share/fonts/truetype/msttcorefonts/arial.ttf) ;</code>
+<br>
+will result in the path <code>/usr/share/fonts/truetype/msttcorefonts/</code> being
+added to the <code>permit file read</code> list. This is done on the basis that font files
+are often grouped in common directories, and rather than risk the file permissions lists
+being swamped with (potentially) hundreds of individual files, it makes sense to add the
+directories.
+<p><b>NOTE:</b> Fontmap is processed (and the paths added to the file permissions list) during
+initialisation of the Postscript interpreter, so any attempt by a Postscript job to change the
+font map cannot influence the file permissions list.
 <hr>
 
 <h2><a name="Free_fonts"></a>Ghostscript's free fonts</h2>

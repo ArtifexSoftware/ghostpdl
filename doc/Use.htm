@@ -2761,7 +2761,10 @@ names are separated by "<code>:</code>" on Unix systems, by
     <dt><code>-sFONTPATH=</code><em>dir1</em><code>;</code><em>dir2</em><code>;</code><em>...</em></dt>
 <dd>Specifies a list of directories that will be scanned when looking for
 fonts not found on the search path, overriding the environment variable
-    <code>GS_FONTPATH</code>.</dd>
+    <code>GS_FONTPATH</code>.
+<p>By implication, any paths specified by <code>FONTPATH</code> or <code>GS_FONTPATH</code> are automatically
+added to the <code>permit file read</code> list (see "<a href="#Safer">-dSAFER</a>").
+</dd>
 </dl>
 
 <dl>
