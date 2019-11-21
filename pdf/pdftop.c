@@ -408,8 +408,13 @@ pdf_impl_set_param(pl_interp_implementation_t *impl,
         ctx->showacroform = boolval;
         return 0;
     }
+    ctx->showannots = true;;
     if (!strncmp(param, "ShowAnnots", 10)) {
         ctx->showannots = boolval;
+        return 0;
+    }
+    if (!strncmp(param, "PreserveAnnots", 14)) {
+        ctx->preserveannots = boolval;
         return 0;
     }
     if (!strncmp(param, "NoUserUnit", 10)) {
@@ -422,6 +427,10 @@ pdf_impl_set_param(pl_interp_implementation_t *impl,
     }
     if (!strncmp(param, "PDFINFO", 13)) {
         ctx->pdfinfo = boolval;
+        return 0;
+    }
+    if (!strncmp(param, "DOPDFMARKS", 10)) {
+        ctx->dopdfmarks = boolval;
         return 0;
     }
     return 0;

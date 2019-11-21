@@ -298,7 +298,7 @@ int pdfi_ri(pdf_context *ctx)
  * functions to 'wrap' these with code to check for replacement of Patterns.
  * This comment is duplicated in pdf_pattern.c
  */
-static int pdfi_gs_setgray(pdf_context *ctx, double d)
+int pdfi_gs_setgray(pdf_context *ctx, double d)
 {
     /* PDF Reference 1.7 p423, any colour operators in a CharProc, following a d1, should be ignored */
     if (ctx->inside_CharProc && ctx->CharProc_is_d1)
@@ -563,6 +563,47 @@ int pdfi_setcmykfill(pdf_context *ctx)
         return code;
     else
         return 0;
+}
+
+/* Do a setcolor using values in an array
+ * Will do gray, rgb, cmyk for sizes 1,3,4
+ * Anything else is an error
+ */
+int pdfi_setcolor_from_array(pdf_context *ctx, pdf_array *array)
+{
+    int code = 0;
+    uint64_t size;
+    double values[4];
+    int i;
+
+    size = pdfi_array_size(array);
+    if (size != 1 && size != 3 && size != 4) {
+        code = gs_note_error(gs_error_rangecheck);
+        goto exit;
+    }
+
+    for (i=0; i<size; i++) {
+        code = pdfi_array_get_number(ctx, array, i, &values[i]);
+        if (code < 0)
+            goto exit;
+    }
+
+    switch (size) {
+    case 1:
+        code = pdfi_gs_setgray(ctx, values[0]);
+        break;
+    case 3:
+        code = pdfi_gs_setrgbcolor(ctx, values[0], values[1], values[2]);
+        break;
+    case 4:
+        code = pdfi_gs_setcmykcolor(ctx, values[0], values[1], values[2], values[3]);
+        break;
+    default:
+        break;
+    }
+
+ exit:
+    return code;
 }
 
 /* Get colors from top of stack into a client color */

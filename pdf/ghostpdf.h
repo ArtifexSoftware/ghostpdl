@@ -200,6 +200,8 @@ typedef struct pdf_context_s
     bool printed;
     bool showacroform;
     bool showannots;
+    bool dopdfmarks;
+    bool preserveannots;
     bool nouserunit;
     bool renderttnotdef;
     bool pdfinfo;
@@ -292,6 +294,12 @@ typedef struct pdf_context_s
 
     /* Does this page need overprint support? */
     bool page_needs_OP;
+
+    /* Does current output device handle pdfmark */
+    bool writepdfmarks;
+
+    /* Should annotations be preserved or marked for current output device? */
+    bool annotations_preserved;
 
     double PageSize[4];
     double UserUnit;

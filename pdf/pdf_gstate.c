@@ -414,7 +414,7 @@ int pdfi_setflat(pdf_context *ctx)
         return 0;
 }
 
-static int setdash_impl(pdf_context *ctx, pdf_array *a, double phase_d)
+int pdfi_setdash_impl(pdf_context *ctx, pdf_array *a, double phase_d)
 {
     float *dash_array;
     double temp;
@@ -481,7 +481,7 @@ int pdfi_setdash(pdf_context *ctx)
             return 0;
     }
 
-    code = setdash_impl(ctx, a, phase_d);
+    code = pdfi_setdash_impl(ctx, a, phase_d);
     pdfi_pop(ctx, 2);
     if(code < 0 && ctx->pdfstoponerror)
         return code;
@@ -598,7 +598,7 @@ static int GS_D(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict 
         return code;
     }
 
-    code = setdash_impl(ctx, a1, d);
+    code = pdfi_setdash_impl(ctx, a1, d);
     pdfi_countdown(a1);
     pdfi_countdown(a);
     return code;

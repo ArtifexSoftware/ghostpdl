@@ -28,6 +28,7 @@
 #include "pdf_gstate.h"
 #include "pdf_misc.h"
 #include "pdf_optcontent.h"
+#include "pdf_device.h"
 #include "pdf_annot.h"
 
 static int pdfi_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
@@ -148,6 +149,8 @@ static int pdfi_process_one_page(pdf_context *ctx, pdf_dict *page_dict)
     code1 = pdfi_do_annotations(ctx, page_dict);
     if (code > 0)
         code = code1;
+
+    /* TODO: Handle "ShowAcroForm" goes here */
 
     return code;
 }
@@ -424,6 +427,7 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num)
      * This needs to be before transparency device is pushed, if applicable
      */
     pdfi_trans_set_needs_OP(ctx);
+    pdfi_device_set_flags(ctx);
     pdfi_oc_init(ctx);
 
     pdfi_gsave(ctx);

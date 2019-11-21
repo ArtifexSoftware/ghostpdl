@@ -36,6 +36,7 @@ static int pdfi_device_check_param(gx_device *dev, const char *param, gs_c_param
     return 0;
 }
 
+/* Check value of boolean device parameter */
 bool pdfi_device_check_param_bool(gx_device *dev, const char *param)
 {
     int code;
@@ -51,4 +52,36 @@ bool pdfi_device_check_param_bool(gx_device *dev, const char *param)
                            &value);
     gs_c_param_list_release(&list);
     return value;
+}
+
+/* Checks whether a parameter exists for the device */
+bool pdfi_device_check_param_exists(gx_device *dev, const char *param)
+{
+    int code;
+    gs_c_param_list list;
+
+    code = pdfi_device_check_param(dev, param, &list);
+    if (code < 0)
+        return false;
+    gs_c_param_list_release(&list);
+    return true;
+}
+
+/* Config some device-related variables */
+void pdfi_device_set_flags(pdf_context *ctx)
+{
+    bool has_pdfmark;
+    bool has_ForOPDFRead;
+
+    has_pdfmark = pdfi_device_check_param_exists(ctx->pgs->device, "pdfmark");
+    has_ForOPDFRead = pdfi_device_check_param_bool(ctx->pgs->device, "ForOPDFRead");
+
+    /* Cache these so they don't have to constantly be calculated */
+    ctx->writepdfmarks = has_pdfmark || ctx->dopdfmarks;
+    ctx->annotations_preserved = ctx->writepdfmarks && !has_ForOPDFRead;
+
+    dbgmprintf2(ctx->memory, "Device writepdfmarks=%s, annotations_preserved=%s\n",
+                ctx->writepdfmarks ? "TRUE" : "FALSE",
+                ctx->annotations_preserved ? "TRUE" : "FALSE");
+
 }

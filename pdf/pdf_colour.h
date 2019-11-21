@@ -33,6 +33,9 @@ int pdfi_setfillcolor(pdf_context *ctx);
 int pdfi_setcolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, bool is_fill);
 int pdfi_ri(pdf_context *ctx);
 
+int pdfi_setcolor_from_array(pdf_context *ctx, pdf_array *array);
+int pdfi_gs_setgray(pdf_context *ctx, double d);
+
 /* For potential use by other types of object (images etc) */
 int pdfi_setcolorspace(pdf_context *ctx, pdf_obj *space, pdf_dict *stream_dict, pdf_dict *page_dict);
 int pdfi_create_colorspace(pdf_context *ctx, pdf_obj *space, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs, bool inline_image);
