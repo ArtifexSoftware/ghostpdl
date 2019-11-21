@@ -638,7 +638,7 @@ hpgl_SC(hpgl_args_t * pargs, hpgl_state_t * pgls)
             return e_Range;
         case 4:
             type = hpgl_scaling_anisotropic;
-            hpgl_arg_c_int(pgls->memory, pargs, &type);
+            (void) hpgl_arg_c_int(pgls->memory, pargs, &type);
             switch (type) {
                 case hpgl_scaling_anisotropic: /* 0 */
                     if (xy[0] == xy[1] || xy[2] == xy[3])
