@@ -785,7 +785,7 @@ currentdict dup /Dpush .undef /Dpop .undef
 /fsexec		% <fillop|strokeop> fsexec -
 {
    PDFusingtransparency {
-     dup /stroke eq {
+     dup /stroke eq 1 index /.fillstroke eq or 1 index /.eofillstroke eq or {
        % BBox needs to include line width / line join expansion.
        % strokepath will return empty path (no currentpoint) if nothing is stroked
        { gsave strokepath pathbbox } stopped grestore {
@@ -932,7 +932,7 @@ currentdict dup /Dpush .undef /Dpop .undef
 
 /B {
   OFFlevels length 0 eq {
-    .fillstroke
+    setstrokestate setfillstate /.fillstroke fsexec
   } {
     newpath
   } ifelse
@@ -942,7 +942,7 @@ currentdict dup /Dpush .undef /Dpop .undef
 
 /B* {
   OFFlevels length 0 eq {
-    .eofillstroke
+    setstrokestate setfillstate /.eofillstroke fsexec
   } {
     newpath
   } ifelse
