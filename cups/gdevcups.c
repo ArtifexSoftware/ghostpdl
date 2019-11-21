@@ -2860,7 +2860,7 @@ cups_open(gx_device *pdev)		/* I - Device info */
     cups->PPD = ppdOpenFile(getenv("PPD"));
 
   if (cups->pageSizeRequested[0] == '\0') {
-    strncpy(cups->pageSizeRequested, cups->header.cupsPageSizeName, 64);
+    (void) snprintf(cups->pageSizeRequested, sizeof(cups->pageSizeRequested), "%s", cups->header.cupsPageSizeName);
 #ifdef CUPS_DEBUG
     dmprintf1(pdev->memory, "DEBUG: Page size requested: %s\n",
 	      cups->header.cupsPageSizeName);
