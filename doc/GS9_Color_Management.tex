@@ -24,6 +24,8 @@
 \usepackage{color}
 \usepackage{caption} % so that I can have captions that dont wrap back under the caption index
 \usepackage{hyperref}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
 \usepackage[ansinew]{inputenc}
 \usepackage[all]{hypcap} % so that links to figures go to the figures and not the captions
 \usepackage{subfig}   % subfigure
@@ -35,24 +37,24 @@
 
 \begin{titlepage}
 
-\begin{center}{\huge \bf Ghostscript 9.21 Color Management\\} \vspace{0.5in} {\Large Michael J.
-Vrhel, Ph.D.\\} {\Large Artifex Software\\} {\Large 7 Mt. Lassen Drive, A-134\\} {\Large Novato, CA 94903, USA\\}
+\begin{center}{\huge \bf Ghostscript 9.50 Color Management\\} \vspace{0.5in} {\Large Michael J.
+Vrhel, Ph.D.\\} {\Large Artifex Software\\} {\Large 7 Mt. Lassen Drive, A-134\\} {\Large San Rafael, CA 94903, USA\\}
 {\Large www.artifex.com\\}
 \end{center}
 \vspace*{0.5in}
 \begin{abstract}
-This document provides information about the color architecture in Ghostscript 9.21. The document is suitable for users who wish to
+This document provides information about the color architecture in Ghostscript 9.50. The document is suitable for users who wish to
 obtain accurate color with their output device as well as for developers who wish to customize Ghostscript to achieve a higher
 level of control and/or interface with a different color management module.
 \end{abstract}
 \begin{center}
 \vspace*{0.25in}
-Revision 1.6
+Revision 1.65
 \vspace*{0.25in}
 \capstartfalse
 \begin{figure}[h]
     \begin{center}
-\includegraphics*[width=1.5in]{figures/Ghost.pdf}
+\includegraphics*[width=1.5in]{figures/ghostscriptR_stack_RGBclr_CS6.pdf}
     \end{center}
 \end{figure}
 \capstarttrue
@@ -72,7 +74,7 @@ Revision 1.6
 
 With release 9.0, the color architecture of Ghostscript was updated to primarily use the ICC\cite{ICC} format for its color management needs.  Prior to this release, Ghostscript's color architecture was based heavily upon PostScript\cite{PS} Color Management (PCM).  This is due to the fact that Ghostscript was designed prior to the ICC format and likely even before there was much thought about digital color management.  At that point in time, color management was very much an art with someone adjusting controls to achieve the proper output color.
 
-Today, almost all print color management is performed using ICC profiles as opposed to PCM.  This fact along with the desire to create a faster, more flexible design was the motivation for the color architectural changes in release 9.0.  Since 9.0, several new features and capabilities  have been added. As of the 9.21 release, features of the color architecture include:
+Today, almost all print color management is performed using ICC profiles as opposed to PCM.  This fact along with the desire to create a faster, more flexible design was the motivation for the color architectural changes in release 9.0.  Since 9.0, several new features and capabilities  have been added. As of the 9.50 release, features of the color architecture include:
 \begin{itemize}
 \item Easy to interface different CMMs (Color Management Modules) with Ghostscript.
 \item ALL color spaces are defined in terms of ICC profiles.
@@ -371,7 +373,7 @@ In the first example, copy the files in ./gs/toolbin/color/src\_color/ to ./iccp
   %  \leavevmode \epsfysize=3.0in
 \includegraphics*[width=2.5in]{figures/text_graph_image_cmyk_rgb.pdf}
     \end{center}
-   \caption{Example file with mixed content. The file includes RGB and CMYK text, graphics, and images}
+   \caption{Example file with mixed content. The file includes RGB and CMYK text, graphics, and iamges}
     \label{fig:normal}
 \end{figure}
 
@@ -463,9 +465,9 @@ The manager is created when the imaging state object is created for the graphics
   & cmm\_profile\_t *default\_rgb;    &	 \textcolor{green}{/* Default RGB profile for device RGB */}    \\
   & cmm\_profile\_t *default\_cmyk;   & 	\textcolor{green}{/* Default CMYK profile for device CMKY */} \\
   & cmm\_profile\_t *lab\_profile;    &  \textcolor{green}{/* Colorspace type ICC profile from LAB to LAB */}   \\
-  & cmm\_profile\_t *xyz\_profile;    &  \textcolor{green}{/* RGB based profile that hands back CIEXYZ values */}   \\
+  & cmm\_profile\_t *xyz\_profile;    &  \textcolor{green}{/* RGB profile that hands back CIEXYZ values */}   \\
   & cmm\_profile\_t *graytok\_profile;&  \textcolor{green}{/* A specialized profile for mapping gray to K */}   \\
-  & gsicc\_devicen\_t *device\_n;     &  \textcolor{green}{/* A linked list of profiles used for DeviceN support */} \\
+  & gsicc\_devicen\_t *device\_n;     &  \textcolor{green}{/* A linked list of profiles for DeviceN support */} \\
   & gsicc\_smask\_t *smask\_profiles; &  \textcolor{green}{/* Profiles used when we are in a softmask group */ } \\
   & bool override\_internal; &  \textcolor{green}{/* Set via the user params */ } \\
   & cmm\_srcgtag\_profile\_t *srcgtag\_profile; &  \textcolor{green}{/* Object dependent source profiles */ } \\
@@ -525,7 +527,8 @@ Returns an ICC object given a stream pointer to the ICC content.  The variables 
 \\
 
 \begin{tabbing}
-\noindent int {\bf gsicc\_clone\_profile}(cmm\_profile\_t *source, cmm\_profile\_t **destination, gs\_memory\_t *memory);\\
+\noindent int {\bf gsicc\_clone\_profile}(\=cmm\_profile\_t *source, cmm\_profile\_t **destination, \\
+\>gs\_memory\_t *memory);\\
 \end{tabbing}
 
 \begin{minipage}[h]{6.0in}
@@ -601,7 +604,8 @@ Read out the serialized icc data contained in the c-list for a given hash code.
 \end{minipage}\\
 
 \begin{tabbing}
-\noindent cmm\_profile\_t* {\bf gsicc\_get\_gscs\_profile}(gs\_color\_space *gs\_colorspace, gsicc\_manager\_t *icc\_manager);\\
+\noindent cmm\_profile\_t* {\bf gsicc\_get\_gscs\_profile}(\=gs\_color\_space *gs\_colorspace, \\
+\> gsicc\_manager\_t *icc\_manager);\\
 \end{tabbing}
 
 \begin{minipage}[h]{6.0in}
@@ -642,8 +646,8 @@ Detect profiles that were set as part of the default settings.  These are needed
 \end{minipage}\\
 
 \begin{tabbing}
-\noindent void {\bf gsicc\_get\_srcprofile}(\=gsicc\_colorbuffer\_t data\_cs,
-                     gs\_graphics\_type\_tag\_t graphics\_type\_tag,\\
+\noindent void {\bf gsicc\_get\_srcprofile}(\=gsicc\_colorbuffer\_t data\_cs,\\
+                     \>gs\_graphics\_type\_tag\_t graphics\_type\_tag,\\
                      \>cmm\_srcgtag\_profile\_t *srcgtag\_profile,
                      cmm\_profile\_t **profile,\\
                      \>gsicc\_rendering\_intents\_t *rendering\_intent);\\
@@ -677,8 +681,8 @@ of this structure are shown below.\\
  & bool usefastcolor;     &   \textcolor{green}{/* No color management */} \\
  & bool supports\_devn;     &   \textcolor{green}{/* Set if the device handles DeviceN colors */} \\
  & bool sim\_overprint;  &   \textcolor{green}{/* Indicates we want to do overprint blending */} \\
- & gsicc\_namelist\_t  *spotnames; & \textcolor{green}{/* If device has an NCLR ICC profile, list of colorant names */} \\
- & bool prebandthreshold;     &   \textcolor{green}{/* Set if we should halftone images before display list */} \\
+ & gsicc\_namelist\_t  *spotnames; & \textcolor{green}{/* If NCLR ICC profile, list of colorant names */} \\
+ & bool prebandthreshold;     &   \textcolor{green}{/* Should we halftone images before display list */} \\
   &       gs\_memory\_t *memory;    & \\
   &       rc\_header rc; &
 \end{tabular}
@@ -794,11 +798,11 @@ This is used to initialize a gsicc\_bufferdesc\_t object. Two of these objects a
 \\
 
 \begin{tabbing}
-\noindent gsicc\_link\_t* {\bf gsicc\_get\_link}(\=gs\_imager\_state * pis, gx\_device *dev, gs\_color\_space  *input\_colorspace,\\
+\noindent gsicc\_link\_t* {\bf gsicc\_get\_link}(\=gs\_imager\_state * pis, gx\_device *dev,\\
+				     \> gs\_color\_space  *input\_colorspace, \\
                                                \>gs\_color\_space *output\_colorspace,\\
-                                               \> gsicc\_rendering\_param\_t *rendering\_params
-                                               gs\_memory\_t
-                                               *memory);\\
+                                               \> gsicc\_rendering\_param\_t *rendering\_params,\\
+                                               \>gs\_memory\_t *memory);\\
 \end{tabbing}
 
 \begin{minipage}[h]{6.0in}
@@ -1177,7 +1181,7 @@ Reading Massachusetts, 1999.
 \end{thebibliography}
 
 \vspace*{1.25in}
-Copyright (c) 2017, Artifex Software Inc. All rights reserved.
+Copyright (c) 2019, Artifex Software Inc. All rights reserved.
 
 
 \end{document}
