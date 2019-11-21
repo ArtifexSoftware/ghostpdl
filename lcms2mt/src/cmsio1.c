@@ -308,6 +308,7 @@ cmsPipeline* CMSEXPORT _cmsReadInputLUT(cmsContext ContextID, cmsHPROFILE hProfi
     cmsTagTypeSignature OriginalType;
     cmsTagSignature tag16;
     cmsTagSignature tagFloat;
+    int k;
 
     // On named color, take the appropriate tag
     if (cmsGetDeviceClass(ContextID, hProfile) == cmsSigNamedColorClass) {
@@ -345,9 +346,17 @@ cmsPipeline* CMSEXPORT _cmsReadInputLUT(cmsContext ContextID, cmsHPROFILE hProfi
             return _cmsReadFloatInputTag(ContextID, hProfile, tagFloat);
         }
 
-        // Revert to perceptual if no tag is found
+        /* There are profiles out there (not legal) that may only have a
+           colorimetric or saturation tag and no perceptual tag.  If we
+           can't find the specified intent be a bit robust and not give
+           up until we can't find any table, starting with perceptual */
         if (!cmsIsTag(ContextID, hProfile, tag16)) {
-            tag16 = Device2PCS16[0];
+            for (k = 0; k < 3; k++) {
+                if (cmsIsTag(ContextID, hProfile, Device2PCS16[k])) {
+                    tag16 = Device2PCS16[k];
+                    break;
+                }
+            }
         }
 
         if (cmsIsTag(ContextID, hProfile, tag16)) { // Is there any LUT-Based table?
