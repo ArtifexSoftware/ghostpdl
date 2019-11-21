@@ -381,7 +381,7 @@ jbig2_data_in(Jbig2Ctx *ctx, const unsigned char *data, size_t size)
                 p += 4;
 
                 segment->data_length = p - s;
-                jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number, "unknown length determined to be %u", segment->data_length);
+                jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number, "unknown length determined to be %lu", (long) segment->data_length);
             }
             else if (segment->data_length > ctx->buf_wr_ix - ctx->buf_rd_ix)
                     return 0; /* need more data */
