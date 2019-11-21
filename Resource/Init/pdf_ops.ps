@@ -932,23 +932,7 @@ currentdict dup /Dpush .undef /Dpop .undef
 
 /B {
   OFFlevels length 0 eq {
-    PDFusingtransparency {
-      % knockout trans group around the filled and stroked object
-      mark
-      /Isolated //true /Knockout //true
-      .dicttomark
-      % strokepath will return empty path (no currentpoint) if nothing is stroked
-      gsave { strokepath pathbbox } stopped grestore not {
-        1 .setopacityalpha
-        .begintransparencygroup
-        gsave setfillstate fill grestore
-        setstrokestate .swapcolors /stroke fsexec .swapcolors
-        .endtransparencygroup
-      } { newpath pop } ifelse
-    } {
-      gsave setfillstate fill grestore
-      setstrokestate .swapcolors /stroke fsexec .swapcolors
-    } ifelse
+    .fillstroke
   } {
     newpath
   } ifelse
@@ -958,23 +942,7 @@ currentdict dup /Dpush .undef /Dpop .undef
 
 /B* {
   OFFlevels length 0 eq {
-    PDFusingtransparency {
-      % knockout trans group around the filled and stroked object
-      mark
-      /Isolated //true /Knockout //true
-      .dicttomark
-      % strokepath will return empty path (no currentpoint) if nothing is stroked
-      gsave { strokepath pathbbox } stopped grestore not {
-        1 .setopacityalpha
-        .begintransparencygroup
-        gsave setfillstate eofill grestore
-        setstrokestate .swapcolors /stroke fsexec .swapcolors
-        .endtransparencygroup
-      } { newpath pop } ifelse
-    } {
-      gsave setfillstate eofill grestore
-      setstrokestate .swapcolors /stroke fsexec .swapcolors
-    } ifelse
+    .eofillstroke
   } {
     newpath
   } ifelse
@@ -990,49 +958,14 @@ currentdict dup /Dpush .undef /Dpop .undef
 /f* { OFFlevels length 0 eq { gsave setfillstate eofill grestore } if n } bind executeonly def
 /B {
   OFFlevels length 0 eq {
-    PDFusingtransparency {
-      % knockout trans group around the filled and stroked object
-      mark
-      /Isolated //true /Knockout //true
-      .dicttomark
-      % strokepath will return empty path (no currentpoint) if nothing is stroked
-      gsave {strokepath pathbbox } stopped grestore not
-      {
-        1 .setopacityalpha
-        .begintransparencygroup
-        gsave setfillstate fill grestore
-        setstrokestate .swapcolors /stroke fsexec .swapcolors
-        .endtransparencygroup
-      } {
-        newpath pop
-      } ifelse
-    } {
-      gsave setfillstate fill grestore
-      setstrokestate .swapcolors /stroke fsexec .swapcolors
-    } ifelse
+    .fillstroke
   } if
   n
 } bind executeonly def
 /b { closepath B } bind executeonly def
 /B* {
   OFFlevels length 0 eq {
-    PDFusingtransparency {
-      % knockout trans group around the filled and stroked object
-      mark
-      /Isolated //true /Knockout //true
-      .dicttomark
-      % strokepath will return empty path (no currentpoint) if nothing is stroked
-      gsave {strokepath pathbbox} stopped grestore not {
-        1 .setopacityalpha
-        .begintransparencygroup
-        gsave setfillstate eofill grestore
-        setstrokestate .swapcolors /stroke fsexec .swapcolors
-        .endtransparencygroup
-      } { newpath pop } ifelse
-    } {
-      gsave setfillstate eofill grestore
-      setstrokestate .swapcolors /stroke fsexec .swapcolors
-    } ifelse
+    .eofillstroke
   } if
   n
 } bind executeonly def
@@ -1650,15 +1583,17 @@ end readonly def
 % If current path is not known to be valid, use the clip path
 /TextTransSetup {	% showarg path_valid TextTransSetup showarg
                         % showarg path_valid false TextTransSetup showarg
+   gsave
    % NB: if 'show' is used, then we use the clippath, but a smaller bbox is preferred
    {
      % path was (probably) valid (CTM may not be invertable)
      % Since TR mode may include stroking, expand for stroke
      % If we get an error, just emit an empty box
-     { gsave strokepath pathbbox } stopped grestore { 0 0 0 0 } if
+     { strokepath pathbbox } stopped { 0 0 0 0 } if
    } {
-     gsave clippath pathbbox grestore	% path not valid -- use clippath
+     clippath pathbbox stopped { 0 0 0 0 } if
    } ifelse
+   grestore
    4 array astore //null
    setup_trans
 } bind executeonly def
