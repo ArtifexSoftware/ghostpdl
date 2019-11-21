@@ -64,7 +64,7 @@ pxdict_h=$(PXLSRC)pxdict.h $(pldict_h) $(pxvalue_h)
 pxgstate_h=$(PXLSRC)pxgstate.h $(gsccolor_h) $(gsiparam_h) $(gsmatrix_h) $(gsrefct_h) $(gxbitmap_h) $(gxfixed_h) $(plsymbol_h) $(pxdict_h) $(pxenum_h)
 pxoper_h=$(PXLSRC)pxoper.h $(gserrors_h) $(pxattr_h) $(pxerrors_h) $(pxvalue_h)
 pxparse_h=$(PXLSRC)pxparse.h $(pxoper_h)
-pxstate_h=$(PXLSRC)pxstate.h $(gsmemory_h) $(pxgstate_h) $(pltop_h)
+pxstate_h=$(PXLSRC)pxstate.h $(gsmemory_h) $(pxgstate_h) $(pltop_h) $(gslibctx_h) $(gxtext_h) $(pcparse_h) $(pgmand_h)
 pxpthr_h=$(PXLSRC)pxpthr.h
 
 $(PXLOBJ)pxbfont.$(OBJ): $(PXLSRC)pxbfont.c $(AK) $(stdpre_h)\
