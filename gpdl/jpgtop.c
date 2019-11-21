@@ -22,6 +22,9 @@
 #include "gsstate.h"
 #include "strimpl.h"
 #include "gscoord.h"
+#include "gsicc_manage.h"
+#include "gspaint.h"
+#include "plmain.h"
 #include "jpeglib.h"
 #include "setjmp_.h"
 #include "sjpeg.h"
@@ -280,8 +283,6 @@ jpg_impl_process_file(pl_interp_implementation_t *impl, const char *filename)
 static int                      /* ret 0 or +ve if ok, else -ve error code */
 jpg_impl_process_begin(pl_interp_implementation_t * impl)
 {
-    jpg_interp_instance_t *jpg = (jpg_interp_instance_t *)impl->interp_client_data;
-
     return 0;
 }
 
@@ -373,24 +374,6 @@ bytes_until_uel(const stream_cursor_read *pr)
     return pr->limit - pr->ptr;
 }
 
-static int
-get32be(stream_cursor_read *pr)
-{
-    int v = pr->ptr[1] << 24;
-    v |= pr->ptr[2] << 16;
-    v |= pr->ptr[3] << 8;
-    v |= pr->ptr[4];
-    pr->ptr += 4;
-
-    return v;
-}
-
-static int
-get8(stream_cursor_read *pr)
-{
-    return *++(pr->ptr);
-}
-
 static void
 jpg_jpeg_init_source(j_decompress_ptr cinfo)
 {
@@ -437,7 +420,7 @@ jpg_error_exit(j_common_ptr cinfo)
 static int
 fill_jpeg_source(jpg_interp_instance_t *jpg, stream_cursor_read * pr)
 {
-    size_t n = pr->limit - pr->ptr;
+    size_t n = bytes_until_uel(pr);
     size_t skip = jpg->bytes_to_skip;
 
     /* Skip any bytes we are supposed to be skipping. */
@@ -779,14 +762,7 @@ jpg_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr)
 static int
 jpg_impl_process_end(pl_interp_implementation_t * impl)
 {
-    jpg_interp_instance_t *jpg = (jpg_interp_instance_t *)impl->interp_client_data;
-    int code = 0;
-
-    /* FIXME: */
-    if (code == gs_error_InterpreterExit || code == gs_error_NeedInput)
-        code = 0;
-
-    return code;
+    return 0;
 }
 
 /* Not implemented */

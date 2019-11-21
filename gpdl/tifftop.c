@@ -22,6 +22,9 @@
 #include "gsstate.h"
 #include "strimpl.h"
 #include "gscoord.h"
+#include "gsicc_manage.h"
+#include "gspaint.h"
+#include "plmain.h"
 #include "tiffio.h"
 
 /* Forward decls */
@@ -261,8 +264,6 @@ tiff_impl_process_file(pl_interp_implementation_t *impl, const char *filename)
 static int                      /* ret 0 or +ve if ok, else -ve error code */
 tiff_impl_process_begin(pl_interp_implementation_t * impl)
 {
-    tiff_interp_instance_t *tiff = (tiff_interp_instance_t *)impl->interp_client_data;
-
     return 0;
 }
 
@@ -399,7 +400,7 @@ static toff_t tifsSeekProc(thandle_t tiff_, toff_t offset, int whence)
     return offset;
 }
 
-static tifsCloseProc(thandle_t tiff_)
+static int tifsCloseProc(thandle_t tiff_)
 {
     return 0;
 }
@@ -527,7 +528,6 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
             tiff->yresolution = (uint32_t)(f+0.5);
 
             if (TIFFIsTiled(tiff->handle)) {
-                int x, y;
                 tiff->samples = gs_alloc_bytes(tiff->memory, TIFFTileSize(tiff->handle), "tiff_tile");
             } else {
                 tiff->tile_width = tiff->width;
@@ -712,14 +712,7 @@ tiff_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr) {
 static int
 tiff_impl_process_end(pl_interp_implementation_t * impl)
 {
-    tiff_interp_instance_t *tiff = (tiff_interp_instance_t *)impl->interp_client_data;
-    int code = 0;
-
-    /* FIXME: */
-    if (code == gs_error_InterpreterExit || code == gs_error_NeedInput)
-        code = 0;
-
-    return code;
+    return 0;
 }
 
 /* Not implemented */

@@ -86,22 +86,23 @@ $(GPDL_PSI_TOP_OBJ): $(GPDLSRC)psitop.c $(AK) $(stdio__h)\
 # URF.
 $(GPDLOBJ)/$(GPDL_URF_TOP_OBJ_FILE): $(GPDLURFSRC)urftop.c $(AK)\
  $(gxdevice_h) $(gserrors_h) $(gsstate_h) $(surfx_h) $(strimpl_h)\
- $(gscoord_h) $(pltop_h)
+ $(gscoord_h) $(pltop_h) $(gsicc_manage_h) $(gspaint_h) $(plmain_h)
 	$(GPDLCC) $(GPDLURFSRC)urftop.c $(GPDLO_)$(GPDL_URF_TOP_OBJ_FILE)
 
 $(GPDL_JPG_TOP_OBJ): $(GPDLSRC)jpgtop.c $(AK)\
  $(gxdevice_h) $(gserrors_h) $(gsstate_h) $(strimpl_h) $(gscoord_h)\
- $(jpeglib_h) $(setjmp__h) $(sjpeg_h) $(pltop_h)
-	$(GPDLCC) $(II)$(JI_)$(_I) $(GPDLSRC)jpgtop.c $(GPDLO_)$(GPDL_JPG_TOP_OBJ_FILE)
+ $(jpeglib_h) $(setjmp__h) $(sjpeg_h) $(pltop_h) $(gsicc_manage_h)\
+ $(gspaint_h) $(plmain_h) $(jpeglib__h)
+	$(GPDLCC) $(I_)$(GLI_) $(II)$(JI_)$(_I) $(JCF_) $(GLF_) $(GPDLSRC)jpgtop.c $(GPDLO_)$(GPDL_JPG_TOP_OBJ_FILE)
 
 $(GPDL_PWG_TOP_OBJ): $(GPDLSRC)pwgtop.c $(AK)\
  $(gxdevice_h) $(gserrors_h) $(gsstate_h) $(strimpl_h) $(gscoord_h)\
- $(spwgx_h) $(pltop_h)
+ $(spwgx_h) $(pltop_h) $(gsicc_manage_h) $(gspaint_h) $(plmain_h)
 	$(GPDLCC) $(GPDLSRC)pwgtop.c $(GPDLO_)$(GPDL_PWG_TOP_OBJ_FILE)
 
 $(GPDL_TIFF_TOP_OBJ): $(GPDLSRC)tifftop.c $(AK)\
  $(gxdevice_h) $(gserrors_h) $(gsstate_h) $(strimpl_h) $(gscoord_h)\
- $(pltop_h)
+ $(pltop_h) $(gsicc_manage_h) $(gspaint_h) $(plmain_h)
 	$(GPDLCC) $(II)$(TI_)$(_I) $(GPDLSRC)tifftop.c $(GPDLO_)$(GPDL_TIFF_TOP_OBJ_FILE)
 
 $(GPDL_JBIG2_TOP_OBJ): $(GPDLSRC)jbig2top.c $(AK)\

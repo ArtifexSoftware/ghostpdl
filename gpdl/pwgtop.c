@@ -20,9 +20,13 @@
 #include "gserrors.h"
 #include "gxdevice.h"
 #include "gsstate.h"
-#include "spwgx.h"
 #include "strimpl.h"
 #include "gscoord.h"
+#include "gsicc_manage.h"
+#include "gspaint.h"
+#include "plmain.h"
+#include "spwgx.h"
+#include "stream.h"
 
 /* Forward decls */
 
@@ -261,8 +265,6 @@ pwg_impl_process_file(pl_interp_implementation_t *impl, const char *filename)
 static int                      /* ret 0 or +ve if ok, else -ve error code */
 pwg_impl_process_begin(pl_interp_implementation_t * impl)
 {
-    pwg_interp_instance_t *pwg = (pwg_interp_instance_t *)impl->interp_client_data;
-
     return 0;
 }
 
@@ -364,12 +366,6 @@ get32be(stream_cursor_read *pr)
     pr->ptr += 4;
 
     return v;
-}
-
-static int
-get8(stream_cursor_read *pr)
-{
-    return *++(pr->ptr);
 }
 
 static int
@@ -575,7 +571,9 @@ bad_header:
                                                                    &local_r, &local_w,
                                                                    true);
                 /* status = 0 => need data
-                 *          1 => need output space */
+                 *          1 => need output space
+                 * but we don't actually use this currently. */
+                (void)status;
                 /* Copy the updated pointer back */
                 pr->ptr = local_r.ptr;
                 if (local_w.ptr + 1 == pwg->stream_buffer)
@@ -644,6 +642,7 @@ pwg_impl_process_end(pl_interp_implementation_t * impl)
     pwg_interp_instance_t *pwg = (pwg_interp_instance_t *)impl->interp_client_data;
     int code = 0;
 
+    (void)pwg;
     /* FIXME: */
     if (code == gs_error_InterpreterExit || code == gs_error_NeedInput)
         code = 0;
