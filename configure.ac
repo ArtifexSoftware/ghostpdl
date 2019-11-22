@@ -2299,14 +2299,6 @@ AC_SUBST(GPDL_TARGET)
 AC_SUBST(GPDL_MAK)
 
 
-AC_ARG_ENABLE([gpdl], AC_HELP_STRING([--enable-gpdl],
-    [Add gpdl to the default make target list]),
-[
-    GPDL_TARGET_VAR="\$(GPDL_TARGET)"
-])
-
-AC_SUBST(GPDL_TARGET_VAR)
-
 dnl do we compile the postscript initialization files into Ghostscript?
 COMPILE_INITS="1"
 AC_ARG_ENABLE([compile-inits], AC_HELP_STRING([--disable-compile-inits],

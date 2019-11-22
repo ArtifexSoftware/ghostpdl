@@ -269,10 +269,10 @@ gconfigd_h=$(GLGENDIR)$(D)gconfigd.h
 iconfxx_h=$(GLGENDIR)$(D)iconfxx.h
 iconfig_h=$(GLGENDIR)$(D)iconfig.h
 
-all default : $(GS_XE) $(PCL_XPS_TARGETS) $(GS_SHARED_OBJS) $(MAKEDIRSTOP) $(GS_MAK) $(MAKEDIRS)
+all default : $(GS_XE) $(PCL_XPS_PDL_TARGETS) $(GS_SHARED_OBJS) $(MAKEDIRSTOP) $(GS_MAK) $(MAKEDIRS)
 	$(NO_OP)
 
-experimental: all $(GPDL_TARGET)
+experimental: all
 	$(NO_OP)
 
 # the distclean and maintainer-clean targets (if any)
