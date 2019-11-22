@@ -4443,6 +4443,8 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
     case CUPS_CSPACE_SW :
     case CUPS_CSPACE_WHITE :
     case CUPS_CSPACE_RGB :
+    case CUPS_CSPACE_CMY:
+    case CUPS_CSPACE_YMC:
     case CUPS_CSPACE_SRGB :
     case CUPS_CSPACE_ADOBERGB :
     case CUPS_CSPACE_RGBA :
@@ -4471,8 +4473,6 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
     case CUPS_CSPACE_K :
     case CUPS_CSPACE_GOLD :
     case CUPS_CSPACE_SILVER :
-    case CUPS_CSPACE_CMY :
-    case CUPS_CSPACE_YMC :
     case CUPS_CSPACE_KCMYcm :
     case CUPS_CSPACE_CMYK :
     case CUPS_CSPACE_YMCK :
