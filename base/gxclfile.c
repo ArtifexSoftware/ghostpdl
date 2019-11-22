@@ -476,8 +476,7 @@ clist_rewind(clist_file_ptr cf, bool discard_data, const char *fname)
     IFILE *ocf = fake_path_to_file(fname);
     char fmode[4];
 
-    strcpy(fmode, "w+");
-    strcat(fmode, gp_fmode_binary_suffix);
+    snprintf(fmode, sizeof(fmode), "w+%s", gp_fmode_binary_suffix);
 
     if (ocf) {
         if (discard_data) {
