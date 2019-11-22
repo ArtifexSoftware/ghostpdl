@@ -310,6 +310,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\gpdl\jp2ktop.c"
+				>
+			</File>
+			<File
 				RelativePath="..\gpdl\jpgtop.c"
 				>
 			</File>

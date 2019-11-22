@@ -41,7 +41,11 @@ GPDL_TIFF_TOP_OBJ=$(GPDLOBJ)/$(GPDL_TIFF_TOP_OBJ_FILE)
 GPDL_JBIG2_TOP_OBJ_FILE=jbig2top.$(OBJ)
 GPDL_JBIG2_TOP_OBJ=$(GPDLOBJ)/$(GPDL_JBIG2_TOP_OBJ_FILE)
 
+GPDL_JP2K_TOP_OBJ_FILE=jp2ktop.$(OBJ)
+GPDL_JP2K_TOP_OBJ=$(GPDLOBJ)/$(GPDL_JP2K_TOP_OBJ_FILE)
+
 GPDL_PSI_TOP_OBJS=\
+	$(GPDL_JP2K_TOP_OBJ)\
 	$(GPDL_JBIG2_TOP_OBJ)\
 	$(GPDL_TIFF_TOP_OBJ)\
 	$(GPDL_PWG_TOP_OBJ)\
@@ -58,7 +62,8 @@ LANG_CFLAGS=\
 	$(D_)JPG_INCLUDED$(_D)\
 	$(D_)PWG_INCLUDED$(_D)\
 	$(ENABLE_TIFF)\
-	$(D_)JBIG2_INCLUDED$(_D)
+	$(D_)JBIG2_INCLUDED$(_D)\
+	$(D_)JP2K_INCLUDED$(_D)
 
 GPDLCC=$(CC_) $(LANG_CFLAGS) $(I_)$(PSSRCDIR)$(_I) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(DEVSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I) $(C_)
 
@@ -109,3 +114,8 @@ $(GPDL_JBIG2_TOP_OBJ): $(GPDLSRC)jbig2top.c $(AK)\
  $(gxdevice_h) $(gserrors_h) $(gsstate_h) $(strimpl_h) $(gscoord_h)\
  $(pltop_h) $(gsicc_manage_h) $(gspaint_h) $(plmain_h)
 	$(GPDLCC) $(I_)$(LDF_JB2I_) $(JBIG2_CFLAGS) $(II)$(JB2I_)$(_I) $(GPDLSRC)jbig2top.c $(GPDLO_)$(GPDL_JBIG2_TOP_OBJ_FILE)
+
+$(GPDL_JP2K_TOP_OBJ): $(GPDLSRC)jp2ktop.c $(AK)\
+ $(gxdevice_h) $(gserrors_h) $(gsstate_h) $(strimpl_h) $(gscoord_h)\
+ $(pltop_h) $(gsicc_manage_h) $(gspaint_h) $(plmain_h)
+	$(GPDLCC) $(I_)$(JPX_OPENJPEG_I_)$(D).. $(I_)$(JPX_OPENJPEG_I_) $(II)$(GLI_)$(_I) $(JPXCF_) $(I_)$(LWF_JPXI_) $(GPDLSRC)jp2ktop.c $(GPDLO_)$(GPDL_JP2K_TOP_OBJ_FILE)
