@@ -639,15 +639,7 @@ early_flush:
 static int
 pwg_impl_process_end(pl_interp_implementation_t * impl)
 {
-    pwg_interp_instance_t *pwg = (pwg_interp_instance_t *)impl->interp_client_data;
-    int code = 0;
-
-    (void)pwg;
-    /* FIXME: */
-    if (code == gs_error_InterpreterExit || code == gs_error_NeedInput)
-        code = 0;
-
-    return code;
+    return 0;
 }
 
 /* Not implemented */
