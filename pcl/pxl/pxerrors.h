@@ -46,8 +46,8 @@ int px_error_message_line(char message[px_max_error_line + 1], int N,
                           const px_parser_state_t * st,
                           const px_state_t * pxs);
 
-/* Begin an error page.  Return the initial Y value. */
-int px_begin_error_page(px_state_t * pxs);
+/* Begin an error page.  Returns the initial Y value in *y. */
+int px_begin_error_page(px_state_t * pxs, int * y);
 
 /* Print a message on an error page. */
 /* Return the updated Y value. */
