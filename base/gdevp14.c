@@ -3143,6 +3143,11 @@ pdf14_fill_path(gx_device *dev,	const gs_gstate *pgs,
     if (code >= 0) {
         new_pgs.trans_device = dev;
         new_pgs.has_transparency = true;
+        /* ppath can permissibly be NULL here, if we want to have a
+         * shading or a pattern fill the clipping path. This upsets
+         * coverity, which is not smart enough to realise that the
+         * validity of a NULL ppath depends on the type of pdcolor.
+         * We'll mark it as a false positive. */
         code = gx_default_fill_path(dev, &new_pgs, ppath, params, pdcolor, pcpath);
         new_pgs.trans_device = NULL;
         new_pgs.has_transparency = false;
@@ -3182,7 +3187,12 @@ pdf14_stroke_path(gx_device *dev, const	gs_gstate	*pgs,
             gx_cpath_outer_box(pcpath, &box);
         else
             (*dev_proc(dev, get_clipping_box)) (dev, &box);
-        if (ppath) {
+
+        /* For fill_path, we accept ppath == NULL to mean
+         * fill the entire clipping region. That makes no
+         * sense for stroke_path, hence ppath is always non
+         * NULL here. */
+        {
             gs_fixed_rect path_box;
             gs_fixed_point expansion;
 
