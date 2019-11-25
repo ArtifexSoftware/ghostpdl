@@ -502,7 +502,7 @@ bad_header:
              * We want to move it back, as without this, the image will be displayed
              * upside down.
              */
-            code = gs_translate(pwg->pgs, 0.0, -pwg->dev->height * 72 / pwg->dev->HWResolution[1]);
+            code = gs_translate(pwg->pgs, 0.0, pwg->dev->height * 72 / pwg->dev->HWResolution[1]);
             if (code >= 0)
                 code = gs_scale(pwg->pgs, 1, -1);
             /* At this point, the ctm is set to:
