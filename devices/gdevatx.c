@@ -179,6 +179,7 @@ atx_print_page(gx_device_printer *pdev, gp_file *f, int max_width_bytes)
     int code = 0;
     byte mask;
     int endidx = width>>3;
+    int rowlen = (width+7)>>3;
 
     /* Enforce a minimum 3" page length. */
     if (page_length_100ths < 300)
@@ -207,8 +208,12 @@ atx_print_page(gx_device_printer *pdev, gp_file *f, int max_width_bytes)
             goto done;
         /* Clear any trailing padding bits */
         row[endidx] &= mask;
+	/* We need an even number of bytes to work with. */
+	end = row + rowlen;
+	if (rowlen & 1)
+	    *end++ = 0;
         /* Find the end of the non-blank data. */
-        for (end = row + raster; end > row && end[-1] == 0 && end[-2] == 0; )
+        while (end > row && end[-1] == 0 && end[-2] == 0)
             end -= 2;
         if (end == row) {		/* blank line */
             ++blank_lines;
