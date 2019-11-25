@@ -382,6 +382,9 @@ static toff_t tifsSeekProc(thandle_t tiff_, toff_t offset, int whence)
     tiff_interp_instance_t *tiff = (tiff_interp_instance_t *)tiff_;
     size_t pos = tiff->file_pos;
 
+    /* toff_t is unsigned, which kind of implies they'll never use
+     * SEEK_CUR, or SEEK_END, which makes you wonder why they include
+     * whence at all, but... */
     if (whence == 1) { /* SEEK_CURR */
         offset += pos;
     } else if (whence == 2) { /* SEEK_END */
@@ -389,10 +392,8 @@ static toff_t tifsSeekProc(thandle_t tiff_, toff_t offset, int whence)
     }
     /* else assume SEEK_SET */
 
-    /* Clamp */
-    if (offset < 0)
-        offset = 0;
-    else if (offset > tiff->buffer_full)
+    /* Clamp (Don't check against 0 as toff_t is unsigned) */
+    if (offset > tiff->buffer_full)
         offset = tiff->buffer_full;
 
     tiff->file_pos = offset;
