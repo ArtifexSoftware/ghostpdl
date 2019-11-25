@@ -108,7 +108,7 @@ check_token(int token_type, const char *s, const char *e, int *score)
     TOKEN_CHECK("translate")
     TOKEN_CHECK("systemdict")
 
-    if (score[0] > 1024 && score[2] >= 3)
+    if (score[0] > 1024 && score[1] >= 3)
         return 1;
     if (score[0] < -1024)
         return 1;
