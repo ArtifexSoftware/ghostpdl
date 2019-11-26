@@ -318,6 +318,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\gpdl\pngtop.c"
+				>
+			</File>
+			<File
 				RelativePath="..\gpdl\psitop.c"
 				>
 			</File>
