@@ -837,6 +837,9 @@ static int pdfi_check_Annots_for_transparency(pdf_context *ctx, pdf_array *annot
             pdfi_countdown(annot);
             annot = NULL;
         }
+        if (code < 0 && ctx->pdfstoponerror)
+            goto exit;
+        code = 0;
     }
 exit:
     pdfi_countdown(annot);
