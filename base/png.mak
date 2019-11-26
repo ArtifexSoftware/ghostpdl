@@ -62,7 +62,7 @@ PZGEN=$(ZGENDIR)$(D)
 # adds /Za which conflicts with the libpng 1.5.x source.
 PNGCC=$(CC) $(CFLAGS) $(PNG_CFLAGS) $(I_)$(PI_)$(_I) $(I_)$(PNGGENDIR)$(_I) $(PF_) \
 $(D_)PNG_NO_ASSEMBLER_CODE$(_D) $(D_)PNG_INTEL_SSE_OPT=0$(_D) \
-$(D_)PNG_INTEL_SSE_IMPLEMENTATION=0$(_D)
+$(D_)PNG_INTEL_SSE_IMPLEMENTATION=0$(_D) $(D_)PNG_ARM_NEON_IMPLEMENTATION=0$(_D)
 
 # Define the name of this makefile.
 LIBPNG_MAK=$(GLSRC)png.mak $(TOP_MAKEFILES)
