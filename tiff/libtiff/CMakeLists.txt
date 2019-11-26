@@ -93,8 +93,10 @@ set(tiff_SOURCES
   tif_tile.c
   tif_version.c
   tif_warning.c
+  tif_webp.c
   tif_write.c
-  tif_zip.c)
+  tif_zip.c
+  tif_zstd.c)
 
 set(tiffxx_HEADERS
   tiffio.hxx)
@@ -102,7 +104,7 @@ set(tiffxx_HEADERS
 set(tiffxx_SOURCES
   tif_stream.cxx)
 
-if(WIN32_IO)
+if(USE_WIN32_FILEIO)
   extra_dist(tif_unix.c)
   list(APPEND tiff_SOURCES tif_win32.c)
 else()
@@ -110,12 +112,14 @@ else()
   list(APPEND tiff_SOURCES tif_unix.c)
 endif()
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}
-                    ${CMAKE_CURRENT_BINARY_DIR}
-                    ${TIFF_INCLUDES})
-
 add_library(tiff ${tiff_SOURCES} ${tiff_HEADERS} ${nodist_tiff_HEADERS}
             ${tiff_port_SOURCES} libtiff.def)
+target_include_directories(tiff
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+        ${TIFF_INCLUDES}
+)
 target_link_libraries(tiff ${TIFF_LIBRARY_DEPS})
 set_target_properties(tiff PROPERTIES SOVERSION ${SO_COMPATVERSION})
 if(NOT CYGWIN)
@@ -138,7 +142,7 @@ install(TARGETS tiff
 install(FILES ${tiff_HEADERS} ${nodist_tiff_HEADERS}
         DESTINATION "${CMAKE_INSTALL_FULL_INCLUDEDIR}")
 
-if(cxx)
+if(CXX_SUPPORT)
   add_library(tiffxx ${tiffxx_SOURCES} ${tiffxx_HEADERS})
   target_link_libraries(tiffxx tiff)
   set_target_properties(tiffxx PROPERTIES SOVERSION ${SO_COMPATVERSION})

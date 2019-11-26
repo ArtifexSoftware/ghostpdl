@@ -1,5 +1,3 @@
-/* $Id: fax2tiff.c,v 1.28 2017-10-29 18:28:45 bfriesen Exp $ */
-
 /*
  * Copyright (c) 1990-1997 Sam Leffler
  * Copyright (c) 1991-1997 Silicon Graphics, Inc.
@@ -76,14 +74,10 @@ static	void usage(void);
   Struct to carry client data.  Note that it does not appear that the client
   data is actually used in this program.
 */
-typedef struct _FAX_Client_Data
+typedef union _FAX_Client_Data
 {
-#if defined(_WIN32) && defined(USE_WIN32_FILEIO)
-        intptr_t fh; /* Operating system file handle */
-#else
-        int fd;      /* Integer file descriptor */
-#endif
-
+	thandle_t fh; /* Operating system file handle */
+	int fd;      /* Integer file descriptor */
 } FAX_Client_Data;
 
 int
@@ -91,7 +85,7 @@ main(int argc, char* argv[])
 {
 	FILE *in;
 	TIFF *out = NULL;
-        FAX_Client_Data client_data;
+	FAX_Client_Data client_data;
 	TIFFErrorHandler whandler = NULL;
 	int compression_in = COMPRESSION_CCITTFAX3;
 	int compression_out = COMPRESSION_CCITTFAX3;
@@ -282,11 +276,11 @@ main(int argc, char* argv[])
 			continue;
 		}
 #if defined(_WIN32) && defined(USE_WIN32_FILEIO)
-                client_data.fh = _get_osfhandle(fileno(in));
+		client_data.fh = (thandle_t)_get_osfhandle(fileno(in));
 #else
-                client_data.fd = fileno(in);
+		client_data.fd = fileno(in);
 #endif
-                TIFFSetClientdata(faxTIFF, (thandle_t) &client_data);
+		TIFFSetClientdata(faxTIFF, client_data.fh);
 		TIFFSetFileName(faxTIFF, (const char*)argv[optind]);
 		TIFFSetField(out, TIFFTAG_IMAGEWIDTH, xsize);
 		TIFFSetField(out, TIFFTAG_BITSPERSAMPLE, 1);

@@ -35,6 +35,7 @@ set(TESTSCRIPTS
     ppm2tiff_pbm.sh
     ppm2tiff_pgm.sh
     ppm2tiff_ppm.sh
+    fax2tiff.sh
     tiffcp-g3.sh
     tiffcp-g3-1d.sh
     tiffcp-g3-1d-fill.sh
@@ -44,6 +45,7 @@ set(TESTSCRIPTS
     tiffcp-logluv.sh
     tiffcp-thumbnail.sh
     tiffcp-lzw-compat.sh
+    tiffcp-lzw-scanline-decode.sh
     tiffdump.sh
     tiffinfo.sh
     tiffcp-split.sh
@@ -120,7 +122,8 @@ set(TIFFIMAGES
     images/rgb-3c-16b.tiff
     images/rgb-3c-8b.tiff
     images/quad-tile.jpg.tiff
-    images/quad-lzw-compat.tiff)
+    images/quad-lzw-compat.tiff
+    images/lzw-single-strip.tiff)
 
 set(BMPIMAGES
     images/palette-1c-8b.bmp
@@ -149,6 +152,7 @@ set(UNCOMPRESSEDIMAGES
 # files which are not currently used by the tests.
 set(IMAGES_EXTRA_DIST
     images/README.txt
+    images/miniswhite-1c-1b.g3
     ${BMPIMAGES}
     ${GIFIMAGES}
     ${PNMIMAGES}
@@ -183,6 +187,15 @@ endif()
 
 add_executable(custom_dir custom_dir.c)
 target_link_libraries(custom_dir tiff port)
+
+add_executable(defer_strile_loading defer_strile_loading.c)
+target_link_libraries(defer_strile_loading tiff port)
+
+add_executable(defer_strile_writing defer_strile_writing.c)
+target_link_libraries(defer_strile_writing tiff port)
+
+add_executable(testtypes testtypes.c)
+target_link_libraries(testtypes tiff port)
 
 set(TEST_OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/output")
 file(MAKE_DIRECTORY "${TEST_OUTPUT}")
@@ -335,6 +348,7 @@ add_convert_test(tiffcp   g32d       "-c g3:2d"      "images/miniswhite-1c-1b.ti
 add_convert_test(tiffcp   g32dfill   "-c g3:2d:fill" "images/miniswhite-1c-1b.tiff" FALSE)
 add_convert_test(tiffcp   g4         "-c g4"         "images/miniswhite-1c-1b.tiff" FALSE)
 add_convert_test(tiffcp   none       "-c none"       "images/quad-lzw-compat.tiff" FALSE)
+add_convert_test(tiffcp   noner1     "-c none -r 1"  "images/lzw-single-strip.tiff" FALSE)
 add_convert_test_multi(tiffcp tiffcp "" logluv "-c none" "-c sgilog" ""
                        "images/logluv-3c-16b.tiff"    FALSE)
 add_convert_test_multi(tiffcp thumbnail "" thumbnail "g3:1d" "" ""
@@ -380,3 +394,7 @@ add_convert_tests(tiffcrop  doubleflip "-F both"                  TIFFIMAGES TRU
 add_convert_tests(tiffcrop  extract    "-U px -E top -X 60 -Y 60" TIFFIMAGES TRUE)
 # Test extracting the first and fourth quarters from the left side.
 add_convert_tests(tiffcrop  extractz14 "-E left -Z1:4,2:4"        TIFFIMAGES TRUE)
+
+# test types
+add_test(NAME "testtypes"
+         COMMAND "testtypes")
