@@ -32,6 +32,7 @@ typedef struct stream_RLE_state_s {
     stream_RL_state_common;
     /* The following parameters are set by the client. */
     ulong record_size;
+    bool omitEOD;
     /* The following change dynamically. */
     ulong record_left;		/* bytes left in current record */
     byte n0;
@@ -47,7 +48,7 @@ typedef struct stream_RLE_state_s {
 /* We define the initialization procedure here, so that clients */
 /* can avoid a procedure call. */
 #define s_RLE_set_defaults_inline(ss)\
-  ((ss)->EndOfData = true, (ss)->record_size = 0)
+  ((ss)->EndOfData = true, (ss)->omitEOD = false, (ss)->record_size = 0)
 #define s_RLE_init_inline(ss)\
   ((ss)->record_left =\
    ((ss)->record_size == 0 ? ((ss)->record_size = max_uint) :\

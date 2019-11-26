@@ -109,6 +109,7 @@ zRLE(i_ctx_t *i_ctx_p)
     stream_RLE_state state;
     int code;
 
+    s_RLE_template.set_defaults((stream_state *)&state);
     check_op(2);
     code = rl_setup(op - 1, &state.EndOfData);
     if (code < 0)
