@@ -1075,7 +1075,7 @@ jbig2_decode_generic_region(Jbig2Ctx *ctx,
 
     if (image->stride * image->height > (1 << 26) && segment->data_length < image->stride * image->height / (1 << 16)) {
         return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
-                           "region is far larger than data provided (%d << %d), aborting to prevent DOS", segment->data_length, image->stride * image->height);
+                           "region is far larger than data provided (%li << %d), aborting to prevent DOS", (long) segment->data_length, image->stride * image->height);
     }
 
     if (!params->MMR && params->TPGDON)

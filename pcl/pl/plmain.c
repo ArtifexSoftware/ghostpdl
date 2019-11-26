@@ -973,14 +973,17 @@ handle_dash_c(pl_main_instance_t *pmi, arg_list *pal, char **collected_commands,
             )
             break;
         code = gs_lib_ctx_stash_sanitized_arg(pmi->memory->gs_lib_ctx, "?");
-        if (code < 0)
-            return code;
+        if (code < 0) {
+            goto end;
+        }
         arglen = strlen(*arg);
         if (*collected_commands == NULL) {
             *collected_commands = (char *)gs_alloc_bytes(pmi->memory, arglen+1,
                                                          "-c buffer");
-            if (*collected_commands == NULL)
-                goto problem_in_dash_c;
+            if (*collected_commands == NULL) {
+                code = gs_note_error(gs_error_VMerror);
+                goto end;
+            }
             memcpy(*collected_commands, *arg, arglen+1);
         } else {
             char *newc;
@@ -989,22 +992,25 @@ handle_dash_c(pl_main_instance_t *pmi, arg_list *pal, char **collected_commands,
                                             *collected_commands,
                                             oldlen + 1 + arglen + 1,
                                             "-c buffer");
-            if (newc == NULL)
-                goto problem_in_dash_c;
+            if (newc == NULL) {
+                code = gs_note_error(gs_error_VMerror);
+                goto end;
+            }
             newc[oldlen] = 32;
             memcpy(newc + oldlen + 1, *arg, arglen + 1);
             *collected_commands = newc;
         }
         *arg = NULL;
     }
-    if (0) {
-problem_in_dash_c:
-        code = gs_error_Fatal;
+
+end:
+    if (code == gs_error_VMerror) {
         dmprintf(pmi->memory, "Failed to allocate memory while handling -c\n");
     }
-    if (code < 0) {
+    else if (code < 0) {
         dmprintf(pmi->memory, "Syntax: -c <postscript commands>\n");
     }
+
     pal->expand_ats = ats;
 
     return code;

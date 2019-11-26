@@ -117,7 +117,6 @@ mgr_begin_page(gx_device_mgr *bdev, gp_file *pstream, mgr_cursor *pcur)
 
         /* Write the header */
         B_PUTHDR8(&head, bdev->width, bdev->height, bdev->mgr_depth);
-        gp_fprintf(pstream, "");
         if ( gp_fwrite(&head, 1, sizeof(head), pstream) < sizeof(head) )
                 return_error(gs_error_ioerror);
         gp_fflush(pstream);

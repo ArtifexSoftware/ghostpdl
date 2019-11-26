@@ -19,6 +19,7 @@
 #define ARCH_ALIGN_SHORT_MOD                 @ARCH_ALIGN_SHORT_MOD@
 #define ARCH_ALIGN_INT_MOD                   @ARCH_ALIGN_INT_MOD@
 #define ARCH_ALIGN_LONG_MOD                  @ARCH_ALIGN_LONG_MOD@
+#define ARCH_ALIGN_SIZE_T_MOD                @ARCH_ALIGN_SIZE_T_MOD@
 #define ARCH_ALIGN_PTR_MOD                   @ARCH_ALIGN_PTR_MOD@
 #define ARCH_ALIGN_FLOAT_MOD                 @ARCH_ALIGN_FLOAT_MOD@
 #define ARCH_ALIGN_DOUBLE_MOD                @ARCH_ALIGN_DOUBLE_MOD@
@@ -30,11 +31,13 @@
 #define ARCH_LOG2_SIZEOF_INT                 @ARCH_LOG2_SIZEOF_INT@
 #define ARCH_LOG2_SIZEOF_LONG                @ARCH_LOG2_SIZEOF_LONG@
 #define ARCH_LOG2_SIZEOF_LONG_LONG           @ARCH_LOG2_SIZEOF_LONG_LONG@
+#define ARCH_LOG2_SIZEOF_SIZE_T              @ARCH_LOG2_SIZEOF_SIZE_T@
 #define ARCH_LOG2_SIZEOF_PTR                 @ARCH_LOG2_SIZEOF_PTR@
 #define ARCH_LOG2_SIZEOF_FLOAT               @ARCH_LOG2_SIZEOF_FLOAT@
 #define ARCH_LOG2_SIZEOF_DOUBLE              @ARCH_LOG2_SIZEOF_DOUBLE@
 
 #define ARCH_SIZEOF_PTR                      @ARCH_SIZEOF_PTR@
+#define ARCH_SIZEOF_SIZE_T                   @ARCH_SIZEOF_SIZE_T@
 #define ARCH_SIZEOF_FLOAT                    @ARCH_SIZEOF_FLOAT@
 #define ARCH_SIZEOF_DOUBLE                   @ARCH_SIZEOF_DOUBLE@
 

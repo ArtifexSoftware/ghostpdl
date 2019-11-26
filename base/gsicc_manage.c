@@ -2846,7 +2846,7 @@ dump_icc_buffer(const gs_memory_t *mem, int buffersize, char filename[],byte *Bu
 
     gs_sprintf(full_file_name,"%d)%s_debug.icc",global_icc_index,filename);
     fid = gp_fopen(mem, full_file_name,"wb");
-    fwrite(Buffer,sizeof(unsigned char),buffersize,fid);
+    gp_fwrite(Buffer,sizeof(unsigned char),buffersize,fid);
     fclose(fid);
 }
 #endif

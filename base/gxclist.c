@@ -636,8 +636,7 @@ clist_open_output_file(gx_device *dev)
     code = clist_init(dev);
     if (code < 0)
         return code;
-    strcpy(fmode, "w+");
-    strcat(fmode, gp_fmode_binary_suffix);
+    snprintf(fmode, sizeof(fmode), "w+%s", gp_fmode_binary_suffix);
     cdev->page_cfname[0] = 0;   /* create a new file */
     cdev->page_bfname[0] = 0;   /* ditto */
     clist_reset_page(cdev);

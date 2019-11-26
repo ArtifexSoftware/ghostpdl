@@ -374,12 +374,12 @@ $(GLOBJ)gsserial.$(OBJ) : $(GLSRC)gsserial.c $(stdpre_h) $(gstypes_h)\
 
 $(GLOBJ)gsutil.$(OBJ) : $(GLSRC)gsutil.c $(AK) $(memory__h)\
  $(string__h) $(gstypes_h) $(gserrors_h) $(gsmemory_h)\
- $(gsrect_h) $(gsuid_h) $(gsutil_h) $(gzstate_h) $(gxdcolor_h) $(LIB_MAK) $(MAKEDIRS)
+ $(gsrect_h) $(gsuid_h) $(gsutil_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsutil.$(OBJ) $(C_) $(GLSRC)gsutil.c
 
 $(AUX)gsutil.$(OBJ) : $(GLSRC)gsutil.c $(AK) $(memory__h) $(string__h)\
  $(gstypes_h) $(gserrors_h) $(gsmemory_h)\
- $(gsrect_h) $(gsuid_h) $(gsutil_h) $(gzstate_h) $(gxdcolor_h) $(LIB_MAK) $(MAKEDIRS)
+ $(gsrect_h) $(gsuid_h) $(gsutil_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCCAUX) $(C_) $(AUXO_)gsutil.$(OBJ) $(GLSRC)gsutil.c
 
 $(GLOBJ)gssprintf.$(OBJ) : $(GLSRC)gssprintf.c $(gssprintf_h) $(stdio__h) \
@@ -3307,12 +3307,12 @@ $(GLD)romfs0.dev :  $(LIB_MAK) $(ECHOGS_XE) $(LIB_MAK) $(MAKEDIRS)
 # psi
 $(GLGEN)gsromfs1_.c : $(MKROMFS_XE) $(PS_ROMFS_DEPS) $(LIB_MAK) $(MAKEDIRS)
 	$(EXP)$(MKROMFS_XE) -o $(GLGEN)gsromfs1_.c \
-	-X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
+	$(MKROMFS_FLAGS) -X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
 	$(PS_ROMFS_ARGS) $(PS_FONT_ROMFS_ARGS) $(GL_ROMFS_ARGS)
 
 $(GLGEN)gsromfs1_1.c : $(MKROMFS_XE) $(PS_ROMFS_DEPS) $(LIB_MAK) $(MAKEDIRS)
 	$(EXP)$(MKROMFS_XE) -o $(GLGEN)gsromfs1_1.c \
-	-X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
+	$(MKROMFS_FLAGS) -X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
 	$(UFST_ROMFS_ARGS) $(PS_ROMFS_ARGS) $(GL_ROMFS_ARGS)
 
 $(GLGEN)gsromfs1.c : $(GLGEN)gsromfs1_$(UFST_BRIDGE).c $(LIB_MAK) $(MAKEDIRS)
@@ -3321,13 +3321,13 @@ $(GLGEN)gsromfs1.c : $(GLGEN)gsromfs1_$(UFST_BRIDGE).c $(LIB_MAK) $(MAKEDIRS)
 # pcl
 $(GLGEN)pclromfs1_.c : $(MKROMFS_XE) $(LIB_MAK) $(MAKEDIRS)
 	$(EXP)$(MKROMFS_XE) -o $(GLGEN)pclromfs1_.c \
-	-X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
+	$(MKROMFS_FLAGS) -X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
 	$(PCLXL_FONT_ROMFS_ARGS) $(PCLXL_ROMFS_ARGS) $(PJL_ROMFS_ARGS) \
         $(PJL_ROMFS_ARGS) $(GL_ROMFS_ARGS)
 
 $(GLGEN)pclromfs1_1.c : $(MKROMFS_XE) $(LIB_MAK) $(MAKEDIRS)
 	$(EXP)$(MKROMFS_XE) -o $(GLGEN)pclromfs1_1.c \
-	-X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
+	$(MKROMFS_FLAGS) -X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
 	$(UFST_ROMFS_ARGS) $(PCLXL_ROMFS_ARGS) $(PJL_ROMFS_ARGS) \
 	$(GL_ROMFS_ARGS)
 
@@ -3336,12 +3336,12 @@ $(GLGEN)pclromfs1.c : $(GLGEN)pclromfs1_$(UFST_BRIDGE).c $(LIB_MAK) $(MAKEDIRS)
 
 $(GLGEN)pclromfs0_.c : $(MKROMFS_XE) $(LIB_MAK) $(MAKEDIRS)
 	$(EXP)$(MKROMFS_XE) -o $(GLGEN)pclromfs0_.c \
-	-X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
+	$(MKROMFS_FLAGS) -X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
 	$(GL_ROMFS_ARGS)
 
 $(GLGEN)pclromfs0_1.c : $(MKROMFS_XE) $(LIB_MAK) $(MAKEDIRS)
 	$(EXP)$(MKROMFS_XE) -o $(GLGEN)pclromfs0_1.c \
-	-X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
+	$(MKROMFS_FLAGS) -X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
 	$(GL_ROMFS_ARGS)
 
 $(GLGEN)pclromfs0.c : $(GLGEN)pclromfs0_$(UFST_BRIDGE).c $(LIB_MAK) $(MAKEDIRS)
@@ -3350,12 +3350,12 @@ $(GLGEN)pclromfs0.c : $(GLGEN)pclromfs0_$(UFST_BRIDGE).c $(LIB_MAK) $(MAKEDIRS)
 # xps
 $(GLGEN)xpsromfs1_.c : $(MKROMFS_XE) $(LIB_MAK) $(MAKEDIRS)
 	$(EXP)$(MKROMFS_XE) -o $(GLGEN)xpsromfs1_.c \
-	-X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
+	$(MKROMFS_FLAGS) -X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
 	$(XPS_ROMFS_ARGS) $(XPS_FONT_ROMFS_ARGS) $(GL_ROMFS_ARGS)
 
 $(GLGEN)xpsromfs1_1.c : $(MKROMFS_XE) $(LIB_MAK) $(MAKEDIRS)
 	$(EXP)$(MKROMFS_XE) -o $(GLGEN)xpsromfs1_1.c \
-	-X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
+	$(MKROMFS_FLAGS) -X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
 	$(XPS_ROMFS_ARGS) $(GL_ROMFS_ARGS)
 
 $(GLGEN)xpsromfs1.c : $(GLGEN)xpsromfs1_$(UFST_BRIDGE).c $(LIB_MAK) $(MAKEDIRS)
@@ -3363,12 +3363,12 @@ $(GLGEN)xpsromfs1.c : $(GLGEN)xpsromfs1_$(UFST_BRIDGE).c $(LIB_MAK) $(MAKEDIRS)
 
 $(GLGEN)xpsromfs0_.c : $(MKROMFS_XE) $(LIB_MAK) $(MAKEDIRS)
 	$(EXP)$(MKROMFS_XE) -o $(GLGEN)xpsromfs0_.c \
-	-X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
+	$(MKROMFS_FLAGS) -X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
 	$(GL_ROMFS_ARGS)
 
 $(GLGEN)xpsromfs0_1.c : $(MKROMFS_XE) $(LIB_MAK) $(MAKEDIRS)
 	$(EXP)$(MKROMFS_XE) -o $(GLGEN)xpsromfs0_1.c \
-	-X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
+	$(MKROMFS_FLAGS) -X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
 	$(GL_ROMFS_ARGS)
 
 $(GLGEN)xpsromfs0.c : $(GLGEN)xpsromfs0_$(UFST_BRIDGE).c $(LIB_MAK) $(MAKEDIRS)
@@ -3419,7 +3419,7 @@ $(GLGEN)pdlromfs1_c3.c : $(GLGEN)pdlromfs1_.c
 
 $(GLGEN)pdlromfs1_.c: $(MKROMFS_XE) $(PS_ROMFS_DEPS) $(LIB_MAK) $(MAKEDIRS)
 	$(EXP)$(MKROMFS_XE) -o $(GLGEN)pdlromfs1_.c -s 4 \
-	-X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
+	$(MKROMFS_FLAGS) -X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
 	$(PCLXL_ROMFS_ARGS) $(PCLXL_FONT_ROMFS_ARGS) $(PJL_ROMFS_ARGS) \
         $(XPS_ROMFS_ARGS) $(XPS_FONT_ROMFS_ARGS) \
 	$(PS_ROMFS_ARGS) $(PS_FONT_ROMFS_ARGS) $(GL_ROMFS_ARGS)
@@ -3439,7 +3439,7 @@ $(GLGEN)pdlromfs1_1c3.c : $(GLGEN)pdlromfs1_1.c
 
 $(GLGEN)pdlromfs1_1.c: $(MKROMFS_XE) $(PS_ROMFS_DEPS) $(LIB_MAK) $(MAKEDIRS)
 	$(EXP)$(MKROMFS_XE) -o $(GLGEN)pdlromfs1_1.c -s 4 \
-	-X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
+	$(MKROMFS_FLAGS) -X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
 	$(UFST_ROMFS_ARGS) $(PCLXL_ROMFS_ARGS) $(PJL_ROMFS_ARGS) $(XPS_ROMFS_ARGS) \
 	$(PS_ROMFS_ARGS) $(GL_ROMFS_ARGS)
 
@@ -3474,7 +3474,7 @@ $(GLGEN)pdlromfs0_c3.c : $(GLGEN)pdlromfs0_.c
 
 $(GLGEN)pdlromfs0_.c : $(MKROMFS_XE) $(LIB_MAK) $(MAKEDIRS)
 	$(EXP)$(MKROMFS_XE) -o $(GLGEN)pdlromfs0_.c -s 4 \
-	-X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
+	$(MKROMFS_FLAGS) -X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
 	$(GL_ROMFS_ARGS)
 
 # Non COMPILE_INITS + UFST variant
@@ -3492,7 +3492,7 @@ $(GLGEN)pdlromfs0_1c3.c : $(GLGEN)pdlromfs0_1.c
 
 $(GLGEN)pdlromfs0_1.c : $(MKROMFS_XE) $(LIB_MAK) $(MAKEDIRS)
 	$(EXP)$(MKROMFS_XE) -o $(GLGEN)pdlromfs0_1.c -s 4 \
-	-X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
+	$(MKROMFS_FLAGS) -X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
 	$(GL_ROMFS_ARGS)
 
 # Rules to fold Non COMPILE_INITS +/- UFST into 1 set of targets

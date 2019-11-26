@@ -681,7 +681,11 @@ pjl_fsinit(pjl_parser_state_t * pst, char *pathname)
 #ifdef GS_NO_FILESYSTEM
     return -1;
 #else
+  #ifdef __WIN32__
+    return _mkdir(fname);
+  #else
     return mkdir(fname, 0777);
+  #endif
 #endif
 }
 
@@ -697,7 +701,11 @@ pjl_fsmkdir(pjl_parser_state_t * pst, char *pathname)
 #ifdef GS_NO_FILESYSTEM
     return -1;
 #else
+  #ifdef __WIN32__
+    return _mkdir(fname);
+  #else
     return mkdir(fname, 0777);
+  #endif
 #endif
 }
 

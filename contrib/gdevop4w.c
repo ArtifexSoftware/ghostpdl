@@ -137,6 +137,8 @@ oki4w_open(gx_device *pdev)
 static int
 oki4w_close(gx_device *pdev)
 {
+        /* RJW: We must call the close entry point for the class. */
+        return gdev_prn_close(pdev);
 /*
         if ( pdev->Duplex_set >= 0 && pdev->Duplex )
           {	gdev_prn_open_printer(pdev, 1);

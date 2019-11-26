@@ -69,7 +69,7 @@ end def
 % <dir.../base.extn> .basename <dir>
 /.splitdirname {
     (/) rsearch { //true } { (\\) rsearch } ifelse
-  {3 -2 roll pop pop //true}{//false} ifelse
+  {exch concatstrings exch pop //true}{//false} ifelse
 } bind def
 
 % <dict> .addfontmappermitpaths

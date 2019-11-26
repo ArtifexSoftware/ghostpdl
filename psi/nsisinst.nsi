@@ -128,12 +128,32 @@ CRCCheck on
 !define MUI_FINISHPAGE_LINK_LOCATION http://www.ghostscript.com/
 
 !insertmacro MUI_PAGE_WELCOME
+
+Page custom OldVersionsPageCreate
+
 !insertmacro MUI_PAGE_LICENSE "LICENSE"
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
 
 !insertmacro MUI_LANGUAGE "English"
+
+Function OldVersionsPageCreate
+  !insertmacro MUI_HEADER_TEXT "Previous Ghostscript Installations" "Optionally run the uninstallers for previous Ghostscript installations$\nClick $\"Cancel$\" to stop uninstalling previous installs"
+
+  StrCpy $0 0
+  loop:
+    EnumRegKey $1 HKLM "Software\Artifex\GPL Ghostscript" $0
+    StrCmp $1 "" done
+    IntOp $0 $0 + 1
+    MessageBox MB_YESNOCANCEL|MB_ICONQUESTION "Uninstall Ghostscript Version $1?" IDNO loop IDCANCEL done
+    Var /GLOBAL uninstexe
+    ReadRegStr $uninstexe HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghostscript $1" "UninstallString"
+    ExecWait "$uninstexe"
+    Goto loop
+  done:
+
+FunctionEnd
 
 !searchparse /ignorecase /noerrors "${TARGET}" w WINTYPE
 !echo "Building ${WINTYPE}-bit installer"
@@ -239,10 +259,11 @@ Function .onInit
         Abort
     ${EndIf}
 !endif
-    System::Call 'kernel32::CreateMutexA(i 0, i 0, t "GhostscriptInstaller") i .r1 ?e'
+
+    System::Call 'kernel32::CreateMutexA(i 0, i 0, t "Ghostscript${VERSION}Installer") i .r1 ?e'
     Pop $R0
     StrCmp $R0 0 +3
-    MessageBox MB_OK "The Ghostscript installer is already running." /SD IDOK
+    MessageBox MB_OK "The Ghostscript ${VERSION} installer is already running." /SD IDOK
     Abort
 FunctionEnd
 
@@ -266,7 +287,7 @@ Delete   "$INSTDIR\uninstgs.exe"
 !if "${WINTYPE}" == "64"
     SetRegView 64
 !endif
-DeleteRegKey HKEY_LOCAL_MACHINE "SOFTWARE\Artifex\GPL Ghostscript\${VERSION}"
+DeleteRegKey HKEY_LOCAL_MACHINE "Software\Artifex\GPL Ghostscript\${VERSION}"
 DeleteRegKey HKEY_LOCAL_MACHINE "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghostscript ${VERSION}"
 DeleteRegKey HKEY_LOCAL_MACHINE "Software\GPL Ghostscript\${VERSION}"
 RMDir /r "$INSTDIR\doc"

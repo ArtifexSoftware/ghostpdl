@@ -134,6 +134,9 @@ pr201_print_page(gx_device_printer *pdev, gp_file *prn_stream)
         byte *in, *out;
         int lnum, skip;
         int head_pins, lr_pitch, x_dpi;
+        int code = 0;
+        byte mask;
+        int endidx = pdev->width>>3;
 
         switch (check_mode(pdev->dname)){
                 case PR201:
@@ -160,6 +163,11 @@ pr201_print_page(gx_device_printer *pdev, gp_file *prn_stream)
         if(in == 0 || out == 0)
                 return -1;
 
+        if (pdev->width & 7)
+            mask = ~(255>>(pdev->width & 7));
+        else
+            mask = 255, endidx--;
+
         /* Initialize printer */
         gp_fputs("\033cl", pdev->file);	/* Software Reset */
         gp_fputs("\033P", pdev->file);	/* Proportional Mode */
@@ -173,16 +181,25 @@ pr201_print_page(gx_device_printer *pdev, gp_file *prn_stream)
         lnum = 0;
         skip = 0;
         while(lnum < height) {
-                byte *inp, *outp, *out_beg, *out_end;
-                int x, y, num_lines, size, mod;
-
-                /* Copy scan lines */
-                if(gdev_prn_copy_scan_lines(pdev, lnum, in, chunk_size) < 0)
-                        break;
+                byte *inp, *outp, *out_beg, *out_end, *p;
+                int x, y, num_lines, size, mod, i;
 
                 /* The number of lines to process */
                 if((num_lines = height - lnum) > bits_per_column)
                         num_lines = bits_per_column;
+
+                /* Copy scan lines */
+                for (i = 0, p = in; i < num_lines; i++, p += line_size) {
+                    code = gdev_prn_get_bits(pdev, lnum + i, p, NULL);
+                    if (code < 0)
+                        goto error;
+                    p[endidx] &= mask;
+                }
+
+                /* Ensure we have a full stripe of line data */
+                for (; i < bits_per_column; i++, p += line_size) {
+                    memset(p, 0, line_size);
+                }
 
                 /* Test for all zero */
                 size = line_size * num_lines;
@@ -242,7 +259,7 @@ pr201_print_page(gx_device_printer *pdev, gp_file *prn_stream)
                 out_beg -= (out_beg - out) % bytes_per_column;
 
                 /* Dot addressing */
-                gp_fprintf(pdev->file, "\033F%04d",
+                gp_fprintf(pdev->file, "\033F%04" PRIdSIZE,
                            (out_beg - out) / bytes_per_column);
 
                 /* Dot graphics */
@@ -264,10 +281,11 @@ pr201_print_page(gx_device_printer *pdev, gp_file *prn_stream)
         gp_fputc('\f',pdev->file);
         gp_fflush(pdev->file);
 
+error:
         gs_free(pdev->memory->non_gc_memory, (char *)out,
                 bits_per_column, line_size, "pr201_print_page(out)");
         gs_free(pdev->memory->non_gc_memory, (char *)in,
                 bits_per_column, line_size, "pr201_print_page(in)");
 
-        return 0;
+        return code;
 }

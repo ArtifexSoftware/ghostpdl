@@ -26,6 +26,9 @@
 #include "gslibctx.h"
 #include "gxtext.h"
 
+#include "pcparse.h"
+#include "pgmand.h"
+
 /* Define an abstract type for an image enumerator. */
 #ifndef px_image_enum_DEFINED
 #  define px_image_enum_DEFINED
@@ -159,6 +162,27 @@ struct px_state_s
     pl_interp_implementation_t *pjls;
     /* ---------------- PCL state -------------------- */
     pl_interp_implementation_t *pcls;
+
+    struct pcl_state_s *pcs;
+
+    pcl_parser_state_t  pcl_parser_state;
+
+    hpgl_parser_state_t gl_parser_state;
+
+    /* if this is a contiguous passthrough meaning that 2 passtrough
+       operators have been given back to back and pxl should not regain
+       control. */
+    bool                this_pass_contiguous;
+
+    bool                pass_first;
+
+    /* store away the current font attributes PCL can't set these,
+     * they persist for XL */
+    gs_point            char_shear;
+    gs_point            char_scale;
+    float               char_bold_value;
+    float               char_angle;
+
 };
 
 /* Allocate a px_state_t. */

@@ -994,7 +994,11 @@ process_ccitt_compress(gs_gstate * pgs,
 
             case 1:            /* need output, process the scanline and continue. */
                 memcpy(pout->pdata, temp_buffer, min(pout->size, wrsize));
-                process_row(prast, 0);
+                code = process_row(prast, 0);
+                if (code < 0) {
+                    s_CFD_template.release((stream_state *) & state);
+                    return gs_rethrow(code, "CCITT decompression failed\n");
+                }
                 memset(temp_buffer, 0, wrsize);
                 scw.ptr = temp_buffer - 1;
                 scw.limit = scw.ptr + wrsize;

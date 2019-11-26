@@ -733,7 +733,8 @@ ztempfile(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     const char *pstr;
     char fmode[4];
-    int code = parse_file_access_string(op, fmode);
+    char fmode_temp[4];
+    int code = parse_file_access_string(op, fmode_temp);
     char *prefix = NULL;
     char *fname= NULL;
     uint fnlen;
@@ -750,7 +751,7 @@ ztempfile(i_ctx_t *i_ctx_p)
         goto done;
     }
 
-    strcat(fmode, gp_fmode_binary_suffix);
+    snprintf(fmode, sizeof(fmode), "%s%s", fmode_temp, gp_fmode_binary_suffix);
     if (r_has_type(op - 1, t_null))
         pstr = gp_scratch_file_name_prefix;
     else {

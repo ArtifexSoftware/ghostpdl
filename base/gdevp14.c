@@ -2813,6 +2813,7 @@ gs_pdf14_device_copy_params(gx_device *dev, const gx_device *target)
     cmm_dev_profile_t *profile_targ;
     cmm_dev_profile_t *profile_dev14;
     pdf14_device *pdev = (pdf14_device*) dev;
+    int k;
 
     COPY_PARAM(width);
     COPY_PARAM(height);
@@ -2837,17 +2838,24 @@ gs_pdf14_device_copy_params(gx_device *dev, const gx_device *target)
         profile_dev14 = dev->icc_struct;
         dev_proc((gx_device *) target, get_profile)((gx_device *) target,
                                           &(profile_targ));
-        gsicc_adjust_profile_rc(profile_targ->device_profile[0], 1, "gs_pdf14_device_copy_params");
-        if (profile_dev14->device_profile[0] != NULL) {
-            gsicc_adjust_profile_rc(profile_dev14->device_profile[0], -1, "gs_pdf14_device_copy_params");
+
+        for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
+            if (profile_targ->device_profile[k] != NULL) {
+                gsicc_adjust_profile_rc(profile_targ->device_profile[k], 1, "gs_pdf14_device_copy_params");
+            }
+            if (profile_dev14->device_profile[k] != NULL) {
+                gsicc_adjust_profile_rc(profile_dev14->device_profile[k], -1, "gs_pdf14_device_copy_params");
+            }
+            profile_dev14->device_profile[k] = profile_targ->device_profile[k];
+            profile_dev14->rendercond[k] = profile_targ->rendercond[k];
         }
-        profile_dev14->device_profile[0] = profile_targ->device_profile[0];
+
         dev->icc_struct->devicegraytok = profile_targ->devicegraytok;
         dev->icc_struct->graydetection = profile_targ->graydetection;
         dev->icc_struct->pageneutralcolor = profile_targ->pageneutralcolor;
         dev->icc_struct->supports_devn = profile_targ->supports_devn;
         dev->icc_struct->usefastcolor = profile_targ->usefastcolor;
-        profile_dev14->rendercond[0] = profile_targ->rendercond[0];
+
         if (pdev->using_blend_cs) {
             /* Swap the device profile and the blend profile. */
             gsicc_adjust_profile_rc(profile_targ->device_profile[0], 1, "gs_pdf14_device_copy_params");
@@ -3135,6 +3143,11 @@ pdf14_fill_path(gx_device *dev,	const gs_gstate *pgs,
     if (code >= 0) {
         new_pgs.trans_device = dev;
         new_pgs.has_transparency = true;
+        /* ppath can permissibly be NULL here, if we want to have a
+         * shading or a pattern fill the clipping path. This upsets
+         * coverity, which is not smart enough to realise that the
+         * validity of a NULL ppath depends on the type of pdcolor.
+         * We'll mark it as a false positive. */
         code = gx_default_fill_path(dev, &new_pgs, ppath, params, pdcolor, pcpath);
         new_pgs.trans_device = NULL;
         new_pgs.has_transparency = false;
@@ -3174,7 +3187,12 @@ pdf14_stroke_path(gx_device *dev, const	gs_gstate	*pgs,
             gx_cpath_outer_box(pcpath, &box);
         else
             (*dev_proc(dev, get_clipping_box)) (dev, &box);
-        if (ppath) {
+
+        /* For fill_path, we accept ppath == NULL to mean
+         * fill the entire clipping region. That makes no
+         * sense for stroke_path, hence ppath is always non
+         * NULL here. */
+        {
             gs_fixed_rect path_box;
             gs_fixed_point expansion;
 
@@ -4641,7 +4659,11 @@ gx_update_pdf14_compositor(gx_device * pdev, gs_gstate * pgs,
             code = gx_end_transparency_group(pgs, pdev);
             break;
         case PDF14_BEGIN_TRANS_TEXT_GROUP:
-            p14dev->text_group = PDF14_TEXTGROUP_BT_NOT_PUSHED;
+            if (p14dev->text_group == PDF14_TEXTGROUP_BT_PUSHED) {
+                p14dev->text_group = PDF14_TEXTGROUP_MISSING_ET;
+                emprintf(p14dev->memory, "Warning: Text group pushed but no ET found\n");
+            } else
+                p14dev->text_group = PDF14_TEXTGROUP_BT_NOT_PUSHED;
             break;
         case PDF14_END_TRANS_TEXT_GROUP:
             if (p14dev->text_group == PDF14_TEXTGROUP_BT_PUSHED)
@@ -4812,6 +4834,19 @@ pdf14_text_begin(gx_device * dev, gs_gstate * pgs,
        Special note:  If text-knockout is set to false while we are within a
        BT ET pair, we should pop the group.  I need to create a test file for
        this case.  */
+
+       /* Catch case where we already pushed a group and are trying to push another one.
+       In that case, we will pop the current one first, as we don't want to be left
+       with it. Note that if we have a BT and no other BTs or ETs then this issue
+       will not be caught until we do the put_image and notice that the stack is not
+       empty. */
+    if (pdev->text_group == PDF14_TEXTGROUP_MISSING_ET) {
+        code = gs_end_transparency_group(pgs);
+        if (code < 0)
+            return code;
+        pdev->text_group = PDF14_TEXTGROUP_BT_NOT_PUSHED;
+    }
+
     if (gs_currenttextknockout(pgs) && (blend_issue || opacity != 1.0) &&
         gs_currenttextrenderingmode(pgs) != 3 && /* don't bother with invisible text */
         pdev->text_group == PDF14_TEXTGROUP_BT_NOT_PUSHED)
@@ -7498,7 +7533,7 @@ find_opening_op(int opening_op, gs_composite_t **ppcte,
             if (op != PDF14_SET_BLEND_PARAMS) {
                 if (opening_op == PDF14_BEGIN_TRANS_MASK)
                     return COMP_ENQUEUE;
-                if (opening_op == PDF14_BEGIN_TRANS_GROUP || opening_op == PDF14_BEGIN_TRANS_PAGE_GROUP || opening_op == PDF14_BEGIN_TRANS_PAGE_GROUP) {
+                if (opening_op == PDF14_BEGIN_TRANS_GROUP || opening_op == PDF14_BEGIN_TRANS_PAGE_GROUP) {
                     if (op != PDF14_BEGIN_TRANS_MASK && op != PDF14_END_TRANS_MASK)
                         return COMP_ENQUEUE;
                 }
@@ -8554,7 +8589,11 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
                   So, if needed change the masks bounding box at this time */
                 break;
             case PDF14_BEGIN_TRANS_TEXT_GROUP:
-                pdev->text_group = PDF14_TEXTGROUP_BT_NOT_PUSHED;
+                if (pdev->text_group == PDF14_TEXTGROUP_BT_PUSHED) {
+                    emprintf(pdev->memory, "Warning: Text group pushed but no ET found\n");
+                    pdev->text_group = PDF14_TEXTGROUP_MISSING_ET;
+                } else
+                    pdev->text_group = PDF14_TEXTGROUP_BT_NOT_PUSHED;
                 *pcdev = dev;
                 return 0; /* Never put into clist. Only used during writing */
             case PDF14_END_TRANS_TEXT_GROUP:
@@ -9082,6 +9121,18 @@ pdf14_clist_text_begin(gx_device * dev,	gs_gstate	* pgs,
                                 pdcolor, pcpath, memory, &penum);
     if (code < 0)
         return code;
+
+   /* Catch case where we already pushed a group and are trying to push another one.
+   In that case, we will pop the current one first, as we don't want to be left
+   with it. Note that if we have a BT and no other BTs or ETs then this issue
+   will not be caught until we do the put_image and notice that the stack is not
+   empty. */
+    if (pdev->text_group == PDF14_TEXTGROUP_MISSING_ET) {
+        code = gs_end_transparency_group(pgs);
+        if (code < 0)
+            return code;
+        pdev->text_group = PDF14_TEXTGROUP_BT_NOT_PUSHED;
+    }
 
     /* We may need to push a non-isolated transparency group if the following
     is true.

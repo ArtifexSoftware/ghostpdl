@@ -17,10 +17,31 @@ cd "$srcdir"
 	exit 1
 }
 
+(automake --version) < /dev/null > /dev/null 2>&1 || {
+        echo
+        echo "You must have automake installed to compile $package."
+        echo "Download the appropriate package for your distribution,"
+        echo "or get the source tarball at ftp://ftp.gnu.org/pub/gnu/"
+        exit 1
+}
+
+rm -rf autom4te.cache
+
 echo "Generating configuration files for $package, please wait...."
 
-echo "  running autoconf"
-autoconf || exit 1
+echo "  running autoreconf"
+autoreconf || exit 1
+
+if test ! -x config.guess -o ! -x config.sub ; then
+  rm -f config.guess config.sub
+  cp `automake --print-libdir`/config.guess . || exit 1
+  cp `automake --print-libdir`/config.sub . || exit 1
+fi
+
+if test ! -x install-sh ; then
+  rm -f install-sh
+  cp `automake --print-libdir`/install-sh . || exit 1
+fi
 
 if test -z "$*"; then
         echo "I am going to run ./configure with no arguments - if you wish "

@@ -24,8 +24,6 @@
 #include "gsrect.h"		/* for prototypes */
 #include "gsuid.h"
 #include "gsutil.h"		/* for prototypes */
-#include "gzstate.h"
-#include "gxdcolor.h"
 
 /* ------ Unique IDs ------ */
 

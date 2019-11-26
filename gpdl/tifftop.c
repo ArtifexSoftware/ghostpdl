@@ -22,6 +22,9 @@
 #include "gsstate.h"
 #include "strimpl.h"
 #include "gscoord.h"
+#include "gsicc_manage.h"
+#include "gspaint.h"
+#include "plmain.h"
 #include "tiffio.h"
 
 /* Forward decls */
@@ -55,8 +58,6 @@ typedef struct tiff_interp_instance_s {
     /* Tiff parser state machine */
     ii_state           state;
 
-    int                pages;
-
     uint32_t           bpp;
     uint32_t           bpc;
     uint32_t           cs;
@@ -69,9 +70,6 @@ typedef struct tiff_interp_instance_s {
 
     uint32_t           num_comps;
     uint32_t           byte_width;
-    uint32_t           y;
-
-    uint32_t           bytes_available_on_entry;
 
     gs_image_t         image;
     gs_image_enum     *penum;
@@ -266,8 +264,6 @@ tiff_impl_process_file(pl_interp_implementation_t *impl, const char *filename)
 static int                      /* ret 0 or +ve if ok, else -ve error code */
 tiff_impl_process_begin(pl_interp_implementation_t * impl)
 {
-    tiff_interp_instance_t *tiff = (tiff_interp_instance_t *)impl->interp_client_data;
-
     return 0;
 }
 
@@ -359,24 +355,6 @@ bytes_until_uel(const stream_cursor_read *pr)
     return pr->limit - pr->ptr;
 }
 
-static int
-get32be(stream_cursor_read *pr)
-{
-    int v = pr->ptr[1] << 24;
-    v |= pr->ptr[2] << 16;
-    v |= pr->ptr[3] << 8;
-    v |= pr->ptr[4];
-    pr->ptr += 4;
-
-    return v;
-}
-
-static int
-get8(stream_cursor_read *pr)
-{
-    return *++(pr->ptr);
-}
-
 static tmsize_t tifsReadProc(thandle_t  tiff_,
                              void      *buf,
                              tmsize_t   size)
@@ -404,6 +382,9 @@ static toff_t tifsSeekProc(thandle_t tiff_, toff_t offset, int whence)
     tiff_interp_instance_t *tiff = (tiff_interp_instance_t *)tiff_;
     size_t pos = tiff->file_pos;
 
+    /* toff_t is unsigned, which kind of implies they'll never use
+     * SEEK_CUR, or SEEK_END, which makes you wonder why they include
+     * whence at all, but... */
     if (whence == 1) { /* SEEK_CURR */
         offset += pos;
     } else if (whence == 2) { /* SEEK_END */
@@ -411,10 +392,8 @@ static toff_t tifsSeekProc(thandle_t tiff_, toff_t offset, int whence)
     }
     /* else assume SEEK_SET */
 
-    /* Clamp */
-    if (offset < 0)
-        offset = 0;
-    else if (offset > tiff->buffer_full)
+    /* Clamp (Don't check against 0 as toff_t is unsigned) */
+    if (offset > tiff->buffer_full)
         offset = tiff->buffer_full;
 
     tiff->file_pos = offset;
@@ -422,7 +401,7 @@ static toff_t tifsSeekProc(thandle_t tiff_, toff_t offset, int whence)
     return offset;
 }
 
-static tifsCloseProc(thandle_t tiff_)
+static int tifsCloseProc(thandle_t tiff_)
 {
     return 0;
 }
@@ -550,7 +529,6 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
             tiff->yresolution = (uint32_t)(f+0.5);
 
             if (TIFFIsTiled(tiff->handle)) {
-                int x, y;
                 tiff->samples = gs_alloc_bytes(tiff->memory, TIFFTileSize(tiff->handle), "tiff_tile");
             } else {
                 tiff->tile_width = tiff->width;
@@ -735,14 +713,7 @@ tiff_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr) {
 static int
 tiff_impl_process_end(pl_interp_implementation_t * impl)
 {
-    tiff_interp_instance_t *tiff = (tiff_interp_instance_t *)impl->interp_client_data;
-    int code = 0;
-
-    /* FIXME: */
-    if (code == gs_error_InterpreterExit || code == gs_error_NeedInput)
-        code = 0;
-
-    return code;
+    return 0;
 }
 
 /* Not implemented */

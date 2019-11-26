@@ -21,16 +21,16 @@
 #  define pxpthr_INCLUDED
 
 /* set passthrough contiguous mode */
-void pxpcl_passthroughcontiguous(bool contiguous);
+void pxpcl_passthroughcontiguous(px_state_t * pxs, bool contiguous);
 
 /* end passthrough contiguous mode */
 void pxpcl_endpassthroughcontiguous(px_state_t * pxs);
 
 /* reset pcl's page */
-void pxpcl_pagestatereset(void);
+void pxpcl_pagestatereset(px_state_t* pxs);
 
 /* release the passthrough state */
-void pxpcl_release(void);
+void pxpcl_release(px_state_t* pxs);
 
 /* set variables in pcl's state that are special to pass through mode,
    these override the default pcl state variables when pcl is

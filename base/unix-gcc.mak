@@ -183,7 +183,7 @@ GPDL=gpdl
 XE=
 XEAUX=
 
-PCL_XPS_TARGETS=
+PCL_XPS_PDL_TARGETS=
 
 # Define the directories for debugging and profiling binaries, relative to
 # the standard binaries.

@@ -16,6 +16,9 @@
 
 /* Unix-specific routines for Ghostscript */
 
+#ifdef __MINGW32__
+#  include "windows_.h"
+#endif
 #include "pipe_.h"
 #include "string_.h"
 #include "time_.h"
@@ -472,3 +475,54 @@ void gp_enumerate_fonts_free(void *enum_state)
     }
 #endif
 }
+
+/* A function to decode the next codepoint of the supplied args from the
+ * local windows codepage, or -1 for EOF.
+ * (copied from gp_win32.c)
+ */
+
+#ifdef __MINGW32__
+int
+gp_local_arg_encoding_get_codepoint(FILE *file, const char **astr)
+{
+    int len;
+    int c;
+    char arg[3];
+    wchar_t unicode[2];
+    char utf8[4];
+
+    if (file) {
+        c = fgetc(file);
+        if (c == EOF)
+            return EOF;
+    } else if (**astr) {
+        c = *(*astr)++;
+        if (c == 0)
+            return EOF;
+    } else {
+        return EOF;
+    }
+
+    arg[0] = c;
+    if (IsDBCSLeadByte(c)) {
+        if (file) {
+            c = fgetc(file);
+            if (c == EOF)
+                return EOF;
+        } else if (**astr) {
+            c = *(*astr)++;
+            if (c == 0)
+                return EOF;
+        }
+        arg[1] = c;
+        len = 2;
+    } else {
+        len = 1;
+    }
+
+    /* Convert the string (unterminated in, unterminated out) */
+    len = MultiByteToWideChar(CP_ACP, 0, arg, len, unicode, 2);
+
+    return unicode[0];
+}
+#endif

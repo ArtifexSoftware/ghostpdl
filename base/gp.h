@@ -334,7 +334,11 @@ gp_rewind(gp_file *f) {
 
 char *gp_fgets(char *buffer, size_t n, gp_file *f);
 
-int gp_fprintf(gp_file *f, const char *fmt, ...);
+int gp_fprintf(gp_file *f, const char *fmt, ...)
+#ifdef __GNUC__
+    __attribute__ ((format (__printf__, 2, 3)))
+#endif
+    ;
 
 /* ------ Reading from stdin, unbuffered if possible ------ */
 
