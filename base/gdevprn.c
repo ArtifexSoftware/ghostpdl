@@ -1699,22 +1699,28 @@ gdev_prn_get_bits(gx_device_printer * pdev, int y, byte * str, byte ** actual_da
 }
 /* Copy scan lines to a buffer.  Return the number of scan lines, */
 /* or <0 if error.  This procedure is DEPRECATED. */
+/* Some old and contrib drivers ignore error codes, so make sure and fill */
+/* remaining lines if we get an error (and for lines past end of page).   */
 int
 gdev_prn_copy_scan_lines(gx_device_printer * pdev, int y, byte * str, uint size)
 {
     uint line_size = gdev_prn_raster(pdev);
-    int count = size / line_size;
-    int i;
+    int requested_count = size / line_size;
+    int i, count;
+    int code = 0;
     byte *dest = str;
 
-    count = min(count, pdev->height - y);
+    /* Clamp count between 0 and remaining lines on page so we don't return < 0 */
+    /* unless gdev_prn_get_bits returns an error */
+    count = max(0, min(requested_count, pdev->height - y));
     for (i = 0; i < count; i++, dest += line_size) {
-        int code = gdev_prn_get_bits(pdev, y + i, dest, NULL);
-
-        if (code < 0)
-            return code;
+        code = gdev_prn_get_bits(pdev, y + i, dest, NULL);
+        if (code < 0) 
+            break;	/* will fill remaining lines and return code outside the loop */
     }
-    return count;
+    /* fill remaining lines with 0's to prevent printing garbage */
+    memset(dest, 0, line_size * (requested_count - i));
+    return (code < 0 ) ? code : count;
 }
 
 /* Close the current page. */

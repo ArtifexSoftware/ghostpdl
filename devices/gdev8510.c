@@ -111,7 +111,7 @@ static void
 m8510_output_run(gx_device_printer *pdev,
         byte *out, int pass, gp_file *prn_stream)
 {
-        byte *out_end = out + pdev->width;
+        byte *out_end = out + ((pdev->width + 7) & -8);	/* round up to multiple of 8 */
         char tmp[10];
         int count;
 
@@ -132,7 +132,7 @@ m8510_output_run(gx_device_printer *pdev,
 
         /* Transfer the line of data. */
         count = out_end - out;
-        if (count) {
+        if (count > 0) {
                 gs_sprintf(tmp, "\033g%03d", count/8);
                 gp_fwrite(tmp, 1, 5, prn_stream);
                 gp_fwrite(out, 1, count, prn_stream);
