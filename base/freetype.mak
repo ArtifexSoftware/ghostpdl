@@ -110,8 +110,7 @@ ft_cff=\
 	$(FTOBJ)cffgload.$(OBJ) \
 	$(FTOBJ)cffload.$(OBJ) \
 	$(FTOBJ)cffobjs.$(OBJ) \
-	$(FTOBJ)cffparse.$(OBJ) \
-	$(FTOBJ)cffpic.$(OBJ)
+	$(FTOBJ)cffparse.$(OBJ)
 
 ft_cid=\
 	$(FTOBJ)cidparse.$(OBJ) \
@@ -162,31 +161,26 @@ ft_pshinter=\
 	$(FTOBJ)pshalgo.$(OBJ)
 
 ft_psnames=\
-	$(FTOBJ)psmodule.$(OBJ) \
-	$(FTOBJ)pspic.$(OBJ)
+	$(FTOBJ)psmodule.$(OBJ)
 
 ft_raster=\
 	$(FTOBJ)ftraster.$(OBJ) \
-	$(FTOBJ)ftrend1.$(OBJ) \
-	$(FTOBJ)rastpic.$(OBJ)
+	$(FTOBJ)ftrend1.$(OBJ)
 
 ft_smooth=\
 	$(FTOBJ)ftgrays.$(OBJ) \
-	$(FTOBJ)ftsmooth.$(OBJ) \
-	$(FTOBJ)ftspic.$(OBJ)
+	$(FTOBJ)ftsmooth.$(OBJ)
 
 ft_sfnt=\
-	$(FTOBJ)sfobjs.$(OBJ) \
-	$(FTOBJ)sfdriver.$(OBJ) \
-	$(FTOBJ)ttcmap.$(OBJ) \
 	$(FTOBJ)ttmtx.$(OBJ) \
 	$(FTOBJ)ttpost.$(OBJ) \
 	$(FTOBJ)ft2ttload.$(OBJ) \
 	$(FTOBJ)ttsbit.$(OBJ) \
 	$(FTOBJ)ttkern.$(OBJ) \
 	$(FTOBJ)ttbdf.$(OBJ) \
-	$(FTOBJ)sfntpic.$(OBJ) \
-	$(FTOBJ)pngshim.$(OBJ)
+	$(FTOBJ)sfnt.$(OBJ) \
+	$(FTOBJ)pngshim.$(OBJ) \
+	$(FTOBJ)ttcpal.$(OBJ)
 
 
 ft_truetype=\
@@ -196,7 +190,6 @@ ft_truetype=\
 	$(FTOBJ)ttgload.$(OBJ) \
 	$(FTOBJ)ft2ttinterp.$(OBJ) \
 	$(FTOBJ)ttgxvar.$(OBJ) \
-	$(FTOBJ)ttpic.$(OBJ) \
 	$(FTOBJ)ttsubpix.$(OBJ)
 
 ft_type1=\
@@ -441,9 +434,6 @@ $(FTOBJ)cffobjs.$(OBJ) : $(FTSRC)cff$(D)cffobjs.c $(FT_MAK) $(MAKEDIRS)
 $(FTOBJ)cffparse.$(OBJ) : $(FTSRC)cff$(D)cffparse.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)cffparse.$(OBJ) $(C_) $(FTSRC)cff$(D)cffparse.c
 
-$(FTOBJ)cffpic.$(OBJ) : $(FTSRC)cff$(D)cffpic.c $(FT_MAK) $(MAKEDIRS)
-	$(FTCC) $(FTO_)cffpic.$(OBJ) $(C_) $(FTSRC)cff$(D)cffpic.c
-
 $(FTOBJ)cidparse.$(OBJ) : $(FTSRC)cid$(D)cidparse.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)cidparse.$(OBJ) $(C_) $(FTSRC)cid$(D)cidparse.c
 
@@ -555,17 +545,14 @@ $(FTOBJ)pshalgo.$(OBJ) : $(FTSRC)pshinter$(D)pshalgo.c $(FT_MAK) $(MAKEDIRS)
 $(FTOBJ)psmodule.$(OBJ) : $(FTSRC)psnames$(D)psmodule.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)psmodule.$(OBJ) $(C_) $(FTSRC)psnames$(D)psmodule.c
 
-$(FTOBJ)pspic.$(OBJ) : $(FTSRC)psnames$(D)pspic.c $(FT_MAK) $(MAKEDIRS)
-	$(FTCC) $(FTO_)pspic.$(OBJ) $(C_) $(FTSRC)psnames$(D)pspic.c
-
 $(FTOBJ)ftraster.$(OBJ) : $(FTSRC)raster$(D)ftraster.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftraster.$(OBJ) $(C_) $(FTSRC)raster$(D)ftraster.c
 
 $(FTOBJ)ftrend1.$(OBJ) : $(FTSRC)raster$(D)ftrend1.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftrend1.$(OBJ) $(C_) $(FTSRC)raster$(D)ftrend1.c
 
-$(FTOBJ)rastpic.$(OBJ) : $(FTSRC)raster$(D)rastpic.c $(FT_MAK) $(MAKEDIRS)
-	$(FTCC) $(FTO_)rastpic.$(OBJ) $(C_) $(FTSRC)raster$(D)rastpic.c
+$(FTOBJ)raster.$(OBJ) : $(FTSRC)raster$(D)raster.c $(FT_MAK) $(MAKEDIRS)
+	$(FTCC) $(FTO_)raster.$(OBJ) $(C_) $(FTSRC)raster$(D)raster.c
 
 $(FTOBJ)ftgrays.$(OBJ) : $(FTSRC)smooth$(D)ftgrays.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftgrays.$(OBJ) $(C_) $(FTSRC)smooth$(D)ftgrays.c
@@ -573,17 +560,8 @@ $(FTOBJ)ftgrays.$(OBJ) : $(FTSRC)smooth$(D)ftgrays.c $(FT_MAK) $(MAKEDIRS)
 $(FTOBJ)ftsmooth.$(OBJ) : $(FTSRC)smooth$(D)ftsmooth.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftsmooth.$(OBJ) $(C_) $(FTSRC)smooth$(D)ftsmooth.c
 
-$(FTOBJ)ftspic.$(OBJ) : $(FTSRC)smooth$(D)ftspic.c $(FT_MAK) $(MAKEDIRS)
-	$(FTCC) $(FTO_)ftspic.$(OBJ) $(C_) $(FTSRC)smooth$(D)ftspic.c
-
-$(FTOBJ)sfobjs.$(OBJ) : $(FTSRC)sfnt$(D)sfobjs.c $(FT_MAK) $(MAKEDIRS)
-	$(FTCC) $(FTO_)sfobjs.$(OBJ) $(C_) $(FTSRC)sfnt$(D)sfobjs.c
-
-$(FTOBJ)sfdriver.$(OBJ) : $(FTSRC)sfnt$(D)sfdriver.c $(FT_MAK) $(MAKEDIRS)
-	$(FTCC) $(FTO_)sfdriver.$(OBJ) $(C_) $(FTSRC)sfnt$(D)sfdriver.c
-
-$(FTOBJ)ttcmap.$(OBJ) : $(FTSRC)sfnt$(D)ttcmap.c $(FT_MAK) $(MAKEDIRS)
-	$(FTCC) $(FTO_)ttcmap.$(OBJ) $(C_) $(FTSRC)sfnt$(D)ttcmap.c
+$(FTOBJ)smooth.$(OBJ) : $(FTSRC)smooth$(D)smooth.c $(FT_MAK) $(MAKEDIRS)
+	$(FTCC) $(FTO_)smooth.$(OBJ) $(C_) $(FTSRC)smooth$(D)smooth.c
 
 $(FTOBJ)ttmtx.$(OBJ) : $(FTSRC)sfnt$(D)ttmtx.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ttmtx.$(OBJ) $(C_) $(FTSRC)sfnt$(D)ttmtx.c
@@ -603,11 +581,14 @@ $(FTOBJ)ttkern.$(OBJ) : $(FTSRC)sfnt$(D)ttkern.c $(FT_MAK) $(MAKEDIRS)
 $(FTOBJ)ttbdf.$(OBJ) : $(FTSRC)sfnt$(D)ttbdf.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ttbdf.$(OBJ) $(C_) $(FTSRC)sfnt$(D)ttbdf.c
 
-$(FTOBJ)sfntpic.$(OBJ) : $(FTSRC)sfnt$(D)sfntpic.c $(FT_MAK) $(MAKEDIRS)
-	$(FTCC) $(FTO_)sfntpic.$(OBJ) $(C_) $(FTSRC)sfnt$(D)sfntpic.c
+$(FTOBJ)sfnt.$(OBJ) : $(FTSRC)sfnt$(D)sfnt.c $(FT_MAK) $(MAKEDIRS)
+	$(FTCC) $(FTO_)sfnt.$(OBJ) $(C_) $(FTSRC)sfnt$(D)sfnt.c
 
 $(FTOBJ)pngshim.$(OBJ) : $(FTSRC)sfnt$(D)pngshim.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)pngshim.$(OBJ) $(C_) $(FTSRC)sfnt$(D)pngshim.c
+
+$(FTOBJ)ttcpal.$(OBJ) : $(FTSRC)sfnt$(D)ttcpal.c $(FT_MAK) $(MAKEDIRS)
+	$(FTCC) $(FTO_)ttcpal.$(OBJ) $(C_) $(FTSRC)sfnt$(D)ttcpal.c
 
 $(FTOBJ)ttdriver.$(OBJ) : $(FTSRC)truetype$(D)ttdriver.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ttdriver.$(OBJ) $(C_) $(FTSRC)truetype$(D)ttdriver.c
@@ -627,8 +608,8 @@ $(FTOBJ)ft2ttinterp.$(OBJ) : $(FTSRC)truetype$(D)ttinterp.c $(FT_MAK) $(MAKEDIRS
 $(FTOBJ)ttgxvar.$(OBJ) : $(FTSRC)truetype$(D)ttgxvar.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ttgxvar.$(OBJ) $(C_) $(FTSRC)truetype$(D)ttgxvar.c
 
-$(FTOBJ)ttpic.$(OBJ) : $(FTSRC)truetype$(D)ttpic.c $(FT_MAK) $(MAKEDIRS)
-	$(FTCC) $(FTO_)ttpic.$(OBJ) $(C_) $(FTSRC)truetype$(D)ttpic.c
+$(FTOBJ)truetype.$(OBJ) : $(FTSRC)truetype$(D)truetype.c $(FT_MAK) $(MAKEDIRS)
+	$(FTCC) $(FTO_)truetype.$(OBJ) $(C_) $(FTSRC)truetype$(D)truetype.c
 
 $(FTOBJ)ttsubpix.$(OBJ) : $(FTSRC)truetype$(D)ttsubpix.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ttsubpix.$(OBJ) $(C_) $(FTSRC)truetype$(D)ttsubpix.c
