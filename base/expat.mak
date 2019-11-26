@@ -47,8 +47,7 @@ expat.config-clean :
 
 expat_=$(EXPATOBJ)xmlparse.$(OBJ) \
 	$(EXPATOBJ)xmltok.$(OBJ) \
-	$(EXPATOBJ)xmlrole.$(OBJ) \
-        $(EXPATOBJ)loadlibrary.$(OBJ)
+	$(EXPATOBJ)xmlrole.$(OBJ)
 
 expat_xmlparse_hdrs=$(EXPATSRC)expat.h \
 	$(EXPATSRC)xmlrole.h \
@@ -80,9 +79,6 @@ $(EXPATOBJ)xmlrole.$(OBJ) : $(EXPATSRC)xmlrole.c $(expat_xmlrole_hdrs) $(EXPAT_M
 
 $(EXPATOBJ)xmltok.$(OBJ) : $(EXPATSRC)xmltok.c $(expat_xmltok_hdrs) $(EXPAT_MAK) $(MAKEDIRS)
 	$(EXPATCC) $(EXPATO_)xmltok.$(OBJ) $(C_) $(EXPATSRC)xmltok.c
-
-$(EXPATOBJ)loadlibrary.$(OBJ) : $(EXPATSRC)loadlibrary.c $(expat_xmltok_hdrs) $(EXPAT_MAK) $(MAKEDIRS)
-	$(EXPATCC) $(EXPATO_)loadlibrary.$(OBJ) $(C_) $(EXPATSRC)loadlibrary.c
 
 # Copy the target definition we want
 $(EXPATGEN)expat.dev : $(EXPAT_MAK) \
