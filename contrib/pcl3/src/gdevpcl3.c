@@ -1493,6 +1493,7 @@ static int pcl3_print_page(gx_device_printer *device, gp_file *out)
     rc = gs_note_error(gs_error_VMerror);
     goto end;
   }
+  eprn_number_of_octets((eprn_Device *)dev, lengths);
   rd.next = (pcl_OctetString *)malloc(planes*sizeof(pcl_OctetString));
   if (!rd.next) {
     rc = gs_note_error(gs_error_VMerror);
@@ -1510,8 +1511,14 @@ static int pcl3_print_page(gx_device_printer *device, gp_file *out)
     for (j=0; j<planes; j++) { /* Make sure we can free at any point. */
       rd.previous[j].str = NULL;
     }
+    for (j = 0; j < planes; j++) {
+      rd.previous[j].str = (pcl_Octet *)malloc(lengths[j]*sizeof(eprn_Octet));
+      if (!rd.previous[j].str) {
+        rc = gs_note_error(gs_error_VMerror);
+        goto end;
+      }
+    }
   }
-  eprn_number_of_octets((eprn_Device *)dev, lengths);
   rd.width = 8*lengths[0];      /* all colorants have equal resolution */
   for (j = 0; j < planes; j++) {
     rd.next[j].str = (pcl_Octet *)malloc(lengths[j]*sizeof(eprn_Octet));
@@ -1521,14 +1528,6 @@ static int pcl3_print_page(gx_device_printer *device, gp_file *out)
     }
   }
     /* Note: 'pcl_Octet' must be identical with 'eprn_Octet'. */
-  if (pcl_cm_is_differential(dev->file_data.compression))
-    for (j = 0; j < planes; j++) {
-      rd.previous[j].str = (pcl_Octet *)malloc(lengths[j]*sizeof(eprn_Octet));
-      if (!rd.previous[j].str) {
-        rc = gs_note_error(gs_error_VMerror);
-        goto end;
-      }
-    }
   rd.workspace_allocated = lengths[0];
   for (j = 1; j < planes; j++)
     if (lengths[j] > rd.workspace_allocated)
