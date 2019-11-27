@@ -1443,17 +1443,13 @@ static int pcl3_close_device(gx_device *device)
 
 ******************************************************************************/
 
-/* Macro to handle return codes from calls to pclgen routines */
-#define guard(call) \
-    if ((rc = (call)) != 0) { \
-      if (rc > 0) { \
-        rc = gs_note_error(gs_error_Fatal); /* bugs are fatal :-) */ \
-      } \
-      else { \
-        rc = gs_note_error(gs_error_ioerror);   /* actually any environment error */ \
-      } \
-      goto end; \
-    }
+/* Function to convert return codes from calls to pclgen routines. */
+static int convert(int code)
+{
+    if (code > 0)   return gs_error_Fatal;
+    if (code < 0)   return gs_error_ioerror;
+    return 0;
+}
 
 static int pcl3_print_page(gx_device_printer *device, gp_file *out)
 {
@@ -1481,7 +1477,11 @@ static int pcl3_print_page(gx_device_printer *device, gp_file *out)
      printer first */
   if (gdev_prn_file_is_new(device) || !dev->configured ||
       dev->configure_every_page) {
-    guard(pcl3_init_file(device->memory, out, &dev->file_data))
+    rc = convert(pcl3_init_file(device->memory, out, &dev->file_data));
+    if (rc) {
+        gs_note_error(rc);
+        goto end;
+    }
     dev->configured = true;
   }
 
@@ -1507,7 +1507,7 @@ static int pcl3_print_page(gx_device_printer *device, gp_file *out)
       rc = gs_note_error(gs_error_VMerror);
       goto end;
     }
-    for (j=0; j<planes; j++) {
+    for (j=0; j<planes; j++) { /* Make sure we can free at any point. */
       rd.previous[j].str = NULL;
     }
   }
@@ -1544,8 +1544,16 @@ static int pcl3_print_page(gx_device_printer *device, gp_file *out)
   }
 
   /* Open the page and start raster mode */
-  guard(pcl3_begin_page(out, &dev->file_data))
-  guard(pcl3_begin_raster(out, &rd))
+  rc = convert(pcl3_begin_page(out, &dev->file_data));
+  if (rc) {
+    gs_note_error(rc);
+    goto end;
+  }
+  rc = convert(pcl3_begin_raster(out, &rd));
+  if (rc) {
+    gs_note_error(rc);
+    goto end;
+  }
 
   /* Loop over scan lines */
   blank_lines = 0;
@@ -1579,16 +1587,32 @@ static int pcl3_print_page(gx_device_printer *device, gp_file *out)
     if (j == planes) blank_lines++;
     else {
       if (blank_lines > 0) {
-        guard(pcl3_skip_groups(out, &rd, blank_lines))
+        rc = convert(pcl3_skip_groups(out, &rd, blank_lines));
+        if (rc) {
+          gs_note_error(rc);
+          goto end;
+        }
         blank_lines = 0;
       }
-      guard(pcl3_transfer_group(out, &rd))
+      rc = convert(pcl3_transfer_group(out, &rd));
+      if (rc) {
+        gs_note_error(rc);
+        goto end;
+      }
     }
   }
 
   /* Terminate raster mode and close the page */
-  guard(pcl3_end_raster(out, &rd))
-  guard(pcl3_end_page(out, &dev->file_data))
+  rc = convert(pcl3_end_raster(out, &rd));
+  if (rc) {
+    gs_note_error(rc);
+    goto end;
+  }
+  rc = convert(pcl3_end_page(out, &dev->file_data));
+  if (rc) {
+    gs_note_error(rc);
+    goto end;
+  }
 
 end:
   /* Free dynamic storage */
@@ -1616,5 +1640,3 @@ end:
 
   return rc;
 }
-
-#undef guard
