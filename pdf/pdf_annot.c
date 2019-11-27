@@ -31,8 +31,9 @@
 #include "pdf_annot.h"
 #include "pdf_colour.h"
 #include "gspath2.h"
+#include "pdf_image.h"
 
-typedef bool (*annot_func)(pdf_context *ctx, pdf_dict *annot, bool *render_done);
+typedef int (*annot_func)(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done);
 
 typedef struct {
     const char *subtype;
@@ -77,12 +78,108 @@ static int pdfi_annot_calcscale(pdf_context *ctx, pdf_dict *annot, double *xscal
     return 0;
 }
 
-/* See pdf_draw.ps/drawwidget */
-static int pdfi_annot_draw_widget(pdf_context *ctx, pdf_dict *annot, double xscale, double yscale)
+static int pdfi_annot_rect(pdf_context *ctx, pdf_dict *annot, gs_rect *rect)
 {
-    /* TODO: Implement this */
+    int code;
+    pdf_array *Rect = NULL;
 
-    return 0;
+    code = pdfi_dict_knownget_type(ctx, annot, "Rect", PDF_ARRAY, (pdf_obj **)&Rect);
+    if (code < 0) goto exit;
+
+    code = pdfi_array_to_gs_rect(ctx, Rect, rect);
+    if (code < 0) goto exit;
+
+    pdfi_normalize_rect(ctx, rect);
+
+ exit:
+    pdfi_countdown(Rect);
+    return code;
+}
+
+/* See pdf_draw.ps/drawwidget (draws the AP for any type of thingy) */
+static int pdfi_annot_draw_AP(pdf_context *ctx, pdf_dict *annot,
+                                  double xscale, double yscale,
+                                  pdf_dict *NormAP)
+{
+    int code = 0;
+    gs_rect rect;
+    pdf_array *BBox = NULL;
+    gs_rect bbox;
+    pdf_array *Matrix = NULL;
+    gs_matrix matrix;
+
+    /* TODO: Just rendering the Norm AP for now.  Lots of other convoluted things
+     *  I am not handling...
+     */
+    if (NormAP == NULL)
+        return 0;
+
+
+    code = pdfi_op_q(ctx);
+    if (code < 0)
+        return code;
+
+    /* TODO: graphicsbeginpage, textbeginpage
+     * These should match what was done at the beginning of the page,
+     * but current implementation has things kind of mixed around.
+     * Need to figure out exactly what to do.  I'd like it to be one
+     * function in both places.
+     * see pdfi_page_render()
+     */
+    /* graphicsbeginpage() */
+    /* textbeginpage() */
+    code = gs_initgraphics(ctx->pgs);
+    code = gs_setstrokeconstantalpha(ctx->pgs, 1.0);
+    code = gs_setfillconstantalpha(ctx->pgs, 1.0);
+    code = gs_setalphaisshape(ctx->pgs, 0);
+    code = gs_setblendmode(ctx->pgs, BLEND_MODE_Compatible);
+    code = gs_settextknockout(ctx->pgs, true);
+    code = gs_settextspacing(ctx->pgs, (double)0.0);
+    code = gs_settextleading(ctx->pgs, (double)0.0);
+    gs_settextrenderingmode(ctx->pgs, 0);
+    code = gs_setwordspacing(ctx->pgs, (double)0.0);
+    code = gs_settexthscaling(ctx->pgs, (double)100.0);
+    code = gs_setsmoothness(ctx->pgs, 0.02); /* Match gs code */
+    ctx->TextBlockDepth = 0;
+    /* TODO: FIXME */
+
+
+    code = pdfi_annot_rect(ctx, annot, &rect);
+    if (code < 0) goto exit;
+
+    code = gs_translate(ctx->pgs, rect.p.x, rect.p.y);
+    if (code < 0) goto exit;
+
+    code = gs_scale(ctx->pgs, xscale, yscale);
+    if (code < 0) goto exit;
+
+    code = pdfi_dict_knownget_type(ctx, NormAP, "BBox", PDF_ARRAY, (pdf_obj **)&BBox);
+    if (code < 0) goto exit;
+    if (code > 0) {
+        code = pdfi_array_to_gs_rect(ctx, BBox, &bbox);
+        if (code < 0) goto exit;
+
+        code = pdfi_dict_knownget_type(ctx, annot, "Matrix", PDF_ARRAY, (pdf_obj **)&Matrix);
+        if (code < 0) goto exit;
+
+        code = pdfi_array_to_gs_matrix(ctx, Matrix, &matrix);
+        if (code < 0) goto exit;
+
+        pdfi_bbox_transform(ctx, &bbox, &matrix);
+
+        /* Compensate for non-zero origin of BBox */
+        code = gs_translate(ctx->pgs, -bbox.p.x, -bbox.p.y);
+        if (code < 0) goto exit;
+
+    }
+    code = pdfi_do_image_or_form(ctx, NULL, ctx->CurrentPageDict, NormAP);
+    if (code < 0) goto exit;
+
+ exit:
+    (void)pdfi_op_Q(ctx);
+    pdfi_countdown(BBox);
+    pdfi_countdown(Matrix);
+    return code;
 }
 
 static int pdfi_annot_setcolor(pdf_context *ctx, pdf_dict *annot, bool *drawit)
@@ -118,7 +215,6 @@ static int pdfi_annot_strokeborder(pdf_context *ctx, pdf_dict *annot, double wid
     int code = 0;
     bool drawit;
     gs_rect rect;
-    pdf_array *Rect = NULL;
 
     if (width <= 0)
         return 0;
@@ -134,13 +230,7 @@ static int pdfi_annot_strokeborder(pdf_context *ctx, pdf_dict *annot, double wid
     code = gs_setlinewidth(ctx->pgs, width);
     if (code < 0) goto exit;
 
-    code = pdfi_dict_knownget_type(ctx, annot, "Rect", PDF_ARRAY, (pdf_obj **)&Rect);
-    if (code < 0) goto exit;
-
-    code = pdfi_array_to_gs_rect(ctx, Rect, &rect);
-    if (code < 0) goto exit;
-
-    pdfi_normalize_rect(ctx, &rect);
+    code = pdfi_annot_rect(ctx, annot, &rect);
 
     /* Stroke the rectangle */
     /* Adjust rectangle by the width */
@@ -152,7 +242,6 @@ static int pdfi_annot_strokeborder(pdf_context *ctx, pdf_dict *annot, double wid
 
  exit:
     (void)pdfi_grestore(ctx);
-    pdfi_countdown(Rect);
     return code;
 }
 
@@ -288,7 +377,29 @@ static int pdfi_annot_draw_border(pdf_context *ctx, pdf_dict *annot)
     return code;
 }
 
-static bool pdfi_annot_draw_Link(pdf_context *ctx, pdf_dict *annot, bool *render_done)
+/* Get the Normal AP dictionary/stream, if it exists
+ * Not an error if it doesn't exist, it will just be NULL
+ */
+static int pdfi_annot_get_NormAP(pdf_context *ctx, pdf_dict *annot, pdf_dict **NormAP)
+{
+    int code;
+    pdf_dict *AP = NULL;
+
+    *NormAP = NULL;
+
+    code = pdfi_dict_knownget_type(ctx, annot, "AP", PDF_DICT, (pdf_obj **)&AP);
+    if (code <= 0) goto exit;
+
+    code = pdfi_dict_knownget_type(ctx, AP, "N", PDF_DICT, (pdf_obj **)NormAP);
+    if (code > 0)
+        code = 0;
+
+ exit:
+    pdfi_countdown(AP);
+    return code;
+}
+
+static int pdfi_annot_draw_Link(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
 {
     int code;
     int code1;
@@ -307,7 +418,7 @@ static bool pdfi_annot_draw_Link(pdf_context *ctx, pdf_dict *annot, bool *render
     if (code < 0) goto exit;
 
     if (xscale * yscale > 0.0) {
-        code = pdfi_annot_draw_widget(ctx, annot, xscale, yscale);
+        code = pdfi_annot_draw_AP(ctx, annot, xscale, yscale, NormAP);
     } else {
         dbgmprintf(ctx->memory, "ANNOT: Ignoring annotation with scale factor of 0\n");
     }
@@ -320,19 +431,39 @@ static bool pdfi_annot_draw_Link(pdf_context *ctx, pdf_dict *annot, bool *render
     return code;
 }
 
-static bool pdfi_annot_draw_Ink(pdf_context *ctx, pdf_dict *annot, bool *render_done)
+static int pdfi_annot_draw_Ink(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
 {
-    return false;
+    *render_done = true;
+    return 0;
 }
 
-static bool pdfi_annot_draw_Widget(pdf_context *ctx, pdf_dict *annot, bool *render_done)
+static int pdfi_annot_draw_Circle(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
 {
-    return false;
+    int code = 0;
+
+    if (NormAP) {
+        *render_done = false;
+        goto exit;
+    }
+
+    /* TODO: Generate appearance (see pdf_draw.ps/Circle) */
+    *render_done = true;
+
+ exit:
+    return code;
+}
+
+/* Draws a thing of type /Widget */
+static int pdfi_annot_draw_Widget(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
+{
+    return 0;
 }
 
 annot_dispatch_t annot_dispatch[] = {
     {"Link", pdfi_annot_draw_Link},
     {"Ink", pdfi_annot_draw_Ink},
+    {"Circle", pdfi_annot_draw_Circle},
+    {"Widget", pdfi_annot_draw_Widget},
     { NULL, NULL},
 };
 
@@ -402,9 +533,10 @@ static int pdfi_annot_preserve(pdf_context *ctx, pdf_dict *annot)
 static int pdfi_annot_draw(pdf_context *ctx, pdf_dict *annot)
 {
     pdf_name *Subtype = NULL;
+    pdf_dict *NormAP = NULL;
     int code;
     annot_dispatch_t *dispatch_ptr;
-    bool render_done = false;
+    bool render_done = true;
 
     code = pdfi_dict_get_type(ctx, annot, "Subtype", PDF_NAME, (pdf_obj **)&Subtype);
     if (code != 0) {
@@ -422,24 +554,28 @@ static int pdfi_annot_draw(pdf_context *ctx, pdf_dict *annot)
     if (!pdfi_annot_check_type(ctx, Subtype))
         goto exit;
 
+    /* Get the Normal AP, if it exists */
+    code = pdfi_annot_get_NormAP(ctx, annot, &NormAP);
+    if (code < 0) goto exit;
+
     code = pdfi_gsave(ctx);
-    if (code < 0)
-        goto exit;
+    if (code < 0) goto exit;
 
     /* Draw the annotation */
     for (dispatch_ptr = annot_dispatch; dispatch_ptr->subtype; dispatch_ptr ++) {
         if (pdfi_name_is(Subtype, dispatch_ptr->subtype)) {
-            code = dispatch_ptr->func(ctx, annot, &render_done);
+            code = dispatch_ptr->func(ctx, annot, NormAP, &render_done);
             break;
         }
     }
     if (!render_done)
-        code = pdfi_annot_draw_Widget(ctx, annot, &render_done);
+        code = pdfi_annot_draw_AP(ctx, annot, 1.0, 1.0, NormAP);
 
     (void)pdfi_grestore(ctx);
 
  exit:
     pdfi_countdown(Subtype);
+    pdfi_countdown(NormAP);
     return code;
 }
 
