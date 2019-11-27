@@ -866,6 +866,12 @@ pdf_context *pdfi_create_context(gs_memory_t *pmem)
 
     ctx->main_stream = NULL;
 
+    /* Setup some flags that don't default to 'false' */
+    ctx->showannots = true;
+    ctx->preserveannots = true;
+    /* NOTE: For testing certain annotations on cluster, might want to set this to false */
+    ctx->printed = true; /* TODO: Should be true if OutputFile is set, false otherwise */
+
     /* Gray, RGB and CMYK profiles set when color spaces installed in graphics lib */
     ctx->gray_lin = gs_cspace_new_ICC(ctx->memory, ctx->pgs, -1);
     ctx->gray = gs_cspace_new_ICC(ctx->memory, ctx->pgs, 1);

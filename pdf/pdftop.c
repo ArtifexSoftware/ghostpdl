@@ -408,7 +408,6 @@ pdf_impl_set_param(pl_interp_implementation_t *impl,
         ctx->showacroform = boolval;
         return 0;
     }
-    ctx->showannots = true;;
     if (!strncmp(param, "ShowAnnots", 10)) {
         ctx->showannots = boolval;
         return 0;
