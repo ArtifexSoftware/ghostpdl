@@ -239,8 +239,11 @@ gs_begin_transparency_group(gs_gstate *pgs,
        target device (process color model).  Here we just want
        to set it as a unknown type for clist writing, as we will take care
        of using the parent group color space later during clist reading.
-     */
-
+       Also, if the group was not isolated we MUST use the parent group
+       color space regardless of what the group color space is specified to be.
+       Note that the page group should always be isolated */
+    if (group_type == PDF14_BEGIN_TRANS_PAGE_GROUP)
+        params.Isolated = true;
 
     if (ptgp->ColorSpace == NULL || params.Isolated != true) {
         params.group_color = UNKNOWN;

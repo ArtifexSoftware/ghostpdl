@@ -190,6 +190,9 @@ struct pdf14_ctx_s {
     int smask_depth;  /* used to catch smasks embedded in smasks.  bug691803 */
     bool smask_blend;
     bool deep; /* If true, 16 bit data, false, 8 bit data. */
+    bool has_tags;
+    int num_spots;
+
 };
 
 typedef struct gs_pdf14trans_params_s gs_pdf14trans_params_t;

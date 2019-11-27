@@ -1063,6 +1063,8 @@ gx_default_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
         /* Just ignore information about events */
         case gxdso_event_info:
             return 0;
+        case gxdso_supports_alpha:
+            return 0;
         case gxdso_overprint_active:
             return 0;
     }
