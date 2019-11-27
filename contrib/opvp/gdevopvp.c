@@ -1796,6 +1796,7 @@ opvp_load_vector_driver(void)
                 }
                 OpenPrinter_0_2 = NULL;
                 ErrorNo = NULL;
+                dlclose(h);
             }
             i++;
         }
