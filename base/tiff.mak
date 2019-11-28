@@ -42,7 +42,7 @@ tiff_1=$(TIFFOBJ)tif_aux.$(OBJ) $(TIFFOBJ)tif_close.$(OBJ) $(TIFFOBJ)tif_codec.$
 tiff_2=$(TIFFOBJ)tif_compress.$(OBJ) $(TIFFOBJ)tif_dir.$(OBJ) $(TIFFOBJ)tif_dirinfo.$(OBJ) $(TIFFOBJ)tif_dirread.$(OBJ)
 tiff_3=$(TIFFOBJ)tif_dirwrite.$(OBJ) $(TIFFOBJ)tif_dumpmode.$(OBJ) $(TIFFOBJ)tif_error.$(OBJ) $(TIFFOBJ)tif_extension.$(OBJ)
 tiff_4=$(TIFFOBJ)tif_fax3.$(OBJ) $(TIFFOBJ)tif_fax3sm.$(OBJ) $(TIFFOBJ)tif_flush.$(OBJ) $(TIFFOBJ)tif_getimage.$(OBJ)
-tiff_5=$(TIFFOBJ)tif_jbig.$(OBJ) $(TIFFOBJ)tif_jpeg.$(OBJ) $(TIFFOBJ)tif_luv.$(OBJ) $(TIFFOBJ)tif_lzw.$(OBJ)
+tiff_5=$(TIFFOBJ)tif_jbig.$(OBJ) $(TIFFOBJ)tif_jpeg.$(OBJ) $(TIFFOBJ)tif_jpeg_12.$(OBJ) $(TIFFOBJ)tif_luv.$(OBJ) $(TIFFOBJ)tif_lzw.$(OBJ)
 tiff_6=$(TIFFOBJ)tif_next.$(OBJ) $(TIFFOBJ)tif_ojpeg.$(OBJ) $(TIFFOBJ)tif_open.$(OBJ) $(TIFFOBJ)tif_packbits.$(OBJ)
 tiff_7=$(TIFFOBJ)tif_pixarlog.$(OBJ) $(TIFFOBJ)tif_predict.$(OBJ) $(TIFFOBJ)tif_print.$(OBJ) $(TIFFOBJ)tif_read.$(OBJ)
 tiff_8=$(TIFFOBJ)tif_strip.$(OBJ) $(TIFFOBJ)tif_swab.$(OBJ) $(TIFFOBJ)tif_thunder.$(OBJ) $(TIFFOBJ)tif_tile.$(OBJ)
@@ -109,6 +109,9 @@ $(TIFFOBJ)tif_getimage.$(OBJ) : $(TIFFSRC)/libtiff/tif_getimage.c $(TIFFDEP)
 
 $(TIFFOBJ)tif_jbig.$(OBJ) : $(TIFFSRC)/libtiff/tif_jbig.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_jbig.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_jbig.c
+
+$(TIFFOBJ)tif_jpeg_12.$(OBJ) : $(TIFFSRC)/libtiff/tif_jpeg_12.c $(TIFFDEP) $(JGENDIR)/jconfig.h
+	$(TIFFCC) $(TIFFO_)tif_jpeg_12.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_jpeg_12.c
 
 $(TIFFOBJ)tif_jpeg.$(OBJ) : $(TIFFSRC)/libtiff/tif_jpeg.c $(TIFFDEP) $(JGENDIR)/jconfig.h
 	$(TIFFCC) $(TIFFO_)tif_jpeg.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_jpeg.c

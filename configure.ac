@@ -1116,6 +1116,8 @@ AC_SUBST(FTSRCDIR)
 AC_SUBST(FT_CFLAGS)
 AC_SUBST(FT_LIBS)
 
+TIFF_JPEG_INCLUDE=
+
 if test x"$enable_auxtools_only" = x"yes" ; then
   LIBJPEGDIR=
   SHARE_LIBJPEG=0
@@ -1143,6 +1145,11 @@ else
             AC_CHECK_HEADERS([jpeglib.h], [SHARE_LIBJPEG=1])
           ])
   fi
+
+  if test x"$LIBJPEGDIR" != x"src" ; then
+    TIFF_JPEG_INCLUDE="$LIBJPEGDIR"
+  fi
+
   if test -z "$SHARE_LIBJPEG"; then
     AC_MSG_ERROR([I wasn't able to find a copy
     of the jpeg library. This is required for compiling
@@ -1437,6 +1444,12 @@ if test x"$SHARE_LIBTIFF" = x"0" ; then
 
       if test x"$ac_cv_prog_gcc" = x"yes"; then
         TIFFCFLAGS="-Wno-write-strings $CFLAGS_NMI $CFLAGS_NUD -DJPEG_LIB_MK1_OR_12BIT=0"
+      fi
+      # if we're building with our own libjpeg, or we have another libjpeg available, allow jpeg compression in TIFF
+      if test x"$TIFF_JPEG_INCLUDE" != x"src" ; then
+        TIFFCFLAGS="-DJPEG_SUPPORT -DJPEG_LIB_MK1_OR_12BIT=0 -I$TIFF_JPEG_INCLUDE $TIFFCFLAGS"
+      elif test x"$SHARE_LIBJPEG" = x"1" ; then
+        TIFFCFLAGS="-DJPEG_SUPPORT -DJPEG_LIB_MK1_OR_12BIT=0 $TIFFCFLAGS"
       fi
 
       echo
