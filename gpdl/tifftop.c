@@ -67,6 +67,7 @@ typedef struct tiff_interp_instance_s {
     uint32_t           yresolution;
     uint32_t           tile_height;
     uint32_t           tile_width;
+    uint32_t           tiled;
 
     uint32_t           num_comps;
     uint32_t           byte_width;
@@ -500,7 +501,8 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
             short planar;
             float f, scale;
             gs_color_space *cs;
-            unsigned int used;
+            unsigned int used[GS_IMAGE_MAX_COMPONENTS];
+            gs_string plane_data[GS_IMAGE_MAX_COMPONENTS];
 
             tiff->handle = TIFFClientOpen("dummy", "rm",
                                           (thandle_t)tiff,
@@ -523,20 +525,44 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
             TIFFGetField(tiff->handle, TIFFTAG_BITSPERSAMPLE, &tiff->bpc);
             TIFFGetField(tiff->handle, TIFFTAG_SAMPLESPERPIXEL, &tiff->num_comps);
             TIFFGetField(tiff->handle, TIFFTAG_PLANARCONFIG, &planar);
+            f = 0;
             TIFFGetField(tiff->handle, TIFFTAG_XRESOLUTION, &f);
             tiff->xresolution = (uint32_t)(f+0.5);
+            f = 0;
             TIFFGetField(tiff->handle, TIFFTAG_YRESOLUTION, &f);
             tiff->yresolution = (uint32_t)(f+0.5);
 
-            if (TIFFIsTiled(tiff->handle)) {
-                tiff->samples = gs_alloc_bytes(tiff->memory, TIFFTileSize(tiff->handle), "tiff_tile");
-            } else {
+            if (tiff->xresolution == 0)
+                tiff->yresolution = tiff->xresolution;
+            if (tiff->yresolution == 0)
+                tiff->xresolution = tiff->yresolution;
+            if (tiff->xresolution == 0)
+                tiff->xresolution = tiff->yresolution = 72;
+            if (tiff->width == 0 || tiff->height == 0 || tiff->bpc == 0 || tiff->num_comps == 0 ||
+                !(planar == PLANARCONFIG_CONTIG || planar == PLANARCONFIG_SEPARATE)) {
+                tiff->state = ii_state_flush;
+                break;
+            }
+
+            tiff->tiled = TIFFIsTiled(tiff->handle);
+
+            if (!tiff->tiled) {
                 tiff->tile_width = tiff->width;
                 tiff->tile_height = tiff->height;
-                tiff->samples = gs_alloc_bytes(tiff->memory, TIFFScanlineSize(tiff->handle), "tiff_scan");
+            }
+
+            if (tiff->tiled || planar == PLANARCONFIG_CONTIG) {
+                tiff->byte_width = ((tiff->bpc * tiff->num_comps * tiff->tile_width + 7)>>3);
+            } else {
+                tiff->byte_width = ((tiff->bpc * tiff->tile_width + 7)>>3) * tiff->num_comps;
+            }
+
+            if (tiff->tiled) {
+                tiff->samples = gs_alloc_bytes(tiff->memory, TIFFTileSize(tiff->handle), "tiff_tile");
+            } else {
+                tiff->samples = gs_alloc_bytes(tiff->memory, tiff->byte_width, "tiff_scan");
             }
             if (tiff->samples == NULL) {
-                TIFFClose(tiff->handle);
                 tiff->state = ii_state_flush;
                 break;
             }
@@ -571,17 +597,13 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                 break;
             }
 
-            if (TIFFIsTiled(tiff->handle) || planar == PLANARCONFIG_CONTIG) {
-                tiff->byte_width = ((tiff->bpc * tiff->num_comps * tiff->tile_width + 7)>>3);
-            } else {
-                tiff->byte_width = ((tiff->bpc * tiff->tile_width + 7)>>3) * tiff->num_comps;
-            }
             code = gs_erasepage(tiff->pgs);
             if (code < 0) {
                 tiff->state = ii_state_flush;
                 return code;
             }
-            for (ty = 0; ty < tiff->height; ty += tiff->tile_height)
+
+            for (ty = 0; ty < tiff->height; ty += tiff->tile_height) {
                 for (tx = 0; tx < tiff->width; tx += tiff->tile_width) {
                     int y, s;
                     byte *row;
@@ -629,6 +651,12 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                     tiff->image.ImageMatrix.xx = tiff->xresolution / 72.0f;
                     tiff->image.ImageMatrix.yy = tiff->yresolution / 72.0f;
 
+                    if (tiff->tiled) {
+                        TIFFReadTile(tiff->handle, tiff->samples, tx, ty, 0, 0);
+                    } else if (planar != PLANARCONFIG_CONTIG) {
+                        tiff->image.format = gs_image_format_component_planar;
+                    }
+
                     code = gs_image_init(tiff->penum,
                                          &tiff->image,
                                          false,
@@ -639,24 +667,28 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                         return code;
                     }
 
-                    if (TIFFIsTiled(tiff->handle)) {
-                        TIFFReadTile(tiff->handle, tiff->samples, tx, ty, 0, 0);
-                    }
-
                     for (y = 0; y < tiff->tile_height; y++) {
-                        if (TIFFIsTiled(tiff->handle)) {
+                        if (tiff->tiled) {
                             row = tiff->samples + tiff->byte_width * y;
                         } else if (planar == PLANARCONFIG_CONTIG) {
                             row = tiff->samples;
                             TIFFReadScanline(tiff->handle, tiff->samples, ty+y, 0);
                         } else {
-                            int span = tiff->byte_width / tiff->num_comps; /* FIXME: Avoid division */
+                            int span = tiff->byte_width / tiff->num_comps;
                             row = tiff->samples;
-                            for (s = 0; s < tiff->num_comps; s++)
-                                TIFFReadScanline(tiff->handle, tiff->samples + span*s, ty+y, s);
+                            for (s = 0; s < tiff->num_comps; s++) {
+                                plane_data[s].data = row;
+                                plane_data[s].size = span;
+                                row += span;
+                                TIFFReadScanline(tiff->handle, plane_data[s].data, ty+y, s);
+                            }
                         }
 
-                        code = gs_image_next(tiff->penum, row, tiff->byte_width, &used);
+                        if (tiff->image.format == gs_image_format_component_planar) {
+                            code = gs_image_next_planes(tiff->penum, (gs_const_string *)&plane_data[0], used);
+                        } else {
+                            code = gs_image_next(tiff->penum, row, tiff->byte_width, used);
+                        }
                         if (code < 0) {
                             tiff->state = ii_state_flush;
                             break;
@@ -668,6 +700,7 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                         tiff->state = ii_state_flush;
                         break;
                     }
+                }
             }
             tiff->state = ii_state_flush;
             (void)pl_finish_page(tiff->memory->gs_lib_ctx->top_of_system,
