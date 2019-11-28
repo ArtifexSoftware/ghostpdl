@@ -402,15 +402,17 @@ runlength(byte *out, byte *in, int length)
     return p_out - out;
 }
 
-#define write_short(data, stream) { \
-    gp_fputc((unsigned char) (data), stream); \
-    gp_fputc((unsigned short) (data) >> 8, stream); \
+static void write_short(unsigned data, gp_file* stream)
+{
+    gp_fputc((unsigned char) (data), stream);
+    gp_fputc((unsigned short) (data) >> 8, stream);
 }
 
-#define alps_cmd(cmd1, data, cmd2, stream) { \
-    gp_fwrite(cmd1, 1, 3, stream); \
-    write_short(data, stream); \
-    gp_fputc(cmd2, stream); \
+static void alps_cmd(const char* cmd1, unsigned data, int cmd2, gp_file* stream)
+{
+    gp_fwrite(cmd1, 1, 3, stream);
+    write_short(data, stream);
+    gp_fputc(cmd2, stream);
 }
 
 static void
