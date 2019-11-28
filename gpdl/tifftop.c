@@ -26,6 +26,8 @@
 #include "gspaint.h"
 #include "plmain.h"
 #include "tiffio.h"
+#include "jmemcust.h"
+#include "gsmchunk.h"
 
 /* Forward decls */
 
@@ -68,6 +70,7 @@ typedef struct tiff_interp_instance_s {
     uint32_t           tile_height;
     uint32_t           tile_width;
     uint32_t           tiled;
+    uint32_t           compression;
 
     uint32_t           num_comps;
     uint32_t           byte_width;
@@ -83,7 +86,7 @@ typedef struct tiff_interp_instance_s {
     TIFF              *handle;
 
     byte              *samples;
-
+    jpeg_cust_mem_data jmem;
 } tiff_interp_instance_t;
 
 static int
@@ -414,6 +417,59 @@ static toff_t tifsSizeProc(thandle_t tiff_)
     return tiff->buffer_full;
 }
 
+#if defined(SHARE_LIBTIFF) && SHARE_LIBTIFF==0
+static void *gs_j_mem_alloc(j_common_ptr cinfo, size_t size)
+{
+    gs_memory_t *mem = (gs_memory_t *)(GET_CUST_MEM_DATA(cinfo)->priv);
+
+    return(gs_alloc_bytes(mem, size, "JPEG allocation"));
+}
+
+static void gs_j_mem_free(j_common_ptr cinfo, void *object, size_t size)
+{
+    gs_memory_t *mem = (gs_memory_t *)(GET_CUST_MEM_DATA(cinfo)->priv);
+
+    gs_free_object(mem, object, "JPEG free");
+}
+
+static long gs_j_mem_init (j_common_ptr cinfo)
+{
+    gs_memory_t *mem = (gs_memory_t *)(GET_CUST_MEM_DATA(cinfo)->priv);
+    gs_memory_t *cmem = NULL;
+
+    if (gs_memory_chunk_wrap(&(cmem), mem) < 0) {
+        return (-1);
+    }
+
+    (void)jpeg_cust_mem_set_private(GET_CUST_MEM_DATA(cinfo), cmem);
+
+    return 0;
+}
+
+static void gs_j_mem_term (j_common_ptr cinfo)
+{
+    gs_memory_t *cmem = (gs_memory_t *)(GET_CUST_MEM_DATA(cinfo)->priv);
+    gs_memory_t *mem = gs_memory_chunk_target(cmem);
+
+    gs_memory_chunk_release(cmem);
+
+    (void)jpeg_cust_mem_set_private(GET_CUST_MEM_DATA(cinfo), mem);
+}
+
+static void *
+tiff_jpeg_mem_callback(thandle_t tiff_)
+{
+    tiff_interp_instance_t *tiff = (tiff_interp_instance_t *)tiff_;
+
+    (void)jpeg_cust_mem_init(&tiff->jmem, (void *)tiff->memory,
+                             gs_j_mem_init, gs_j_mem_term, NULL,
+                            gs_j_mem_alloc, gs_j_mem_free,
+                            gs_j_mem_alloc, gs_j_mem_free, NULL);
+
+    return &tiff->jmem;
+}
+#endif /* SHARE_LIBTIFF == 0 */
+
 static int
 do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int eof)
 {
@@ -518,6 +574,15 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                 break;
             }
 
+            TIFFGetField(tiff->handle, TIFFTAG_COMPRESSION, &tiff->compression);
+            if (tiff->compression == COMPRESSION_JPEG){
+                TIFFSetField(tiff->handle, TIFFTAG_JPEGCOLORMODE, JPEGCOLORMODE_RGB);
+            }
+#if defined(SHARE_LIBTIFF) && SHARE_LIBTIFF==0
+            TIFFSetJpegMemFunction(tiff->handle,
+                                   &tiff_jpeg_mem_callback);
+#endif
+
             TIFFGetField(tiff->handle, TIFFTAG_IMAGEWIDTH, &tiff->width);
             TIFFGetField(tiff->handle, TIFFTAG_IMAGELENGTH, &tiff->height);
             TIFFGetField(tiff->handle, TIFFTAG_TILEWIDTH, &tiff->tile_width);
@@ -557,7 +622,9 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                 tiff->byte_width = ((tiff->bpc * tiff->tile_width + 7)>>3) * tiff->num_comps;
             }
 
-            if (tiff->tiled) {
+            if (tiff->compression == COMPRESSION_OJPEG) {
+                tiff->samples = gs_alloc_bytes(tiff->memory, sizeof(uint32_t) * tiff->width * tiff->height, "tiff_image");
+            } else if (tiff->tiled) {
                 tiff->samples = gs_alloc_bytes(tiff->memory, TIFFTileSize(tiff->handle), "tiff_tile");
             } else {
                 tiff->samples = gs_alloc_bytes(tiff->memory, tiff->byte_width, "tiff_scan");
@@ -637,10 +704,8 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                         code = gs_translate(tiff->pgs, xoffset, -yoffset);
                     if (code >= 0)
                         code = gs_scale(tiff->pgs, scale, -scale);
-                    if (code < 0) {
-                        tiff->state = ii_state_flush;
-                        break;
-                    }
+                    if (code < 0)
+                        goto fail_decode;
 
                     memset(&tiff->image, 0, sizeof(tiff->image));
                     gs_image_t_init(&tiff->image, cs);
@@ -651,8 +716,31 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                     tiff->image.ImageMatrix.xx = tiff->xresolution / 72.0f;
                     tiff->image.ImageMatrix.yy = tiff->yresolution / 72.0f;
 
-                    if (tiff->tiled) {
-                        TIFFReadTile(tiff->handle, tiff->samples, tx, ty, 0, 0);
+                    if (tiff->compression == COMPRESSION_OJPEG) {
+                        int n = tiff->width * tiff->height;
+                        byte *p;
+                        uint32_t *q;
+                        if (tiff->tiled)
+                            goto fail_decode;
+                        if (TIFFReadRGBAImage(tiff->handle, tiff->width, tiff->height,
+                                              (uint32_t *)tiff->samples, 0) == 0) {
+                            code = gs_error_unknownerror;
+                            goto fail_decode;
+                        }
+                        q = tiff->samples;
+                        p = (byte *)q;
+                        while (n--) {
+                            uint32_t v = *q++;
+                            p[0] = v;
+                            p[1] = (v>>8);
+                            p[2] = (v>>16);
+                            p += 3;
+                        }
+                    } else if (tiff->tiled) {
+                        if (TIFFReadTile(tiff->handle, tiff->samples, tx, ty, 0, 0) == 0) {
+                            code = gs_error_unknownerror;
+                            goto fail_decode;
+                        }
                     } else if (planar != PLANARCONFIG_CONTIG) {
                         tiff->image.format = gs_image_format_component_planar;
                     }
@@ -668,11 +756,17 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                     }
 
                     for (y = 0; y < tiff->tile_height; y++) {
-                        if (tiff->tiled) {
+                        if (tiff->compression == COMPRESSION_OJPEG) {
+                            /* OJPEG appears to be upside down! */
+                            row = tiff->samples + tiff->byte_width * (tiff->tile_height-1-y);
+                        } else if (tiff->tiled) {
                             row = tiff->samples + tiff->byte_width * y;
                         } else if (planar == PLANARCONFIG_CONTIG) {
                             row = tiff->samples;
-                            TIFFReadScanline(tiff->handle, tiff->samples, ty+y, 0);
+                            if (TIFFReadScanline(tiff->handle, tiff->samples, ty+y, 0) == 0) {
+                                code = gs_error_unknownerror;
+                                goto fail_decode;
+                            }
                         } else {
                             int span = tiff->byte_width / tiff->num_comps;
                             row = tiff->samples;
@@ -680,7 +774,10 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                                 plane_data[s].data = row;
                                 plane_data[s].size = span;
                                 row += span;
-                                TIFFReadScanline(tiff->handle, plane_data[s].data, ty+y, s);
+                                if (TIFFReadScanline(tiff->handle, plane_data[s].data, ty+y, s) == 0) {
+                                    code = gs_error_unknownerror;
+                                    goto fail_decode;
+                                }
                             }
                         }
 
@@ -690,8 +787,8 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                             code = gs_image_next(tiff->penum, row, tiff->byte_width, used);
                         }
                         if (code < 0) {
-                            tiff->state = ii_state_flush;
-                            break;
+                            code = gs_error_unknownerror;
+                            goto fail_decode;
                         }
                     }
                     code = gs_image_cleanup_and_free_enum(tiff->penum, tiff->pgs);
@@ -705,6 +802,9 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
             tiff->state = ii_state_flush;
             (void)pl_finish_page(tiff->memory->gs_lib_ctx->top_of_system,
                                  tiff->pgs, 1, true);
+            break;
+fail_decode:
+            tiff->state = ii_state_flush;
             break;
         }
         default:

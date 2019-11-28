@@ -1446,10 +1446,8 @@ if test x"$SHARE_LIBTIFF" = x"0" ; then
         TIFFCFLAGS="-Wno-write-strings $CFLAGS_NMI $CFLAGS_NUD -DJPEG_LIB_MK1_OR_12BIT=0"
       fi
       # if we're building with our own libjpeg, or we have another libjpeg available, allow jpeg compression in TIFF
-      if test x"$TIFF_JPEG_INCLUDE" != x"src" ; then
-        TIFFCFLAGS="-DJPEG_SUPPORT -DJPEG_LIB_MK1_OR_12BIT=0 -I$TIFF_JPEG_INCLUDE $TIFFCFLAGS"
-      elif test x"$SHARE_LIBJPEG" = x"1" ; then
-        TIFFCFLAGS="-DJPEG_SUPPORT -DJPEG_LIB_MK1_OR_12BIT=0 $TIFFCFLAGS"
+      if test x"$SHARE_LIBJPEG" = x"1" ; then
+        TIFFCFLAGS="-DJPEG_SUPPORT -DOJPEG_SUPPORT -DJPEG_LIB_MK1_OR_12BIT=0 $TIFFCFLAGS"
       fi
 
       echo

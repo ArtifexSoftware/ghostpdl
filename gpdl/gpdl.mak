@@ -25,27 +25,27 @@ GPDLO_=$(O_)$(GPDLOBJ)
 GLGEN=$(GLGENDIR)$(D)
 
 GPDL_PSI_TOP_OBJ_FILE=psitop.$(OBJ)
-GPDL_PSI_TOP_OBJ=$(GPDLOBJ)/$(GPDL_PSI_TOP_OBJ_FILE)
+GPDL_PSI_TOP_OBJ=$(GPDLOBJ)$(GPDL_PSI_TOP_OBJ_FILE)
 
 GPDL_URF_TOP_OBJ_FILE=urftop.$(OBJ)
 
 GPDL_JPG_TOP_OBJ_FILE=jpgtop.$(OBJ)
-GPDL_JPG_TOP_OBJ=$(GPDLOBJ)/$(GPDL_JPG_TOP_OBJ_FILE)
+GPDL_JPG_TOP_OBJ=$(GPDLOBJ)$(GPDL_JPG_TOP_OBJ_FILE)
 
 GPDL_PWG_TOP_OBJ_FILE=pwgtop.$(OBJ)
-GPDL_PWG_TOP_OBJ=$(GPDLOBJ)/$(GPDL_PWG_TOP_OBJ_FILE)
+GPDL_PWG_TOP_OBJ=$(GPDLOBJ)$(GPDL_PWG_TOP_OBJ_FILE)
 
 GPDL_TIFF_TOP_OBJ_FILE=tifftop.$(OBJ)
-GPDL_TIFF_TOP_OBJ=$(GPDLOBJ)/$(GPDL_TIFF_TOP_OBJ_FILE)
+GPDL_TIFF_TOP_OBJ=$(GPDLOBJ)$(GPDL_TIFF_TOP_OBJ_FILE)
 
 GPDL_JBIG2_TOP_OBJ_FILE=jbig2top.$(OBJ)
-GPDL_JBIG2_TOP_OBJ=$(GPDLOBJ)/$(GPDL_JBIG2_TOP_OBJ_FILE)
+GPDL_JBIG2_TOP_OBJ=$(GPDLOBJ)$(GPDL_JBIG2_TOP_OBJ_FILE)
 
 GPDL_JP2K_TOP_OBJ_FILE=jp2ktop.$(OBJ)
-GPDL_JP2K_TOP_OBJ=$(GPDLOBJ)/$(GPDL_JP2K_TOP_OBJ_FILE)
+GPDL_JP2K_TOP_OBJ=$(GPDLOBJ)$(GPDL_JP2K_TOP_OBJ_FILE)
 
 GPDL_PNG_TOP_OBJ_FILE=pngtop.$(OBJ)
-GPDL_PNG_TOP_OBJ=$(GPDLOBJ)/$(GPDL_PNG_TOP_OBJ_FILE)
+GPDL_PNG_TOP_OBJ=$(GPDLOBJ)$(GPDL_PNG_TOP_OBJ_FILE)
 
 GPDL_PSI_TOP_OBJS=\
 	$(GPDL_PNG_TOP_OBJ)\
@@ -110,10 +110,18 @@ $(GPDL_PWG_TOP_OBJ): $(GPDLSRC)pwgtop.c $(AK)\
  $(spwgx_h) $(pltop_h) $(gsicc_manage_h) $(gspaint_h) $(plmain_h)
 	$(GPDLCC) $(GPDLSRC)pwgtop.c $(GPDLO_)$(GPDL_PWG_TOP_OBJ_FILE)
 
-$(GPDL_TIFF_TOP_OBJ): $(GPDLSRC)tifftop.c $(AK)\
+$(GPDLOBJ)tifftop_0.$(OBJ): $(GPDLSRC)tifftop.c $(AK)\
  $(gxdevice_h) $(gserrors_h) $(gsstate_h) $(strimpl_h) $(gscoord_h)\
- $(pltop_h) $(gsicc_manage_h) $(gspaint_h) $(plmain_h)
-	$(GPDLCC) $(II)$(TI_)$(_I) $(GPDLSRC)tifftop.c $(GPDLO_)$(GPDL_TIFF_TOP_OBJ_FILE)
+ $(pltop_h) $(gsicc_manage_h) $(gspaint_h) $(plmain_h) $(jmemcust_h)
+	$(GPDLCC) $(D_)SHARE_LIBTIFF=0 $(II)$(TI_)$(_I) $(II)$(JI_)$(_I) $(GPDLSRC)tifftop.c $(GPDLO_)tifftop_0.$(OBJ)
+
+$(GPDLOBJ)tifftop_1.$(OBJ): $(GPDLSRC)tifftop.c $(AK)\
+ $(gxdevice_h) $(gserrors_h) $(gsstate_h) $(strimpl_h) $(gscoord_h)\
+ $(pltop_h) $(gsicc_manage_h) $(gspaint_h) $(plmain_h) $(jmemcust_h)
+	$(GPDLCC) $(D_)SHARE_LIBTIFF=1 $(II)$(TI_)$(_I) $(II)$(JI_)$(_I) $(GPDLSRC)tifftop.c $(GPDLO_)tifftop_1.$(OBJ)
+
+$(GPDL_TIFF_TOP_OBJ): $(GPDLOBJ)tifftop_$(SHARE_LIBTIFF).$(OBJ)
+	$(CP_) $(GPDLOBJ)tifftop_$(SHARE_LIBTIFF).$(OBJ) $(GPDL_TIFF_TOP_OBJ)
 
 $(GPDL_JBIG2_TOP_OBJ): $(GPDLSRC)jbig2top.c $(AK)\
  $(gxdevice_h) $(gserrors_h) $(gsstate_h) $(strimpl_h) $(gscoord_h)\
