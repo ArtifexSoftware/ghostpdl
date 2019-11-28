@@ -1,5 +1,4 @@
-/* $Id: raw2tiff.c,v 1.29 2017-01-14 13:12:33 erouault Exp $
- *
+/*
  * Project:  libtiff tools
  * Purpose:  Convert raw byte sequences in TIFF images
  * Author:   Andrey Kiselev, dron@ak4719.spb.edu
@@ -61,7 +60,7 @@
 #include "tiffio.h"
 
 #ifndef HAVE_GETOPT
-extern int getopt(int, char**, char*);
+extern int getopt(int argc, char * const argv[], const char *optstring);
 #endif
 
 #ifndef O_BINARY

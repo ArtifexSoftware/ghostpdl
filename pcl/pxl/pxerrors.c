@@ -227,12 +227,17 @@ px_error_message_line(char message[px_max_error_line + 1], int N,
 
 /* Begin an error page.  Return the initial Y value. */
 int
-px_begin_error_page(px_state_t * pxs)
+px_begin_error_page(px_state_t * pxs, int* y)
 {
+    int code;
+
     gs_gstate *pgs = pxs->pgs;
 
-    gs_initgraphics(pgs);
-    gs_erasepage(pgs);
+    code = gs_initgraphics(pgs);
+    if (code < 0)   return code;
+
+    code = gs_erasepage(pgs);
+    if (code < 0)   return code;
     /* Don't call pxSetPageDefaultCTM -- we don't want rotation or */
     /* unusual Units of Measure -- but do invert the Y axis. */
     /*pxSetPageDefaultCTM(NULL, pxs); */
@@ -242,8 +247,9 @@ px_begin_error_page(px_state_t * pxs)
         px_get_default_media_size(pxs, &pt);
         gs_translate(pgs, 0.0, pt.y);
         gs_scale(pgs, 1.0, -1.0);
-        return 90;
+        *y = 90;
     }
+    return 0;
 }
 
 /* Print a message on an error page. */

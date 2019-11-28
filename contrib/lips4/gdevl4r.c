@@ -502,7 +502,7 @@ lips4_put_params(gx_device * pdev, gs_param_list * plist)
                                      (param_name = LIPS_OPTION_MEDIATYPE),
                                      &pmedia)) {
         case 0:
-            if (pmedia.size > LIPS_MEDIACHAR_MAX) {
+            if (pmedia.size >= LIPS_MEDIACHAR_MAX) {
                 ecode = gs_error_limitcheck;
                 goto pmediae;
             } else {   /* Check the validity of ``MediaType'' characters */

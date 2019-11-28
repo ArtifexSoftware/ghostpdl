@@ -1443,18 +1443,19 @@ static int pcl3_close_device(gx_device *device)
 
 ******************************************************************************/
 
-/* Macro to handle return codes from calls to pclgen routines */
-#define guard(call)                                                     \
-    if ((rc = (call)) != 0) {                                           \
-      if (rc > 0) return_error(gs_error_Fatal); /* bugs are fatal :-) */ \
-      return_error(gs_error_ioerror);   /* actually any environment error */ \
-    }
+/* Function to convert return codes from calls to pclgen routines. */
+static int convert(int code)
+{
+    if (code > 0)   return gs_error_Fatal;
+    if (code < 0)   return gs_error_ioerror;
+    return 0;
+}
 
 static int pcl3_print_page(gx_device_printer *device, gp_file *out)
 {
   int
     blank_lines,
-    rc;
+    rc = 0;
   pcl3_Device *dev = (pcl3_Device *)device;
   const char *epref = dev->eprn.CUPS_messages? CUPS_ERRPREF: "";
   pcl_RasterData rd;
@@ -1463,75 +1464,95 @@ static int pcl3_print_page(gx_device_printer *device, gp_file *out)
     *lengths,
     planes;
 
+  /* Make sure out cleanup code will cope with partially-initialised data. */
+  memset(&rd, 0, sizeof(pcl_RasterData)); /* Belt and braces. */
+  planes = 0;
+  lengths = NULL;
+  rd.next = NULL;
+  rd.previous = NULL;
+  rd.workspace[0] = NULL;
+  rd.workspace[1] = NULL;
+
   /* If this is a new file or we've decided to re-configure, initialize the
      printer first */
   if (gdev_prn_file_is_new(device) || !dev->configured ||
       dev->configure_every_page) {
-    guard(pcl3_init_file(device->memory, out, &dev->file_data))
+    rc = convert(pcl3_init_file(device->memory, out, &dev->file_data));
+    if (rc) {
+        gs_note_error(rc);
+        goto end;
+    }
     dev->configured = true;
   }
 
   /* Initialize raster data structure */
-  memset(&rd, 0, sizeof(pcl_RasterData));
   rd.global = &dev->file_data;
   planes = eprn_number_of_bitplanes((eprn_Device *)dev);
   lengths = (unsigned int *)malloc(planes*sizeof(unsigned int));
-  rd.next = (pcl_OctetString *)malloc(planes*sizeof(pcl_OctetString));
-  if (pcl_cm_is_differential(dev->file_data.compression))
-    rd.previous = (pcl_OctetString *)malloc(planes*sizeof(pcl_OctetString));
-  if (lengths == NULL || rd.next == NULL ||
-      (pcl_cm_is_differential(dev->file_data.compression) &&
-        rd.previous == NULL)) {
-    free(lengths); free(rd.next); free(rd.previous);
-    eprintf1("%s" ERRPREF "Memory allocation failure from malloc().\n",
-      epref);
-    return_error(gs_error_VMerror);
+  if (!lengths) {
+    rc = gs_note_error(gs_error_VMerror);
+    goto end;
   }
   eprn_number_of_octets((eprn_Device *)dev, lengths);
-  rd.width = 8*lengths[0];      /* all colorants have equal resolution */
-  for (j = 0; j < planes; j++)
-    rd.next[j].str = (pcl_Octet *)malloc(lengths[j]*sizeof(eprn_Octet));
-    /* Note: 'pcl_Octet' must be identical with 'eprn_Octet'. */
-  if (pcl_cm_is_differential(dev->file_data.compression))
-    for (j = 0; j < planes; j++)
+  rd.next = (pcl_OctetString *)malloc(planes*sizeof(pcl_OctetString));
+  if (!rd.next) {
+    rc = gs_note_error(gs_error_VMerror);
+    goto end;
+  }
+  for (j=0; j<planes; j++) { /* Make sure we can free at any point. */
+    rd.next[j].str = NULL;
+  }
+  if (pcl_cm_is_differential(dev->file_data.compression)) {
+    rd.previous = (pcl_OctetString *)malloc(planes*sizeof(pcl_OctetString));
+    if (!rd.previous) {
+      rc = gs_note_error(gs_error_VMerror);
+      goto end;
+    }
+    for (j=0; j<planes; j++) { /* Make sure we can free at any point. */
+      rd.previous[j].str = NULL;
+    }
+    for (j = 0; j < planes; j++) {
       rd.previous[j].str = (pcl_Octet *)malloc(lengths[j]*sizeof(eprn_Octet));
+      if (!rd.previous[j].str) {
+        rc = gs_note_error(gs_error_VMerror);
+        goto end;
+      }
+    }
+  }
+  rd.width = 8*lengths[0];      /* all colorants have equal resolution */
+  for (j = 0; j < planes; j++) {
+    rd.next[j].str = (pcl_Octet *)malloc(lengths[j]*sizeof(eprn_Octet));
+    if (!rd.next[j].str) {
+      rc = gs_note_error(gs_error_VMerror);
+      goto end;
+    }
+  }
+    /* Note: 'pcl_Octet' must be identical with 'eprn_Octet'. */
   rd.workspace_allocated = lengths[0];
   for (j = 1; j < planes; j++)
     if (lengths[j] > rd.workspace_allocated)
       rd.workspace_allocated = lengths[j];
   for (j = 0;
-      j < 2 && (j != 1 || dev->file_data.compression == pcl_cm_delta); j++)
+      j < 2 && (j != 1 || dev->file_data.compression == pcl_cm_delta); j++) {
     rd.workspace[j] =
       (pcl_Octet *)malloc(rd.workspace_allocated*sizeof(pcl_Octet));
-
-  /* Collective check for allocation failures */
-  j = 0;
-  while (j < planes && rd.next[j].str != NULL) j++;
-  if (j == planes && pcl_cm_is_differential(dev->file_data.compression)) {
-    j = 0;
-    while (j < planes && rd.previous[j].str != NULL) j++;
-    if (j == planes && dev->file_data.compression == pcl_cm_delta &&
-        rd.workspace[1] == NULL) j = 0;
-  }
-  if (j < planes || rd.workspace[0] == NULL) {
-    /* Free everything. Note that free(NULL) is legal and we did a memset()
-       with 0 on 'rd'. */
-    for (j = 0; j < planes; j++) {
-      free(rd.next[j].str);
-      if (pcl_cm_is_differential(dev->file_data.compression))
-        free(rd.previous[j].str);
+    if (!rd.workspace[j]) {
+      rc = gs_note_error(gs_error_VMerror);
+      goto end;
     }
-    free(lengths); free(rd.next); free(rd.previous);
-    for (j = 0; j < 2; j++) free(rd.workspace[j]);
-
-    eprintf1("%s" ERRPREF "Memory allocation failure from malloc().\n",
-      epref);
-    return_error(gs_error_VMerror);
   }
 
   /* Open the page and start raster mode */
-  guard(pcl3_begin_page(out, &dev->file_data))
-  guard(pcl3_begin_raster(out, &rd))
+  rc = convert(pcl3_begin_page(out, &dev->file_data));
+  if (rc) {
+    gs_note_error(rc);
+    goto end;
+  }
+  rc = convert(pcl3_begin_raster(out, &rd));
+  if (rc) {
+    gs_note_error(rc);
+    goto end;
+  }
 
   /* Loop over scan lines */
   blank_lines = 0;
@@ -1565,25 +1586,56 @@ static int pcl3_print_page(gx_device_printer *device, gp_file *out)
     if (j == planes) blank_lines++;
     else {
       if (blank_lines > 0) {
-        guard(pcl3_skip_groups(out, &rd, blank_lines))
+        rc = convert(pcl3_skip_groups(out, &rd, blank_lines));
+        if (rc) {
+          gs_note_error(rc);
+          goto end;
+        }
         blank_lines = 0;
       }
-      guard(pcl3_transfer_group(out, &rd))
+      rc = convert(pcl3_transfer_group(out, &rd));
+      if (rc) {
+        gs_note_error(rc);
+        goto end;
+      }
     }
   }
 
   /* Terminate raster mode and close the page */
-  guard(pcl3_end_raster(out, &rd))
-  guard(pcl3_end_page(out, &dev->file_data))
+  rc = convert(pcl3_end_raster(out, &rd));
+  if (rc) {
+    gs_note_error(rc);
+    goto end;
+  }
+  rc = convert(pcl3_end_page(out, &dev->file_data));
+  if (rc) {
+    gs_note_error(rc);
+    goto end;
+  }
 
+end:
   /* Free dynamic storage */
-  for (j = 0; j < planes; j++) free(rd.next[j].str);
-  if (pcl_cm_is_differential(dev->file_data.compression))
-    for (j = 0; j < planes; j++) free(rd.previous[j].str);
-  for (j = 0; j < 2; j++) free(rd.workspace[j]);
-  free(lengths); free(rd.next); free(rd.previous);
+  if (rd.next) {
+    for (j = 0; j < planes; j++) {
+      free(rd.next[j].str);
+    }
+  }
+  if (rd.previous) {
+    for (j = 0; j < planes; j++) {
+      free(rd.previous[j].str);
+    }
+  }
+  for (j = 0; j < 2; j++) {
+    free(rd.workspace[j]);
+  }
+  free(lengths);
+  free(rd.next);
+  free(rd.previous);
 
-  return 0;
+  if (rc == gs_error_VMerror) {
+    eprintf1("%s" ERRPREF "Memory allocation failure from malloc().\n",
+      epref);
+  }
+
+  return rc;
 }
-
-#undef guard

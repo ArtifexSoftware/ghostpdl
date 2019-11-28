@@ -1,5 +1,3 @@
-/* $Id: tiffsplit.c,v 1.23 2015-05-28 13:10:26 bfriesen Exp $ */
-
 /*
  * Copyright (c) 1992-1997 Sam Leffler
  * Copyright (c) 1992-1997 Silicon Graphics, Inc.
@@ -33,7 +31,7 @@
 #include "tiffio.h"
 
 #ifndef HAVE_GETOPT
-extern int getopt(int, char**, char*);
+extern int getopt(int argc, char * const argv[], const char *optstring);
 #endif
 
 #define	CopyField(tag, v) \

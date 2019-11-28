@@ -741,6 +741,7 @@ pclxl_write_image_data_RLE(gx_device_pclxl * xdev, const byte * base,
             goto nc;
         s_RLE_set_defaults_inline(&rlstate);
         rlstate.EndOfData = false;
+        rlstate.omitEOD = true;
         s_RLE_init_inline(&rlstate);
         w.ptr = buf - 1;
         w.limit = w.ptr + num_bytes;

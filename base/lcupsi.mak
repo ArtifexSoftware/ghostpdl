@@ -40,7 +40,7 @@ LCUPSI_MAK=$(GLSRC)lcupsi.mak $(TOP_MAKEFILES)
 LIBCUPSI_OBJS =\
     $(LIBCUPSIOBJ)error.$(OBJ) \
     $(LIBCUPSIOBJ)interpret.$(OBJ) \
-    $(LIBCUPSIOBJ)raster.$(OBJ)
+    $(LIBCUPSIOBJ)cupsraster.$(OBJ)
 
 LIBCUPSI_DEPS	=	\
 		$(LIBCUPSISRC)common.h $(LCUPSI_MAK) \
@@ -120,6 +120,6 @@ $(LIBCUPSIOBJ)error.$(OBJ) : $(LIBCUPSISRC)error.c $(LIBCUPSI_DEPS)
 $(LIBCUPSIOBJ)interpret.$(OBJ) : $(LIBCUPSISRC)interpret.c $(LIBCUPSI_DEPS)
 	$(LCUPSI_CC) $(LCUPSIO_)interpret.$(OBJ) $(C_) $(LIBCUPSISRC)interpret.c
 	
-$(LIBCUPSIOBJ)raster.$(OBJ) : $(LIBCUPSISRC)raster.c $(LIBCUPSI_DEPS)
-	$(LCUPSI_CC) $(LCUPSIO_)raster.$(OBJ) $(C_) $(LIBCUPSISRC)raster.c
+$(LIBCUPSIOBJ)cupsraster.$(OBJ) : $(LIBCUPSISRC)cupsraster.c $(LIBCUPSI_DEPS)
+	$(LCUPSI_CC) $(LCUPSIO_)cupsraster.$(OBJ) $(C_) $(LIBCUPSISRC)cupsraster.c
 	

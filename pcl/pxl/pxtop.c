@@ -466,8 +466,12 @@ pxl_impl_report_errors(pl_interp_implementation_t * impl,
 
     if (code >= 0)
         return code;            /* not really an error */
-    if (report & eErrorPage)
-        y = px_begin_error_page(pxs);
+    if (report & eErrorPage) {
+        int ecode = px_begin_error_page(pxs, &y);
+        if (ecode < 0) {
+            return ecode;
+        }
+    }
     while ((N = px_error_message_line(message, N, subsystem,
                                       code, st, pxs)) >= 0) {
         if ((report & eBackChannel) || force_to_cout)

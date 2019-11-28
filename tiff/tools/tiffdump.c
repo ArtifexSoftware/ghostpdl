@@ -1,5 +1,3 @@
-/* $Id: tiffdump.c,v 1.35 2016-11-19 15:42:46 bfriesen Exp $ */
-
 /*
  * Copyright (c) 1988-1997 Sam Leffler
  * Copyright (c) 1991-1997 Silicon Graphics, Inc.
@@ -53,7 +51,7 @@
 #endif
 
 #ifndef HAVE_GETOPT
-extern int getopt(int, char**, char*);
+extern int getopt(int argc, char * const argv[], const char *optstring);
 #endif
 
 #include "tiffio.h"

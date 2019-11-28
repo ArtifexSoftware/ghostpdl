@@ -376,7 +376,7 @@ do_process(jp2k_interp_instance_t *jp2k, stream_cursor_read * pr, bool eof)
 {
     int code = 0;
     gs_color_space *cs;
-    ii_state ostate = jp2k->state;
+    ii_state ostate;
     size_t bytes_in;
     int advanced;
 
@@ -384,6 +384,7 @@ do_process(jp2k_interp_instance_t *jp2k, stream_cursor_read * pr, bool eof)
     do
     {
         advanced = 0;
+        ostate = jp2k->state;
         bytes_in = pr->limit - pr->ptr;
         switch(jp2k->state)
         {
@@ -629,9 +630,7 @@ early_flush:
             return flush_to_uel(pr);
         }
         advanced |= (ostate != jp2k->state);
-        ostate = jp2k->state;
         advanced |= (bytes_in != pr->limit - pr->ptr);
-        bytes_in = pr->limit - pr->ptr;
     } while (advanced);
 
     return code;

@@ -37,11 +37,9 @@ lib_LTLIBRARIES = libexpat.la
 
 libexpat_la_LDFLAGS = \
     -no-undefined \
-    -version-info @LIBCURRENT@:@LIBREVISION@:@LIBAGE@ \
-    -rpath $(libdir)
+    -version-info @LIBCURRENT@:@LIBREVISION@:@LIBAGE@
 
 libexpat_la_SOURCES = \
-    loadlibrary.c \
     xmlparse.c \
     xmltok.c \
     xmlrole.c

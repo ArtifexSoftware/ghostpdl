@@ -329,11 +329,13 @@ run_len_0_n0_read:
                 *++q = n0;
             }
     case state_eod_unmarked:
-            if (wlimit - q < 1) {
-                ss->state = state_eod_unmarked;
-                goto no_output_room;
+            if (!ss->omitEOD) {
+                if (wlimit - q < 1) {
+                    ss->state = state_eod_unmarked;
+                    goto no_output_room;
+                }
+                *++q = 128; /* EOD */
             }
-            *++q = 128; /* EOD */
     case state_eod:
             ss->run_len = 0;
             ss->state = state_0;
