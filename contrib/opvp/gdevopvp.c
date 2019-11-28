@@ -4340,20 +4340,16 @@ opvp_image_plane_data(
             for (i = 0; i < height; i++) {
                 ptr = buf + raster_length * i;
                 for (j = 0; j < vinfo->width; j++) {
-                    ptr[j*3] = min(255, frac2cv(gx_map_color_frac(pgs,
-                      cv2frac(ptr[j*3]), effective_transfer[0])));
-                    ptr[j*3+1] = min(255, frac2cv(gx_map_color_frac(pgs,
-                      cv2frac(ptr[j*3+1]), effective_transfer[1])));
-                    ptr[j*3+2] = min(255, frac2cv(gx_map_color_frac(pgs,
-                      cv2frac(ptr[j*3+2]), effective_transfer[2])));
+                    ptr[j*3+0] = frac2byte(gx_map_color_frac(pgs, byte2frac(ptr[j*3+0]), effective_transfer[0]));
+                    ptr[j*3+1] = frac2byte(gx_map_color_frac(pgs, byte2frac(ptr[j*3+1]), effective_transfer[1]));
+                    ptr[j*3+2] = frac2byte(gx_map_color_frac(pgs, byte2frac(ptr[j*3+2]), effective_transfer[2]));
                 }
             }
         } else if (vinfo->bits_per_pixel == 8) { /* 8bit Gray image */
             for (i = 0; i < height; i++) {
                 ptr = buf + raster_length * i;
                 for (j=0; j < vinfo->width; j++) {
-                    ptr[j] = min(255, frac2cv(gx_map_color_frac(pgs,
-                      cv2frac(ptr[j]), effective_transfer[3])));
+                    ptr[j] = frac2byte(gx_map_color_frac(pgs, byte2frac(ptr[j]), effective_transfer[3]));
                 }
             }
         }
@@ -4362,20 +4358,16 @@ opvp_image_plane_data(
             for (i = 0; i < height; i++) {
                 ptr = buf + raster_length * i;
                 for (j = 0; j < vinfo->width; j++) {
-                    ptr[j*3] = min(255, frac2cv(gx_map_color_frac(pgs,
-                      cv2frac(ptr[j*3]), effective_transfer.colored.red)));
-                    ptr[j*3+1] = min(255, frac2cv(gx_map_color_frac(pgs,
-                      cv2frac(ptr[j*3+1]), effective_transfer.colored.green)));
-                    ptr[j*3+2] = min(255, frac2cv(gx_map_color_frac(pgs,
-                      cv2frac(ptr[j*3+2]), effective_transfer.colored.blue)));
+                    ptr[j*3+0] = frac2byte(gx_map_color_frac(pgs, byte2frac(ptr[j*3+0]), effective_transfer.colored.red));
+                    ptr[j*3+1] = frac2byte(gx_map_color_frac(pgs, byte2frac(ptr[j*3+1]), effective_transfer.colored.green));
+                    ptr[j*3+2] = frac2byte(gx_map_color_frac(pgs, byte2frac(ptr[j*3+2]), effective_transfer.colored.blue));
                 }
             }
         } else if (vinfo->bits_per_pixel == 8) { /* 8bit Gray image */
             for (i = 0; i < height; i++) {
                 ptr = buf + raster_length * i;
                 for (j = 0; j < vinfo->width; j++) {
-                    ptr[j] = min(255, frac2cv(gx_map_color_frac(pgs,
-                      cv2frac(ptr[j]), effective_transfer.colored.gray)));
+                    ptr[j] = frac2byte(gx_map_color_frac(pgs, byte2frac(ptr[j]), effective_transfer.colored.gray));
                 }
             }
         }
