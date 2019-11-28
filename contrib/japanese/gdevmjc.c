@@ -1444,11 +1444,9 @@ mj_color_correct(gx_color_value *Rptr ,gx_color_value *Gptr , gx_color_value *Bp
                 } else if (G>B) {				/* R=G>B */
                         D = G-B;
                         Wa  = R;
-                        H  = 256;
                 } else {						/* B>R=G */
                         D = G-B;
                         Wa = R;
-                        H = 1024;
                 }
         }
 
