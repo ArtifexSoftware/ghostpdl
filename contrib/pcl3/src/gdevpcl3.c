@@ -1479,7 +1479,7 @@ static int pcl3_print_page(gx_device_printer *device, gp_file *out)
       dev->configure_every_page) {
     rc = convert(pcl3_init_file(device->memory, out, &dev->file_data));
     if (rc) {
-        gs_note_error(rc);
+        (void) gs_note_error(rc);
         goto end;
     }
     dev->configured = true;
@@ -1545,12 +1545,12 @@ static int pcl3_print_page(gx_device_printer *device, gp_file *out)
   /* Open the page and start raster mode */
   rc = convert(pcl3_begin_page(out, &dev->file_data));
   if (rc) {
-    gs_note_error(rc);
+    (void) gs_note_error(rc);
     goto end;
   }
   rc = convert(pcl3_begin_raster(out, &rd));
   if (rc) {
-    gs_note_error(rc);
+    (void) gs_note_error(rc);
     goto end;
   }
 
@@ -1588,14 +1588,14 @@ static int pcl3_print_page(gx_device_printer *device, gp_file *out)
       if (blank_lines > 0) {
         rc = convert(pcl3_skip_groups(out, &rd, blank_lines));
         if (rc) {
-          gs_note_error(rc);
+          (void) gs_note_error(rc);
           goto end;
         }
         blank_lines = 0;
       }
       rc = convert(pcl3_transfer_group(out, &rd));
       if (rc) {
-        gs_note_error(rc);
+        (void) gs_note_error(rc);
         goto end;
       }
     }
@@ -1604,12 +1604,12 @@ static int pcl3_print_page(gx_device_printer *device, gp_file *out)
   /* Terminate raster mode and close the page */
   rc = convert(pcl3_end_raster(out, &rd));
   if (rc) {
-    gs_note_error(rc);
+    (void) gs_note_error(rc);
     goto end;
   }
   rc = convert(pcl3_end_page(out, &dev->file_data));
   if (rc) {
-    gs_note_error(rc);
+    (void) gs_note_error(rc);
     goto end;
   }
 
