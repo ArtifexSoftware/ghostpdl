@@ -4835,7 +4835,6 @@ opvp_vector_dopath(
     int i;
     int pop = 0;
     int npoints = 0;
-    int *cp_num = NULL;
     _fPoint *points = NULL;
     opvp_point_t *opvp_p = NULL;
     _fPoint current;
@@ -4914,11 +4913,6 @@ opvp_vector_dopath(
                 break;
             case gs_pe_curveto:
                 /* npoints */
-                if (!cp_num)
-                cp_num = calloc(sizeof(int), 2);
-                cp_num[0] = npoints;
-                cp_num[1] = 0;
-
                 /* call BezierPath */
                 if (apiEntry->opvpBezierPath) {
                     r = apiEntry->opvpBezierPath(
@@ -4940,7 +4934,6 @@ opvp_vector_dopath(
 
             /* reset */
             npoints = 1;
-            if (cp_num) free(cp_num), cp_num = NULL;
             points = realloc(points, sizeof(_fPoint));
             points[0] = current;
 #endif
@@ -5068,7 +5061,6 @@ opvp_vector_dopath(
 #ifdef  OPVP_OPT_MULTI_PATH
     if (points) free(points);
     if (opvp_p) free(opvp_p);
-    if (cp_num) free(cp_num);
 #endif
     return ecode;
 }
