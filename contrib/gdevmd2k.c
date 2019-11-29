@@ -539,12 +539,14 @@ alps_print_page(gx_device_printer *pdev, gp_file *prn_stream,
                 /* get a component of CMYK from raster data */
                 len = cmyk_to_bit(work, dp, len, c_comp);
                 dp = work;
+                /* Fall through. */
             case 1:
                 /* remove trailing 0s */
                 for( ; len > 0 && dp[len-1] == 0; len --);
                 break;
             case 32:
                 dp += c_comp;
+                /* Fall through. */
             case 8:
                 outP = work;
                 ep = error;
