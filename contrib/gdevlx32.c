@@ -1243,8 +1243,13 @@ finalizeheader(pagedata *gendata, int vskip, int newhead)
          */
         dir = (header[2] & 0x01 ? LEFT : RIGHT);
 
-        /* Retrieve the horizontal offset for the next stripe */
-        offs2 = gendata->dev->hoffset[newhead][gendata->direction];
+        /* Retrieve the horizontal offset for the next stripe. We don't do this
+        if newhead is negative, because otherwise we would be out of bounds in
+        gendata->dev->hoffset[]; offs2 isn't actually used in this case anyway.
+        */
+        if (newhead >= 0) {
+            offs2 = gendata->dev->hoffset[newhead][gendata->direction];
+        }
 
         /* Calculate the separation adjust in 1200ths of an inch */
         if(newhead == LEFT)
@@ -1263,7 +1268,9 @@ finalizeheader(pagedata *gendata, int vskip, int newhead)
         vskip *= gendata->yrmul;
 
         /* Calculate absolute starting position of new stripe */
-        nstartabs = newstart + offs2;
+        if (newhead >= 0) {
+            nstartabs = newstart + offs2;
+        }
 
         /* Calculate absolute ending position of this stripe
          * by summing (with proper sign) the starting position
