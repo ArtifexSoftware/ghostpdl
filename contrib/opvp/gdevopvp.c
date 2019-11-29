@@ -4028,6 +4028,10 @@ opvp_image_plane_data(
     if (buf) {
         /* Adjust image data gamma */
         pbe = (bbox_image_enum *)vinfo->bbox_info;
+        if (!pbe) {
+            ecode = gs_note_error(gs_error_invalidaccess);
+            goto end;
+        }
         tinfo = (gx_image_enum *)pbe->target_info;
         pgs = tinfo->pgs;
 
@@ -4382,14 +4386,15 @@ opvp_image_plane_data(
             apiEntry->opvpTransferDrawImage(printerContext,
                         raster_length * height, (void *)buf);
         }
-        if (buf) {
-            free(buf); /* free buffer */
-        }
     }
 
     vinfo->y += height;
     ecode = (vinfo->y >= vinfo->height);
 
+end:
+    if (buf) {
+        free(buf); /* free buffer */
+    }
     return ecode;
 }
 
