@@ -71,6 +71,8 @@ typedef struct tiff_interp_instance_s {
     uint32_t           tile_width;
     uint32_t           tiled;
     uint32_t           compression;
+    uint32_t           photometric;
+    uint8_t           *palette;
 
     uint32_t           num_comps;
     uint32_t           byte_width;
@@ -84,8 +86,10 @@ typedef struct tiff_interp_instance_s {
     byte              *tiff_buffer;
     size_t             file_pos;
     TIFF              *handle;
+    int                is_rgba;
 
     byte              *samples;
+    byte              *proc_samples;
     jpeg_cust_mem_data jmem;
 } tiff_interp_instance_t;
 
@@ -471,6 +475,36 @@ tiff_jpeg_mem_callback(thandle_t tiff_)
 #endif /* SHARE_LIBTIFF == 0 */
 
 static int
+guess_pal_depth(int n, uint16_t *rmap, uint16_t *gmap, uint16_t *bmap)
+{
+    int i;
+    for (i = 0; i < n; i++) {
+        if (rmap[i] >= 256 || gmap[i] >= 256 || bmap[i] >= 256)
+            return 16;
+    }
+    return 8;
+}
+
+static void
+blend_alpha(tiff_interp_instance_t *tiff, int n)
+{
+    byte *p = tiff->samples;
+    const byte *q = (const byte *)tiff->samples;
+    int nc = tiff->num_comps;
+    int i;
+
+    while (n--) {
+        byte a = q[nc];
+        for (i = nc; i > 0; i--) {
+            int c = *q++ * a + 255*(255-a);
+            c += (c>>7);
+            *p++ = c>>8;
+        }
+        q++;
+    }
+}
+
+static int
 do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int eof)
 {
     tiff_interp_instance_t *tiff = (tiff_interp_instance_t *)impl->interp_client_data;
@@ -559,6 +593,9 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
             gs_color_space *cs;
             unsigned int used[GS_IMAGE_MAX_COMPONENTS];
             gs_string plane_data[GS_IMAGE_MAX_COMPONENTS];
+            int invert = 0;
+            int alpha = 0;
+            char emsg[1024];
 
             tiff->handle = TIFFClientOpen("dummy", "rm",
                                           (thandle_t)tiff,
@@ -575,8 +612,13 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
             }
 
             TIFFGetField(tiff->handle, TIFFTAG_COMPRESSION, &tiff->compression);
-            if (tiff->compression == COMPRESSION_JPEG){
+            if (tiff->compression == COMPRESSION_JPEG) {
                 TIFFSetField(tiff->handle, TIFFTAG_JPEGCOLORMODE, JPEGCOLORMODE_RGB);
+            }
+            TIFFGetField(tiff->handle, TIFFTAG_PHOTOMETRIC, &tiff->photometric);
+            if (tiff->photometric == PHOTOMETRIC_LOGL ||
+                tiff->photometric == PHOTOMETRIC_LOGLUV) {
+                TIFFSetField(tiff->handle, TIFFTAG_SGILOGDATAFMT, SGILOGDATAFMT_8BIT);
             }
 #if defined(SHARE_LIBTIFF) && SHARE_LIBTIFF==0
             TIFFSetJpegMemFunction(tiff->handle,
@@ -622,8 +664,16 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                 tiff->byte_width = ((tiff->bpc * tiff->tile_width + 7)>>3) * tiff->num_comps;
             }
 
-            if (tiff->compression == COMPRESSION_OJPEG) {
+            /* Allocate 'samples' to hold the raw samples values read from libtiff.
+             * The exact size of this buffer depends on which of the multifarious
+             * read routines we are using. (Tiled/RGBAImage/Scanlines) */
+            if (tiff->compression == COMPRESSION_OJPEG ||
+                tiff->photometric == PHOTOMETRIC_YCBCR) {
+                tiff->is_rgba = 1;
                 tiff->samples = gs_alloc_bytes(tiff->memory, sizeof(uint32_t) * tiff->width * tiff->height, "tiff_image");
+                tiff->tile_width = tiff->width;
+                tiff->tile_height = tiff->height;
+                tiff->byte_width = ((tiff->bpc * tiff->num_comps * tiff->tile_width + 7)>>3);
             } else if (tiff->tiled) {
                 tiff->samples = gs_alloc_bytes(tiff->memory, TIFFTileSize(tiff->handle), "tiff_tile");
             } else {
@@ -633,9 +683,98 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                 tiff->state = ii_state_flush;
                 break;
             }
+            tiff->proc_samples = tiff->samples;
 
             /* FIXME: Need to allow for LAB, YUV etc too */
             tiff->bpp = tiff->bpc * tiff->num_comps;
+            switch(tiff->photometric) {
+            case PHOTOMETRIC_MINISWHITE:
+                invert = 1;
+                /* Fall through */
+            case PHOTOMETRIC_MINISBLACK:
+                if (tiff->num_comps != 1) {
+                    code = gs_error_unknownerror;
+                    goto fail_decode;
+                }
+                break;
+            case PHOTOMETRIC_RGB:
+                if (tiff->num_comps == 4) {
+                    alpha = 1;
+                    tiff->num_comps = 3;
+                    tiff->bpp = tiff->bpp * 3/4;
+                    tiff->byte_width = tiff->byte_width * 3/4;
+                } else if (tiff->num_comps != 3) {
+                    code = gs_error_unknownerror;
+                    goto fail_decode;
+                }
+                break;
+            case PHOTOMETRIC_PALETTE:
+            {
+                uint16_t *rmap, *gmap, *bmap;
+                int i, n = 1<<tiff->bpc;
+                if (tiff->num_comps != 1) {
+                    code = gs_error_unknownerror;
+                    goto fail_decode;
+                }
+                if (!TIFFGetField(tiff->handle, TIFFTAG_COLORMAP, &rmap, &gmap, &bmap)) {
+                    code = gs_error_unknownerror;
+                    goto fail_decode;
+                }
+                tiff->palette = gs_alloc_bytes(tiff->memory, 3*n, "palette");
+                if (tiff->palette == NULL) {
+                    code = gs_error_unknownerror;
+                    goto fail_decode;
+                }
+                if (guess_pal_depth(n, rmap, gmap, bmap) == 8) {
+                    for (i=0; i < n; i++) {
+                        tiff->palette[3*i+0] = rmap[i];
+                        tiff->palette[3*i+1] = gmap[i];
+                        tiff->palette[3*i+2] = bmap[i];
+                    }
+                } else {
+                    for (i=0; i < n; i++) {
+                        tiff->palette[3*i+0] = rmap[i]*255/65535;
+                        tiff->palette[3*i+1] = gmap[i]*255/65535;
+                        tiff->palette[3*i+2] = bmap[i]*255/65535;
+                    }
+                }
+                tiff->bpc = 8;
+                tiff->num_comps = 3;
+                tiff->bpp = 24;
+                tiff->byte_width = tiff->tile_width * 3;
+                /* Now we need to make a "proc_samples" area to store the
+                 * processed samples in. */
+                if (tiff->is_rgba) {
+                    code = gs_error_unknownerror;
+                    goto fail_decode;
+                } else if (tiff->tiled) {
+                    tiff->proc_samples = gs_alloc_bytes(tiff->memory, tiff->tile_width * tiff->tile_height * 3, "tiff_tile");
+                } else {
+                    tiff->proc_samples = gs_alloc_bytes(tiff->memory, tiff->width * 3, "tiff_scan");
+                }
+                break;
+            }
+            case PHOTOMETRIC_MASK:
+                if (tiff->num_comps != 1) {
+                    code = gs_error_unknownerror;
+                    goto fail_decode;
+                }
+                break;
+            case PHOTOMETRIC_SEPARATED:
+            case PHOTOMETRIC_YCBCR:
+            case PHOTOMETRIC_CIELAB:
+            case PHOTOMETRIC_ICCLAB:
+            case PHOTOMETRIC_ITULAB:
+                if (tiff->num_comps != 3) {
+                    code = gs_error_unknownerror;
+                    goto fail_decode;
+                }
+                break;
+            case PHOTOMETRIC_CFA:
+            default:
+                tiff->state = ii_state_flush;
+                break;
+            }
             switch(tiff->num_comps) {
             default:
             case 1:
@@ -675,6 +814,7 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                     int y, s;
                     byte *row;
                     float xext, xoffset, yext, yoffset;
+                    int tremx, tremy;
 
                     tiff->penum = gs_image_enum_alloc(tiff->memory, "tiff_impl_process(penum)");
                     if (tiff->penum == NULL) {
@@ -715,27 +855,24 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
 
                     tiff->image.ImageMatrix.xx = tiff->xresolution / 72.0f;
                     tiff->image.ImageMatrix.yy = tiff->yresolution / 72.0f;
+                    if (invert) {
+                        tiff->image.Decode[0] = 1;
+                        tiff->image.Decode[1] = 0;
+                        tiff->image.Decode[2] = 1;
+                        tiff->image.Decode[3] = 0;
+                        tiff->image.Decode[4] = 1;
+                        tiff->image.Decode[5] = 0;
+                        tiff->image.Decode[6] = 1;
+                        tiff->image.Decode[7] = 0;
+                    }
 
-                    if (tiff->compression == COMPRESSION_OJPEG) {
-                        int n = tiff->width * tiff->height;
-                        byte *p;
-                        uint32_t *q;
-                        if (tiff->tiled)
-                            goto fail_decode;
+                    if (tiff->is_rgba) {
                         if (TIFFReadRGBAImage(tiff->handle, tiff->width, tiff->height,
                                               (uint32_t *)tiff->samples, 0) == 0) {
                             code = gs_error_unknownerror;
                             goto fail_decode;
                         }
-                        q = tiff->samples;
-                        p = (byte *)q;
-                        while (n--) {
-                            uint32_t v = *q++;
-                            p[0] = v;
-                            p[1] = (v>>8);
-                            p[2] = (v>>16);
-                            p += 3;
-                        }
+                        blend_alpha(tiff, tiff->tile_width * tiff->tile_height);
                     } else if (tiff->tiled) {
                         if (TIFFReadTile(tiff->handle, tiff->samples, tx, ty, 0, 0) == 0) {
                             code = gs_error_unknownerror;
@@ -743,6 +880,24 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                         }
                     } else if (planar != PLANARCONFIG_CONTIG) {
                         tiff->image.format = gs_image_format_component_planar;
+                    }
+
+                    if (!tiff->is_rgba && tiff->tiled) {
+                        if (tiff->palette) {
+                            int n = tiff->tile_width * tiff->tile_height;
+                            byte *q = tiff->samples;
+                            byte *p = tiff->proc_samples;
+                            while (n--) {
+                                byte *v = &tiff->palette[3 * *q++];
+                                p[0] = *v++;
+                                p[1] = *v++;
+                                p[2] = *v++;
+                                p += 3;
+                            }
+                        }
+                        if (alpha) {
+                            blend_alpha(tiff, tiff->tile_width);
+                        }
                     }
 
                     code = gs_image_init(tiff->penum,
@@ -755,29 +910,54 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                         return code;
                     }
 
-                    for (y = 0; y < tiff->tile_height; y++) {
-                        if (tiff->compression == COMPRESSION_OJPEG) {
-                            /* OJPEG appears to be upside down! */
-                            row = tiff->samples + tiff->byte_width * (tiff->tile_height-1-y);
+                    tremx = tiff->width - tx;
+                    if (tremx > tiff->tile_width)
+                        tremx = tiff->tile_width;
+                    tremy = tiff->height - ty;
+                    if (tremy > tiff->tile_height)
+                        tremy = tiff->tile_height;
+                    for (y = 0; y < tremy; y++) {
+                        if (tiff->is_rgba) {
+                            row = tiff->proc_samples + tiff->byte_width * (tiff->tile_height-1-y);
                         } else if (tiff->tiled) {
-                            row = tiff->samples + tiff->byte_width * y;
+                            row = tiff->proc_samples + tiff->byte_width * y;
                         } else if (planar == PLANARCONFIG_CONTIG) {
-                            row = tiff->samples;
+                            row = tiff->proc_samples;
                             if (TIFFReadScanline(tiff->handle, tiff->samples, ty+y, 0) == 0) {
                                 code = gs_error_unknownerror;
                                 goto fail_decode;
                             }
                         } else {
                             int span = tiff->byte_width / tiff->num_comps;
-                            row = tiff->samples;
+                            byte *in_row = tiff->samples;
+                            row = tiff->proc_samples;
                             for (s = 0; s < tiff->num_comps; s++) {
                                 plane_data[s].data = row;
                                 plane_data[s].size = span;
-                                row += span;
-                                if (TIFFReadScanline(tiff->handle, plane_data[s].data, ty+y, s) == 0) {
+                                if (TIFFReadScanline(tiff->handle, in_row, ty+y, s) == 0) {
                                     code = gs_error_unknownerror;
                                     goto fail_decode;
                                 }
+                                row += span;
+                                in_row += span;
+                            }
+                        }
+
+                        if (!tiff->tiled) {
+                            if (tiff->palette) {
+                                int n = tiff->tile_width;
+                                const byte *q = tiff->samples;
+                                byte *p = tiff->proc_samples;
+                                while (n--) {
+                                    byte *v = &tiff->palette[3 * *q++];
+                                    p[0] = *v++;
+                                    p[1] = *v++;
+                                    p[2] = *v++;
+                                    p += 3;
+                                }
+                            }
+                            if (alpha) {
+                                blend_alpha(tiff, tiff->tile_width);
                             }
                         }
 
@@ -820,9 +1000,20 @@ fail_decode:
                 tiff->penum = NULL;
             }
 
+            if (tiff->proc_samples && tiff->proc_samples != tiff->samples) {
+                gs_free_object(tiff->memory, tiff->proc_samples, "tiff_impl_process(samples)");
+                tiff->proc_samples = NULL;
+            }
+
             if (tiff->samples) {
                 gs_free_object(tiff->memory, tiff->samples, "tiff_impl_process(samples)");
                 tiff->samples = NULL;
+                tiff->proc_samples = NULL;
+            }
+
+            if (tiff->palette) {
+                gs_free_object(tiff->memory, tiff->palette, "tiff_impl_process(samples)");
+                tiff->palette = NULL;
             }
 
             if (tiff->tiff_buffer) {
