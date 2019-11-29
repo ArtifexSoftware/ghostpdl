@@ -3582,13 +3582,17 @@ opvp_fill_mask(
     const gx_clip_path *pcpath)
 {
     if (vector) {
+        int code;
 #if GS_VERSION_MAJOR >= 8       /* for gs 8.15 */
-        gdev_vector_update_fill_color((gx_device_vector *)dev, NULL, pdcolor);
+        code = gdev_vector_update_fill_color((gx_device_vector *)dev, NULL, pdcolor);
 #else
-        gdev_vector_update_fill_color((gx_device_vector *)dev, pdcolor);
+        code = gdev_vector_update_fill_color((gx_device_vector *)dev, pdcolor);
 #endif
-        gdev_vector_update_clip_path((gx_device_vector *)dev, pcpath);
-        gdev_vector_update_log_op((gx_device_vector *)dev, lop);
+        if (code < 0)   return code;
+        code = gdev_vector_update_clip_path((gx_device_vector *)dev, pcpath);
+        if (code < 0)   return code;
+        code = gdev_vector_update_log_op((gx_device_vector *)dev, lop);
+        if (code < 0)   return code;
     }
 
     return gx_default_fill_mask(dev, data, data_x, raster, id,
