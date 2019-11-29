@@ -89,7 +89,7 @@ jbig2_print_page(gx_device_printer * pdev, gp_file * prn_stream)
     swrite_file(&fstrm, prn_stream, fbuf, fbuf_size);
     s_init(&cstrm, mem);
     s_std_init(&cstrm, jbuf, jbuf_size, &s_filter_write_procs,
-               s_devices/gdevescp.cmode_write);
+               s_mode_write);
     cstrm.state = (stream_state *) & state;
     cstrm.procs.process = state.templat->process;
     cstrm.strm = &fstrm;
