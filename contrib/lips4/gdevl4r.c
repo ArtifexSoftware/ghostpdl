@@ -520,6 +520,7 @@ lips4_put_params(gx_device * pdev, gs_param_list * plist)
         default:
             ecode = code;
           pmediae:param_signal_error(plist, param_name, ecode);
+          /* Fall through. */
         case 1:
             pmedia.data = 0;
             break;
