@@ -484,12 +484,15 @@ unsigned long FrameTiffComp(unsigned char *pubDest,
     case 1:
       *TgtPtr++ = 0x00;
       ulret++;
+      /* Fall through. */
     case 2:
       *TgtPtr++ = 0x00;
       ulret++;
+      /* Fall through. */
     case 3:
       *TgtPtr++ = 0x00;
       ulret++;
+      /* Fall through. */
     default:
       break;
     }
@@ -500,10 +503,13 @@ unsigned long FrameTiffComp(unsigned char *pubDest,
     {
     case 1:
       ulret++;
+      /* Fall through. */
     case 2:
       ulret++;
+      /* Fall through. */
     case 3:
       ulret++;
+      /* Fall through. */
     default:
       break;
     }
