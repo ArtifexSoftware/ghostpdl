@@ -1435,7 +1435,7 @@ if test x"$SHARE_LIBTIFF" = x"0" ; then
       if ! test -d "$LIBTIFFCONFDIR" ; then
         mkdir "$LIBTIFFCONFDIR"
       fi
-      cd "$LIBTIFFCONFDIR" && "$absolute_source_path/$LIBTIFFDIR/configure" --disable-jbig --disable-lzma $SUBCONFIG_OPTS
+      cd "$LIBTIFFCONFDIR" && "$absolute_source_path/$LIBTIFFDIR/configure" --disable-jbig --disable-lzma --disable-zstd --disable-webp $SUBCONFIG_OPTS
       status=$?
       if test $status -ne 0 ; then
         AC_MSG_ERROR([libtiff configure script failed], $status)
