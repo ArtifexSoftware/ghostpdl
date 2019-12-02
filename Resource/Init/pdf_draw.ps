@@ -3727,7 +3727,9 @@ currentdict /set_bc_color undef
         grestore
         dup /CA knownoget {.setopacityalpha} if
         strokeborderpath
-      } if
+      } {
+        strokeborderpath
+      } ifelse
       //endannottransparency exec
       //false
       grestore
