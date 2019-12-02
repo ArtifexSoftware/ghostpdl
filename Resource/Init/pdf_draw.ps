@@ -4543,6 +4543,17 @@ currentdict /set_bc_color undef
         } ifelse
       } if
       pop pop
+      dup /CL knownoget {
+        dup length 6 eq {
+          aload pop moveto lineto lineto stroke
+        } {
+          dup length 4 eq {
+            aload pop moveto lineto stroke
+          } {
+            pop
+          } ifelse
+        } ifelse
+      } if
       //endannottransparency exec
       //false
       grestore
