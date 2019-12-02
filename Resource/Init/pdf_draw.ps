@@ -3164,9 +3164,14 @@ end
       3 -1 roll pop 2 index annotsetcolor {0 setdash setlinewidth stroke} if
     } {
       dup 2 get
-      exch dup length 3 gt { 3 get } { pop {} } ifelse
-      3 index /CA knownoget {.setopacityalpha} if
-      2 index annotsetcolor {0 setdash setlinewidth stroke} if
+      % If element 3 of the /Border array is 0, then don't draw the border
+      dup 0 ne {
+        exch dup length 3 gt { 3 get } { pop {} } ifelse
+        3 index /CA knownoget {.setopacityalpha} if
+        2 index annotsetcolor {0 setdash setlinewidth stroke} if
+      }{
+       pop pop
+      } ifelse
     } ifelse
   } {
     3 index /CA knownoget {.setopacityalpha} if
@@ -3633,7 +3638,8 @@ currentdict /set_bc_color undef
         drawborder
         //false
       }{
-        pop
+        dup annotrect
+        drawopdict /re get exec strokeborderpath
       } ifelse
       //endannottransparency exec
       grestore
