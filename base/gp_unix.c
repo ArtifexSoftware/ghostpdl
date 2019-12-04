@@ -356,7 +356,11 @@ void *gp_enumerate_fonts_init(gs_memory_t *mem)
      */
     code = 0;
     while ((dirstr = FcStrListNext(fdirlist)) != NULL && code >= 0) {
-        code = gs_add_control_path(mem, gs_permit_file_reading, (char *)dirstr);
+        char dirstr2[gp_file_name_sizeof];
+        dirstr2[0] = '\0';
+        strncat(dirstr2, (char *)dirstr, gp_file_name_sizeof - 1);
+        strncat(dirstr2, "/", gp_file_name_sizeof);
+        code = gs_add_control_path(mem, gs_permit_file_reading, (char *)dirstr2);
     }
     FcStrListDone(fdirlist);
     if (code < 0) {
