@@ -3267,7 +3267,6 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
     gs_fixed_rect path_bbox;
     int expansion_code;
     gs_fixed_point expansion;
-    bool save_is_fill_color = pgs->is_fill_color;
 
     if ((pgs->fillconstantalpha == 0.0 && pgs->strokeconstantalpha == 0.0) ||
         (pgs->ctm.xx == 0.0 && pgs->ctm.xy == 0.0 && pgs->ctm.yx == 0.0 && pgs->ctm.yy == 0.0))

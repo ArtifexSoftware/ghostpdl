@@ -509,7 +509,6 @@ static dev_proc_fill_rectangle(overprint_sep_fill_rectangle);
 static dev_proc_fill_rectangle_hl_color(overprint_fill_rectangle_hl_color);
 static dev_proc_copy_planes(overprint_copy_planes);
 static dev_proc_copy_alpha_hl_color(overprint_copy_alpha_hl_color);
-static dev_proc_begin_image(overprint_begin_image);
 
 /* other low-level overprint_sep_* rendering methods prototypes go here */
 

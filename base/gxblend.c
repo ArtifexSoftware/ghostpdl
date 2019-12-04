@@ -3491,8 +3491,12 @@ do_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                     }
                 } else
                     fn = &compose_group_nonknockout_nonblend_isolated_mask_common;
-            } else /* 14% */
-                fn = &compose_group_nonknockout_nonblend_isolated_nomask_common;
+            } else 
+                if (maskbuf) {
+                    /* Outside mask */
+                    fn = &compose_group_nonknockout_nonblend_isolated_mask_common;
+                } else
+                    fn = &compose_group_nonknockout_nonblend_isolated_nomask_common;
         } else {
             if (has_mask || maskbuf) /* 4% */
                 fn = &compose_group_nonknockout_nonblend_nonisolated_mask_common;
@@ -4249,8 +4253,13 @@ do_compose_group16(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                     fn = &compose_group16_nonknockout_nonblend_isolated_allmask_common;
                 else
                     fn = &compose_group16_nonknockout_nonblend_isolated_mask_common;
-            } else /* 14% */
-                fn = &compose_group16_nonknockout_nonblend_isolated_nomask_common;
+            } else 
+                if (maskbuf) {
+                    /* Outside mask data but still has mask */
+                    fn = &compose_group16_nonknockout_nonblend_isolated_mask_common;
+                } else {
+                    fn = &compose_group16_nonknockout_nonblend_isolated_nomask_common;
+                }
         } else {
             if (has_mask || maskbuf) /* 4% */
                 fn = &compose_group16_nonknockout_nonblend_nonisolated_mask_common;
