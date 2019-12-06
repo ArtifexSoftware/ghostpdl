@@ -320,16 +320,16 @@ so-only-subtarget:
 	 $(AUXDIR)/echogs$(XEAUX) $(AUXDIR)/genarch$(XEAUX)
 	$(MAKE) $(SUB_MAKE_OPTION) $(SODEFS) GENOPT='$(GENOPT)' GS_LDFLAGS='$(LDFLAGS) $(GS_LDFLAGS_SO)'\
          PCL_LDFLAGS='$(LDFLAGS) $(PCL_LDFLAGS_SO)' XPS_LDFLAGS='$(LDFLAGS) $(XPS_LDFLAGS_SO)' \
-         PDL_LDFLAGS='$(LDFLAGS) $(PDL_LDFLAGS_SO)' CFLAGS='$(CFLAGS_STANDARD) $(CFLAGS_SO) \
-         $(GCFLAGS) $(AC_CFLAGS) $(XCFLAGS)' prefix=$(prefix)
+         PDL_LDFLAGS='$(LDFLAGS) $(PDL_LDFLAGS_SO)' PDF_LDFLAGS='$(LDFLAGS) $(PDF_LDFLAGS_SO)' \
+         CFLAGS='$(CFLAGS_STANDARD) $(CFLAGS_SO) $(GCFLAGS) $(AC_CFLAGS) $(XCFLAGS)' prefix=$(prefix)
 
 so-only-stripped-subtarget: so-only-subtarget
-	$(MAKE) $(SUB_MAKE_OPTION) $(SODEFS) gs-so-strip $(PCL_TARGET)-so-strip $(XPS_TARGET)-so-strip $(GPDL_TARGET)-so-strip
+	$(MAKE) $(SUB_MAKE_OPTION) $(SODEFS) gs-so-strip $(PCL_TARGET)-so-strip $(XPS_TARGET)-so-strip $(GPDL_TARGET)-so-strip$ (PDF_TARGET)-so-strip
 
 so-subtarget: so-only-subtarget
 	$(MAKE) $(SUB_MAKE_OPTION) $(SODEFS_FINAL) GENOPT='$(GENOPT)' LDFLAGS='$(LDFLAGS)'\
 	 CFLAGS='$(CFLAGS_STANDARD) $(GCFLAGS) $(AC_CFLAGS) $(XCFLAGS)' prefix=$(prefix)\
-	 $(GSSOC_XE) $(GSSOX_XE) $(PCL_TARGET)-so-loader $(XPS_TARGET)-so-loader $(GPDL_TARGET)-so-loader
+	 $(GSSOC_XE) $(GSSOX_XE) $(PCL_TARGET)-so-loader $(XPS_TARGET)-so-loader $(GPDL_TARGET)-so-loader $(PDF_TARGET)-so-loader
 
 install-so:
 	$(MAKE) $(SUB_MAKE_OPTION) install-so-subtarget BUILDDIRPREFIX=$(SODIRPREFIX)
