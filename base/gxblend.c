@@ -4642,9 +4642,9 @@ template_mark_fill_rect(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restri
                 } else if (!additive && overprint) {
                     int comps;
 
-                    for (i = 0, comps = drawn_comps; comps != 0; ++i, comps >>= 1) {
+                    for (k = 0, comps = drawn_comps; comps != 0; ++k, comps >>= 1) {
                         if ((comps & 0x1) != 0) {
-                            dst_ptr[i * planestride] = 255 - pdst[i];
+                            dst_ptr[k * planestride] = 255 - pdst[k];
                         }
                     }
                 } else {
@@ -5209,9 +5209,9 @@ template_mark_fill_rect16(int w, int h, uint16_t *gs_restrict dst_ptr, uint16_t 
                 } else if (!additive && overprint) {
                     int comps;
 
-                    for (i = 0, comps = drawn_comps; comps != 0; ++i, comps >>= 1) {
+                    for (k = 0, comps = drawn_comps; comps != 0; ++k, comps >>= 1) {
                         if ((comps & 0x1) != 0) {
-                            dst_ptr[i * planestride] = 65535 - pdst[i];
+                            dst_ptr[k * planestride] = 65535 - pdst[k];
                         }
                     }
                 }
