@@ -227,6 +227,9 @@ typedef unsigned long long uint64_t;
 #    define PRIiSIZE "lli"
 #   endif
 #  endif
+#  ifndef PRIx64
+#    define PRIx64 PRIxSIZE
+#  endif
 # endif
 
 #endif /* stdint__INCLUDED */

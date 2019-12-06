@@ -310,7 +310,7 @@ case $host in
         fi
         SET_DT_SONAME=""
         ;;
-        *-sun*)
+        *-sun*|*-solaris*)
         CC_OPT_FLAGS_TO_TRY="-O2"
         CFLAGS_LARGEFILE="-D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64"
         # the trailing space is required!
@@ -2202,7 +2202,7 @@ if test x$no_x != xyes; then
         if test ! "$x_libraries" = "NONE" -a ! "$x_libraries" = ""; then
                 X_LDFLAGS="-L$x_libraries"
                 case $host in
-                    *-sun*)
+                    *-sun*|*-solaris*)
                         X_LDFLAGS="$X_LDFLAGS -R$x_libraries"
                     ;;
                     *)
@@ -2784,7 +2784,7 @@ case $host in
       DYNAMIC_LIBS=""
       SO_LIB_EXT=".dylib"
     ;;
-    *-sun*)
+    *-sun*|*-solaris*)
       if test $ac_cv_prog_gcc = yes; then
         DYNAMIC_CFLAGS="-fPIC $DYNAMIC_CFLAGS"
       else
@@ -2879,7 +2879,7 @@ AC_ARG_ENABLE([dynamic], AC_HELP_STRING([--enable-dynamic],
         OPT_CFLAGS="$DYNAMIC_CFLAGS $OPT_CFLAGS"
         DBG_CFLAGS="$DYNAMIC_CFLAGS $DBG_CFLAGS"
       ;;
-      *-sun*)
+      *-sun*|*-solaris*)
         DYNAMIC_DEVS="\$(GLOBJDIR)/X11.so"
         DYNAMIC_FLAGS="-DGS_DEVS_SHARED -DGS_DEVS_SHARED_DIR=\\\"\$(gssharedir)\\\""
         OPT_CFLAGS="$DYNAMIC_CFLAGS $OPT_CFLAGS"
@@ -3067,7 +3067,7 @@ AC_ARG_WITH(memory-alignment,
 
 if test x"$GS_MEMPTR_ALIGNMENT" = xcheck ; then
   case $host in
-    *hpux*|*-sun*|*-aix*)
+    *hpux*|*-sun*|*-aix*|*-solaris*)
      GS_MEMPTR_ALIGNMENT=8
     ;;
     *)
