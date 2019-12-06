@@ -1066,6 +1066,8 @@ currentdict end readonly def
     //true
   } ifelse {
     dup dup type /arraytype eq { 0 get } if
+    dup type /packedarraytype eq {exch pop exec dup} if
+
     //csrdict exch .knownget  {
       exec dup type /nametype ne { dup length 1 eq { 0 get } if } if
     } {
