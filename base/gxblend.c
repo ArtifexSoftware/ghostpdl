@@ -2994,18 +2994,8 @@ template_compose_group(byte *gs_restrict tos_ptr, bool tos_isolated,
                     }
                 } else {
                     /* Pure subtractive */
-                    /* Compatible overprint should have taken care of all
-                       of the blending issues if we were not isolated */
-                    if (overprint && tos_isolated) {
-                        for (i = 0, comps = drawn_comps; comps != 0; ++i, comps >>= 1) {
-                            if ((comps & 0x1) != 0) {
-                                nos_ptr[i * nos_planestride] = 255 - dst[i];
-                            }
-                        }
-                    } else {
-                        for (i = 0; i < n_chan; ++i)
-                            nos_ptr[i * nos_planestride] = 255 - dst[i];
-                    }
+                    for (i = 0; i < n_chan; ++i)
+                        nos_ptr[i * nos_planestride] = 255 - dst[i];
                 }
                 /* alpha */
                 nos_ptr[n_chan * nos_planestride] = dst[n_chan];
@@ -4642,14 +4632,21 @@ template_mark_fill_rect(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restri
                 dst[num_comp] = dst_ptr[num_comp * planestride];
                 pdst = art_pdf_composite_pixel_alpha_8_inline(dst, src, num_comp, blend_mode, first_blend_spot,
                             pdev->blend_procs, pdev);
-                /* Overprint drawncomps is handled in the blending
-                    procedure, by the compatible overprint blend */
-                /* Post blend complement for subtractive */
-                if (!additive) {
+                /* Post blend complement for subtractive and handling of drawncomps
+                   if overprint.  We will have already done the compatible overprint
+                   mode in the above composition */
+                if (!additive && !overprint) {
                     /* Pure subtractive */
                     for (k = 0; k < num_comp; ++k)
                         dst_ptr[k * planestride] = 255 - pdst[k];
+                } else if (!additive && overprint) {
+                    int comps;
 
+                    for (i = 0, comps = drawn_comps; comps != 0; ++i, comps >>= 1) {
+                        if ((comps & 0x1) != 0) {
+                            dst_ptr[i * planestride] = 255 - pdst[i];
+                        }
+                    }
                 } else {
                     /* Hybrid case, additive with subtractive spots */
                     for (k = 0; k < (num_comp - num_spots); k++) {
@@ -5203,15 +5200,22 @@ template_mark_fill_rect16(int w, int h, uint16_t *gs_restrict dst_ptr, uint16_t 
                 pdst = art_pdf_composite_pixel_alpha_16_inline(dst, src, num_comp, blend_mode, first_blend_spot,
                             pdev->blend_procs, pdev);
 
-                /* Overprint drawncomps is handled in the blending
-                   procedure, by the compatible overprint blend */
                 /* Post blend complement for subtractive */
-                if (!additive) {
+                if (!additive && !overprint) {
                     /* Pure subtractive */
                     for (k = 0; k < num_comp; ++k)
                         dst_ptr[k * planestride] = 65535 - pdst[k];
 
-                } else {
+                } else if (!additive && overprint) {
+                    int comps;
+
+                    for (i = 0, comps = drawn_comps; comps != 0; ++i, comps >>= 1) {
+                        if ((comps & 0x1) != 0) {
+                            dst_ptr[i * planestride] = 65535 - pdst[i];
+                        }
+                    }
+                }
+                else {
                     /* Hybrid case, additive with subtractive spots */
                     for (k = 0; k < (num_comp - num_spots); k++) {
                         dst_ptr[k * planestride] = pdst[k];
