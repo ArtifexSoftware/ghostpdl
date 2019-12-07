@@ -1209,6 +1209,8 @@ art_blend_pixel_8_inline(byte *gs_restrict dst, const byte *gs_restrict backdrop
             {
                 gx_color_index drawn_comps = p14dev->op_state == PDF14_OP_STATE_FILL ?
                                              p14dev->drawn_comps_fill : p14dev->drawn_comps_stroke;
+                bool opm = p14dev->op_state == PDF14_OP_STATE_FILL ?
+                    p14dev->effective_overprint_mode : p14dev->stroke_effective_op_mode;
                 gx_color_index comps;
                 /* If overprint mode is true and the current color space and
                  * the group color space are CMYK (or CMYK and spots), then
@@ -1267,7 +1269,7 @@ art_blend_pixel_8_inline(byte *gs_restrict dst, const byte *gs_restrict backdrop
                  the mixing of the source with the blend result.  Essentially
                  replacing that mixing with the color we have here.
                  */
-                if (p14dev->effective_overprint_mode && p14dev->color_info.num_components > 3
+                if (opm && p14dev->color_info.num_components > 3
                     && !(p14dev->ctx->additive)) {
                     for (i = 0; i < 4; i++) {
                         b = backdrop[i];
@@ -4587,6 +4589,7 @@ template_mark_fill_rect(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restri
 {
     int i, j, k;
     byte dst[PDF14_MAX_PLANES] = { 0 };
+    byte dest_alpha;
     bool tag_blend = blend_mode == BLEND_MODE_Normal ||
         blend_mode == BLEND_MODE_Compatible ||
         blend_mode == BLEND_MODE_CompatibleOverprint;
@@ -4630,6 +4633,7 @@ template_mark_fill_rect(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restri
                     }
                 }
                 dst[num_comp] = dst_ptr[num_comp * planestride];
+                dest_alpha = dst[num_comp];
                 pdst = art_pdf_composite_pixel_alpha_8_inline(dst, src, num_comp, blend_mode, first_blend_spot,
                             pdev->blend_procs, pdev);
                 /* Post blend complement for subtractive and handling of drawncomps
@@ -4641,10 +4645,22 @@ template_mark_fill_rect(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restri
                         dst_ptr[k * planestride] = 255 - pdst[k];
                 } else if (!additive && overprint) {
                     int comps;
-
-                    for (k = 0, comps = drawn_comps; comps != 0; ++k, comps >>= 1) {
+                    /* If this is an overprint case, and alpha_r is different
+                       than alpha_d then we will need to adjust
+                       the colors of the non-drawn components here too */
+                    for (k = 0, comps = drawn_comps; k < num_comp; ++k, comps >>= 1) {
                         if ((comps & 0x1) != 0) {
                             dst_ptr[k * planestride] = 255 - pdst[k];
+                        } else if (dest_alpha != pdst[num_comp]) {
+                            /* We need val_new = (val_old * old_alpha) / new_alpha */
+                            if (pdst[num_comp] != 0) {
+                                int val = (int)floor(((float)dest_alpha / (float)pdst[num_comp]) * (255 - pdst[k]) + 0.5);
+                                if (val < 0)
+                                    val = 0;
+                                else if (val > 255)
+                                    val = 255;
+                                dst_ptr[k * planestride] = val;
+                            }
                         }
                     }
                 } else {

@@ -2949,7 +2949,7 @@ pdf14_set_marking_params(gx_device *dev, const gs_gstate *pgs)
     pdev->blend_mode = pgs->blend_mode;
     pdev->overprint = pgs->overprint;
     pdev->effective_overprint_mode = pgs->color[!pgs->is_fill_color].effective_opm;
-    pdev->stroke_effective_op_mode = pgs->color[!pgs->is_fill_color].effective_opm;
+    pdev->stroke_effective_op_mode = pgs->color[pgs->is_fill_color].effective_opm;
     pdev->stroke_overprint = pgs->stroke_overprint;
     pdev->fillconstantalpha = pgs->fillconstantalpha;
     pdev->strokeconstantalpha = pgs->strokeconstantalpha;
@@ -4371,8 +4371,10 @@ pdf14_set_params(gs_gstate * pgs,
         pgs->overprint = pparams->overprint;
     if (pparams->changed & PDF14_SET_STROKEOVERPRINT)
         pgs->stroke_overprint = pparams->stroke_overprint;
-    if (pparams->changed & PDF14_SET_OVERPRINT_MODE)
-        pgs->color[0].effective_opm = pparams->effective_overprint_mode;
+    if (pparams->changed & PDF14_SET_OVERPRINT_MODE) {
+        pgs->color[!pgs->is_fill_color].effective_opm = pparams->effective_overprint_mode;
+        pgs->color[pgs->is_fill_color].effective_opm = pparams->stroke_effective_op_mode;
+    }
     if (pparams->changed & PDF14_SET_FILLCONSTANTALPHA)
         pgs->fillconstantalpha = pparams->fillconstantalpha;
     if (pparams->changed & PDF14_SET_STROKECONSTANTALPHA)
