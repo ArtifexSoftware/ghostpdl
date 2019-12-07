@@ -549,9 +549,25 @@ end
         cleartomark //null exit
       } if
       gsave //nodict begin
-        /CS knownoget {
+        dup /CS knownoget {
+          exch pop
           resolvecolorspace dup setgcolorspace csput
-        } if
+        }
+        {
+          % Group attributes dictionaries are supposed to contain a /CS
+          % entry, but Acrobat apparently also handles a /ColorSpace....
+          /ColorSpace knownoget {
+            (   **** Error: A transparency group XObject has a /ColorSpace instead of /CS attribute.\n)
+            pdfformaterror
+            resolvecolorspace dup setgcolorspace csput
+          }
+          {
+            (   **** Error: Ignoring a transparency group XObject without /CS attribute.\n)
+            pdfformaterror
+            (               Output may be incorrect.\n) pdfformaterror
+            cleartomark //null exit
+          }ifelse
+        } ifelse
         aload pop setcolor [ currentgray ]
       end grestore
       /GrayBackground exch 3 2 roll
@@ -643,9 +659,19 @@ def
     resolvecolorspace dup setgcolorspace csput
     //true		% use currentcolorspace
   } {
-    % inheriting the colorspace -- make sure Device* spaces are not CIEBased
-    forceDefaultCS currentcolorspace 0 get .knownget { exec } if
-    //false		% no defined colorspace
+    % Group attributes dictionaries are supposed to contain a /CS
+    % entry, but Acrobat apparently also handles a /ColorSpace....
+    dup /Group oget /ColorSpace knownoget {
+    (   **** Error: A transparency group attribute dictionary has a /ColorSpace instead of /CS attribute.\n)
+    pdfformaterror
+      resolvecolorspace dup setgcolorspace csput
+      //true		% use currentcolorspace
+    }
+    {
+      % inheriting the colorspace -- make sure Device* spaces are not CIEBased
+      forceDefaultCS currentcolorspace 0 get .knownget { exec } if
+      //false		% no defined colorspace
+    } ifelse
   } ifelse
   3 -1 roll dup
   dup 4 1 roll /BBox get aload pop .begintransparencymaskgroup
