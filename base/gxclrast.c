@@ -1979,6 +1979,22 @@ idata:                  data_size = 0;
                             code = (*dev_proc(tdev, fill_stroke_path))(tdev, &gs_gstate, ppath,
                                                                 &fill_params, &fill_color,
                                                                 &stroke_params, &stroke_color, pcpath);
+                            /* if the color is a pattern, it may have had the "is_locked" flag set	*/
+                            /* clear those now (see do_fill_stroke).					*/
+                            if (gx_dc_is_pattern1_color(&stroke_color)) {
+                                gs_id id = stroke_color.colors.pattern.p_tile->id;
+
+                                code = gx_pattern_cache_entry_set_lock(&gs_gstate, id, false);
+                                if (code < 0)
+                                    return code;	/* unlock failed -- should not happen */
+                            }
+                            if (gx_dc_is_pattern1_color(&fill_color)) {
+                                gs_id id = fill_color.colors.pattern.p_tile->id;
+
+                                code = gx_pattern_cache_entry_set_lock(&gs_gstate, id, false);
+                                if (code < 0)
+                                    return code;	/* unlock failed -- should not happen */
+                            }
                             break;
                         case cmd_opv_stroke:
                             stroke_params.flatness = gs_gstate.flatness;

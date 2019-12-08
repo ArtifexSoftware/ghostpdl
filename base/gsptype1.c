@@ -1628,6 +1628,7 @@ typedef struct gx_dc_serialized_tile_s {
 } gx_dc_serialized_tile_t;
 
 enum {
+    TILE_IS_LOCKED   = 0x80000000,
     TILE_HAS_OVERLAP = 0x40000000,
     TILE_IS_SIMPLE   = 0x20000000,
     TILE_USES_TRANSP = 0x10000000,
@@ -1672,7 +1673,8 @@ gx_dc_pattern_write_raster(gx_color_tile *ptile, int64_t offset, byte *data,
         buf.flags = ptile->depth
                   | (ptile->tiling_type<<TILE_TYPE_SHIFT)
                   | (ptile->is_simple ? TILE_IS_SIMPLE : 0)
-                  | (ptile->has_overlap ? TILE_HAS_OVERLAP : 0);
+                  | (ptile->has_overlap ? TILE_HAS_OVERLAP : 0)
+                  | (ptile->is_locked ? TILE_IS_LOCKED : 0);
         if (sizeof(buf) > left) {
             /* For a while we require the client to provide enough buffer size. */
             return_error(gs_error_unregistered); /* Must not happen. */
@@ -1764,7 +1766,8 @@ gx_dc_pattern_trans_write_raster(gx_color_tile *ptile, int64_t offset, byte *dat
                   | TILE_USES_TRANSP
                   | (ptile->tiling_type<<TILE_TYPE_SHIFT)
                   | (ptile->is_simple ? TILE_IS_SIMPLE : 0)
-                  | (ptile->has_overlap ? TILE_HAS_OVERLAP : 0);
+                  | (ptile->has_overlap ? TILE_HAS_OVERLAP : 0)
+                  | (ptile->is_locked ? TILE_IS_LOCKED : 0);
         buf.step_matrix = ptile->step_matrix;
         buf.bbox = ptile->bbox;
         buf.blending_mode = ptile->blending_mode;
@@ -1889,6 +1892,7 @@ gx_dc_pattern_write(
                   | (ptile->tiling_type<<TILE_TYPE_SHIFT)
                   | (ptile->is_simple ? TILE_IS_SIMPLE : 0)
                   | (ptile->has_overlap ? TILE_HAS_OVERLAP : 0)
+                  | (ptile->is_locked ? TILE_IS_LOCKED : 0)
                   | (ptile->cdev->common.page_uses_transparency ? TILE_USES_TRANSP : 0);
         buf.blending_mode = ptile->blending_mode;    /* in case tile has transparency */
         if (sizeof(buf) > left) {
@@ -2114,8 +2118,9 @@ gx_dc_pattern_read(
         ptile->tiling_type = (buf.flags & TILE_TYPE_MASK)>>TILE_TYPE_SHIFT;
         ptile->is_simple = !!(buf.flags & TILE_IS_SIMPLE);
         ptile->has_overlap = !!(buf.flags & TILE_HAS_OVERLAP);
+        ptile->is_locked = !!(buf.flags & TILE_IS_LOCKED);
         ptile->blending_mode = buf.blending_mode;
-        ptile->is_dummy = 0;
+        ptile->is_dummy = false;
 
         if (!(buf.flags & TILE_IS_CLIST)) {
 

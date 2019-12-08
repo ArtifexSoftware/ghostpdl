@@ -26,6 +26,7 @@
 #include "gspath.h"
 #include "gzpath.h"
 #include "gxpaint.h"
+#include "gxpcolor.h"		/* for do_fill_stroke */
 #include "gzstate.h"
 #include "gxdevice.h"
 #include "gxdevmem.h"
@@ -610,9 +611,17 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
         code = gx_set_dev_color(pgs);
         if (code != 0)
             return code;		/* may be gs_error_Remap_color or real error */
-        code = gs_gstate_color_load(pgs);	/* FIXME: needed for stroke_color ?? */
+        code = gs_gstate_color_load(pgs);
         if (code < 0)
             return code;
+        /* If this was a pattern color, make sure and lock it in the pattern_cache */
+        if (gx_dc_is_pattern1_color(gs_currentdevicecolor_inline(pgs))) {
+            gs_id id = gs_currentdevicecolor_inline(pgs)->colors.pattern.p_tile->id;
+
+            code = gx_pattern_cache_entry_set_lock(pgs, id, true);
+	    if (code < 0)
+		return code;	/* lock failed -- tile not in cache? */
+        }
     }
 
     if (pgs->stroke_overprint || (!pgs->stroke_overprint && dev_proc(pgs->device, dev_spec_op)(pgs->device,
@@ -635,7 +644,7 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
         /* color is set for fill, but a failure here is a problem */
         /* i.e., something other than error_Remap_Color */
         *restart = 2;	/* we shouldn't re-enter with '2' */
-        return code;
+        goto out;
     }
 
     if (pgs->overprint || (!pgs->overprint && dev_proc(pgs->device, dev_spec_op)(pgs->device,
@@ -644,7 +653,7 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
             "[overprint] StrokeFill Fill Set Overprint\n");
         code = gs_do_set_overprint(pgs);
         if (code < 0)
-            return code;
+            goto out;		/* fatal */
     }
 
     abits = 0;
@@ -683,9 +692,9 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
                                   pgs->fill_adjust.y + extra_adjust,
                                   abits, devn);
         if (acode == 2) /* Special case for no fill required */
-            return 0;
+            goto out;
         if (acode < 0)
-            return acode;
+            goto out;
         gs_setlinewidth(pgs, new_width);
         scale_dash_pattern(pgs, scale);
         gs_setflat(pgs, orig_flatness * scale);
@@ -698,10 +707,18 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
         gs_setlinewidth(pgs, orig_width);
         scale_dash_pattern(pgs, 1.0 / scale);
         gs_setflat(pgs, orig_flatness);
-        rcode = alpha_buffer_release(pgs, code >= 0);
+        acode = alpha_buffer_release(pgs, code >= 0);
     }
-    if (code >= 0 && rcode < 0)
-        code = rcode;
+out:
+    if (gx_dc_is_pattern1_color(gs_altdevicecolor_inline(pgs))) {
+	gs_id id = gs_altdevicecolor_inline(pgs)->colors.pattern.p_tile->id;
+
+	rcode = gx_pattern_cache_entry_set_lock(pgs, id, false);
+	if (rcode < 0)
+	    return rcode;	/* unlock failed -- shouldn't be possible */
+    }
+    if (code >= 0 && acode < 0)
+        code = acode;
     return code;
 }
 
