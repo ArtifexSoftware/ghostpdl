@@ -38,6 +38,7 @@ typedef int (*annot_func)(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, b
 typedef struct {
     const char *subtype;
     annot_func func;
+    bool simpleAP;
 } annot_dispatch_t;
 
 
@@ -68,16 +69,6 @@ static int pdfi_annot_end_transparency(pdf_context *ctx, pdf_dict *annot)
     return pdfi_trans_end_simple_group(ctx);
 }
 
-/* See pdf_draw.ps/calc_annot_scale */
-static int pdfi_annot_calcscale(pdf_context *ctx, pdf_dict *annot, double *xscale, double *yscale)
-{
-    /* TODO: Implement this */
-
-    *xscale = 1.0;
-    *yscale = 1.0;
-    return 0;
-}
-
 static int pdfi_annot_rect(pdf_context *ctx, pdf_dict *annot, gs_rect *rect)
 {
     int code;
@@ -97,9 +88,7 @@ static int pdfi_annot_rect(pdf_context *ctx, pdf_dict *annot, gs_rect *rect)
 }
 
 /* See pdf_draw.ps/drawwidget (draws the AP for any type of thingy) */
-static int pdfi_annot_draw_AP(pdf_context *ctx, pdf_dict *annot,
-                                  double xscale, double yscale,
-                                  pdf_dict *NormAP)
+static int pdfi_annot_draw_AP(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP)
 {
     int code = 0;
     gs_rect rect;
@@ -107,13 +96,10 @@ static int pdfi_annot_draw_AP(pdf_context *ctx, pdf_dict *annot,
     gs_rect bbox;
     pdf_array *Matrix = NULL;
     gs_matrix matrix;
+    double xscale, yscale;
 
-    /* TODO: Just rendering the Norm AP for now.  Lots of other convoluted things
-     *  I am not handling...
-     */
     if (NormAP == NULL)
         return 0;
-
 
     code = pdfi_op_q(ctx);
     if (code < 0)
@@ -147,31 +133,44 @@ static int pdfi_annot_draw_AP(pdf_context *ctx, pdf_dict *annot,
     code = pdfi_annot_rect(ctx, annot, &rect);
     if (code < 0) goto exit;
 
+    code = pdfi_dict_knownget_type(ctx, NormAP, "BBox", PDF_ARRAY, (pdf_obj **)&BBox);
+    if (code < 0) goto exit;
+    code = pdfi_array_to_gs_rect(ctx, BBox, &bbox);
+    if (code < 0) goto exit;
+
+    code = pdfi_dict_knownget_type(ctx, NormAP, "Matrix", PDF_ARRAY, (pdf_obj **)&Matrix);
+    if (code < 0) goto exit;
+    code = pdfi_array_to_gs_matrix(ctx, Matrix, &matrix);
+    if (code < 0) goto exit;
+
+    xscale = yscale = 1.0;
+
     code = gs_translate(ctx->pgs, rect.p.x, rect.p.y);
     if (code < 0) goto exit;
 
-    code = gs_scale(ctx->pgs, xscale, yscale);
-    if (code < 0) goto exit;
-
-    code = pdfi_dict_knownget_type(ctx, NormAP, "BBox", PDF_ARRAY, (pdf_obj **)&BBox);
-    if (code < 0) goto exit;
-    if (code > 0) {
-        code = pdfi_array_to_gs_rect(ctx, BBox, &bbox);
-        if (code < 0) goto exit;
-
-        code = pdfi_dict_knownget_type(ctx, annot, "Matrix", PDF_ARRAY, (pdf_obj **)&Matrix);
-        if (code < 0) goto exit;
-
-        code = pdfi_array_to_gs_matrix(ctx, Matrix, &matrix);
-        if (code < 0) goto exit;
-
+    if (BBox != NULL) {
         pdfi_bbox_transform(ctx, &bbox, &matrix);
+
+        /* Calculate scale factor */
+        xscale = (rect.q.x - rect.p.x) / (bbox.q.x - bbox.p.x);
+        yscale = (rect.q.y - rect.p.y) / (bbox.q.y - bbox.p.y);
+
+        if (xscale * yscale <= 0) {
+            dbgmprintf(ctx->memory, "ANNOT: Ignoring annotation with scale factor of 0\n");
+            code = 0;
+            goto exit;
+        }
+
+        /* Scale it */
+        code = gs_scale(ctx->pgs, xscale, yscale);
+        if (code < 0) goto exit;
 
         /* Compensate for non-zero origin of BBox */
         code = gs_translate(ctx->pgs, -bbox.p.x, -bbox.p.y);
         if (code < 0) goto exit;
-
     }
+
+    /* Render the annotation */
     code = pdfi_do_image_or_form(ctx, NULL, ctx->CurrentPageDict, NormAP);
     if (code < 0) goto exit;
 
@@ -384,18 +383,45 @@ static int pdfi_annot_get_NormAP(pdf_context *ctx, pdf_dict *annot, pdf_dict **N
 {
     int code;
     pdf_dict *AP = NULL;
+    pdf_dict *baseAP = NULL;
+    pdf_name *AS = NULL;
 
     *NormAP = NULL;
 
     code = pdfi_dict_knownget_type(ctx, annot, "AP", PDF_DICT, (pdf_obj **)&AP);
     if (code <= 0) goto exit;
 
-    code = pdfi_dict_knownget_type(ctx, AP, "N", PDF_DICT, (pdf_obj **)NormAP);
-    if (code > 0)
-        code = 0;
+    code = pdfi_dict_knownget_type(ctx, AP, "N", PDF_DICT, (pdf_obj **)&baseAP);
+    if (code <= 0) goto exit;
+
+    code = 0;
+
+    if (pdfi_dict_is_stream(ctx, baseAP)) {
+        AP = baseAP;
+        pdfi_countup(AP);
+    } else {
+        code = pdfi_dict_knownget_type(ctx, annot, "AS", PDF_NAME, (pdf_obj **)&AS);
+        if (code < 0) goto exit;
+        if (code == 0) {
+            dbgmprintf(ctx->memory, "WARNING Annotation has non-stream AP but no AS.  Don't know what to render. Skipping\n");
+            goto exit;
+        }
+
+        /* Lookup the AS in the NormAP and use that as the AP */
+        code = pdfi_dict_get_by_key(ctx, baseAP, AS, (pdf_obj **)&AP);
+        if (code < 0) goto exit;
+        if (AP->type != PDF_DICT) {
+            code = gs_note_error(gs_error_typecheck);
+            goto exit;
+        }
+    }
+
+   *NormAP = AP;
 
  exit:
     pdfi_countdown(AP);
+    pdfi_countdown(AS);
+    pdfi_countdown(baseAP);
     return code;
 }
 
@@ -403,7 +429,6 @@ static int pdfi_annot_draw_Link(pdf_context *ctx, pdf_dict *annot, pdf_dict *Nor
 {
     int code;
     int code1;
-    double xscale, yscale;
 
     dbgmprintf(ctx->memory, "ANNOT: Drawing Link\n");
 
@@ -414,14 +439,8 @@ static int pdfi_annot_draw_Link(pdf_context *ctx, pdf_dict *annot, pdf_dict *Nor
     code = pdfi_annot_draw_border(ctx, annot);
     if (code < 0) goto exit;
 
-    code = pdfi_annot_calcscale(ctx, annot, &xscale, &yscale);
-    if (code < 0) goto exit;
 
-    if (xscale * yscale > 0.0) {
-        code = pdfi_annot_draw_AP(ctx, annot, xscale, yscale, NormAP);
-    } else {
-        dbgmprintf(ctx->memory, "ANNOT: Ignoring annotation with scale factor of 0\n");
-    }
+    code = pdfi_annot_draw_AP(ctx, annot, NormAP);
 
  exit:
     code1 = pdfi_annot_end_transparency(ctx, annot);
@@ -433,37 +452,190 @@ static int pdfi_annot_draw_Link(pdf_context *ctx, pdf_dict *annot, pdf_dict *Nor
 
 static int pdfi_annot_draw_Ink(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
 {
+    int code = 0;
+
+    /* TODO: Generate appearance (see pdf_draw.ps/Ink) */
     *render_done = true;
-    return 0;
+
+    return code;
 }
 
 static int pdfi_annot_draw_Circle(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
 {
     int code = 0;
 
+    /* TODO: Generate appearance (see pdf_draw.ps/Circle) */
+    *render_done = true;
+
+    return code;
+}
+
+static int pdfi_annot_draw_Stamp(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
+{
+    int code = 0;
+
+    /* TODO: Generate appearance (see pdf_draw.ps/Stamp) */
+    *render_done = true;
+
+    return code;
+}
+
+static int pdfi_annot_draw_FreeText(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
+{
+    int code = 0;
+
+    /* TODO: Generate appearance (see pdf_draw.ps/FreeText) */
+    *render_done = true;
+
+    return code;
+}
+
+static int pdfi_annot_draw_Text(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
+{
+    int code = 0;
+
+    /* TODO: Generate appearance (see pdf_draw.ps/Text) */
+    *render_done = true;
+
+    return code;
+}
+
+static int pdfi_annot_draw_StrikeOut(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
+{
+    int code = 0;
+
+    /* TODO: Generate appearance (see pdf_draw.ps/StrikeOut) */
+    *render_done = true;
+
+    return code;
+}
+
+static int pdfi_annot_draw_Underline(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
+{
+    int code = 0;
+
+    /* TODO: Generate appearance (see pdf_draw.ps/Underline) */
+    *render_done = true;
+
+    return code;
+}
+
+static int pdfi_annot_draw_Highlight(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
+{
+    int code = 0;
+
+    /* TODO: Generate appearance (see pdf_draw.ps/StrikeOut) */
+    *render_done = true;
+
+    return code;
+}
+
+static int pdfi_annot_draw_Redact(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
+{
+    int code = 0;
+
+    /* TODO: Generate appearance (see pdf_draw.ps/Redact) */
+    *render_done = true;
+
+    return code;
+}
+
+static int pdfi_annot_draw_Popup(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
+{
+    int code = 0;
+    bool Open = false;
+
+    /* Render only if open */
+    code = pdfi_dict_get_bool(ctx, annot, "Annots", &Open);
+    if (code < 0 && (code != gs_error_undefined))
+        goto exit;
+
+    code = 0;
+
+    if (!Open) {
+        *render_done = true;
+        goto exit;
+    }
+
     if (NormAP) {
         *render_done = false;
         goto exit;
     }
 
-    /* TODO: Generate appearance (see pdf_draw.ps/Circle) */
+    /* TODO: Generate appearance (see pdf_draw.ps/Popup) */
     *render_done = true;
 
  exit:
     return code;
 }
 
+static int pdfi_annot_draw_Line(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
+{
+    int code = 0;
+
+    /* TODO: Generate appearance (see pdf_draw.ps/Line) */
+    *render_done = true;
+
+    return code;
+}
+
+static int pdfi_annot_draw_PolyLine(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
+{
+   int code = 0;
+
+    /* TODO: Generate appearance (see pdf_draw.ps/PolyLine) */
+    *render_done = true;
+
+    return code;
+}
+
+static int pdfi_annot_draw_Polygon(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
+{
+    int code = 0;
+
+    /* TODO: Generate appearance (see pdf_draw.ps/Polygon) */
+    *render_done = true;
+
+    return code;
+}
+
+static int pdfi_annot_draw_Square(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
+{
+    int code = 0;
+
+    /* TODO: Generate appearance (see pdf_draw.ps/Square) */
+    *render_done = true;
+
+    return code;
+}
+
 /* Draws a thing of type /Widget */
 static int pdfi_annot_draw_Widget(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
 {
+    /* TODO: See top part of pdf_draw.ps/drawwidget
+     * check for /FT and /T and stuff
+     */
+    *render_done = false;
     return 0;
 }
 
 annot_dispatch_t annot_dispatch[] = {
-    {"Link", pdfi_annot_draw_Link},
-    {"Ink", pdfi_annot_draw_Ink},
-    {"Circle", pdfi_annot_draw_Circle},
-    {"Widget", pdfi_annot_draw_Widget},
+    {"Ink", pdfi_annot_draw_Ink, true},
+    {"Circle", pdfi_annot_draw_Circle, true},
+    {"Stamp", pdfi_annot_draw_Stamp, true},
+    {"FreeText", pdfi_annot_draw_FreeText, true},
+    {"Text", pdfi_annot_draw_Text, true},
+    {"StrikeOut", pdfi_annot_draw_StrikeOut, true},
+    {"Underline", pdfi_annot_draw_Underline, true},
+    {"Redact", pdfi_annot_draw_Redact, true},
+    {"Highlight", pdfi_annot_draw_Highlight, true},
+    {"Polygon", pdfi_annot_draw_Polygon, true},
+    {"Square", pdfi_annot_draw_Square, true},
+    {"Line", pdfi_annot_draw_Line, true},
+    {"PolyLine", pdfi_annot_draw_PolyLine, true},
+    {"Link", pdfi_annot_draw_Link, false},
+    {"Popup", pdfi_annot_draw_Popup, false},
+    {"Widget", pdfi_annot_draw_Widget, false},
     { NULL, NULL},
 };
 
@@ -564,12 +736,25 @@ static int pdfi_annot_draw(pdf_context *ctx, pdf_dict *annot)
     /* Draw the annotation */
     for (dispatch_ptr = annot_dispatch; dispatch_ptr->subtype; dispatch_ptr ++) {
         if (pdfi_name_is(Subtype, dispatch_ptr->subtype)) {
-            code = dispatch_ptr->func(ctx, annot, NormAP, &render_done);
+            if (NormAP && dispatch_ptr->simpleAP)
+                render_done = false;
+            else
+                code = dispatch_ptr->func(ctx, annot, NormAP, &render_done);
             break;
         }
     }
+    if (!dispatch_ptr->subtype) {
+        char str[100];
+        memcpy(str, (const char *)Subtype->data, Subtype->length);
+        str[Subtype->length] = '\0';
+        dbgmprintf1(ctx->memory, "ANNOT: No handler for subtype %s\n", str);
+
+        /* Not necessarily an error? We can just render the AP if there is one */
+        render_done = false;
+    }
+
     if (!render_done)
-        code = pdfi_annot_draw_AP(ctx, annot, 1.0, 1.0, NormAP);
+        code = pdfi_annot_draw_AP(ctx, annot, NormAP);
 
     (void)pdfi_grestore(ctx);
 
