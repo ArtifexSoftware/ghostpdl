@@ -262,9 +262,9 @@ static int pdfi_build_mesh_shading(pdf_context *ctx, gs_shading_mesh_params_t *p
     if (shading_dict->stream_offset == 0)
         return_error(gs_error_typecheck);
 
-    code = pdfi_dict_get_int(ctx, shading_dict, "Length", &Length);
-    if (code < 0)
-        return code;
+    if (!pdfi_dict_is_stream(ctx, shading_dict))
+        return_error(gs_error_undefined);
+    Length = pdfi_dict_stream_length(ctx, shading_dict);
 
     savedoffset = pdfi_tell(ctx->main_stream);
     code = pdfi_seek(ctx, ctx->main_stream, shading_dict->stream_offset, SEEK_SET);

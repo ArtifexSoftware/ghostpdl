@@ -826,3 +826,49 @@ int pdfi_merge_dicts(pdf_dict *target, pdf_dict *source)
     }
     return 0;
 }
+
+/* Check if dict is a stream
+ * It's a stream if it has a Length key
+ * Not a stream if it has no Length, or some other error happened when looking it up.
+ *
+ * Since dicts get created in various ways, we do a lazy-evaluation on whether there is a
+ * Length key, then cache it in the object so we don't have to check next time.
+ */
+bool pdfi_dict_is_stream(pdf_context *ctx, pdf_dict *d)
+{
+    int64_t Length = 0;
+    int code;
+
+    if (d->length_valid)
+        goto exit;
+
+    code = pdfi_dict_get_int(ctx, d, "Length", &Length);
+    if (code < 0) {
+        /* Includes undefined */
+        d->is_stream = false;
+    } else {
+        d->is_stream = true;
+    }
+
+    /* Make sure Length is not negative... */
+    if (Length < 0)
+        Length = 0;
+
+    /* Cache it */
+    d->Length = Length;
+    d->length_valid = true;
+
+ exit:
+    return d->is_stream;
+}
+
+/* Return Length of a stream, or 0 if it's not a stream
+ * Note that a stream is just a dict with a Length.
+ */
+int64_t pdfi_dict_stream_length(pdf_context *ctx, pdf_dict *d)
+{
+    if (pdfi_dict_is_stream(ctx, d))
+        return d->Length;
+    else
+        return 0;
+}

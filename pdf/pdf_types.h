@@ -124,6 +124,9 @@ typedef struct pdf_dict_s {
     pdf_obj **keys;
     pdf_obj **values;
     gs_offset_t stream_offset;
+    int64_t Length; /* Value of Length in dict, 0 if undefined.  non-zero means it's a stream */
+    bool is_stream; /* True if it has a Length param */
+    bool length_valid; /* True if Length and is_stream have been cached above */
 } pdf_dict;
 
 typedef struct pdf_indirect_ref_s {

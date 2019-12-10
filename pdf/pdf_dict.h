@@ -55,5 +55,7 @@ int pdfi_dict_copy(pdf_dict *target, pdf_dict *source);
 int pdfi_alloc_dict(pdf_context *ctx, uint64_t size, pdf_dict **returned);
 int pdfi_dict_next(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, pdf_obj **Value, void *index);
 int pdfi_dict_first(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, pdf_obj **Value, void *index);
+bool pdfi_dict_is_stream(pdf_context *ctx, pdf_dict *d);
+int64_t pdfi_dict_stream_length(pdf_context *ctx, pdf_dict *d);
 
 #endif

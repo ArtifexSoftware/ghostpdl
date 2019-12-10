@@ -1301,9 +1301,11 @@ pdfi_stream_to_buffer(pdf_context *ctx, pdf_dict *stream_dict, byte **buf, int64
         } while (bytes >= 0);
         pdfi_close_file(ctx, stream);
     } else {
-        code = pdfi_dict_get_int(ctx, stream_dict, "Length", &buflen);
-        if (code < 0)
+        if (!pdfi_dict_is_stream(ctx, stream_dict)) {
+            code = gs_note_error(gs_error_undefined);
             goto exit;
+        }
+        buflen = pdfi_dict_stream_length(ctx, stream_dict);
     }
 
     /* Alloc buffer */

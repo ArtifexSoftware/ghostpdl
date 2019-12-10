@@ -971,13 +971,14 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
     if (code < 0)
         return code;
 
-    code = pdfi_dict_get_int(ctx, ICC_dict, "Length", &Length);
-    if (code < 0)
-        return code;
-    code = pdfi_dict_get_int(ctx, ICC_dict, "N", &N);
-    if (code < 0) {
-        return code;
+    if (!pdfi_dict_is_stream(ctx, ICC_dict)) {
+        gs_note_error(gs_error_undefined);
+        goto done;
     }
+    Length = pdfi_dict_stream_length(ctx, ICC_dict);
+    code = pdfi_dict_get_int(ctx, ICC_dict, "N", &N);
+    if (code < 0)
+        goto done;
     code = pdfi_dict_knownget(ctx, ICC_dict, "Name", &Name);
     if (code > 0) {
         if(Name->type == PDF_STRING || Name->type == PDF_NAME) {
@@ -992,12 +993,11 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
         pdfi_countdown(Name);
     }
     if (code < 0)
-        return code;
-
+        goto done;
 
     code = pdfi_dict_knownget_type(ctx, ICC_dict, "Range", PDF_ARRAY, (pdf_obj **)&a);
     if (code < 0)
-        return code;
+        goto done;
     if (code > 0) {
         double dbl;
         int i;

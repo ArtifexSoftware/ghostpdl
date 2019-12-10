@@ -291,9 +291,9 @@ pdfi_build_function_4(pdf_context *ctx, gs_function_params_t * mnDR,
     params.ops.data = 0;	/* in case of failure */
     params.ops.size = 0;	/* ditto */
 
-    code = pdfi_dict_get_int(ctx, function_dict, "Length", &Length);
-    if (code < 0)
-        return code;
+    if (!pdfi_dict_is_stream(ctx, function_dict))
+        return_error(gs_error_undefined);
+    Length = pdfi_dict_stream_length(ctx, function_dict);
 
     savedoffset = pdfi_tell(ctx->main_stream);
     code = pdfi_seek(ctx, ctx->main_stream, function_dict->stream_offset, SEEK_SET);
@@ -359,7 +359,7 @@ pdfi_build_function_0(pdf_context *ctx, gs_function_params_t * mnDR,
 {
     gs_function_Sd_params_t params;
     pdf_stream *function_stream = NULL;
-    int code;
+    int code = 0;
     int64_t Length, temp;
     byte *data_source_buffer;
     gs_offset_t savedoffset;
@@ -371,17 +371,17 @@ pdfi_build_function_0(pdf_context *ctx, gs_function_params_t * mnDR,
     params.Size = params.array_step = params.stream_step = NULL;
     params.Order = 0;
 
-    code = pdfi_dict_get_int(ctx, function_dict, "Length", &Length);
-    if (code < 0)
-        return code;
+    if (!pdfi_dict_is_stream(ctx, function_dict))
+        return_error(gs_error_undefined);
+    Length = pdfi_dict_stream_length(ctx, function_dict);
 
     savedoffset = pdfi_tell(ctx->main_stream);
     pdfi_seek(ctx, ctx->main_stream, function_dict->stream_offset, SEEK_SET);
 
     Length = pdfi_open_memory_stream_from_filtered_stream(ctx, function_dict, (unsigned int)Length, &data_source_buffer, ctx->main_stream, &function_stream);
-    if (code < 0) {
+    if (Length < 0) {
         pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
-        return code;
+        return Length;
     }
 
     data_source_init_stream(&params.DataSource, function_stream->s);

@@ -437,13 +437,8 @@ pdfi_get_image_info(pdf_context *ctx, pdf_dict *image_dict,
 
     /* Not Handled: "ID", "OPI" */
 
-    /* Length if it's in a stream dict (?) */
-    code = pdfi_dict_get_int(ctx, image_dict, "Length", &info->Length);
-    if (code != 0) {
-        if (code != gs_error_undefined)
-            goto errorExit;
-        info->Length = 0;
-    }
+    /* Length if it's in a stream dict */
+    info->Length = pdfi_dict_stream_length(ctx, image_dict);
 
     /* Required */
     code = pdfi_dict_get_number2(ctx, image_dict, "Height", "H", &temp_f);
