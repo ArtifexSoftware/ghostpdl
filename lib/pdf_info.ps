@@ -19,7 +19,7 @@
 % Dump some info from a PDF file
 
 % usage: gs -dNODISPLAY -q -sFile=____.pdf [-dDumpMediaSizes=false] [-dDumpFontsNeeded=false] [-dDumpXML]
-%                                          [-dDumpFontsUsed [-dShowEmbeddedFonts] ] toolbin/pdf_info.ps
+%                                          [-dDumpFontsUsed [-dShowEmbeddedFonts] ] lib/pdf_info.ps
 
 128 dict begin
 
@@ -44,7 +44,7 @@
   {
     { counttomark 1 eq {
         dup 0 get (-) 0 get ne {
-          % File specified on the command line using:  -- toolbin/pdf_info.ps infile.pdf
+          % File specified on the command line using:  -- lib/pdf_info.ps infile.pdf
           /File exch def
           false   % don't show usage
         } {
@@ -52,7 +52,7 @@
         } ifelse
       } { true } ifelse
       {
-        (\n*** Usage: gs [options] -- toolbin/pdf_info.ps infile.pdf  ***\n\n) print
+        (\n*** Usage: gs [options] -- lib/pdf_info.ps infile.pdf  ***\n\n) print
         showoptions
         quit
       } if
@@ -60,7 +60,7 @@
   } if
 /File where not {
   (\n   *** Missing input file name \(use -sFile=____.pdf\)\n) =
-  (    usage: gs -dNODISPLAY -q -sFile=____.pdf [ options ] toolbin/pdf_info.ps\n) =
+  (    usage: gs -dNODISPLAY -q -sFile=____.pdf [ options ] lib/pdf_info.ps\n) =
   showoptions
   quit
 } if

@@ -95,7 +95,7 @@ acctest.ps align.ps bdftops.ps \
 caption.ps cid2code.ps docie.ps \
 errpage.ps font2pcl.ps gslp.ps gsnup.ps image-qa.ps \
 jispaper.ps landscap.ps lines.ps \
-mkcidfm.ps PDFA_def.ps PDFX_def.ps \
+mkcidfm.ps PDFA_def.ps PDFX_def.ps pdf_info.ps \
 pf2afm.ps pfbtopfa.ps ppath.ps \
 pphs.ps \
 prfont.ps printafm.ps \
