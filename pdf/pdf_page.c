@@ -155,21 +155,27 @@ static int pdfi_process_one_page(pdf_context *ctx, pdf_dict *page_dict)
     return code;
 }
 
-/* Just dealing with UserUnit for now.
- * See pdf_PDF2PS_matrix and .pdfshowpage_Install
- */
+/* See pdf_PDF2PS_matrix and .pdfshowpage_Install */
 static void pdfi_set_ctm(pdf_context *ctx)
 {
     gs_matrix mat;
 
+    /* Adjust for UserUnits */
     mat.xx = ctx->UserUnit;
     mat.xy = 0;
     mat.yx = 0;
     mat.yy = ctx->UserUnit;
     mat.tx = 0;
     mat.ty = 0;
-
     gs_concat(ctx->pgs, &mat);
+
+    /* We need to make sure the default matrix is properly set.
+     * If we do gs_initgraphics() later (such as for annotations)
+     * then it uses this default matrix if it is set.
+     * Needed for page rotations to work correctly with Annotations.
+     */
+    gs_setdefaultmatrix(ctx->pgs, &ctm_only(ctx->pgs));
+
 }
 
 static int pdfi_set_media_size(pdf_context *ctx, pdf_dict *page_dict)
@@ -269,6 +275,11 @@ static int pdfi_set_media_size(pdf_context *ctx, pdf_dict *page_dict)
     }
     gs_c_param_list_release(&list);
 
+    /* Resets the default matrix to NULL before doing initgraphics, because
+     * otherwise initgraphics would keep old matrix.
+     * (see pdfi_set_ctm())
+     */
+    gs_setdefaultmatrix(ctx->pgs, NULL);
     gs_initgraphics(ctx->pgs);
 
     switch(rotate) {

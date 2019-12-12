@@ -546,7 +546,7 @@ static int pdfi_annot_draw_Popup(pdf_context *ctx, pdf_dict *annot, pdf_dict *No
     bool Open = false;
 
     /* Render only if open */
-    code = pdfi_dict_get_bool(ctx, annot, "Annots", &Open);
+    code = pdfi_dict_get_bool(ctx, annot, "Open", &Open);
     if (code < 0 && (code != gs_error_undefined))
         goto exit;
 
