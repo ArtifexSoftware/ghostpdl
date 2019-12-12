@@ -376,9 +376,9 @@ GCFLAGS=  -Wall -Wstrict-prototypes -Wundef -Wmissing-declarations -Wmissing-pro
 # Define the added flags for standard, debugging, profiling
 # and shared object builds.
 
-CFLAGS_STANDARD= -O2
+CFLAGS_STANDARD= -O2 -DNDEBUG
 CFLAGS_DEBUG= -g -O0
-CFLAGS_PROFILE=-pg  -O2
+CFLAGS_PROFILE=-pg  -O2 -DNDEBUG
 CFLAGS_SO=-fPIC
 
 # Define the other compilation flags.  Add at most one of the following:

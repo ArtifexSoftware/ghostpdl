@@ -279,46 +279,46 @@ dnl --------------------------------------------------
 dnl Set build flags based on environment
 dnl --------------------------------------------------
 
-CC_OPT_FLAGS_TO_TRY="-O"
+CC_OPT_FLAGS_TO_TRY="-O -DNDEBUG"
 SET_DT_SONAME="-soname="
 CFLAGS_LARGEFILE=""
 
 case $host in
         *-linux*|*-gnu)
         if test $ac_cv_prog_gcc = yes; then
-            CC_OPT_FLAGS_TO_TRY="-O2"
+            CC_OPT_FLAGS_TO_TRY="-O2 -DNDEBUG"
             CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
         fi
         ;;
         *bsd*)
         if test $ac_cv_prog_gcc = yes; then
-            CC_OPT_FLAGS_TO_TRY="-O2"
+            CC_OPT_FLAGS_TO_TRY="-O2 -DNDEBUG"
             CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
         fi
         ;;
         *-darwin*)
         if test $ac_cv_prog_gcc = yes; then
-            CC_OPT_FLAGS_TO_TRY="-O2"
+            CC_OPT_FLAGS_TO_TRY="-O2 -DNDEBUG"
             CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
         fi
         SET_DT_SONAME=""
         ;;
         *-mingw*|*-msys*|*-cygwin*)
         if test $ac_cv_prog_gcc = yes; then
-            CC_OPT_FLAGS_TO_TRY="-O2"
+            CC_OPT_FLAGS_TO_TRY="-O2 -DNDEBUG"
             CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
         fi
         SET_DT_SONAME=""
         ;;
         *-sun*|*-solaris*)
-        CC_OPT_FLAGS_TO_TRY="-O2"
+        CC_OPT_FLAGS_TO_TRY="-O2 -DNDEBUG"
         CFLAGS_LARGEFILE="-D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64"
         # the trailing space is required!
         if test $ac_cv_prog_gcc = no; then
             SET_DT_SONAME="-h "
         fi
         if test $ac_cv_prog_gcc = yes; then
-            CC_OPT_FLAGS_TO_TRY="-O2"
+            CC_OPT_FLAGS_TO_TRY="-O2 -DNDEBUG"
             CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
         else
             CC_DBG_FLAGS_TO_TRY="-g -O0"
@@ -326,7 +326,7 @@ case $host in
         ;;
         *-aix*)
         if test $ac_cv_prog_gcc = yes; then
-            CC_OPT_FLAGS_TO_TRY="-O2"
+            CC_OPT_FLAGS_TO_TRY="-O2 -DNDEBUG"
             CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
             SET_DT_SONAME="so"
         fi

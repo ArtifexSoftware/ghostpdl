@@ -221,9 +221,9 @@ CCLD=$(CC)
 
 # Define the added flags for standard, debugging, and profiling builds.
 
-CFLAGS_STANDARD=-O
+CFLAGS_STANDARD=-O -DNDEBUG
 CFLAGS_DEBUG=-g
-CFLAGS_PROFILE=-pg -O
+CFLAGS_PROFILE=-pg -O -DNDEBUG
 
 # Define the other compilation flags.  Add at most one of the following:
 #	-Aa -w -D_HPUX_SOURCE for the HP 400.

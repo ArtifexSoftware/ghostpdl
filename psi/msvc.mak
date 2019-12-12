@@ -793,7 +793,11 @@ XCFLAGS=
 !endif
 
 !ifndef CFLAGS
+!if !defined(DEBUG) || "$(DEBUG)"=="0"
+CFLAGS=/DNDEBUG
+!else
 CFLAGS=
+!endif
 !endif
 
 !ifdef DEVSTUDIO
