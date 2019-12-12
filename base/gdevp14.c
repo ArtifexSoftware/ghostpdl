@@ -9350,6 +9350,183 @@ pdf14_clist_stroke_path(gx_device *dev,	const gs_gstate *pgs,
     return code;
 }
 
+/* Set up work for doing shading patterns in fill stroke through
+   the clist.  We have to do all the dirty work now since we are
+   going through the default fill and stroke operations individually */
+static int
+pdf14_clist_fill_stroke_path_pattern_setup(gx_device* dev, const gs_gstate* pgs, gx_path* ppath,
+    const gx_fill_params* params_fill, const gx_drawing_color* pdevc_fill,
+    const gx_stroke_params* params_stroke, const gx_drawing_color* pdevc_stroke,
+    const gx_clip_path* pcpath)
+{
+    int code, code2;
+    gs_transparency_group_params_t params = { 0 };
+    gs_fixed_rect clip_bbox;
+    gs_rect bbox, group_stroke_box;
+    float opacity = pgs->opacity.alpha;
+    gs_blend_mode_t blend_mode = pgs->blend_mode;
+    gs_fixed_rect path_bbox;
+    int expansion_code;
+    gs_fixed_point expansion;
+
+    code = gx_curr_fixed_bbox((gs_gstate*)pgs, &clip_bbox, NO_PATH);
+    if (code < 0 && code != gs_error_unknownerror)
+        return code;
+    if (code == gs_error_unknownerror) {
+        /* didn't get clip box from gx_curr_fixed_bbox */
+        clip_bbox.p.x = clip_bbox.p.y = 0.0;
+        clip_bbox.q.x = int2fixed(dev->width);
+        clip_bbox.q.y = int2fixed(dev->height);
+    }
+    if (pcpath)
+        rect_intersect(clip_bbox, pcpath->outer_box);
+
+    /* expand the ppath using stroke expansion rule, then intersect it */
+    code = gx_path_bbox(ppath, &path_bbox);
+    if (code == gs_error_nocurrentpoint && ppath->segments->contents.subpath_first == 0)
+        return 0;		/* ignore empty path */
+    if (code < 0)
+        return code;
+    expansion_code = gx_stroke_path_expansion(pgs, ppath, &expansion);
+    if (expansion_code >= 0) {
+        path_bbox.p.x -= expansion.x;
+        path_bbox.p.y -= expansion.y;
+        path_bbox.q.x += expansion.x;
+        path_bbox.q.y += expansion.y;
+    }
+    rect_intersect(path_bbox, clip_bbox);
+    bbox.p.x = fixed2float(path_bbox.p.x);
+    bbox.p.y = fixed2float(path_bbox.p.y);
+    bbox.q.x = fixed2float(path_bbox.q.x);
+    bbox.q.y = fixed2float(path_bbox.q.y);
+
+    code = gs_bbox_transform_inverse(&bbox, &ctm_only(pgs), &group_stroke_box);
+    if (code < 0)
+        return code;
+
+    /* See if overprint is enabled for both stroke and fill AND if ca == CA */
+    if (pgs->fillconstantalpha == pgs->strokeconstantalpha &&
+        (pgs->overprint && pgs->stroke_overprint)) {
+        /* Push a non-isolated non-knockout group with alpha = 1.0 and
+           compatible overprint mode.  Group will be composited with
+           original alpha and blend mode */
+        params.Isolated = false;
+        params.group_color = UNKNOWN;
+        params.Knockout = false;
+
+        /* non-isolated non-knockout group pushed with original alpha and blend mode */
+        code = gs_begin_transparency_group(pgs, &params, (const gs_rect*)&group_stroke_box, PDF14_BEGIN_TRANS_GROUP);
+        if (code < 0)
+            return code;
+
+        /* Change alpha to 1.0 and blend mode to compatible overprint for actual drawing */
+        code = gs_setopacityalpha((gs_gstate*)pgs, 1.0);
+        if (code < 0)
+            goto cleanup;
+        code = gs_setblendmode((gs_gstate*)pgs, BLEND_MODE_CompatibleOverprint);
+        if (code < 0)
+            goto cleanup;
+
+        /* Do fill */
+        code = pdf14_clist_fill_path(dev, pgs, ppath, params_fill, pdevc_fill, pcpath);
+        if (code < 0)
+            goto cleanup;
+
+        /* Do stroke */
+        code = pdf14_clist_stroke_path(dev, pgs, ppath, params_stroke, pdevc_stroke, pcpath);
+        if (code < 0)
+            goto cleanup;
+    } else {
+        /* Push a non-isolated knockout group. Do not change the alpha or
+           blend modes */
+        params.Isolated = false;
+        params.group_color = UNKNOWN;
+        params.Knockout = true;
+
+        /* non-isolated knockout group is pushed with alpha = 1.0 and Normal blend mode */
+        code = gs_setopacityalpha((gs_gstate*)pgs, 1.0);
+        if (code < 0)
+            return code;
+        code = gs_setblendmode((gs_gstate*)pgs, BLEND_MODE_Normal);
+        if (code < 0)
+            return code;
+
+        code = gs_begin_transparency_group(pgs, &params, (const gs_rect*)&group_stroke_box, PDF14_BEGIN_TRANS_GROUP);
+        if (code < 0)
+            return code;
+
+        /* restore blend mode for actual drawing in the group */
+        code = gs_setblendmode((gs_gstate*)pgs, blend_mode);
+        if (code < 0)
+            goto cleanup;
+
+        if (pgs->fillconstantalpha > 0.0) {
+            code = gs_setopacityalpha((gs_gstate*)pgs, pgs->fillconstantalpha);
+            if (code < 0)
+                goto cleanup;
+
+            /* If we are in an overprint situation, set the blend mode to compatible
+               overprint */
+            if (pgs->overprint)
+                code = gs_setblendmode((gs_gstate*)pgs, BLEND_MODE_CompatibleOverprint);
+            if (code < 0)
+                goto cleanup;
+
+            code = pdf14_clist_fill_path(dev, pgs, ppath, params_fill, pdevc_fill, pcpath);
+            if (code < 0)
+                goto cleanup;
+
+            if (pgs->overprint)
+                code = gs_setblendmode((gs_gstate*)pgs, blend_mode);
+            if (code < 0)
+                goto cleanup;
+        }
+
+        if (pgs->strokeconstantalpha > 0.0) {
+            code = gs_setopacityalpha((gs_gstate*)pgs, pgs->strokeconstantalpha);
+            if (code < 0)
+                goto cleanup;
+            if (pgs->stroke_overprint)
+                code = gs_setblendmode((gs_gstate*)pgs, BLEND_MODE_CompatibleOverprint);
+            code = pdf14_clist_stroke_path(dev, pgs, ppath, params_stroke, pdevc_stroke, pcpath);
+            if (code < 0)
+                goto cleanup;
+
+            if (pgs->stroke_overprint)
+                code = gs_setblendmode((gs_gstate*)pgs, blend_mode);
+            if (code < 0)
+                goto cleanup;
+        }
+    }
+    /* Now during the pop do the compositing with alpha of 1.0 and normal blend */
+    code = gs_setopacityalpha((gs_gstate*)pgs, 1.0);
+    if (code < 0)
+        goto cleanup;
+    code = gs_setblendmode((gs_gstate*)pgs, BLEND_MODE_Normal);
+    if (code < 0)
+        goto cleanup;
+
+    /* Restore where we were. If an error occured while in the group push
+       return that error code but try to do the cleanup */
+cleanup:
+    code2 = gs_end_transparency_group((gs_gstate*)pgs);
+    if (code2 < 0) {
+        /* At this point things have gone very wrong. We should just shut down */
+        code = gs_abort_pdf14trans_device((gs_gstate*)pgs);
+        return code2;
+    }
+
+    /* Restore if there were any changes */
+    code2 = gs_setopacityalpha((gs_gstate*)pgs, opacity);
+    if (code2 < 0)
+        return code2;
+    code2 = gs_setblendmode((gs_gstate*)pgs, blend_mode);
+    if (code2 < 0)
+        return code2;
+
+    return code;
+}
+
 /*
  * fill_path routine for the PDF 1.4 transaprency compositor device for
  * writing the clist.
@@ -9391,28 +9568,15 @@ pdf14_clist_fill_stroke_path(gx_device	*dev, const gs_gstate *pgs, gx_path *ppat
     code = pdf14_clist_update_params(pdev, pgs, false, NULL);
     if (code < 0)
         return code;
-    /* If we are doing a shading fill and we are in a transparency group of a
-       different color space, then we do not want to do the shading in the
-       device color space. It must occur in the source space.  To handle it in
-       the device space would require knowing all the nested transparency group
-       color space as well as the transparency.  Some of the shading code ignores
-       this, so we have to pass on the clist_writer device to enable proper
-       mapping to the transparency group color space. */
+    /* If we are doing a shading fill or stroke, the clist can't 
+       deal with this and end up in the pdf_fill_stroke operation.
+       We will need to break up the fill stroke now and do 
+       the appropriate group pushes and set up. */
 
-    if (pdevc_fill != NULL && gx_dc_is_pattern2_color(pdevc_fill)) {
-        pinst_fill = (gs_pattern2_instance_t *)pdevc_fill->ccolor.pattern;
-        pinst_fill->saved->has_transparency = true;
-        /* The transparency color space operations are driven by the pdf14
-           clist writer device.  */
-        pinst_fill->saved->trans_device = dev;
-    }
-    if (pdevc_stroke != NULL && gx_dc_is_pattern2_color(pdevc_stroke) &&
-        pdev->trans_group_parent_cmap_procs != NULL) {
-        pinst_stroke = (gs_pattern2_instance_t *)pdevc_stroke->ccolor.pattern;
-        pinst_stroke->saved->has_transparency = true;
-        /* The transparency color space operations are driven
-           by the pdf14 clist writer device.  */
-        pinst_stroke->saved->trans_device = dev;
+    if ((pdevc_fill != NULL && gx_dc_is_pattern2_color(pdevc_fill)) ||
+        (pdevc_stroke != NULL && gx_dc_is_pattern2_color(pdevc_stroke))) {
+        return pdf14_clist_fill_stroke_path_pattern_setup(dev, pgs, ppath,
+            params_fill, pdevc_fill, params_stroke, pdevc_stroke, pcpath);
     }
     update_lop_for_pdf14(&new_pgs, pdevc_fill);
     new_pgs.trans_device = dev;

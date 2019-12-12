@@ -2823,7 +2823,6 @@ template_compose_group(byte *gs_restrict tos_ptr, bool tos_isolated,
     byte tos_pixel[PDF14_MAX_PLANES];
     byte nos_pixel[PDF14_MAX_PLANES];
     byte back_drop[PDF14_MAX_PLANES];
-    gx_color_index comps;
     bool in_mask_rect_y;
     bool in_mask_rect;
     byte pix_alpha;

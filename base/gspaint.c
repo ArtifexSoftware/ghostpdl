@@ -574,7 +574,7 @@ gs_strokepath2(gs_gstate * pgs)
 
 static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
 {
-    int code, abits, acode, rcode = 0;
+    int code, abits, acode = 0, rcode = 0;
     bool devn;
     float orig_width, scale, orig_flatness;
 
