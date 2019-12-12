@@ -332,13 +332,13 @@ currentdict /res-type-dict undef
 
   systemdict /DumpFontsUsed known
   {
-    (\nFont or CIDFont resources used:) =
-    { = } forall
+    (\nFont or CIDFont resources used (plain name and ASCIIHEX string representation):) =
+    { 128 string cvs dup print (    ) print (<) print 128 string cvs {16 8 string cvrs print} forall (>) print (\n) print} forall
   } {
     DumpFontsNeeded {
       dup length 0 gt {
         (\nFonts Needed that are not embedded \(system fonts required\):) =
-        { (    ) print = } forall
+        { (    ) print 128 string cvs dup print (    ) print (<) print {16 8 string cvrs print} forall (>) print (\n) print} forall
       } {
         pop
         (\nNo system fonts are needed.) =
