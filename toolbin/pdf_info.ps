@@ -40,23 +40,24 @@
 /DumpMediaSizes where { pop } { /DumpMediaSizes true def } ifelse
 /DumpFontsNeeded where { pop } { /DumpFontsNeeded true def } ifelse
 
-[ .shellarguments
-  { counttomark 1 eq {
-      dup 0 get (-) 0 get ne {
-        % File specified on the command line using:  -- toolbin/pdf_info.ps infile.pdf
-        /File exch def
-        false	% don't show usage
-      } {
-        true	% show usage and quit
-      } ifelse
-    } { true } ifelse
-    {
-      (\n*** Usage: gs [options] -- toolbin/pdf_info.ps infile.pdf  ***\n\n) print
-      showoptions
-      quit
+[ {.shellarguments} stopped not
+  {
+    { counttomark 1 eq {
+        dup 0 get (-) 0 get ne {
+          % File specified on the command line using:  -- toolbin/pdf_info.ps infile.pdf
+          /File exch def
+          false   % don't show usage
+        } {
+          true    % show usage and quit
+        } ifelse
+      } { true } ifelse
+      {
+        (\n*** Usage: gs [options] -- toolbin/pdf_info.ps infile.pdf  ***\n\n) print
+        showoptions
+        quit
+      } if
     } if
   } if
-
 /File where not {
   (\n   *** Missing input file name \(use -sFile=____.pdf\)\n) =
   (    usage: gs -dNODISPLAY -q -sFile=____.pdf [ options ] toolbin/pdf_info.ps\n) =
