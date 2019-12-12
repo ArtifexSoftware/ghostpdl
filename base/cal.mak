@@ -120,8 +120,8 @@ $(CAL_OBJ)$(CAL_PREFIX)blend.$(OBJ) : $(CAL_SRC)blend.c $(cal_HDRS) $(CAL_DEP) $
 
 cal_ets_h=$(CAL_SRC)cal_ets.h
 ca_ets_tm_h=$(CAL_SRC)cal_ets_tm.h
-$(GLOBJ)ets_1.$(OBJ) : $(CAL_SRC)cal_ets.c $(CAL_SRC)ets_template.c $(AK) \
- $(cal_ets_h) $(cal_ets_tm_h) $(LIB_MAK) $(MAKEDIRS)
+$(GLOBJ)ets_1.$(OBJ) : $(CAL_SRC)cal_ets.c $(CAL_SRC)ets_template.c \
+ $(cal_ets_h) $(cal_ets_tm_h) $(cal_HDRS) $(CAL_DEP) $(LIB_MAK)
 	$(GLCC) $(CAL_SSE4_2_CFLAGS) $(CAL_NEON_CFLAGS) $(GLO_)ets_1.$(OBJ) $(C_) $(CAL_SRC)cal_ets.c
 
 
