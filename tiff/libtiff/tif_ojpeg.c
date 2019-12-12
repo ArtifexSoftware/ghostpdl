@@ -204,6 +204,10 @@ static const TIFFField ojpegFields[] = {
 # define XMD_H 1
 #endif
 
+/* If we are building for GS, do NOT mess with boolean - we want it to be int on all platforms.
+ */
+#define GS_TIFF_BUILD
+#ifndef GS_TIFF_BUILD
 /* Define "boolean" as unsigned char, not int, per Windows custom. */
 #if defined(__WIN32__) && !defined(__MINGW32__)
 # ifndef __RPCNDR_H__            /* don't conflict if rpcndr.h already read */
@@ -211,9 +215,13 @@ static const TIFFField ojpegFields[] = {
 # endif
 # define HAVE_BOOLEAN            /* prevent jmorecfg.h from redefining it */
 #endif
+#endif
 
 #include "jpeglib.h"
 #include "jerror.h"
+#ifdef GS_TIFF_BUILD
+#include "jmemcust.h"
+#endif
 
 typedef struct jpeg_error_mgr jpeg_error_mgr;
 typedef struct jpeg_common_struct jpeg_common_struct;
@@ -242,8 +250,8 @@ typedef enum {
 
 typedef struct {
 	TIFF* tif;
-        int decoder_ok;
-        int error_in_raw_data_decoding;
+	int decoder_ok;
+	int error_in_raw_data_decoding;
 	#ifndef LIBJPEG_ENCAP_EXTERNAL
 	JMP_BUF exit_jmpbuf;
 	#endif
@@ -334,6 +342,10 @@ typedef struct {
 	OJPEGStateOutState out_state;
 	uint8 out_buffer[OJPEG_BUFFER];
 	uint8* skip_buffer;
+#ifdef GS_TIFF_BUILD
+	jpeg_cust_mem_data jmem;
+	jpeg_cust_mem_data *jmem_parent;
+#endif
 } OJPEGState;
 
 static int OJPEGVGetField(TIFF* tif, uint32 tag, va_list ap);
@@ -423,7 +435,7 @@ TIFFInitOJPEG(TIFF* tif, int scheme)
 
 	assert(scheme==COMPRESSION_OJPEG);
 
-        /*
+	/*
 	 * Merge codec-specific tag information.
 	 */
 	if (!_TIFFMergeFields(tif, ojpegFields, TIFFArrayCount(ojpegFields))) {
@@ -1194,6 +1206,91 @@ OJPEGReadSecondarySos(TIFF* tif, uint16 s)
 	return(1);
 }
 
+#ifdef GS_TIFF_BUILD
+#define TIFF_FROM_CINFO(cinfo) \
+	((TIFF *)GET_CUST_MEM_DATA(cinfo)->priv)
+
+static void *j_mem_get_small(j_common_ptr cinfo, size_t size)
+{
+	jpeg_cust_mem_data *jc = GET_CUST_MEM_DATA(cinfo);
+	TIFF *tif = (TIFF *)jc->priv;
+	OJPEGState* sp=(OJPEGState*)tif->tif_data;
+	void *ret;
+
+	cinfo->client_data = sp->jmem_parent;
+	ret = sp->jmem_parent->j_mem_get_small(cinfo, size);
+	cinfo->client_data = jc;
+
+	return ret;
+}
+
+static void *j_mem_get_large(j_common_ptr cinfo, size_t size)
+{
+	jpeg_cust_mem_data *jc = GET_CUST_MEM_DATA(cinfo);
+	TIFF *tif = (TIFF *)jc->priv;
+	OJPEGState* sp=(OJPEGState*)tif->tif_data;
+	void *ret;
+
+	cinfo->client_data = sp->jmem_parent;
+	ret = sp->jmem_parent->j_mem_get_large(cinfo, size);
+	cinfo->client_data = jc;
+
+	return ret;
+}
+
+static void j_mem_free_small(j_common_ptr cinfo, void *object, size_t size)
+{
+	jpeg_cust_mem_data *jc = GET_CUST_MEM_DATA(cinfo);
+	TIFF *tif = (TIFF *)jc->priv;
+	OJPEGState* sp=(OJPEGState*)tif->tif_data;
+
+	cinfo->client_data = sp->jmem_parent;
+	sp->jmem_parent->j_mem_free_small(cinfo, object, size);
+	cinfo->client_data = jc;
+}
+
+static void j_mem_free_large(j_common_ptr cinfo, void *object, size_t size)
+{
+	jpeg_cust_mem_data *jc = GET_CUST_MEM_DATA(cinfo);
+	TIFF *tif = (TIFF *)jc->priv;
+	OJPEGState* sp=(OJPEGState*)tif->tif_data;
+
+	cinfo->client_data = sp->jmem_parent;
+	sp->jmem_parent->j_mem_free_large(cinfo, object, size);
+	cinfo->client_data = jc;
+}
+
+static long j_mem_init (j_common_ptr cinfo)
+{
+	jpeg_cust_mem_data *jc = GET_CUST_MEM_DATA(cinfo);
+	TIFF *tif = (TIFF *)jc->priv;
+	OJPEGState* sp=(OJPEGState*)tif->tif_data;
+	long ret;
+
+	cinfo->client_data = sp->jmem_parent;
+	ret = sp->jmem_parent->j_mem_init(cinfo);
+	cinfo->client_data = jc;
+
+	return ret;
+}
+
+static void j_mem_term (j_common_ptr cinfo)
+{
+	jpeg_cust_mem_data *jc = GET_CUST_MEM_DATA(cinfo);
+	TIFF *tif = (TIFF *)jc->priv;
+	OJPEGState* sp=(OJPEGState*)tif->tif_data;
+
+	cinfo->client_data = sp->jmem_parent;
+	sp->jmem_parent->j_mem_term(cinfo);
+	cinfo->client_data = jc;
+}
+#else
+
+#define TIFF_FROM_CINFO(cinfo) \
+	((TIFF *)GET_CUST_MEM_DATA(cinfo))
+
+#endif
+
 static int
 OJPEGWriteHeaderInfo(TIFF* tif)
 {
@@ -1210,7 +1307,17 @@ OJPEGWriteHeaderInfo(TIFF* tif)
 	sp->libjpeg_jpeg_error_mgr.output_message=OJPEGLibjpegJpegErrorMgrOutputMessage;
 	sp->libjpeg_jpeg_error_mgr.error_exit=OJPEGLibjpegJpegErrorMgrErrorExit;
 	sp->libjpeg_jpeg_decompress_struct.err=&(sp->libjpeg_jpeg_error_mgr);
+	/* set client_data to avoid UMR warning from tools like Purify */
+#ifdef GS_TIFF_BUILD
+	sp->jmem_parent = tif->get_jpeg_mem_ptr(tif->tif_clientdata);
+	(void)jpeg_cust_mem_init(&sp->jmem, (void *)tif,
+				 j_mem_init, j_mem_term, NULL,
+				 j_mem_get_small, j_mem_free_small,
+				 j_mem_get_large, j_mem_free_large, NULL);
+	sp->libjpeg_jpeg_decompress_struct.client_data=&sp->jmem;
+#else
 	sp->libjpeg_jpeg_decompress_struct.client_data=(void*)tif;
+#endif
 	if (jpeg_create_decompress_encap(sp,&(sp->libjpeg_jpeg_decompress_struct))==0)
 		return(0);
 	sp->libjpeg_session_active=1;
@@ -2531,18 +2638,20 @@ jpeg_encap_unwind(TIFF* tif)
 static void
 OJPEGLibjpegJpegErrorMgrOutputMessage(jpeg_common_struct* cinfo)
 {
+        TIFF *tif = TIFF_FROM_CINFO(cinfo);
 	char buffer[JMSG_LENGTH_MAX];
 	(*cinfo->err->format_message)(cinfo,buffer);
-	TIFFWarningExt(((TIFF*)(cinfo->client_data))->tif_clientdata,"LibJpeg","%s",buffer);
+	TIFFWarningExt(tif->tif_clientdata,"LibJpeg","%s",buffer);
 }
 
 static void
 OJPEGLibjpegJpegErrorMgrErrorExit(jpeg_common_struct* cinfo)
 {
+        TIFF *tif = TIFF_FROM_CINFO(cinfo);
 	char buffer[JMSG_LENGTH_MAX];
 	(*cinfo->err->format_message)(cinfo,buffer);
-	TIFFErrorExt(((TIFF*)(cinfo->client_data))->tif_clientdata,"LibJpeg","%s",buffer);
-	jpeg_encap_unwind((TIFF*)(cinfo->client_data));
+	TIFFErrorExt(tif->tif_clientdata,"LibJpeg","%s",buffer);
+	jpeg_encap_unwind(tif);
 }
 
 static void
@@ -2554,7 +2663,7 @@ OJPEGLibjpegJpegSourceMgrInitSource(jpeg_decompress_struct* cinfo)
 static boolean
 OJPEGLibjpegJpegSourceMgrFillInputBuffer(jpeg_decompress_struct* cinfo)
 {
-	TIFF* tif=(TIFF*)cinfo->client_data;
+        TIFF *tif = TIFF_FROM_CINFO(cinfo);
 	OJPEGState* sp=(OJPEGState*)tif->tif_data;
 	void* mem=0;
 	uint32 len=0U;
@@ -2571,7 +2680,7 @@ OJPEGLibjpegJpegSourceMgrFillInputBuffer(jpeg_decompress_struct* cinfo)
 static void
 OJPEGLibjpegJpegSourceMgrSkipInputData(jpeg_decompress_struct* cinfo, long num_bytes)
 {
-	TIFF* tif=(TIFF*)cinfo->client_data;
+        TIFF *tif = TIFF_FROM_CINFO(cinfo);
 	(void)num_bytes;
 	TIFFErrorExt(tif->tif_clientdata,"LibJpeg","Unexpected error");
 	jpeg_encap_unwind(tif);
@@ -2584,7 +2693,7 @@ OJPEGLibjpegJpegSourceMgrSkipInputData(jpeg_decompress_struct* cinfo, long num_b
 static boolean
 OJPEGLibjpegJpegSourceMgrResyncToRestart(jpeg_decompress_struct* cinfo, int desired)
 {
-	TIFF* tif=(TIFF*)cinfo->client_data;
+        TIFF *tif = TIFF_FROM_CINFO(cinfo);
 	(void)desired;
 	TIFFErrorExt(tif->tif_clientdata,"LibJpeg","Unexpected error");
 	jpeg_encap_unwind(tif);

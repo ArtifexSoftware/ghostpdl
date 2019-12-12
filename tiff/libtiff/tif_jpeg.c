@@ -65,6 +65,10 @@ int TIFFJPEGIsFullStripRequired_12(TIFF* tif);
 # define XMD_H 1
 #endif
 
+/* If we are building for GS, do NOT mess with boolean - we want it to be int on all platforms.
+ */
+#define GS_TIFF_BUILD
+#ifndef GS_TIFF_BUILD
 /*
    The windows RPCNDR.H file defines boolean, but defines it with the
    unsigned char size.  You should compile JPEG library using appropriate
@@ -84,6 +88,7 @@ int TIFFJPEGIsFullStripRequired_12(TIFF* tif);
    typedef unsigned char boolean;
 # endif
 # define HAVE_BOOLEAN            /* prevent jmorecfg.h from redefining it */
+#endif
 #endif
 
 #include "jpeglib.h"
@@ -290,15 +295,19 @@ TIFFjpeg_create_compress(JPEGState* sp)
 }
 
 static int
-TIFFjpeg_create_decompress(JPEGState* sp)
+TIFFjpeg_create_decompress(JPEGState* sp, TIFF *tif)
 {
 	/* initialize JPEG error handling */
 	sp->cinfo.d.err = jpeg_std_error(&sp->err);
 	sp->err.error_exit = TIFFjpeg_error_exit;
 	sp->err.output_message = TIFFjpeg_output_message;
 
-	/* set client_data to avoid UMR warning from tools like Purify */
-	sp->cinfo.d.client_data = NULL;
+        /* GS extension */
+	if (tif->get_jpeg_mem_ptr)
+		sp->cinfo.d.client_data = tif->get_jpeg_mem_ptr(tif->tif_clientdata);
+	else
+		/* set client_data to avoid UMR warning from tools like Purify */
+		sp->cinfo.d.client_data = NULL;
 
 	return CALLVJPEG(sp, jpeg_create_decompress(&sp->cinfo.d));
 }
@@ -1065,7 +1074,7 @@ int TIFFJPEGIsFullStripRequired(TIFF* tif)
     memset(&state, 0, sizeof(JPEGState));
     state.tif = tif;
 
-    TIFFjpeg_create_decompress(&state);
+    TIFFjpeg_create_decompress(&state, tif);
 
     TIFFjpeg_data_src(&state);
 
@@ -2443,7 +2452,7 @@ static int JPEGInitializeLibJPEG( TIFF * tif, int decompress )
      * Initialize libjpeg.
      */
     if ( decompress ) {
-        if (!TIFFjpeg_create_decompress(sp))
+        if (!TIFFjpeg_create_decompress(sp, tif))
             return (0);
     } else {
         if (!TIFFjpeg_create_compress(sp))
