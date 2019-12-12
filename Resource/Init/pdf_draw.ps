@@ -3573,6 +3573,23 @@ currentdict /set_bc_color undef
   } ifelse
 } bind executeonly def
 
+/applyRD {
+  % x y w h [l t r b]
+  dup 0 get             % x y w h [] l
+  6 -1 roll add
+  5 1 roll              %x+l y w h []
+  dup 1 get             %x+l y w h [] b
+  5 -1 roll add         %x+l w h [] b+y
+  4 1 roll              %x+l y+b w h []
+  aload pop             %x+l y+b w h l t r b
+  exch                  %x+l y+b w h l t b r
+  4 -1 roll add         %x+l y+b w h t b r+l
+  3 1 roll add          %x+l y+b w h r+l t+b
+  3 -1 roll exch sub    %x+l y+b w r+l h-(t+b)
+  3 1 roll sub          %x+l y+b h-(t+b) w-(r+l)
+  exch
+} bind executeonly def
+
 % Draw an annotation.
 /drawannottypes 20 dict begin
 
@@ -3671,13 +3688,20 @@ currentdict /set_bc_color undef
       {
         gsave
         dup /ca knownoget {.setopacityalpha} if
-        dup annotrect rectfill
+        dup annotrect
+        5 index /RD knownoget {
+          applyRD
+        } if
+        rectfill
         grestore
         dup /CA knownoget {.setopacityalpha} if
         drawborder
         //false
       }{
         dup annotrect
+        5 index /RD knownoget {
+          applyRD
+        } if
         drawopdict /re get exec strokeborderpath
       } ifelse
       //endannottransparency exec
@@ -3712,7 +3736,11 @@ currentdict /set_bc_color undef
     } {
       gsave
       //startannottransparency exec
-      dup annotrect 4 2 roll exch 3 index 2 div add exch 2 index 2 div add
+      dup annotrect
+      5 index /RD knownoget {
+        applyRD
+      } if
+      4 2 roll exch 3 index 2 div add exch 2 index 2 div add
       translate //drawellipse exec
       dup
       fillborderpath
@@ -4439,7 +4467,11 @@ currentdict /set_bc_color undef
       }{
         //false
       } ifelse
-      {dup annotrect
+      {
+        dup annotrect
+        5 index /RD knownoget {
+          applyRD
+        } if
         %% Somewhat horrifyingly, rectfill maps directly to the device fill_rectangle
         %% method, which bypasses transparency (!!) So we construct the rectangle,
         %% and fill it, manually instead....
@@ -4500,23 +4532,93 @@ currentdict /set_bc_color undef
       }ifelse
 
       %% draw the border, if we don't have a border style dictionary, draw a default one.
-      dup /BS knownoget {
+      dup /BS knownoget
+      {
         pop dup drawborder
       }{
         newpath
         0 setgray 1 setlinewidth
-        dup annotrect 4 -1 roll 1 add 4 -1 roll 1 add 4 -1 roll 2 sub 4 -1 roll 2 sub
-        4 2 roll moveto
-        currentpoint exch 3 index add exch lineto
-        currentpoint 2 index add lineto
-        exch currentpoint 3 1 roll exch sub exch lineto
-        currentpoint 3 -1 roll sub lineto stroke
+        dup annotrect
+        5 index /RD knownoget {
+          applyRD
+          4 -1 roll 4 -1 roll 4 -1 roll 4 -1 roll
+          4 2 roll
+        } {
+          4 -1 roll 1 add 4 -1 roll 1 add 4 -1 roll 2 sub 4 -1 roll 2 sub
+          4 2 roll
+        }ifelse
+        moveto
+        currentpoint exch 3 index add exch
+        lineto
+        currentpoint 2 index add
+        lineto
+        exch currentpoint 3 1 roll exch sub exch
+        lineto
+        currentpoint 3 -1 roll sub
+        lineto stroke
       }ifelse
 
+      gsave % in case we rotate the contents
       %% Start the current point at the top left of the annotation Rect
       %%
-      dup annotrect 4 -1 roll 2 add 4 -1 roll 2 add 4 -1 roll 4 sub 4 -1 roll 4 sub
-      3 -1 roll add 2 index exch moveto 1 index add
+      dup /Rotate knownoget
+      % x y w h - x' w' x' y'
+      {
+        dup 90 eq {
+          pop
+          dup annotrect
+          5 index /RD knownoget {
+            applyRD
+          } if
+          exch pop 3 -1 roll 2 index
+          moveto 90 rotate
+          1 index add
+        } {
+          dup 180 eq {
+            pop
+            dup annotrect
+            5 index /RD knownoget {
+              applyRD
+            } if
+            pop 3 -1 roll 1 index add -1 mul exch 1 index -1 mul 4 -1 roll
+            moveto 180 rotate
+            1 index add
+          }{
+            270 eq {
+              dup annotrect
+              5 index /RD knownoget {
+                applyRD
+              } if
+               3 -1 roll add 2 index 2 index add exch
+              moveto
+              270 rotate
+              1 index add
+            }{
+              dup annotrect
+              5 index /RD knownoget {
+                applyRD
+                3 -1 roll add 2 index exch
+                moveto 1 index add
+              }{
+                4 -1 roll 2 add 4 -1 roll 2 add 4 -1 roll 4 sub 4 -1 roll 4 sub
+                3 -1 roll add 2 index exch
+                moveto 1 index add
+              } ifelse
+            } ifelse
+          } ifelse
+        } ifelse
+      }{
+         dup annotrect
+          5 index /RD knownoget {
+            applyRD
+            3 -1 roll add 2 index exch
+            moveto 1 index add
+          }{
+           4 -1 roll 2 add 4 -1 roll 2 add 4 -1 roll 4 sub 4 -1 roll 4 sub
+           3 -1 roll add 2 index exch
+           moveto 1 index add
+         } ifelse
+      } ifelse
 
       %% Get the Contents string, if we don't have one, we're done
       %%
@@ -4586,6 +4688,8 @@ currentdict /set_bc_color undef
         } ifelse
       } if
       pop pop
+
+      grestore % in case the contents were rotated
       dup /CL knownoget {
         dup length 6 eq {
           aload pop moveto lineto lineto stroke
