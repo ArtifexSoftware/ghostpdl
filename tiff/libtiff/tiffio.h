@@ -444,6 +444,8 @@ extern "C"
     extern int TIFFRewriteDirectory(TIFF *);
     extern int TIFFDeferStrileArrayWriting(TIFF *);
     extern int TIFFForceStrileArrayWriting(TIFF *);
+    /* Extra function to allow JPEG memory use to be controlled */
+    extern void TIFFSetJpegMemFunction(TIFF *, void *(*fn)(thandle_t));
 
 #if defined(c_plusplus) || defined(__cplusplus)
     extern void TIFFPrintDirectory(TIFF *, FILE *, long = 0);

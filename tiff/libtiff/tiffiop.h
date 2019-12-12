@@ -291,6 +291,7 @@ struct tiff
     tmsize_t tif_max_single_mem_alloc;    /* in bytes. 0 for unlimited */
     tmsize_t tif_max_cumulated_mem_alloc; /* in bytes. 0 for unlimited */
     tmsize_t tif_cur_cumulated_mem_alloc; /* in bytes */
+    void                *(*get_jpeg_mem_ptr)(thandle_t);
 };
 
 struct TIFFOpenOptions

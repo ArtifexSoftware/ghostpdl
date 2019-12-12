@@ -937,3 +937,20 @@ TIFFUnmapFileProc TIFFGetUnmapFileProc(TIFF *tif)
 {
     return (tif->tif_unmapproc);
 }
+
+void
+TIFFSetJpegMemFunction(TIFF *tif,
+                       void *(*fn)(thandle_t))
+{
+    tif->get_jpeg_mem_ptr = fn;
+}
+
+
+/* vim: set ts=8 sts=8 sw=8 noet: */
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 8
+ * fill-column: 78
+ * End:
+ */
