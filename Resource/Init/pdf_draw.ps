@@ -3100,17 +3100,20 @@ end
 /strokeborder {		% <annot> <width> <dash> strokeborder -
   1 index 0 ne {	% do not draw if border width is 0
     gsave
-    2 index annotsetcolor
-    {
+%    2 index annotsetcolor
+%    {
       0 setdash dup setlinewidth
-      exch annotrect
+      exch dup annotrect
+      5 -1 roll /RD knownoget {
+        applyRD
+      } if
       2 { 4 index sub 4 1 roll } repeat
       2 { 4 index 0.5 mul add 4 1 roll } repeat
       rectstroke pop
       grestore
-    } {
-      pop pop pop
-    } ifelse
+%    } {
+%      pop pop pop
+%    } ifelse
   } {
     pop pop pop
   }ifelse
@@ -3151,7 +3154,8 @@ end
       } if
       {} 2 index /S knownoget {
         /D eq { 2 index /D knownoget not { {3} } if exch pop } if
-      } if 3 -1 roll pop strokeborder
+      } if
+      3 -1 roll pop strokeborder
     } {
       dup 2 get
       exch dup length 3 gt { 3 get } { pop {} } ifelse
@@ -3200,21 +3204,29 @@ end
         /D eq { 2 index /D knownoget not { {3} } if exch pop } if
       } if
       3 index /CA knownoget {.setopacityalpha} if
-      3 -1 roll pop 2 index annotsetcolor {0 setdash setlinewidth stroke} if
+      3 -1 roll pop
+%      2 index annotsetcolor {
+      0 setdash setlinewidth stroke
+%      } if
     } {
       dup 2 get
       % If element 3 of the /Border array is 0, then don't draw the border
       dup 0 ne {
         exch dup length 3 gt { 3 get } { pop {} } ifelse
         3 index /CA knownoget {.setopacityalpha} if
-        2 index annotsetcolor {0 setdash setlinewidth stroke} if
+%        2 index annotsetcolor {
+        0 setdash setlinewidth stroke
+%        } if
       }{
        pop pop
       } ifelse
     } ifelse
   } {
     3 index /CA knownoget {.setopacityalpha} if
-    1 {} 2 index annotsetcolor {0 setdash setlinewidth stroke} if
+    1 {}
+%    2 index annotsetcolor {
+    0 setdash setlinewidth stroke
+%    } if
   } ifelse
   pop
   grestore
@@ -4014,44 +4026,46 @@ currentdict /set_bc_color undef
     } {
       gsave
       //startannottransparency exec
-      dup /L knownoget {
-        1 index /LE knownoget { % <annot> [x1 y1 x2 y2] [LE1 LE2]
-          gsave
-          1 index aload pop     % <annot> [x1 y1 x2 y2] [LE1 LE2] x1 y1 x2 y2
-          3 -1 roll sub         % <annot> [x1 y1 x2 y2] [LE1 LE2] x1 x2 dy
-          3 1 roll exch sub     % <annot> [x1 y1 x2 y2] [LE1 LE2] dy dx
-          2 copy translate
-          atan                  % <annot> [x1 y1 x2 y2] [LE1 LE2]
-          rotate
-          dup 0 get             % <annot> [x1 y1 x2 y2] [LE1 LE2] LE1
-          dup //LineEnd_dict exch known not
-          {
-            pop /None
-          } if
-          //LineEnd_dict exch   % <annot> [x1 y1 x2 y2] [LE1 LE2] <dict> LE1
-          get                   % <annot> [x1 y1 x2 y2] [LE1 LE2] {}
-          3 index exch          % <annot> [x1 y1 x2 y2] [LE1 LE2] <annot> {}
-          exec
-          grestore
-          gsave
-          1 index aload pop  % x1 y1 x2 y2
-          3 -1 roll sub      % x1 x2 dy
-          3 1 roll exch sub  % dy dx
-          2 copy translate
-          atan 180 add
-          rotate
-          1 get dup //LineEnd_dict exch known not {pop /None} if //LineEnd_dict exch get 3 index exch exec
-          grestore
-        }if
-        aload pop 4 2 roll
-        moveto lineto
-        strokeborderpath
-      }{
-        (   **** Error: Invalid L array for Line, annotation has not been drawn.\n)
-        pdfformaterror
-        (               Output may be incorrect.\n) pdfformaterror
-        pop
-      } ifelse
+      dup annotsetcolor {
+        dup /L knownoget {
+          1 index /LE knownoget { % <annot> [x1 y1 x2 y2] [LE1 LE2]
+            gsave
+            1 index aload pop     % <annot> [x1 y1 x2 y2] [LE1 LE2] x1 y1 x2 y2
+            3 -1 roll sub         % <annot> [x1 y1 x2 y2] [LE1 LE2] x1 x2 dy
+            3 1 roll exch sub     % <annot> [x1 y1 x2 y2] [LE1 LE2] dy dx
+            2 copy translate
+            atan                  % <annot> [x1 y1 x2 y2] [LE1 LE2]
+            rotate
+            dup 0 get             % <annot> [x1 y1 x2 y2] [LE1 LE2] LE1
+            dup //LineEnd_dict exch known not
+            {
+              pop /None
+            } if
+            //LineEnd_dict exch   % <annot> [x1 y1 x2 y2] [LE1 LE2] <dict> LE1
+            get                   % <annot> [x1 y1 x2 y2] [LE1 LE2] {}
+            3 index exch          % <annot> [x1 y1 x2 y2] [LE1 LE2] <annot> {}
+            exec
+            grestore
+            gsave
+            1 index aload pop  % x1 y1 x2 y2
+            3 -1 roll sub      % x1 x2 dy
+            3 1 roll exch sub  % dy dx
+            2 copy translate
+            atan 180 add
+            rotate
+            1 get dup //LineEnd_dict exch known not {pop /None} if //LineEnd_dict exch get 3 index exch exec
+            grestore
+          }if
+          aload pop 4 2 roll
+          moveto lineto
+          strokeborderpath
+        }{
+          (   **** Error: Invalid L array for Line, annotation has not been drawn.\n)
+          pdfformaterror
+          (               Output may be incorrect.\n) pdfformaterror
+          pop
+        } ifelse
+      } if
       //endannottransparency exec
       //false
       grestore
@@ -4119,14 +4133,16 @@ currentdict /set_bc_color undef
 
   /Link { % <annot> -> <false>
     //startannottransparency exec
-    dup drawborder dup calc_annot_scale
-    2 copy mul 0 ne
-    {3 -1 roll drawwidget //false}
-    {
-      pop pop
-      (   **** Error: ignoring annotation with scale factor of 0\n) pdfformaterror
-      (               Output may be incorrect.\n) pdfformaterror
-    }ifelse
+    dup annotsetcolor {
+      dup drawborder dup calc_annot_scale
+      2 copy mul 0 ne
+      {3 -1 roll drawwidget //false}
+      {
+        pop pop
+        (   **** Error: ignoring annotation with scale factor of 0\n) pdfformaterror
+        (               Output may be incorrect.\n) pdfformaterror
+      }ifelse
+    } if
     //endannottransparency exec
   } bind executeonly def
 
@@ -4140,7 +4156,8 @@ currentdict /set_bc_color undef
       1 setlinewidth
       1 setlinecap
       1 setlinejoin
-      dup annotsetcolor {
+      dup annotsetcolor
+      {
         dup calc_annot_scale
         2 copy mul 0 ne
         {
@@ -4189,7 +4206,8 @@ currentdict /set_bc_color undef
       //true
     } {
       0 setlinecap
-      dup annotsetcolor {
+      dup annotsetcolor
+      {
         dup calc_annot_scale
         2 copy mul 0 ne
         {
@@ -4229,7 +4247,8 @@ currentdict /set_bc_color undef
       //true
     } {
       0 setlinecap
-      dup annotsetcolor {
+      dup annotsetcolor
+      {
         dup calc_annot_scale
         2 copy mul 0 ne
         {
@@ -4291,7 +4310,8 @@ currentdict /set_bc_color undef
       //true
     } {
     0 setlinecap
-    dup annotsetcolor {
+    dup annotsetcolor
+    {
       /QuadPoints knownoget {
         aload length 8 idiv {
           6 -2 roll
@@ -4326,7 +4346,8 @@ currentdict /set_bc_color undef
       //true
     } {
       //startannottransparency exec
-      dup annotsetcolor {
+      dup annotsetcolor
+      {
         dup calc_annot_scale
         2 copy mul 0 ne
         {
@@ -4657,7 +4678,6 @@ currentdict /set_bc_color undef
             %% and use it immediatley to start the text one line down
             %%
             currentpoint ..TextHeight sub moveto
-
             %% Now we process each character code in the string. If we find
             %% a /r/ or /n then we drop a line. If the character would end up
             %% outside the Annot Rect, then we drop a line before showing it.
