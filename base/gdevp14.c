@@ -3331,17 +3331,21 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
         if (code < 0)
             goto cleanup;
 
-        ((pdf14_device*)dev)->op_state = PDF14_OP_STATE_FILL;
-        code = pdf14_fill_path(dev, pgs, ppath, fill_params, pdcolor_fill, pcpath);
-        if (code < 0)
-            goto cleanup;
+        if (pgs->fillconstantalpha > 0) {
+            ((pdf14_device*)dev)->op_state = PDF14_OP_STATE_FILL;
+            code = pdf14_fill_path(dev, pgs, ppath, fill_params, pdcolor_fill, pcpath);
+            if (code < 0)
+                goto cleanup;
+        }
 
-        gs_swapcolors_quick((gs_gstate *) pgs);	/* flips stroke_color_index (to stroke) */
-        ((pdf14_device*)dev)->op_state = PDF14_OP_STATE_STROKE;
-        code = pdf14_stroke_path(dev, pgs, ppath, stroke_params, pdcolor_stroke, pcpath);
-        gs_swapcolors_quick((gs_gstate*) pgs);	/* this flips pgs->stroke_color_index back as well */
-        if (code < 0)
-            goto cleanup;       /* bail out (with colors swapped back to fill) */
+        if (pgs->strokeconstantalpha > 0) {
+            gs_swapcolors_quick((gs_gstate*)pgs);	/* flips stroke_color_index (to stroke) */
+            ((pdf14_device*)dev)->op_state = PDF14_OP_STATE_STROKE;
+            code = pdf14_stroke_path(dev, pgs, ppath, stroke_params, pdcolor_stroke, pcpath);
+            gs_swapcolors_quick((gs_gstate*)pgs);	/* this flips pgs->stroke_color_index back as well */
+            if (code < 0)
+                goto cleanup;       /* bail out (with colors swapped back to fill) */
+        }
 
     } else {
         /* Push a non-isolated knockout group. Do not change the alpha or
@@ -9415,7 +9419,7 @@ pdf14_clist_fill_stroke_path_pattern_setup(gx_device* dev, const gs_gstate* pgs,
         params.Knockout = false;
 
         /* non-isolated non-knockout group pushed with original alpha and blend mode */
-        code = gs_begin_transparency_group(pgs, &params, (const gs_rect*)&group_stroke_box, PDF14_BEGIN_TRANS_GROUP);
+        code = gs_begin_transparency_group((gs_gstate*)pgs, &params, (const gs_rect*)&group_stroke_box, PDF14_BEGIN_TRANS_GROUP);
         if (code < 0)
             return code;
 
@@ -9428,14 +9432,19 @@ pdf14_clist_fill_stroke_path_pattern_setup(gx_device* dev, const gs_gstate* pgs,
             goto cleanup;
 
         /* Do fill */
-        code = pdf14_clist_fill_path(dev, pgs, ppath, params_fill, pdevc_fill, pcpath);
-        if (code < 0)
-            goto cleanup;
+        if (pgs->fillconstantalpha > 0.0) {
+            code = pdf14_clist_fill_path(dev, pgs, ppath, params_fill, pdevc_fill, pcpath);
+            if (code < 0)
+                goto cleanup;
+        }
 
         /* Do stroke */
-        code = pdf14_clist_stroke_path(dev, pgs, ppath, params_stroke, pdevc_stroke, pcpath);
-        if (code < 0)
-            goto cleanup;
+        if (pgs->strokeconstantalpha > 0.0) {
+            code = pdf14_clist_stroke_path(dev, pgs, ppath, params_stroke, pdevc_stroke, pcpath);
+            if (code < 0)
+                goto cleanup;
+        }
+
     } else {
         /* Push a non-isolated knockout group. Do not change the alpha or
            blend modes */
@@ -9451,7 +9460,7 @@ pdf14_clist_fill_stroke_path_pattern_setup(gx_device* dev, const gs_gstate* pgs,
         if (code < 0)
             return code;
 
-        code = gs_begin_transparency_group(pgs, &params, (const gs_rect*)&group_stroke_box, PDF14_BEGIN_TRANS_GROUP);
+        code = gs_begin_transparency_group((gs_gstate*)pgs, &params, (const gs_rect*)&group_stroke_box, PDF14_BEGIN_TRANS_GROUP);
         if (code < 0)
             return code;
 
@@ -9523,7 +9532,6 @@ cleanup:
     code2 = gs_setblendmode((gs_gstate*)pgs, blend_mode);
     if (code2 < 0)
         return code2;
-
     return code;
 }
 
@@ -9540,24 +9548,10 @@ pdf14_clist_fill_stroke_path(gx_device	*dev, const gs_gstate *pgs, gx_path *ppat
     pdf14_clist_device * pdev = (pdf14_clist_device *)dev;
     gs_gstate new_pgs = *pgs;
     int code;
-    gs_pattern2_instance_t *pinst_fill = NULL;
-    gs_pattern2_instance_t *pinst_stroke = NULL;
-    gx_device_forward * fdev = (gx_device_forward *)dev;
-    cmm_dev_profile_t *dev_profile, *fwd_profile;
-    gsicc_rendering_param_t render_cond;
-    cmm_profile_t *icc_profile_fwd, *icc_profile_dev;
 
-    code = dev_proc(dev, get_profile)(dev,  &dev_profile);
-    if (code < 0)
-        return code;
-    code = dev_proc(fdev->target, get_profile)(fdev->target,  &fwd_profile);
-    if (code < 0)
-        return code;
-
-    gsicc_extract_profile(GS_UNKNOWN_TAG, fwd_profile, &icc_profile_fwd,
-                          &render_cond);
-    gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &icc_profile_dev,
-                          &render_cond);
+    if ((pgs->fillconstantalpha == 0.0 && pgs->strokeconstantalpha == 0.0) ||
+        (pgs->ctm.xx == 0.0 && pgs->ctm.xy == 0.0 && pgs->ctm.yx == 0.0 && pgs->ctm.yy == 0.0))
+        return 0;
 
     /*
      * Ensure that that the PDF 1.4 reading compositor will have the current
@@ -9585,12 +9579,6 @@ pdf14_clist_fill_stroke_path(gx_device	*dev, const gs_gstate *pgs, gx_path *ppat
                                        params_stroke, pdevc_stroke, pcpath);
     new_pgs.trans_device = NULL;
     new_pgs.has_transparency = false;
-    if (pinst_fill != NULL){
-        pinst_fill->saved->trans_device = NULL;
-    }
-    if (pinst_stroke != NULL){
-        pinst_stroke->saved->trans_device = NULL;
-    }
     return code;
 }
 
