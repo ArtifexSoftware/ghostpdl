@@ -3707,14 +3707,19 @@ currentdict /set_bc_color undef
         rectfill
         grestore
         dup /CA knownoget {.setopacityalpha} if
-        drawborder
+        dup annotsetcolor {
+          drawborder
+        } if
         //false
       }{
         dup annotrect
         5 index /RD knownoget {
           applyRD
         } if
-        drawopdict /re get exec strokeborderpath
+        drawopdict /re get exec
+        dup annotsetcolor {
+          strokeborderpath
+        } if
       } ifelse
       //endannottransparency exec
       grestore
@@ -3756,7 +3761,9 @@ currentdict /set_bc_color undef
       translate //drawellipse exec
       dup
       fillborderpath
-      strokeborderpath
+      dup annotsetcolor {
+        strokeborderpath
+      } if
       //endannottransparency exec
       grestore
       //false
@@ -3805,9 +3812,13 @@ currentdict /set_bc_color undef
         fill
         grestore
         dup /CA knownoget {.setopacityalpha} if
-        strokeborderpath
+        dup annotsetcolor {
+          strokeborderpath
+        } if
       } {
-        strokeborderpath
+        dup annotsetcolor {
+          strokeborderpath
+        } if
       } ifelse
       //endannottransparency exec
       //false
