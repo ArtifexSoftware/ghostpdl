@@ -4621,10 +4621,10 @@ currentdict /set_bc_color undef
               5 index /RD knownoget {
                 applyRD
               } if
-               3 -1 roll add 2 index 2 index add exch
-              moveto
-              270 rotate
-              1 index add
+              dup 4 -1 roll add 3 -1 roll 3 index add exch
+              moveto 270 rotate
+              exch pop currentpoint
+              pop dup 3 -1 roll add
             }{
               dup annotrect
               5 index /RD knownoget {
@@ -4702,7 +4702,8 @@ currentdict /set_bc_color undef
               } {
                 1 string dup 0 4 -1 roll
                 put dup                 %% llx urx (string) (int) (int)
-                stringwidth pop currentpoint pop add 3 index gt {
+                stringwidth pop currentpoint pop add 3 index
+                gt {
                   currentpoint exch pop 4 index exch ..TextHeight sub moveto
                 } if
                 show
