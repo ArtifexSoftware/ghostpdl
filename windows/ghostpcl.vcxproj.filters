@@ -1,0 +1,594 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="pcl">
+      <UniqueIdentifier>{6b624ab7-9800-43bb-8223-51f80b0dec16}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="pcl %28.h%29">
+      <UniqueIdentifier>{ad569c49-36bf-4f66-a5c9-bef83a62eb83}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="pl">
+      <UniqueIdentifier>{5c442046-a135-42cf-962b-f7a789c395b0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="pl %28.h%29">
+      <UniqueIdentifier>{08e4da99-c29c-46d7-8f42-4515768df016}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="pxl">
+      <UniqueIdentifier>{47dc0ea2-1a45-426c-a582-5c8c71872502}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="pxl %28.h%29">
+      <UniqueIdentifier>{23702ff2-ab3e-4083-8329-a37516e528ae}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\pcl\pcl\pcbiptrn.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pccid.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pccolor.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pccprint.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pccsbase.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pcdither.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pcdraw.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pcfont.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pcfontpg.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pcfrgrnd.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pcfsel.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pcht.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pcident.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pcimpl.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pcindxed.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pcjob.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pclookup.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pcmacros.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pcmisc.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pcmtx3.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pcommand.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pcpage.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pcpalet.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pcparse.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pcpatrn.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pcpatxfm.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pcrect.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pcsfont.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pcstatus.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pcsymbol.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pctext.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pctop.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pcuptrn.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pcursor.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pcwhtidx.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pgchar.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pgcolor.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pgconfig.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pgdraw.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pgfdata.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pgfont.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pgframe.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pggeom.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pginit.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pglabel.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pglfill.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pgmisc.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pgparse.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pgpoly.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\pgvector.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\rtgmode.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\rtmisc.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\rtraster.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pcl\rtrstcmp.c">
+      <Filter>pcl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pl\pjparse.c">
+      <Filter>pl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pl\pjparsei.c">
+      <Filter>pl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pl\pjtop.c">
+      <Filter>pl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pl\plalloc.c">
+      <Filter>pl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pl\plapi.c">
+      <Filter>pl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pl\plchar.c">
+      <Filter>pl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pl\pldict.c">
+      <Filter>pl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pl\pldraw.c">
+      <Filter>pl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pl\plfapi.c">
+      <Filter>pl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pl\plfont.c">
+      <Filter>pl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pl\plftable.c">
+      <Filter>pl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pl\plht.c">
+      <Filter>pl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pl\plimpl.c">
+      <Filter>pl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pl\pllfont.c">
+      <Filter>pl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pl\plmain.c">
+      <Filter>pl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pl\plparams.c">
+      <Filter>pl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pl\plplatf.c">
+      <Filter>pl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pl\plplatfps.c">
+      <Filter>pl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pl\plsymbol.c">
+      <Filter>pl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pl\pltop.c">
+      <Filter>pl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pl\pltoputl.c">
+      <Filter>pl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pl\pluchar.c">
+      <Filter>pl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pl\plufont.c">
+      <Filter>pl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pl\plufstlp.c">
+      <Filter>pl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pl\plufstlp1.c">
+      <Filter>pl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pl\plulfont.c">
+      <Filter>pl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pl\plvalue.c">
+      <Filter>pl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pl\plvocab.c">
+      <Filter>pl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pl\plwimg.c">
+      <Filter>pl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pl\plwmainc.c">
+      <Filter>pl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pl\plwreg.c">
+      <Filter>pl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pl\realmain.c">
+      <Filter>pl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pxl\pxbfont.c">
+      <Filter>pxl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pxl\pxerrors.c">
+      <Filter>pxl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pxl\pxffont.c">
+      <Filter>pxl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pxl\pxfont.c">
+      <Filter>pxl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pxl\pxgstate.c">
+      <Filter>pxl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pxl\pximage.c">
+      <Filter>pxl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pxl\pximpl.c">
+      <Filter>pxl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pxl\pxink.c">
+      <Filter>pxl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pxl\pxpaint.c">
+      <Filter>pxl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pxl\pxparse.c">
+      <Filter>pxl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pxl\pxptable.c">
+      <Filter>pxl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pxl\pxpthr.c">
+      <Filter>pxl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pxl\pxsessio.c">
+      <Filter>pxl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pxl\pxstate.c">
+      <Filter>pxl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pxl\pxstream.c">
+      <Filter>pxl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pxl\pxtop.c">
+      <Filter>pxl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pxl\pxvalue.c">
+      <Filter>pxl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pcl\pxl\pxvendor.c">
+      <Filter>pxl</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\pcl\pcl\pcbiptrn.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\pccid.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\pccoord.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\pccsbase.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\pcdict.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\pcdither.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\pcdraw.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\pcfont.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\pcfontst.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\pcfrgrnd.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\pcfsel.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\pcht.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\pcident.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\pcindxed.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\pclookup.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\pcmtx3.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\pcommand.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\pcpage.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\pcpalet.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\pcparam.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\pcparse.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\pcpatrn.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\pcpattyp.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\pcpatxfm.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\pcstate.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\pcsymbol.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\pctop.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\pctpm.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\pcuptrn.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\pcursor.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\pcwhtidx.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\pcxfmst.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\pgdraw.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\pgfdata.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\pgfont.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\pggeom.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\pginit.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\pgmand.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\pgmisc.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\pgstate.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\rtgmode.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\rtmisc.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\rtraster.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\rtrstcmp.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pcl\rtrstst.h">
+      <Filter>pcl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pl\pjparse.h">
+      <Filter>pl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pl\pjtop.h">
+      <Filter>pl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pl\plalloc.h">
+      <Filter>pl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pl\plapi.h">
+      <Filter>pl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pl\plchar.h">
+      <Filter>pl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pl\pldebug.h">
+      <Filter>pl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pl\pldict.h">
+      <Filter>pl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pl\pldraw.h">
+      <Filter>pl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pl\plfapi.h">
+      <Filter>pl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pl\plfont.h">
+      <Filter>pl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pl\plftable.h">
+      <Filter>pl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pl\plht.h">
+      <Filter>pl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pl\pllfont.h">
+      <Filter>pl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pl\plmain.h">
+      <Filter>pl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pl\plparse.h">
+      <Filter>pl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pl\plplatf.h">
+      <Filter>pl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pl\plsymbol.h">
+      <Filter>pl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pl\pltop.h">
+      <Filter>pl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pl\pltoputl.h">
+      <Filter>pl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pl\plufstlp.h">
+      <Filter>pl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pl\plvalue.h">
+      <Filter>pl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pl\plvocab.h">
+      <Filter>pl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pl\plwimg.h">
+      <Filter>pl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pl\plwreg.h">
+      <Filter>pl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pl\plwres.h">
+      <Filter>pl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pxl\pxattr.h">
+      <Filter>pxl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pxl\pxbfont.h">
+      <Filter>pxl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pxl\pxdict.h">
+      <Filter>pxl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pxl\pxenum.h">
+      <Filter>pxl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pxl\pxerrors.h">
+      <Filter>pxl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pxl\pxfont.h">
+      <Filter>pxl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pxl\pxgstate.h">
+      <Filter>pxl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pxl\pxoper.h">
+      <Filter>pxl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pxl\pxparse.h">
+      <Filter>pxl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pxl\pxptable.h">
+      <Filter>pxl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pxl\pxpthr.h">
+      <Filter>pxl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pxl\pxstate.h">
+      <Filter>pxl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pxl\pxtag.h">
+      <Filter>pxl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pxl\pxvalue.h">
+      <Filter>pxl %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pcl\pxl\pxvendor.h">
+      <Filter>pxl %28.h%29</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,2779 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug-contrib|Win32">
+      <Configuration>Debug-contrib</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug-contrib|x64">
+      <Configuration>Debug-contrib</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug-cups|Win32">
+      <Configuration>Debug-cups</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug-cups|x64">
+      <Configuration>Debug-cups</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="DebugXP|Win32">
+      <Configuration>DebugXP</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="DebugXP|x64">
+      <Configuration>DebugXP</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MementoXP|Win32">
+      <Configuration>MementoXP</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MementoXP|x64">
+      <Configuration>MementoXP</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Memento|Win32">
+      <Configuration>Memento</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Memento|x64">
+      <Configuration>Memento</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Profile|Win32">
+      <Configuration>Profile</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Profile|x64">
+      <Configuration>Profile</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release-contrib|Win32">
+      <Configuration>Release-contrib</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release-contrib|x64">
+      <Configuration>Release-contrib</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseXP|Win32">
+      <Configuration>ReleaseXP</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseXP|x64">
+      <Configuration>ReleaseXP</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}</ProjectGuid>
+    <RootNamespace>ghostscript</RootNamespace>
+    <Keyword>MakeFileProj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-contrib|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-contrib|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-cups|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Memento|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MementoXP|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v141_xp</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Profile|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseXP|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v141_xp</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugXP|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v141_xp</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-contrib|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-contrib|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-cups|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Memento|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MementoXP|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v141_xp</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Profile|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseXP|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v141_xp</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugXP|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v141_xp</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release-contrib|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug-contrib|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug-cups|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Memento|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='MementoXP|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Profile|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseXP|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='DebugXP|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release-contrib|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug-contrib|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug-cups|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Memento|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='MementoXP|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Profile|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseXP|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='DebugXP|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>16.0.29511.113</_ProjectFileVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>debugobj\</OutDir>
+    <IntDir>debugobj\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gsdebug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= debugbsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gsdebug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= debugbsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= debugclean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\debugbin\gswin32c.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;DEBUG=1;TDEBUG=1;HAVE_SSE2=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugXP|Win32'">
+    <OutDir>debugobjxp\</OutDir>
+    <IntDir>debugobjxp\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 XP= DEVSTUDIO= gsdebug &amp;&amp; nmake -f psi\msvc32.mak XP= DEVSTUDIO= debugbsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak XP= DEVSTUDIO= debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 XP= DEVSTUDIO= gsdebug &amp;&amp; nmake -f psi\msvc32.mak XP= DEVSTUDIO= debugbsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak XP= DEVSTUDIO= debugclean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\debugbinxp\gswin32c.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;DEBUG=1;TDEBUG=1;HAVE_SSE2=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>debugobj64\</OutDir>
+    <IntDir>debugobj64\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= gsdebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugbsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= gsdebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugbsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugclean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\debugbin\gswin64c.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN64;_DEBUG;DEBUG=1;TDEBUG=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugXP|x64'">
+    <OutDir>debugobj64xp\</OutDir>
+    <IntDir>debugobj64xp\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 XP= DEVSTUDIO= gsdebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= XP= DEVSTUDIO= debugbsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= XP= DEVSTUDIO= debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 XP= DEVSTUDIO= gsdebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= XP= DEVSTUDIO= debugbsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= XP= DEVSTUDIO= debugclean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\debugbinxp\gswin64c.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN64;_DEBUG;DEBUG=1;TDEBUG=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>obj\</OutDir>
+    <IntDir>obj\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gs &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gs &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= clean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\bin\gswin32c.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;HAVE_SSE2=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseXP|Win32'">
+    <OutDir>objxp\</OutDir>
+    <IntDir>objxp\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 XP= DEVSTUDIO= gs &amp;&amp; nmake -f psi\msvc32.mak XP= DEVSTUDIO= bsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak XP= DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 XP= DEVSTUDIO= gs &amp;&amp; nmake -f psi\msvc32.mak XP= DEVSTUDIO= bsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak XP= DEVSTUDIO= clean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\binxp\gswin32c.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;HAVE_SSE2=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>obj64\</OutDir>
+    <IntDir>obj64\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= gs &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= bsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= gs &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= bsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= clean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\bin\gswin64c.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseXP|x64'">
+    <OutDir>obj64xp\</OutDir>
+    <IntDir>obj64xp\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 XP= DEVSTUDIO= gs &amp;&amp; nmake -f psi\msvc32.mak WIN64= XP= DEVSTUDIO= bsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= XP= DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 XP= DEVSTUDIO= gs &amp;&amp; nmake -f psi\msvc32.mak WIN64= XP= DEVSTUDIO= bsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= XP= DEVSTUDIO= clean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\binxp\gswin64c.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Profile|Win32'">
+    <OutDir>profobj\</OutDir>
+    <IntDir>profobj\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gsprofile &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= profilebsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= profileclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gsprofile &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= profilebsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= profileclean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\profbin\gswin32c.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;DEBUG=0;TDEBUG=0;DEBUGSYM=1;HAVE_SSE2=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">
+    <OutDir>profobj64\</OutDir>
+    <IntDir>profobj64\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= gsprofile &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= profilebsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= profileclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= gsprofile &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= profilebsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= profileclean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\profbin\gswin64c.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN64;_DEBUG;DEBUG=1;TDEBUG=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Memento|Win32'">
+    <OutDir>memobj\</OutDir>
+    <IntDir>memobj\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gsmemento &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= mementobsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= mementoclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gsmemento &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= mementobsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= mementoclean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\membin\gswin32c.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;DEBUG=1;TDEBUG=1;HAVE_SSE2=1;MEMENTO=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MementoXP|Win32'">
+    <OutDir>memobjxp\</OutDir>
+    <IntDir>memobjxp\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 XP= DEVSTUDIO= gsmemento &amp;&amp; nmake -f psi\msvc32.mak XP= DEVSTUDIO= mementobsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak XP= DEVSTUDIO= mementoclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 XP= DEVSTUDIO= gsmemento &amp;&amp; nmake -f psi\msvc32.mak XP= DEVSTUDIO= mementobsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak XP= DEVSTUDIO= mementoclean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\membinxp\gswin32c.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;DEBUG=1;TDEBUG=1;HAVE_SSE2=1;MEMENTO=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Memento|x64'">
+    <OutDir>memobj64\</OutDir>
+    <IntDir>memobj64\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= gsmemento &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= mementobsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= mementoclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= gsmemento &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= mementobsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= mementoclean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\membin\gswin64c.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN64;_DEBUG;DEBUG=1;TDEBUG=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MementoXP|x64'">
+    <OutDir>memobj64xp\</OutDir>
+    <IntDir>memobj64xp\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 XP= DEVSTUDIO= gsmemento &amp;&amp; nmake -f psi\msvc32.mak WIN64= XP= DEVSTUDIO= mementobsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= XP= DEVSTUDIO= mementoclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 XP= DEVSTUDIO= gsmemento &amp;&amp; nmake -f psi\msvc32.mak WIN64= XP= DEVSTUDIO= mementobsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= XP= DEVSTUDIO= mementoclean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\membinxp\gswin64c.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN64;_DEBUG;DEBUG=1;TDEBUG=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-cups|Win32'">
+    <OutDir>$(Configuration)\</OutDir>
+    <IntDir>$(Configuration)\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= WITH_CUPS=1 gsdebug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CUPS=1 debugbsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CUPS=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= WITH_CUPS=1 gsdebug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CUPS=1 debugbsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CUPS=1 debugclean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\debugbin\gswin32c.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;DEBUG=1;TDEBUG=1;HAVE_SSE2=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-cups|x64'">
+    <OutDir>$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= WITH_CUPS=1 gsdebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugbsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= WITH_CUPS=1 gsdebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugbsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugclean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\debugbin\gswin64c.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN64;_DEBUG;DEBUG=1;TDEBUG=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-contrib|Win32'">
+    <OutDir>$(Configuration)\</OutDir>
+    <IntDir>$(Configuration)\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= WITH_CONTRIB=1 gsdebug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CONTRIB=1 debugbsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CONTRIB=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= WITH_CUPS=1 gsdebug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CONTRIB=1 debugbsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CONTRIB=1 debugclean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\debugbin\gswin32c.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;DEBUG=1;TDEBUG=1;HAVE_SSE2=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-contrib|x64'">
+    <OutDir>$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= WITH_CUPS=1 gsdebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugbsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= WITH_CUPS=1 gsdebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugbsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugclean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\debugbin\gswin64c.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN64;_DEBUG;DEBUG=1;TDEBUG=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-contrib|Win32'">
+    <OutDir>$(Configuration)\</OutDir>
+    <IntDir>$(Configuration)\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gs &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gs &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= clean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\bin\gswin32c.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;HAVE_SSE2=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-contrib|x64'">
+    <OutDir>$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 SBR=1 DEVSTUDIO= WITH_CONTRIB=1 gs &amp;&amp; nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 DEVSTUDIO= bsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 WITH_CONTRIB=1 DEVSTUDIO= gs &amp;&amp; nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 DEVSTUDIO= bsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 DEVSTUDIO= clean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\bin\gswin64c.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <None Include="..\devices\vector\opdfread.ps" />
+    <None Include="..\doc\API.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\AUTHORS" />
+    <None Include="..\doc\C-style.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\Changes.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\Commprod.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\COPYING" />
+    <None Include="..\doc\Deprecated.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\Details.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\Details8.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\Details9.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\Develop.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\Devices.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\DLL.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\Drivers.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\Fonts.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\gs.css" />
+    <None Include="..\doc\GS9_Color_Management.tex" />
+    <None Include="..\doc\Helpers.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\Hershey.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\History1.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\History2.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\History3.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\History4.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\History5.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\History6.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\History7.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\History8.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\History9.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\index.html" />
+    <None Include="..\doc\Install.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\Issues.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\Language.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\Lib.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\Make.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\News.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\Projects.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\Ps-style.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\Ps2epsi.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\Ps2pdf.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\Ps2ps2.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\pscet_status.txt" />
+    <None Include="..\doc\Psfiles.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\Readme.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\Release.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\Source.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\Unix-lpr.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\Use.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\doc\Xfonts.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\jpeg\jmemdosa.asm" />
+    <None Include="..\Resource\CMap\78-EUC-H" />
+    <None Include="..\Resource\CMap\78-EUC-V" />
+    <None Include="..\Resource\CMap\78-H" />
+    <None Include="..\Resource\CMap\78-RKSJ-H" />
+    <None Include="..\Resource\CMap\78-RKSJ-V" />
+    <None Include="..\Resource\CMap\78-V" />
+    <None Include="..\Resource\CMap\78ms-RKSJ-H" />
+    <None Include="..\Resource\CMap\78ms-RKSJ-V" />
+    <None Include="..\Resource\CMap\83pv-RKSJ-H" />
+    <None Include="..\Resource\CMap\90ms-RKSJ-H" />
+    <None Include="..\Resource\CMap\90ms-RKSJ-UCS2" />
+    <None Include="..\Resource\CMap\90ms-RKSJ-V" />
+    <None Include="..\Resource\CMap\90msp-RKSJ-H" />
+    <None Include="..\Resource\CMap\90msp-RKSJ-V" />
+    <None Include="..\Resource\CMap\90pv-RKSJ-H" />
+    <None Include="..\Resource\CMap\90pv-RKSJ-UCS2" />
+    <None Include="..\Resource\CMap\90pv-RKSJ-UCS2C" />
+    <None Include="..\Resource\CMap\90pv-RKSJ-V" />
+    <None Include="..\Resource\CMap\Add-H" />
+    <None Include="..\Resource\CMap\Add-RKSJ-H" />
+    <None Include="..\Resource\CMap\Add-RKSJ-V" />
+    <None Include="..\Resource\CMap\Add-V" />
+    <None Include="..\Resource\CMap\Adobe-CNS1-0" />
+    <None Include="..\Resource\CMap\Adobe-CNS1-1" />
+    <None Include="..\Resource\CMap\Adobe-CNS1-2" />
+    <None Include="..\Resource\CMap\Adobe-CNS1-3" />
+    <None Include="..\Resource\CMap\Adobe-CNS1-4" />
+    <None Include="..\Resource\CMap\Adobe-CNS1-5" />
+    <None Include="..\Resource\CMap\Adobe-CNS1-6" />
+    <None Include="..\Resource\CMap\Adobe-CNS1-B5pc" />
+    <None Include="..\Resource\CMap\Adobe-CNS1-ETenms-B5" />
+    <None Include="..\Resource\CMap\Adobe-CNS1-H-CID" />
+    <None Include="..\Resource\CMap\Adobe-CNS1-H-Host" />
+    <None Include="..\Resource\CMap\Adobe-CNS1-H-Mac" />
+    <None Include="..\Resource\CMap\Adobe-CNS1-UCS2" />
+    <None Include="..\Resource\CMap\Adobe-GB1-0" />
+    <None Include="..\Resource\CMap\Adobe-GB1-1" />
+    <None Include="..\Resource\CMap\Adobe-GB1-2" />
+    <None Include="..\Resource\CMap\Adobe-GB1-3" />
+    <None Include="..\Resource\CMap\Adobe-GB1-4" />
+    <None Include="..\Resource\CMap\Adobe-GB1-5" />
+    <None Include="..\Resource\CMap\Adobe-GB1-GBK-EUC" />
+    <None Include="..\Resource\CMap\Adobe-GB1-GBpc-EUC" />
+    <None Include="..\Resource\CMap\Adobe-GB1-H-CID" />
+    <None Include="..\Resource\CMap\Adobe-GB1-H-Host" />
+    <None Include="..\Resource\CMap\Adobe-GB1-H-Mac" />
+    <None Include="..\Resource\CMap\Adobe-GB1-UCS2" />
+    <None Include="..\Resource\CMap\Adobe-Japan1-0" />
+    <None Include="..\Resource\CMap\Adobe-Japan1-1" />
+    <None Include="..\Resource\CMap\Adobe-Japan1-2" />
+    <None Include="..\Resource\CMap\Adobe-Japan1-3" />
+    <None Include="..\Resource\CMap\Adobe-Japan1-4" />
+    <None Include="..\Resource\CMap\Adobe-Japan1-5" />
+    <None Include="..\Resource\CMap\Adobe-Japan1-6" />
+    <None Include="..\Resource\CMap\Adobe-Japan1-90ms-RKSJ" />
+    <None Include="..\Resource\CMap\Adobe-Japan1-90pv-RKSJ" />
+    <None Include="..\Resource\CMap\Adobe-Japan1-H-CID" />
+    <None Include="..\Resource\CMap\Adobe-Japan1-H-Host" />
+    <None Include="..\Resource\CMap\Adobe-Japan1-H-Mac" />
+    <None Include="..\Resource\CMap\Adobe-Japan1-PS-H" />
+    <None Include="..\Resource\CMap\Adobe-Japan1-PS-V" />
+    <None Include="..\Resource\CMap\Adobe-Japan1-UCS2" />
+    <None Include="..\Resource\CMap\Adobe-Japan2-0" />
+    <None Include="..\Resource\CMap\Adobe-Korea1-0" />
+    <None Include="..\Resource\CMap\Adobe-Korea1-1" />
+    <None Include="..\Resource\CMap\Adobe-Korea1-2" />
+    <None Include="..\Resource\CMap\Adobe-Korea1-H-CID" />
+    <None Include="..\Resource\CMap\Adobe-Korea1-H-Host" />
+    <None Include="..\Resource\CMap\Adobe-Korea1-H-Mac" />
+    <None Include="..\Resource\CMap\Adobe-Korea1-KSCms-UHC" />
+    <None Include="..\Resource\CMap\Adobe-Korea1-KSCpc-EUC" />
+    <None Include="..\Resource\CMap\Adobe-Korea1-UCS2" />
+    <None Include="..\Resource\CMap\B5-H" />
+    <None Include="..\Resource\CMap\B5-V" />
+    <None Include="..\Resource\CMap\B5pc-H" />
+    <None Include="..\Resource\CMap\B5pc-UCS2" />
+    <None Include="..\Resource\CMap\B5pc-UCS2C" />
+    <None Include="..\Resource\CMap\B5pc-V" />
+    <None Include="..\Resource\CMap\CNS-EUC-H" />
+    <None Include="..\Resource\CMap\CNS-EUC-V" />
+    <None Include="..\Resource\CMap\CNS01-RKSJ-H" />
+    <None Include="..\Resource\CMap\CNS02-RKSJ-H" />
+    <None Include="..\Resource\CMap\CNS03-RKSJ-H" />
+    <None Include="..\Resource\CMap\CNS04-RKSJ-H" />
+    <None Include="..\Resource\CMap\CNS05-RKSJ-H" />
+    <None Include="..\Resource\CMap\CNS06-RKSJ-H" />
+    <None Include="..\Resource\CMap\CNS07-RKSJ-H" />
+    <None Include="..\Resource\CMap\CNS1-H" />
+    <None Include="..\Resource\CMap\CNS1-V" />
+    <None Include="..\Resource\CMap\CNS15-RKSJ-H" />
+    <None Include="..\Resource\CMap\CNS2-H" />
+    <None Include="..\Resource\CMap\CNS2-V" />
+    <None Include="..\Resource\CMap\ETen-B5-H" />
+    <None Include="..\Resource\CMap\ETen-B5-UCS2" />
+    <None Include="..\Resource\CMap\ETen-B5-V" />
+    <None Include="..\Resource\CMap\ETenms-B5-H" />
+    <None Include="..\Resource\CMap\ETenms-B5-V" />
+    <None Include="..\Resource\CMap\ETHK-B5-H" />
+    <None Include="..\Resource\CMap\ETHK-B5-V" />
+    <None Include="..\Resource\CMap\EUC-H" />
+    <None Include="..\Resource\CMap\EUC-V" />
+    <None Include="..\Resource\CMap\Ext-H" />
+    <None Include="..\Resource\CMap\Ext-RKSJ-H" />
+    <None Include="..\Resource\CMap\Ext-RKSJ-V" />
+    <None Include="..\Resource\CMap\Ext-V" />
+    <None Include="..\Resource\CMap\GB-EUC-H" />
+    <None Include="..\Resource\CMap\GB-EUC-V" />
+    <None Include="..\Resource\CMap\GB-H" />
+    <None Include="..\Resource\CMap\GB-RKSJ-H" />
+    <None Include="..\Resource\CMap\GB-V" />
+    <None Include="..\Resource\CMap\GBK-EUC-H" />
+    <None Include="..\Resource\CMap\GBK-EUC-UCS2" />
+    <None Include="..\Resource\CMap\GBK-EUC-V" />
+    <None Include="..\Resource\CMap\GBK2K-H" />
+    <None Include="..\Resource\CMap\GBK2K-V" />
+    <None Include="..\Resource\CMap\GBKp-EUC-H" />
+    <None Include="..\Resource\CMap\GBKp-EUC-V" />
+    <None Include="..\Resource\CMap\GBpc-EUC-H" />
+    <None Include="..\Resource\CMap\GBpc-EUC-UCS2" />
+    <None Include="..\Resource\CMap\GBpc-EUC-UCS2C" />
+    <None Include="..\Resource\CMap\GBpc-EUC-V" />
+    <None Include="..\Resource\CMap\GBT-EUC-H" />
+    <None Include="..\Resource\CMap\GBT-EUC-V" />
+    <None Include="..\Resource\CMap\GBT-H" />
+    <None Include="..\Resource\CMap\GBT-RKSJ-H" />
+    <None Include="..\Resource\CMap\GBT-V" />
+    <None Include="..\Resource\CMap\GBTpc-EUC-H" />
+    <None Include="..\Resource\CMap\GBTpc-EUC-V" />
+    <None Include="..\Resource\CMap\H" />
+    <None Include="..\Resource\CMap\Hankaku" />
+    <None Include="..\Resource\CMap\Hiragana" />
+    <None Include="..\Resource\CMap\HK-RKSJ-H" />
+    <None Include="..\Resource\CMap\HKdla-B5-H" />
+    <None Include="..\Resource\CMap\HKdla-B5-V" />
+    <None Include="..\Resource\CMap\HKdlb-B5-H" />
+    <None Include="..\Resource\CMap\HKdlb-B5-V" />
+    <None Include="..\Resource\CMap\HKgccs-B5-H" />
+    <None Include="..\Resource\CMap\HKgccs-B5-V" />
+    <None Include="..\Resource\CMap\HKm314-B5-H" />
+    <None Include="..\Resource\CMap\HKm314-B5-V" />
+    <None Include="..\Resource\CMap\HKm471-B5-H" />
+    <None Include="..\Resource\CMap\HKm471-B5-V" />
+    <None Include="..\Resource\CMap\HKscs-B5-H" />
+    <None Include="..\Resource\CMap\HKscs-B5-V" />
+    <None Include="..\Resource\CMap\Hojo-EUC-H" />
+    <None Include="..\Resource\CMap\Hojo-EUC-V" />
+    <None Include="..\Resource\CMap\Hojo-H" />
+    <None Include="..\Resource\CMap\Hojo-RKSJ-H" />
+    <None Include="..\Resource\CMap\Hojo-V" />
+    <None Include="..\Resource\CMap\Identity-H" />
+    <None Include="..\Resource\CMap\Identity-UTF16-H" />
+    <None Include="..\Resource\CMap\Identity-UTF16-V" />
+    <None Include="..\Resource\CMap\Identity-V" />
+    <None Include="..\Resource\CMap\Katakana" />
+    <None Include="..\Resource\CMap\KSC-EUC-H" />
+    <None Include="..\Resource\CMap\KSC-EUC-V" />
+    <None Include="..\Resource\CMap\KSC-H" />
+    <None Include="..\Resource\CMap\KSC-Johab-H" />
+    <None Include="..\Resource\CMap\KSC-Johab-V" />
+    <None Include="..\Resource\CMap\KSC-RKSJ-H" />
+    <None Include="..\Resource\CMap\KSC-V" />
+    <None Include="..\Resource\CMap\KSC2-RKSJ-H" />
+    <None Include="..\Resource\CMap\KSCms-UHC-H" />
+    <None Include="..\Resource\CMap\KSCms-UHC-HW-H" />
+    <None Include="..\Resource\CMap\KSCms-UHC-HW-V" />
+    <None Include="..\Resource\CMap\KSCms-UHC-UCS2" />
+    <None Include="..\Resource\CMap\KSCms-UHC-V" />
+    <None Include="..\Resource\CMap\KSCpc-EUC-H" />
+    <None Include="..\Resource\CMap\KSCpc-EUC-UCS2" />
+    <None Include="..\Resource\CMap\KSCpc-EUC-UCS2C" />
+    <None Include="..\Resource\CMap\KSCpc-EUC-V" />
+    <None Include="..\Resource\CMap\NWP-H" />
+    <None Include="..\Resource\CMap\NWP-V" />
+    <None Include="..\Resource\CMap\RKSJ-H" />
+    <None Include="..\Resource\CMap\RKSJ-V" />
+    <None Include="..\Resource\CMap\Roman" />
+    <None Include="..\Resource\CMap\TCVN-RKSJ-H" />
+    <None Include="..\Resource\CMap\UCS2-90ms-RKSJ" />
+    <None Include="..\Resource\CMap\UCS2-90pv-RKSJ" />
+    <None Include="..\Resource\CMap\UCS2-B5pc" />
+    <None Include="..\Resource\CMap\UCS2-ETen-B5" />
+    <None Include="..\Resource\CMap\UCS2-GBK-EUC" />
+    <None Include="..\Resource\CMap\UCS2-GBpc-EUC" />
+    <None Include="..\Resource\CMap\UCS2-KSCms-UHC" />
+    <None Include="..\Resource\CMap\UCS2-KSCpc-EUC" />
+    <None Include="..\Resource\CMap\UniCNS-UCS2-H" />
+    <None Include="..\Resource\CMap\UniCNS-UCS2-V" />
+    <None Include="..\Resource\CMap\UniCNS-UTF16-H" />
+    <None Include="..\Resource\CMap\UniCNS-UTF16-V" />
+    <None Include="..\Resource\CMap\UniCNS-UTF32-H" />
+    <None Include="..\Resource\CMap\UniCNS-UTF32-V" />
+    <None Include="..\Resource\CMap\UniCNS-UTF8-H" />
+    <None Include="..\Resource\CMap\UniCNS-UTF8-V" />
+    <None Include="..\Resource\CMap\UniGB-UCS2-H" />
+    <None Include="..\Resource\CMap\UniGB-UCS2-V" />
+    <None Include="..\Resource\CMap\UniGB-UTF16-H" />
+    <None Include="..\Resource\CMap\UniGB-UTF16-V" />
+    <None Include="..\Resource\CMap\UniGB-UTF32-H" />
+    <None Include="..\Resource\CMap\UniGB-UTF32-V" />
+    <None Include="..\Resource\CMap\UniGB-UTF8-H" />
+    <None Include="..\Resource\CMap\UniGB-UTF8-V" />
+    <None Include="..\Resource\CMap\UniHojo-UCS2-H" />
+    <None Include="..\Resource\CMap\UniHojo-UCS2-V" />
+    <None Include="..\Resource\CMap\UniHojo-UTF16-H" />
+    <None Include="..\Resource\CMap\UniHojo-UTF16-V" />
+    <None Include="..\Resource\CMap\UniHojo-UTF32-H" />
+    <None Include="..\Resource\CMap\UniHojo-UTF32-V" />
+    <None Include="..\Resource\CMap\UniHojo-UTF8-H" />
+    <None Include="..\Resource\CMap\UniHojo-UTF8-V" />
+    <None Include="..\Resource\CMap\UniJIS-UCS2-H" />
+    <None Include="..\Resource\CMap\UniJIS-UCS2-HW-H" />
+    <None Include="..\Resource\CMap\UniJIS-UCS2-HW-V" />
+    <None Include="..\Resource\CMap\UniJIS-UCS2-V" />
+    <None Include="..\Resource\CMap\UniJIS-UTF16-H" />
+    <None Include="..\Resource\CMap\UniJIS-UTF16-V" />
+    <None Include="..\Resource\CMap\UniJIS-UTF32-H" />
+    <None Include="..\Resource\CMap\UniJIS-UTF32-V" />
+    <None Include="..\Resource\CMap\UniJIS-UTF8-H" />
+    <None Include="..\Resource\CMap\UniJIS-UTF8-V" />
+    <None Include="..\Resource\CMap\UniJIS2004-UTF16-H" />
+    <None Include="..\Resource\CMap\UniJIS2004-UTF16-V" />
+    <None Include="..\Resource\CMap\UniJIS2004-UTF32-H" />
+    <None Include="..\Resource\CMap\UniJIS2004-UTF32-V" />
+    <None Include="..\Resource\CMap\UniJIS2004-UTF8-H" />
+    <None Include="..\Resource\CMap\UniJIS2004-UTF8-V" />
+    <None Include="..\Resource\CMap\UniJISPro-UCS2-HW-V" />
+    <None Include="..\Resource\CMap\UniJISPro-UCS2-V" />
+    <None Include="..\Resource\CMap\UniJISPro-UTF8-V" />
+    <None Include="..\Resource\CMap\UniJISX0213-UTF32-H" />
+    <None Include="..\Resource\CMap\UniJISX0213-UTF32-V" />
+    <None Include="..\Resource\CMap\UniJISX02132004-UTF32-H" />
+    <None Include="..\Resource\CMap\UniJISX02132004-UTF32-V" />
+    <None Include="..\Resource\CMap\UniKS-UCS2-H" />
+    <None Include="..\Resource\CMap\UniKS-UCS2-V" />
+    <None Include="..\Resource\CMap\UniKS-UTF16-H" />
+    <None Include="..\Resource\CMap\UniKS-UTF16-V" />
+    <None Include="..\Resource\CMap\UniKS-UTF32-H" />
+    <None Include="..\Resource\CMap\UniKS-UTF32-V" />
+    <None Include="..\Resource\CMap\UniKS-UTF8-H" />
+    <None Include="..\Resource\CMap\UniKS-UTF8-V" />
+    <None Include="..\Resource\CMap\V" />
+    <None Include="..\Resource\CMap\WP-Symbol" />
+    <None Include="..\Resource\ColorSpace\DefaultCMYK" />
+    <None Include="..\Resource\ColorSpace\DefaultGray" />
+    <None Include="..\Resource\ColorSpace\DefaultRGB" />
+    <None Include="..\Resource\ColorSpace\sGray" />
+    <None Include="..\Resource\ColorSpace\sRGB" />
+    <None Include="..\Resource\ColorSpace\TrivialCMYK" />
+    <None Include="..\Resource\Decoding\FCO_Dingbats" />
+    <None Include="..\Resource\Decoding\FCO_Symbol" />
+    <None Include="..\Resource\Decoding\FCO_Unicode" />
+    <None Include="..\Resource\Decoding\FCO_Wingdings" />
+    <None Include="..\Resource\Decoding\Latin1" />
+    <None Include="..\Resource\Decoding\StandardEncoding" />
+    <None Include="..\Resource\Decoding\Unicode" />
+    <None Include="..\Resource\Encoding\Wingdings" />
+    <None Include="..\Resource\Font\CenturySchL-Bold" />
+    <None Include="..\Resource\Font\CenturySchL-BoldItal" />
+    <None Include="..\Resource\Font\CenturySchL-Ital" />
+    <None Include="..\Resource\Font\CenturySchL-Roma" />
+    <None Include="..\Resource\Font\Dingbats" />
+    <None Include="..\Resource\Font\NimbusMonL-Bold" />
+    <None Include="..\Resource\Font\NimbusMonL-BoldObli" />
+    <None Include="..\Resource\Font\NimbusMonL-Regu" />
+    <None Include="..\Resource\Font\NimbusMonL-ReguObli" />
+    <None Include="..\Resource\Font\NimbusRomNo9L-Medi" />
+    <None Include="..\Resource\Font\NimbusRomNo9L-MediItal" />
+    <None Include="..\Resource\Font\NimbusRomNo9L-Regu" />
+    <None Include="..\Resource\Font\NimbusRomNo9L-ReguItal" />
+    <None Include="..\Resource\Font\NimbusSanL-Bold" />
+    <None Include="..\Resource\Font\NimbusSanL-BoldCond" />
+    <None Include="..\Resource\Font\NimbusSanL-BoldCondItal" />
+    <None Include="..\Resource\Font\NimbusSanL-BoldItal" />
+    <None Include="..\Resource\Font\NimbusSanL-Regu" />
+    <None Include="..\Resource\Font\NimbusSanL-ReguCond" />
+    <None Include="..\Resource\Font\NimbusSanL-ReguCondItal" />
+    <None Include="..\Resource\Font\NimbusSanL-ReguItal" />
+    <None Include="..\Resource\Font\StandardSymL" />
+    <None Include="..\Resource\Font\URWBookmanL-DemiBold" />
+    <None Include="..\Resource\Font\URWBookmanL-DemiBoldItal" />
+    <None Include="..\Resource\Font\URWBookmanL-Ligh" />
+    <None Include="..\Resource\Font\URWBookmanL-LighItal" />
+    <None Include="..\Resource\Font\URWChanceryL-MediItal" />
+    <None Include="..\Resource\Font\URWGothicL-Book" />
+    <None Include="..\Resource\Font\URWGothicL-BookObli" />
+    <None Include="..\Resource\Font\URWGothicL-Demi" />
+    <None Include="..\Resource\Font\URWGothicL-DemiObli" />
+    <None Include="..\Resource\Font\URWPalladioL-Bold" />
+    <None Include="..\Resource\Font\URWPalladioL-BoldItal" />
+    <None Include="..\Resource\Font\URWPalladioL-Ital" />
+    <None Include="..\Resource\Font\URWPalladioL-Roma" />
+    <None Include="..\Resource\Init\cidfmap" />
+    <None Include="..\Resource\Init\FCOfontmap-PCLPS2" />
+    <None Include="..\Resource\Init\Fontmap" />
+    <None Include="..\Resource\Init\Fontmap.GS" />
+    <None Include="..\Resource\Init\gs_agl.ps" />
+    <None Include="..\Resource\Init\gs_btokn.ps" />
+    <None Include="..\Resource\Init\gs_cet.ps" />
+    <None Include="..\Resource\Init\gs_cff.ps" />
+    <None Include="..\Resource\Init\gs_cidcm.ps" />
+    <None Include="..\Resource\Init\gs_ciddc.ps" />
+    <None Include="..\Resource\Init\gs_cidfm.ps" />
+    <None Include="..\Resource\Init\gs_cidfn.ps" />
+    <None Include="..\Resource\Init\gs_cidtt.ps" />
+    <None Include="..\Resource\Init\gs_cmap.ps" />
+    <None Include="..\Resource\Init\gs_cspace.ps" />
+    <None Include="..\Resource\Init\gs_css_e.ps" />
+    <None Include="..\Resource\Init\gs_dbt_e.ps" />
+    <None Include="..\Resource\Init\gs_diskf.ps" />
+    <None Include="..\Resource\Init\gs_diskn.ps" />
+    <None Include="..\Resource\Init\gs_dps1.ps" />
+    <None Include="..\Resource\Init\gs_dps2.ps" />
+    <None Include="..\Resource\Init\gs_dscp.ps" />
+    <None Include="..\Resource\Init\gs_epsf.ps" />
+    <None Include="..\Resource\Init\gs_fapi.ps" />
+    <None Include="..\Resource\Init\gs_fntem.ps" />
+    <None Include="..\Resource\Init\gs_fonts.ps" />
+    <None Include="..\Resource\Init\gs_frsd.ps" />
+    <None Include="..\Resource\Init\gs_icc.ps" />
+    <None Include="..\Resource\Init\gs_il1_e.ps" />
+    <None Include="..\Resource\Init\gs_img.ps" />
+    <None Include="..\Resource\Init\gs_init.ps" />
+    <None Include="..\Resource\Init\gs_lev2.ps" />
+    <None Include="..\Resource\Init\gs_ll3.ps" />
+    <None Include="..\Resource\Init\gs_mex_e.ps" />
+    <None Include="..\Resource\Init\gs_mgl_e.ps" />
+    <None Include="..\Resource\Init\gs_mro_e.ps" />
+    <None Include="..\Resource\Init\gs_pdfwr.ps" />
+    <None Include="..\Resource\Init\gs_pdf_e.ps" />
+    <None Include="..\Resource\Init\gs_res.ps" />
+    <None Include="..\Resource\Init\gs_resmp.ps" />
+    <None Include="..\Resource\Init\gs_setpd.ps" />
+    <None Include="..\Resource\Init\gs_statd.ps" />
+    <None Include="..\Resource\Init\gs_std_e.ps" />
+    <None Include="..\Resource\Init\gs_sym_e.ps" />
+    <None Include="..\Resource\Init\gs_trap.ps" />
+    <None Include="..\Resource\Init\gs_ttf.ps" />
+    <None Include="..\Resource\Init\gs_typ32.ps" />
+    <None Include="..\Resource\Init\gs_typ42.ps" />
+    <None Include="..\Resource\Init\gs_type1.ps" />
+    <None Include="..\Resource\Init\gs_wan_e.ps" />
+    <None Include="..\Resource\Init\pdf_base.ps" />
+    <None Include="..\Resource\Init\pdf_cslayer.ps" />
+    <None Include="..\Resource\Init\pdf_draw.ps" />
+    <None Include="..\Resource\Init\pdf_font.ps" />
+    <None Include="..\Resource\Init\pdf_main.ps" />
+    <None Include="..\Resource\Init\pdf_ops.ps" />
+    <None Include="..\Resource\Init\pdf_rbld.ps" />
+    <None Include="..\Resource\Init\pdf_sec.ps" />
+    <None Include="..\Resource\Init\xlatmap" />
+    <None Include="..\Resource\SubstCID\CNS1-WMode" />
+    <None Include="..\Resource\SubstCID\GB1-WMode" />
+    <None Include="..\Resource\SubstCID\Japan1-WMode" />
+    <None Include="..\Resource\SubstCID\Korea1-WMode" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\base\aes.c" />
+    <ClCompile Include="..\base\bench.c" />
+    <ClCompile Include="..\base\bobbin.c" />
+    <ClCompile Include="..\base\claptrap-init.c" />
+    <ClCompile Include="..\base\claptrap-planar.c" />
+    <ClCompile Include="..\base\claptrap.c" />
+    <ClCompile Include="..\base\echogs.c" />
+    <ClCompile Include="..\base\ets.c" />
+    <ClCompile Include="..\base\fapibstm.c" />
+    <ClCompile Include="..\base\fapiufst.c" />
+    <ClCompile Include="..\base\fapi_ft.c" />
+    <ClCompile Include="..\base\gconf.c" />
+    <ClCompile Include="..\base\gdevabuf.c" />
+    <ClCompile Include="..\base\gdevbbox.c" />
+    <ClCompile Include="..\base\gdevdbit.c" />
+    <ClCompile Include="..\base\gdevdcrd.c" />
+    <ClCompile Include="..\base\gdevddrw.c" />
+    <ClCompile Include="..\base\gdevdevn.c" />
+    <ClCompile Include="..\base\gdevdflt.c" />
+    <ClCompile Include="..\base\gdevdgbr.c" />
+    <ClCompile Include="..\base\gdevdrop.c" />
+    <ClCompile Include="..\base\gdevdsha.c" />
+    <ClCompile Include="..\base\gdevemap.c" />
+    <ClCompile Include="..\base\gdevepo.c" />
+    <ClCompile Include="..\base\gdevflp.c" />
+    <ClCompile Include="..\base\gdevhit.c" />
+    <ClCompile Include="..\base\gdevm1.c" />
+    <ClCompile Include="..\base\gdevm16.c" />
+    <ClCompile Include="..\base\gdevm2.c" />
+    <ClCompile Include="..\base\gdevm24.c" />
+    <ClCompile Include="..\base\gdevm32.c" />
+    <ClCompile Include="..\base\gdevm4.c" />
+    <ClCompile Include="..\base\gdevm40.c" />
+    <ClCompile Include="..\base\gdevm48.c" />
+    <ClCompile Include="..\base\gdevm56.c" />
+    <ClCompile Include="..\base\gdevm64.c" />
+    <ClCompile Include="..\base\gdevm8.c" />
+    <ClCompile Include="..\base\gdevmem.c" />
+    <ClCompile Include="..\base\gdevmpla.c" />
+    <ClCompile Include="..\base\gdevmplt.c" />
+    <ClCompile Include="..\base\gdevmr1.c" />
+    <ClCompile Include="..\base\gdevmr2n.c" />
+    <ClCompile Include="..\base\gdevmr8n.c" />
+    <ClCompile Include="..\base\gdevmrun.c" />
+    <ClCompile Include="..\base\gdevmx.c" />
+    <ClCompile Include="..\base\gdevnfwd.c" />
+    <ClCompile Include="..\base\gdevoflt.c" />
+    <ClCompile Include="..\base\gdevp14.c" />
+    <ClCompile Include="..\base\gdevpccm.c" />
+    <ClCompile Include="..\base\gdevpipe.c" />
+    <ClCompile Include="..\base\gdevplnx.c" />
+    <ClCompile Include="..\base\gdevppla.c" />
+    <ClCompile Include="..\base\gdevprn.c" />
+    <ClCompile Include="..\base\gdevrops.c" />
+    <ClCompile Include="..\base\gdevsclass.c" />
+    <ClCompile Include="..\base\gdevvec.c" />
+    <ClCompile Include="..\base\genarch.c" />
+    <ClCompile Include="..\base\genconf.c" />
+    <ClCompile Include="..\base\gendev.c" />
+    <ClCompile Include="..\base\genht.c" />
+    <ClCompile Include="..\base\gpmisc.c" />
+    <ClCompile Include="..\base\gp_dosfe.c" />
+    <ClCompile Include="..\base\gp_dosfs.c" />
+    <ClCompile Include="..\base\gp_dvx.c" />
+    <ClCompile Include="..\base\gp_getnv.c" />
+    <ClCompile Include="..\base\gp_iwatc.c" />
+    <ClCompile Include="..\base\gp_mac.c" />
+    <ClCompile Include="..\base\gp_macio.c" />
+    <ClCompile Include="..\base\gp_macpoll.c" />
+    <ClCompile Include="..\base\gp_mktmp.c" />
+    <ClCompile Include="..\base\gp_msdll.c" />
+    <ClCompile Include="..\base\gp_msdos.c" />
+    <ClCompile Include="..\base\gp_mshdl.c" />
+    <ClCompile Include="..\base\gp_mslib.c" />
+    <ClCompile Include="..\base\gp_mspol.c" />
+    <ClCompile Include="..\base\gp_msprn.c" />
+    <ClCompile Include="..\base\gp_mswin.c" />
+    <ClCompile Include="..\base\gp_nsync.c" />
+    <ClCompile Include="..\base\gp_ntfs.c" />
+    <ClCompile Include="..\base\gp_os2.c" />
+    <ClCompile Include="..\base\gp_os2fs.c" />
+    <ClCompile Include="..\base\gp_os2pr.c" />
+    <ClCompile Include="..\base\gp_os9.c" />
+    <ClCompile Include="..\base\gp_paper.c" />
+    <ClCompile Include="..\base\gp_psync.c" />
+    <ClCompile Include="..\base\gp_stdia.c" />
+    <ClCompile Include="..\base\gp_stdin.c" />
+    <ClCompile Include="..\base\gp_strdl.c" />
+    <ClCompile Include="..\base\gp_unifn.c" />
+    <ClCompile Include="..\base\gp_unifs.c" />
+    <ClCompile Include="..\base\gp_unix.c" />
+    <ClCompile Include="..\base\gp_unix_cache.c" />
+    <ClCompile Include="..\base\gp_upapr.c" />
+    <ClCompile Include="..\base\gp_vms.c" />
+    <ClCompile Include="..\base\gp_wgetv.c" />
+    <ClCompile Include="..\base\gp_win32.c" />
+    <ClCompile Include="..\base\gp_winfs.c" />
+    <ClCompile Include="..\base\gp_winfs2.c" />
+    <ClCompile Include="..\base\gp_wpapr.c" />
+    <ClCompile Include="..\base\gp_wsync.c" />
+    <ClCompile Include="..\base\gp_wutf8.c" />
+    <ClCompile Include="..\base\gsalloc.c" />
+    <ClCompile Include="..\base\gsalpha.c" />
+    <ClCompile Include="..\base\gsalphac.c" />
+    <ClCompile Include="..\base\gsargs.c" />
+    <ClCompile Include="..\base\gsbitcom.c" />
+    <ClCompile Include="..\base\gsbitops.c" />
+    <ClCompile Include="..\base\gsbittab.c" />
+    <ClCompile Include="..\base\gscdef.c" />
+    <ClCompile Include="..\base\gscdevn.c" />
+    <ClCompile Include="..\base\gscedata.c" />
+    <ClCompile Include="..\base\gscencs.c" />
+    <ClCompile Include="..\base\gschar.c" />
+    <ClCompile Include="..\base\gschar0.c" />
+    <ClCompile Include="..\base\gscicach.c" />
+    <ClCompile Include="..\base\gscie.c" />
+    <ClCompile Include="..\base\gsciemap.c" />
+    <ClCompile Include="..\base\gsclipsr.c" />
+    <ClCompile Include="..\base\gscolor.c" />
+    <ClCompile Include="..\base\gscolor1.c" />
+    <ClCompile Include="..\base\gscolor2.c" />
+    <ClCompile Include="..\base\gscolor3.c" />
+    <ClCompile Include="..\base\gscoord.c" />
+    <ClCompile Include="..\base\gscparam.c" />
+    <ClCompile Include="..\base\gscpixel.c" />
+    <ClCompile Include="..\base\gscrd.c" />
+    <ClCompile Include="..\base\gscrdp.c" />
+    <ClCompile Include="..\base\gscrypt1.c" />
+    <ClCompile Include="..\base\gscscie.c" />
+    <ClCompile Include="..\base\gscsepr.c" />
+    <ClCompile Include="..\base\gscspace.c" />
+    <ClCompile Include="..\base\gscssub.c" />
+    <ClCompile Include="..\base\gsdevice.c" />
+    <ClCompile Include="..\base\gsdevmem.c" />
+    <ClCompile Include="..\base\gsdparam.c" />
+    <ClCompile Include="..\base\gsdps1.c" />
+    <ClCompile Include="..\base\gsdsrc.c" />
+    <ClCompile Include="..\base\gsequivc.c" />
+    <ClCompile Include="..\base\gsfcid.c" />
+    <ClCompile Include="..\base\gsfcid2.c" />
+    <ClCompile Include="..\base\gsfcmap.c" />
+    <ClCompile Include="..\base\gsfcmap1.c" />
+    <ClCompile Include="..\base\gsflip.c" />
+    <ClCompile Include="..\base\gsfname.c" />
+    <ClCompile Include="..\base\gsfont.c" />
+    <ClCompile Include="..\base\gsfont0.c" />
+    <ClCompile Include="..\base\gsfont0c.c" />
+    <ClCompile Include="..\base\gsfunc.c" />
+    <ClCompile Include="..\base\gsfunc0.c" />
+    <ClCompile Include="..\base\gsfunc3.c" />
+    <ClCompile Include="..\base\gsfunc4.c" />
+    <ClCompile Include="..\base\gsgcache.c" />
+    <ClCompile Include="..\base\gsgdata.c" />
+    <ClCompile Include="..\base\gsgstate.c" />
+    <ClCompile Include="..\base\gshsb.c" />
+    <ClCompile Include="..\base\gsht.c" />
+    <ClCompile Include="..\base\gsht1.c" />
+    <ClCompile Include="..\base\gshtscr.c" />
+    <ClCompile Include="..\base\gshtx.c" />
+    <ClCompile Include="..\base\gsicc.c" />
+    <ClCompile Include="..\base\gsicc_cache.c" />
+    <ClCompile Include="..\base\gsicc_create.c" />
+    <ClCompile Include="..\base\gsicc_lcms2.c" />
+    <ClCompile Include="..\base\gsicc_lcms2mt.c" />
+    <ClCompile Include="..\base\gsicc_manage.c" />
+    <ClCompile Include="..\base\gsicc_monitorcm.c" />
+    <ClCompile Include="..\base\gsicc_nocm.c" />
+    <ClCompile Include="..\base\gsicc_profilecache.c" />
+    <ClCompile Include="..\base\gsicc_replacecm.c" />
+    <ClCompile Include="..\base\gsimage.c" />
+    <ClCompile Include="..\base\gsimpath.c" />
+    <ClCompile Include="..\base\gsinit.c" />
+    <ClCompile Include="..\base\gsiodev.c" />
+    <ClCompile Include="..\base\gsiodevs.c" />
+    <ClCompile Include="..\base\gsiodisk.c" />
+    <ClCompile Include="..\base\gsiomacres.c" />
+    <ClCompile Include="..\base\gsioram.c" />
+    <ClCompile Include="..\base\gsiorom.c" />
+    <ClCompile Include="..\base\gsistate.c" />
+    <ClCompile Include="..\base\gslib.c" />
+    <ClCompile Include="..\base\gslibctx.c" />
+    <ClCompile Include="..\base\gsline.c" />
+    <ClCompile Include="..\base\gsmalloc.c" />
+    <ClCompile Include="..\base\gsmatrix.c" />
+    <ClCompile Include="..\base\gsmchunk.c" />
+    <ClCompile Include="..\base\gsmd5.c" />
+    <ClCompile Include="..\base\gsmemory.c" />
+    <ClCompile Include="..\base\gsmemret.c" />
+    <ClCompile Include="..\base\gsmisc.c" />
+    <ClCompile Include="..\base\gsnogc.c" />
+    <ClCompile Include="..\base\gsnorop.c" />
+    <ClCompile Include="..\base\gsnotify.c" />
+    <ClCompile Include="..\base\gsovrc.c" />
+    <ClCompile Include="..\base\gspaint.c" />
+    <ClCompile Include="..\base\gsparam.c" />
+    <ClCompile Include="..\base\gsparam2.c" />
+    <ClCompile Include="..\base\gsparams.c" />
+    <ClCompile Include="..\base\gsparamx.c" />
+    <ClCompile Include="..\base\gspath.c" />
+    <ClCompile Include="..\base\gspath1.c" />
+    <ClCompile Include="..\base\gspcolor.c" />
+    <ClCompile Include="..\base\gspmdrv.c" />
+    <ClCompile Include="..\base\gsptype1.c" />
+    <ClCompile Include="..\base\gsptype2.c" />
+    <ClCompile Include="..\base\gsromfs0.c" />
+    <ClCompile Include="..\base\gsrop.c" />
+    <ClCompile Include="..\base\gsroprun.c" />
+    <ClCompile Include="..\base\gsroptab.c" />
+    <ClCompile Include="..\base\gsserial.c" />
+    <ClCompile Include="..\base\gsshade.c" />
+    <ClCompile Include="..\base\gsstate.c" />
+    <ClCompile Include="..\base\gsstrl.c" />
+    <ClCompile Include="..\base\gstext.c" />
+    <ClCompile Include="..\base\gstiffio.c" />
+    <ClCompile Include="..\base\gstrans.c" />
+    <ClCompile Include="..\base\gstrap.c" />
+    <ClCompile Include="..\base\gstype1.c" />
+    <ClCompile Include="..\base\gstype2.c" />
+    <ClCompile Include="..\base\gstype42.c" />
+    <ClCompile Include="..\base\gsutil.c" />
+    <ClCompile Include="..\base\gxacpath.c" />
+    <ClCompile Include="..\base\gxbcache.c" />
+    <ClCompile Include="..\base\gxblend.c" />
+    <ClCompile Include="..\base\gxblend1.c" />
+    <ClCompile Include="..\base\gxccache.c" />
+    <ClCompile Include="..\base\gxccman.c" />
+    <ClCompile Include="..\base\gxchar.c" />
+    <ClCompile Include="..\base\gxchrout.c" />
+    <ClCompile Include="..\base\gxcht.c" />
+    <ClCompile Include="..\base\gxclbits.c" />
+    <ClCompile Include="..\base\gxclfile.c" />
+    <ClCompile Include="..\base\gxclimag.c" />
+    <ClCompile Include="..\base\gxclip.c" />
+    <ClCompile Include="..\base\gxclip2.c" />
+    <ClCompile Include="..\base\gxclipm.c" />
+    <ClCompile Include="..\base\gxclist.c" />
+    <ClCompile Include="..\base\gxcllzw.c" />
+    <ClCompile Include="..\base\gxclmem.c" />
+    <ClCompile Include="..\base\gxclpage.c" />
+    <ClCompile Include="..\base\gxclpath.c" />
+    <ClCompile Include="..\base\gxclrast.c" />
+    <ClCompile Include="..\base\gxclread.c" />
+    <ClCompile Include="..\base\gxclrect.c" />
+    <ClCompile Include="..\base\gxclthrd.c" />
+    <ClCompile Include="..\base\gxclutil.c" />
+    <ClCompile Include="..\base\gxclzlib.c" />
+    <ClCompile Include="..\base\gxcmap.c" />
+    <ClCompile Include="..\base\gxcpath.c" />
+    <ClCompile Include="..\base\gxctable.c" />
+    <ClCompile Include="..\base\gxdcconv.c" />
+    <ClCompile Include="..\base\gxdcolor.c" />
+    <ClCompile Include="..\base\gxdevndi.c" />
+    <ClCompile Include="..\base\gxdhtserial.c" />
+    <ClCompile Include="..\base\gxdownscale.c" />
+    <ClCompile Include="..\base\gxfapi.c" />
+    <ClCompile Include="..\base\gxfapiu.c" />
+    <ClCompile Include="..\base\gxfcopy.c" />
+    <ClCompile Include="..\base\gxfdrop.c" />
+    <ClCompile Include="..\base\gxfill.c" />
+    <ClCompile Include="..\base\gxhintn.c" />
+    <ClCompile Include="..\base\gxhintn1.c" />
+    <ClCompile Include="..\base\gxhldevc.c" />
+    <ClCompile Include="..\base\gxht.c" />
+    <ClCompile Include="..\base\gxhtbit.c" />
+    <ClCompile Include="..\base\gxht_thresh.c" />
+    <ClCompile Include="..\base\gxi12bit.c" />
+    <ClCompile Include="..\base\gxi16bit.c" />
+    <ClCompile Include="..\base\gxicolor.c" />
+    <ClCompile Include="..\base\gxidata.c" />
+    <ClCompile Include="..\base\gxifast.c" />
+    <ClCompile Include="..\base\gximag3x.c" />
+    <ClCompile Include="..\base\gximage.c" />
+    <ClCompile Include="..\base\gximage1.c" />
+    <ClCompile Include="..\base\gximage3.c" />
+    <ClCompile Include="..\base\gximage4.c" />
+    <ClCompile Include="..\base\gximask.c" />
+    <ClCompile Include="..\base\gximdecode.c" />
+    <ClCompile Include="..\base\gximono.c" />
+    <ClCompile Include="..\base\gxino12b.c" />
+    <ClCompile Include="..\base\gxino16b.c" />
+    <ClCompile Include="..\base\gxipixel.c" />
+    <ClCompile Include="..\base\gxiscale.c" />
+    <ClCompile Include="..\base\gxmclip.c" />
+    <ClCompile Include="..\base\gxoprect.c" />
+    <ClCompile Include="..\base\gxp1fill.c" />
+    <ClCompile Include="..\base\gxpageq.c" />
+    <ClCompile Include="..\base\gxpaint.c" />
+    <ClCompile Include="..\base\gxpath.c" />
+    <ClCompile Include="..\base\gxpath2.c" />
+    <ClCompile Include="..\base\gxpcmap.c" />
+    <ClCompile Include="..\base\gxpcopy.c" />
+    <ClCompile Include="..\base\gxpdash.c" />
+    <ClCompile Include="..\base\gxpdash2.c" />
+    <ClCompile Include="..\base\gxpflat.c" />
+    <ClCompile Include="..\base\gxsample.c" />
+    <ClCompile Include="..\base\gxscanc.c" />
+    <ClCompile Include="..\base\gxshade.c" />
+    <ClCompile Include="..\base\gxshade1.c" />
+    <ClCompile Include="..\base\gxshade4.c" />
+    <ClCompile Include="..\base\gxshade6.c" />
+    <ClCompile Include="..\base\gxstroke.c" />
+    <ClCompile Include="..\base\gxsync.c" />
+    <ClCompile Include="..\base\gxttfb.c" />
+    <ClCompile Include="..\base\gxtype1.c" />
+    <ClCompile Include="..\base\gzspotan.c" />
+    <ClCompile Include="..\base\jmemcust.c" />
+    <ClCompile Include="..\base\memento.c" />
+    <ClCompile Include="..\base\minftrsz.c" />
+    <ClCompile Include="..\base\mkromfs.c" />
+    <ClCompile Include="..\base\ramfs.c" />
+    <ClCompile Include="..\base\rinkj\evenbetter-rll.c" />
+    <ClCompile Include="..\base\rinkj\rinkj-byte-stream.c" />
+    <ClCompile Include="..\base\rinkj\rinkj-config.c" />
+    <ClCompile Include="..\base\rinkj\rinkj-device.c" />
+    <ClCompile Include="..\base\rinkj\rinkj-dither.c" />
+    <ClCompile Include="..\base\rinkj\rinkj-epson870.c" />
+    <ClCompile Include="..\base\rinkj\rinkj-screen-eb.c" />
+    <ClCompile Include="..\base\sa85d.c" />
+    <ClCompile Include="..\base\saes.c" />
+    <ClCompile Include="..\base\sarc4.c" />
+    <ClCompile Include="..\base\sbcp.c" />
+    <ClCompile Include="..\base\sbhc.c" />
+    <ClCompile Include="..\base\sbwbs.c" />
+    <ClCompile Include="..\base\scantab.c" />
+    <ClCompile Include="..\base\scfd.c" />
+    <ClCompile Include="..\base\scfdgen.c" />
+    <ClCompile Include="..\base\scfdtab.c" />
+    <ClCompile Include="..\base\scfe.c" />
+    <ClCompile Include="..\base\scfetab.c" />
+    <ClCompile Include="..\base\scfparam.c" />
+    <ClCompile Include="..\base\sdcparam.c" />
+    <ClCompile Include="..\base\sdctc.c" />
+    <ClCompile Include="..\base\sdctd.c" />
+    <ClCompile Include="..\base\sdcte.c" />
+    <ClCompile Include="..\base\sddparam.c" />
+    <ClCompile Include="..\base\sdeparam.c" />
+    <ClCompile Include="..\base\seexec.c" />
+    <ClCompile Include="..\base\sfilter2.c" />
+    <ClCompile Include="..\base\sfxboth.c" />
+    <ClCompile Include="..\base\sfxcommon.c" />
+    <ClCompile Include="..\base\sfxfd.c" />
+    <ClCompile Include="..\base\sfxstdio.c" />
+    <ClCompile Include="..\base\shc.c" />
+    <ClCompile Include="..\base\shcgen.c" />
+    <ClCompile Include="..\base\sidscale.c" />
+    <ClCompile Include="..\base\siinterp.c" />
+    <ClCompile Include="..\base\simscale.c" />
+    <ClCompile Include="..\base\siscale.c" />
+    <ClCompile Include="..\base\siscale_cal.c" />
+    <ClCompile Include="..\base\sjbig2.c" />
+    <ClCompile Include="..\base\sjbig2_luratech.c" />
+    <ClCompile Include="..\base\sjpegc.c" />
+    <ClCompile Include="..\base\sjpegd.c" />
+    <ClCompile Include="..\base\sjpege.c" />
+    <ClCompile Include="..\base\sjpx.c" />
+    <ClCompile Include="..\base\sjpx_luratech.c" />
+    <ClCompile Include="..\base\sjpx_openjpeg.c" />
+    <ClCompile Include="..\base\slzwc.c" />
+    <ClCompile Include="..\base\slzwd.c" />
+    <ClCompile Include="..\base\slzwe.c" />
+    <ClCompile Include="..\base\smd5.c" />
+    <ClCompile Include="..\base\spdiff.c" />
+    <ClCompile Include="..\base\spngp.c" />
+    <ClCompile Include="..\base\spprint.c" />
+    <ClCompile Include="..\base\spsdf.c" />
+    <ClCompile Include="..\base\spwgd.c" />
+    <ClCompile Include="..\base\srld.c" />
+    <ClCompile Include="..\base\srle.c" />
+    <ClCompile Include="..\base\sstring.c" />
+    <ClCompile Include="..\base\stream.c" />
+    <ClCompile Include="..\base\strmio.c" />
+    <ClCompile Include="..\base\szlibc.c" />
+    <ClCompile Include="..\base\szlibd.c" />
+    <ClCompile Include="..\base\szlibe.c" />
+    <ClCompile Include="..\base\ttcalc.c" />
+    <ClCompile Include="..\base\ttfinp.c" />
+    <ClCompile Include="..\base\ttfmain.c" />
+    <ClCompile Include="..\base\ttfmemd.c" />
+    <ClCompile Include="..\base\ttinterp.c" />
+    <ClCompile Include="..\base\ttload.c" />
+    <ClCompile Include="..\base\ttobjs.c" />
+    <ClCompile Include="..\base\vdtrace.c" />
+    <ClCompile Include="..\contrib\eplaser\gdevescv.c" />
+    <ClCompile Include="..\contrib\gdevbjca.c" />
+    <ClCompile Include="..\contrib\gdevbjc_.c" />
+    <ClCompile Include="..\contrib\gdevcd8.c" />
+    <ClCompile Include="..\contrib\gdevdj9.c" />
+    <ClCompile Include="..\contrib\gdevgdi.c" />
+    <ClCompile Include="..\contrib\gdevhl12.c" />
+    <ClCompile Include="..\contrib\gdevln03.c" />
+    <ClCompile Include="..\contrib\gdevlx32.c" />
+    <ClCompile Include="..\contrib\gdevlx50.c" />
+    <ClCompile Include="..\contrib\gdevlx7.c" />
+    <ClCompile Include="..\contrib\gdevmd2k.c" />
+    <ClCompile Include="..\contrib\gdevop4w.c" />
+    <ClCompile Include="..\contrib\gdevxes.c" />
+    <ClCompile Include="..\contrib\japanese\dviprlib.c" />
+    <ClCompile Include="..\contrib\japanese\gdev10v.c" />
+    <ClCompile Include="..\contrib\japanese\gdevalps.c" />
+    <ClCompile Include="..\contrib\japanese\gdevdmpr.c" />
+    <ClCompile Include="..\contrib\japanese\gdevespg.c" />
+    <ClCompile Include="..\contrib\japanese\gdevfmlbp.c" />
+    <ClCompile Include="..\contrib\japanese\gdevfmpr.c" />
+    <ClCompile Include="..\contrib\japanese\gdevj100.c" />
+    <ClCompile Include="..\contrib\japanese\gdevlbp3.c" />
+    <ClCompile Include="..\contrib\japanese\gdevmag.c" />
+    <ClCompile Include="..\contrib\japanese\gdevmjc.c" />
+    <ClCompile Include="..\contrib\japanese\gdevml6.c" />
+    <ClCompile Include="..\contrib\japanese\gdevnpdl.c" />
+    <ClCompile Include="..\contrib\japanese\gdevp201.c" />
+    <ClCompile Include="..\contrib\japanese\gdevrpdl.c" />
+    <ClCompile Include="..\contrib\lips4\gdevl4r.c" />
+    <ClCompile Include="..\contrib\lips4\gdevl4v.c" />
+    <ClCompile Include="..\contrib\lips4\gdevlips.c" />
+    <ClCompile Include="..\contrib\lips4\gdevlprn.c" />
+    <ClCompile Include="..\contrib\opvp\gdevopvp.c" />
+    <ClCompile Include="..\contrib\pcl3\eprn\eprnfs.c" />
+    <ClCompile Include="..\contrib\pcl3\eprn\eprnparm.c" />
+    <ClCompile Include="..\contrib\pcl3\eprn\eprnrend.c" />
+    <ClCompile Include="..\contrib\pcl3\eprn\gdeveprn.c" />
+    <ClCompile Include="..\contrib\pcl3\eprn\mediasize.c" />
+    <ClCompile Include="..\contrib\pcl3\eprn\pagecount.c" />
+    <ClCompile Include="..\contrib\pcl3\src\gdevpcl3.c" />
+    <ClCompile Include="..\contrib\pcl3\src\pcl3opts.c" />
+    <ClCompile Include="..\contrib\pcl3\src\pclcap.c" />
+    <ClCompile Include="..\contrib\pcl3\src\pclcomp.c" />
+    <ClCompile Include="..\contrib\pcl3\src\pclgen.c" />
+    <ClCompile Include="..\contrib\pcl3\src\pclscan.c" />
+    <ClCompile Include="..\contrib\pcl3\src\pclsize.c" />
+    <ClCompile Include="..\contrib\pscolor\test.c" />
+    <ClCompile Include="..\cups\gdevcups.c" />
+    <ClCompile Include="..\cups\libs\cups\adminutil.c" />
+    <ClCompile Include="..\cups\libs\cups\array.c" />
+    <ClCompile Include="..\cups\libs\cups\attr.c" />
+    <ClCompile Include="..\cups\libs\cups\auth.c" />
+    <ClCompile Include="..\cups\libs\cups\backchannel.c" />
+    <ClCompile Include="..\cups\libs\cups\backend.c" />
+    <ClCompile Include="..\cups\libs\cups\conflicts.c" />
+    <ClCompile Include="..\cups\libs\cups\custom.c" />
+    <ClCompile Include="..\cups\libs\cups\debug.c" />
+    <ClCompile Include="..\cups\libs\cups\dest.c" />
+    <ClCompile Include="..\cups\libs\cups\dir.c" />
+    <ClCompile Include="..\cups\libs\cups\emit.c" />
+    <ClCompile Include="..\cups\libs\cups\encode.c" />
+    <ClCompile Include="..\cups\libs\cups\file.c" />
+    <ClCompile Include="..\cups\libs\cups\getdevices.c" />
+    <ClCompile Include="..\cups\libs\cups\getifaddrs.c" />
+    <ClCompile Include="..\cups\libs\cups\getputfile.c" />
+    <ClCompile Include="..\cups\libs\cups\globals.c" />
+    <ClCompile Include="..\cups\libs\cups\http-addr.c" />
+    <ClCompile Include="..\cups\libs\cups\http-addrlist.c" />
+    <ClCompile Include="..\cups\libs\cups\http-support.c" />
+    <ClCompile Include="..\cups\libs\cups\http.c" />
+    <ClCompile Include="..\cups\libs\cups\ipp-support.c" />
+    <ClCompile Include="..\cups\libs\cups\ipp.c" />
+    <ClCompile Include="..\cups\libs\cups\langprintf.c" />
+    <ClCompile Include="..\cups\libs\cups\language.c" />
+    <ClCompile Include="..\cups\libs\cups\localize.c" />
+    <ClCompile Include="..\cups\libs\cups\mark.c" />
+    <ClCompile Include="..\cups\libs\cups\md5.c" />
+    <ClCompile Include="..\cups\libs\cups\md5passwd.c" />
+    <ClCompile Include="..\cups\libs\cups\notify.c" />
+    <ClCompile Include="..\cups\libs\cups\options.c" />
+    <ClCompile Include="..\cups\libs\cups\page.c" />
+    <ClCompile Include="..\cups\libs\cups\ppd.c" />
+    <ClCompile Include="..\cups\libs\cups\pwg-file.c" />
+    <ClCompile Include="..\cups\libs\cups\pwg-media.c" />
+    <ClCompile Include="..\cups\libs\cups\pwg-ppd.c" />
+    <ClCompile Include="..\cups\libs\cups\request.c" />
+    <ClCompile Include="..\cups\libs\cups\sidechannel.c" />
+    <ClCompile Include="..\cups\libs\cups\snmp.c" />
+    <ClCompile Include="..\cups\libs\cups\snprintf.c" />
+    <ClCompile Include="..\cups\libs\cups\string.c" />
+    <ClCompile Include="..\cups\libs\cups\tempfile.c" />
+    <ClCompile Include="..\cups\libs\cups\testadmin.c" />
+    <ClCompile Include="..\cups\libs\cups\testarray.c" />
+    <ClCompile Include="..\cups\libs\cups\testconflicts.c" />
+    <ClCompile Include="..\cups\libs\cups\testcups.c" />
+    <ClCompile Include="..\cups\libs\cups\testfile.c" />
+    <ClCompile Include="..\cups\libs\cups\testhttp.c" />
+    <ClCompile Include="..\cups\libs\cups\testi18n.c" />
+    <ClCompile Include="..\cups\libs\cups\testipp.c" />
+    <ClCompile Include="..\cups\libs\cups\testlang.c" />
+    <ClCompile Include="..\cups\libs\cups\testoptions.c" />
+    <ClCompile Include="..\cups\libs\cups\testppd.c" />
+    <ClCompile Include="..\cups\libs\cups\testpwg.c" />
+    <ClCompile Include="..\cups\libs\cups\testsnmp.c" />
+    <ClCompile Include="..\cups\libs\cups\transcode.c" />
+    <ClCompile Include="..\cups\libs\cups\usersys.c" />
+    <ClCompile Include="..\cups\libs\cups\util.c" />
+    <ClCompile Include="..\cups\libs\filter\common.c" />
+    <ClCompile Include="..\cups\libs\filter\error.c" />
+    <ClCompile Include="..\cups\libs\filter\image-bmp.c" />
+    <ClCompile Include="..\cups\libs\filter\image-colorspace.c" />
+    <ClCompile Include="..\cups\libs\filter\image-gif.c" />
+    <ClCompile Include="..\cups\libs\filter\image-jpeg.c" />
+    <ClCompile Include="..\cups\libs\filter\image-photocd.c" />
+    <ClCompile Include="..\cups\libs\filter\image-pix.c" />
+    <ClCompile Include="..\cups\libs\filter\image-png.c" />
+    <ClCompile Include="..\cups\libs\filter\image-pnm.c" />
+    <ClCompile Include="..\cups\libs\filter\image-sgi.c" />
+    <ClCompile Include="..\cups\libs\filter\image-sgilib.c" />
+    <ClCompile Include="..\cups\libs\filter\image-sun.c" />
+    <ClCompile Include="..\cups\libs\filter\image-tiff.c" />
+    <ClCompile Include="..\cups\libs\filter\image-zoom.c" />
+    <ClCompile Include="..\cups\libs\filter\image.c" />
+    <ClCompile Include="..\cups\libs\filter\interpret.c" />
+    <ClCompile Include="..\cups\libs\filter\raster.c" />
+    <ClCompile Include="..\cups\pdftoraster.c" />
+    <ClCompile Include="..\devices\gdev3852.c" />
+    <ClCompile Include="..\devices\gdev4081.c" />
+    <ClCompile Include="..\devices\gdev4693.c" />
+    <ClCompile Include="..\devices\gdev8510.c" />
+    <ClCompile Include="..\devices\gdev8bcm.c" />
+    <ClCompile Include="..\devices\gdevatx.c" />
+    <ClCompile Include="..\devices\gdevbit.c" />
+    <ClCompile Include="..\devices\gdevbj10.c" />
+    <ClCompile Include="..\devices\gdevbjcl.c" />
+    <ClCompile Include="..\devices\gdevbmp.c" />
+    <ClCompile Include="..\devices\gdevbmpa.c" />
+    <ClCompile Include="..\devices\gdevbmpc.c" />
+    <ClCompile Include="..\devices\gdevccr.c" />
+    <ClCompile Include="..\devices\gdevcdj.c" />
+    <ClCompile Include="..\devices\gdevcfax.c" />
+    <ClCompile Include="..\devices\gdevchameleon.c" />
+    <ClCompile Include="..\devices\gdevcif.c" />
+    <ClCompile Include="..\devices\gdevclj.c" />
+    <ClCompile Include="..\devices\gdevcljc.c" />
+    <ClCompile Include="..\devices\gdevcmykog.c" />
+    <ClCompile Include="..\devices\gdevcslw.c" />
+    <ClCompile Include="..\devices\gdevdfax.c" />
+    <ClCompile Include="..\devices\gdevdjet.c" />
+    <ClCompile Include="..\devices\gdevdjtc.c" />
+    <ClCompile Include="..\devices\gdevdljm.c" />
+    <ClCompile Include="..\devices\gdevdm24.c" />
+    <ClCompile Include="..\devices\gdevdsp.c" />
+    <ClCompile Include="..\devices\gdevepsc.c" />
+    <ClCompile Include="..\devices\gdevepsn.c" />
+    <ClCompile Include="..\devices\gdevescp.c" />
+    <ClCompile Include="..\devices\gdevfax.c" />
+    <ClCompile Include="..\devices\gdevfpng.c" />
+    <ClCompile Include="..\devices\gdevhl7x.c" />
+    <ClCompile Include="..\devices\gdevicov.c" />
+    <ClCompile Include="..\devices\gdevifno.c" />
+    <ClCompile Include="..\devices\gdevijs.c" />
+    <ClCompile Include="..\devices\gdevimgn.c" />
+    <ClCompile Include="..\devices\gdevjbig2.c" />
+    <ClCompile Include="..\devices\gdevjpeg.c" />
+    <ClCompile Include="..\devices\gdevjpx.c" />
+    <ClCompile Include="..\devices\gdevl31s.c" />
+    <ClCompile Include="..\devices\gdevlbp8.c" />
+    <ClCompile Include="..\devices\gdevlp8k.c" />
+    <ClCompile Include="..\devices\gdevlxm.c" />
+    <ClCompile Include="..\devices\gdevmeds.c" />
+    <ClCompile Include="..\devices\gdevmgr.c" />
+    <ClCompile Include="..\devices\gdevmiff.c" />
+    <ClCompile Include="..\devices\gdevmsxf.c" />
+    <ClCompile Include="..\devices\gdevn533.c" />
+    <ClCompile Include="..\devices\gdevo182.c" />
+    <ClCompile Include="..\devices\gdevokii.c" />
+    <ClCompile Include="..\devices\gdevp2up.c" />
+    <ClCompile Include="..\devices\gdevpbm.c" />
+    <ClCompile Include="..\devices\gdevpcfb.c" />
+    <ClCompile Include="..\devices\gdevpcl.c" />
+    <ClCompile Include="..\devices\gdevpcx.c" />
+    <ClCompile Include="..\devices\gdevpdfimg.c" />
+    <ClCompile Include="..\devices\gdevpe.c" />
+    <ClCompile Include="..\devices\gdevperm.c" />
+    <ClCompile Include="..\devices\gdevphex.c" />
+    <ClCompile Include="..\devices\gdevpjet.c" />
+    <ClCompile Include="..\devices\gdevplan.c" />
+    <ClCompile Include="..\devices\gdevplib.c" />
+    <ClCompile Include="..\devices\gdevpng.c" />
+    <ClCompile Include="..\devices\gdevprna.c" />
+    <ClCompile Include="..\devices\gdevpsd.c" />
+    <ClCompile Include="..\devices\gdevpsim.c" />
+    <ClCompile Include="..\devices\gdevpxut.c" />
+    <ClCompile Include="..\devices\gdevrinkj.c" />
+    <ClCompile Include="..\devices\gdevsj48.c" />
+    <ClCompile Include="..\devices\gdevsnfb.c" />
+    <ClCompile Include="..\devices\gdevstc.c" />
+    <ClCompile Include="..\devices\gdevstc1.c" />
+    <ClCompile Include="..\devices\gdevstc2.c" />
+    <ClCompile Include="..\devices\gdevstc3.c" />
+    <ClCompile Include="..\devices\gdevstc4.c" />
+    <ClCompile Include="..\devices\gdevtfax.c" />
+    <ClCompile Include="..\devices\gdevtfnx.c" />
+    <ClCompile Include="..\devices\gdevtifs.c" />
+    <ClCompile Include="..\devices\gdevtknk.c" />
+    <ClCompile Include="..\devices\gdevtrac.c" />
+    <ClCompile Include="..\devices\gdevtsep.c" />
+    <ClCompile Include="..\devices\gdevupd.c" />
+    <ClCompile Include="..\devices\gdevwddb.c" />
+    <ClCompile Include="..\devices\gdevwpr2.c" />
+    <ClCompile Include="..\devices\gdevx.c" />
+    <ClCompile Include="..\devices\gdevxalt.c" />
+    <ClCompile Include="..\devices\gdevxcf.c" />
+    <ClCompile Include="..\devices\gdevxcmp.c" />
+    <ClCompile Include="..\devices\gdevxini.c" />
+    <ClCompile Include="..\devices\gdevxres.c" />
+    <ClCompile Include="..\devices\gxfcopy.c" />
+    <ClCompile Include="..\devices\minftrsz.c" />
+    <ClCompile Include="..\devices\rinkj\evenbetter-rll.c" />
+    <ClCompile Include="..\devices\rinkj\rinkj-byte-stream.c" />
+    <ClCompile Include="..\devices\rinkj\rinkj-config.c" />
+    <ClCompile Include="..\devices\rinkj\rinkj-device.c" />
+    <ClCompile Include="..\devices\rinkj\rinkj-dither.c" />
+    <ClCompile Include="..\devices\rinkj\rinkj-epson870.c" />
+    <ClCompile Include="..\devices\rinkj\rinkj-screen-eb.c" />
+    <ClCompile Include="..\devices\vector\gdevagl.c" />
+    <ClCompile Include="..\devices\vector\gdevlj56.c" />
+    <ClCompile Include="..\devices\vector\gdevpdf.c" />
+    <ClCompile Include="..\devices\vector\gdevpdfb.c" />
+    <ClCompile Include="..\devices\vector\gdevpdfc.c" />
+    <ClCompile Include="..\devices\vector\gdevpdfd.c" />
+    <ClCompile Include="..\devices\vector\gdevpdfe.c" />
+    <ClCompile Include="..\devices\vector\gdevpdfg.c" />
+    <ClCompile Include="..\devices\vector\gdevpdfi.c" />
+    <ClCompile Include="..\devices\vector\gdevpdfj.c" />
+    <ClCompile Include="..\devices\vector\gdevpdfk.c" />
+    <ClCompile Include="..\devices\vector\gdevpdfm.c" />
+    <ClCompile Include="..\devices\vector\gdevpdfo.c" />
+    <ClCompile Include="..\devices\vector\gdevpdfp.c" />
+    <ClCompile Include="..\devices\vector\gdevpdfr.c" />
+    <ClCompile Include="..\devices\vector\gdevpdft.c" />
+    <ClCompile Include="..\devices\vector\gdevpdfu.c" />
+    <ClCompile Include="..\devices\vector\gdevpdfv.c" />
+    <ClCompile Include="..\devices\vector\gdevpdt.c" />
+    <ClCompile Include="..\devices\vector\gdevpdtb.c" />
+    <ClCompile Include="..\devices\vector\gdevpdtc.c" />
+    <ClCompile Include="..\devices\vector\gdevpdtd.c" />
+    <ClCompile Include="..\devices\vector\gdevpdte.c" />
+    <ClCompile Include="..\devices\vector\gdevpdtf.c" />
+    <ClCompile Include="..\devices\vector\gdevpdti.c" />
+    <ClCompile Include="..\devices\vector\gdevpdts.c" />
+    <ClCompile Include="..\devices\vector\gdevpdtt.c" />
+    <ClCompile Include="..\devices\vector\gdevpdtv.c" />
+    <ClCompile Include="..\devices\vector\gdevpdtw.c" />
+    <ClCompile Include="..\devices\vector\gdevps.c" />
+    <ClCompile Include="..\devices\vector\gdevpsdi.c" />
+    <ClCompile Include="..\devices\vector\gdevpsdp.c" />
+    <ClCompile Include="..\devices\vector\gdevpsds.c" />
+    <ClCompile Include="..\devices\vector\gdevpsdu.c" />
+    <ClCompile Include="..\devices\vector\gdevpsf1.c" />
+    <ClCompile Include="..\devices\vector\gdevpsf2.c" />
+    <ClCompile Include="..\devices\vector\gdevpsfm.c" />
+    <ClCompile Include="..\devices\vector\gdevpsft.c" />
+    <ClCompile Include="..\devices\vector\gdevpsfu.c" />
+    <ClCompile Include="..\devices\vector\gdevpsfx.c" />
+    <ClCompile Include="..\devices\vector\gdevpsu.c" />
+    <ClCompile Include="..\devices\vector\gdevpx.c" />
+    <ClCompile Include="..\devices\vector\gdevsvg.c" />
+    <ClCompile Include="..\devices\vector\gdevtxtw.c" />
+    <ClCompile Include="..\devices\vector\gdevxps.c" />
+    <ClCompile Include="..\devices\vector\whitelst.c" />
+    <ClCompile Include="..\expat\lib\xmlparse.c" />
+    <ClCompile Include="..\expat\lib\xmlrole.c" />
+    <ClCompile Include="..\expat\lib\xmltok.c" />
+    <ClCompile Include="..\expat\lib\xmltok_impl.c" />
+    <ClCompile Include="..\expat\lib\xmltok_ns.c" />
+    <ClCompile Include="..\expat\tests\benchmark\benchmark.c" />
+    <ClCompile Include="..\expat\tests\chardata.c" />
+    <ClCompile Include="..\expat\tests\minicheck.c" />
+    <ClCompile Include="..\expat\tests\runtests.c" />
+    <ClCompile Include="..\expat\tests\runtestspp.cpp" />
+    <ClCompile Include="..\ijs\ijs.c" />
+    <ClCompile Include="..\ijs\ijs_client.c" />
+    <ClCompile Include="..\ijs\ijs_client_example.c" />
+    <ClCompile Include="..\ijs\ijs_exec_unix.c" />
+    <ClCompile Include="..\ijs\ijs_exec_win.c" />
+    <ClCompile Include="..\ijs\ijs_server.c" />
+    <ClCompile Include="..\ijs\ijs_server_example.c" />
+    <ClCompile Include="..\jbig2dec\getopt.c" />
+    <ClCompile Include="..\jbig2dec\getopt1.c" />
+    <ClCompile Include="..\jbig2dec\jbig2.c" />
+    <ClCompile Include="..\jbig2dec\jbig2dec.c" />
+    <ClCompile Include="..\jbig2dec\jbig2_arith.c" />
+    <ClCompile Include="..\jbig2dec\jbig2_arith_iaid.c" />
+    <ClCompile Include="..\jbig2dec\jbig2_arith_int.c" />
+    <ClCompile Include="..\jbig2dec\jbig2_generic.c" />
+    <ClCompile Include="..\jbig2dec\jbig2_huffman.c" />
+    <ClCompile Include="..\jbig2dec\jbig2_hufftab.c" />
+    <ClCompile Include="..\jbig2dec\jbig2_image.c" />
+    <ClCompile Include="..\jbig2dec\jbig2_image_pbm.c" />
+    <ClCompile Include="..\jbig2dec\jbig2_image_png.c" />
+    <ClCompile Include="..\jbig2dec\jbig2_mmr.c" />
+    <ClCompile Include="..\jbig2dec\jbig2_page.c" />
+    <ClCompile Include="..\jbig2dec\jbig2_refinement.c" />
+    <ClCompile Include="..\jbig2dec\jbig2_segment.c" />
+    <ClCompile Include="..\jbig2dec\jbig2_symbol_dict.c" />
+    <ClCompile Include="..\jbig2dec\jbig2_text.c" />
+    <ClCompile Include="..\jbig2dec\memcmp.c" />
+    <ClCompile Include="..\jbig2dec\sha1.c" />
+    <ClCompile Include="..\jbig2dec\snprintf.c" />
+    <ClCompile Include="..\jpegxr\algo.c" />
+    <ClCompile Include="..\jpegxr\api.c" />
+    <ClCompile Include="..\jpegxr\cr_parse.c" />
+    <ClCompile Include="..\jpegxr\cw_emit.c" />
+    <ClCompile Include="..\jpegxr\dllmain.c" />
+    <ClCompile Include="..\jpegxr\file.c" />
+    <ClCompile Include="..\jpegxr\flags.c" />
+    <ClCompile Include="..\jpegxr\init.c" />
+    <ClCompile Include="..\jpegxr\io.c" />
+    <ClCompile Include="..\jpegxr\jpegxr.c" />
+    <ClCompile Include="..\jpegxr\jpegxr_pixelformat.c" />
+    <ClCompile Include="..\jpegxr\qp.tab.c" />
+    <ClCompile Include="..\jpegxr\qp_lexor.c" />
+    <ClCompile Include="..\jpegxr\r_parse.c" />
+    <ClCompile Include="..\jpegxr\r_strip.c" />
+    <ClCompile Include="..\jpegxr\r_tile_frequency.c" />
+    <ClCompile Include="..\jpegxr\r_tile_spatial.c" />
+    <ClCompile Include="..\jpegxr\w_emit.c" />
+    <ClCompile Include="..\jpegxr\w_strip.c" />
+    <ClCompile Include="..\jpegxr\w_tile_frequency.c" />
+    <ClCompile Include="..\jpegxr\w_tile_spatial.c" />
+    <ClCompile Include="..\jpegxr\x_strip.c" />
+    <ClCompile Include="..\jpeg\ansi2knr.c" />
+    <ClCompile Include="..\jpeg\cdjpeg.c" />
+    <ClCompile Include="..\jpeg\cjpeg.c" />
+    <ClCompile Include="..\jpeg\ckconfig.c" />
+    <ClCompile Include="..\jpeg\djpeg.c" />
+    <ClCompile Include="..\jpeg\example.c" />
+    <ClCompile Include="..\jpeg\jcapimin.c" />
+    <ClCompile Include="..\jpeg\jcapistd.c" />
+    <ClCompile Include="..\jpeg\jccoefct.c" />
+    <ClCompile Include="..\jpeg\jccolor.c" />
+    <ClCompile Include="..\jpeg\jcdctmgr.c" />
+    <ClCompile Include="..\jpeg\jchuff.c" />
+    <ClCompile Include="..\jpeg\jcinit.c" />
+    <ClCompile Include="..\jpeg\jcmainct.c" />
+    <ClCompile Include="..\jpeg\jcmarker.c" />
+    <ClCompile Include="..\jpeg\jcmaster.c" />
+    <ClCompile Include="..\jpeg\jcomapi.c" />
+    <ClCompile Include="..\jpeg\jcparam.c" />
+    <ClCompile Include="..\jpeg\jcphuff.c" />
+    <ClCompile Include="..\jpeg\jcprepct.c" />
+    <ClCompile Include="..\jpeg\jcsample.c" />
+    <ClCompile Include="..\jpeg\jctrans.c" />
+    <ClCompile Include="..\jpeg\jdapimin.c" />
+    <ClCompile Include="..\jpeg\jdapistd.c" />
+    <ClCompile Include="..\jpeg\jdatadst.c" />
+    <ClCompile Include="..\jpeg\jdatasrc.c" />
+    <ClCompile Include="..\jpeg\jdcoefct.c" />
+    <ClCompile Include="..\jpeg\jdcolor.c" />
+    <ClCompile Include="..\jpeg\jddctmgr.c" />
+    <ClCompile Include="..\jpeg\jdhuff.c" />
+    <ClCompile Include="..\jpeg\jdinput.c" />
+    <ClCompile Include="..\jpeg\jdmainct.c" />
+    <ClCompile Include="..\jpeg\jdmarker.c" />
+    <ClCompile Include="..\jpeg\jdmaster.c" />
+    <ClCompile Include="..\jpeg\jdmerge.c" />
+    <ClCompile Include="..\jpeg\jdphuff.c" />
+    <ClCompile Include="..\jpeg\jdpostct.c" />
+    <ClCompile Include="..\jpeg\jdsample.c" />
+    <ClCompile Include="..\jpeg\jdtrans.c" />
+    <ClCompile Include="..\jpeg\jerror.c" />
+    <ClCompile Include="..\jpeg\jfdctflt.c" />
+    <ClCompile Include="..\jpeg\jfdctfst.c" />
+    <ClCompile Include="..\jpeg\jfdctint.c" />
+    <ClCompile Include="..\jpeg\jidctflt.c" />
+    <ClCompile Include="..\jpeg\jidctfst.c" />
+    <ClCompile Include="..\jpeg\jidctint.c" />
+    <ClCompile Include="..\jpeg\jidctred.c" />
+    <ClCompile Include="..\jpeg\jmemansi.c" />
+    <ClCompile Include="..\jpeg\jmemdos.c" />
+    <ClCompile Include="..\jpeg\jmemmac.c" />
+    <ClCompile Include="..\jpeg\jmemmgr.c" />
+    <ClCompile Include="..\jpeg\jmemname.c" />
+    <ClCompile Include="..\jpeg\jmemnobs.c" />
+    <ClCompile Include="..\jpeg\jpegtran.c" />
+    <ClCompile Include="..\jpeg\jquant1.c" />
+    <ClCompile Include="..\jpeg\jquant2.c" />
+    <ClCompile Include="..\jpeg\jutils.c" />
+    <ClCompile Include="..\jpeg\rdbmp.c" />
+    <ClCompile Include="..\jpeg\rdcolmap.c" />
+    <ClCompile Include="..\jpeg\rdgif.c" />
+    <ClCompile Include="..\jpeg\rdjpgcom.c" />
+    <ClCompile Include="..\jpeg\rdppm.c" />
+    <ClCompile Include="..\jpeg\rdrle.c" />
+    <ClCompile Include="..\jpeg\rdswitch.c" />
+    <ClCompile Include="..\jpeg\rdtarga.c" />
+    <ClCompile Include="..\jpeg\transupp.c" />
+    <ClCompile Include="..\jpeg\wrbmp.c" />
+    <ClCompile Include="..\jpeg\wrgif.c" />
+    <ClCompile Include="..\jpeg\wrjpgcom.c" />
+    <ClCompile Include="..\jpeg\wrppm.c" />
+    <ClCompile Include="..\jpeg\wrrle.c" />
+    <ClCompile Include="..\jpeg\wrtarga.c" />
+    <ClCompile Include="..\lcms2mt\src\cmsalpha.c" />
+    <ClCompile Include="..\lcms2mt\src\cmscam02.c" />
+    <ClCompile Include="..\lcms2mt\src\cmscgats.c" />
+    <ClCompile Include="..\lcms2mt\src\cmscnvrt.c" />
+    <ClCompile Include="..\lcms2mt\src\cmserr.c" />
+    <ClCompile Include="..\lcms2mt\src\cmsgamma.c" />
+    <ClCompile Include="..\lcms2mt\src\cmsgmt.c" />
+    <ClCompile Include="..\lcms2mt\src\cmshalf.c" />
+    <ClCompile Include="..\lcms2mt\src\cmsintrp.c" />
+    <ClCompile Include="..\lcms2mt\src\cmsio0.c" />
+    <ClCompile Include="..\lcms2mt\src\cmsio1.c" />
+    <ClCompile Include="..\lcms2mt\src\cmslut.c" />
+    <ClCompile Include="..\lcms2mt\src\cmsmd5.c" />
+    <ClCompile Include="..\lcms2mt\src\cmsmtrx.c" />
+    <ClCompile Include="..\lcms2mt\src\cmsnamed.c" />
+    <ClCompile Include="..\lcms2mt\src\cmsopt.c" />
+    <ClCompile Include="..\lcms2mt\src\cmspack.c" />
+    <ClCompile Include="..\lcms2mt\src\cmspcs.c" />
+    <ClCompile Include="..\lcms2mt\src\cmsplugin.c" />
+    <ClCompile Include="..\lcms2mt\src\cmsps2.c" />
+    <ClCompile Include="..\lcms2mt\src\cmssamp.c" />
+    <ClCompile Include="..\lcms2mt\src\cmssm.c" />
+    <ClCompile Include="..\lcms2mt\src\cmstypes.c" />
+    <ClCompile Include="..\lcms2mt\src\cmsvirt.c" />
+    <ClCompile Include="..\lcms2mt\src\cmswtpnt.c" />
+    <ClCompile Include="..\lcms2mt\src\cmsxform.c" />
+    <ClCompile Include="..\libpng\example.c" />
+    <ClCompile Include="..\libpng\png.c" />
+    <ClCompile Include="..\libpng\pngerror.c" />
+    <ClCompile Include="..\libpng\pnggccrd.c" />
+    <ClCompile Include="..\libpng\pngget.c" />
+    <ClCompile Include="..\libpng\pngmem.c" />
+    <ClCompile Include="..\libpng\pngpread.c" />
+    <ClCompile Include="..\libpng\pngread.c" />
+    <ClCompile Include="..\libpng\pngrio.c" />
+    <ClCompile Include="..\libpng\pngrtran.c" />
+    <ClCompile Include="..\libpng\pngrutil.c" />
+    <ClCompile Include="..\libpng\pngset.c" />
+    <ClCompile Include="..\libpng\pngtest.c" />
+    <ClCompile Include="..\libpng\pngtrans.c" />
+    <ClCompile Include="..\libpng\pngvcrd.c" />
+    <ClCompile Include="..\libpng\pngwio.c" />
+    <ClCompile Include="..\libpng\pngwrite.c" />
+    <ClCompile Include="..\libpng\pngwtran.c" />
+    <ClCompile Include="..\libpng\pngwutil.c" />
+    <ClCompile Include="..\openjpeg\src\lib\openjp2\bio.c" />
+    <ClCompile Include="..\openjpeg\src\lib\openjp2\cidx_manager.c" />
+    <ClCompile Include="..\openjpeg\src\lib\openjp2\cio.c" />
+    <ClCompile Include="..\openjpeg\src\lib\openjp2\dwt.c" />
+    <ClCompile Include="..\openjpeg\src\lib\openjp2\event.c" />
+    <ClCompile Include="..\openjpeg\src\lib\openjp2\function_list.c" />
+    <ClCompile Include="..\openjpeg\src\lib\openjp2\image.c" />
+    <ClCompile Include="..\openjpeg\src\lib\openjp2\invert.c" />
+    <ClCompile Include="..\openjpeg\src\lib\openjp2\j2k.c" />
+    <ClCompile Include="..\openjpeg\src\lib\openjp2\j2k_lib.c" />
+    <ClCompile Include="..\openjpeg\src\lib\openjp2\jp2.c" />
+    <ClCompile Include="..\openjpeg\src\lib\openjp2\jpt.c" />
+    <ClCompile Include="..\openjpeg\src\lib\openjp2\mct.c" />
+    <ClCompile Include="..\openjpeg\src\lib\openjp2\mqc.c" />
+    <ClCompile Include="..\openjpeg\src\lib\openjp2\openjpeg.c" />
+    <ClCompile Include="..\openjpeg\src\lib\openjp2\opj_clock.c" />
+    <ClCompile Include="..\openjpeg\src\lib\openjp2\phix_manager.c" />
+    <ClCompile Include="..\openjpeg\src\lib\openjp2\pi.c" />
+    <ClCompile Include="..\openjpeg\src\lib\openjp2\ppix_manager.c" />
+    <ClCompile Include="..\openjpeg\src\lib\openjp2\t1.c" />
+    <ClCompile Include="..\openjpeg\src\lib\openjp2\t1_generate_luts.c" />
+    <ClCompile Include="..\openjpeg\src\lib\openjp2\t2.c" />
+    <ClCompile Include="..\openjpeg\src\lib\openjp2\tcd.c" />
+    <ClCompile Include="..\openjpeg\src\lib\openjp2\tgt.c" />
+    <ClCompile Include="..\openjpeg\src\lib\openjp2\thix_manager.c" />
+    <ClCompile Include="..\openjpeg\src\lib\openjp2\thread.c" />
+    <ClCompile Include="..\openjpeg\src\lib\openjp2\tpix_manager.c" />
+    <ClCompile Include="..\psi\dmmain.c" />
+    <ClCompile Include="..\psi\dpmain.c" />
+    <ClCompile Include="..\psi\dscparse.c" />
+    <ClCompile Include="..\psi\dwdll.c" />
+    <ClCompile Include="..\psi\dwimg.c" />
+    <ClCompile Include="..\psi\dwinst.cpp" />
+    <ClCompile Include="..\psi\dwmain.c" />
+    <ClCompile Include="..\psi\dwmainc.c" />
+    <ClCompile Include="..\psi\dwnodll.c" />
+    <ClCompile Include="..\psi\dwreg.c" />
+    <ClCompile Include="..\psi\dwsetup.cpp" />
+    <ClCompile Include="..\psi\dwtext.c" />
+    <ClCompile Include="..\psi\dwtrace.c" />
+    <ClCompile Include="..\psi\dwuninst.cpp" />
+    <ClCompile Include="..\psi\dxmain.c" />
+    <ClCompile Include="..\psi\dxmainc.c" />
+    <ClCompile Include="..\psi\gs.c" />
+    <ClCompile Include="..\psi\gsdll.c" />
+    <ClCompile Include="..\psi\gserver.c" />
+    <ClCompile Include="..\psi\ialloc.c" />
+    <ClCompile Include="..\psi\iapi.c" />
+    <ClCompile Include="..\psi\ibnum.c" />
+    <ClCompile Include="..\psi\iconf.c" />
+    <ClCompile Include="..\psi\icontext.c" />
+    <ClCompile Include="..\psi\idebug.c" />
+    <ClCompile Include="..\psi\idict.c" />
+    <ClCompile Include="..\psi\idisp.c" />
+    <ClCompile Include="..\psi\idparam.c" />
+    <ClCompile Include="..\psi\idstack.c" />
+    <ClCompile Include="..\psi\igc.c" />
+    <ClCompile Include="..\psi\igcref.c" />
+    <ClCompile Include="..\psi\igcstr.c" />
+    <ClCompile Include="..\psi\iinit.c" />
+    <ClCompile Include="..\psi\ilocate.c" />
+    <ClCompile Include="..\psi\imain.c" />
+    <ClCompile Include="..\psi\imainarg.c" />
+    <ClCompile Include="..\psi\iname.c" />
+    <ClCompile Include="..\psi\inobtokn.c" />
+    <ClCompile Include="..\psi\inouparm.c" />
+    <ClCompile Include="..\psi\interp.c" />
+    <ClCompile Include="..\psi\iparam.c" />
+    <ClCompile Include="..\psi\iplugin.c" />
+    <ClCompile Include="..\psi\ireclaim.c" />
+    <ClCompile Include="..\psi\isave.c" />
+    <ClCompile Include="..\psi\iscan.c" />
+    <ClCompile Include="..\psi\iscanbin.c" />
+    <ClCompile Include="..\psi\iscannum.c" />
+    <ClCompile Include="..\psi\istack.c" />
+    <ClCompile Include="..\psi\iutil.c" />
+    <ClCompile Include="..\psi\iutil2.c" />
+    <ClCompile Include="..\psi\psapi.c" />
+    <ClCompile Include="..\psi\sfilter1.c" />
+    <ClCompile Include="..\psi\wrfont.c" />
+    <ClCompile Include="..\psi\write_t1.c" />
+    <ClCompile Include="..\psi\write_t2.c" />
+    <ClCompile Include="..\psi\zalg.c" />
+    <ClCompile Include="..\psi\zarith.c" />
+    <ClCompile Include="..\psi\zarray.c" />
+    <ClCompile Include="..\psi\zbfont.c" />
+    <ClCompile Include="..\psi\zbseq.c" />
+    <ClCompile Include="..\psi\zcfont.c" />
+    <ClCompile Include="..\psi\zchar.c" />
+    <ClCompile Include="..\psi\zchar1.c" />
+    <ClCompile Include="..\psi\zchar2.c" />
+    <ClCompile Include="..\psi\zchar32.c" />
+    <ClCompile Include="..\psi\zchar42.c" />
+    <ClCompile Include="..\psi\zcharout.c" />
+    <ClCompile Include="..\psi\zcharx.c" />
+    <ClCompile Include="..\psi\zcid.c" />
+    <ClCompile Include="..\psi\zcie.c" />
+    <ClCompile Include="..\psi\zcolor.c" />
+    <ClCompile Include="..\psi\zcolor1.c" />
+    <ClCompile Include="..\psi\zcolor2.c" />
+    <ClCompile Include="..\psi\zcolor3.c" />
+    <ClCompile Include="..\psi\zcontrol.c" />
+    <ClCompile Include="..\psi\zcrd.c" />
+    <ClCompile Include="..\psi\zcsindex.c" />
+    <ClCompile Include="..\psi\zcspixel.c" />
+    <ClCompile Include="..\psi\zcssepr.c" />
+    <ClCompile Include="..\psi\zdevcal.c" />
+    <ClCompile Include="..\psi\zdevice.c" />
+    <ClCompile Include="..\psi\zdevice2.c" />
+    <ClCompile Include="..\psi\zdict.c" />
+    <ClCompile Include="..\psi\zdouble.c" />
+    <ClCompile Include="..\psi\zdps1.c" />
+    <ClCompile Include="..\psi\zdscpars.c" />
+    <ClCompile Include="..\psi\zfaes.c" />
+    <ClCompile Include="..\psi\zfapi.c" />
+    <ClCompile Include="..\psi\zfarc4.c" />
+    <ClCompile Include="..\psi\zfbcp.c" />
+    <ClCompile Include="..\psi\zfcid.c" />
+    <ClCompile Include="..\psi\zfcid0.c" />
+    <ClCompile Include="..\psi\zfcid1.c" />
+    <ClCompile Include="..\psi\zfcmap.c" />
+    <ClCompile Include="..\psi\zfdctd.c" />
+    <ClCompile Include="..\psi\zfdcte.c" />
+    <ClCompile Include="..\psi\zfdecode.c" />
+    <ClCompile Include="..\psi\zfile.c" />
+    <ClCompile Include="..\psi\zfile1.c" />
+    <ClCompile Include="..\psi\zfileio.c" />
+    <ClCompile Include="..\psi\zfilter.c" />
+    <ClCompile Include="..\psi\zfilter2.c" />
+    <ClCompile Include="..\psi\zfimscale.c" />
+    <ClCompile Include="..\psi\zfjbig2.c" />
+    <ClCompile Include="..\psi\zfjpx.c" />
+    <ClCompile Include="..\psi\zfmd5.c" />
+    <ClCompile Include="..\psi\zfont.c" />
+    <ClCompile Include="..\psi\zfont0.c" />
+    <ClCompile Include="..\psi\zfont1.c" />
+    <ClCompile Include="..\psi\zfont2.c" />
+    <ClCompile Include="..\psi\zfont32.c" />
+    <ClCompile Include="..\psi\zfont42.c" />
+    <ClCompile Include="..\psi\zfontenum.c" />
+    <ClCompile Include="..\psi\zfproc.c" />
+    <ClCompile Include="..\psi\zfrsd.c" />
+    <ClCompile Include="..\psi\zfsample.c" />
+    <ClCompile Include="..\psi\zfunc.c" />
+    <ClCompile Include="..\psi\zfunc0.c" />
+    <ClCompile Include="..\psi\zfunc3.c" />
+    <ClCompile Include="..\psi\zfunc4.c" />
+    <ClCompile Include="..\psi\zfzlib.c" />
+    <ClCompile Include="..\psi\zgeneric.c" />
+    <ClCompile Include="..\psi\zgstate.c" />
+    <ClCompile Include="..\psi\zht.c" />
+    <ClCompile Include="..\psi\zht1.c" />
+    <ClCompile Include="..\psi\zht2.c" />
+    <ClCompile Include="..\psi\zicc.c" />
+    <ClCompile Include="..\psi\zimage.c" />
+    <ClCompile Include="..\psi\zimage3.c" />
+    <ClCompile Include="..\psi\ziodev.c" />
+    <ClCompile Include="..\psi\ziodev2.c" />
+    <ClCompile Include="..\psi\ziodevsc.c" />
+    <ClCompile Include="..\psi\zmath.c" />
+    <ClCompile Include="..\psi\zmatrix.c" />
+    <ClCompile Include="..\psi\zmedia2.c" />
+    <ClCompile Include="..\psi\zmisc.c" />
+    <ClCompile Include="..\psi\zmisc1.c" />
+    <ClCompile Include="..\psi\zmisc2.c" />
+    <ClCompile Include="..\psi\zmisc3.c" />
+    <ClCompile Include="..\psi\zncdummy.c" />
+    <ClCompile Include="..\psi\zpacked.c" />
+    <ClCompile Include="..\psi\zpaint.c" />
+    <ClCompile Include="..\psi\zpath.c" />
+    <ClCompile Include="..\psi\zpath1.c" />
+    <ClCompile Include="..\psi\zpcolor.c" />
+    <ClCompile Include="..\psi\zpdfops.c" />
+    <ClCompile Include="..\psi\zrelbit.c" />
+    <ClCompile Include="..\psi\zshade.c" />
+    <ClCompile Include="..\psi\zstack.c" />
+    <ClCompile Include="..\psi\zstring.c" />
+    <ClCompile Include="..\psi\zsysvm.c" />
+    <ClCompile Include="..\psi\ztoken.c" />
+    <ClCompile Include="..\psi\ztrans.c" />
+    <ClCompile Include="..\psi\ztrap.c" />
+    <ClCompile Include="..\psi\ztype.c" />
+    <ClCompile Include="..\psi\zupath.c" />
+    <ClCompile Include="..\psi\zusparam.c" />
+    <ClCompile Include="..\psi\zvmem.c" />
+    <ClCompile Include="..\psi\zvmem2.c" />
+    <ClCompile Include="..\tiff\libtiff\mkg3states.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_acorn.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_apple.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_atari.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_aux.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_close.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_codec.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_color.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_compress.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_dir.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_dirinfo.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_dirread.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_dirwrite.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_dumpmode.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_error.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_extension.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_fax3.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_fax3sm.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_flush.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_getimage.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_jbig.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_jpeg.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_luv.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_lzw.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_msdos.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_next.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_ojpeg.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_open.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_packbits.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_pixarlog.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_predict.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_print.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_read.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_stream.cxx" />
+    <ClCompile Include="..\tiff\libtiff\tif_strip.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_swab.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_thunder.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_tile.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_unix.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_version.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_warning.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_win3.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_win32.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_write.c" />
+    <ClCompile Include="..\tiff\libtiff\tif_zip.c" />
+    <ClCompile Include="..\tiff\port\dummy.c" />
+    <ClCompile Include="..\tiff\port\getopt.c" />
+    <ClCompile Include="..\tiff\port\lfind.c" />
+    <ClCompile Include="..\tiff\port\strcasecmp.c" />
+    <ClCompile Include="..\tiff\port\strtoul.c" />
+    <ClCompile Include="..\tiff\test\ascii_tag.c" />
+    <ClCompile Include="..\tiff\test\check_tag.c" />
+    <ClCompile Include="..\tiff\test\long_tag.c" />
+    <ClCompile Include="..\tiff\test\short_tag.c" />
+    <ClCompile Include="..\tiff\test\strip.c" />
+    <ClCompile Include="..\tiff\test\strip_rw.c" />
+    <ClCompile Include="..\tiff\test\test_arrays.c" />
+    <ClCompile Include="..\tiff\tools\bmp2tiff.c" />
+    <ClCompile Include="..\tiff\tools\fax2ps.c" />
+    <ClCompile Include="..\tiff\tools\fax2tiff.c" />
+    <ClCompile Include="..\tiff\tools\gif2tiff.c" />
+    <ClCompile Include="..\tiff\tools\pal2rgb.c" />
+    <ClCompile Include="..\tiff\tools\ppm2tiff.c" />
+    <ClCompile Include="..\tiff\tools\ras2tiff.c" />
+    <ClCompile Include="..\tiff\tools\raw2tiff.c" />
+    <ClCompile Include="..\tiff\tools\rgb2ycbcr.c" />
+    <ClCompile Include="..\tiff\tools\sgi2tiff.c" />
+    <ClCompile Include="..\tiff\tools\sgisv.c" />
+    <ClCompile Include="..\tiff\tools\thumbnail.c" />
+    <ClCompile Include="..\tiff\tools\tiff2bw.c" />
+    <ClCompile Include="..\tiff\tools\tiff2pdf.c" />
+    <ClCompile Include="..\tiff\tools\tiff2ps.c" />
+    <ClCompile Include="..\tiff\tools\tiff2rgba.c" />
+    <ClCompile Include="..\tiff\tools\tiffcmp.c" />
+    <ClCompile Include="..\tiff\tools\tiffcp.c" />
+    <ClCompile Include="..\tiff\tools\tiffcrop.c" />
+    <ClCompile Include="..\tiff\tools\tiffdither.c" />
+    <ClCompile Include="..\tiff\tools\tiffdump.c" />
+    <ClCompile Include="..\tiff\tools\tiffgt.c" />
+    <ClCompile Include="..\tiff\tools\tiffinfo.c" />
+    <ClCompile Include="..\tiff\tools\tiffmedian.c" />
+    <ClCompile Include="..\tiff\tools\tiffset.c" />
+    <ClCompile Include="..\tiff\tools\tiffsplit.c" />
+    <ClCompile Include="..\tiff\tools\ycbcr.c" />
+    <ClCompile Include="..\urf\gdevurf.c" />
+    <ClCompile Include="..\urf\surfd.c" />
+    <ClCompile Include="..\urf\urffilter.c" />
+    <ClCompile Include="..\zlib\adler32.c" />
+    <ClCompile Include="..\zlib\compress.c" />
+    <ClCompile Include="..\zlib\crc32.c" />
+    <ClCompile Include="..\zlib\deflate.c" />
+    <ClCompile Include="..\zlib\gzclose.c" />
+    <ClCompile Include="..\zlib\gzlib.c" />
+    <ClCompile Include="..\zlib\gzread.c" />
+    <ClCompile Include="..\zlib\gzwrite.c" />
+    <ClCompile Include="..\zlib\infback.c" />
+    <ClCompile Include="..\zlib\inffast.c" />
+    <ClCompile Include="..\zlib\inflate.c" />
+    <ClCompile Include="..\zlib\inftrees.c" />
+    <ClCompile Include="..\zlib\trees.c" />
+    <ClCompile Include="..\zlib\uncompr.c" />
+    <ClCompile Include="..\zlib\zutil.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\base\aes.h" />
+    <ClInclude Include="..\base\assert_.h" />
+    <ClInclude Include="..\base\bobbin.h" />
+    <ClInclude Include="..\base\claptrap-impl.h" />
+    <ClInclude Include="..\base\claptrap.h" />
+    <ClInclude Include="..\base\ctype_.h" />
+    <ClInclude Include="..\base\dirent_.h" />
+    <ClInclude Include="..\base\dos_.h" />
+    <ClInclude Include="..\base\errno_.h" />
+    <ClInclude Include="..\base\ets.h" />
+    <ClInclude Include="..\base\ets_tm.h" />
+    <ClInclude Include="..\base\fcntl_.h" />
+    <ClInclude Include="..\base\gconf.h" />
+    <ClInclude Include="..\base\gdbflags.h" />
+    <ClInclude Include="..\base\gdebug.h" />
+    <ClInclude Include="..\base\gdevbbox.h" />
+    <ClInclude Include="..\base\gdevdcrd.h" />
+    <ClInclude Include="..\base\gdevddrw.h" />
+    <ClInclude Include="..\base\gdevdevn.h" />
+    <ClInclude Include="..\base\gdevdevnprn.h" />
+    <ClInclude Include="..\base\gdevflp.h" />
+    <ClInclude Include="..\base\gdevmem.h" />
+    <ClInclude Include="..\base\gdevmpla.h" />
+    <ClInclude Include="..\base\gdevmplt.h" />
+    <ClInclude Include="..\base\gdevmrop.h" />
+    <ClInclude Include="..\base\gdevmrun.h" />
+    <ClInclude Include="..\base\gdevoflt.h" />
+    <ClInclude Include="..\base\gdevp14.h" />
+    <ClInclude Include="..\base\gdevpccm.h" />
+    <ClInclude Include="..\base\gdevplnx.h" />
+    <ClInclude Include="..\base\gdevppla.h" />
+    <ClInclude Include="..\base\gdevprn.h" />
+    <ClInclude Include="..\base\gdevpxat.h" />
+    <ClInclude Include="..\base\gdevpxen.h" />
+    <ClInclude Include="..\base\gdevpxop.h" />
+    <ClInclude Include="..\base\gdevsclass.h" />
+    <ClInclude Include="..\base\gdevvec.h" />
+    <ClInclude Include="..\base\gen_ordered.h" />
+    <ClInclude Include="..\base\gp.h" />
+    <ClInclude Include="..\base\gpcheck.h" />
+    <ClInclude Include="..\base\gpgetenv.h" />
+    <ClInclude Include="..\base\gpmisc.h" />
+    <ClInclude Include="..\base\gpsync.h" />
+    <ClInclude Include="..\base\gp_mswin.h" />
+    <ClInclude Include="..\base\gp_os2.h" />
+    <ClInclude Include="..\base\gsalloc.h" />
+    <ClInclude Include="..\base\gsalpha.h" />
+    <ClInclude Include="..\base\gsalphac.h" />
+    <ClInclude Include="..\base\gsargs.h" />
+    <ClInclude Include="..\base\gsbitmap.h" />
+    <ClInclude Include="..\base\gsbitops.h" />
+    <ClInclude Include="..\base\gsbittab.h" />
+    <ClInclude Include="..\base\gsccode.h" />
+    <ClInclude Include="..\base\gsccolor.h" />
+    <ClInclude Include="..\base\gscdefs.h" />
+    <ClInclude Include="..\base\gscdevn.h" />
+    <ClInclude Include="..\base\gscedata.h" />
+    <ClInclude Include="..\base\gscencs.h" />
+    <ClInclude Include="..\base\gschar.h" />
+    <ClInclude Include="..\base\gscicach.h" />
+    <ClInclude Include="..\base\gscie.h" />
+    <ClInclude Include="..\base\gscindex.h" />
+    <ClInclude Include="..\base\gsclipsr.h" />
+    <ClInclude Include="..\base\gscms.h" />
+    <ClInclude Include="..\base\gscolor.h" />
+    <ClInclude Include="..\base\gscolor1.h" />
+    <ClInclude Include="..\base\gscolor2.h" />
+    <ClInclude Include="..\base\gscolor3.h" />
+    <ClInclude Include="..\base\gscompt.h" />
+    <ClInclude Include="..\base\gscoord.h" />
+    <ClInclude Include="..\base\gscpixel.h" />
+    <ClInclude Include="..\base\gscpm.h" />
+    <ClInclude Include="..\base\gscrd.h" />
+    <ClInclude Include="..\base\gscrdp.h" />
+    <ClInclude Include="..\base\gscrypt1.h" />
+    <ClInclude Include="..\base\gscsel.h" />
+    <ClInclude Include="..\base\gscsepr.h" />
+    <ClInclude Include="..\base\gscspace.h" />
+    <ClInclude Include="..\base\gscssub.h" />
+    <ClInclude Include="..\base\gsdcolor.h" />
+    <ClInclude Include="..\base\gsdevice.h" />
+    <ClInclude Include="..\base\gsdll.h" />
+    <ClInclude Include="..\base\gsdllwin.h" />
+    <ClInclude Include="..\base\gsdsrc.h" />
+    <ClInclude Include="..\base\gsequivc.h" />
+    <ClInclude Include="..\base\gserrors.h" />
+    <ClInclude Include="..\base\gsexit.h" />
+    <ClInclude Include="..\base\gsfcmap.h" />
+    <ClInclude Include="..\base\gsflip.h" />
+    <ClInclude Include="..\base\gsfname.h" />
+    <ClInclude Include="..\base\gsfont.h" />
+    <ClInclude Include="..\base\gsform1.h" />
+    <ClInclude Include="..\base\gsfunc.h" />
+    <ClInclude Include="..\base\gsfunc0.h" />
+    <ClInclude Include="..\base\gsfunc3.h" />
+    <ClInclude Include="..\base\gsfunc4.h" />
+    <ClInclude Include="..\base\gsgc.h" />
+    <ClInclude Include="..\base\gsgcache.h" />
+    <ClInclude Include="..\base\gsgdata.h" />
+    <ClInclude Include="..\base\gsgstate.h" />
+    <ClInclude Include="..\base\gshsb.h" />
+    <ClInclude Include="..\base\gsht.h" />
+    <ClInclude Include="..\base\gsht1.h" />
+    <ClInclude Include="..\base\gshtx.h" />
+    <ClInclude Include="..\base\gsicc.h" />
+    <ClInclude Include="..\base\gsicc_cache.h" />
+    <ClInclude Include="..\base\gsicc_cms.h" />
+    <ClInclude Include="..\base\gsicc_create.h" />
+    <ClInclude Include="..\base\gsicc_manage.h" />
+    <ClInclude Include="..\base\gsicc_profilecache.h" />
+    <ClInclude Include="..\base\gsimage.h" />
+    <ClInclude Include="..\base\gsio.h" />
+    <ClInclude Include="..\base\gsiorom.h" />
+    <ClInclude Include="..\base\gsipar3x.h" />
+    <ClInclude Include="..\base\gsiparam.h" />
+    <ClInclude Include="..\base\gsiparm3.h" />
+    <ClInclude Include="..\base\gsiparm4.h" />
+    <ClInclude Include="..\base\gsjconf.h" />
+    <ClInclude Include="..\base\gsjmorec.h" />
+    <ClInclude Include="..\base\gslib.h" />
+    <ClInclude Include="..\base\gslibctx.h" />
+    <ClInclude Include="..\base\gsline.h" />
+    <ClInclude Include="..\base\gslparam.h" />
+    <ClInclude Include="..\base\gsmalloc.h" />
+    <ClInclude Include="..\base\gsmatrix.h" />
+    <ClInclude Include="..\base\gsmchunk.h" />
+    <ClInclude Include="..\base\gsmd5.h" />
+    <ClInclude Include="..\base\gsmdebug.h" />
+    <ClInclude Include="..\base\gsmemory.h" />
+    <ClInclude Include="..\base\gsmemraw.h" />
+    <ClInclude Include="..\base\gsmemret.h" />
+    <ClInclude Include="..\base\gsnamecl.h" />
+    <ClInclude Include="..\base\gsncdummy.h" />
+    <ClInclude Include="..\base\gsnogc.h" />
+    <ClInclude Include="..\base\gsnotify.h" />
+    <ClInclude Include="..\base\gsovrc.h" />
+    <ClInclude Include="..\base\gspaint.h" />
+    <ClInclude Include="..\base\gsparam.h" />
+    <ClInclude Include="..\base\gsparams.h" />
+    <ClInclude Include="..\base\gsparamx.h" />
+    <ClInclude Include="..\base\gspath.h" />
+    <ClInclude Include="..\base\gspath2.h" />
+    <ClInclude Include="..\base\gspcolor.h" />
+    <ClInclude Include="..\base\gspenum.h" />
+    <ClInclude Include="..\base\gspmdrv.h" />
+    <ClInclude Include="..\base\gsptype1.h" />
+    <ClInclude Include="..\base\gsptype2.h" />
+    <ClInclude Include="..\base\gsrect.h" />
+    <ClInclude Include="..\base\gsrefct.h" />
+    <ClInclude Include="..\base\gsrop.h" />
+    <ClInclude Include="..\base\gsroprun1.h" />
+    <ClInclude Include="..\base\gsroprun24.h" />
+    <ClInclude Include="..\base\gsroprun8.h" />
+    <ClInclude Include="..\base\gsropt.h" />
+    <ClInclude Include="..\base\gsserial.h" />
+    <ClInclude Include="..\base\gsshade.h" />
+    <ClInclude Include="..\base\gsstate.h" />
+    <ClInclude Include="..\base\gsstrl.h" />
+    <ClInclude Include="..\base\gsstruct.h" />
+    <ClInclude Include="..\base\gsstype.h" />
+    <ClInclude Include="..\base\gstext.h" />
+    <ClInclude Include="..\base\gstiffio.h" />
+    <ClInclude Include="..\base\gstparam.h" />
+    <ClInclude Include="..\base\gstrans.h" />
+    <ClInclude Include="..\base\gstrap.h" />
+    <ClInclude Include="..\base\gstype1.h" />
+    <ClInclude Include="..\base\gstypes.h" />
+    <ClInclude Include="..\base\gsuid.h" />
+    <ClInclude Include="..\base\gsutil.h" />
+    <ClInclude Include="..\base\gsxfont.h" />
+    <ClInclude Include="..\base\gs_dll_call.h" />
+    <ClInclude Include="..\base\gs_mgl_e.h" />
+    <ClInclude Include="..\base\gs_mro_e.h" />
+    <ClInclude Include="..\base\gx.h" />
+    <ClInclude Include="..\base\gxalloc.h" />
+    <ClInclude Include="..\base\gxalpha.h" />
+    <ClInclude Include="..\base\gxarith.h" />
+    <ClInclude Include="..\base\gxband.h" />
+    <ClInclude Include="..\base\gxbcache.h" />
+    <ClInclude Include="..\base\gxbitfmt.h" />
+    <ClInclude Include="..\base\gxbitmap.h" />
+    <ClInclude Include="..\base\gxbitops.h" />
+    <ClInclude Include="..\base\gxblend.h" />
+    <ClInclude Include="..\base\gxcdevn.h" />
+    <ClInclude Include="..\base\gxchar.h" />
+    <ClInclude Include="..\base\gxchrout.h" />
+    <ClInclude Include="..\base\gxcid.h" />
+    <ClInclude Include="..\base\gxcie.h" />
+    <ClInclude Include="..\base\gxcindex.h" />
+    <ClInclude Include="..\base\gxcldev.h" />
+    <ClInclude Include="..\base\gxclio.h" />
+    <ClInclude Include="..\base\gxclip.h" />
+    <ClInclude Include="..\base\gxclip2.h" />
+    <ClInclude Include="..\base\gxclipm.h" />
+    <ClInclude Include="..\base\gxclipsr.h" />
+    <ClInclude Include="..\base\gxclist.h" />
+    <ClInclude Include="..\base\gxclmem.h" />
+    <ClInclude Include="..\base\gxclpage.h" />
+    <ClInclude Include="..\base\gxclpath.h" />
+    <ClInclude Include="..\base\gxclthrd.h" />
+    <ClInclude Include="..\base\gxcmap.h" />
+    <ClInclude Include="..\base\gxcolor2.h" />
+    <ClInclude Include="..\base\gxcomp.h" />
+    <ClInclude Include="..\base\gxcoord.h" />
+    <ClInclude Include="..\base\gxcpath.h" />
+    <ClInclude Include="..\base\gxcspace.h" />
+    <ClInclude Include="..\base\gxctable.h" />
+    <ClInclude Include="..\base\gxcvalue.h" />
+    <ClInclude Include="..\base\gxdcconv.h" />
+    <ClInclude Include="..\base\gxdcolor.h" />
+    <ClInclude Include="..\base\gxdda.h" />
+    <ClInclude Include="..\base\gxdevbuf.h" />
+    <ClInclude Include="..\base\gxdevcli.h" />
+    <ClInclude Include="..\base\gxdevice.h" />
+    <ClInclude Include="..\base\gxdevmem.h" />
+    <ClInclude Include="..\base\gxdevrop.h" />
+    <ClInclude Include="..\base\gxdevsop.h" />
+    <ClInclude Include="..\base\gxdht.h" />
+    <ClInclude Include="..\base\gxdhtres.h" />
+    <ClInclude Include="..\base\gxdhtserial.h" />
+    <ClInclude Include="..\base\gxdither.h" />
+    <ClInclude Include="..\base\gxdownscale.h" />
+    <ClInclude Include="..\base\gxdtfill.h" />
+    <ClInclude Include="..\base\gxfapi.h" />
+    <ClInclude Include="..\base\gxfapiu.h" />
+    <ClInclude Include="..\base\gxfarith.h" />
+    <ClInclude Include="..\base\gxfcache.h" />
+    <ClInclude Include="..\base\gxfcid.h" />
+    <ClInclude Include="..\base\gxfcmap.h" />
+    <ClInclude Include="..\base\gxfcmap1.h" />
+    <ClInclude Include="..\base\gxfdrop.h" />
+    <ClInclude Include="..\base\gxfill.h" />
+    <ClInclude Include="..\base\gxfillsl.h" />
+    <ClInclude Include="..\base\gxfilltr.h" />
+    <ClInclude Include="..\base\gxfillts.h" />
+    <ClInclude Include="..\base\gxfixed.h" />
+    <ClInclude Include="..\base\gxfmap.h" />
+    <ClInclude Include="..\base\gxfont.h" />
+    <ClInclude Include="..\base\gxfont0.h" />
+    <ClInclude Include="..\base\gxfont0c.h" />
+    <ClInclude Include="..\base\gxfont1.h" />
+    <ClInclude Include="..\base\gxfont42.h" />
+    <ClInclude Include="..\base\gxfrac.h" />
+    <ClInclude Include="..\base\gxftype.h" />
+    <ClInclude Include="..\base\gxfunc.h" />
+    <ClInclude Include="..\base\gxgetbit.h" />
+    <ClInclude Include="..\base\gxgstate.h" />
+    <ClInclude Include="..\base\gxhintn.h" />
+    <ClInclude Include="..\base\gxhldevc.h" />
+    <ClInclude Include="..\base\gxht.h" />
+    <ClInclude Include="..\base\gxhttile.h" />
+    <ClInclude Include="..\base\gxhttype.h" />
+    <ClInclude Include="..\base\gxht_thresh.h" />
+    <ClInclude Include="..\base\gxiclass.h" />
+    <ClInclude Include="..\base\gximag3x.h" />
+    <ClInclude Include="..\base\gximage.h" />
+    <ClInclude Include="..\base\gximage3.h" />
+    <ClInclude Include="..\base\gximask.h" />
+    <ClInclude Include="..\base\gximdecode.h" />
+    <ClInclude Include="..\base\gxiodev.h" />
+    <ClInclude Include="..\base\gxiparam.h" />
+    <ClInclude Include="..\base\gxline.h" />
+    <ClInclude Include="..\base\gxlum.h" />
+    <ClInclude Include="..\base\gxmatrix.h" />
+    <ClInclude Include="..\base\gxmclip.h" />
+    <ClInclude Include="..\base\gxobj.h" />
+    <ClInclude Include="..\base\gxoprect.h" />
+    <ClInclude Include="..\base\gxp1impl.h" />
+    <ClInclude Include="..\base\gxpageq.h" />
+    <ClInclude Include="..\base\gxpaint.h" />
+    <ClInclude Include="..\base\gxpath.h" />
+    <ClInclude Include="..\base\gxpcache.h" />
+    <ClInclude Include="..\base\gxpcolor.h" />
+    <ClInclude Include="..\base\gxrplane.h" />
+    <ClInclude Include="..\base\gxsample.h" />
+    <ClInclude Include="..\base\gxsamplp.h" />
+    <ClInclude Include="..\base\gxscanc.h" />
+    <ClInclude Include="..\base\gxshade.h" />
+    <ClInclude Include="..\base\gxshade4.h" />
+    <ClInclude Include="..\base\gxstate.h" />
+    <ClInclude Include="..\base\gxstdio.h" />
+    <ClInclude Include="..\base\gxsync.h" />
+    <ClInclude Include="..\base\gxtext.h" />
+    <ClInclude Include="..\base\gxtmap.h" />
+    <ClInclude Include="..\base\gxttf.h" />
+    <ClInclude Include="..\base\gxttfb.h" />
+    <ClInclude Include="..\base\gxtype1.h" />
+    <ClInclude Include="..\base\gxxfont.h" />
+    <ClInclude Include="..\base\gzacpath.h" />
+    <ClInclude Include="..\base\gzcpath.h" />
+    <ClInclude Include="..\base\gzht.h" />
+    <ClInclude Include="..\base\gzline.h" />
+    <ClInclude Include="..\base\gzpath.h" />
+    <ClInclude Include="..\base\gzspotan.h" />
+    <ClInclude Include="..\base\gzstate.h" />
+    <ClInclude Include="..\base\icc34.h" />
+    <ClInclude Include="..\base\jerror_.h" />
+    <ClInclude Include="..\base\jmemcust.h" />
+    <ClInclude Include="..\base\locale_.h" />
+    <ClInclude Include="..\base\malloc_.h" />
+    <ClInclude Include="..\base\math_.h" />
+    <ClInclude Include="..\base\memento.h" />
+    <ClInclude Include="..\base\memory_.h" />
+    <ClInclude Include="..\base\pipe_.h" />
+    <ClInclude Include="..\base\png_.h" />
+    <ClInclude Include="..\base\ramfs.h" />
+    <ClInclude Include="..\base\sa85d.h" />
+    <ClInclude Include="..\base\sa85x.h" />
+    <ClInclude Include="..\base\saes.h" />
+    <ClInclude Include="..\base\sarc4.h" />
+    <ClInclude Include="..\base\sbcp.h" />
+    <ClInclude Include="..\base\sbhc.h" />
+    <ClInclude Include="..\base\sbtx.h" />
+    <ClInclude Include="..\base\sbwbs.h" />
+    <ClInclude Include="..\base\scanchar.h" />
+    <ClInclude Include="..\base\scf.h" />
+    <ClInclude Include="..\base\scfx.h" />
+    <ClInclude Include="..\base\scommon.h" />
+    <ClInclude Include="..\base\sdcparam.h" />
+    <ClInclude Include="..\base\sdct.h" />
+    <ClInclude Include="..\base\setjmp_.h" />
+    <ClInclude Include="..\base\sfilter.h" />
+    <ClInclude Include="..\base\sha2.h" />
+    <ClInclude Include="..\base\shc.h" />
+    <ClInclude Include="..\base\shcgen.h" />
+    <ClInclude Include="..\base\sidscale.h" />
+    <ClInclude Include="..\base\siinterp.h" />
+    <ClInclude Include="..\base\simscale.h" />
+    <ClInclude Include="..\base\siscale.h" />
+    <ClInclude Include="..\base\sisparam.h" />
+    <ClInclude Include="..\base\sjbig2.h" />
+    <ClInclude Include="..\base\sjbig2_luratech.h" />
+    <ClInclude Include="..\base\sjpeg.h" />
+    <ClInclude Include="..\base\sjpx_luratech.h" />
+    <ClInclude Include="..\base\sjpx_openjpeg.h" />
+    <ClInclude Include="..\base\slzwx.h" />
+    <ClInclude Include="..\base\smd5.h" />
+    <ClInclude Include="..\base\smtf.h" />
+    <ClInclude Include="..\base\spdiffx.h" />
+    <ClInclude Include="..\base\spngpx.h" />
+    <ClInclude Include="..\base\spprint.h" />
+    <ClInclude Include="..\base\spsdf.h" />
+    <ClInclude Include="..\base\spwgx.h" />
+    <ClInclude Include="..\base\srdline.h" />
+    <ClInclude Include="..\base\srlx.h" />
+    <ClInclude Include="..\base\ssha2.h" />
+    <ClInclude Include="..\base\sstring.h" />
+    <ClInclude Include="..\base\stat_.h" />
+    <ClInclude Include="..\base\std.h" />
+    <ClInclude Include="..\base\stdint_.h" />
+    <ClInclude Include="..\base\stdio_.h" />
+    <ClInclude Include="..\base\stdpn.h" />
+    <ClInclude Include="..\base\stdpre.h" />
+    <ClInclude Include="..\base\stream.h" />
+    <ClInclude Include="..\base\strimpl.h" />
+    <ClInclude Include="..\base\string_.h" />
+    <ClInclude Include="..\base\strmio.h" />
+    <ClInclude Include="..\base\szlibx.h" />
+    <ClInclude Include="..\base\szlibxx.h" />
+    <ClInclude Include="..\base\time_.h" />
+    <ClInclude Include="..\base\ttcalc.h" />
+    <ClInclude Include="..\base\ttcommon.h" />
+    <ClInclude Include="..\base\ttconf.h" />
+    <ClInclude Include="..\base\ttconfig.h" />
+    <ClInclude Include="..\base\ttfinp.h" />
+    <ClInclude Include="..\base\ttfmemd.h" />
+    <ClInclude Include="..\base\ttfoutl.h" />
+    <ClInclude Include="..\base\ttfsfnt.h" />
+    <ClInclude Include="..\base\ttinterp.h" />
+    <ClInclude Include="..\base\ttload.h" />
+    <ClInclude Include="..\base\ttmisc.h" />
+    <ClInclude Include="..\base\ttobjs.h" />
+    <ClInclude Include="..\base\tttables.h" />
+    <ClInclude Include="..\base\tttype.h" />
+    <ClInclude Include="..\base\tttypes.h" />
+    <ClInclude Include="..\base\unistd_.h" />
+    <ClInclude Include="..\base\valgrind.h" />
+    <ClInclude Include="..\base\vdtrace.h" />
+    <ClInclude Include="..\base\vmsmath.h" />
+    <ClInclude Include="..\base\vms_x_fix.h" />
+    <ClInclude Include="..\base\windows_.h" />
+    <ClInclude Include="..\base\wrfont.h" />
+    <ClInclude Include="..\base\write_t1.h" />
+    <ClInclude Include="..\base\write_t2.h" />
+    <ClInclude Include="..\base\x_.h" />
+    <ClInclude Include="..\contrib\defs.h" />
+    <ClInclude Include="..\contrib\eplaser\gdevescv.h" />
+    <ClInclude Include="..\contrib\gdevbjc_.h" />
+    <ClInclude Include="..\contrib\gdevcd8.h" />
+    <ClInclude Include="..\contrib\japanese\dviprlib.h" />
+    <ClInclude Include="..\contrib\japanese\gdevmjc.h" />
+    <ClInclude Include="..\contrib\lips4\gdevlips.h" />
+    <ClInclude Include="..\contrib\lips4\gdevlprn.h" />
+    <ClInclude Include="..\contrib\opvp\opvp.h" />
+    <ClInclude Include="..\contrib\opvp\opvp_0_2_0.h" />
+    <ClInclude Include="..\contrib\opvp\opvp_common.h" />
+    <ClInclude Include="..\contrib\pcl3\eprn\gdeveprn.h" />
+    <ClInclude Include="..\contrib\pcl3\eprn\mediasize.h" />
+    <ClInclude Include="..\contrib\pcl3\eprn\pagecount.h" />
+    <ClInclude Include="..\contrib\pcl3\src\pclcap.h" />
+    <ClInclude Include="..\contrib\pcl3\src\pclgen.h" />
+    <ClInclude Include="..\contrib\pcl3\src\pclscan.h" />
+    <ClInclude Include="..\contrib\pcl3\src\pclsize.h" />
+    <ClInclude Include="..\cups\libs\configwin.h" />
+    <ClInclude Include="..\cups\libs\cups\adminutil.h" />
+    <ClInclude Include="..\cups\libs\cups\array.h" />
+    <ClInclude Include="..\cups\libs\cups\backend.h" />
+    <ClInclude Include="..\cups\libs\cups\cups.h" />
+    <ClInclude Include="..\cups\libs\cups\debug.h" />
+    <ClInclude Include="..\cups\libs\cups\dir.h" />
+    <ClInclude Include="..\cups\libs\cups\file-private.h" />
+    <ClInclude Include="..\cups\libs\cups\file.h" />
+    <ClInclude Include="..\cups\libs\cups\globals.h" />
+    <ClInclude Include="..\cups\libs\cups\http-private.h" />
+    <ClInclude Include="..\cups\libs\cups\http.h" />
+    <ClInclude Include="..\cups\libs\cups\i18n.h" />
+    <ClInclude Include="..\cups\libs\cups\ipp-private.h" />
+    <ClInclude Include="..\cups\libs\cups\ipp.h" />
+    <ClInclude Include="..\cups\libs\cups\language.h" />
+    <ClInclude Include="..\cups\libs\cups\md5-apple.h" />
+    <ClInclude Include="..\cups\libs\cups\md5.h" />
+    <ClInclude Include="..\cups\libs\cups\ppd-private.h" />
+    <ClInclude Include="..\cups\libs\cups\ppd.h" />
+    <ClInclude Include="..\cups\libs\cups\pwg-private.h" />
+    <ClInclude Include="..\cups\libs\cups\raster.h" />
+    <ClInclude Include="..\cups\libs\cups\sidechannel.h" />
+    <ClInclude Include="..\cups\libs\cups\snmp-private.h" />
+    <ClInclude Include="..\cups\libs\cups\string.h" />
+    <ClInclude Include="..\cups\libs\cups\transcode.h" />
+    <ClInclude Include="..\cups\libs\cups\versioning.h" />
+    <ClInclude Include="..\cups\libs\filter\common.h" />
+    <ClInclude Include="..\cups\libs\filter\image-private.h" />
+    <ClInclude Include="..\cups\libs\filter\image-sgi.h" />
+    <ClInclude Include="..\cups\libs\filter\image.h" />
+    <ClInclude Include="..\devices\gdev8bcm.h" />
+    <ClInclude Include="..\devices\gdevbjc.h" />
+    <ClInclude Include="..\devices\gdevbjcl.h" />
+    <ClInclude Include="..\devices\gdevbmp.h" />
+    <ClInclude Include="..\devices\gdevdljm.h" />
+    <ClInclude Include="..\devices\gdevdsp.h" />
+    <ClInclude Include="..\devices\gdevdsp2.h" />
+    <ClInclude Include="..\devices\gdevfax.h" />
+    <ClInclude Include="..\devices\gdevmeds.h" />
+    <ClInclude Include="..\devices\gdevmgr.h" />
+    <ClInclude Include="..\devices\gdevpcl.h" />
+    <ClInclude Include="..\devices\gdevplib.h" />
+    <ClInclude Include="..\devices\gdevpm.h" />
+    <ClInclude Include="..\devices\gdevprna.h" />
+    <ClInclude Include="..\devices\gdevpsd.h" />
+    <ClInclude Include="..\devices\gdevpxut.h" />
+    <ClInclude Include="..\devices\gdevstc.h" />
+    <ClInclude Include="..\devices\gdevtfax.h" />
+    <ClInclude Include="..\devices\gdevtifs.h" />
+    <ClInclude Include="..\devices\gdevx.h" />
+    <ClInclude Include="..\devices\gdevxcmp.h" />
+    <ClInclude Include="..\devices\gxfcopy.h" />
+    <ClInclude Include="..\devices\minftrsz.h" />
+    <ClInclude Include="..\devices\rinkj\evenbetter-rll.h" />
+    <ClInclude Include="..\devices\rinkj\rinkj-byte-stream.h" />
+    <ClInclude Include="..\devices\rinkj\rinkj-config.h" />
+    <ClInclude Include="..\devices\rinkj\rinkj-device.h" />
+    <ClInclude Include="..\devices\rinkj\rinkj-dither.h" />
+    <ClInclude Include="..\devices\rinkj\rinkj-epson870.h" />
+    <ClInclude Include="..\devices\rinkj\rinkj-screen-eb.h" />
+    <ClInclude Include="..\devices\vector\gdevagl.h" />
+    <ClInclude Include="..\devices\vector\gdevpdfb.h" />
+    <ClInclude Include="..\devices\vector\gdevpdfc.h" />
+    <ClInclude Include="..\devices\vector\gdevpdfg.h" />
+    <ClInclude Include="..\devices\vector\gdevpdfo.h" />
+    <ClInclude Include="..\devices\vector\gdevpdfx.h" />
+    <ClInclude Include="..\devices\vector\gdevpdt.h" />
+    <ClInclude Include="..\devices\vector\gdevpdtb.h" />
+    <ClInclude Include="..\devices\vector\gdevpdtd.h" />
+    <ClInclude Include="..\devices\vector\gdevpdtf.h" />
+    <ClInclude Include="..\devices\vector\gdevpdti.h" />
+    <ClInclude Include="..\devices\vector\gdevpdts.h" />
+    <ClInclude Include="..\devices\vector\gdevpdtt.h" />
+    <ClInclude Include="..\devices\vector\gdevpdtv.h" />
+    <ClInclude Include="..\devices\vector\gdevpdtw.h" />
+    <ClInclude Include="..\devices\vector\gdevpdtx.h" />
+    <ClInclude Include="..\devices\vector\gdevpsdf.h" />
+    <ClInclude Include="..\devices\vector\gdevpsds.h" />
+    <ClInclude Include="..\devices\vector\gdevpsf.h" />
+    <ClInclude Include="..\devices\vector\gdevpsu.h" />
+    <ClInclude Include="..\devices\vector\whitelst.h" />
+    <ClInclude Include="..\expat\lib\amigaconfig.h" />
+    <ClInclude Include="..\expat\lib\ascii.h" />
+    <ClInclude Include="..\expat\lib\asciitab.h" />
+    <ClInclude Include="..\expat\lib\expat.h" />
+    <ClInclude Include="..\expat\lib\expat_external.h" />
+    <ClInclude Include="..\expat\lib\iasciitab.h" />
+    <ClInclude Include="..\expat\lib\internal.h" />
+    <ClInclude Include="..\expat\lib\latin1tab.h" />
+    <ClInclude Include="..\expat\lib\macconfig.h" />
+    <ClInclude Include="..\expat\lib\nametab.h" />
+    <ClInclude Include="..\expat\lib\utf8tab.h" />
+    <ClInclude Include="..\expat\lib\winconfig.h" />
+    <ClInclude Include="..\expat\lib\xmlrole.h" />
+    <ClInclude Include="..\expat\lib\xmltok.h" />
+    <ClInclude Include="..\expat\lib\xmltok_impl.h" />
+    <ClInclude Include="..\expat\tests\chardata.h" />
+    <ClInclude Include="..\expat\tests\minicheck.h" />
+    <ClInclude Include="..\ijs\ijs.h" />
+    <ClInclude Include="..\ijs\ijs_client.h" />
+    <ClInclude Include="..\ijs\ijs_server.h" />
+    <ClInclude Include="..\ijs\unistd_.h" />
+    <ClInclude Include="..\jbig2dec\config.h" />
+    <ClInclude Include="..\jbig2dec\config_types.h" />
+    <ClInclude Include="..\jbig2dec\config_win32.h" />
+    <ClInclude Include="..\jbig2dec\getopt.h" />
+    <ClInclude Include="..\jbig2dec\jbig2.h" />
+    <ClInclude Include="..\jbig2dec\jbig2_arith.h" />
+    <ClInclude Include="..\jbig2dec\jbig2_arith_iaid.h" />
+    <ClInclude Include="..\jbig2dec\jbig2_arith_int.h" />
+    <ClInclude Include="..\jbig2dec\jbig2_generic.h" />
+    <ClInclude Include="..\jbig2dec\jbig2_huffman.h" />
+    <ClInclude Include="..\jbig2dec\jbig2_hufftab.h" />
+    <ClInclude Include="..\jbig2dec\jbig2_image.h" />
+    <ClInclude Include="..\jbig2dec\jbig2_mmr.h" />
+    <ClInclude Include="..\jbig2dec\jbig2_priv.h" />
+    <ClInclude Include="..\jbig2dec\jbig2_symbol_dict.h" />
+    <ClInclude Include="..\jbig2dec\jbig2_text.h" />
+    <ClInclude Include="..\jbig2dec\os_types.h" />
+    <ClInclude Include="..\jbig2dec\sha1.h" />
+    <ClInclude Include="..\jpegxr\app_resource.h" />
+    <ClInclude Include="..\jpegxr\dll_resource.h" />
+    <ClInclude Include="..\jpegxr\file.h" />
+    <ClInclude Include="..\jpegxr\jpegxr.h" />
+    <ClInclude Include="..\jpegxr\jxr_priv.h" />
+    <ClInclude Include="..\jpegxr\qp.tab.h" />
+    <ClInclude Include="..\jpegxr\stdint_minimal.h" />
+    <ClInclude Include="..\jpeg\cderror.h" />
+    <ClInclude Include="..\jpeg\cdjpeg.h" />
+    <ClInclude Include="..\jpeg\jchuff.h" />
+    <ClInclude Include="..\jpeg\jdct.h" />
+    <ClInclude Include="..\jpeg\jdhuff.h" />
+    <ClInclude Include="..\jpeg\jerror.h" />
+    <ClInclude Include="..\jpeg\jinclude.h" />
+    <ClInclude Include="..\jpeg\jmemsys.h" />
+    <ClInclude Include="..\jpeg\jmorecfg.h" />
+    <ClInclude Include="..\jpeg\jpegint.h" />
+    <ClInclude Include="..\jpeg\jpeglib.h" />
+    <ClInclude Include="..\jpeg\jversion.h" />
+    <ClInclude Include="..\jpeg\transupp.h" />
+    <ClInclude Include="..\lcms2mt\include\lcms2mt.h" />
+    <ClInclude Include="..\lcms2mt\include\lcms2mt_plugin.h" />
+    <ClInclude Include="..\lcms2mt\src\extra_xform.h" />
+    <ClInclude Include="..\lcms2mt\src\lcms2_internal.h" />
+    <ClInclude Include="..\libpng\png.h" />
+    <ClInclude Include="..\libpng\pngconf.h" />
+    <ClInclude Include="..\openjpeg\src\lib\openjp2\bio.h" />
+    <ClInclude Include="..\openjpeg\src\lib\openjp2\cidx_manager.h" />
+    <ClInclude Include="..\openjpeg\src\lib\openjp2\cio.h" />
+    <ClInclude Include="..\openjpeg\src\lib\openjp2\dwt.h" />
+    <ClInclude Include="..\openjpeg\src\lib\openjp2\event.h" />
+    <ClInclude Include="..\openjpeg\src\lib\openjp2\fix.h" />
+    <ClInclude Include="..\openjpeg\src\lib\openjp2\function_list.h" />
+    <ClInclude Include="..\openjpeg\src\lib\openjp2\image.h" />
+    <ClInclude Include="..\openjpeg\src\lib\openjp2\indexbox_manager.h" />
+    <ClInclude Include="..\openjpeg\src\lib\openjp2\int.h" />
+    <ClInclude Include="..\openjpeg\src\lib\openjp2\invert.h" />
+    <ClInclude Include="..\openjpeg\src\lib\openjp2\j2k.h" />
+    <ClInclude Include="..\openjpeg\src\lib\openjp2\j2k_lib.h" />
+    <ClInclude Include="..\openjpeg\src\lib\openjp2\jp2.h" />
+    <ClInclude Include="..\openjpeg\src\lib\openjp2\jpt.h" />
+    <ClInclude Include="..\openjpeg\src\lib\openjp2\mct.h" />
+    <ClInclude Include="..\openjpeg\src\lib\openjp2\mqc.h" />
+    <ClInclude Include="..\openjpeg\src\lib\openjp2\openjpeg.h" />
+    <ClInclude Include="..\openjpeg\src\lib\openjp2\opj_clock.h" />
+    <ClInclude Include="..\openjpeg\src\lib\openjp2\opj_config.h" />
+    <ClInclude Include="..\openjpeg\src\lib\openjp2\opj_config_private.h" />
+    <ClInclude Include="..\openjpeg\src\lib\openjp2\opj_includes.h" />
+    <ClInclude Include="..\openjpeg\src\lib\openjp2\opj_intmath.h" />
+    <ClInclude Include="..\openjpeg\src\lib\openjp2\opj_inttypes.h" />
+    <ClInclude Include="..\openjpeg\src\lib\openjp2\opj_malloc.h" />
+    <ClInclude Include="..\openjpeg\src\lib\openjp2\opj_stdint.h" />
+    <ClInclude Include="..\openjpeg\src\lib\openjp2\pi.h" />
+    <ClInclude Include="..\openjpeg\src\lib\openjp2\t1.h" />
+    <ClInclude Include="..\openjpeg\src\lib\openjp2\t1_luts.h" />
+    <ClInclude Include="..\openjpeg\src\lib\openjp2\t2.h" />
+    <ClInclude Include="..\openjpeg\src\lib\openjp2\tcd.h" />
+    <ClInclude Include="..\openjpeg\src\lib\openjp2\tgt.h" />
+    <ClInclude Include="..\openjpeg\src\lib\openjp2\thread.h" />
+    <ClInclude Include="..\openjpeg\src\lib\openjp2\tls_keys.h" />
+    <ClInclude Include="..\psi\bfont.h" />
+    <ClInclude Include="..\psi\btoken.h" />
+    <ClInclude Include="..\psi\dscparse.h" />
+    <ClInclude Include="..\psi\dstack.h" />
+    <ClInclude Include="..\psi\dwdll.h" />
+    <ClInclude Include="..\psi\dwimg.h" />
+    <ClInclude Include="..\psi\dwinst.h" />
+    <ClInclude Include="..\psi\dwreg.h" />
+    <ClInclude Include="..\psi\dwres.h" />
+    <ClInclude Include="..\psi\dwsetup.h" />
+    <ClInclude Include="..\psi\dwtext.h" />
+    <ClInclude Include="..\psi\dwtrace.h" />
+    <ClInclude Include="..\psi\dwuninst.h" />
+    <ClInclude Include="..\psi\estack.h" />
+    <ClInclude Include="..\psi\files.h" />
+    <ClInclude Include="..\psi\ghost.h" />
+    <ClInclude Include="..\psi\ialloc.h" />
+    <ClInclude Include="..\psi\iapi.h" />
+    <ClInclude Include="..\psi\iastate.h" />
+    <ClInclude Include="..\psi\iastruct.h" />
+    <ClInclude Include="..\psi\ibnum.h" />
+    <ClInclude Include="..\psi\ichar.h" />
+    <ClInclude Include="..\psi\ichar1.h" />
+    <ClInclude Include="..\psi\icharout.h" />
+    <ClInclude Include="..\psi\icid.h" />
+    <ClInclude Include="..\psi\icie.h" />
+    <ClInclude Include="..\psi\icolor.h" />
+    <ClInclude Include="..\psi\iconf.h" />
+    <ClInclude Include="..\psi\icontext.h" />
+    <ClInclude Include="..\psi\icremap.h" />
+    <ClInclude Include="..\psi\icsmap.h" />
+    <ClInclude Include="..\psi\icstate.h" />
+    <ClInclude Include="..\psi\iddict.h" />
+    <ClInclude Include="..\psi\iddstack.h" />
+    <ClInclude Include="..\psi\idebug.h" />
+    <ClInclude Include="..\psi\idict.h" />
+    <ClInclude Include="..\psi\idictdef.h" />
+    <ClInclude Include="..\psi\idicttpl.h" />
+    <ClInclude Include="..\psi\idisp.h" />
+    <ClInclude Include="..\psi\idosave.h" />
+    <ClInclude Include="..\psi\idparam.h" />
+    <ClInclude Include="..\psi\idsdata.h" />
+    <ClInclude Include="..\psi\idstack.h" />
+    <ClInclude Include="..\psi\ierrors.h" />
+    <ClInclude Include="..\psi\iesdata.h" />
+    <ClInclude Include="..\psi\iestack.h" />
+    <ClInclude Include="..\psi\ifapi.h" />
+    <ClInclude Include="..\psi\ifcid.h" />
+    <ClInclude Include="..\psi\ifilter.h" />
+    <ClInclude Include="..\psi\ifilter2.h" />
+    <ClInclude Include="..\psi\ifont.h" />
+    <ClInclude Include="..\psi\ifont1.h" />
+    <ClInclude Include="..\psi\ifont2.h" />
+    <ClInclude Include="..\psi\ifont42.h" />
+    <ClInclude Include="..\psi\ifrpred.h" />
+    <ClInclude Include="..\psi\ifunc.h" />
+    <ClInclude Include="..\psi\ifwpred.h" />
+    <ClInclude Include="..\psi\igc.h" />
+    <ClInclude Include="..\psi\igcstr.h" />
+    <ClInclude Include="..\psi\igstate.h" />
+    <ClInclude Include="..\psi\iht.h" />
+    <ClInclude Include="..\psi\iimage.h" />
+    <ClInclude Include="..\psi\iinit.h" />
+    <ClInclude Include="..\psi\ilevel.h" />
+    <ClInclude Include="..\psi\imain.h" />
+    <ClInclude Include="..\psi\imainarg.h" />
+    <ClInclude Include="..\psi\imemory.h" />
+    <ClInclude Include="..\psi\iminst.h" />
+    <ClInclude Include="..\psi\iname.h" />
+    <ClInclude Include="..\psi\inamedef.h" />
+    <ClInclude Include="..\psi\inameidx.h" />
+    <ClInclude Include="..\psi\inames.h" />
+    <ClInclude Include="..\psi\inamestr.h" />
+    <ClInclude Include="..\psi\interp.h" />
+    <ClInclude Include="..\psi\iosdata.h" />
+    <ClInclude Include="..\psi\iostack.h" />
+    <ClInclude Include="..\psi\ipacked.h" />
+    <ClInclude Include="..\psi\iparam.h" />
+    <ClInclude Include="..\psi\iparray.h" />
+    <ClInclude Include="..\psi\ipcolor.h" />
+    <ClInclude Include="..\psi\iplugin.h" />
+    <ClInclude Include="..\psi\iref.h" />
+    <ClInclude Include="..\psi\isave.h" />
+    <ClInclude Include="..\psi\iscan.h" />
+    <ClInclude Include="..\psi\iscanbin.h" />
+    <ClInclude Include="..\psi\iscannum.h" />
+    <ClInclude Include="..\psi\isdata.h" />
+    <ClInclude Include="..\psi\isstate.h" />
+    <ClInclude Include="..\psi\istack.h" />
+    <ClInclude Include="..\psi\istkparm.h" />
+    <ClInclude Include="..\psi\istream.h" />
+    <ClInclude Include="..\psi\istruct.h" />
+    <ClInclude Include="..\psi\itoken.h" />
+    <ClInclude Include="..\psi\iutil.h" />
+    <ClInclude Include="..\psi\iutil2.h" />
+    <ClInclude Include="..\psi\ivmem2.h" />
+    <ClInclude Include="..\psi\ivmspace.h" />
+    <ClInclude Include="..\psi\main.h" />
+    <ClInclude Include="..\psi\oparc.h" />
+    <ClInclude Include="..\psi\opcheck.h" />
+    <ClInclude Include="..\psi\opdef.h" />
+    <ClInclude Include="..\psi\oper.h" />
+    <ClInclude Include="..\psi\opextern.h" />
+    <ClInclude Include="..\psi\ostack.h" />
+    <ClInclude Include="..\psi\psapi.h" />
+    <ClInclude Include="..\psi\store.h" />
+    <ClInclude Include="..\psi\wrfont.h" />
+    <ClInclude Include="..\psi\write_t1.h" />
+    <ClInclude Include="..\psi\write_t2.h" />
+    <ClInclude Include="..\psi\zchar42.h" />
+    <ClInclude Include="..\psi\zcie.h" />
+    <ClInclude Include="..\psi\zcolor.h" />
+    <ClInclude Include="..\psi\zfile.h" />
+    <ClInclude Include="..\psi\zfrsd.h" />
+    <ClInclude Include="..\psi\zfunc.h" />
+    <ClInclude Include="..\psi\zht2.h" />
+    <ClInclude Include="..\psi\zicc.h" />
+    <ClInclude Include="..\tiff\libtiff\t4.h" />
+    <ClInclude Include="..\tiff\libtiff\tiff.h" />
+    <ClInclude Include="..\tiff\libtiff\tiffconf.vc.h" />
+    <ClInclude Include="..\tiff\libtiff\tiffconf.wince.h" />
+    <ClInclude Include="..\tiff\libtiff\tiffio.h" />
+    <ClInclude Include="..\tiff\libtiff\tiffio.hxx" />
+    <ClInclude Include="..\tiff\libtiff\tiffiop.h" />
+    <ClInclude Include="..\tiff\libtiff\tiffvers.h" />
+    <ClInclude Include="..\tiff\libtiff\tif_config.vc.h" />
+    <ClInclude Include="..\tiff\libtiff\tif_config.wince.h" />
+    <ClInclude Include="..\tiff\libtiff\tif_dir.h" />
+    <ClInclude Include="..\tiff\libtiff\tif_fax3.h" />
+    <ClInclude Include="..\tiff\libtiff\tif_predict.h" />
+    <ClInclude Include="..\tiff\libtiff\uvcode.h" />
+    <ClInclude Include="..\tiff\port\libport.h" />
+    <ClInclude Include="..\tiff\test\test_arrays.h" />
+    <ClInclude Include="..\tiff\tools\rasterfile.h" />
+    <ClInclude Include="..\urf\surfx.h" />
+    <ClInclude Include="..\zlib\crc32.h" />
+    <ClInclude Include="..\zlib\deflate.h" />
+    <ClInclude Include="..\zlib\gzguts.h" />
+    <ClInclude Include="..\zlib\inffast.h" />
+    <ClInclude Include="..\zlib\inffixed.h" />
+    <ClInclude Include="..\zlib\inflate.h" />
+    <ClInclude Include="..\zlib\inftrees.h" />
+    <ClInclude Include="..\zlib\trees.h" />
+    <ClInclude Include="..\zlib\zconf.h" />
+    <ClInclude Include="..\zlib\zlib.h" />
+    <ClInclude Include="..\zlib\zutil.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\base\gspmdrv.rc" />
+    <ResourceCompile Include="..\base\gswin.rc" />
+    <ResourceCompile Include="..\base\gswin32.rc" />
+    <ResourceCompile Include="..\psi\dwmain.rc" />
+    <ResourceCompile Include="..\psi\dwsetup.rc" />
+    <ResourceCompile Include="..\psi\dwuninst.rc" />
+    <ResourceCompile Include="..\psi\gsdll2.rc" />
+    <ResourceCompile Include="..\psi\gsdll32.rc" />
+    <ResourceCompile Include="..\psi\gsos2.rc" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

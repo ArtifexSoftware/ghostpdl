@@ -1,0 +1,616 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug-contrib|Win32">
+      <Configuration>Debug-contrib</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug-contrib|x64">
+      <Configuration>Debug-contrib</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug-cups|Win32">
+      <Configuration>Debug-cups</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug-cups|x64">
+      <Configuration>Debug-cups</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="DebugXP|Win32">
+      <Configuration>DebugXP</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="DebugXP|x64">
+      <Configuration>DebugXP</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MementoXP|Win32">
+      <Configuration>MementoXP</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MementoXP|x64">
+      <Configuration>MementoXP</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Memento|Win32">
+      <Configuration>Memento</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Memento|x64">
+      <Configuration>Memento</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Profile|Win32">
+      <Configuration>Profile</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Profile|x64">
+      <Configuration>Profile</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release-contrib|Win32">
+      <Configuration>Release-contrib</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release-contrib|x64">
+      <Configuration>Release-contrib</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseXP|Win32">
+      <Configuration>ReleaseXP</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseXP|x64">
+      <Configuration>ReleaseXP</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{ED35CF95-DAA1-45B3-9206-599F4170F198}</ProjectGuid>
+    <RootNamespace>ghostpcl</RootNamespace>
+    <Keyword>MakeFileProj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-contrib|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-contrib|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-cups|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Memento|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MementoXP|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v141_xp</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Profile|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseXP|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v141_xp</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugXP|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v141_xp</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-contrib|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-contrib|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-cups|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Memento|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MementoXP|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v141_xp</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Profile|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseXP|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v141_xp</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugXP|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v141_xp</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release-contrib|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug-contrib|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug-cups|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Memento|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='MementoXP|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Profile|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseXP|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='DebugXP|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release-contrib|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug-contrib|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug-cups|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Memento|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='MementoXP|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Profile|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseXP|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='DebugXP|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>16.0.29511.113</_ProjectFileVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>debugobj\</OutDir>
+    <IntDir>debugobj\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gpcl6debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= debugbsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gpcl6debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= debugbsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= debugclean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\debugbin\gpcl6win32.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;DEBUG=1;TDEBUG=1;HAVE_SSE2=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugXP|Win32'">
+    <OutDir>debugobjxp\</OutDir>
+    <IntDir>debugobjxp\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 XP= DEVSTUDIO= gpcl6debug &amp;&amp; nmake -f psi\msvc32.mak XP= DEVSTUDIO= debugbsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak XP= DEVSTUDIO= debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 XP= DEVSTUDIO= gpcl6debug &amp;&amp; nmake -f psi\msvc32.mak XP= DEVSTUDIO= debugbsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak XP= DEVSTUDIO= debugclean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\debugbinxp\gpcl6win32.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;DEBUG=1;TDEBUG=1;HAVE_SSE2=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>debugobj64\</OutDir>
+    <IntDir>debugobj64\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= gpcl6debug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugbsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= gpcl6debug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugbsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugclean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\debugbin\gpcl6win64.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN64;_DEBUG;DEBUG=1;TDEBUG=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugXP|x64'">
+    <OutDir>debugobj64xp\</OutDir>
+    <IntDir>debugobj64xp\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 XP= DEVSTUDIO= gpcl6debug &amp;&amp; nmake -f psi\msvc32.mak WIN64= XP= DEVSTUDIO= debugbsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= XP= DEVSTUDIO= debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 XP= DEVSTUDIO= gpcl6debug &amp;&amp; nmake -f psi\msvc32.mak WIN64= XP= DEVSTUDIO= debugbsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= XP= DEVSTUDIO= debugclean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\debugbinxp\gpcl6win64.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN64;_DEBUG;DEBUG=1;TDEBUG=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>obj\</OutDir>
+    <IntDir>obj\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gpcl6 &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gpcl6 &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= clean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\bin\gpcl6win32.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;HAVE_SSE2=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseXP|Win32'">
+    <OutDir>objxp\</OutDir>
+    <IntDir>objxp\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 XP= DEVSTUDIO= gpcl6 &amp;&amp; nmake -f psi\msvc32.mak XP= DEVSTUDIO= bsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak XP= DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 XP= DEVSTUDIO= gpcl6 &amp;&amp; nmake -f psi\msvc32.mak XP= DEVSTUDIO= bsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak XP= DEVSTUDIO= clean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\binxp\gpcl6win32.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;HAVE_SSE2=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>obj64\</OutDir>
+    <IntDir>obj64\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= gpcl6 &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= bsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= gpcl6 &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= bsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= clean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\bin\gpcl6win64.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseXP|x64'">
+    <OutDir>obj64xp\</OutDir>
+    <IntDir>obj64xp\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 XP= DEVSTUDIO= gpcl6 &amp;&amp; nmake -f psi\msvc32.mak WIN64= XP= DEVSTUDIO= bsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= XP= DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 XP= DEVSTUDIO= gpcl6 &amp;&amp; nmake -f psi\msvc32.mak WIN64= XP= DEVSTUDIO= bsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= XP= DEVSTUDIO= clean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\binxp\gpcl6win64.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Profile|Win32'">
+    <OutDir>profobj\</OutDir>
+    <IntDir>profobj\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gpcl6profile &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= profilebsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= profileclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gpcl6profile &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= profilebsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= profileclean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\profbin\gpcl6win32.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;DEBUG=0;TDEBUG=0;DEBUGSYM=1;HAVE_SSE2=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">
+    <OutDir>profobj64\</OutDir>
+    <IntDir>profobj64\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= gpcl6profile &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= profilebsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= profileclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= gpcl6profile &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= profilebsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= profileclean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\profbin\gpcl6win64.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN64;_DEBUG;DEBUG=1;TDEBUG=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Memento|Win32'">
+    <OutDir>memobj\</OutDir>
+    <IntDir>memobj\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gpcl6memento &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= mementobsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= mementoclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gpcl6memento &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= mementobsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= mementoclean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\membin\gpcl6win32.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;DEBUG=1;TDEBUG=1;HAVE_SSE2=1;MEMENTO=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MementoXP|Win32'">
+    <OutDir>memobjxp\</OutDir>
+    <IntDir>memobjxp\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 XP= DEVSTUDIO= gpcl6memento &amp;&amp; nmake -f psi\msvc32.mak XP= DEVSTUDIO= mementobsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak XP= DEVSTUDIO= mementoclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 XP= DEVSTUDIO= gpcl6memento &amp;&amp; nmake -f psi\msvc32.mak XP= DEVSTUDIO= mementobsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak XP= DEVSTUDIO= mementoclean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\membinxp\gpcl6win32.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;DEBUG=1;TDEBUG=1;HAVE_SSE2=1;MEMENTO=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Memento|x64'">
+    <OutDir>memobj64\</OutDir>
+    <IntDir>memobj64\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= gpcl6memento &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= mementobsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= mementoclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= gpcl6memento &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= mementobsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= mementoclean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\membin\gpcl6win64.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN64;_DEBUG;DEBUG=1;TDEBUG=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MementoXP|x64'">
+    <OutDir>memobj64xp\</OutDir>
+    <IntDir>memobj64xp\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 XP= DEVSTUDIO= gpcl6memento &amp;&amp; nmake -f psi\msvc32.mak WIN64= XP= DEVSTUDIO= mementobsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= XP= DEVSTUDIO= mementoclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 XP= DEVSTUDIO= gpcl6memento &amp;&amp; nmake -f psi\msvc32.mak WIN64= XP= DEVSTUDIO= mementobsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= XP= DEVSTUDIO= mementoclean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\membinxp\gpcl6win64.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN64;_DEBUG;DEBUG=1;TDEBUG=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-cups|Win32'">
+    <OutDir>$(Configuration)\</OutDir>
+    <IntDir>$(Configuration)\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= WITH_CUPS=1 gpcl6debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CUPS=1 debugbsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CUPS=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= WITH_CUPS=1 gpcl6debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CUPS=1 debugbsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CUPS=1 debugclean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\debugbin\gpcl6win32.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;DEBUG=1;TDEBUG=1;HAVE_SSE2=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-cups|x64'">
+    <OutDir>$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= WITH_CUPS=1 gpcl6debug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugbsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= WITH_CUPS=1 gpcl6debug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugbsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugclean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\debugbin\gpcl6win64.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN64;_DEBUG;DEBUG=1;TDEBUG=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-contrib|Win32'">
+    <OutDir>$(Configuration)\</OutDir>
+    <IntDir>$(Configuration)\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= WITH_CONTRIB=1 gpcl6debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CONTRIB=1 debugbsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CONTRIB=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= WITH_CUPS=1 gpcl6debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CONTRIB=1 debugbsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CONTRIB=1 debugclean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\debugbin\gpcl6win32.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;DEBUG=1;TDEBUG=1;HAVE_SSE2=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-contrib|x64'">
+    <OutDir>$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= WITH_CUPS=1 gpcl6debug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugbsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= WITH_CUPS=1 gpcl6debug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugbsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugclean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\debugbin\gpcl6win64.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN64;_DEBUG;DEBUG=1;TDEBUG=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-contrib|Win32'">
+    <OutDir>$(Configuration)\</OutDir>
+    <IntDir>$(Configuration)\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gpcl6 &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gpcl6 &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= clean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\bin\gpcl6win32.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;HAVE_SSE2=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-contrib|x64'">
+    <OutDir>$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 SBR=1 DEVSTUDIO= WITH_CONTRIB=1 gpcl6 &amp;&amp; nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 DEVSTUDIO= bsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 WITH_CONTRIB=1 DEVSTUDIO= gpcl6 &amp;&amp; nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 DEVSTUDIO= bsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 DEVSTUDIO= clean</NMakeCleanCommandLine>
+    <NMakeOutput>$(ProjectDir)\..\bin\gpcl6win64.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\pcl\pcl\pcbiptrn.c" />
+    <ClCompile Include="..\pcl\pcl\pccid.c" />
+    <ClCompile Include="..\pcl\pcl\pccolor.c" />
+    <ClCompile Include="..\pcl\pcl\pccprint.c" />
+    <ClCompile Include="..\pcl\pcl\pccsbase.c" />
+    <ClCompile Include="..\pcl\pcl\pcdither.c" />
+    <ClCompile Include="..\pcl\pcl\pcdraw.c" />
+    <ClCompile Include="..\pcl\pcl\pcfont.c" />
+    <ClCompile Include="..\pcl\pcl\pcfontpg.c" />
+    <ClCompile Include="..\pcl\pcl\pcfrgrnd.c" />
+    <ClCompile Include="..\pcl\pcl\pcfsel.c" />
+    <ClCompile Include="..\pcl\pcl\pcht.c" />
+    <ClCompile Include="..\pcl\pcl\pcident.c" />
+    <ClCompile Include="..\pcl\pcl\pcimpl.c" />
+    <ClCompile Include="..\pcl\pcl\pcindxed.c" />
+    <ClCompile Include="..\pcl\pcl\pcjob.c" />
+    <ClCompile Include="..\pcl\pcl\pclookup.c" />
+    <ClCompile Include="..\pcl\pcl\pcmacros.c" />
+    <ClCompile Include="..\pcl\pcl\pcmisc.c" />
+    <ClCompile Include="..\pcl\pcl\pcmtx3.c" />
+    <ClCompile Include="..\pcl\pcl\pcommand.c" />
+    <ClCompile Include="..\pcl\pcl\pcpage.c" />
+    <ClCompile Include="..\pcl\pcl\pcpalet.c" />
+    <ClCompile Include="..\pcl\pcl\pcparse.c" />
+    <ClCompile Include="..\pcl\pcl\pcpatrn.c" />
+    <ClCompile Include="..\pcl\pcl\pcpatxfm.c" />
+    <ClCompile Include="..\pcl\pcl\pcrect.c" />
+    <ClCompile Include="..\pcl\pcl\pcsfont.c" />
+    <ClCompile Include="..\pcl\pcl\pcstatus.c" />
+    <ClCompile Include="..\pcl\pcl\pcsymbol.c" />
+    <ClCompile Include="..\pcl\pcl\pctext.c" />
+    <ClCompile Include="..\pcl\pcl\pctop.c" />
+    <ClCompile Include="..\pcl\pcl\pcuptrn.c" />
+    <ClCompile Include="..\pcl\pcl\pcursor.c" />
+    <ClCompile Include="..\pcl\pcl\pcwhtidx.c" />
+    <ClCompile Include="..\pcl\pcl\pgchar.c" />
+    <ClCompile Include="..\pcl\pcl\pgcolor.c" />
+    <ClCompile Include="..\pcl\pcl\pgconfig.c" />
+    <ClCompile Include="..\pcl\pcl\pgdraw.c" />
+    <ClCompile Include="..\pcl\pcl\pgfdata.c" />
+    <ClCompile Include="..\pcl\pcl\pgfont.c" />
+    <ClCompile Include="..\pcl\pcl\pgframe.c" />
+    <ClCompile Include="..\pcl\pcl\pggeom.c" />
+    <ClCompile Include="..\pcl\pcl\pginit.c" />
+    <ClCompile Include="..\pcl\pcl\pglabel.c" />
+    <ClCompile Include="..\pcl\pcl\pglfill.c" />
+    <ClCompile Include="..\pcl\pcl\pgmisc.c" />
+    <ClCompile Include="..\pcl\pcl\pgparse.c" />
+    <ClCompile Include="..\pcl\pcl\pgpoly.c" />
+    <ClCompile Include="..\pcl\pcl\pgvector.c" />
+    <ClCompile Include="..\pcl\pcl\rtgmode.c" />
+    <ClCompile Include="..\pcl\pcl\rtmisc.c" />
+    <ClCompile Include="..\pcl\pcl\rtraster.c" />
+    <ClCompile Include="..\pcl\pcl\rtrstcmp.c" />
+    <ClCompile Include="..\pcl\pl\pjparse.c" />
+    <ClCompile Include="..\pcl\pl\pjparsei.c" />
+    <ClCompile Include="..\pcl\pl\pjtop.c" />
+    <ClCompile Include="..\pcl\pl\plalloc.c" />
+    <ClCompile Include="..\pcl\pl\plapi.c" />
+    <ClCompile Include="..\pcl\pl\plchar.c" />
+    <ClCompile Include="..\pcl\pl\pldict.c" />
+    <ClCompile Include="..\pcl\pl\pldraw.c" />
+    <ClCompile Include="..\pcl\pl\plfapi.c" />
+    <ClCompile Include="..\pcl\pl\plfont.c" />
+    <ClCompile Include="..\pcl\pl\plftable.c" />
+    <ClCompile Include="..\pcl\pl\plht.c" />
+    <ClCompile Include="..\pcl\pl\plimpl.c" />
+    <ClCompile Include="..\pcl\pl\pllfont.c" />
+    <ClCompile Include="..\pcl\pl\plmain.c" />
+    <ClCompile Include="..\pcl\pl\plparams.c" />
+    <ClCompile Include="..\pcl\pl\plplatf.c" />
+    <ClCompile Include="..\pcl\pl\plplatfps.c" />
+    <ClCompile Include="..\pcl\pl\plsymbol.c" />
+    <ClCompile Include="..\pcl\pl\pltop.c" />
+    <ClCompile Include="..\pcl\pl\pltoputl.c" />
+    <ClCompile Include="..\pcl\pl\pluchar.c" />
+    <ClCompile Include="..\pcl\pl\plufont.c" />
+    <ClCompile Include="..\pcl\pl\plufstlp.c" />
+    <ClCompile Include="..\pcl\pl\plufstlp1.c" />
+    <ClCompile Include="..\pcl\pl\plulfont.c" />
+    <ClCompile Include="..\pcl\pl\plvalue.c" />
+    <ClCompile Include="..\pcl\pl\plvocab.c" />
+    <ClCompile Include="..\pcl\pl\plwimg.c" />
+    <ClCompile Include="..\pcl\pl\plwmainc.c" />
+    <ClCompile Include="..\pcl\pl\plwreg.c" />
+    <ClCompile Include="..\pcl\pl\realmain.c" />
+    <ClCompile Include="..\pcl\pxl\pxbfont.c" />
+    <ClCompile Include="..\pcl\pxl\pxerrors.c" />
+    <ClCompile Include="..\pcl\pxl\pxffont.c" />
+    <ClCompile Include="..\pcl\pxl\pxfont.c" />
+    <ClCompile Include="..\pcl\pxl\pxgstate.c" />
+    <ClCompile Include="..\pcl\pxl\pximage.c" />
+    <ClCompile Include="..\pcl\pxl\pximpl.c" />
+    <ClCompile Include="..\pcl\pxl\pxink.c" />
+    <ClCompile Include="..\pcl\pxl\pxpaint.c" />
+    <ClCompile Include="..\pcl\pxl\pxparse.c" />
+    <ClCompile Include="..\pcl\pxl\pxptable.c" />
+    <ClCompile Include="..\pcl\pxl\pxpthr.c" />
+    <ClCompile Include="..\pcl\pxl\pxsessio.c" />
+    <ClCompile Include="..\pcl\pxl\pxstate.c" />
+    <ClCompile Include="..\pcl\pxl\pxstream.c" />
+    <ClCompile Include="..\pcl\pxl\pxtop.c" />
+    <ClCompile Include="..\pcl\pxl\pxvalue.c" />
+    <ClCompile Include="..\pcl\pxl\pxvendor.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\pcl\pcl\pcbiptrn.h" />
+    <ClInclude Include="..\pcl\pcl\pccid.h" />
+    <ClInclude Include="..\pcl\pcl\pccoord.h" />
+    <ClInclude Include="..\pcl\pcl\pccsbase.h" />
+    <ClInclude Include="..\pcl\pcl\pcdict.h" />
+    <ClInclude Include="..\pcl\pcl\pcdither.h" />
+    <ClInclude Include="..\pcl\pcl\pcdraw.h" />
+    <ClInclude Include="..\pcl\pcl\pcfont.h" />
+    <ClInclude Include="..\pcl\pcl\pcfontst.h" />
+    <ClInclude Include="..\pcl\pcl\pcfrgrnd.h" />
+    <ClInclude Include="..\pcl\pcl\pcfsel.h" />
+    <ClInclude Include="..\pcl\pcl\pcht.h" />
+    <ClInclude Include="..\pcl\pcl\pcident.h" />
+    <ClInclude Include="..\pcl\pcl\pcindxed.h" />
+    <ClInclude Include="..\pcl\pcl\pclookup.h" />
+    <ClInclude Include="..\pcl\pcl\pcmtx3.h" />
+    <ClInclude Include="..\pcl\pcl\pcommand.h" />
+    <ClInclude Include="..\pcl\pcl\pcpage.h" />
+    <ClInclude Include="..\pcl\pcl\pcpalet.h" />
+    <ClInclude Include="..\pcl\pcl\pcparam.h" />
+    <ClInclude Include="..\pcl\pcl\pcparse.h" />
+    <ClInclude Include="..\pcl\pcl\pcpatrn.h" />
+    <ClInclude Include="..\pcl\pcl\pcpattyp.h" />
+    <ClInclude Include="..\pcl\pcl\pcpatxfm.h" />
+    <ClInclude Include="..\pcl\pcl\pcstate.h" />
+    <ClInclude Include="..\pcl\pcl\pcsymbol.h" />
+    <ClInclude Include="..\pcl\pcl\pctop.h" />
+    <ClInclude Include="..\pcl\pcl\pctpm.h" />
+    <ClInclude Include="..\pcl\pcl\pcuptrn.h" />
+    <ClInclude Include="..\pcl\pcl\pcursor.h" />
+    <ClInclude Include="..\pcl\pcl\pcwhtidx.h" />
+    <ClInclude Include="..\pcl\pcl\pcxfmst.h" />
+    <ClInclude Include="..\pcl\pcl\pgdraw.h" />
+    <ClInclude Include="..\pcl\pcl\pgfdata.h" />
+    <ClInclude Include="..\pcl\pcl\pgfont.h" />
+    <ClInclude Include="..\pcl\pcl\pggeom.h" />
+    <ClInclude Include="..\pcl\pcl\pginit.h" />
+    <ClInclude Include="..\pcl\pcl\pgmand.h" />
+    <ClInclude Include="..\pcl\pcl\pgmisc.h" />
+    <ClInclude Include="..\pcl\pcl\pgstate.h" />
+    <ClInclude Include="..\pcl\pcl\rtgmode.h" />
+    <ClInclude Include="..\pcl\pcl\rtmisc.h" />
+    <ClInclude Include="..\pcl\pcl\rtraster.h" />
+    <ClInclude Include="..\pcl\pcl\rtrstcmp.h" />
+    <ClInclude Include="..\pcl\pcl\rtrstst.h" />
+    <ClInclude Include="..\pcl\pl\pjparse.h" />
+    <ClInclude Include="..\pcl\pl\pjtop.h" />
+    <ClInclude Include="..\pcl\pl\plalloc.h" />
+    <ClInclude Include="..\pcl\pl\plapi.h" />
+    <ClInclude Include="..\pcl\pl\plchar.h" />
+    <ClInclude Include="..\pcl\pl\pldebug.h" />
+    <ClInclude Include="..\pcl\pl\pldict.h" />
+    <ClInclude Include="..\pcl\pl\pldraw.h" />
+    <ClInclude Include="..\pcl\pl\plfapi.h" />
+    <ClInclude Include="..\pcl\pl\plfont.h" />
+    <ClInclude Include="..\pcl\pl\plftable.h" />
+    <ClInclude Include="..\pcl\pl\plht.h" />
+    <ClInclude Include="..\pcl\pl\pllfont.h" />
+    <ClInclude Include="..\pcl\pl\plmain.h" />
+    <ClInclude Include="..\pcl\pl\plparse.h" />
+    <ClInclude Include="..\pcl\pl\plplatf.h" />
+    <ClInclude Include="..\pcl\pl\plsymbol.h" />
+    <ClInclude Include="..\pcl\pl\pltop.h" />
+    <ClInclude Include="..\pcl\pl\pltoputl.h" />
+    <ClInclude Include="..\pcl\pl\plufstlp.h" />
+    <ClInclude Include="..\pcl\pl\plvalue.h" />
+    <ClInclude Include="..\pcl\pl\plvocab.h" />
+    <ClInclude Include="..\pcl\pl\plwimg.h" />
+    <ClInclude Include="..\pcl\pl\plwreg.h" />
+    <ClInclude Include="..\pcl\pl\plwres.h" />
+    <ClInclude Include="..\pcl\pxl\pxattr.h" />
+    <ClInclude Include="..\pcl\pxl\pxbfont.h" />
+    <ClInclude Include="..\pcl\pxl\pxdict.h" />
+    <ClInclude Include="..\pcl\pxl\pxenum.h" />
+    <ClInclude Include="..\pcl\pxl\pxerrors.h" />
+    <ClInclude Include="..\pcl\pxl\pxfont.h" />
+    <ClInclude Include="..\pcl\pxl\pxgstate.h" />
+    <ClInclude Include="..\pcl\pxl\pxoper.h" />
+    <ClInclude Include="..\pcl\pxl\pxparse.h" />
+    <ClInclude Include="..\pcl\pxl\pxptable.h" />
+    <ClInclude Include="..\pcl\pxl\pxpthr.h" />
+    <ClInclude Include="..\pcl\pxl\pxstate.h" />
+    <ClInclude Include="..\pcl\pxl\pxtag.h" />
+    <ClInclude Include="..\pcl\pxl\pxvalue.h" />
+    <ClInclude Include="..\pcl\pxl\pxvendor.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -1,0 +1,105 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="xps">
+      <UniqueIdentifier>{b93e1b49-8090-43e2-a089-c82816c9446c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="xps %28.h%29">
+      <UniqueIdentifier>{109bd127-5938-44fd-b458-54958f999ada}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\xps\xpsanalyze.c">
+      <Filter>xps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\xps\xpscff.c">
+      <Filter>xps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\xps\xpscolor.c">
+      <Filter>xps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\xps\xpscommon.c">
+      <Filter>xps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\xps\xpscrc.c">
+      <Filter>xps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\xps\xpsdoc.c">
+      <Filter>xps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\xps\xpsfapi.c">
+      <Filter>xps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\xps\xpsfont.c">
+      <Filter>xps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\xps\xpsglyphs.c">
+      <Filter>xps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\xps\xpsgradient.c">
+      <Filter>xps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\xps\xpshash.c">
+      <Filter>xps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\xps\xpsimage.c">
+      <Filter>xps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\xps\xpsjpeg.c">
+      <Filter>xps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\xps\xpsjxr.c">
+      <Filter>xps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\xps\xpsmem.c">
+      <Filter>xps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\xps\xpsopacity.c">
+      <Filter>xps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\xps\xpspage.c">
+      <Filter>xps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\xps\xpspath.c">
+      <Filter>xps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\xps\xpspng.c">
+      <Filter>xps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\xps\xpsresource.c">
+      <Filter>xps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\xps\xpstiff.c">
+      <Filter>xps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\xps\xpstile.c">
+      <Filter>xps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\xps\xpstop.c">
+      <Filter>xps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\xps\xpsttf.c">
+      <Filter>xps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\xps\xpsutf.c">
+      <Filter>xps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\xps\xpsvisual.c">
+      <Filter>xps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\xps\xpsxml.c">
+      <Filter>xps</Filter>
+    </ClCompile>
+    <ClCompile Include="..\xps\xpszip.c">
+      <Filter>xps</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\xps\ghostxps.h">
+      <Filter>xps %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\xps\xpsfapi.h">
+      <Filter>xps %28.h%29</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
