@@ -4044,10 +4044,12 @@ currentdict /set_bc_color undef
             1 index aload pop     % <annot> [x1 y1 x2 y2] [LE1 LE2] x1 y1 x2 y2
             3 -1 roll sub         % <annot> [x1 y1 x2 y2] [LE1 LE2] x1 x2 dy
             3 1 roll exch sub     % <annot> [x1 y1 x2 y2] [LE1 LE2] dy dx
-            2 copy translate
+            3 index aload pop 4 2 roll pop pop
+            translate
+            0 0 moveto
             atan                  % <annot> [x1 y1 x2 y2] [LE1 LE2]
             rotate
-            dup 0 get             % <annot> [x1 y1 x2 y2] [LE1 LE2] LE1
+            dup 1 get             % <annot> [x1 y1 x2 y2] [LE1 LE2] LE1
             dup //LineEnd_dict exch known not
             {
               pop /None
@@ -4061,10 +4063,12 @@ currentdict /set_bc_color undef
             1 index aload pop  % x1 y1 x2 y2
             3 -1 roll sub      % x1 x2 dy
             3 1 roll exch sub  % dy dx
-            2 copy translate
+            3 index aload pop pop pop
+            translate
+            0 0 moveto
             atan 180 add
             rotate
-            1 get dup //LineEnd_dict exch known not {pop /None} if //LineEnd_dict exch get 3 index exch exec
+            0 get dup //LineEnd_dict exch known not {pop /None} if //LineEnd_dict exch get 3 index exch exec
             grestore
           }if
           aload pop 4 2 roll
