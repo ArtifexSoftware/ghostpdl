@@ -4724,14 +4724,29 @@ currentdict /set_bc_color undef
       grestore % in case the contents were rotated
       dup /CL knownoget {
         dup length 6 eq {
-          aload pop moveto lineto lineto stroke
+          dup aload pop pop pop
         } {
           dup length 4 eq {
-            aload pop moveto lineto stroke
+            dup aload pop
           } {
-            pop
+            pop 0
           } ifelse
         } ifelse
+        4 2 roll
+        exch 4 -1 roll sub
+        3 1 roll exch sub
+        atan exch
+        aload pop moveto lineto lineto
+        currentpoint
+%        stroke
+%        0 1 0 setrgbcolor
+        moveto currentpoint translate 0 0 moveto
+        360 exch sub rotate
+        currentpoint
+        -5 -8 rlineto
+        moveto
+        5 -8 rlineto
+        stroke
       } if
       //endannottransparency exec
       //false
