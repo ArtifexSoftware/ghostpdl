@@ -1046,10 +1046,10 @@ txtwrite_put_params(gx_device * dev, gs_param_list * plist)
 {
     gx_device_txtwrite_t *tdev = (gx_device_txtwrite_t *) dev;
     int ecode = 0;
-    int code;
+    int code, old_TextFormat = tdev->TextFormat;
     const char *param_name;
     gs_param_string ofs;
-    bool dummy;
+    bool dummy, open = dev->is_open;
 
     switch (code = param_read_string(plist, (param_name = "OutputFile"), &ofs)) {
         case 0:
@@ -1092,12 +1092,6 @@ txtwrite_put_params(gx_device * dev, gs_param_list * plist)
     if (code < 0)
         return code;
 
-    code = gx_default_put_params(dev, plist);
-    if (code < 0)
-        return code;
-
-    dev->interpolate_control = 0;
-
     if (ofs.data != 0) {	/* Close the file if it's open. */
         if (tdev->file != 0) {
             gp_fclose(tdev->file);
@@ -1106,6 +1100,23 @@ txtwrite_put_params(gx_device * dev, gs_param_list * plist)
         memcpy(tdev->fname, ofs.data, ofs.size);
         tdev->fname[ofs.size] = 0;
     }
+
+    /* If we change media size then gs_default_put_params will close
+     * the device if it is open. We don't want it to do that, so set
+     * the device's 'is_open' flag to false, and reset it after we've
+     * processed the params.
+     */
+    if (old_TextFormat == tdev->TextFormat && open)
+        dev->is_open = false;
+
+    code = gx_default_put_params(dev, plist);
+    if (code < 0)
+        return code;
+
+    dev->is_open = open;
+
+    dev->interpolate_control = 0;
+
     return 0;
 }
 

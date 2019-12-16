@@ -434,7 +434,7 @@ $(GLGENDIR)$(D)fdevs.tr: $(GS_MAK) $(ECHOGS_XE) $(GSPLAT_DEVS_ALL) $(FEATURE_DEV
 	$(EXP)$(ECHOGS_XE) -a $(GLGENDIR)$(D)fdevs.tr -+ $(FEATURE_DEVS_EXTRA)
 
 $(GLGENDIR)$(D)devdevs.tr: $(GS_MAK) $(ECHOGS_XE) $(DEVICE_DEVS_ALL) $(MAKEDIRS)
-	$(EXP)$(ECHOGS_XE) -a $(GLGENDIR)$(D)devdevs.tr -+ $(DEVICE_DEVS)
+	$(EXP)$(ECHOGS_XE) -w $(GLGENDIR)$(D)devdevs.tr -+ $(DEVICE_DEVS)
 	$(EXP)$(ECHOGS_XE) -a $(GLGENDIR)$(D)devdevs.tr -+ $(DEVICE_DEVS1)
 	$(EXP)$(ECHOGS_XE) -a $(GLGENDIR)$(D)devdevs.tr -+ $(DEVICE_DEVS2)
 	$(EXP)$(ECHOGS_XE) -a $(GLGENDIR)$(D)devdevs.tr -+ $(DEVICE_DEVS3)

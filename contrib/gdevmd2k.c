@@ -402,15 +402,17 @@ runlength(byte *out, byte *in, int length)
     return p_out - out;
 }
 
-#define write_short(data, stream) { \
-    gp_fputc((unsigned char) (data), stream); \
-    gp_fputc((unsigned short) (data) >> 8, stream); \
+static void write_short(unsigned data, gp_file* stream)
+{
+    gp_fputc((unsigned char) (data), stream);
+    gp_fputc((unsigned short) (data) >> 8, stream);
 }
 
-#define alps_cmd(cmd1, data, cmd2, stream) { \
-    gp_fwrite(cmd1, 1, 3, stream); \
-    write_short(data, stream); \
-    gp_fputc(cmd2, stream); \
+static void alps_cmd(const char* cmd1, unsigned data, int cmd2, gp_file* stream)
+{
+    gp_fwrite(cmd1, 1, 3, stream);
+    write_short(data, stream);
+    gp_fputc(cmd2, stream);
 }
 
 static void
@@ -537,12 +539,14 @@ alps_print_page(gx_device_printer *pdev, gp_file *prn_stream,
                 /* get a component of CMYK from raster data */
                 len = cmyk_to_bit(work, dp, len, c_comp);
                 dp = work;
+                /* Fall through. */
             case 1:
                 /* remove trailing 0s */
                 for( ; len > 0 && dp[len-1] == 0; len --);
                 break;
             case 32:
                 dp += c_comp;
+                /* Fall through. */
             case 8:
                 outP = work;
                 ep = error;

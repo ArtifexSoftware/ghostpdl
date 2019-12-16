@@ -141,7 +141,7 @@ currentdict end def
 % <dir.../base.extn> .basename <dir>
 /.splitdirname {
   (/) rsearch { //true } { (\\) rsearch } ifelse
-  {3 -2 roll pop pop //true}{//false} ifelse
+  {exch concatstrings exch pop //true}{//false} ifelse
 } bind def
 
 % <file> .addcidfmappath -
@@ -214,7 +214,7 @@ currentdict end def
     } loop
   } forall
   currentdict end
-  {exch pop (/) concatstrings /PermitFileReading exch .addcontrolpath} forall
+  {exch pop /PermitFileReading exch .addcontrolpath} forall
 
   % Checks for vicious substitution cycles.
   dup length dict copy                  % <<map>>

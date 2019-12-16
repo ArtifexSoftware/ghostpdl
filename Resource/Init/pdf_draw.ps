@@ -549,9 +549,25 @@ end
         cleartomark //null exit
       } if
       gsave //nodict begin
-        /CS knownoget {
+        dup /CS knownoget {
+          exch pop
           resolvecolorspace dup setgcolorspace csput
-        } if
+        }
+        {
+          % Group attributes dictionaries are supposed to contain a /CS
+          % entry, but Acrobat apparently also handles a /ColorSpace....
+          /ColorSpace knownoget {
+            (   **** Error: A transparency group XObject has a /ColorSpace instead of /CS attribute.\n)
+            pdfformaterror
+            resolvecolorspace dup setgcolorspace csput
+          }
+          {
+            (   **** Error: Ignoring a transparency group XObject without /CS attribute.\n)
+            pdfformaterror
+            (               Output may be incorrect.\n) pdfformaterror
+            cleartomark //null exit
+          }ifelse
+        } ifelse
         aload pop setcolor [ currentgray ]
       end grestore
       /GrayBackground exch 3 2 roll
@@ -643,9 +659,19 @@ def
     resolvecolorspace dup setgcolorspace csput
     //true		% use currentcolorspace
   } {
-    % inheriting the colorspace -- make sure Device* spaces are not CIEBased
-    forceDefaultCS currentcolorspace 0 get .knownget { exec } if
-    //false		% no defined colorspace
+    % Group attributes dictionaries are supposed to contain a /CS
+    % entry, but Acrobat apparently also handles a /ColorSpace....
+    dup /Group oget /ColorSpace knownoget {
+    (   **** Error: A transparency group attribute dictionary has a /ColorSpace instead of /CS attribute.\n)
+    pdfformaterror
+      resolvecolorspace dup setgcolorspace csput
+      //true		% use currentcolorspace
+    }
+    {
+      % inheriting the colorspace -- make sure Device* spaces are not CIEBased
+      forceDefaultCS currentcolorspace 0 get .knownget { exec } if
+      //false		% no defined colorspace
+    } ifelse
   } ifelse
   3 -1 roll dup
   dup 4 1 roll /BBox get aload pop .begintransparencymaskgroup
@@ -1066,6 +1092,8 @@ currentdict end readonly def
     //true
   } ifelse {
     dup dup type /arraytype eq { 0 get } if
+    dup type /packedarraytype eq {exch pop exec dup} if
+
     //csrdict exch .knownget  {
       exec dup type /nametype ne { dup length 1 eq { 0 get } if } if
     } {
@@ -1423,8 +1451,12 @@ drawopdict begin
           } {
             clippath
           } ifelse
-          //null setup_trans
+          % If we get an error, just emit an empty box
+          { pathbbox } stopped { 0 0 0 0 } if
+          4 array astore
           grestore
+          //null
+          setup_trans
           //do_shade exec
           teardown_trans
         } {
@@ -2247,7 +2279,8 @@ currentdict /last-ditch-bpc-csp undef
        % We also need to actually set the current colour space to be the same as the group
        % code only picks up the current colour space, not the space from the dictionary.
        currentdict /SMask get /Matte known {/CS currentdict /ColorSpace get dup pdfopdict /cs get exec } if
-    >> 0 0 1 1 .begintransparencygroup
+    >> 0 0 1 1
+    .begintransparencygroup
      doimage
     .endtransparencygroup
     % tell the compositor we're done with the SMask.
@@ -2258,7 +2291,8 @@ currentdict /last-ditch-bpc-csp undef
   } {
     .currentSMask //null ne {
       % the image doesn't have an SMask, but the ExtGState does, force a group.
-      << /Subtype /Group /Isolated //true >> 0 0 1 1 .begintransparencygroup
+      << /Subtype /Group /Isolated //true >> 0 0 1 1
+      .begintransparencygroup
       doimage
       .endtransparencygroup
     }
@@ -2339,7 +2373,12 @@ currentdict /last-ditch-bpc-csp undef
       makemaskimage
   } if
                 % Stack: datasource imagemask
-  gsave 1 1 moveto 0 0 lineto /image setup_trans grestore
+  gsave 1 1 moveto 0 0 lineto
+  % If we get an error, just emit an empty box
+  { pathbbox } stopped { 0 0 0 0 } if
+  4 array astore grestore
+  /image
+  setup_trans
   { currentdict end setfillstate //true ValidateDecode { imagemask } }
   { ColorSpace setgcolorspace currentdict end setfillblend //false ValidateDecode { image } }
   ifelse
@@ -3061,17 +3100,20 @@ end
 /strokeborder {		% <annot> <width> <dash> strokeborder -
   1 index 0 ne {	% do not draw if border width is 0
     gsave
-    2 index annotsetcolor
-    {
+%    2 index annotsetcolor
+%    {
       0 setdash dup setlinewidth
-      exch annotrect
+      exch dup annotrect
+      5 -1 roll /RD knownoget {
+        applyRD
+      } if
       2 { 4 index sub 4 1 roll } repeat
       2 { 4 index 0.5 mul add 4 1 roll } repeat
       rectstroke pop
       grestore
-    } {
-      pop pop pop
-    } ifelse
+%    } {
+%      pop pop pop
+%    } ifelse
   } {
     pop pop pop
   }ifelse
@@ -3112,7 +3154,8 @@ end
       } if
       {} 2 index /S knownoget {
         /D eq { 2 index /D knownoget not { {3} } if exch pop } if
-      } if 3 -1 roll pop strokeborder
+      } if
+      3 -1 roll pop strokeborder
     } {
       dup 2 get
       exch dup length 3 gt { 3 get } { pop {} } ifelse
@@ -3161,16 +3204,29 @@ end
         /D eq { 2 index /D knownoget not { {3} } if exch pop } if
       } if
       3 index /CA knownoget {.setopacityalpha} if
-      3 -1 roll pop 2 index annotsetcolor {0 setdash setlinewidth stroke} if
+      3 -1 roll pop
+%      2 index annotsetcolor {
+      0 setdash setlinewidth stroke
+%      } if
     } {
       dup 2 get
-      exch dup length 3 gt { 3 get } { pop {} } ifelse
-      3 index /CA knownoget {.setopacityalpha} if
-      2 index annotsetcolor {0 setdash setlinewidth stroke} if
+      % If element 3 of the /Border array is 0, then don't draw the border
+      dup 0 ne {
+        exch dup length 3 gt { 3 get } { pop {} } ifelse
+        3 index /CA knownoget {.setopacityalpha} if
+%        2 index annotsetcolor {
+        0 setdash setlinewidth stroke
+%        } if
+      }{
+       pop pop
+      } ifelse
     } ifelse
   } {
     3 index /CA knownoget {.setopacityalpha} if
-    1 {} 2 index annotsetcolor {0 setdash setlinewidth stroke} if
+    1 {}
+%    2 index annotsetcolor {
+    0 setdash setlinewidth stroke
+%    } if
   } ifelse
   pop
   grestore
@@ -3257,12 +3313,24 @@ end
   1 index /DA fget not {
     1 index /V fget {
       <EFBBBF> anchorsearch {
-        pop /Helvetica findfont 12 scalefont setfont
+        pop /Helvetica findfont
+        12 scalefont setfont
       } {
         <FEFF> anchorsearch {
           pop pop /FallBackFont /Identity-UTF16-H [/CIDFallBack] composefont 12 scalefont setfont
         } {
-          pop /Helvetica findfont 12 scalefont setfont
+          pop /Helvetica findfont
+          % re-encode the font to PDFDocEncoding
+          dup length dict begin
+          {
+            1 index /FID ne 2 index /UniqueID ne and { def } { pop pop } ifelse
+          } forall
+          /Encoding /PDFDocEncoding /Encoding findresource def
+          /FontName /Helvetica-PDFDocEncoding def
+          currentdict
+          end
+          /Helvetica-PDFDocEncoding exch definefont
+          12 scalefont setfont
         }ifelse
       }ifelse
     } if
@@ -3529,6 +3597,23 @@ currentdict /set_bc_color undef
   } ifelse
 } bind executeonly def
 
+/applyRD {
+  % x y w h [l t r b]
+  dup 0 get             % x y w h [] l
+  6 -1 roll add
+  5 1 roll              %x+l y w h []
+  dup 1 get             %x+l y w h [] b
+  5 -1 roll add         %x+l w h [] b+y
+  4 1 roll              %x+l y+b w h []
+  aload pop             %x+l y+b w h l t r b
+  exch                  %x+l y+b w h l t b r
+  4 -1 roll add         %x+l y+b w h t b r+l
+  3 1 roll add          %x+l y+b w h r+l t+b
+  3 -1 roll exch sub    %x+l y+b w r+l h-(t+b)
+  3 1 roll sub          %x+l y+b h-(t+b) w-(r+l)
+  exch
+} bind executeonly def
+
 % Draw an annotation.
 /drawannottypes 20 dict begin
 
@@ -3627,13 +3712,26 @@ currentdict /set_bc_color undef
       {
         gsave
         dup /ca knownoget {.setopacityalpha} if
-        dup annotrect rectfill
+        dup annotrect
+        5 index /RD knownoget {
+          applyRD
+        } if
+        rectfill
         grestore
         dup /CA knownoget {.setopacityalpha} if
-        drawborder
+        dup annotsetcolor {
+          drawborder
+        } if
         //false
       }{
-        pop
+        dup annotrect
+        5 index /RD knownoget {
+          applyRD
+        } if
+        drawopdict /re get exec
+        dup annotsetcolor {
+          strokeborderpath
+        } if
       } ifelse
       //endannottransparency exec
       grestore
@@ -3667,11 +3765,17 @@ currentdict /set_bc_color undef
     } {
       gsave
       //startannottransparency exec
-      dup annotrect 4 2 roll exch 3 index 2 div add exch 2 index 2 div add
+      dup annotrect
+      5 index /RD knownoget {
+        applyRD
+      } if
+      4 2 roll exch 3 index 2 div add exch 2 index 2 div add
       translate //drawellipse exec
       dup
       fillborderpath
-      strokeborderpath
+      dup annotsetcolor {
+        strokeborderpath
+      } if
       //endannottransparency exec
       grestore
       //false
@@ -3720,8 +3824,14 @@ currentdict /set_bc_color undef
         fill
         grestore
         dup /CA knownoget {.setopacityalpha} if
-        strokeborderpath
-      } if
+        dup annotsetcolor {
+          strokeborderpath
+        } if
+      } {
+        dup annotsetcolor {
+          strokeborderpath
+        } if
+      } ifelse
       //endannottransparency exec
       //false
       grestore
@@ -3939,44 +4049,50 @@ currentdict /set_bc_color undef
     } {
       gsave
       //startannottransparency exec
-      dup /L knownoget {
-        1 index /LE knownoget { % <annot> [x1 y1 x2 y2] [LE1 LE2]
-          gsave
-          1 index aload pop     % <annot> [x1 y1 x2 y2] [LE1 LE2] x1 y1 x2 y2
-          3 -1 roll sub         % <annot> [x1 y1 x2 y2] [LE1 LE2] x1 x2 dy
-          3 1 roll exch sub     % <annot> [x1 y1 x2 y2] [LE1 LE2] dy dx
-          2 copy translate
-          atan                  % <annot> [x1 y1 x2 y2] [LE1 LE2]
-          rotate
-          dup 0 get             % <annot> [x1 y1 x2 y2] [LE1 LE2] LE1
-          dup //LineEnd_dict exch known not
-          {
-            pop /None
-          } if
-          //LineEnd_dict exch   % <annot> [x1 y1 x2 y2] [LE1 LE2] <dict> LE1
-          get                   % <annot> [x1 y1 x2 y2] [LE1 LE2] {}
-          3 index exch          % <annot> [x1 y1 x2 y2] [LE1 LE2] <annot> {}
-          exec
-          grestore
-          gsave
-          1 index aload pop  % x1 y1 x2 y2
-          3 -1 roll sub      % x1 x2 dy
-          3 1 roll exch sub  % dy dx
-          2 copy translate
-          atan 180 add
-          rotate
-          1 get dup //LineEnd_dict exch known not {pop /None} if //LineEnd_dict exch get 3 index exch exec
-          grestore
-        }if
-        aload pop 4 2 roll
-        moveto lineto
-        strokeborderpath
-      }{
-        (   **** Error: Invalid L array for Line, annotation has not been drawn.\n)
-        pdfformaterror
-        (               Output may be incorrect.\n) pdfformaterror
-        pop
-      } ifelse
+      dup annotsetcolor {
+        dup /L knownoget {
+          1 index /LE knownoget { % <annot> [x1 y1 x2 y2] [LE1 LE2]
+            gsave
+            1 index aload pop     % <annot> [x1 y1 x2 y2] [LE1 LE2] x1 y1 x2 y2
+            3 -1 roll sub         % <annot> [x1 y1 x2 y2] [LE1 LE2] x1 x2 dy
+            3 1 roll exch sub     % <annot> [x1 y1 x2 y2] [LE1 LE2] dy dx
+            3 index aload pop 4 2 roll pop pop
+            translate
+            0 0 moveto
+            atan                  % <annot> [x1 y1 x2 y2] [LE1 LE2]
+            rotate
+            dup 1 get             % <annot> [x1 y1 x2 y2] [LE1 LE2] LE1
+            dup //LineEnd_dict exch known not
+            {
+              pop /None
+            } if
+            //LineEnd_dict exch   % <annot> [x1 y1 x2 y2] [LE1 LE2] <dict> LE1
+            get                   % <annot> [x1 y1 x2 y2] [LE1 LE2] {}
+            3 index exch          % <annot> [x1 y1 x2 y2] [LE1 LE2] <annot> {}
+            exec
+            grestore
+            gsave
+            1 index aload pop  % x1 y1 x2 y2
+            3 -1 roll sub      % x1 x2 dy
+            3 1 roll exch sub  % dy dx
+            3 index aload pop pop pop
+            translate
+            0 0 moveto
+            atan 180 add
+            rotate
+            0 get dup //LineEnd_dict exch known not {pop /None} if //LineEnd_dict exch get 3 index exch exec
+            grestore
+          }if
+          aload pop 4 2 roll
+          moveto lineto
+          strokeborderpath
+        }{
+          (   **** Error: Invalid L array for Line, annotation has not been drawn.\n)
+          pdfformaterror
+          (               Output may be incorrect.\n) pdfformaterror
+          pop
+        } ifelse
+      } if
       //endannottransparency exec
       //false
       grestore
@@ -4044,14 +4160,16 @@ currentdict /set_bc_color undef
 
   /Link { % <annot> -> <false>
     //startannottransparency exec
-    dup drawborder dup calc_annot_scale
-    2 copy mul 0 ne
-    {3 -1 roll drawwidget //false}
-    {
-      pop pop
-      (   **** Error: ignoring annotation with scale factor of 0\n) pdfformaterror
-      (               Output may be incorrect.\n) pdfformaterror
-    }ifelse
+    dup annotsetcolor {
+      dup drawborder dup calc_annot_scale
+      2 copy mul 0 ne
+      {3 -1 roll drawwidget //false}
+      {
+        pop pop
+        (   **** Error: ignoring annotation with scale factor of 0\n) pdfformaterror
+        (               Output may be incorrect.\n) pdfformaterror
+      }ifelse
+    } if
     //endannottransparency exec
   } bind executeonly def
 
@@ -4065,7 +4183,8 @@ currentdict /set_bc_color undef
       1 setlinewidth
       1 setlinecap
       1 setlinejoin
-      dup annotsetcolor {
+      dup annotsetcolor
+      {
         dup calc_annot_scale
         2 copy mul 0 ne
         {
@@ -4114,7 +4233,8 @@ currentdict /set_bc_color undef
       //true
     } {
       0 setlinecap
-      dup annotsetcolor {
+      dup annotsetcolor
+      {
         dup calc_annot_scale
         2 copy mul 0 ne
         {
@@ -4154,7 +4274,8 @@ currentdict /set_bc_color undef
       //true
     } {
       0 setlinecap
-      dup annotsetcolor {
+      dup annotsetcolor
+      {
         dup calc_annot_scale
         2 copy mul 0 ne
         {
@@ -4216,7 +4337,8 @@ currentdict /set_bc_color undef
       //true
     } {
     0 setlinecap
-    dup annotsetcolor {
+    dup annotsetcolor
+    {
       /QuadPoints knownoget {
         aload length 8 idiv {
           6 -2 roll
@@ -4228,7 +4350,9 @@ currentdict /set_bc_color undef
         } repeat
         PDFusingtransparency {
           //emptydict
-          pathbbox 2 index add exch 3 index add exch .begintransparencygroup
+          % If we get an error, just emit an empty box
+          { pathbbox } stopped { 0 0 0 0 } if
+          2 index add exch 3 index add exch .begintransparencygroup
           /Multiply .setblendmode
           fill
           .endtransparencygroup
@@ -4249,7 +4373,8 @@ currentdict /set_bc_color undef
       //true
     } {
       //startannottransparency exec
-      dup annotsetcolor {
+      dup annotsetcolor
+      {
         dup calc_annot_scale
         2 copy mul 0 ne
         {
@@ -4390,7 +4515,11 @@ currentdict /set_bc_color undef
       }{
         //false
       } ifelse
-      {dup annotrect
+      {
+        dup annotrect
+        5 index /RD knownoget {
+          applyRD
+        } if
         %% Somewhat horrifyingly, rectfill maps directly to the device fill_rectangle
         %% method, which bypasses transparency (!!) So we construct the rectangle,
         %% and fill it, manually instead....
@@ -4401,7 +4530,26 @@ currentdict /set_bc_color undef
       %% get and process the default appearance string, if we don't have one, use a default
       /DA_Action_Dict
       <<
-        /Tf {exch dup /Helv eq {pop /Helvetica findfont exch scalefont setfont}{findfont exch scalefont setfont}ifelse}
+        /Tf
+        {
+          exch dup /Helv eq
+          {
+            pop /Helvetica dup findfont
+          }
+          {dup findfont}ifelse
+
+          % re-encode the font to PDFDocEncoding
+          dup length dict begin
+          {
+            1 index /FID ne 2 index /UniqueID ne and { def } { pop pop } ifelse
+          } forall
+          /Encoding /PDFDocEncoding /Encoding findresource def
+          /FontName /Helvetica-PDFDocEncoding def
+          currentdict
+          end
+          definefont
+          exch scalefont setfont
+        }
         /r  {aload pop setrgbcolor} % Can't find this actually defined anywhere, but Acrobat seems to honour it :-(
         /rg {setrgbcolor}
         /RG {setrgbcolor}
@@ -4447,27 +4595,108 @@ currentdict /set_bc_color undef
         {cleartomark pop} ifelse
       } {
         0 setgray
-        /Helvetica findfont 12 scalefont setfont
+        /Helvetica findfont
+        % re-encode the font to PDFDocEncoding
+        dup length dict begin
+        {
+          1 index /FID ne 2 index /UniqueID ne and { def } { pop pop } ifelse
+        } forall
+        /Encoding /PDFDocEncoding /Encoding findresource def
+        /FontName /Helvetica-PDFDocEncoding def
+        currentdict
+        end
+        /Helvetica-PDFDocEncoding exch definefont
+        12 scalefont setfont
       }ifelse
 
       %% draw the border, if we don't have a border style dictionary, draw a default one.
-      dup /BS knownoget {
+      dup /BS knownoget
+      {
         pop dup drawborder
       }{
         newpath
         0 setgray 1 setlinewidth
-        dup annotrect 4 -1 roll 1 add 4 -1 roll 1 add 4 -1 roll 2 sub 4 -1 roll 2 sub
-        4 2 roll moveto
-        currentpoint exch 3 index add exch lineto
-        currentpoint 2 index add lineto
-        exch currentpoint 3 1 roll exch sub exch lineto
-        currentpoint 3 -1 roll sub lineto stroke
+        dup annotrect
+        5 index /RD knownoget {
+          applyRD
+          4 -1 roll 4 -1 roll 4 -1 roll 4 -1 roll
+          4 2 roll
+        } {
+          4 -1 roll 1 add 4 -1 roll 1 add 4 -1 roll 2 sub 4 -1 roll 2 sub
+          4 2 roll
+        }ifelse
+        moveto
+        currentpoint exch 3 index add exch
+        lineto
+        currentpoint 2 index add
+        lineto
+        exch currentpoint 3 1 roll exch sub exch
+        lineto
+        currentpoint 3 -1 roll sub
+        lineto stroke
       }ifelse
 
+      gsave % in case we rotate the contents
       %% Start the current point at the top left of the annotation Rect
       %%
-      dup annotrect 4 -1 roll 2 add 4 -1 roll 2 add 4 -1 roll 4 sub 4 -1 roll 4 sub
-      3 -1 roll add 2 index exch moveto 1 index add
+      dup /Rotate knownoget
+      % x y w h - x' w' x' y'
+      {
+        dup 90 eq {
+          pop
+          dup annotrect
+          5 index /RD knownoget {
+            applyRD
+          } if
+          exch pop 3 -1 roll 2 index
+          moveto 90 rotate
+          1 index add
+        } {
+          dup 180 eq {
+            pop
+            dup annotrect
+            5 index /RD knownoget {
+              applyRD
+            } if
+            pop 3 -1 roll 1 index add -1 mul exch 1 index -1 mul 4 -1 roll
+            moveto 180 rotate
+            1 index add
+          }{
+            270 eq {
+              dup annotrect
+              5 index /RD knownoget {
+                applyRD
+              } if
+              dup 4 -1 roll add 3 -1 roll 3 index add exch
+              moveto 270 rotate
+              exch pop currentpoint
+              pop dup 3 -1 roll add
+            }{
+              dup annotrect
+              5 index /RD knownoget {
+                applyRD
+                3 -1 roll add 2 index exch
+                moveto 1 index add
+              }{
+                4 -1 roll 2 add 4 -1 roll 2 add 4 -1 roll 4 sub 4 -1 roll 4 sub
+                3 -1 roll add 2 index exch
+                moveto 1 index add
+              } ifelse
+            } ifelse
+          } ifelse
+        } ifelse
+      }{
+         dup annotrect
+          5 index /RD knownoget {
+            applyRD
+            3 -1 roll add 2 index exch
+            moveto 1 index add
+          }{
+           4 -1 roll 2 add 4 -1 roll 2 add 4 -1 roll 4 sub 4 -1 roll 4 sub
+           3 -1 roll add 2 index exch
+           moveto 1 index add
+         } ifelse
+      } ifelse
 
       %% Get the Contents string, if we don't have one, we're done
       %%
@@ -4506,7 +4735,6 @@ currentdict /set_bc_color undef
             %% and use it immediatley to start the text one line down
             %%
             currentpoint ..TextHeight sub moveto
-
             %% Now we process each character code in the string. If we find
             %% a /r/ or /n then we drop a line. If the character would end up
             %% outside the Annot Rect, then we drop a line before showing it.
@@ -4520,7 +4748,8 @@ currentdict /set_bc_color undef
               } {
                 1 string dup 0 4 -1 roll
                 put dup                 %% llx urx (string) (int) (int)
-                stringwidth pop currentpoint pop add 3 index gt {
+                stringwidth pop currentpoint pop add 3 index
+                gt {
                   currentpoint exch pop 4 index exch ..TextHeight sub moveto
                 } if
                 show
@@ -4537,6 +4766,34 @@ currentdict /set_bc_color undef
         } ifelse
       } if
       pop pop
+
+      grestore % in case the contents were rotated
+      dup /CL knownoget {
+        dup length 6 eq {
+          dup aload pop pop pop
+        } {
+          dup length 4 eq {
+            dup aload pop
+          } {
+            pop 0
+          } ifelse
+        } ifelse
+        4 2 roll
+        exch 4 -1 roll sub
+        3 1 roll exch sub
+        atan exch
+        aload pop moveto lineto lineto
+        currentpoint
+%        stroke
+%        0 1 0 setrgbcolor
+        moveto currentpoint translate 0 0 moveto
+        360 exch sub rotate
+        currentpoint
+        -5 -8 rlineto
+        moveto
+        5 -8 rlineto
+        stroke
+      } if
       //endannottransparency exec
       //false
       grestore
@@ -4572,7 +4829,18 @@ currentdict /set_bc_color undef
     PDFusingtransparency {
       .begintransparencytextgroup
     } if
-    /Times-Bold findfont exch scalefont setfont  % (text) y
+    /Times-Bold findfont
+    % re-encode the font to PDFDocEncoding
+    dup length dict begin
+    {
+      1 index /FID ne 2 index /UniqueID ne and { def } { pop pop } ifelse
+    } forall
+    /Encoding /PDFDocEncoding /Encoding findresource def
+    /FontName /Times-Bold-PDFDocEncoding def
+    currentdict
+    end
+    /Times-Bold-PDFDocEncoding exch definefont
+    exch scalefont setfont  % (text) y
     gsave
     0 0 moveto
     1 index //false charpath flattenpath pathbbox
@@ -4735,7 +5003,18 @@ currentdict /set_bc_color undef
               .begintransparencytextgroup
             } if
             0 setgray
-            /Helvetica findfont 9 scalefont setfont
+            /Helvetica findfont
+            % re-encode the font to PDFDocEncoding
+            dup length dict begin
+            {
+              1 index /FID ne 2 index /UniqueID ne and { def } { pop pop } ifelse
+            } forall
+            /Encoding /PDFDocEncoding /Encoding findresource def
+            /FontName /Helvetica-PDFDocEncoding def
+            currentdict
+            end
+            /Helvetica-PDFDocEncoding exch definefont
+            9 scalefont setfont
             2 index aload pop 3 1 roll pop pop 30 sub exch 5 add exch
             moveto show
             PDFusingtransparency {
@@ -4754,7 +5033,18 @@ currentdict /set_bc_color undef
               .begintransparencytextgroup
             } if
             0 setgray
-            /Helvetica findfont 9 scalefont setfont
+            /Helvetica findfont
+            % re-encode the font to PDFDocEncoding
+            dup length dict begin
+            {
+              1 index /FID ne 2 index /UniqueID ne and { def } { pop pop } ifelse
+            } forall
+            /Encoding /PDFDocEncoding /Encoding findresource def
+            /FontName /Helvetica-PDFDocEncoding def
+            currentdict
+            end
+            /Helvetica-PDFDocEncoding exch definefont
+            9 scalefont setfont
             dup stringwidth pop
             2 index aload pop pop exch pop exch sub
             exch sub 2 div 2 index aload pop 3 1 roll pop pop 11 sub 3 1 roll add exch moveto

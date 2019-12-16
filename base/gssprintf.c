@@ -16,8 +16,9 @@
 /* From: https://svn.apache.org/repos/asf/apr/apr/trunk/strings/apr_snprintf.c */
 /* Additional modifications to work outside Apache for use with Ghostscript */
 
+#include "unistd_.h"
+#include "gp.h"
 #include "stdio_.h"
-#include "stdint_.h"
 #include "string_.h"
 #include <stdarg.h>
 #include "math_.h"

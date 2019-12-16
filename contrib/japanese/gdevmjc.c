@@ -440,6 +440,7 @@ mj_put_params(gx_device *pdev,  gs_param_list *plist, int ptype)
         code = put_param_int(plist, "Magenta", &magenta, 0, INT_MAX, code);
         code = put_param_int(plist, "Yellow", &yellow, 0, INT_MAX, code);
         code = put_param_int(plist, "Black", &black, 0, INT_MAX, code);
+        (void) code;
 
         if ((code = param_read_bool(plist,
                                      (param_name = "Unidirectional"),
@@ -998,7 +999,6 @@ mj_print_page(gx_device_printer * pdev, gp_file * prn_stream, int ptype)
   plane_size = calc_buffsize(line_size, storage_bpp);
 
   if (bits_per_pixel == 1) {            /* Data printed direct from i/p */
-    databuff_size = 0;                  /* so no data buffer required, */
     outbuff_size = plane_size * 4;      /* but need separate output buffers */
   }
 
@@ -1053,6 +1053,7 @@ mj_print_page(gx_device_printer * pdev, gp_file * prn_stream, int ptype)
         p += xtalbuff_size;
         Kbuf[1] = p;
         p += xtalbuff_size;
+        (void) p;
   }
 
   storage = (word *) gs_malloc(pdev->memory->non_gc_memory, storage_size_words, W, "mj_colour_print_page");
@@ -1105,7 +1106,6 @@ mj_print_page(gx_device_printer * pdev, gp_file * prn_stream, int ptype)
       p += plane_size;
     }
     if (bits_per_pixel == 1) {
-      out_data = out_row = p;	  /* size is outbuff_size * 4 */
       data[1] += databuff_size;   /* coincides with plane_data pointers */
       data[3] += databuff_size;
     }
@@ -1174,9 +1174,6 @@ mj_print_page(gx_device_printer * pdev, gp_file * prn_stream, int ptype)
 #define MOFFSET (pdev->t_margin - MJ700V2C_PRINT_LIMIT) /* Print position */
 
   {
-    int MJ_MARGIN_MM = 55;
-    uint top_skip = (int)(( MJ_MARGIN_MM  * pdev->y_pixels_per_inch ) / 254);
-    top_skip = (top_skip ^ (-1)) & 65536;
     gp_fwrite("\033(V\2\0\0\0",sizeof(byte), 7, prn_stream);
     gp_fwrite("\033(v\2\0\0\xff",sizeof(byte), 7, prn_stream);
   }
@@ -1441,14 +1438,6 @@ mj_color_correct(gx_color_value *Rptr ,gx_color_value *Gptr , gx_color_value *Bp
                         *Gptr = M;
                         *Bptr = Y;
                         return;
-                } else if (G>B) {				/* R=G>B */
-                        D = G-B;
-                        Wa  = R;
-                        H  = 256;
-                } else {						/* B>R=G */
-                        D = G-B;
-                        Wa = R;
-                        H = 1024;
                 }
         }
 

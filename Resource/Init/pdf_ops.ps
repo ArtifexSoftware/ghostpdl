@@ -701,7 +701,7 @@ end
 % NB: setup_trans is defined as either setupOPtrans (for devices that can support
 %     overprint, or as setupSMtrans which pushes a group for SMask.
 % Also see 'teardown_trans' that pops the group and resets the changed values.
-/setupOPtrans	% <fillop|strokeop> setup_trans
+/setupOPtrans	% [ pathbbox ] <fillop|strokeop> setup_trans
 {  % Check OP and BM in case we need to push a group
   //OPsaveDstack begin
   //Dpush exec			% push the current OPsaveDstack values into 'previous'
@@ -719,41 +719,7 @@ end
   } ifelse
   .currentSMask //null ne or {		% push a group for OP or SMask
     mark /Subtype /Group /Isolated .currentSMask //null ne .dicttomark
-    1 index /stroke eq {
-      % BBox needs to include line width / line join expansion.
-      gsave strokepath pathbbox grestore
-    } {
-      pathbbox     % fill/eofill cases
-    } ifelse
-    .begintransparencygroup
-    % After group pushed, set opacityalpha, shapealpha and blendmode
-    /saveOA .currentopacityalpha def
-    /saveSA .currentshapealpha def
-    1 .setopacityalpha 1 .setshapealpha
-    /GroupPushed //true def
-  } if
-  % we may change to CompatibleOverprint even if we didn't push a group.
-  ChangeBM {
-    /saveBM .currentblendmode def /CompatibleOverprint .setblendmode
-  } if
-  pop		% fillop/strokeop
-  end	% OPsaveDstack
-} bind executeonly def
-
-% Also see 'teardown_trans' that pops the group and resets the changed values.
-/setupSMtrans	% <fillop|strokeop> setup_trans
-{
-  //OPsaveDstack begin
-  //Dpush exec			% push the current OPsaveDstack values into 'previous'
-  .currentSMask //null ne 1 index /image ne and		% only push for SMask if not from image
-  {
-    mark /Subtype /Group /Isolated //true .dicttomark
-    exch /stroke eq {
-    % BBox needs to include line width / line join expansion.
-      gsave strokepath pathbbox grestore
-    } {
-      pathbbox     % fill/eofill cases
-    } ifelse
+    2 index aload pop		% pathbbox
     .begintransparencygroup
     % After group pushed, set opacityalpha, shapealpha and blendmode
     /saveOA .currentopacityalpha def
@@ -762,9 +728,37 @@ end
     /GroupPushed //true def
   } {
     /GroupPushed //false def
-    pop		% fillop/strokeop
+  } ifelse
+  % we may change to CompatibleOverprint even if we didn't push a group.
+  ChangeBM {
+    /saveBM .currentblendmode def /CompatibleOverprint .setblendmode
+  } if
+  pop		% fillop/strokeop
+  pop		% pathbbox array
+  end	% OPsaveDstack
+} bind executeonly def
+
+% Also see 'teardown_trans' that pops the group and resets the changed values.
+/setupSMtrans	% [ pathbbox ] <fillop|strokeop> setup_trans
+{
+  //OPsaveDstack begin
+  //Dpush exec			% push the current OPsaveDstack values into 'previous'
+  .currentSMask //null ne 1 index /image ne and		% only push for SMask if not from image
+  {
+    mark /Subtype /Group /Isolated //true .dicttomark
+    2 index aload pop		% pathbbox
+    .begintransparencygroup
+    % After group pushed, set opacityalpha, shapealpha and blendmode
+    /saveOA .currentopacityalpha def
+    /saveSA .currentshapealpha def
+    1 .setopacityalpha 1 .setshapealpha
+    /GroupPushed //true def
+  } {
+    /GroupPushed //false def
   } ifelse
   end	% OPsaveDstack
+  pop	% fillop/strokeop
+  pop	% pathbbox array
 } bind executeonly def
 
 % If a transparency group was pushed, pop it, and reset the settings.
@@ -791,9 +785,23 @@ currentdict dup /Dpush .undef /Dpop .undef
 /fsexec		% <fillop|strokeop> fsexec -
 {
    PDFusingtransparency {
-      dup setup_trans
-      cvx exec
-      teardown_trans
+     dup /stroke eq {
+       % BBox needs to include line width / line join expansion.
+       % strokepath will return empty path (no currentpoint) if nothing is stroked
+       { gsave strokepath pathbbox } stopped grestore {
+         % If we get an error, just emit an empty box
+         0 0 0 0
+       } if
+     } {
+       % If we get an error, just emit an empty box
+       { pathbbox } stopped { 0 0 0 0 } if
+     } ifelse
+     % pathbbox valid -- proceed with drawing
+     4 array astore		% pathbbox
+     1 index
+     setup_trans
+     cvx exec
+     teardown_trans
    } {
       cvx exec
    } ifelse
@@ -924,23 +932,23 @@ currentdict dup /Dpush .undef /Dpop .undef
 
 /B {
   OFFlevels length 0 eq {
-         PDFusingtransparency {
-                % knockout trans group around the filled and stroked object
-                mark
-                /Isolated //true /Knockout //true
-                .dicttomark
-                % strokepath will return empty path (no currentpoint) if nothing is stroked
-                gsave { strokepath pathbbox } stopped grestore not {
-            1 .setopacityalpha
-                        .begintransparencygroup
-                        gsave setfillstate fill grestore
-                        setstrokestate .swapcolors /stroke fsexec .swapcolors
-                        .endtransparencygroup
-                } { newpath pop } ifelse
-         } {
-                gsave setfillstate fill grestore
-                setstrokestate .swapcolors /stroke fsexec .swapcolors
-        } ifelse
+    PDFusingtransparency {
+      % knockout trans group around the filled and stroked object
+      mark
+      /Isolated //true /Knockout //true
+      .dicttomark
+      % strokepath will return empty path (no currentpoint) if nothing is stroked
+      gsave { strokepath pathbbox } stopped grestore not {
+        1 .setopacityalpha
+        .begintransparencygroup
+        gsave setfillstate fill grestore
+        setstrokestate .swapcolors /stroke fsexec .swapcolors
+        .endtransparencygroup
+      } { newpath pop } ifelse
+    } {
+      gsave setfillstate fill grestore
+      setstrokestate .swapcolors /stroke fsexec .swapcolors
+    } ifelse
   } {
     newpath
   } ifelse
@@ -950,23 +958,23 @@ currentdict dup /Dpush .undef /Dpop .undef
 
 /B* {
   OFFlevels length 0 eq {
-         PDFusingtransparency {
-                % knockout trans group around the filled and stroked object
-                mark
-                /Isolated //true /Knockout //true
-                .dicttomark
-                % strokepath will return empty path (no currentpoint) if nothing is stroked
-                gsave { strokepath pathbbox } stopped grestore not {
-            1 .setopacityalpha
-                        .begintransparencygroup
-                        gsave setfillstate eofill grestore
-                        setstrokestate .swapcolors /stroke fsexec .swapcolors
-                        .endtransparencygroup
-                } { newpath pop } ifelse
-         } {
-                gsave setfillstate eofill grestore
-                setstrokestate .swapcolors /stroke fsexec .swapcolors
-        } ifelse
+    PDFusingtransparency {
+      % knockout trans group around the filled and stroked object
+      mark
+      /Isolated //true /Knockout //true
+      .dicttomark
+      % strokepath will return empty path (no currentpoint) if nothing is stroked
+      gsave { strokepath pathbbox } stopped grestore not {
+        1 .setopacityalpha
+        .begintransparencygroup
+        gsave setfillstate eofill grestore
+        setstrokestate .swapcolors /stroke fsexec .swapcolors
+        .endtransparencygroup
+      } { newpath pop } ifelse
+    } {
+      gsave setfillstate eofill grestore
+      setstrokestate .swapcolors /stroke fsexec .swapcolors
+    } ifelse
   } {
     newpath
   } ifelse
@@ -1643,7 +1651,16 @@ end readonly def
 /TextTransSetup {	% showarg path_valid TextTransSetup showarg
                         % showarg path_valid false TextTransSetup showarg
    % NB: if 'show' is used, then we use the clippath, but a smaller bbox is preferred
-   not dup { gsave clippath } if //null setup_trans { grestore } if
+   {
+     % path was (probably) valid (CTM may not be invertable)
+     % Since TR mode may include stroking, expand for stroke
+     % If we get an error, just emit an empty box
+     { gsave strokepath pathbbox } stopped grestore { 0 0 0 0 } if
+   } {
+     gsave clippath pathbbox grestore	% path not valid -- use clippath
+   } ifelse
+   4 array astore //null
+   setup_trans
 } bind executeonly def
 
 /TextTransTeardown {
@@ -1929,7 +1946,9 @@ end readonly def
           1 .setopacityalpha
           % While text will always have a currentpoint, strokepath seems to mess with it.
           % we get the currentpoint, then use moveto to restore it for pathbbox
-          gsave currentpoint strokepath moveto pathbbox grestore
+          { gsave currentpoint strokepath moveto pathbbox } stopped grestore {
+            /tB cvx /undefinedresult signalerror
+          } if
           .begintransparencygroup
           gsave tf grestore tS
           .endtransparencygroup

@@ -1396,11 +1396,11 @@ lips4v_endpath(gx_device_vector * vdev, gx_path_type_t type)
     lputs(s, "P)");
     sputc(s, LIPS_IS2);
     if (type & gx_path_type_rule) {
-        if (type & gx_path_type_winding_number) {
-            lputs(s, "}I1");
+        if (type & gx_path_type_even_odd) {
+            lputs(s, "}I0");
             sputc(s, LIPS_IS2);
         } else {
-            lputs(s, "}I0");
+            lputs(s, "}I1");
             sputc(s, LIPS_IS2);
         }
     }
@@ -1640,6 +1640,7 @@ lips4v_put_params(gx_device * dev, gs_param_list * plist)
         default:
         ecode = code;
       casse:param_signal_error(plist, param_name, ecode);
+        /* Fall through. */
         case 1:
         break;
     }
@@ -1665,6 +1666,7 @@ lips4v_put_params(gx_device * dev, gs_param_list * plist)
         default:
         ecode = code;
       pmediae:param_signal_error(plist, param_name, ecode);
+        /* Fall through. */
         case 1:
         pmedia.data = 0;
         break;
@@ -1695,6 +1697,7 @@ lips4v_put_params(gx_device * dev, gs_param_list * plist)
         default:
         ecode = code;
       userne:param_signal_error(plist, param_name, ecode);
+        /* Fall through. */
         case 1:
         usern.data = 0;
         break;
@@ -1716,6 +1719,7 @@ lips4v_put_params(gx_device * dev, gs_param_list * plist)
         default:
         ecode = code;
       nupe:param_signal_error(plist, param_name, ecode);
+        /* Fall through. */
         case 1:
         break;
     }
@@ -1736,6 +1740,7 @@ lips4v_put_params(gx_device * dev, gs_param_list * plist)
         default:
         ecode = code;
       tden:param_signal_error(plist, param_name, ecode);
+        /* Fall through. */
         case 1:
         break;
     }
@@ -1771,6 +1776,7 @@ lips4v_put_params(gx_device * dev, gs_param_list * plist)
             }
             ecode = code;
             param_signal_error(plist, param_name, ecode);
+            /* Fall through. */
             case 1:
             break;
         }
@@ -1795,6 +1801,7 @@ lips4v_put_params(gx_device * dev, gs_param_list * plist)
         default:
         ecode = code;
       bppe:param_signal_error(plist, param_name, ecode);
+        /* Fall through. */
         case 1:
         break;
     }

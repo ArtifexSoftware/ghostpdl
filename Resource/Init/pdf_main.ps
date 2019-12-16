@@ -2784,7 +2784,7 @@ currentdict /PDF2PS_matrix_key undef
     .poppdf14devicefilter	% NB: reset to DefaultQstate will also restore transfer function
     /DefaultQstate qstate store	% device has changed -- reset DefaultQstate
   } {
-    /setup_trans { pop } def    % no-op this if the page doesn't use transparency
+    /setup_trans { pop pop } def    % no-op this if the page doesn't use transparency
                                 % NB: original will be restored from PDFsave
     showpagecontents
   } ifelse

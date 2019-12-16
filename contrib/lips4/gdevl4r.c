@@ -520,6 +520,7 @@ lips4_put_params(gx_device * pdev, gs_param_list * plist)
         default:
             ecode = code;
           pmediae:param_signal_error(plist, param_name, ecode);
+          /* Fall through. */
         case 1:
             pmedia.data = 0;
             break;
@@ -825,11 +826,13 @@ lips4_image_out(gx_device_printer * pdev, gp_file * prn_stream, int x, int y, in
             gp_fwrite(lprn->TmpBuf, 1, width / 8 * height, prn_stream);
         }
     } else {
+        /* 2019-11-28: changed two occurrencies of 'Len' to 'Len_rle' here, but
+        unable to test. */
         gs_sprintf(comp_str, "%c%d;%d;%d;10;%d.r", LIPS_CSI,
-                Len, width / 8, (int)pdev->x_pixels_per_inch, height);
+                Len_rle, width / 8, (int)pdev->x_pixels_per_inch, height);
         if (Len_rle < width / 8 * height - strlen(comp_str) + strlen(raw_str)) {
             gp_fprintf(prn_stream, "%s", comp_str);
-            gp_fwrite(lprn->CompBuf2, 1, Len, prn_stream);
+            gp_fwrite(lprn->CompBuf2, 1, Len_rle, prn_stream);
         } else {
             /* compression result is bad. */
             gp_fprintf(prn_stream, "%s", raw_str);

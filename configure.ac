@@ -279,46 +279,46 @@ dnl --------------------------------------------------
 dnl Set build flags based on environment
 dnl --------------------------------------------------
 
-CC_OPT_FLAGS_TO_TRY="-O"
+CC_OPT_FLAGS_TO_TRY="-O -DNDEBUG"
 SET_DT_SONAME="-soname="
 CFLAGS_LARGEFILE=""
 
 case $host in
         *-linux*|*-gnu)
         if test $ac_cv_prog_gcc = yes; then
-            CC_OPT_FLAGS_TO_TRY="-O2"
+            CC_OPT_FLAGS_TO_TRY="-O2 -DNDEBUG"
             CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
         fi
         ;;
         *bsd*)
         if test $ac_cv_prog_gcc = yes; then
-            CC_OPT_FLAGS_TO_TRY="-O2"
+            CC_OPT_FLAGS_TO_TRY="-O2 -DNDEBUG"
             CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
         fi
         ;;
         *-darwin*)
         if test $ac_cv_prog_gcc = yes; then
-            CC_OPT_FLAGS_TO_TRY="-O2"
+            CC_OPT_FLAGS_TO_TRY="-O2 -DNDEBUG"
             CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
         fi
         SET_DT_SONAME=""
         ;;
         *-mingw*|*-msys*|*-cygwin*)
         if test $ac_cv_prog_gcc = yes; then
-            CC_OPT_FLAGS_TO_TRY="-O2"
+            CC_OPT_FLAGS_TO_TRY="-O2 -DNDEBUG"
             CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
         fi
         SET_DT_SONAME=""
         ;;
-        *-sun*)
-        CC_OPT_FLAGS_TO_TRY="-O2"
+        *-sun*|*-solaris*)
+        CC_OPT_FLAGS_TO_TRY="-O2 -DNDEBUG"
         CFLAGS_LARGEFILE="-D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64"
         # the trailing space is required!
         if test $ac_cv_prog_gcc = no; then
             SET_DT_SONAME="-h "
         fi
         if test $ac_cv_prog_gcc = yes; then
-            CC_OPT_FLAGS_TO_TRY="-O2"
+            CC_OPT_FLAGS_TO_TRY="-O2 -DNDEBUG"
             CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
         else
             CC_DBG_FLAGS_TO_TRY="-g -O0"
@@ -326,7 +326,7 @@ case $host in
         ;;
         *-aix*)
         if test $ac_cv_prog_gcc = yes; then
-            CC_OPT_FLAGS_TO_TRY="-O2"
+            CC_OPT_FLAGS_TO_TRY="-O2 -DNDEBUG"
             CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
             SET_DT_SONAME="so"
         fi
@@ -1435,7 +1435,7 @@ if test x"$SHARE_LIBTIFF" = x"0" ; then
       if ! test -d "$LIBTIFFCONFDIR" ; then
         mkdir "$LIBTIFFCONFDIR"
       fi
-      cd "$LIBTIFFCONFDIR" && "$absolute_source_path/$LIBTIFFDIR/configure" --disable-jbig --disable-lzma $SUBCONFIG_OPTS
+      cd "$LIBTIFFCONFDIR" && "$absolute_source_path/$LIBTIFFDIR/configure" --disable-jbig --disable-lzma --disable-zstd --disable-webp $SUBCONFIG_OPTS
       status=$?
       if test $status -ne 0 ; then
         AC_MSG_ERROR([libtiff configure script failed], $status)
@@ -1446,10 +1446,8 @@ if test x"$SHARE_LIBTIFF" = x"0" ; then
         TIFFCFLAGS="-Wno-write-strings $CFLAGS_NMI $CFLAGS_NUD -DJPEG_LIB_MK1_OR_12BIT=0"
       fi
       # if we're building with our own libjpeg, or we have another libjpeg available, allow jpeg compression in TIFF
-      if test x"$TIFF_JPEG_INCLUDE" != x"src" ; then
-        TIFFCFLAGS="-DJPEG_SUPPORT -DJPEG_LIB_MK1_OR_12BIT=0 -I$TIFF_JPEG_INCLUDE $TIFFCFLAGS"
-      elif test x"$SHARE_LIBJPEG" = x"1" ; then
-        TIFFCFLAGS="-DJPEG_SUPPORT -DJPEG_LIB_MK1_OR_12BIT=0 $TIFFCFLAGS"
+      if test x"$SHARE_LIBJPEG" = x"1" ; then
+        TIFFCFLAGS="-DJPEG_SUPPORT -DOJPEG_SUPPORT -DJPEG_LIB_MK1_OR_12BIT=0 $TIFFCFLAGS"
       fi
 
       echo
@@ -2202,7 +2200,7 @@ if test x$no_x != xyes; then
         if test ! "$x_libraries" = "NONE" -a ! "$x_libraries" = ""; then
                 X_LDFLAGS="-L$x_libraries"
                 case $host in
-                    *-sun*)
+                    *-sun*|*-solaris*)
                         X_LDFLAGS="$X_LDFLAGS -R$x_libraries"
                     ;;
                     *)
@@ -2813,7 +2811,7 @@ case $host in
       DYNAMIC_LIBS=""
       SO_LIB_EXT=".dylib"
     ;;
-    *-sun*)
+    *-sun*|*-solaris*)
       if test $ac_cv_prog_gcc = yes; then
         DYNAMIC_CFLAGS="-fPIC $DYNAMIC_CFLAGS"
       else
@@ -2917,7 +2915,7 @@ AC_ARG_ENABLE([dynamic], AC_HELP_STRING([--enable-dynamic],
         OPT_CFLAGS="$DYNAMIC_CFLAGS $OPT_CFLAGS"
         DBG_CFLAGS="$DYNAMIC_CFLAGS $DBG_CFLAGS"
       ;;
-      *-sun*)
+      *-sun*|*-solaris*)
         DYNAMIC_DEVS="\$(GLOBJDIR)/X11.so"
         DYNAMIC_FLAGS="-DGS_DEVS_SHARED -DGS_DEVS_SHARED_DIR=\\\"\$(gssharedir)\\\""
         OPT_CFLAGS="$DYNAMIC_CFLAGS $OPT_CFLAGS"
@@ -3106,7 +3104,7 @@ AC_ARG_WITH(memory-alignment,
 
 if test x"$GS_MEMPTR_ALIGNMENT" = xcheck ; then
   case $host in
-    *hpux*|*-sun*|*-aix*)
+    *hpux*|*-sun*|*-aix*|*-solaris*)
      GS_MEMPTR_ALIGNMENT=8
     ;;
     *)
