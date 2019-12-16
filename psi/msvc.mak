@@ -877,6 +877,7 @@ SBRFLAGS=/FR$(SBRDIR)\$(NUL)
 MSVC_VERSION=5
 !endif
 !if "$(_NMAKE_VER)" == "6.00.8168.0"
+# VC 6
 MSVC_VERSION=6
 !endif
 !if "$(_NMAKE_VER)" == "7.00.9466"
@@ -890,50 +891,71 @@ MSVC_VERSION=7
 MSVC_MINOR_VERSION=1
 !endif
 !if "$(_NMAKE_VER)" == "8.00.40607.16"
+# VS2005
 MSVC_VERSION=8
 !endif
 !if "$(_NMAKE_VER)" == "8.00.50727.42"
+# VS2005
 MSVC_VERSION=8
 !endif
 !if "$(_NMAKE_VER)" == "8.00.50727.762"
+# VS2005
 MSVC_VERSION=8
 !endif
 !if "$(_NMAKE_VER)" == "9.00.21022.08"
+# VS2008
 MSVC_VERSION=9
 !endif
 !if "$(_NMAKE_VER)" == "9.00.30729.01"
+# VS2008
 MSVC_VERSION=9
 !endif
 !if "$(_NMAKE_VER)" == "10.00.30319.01"
+# VS2010
 MSVC_VERSION=10
 !endif
 !if "$(_NMAKE_VER)" == "11.00.50522.1"
+# VS2012
 MSVC_VERSION=11
 !endif
 !if "$(_NMAKE_VER)" == "11.00.50727.1"
+# VS2012
 MSVC_VERSION=11
 !endif
 !if "$(_NMAKE_VER)" == "11.00.60315.1"
+# VS2012
 MSVC_VERSION=11
 !endif
 !if "$(_NMAKE_VER)" == "11.00.60610.1"
+# VS2012
 MSVC_VERSION=11
 !endif
 !if "$(_NMAKE_VER)" == "12.00.21005.1"
+# VS 2013
 MSVC_VERSION=12
 !endif
 !if "$(_NMAKE_VER)" == "14.00.23506.0"
+# VS2015
 MSVC_VERSION=14
 !endif
-!if "$(_NMAKE_VER)" == "14.14.26433.0"
+!if "$(_NMAKE_VER)" == "14.00.24210.0"
+# VS2015
 MSVC_VERSION=14
 !endif
-!if "$(_NMAKE_VER)" == "14.16.27026.1"
-MSVC_VERSION=14
+!if "$(_NMAKE_VER)" == "14.16.27034.0"
+# VS2017 or VS2019 (Toolset v141)
+MSVC_VERSION=15
+MS_TOOLSET_VERSION=14.16.27034
+!endif
+!if "$(_NMAKE_VER)" == "14.24.28314.0"
+# VS2019 (Toolset v142)
+MSVC_VERSION=16
+MS_TOOLSET_VERSION=14.24.28314
 !endif
 !endif
 
 !ifndef MSVC_VERSION
+!MESSAGE Could not determine MSVC_VERSION! Guessing at an ancient one.
 MSVC_VERSION=6
 !endif
 !ifndef MSVC_MINOR_VERSION
@@ -1218,6 +1240,54 @@ COMPDIR64=$(COMPBASE)\bin\x86_amd64
 LINKLIBPATH=/LIBPATH:"$(COMPBASE)\lib\amd64" /LIBPATH:"$(COMPBASE)\PlatformSDK\Lib\x64"
 !   endif
 !  endif
+! endif
+!endif
+
+!if $(MSVC_VERSION) == 15
+! ifndef DEVSTUDIO
+DEVSTUDIO=C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\$(MS_TOOLSET_VERSION)
+! endif
+! if "$(DEVSTUDIO)"==""
+COMPBASE=
+SHAREDBASE=
+! else
+!  if $(BUILD_SYSTEM) == 64
+DEVSTUDIO_HOST=Hostx64
+!  else
+DEVSTUDIO_HOST=Hostx86
+!  endif
+!  ifdef WIN64
+DEVSTUDIO_TARGET=x64
+!  else
+DEVSTUDIO_TARGET=x86
+!  endif
+COMPDIR=$(DEVSTUDIO)\bin\$(DEVSTUDIO_HOST)\$(DEVSTUDIO_TARGET)
+RCDIR=
+LINKLIBPATH=/LIBPATH:"$(DEVSTUDIO)\lib\$(DEVSTUDIO_TARGET)"
+! endif
+!endif
+
+!if $(MSVC_VERSION) == 16
+! ifndef DEVSTUDIO
+DEVSTUDIO=C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\$(MS_TOOLSET_VERSION)
+! endif
+! if "$(DEVSTUDIO)"==""
+COMPBASE=
+SHAREDBASE=
+! else
+!  if $(BUILD_SYSTEM) == 64
+DEVSTUDIO_HOST=Hostx64
+!  else
+DEVSTUDIO_HOST=Hostx86
+!  endif
+!  ifdef WIN64
+DEVSTUDIO_TARGET=x64
+!  else
+DEVSTUDIO_TARGET=x86
+!  endif
+COMPDIR=$(DEVSTUDIO)\bin\$(DEVSTUDIO_HOST)\$(DEVSTUDIO_TARGET)
+RCDIR=
+LINKLIBPATH=/LIBPATH:"$(DEVSTUDIO)\lib\$(DEVSTUDIO_TARGET)"
 ! endif
 !endif
 

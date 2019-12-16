@@ -99,6 +99,8 @@ CDCC=/Zi
 
 !if "$(CPU_FAMILY)"=="i386"
 
+!if ($(MSVC_VERSION) <= 12)
+# GB and QI0f were removed at (or before) VS2015
 !if ($(MSVC_VERSION) >= 8) || defined(WIN64)
 # MSVC 8 (2005) attempts to produce code good for all processors.
 # and doesn't used /G5 or /GB.
@@ -111,6 +113,7 @@ CPFLAGS=/G5 $(QI0f)
 CPFLAGS=/GB $(QI0f)
 !else
 CPFLAGS=/GB $(QI0f)
+!endif
 !endif
 !endif
 
@@ -200,7 +203,11 @@ COMPILE_WITH_FRAMES=/Oy-
 CS=
 !else
 !if $(DEBUG)!=0 || $(TDEBUG)!=0
+!if $(MSVC_VERSION) < 14
+# This flag (Enable stack checks for all functions) has gone in
+# VS2015.
 CS=/Ge
+!endif
 !else
 CS=/Gs
 !endif
