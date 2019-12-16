@@ -2953,6 +2953,7 @@ pdf14_set_marking_params(gx_device *dev, const gs_gstate *pgs)
     pdev->stroke_overprint = pgs->stroke_overprint;
     pdev->fillconstantalpha = pgs->fillconstantalpha;
     pdev->strokeconstantalpha = pgs->strokeconstantalpha;
+    pdev->op_state = pgs->is_fill_color;
 
     if_debug6m('v', dev->memory,
                "[v]set_marking_params, opacity = %g, shape = %g, bm = %d, op = %d, eop = %d seop = %d\n",
@@ -4383,6 +4384,8 @@ pdf14_set_params(gs_gstate * pgs,
         pgs->fillconstantalpha = pparams->fillconstantalpha;
     if (pparams->changed & PDF14_SET_STROKECONSTANTALPHA)
         pgs->strokeconstantalpha = pparams->strokeconstantalpha;
+    if (pparams->changed & PDF_SET_FILLSTROKE_STATE)
+        pgs->is_fill_color = pparams->op_fs_state;
     pdf14_set_marking_params(dev, pgs);
 }
 
@@ -7491,6 +7494,8 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
                 put_value(pbuf, pparams->fillconstantalpha);
             if (pparams->changed & PDF14_SET_STROKECONSTANTALPHA)
                 put_value(pbuf, pparams->strokeconstantalpha);
+            if (pparams->changed & PDF_SET_FILLSTROKE_STATE)
+                put_value(pbuf, pparams->op_fs_state);
             break;
         case PDF14_PUSH_TRANS_STATE:
             break;
@@ -7696,6 +7701,8 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
                 read_value(data, params.fillconstantalpha);
             if (params.changed & PDF14_SET_STROKECONSTANTALPHA)
                 read_value(data, params.strokeconstantalpha);
+            if (params.changed & PDF_SET_FILLSTROKE_STATE)
+                read_value(data, params.op_fs_state);
             break;
     }
     code = gs_create_pdf14trans(ppct, &params, mem);
@@ -9125,6 +9132,10 @@ pdf14_clist_update_params(pdf14_clist_device * pdev, const gs_gstate * pgs,
     if (pgs->strokeconstantalpha != pdev->strokeconstantalpha) {
         changed |= PDF14_SET_STROKECONSTANTALPHA;
         params.strokeconstantalpha = pdev->strokeconstantalpha = pgs->strokeconstantalpha;
+    }
+    if (pgs->is_fill_color != pdev->op_state) {
+        changed |= PDF_SET_FILLSTROKE_STATE;
+        params.op_fs_state = pdev->op_state = pgs->is_fill_color;
     }
     if (crop_blend_params) {
         params.ctm = group_params->ctm;
