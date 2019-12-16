@@ -3313,12 +3313,24 @@ end
   1 index /DA fget not {
     1 index /V fget {
       <EFBBBF> anchorsearch {
-        pop /Helvetica findfont 12 scalefont setfont
+        pop /Helvetica findfont
+        12 scalefont setfont
       } {
         <FEFF> anchorsearch {
           pop pop /FallBackFont /Identity-UTF16-H [/CIDFallBack] composefont 12 scalefont setfont
         } {
-          pop /Helvetica findfont 12 scalefont setfont
+          pop /Helvetica findfont
+          % re-encode the font to PDFDocEncoding
+          dup length dict begin
+          {
+            1 index /FID ne 2 index /UniqueID ne and { def } { pop pop } ifelse
+          } forall
+          /Encoding /PDFDocEncoding /Encoding findresource def
+          /FontName /Helvetica-PDFDocEncoding def
+          currentdict
+          end
+          /Helvetica-PDFDocEncoding exch definefont
+          12 scalefont setfont
         }ifelse
       }ifelse
     } if
@@ -4518,7 +4530,26 @@ currentdict /set_bc_color undef
       %% get and process the default appearance string, if we don't have one, use a default
       /DA_Action_Dict
       <<
-        /Tf {exch dup /Helv eq {pop /Helvetica findfont exch scalefont setfont}{findfont exch scalefont setfont}ifelse}
+        /Tf
+        {
+          exch dup /Helv eq
+          {
+            pop /Helvetica dup findfont
+          }
+          {dup findfont}ifelse
+
+          % re-encode the font to PDFDocEncoding
+          dup length dict begin
+          {
+            1 index /FID ne 2 index /UniqueID ne and { def } { pop pop } ifelse
+          } forall
+          /Encoding /PDFDocEncoding /Encoding findresource def
+          /FontName /Helvetica-PDFDocEncoding def
+          currentdict
+          end
+          definefont
+          exch scalefont setfont
+        }
         /r  {aload pop setrgbcolor} % Can't find this actually defined anywhere, but Acrobat seems to honour it :-(
         /rg {setrgbcolor}
         /RG {setrgbcolor}
@@ -4564,7 +4595,18 @@ currentdict /set_bc_color undef
         {cleartomark pop} ifelse
       } {
         0 setgray
-        /Helvetica findfont 12 scalefont setfont
+        /Helvetica findfont
+        % re-encode the font to PDFDocEncoding
+        dup length dict begin
+        {
+          1 index /FID ne 2 index /UniqueID ne and { def } { pop pop } ifelse
+        } forall
+        /Encoding /PDFDocEncoding /Encoding findresource def
+        /FontName /Helvetica-PDFDocEncoding def
+        currentdict
+        end
+        /Helvetica-PDFDocEncoding exch definefont
+        12 scalefont setfont
       }ifelse
 
       %% draw the border, if we don't have a border style dictionary, draw a default one.
@@ -4787,7 +4829,18 @@ currentdict /set_bc_color undef
     PDFusingtransparency {
       .begintransparencytextgroup
     } if
-    /Times-Bold findfont exch scalefont setfont  % (text) y
+    /Times-Bold findfont
+    % re-encode the font to PDFDocEncoding
+    dup length dict begin
+    {
+      1 index /FID ne 2 index /UniqueID ne and { def } { pop pop } ifelse
+    } forall
+    /Encoding /PDFDocEncoding /Encoding findresource def
+    /FontName /Times-Bold-PDFDocEncoding def
+    currentdict
+    end
+    /Times-Bold-PDFDocEncoding exch definefont
+    exch scalefont setfont  % (text) y
     gsave
     0 0 moveto
     1 index //false charpath flattenpath pathbbox
@@ -4950,7 +5003,18 @@ currentdict /set_bc_color undef
               .begintransparencytextgroup
             } if
             0 setgray
-            /Helvetica findfont 9 scalefont setfont
+            /Helvetica findfont
+            % re-encode the font to PDFDocEncoding
+            dup length dict begin
+            {
+              1 index /FID ne 2 index /UniqueID ne and { def } { pop pop } ifelse
+            } forall
+            /Encoding /PDFDocEncoding /Encoding findresource def
+            /FontName /Helvetica-PDFDocEncoding def
+            currentdict
+            end
+            /Helvetica-PDFDocEncoding exch definefont
+            9 scalefont setfont
             2 index aload pop 3 1 roll pop pop 30 sub exch 5 add exch
             moveto show
             PDFusingtransparency {
@@ -4969,7 +5033,18 @@ currentdict /set_bc_color undef
               .begintransparencytextgroup
             } if
             0 setgray
-            /Helvetica findfont 9 scalefont setfont
+            /Helvetica findfont
+            % re-encode the font to PDFDocEncoding
+            dup length dict begin
+            {
+              1 index /FID ne 2 index /UniqueID ne and { def } { pop pop } ifelse
+            } forall
+            /Encoding /PDFDocEncoding /Encoding findresource def
+            /FontName /Helvetica-PDFDocEncoding def
+            currentdict
+            end
+            /Helvetica-PDFDocEncoding exch definefont
+            9 scalefont setfont
             dup stringwidth pop
             2 index aload pop pop exch pop exch sub
             exch sub 2 div 2 index aload pop 3 1 roll pop pop 11 sub 3 1 roll add exch moveto
