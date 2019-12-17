@@ -1592,12 +1592,11 @@ possibly a specific one for each document.</p>
 
 <h3><a name="UnicodeTT"></a>Using Unicode True Type fonts</h3>
 
-<p>Ghostscript can handle True Type fonts with the full Unicode character set.
-For doing that, a third-party software should generate a Postscript
-or PDF document with a text, which is encoded with the
-UTF-16 encoding. Ghostscript may be used for converting
-such Postscript documents to PDF and for
-re-distilling such PDF documents to PDF subsets.</p>
+<p>Ghostscript can make use of Truetype fonts with a Unicode character set.
+To do so, you should generate a (<b>NOTE:</b> non-standard!) Postscript or PDF
+job where the relevant text is encoded as UTF-16. Ghostscript may be used for
+converting such jobs to other formats (Postscript, PDF, PXL etc).
+The resulting output will be compliant with the spec (unlike the input).</p>
 
 <p>
 To render an UTF-16 encoded text, one must do the following :</p>
@@ -1611,12 +1610,12 @@ It must have a <code>cmap</code> table with
 and <code>SpecificID</code> eqials to 1 (Unicode).</li>
 
 <li>
-Describe the font in <code>lib/cidfmap</code>
+Describe the font in <code>Resource/Init/cidfmap</code>
 with special values for the <code>CSI</code> key :
 <code>[(Artifex) (Unicode) 0]</code>.</li>
 
 <li>
-In the PS or PDF document combine the font
+In the PS or PDF job combine the font
 with one of CMap <code>Identity-UTF16-H</code>
 (for the horizontal writing mode)
 or <code>Identity-UTF16-V</code>
