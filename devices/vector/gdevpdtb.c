@@ -509,7 +509,7 @@ pdf_write_FontFile_entry(gx_device_pdf *pdev, pdf_base_font_t *pbfont)
         FontFile_key = "/FontFile2";
         break;
     default:			/* Type 1/2, CIDFontType 0 */
-        if (pdev->ResourcesBeforeUsage)
+        if (!pdev->HaveCFF)
             FontFile_key = "/FontFile";
         else
             FontFile_key = "/FontFile3";
