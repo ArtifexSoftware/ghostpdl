@@ -598,6 +598,9 @@ static int pdfi_check_Font(pdf_context *ctx, pdf_dict *font, pdf_dict *page_dict
     int code = 0;
     pdf_obj *o = NULL;
 
+    if (font->type != PDF_DICT)
+        return_error(gs_error_typecheck);
+
     code = pdfi_dict_knownget_type(ctx, font, "Subtype", PDF_NAME, &o);
     if (code > 0) {
         if (pdfi_name_is((pdf_name *)o, "Type3")) {
@@ -823,7 +826,7 @@ static int pdfi_check_Annots_for_transparency(pdf_context *ctx, pdf_array *annot
 
     for (i=0; i < pdfi_array_size(annots_array); i++) {
         code = pdfi_array_get_type(ctx, annots_array, (uint64_t)i, PDF_DICT, (pdf_obj **)&annot);
-        if (code > 0) {
+        if (code >= 0) {
             code = pdfi_check_annot_for_transparency(ctx, annot, page_dict, transparent, num_spots);
             if (code < 0 && ctx->pdfstoponerror)
                 goto exit;
