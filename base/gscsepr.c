@@ -190,9 +190,9 @@ gx_set_overprint_Separation(const gs_color_space * pcs, gs_gstate * pgs)
     else {
         gs_overprint_params_t   params;
 
-        /* We should not have to blend if we don't need the alternate tint transform */
-        params.retain_any_comps = (pgs->overprint || pgs->stroke_overprint) &&
-                                  pcs->params.separation.sep_type != SEP_ALL;
+        params.retain_any_comps = (((pgs->overprint && pgs->is_fill_color) ||
+                                   (pgs->stroke_overprint && !pgs->is_fill_color)) &&
+                                   (pcs->params.separation.sep_type != SEP_ALL));
         params.is_fill_color = pgs->is_fill_color;
         params.drawn_comps = 0;
         params.op_state = OP_STATE_NONE;

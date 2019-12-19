@@ -738,7 +738,11 @@ gx_set_overprint_DeviceN(const gs_color_space * pcs, gs_gstate * pgs)
     } else {
         gs_overprint_params_t   params;
 
-        if ((params.retain_any_comps = (pgs->overprint || pgs->stroke_overprint))) {
+
+        params.retain_any_comps = (pgs->overprint && pgs->is_fill_color) ||
+                                  (pgs->stroke_overprint && !pgs->is_fill_color);
+
+        if (params.retain_any_comps) {
             int     i, ncomps = pcs->params.device_n.num_components;
 
             params.is_fill_color = pgs->is_fill_color;	/* for fill_stroke */
