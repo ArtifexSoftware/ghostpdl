@@ -69,6 +69,31 @@ static int pdfi_annot_end_transparency(pdf_context *ctx, pdf_dict *annot)
     return pdfi_trans_end_simple_group(ctx);
 }
 
+/* Set opacity for MarkUp annotations if CA or ca key is present */
+static int pdfi_annot_opacity(pdf_context *ctx, pdf_dict *annot)
+{
+    int code = 0;
+    double CA;
+
+    /* CA -- opacity */
+    code = pdfi_dict_knownget_number(ctx, annot, "CA", &CA);
+    if (code < 0) goto exit;
+    if (code > 0) {
+        code = gs_setopacityalpha(ctx->pgs, CA);
+        if (code < 0) goto exit;
+    }
+    /* Also check for 'ca', I assume because there is some file out there that spells it wrong... */
+    code = pdfi_dict_knownget_number(ctx, annot, "ca", &CA);
+    if (code < 0) goto exit;
+    if (code > 0) {
+        code = gs_setopacityalpha(ctx->pgs, CA);
+        if (code < 0) goto exit;
+    }
+
+ exit:
+    return code;
+}
+
 static int pdfi_annot_rect(pdf_context *ctx, pdf_dict *annot, gs_rect *rect)
 {
     int code;
@@ -181,7 +206,7 @@ static int pdfi_annot_draw_AP(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormA
     return code;
 }
 
-static int pdfi_annot_setcolor(pdf_context *ctx, pdf_dict *annot, bool *drawit)
+static int pdfi_annot_setcolor(pdf_context *ctx, pdf_dict *annot, bool usedefault, bool *drawit)
 {
     int code = 0;
     pdf_array *C = NULL;
@@ -192,7 +217,10 @@ static int pdfi_annot_setcolor(pdf_context *ctx, pdf_dict *annot, bool *drawit)
     if (code < 0) goto exit;
 
     if (code == 0) {
-        code = pdfi_gs_setgray(ctx, 0);
+        if (usedefault)
+            code = pdfi_gs_setgray(ctx, 0);
+        else
+            *drawit = false;
     } else {
         if (pdfi_array_size(C) == 0) {
             code = 0;
@@ -212,17 +240,12 @@ static int pdfi_annot_setcolor(pdf_context *ctx, pdf_dict *annot, bool *drawit)
 static int pdfi_annot_strokeborder(pdf_context *ctx, pdf_dict *annot, double width, pdf_array *dash)
 {
     int code = 0;
-    bool drawit;
     gs_rect rect;
 
     if (width <= 0)
         return 0;
 
     code = pdfi_gsave(ctx);
-
-    code = pdfi_annot_setcolor(ctx, annot, &drawit);
-    if (code < 0) goto exit;
-    if (!drawit) goto exit;
 
     code = pdfi_setdash_impl(ctx, dash, 0);
     if (code < 0) goto exit;
@@ -429,6 +452,7 @@ static int pdfi_annot_draw_Link(pdf_context *ctx, pdf_dict *annot, pdf_dict *Nor
 {
     int code;
     int code1;
+    bool drawit;
 
     dbgmprintf(ctx->memory, "ANNOT: Drawing Link\n");
 
@@ -436,9 +460,12 @@ static int pdfi_annot_draw_Link(pdf_context *ctx, pdf_dict *annot, pdf_dict *Nor
     if (code < 0)
         return code;
 
+    code = pdfi_annot_setcolor(ctx, annot, true, &drawit);
+    if (code < 0) goto exit;
+    if (!drawit) goto exit;
+
     code = pdfi_annot_draw_border(ctx, annot);
     if (code < 0) goto exit;
-
 
     code = pdfi_annot_draw_AP(ctx, annot, NormAP);
 
@@ -480,23 +507,145 @@ static int pdfi_annot_draw_Stamp(pdf_context *ctx, pdf_dict *annot, pdf_dict *No
     return code;
 }
 
+/* See pdf_draw.ps/FreeText */
 static int pdfi_annot_draw_FreeText(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
 {
     int code = 0;
+    int code1 = 0;
+    bool drawborder;
+    gs_rect rect;
 
-    /* TODO: Generate appearance (see pdf_draw.ps/FreeText) */
+    /* Disabled for now... this was probably not a good one to start with! */
     *render_done = true;
+    return 0;
 
+    *render_done = false;
+
+    code = pdfi_annot_start_transparency(ctx, annot);
+    if (code < 0) goto exit1;
+
+    code = pdfi_annot_rect(ctx, annot, &rect);
+    if (code < 0) goto exit;
+
+    code = gs_rectclip(ctx->pgs, &rect, 1);
+    if (code < 0) goto exit;
+
+    code = pdfi_annot_opacity(ctx, annot);
+    if (code < 0) goto exit;
+
+    /* Set the border color if applicable */
+    code = pdfi_annot_setcolor(ctx, annot, false, &drawborder);
+    if (code < 0) goto exit;
+
+    /* Only draw border if a color was specified */
+    if (drawborder) {
+        /* TODO: Handle RD */
+        gs_rectfill(ctx->pgs, &rect, 1);
+    }
+
+
+ exit:
+    code1 = pdfi_annot_end_transparency(ctx, annot);
+    if (code >= 0)
+        code = code1;
+ exit1:
+    *render_done = true;
     return code;
 }
 
+/* Generate appearance (see pdf_draw.ps/Text)
+ * This draws the default "Note" thingy which looks like a little page.
+ * TODO: Spec lists a whole bunch of different /Name with different appearances that we don't handle.
+ * See page 1 of tests_private/pdf/sumatra/annotations_without_appearance_streams.pdf
+ *
+ * If there was an AP it was already handled.
+ */
 static int pdfi_annot_draw_Text(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
 {
     int code = 0;
+    int code1 = 0;
+    gs_rect rect;
 
-    /* TODO: Generate appearance (see pdf_draw.ps/Text) */
+    code = pdfi_annot_start_transparency(ctx, annot);
+    if (code < 0) goto exit1;
+
+    code = pdfi_annot_rect(ctx, annot, &rect);
+    if (code < 0) goto exit;
+    code = gs_translate(ctx->pgs, rect.p.x, rect.p.y);
+    if (code < 0) goto exit;
+
+    /* Draw a page icon (/Note) */
+    /* TODO: All the other /Name appearances */
+    code = gs_translate(ctx->pgs, 0.5, (rect.q.y-rect.p.y)-18.5);
+    if (code < 0) goto exit;
+    code = gs_setlinewidth(ctx->pgs, 1.0);
+    if (code < 0) goto exit;
+    code = pdfi_gs_setgray(ctx, 0.75);
+    if (code < 0) goto exit;
+    code = gs_moveto(ctx->pgs, 0.5, -1);
+    if (code < 0) goto exit;
+    code = gs_lineto(ctx->pgs, 10, -1);
+    if (code < 0) goto exit;
+    code = gs_lineto(ctx->pgs, 15, 4);
+    if (code < 0) goto exit;
+    code = gs_lineto(ctx->pgs, 15, 17.5);
+    if (code < 0) goto exit;
+    code = gs_stroke(ctx->pgs);
+    if (code < 0) goto exit;
+
+    code = gs_moveto(ctx->pgs, 0, 0);
+    if (code < 0) goto exit;
+    code = gs_lineto(ctx->pgs, 9, 0);
+    if (code < 0) goto exit;
+    code = gs_lineto(ctx->pgs, 14, 5);
+    if (code < 0) goto exit;
+    code = gs_lineto(ctx->pgs, 14, 18);
+    if (code < 0) goto exit;
+    code = gs_lineto(ctx->pgs, 0, 18);
+    if (code < 0) goto exit;
+    code = gs_closepath(ctx->pgs);
+    if (code < 0) goto exit;
+
+    code = pdfi_gsave(ctx);
+    if (code >= 0) {
+        code = pdfi_gs_setgray(ctx, 0.5);
+        code = gs_fill(ctx->pgs);
+        code = pdfi_grestore(ctx);
+    } else
+        goto exit;
+
+    code = pdfi_gs_setgray(ctx, 0);
+    if (code < 0) goto exit;
+    code = gs_stroke(ctx->pgs);
+    if (code < 0) goto exit;
+
+    code = gs_moveto(ctx->pgs, 3, 8);
+    if (code < 0) goto exit;
+    code = gs_lineto(ctx->pgs, 7.5, 8);
+    if (code < 0) goto exit;
+    code = gs_moveto(ctx->pgs, 3, 11);
+    if (code < 0) goto exit;
+    code = gs_lineto(ctx->pgs, 10, 11);
+    if (code < 0) goto exit;
+    code = gs_moveto(ctx->pgs, 3, 14);
+    if (code < 0) goto exit;
+    code = gs_lineto(ctx->pgs, 10, 14);
+    if (code < 0) goto exit;
+    code = gs_moveto(ctx->pgs, 9, 0);
+    if (code < 0) goto exit;
+    code = gs_lineto(ctx->pgs, 9, 5);
+    if (code < 0) goto exit;
+    code = gs_lineto(ctx->pgs, 14, 5);
+    if (code < 0) goto exit;
+    code = gs_stroke(ctx->pgs);
+    if (code < 0) goto exit;
+
+ exit:
+    code1 = pdfi_annot_end_transparency(ctx, annot);
+    if (code >= 0)
+        code = code1;
+ exit1:
     *render_done = true;
-
     return code;
 }
 
@@ -569,13 +718,46 @@ static int pdfi_annot_draw_Popup(pdf_context *ctx, pdf_dict *annot, pdf_dict *No
     return code;
 }
 
+/* Generate appearance (see pdf_draw.ps/Line)
+ *
+ * If there was an AP it was already handled.
+ */
 static int pdfi_annot_draw_Line(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
 {
     int code = 0;
+    int code1 = 0;
+    gs_rect lrect;
+    pdf_array *L = NULL;
+    bool drawit;
 
-    /* TODO: Generate appearance (see pdf_draw.ps/Line) */
+    code = pdfi_annot_start_transparency(ctx, annot);
+    if (code < 0) goto exit1;
+
+    code = pdfi_dict_knownget_type(ctx, annot, "L", PDF_ARRAY, (pdf_obj **)&L);
+    if (code < 0) goto exit;
+
+    code = pdfi_array_to_gs_rect(ctx, L, &lrect);
+    if (code < 0) goto exit;
+
+    code = pdfi_annot_setcolor(ctx, annot, false, &drawit);
+    if (code < 0) goto exit;
+
+
+    /* TODO: Handle LE */
+
+    /* Draw the actual line */
+    code = gs_moveto(ctx->pgs, lrect.p.x, lrect.p.y);
+    code = gs_lineto(ctx->pgs, lrect.q.x, lrect.q.y);
+    /* TODO: need to implement /strokeborderpath which is very similar to /strokeborder */
+    code = gs_stroke(ctx->pgs);
+
+ exit:
+    code1 = pdfi_annot_end_transparency(ctx, annot);
+    if (code >= 0)
+        code = code1;
+ exit1:
     *render_done = true;
-
+    pdfi_countdown(L);
     return code;
 }
 
