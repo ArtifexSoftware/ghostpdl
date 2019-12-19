@@ -4520,11 +4520,7 @@ currentdict /set_bc_color undef
         5 index /RD knownoget {
           applyRD
         } if
-        %% Somewhat horrifyingly, rectfill maps directly to the device fill_rectangle
-        %% method, which bypasses transparency (!!) So we construct the rectangle,
-        %% and fill it, manually instead....
-        gsave 4 2 roll moveto 1 index 0 rlineto
-        0 exch rlineto neg 0 rlineto closepath fill grestore
+        rectfill
       } if
 
       %% get and process the default appearance string, if we don't have one, use a default
