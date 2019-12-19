@@ -753,6 +753,7 @@ gx_set_overprint_DeviceN(const gs_color_space * pcs, gs_gstate * pgs)
         /* Only DeviceCMYK can use overprint mode */
         pgs->color[0].effective_opm = 0;
         params.op_state = OP_STATE_NONE;
+        params.is_fill_color =pgs->is_fill_color;
         return gs_gstate_update_overprint(pgs, &params);
     }
 }

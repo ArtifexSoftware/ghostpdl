@@ -114,6 +114,7 @@ gx_set_overprint_DevicePixel(const gs_color_space * pcs, gs_gstate * pgs)
 
     params.retain_any_comps = false;
     pgs->color[0].effective_opm = 0;
+    params.is_fill_color = pgs->is_fill_color;
     return gs_gstate_update_overprint(pgs, &params);
 }
 
