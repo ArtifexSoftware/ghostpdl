@@ -130,6 +130,7 @@ c_overprint_equal(const gs_composite_t * pct0, const gs_composite_t * pct1)
 #define OVERPRINT_ANY_COMPS           1
 #define OVERPRINT_IS_FILL_COLOR       2
 #define OVERPRINT_SET_FILL_COLOR      0xc
+#define OVERPRINT_EOPM                0x10
 
 /*
  * Convert an overprint compositor to string form for use by the command
@@ -163,6 +164,7 @@ c_overprint_write(const gs_composite_t * pct, byte * data, uint * psize, gx_devi
         flags |= (pparams->retain_any_comps) ? OVERPRINT_ANY_COMPS : 0;
         flags |= (pparams->is_fill_color) ? OVERPRINT_IS_FILL_COLOR : 0;
         flags |= (pparams->op_state) << 2;
+        flags |= (pparams->effective_opm) << 4;
 
         /* write out the component bits */
         if (pparams->retain_any_comps) {
@@ -209,6 +211,7 @@ c_overprint_read(
     params.retain_any_comps = (flags & OVERPRINT_ANY_COMPS) != 0;
     params.is_fill_color = (flags & OVERPRINT_IS_FILL_COLOR) != 0;
     params.op_state = (flags & OVERPRINT_SET_FILL_COLOR) >> 2;
+    params.effective_opm = (flags & OVERPRINT_EOPM) >> 4;
     params.idle = 0;
     params.drawn_comps = 0;
 
@@ -223,6 +226,7 @@ c_overprint_read(
     if_debug1m('v', mem, ", retain_any_comps=%d", params.retain_any_comps);
     if_debug1m('v', mem, ", is_fill_color=%d", params.is_fill_color);
     if_debug1m('v', mem, ", drawn_comps=0x%x", params.drawn_comps);
+    if_debug1m('v', mem, ", op_state=%d", params.op_state);
     if_debug0m('v', mem, "\n");
     code = gs_create_overprint(ppct, &params, mem);
     return code < 0 ? code : nbytes;

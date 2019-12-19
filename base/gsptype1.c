@@ -704,7 +704,7 @@ gs_pattern1_set_color(const gs_client_color * pcc, gs_gstate * pgs)
         gs_overprint_params_t   params;
 
         params.retain_any_comps = false;
-        pgs->color[0].effective_opm = 0;
+        params.effective_opm = pgs->color[0].effective_opm = 0;
         return gs_gstate_update_overprint(pgs, &params);
     }
 }

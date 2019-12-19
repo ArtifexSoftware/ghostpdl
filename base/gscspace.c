@@ -478,7 +478,7 @@ gx_set_no_overprint(gs_gstate* pgs)
     params.retain_any_comps = false;
     params.op_state = OP_STATE_NONE;
     params.is_fill_color = pgs->is_fill_color;
-    pgs->color[0].effective_opm = 0;
+    params.effective_opm = pgs->color[0].effective_opm = 0;
 
     return gs_gstate_update_overprint(pgs, &params);
 }
@@ -505,7 +505,7 @@ gx_spot_colors_set_overprint(const gs_color_space * pcs, gs_gstate * pgs)
     params.op_state = OP_STATE_NONE;
 
     /* Only DeviceCMYK case can have overprint mode set to true */
-    pgs->color[0].effective_opm = 0;
+    params.effective_opm = pgs->color[0].effective_opm = 0;
     return gs_gstate_update_overprint(pgs, &params);
 }
 
@@ -757,7 +757,8 @@ int gx_set_overprint_cmyk(const gs_color_space * pcs, gs_gstate * pgs)
     /* We are in CMYK, the profiles match and overprint is true.  Set effective
        overprint mode to overprint mode but only if effective has not already
        been set to 0 */
-    pgs->color[0].effective_opm = pgs->overprint_mode && gs_currentcolor_eopm(pgs);
+    params.effective_opm = pgs->color[0].effective_opm =
+        pgs->overprint_mode && gs_currentcolor_eopm(pgs);
     return gs_gstate_update_overprint(pgs, &params);
 }
 

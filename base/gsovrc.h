@@ -256,6 +256,7 @@ struct gs_overprint_params_s {
     gx_color_index  drawn_comps;
     bool is_fill_color;      /* This tells us what the current color is for our set up */
     OP_FS_STATE op_state;   /* This sets the state of the device for an upcoming command */
+    bool effective_opm;     /* PDF14 needs this information for its compatible blend mode */
 };
 
 /*

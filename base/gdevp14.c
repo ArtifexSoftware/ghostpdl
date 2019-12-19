@@ -4376,16 +4376,13 @@ pdf14_set_params(gs_gstate * pgs,
         pgs->overprint = pparams->overprint;
     if (pparams->changed & PDF14_SET_STROKEOVERPRINT)
         pgs->stroke_overprint = pparams->stroke_overprint;
-    if (pparams->changed & PDF14_SET_OVERPRINT_MODE) {
-        pgs->color[!pgs->is_fill_color].effective_opm = pparams->effective_overprint_mode;
-        pgs->color[pgs->is_fill_color].effective_opm = pparams->stroke_effective_op_mode;
-    }
     if (pparams->changed & PDF14_SET_FILLCONSTANTALPHA)
         pgs->fillconstantalpha = pparams->fillconstantalpha;
     if (pparams->changed & PDF14_SET_STROKECONSTANTALPHA)
         pgs->strokeconstantalpha = pparams->strokeconstantalpha;
-    if (pparams->changed & PDF_SET_FILLSTROKE_STATE)
-        pgs->is_fill_color = pparams->op_fs_state;
+    if (pparams->changed & PDF_SET_FILLSTROKE_STATE) {
+        gs_swapcolors_quick((gs_gstate*)pgs);
+    }
     pdf14_set_marking_params(dev, pgs);
 }
 
@@ -4973,10 +4970,14 @@ pdf14_create_compositor(gx_device * dev, gx_device * * pcdev,
                         drawn_comps = ((gx_color_index)1 << (p14dev->color_info.num_components)) - (gx_color_index)1;
                     }
 
-                    if (op_pct->params.is_fill_color)
+                    if (op_pct->params.is_fill_color) {
+                        p14dev->effective_overprint_mode = op_pct->params.effective_opm;
                         p14dev->drawn_comps_fill = drawn_comps;
-                    else
+                    } else {
+                        p14dev->stroke_effective_op_mode = op_pct->params.effective_opm;
                         p14dev->drawn_comps_stroke = drawn_comps;
+                    }
+
                 }
                 *pcdev = dev;
                 return 0;
@@ -7142,6 +7143,8 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
         p14dev->width = 1;
         p14dev->height = 1;
     }
+
+    p14dev->op_state = pgs->is_fill_color;
     code = dev_proc((gx_device *) p14dev, open_device) ((gx_device *) p14dev);
     *pdev = (gx_device *) p14dev;
     pdf14_set_marking_params((gx_device *)p14dev, pgs);
@@ -7486,10 +7489,6 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
                 put_value(pbuf, pparams->overprint);
             if (pparams->changed & PDF14_SET_STROKEOVERPRINT)
                 put_value(pbuf, pparams->stroke_overprint);
-            if (pparams->changed & PDF14_SET_OVERPRINT_MODE) {
-                put_value(pbuf, pparams->effective_overprint_mode);
-                put_value(pbuf, pparams->stroke_effective_op_mode);
-            }
             if (pparams->changed & PDF14_SET_FILLCONSTANTALPHA)
                 put_value(pbuf, pparams->fillconstantalpha);
             if (pparams->changed & PDF14_SET_STROKECONSTANTALPHA)
@@ -7693,10 +7692,6 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
                 read_value(data, params.overprint);
             if (params.changed & PDF14_SET_STROKEOVERPRINT)
                 read_value(data, params.stroke_overprint);
-            if (params.changed & PDF14_SET_OVERPRINT_MODE) {
-                read_value(data, params.effective_overprint_mode);
-                read_value(data, params.stroke_effective_op_mode);
-            }
             if (params.changed & PDF14_SET_FILLCONSTANTALPHA)
                 read_value(data, params.fillconstantalpha);
             if (params.changed & PDF14_SET_STROKECONSTANTALPHA)
@@ -8420,6 +8415,7 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_gstate * pgs,
     pdev->pad = target->pad;
     pdev->log2_align_mod = target->log2_align_mod;
     pdev->is_planar = target->is_planar;
+    pdev->op_state = pgs->is_fill_color;
 
     if (deep) {
         set_dev_proc(pdev, encode_color, pdf14_encode_color16);
@@ -9118,12 +9114,6 @@ pdf14_clist_update_params(pdf14_clist_device * pdev, const gs_gstate * pgs,
     if (pgs->stroke_overprint != pdev->stroke_overprint) {
         changed |= PDF14_SET_STROKEOVERPRINT;
         params.stroke_overprint = pdev->stroke_overprint = pgs->stroke_overprint;
-    }
-    if (pgs->color[!pgs->is_fill_color].effective_opm != pdev->effective_overprint_mode ||
-        pgs->color[pgs->is_fill_color].effective_opm != pdev->stroke_effective_op_mode) {
-        changed |= PDF14_SET_OVERPRINT_MODE;
-        params.effective_overprint_mode = pdev->effective_overprint_mode = pgs->color[!pgs->is_fill_color].effective_opm;
-        params.stroke_effective_op_mode = pdev->stroke_effective_op_mode = pgs->color[pgs->is_fill_color].effective_opm;
     }
     if (pgs->fillconstantalpha != pdev->fillconstantalpha) {
         changed |= PDF14_SET_FILLCONSTANTALPHA;

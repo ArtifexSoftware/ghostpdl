@@ -205,7 +205,7 @@ gx_set_overprint_Separation(const gs_color_space * pcs, gs_gstate * pgs)
             }
         }
         /* Only DeviceCMYK can use overprint mode */
-        pgs->color[0].effective_opm = 0;
+        params.effective_opm = pgs->color[0].effective_opm = 0;
         return gs_gstate_update_overprint(pgs, &params);
     }
 }
