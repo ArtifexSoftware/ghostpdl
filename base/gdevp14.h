@@ -35,9 +35,9 @@ typedef enum {
 } pdf14_default_colorspace_t;
 
 typedef enum {
-    PDF14_OP_STATE_NONE = -1,
-    PDF14_OP_STATE_STROKE = 0,
-    PDF14_OP_STATE_FILL = 1
+    PDF14_OP_STATE_NONE = 0,
+    PDF14_OP_STATE_FILL = 1,
+    PDF14_OP_STATE_STROKE = 2,
 } PDF14_OP_FS_STATE;
 
 /*

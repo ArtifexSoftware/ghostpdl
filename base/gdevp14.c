@@ -2948,12 +2948,9 @@ pdf14_set_marking_params(gx_device *dev, const gs_gstate *pgs)
     pdev->alpha = pgs->opacity.alpha * pgs->shape.alpha;
     pdev->blend_mode = pgs->blend_mode;
     pdev->overprint = pgs->overprint;
-    pdev->effective_overprint_mode = pgs->color[!pgs->is_fill_color].effective_opm;
-    pdev->stroke_effective_op_mode = pgs->color[pgs->is_fill_color].effective_opm;
     pdev->stroke_overprint = pgs->stroke_overprint;
     pdev->fillconstantalpha = pgs->fillconstantalpha;
     pdev->strokeconstantalpha = pgs->strokeconstantalpha;
-    pdev->op_state = pgs->is_fill_color;
 
     if_debug6m('v', dev->memory,
                "[v]set_marking_params, opacity = %g, shape = %g, bm = %d, op = %d, eop = %d seop = %d\n",
