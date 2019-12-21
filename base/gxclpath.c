@@ -1049,21 +1049,9 @@ clist_fill_stroke_path(gx_device * pdev, const gs_gstate * pgs,
         }
         re.pcls->color_usage.slow_rop |= slow_rop;
 
-        /*
-         * If a dash pattern is active, we can't skip segments
-         * outside the clipping region, because that would throw off
-         * the pattern.
-         * Don't skip segments when expansion is unknown.
-         */
+        /* Don't skip segments when expansion is unknown.  */
 
-        if (pattern_size || expansion_code < 0 ) {
-            ymin = min_fixed;
-            ymax = max_fixed;
-        } else {
-            ymin = int2fixed(re.y - adjust_y);
-            ymax = int2fixed(re.y + re.height + adjust_y);
-        }
-        code = cmd_put_path(cdev, re.pcls, ppath, ymin, ymax,
+        code = cmd_put_path(cdev, re.pcls, ppath, min_fixed, max_fixed,
                             op, false, (segment_notes)~0);
         if (code < 0)
             return code;
