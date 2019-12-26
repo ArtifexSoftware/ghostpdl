@@ -38,6 +38,7 @@
 #include "gsequivc.h"
 #include "gxdht.h"
 #include "gxiodev.h"
+#include "gzht.h"
 #include "stdio_.h"
 #include "ctype_.h"
 #include "gxgetbit.h"
@@ -1230,9 +1231,7 @@ tiffsep1_put_params(gx_device * pdev, gs_param_list * plist)
 static void build_comp_to_sep_map(tiffsep_device *, short *);
 static int number_output_separations(int, int, int, int);
 static int create_separation_file_name(tiffsep_device *, char *, uint, int, bool);
-static byte * threshold_from_order( gx_ht_order *, int *, int *, gs_memory_t *);
 static int sep1_ht_order_to_thresholds(gx_device *pdev, const gs_gstate *pgs);
-static void sep1_free_thresholds(tiffsep1_device *);
 dev_proc_fill_path(clist_fill_path);
 
 /* Open the tiffsep1 device.  This will now be using planar buffers so that
@@ -1371,10 +1370,6 @@ tiffsep1_prn_close(gx_device * pdev)
             TIFFCleanup(tfdev->tiff[comp_num]);
             tfdev->tiff[comp_num] = NULL;
         }
-    }
-    /* If we have thresholds, free them and clear the pointers */
-    if( tfdev->thresholds[0].dstart != NULL) {
-        sep1_free_thresholds(tfdev);
     }
 
 done:
@@ -2113,10 +2108,11 @@ sep1_ht_order_to_thresholds(gx_device *pdev, const gs_gstate *pgs)
 {
     tiffsep1_device * const tfdev = (tiffsep1_device *)pdev;
     gs_memory_t *mem = pdev->memory;
+    int code;
 
-    /* If we have thresholds, free them and clear the pointers */
+    /* If we have thresholds, clear the pointers */
     if( tfdev->thresholds[0].dstart != NULL) {
-        sep1_free_thresholds(tfdev);
+        tfdev->thresholds[0].dstart = NULL;
     } else {
         int nc, j;
         gx_ht_order *d_order;
@@ -2130,126 +2126,24 @@ sep1_ht_order_to_thresholds(gx_device *pdev, const gs_gstate *pgs)
         for( j=0; j<nc; j++ ) {
             d_order = &(pgs->dev_ht->components[j].corder);
             dptr = &(tfdev->thresholds[j]);
-            dptr->dstart = threshold_from_order( d_order, &(dptr->dwidth), &(dptr->dheight), mem);
-            if( dptr->dstart == NULL ) {
+            /* In order to use the function from gsht.c we need to set the color_info */
+            /* values it uses to reflect the eventual 1-bit output, not contone       */
+            pdev->color_info.dither_grays = pdev->color_info.dither_colors = 2;
+            pdev->color_info.polarity = GX_CINFO_POLARITY_ADDITIVE;
+            code = gx_ht_construct_threshold(d_order, pdev, pgs, j);
+            pdev->color_info.dither_grays = pdev->color_info.dither_colors = 256;
+            pdev->color_info.polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
+            if( code < 0 ) {
                 emprintf(mem,
                          "sep1_order_to_thresholds: conversion to thresholds failed.\n");
-                return_error(gs_error_rangecheck);      /* error condition */
+                return_error(code);      /* error condition */
             }
+            dptr->dstart = d_order->threshold;
+			dptr->dwidth = d_order->width;
+			dptr->dheight = d_order->full_height;
         }
     }
     return 0;
-}
-
-static void
-sep1_free_thresholds(tiffsep1_device *tfdev)
-{
-    int i;
-
-    for (i=0; i < GX_DEVICE_COLOR_MAX_COMPONENTS + 1; i++) {
-        threshold_array_t *dptr = &(tfdev->thresholds[i]);
-
-        if (dptr->dstart != NULL) {
-            gs_free(tfdev->memory, dptr->dstart, dptr->dwidth * dptr->dheight, 1,
-                      "tiffsep1_threshold_array");
-            dptr->dstart = NULL;
-        }
-    }
-}
-
-/************************************************************************/
-/*      This routine generates a threshold matrix for use in            */
-/*      the color dithering routine from the "order" info in            */
-/*      the current graphics state.                                     */
-/*                                                                      */
-/************************************************************************/
-
-static byte*
-threshold_from_order( gx_ht_order *d_order, int *Width, int *Height, gs_memory_t *memory)
-{
-   int i, j, l, prev_l;
-   unsigned char *thresh;
-    int num_repeat, shift;
-
-    /* We can have simple or complete orders.  Simple ones tile the threshold
-       with shifts.   To handle those we simply loop over the number of
-       repeats making sure to shift columns when we set our threshold values */
-    num_repeat = d_order->full_height / d_order->height;
-    shift = d_order->shift;
-
-#ifdef DEBUG
-if ( gs_debug_c('h') ) {
-       dmprintf2(memory, "   width=%d, height=%d,",
-            d_order->width, d_order->height );
-       dmprintf2(memory, " num_levels=%d, raster=%d\n",
-            d_order->num_levels, d_order->raster );
-}
-#endif
-
-   thresh = (byte *)gs_malloc(memory, d_order->width * d_order->full_height, 1,
-                                  "tiffsep1_threshold_array");
-   if( thresh == NULL ) {
-#ifdef DEBUG
-      emprintf(memory, "threshold_from_order, malloc failed\n");
-      emprintf2(memory, "   width=%d, height=%d,",
-                d_order->width, d_order->height );
-      emprintf2(memory, " num_levels=%d, raster=%d\n",
-                d_order->num_levels, d_order->raster );
-#endif
-        return thresh ;         /* error if allocation failed   */
-   }
-   for( i=0; i<d_order->num_bits; i++ )
-      thresh[i] = 1;
-
-   *Width  = d_order->width;
-   *Height = d_order->full_height;
-
-   prev_l = 0;
-   l = 1;
-   while( l < d_order->num_levels ) {
-      if( d_order->levels[l] > d_order->levels[prev_l] ) {
-         int t_level = (256*l)/d_order->num_levels;
-
-#ifdef DEBUG
-         if ( gs_debug_c('h') )
-            dmprintf2(memory, "  level[%3d]=%3d\n", l, d_order->levels[l]);
-#endif
-         for( j=d_order->levels[prev_l]; j<d_order->levels[l]; j++) {
-            gs_int_point col_row = { 0, 0 };
-            int col_kk, row_kk, kk;
-
-            d_order->procs->bit_index(d_order, j, &col_row);
-#ifdef DEBUG
-            if ( gs_debug_c('h') )
-               dmprintf3(memory, "row=%2d, col=%2d, t_level=%3d\n",
-                  col_row.y, col_row.x, t_level);
-#endif
-            if( col_row.x < (int)d_order->width ) {
-                for (kk = 0; kk < num_repeat; kk++) {
-                    row_kk = col_row.y + kk * d_order->height;
-                    col_kk = col_row.x + kk * shift;
-                    col_kk = col_kk % d_order->width;
-                    *(thresh + col_kk + (row_kk * d_order->width)) = t_level;
-                }
-            }
-         }
-         prev_l = l;
-      }
-      l++;
-   }
-
-#ifdef DEBUG
-   if (gs_debug_c('h')) {
-      for( i=0; i<(int)d_order->height; i++ ) {
-         dmprintf1(memory, "threshold array row %3d= ", i);
-         for( j=(int)d_order->width-1; j>=0; j-- )
-            dmprintf1(memory, "%3d ", *(thresh+j+(i*d_order->width)) );
-         dmprintf(memory, "\n");
-      }
-   }
-#endif
-
-   return thresh;
 }
 
  /*
@@ -2873,9 +2767,10 @@ tiffsep1_print_page(gx_device_printer * pdev, gp_file * file)
                  * 27% faster.
                  */
 #define USE_32_BIT_WRITES
+				int threshline = tfdev->thresholds[comp_num].dheight - 1 -
+					             (y % tfdev->thresholds[comp_num].dheight);
                 byte *thresh_line_base = tfdev->thresholds[comp_num].dstart +
-                                    ((y % tfdev->thresholds[comp_num].dheight) *
-                                        tfdev->thresholds[comp_num].dwidth) ;
+                                    ( threshline * tfdev->thresholds[comp_num].dwidth) ;
                 byte *thresh_ptr = thresh_line_base;
                 byte *thresh_limit = thresh_ptr + tfdev->thresholds[comp_num].dwidth;
                 byte *src = params.data[comp_num];
