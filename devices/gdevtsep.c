@@ -50,6 +50,9 @@
 #include "gsicc_cache.h"
 #include "gxdevsop.h"
 #include "gsicc.h"
+#ifdef WITH_CAL
+#include "cal.h"
+#endif
 
 /*
  * Some of the code in this module is based upon the gdevtfnx.c module.
@@ -2577,6 +2580,26 @@ done:
     return code;
 }
 
+#ifdef WITH_CAL
+static void
+ht_callback(cal_halftone_data_t *ht, void *arg)
+{
+    tiffsep1_device *tfdev = (tiffsep1_device *)arg;
+    int num_std_colorants = tfdev->devn_params.num_std_colorant_names;
+    int num_order = tfdev->devn_params.num_separation_order_names;
+    int num_spot = tfdev->devn_params.separations.num_separations;
+    int comp_num;
+    int num_comp = number_output_separations(tfdev->color_info.num_components,
+                                             num_std_colorants, num_order, num_spot);
+    /* Deliberately cast away const, cos tifflib has a bad interface. */
+    unsigned char *data = (unsigned char *)ht->data;
+
+    for (comp_num = 0; comp_num < num_comp; comp_num++) {
+        TIFFWriteScanline(tfdev->tiff[comp_num], &data[ht->raster*comp_num], ht->y, 0);
+    }
+}
+#endif
+
 /*
  * Output the image data for the tiff separation (tiffsep1) device.  The data
  * for the tiffsep1 device is written in separate planes to separate files.
@@ -2708,9 +2731,47 @@ tiffsep1_print_page(gx_device_printer * pdev, gp_file * file)
         int pixel, y;
         gs_get_bits_params_t params;
         gs_int_rect rect;
+
+#ifdef WITH_CAL
+        cal_context *cal = pdev->memory->gs_lib_ctx->core->cal_ctx;
+        cal_halftone *cal_ht = NULL;
+        cal_matrix matrix = { 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f };
+
+        cal_ht = cal_halftone_init(cal,
+                                   pdev->memory->non_gc_memory,
+                                   pdev->width,
+                                   pdev->height,
+                                   &matrix,
+                                   comp_num,
+                                   NULL,
+                                   0,
+                                   0,
+                                   pdev->width,
+                                   pdev->height,
+                                   0);
+        if (cal_ht == NULL) {
+            code = gs_error_VMerror;
+            goto done;
+        }
+
+        for (comp_num = 0; comp_num < num_comp; comp_num++) {
+            if (cal_halftone_add_screen(cal,
+                                        pdev->memory->non_gc_memory,
+                                        cal_ht,
+                                        0,
+                                        tfdev->thresholds[comp_num].dwidth,
+                                        tfdev->thresholds[comp_num].dheight,
+                                        0,
+                                        0,
+                                        tfdev->thresholds[comp_num].dstart) < 0) {
+                goto cal_fail;
+            }
+        }
+#else
         /* the dithered_line is assumed to be 32-bit aligned by the alloc */
         uint32_t *dithered_line = (uint32_t *)gs_alloc_bytes(pdev->memory, dithered_raster,
                                 "tiffsep1_print_page");
+#endif
 
         memset(planes, 0, sizeof(*planes) * GS_CLIENT_COLOR_MAX_COMPONENTS);
 
@@ -2731,7 +2792,11 @@ tiffsep1_print_page(gx_device_printer * pdev, gp_file * file)
             }
         }
 
-        if (code < 0 || dithered_line == NULL) {
+        if (code < 0
+#ifndef WITH_CAL
+            || dithered_line == NULL
+#endif
+            ) {
             code = gs_note_error(gs_error_VMerror);
             goto cleanup;
         }
@@ -2752,6 +2817,14 @@ tiffsep1_print_page(gx_device_printer * pdev, gp_file * file)
             if (code < 0)
                 break;
 
+#ifdef WITH_CAL
+            if (cal_halftone_process_planar(cal_ht,
+                                            pdev->memory->non_gc_memory,
+                                            &params.data[0],
+                                            ht_callback,
+                                            tfdev) < 0)
+                goto cal_fail;
+#else
             /* Dither the separation and write it out */
             for (comp_num = 0; comp_num < num_comp; comp_num++ ) {
 
@@ -2767,8 +2840,8 @@ tiffsep1_print_page(gx_device_printer * pdev, gp_file * file)
                  * 27% faster.
                  */
 #define USE_32_BIT_WRITES
-				int threshline = tfdev->thresholds[comp_num].dheight - 1 -
-					             (y % tfdev->thresholds[comp_num].dheight);
+                int threshline = tfdev->thresholds[comp_num].dheight - 1 -
+			             (y % tfdev->thresholds[comp_num].dheight);
                 byte *thresh_line_base = tfdev->thresholds[comp_num].dstart +
                                     ( threshline * tfdev->thresholds[comp_num].dwidth) ;
                 byte *thresh_ptr = thresh_line_base;
@@ -2819,6 +2892,7 @@ tiffsep1_print_page(gx_device_printer * pdev, gp_file * file)
 #endif /* SKIP_HALFTONING_FOR_TIMING */
                 TIFFWriteScanline(tfdev->tiff[comp_num], (tdata_t)dithered_line, y, 0);
             } /* end component loop */
+#endif
         }
         /* Update the strip data */
         for (comp_num = 0; comp_num < num_comp; comp_num++ ) {
@@ -2841,9 +2915,19 @@ tiffsep1_print_page(gx_device_printer * pdev, gp_file * file)
         }
         code = code1;
 
+#ifdef WITH_CAL
+        if(0) {
+cal_fail:
+            code = gs_error_unknownerror;
+        }
+        cal_halftone_fin(cal_ht, pdev->memory->non_gc_memory);
+#endif
+
         /* free any allocations and exit with code */
 cleanup:
+#ifndef WITH_CAL
         gs_free_object(pdev->memory, dithered_line, "tiffsep1_print_page");
+#endif
         for (comp_num = 0; comp_num < num_comp; comp_num++) {
             gs_free_object(pdev->memory, planes[comp_num], "tiffsep1_print_page");
         }

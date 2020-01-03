@@ -1671,12 +1671,23 @@ $(DD)tiffgray.dev : $(libtiff_dev) $(tiffgray_) $(DD)tiffs.dev\
 	$(SETPDEV2) $(DD)tiffgray $(tiffgray_)
 	$(ADDMOD) $(DD)tiffgray -include $(DD)tiffs $(tiff_i_)
 
-$(DEVOBJ)gdevtsep.$(OBJ) : $(DEVSRC)gdevtsep.c $(PDEVH) $(stdint__h)\
+$(DEVOBJ)gdevtsep_0.$(OBJ) : $(DEVSRC)gdevtsep.c $(PDEVH) $(stdint__h)\
  $(gdevtifs_h) $(gdevdevn_h) $(gxdevsop_h) $(gsequivc_h) $(stdio__h) $(ctype__h)\
  $(gxdht_h) $(gxiodev_h) $(gxdownscale_h) $(gzht_h)\
  $(gxgetbit_h) $(gdevppla_h) $(gp_h) $(gstiffio_h) $(gsicc_h)\
  $(gscms_h) $(gsicc_cache_h) $(gxdevsop_h) $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
-	$(DEVCC) $(I_)$(TI_)$(_I) $(DEVO_)gdevtsep.$(OBJ) $(C_) $(DEVSRC)gdevtsep.c
+	$(DEVCC) $(I_)$(TI_)$(_I) $(DEVO_)gdevtsep_0.$(OBJ) $(C_) $(DEVSRC)gdevtsep.c
+
+$(DEVOBJ)gdevtsep_1.$(OBJ) : $(DEVSRC)gdevtsep.c $(PDEVH) $(stdint__h)\
+ $(gdevtifs_h) $(gdevdevn_h) $(gxdevsop_h) $(gsequivc_h) $(stdio__h) $(ctype__h)\
+ $(gxdht_h) $(gxiodev_h) $(gxdownscale_h) $(gzht_h)\
+ $(gxgetbit_h) $(gdevppla_h) $(gp_h) $(gstiffio_h) $(gsicc_h) $(cal_h)\
+ $(gscms_h) $(gsicc_cache_h) $(gxdevsop_h) $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
+	$(DEVCC) $(D_)WITH_CAL$(_D) $(I_)$(CALSRCDIR)$(_I) $(I_)$(TI_)$(_I) $(DEVO_)gdevtsep_1.$(OBJ) $(C_) $(DEVSRC)gdevtsep.c
+
+$(DEVOBJ)gdevtsep.$(OBJ) : $(DEVOBJ)gdevtsep_$(WITH_CAL).$(OBJ)
+	$(CP_) $(DEVOBJ)gdevtsep_$(WITH_CAL).$(OBJ) $(DEVOBJ)gdevtsep.$(OBJ)
+			 
 
 # TIFF Scaled (downscaled gray -> mono), configurable compression
 
