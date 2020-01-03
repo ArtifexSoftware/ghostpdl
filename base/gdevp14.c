@@ -3347,7 +3347,7 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
 
     } else {
         /* Push a non-isolated knockout group. Do not change the alpha or
-            blend modes */
+            blend modes. Note: we need to draw those that have alpha = 0 */
         params.Isolated = false;
         params.group_color = UNKNOWN;
         params.Knockout = true;
@@ -3370,38 +3370,34 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
         if (code < 0)
             goto cleanup;
 
-        if (pgs->fillconstantalpha > 0.0) {
-            code = gs_setopacityalpha((gs_gstate*) pgs, pgs->fillconstantalpha);
-            if (code < 0)
-                goto cleanup;
-            ((pdf14_device*)dev)->op_state = PDF14_OP_STATE_FILL;
+        code = gs_setopacityalpha((gs_gstate*) pgs, pgs->fillconstantalpha);
+        if (code < 0)
+            goto cleanup;
+        ((pdf14_device*)dev)->op_state = PDF14_OP_STATE_FILL;
 
-            /* If we are in an overprint situation, set the blend mode to compatible
-               overprint */
-            if (pgs->overprint)
-                code = gs_setblendmode((gs_gstate*) pgs, BLEND_MODE_CompatibleOverprint);
-            code = pdf14_fill_path(dev, pgs, ppath, fill_params, pdcolor_fill, pcpath);
-            if (pgs->overprint)
-                code = gs_setblendmode((gs_gstate*) pgs, blend_mode);
-            if (code < 0)
-                goto cleanup;
-        }
+        /* If we are in an overprint situation, set the blend mode to compatible
+            overprint */
+        if (pgs->overprint)
+            code = gs_setblendmode((gs_gstate*) pgs, BLEND_MODE_CompatibleOverprint);
+        code = pdf14_fill_path(dev, pgs, ppath, fill_params, pdcolor_fill, pcpath);
+        if (pgs->overprint)
+            code = gs_setblendmode((gs_gstate*) pgs, blend_mode);
+        if (code < 0)
+            goto cleanup;
 
-        if (pgs->strokeconstantalpha > 0.0) {
-            code = gs_setopacityalpha((gs_gstate*) pgs, pgs->strokeconstantalpha);
-            if (code < 0)
-                goto cleanup;
-            gs_swapcolors_quick((gs_gstate*) pgs);
-            ((pdf14_device*)dev)->op_state = PDF14_OP_STATE_STROKE;
-            if (pgs->stroke_overprint)
-                code = gs_setblendmode((gs_gstate*) pgs, BLEND_MODE_CompatibleOverprint);
-            code = pdf14_stroke_path(dev, pgs, ppath, stroke_params, pdcolor_stroke, pcpath);
-            if (pgs->stroke_overprint)
-                code = gs_setblendmode((gs_gstate*) pgs, blend_mode);
-            gs_swapcolors_quick((gs_gstate*) pgs);
-            if (code < 0)
-                goto cleanup;		/* bail out (with colors swapped back to fill) */
-        }
+        code = gs_setopacityalpha((gs_gstate*) pgs, pgs->strokeconstantalpha);
+        if (code < 0)
+            goto cleanup;
+        gs_swapcolors_quick((gs_gstate*) pgs);
+        ((pdf14_device*)dev)->op_state = PDF14_OP_STATE_STROKE;
+        if (pgs->stroke_overprint)
+            code = gs_setblendmode((gs_gstate*) pgs, BLEND_MODE_CompatibleOverprint);
+        code = pdf14_stroke_path(dev, pgs, ppath, stroke_params, pdcolor_stroke, pcpath);
+        if (pgs->stroke_overprint)
+            code = gs_setblendmode((gs_gstate*) pgs, blend_mode);
+        gs_swapcolors_quick((gs_gstate*) pgs);
+        if (code < 0)
+            goto cleanup;		/* bail out (with colors swapped back to fill) */
     }
 
     /* Now during the pop do the compositing with alpha of 1.0 and normal blend */
