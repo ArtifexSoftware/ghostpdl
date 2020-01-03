@@ -113,8 +113,8 @@ static int
 s_ram_switch(stream *, bool);
 
 static int
-ramfs_errno_to_code(int errno) {
-    switch (errno) {
+ramfs_errno_to_code(int error_number) {
+    switch (error_number) {
     case RAMFS_NOTFOUND:
         return_error(gs_error_undefinedfilename);
     case RAMFS_NOACCESS:
