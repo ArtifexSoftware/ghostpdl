@@ -3348,7 +3348,11 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
     } else {
         /* Push a non-isolated knockout group. Do not change the alpha or
             blend modes. Note: we need to draw those that have alpha = 0 */
-        params.Isolated = false;
+        if (((pdf14_device*)dev)->ctx->stack->isolated && ((pdf14_device*)dev)->ctx->stack->knockout) {
+            params.Isolated = true;
+        } else {
+            params.Isolated = false;
+        }
         params.group_color = UNKNOWN;
         params.Knockout = true;
 
