@@ -2508,23 +2508,24 @@ art_pdf_composite_knockout_8(byte *gs_restrict dst,
         /* Result alpha is Union of backdrop and source alpha */
         tmp = (0xff - a_b) * (0xff - a_s) + 0x80;
         a_r = 0xff - (((tmp >> 8) + tmp) >> 8);
-        /* todo: verify that a_r is nonzero in all cases */
 
-        /* Compute a_s / a_r in 16.16 format */
-        src_scale = ((a_s << 16) + (a_r >> 1)) / a_r;
+        if (a_r != 0) {
+            /* Compute a_s / a_r in 16.16 format */
+            src_scale = ((a_s << 16) + (a_r >> 1)) / a_r;
 
-        art_blend_pixel_8(blend, dst, src, n_chan, blend_mode, pblend_procs, p14dev);
-        for (i = 0; i < n_chan; i++) {
-            int c_bl;		/* Result of blend function */
-            int c_mix;		/* Blend result mixed with source color */
+            art_blend_pixel_8(blend, dst, src, n_chan, blend_mode, pblend_procs, p14dev);
+            for (i = 0; i < n_chan; i++) {
+                int c_bl;		/* Result of blend function */
+                int c_mix;		/* Blend result mixed with source color */
 
-            c_s = src[i];
-            c_b = dst[i];
-            c_bl = blend[i];
-            tmp = a_b * (c_bl - ((int)c_s)) + 0x80;
-            c_mix = c_s + (((tmp >> 8) + tmp) >> 8);
-            tmp = (c_b << 16) + src_scale * (c_mix - c_b) + 0x8000;
-            dst[i] = tmp >> 16;
+                c_s = src[i];
+                c_b = dst[i];
+                c_bl = blend[i];
+                tmp = a_b * (c_bl - ((int)c_s)) + 0x80;
+                c_mix = c_s + (((tmp >> 8) + tmp) >> 8);
+                tmp = (c_b << 16) + src_scale * (c_mix - c_b) + 0x8000;
+                dst[i] = tmp >> 16;
+            }
         }
         dst[n_chan] = a_r;
     }
@@ -2585,26 +2586,27 @@ art_pdf_composite_knockout_16(uint16_t *gs_restrict dst,
         /* Result alpha is Union of backdrop and source alpha */
         tmp = (0xffff - a_b) * (0xffff - a_s) + 0x8000;
         a_r = 0xffff - (((tmp >> 16) + tmp) >> 16);
-        /* todo: verify that a_r is nonzero in all cases */
 
-        /* Compute a_s / a_r in 16.16 format */
-        src_scale = ((a_s << 16) + (a_r >> 1)) / a_r;
+        if (a_r != 0) {
+            /* Compute a_s / a_r in 16.16 format */
+            src_scale = ((a_s << 16) + (a_r >> 1)) / a_r;
 
-        src_scale >>= 1; /* Lose a bit to avoid overflow */
-        a_b >>= 1; /* Lose a bit to avoid overflow */
-        art_blend_pixel_16(blend, dst, src, n_chan, blend_mode, pblend_procs, p14dev);
-        for (i = 0; i < n_chan; i++) {
-            int c_bl;		/* Result of blend function */
-            int c_mix;		/* Blend result mixed with source color */
-            int stmp;
+            src_scale >>= 1; /* Lose a bit to avoid overflow */
+            a_b >>= 1; /* Lose a bit to avoid overflow */
+            art_blend_pixel_16(blend, dst, src, n_chan, blend_mode, pblend_procs, p14dev);
+            for (i = 0; i < n_chan; i++) {
+                int c_bl;		/* Result of blend function */
+                int c_mix;		/* Blend result mixed with source color */
+                int stmp;
 
-            c_s = src[i];
-            c_b = dst[i];
-            c_bl = blend[i];
-            stmp = a_b * (c_bl - ((int)c_s)) + 0x4000;
-            c_mix = c_s + (((stmp >> 16) + stmp) >> 15);
-            tmp = src_scale * (c_mix - c_b) + 0x4000;
-            dst[i] = c_b + (tmp >> 15);
+                c_s = src[i];
+                c_b = dst[i];
+                c_bl = blend[i];
+                stmp = a_b * (c_bl - ((int)c_s)) + 0x4000;
+                c_mix = c_s + (((stmp >> 16) + stmp) >> 15);
+                tmp = src_scale * (c_mix - c_b) + 0x4000;
+                dst[i] = c_b + (tmp >> 15);
+            }
         }
         dst[n_chan] = a_r;
     }
