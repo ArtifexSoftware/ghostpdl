@@ -7000,6 +7000,8 @@ pdf14_dev_spec_op(gx_device *pdev, int dev_spec_op,
         return 0;
     if(dev_spec_op == gxdso_JPEG_passthrough_query)
         return 0;
+    if (dev_spec_op == gxdso_overprint_active)
+        return p14dev->overprint || p14dev->stroke_overprint;
 
      return dev_proc(p14dev->target, dev_spec_op)(p14dev->target, dev_spec_op, data, size);
 }
