@@ -2127,6 +2127,8 @@ sep1_ht_order_to_thresholds(gx_device *pdev, const gs_gstate *pgs)
         }
         nc = pgs->dev_ht->num_comp;
         for( j=0; j<nc; j++ ) {
+            int x, y;
+
             d_order = &(pgs->dev_ht->components[j].corder);
             dptr = &(tfdev->thresholds[j]);
             /* In order to use the function from gsht.c we need to set the color_info */
@@ -2134,16 +2136,25 @@ sep1_ht_order_to_thresholds(gx_device *pdev, const gs_gstate *pgs)
             pdev->color_info.dither_grays = pdev->color_info.dither_colors = 2;
             pdev->color_info.polarity = GX_CINFO_POLARITY_ADDITIVE;
             code = gx_ht_construct_threshold(d_order, pdev, pgs, j);
-            pdev->color_info.dither_grays = pdev->color_info.dither_colors = 256;
-            pdev->color_info.polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
             if( code < 0 ) {
                 emprintf(mem,
                          "sep1_order_to_thresholds: conversion to thresholds failed.\n");
                 return_error(code);      /* error condition */
             }
+            pdev->color_info.dither_grays = pdev->color_info.dither_colors = 256;
+            pdev->color_info.polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
+            /* Invert the thresholds so we (almost) match pbmraw dithered output */
+            for (y=0; y<d_order->full_height; y++) {
+                byte *s = d_order->threshold;
+                int s_offset = y * d_order->width;
+
+                for (x=0; x<d_order->width; x++) {
+                    s[s_offset + x] = 256 - s[s_offset + x];
+                }
+            }
             dptr->dstart = d_order->threshold;
-			dptr->dwidth = d_order->width;
-			dptr->dheight = d_order->full_height;
+            dptr->dwidth = d_order->width;
+            dptr->dheight = d_order->full_height;
         }
     }
     return 0;
@@ -2840,10 +2851,9 @@ tiffsep1_print_page(gx_device_printer * pdev, gp_file * file)
                  * 27% faster.
                  */
 #define USE_32_BIT_WRITES
-                int threshline = tfdev->thresholds[comp_num].dheight - 1 -
-			             (y % tfdev->thresholds[comp_num].dheight);
                 byte *thresh_line_base = tfdev->thresholds[comp_num].dstart +
-                                    ( threshline * tfdev->thresholds[comp_num].dwidth) ;
+			             ((y % tfdev->thresholds[comp_num].dheight) *
+                                     tfdev->thresholds[comp_num].dwidth) ;
                 byte *thresh_ptr = thresh_line_base;
                 byte *thresh_limit = thresh_ptr + tfdev->thresholds[comp_num].dwidth;
                 byte *src = params.data[comp_num];
