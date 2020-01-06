@@ -1300,26 +1300,42 @@ pdf14_ctx_free(pdf14_ctx *ctx)
  * if backdrop is fully transparent.
  **/
 static	pdf14_buf *
-pdf14_find_backdrop_buf(pdf14_ctx *ctx)
+pdf14_find_backdrop_buf(pdf14_ctx *ctx, bool *is_backdrop)
 {
+    /* Our new buffer is buf */
     pdf14_buf *buf = ctx->stack;
 
-    while (buf != NULL) {
+    *is_backdrop = false;
+
+    if (buf != NULL) {
+        /* If the new buffer is isolated there is no backdrop */
         if (buf->isolated) return NULL;
-        if (buf->knockout && !buf->isolated) return buf->saved;
-        /* If target (NOS) is knockout and isolated then the compositing will happen
-           at the end */
-        if (buf->saved != NULL && buf->saved->knockout && buf->saved->isolated) return NULL;
-        /* Target (NOS) is not isolated.  Next group on stack is a knockout.
-           We need to compose with the backdrop when we do the pop */
-        if (buf->saved != NULL && buf->saved->knockout && !buf->saved->isolated)
-            return NULL;
-        /* Not a knockout and not isolated.  Initialize backdrop */
-        if (!buf->knockout) return buf->saved;
-        buf = buf->saved;
+
+        /* If the previous buffer is a knockout group 
+           then we need to use its backdrop as the backdrop. If
+           it was isolated then that back drop was NULL */
+        if (buf->saved != NULL && buf->saved->knockout) {
+            /* This bit of logic is need to get both
+               fts_25_2524.pdf and the overlapping Altona
+               file working. The difference is between a
+               knockout group in a knockout group vs. a
+               non-knockout group in a knockout group.
+               fts_25_2524.pdf has a knockout in a knockout
+               due to the stroke fill that occurs within
+               the knockout group. */
+            if (!buf->knockout)
+                return NULL;
+            else {
+                *is_backdrop = true;
+                return buf->saved;
+            }
+        }
+        /* This should be the non-isolated case where its parent is
+           not a knockout */
+        if (buf->saved != NULL) {
+            return buf->saved;
+        }
     }
-    /* this really shouldn't happen, as bottom-most buf should be
-       non-knockout */
     return NULL;
 }
 
@@ -1333,8 +1349,8 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
                               gx_device *dev)
 {
     pdf14_buf *tos = ctx->stack;
-    pdf14_buf *buf, *backdrop;
-    bool has_shape, has_tags;
+    pdf14_buf *buf, * pdf14_backdrop;
+    bool has_shape, has_tags, is_backdrop;
 
     if_debug1m('v', ctx->memory,
                "[v]pdf14_push_transparency_group, idle = %d\n", idle);
@@ -1377,97 +1393,56 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
         return 0;
     if (idle)
         return 0;
-    backdrop = pdf14_find_backdrop_buf(ctx);
-    if (backdrop == NULL) {
+    pdf14_backdrop = pdf14_find_backdrop_buf(ctx, &is_backdrop);
+
+    /* Initializes buf->data with the backdrop or as opaque */
+    if (pdf14_backdrop == NULL || (is_backdrop && pdf14_backdrop->backdrop == NULL)) {
         /* Note, don't clear out tags set by pdf14_buf_new == GS_UNKNOWN_TAG */
         /* Memsetting by 0, so this copes with the deep case too */
         memset(buf->data, 0, buf->planestride * (buf->n_chan +
                                                  (buf->has_shape ? 1 : 0) +
                                                  (buf->has_alpha_g ? 1 : 0)));
     } else {
-        if (!buf->knockout) {
-            if (!cm_back_drop) {
-                pdf14_preserve_backdrop(buf, tos, false
+        if (!cm_back_drop) {
+            pdf14_preserve_backdrop(buf, pdf14_backdrop, is_backdrop
 #if RAW_DUMP
-                                        , ctx->memory
+                                    , ctx->memory
 #endif
-                                        );
-            } else {
-                /* We must have an non-isolated group with a mismatch in color spaces.
-                   In this case, we can't just copy the buffer but must CM it */
-                pdf14_preserve_backdrop_cm(buf, group_profile, tos, tos_profile,
-                                           ctx->memory, pgs, dev, false);
-            }
+                                    );
+        } else {
+            /* We must have an non-isolated group with a mismatch in color spaces.
+                In this case, we can't just copy the buffer but must CM it */
+            pdf14_preserve_backdrop_cm(buf, group_profile, pdf14_backdrop, tos_profile,
+                                        ctx->memory, pgs, dev, is_backdrop);
         }
     }
 
-    /* If knockout, we have to maintain a copy of the backdrop in case we are
-       drawing nonisolated groups on top of the knockout group. */
-    if (buf->knockout) {
+    /* If our new group is a non-isolated knockout group, we have to maintain
+       a copy of the backdrop in case we are drawing nonisolated groups on top of the
+       knockout group. They have to always blend with the groups backdrop
+       not what is currently drawn in the group. Selection of the backdrop
+       depends upon the properties of the parent group. For example, if
+       the parent itself is a knockout group we actually
+       need to blend with its backdrop. This could be NULL if the parent was
+       an isolated knockout group. */
+    if (buf->knockout && pdf14_backdrop != NULL) {
         buf->backdrop = gs_alloc_bytes(ctx->memory, buf->planestride * buf->n_chan,
-                                        "pdf14_push_transparency_group");
+            "pdf14_push_transparency_group");
         if (buf->backdrop == NULL) {
             return gs_throw(gs_error_VMerror, "Knockout backdrop allocation failed");
         }
-        if (buf->isolated) {
-            /* We will have opaque backdrop for non-isolated compositing */
-            /* Memsetting by 0, so this copes with the deep case too */
-            memset(buf->backdrop, 0, buf->planestride * buf->n_chan);
-        } else {
-            /* Save knockout backdrop for non-isolated compositing */
-            /* Note that we need to drill down through the non-isolated groups in our
-               stack and make sure that we are not embedded in another knockout group */
-            pdf14_buf *check = tos;
-            pdf14_buf *child = NULL;  /* Needed so we can get profile */
-            cmm_profile_t *prev_knockout_profile;
 
-            while (check != NULL) {
-                if (check->isolated)
-                    break;
-                if (check->knockout) {
-                    break;
-                }
-                child = check;
-                check = check->saved;
-            }
-            /* Here we need to grab a back drop from a knockout parent group and
-                potentially worry about color differences. */
-            if (check == NULL || check->page_group) {
-                prev_knockout_profile = tos_profile;
-                check = tos;
-            } else {
-                if (child == NULL) {
-                    prev_knockout_profile = tos_profile;
-                } else {
-                    prev_knockout_profile  = child->parent_color_info->icc_profile;
-                }
-            }
-            if (!cm_back_drop) {
-                pdf14_preserve_backdrop(buf, check, false
-#if RAW_DUMP
-                                        , ctx->memory
-#endif
-                                        );
-            } else {
-                /* We must have an non-isolated group with a mismatch in color spaces.
-                   In this case, we can't just copy the buffer but must CM it */
-                pdf14_preserve_backdrop_cm(buf, group_profile, check,
-                                           prev_knockout_profile, ctx->memory, pgs,
-                                           dev, false);
-            }
-            memcpy(buf->backdrop, buf->data, buf->planestride * buf->n_chan);
-        }
+        memcpy(buf->backdrop, buf->data, buf->planestride * buf->n_chan);
+
 #if RAW_DUMP
         /* Dump the current buffer to see what we have. */
         dump_raw_buffer(ctx->memory,
-                        ctx->stack->rect.q.y-ctx->stack->rect.p.y,
-                        ctx->stack->rowstride>>buf->deep, buf->n_chan,
-                        ctx->stack->planestride, ctx->stack->rowstride,
-                        "KnockoutBackDrop", buf->backdrop, buf->deep);
+            ctx->stack->rect.q.y - ctx->stack->rect.p.y,
+            ctx->stack->rowstride >> buf->deep, buf->n_chan,
+            ctx->stack->planestride, ctx->stack->rowstride,
+            "KnockoutBackDrop", buf->backdrop, buf->deep);
         global_index++;
 #endif
-    } else {
-        buf->backdrop = NULL;
     }
 #if RAW_DUMP
     /* Dump the current buffer to see what we have. */
@@ -3348,11 +3323,7 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
     } else {
         /* Push a non-isolated knockout group. Do not change the alpha or
             blend modes. Note: we need to draw those that have alpha = 0 */
-        if (((pdf14_device*)dev)->ctx->stack->isolated && ((pdf14_device*)dev)->ctx->stack->knockout) {
-            params.Isolated = true;
-        } else {
-            params.Isolated = false;
-        }
+        params.Isolated = false;
         params.group_color = UNKNOWN;
         params.Knockout = true;
 
@@ -6225,6 +6196,7 @@ do_mark_fill_rectangle_ko_simple(gx_device *dev, int x, int y, int w, int h,
     gx_color_index drawn_comps = pdev->op_state == PDF14_OP_STATE_FILL ?
         pdev->drawn_comps_fill : pdev->drawn_comps_stroke;
     gx_color_index comps;
+    bool has_backdrop = buf->backdrop != NULL;
 
     if (buf->data == NULL)
         return 0;
@@ -6290,8 +6262,12 @@ do_mark_fill_rectangle_ko_simple(gx_device *dev, int x, int y, int w, int h,
     if (x + w > buf->dirty.q.x) buf->dirty.q.x = x + w;
     if (y + h > buf->dirty.q.y) buf->dirty.q.y = y + h;
 
-    /* composite with backdrop only */
-    bline = buf->backdrop + (x - buf->rect.p.x) + (y - buf->rect.p.y) * rowstride;
+    /* composite with backdrop only. */
+    if (has_backdrop)
+        bline = buf->backdrop + (x - buf->rect.p.x) + (y - buf->rect.p.y) * rowstride;
+    else 
+        bline = NULL;
+
     line = buf->data + (x - buf->rect.p.x) + (y - buf->rect.p.y) * rowstride;
 
     for (j = 0; j < h; ++j) {
@@ -6299,19 +6275,21 @@ do_mark_fill_rectangle_ko_simple(gx_device *dev, int x, int y, int w, int h,
         dst_ptr = line;
         for (i = 0; i < w; ++i) {
             /* Complement the components for subtractive color spaces */
-            if (additive) {
-                for (k = 0; k < num_chan; ++k)
-                    dst[k] = bg_ptr[k * planestride];
-            } else {
-                for (k = 0; k < num_comp; ++k)
-                    dst2[k] = dst[k] = 255 - bg_ptr[k * planestride];
+            if (has_backdrop) {
+                if (additive) {
+                    for (k = 0; k < num_chan; ++k)
+                        dst[k] = bg_ptr[k * planestride];
+                } else {
+                    for (k = 0; k < num_comp; ++k)
+                        dst2[k] = dst[k] = 255 - bg_ptr[k * planestride];
+                }
+                dst2[num_comp] = dst[num_comp] = bg_ptr[num_comp * planestride];	/* alpha doesn't invert */
             }
-            dst2[num_comp] = dst[num_comp] = bg_ptr[num_comp * planestride];	/* alpha doesn't invert */
-            if (buf->isolated) {
+            if (buf->isolated || !has_backdrop) {
                 art_pdf_knockoutisolated_group_8(dst, src, num_comp);
             } else {
                 art_pdf_composite_knockout_8(dst, src, num_comp,
-                                             blend_mode, pdev->blend_procs, pdev);
+                                            blend_mode, pdev->blend_procs, pdev);
             }
             /* Complement the results for subtractive color spaces */
             if (additive) {
@@ -6410,6 +6388,7 @@ do_mark_fill_rectangle_ko_simple16(gx_device *dev, int x, int y, int w, int h,
     gx_color_index drawn_comps = pdev->op_state == PDF14_OP_STATE_FILL ?
         pdev->drawn_comps_fill : pdev->drawn_comps_stroke;
     gx_color_index comps;
+    bool has_backdrop = buf->backdrop != NULL;
 
     if (buf->data == NULL)
         return 0;
@@ -6475,8 +6454,13 @@ do_mark_fill_rectangle_ko_simple16(gx_device *dev, int x, int y, int w, int h,
     if (x + w > buf->dirty.q.x) buf->dirty.q.x = x + w;
     if (y + h > buf->dirty.q.y) buf->dirty.q.y = y + h;
 
-    /* composite with backdrop only */
-    bline = (uint16_t *)(void *)(buf->backdrop + (x - buf->rect.p.x)*2 + (y - buf->rect.p.y) * rowstride);
+
+    /* composite with backdrop only. */
+    if (has_backdrop)
+        bline = (uint16_t*)(void*)(buf->backdrop + (x - buf->rect.p.x) * 2 + (y - buf->rect.p.y) * rowstride);
+    else
+        bline = NULL;
+
     line = (uint16_t *)(void *)(buf->data + (x - buf->rect.p.x)*2 + (y - buf->rect.p.y) * rowstride);
     planestride >>= 1;
     rowstride >>= 1;
@@ -6489,15 +6473,17 @@ do_mark_fill_rectangle_ko_simple16(gx_device *dev, int x, int y, int w, int h,
         dst_ptr = line;
         for (i = 0; i < w; ++i) {
             /* Complement the components for subtractive color spaces */
-            if (additive) {
-                for (k = 0; k < num_chan; ++k)
-                    dst[k] = bg_ptr[k * planestride];
-            } else {
-                for (k = 0; k < num_comp; ++k)
-                    dst2[k] = dst[k] = 65535 - bg_ptr[k * planestride];
+            if (has_backdrop) {
+                if (additive) {
+                    for (k = 0; k < num_chan; ++k)
+                        dst[k] = bg_ptr[k * planestride];
+                } else {
+                    for (k = 0; k < num_comp; ++k)
+                        dst2[k] = dst[k] = 65535 - bg_ptr[k * planestride];
+                }
+                dst2[num_comp] = dst[num_comp] = bg_ptr[num_comp * planestride];	/* alpha doesn't invert */
             }
-            dst2[num_comp] = dst[num_comp] = bg_ptr[num_comp * planestride];	/* alpha doesn't invert */
-            if (buf->isolated) {
+            if (buf->isolated || !has_backdrop) {
                 art_pdf_knockoutisolated_group_16(dst, src, num_comp);
             } else {
                 art_pdf_composite_knockout_16(dst, src, num_comp,
