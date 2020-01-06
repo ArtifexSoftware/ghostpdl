@@ -2742,6 +2742,7 @@ tiffsep1_print_page(gx_device_printer * pdev, gp_file * file)
         int pixel, y;
         gs_get_bits_params_t params;
         gs_int_rect rect;
+        uint32_t *dithered_line = NULL;
 
 #ifdef WITH_CAL
         cal_context *cal = pdev->memory->gs_lib_ctx->core->cal_ctx;
@@ -2760,29 +2761,23 @@ tiffsep1_print_page(gx_device_printer * pdev, gp_file * file)
                                    pdev->width,
                                    pdev->height,
                                    0);
-        if (cal_ht == NULL) {
-            code = gs_error_VMerror;
-            goto done;
-        }
-
-        for (comp_num = 0; comp_num < num_comp; comp_num++) {
-            if (cal_halftone_add_screen(cal,
-                                        pdev->memory->non_gc_memory,
-                                        cal_ht,
-                                        0,
-                                        tfdev->thresholds[comp_num].dwidth,
-                                        tfdev->thresholds[comp_num].dheight,
-                                        0,
-                                        0,
-                                        tfdev->thresholds[comp_num].dstart) < 0) {
-                goto cal_fail;
-            }
-        }
-#else
-        /* the dithered_line is assumed to be 32-bit aligned by the alloc */
-        uint32_t *dithered_line = (uint32_t *)gs_alloc_bytes(pdev->memory, dithered_raster,
-                                "tiffsep1_print_page");
+        if (cal_ht != NULL) {
+            for (comp_num = 0; comp_num < num_comp; comp_num++)
+                if (cal_halftone_add_screen(cal,
+                                            pdev->memory->non_gc_memory,
+                                            cal_ht,
+                                            0,
+                                            tfdev->thresholds[comp_num].dwidth,
+                                            tfdev->thresholds[comp_num].dheight,
+                                            0,
+                                            0,
+                                            tfdev->thresholds[comp_num].dstart) < 0)
+                    goto cal_fail;
+        } else
 #endif
+        /* the dithered_line is assumed to be 32-bit aligned by the alloc */
+        dithered_line = (uint32_t *)gs_alloc_bytes(pdev->memory, dithered_raster,
+                                "tiffsep1_print_page");
 
         memset(planes, 0, sizeof(*planes) * GS_CLIENT_COLOR_MAX_COMPONENTS);
 
@@ -2803,11 +2798,11 @@ tiffsep1_print_page(gx_device_printer * pdev, gp_file * file)
             }
         }
 
-        if (code < 0
-#ifndef WITH_CAL
-            || dithered_line == NULL
+#ifdef WITH_CAL
+        if (code < 0 || (cal_ht == NULL && dithered_line == NULL)) {
+#else
+        if (code < 0 || dithered_line == NULL) {
 #endif
-            ) {
             code = gs_note_error(gs_error_VMerror);
             goto cleanup;
         }
@@ -2829,13 +2824,15 @@ tiffsep1_print_page(gx_device_printer * pdev, gp_file * file)
                 break;
 
 #ifdef WITH_CAL
-            if (cal_halftone_process_planar(cal_ht,
-                                            pdev->memory->non_gc_memory,
-                                            &params.data[0],
-                                            ht_callback,
-                                            tfdev) < 0)
-                goto cal_fail;
-#else
+            if(cal_ht != NULL) {
+                if (cal_halftone_process_planar(cal_ht,
+                                                pdev->memory->non_gc_memory,
+                                                &params.data[0],
+                                                ht_callback,
+                                                tfdev) < 0)
+                    goto cal_fail;
+            } else
+#endif
             /* Dither the separation and write it out */
             for (comp_num = 0; comp_num < num_comp; comp_num++ ) {
 
@@ -2902,7 +2899,6 @@ tiffsep1_print_page(gx_device_printer * pdev, gp_file * file)
 #endif /* SKIP_HALFTONING_FOR_TIMING */
                 TIFFWriteScanline(tfdev->tiff[comp_num], (tdata_t)dithered_line, y, 0);
             } /* end component loop */
-#endif
         }
         /* Update the strip data */
         for (comp_num = 0; comp_num < num_comp; comp_num++ ) {
@@ -2935,9 +2931,7 @@ cal_fail:
 
         /* free any allocations and exit with code */
 cleanup:
-#ifndef WITH_CAL
         gs_free_object(pdev->memory, dithered_line, "tiffsep1_print_page");
-#endif
         for (comp_num = 0; comp_num < num_comp; comp_num++) {
             gs_free_object(pdev->memory, planes[comp_num], "tiffsep1_print_page");
         }
