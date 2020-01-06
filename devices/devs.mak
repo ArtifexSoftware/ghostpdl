@@ -1866,16 +1866,18 @@ lcups_dev=$(LCUPSGENDIR)$(D)lcups.dev
 lcupsi_dev=$(LCUPSIGENDIR)$(D)lcupsi.dev
 
 cups_=$(DEVOBJ)gdevcups.$(OBJ)
-$(DD)cups.dev : $(lcups_dev) $(lcupsi_dev) $(cups_) $(GDEV) \
+$(DD)cups.dev : $(lcups_dev) $(lcupsi_dev) $(cups_) $(GDEV) $(GLD)page.dev \
  $(DEVS_MAK) $(MAKEDIRS)
 	$(SETPDEV2) $(DD)cups $(cups_)
 	$(ADDMOD) $(DD)cups -include $(lcups_dev)
 	$(ADDMOD) $(DD)cups -include $(lcupsi_dev)
-$(DD)pwgraster.dev : $(lcups_dev) $(lcupsi_dev) $(cups_) $(GDEV) \
+	$(ADDMOD) $(DD)cups -include $(GLD)page
+$(DD)pwgraster.dev : $(lcups_dev) $(lcupsi_dev) $(cups_) $(GDEV) $(GLD)page.dev \
  $(DEVS_MAK) $(MAKEDIRS)
 	$(SETPDEV2) $(DD)pwgraster $(cups_)
 	$(ADDMOD) $(DD)pwgraster -include $(lcups_dev)
 	$(ADDMOD) $(DD)pwgraster -include $(lcupsi_dev)
+	$(ADDMOD) $(DD)pwgraster -include $(GLD)page
 
 $(DEVOBJ)gdevcups.$(OBJ) : $(LCUPSSRCDIR)$(D)gdevcups.c $(std_h) $(gxdevsop_h) $(DEVS_MAK) $(MAKEDIRS)
 	$(CUPS_CC) $(DEVO_)gdevcups.$(OBJ) $(C_) $(CFLAGS) $(CUPSCFLAGS) \
