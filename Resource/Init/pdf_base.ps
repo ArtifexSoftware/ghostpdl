@@ -1251,16 +1251,26 @@ currentdict /pdf_rules_dict undef
   dup /JBIG2Globals knownoget {
     % make global ctx
     PDFfile fileposition exch % resolvestream is not reentrant
+    mark exch
     //true resolvestream 		% stack after: PDFfileposition -file-
     % Read the data in a loop until EOF to so we can move the strings into a bytestring
     [ { counttomark 1 add index 60000 string readstring not { exit } if } loop ]
     exch pop 0 1 index { length add } forall	% compute the total length
     % now copy the data from the array of strings into a bytestring
     .bytestring exch 0 exch { 3 copy putinterval length add } forall pop
-    .jbig2makeglobalctx
-    PDFfile 3 -1 roll setfileposition
-    1 index exch
-    /.jbig2globalctx exch put
+    % If this fails we don't want to abort totally, there may be more content
+    % in the PDF file that we can render. So just run in a stopped context.
+    {.jbig2makeglobalctx} stopped
+    {
+      cleartomark
+      PDFfile exch setfileposition
+    }
+    {
+      exch pop
+      PDFfile 3 -1 roll setfileposition
+      1 index exch
+      /.jbig2globalctx exch put
+    } ifelse
   } if
 } bind executeonly def
 
