@@ -25,6 +25,16 @@ PDFCCC  = $(CC_) $(JPX_CFLAGS) $(D_)PDF_INCLUDED$(_D) $(I_)$(PDFSRCDIR)$(_I) $(I
 	$(I_)$(EXPATINCDIR)$(_I) $(I_)$(JPEGXR_SRCDIR)$(_I) $(I_)$(ZSRCDIR)$(_I) \
         $(I_)$(JPX_OPENJPEG_I_)$(_I) $(I_)$(JB2I_)$(_I) $(C_)
 
+PDFJB2CC=$(CC_) $(JPX_CFLAGS) $(D_)PDF_INCLUDED$(_D) $(I_)$(PDFSRCDIR)$(_I) $(I_)$(PDFGENDIR)$(_I) \
+	$(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) \
+	$(I_)$(EXPATINCDIR)$(_I) $(I_)$(JPEGXR_SRCDIR)$(_I) $(I_)$(ZSRCDIR)$(_I) \
+	$(I_)$(JPX_OPENJPEG_I_)$(_I) $(I_)$(JB2I_)$(_I) $(JB2CF_) $(C_)
+
+PDFLURCC=$(CC_) $(JPX_CFLAGS) $(D_)PDF_INCLUDED$(_D) $(I_)$(PDFSRCDIR)$(_I) $(I_)$(PDFGENDIR)$(_I) \
+	$(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) \
+	$(I_)$(EXPATINCDIR)$(_I) $(I_)$(JPEGXR_SRCDIR)$(_I) $(I_)$(ZSRCDIR)$(_I) \
+	$(I_)$(LWF_JPXI_)$(_I) $(I_)$(LDF_JB2I_)$(_I) $(JB2CF_) $(C_)
+
 # Define the name of this makefile.
 PDF_MAK     = $(PDFSRC)pdf.mak $(TOP_MAKEFILES)
 
@@ -119,8 +129,14 @@ $(PDFOBJ)pdf_loop_detect.$(OBJ): $(PDFSRC)pdf_loop_detect.c $(PDFINCLUDES) $(PDF
 $(PDFOBJ)pdf_int.$(OBJ): $(PDFSRC)pdf_int.c $(PDFINCLUDES) $(plmain_h) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_int.c $(PDFO_)pdf_int.$(OBJ)
 
-$(PDFOBJ)pdf_file.$(OBJ): $(PDFSRC)pdf_file.c $(sjpeg_h) $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
-	$(PDFCCC) $(PDFSRC)pdf_file.c $(PDFO_)pdf_file.$(OBJ)
+$(PDFOBJ)pdf_file_luratech.$(OBJ): $(PDFSRC)pdf_file.c $(sjpeg_h) $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
+	$(PDFLURCC) $(PDFSRC)pdf_file.c $(PDFO_)pdf_file_luratech.$(OBJ)
+
+$(PDFOBJ)pdf_file_jbig2dec.$(OBJ): $(PDFSRC)pdf_file.c $(sjpeg_h) $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
+	$(PDFJB2CC) $(PDFSRC)pdf_file.c $(PDFO_)pdf_file_jbig2dec.$(OBJ)
+
+$(PDFOBJ)pdf_file.$(OBJ): $(PDFOBJ)pdf_file_$(JBIG2_LIB).$(OBJ)
+	$(CP_) $(PDFOBJ)pdf_file_$(JBIG2_LIB).$(OBJ) $(PDFOBJ)pdf_file.$(OBJ)
 
 $(PDFOBJ)pdf_trans.$(OBJ): $(PDFSRC)pdf_trans.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_trans.c $(PDFO_)pdf_trans.$(OBJ)
