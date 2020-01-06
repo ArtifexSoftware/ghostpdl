@@ -1,0 +1,159 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="pdf %28%2a.c%29">
+      <UniqueIdentifier>{d24cdec9-c0b8-420c-95cc-57a65ea6a8f6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="pdf %28%2a.h%29">
+      <UniqueIdentifier>{2979d80e-156d-413a-88a9-a4704eff2539}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\pdf\ghostpdf.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_array.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_colour.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_dict.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_file.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_font.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_font0.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_font1.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_font1C.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_font3.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_fontTT.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_func.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_gstate.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_image.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_int.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_loop_detect.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_path.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_pattern.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_shading.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_stack.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_text.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_trans.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdf_xref.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pdf\pdftop.c">
+      <Filter>pdf %28%2a.c%29</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\pdf\ghostpdf.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_array.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_colour.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_dict.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_file.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_font.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_font0.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_font1.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_font1C.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_font3.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_fontTT.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_func.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_gstate.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_image.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_int.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_loop_detect.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_path.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_pattern.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_shading.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_stack.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_text.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_trans.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_types.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pdf\pdf_xref.h">
+      <Filter>pdf %28%2a.h%29</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
