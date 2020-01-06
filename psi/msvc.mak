@@ -97,6 +97,9 @@ DEFAULT_OBJ_DIR=$(DEFAULT_OBJ_DIR)rt
 !ifdef WIN64
 DEFAULT_OBJ_DIR=$(DEFAULT_OBJ_DIR)64
 !endif
+!ifdef XP
+DEFAULT_OBJ_DIR=$(DEFAULT_OBJ_DIR)xp
+!endif
 
 !ifndef AUXDIR
 AUXDIR=$(DEFAULT_OBJ_DIR)\aux_
@@ -117,6 +120,9 @@ BINDIR=.\profbin
 BINDIR=.\bin
 !endif
 !endif
+!endif
+!ifdef XP
+BINDIR=$(BINDIR)xp
 !endif
 !endif
 !ifndef GLSRCDIR
@@ -851,6 +857,11 @@ CFLAGS=
 CFLAGS=$(CFLAGS) /FC
 !endif
 
+!ifdef XP
+CFLAGS=$(CFLAGS) /D_USING_V110_SDK71_
+SUBSUBSYS=,"5.01"
+!endif
+
 !ifdef CLUSTER
 CFLAGS=$(CFLAGS) -DCLUSTER
 !endif
@@ -924,6 +935,7 @@ SBRFLAGS=/FR$(SBRDIR)\$(NUL)
 MSVC_VERSION=5
 !endif
 !if "$(_NMAKE_VER)" == "6.00.8168.0"
+# VC 6
 MSVC_VERSION=6
 !endif
 !if "$(_NMAKE_VER)" == "7.00.9466"
@@ -937,50 +949,71 @@ MSVC_VERSION=7
 MSVC_MINOR_VERSION=1
 !endif
 !if "$(_NMAKE_VER)" == "8.00.40607.16"
+# VS2005
 MSVC_VERSION=8
 !endif
 !if "$(_NMAKE_VER)" == "8.00.50727.42"
+# VS2005
 MSVC_VERSION=8
 !endif
 !if "$(_NMAKE_VER)" == "8.00.50727.762"
+# VS2005
 MSVC_VERSION=8
 !endif
 !if "$(_NMAKE_VER)" == "9.00.21022.08"
+# VS2008
 MSVC_VERSION=9
 !endif
 !if "$(_NMAKE_VER)" == "9.00.30729.01"
+# VS2008
 MSVC_VERSION=9
 !endif
 !if "$(_NMAKE_VER)" == "10.00.30319.01"
+# VS2010
 MSVC_VERSION=10
 !endif
 !if "$(_NMAKE_VER)" == "11.00.50522.1"
+# VS2012
 MSVC_VERSION=11
 !endif
 !if "$(_NMAKE_VER)" == "11.00.50727.1"
+# VS2012
 MSVC_VERSION=11
 !endif
 !if "$(_NMAKE_VER)" == "11.00.60315.1"
+# VS2012
 MSVC_VERSION=11
 !endif
 !if "$(_NMAKE_VER)" == "11.00.60610.1"
+# VS2012
 MSVC_VERSION=11
 !endif
 !if "$(_NMAKE_VER)" == "12.00.21005.1"
+# VS 2013
 MSVC_VERSION=12
 !endif
 !if "$(_NMAKE_VER)" == "14.00.23506.0"
+# VS2015
 MSVC_VERSION=14
 !endif
-!if "$(_NMAKE_VER)" == "14.14.26433.0"
+!if "$(_NMAKE_VER)" == "14.00.24210.0"
+# VS2015
 MSVC_VERSION=14
 !endif
-!if "$(_NMAKE_VER)" == "14.16.27026.1"
-MSVC_VERSION=14
+!if "$(_NMAKE_VER)" == "14.16.27034.0"
+# VS2017 or VS2019 (Toolset v141)
+MSVC_VERSION=15
+MS_TOOLSET_VERSION=14.16.27034
+!endif
+!if "$(_NMAKE_VER)" == "14.24.28314.0"
+# VS2019 (Toolset v142)
+MSVC_VERSION=16
+MS_TOOLSET_VERSION=14.24.28314
 !endif
 !endif
 
 !ifndef MSVC_VERSION
+!MESSAGE Could not determine MSVC_VERSION! Guessing at an ancient one.
 MSVC_VERSION=6
 !endif
 !ifndef MSVC_MINOR_VERSION
@@ -1265,6 +1298,54 @@ COMPDIR64=$(COMPBASE)\bin\x86_amd64
 LINKLIBPATH=/LIBPATH:"$(COMPBASE)\lib\amd64" /LIBPATH:"$(COMPBASE)\PlatformSDK\Lib\x64"
 !   endif
 !  endif
+! endif
+!endif
+
+!if $(MSVC_VERSION) == 15
+! ifndef DEVSTUDIO
+DEVSTUDIO=C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\$(MS_TOOLSET_VERSION)
+! endif
+! if "$(DEVSTUDIO)"==""
+COMPBASE=
+SHAREDBASE=
+! else
+!  if $(BUILD_SYSTEM) == 64
+DEVSTUDIO_HOST=Hostx64
+!  else
+DEVSTUDIO_HOST=Hostx86
+!  endif
+!  ifdef WIN64
+DEVSTUDIO_TARGET=x64
+!  else
+DEVSTUDIO_TARGET=x86
+!  endif
+COMPDIR=$(DEVSTUDIO)\bin\$(DEVSTUDIO_HOST)\$(DEVSTUDIO_TARGET)
+RCDIR=
+LINKLIBPATH=/LIBPATH:"$(DEVSTUDIO)\lib\$(DEVSTUDIO_TARGET)"
+! endif
+!endif
+
+!if $(MSVC_VERSION) == 16
+! ifndef DEVSTUDIO
+DEVSTUDIO=C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\$(MS_TOOLSET_VERSION)
+! endif
+! if "$(DEVSTUDIO)"==""
+COMPBASE=
+SHAREDBASE=
+! else
+!  if $(BUILD_SYSTEM) == 64
+DEVSTUDIO_HOST=Hostx64
+!  else
+DEVSTUDIO_HOST=Hostx86
+!  endif
+!  ifdef WIN64
+DEVSTUDIO_TARGET=x64
+!  else
+DEVSTUDIO_TARGET=x86
+!  endif
+COMPDIR=$(DEVSTUDIO)\bin\$(DEVSTUDIO_HOST)\$(DEVSTUDIO_TARGET)
+RCDIR=
+LINKLIBPATH=/LIBPATH:"$(DEVSTUDIO)\lib\$(DEVSTUDIO_TARGET)"
 ! endif
 !endif
 
@@ -1608,7 +1689,7 @@ BITSTREAM_CFLAGS=
 
 # Define the name of the makefile -- used in dependencies.
 
-MAKEFILE=$(PSSRCDIR)\msvc32.mak
+MAKEFILE=$(PSSRCDIR)\msvc.mak
 TOP_MAKEFILES=$(MAKEFILE) $(GLSRCDIR)\msvccmd.mak $(GLSRCDIR)\msvctail.mak $(GLSRCDIR)\winlib.mak $(PSSRCDIR)\winint.mak
 
 # Define the files to be removed by `make clean'.
@@ -1790,7 +1871,7 @@ $(GS_XE): $(GSDLL_DLL)
 
 !else
 $(GS_XE): $(GSDLL_DLL)  $(DWOBJ) $(GSCONSOLE_XE) $(GLOBJ)gp_wutf8.$(OBJ) $(TOP_MAKEFILES)
-	echo /SUBSYSTEM:WINDOWS > $(PSGEN)gswin.rsp
+	echo /SUBSYSTEM:WINDOWS$(SUBSUBSYS) > $(PSGEN)gswin.rsp
 !if "$(PROFILE)"=="1"
 	echo /Profile >> $(PSGEN)gswin.rsp
 !endif
@@ -1805,7 +1886,7 @@ $(GS_XE): $(GSDLL_DLL)  $(DWOBJ) $(GSCONSOLE_XE) $(GLOBJ)gp_wutf8.$(OBJ) $(TOP_M
 
 # The console mode small EXE loader
 $(GSCONSOLE_XE): $(OBJC) $(GS_OBJ).res $(PSSRCDIR)\dw64c.def $(PSSRCDIR)\dw32c.def $(GLOBJ)gp_wutf8.$(OBJ) $(TOP_MAKEFILES)
-	echo /SUBSYSTEM:CONSOLE > $(PSGEN)gswin.rsp
+	echo /SUBSYSTEM:CONSOLE$(SUBSUBSYS) > $(PSGEN)gswin.rsp
 !if "$(PROFILE)"=="1"
 	echo /Profile >> $(PSGEN)gswin.rsp
 !endif
@@ -1842,7 +1923,7 @@ $(GPCL6DLL_DLL): $(ECHOGS_XE) $(GSDLL_OBJ).res $(LIBCTR) $(LIB_ALL) $(PCL_DEVS_A
 	del $(PCLGEN)gpclwin.rsp
 
 $(GPCL_XE): $(GPCL6DLL_DLL) $(DWMAINOBJS) $(GS_OBJ).res $(TOP_MAKEFILES)
-	echo /SUBSYSTEM:CONSOLE > $(PCLGEN)gpclwin.rsp
+	echo /SUBSYSTEM:CONSOLE$(SUBSUBSYS) > $(PCLGEN)gpclwin.rsp
 !if "$(PROFILE)"=="1"
 	echo /Profile >> $(PCLGEN)gpclwin.rsp
 !endif
@@ -1870,7 +1951,7 @@ $(GXPSDLL_DLL): $(ECHOGS_XE) $(GSDLL_OBJ).res $(LIBCTR) $(LIB_ALL) $(XPS_DEVS_AL
 	del $(PCLGEN)gxpswin.rsp
 
 $(GXPS_XE): $(GXPSDLL_DLL) $(DWMAINOBJS) $(GS_OBJ).res $(TOP_MAKEFILES)
-	echo /SUBSYSTEM:CONSOLE > $(XPSGEN)gxpswin.rsp
+	echo /SUBSYSTEM:CONSOLE$(SUBSUBSYS) > $(XPSGEN)gxpswin.rsp
 !if "$(PROFILE)"=="1"
 	echo /Profile >> $(XPSGEN)gxpswin.rsp
 !endif
@@ -1936,7 +2017,7 @@ $(GPDLDLL_DLL): $(ECHOGS_XE) $(GSDLL_OBJ).res $(LIBCTR) $(LIB_ALL) $(PCL_DEVS_AL
 	del $(GPDLGEN)gpdlwin.rsp
 
 $(GPDL_XE): $(GPDLDLL_DLL) $(DWMAINOBJS) $(GS_OBJ).res $(TOP_MAKEFILES)
-	echo /SUBSYSTEM:CONSOLE > $(GPDLGEN)gpdlwin.rsp
+	echo /SUBSYSTEM:CONSOLE$(SUBSUBSYS) > $(GPDLGEN)gpdlwin.rsp
 !if "$(PROFILE)"=="1"
 	echo /Profile >> $(XPSGEN)gpdlwin.rsp
 !endif
@@ -1982,7 +2063,7 @@ $(GSCONSOLE_XE): $(ECHOGS_XE) $(gs_tr) $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(OBJ
 	echo $(GLOBJ)dwimg.obj >> $(PSGEN)gswin.tr
 	echo $(PSOBJ)dwmainc.obj >> $(PSGEN)gswin.tr
 	echo $(PSOBJ)dwreg.obj >> $(PSGEN)gswin.tr
-	echo /SUBSYSTEM:CONSOLE > $(PSGEN)gswin.rsp
+	echo /SUBSYSTEM:CONSOLE$(SUBSUBSYS) > $(PSGEN)gswin.rsp
 !ifdef WIN64
 	echo /DEF:$(PSSRCDIR)\dw64c.def /OUT:$(GSCONSOLE_XE) >> $(PSGEN)gswin.rsp
 !else
@@ -2000,7 +2081,7 @@ $(GPCL_XE): $(ECHOGS_XE) $(LIBCTR) $(LIB_ALL) $(WINMAINOBJS) $(PCL_DEVS_ALL) $(P
 	copy $(pclld_tr) $(PCLGEN)gpclwin.tr
 	echo $(WINMAINOBJS) $(MAIN_OBJ) $(TOP_OBJ) $(INT_ARCHIVE_SOME) $(XOBJS) >> $(PCLGEN)gpclwin.tr
 	echo $(PCLOBJ)pclromfs$(COMPILE_INITS).$(OBJ) >> $(PCLGEN)gpclwin.tr
-	echo /SUBSYSTEM:CONSOLE > $(PCLGEN)pclwin.rsp
+	echo /SUBSYSTEM:CONSOLE$(SUBSUBSYS) > $(PCLGEN)pclwin.rsp
         echo /OUT:$(GPCL_XE) >> $(PCLGEN)pclwin.rsp
 	$(LINK) $(LCT) @$(PCLGEN)pclwin.rsp @$(PCLGEN)gpclwin.tr $(LINKLIBPATH) @$(LIBCTR) @$(PCLGEN)pcllib.rsp
         del $(PCLGEN)pclwin.rsp
@@ -2013,7 +2094,7 @@ $(GXPS_XE): $(ECHOGS_XE) $(LIBCTR) $(LIB_ALL) $(WINMAINOBJS) $(XPS_DEVS_ALL) $(X
 	copy $(xpsld_tr) $(XPSGEN)gxpswin.tr
 	echo $(WINMAINOBJS) $(MAIN_OBJ) $(XPS_TOP_OBJS) $(INT_ARCHIVE_SOME) $(XOBJS) >> $(XPSGEN)gxpswin.tr
 	echo $(PCLOBJ)xpsromfs$(COMPILE_INITS).$(OBJ) >> $(XPSGEN)gxpswin.tr
-	echo /SUBSYSTEM:CONSOLE > $(XPSGEN)xpswin.rsp
+	echo /SUBSYSTEM:CONSOLE$(SUBSUBSYS) > $(XPSGEN)xpswin.rsp
         echo /OUT:$(GXPS_XE) >> $(XPSGEN)xpswin.rsp
 	$(LINK) $(LCT) @$(XPSGEN)xpswin.rsp @$(XPSGEN)gxpswin.tr $(LINKLIBPATH) @$(LIBCTR) @$(XPSGEN)xpslib.rsp
         del $(XPSGEN)xpswin.rsp
@@ -2040,7 +2121,7 @@ $(GPDL_XE): $(ECHOGS_XE) $(ld_tr) $(gpdl_tr) $(LIBCTR) $(LIB_ALL) $(WINMAINOBJS)
 	copy $(gpdlld_tr) $(GPDLGEN)gpdlwin.tr
 	echo $(WINMAINOBJS) $(MAIN_OBJ) $(GPDL_PSI_TOP_OBJS) $(PCL_PXL_TOP_OBJS) $(PSI_TOP_OBJ) $(XPS_TOP_OBJ) $(XOBJS) >> $(GPDLGEN)gpdlwin.tr
 	echo $(PCLOBJ)pdlromfs$(COMPILE_INITS).$(OBJ) >> $(GPDLGEN)gpdlwin.tr
-	echo /SUBSYSTEM:CONSOLE > $(GPDLGEN)gpdlwin.rsp
+	echo /SUBSYSTEM:CONSOLE$(SUBSUBSYS) > $(GPDLGEN)gpdlwin.rsp
         echo /OUT:$(GPDL_XE) >> $(GPDLGEN)gpdlwin.rsp
 	$(LINK) $(LCT) @$(GPDLGEN)gpdlwin.rsp @$(GPDLGEN)gpdlwin.tr $(LINKLIBPATH) @$(LIBCTR) @$(GPDLGEN)gpdllib.rsp
 	del $(GPDLGEN)gpdlwin.rsp
@@ -2056,31 +2137,39 @@ WINDEFS=WIN64= BUILD_SYSTEM="$(BUILD_SYSTEM)" PGMFILES="$(PGMFILES)" PGMFILESx86
 WINDEFS=BUILD_SYSTEM="$(BUILD_SYSTEM)" PGMFILES="$(PGMFILES)" PGMFILESx86="$(PGMFILESx86)"
 !endif
 
-DEBUGDEFS=DEBUG=1 TDEBUG=1
+RECURSIVEDEFS=$(WINDEFS)
+!ifdef XP
+RECURSIVEDEFS=XP=$(XP) $(RECURSIVEDEFS)
+!endif
+!ifdef DEVSTUDIO
+RECURSIVEDEFS=DEVSTUDIO="$(DEVSTUDIO)" $(RECURSIVEDEFS)
+!endif
+
+DEBUGDEFS=DEBUG=1 TDEBUG=1 $(RECURSIVEDEFS)
 
 debug:
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(DEBUGDEFS) $(WINDEFS)
+	nmake -f $(MAKEFILE) $(DEBUGDEFS) FT_BRIDGE=$(FT_BRIDGE)
 
 gsdebug:
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(DEBUGDEFS) $(WINDEFS) gs
+	nmake -f $(MAKEFILE) $(DEBUGDEFS) FT_BRIDGE=$(FT_BRIDGE) gs
 
 gpcl6debug:
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(DEBUGDEFS) $(WINDEFS) gpcl6
+	nmake -f $(MAKEFILE) $(DEBUGDEFS) FT_BRIDGE=$(FT_BRIDGE) gpcl6
 
 gxpsdebug:
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(DEBUGDEFS) $(WINDEFS) gxps
+	nmake -f $(MAKEFILE) $(DEBUGDEFS) FT_BRIDGE=$(FT_BRIDGE) gxps
 
 gpdfdebug:
 	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(DEBUGDEFS) $(WINDEFS) gpdf
 
 gpdldebug:
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(DEBUGDEFS) $(WINDEFS) gpdl
+	nmake -f $(MAKEFILE) $(DEBUGDEFS) FT_BRIDGE=$(FT_BRIDGE) gpdl
 
 debugclean:
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(DEBUGDEFS) $(WINDEFS) clean
+	nmake -f $(MAKEFILE) $(DEBUGDEFS) FT_BRIDGE=$(FT_BRIDGE) clean
 
 debugbsc:
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(DEBUGDEFS) $(WINDEFS) bsc
+	nmake -f $(MAKEFILE) $(DEBUGDEFS) FT_BRIDGE=$(FT_BRIDGE) bsc
 
 # --------------------- Memento targets --------------------- #
 # Simply set some definitions and call ourselves back         #
@@ -2088,58 +2177,58 @@ debugbsc:
 MEMENTODEFS=$(DEBUGDEFS) MEMENTO=1
 
 memento-target:
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(MEMENTODEFS) $(WINDEFS)
+	nmake -f $(MAKEFILE) $(MEMENTODEFS) FT_BRIDGE=$(FT_BRIDGE)
 
 gsmemento:
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(MEMENTODEFS) $(WINDEFS) gs
+	nmake -f $(MAKEFILE) $(MEMENTODEFS) FT_BRIDGE=$(FT_BRIDGE) gs
 
 gpcl6memento:
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(MEMENTODEFS) $(WINDEFS) gpcl6
+	nmake -f $(MAKEFILE) $(MEMENTODEFS) FT_BRIDGE=$(FT_BRIDGE) gpcl6
 
 gxpsmemento:
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(MEMENTODEFS) $(WINDEFS) gxps
+	nmake -f $(MAKEFILE) $(MEMENTODEFS) FT_BRIDGE=$(FT_BRIDGE) gxps
 
 gpdfmemento:
 	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(MEMENTODEFS) $(WINDEFS) gpdf
 
 gpdlmemento:
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(MEMENTODEFS) $(WINDEFS) gpdl
+	nmake -f $(MAKEFILE) $(MEMENTODEFS) FT_BRIDGE=$(FT_BRIDGE) gpdl
 
 mementoclean:
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(MEMENTODEFS) $(WINDEFS) clean
+	nmake -f $(MAKEFILE) $(MEMENTODEFS) FT_BRIDGE=$(FT_BRIDGE) clean
 
 mementobsc:
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(MEMENTODEFS) $(WINDEFS) bsc
+	nmake -f $(MAKEFILE) $(MEMENTODEFS) FT_BRIDGE=$(FT_BRIDGE) bsc
 
 # --------------------- Profile targets --------------------- #
 # Simply set some definitions and call ourselves back         #
 
-PROFILEDEFS=PROFILE=1
+PROFILEDEFS=$(RECURSIVEDEFS) PROFILE=1
 
 profile:
 profile-target:
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(PROFILEDEFS) $(WINDEFS)
+	nmake -f $(MAKEFILE) $(PROFILEDEFS) FT_BRIDGE=$(FT_BRIDGE)
 
 gsprofile:
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(PROFILEDEFS) $(WINDEFS) gs
+	nmake -f $(MAKEFILE) $(PROFILEDEFS) FT_BRIDGE=$(FT_BRIDGE) gs
 
 gpcl6profile:
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(PROFILEDEFS) $(WINDEFS) gpcl6
+	nmake -f $(MAKEFILE) $(PROFILEDEFS) FT_BRIDGE=$(FT_BRIDGE) gpcl6
 
 gxpsprofile:
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(PROFILEDEFS) $(WINDEFS) gxps
+	nmake -f $(MAKEFILE) $(PROFILEDEFS) FT_BRIDGE=$(FT_BRIDGE) gxps
 
 gpdfprofile:
 	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(PROFILEDEFS) $(WINDEFS) gpdf
 
 gpdlprofile:
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(PROFILEDEFS) $(WINDEFS) gpdl
+	nmake -f $(MAKEFILE) $(PROFILEDEFS) FT_BRIDGE=$(FT_BRIDGE) gpdl
 
 profileclean:
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(PROFILEDEFS) $(WINDEFS) clean
+	nmake -f $(MAKEFILE) $(PROFILEDEFS) FT_BRIDGE=$(FT_BRIDGE) clean
 
 profilebsc:
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(PROFILEDEFS) $(WINDEFS) bsc
+	nmake -f $(MAKEFILE) $(PROFILEDEFS) FT_BRIDGE=$(FT_BRIDGE) bsc
 
 
 
@@ -2176,22 +2265,22 @@ ufst-lib:
 #	nmake -f makefile.artifex fco_lib.a if_lib.a psi_lib.a tt_lib.a
 
 ufst-debug: ufst-lib
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(UFSTBASEDEFS) $(UFSTDEBUGDEFS) UFST_CFLAGS="$(UFST_CFLAGS)" $(WINDEFS)
+	nmake -f $(MAKEFILE) $(RECURSIVEDEFS) $(UFSTBASEDEFS) $(UFSTDEBUGDEFS) UFST_CFLAGS="$(UFST_CFLAGS)"
 
 ufst-debugclean: ufst-lib
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(UFSTBASEDEFS) $(UFSTDEBUGDEFS) UFST_CFLAGS="$(UFST_CFLAGS)" $(WINDEFS) clean
+	nmake -f $(MAKEFILE) $(RECURSIVEDEFS) $(UFSTBASEDEFS) $(UFSTDEBUGDEFS) UFST_CFLAGS="$(UFST_CFLAGS)" clean
 
 ufst-debugbsc: ufst-lib
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(UFSTBASEDEFS) $(UFSTDEBUGDEFS) UFST_CFLAGS="$(UFST_CFLAGS)" $(WINDEFS) bsc
+	nmake -f $(MAKEFILE) $(RECURSIVEDEFS) $(UFSTBASEDEFS) $(UFSTDEBUGDEFS) UFST_CFLAGS="$(UFST_CFLAGS)" bsc
 
 ufst: ufst-lib
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(UFSTBASEDEFS) $(UFSTDEFS) UFST_CFLAGS="$(UFST_CFLAGS)" $(WINDEFS)
+	nmake -f $(MAKEFILE) $(RECURSIVEDEFS) $(UFSTBASEDEFS) $(UFSTDEFS) UFST_CFLAGS="$(UFST_CFLAGS)"
 
 ufst-clean: ufst-lib
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(UFSTBASEDEFS) $(UFSTDEFS) UFST_CFLAGS="$(UFST_CFLAGS)" $(WINDEFS) clean
+	nmake -f $(MAKEFILE) $(RECURSIVEDEFS) $(UFSTBASEDEFS) $(UFSTDEFS) UFST_CFLAGS="$(UFST_CFLAGS)" clean
 
 ufst-bsc: ufst-lib
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(UFSTBASEDEFS) $(UFSTDEFS) UFST_CFLAGS="$(UFST_CFLAGS)" $(WINDEFS) bsc
+	nmake -f $(MAKEFILE) $(RECURSIVEDEFS) $(UFSTBASEDEFS) $(UFSTDEFS) UFST_CFLAGS="$(UFST_CFLAGS)" bsc
 
 #----------------------- Individual Product Targets --------------------#
 gs:$(GS_XE) $(GSCONSOLE_XE)

@@ -2900,7 +2900,19 @@ currentdict /PDF2PS_matrix_key undef
   % Draw the annotations
   //systemdict /ShowAnnots .knownget not { //true } if {
     /Annots knownoget {
-      { oforce
+      {
+        /AnnotDrawCheck exch             % marker to clean up stack on error
+        {oforce} stopped
+        {
+          (   **** Error: Unable to draw an annotation.\n) pdfformaterror
+          (                Output may be incorrect.\n) pdfformaterror
+          count -1 0 {                           % make sure we don't go past the top of the stack
+            pop                                  % remove the counter
+            /AnnotDrawCheck eq {exit} if % remove object and check if its the marker, exit if it is
+          } for
+        }
+        {
+        exch pop
         dup //null ne {
         .writepdfmarks
         %%
@@ -2922,6 +2934,7 @@ currentdict /PDF2PS_matrix_key undef
         } {
           pop
         } ifelse
+      } ifelse
       } forall
     } if
   } if
@@ -3107,33 +3120,45 @@ currentdict /PDF2PS_matrix_key undef
    //false exch			% Assume no transparency
    /Annots knownoget {		% Get Annots array
      {
-       oforce
-       dup //null ne {
-         dup /Subtype knownoget {
-           /Highlight eq {      % Highlight annotation is always implemented
-             pop pop //true exit  % as transparency.
+       /AnnotTransparencyCheck exch             % marker to clean up stack on error
+       {oforce} stopped
+       {
+         (   **** Error: Unable to check an annotation for use of transparency.\n) pdfformaterror
+         (                Output may be incorrect.\n) pdfformaterror
+         count -1 0 {                           % make sure we don't go past the top of the stack
+           pop                                  % remove the counter
+           /AnnotTransparencyCheck eq {exit} if % remove object and check if its the marker, exit if it is
+         } for
+       }
+       {
+         exch pop                               % remove the 'on error' marker
+         dup //null ne {
+           dup /Subtype knownoget {
+             /Highlight eq {      % Highlight annotation is always implemented
+               pop pop //true exit  % as transparency.
+             } if
            } if
-         } if
-         dup /AP knownoget {	% Get appearance dict for the annoation
-           /N knownogetdict { 	% Get the /N (i.e. normal) appearance stream
-             4 dict exch resourceusestransparency { pop pop //true exit } if
+           dup /AP knownoget {	% Get appearance dict for the annoation
+             /N knownogetdict { 	% Get the /N (i.e. normal) appearance stream
+               4 dict exch resourceusestransparency { pop pop //true exit } if
+             } if
+           } if  			% If AP dict known
+           dup /BM knownoget {
+             //true exit
            } if
-         } if  			% If AP dict known
-         dup /BM knownoget {
-           //true exit
-         } if
-         dup /CA knownoget {
-           1 le {
-             pop pop //true exit
+           dup /CA knownoget {
+             1 le {
+               pop pop //true exit
+             } if
            } if
-         } if
-         /ca knownoget {
-           1 le {
-             pop //true exit
+           /ca knownoget {
+             1 le {
+               pop //true exit
+             } if
            } if
-         } if
-       } {
-         pop
+         } {
+           pop
+         } ifelse
        } ifelse
      } forall			% For all annots on the page
    } if

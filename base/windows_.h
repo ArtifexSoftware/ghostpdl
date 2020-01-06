@@ -19,7 +19,9 @@
 #ifndef windows__INCLUDED
 #  define windows__INCLUDED
 
+#ifndef STRICT
 #define STRICT
+#endif
 #ifdef METRO
 #include <winapifamily.h>
 #endif

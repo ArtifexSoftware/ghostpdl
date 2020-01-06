@@ -2526,7 +2526,7 @@ main(int argc, char *argv[])
     }
     if (!buildtime)
         buildtime = time(NULL);
-    fprintf(out,"    time_t gs_romfs_buildtime = %ld;\n\n", buildtime);
+    fprintf(out,"    time_t gs_romfs_buildtime = %ld;\n\n", (long)buildtime);
 
     /* process the remaining arguments (options interspersed with paths) */
     for (; atarg < argc; atarg++) {

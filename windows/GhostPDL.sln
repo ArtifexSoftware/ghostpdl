@@ -1,13 +1,15 @@
-
-Microsoft Visual Studio Solution File, Format Version 9.00
-# Visual Studio 2005
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ghostscript", "ghostscript.vcproj", "{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}"
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29609.76
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ghostscript", "ghostscript.vcxproj", "{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ghostpcl", "ghostpcl.vcproj", "{ED35CF95-DAA1-45B3-9206-599F4170F198}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ghostpcl", "ghostpcl.vcxproj", "{ED35CF95-DAA1-45B3-9206-599F4170F198}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ghostxps", "ghostxps.vcproj", "{DE21942C-CDA2-445B-B2EC-51FF54E0F0DD}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ghostxps", "ghostxps.vcxproj", "{DE21942C-CDA2-445B-B2EC-51FF54E0F0DD}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ghostpdl", "ghostpdl.vcproj", "{C4038125-61B9-4147-9EA8-39690BA3A599}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ghostpdl", "ghostpdl.vcxproj", "{C4038125-61B9-4147-9EA8-39690BA3A599}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ghostpdf", "ghostpdf.vcproj", "{4C038125-61B9-4147-9EA8-39690BA3A599}"
 EndProject
@@ -21,14 +23,20 @@ Global
 		Debug-contrib|x64 = Debug-contrib|x64
 		Debug-cups|Win32 = Debug-cups|Win32
 		Debug-cups|x64 = Debug-cups|x64
+		DebugXP|Win32 = DebugXP|Win32
+		DebugXP|x64 = DebugXP|x64
 		Memento|Win32 = Memento|Win32
 		Memento|x64 = Memento|x64
+		MementoXP|Win32 = MementoXP|Win32
+		MementoXP|x64 = MementoXP|x64
 		Profile|Win32 = Profile|Win32
 		Profile|x64 = Profile|x64
 		Release|Win32 = Release|Win32
 		Release|x64 = Release|x64
 		Release-contrib|Win32 = Release-contrib|Win32
 		Release-contrib|x64 = Release-contrib|x64
+		ReleaseXP|Win32 = ReleaseXP|Win32
+		ReleaseXP|x64 = ReleaseXP|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}.Debug|Win32.ActiveCfg = Debug|Win32
@@ -39,9 +47,17 @@ Global
 		{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}.Debug-cups|Win32.ActiveCfg = Debug-cups|Win32
 		{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}.Debug-cups|x64.ActiveCfg = Debug-cups|x64
 		{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}.Debug-cups|x64.Build.0 = Debug-cups|x64
+		{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}.DebugXP|Win32.ActiveCfg = DebugXP|Win32
+		{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}.DebugXP|Win32.Build.0 = DebugXP|Win32
+		{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}.DebugXP|x64.ActiveCfg = DebugXP|x64
+		{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}.DebugXP|x64.Build.0 = DebugXP|x64
 		{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}.Memento|Win32.ActiveCfg = Memento|Win32
 		{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}.Memento|x64.ActiveCfg = Memento|x64
 		{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}.Memento|x64.Build.0 = Memento|x64
+		{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}.MementoXP|Win32.ActiveCfg = MementoXP|Win32
+		{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}.MementoXP|Win32.Build.0 = MementoXP|Win32
+		{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}.MementoXP|x64.ActiveCfg = MementoXP|x64
+		{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}.MementoXP|x64.Build.0 = MementoXP|x64
 		{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}.Profile|Win32.ActiveCfg = Profile|Win32
 		{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}.Profile|x64.ActiveCfg = Profile|x64
 		{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}.Profile|x64.Build.0 = Profile|x64
@@ -51,6 +67,10 @@ Global
 		{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}.Release-contrib|Win32.ActiveCfg = Release-contrib|Win32
 		{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}.Release-contrib|x64.ActiveCfg = Release-contrib|x64
 		{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}.Release-contrib|x64.Build.0 = Release-contrib|x64
+		{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}.ReleaseXP|Win32.ActiveCfg = ReleaseXP|Win32
+		{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}.ReleaseXP|Win32.Build.0 = ReleaseXP|Win32
+		{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}.ReleaseXP|x64.ActiveCfg = ReleaseXP|x64
+		{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}.ReleaseXP|x64.Build.0 = ReleaseXP|x64
 		{ED35CF95-DAA1-45B3-9206-599F4170F198}.Debug|Win32.ActiveCfg = Debug|Win32
 		{ED35CF95-DAA1-45B3-9206-599F4170F198}.Debug|x64.ActiveCfg = Debug|x64
 		{ED35CF95-DAA1-45B3-9206-599F4170F198}.Debug-contrib|Win32.ActiveCfg = Debug-contrib|Win32
@@ -59,9 +79,17 @@ Global
 		{ED35CF95-DAA1-45B3-9206-599F4170F198}.Debug-cups|Win32.ActiveCfg = Debug-cups|Win32
 		{ED35CF95-DAA1-45B3-9206-599F4170F198}.Debug-cups|x64.ActiveCfg = Debug-cups|x64
 		{ED35CF95-DAA1-45B3-9206-599F4170F198}.Debug-cups|x64.Build.0 = Debug-cups|x64
+		{ED35CF95-DAA1-45B3-9206-599F4170F198}.DebugXP|Win32.ActiveCfg = DebugXP|Win32
+		{ED35CF95-DAA1-45B3-9206-599F4170F198}.DebugXP|Win32.Build.0 = DebugXP|Win32
+		{ED35CF95-DAA1-45B3-9206-599F4170F198}.DebugXP|x64.ActiveCfg = DebugXP|x64
+		{ED35CF95-DAA1-45B3-9206-599F4170F198}.DebugXP|x64.Build.0 = DebugXP|x64
 		{ED35CF95-DAA1-45B3-9206-599F4170F198}.Memento|Win32.ActiveCfg = Memento|Win32
 		{ED35CF95-DAA1-45B3-9206-599F4170F198}.Memento|x64.ActiveCfg = Memento|x64
 		{ED35CF95-DAA1-45B3-9206-599F4170F198}.Memento|x64.Build.0 = Memento|x64
+		{ED35CF95-DAA1-45B3-9206-599F4170F198}.MementoXP|Win32.ActiveCfg = MementoXP|Win32
+		{ED35CF95-DAA1-45B3-9206-599F4170F198}.MementoXP|Win32.Build.0 = MementoXP|Win32
+		{ED35CF95-DAA1-45B3-9206-599F4170F198}.MementoXP|x64.ActiveCfg = MementoXP|x64
+		{ED35CF95-DAA1-45B3-9206-599F4170F198}.MementoXP|x64.Build.0 = MementoXP|x64
 		{ED35CF95-DAA1-45B3-9206-599F4170F198}.Profile|Win32.ActiveCfg = Profile|Win32
 		{ED35CF95-DAA1-45B3-9206-599F4170F198}.Profile|x64.ActiveCfg = Profile|x64
 		{ED35CF95-DAA1-45B3-9206-599F4170F198}.Profile|x64.Build.0 = Profile|x64
@@ -71,6 +99,10 @@ Global
 		{ED35CF95-DAA1-45B3-9206-599F4170F198}.Release-contrib|Win32.ActiveCfg = Release-contrib|Win32
 		{ED35CF95-DAA1-45B3-9206-599F4170F198}.Release-contrib|x64.ActiveCfg = Release-contrib|x64
 		{ED35CF95-DAA1-45B3-9206-599F4170F198}.Release-contrib|x64.Build.0 = Release-contrib|x64
+		{ED35CF95-DAA1-45B3-9206-599F4170F198}.ReleaseXP|Win32.ActiveCfg = ReleaseXP|Win32
+		{ED35CF95-DAA1-45B3-9206-599F4170F198}.ReleaseXP|Win32.Build.0 = ReleaseXP|Win32
+		{ED35CF95-DAA1-45B3-9206-599F4170F198}.ReleaseXP|x64.ActiveCfg = ReleaseXP|x64
+		{ED35CF95-DAA1-45B3-9206-599F4170F198}.ReleaseXP|x64.Build.0 = ReleaseXP|x64
 		{DE21942C-CDA2-445B-B2EC-51FF54E0F0DD}.Debug|Win32.ActiveCfg = Debug|Win32
 		{DE21942C-CDA2-445B-B2EC-51FF54E0F0DD}.Debug|x64.ActiveCfg = Debug|x64
 		{DE21942C-CDA2-445B-B2EC-51FF54E0F0DD}.Debug-contrib|Win32.ActiveCfg = Debug-contrib|Win32
@@ -79,9 +111,17 @@ Global
 		{DE21942C-CDA2-445B-B2EC-51FF54E0F0DD}.Debug-cups|Win32.ActiveCfg = Debug-cups|Win32
 		{DE21942C-CDA2-445B-B2EC-51FF54E0F0DD}.Debug-cups|x64.ActiveCfg = Debug-cups|x64
 		{DE21942C-CDA2-445B-B2EC-51FF54E0F0DD}.Debug-cups|x64.Build.0 = Debug-cups|x64
+		{DE21942C-CDA2-445B-B2EC-51FF54E0F0DD}.DebugXP|Win32.ActiveCfg = DebugXP|Win32
+		{DE21942C-CDA2-445B-B2EC-51FF54E0F0DD}.DebugXP|Win32.Build.0 = DebugXP|Win32
+		{DE21942C-CDA2-445B-B2EC-51FF54E0F0DD}.DebugXP|x64.ActiveCfg = DebugXP|x64
+		{DE21942C-CDA2-445B-B2EC-51FF54E0F0DD}.DebugXP|x64.Build.0 = DebugXP|x64
 		{DE21942C-CDA2-445B-B2EC-51FF54E0F0DD}.Memento|Win32.ActiveCfg = Memento|Win32
 		{DE21942C-CDA2-445B-B2EC-51FF54E0F0DD}.Memento|x64.ActiveCfg = Memento|x64
 		{DE21942C-CDA2-445B-B2EC-51FF54E0F0DD}.Memento|x64.Build.0 = Memento|x64
+		{DE21942C-CDA2-445B-B2EC-51FF54E0F0DD}.MementoXP|Win32.ActiveCfg = MementoXP|Win32
+		{DE21942C-CDA2-445B-B2EC-51FF54E0F0DD}.MementoXP|Win32.Build.0 = MementoXP|Win32
+		{DE21942C-CDA2-445B-B2EC-51FF54E0F0DD}.MementoXP|x64.ActiveCfg = MementoXP|x64
+		{DE21942C-CDA2-445B-B2EC-51FF54E0F0DD}.MementoXP|x64.Build.0 = MementoXP|x64
 		{DE21942C-CDA2-445B-B2EC-51FF54E0F0DD}.Profile|Win32.ActiveCfg = Profile|Win32
 		{DE21942C-CDA2-445B-B2EC-51FF54E0F0DD}.Profile|x64.ActiveCfg = Profile|x64
 		{DE21942C-CDA2-445B-B2EC-51FF54E0F0DD}.Profile|x64.Build.0 = Profile|x64
@@ -91,6 +131,10 @@ Global
 		{DE21942C-CDA2-445B-B2EC-51FF54E0F0DD}.Release-contrib|Win32.ActiveCfg = Release-contrib|Win32
 		{DE21942C-CDA2-445B-B2EC-51FF54E0F0DD}.Release-contrib|x64.ActiveCfg = Release-contrib|x64
 		{DE21942C-CDA2-445B-B2EC-51FF54E0F0DD}.Release-contrib|x64.Build.0 = Release-contrib|x64
+		{DE21942C-CDA2-445B-B2EC-51FF54E0F0DD}.ReleaseXP|Win32.ActiveCfg = ReleaseXP|Win32
+		{DE21942C-CDA2-445B-B2EC-51FF54E0F0DD}.ReleaseXP|Win32.Build.0 = ReleaseXP|Win32
+		{DE21942C-CDA2-445B-B2EC-51FF54E0F0DD}.ReleaseXP|x64.ActiveCfg = ReleaseXP|x64
+		{DE21942C-CDA2-445B-B2EC-51FF54E0F0DD}.ReleaseXP|x64.Build.0 = ReleaseXP|x64
 		{C4038125-61B9-4147-9EA8-39690BA3A599}.Debug|Win32.ActiveCfg = Debug|Win32
 		{C4038125-61B9-4147-9EA8-39690BA3A599}.Debug|x64.ActiveCfg = Debug|x64
 		{C4038125-61B9-4147-9EA8-39690BA3A599}.Debug-contrib|Win32.ActiveCfg = Debug-contrib|Win32
@@ -99,9 +143,17 @@ Global
 		{C4038125-61B9-4147-9EA8-39690BA3A599}.Debug-cups|Win32.ActiveCfg = Debug-cups|Win32
 		{C4038125-61B9-4147-9EA8-39690BA3A599}.Debug-cups|x64.ActiveCfg = Debug-cups|x64
 		{C4038125-61B9-4147-9EA8-39690BA3A599}.Debug-cups|x64.Build.0 = Debug-cups|x64
+		{C4038125-61B9-4147-9EA8-39690BA3A599}.DebugXP|Win32.ActiveCfg = DebugXP|Win32
+		{C4038125-61B9-4147-9EA8-39690BA3A599}.DebugXP|Win32.Build.0 = DebugXP|Win32
+		{C4038125-61B9-4147-9EA8-39690BA3A599}.DebugXP|x64.ActiveCfg = DebugXP|x64
+		{C4038125-61B9-4147-9EA8-39690BA3A599}.DebugXP|x64.Build.0 = DebugXP|x64
 		{C4038125-61B9-4147-9EA8-39690BA3A599}.Memento|Win32.ActiveCfg = Memento|Win32
 		{C4038125-61B9-4147-9EA8-39690BA3A599}.Memento|x64.ActiveCfg = Memento|x64
 		{C4038125-61B9-4147-9EA8-39690BA3A599}.Memento|x64.Build.0 = Memento|x64
+		{C4038125-61B9-4147-9EA8-39690BA3A599}.MementoXP|Win32.ActiveCfg = MementoXP|Win32
+		{C4038125-61B9-4147-9EA8-39690BA3A599}.MementoXP|Win32.Build.0 = MementoXP|Win32
+		{C4038125-61B9-4147-9EA8-39690BA3A599}.MementoXP|x64.ActiveCfg = MementoXP|x64
+		{C4038125-61B9-4147-9EA8-39690BA3A599}.MementoXP|x64.Build.0 = MementoXP|x64
 		{C4038125-61B9-4147-9EA8-39690BA3A599}.Profile|Win32.ActiveCfg = Profile|Win32
 		{C4038125-61B9-4147-9EA8-39690BA3A599}.Profile|x64.ActiveCfg = Profile|x64
 		{C4038125-61B9-4147-9EA8-39690BA3A599}.Profile|x64.Build.0 = Profile|x64
@@ -111,34 +163,10 @@ Global
 		{C4038125-61B9-4147-9EA8-39690BA3A599}.Release-contrib|Win32.ActiveCfg = Release-contrib|Win32
 		{C4038125-61B9-4147-9EA8-39690BA3A599}.Release-contrib|x64.ActiveCfg = Release-contrib|x64
 		{C4038125-61B9-4147-9EA8-39690BA3A599}.Release-contrib|x64.Build.0 = Release-contrib|x64
-		{4C038125-61B9-4147-9EA8-39690BA3A599}.Debug|Win32.ActiveCfg = Debug|Win32
-		{4C038125-61B9-4147-9EA8-39690BA3A599}.Debug|Win32.Build.0 = Debug|Win32
-		{4C038125-61B9-4147-9EA8-39690BA3A599}.Debug|x64.ActiveCfg = Debug|x64
-		{4C038125-61B9-4147-9EA8-39690BA3A599}.Debug|x64.Build.0 = Debug|x64
-		{4C038125-61B9-4147-9EA8-39690BA3A599}.Debug-contrib|Win32.ActiveCfg = Debug-contrib|Win32
-		{4C038125-61B9-4147-9EA8-39690BA3A599}.Debug-contrib|Win32.Build.0 = Debug-contrib|Win32
-		{4C038125-61B9-4147-9EA8-39690BA3A599}.Debug-contrib|x64.ActiveCfg = Debug-contrib|x64
-		{4C038125-61B9-4147-9EA8-39690BA3A599}.Debug-contrib|x64.Build.0 = Debug-contrib|x64
-		{4C038125-61B9-4147-9EA8-39690BA3A599}.Debug-cups|Win32.ActiveCfg = Debug-cups|Win32
-		{4C038125-61B9-4147-9EA8-39690BA3A599}.Debug-cups|Win32.Build.0 = Debug-cups|Win32
-		{4C038125-61B9-4147-9EA8-39690BA3A599}.Debug-cups|x64.ActiveCfg = Debug-cups|x64
-		{4C038125-61B9-4147-9EA8-39690BA3A599}.Debug-cups|x64.Build.0 = Debug-cups|x64
-		{4C038125-61B9-4147-9EA8-39690BA3A599}.Memento|Win32.ActiveCfg = Memento|Win32
-		{4C038125-61B9-4147-9EA8-39690BA3A599}.Memento|Win32.Build.0 = Memento|Win32
-		{4C038125-61B9-4147-9EA8-39690BA3A599}.Memento|x64.ActiveCfg = Memento|x64
-		{4C038125-61B9-4147-9EA8-39690BA3A599}.Memento|x64.Build.0 = Memento|x64
-		{4C038125-61B9-4147-9EA8-39690BA3A599}.Profile|Win32.ActiveCfg = Profile|Win32
-		{4C038125-61B9-4147-9EA8-39690BA3A599}.Profile|Win32.Build.0 = Profile|Win32
-		{4C038125-61B9-4147-9EA8-39690BA3A599}.Profile|x64.ActiveCfg = Profile|x64
-		{4C038125-61B9-4147-9EA8-39690BA3A599}.Profile|x64.Build.0 = Profile|x64
-		{4C038125-61B9-4147-9EA8-39690BA3A599}.Release|Win32.ActiveCfg = Release|Win32
-		{4C038125-61B9-4147-9EA8-39690BA3A599}.Release|Win32.Build.0 = Release|Win32
-		{4C038125-61B9-4147-9EA8-39690BA3A599}.Release|x64.ActiveCfg = Release|x64
-		{4C038125-61B9-4147-9EA8-39690BA3A599}.Release|x64.Build.0 = Release|x64
-		{4C038125-61B9-4147-9EA8-39690BA3A599}.Release-contrib|Win32.ActiveCfg = Release-contrib|Win32
-		{4C038125-61B9-4147-9EA8-39690BA3A599}.Release-contrib|Win32.Build.0 = Release-contrib|Win32
-		{4C038125-61B9-4147-9EA8-39690BA3A599}.Release-contrib|x64.ActiveCfg = Release-contrib|x64
-		{4C038125-61B9-4147-9EA8-39690BA3A599}.Release-contrib|x64.Build.0 = Release-contrib|x64
+		{C4038125-61B9-4147-9EA8-39690BA3A599}.ReleaseXP|Win32.ActiveCfg = ReleaseXP|Win32
+		{C4038125-61B9-4147-9EA8-39690BA3A599}.ReleaseXP|Win32.Build.0 = ReleaseXP|Win32
+		{C4038125-61B9-4147-9EA8-39690BA3A599}.ReleaseXP|x64.ActiveCfg = ReleaseXP|x64
+		{C4038125-61B9-4147-9EA8-39690BA3A599}.ReleaseXP|x64.Build.0 = ReleaseXP|x64
 		{98351FEF-0032-457C-B9D9-D6B68A829386}.Debug|Win32.ActiveCfg = Debug|Win32
 		{98351FEF-0032-457C-B9D9-D6B68A829386}.Debug|Win32.Build.0 = Debug|Win32
 		{98351FEF-0032-457C-B9D9-D6B68A829386}.Debug|x64.ActiveCfg = Debug|x64
@@ -149,9 +177,17 @@ Global
 		{98351FEF-0032-457C-B9D9-D6B68A829386}.Debug-cups|Win32.ActiveCfg = Debug-cups|Win32
 		{98351FEF-0032-457C-B9D9-D6B68A829386}.Debug-cups|Win32.Build.0 = Debug-cups|Win32
 		{98351FEF-0032-457C-B9D9-D6B68A829386}.Debug-cups|x64.ActiveCfg = Debug|Win32
+		{98351FEF-0032-457C-B9D9-D6B68A829386}.DebugXP|Win32.ActiveCfg = DebugXP|Win32
+		{98351FEF-0032-457C-B9D9-D6B68A829386}.DebugXP|Win32.Build.0 = DebugXP|Win32
+		{98351FEF-0032-457C-B9D9-D6B68A829386}.DebugXP|x64.ActiveCfg = DebugXP|x64
+		{98351FEF-0032-457C-B9D9-D6B68A829386}.DebugXP|x64.Build.0 = DebugXP|x64
 		{98351FEF-0032-457C-B9D9-D6B68A829386}.Memento|Win32.ActiveCfg = Memento|Win32
 		{98351FEF-0032-457C-B9D9-D6B68A829386}.Memento|Win32.Build.0 = Memento|Win32
 		{98351FEF-0032-457C-B9D9-D6B68A829386}.Memento|x64.ActiveCfg = Release|Win32
+		{98351FEF-0032-457C-B9D9-D6B68A829386}.MementoXP|Win32.ActiveCfg = MementoXP|Win32
+		{98351FEF-0032-457C-B9D9-D6B68A829386}.MementoXP|Win32.Build.0 = MementoXP|Win32
+		{98351FEF-0032-457C-B9D9-D6B68A829386}.MementoXP|x64.ActiveCfg = MementoXP|x64
+		{98351FEF-0032-457C-B9D9-D6B68A829386}.MementoXP|x64.Build.0 = MementoXP|x64
 		{98351FEF-0032-457C-B9D9-D6B68A829386}.Profile|Win32.ActiveCfg = Profile|Win32
 		{98351FEF-0032-457C-B9D9-D6B68A829386}.Profile|Win32.Build.0 = Profile|Win32
 		{98351FEF-0032-457C-B9D9-D6B68A829386}.Profile|x64.ActiveCfg = Release|Win32
@@ -161,8 +197,15 @@ Global
 		{98351FEF-0032-457C-B9D9-D6B68A829386}.Release-contrib|Win32.ActiveCfg = Release-contrib|Win32
 		{98351FEF-0032-457C-B9D9-D6B68A829386}.Release-contrib|Win32.Build.0 = Release-contrib|Win32
 		{98351FEF-0032-457C-B9D9-D6B68A829386}.Release-contrib|x64.ActiveCfg = Release|Win32
+		{98351FEF-0032-457C-B9D9-D6B68A829386}.ReleaseXP|Win32.ActiveCfg = ReleaseXP|Win32
+		{98351FEF-0032-457C-B9D9-D6B68A829386}.ReleaseXP|Win32.Build.0 = ReleaseXP|Win32
+		{98351FEF-0032-457C-B9D9-D6B68A829386}.ReleaseXP|x64.ActiveCfg = ReleaseXP|x64
+		{98351FEF-0032-457C-B9D9-D6B68A829386}.ReleaseXP|x64.Build.0 = ReleaseXP|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C2940BC0-D59A-4FAE-AE5C-A987A8BBA9B4}
 	EndGlobalSection
 EndGlobal

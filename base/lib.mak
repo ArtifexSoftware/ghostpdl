@@ -3213,10 +3213,10 @@ translib_=$(GLOBJ)gstrans.$(OBJ) $(GLOBJ)gximag3x.$(OBJ)\
  $(GLOBJ)gsequivc.$(OBJ)  $(GLOBJ)gdevdcrd.$(OBJ)
 
 $(GLD)translib.dev : $(LIB_MAK) $(ECHOGS_XE) $(translib_)\
- $(GLD)cspixlib.dev $(GLD)bboxutil.dev $(GLD)cielib.dev $(LIB_MAK) $(MAKEDIRS)
+ $(GLD)cspixlib.dev $(GLD)bboxutil.dev $(GLD)cielib.dev $(GLD)page.dev $(LIB_MAK) $(MAKEDIRS)
 	$(SETMOD) $(GLD)translib $(translib_)
 	$(ADDMOD) $(GLD)translib -imagetype 3x
-	$(ADDMOD) $(GLD)translib -include $(GLD)cspixlib $(GLD)bboxutil
+	$(ADDMOD) $(GLD)translib -include $(GLD)cspixlib $(GLD)bboxutil $(GLD)page
 	$(ADDMOD) $(GLD)translib -include $(GLD)cielib.dev
 
 # ---------------- Smooth shading ---------------- #

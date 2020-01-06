@@ -1054,8 +1054,8 @@ const gx_devn_prn_device gs_devicen_device =
     gx_devn_prn_device_body(devicen_procs, "devicen", 4, GX_CINFO_POLARITY_SUBTRACTIVE, 32, 255, 255, "DeviceCMYK"),
     /* DeviceN device specific parameters */
     { 8,                        /* Bits per color - must match ncomp, depth, etc. above */
-      NULL,                     /* No names for standard DeviceN color model */
-      0,                        /* No standard colorants for DeviceN */
+      DeviceCMYKComponents,     /* Names of color model colorants */
+      4,                        /* Number colorants for CMYK */
       0,                        /* MaxSeparations has not been specified */
       -1,                       /* PageSpotColors has not been specified */
       {0},                      /* SeparationNames */
@@ -1761,7 +1761,7 @@ devn_write_pcx_file(gx_device_printer * pdev, char * filename, int ncomp,
 
     if (outname == NULL) {
         code = gs_note_error(gs_error_VMerror);
-	goto done;
+        goto done;
     }
 
     code = gs_add_control_path(pdev->memory, gs_permit_file_reading, filename);
@@ -1771,7 +1771,7 @@ devn_write_pcx_file(gx_device_printer * pdev, char * filename, int ncomp,
     in = gp_fopen(pdev->memory, filename, "rb");
     if (!in) {
         code = gs_note_error(gs_error_invalidfileaccess);
-	goto done;
+        goto done;
     }
     gs_sprintf(outname, "%s.pcx", filename);
     code = gs_add_control_path(pdev->memory, gs_permit_file_writing, outname);
@@ -1780,9 +1780,12 @@ devn_write_pcx_file(gx_device_printer * pdev, char * filename, int ncomp,
     out = gp_fopen(pdev->memory, outname, "wb");
     if (!out) {
         code = gs_note_error(gs_error_invalidfileaccess);
-	goto done;
+        goto done;
     }
 
+    if (ncomp == 4 && bpc == 8) {
+        ncomp = 3;		/* we will convert 32-bit to 24-bit RGB */
+    }
     planar = devn_setup_pcx_header(pdev, &header, ncomp, bpc);
     code = devn_pcx_write_page(pdev, in, linesize, out, &header, planar, depth);
     if (code >= 0)
@@ -1814,12 +1817,22 @@ devn_pcx_write_page(gx_device_printer * pdev, gp_file * infile, int linesize, gp
     int height = pdev->height;
     uint lsize = raster + rsize;
     byte *line = gs_alloc_bytes(pdev->memory, lsize, "pcx file buffer");
+    byte *rgb_buff = NULL;
     byte *plane = line + raster;
+    bool convert_to_rgb = false;
     int y;
     int code = 0;               /* return code */
 
     if (line == 0)              /* can't allocate line buffer */
         return_error(gs_error_VMerror);
+    if (pdev->color_info.num_components == 4 && depth == 32) {
+        rgb_buff = gs_alloc_bytes(pdev->memory, lsize, "pcx_rgb_buff");
+        if (rgb_buff == 0)              /* can't allocate line buffer */
+            return_error(gs_error_VMerror);
+        raster = (raster * 3) / 4;	/* will be rounded up to even later */
+        depth = 24;			/* we will be writing 24-bit rgb */
+        convert_to_rgb = true;
+    }
 
     /* Fill in the other variable entries in the header struct. */
 
@@ -1844,6 +1857,21 @@ devn_pcx_write_page(gx_device_printer * pdev, gp_file * infile, int linesize, gp
         code = gp_fread(line, sizeof(byte), linesize, infile);
         if (code < 0)
             break;
+        /* If needed, convert to rgb */
+        if (convert_to_rgb) {
+            int i;
+			byte *row_in = line;
+
+            /* Transform the data. */
+            row = rgb_buff;	/* adjust to converted output buffer */
+            for (i=0; i < linesize; i += 4) {
+                *row++ = ((255 - row_in[0]) * (255 - row_in[3])) / 255;
+                *row++ = ((255 - row_in[1]) * (255 - row_in[3])) / 255;
+                *row++ = ((255 - row_in[2]) * (255 - row_in[3])) / 255;
+                row_in += 4;
+            }
+            row = rgb_buff;	/* adjust to converted output buffer */
+        }
         end = row + raster;
         if (!planar) {          /* Just write the bits. */
             if (raster & 1) {   /* Round to even, with predictable padding. */
@@ -1906,6 +1934,8 @@ devn_pcx_write_page(gx_device_printer * pdev, gp_file * infile, int linesize, gp
     }
 
   pcx_done:
+    if (rgb_buff != NULL)
+        gs_free_object(pdev->memory, rgb_buff, "pcx_rgb_buff");
     gs_free_object(pdev->memory, line, "pcx file buffer");
 
     return code;

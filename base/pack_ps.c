@@ -344,7 +344,7 @@ main(int argc, char *argv[])
     if (!buildtime) {
         buildtime = time(NULL);
     }
-    fprintf(outfile,"/* Auto-generated from PostScript file \"%s\" at time %ld */\n", infilename, buildtime);
+    fprintf(outfile,"/* Auto-generated from PostScript file \"%s\" at time %ld */\n", infilename, (long)buildtime);
 
     while (readline(infile, inputline, INPUT_LINE_LENGTH_MAX)) {
 
