@@ -32,6 +32,7 @@
 #include "pdf_colour.h"
 #include "gspath2.h"
 #include "pdf_image.h"
+#include "gxfarith.h"
 
 typedef int (*annot_func)(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done);
 
@@ -40,6 +41,14 @@ typedef struct {
     annot_func func;
     bool simpleAP;
 } annot_dispatch_t;
+
+
+typedef int (*annot_LE_func)(pdf_context *ctx, pdf_dict *annot);
+
+typedef struct {
+    const char *name;
+    annot_LE_func func;
+} annot_LE_dispatch_t;
 
 
 static int pdfi_annot_start_transparency(pdf_context *ctx, pdf_dict *annot)
@@ -69,8 +78,29 @@ static int pdfi_annot_end_transparency(pdf_context *ctx, pdf_dict *annot)
     return pdfi_trans_end_simple_group(ctx);
 }
 
-/* Set opacity for MarkUp annotations if CA or ca key is present */
-static int pdfi_annot_opacity(pdf_context *ctx, pdf_dict *annot)
+/* Get width from BS, if it exists
+ * Default to 1.0 if not
+ */
+static int pdfi_annot_get_BS_width(pdf_context *ctx, pdf_dict *annot, double *width)
+{
+    int code;
+    pdf_dict *BS = NULL;
+
+    *width = 1.0;
+
+    code = pdfi_dict_knownget_type(ctx, annot, "BS", PDF_DICT, (pdf_obj **)&BS);
+    if (code <= 0)
+        goto exit;
+
+    code = pdfi_dict_knownget_number(ctx, BS, "W", width);
+
+ exit:
+    pdfi_countdown(BS);
+    return code;
+}
+
+/* Set stroke opacity for MarkUp annotations if CA is present */
+static int pdfi_annot_opacity_stroke(pdf_context *ctx, pdf_dict *annot)
 {
     int code = 0;
     double CA;
@@ -82,7 +112,16 @@ static int pdfi_annot_opacity(pdf_context *ctx, pdf_dict *annot)
         code = gs_setopacityalpha(ctx->pgs, CA);
         if (code < 0) goto exit;
     }
-    /* Also check for 'ca', I assume because there is some file out there that spells it wrong... */
+ exit:
+    return code;
+}
+
+/* Set non-stroke opacity for MarkUp annotations if ca key is present */
+static int pdfi_annot_opacity_fill(pdf_context *ctx, pdf_dict *annot)
+{
+    int code = 0;
+    double CA;
+
     code = pdfi_dict_knownget_number(ctx, annot, "ca", &CA);
     if (code < 0) goto exit;
     if (code > 0) {
@@ -206,6 +245,37 @@ static int pdfi_annot_draw_AP(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormA
     return code;
 }
 
+static int pdfi_annot_setinteriorcolor(pdf_context *ctx, pdf_dict *annot, bool usedefault, bool *drawit)
+{
+    int code = 0;
+    pdf_array *C = NULL;
+
+    *drawit = true;
+
+    code = pdfi_dict_knownget_type(ctx, annot, "IC", PDF_ARRAY, (pdf_obj **)&C);
+    if (code < 0) goto exit;
+
+    if (code == 0) {
+        if (usedefault)
+            code = pdfi_gs_setgray(ctx, 0);
+        else
+            *drawit = false;
+    } else {
+        if (pdfi_array_size(C) == 0) {
+            code = 0;
+            *drawit = false;
+        } else {
+            code = pdfi_setcolor_from_array(ctx, C);
+        }
+    }
+
+ exit:
+    if (code < 0)
+        *drawit = false;
+    pdfi_countdown(C);
+    return code;
+}
+
 static int pdfi_annot_setcolor(pdf_context *ctx, pdf_dict *annot, bool usedefault, bool *drawit)
 {
     int code = 0;
@@ -237,6 +307,43 @@ static int pdfi_annot_setcolor(pdf_context *ctx, pdf_dict *annot, bool usedefaul
     return code;
 }
 
+/* Stroke border using current path */
+static int pdfi_annot_strokeborderpath(pdf_context *ctx, pdf_dict *annot, double width, pdf_array *dash)
+{
+    int code = 0;
+
+    if (width <= 0)
+        return 0;
+
+    code = pdfi_setdash_impl(ctx, dash, 0);
+    if (code < 0) goto exit;
+    code = gs_setlinewidth(ctx->pgs, width);
+    if (code < 0) goto exit;
+
+    code = gs_stroke(ctx->pgs);
+
+ exit:
+    return code;
+}
+
+/* Fill border path */
+static int pdfi_annot_fillborderpath(pdf_context *ctx, pdf_dict *annot)
+{
+    int code;
+    bool drawit;
+
+    code = pdfi_gsave(ctx);
+
+    code = pdfi_annot_opacity_fill(ctx, annot);
+    code = pdfi_annot_setinteriorcolor(ctx, annot, false, &drawit);
+    if (drawit)
+        code = gs_fill(ctx->pgs);
+
+    code = pdfi_grestore(ctx);
+    return code;
+}
+
+/* Stroke border, drawing path from rect */
 static int pdfi_annot_strokeborder(pdf_context *ctx, pdf_dict *annot, double width, pdf_array *dash)
 {
     int code = 0;
@@ -270,7 +377,7 @@ static int pdfi_annot_strokeborder(pdf_context *ctx, pdf_dict *annot, double wid
 /* Draw border from a Border array
  * Note: Border can be null
  */
-static int pdfi_annot_draw_Border(pdf_context *ctx, pdf_dict *annot, pdf_array *Border)
+static int pdfi_annot_draw_Border(pdf_context *ctx, pdf_dict *annot, pdf_array *Border, bool usepath)
 {
     pdf_array *dash = NULL;
     int code = 0;
@@ -306,7 +413,10 @@ static int pdfi_annot_draw_Border(pdf_context *ctx, pdf_dict *annot, pdf_array *
     }
 
     /* At this point we have a dash array (which could be length 0) and a width */
-    code = pdfi_annot_strokeborder(ctx, annot, width, dash);
+    if (usepath)
+        code = pdfi_annot_strokeborderpath(ctx, annot, width, dash);
+    else
+        code = pdfi_annot_strokeborder(ctx, annot, width, dash);
 
  exit:
     pdfi_countdown(dash);
@@ -314,7 +424,7 @@ static int pdfi_annot_draw_Border(pdf_context *ctx, pdf_dict *annot, pdf_array *
 }
 
 /* Draw border from a BS dict */
-static int pdfi_annot_draw_BS(pdf_context *ctx, pdf_dict *annot, pdf_dict *BS)
+static int pdfi_annot_draw_BS(pdf_context *ctx, pdf_dict *annot, pdf_dict *BS, bool usepath)
 {
     double W;
     int code = 0;
@@ -354,7 +464,10 @@ static int pdfi_annot_draw_BS(pdf_context *ctx, pdf_dict *annot, pdf_dict *BS)
     }
 
     /* At this point we have a dash array (which could be length 0) and a width */
-    code = pdfi_annot_strokeborder(ctx, annot, W, dash);
+    if (usepath)
+        code = pdfi_annot_strokeborderpath(ctx, annot, W, dash);
+    else
+        code = pdfi_annot_strokeborder(ctx, annot, W, dash);
 
  exit:
     pdfi_countdown(S);
@@ -369,8 +482,9 @@ static int pdfi_annot_draw_BS(pdf_context *ctx, pdf_dict *annot, pdf_dict *BS)
  *  /BS -- a Border Style dictionary
  *  Spec says /Border would be ignored in favor of /BS
  *
+ * usepath -- indicates whether to stroke existing path, or use Rect to draw a path first
  */
-static int pdfi_annot_draw_border(pdf_context *ctx, pdf_dict *annot)
+static int pdfi_annot_draw_border(pdf_context *ctx, pdf_dict *annot, bool usepath)
 {
     int code, code1;
     pdf_dict *BS = NULL;
@@ -385,10 +499,10 @@ static int pdfi_annot_draw_border(pdf_context *ctx, pdf_dict *annot)
     if (code < 0) goto exit;
 
     if (BS) {
-        code = pdfi_annot_draw_BS(ctx, annot, BS);
+        code = pdfi_annot_draw_BS(ctx, annot, BS, usepath);
     } else {
         /* Note: Border can be null */
-        code = pdfi_annot_draw_Border(ctx, annot, Border);
+        code = pdfi_annot_draw_Border(ctx, annot, Border, usepath);
     }
     code1 = pdfi_grestore(ctx);
     if (code == 0) code = code1;
@@ -398,6 +512,147 @@ static int pdfi_annot_draw_border(pdf_context *ctx, pdf_dict *annot)
     pdfi_countdown(Border);
     return code;
 }
+
+
+/* Draw circle LE */
+static int pdfi_annot_draw_LE_Circle(pdf_context *ctx, pdf_dict *annot)
+{
+    double radius;
+    int code;
+    double width;
+
+    code = pdfi_annot_get_BS_width(ctx, annot, &width);
+    if (code < 0) goto exit;
+
+    code = pdfi_gsave(ctx);
+    radius = width * 2.5;
+    code = gs_moveto(ctx->pgs, radius, 0);
+    code = gs_arc(ctx->pgs, 0, 0, radius, 0, 360);
+    code = pdfi_annot_opacity_stroke(ctx, annot);
+    code = pdfi_annot_fillborderpath(ctx, annot);
+
+    code = pdfi_grestore(ctx);
+
+    radius = width * 3;
+    code = gs_moveto(ctx->pgs, radius, 0);
+    code = gs_arc(ctx->pgs, 0, 0, radius, 0, 360);
+    code = pdfi_annot_draw_border(ctx, annot, true);
+
+ exit:
+    return code;
+}
+
+/* Draw OpenArrow LE */
+static int pdfi_annot_draw_LE_OpenArrow(pdf_context *ctx, pdf_dict *annot)
+{
+    int code;
+    double width;
+
+    code = pdfi_annot_get_BS_width(ctx, annot, &width);
+    if (code < 0) goto exit;
+
+    code = pdfi_gsave(ctx);
+    code = gs_setlinejoin(ctx->pgs, 0);
+
+    code = gs_moveto(ctx->pgs, -width*6, -width*4);
+    code = gs_lineto(ctx->pgs, -width/1.2, 0);
+    code = gs_lineto(ctx->pgs, -width*6, width*4);
+    code = pdfi_annot_draw_border(ctx, annot, true);
+
+    code = pdfi_grestore(ctx);
+ exit:
+    return code;
+}
+
+/* Draw None or null LE (do nothing) */
+static int pdfi_annot_draw_LE_None(pdf_context *ctx, pdf_dict *annot)
+{
+    return 0;
+}
+
+annot_LE_dispatch_t annot_LE_dispatch[] = {
+    {"Circle", pdfi_annot_draw_LE_Circle},
+    {"OpenArrow", pdfi_annot_draw_LE_OpenArrow},
+    {"None", pdfi_annot_draw_LE_None},
+    { NULL, NULL},
+};
+
+/* Draw one line ending at (x,y) */
+static int pdfi_annot_draw_LE_one(pdf_context *ctx, pdf_dict *annot, pdf_name *LE,
+                                  double x, double y, double angle)
+{
+    int code;
+    int code1;
+    annot_LE_dispatch_t *dispatch_ptr;
+
+    code = pdfi_gsave(ctx);
+    if (code < 0) goto exit1;
+
+    code = gs_translate(ctx->pgs, x, y);
+    code = gs_moveto(ctx->pgs, 0, 0);
+    code = gs_rotate(ctx->pgs, angle);
+
+    /* Draw the LE */
+    for (dispatch_ptr = annot_LE_dispatch; dispatch_ptr->name; dispatch_ptr ++) {
+        if (pdfi_name_is(LE, dispatch_ptr->name)) {
+            code = dispatch_ptr->func(ctx, annot);
+            break;
+        }
+    }
+    if (!dispatch_ptr->name) {
+        char str[100];
+        memcpy(str, (const char *)LE->data, LE->length);
+        str[LE->length] = '\0';
+        dbgmprintf1(ctx->memory, "ANNOT: WARNING No handler for LE %s\n", str);
+    }
+
+ exit1:
+    code1 = pdfi_grestore(ctx);
+    if (code < 0)
+        code = code1;
+    return code;
+}
+
+/* Draw line endings using LE entry in annotation dictionary
+ * Draws one at (x1,y1) and one at (x2,y2)
+ *  (defaults to None if not there)
+ */
+static int pdfi_annot_draw_LE(pdf_context *ctx, pdf_dict *annot, double x1, double y1, double x2, double y2)
+{
+    pdf_array *LE = NULL;
+    pdf_name *LE1 = NULL;
+    pdf_name *LE2 = NULL;
+    double dx, dy;
+    double angle;
+    int code;
+
+    code = pdfi_dict_knownget_type(ctx, annot, "LE", PDF_ARRAY, (pdf_obj **)&LE);
+    if (code <= 0)
+        goto exit;
+
+    dx = x2 - x1;
+    dy = y2 - y1;
+    code = gs_atan2_degrees(dy, dx, &angle);
+    if (code < 0) goto exit;
+
+    code = pdfi_array_get_type(ctx, LE, 0, PDF_NAME, (pdf_obj **)&LE1);
+    if (code < 0) goto exit;
+
+    code = pdfi_annot_draw_LE_one(ctx, annot, LE1, x1, y1, angle+180);
+    if (code < 0) goto exit;
+
+    code = pdfi_array_get_type(ctx, LE, 1, PDF_NAME, (pdf_obj **)&LE2);
+    if (code < 0) goto exit;
+    code = pdfi_annot_draw_LE_one(ctx, annot, LE2, x2, y2, angle);
+    if (code < 0) goto exit;
+
+ exit:
+    pdfi_countdown(LE);
+    pdfi_countdown(LE1);
+    pdfi_countdown(LE2);
+    return code;
+}
+
 
 /* Get the Normal AP dictionary/stream, if it exists
  * Not an error if it doesn't exist, it will just be NULL
@@ -464,7 +719,7 @@ static int pdfi_annot_draw_Link(pdf_context *ctx, pdf_dict *annot, pdf_dict *Nor
     if (code < 0) goto exit;
     if (!drawit) goto exit;
 
-    code = pdfi_annot_draw_border(ctx, annot);
+    code = pdfi_annot_draw_border(ctx, annot, false);
     if (code < 0) goto exit;
 
     code = pdfi_annot_draw_AP(ctx, annot, NormAP);
@@ -530,7 +785,10 @@ static int pdfi_annot_draw_FreeText(pdf_context *ctx, pdf_dict *annot, pdf_dict 
     code = gs_rectclip(ctx->pgs, &rect, 1);
     if (code < 0) goto exit;
 
-    code = pdfi_annot_opacity(ctx, annot);
+    code = pdfi_annot_opacity_stroke(ctx, annot);
+    if (code < 0) goto exit;
+
+    code = pdfi_annot_opacity_fill(ctx, annot);
     if (code < 0) goto exit;
 
     /* Set the border color if applicable */
@@ -742,14 +1000,17 @@ static int pdfi_annot_draw_Line(pdf_context *ctx, pdf_dict *annot, pdf_dict *Nor
     code = pdfi_annot_setcolor(ctx, annot, false, &drawit);
     if (code < 0) goto exit;
 
-
-    /* TODO: Handle LE */
+    /* Handle LE */
+    code = pdfi_annot_draw_LE(ctx, annot, lrect.p.x, lrect.p.y, lrect.q.x, lrect.q.y);
+    if (code < 0) goto exit;
 
     /* Draw the actual line */
     code = gs_moveto(ctx->pgs, lrect.p.x, lrect.p.y);
+    if (code < 0) goto exit;
     code = gs_lineto(ctx->pgs, lrect.q.x, lrect.q.y);
-    /* TODO: need to implement /strokeborderpath which is very similar to /strokeborder */
-    code = gs_stroke(ctx->pgs);
+    if (code < 0) goto exit;
+    code = pdfi_annot_draw_border(ctx, annot, true);
+    if (code < 0) goto exit;
 
  exit:
     code1 = pdfi_annot_end_transparency(ctx, annot);
