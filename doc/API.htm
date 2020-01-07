@@ -839,18 +839,18 @@ int main(int argc, char *argv[])
 
     code = gsapi_new_instance(&amp;minst, NULL);
     if (code &lt; 0)
-    return 1;
+        return 1;
     code = gsapi_set_arg_encoding(minst, GS_ARG_ENCODING_UTF8);
     if (code == 0)
         code = gsapi_init_with_args(minst, gsargc, gsargv);
     code1 = gsapi_exit(minst);
     if ((code == 0) || (code == gs_error_Quit))
-    code = code1;
+        code = code1;
 
     gsapi_delete_instance(minst);
 
     if ((code == 0) || (code == gs_error_Quit))
-    return 0;
+        return 0;
     return 1;
 }
 </pre>
@@ -880,13 +880,13 @@ gsdll_stdin(void *instance, char *buf, int len)
     int ch;
     int count = 0;
     while (count &lt; len) {
-    ch = fgetc(stdin);
-    if (ch == EOF)
-        return 0;
-    *buf++ = ch;
-    count++;
-    if (ch == '\n')
-        break;
+        ch = fgetc(stdin);
+        if (ch == EOF)
+            return 0;
+        *buf++ = ch;
+        count++;
+        if (ch == '\n')
+            break;
     }
     return count;
 }
@@ -917,21 +917,21 @@ int main(int argc, char *argv[])
 
     code = gsapi_new_instance(&amp;minst, NULL);
     if (code &lt; 0)
-    return 1;
+        return 1;
     gsapi_set_stdio(minst, gsdll_stdin, gsdll_stdout, gsdll_stderr);
     code = gsapi_set_arg_encoding(minst, GS_ARG_ENCODING_UTF8);
     if (code == 0)
         code = gsapi_init_with_args(minst, argc, argv);
     if (code == 0)
-    code = gsapi_run_string(minst, start_string, 0, &amp;exit_code);
+        code = gsapi_run_string(minst, start_string, 0, &amp;exit_code);
     code1 = gsapi_exit(minst);
     if ((code == 0) || (code == gs_error_Quit))
-    code = code1;
+        code = code1;
 
     gsapi_delete_instance(minst);
 
     if ((code == 0) || (code == gs_error_Quit))
-    return 0;
+        return 0;
     return 1;
 }
 </pre>
@@ -950,27 +950,27 @@ int main(int argc, char *argv[])
 
     code = gsapi_new_instance(&amp;minst, NULL);
     if (code &lt; 0)
-    return 1;
+        return 1;
     code = gsapi_set_arg_encoding(minst, GS_ARG_ENCODING_UTF8);
     if (code == 0)
         code = gsapi_init_with_args(minst, argc, argv);
 
     if (code == 0) {
-    gsapi_run_string_begin(minst, 0, &amp;exit_code);
-    gsapi_run_string_continue(minst, command, strlen(command), 0, &amp;exit_code);
-    gsapi_run_string_continue(minst, "qu", 2, 0, &amp;exit_code);
-    gsapi_run_string_continue(minst, "it", 2, 0, &amp;exit_code);
-    gsapi_run_string_end(minst, 0, &amp;exit_code);
+        gsapi_run_string_begin(minst, 0, &amp;exit_code);
+        gsapi_run_string_continue(minst, command, strlen(command), 0, &amp;exit_code);
+        gsapi_run_string_continue(minst, "qu", 2, 0, &amp;exit_code);
+        gsapi_run_string_continue(minst, "it", 2, 0, &amp;exit_code);
+        gsapi_run_string_end(minst, 0, &amp;exit_code);
     }
 
     code1 = gsapi_exit(minst);
     if ((code == 0) || (code == gs_error_Quit))
-    code = code1;
+        code = code1;
 
     gsapi_delete_instance(minst);
 
     if ((code == 0) || (code == gs_error_Quit))
-    return 0;
+        return 0;
     return 1;
 }
 </pre>
