@@ -201,6 +201,7 @@ my $cmd="rsync -avxcz ".
 " --exclude .deps --exclude .libs --exclude autom4te.cache".
 " --exclude bin --exclude obj --exclude debugobj --exclude pgobj".
 " --exclude bin64 --exclude obj64 --exclude debugobj64 --exclude pgobj64".
+" --exclude luratechbin --exclude luratechobj --exclude luratechbin64 --exclude luratechobj64".
 " --exclude membin --exclude memobj --exclude membin64 --exclude memobj64".
 " --exclude profbin --exclude profobj --exclude profbin64 --exclude profobj64".
 " --exclude sanbin --exclude sanobj --exclude sanbin64 --exclude sanobj64".
