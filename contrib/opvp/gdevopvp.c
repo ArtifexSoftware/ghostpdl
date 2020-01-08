@@ -2506,15 +2506,12 @@ opvp_map_rgb_color(gx_device *dev,
     b = prgb[2];
 #endif
 
-#if !(ENABLE_SIMPLE_MODE)
-    pdev = (gx_device_opvp *)dev;
-    r = -1;
-#endif
-    cs = OPVP_CSPACE_STANDARDRGB;
-
 #if ENABLE_SIMPLE_MODE
     cs = colorSpace;
 #else
+    pdev = (gx_device_opvp *)dev;
+    r = -1;
+    cs = OPVP_CSPACE_STANDARDRGB;
     if (pdev->is_open) {
         /* call GetColorSpace */
         if (apiEntry->opvpGetColorSpace) {
