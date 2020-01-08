@@ -3211,26 +3211,22 @@ pdf_try_prepare_stroke(gx_device_pdf *pdev, const gs_gstate *pgs, bool for_text)
     }
     /* Update overprint, stroke adjustment. */
     if (pdev->params.PreserveOverprintSettings &&
-        pdev->stroke_overprint != pgs->overprint &&
+        pdev->stroke_overprint != pgs->stroke_overprint &&
         !pdev->skip_colors
         ) {
         if (pres == 0)
             code = pdf_open_gstate(pdev, &pres);
         if (code < 0)
             return code;
-        code = cos_dict_put_c_key_bool(resource_dict(pres), "/OP", pgs->overprint);
+        code = cos_dict_put_c_key_bool(resource_dict(pres), "/OP", pgs->stroke_overprint);
         if (code < 0)
             return code;
-        pdev->stroke_overprint = pgs->overprint;
-        if (pdev->CompatibilityLevel < 1.3) {
-            /* PDF 1.2 only has a single overprint setting. */
-            pdev->fill_overprint = pgs->overprint;
-        } else {
-            /* According to PDF>=1.3 spec, OP also sets op,
-               if there is no /op in same garphic state object.
-               We don't write /op, so monitor the viewer's state here : */
-            pdev->fill_overprint = pgs->overprint;
-        }
+        pdev->stroke_overprint = pgs->stroke_overprint;
+
+        /* According to PDF>=1.3 spec, OP also sets op,
+           if there is no /op in same graphic state object.
+           We don't write /op, so monitor the viewer's state here : */
+        pdev->fill_overprint = pgs->stroke_overprint;
     }
     if (pdev->state.stroke_adjust != pgs->stroke_adjust) {
         code = pdf_open_gstate(pdev, &pres);
@@ -3270,7 +3266,7 @@ pdf_try_prepare_fill_stroke(gx_device_pdf *pdev, const gs_gstate *pgs, bool for_
     /* Update overprint. */
     if (pdev->params.PreserveOverprintSettings &&
         (pdev->fill_overprint != pgs->overprint ||
-        pdev->font3) &&	!pdev->skip_colors
+         pdev->font3) && !pdev->skip_colors
         ) {
         code = pdf_open_gstate(pdev, &pres);
         if (code < 0)
@@ -3290,19 +3286,19 @@ pdf_try_prepare_fill_stroke(gx_device_pdf *pdev, const gs_gstate *pgs, bool for_
     }
     /* Update overprint, stroke adjustment. */
     if (pdev->params.PreserveOverprintSettings &&
-        pdev->stroke_overprint != pgs->overprint &&
+        pdev->stroke_overprint != pgs->stroke_overprint &&
         !pdev->skip_colors
         ) {
         code = pdf_open_gstate(pdev, &pres);
         if (code < 0)
             return code;
-        code = cos_dict_put_c_key_bool(resource_dict(pres), "/OP", pgs->overprint);
+        code = cos_dict_put_c_key_bool(resource_dict(pres), "/OP", pgs->stroke_overprint);
         if (code < 0)
             return code;
-        pdev->stroke_overprint = pgs->overprint;
+        pdev->stroke_overprint = pgs->stroke_overprint;
         if (pdev->CompatibilityLevel < 1.3) {
             /* PDF 1.2 only has a single overprint setting. */
-            pdev->fill_overprint = pgs->overprint;
+            pdev->fill_overprint = pgs->stroke_overprint;
         } else {
             /* According to PDF>=1.3 spec, OP also sets op,
                if there is no /op in same garphic state object.
