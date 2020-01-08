@@ -632,7 +632,7 @@ typedef struct {
     preceding each function's implementation. */
 
 /* Initialize the eprn device for another printer model */
-extern void eprn_init_device(eprn_Device *dev,
+extern int eprn_init_device(eprn_Device *dev,
   const eprn_PrinterDescription *desc);
 
 /* Modify the information on supported media sizes and associated hardware

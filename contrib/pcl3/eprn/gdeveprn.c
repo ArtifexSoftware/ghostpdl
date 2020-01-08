@@ -836,11 +836,12 @@ int eprn_set_page_layout(eprn_Device *dev)
 
 ******************************************************************************/
 
-void eprn_init_device(eprn_Device *dev, const eprn_PrinterDescription *desc)
+int eprn_init_device(eprn_Device *dev, const eprn_PrinterDescription *desc)
 {
   eprn_Eprn *eprn = &dev->eprn;
   int j;
   float hres, vres;
+  int code;
 
   if (dev->is_open) gs_closedevice((gx_device *)dev);
 
@@ -867,9 +868,11 @@ void eprn_init_device(eprn_Device *dev, const eprn_PrinterDescription *desc)
   eprn->intensity_rendering = eprn_IR_halftones;
   hres = dev->HWResolution[0];
   vres = dev->HWResolution[1];
-  eprn_check_colour_info(desc->colour_info, &eprn->colour_model,
+  code = eprn_check_colour_info(desc->colour_info, &eprn->colour_model,
       &hres, &vres, &eprn->black_levels, &eprn->non_black_levels);
-
+  if (code) {
+    return code;
+  }
   if (eprn->pagecount_file != NULL) {
     gs_free(dev->memory->non_gc_memory, eprn->pagecount_file, strlen(eprn->pagecount_file) + 1,
       sizeof(char), "eprn_init_device");
@@ -878,7 +881,7 @@ void eprn_init_device(eprn_Device *dev, const eprn_PrinterDescription *desc)
 
   eprn->media_position_set = false;
 
-  return;
+  return 0;
 }
 
 /******************************************************************************

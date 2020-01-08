@@ -897,7 +897,11 @@ static int pcl3_put_params(gx_device *device, gs_param_list *plist)
         if (dev->is_open) gs_closedevice(device);
         dev->printer = subdevice_list[j].value;
         dev->initialized = false;
-        eprn_init_device((eprn_Device *)dev, &pcl3_printers[dev->printer].desc);
+        rc = eprn_init_device((eprn_Device *)dev, &pcl3_printers[dev->printer].desc);
+        if (rc < 0) {
+            last_error = rc;
+            param_signal_error(plist, pname, last_error);
+        }
       }
       else {
         eprintf1("%s" ERRPREF "Unknown subdevice name: `", epref);
