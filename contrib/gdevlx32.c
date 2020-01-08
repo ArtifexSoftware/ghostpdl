@@ -3358,6 +3358,7 @@ print_photo_page(pagedata *gendata)
                                 encode_col_buf(gendata, LEFT);
                                 lline++;
                         }
+                        break;
 
                 case RHDATA:
                         calcbufmargins(gendata, RIGHT);
