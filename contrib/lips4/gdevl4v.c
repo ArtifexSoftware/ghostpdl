@@ -1313,9 +1313,10 @@ lips4v_beginpath(gx_device_vector * vdev, gx_path_type_t type)
     if (type & gx_path_type_clip) {
         lputs(s, "P(10");
         sputc(s, LIPS_IS2);
-    } else
+    } else {
         lputs(s, "P(00");
         sputc(s, LIPS_IS2);
+    }
 
     return 0;
 }
