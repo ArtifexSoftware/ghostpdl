@@ -2561,7 +2561,11 @@ opvp_map_rgb_color(gx_device *dev,
         } else {
             k = 0;
         }
-        return (k + (y << 8) + (m << 16) + (c << 24));
+        return (gx_color_index) k
+                + ((gx_color_index) y << 8)
+                + ((gx_color_index) m << 16)
+                + ((gx_color_index) c << 24)
+                ;
         break;
     case OPVP_CSPACE_DEVICEGRAY:
 #if GS_VERSION_MAJOR >= 8
