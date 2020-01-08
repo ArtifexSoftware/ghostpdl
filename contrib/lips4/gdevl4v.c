@@ -2477,9 +2477,10 @@ lips4v_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 
     if (pdev->OneBitMask)
         pdev->OneBitMask = false;
-    else
+    else {
         lputs(s, "}Q1100");
         sputc(s, LIPS_IS2);	/* End of Image */
+    }
 
     pdev->MaskReverse = -1;
 
