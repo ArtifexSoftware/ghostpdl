@@ -382,7 +382,7 @@ s_CFE_process(stream_state * st, stream_cursor_read * pr,
 /* Encode a 1-D scan line. */
 /* Attempt to stop coverity thinking skip_white_pixels() taints lbuf:*/
 /* coverity[ -tainted_data_return ] */
-/* coverity[ -tainted_data_argument arg-1 ] */
+/* coverity[ -tainted_data_argument arg-2 ] */
 static void
 cf_encode_1d(stream_CFE_state * ss, const byte * lbuf, stream_cursor_write * pw)
 {
