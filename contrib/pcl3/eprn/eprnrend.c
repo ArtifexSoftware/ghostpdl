@@ -240,7 +240,7 @@ gx_color_index eprn_map_rgb_color_for_RGB_flex(gx_device *device,
   gx_color_value red = cv[0], green = cv[1], blue = cv[2];
   gx_color_index value = 0;
   gx_color_value step;
-  unsigned int level;
+  gx_color_index level;
   const eprn_Eprn *eprn = &((eprn_Device *)device)->eprn;
 
 #ifdef EPRN_TRACE
