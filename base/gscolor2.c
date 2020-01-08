@@ -111,7 +111,7 @@ gs_setcolor(gs_gstate * pgs, const gs_client_color * pcc)
     op = pgs->is_fill_color ? pgs->overprint : pgs->stroke_overprint;
     if (pgs->color[0].effective_opm && op) {
         if (pgs->is_fill_color) {
-            gs_setoverprint(pgs, op);
+            gs_setfilloverprint(pgs, op);
         } else {
             gs_setstrokeoverprint(pgs, op);
         }

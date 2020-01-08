@@ -648,11 +648,15 @@ gs_do_set_overprint(gs_gstate * pgs)
 }
 
 /* setoverprint (non-stroke case) interpreter code
-   ensures that this is called when appropriate */
+   ensures that this is called when appropriate. This
+   should only be coming when we are doing PS files.
+   As they don't have separate stroke and fill overprint
+   controls */
 void
 gs_setoverprint(gs_gstate * pgs, bool ovp)
 {
     pgs->overprint = ovp;
+    pgs->stroke_overprint = ovp;
 }
 
 /* currentoverprint */
