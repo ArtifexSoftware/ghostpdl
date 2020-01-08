@@ -396,6 +396,7 @@ do_stroke(gs_gstate * pgs)
 {
     int code, abits, acode, rcode = 0;
     bool devn;
+    bool is_fill_correct = true;
 
     /* We need to distinguish text from vectors to set the object tag.
 
@@ -425,15 +426,28 @@ do_stroke(gs_gstate * pgs)
     if (code < 0)
         return code;
 
+
     if (pgs->stroke_overprint || (!pgs->stroke_overprint && dev_proc(pgs->device, dev_spec_op)(pgs->device,
         gxdso_overprint_active, NULL, 0))) {
         gs_overprint_params_t op_params = { 0 };
 
+        /* PS2 does not have the concept of fill and stroke colors. Here we need to possibly correct
+           for that in the graphic state during this operation */
+        if (pgs->is_fill_color) {
+            is_fill_correct = false;
+            pgs->is_fill_color = false;
+        }
+
+
         if_debug0m(gs_debug_flag_overprint, pgs->memory,
             "[overprint] Stroke Overprint\n");
         code = gs_do_set_overprint(pgs);
-        if (code < 0)
+        if (code < 0) {
+            if (!is_fill_correct) {
+                pgs->is_fill_color = true;
+            }
             return code;
+        }
 
         op_params.op_state = OP_STATE_STROKE;
         gs_gstate_update_overprint(pgs, &op_params);
@@ -469,10 +483,18 @@ do_stroke(gs_gstate * pgs)
                                   pgs->fill_adjust.x + extra_adjust,
                                   pgs->fill_adjust.y + extra_adjust,
                                   abits, devn);
-        if (acode == 2) /* Special code meaning no fill required */
+        if (acode == 2) {            /* Special code meaning no fill required */
+            if (!is_fill_correct) {
+                pgs->is_fill_color = true;
+            }
             return 0;
-        if (acode < 0)
+        }
+        if (acode < 0) {
+            if (!is_fill_correct) {
+                pgs->is_fill_color = true;
+            }
             return acode;
+        }
         gs_setlinewidth(pgs, new_width);
         scale_dash_pattern(pgs, scale);
         gs_setflat(pgs, orig_flatness * scale);
@@ -497,6 +519,10 @@ do_stroke(gs_gstate * pgs)
         code = gx_stroke_fill(pgs->path, pgs);
     if (code >= 0 && rcode < 0)
         code = rcode;
+
+    if (!is_fill_correct) {
+        pgs->is_fill_color = true;
+    }
     return code;
 }
 
