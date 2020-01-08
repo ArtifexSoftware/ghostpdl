@@ -150,7 +150,7 @@ static void send_ERG(gp_file *out, pcl_Level level)
 
 int pcl3_init_file(gs_memory_t *mem, gp_file *out, pcl_FileData *data)
 {
-  pcl_bool needs_CRD = (data->level == pcl_level_3plus_CRD_only);
+  pcl_bool needs_CRD = (data && data->level == pcl_level_3plus_CRD_only);
     /* Do we need Configure Raster Data? */
   int j;
   const pcl_ColorantState *colorant = NULL;
