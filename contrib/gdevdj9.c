@@ -633,9 +633,10 @@ hp_colour_open(gx_device * pdev)
 static int
 cdj970_get_params(gx_device * pdev, gs_param_list * plist)
 {
-    int code = gdev_prn_get_params(pdev, plist);
-
-    if (code < 0 ||
+    int code;
+    
+    (void) (
+        (code = gdev_prn_get_params(pdev, plist)) < 0 ||
         (code = param_write_int(plist, "Quality", &cdj970->quality)) < 0 ||
         (code = param_write_int(plist, "Duplex", &cdj970->duplex)) < 0 ||
         (code = param_write_int(plist, "Papertype", &cdj970->papertype)) < 0
@@ -652,9 +653,8 @@ cdj970_get_params(gx_device * pdev, gs_param_list * plist)
             param_write_float(plist, "GammaValK", &cdj970->gammavalk)) < 0
         || (code =
             param_write_float(plist, "BlackCorrect",
-                              &cdj970->blackcorrect)) < 0)
-
-        return (code);
+                              &cdj970->blackcorrect)) < 0
+        );
     return (code);
 }
 
