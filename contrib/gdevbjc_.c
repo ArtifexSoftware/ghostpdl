@@ -390,8 +390,9 @@ gdev_bjc_get_params(gx_device * pdev, gs_param_list * plist)
 {
     const gx_device_bjc_printer * ppdev = (gx_device_bjc_printer *)pdev;
 
-    int code = gdev_prn_get_params(pdev, plist);
-    if (code < 0 ||
+    int code;
+    (void) (
+        (code = gdev_prn_get_params(pdev, plist)) < 0 ||
         (code = param_write_string(plist, "PrinterType",
                  &paramValueToParam(strPrinterType, ppdev->printerType)->p_string)) < 0 ||
         (code = param_write_string(plist, "Feeder",
@@ -417,8 +418,8 @@ gdev_bjc_get_params(gx_device * pdev, gs_param_list * plist)
         (code = param_write_float(plist, "Gamma", &ppdev->gamma)) < 0 ||
         (code = param_write_float(plist, "RedGamma", &ppdev->redGamma)) < 0 ||
         (code = param_write_float(plist, "GreenGamma", &ppdev->greenGamma)) < 0 ||
-        (code = param_write_float(plist, "BlueGamma", &ppdev->blueGamma)) < 0)
-        return code;
+        (code = param_write_float(plist, "BlueGamma", &ppdev->blueGamma)) < 0
+        );
     return code;
 
 }
