@@ -133,6 +133,29 @@ static int pdfi_annot_opacity_fill(pdf_context *ctx, pdf_dict *annot)
     return code;
 }
 
+/* Apply RD to provided rect */
+static int pdfi_annot_applyRD(pdf_context *ctx, pdf_dict *annot, gs_rect *rect)
+{
+    int code;
+    pdf_array *RD = NULL;
+    gs_rect rd;
+
+    code = pdfi_dict_knownget_type(ctx, annot, "RD", PDF_ARRAY, (pdf_obj **)&RD);
+    if (code < 0) goto exit;
+
+    code = pdfi_array_to_gs_rect(ctx, RD, &rd);
+    if (code < 0) goto exit;
+
+    rect->p.x += rd.p.x;
+    rect->p.y += rd.p.y;
+    rect->q.x -= rd.q.x;
+    rect->q.y -= rd.p.y;
+
+ exit:
+    pdfi_countdown(RD);
+    return code;
+}
+
 static int pdfi_annot_rect(pdf_context *ctx, pdf_dict *annot, gs_rect *rect)
 {
     int code;
@@ -333,13 +356,76 @@ static int pdfi_annot_fillborderpath(pdf_context *ctx, pdf_dict *annot)
     bool drawit;
 
     code = pdfi_gsave(ctx);
+    if (code < 0) return code;
 
     code = pdfi_annot_opacity_fill(ctx, annot);
+    if (code < 0) goto exit;
     code = pdfi_annot_setinteriorcolor(ctx, annot, false, &drawit);
+    if (code < 0) goto exit;
     if (drawit)
         code = gs_fill(ctx->pgs);
 
-    code = pdfi_grestore(ctx);
+ exit:
+    (void)pdfi_grestore(ctx);
+    return code;
+}
+
+/* Make a rectangle path from Rect (see /re, /normal_re in pdf_ops.ps)
+ * See also /Square
+ * Not sure if I have to worry about the /inside_text_re here
+ */
+static int pdfi_annot_rectpath(pdf_context *ctx, pdf_dict *annot)
+{
+    gs_rect rect;
+    int code;
+
+    code = pdfi_annot_rect(ctx, annot, &rect);
+    if (code < 0) goto exit;
+
+    code = pdfi_annot_applyRD(ctx, annot, &rect);
+    if (code < 0) goto exit;
+
+    code = gs_moveto(ctx->pgs, rect.p.x, rect.p.y);
+    if (code < 0) goto exit;
+    code = gs_lineto(ctx->pgs, rect.q.x, rect.p.y);
+    if (code < 0) goto exit;
+    code = gs_lineto(ctx->pgs, rect.q.x, rect.q.y);
+    if (code < 0) goto exit;
+    code = gs_lineto(ctx->pgs, rect.p.x, rect.q.y);
+    if (code < 0) goto exit;
+    code = gs_closepath(ctx->pgs);
+
+ exit:
+    return code;
+}
+
+/* Fill rectangle */
+static int pdfi_annot_fillrect(pdf_context *ctx, pdf_dict *annot)
+{
+    int code;
+    bool drawit;
+    gs_rect rect;
+
+    code = pdfi_gsave(ctx);
+    if (code < 0) return code;
+
+    code = pdfi_annot_setinteriorcolor(ctx, annot, false, &drawit);
+    if (code < 0) goto exit;
+    if (drawit) {
+        code = pdfi_annot_opacity_fill(ctx, annot);
+    if (code < 0) goto exit;
+        code = pdfi_annot_rect(ctx, annot, &rect);
+        if (code < 0) goto exit;
+
+        code = pdfi_annot_applyRD(ctx, annot, &rect);
+        if (code < 0) goto exit;
+
+        code = gs_rectfill(ctx->pgs, &rect, 1);
+        if (code < 0) goto exit;
+    }
+
+ exit:
+    (void)pdfi_grestore(ctx);
     return code;
 }
 
@@ -742,13 +828,94 @@ static int pdfi_annot_draw_Ink(pdf_context *ctx, pdf_dict *annot, pdf_dict *Norm
     return code;
 }
 
+/* from pdf_draw.ps/drawellipse
+ * "Don Lancaster's code for drawing an ellipse"
+ * https://www.tinaja.com/glib/ellipse4.pdf
+ *
+/magic 0.55228475 0.00045 sub store  % improved value
+/drawellipse {
+2 div /yrad exch store
+2 div /xrad exch store
+/xmag xrad magic mul store
+/ymag yrad magic mul store xrad
+neg 0 moveto
+xrad neg ymag xmag neg yrad 0 yrad curveto
+xmag  yrad xrad ymag xrad 0 curveto
+xrad ymag neg  xmag yrad neg 0  yrad neg curveto
+xmag neg yrad neg xrad neg ymag neg xrad neg  0 curveto
+} bind def
+
+ */
+static int pdfi_annot_drawellipse(pdf_context *ctx, double width, double height)
+{
+    int code = 0;
+    double magic = .55228475 - .00045; /* Magic value */
+    double xrad = width / 2;
+    double yrad = height / 2;
+    double xmag = xrad * magic;
+    double ymag = yrad * magic;
+
+    code = gs_moveto(ctx->pgs, -xrad, 0);
+    if (code < 0) return code;
+    code = gs_curveto(ctx->pgs, -xrad, ymag, -xmag, yrad, 0, yrad);
+    if (code < 0) return code;
+    code = gs_curveto(ctx->pgs, xmag, yrad, xrad, ymag, xrad, 0);
+    if (code < 0) return code;
+    code = gs_curveto(ctx->pgs, xrad, -ymag, xmag, -yrad, 0, -yrad);
+    if (code < 0) return code;
+    code = gs_curveto(ctx->pgs, -xmag, -yrad, -xrad, -ymag, -xrad, 0);
+
+    return code;
+}
+
+/* Generate appearance (see pdf_draw.ps/Circle)
+ *
+ * If there was an AP it was already handled.
+ */
 static int pdfi_annot_draw_Circle(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
 {
     int code = 0;
+    int code1 = 0;
+    gs_rect rect;
+    bool drawit;
+    double width, height;
 
-    /* TODO: Generate appearance (see pdf_draw.ps/Circle) */
+    code = pdfi_annot_start_transparency(ctx, annot);
+    if (code < 0) goto exit1;
+
+    code = pdfi_annot_rect(ctx, annot, &rect);
+    if (code < 0) goto exit;
+
+    code = pdfi_annot_applyRD(ctx, annot, &rect);
+    if (code < 0) goto exit;
+
+    /* Translate to the center of the ellipse */
+    width = rect.q.x - rect.p.x;
+    height = rect.q.y - rect.p.y;
+    code = gs_translate(ctx->pgs, rect.p.x + width/2, rect.p.y + height/2);
+    if (code < 0) goto exit;
+
+    /* Draw the ellipse */
+    code = pdfi_annot_drawellipse(ctx, width, height);
+    if (code < 0) goto exit;
+
+    code = pdfi_annot_fillborderpath(ctx, annot);
+    if (code < 0) goto exit;
+
+    code = pdfi_annot_setcolor(ctx, annot, false, &drawit);
+    if (code < 0) goto exit;
+
+    if (drawit) {
+        code = pdfi_annot_draw_border(ctx, annot, true);
+        if (code < 0) goto exit;
+    }
+
+ exit:
+    code1 = pdfi_annot_end_transparency(ctx, annot);
+    if (code >= 0)
+        code = code1;
+ exit1:
     *render_done = true;
-
     return code;
 }
 
@@ -797,7 +964,9 @@ static int pdfi_annot_draw_FreeText(pdf_context *ctx, pdf_dict *annot, pdf_dict 
 
     /* Only draw border if a color was specified */
     if (drawborder) {
-        /* TODO: Handle RD */
+        code = pdfi_annot_applyRD(ctx, annot, &rect);
+        if (code < 0) goto exit;
+
         gs_rectfill(ctx->pgs, &rect, 1);
     }
 
@@ -1032,23 +1201,115 @@ static int pdfi_annot_draw_PolyLine(pdf_context *ctx, pdf_dict *annot, pdf_dict 
     return code;
 }
 
+/* Generate appearance (see pdf_draw.ps/Polygon)
+ *
+ * If there was an AP it was already handled.
+ */
 static int pdfi_annot_draw_Polygon(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
 {
     int code = 0;
+    int code1 = 0;
+    pdf_array *Vertices = NULL;
+    bool drawit;
+    int i;
 
-    /* TODO: Generate appearance (see pdf_draw.ps/Polygon) */
+    code = pdfi_annot_start_transparency(ctx, annot);
+    if (code < 0) goto exit1;
+
+    code = pdfi_dict_knownget_type(ctx, annot, "Vertices", PDF_ARRAY, (pdf_obj **)&Vertices);
+    if (code < 0) goto exit;
+
+    for (i=0; i<pdfi_array_size(Vertices); i+=2) {
+        double x,y;
+
+        code = pdfi_array_get_number(ctx, Vertices, i, &x);
+        if (code < 0) goto exit;
+        code = pdfi_array_get_number(ctx, Vertices, i+1, &y);
+        if (code < 0) goto exit;
+
+        if (i == 0) {
+            code = gs_moveto(ctx->pgs, x, y);
+            if (code < 0) goto exit;
+        } else {
+            code = gs_lineto(ctx->pgs, x, y);
+            if (code < 0) goto exit;
+        }
+    }
+
+    /* NOTE: The logic here seems a bit wonky.  Why only set opacity if there was a fill?
+     * Anyway, it is based on the ps code (pdf_draw.ps/Polygon).
+     * Maybe can be improved.
+     */
+    code = pdfi_annot_setinteriorcolor(ctx, annot, false, &drawit);
+    if (code < 0) goto exit;
+    if (drawit) {
+        code = pdfi_annot_fillborderpath(ctx, annot);
+        if (code < 0) goto exit;
+        code = pdfi_annot_opacity_stroke(ctx, annot); /* TODO: Why only on this path? */
+        if (code < 0) goto exit;
+    }
+    code = pdfi_annot_setcolor(ctx, annot, false, &drawit);
+    if (code < 0) goto exit;
+    if (drawit) {
+        code = pdfi_annot_draw_border(ctx, annot, true);
+        if (code < 0) goto exit;
+    }
+
+ exit:
+    code1 = pdfi_annot_end_transparency(ctx, annot);
+    if (code >= 0)
+        code = code1;
+ exit1:
     *render_done = true;
-
+    pdfi_countdown(Vertices);
     return code;
 }
 
+/* Generate appearance (see pdf_draw.ps/Square)
+ *
+ * If there was an AP it was already handled.
+ */
 static int pdfi_annot_draw_Square(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
 {
     int code = 0;
+    int code1 = 0;
+    bool drawit;
 
-    /* TODO: Generate appearance (see pdf_draw.ps/Square) */
+    code = pdfi_annot_start_transparency(ctx, annot);
+    if (code < 0) goto exit1;
+
+    code = pdfi_annot_setinteriorcolor(ctx, annot, false, &drawit);
+    if (code < 0) goto exit;
+    if (drawit) {
+        code = pdfi_annot_fillrect(ctx, annot);
+        if (code < 0) goto exit;
+
+        code = pdfi_annot_setcolor(ctx, annot, false, &drawit);
+        if (code < 0) goto exit;
+
+        if (drawit) {
+            code = pdfi_annot_draw_border(ctx, annot, false);
+            if (code < 0) goto exit;
+        }
+    } else {
+        code = pdfi_annot_rectpath(ctx, annot);
+        if (code < 0) goto exit;
+
+        code = pdfi_annot_setcolor(ctx, annot, false, &drawit);
+        if (code < 0) goto exit;
+
+        if (drawit) {
+            code = pdfi_annot_draw_border(ctx, annot, true);
+            if (code < 0) goto exit;
+        }
+    }
+
+ exit:
+    code1 = pdfi_annot_end_transparency(ctx, annot);
+    if (code >= 0)
+        code = code1;
+ exit1:
     *render_done = true;
-
     return code;
 }
 
