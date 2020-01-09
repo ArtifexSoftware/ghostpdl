@@ -466,7 +466,7 @@ gx_color_index eprn_map_cmyk_color_flex(gx_device *device,
   gx_color_value cyan = cv[0], magenta = cv[1], yellow = cv[2], black = cv[3];
   gx_color_index value = 0;
   gx_color_value step;
-  unsigned int level;
+  gx_color_index level;
   const eprn_Eprn *eprn = &((eprn_Device *)device)->eprn;
 
 #ifdef EPRN_TRACE
