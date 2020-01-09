@@ -365,7 +365,7 @@ mj_open(gx_device *pdev, int ptype)
   gx_device_set_margins(pdev, m, true);
 
   if (mj->colorcomp == 3)
-    mj->density = (int)(mj->density * 720 / ydpi * 1.5);
+    mj->density = (int)(mj->density * 720 / ydpi) * 1.5;
   else
     mj->density = mj->density * 720 / ydpi;
 
