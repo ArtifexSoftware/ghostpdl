@@ -572,18 +572,10 @@ lips4v_copy_text_char(gx_device * dev, const byte * data,
         }
     }
     /* 文字セット・アサイン番号選択命令2 */
-    if (download) {
-        if (pdev->current_font != ccode / 128) {
-            gs_sprintf(cset_number, "%c%d%%v", LIPS_CSI, ccode / 128);
-            lputs(s, cset_number);
-            pdev->current_font = ccode / 128;
-        }
-    } else {
-        if (pdev->current_font != ccode / 128) {
-            gs_sprintf(cset_number, "%c%d%%v", LIPS_CSI, ccode / 128);
-            lputs(s, cset_number);
-            pdev->current_font = ccode / 128;
-        }
+    if (pdev->current_font != ccode / 128) {
+        gs_sprintf(cset_number, "%c%d%%v", LIPS_CSI, ccode / 128);
+        lputs(s, cset_number);
+        pdev->current_font = ccode / 128;
     }
 
     /* カラー */
