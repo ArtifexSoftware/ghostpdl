@@ -2054,6 +2054,7 @@ escv_put_params(gx_device * dev, gs_param_list * plist)
     ecode = code;
   pmediae:
     param_signal_error(plist, param_name, ecode);
+    /* Fall through. */
   case 1:
     if(!pdev->MediaType){
       pdev->MediaType = 0;
