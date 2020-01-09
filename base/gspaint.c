@@ -661,6 +661,13 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
     *restart = 1;		/* finished, successfully with stroke_color */
 
     gs_swapcolors_quick(pgs);	/* switch to fill color */
+
+    /* Have to set the fill color too */
+    if (pgs->show_gstate == NULL)
+        ensure_tag_is_set(pgs, pgs->device, GS_PATH_TAG);	/* NB: may unset_dev_color */
+    else
+        ensure_tag_is_set(pgs, pgs->device, GS_TEXT_TAG);	/* NB: may unset_dev_color */
+
     code = gx_set_dev_color(pgs);
     if (code != 0) {
         return code;
