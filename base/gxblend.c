@@ -4190,7 +4190,7 @@ do_compose_group16(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
     } else
         nos_alpha_g_ptr = NULL;
     if (tos->has_alpha_g) {
-        tos_alpha_g_ptr = tos_ptr + tos_alpha_g_offset;
+        tos_alpha_g_ptr = tos_ptr + (tos_alpha_g_offset>>1);
     } else
         tos_alpha_g_ptr = NULL;
 
@@ -4542,7 +4542,7 @@ do_compose_alphaless_group16(pdf14_buf *tos, pdf14_buf *nos,
     } else
         nos_alpha_g_ptr = NULL;
     if (tos->has_alpha_g) {
-        tos_alpha_g_ptr = tos_ptr + (tos_alpha_g_offset >> 1);
+        tos_alpha_g_ptr = tos_ptr + (tos_alpha_g_offset>>1);
     } else
         tos_alpha_g_ptr = NULL;
 
