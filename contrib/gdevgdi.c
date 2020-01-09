@@ -548,11 +548,14 @@ unsigned int FrameTiff_Comp(unsigned char *lpSrcBuf, unsigned char *lpTgtBuf, un
 
     if(ubFirst == ubSecond)  /* case of data match */
     {
+      #if 0
+      /* This code causes coverity problems, and has no affect. */
       usEndCnt = usCount;
       if (usCount > 16384)
       {
         usEndCnt = 16384;
       }
+      #endif
       usEndCnt = usCount - 2;
       while (usEndCnt--)
       {
@@ -589,11 +592,14 @@ unsigned int FrameTiff_Comp(unsigned char *lpSrcBuf, unsigned char *lpTgtBuf, un
       ubMisCnt = 0;
       if (usCount > 2)
       {
+        #if 0
+        /* This code causes coverity problems, and has no affect. */
         usEndCnt = usCount;
         if (usCount > 16384)
         {
           usEndCnt = 16384;
         }
+        #endif
         usEndCnt = usCount - 2;
         /* usEndCnt = usCount - 2; original*/
         /* 19990824 by LSM : for end file while (usEndCnt--)*/
