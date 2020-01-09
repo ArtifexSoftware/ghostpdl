@@ -437,6 +437,7 @@ lips_put_params(gx_device * pdev, gs_param_list * plist)
         default:
             ecode = code;
           userne:param_signal_error(plist, param_name, ecode);
+          /* Fall through. */
         case 1:
             usern.data = 0;
             break;
