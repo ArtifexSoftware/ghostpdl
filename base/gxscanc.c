@@ -3449,7 +3449,7 @@ static void mark_line_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fix
             int64_t y = (int64_t)ey - (int64_t)sy;
             fixed new_sy = int2fixed(cr->base);
             int64_t dy = (int64_t)new_sy - (int64_t)sy;
-            sx += (int)((((int64_t)(ex-sx))*dy + y/2)/y);
+            sx += (int)(((((int64_t)ex-sx))*dy + y/2)/y);
             sy = new_sy;
             cursor_null_tr(cr);
             cr->y = sy;
@@ -3463,7 +3463,7 @@ static void mark_line_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fix
             int64_t dy = (int64_t)ey - (int64_t)new_ey;
             saved_ex = ex;
             saved_ey = ey;
-            ex -= (int)((((int64_t)(ex-sx))*dy + y/2)/y);
+            ex -= (int)(((((int64_t)ex-sx))*dy + y/2)/y);
             ey = new_ey;
             iey = cr->scanlines;
         }
@@ -3489,7 +3489,7 @@ static void mark_line_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fix
             int64_t y = (int64_t)ey - (int64_t)sy;
             fixed new_ey = int2fixed(cr->base);
             int64_t dy = (int64_t)ey - (int64_t)new_ey;
-            ex -= (int)((((int64_t)(ex-sx))*dy + y/2)/y);
+            ex -= (int)(((((int64_t)ex-sx))*dy + y/2)/y);
             ey = new_ey;
             iey = 0;
         }
@@ -3498,7 +3498,7 @@ static void mark_line_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fix
             int64_t y = (int64_t)ey - (int64_t)sy;
             fixed new_sy = int2fixed(cr->base + cr->scanlines);
             int64_t dy = (int64_t)new_sy - (int64_t)sy;
-            sx += (int)((((int64_t)(ex-sx))*dy + y/2)/y);
+            sx += (int)(((((int64_t)ex-sx))*dy + y/2)/y);
             sy = new_sy;
             cursor_null_tr(cr);
             cr->y = sy;
