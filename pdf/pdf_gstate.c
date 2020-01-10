@@ -1382,10 +1382,64 @@ error:
     return code;
 }
 
+static int build_type6_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict *page_dict, gx_device_halftone *pdht, gs_halftone_component *phtc, char *name, int len)
+{
+    int code;
+    pdf_obj *obj = NULL;
+    int64_t w, h, size;
+    gs_threshold_halftone *ptp = &phtc->params.threshold;
+
+    ptp->thresholds.data = NULL;
+    ptp->thresholds.size = 0;
+
+    code = pdfi_dict_get_int(ctx, halftone_dict, "Width", &w);
+    if (code < 0)
+        return code;
+
+    ptp->width = w;
+    code = pdfi_dict_get_int(ctx, halftone_dict, "Height", &h);
+    if (code < 0)
+        return code;
+    ptp->height = h;
+    ptp->transfer = 0;
+    ptp->transfer_closure.proc = 0;
+    ptp->transfer_closure.data = 0;
+
+    code = pdfi_get_name_index(ctx, name, len, (unsigned int *)&phtc->cname);
+    if (code < 0)
+        goto error;
+
+    phtc->comp_number = gs_cname_to_colorant_number(ctx->pgs, (byte *)name, len, 1);
+
+    code = pdfi_stream_to_buffer(ctx, halftone_dict, (byte **)&ptp->thresholds.data, (int64_t *)&ptp->thresholds.size);
+    if (code < 0)
+        goto error;
+
+    phtc->type = ht_type_threshold;
+    return code;
+
+error:
+    gs_free_object(ctx->memory, (byte *)ptp->thresholds.data, "build_type6_halftone");
+    return code;
+}
+
 static void pdfi_free_halftone(gs_memory_t *memory, void *data, client_name_t cname)
 {
+    int i=0;
     gs_halftone *pht = (gs_halftone *)data;
+    gs_halftone_component comp;
 
+    for (i=0;i< pht->params.multiple.num_comp;i++) {
+        comp = pht->params.multiple.components[i];
+        switch(comp.type) {
+            case ht_type_threshold:
+                if (comp.params.threshold.thresholds.data != NULL)
+                    gs_free_object(memory, comp.params.threshold.thresholds.data, "pdfi_free_halftone - thresholds");
+                break;
+            default:
+                break;
+        }
+    }
     gs_free_object(memory, pht->params.multiple.components, "pdfi_free_halftone");
 }
 
@@ -1430,7 +1484,7 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict 
             if (code < 0)
                 goto error;
 
-            pht->type = 1;
+            pht->type = ht_type_multiple;
             pht->params.multiple.components = phtc;
             pht->params.multiple.num_comp = 1;
             pht->params.multiple.get_colorname_string = pdfi_name_from_index;
@@ -1453,6 +1507,31 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict 
                 return code;
             break;
         case 6:
+            phtc = (gs_halftone_component *)gs_alloc_bytes(ctx->memory, sizeof(gs_halftone_component), "pdfi_do_halftone");
+            if (phtc == 0) {
+                code = gs_note_error(gs_error_VMerror);
+                goto error;
+            }
+
+            code = build_type6_halftone(ctx, halftone_dict, page_dict, pdht, phtc, (char *)"Default", 7);
+            if (code < 0)
+                goto error;
+
+            pht->type = 6;
+            pht->params.multiple.components = phtc;
+            pht->params.multiple.num_comp = 1;
+            pht->params.multiple.get_colorname_string = pdfi_name_from_index;
+
+            code = gs_sethalftone_prepare(ctx->pgs, pht, pdht);
+
+            code = gx_gstate_dev_ht_install(ctx->pgs, pdht, pht->type, gs_currentdevice_inline(ctx->pgs));
+            if (code < 0)
+                goto error;
+
+            gx_device_halftone_release(pdht, pdht->rc.memory);
+            ctx->pgs->halftone = pht;
+            rc_increment(ctx->pgs->halftone);
+            gx_unset_both_dev_colors(ctx->pgs);
             break;
         case 10:
             break;
