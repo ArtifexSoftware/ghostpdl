@@ -1385,8 +1385,7 @@ error:
 static int build_type6_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict *page_dict, gx_device_halftone *pdht, gs_halftone_component *phtc, char *name, int len)
 {
     int code;
-    pdf_obj *obj = NULL;
-    int64_t w, h, size;
+    int64_t w, h;
     gs_threshold_halftone *ptp = &phtc->params.threshold;
 
     ptp->thresholds.data = NULL;
@@ -1434,7 +1433,7 @@ static void pdfi_free_halftone(gs_memory_t *memory, void *data, client_name_t cn
         switch(comp.type) {
             case ht_type_threshold:
                 if (comp.params.threshold.thresholds.data != NULL)
-                    gs_free_object(memory, comp.params.threshold.thresholds.data, "pdfi_free_halftone - thresholds");
+                    gs_free_object(memory, (byte *)comp.params.threshold.thresholds.data, "pdfi_free_halftone - thresholds");
                 break;
             default:
                 break;
