@@ -3266,6 +3266,7 @@ pdf_try_prepare_fill_stroke(gx_device_pdf *pdev, const gs_gstate *pgs, bool for_
     /* Update overprint. */
     if (pdev->params.PreserveOverprintSettings &&
         (pdev->fill_overprint != pgs->overprint ||
+         pdev->stroke_overprint != pgs->stroke_overprint ||
          pdev->font3) && !pdev->skip_colors
         ) {
         code = pdf_open_gstate(pdev, &pres);
