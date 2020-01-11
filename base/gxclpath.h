@@ -42,11 +42,12 @@
 #define alpha_known		(1<<9)
 #define misc2_all_known		((1<<10)-1)
 /* End of misc2 flags. */
+/* The following bits don't get passed in misc2, so are only limited by sizeof uint */
 #define fill_adjust_known	(1<<10)
 #define ctm_known		(1<<11)
 #define dash_known		(1<<12)
 #define clip_path_known		(1<<13)
-#define stroke_all_known	((1<<14)-1)
+#define STROKE_ALL_KNOWN	((1<<14)-1)
 #define color_space_known	(1<<14)
 /*#define all_known             ((1<<15)-1) */
 
@@ -145,44 +146,49 @@ typedef enum {
     cmd_opv_fill = 0xf0,
     cmd_opv_rgapto = 0xf1, 	/* dx%, dy% */
     cmd_opv_eofill = 0xf3,
+    cmd_opv_fill_stroke = 0xf4,
+    cmd_opv_eofill_stroke = 0xf5,
     cmd_opv_stroke = 0xf6,
     cmd_opv_polyfill = 0xf9,
     cmd_opv_fill_trapezoid = 0xfc
 
 #define cmd_path_op_name_strings\
   "fill", "rgapto", "?f2?", "eofill",\
-  "?f4?", "?f5", "stroke", "?f7?",\
+  "fill_stroke", "eofill_stroke", "stroke", "?f7?",\
   "?f8?", "polyfill", "?fa?", "?fb?",\
   "fill_trapezoid", "?fd?", "?fe?", "?ff?"
 
-/* unused cmd_op values: 0xd0, 0xf2, 0xf4, 0xf5, 0xf7, 0xf8, 0xf9, 0xfa, 0xfb, 0xfd, 0xfe, 0xff */
+/* unused cmd_op values: 0xd0, 0xf2, 0xf7, 0xf8, 0xfa, 0xfb, 0xfd, 0xfe, 0xff */
 } gx_cmd_xop;
 
 /* This is usd for cmd_opv_ext_put_drawing_color so that we know if it
-   is assocated with a tile or not */
+   is assocated with a tile or not and for fill or stroke color */
 typedef enum {
-    devn_not_tile = 0x00,
-    devn_tile0 = 0x01,
-    devn_tile1 = 0x02
+    devn_not_tile_fill = 0x00,
+    devn_not_tile_stroke = 0x01,
+    devn_tile0 = 0x02,
+    devn_tile1 = 0x03
 } dc_devn_cl_type;
 /*
  * Further extended command set. This code always occupies a byte, which
  * is the second byte of a command whose first byte is cmd_opv_extend.
  */
 typedef enum {
-    cmd_opv_ext_put_params = 0x00,          /* serialized parameter list */
-    cmd_opv_ext_create_compositor = 0x01,   /* compositor id,
-                                             * serialized compositor */
-    cmd_opv_ext_put_halftone = 0x02,        /* length of entire halftone */
-    cmd_opv_ext_put_ht_seg = 0x03,          /* segment length,
-                                             * halftone segment data */
-    cmd_opv_ext_put_drawing_color = 0x04,    /* length, color type id,
-                                             * serialized color */
-    cmd_opv_ext_tile_rect_hl = 0x05,         /* Uses devn colors in tiling fill */
-    cmd_opv_ext_put_tile_devn_color0 = 0x6,  /* Devn color0 for tile filling */
-    cmd_opv_ext_put_tile_devn_color1 = 0x7,   /* Devn color1 for tile filling */
-    cmd_opv_ext_set_color_is_devn = 0x8,      /* Used for overload of copy_color_alpha */
-    cmd_opv_ext_unset_color_is_devn = 0x9     /* Used for overload of copy_color_alpha */
+    cmd_opv_ext_put_params = 0x00,           /* serialized parameter list */
+    cmd_opv_ext_create_compositor = 0x01,    /* compositor id,
+                                              * serialized compositor */
+    cmd_opv_ext_put_halftone = 0x02,         /* length of entire halftone */
+    cmd_opv_ext_put_ht_seg = 0x03,           /* segment length,
+                                              * halftone segment data */
+    cmd_opv_ext_put_fill_dcolor = 0x04,      /* length, color type id,
+                                              * serialized color */
+    cmd_opv_ext_put_stroke_dcolor = 0x05,    /* length, color type id,
+                                              * serialized color */
+    cmd_opv_ext_tile_rect_hl = 0x06,         /* Uses devn colors in tiling fill */
+    cmd_opv_ext_put_tile_devn_color0 = 0x07, /* Devn color0 for tile filling */
+    cmd_opv_ext_put_tile_devn_color1 = 0x08, /* Devn color1 for tile filling */
+    cmd_opv_ext_set_color_is_devn = 0x09,    /* Used for overload of copy_color_alpha */
+    cmd_opv_ext_unset_color_is_devn = 0x0a   /* Used for overload of copy_color_alpha */
 } gx_cmd_ext_op;
 
 #define cmd_segment_op_num_operands_values\
@@ -210,6 +216,7 @@ typedef enum {
 /* In gxclpath.c */
 dev_proc_fill_path(clist_fill_path);
 dev_proc_stroke_path(clist_stroke_path);
+dev_proc_fill_stroke_path(clist_fill_stroke_path);
 dev_proc_fill_parallelogram(clist_fill_parallelogram);
 dev_proc_fill_triangle(clist_fill_triangle);
 

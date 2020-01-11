@@ -952,8 +952,9 @@ $(GLOBJ)gscicach.$(OBJ) : $(GLSRC)gscicach.c $(AK) $(gx_h)\
 	$(GLCC) $(GLO_)gscicach.$(OBJ) $(C_) $(GLSRC)gscicach.c
 
 $(GLOBJ)gsovrc.$(OBJ) : $(GLSRC)gsovrc.c $(AK) $(gx_h) $(gserrors_h)\
- $(memory__h) $(gsutil_h) $(gxcomp_h) $(gxdevice_h) $(gsdevice_h) $(gxgetbit_h)\
- $(gsovrc_h) $(gxdcolor_h) $(gxoprect_h) $(gsbitops_h) $(gxgstate_h) $(LIB_MAK) $(MAKEDIRS)
+ $(assert__h) $(memory__h) $(gsutil_h) $(gxcomp_h) $(gxdevice_h) $(gsdevice_h)\
+ $(gxgetbit_h) $(gsovrc_h) $(gxdcolor_h) $(gxoprect_h) $(gsbitops_h) $(gxgstate_h)\
+ $(gxdevsop_h) $(gxcldev_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsovrc.$(OBJ) $(C_) $(GLSRC)gsovrc.c
 
 $(GLOBJ)gxoprect.$(OBJ) : $(GLSRC)gxoprect.c $(AK) $(gx_h)\
@@ -1051,7 +1052,7 @@ $(GLOBJ)gspaint.$(OBJ) : $(GLSRC)gspaint.c $(AK) $(gx_h) $(gserrors_h)\
  $(math__h) $(gpcheck_h) $(gsropt_h) $(gxfixed_h) $(gxmatrix_h) $(gspaint_h)\
  $(gspath_h) $(gzpath_h) $(gxpaint_h) $(gzstate_h) $(gxdevice_h) $(gxdevmem_h)\
  $(gzcpath_h) $(gxhldevc_h) $(gsutil_h) $(gxdevsop_h) $(gsicc_cms_h)\
- $(gdevepo_h) $(gxscanc_h) $(LIB_MAK) $(MAKEDIRS)
+ $(gdevepo_h) $(gxscanc_h) $(gxpcolor_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gspaint.$(OBJ) $(C_) $(GLSRC)gspaint.c
 
 $(GLOBJ)gsparam.$(OBJ) : $(GLSRC)gsparam.c $(AK) $(gx_h) $(gserrors_h)\
@@ -1090,7 +1091,7 @@ $(GLOBJ)gsstate.$(OBJ) : $(GLSRC)gsstate.c $(AK) $(gx_h) $(gserrors_h)\
 $(GLOBJ)gstext.$(OBJ) : $(GLSRC)gstext.c $(AK) $(memory__h) $(gdebug_h)\
  $(gserrors_h) $(gsmemory_h) $(gsstruct_h) $(gstypes_h)\
  $(gxfcache_h) $(gxdevcli_h) $(gxdcolor_h) $(gxfont_h) $(gxpath_h)\
- $(gxtext_h) $(gzstate_h) $(gsutil_h) $(LIB_MAK) $(MAKEDIRS)
+ $(gxtext_h) $(gzstate_h) $(gsutil_h) $(gxdevsop_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gstext.$(OBJ) $(C_) $(GLSRC)gstext.c
 
 # We make gsiodevs a separate module so the PS interpreter can replace it.

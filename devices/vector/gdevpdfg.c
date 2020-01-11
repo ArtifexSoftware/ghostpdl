@@ -75,8 +75,9 @@ pdf_save_viewer_state(gx_device_pdf *pdev, stream *s)
     pdev->vgstack[i].transfer_ids[2] = pdev->transfer_ids[2];
     pdev->vgstack[i].transfer_ids[3] = pdev->transfer_ids[3];
     pdev->vgstack[i].transfer_not_identity = pdev->transfer_not_identity;
-    pdev->vgstack[i].opacity_alpha = pdev->state.opacity.alpha;
-    pdev->vgstack[i].shape_alpha = pdev->state.shape.alpha;
+    pdev->vgstack[i].strokeconstantalpha = pdev->state.strokeconstantalpha;
+    pdev->vgstack[i].fillconstantalpha = pdev->state.fillconstantalpha;
+    pdev->vgstack[i].alphaisshape = pdev->state.alphaisshape;
     pdev->vgstack[i].blend_mode = pdev->state.blend_mode;
     pdev->vgstack[i].halftone_id = pdev->halftone_id;
     pdev->vgstack[i].black_generation_id = pdev->black_generation_id;
@@ -125,8 +126,9 @@ pdf_load_viewer_state(gx_device_pdf *pdev, pdf_viewer_state *s)
     pdev->transfer_ids[2] = s->transfer_ids[2];
     pdev->transfer_ids[3] = s->transfer_ids[3];
     pdev->transfer_not_identity = s->transfer_not_identity;
-    pdev->state.opacity.alpha = s->opacity_alpha;
-    pdev->state.shape.alpha = s->shape_alpha;
+    pdev->state.strokeconstantalpha = s->strokeconstantalpha;
+    pdev->state.fillconstantalpha = s->fillconstantalpha;
+    pdev->state.alphaisshape = s->alphaisshape;
     pdev->state.blend_mode = s->blend_mode;
     pdev->halftone_id = s->halftone_id;
     pdev->black_generation_id = s->black_generation_id;
@@ -209,8 +211,9 @@ pdf_viewer_state_from_gs_gstate_aux(pdf_viewer_state *pvs, const gs_gstate *pgs)
     pvs->transfer_ids[1] = (pgs->set_transfer.green != NULL ? pgs->set_transfer.green->id : 0);
     pvs->transfer_ids[2] = (pgs->set_transfer.blue != NULL ? pgs->set_transfer.blue->id : 0);
     pvs->transfer_ids[3] = (pgs->set_transfer.gray != NULL ? pgs->set_transfer.gray->id : 0);
-    pvs->opacity_alpha = pgs->opacity.alpha;
-    pvs->shape_alpha = pgs->shape.alpha;
+    pvs->fillconstantalpha = pgs->fillconstantalpha;
+    pvs->strokeconstantalpha = pgs->strokeconstantalpha;
+    pvs->alphaisshape = pgs->alphaisshape;
     pvs->blend_mode = pgs->blend_mode;
     pvs->halftone_id = (pgs->dev_ht != 0 ? pgs->dev_ht->id : 0);
     pvs->black_generation_id = (pgs->black_generation != 0 ? pgs->black_generation->id : 0);
@@ -2871,8 +2874,6 @@ static int
 pdf_update_alpha(gx_device_pdf *pdev, const gs_gstate *pgs,
                  pdf_resource_t **ppres, bool for_text)
 {
-    bool ais;
-    double alpha;
     int code;
 
     if (pdev->state.soft_mask_id != pgs->soft_mask_id) {
@@ -2903,51 +2904,27 @@ pdf_update_alpha(gx_device_pdf *pdev, const gs_gstate *pgs,
         }
         pdev->state.soft_mask_id = pgs->soft_mask_id;
     }
-    if (pdev->state.opacity.alpha != pgs->opacity.alpha) {
-        if (pdev->state.shape.alpha != pgs->shape.alpha) {
-            /* We had previously set one of opacity or shape, but we didn't
-             * ever need to write the graphcis state out, leaving us with a
-             * dangling alpha. We should honour the current state. One of
-             * opacity or alpha will be the default (1.0), so use the other.
-             */
-            pdev->state.opacity.alpha = pgs->opacity.alpha;
-            pdev->state.shape.alpha = pgs->shape.alpha;
-            if (pgs->opacity.alpha != 1.0) {
-                ais = false;
-                alpha = pdev->state.opacity.alpha;
-            }
-            else {
-                ais = true;
-                alpha = pdev->state.shape.alpha;
-            }
-        } else {
-            ais = false;
-            alpha = pdev->state.opacity.alpha = pgs->opacity.alpha;
-        }
-    } else if (pdev->state.shape.alpha != pgs->shape.alpha) {
-        ais = true;
-        alpha = pdev->state.shape.alpha = pgs->shape.alpha;
-    } else
-        return 0;
-    code = pdf_open_gstate(pdev, ppres);
-    if (code < 0)
-        return code;
-    code = cos_dict_put_c_key_bool(resource_dict(*ppres), "/AIS", ais);
-    if (code < 0)
-        return code;
-    if (!for_text) {
-    /* we never do the 'both' operations (b, B, b*, B*) so we set both */
-    /* CA and ca the same so that we stay in sync with state.*.alpha   */
-    code = cos_dict_put_c_key_real(resource_dict(*ppres), "/CA", alpha);
-    if (code < 0)
-        return code;
-    return cos_dict_put_c_key_real(resource_dict(*ppres), "/ca", alpha);
-    } else {
+
+    if (pdev->state.alphaisshape != pgs->alphaisshape ||
+        pdev->state.strokeconstantalpha != pgs->strokeconstantalpha ||
+        pdev->state.fillconstantalpha != pgs->fillconstantalpha) {
+
+        pdev->state.strokeconstantalpha = pgs->strokeconstantalpha;
+        pdev->state.fillconstantalpha = pgs->fillconstantalpha;
+        pdev->state.alphaisshape = pgs->alphaisshape;
+
+        code = pdf_open_gstate(pdev, ppres);
+        if (code < 0)
+            return code;
+        code = cos_dict_put_c_key_bool(resource_dict(*ppres), "/AIS", pgs->alphaisshape);
+        if (code < 0)
+            return code;
         code = cos_dict_put_c_key_real(resource_dict(*ppres), "/CA", pgs->strokeconstantalpha);
         if (code < 0)
             return code;
         return cos_dict_put_c_key_real(resource_dict(*ppres), "/ca", pgs->fillconstantalpha);
-    }
+    } else
+        return 0;
 }
 
 /*
@@ -2983,8 +2960,8 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_gstate *pgs,
          * If the graphics state calls for any transparency functions,
          * we can't represent them, so return a rangecheck.
          */
-        if (pgs->opacity.alpha != 1 ||
-            pgs->shape.alpha != 1)
+        if (pgs->strokeconstantalpha != 1 ||
+            pgs->fillconstantalpha != 1)
             return_error(gs_error_rangecheck);
     }
     /*
@@ -3234,26 +3211,22 @@ pdf_try_prepare_stroke(gx_device_pdf *pdev, const gs_gstate *pgs, bool for_text)
     }
     /* Update overprint, stroke adjustment. */
     if (pdev->params.PreserveOverprintSettings &&
-        pdev->stroke_overprint != pgs->overprint &&
+        pdev->stroke_overprint != pgs->stroke_overprint &&
         !pdev->skip_colors
         ) {
         if (pres == 0)
             code = pdf_open_gstate(pdev, &pres);
         if (code < 0)
             return code;
-        code = cos_dict_put_c_key_bool(resource_dict(pres), "/OP", pgs->overprint);
+        code = cos_dict_put_c_key_bool(resource_dict(pres), "/OP", pgs->stroke_overprint);
         if (code < 0)
             return code;
-        pdev->stroke_overprint = pgs->overprint;
-        if (pdev->CompatibilityLevel < 1.3) {
-            /* PDF 1.2 only has a single overprint setting. */
-            pdev->fill_overprint = pgs->overprint;
-        } else {
-            /* According to PDF>=1.3 spec, OP also sets op,
-               if there is no /op in same garphic state object.
-               We don't write /op, so monitor the viewer's state here : */
-            pdev->fill_overprint = pgs->overprint;
-        }
+        pdev->stroke_overprint = pgs->stroke_overprint;
+
+        /* According to PDF>=1.3 spec, OP also sets op,
+           if there is no /op in same graphic state object.
+           We don't write /op, so monitor the viewer's state here : */
+        pdev->fill_overprint = pgs->stroke_overprint;
     }
     if (pdev->state.stroke_adjust != pgs->stroke_adjust) {
         code = pdf_open_gstate(pdev, &pres);
@@ -3280,6 +3253,86 @@ pdf_prepare_stroke(gx_device_pdf *pdev, const gs_gstate *pgs, bool for_text)
             return code;
     }
     return pdf_try_prepare_stroke(pdev, pgs, for_text);
+}
+
+static int
+pdf_try_prepare_fill_stroke(gx_device_pdf *pdev, const gs_gstate *pgs, bool for_text)
+{
+    pdf_resource_t *pres = 0;
+    int code = pdf_prepare_drawing(pdev, pgs, &pres, for_text);
+
+    if (code < 0)
+        return code;
+    /* Update overprint. */
+    if (pdev->params.PreserveOverprintSettings &&
+        (pdev->fill_overprint != pgs->overprint ||
+         pdev->stroke_overprint != pgs->stroke_overprint ||
+         pdev->font3) && !pdev->skip_colors
+        ) {
+        code = pdf_open_gstate(pdev, &pres);
+        if (code < 0)
+            return code;
+        /* PDF 1.2 only has a single overprint setting. */
+        if (pdev->CompatibilityLevel < 1.3) {
+            code = cos_dict_put_c_key_bool(resource_dict(pres), "/OP", pgs->overprint);
+            if (code < 0)
+                return code;
+            pdev->stroke_overprint = pgs->overprint;
+        } else {
+            code = cos_dict_put_c_key_bool(resource_dict(pres), "/op", pgs->overprint);
+            if (code < 0)
+                return code;
+        }
+        pdev->fill_overprint = pgs->overprint;
+    }
+    /* Update overprint, stroke adjustment. */
+    if (pdev->params.PreserveOverprintSettings &&
+        pdev->stroke_overprint != pgs->stroke_overprint &&
+        !pdev->skip_colors
+        ) {
+        code = pdf_open_gstate(pdev, &pres);
+        if (code < 0)
+            return code;
+        code = cos_dict_put_c_key_bool(resource_dict(pres), "/OP", pgs->stroke_overprint);
+        if (code < 0)
+            return code;
+        pdev->stroke_overprint = pgs->stroke_overprint;
+        if (pdev->CompatibilityLevel < 1.3) {
+            /* PDF 1.2 only has a single overprint setting. */
+            pdev->fill_overprint = pgs->stroke_overprint;
+        } else {
+            /* According to PDF>=1.3 spec, OP also sets op,
+               if there is no /op in same garphic state object.
+               We don't write /op, so monitor the viewer's state here : */
+            pdev->fill_overprint = pgs->overprint;
+        }
+    }
+    if (pdev->state.stroke_adjust != pgs->stroke_adjust) {
+        code = pdf_open_gstate(pdev, &pres);
+        if (code < 0)
+            return code;
+        code = cos_dict_put_c_key_bool(resource_dict(pres), "/SA", pgs->stroke_adjust);
+        if (code < 0)
+            return code;
+        pdev->state.stroke_adjust = pgs->stroke_adjust;
+    }
+    return pdf_end_gstate(pdev, pres);
+}
+
+int
+pdf_prepare_fill_stroke(gx_device_pdf *pdev, const gs_gstate *pgs, bool for_text)
+{
+    int code;
+
+    if (pdev->context != PDF_IN_STREAM) {
+        code = pdf_try_prepare_fill_stroke(pdev, pgs, for_text);
+        if (code != gs_error_interrupt) /* See pdf_open_gstate */
+            return code;
+        code = pdf_open_contents(pdev, PDF_IN_STREAM);
+        if (code < 0)
+            return code;
+    }
+    return pdf_try_prepare_fill_stroke(pdev, pgs, for_text);
 }
 
 /* Update the graphics state for an image other than an ImageType 1 mask. */

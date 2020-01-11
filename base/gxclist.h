@@ -336,8 +336,7 @@ struct gx_device_clist_writer_s {
     const gx_clip_path *clip_path;	/* current clip path, */
                                 /* only non-transient for images */
     gs_id clip_path_id;		/* id of current clip path */
-    clist_color_space_t color_space;	/* current color space, */
-                                /* only used for non-mask images */
+    clist_color_space_t color_space; /* only used for non-mask images */
     gs_id transfer_ids[4];	/* ids of transfer maps */
     gs_id black_generation_id;	/* id of black generation map */
     gs_id undercolor_removal_id;	/* id of u.c.r. map */
@@ -366,6 +365,9 @@ struct gx_device_clist_writer_s {
                                            access to the graphic state information in those
                                            routines, this is the logical place to put this
                                            information */
+    bool op_fill_active;   /* Needed so we know state during clist writing */
+    bool op_stroke_active; /* Needed so we know state during clist writing  */
+
 };
 
 /* Bits for gx_device_clist_writer.disable_mask. Bit set disables behavior */

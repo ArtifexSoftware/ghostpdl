@@ -217,7 +217,7 @@ gs_rectfill(gs_gstate * pgs, const gs_rect * pr, uint count)
         gs_gstate_color_load(pgs) >= 0 &&
         (*dev_proc(pdev, get_alpha_bits)) (pdev, go_graphics)
         <= 1 &&
-        (!pgs->overprint || !pgs->effective_overprint_mode)
+        (!pgs->overprint || !gs_currentcolor_eopm(pgs))
         ) {
         uint i;
         gs_fixed_rect clip_rect;

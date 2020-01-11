@@ -329,26 +329,28 @@ static int common_clip(gs_gstate *, int);
    The transparency group will be the intersection of the path and clipping
    path */
 int
-gx_curr_bbox(gs_gstate * pgs, gs_rect *bbox, gs_bbox_comp_t comp_type)
+gx_curr_fixed_bbox(gs_gstate * pgs, gs_fixed_rect *bbox, gs_bbox_comp_t comp_type)
 {
-    gx_clip_path *clip_path;
     int code;
+    gx_clip_path *clip_path;
     gs_fixed_rect path_bbox;
     int expansion_code;
     bool include_path = true;
     gs_fixed_point expansion;
 
     code = gx_effective_clip_path(pgs, &clip_path);
-        if (code < 0) return code;
+    if (code < 0 || clip_path == NULL) {
+        bbox->p.x = bbox->p.y = bbox->q.x = bbox->q.y = 0;
+        return (code < 0) ? code : gs_error_unknownerror;
+    } else {
+        *bbox = clip_path->outer_box;
+    }
     if (comp_type == NO_PATH) {
-        bbox->p.x = fixed2float(clip_path->outer_box.p.x);
-        bbox->p.y = fixed2float(clip_path->outer_box.p.y);
-        bbox->q.x = fixed2float(clip_path->outer_box.q.x);
-        bbox->q.y = fixed2float(clip_path->outer_box.q.y);
-        return 0;
+       return 0;
     }
     code = gx_path_bbox(pgs->path, &path_bbox);
-        if (code < 0) return code;
+    if (code < 0)
+        return code;
     if (comp_type == PATH_STROKE) {
         /* Handle any stroke expansion of our bounding box */
         expansion_code = gx_stroke_path_expansion(pgs, pgs->path, &expansion);
@@ -364,19 +366,22 @@ gx_curr_bbox(gs_gstate * pgs, gs_rect *bbox, gs_bbox_comp_t comp_type)
         }
     }
     if (include_path) {
-        rect_intersect(path_bbox, clip_path->outer_box);
-        /* clip path and drawing path */
-        bbox->p.x = fixed2float(path_bbox.p.x);
-        bbox->p.y = fixed2float(path_bbox.p.y);
-        bbox->q.x = fixed2float(path_bbox.q.x);
-        bbox->q.y = fixed2float(path_bbox.q.y);
-    } else {
-        /* clip path only */
-        bbox->p.x = fixed2float(clip_path->outer_box.p.x);
-        bbox->p.y = fixed2float(clip_path->outer_box.p.y);
-        bbox->q.x = fixed2float(clip_path->outer_box.q.x);
-        bbox->q.y = fixed2float(clip_path->outer_box.q.y);
+        rect_intersect(*bbox, path_bbox);
     }
+    return 0;
+}
+
+/* A variation of the above that returns a gs_rect (double) bbox */
+int
+gx_curr_bbox(gs_gstate * pgs, gs_rect *bbox, gs_bbox_comp_t comp_type)
+{
+    gs_fixed_rect curr_fixed_bbox;
+
+    gx_curr_fixed_bbox(pgs, &curr_fixed_bbox, comp_type);
+    bbox->p.x = fixed2float(curr_fixed_bbox.p.x);
+    bbox->p.y = fixed2float(curr_fixed_bbox.p.y);
+    bbox->q.x = fixed2float(curr_fixed_bbox.q.x);
+    bbox->q.y = fixed2float(curr_fixed_bbox.q.y);
     return 0;
 }
 
@@ -395,7 +400,7 @@ gx_effective_clip_path(gs_gstate * pgs, gx_clip_path ** ppcpath)
         (pgs->view_clip == 0 || pgs->view_clip->rule == 0 ? gs_no_id :
          pgs->view_clip->id);
 
-    if (gs_device_is_memory(pgs->device)) {
+    if (pgs->device == NULL || gs_device_is_memory(pgs->device) || pgs->clip_path == NULL) {
         *ppcpath = pgs->clip_path;
         return 0;
     }

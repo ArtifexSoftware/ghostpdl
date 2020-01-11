@@ -220,7 +220,7 @@ clist_fill_mask(gx_device * dev,
         if (code < 0)
             return code;
         code = cmd_put_drawing_color(cdev, re.pcls, pdcolor, &re,
-                                     devn_not_tile);
+                                     devn_not_tile_fill);
         if (code == gs_error_unregistered)
             return code;
         if (depth > 1 && code >= 0)
@@ -1119,7 +1119,7 @@ clist_image_plane_data(gx_image_enum_common_t * info,
                 re.rect_nbands = ((pie->ymax + re.band_height - 1) / re.band_height) -
                                  ((pie->ymin) / re.band_height);
                 code = cmd_put_drawing_color(cdev, re.pcls, &pie->dcolor,
-                                             &re, devn_not_tile);
+                                             &re, devn_not_tile_fill);
                 if (code < 0)
                     return code;
             }

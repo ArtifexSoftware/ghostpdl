@@ -311,7 +311,7 @@ pdf14_preserve_backdrop_cm(pdf14_buf *buf, cmm_profile_t *group_profile,
 }
 
 void
-pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool knockout_buff
+pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool from_backdrop
 #if RAW_DUMP
                         , const gs_memory_t *mem
 #endif
@@ -330,8 +330,8 @@ pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool knockout_buff
         int i, n_planes;
         bool deep = buf->deep;
 
-        if (knockout_buff) {
-            buf_plane = buf->backdrop;
+        if (from_backdrop) {
+            buf_plane = buf->data;
             tos_plane = tos->backdrop;
             n_planes = buf->n_chan;
         } else {
@@ -353,7 +353,7 @@ pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool knockout_buff
              * alpha_g and shape, but don't need to clear the tag plane
              * if it would be copied below (and if it exists). */
             int tag_plane_num = tos->n_chan + !!buf->has_shape + !!buf->has_alpha_g;
-            if (!knockout_buff && n_planes > tag_plane_num)
+            if (!from_backdrop && n_planes > tag_plane_num)
                 n_planes = tag_plane_num;
             if (n_planes > tos->n_chan)
                 memset(buf->data + tos->n_chan * buf->planestride, 0, (n_planes - tos->n_chan) * buf->planestride);
@@ -369,17 +369,19 @@ pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool knockout_buff
             buf_plane += buf->planestride;
             tos_plane += tos->planestride;
         }
-        if (!knockout_buff)
+        if (!from_backdrop)
             copy_extra_planes(buf_plane, buf, tos_plane, tos, width, height);
     }
 #if RAW_DUMP
     if (x0 < x1 && y0 < y1) {
-        byte *buf_plane = (knockout_buff ? buf->backdrop : buf->data);
-        buf_plane +=  ((x0 - buf->rect.p.x)<<buf->deep) +
-            (y0 - buf->rect.p.y) * buf->rowstride;
-        dump_raw_buffer(mem, y1 - y0, x1 - x0, buf->n_planes, buf->planestride,
-                        buf->rowstride, "BackDropInit", buf_plane, buf->deep);
-        global_index++;
+        byte *buf_plane = (from_backdrop ? buf->backdrop : buf->data);
+        if (buf_plane != NULL) {
+            buf_plane += ((x0 - buf->rect.p.x) << buf->deep) +
+                (y0 - buf->rect.p.y) * buf->rowstride;
+            dump_raw_buffer(mem, y1 - y0, x1 - x0, buf->n_planes, buf->planestride,
+                buf->rowstride, "BackDropInit", buf_plane, buf->deep);
+            global_index++;
+        }
     }
 #endif
 }

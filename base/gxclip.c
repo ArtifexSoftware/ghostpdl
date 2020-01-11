@@ -47,6 +47,7 @@ static dev_proc_get_clipping_box(clip_get_clipping_box);
 static dev_proc_get_bits_rectangle(clip_get_bits_rectangle);
 static dev_proc_fill_path(clip_fill_path);
 static dev_proc_transform_pixel_region(clip_transform_pixel_region);
+static dev_proc_fill_stroke_path(clip_fill_stroke_path);
 
 /* The device descriptor. */
 static const gx_device_clip gs_clip_device =
@@ -124,8 +125,9 @@ static const gx_device_clip gs_clip_device =
   clip_strip_copy_rop2,
   clip_strip_tile_rect_devn,
   clip_copy_alpha_hl_color,
-  NULL,
-  clip_transform_pixel_region
+  NULL,						/* process_page */
+  clip_transform_pixel_region,
+  clip_fill_stroke_path,
  }
 };
 
@@ -1633,4 +1635,79 @@ clip_transform_pixel_region(gx_device *dev, transform_pixel_region_reason reason
     data->state = state;
 
     return ret;
+}
+
+static int
+clip_call_fill_stroke_path(clip_callback_data_t * pccd, int xc, int yc, int xec, int yec)
+{
+    gx_device *tdev = pccd->tdev;
+    dev_proc_fill_stroke_path((*proc));
+    int code;
+    gx_clip_path cpath_intersection;
+    gx_clip_path *pcpath = (gx_clip_path *)pccd->pcpath;
+
+    /* Previously the code here tested for pcpath != NULL, but
+     * we can commonly (such as from clist_playback_band) be
+     * called with a non-NULL, but still invalid clip path.
+     * Detect this by the list having at least one entry in it. */
+    if (pcpath != NULL && pcpath->rect_list->list.count != 0) {
+        gx_path rect_path;
+        code = gx_cpath_init_local_shared_nested(&cpath_intersection, pcpath, pccd->ppath->memory, 1);
+        if (code < 0)
+            return code;
+        gx_path_init_local(&rect_path, pccd->ppath->memory);
+        code = gx_path_add_rectangle(&rect_path, int2fixed(xc), int2fixed(yc), int2fixed(xec), int2fixed(yec));
+        if (code < 0)
+            return code;
+        code = gx_cpath_intersect(&cpath_intersection, &rect_path,
+                                  gx_rule_winding_number, (gs_gstate *)(pccd->pgs));
+        gx_path_free(&rect_path, "clip_call_fill_stroke_path");
+    } else {
+        gs_fixed_rect clip_box;
+        clip_box.p.x = int2fixed(xc);
+        clip_box.p.y = int2fixed(yc);
+        clip_box.q.x = int2fixed(xec);
+        clip_box.q.y = int2fixed(yec);
+        gx_cpath_init_local(&cpath_intersection, pccd->ppath->memory);
+        code = gx_cpath_from_rectangle(&cpath_intersection, &clip_box);
+    }
+    if (code < 0)
+        return code;
+    proc = dev_proc(tdev, fill_stroke_path);
+    if (proc == NULL)
+        proc = gx_default_fill_stroke_path;
+    code = (*proc)(pccd->tdev, pccd->pgs, pccd->ppath, pccd->params,
+                   pccd->pdcolor, pccd->stroke_params, pccd->pstroke_dcolor,
+                   &cpath_intersection);
+    gx_cpath_free(&cpath_intersection, "clip_call_fill_stroke_path");
+    return code;
+}
+
+static int
+clip_fill_stroke_path(gx_device *dev, const gs_gstate *pgs,
+               gx_path *ppath,
+               const gx_fill_params *params,
+               const gx_drawing_color *pdcolor,
+               const gx_stroke_params *stroke_params,
+               const gx_drawing_color *pstroke_dcolor,
+               const gx_clip_path *pcpath)
+{
+    gx_device_clip *rdev = (gx_device_clip *) dev;
+    clip_callback_data_t ccdata;
+    gs_fixed_rect box;
+
+    ccdata.pgs = pgs;
+    ccdata.ppath = ppath;
+    ccdata.params = params;
+    ccdata.pdcolor = pdcolor;
+    ccdata.stroke_params = stroke_params;
+    ccdata.pstroke_dcolor = pstroke_dcolor;
+    ccdata.pcpath = pcpath;
+    clip_get_clipping_box(dev, &box);
+    return clip_enumerate(rdev,
+                          fixed2int(box.p.x),
+                          fixed2int(box.p.y),
+                          fixed2int(box.q.x - box.p.x),
+                          fixed2int(box.q.y - box.p.y),
+                          clip_call_fill_stroke_path, &ccdata);
 }

@@ -152,7 +152,8 @@ gx_device_mplt gs_pcl_mono_palette_device =
      default_subclass_strip_tile_rect_devn,
      default_subclass_copy_alpha_hl_color,
      default_subclass_process_page,
-     default_subclass_transform_pixel_region
+     default_subclass_transform_pixel_region,
+     default_subclass_fill_stroke_path,
     }
 };
 

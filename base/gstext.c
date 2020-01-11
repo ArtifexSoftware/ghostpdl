@@ -31,6 +31,7 @@
 #include "gxtext.h"
 #include "gzstate.h"
 #include "gsutil.h"
+#include "gxdevsop.h"
 
 /* GC descriptors */
 public_st_gs_text_params();
@@ -271,6 +272,12 @@ gs_text_begin(gs_gstate * pgs, const gs_text_params_t * text,
 {
     gx_clip_path *pcpath = 0;
     int code;
+    gs_overprint_params_t op_params = { 0 };
+    bool op_active = dev_proc(pgs->device, dev_spec_op)(pgs->device, gxdso_overprint_active, NULL, 0);
+    bool text_op_fill = ((pgs->overprint || (!pgs->overprint && op_active)) &&
+        (pgs->text_rendering_mode == 0));
+    bool text_op_stroke = ((pgs->stroke_overprint || (!pgs->stroke_overprint && op_active)) &&
+        (pgs->text_rendering_mode == 1));
 
     /*
      * Detect nocurrentpoint now, even if the string is empty, for Adobe
@@ -310,6 +317,40 @@ gs_text_begin(gs_gstate * pgs, const gs_text_params_t * text,
     code = gs_gstate_color_load(pgs);
     if (code < 0)
         return code;
+
+    if (text_op_stroke) {
+        if_debug0m(gs_debug_flag_overprint, pgs->memory,
+            "[overprint] Stroke Text Overprint\n");
+        code = gs_do_set_overprint(pgs);
+        if (code < 0)
+            return code;
+    } else if (text_op_fill) {
+        if_debug0m(gs_debug_flag_overprint, pgs->memory,
+            "[overprint] Fill Text Overprint\n");
+        code = gs_do_set_overprint(pgs);
+        if (code < 0)
+            return code;
+    }
+
+    /* If overprint is true, push the compositor action to set the op device state */
+    if ((pgs->overprint  && pgs->text_rendering_mode == 0) ||
+        (pgs->stroke_overprint && pgs->text_rendering_mode == 1) ||
+        op_active) {
+        gx_device* dev = pgs->device;
+        cmm_dev_profile_t* dev_profile;
+
+        dev_proc(dev, get_profile)(dev, &dev_profile);
+        if (dev_profile->sim_overprint && dev_profile->device_profile[0]->data_cs == gsCMYK) {
+            if (pgs->text_rendering_mode == 0) {
+                op_params.op_state = OP_STATE_FILL;
+                gs_gstate_update_overprint(pgs, &op_params);
+            } else if (pgs->text_rendering_mode == 1) {
+                op_params.op_state = OP_STATE_STROKE;
+                gs_gstate_update_overprint(pgs, &op_params);
+            }
+        }
+    }
+
     pgs->device->sgr.stroke_stored = false;
     return gx_device_text_begin(pgs->device, pgs,
                                 text, pgs->font, pgs->path,

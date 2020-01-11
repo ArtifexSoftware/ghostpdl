@@ -34,6 +34,12 @@ typedef enum {
     PDF14_DeviceCustom = 4
 } pdf14_default_colorspace_t;
 
+typedef enum {
+    PDF14_OP_STATE_NONE = 0,
+    PDF14_OP_STATE_FILL = 1,
+    PDF14_OP_STATE_STROKE = 2,
+} PDF14_OP_FS_STATE;
+
 /*
  * This structure contains procedures for processing routine which differ
  * between the different blending color spaces.
@@ -205,12 +211,19 @@ typedef struct pdf14_device_s {
     float opacity;
     float shape;
     float alpha; /* alpha = opacity * shape */
+    float fillconstantalpha;
+    float strokeconstantalpha;
     gs_blend_mode_t blend_mode;
     bool text_knockout;
     bool overprint;
-    bool effective_overprint_mode;
+	bool effective_overprint_mode;
+	bool stroke_effective_op_mode;
+	bool stroke_overprint;
     int text_group;
     gx_color_index drawn_comps;		/* Used for overprinting.  Passed from overprint compositor */
+    gx_color_index drawn_comps_fill;		/* selected by color_is_fill */
+    gx_color_index drawn_comps_stroke;
+    PDF14_OP_FS_STATE op_state;
     gx_device * pclist_device;
     bool free_devicen;              /* Used to avoid freeing a deviceN parameter from target clist device */
     bool sep_device;

@@ -1035,6 +1035,19 @@ typedef enum FILTER_FLAGS {
 #define dev_proc_stroke_path(proc)\
   dev_t_proc_stroke_path(proc, gx_device)
 
+                /* Added in release 9.22 */
+
+#define dev_t_proc_fill_stroke_path(proc, dev_t)\
+  int proc(dev_t *dev,\
+    const gs_gstate *pgs, gx_path *ppath,\
+    const gx_fill_params *fill_params,\
+    const gx_drawing_color *pdcolor_fill,\
+    const gx_stroke_params *stroke_params,\
+    const gx_drawing_color *pdcolor_stroke,\
+    const gx_clip_path *pcpath)
+#define dev_proc_fill_stroke_path(proc)\
+  dev_t_proc_fill_stroke_path(proc, gx_device)
+
                 /* Added in release 3.60 */
 
 #define dev_t_proc_fill_mask(proc, dev_t)\
@@ -1642,6 +1655,7 @@ typedef struct {
         dev_t_proc_copy_alpha_hl_color((*copy_alpha_hl_color), dev_t);\
         dev_t_proc_process_page((*process_page), dev_t);\
         dev_t_proc_transform_pixel_region((*transform_pixel_region), dev_t);\
+        dev_t_proc_fill_stroke_path((*fill_stroke_path), dev_t);\
 }
 
 /*

@@ -204,6 +204,9 @@ gs_pattern2_set_color(const gs_client_color * pcc, gs_gstate * pgs)
     int code;
     uchar k, num_comps;
 
+    /* Shading patterns can't use opm */
+    pgs->color[!pgs->is_fill_color].effective_opm = 0;
+
     pinst->saved->overprint_mode = pgs->overprint_mode;
     pinst->saved->overprint = pgs->overprint;
 

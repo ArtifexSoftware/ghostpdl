@@ -734,14 +734,18 @@ gx_set_overprint_DeviceN(const gs_color_space * pcs, gs_gstate * pgs)
         if ( base_type->index == gs_color_space_index_DeviceCMYK )
             return base_type->set_overprint( pcs->base_space, pgs );
         else
-            return gx_spot_colors_set_overprint( pcs->base_space, pgs);
+            return gx_set_no_overprint(pgs);
     } else {
         gs_overprint_params_t   params;
 
-        if ((params.retain_any_comps = pgs->overprint)) {
+
+        params.retain_any_comps = (pgs->overprint && pgs->is_fill_color) ||
+                                  (pgs->stroke_overprint && !pgs->is_fill_color);
+
+        if (params.retain_any_comps) {
             int     i, ncomps = pcs->params.device_n.num_components;
 
-            params.retain_spot_comps = false;
+            params.is_fill_color = pgs->is_fill_color;	/* for fill_stroke */
             params.drawn_comps = 0;
             for (i = 0; i < ncomps; i++) {
                 int mcomp = pcmap->color_map[i];
@@ -751,7 +755,9 @@ gx_set_overprint_DeviceN(const gs_color_space * pcs, gs_gstate * pgs)
         }
 
         /* Only DeviceCMYK can use overprint mode */
-        pgs->effective_overprint_mode = 0;
+        params.effective_opm = pgs->color[0].effective_opm = 0;
+        params.op_state = OP_STATE_NONE;
+        params.is_fill_color =pgs->is_fill_color;
         return gs_gstate_update_overprint(pgs, &params);
     }
 }

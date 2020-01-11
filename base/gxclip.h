@@ -42,7 +42,8 @@ typedef struct clip_callback_data_s {
     int sourcex;                        /* ibid. */
     uint raster;                        /* ibid. */
     int depth;                          /* copy_alpha, fill_mask */
-    const gx_drawing_color *pdcolor;    /* fill_mask, fill_rectangle_hl_color */
+    const gx_drawing_color *pdcolor;    /* fill_mask, fill_rectangle_hl_color, fill_path, fill_stroke_path */
+    const gx_drawing_color *pstroke_dcolor; /* fill_stroke_path */
     gs_logical_operation_t lop;         /* fill_mask, strip_copy_rop */
     const gx_clip_path *pcpath;         /* fill_mask, fill_rectangle_hl_color*/
     const gx_strip_bitmap *tiles;       /* strip_tile_rectangle */
@@ -51,9 +52,10 @@ typedef struct clip_callback_data_s {
     const gx_strip_bitmap *textures;    /* ibid. */
     const gx_color_index *tcolors;      /* ibid. */
     int plane_height;                   /* copy_planes, strip_copy_rop2 */
-    const gs_gstate * pgs;        /* fill_path, fill_rectangle_hl_color */
-    gx_path * ppath;                    /* fill_path */
-    const gx_fill_params * params;      /* fill_path */
+    const gs_gstate *pgs;               /* fill_path, fill_stroke_path, fill_rectangle_hl_color */
+    gx_path *ppath;                     /* fill_path, fill_stroke_path */
+    const gx_fill_params *params;       /* fill_path, fill_stroke_path */
+    const gx_stroke_params *stroke_params; /* fill_stroke_path */
 } clip_callback_data_t;
 
 /* Declare the callback procedures. */

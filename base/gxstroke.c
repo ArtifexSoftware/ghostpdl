@@ -105,13 +105,18 @@ int
 gx_stroke_path_expansion(const gs_gstate * pgs, const gx_path * ppath,
                          gs_fixed_point * ppt)
 {
-    const subpath *psub = ppath->first_subpath;
+    const subpath *psub;
     const segment *pseg;
     double cx = fabs(pgs->ctm.xx) + fabs(pgs->ctm.yx);
     double cy = fabs(pgs->ctm.xy) + fabs(pgs->ctm.yy);
     double expand = pgs->line_params.half_width;
     int result = 1;
 
+    if (ppath == NULL) {
+        ppt->x = ppt->y = 0;
+        return 0;		/* no expansion */
+    }
+    psub = ppath->first_subpath;
     /* Adjust the expansion (E) for square caps, if needed */
     if (pgs->line_params.start_cap == gs_cap_square ||
         pgs->line_params.end_cap == gs_cap_square)

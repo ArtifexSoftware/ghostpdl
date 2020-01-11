@@ -767,6 +767,7 @@ gx_device_fill_in_procs(register gx_device * dev)
     fill_dev_proc(dev, copy_planes, gx_default_copy_planes);
     fill_dev_proc(dev, process_page, gx_default_process_page);
     fill_dev_proc(dev, transform_pixel_region, gx_default_transform_pixel_region);
+    fill_dev_proc(dev, fill_stroke_path, gx_default_fill_stroke_path);
 }
 
 
@@ -1062,6 +1063,8 @@ gx_default_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
         /* Just ignore information about events */
         case gxdso_event_info:
             return 0;
+        case gxdso_overprint_active:
+            return 0;
     }
     return_error(gs_error_undefined);
 }
@@ -1315,6 +1318,7 @@ int gx_copy_device_procs(gx_device *dest, gx_device *src, gx_device *prototype)
     set_dev_proc(dest, strip_tile_rect_devn, dev_proc(prototype, strip_tile_rect_devn));
     set_dev_proc(dest, process_page, dev_proc(prototype, process_page));
     set_dev_proc(dest, transform_pixel_region, dev_proc(prototype, transform_pixel_region));
+    set_dev_proc(dest, fill_stroke_path, dev_proc(prototype, fill_stroke_path));
 
     /*
      * We absolutely must set the 'set_graphics_type_tag' to the default subclass one

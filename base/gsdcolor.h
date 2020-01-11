@@ -360,7 +360,7 @@ struct gx_device_color_s {
 
 struct gx_device_color_saved_s {
     gx_device_color_type    type;
-    gs_graphics_type_tag_t tag;	/* value used to set dev_color */
+    int                     devn_type;		/* for fill / stroke */
     union _svc {
         gx_color_index  pure;
         struct _svbin {

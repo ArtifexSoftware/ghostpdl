@@ -73,6 +73,30 @@ gx_stroke_fill(gx_path * ppath, gs_gstate * pgs)
 }
 
 int
+gx_fill_stroke_path(gs_gstate * pgs, int rule)
+{
+    gx_device *dev = gs_currentdevice_inline(pgs);
+    gx_clip_path *pcpath;
+    int code = gx_effective_clip_path(pgs, &pcpath);
+    gx_stroke_params stroke_params;
+    gx_fill_params fill_params;
+
+    if (code < 0)
+        return code;
+    fill_params.rule = rule;
+    fill_params.adjust.x = pgs->fill_adjust.x;
+    fill_params.adjust.y = pgs->fill_adjust.y;
+    fill_params.flatness = (caching_an_outline_font(pgs) ? 0.0 : pgs->flatness);
+    stroke_params.flatness = (caching_an_outline_font(pgs) ? 0.0 : pgs->flatness);
+    stroke_params.traditional = false;
+    return (*dev_proc(dev, fill_stroke_path))
+        (dev, (const gs_gstate *)pgs, pgs->path,
+         &fill_params, gs_currentdevicecolor_inline(pgs),
+         &stroke_params, gs_altdevicecolor_inline(pgs),
+         pcpath);
+}
+
+int
 gx_stroke_add(gx_path * ppath, gx_path * to_path,
               const gs_gstate * pgs, bool traditional)
 {

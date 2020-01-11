@@ -72,7 +72,10 @@ typedef enum {
 #define PDF14_SET_SHAPE_ALPHA   (1 << 2)
 #define PDF14_SET_OPACITY_ALPHA (1 << 3)
 #define PDF14_SET_OVERPRINT		(1 << 4)
-#define PDF14_SET_OVERPRINT_MODE (1 << 5)
+#define PDF14_SET_FILLCONSTANTALPHA (1 << 6)
+#define PDF14_SET_STROKECONSTANTALPHA (1 << 7)
+#define PDF14_SET_STROKEOVERPRINT (1 << 8)
+#define PDF_SET_FILLSTROKE_STATE (1 << 9)
 
 /* Used for keeping track of the text group madness, since we have the pdf14
    device needs to know if we are int an BT/ET group vs. a FreeText Annotation
@@ -123,11 +126,15 @@ struct gs_pdf14trans_params_s {
     int text_group;
     gs_transparency_source_t opacity;
     gs_transparency_source_t shape;
+    float fillconstantalpha;
+    float strokeconstantalpha;
     bool mask_is_image;
     gs_matrix ctm;
     bool replacing;
     bool overprint;
+    bool stroke_overprint;
     bool effective_overprint_mode;
+    bool stroke_effective_op_mode;
     bool idle; /* For clist reader.*/
     uint mask_id; /* For clist reader.*/
     int group_color_numcomps;
@@ -137,6 +144,7 @@ struct gs_pdf14trans_params_s {
     bool crop_blend_params;  /* This is used when the blend params are updated
                                 during a transparency group push */
     bool is_pattern;      /* Needed to detect device push and pop for clist pattern */
+    PDF14_OP_FS_STATE op_fs_state;
 };
 
 /*

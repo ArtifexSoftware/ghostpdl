@@ -465,26 +465,47 @@ gx_install_DeviceCMYK(gs_color_space * pcs, gs_gstate * pgs)
 }
 
 /*
+ * Communicate to the overprint compositor that this particular
+ * state overprint is not enabled.  This could be due to a 
+ * mismatched color space, or that overprint is false or the
+ * device does not support it.
+ */
+int
+gx_set_no_overprint(gs_gstate* pgs)
+{
+    gs_overprint_params_t   params = { 0 };
+
+    params.retain_any_comps = false;
+    params.op_state = OP_STATE_NONE;
+    params.is_fill_color = pgs->is_fill_color;
+    params.effective_opm = pgs->color[0].effective_opm = 0;
+
+    return gs_gstate_update_overprint(pgs, &params);
+}
+
+/*
  * Push an overprint compositor onto the current device indicating that,
  * at most, the spot color parameters are to be preserved.
  *
  * This routine should be used for all Device, CIEBased, and ICCBased
- * color spaces, except for DeviceCMKY. Also, it would not be used for
- * DeviceRGB if we have simulated overprint turned on.
- * These latter cases requires a
- * special verson that supports overprint mode.
+ * color spaces, except for DeviceCMKY.
  */
 int
 gx_spot_colors_set_overprint(const gs_color_space * pcs, gs_gstate * pgs)
 {
-    gs_overprint_params_t   params;
+    gs_overprint_params_t   params = {0};
+    bool op = pgs->is_fill_color ? pgs->overprint : pgs->stroke_overprint;
 
-    if ((params.retain_any_comps = pgs->overprint)) {
-        params.retain_spot_comps = true;
+    if (!op)
         params.retain_any_comps = false;
-    }
+    else
+        params.retain_any_comps = true;
+
+    params.is_fill_color = pgs->is_fill_color;
+    params.op_state = OP_STATE_NONE;
+
     /* Only DeviceCMYK case can have overprint mode set to true */
-    pgs->effective_overprint_mode = 0;
+    params.effective_opm = pgs->color[0].effective_opm = 0;
     return gs_gstate_update_overprint(pgs, &params);
 }
 
@@ -615,7 +636,7 @@ gx_set_overprint_DeviceCMYK(const gs_color_space * pcs, gs_gstate * pgs)
    overprint simulation.  This is seen with AR when doing output preview,
    overprint simulation enabled of the file overprint_icc.pdf (see our
    test files) which has SWOP ICC based CMYK fills.  In AR, if we use a
-   simluation ICC profile that is different than the source profile,
+   simulation ICC profile that is different than the source profile,
    overprinting is no longer previewed. We follow the same logic here.
    If the source and destination ICC profiles do not match, then there is
    effectively no overprinting enabled.  This is bug 692433 */
@@ -624,13 +645,17 @@ int gx_set_overprint_cmyk(const gs_color_space * pcs, gs_gstate * pgs)
     gx_device *             dev = pgs->device;
     gx_device_color_info *  pcinfo = (dev == 0 ? 0 : &dev->color_info);
     gx_color_index          drawn_comps = 0;
-    gs_overprint_params_t   params;
+    gs_overprint_params_t   params = { 0 };
     gx_device_color        *pdc;
     cmm_dev_profile_t      *dev_profile;
     cmm_profile_t          *output_profile = 0;
     int                     code;
     bool                    profile_ok = false;
     gsicc_rendering_param_t        render_cond;
+    bool                    eop;
+
+    if_debug0m(gs_debug_flag_overprint, pgs->memory,
+        "[overprint] gx_set_overprint_cmyk\n");
 
     if (dev) {
         code = dev_proc(dev, get_profile)(dev, &dev_profile);
@@ -646,6 +671,10 @@ int gx_set_overprint_cmyk(const gs_color_space * pcs, gs_gstate * pgs)
         else
             drawn_comps = pcinfo->process_comps;
     }
+
+    if_debug1m(gs_debug_flag_overprint, pgs->memory,
+        "[overprint] gx_set_overprint_cmyk. drawn_comps = 0x%x\n", drawn_comps);
+
     if (drawn_comps == 0)
         return gx_spot_colors_set_overprint(pcs, pgs);
 
@@ -658,15 +687,24 @@ int gx_set_overprint_cmyk(const gs_color_space * pcs, gs_gstate * pgs)
         }
     }
 
-    pdc = gs_currentdevicecolor_inline(pgs);
-    if (color_is_set(pdc) && profile_ok && pgs->effective_overprint_mode) {
+    eop = gs_currentcolor_eopm(pgs);
+
+    if_debug3m(gs_debug_flag_overprint, pgs->memory,
+        "[overprint] gx_set_overprint_cmyk. is_fill_color = %d, pgs->color[0].effective_opm = %d pgs->color[1].effective_opm = %d\n",
+        pgs->is_fill_color, pgs->color[0].effective_opm, pgs->color[1].effective_opm);
+
+    if (profile_ok && eop) {
         gx_color_index  nz_comps, one, temp;
         int             code;
         int             num_colorant[4], k;
         bool            colorant_ok;
-
         dev_color_proc_get_nonzero_comps((*procp));
 
+        if_debug0m(gs_debug_flag_overprint, pgs->memory,
+            "[overprint] gx_set_overprint_cmyk. color_is_set, profile_ok and eop\n");
+
+        gx_set_dev_color(pgs);
+        pdc = gs_currentdevicecolor_inline(pgs);
         procp = pdc->type->get_nonzero_comps;
         if (pdc->ccolor_valid) {
             /* If we have the source colors, then use those in making the
@@ -707,15 +745,20 @@ int gx_set_overprint_cmyk(const gs_color_space * pcs, gs_gstate * pgs)
         }
         drawn_comps &= nz_comps;
     }
+    params.is_fill_color = pgs->is_fill_color;
     params.retain_any_comps = true;
-    params.retain_spot_comps = false;
     params.drawn_comps = drawn_comps;
+    params.op_state = OP_STATE_NONE;
+
+    if_debug2m(gs_debug_flag_overprint, pgs->memory,
+        "[overprint] gx_set_overprint_cmyk. retain_any_comps = %d, drawn_comps = 0x%x\n",
+        params.retain_any_comps, params.drawn_comps);
+
     /* We are in CMYK, the profiles match and overprint is true.  Set effective
        overprint mode to overprint mode but only if effective has not already
        been set to 0 */
-    pgs->effective_overprint_mode =
-        (pgs->overprint_mode && pgs->effective_overprint_mode);
-
+    params.effective_opm = pgs->color[0].effective_opm =
+        pgs->overprint_mode && gs_currentcolor_eopm(pgs);
     return gs_gstate_update_overprint(pgs, &params);
 }
 

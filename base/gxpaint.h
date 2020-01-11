@@ -36,6 +36,8 @@ int gx_fill_path(gx_path * ppath, gx_device_color * pdevc, gs_gstate * pgs,
                  int rule, fixed adjust_x, fixed adjust_y);
 int gx_stroke_fill(gx_path * ppath, gs_gstate * pgs);
 int gx_stroke_add(gx_path *ppath, gx_path *to_path, const gs_gstate * pgs, bool traditional);
+int gx_fill_stroke_path(gs_gstate *pgs, int rule);
+
 /*
  * gx_gstate_stroke_add needs a device for the sake of absolute-length
  * dots (and for no other reason).

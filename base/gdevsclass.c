@@ -894,6 +894,17 @@ int default_subclass_process_page(gx_device *dev, gx_process_page_options_t *opt
     return 0;
 }
 
+int default_subclass_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
+        const gx_fill_params *fill_params, const gx_drawing_color *pdcolor_fill,
+        const gx_stroke_params *stroke_params, const gx_drawing_color *pdcolor_stroke,
+        const gx_clip_path *pcpath)
+{
+    if (dev->child)
+        return dev_proc(dev->child, fill_stroke_path)(dev, pgs, ppath, fill_params, pdcolor_fill,
+                                                      stroke_params, pdcolor_stroke, pcpath);
+    return 0;
+}
+
 int default_subclass_transform_pixel_region(gx_device *dev, transform_pixel_region_reason reason, transform_pixel_region_data *data)
 {
     if (dev->child)
