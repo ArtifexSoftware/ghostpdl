@@ -4022,7 +4022,7 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_gstate * pgs,
         }
         blend_mode = ptile->blending_mode;
         memcpy(&save_pdf14_dev, p14dev, sizeof(pdf14_device));
-        code = pdf14_push_transparency_group(p14dev->ctx, &rect, 1, 0, 1, 1,
+        code = pdf14_push_transparency_group(p14dev->ctx, &rect, 1, 0, 65535, 65535,
                                              blend_mode, 0, 0, n_chan_tile-1,
                                              false, NULL, NULL, pgs_noconst,
                                              pdev);
