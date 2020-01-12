@@ -964,10 +964,10 @@ overprint_create_compositor(
 
         if (params.is_fill_color)
             update = (params.drawn_comps != opdev->drawn_comps_fill) ||
-            ((!params.retain_any_comps) != opdev->retain_none_fill);
+            ((params.retain_any_comps == 0) != opdev->retain_none_fill);
         else
             update = (params.drawn_comps != opdev->drawn_comps_stroke) ||
-            ((!params.retain_any_comps) != opdev->retain_none_stroke);
+            ((params.retain_any_comps == 0) != opdev->retain_none_stroke);
 
         params.idle = pct->idle;
         /* device must already exist, so just update the parameters if settings change */

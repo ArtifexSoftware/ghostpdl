@@ -703,7 +703,9 @@ int gx_set_overprint_cmyk(const gs_color_space * pcs, gs_gstate * pgs)
         if_debug0m(gs_debug_flag_overprint, pgs->memory,
             "[overprint] gx_set_overprint_cmyk. color_is_set, profile_ok and eop\n");
 
-        gx_set_dev_color(pgs);
+        code = gx_set_dev_color(pgs);
+        if (code < 0)
+            return code;
         pdc = gs_currentdevicecolor_inline(pgs);
         procp = pdc->type->get_nonzero_comps;
         if (pdc->ccolor_valid) {

@@ -3352,13 +3352,19 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
 
         /* If we are in an overprint situation, set the blend mode to compatible
             overprint */
-        if (pgs->overprint)
-            code = gs_setblendmode((gs_gstate*) pgs, BLEND_MODE_CompatibleOverprint);
+        if (pgs->overprint) {
+            code = gs_setblendmode((gs_gstate*)pgs, BLEND_MODE_CompatibleOverprint);
+            if (code < 0)
+                goto cleanup;
+        }
         code = pdf14_fill_path(dev, pgs, ppath, fill_params, pdcolor_fill, pcpath);
-        if (pgs->overprint)
-            code = gs_setblendmode((gs_gstate*) pgs, blend_mode);
         if (code < 0)
             goto cleanup;
+        if (pgs->overprint) {
+            code = gs_setblendmode((gs_gstate*)pgs, blend_mode);
+            if (code < 0)
+                goto cleanup;
+        }
 
         code = gs_setopacityalpha((gs_gstate*) pgs, pgs->strokeconstantalpha);
         if (code < 0)
@@ -6298,7 +6304,7 @@ do_mark_fill_rectangle_ko_simple(gx_device *dev, int x, int y, int w, int h,
             } else {
                 if (overprint) {
                     /* We may have to do the compatible overprint blending */
-                    if (!buf->isolated && drawn_comps != ((1 << dev->color_info.num_components)-1)) {
+                    if (!buf->isolated && drawn_comps != (( (size_t) 1 << (size_t) dev->color_info.num_components)-(size_t) 1)) {
                         art_pdf_composite_knockout_8(dst2, src, num_comp,
                             blend_mode, pdev->blend_procs, pdev);
                     }
@@ -6333,7 +6339,8 @@ do_mark_fill_rectangle_ko_simple(gx_device *dev, int x, int y, int w, int h,
             if (shape_off)
                 dst_ptr[shape_off] = 255 - shape;
             ++dst_ptr;
-            ++bg_ptr;
+            if (has_backdrop)
+                ++bg_ptr;
         }
         bline += rowstride;
         line += rowstride;
@@ -6496,7 +6503,7 @@ do_mark_fill_rectangle_ko_simple16(gx_device *dev, int x, int y, int w, int h,
             } else {
                 if (overprint) {
                     /* We may have to do the compatible overprint blending */
-                    if (!buf->isolated && drawn_comps != ((1 << dev->color_info.num_components) - 1)) {
+                    if (!buf->isolated && drawn_comps != (((size_t)1 << (size_t)dev->color_info.num_components) - (size_t)1)) {
                         art_pdf_composite_knockout_16(dst2, src, num_comp,
                             blend_mode, pdev->blend_procs, pdev);
                     }
@@ -6531,7 +6538,8 @@ do_mark_fill_rectangle_ko_simple16(gx_device *dev, int x, int y, int w, int h,
             if (shape_off)
                 dst_ptr[shape_off] = 65535 - shape;
             ++dst_ptr;
-            ++bg_ptr;
+            if (has_backdrop)
+                ++bg_ptr;
         }
         bline += rowstride;
         line += rowstride;
@@ -9471,26 +9479,32 @@ pdf14_clist_fill_stroke_path_pattern_setup(gx_device* dev, const gs_gstate* pgs,
             if (code < 0)
                 goto cleanup;
 
-            if (pgs->overprint)
+            if (pgs->overprint) {
                 code = gs_setblendmode((gs_gstate*)pgs, blend_mode);
-            if (code < 0)
-                goto cleanup;
+                if (code < 0)
+                    goto cleanup;
+            }
         }
 
         if (pgs->strokeconstantalpha > 0.0) {
             code = gs_setopacityalpha((gs_gstate*)pgs, pgs->strokeconstantalpha);
             if (code < 0)
                 goto cleanup;
-            if (pgs->stroke_overprint)
+            if (pgs->stroke_overprint) {
                 code = gs_setblendmode((gs_gstate*)pgs, BLEND_MODE_CompatibleOverprint);
+                if (code < 0)
+                    goto cleanup;
+            }
+
             code = pdf14_clist_stroke_path(dev, pgs, ppath, params_stroke, pdevc_stroke, pcpath);
             if (code < 0)
                 goto cleanup;
 
-            if (pgs->stroke_overprint)
+            if (pgs->stroke_overprint) {
                 code = gs_setblendmode((gs_gstate*)pgs, blend_mode);
-            if (code < 0)
-                goto cleanup;
+                if (code < 0)
+                    goto cleanup;
+            }
         }
     }
     /* Now during the pop do the compositing with alpha of 1.0 and normal blend */
