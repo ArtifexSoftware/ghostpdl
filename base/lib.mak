@@ -153,6 +153,15 @@ jpeglib__h=$(GLGEN)jpeglib_.h
 
 cal_h=$(CALSRCDIR)$(D)cal.h
 
+# The following would logically be better in freetype.mak
+# but we need it for fapi_ft.c below
+FTCONFH=gsftopts.h
+GENFTCONFH=$(FTGENDIR)$(D)$(FTCONFH)
+BASEFTCONFH=$(GLSRC)$(FTCONFH)
+
+$(GENFTCONFH) : $(BASEFTCONFH)
+	$(CP_) $(BASEFTCONFH) $(GENFTCONFH)
+
 # Miscellaneous
 
 gsio_h=$(GLSRC)gsio.h
@@ -1310,12 +1319,22 @@ $(GLD)fapif1.dev : $(INT_MAK) $(ECHOGS_XE) $(GLOBJ)fapi_ft.$(OBJ) \
 	$(ADDMOD) $(GLD)fapif1 -include $(GLD)freetype
 	$(ADDMOD) $(GLD)fapif1 -fapi fapi_ft
 
-$(GLOBJ)fapi_ft.$(OBJ) : $(GLSRC)fapi_ft.c $(AK)\
+$(GLOBJ)fapi_ft_0.$(OBJ) : $(GLSRC)fapi_ft.c $(AK)\
  $(stdio__h) $(malloc__h) $(write_t1_h) $(write_t2_h) $(math__h) $(gserrors_h)\
  $(gsmemory_h) $(gsmalloc_h) $(gxfixed_h) $(gdebug_h) $(gxbitmap_h)\
  $(gsmchunk_h) $(stream_h) $(gxiodev_h) $(gsfname_h) $(gxfapi_h) $(gxfont1_h)\
- $(gxfont_h) $(LIB_MAK) $(MAKEDIRS)
-	$(GLCC) $(FT_CFLAGS) $(GLO_)fapi_ft.$(OBJ) $(C_) $(GLSRC)fapi_ft.c
+ $(gxfont_h) $(BASEFTCONFH) $(LIB_MAK) $(MAKEDIRS)
+	$(GLCC) $(FT_CFLAGS) $(D_)FT_CONFIG_OPTIONS_H=\"$(FTCONFH)\"$(_D) $(GLO_)fapi_ft_0.$(OBJ) $(C_) $(GLSRC)fapi_ft.c
+
+$(GLOBJ)fapi_ft_1.$(OBJ) : $(GLSRC)fapi_ft.c $(AK)\
+ $(stdio__h) $(malloc__h) $(write_t1_h) $(write_t2_h) $(math__h) $(gserrors_h)\
+ $(gsmemory_h) $(gsmalloc_h) $(gxfixed_h) $(gdebug_h) $(gxbitmap_h)\
+ $(gsmchunk_h) $(stream_h) $(gxiodev_h) $(gsfname_h) $(gxfapi_h) $(gxfont1_h)\
+ $(gxfont_h) $(BASEFTCONFH) $(LIB_MAK) $(MAKEDIRS)
+	$(GLCC) $(FT_CFLAGS) $(GLO_)fapi_ft_1.$(OBJ) $(C_) $(GLSRC)fapi_ft.c
+
+$(GLOBJ)fapi_ft.$(OBJ) : $(GLOBJ)fapi_ft_$(SHARE_FT).$(OBJ)
+	$(CP_) $(GLOBJ)fapi_ft_$(SHARE_FT).$(OBJ) $(GLOBJ)fapi_ft.$(OBJ)
 
 # stub for FreeType bridge :
 
