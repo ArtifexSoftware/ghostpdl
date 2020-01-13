@@ -3371,11 +3371,20 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
             goto cleanup;
         gs_swapcolors_quick((gs_gstate*) pgs);
         ((pdf14_device*)dev)->op_state = PDF14_OP_STATE_STROKE;
-        if (pgs->stroke_overprint)
-            code = gs_setblendmode((gs_gstate*) pgs, BLEND_MODE_CompatibleOverprint);
+        if (pgs->stroke_overprint) {
+            code = gs_setblendmode((gs_gstate*)pgs, BLEND_MODE_CompatibleOverprint);
+            if (code < 0)
+                goto cleanup;
+        }
         code = pdf14_stroke_path(dev, pgs, ppath, stroke_params, pdcolor_stroke, pcpath);
-        if (pgs->stroke_overprint)
-            code = gs_setblendmode((gs_gstate*) pgs, blend_mode);
+        if (code < 0)
+            goto cleanup;
+
+        if (pgs->stroke_overprint) {
+            code = gs_setblendmode((gs_gstate*)pgs, blend_mode);
+            if (code < 0)
+                goto cleanup;
+        }
         gs_swapcolors_quick((gs_gstate*) pgs);
         if (code < 0)
             goto cleanup;		/* bail out (with colors swapped back to fill) */
