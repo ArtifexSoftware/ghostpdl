@@ -496,6 +496,23 @@ gsicc_get_default_type(cmm_profile_t *profile_data)
     }
 }
 
+int
+gsicc_use_fast_color(cmm_profile_t* profile_data)
+{
+    switch (profile_data->default_match) {
+    case CIE_A:
+    case CIE_ABC:
+    case CIE_DEF:
+    case CIE_DEFG:
+    case LAB_TYPE:
+    case NAMED_TYPE:
+    case DEVICEN_TYPE:
+        return 0;
+    default:
+        return profile_data->num_comps;
+    }
+}
+
 bool
 gsicc_is_default_profile(cmm_profile_t *profile_data)
 {
