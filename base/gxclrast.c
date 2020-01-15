@@ -249,7 +249,7 @@ static int read_set_bits(command_buf_t *pcb, tile_slot *bits,
                           gx_device_clist_reader *cdev, gs_memory_t *mem);
 static int read_set_misc2(command_buf_t *pcb, gs_gstate *pgs,
                            segment_notes *pnotes);
-static int read_set_color_space(command_buf_t *pcb, gs_gstate *pgs, gs_color_space **ppcs,
+static int read_set_color_space(command_buf_t *pcb, gs_gstate *pgs,
                                  gx_device_clist_reader *cdev, gs_memory_t *mem);
 static int read_begin_image(command_buf_t *pcb, gs_image_common_t *pic,
                              gs_color_space *pcs);
@@ -1338,7 +1338,7 @@ set_phase:      /*
                         break;
                     case cmd_opv_set_color_space:
                         cbuf.ptr = cbp;
-                        code = read_set_color_space(&cbuf, &gs_gstate, &pcs, cdev, mem);
+                        code = read_set_color_space(&cbuf, &gs_gstate, cdev, mem);
                         pcs = gs_gstate.color[0].color_space;
                         cbp = cbuf.ptr;
                         if (code < 0) {
@@ -2755,7 +2755,7 @@ read_set_misc2(command_buf_t *pcb, gs_gstate *pgs, segment_notes *pnotes)
 }
 
 static int
-read_set_color_space(command_buf_t *pcb, gs_gstate *pgs, gs_color_space** ppcs,
+read_set_color_space(command_buf_t *pcb, gs_gstate *pgs,
                      gx_device_clist_reader *cdev, gs_memory_t *mem)
 {
     const byte *cbp = pcb->ptr;
@@ -2765,8 +2765,6 @@ read_set_color_space(command_buf_t *pcb, gs_gstate *pgs, gs_color_space** ppcs,
     int code = 0;
     cmm_profile_t *picc_profile;
     clist_icc_color_t icc_information;
-
-    ppcs = &pcs;
 
     if_debug3m('L', mem, " %d%s%s\n", index,
                (b & 8 ? " (indexed)" : ""),
