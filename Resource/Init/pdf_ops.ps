@@ -1160,9 +1160,19 @@ end readonly def
 
 } bind executeonly def
 
+/clip_if_required {
+    .currenttextrenderingmode 4 ge
+    {currentpoint} //.internalstopped exec
+    {//false}
+    {pop pop //true}
+    ifelse and
+    { .currentfilladjust2 0 dup .setfilladjust2 clip .setfilladjust2} if
+    newpath
+} bind def
+
 /ET_NO_TXT_KO {
   currentdict /TextSaveMatrix known {
-    .currenttextrenderingmode 4 ge { .currentfilladjust2 0 dup .setfilladjust2 clip .setfilladjust2 newpath} if
+    //clip_if_required exec
     TextSaveMatrix setmatrix
     currentdict /TextSaveMatrix undef
 
@@ -1184,6 +1194,8 @@ end readonly def
     switch_to_normal_marking_ops
   } if
 } bind executeonly def
+
+currentdict /clip_if_required .undef
 
 /ET {
   //ET_NO_TXT_KO exec
