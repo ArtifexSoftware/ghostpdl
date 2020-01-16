@@ -901,6 +901,9 @@ clist_fill_stroke_path(gx_device * pdev, const gs_gstate * pgs,
     bool slow_rop = cmd_slow_rop(pdev, lop_know_S_0(lop), pdevc_fill);
     cmd_rects_enum_t re;
 
+    if (pdevc_stroke == NULL || pdevc_fill == NULL)
+        return_error(gs_error_unknownerror);	/* shouldn't happen */
+
     if ((cdev->disable_mask & (clist_disable_fill_path || clist_disable_stroke_path)) ||
         gs_debug_c(',')
         ) {
@@ -909,8 +912,7 @@ clist_fill_stroke_path(gx_device * pdev, const gs_gstate * pgs,
                                            params_stroke, pdevc_stroke, pcpath);
     }
     /* TODO: For now punt to default if we have shaded color (pattern2) */
-    if ((pdevc_fill != NULL && gx_dc_is_pattern2_color(pdevc_fill)) ||
-        (pdevc_stroke != NULL && gx_dc_is_pattern2_color(pdevc_stroke)) ) {
+    if (gx_dc_is_pattern2_color(pdevc_fill) || gx_dc_is_pattern2_color(pdevc_stroke)) {
         return gx_default_fill_stroke_path(pdev, pgs, ppath, params_fill, pdevc_fill,
                                            params_stroke, pdevc_stroke, pcpath);
     }
