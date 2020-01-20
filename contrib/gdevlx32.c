@@ -138,9 +138,9 @@ static int qualify_buffer(pagedata *gendata);
 static int roll_buffer(pagedata *gendata);
 static void calclinemargins(pagedata *gendata, byte *data, int mask, int *left, int *right);
 static void calcbufmargins(pagedata *gendata,int head);
-static void print_color_page(pagedata *gendata);
+static int print_color_page(pagedata *gendata);
 static void print_mono_page(pagedata *gendata);
-static void print_photo_page(pagedata *gendata);
+static int print_photo_page(pagedata *gendata);
 
 /* Codes for the color indexes. */
 #define WHITE        0x00  /* Pure white */
@@ -563,6 +563,7 @@ lxm3200_map_color_rgb(gx_device *dev, gx_color_index color,
 static int
 lxm3200_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {
+	int code = 0;
 	lxm_device *dev = (lxm_device *)pdev;
 	pagedata *gendata;
 
@@ -766,11 +767,13 @@ lxm3200_print_page(gx_device_printer *pdev, gp_file *prn_stream)
         switch(gendata->rendermode)
         {
                 case LXM3200_P:
-                        print_photo_page(gendata);
+                        code = print_photo_page(gendata);
+                        if (code < 0)   goto end;
                         break;
 
                 case LXM3200_C:
-                        print_color_page(gendata);
+                        code = print_color_page(gendata);
+                        if (code < 0)   goto end;
                         break;
 
                 case LXM3200_M:
@@ -782,11 +785,13 @@ lxm3200_print_page(gx_device_printer *pdev, gp_file *prn_stream)
         /* Output the end-of-page epilogue */
         outputepilogue(gendata);
 
+        end:
+        
         /* Free the allocated resources */
         freeresources(dev);
 
         /* Done. Bye bye, see you on next page. */
-        return(0);
+        return code;
 }
 
 /* Function that Ghostscript calls to ask the driver
@@ -2589,8 +2594,10 @@ roll_buffer(pagedata *gendata)
                 memset(data, 0, gendata->numbytes);
                 if(vl < gendata->numvlines)
                 {
-                        gdev_prn_get_bits((gx_device_printer *)gendata->dev,
-                                                                                                vl, data+ofs, &in_data);
+                        int code = gdev_prn_get_bits((gx_device_printer *)gendata->dev, vl, data+ofs, &in_data);
+                        if (code < 0) {
+                            return code;
+                        }
                         if(in_data != data+ofs)memcpy(data+ofs, in_data, gendata->numrbytes);
                 }
                 vl++;
@@ -2741,7 +2748,7 @@ calcbufmargins(pagedata *gendata, int head)
  * This is the main routine that prints in
  * standard color mode.
  */
-static void
+static int
 print_color_page(pagedata *gendata)
 {
         int res, lline, cmask;
@@ -2762,12 +2769,15 @@ print_color_page(pagedata *gendata)
          */
         res = init_buffer(gendata);
         while(res == 0)res = roll_buffer(gendata);
+        if (res < 0) {
+            return res;
+        }
 
         /* If this buffer happens to be the last one,
          * and empty as well, we had a blank page.
          * Just exit without ado.
          */
-        if(res == LAST)return;
+        if(res == LAST)return 0;
 
         /* This is the first non-blank line of the
          * page: issue a vertical skip command to
@@ -3109,6 +3119,8 @@ print_color_page(pagedata *gendata)
          * by the trailing sequence).
          */
         finalizeheader(gendata, 0, -1);
+        
+        return 0;
 }
 
 /* This is the equivalent of print_color_page()
@@ -3216,7 +3228,7 @@ print_mono_page(pagedata *gendata)
  * no need to care for different heights of the
  * printing pens (i.e.: no "lastblack" tricks).
  */
-static void
+static int
 print_photo_page(pagedata *gendata)
 {
         int res, lline;
@@ -3224,7 +3236,11 @@ print_photo_page(pagedata *gendata)
         res = init_buffer(gendata);
         while(res == 0)res = roll_buffer(gendata);
 
-        if(res == LAST)return;
+        if (res < 0)    {
+            return res;
+        }
+
+        if(res == LAST)return 0;
 
         skiplines(gendata, gendata->curvline, COLTOPSTART);
         lline = gendata->curvline;
@@ -3283,6 +3299,9 @@ print_photo_page(pagedata *gendata)
         }
 
         res = roll_buffer(gendata);
+        if (res < 0) {
+            return res;
+        }
 
         while(!(res & LAST))
         {
@@ -3342,6 +3361,9 @@ print_photo_page(pagedata *gendata)
                 }
 
                 res = roll_buffer(gendata);
+                if (res < 0) {
+                    return res;
+                }
         }
 
         switch(res)
@@ -3397,4 +3419,5 @@ print_photo_page(pagedata *gendata)
         }
 
         finalizeheader(gendata, 0, -1);
+        return 0;
 }
