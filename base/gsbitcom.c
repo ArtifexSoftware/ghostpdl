@@ -13,6 +13,7 @@
    CA 94945, U.S.A., +1(415)492-9861, for further information.
 */
 
+#include <assert.h>
 
 /* Oversampled bitmap compression */
 #include "std.h"
@@ -196,8 +197,10 @@ bits_compress_scaled(const byte * src, int srcx, uint width, uint height,
 
                 for (index = 0, count = 0; index != sskip;
                      index += sraster
-                    )
+                    ) {
+                    assert(in_shift >= 0);  /* Coverity 94484. */
                     count += half_byte_1s[(s[index] >> in_shift) & mask];
+                }
                 if (count != 0 && table[count] == 0) {	/* Look at adjacent cells to help prevent */
                     /* dropouts. */
                     uint orig_count = count;
