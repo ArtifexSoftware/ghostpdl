@@ -1271,10 +1271,12 @@ art_blend_pixel_8_inline(byte *gs_restrict dst, const byte *gs_restrict backdrop
                  */
                 if (opm && p14dev->color_info.num_components > 3
                     && !(p14dev->ctx->additive)) {
-                    for (i = 0; i < 4; i++) {
-                        b = backdrop[i];
-                        s = src[i];
-                        dst[i] = s < 0xff ? s : b; /* Subtractive zero */
+                    for (i = 0, comps = drawn_comps; i < 4; i++, comps >>= 1) {
+                        if ((comps & 0x1) != 0) {
+                            dst[i] = src[i];
+                        } else {
+                            dst[i] = backdrop[i];
+                        }
                     }
                     for (i = 4; i < n_chan; i++) {
                         dst[i] = backdrop[i];

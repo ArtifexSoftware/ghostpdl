@@ -727,7 +727,9 @@ int gx_set_overprint_cmyk(const gs_color_space * pcs, gs_gstate * pgs)
             one = 1;
             colorant_ok = true;
             for (k = 0; k < 4; k++) {
-                if (pdc->ccolor.paint.values[k] != 0) {
+                /* Note: AR assumes the value is zero if it
+                   is less than 0.5 out of 255 */
+                if (pdc->ccolor.paint.values[k] > (0.5 / 255.0)) {
                     if (num_colorant[k] == -1) {
                         colorant_ok = false;
                     } else {
