@@ -342,6 +342,23 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
     return fdev;
 }
 
+gx_pattern_trans_t*
+new_pattern_trans_buff(gs_memory_t *mem)
+{
+    gx_pattern_trans_t *result;
+
+    /* Allocate structure that we will use for the trans pattern */
+    result = gs_alloc_struct(mem, gx_pattern_trans_t, &st_pattern_trans, "new_pattern_trans_buff");
+    result->transbytes = NULL;
+    result->pdev14 = NULL;
+    result->mem = NULL;
+    result->fill_trans_buffer = NULL;
+    result->buf = NULL;
+    result->n_chan = 0;
+
+    return(result);
+}
+
 /*
  * Initialize a pattern accumulator.
  * Client must already have set instance and bitmap_memory.
@@ -393,14 +410,9 @@ pattern_accum_open(gx_device * dev)
        do this since the transparency code all */
     if (pinst->templat.uses_transparency) {
         /* Allocate structure that we will use for the trans pattern */
-        padev->transbuff = gs_alloc_struct(mem,gx_pattern_trans_t,&st_pattern_trans,"pattern_accum_open(trans)");
-        padev->transbuff->transbytes = NULL;
-        padev->transbuff->mem = NULL;
-        padev->transbuff->pdev14 = NULL;
-        padev->transbuff->fill_trans_buffer = NULL;
-        /* n_chan = 0 => padev->transbuff isn't inited. */
-        padev->transbuff->n_chan = 0;
-        padev->transbuff->buf = NULL;
+        padev->transbuff = new_pattern_trans_buff(mem);
+        if (padev->transbuff == NULL)
+            return_error(gs_error_VMerror);
     } else {
         padev->transbuff = NULL;
     }
@@ -495,21 +507,6 @@ pattern_accum_open(gx_device * dev)
     /* Retain the device, so it will survive anomalous grestores. */
     gx_device_retain(dev, true);
     return code;
-}
-
-gx_pattern_trans_t*
-new_pattern_trans_buff(gs_memory_t *mem)
-{
-    gx_pattern_trans_t *result;
-
-    /* Allocate structure that we will use for the trans pattern */
-    result = gs_alloc_struct(mem, gx_pattern_trans_t, &st_pattern_trans, "new_pattern_trans_buff");
-    result->transbytes = NULL;
-    result->pdev14 = NULL;
-    result->mem = NULL;
-    result->fill_trans_buffer = NULL;
-
-    return(result);
 }
 
 /* Close an accumulator and free the bits. */
@@ -1537,6 +1534,7 @@ gx_pattern_load(gx_device_color * pdc, const gs_gstate * pgs,
                 gs_free_object(((gx_device_pattern_accum *)adev)->bitmap_memory,
                                ((gx_device_pattern_accum *)adev)->transbuff,
                                "gx_pattern_load");
+                ((gx_device_pattern_accum *)adev)->transbuff = NULL;
             }
             dev_proc(adev, close_device)((gx_device *)adev);
             /* adev was the target of the pdf14 device, so also is no longer retained */
