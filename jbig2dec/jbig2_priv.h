@@ -116,11 +116,7 @@ void *jbig2_realloc(Jbig2Allocator *allocator, void *p, size_t size, size_t num)
 
 #define jbig2_renew(ctx, p, t, size) ((t *)jbig2_realloc(ctx->allocator, (p), size, sizeof(t)))
 
-int jbig2_error(Jbig2Ctx *ctx, Jbig2Severity severity, int32_t seg_idx, const char *fmt, ...)
-#ifdef __GNUC__
-    __attribute__ ((format (__printf__, 4, 5)))
-#endif
-    ;
+int jbig2_error(Jbig2Ctx *ctx, Jbig2Severity severity, int32_t seg_idx, const char *fmt, ...);
 
 /* The word stream design is a compromise between simplicity and
    trying to amortize the number of method calls. Each ::get_next_word
@@ -136,5 +132,16 @@ struct _Jbig2WordStream {
 Jbig2WordStream *jbig2_word_stream_buf_new(Jbig2Ctx *ctx, const byte *data, size_t size);
 
 void jbig2_word_stream_buf_free(Jbig2Ctx *ctx, Jbig2WordStream *ws);
+
+/* restrict is standard in C99, but not in all C++ compilers. */
+#if defined (__STDC_VERSION_) && (__STDC_VERSION__ >= 199901L) /* C99 */
+#define JBIG2_RESTRICT restrict
+#elif defined(_MSC_VER) && (_MSC_VER >= 1600) /* MSVC 10 or newer */
+#define JBIG2_RESTRICT __restrict
+#elif defined(__GNUC__) && (__GNUC__ >= 3) /* GCC 3 or newer */
+#define JBIG2_RESTRICT __restrict
+#else /* Unknown or ancient */
+#define JBIG2_RESTRICT
+#endif
 
 #endif /* _JBIG2_PRIV_H */
