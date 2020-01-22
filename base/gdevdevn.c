@@ -268,7 +268,7 @@ devn_get_color_comp_index(gx_device * dev, gs_devn_params * pdevn_params,
 {
     int num_order = pdevn_params->num_separation_order_names;
     int color_component_number = 0;
-    int max_spot_colors = GX_DEVICE_MAX_SEPARATIONS - MAX_DEVICE_PROCESS_COLORS;
+    int max_spot_colors = GX_DEVICE_MAX_SEPARATIONS - pdevn_params->num_std_colorant_names;
 
     /*
      * Check if the component is in either the process color model list
@@ -318,8 +318,9 @@ devn_get_color_comp_index(gx_device * dev, gs_devn_params * pdevn_params,
      * Check if we have room for another spot colorant.
      */
     if (auto_spot_colors == ENABLE_AUTO_SPOT_COLORS)
-        max_spot_colors = dev->color_info.max_components -
-            pdevn_params->num_std_colorant_names;
+        /* limit max_spot_colors to what the device can handle given max_components */
+        max_spot_colors = min(max_spot_colors,
+                              dev->color_info.max_components - pdevn_params->num_std_colorant_names);
     if (pdevn_params->separations.num_separations < max_spot_colors) {
         byte * sep_name;
         gs_separations * separations = &pdevn_params->separations;
@@ -360,14 +361,17 @@ devn_get_params(gx_device * pdev, gs_param_list * plist,
     gs_param_string_array scna;
     gs_param_string_array sona;
     gs_param_int_array equiv_cmyk;
-    int equiv_elements[5 * (GX_DEVICE_MAX_SEPARATIONS - MAX_DEVICE_PROCESS_COLORS)] = { 0 }; /* 5 * max_spot_colors */
+    /* there are 5 ints  per colorant in equiv_elements: a valid flag and an int for C, M, Y and K */
+    int equiv_elements[5 * GX_DEVICE_MAX_SEPARATIONS] = { 0 }; /* 5 * max_colors */
+    /* limit in case num_separations in pdevn_params exceeds what is expected. */
+    int num_separations = min(pdevn_params->separations.num_separations, sizeof(equiv_elements)/(5*sizeof(int)));
 
 
     set_param_array(scna, NULL, 0);
     set_param_array(sona, NULL, 0);
 
     if (pequiv_colors != NULL) {
-        for (spot_num = 0; spot_num < pdevn_params->separations.num_separations; spot_num++) {
+        for (spot_num = 0; spot_num < num_separations; spot_num++) {
             equiv_elements[i++] = pequiv_colors->color[spot_num].color_info_valid ? 1 : 0;
             equiv_elements[i++] = pequiv_colors->color[spot_num].c;
             equiv_elements[i++] = pequiv_colors->color[spot_num].m;
@@ -444,7 +448,7 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
     {
         break;
     } END_ARRAY_PARAM(sona, sone);
-    if (sona.data != 0 && sona.size > GX_DEVICE_COLOR_MAX_COMPONENTS) {
+    if (sona.data != 0 && sona.size > pdev->color_info.max_components) {
         param_signal_error(plist, "SeparationOrder", gs_error_rangecheck);
         return_error(gs_error_rangecheck);
     }
@@ -455,7 +459,7 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
     {
         break;
     } END_ARRAY_PARAM(scna, scne);
-    if (scna.data != 0 && scna.size > GX_DEVICE_MAX_SEPARATIONS) {
+    if (scna.data != 0 && scna.size > pdev->color_info.max_components) {
         param_signal_error(plist, "SeparationColorNames", gs_error_rangecheck);
         return_error(gs_error_rangecheck);
     }
@@ -465,6 +469,10 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
     {
         break;
     } END_ARRAY_PARAM(equiv_cmyk, equiv_cmyk_e);
+    if (equiv_cmyk.data != 0 && scna.size > pdev->color_info.max_components) {
+        param_signal_error(plist, "SeparationColorNames", gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
+    }
 
     /* Separations are only valid with a subrtractive color model */
     if (pdev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
@@ -495,9 +503,10 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
                         pequiv_colors->all_color_info_valid = false;
                     }
                     num_spot++;
+                    num_spot_changed = true;
                 }
             }
-            num_spot_changed = true;
+
             for (i = pdevn_params->separations.num_separations; i < num_spot; i++)
                 pdevn_params->separation_order_map[i + pdevn_params->num_std_colorant_names] =
                 i + pdevn_params->num_std_colorant_names;
@@ -591,8 +600,8 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
                     param_signal_error(plist, "PageSpotColors", gs_error_rangecheck);
                     return_error(gs_error_rangecheck);
                 }
-                if (page_spot_colors > GX_DEVICE_COLOR_MAX_COMPONENTS - MAX_DEVICE_PROCESS_COLORS)
-                    page_spot_colors = GX_DEVICE_COLOR_MAX_COMPONENTS - MAX_DEVICE_PROCESS_COLORS;
+                if (page_spot_colors > pdev->color_info.max_components - pdevn_params->num_std_colorant_names)
+                    page_spot_colors = pdev->color_info.max_components - pdevn_params->num_std_colorant_names;
                     /* Need to leave room for the process colors in GX_DEVICE_COLOR_MAX_COMPONENTS  */
         }
         /*
