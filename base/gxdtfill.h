@@ -182,7 +182,11 @@ GX_FILL_TRAPEZOID (gx_device * dev, const EDGE_TYPE * left,
         if_debug2m('z', dev->memory, "[z]y=[%d,%d]\n", iy, iy1);
 
         l.h = left->end.y - left->start.y;
+        if (l.h == 0)
+           return 0;
         r.h = right->end.y - right->start.y;
+        if (r.h == 0)
+           return 0;
         l.x = x0l + (fixed_half - fixed_epsilon);
         r.x = x0r + (fixed_half - fixed_epsilon);
 #if !LINEAR_COLOR
