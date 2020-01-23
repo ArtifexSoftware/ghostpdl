@@ -95,6 +95,16 @@ $(PDFOBJ)pdf_font3.$(OBJ): $(PDFSRC)pdf_font3.c $(PDFINCLUDES) $(PDF_MAK) $(MAKE
 $(PDFOBJ)pdf_fontTT.$(OBJ): $(PDFSRC)pdf_fontTT.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_fontTT.c $(PDFO_)pdf_fontTT.$(OBJ)
 
+$(PDFOBJ)pdf_font9.$(OBJ): $(PDFSRC)pdf_font9.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
+	$(PDFCCC) $(PDFSRC)pdf_font9.c $(PDFO_)pdf_font9.$(OBJ)
+
+$(PDFOBJ)pdf_font11.$(OBJ): $(PDFSRC)pdf_font11.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
+	$(PDFCCC) $(PDFSRC)pdf_font11.c $(PDFO_)pdf_font11.$(OBJ)
+
+$(PDFOBJ)pdf_cmap.$(OBJ): $(PDFSRC)pdf_cmap.c $(PDFINCLUDES) \
+$(gxfcmap1_h) $(strmio_h) $(stream_h) $(scanchar_h) $(PDF_MAK) $(MAKEDIRS)
+	$(PDFCCC) $(PDFSRC)pdf_cmap.c $(PDFO_)pdf_cmap.$(OBJ)
+
 $(PDFOBJ)pdf_text.$(OBJ): $(PDFSRC)pdf_text.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_text.c $(PDFO_)pdf_text.$(OBJ)
 
@@ -205,6 +215,9 @@ PDF_OBJS=\
     $(PDFOBJ)pdf_font1C.$(OBJ)\
     $(PDFOBJ)pdf_font3.$(OBJ)\
     $(PDFOBJ)pdf_fontTT.$(OBJ)\
+    $(PDFOBJ)pdf_font9.$(OBJ)\
+    $(PDFOBJ)pdf_font11.$(OBJ)\
+    $(PDFOBJ)pdf_cmap.$(OBJ)\
     $(PDFOBJ)pdf_text.$(OBJ)\
     $(PDFOBJ)pdf_shading.$(OBJ)\
     $(PDFOBJ)pdf_func.$(OBJ)\

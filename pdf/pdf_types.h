@@ -40,6 +40,7 @@ typedef enum pdf_obj_type_e {
     PDF_ARRAY_MARK = '[',
     PDF_DICT_MARK = '<',
     PDF_PROC_MARK = '{',
+    PDF_CMAP = 'C'
 } pdf_obj_type;
 
 #if REFCNT_DEBUG

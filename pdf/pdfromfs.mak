@@ -16,4 +16,8 @@
 # in the top level makefiles. Being empty, it's here purely for symmetry
 
 PDF_FONT_ROMFS_ARGS=
-PDF_ROMFS_ARGS=
+
+# The -C turns "compaction" on, -B off. For debugging convenience
+# it's off just now.
+# PDF_ROMFS_ARGS=-d Resource/ -P $(PSRESDIR)$(D) -C CMap$(D)*
+PDF_ROMFS_ARGS=-d Resource/ -P $(PSRESDIR)$(D) -B CMap$(D)*

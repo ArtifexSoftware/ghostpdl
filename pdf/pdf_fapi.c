@@ -116,7 +116,23 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
                 gs_string * name, gs_glyph ccode, gs_string * enc_char_name,
                 char *font_file_path, gs_fapi_char_ref * cr, bool bCID)
 {
-    if (pbfont->FontType == ft_TrueType) {
+    if (pbfont->FontType == ft_CID_TrueType) {
+        pdf_cidfont_type2 *pttfont = (pdf_cidfont_type2 *)pbfont->client_data;
+        gs_glyph gid;
+
+        if (((gs_glyph)ccode) > GS_MIN_CID_GLYPH)
+           ccode = ccode - GS_MIN_CID_GLYPH;
+
+        gid = ccode;
+        if (pttfont->cidtogidmap.size > (ccode << 1) + 1) {
+            gid = pttfont->cidtogidmap.data[ccode << 1] << 8 | pttfont->cidtogidmap.data[(ccode << 1) + 1];
+        }
+        cr->client_char_code = ((gs_glyph)ccode) - GS_MIN_CID_GLYPH;
+        cr->char_codes[0] = gid;
+        cr->is_glyph_index = true;
+        return 0;
+    }
+    else if (pbfont->FontType == ft_TrueType) {
         /* I'm not clear if the heavy lifting should be here or in pdfi_tt_encode_char() */
         pdf_font_truetype *ttfont = (pdf_font_truetype *)pbfont->client_data;
         pdf_name *GlyphName = NULL;
@@ -236,6 +252,160 @@ pdfi_get_glyphdirectory_data(gs_fapi_font * ff, int char_code,
     return (0);
 }
 
+#define GLYPH_W0_WIDTH_INDEX 0
+#define GLYPH_W0_HEIGHT_INDEX 1
+
+#define GLYPH_W1_WIDTH_INDEX 2
+#define GLYPH_W1_HEIGHT_INDEX 3
+#define GLYPH_W1_V_X_INDEX 4
+#define GLYPH_W1_V_Y_INDEX 5
+
+static int pdfi_get_glyph_metrics(gs_font *pfont, gs_glyph cid, double *widths, bool vertical)
+{
+    pdf_cidfont_type2 *pdffont11 = (pdf_cidfont_type2 *)pfont->client_data;
+    int i;
+
+    if (cid >= GS_MIN_CID_GLYPH)
+        cid = cid - GS_MIN_CID_GLYPH;
+
+    widths[GLYPH_W0_WIDTH_INDEX] = pdffont11->DW;
+    widths[GLYPH_W0_HEIGHT_INDEX] = 0;
+    if (pdffont11->W != NULL) {
+        i = 0;
+
+        while(1) {
+            pdf_num *c;
+            pdf_obj *o;
+            if (i + 1>= pdffont11->W->size) break;
+            (void)pdfi_array_peek(pdffont11->ctx, pdffont11->W, i, (pdf_obj **)&c);
+            if (c->type != PDF_INT) {
+                return_error(gs_error_typecheck);
+            }
+            (void)pdfi_array_peek(pdffont11->ctx, pdffont11->W, i + 1, (pdf_obj **)&o);
+            if (o->type == PDF_INT) {
+                pdf_num *c2 = (pdf_num *)o;
+                if (i + 2 >= pdffont11->W->size) break;
+                (void)pdfi_array_peek(pdffont11->ctx, pdffont11->W, i + 2, (pdf_obj **)&o);
+                if (o->type == PDF_INT) {
+                    if (cid >= c->value.i && cid <= c2->value.i) {
+                        widths[GLYPH_W0_WIDTH_INDEX] = ((pdf_num *)o)->value.i;
+                        widths[GLYPH_W0_HEIGHT_INDEX] = 0;
+                        break;
+                    }
+                    else {
+                        i += 3;
+                        continue;
+                    }
+                }
+                else {
+                    return_error(gs_error_typecheck);
+                }
+            }
+            else if (o->type == PDF_ARRAY) {
+                pdf_array *a = (pdf_array *)o;
+                if (cid >= c->value.i && cid < c->value.i + a->size) {
+                    (void)pdfi_array_peek(pdffont11->ctx, a, cid - c->value.i, (pdf_obj **)&o);
+                    if (o->type == PDF_INT) {
+                        widths[GLYPH_W0_WIDTH_INDEX] = ((pdf_num *)o)->value.i;
+                        widths[GLYPH_W0_HEIGHT_INDEX] = 0;
+                        break;
+                    }
+                }
+                i += 2;
+                continue;
+            }
+            else
+                return_error(gs_error_typecheck);
+        }
+    }
+    if (vertical) {
+        /* Default default <sigh>! */
+        widths[GLYPH_W1_WIDTH_INDEX] = 0;
+        widths[GLYPH_W1_HEIGHT_INDEX] = -1000;
+        widths[GLYPH_W1_V_X_INDEX] = widths[GLYPH_W0_WIDTH_INDEX] / 2.0;
+        widths[GLYPH_W1_V_Y_INDEX] = 880;
+
+        if (pdffont11->DW2 != NULL && pdffont11->DW2->type == PDF_ARRAY
+            && pdffont11->DW2->size >= 2) {
+            pdf_num *w2_0, *w2_1;
+
+            (void)pdfi_array_peek(pdffont11->ctx, (pdf_array *)pdffont11->DW2, 0, (pdf_obj **)&w2_0);
+            (void)pdfi_array_peek(pdffont11->ctx, (pdf_array *)pdffont11->DW2, 1, (pdf_obj **)&w2_1);
+
+            if (w2_0->type == PDF_INT && w2_1->type == PDF_INT) {
+                widths[GLYPH_W1_WIDTH_INDEX] = 0;
+                widths[GLYPH_W1_HEIGHT_INDEX] = w2_0->value.i;
+                widths[GLYPH_W1_V_X_INDEX] = widths[GLYPH_W0_WIDTH_INDEX] / 2.0;
+                widths[GLYPH_W1_V_Y_INDEX] = w2_1->value.i;
+            }
+        }
+        if (pdffont11->W2 != NULL && pdffont11->W2->type == PDF_ARRAY) {
+            i = 0;
+            while(1) {
+                pdf_num *c;
+                pdf_obj *o;
+                if (i + 1 >= pdffont11->W2->size) break;
+                (void)pdfi_array_peek(pdffont11->ctx, pdffont11->W2, i, (pdf_obj **)&c);
+                if (c->type != PDF_INT) {
+                    return_error(gs_error_typecheck);
+                }
+                (void)pdfi_array_peek(pdffont11->ctx, pdffont11->W2, i + 1, (pdf_obj **)&o);
+                if (o->type == PDF_INT) {
+                    if (cid >= c->value.i && cid <= ((pdf_num *)o)->value.i) {
+                        pdf_num *w1y, *v1x, *v1y;
+                        if (i + 4 >= pdffont11->W2->size) {
+                            break;
+                        }
+                        (void)pdfi_array_peek(pdffont11->ctx, pdffont11->W2, i + 1, (pdf_obj **)&w1y);
+                        (void)pdfi_array_peek(pdffont11->ctx, pdffont11->W2, i + 1, (pdf_obj **)&v1x);
+                        (void)pdfi_array_peek(pdffont11->ctx, pdffont11->W2, i + 1, (pdf_obj **)&v1y);
+                        if (w1y == NULL || w1y->type != PDF_INT
+                         || v1x == NULL || v1x->type != PDF_INT
+                         || v1y == NULL || v1y->type != PDF_INT) {
+                            return_error(gs_error_typecheck);
+                        }
+                        widths[GLYPH_W1_WIDTH_INDEX] = 0;
+                        widths[GLYPH_W1_HEIGHT_INDEX] = w1y->value.i;
+                        widths[GLYPH_W1_V_X_INDEX] = v1x->value.i;
+                        widths[GLYPH_W1_V_Y_INDEX] = v1y->value.i;
+                        break;
+                    }
+                    i += 5;
+                }
+                else if (o->type == PDF_ARRAY) {
+                    pdf_array *a = (pdf_array *)o;
+                    int l = a->size - (a->size % 3);
+
+                    if (cid >= c->value.i && cid < c->value.i + (l / 3)) {
+                        pdf_num *w1y, *v1x, *v1y;
+                        int index = (cid - c->value.i) * 3;
+                        (void)pdfi_array_peek(pdffont11->ctx, a, index, (pdf_obj **)&w1y);
+                        (void)pdfi_array_peek(pdffont11->ctx, a, index + 1, (pdf_obj **)&v1x);
+                        (void)pdfi_array_peek(pdffont11->ctx, a, index + 2, (pdf_obj **)&v1y);
+                        if (w1y == NULL || w1y->type != PDF_INT
+                         || v1x == NULL || v1x->type != PDF_INT
+                         || v1y == NULL || v1y->type != PDF_INT) {
+                            return_error(gs_error_typecheck);
+                        }
+                        widths[GLYPH_W1_WIDTH_INDEX] = 0;
+                        widths[GLYPH_W1_HEIGHT_INDEX] = w1y->value.i;
+                        widths[GLYPH_W1_V_X_INDEX] = v1x->value.i;
+                        widths[GLYPH_W1_V_Y_INDEX] = v1y->value.i;
+                        break;
+                    }
+                    i += 2;
+                }
+                else {
+                    return_error(gs_error_typecheck);
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
+
 static int
 pdfi_fapi_get_metrics(gs_fapi_font * ff, gs_string * char_name, gs_glyph cid, double *m, bool vertical)
 {
@@ -250,28 +420,40 @@ pdfi_fapi_set_cache(gs_text_enum_t * penum, const gs_font_base * pbfont,
 {
     int code = 0;
     gs_gstate *pgs = penum->pgs;
-    float w2[6];
+    float w2[10];
+    double widths[6] = {0};
 
-    w2[0] = pwidth[0];
-    w2[1] = pwidth[1];
+    if (cid > GS_MIN_CID_GLYPH) {
+        cid = cid - GS_MIN_CID_GLYPH;
+        code = pdfi_get_glyph_metrics((gs_font *)pbfont, cid, widths, true);
+    }
+    else {
+        code = -1;
+    }
+
+    if (code < 0) {
+        w2[0] = pwidth[0];
+        w2[1] = pwidth[1];
+    }
+    else {
+        w2[0] = widths[GLYPH_W0_WIDTH_INDEX] / 1000.0;
+        w2[1] = widths[GLYPH_W0_HEIGHT_INDEX] / 1000.0;
+    }
     w2[2] = pbbox->p.x;
     w2[3] = pbbox->p.y;
     w2[4] = pbbox->q.x;
     w2[5] = pbbox->q.y;
 
-    if (pbfont->PaintType) {
-        double expand = max(1.415,
-                            gs_currentmiterlimit(pgs)) *
-            gs_currentlinewidth(pgs) / 2;
+    w2[6] = widths[GLYPH_W1_WIDTH_INDEX] / 1000.0;
+    w2[7] = widths[GLYPH_W1_HEIGHT_INDEX] / 1000.0;
+    w2[8] = widths[GLYPH_W1_V_X_INDEX] / 1000.0;
+    w2[9] = widths[GLYPH_W1_V_Y_INDEX] / 1000.0;
 
-        w2[2] -= expand;
-        w2[3] -= expand;
-        w2[4] += expand;
-        w2[5] += expand;
-    }
-    if ((code = gs_setcachedevice((gs_show_enum *) penum, pgs, w2)) < 0) {
+
+    if ((code = gs_setcachedevice2((gs_show_enum *) penum, pgs, w2)) < 0) {
         return (code);
     }
+
     *imagenow = true;
     return (code);
 }

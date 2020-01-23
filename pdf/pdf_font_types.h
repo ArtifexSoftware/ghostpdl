@@ -61,6 +61,7 @@
 #define PDF_FONT_DATA
 
 #include "pdf_types.h"
+#include "pdf_cmap.h"
 #include "gxfont.h"
 #include "gsfont.h"
 
@@ -102,7 +103,7 @@ typedef struct pdf_font_s {
 typedef struct pdf_font_type0_s {
     pdf_font_base;                  /* For this font type, the FontDescriptor will be NULL, as will the pfont, (we use the DescendantFont) */
 
-    pdf_obj *Encoding;              /* Name or sream for the CMap */
+    pdf_obj *Encoding;              /* CMap */
     pdf_array *DescendantFonts;     /* A single element array specifying the CIDFont dictionary */
     pdf_obj *ToUnicode;             /* Name or stream (technically shoudl be a stream, but we've seen Identity names */
 } pdf_font_type0;
@@ -134,15 +135,16 @@ typedef struct pdf_font_truetype_s {
     pdfi_truetype_cmap cmap;
 } pdf_font_truetype;
 
-typedef struct pdf_cidfont {
+typedef struct pdf_cidfont_type2 {
     pdf_font_base;
-
+    gs_string sfnt;
     pdf_dict *CIDSystemInfo;
-    uint64_t W;
-    pdf_array *DW;
-    uint64_t W2;
+    int64_t DW;
+    pdf_array *W;
     pdf_array *DW2;
-    pdf_obj *CIDToGIDMap;
-} pdf_cidfont;
+    pdf_array *W2;
+    gs_string cidtogidmap;
+    font_proc_glyph_info((*orig_glyph_info));
+} pdf_cidfont_type2;
 
 #endif

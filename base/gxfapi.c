@@ -1485,7 +1485,7 @@ gs_fapi_do_char(gs_font *pfont, gs_gstate *pgs, gs_text_enum_t *penum, char *fon
     }
     if (cr.metrics_type == gs_fapi_metrics_notdef && !bVertical) {
         code =
-            I->ff.fapi_get_metrics(&I->ff, &enc_char_name_string, index, sbw,
+            I->ff.fapi_get_metrics(&I->ff, &enc_char_name_string, (int)index, sbw,
                                    bVertical);
         if (code < 0)
             return code;

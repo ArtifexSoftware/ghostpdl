@@ -28,6 +28,7 @@
 #include "pdf_font1C.h"
 #include "pdf_font3.h"
 #include "pdf_fontTT.h"
+#include "pdf_font0.h"
 #include "gscencs.h"            /* For gs_c_known_encode and gs_c_glyph_name */
 
 
@@ -308,6 +309,8 @@ int pdfi_free_font(pdf_obj *font)
 
     switch (f->pdfi_font_type) {
         case e_pdf_font_type0:
+            return pdfi_free_font_type0((pdf_obj *)font);
+            break;
         case e_pdf_font_type1:
         case e_pdf_font_cff:
         case e_pdf_font_type3:
@@ -316,9 +319,11 @@ int pdfi_free_font(pdf_obj *font)
         case e_pdf_font_truetype:
             return pdfi_free_font_truetype((pdf_obj *)font);
             break;
+        case e_pdf_cidfont_type2:
+            return pdfi_free_font_cidtype2((pdf_obj *)font);
+            break;
         case e_pdf_cidfont_type0:
         case e_pdf_cidfont_type1:
-        case e_pdf_cidfont_type2:
         case e_pdf_cidfont_type4:
         default:
             return gs_note_error(gs_error_typecheck);

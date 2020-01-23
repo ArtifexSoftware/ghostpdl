@@ -280,6 +280,11 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
         ctx->pdf_warnings |= W_PDF_TEXTOPNOBT;
     }
 
+    /* NOTE: we don't scale the FontMatrix we leave it as the default
+     * and do all our scaling with the textmatrix/ctm. This saves having
+     * to create multiple instances of the same font, and simplifies
+     * composite fonts significantly.
+     */
     current_font = pdfi_get_current_pdf_font(ctx);
 
     if (current_font == NULL) {
@@ -295,11 +300,13 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
         current_font->pdfi_font_type == e_pdf_font_cff ||
         current_font->pdfi_font_type == e_pdf_font_type3 ||
         current_font->pdfi_font_type == e_pdf_font_cff ||
-        current_font->pdfi_font_type == e_pdf_font_truetype)
+        current_font->pdfi_font_type == e_pdf_font_truetype ||
+        current_font->pdfi_font_type == e_pdf_font_type0)
     {
-        /* Simple fonts, 1-byte encodings */
-
-        if (current_font->Widths == NULL) {
+        /* For Type 0 fonts, we apply the DW/W/DW2/W2 values when we retrieve the metrics for
+           setcachedevice - see pdfi_fapi_set_cache()
+         */
+        if (current_font->pdfi_font_type == e_pdf_font_type0 || current_font->Widths == NULL) {
             text.operation = TEXT_FROM_STRING | TEXT_DO_DRAW | TEXT_RETURN_WIDTH;
         } else {
             gs_point pt;
@@ -340,13 +347,14 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
             text.x_widths = x_widths;
             text.y_widths = y_widths;
             text.widths_size = s->length * 2;
-            Tw = gs_currentwordspacing(ctx->pgs);
-            if (Tw != 0) {
-                text.operation |= TEXT_ADD_TO_SPACE_WIDTH;
-                text.delta_space.x = Tw / ctx->pgs->PDFfontsize;
-                text.delta_space.y = 0;
-                text.space.s_char = 0x20;
-            }
+        }
+
+        Tw = gs_currentwordspacing(ctx->pgs);
+        if (Tw != 0) {
+            text.operation |= TEXT_ADD_TO_SPACE_WIDTH;
+            text.delta_space.x = Tw / ctx->pgs->PDFfontsize;
+            text.delta_space.y = 0;
+            text.space.s_char = 0x20;
         }
         text.data.chars = (const gs_char *)s->data;
         text.size = s->length;
@@ -354,9 +362,6 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
         Trmode = gs_currenttextrenderingmode(ctx->pgs);
         if (current_font->pdfi_font_type == e_pdf_font_type3 && Trmode != 0 && Trmode != 3)
             Trmode = 0;
-    } else {
-        /* CID fonts, multi-byte encodings. Not implemented yet. */
-        return 0;
     }
 
     if (ctx->preserve_tr_mode) {

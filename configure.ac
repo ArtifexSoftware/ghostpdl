@@ -2514,6 +2514,9 @@ AC_SUBST(XPS_MAK)
 AC_SUBST(XPSROMFS_MAK)
 
 GPDF_DEV=
+PDF=
+PDF_MAK="\$(GLSRCDIR)\$(D)stub.mak"
+PDFROMFS_MAK="\$(GLSRCDIR)\$(D)stub.mak"
 
 if test x"$with_pdf" != x"no" ; then
   if test -f $srcdir/pdf/pdf.mak; then
@@ -2525,6 +2528,7 @@ if test x"$with_pdf" != x"no" ; then
     CFLAGS="-DBUILD_PDF=1 -I$srcdir/pdf $CFLAGS"
     GPDF_DEV="\$(PDFOBJDIR)\$(D)pdfi.dev"
     PDF_MAK="\$(PDFSRCDIR)\$(D)pdf.mak"
+    PDFROMFS_MAK="\$(PDFSRCDIR)\$(D)pdfromfs.mak"
   fi
 fi
 AC_SUBST(PDF)
@@ -2532,6 +2536,7 @@ AC_SUBST(PDF_TARGET)
 
 AC_SUBST(PDF_MAK)
 AC_SUBST(GPDF_DEV)
+AC_SUBST(PDFROMFS_MAK)
 
 
 GPDL=no_gpdl

@@ -753,6 +753,7 @@ include $(GLSRCDIR)/gs.mak
 # *romfs.mak must precede lib.mak
 include @PLROMFS_MAK@   # plromfs.mak
 include @XPSROMFS_MAK@ # xpsromfs.mak
+include @PDFROMFS_MAK@ # pdfromfs.mak
 
 include $(PSSRCDIR)/psromfs.mak
 include $(GLSRCDIR)/lib.mak

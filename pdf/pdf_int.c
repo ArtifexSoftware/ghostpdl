@@ -27,6 +27,8 @@
 #include "pdf_image.h"
 #include "pdf_shading.h"
 #include "pdf_font.h"
+#include "pdf_font.h"
+#include "pdf_cmap.h"
 #include "pdf_text.h"
 #include "pdf_gstate.h"
 #include "pdf_stack.h"
@@ -246,6 +248,9 @@ void pdfi_free_object(pdf_obj *o)
             break;
         case PDF_FONT:
             pdfi_free_font(o);
+            break;
+        case PDF_CMAP:
+            pdfi_free_cmap(o);
             break;
         default:
             dbgmprintf(o->memory, "!!! Attempting to free unknown obect type !!!\n");
