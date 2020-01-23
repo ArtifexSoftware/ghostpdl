@@ -39,4 +39,28 @@ int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src, int x, 
 int jbig2_image_get_pixel(Jbig2Image *image, int x, int y);
 void jbig2_image_set_pixel(Jbig2Image *image, int x, int y, bool value);
 
+static inline int
+jbig2_image_get_pixel_fast(Jbig2Image *image, int x, int y)
+{
+    const int byte = (x >> 3) + y * image->stride;
+    const int bit = 7 - (x & 7);
+
+    return ((image->data[byte] >> bit) & 1);
+}
+
+/* set an individual pixel value in an image */
+static inline void
+jbig2_image_set_pixel_fast(Jbig2Image *image, int x, int y, bool value)
+{
+    int scratch, mask;
+    int bit, byte;
+
+    byte = (x >> 3) + y * image->stride;
+    bit = 7 - (x & 7);
+    mask = (1 << bit) ^ 0xff;
+
+    scratch = image->data[byte] & mask;
+    image->data[byte] = scratch | (value << bit);
+}
+
 #endif /* _JBIG2_IMAGE_H */
