@@ -198,7 +198,8 @@ bits_compress_scaled(const byte * src, int srcx, uint width, uint height,
                 for (index = 0, count = 0; index != sskip;
                      index += sraster
                     ) {
-                    assert(in_shift >= 0);  /* Coverity 94484. */
+                    /* Coverity 94484 incorrectly thinks in_shift can be negative. */
+                    /* coverity [negative_shift] */
                     count += half_byte_1s[(s[index] >> in_shift) & mask];
                 }
                 if (count != 0 && table[count] == 0) {	/* Look at adjacent cells to help prevent */
