@@ -3250,7 +3250,7 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
         return code;
     if (code == gs_error_unknownerror) {
         /* didn't get clip box from gx_curr_fixed_bbox */
-        clip_bbox.p.x = clip_bbox.p.y = 0.0;
+        clip_bbox.p.x = clip_bbox.p.y = 0;
         clip_bbox.q.x = int2fixed(dev->width);
         clip_bbox.q.y = int2fixed(dev->height);
     }
@@ -9379,7 +9379,7 @@ pdf14_clist_fill_stroke_path_pattern_setup(gx_device* dev, const gs_gstate* pgs,
         return code;
     if (code == gs_error_unknownerror) {
         /* didn't get clip box from gx_curr_fixed_bbox */
-        clip_bbox.p.x = clip_bbox.p.y = 0.0;
+        clip_bbox.p.x = clip_bbox.p.y = 0;
         clip_bbox.q.x = int2fixed(dev->width);
         clip_bbox.q.y = int2fixed(dev->height);
     }
