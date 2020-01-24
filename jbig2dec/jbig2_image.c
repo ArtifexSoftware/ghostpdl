@@ -185,10 +185,10 @@ template_image_compose_opt(const uint8_t * JBIG2_RESTRICT ss, uint8_t * JBIG2_RE
                 *dd ^= (~v) & leftmask;
             else /* Replace */
                 *dd = (v & leftmask) | (*dd & ~leftmask);
-	    dd += dstride;
-	    ss += sstride;
-	}
-	return;
+            dd += dstride;
+            ss += sstride;
+        }
+        return;
     }
     bytewidth -= 2;
     if (shift == 0) {
@@ -208,8 +208,7 @@ template_image_compose_opt(const uint8_t * JBIG2_RESTRICT ss, uint8_t * JBIG2_RE
             else /* Replace */
                 *d = (*s++ & leftmask) | (*d & ~leftmask), d++;
             /* Central run */
-            for (i = bytewidth; i != 0; i--)
-	    {
+            for (i = bytewidth; i != 0; i--) {
                 if (op == JBIG2_COMPOSE_OR)
                     *d++ |= *s++;
                 else if (op == JBIG2_COMPOSE_AND)
@@ -220,8 +219,8 @@ template_image_compose_opt(const uint8_t * JBIG2_RESTRICT ss, uint8_t * JBIG2_RE
                     *d++ ^= ~*s++;
                 else /* Replace */
                     *d++ = *s++;
-	    }
-	    /* Right byte */
+            }
+            /* Right byte */
             if (op == JBIG2_COMPOSE_OR)
                 *d |= *s & rightmask;
             else if (op == JBIG2_COMPOSE_AND)
@@ -232,9 +231,9 @@ template_image_compose_opt(const uint8_t * JBIG2_RESTRICT ss, uint8_t * JBIG2_RE
                 *d ^= (~*s) & rightmask;
             else /* Replace */
                 *d = (*s & rightmask) | (*d & ~rightmask);
-	    dd += dstride;
-	    ss += sstride;
-	}
+            dd += dstride;
+            ss += sstride;
+        }
     } else {
         for (j = 0; j < h; j++) {
             /* Left byte */
@@ -242,8 +241,8 @@ template_image_compose_opt(const uint8_t * JBIG2_RESTRICT ss, uint8_t * JBIG2_RE
             uint8_t * JBIG2_RESTRICT d = dd;
             uint8_t s0, s1, v;
             s0 = early ? 0 : *s;
-	    s++;
-	    s1 = *s++;
+            s++;
+            s1 = *s++;
             v = ((s0<<8) | s1)>>shift;
             if (op == JBIG2_COMPOSE_OR)
                 *d++ |= v & leftmask;
@@ -256,10 +255,9 @@ template_image_compose_opt(const uint8_t * JBIG2_RESTRICT ss, uint8_t * JBIG2_RE
             else /* Replace */
                 *d = (v & leftmask) | (*d & ~leftmask), d++;
             /* Central run */
-            for (i = bytewidth; i > 0; i--)
-	    {
+            for (i = bytewidth; i > 0; i--) {
                 s0 = s1; s1 = *s++;
-		v = ((s0<<8) | s1)>>shift;
+                v = ((s0<<8) | s1)>>shift;
                 if (op == JBIG2_COMPOSE_OR)
                     *d++ |= v;
                 else if (op == JBIG2_COMPOSE_AND)
@@ -270,10 +268,10 @@ template_image_compose_opt(const uint8_t * JBIG2_RESTRICT ss, uint8_t * JBIG2_RE
                     *d++ ^= ~v;
                 else /* Replace */
                     *d++ = v;
-	    }
-	    /* Right byte */
-	    s0 = s1; s1 = (late ? 0 : *s);
-	    v = (((s0<<8) | s1)>>shift);
+            }
+            /* Right byte */
+            s0 = s1; s1 = (late ? 0 : *s);
+            v = (((s0<<8) | s1)>>shift);
             if (op == JBIG2_COMPOSE_OR)
                 *d |= v & rightmask;
             else if (op == JBIG2_COMPOSE_AND)
@@ -284,9 +282,9 @@ template_image_compose_opt(const uint8_t * JBIG2_RESTRICT ss, uint8_t * JBIG2_RE
                 *d ^= ~v & rightmask;
             else /* Replace */
                 *d = (v & rightmask) | (*d & ~rightmask);
-	    dd += dstride;
-	    ss += sstride;
-	}
+            dd += dstride;
+            ss += sstride;
+        }
     }
 }
 
@@ -380,9 +378,9 @@ jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src, int x, int 
     if (x < 0) {
         if (w < (uint32_t) -x)
             w = 0;
-	else
+        else
             w += x;
-	ss += (-x-1)>>3;
+        ss += (-x-1)>>3;
         x = 0;
     }
     if (y < 0) {
@@ -390,7 +388,7 @@ jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src, int x, int 
             h = 0;
         else
             h += y;
-	syoffset = -y * src->stride;
+        syoffset = -y * src->stride;
         y = 0;
     }
     if ((uint32_t)x + w > dst->width)
