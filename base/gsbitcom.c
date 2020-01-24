@@ -129,6 +129,34 @@ bits_compress_scaled(const byte * src, int srcx, uint width, uint height,
     byte *d = dest;
     uint h;
 
+    /* Assert some preconditions are satisfied: */
+
+    /* log2_x and log2_y must each be 0, 1 or 2. */
+    assert(log2_x >= 0 && log2_x < 3);
+    assert(log2_y >= 0 && log2_y < 3);
+
+    /* srcx and width must be multiple of xscale. */
+    assert(srcx % xscale == 0);
+    assert(width % xscale == 0);
+
+    /* height must be multiple of yscale. */
+    assert(height % yscale == 0);
+
+    /* because xscale is 1, 2 or 4 and srcx is a multiple of xscale,
+    in_shift_initial ends up being constrained as follows: */
+    if (log2_x == 0) {
+        /* in_shift_initial is {0,1,2,3,4,5,6,7]} */
+        assert(in_shift_initial >= 0 && in_shift_initial < 8);
+    }
+    if (log2_x == 1) {
+        /* in_shift_initial is {0,2,4,6}. */
+        assert(in_shift_initial >= 0 && in_shift_initial < 7 && in_shift_initial % 2 == 0);
+    }
+    if (log2_x == 2) {
+        /* in_shift_initial is {0,4} */
+        assert(in_shift_initial == 0 || in_shift_initial == 4);
+    }
+
     for (h = height; h; srow += sskip, h -= yscale) {
         const byte *s = srow;
 
