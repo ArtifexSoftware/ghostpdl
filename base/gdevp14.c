@@ -4854,9 +4854,16 @@ gx_update_pdf14_compositor(gx_device * pdev, gs_gstate * pgs,
             break;
         case PDF14_BEGIN_TRANS_MASK:
             code = gx_begin_transparency_mask(pgs, pdev, &params);
+            if (code >= 0)
+                p14dev->in_smask_construction++;
             break;
         case PDF14_END_TRANS_MASK:
             code = gx_end_transparency_mask(pgs, pdev, &params);
+            if (code >= 0) {
+                p14dev->in_smask_construction--;
+                if (p14dev->in_smask_construction < 0)
+                    p14dev->in_smask_construction = 0;
+            }
             break;
         case PDF14_SET_BLEND_PARAMS:
             pdf14_set_params(pgs, pdev, &pdf14pct->params);
@@ -6109,7 +6116,7 @@ pdf14_begin_transparency_mask(gx_device	*dev,
         return code;
     /* Note that the soft mask always follows the group color requirements even
        when we have a separable device */
-    return pdf14_push_transparency_mask(pdev->ctx, &rect, bg_alpha,
+    code = pdf14_push_transparency_mask(pdev->ctx, &rect, bg_alpha,
                                         transfer_fn, ptmp->function_is_identity,
                                         ptmp->idle, ptmp->replacing,
                                         ptmp->mask_id, ptmp->subtype,
@@ -6119,6 +6126,10 @@ pdf14_begin_transparency_mask(gx_device	*dev,
                                         ptmp->Matte_components,
                                         ptmp->Matte,
                                         ptmp->GrayBackground);
+    if (code < 0)
+        return code;
+
+    return 0;
 }
 
 static	int
@@ -6133,6 +6144,7 @@ pdf14_end_transparency_mask(gx_device *dev, gs_gstate *pgs)
 #ifdef DEBUG
     pdf14_debug_mask_stack_state(pdev->ctx);
 #endif
+
     /* May need to reset some color stuff related
      * to a mismatch between the Smask color space
      * and the Smask blending space */
@@ -7007,6 +7019,8 @@ pdf14_dev_spec_op(gx_device *pdev, int dev_spec_op,
         return 0;
     if (dev_spec_op == gxdso_overprint_active)
         return p14dev->overprint || p14dev->stroke_overprint;
+    if (dev_spec_op == gxdso_in_smask_construction)
+        return p14dev->in_smask_construction > 0;
 
      return dev_proc(p14dev->target, dev_spec_op)(p14dev->target, dev_spec_op, data, size);
 }
@@ -8843,6 +8857,7 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
                   than transparent. We must use the parent colors bounding box in
                   determining the range of bands in which this mask can affect.
                   So, if needed change the masks bounding box at this time */
+                pdev->in_smask_construction++;
                 break;
             case PDF14_BEGIN_TRANS_TEXT_GROUP:
                 if (pdev->text_group == PDF14_TEXTGROUP_BT_PUSHED) {
@@ -8862,8 +8877,12 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
                 if (code < 0)
                     return code;
                 break;
-            case PDF14_END_TRANS_GROUP:
             case PDF14_END_TRANS_MASK:
+                pdev->in_smask_construction--;
+                if (pdev->in_smask_construction < 0)
+                    pdev->in_smask_construction = 0;
+                /* fallthrough */
+            case PDF14_END_TRANS_GROUP:
                 /* We need to update the clist writer device procs based upon the
                    the group color space. */
                 code = pdf14_update_device_color_procs_pop_c(dev,pgs);

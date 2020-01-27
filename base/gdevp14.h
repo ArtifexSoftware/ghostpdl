@@ -216,9 +216,9 @@ typedef struct pdf14_device_s {
     gs_blend_mode_t blend_mode;
     bool text_knockout;
     bool overprint;
-	bool effective_overprint_mode;
-	bool stroke_effective_op_mode;
-	bool stroke_overprint;
+    bool effective_overprint_mode;
+    bool stroke_effective_op_mode;
+    bool stroke_overprint;
     int text_group;
     gx_color_index drawn_comps;		/* Used for overprinting.  Passed from overprint compositor */
     gx_color_index drawn_comps_fill;		/* selected by color_is_fill */
@@ -228,6 +228,7 @@ typedef struct pdf14_device_s {
     bool free_devicen;              /* Used to avoid freeing a deviceN parameter from target clist device */
     bool sep_device;
     bool using_blend_cs;
+    int in_smask_construction;
     const gx_color_map_procs *(*save_get_cmap_procs)(const gs_gstate *,
                                                      const gx_device *);
     gx_device_color_info saved_target_color_info;
