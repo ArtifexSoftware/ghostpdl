@@ -164,7 +164,6 @@ static int image_skip_color_icc_tpr(gx_image_enum *penum, gx_device *dev);
 int
 gs_image_class_4_color(gx_image_enum * penum, irender_proc_t *render_fn)
 {
-    bool std_cmap_procs;
     int code = 0;
 #if USE_FAST_HT_CODE
     bool use_fast_thresh = true;
@@ -213,12 +212,10 @@ gs_image_class_4_color(gx_image_enum * penum, irender_proc_t *render_fn)
        then we will need to use those and go through pixel by pixel instead
        of blasting through buffers.  This is true for example with many of
        the color spaces for CUPs */
-    std_cmap_procs = gx_device_uses_std_cmap_procs(penum->dev, penum->pgs);
     if ( (gs_color_space_get_index(penum->pcs) == gs_color_space_index_DeviceN &&
-        penum->pcs->cmm_icc_profile_data == NULL) || penum->use_mask_color ||
-        !std_cmap_procs) {
+        penum->pcs->cmm_icc_profile_data == NULL) || penum->use_mask_color) {
          *render_fn = &image_render_color_DeviceN;
-         return code;
+         return 0;
     }
 
     /* Set up the link now */
@@ -270,6 +267,10 @@ gs_image_class_4_color(gx_image_enum * penum, irender_proc_t *render_fn)
                plus an additional linear adjustment */
             penum->use_cie_range = (get_cie_range(penum->pcs) != NULL);
         }
+    }
+    if (!gx_device_uses_std_cmap_procs(penum->dev, penum->pgs)) {
+        *render_fn = &image_render_color_DeviceN;
+        return code;
     }
     if (gx_device_must_halftone(penum->dev) && use_fast_thresh &&
         (penum->posture == image_portrait || penum->posture == image_landscape)
@@ -1200,8 +1201,12 @@ image_render_color_DeviceN(gx_image_enum *penum_orig, const byte *buffer, int da
             dmputs(dev->memory, "\n");
         }
 #endif
-        mcode = remap_color(&cc, pcs, pdevc_next, pgs, dev,
-                           gs_color_select_source);
+        if (lab_case || penum->icc_link == NULL || pcs->cmm_icc_profile_data == NULL)
+            mcode = remap_color(&cc, pcs, pdevc_next, pgs, dev, gs_color_select_source);
+        else
+            mcode = gx_remap_ICC_with_link(&cc, pcs, pdevc_next, pgs, dev,
+                                           gs_color_select_source, penum->icc_link);
+
 mapped:	if (mcode < 0)
             goto fill;
         if (sizeof(pdevc_next->colors.binary.color[0]) <= sizeof(ulong))

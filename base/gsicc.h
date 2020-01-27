@@ -35,4 +35,8 @@ extern cs_proc_remap_color(gx_remap_ICC_imagelab);
 
 int gx_change_color_model(gx_device *dev, int num_comps, int bit_depth);
 
+int gx_remap_ICC_with_link(const gs_client_color * pcc, const gs_color_space * pcs,
+        gx_device_color * pdc, const gs_gstate * pgs, gx_device * dev,
+                gs_color_select_t select, gsicc_link_t *icc_link);
+
 #endif /* gsicc_INCLUDED */
