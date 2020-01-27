@@ -1311,7 +1311,7 @@ pdf14_find_backdrop_buf(pdf14_ctx *ctx, bool *is_backdrop)
         /* If the new buffer is isolated there is no backdrop */
         if (buf->isolated) return NULL;
 
-        /* If the previous buffer is a knockout group 
+        /* If the previous buffer is a knockout group
            then we need to use its backdrop as the backdrop. If
            it was isolated then that back drop was NULL */
         if (buf->saved != NULL && buf->saved->knockout) {
@@ -2970,7 +2970,7 @@ update_lop_for_pdf14(gs_gstate *pgs, const gx_drawing_color *pdcolor)
 }
 
 static int
-push_shfill_group(pdf14_clist_device *pdev, 
+push_shfill_group(pdf14_clist_device *pdev,
                   gs_gstate *pgs,
                   gs_fixed_rect *box)
 {
@@ -6278,7 +6278,7 @@ do_mark_fill_rectangle_ko_simple(gx_device *dev, int x, int y, int w, int h,
     /* composite with backdrop only. */
     if (has_backdrop)
         bline = buf->backdrop + (x - buf->rect.p.x) + (y - buf->rect.p.y) * rowstride;
-    else 
+    else
         bline = NULL;
 
     line = buf->data + (x - buf->rect.p.x) + (y - buf->rect.p.y) * rowstride;
@@ -9569,9 +9569,9 @@ pdf14_clist_fill_stroke_path(gx_device	*dev, const gs_gstate *pgs, gx_path *ppat
     code = pdf14_clist_update_params(pdev, pgs, false, NULL);
     if (code < 0)
         return code;
-    /* If we are doing a shading fill or stroke, the clist can't 
+    /* If we are doing a shading fill or stroke, the clist can't
        deal with this and end up in the pdf_fill_stroke operation.
-       We will need to break up the fill stroke now and do 
+       We will need to break up the fill stroke now and do
        the appropriate group pushes and set up. */
 
     if ((pdevc_fill != NULL && gx_dc_is_pattern2_color(pdevc_fill)) ||
@@ -10230,7 +10230,7 @@ pdf14_spot_get_color_comp_index(gx_device *dev, const char *pname,
        We need the real target procs */
     if (target_get_color_comp_index == pdf14_cmykspot_get_color_comp_index)
         target_get_color_comp_index =
-        ((pdf14_clist_device *)pdev)->saved_target_get_color_comp_index;
+            ((pdf14_clist_device *)pdev)->saved_target_get_color_comp_index;
     /*
     * If this is not a separation name then simply forward it to the target
     * device.
@@ -10251,6 +10251,9 @@ pdf14_spot_get_color_comp_index(gx_device *dev, const char *pname,
         return comp_index - offset;
     /*
     * If we do not know this color, check if the output (target) device does.
+    * Note that if the target device has ENABLE_AUTO_SPOT_COLORS this will add
+    * the colorant so we will only get < 0 returned when we hit the max. for
+    * the target device.
     */
     comp_index = (*target_get_color_comp_index)(tdev, pname, name_size, component_type);
     /*
@@ -10262,14 +10265,20 @@ pdf14_spot_get_color_comp_index(gx_device *dev, const char *pname,
 
     /*
     * This is a new colorant.  Add it to our list of colorants.
+    * The limit accounts for the number of process colors (at least 4).
     */
-    if (pseparations->num_separations < GX_DEVICE_COLOR_MAX_COMPONENTS - 1) {
+    if ((pseparations->num_separations + 1) <
+            (GX_DEVICE_COLOR_MAX_COMPONENTS - max(num_process_colors, 4))) {
         int sep_num = pseparations->num_separations++;
         int color_component_number;
         byte * sep_name;
 
         sep_name = gs_alloc_bytes(dev->memory->stable_memory,
             name_size, "pdf14_spot_get_color_comp_index");
+        if (sep_name == NULL) {
+            pseparations->num_separations--;	/* we didn't add it */
+            return -1;
+        }
         memcpy(sep_name, pname, name_size);
         pseparations->names[sep_num].size = name_size;
         pseparations->names[sep_num].data = sep_name;
