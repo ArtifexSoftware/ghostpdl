@@ -327,7 +327,10 @@ devn_get_color_comp_index(gx_device * dev, gs_devn_params * pdevn_params,
         int sep_num = separations->num_separations++;
         /* We have a new spot colorant - put in stable memory to avoid "restore" */
         sep_name = gs_alloc_bytes(dev->memory->stable_memory, name_size, "devn_get_color_comp_index");
-
+        if (sep_name == NULL) {
+            separations->num_separations--;	/* we didn't add it */
+            return -1;
+        }
         memcpy(sep_name, pname, name_size);
         separations->names[sep_num].size = name_size;
         separations->names[sep_num].data = sep_name;
@@ -494,6 +497,10 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
                     /* We have a new separation */
                     sep_name = (byte *)gs_alloc_bytes(pdev->memory,
                         name_size, "devicen_put_params_no_sep_order");
+                    if (sep_name == NULL) {
+                        param_signal_error(plist, "SeparationColorNames", gs_error_VMerror);
+                        return_error(gs_error_VMerror);
+                    }
                     memcpy(sep_name, scna.data[i].data, name_size);
                     pdevn_params->separations.names[num_spot].size = name_size;
                     pdevn_params->separations.names[num_spot].data = sep_name;
@@ -709,6 +716,9 @@ devn_copy_params(gx_device * psrcdev, gx_device * pdesdev)
         int name_size = src_devn_params->separations.names[k].size;
         sep_name = (byte *)gs_alloc_bytes(pdesdev->memory->stable_memory,
                                           name_size, "devn_copy_params");
+        if (sep_name == NULL) {
+            return_error(gs_error_VMerror);
+        }
         memcpy(sep_name, src_devn_params->separations.names[k].data, name_size);
         des_devn_params->separations.names[k].size = name_size;
         des_devn_params->separations.names[k].data = sep_name;
@@ -725,6 +735,9 @@ devn_copy_params(gx_device * psrcdev, gx_device * pdesdev)
         int name_size = src_devn_params->pdf14_separations.names[k].size;
         sep_name = (byte *)gs_alloc_bytes(pdesdev->memory->stable_memory,
                                           name_size, "devn_copy_params");
+        if (sep_name == NULL) {
+            return_error(gs_error_VMerror);
+        }
         memcpy(sep_name, src_devn_params->pdf14_separations.names[k].data,
                name_size);
         des_devn_params->pdf14_separations.names[k].size = name_size;
