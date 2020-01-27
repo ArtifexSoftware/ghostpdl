@@ -33,6 +33,9 @@
 #if !defined (INT32_MAX)
 #define INT32_MAX  0x7fffffff
 #endif
+#if !defined (UINT32_MAX)
+#define UINT32_MAX  0xffffffffu
+#endif
 
 /* allocate a Jbig2Image structure and its associated bitmap */
 Jbig2Image *
@@ -350,6 +353,15 @@ jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src, int x, int 
 
     if (src == NULL)
         return 0;
+
+    if ((UINT32_MAX - src->width  < (x > 0 ? x : -x)) ||
+        (UINT32_MAX - src->height < (y > 0 ? y : -y)))
+    {
+#ifdef JBIG2_DEBUG
+        jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1, "overflow in compose_image");
+#endif
+        return 0;
+    }
 
     /* This code takes a src image and combines it onto dst at offset (x,y), with operation op. */
 
