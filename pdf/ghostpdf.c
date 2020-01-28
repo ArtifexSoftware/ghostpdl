@@ -433,6 +433,7 @@ int pdfi_get_name_index(pdf_context *ctx, char *name, int len, unsigned int *ret
         }
         last_entry = e;
         index = e->index;
+        e = e->next;
     }
 
     new_entry = (pdfi_name_entry *)gs_alloc_bytes(ctx->memory, sizeof(pdfi_name_entry), "Alloc name table entry");
