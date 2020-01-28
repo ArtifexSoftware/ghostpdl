@@ -20,6 +20,7 @@ int pdfi_get_current_bbox(pdf_context *ctx, gs_rect *bbox, bool stroked);
 int pdfi_name_strcmp(const pdf_name *n, const char *s);
 bool pdfi_name_is(const pdf_name *n, const char *s);
 int pdfi_name_cmp(const pdf_name *n1, const pdf_name *n2);
+int pdfi_string_from_name(pdf_context *ctx, pdf_name *n, char **str, int *len);
 
 gs_color_space_index pdfi_get_color_space_index(pdf_context *ctx, const gs_color_space *pcs);
 gs_color_space_index pdfi_currentcolorspace(pdf_context *ctx, int index);

@@ -124,3 +124,22 @@ int pdfi_setrenderingintent(pdf_context *ctx, pdf_name *n)
     }
     return code;
 }
+
+int pdfi_string_from_name(pdf_context *ctx, pdf_name *n, char **str, int *len)
+{
+    if (n->type != PDF_NAME)
+        return gs_note_error(gs_error_typecheck);
+
+    *str = NULL;
+    *len = 0;
+
+    *str = (char *)gs_alloc_bytes(ctx->memory, n->length + 1, "pdfi_string_from_name");
+    if (*str == NULL)
+        return gs_note_error(gs_error_VMerror);
+
+    memcpy(*str, n->data, n->length);
+    (*str)[n->length + 1] = 0x00;
+    *len = n->length;
+
+    return 0;
+}
