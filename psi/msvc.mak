@@ -963,6 +963,11 @@ MS_TOOLSET_VERSION=14.16.27034
 MSVC_VERSION=16
 MS_TOOLSET_VERSION=14.24.28314
 !endif
+!if "$(_NMAKE_VER)" == "14.24.28315.0"
+# VS2019 (Toolset v142)
+MSVC_VERSION=16
+MS_TOOLSET_VERSION=14.24.28315
+!endif
 !endif
 
 !ifndef MSVC_VERSION
@@ -1280,7 +1285,12 @@ LINKLIBPATH=/LIBPATH:"$(DEVSTUDIO)\lib\$(DEVSTUDIO_TARGET)"
 
 !if $(MSVC_VERSION) == 16
 ! ifndef DEVSTUDIO
-DEVSTUDIO=C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\$(MS_TOOLSET_VERSION)
+!  if exist("C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional")
+DEVSTUDIO_VARIANT="Professional"
+!  else
+DEVSTUDIO_VARIANT="Community"
+!  endif
+DEVSTUDIO=C:\Program Files (x86)\Microsoft Visual Studio\2019\$(DEVSTUDIO_VARIANT)\VC\Tools\MSVC\$(MS_TOOLSET_VERSION)
 ! endif
 ! if "$(DEVSTUDIO)"==""
 COMPBASE=
