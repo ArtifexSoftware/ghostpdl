@@ -96,8 +96,7 @@ jp2k_detect_language(const char *s_, int len)
             s[3] == 0x0C &&
             s[4] == 0x6a &&
             s[5] == 0x50 &&
-            s[6] == 0x1a &&
-            s[7] == 0x1a &&
+            ((s[6] == 0x1a && s[7] == 0x1a) || (s[6] == 0x20 && s[7] == 0x20)) &&
             s[8] == 0x0d &&
             s[9] == 0x0a &&
             s[10] == 0x87 &&
@@ -412,8 +411,7 @@ do_process(jp2k_interp_instance_t *jp2k, stream_cursor_read * pr, bool eof)
                 s[3] == 0x0C &&
                 s[4] == 0x6a &&
                 s[5] == 0x50 &&
-                s[6] == 0x1a &&
-                s[7] == 0x1a &&
+                ((s[6] == 0x1a && s[7] == 0x1a) || (s[6] == 0x20 && s[7] == 0x20)) &&
                 s[8] == 0x0d &&
                 s[9] == 0x0a &&
                 s[10] == 0x87 &&
