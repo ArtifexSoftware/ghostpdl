@@ -439,7 +439,7 @@ static int decode_image(stream_jpxd_state * const state)
     {
         if (state->image->comps[compno].alpha == 0x00)
             numprimcomp++;
-        else if (state->image->comps[compno].alpha == 0x01)
+        else if (state->image->comps[compno].alpha == 0x01 || state->image->comps[compno].alpha == 0x02)
             alpha_comp = compno;
     }
 
