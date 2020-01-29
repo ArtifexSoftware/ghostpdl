@@ -123,20 +123,24 @@ typedef struct gp_file_s gp_file;
 
 
 
-/* Disable 'inline' if the compiler can't handle it. */
-#ifdef __DECC
-#  undef inline
-#  define inline __inline
-#else
-#  ifdef __GNUC__
-/* Define inline as __inline__ so -pedantic won't produce a warning. */
-#    undef inline
-#    define inline __inline__
-#  else
-#    if !(defined(__MWERKS__) || defined(inline))
-#      define inline		/* */
-#    endif
-#  endif
+/* Ensure we have a definition of 'inline', even if that means
+ * disabling it if the compiler can't handle it. */
+#ifdef __cplusplus
+ /* inline will already be defined within C++ */
+#elif defined (__STDC_VERSION_) && (__STDC_VERSION__ >= 199901L)
+ /* inline will already be defined within C99 */
+#elif defined(_MSC_VER) && (_MSC_VER >= 1500) /* MSVC 9 or newer */
+ #define inline __inline
+#elif defined(__GNUC__) && (__GNUC__ >= 3) /* GCC 3 or newer */
+ /* Define inline as __inline__ so -pedantic won't produce a warning. */
+ #undef inline
+ #define inline __inline__
+#elif defined(__DECC)
+ #undef inline
+ #define inline __inline
+#elif !(defined(__MWERKS__) || defined(inline))
+ /* Unknown or ancient - disable it */
+ #define inline
 #endif
 
 /* Define ourselves a 'forceinline' we can use to more forcefully
