@@ -922,9 +922,9 @@ jbig2_decode_generic_template0_TPGDON(Jbig2Ctx *ctx,
         gmin = params->gbat[6];
     if (gmax < params->gbat[6])
         gmax = params->gbat[6];
-    if (left < -gmin)
+    if ((int)left < -gmin)
         left = -gmin;
-    if (right < gmax)
+    if ((int)right < gmax)
         right = gmax;
     /* We need to guarantee 9 pixels in the right margin to be able
      * to use jbig2_image_get_pixels_fast. */
@@ -943,7 +943,7 @@ jbig2_decode_generic_template0_TPGDON(Jbig2Ctx *ctx,
         gmin = params->gbat[5];
     if (params->gbat[7] < gmin)
         gmin = params->gbat[7];
-    if (top < -gmin)
+    if ((int)top < -gmin)
         top = -gmin;
     /* So 0 <= y < top needs bounds checking. */
 
