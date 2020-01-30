@@ -105,7 +105,7 @@ gs_setcolor(gs_gstate * pgs, const gs_client_color * pcc)
     (*pcs->type->restrict_color)(pgs->color[0].ccolor, pcs);
     (*pcs->type->adjust_color_count)(&cc_old, pcs, -1);
 
-    /* If we are in a situation where we are doing overprint 
+    /* If we are in a situation where we are doing overprint
        with OPM, then we need to update the overprint
        compositor as these values can affect what is drawn */
     op = pgs->is_fill_color ? pgs->overprint : pgs->stroke_overprint;

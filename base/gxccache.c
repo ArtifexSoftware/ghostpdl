@@ -212,7 +212,7 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
         else
             dmputs(penum->memory, "[K]no bits\n");
         dmlprintf3(penum->memory, "[K]copying 0x%lx, offset=(%g,%g)\n", (ulong) cc,
-                   fixed2float(-cc->offset.x),  
+                   fixed2float(-cc->offset.x),
                    fixed2float(-cc->offset.y));
         dmlprintf6(penum->memory, "   at (%g,%g)+(%d,%d)->(%d,%d)\n",
                    fixed2float(pt.x), fixed2float(pt.y),

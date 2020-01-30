@@ -139,7 +139,7 @@ setup_device_and_mem_for_thread(gs_memory_t *chunk_base_mem, gx_device *dev, boo
                 "Error setting up proof profile, code=%d. Rendering threads not started.\n",
                 code);
             goto out_cleanup;
-            
+
         }
     }
     else {

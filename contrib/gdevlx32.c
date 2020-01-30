@@ -786,7 +786,7 @@ lxm3200_print_page(gx_device_printer *pdev, gp_file *prn_stream)
         outputepilogue(gendata);
 
         end:
-        
+
         /* Free the allocated resources */
         freeresources(dev);
 
@@ -3119,7 +3119,7 @@ print_color_page(pagedata *gendata)
          * by the trailing sequence).
          */
         finalizeheader(gendata, 0, -1);
-        
+
         return 0;
 }
 

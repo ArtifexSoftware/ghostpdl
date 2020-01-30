@@ -520,7 +520,7 @@ gp_enumerate_files_next_impl(gs_memory_t * mem, file_enum * pfen, char *ptr, uin
             work[len++] = '/';
             goto winner;
         }
-        
+
         /* >>> Should optimise the case in which the next level */
         /* >>> of directory has no wildcards. */
 #ifdef DEBUG

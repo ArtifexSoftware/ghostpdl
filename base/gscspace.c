@@ -466,7 +466,7 @@ gx_install_DeviceCMYK(gs_color_space * pcs, gs_gstate * pgs)
 
 /*
  * Communicate to the overprint compositor that this particular
- * state overprint is not enabled.  This could be due to a 
+ * state overprint is not enabled.  This could be due to a
  * mismatched color space, or that overprint is false or the
  * device does not support it.
  */

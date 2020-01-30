@@ -176,7 +176,7 @@ c_overprint_write(const gs_composite_t * pct, byte * data, uint * psize, gx_devi
             used += tmp_size;
             if_debug0m('v', ((const gx_device*)cdev)->memory, "[v] drawn_comps stored\n");
 
-        } 
+        }
     }
 
     /* check for overflow */
@@ -313,7 +313,7 @@ gs_is_overprint_compositor(const gs_composite_t * pct)
  * The data fields reflect entries in the gs_overprint_params_t
  * structure. There is no explicit retain_any_comps field, as the current
  * setting of this field can be determined by checking the fill_rectangle
- * method. 
+ * method.
  */
 typedef struct overprint_device_s {
     gx_device_forward_common;
@@ -363,7 +363,7 @@ typedef struct overprint_device_s {
     gx_device_procs no_overprint_procs;
     gx_device_procs sep_overprint_procs;
 
-    /* Due to the setting of stroke and fill overprint we can get in 
+    /* Due to the setting of stroke and fill overprint we can get in
        a situation where one makes the device idle.  We need to know
        if that is the case when doing a compositor push even when
        no parameters have changed */
@@ -799,11 +799,11 @@ update_overprint_params(
     if (!pparams->retain_any_comps || pparams->idle) {
         if (pparams->is_fill_color) {
             opdev->retain_none_fill = true;
-            opdev->drawn_comps_fill = 
+            opdev->drawn_comps_fill =
                 ((gx_color_index)1 << (opdev->color_info.num_components)) - (gx_color_index)1;
         } else {
             opdev->retain_none_stroke = true;
-            opdev->drawn_comps_stroke = 
+            opdev->drawn_comps_stroke =
                 ((gx_color_index)1 << (opdev->color_info.num_components)) - (gx_color_index)1;
         }
 
@@ -1335,7 +1335,7 @@ overprint_sep_fill_rectangle(
 }
 
 /* We need this to ensure the device knows we are doing a fill */
-static int 
+static int
 overprint_fill_path(gx_device* pdev, const gs_gstate* pgs,
     gx_path* ppath, const gx_fill_params* params_fill,
     const gx_device_color* pdcolor, const gx_clip_path* pcpath)
@@ -1425,7 +1425,7 @@ overprint_dev_spec_op(gx_device* pdev, int dev_spec_op,
 
     if (dev_spec_op == gxdso_overprint_active)
         return !opdev->is_idle;
- 
+
     return dev_proc(tdev, dev_spec_op)(tdev, dev_spec_op, data, size);
 }
 

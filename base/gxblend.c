@@ -4288,7 +4288,7 @@ do_compose_group16(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                     fn = &compose_group16_nonknockout_nonblend_isolated_allmask_common;
                 else
                     fn = &compose_group16_nonknockout_nonblend_isolated_mask_common;
-            } else 
+            } else
                 if (maskbuf) {
                     /* Outside mask data but still has mask */
                     fn = &compose_group16_nonknockout_nonblend_isolated_mask_common;
