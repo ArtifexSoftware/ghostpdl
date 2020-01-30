@@ -23,31 +23,6 @@
 #include "gstypes.h"
 #include "pdf_optcontent.h"
 
-int gs_swapcolors(gs_gstate *pgs)
-{
-    int prior_overprint = pgs->overprint;
-
-    gs_swapcolors_quick(pgs);
-
-    /* The following code will only call gs_do_set_overprint when we
-     * have a change:
-     * if ((prior_overprint != pgs->overprint) ||
-     *    ((prior_mode != pgs->effective_overprint_mode) &&
-     *     (pgs->overprint)))
-     *    return gs_do_set_overprint(pgs);
-     * Sadly, that's no good, as we need to call when we have swapped
-     * image space types too (separation <-> non separation for example).
-     *
-     * So instead, we call whenever at least one of them had overprint
-     * turned on.
-     */
-    if (prior_overprint || pgs->overprint)
-    {
-        return gs_do_set_overprint(pgs);
-    }
-    return 0;
- }
-
 int pdfi_moveto (pdf_context *ctx)
 {
     pdf_num *n1, *n2;

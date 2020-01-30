@@ -366,7 +366,7 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
             text.operation |= TEXT_DO_DRAW;
         /* Text is filled, so select the fill colour.
          */
-        gs_swapcolors(ctx->pgs);
+        gs_swapcolors_quick(ctx->pgs);
 
         code = gs_text_begin(ctx->pgs, &text, ctx->memory, &penum);
         if (code >= 0) {
@@ -375,7 +375,7 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
             gs_text_release(penum, "pdfi_Tj");
             ctx->current_text_enum = NULL;
         }
-        gs_swapcolors(ctx->pgs);
+        gs_swapcolors_quick(ctx->pgs);
     } else {
         if (Trmode != 0 && Trmode != 3 && !ctx->preserve_tr_mode) {
             text.operation |= TEXT_DO_FALSE_CHARPATH;
@@ -391,7 +391,7 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
                 text.operation |= TEXT_DO_DRAW;
             /* Text is filled, so select the fill colour.
              */
-            gs_swapcolors(ctx->pgs);
+            gs_swapcolors_quick(ctx->pgs);
         }
 
         code = gs_text_begin(ctx->pgs, &text, ctx->memory, &penum);
@@ -418,18 +418,18 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
         switch(Trmode) {
             case 0:
                 /* Text has been drawn, put the colours back again */
-                gs_swapcolors(ctx->pgs);
+                gs_swapcolors_quick(ctx->pgs);
                 break;
             case 1:
                 gs_stroke(ctx->pgs);
                 pdfi_grestore(ctx);
                 break;
             case 2:
-                gs_swapcolors(ctx->pgs);
+                gs_swapcolors_quick(ctx->pgs);
                 pdfi_gsave(ctx);
                 gs_fill(ctx->pgs);
                 pdfi_grestore(ctx);
-                gs_swapcolors(ctx->pgs);
+                gs_swapcolors_quick(ctx->pgs);
                 gs_stroke(ctx->pgs);
                 pdfi_grestore(ctx);
                 break;
@@ -442,11 +442,11 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
              * or stroke some portions of it in the middle.
              */
             case 4:
-                gs_swapcolors(ctx->pgs);
+                gs_swapcolors_quick(ctx->pgs);
                 pdfi_gsave(ctx);
                 gs_fill(ctx->pgs);
                 pdfi_grestore(ctx);
-                gs_swapcolors(ctx->pgs);
+                gs_swapcolors_quick(ctx->pgs);
                 pdfi_grestore(ctx);
 //                gs_clip(ctx->pgs);
                 break;
@@ -458,11 +458,11 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
 //                gs_clip(ctx->pgs);
                 break;
             case 6:
-                gs_swapcolors(ctx->pgs);
+                gs_swapcolors_quick(ctx->pgs);
                 pdfi_gsave(ctx);
                 gs_fill(ctx->pgs);
                 pdfi_grestore(ctx);
-                gs_swapcolors(ctx->pgs);
+                gs_swapcolors_quick(ctx->pgs);
                 pdfi_gsave(ctx);
                 gs_stroke(ctx->pgs);
                 pdfi_grestore(ctx);

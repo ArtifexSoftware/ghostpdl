@@ -403,9 +403,9 @@ int pdfi_setgrayfill(pdf_context *ctx)
                 return 0;
         }
     }
-    gs_swapcolors(ctx->pgs);
+    gs_swapcolors_quick(ctx->pgs);
     code = pdfi_gs_setgray(ctx, d1);
-    gs_swapcolors(ctx->pgs);
+    gs_swapcolors_quick(ctx->pgs);
     pdfi_pop(ctx, 1);
     if(code < 0 && ctx->pdfstoponerror)
         return code;
@@ -479,9 +479,9 @@ int pdfi_setrgbfill(pdf_context *ctx)
             Values[i] = (double)num->value.i;
         }
     }
-    gs_swapcolors(ctx->pgs);
+    gs_swapcolors_quick(ctx->pgs);
     code = pdfi_gs_setrgbcolor(ctx, Values[0], Values[1], Values[2]);
-    gs_swapcolors(ctx->pgs);
+    gs_swapcolors_quick(ctx->pgs);
     pdfi_pop(ctx, 3);
     if(code < 0 && ctx->pdfstoponerror)
         return code;
@@ -555,9 +555,9 @@ int pdfi_setcmykfill(pdf_context *ctx)
             Values[i] = (double)num->value.i;
         }
     }
-    gs_swapcolors(ctx->pgs);
+    gs_swapcolors_quick(ctx->pgs);
     code = pdfi_gs_setcmykcolor(ctx, Values[0], Values[1], Values[2], Values[3]);
-    gs_swapcolors(ctx->pgs);
+    gs_swapcolors_quick(ctx->pgs);
     pdfi_pop(ctx, 4);
     if(code < 0 && ctx->pdfstoponerror)
         return code;
@@ -664,14 +664,14 @@ int pdfi_setfillcolor(pdf_context *ctx)
     int ncomps, code;
     gs_client_color cc;
 
-    gs_swapcolors(ctx->pgs);
+    gs_swapcolors_quick(ctx->pgs);
     pcs = gs_currentcolorspace(ctx->pgs);
     ncomps = cs_num_components(pcs);
     code = pdfi_get_color_from_stack(ctx, &cc, ncomps);
     if (code == 0) {
         code = gs_setcolor(ctx->pgs, &cc);
     }
-    gs_swapcolors(ctx->pgs);
+    gs_swapcolors_quick(ctx->pgs);
     if (code < 0 && ctx->pdfstoponerror)
         return code;
     return 0;
@@ -690,7 +690,7 @@ pdfi_setcolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, boo
     bool is_pattern = false;
 
     if (is_fill) {
-        gs_swapcolors(ctx->pgs);
+        gs_swapcolors_quick(ctx->pgs);
     }
     pcs = gs_currentcolorspace(ctx->pgs);
 
@@ -747,7 +747,7 @@ pdfi_setcolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, boo
 
  cleanupExit:
     if (is_fill)
-        gs_swapcolors(ctx->pgs);
+        gs_swapcolors_quick(ctx->pgs);
     return code;
 }
 
@@ -2241,9 +2241,9 @@ int pdfi_setfillcolor_space(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *p
             return_error(gs_error_stackunderflow);
         return 0;
     }
-    gs_swapcolors(ctx->pgs);
+    gs_swapcolors_quick(ctx->pgs);
     code = pdfi_setcolorspace(ctx, ctx->stack_top[-1], stream_dict, page_dict);
-    gs_swapcolors(ctx->pgs);
+    gs_swapcolors_quick(ctx->pgs);
     pdfi_pop(ctx, 1);
 
     if (code < 0 && ctx->pdfstoponerror)
