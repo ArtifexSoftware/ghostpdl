@@ -2253,7 +2253,7 @@ art_pdf_recomposite_group_16(uint16_t *gs_restrict *dstp, uint16_t *gs_restrict 
  * @NOTE: This function may corrupt src.
  **/
 static forceinline void
-art_pdf_composite_knockout_group_8(byte *gs_restrict backdrop, byte tos_shape, 
+art_pdf_composite_knockout_group_8(byte *gs_restrict backdrop, byte tos_shape,
         byte* gs_restrict src_alpha_g, byte *gs_restrict dst,
         byte *gs_restrict dst_alpha_g, byte *gs_restrict src, int n_chan, byte alpha,
         gs_blend_mode_t blend_mode,
@@ -3503,7 +3503,7 @@ do_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                     }
                 } else
                     fn = &compose_group_nonknockout_nonblend_isolated_mask_common;
-            } else 
+            } else
                 if (maskbuf) {
                     /* Outside mask */
                     fn = &compose_group_nonknockout_nonblend_isolated_mask_common;
@@ -3843,7 +3843,7 @@ compose_group16_nonknockout_blend(uint16_t *tos_ptr, bool tos_isolated, int tos_
               bool has_matte, int n_chan, bool additive, int num_spots, bool overprint, gx_color_index drawn_comps, int x0, int y0, int x1, int y1,
               const pdf14_nonseparable_blending_procs_t *pblend_procs, pdf14_device *pdev)
 {
-    template_compose_group16(tos_ptr, tos_isolated, tos_planestride, tos_rowstride, 
+    template_compose_group16(tos_ptr, tos_isolated, tos_planestride, tos_rowstride,
         tos_alpha_g_ptr, alpha, shape, blend_mode, tos_has_shape,
         tos_shape_offset, tos_alpha_g_offset, tos_tag_offset, tos_has_tag,
         nos_ptr, nos_isolated, nos_planestride, nos_rowstride, nos_alpha_g_ptr, /* nos_knockout = */0,
