@@ -23,6 +23,31 @@
 #include "gstypes.h"
 #include "pdf_optcontent.h"
 
+int gs_swapcolors(gs_gstate *pgs)
+{
+    int prior_overprint = pgs->overprint;
+
+    gs_swapcolors_quick(pgs);
+
+    /* The following code will only call gs_do_set_overprint when we
+     * have a change:
+     * if ((prior_overprint != pgs->overprint) ||
+     *    ((prior_mode != pgs->effective_overprint_mode) &&
+     *     (pgs->overprint)))
+     *    return gs_do_set_overprint(pgs);
+     * Sadly, that's no good, as we need to call when we have swapped
+     * image space types too (separation <-> non separation for example).
+     *
+     * So instead, we call whenever at least one of them had overprint
+     * turned on.
+     */
+    if (prior_overprint || pgs->overprint)
+    {
+        return gs_do_set_overprint(pgs);
+    }
+    return 0;
+ }
+
 int pdfi_moveto (pdf_context *ctx)
 {
     pdf_num *n1, *n2;
@@ -140,7 +165,7 @@ static int pdfi_fill_inner(pdf_context *ctx, bool use_eofill)
         return code;
     }
 
-    gs_swapcolors(ctx->pgs);
+    gs_swapcolors_quick(ctx->pgs);
     code = pdfi_trans_setup(ctx, &state, TRANSPARENCY_Caller_Fill, gs_getfillconstantalpha(ctx->pgs));
     if (code == 0) {
         if (use_eofill)
@@ -151,7 +176,7 @@ static int pdfi_fill_inner(pdf_context *ctx, bool use_eofill)
         if (code == 0)
             code = code1;
     }
-    gs_swapcolors(ctx->pgs);
+    gs_swapcolors_quick(ctx->pgs);
     if(code < 0 && ctx->pdfstoponerror)
         return code;
     else
@@ -429,7 +454,7 @@ static int pdfi_B_inner(pdf_context *ctx, bool use_eofill)
     code = pdfi_gsave(ctx);
     if (code < 0)
         goto exit;
-    gs_swapcolors(ctx->pgs);
+    gs_swapcolors_quick(ctx->pgs);
     code = pdfi_trans_set_params(ctx, gs_getfillconstantalpha(ctx->pgs));
     if (code == 0) {
         if (use_eofill)
@@ -437,7 +462,7 @@ static int pdfi_B_inner(pdf_context *ctx, bool use_eofill)
         else
             code = gs_fill(ctx->pgs);
     }
-    gs_swapcolors(ctx->pgs);
+    gs_swapcolors_quick(ctx->pgs);
     code1 = pdfi_grestore(ctx);
     if (code == 0)
         code = code1;
