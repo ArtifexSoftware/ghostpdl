@@ -223,6 +223,24 @@ gs_image_begin_typed(const gs_image_common_t * pic, gs_gstate * pgs,
         if (code < 0)
             return code;
     }
+
+    if (pgs->overprint || (!pgs->overprint && dev_proc(pgs->device, dev_spec_op)(pgs->device,
+        gxdso_overprint_active, NULL, 0))) {
+        gs_overprint_params_t op_params = { 0 };
+
+        if_debug0m(gs_debug_flag_overprint, pgs->memory,
+            "[overprint] Image Overprint\n");
+        code = gs_do_set_overprint(pgs);
+        if (code < 0)
+            return code;
+
+        op_params.op_state = OP_STATE_FILL;
+        gs_gstate_update_overprint(pgs, &op_params);
+
+        dev = gs_currentdevice(pgs);
+        dev2 = dev;
+    }
+
     /* Imagemask with shading color needs a special optimization
        with converting the image into a clipping.
        Check for such case after gs_gstate_color_load is done,

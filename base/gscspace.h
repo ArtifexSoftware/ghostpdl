@@ -367,6 +367,9 @@ bool gs_color_space_equal(const gs_color_space *pcs1,
 /* Restrict a color to its legal range. */
 void gs_color_space_restrict_color(gs_client_color *, const gs_color_space *);
 
+/* Communicate to overprint compositor that overprint is not to be used */
+int gx_set_no_overprint(gs_gstate* pgs);
+
 /*
  * Get the base space of an Indexed or uncolored Pattern color space, or the
  * alternate space of a Separation or DeviceN space.  Return NULL if the

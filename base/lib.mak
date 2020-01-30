@@ -153,6 +153,15 @@ jpeglib__h=$(GLGEN)jpeglib_.h
 
 cal_h=$(CALSRCDIR)$(D)cal.h
 
+# The following would logically be better in freetype.mak
+# but we need it for fapi_ft.c below
+FTCONFH=gsftopts.h
+GENFTCONFH=$(FTGENDIR)$(D)$(FTCONFH)
+BASEFTCONFH=$(GLSRC)$(FTCONFH)
+
+$(GENFTCONFH) : $(BASEFTCONFH) $(MAKEDIRS)
+	$(CP_) $(BASEFTCONFH) $(GENFTCONFH)
+
 # Miscellaneous
 
 gsio_h=$(GLSRC)gsio.h
@@ -952,8 +961,9 @@ $(GLOBJ)gscicach.$(OBJ) : $(GLSRC)gscicach.c $(AK) $(gx_h)\
 	$(GLCC) $(GLO_)gscicach.$(OBJ) $(C_) $(GLSRC)gscicach.c
 
 $(GLOBJ)gsovrc.$(OBJ) : $(GLSRC)gsovrc.c $(AK) $(gx_h) $(gserrors_h)\
- $(memory__h) $(gsutil_h) $(gxcomp_h) $(gxdevice_h) $(gsdevice_h) $(gxgetbit_h)\
- $(gsovrc_h) $(gxdcolor_h) $(gxoprect_h) $(gsbitops_h) $(gxgstate_h) $(LIB_MAK) $(MAKEDIRS)
+ $(assert__h) $(memory__h) $(gsutil_h) $(gxcomp_h) $(gxdevice_h) $(gsdevice_h)\
+ $(gxgetbit_h) $(gsovrc_h) $(gxdcolor_h) $(gxoprect_h) $(gsbitops_h) $(gxgstate_h)\
+ $(gxdevsop_h) $(gxcldev_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsovrc.$(OBJ) $(C_) $(GLSRC)gsovrc.c
 
 $(GLOBJ)gxoprect.$(OBJ) : $(GLSRC)gxoprect.c $(AK) $(gx_h)\
@@ -1051,7 +1061,7 @@ $(GLOBJ)gspaint.$(OBJ) : $(GLSRC)gspaint.c $(AK) $(gx_h) $(gserrors_h)\
  $(math__h) $(gpcheck_h) $(gsropt_h) $(gxfixed_h) $(gxmatrix_h) $(gspaint_h)\
  $(gspath_h) $(gzpath_h) $(gxpaint_h) $(gzstate_h) $(gxdevice_h) $(gxdevmem_h)\
  $(gzcpath_h) $(gxhldevc_h) $(gsutil_h) $(gxdevsop_h) $(gsicc_cms_h)\
- $(gdevepo_h) $(gxscanc_h) $(LIB_MAK) $(MAKEDIRS)
+ $(gdevepo_h) $(gxscanc_h) $(gxpcolor_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gspaint.$(OBJ) $(C_) $(GLSRC)gspaint.c
 
 $(GLOBJ)gsparam.$(OBJ) : $(GLSRC)gsparam.c $(AK) $(gx_h) $(gserrors_h)\
@@ -1090,7 +1100,7 @@ $(GLOBJ)gsstate.$(OBJ) : $(GLSRC)gsstate.c $(AK) $(gx_h) $(gserrors_h)\
 $(GLOBJ)gstext.$(OBJ) : $(GLSRC)gstext.c $(AK) $(memory__h) $(gdebug_h)\
  $(gserrors_h) $(gsmemory_h) $(gsstruct_h) $(gstypes_h)\
  $(gxfcache_h) $(gxdevcli_h) $(gxdcolor_h) $(gxfont_h) $(gxpath_h)\
- $(gxtext_h) $(gzstate_h) $(gsutil_h) $(LIB_MAK) $(MAKEDIRS)
+ $(gxtext_h) $(gzstate_h) $(gsutil_h) $(gxdevsop_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gstext.$(OBJ) $(C_) $(GLSRC)gstext.c
 
 # We make gsiodevs a separate module so the PS interpreter can replace it.
@@ -1309,12 +1319,22 @@ $(GLD)fapif1.dev : $(INT_MAK) $(ECHOGS_XE) $(GLOBJ)fapi_ft.$(OBJ) \
 	$(ADDMOD) $(GLD)fapif1 -include $(GLD)freetype
 	$(ADDMOD) $(GLD)fapif1 -fapi fapi_ft
 
-$(GLOBJ)fapi_ft.$(OBJ) : $(GLSRC)fapi_ft.c $(AK)\
+$(GLOBJ)fapi_ft_0.$(OBJ) : $(GLSRC)fapi_ft.c $(AK)\
  $(stdio__h) $(malloc__h) $(write_t1_h) $(write_t2_h) $(math__h) $(gserrors_h)\
  $(gsmemory_h) $(gsmalloc_h) $(gxfixed_h) $(gdebug_h) $(gxbitmap_h)\
  $(gsmchunk_h) $(stream_h) $(gxiodev_h) $(gsfname_h) $(gxfapi_h) $(gxfont1_h)\
- $(gxfont_h) $(LIB_MAK) $(MAKEDIRS)
-	$(GLCC) $(FT_CFLAGS) $(GLO_)fapi_ft.$(OBJ) $(C_) $(GLSRC)fapi_ft.c
+ $(gxfont_h) $(BASEFTCONFH) $(LIB_MAK) $(MAKEDIRS)
+	$(GLCC) $(FT_CFLAGS) $(D_)FT_CONFIG_OPTIONS_H=\"$(FTCONFH)\"$(_D) $(GLO_)fapi_ft_0.$(OBJ) $(C_) $(GLSRC)fapi_ft.c
+
+$(GLOBJ)fapi_ft_1.$(OBJ) : $(GLSRC)fapi_ft.c $(AK)\
+ $(stdio__h) $(malloc__h) $(write_t1_h) $(write_t2_h) $(math__h) $(gserrors_h)\
+ $(gsmemory_h) $(gsmalloc_h) $(gxfixed_h) $(gdebug_h) $(gxbitmap_h)\
+ $(gsmchunk_h) $(stream_h) $(gxiodev_h) $(gsfname_h) $(gxfapi_h) $(gxfont1_h)\
+ $(gxfont_h) $(BASEFTCONFH) $(LIB_MAK) $(MAKEDIRS)
+	$(GLCC) $(FT_CFLAGS) $(GLO_)fapi_ft_1.$(OBJ) $(C_) $(GLSRC)fapi_ft.c
+
+$(GLOBJ)fapi_ft.$(OBJ) : $(GLOBJ)fapi_ft_$(SHARE_FT).$(OBJ)
+	$(CP_) $(GLOBJ)fapi_ft_$(SHARE_FT).$(OBJ) $(GLOBJ)fapi_ft.$(OBJ)
 
 # stub for FreeType bridge :
 

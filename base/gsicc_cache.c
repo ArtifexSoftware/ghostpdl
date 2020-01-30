@@ -806,12 +806,12 @@ gsicc_get_link(const gs_gstate *pgs1, gx_device *dev_in,
            an override setting.  Also, only use the blackpoint if overide_bp
            is set. Note that this can conflict with intents set from the source
            objects so the user needs to understand what options to set. */
-        gs_color_space_index index =
-                            gsicc_get_default_type(gs_input_profile);
         code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+        if (code < 0)
+            return NULL;
+
         /* Check for unmanaged color case */
-        if (index < gs_color_space_index_DevicePixel &&
-            dev_profile->usefastcolor) {
+        if (gsicc_use_fast_color(gs_input_profile) > 0 && dev_profile->usefastcolor) {
             /* Return a "link" from the source space to the device color space */
             gsicc_link_t *link = gsicc_nocm_get_link(pgs, dev,
                                                      gs_input_profile->num_comps);

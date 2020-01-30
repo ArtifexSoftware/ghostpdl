@@ -214,17 +214,17 @@ struct gx_color_tile_s {
     byte has_overlap;           /* true if step size is smaller than bounding box */
     byte is_dummy;		/* if true, the device manages the pattern,
                                    and the content of the tile is empty. */
-    byte pad[2];		/* structure members alignment. */
-    /* The following is neither key nor value. */
-    uint index;			/* the index of the tile within */
-    bool trans_group_popped;    /* Used to avoid multiple group pops in image mask fills */
-    bool is_planar;             /* Has to be stored here due to the device
+    byte trans_group_popped;    /* Used to avoid multiple group pops in image mask fills */
+    byte is_planar;             /* Has to be stored here due to the device
                                    change that can occur when the tile is
                                    created and when it is written in the clist
                                    when we are writing to a transparency
                                    device which, is not planar but the target
                                    is */
-    /* the cache (for GC) */
+    byte is_locked;		/* stroke patterns cannot be freed during fill_stroke_path */
+    byte pad[2];		/* structure members alignment. */
+    /* The following is neither key nor value. */
+    uint index;			/* the index of the tile within the cache (for GC) */
 };
 
 #define private_st_color_tile()	/* in gxpcmap.c */\
@@ -311,6 +311,9 @@ int gx_pattern_cache_add_entry(gs_gstate *, gx_device_forward *,
    device handles high level patterns. */
 int gx_pattern_cache_add_dummy_entry(gs_gstate *pgs, gs_pattern1_instance_t *pinst,
                                 int depth);
+
+/* set or clear the lock for a tile in the cache. Returns error if tile not in cache */
+int gx_pattern_cache_entry_set_lock(gs_gstate * pgs, gs_id id, bool new_lock_value);
 
 /* Get entry for reading a pattern from clist. */
 int gx_pattern_cache_get_entry(gs_gstate * pgs, gs_id id, gx_color_tile ** pctile);

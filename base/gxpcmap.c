@@ -180,7 +180,8 @@ static const gx_device_pattern_accum gs_pattern_accum_device =
      gx_default_strip_tile_rect_devn,
      NULL,                              /* alpha_hl_color */
      NULL,                              /* process_page */
-     gx_default_transform_pixel_region  /* NOT the default forwarding one */
+     gx_default_transform_pixel_region, /* NOT the default forwarding one */
+     gx_default_fill_stroke_path,
 },
  0,                             /* target */
  0, 0, 0, 0                     /* bitmap_memory, bits, mask, instance */
@@ -341,6 +342,23 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
     return fdev;
 }
 
+gx_pattern_trans_t*
+new_pattern_trans_buff(gs_memory_t *mem)
+{
+    gx_pattern_trans_t *result;
+
+    /* Allocate structure that we will use for the trans pattern */
+    result = gs_alloc_struct(mem, gx_pattern_trans_t, &st_pattern_trans, "new_pattern_trans_buff");
+    result->transbytes = NULL;
+    result->pdev14 = NULL;
+    result->mem = NULL;
+    result->fill_trans_buffer = NULL;
+    result->buf = NULL;
+    result->n_chan = 0;
+
+    return(result);
+}
+
 /*
  * Initialize a pattern accumulator.
  * Client must already have set instance and bitmap_memory.
@@ -392,14 +410,9 @@ pattern_accum_open(gx_device * dev)
        do this since the transparency code all */
     if (pinst->templat.uses_transparency) {
         /* Allocate structure that we will use for the trans pattern */
-        padev->transbuff = gs_alloc_struct(mem,gx_pattern_trans_t,&st_pattern_trans,"pattern_accum_open(trans)");
-        padev->transbuff->transbytes = NULL;
-        padev->transbuff->mem = NULL;
-        padev->transbuff->pdev14 = NULL;
-        padev->transbuff->fill_trans_buffer = NULL;
-        /* n_chan = 0 => padev->transbuff isn't inited. */
-        padev->transbuff->n_chan = 0;
-        padev->transbuff->buf = NULL;
+        padev->transbuff = new_pattern_trans_buff(mem);
+        if (padev->transbuff == NULL)
+            return_error(gs_error_VMerror);
     } else {
         padev->transbuff = NULL;
     }
@@ -494,21 +507,6 @@ pattern_accum_open(gx_device * dev)
     /* Retain the device, so it will survive anomalous grestores. */
     gx_device_retain(dev, true);
     return code;
-}
-
-gx_pattern_trans_t*
-new_pattern_trans_buff(gs_memory_t *mem)
-{
-    gx_pattern_trans_t *result;
-
-    /* Allocate structure that we will use for the trans pattern */
-    result = gs_alloc_struct(mem, gx_pattern_trans_t, &st_pattern_trans, "new_pattern_trans_buff");
-    result->transbytes = NULL;
-    result->pdev14 = NULL;
-    result->mem = NULL;
-    result->fill_trans_buffer = NULL;
-
-    return(result);
 }
 
 /* Close an accumulator and free the bits. */
@@ -907,12 +905,14 @@ gstate_set_pattern_cache(gs_gstate * pgs, gx_pattern_cache * pcache)
 }
 
 /* Free a Pattern cache entry. */
+/* This will not free a pattern if it is 'locked' which should only be for */
+/* a stroke pattern during fill_stroke_path.                               */
 static void
 gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
 {
     gx_device *temp_device;
 
-    if ((ctile->id != gx_no_bitmap_id) && !ctile->is_dummy) {
+    if ((ctile->id != gx_no_bitmap_id) && !ctile->is_dummy && !ctile->is_locked) {
         gs_memory_t *mem = pcache->memory;
 
         /*
@@ -991,18 +991,25 @@ gx_pattern_cache_ensure_space(gs_gstate * pgs, int needed)
 {
     int code = ensure_pattern_cache(pgs);
     gx_pattern_cache *pcache;
+    int start_free_id;
 
     if (code < 0)
         return;                 /* no cache -- just exit */
 
     pcache = pgs->pattern_cache;
-
+    start_free_id = pcache->next;	/* for scan wrap check */
     /* If too large then start freeing entries */
-    /* By starting at 'next', we attempt to first free the oldest entries */
+    /* By starting just after 'next', we attempt to first free the oldest entries */
     while (pcache->bits_used + needed > pcache->max_bits &&
            pcache->bits_used != 0) {
         pcache->next = (pcache->next + 1) % pcache->num_tiles;
         gx_pattern_cache_free_entry(pcache, &pcache->tiles[pcache->next]);
+        /* since a pattern may be temporarily locked (stroke pattern for fill_stroke_path) */
+        /* we may not have freed all entries even though we've scanned the entire cache.   */
+        /* The following check for wrapping prevents infinite loop if stroke pattern was   */
+        /* larger than pcache->max_bits,                                                   */
+        if (pcache->next == start_free_id)
+            break;		/* we wrapped -- cache may not be empty */
     }
 }
 
@@ -1133,12 +1140,14 @@ gx_pattern_cache_add_entry(gs_gstate * pgs,
     ctile->is_simple = pinst->is_simple;
     ctile->has_overlap = pinst->has_overlap;
     ctile->is_dummy = false;
+    ctile->is_locked = false;
     if (pinst->templat.uses_transparency) {
         /* to work with pdfi get the blend mode out of the saved pgs device */
         ctile->blending_mode = ((pdf14_device*)(saved->device))->blend_mode;
     }
     else
         ctile->blending_mode = 0;
+    ctile->trans_group_popped = false;
     if (dev_proc(fdev, open_device) != pattern_clist_open_device) {
         if (mbits != 0) {
             make_bitmap(&ctile->tbits, mbits, gs_next_ids(pgs->memory, 1), pgs->memory);
@@ -1180,6 +1189,26 @@ gx_pattern_cache_add_entry(gs_gstate * pgs,
     gx_pattern_cache_update_used(pgs, used);
 
     *pctile = ctile;
+    return 0;
+}
+
+/* set or clear the 'is_locked' flag for a tile in the cache. Used by	*/
+/* fill_stroke_path to make sure a large stroke pattern stays in the	*/
+/* cache even if the fill is also a pattern.				*/
+int
+gx_pattern_cache_entry_set_lock(gs_gstate *pgs, gs_id id, bool new_lock_value)
+{
+    gx_pattern_cache *pcache;
+    gx_color_tile *ctile;
+    int code = ensure_pattern_cache(pgs);
+
+    if (code < 0)
+        return code;
+    pcache = pgs->pattern_cache;
+    ctile = &pcache->tiles[id % pcache->num_tiles];
+    if (ctile->id != id)
+        return_error(gs_error_undefined);
+    ctile->is_locked = new_lock_value;
     return 0;
 }
 
@@ -1232,6 +1261,7 @@ gx_pattern_cache_add_dummy_entry(gs_gstate *pgs,
     ctile->is_simple = pinst->is_simple;
     ctile->has_overlap = pinst->has_overlap;
     ctile->is_dummy = true;
+    ctile->is_locked = false;
     memset(&ctile->tbits, 0 , sizeof(ctile->tbits));
     ctile->tbits.size = pinst->size;
     ctile->tbits.id = gs_no_bitmap_id;
@@ -1368,6 +1398,7 @@ gx_pattern_cache_winnow(gx_pattern_cache * pcache,
     for (i = 0; i < pcache->num_tiles; ++i) {
         gx_color_tile *ctile = &pcache->tiles[i];
 
+        ctile->is_locked = false;		/* force freeing */
         if (ctile->id != gx_no_bitmap_id && (*proc) (ctile, proc_data))
             gx_pattern_cache_free_entry(pcache, ctile);
     }
@@ -1503,6 +1534,7 @@ gx_pattern_load(gx_device_color * pdc, const gs_gstate * pgs,
                 gs_free_object(((gx_device_pattern_accum *)adev)->bitmap_memory,
                                ((gx_device_pattern_accum *)adev)->transbuff,
                                "gx_pattern_load");
+                ((gx_device_pattern_accum *)adev)->transbuff = NULL;
             }
             dev_proc(adev, close_device)((gx_device *)adev);
             /* adev was the target of the pdf14 device, so also is no longer retained */

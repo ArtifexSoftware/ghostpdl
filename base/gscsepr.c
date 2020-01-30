@@ -186,16 +186,17 @@ gx_set_overprint_Separation(const gs_color_space * pcs, gs_gstate * pgs)
     gs_devicen_color_map *  pcmap = &pgs->color_component_map;
 
     if (pcmap->use_alt_cspace)
-        return gx_spot_colors_set_overprint(pcs->base_space, pgs);
+        return gx_set_no_overprint(pgs);
     else {
         gs_overprint_params_t   params;
 
-        /* We should not have to blend if we don't need the alternate tint transform */
-        params.retain_any_comps = pgs->overprint &&
-                                  pcs->params.separation.sep_type != SEP_ALL;
+        params.retain_any_comps = (((pgs->overprint && pgs->is_fill_color) ||
+                                   (pgs->stroke_overprint && !pgs->is_fill_color)) &&
+                                   (pcs->params.separation.sep_type != SEP_ALL));
+        params.is_fill_color = pgs->is_fill_color;
+        params.drawn_comps = 0;
+        params.op_state = OP_STATE_NONE;
         if (params.retain_any_comps) {
-            params.retain_spot_comps = false;
-            params.drawn_comps = 0;
             if (pcs->params.separation.sep_type != SEP_NONE) {
                 int mcomp = pcmap->color_map[0];
 
@@ -204,7 +205,7 @@ gx_set_overprint_Separation(const gs_color_space * pcs, gs_gstate * pgs)
             }
         }
         /* Only DeviceCMYK can use overprint mode */
-        pgs->effective_overprint_mode = 0;
+        params.effective_opm = pgs->color[0].effective_opm = 0;
         return gs_gstate_update_overprint(pgs, &params);
     }
 }

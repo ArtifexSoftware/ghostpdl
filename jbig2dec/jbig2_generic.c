@@ -831,6 +831,8 @@ jbig2_decode_generic_template0_TPGDON(Jbig2Ctx *ctx,
     bool bit;
     int LTP = 0;
     int code = 0;
+    int gmin, gmax;
+    uint32_t left, right, top;
 
     if (pixel_outside_field(params->gbat[0], params->gbat[1]) ||
         pixel_outside_field(params->gbat[2], params->gbat[3]) ||
@@ -839,6 +841,112 @@ jbig2_decode_generic_template0_TPGDON(Jbig2Ctx *ctx,
         return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
                            "adaptive template pixel is out of field");
 
+    /* JBig2 has 'standard' values for gbat (see 6.2.5.4 of the spec).
+     * Have an optimised version for those locations. This greatly
+     * simplifies some of the fetches. It's almost like they thought
+     * it through. */
+    if (params->gbat[0] ==  3 && params->gbat[1] == -1 &&
+        params->gbat[2] == -3 && params->gbat[3] == -1 &&
+        params->gbat[4] ==  2 && params->gbat[5] == -2 &&
+        params->gbat[6] == -2 && params->gbat[7] == -2)
+    {
+        right = GBW-9; /* To allow us to use get_pixels */
+        for (y = 0; y < GBH; y++) {
+            LTP ^= jbig2_arith_decode(as, &GB_stats[0x9B25], &code);
+            if (code)
+                return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to decode arithmetic code when handling generic template0 TPGDON1");
+            if (!LTP) {
+                for (x = 0; x < GBW; x++) {
+                    if (params->USESKIP && jbig2_image_get_pixel(params->SKIP, x, y)) {
+                        jbig2_image_set_pixel_fast(image, x, y, 0);
+                        continue;
+                    }
+                    if (y >= 2 && x >= 4 && x < right)
+                    {
+                        CONTEXT  = jbig2_image_get_pixels_fast(image, x - 4, y,     4);
+                        CONTEXT |= jbig2_image_get_pixels_fast(image, x - 3, y - 1, 7) << 4;
+                        CONTEXT |= jbig2_image_get_pixels_fast(image, x - 2, y - 2, 5) << 11;
+                    }
+                    else
+                    {
+                        CONTEXT  = jbig2_image_get_pixel(image, x - 1, y);
+                        CONTEXT |= jbig2_image_get_pixel(image, x - 2, y) << 1;
+                        CONTEXT |= jbig2_image_get_pixel(image, x - 3, y) << 2;
+                        CONTEXT |= jbig2_image_get_pixel(image, x - 4, y) << 3;
+                        if (y >= 1)
+                        {
+                            CONTEXT |= jbig2_image_get_pixel(image, x + 3, y - 1) << 4;
+                            CONTEXT |= jbig2_image_get_pixel(image, x + 2, y - 1) << 5;
+                            CONTEXT |= jbig2_image_get_pixel(image, x + 1, y - 1) << 6;
+                            CONTEXT |= jbig2_image_get_pixel(image, x,     y - 1) << 7;
+                            CONTEXT |= jbig2_image_get_pixel(image, x - 1, y - 1) << 8;
+                            CONTEXT |= jbig2_image_get_pixel(image, x - 2, y - 1) << 9;
+                            CONTEXT |= jbig2_image_get_pixel(image, x - 3, y - 1) << 10;
+                        }
+                        if (y >= 2)
+                        {
+                            CONTEXT |= jbig2_image_get_pixel(image, x + 2, y - 2) << 11;
+                            CONTEXT |= jbig2_image_get_pixel(image, x + 1, y - 2) << 12;
+                            CONTEXT |= jbig2_image_get_pixel(image, x,     y - 2) << 13;
+                            CONTEXT |= jbig2_image_get_pixel(image, x - 1, y - 2) << 14;
+                            CONTEXT |= jbig2_image_get_pixel(image, x - 2, y - 2) << 15;
+                        }
+                    }
+                    bit = jbig2_arith_decode(as, &GB_stats[CONTEXT], &code);
+                    if (code)
+                        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to decode arithmetic code when handling generic template0 TPGDON2");
+                    jbig2_image_set_pixel_fast(image, x, y, bit);
+                }
+            } else {
+                copy_prev_row(image, y);
+            }
+        }
+        return 0;
+    }
+
+    /* We divide the width into 3 regions 0..left...right...GBW,
+     * between left and right, we know that our accesses will never
+     * step outside the image, enabling us to use faster accessors. */
+    left = 4;
+    right = 2;
+    gmin = gmax = params->gbat[0];
+    if (params->gbat[2] < gmin)
+        gmin = params->gbat[2];
+    if (gmax < params->gbat[2])
+        gmax = params->gbat[2];
+    if (params->gbat[4] < gmin)
+        gmin = params->gbat[4];
+    if (gmax < params->gbat[4])
+        gmax = params->gbat[4];
+    if (params->gbat[6] < gmin)
+        gmin = params->gbat[6];
+    if (gmax < params->gbat[6])
+        gmax = params->gbat[6];
+    if ((int)left < -gmin)
+        left = -gmin;
+    if ((int)right < gmax)
+        right = gmax;
+    /* We need to guarantee 9 pixels in the right margin to be able
+     * to use jbig2_image_get_pixels_fast. */
+    if (right < 9)
+        right = 9;
+    right = GBW - right;
+    /* So 0 <= x < left or right <= x < GBW needs bounds checking. */
+
+    /* Now we do the same for the height, but here there is no bottom
+     * region, as we only ever look up for y. */
+    top = 2;
+    gmin = params->gbat[1];
+    if (params->gbat[3] < gmin)
+        gmin = params->gbat[3];
+    if (params->gbat[5] < gmin)
+        gmin = params->gbat[5];
+    if (params->gbat[7] < gmin)
+        gmin = params->gbat[7];
+    if ((int)top < -gmin)
+        top = -gmin;
+    /* So 0 <= y < top needs bounds checking. */
+
     for (y = 0; y < GBH; y++) {
         LTP ^= jbig2_arith_decode(as, &GB_stats[0x9B25], &code);
         if (code)
@@ -846,29 +954,48 @@ jbig2_decode_generic_template0_TPGDON(Jbig2Ctx *ctx,
         if (!LTP) {
             for (x = 0; x < GBW; x++) {
                 if (params->USESKIP && jbig2_image_get_pixel(params->SKIP, x, y)) {
-                    jbig2_image_set_pixel(image, x, y, 0);
+                    jbig2_image_set_pixel_fast(image, x, y, 0);
                     continue;
                 }
-                CONTEXT = jbig2_image_get_pixel(image, x - 1, y);
-                CONTEXT |= jbig2_image_get_pixel(image, x - 2, y) << 1;
-                CONTEXT |= jbig2_image_get_pixel(image, x - 3, y) << 2;
-                CONTEXT |= jbig2_image_get_pixel(image, x - 4, y) << 3;
-                CONTEXT |= jbig2_image_get_pixel(image, x + params->gbat[0], y + params->gbat[1]) << 4;
-                CONTEXT |= jbig2_image_get_pixel(image, x + 2, y - 1) << 5;
-                CONTEXT |= jbig2_image_get_pixel(image, x + 1, y - 1) << 6;
-                CONTEXT |= jbig2_image_get_pixel(image, x, y - 1) << 7;
-                CONTEXT |= jbig2_image_get_pixel(image, x - 1, y - 1) << 8;
-                CONTEXT |= jbig2_image_get_pixel(image, x - 2, y - 1) << 9;
-                CONTEXT |= jbig2_image_get_pixel(image, x + params->gbat[2], y + params->gbat[3]) << 10;
-                CONTEXT |= jbig2_image_get_pixel(image, x + params->gbat[4], y + params->gbat[5]) << 11;
-                CONTEXT |= jbig2_image_get_pixel(image, x + 1, y - 2) << 12;
-                CONTEXT |= jbig2_image_get_pixel(image, x, y - 2) << 13;
-                CONTEXT |= jbig2_image_get_pixel(image, x - 1, y - 2) << 14;
-                CONTEXT |= jbig2_image_get_pixel(image, x + params->gbat[6], y + params->gbat[7]) << 15;
+                if (y >= top && x >= left && x < right)
+                {
+                    CONTEXT = jbig2_image_get_pixels_fast(image, x - 4, y, 4);
+                    CONTEXT |= jbig2_image_get_pixel_fast(image, x + params->gbat[0], y + params->gbat[1]) << 4;
+                    CONTEXT |= jbig2_image_get_pixels_fast(image, x - 2, y - 1, 5) << 5;
+                    CONTEXT |= jbig2_image_get_pixel_fast(image, x + params->gbat[2], y + params->gbat[3]) << 10;
+                    CONTEXT |= jbig2_image_get_pixel_fast(image, x + params->gbat[4], y + params->gbat[5]) << 11;
+                    CONTEXT |= jbig2_image_get_pixels_fast(image, x - 1, y - 2, 3) << 12;
+                    CONTEXT |= jbig2_image_get_pixel_fast(image, x + params->gbat[6], y + params->gbat[7]) << 15;
+                }
+                else
+                {
+                    CONTEXT = jbig2_image_get_pixel(image, x - 1, y);
+                    CONTEXT |= jbig2_image_get_pixel(image, x - 2, y) << 1;
+                    CONTEXT |= jbig2_image_get_pixel(image, x - 3, y) << 2;
+                    CONTEXT |= jbig2_image_get_pixel(image, x - 4, y) << 3;
+                    CONTEXT |= jbig2_image_get_pixel(image, x + params->gbat[0], y + params->gbat[1]) << 4;
+                    if (y >= 1)
+                    {
+                        CONTEXT |= jbig2_image_get_pixel(image, x + 2, y - 1) << 5;
+                        CONTEXT |= jbig2_image_get_pixel(image, x + 1, y - 1) << 6;
+                        CONTEXT |= jbig2_image_get_pixel(image, x, y - 1) << 7;
+                        CONTEXT |= jbig2_image_get_pixel(image, x - 1, y - 1) << 8;
+                        CONTEXT |= jbig2_image_get_pixel(image, x - 2, y - 1) << 9;
+                    }
+                    CONTEXT |= jbig2_image_get_pixel(image, x + params->gbat[2], y + params->gbat[3]) << 10;
+                    CONTEXT |= jbig2_image_get_pixel(image, x + params->gbat[4], y + params->gbat[5]) << 11;
+                    if (y >= 2)
+                    {
+                        CONTEXT |= jbig2_image_get_pixel(image, x + 1, y - 2) << 12;
+                        CONTEXT |= jbig2_image_get_pixel(image, x, y - 2) << 13;
+                        CONTEXT |= jbig2_image_get_pixel(image, x - 1, y - 2) << 14;
+                    }
+                    CONTEXT |= jbig2_image_get_pixel(image, x + params->gbat[6], y + params->gbat[7]) << 15;
+                }
                 bit = jbig2_arith_decode(as, &GB_stats[CONTEXT], &code);
                 if (code)
                     return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to decode arithmetic code when handling generic template0 TPGDON2");
-                jbig2_image_set_pixel(image, x, y, bit);
+                jbig2_image_set_pixel_fast(image, x, y, bit);
             }
         } else {
             copy_prev_row(image, y);

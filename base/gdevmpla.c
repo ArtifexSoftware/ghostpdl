@@ -1718,6 +1718,8 @@ plane_strip_copy_rop(gx_device_memory * mdev,
      * so ensure we have the right ones in there. */
     set_dev_proc(mdev, get_bits_rectangle, dev_proc(mdproto, get_bits_rectangle));
     set_dev_proc(mdev, fill_rectangle, dev_proc(mdproto, fill_rectangle));
+    /* mdev->color_info.depth is restored by MEM_RESTORE_PARAMS below. */
+    mdev->color_info.depth = mdev->planes[plane].depth;
     code = dev_proc(mdproto, strip_copy_rop)((gx_device *)mdev, sdata, sourcex, sraster,
                                              id, scolors, textures, tcolors,
                                              x, y, width, height,

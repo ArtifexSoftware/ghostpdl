@@ -353,12 +353,11 @@ gx_remap_concrete_ICC(const gs_color_space * pcs, const frac * pconc,
  * To device space
  */
 int
-gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
+gx_remap_ICC_with_link(const gs_client_color * pcc, const gs_color_space * pcs,
         gx_device_color * pdc, const gs_gstate * pgs, gx_device * dev,
-                gs_color_select_t select)
+                gs_color_select_t select, gsicc_link_t *icc_link)
 {
-    gsicc_link_t *icc_link;
-    gsicc_rendering_param_t rendering_params;
+    cmm_dev_profile_t *dev_profile;
     unsigned short psrc[GS_CLIENT_COLOR_MAX_COMPONENTS], psrc_cm[GS_CLIENT_COLOR_MAX_COMPONENTS];
     unsigned short *psrc_temp;
     frac conc[GS_CLIENT_COLOR_MAX_COMPONENTS];
@@ -368,20 +367,15 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
 #endif
     int num_des_comps;
     int code;
-    cmm_dev_profile_t *dev_profile;
 
     code = dev_proc(dev, get_profile)(dev, &dev_profile);
     if (code < 0)
         return code;
     if (dev_profile == NULL)
         return gs_throw(gs_error_Fatal, "Attempting to do ICC remap with no profile");
-    num_des_comps = gsicc_get_device_profile_comps(dev_profile);
-    rendering_params.black_point_comp = pgs->blackptcomp;
-    rendering_params.graphics_type_tag = dev->graphics_type_tag;
-    rendering_params.override_icc = false;
-    rendering_params.preserve_black = gsBKPRESNOTSPECIFIED;
-    rendering_params.rendering_intent = pgs->renderingintent;
-    rendering_params.cmm = gsCMM_DEFAULT;
+    if (icc_link == NULL)
+        return gs_throw(gs_error_Fatal, "Attempting to do ICC remap with no link");
+
     /* Need to clear out psrc_cm in case we have separation bands that are
        not color managed */
     memset(psrc_cm,0,sizeof(unsigned short)*GS_CLIENT_COLOR_MAX_COMPONENTS);
@@ -397,14 +391,7 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
             psrc[k] = (unsigned short) (pcc->paint.values[k]*65535.0);
         }
     }
-    /* Get a link from the cache, or create if it is not there. Need to get 16 bit profile */
-    icc_link = gsicc_get_link(pgs, dev, pcs, NULL, &rendering_params, pgs->memory);
-    if (icc_link == NULL) {
-        #ifdef DEBUG
-            gs_warn("Could not create ICC link:  Check profiles");
-        #endif
-        return -1;
-    }
+    num_des_comps = gsicc_get_device_profile_comps(dev_profile);
     if (icc_link->is_identity) {
         psrc_temp = &(psrc[0]);
     } else {
@@ -434,8 +421,6 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
         if_debug0m(gs_debug_flag_icc, dev->memory, "]\n");
     }
 #endif
-    /* Release the link */
-    gsicc_release_link(icc_link);
     /* Now do the remap for ICC which amounts to the alpha application
        the transfer function and potentially the halftoning */
     /* Right now we need to go from unsigned short to frac.  I really
@@ -451,6 +436,42 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
         pdc->ccolor.paint.values[i] = pcc->paint.values[i];
     pdc->ccolor_valid = true;
     return 0;
+}
+
+int
+gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
+        gx_device_color * pdc, const gs_gstate * pgs, gx_device * dev,
+                gs_color_select_t select)
+{
+    gsicc_link_t *icc_link;
+    gsicc_rendering_param_t rendering_params;
+    cmm_dev_profile_t *dev_profile;
+    int code;
+
+    code = dev_proc(dev, get_profile)(dev, &dev_profile);
+    if (code < 0)
+        return code;
+    if (dev_profile == NULL)
+        return gs_throw(gs_error_Fatal, "Attempting to do ICC remap with no profile");
+
+    rendering_params.black_point_comp = pgs->blackptcomp;
+    rendering_params.graphics_type_tag = dev->graphics_type_tag;
+    rendering_params.override_icc = false;
+    rendering_params.preserve_black = gsBKPRESNOTSPECIFIED;
+    rendering_params.rendering_intent = pgs->renderingintent;
+    rendering_params.cmm = gsCMM_DEFAULT;
+    /* Get a link from the cache, or create if it is not there. Need to get 16 bit profile */
+    icc_link = gsicc_get_link(pgs, dev, pcs, NULL, &rendering_params, pgs->memory);
+    if (icc_link == NULL) {
+#ifdef DEBUG
+        gs_warn("Could not create ICC link:  Check profiles");
+#endif
+        return_error(gs_error_unknownerror);
+    }
+    code = gx_remap_ICC_with_link(pcc, pcs, pdc, pgs, dev, select, icc_link);
+    /* Release the link */
+    gsicc_release_link(icc_link);
+    return code;
 }
 
 /*
@@ -494,10 +515,10 @@ gx_remap_ICC_imagelab(const gs_client_color * pcc, const gs_color_space * pcs,
     /* Get a link from the cache, or create if it is not there. Need to get 16 bit profile */
     icc_link = gsicc_get_link(pgs, dev, pcs, NULL, &rendering_params, pgs->memory);
     if (icc_link == NULL) {
-        #ifdef DEBUG
-                gs_warn("Could not create ICC link:  Check profiles");
-        #endif
-        return -1;
+#ifdef DEBUG
+        gs_warn("Could not create ICC link:  Check profiles");
+#endif
+        return_error(gs_error_unknownerror);
     }
     if (icc_link->is_identity) {
         psrc_temp = &(psrc[0]);
@@ -562,10 +583,10 @@ gx_concretize_ICC(
     /* Get a link from the cache, or create if it is not there. Get 16 bit profile */
     icc_link = gsicc_get_link(pgs, dev, pcs, NULL, &rendering_params, pgs->memory);
     if (icc_link == NULL) {
-        #ifdef DEBUG
-                gs_warn("Could not create ICC link:  Check profiles");
-        #endif
-        return -1;
+#ifdef DEBUG
+        gs_warn("Could not create ICC link:  Check profiles");
+#endif
+        return_error(gs_error_unknownerror);
     }
     /* Transform the color */
     if (icc_link->is_identity) {
@@ -656,9 +677,10 @@ gx_set_overprint_ICC(const gs_color_space * pcs, gs_gstate * pgs)
     bool cs_ok;
     cmm_dev_profile_t *dev_profile;
     bool gray_to_k;
+    bool op = pgs->is_fill_color ? pgs->overprint : pgs->stroke_overprint;
 
     if (dev == 0 || pcinfo == NULL)
-        return gx_spot_colors_set_overprint(pcs, pgs);
+        return gx_set_no_overprint(pgs);
 
     dev_proc(dev, get_profile)(dev, &dev_profile);
     gray_to_k = dev_profile->devicegraytok;
@@ -669,8 +691,12 @@ gx_set_overprint_ICC(const gs_color_space * pcs, gs_gstate * pgs)
     cs_ok = ((pcs->cmm_icc_profile_data->data_cs == gsCMYK) ||
         (pcs->cmm_icc_profile_data->data_cs == gsGRAY && gray_to_k));
 
-    if (!pgs->overprint || pcinfo->opmode == GX_CINFO_OPMODE_NOT || !cs_ok)
-        return gx_spot_colors_set_overprint(pcs, pgs);
+    if_debug4m(gs_debug_flag_overprint, pgs->memory,
+        "[overprint] gx_set_overprint_ICC. cs_ok = %d is_fill_color = %d overprint = %d stroke_overprint = %d \n",
+        cs_ok, pgs->is_fill_color, pgs->overprint, pgs->stroke_overprint);
+
+    if (!op || pcinfo->opmode == GX_CINFO_OPMODE_NOT || !cs_ok)
+        return gx_set_no_overprint(pgs);
     else
         return gx_set_overprint_cmyk(pcs, pgs);
 }
@@ -691,7 +717,7 @@ gx_change_color_model(gx_device *dev, int num_comps, int bit_depth)
     int k;
 
     if (!((num_comps == 1) || (num_comps == 3) || (num_comps == 4)))
-        return -1;
+        return_error(gs_error_unknownerror);
 
     dev->color_info.max_components = num_comps;
     dev->color_info.num_components = num_comps;

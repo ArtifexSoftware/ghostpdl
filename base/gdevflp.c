@@ -106,6 +106,7 @@ static dev_proc_strip_tile_rect_devn(flp_strip_tile_rect_devn);
 static dev_proc_copy_alpha_hl_color(flp_copy_alpha_hl_color);
 static dev_proc_process_page(flp_process_page);
 static dev_proc_transform_pixel_region(flp_transform_pixel_region);
+static dev_proc_fill_stroke_path(flp_fill_stroke_path);
 
 /* The device prototype */
 #define MAX_COORD (max_int_in_fixed - 1000)
@@ -208,7 +209,9 @@ gx_device_flp gs_flp_device =
      flp_strip_copy_rop2,
      flp_strip_tile_rect_devn,
      flp_copy_alpha_hl_color,
-     flp_process_page
+     flp_process_page,
+     flp_transform_pixel_region,
+     flp_fill_stroke_path,
     }
 };
 
@@ -1210,6 +1213,21 @@ int flp_process_page(gx_device *dev, gx_process_page_options_t *options)
     if (!code)
         return default_subclass_process_page(dev, options);
 
+    return 0;
+}
+
+int flp_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
+    const gx_fill_params *fill_params, const gx_drawing_color *pdcolor_fill,
+    const gx_stroke_params *stroke_params, const gx_drawing_color *pdcolor_stroke,
+    const gx_clip_path *pcpath)
+{
+    int code = SkipPage(dev);
+
+    if (code < 0)
+        return code;
+    if (!code)
+        return default_subclass_fill_stroke_path(dev, pgs, ppath, fill_params, pdcolor_fill,
+                                                 stroke_params, pdcolor_stroke, pcpath);
     return 0;
 }
 

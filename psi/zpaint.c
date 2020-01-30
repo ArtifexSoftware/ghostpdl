@@ -19,6 +19,8 @@
 #include "oper.h"
 #include "gspaint.h"
 #include "igstate.h"
+#include "store.h"
+#include "estack.h"
 
 /* - fill - */
 static int
@@ -39,6 +41,60 @@ static int
 zstroke(i_ctx_t *i_ctx_p)
 {
     return gs_stroke(igs);
+}
+
+static int
+fillstroke_cont(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    int restart, code;
+
+    check_type(*op, t_integer);
+    restart = (int)op->value.intval;
+    code = gs_fillstroke(igs, &restart);
+    if (code == gs_error_Remap_Color) {
+        op->value.intval = restart;
+        return code;
+    }
+    pop(1);
+    return code;
+}
+
+static int
+zfillstroke(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    push(1);
+    make_int(op, 0);		/* 0 implies we are at fill color, need to swap first */
+    push_op_estack(fillstroke_cont);
+    return o_push_estack;
+}
+
+static int
+eofillstroke_cont(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    int restart, code;
+
+    check_type(*op, t_integer);
+    restart = (int)op->value.intval;
+    code = gs_eofillstroke(igs, &restart);
+    if (code == gs_error_Remap_Color) {
+        op->value.intval = restart;
+        return code;
+    }
+    pop(1);
+    return code;
+}
+
+static int
+zeofillstroke(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    push(1);
+    make_int(op, 0);
+    push_op_estack(eofillstroke_cont);
+    return o_push_estack;
 }
 
 /* ------ Non-standard operators ------ */
@@ -80,5 +136,9 @@ const op_def zpaint_op_defs[] =
                 /* Non-standard operators */
     {"0.fillpage", zfillpage},
     {"3.imagepath", zimagepath},
+    {"0.eofillstroke", zeofillstroke},
+    {"0.fillstroke", zfillstroke},
+    {"0%eofillstroke_cont", eofillstroke_cont },
+    {"0%fillstroke_cont", fillstroke_cont },
     op_def_end(0)
 };

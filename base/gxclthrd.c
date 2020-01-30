@@ -102,7 +102,47 @@ setup_device_and_mem_for_thread(gs_memory_t *chunk_base_mem, gx_device *dev, boo
     ndev->pad = dev->pad;
     ndev->log2_align_mod = dev->log2_align_mod;
     ndev->is_planar = dev->is_planar;
-    if (gscms_is_threadsafe()) {
+    ndev->icc_struct = NULL;
+
+    /* If the device ICC profile (or proof) is OI_PROFILE, then that was not handled
+     * by put/get params, and we cannot share the profiles between the 'parent' output device
+     * and the devices created for each thread. Thus we also cannot share the icc_struct.
+     * In this case we need to create a new icc_struct and clone the profiles.  The clone
+     * operation also initializes some of the required data
+     * We need to do this *before* the gs_getdeviceparams/gs_putdeviceparams so gs_putdeviceparams
+     * will spot the same profile being used, and treat it as a no-op. Otherwise it will try to find
+     * a profile with the 'special' name "OI_PROFILE" and throw an error.
+     */
+    if (!gscms_is_threadsafe() || (dev->icc_struct != NULL &&
+        ((dev->icc_struct->device_profile[0] != NULL &&
+          strncmp(dev->icc_struct->device_profile[0]->name, OI_PROFILE, strlen(OI_PROFILE)) == 0)
+        || (dev->icc_struct->proof_profile != NULL &&
+        strncmp(dev->icc_struct->proof_profile->name, OI_PROFILE, strlen(OI_PROFILE)) == 0)))) {
+        ndev->icc_struct = gsicc_new_device_profile_array(ndev->memory);
+        if (!ndev->icc_struct) {
+            emprintf1(ndev->memory,
+                  "Error setting up device profile array, code=%d. Rendering threads not started.\n",
+                  code);
+            goto out_cleanup;
+        }
+        if ((code = gsicc_clone_profile(dev->icc_struct->device_profile[0],
+            &(ndev->icc_struct->device_profile[0]), ndev->memory)) < 0) {
+            emprintf1(dev->memory,
+                "Error setting up device profile, code=%d. Rendering threads not started.\n",
+                code);
+            goto out_cleanup;
+        }
+        if (dev->icc_struct->proof_profile &&
+           (code = gsicc_clone_profile(dev->icc_struct->proof_profile,
+            &ndev->icc_struct->proof_profile, ndev->memory)) < 0) {
+            emprintf1(dev->memory,
+                "Error setting up proof profile, code=%d. Rendering threads not started.\n",
+                code);
+            goto out_cleanup;
+
+        }
+    }
+    else {
         /* safe to share the icc_struct among threads */
         ndev->icc_struct = dev->icc_struct;  /* Set before put params */
         rc_increment(ndev->icc_struct);
@@ -120,29 +160,6 @@ setup_device_and_mem_for_thread(gs_memory_t *chunk_base_mem, gx_device *dev, boo
         goto out_cleanup;
     gs_c_param_list_release(&paramlist);
 
-    /* If the device ICC profile (or proof) is OI_PROFILE, then that was not handled
-     * by put/get params.  In this case we need to clone the profiles.  The clone
-     * operation also initializes some of the required data */
-    if (dev->icc_struct != NULL && dev->icc_struct->device_profile[0] != NULL &&
-        strncmp(dev->icc_struct->device_profile[0]->name, OI_PROFILE, strlen(OI_PROFILE)) == 0) {
-        if ((code = gsicc_clone_profile(dev->icc_struct->device_profile[0],
-            &(ndev->icc_struct->device_profile[0]), ndev->memory)) < 0) {
-            emprintf1(dev->memory,
-                "Error setting up device profile, code=%d. Rendering threads not started.\n",
-                code);
-            goto out_cleanup;
-        }
-    }
-    if (dev->icc_struct != NULL && dev->icc_struct->proof_profile != NULL &&
-        strncmp(dev->icc_struct->proof_profile->name, OI_PROFILE, strlen(OI_PROFILE)) == 0) {
-        if ((code = gsicc_clone_profile(dev->icc_struct->proof_profile,
-            &ndev->icc_struct->proof_profile, ndev->memory)) < 0) {
-            emprintf1(dev->memory,
-                "Error setting up proof profile, code=%d. Rendering threads not started.\n",
-                code);
-            goto out_cleanup;
-        }
-    }
     /* In the case of a separation device, we need to make sure we get the
        devn params copied over */
     pclist_devn_params = dev_proc(dev, ret_devn_params)(dev);
@@ -219,7 +236,7 @@ setup_device_and_mem_for_thread(gs_memory_t *chunk_base_mem, gx_device *dev, boo
     /* The threads are maintained until clist_finish_page.  At which
        point, the threads are torn down, the master clist reader device
        is changed to writer, and the icc_table and the icc_cache_cl freed */
-    if (gscms_is_threadsafe()) {
+    if (dev->icc_struct == ndev->icc_struct) {
     /* safe to share the link cache */
         ncdev->icc_cache_cl = cdev->icc_cache_cl;
         rc_increment(cdev->icc_cache_cl);		/* FIXME: needs to be incdemented safely */

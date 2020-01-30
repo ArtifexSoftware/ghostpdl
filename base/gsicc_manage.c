@@ -496,6 +496,23 @@ gsicc_get_default_type(cmm_profile_t *profile_data)
     }
 }
 
+int
+gsicc_use_fast_color(cmm_profile_t* profile_data)
+{
+    switch (profile_data->default_match) {
+    case CIE_A:
+    case CIE_ABC:
+    case CIE_DEF:
+    case CIE_DEFG:
+    case LAB_TYPE:
+    case NAMED_TYPE:
+    case DEVICEN_TYPE:
+        return 0;
+    default:
+        return profile_data->num_comps;
+    }
+}
+
 bool
 gsicc_is_default_profile(cmm_profile_t *profile_data)
 {
@@ -1440,7 +1457,7 @@ gsicc_new_device_profile_array(gs_memory_t *memory)
     result->usefastcolor = false;  /* Default is to not use fast color */
     result->prebandthreshold = true;
     result->supports_devn = false;
-    result->sim_overprint = false;  /* Default is now not to simulate overprint */
+    result->sim_overprint = true;  /* Default is to simulate overprint */
     rc_init_free(result, memory->non_gc_memory, 1, rc_free_profile_array);
     return result;
 }

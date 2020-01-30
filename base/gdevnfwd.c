@@ -117,7 +117,9 @@ gx_device_forward_fill_in_procs(register gx_device_forward * dev)
     fill_dev_proc(dev, set_graphics_type_tag, gx_forward_set_graphics_type_tag);
     fill_dev_proc(dev, strip_copy_rop2, gx_forward_strip_copy_rop2);
     fill_dev_proc(dev, strip_tile_rect_devn, gx_forward_strip_tile_rect_devn);
+    fill_dev_proc(dev, strip_tile_rect_devn, gx_forward_strip_tile_rect_devn);
     fill_dev_proc(dev, transform_pixel_region, gx_forward_transform_pixel_region);
+    fill_dev_proc(dev, fill_stroke_path, gx_forward_fill_stroke_path);
     gx_device_fill_in_procs((gx_device *) dev);
 }
 
@@ -447,6 +449,24 @@ gx_forward_stroke_path(gx_device * dev, const gs_gstate * pgs,
          dev_proc(tdev, stroke_path));
 
     return proc(tdev, pgs, ppath, params, pdcolor, pcpath);
+}
+
+int
+gx_forward_fill_stroke_path(gx_device * dev, const gs_gstate * pgs,
+                            gx_path * ppath,
+                            const gx_fill_params * params_fill,
+                            const gx_drawing_color * pdcolor_fill,
+                            const gx_stroke_params * params_stroke,
+                            const gx_drawing_color * pdcolor_stroke,
+                            const gx_clip_path * pcpath)
+{
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
+    gx_device *tdev = fdev->target;
+    dev_proc_fill_stroke_path((*proc)) =
+        (tdev == 0 ? (tdev = dev, gx_default_fill_stroke_path) :
+         dev_proc(tdev, fill_stroke_path));
+
+    return proc(tdev, pgs, ppath, params_fill, pdcolor_fill, params_stroke, pdcolor_stroke, pcpath);
 }
 
 int

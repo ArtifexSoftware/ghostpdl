@@ -281,7 +281,7 @@ gx_set_overprint_Pattern(const gs_color_space * pcs, gs_gstate * pgs)
 
     if (!pgs->overprint) {
         params.retain_any_comps = false;
-        pgs->effective_overprint_mode = 0;
+        params.effective_opm = pgs->color[0].effective_opm = 0;
         return gs_gstate_update_overprint(pgs, &params);
     }
     return 0;

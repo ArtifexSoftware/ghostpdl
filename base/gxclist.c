@@ -201,7 +201,8 @@ const gx_device_procs gs_clist_device_procs = {
     clist_strip_tile_rect_devn,
     clist_copy_alpha_hl_color,
     clist_process_page,
-    gx_default_transform_pixel_region
+    gx_default_transform_pixel_region,
+    clist_fill_stroke_path,
 };
 
 /*------------------- Choose the implementation -----------------------
@@ -577,6 +578,8 @@ clist_reset(gx_device * dev)
     cdev->cropping_level = 0;
     cdev->mask_id_count = cdev->mask_id = cdev->temp_mask_id = 0;
     cdev->icc_table = NULL;
+    cdev->op_fill_active = false;
+    cdev->op_stroke_active = false;
     return 0;
 }
 /*

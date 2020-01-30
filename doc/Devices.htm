@@ -520,9 +520,9 @@ many colorants occur on a particular page.  With Postscript, this is not possibl
 in general.  To optimize for this, when rendering Postscript, it is possible to specify
 at run-time the number of spot colorants you wish to have the device capable
 of handling using the -dMaxSpots=N command option, where N is the number of spot
-colorants that you wish to be able to handle and must be
-less than 60 (60 + 4 CMYK process colorants gets us to a
-maximum of 64 colorants on a page).   If you specify more than
+colorants that you wish to be able to handle and must be no more than the 64 minus the
+number of process colors. For example, 60 or less for a CMYK device such as tiffsep.
+If you specify more than
 is needed, the document will render more slowly.   The ideal case is to use
 the same number as the maximum number of spot colorants that occur on a single page
 of the document.  If more spot colorants are encountered than is specified by

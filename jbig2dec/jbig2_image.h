@@ -39,4 +39,42 @@ int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src, int x, 
 int jbig2_image_get_pixel(Jbig2Image *image, int x, int y);
 void jbig2_image_set_pixel(Jbig2Image *image, int x, int y, bool value);
 
+/* Get a bit. No bounds checking. */
+static inline int
+jbig2_image_get_pixel_fast(Jbig2Image *image, int x, int y)
+{
+    const int byte = (x >> 3) + y * image->stride;
+    const int bit = 7 - (x & 7);
+
+    return ((image->data[byte] >> bit) & 1);
+}
+
+/* Get a run of up to 9 bits. This reads into the next byte, so the caller
+ * must ensure that we are always safe to read at least 9 pixels, even if
+ * it only wants less than that. */
+static inline int
+jbig2_image_get_pixels_fast(Jbig2Image *image, int x, int y, int bits)
+{
+    const int byte = (x >> 3) + y * image->stride;
+    const int bit = 7 - (x & 7);
+    int v = ((image->data[byte]<<8) | (image->data[byte+1]))>>(bit+9-bits);
+
+    return v & ((1<<bits)-1);
+}
+
+/* set an individual pixel value in an image - no bounds checking */
+static inline void
+jbig2_image_set_pixel_fast(Jbig2Image *image, int x, int y, bool value)
+{
+    int scratch, mask;
+    int bit, byte;
+
+    byte = (x >> 3) + y * image->stride;
+    bit = 7 - (x & 7);
+    mask = (1 << bit) ^ 0xff;
+
+    scratch = image->data[byte] & mask;
+    image->data[byte] = scratch | (value << bit);
+}
+
 #endif /* _JBIG2_IMAGE_H */

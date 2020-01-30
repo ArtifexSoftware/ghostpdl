@@ -66,12 +66,20 @@ END
 // TEXTINCLUDE
 //
 
+<<<<<<< e2c48062c190a618a765f443fdfcac76a80d684d
 1 TEXTINCLUDE 
+=======
+1 TEXTINCLUDE
+>>>>>>> Pull in newly merged and updated LCMS2MT from MuPDF thirdparty repo.
 BEGIN
     "resource.h\0"
 END
 
+<<<<<<< e2c48062c190a618a765f443fdfcac76a80d684d
 2 TEXTINCLUDE 
+=======
+2 TEXTINCLUDE
+>>>>>>> Pull in newly merged and updated LCMS2MT from MuPDF thirdparty repo.
 BEGIN
     "#define APSTUDIO_HIDDEN_SYMBOLS\r\n"
     "#include ""windows.h""\r\n"
@@ -79,7 +87,11 @@ BEGIN
     "\0"
 END
 
+<<<<<<< e2c48062c190a618a765f443fdfcac76a80d684d
 3 TEXTINCLUDE 
+=======
+3 TEXTINCLUDE
+>>>>>>> Pull in newly merged and updated LCMS2MT from MuPDF thirdparty repo.
 BEGIN
     "\r\n"
     "\0"
@@ -101,4 +113,7 @@ END
 
 /////////////////////////////////////////////////////////////////////////////
 #endif    // not APSTUDIO_INVOKED
+<<<<<<< e2c48062c190a618a765f443fdfcac76a80d684d
 
+=======
+>>>>>>> Pull in newly merged and updated LCMS2MT from MuPDF thirdparty repo.

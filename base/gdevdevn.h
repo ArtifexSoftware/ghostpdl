@@ -25,14 +25,6 @@
 #define LIMIT_TO_ICC 1
 
 /*
- * Define the maximum number of process model colorants.  Currently we only
- * have code for DeviceGray, DeviceRGB, and DeviceCMYK.  Thus this value
- * only needs to be 4.  However we are allowing for a future hexachrome
- * device.  (This value does not include spot colors.  See previous value.)
- */
-#define MAX_DEVICE_PROCESS_COLORS 6
-
-/*
  * Type definitions associated with the fixed color model names.
  */
 typedef const char * fixed_colorant_name;
@@ -57,7 +49,7 @@ struct gs_separations_s {
 /*
  * Type for holding a separation order map
  */
-typedef int gs_separation_map[GX_DEVICE_MAX_SEPARATIONS + MAX_DEVICE_PROCESS_COLORS];
+typedef int gs_separation_map[GX_DEVICE_MAX_SEPARATIONS];
 
 typedef struct gs_devn_params_s {
     /*

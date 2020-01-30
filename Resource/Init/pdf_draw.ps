@@ -2242,21 +2242,15 @@ currentdict /last-ditch-bpc-csp undef
 } bind executeonly def
 
 /doimagesmask { % <imagemask> doimagesmask -
-  PDFusingtransparency {
-    currentdict /SMask knownoget
+  PDFusingtransparency not
+  /PreserveSMask /GetDeviceParam .special_op { exch pop } { //false } ifelse
+  or {
+    % not using transparency OR the device supports SMask (e.g. pdfwrite)
+    doimage
   } {
-    //false
-  } ifelse
-  {	% We are doing transparency and SMask is present in the image
-        % stack: <imagemask> <SMask>
-    /PreserveSMask /GetDeviceParam .special_op {
-        exch pop
-    }{
-        //false
-    }ifelse
-    {
-      pop	% pdfwrite will process SMask directly during 'doimage'
-    } {
+    currentdict /SMask knownoget {
+      % We are doing transparency and SMask is present in the image
+      % stack: <imagemask> <SMask>
       .begintransparencymaskimage
       PDFfile fileposition exch
       gsave //nodict begin
@@ -2268,36 +2262,44 @@ currentdict /last-ditch-bpc-csp undef
       end grestore
       PDFfile exch setfileposition
       0 .endtransparencymask
-    } ifelse
-    << /Subtype /Group /Isolated //true
-       /.image_with_SMask //true
-       % pdfwrite needs : see gs/src/ztrans.c, gs/src/gdevpdft.c
-       % Code to deal with a Matte in the SMask. We know the image dictionary must have an SMask
-       % entry if we get here, so we don't need to check its existence. Just pull it out and see if
-       % the SMask has a Matte entry. If it does, get the ColorSpace from the parent image and
-       % put a /CS key with that colour space in the Group that we manufacture. Bug #700686
-       % We also need to actually set the current colour space to be the same as the group
-       % code only picks up the current colour space, not the space from the dictionary.
-       currentdict /SMask get /Matte known {/CS currentdict /ColorSpace get dup pdfopdict /cs get exec } if
-    >> 0 0 1 1
-    .begintransparencygroup
-     doimage
-    .endtransparencygroup
-    % tell the compositor we're done with the SMask.
-    % Note that any SMask in the ExtGState should be reapplied
-    % by the next call to setfill(stroke)state AND this relies
-    % on our lazy evaulation of SMask groups
-    //false << /Subtype /None >> 0 0 0 0 .begintransparencymaskgroup
-  } {
-    .currentSMask //null ne {
-      % the image doesn't have an SMask, but the ExtGState does, force a group.
-      << /Subtype /Group /Isolated //true >> 0 0 1 1
+      << /Subtype /Group /Isolated //true
+         /.image_with_SMask //true
+         % pdfwrite needs : see gs/src/ztrans.c, gs/src/gdevpdft.c
+         % Code to deal with a Matte in the SMask. We know the image dictionary must have an SMask
+         % entry if we get here, so we don't need to check its existence. Just pull it out and see if
+         % the SMask has a Matte entry. If it does, get the ColorSpace from the parent image and
+         % put a /CS key with that colour space in the Group that we manufacture. Bug #700686
+         % We also need to actually set the current colour space to be the same as the group
+         % code only picks up the current colour space, not the space from the dictionary.
+         currentdict /SMask get /Matte known {/CS currentdict /ColorSpace get dup pdfopdict /cs get exec } if
+      >> 0 0 1 1
       .begintransparencygroup
+      .currentstrokeconstantalpha .currentfillconstantalpha .currentshapealpha .currentopacityalpha 5 -1 roll
+      1 .setfillconstantalpha 1 .setstrokeconstantalpha
+      1 .setopacityalpha 1 .setshapealpha
       doimage
+      .setopacityalpha .setshapealpha .setfillconstantalpha .setstrokeconstantalpha
       .endtransparencygroup
-    }
-    { doimage }
-    ifelse
+      % tell the compositor we're done with the SMask.
+      % Note that any SMask in the ExtGState should be reapplied
+      % by the next call to setfill(stroke)state AND this relies
+      % on our lazy evaulation of SMask groups
+      //false << /Subtype /None >> 0 0 0 0 .begintransparencymaskgroup
+    } {
+      % We don't have an SMask in the image but there might be an SMask in the ExtGState
+      .currentSMask //null ne {
+        % the image doesn't have an SMask, but the ExtGState does, force a group.
+        << /Subtype /Group /Isolated //true >> 0 0 1 1
+        .begintransparencygroup
+        .currentstrokeconstantalpha .currentfillconstantalpha .currentshapealpha .currentopacityalpha 5 -1 roll
+        1 .setopacityalpha 1 .setshapealpha
+        doimage
+        .setopacityalpha .setshapealpha .setfillconstantalpha .setstrokeconstantalpha
+        .endtransparencygroup
+      } {
+        doimage
+      } ifelse
+    } ifelse
   } ifelse
 } bind executeonly def
 

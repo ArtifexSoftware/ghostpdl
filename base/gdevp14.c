@@ -15,6 +15,7 @@
 
 /* Compositing devices for implementing	PDF 1.4	imaging	model */
 
+#include "assert_.h"
 #include "math_.h"
 #include "memory_.h"
 #include "gx.h"
@@ -182,6 +183,7 @@ dev_proc_decode_color(pdf14_decode_color16);
 static	dev_proc_fill_rectangle(pdf14_fill_rectangle);
 static  dev_proc_fill_rectangle_hl_color(pdf14_fill_rectangle_hl_color);
 static	dev_proc_fill_path(pdf14_fill_path);
+static	dev_proc_fill_stroke_path(pdf14_fill_stroke_path);
 static  dev_proc_copy_mono(pdf14_copy_mono);
 static	dev_proc_fill_mask(pdf14_fill_mask);
 static	dev_proc_stroke_path(pdf14_stroke_path);
@@ -283,7 +285,10 @@ static	const gx_color_map_procs *
         gx_forward_set_graphics_type_tag, /* set_graphics_type_tag */\
         NULL,                           /* strip_copy_rop2 */\
         NULL,                           /* strip_tile_rect_devn */\
-        pdf14_copy_alpha_hl_color       /* copy_alpha_hl_color */\
+        pdf14_copy_alpha_hl_color,       /* copy_alpha_hl_color */\
+        NULL,                            /* process_page */\
+        NULL,				/* transform_pixel_region */\
+        pdf14_fill_stroke_path,         /* fill_stroke */\
 }
 
 static	const gx_device_procs pdf14_Gray_procs =
@@ -1295,26 +1300,42 @@ pdf14_ctx_free(pdf14_ctx *ctx)
  * if backdrop is fully transparent.
  **/
 static	pdf14_buf *
-pdf14_find_backdrop_buf(pdf14_ctx *ctx)
+pdf14_find_backdrop_buf(pdf14_ctx *ctx, bool *is_backdrop)
 {
+    /* Our new buffer is buf */
     pdf14_buf *buf = ctx->stack;
 
-    while (buf != NULL) {
+    *is_backdrop = false;
+
+    if (buf != NULL) {
+        /* If the new buffer is isolated there is no backdrop */
         if (buf->isolated) return NULL;
-        if (buf->knockout && !buf->isolated) return buf->saved;
-        /* If target (NOS) is knockout and isolated then the compositing will happen
-           at the end */
-        if (buf->saved != NULL && buf->saved->knockout && buf->saved->isolated) return NULL;
-        /* Target (NOS) is not isolated.  Next group on stack is a knockout.
-           We need to compose with the backdrop when we do the pop */
-        if (buf->saved != NULL && buf->saved->knockout && !buf->saved->isolated)
-            return NULL;
-        /* Not a knockout and not isolated.  Initialize backdrop */
-        if (!buf->knockout) return buf->saved;
-        buf = buf->saved;
+
+        /* If the previous buffer is a knockout group
+           then we need to use its backdrop as the backdrop. If
+           it was isolated then that back drop was NULL */
+        if (buf->saved != NULL && buf->saved->knockout) {
+            /* This bit of logic is need to get both
+               fts_25_2524.pdf and the overlapping Altona
+               file working. The difference is between a
+               knockout group in a knockout group vs. a
+               non-knockout group in a knockout group.
+               fts_25_2524.pdf has a knockout in a knockout
+               due to the stroke fill that occurs within
+               the knockout group. */
+            if (!buf->knockout)
+                return NULL;
+            else {
+                *is_backdrop = true;
+                return buf->saved;
+            }
+        }
+        /* This should be the non-isolated case where its parent is
+           not a knockout */
+        if (buf->saved != NULL) {
+            return buf->saved;
+        }
     }
-    /* this really shouldn't happen, as bottom-most buf should be
-       non-knockout */
     return NULL;
 }
 
@@ -1328,8 +1349,8 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
                               gx_device *dev)
 {
     pdf14_buf *tos = ctx->stack;
-    pdf14_buf *buf, *backdrop;
-    bool has_shape, has_tags;
+    pdf14_buf *buf, * pdf14_backdrop;
+    bool has_shape, has_tags, is_backdrop;
 
     if_debug1m('v', ctx->memory,
                "[v]pdf14_push_transparency_group, idle = %d\n", idle);
@@ -1372,97 +1393,56 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
         return 0;
     if (idle)
         return 0;
-    backdrop = pdf14_find_backdrop_buf(ctx);
-    if (backdrop == NULL) {
+    pdf14_backdrop = pdf14_find_backdrop_buf(ctx, &is_backdrop);
+
+    /* Initializes buf->data with the backdrop or as opaque */
+    if (pdf14_backdrop == NULL || (is_backdrop && pdf14_backdrop->backdrop == NULL)) {
         /* Note, don't clear out tags set by pdf14_buf_new == GS_UNKNOWN_TAG */
         /* Memsetting by 0, so this copes with the deep case too */
         memset(buf->data, 0, buf->planestride * (buf->n_chan +
                                                  (buf->has_shape ? 1 : 0) +
                                                  (buf->has_alpha_g ? 1 : 0)));
     } else {
-        if (!buf->knockout) {
-            if (!cm_back_drop) {
-                pdf14_preserve_backdrop(buf, tos, false
+        if (!cm_back_drop) {
+            pdf14_preserve_backdrop(buf, pdf14_backdrop, is_backdrop
 #if RAW_DUMP
-                                        , ctx->memory
+                                    , ctx->memory
 #endif
-                                        );
-            } else {
-                /* We must have an non-isolated group with a mismatch in color spaces.
-                   In this case, we can't just copy the buffer but must CM it */
-                pdf14_preserve_backdrop_cm(buf, group_profile, tos, tos_profile,
-                                           ctx->memory, pgs, dev, false);
-            }
+                                    );
+        } else {
+            /* We must have an non-isolated group with a mismatch in color spaces.
+                In this case, we can't just copy the buffer but must CM it */
+            pdf14_preserve_backdrop_cm(buf, group_profile, pdf14_backdrop, tos_profile,
+                                        ctx->memory, pgs, dev, is_backdrop);
         }
     }
 
-    /* If knockout, we have to maintain a copy of the backdrop in case we are
-       drawing nonisolated groups on top of the knockout group. */
-    if (buf->knockout) {
+    /* If our new group is a non-isolated knockout group, we have to maintain
+       a copy of the backdrop in case we are drawing nonisolated groups on top of the
+       knockout group. They have to always blend with the groups backdrop
+       not what is currently drawn in the group. Selection of the backdrop
+       depends upon the properties of the parent group. For example, if
+       the parent itself is a knockout group we actually
+       need to blend with its backdrop. This could be NULL if the parent was
+       an isolated knockout group. */
+    if (buf->knockout && pdf14_backdrop != NULL) {
         buf->backdrop = gs_alloc_bytes(ctx->memory, buf->planestride * buf->n_chan,
-                                        "pdf14_push_transparency_group");
+            "pdf14_push_transparency_group");
         if (buf->backdrop == NULL) {
             return gs_throw(gs_error_VMerror, "Knockout backdrop allocation failed");
         }
-        if (buf->isolated) {
-            /* We will have opaque backdrop for non-isolated compositing */
-            /* Memsetting by 0, so this copes with the deep case too */
-            memset(buf->backdrop, 0, buf->planestride * buf->n_chan);
-        } else {
-            /* Save knockout backdrop for non-isolated compositing */
-            /* Note that we need to drill down through the non-isolated groups in our
-               stack and make sure that we are not embedded in another knockout group */
-            pdf14_buf *check = tos;
-            pdf14_buf *child = NULL;  /* Needed so we can get profile */
-            cmm_profile_t *prev_knockout_profile;
 
-            while (check != NULL) {
-                if (check->isolated)
-                    break;
-                if (check->knockout) {
-                    break;
-                }
-                child = check;
-                check = check->saved;
-            }
-            /* Here we need to grab a back drop from a knockout parent group and
-                potentially worry about color differences. */
-            if (check == NULL || check->page_group) {
-                prev_knockout_profile = tos_profile;
-                check = tos;
-            } else {
-                if (child == NULL) {
-                    prev_knockout_profile = tos_profile;
-                } else {
-                    prev_knockout_profile  = child->parent_color_info->icc_profile;
-                }
-            }
-            if (!cm_back_drop) {
-                pdf14_preserve_backdrop(buf, check, false
-#if RAW_DUMP
-                                        , ctx->memory
-#endif
-                                        );
-            } else {
-                /* We must have an non-isolated group with a mismatch in color spaces.
-                   In this case, we can't just copy the buffer but must CM it */
-                pdf14_preserve_backdrop_cm(buf, group_profile, check,
-                                           prev_knockout_profile, ctx->memory, pgs,
-                                           dev, false);
-            }
-            memcpy(buf->backdrop, buf->data, buf->planestride * buf->n_chan);
-        }
+        memcpy(buf->backdrop, buf->data, buf->planestride * buf->n_chan);
+
 #if RAW_DUMP
         /* Dump the current buffer to see what we have. */
         dump_raw_buffer(ctx->memory,
-                        ctx->stack->rect.q.y-ctx->stack->rect.p.y,
-                        ctx->stack->rowstride>>buf->deep, buf->n_chan,
-                        ctx->stack->planestride, ctx->stack->rowstride,
-                        "KnockoutBackDrop", buf->backdrop, buf->deep);
+            ctx->stack->rect.q.y - ctx->stack->rect.p.y,
+            ctx->stack->rowstride >> buf->deep, buf->n_chan,
+            ctx->stack->planestride, ctx->stack->rowstride,
+            "KnockoutBackDrop", buf->backdrop, buf->deep);
         global_index++;
 #endif
-    } else {
-        buf->backdrop = NULL;
     }
 #if RAW_DUMP
     /* Dump the current buffer to see what we have. */
@@ -1490,7 +1470,7 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
     bool icc_match;
     pdf14_device *pdev = (pdf14_device *)dev;
     bool overprint = pdev->overprint;
-    gx_color_index drawn_comps = pdev->drawn_comps;
+    gx_color_index drawn_comps = pdev->drawn_comps_stroke | pdev->drawn_comps_fill;
     bool has_matte = false;
 
     if (nos == NULL)
@@ -2943,11 +2923,14 @@ pdf14_set_marking_params(gx_device *dev, const gs_gstate *pgs)
     pdev->alpha = pgs->opacity.alpha * pgs->shape.alpha;
     pdev->blend_mode = pgs->blend_mode;
     pdev->overprint = pgs->overprint;
-    pdev->effective_overprint_mode = pgs->effective_overprint_mode;
+    pdev->stroke_overprint = pgs->stroke_overprint;
+    pdev->fillconstantalpha = pgs->fillconstantalpha;
+    pdev->strokeconstantalpha = pgs->strokeconstantalpha;
 
-    if_debug5m('v', dev->memory,
-               "[v]set_marking_params, opacity = %g, shape = %g, bm = %d, op = %d, eop = %d\n",
-               pdev->opacity, pdev->shape, pgs->blend_mode, pgs->overprint, pgs->effective_overprint_mode);
+    if_debug6m('v', dev->memory,
+               "[v]set_marking_params, opacity = %g, shape = %g, bm = %d, op = %d, eop = %d seop = %d\n",
+               pdev->opacity, pdev->shape, pgs->blend_mode, pgs->overprint, pdev->effective_overprint_mode,
+               pdev->stroke_effective_op_mode);
 }
 
 static  void
@@ -2987,7 +2970,7 @@ update_lop_for_pdf14(gs_gstate *pgs, const gx_drawing_color *pdcolor)
 }
 
 static int
-push_shfill_group(pdf14_clist_device *pdev, 
+push_shfill_group(pdf14_clist_device *pdev,
                   gs_gstate *pgs,
                   gs_fixed_rect *box)
 {
@@ -3243,6 +3226,196 @@ pdf14_stroke_path(gx_device *dev, const	gs_gstate	*pgs,
 }
 
 static int
+pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
+    const gx_fill_params *fill_params, const gx_drawing_color *pdcolor_fill,
+    const gx_stroke_params *stroke_params, const gx_drawing_color *pdcolor_stroke,
+    const gx_clip_path *pcpath)
+{
+    int code, code2;
+    gs_transparency_group_params_t params = { 0 };
+    gs_fixed_rect clip_bbox;
+    gs_rect bbox, group_stroke_box;
+    float opacity = pgs->opacity.alpha;
+    gs_blend_mode_t blend_mode = pgs->blend_mode;
+    gs_fixed_rect path_bbox;
+    int expansion_code;
+    gs_fixed_point expansion;
+
+    if ((pgs->fillconstantalpha == 0.0 && pgs->strokeconstantalpha == 0.0) ||
+        (pgs->ctm.xx == 0.0 && pgs->ctm.xy == 0.0 && pgs->ctm.yx == 0.0 && pgs->ctm.yy == 0.0))
+        return 0;
+
+    code = gx_curr_fixed_bbox((gs_gstate *)pgs, &clip_bbox, NO_PATH);
+    if (code < 0 && code != gs_error_unknownerror)
+        return code;
+    if (code == gs_error_unknownerror) {
+        /* didn't get clip box from gx_curr_fixed_bbox */
+        clip_bbox.p.x = clip_bbox.p.y = 0;
+        clip_bbox.q.x = int2fixed(dev->width);
+        clip_bbox.q.y = int2fixed(dev->height);
+    }
+    if (pcpath)
+        rect_intersect(clip_bbox, pcpath->outer_box);
+
+    /* expand the ppath using stroke expansion rule, then intersect it */
+    code = gx_path_bbox(ppath, &path_bbox);
+    if (code == gs_error_nocurrentpoint && ppath->segments->contents.subpath_first == 0)
+        return 0;		/* ignore empty path */
+    if (code < 0)
+        return code;
+    expansion_code = gx_stroke_path_expansion(pgs, ppath, &expansion);
+    if (expansion_code >= 0) {
+        path_bbox.p.x -= expansion.x;
+        path_bbox.p.y -= expansion.y;
+        path_bbox.q.x += expansion.x;
+        path_bbox.q.y += expansion.y;
+    }
+    rect_intersect(path_bbox, clip_bbox);
+    bbox.p.x = fixed2float(path_bbox.p.x);
+    bbox.p.y = fixed2float(path_bbox.p.y);
+    bbox.q.x = fixed2float(path_bbox.q.x);
+    bbox.q.y = fixed2float(path_bbox.q.y);
+
+    code = gs_bbox_transform_inverse(&bbox, &ctm_only(pgs), &group_stroke_box);
+    if (code < 0)
+        return code;
+
+    /* See if overprint is enabled for both stroke and fill AND if ca == CA */
+    if (pgs->fillconstantalpha == pgs->strokeconstantalpha &&
+        (((pdf14_device*)dev)->overprint && ((pdf14_device*)dev)->stroke_overprint)) {
+        /* Push a non-isolated non-knockout group with alpha = 1.0 and
+           compatible overprint mode.  Group will be composited with
+           original alpha and blend mode */
+        params.Isolated = false;
+        params.group_color = UNKNOWN;
+        params.Knockout = false;
+
+        /* non-isolated non-knockout group pushed with original alpha and blend mode */
+        code = pdf14_begin_transparency_group(dev, (const gs_transparency_group_params_t*) &params,
+            (const gs_rect*) &group_stroke_box, (gs_gstate*) pgs, dev->memory);
+        if (code < 0)
+            return code;
+
+        /* Change alpha to 1.0 and blend mode to compatible overprint for actual drawing */
+        code = gs_setopacityalpha((gs_gstate *) pgs, 1.0);
+        if (code < 0)
+            goto cleanup;
+        code = gs_setblendmode((gs_gstate *) pgs, BLEND_MODE_CompatibleOverprint);
+        if (code < 0)
+            goto cleanup;
+
+        if (pgs->fillconstantalpha > 0) {
+            ((pdf14_device*)dev)->op_state = PDF14_OP_STATE_FILL;
+            code = pdf14_fill_path(dev, pgs, ppath, fill_params, pdcolor_fill, pcpath);
+            if (code < 0)
+                goto cleanup;
+        }
+
+        if (pgs->strokeconstantalpha > 0) {
+            gs_swapcolors_quick((gs_gstate*)pgs);	/* flips stroke_color_index (to stroke) */
+            ((pdf14_device*)dev)->op_state = PDF14_OP_STATE_STROKE;
+            code = pdf14_stroke_path(dev, pgs, ppath, stroke_params, pdcolor_stroke, pcpath);
+            gs_swapcolors_quick((gs_gstate*)pgs);	/* this flips pgs->stroke_color_index back as well */
+            if (code < 0)
+                goto cleanup;       /* bail out (with colors swapped back to fill) */
+        }
+
+    } else {
+        /* Push a non-isolated knockout group. Do not change the alpha or
+            blend modes. Note: we need to draw those that have alpha = 0 */
+        params.Isolated = false;
+        params.group_color = UNKNOWN;
+        params.Knockout = true;
+
+        /* non-isolated knockout group is pushed with alpha = 1.0 and Normal blend mode */
+        code = gs_setopacityalpha((gs_gstate*) pgs, 1.0);
+        if (code < 0)
+            return code;
+        code = gs_setblendmode((gs_gstate*) pgs, BLEND_MODE_Normal);
+        if (code < 0)
+            return code;
+
+        code = pdf14_begin_transparency_group(dev, (const gs_transparency_group_params_t*) &params,
+            (const gs_rect*) &group_stroke_box, (gs_gstate*) pgs, dev->memory);
+        if (code < 0)
+            return code;
+
+        /* restore blend mode for actual drawing in the group */
+        code = gs_setblendmode((gs_gstate*) pgs, blend_mode);
+        if (code < 0)
+            goto cleanup;
+
+        code = gs_setopacityalpha((gs_gstate*) pgs, pgs->fillconstantalpha);
+        if (code < 0)
+            goto cleanup;
+        ((pdf14_device*)dev)->op_state = PDF14_OP_STATE_FILL;
+
+        /* If we are in an overprint situation, set the blend mode to compatible
+            overprint */
+        if (pgs->overprint) {
+            code = gs_setblendmode((gs_gstate*)pgs, BLEND_MODE_CompatibleOverprint);
+            if (code < 0)
+                goto cleanup;
+        }
+        code = pdf14_fill_path(dev, pgs, ppath, fill_params, pdcolor_fill, pcpath);
+        if (code < 0)
+            goto cleanup;
+        if (pgs->overprint) {
+            code = gs_setblendmode((gs_gstate*)pgs, blend_mode);
+            if (code < 0)
+                goto cleanup;
+        }
+
+        code = gs_setopacityalpha((gs_gstate*) pgs, pgs->strokeconstantalpha);
+        if (code < 0)
+            goto cleanup;
+        gs_swapcolors_quick((gs_gstate*) pgs);
+        ((pdf14_device*)dev)->op_state = PDF14_OP_STATE_STROKE;
+        if (pgs->stroke_overprint) {
+            code = gs_setblendmode((gs_gstate*)pgs, BLEND_MODE_CompatibleOverprint);
+            if (code < 0)
+                goto cleanup;
+        }
+        code = pdf14_stroke_path(dev, pgs, ppath, stroke_params, pdcolor_stroke, pcpath);
+        if (code < 0)
+            goto cleanup;
+
+        if (pgs->stroke_overprint) {
+            code = gs_setblendmode((gs_gstate*)pgs, blend_mode);
+            if (code < 0)
+                goto cleanup;
+        }
+        gs_swapcolors_quick((gs_gstate*) pgs);
+    }
+
+    /* Now during the pop do the compositing with alpha of 1.0 and normal blend */
+    code = gs_setopacityalpha((gs_gstate*) pgs, 1.0);
+    if (code < 0)
+        goto cleanup;
+    code = gs_setblendmode((gs_gstate*) pgs, BLEND_MODE_Normal);
+
+    /* Restore where we were. If an error occured while in the group push
+       return that error code but try to do the cleanup */
+cleanup:
+    code2 = pdf14_end_transparency_group(dev, (gs_gstate*) pgs);
+    if (code2 < 0) {
+        /* At this point things have gone very wrong. We should just shut down */
+        code = gs_abort_pdf14trans_device((gs_gstate*) pgs);
+        return code2;
+    }
+
+    /* Restore if there were any changes */
+    code2 = gs_setopacityalpha((gs_gstate*) pgs, opacity);
+    if (code2 < 0)
+        return code2;
+    code2 = gs_setblendmode((gs_gstate*) pgs, blend_mode);
+    if (code2 < 0)
+        return code2;
+
+    return code;
+}
+
+static int
 pdf14_copy_alpha(gx_device * dev, const byte * data, int data_x,
            int aa_raster, gx_bitmap_id id, int x, int y, int w, int h,
                       gx_color_index color, int depth)
@@ -3290,8 +3463,9 @@ do_pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
     int shape_off = num_chan * planestride;
     int alpha_g_off = shape_off + (has_shape ? planestride : 0);
     int tag_off = alpha_g_off + (has_alpha_g ? planestride : 0);
-    bool overprint = pdev->overprint;
-    gx_color_index drawn_comps = pdev->drawn_comps;
+    bool overprint = pdev->op_state == PDF14_OP_STATE_FILL ? pdev->overprint : pdev->stroke_overprint;
+    gx_color_index drawn_comps = pdev->op_state == PDF14_OP_STATE_FILL ?
+                                 pdev->drawn_comps_fill : pdev->drawn_comps_stroke;
     gx_color_index comps;
     byte shape = 0; /* Quiet compiler. */
     byte src_alpha;
@@ -3478,8 +3652,9 @@ do_pdf14_copy_alpha_color_16(gx_device * dev, const byte * data, int data_x,
     int shape_off = num_chan * planestride;
     int alpha_g_off = shape_off + (has_shape ? planestride : 0);
     int tag_off = alpha_g_off + (has_alpha_g ? planestride : 0);
-    bool overprint = pdev->overprint;
-    gx_color_index drawn_comps = pdev->drawn_comps;
+    bool overprint = pdev->op_state == PDF14_OP_STATE_FILL ? pdev->overprint : pdev->stroke_overprint;
+    gx_color_index drawn_comps = pdev->op_state == PDF14_OP_STATE_FILL ?
+        pdev->drawn_comps_fill : pdev->drawn_comps_stroke;
     gx_color_index comps;
     uint16_t shape = 0; /* Quiet compiler. */
     uint16_t src_alpha;
@@ -4180,8 +4355,15 @@ pdf14_set_params(gs_gstate * pgs,
         pgs->opacity.alpha = pparams->opacity.alpha;
     if (pparams->changed & PDF14_SET_OVERPRINT)
         pgs->overprint = pparams->overprint;
-    if (pparams->changed & PDF14_SET_OVERPRINT_MODE)
-        pgs->effective_overprint_mode = pparams->effective_overprint_mode;
+    if (pparams->changed & PDF14_SET_STROKEOVERPRINT)
+        pgs->stroke_overprint = pparams->stroke_overprint;
+    if (pparams->changed & PDF14_SET_FILLCONSTANTALPHA)
+        pgs->fillconstantalpha = pparams->fillconstantalpha;
+    if (pparams->changed & PDF14_SET_STROKECONSTANTALPHA)
+        pgs->strokeconstantalpha = pparams->strokeconstantalpha;
+    if (pparams->changed & PDF_SET_FILLSTROKE_STATE) {
+        gs_swapcolors_quick((gs_gstate*)pgs);
+    }
     pdf14_set_marking_params(dev, pgs);
 }
 
@@ -4672,9 +4854,16 @@ gx_update_pdf14_compositor(gx_device * pdev, gs_gstate * pgs,
             break;
         case PDF14_BEGIN_TRANS_MASK:
             code = gx_begin_transparency_mask(pgs, pdev, &params);
+            if (code >= 0)
+                p14dev->in_smask_construction++;
             break;
         case PDF14_END_TRANS_MASK:
             code = gx_end_transparency_mask(pgs, pdev, &params);
+            if (code >= 0) {
+                p14dev->in_smask_construction--;
+                if (p14dev->in_smask_construction < 0)
+                    p14dev->in_smask_construction = 0;
+            }
             break;
         case PDF14_SET_BLEND_PARAMS:
             pdf14_set_params(pgs, pdev, &pdf14pct->params);
@@ -4756,12 +4945,27 @@ pdf14_create_compositor(gx_device * dev, gx_device * * pcdev,
                    values around a fair amount.  Hence the forced assignement here.
                    See gx_spot_colors_set_overprint in gscspace for issues... */
                 const gs_overprint_t * op_pct = (const gs_overprint_t *) pct;
-                if (op_pct->params.retain_any_comps && !op_pct->params.retain_spot_comps) {
-                    p14dev->drawn_comps = op_pct->params.drawn_comps;
-                } else {
-                    /* Draw everything. If this parameter was not set, clist does
-                       not fill it in.  */
-                    p14dev->drawn_comps = ( (gx_color_index) 1 << (p14dev->color_info.num_components)) - (gx_color_index) 1;
+                gx_color_index drawn_comps;
+
+                p14dev->op_state = op_pct->params.op_state;
+
+                if (!p14dev->op_state) {
+                    if (op_pct->params.retain_any_comps) {
+                        drawn_comps = op_pct->params.drawn_comps;
+                    } else {
+                        /* Draw everything. If this parameter was not set, clist does
+                           not fill it in.  */
+                        drawn_comps = ((gx_color_index)1 << (p14dev->color_info.num_components)) - (gx_color_index)1;
+                    }
+
+                    if (op_pct->params.is_fill_color) {
+                        p14dev->effective_overprint_mode = op_pct->params.effective_opm;
+                        p14dev->drawn_comps_fill = drawn_comps;
+                    } else {
+                        p14dev->stroke_effective_op_mode = op_pct->params.effective_opm;
+                        p14dev->drawn_comps_stroke = drawn_comps;
+                    }
+
                 }
                 *pcdev = dev;
                 return 0;
@@ -5912,7 +6116,7 @@ pdf14_begin_transparency_mask(gx_device	*dev,
         return code;
     /* Note that the soft mask always follows the group color requirements even
        when we have a separable device */
-    return pdf14_push_transparency_mask(pdev->ctx, &rect, bg_alpha,
+    code = pdf14_push_transparency_mask(pdev->ctx, &rect, bg_alpha,
                                         transfer_fn, ptmp->function_is_identity,
                                         ptmp->idle, ptmp->replacing,
                                         ptmp->mask_id, ptmp->subtype,
@@ -5922,6 +6126,10 @@ pdf14_begin_transparency_mask(gx_device	*dev,
                                         ptmp->Matte_components,
                                         ptmp->Matte,
                                         ptmp->GrayBackground);
+    if (code < 0)
+        return code;
+
+    return 0;
 }
 
 static	int
@@ -5936,6 +6144,7 @@ pdf14_end_transparency_mask(gx_device *dev, gs_gstate *pgs)
 #ifdef DEBUG
     pdf14_debug_mask_stack_state(pdev->ctx);
 #endif
+
     /* May need to reset some color stuff related
      * to a mismatch between the Smask color space
      * and the Smask blending space */
@@ -5990,6 +6199,7 @@ do_mark_fill_rectangle_ko_simple(gx_device *dev, int x, int y, int w, int h,
     byte *bline, *bg_ptr, *line, *dst_ptr;
     byte src[PDF14_MAX_PLANES];
     byte dst[PDF14_MAX_PLANES] = { 0 };
+    byte dst2[PDF14_MAX_PLANES] = { 0 };
     int rowstride = buf->rowstride;
     int planestride = buf->planestride;
     int num_chan = buf->n_chan;
@@ -6007,9 +6217,11 @@ do_mark_fill_rectangle_ko_simple(gx_device *dev, int x, int y, int w, int h,
     int shift = 8;
     byte shape = 0; /* Quiet compiler. */
     byte src_alpha;
-    bool overprint = pdev->overprint;
-    gx_color_index drawn_comps = pdev->drawn_comps;
+    bool overprint = pdev->op_state == PDF14_OP_STATE_FILL ? pdev->overprint : pdev->stroke_overprint;
+    gx_color_index drawn_comps = pdev->op_state == PDF14_OP_STATE_FILL ?
+        pdev->drawn_comps_fill : pdev->drawn_comps_stroke;
     gx_color_index comps;
+    bool has_backdrop = buf->backdrop != NULL;
 
     if (buf->data == NULL)
         return 0;
@@ -6075,8 +6287,12 @@ do_mark_fill_rectangle_ko_simple(gx_device *dev, int x, int y, int w, int h,
     if (x + w > buf->dirty.q.x) buf->dirty.q.x = x + w;
     if (y + h > buf->dirty.q.y) buf->dirty.q.y = y + h;
 
-    /* composite with backdrop only */
-    bline = buf->backdrop + (x - buf->rect.p.x) + (y - buf->rect.p.y) * rowstride;
+    /* composite with backdrop only. */
+    if (has_backdrop)
+        bline = buf->backdrop + (x - buf->rect.p.x) + (y - buf->rect.p.y) * rowstride;
+    else
+        bline = NULL;
+
     line = buf->data + (x - buf->rect.p.x) + (y - buf->rect.p.y) * rowstride;
 
     for (j = 0; j < h; ++j) {
@@ -6084,19 +6300,21 @@ do_mark_fill_rectangle_ko_simple(gx_device *dev, int x, int y, int w, int h,
         dst_ptr = line;
         for (i = 0; i < w; ++i) {
             /* Complement the components for subtractive color spaces */
-            if (additive) {
-                for (k = 0; k < num_chan; ++k)
-                    dst[k] = bg_ptr[k * planestride];
-            } else {
-                for (k = 0; k < num_comp; ++k)
-                    dst[k] = 255 - bg_ptr[k * planestride];
+            if (has_backdrop) {
+                if (additive) {
+                    for (k = 0; k < num_chan; ++k)
+                        dst[k] = bg_ptr[k * planestride];
+                } else {
+                    for (k = 0; k < num_comp; ++k)
+                        dst2[k] = dst[k] = 255 - bg_ptr[k * planestride];
+                }
+                dst2[num_comp] = dst[num_comp] = bg_ptr[num_comp * planestride];	/* alpha doesn't invert */
             }
-            dst[num_comp] = bg_ptr[num_comp * planestride];	/* alpha doesn't invert */
-            if (buf->isolated) {
+            if (buf->isolated || !has_backdrop) {
                 art_pdf_knockoutisolated_group_8(dst, src, num_comp);
             } else {
                 art_pdf_composite_knockout_8(dst, src, num_comp,
-                                             blend_mode, pdev->blend_procs, pdev);
+                                            blend_mode, pdev->blend_procs, pdev);
             }
             /* Complement the results for subtractive color spaces */
             if (additive) {
@@ -6104,9 +6322,17 @@ do_mark_fill_rectangle_ko_simple(gx_device *dev, int x, int y, int w, int h,
                     dst_ptr[k * planestride] = dst[k];
             } else {
                 if (overprint) {
-                    for (k = 0, comps = drawn_comps; comps != 0; ++k, comps >>= 1) {
+                    /* We may have to do the compatible overprint blending */
+                    if (!buf->isolated && drawn_comps != (( (size_t) 1 << (size_t) dev->color_info.num_components)-(size_t) 1)) {
+                        art_pdf_composite_knockout_8(dst2, src, num_comp,
+                            blend_mode, pdev->blend_procs, pdev);
+                    }
+                    for (k = 0, comps = drawn_comps; k < num_comp; ++k, comps >>= 1) {
                         if ((comps & 0x1) != 0) {
                             dst_ptr[k * planestride] = 255 - dst[k];
+                        } else {
+                            /* Compatible overprint blend result. */
+                            dst_ptr[k * planestride] = 255 - dst2[k];
                         }
                     }
                 } else {
@@ -6132,7 +6358,8 @@ do_mark_fill_rectangle_ko_simple(gx_device *dev, int x, int y, int w, int h,
             if (shape_off)
                 dst_ptr[shape_off] = 255 - shape;
             ++dst_ptr;
-            ++bg_ptr;
+            if (has_backdrop)
+                ++bg_ptr;
         }
         bline += rowstride;
         line += rowstride;
@@ -6167,6 +6394,7 @@ do_mark_fill_rectangle_ko_simple16(gx_device *dev, int x, int y, int w, int h,
     uint16_t *bline, *bg_ptr, *line, *dst_ptr;
     uint16_t src[PDF14_MAX_PLANES];
     uint16_t dst[PDF14_MAX_PLANES] = { 0 };
+    uint16_t dst2[PDF14_MAX_PLANES] = { 0 };
     int rowstride = buf->rowstride;
     int planestride = buf->planestride;
     int num_chan = buf->n_chan;
@@ -6182,9 +6410,11 @@ do_mark_fill_rectangle_ko_simple16(gx_device *dev, int x, int y, int w, int h,
     gs_graphics_type_tag_t curr_tag = GS_UNKNOWN_TAG;  /* Quiet compiler */
     uint16_t shape = 0; /* Quiet compiler. */
     uint16_t src_alpha;
-    bool overprint = pdev->overprint;
-    gx_color_index drawn_comps = pdev->drawn_comps;
+    bool overprint = pdev->op_state == PDF14_OP_STATE_FILL ? pdev->overprint : pdev->stroke_overprint;
+    gx_color_index drawn_comps = pdev->op_state == PDF14_OP_STATE_FILL ?
+        pdev->drawn_comps_fill : pdev->drawn_comps_stroke;
     gx_color_index comps;
+    bool has_backdrop = buf->backdrop != NULL;
 
     if (buf->data == NULL)
         return 0;
@@ -6250,8 +6480,13 @@ do_mark_fill_rectangle_ko_simple16(gx_device *dev, int x, int y, int w, int h,
     if (x + w > buf->dirty.q.x) buf->dirty.q.x = x + w;
     if (y + h > buf->dirty.q.y) buf->dirty.q.y = y + h;
 
-    /* composite with backdrop only */
-    bline = (uint16_t *)(void *)(buf->backdrop + (x - buf->rect.p.x)*2 + (y - buf->rect.p.y) * rowstride);
+
+    /* composite with backdrop only. */
+    if (has_backdrop)
+        bline = (uint16_t*)(void*)(buf->backdrop + (x - buf->rect.p.x) * 2 + (y - buf->rect.p.y) * rowstride);
+    else
+        bline = NULL;
+
     line = (uint16_t *)(void *)(buf->data + (x - buf->rect.p.x)*2 + (y - buf->rect.p.y) * rowstride);
     planestride >>= 1;
     rowstride >>= 1;
@@ -6264,15 +6499,17 @@ do_mark_fill_rectangle_ko_simple16(gx_device *dev, int x, int y, int w, int h,
         dst_ptr = line;
         for (i = 0; i < w; ++i) {
             /* Complement the components for subtractive color spaces */
-            if (additive) {
-                for (k = 0; k < num_chan; ++k)
-                    dst[k] = bg_ptr[k * planestride];
-            } else {
-                for (k = 0; k < num_comp; ++k)
-                    dst[k] = 65535 - bg_ptr[k * planestride];
+            if (has_backdrop) {
+                if (additive) {
+                    for (k = 0; k < num_chan; ++k)
+                        dst[k] = bg_ptr[k * planestride];
+                } else {
+                    for (k = 0; k < num_comp; ++k)
+                        dst2[k] = dst[k] = 65535 - bg_ptr[k * planestride];
+                }
+                dst2[num_comp] = dst[num_comp] = bg_ptr[num_comp * planestride];	/* alpha doesn't invert */
             }
-            dst[num_comp] = bg_ptr[num_comp * planestride];	/* alpha doesn't invert */
-            if (buf->isolated) {
+            if (buf->isolated || !has_backdrop) {
                 art_pdf_knockoutisolated_group_16(dst, src, num_comp);
             } else {
                 art_pdf_composite_knockout_16(dst, src, num_comp,
@@ -6284,9 +6521,17 @@ do_mark_fill_rectangle_ko_simple16(gx_device *dev, int x, int y, int w, int h,
                     dst_ptr[k * planestride] = dst[k];
             } else {
                 if (overprint) {
-                    for (k = 0, comps = drawn_comps; comps != 0; ++k, comps >>= 1) {
+                    /* We may have to do the compatible overprint blending */
+                    if (!buf->isolated && drawn_comps != (((size_t)1 << (size_t)dev->color_info.num_components) - (size_t)1)) {
+                        art_pdf_composite_knockout_16(dst2, src, num_comp,
+                            blend_mode, pdev->blend_procs, pdev);
+                    }
+                    for (k = 0, comps = drawn_comps; k < num_comp; ++k, comps >>= 1) {
                         if ((comps & 0x1) != 0) {
                             dst_ptr[k * planestride] = 65535 - dst[k];
+                        } else {
+                            /* Compatible overprint blend result. */
+                            dst_ptr[k * planestride] = 65535 - dst2[k];
                         }
                     }
                 } else {
@@ -6312,7 +6557,8 @@ do_mark_fill_rectangle_ko_simple16(gx_device *dev, int x, int y, int w, int h,
             if (shape_off)
                 dst_ptr[shape_off] = 65535 - shape;
             ++dst_ptr;
-            ++bg_ptr;
+            if (has_backdrop)
+                ++bg_ptr;
         }
         bline += rowstride;
         line += rowstride;
@@ -6771,6 +7017,10 @@ pdf14_dev_spec_op(gx_device *pdev, int dev_spec_op,
         return 0;
     if(dev_spec_op == gxdso_JPEG_passthrough_query)
         return 0;
+    if (dev_spec_op == gxdso_overprint_active)
+        return p14dev->overprint || p14dev->stroke_overprint;
+    if (dev_spec_op == gxdso_in_smask_construction)
+        return p14dev->in_smask_construction > 0;
 
      return dev_proc(p14dev->target, dev_spec_op)(p14dev->target, dev_spec_op, data, size);
 }
@@ -6907,6 +7157,8 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
         p14dev->width = 1;
         p14dev->height = 1;
     }
+
+    p14dev->op_state = pgs->is_fill_color;
     code = dev_proc((gx_device *) p14dev, open_device) ((gx_device *) p14dev);
     *pdev = (gx_device *) p14dev;
     pdf14_set_marking_params((gx_device *)p14dev, pgs);
@@ -7237,7 +7489,8 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
                 pdf14_needed = false;		/* At page level, set back to false */
             if (smask_level == 0 && trans_group_level == 0)
                 cdev->page_pdf14_needed = pdf14_needed;         /* save for after popping to page level */
-            *pbuf++ = pparams->changed;
+            /* Changed is now two bytes due to overprint stroke fill. Write as int */
+            put_value(pbuf, pparams->changed);
             if (pparams->changed & PDF14_SET_BLEND_MODE)
                 *pbuf++ = pparams->blend_mode;
             if (pparams->changed & PDF14_SET_TEXT_KNOCKOUT)
@@ -7248,8 +7501,14 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
                 put_value(pbuf, pparams->shape.alpha);
             if (pparams->changed & PDF14_SET_OVERPRINT)
                 put_value(pbuf, pparams->overprint);
-            if (pparams->changed & PDF14_SET_OVERPRINT_MODE)
-                put_value(pbuf, pparams->effective_overprint_mode);
+            if (pparams->changed & PDF14_SET_STROKEOVERPRINT)
+                put_value(pbuf, pparams->stroke_overprint);
+            if (pparams->changed & PDF14_SET_FILLCONSTANTALPHA)
+                put_value(pbuf, pparams->fillconstantalpha);
+            if (pparams->changed & PDF14_SET_STROKECONSTANTALPHA)
+                put_value(pbuf, pparams->strokeconstantalpha);
+            if (pparams->changed & PDF_SET_FILLSTROKE_STATE)
+                put_value(pbuf, pparams->op_fs_state);
             break;
         case PDF14_PUSH_TRANS_STATE:
             break;
@@ -7434,7 +7693,7 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
             return 0;
             break;
         case PDF14_SET_BLEND_PARAMS:
-            params.changed = *data++;
+            read_value(data, params.changed);
             if (params.changed & PDF14_SET_BLEND_MODE)
                 params.blend_mode = *data++;
             if (params.changed & PDF14_SET_TEXT_KNOCKOUT)
@@ -7445,8 +7704,14 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
                 read_value(data, params.shape.alpha);
             if (params.changed & PDF14_SET_OVERPRINT)
                 read_value(data, params.overprint);
-            if (params.changed & PDF14_SET_OVERPRINT_MODE)
-                read_value(data, params.effective_overprint_mode);
+            if (params.changed & PDF14_SET_STROKEOVERPRINT)
+                read_value(data, params.stroke_overprint);
+            if (params.changed & PDF14_SET_FILLCONSTANTALPHA)
+                read_value(data, params.fillconstantalpha);
+            if (params.changed & PDF14_SET_STROKECONSTANTALPHA)
+                read_value(data, params.strokeconstantalpha);
+            if (params.changed & PDF_SET_FILLSTROKE_STATE)
+                read_value(data, params.op_fs_state);
             break;
     }
     code = gs_create_pdf14trans(ppct, &params, mem);
@@ -7870,13 +8135,17 @@ send_pdf14trans(gs_gstate	* pgs, gx_device * dev,
         gx_forward_set_graphics_type_tag, /* set_graphics_type_tag */\
         NULL,                           /* strip_copy_rop2 */\
         NULL,                           /* strip_tile_rect_devn */\
-        gx_forward_copy_alpha_hl_color\
+        gx_forward_copy_alpha_hl_color,\
+        NULL,				/* process_page */\
+        NULL,				/* transform_pixel_region */\
+        pdf14_clist_fill_stroke_path,\
 }
 
 static	dev_proc_create_compositor(pdf14_clist_create_compositor);
 static	dev_proc_create_compositor(pdf14_clist_forward_create_compositor);
 static	dev_proc_fill_path(pdf14_clist_fill_path);
 static	dev_proc_stroke_path(pdf14_clist_stroke_path);
+static	dev_proc_fill_stroke_path(pdf14_clist_fill_stroke_path);
 static	dev_proc_text_begin(pdf14_clist_text_begin);
 static	dev_proc_begin_image(pdf14_clist_begin_image);
 static	dev_proc_begin_typed_image(pdf14_clist_begin_typed_image);
@@ -8160,6 +8429,7 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_gstate * pgs,
     pdev->pad = target->pad;
     pdev->log2_align_mod = target->log2_align_mod;
     pdev->is_planar = target->is_planar;
+    pdev->op_state = pgs->is_fill_color;
 
     if (deep) {
         set_dev_proc(pdev, encode_color, pdf14_encode_color16);
@@ -8587,6 +8857,7 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
                   than transparent. We must use the parent colors bounding box in
                   determining the range of bands in which this mask can affect.
                   So, if needed change the masks bounding box at this time */
+                pdev->in_smask_construction++;
                 break;
             case PDF14_BEGIN_TRANS_TEXT_GROUP:
                 if (pdev->text_group == PDF14_TEXTGROUP_BT_PUSHED) {
@@ -8606,8 +8877,12 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
                 if (code < 0)
                     return code;
                 break;
-            case PDF14_END_TRANS_GROUP:
             case PDF14_END_TRANS_MASK:
+                pdev->in_smask_construction--;
+                if (pdev->in_smask_construction < 0)
+                    pdev->in_smask_construction = 0;
+                /* fallthrough */
+            case PDF14_END_TRANS_GROUP:
                 /* We need to update the clist writer device procs based upon the
                    the group color space. */
                 code = pdf14_update_device_color_procs_pop_c(dev,pgs);
@@ -8855,9 +9130,21 @@ pdf14_clist_update_params(pdf14_clist_device * pdev, const gs_gstate * pgs,
         changed |= PDF14_SET_OVERPRINT;
         params.overprint = pdev->overprint = pgs->overprint;
     }
-    if (pgs->effective_overprint_mode != pdev->effective_overprint_mode) {
-        changed |= PDF14_SET_OVERPRINT_MODE;
-        params.effective_overprint_mode = pdev->effective_overprint_mode = pgs->effective_overprint_mode;
+    if (pgs->stroke_overprint != pdev->stroke_overprint) {
+        changed |= PDF14_SET_STROKEOVERPRINT;
+        params.stroke_overprint = pdev->stroke_overprint = pgs->stroke_overprint;
+    }
+    if (pgs->fillconstantalpha != pdev->fillconstantalpha) {
+        changed |= PDF14_SET_FILLCONSTANTALPHA;
+        params.fillconstantalpha = pdev->fillconstantalpha = pgs->fillconstantalpha;
+    }
+    if (pgs->strokeconstantalpha != pdev->strokeconstantalpha) {
+        changed |= PDF14_SET_STROKECONSTANTALPHA;
+        params.strokeconstantalpha = pdev->strokeconstantalpha = pgs->strokeconstantalpha;
+    }
+    if (pgs->is_fill_color != pdev->op_state) {
+        changed |= PDF_SET_FILLSTROKE_STATE;
+        params.op_fs_state = pdev->op_state = pgs->is_fill_color;
     }
     if (crop_blend_params) {
         params.ctm = group_params->ctm;
@@ -9084,6 +9371,240 @@ pdf14_clist_stroke_path(gx_device *dev,	const gs_gstate *pgs,
     }
     if (pinst != NULL)
         pinst->saved->trans_device = NULL;
+    return code;
+}
+
+/* Set up work for doing shading patterns in fill stroke through
+   the clist.  We have to do all the dirty work now since we are
+   going through the default fill and stroke operations individually */
+static int
+pdf14_clist_fill_stroke_path_pattern_setup(gx_device* dev, const gs_gstate* pgs, gx_path* ppath,
+    const gx_fill_params* params_fill, const gx_drawing_color* pdevc_fill,
+    const gx_stroke_params* params_stroke, const gx_drawing_color* pdevc_stroke,
+    const gx_clip_path* pcpath)
+{
+    int code, code2;
+    gs_transparency_group_params_t params = { 0 };
+    gs_fixed_rect clip_bbox;
+    gs_rect bbox, group_stroke_box;
+    float opacity = pgs->opacity.alpha;
+    gs_blend_mode_t blend_mode = pgs->blend_mode;
+    gs_fixed_rect path_bbox;
+    int expansion_code;
+    gs_fixed_point expansion;
+
+    code = gx_curr_fixed_bbox((gs_gstate*)pgs, &clip_bbox, NO_PATH);
+    if (code < 0 && code != gs_error_unknownerror)
+        return code;
+    if (code == gs_error_unknownerror) {
+        /* didn't get clip box from gx_curr_fixed_bbox */
+        clip_bbox.p.x = clip_bbox.p.y = 0;
+        clip_bbox.q.x = int2fixed(dev->width);
+        clip_bbox.q.y = int2fixed(dev->height);
+    }
+    if (pcpath)
+        rect_intersect(clip_bbox, pcpath->outer_box);
+
+    /* expand the ppath using stroke expansion rule, then intersect it */
+    code = gx_path_bbox(ppath, &path_bbox);
+    if (code == gs_error_nocurrentpoint && ppath->segments->contents.subpath_first == 0)
+        return 0;		/* ignore empty path */
+    if (code < 0)
+        return code;
+    expansion_code = gx_stroke_path_expansion(pgs, ppath, &expansion);
+    if (expansion_code >= 0) {
+        path_bbox.p.x -= expansion.x;
+        path_bbox.p.y -= expansion.y;
+        path_bbox.q.x += expansion.x;
+        path_bbox.q.y += expansion.y;
+    }
+    rect_intersect(path_bbox, clip_bbox);
+    bbox.p.x = fixed2float(path_bbox.p.x);
+    bbox.p.y = fixed2float(path_bbox.p.y);
+    bbox.q.x = fixed2float(path_bbox.q.x);
+    bbox.q.y = fixed2float(path_bbox.q.y);
+
+    code = gs_bbox_transform_inverse(&bbox, &ctm_only(pgs), &group_stroke_box);
+    if (code < 0)
+        return code;
+
+    /* See if overprint is enabled for both stroke and fill AND if ca == CA */
+    if (pgs->fillconstantalpha == pgs->strokeconstantalpha &&
+        (pgs->overprint && pgs->stroke_overprint)) {
+        /* Push a non-isolated non-knockout group with alpha = 1.0 and
+           compatible overprint mode.  Group will be composited with
+           original alpha and blend mode */
+        params.Isolated = false;
+        params.group_color = UNKNOWN;
+        params.Knockout = false;
+
+        /* non-isolated non-knockout group pushed with original alpha and blend mode */
+        code = gs_begin_transparency_group((gs_gstate*)pgs, &params, (const gs_rect*)&group_stroke_box, PDF14_BEGIN_TRANS_GROUP);
+        if (code < 0)
+            return code;
+
+        /* Change alpha to 1.0 and blend mode to compatible overprint for actual drawing */
+        code = gs_setopacityalpha((gs_gstate*)pgs, 1.0);
+        if (code < 0)
+            goto cleanup;
+        code = gs_setblendmode((gs_gstate*)pgs, BLEND_MODE_CompatibleOverprint);
+        if (code < 0)
+            goto cleanup;
+
+        /* Do fill */
+        if (pgs->fillconstantalpha > 0.0) {
+            code = pdf14_clist_fill_path(dev, pgs, ppath, params_fill, pdevc_fill, pcpath);
+            if (code < 0)
+                goto cleanup;
+        }
+
+        /* Do stroke */
+        if (pgs->strokeconstantalpha > 0.0) {
+            code = pdf14_clist_stroke_path(dev, pgs, ppath, params_stroke, pdevc_stroke, pcpath);
+            if (code < 0)
+                goto cleanup;
+        }
+
+    } else {
+        /* Push a non-isolated knockout group. Do not change the alpha or
+           blend modes */
+        params.Isolated = false;
+        params.group_color = UNKNOWN;
+        params.Knockout = true;
+
+        /* non-isolated knockout group is pushed with alpha = 1.0 and Normal blend mode */
+        code = gs_setopacityalpha((gs_gstate*)pgs, 1.0);
+        if (code < 0)
+            return code;
+        code = gs_setblendmode((gs_gstate*)pgs, BLEND_MODE_Normal);
+        if (code < 0)
+            return code;
+
+        code = gs_begin_transparency_group((gs_gstate*)pgs, &params, (const gs_rect*)&group_stroke_box, PDF14_BEGIN_TRANS_GROUP);
+        if (code < 0)
+            return code;
+
+        /* restore blend mode for actual drawing in the group */
+        code = gs_setblendmode((gs_gstate*)pgs, blend_mode);
+        if (code < 0)
+            goto cleanup;
+
+        if (pgs->fillconstantalpha > 0.0) {
+            code = gs_setopacityalpha((gs_gstate*)pgs, pgs->fillconstantalpha);
+            if (code < 0)
+                goto cleanup;
+
+            /* If we are in an overprint situation, set the blend mode to compatible
+               overprint */
+            if (pgs->overprint)
+                code = gs_setblendmode((gs_gstate*)pgs, BLEND_MODE_CompatibleOverprint);
+            if (code < 0)
+                goto cleanup;
+
+            code = pdf14_clist_fill_path(dev, pgs, ppath, params_fill, pdevc_fill, pcpath);
+            if (code < 0)
+                goto cleanup;
+
+            if (pgs->overprint) {
+                code = gs_setblendmode((gs_gstate*)pgs, blend_mode);
+                if (code < 0)
+                    goto cleanup;
+            }
+        }
+
+        if (pgs->strokeconstantalpha > 0.0) {
+            code = gs_setopacityalpha((gs_gstate*)pgs, pgs->strokeconstantalpha);
+            if (code < 0)
+                goto cleanup;
+            if (pgs->stroke_overprint) {
+                code = gs_setblendmode((gs_gstate*)pgs, BLEND_MODE_CompatibleOverprint);
+                if (code < 0)
+                    goto cleanup;
+            }
+
+            code = pdf14_clist_stroke_path(dev, pgs, ppath, params_stroke, pdevc_stroke, pcpath);
+            if (code < 0)
+                goto cleanup;
+
+            if (pgs->stroke_overprint) {
+                code = gs_setblendmode((gs_gstate*)pgs, blend_mode);
+                if (code < 0)
+                    goto cleanup;
+            }
+        }
+    }
+    /* Now during the pop do the compositing with alpha of 1.0 and normal blend */
+    code = gs_setopacityalpha((gs_gstate*)pgs, 1.0);
+    if (code < 0)
+        goto cleanup;
+    code = gs_setblendmode((gs_gstate*)pgs, BLEND_MODE_Normal);
+    if (code < 0)
+        goto cleanup;
+
+    /* Restore where we were. If an error occured while in the group push
+       return that error code but try to do the cleanup */
+cleanup:
+    code2 = gs_end_transparency_group((gs_gstate*)pgs);
+    if (code2 < 0) {
+        /* At this point things have gone very wrong. We should just shut down */
+        code = gs_abort_pdf14trans_device((gs_gstate*)pgs);
+        return code2;
+    }
+
+    /* Restore if there were any changes */
+    code2 = gs_setopacityalpha((gs_gstate*)pgs, opacity);
+    if (code2 < 0)
+        return code2;
+    code2 = gs_setblendmode((gs_gstate*)pgs, blend_mode);
+    if (code2 < 0)
+        return code2;
+    return code;
+}
+
+/*
+ * fill_path routine for the PDF 1.4 transaprency compositor device for
+ * writing the clist.
+ */
+static	int
+pdf14_clist_fill_stroke_path(gx_device	*dev, const gs_gstate *pgs, gx_path *ppath,
+                             const gx_fill_params *params_fill, const gx_drawing_color *pdevc_fill,
+                             const gx_stroke_params *params_stroke, const gx_drawing_color *pdevc_stroke,
+                             const gx_clip_path *pcpath)
+{
+    pdf14_clist_device * pdev = (pdf14_clist_device *)dev;
+    gs_gstate new_pgs = *pgs;
+    int code;
+
+    if ((pgs->fillconstantalpha == 0.0 && pgs->strokeconstantalpha == 0.0) ||
+        (pgs->ctm.xx == 0.0 && pgs->ctm.xy == 0.0 && pgs->ctm.yx == 0.0 && pgs->ctm.yy == 0.0))
+        return 0;
+
+    /*
+     * Ensure that that the PDF 1.4 reading compositor will have the current
+     * blending parameters.  This is needed since the fill_rectangle routines
+     * do not have access to the gs_gstate.  Thus we have to pass any
+     * changes explictly.
+     */
+    code = pdf14_clist_update_params(pdev, pgs, false, NULL);
+    if (code < 0)
+        return code;
+    /* If we are doing a shading fill or stroke, the clist can't
+       deal with this and end up in the pdf_fill_stroke operation.
+       We will need to break up the fill stroke now and do
+       the appropriate group pushes and set up. */
+
+    if ((pdevc_fill != NULL && gx_dc_is_pattern2_color(pdevc_fill)) ||
+        (pdevc_stroke != NULL && gx_dc_is_pattern2_color(pdevc_stroke))) {
+        return pdf14_clist_fill_stroke_path_pattern_setup(dev, pgs, ppath,
+            params_fill, pdevc_fill, params_stroke, pdevc_stroke, pcpath);
+    }
+    update_lop_for_pdf14(&new_pgs, pdevc_fill);
+    new_pgs.trans_device = dev;
+    new_pgs.has_transparency = true;
+    code = gx_forward_fill_stroke_path(dev, &new_pgs, ppath, params_fill, pdevc_fill,
+                                       params_stroke, pdevc_stroke, pcpath);
+    new_pgs.trans_device = NULL;
+    new_pgs.has_transparency = false;
     return code;
 }
 
@@ -9728,7 +10249,7 @@ pdf14_spot_get_color_comp_index(gx_device *dev, const char *pname,
        We need the real target procs */
     if (target_get_color_comp_index == pdf14_cmykspot_get_color_comp_index)
         target_get_color_comp_index =
-        ((pdf14_clist_device *)pdev)->saved_target_get_color_comp_index;
+            ((pdf14_clist_device *)pdev)->saved_target_get_color_comp_index;
     /*
     * If this is not a separation name then simply forward it to the target
     * device.
@@ -9749,6 +10270,9 @@ pdf14_spot_get_color_comp_index(gx_device *dev, const char *pname,
         return comp_index - offset;
     /*
     * If we do not know this color, check if the output (target) device does.
+    * Note that if the target device has ENABLE_AUTO_SPOT_COLORS this will add
+    * the colorant so we will only get < 0 returned when we hit the max. for
+    * the target device.
     */
     comp_index = (*target_get_color_comp_index)(tdev, pname, name_size, component_type);
     /*
@@ -9760,14 +10284,20 @@ pdf14_spot_get_color_comp_index(gx_device *dev, const char *pname,
 
     /*
     * This is a new colorant.  Add it to our list of colorants.
+    * The limit accounts for the number of process colors (at least 4).
     */
-    if (pseparations->num_separations < GX_DEVICE_COLOR_MAX_COMPONENTS - 1) {
+    if ((pseparations->num_separations + 1) <
+            (GX_DEVICE_COLOR_MAX_COMPONENTS - max(num_process_colors, 4))) {
         int sep_num = pseparations->num_separations++;
         int color_component_number;
         byte * sep_name;
 
         sep_name = gs_alloc_bytes(dev->memory->stable_memory,
             name_size, "pdf14_spot_get_color_comp_index");
+        if (sep_name == NULL) {
+            pseparations->num_separations--;	/* we didn't add it */
+            return -1;
+        }
         memcpy(sep_name, pname, name_size);
         pseparations->names[sep_num].size = name_size;
         pseparations->names[sep_num].data = sep_name;

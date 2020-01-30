@@ -3263,8 +3263,9 @@ to the output device profile.  To achieve this, one should
 <dl>
     <dt><code>-dUseFastColor=</code><em>true/false</em></dt>
 <dd>
-This is used to avoid the use of ICC profiles for source colors that
-are defined by DeviceGray, DeviceRGB and DeviceCMYK definitions.  With
+This is used to avoid the use of ICC profiles for source colors. This
+includes those that are defined by DeviceGray, DeviceRGB and DeviceCMYK definitions
+as well as ICC-based color spaces in the source document.  With
 UseFastColor set to true, the traditional Postscript 255 minus operations
 are used to convert between RGB and CMYK with black generation and undercolor
     removal mappings.</dd>
