@@ -97,18 +97,15 @@ struct pdf14_mask_s {
 
 };
 
-/* A structure to hold information
- * about the parent color related
- * procs and other information.
- * These may change depending upon
- * if the blending space is different
- * than the base space.  The structure
- * is a list that is updated upon
- * every transparency group push and pop */
+/* A structure to hold information about the group color related
+ * procs and other information. These may change depending upon
+ * if the blending space is different than the base space.
+ * The structure is a list that is updated upo every transparency 
+ * group push and pop */
 
-typedef struct pdf14_parent_color_s pdf14_parent_color_t;
+typedef struct pdf14_group_color_s pdf14_group_color_t;
 
-struct pdf14_parent_color_s {
+struct pdf14_group_color_s {
     int num_components;
     bool isadditive;
     gx_color_polarity_t polarity;
@@ -119,14 +116,14 @@ struct pdf14_parent_color_s {
     uint max_color; /* Causes issues if these are not maintained */
     const gx_color_map_procs *(*get_cmap_procs)(const gs_gstate *,
                                                      const gx_device *);
-    const gx_cm_color_map_procs *(*parent_color_mapping_procs)(const gx_device *);
+    const gx_cm_color_map_procs *(*group_color_mapping_procs)(const gx_device *);
     gx_color_index (*encode)(gx_device *, const gx_color_value value[]);
     int (*decode)(gx_device *, gx_color_index, gx_color_value *);
-    int (*parent_color_comp_index)(gx_device *, const char *, int, int);
+    int (*group_color_comp_index)(gx_device *, const char *, int, int);
     const pdf14_procs_t * unpack_procs;
     const pdf14_nonseparable_blending_procs_t * parent_blending_procs;
     cmm_profile_t *icc_profile;  /* Opaque to GC.  Allocated in non-gc memory */
-    pdf14_parent_color_t *previous;
+    pdf14_group_color_t *previous;
 };
 
 typedef struct pdf14_ctx_s pdf14_ctx;
@@ -169,7 +166,7 @@ struct pdf14_buf_s {
     gs_transparency_mask_subtype_t SMask_SubType;
 
     uint mask_id;
-    pdf14_parent_color_t *parent_color_info;
+    pdf14_group_color_t *group_color_info;
 
     gs_transparency_color_t color_space;  /* Different groups can have different spaces for blending */
     gs_memory_t *memory;
@@ -192,7 +189,7 @@ struct pdf14_ctx_s {
     bool deep; /* If true, 16 bit data, false, 8 bit data. */
     bool has_tags;
     int num_spots;
-
+    pdf14_group_color_t* base_color_info;
 };
 
 typedef struct gs_pdf14trans_params_s gs_pdf14trans_params_t;
@@ -271,7 +268,7 @@ typedef struct pdf14_device_s {
     dev_proc_get_color_mapping_procs(*my_get_color_mapping_procs);
     dev_proc_get_color_comp_index(*my_get_color_comp_index);
 
-    pdf14_parent_color_t *trans_group_parent_cmap_procs;
+    pdf14_group_color_t *trans_group_cmap_procs;
 
 } pdf14_device_t;
 

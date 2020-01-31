@@ -1026,6 +1026,7 @@ gx_default_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
         case gxdso_supports_saved_pages:
         case gxdso_needs_invariant_palette:
         case gxdso_supports_iccpostrender:
+        case gxdso_supports_alpha:
             return 0;
         case gxdso_pattern_shfill_doesnt_need_path:
             return (dev_proc(pdev, fill_path) == gx_default_fill_path);
@@ -1062,8 +1063,6 @@ gx_default_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
                     dev_proc(pdev, encode_color) == gx_default_rgb_map_rgb_color);
         /* Just ignore information about events */
         case gxdso_event_info:
-            return 0;
-        case gxdso_supports_alpha:
             return 0;
         case gxdso_overprint_active:
             return 0;
