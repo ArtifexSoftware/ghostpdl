@@ -964,14 +964,20 @@ MSVC_VERSION=16
 MS_TOOLSET_VERSION=14.24.28314
 !endif
 !if "$(_NMAKE_VER)" == "14.24.28315.0"
-# VS2019 (Toolset v142)
+# VS2019 (Toolset v142 - update)
 MSVC_VERSION=16
 MS_TOOLSET_VERSION=14.24.28315
+!endif
+!if "$(_NMAKE_VER)" == "14.24.28316.0"
+# VS2019 (Toolset v142 - update)
+MSVC_VERSION=16
+MS_TOOLSET_VERSION=14.24.28316
 !endif
 !endif
 
 !ifndef MSVC_VERSION
 !MESSAGE Could not determine MSVC_VERSION! Guessing at an ancient one.
+!MESSAGE Unknown nmake version: $(_NMAKE_VER)
 MSVC_VERSION=6
 !endif
 !ifndef MSVC_MINOR_VERSION
