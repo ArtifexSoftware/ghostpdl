@@ -801,7 +801,7 @@ jbig2_find_changing_element(const byte *line, uint32_t x, uint32_t w)
     assert(x % 8 == 0);
     /* Check next uint8 if we are not on 16-bit boundary. */
     if (x % 16) {
-        if (x + 8 > w) {
+        if (w - x < 8) {
             goto check1;
         }
         if ( ((uint8_t*) line)[ x / 8] != all8) {
@@ -813,7 +813,7 @@ jbig2_find_changing_element(const byte *line, uint32_t x, uint32_t w)
     assert(x % 16 == 0);
     /* Check next uint16 if we are not on 32-bit boundary. */
     if (x % 32) {
-        if (x + 16 > w) {
+        if (w - x < 16) {
             goto check8;
         }
         if ( ((uint16_t*) line)[ x / 16] != all16) {
@@ -826,7 +826,7 @@ jbig2_find_changing_element(const byte *line, uint32_t x, uint32_t w)
     sub-32-bit region. */
     assert(x % 32 == 0);
     for(;;) {
-        if (x + 32 > w) {
+        if (w - x < 32) {
             /* We could still look at the uint32 here - if it equals all32, we
             know there is no match before <w> so could do {x = w; goto end;}.
 
@@ -843,11 +843,11 @@ jbig2_find_changing_element(const byte *line, uint32_t x, uint32_t w)
     /* Check next uint16. */
 check16:
     assert(x % 16 == 0);
-    if (x + 16 > w) {
+    if (w - x < 16) {
         goto check8;
     }
 check16_no_eof:
-    assert(x + 16 <= w);
+    assert(w - x >= 16);
     if ( ((uint16_t*) line)[x/16] != all16) {
         goto check8_no_eof;
     }
@@ -856,11 +856,11 @@ check16_no_eof:
     /* Check next uint8. */
 check8:
     assert(x % 8 == 0);
-    if (x + 8 > w) {
+    if (w - x < 8) {
         goto check1;
     }
 check8_no_eof:
-    assert(x + 8 <= w);
+    assert(w - x >= 8);
     if ( ((uint8_t*) line)[x/8] != all8) {
         goto check1;
     }
