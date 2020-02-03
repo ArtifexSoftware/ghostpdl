@@ -1012,6 +1012,8 @@ jbig2_decode_generic_template0_TPGDON(Jbig2Ctx *ctx,
         left = -gmin;
     if ((int)right < gmax)
         right = gmax;
+    if (right > GBW)
+        right = GBW;
     right = GBW - right;
     /* So 0 <= x < left or right <= x < GBW needs bounds checking. */
 
