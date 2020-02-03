@@ -419,14 +419,43 @@ end
 
   % Some functions used to implement phases of HT and HTP
   /sethalftones {
+    % As is so often the case, if we get an error we need to clean up the stack, but we can't
+    % use mark/cleartomark, because the action which caused the error may have left a mark
+    % on the stack. So we need to define our own mark. On an error we'll clean up the stack
+    % until we reach this unique key on the stack
+    /SethalftonesMark exch
+
     dup /Default eq {
-      pop .setdefaulthalftone
-    } {
-      resolvehalftone sethalftone
+      pop .setdefaulthalftone pop
+    }
+    {
+      {resolvehalftone} stopped
+      {
+        (\n   **** Error resolving halftone. Ignoring the halftone, output may be incorrect.\n)
+        pdfformaterror
+        % Clean up the stack by checking every entry until we find our unique key
+        {/SethalftonesMark eq {exit} if} loop
+      }
+      {
+        {sethalftone} stopped
+        {
+          (\n   **** Error setting halftone. Ignoring the halftone, output may be incorrect.\n)
+          pdfformaterror
+          % Clean up the stack by checking every entry until we find our unique key
+          {/SethalftonesMark eq {exit} if} loop
+        }
+        {
+          pop
+        }ifelse
+      }ifelse
     } ifelse
   } bind executeonly def
   /sethalftonephases {
-      aload pop -1 2 index 2 index .setscreenphase pop pop
+      {aload pop -1 2 index 2 index .setscreenphase pop pop} stopped
+      {
+        (\n   **** Error setting halftone phase. Ignoring the phase, output may be incorrect.\n)
+        pdfformaterror
+      } if
   } bind executeonly def
 
   /HT {
