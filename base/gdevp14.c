@@ -4835,10 +4835,15 @@ gx_update_pdf14_compositor(gx_device * pdev, gs_gstate * pgs,
             break;
         case PDF14_BEGIN_TRANS_PAGE_GROUP:
         case PDF14_BEGIN_TRANS_GROUP:
+            if (p14dev->smask_constructed || p14dev->depth_within_smask)
+                p14dev->depth_within_smask++;
+            p14dev->smask_constructed = 0;
             code = gx_begin_transparency_group(pgs, pdev, &params);
             break;
         case PDF14_END_TRANS_GROUP:
             code = gx_end_transparency_group(pgs, pdev);
+            if (p14dev->depth_within_smask)
+                p14dev->depth_within_smask--;
             break;
         case PDF14_BEGIN_TRANS_TEXT_GROUP:
             if (p14dev->text_group == PDF14_TEXTGROUP_BT_PUSHED) {
@@ -4863,6 +4868,8 @@ gx_update_pdf14_compositor(gx_device * pdev, gs_gstate * pgs,
                 p14dev->in_smask_construction--;
                 if (p14dev->in_smask_construction < 0)
                     p14dev->in_smask_construction = 0;
+                if (p14dev->in_smask_construction == 0)
+                    p14dev->smask_constructed = 1;
             }
             break;
         case PDF14_SET_BLEND_PARAMS:
@@ -7019,8 +7026,8 @@ pdf14_dev_spec_op(gx_device *pdev, int dev_spec_op,
         return 0;
     if (dev_spec_op == gxdso_overprint_active)
         return p14dev->overprint || p14dev->stroke_overprint;
-    if (dev_spec_op == gxdso_in_smask_construction)
-        return p14dev->in_smask_construction > 0;
+    if (dev_spec_op == gxdso_in_smask)
+        return p14dev->in_smask_construction > 0 || p14dev->depth_within_smask;
 
      return dev_proc(p14dev->target, dev_spec_op)(p14dev->target, dev_spec_op, data, size);
 }
@@ -8794,6 +8801,9 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
                 break;
             case PDF14_BEGIN_TRANS_PAGE_GROUP:
             case PDF14_BEGIN_TRANS_GROUP:
+                if (pdev->smask_constructed || pdev->depth_within_smask)
+                    pdev->depth_within_smask++;
+                pdev->smask_constructed = 0;
                 /*
                  * Keep track of any changes made in the blending parameters.
                    These need to be written out in the same bands as the group
@@ -8881,11 +8891,15 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
                 pdev->in_smask_construction--;
                 if (pdev->in_smask_construction < 0)
                     pdev->in_smask_construction = 0;
+                if (pdev->in_smask_construction == 0)
+                    pdev->smask_constructed = 1;
                 /* fallthrough */
             case PDF14_END_TRANS_GROUP:
                 /* We need to update the clist writer device procs based upon the
                    the group color space. */
                 code = pdf14_update_device_color_procs_pop_c(dev,pgs);
+                if (pdev->depth_within_smask)
+                    pdev->depth_within_smask--;
                 if (code < 0)
                     return code;
                 break;
