@@ -346,6 +346,8 @@ pick_cell_size(gs_screen_halftone * ph, const gs_matrix * pmat, ulong max_size,
         return_error(gs_error_rangecheck);
     while ((fabs(u0) + fabs(v0)) * rt < 4)
         ++rt;
+    phcp->C = 0;
+
   try_size:
     better = false;
     {
@@ -443,6 +445,15 @@ pick_cell_size(gs_screen_halftone * ph, const gs_matrix * pmat, ulong max_size,
                     goto done;
             }
     }
+    /* It is possible (for ridiculous halftone screens) to reach this point without ever
+     * having been able to find a suitable screen. In that case we will not have set
+     * phcp and so phcp->C will be undefined. We can detect this condition by checking rt
+     * is 1 (so its the first attempt to find a screen) and better is false (we didn't find
+     * a better match). If that happens, exit with an error.
+     */
+    if (rt == 1 && !better)
+        return_error(gs_error_rangecheck);
+
     if (phcp->C < min_levels) { /* We don't have enough levels yet.  Keep going. */
         ++rt;
         goto try_size;
