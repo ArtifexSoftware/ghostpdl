@@ -42,21 +42,16 @@ struct _Jbig2ArithState {
     int offset;
 };
 
-#undef SOFTWARE_CONVENTION
-
 /*
-  A note on the "software conventions".
-
-  Previously, I had misinterpreted the spec, and had thought that the
-  spec's description of the "software convention" was wrong. Now I
-  believe that this code is both correct and matches the spec, with
-  SOFTWARE_CONVENTION defined or not. Thanks to William Rucklidge for
-  the clarification.
-
-  In any case, my benchmarking indicates no speed difference at all.
-  Therefore, for now we will just use the normative version.
-
- */
+  Previous versions of this code had a #define to allow
+  us to choose between using the revised arithmetic decoding
+  specified in the 'Software Convention' section of the spec.
+  Back to back tests showed that the 'Software Convention'
+  version was indeed slightly faster. We therefore enable it
+  by default. We also strip the option out, because a) it
+  makes the code harder to read, and b) such things are an
+  invitation to bitrot.
+*/
 
 static void
 jbig2_arith_bytein(Jbig2ArithState *as)
@@ -83,9 +78,6 @@ jbig2_arith_bytein(Jbig2ArithState *as)
 #ifdef JBIG2_DEBUG_ARITH
                 fprintf(stderr, "read %02x (aa)\n", B);
 #endif
-#ifndef SOFTWARE_CONVENTION
-                as->C += 0xFF00;
-#endif
                 as->CT = 8;
                 as->next_word = 0xFF000000 | (as->next_word >> 8);
                 as->next_word_bytes = 4;
@@ -94,11 +86,7 @@ jbig2_arith_bytein(Jbig2ArithState *as)
 #ifdef JBIG2_DEBUG_ARITH
                 fprintf(stderr, "read %02x (a)\n", B);
 #endif
-#ifdef SOFTWARE_CONVENTION
                 as->C += 0xFE00 - (B1 << 9);
-#else
-                as->C += B1 << 9;
-#endif
                 as->CT = 7;
             }
         } else {
@@ -106,9 +94,6 @@ jbig2_arith_bytein(Jbig2ArithState *as)
             if (B1 > 0x8F) {
 #ifdef JBIG2_DEBUG_ARITH
                 fprintf(stderr, "read %02x (ba)\n", B);
-#endif
-#ifndef SOFTWARE_CONVENTION
-                as->C += 0xFF00;
 #endif
                 as->CT = 8;
             } else {
@@ -118,11 +103,7 @@ jbig2_arith_bytein(Jbig2ArithState *as)
                 fprintf(stderr, "read %02x (b)\n", B);
 #endif
 
-#ifdef SOFTWARE_CONVENTION
                 as->C += 0xFE00 - (B1 << 9);
-#else
-                as->C += (B1 << 9);
-#endif
                 as->CT = 7;
             }
         }
@@ -141,11 +122,7 @@ jbig2_arith_bytein(Jbig2ArithState *as)
             as->next_word_bytes = new_bytes;
         }
         B = (byte)((as->next_word >> 24) & 0xFF);
-#ifdef SOFTWARE_CONVENTION
         as->C += 0xFF00 - (B << 8);
-#else
-        as->C += (B << 8);
-#endif
     }
 }
 
@@ -172,11 +149,7 @@ jbig2_arith_new(Jbig2Ctx *ctx, Jbig2WordStream *ws)
     result->offset = new_bytes;
 
     /* Figure E.20 */
-#ifdef SOFTWARE_CONVENTION
     result->C = (~(result->next_word >> 8)) & 0xFF0000;
-#else
-    result->C = (result->next_word >> 8) & 0xFF0000;
-#endif
 
     jbig2_arith_bytein(result);
     result->C <<= 7;
@@ -276,16 +249,9 @@ jbig2_arith_decode(Jbig2ArithState *as, Jbig2ArithCx *pcx, int *code)
     /* Figure E.15 */
     as->A -= pqe->Qe;
     if (
-#ifdef SOFTWARE_CONVENTION
         /* Note: I do not think this is correct. See above. */
         (as->C >> 16) < as->A
-#else
-        !((as->C >> 16) < pqe->Qe)
-#endif
     ) {
-#ifndef SOFTWARE_CONVENTION
-        as->C -= pqe->Qe << 16;
-#endif
         if ((as->A & 0x8000) == 0) {
             /* MPS_EXCHANGE, Figure E.16 */
             if (as->A < pqe->Qe) {
@@ -303,9 +269,7 @@ jbig2_arith_decode(Jbig2ArithState *as, Jbig2ArithCx *pcx, int *code)
             return cx >> 7;
         }
     } else {
-#ifdef SOFTWARE_CONVENTION
         as->C -= (as->A) << 16;
-#endif
         /* LPS_EXCHANGE, Figure E.17 */
         if (as->A < pqe->Qe) {
             as->A = pqe->Qe;

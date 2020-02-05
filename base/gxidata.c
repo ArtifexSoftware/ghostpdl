@@ -208,6 +208,7 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
             dmprintf1(dev->memory, "[b]image1 y=%d\n", y);
         if (gs_debug_c('B')) {
             int i, n = width_spp;
+            byte *buftemp = (buffer == NULL) ? penum->buffer : buffer;
 
             if (penum->bps > 8)
                 n *= 2;
@@ -215,7 +216,7 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
                 n = (n + 7) / 8;
             dmlputs(dev->memory, "[B]row:");
             for (i = 0; i < n; i++)
-                dmprintf1(dev->memory, " %02x", buffer[i]);
+                dmprintf1(dev->memory, " %02x", buftemp[i]);
             dmputs(dev->memory, "\n");
         }
 #endif

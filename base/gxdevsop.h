@@ -359,13 +359,13 @@ enum {
     * 0 otherwise.
     */
     gxdso_overprint_active,
-    /* gxdso_in_smask_construction:
+    /* gxdso_in_smask:
     *     data = NULL
     *     size = 0
-    * Returns 1 if we are within an smask,
+    * Returns 1 if we are within an smask (either construction or usage),
     * 0 otherwise.
     */
-    gxdso_in_smask_construction,
+    gxdso_in_smask,
 
     /* Debug only dsos follow here */
 #ifdef DEBUG
