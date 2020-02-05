@@ -61,6 +61,23 @@ jbig2_arith_bytein(Jbig2ArithState *as)
 
     /* invariant: as->next_word_bytes > 0 */
 
+    /* This code confused me no end when I first read it, so a quick note
+     * to save others (and future me's) from being similarly confused.
+     * 'next_word' does indeed contain 'next_word_bytes' of valid data
+     * (always starting at the most significant byte). The confusing
+     * thing is that the first byte has always already been read.
+     * i.e. it serves only as an indication that the last byte we read
+     * was FF or not.
+     *
+     * The jbig2 bytestream uses FF bytes, followed by a byte > 0x8F as
+     * marker bytes. These never occur in normal streams of arithmetic
+     * encoding, so meeting one terminates the stream (with an infinite
+     * series of 1 bits).
+     *
+     * If we meet an FF byte, we return it as normal. We just 'remember'
+     * that fact for the next byte we read.
+     */
+
     /* Figure G.3 */
     B = (byte)((as->next_word >> 24) & 0xFF);
     if (B == 0xFF) {
@@ -231,27 +248,22 @@ jbig2_arith_renormd(Jbig2ArithState *as)
     } while ((as->A & 0x8000) == 0);
 }
 
-bool
-jbig2_arith_decode(Jbig2ArithState *as, Jbig2ArithCx *pcx, int *code)
+int
+jbig2_arith_decode(Jbig2ArithState *as, Jbig2ArithCx *pcx)
 {
     Jbig2ArithCx cx = *pcx;
     const Jbig2ArithQe *pqe;
     unsigned int index = cx & 0x7f;
     bool D;
 
-    if (index >= MAX_QE_ARRAY_SIZE) {
-        *code = -1;
-        return 0;
-    } else {
-        pqe = &jbig2_arith_Qe[index];
-    }
+    if (index >= MAX_QE_ARRAY_SIZE)
+        return -1; /* Error */
+
+    pqe = &jbig2_arith_Qe[index];
 
     /* Figure E.15 */
     as->A -= pqe->Qe;
-    if (
-        /* Note: I do not think this is correct. See above. */
-        (as->C >> 16) < as->A
-    ) {
+    if ((as->C >> 16) < as->A) {
         if ((as->A & 0x8000) == 0) {
             /* MPS_EXCHANGE, Figure E.16 */
             if (as->A < pqe->Qe) {
@@ -262,10 +274,8 @@ jbig2_arith_decode(Jbig2ArithState *as, Jbig2ArithCx *pcx, int *code)
                 *pcx ^= pqe->mps_xor;
             }
             jbig2_arith_renormd(as);
-            *code = 0;
             return D;
         } else {
-            *code = 0;
             return cx >> 7;
         }
     } else {
@@ -281,7 +291,6 @@ jbig2_arith_decode(Jbig2ArithState *as, Jbig2ArithCx *pcx, int *code)
             *pcx ^= pqe->lps_xor;
         }
         jbig2_arith_renormd(as);
-        *code = 0;
         return D;
     }
 }
@@ -342,7 +351,6 @@ main(int argc, char **argv)
     Jbig2ArithState *as;
     int i;
     Jbig2ArithCx cx = 0;
-    int code;
 
     ctx = jbig2_ctx_new(NULL, 0, NULL, NULL, NULL);
 
@@ -358,7 +366,7 @@ main(int argc, char **argv)
 #else
         (void)
 #endif
-            jbig2_arith_decode(as, &cx, &code);
+            jbig2_arith_decode(as, &cx);
 
 #ifdef JBIG2_DEBUG_ARITH
         fprintf(stderr, "%3d: D = %d, ", i, D);
