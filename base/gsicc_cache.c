@@ -104,6 +104,10 @@ gsicc_cache_new(gs_memory_t *memory)
                              "gsicc_cache_new");
     if ( result == NULL )
         return(NULL);
+    result->head = NULL;
+    result->num_links = 0;
+    result->cache_full = false;
+    result->memory = memory->stable_memory;
 #ifdef MEMENTO_SQUEEZE_BUILD
     result->lock = NULL;
 #else
@@ -122,10 +126,6 @@ gsicc_cache_new(gs_memory_t *memory)
     }
 #endif
     rc_init_free(result, memory->stable_memory, 1, rc_gsicc_link_cache_free);
-    result->head = NULL;
-    result->num_links = 0;
-    result->cache_full = false;
-    result->memory = memory->stable_memory;
     if_debug2m(gs_debug_flag_icc, memory,
                "[icc] Allocating link cache = 0x%p memory = 0x%p\n",
 	       result, result->memory);
