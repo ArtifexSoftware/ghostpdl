@@ -865,8 +865,8 @@ ialloc_add_clump(gs_ref_memory_t *imem, ulong space, client_name_t cname)
     /* Allow acquisition of this clump. */
     imem->is_controlled = false;
     imem->large_size = imem->clump_size;
-    imem->limit = max_long;
-    imem->gc_status.max_vm = max_long;
+    imem->limit = max_size_t;
+    imem->gc_status.max_vm = max_size_t;
 
     /* Acquire the clump. */
     cp = alloc_add_clump(imem, space, cname);
@@ -960,7 +960,7 @@ ialloc_set_limit(register gs_ref_memory_t * mem)
      0);
 
     if (mem->gc_status.enabled) {
-        ulong limit = mem->gc_allocated + mem->gc_status.vm_threshold;
+        size_t limit = mem->gc_allocated + mem->gc_status.vm_threshold;
 
         if (limit < mem->previous_status.allocated)
             mem->limit = 0;
@@ -971,12 +971,12 @@ ialloc_set_limit(register gs_ref_memory_t * mem)
     } else
         mem->limit = min(max_allocated, mem->gc_allocated + FORCE_GC_LIMIT);
     if_debug7m('0', (const gs_memory_t *)mem,
-               "[0]space=%d, max_vm=%ld, prev.alloc=%ld, enabled=%d, "
-               "gc_alloc=%ld, threshold=%ld => limit=%ld\n",
-               mem->space, (long)mem->gc_status.max_vm,
-               (long)mem->previous_status.allocated,
-               mem->gc_status.enabled, (long)mem->gc_allocated,
-               (long)mem->gc_status.vm_threshold, (long)mem->limit);
+               "[0]space=%d, max_vm=%"PRIdSIZE", prev.alloc=%"PRIdSIZE", enabled=%d, "
+               "gc_alloc=%"PRIdSIZE", threshold=%"PRIdSIZE" => limit=%"PRIdSIZE"\n",
+               mem->space, mem->gc_status.max_vm,
+               mem->previous_status.allocated,
+               mem->gc_status.enabled, mem->gc_allocated,
+               mem->gc_status.vm_threshold, mem->limit);
 }
 
 struct free_data
@@ -2476,9 +2476,9 @@ alloc_acquire_clump(gs_ref_memory_t * mem, size_t csize, bool has_strings,
                 return 0;
             }
             if_debug4m('0', (const gs_memory_t *)mem,
-                       "[0]signaling space=%d, allocated=%ld, limit=%ld, requested=%ld\n",
-                       mem->space, (long)mem->allocated,
-                       (long)mem->limit, (long)mem->gc_status.requested);
+                       "[0]signaling space=%d, allocated=%"PRIdSIZE", limit=%"PRIdSIZE", requested=%"PRIdSIZE"\n",
+                       mem->space, mem->allocated,
+                       mem->limit, mem->gc_status.requested);
             mem->gs_lib_ctx->gcsignal = mem->gc_status.signal_value;
         }
     }
