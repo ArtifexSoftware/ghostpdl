@@ -38,20 +38,16 @@ int sjpxd_create(gs_memory_t *mem)
 #if !defined(SHARE_JPX) || (SHARE_JPX == 0)
     gs_lib_ctx_t *ctx = mem->gs_lib_ctx;
 
-#ifdef MEMENTO_SQUEEZE_BUILD
-    ctx->sjpxd_private = NULL;
-#else
     ctx->sjpxd_private = gx_monitor_label(gx_monitor_alloc(mem), "sjpxd_monitor");
     if (ctx->sjpxd_private == NULL)
         return gs_error_VMerror;
-#endif
 #endif
     return 0;
 }
 
 void sjpxd_destroy(gs_memory_t *mem)
 {
-#if (!defined(SHARE_JPX) || (SHARE_JPX == 0)) && !defined(MEMENTO_SQUEEZE_BUILD)
+#if !defined(SHARE_JPX) || (SHARE_JPX == 0)
     gs_lib_ctx_t *ctx = mem->gs_lib_ctx;
 
     gx_monitor_free((gx_monitor_t *)ctx->sjpxd_private);
@@ -64,13 +60,9 @@ static int opj_lock(gs_memory_t *mem)
 #if !defined(SHARE_JPX) || (SHARE_JPX == 0)
     int ret;
 
-#ifdef MEMENTO_SQUEEZE_BUILD
-    ret = 0;
-#else
     gs_lib_ctx_t *ctx = mem->gs_lib_ctx;
 
     ret = gx_monitor_enter((gx_monitor_t *)ctx->sjpxd_private);
-#endif
     assert(opj_memory == NULL);
     opj_memory = mem->non_gc_memory;
     return ret;
@@ -86,12 +78,7 @@ static int opj_unlock(gs_memory_t *mem)
 
     assert(opj_memory != NULL);
     opj_memory = NULL;
-#ifdef MEMENTO_SQUEEZE_BUILD
-    (void)ctx;
-    return 0;
-#else
     return gx_monitor_leave((gx_monitor_t *)ctx->sjpxd_private);
-#endif
 #else
     return 0;
 #endif

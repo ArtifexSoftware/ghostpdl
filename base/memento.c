@@ -2895,6 +2895,11 @@ void Memento_stopLeaking(void)
     memento.leaking--;
 }
 
+int Memento_squeezing(void)
+{
+    return memento.squeezing;
+}
+
 #endif /* MEMENTO_CPP_EXTRAS_ONLY */
 
 #ifdef __cplusplus
@@ -3092,6 +3097,11 @@ void (Memento_startLeaking)(void)
 
 void (Memento_stopLeaking)(void)
 {
+}
+
+int (Memento_squeezing)(void)
+{
+    return 0;
 }
 
 #endif

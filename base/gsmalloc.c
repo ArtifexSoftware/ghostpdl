@@ -127,13 +127,11 @@ gs_malloc_memory_init(void)
     mem->thread_safe_memory = (gs_memory_t *)mem;	/* this allocator is thread safe */
     /* Allocate a monitor to serialize access to structures within */
     mem->monitor = NULL;	/* prevent use during initial allocation */
-#ifndef MEMENTO_SQUEEZE_BUILD
     mem->monitor = gx_monitor_label(gx_monitor_alloc((gs_memory_t *)mem), "heap");
     if (mem->monitor == NULL) {
         free(mem);
         return NULL;
     }
-#endif
 
     return mem;
 }

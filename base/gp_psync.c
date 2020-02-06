@@ -66,10 +66,15 @@ gp_semaphore_open(gp_semaphore * sema)
     pt_semaphore_t * const sem = (pt_semaphore_t *)sema;
     int scode;
 
-#ifdef MEMENTO_SQUEEZE_BUILD
-    eprintf("Can't create semaphores when memory squeezing with forks\n");
-    Memento_bt();
-    return_error(gs_error_VMerror);
+#ifdef MEMENTO
+    if (Memento_squeezing()) {
+         /* If squeezing, we nobble all the locking functions to do nothing.
+          * We also ensure we never actually create threads (elsewhere),
+          * so this is still safe. */
+        memset(&sem->mutex, 0, sizeof(sem->mutex));
+        memset(&sem->cond, 0, sizeof(sem->cond));
+        return 0;
+    }
 #endif
 
     if (!sema)
@@ -93,6 +98,11 @@ gp_semaphore_close(gp_semaphore * sema)
     pt_semaphore_t * const sem = (pt_semaphore_t *)sema;
     int scode, scode2;
 
+#ifdef MEMENTO
+    if (Memento_squeezing())
+        return 0;
+#endif
+
     scode = pthread_cond_destroy(&sem->cond);
     scode2 = pthread_mutex_destroy(&sem->mutex);
     if (scode == 0)
@@ -106,10 +116,13 @@ gp_semaphore_wait(gp_semaphore * sema)
     pt_semaphore_t * const sem = (pt_semaphore_t *)sema;
     int scode, scode2;
 
-#ifdef MEMENTO_SQUEEZE_BUILD
-    eprintf("Can't create mutexes when memory squeezing with forks\n");
-    Memento_bt();
-    return_error(gs_error_VMerror);
+#ifdef MEMENTO
+    if (Memento_squeezing()) {
+         /* If squeezing, we nobble all the locking functions to do nothing.
+          * We also ensure we never actually create threads (elsewhere),
+          * so this is still safe. */
+        return 0;
+    }
 #endif
 
     scode = pthread_mutex_lock(&sem->mutex);
@@ -133,6 +146,11 @@ gp_semaphore_signal(gp_semaphore * sema)
 {
     pt_semaphore_t * const sem = (pt_semaphore_t *)sema;
     int scode, scode2;
+
+#ifdef MEMENTO
+    if (Memento_squeezing())
+        return 0;
+#endif
 
     scode = pthread_mutex_lock(&sem->mutex);
     if (scode != 0)
@@ -178,15 +196,15 @@ gp_monitor_open(gp_monitor * mona)
     pthread_mutexattr_t attr;
     pthread_mutexattr_t *attrp = NULL;
 
-#ifdef MEMENTO_SQUEEZE_BUILD
-    eprintf("Can't create monitors when memory squeezing with forks\n");
-    Memento_bt();
-    return_error(gs_error_VMerror);
-#endif
-
     if (!mona)
         return -1;		/* monitors are not movable */
 
+#ifdef MEMENTO
+    if (Memento_squeezing()) {
+         memset(mona, 0, sizeof(*mona));
+         return 0;
+    }
+#endif
 
 #ifdef GS_RECURSIVE_MUTEXATTR
     attrp = &attr;
@@ -216,6 +234,11 @@ gp_monitor_close(gp_monitor * mona)
     pthread_mutex_t * const mon = &((gp_pthread_recursive_t *)mona)->mutex;
     int scode;
 
+#ifdef MEMENTO
+    if (Memento_squeezing())
+         return 0;
+#endif
+
     scode = pthread_mutex_destroy(mon);
     return SEM_ERROR_CODE(scode);
 }
@@ -225,6 +248,12 @@ gp_monitor_enter(gp_monitor * mona)
 {
     pthread_mutex_t * const mon = (pthread_mutex_t *)mona;
     int scode;
+
+#ifdef MEMENTO
+    if (Memento_squeezing()) {
+         return 0;
+    }
+#endif
 
 #ifdef GS_RECURSIVE_MUTEXATTR
     scode = pthread_mutex_lock(mon);
@@ -255,6 +284,11 @@ gp_monitor_leave(gp_monitor * mona)
 {
     pthread_mutex_t * const mon = (pthread_mutex_t *)mona;
     int scode = 0;
+
+#ifdef MEMENTO
+    if (Memento_squeezing())
+         return 0;
+#endif
 
 #ifdef GS_RECURSIVE_MUTEXATTR
     scode = pthread_mutex_unlock(mon);
@@ -303,18 +337,20 @@ gp_thread_begin_wrapper(void *thread_data /* gp_thread_creation_closure_t * */)
 int
 gp_create_thread(gp_thread_creation_callback_t proc, void *proc_data)
 {
-    gp_thread_creation_closure_t *closure =
-        (gp_thread_creation_closure_t *)malloc(sizeof(*closure));
+    gp_thread_creation_closure_t *closure;
     pthread_t ignore_thread;
     pthread_attr_t attr;
     int code;
 
-#ifdef MEMENTO_SQUEEZE_BUILD
-    eprintf("Can't create threads when memory squeezing with forks\n");
-    Memento_bt();
-    return_error(gs_error_VMerror);
+#ifdef MEMENTO
+    if (Memento_squeezing()) {
+        eprintf("Can't create threads when memory squeezing with forks\n");
+        Memento_bt();
+        return_error(gs_error_VMerror);
+    }
 #endif
 
+    closure = (gp_thread_creation_closure_t *)malloc(sizeof(*closure));
     if (!closure)
         return_error(gs_error_VMerror);
     closure->proc = proc;

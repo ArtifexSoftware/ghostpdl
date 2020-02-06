@@ -261,6 +261,8 @@ void Memento_stopLeaking(void);
 
 int Memento_sequence(void);
 
+int Memento_squeezing(void);
+
 void Memento_fin(void);
 
 void Memento_bt(void);
@@ -322,6 +324,7 @@ void Memento_bt(void);
 #define Memento_fin()                      do {} while (0)
 #define Memento_bt()                       do {} while (0)
 #define Memento_sequence()                 (0)
+#define Memento_squeezing()                (0)
 
 #endif /* MEMENTO */
 
