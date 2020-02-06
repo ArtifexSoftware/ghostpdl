@@ -207,6 +207,7 @@ my $cmd="rsync -avxcz ".
 " --exclude sanbin --exclude sanobj --exclude sanbin64 --exclude sanobj64".
 " --exclude sobin --exclude soobj --exclude debugbin".
 " --exclude ufst --exclude ufst-obj --exclude ufst-debugobj".
+" --exclude '*-bin' --exclude '*-obj'".
 " --exclude config.log --exclude .png".
 " --exclude .ppm --exclude .pkm --exclude .pgm --exclude .pbm".
 " --exclude .tif --exclude .bmp".
