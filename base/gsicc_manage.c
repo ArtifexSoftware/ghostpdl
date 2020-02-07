@@ -2155,6 +2155,7 @@ gsicc_profile_new(stream *s, gs_memory_t *memory, const char* pname,
     result->lock = gx_monitor_label(gx_monitor_alloc(mem_nongc),
                                     "gsicc_manage");
     if (result->lock == NULL) {
+        gs_free_object(mem_nongc, result->buffer, "gsicc_load_profile");
         gs_free_object(mem_nongc, result, "gsicc_profile_new");
         gs_free_object(mem_nongc, nameptr, "gsicc_profile_new");
         return NULL;
