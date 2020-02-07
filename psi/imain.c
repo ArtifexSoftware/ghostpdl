@@ -1259,6 +1259,10 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
 
     set_lib_path_length(minst, 0);
     gs_free_object(minst->heap, minst->lib_path.container.value.refs, "lib_path array");
+    if (minst->init_done == 0 && i_ctx_p) {
+        /* This fixes leak if memento forces failure in gs_main_init1(). */
+        dmem = *idmemory;
+    }
     ialloc_finit(&dmem);
     return exit_status;
 }
