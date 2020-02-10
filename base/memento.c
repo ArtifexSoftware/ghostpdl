@@ -1861,6 +1861,7 @@ static void Memento_startFailing(void)
 {
     if (!memento.failing) {
         fprintf(stderr, "Starting to fail...\n");
+        Memento_bt();
         fflush(stderr);
         memento.failing = 1;
         memento.failAt = memento.sequence;
