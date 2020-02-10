@@ -28,6 +28,8 @@
 #include "gxht.h" /* gsht1.h is incomplete, we need storage size of gs_halftone */
 #include "gsht1.h"
 
+#include <assert.h>
+
 int xps_zip_trace = 0;
 int xps_doc_trace = 0;
 
@@ -104,6 +106,7 @@ static int
 xps_impl_allocate_interp_instance(pl_interp_implementation_t *impl,
                                  gs_memory_t *pmem)
 {
+    int code = 0;
     xps_interp_instance_t *instance;
     xps_context_t *ctx;
     gs_gstate *pgs;
@@ -118,13 +121,8 @@ xps_impl_allocate_interp_instance(pl_interp_implementation_t *impl,
 
     if (!instance || !ctx || !pgs)
     {
-        if (instance)
-            gs_free_object(pmem, instance, "xps_impl_allocate_interp_instance");
-        if (ctx)
-            gs_free_object(pmem, ctx, "xps_impl_allocate_interp_instance");
-        if (pgs)
-            gs_gstate_free(pgs);
-        return gs_error_VMerror;
+        code = gs_error_VMerror;
+        goto end;
     }
 
     /* FIXME: check return value */
@@ -161,13 +159,29 @@ xps_impl_allocate_interp_instance(pl_interp_implementation_t *impl,
     
     /* NB needs error handling */
     ctx->fontdir = gs_font_dir_alloc(ctx->memory);
-
+    if (!ctx->fontdir) {
+        code = gs_error_VMerror;
+        goto end;
+    }
     gs_setaligntopixels(ctx->fontdir, 1); /* no subpixels */
     gs_setgridfittt(ctx->fontdir, 1); /* see gx_ttf_outline in gxttfn.c for values */
 
     impl->interp_client_data = instance;
 
-    return 0;
+    end:
+    if (code < 0) {
+        if (instance) {
+            gs_free_object(pmem, instance, "xps_impl_allocate_interp_instance");
+        }
+        if (ctx) {
+            assert(!ctx->fontdir);
+            gs_free_object(pmem, ctx, "xps_impl_allocate_interp_instance");
+        }
+        if (pgs) {
+            gs_gstate_free(pgs);
+        }
+    }
+    return code;
 }
 
 /* Prepare interp instance for the next "job" */
