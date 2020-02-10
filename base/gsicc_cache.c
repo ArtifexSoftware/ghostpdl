@@ -275,13 +275,6 @@ gsicc_alloc_link(gs_memory_t *memory, gsicc_hashlink_t hashcode)
                              "gsicc_alloc_link");
     if (result == NULL)
         return NULL;
-    result->lock = gx_monitor_label(gx_monitor_alloc(memory->stable_memory),
-                                    "gsicc_link_new");
-    if (result->lock == NULL) {
-        gs_free_object(memory->stable_memory, result, "gsicc_alloc_link(lock)");
-        return NULL;
-    }
-    gx_monitor_enter(result->lock);     /* this link is owned by this thread until built and made "valid" */
     /* set up placeholder values */
     result->is_monitored = false;
     result->orig_procs.map_buffer = NULL;
@@ -302,6 +295,14 @@ gsicc_alloc_link(gs_memory_t *memory, gsicc_hashlink_t hashcode)
     result->is_identity = false;
     result->valid = false;		/* not yet complete */
     result->memory = memory->stable_memory;
+
+    result->lock = gx_monitor_label(gx_monitor_alloc(memory->stable_memory),
+                                    "gsicc_link_new");
+    if (result->lock == NULL) {
+        gs_free_object(memory->stable_memory, result, "gsicc_alloc_link(lock)");
+        return NULL;
+    }
+    gx_monitor_enter(result->lock);     /* this link is owned by this thread until built and made "valid" */
 
     if_debug1m('^', result->memory, "[^]icclink 0x%p init = 1\n",
                result);
