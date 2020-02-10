@@ -179,6 +179,7 @@ xps_impl_allocate_interp_instance(pl_interp_implementation_t *impl,
             rc_decrement(ctx->gray, "gs_cspace_new_ICC");
             rc_decrement(ctx->cmyk, "gs_cspace_new_ICC");
             rc_decrement(ctx->srgb, "gs_cspace_new_ICC");
+            rc_decrement(ctx->scrgb, "gs_cspace_new_ICC");
             gs_free_object(pmem, ctx, "xps_impl_allocate_interp_instance");
         }
         if (pgs) {
