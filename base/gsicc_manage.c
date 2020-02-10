@@ -188,6 +188,10 @@ gsicc_set_iccsmaskprofile(const char *pname,
             gsicc_get_profile_handle_buffer(icc_profile->buffer,
                                             icc_profile->buffer_size,
                                             mem);
+    if (!icc_profile->profile_handle) {
+        rc_free_icc_profile(mem, icc_profile, "gsicc_set_iccsmaskprofile");
+        return NULL;
+    }
     /* Compute the hash code of the profile. Everything in the
        ICC manager will have it's hash code precomputed */
     gsicc_get_icc_buff_hash(icc_profile->buffer, &(icc_profile->hashcode),
