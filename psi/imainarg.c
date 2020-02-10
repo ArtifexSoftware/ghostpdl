@@ -169,8 +169,10 @@ gs_main_init_with_args01(gs_main_instance * minst, int argc, char *argv[])
 #endif /* __VMS */
     minst->lib_path.final = gs_lib_default_path;
     code = gs_main_set_lib_paths(minst);
-    if (code < 0)
+    if (code < 0) {
+        gs_main_finit(minst, 0, code);
         return code;
+    }
     /* Prescan the command line for --help and --version. */
     {
         int i;
@@ -193,8 +195,10 @@ gs_main_init_with_args01(gs_main_instance * minst, int argc, char *argv[])
                 puts(minst->heap, "");  /* \n */
                 helping = true;
             }
-        if (helping)
+        if (helping) {
+            gs_main_finit(minst, 0, code);
             return gs_error_Info;
+        }
     }
     /* Execute files named in the command line, */
     /* processing options along the way. */
@@ -211,19 +215,25 @@ gs_main_init_with_args01(gs_main_instance * minst, int argc, char *argv[])
             (char *)gs_alloc_bytes(minst->heap, len, "GS_OPTIONS");
 
             gp_getenv(GS_OPTIONS, opts, &len);  /* can't fail */
-            if (arg_push_decoded_memory_string(&args, opts, false, true, minst->heap))
+            if (arg_push_decoded_memory_string(&args, opts, false, true, minst->heap)) {
+                gs_main_finit(minst, 0, code);
                 return gs_error_Fatal;
+            }
         }
     }
     while ((code = arg_next(&args, (const char **)&arg, minst->heap)) > 0) {
         code = gs_lib_ctx_stash_sanitized_arg(minst->heap->gs_lib_ctx, arg);
-        if (code < 0)
+        if (code < 0) {
+            gs_main_finit(minst, 0, code);
             return code;
+        }
         switch (*arg) {
             case '-':
                 code = swproc(minst, arg, &args);
-                if (code < 0)
+                if (code < 0) {
+                    gs_main_finit(minst, 0, code);
                     return code;
+                }
                 if (code > 0)
                     outprintf(minst->heap, "Unknown switch %s - ignoring\n", arg);
                 if (gs_debug[':'] && !have_dumped_args) {
@@ -239,8 +249,10 @@ gs_main_init_with_args01(gs_main_instance * minst, int argc, char *argv[])
             default:
                 /* default is to treat this as a file name to be run */
                 code = argproc(minst, arg);
-                if (code < 0)
+                if (code < 0) {
+                    gs_main_finit(minst, 0, code);
                     return code;
+                }
                 if (minst->saved_pages_test_mode) {
                     gx_device *pdev;
                     int ret;
@@ -256,11 +268,15 @@ gs_main_init_with_args01(gs_main_instance * minst, int argc, char *argv[])
                             pdev = child_dev_data.target;
                     } while ((ret > 0) && (child_dev_data.n != 0));
                     if ((code = gx_saved_pages_param_process((gx_device_printer *)pdev,
-                               (byte *)"print normal flush", 18)) < 0)
+                               (byte *)"print normal flush", 18)) < 0) {
+                        gs_main_finit(minst, 0, code);
                         return code;
+                    }
                     if (code > 0)
-                        if ((code = gs_erasepage(minst->i_ctx_p->pgs)) < 0)
+                        if ((code = gs_erasepage(minst->i_ctx_p->pgs)) < 0) {
+                            gs_main_finit(minst, 0, code);
                             return code;
+                        }
                 }
         }
     }
