@@ -691,15 +691,6 @@ pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim, pdf_stream *image_str
         goto cleanupExit;
     }
 
-    if (ImageMask) {
-        /* for ImageMask, the code below expects the colorspace to be NULL, and instead takes the
-         * color from the current graphics state.  But we need to swap it so it will get the
-         * non-stroking color space.  We will swap it back later in this routine.
-         */
-        gs_swapcolors_quick(ctx->pgs);
-        colors_swapped = true;
-    }
-
     /* Took this logic from gs_image_init()
      * (the other tests in there have already been handled elsewhere)
      */
@@ -784,8 +775,6 @@ pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim, pdf_stream *image_str
  cleanupExit:
     if (buffer)
         gs_free_object(ctx->memory, buffer, "pdfi_render_image (buffer)");
-    if (colors_swapped)
-        gs_swapcolors_quick(ctx->pgs);
     if (penum)
         gs_image_cleanup_and_free_enum(penum, ctx->pgs);
     pdfi_grestore(ctx);

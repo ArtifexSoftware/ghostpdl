@@ -140,7 +140,6 @@ static int pdfi_fill_inner(pdf_context *ctx, bool use_eofill)
         return code;
     }
 
-    gs_swapcolors_quick(ctx->pgs);
     code = pdfi_trans_setup(ctx, &state, TRANSPARENCY_Caller_Fill, gs_getfillconstantalpha(ctx->pgs));
     if (code == 0) {
         if (use_eofill)
@@ -151,7 +150,6 @@ static int pdfi_fill_inner(pdf_context *ctx, bool use_eofill)
         if (code == 0)
             code = code1;
     }
-    gs_swapcolors_quick(ctx->pgs);
     if(code < 0 && ctx->pdfstoponerror)
         return code;
     else
@@ -181,6 +179,7 @@ int pdfi_stroke(pdf_context *ctx)
         return code;
     }
 
+    gs_swapcolors_quick(ctx->pgs);
     code = pdfi_trans_setup(ctx, &state, TRANSPARENCY_Caller_Stroke, gs_getstrokeconstantalpha(ctx->pgs));
     if (code == 0) {
         code = gs_stroke(ctx->pgs);
@@ -188,6 +187,7 @@ int pdfi_stroke(pdf_context *ctx)
         if (code == 0)
             code = code1;
     }
+    gs_swapcolors_quick(ctx->pgs);
     if(code < 0 && ctx->pdfstoponerror)
         return code;
     else
@@ -404,7 +404,7 @@ int pdfi_b_star(pdf_context *ctx)
 /* common code for B and B* */
 static int pdfi_B_inner(pdf_context *ctx, bool use_eofill)
 {
-    int code, code1;
+    int code, code1=0;
     pdfi_trans_state_t state;
     bool started_group = false;
 
@@ -429,7 +429,6 @@ static int pdfi_B_inner(pdf_context *ctx, bool use_eofill)
     code = pdfi_gsave(ctx);
     if (code < 0)
         goto exit;
-    gs_swapcolors_quick(ctx->pgs);
     code = pdfi_trans_set_params(ctx, gs_getfillconstantalpha(ctx->pgs));
     if (code == 0) {
         if (use_eofill)
@@ -437,16 +436,17 @@ static int pdfi_B_inner(pdf_context *ctx, bool use_eofill)
         else
             code = gs_fill(ctx->pgs);
     }
-    gs_swapcolors_quick(ctx->pgs);
     code1 = pdfi_grestore(ctx);
     if (code == 0)
         code = code1;
     if (code < 0)
         goto exit;
 
+    gs_swapcolors_quick(ctx->pgs);
     code = pdfi_trans_setup(ctx, &state, TRANSPARENCY_Caller_Stroke, gs_getstrokeconstantalpha(ctx->pgs));
     if (code >= 0)
         code = gs_stroke(ctx->pgs);
+    gs_swapcolors_quick(ctx->pgs);
     code1 = pdfi_trans_teardown(ctx, &state);
     if (code == 0)
         code = code1;
