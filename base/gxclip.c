@@ -1602,14 +1602,25 @@ clip_transform_pixel_region(gx_device *dev, transform_pixel_region_reason reason
             /* Single unskewed rectangle - we can use the underlying device direct */
             local_data.u.init.clip = &local_clip;
             local_clip = *data->u.init.clip;
-            if (local_clip.p.x < cdev->current->xmin)
-                local_clip.p.x = cdev->current->xmin;
-            if (local_clip.q.x > cdev->current->xmax)
-                local_clip.q.x = cdev->current->xmax;
-            if (local_clip.p.y < cdev->current->ymin)
-                local_clip.p.y = cdev->current->ymin;
-            if (local_clip.q.y > cdev->current->ymax)
-                local_clip.q.y = cdev->current->ymax;
+            if (cdev->list.transpose) {
+                if (local_clip.p.x < cdev->current->ymin)
+                    local_clip.p.x = cdev->current->ymin;
+                if (local_clip.q.x > cdev->current->ymax)
+                    local_clip.q.x = cdev->current->ymax;
+                if (local_clip.p.y < cdev->current->xmin)
+                    local_clip.p.y = cdev->current->xmin;
+                if (local_clip.q.y > cdev->current->xmax)
+                    local_clip.q.y = cdev->current->xmax;
+            } else {
+                if (local_clip.p.x < cdev->current->xmin)
+                    local_clip.p.x = cdev->current->xmin;
+                if (local_clip.q.x > cdev->current->xmax)
+                    local_clip.q.x = cdev->current->xmax;
+                if (local_clip.p.y < cdev->current->ymin)
+                    local_clip.p.y = cdev->current->ymin;
+                if (local_clip.q.y > cdev->current->ymax)
+                    local_clip.q.y = cdev->current->ymax;
+            }
             state->use_default = 0;
             ret = dev_proc(cdev->target, transform_pixel_region)(cdev->target, reason, &local_data);
         } else {
