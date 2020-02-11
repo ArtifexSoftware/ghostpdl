@@ -1,3 +1,10 @@
+Version 0.18 (2020 February 11)
+
+* Performance enhancements related to decoding of MMR and generic
+  regions as well as composing images onto pages.
+
+* Bug fixes for a few issues reported by Coverity and OSS-Fuzz.
+
 Version 0.17 (2019 September 16)
 
 * Improved test suite by verifying input file contents and adding
