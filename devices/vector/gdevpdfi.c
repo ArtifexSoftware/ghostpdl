@@ -1556,6 +1556,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
             goto fail_and_fallback;
         } else if (convert_to_process_colors) {
             image[1].pixel.ColorSpace = pcs_orig;
+            image[1].pixel.BitsPerComponent = pim->BitsPerComponent;
             code = psdf_setup_image_colors_filter(&pie->writer.binary[1],
                     (gx_device_psdf *)pdev, &image[1].pixel, pgs);
             if (code < 0) {
