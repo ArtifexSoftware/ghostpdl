@@ -95,51 +95,49 @@ overview</a>.
 <!-- [1.0 end visible header] ============================================== -->
 
 <!-- [2.0 begin contents] ================================================== -->
-
-<h2><a name="Version9.50"></a>Version 9.50 (2019-09-30)</h2>
+<h2><a name="Version9.51"></a>Version 9.51 (2020-03-12)</h2>
 <p> Highlights in this release include:
 <ul>
 <li>
-<p>The change to version 9.50 (rather than the intended 9.28) follows recognition
-of the extent and importance of the file access control redesign/reimplementation
-outlined below.
+<p>9.51 is primarily a maintainance release, consolidating the changes we introduced
+in 9.50.
 </li>
 <li>
-<p>The file access control capability (enable with <code>-dSAFER</code>) has been
-completely rewritten, with a ground-up rethink of the design. For more details,
-see: <a href="Use.htm#Safer">SAFER</a>.
-<p>It is important to note that <code>-dSAFER</code> now <strong>only</strong> enables
-the file access controls, and no longer applies restrictions to standard Postscript
-functionality (specifically, restrictions on <code>setpagedevice</code>. If your
-application relies on these Postscript restrictions, see <a href="Use.htm#OldSafer">OLDSAFER</a>,
-and please get in touch, as we do plan to remove those Postscript restrictions
-unless we have reason not to.
-<p><strong>IMPORTANT:</strong> File access controls are now enabled by default. In
-order to run Ghostscript without these controls, see <a href="Use.htm#NoSafer">NOSAFER</a>
-<p><strong>Important Note for Windows Users</strong>: See below under
-<a href="#28_Incompatible_changes">Incompatible Changes</a>
+<p>We have continued our work on code hygiene for this release, with a focus on the
+static analysis tool Coverity (from <a href="https://www.synopsys.com">Synopsys, Inc</a>)
+and we are now maintaining a policy of zero Coverity issues in the Ghostscript/GhostPDL
+source base.
 </li>
 <li>
-<p>IMPORTANT: We are in the process of forking LittleCMS. LCMS2 is not thread safe, and
-cannot be made thread safe without breaking the ABI. Our fork will be thread safe, and include
-performance enhancements (these changes have all be been offered and rejected upstream). We
-will maintain compatibility between Ghostscript and LCMS2 for a time, but not in perpetuity.
-Our fork will be available as its own package separately from Ghostscript (and MuPDF).
+<p><b>IMPORTANT:</b> In consultation with a representative of
+(<a href="http://www.openprinting.org">OpenPrinting</a>) it is
+our intention to deprecate and, in the not distant future, remove the
+OpenPrinting Vector/Raster Printer Drivers (that is, the <code>opvp</code>
+and <code>oprp</code> devices.
+<p> If you rely on either of these devices, <b><i>please</i></b> get in touch with
+us, so we can discuss your use case, and revise our plans accordingly.
+</li>
+<li>
+<p>IMPORTANT: We have forked LittleCMS2 into LittleCMS2mt (the "mt" indicating "multi-thred").
+LCMS2 is not thread safe, and cannot be made thread safe without breaking the ABI. Our fork
+will be thread safe, and include performance enhancements (these changes have all be been
+offered and rejected upstream). We will maintain compatibility between Ghostscript and LCMS2
+for a time, but not in perpetuity. If there is sufficient interest, our fork will be
+available as its own package separately from Ghostscript (and MuPDF).
 </li>
 <li>
 <p>The usual round of bug fixes, compatibility changes, and incremental improvements.
 </li>
-<li>
-<p>Special thanks to Akira Kakuto, Paul Wessel, William Bader, Nelson H. F. Beebe and
-everyone else who put time and effort into testing this new release.
-</li>
 </ul>
 <p>For a list of open issues, or to report problems,
 please visit <a href="http://bugs.ghostscript.com/">bugs.ghostscript.com</a>.
-<h3><a name="9.50_Incompatible_changes"></a>Incompatible changes</h3>
+<h3><a name="9.51_Incompatible_changes"></a>Incompatible changes</h3>
+<h4>Included below are incompatible changes from recent releases (the
+specific release in question listed in parentheses). We include these,
+for now, as we are aware that not everyone upgrades with every release.</h4>
 <ul>
 <li>
-<p>There are a couple of subtle incompatibilities between the old and new SAFER
+<p>(9.50) There are a couple of subtle incompatibilities between the old and new SAFER
 implementations. Firstly, as mentioned above, SAFER now leaves standard Postcript
 functionality unchanged (except for the file access limitations). Secondly,
 the interaction with <code>save</code>&sol;<code>restore</code> operations, see
@@ -152,9 +150,7 @@ change in behaviour compared to the old code which, on Windows, was case
 in that it now supports (although does not enforce) case sensitivity.
 </li>
 <li>
-<p>The following is not strictly speaking new to 9.50, as not much has changed since
-9.27 in this area, but for those who don't upgrade with every release:
-<p>The process of &quot;tidying&quot; the Postscript name space should have removed
+<p>(9.27) The process of &quot;tidying&quot; the Postscript name space should have removed
 only non-standard and undocumented operators. Nevertheless, it is possible that
 any integrations or utilities that rely on those non-standard and undocumented
 operators may stop working, or may change behaviour.
@@ -168,7 +164,7 @@ still work as previously for Postscript files. For PDF files, users are encourag
 at <a href="https://www.mupdf.com">MuPDF</a>.
 </li>
 </ul>
-<h3><a name="9.50_changelog"></a>Changelog</h3>
+<h3><a name="9.51_changelog"></a>Changelog</h3>
 
 <p>See the <a href="History9.htm">history file</a> for complete log
 of changes.
@@ -179,7 +175,7 @@ of changes.
 <hr>
 
 <p>
-<small>Copyright &copy; 2005-2019 Artifex Software, Inc.
+<small>Copyright &copy; 2005-2020 Artifex Software, Inc.
 All rights reserved.</small>
 
 <p>
@@ -193,7 +189,7 @@ or contact Artifex Software, Inc.,  1305 Grant Avenue - Suite 200,
 Novato, CA 94945, U.S.A., +1(415)492-9861, for further information.
 
 <p>
-<small>Ghostscript version 9.50, 15 October 2019
+<small>Ghostscript version 9.51, 12 March 2020
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
