@@ -1786,7 +1786,8 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_gstate *pgs, gx_device *dev)
            catch this earlier and just avoid creating the structure
            to begin with.  For now we need to delete the structure
            that was created.  Only delete if the alpha value is 65535 */
-        if (tos->alpha == 65535) {
+        if ((tos->alpha == 65535 && tos->is_ident) ||
+            (!tos->is_ident && (tos->transfer_fn[tos->alpha>>8] == 255))) {
             pdf14_buf_free(tos);
             if (ctx->mask_stack != NULL) {
                 pdf14_free_mask_stack(ctx, ctx->memory);
@@ -10168,8 +10169,10 @@ c_pdf14trans_get_cropping(const gs_composite_t *pcte, int *ry, int *rheight,
                 pdf14_compute_group_device_int_rect(&pdf14pct->params.ctm,
                                                     &pdf14pct->params.bbox, &rect);
                 /* We have to crop this by the parent object and worry about the BC outside
-                   the range, except for image SMask which don't affect areas outside the image */
-                if ( pdf14pct->params.GrayBackground == 1.0 || pdf14pct->params.mask_is_image) {
+                   the range, except for image SMask which don't affect areas outside the image.
+                   The presence of a transfer function opens the possibility of issues with this */
+                if (pdf14pct->params.mask_is_image || (pdf14pct->params.GrayBackground == 1.0 &&
+                      pdf14pct->params.function_is_identity)) {
                     /* In this case there will not be a background effect to
                        worry about.  The mask will not have any effect outside
                        the bounding box.  This is NOT the default or common case. */
