@@ -2165,8 +2165,10 @@ gs_fapi_ufst_init(gs_memory_t * mem, gs_fapi_server ** server)
                                                       sizeof
                                                       (fapi_ufst_server),
                                                       "fapi_ufst_server");
-    if (serv == 0)
+    if (serv == NULL) {
+        gs_memory_chunk_release(cmem);
         return_error(gs_error_Fatal);
+    }
     memset(serv, 0, sizeof(*serv));
 
     serv->mem = cmem;
