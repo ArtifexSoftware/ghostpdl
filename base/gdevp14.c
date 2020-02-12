@@ -1300,10 +1300,11 @@ pdf14_ctx_free(pdf14_ctx *ctx)
  * if backdrop is fully transparent.
  **/
 static	pdf14_buf *
-pdf14_find_backdrop_buf(pdf14_ctx *ctx, bool *is_backdrop)
+pdf14_find_backdrop_buf(gx_device* dev, pdf14_ctx *ctx, bool *is_backdrop)
 {
     /* Our new buffer is buf */
     pdf14_buf *buf = ctx->stack;
+    pdf14_device* pdev = (pdf14_device*)dev;
 
     *is_backdrop = false;
 
@@ -1315,15 +1316,16 @@ pdf14_find_backdrop_buf(pdf14_ctx *ctx, bool *is_backdrop)
            then we need to use its backdrop as the backdrop. If
            it was isolated then that back drop was NULL */
         if (buf->saved != NULL && buf->saved->knockout) {
-            /* This bit of logic is need to get both
-               fts_25_2524.pdf and the overlapping Altona
-               file working. The difference is between a
-               knockout group in a knockout group vs. a
-               non-knockout group in a knockout group.
-               fts_25_2524.pdf has a knockout in a knockout
-               due to the stroke fill that occurs within
-               the knockout group. */
-            if (!buf->knockout)
+            /* For fts_25_2524.pdf and the overlapping Altona
+               file and Bug 702114.  Per the spec, if we
+               have a non-isolated group in a knockout the
+               non-isolated group uses the backdrop of its
+               parent group (the knockout group) as its
+               own backdrop.  Apparently though this is not
+               true if we are constructing a softmask for
+               some reason which is the case with the overlapping
+               groups page in the multi-page Altona file */
+            if (pdev->in_smask_construction)
                 return NULL;
             else {
                 *is_backdrop = true;
@@ -1393,7 +1395,7 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
         return 0;
     if (idle)
         return 0;
-    pdf14_backdrop = pdf14_find_backdrop_buf(ctx, &is_backdrop);
+    pdf14_backdrop = pdf14_find_backdrop_buf(dev, ctx, &is_backdrop);
 
     /* Initializes buf->data with the backdrop or as opaque */
     if (pdf14_backdrop == NULL || (is_backdrop && pdf14_backdrop->backdrop == NULL)) {
