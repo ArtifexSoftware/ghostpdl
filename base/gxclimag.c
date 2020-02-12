@@ -755,8 +755,6 @@ clist_begin_typed_image(gx_device * dev, const gs_gstate * pgs,
             goto use_default;
     }
     if (pim->Interpolate) {
-        if (gx_device_is_pattern_clist(dev))
-            goto use_default;
         pie->support.x = pie->support.y = MAX_ISCALE_SUPPORT + 1;
     } else {
         pie->support.x = pie->support.y = 0;
