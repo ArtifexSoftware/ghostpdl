@@ -1248,13 +1248,14 @@ s_image_colors_set_mask_colors(stream_image_colors_state * ss, uint *MaskColor)
 /* Set image dimensions. */
 void
 s_image_colors_set_dimensions(stream_image_colors_state * ss,
-                               int width, int height, int depth, int bits_per_sample)
+                              int width, int height, int input_width,
+                              int depth, int bits_per_sample)
 {
     ss->width = width;
     ss->height = height;
     ss->depth = depth;
     ss->bits_per_sample = bits_per_sample;
-    ss->row_bits = bits_per_sample * depth * width;
+    ss->row_bits = bits_per_sample * depth * input_width;
     ss->raster = bitmap_raster(ss->row_bits);
     ss->row_alignment_bytes = 0; /* (ss->raster * 8 - ss->row_bits) / 8) doesn't work. */
 }

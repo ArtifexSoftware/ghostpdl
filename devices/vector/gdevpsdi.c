@@ -828,7 +828,8 @@ psdf_setup_compression_chooser(psdf_binary_writer *pbw, gx_device_psdf *pdev,
 /* Set up an "image to mask" filter. */
 int
 psdf_setup_image_to_mask_filter(psdf_binary_writer *pbw, gx_device_psdf *pdev,
-                    int width, int height, int depth, int bits_per_sample, uint *MaskColor)
+                                int width, int height, int input_width,
+                                int depth, int bits_per_sample, uint *MaskColor)
 {
     int code;
     stream_state *ss = s_alloc_state(pdev->memory, s__image_colors_template.stype,
@@ -842,7 +843,7 @@ psdf_setup_image_to_mask_filter(psdf_binary_writer *pbw, gx_device_psdf *pdev,
     if (code < 0)
         return code;
     s_image_colors_set_dimensions((stream_image_colors_state *)ss,
-                    width, height, depth, bits_per_sample);
+                                  width, height, input_width, depth, bits_per_sample);
     s_image_colors_set_mask_colors((stream_image_colors_state *)ss, MaskColor);
     return 0;
 }
@@ -850,7 +851,9 @@ psdf_setup_image_to_mask_filter(psdf_binary_writer *pbw, gx_device_psdf *pdev,
 /* Set up an image colors filter. */
 int
 psdf_setup_image_colors_filter(psdf_binary_writer *pbw,
-                               gx_device_psdf *pdev, gs_pixel_image_t * pim,
+                               gx_device_psdf *pdev,
+                               const gs_pixel_image_t *input_pim,
+                               gs_pixel_image_t * pim,
                                const gs_gstate *pgs)
 {   /* fixme: currently it's a stub convertion to mask. */
     int code;
@@ -866,9 +869,9 @@ psdf_setup_image_colors_filter(psdf_binary_writer *pbw,
     if (code < 0)
         return code;
     s_image_colors_set_dimensions((stream_image_colors_state *)ss,
-                    pim->Width, pim->Height,
-                    gs_color_space_num_components(pim->ColorSpace),
-                    pim->BitsPerComponent);
+                                  pim->Width, pim->Height, input_pim->Width,
+                                  gs_color_space_num_components(pim->ColorSpace),
+                                  pim->BitsPerComponent);
     s_image_colors_set_color_space((stream_image_colors_state *)ss,
                     (gx_device *)pdev, pim->ColorSpace, pgs, pim->Decode);
     pim->BitsPerComponent = pdev->color_info.comp_bits[0]; /* Same precision for all components. */

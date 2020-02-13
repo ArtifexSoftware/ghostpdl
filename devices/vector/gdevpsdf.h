@@ -459,11 +459,14 @@ int psdf_setup_compression_chooser(psdf_binary_writer *pbw,
 
 /* Set up an "image to mask" filter. */
 int psdf_setup_image_to_mask_filter(psdf_binary_writer *pbw, gx_device_psdf *pdev,
-            int width, int height, int depth, int bits_per_sample, uint *MaskColor);
+                                    int width, int height, int input_width,
+                                    int depth, int bits_per_sample, uint *MaskColor);
 
 /* Set up an image colors filter. */
 int psdf_setup_image_colors_filter(psdf_binary_writer *pbw,
-        gx_device_psdf *pdev, gs_pixel_image_t * pim,
+                                   gx_device_psdf *pdev,
+                                   const gs_pixel_image_t *input_pim,
+                                   gs_pixel_image_t * pim,
         const gs_gstate *pgs);
 
 /* ---------------- Symbolic data printing ---------------- */
