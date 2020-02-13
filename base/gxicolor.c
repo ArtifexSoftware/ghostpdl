@@ -445,14 +445,14 @@ decode_row(const gx_image_enum *penum, const byte *psrc, int spp, byte *pdes,
 static int
 image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w,
                      gx_device *dev, int *spp_cm_out, byte **psrc_cm,
-                     byte **psrc_cm_start, byte **bufend, bool planar_out)
+                     byte **psrc_cm_start, byte **bufend, int *pspan, bool planar_out)
 {
     const gx_image_enum *const penum = penum_orig; /* const within proc */
     const gs_gstate *pgs = penum->pgs;
     bool need_decode = penum->icc_setup.need_decode;
     gsicc_bufferdesc_t input_buff_desc;
     gsicc_bufferdesc_t output_buff_desc;
-    int num_pixels, spp_cm;
+    int spp_cm;
     int spp = penum->spp;
     bool force_planar = false;
     int num_des_comps;
@@ -462,7 +462,6 @@ image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w,
     const byte *planar_src;
     byte *planar_des;
     int j, k;
-    int width;
 
     code = dev_proc(dev, get_profile)(dev, &dev_profile);
     if (code < 0) return code;
@@ -470,6 +469,8 @@ image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w,
     if (penum->icc_link == NULL) {
         return gs_rethrow(-1, "ICC Link not created during image render color");
     }
+    if (pspan)
+        *pspan = w;
     /* If the link is the identity, then we don't need to do any color
        conversions except for potentially a decode.  Planar out is a special
        case. For now we let the CMM do the reorg into planar.  We will want
@@ -485,14 +486,18 @@ image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w,
         *bufend = *psrc_cm + w;
         *psrc_cm_start = NULL;
     } else {
+        int width = w/spp;
+        int span = (width+31)&~31;
         spp_cm = num_des_comps;
 
-        /* Put the buffer on a 32 byte memory alignment for SSE/AVX.  Also
-           extra space for 32 byte overrun */
-        *psrc_cm_start = gs_alloc_bytes(pgs->memory,  w * spp_cm/spp + 64,
-                                  "image_color_icc_prep");
+        if (pspan)
+            *pspan = span;
+        /* Put the buffer on a 32 byte memory alignment for SSE/AVX for every
+         * line. Also extra space for 32 byte overrun. */
+        *psrc_cm_start = gs_alloc_bytes(pgs->memory,  span * spp_cm + 64,
+                                        "image_color_icc_prep");
         *psrc_cm = *psrc_cm_start + ((32 - (intptr_t)(*psrc_cm_start)) & 31);
-        *bufend = *psrc_cm +  w * spp_cm/spp;
+        *bufend = *psrc_cm +  span * spp_cm;
         if (penum->icc_link->is_identity) {
             if (!force_planar) {
                 /* decode only. no CM.  This is slow but does not happen that often */
@@ -518,11 +523,10 @@ image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w,
                     planar_src = psrc;
                 }
                 /* Now to planar */
-                width = w/spp;
                 planar_des = *psrc_cm;
                 for (k = 0; k < width; k++) {
                     for (j = 0; j < spp; j++) {
-                        *(planar_des + j * width) = *planar_src++;
+                        *(planar_des + j * span) = *planar_src++;
                     }
                     planar_des++;
                 }
@@ -534,18 +538,17 @@ image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w,
             }
         } else {
             /* Set up the buffer descriptors. planar out always ends up here */
-            num_pixels = w/spp;
             gsicc_init_buffer(&input_buff_desc, spp, 1,
                           false, false, false, 0, w,
-                          1, num_pixels);
+                          1, width);
             if (!force_planar) {
                 gsicc_init_buffer(&output_buff_desc, spp_cm, 1,
-                              false, false, false, 0, num_pixels * spp_cm,
-                              1, num_pixels);
+                              false, false, false, 0, width * spp_cm,
+                              1, width);
             } else {
                 gsicc_init_buffer(&output_buff_desc, spp_cm, 1,
-                              false, false, true, w/spp, w/spp,
-                              1, num_pixels);
+                              false, false, true, span, span,
+                              1, width);
             }
             /* For now, just blast it all through the link. If we had a significant reduction
                we will want to repack the data first and then do this.  That will be
@@ -595,13 +598,14 @@ image_render_color_ht_cal(gx_image_enum *penum, const byte *buffer, int data_x,
     byte *bufend = NULL;
     byte *input[GX_DEVICE_COLOR_MAX_COMPONENTS];    /* to ensure 128 bit boundary */
     int i;
+    int planestride;
 
     if (h == 0)
         return 0;
 
     /* Get the buffer into the device color space */
     code = image_color_icc_prep(penum, psrc, w, dev, &spp_cm, &psrc_cm,
-                                &psrc_cm_start,  &bufend, true);
+                                &psrc_cm_start,  &bufend, &planestride, true);
     if (code < 0)
         return code;
 
@@ -654,7 +658,7 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
     if (h != 0 && penum->line_size != 0) {      /* line_size == 0, nothing to do */
         /* Get the buffer into the device color space */
         code = image_color_icc_prep(penum, psrc, w, dev, &spp_cm, &psrc_cm,
-                                    &psrc_cm_start,  &bufend, true);
+                                    &psrc_cm_start,  &bufend, &psrc_planestride, true);
         if (code < 0)
             return code;
     } else {
@@ -1071,7 +1075,7 @@ image_render_color_icc_tpr(gx_image_enum *penum_orig, const byte *buffer, int da
     if (h == 0)
         return 0;
     code = image_color_icc_prep(penum_orig, psrc, w, dev, &spp_cm, &psrc_cm,
-                                &psrc_cm_start, &bufend, false);
+                                &psrc_cm_start, &bufend, NULL, false);
     if (code < 0) return code;
     psrc_cm_initial = psrc_cm;
     gx_get_cmapper(&cmapper, pgs, dev, has_transfer, must_halftone, gs_color_select_source);
