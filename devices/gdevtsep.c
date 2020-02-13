@@ -2827,7 +2827,7 @@ tiffsep1_print_page(gx_device_printer * pdev, gp_file * file)
             if(cal_ht != NULL) {
                 if (cal_halftone_process_planar(cal_ht,
                                                 pdev->memory->non_gc_memory,
-                                                &params.data[0],
+                                                (const byte * const *)&params.data[0],
                                                 ht_callback,
                                                 tfdev) < 0)
                     goto cal_fail;
