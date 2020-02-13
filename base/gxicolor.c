@@ -62,7 +62,17 @@ static irender_proc(image_render_color_icc_tpr);
 #ifndef WITH_CAL
 static irender_proc(image_render_color_thresh);
 #else
+
+#include "cal.h"
+
 static irender_proc(image_render_color_ht_cal);
+
+static int
+image_render_color_ht_cal_skip_line(gx_image_enum *penum,
+                                    gx_device     *dev)
+{
+    return !cal_halftone_next_line_required(penum->cal_ht);
+}
 
 static void
 color_halftone_callback(cal_halftone_data_t *ht, void *arg)
@@ -85,11 +95,6 @@ color_halftone_callback(cal_halftone_data_t *ht, void *arg)
 static cal_halftone*
 color_halftone_init(gx_image_enum *penum)
 {
-    void *callback;
-    void *args;
-    int ox;
-    int dd_curr_y;
-    int dev_width;
     cal_halftone *cal_ht = NULL;
     gx_dda_fixed dda_ht;
     cal_context *ctx = penum->memory->gs_lib_ctx->core->cal_ctx;
@@ -108,9 +113,6 @@ color_halftone_init(gx_image_enum *penum)
     dda_ht = penum->dda.pixel0.x;
     if (penum->dxx > 0)
         dda_translate(dda_ht, -fixed_epsilon);
-    ox = dda_current(dda_ht);
-    dd_curr_y = dda_current(penum->dda.pixel0.y);
-    dev_width = gxht_dda_length(&dda_ht, penum->rect.w);
     matrix.xx = penum->matrix.xx;
     matrix.xy = penum->matrix.xy;
     matrix.yx = penum->matrix.yx;
@@ -293,7 +295,8 @@ gs_image_class_4_color(gx_image_enum * penum, irender_proc_t *render_fn)
             penum->cal_ht = color_halftone_init(penum);
             if (penum->cal_ht != NULL)
             {
-                penum->skip_render = image_render_color_ht_cal;
+                penum->skip_next_line = image_render_color_ht_cal_skip_line;
+                *render_fn = &image_render_color_ht_cal;
                 return code;
             }
 #else
@@ -591,8 +594,9 @@ image_render_color_ht_cal(gx_image_enum *penum, const byte *buffer, int data_x,
     byte *psrc_cm = NULL, *psrc_cm_start = NULL;
     byte *bufend = NULL;
     byte *input[GX_DEVICE_COLOR_MAX_COMPONENTS];    /* to ensure 128 bit boundary */
+    int i;
 
-    if (h == 0 || penum->line_size == 0)      /* line_size == 0, nothing to do */
+    if (h == 0)
         return 0;
 
     /* Get the buffer into the device color space */
@@ -601,8 +605,11 @@ image_render_color_ht_cal(gx_image_enum *penum, const byte *buffer, int data_x,
     if (code < 0)
         return code;
 
+    for (i = 0; i < spp_cm; i++)
+        input[i] = psrc_cm + w*i;
+
     code = cal_halftone_process_planar(penum->cal_ht, penum->memory->non_gc_memory,
-                                       input, halftone_callback, dev);
+                                       (const byte * const *)input, color_halftone_callback, dev);
 
     /* Free cm buffer, if it was used */
     if (psrc_cm_start != NULL) {
