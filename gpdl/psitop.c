@@ -359,6 +359,7 @@ ps_impl_allocate_interp_instance(pl_interp_implementation_t *impl, gs_memory_t *
 
     code = psapi_init_with_args01(psi->psapi_instance, nargs, (char **)gsargs);
     if (code < 0) {
+        (void)psapi_exit(psi->psapi_instance);
         psapi_delete_instance(psi->psapi_instance);
         gs_free_object(mem, psi, "ps_impl_allocate_interp_instance");
     }
