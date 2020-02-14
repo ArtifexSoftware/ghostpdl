@@ -118,8 +118,11 @@ gs_pattern1_init(gs_pattern1_template_t * ppat)
 }
 
 /* Make an instance of a PatternType 1 pattern. */
-static int compute_inst_matrix(gs_pattern1_instance_t * pinst,
-        gs_gstate * saved, gs_rect * pbbox, int width, int height);
+static int compute_inst_matrix(gs_pattern1_instance_t *pinst,
+                               gs_gstate *saved,
+                               gs_rect *pbbox,
+                               int width, int height,
+                               float *bbw, float *bbh);
 int
 gs_makepattern(gs_client_color * pcc, const gs_pattern1_template_t * pcp,
                const gs_matrix * pmat, gs_gstate * pgs, gs_memory_t * mem)
@@ -145,6 +148,7 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
     int code = gs_make_pattern_common(pcc, (const gs_pattern_template_t *)pcp,
                                       pmat, pgs, mem,
                                       &st_pattern1_instance);
+    float bbw, bbh;
 
     if (code < 0)
         return code;
@@ -181,7 +185,7 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
             goto fsaved;
     }
     inst.templat = *pcp;
-    code = compute_inst_matrix(&inst, saved, &bbox, dev_width, dev_height);
+    code = compute_inst_matrix(&inst, saved, &bbox, dev_width, dev_height, &bbw, &bbh);
     if (code < 0)
         goto fsaved;
 
@@ -214,9 +218,6 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
     if_debug5m('t', mem, "[t]bbox=(%g,%g),(%g,%g), uses_transparency=%d\n",
                bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y, inst.templat.uses_transparency);
     {
-        float bbw = bbox.q.x - bbox.p.x;
-        float bbh = bbox.q.y - bbox.p.y;
-
         /* If the step and the size agree to within 1/2 pixel, */
         /* make them the same. */
         if (ADJUST_SCALE_BY_GS_TRADITION) {
@@ -247,7 +248,7 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
                 gs_scale(saved, fabs(inst.size.x / inst.step_matrix.xx),
                          fabs(inst.size.y / inst.step_matrix.yy));
                 code = compute_inst_matrix(&inst, saved, &bbox,
-                                                dev_width, dev_height);
+                                           dev_width, dev_height, &bbw, &bbh);
                 if (code < 0)
                     goto fsaved;
                 if (ADJUST_SCALE_FOR_THIN_LINES) {
@@ -529,14 +530,30 @@ clamp_pattern_bbox(gs_pattern1_instance_t * pinst, gs_rect * pbbox,
 /* from the step values and the saved matrix. */
 static int
 compute_inst_matrix(gs_pattern1_instance_t * pinst, gs_gstate * saved,
-                            gs_rect * pbbox, int width, int height)
+                    gs_rect * pbbox, int width, int height,
+                    float *pbbw, float *pbbh)
 {
     float xx, xy, yx, yy, dx, dy, temp;
     int code;
+    gs_matrix m = ctm_only(saved);
 
-    code = gs_bbox_transform(&pinst->templat.BBox, &ctm_only(saved), pbbox);
+    /* Bug 702124: Due to the limited precision of floats, we find that
+     * transforming (say) small height boxes in the presence of large tx/ty
+     * values can cause the box heights to map to 0. So calculate the
+     * width/height of the bbox before we roll the offset into it. */
+    m.tx = 0; m.ty = 0;
+
+    code = gs_bbox_transform(&pinst->templat.BBox, &m, pbbox);
     if (code < 0)
         return code;
+
+    *pbbw = pbbox->q.x - pbbox->p.x;
+    *pbbh = pbbox->q.y - pbbox->p.y;
+
+    pbbox->p.x += ctm_only(saved).tx;
+    pbbox->p.y += ctm_only(saved).ty;
+    pbbox->q.x += ctm_only(saved).tx;
+    pbbox->q.y += ctm_only(saved).ty;
     /*
      * Adjust saved.ctm to map the bbox origin to pixels.
      */
