@@ -537,7 +537,8 @@ clist_begin_typed_image(gx_device * dev, const gs_gstate * pgs,
             indexed = false;
             num_components = gs_color_space_num_components(pcs);
         }
-        uses_color = pim->CombineWithColor && rop3_uses_T(pgs->log_op);
+        uses_color = pim->CombineWithColor &&
+                    (rop3_uses_T(pgs->log_op) || rop3_uses_S(pgs->log_op));
     }
     code = gx_image_enum_common_init((gx_image_enum_common_t *) pie,
                                      (const gs_data_image_t *) pim,
