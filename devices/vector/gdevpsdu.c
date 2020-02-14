@@ -393,6 +393,8 @@ psdf_DCT_filter(gs_param_list *plist /* may be NULL */,
            &st_jpeg_compress_data, "zDCTE");
         if (jcdp == 0)
             return_error(gs_error_VMerror);
+        jcdp->cinfo.mem = NULL;
+        jcdp->cinfo.client_data = NULL;
         ss->data.compress = jcdp;
         jcdp->memory = ss->jpeg_memory = mem;	/* set now for allocation */
         if ((code = gs_jpeg_create_compress(ss)) < 0)
