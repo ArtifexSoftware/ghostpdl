@@ -1244,6 +1244,7 @@ gstate_clone(gs_gstate * pfrom, gs_memory_t * mem, client_name_t cname,
     *pgs = *pfrom;
     pgs->client_data = pdata;
     gs_currentlineparams_inline(pgs)->dash = dash;
+    pgs->memory = mem;
 
     gs_gstate_copied(pgs);
     /* Don't do anything to clip_stack. */
