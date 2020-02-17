@@ -182,10 +182,11 @@ static long gs_j_mem_init (j_common_ptr cinfo)
 static void gs_j_mem_term (j_common_ptr cinfo)
 {
     gs_memory_t *cmem = (gs_memory_t *)(GET_CUST_MEM_DATA(cinfo)->priv);
-    gs_memory_t *mem = gs_memory_chunk_target(cmem);
+    gs_memory_t *mem = gs_memory_chunk_unwrap(cmem);
 
-    gs_memory_chunk_release(cmem);
-    
+    if (mem == cmem)
+        return;
+
     (void)jpeg_cust_mem_set_private(GET_CUST_MEM_DATA(cinfo), mem);
 }
 #endif /* SHAREJPEG == 0 */
@@ -199,13 +200,16 @@ int gs_jpeg_mem_init (gs_memory_t *mem, j_common_ptr cinfo)
 
     memset(&custm, 0x00, sizeof(custm));
 
+    /* JPEG allocated chunks don't need to be subject to gc. */
+    mem = mem->non_gc_memory;
+
     if (!jpeg_cust_mem_init(&custm, (void *) mem, gs_j_mem_init, gs_j_mem_term, NULL,
                             gs_j_mem_alloc, gs_j_mem_free,
                             gs_j_mem_alloc, gs_j_mem_free, NULL)) {
         code = gs_note_error(gs_error_VMerror);
     }
     if (code == 0) {
-        custmptr = (jpeg_cust_mem_data *)gs_alloc_bytes(mem->non_gc_memory, sizeof(custm) + sizeof(void *), "JPEG custom memory descriptor");
+        custmptr = (jpeg_cust_mem_data *)gs_alloc_bytes(mem, sizeof(custm) + sizeof(void *), "JPEG custom memory descriptor");
         if (!custmptr) {
             code = gs_note_error(gs_error_VMerror);
         }
