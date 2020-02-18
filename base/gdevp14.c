@@ -7027,8 +7027,13 @@ pdf14_dev_spec_op(gx_device *pdev, int dev_spec_op,
         return 0;
     if(dev_spec_op == gxdso_JPEG_passthrough_query)
         return 0;
-    if (dev_spec_op == gxdso_overprint_active)
-        return p14dev->overprint || p14dev->stroke_overprint;
+    if (dev_spec_op == gxdso_overprint_active) {
+        if (p14dev->pclist_device != NULL) {
+            return dev_proc(p14dev->pclist_device, dev_spec_op)(p14dev->pclist_device, dev_spec_op, data, size);
+        } else {
+            return p14dev->overprint || p14dev->stroke_overprint;
+        }
+    }
     if (dev_spec_op == gxdso_in_smask)
         return p14dev->in_smask_construction > 0 || p14dev->depth_within_smask;
 
