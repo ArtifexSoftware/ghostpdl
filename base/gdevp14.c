@@ -3285,7 +3285,8 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
 
     /* See if overprint is enabled for both stroke and fill AND if ca == CA */
     if (pgs->fillconstantalpha == pgs->strokeconstantalpha &&
-        (((pdf14_device*)dev)->overprint && ((pdf14_device*)dev)->stroke_overprint)) {
+        ((pdf14_device*)dev)->overprint && ((pdf14_device*)dev)->stroke_overprint &&
+        dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
         /* Push a non-isolated non-knockout group with alpha = 1.0 and
            compatible overprint mode.  Group will be composited with
            original alpha and blend mode */
@@ -3355,7 +3356,7 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
 
         /* If we are in an overprint situation, set the blend mode to compatible
             overprint */
-        if (pgs->overprint) {
+        if (pgs->overprint && dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
             code = gs_setblendmode((gs_gstate*)pgs, BLEND_MODE_CompatibleOverprint);
             if (code < 0)
                 goto cleanup;
@@ -3363,7 +3364,7 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
         code = pdf14_fill_path(dev, pgs, ppath, fill_params, pdcolor_fill, pcpath);
         if (code < 0)
             goto cleanup;
-        if (pgs->overprint) {
+        if (pgs->overprint && dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
             code = gs_setblendmode((gs_gstate*)pgs, blend_mode);
             if (code < 0)
                 goto cleanup;
@@ -3374,7 +3375,7 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
             goto cleanup;
         gs_swapcolors_quick((gs_gstate*) pgs);
         ((pdf14_device*)dev)->op_state = PDF14_OP_STATE_STROKE;
-        if (pgs->stroke_overprint) {
+        if (pgs->stroke_overprint && dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
             code = gs_setblendmode((gs_gstate*)pgs, BLEND_MODE_CompatibleOverprint);
             if (code < 0)
                 goto cleanup;
@@ -3383,7 +3384,7 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
         if (code < 0)
             goto cleanup;
 
-        if (pgs->stroke_overprint) {
+        if (pgs->stroke_overprint && dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
             code = gs_setblendmode((gs_gstate*)pgs, blend_mode);
             if (code < 0)
                 goto cleanup;
@@ -9452,7 +9453,8 @@ pdf14_clist_fill_stroke_path_pattern_setup(gx_device* dev, const gs_gstate* pgs,
 
     /* See if overprint is enabled for both stroke and fill AND if ca == CA */
     if (pgs->fillconstantalpha == pgs->strokeconstantalpha &&
-        (pgs->overprint && pgs->stroke_overprint)) {
+        pgs->overprint && pgs->stroke_overprint &&
+        dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
         /* Push a non-isolated non-knockout group with alpha = 1.0 and
            compatible overprint mode.  Group will be composited with
            original alpha and blend mode */
@@ -9518,7 +9520,7 @@ pdf14_clist_fill_stroke_path_pattern_setup(gx_device* dev, const gs_gstate* pgs,
 
             /* If we are in an overprint situation, set the blend mode to compatible
                overprint */
-            if (pgs->overprint)
+            if (pgs->overprint && dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE)
                 code = gs_setblendmode((gs_gstate*)pgs, BLEND_MODE_CompatibleOverprint);
             if (code < 0)
                 goto cleanup;
@@ -9527,7 +9529,7 @@ pdf14_clist_fill_stroke_path_pattern_setup(gx_device* dev, const gs_gstate* pgs,
             if (code < 0)
                 goto cleanup;
 
-            if (pgs->overprint) {
+            if (pgs->overprint && dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
                 code = gs_setblendmode((gs_gstate*)pgs, blend_mode);
                 if (code < 0)
                     goto cleanup;
