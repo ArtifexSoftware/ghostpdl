@@ -1405,6 +1405,7 @@ ibegin:                 if_debug0m('L', mem, "\n");
                         {
                             /* Processing an image operation */
                             dev_proc(tdev, set_graphics_type_tag)(tdev, GS_IMAGE_TAG);/* FIXME: what about text bitmaps? */
+                            image.i4.override_in_smask = 0;
                             code = (*dev_proc(tdev, begin_typed_image))
                                 (tdev, &gs_gstate, NULL,
                                  (const gs_image_common_t *)&image,

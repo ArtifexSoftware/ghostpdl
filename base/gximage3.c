@@ -27,6 +27,7 @@
 #include "gxclipm.h"
 #include "gximage3.h"
 #include "gxgstate.h"
+#include "gxdevsop.h"
 #include <limits.h> /* For INT_MAX etc */
 
 /* Forward references */
@@ -404,6 +405,7 @@ gx_begin_image3_generic(gx_device * dev,
         m_mat = *pmat;
         m_mat.tx -= origin.x;
         m_mat.ty -= origin.y;
+        i_mask.override_in_smask = (dev_proc(dev, dev_spec_op)(dev, gxdso_in_smask, NULL, 0)) > 0;
         /*
          * Note that pgs = NULL here, since we don't want to have to
          * create another gs_gstate with default log_op, etc.
