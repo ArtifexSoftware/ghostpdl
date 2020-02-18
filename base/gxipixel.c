@@ -335,7 +335,8 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
      * should grid fit. This allows us to avoid nasty blank lines around
      * the edges of cells. Similarly, for smasks.
      */
-    in_smask = (dev_proc(dev, dev_spec_op)(dev, gxdso_in_smask, NULL, 0)) > 0;
+    in_smask = (pim->override_in_smask ||
+                (dev_proc(dev, dev_spec_op)(dev, gxdso_in_smask, NULL, 0)) > 0);
     gridfitimages = (in_smask || in_pattern_accumulator) && orthogonal;
 
     if (pgs != NULL && pgs->show_gstate != NULL) {

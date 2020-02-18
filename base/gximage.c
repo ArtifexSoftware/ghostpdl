@@ -70,6 +70,7 @@ gs_pixel_image_t_init(gs_pixel_image_t * pim,
     pim->format = gs_image_format_chunky;
     pim->ColorSpace = color_space;
     pim->CombineWithColor = false;
+    pim->override_in_smask = 0;
 }
 
 /* Initialize the common part of an image-processing enumerator. */
