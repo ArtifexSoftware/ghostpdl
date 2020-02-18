@@ -1079,10 +1079,11 @@ get_color_handler(gx_image_enum *penum, int spp_decode,
     /* If we are in a non device space then work from the pcs not from the
     concrete space also handle index case, where base case was device type */
     /* We'll have done the interpolation in the base space, not the indexed
-     * space, so allow for that here. */
+     * space, so allow for that here. Also avoid problems with separation
+     * color spaces with check for presence of ICC profile */
     if (is_index_space)
         pcs = pcs->base_space;
-    if (dev_profile->usefastcolor &&
+    if (dev_profile->usefastcolor && pcs->cmm_icc_profile_data != NULL &&
         gsicc_is_default_profile(pcs->cmm_icc_profile_data) &&
         dev_profile->device_profile[0]->num_comps == spp_decode) {
         const gs_color_space * pconcs = cs_concrete_space(pcs, pgs);

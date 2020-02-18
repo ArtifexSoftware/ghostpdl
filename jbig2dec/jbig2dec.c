@@ -35,6 +35,12 @@
 #include "os_types.h"
 #include "sha1.h"
 
+#ifdef JBIG_EXTERNAL_MEMENTO_H
+#include JBIG_EXTERNAL_MEMENTO_H
+#else
+#include "memento.h"
+#endif
+
 #include "jbig2.h"
 #include "jbig2_priv.h"
 #include "jbig2_image.h"

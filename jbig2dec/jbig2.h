@@ -26,7 +26,7 @@ extern "C"
 #define _JBIG2_H
 
 #define JBIG2_VERSION_MAJOR (0)
-#define JBIG2_VERSION_MINOR (17)
+#define JBIG2_VERSION_MINOR (18)
 
 /* warning levels */
 typedef enum {

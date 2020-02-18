@@ -197,6 +197,10 @@ gs_cspace_new_scrgb(gs_memory_t *pmem, gs_gstate * pgs)
     pcspace->cmm_icc_profile_data->profile_handle =
         gsicc_get_profile_handle_buffer(pcspace->cmm_icc_profile_data->buffer,
             pcspace->cmm_icc_profile_data->buffer_size, pmem);
+    if (!pcspace->cmm_icc_profile_data->profile_handle) {
+        rc_decrement(pcspace, "gs_cspace_new_scrgb");
+        return NULL;
+    }
     profile = pcspace->cmm_icc_profile_data;
 
     /* Compute the hash code of the profile. Everything in the

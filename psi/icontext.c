@@ -122,6 +122,8 @@ context_state_alloc(gs_context_state_t ** ppcst,
         if (pcst == 0)
             return_error(gs_error_VMerror);
     }
+    /* Make sure pcst->memory is valid, in case we return an error. */
+    pcst->memory = *dmem;
     code = gs_interp_alloc_stacks(mem, pcst);
     if (code < 0)
         goto x0;
@@ -137,7 +139,6 @@ context_state_alloc(gs_context_state_t ** ppcst,
         code = gs_note_error(gs_error_VMerror);
         goto x1;
     }
-    pcst->memory = *dmem;
     pcst->language_level = 1;
     make_false(&pcst->array_packing);
     make_int(&pcst->binary_object_format, 0);

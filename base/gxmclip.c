@@ -89,7 +89,9 @@ gx_mask_clip_initialize(gx_device_mask_clip * cdev,
     for (;;) {
         ulong bitmap_size = max_ulong;
 
-        if (buffer_height <= 0) {
+        /* Bug 702124: Allow for the case when size.y == 0 - then
+         * buffer_height will be zero, and it's not a VMerror. */
+        if (bits->size.y > 0 && buffer_height <= 0) {
             /*
              * The tile is too wide to buffer even one scan line.
              * We could do copy_mono in chunks, but for now, we punt.

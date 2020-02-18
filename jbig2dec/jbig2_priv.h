@@ -20,9 +20,8 @@
 #ifndef _JBIG2_PRIV_H
 #define _JBIG2_PRIV_H
 
-/* To enable Memento, either uncomment the following, or arrange to
- * predefine MEMENTO whilst building. */
-/* #define MEMENTO */
+/* To enable Memento predefine MEMENTO while building by setting
+   CFLAGS=-DMEMENTO. */
 
 /* If we are being compiled as part of a larger project that includes
  * Memento, that project should define JBIG_EXTERNAL_MEMENTO_H to point

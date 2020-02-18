@@ -27,7 +27,7 @@
 
 #ifndef GS_COPYRIGHT
 #  define GS_COPYRIGHT\
-        "Copyright (C) 2019 Artifex Software, Inc.  All rights reserved."
+        "Copyright (C) 2020 Artifex Software, Inc.  All rights reserved."
 #endif
 
 #ifndef GS_PRODUCTFAMILY

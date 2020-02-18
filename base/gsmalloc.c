@@ -119,7 +119,7 @@ gs_malloc_memory_init(void)
     mem->stable_memory = 0;	/* just for tidyness, never referenced */
     mem->procs = gs_malloc_memory_procs;
     mem->allocated = 0;
-    mem->limit = max_long;
+    mem->limit = max_size_t;
     mem->used = 0;
     mem->max_used = 0;
     mem->gs_lib_ctx = 0;
@@ -127,13 +127,11 @@ gs_malloc_memory_init(void)
     mem->thread_safe_memory = (gs_memory_t *)mem;	/* this allocator is thread safe */
     /* Allocate a monitor to serialize access to structures within */
     mem->monitor = NULL;	/* prevent use during initial allocation */
-#ifndef MEMENTO_SQUEEZE_BUILD
     mem->monitor = gx_monitor_label(gx_monitor_alloc((gs_memory_t *)mem), "heap");
     if (mem->monitor == NULL) {
         free(mem);
         return NULL;
     }
-#endif
 
     return mem;
 }
@@ -188,7 +186,7 @@ gs_heap_alloc_bytes(gs_memory_t * mem, size_t size, client_name_t cname)
     } else {
         size_t added = size + sizeof(gs_malloc_block_t);
 
-        if (added <= size || mmem->limit - added < mmem->used)
+        if (added <= size || added > mmem->limit || mmem->limit - added < mmem->used)
             set_msg("exceeded limit");
         else if ((ptr = (byte *) Memento_label(malloc(added), cname)) == 0)
             set_msg("failed");

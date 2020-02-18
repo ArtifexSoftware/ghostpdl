@@ -1300,10 +1300,11 @@ pdf14_ctx_free(pdf14_ctx *ctx)
  * if backdrop is fully transparent.
  **/
 static	pdf14_buf *
-pdf14_find_backdrop_buf(pdf14_ctx *ctx, bool *is_backdrop)
+pdf14_find_backdrop_buf(gx_device* dev, pdf14_ctx *ctx, bool *is_backdrop)
 {
     /* Our new buffer is buf */
     pdf14_buf *buf = ctx->stack;
+    pdf14_device* pdev = (pdf14_device*)dev;
 
     *is_backdrop = false;
 
@@ -1315,15 +1316,16 @@ pdf14_find_backdrop_buf(pdf14_ctx *ctx, bool *is_backdrop)
            then we need to use its backdrop as the backdrop. If
            it was isolated then that back drop was NULL */
         if (buf->saved != NULL && buf->saved->knockout) {
-            /* This bit of logic is need to get both
-               fts_25_2524.pdf and the overlapping Altona
-               file working. The difference is between a
-               knockout group in a knockout group vs. a
-               non-knockout group in a knockout group.
-               fts_25_2524.pdf has a knockout in a knockout
-               due to the stroke fill that occurs within
-               the knockout group. */
-            if (!buf->knockout)
+            /* For fts_25_2524.pdf and the overlapping Altona
+               file and Bug 702114.  Per the spec, if we
+               have a non-isolated group in a knockout the
+               non-isolated group uses the backdrop of its
+               parent group (the knockout group) as its
+               own backdrop.  Apparently though this is not
+               true if we are constructing a softmask for
+               some reason which is the case with the overlapping
+               groups page in the multi-page Altona file */
+            if (pdev->in_smask_construction)
                 return NULL;
             else {
                 *is_backdrop = true;
@@ -1393,7 +1395,7 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
         return 0;
     if (idle)
         return 0;
-    pdf14_backdrop = pdf14_find_backdrop_buf(ctx, &is_backdrop);
+    pdf14_backdrop = pdf14_find_backdrop_buf(dev, ctx, &is_backdrop);
 
     /* Initializes buf->data with the backdrop or as opaque */
     if (pdf14_backdrop == NULL || (is_backdrop && pdf14_backdrop->backdrop == NULL)) {
@@ -1786,7 +1788,8 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_gstate *pgs, gx_device *dev)
            catch this earlier and just avoid creating the structure
            to begin with.  For now we need to delete the structure
            that was created.  Only delete if the alpha value is 65535 */
-        if (tos->alpha == 65535) {
+        if ((tos->alpha == 65535 && tos->is_ident) ||
+            (!tos->is_ident && (tos->transfer_fn[tos->alpha>>8] == 255))) {
             pdf14_buf_free(tos);
             if (ctx->mask_stack != NULL) {
                 pdf14_free_mask_stack(ctx, ctx->memory);
@@ -10168,8 +10171,10 @@ c_pdf14trans_get_cropping(const gs_composite_t *pcte, int *ry, int *rheight,
                 pdf14_compute_group_device_int_rect(&pdf14pct->params.ctm,
                                                     &pdf14pct->params.bbox, &rect);
                 /* We have to crop this by the parent object and worry about the BC outside
-                   the range, except for image SMask which don't affect areas outside the image */
-                if ( pdf14pct->params.GrayBackground == 1.0 || pdf14pct->params.mask_is_image) {
+                   the range, except for image SMask which don't affect areas outside the image.
+                   The presence of a transfer function opens the possibility of issues with this */
+                if (pdf14pct->params.mask_is_image || (pdf14pct->params.GrayBackground == 1.0 &&
+                      pdf14pct->params.function_is_identity)) {
                     /* In this case there will not be a background effect to
                        worry about.  The mask will not have any effect outside
                        the bounding box.  This is NOT the default or common case. */

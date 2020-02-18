@@ -85,6 +85,7 @@ typedef ulong bits32;
 #define max_ushort ARCH_MAX_USHORT
 #define max_uint ARCH_MAX_UINT
 #define max_ulong ARCH_MAX_ULONG
+#define max_size_t ARCH_MAX_SIZE_T
 
 /* Minimum and maximum values for pointers. */
 #if ARCH_PTRS_ARE_SIGNED

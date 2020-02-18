@@ -1077,8 +1077,8 @@ gx_pattern_cache_add_entry(gs_gstate * pgs,
          * being 0.
          */
         if (mmask != 0 &&
-            fabsf(pinst->step_matrix.tx) <= pinst->size.x &&
-            fabsf(pinst->step_matrix.ty) <= pinst->size.y &&
+            fabsf(pinst->step_matrix.xx) <= pinst->size.x &&
+            fabsf(pinst->step_matrix.yy) <= pinst->size.y &&
             pinst->step_matrix.xy == 0 &&
             pinst->step_matrix.yx == 0) {
             int y;

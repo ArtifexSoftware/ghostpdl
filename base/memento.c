@@ -50,6 +50,7 @@ int atexit(void (*)(void));
 
 #include <stdlib.h>
 #include <stdarg.h>
+#include <string.h>
 
 #ifdef __ANDROID__
 #define MEMENTO_ANDROID
@@ -254,7 +255,8 @@ enum {
     Memento_Flag_BreakOnFree = 4,
     Memento_Flag_BreakOnRealloc = 8,
     Memento_Flag_Freed = 16,
-    Memento_Flag_KnownLeak = 32
+    Memento_Flag_KnownLeak = 32,
+    Memento_Flag_Reported = 64
 };
 
 enum {
@@ -455,6 +457,7 @@ extern void backtrace_symbols_fd(void **, size_t, int);
 extern char **backtrace_symbols(void **, size_t);
 
 #define MEMENTO_BACKTRACE_MAX 256
+static void (*print_stack_value)(void *address);
 
 /* Libbacktrace gubbins - relies on us having libdl to load the .so */
 #ifdef HAVE_LIBDL
@@ -492,7 +495,6 @@ static backtrace_create_state_type backtrace_create_state;
 static backtrace_pcinfo_type backtrace_pcinfo;
 static struct backtrace_state *my_backtrace_state;
 static void *libbt;
-static void (*print_stack_value)(void *address);
 static char backtrace_exe[4096];
 static void *current_addr;
 
@@ -552,7 +554,7 @@ static void print_stack_libbt_failed(void *addr)
                  //"gdb -q --batch -p=%i -ex 'info line *%p' -ex quit 2>/dev/null",
                  "gdb -q --batch -p=%i -ex 'info line *%p' -ex quit 2>/dev/null| egrep -v '(Thread debugging using)|(Using host libthread_db library)|(A debugging session is active)|(will be detached)|(Quit anyway)|(No such file or directory)|(^0x)|(^$)'",
                  getpid(), addr);
-	printf("%s\n", command);
+    printf("%s\n", command);
         e = system(command);
         if (e == 0)
             return; /* That'll do! */
@@ -621,8 +623,8 @@ static int init_libbt(void)
 
  fail:
     fprintf(stderr,
-	    "MEMENTO: libbacktrace.so failed to load; backtraces will be sparse.\n"
-	    "MEMENTO: See memento.h for how to rectify this.\n");
+            "MEMENTO: libbacktrace.so failed to load; backtraces will be sparse.\n"
+            "MEMENTO: See memento.h for how to rectify this.\n");
     libbt = NULL;
     backtrace_create_state = NULL;
     backtrace_syminfo = NULL;
@@ -1137,7 +1139,7 @@ static int Memento_Internal_checkFreedBlock(Memento_BlkHeader *b, void *arg)
                 goto mismatch4;
             p += 4;
             i -= 4;
-	} while (i > 0);
+        } while (i > 0);
         i += 4;
     }
     if (i & 2) {
@@ -1595,6 +1597,7 @@ void Memento_fin(void)
             Memento_listBlocks();
 #ifdef MEMENTO_DETAILS
             fprintf(stderr, "\n");
+            Memento_listBlockInfo();
 #endif
             Memento_breakpoint();
         }
@@ -1858,6 +1861,7 @@ static void Memento_startFailing(void)
 {
     if (!memento.failing) {
         fprintf(stderr, "Starting to fail...\n");
+        Memento_bt();
         fflush(stderr);
         memento.failing = 1;
         memento.failAt = memento.sequence;
@@ -2097,112 +2101,112 @@ static void do_reference(Memento_BlkHeader *blk, int event)
 
 int Memento_checkPointerOrNull(void *blk)
 {
-	if (blk == NULL)
-		return 0;
-	if (blk == MEMENTO_PREFILL_PTR)
-		fprintf(stderr, "Prefill value found as pointer - buffer underrun?\n");
-	else if (blk == MEMENTO_POSTFILL_PTR)
-		fprintf(stderr, "Postfill value found as pointer - buffer overrun?\n");
-	else if (blk == MEMENTO_ALLOCFILL_PTR)
-		fprintf(stderr, "Allocfill value found as pointer - use of uninitialised value?\n");
-	else if (blk == MEMENTO_FREEFILL_PTR)
-		fprintf(stderr, "Allocfill value found as pointer - use after free?\n");
-	else
-		return 0;
+    if (blk == NULL)
+        return 0;
+    if (blk == MEMENTO_PREFILL_PTR)
+        fprintf(stderr, "Prefill value found as pointer - buffer underrun?\n");
+    else if (blk == MEMENTO_POSTFILL_PTR)
+        fprintf(stderr, "Postfill value found as pointer - buffer overrun?\n");
+    else if (blk == MEMENTO_ALLOCFILL_PTR)
+        fprintf(stderr, "Allocfill value found as pointer - use of uninitialised value?\n");
+    else if (blk == MEMENTO_FREEFILL_PTR)
+        fprintf(stderr, "Allocfill value found as pointer - use after free?\n");
+    else
+        return 0;
 #ifdef MEMENTO_DETAILS
-	fprintf(stderr, "Current backtrace:\n");
-	Memento_bt();
-	fprintf(stderr, "History:\n");
-	Memento_info(blk);
+    fprintf(stderr, "Current backtrace:\n");
+    Memento_bt();
+    fprintf(stderr, "History:\n");
+    Memento_info(blk);
 #endif
-	return 1;
+    return 1;
 }
 
 int Memento_checkBytePointerOrNull(void *blk)
 {
-	unsigned char i;
-	if (blk == NULL)
-		return 0;
-	Memento_checkPointerOrNull(blk);
+    unsigned char i;
+    if (blk == NULL)
+        return 0;
+    Memento_checkPointerOrNull(blk);
 
-	i = *(unsigned int *)blk;
+    i = *(unsigned int *)blk;
 
-	if (i == MEMENTO_PREFILL_UBYTE)
-		fprintf(stderr, "Prefill value found - buffer underrun?\n");
-	else if (i == MEMENTO_POSTFILL_UBYTE)
-		fprintf(stderr, "Postfill value found - buffer overrun?\n");
-	else if (i == MEMENTO_ALLOCFILL_UBYTE)
-		fprintf(stderr, "Allocfill value found - use of uninitialised value?\n");
-	else if (i == MEMENTO_FREEFILL_UBYTE)
-		fprintf(stderr, "Allocfill value found - use after free?\n");
-	else
-		return 0;
+    if (i == MEMENTO_PREFILL_UBYTE)
+        fprintf(stderr, "Prefill value found - buffer underrun?\n");
+    else if (i == MEMENTO_POSTFILL_UBYTE)
+        fprintf(stderr, "Postfill value found - buffer overrun?\n");
+    else if (i == MEMENTO_ALLOCFILL_UBYTE)
+        fprintf(stderr, "Allocfill value found - use of uninitialised value?\n");
+    else if (i == MEMENTO_FREEFILL_UBYTE)
+        fprintf(stderr, "Allocfill value found - use after free?\n");
+    else
+        return 0;
 #ifdef MEMENTO_DETAILS
-	fprintf(stderr, "Current backtrace:\n");
-	Memento_bt();
-	fprintf(stderr, "History:\n");
-	Memento_info(blk);
+    fprintf(stderr, "Current backtrace:\n");
+    Memento_bt();
+    fprintf(stderr, "History:\n");
+    Memento_info(blk);
 #endif
-	Memento_breakpoint();
-	return 1;
+    Memento_breakpoint();
+    return 1;
 }
 
 int Memento_checkShortPointerOrNull(void *blk)
 {
-	unsigned short i;
-	if (blk == NULL)
-		return 0;
-	Memento_checkPointerOrNull(blk);
+    unsigned short i;
+    if (blk == NULL)
+        return 0;
+    Memento_checkPointerOrNull(blk);
 
-	i = *(unsigned short *)blk;
+    i = *(unsigned short *)blk;
 
-	if (i == MEMENTO_PREFILL_USHORT)
-		fprintf(stderr, "Prefill value found - buffer underrun?\n");
-	else if (i == MEMENTO_POSTFILL_USHORT)
-		fprintf(stderr, "Postfill value found - buffer overrun?\n");
-	else if (i == MEMENTO_ALLOCFILL_USHORT)
-		fprintf(stderr, "Allocfill value found - use of uninitialised value?\n");
-	else if (i == MEMENTO_FREEFILL_USHORT)
-		fprintf(stderr, "Allocfill value found - use after free?\n");
-	else
-		return 0;
+    if (i == MEMENTO_PREFILL_USHORT)
+        fprintf(stderr, "Prefill value found - buffer underrun?\n");
+    else if (i == MEMENTO_POSTFILL_USHORT)
+        fprintf(stderr, "Postfill value found - buffer overrun?\n");
+    else if (i == MEMENTO_ALLOCFILL_USHORT)
+        fprintf(stderr, "Allocfill value found - use of uninitialised value?\n");
+    else if (i == MEMENTO_FREEFILL_USHORT)
+        fprintf(stderr, "Allocfill value found - use after free?\n");
+    else
+        return 0;
 #ifdef MEMENTO_DETAILS
-	fprintf(stderr, "Current backtrace:\n");
-	Memento_bt();
-	fprintf(stderr, "History:\n");
-	Memento_info(blk);
+    fprintf(stderr, "Current backtrace:\n");
+    Memento_bt();
+    fprintf(stderr, "History:\n");
+    Memento_info(blk);
 #endif
-	Memento_breakpoint();
-	return 1;
+    Memento_breakpoint();
+    return 1;
 }
 
 int Memento_checkIntPointerOrNull(void *blk)
 {
-	unsigned int i;
-	if (blk == NULL)
-		return 0;
-	Memento_checkPointerOrNull(blk);
+    unsigned int i;
+    if (blk == NULL)
+        return 0;
+    Memento_checkPointerOrNull(blk);
 
-	i = *(unsigned int *)blk;
+    i = *(unsigned int *)blk;
 
-	if (i == MEMENTO_PREFILL_UINT)
-		fprintf(stderr, "Prefill value found - buffer underrun?\n");
-	else if (i == MEMENTO_POSTFILL_UINT)
-		fprintf(stderr, "Postfill value found - buffer overrun?\n");
-	else if (i == MEMENTO_ALLOCFILL_UINT)
-		fprintf(stderr, "Allocfill value found - use of uninitialised value?\n");
-	else if (i == MEMENTO_FREEFILL_UINT)
-		fprintf(stderr, "Allocfill value found - use after free?\n");
-	else
-		return 0;
+    if (i == MEMENTO_PREFILL_UINT)
+        fprintf(stderr, "Prefill value found - buffer underrun?\n");
+    else if (i == MEMENTO_POSTFILL_UINT)
+        fprintf(stderr, "Postfill value found - buffer overrun?\n");
+    else if (i == MEMENTO_ALLOCFILL_UINT)
+        fprintf(stderr, "Allocfill value found - use of uninitialised value?\n");
+    else if (i == MEMENTO_FREEFILL_UINT)
+        fprintf(stderr, "Allocfill value found - use after free?\n");
+    else
+        return 0;
 #ifdef MEMENTO_DETAILS
-	fprintf(stderr, "Current backtrace:\n");
-	Memento_bt();
-	fprintf(stderr, "History:\n");
-	Memento_info(blk);
+    fprintf(stderr, "Current backtrace:\n");
+    Memento_bt();
+    fprintf(stderr, "History:\n");
+    Memento_info(blk);
 #endif
-	Memento_breakpoint();
-	return 1;
+    Memento_breakpoint();
+    return 1;
 }
 
 static void *do_takeRef(void *blk)
@@ -2401,7 +2405,11 @@ static int checkBlockUser(Memento_BlkHeader *memblk, const char *action)
         }
         fprintf(stderr, "Block last checked OK at allocation %d. Now %d.\n",
                 memblk->lastCheckedOK, memento.sequence);
-        Memento_breakpointLocked();
+        if ((memblk->flags & Memento_Flag_Reported) == 0)
+        {
+            memblk->flags |= Memento_Flag_Reported;
+            Memento_breakpointLocked();
+        }
         return 1;
     }
 #endif
@@ -2448,7 +2456,11 @@ static int checkBlock(Memento_BlkHeader *memblk, const char *action)
         }
         fprintf(stderr, "Block last checked OK at allocation %d. Now %d.\n",
                 memblk->lastCheckedOK, memento.sequence);
-        Memento_breakpointLocked();
+        if ((memblk->flags & Memento_Flag_Reported) == 0)
+        {
+            memblk->flags |= Memento_Flag_Reported;
+            Memento_breakpointLocked();
+        }
         return 1;
     }
 #endif
@@ -2639,6 +2651,11 @@ static int Memento_Internal_checkAllAlloced(Memento_BlkHeader *memblk, void *arg
         data->preCorrupt  = 0;
         data->postCorrupt = 0;
         data->freeCorrupt = 0;
+        if ((memblk->flags & Memento_Flag_Reported) == 0)
+        {
+            memblk->flags |= Memento_Flag_Reported;
+            Memento_breakpointLocked();
+        }
     }
     else
         memblk->lastCheckedOK = memento.sequence;
@@ -2679,6 +2696,11 @@ static int Memento_Internal_checkAllFreed(Memento_BlkHeader *memblk, void *arg)
         fprintf(stderr, " corrupted.\n"
                 "    Block last checked OK at allocation %d. Now %d.\n",
                 memblk->lastCheckedOK, memento.sequence);
+        if ((memblk->flags & Memento_Flag_Reported) == 0)
+        {
+            memblk->flags |= Memento_Flag_Reported;
+            Memento_breakpointLocked();
+        }
         VALGRIND_MAKE_MEM_NOACCESS(memblk, sizeof(Memento_BlkHeader));
         data->preCorrupt  = 0;
         data->postCorrupt = 0;
@@ -2895,6 +2917,11 @@ void Memento_stopLeaking(void)
     memento.leaking--;
 }
 
+int Memento_squeezing(void)
+{
+    return memento.squeezing;
+}
+
 #endif /* MEMENTO_CPP_EXTRAS_ONLY */
 
 #ifdef __cplusplus
@@ -3092,6 +3119,11 @@ void (Memento_startLeaking)(void)
 
 void (Memento_stopLeaking)(void)
 {
+}
+
+int (Memento_squeezing)(void)
+{
+    return 0;
 }
 
 #endif

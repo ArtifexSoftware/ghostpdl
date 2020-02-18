@@ -79,12 +79,15 @@ gs_lib_ctx_set_icc_directory(const gs_memory_t *mem_gc, const char* pname,
         }
         gs_free_object(p_ctx_mem, p_ctx->profiledir,
                        "gs_lib_ctx_set_icc_directory");
+        p_ctx->profiledir = NULL;
+        p_ctx->profiledir_len = 0;
     }
     /* User param string.  Must allocate in non-gc memory */
     result = (char*) gs_alloc_bytes(p_ctx_mem, dir_namelen+1,
                                      "gs_lib_ctx_set_icc_directory");
-    if (result == NULL)
+    if (result == NULL) {
         return -1;
+    }
     strcpy(result, pname);
     p_ctx->profiledir = result;
     p_ctx->profiledir_len = dir_namelen;
@@ -262,14 +265,10 @@ int gs_lib_ctx_init(gs_lib_ctx_t *ctx, gs_memory_t *mem)
     memset(pio, 0, sizeof(*pio));
 
     if (ctx != NULL) {
-#ifdef MEMENTO_SQUEEZE_BUILD
-        goto Failure;
-#else
         pio->core = ctx->core;
         gx_monitor_enter((gx_monitor_t *)(pio->core->monitor));
         pio->core->refs++;
         gx_monitor_leave((gx_monitor_t *)(pio->core->monitor));
-#endif /* MEMENTO_SQUEEZE_BUILD */
     } else {
         pio->core = (gs_lib_ctx_core_t *)gs_alloc_bytes_immovable(mem,
                                                                   sizeof(gs_lib_ctx_core_t),
@@ -305,7 +304,6 @@ int gs_lib_ctx_init(gs_lib_ctx_t *ctx, gs_memory_t *mem)
         pio->core->fs->memory = mem;
         pio->core->fs->next   = NULL;
 
-#ifndef MEMENTO_SQUEEZE_BUILD
         pio->core->monitor = gx_monitor_alloc(mem);
         if (pio->core->monitor == NULL) {
 #ifdef WITH_CAL
@@ -316,7 +314,6 @@ int gs_lib_ctx_init(gs_lib_ctx_t *ctx, gs_memory_t *mem)
             gs_free_object(mem, pio, "gs_lib_ctx_init");
             return -1;
         }
-#endif /* MEMENTO_SQUEEZE_BUILD */
         pio->core->refs = 1;
         pio->core->memory = mem;
 
@@ -414,17 +411,11 @@ void gs_lib_ctx_fin(gs_memory_t *mem)
     mem_err_print = NULL;
 #endif
 
-#ifndef MEMENTO_SQUEEZE_BUILD
     gx_monitor_enter((gx_monitor_t *)(ctx->core->monitor));
-#endif
     refs = --ctx->core->refs;
-#ifndef MEMENTO_SQUEEZE_BUILD
     gx_monitor_leave((gx_monitor_t *)(ctx->core->monitor));
-#endif
     if (refs == 0) {
-#ifndef MEMENTO_SQUEEZE_BUILD
         gx_monitor_free((gx_monitor_t *)(ctx->core->monitor));
-#endif
 #ifdef WITH_CAL
         cal_fin(ctx->core->cal_ctx, ctx->core->memory);
 #endif

@@ -347,8 +347,10 @@ ps_impl_allocate_interp_instance(pl_interp_implementation_t *impl, gs_memory_t *
     psi->bytes_fed = 0;
     psi->psapi_instance = gs_lib_ctx_get_interp_instance(mem);
     code = psapi_new_instance(&psi->psapi_instance, NULL);
-    if (code < 0)
+    if (code < 0) {
         gs_free_object(mem, psi, "ps_impl_allocate_interp_instance");
+        return code;
+    }
 
     impl->interp_client_data = psi;
 
@@ -357,6 +359,7 @@ ps_impl_allocate_interp_instance(pl_interp_implementation_t *impl, gs_memory_t *
 
     code = psapi_init_with_args01(psi->psapi_instance, nargs, (char **)gsargs);
     if (code < 0) {
+        (void)psapi_exit(psi->psapi_instance);
         psapi_delete_instance(psi->psapi_instance);
         gs_free_object(mem, psi, "ps_impl_allocate_interp_instance");
     }
