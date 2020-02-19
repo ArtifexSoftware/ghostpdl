@@ -3083,6 +3083,7 @@ pdf14_fill_path(gx_device *dev,	const gs_gstate *pgs,
                 }
             }
 #endif
+            pdf14_set_marking_params(dev, &new_pgs);
             code = pdf14_tile_pattern_fill(dev, &new_pgs, ppath,
                 params, pdcolor, pcpath);
             new_pgs.trans_device = NULL;
@@ -4039,7 +4040,8 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_gstate * pgs,
         }
         blend_mode = ptile->blending_mode;
         memcpy(&save_pdf14_dev, p14dev, sizeof(pdf14_device));
-        code = pdf14_push_transparency_group(p14dev->ctx, &rect, 1, 0, 65535, 65535,
+        code = pdf14_push_transparency_group(p14dev->ctx, &rect, 1, 0, (uint16_t)floor(65535 * p14dev->alpha + 0.5),
+                                            (uint16_t)floor(65535 * p14dev->shape + 0.5),
                                              blend_mode, 0, 0, n_chan_tile-1,
                                              false, NULL, NULL, pgs_noconst,
                                              pdev);

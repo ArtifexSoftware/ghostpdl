@@ -327,6 +327,7 @@ xps_parse_tiling_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
         gs_client_color gscolor;
         gs_color_space *cs;
         bool sa;
+        float opacity;
 
         closure.ctx = ctx;
         closure.base_uri = base_uri;
@@ -384,7 +385,18 @@ xps_parse_tiling_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
         gs_setstrokeadjust(ctx->pgs, false);
         gs_makepattern(&gscolor, &gspat, &transform, ctx->pgs, NULL);
         gs_setpattern(ctx->pgs, &gscolor);
+        /* If the tiling brush has an opacity, it was already set in the group
+           that we are filling.  Reset to 1.0 here to avoid double application
+           when the tiling actually occurs */
+        opacity = ctx->pgs->opacity.alpha;
+        gs_setopacityalpha(ctx->pgs, 1.0);
+        gs_setfillconstantalpha(ctx->pgs, 1.0);
+        gs_setstrokeconstantalpha(ctx->pgs, 1.0);
         xps_fill(ctx);
+        gs_setopacityalpha(ctx->pgs, opacity);
+        gs_setfillconstantalpha(ctx->pgs, opacity);
+        gs_setstrokeconstantalpha(ctx->pgs, opacity);
+
         gs_setstrokeadjust(ctx->pgs, sa);
         gsicc_adjust_profile_rc(cs->cmm_icc_profile_data, -1, "xps_parse_tiling_brush");
 
