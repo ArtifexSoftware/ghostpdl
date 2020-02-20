@@ -5663,8 +5663,8 @@ do_mark_fill_rectangle16(gx_device * dev, int x, int y, int w, int h,
     bool overprint = pdev->op_state == PDF14_OP_STATE_FILL ? pdev->overprint : pdev->stroke_overprint;
     gx_color_index drawn_comps = pdev->op_state == PDF14_OP_STATE_FILL ?
                                  pdev->drawn_comps_fill : pdev->drawn_comps_stroke;
-    byte shape = 0; /* Quiet compiler. */
-    byte src_alpha;
+    uint16_t shape = 0; /* Quiet compiler. */
+    uint16_t src_alpha;
     int num_spots = buf->num_spots;
     int first_blend_spot = num_comp;
     pdf14_mark_fill_rect16_fn fn;
