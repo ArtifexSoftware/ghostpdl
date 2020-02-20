@@ -4011,8 +4011,8 @@ compose_group16_nonknockout_nonblend_isolated_nomask_common(uint16_t *tos_ptr, b
               bool has_matte, int n_chan, bool additive, int num_spots, bool overprint, gx_color_index drawn_comps, int x0, int y0, int x1, int y1,
               const pdf14_nonseparable_blending_procs_t *pblend_procs, pdf14_device *pdev)
 {
-    template_compose_group16(tos_ptr, /*tos_isolated*/1, tos_planestride, tos_rowstride, /*tos_alpha_g_ptr*/ 0, alpha, shape, BLEND_MODE_Normal, /*tos_has_shape*/0,
-        tos_shape_offset, tos_alpha_g_offset, tos_tag_offset, /*tos_has_tag*/0,
+    template_compose_group16(tos_ptr, /*tos_isolated*/1, tos_planestride, tos_rowstride, alpha, shape, BLEND_MODE_Normal, /*tos_has_shape*/0,
+        tos_shape_offset, tos_alpha_g_offset, tos_tag_offset, /*tos_has_tag*/0, /*tos_alpha_g_ptr*/ 0,
         nos_ptr, /*nos_isolated*/0, nos_planestride, nos_rowstride, /*nos_alpha_g_ptr*/0, /* nos_knockout = */0,
         /*nos_shape_offset*/0, /*nos_tag_offset*/0, mask_row_ptr, /*has_mask*/0, /*maskbuf*/NULL, mask_bg_alpha, mask_tr_fn,
         backdrop_ptr, /*has_matte*/0, n_chan, /*additive*/1, /*num_spots*/0, /*overprint*/0, /*drawn_comps*/0, x0, y0, x1, y1, pblend_procs, pdev, 1, 0);
