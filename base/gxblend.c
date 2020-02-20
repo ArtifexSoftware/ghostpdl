@@ -4080,7 +4080,7 @@ compose_group16_alphaless_knockout(uint16_t *tos_ptr, bool tos_isolated, int tos
               const pdf14_nonseparable_blending_procs_t *pblend_procs, pdf14_device *pdev)
 {
     template_compose_group16(tos_ptr, tos_isolated, tos_planestride, tos_rowstride,
-        alpha, shape, blend_mode, tos_has_shape, tos_shape_offset, tos_alpha_g_offset, tos_tag_offset, tos_has_tag, tos_alpha_g_ptr, 
+        alpha, shape, blend_mode, tos_has_shape, tos_shape_offset, tos_alpha_g_offset, tos_tag_offset, tos_has_tag, tos_alpha_g_ptr,
         nos_ptr, nos_isolated, nos_planestride, nos_rowstride, nos_alpha_g_ptr, /* nos_knockout = */1,
         nos_shape_offset, nos_tag_offset, /* mask_row_ptr */ NULL, /* has_mask */ 0, /* maskbuf */ NULL, mask_bg_alpha, /* mask_tr_fn */ NULL,
         backdrop_ptr, /* has_matte */ false , n_chan, additive, num_spots, overprint, drawn_comps, x0, y0, x1, y1, pblend_procs, pdev, 0, 1);
@@ -5193,6 +5193,7 @@ template_mark_fill_rect16(int w, int h, uint16_t *gs_restrict dst_ptr, uint16_t 
 {
     int i, j, k;
     uint16_t dst[PDF14_MAX_PLANES] = { 0 };
+    uint16_t dest_alpha;
     /* Expand src_alpha and shape to be 0...0x10000 rather than 0...0xffff */
     int src_alpha = src_alpha_ + (src_alpha_>>15);
     int shape = shape_ + (shape_>>15);
@@ -5239,25 +5240,37 @@ template_mark_fill_rect16(int w, int h, uint16_t *gs_restrict dst_ptr, uint16_t 
                     }
                 }
                 dst[num_comp] = dst_ptr[num_comp * planestride];
+                dest_alpha = dst[num_comp];
                 pdst = art_pdf_composite_pixel_alpha_16_inline(dst, src, num_comp, blend_mode, first_blend_spot,
                             pdev->blend_procs, pdev);
-
-                /* Post blend complement for subtractive */
+                /* Post blend complement for subtractive and handling of drawncomps
+                   if overprint.  We will have already done the compatible overprint
+                   mode in the above composition */
                 if (!additive && !overprint) {
                     /* Pure subtractive */
                     for (k = 0; k < num_comp; ++k)
                         dst_ptr[k * planestride] = 65535 - pdst[k];
-
                 } else if (!additive && overprint) {
                     int comps;
-
+                    /* If this is an overprint case, and alpha_r is different
+                       than alpha_d then we will need to adjust
+                       the colors of the non-drawn components here too */
                     for (k = 0, comps = drawn_comps; comps != 0; ++k, comps >>= 1) {
                         if ((comps & 0x1) != 0) {
                             dst_ptr[k * planestride] = 65535 - pdst[k];
+                        } else if (dest_alpha != pdst[num_comp]) {
+                            /* We need val_new = (val_old * old_alpha) / new_alpha */
+                            if (pdst[num_comp] != 0) {
+                                int val = (int)floor(((float)dest_alpha / (float)pdst[num_comp]) * (65535 - pdst[k]) + 0.5);
+                                if (val < 0)
+                                    val = 0;
+                                else if (val > 65535)
+                                    val = 65535;
+                                dst_ptr[k * planestride] = val;
+                            }
                         }
                     }
-                }
-                else {
+                } else {
                     /* Hybrid case, additive with subtractive spots */
                     for (k = 0; k < (num_comp - num_spots); k++) {
                         dst_ptr[k * planestride] = pdst[k];
