@@ -354,6 +354,12 @@ gs_gsave_for_save(gs_gstate * pgs, gs_gstate ** psaved)
     /* Cut the stack so we can't grestore past here. */
     *psaved = pgs->saved;
     pgs->saved = 0;
+
+    code = gs_gsave(pgs);
+    if (code < 0) {
+        pgs->saved = *psaved;
+        return code;
+    }
     return code;
 fail:
     if (new_cpath)
