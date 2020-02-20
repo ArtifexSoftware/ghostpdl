@@ -84,9 +84,6 @@ zsave(i_ctx_t *i_ctx_p)
     code = gs_gsave_for_save(igs, &prev);
     if (code < 0)
         return code;
-    code = gs_gsave(igs);
-    if (code < 0)
-        return code;
     vmsave->gsave = prev;
     push(1);
     make_tav(op, t_save, 0, saveid, sid);
