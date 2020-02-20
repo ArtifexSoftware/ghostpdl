@@ -4605,13 +4605,13 @@ pdf14_compose_alphaless_group(pdf14_buf *tos, pdf14_buf *nos,
 typedef void (*pdf14_mark_fill_rect_fn)(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restrict src, int num_comp, int num_spots, int first_blend_spot,
                byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
                bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
-               int alpha_g_off, int shape_off, byte shape, bool isolated);
+               int alpha_g_off, int shape_off, byte shape);
 
 static forceinline void
 template_mark_fill_rect(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restrict src, int num_comp, int num_spots, int first_blend_spot,
                byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
                bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
-               int alpha_g_off, int shape_off, byte shape, bool isolated)
+               int alpha_g_off, int shape_off, byte shape)
 {
     int i, j, k;
     byte dst[PDF14_MAX_PLANES] = { 0 };
@@ -4729,7 +4729,7 @@ static void
 mark_fill_rect_alpha0(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restrict src, int num_comp, int num_spots, int first_blend_spot,
                byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
                bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
-               int alpha_g_off, int shape_off, byte shape, bool isolated)
+               int alpha_g_off, int shape_off, byte shape)
 {
     int i, j;
 
@@ -4753,19 +4753,19 @@ static void
 mark_fill_rect(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restrict src, int num_comp, int num_spots, int first_blend_spot,
                byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
                bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
-               int alpha_g_off, int shape_off, byte shape, bool isolated)
+               int alpha_g_off, int shape_off, byte shape)
 {
     template_mark_fill_rect(w, h, dst_ptr, src, num_comp, num_spots, first_blend_spot,
                src_alpha, rowstride, planestride, additive, pdev, blend_mode,
                overprint, drawn_comps, tag_off, curr_tag,
-               alpha_g_off, shape_off, shape, isolated);
+               alpha_g_off, shape_off, shape);
 }
 
 static void
 mark_fill_rect_sub4_fast(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restrict src, int num_comp, int num_spots, int first_blend_spot,
                byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
                bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
-               int alpha_g_off, int shape_off, byte shape, bool isolated)
+               int alpha_g_off, int shape_off, byte shape)
 {
     int i, j, k;
 
@@ -4809,43 +4809,43 @@ static void
 mark_fill_rect_add_nospots(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restrict src, int num_comp, int num_spots, int first_blend_spot,
                byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
                bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
-               int alpha_g_off, int shape_off, byte shape, bool isolated)
+               int alpha_g_off, int shape_off, byte shape)
 {
     template_mark_fill_rect(w, h, dst_ptr, src, num_comp, /*num_spots*/0, first_blend_spot,
                src_alpha, rowstride, planestride, /*additive*/1, pdev, blend_mode,
                /*overprint*/0, /*drawn_comps*/0, tag_off, curr_tag,
-               alpha_g_off, shape_off, shape, /*isolated*/ 0);
+               alpha_g_off, shape_off, shape);
 }
 
 static void
 mark_fill_rect_add_nospots_common(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restrict src, int num_comp, int num_spots, int first_blend_spot,
                byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
                bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
-               int alpha_g_off, int shape_off, byte shape, bool isolated)
+               int alpha_g_off, int shape_off, byte shape)
 {
     template_mark_fill_rect(w, h, dst_ptr, src, num_comp, /*num_spots*/0, /*first_blend_spot*/0,
                src_alpha, rowstride, planestride, /*additive*/1, pdev, /*blend_mode*/BLEND_MODE_Normal,
                /*overprint*/0, /*drawn_comps*/0, /*tag_off*/0, curr_tag,
-               alpha_g_off, /*shape_off*/0, shape, /*isolated*/ 0);
+               alpha_g_off, /*shape_off*/0, shape);
 }
 
 static void
 mark_fill_rect_add_nospots_common_no_alpha_g(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restrict src, int num_comp, int num_spots, int first_blend_spot,
                byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
                bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
-               int alpha_g_off, int shape_off, byte shape, bool isolated)
+               int alpha_g_off, int shape_off, byte shape)
 {
     template_mark_fill_rect(w, h, dst_ptr, src, num_comp, /*num_spots*/0, /*first_blend_spot*/0,
                src_alpha, rowstride, planestride, /*additive*/1, pdev, /*blend_mode*/BLEND_MODE_Normal,
                /*overprint*/0, /*drawn_comps*/0, /*tag_off*/0, curr_tag,
-               /*alpha_g_off*/0, /*shape_off*/0, shape, /*isolated*/ 0);
+               /*alpha_g_off*/0, /*shape_off*/0, shape);
 }
 
 static void
 mark_fill_rect_add3_common(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restrict src, int num_comp, int num_spots, int first_blend_spot,
                byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
                bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
-               int alpha_g_off, int shape_off, byte shape, bool isolated)
+               int alpha_g_off, int shape_off, byte shape)
 {
     int i, j, k;
 
@@ -4889,7 +4889,7 @@ static void
 mark_fill_rect_add1_no_spots(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restrict src, int num_comp, int num_spots, int first_blend_spot,
                byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
                bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
-               int alpha_g_off, int shape_off, byte shape, bool isolated)
+               int alpha_g_off, int shape_off, byte shape)
 {
     int i;
     bool tag_blend = blend_mode == BLEND_MODE_Normal ||
@@ -4935,7 +4935,7 @@ static void
 mark_fill_rect_add1_no_spots_normal(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restrict src, int num_comp, int num_spots, int first_blend_spot,
                byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
                bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
-               int alpha_g_off, int shape_off, byte shape, bool isolated)
+               int alpha_g_off, int shape_off, byte shape)
 {
     int i;
 
@@ -4989,7 +4989,7 @@ static void
 mark_fill_rect_add1_no_spots_fast(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restrict src, int num_comp, int num_spots, int first_blend_spot,
                byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
                bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
-               int alpha_g_off, int shape_off, byte shape, bool isolated)
+               int alpha_g_off, int shape_off, byte shape)
 {
     int i;
 
@@ -5055,7 +5055,6 @@ do_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     int num_spots = buf->num_spots;
     int first_blend_spot = num_comp;
     pdf14_mark_fill_rect_fn fn;
-    bool isolated = buf->isolated;
 
     if (num_spots > 0 && !blend_valid_for_spot(blend_mode))
         first_blend_spot = num_comp - num_spots;
@@ -5161,7 +5160,7 @@ do_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 
     fn(w, h, dst_ptr, src, num_comp, num_spots, first_blend_spot, src_alpha,
        rowstride, planestride, additive, pdev, blend_mode, overprint,
-       drawn_comps, tag_off, curr_tag, alpha_g_off, shape_off, shape, isolated);
+       drawn_comps, tag_off, curr_tag, alpha_g_off, shape_off, shape);
 
 #if 0
 /* #if RAW_DUMP */
