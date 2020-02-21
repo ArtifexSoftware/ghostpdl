@@ -330,15 +330,14 @@ pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool from_backdrop
         int i, n_planes;
         bool deep = buf->deep;
 
+        buf_plane = buf->data;
+        n_planes = buf->n_planes;
         if (from_backdrop) {
-            buf_plane = buf->data;
             tos_plane = tos->backdrop;
-            n_planes = buf->n_chan;
         } else {
-            buf_plane = buf->data;
             tos_plane = tos->data;
-            n_planes = buf->n_planes;
         }
+
         /* First clear out everything. There are cases where the incoming buf
            has a region outside the existing tos group.  Need to check if this
            is getting clipped in which case we need to fix the allocation of
@@ -385,7 +384,6 @@ pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool from_backdrop
     }
 #endif
 }
-
 
 /*
  * Encode a list of colorant values into a gx_color_index_value.
