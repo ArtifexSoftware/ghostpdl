@@ -1300,11 +1300,10 @@ pdf14_ctx_free(pdf14_ctx *ctx)
  * if backdrop is fully transparent.
  **/
 static	pdf14_buf *
-pdf14_find_backdrop_buf(gx_device* dev, pdf14_ctx *ctx, bool *is_backdrop)
+pdf14_find_backdrop_buf(pdf14_ctx *ctx, bool *is_backdrop)
 {
     /* Our new buffer is buf */
     pdf14_buf *buf = ctx->stack;
-    pdf14_device* pdev = (pdf14_device*)dev;
 
     *is_backdrop = false;
 
@@ -1316,21 +1315,14 @@ pdf14_find_backdrop_buf(gx_device* dev, pdf14_ctx *ctx, bool *is_backdrop)
            then we need to use its backdrop as the backdrop. If
            it was isolated then that back drop was NULL */
         if (buf->saved != NULL && buf->saved->knockout) {
-            /* For fts_25_2524.pdf and the overlapping Altona
-               file and Bug 702114.  Per the spec, if we
-               have a non-isolated group in a knockout the
-               non-isolated group uses the backdrop of its
-               parent group (the knockout group) as its
-               own backdrop.  Apparently though this is not
-               true if we are constructing a softmask for
-               some reason which is the case with the overlapping
-               groups page in the multi-page Altona file */
-            if (pdev->in_smask_construction)
-                return NULL;
-            else {
-                *is_backdrop = true;
-                return buf->saved;
-            }
+            /* Per the spec, if we have a non-isolated group
+               in a knockout group the non-isolated group
+               uses the backdrop of its parent group (the knockout group)
+               as its own backdrop.  The non-isolated group must
+               go through the standard re-composition operation
+               to avoid the double application of the backdrop */
+            *is_backdrop = true;
+            return buf->saved;
         }
         /* This should be the non-isolated case where its parent is
            not a knockout */
@@ -1365,7 +1357,14 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
 
     /* If the group is NOT isolated we add in the alpha_g plane.  This enables
        recompositing to be performed ala art_pdf_recomposite_group_8 so that
-       the backdrop is only included one time in the computation. */
+       the backdrop is only included one time in the computation. 
+       
+       For shape and alpha, backdrop removal is accomplished by maintaining
+       two sets of variables to hold the accumulated values. The group shape
+       and alpha, f_g and alpha_g, accumulate only the shape and alpha of the group
+       elements, excluding the group backdrop.
+
+       */
     /* Order of buffer data is color data, followed by alpha channel, followed by
        shape (if present), then alpha_g (if present), then tags (if present) */
     buf = pdf14_buf_new(rect, has_tags, !isolated, has_shape, idle, numcomps + 1,
@@ -1395,7 +1394,7 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
         return 0;
     if (idle)
         return 0;
-    pdf14_backdrop = pdf14_find_backdrop_buf(dev, ctx, &is_backdrop);
+    pdf14_backdrop = pdf14_find_backdrop_buf(ctx, &is_backdrop);
 
     /* Initializes buf->data with the backdrop or as opaque */
     if (pdf14_backdrop == NULL || (is_backdrop && pdf14_backdrop->backdrop == NULL)) {
@@ -1428,19 +1427,19 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
        need to blend with its backdrop. This could be NULL if the parent was
        an isolated knockout group. */
     if (buf->knockout && pdf14_backdrop != NULL) {
-        buf->backdrop = gs_alloc_bytes(ctx->memory, buf->planestride * buf->n_chan,
+        buf->backdrop = gs_alloc_bytes(ctx->memory, buf->planestride * buf->n_planes,
             "pdf14_push_transparency_group");
         if (buf->backdrop == NULL) {
             return gs_throw(gs_error_VMerror, "Knockout backdrop allocation failed");
         }
 
-        memcpy(buf->backdrop, buf->data, buf->planestride * buf->n_chan);
+        memcpy(buf->backdrop, buf->data, buf->planestride * buf->n_planes);
 
 #if RAW_DUMP
         /* Dump the current buffer to see what we have. */
         dump_raw_buffer(ctx->memory,
             ctx->stack->rect.q.y - ctx->stack->rect.p.y,
-            ctx->stack->rowstride >> buf->deep, buf->n_chan,
+            ctx->stack->rowstride >> buf->deep, buf->n_planes,
             ctx->stack->planestride, ctx->stack->rowstride,
             "KnockoutBackDrop", buf->backdrop, buf->deep);
         global_index++;

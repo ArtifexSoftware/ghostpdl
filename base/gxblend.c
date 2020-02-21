@@ -1537,9 +1537,10 @@ art_pdf_union_8(byte alpha1, byte alpha2)
 }
 #endif
 
-static void
-art_pdf_knockout_composite_pixel_alpha_8(byte *gs_restrict backdrop, byte tos_shape, byte *gs_restrict dst,
-                        const byte *gs_restrict src, int n_chan, gs_blend_mode_t blend_mode,
+static byte*
+art_pdf_knockout_composite_pixel_alpha_8(byte *gs_restrict backdrop, byte tos_shape,
+                        byte *gs_restrict dst, byte *gs_restrict src, int n_chan,
+                        gs_blend_mode_t blend_mode, 
                         const pdf14_nonseparable_blending_procs_t * pblend_procs,
                         pdf14_device *p14dev)
 {
@@ -1556,16 +1557,15 @@ art_pdf_knockout_composite_pixel_alpha_8(byte *gs_restrict backdrop, byte tos_sh
         /* source alpha is zero, if we have a src shape value there then copy
            the backdrop, else leave it alone */
         if (tos_shape)
-           memcpy(dst, backdrop, n_chan + 1);
-        return;
+           return backdrop;
+        return NULL;
     }
 
     /* In this case a_s is not zero */
     if (a_b == 0) {
         /* backdrop alpha is zero but not source alpha, just copy source pixels and
            avoid computation. */
-        memcpy(dst, src, n_chan + 1);
-        return;
+        return src;
     }
 
     /* Result alpha is Union of backdrop and source alpha */
@@ -1604,11 +1604,12 @@ art_pdf_knockout_composite_pixel_alpha_8(byte *gs_restrict backdrop, byte tos_sh
         }
     }
     dst[n_chan] = a_r;
+    return dst;
 }
 
-static void
+static forceinline uint16_t*
 art_pdf_knockout_composite_pixel_alpha_16(uint16_t *gs_restrict backdrop, uint16_t tos_shape, uint16_t *gs_restrict dst,
-                        const uint16_t *gs_restrict src, int n_chan, gs_blend_mode_t blend_mode,
+                        uint16_t *gs_restrict src, int n_chan, gs_blend_mode_t blend_mode,
                         const pdf14_nonseparable_blending_procs_t * pblend_procs,
                         pdf14_device *p14dev)
 {
@@ -1625,16 +1626,15 @@ art_pdf_knockout_composite_pixel_alpha_16(uint16_t *gs_restrict backdrop, uint16
         /* source alpha is zero, if we have a src shape value there then copy
            the backdrop, else leave it alone */
         if (tos_shape)
-           memcpy(dst, backdrop, 2*(n_chan + 1));
-        return;
+            return backdrop;
+        return NULL;
     }
 
     /* In this case a_s is not zero */
     if (a_b == 0) {
         /* backdrop alpha is zero but not source alpha, just copy source pixels and
            avoid computation. */
-        memcpy(dst, src, 2*(n_chan + 1));
-        return;
+        return src;
     }
 
     /* Result alpha is Union of backdrop and source alpha */
@@ -1676,6 +1676,7 @@ art_pdf_knockout_composite_pixel_alpha_16(uint16_t *gs_restrict backdrop, uint16
         }
     }
     dst[n_chan] = a_r;
+    return dst;
 }
 
 void
@@ -2083,9 +2084,6 @@ art_pdf_composite_pixel_alpha_16_fast_mono(uint16_t *gs_restrict dst, const uint
  * @alpha: Alpha mask value.
  * @src_alpha_g: alpha_g value associated with @src.
  * @blend_mode: Blend mode for compositing.
- * @first_blend_spot: The first component for which Normal blending should be used.
- * @pblend_procs: Procs for handling non separable blending modes.
- * @p14dev: pdf14 device
  *
  * Note: this is only for non-isolated groups. This covers only the
  * single-alpha case. A separate function is needed for dual-alpha,
@@ -2104,9 +2102,7 @@ art_pdf_composite_pixel_alpha_16_fast_mono(uint16_t *gs_restrict dst, const uint
 static forceinline int
 art_pdf_recomposite_group_8(byte *gs_restrict *dstp, byte *gs_restrict dst_alpha_g,
         byte *gs_restrict src, byte src_alpha_g, int n_chan,
-        byte alpha, gs_blend_mode_t blend_mode, int first_blend_spot,
-        const pdf14_nonseparable_blending_procs_t * pblend_procs,
-        pdf14_device *p14dev)
+        byte alpha, gs_blend_mode_t blend_mode)
 {
     byte dst_alpha;
     int i;
@@ -2167,11 +2163,28 @@ art_pdf_recomposite_group_8(byte *gs_restrict *dstp, byte *gs_restrict dst_alpha
 }
 
 static forceinline int
+art_pdf_ko_recomposite_group_8(byte tos_shape,
+    byte src_alpha_g, byte* gs_restrict* dstp,
+    byte* gs_restrict dst_alpha_g, byte* gs_restrict src,
+    int n_chan, byte alpha, gs_blend_mode_t blend_mode, bool has_mask)
+{
+    byte* gs_restrict dst = *dstp;
+
+    if (tos_shape == 0 || src_alpha_g == 0) {
+        /* If a softmask was present pass it along Bug 693548 */
+        if (has_mask)
+            dst[n_chan] = alpha;
+        return 0;
+    }
+
+    return art_pdf_recomposite_group_8(dstp, dst_alpha_g, src, src_alpha_g,
+                                       n_chan, alpha, blend_mode);
+}
+
+static forceinline int
 art_pdf_recomposite_group_16(uint16_t *gs_restrict *dstp, uint16_t *gs_restrict dst_alpha_g,
         uint16_t *gs_restrict src, uint16_t src_alpha_g, int n_chan,
-        uint16_t alpha, gs_blend_mode_t blend_mode, int first_blend_spot,
-        const pdf14_nonseparable_blending_procs_t * pblend_procs,
-        pdf14_device *p14dev)
+        uint16_t alpha, gs_blend_mode_t blend_mode)
 {
     uint16_t dst_alpha;
     int i;
@@ -2238,97 +2251,25 @@ art_pdf_recomposite_group_16(uint16_t *gs_restrict *dstp, uint16_t *gs_restrict 
     /* todo: optimize BLEND_MODE_Normal buf alpha != 255 case */
 }
 
-/**
- * art_pdf_composite_knockout_group_8: Composite group pixel.
- * @backdrop: Backdrop of original parent group.
- * @tos_shape: So that we know to copy the backdrop or not even if a_s is zero
- * @dst: Where to store pixel.
- * @dst_alpha_g: Optional pointer to alpha g value.
- * @alpha: Alpha mask value.
- * @blend_mode: Blend mode for compositing.
- * @pblend_procs: Procs for handling non separable blending modes.
- * @p14dev: PDF14 device
- * @has_mask: needed for knowing to pass back the soft mask value if shape = 0
- *
- * Note: this is only for knockout nonisolated groups.
- *
- * @alpha corresponds to $fk_i \cdot fm_i \cdot qk_i \cdot qm_i$.
- *
- * @NOTE: This function may corrupt src.
- **/
-static forceinline void
-art_pdf_composite_knockout_group_8(byte *gs_restrict backdrop, byte tos_shape,
-        byte *gs_restrict src_alpha_g, byte *gs_restrict dst,
-        byte *gs_restrict dst_alpha_g, byte *gs_restrict src, int n_chan, byte alpha,
-        gs_blend_mode_t blend_mode,
-        const pdf14_nonseparable_blending_procs_t * pblend_procs,
-        pdf14_device *p14dev, bool has_mask)
+static forceinline int
+art_pdf_ko_recomposite_group_16(uint16_t tos_shape,
+    uint16_t src_alpha_g, uint16_t* gs_restrict* dstp,
+    uint16_t* gs_restrict dst_alpha_g, uint16_t* gs_restrict src,
+    int n_chan, uint16_t alpha, gs_blend_mode_t blend_mode,
+    bool has_mask)
 {
-    byte src_alpha;		/* $\alpha g_n$ */
-    int tmp;
+    uint16_t* gs_restrict dst = *dstp;
 
-    if (tos_shape == 0 || (src_alpha_g != NULL && *src_alpha_g == 0)) {
+    if (tos_shape == 0 || src_alpha_g == 0) {
         /* If a softmask was present pass it along Bug 693548 */
         if (has_mask)
             dst[n_chan] = alpha;
-        return;
+        return 0;
     }
 
-    if (alpha != 255) {
-        if (tos_shape != 255) return;
-        src_alpha = src[n_chan];
-        if (src_alpha == 0)
-            return;
-        tmp = src_alpha * alpha + 0x80;
-        src[n_chan] = (tmp + (tmp >> 8)) >> 8;
-    }
-
-    if (dst_alpha_g != NULL) {
-        tmp = (255 - *dst_alpha_g) * (255 - src[n_chan]) + 0x80;
-        *dst_alpha_g = 255 - ((tmp + (tmp >> 8)) >> 8);
-    }
-    art_pdf_knockout_composite_pixel_alpha_8(backdrop, tos_shape, dst, src,
-                                             n_chan, blend_mode, pblend_procs,
-                                             p14dev);
-}
-
-static forceinline void
-art_pdf_composite_knockout_group_16(uint16_t *gs_restrict backdrop, uint16_t tos_shape,
-        uint16_t *gs_restrict src_alpha_g, uint16_t *gs_restrict dst,
-        uint16_t *gs_restrict dst_alpha_g, uint16_t *gs_restrict src, int n_chan, uint16_t alpha,
-        gs_blend_mode_t blend_mode,
-        const pdf14_nonseparable_blending_procs_t * pblend_procs,
-        pdf14_device *p14dev, bool has_mask)
-{
-    int src_alpha;		/* $\alpha g_n$ */
-    int tmp;
-
-    if (tos_shape == 0 || (src_alpha_g != NULL && *src_alpha_g == 0)) {
-        /* If a softmask was present pass it along Bug 693548 */
-        if (has_mask)
-            dst[n_chan] = alpha;
-        return;
-    }
-
-    if (alpha != 65535) {
-        if (tos_shape != 65535) return;
-        src_alpha = src[n_chan];
-        if (src_alpha == 0)
-            return;
-        src_alpha += src_alpha>>15;
-        tmp = src_alpha * alpha + 0x8000;
-        src[n_chan] = tmp >> 16;
-    }
-
-    if (dst_alpha_g != NULL) {
-        tmp = *dst_alpha_g;
-        tmp += tmp>>15;
-        tmp = (0x10000 - tmp) * (0xffff - src[n_chan]) + 0x8000;
-        *dst_alpha_g = 0xffff - (tmp >> 16);
-    }
-    art_pdf_knockout_composite_pixel_alpha_16(backdrop, tos_shape, dst, src,
-                                             n_chan, blend_mode, pblend_procs,
-                                             p14dev);
+    return art_pdf_recomposite_group_16(dstp, dst_alpha_g, src,
+                                        src_alpha_g, n_chan, alpha,
+                                        blend_mode);
 }
 
 /**
@@ -2375,6 +2316,39 @@ art_pdf_composite_group_8(byte *gs_restrict dst, byte *gs_restrict dst_alpha_g,
 }
 
 static forceinline int
+art_pdf_ko_composite_group_8(byte tos_shape,
+    byte* gs_restrict src_alpha_g, byte* gs_restrict dst,
+    byte* gs_restrict dst_alpha_g, byte* gs_restrict src,
+    int n_chan, byte alpha, bool has_mask)
+{
+    byte src_alpha;		/* $\alpha g_n$ */
+    int tmp;
+
+    if (tos_shape == 0 || (src_alpha_g != NULL && *src_alpha_g == 0)) {
+        /* If a softmask was present pass it along Bug 693548 */
+        if (has_mask)
+            dst[n_chan] = alpha;
+        return 0;
+    }
+
+    if (alpha != 255) {
+        if (tos_shape != 255)
+            return 0;
+        src_alpha = src[n_chan];
+        if (src_alpha == 0)
+            return 0;
+        tmp = src_alpha * alpha + 0x80;
+        src[n_chan] = (tmp + (tmp >> 8)) >> 8;
+    }
+
+    if (dst_alpha_g != NULL) {
+        tmp = (255 - *dst_alpha_g) * (255 - src[n_chan]) + 0x80;
+        *dst_alpha_g = 255 - ((tmp + (tmp >> 8)) >> 8);
+    }
+    return 1;
+}
+
+static forceinline int
 art_pdf_composite_group_16(uint16_t *gs_restrict dst, uint16_t *gs_restrict dst_alpha_g,
         uint16_t *gs_restrict src, int n_chan, uint16_t alpha)
 {
@@ -2396,6 +2370,25 @@ art_pdf_composite_group_16(uint16_t *gs_restrict dst, uint16_t *gs_restrict dst_
     }
 
     return 1;
+}
+
+static forceinline int
+art_pdf_ko_composite_group_16(uint16_t tos_shape,
+    uint16_t* gs_restrict src_alpha_g, uint16_t* gs_restrict dst,
+    uint16_t* gs_restrict dst_alpha_g, uint16_t* gs_restrict src,
+    int n_chan, uint16_t alpha, bool has_mask)
+{
+    if (tos_shape == 0 || (src_alpha_g != NULL && *src_alpha_g == 0)) {
+        /* If a softmask was present pass it along Bug 693548 */
+        if (has_mask)
+            dst[n_chan] = alpha;
+        return 0;
+    }
+
+    if (alpha != 65535 && tos_shape != 65535)
+        return 0;
+
+    return art_pdf_composite_group_16(dst, dst_alpha_g, src, n_chan, alpha);
 }
 
 /* A very simple case.  Knockout isolated group going to a parent that is not
@@ -2974,27 +2967,33 @@ template_compose_group(byte *gs_restrict tos_ptr, bool tos_isolated,
                     /* alpha */
                     back_drop[n_chan] = backdrop_ptr[n_chan * nos_planestride];
                 }
-                art_pdf_composite_knockout_group_8(back_drop, tos_shape, tos_alpha_g_ptr,
-                                                   nos_pixel, nos_alpha_g_ptr,
-                                                   tos_pixel, n_chan, pix_alpha,
-                                                   blend_mode, pblend_procs,
-                                                   pdev, has_mask2);
+                if (tos_isolated ?
+                    art_pdf_ko_composite_group_8(tos_shape, tos_alpha_g_ptr,
+                                                 nos_pixel, nos_alpha_g_ptr,
+                                                 tos_pixel, n_chan, pix_alpha,
+                                                 has_mask2) :
+                    art_pdf_ko_recomposite_group_8(tos_shape, has_alpha ? tos_ptr[tos_alpha_g_offset] : 255,
+                                                   &dst, nos_alpha_g_ptr, tos_pixel, n_chan, pix_alpha,
+                                                   blend_mode, has_mask2))
+                    dst = art_pdf_knockout_composite_pixel_alpha_8(back_drop, tos_shape,
+                                                                   nos_pixel, tos_pixel,
+                                                                   n_chan, blend_mode,
+                                                                   pblend_procs, pdev);
             } else if (tos_isolated ?
                        art_pdf_composite_group_8(nos_pixel, nos_alpha_g_ptr,
                                                  tos_pixel, n_chan, pix_alpha) :
                        art_pdf_recomposite_group_8(&dst, nos_alpha_g_ptr,
                            tos_pixel, has_alpha ? tos_ptr[tos_alpha_g_offset] : 255, n_chan,
-                                                   pix_alpha, blend_mode, first_blend_spot,
-                                                   pblend_procs, pdev)) {
+                                                   pix_alpha, blend_mode)) {
                 dst = art_pdf_composite_pixel_alpha_8_inline(nos_pixel, tos_pixel, n_chan,
                                                 blend_mode, first_blend_spot,
                                                 pblend_procs, pdev);
             }
             if (nos_shape_offset && pix_alpha != 0) {
                 nos_ptr[nos_shape_offset] =
-                    art_pdf_union_mul_8 (nos_ptr[nos_shape_offset],
-                                         has_alpha ? tos_ptr[tos_shape_offset] : global_shape,
-                                         shape);
+                    art_pdf_union_mul_8(nos_ptr[nos_shape_offset],
+                                        has_alpha ? tos_ptr[tos_shape_offset] : global_shape,
+                                        shape);
             }
             if (dst)
             {
@@ -3730,11 +3729,18 @@ template_compose_group16(uint16_t *gs_restrict tos_ptr, bool tos_isolated,
                     /* alpha */
                     back_drop[n_chan] = backdrop_ptr[n_chan * nos_planestride];
                 }
-                art_pdf_composite_knockout_group_16(back_drop, tos_shape, tos_alpha_g_ptr,
-                                                    nos_pixel, nos_alpha_g_ptr,
-                                                    tos_pixel, n_chan, pix_alpha,
-                                                    blend_mode, pblend_procs,
-                                                    pdev, has_mask2);
+
+                if (tos_isolated ?
+                    art_pdf_ko_composite_group_16(tos_shape, tos_alpha_g_ptr,
+                        nos_pixel, nos_alpha_g_ptr,
+                        tos_pixel, n_chan, pix_alpha,
+                        has_mask2) :
+                    art_pdf_ko_recomposite_group_16(tos_shape, has_alpha ? tos_ptr[tos_alpha_g_offset] : 65535,
+                        &dst, nos_alpha_g_ptr, tos_pixel, n_chan, pix_alpha,
+                        blend_mode, has_mask2)) {
+                    dst = art_pdf_knockout_composite_pixel_alpha_16(back_drop, tos_shape, nos_pixel, tos_pixel,
+                        n_chan, blend_mode, pblend_procs, pdev);
+                }
             }
             else if (tos_isolated ?
                        art_pdf_composite_group_16(nos_pixel, nos_alpha_g_ptr,
@@ -3743,8 +3749,7 @@ template_compose_group16(uint16_t *gs_restrict tos_ptr, bool tos_isolated,
                                                     tos_pixel,
                                                     has_alpha ? GET16_2NATIVE(tos_is_be, tos_ptr[tos_alpha_g_offset]) : 65535,
                                                     n_chan,
-                                                    pix_alpha, blend_mode, first_blend_spot,
-                                                    pblend_procs, pdev)) {
+                                                    pix_alpha, blend_mode)) {
                 dst = art_pdf_composite_pixel_alpha_16_inline(nos_pixel, tos_pixel, n_chan,
                                                 blend_mode, first_blend_spot,
                                                 pblend_procs, pdev);
