@@ -1896,9 +1896,9 @@ gdev_pdf_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
         code = gdev_pdf_fill_path(dev, pgs, ppath, fill_params, pdcolor_fill, pcpath);
         if (code < 0)
             return code;
-        gs_swapcolors_quick(pgs);
+        gs_swapcolors_quick((gs_gstate *)pgs);
         code = gdev_pdf_stroke_path(dev, pgs, ppath, stroke_params, pdcolor_stroke, pcpath);
-        gs_swapcolors_quick(pgs);
+        gs_swapcolors_quick((gs_gstate *)pgs);
         return code;
     } else {
         bool set_ctm;

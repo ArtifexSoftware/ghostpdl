@@ -622,7 +622,6 @@ struct gx_device_pdf_s {
     bool fill_overprint, stroke_overprint;
     int rendering_intent;
     bool remap_fill_color, remap_stroke_color;
-    int overprint_mode;
     gs_id halftone_id;
     gs_id transfer_ids[4];
     int transfer_not_identity;        /* bitmask */

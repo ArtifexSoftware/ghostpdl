@@ -82,7 +82,7 @@ pdf_save_viewer_state(gx_device_pdf *pdev, stream *s)
     pdev->vgstack[i].halftone_id = pdev->halftone_id;
     pdev->vgstack[i].black_generation_id = pdev->black_generation_id;
     pdev->vgstack[i].undercolor_removal_id = pdev->undercolor_removal_id;
-    pdev->vgstack[i].overprint_mode = pdev->overprint_mode;
+    pdev->vgstack[i].overprint_mode = pdev->state.overprint_mode;
     pdev->vgstack[i].smoothness = pdev->state.smoothness;
     pdev->vgstack[i].flatness = pdev->state.flatness;
     pdev->vgstack[i].text_knockout = pdev->state.text_knockout;
@@ -133,7 +133,7 @@ pdf_load_viewer_state(gx_device_pdf *pdev, pdf_viewer_state *s)
     pdev->halftone_id = s->halftone_id;
     pdev->black_generation_id = s->black_generation_id;
     pdev->undercolor_removal_id = s->undercolor_removal_id;
-    pdev->overprint_mode = s->overprint_mode;
+    pdev->state.overprint_mode = s->overprint_mode;
     pdev->state.smoothness = s->smoothness;
     pdev->state.flatness = s->flatness;
     pdev->state.text_knockout = s->text_knockout;
@@ -3058,9 +3058,13 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_gstate *pgs,
             }
         }
     }
-    if (pdev->CompatibilityLevel >= 1.3 && pdev->sbstack_depth == bottom) {
-        if (pdev->overprint_mode != pdev->params.OPM) {
-            if (pdev->params.OPM == 1 && pdev->PDFA == 2) {
+    if (pdev->state.overprint_mode != pdev->params.OPM) {
+        if (pdev->params.OPM != pgs->overprint_mode)
+            ((gs_gstate *)pgs)->overprint_mode = pdev->params.OPM;
+    }
+    if (pdev->CompatibilityLevel >= 1.3 /*&& pdev->sbstack_depth == bottom */) {
+        if (pdev->state.overprint_mode != pgs->overprint_mode) {
+            if (pgs->overprint_mode == 1 && pdev->PDFA == 2) {
                 switch (pdev->PDFACompatibilityPolicy) {
                     case 0:
                         emprintf(pdev->memory,
@@ -3071,7 +3075,8 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_gstate *pgs,
                     case 1:
                         emprintf(pdev->memory,
                              "Setting Overprint Mode to 1\n not permitted in PDF/A-2, overprint mode not set\n\n");
-                        pdev->params.OPM = 0;
+                        /* Deliberately breaking const here in order to force the graphics state overprint mode to be unchanged */
+                        ((gs_gstate *)pgs)->overprint_mode = pdev->state.overprint_mode;
                         break;
                     case 2:
                         emprintf(pdev->memory,
@@ -3086,14 +3091,14 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_gstate *pgs,
                         break;
                 }
             }
-            if (pdev->overprint_mode != pdev->params.OPM) {
+            if (pdev->state.overprint_mode != pgs->overprint_mode) {
                 code = pdf_open_gstate(pdev, ppres);
                 if (code < 0)
                     return code;
-                code = cos_dict_put_c_key_int(resource_dict(*ppres), "/OPM", pdev->params.OPM);
+                code = cos_dict_put_c_key_int(resource_dict(*ppres), "/OPM", pgs->overprint_mode);
                 if (code < 0)
                     return code;
-                pdev->overprint_mode = pdev->params.OPM;
+                pdev->params.OPM = pdev->state.overprint_mode = pgs->overprint_mode;
             }
         }
         if (pdev->state.smoothness != pgs->smoothness) {
