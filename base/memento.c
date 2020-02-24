@@ -48,6 +48,7 @@ int atexit(void (*)(void));
 #include <unistd.h>
 #endif
 
+#include <errno.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
@@ -402,6 +403,11 @@ static void Memento_initMutex(Memento_mutex *m)
 #endif
 #endif
 
+typedef struct {
+    int begin;
+    int end;
+} Memento_range;
+
 /* And our global structure */
 static struct {
     int            inited;
@@ -432,6 +438,9 @@ static struct {
     size_t         numFrees;
     size_t         numReallocs;
     Memento_mutex  mutex;
+    Memento_range *squeezes;
+    int            squeezes_num;
+    int            squeezes_pos;
 } memento;
 
 #define MEMENTO_EXTRASIZE (sizeof(Memento_BlkHeader) + Memento_PostSize)
@@ -1623,6 +1632,184 @@ void Memento_fin(void)
     }
 }
 
+/* Reads number from <text> using strtol().
+
+Params:
+    text:
+        text to read.
+    out:
+        pointer to output value.
+    relative:
+        *relative set to 1 if <text> starts with '+' or '-', else set to 0.
+    end:
+        *end is set to point to next unread character after number.
+
+Returns 0 on success, else -1.
+*/
+static int read_number(const char *text, int *out, int *relative, char **end)
+{
+    if (text[0] == '+' || text[0] == '-') {
+        *relative = 1;
+    }
+    else  {
+        *relative = 0;
+    }
+    errno = 0;
+    *out = strtol(text, end, 0 /*base*/);
+    if (errno || *end == text) {
+        fprintf(stderr, "Failed to parse number at start of '%s'.\n", text);
+        return -1;
+    }
+    if (0)  fprintf(stderr, "text='%s': *out=%i *relative=%i\n",
+            text, *out, *relative);
+    return 0;
+}
+
+/* Reads number plus optional delta value from <text>.
+
+Evaluates <number> or <number>[+|-<delta>]. E.g. text='1234+2' sets *out=1236,
+text='1234-1' sets *out=1233.
+
+Params:
+    text:
+        text to read.
+    out:
+        pointer to output value.
+    end:
+        *end is set to point to next unread character after number.
+
+Returns 0 on success, else -1.
+*/
+static int read_number_delta(const char *text, int *out, char **end)
+{
+    int e;
+    int relative;
+    e = read_number(text, out, &relative, end);
+    if (e) {
+        return e;
+    }
+    if (relative) {
+        fprintf(stderr, "Base number should not start with '+' or '-' at start of '%s'.\n",
+                text);
+        return -1;
+    }
+    if (*end) {
+        if (**end == '-' || **end == '+') {
+            int delta;
+            e = read_number(*end, &delta, &relative, end);
+            if (e) {
+                return e;
+            }
+            *out += delta;
+        }
+    }
+    if (0)  fprintf(stderr, "text='%s': *out=%i\n", text, *out);
+    return 0;
+}
+
+/* Reads range.
+
+E.g.:
+    text='115867-2' sets *begin=115865 *end=115866.
+    text='115867-1..+3' sets *begin=115866 *end=115869.
+
+Supported patterns for text:
+    <range>
+        <value>             - returns *begin=value *end=*begin+1.
+        <value1>..<value2>  - returns *begin=value1 *end=value2.
+        <value>..+<number>  - returns *begin=value *end=*begin+number.
+    <value>
+        <number>
+        <number>+<number>
+        <number>-<number>
+
+    <number>: [0-9]+
+
+If not specified, *end defaults to *begin+1.
+
+Returns 0 on success, else -1, with *string_end pointing to first unused
+character.
+*/
+static int read_number_range(const char *text, int *begin, int *end, char **string_end)
+{
+    int e;
+    e = read_number_delta(text, begin, string_end);
+    if (e) {
+        return e;
+    }
+    if (string_end && (*string_end)[0] == '.' && (*string_end)[1] == '.') {
+        int relative;
+        e = read_number((*string_end) + 2, end, &relative, string_end);
+        if (e) {
+            return e;
+        }
+        if (relative) {
+            *end += *begin;
+        }
+    }
+    else {
+        *end = *begin + 1;
+    }
+    if (*end < *begin) {
+        fprintf(stderr, "Range %i..%i has negative extent, at start of '%s'.\n",
+                *begin, *end, text);
+        return -1;
+    }
+    if (0)  fprintf(stderr, "text='%s': *begin=%i *end=%i\n", text, *begin, *end);
+    return 0;
+}
+
+/*
+Format: <range>[,<range>]+
+
+For description of <range>, see read_number_range() above.
+
+E.g.:
+    MEMENTO_SQUEEZES=1234-2..+4,2345,2350..+2
+*/
+static int Memento_add_squeezes(const char *text)
+{
+    int e = 0;
+    for(;;) {
+        int     begin;
+        int     end;
+        char   *string_end;
+        if (!*text) {
+            break;
+        }
+        e = read_number_range(text, &begin, &end, &string_end);
+        if (e) {
+            break;
+        }
+        if (*string_end && *string_end != ',') {
+            fprintf(stderr, "Expecting comma at start of '%s'.\n", string_end);
+            e = -1;
+            break;
+        }
+        fprintf(stderr, "Adding squeeze range %i..%i.\n",
+                begin, end, string_end-text);
+        memento.squeezes_num += 1;
+        memento.squeezes = MEMENTO_UNDERLYING_REALLOC(
+                memento.squeezes,
+                memento.squeezes_num * sizeof(*memento.squeezes)
+                );
+        if (!memento.squeezes) {
+            fprintf(stderr, "Failed to allocate memory for memento.squeezes_num=%i\n",
+                    memento.squeezes_num);
+            e = -1;
+            break;
+        }
+        memento.squeezes[memento.squeezes_num-1].begin = begin;
+        memento.squeezes[memento.squeezes_num-1].end = end;
+
+        if (*string_end == 0) {
+            break;
+        }
+        text = string_end + 1;
+    }
+    return e;
+}
+
 static void Memento_init(void)
 {
     char *env;
@@ -1634,6 +1821,9 @@ static void Memento_init(void)
     memento.free.tail = NULL;
     memento.sequence  = 0;
     memento.countdown = 1024;
+    memento.squeezes  = NULL;
+    memento.squeezes_num = 0;
+    memento.squeezes_pos = 0;
 
     env = getenv("MEMENTO_FAILAT");
     memento.failAt = (env ? atoi(env) : 0);
@@ -1651,6 +1841,17 @@ static void Memento_init(void)
 
     env = getenv("MEMENTO_SQUEEZEAT");
     memento.squeezeAt = (env ? atoi(env) : 0);
+
+    env = getenv("MEMENTO_SQUEEZES");
+    if (env) {
+        int e;
+        fprintf(stderr, "Parsing squeeze ranges in MEMENTO_SQUEEZES=%s\n", env);
+        e = Memento_add_squeezes(env);
+        if (e) {
+            fprintf(stderr, "Failed to parse MEMENTO_SQUEEZES=%s\n", env);
+            exit(1);
+        }
+    }
 
     env = getenv("MEMENTO_PATTERN");
     memento.pattern = (env ? atoi(env) : 0);
@@ -1791,6 +1992,11 @@ static int squeeze(void)
         } else
             memento.patternBit <<= 1;
         memento.squeezing = 1;
+
+        /* This is necessary to allow Memento_failThisEventLocked() near the
+        end to do 'return squeeze();'. */
+        memento.squeezes_num = 0;
+
         return 1;
     }
 
@@ -1979,9 +2185,46 @@ static int Memento_failThisEventLocked(void)
 
     if (Memento_event()) Memento_breakpointLocked();
 
+    if (!memento.squeezing && memento.squeezes_num) {
+        /* Move to next relevant squeeze region if appropriate. */
+        for(;;) {
+            if (memento.squeezes_pos == memento.squeezes_num) {
+                break;
+            }
+            if (memento.sequence >= memento.squeezes[memento.squeezes_pos].end) {
+                memento.squeezes_pos += 1;
+            }
+            else {
+                break;
+            }
+        }
+
+        /* See whether memento.sequence is within this squeeze region. */
+        if (memento.squeezes_pos < memento.squeezes_num) {
+            int begin = memento.squeezes[memento.squeezes_pos].begin;
+            int end   = memento.squeezes[memento.squeezes_pos].end;
+            if (memento.sequence >= begin && memento.sequence < end) {
+                if (1) {
+                    fprintf(stderr,
+                            "squeezes match memento.sequence=%i: memento.squeezes_pos=%i/%i %i..%i\n",
+                            memento.sequence,
+                            memento.squeezes_pos,
+                            memento.squeezes_num,
+                            memento.squeezes[memento.squeezes_pos].begin,
+                            memento.squeezes[memento.squeezes_pos].end
+                            );
+                }
+                return squeeze();
+            }
+        }
+    }
+
     if ((memento.sequence >= memento.failAt) && (memento.failAt != 0))
         Memento_startFailing();
-    if ((memento.sequence >= memento.squeezeAt) && (memento.squeezeAt != 0)) {
+    if (memento.squeezes_num==0
+            && (memento.sequence >= memento.squeezeAt)
+            && (memento.squeezeAt != 0)
+            ) {
         return squeeze();
     }
 
