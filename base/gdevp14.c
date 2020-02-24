@@ -9547,7 +9547,7 @@ pdf14_clist_fill_stroke_path_pattern_setup(gx_device* dev, const gs_gstate* pgs,
             code = gs_setopacityalpha((gs_gstate*)pgs, pgs->strokeconstantalpha);
             if (code < 0)
                 goto cleanup;
-            if (pgs->stroke_overprint) {
+            if (pgs->stroke_overprint && dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
                 code = gs_setblendmode((gs_gstate*)pgs, BLEND_MODE_CompatibleOverprint);
                 if (code < 0)
                     goto cleanup;
@@ -9557,7 +9557,7 @@ pdf14_clist_fill_stroke_path_pattern_setup(gx_device* dev, const gs_gstate* pgs,
             if (code < 0)
                 goto cleanup;
 
-            if (pgs->stroke_overprint) {
+            if (pgs->stroke_overprint && dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
                 code = gs_setblendmode((gs_gstate*)pgs, blend_mode);
                 if (code < 0)
                     goto cleanup;
