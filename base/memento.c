@@ -1413,10 +1413,11 @@ int Memento_listBlocksNested(void)
     for (b = memento.used.head; b; b = b->next) {
         char *p = MEMBLK_TOBLK(b);
         int end = (b->rawsize < MEMENTO_PTRSEARCH ? b->rawsize : MEMENTO_PTRSEARCH);
+        VALGRIND_MAKE_MEM_DEFINED(p, end);
+        end -= sizeof(void *)-1;
         for (i = MEMENTO_SEARCH_SKIP; i < end; i += sizeof(void *)) {
             void *q = *(void **)(&p[i]);
             void **r;
-
             /* Do trivial checks on pointer */
             if ((mask & (intptr_t)q) != mask || q < minptr || q > maxptr)
                 continue;
@@ -1437,7 +1438,7 @@ int Memento_listBlocksNested(void)
 
                 /* Not interested in pointers to ourself! */
                 if (child == b)
-                        continue;
+                    continue;
 
                 /* We're also assuming acyclicness here. If this is one of
                  * our parents, ignore it. */
