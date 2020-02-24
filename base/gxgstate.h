@@ -438,7 +438,15 @@ int gs_currentscreenphase_pgs(const gs_gstate *, gs_int_point *, gs_color_select
     (pgs)->current_point.x = xx;\
     (pgs)->current_point.y = yy;
 
-void gs_swapcolors_quick(gs_gstate *);
+/* The const is a lie. The swapcolors stuff is a bit of a hack; a late
+ * addition to the graphics library, which has to be used in many places
+ * where the device interface only has a const gs_gstate available to it
+ * rather than a non-const one. In all these cases, we flip the colors
+ * during a call to a function, then swap it back again before we leave,
+ * so the net effect of the call remains that the gstate is not changed.
+ * Rather than breaking const at every single callsite, we move the const
+ * breaking into the function itself. */
+void gs_swapcolors_quick(const gs_gstate *);
 
 /* Set the graphics_type_tag iff the requested tag bit is not set in the dev_color and	*/
 /* unset the dev_color so that gx_set_dev_color will remap (encode) with the new tag.	*/
