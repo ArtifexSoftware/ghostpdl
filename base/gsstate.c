@@ -1436,14 +1436,24 @@ gs_id gx_get_clip_path_id(gs_gstate *pgs)
     return pgs->clip_path->id;
 }
 
-void gs_swapcolors_quick(gs_gstate *pgs)
+void gs_swapcolors_quick(const gs_gstate *cpgs)
 {
+    union {
+        const gs_gstate *cpgs;
+        gs_gstate *pgs;
+    } const_breaker;
+    gs_gstate *pgs;
     struct gx_cie_joint_caches_s *tmp_cie;
     gs_devicen_color_map          tmp_ccm;
     gs_client_color              *tmp_cc;
     int                           tmp;
     gx_device_color              *tmp_dc;
     gs_color_space               *tmp_cs;
+
+    /* Break const just once, neatly, here rather than
+     * hackily in every caller. */
+    const_breaker.cpgs = cpgs;
+    pgs = const_breaker.pgs;
 
     tmp_cc               = pgs->color[0].ccolor;
     pgs->color[0].ccolor = pgs->color[1].ccolor;

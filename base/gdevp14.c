@@ -3316,10 +3316,10 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
         }
 
         if (pgs->strokeconstantalpha > 0) {
-            gs_swapcolors_quick((gs_gstate*)pgs);	/* flips stroke_color_index (to stroke) */
+            gs_swapcolors_quick(pgs);	/* flips stroke_color_index (to stroke) */
             ((pdf14_device*)dev)->op_state = PDF14_OP_STATE_STROKE;
             code = pdf14_stroke_path(dev, pgs, ppath, stroke_params, pdcolor_stroke, pcpath);
-            gs_swapcolors_quick((gs_gstate*)pgs);	/* this flips pgs->stroke_color_index back as well */
+            gs_swapcolors_quick(pgs);	/* this flips pgs->stroke_color_index back as well */
             if (code < 0)
                 goto cleanup;       /* bail out (with colors swapped back to fill) */
         }
@@ -3373,23 +3373,29 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
         code = gs_setopacityalpha((gs_gstate*) pgs, pgs->strokeconstantalpha);
         if (code < 0)
             goto cleanup;
-        gs_swapcolors_quick((gs_gstate*) pgs);
+        gs_swapcolors_quick(pgs);
         ((pdf14_device*)dev)->op_state = PDF14_OP_STATE_STROKE;
         if (pgs->stroke_overprint && dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
             code = gs_setblendmode((gs_gstate*)pgs, BLEND_MODE_CompatibleOverprint);
-            if (code < 0)
+            if (code < 0) {
+                gs_swapcolors_quick(pgs);
                 goto cleanup;
+            }
         }
         code = pdf14_stroke_path(dev, pgs, ppath, stroke_params, pdcolor_stroke, pcpath);
-        if (code < 0)
+        if (code < 0) {
+            gs_swapcolors_quick(pgs);
             goto cleanup;
+        }
 
         if (pgs->stroke_overprint && dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
             code = gs_setblendmode((gs_gstate*)pgs, blend_mode);
-            if (code < 0)
+            if (code < 0) {
+                gs_swapcolors_quick(pgs);
                 goto cleanup;
+            }
         }
-        gs_swapcolors_quick((gs_gstate*) pgs);
+        gs_swapcolors_quick(pgs);
     }
 
     /* Now during the pop do the compositing with alpha of 1.0 and normal blend */
@@ -4367,7 +4373,7 @@ pdf14_set_params(gs_gstate * pgs,
     if (pparams->changed & PDF14_SET_STROKECONSTANTALPHA)
         pgs->strokeconstantalpha = pparams->strokeconstantalpha;
     if (pparams->changed & PDF_SET_FILLSTROKE_STATE) {
-        gs_swapcolors_quick((gs_gstate*)pgs);
+        gs_swapcolors_quick(pgs);
     }
     pdf14_set_marking_params(dev, pgs);
 }
