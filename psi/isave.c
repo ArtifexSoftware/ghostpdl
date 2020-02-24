@@ -881,7 +881,9 @@ alloc_restore_all(i_ctx_t *i_ctx_p)
     /* Restore to a state outside any saves. */
     while (lmem->save_level != 0) {
         vm_save_t *vmsave = alloc_save_client_data(alloc_save_current(idmemory));
-        gs_grestoreall_for_restore(i_ctx_p->pgs, vmsave->gsave);
+        if (vmsave->gsave) {
+            gs_grestoreall_for_restore(i_ctx_p->pgs, vmsave->gsave);
+        }
         vmsave->gsave = 0;
         code = alloc_restore_step_in(idmemory, lmem->saved);
 

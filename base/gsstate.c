@@ -358,6 +358,8 @@ gs_gsave_for_save(gs_gstate * pgs, gs_gstate ** psaved)
     code = gs_gsave(pgs);
     if (code < 0) {
         pgs->saved = *psaved;
+        *psaved = NULL;
+        gs_grestore(pgs);
         return code;
     }
     return code;
