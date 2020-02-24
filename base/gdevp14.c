@@ -1357,8 +1357,8 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
 
     /* If the group is NOT isolated we add in the alpha_g plane.  This enables
        recompositing to be performed ala art_pdf_recomposite_group_8 so that
-       the backdrop is only included one time in the computation. 
-       
+       the backdrop is only included one time in the computation.
+
        For shape and alpha, backdrop removal is accomplished by maintaining
        two sets of variables to hold the accumulated values. The group shape
        and alpha, f_g and alpha_g, accumulate only the shape and alpha of the group
@@ -3229,26 +3229,39 @@ pdf14_stroke_path(gx_device *dev, const	gs_gstate	*pgs,
 }
 
 static int
-pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
+pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *cpgs, gx_path *ppath,
     const gx_fill_params *fill_params, const gx_drawing_color *pdcolor_fill,
     const gx_stroke_params *stroke_params, const gx_drawing_color *pdcolor_stroke,
     const gx_clip_path *pcpath)
 {
+    union {
+        const gs_gstate *cpgs;
+        gs_gstate *pgs;
+    } const_breaker;
+    gs_gstate *pgs;
     int code, code2;
     gs_transparency_group_params_t params = { 0 };
     gs_fixed_rect clip_bbox;
     gs_rect bbox, group_stroke_box;
-    float opacity = pgs->opacity.alpha;
-    gs_blend_mode_t blend_mode = pgs->blend_mode;
+    float opacity;
+    gs_blend_mode_t blend_mode;
     gs_fixed_rect path_bbox;
     int expansion_code;
     gs_fixed_point expansion;
+    pdf14_device *p14dev = (pdf14_device *)dev;
+
+    /* Break const just once, neatly */
+    const_breaker.cpgs = cpgs;
+    pgs = const_breaker.pgs;
 
     if ((pgs->fillconstantalpha == 0.0 && pgs->strokeconstantalpha == 0.0) ||
         (pgs->ctm.xx == 0.0 && pgs->ctm.xy == 0.0 && pgs->ctm.yx == 0.0 && pgs->ctm.yy == 0.0))
         return 0;
 
-    code = gx_curr_fixed_bbox((gs_gstate *)pgs, &clip_bbox, NO_PATH);
+    opacity = pgs->opacity.alpha;
+    blend_mode = pgs->blend_mode;
+
+    code = gx_curr_fixed_bbox(pgs, &clip_bbox, NO_PATH);
     if (code < 0 && code != gs_error_unknownerror)
         return code;
     if (code == gs_error_unknownerror) {
@@ -3285,7 +3298,7 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
 
     /* See if overprint is enabled for both stroke and fill AND if ca == CA */
     if (pgs->fillconstantalpha == pgs->strokeconstantalpha &&
-        ((pdf14_device*)dev)->overprint && ((pdf14_device*)dev)->stroke_overprint &&
+        p14dev->overprint && p14dev->stroke_overprint &&
         dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
         /* Push a non-isolated non-knockout group with alpha = 1.0 and
            compatible overprint mode.  Group will be composited with
@@ -3295,21 +3308,17 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
         params.Knockout = false;
 
         /* non-isolated non-knockout group pushed with original alpha and blend mode */
-        code = pdf14_begin_transparency_group(dev, (const gs_transparency_group_params_t*) &params,
-            (const gs_rect*) &group_stroke_box, (gs_gstate*) pgs, dev->memory);
+        code = pdf14_begin_transparency_group(dev, &params,
+                                              &group_stroke_box, pgs, dev->memory);
         if (code < 0)
             return code;
 
         /* Change alpha to 1.0 and blend mode to compatible overprint for actual drawing */
-        code = gs_setopacityalpha((gs_gstate *) pgs, 1.0);
-        if (code < 0)
-            goto cleanup;
-        code = gs_setblendmode((gs_gstate *) pgs, BLEND_MODE_CompatibleOverprint);
-        if (code < 0)
-            goto cleanup;
+        (void)gs_setopacityalpha(pgs, 1.0); /* Can never fail */
+        (void)gs_setblendmode(pgs, BLEND_MODE_CompatibleOverprint); /* Can never fail */
 
         if (pgs->fillconstantalpha > 0) {
-            ((pdf14_device*)dev)->op_state = PDF14_OP_STATE_FILL;
+            p14dev->op_state = PDF14_OP_STATE_FILL;
             code = pdf14_fill_path(dev, pgs, ppath, fill_params, pdcolor_fill, pcpath);
             if (code < 0)
                 goto cleanup;
@@ -3317,7 +3326,7 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
 
         if (pgs->strokeconstantalpha > 0) {
             gs_swapcolors_quick(pgs);	/* flips stroke_color_index (to stroke) */
-            ((pdf14_device*)dev)->op_state = PDF14_OP_STATE_STROKE;
+            p14dev->op_state = PDF14_OP_STATE_STROKE;
             code = pdf14_stroke_path(dev, pgs, ppath, stroke_params, pdcolor_stroke, pcpath);
             gs_swapcolors_quick(pgs);	/* this flips pgs->stroke_color_index back as well */
             if (code < 0)
@@ -3332,95 +3341,61 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
         params.Knockout = true;
 
         /* non-isolated knockout group is pushed with alpha = 1.0 and Normal blend mode */
-        code = gs_setopacityalpha((gs_gstate*) pgs, 1.0);
-        if (code < 0)
-            return code;
-        code = gs_setblendmode((gs_gstate*) pgs, BLEND_MODE_Normal);
-        if (code < 0)
-            return code;
+        (void)gs_setopacityalpha(pgs, 1.0); /* Can never fail */
+        (void)gs_setblendmode(pgs, BLEND_MODE_Normal); /* Can never fail */
 
-        code = pdf14_begin_transparency_group(dev, (const gs_transparency_group_params_t*) &params,
-            (const gs_rect*) &group_stroke_box, (gs_gstate*) pgs, dev->memory);
-        if (code < 0)
-            return code;
-
+        code = pdf14_begin_transparency_group(dev, &params,
+                                              &group_stroke_box, pgs, dev->memory);
         /* restore blend mode for actual drawing in the group */
-        code = gs_setblendmode((gs_gstate*) pgs, blend_mode);
-        if (code < 0)
-            goto cleanup;
+        (void)gs_setblendmode(pgs, blend_mode); /* Can never fail */
+        if (code < 0) {
+            /* Make sure we put everything back even if we exit with an error. */
+            (void)gs_setopacityalpha(pgs, opacity);
+            return code;
+        }
 
-        code = gs_setopacityalpha((gs_gstate*) pgs, pgs->fillconstantalpha);
-        if (code < 0)
-            goto cleanup;
-        ((pdf14_device*)dev)->op_state = PDF14_OP_STATE_FILL;
+        (void)gs_setopacityalpha(pgs, pgs->fillconstantalpha); /* Can never fail */
+        p14dev->op_state = PDF14_OP_STATE_FILL;
 
         /* If we are in an overprint situation, set the blend mode to compatible
             overprint */
-        if (pgs->overprint && dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
-            code = gs_setblendmode((gs_gstate*)pgs, BLEND_MODE_CompatibleOverprint);
-            if (code < 0)
-                goto cleanup;
-        }
+        if (pgs->overprint && dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE)
+            gs_setblendmode(pgs, BLEND_MODE_CompatibleOverprint); /* Can never fail */
         code = pdf14_fill_path(dev, pgs, ppath, fill_params, pdcolor_fill, pcpath);
+        if (pgs->overprint && dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE)
+            gs_setblendmode(pgs, blend_mode); /* Can never fail */
         if (code < 0)
             goto cleanup;
-        if (pgs->overprint && dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
-            code = gs_setblendmode((gs_gstate*)pgs, blend_mode);
-            if (code < 0)
-                goto cleanup;
-        }
 
-        code = gs_setopacityalpha((gs_gstate*) pgs, pgs->strokeconstantalpha);
-        if (code < 0)
-            goto cleanup;
+        gs_setopacityalpha(pgs, pgs->strokeconstantalpha); /* Can never fail */
         gs_swapcolors_quick(pgs);
-        ((pdf14_device*)dev)->op_state = PDF14_OP_STATE_STROKE;
-        if (pgs->stroke_overprint && dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
-            code = gs_setblendmode((gs_gstate*)pgs, BLEND_MODE_CompatibleOverprint);
-            if (code < 0) {
-                gs_swapcolors_quick(pgs);
-                goto cleanup;
-            }
-        }
+        p14dev->op_state = PDF14_OP_STATE_STROKE;
+        if (pgs->stroke_overprint && dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE)
+            (void)gs_setblendmode(pgs, BLEND_MODE_CompatibleOverprint); /* Can never fail */
         code = pdf14_stroke_path(dev, pgs, ppath, stroke_params, pdcolor_stroke, pcpath);
-        if (code < 0) {
-            gs_swapcolors_quick(pgs);
-            goto cleanup;
-        }
-
-        if (pgs->stroke_overprint && dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
-            code = gs_setblendmode((gs_gstate*)pgs, blend_mode);
-            if (code < 0) {
-                gs_swapcolors_quick(pgs);
-                goto cleanup;
-            }
-        }
+        /* Don't need to restore blendmode here, as it will be restored below. */
         gs_swapcolors_quick(pgs);
+        if (code < 0)
+            goto cleanup;
     }
 
+cleanup:
     /* Now during the pop do the compositing with alpha of 1.0 and normal blend */
-    code = gs_setopacityalpha((gs_gstate*) pgs, 1.0);
-    if (code < 0)
-        goto cleanup;
-    code = gs_setblendmode((gs_gstate*) pgs, BLEND_MODE_Normal);
+    (void)gs_setopacityalpha(pgs, 1.0); /* Can never fail */
+    (void)gs_setblendmode(pgs, BLEND_MODE_Normal); /* Can never fail */
 
     /* Restore where we were. If an error occured while in the group push
        return that error code but try to do the cleanup */
-cleanup:
-    code2 = pdf14_end_transparency_group(dev, (gs_gstate*) pgs);
+    code2 = pdf14_end_transparency_group(dev, pgs);
     if (code2 < 0) {
         /* At this point things have gone very wrong. We should just shut down */
-        code = gs_abort_pdf14trans_device((gs_gstate*) pgs);
+        code = gs_abort_pdf14trans_device(pgs);
         return code2;
     }
 
     /* Restore if there were any changes */
-    code2 = gs_setopacityalpha((gs_gstate*) pgs, opacity);
-    if (code2 < 0)
-        return code2;
-    code2 = gs_setblendmode((gs_gstate*) pgs, blend_mode);
-    if (code2 < 0)
-        return code2;
+    (void)gs_setopacityalpha(pgs, opacity); /* Can never fail */
+    (void)gs_setblendmode(pgs, blend_mode); /* Can never fail */
 
     return code;
 }
@@ -9408,22 +9383,34 @@ pdf14_clist_stroke_path(gx_device *dev,	const gs_gstate *pgs,
    the clist.  We have to do all the dirty work now since we are
    going through the default fill and stroke operations individually */
 static int
-pdf14_clist_fill_stroke_path_pattern_setup(gx_device* dev, const gs_gstate* pgs, gx_path* ppath,
+pdf14_clist_fill_stroke_path_pattern_setup(gx_device* dev, const gs_gstate* cpgs, gx_path* ppath,
     const gx_fill_params* params_fill, const gx_drawing_color* pdevc_fill,
     const gx_stroke_params* params_stroke, const gx_drawing_color* pdevc_stroke,
     const gx_clip_path* pcpath)
 {
+    union {
+        const gs_gstate *cpgs;
+        gs_gstate *pgs;
+    } const_breaker;
+    gs_gstate *pgs;
     int code, code2;
     gs_transparency_group_params_t params = { 0 };
     gs_fixed_rect clip_bbox;
     gs_rect bbox, group_stroke_box;
-    float opacity = pgs->opacity.alpha;
-    gs_blend_mode_t blend_mode = pgs->blend_mode;
+    float opacity;
+    gs_blend_mode_t blend_mode;
     gs_fixed_rect path_bbox;
     int expansion_code;
     gs_fixed_point expansion;
 
-    code = gx_curr_fixed_bbox((gs_gstate*)pgs, &clip_bbox, NO_PATH);
+    /* Break const just once, neatly */
+    const_breaker.cpgs = cpgs;
+    pgs = const_breaker.pgs;
+
+    opacity = pgs->opacity.alpha;
+    blend_mode = pgs->blend_mode;
+
+    code = gx_curr_fixed_bbox(pgs, &clip_bbox, NO_PATH);
     if (code < 0 && code != gs_error_unknownerror)
         return code;
     if (code == gs_error_unknownerror) {
@@ -9470,17 +9457,13 @@ pdf14_clist_fill_stroke_path_pattern_setup(gx_device* dev, const gs_gstate* pgs,
         params.Knockout = false;
 
         /* non-isolated non-knockout group pushed with original alpha and blend mode */
-        code = gs_begin_transparency_group((gs_gstate*)pgs, &params, (const gs_rect*)&group_stroke_box, PDF14_BEGIN_TRANS_GROUP);
+        code = gs_begin_transparency_group(pgs, &params, &group_stroke_box, PDF14_BEGIN_TRANS_GROUP);
         if (code < 0)
             return code;
 
         /* Change alpha to 1.0 and blend mode to compatible overprint for actual drawing */
-        code = gs_setopacityalpha((gs_gstate*)pgs, 1.0);
-        if (code < 0)
-            goto cleanup;
-        code = gs_setblendmode((gs_gstate*)pgs, BLEND_MODE_CompatibleOverprint);
-        if (code < 0)
-            goto cleanup;
+        (void)gs_setopacityalpha(pgs, 1.0); /* Can never fail */
+        (void)gs_setblendmode(pgs, BLEND_MODE_CompatibleOverprint); /* Can never fail */
 
         /* Do fill */
         if (pgs->fillconstantalpha > 0.0) {
@@ -9504,91 +9487,62 @@ pdf14_clist_fill_stroke_path_pattern_setup(gx_device* dev, const gs_gstate* pgs,
         params.Knockout = true;
 
         /* non-isolated knockout group is pushed with alpha = 1.0 and Normal blend mode */
-        code = gs_setopacityalpha((gs_gstate*)pgs, 1.0);
-        if (code < 0)
-            return code;
-        code = gs_setblendmode((gs_gstate*)pgs, BLEND_MODE_Normal);
-        if (code < 0)
-            return code;
+        (void)gs_setopacityalpha(pgs, 1.0); /* Can never fail */
+        (void)gs_setblendmode(pgs, BLEND_MODE_Normal); /* Can never fail */
 
-        code = gs_begin_transparency_group((gs_gstate*)pgs, &params, (const gs_rect*)&group_stroke_box, PDF14_BEGIN_TRANS_GROUP);
-        if (code < 0)
-            return code;
-
+        code = gs_begin_transparency_group(pgs, &params, &group_stroke_box, PDF14_BEGIN_TRANS_GROUP);
         /* restore blend mode for actual drawing in the group */
-        code = gs_setblendmode((gs_gstate*)pgs, blend_mode);
-        if (code < 0)
-            goto cleanup;
+        (void)gs_setblendmode(pgs, blend_mode); /* Can never fail */
+        if (code < 0) {
+            (void)gs_setopacityalpha(pgs, opacity); /* Can never fail */
+            return code;
+        }
 
         if (pgs->fillconstantalpha > 0.0) {
-            code = gs_setopacityalpha((gs_gstate*)pgs, pgs->fillconstantalpha);
-            if (code < 0)
-                goto cleanup;
+            (void)gs_setopacityalpha(pgs, pgs->fillconstantalpha); /* Can never fail */
 
             /* If we are in an overprint situation, set the blend mode to compatible
                overprint */
             if (pgs->overprint && dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE)
-                code = gs_setblendmode((gs_gstate*)pgs, BLEND_MODE_CompatibleOverprint);
-            if (code < 0)
-                goto cleanup;
+                (void)gs_setblendmode(pgs, BLEND_MODE_CompatibleOverprint); /* Can never fail */
 
             code = pdf14_clist_fill_path(dev, pgs, ppath, params_fill, pdevc_fill, pcpath);
             if (code < 0)
                 goto cleanup;
 
-            if (pgs->overprint && dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
-                code = gs_setblendmode((gs_gstate*)pgs, blend_mode);
-                if (code < 0)
-                    goto cleanup;
-            }
+            if (pgs->overprint && dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE)
+                (void)gs_setblendmode(pgs, blend_mode); /* Can never fail */
         }
 
         if (pgs->strokeconstantalpha > 0.0) {
-            code = gs_setopacityalpha((gs_gstate*)pgs, pgs->strokeconstantalpha);
-            if (code < 0)
-                goto cleanup;
-            if (pgs->stroke_overprint && dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
-                code = gs_setblendmode((gs_gstate*)pgs, BLEND_MODE_CompatibleOverprint);
-                if (code < 0)
-                    goto cleanup;
-            }
+            (void)gs_setopacityalpha(pgs, pgs->strokeconstantalpha); /* Can never fail */
+            if (pgs->stroke_overprint && dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE)
+                (void)gs_setblendmode(pgs, BLEND_MODE_CompatibleOverprint); /* Can never fail */
 
             code = pdf14_clist_stroke_path(dev, pgs, ppath, params_stroke, pdevc_stroke, pcpath);
             if (code < 0)
                 goto cleanup;
-
-            if (pgs->stroke_overprint && dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
-                code = gs_setblendmode((gs_gstate*)pgs, blend_mode);
-                if (code < 0)
-                    goto cleanup;
-            }
         }
     }
+
+cleanup:
     /* Now during the pop do the compositing with alpha of 1.0 and normal blend */
-    code = gs_setopacityalpha((gs_gstate*)pgs, 1.0);
-    if (code < 0)
-        goto cleanup;
-    code = gs_setblendmode((gs_gstate*)pgs, BLEND_MODE_Normal);
-    if (code < 0)
-        goto cleanup;
+    (void)gs_setopacityalpha(pgs, 1.0); /* Can never fail */
+    (void)gs_setblendmode(pgs, BLEND_MODE_Normal); /* Can never fail */
 
     /* Restore where we were. If an error occured while in the group push
        return that error code but try to do the cleanup */
-cleanup:
-    code2 = gs_end_transparency_group((gs_gstate*)pgs);
+    code2 = gs_end_transparency_group(pgs);
     if (code2 < 0) {
         /* At this point things have gone very wrong. We should just shut down */
-        code = gs_abort_pdf14trans_device((gs_gstate*)pgs);
+        code = gs_abort_pdf14trans_device(pgs);
         return code2;
     }
 
     /* Restore if there were any changes */
-    code2 = gs_setopacityalpha((gs_gstate*)pgs, opacity);
-    if (code2 < 0)
-        return code2;
-    code2 = gs_setblendmode((gs_gstate*)pgs, blend_mode);
-    if (code2 < 0)
-        return code2;
+    (void)gs_setopacityalpha(pgs, opacity); /* Can never fail */
+    (void)gs_setblendmode(pgs, blend_mode); /* Can never fail */
+
     return code;
 }
 
