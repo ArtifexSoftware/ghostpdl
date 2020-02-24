@@ -57,11 +57,12 @@ if __name__ == '__main__':
     # Use latin_1 encoding to ensure we can read all 8-bit bytes from stdin as
     # characters.
     f = io.TextIOWrapper( sys.stdin.buffer, encoding='latin_1')
+    progress_n_next = 0
     for line in f:
         m = re.match( '^Memory squeezing @ ([0-9]+)$', line)
         if m:
             memento_n = int( m.group(1))
-            if memento_n % progress_n == 0:
+            if memento_n >= progress_n_next:
                 print( 'memento_n=%s. num_segv=%s num_leak=%s' % (
                             memento_n,
                             num_segv,
@@ -69,6 +70,8 @@ if __name__ == '__main__':
                             ),
                         file=log,
                         )
+                progress_n_next = int(memento_n / progress_n + 1) * progress_n
+                log.flush() # Otherwise buffered and we see no output for ages.
         if line.startswith( 'SEGV at:'):
             num_segv += 1
             print( 'memento_n=%s: segv' % memento_n, file=out)
