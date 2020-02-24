@@ -43,7 +43,9 @@ inline static void process_at_pixel(ClapTrap      * gs_restrict ct,
     /* Use local vars to avoid pointer aliasing */
     int            width        = ct->width;
     int            height       = ct->height;
+#ifndef NDEBUG
     int            num_comp_lim = ct->num_comps;
+#endif
     int            max_x_offset = ct->max_x_offset;
     int            max_y_offset = ct->max_y_offset;
     int            span         = ct->span;
