@@ -1026,7 +1026,6 @@ clist_fill_stroke_path(gx_device * pdev, const gs_gstate * pgs,
     RECT_ENUM_INIT(re, ry, rheight);
     do {
         int code;
-        fixed ymin, ymax;
 
         RECT_STEP_INIT(re);
         if ((code = cmd_do_write_unknown(cdev, re.pcls, STROKE_ALL_KNOWN | FILL_KNOWN)) < 0)

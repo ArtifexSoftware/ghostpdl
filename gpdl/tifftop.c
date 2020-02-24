@@ -595,7 +595,6 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
             gs_string plane_data[GS_IMAGE_MAX_COMPONENTS];
             int invert = 0;
             int alpha = 0;
-            char emsg[1024];
 
             tiff->handle = TIFFClientOpen("dummy", "rm",
                                           (thandle_t)tiff,
