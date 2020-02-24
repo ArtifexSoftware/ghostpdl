@@ -4679,18 +4679,27 @@ template_mark_fill_rect(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restri
                     /* If this is an overprint case, and alpha_r is different
                        than alpha_d then we will need to adjust
                        the colors of the non-drawn components here too */
-                    for (k = 0, comps = drawn_comps; k < num_comp; ++k, comps >>= 1) {
-                        if ((comps & 0x1) != 0) {
-                            dst_ptr[k * planestride] = 255 - pdst[k];
-                        } else if (dest_alpha != pdst[num_comp]) {
-                            /* We need val_new = (val_old * old_alpha) / new_alpha */
-                            if (pdst[num_comp] != 0) {
-                                int val = (int)floor(((float)dest_alpha / (float)pdst[num_comp]) * (255 - pdst[k]) + 0.5);
+                    if (dest_alpha != pdst[num_comp] && pdst[num_comp] != 0) {
+                        /* dest_alpha > pdst[num_comp], and dst[num_comp] != 0.
+                         * Therefore dest_alpha / pdst[num_comp] <= 255 */
+                        uint32_t scale = 256 * dest_alpha / pdst[num_comp];
+                        for (k = 0, comps = drawn_comps; k < num_comp; ++k, comps >>= 1) {
+                            if ((comps & 0x1) != 0) {
+                                dst_ptr[k * planestride] = 255 - pdst[k];
+                            } else {
+                                /* We need val_new = (val_old * old_alpha) / new_alpha */
+                                uint32_t val = (scale * (255 - pdst[k]) + 128)>>8;
                                 if (val < 0)
                                     val = 0;
                                 else if (val > 255)
                                     val = 255;
                                 dst_ptr[k * planestride] = val;
+                            }
+                        }
+                    } else {
+                        for (k = 0, comps = drawn_comps; k < num_comp; ++k, comps >>= 1) {
+                            if ((comps & 0x1) != 0) {
+                                dst_ptr[k * planestride] = 255 - pdst[k];
                             }
                         }
                     }
@@ -5259,18 +5268,27 @@ template_mark_fill_rect16(int w, int h, uint16_t *gs_restrict dst_ptr, uint16_t 
                     /* If this is an overprint case, and alpha_r is different
                        than alpha_d then we will need to adjust
                        the colors of the non-drawn components here too */
-                    for (k = 0, comps = drawn_comps; comps != 0; ++k, comps >>= 1) {
-                        if ((comps & 0x1) != 0) {
-                            dst_ptr[k * planestride] = 65535 - pdst[k];
-                        } else if (dest_alpha != pdst[num_comp]) {
-                            /* We need val_new = (val_old * old_alpha) / new_alpha */
-                            if (pdst[num_comp] != 0) {
-                                int val = (int)floor(((float)dest_alpha / (float)pdst[num_comp]) * (65535 - pdst[k]) + 0.5);
+                    if (dest_alpha != pdst[num_comp] && pdst[num_comp] != 0) {
+                        /* dest_alpha > pdst[num_comp], and dst[num_comp] != 0.
+                         * Therefore dest_alpha / pdst[num_comp] <= 65535 */
+                        uint64_t scale = (uint64_t)65536 * dest_alpha / pdst[num_comp];
+                        for (k = 0, comps = drawn_comps; comps != 0; ++k, comps >>= 1) {
+                            if ((comps & 0x1) != 0) {
+                                dst_ptr[k * planestride] = 65535 - pdst[k];
+                            } else  {
+                                /* We need val_new = (val_old * old_alpha) / new_alpha */
+                                uint64_t val = (scale * (65535 - pdst[k]) + 32768)>>16;
                                 if (val < 0)
                                     val = 0;
                                 else if (val > 65535)
                                     val = 65535;
                                 dst_ptr[k * planestride] = val;
+                            }
+                        }
+                    } else {
+                        for (k = 0, comps = drawn_comps; comps != 0; ++k, comps >>= 1) {
+                            if ((comps & 0x1) != 0) {
+                                dst_ptr[k * planestride] = 65535 - pdst[k];
                             }
                         }
                     }
