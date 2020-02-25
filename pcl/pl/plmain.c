@@ -359,6 +359,8 @@ pl_main_run_file_utf8(pl_main_instance_t *minst, const char *prefix_commands, co
         code = s_process_read_buf(s);
         if (code < 0)
             break;
+        if (s->end_status == ERRC)
+            break;
 
         if (new_job) {
             /* The only time the current implementation won't be PJL,
