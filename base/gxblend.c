@@ -2378,6 +2378,9 @@ art_pdf_ko_composite_group_16(uint16_t tos_shape,
     uint16_t* gs_restrict dst_alpha_g, uint16_t* gs_restrict src,
     int n_chan, uint16_t alpha, bool has_mask)
 {
+    uint16_t src_alpha;
+    int tmp;
+
     if (tos_shape == 0 || (src_alpha_g != NULL && *src_alpha_g == 0)) {
         /* If a softmask was present pass it along Bug 693548 */
         if (has_mask)
@@ -2385,10 +2388,23 @@ art_pdf_ko_composite_group_16(uint16_t tos_shape,
         return 0;
     }
 
-    if (alpha != 65535 && tos_shape != 65535)
-        return 0;
+    if (alpha != 65535) {
+        if (tos_shape != 65535)
+            return 0;
+        src_alpha = src[n_chan];
+        if (src_alpha == 0)
+            return 0;
+        tmp = alpha + (alpha >> 15);
+        src[n_chan] = (src_alpha * tmp + 0x8000) >> 16;
+    }
 
-    return art_pdf_composite_group_16(dst, dst_alpha_g, src, n_chan, alpha);
+    if (dst_alpha_g != NULL) {
+        tmp = *dst_alpha_g;
+        tmp += tmp >> 15;
+        tmp = (0x10000 - tmp) * (0xffff - src[n_chan]) + 0x8000;
+        *dst_alpha_g = 0xffff - (tmp >> 16);
+    }
+    return 1;
 }
 
 /* A very simple case.  Knockout isolated group going to a parent that is not
