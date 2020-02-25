@@ -2188,7 +2188,7 @@ art_pdf_recomposite_group_16(uint16_t *gs_restrict *dstp, uint16_t *gs_restrict 
 {
     uint16_t dst_alpha;
     int i;
-    int tmp;
+    uint32_t tmp;
     int scale;
     uint16_t *gs_restrict dst = *dstp;
 
@@ -2241,7 +2241,7 @@ art_pdf_recomposite_group_16(uint16_t *gs_restrict *dstp, uint16_t *gs_restrict 
         tmp = (src_alpha_g * tmp + 0x8000)>>16;
         src[n_chan] = tmp;
         if (dst_alpha_g != NULL) {
-            int d = *dst_alpha_g;
+            uint32_t d = *dst_alpha_g;
             d += d>>15;
             tmp = (0x10000 - d) * (0xffff - tmp) + 0x8000;
             *dst_alpha_g = 0xffff - (tmp >> 16);
