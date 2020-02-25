@@ -194,14 +194,12 @@ gx_default_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
     byte *src_planes[GS_CLIENT_COLOR_MAX_COMPONENTS];
     gs_int_rect gb_rect;
     int byte_depth;
-    gx_color_index mask;
     int shift, word_width;
     gx_color_value *composite;
     byte *gb_buff;
     int x_curr, w_curr, gb_buff_start;
 
     byte_depth = bpp / ncomps;
-    mask = ((gx_color_index)1 << byte_depth) - 1;
     shift = 16 - byte_depth;
     word_width = byte_depth >> 3;
 
@@ -292,7 +290,7 @@ gx_default_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
                     return code;
                 }
                 /* reset ourselves */
-                gb_buff_start = gb_buff_start + w_curr;
+                gb_buff_start = gb_buff_start + w_curr * word_width;
                 w_curr = 0;
                 x_curr = rx + 1;
             } else {
@@ -330,9 +328,9 @@ gx_default_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
                     byte *ptr = ((src_planes[k]) + (sx - data_x) * word_width);
                     switch (word_width) {
                         case 2:
-                            *ptr++ = composite[k] & mask;
+                            *ptr++ = composite[k] >> 8;
                         case 1:
-                            *ptr++ = (composite[k] >> shift) & mask;
+                            *ptr++ = composite[k] >> shift;
                     }
                 }
             } /* else on alpha != 0 */
