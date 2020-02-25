@@ -58,23 +58,28 @@ if __name__ == '__main__':
     # characters.
     f = io.TextIOWrapper( sys.stdin.buffer, encoding='latin_1')
     progress_n_next = 0
+
+    def print_progress():
+        print( 'memento_n=%s. num_segv=%s num_leak=%s' % (
+                    memento_n,
+                    num_segv,
+                    num_leak
+                    ),
+                file=log,
+                )
+
     for line in f:
         m = re.match( '^Memory squeezing @ ([0-9]+)$', line)
         if m:
             memento_n = int( m.group(1))
             if memento_n >= progress_n_next:
-                print( 'memento_n=%s. num_segv=%s num_leak=%s' % (
-                            memento_n,
-                            num_segv,
-                            num_leak
-                            ),
-                        file=log,
-                        )
+                print_progress()
                 progress_n_next = int(memento_n / progress_n + 1) * progress_n
                 log.flush() # Otherwise buffered and we see no output for ages.
-        if line.startswith( 'SEGV at:'):
+        elif line.startswith( 'SEGV at:'):
             num_segv += 1
             print( 'memento_n=%s: segv' % memento_n, file=out)
         elif line.startswith( 'Allocated blocks'):
             num_leak += 1
             print( 'memento_n=%s: leak' % memento_n, file=out)
+    print_progress()
