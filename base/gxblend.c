@@ -745,7 +745,7 @@ art_blend_saturation_rgb_16(int n_chan, uint16_t *gs_restrict dst, const uint16_
     int mins, maxs;
     int y;
     int64_t scale;
-    int r, g, b;
+    int64_t r, g, b;
 
     minb = rb < gb ? rb : gb;
     minb = minb < bb ? minb : bb;
@@ -764,15 +764,19 @@ art_blend_saturation_rgb_16(int n_chan, uint16_t *gs_restrict dst, const uint16_
     maxs = rs > gs ? rs : gs;
     maxs = maxs > bs ? maxs : bs;
 
+    /* -65535 <= maxs - mins <= 65535 i.e. 17 bits */
+    /* -65535 <= maxb - minb <= 65535 i.e. 17 bits */
+    /* worst case, maxb - minb == +/- 1, so scale would be 33 bits. */
     scale = (((int64_t)(maxs - mins)) << 16) / (maxb - minb);
+    /* 0 <= y <= 65535 */
     y = (rb * 77 + gb * 151 + bb * 28 + 0x80) >> 8;
     r = y + ((((rb - y) * scale) + 0x8000) >> 16);
     g = y + ((((gb - y) * scale) + 0x8000) >> 16);
     b = y + ((((bb - y) * scale) + 0x8000) >> 16);
 
-    if ((r | g | b) & 0x10000) {
+    if ((r | g | b) & (int64_t)~0xffff) {
         int64_t scalemin, scalemax;
-        int min, max;
+        int64_t min, max;
 
         min = r < g ? r : g;
         min = min < b ? min : b;
@@ -780,7 +784,7 @@ art_blend_saturation_rgb_16(int n_chan, uint16_t *gs_restrict dst, const uint16_
         max = max > b ? max : b;
 
         if (min < 0)
-            scalemin = ((int64_t)(y << 16)) / (y - min);
+            scalemin = (((int64_t)y) << 16) / (y - min);
         else
             scalemin = 0x10000;
 
