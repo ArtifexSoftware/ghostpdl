@@ -2227,10 +2227,6 @@ art_pdf_recomposite_group_16(uint16_t *gs_restrict *dstp, uint16_t *gs_restrict 
                 /* RJW: Nasty that we have to resort to 64bit here, but we'll live with it. */
                 tmp64 = (si - di) * (int64_t)scale + 0x8000;
                 tmp = si + (tmp64 >> 16);
-
-                /* todo: it should be possible to optimize these cond branches */
-                if (tmp < 0)
-                    tmp = 0;
                 if (tmp > 65535)
                     tmp = 65535;
                 src[i] = tmp;
