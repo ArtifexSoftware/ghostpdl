@@ -547,7 +547,7 @@ gx_serialize_Separation(const gs_color_space * pcs, stream * s)
 
     if (code < 0)
         return code;
-    code = sputs(s, (const byte *)&p->sep_name, strlen(p->sep_name) + 1, &n);
+    code = sputs(s, (const byte *)p->sep_name, strlen(p->sep_name) + 1, &n);
     if (code < 0)
         return code;
     code = cs_serialize(pcs->base_space, s);
