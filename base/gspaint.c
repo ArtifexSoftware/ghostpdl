@@ -752,7 +752,7 @@ out:
         gs_id id;
 
         if (gs_altdevicecolor_inline(pgs)->colors.pattern.p_tile != NULL) {
-            code = gs_altdevicecolor_inline(pgs)->colors.pattern.p_tile->id;
+            id = gs_altdevicecolor_inline(pgs)->colors.pattern.p_tile->id;
             rcode = gx_pattern_cache_entry_set_lock(pgs, id, false);
 	        if (rcode < 0)
 	            return rcode;	/* unlock failed -- shouldn't be possible */
