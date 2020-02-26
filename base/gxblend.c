@@ -5402,7 +5402,7 @@ mark_fill_rect16_sub4_fast(int w, int h, uint16_t *gs_restrict dst_ptr, uint16_t
                 dst_ptr[4 * planestride] = a_s;
             } else if (a_s != 0) {
                 /* Result alpha is Union of backdrop and source alpha */
-                int tmp, src_scale;
+                unsigned int tmp, src_scale;
                 unsigned int a_r;
 
                 a_b += a_b>>15;
@@ -5485,9 +5485,8 @@ mark_fill_rect16_add3_common(int w, int h, uint16_t *gs_restrict dst_ptr, uint16
                 /* alpha */
                 dst_ptr[3 * planestride] = a_s;
             } else if (a_s != 0) {
-                int tmp;
+                unsigned int tmp, src_scale;
                 unsigned int a_r;
-                int src_scale;
 
                 a_b += a_b >> 15;
                 /* Result alpha is Union of backdrop and source alpha */
@@ -5588,8 +5587,9 @@ mark_fill_rect16_add1_no_spots_normal(int w, int h, uint16_t *gs_restrict dst_pt
                 dst_ptr[planestride] = a_s;
             } else {
                 /* Result alpha is Union of backdrop and source alpha */
-                int tmp, src_scale, c_s, c_b;
+                unsigned int tmp, src_scale;
                 unsigned int a_r;
+                int c_s, c_b;
 
                 a_b += a_b>>15;
                 tmp = (0x10000 - a_b) * (0xffff - a_s) + 0x8000;
@@ -5647,8 +5647,9 @@ mark_fill_rect16_add1_no_spots_fast(int w, int h, uint16_t *gs_restrict dst_ptr,
                 dst_ptr[planestride] = a_s;
             } else if (a_s != 0) {
                 /* Result alpha is Union of backdrop and source alpha */
-                int tmp, src_scale, c_s, c_b;
+                unsigned int tmp, src_scale;
                 unsigned int a_r;
+                int c_s, c_b;
 
                 a_b += a_b>>15;
                 tmp = (0x10000 - a_b) * (0xffff - a_s) + 0x8000;
