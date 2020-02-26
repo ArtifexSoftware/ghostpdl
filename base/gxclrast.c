@@ -1993,18 +1993,22 @@ idata:                  data_size = 0;
                             /* if the color is a pattern, it may have had the "is_locked" flag set	*/
                             /* clear those now (see do_fill_stroke).					*/
                             if (gx_dc_is_pattern1_color(&stroke_color)) {
-                                gs_id id = stroke_color.colors.pattern.p_tile->id;
+                                if (stroke_color.colors.pattern.p_tile != NULL) {
+                                    gs_id id = stroke_color.colors.pattern.p_tile->id;
 
-                                code = gx_pattern_cache_entry_set_lock(&gs_gstate, id, false);
-                                if (code < 0)
-                                    return code;	/* unlock failed -- should not happen */
+                                    code = gx_pattern_cache_entry_set_lock(&gs_gstate, id, false);
+                                    if (code < 0)
+                                        return code;	/* unlock failed -- should not happen */
+                                }
                             }
                             if (gx_dc_is_pattern1_color(&fill_color)) {
-                                gs_id id = fill_color.colors.pattern.p_tile->id;
+                                if (fill_color.colors.pattern.p_tile != NULL) {
+                                    gs_id id = fill_color.colors.pattern.p_tile->id;
 
-                                code = gx_pattern_cache_entry_set_lock(&gs_gstate, id, false);
-                                if (code < 0)
-                                    return code;	/* unlock failed -- should not happen */
+                                    code = gx_pattern_cache_entry_set_lock(&gs_gstate, id, false);
+                                    if (code < 0)
+                                        return code;	/* unlock failed -- should not happen */
+                                }
                             }
                             break;
                         case cmd_opv_stroke:
