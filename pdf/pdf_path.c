@@ -405,8 +405,6 @@ int pdfi_b_star(pdf_context *ctx)
 static int pdfi_B_inner(pdf_context *ctx, bool use_eofill)
 {
     int code, code1=0;
-    pdfi_trans_state_t state;
-    bool started_group = false;
 
     if (ctx->TextBlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
@@ -416,47 +414,15 @@ static int pdfi_B_inner(pdf_context *ctx, bool use_eofill)
         return code;
     }
 
-    if (ctx->page_has_transparency) {
-        code = gs_setopacityalpha(ctx->pgs, 1.0);
-        if (code < 0)
-            return code;
-        code = pdfi_trans_begin_simple_group(ctx, true, true, true);
-        if (code < 0)
-            return code;
-        started_group = true;
-    }
-
-    code = pdfi_gsave(ctx);
+    code = pdfi_trans_set_params(ctx, gs_getstrokeconstantalpha(ctx->pgs));
     if (code < 0)
         goto exit;
-    code = pdfi_trans_set_params(ctx, gs_getfillconstantalpha(ctx->pgs));
-    if (code == 0) {
-        if (use_eofill)
-            code = gs_eofill(ctx->pgs);
-        else
-            code = gs_fill(ctx->pgs);
-    }
-    code1 = pdfi_grestore(ctx);
-    if (code == 0)
-        code = code1;
-    if (code < 0)
-        goto exit;
+    if (use_eofill)
+        code = gs_eofillstroke(ctx->pgs, &code1);
+    else
+        code = gs_fillstroke(ctx->pgs, &code1);
 
-    gs_swapcolors_quick(ctx->pgs);
-    code = pdfi_trans_setup(ctx, &state, TRANSPARENCY_Caller_Stroke, gs_getstrokeconstantalpha(ctx->pgs));
-    if (code >= 0)
-        code = gs_stroke(ctx->pgs);
-    gs_swapcolors_quick(ctx->pgs);
-    code1 = pdfi_trans_teardown(ctx, &state);
-    if (code == 0)
-        code = code1;
-
- exit:
-    if (started_group)
-        code1 = pdfi_trans_end_simple_group(ctx);
-    if (code == 0)
-        code = code1;
-
+exit:
     if (code < 0)
         gs_newpath(ctx->pgs);
 
