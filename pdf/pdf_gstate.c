@@ -1429,7 +1429,7 @@ error:
 static int build_type10_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict *page_dict, gx_device_halftone *pdht, gs_halftone_component *phtc, char *name, int len)
 {
     int code;
-    int64_t w, h, bps;
+    int64_t w, h;
     gs_threshold2_halftone *ptp = &phtc->params.threshold2;
 
     ptp->thresholds.data = NULL;
@@ -1481,7 +1481,7 @@ error:
 static int build_type16_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict *page_dict, gx_device_halftone *pdht, gs_halftone_component *phtc, char *name, int len)
 {
     int code;
-    int64_t w, h, bps;
+    int64_t w, h;
     gs_threshold2_halftone *ptp = &phtc->params.threshold2;
 
     ptp->thresholds.data = NULL;

@@ -668,7 +668,6 @@ pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim, pdf_stream *image_str
                   int comps, bool ImageMask)
 {
     int code;
-    bool colors_swapped = false;
     gs_image_enum *penum = NULL;
     //    unsigned char Buffer[1024];
     byte *buffer = NULL;
