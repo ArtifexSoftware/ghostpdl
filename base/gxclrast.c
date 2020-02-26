@@ -506,6 +506,7 @@ clist_playback_band(clist_playback_action playback_action,
     struct _cas {
         bool lop_enabled;
         gx_device_color dcolor;
+        gs_fixed_point fa_save;
     } clip_save;
     bool in_clip = false;
     gs_gstate gs_gstate;
@@ -1299,6 +1300,12 @@ set_phase:      /*
                         tdev = (gx_device *)&clip_accum;
                         clip_save.lop_enabled = state.lop_enabled;
                         clip_save.dcolor = fill_color;
+                        clip_save.fa_save.x = gs_gstate.fill_adjust.x;
+                        clip_save.fa_save.y = gs_gstate.fill_adjust.y;
+                        /* clip_path should match fill_path, i.e., with fill_adjust applied	*/
+                        /* If we get here with the fill_adjust = [0, 0], set it to [0.5, 0.5]i	*/
+                        if (clip_save.fa_save.x == 0 || clip_save.fa_save.y == 0)
+                            gs_gstate.fill_adjust.x = gs_gstate.fill_adjust.y = fixed_half;
                         /* temporarily set a solid color */
                         color_set_pure(&fill_color, (gx_color_index)1);
                         state.lop_enabled = false;
@@ -1334,6 +1341,9 @@ set_phase:      /*
                             (state.lop_enabled ? state.lop :
                              lop_default);
                         fill_color = clip_save.dcolor;
+                        /* restore the fill_adjust if it was changed by begin_clip */
+                        gs_gstate.fill_adjust.x = clip_save.fa_save.x;
+                        gs_gstate.fill_adjust.y = clip_save.fa_save.y;
                         in_clip = false;
                         break;
                     case cmd_opv_set_color_space:
