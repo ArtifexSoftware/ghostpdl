@@ -642,9 +642,14 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
             return code;
         /* If this was a pattern color, make sure and lock it in the pattern_cache */
         if (gx_dc_is_pattern1_color(gs_currentdevicecolor_inline(pgs))) {
-            gs_id id = gs_currentdevicecolor_inline(pgs)->colors.pattern.p_tile->id;
+            gs_id id;
 
-            code = gx_pattern_cache_entry_set_lock(pgs, id, true);
+            if(gs_currentdevicecolor_inline(pgs)->colors.pattern.p_tile != NULL) {
+                id = gs_currentdevicecolor_inline(pgs)->colors.pattern.p_tile->id;
+                code = gx_pattern_cache_entry_set_lock(pgs, id, true);
+            } else {
+                code = 0;
+            }
 	    if (code < 0)
 		return code;	/* lock failed -- tile not in cache? */
         }
@@ -744,11 +749,16 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
     }
 out:
     if (gx_dc_is_pattern1_color(gs_altdevicecolor_inline(pgs))) {
-	gs_id id = gs_altdevicecolor_inline(pgs)->colors.pattern.p_tile->id;
+        gs_id id;
 
-	rcode = gx_pattern_cache_entry_set_lock(pgs, id, false);
-	if (rcode < 0)
-	    return rcode;	/* unlock failed -- shouldn't be possible */
+        if (gs_altdevicecolor_inline(pgs)->colors.pattern.p_tile != NULL) {
+            code = gs_altdevicecolor_inline(pgs)->colors.pattern.p_tile->id;
+            rcode = gx_pattern_cache_entry_set_lock(pgs, id, false);
+	        if (rcode < 0)
+	            return rcode;	/* unlock failed -- shouldn't be possible */
+        } else {
+            code = 0;
+        }
     }
     if (code >= 0 && acode < 0)
         code = acode;
