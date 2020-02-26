@@ -212,9 +212,9 @@ gx_set_dash(gx_dash_params * dash, const float *pattern, uint length,
             else if (length != dash->pattern_size)
                 ppat = gs_resize_object(mem, ppat, size,
                                         "gx_set_dash(pattern)");
-            if (ppat == NULL)
-                return_error(gs_error_VMerror);
         }
+        if (ppat == NULL)
+            return_error(gs_error_VMerror);
         if (ppat != pattern)
             memcpy(ppat, pattern, length * sizeof(float));
     }
