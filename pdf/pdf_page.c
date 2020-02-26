@@ -190,8 +190,6 @@ static int pdfi_set_media_size(pdf_context *ctx, pdf_dict *page_dict)
     int64_t rotate = 0;
     double userunit = 1.0;
 
-    gs_c_param_list_write(&list, ctx->memory);
-
     code = pdfi_dict_get_type(ctx, page_dict, "MediaBox", PDF_ARRAY, (pdf_obj **)&default_media);
     if (code < 0) {
         code = gs_erasepage(ctx->pgs);
@@ -261,6 +259,13 @@ static int pdfi_set_media_size(pdf_context *ctx, pdf_dict *page_dict)
     fa.data = fv;
     fa.size = 2;
 
+    /* ----- setup specific device parameters ----- */
+    gs_c_param_list_write(&list, ctx->memory);
+
+    /* Setup the device transparency mode for this page */
+    code = param_write_bool((gs_param_list *)&list, "PageUsesTransparency",
+                            &ctx->page_has_transparency);
+
     code = param_write_float_array((gs_param_list *)&list, ".MediaSize", &fa);
     if (code >= 0)
     {
@@ -274,6 +279,7 @@ static int pdfi_set_media_size(pdf_context *ctx, pdf_dict *page_dict)
         }
     }
     gs_c_param_list_release(&list);
+    /* ----- end setup specific device parameters ----- */
 
     /* Resets the default matrix to NULL before doing initgraphics, because
      * otherwise initgraphics would keep old matrix.
@@ -398,6 +404,11 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num)
         goto exit2;
     }
 
+    /* Force NOTRANSPARENCY here if required, until we can get it working... */
+    /* Need to have this flag setup before calling pdfi_set_media_size() */
+    ctx->page_has_transparency = ctx->PageTransparencyArray[page_index] & page_bit ? 1 : 0;
+    dbgmprintf1(ctx->memory, "Current page transparency setting is %d\n", ctx->page_has_transparency);
+
     code = pdfi_set_media_size(ctx, page_dict);
     if (code < 0) {
         goto exit2;
@@ -428,11 +439,6 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num)
     ctx->TextBlockDepth = 0;
 
     pdfi_setup_transfers(ctx);
-
-    dbgmprintf1(ctx->memory, "Current page transparency setting is %d\n", ctx->PageTransparencyArray[page_index] & page_bit ? 1 : 0);
-
-    /* Force NOTRANSPARENCY here if required, until we can get it working... */
-    ctx->page_has_transparency = ctx->PageTransparencyArray[page_index] & page_bit ? 1 : 0;
 
     /* Set whether device needs OP support
      * This needs to be before transparency device is pushed, if applicable
