@@ -670,69 +670,110 @@ art_blend_luminosity_cmyk_16(int n_chan, uint16_t *gs_restrict dst, const uint16
         dst[i] = src[i];
 }
 
+
+/*
+
+Some notes on saturation blendmode:
+
+To test the results of deep color rendering, we ran a psdcmyk vs
+psdcmyk16 comparison. This showed differences on page 17 of the
+Altona_technical_v20_x4.pdf file in one patch. Simplifying the
+file shows that the saturation blend mode is showing significant
+differences between 8 and 16 bit rendering.
+
+Saturation blend mode is defined to not make any changes if we
+are writing over a pure grey color (as there is no 'hue' for
+it to saturate). You'd expect that the blending function would be
+continuous (i.e. that a small peturbation of the background color
+should only produce a small peturbation in the output), but this
+is NOT the case around pure greys.
+
+The example in the tested file, shows that psdcmyk is called with
+7a, 7a, 7a, which therefore leaves the background unchanged. For
+psdcmyk16, it's called with 7a01 7a03 7a01, which therefore does
+NOT leave the background unchanged. Testing by changing the 8 bit
+inputs to 7b 7a 7b (a small peturbation), gives output of 99 64 99
+(a large change).
+
+So, actually, the results given seem reasonable in that case.
+
+As a further indication that saturation blend mode results are
+'unstable' for 'near greys', the same patch in acrobat renders
+slightly blue, where the 16bit rendering in gs renders slightly
+pink. This can be explained by a small peturbation in the input
+color, which itself can be explained by small differences in the
+color profiles used.
+
+*/
+
 void
 art_blend_saturation_rgb_8(int n_chan, byte *gs_restrict dst, const byte *gs_restrict backdrop,
                            const byte *gs_restrict src)
 {
-    int rb = backdrop[0], gb = backdrop[1], bb = backdrop[2];
+    int32_t rb = backdrop[0], gb = backdrop[1], bb = backdrop[2];
     int rs = src[0], gs = src[1], bs = src[2];
-    int minb, maxb;
-    int mins, maxs;
-    int y;
+    int mins, maxs, minb, maxb;
+    int satCs, lumCb, lumC, d;
     int scale;
-    int r, g, b;
 
-    minb = rb < gb ? rb : gb;
-    minb = minb < bb ? minb : bb;
-    maxb = rb > gb ? rb : gb;
-    maxb = maxb > bb ? maxb : bb;
-    if (minb == maxb) {
-        /* backdrop has zero saturation, avoid divide by 0 */
+    if (rb == gb && gb == bb) {
+        /* backdrop has zero saturation, no change. */
         dst[0] = gb;
         dst[1] = gb;
         dst[2] = gb;
         return;
     }
 
+    /* Lum(Cb) */
+    lumCb = (rb * 77 + gb * 151 + bb * 28 + 0x80) >> 8;
+
     mins = rs < gs ? rs : gs;
+    maxs = rs < gs ? gs : rs;
     mins = mins < bs ? mins : bs;
-    maxs = rs > gs ? rs : gs;
-    maxs = maxs > bs ? maxs : bs;
+    maxs = maxs < bs ? bs : maxs;
 
-    scale = ((maxs - mins) << 16) / (maxb - minb);
-    y = (rb * 77 + gb * 151 + bb * 28 + 0x80) >> 8;
-    r = y + ((((rb - y) * scale) + 0x8000) >> 16);
-    g = y + ((((gb - y) * scale) + 0x8000) >> 16);
-    b = y + ((((bb - y) * scale) + 0x8000) >> 16);
+    /* Sat(Cs) = maxs - mins */
+    satCs = maxs - mins;
 
-    if ((r | g | b) & 0x100) {
-        int scalemin, scalemax;
-        int min, max;
+    /* C = {rb, bb, gb} = SetSat(Cb, Sat(Cs)) */
+    minb = rb < gb ? rb : gb;
+    maxb = rb < gb ? gb : rb;
+    minb = minb < bb ? minb : bb;
+    maxb = maxb < bb ? bb : maxb;
+    scale = (satCs<<8) / (maxb - minb);
+    rb = ((rb - minb) * scale + 0x80)>>8;
+    gb = ((gb - minb) * scale + 0x80)>>8;
+    bb = ((bb - minb) * scale + 0x80)>>8;
+    /* Leaves us with Cmin = 0, Cmax = s, and Cmid all as per the spec. */
 
-        min = r < g ? r : g;
-        min = min < b ? min : b;
-        max = r > g ? r : g;
-        max = max > b ? max : b;
-
-        if (min < 0)
-            scalemin = (y << 16) / (y - min);
-        else
-            scalemin = 0x10000;
-
-        if (max > 255)
-            scalemax = ((255 - y) << 16) / (max - y);
-        else
-            scalemax = 0x10000;
-
-        scale = scalemin < scalemax ? scalemin : scalemax;
-        r = y + (((r - y) * scale + 0x8000) >> 16);
-        g = y + (((g - y) * scale + 0x8000) >> 16);
-        b = y + (((b - y) * scale + 0x8000) >> 16);
+    /* SetLum(SetSat(Cb, Sat(Cs)), Lum(Cb)) */
+    /* lumC = Lum(C) */
+    lumC = (rb * 77 + gb * 151 + bb * 28 + 0x80) >> 8;
+    d = lumCb - lumC;
+    /* ClipColor(C) */
+    /* We know that Cmin = 0, Cmax = satCs. Therefore, given we are about
+     * to add 'd' back on to reset the luminance, we'll have overflow
+     * problems if d < 0 or d+satCs > 255. We further know that as
+     * 0 <= satCs <= 255, so only one of those can be true a time. */
+    if (d < 0) {
+        scale = (lumCb<<8) / lumC;
+        goto correct_overflow;
+    } else if (d + satCs > 255) {
+        scale = ((255 - lumCb)<<8) / (satCs - lumC);
+correct_overflow:
+        rb = lumCb + (((rb - lumC) * scale + 0x80)>>8);
+        gb = lumCb + (((gb - lumC) * scale + 0x80)>>8);
+        bb = lumCb + (((bb - lumC) * scale + 0x80)>>8);
+    } else {
+        /* C += d */
+        rb += d;
+        gb += d;
+        bb += d;
     }
 
-    dst[0] = r;
-    dst[1] = g;
-    dst[2] = b;
+    dst[0] = rb;
+    dst[1] = gb;
+    dst[2] = bb;
 }
 
 void
@@ -741,67 +782,70 @@ art_blend_saturation_rgb_16(int n_chan, uint16_t *gs_restrict dst, const uint16_
 {
     int rb = backdrop[0], gb = backdrop[1], bb = backdrop[2];
     int rs = src[0], gs = src[1], bs = src[2];
-    int minb, maxb;
-    int mins, maxs;
-    int y;
-    int64_t scale;
-    int64_t r, g, b;
+    int mins, maxs, minb, maxb;
+    int satCs, lumCb, lumC, d;
+    uint64_t scale;
 
-    minb = rb < gb ? rb : gb;
-    minb = minb < bb ? minb : bb;
-    maxb = rb > gb ? rb : gb;
-    maxb = maxb > bb ? maxb : bb;
-    if (minb == maxb) {
-        /* backdrop has zero saturation, avoid divide by 0 */
+    if (rb == gb && gb == bb) {
+        /* backdrop has zero saturation, no change. */
         dst[0] = gb;
         dst[1] = gb;
         dst[2] = gb;
         return;
     }
 
+    /* Lum(Cb) */
+    lumCb = (rb * 77 + gb * 151 + bb * 28 + 0x80) >> 8;
+
     mins = rs < gs ? rs : gs;
+    maxs = rs < gs ? gs : rs;
     mins = mins < bs ? mins : bs;
-    maxs = rs > gs ? rs : gs;
-    maxs = maxs > bs ? maxs : bs;
+    maxs = maxs < bs ? bb : maxs;
 
-    /* -65535 <= maxs - mins <= 65535 i.e. 17 bits */
-    /* -65535 <= maxb - minb <= 65535 i.e. 17 bits */
-    /* worst case, maxb - minb == +/- 1, so scale would be 33 bits. */
-    scale = (((int64_t)(maxs - mins)) << 16) / (maxb - minb);
-    /* 0 <= y <= 65535 */
-    y = (rb * 77 + gb * 151 + bb * 28 + 0x80) >> 8;
-    r = y + ((((rb - y) * scale) + 0x8000) >> 16);
-    g = y + ((((gb - y) * scale) + 0x8000) >> 16);
-    b = y + ((((bb - y) * scale) + 0x8000) >> 16);
+    /* Sat(Cs) = maxs - mins */
+    satCs = maxs - mins;
 
-    if ((r | g | b) & (int64_t)~0xffff) {
-        int64_t scalemin, scalemax;
-        int64_t min, max;
+    /* SetSat(Cb, Sat(Cs)) */
+    minb = rb < gb ? rb : gb;
+    maxb = rb < gb ? gb : rb;
+    minb = minb < bb ? minb : bb;
+    maxb = maxb < bb ? bb : maxb;
+    /* 0 <= maxb - minb <= 65535 */
+    /* 0 <= satCs <= 65535 */
+    scale = ((unsigned int)(satCs<<16)) / (maxb - minb);
+    rb = ((rb - minb) * scale + 0x8000)>>16;
+    gb = ((gb - minb) * scale + 0x8000)>>16;
+    bb = ((bb - minb) * scale + 0x8000)>>16;
+    /* Leaves us with Cmin = 0, Cmax = s, and Cmid all as per the spec. */
 
-        min = r < g ? r : g;
-        min = min < b ? min : b;
-        max = r > g ? r : g;
-        max = max > b ? max : b;
-
-        if (min < 0)
-            scalemin = (((int64_t)y) << 16) / (y - min);
-        else
-            scalemin = 0x10000;
-
-        if (max > 65535)
-            scalemax = (((int64_t)(65535 - y)) << 16) / (max - y);
-        else
-            scalemax = 0x10000;
-
-        scale = scalemin < scalemax ? scalemin : scalemax;
-        r = y + (((r - y) * scale + 0x8000) >> 16);
-        g = y + (((g - y) * scale + 0x8000) >> 16);
-        b = y + (((b - y) * scale + 0x8000) >> 16);
+    /* SetLum(SetSat(Cb, Sat(Cs)), Lum(Cb)) */
+    /* lumC = Lum(C) */
+    lumC = (rb * 77 + gb * 151 + bb * 28 + 0x80) >> 8;
+    d = lumCb - lumC;
+    /* ClipColor(C) */
+    /* We know that Cmin = 0, Cmax = satCs. Therefore, given we are about
+     * to add 'd' back on to reset the luminance, we'll have overflow
+     * problems if d < 0 or d+satCs > 65535. We further know that as
+     * 0 <= satCs <= 65535, so only one of those can be true a time. */
+    if (d < 0) {
+        scale = ((unsigned int)(lumCb<<16)) / (unsigned int)lumC;
+        goto correct_overflow;
+    } else if (d + satCs > 65535) {
+        scale = ((unsigned int)((65535 - lumCb)<<16)) / (unsigned int)(satCs - lumC);
+correct_overflow:
+        rb = lumCb + (((rb - lumC) * scale + 0x8000)>>16);
+        gb = lumCb + (((gb - lumC) * scale + 0x8000)>>16);
+        bb = lumCb + (((bb - lumC) * scale + 0x8000)>>16);
+    } else {
+        /* C += d */
+        rb += d;
+        gb += d;
+        bb += d;
     }
 
-    dst[0] = r;
-    dst[1] = g;
-    dst[2] = b;
+    dst[0] = rb;
+    dst[1] = gb;
+    dst[2] = bb;
 }
 
 void
