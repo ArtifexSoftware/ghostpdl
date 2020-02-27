@@ -792,6 +792,11 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     }
 
     code = gs_shfill(ctx->pgs, psh);
+    if (code < 0) {
+        dbgmprintf(ctx->memory, "ERROR: ignoring invalid smooth shading object, output may be incorrect\n");
+        ctx->pdf_warnings |= W_PDF_BADSHADING;
+        code = 0;
+    }
 
     if (ctx->page_has_transparency) {
         code1 = pdfi_trans_teardown(ctx, &trans_state);

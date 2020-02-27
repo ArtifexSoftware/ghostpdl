@@ -383,6 +383,8 @@ pdfi_report_errors(pdf_context *ctx)
             dmprintf(ctx->memory, "\tCouldn't set ICC profile space, used number of profile components to select a space.\n");
         if (ctx->pdf_warnings & W_PDF_BADTRSWITCH)
             dmprintf(ctx->memory, "\tSwitching from a text rendering mode including clip, to a mode which does not, is invalid.\n");
+        if (ctx->pdf_warnings & W_PDF_BADSHADING)
+            dmprintf(ctx->memory, "\tThe file has an error when interpreting a Shading object.\n");
     }
 
     dmprintf(ctx->memory, "\n   **** This file had errors that were repaired or ignored.\n");
