@@ -1544,7 +1544,7 @@ art_pdf_union_8(byte alpha1, byte alpha2)
 static byte*
 art_pdf_knockout_composite_pixel_alpha_8(byte *gs_restrict backdrop, byte tos_shape,
                         byte *gs_restrict dst, byte *gs_restrict src, int n_chan,
-                        gs_blend_mode_t blend_mode, 
+                        gs_blend_mode_t blend_mode,
                         const pdf14_nonseparable_blending_procs_t * pblend_procs,
                         pdf14_device *p14dev)
 {
