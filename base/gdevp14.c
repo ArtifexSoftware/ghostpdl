@@ -2278,9 +2278,9 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
     gs_image1_t image;
     gx_image_enum_common_t *info;
     pdf14_buf *buf = pdev->ctx->stack;
-    gs_int_rect rect = buf->rect;
+    gs_int_rect rect;
     int y;
-    int num_comp = buf->n_chan - 1;
+    int num_comp;
     byte *linebuf, *linebuf_unaligned;
     gs_color_space *pcs;
     int x1, y1, width, height;
@@ -2292,8 +2292,8 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
     uint16_t bg = pdev->ctx->additive ? 65535 : 0;
     bool has_tags = device_encodes_tags(dev);
     bool deep = pdev->ctx->deep;
-    int planestride = buf->planestride;
-    int rowstride = buf->rowstride;
+    int planestride;
+    int rowstride;
     blend_image_row_proc_t blend_row;
     bool color_mismatch = false;
     bool supports_alpha = false;
@@ -2301,6 +2301,15 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
     int alpha_offset, tag_offset;
     const byte* buf_ptrs[GS_CLIENT_COLOR_MAX_COMPONENTS];
 
+
+    /* Nothing was ever drawn. */
+    if (buf == NULL)
+        return 0;
+
+    num_comp = buf->n_chan - 1;
+    rect = buf->rect;
+    planestride = buf->planestride;
+    rowstride = buf->rowstride;
 
     /* Make sure that this is the only item on the stack. Fuzzing revealed a
        potential problem. Bug 694190 */
@@ -2574,16 +2583,25 @@ pdf14_cmykspot_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
 {
     pdf14_device * pdev = (pdf14_device *)dev;
     pdf14_buf *buf = pdev->ctx->stack;
-    gs_int_rect rect = buf->rect;
+    gs_int_rect rect;
     int x1, y1, width, height;
     gs_devn_params * pdevn_params = &pdev->devn_params;
     gs_separations * pseparations = &pdevn_params->separations;
-    int planestride = buf->planestride;
-    int rowstride = buf->rowstride;
+    int planestride;
+    int rowstride;
     bool deep = pdev->ctx->deep;
     const uint16_t bg = pdev->ctx->additive ? 65535 : 0;
-    int num_comp = buf->n_chan - 1;
+    int num_comp;
     byte *buf_ptr;
+
+    /* Nothing was ever drawn. */
+    if (buf == NULL)
+        return 0;
+
+    num_comp = buf->n_chan - 1;
+    rect = buf->rect;
+    planestride = buf->planestride;
+    rowstride = buf->rowstride;
 
     /* Make sure that this is the only item on the stack. Fuzzing revealed a
        potential problem. Bug 694190 */
@@ -2634,14 +2652,23 @@ pdf14_custom_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
     pdf14_device * pdev = (pdf14_device *)dev;
     pdf14_buf *buf = pdev->ctx->stack;
     bool deep = pdev->ctx->deep;
-    gs_int_rect rect = buf->rect;
+    gs_int_rect rect;
     int x0 = rect.p.x, y0 = rect.p.y;
-    int planestride = buf->planestride;
-    int rowstride = buf->rowstride;
-    int num_comp = buf->n_chan - 1;
+    int planestride = buf;
+    int rowstride = buf;
+    int num_comp = buf;
     const uint16_t bg = pdev->ctx->additive ? 0xffff : 0;
     int x1, y1, width, height;
     byte *buf_ptr;
+
+    /* Nothing was ever drawn. */
+    if (buf == NULL)
+        return 0;
+
+    num_comp = buf->n_chan - 1;
+    rect = buf->rect;
+    planestride = buf->planestride;
+    rowstride = buf->rowstride;
 
     /* Make sure that this is the only item on the stack. Fuzzing revealed a
        potential problem. Bug 694190 */
