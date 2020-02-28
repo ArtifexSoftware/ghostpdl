@@ -453,6 +453,7 @@ psd_prn_open(gx_device * pdev)
     pdev->color_info.depth = pdev->color_info.num_components *
                              pdev_psd->devn_params.bitspercomponent;
     pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
+    set_linear_color_bits_mask_shift(pdev);
     if (pdev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
         pdev->icc_struct->supports_devn = false;
     else

@@ -433,6 +433,33 @@ top:
     if (cs_lin_test && !gx_has_transfer(pgs, dev->color_info.num_components)) {
         pfs->cs_always_linear = true;
     }
+
+#ifdef IGNORE_SPEC_MATCH_ADOBE_SHADINGS
+    /* Per the spec. If the source space is DeviceN or Separation and the
+       colorants are not supported (i.e. if we are using the alternate tint
+       transform) the interpolation should occur in the source space to
+       accommodate non-linear tint transform functions.
+       e.g. We had a case where the transform function
+       was an increasing staircase. Including that function in the
+       gradient smoothness calculation gave us severe quantization. AR on
+       the other hand is doing the interpolation in device color space
+       and has a smooth result for that case. So AR is not following the spec. The
+       bit below solves the issues for Type 4 and Type 5 shadings as
+       this will avoid interpolations in source space. Type 6 and Type 7 will still
+       have interpolations in the source space even if pfs->cs_always_linear == true.
+       So the approach below does not solve those issues. To do that
+       without changing the shading code, we could make a linear
+       approximation to the alternate tint transform, which would
+       ensure smoothness like what AR provides.
+    */
+    if ((gs_color_space_get_index(pcs) == gs_color_space_index_DeviceN ||
+        gs_color_space_get_index(pcs) == gs_color_space_index_Separation) &&
+        using_alt_color_space((gs_gstate*)pgs) && (psh->head.type == 4 ||
+        psh->head.type == 5)) {
+        pfs->cs_always_linear = true;
+    }
+#endif
+
     return 0;
 }
 

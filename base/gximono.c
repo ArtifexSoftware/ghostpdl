@@ -1002,7 +1002,7 @@ image_render_mono_ht_cal(gx_image_enum * penum, const byte * buffer, int data_x,
         return 0;
 
     return cal_halftone_process_planar(penum->cal_ht, penum->memory->non_gc_memory,
-                                       &input, halftone_callback, dev);
+                                       (const byte * const *)&input, halftone_callback, dev);
 }
 #else
 /*

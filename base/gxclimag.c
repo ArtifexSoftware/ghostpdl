@@ -537,7 +537,8 @@ clist_begin_typed_image(gx_device * dev, const gs_gstate * pgs,
             indexed = false;
             num_components = gs_color_space_num_components(pcs);
         }
-        uses_color = pim->CombineWithColor && rop3_uses_T(pgs->log_op);
+        uses_color = pim->CombineWithColor &&
+                    (rop3_uses_T(pgs->log_op) || rop3_uses_S(pgs->log_op));
     }
     code = gx_image_enum_common_init((gx_image_enum_common_t *) pie,
                                      (const gs_data_image_t *) pim,
@@ -1096,7 +1097,7 @@ clist_image_plane_data(gx_image_enum_common_t * info,
             if (code >= 0) {
                 uint want_known = ctm_known | clip_path_known |
                             op_bm_tk_known | opacity_alpha_known |
-                            shape_alpha_known | alpha_known |
+                            shape_alpha_known | alpha_known | fill_adjust_known |
                             (pie->color_space.id == gs_no_id ? 0 :
                                                      color_space_known);
 
@@ -1827,10 +1828,10 @@ clist_image_unknowns(gx_device *dev, const clist_image_enum *pie)
     uint unknown = 0;
 
     /*
-     * Determine if the CTM, color space, and clipping region (and, for
-     * masked images or images with CombineWithColor, the current color)
-     * are unknown. Set the device state in anticipation of the values
-     * becoming known.
+     * Determine if the CTM, color space, fill_adjust and clipping region,
+     * (and, for masked images or images with CombineWithColor, the current
+     * color) are unknown. Set the device state in anticipation of the
+     * values becoming known.
      */
     if (cdev->gs_gstate.ctm.xx != pgs->ctm.xx ||
         cdev->gs_gstate.ctm.xy != pgs->ctm.xy ||
@@ -1852,6 +1853,11 @@ clist_image_unknowns(gx_device *dev, const clist_image_enum *pie)
             unknown |= color_space_known;
             cdev->color_space = pie->color_space;
         }
+    }
+    if (cdev->gs_gstate.fill_adjust.x != pgs->fill_adjust.x ||
+        cdev->gs_gstate.fill_adjust.y != pgs->fill_adjust.y) {
+        unknown |= fill_adjust_known;
+        cdev->gs_gstate.fill_adjust = pgs->fill_adjust;
     }
     if (cmd_check_clip_path(cdev, pie->pcpath))
         unknown |= clip_path_known;

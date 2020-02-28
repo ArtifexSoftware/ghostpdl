@@ -1126,7 +1126,15 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
         if (idmemory->reclaim != 0) {
             code = interp_reclaim(&minst->i_ctx_p, avm_global);
 
-            if (code < 0) {
+            /* We ignore gs_error_VMerror because it comes from gs_vmreclaim()
+            calling context_state_load(), and we don't seem to depend on the
+            missing fields. */
+            if (code == gs_error_VMerror) {
+                if (exit_status == 0 || exit_status == gs_error_Quit) {
+                    exit_status = gs_error_VMerror;
+                }
+            }
+            else if (code < 0) {
                 ref error_name;
                 if (tempnames)
                     free(tempnames);

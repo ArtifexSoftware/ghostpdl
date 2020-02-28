@@ -354,6 +354,14 @@ gs_gsave_for_save(gs_gstate * pgs, gs_gstate ** psaved)
     /* Cut the stack so we can't grestore past here. */
     *psaved = pgs->saved;
     pgs->saved = 0;
+
+    code = gs_gsave(pgs);
+    if (code < 0) {
+        pgs->saved = *psaved;
+        *psaved = NULL;
+        gs_grestore(pgs);
+        return code;
+    }
     return code;
 fail:
     if (new_cpath)
@@ -1200,11 +1208,11 @@ gstate_alloc(gs_memory_t * mem, client_name_t cname, const gs_gstate * pfrom)
 
 /* Copy the dash pattern from one gstate to another. */
 static int
-gstate_copy_dash(gs_gstate * pto, const gs_gstate * pfrom)
+gstate_copy_dash(gs_memory_t *mem, gx_dash_params *dash , const gs_gstate * pfrom)
 {
-    return gs_setdash(pto, pfrom->line_params.dash.pattern,
+    return gx_set_dash(dash, pfrom->line_params.dash.pattern,
                       pfrom->line_params.dash.pattern_size,
-                      pfrom->line_params.dash.offset);
+                      pfrom->line_params.dash.offset, mem);
 }
 
 /* Clone an existing graphics state. */
@@ -1217,28 +1225,35 @@ gstate_clone(gs_gstate * pfrom, gs_memory_t * mem, client_name_t cname,
 {
     gs_gstate *pgs = gstate_alloc(mem, cname, pfrom);
     gs_gstate_parts parts;
+    void *pdata = NULL;
+    gx_dash_params dash;
 
-    if (pgs == 0)
+    if (pgs == NULL)
         return 0;
     GSTATE_ASSIGN_PARTS(&parts, pgs);
-    *pgs = *pfrom;
-    /* Copy the dash pattern if necessary. */
-    if (pgs->line_params.dash.pattern) {
-        int code;
+    if (pfrom->client_data != NULL) {
+        pdata = (*pfrom->client_procs.alloc) (mem);
 
-        pgs->line_params.dash.pattern = 0;      /* force allocation */
-        code = gstate_copy_dash(pgs, pfrom);
-        if (code < 0)
-            goto fail;
-    }
-    if (pgs->client_data != 0) {
-        void *pdata = pgs->client_data = (*pgs->client_procs.alloc) (mem);
-
-        if (pdata == 0 ||
-         gstate_copy_client_data(pgs, pdata, pfrom->client_data, reason) < 0
+        if (pdata == NULL ||
+         gstate_copy_client_data(pfrom, pdata, pfrom->client_data, reason) < 0
             )
             goto fail;
     }
+    /* Copy the dash and dash pattern if necessary. */
+    dash = gs_currentlineparams_inline(pfrom)->dash;
+    if (pfrom->line_params.dash.pattern) {
+        int code;
+
+        dash.pattern = NULL; /* Ensures a fresh allocation */
+        code = gstate_copy_dash(mem, &dash, pfrom);
+        if (code < 0)
+            goto fail;
+    }
+    *pgs = *pfrom;
+    pgs->client_data = pdata;
+    gs_currentlineparams_inline(pgs)->dash = dash;
+    pgs->memory = mem;
+
     gs_gstate_copied(pgs);
     /* Don't do anything to clip_stack. */
 
@@ -1263,6 +1278,8 @@ gstate_clone(gs_gstate * pfrom, gs_memory_t * mem, client_name_t cname,
     cs_adjust_counts_icc(pgs, 1);
     return pgs;
   fail:
+    if (pdata != NULL)
+        (*pfrom->client_procs.free) (pdata, mem);
     memset(pgs->color, 0, 2*sizeof(gs_gstate_color));
     gs_free_object(mem, pgs->line_params.dash.pattern, cname);
     GSTATE_ASSIGN_PARTS(pgs, &parts);
@@ -1341,7 +1358,8 @@ gstate_copy(gs_gstate * pto, const gs_gstate * pfrom,
     GSTATE_ASSIGN_PARTS(&parts, pto);
     /* Copy the dash pattern if necessary. */
     if (pfrom->line_params.dash.pattern || pto->line_params.dash.pattern) {
-        int code = gstate_copy_dash(pto, pfrom);
+        int code = gstate_copy_dash(pto->memory,
+                             &(gs_currentlineparams_inline(pto)->dash), pfrom);
 
         if (code < 0)
             return code;
@@ -1420,14 +1438,24 @@ gs_id gx_get_clip_path_id(gs_gstate *pgs)
     return pgs->clip_path->id;
 }
 
-void gs_swapcolors_quick(gs_gstate *pgs)
+void gs_swapcolors_quick(const gs_gstate *cpgs)
 {
+    union {
+        const gs_gstate *cpgs;
+        gs_gstate *pgs;
+    } const_breaker;
+    gs_gstate *pgs;
     struct gx_cie_joint_caches_s *tmp_cie;
     gs_devicen_color_map          tmp_ccm;
     gs_client_color              *tmp_cc;
     int                           tmp;
     gx_device_color              *tmp_dc;
     gs_color_space               *tmp_cs;
+
+    /* Break const just once, neatly, here rather than
+     * hackily in every caller. */
+    const_breaker.cpgs = cpgs;
+    pgs = const_breaker.pgs;
 
     tmp_cc               = pgs->color[0].ccolor;
     pgs->color[0].ccolor = pgs->color[1].ccolor;

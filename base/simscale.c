@@ -8363,7 +8363,7 @@ s_imscale_process(stream_state *st, stream_cursor_read *pr,
                 pr->ptr += ncopy;
             } else {
                 memset(ss->window + 3 * w, 0xff, w);
-                ss->src_offset += ss->src_size;
+                ss->src_offset = ss->src_size;
             }
             if (ss->src_offset == ss->src_size) {
                 ss->src_offset = 0;

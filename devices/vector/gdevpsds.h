@@ -253,7 +253,8 @@ struct stream_image_transfer_state_s {
     stream_image_colors_reloc_ptrs, pcs, pdev, pgs)
 
 void s_image_colors_set_dimensions(stream_image_colors_state * st,
-                               int width, int height, int depth, int bits_per_sample);
+                                   int width, int height, int input_width,
+                                   int depth, int bits_per_sample);
 
 void s_image_colors_set_mask_colors(stream_image_colors_state * ss, uint *MaskColor);
 

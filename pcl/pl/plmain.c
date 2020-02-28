@@ -357,6 +357,8 @@ pl_main_run_file_utf8(pl_main_instance_t *minst, const char *prefix_commands, co
         code = s_process_read_buf(s);
         if (code < 0)
             break;
+        if (s->end_status == ERRC)
+            break;
 
         if (new_job) {
             /* The only time the current implementation won't be PJL,
@@ -559,8 +561,10 @@ pl_main_delete_instance(pl_main_instance_t *minst)
     /* close and deallocate the device */
     if (minst->device) {
         gs_closedevice(minst->device);
-        gs_unregister_root(minst->device->memory, minst->device_root,
-                           "pl_main_languages_delete_instance");
+        if (minst->device_root) {
+            gs_unregister_root(minst->device->memory, minst->device_root,
+                               "pl_main_languages_delete_instance");
+        }
         minst->device_root = NULL;
         gx_device_retain(minst->device, false);
         minst->device = NULL;
@@ -779,9 +783,11 @@ pl_top_create_device(pl_main_instance_t * pti, int index)
             return gs_error_VMerror;
 
         pti->device_root = NULL;
-        gs_register_struct_root(pti->device_memory, &pti->device_root,
+        code = gs_register_struct_root(pti->device_memory, &pti->device_root,
                                 (void **)&pti->device,
                                 "pl_top_create_device");
+        if (code < 0)
+            return code;
 
         {
             gs_c_param_list list;

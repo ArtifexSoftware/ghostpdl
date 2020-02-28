@@ -2765,7 +2765,7 @@ $(GLD)colimlib.dev : $(LIB_MAK) $(ECHOGS_XE) $(colimlib_) $(LIB_MAK) $(MAKEDIRS)
 	$(SETMOD) $(GLD)colimlib $(colimlib_)
 	$(ADDMOD) $(GLD)colimlib -imageclass 4_color
 
-$(GLOBJ)gxicolor.$(OBJ) : $(GLSRC)gxicolor.c $(AK) $(gx_h)\
+$(GLOBJ)gxicolor_0.$(OBJ) : $(GLSRC)gxicolor.c $(AK) $(gx_h)\
  $(gserrors_h) $(memory__h) $(gpcheck_h) $(gxarith_h)\
  $(gxfixed_h) $(gxfrac_h) $(gxmatrix_h)\
  $(gsccolor_h) $(gspaint_h) $(gzstate_h)\
@@ -2773,7 +2773,20 @@ $(GLOBJ)gxicolor.$(OBJ) : $(GLSRC)gxicolor.c $(AK) $(gx_h)\
  $(gxgstate_h) $(gxdevmem_h) $(gxcpath_h) $(gximage_h)\
  $(gsicc_h) $(gsicc_cache_h) $(gsicc_cms_h) $(gxcie_h)\
  $(gscie_h) $(gzht_h) $(gxht_thresh_h) $(gxdevsop_h) $(LIB_MAK) $(MAKEDIRS)
-	$(GLCC) $(GLO_)gxicolor.$(OBJ) $(C_) $(GLSRC)gxicolor.c
+	$(GLCC) $(GLO_)gxicolor_0.$(OBJ) $(C_) $(GLSRC)gxicolor.c
+
+$(GLOBJ)gxicolor_1.$(OBJ) : $(GLSRC)gxicolor.c $(AK) $(gx_h)\
+ $(gserrors_h) $(memory__h) $(gpcheck_h) $(gxarith_h)\
+ $(gxfixed_h) $(gxfrac_h) $(gxmatrix_h)\
+ $(gsccolor_h) $(gspaint_h) $(gzstate_h)\
+ $(gxdevice_h) $(gxcmap_h) $(gxdcconv_h) $(gxdcolor_h)\
+ $(gxgstate_h) $(gxdevmem_h) $(gxcpath_h) $(gximage_h)\
+ $(gsicc_h) $(gsicc_cache_h) $(gsicc_cms_h) $(gxcie_h)\
+ $(gscie_h) $(gzht_h) $(gxht_thresh_h) $(gxdevsop_h) $(LIB_MAK) $(MAKEDIRS)
+	$(GLCC) $(D_)WITH_CAL$(_D) $(I_)$(CALSRCDIR)$(_I) $(GLO_)gxicolor_1.$(OBJ) $(C_) $(GLSRC)gxicolor.c
+
+$(GLOBJ)gxicolor.$(OBJ) : $(GLOBJ)gxicolor_$(WITH_CAL).$(OBJ)
+	$(CP_) $(GLOBJ)gxicolor_$(WITH_CAL).$(OBJ) $(GLOBJ)gxicolor.$(OBJ)
 
 # ---- Level 1 path miscellany (arcs, pathbbox, path enumeration) ---- #
 

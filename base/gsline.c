@@ -177,7 +177,7 @@ gx_set_dash(gx_dash_params * dash, const float *pattern, uint length,
         dist_left = 0.0;
         if (mem && ppat) {
             gs_free_object(mem, ppat, "gx_set_dash(old pattern)");
-            ppat = 0;
+            ppat = NULL;
         }
     } else {
         uint size = length * sizeof(float);
@@ -205,16 +205,16 @@ gx_set_dash(gx_dash_params * dash, const float *pattern, uint length,
                (dist_left > 0 || pattern[index] != 0)
             )
             ink = !ink, index++;
-        if (mem) {
-            if (ppat == 0)
+        if (mem != NULL) {
+            if (ppat == NULL)
                 ppat = (float *)gs_alloc_bytes(mem, size,
                                                "gx_set_dash(pattern)");
             else if (length != dash->pattern_size)
                 ppat = gs_resize_object(mem, ppat, size,
                                         "gx_set_dash(pattern)");
-            if (ppat == 0)
-                return_error(gs_error_VMerror);
         }
+        if (ppat == NULL)
+            return_error(gs_error_VMerror);
         if (ppat != pattern)
             memcpy(ppat, pattern, length * sizeof(float));
     }

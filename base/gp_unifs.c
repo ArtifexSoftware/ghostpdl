@@ -195,16 +195,16 @@ int gp_pread_impl(char *buf, size_t count, gs_offset_t offset, FILE *f)
     int c;
     int64_t os, curroff = gp_ftell_impl(f);
     if (curroff < 0) return curroff;
-    
+
     os = gp_fseek_impl(f, offset, 0);
     if (os < 0) return os;
-    
+
     c = fread(buf, 1, count, f);
     if (c < 0) return c;
-    
+
     os = gp_fseek_impl(f, curroff, 0);
     if (os < 0) return os;
-    
+
     return c;
 #endif
 }
@@ -219,16 +219,16 @@ int gp_pwrite_impl(const char *buf, size_t count, gs_offset_t offset, FILE *f)
     int c;
     int64_t os, curroff = gp_ftell_impl(f);
     if (curroff < 0) return curroff;
-    
+
     os = gp_fseek_impl(f, offset, 0);
     if (os < 0) return os;
-    
+
     c = fwrite(buf, 1, count, f);
     if (c < 0) return c;
-    
+
     os = gp_fseek_impl(f, curroff, 0);
     if (os < 0) return os;
-    
+
     return c;
 #endif
 }
@@ -438,7 +438,6 @@ gp_enumerate_files_next_impl(gs_memory_t * mem, file_enum * pfen, char *ptr, uin
     char *pattern = pfen->pattern;
     int pathead = pfen->pathead;
     int len;
-    struct stat stbuf;
 
     if (pfen->first_time) {
         pfen->dirp = ((worklen == 0) ? opendir(".") : opendir(work));
@@ -636,11 +635,11 @@ bool gp_fseekable_impl(FILE *f)
 {
     struct stat s;
     int fno;
-    
+
     fno = fileno(f);
     if (fno < 0)
         return(false);
-    
+
     if (fstat(fno, &s) < 0)
         return(false);
 

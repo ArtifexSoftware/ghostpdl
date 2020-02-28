@@ -1511,7 +1511,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
         image[0].pixel.ColorSpace = pcs_orig;
         image[0].pixel.BitsPerComponent = pim->BitsPerComponent;
         code = psdf_setup_image_colors_filter(&pie->writer.binary[0],
-                    (gx_device_psdf *)pdev, &image[0].pixel, pgs);
+                                              (gx_device_psdf *)pdev, pim, &image[0].pixel, pgs);
         if (code < 0)
             goto fail_and_fallback;
         image[0].pixel.ColorSpace = pcs_device;
@@ -1556,8 +1556,9 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
             goto fail_and_fallback;
         } else if (convert_to_process_colors) {
             image[1].pixel.ColorSpace = pcs_orig;
+            image[1].pixel.BitsPerComponent = pim->BitsPerComponent;
             code = psdf_setup_image_colors_filter(&pie->writer.binary[1],
-                    (gx_device_psdf *)pdev, &image[1].pixel, pgs);
+                                              (gx_device_psdf *)pdev, pim, &image[1].pixel, pgs);
             if (code < 0) {
                 goto fail_and_fallback;
             }
@@ -1595,9 +1596,13 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
                                   pmat, pgs, force_lossless, in_line);
         if (code < 0)
             goto fail_and_fallback;
+        /* Bug701972 -- added input_width arg here.  For this case, just passing in the same
+         * width as before, so nothing changes.  This is an obscure case that isn't tested
+         * on the cluster (note that it requires CompatibilityLevel < 1.3).
+         */
         psdf_setup_image_to_mask_filter(&pie->writer.binary[i],
-             (gx_device_psdf *)pdev, pim->Width, pim->Height,
-             num_components, pim->BitsPerComponent, image[i].type4.MaskColor);
+                                        (gx_device_psdf *)pdev, pim->Width, pim->Height, pim->Width,
+                                        num_components, pim->BitsPerComponent, image[i].type4.MaskColor);
         code = pdf_begin_image_data_decoded(pdev, num_components, pranges, i,
                              &image[i].pixel, &cs_value, pie);
         if (code < 0)
