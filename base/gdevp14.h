@@ -318,4 +318,6 @@ int gs_pdf14_device_color_mon_set(gx_device *pdev, bool monitoring);
 /* depth are critical since these must match when reading back colors.             */
 bool pdf14_ok_to_optimize(gx_device *bdev);
 
+
+
 #endif /* gdevp14_INCLUDED */
