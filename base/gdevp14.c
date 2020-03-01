@@ -7630,6 +7630,15 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
     /* In case we have alphabits set */
     p14dev->color_info.anti_alias = target->color_info.anti_alias;
 
+    if (p14dev->ctx->stack == NULL &&
+        pdf14pct->params.is_pattern) {
+        code = pdf14_initialize_ctx((gx_device*)p14dev,
+            p14dev->color_info.num_components,
+            p14dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE);
+        if (code < 0)
+            return code;
+    }
+
     /* We should never go into this when using a blend color space */
     if (use_pdf14_accum) {
         const gx_device_pdf14_accum *accum_proto = NULL;
