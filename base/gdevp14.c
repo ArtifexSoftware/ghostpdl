@@ -4299,9 +4299,18 @@ pdf14_fill_mask(gx_device * orig_dev,
             group_rect.q.x = x + w;
             group_rect.q.y = y + h;
             if (!(w <= 0 || h <= 0)) {
+
+                pdf14_group_color_t *group_color_info = gs_alloc_struct(p14dev->memory->stable_memory,
+                    pdf14_group_color_t, &st_pdf14_clr, "pdf14_fill_mask");
+                if (group_color_info == NULL)
+                    return gs_error_VMerror;
+                group_color_info->icc_profile = NULL;
+                group_color_info->num_components = ptile->ttrans->n_chan - 1;
+                group_color_info->previous = NULL;
+
                 code = pdf14_push_transparency_group(p14dev->ctx, &group_rect,
                      1, 0, 65535, 65535, 65535, ptile->blending_mode, 0, 0,
-                     ptile->ttrans->n_chan-1, false, NULL, NULL, NULL, NULL, NULL);
+                     ptile->ttrans->n_chan-1, false, NULL, NULL, group_color_info, NULL, NULL);
                 if (code < 0)
                     return code;
                 /* Set up the output buffer information now that we have
@@ -4455,6 +4464,8 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_gstate * pgs,
 
         group_color_info = gs_alloc_struct(pdev->memory->stable_memory,
             pdf14_group_color_t, &st_pdf14_clr, "pdf14_tile_pattern_fill");
+        if (group_color_info == NULL)
+            return gs_error_VMerror;
 
         group_color_info->icc_profile = NULL;
         group_color_info->num_components = n_chan_tile - 1;
