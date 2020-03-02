@@ -3686,6 +3686,14 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *cpgs, gx_path *ppath,
         (pgs->ctm.xx == 0.0 && pgs->ctm.xy == 0.0 && pgs->ctm.yx == 0.0 && pgs->ctm.yy == 0.0))
         return 0;
 
+    /* Check if a context stack is set */
+    if (p14dev->ctx->stack == NULL) {
+        code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
+            dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE);
+        if (code < 0)
+            return code;
+    }
+
     code = gx_curr_fixed_bbox(pgs, &clip_bbox, NO_PATH);
     if (code < 0 && code != gs_error_unknownerror)
         return code;
@@ -4726,6 +4734,15 @@ pdf14_begin_typed_image(gx_device * dev, const gs_gstate * pgs,
 {
     const gs_image_t *pim = (const gs_image_t *)pic;
     int code;
+    pdf14_device* pdev14 = (pdf14_device*)dev;
+
+    /* Check if a context stack is set */
+    if (pdev14->ctx->stack == NULL) {
+        code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
+            dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE);
+        if (code < 0)
+            return code;
+    }
 
     /* If we are filling an image mask with a pattern that has a transparency
        then we need to do some special handling */
@@ -5456,6 +5473,14 @@ pdf14_text_begin(gx_device * dev, gs_gstate * pgs,
     uint text_mode = gs_currenttextrenderingmode(pgs);
     bool text_stroke = (text_mode == 1 || text_mode == 2 || text_mode == 5 || text_mode == 6);
     bool text_fill = (text_mode == 0 || text_mode == 2 || text_mode == 4 || text_mode == 6);
+
+    /* Check if a context stack is set */
+    if (pdev->ctx->stack == NULL) {
+        code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
+            dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE);
+        if (code < 0)
+            return code;
+    }
 
     if_debug0m('v', memory, "[v]pdf14_text_begin\n");
     pdf14_set_marking_params(dev, pgs);
