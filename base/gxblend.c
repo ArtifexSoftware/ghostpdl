@@ -800,7 +800,7 @@ art_blend_saturation_rgb_16(int n_chan, uint16_t *gs_restrict dst, const uint16_
     mins = rs < gs ? rs : gs;
     maxs = rs < gs ? gs : rs;
     mins = mins < bs ? mins : bs;
-    maxs = maxs < bs ? bb : maxs;
+    maxs = maxs < bs ? bs : maxs;
 
     /* Sat(Cs) = maxs - mins */
     satCs = maxs - mins;
