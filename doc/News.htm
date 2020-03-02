@@ -109,6 +109,15 @@ and we are now maintaining a policy of zero Coverity issues in the Ghostscript/G
 source base.
 </li>
 <li>
+<p><b>IMPORTANT:</b> In consultation with a representative of
+(<a href="http://www.openprinting.org">OpenPrinting</a>) it is
+our intention to deprecate and, in the not distant future, remove the
+OpenPrinting Vector/Raster Printer Drivers (that is, the <code>opvp</code>
+and <code>oprp</code> devices.
+<p> If you rely on either of these devices, <b><i>please</i></b> get in touch with
+us, so we can discuss your use case, and revise our plans accordingly.
+</li>
+<li>
 <p>IMPORTANT: We have forked LittleCMS2 into LittleCMS2mt (the "mt" indicating "multi-thred").
 LCMS2 is not thread safe, and cannot be made thread safe without breaking the ABI. Our fork
 will be thread safe, and include performance enhancements (these changes have all be been
