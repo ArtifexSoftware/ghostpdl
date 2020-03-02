@@ -2193,7 +2193,6 @@ art_pdf_recomposite_group_16(uint16_t *gs_restrict *dstp, uint16_t *gs_restrict 
     uint16_t dst_alpha;
     int i;
     uint32_t tmp;
-    int scale;
     uint16_t *gs_restrict dst = *dstp;
 
     if (src_alpha_g == 0)
@@ -2219,21 +2218,24 @@ art_pdf_recomposite_group_16(uint16_t *gs_restrict *dstp, uint16_t *gs_restrict 
         if (src_alpha_g != 65535 && dst_alpha != 0) {
             /* Uncomposite the color. In other words, solve
                "src = (src, src_alpha_g) over dst" for src */
-            scale = ((unsigned int)(dst_alpha * 65535 + (src_alpha_g>>1))) / src_alpha_g -
+            uint32_t scale = ((unsigned int)(dst_alpha * 65535 + (src_alpha_g>>1))) / src_alpha_g -
                 dst_alpha;
             /* scale is NOT in 16.16 form here. I've seen values of 0xfefe01, for example. */
             for (i = 0; i < n_chan; i++) {
                 int si, di;
                 int64_t tmp64;
+                int t;
 
                 si = src[i];
                 di = dst[i];
                 /* RJW: Nasty that we have to resort to 64bit here, but we'll live with it. */
-                tmp64 = (si - di) * (int64_t)scale + 0x8000;
-                tmp = si + (tmp64 >> 16);
-                if (tmp > 65535)
-                    tmp = 65535;
-                src[i] = tmp;
+                tmp64 = (si - di) * (uint64_t)scale + 0x8000;
+                t = si + (tmp64 >> 16);
+                if (t < 0)
+                    t = 0;
+                else if (t > 65535)
+                    t = 65535;
+                src[i] = t;
             }
         }
 
