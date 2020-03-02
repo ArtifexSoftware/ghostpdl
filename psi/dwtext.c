@@ -914,9 +914,9 @@ WndTextProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
          * initializes it here.
          */
         tw = (TW *)(((CREATESTRUCT FAR *)lParam)->lpCreateParams);
-        SetWindowLong(hwnd, 0, (LONG)tw);
+        SetWindowLongPtr(hwnd, 0, (LONG_PTR)tw);
     }
-    tw = (TW *)GetWindowLong(hwnd, 0);
+    tw = (TW *)GetWindowLongPtr(hwnd, 0);
 
     switch(message) {
         case WM_SYSCOMMAND:
