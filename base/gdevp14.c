@@ -5692,7 +5692,18 @@ pdf14_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
     const gx_clip_path *pcpath)
 {
     pdf14_device *pdev = (pdf14_device *)dev;
-    pdf14_buf *buf = pdev->ctx->stack;
+    pdf14_buf* buf;
+    int code;
+
+    /* Check if a context stack is set */
+    if (pdev->ctx->stack == NULL) {
+        code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
+            dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE);
+        if (code < 0)
+            return code;
+    }
+    buf = pdev->ctx->stack;
+
     int x = fixed2int(rect->p.x);
     int y = fixed2int(rect->p.y);
     int w = fixed2int(rect->q.x) - x;
@@ -5713,7 +5724,17 @@ pdf14_fill_rectangle(gx_device * dev,
                     int x, int y, int w, int h, gx_color_index color)
 {
     pdf14_device *pdev = (pdf14_device *)dev;
-    pdf14_buf *buf = pdev->ctx->stack;
+    pdf14_buf *buf;
+    int code;
+
+    /* Check if a context stack is set */
+    if (pdev->ctx->stack == NULL) {
+        code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
+            dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE);
+        if (code < 0)
+            return code;
+    }
+    buf = pdev->ctx->stack;
 
     fit_fill_xywh(dev, x, y, w, h);
     if (w <= 0 || h <= 0)
