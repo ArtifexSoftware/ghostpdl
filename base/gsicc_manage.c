@@ -3010,7 +3010,7 @@ gs_seticcdirectory(const gs_gstate * pgs, gs_param_string * pval)
         pname = (char *)gs_alloc_bytes(mem, namelen,
                                        "gs_seticcdirectory");
         if (pname == NULL)
-            return gs_rethrow(-1, "cannot allocate directory name");
+            return gs_rethrow(gs_error_VMerror, "cannot allocate directory name");
         memcpy(pname,pval->data,namelen-1);
         pname[namelen-1] = 0;
         if (gs_lib_ctx_set_icc_directory(mem, (const char*) pname, namelen) < 0) {
