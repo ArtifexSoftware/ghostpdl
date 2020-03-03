@@ -2396,7 +2396,7 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
 #endif
     if (width <= 0 || height <= 0 || buf->data == NULL)
         return 0;
-    buf_ptr = buf->data + rect.p.y * rowstride + (rect.p.x<<deep);
+    buf_ptr = buf->data;
 
     /* Check that target is OK.  From fuzzing results the target could have been
        destroyed, for e.g if it were a pattern accumulator that was closed
@@ -2728,7 +2728,7 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
     supports_alpha = dev_proc(target, dev_spec_op)(target, gxdso_supports_alpha, NULL, 0);
     code = 0;
 
-    buf_ptr = buf->data + rect.p.y * rowstride + (rect.p.x << deep);
+    buf_ptr = buf->data;
 
     /* Note. The logic below will need a little rework if we ever
        have a device that has tags and alpha support */
@@ -2977,7 +2977,6 @@ pdf14_cmykspot_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
     bool deep = pdev->ctx->deep;
     const uint16_t bg = pdev->ctx->additive ? 65535 : 0;
     int num_comp;
-    byte *buf_ptr;
 
     /* Nothing was ever drawn. */
     if (buf == NULL)
@@ -3001,7 +3000,7 @@ pdf14_cmykspot_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
     height = y1 - rect.p.y;
     if (width <= 0 || height <= 0 || buf->data == NULL)
         return 0;
-    buf_ptr = buf->data + rect.p.y * buf->rowstride + (rect.p.x<<deep);
+
 #if RAW_DUMP
     /* Dump the current buffer to see what we have. */
     dump_raw_buffer(pdev->ctx->memory,
