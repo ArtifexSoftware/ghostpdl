@@ -1120,6 +1120,7 @@ pdf14_buf_new(gs_int_rect *rect, bool has_tags, bool has_alpha_g,
     result->deep = deep;
     result->page_group = false;
     result->group_color_info = NULL;
+    result->group_popped = false;
 
     if (idle || height <= 0) {
         /* Empty clipping - will skip all drawings. */
@@ -1290,21 +1291,85 @@ pdf14_find_backdrop_buf(pdf14_ctx *ctx, bool *is_backdrop)
     return NULL;
 }
 
+/* This wil create the first buffer when we have
+   either the first drawing operation or transparency
+   group push.  At that time, the color space in which
+   we are going to be doing the alpha blend will be known */
+static int
+pdf14_initialize_ctx(gx_device* dev, int n_chan, bool additive)
+{
+    pdf14_device* pdev = (pdf14_device*)dev;
+    bool has_tags = device_encodes_tags(dev);
+    int num_spots = pdev->ctx->num_spots;
+    pdf14_buf* buf;
+    gs_memory_t* memory = dev->memory->stable_memory;
+
+    if_debug2m('v', dev->memory, "[v]pdf14_initialize_ctx: width = %d, height = %d\n",
+        dev->width, dev->height);
+
+    buf = pdf14_buf_new(&(pdev->ctx->rect), has_tags, false, false, false, n_chan + 1,
+        num_spots, memory, pdev->ctx->deep);
+    if (buf == NULL) {
+        return gs_error_VMerror;
+    }
+    if_debug5m('v', memory,
+        "[v]base buf: %d x %d, %d color channels, %d planes, deep=%d\n",
+        buf->rect.q.x, buf->rect.q.y, buf->n_chan, buf->n_planes, pdev->ctx->deep);
+
+    /* This check is not really needed */
+    if (buf->data != NULL) {
+        /* Memsetting by 0, so this copes with the deep case too */
+        if (buf->has_tags) {
+            memset(buf->data, 0, buf->planestride * (buf->n_planes - 1));
+        }
+        else {
+            memset(buf->data, 0, buf->planestride * buf->n_planes);
+        }
+    }
+    buf->saved = NULL;
+    pdev->ctx->stack = buf;
+    pdev->ctx->n_chan = n_chan;
+    pdev->ctx->additive = additive;
+    return 0;
+}
+
 static	int
 pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
                               bool knockout, uint16_t alpha, uint16_t shape, uint16_t opacity,
                               gs_blend_mode_t blend_mode, bool idle, uint mask_id,
-                              int numcomps, bool cm_back_drop,
-                              cmm_profile_t *group_profile,
-                              cmm_profile_t *tos_profile, pdf14_group_color_t* group_color,
-                              gs_gstate *pgs, gx_device *dev)
+                              int numcomps, bool cm_back_drop, bool shade_group,
+                              cmm_profile_t *group_profile, cmm_profile_t *tos_profile,
+                              pdf14_group_color_t* group_color, gs_gstate *pgs,
+                              gx_device *dev)
 {
     pdf14_buf *tos = ctx->stack;
     pdf14_buf *buf, * pdf14_backdrop;
     bool has_shape, is_backdrop;
+    int code;
 
     if_debug1m('v', ctx->memory,
                "[v]pdf14_push_transparency_group, idle = %d\n", idle);
+
+    /* If the previous group is the top group and was already popped then
+       it should be destroyed now and the current group is the page group */
+    if (tos != NULL && tos->group_popped) {
+        if_debug0m('v', ctx->memory, "[v]pop buf, (group_popped)\n");
+        pdf14_buf_free(tos);
+        ctx->stack = NULL;
+        tos = NULL;
+    }
+
+    /* If there is no parent group (i.e. this is the first group push) AND this group
+       was created during the clist writing phase to deal with shading fills, then
+       there is not yet a base group (the file did not have a page group).  Create
+       that base buffer now */
+    if (tos == NULL && shade_group) {
+        code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
+            dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE);
+        if (code < 0)
+            return code;
+        tos = ctx->stack;
+    }
 
     if (tos == NULL) {
         has_shape = false;
@@ -1445,8 +1510,12 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
     bool has_matte = false;
 
     /* This is our last buffer. There is nothing to 
-       compose to.  Keep this buffer until we have the put image. */
+       compose to.  Keep this buffer until we have the put image.
+       If we have another group push, this group must be destroyed.
+       This only occurs sometimes when at clist creation time
+       push_shfill_group occured and nothing was drawn in this group */
     if (nos == NULL) {
+        tos->group_popped = true;
         return 0;
     }
 
@@ -3342,6 +3411,8 @@ push_shfill_group(pdf14_clist_device *pdev,
     gs_rect cb;
     gs_gstate fudged_pgs = *pgs;
 
+    params.shade_group = true;
+
     /* gs_begin_transparency_group takes a bbox that it then
      * transforms by ctm. Our bbox has already been transformed,
      * so clear out the ctm. */
@@ -3385,47 +3456,6 @@ static int
 pop_shfill_group(gs_gstate *pgs)
 {
      return gs_end_transparency_group(pgs);
-}
-
-/* This wil create the first buffer when we have
-   either the first drawing operation or transparency
-   group push.  At that time, the color space in which
-   we are going to be doing the alpha blend will be known */
-static int
-pdf14_initialize_ctx(gx_device* dev, int n_chan, bool additive)
-{
-    pdf14_device* pdev = (pdf14_device*)dev;
-    bool has_tags = device_encodes_tags(dev);
-    int num_spots = pdev->ctx->num_spots;
-    pdf14_buf* buf;
-    gs_memory_t* memory = dev->memory->stable_memory;
-
-    if_debug2m('v', dev->memory, "[v]pdf14_initialize_ctx: width = %d, height = %d\n",
-        dev->width, dev->height);
-
-    buf = pdf14_buf_new(&(pdev->ctx->rect), has_tags, false, false, false, n_chan + 1,
-                        num_spots, memory, pdev->ctx->deep);
-    if (buf == NULL) {
-        return gs_error_VMerror;
-    }
-    if_debug5m('v', memory,
-        "[v]base buf: %d x %d, %d color channels, %d planes, deep=%d\n",
-        buf->rect.q.x, buf->rect.q.y, buf->n_chan, buf->n_planes, pdev->ctx->deep);
-
-    /* This check is not really needed */
-    if (buf->data != NULL) {
-        /* Memsetting by 0, so this copes with the deep case too */
-        if (buf->has_tags) {
-            memset(buf->data, 0, buf->planestride * (buf->n_planes - 1));
-        } else {
-            memset(buf->data, 0, buf->planestride * buf->n_planes);
-        }
-    }
-    buf->saved = NULL;
-    pdev->ctx->stack = buf;
-    pdev->ctx->n_chan = n_chan;
-    pdev->ctx->additive = additive;
-    return 0;
 }
 
 static int
@@ -4310,7 +4340,8 @@ pdf14_fill_mask(gx_device * orig_dev,
 
                 code = pdf14_push_transparency_group(p14dev->ctx, &group_rect,
                      1, 0, 65535, 65535, 65535, ptile->blending_mode, 0, 0,
-                     ptile->ttrans->n_chan-1, false, NULL, NULL, group_color_info, NULL, NULL);
+                     ptile->ttrans->n_chan-1, false, false, NULL, NULL,
+                     group_color_info, NULL, NULL);
                 if (code < 0)
                     return code;
                 /* Set up the output buffer information now that we have
@@ -4472,7 +4503,7 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_gstate * pgs,
         group_color_info->previous = NULL;
         
         code = pdf14_push_transparency_group(p14dev->ctx, &rect, 1, 0, (uint16_t)floor(65535 * p14dev->alpha + 0.5),
-                                             false, NULL, NULL, group_color_info, pgs_noconst,
+                                             false, false, NULL, NULL, group_color_info, pgs_noconst,
                                              pdev);
         if (code < 0)
             return code;
@@ -4714,7 +4745,7 @@ pdf14_patt_trans_image_fill(gx_device * dev, const gs_gstate * pgs,
                    ptile->uid.id, ptile->id);
         code = pdf14_push_transparency_group(p14dev->ctx, &group_rect, 1, 0, 65535, 65535,
                                              65535, pgs->blend_mode, 0, 0,
-                                             ptile->ttrans->n_chan-1, false, NULL,
+                                             ptile->ttrans->n_chan-1, false, false, NULL,
                                              NULL, NULL, (gs_gstate *)pgs, dev);
         /* Set up the output buffer information now that we have
            pushed the group */
@@ -5872,7 +5903,7 @@ pdf14_begin_transparency_group(gx_device *dev,
                                         (uint16_t)floor(65535 * ptgp->group_opacity + 0.5),
                                         pgs->blend_mode, ptgp->idle,
                                          ptgp->mask_id, pdev->color_info.num_components,
-                                         cm_back_drop, group_profile, tos_profile,
+                                         cm_back_drop, ptgp->shade_group, group_profile, tos_profile,
                                          group_color_info, pgs, dev);
     if (new_icc)
         gsicc_adjust_profile_rc(group_profile, -1, "pdf14_begin_transparency_group");
@@ -7919,6 +7950,7 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
             put_value(pbuf, pparams->opacity);
             put_value(pbuf, pparams->shape);
             put_value(pbuf, pparams->bbox);
+            put_value(pbuf, pparams->shade_group);
             put_value(pbuf, pparams->text_group);
             mask_id = pparams->mask_id;
             put_value(pbuf, mask_id);
@@ -8139,6 +8171,7 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
             read_value(data, params.opacity);
             read_value(data, params.shape);
             read_value(data, params.bbox);
+            read_value(data, params.shade_group);
             read_value(data, params.text_group);
             read_value(data, params.mask_id);
             read_value(data, params.icc_hash);

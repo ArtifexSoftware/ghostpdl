@@ -143,7 +143,9 @@ struct pdf14_buf_s {
     bool has_tags;
     bool deep; /* false => 8 bits, true => 16 bits */
     bool page_group;
-
+    bool group_popped;  /* Can occur in cases where clist created shading groups */
+                        /* If there is a group and is pushed and popped, with
+                           nothing drawn AND the clist created shading groups */
     gs_int_rect rect;
     /* Note: the traditional GS name for rowstride is "raster" */
 

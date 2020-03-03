@@ -76,6 +76,7 @@ typedef struct gs_transparency_group_params_s {
     float group_opacity;
     bool image_with_SMask;
     int text_group;
+    bool shade_group;
     bool idle;
     uint mask_id;
     int group_color_numcomps;

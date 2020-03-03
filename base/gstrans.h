@@ -120,6 +120,7 @@ struct gs_pdf14trans_params_s {
     bool text_knockout;
     int text_group;
     bool ais;
+    bool shade_group;
     float opacity;
     float shape;
     float fillconstantalpha;

@@ -176,6 +176,7 @@ gs_trans_group_params_init(gs_transparency_group_params_t *ptgp, float opacity)
     ptgp->iccprofile = NULL;
     ptgp->group_opacity = opacity;
     ptgp->group_shape = 1.0;
+    ptgp->shade_group = false;
 }
 
 int
@@ -214,7 +215,7 @@ gs_begin_transparency_group(gs_gstate *pgs,
     params.shape = ptgp->group_shape;
     params.blend_mode = pgs->blend_mode;
     params.text_group = ptgp->text_group;
-
+    params.shade_group = ptgp->shade_group;
     /* This function is called during the c-list writer side.
        Store some information so that we know what the color space is
        so that we can adjust according later during the clist reader.
@@ -332,6 +333,7 @@ gx_begin_transparency_group(gs_gstate * pgs, gx_device * pdev,
     tgp.idle = pparams->idle;
     tgp.mask_id = pparams->mask_id;
     tgp.text_group = pparams->text_group;
+    tgp.shade_group = pparams->shade_group;
 
     /* Needed so that we do proper blending */
     tgp.group_color = pparams->group_color;
