@@ -27,7 +27,6 @@ my %products=('abort' =>1,
 my $user;
 my $product="";
 my $filters="";
-my $ifilters="";
 my $extras="";
 my $command="";
 my $res="";
@@ -81,10 +80,10 @@ while ($t1=shift) {
     $relaxTimeout="relaxTimeout";
   } elsif ($t1=~m/^-/ || $t1=~m/^\d/) {
     $command.=$t1.' ';
+  } elsif ($t1 =~ m/ifilter=.*/) {
+    $filters.=$t1.' ';
   } elsif ($t1 =~ m/filter=.*/) {
     $filters.=$t1.' ';
-  } elsif ($t1 =~ m/ifilter=.*/) {
-    $ifilters.=$t1.' ';
   } elsif ($t1 =~ m/extras=.*/) {
     $extras.=$t1.' ';
   } elsif (exists $products{$t1}) {
@@ -238,7 +237,7 @@ if ($product ne "abort" ) { #&& $product ne "bmpcmp") {
 open(F,">cluster_command.run");
 print F "$user $product $arm $res $w32 $win32 $nr $pdfwrite $nopdfwrite $relaxTimeout $singlePagePDF $extended $smoke $cull $avx2 $cal\n";
 print F "$command\n";
-print F "$filters\t$ifilters\n";
+print F "$filters\n";
 print F "$extras\n";
 close(F);
 
@@ -254,7 +253,6 @@ if ($product ne "abort") {
 }
 print "$cmd\n" if ($verbose);
 #print "filters=$filters\n";
-#print "ifilters=$ifilters\n";
 #print "extras=$extras\n";
 `$cmd`;
 
