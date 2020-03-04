@@ -103,6 +103,14 @@ _cupsGlobals(void)
   pthread_once(&cups_globals_key_once, cups_globals_init);
 #endif /* HAVE_PTHREAD_H */
 
+#ifdef HAVE_PTHREAD_H
+#elif defined(WIN32)
+  if (!cups_global_mutex.m_init) {
+    InitializeCriticalSection(&cups_global_mutex.m_criticalSection);
+    cups_global_mutex.m_init = 1;
+  }
+#endif
+
  /*
   * See if we have allocated the data yet...
   */
