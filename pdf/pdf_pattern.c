@@ -392,9 +392,16 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
     code = pdfi_dict_get_number(ctx, pdict, "YStep", &YStep);
     if (code < 0)
         goto exit;
+
+    /* The spec says Resources are required, but in fact this doesn't seem to be true.
+     * (tests_private/pdf/sumatra/infinite_pattern_recursion.pdf)
+     */
     code = pdfi_dict_get_type(ctx, pdict, "Resources", PDF_DICT, (pdf_obj **)&Resources);
-    if (code < 0)
-        goto exit;
+    if (code < 0) {
+        dbgmprintf(ctx->memory, "PATTERN: Missing Resources in Pattern dict\n");
+        ctx->pdf_warnings |= W_PDF_BADPATTERN;
+        code = 0;
+    }
 
     /* (optional Matrix) */
     code = pdfi_dict_knownget_type(ctx, pdict, "Matrix", PDF_ARRAY, (pdf_obj **)&Matrix);

@@ -385,6 +385,8 @@ pdfi_report_errors(pdf_context *ctx)
             dmprintf(ctx->memory, "\tSwitching from a text rendering mode including clip, to a mode which does not, is invalid.\n");
         if (ctx->pdf_warnings & W_PDF_BADSHADING)
             dmprintf(ctx->memory, "\tThe file has an error when interpreting a Shading object.\n");
+        if (ctx->pdf_warnings & W_PDF_BADPATTERN)
+            dmprintf(ctx->memory, "\tThe file has an error when interpreting a Pattern object.\n");
     }
 
     dmprintf(ctx->memory, "\n   **** This file had errors that were repaired or ignored.\n");

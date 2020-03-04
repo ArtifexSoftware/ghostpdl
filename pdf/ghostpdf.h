@@ -146,6 +146,7 @@ typedef enum pdf_warning_flag_e {
     W_PDF_BADICC_USECOMPS = W_PDF_BADICC_USE_ALT << 1,
     W_PDF_BADTRSWITCH = W_PDF_BADICC_USECOMPS << 1,
     W_PDF_BADSHADING = W_PDF_BADTRSWITCH << 1,
+    W_PDF_BADPATTERN = W_PDF_BADSHADING << 1,
 } pdf_warning_flag;
 
 #define INITIAL_STACK_SIZE 32
