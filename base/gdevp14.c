@@ -1292,7 +1292,7 @@ pdf14_find_backdrop_buf(pdf14_ctx *ctx, bool *is_backdrop)
    group push.  At that time, the color space in which
    we are going to be doing the alpha blend will be known */
 static int
-pdf14_initialize_ctx(gx_device* dev, int n_chan, bool additive)
+pdf14_initialize_ctx(gx_device* dev, int n_chan, bool additive, gs_gstate* pgs)
 {
     pdf14_device* pdev = (pdf14_device*)dev;
     bool has_tags = device_encodes_tags(dev);
@@ -1326,6 +1326,42 @@ pdf14_initialize_ctx(gx_device* dev, int n_chan, bool additive)
     pdev->ctx->stack = buf;
     pdev->ctx->n_chan = n_chan;
     pdev->ctx->additive = additive;
+
+    /* Every buffer needs group color information including the base
+       one that is created for when we have no group */
+    buf->group_color_info = gs_alloc_struct(pdev->memory->stable_memory,
+            pdf14_group_color_t, &st_pdf14_clr, "pdf14_initialize_ctx");
+    if (buf->group_color_info == NULL)
+        return gs_error_VMerror;
+
+    if (pgs != NULL)
+        buf->group_color_info->get_cmap_procs = pgs->get_cmap_procs;
+    else
+        buf->group_color_info->get_cmap_procs = pdf14_get_cmap_procs;
+
+    buf->group_color_info->group_color_mapping_procs =
+        dev_proc(pdev, get_color_mapping_procs);
+    buf->group_color_info->group_color_comp_index =
+        dev_proc(pdev, get_color_comp_index);
+    buf->group_color_info->parent_blending_procs = pdev->blend_procs;
+    buf->group_color_info->polarity = pdev->color_info.polarity;
+    buf->group_color_info->num_components = pdev->color_info.num_components;
+    buf->group_color_info->isadditive = pdev->ctx->additive;
+    buf->group_color_info->unpack_procs = pdev->pdf14_procs;
+    buf->group_color_info->depth = pdev->color_info.depth;
+    buf->group_color_info->max_color = pdev->color_info.max_color;
+    buf->group_color_info->max_gray = pdev->color_info.max_gray;
+    buf->group_color_info->encode = dev_proc(pdev, encode_color);
+    buf->group_color_info->decode = dev_proc(pdev, decode_color);
+    memcpy(&(buf->group_color_info->comp_bits), &(pdev->color_info.comp_bits),
+        GX_DEVICE_COLOR_MAX_COMPONENTS);
+    memcpy(&(buf->group_color_info->comp_shift), &(pdev->color_info.comp_shift),
+        GX_DEVICE_COLOR_MAX_COMPONENTS);
+    buf->group_color_info->previous = NULL;  /* used during clist writing */
+    buf->group_color_info->icc_profile = pdev->icc_struct->device_profile[0];
+    if (buf->group_color_info->icc_profile != NULL)
+        gsicc_adjust_profile_rc(buf->group_color_info->icc_profile, 1, "pdf14_initialize_ctx");
+
     return 0;
 }
 
@@ -1361,7 +1397,7 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
        that base buffer now */
     if (tos == NULL && shade_group) {
         code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
-            dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE);
+            dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, pgs);
         if (code < 0)
             return code;
         tos = ctx->stack;
@@ -2365,7 +2401,6 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
     int alpha_offset, tag_offset;
     const byte* buf_ptrs[GS_CLIENT_COLOR_MAX_COMPONENTS];
 
-
     /* Nothing was ever drawn. */
     if (buf == NULL)
         return 0;
@@ -2391,7 +2426,7 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
 #endif
     if (width <= 0 || height <= 0 || buf->data == NULL)
         return 0;
-    buf_ptr = buf->data;
+    buf_ptr = buf->data + rect.p.y * buf->rowstride + (rect.p.x << deep);
 
     /* Check that target is OK.  From fuzzing results the target could have been
        destroyed, for e.g if it were a pattern accumulator that was closed
@@ -2723,7 +2758,7 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
     supports_alpha = dev_proc(target, dev_spec_op)(target, gxdso_supports_alpha, NULL, 0);
     code = 0;
 
-    buf_ptr = buf->data;
+    buf_ptr = buf->data + rect.p.y * buf->rowstride + (rect.p.x << deep);
 
     /* Note. The logic below will need a little rework if we ever
        have a device that has tags and alpha support */
@@ -3467,7 +3502,7 @@ pdf14_fill_path(gx_device *dev,	const gs_gstate *pgs,
     /* Check if a context stack is set */
     if (pdev14->ctx->stack == NULL) {
         code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
-            dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE);
+            dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, pgs);
         if (code < 0)
             return code;
     }
@@ -3604,7 +3639,7 @@ pdf14_stroke_path(gx_device *dev, const	gs_gstate	*pgs,
     /* Check if a context stack is set */
     if (p14dev->ctx->stack == NULL) {
         code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
-            dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE);
+            dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, pgs);
         if (code < 0)
             return code;
     }
@@ -3713,7 +3748,7 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *cpgs, gx_path *ppath,
     /* Check if a context stack is set */
     if (p14dev->ctx->stack == NULL) {
         code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
-            dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE);
+            dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, pgs);
         if (code < 0)
             return code;
     }
@@ -4315,7 +4350,7 @@ pdf14_fill_mask(gx_device * orig_dev,
     /* Check if a context stack is set */
     if (p14dev->ctx->stack == NULL) {
         code = pdf14_initialize_ctx(orig_dev, orig_dev->color_info.num_components,
-            orig_dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE);
+            orig_dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, NULL);
         if (code < 0)
             return code;
     }
@@ -4798,7 +4833,7 @@ pdf14_begin_typed_image(gx_device * dev, const gs_gstate * pgs,
     /* Check if a context stack is set */
     if (pdev14->ctx->stack == NULL) {
         code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
-            dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE);
+            dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, pgs);
         if (code < 0)
             return code;
     }
@@ -5536,7 +5571,7 @@ pdf14_text_begin(gx_device * dev, gs_gstate * pgs,
     /* Check if a context stack is set */
     if (pdev->ctx->stack == NULL) {
         code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
-            dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE);
+            dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, pgs);
         if (code < 0)
             return code;
     }
@@ -5750,7 +5785,7 @@ pdf14_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
     /* Check if a context stack is set */
     if (pdev->ctx->stack == NULL) {
         code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
-            dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE);
+            dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, pgs);
         if (code < 0)
             return code;
     }
@@ -5777,7 +5812,7 @@ pdf14_fill_rectangle(gx_device * dev,
     /* Check if a context stack is set */
     if (pdev->ctx->stack == NULL) {
         code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
-            dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE);
+            dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, NULL);
         if (code < 0)
             return code;
     }
@@ -6163,7 +6198,7 @@ pdf14_update_device_color_procs(gx_device *dev,
     if (pgs != NULL)
         group_color_info->get_cmap_procs        = pgs->get_cmap_procs;
     else
-        group_color_info->get_cmap_procs = pdev->trans_group_cmap_procs->get_cmap_procs;
+        group_color_info->get_cmap_procs = pdf14_get_cmap_procs;
 
     group_color_info->group_color_mapping_procs =
                                       dev_proc(pdev, get_color_mapping_procs);
@@ -7742,7 +7777,7 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
         pdf14pct->params.is_pattern) {
         code = pdf14_initialize_ctx((gx_device*)p14dev,
             p14dev->color_info.num_components,
-            p14dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE);
+            p14dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, pgs);
         if (code < 0)
             return code;
     }
