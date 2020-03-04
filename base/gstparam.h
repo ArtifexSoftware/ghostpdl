@@ -80,7 +80,7 @@ typedef struct gs_transparency_group_params_s {
     bool idle;
     uint mask_id;
     int group_color_numcomps;
-    gs_transparency_color_t group_color;
+    gs_transparency_color_t group_color_type;
     int64_t icc_hashcode;                    /* Needed when we are doing clist reading */
     cmm_profile_t *iccprofile;               /* The profile  */
 } gs_transparency_group_params_t;
@@ -118,7 +118,7 @@ typedef struct gs_transparency_mask_params_s {
 typedef struct gx_transparency_mask_params_s {
     gs_transparency_mask_subtype_t subtype;
     int group_color_numcomps;
-    gs_transparency_color_t group_color;
+    gs_transparency_color_t group_color_type;
     int Background_components;
     int Matte_components;
     float Background[GS_CLIENT_COLOR_MAX_COMPONENTS];

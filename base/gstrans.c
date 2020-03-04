@@ -247,7 +247,7 @@ gs_begin_transparency_group(gs_gstate *pgs,
         params.Isolated = true;
 
     if (ptgp->ColorSpace == NULL || params.Isolated != true) {
-        params.group_color = UNKNOWN;
+        params.group_color_type = UNKNOWN;
         params.group_color_numcomps = 0;
     } else {
         /* The /CS parameter was present.  Use what was set.  Currently
@@ -262,7 +262,7 @@ gs_begin_transparency_group(gs_gstate *pgs,
             /* Blending space is ICC based.  If we are doing c-list rendering
                we will need to write this color space into the clist.
                */
-            params.group_color = ICC;
+            params.group_color_type = ICC;
             params.group_color_numcomps =
                 blend_color_space->cmm_icc_profile_data->num_comps;
             /* Get the ICC profile */
@@ -285,12 +285,12 @@ gs_begin_transparency_group(gs_gstate *pgs,
                     /* We can end up here if we are in a deviceN color space and
                        we have a sep output device */
                     profile = NULL;
-                    params.group_color = DEVICEN;
+                    params.group_color_type = DEVICEN;
                     params.group_color_numcomps = cs_num_components(blend_color_space);
                 break;
             }
             if (profile != NULL) {
-                params.group_color = ICC;
+                params.group_color_type = ICC;
                 params.group_color_numcomps = profile->num_comps;
                 params.iccprofile = profile;
                 params.icc_hash = profile->hashcode;
@@ -336,7 +336,7 @@ gx_begin_transparency_group(gs_gstate * pgs, gx_device * pdev,
     tgp.shade_group = pparams->shade_group;
 
     /* Needed so that we do proper blending */
-    tgp.group_color = pparams->group_color;
+    tgp.group_color_type = pparams->group_color_type;
     tgp.group_color_numcomps = pparams->group_color_numcomps;
     tgp.iccprofile = pparams->iccprofile;
     tgp.icc_hashcode = pparams->icc_hash;
@@ -620,7 +620,7 @@ gs_begin_transparency_mask(gs_gstate * pgs,
         if ( blend_color_space->cmm_icc_profile_data != NULL ) {
         /* Blending space is ICC based.  If we are doing c-list rendering we will
            need to write this color space into the clist. */
-            params.group_color = ICC;
+            params.group_color_type = ICC;
             params.group_color_numcomps =
                     blend_color_space->cmm_icc_profile_data->num_comps;
             /* Get the ICC profile */
@@ -630,7 +630,7 @@ gs_begin_transparency_mask(gs_gstate * pgs,
             params.iccprofile = blend_color_space->cmm_icc_profile_data;
             params.icc_hash = blend_color_space->cmm_icc_profile_data->hashcode;
         } else {
-            params.group_color = GRAY_SCALE;
+            params.group_color_type = GRAY_SCALE;
             params.group_color_numcomps = 1;  /* Need to check */
         }
         /* Explicitly decrement the profile data since blend_color_space may not
@@ -652,7 +652,7 @@ gx_begin_transparency_mask(gs_gstate * pgs, gx_device * pdev,
     const int l = sizeof(pparams->Background[0]) * pparams->Background_components;
     const int m = sizeof(pparams->Matte[0]) * pparams->Matte_components;
 
-    tmp.group_color = pparams->group_color;
+    tmp.group_color_type = pparams->group_color_type;
     tmp.subtype = pparams->subtype;
     tmp.group_color_numcomps = pparams->group_color_numcomps;
     tmp.Background_components = pparams->Background_components;
@@ -665,7 +665,7 @@ gx_begin_transparency_mask(gs_gstate * pgs, gx_device * pdev,
     tmp.replacing = pparams->replacing;
     tmp.mask_id = pparams->mask_id;
 
-    if (tmp.group_color == ICC ) {
+    if (tmp.group_color_type == ICC ) {
         /* Do I need to ref count here? */
         tmp.iccprofile = pparams->iccprofile;
         tmp.icc_hashcode = pparams->icc_hash;
