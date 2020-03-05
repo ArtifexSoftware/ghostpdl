@@ -2544,7 +2544,28 @@ ps_get_glyphname_or_cid(gs_text_enum_t *penum,
     }
     else if (is_TT_from_type42) {
         /* This font must not use 'cmap', so compute glyph index from CharStrings : */
-        ref *CharStrings, *glyph_index;
+        ref *CharStrings, *glyph_index, *cmaptab;
+
+        if (dict_find_string(pdr, "TT_cmap", &cmaptab) > 0 &&
+           r_has_type(cmaptab, t_dictionary)) {
+           const char *nd = ".notdef";
+
+           if (enc_char_name->size >= strlen(nd) &&
+               enc_char_name->data[0] == nd[0] &&
+               !memcmp(enc_char_name->data, nd, strlen(nd))) {
+               ref ccref, *gidref, boolref;
+               make_int(&ccref, ccode);
+               if (dict_find(cmaptab, &ccref, &gidref) > 0 &&
+                   r_has_type(gidref, t_integer) &&
+                   gidref->value.intval == 0) {
+                   make_bool(&boolref, true);
+               }
+               else {
+                   make_bool(&boolref, false);
+               }
+               dict_put_string(pdr, ".render_notdef", &boolref, NULL);
+           }
+        }
 
         if (dict_find_string(pdr, "CharStrings", &CharStrings) <= 0
             || !r_has_type(CharStrings, t_dictionary))

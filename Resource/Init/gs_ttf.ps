@@ -1657,7 +1657,13 @@ currentdict /.pickcmap_with_no_xlatmap .undef
   /CharStrings currentdict end
 } .bind def
 
-% - .pdfcharkeys /CharStrings <charstrings> /Encoding <encoding>
+% If we're using a 1,0 cmap table, we need to store the table for the heuristic
+% to know whether to image or elide GID 0. See zfapi.c ps_get_glyphname_or_cid().
+% For other cmap types, we don't. Since this just pushes key/value pairs onto the
+% stack for a later dicttomark op, it doesn't matter that different branches can push
+% different numbers of objects.
+%
+% - .pdfcharkeys [/TT_cmap cmapdict] /CharStrings <charstrings> /Encoding <encoding>
 /.pdfcharkeys {
         % The following algorithms are per the PDF 1.7 Reference.
   TTFDEBUG { (.pdfcharkeys beg) = } if
@@ -1736,6 +1742,7 @@ currentdict /.pickcmap_with_no_xlatmap .undef
       } ifelse
     } {
       <00010000> //.findcmap exec {
+        /TT_cmap 1 index cmapdict 3 -1 roll
         TTFDEBUG { (Using cmap 1.0 for non-symbolic.) = } if
         prebuilt_encoding //null ne {
           prebuilt_encoding .invert_encoding exch .romanmacdict //.pdfmapchars exec
