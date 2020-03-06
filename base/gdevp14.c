@@ -1703,14 +1703,9 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	uint16_t bg_alph
                idle, replacing);
     ctx->smask_depth += 1;
 
-
-    /* If there is not yet a group present, then this is effectively the page group
-   and should be isolated. */
     if (ctx->stack == NULL) {
         return_error(gs_error_VMerror);
-    } else {
-        ctx->stack->group_color_info = group_color;
-    }
+    } 
 
     /* An optimization to consider is that if the SubType is Alpha
        then we really should only be allocating the alpha band and
@@ -1718,7 +1713,7 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	uint16_t bg_alph
        a bit tricky.  We need to create this based upon the size of
        the color space + an alpha channel. NOT the device size
        or the previous ctx size */
-    /* A mask doesnt worry about tags */
+    /* A mask doesn't worry about tags */
     buf = pdf14_buf_new(rect, false, false, false, idle, numcomps + 1, 0,
                         ctx->memory, ctx->deep);
     if (buf == NULL)
@@ -1732,6 +1727,8 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	uint16_t bg_alph
     buf->blend_mode = BLEND_MODE_Normal;
     buf->transfer_fn = transfer_fn;
     buf->matte_num_comps = Matte_components;
+    buf->group_color_info = group_color;
+
     if (Matte_components) {
         buf->matte = (uint16_t *)gs_alloc_bytes(ctx->memory, Matte_components * sizeof(uint16_t),
                                                 "pdf14_push_transparency_mask");
@@ -3044,6 +3041,7 @@ pdf14_cmykspot_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
     global_index++;
     clist_band_count++;
 #endif
+
     return pdf14_put_blended_image_cmykspot(dev, target, pgs,
                       buf, planestride, rowstride,
                       rect.p.x, rect.p.y, width, height, num_comp, bg,
