@@ -121,7 +121,7 @@ struct pdf14_group_color_s {
     int (*decode)(gx_device *, gx_color_index, gx_color_value *);
     int (*group_color_comp_index)(gx_device *, const char *, int, int);
     const pdf14_procs_t * unpack_procs;
-    const pdf14_nonseparable_blending_procs_t * parent_blending_procs;
+    const pdf14_nonseparable_blending_procs_t * blend_procs;
     cmm_profile_t *icc_profile;  /* Opaque to GC.  Allocated in non-gc memory */
     pdf14_group_color_t *previous;
 };
@@ -269,7 +269,7 @@ typedef struct pdf14_device_s {
     dev_proc_get_color_mapping_procs(*my_get_color_mapping_procs);
     dev_proc_get_color_comp_index(*my_get_color_comp_index);
 
-    pdf14_group_color_t *trans_group_cmap_procs;
+    pdf14_group_color_t *color_model_stack;
 
 } pdf14_device_t;
 
