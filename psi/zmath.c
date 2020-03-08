@@ -157,11 +157,11 @@ zexp(i_ctx_t *i_ctx_p)
         result = 1.0;		/* match Adobe; can't rely on C library */
     else
         result = pow(args[0], args[1]);
-    make_real(op - 1, result);
 #ifdef HAVE_ISINF
     if (isinf((op - 1)->value.realval))
         return_error(gs_error_undefinedresult);
 #endif
+    make_real(op - 1, result);
     pop(1);
     return 0;
 }

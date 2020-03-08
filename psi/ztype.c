@@ -281,7 +281,18 @@ zcvi(i_ctx_t *i_ctx_p)
     }
     if (!REAL_CAN_BE_INT(fval))
         return_error(gs_error_rangecheck);
-    make_int(op, (long)fval);   /* truncates towards 0 */
+    if (sizeof(ps_int) != 4 && gs_currentcpsimode(imemory)) {
+        if ((double)fval > (double)MAX_PS_INT32)       /* (double)0x7fffffff */
+            return_error(gs_error_rangecheck);
+        else if ((double)fval < (double)MIN_PS_INT32) /* (double)(int)0x80000000 */
+            return_error(gs_error_rangecheck);
+        else {
+            make_int(op, (ps_int) fval);
+        }
+    }
+    else
+        make_int(op, (ps_int) fval);
+
     return 0;
 }
 

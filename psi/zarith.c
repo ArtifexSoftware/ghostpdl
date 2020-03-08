@@ -148,6 +148,14 @@ zdiv(i_ctx_t *i_ctx_p)
                     break;
                 case t_integer:
                     result = (double)op1->value.intval / op->value.realval;
+#ifdef HAVE_ISINF
+                    if (isinf(result))
+                        return_error(gs_error_undefinedresult);
+#endif
+#ifdef HAVE_ISNAN
+                    if (isnan(result))
+                        return_error(gs_error_undefinedresult);
+#endif
                     make_real(op1, result);
             }
             break;
