@@ -36,10 +36,10 @@ struct _Jbig2ArithState {
     int CT;
 
     uint32_t next_word;
-    int next_word_bytes;
+    size_t next_word_bytes;
 
     Jbig2WordStream *ws;
-    int offset;
+    size_t offset;
 };
 
 /*
@@ -94,10 +94,12 @@ jbig2_arith_bytein(Jbig2Ctx *ctx, Jbig2ArithState *as)
 
         /* next_word_bytes can only be == 1 here, but let's be defensive. */
         if (as->next_word_bytes <= 1) {
-            as->next_word_bytes = as->ws->get_next_word(ctx, as->ws, as->offset, &as->next_word);
-            if (as->next_word_bytes < 0) {
+            int ret = as->ws->get_next_word(ctx, as->ws, as->offset, &as->next_word);
+            if (ret < 0) {
                 return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to check for marker code due to failure in underlying stream during arithmetic decoding");
             }
+
+            as->next_word_bytes = (size_t) ret;
             if (as->next_word_bytes == 0) {
                 jbig2_error(ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to read end of possible terminating marker code, assuming terminating marker code");
                 as->next_word = 0xFF900000;
@@ -151,10 +153,12 @@ jbig2_arith_bytein(Jbig2Ctx *ctx, Jbig2ArithState *as)
         as->next_word_bytes--;
 
         if (as->next_word_bytes == 0) {
-            as->next_word_bytes = as->ws->get_next_word(ctx, as->ws, as->offset, &as->next_word);
-            if (as->next_word_bytes < 0) {
+            int ret = as->ws->get_next_word(ctx, as->ws, as->offset, &as->next_word);
+            if (ret < 0) {
                 return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to read from underlying stream during arithmetic decoding");
             }
+            as->next_word_bytes = (size_t) ret;
+
             if (as->next_word_bytes == 0) {
                 jbig2_error(ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to find terminating marker code before end of underlying stream, assuming terminating marker code");
                 as->next_word = 0xFF900000;
@@ -183,6 +187,7 @@ Jbig2ArithState *
 jbig2_arith_new(Jbig2Ctx *ctx, Jbig2WordStream *ws)
 {
     Jbig2ArithState *result;
+    int ret;
 
     result = jbig2_new(ctx, Jbig2ArithState, 1);
     if (result == NULL) {
@@ -193,17 +198,20 @@ jbig2_arith_new(Jbig2Ctx *ctx, Jbig2WordStream *ws)
     result->ws = ws;
     result->offset = 0;
 
-    result->next_word_bytes = result->ws->get_next_word(ctx, result->ws, result->offset, &result->next_word);
-    if (result->next_word_bytes < 0) {
+    ret = result->ws->get_next_word(ctx, result->ws, result->offset, &result->next_word);
+    if (ret < 0) {
         jbig2_free(ctx->allocator, result);
         jbig2_error(ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to initialize underlying stream of arithmetic decoder");
         return NULL;
     }
+
+    result->next_word_bytes = (size_t) ret;
     if (result->next_word_bytes == 0) {
         jbig2_free(ctx->allocator, result);
         jbig2_error(ctx, JBIG2_SEVERITY_FATAL, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to read first byte from underlying stream when initializing arithmetic decoder");
         return NULL;
     }
+
     result->offset += result->next_word_bytes;
 
     /* Figure F.1 */

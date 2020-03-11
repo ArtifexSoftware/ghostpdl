@@ -211,6 +211,22 @@ jbig2_get_uint32(const byte *bptr)
     return ((uint32_t) get_uint16(bptr) << 16) | get_uint16(bptr + 2);
 }
 
+static size_t
+jbig2_find_buffer_size(size_t desired)
+{
+    const size_t initial_buf_size = 1024;
+    size_t size = initial_buf_size;
+
+    if (desired == SIZE_MAX)
+        return SIZE_MAX;
+
+    while (size < desired)
+        size <<= 1;
+
+    return size;
+}
+
+
 /**
  * jbig2_data_in: submit data for decoding
  * @ctx: The jbig2dec decoder context
@@ -226,14 +242,8 @@ jbig2_get_uint32(const byte *bptr)
 int
 jbig2_data_in(Jbig2Ctx *ctx, const unsigned char *data, size_t size)
 {
-    const size_t initial_buf_size = 1024;
-
     if (ctx->buf == NULL) {
-        size_t buf_size = initial_buf_size;
-
-        do
-            buf_size <<= 1;
-        while (buf_size < size);
+        size_t buf_size = jbig2_find_buffer_size(size);
         ctx->buf = jbig2_new(ctx, byte, buf_size);
         if (ctx->buf == NULL) {
             return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to allocate buffer when reading data");
@@ -241,21 +251,26 @@ jbig2_data_in(Jbig2Ctx *ctx, const unsigned char *data, size_t size)
         ctx->buf_size = buf_size;
         ctx->buf_rd_ix = 0;
         ctx->buf_wr_ix = 0;
-    } else if (ctx->buf_wr_ix + size > ctx->buf_size) {
-        if (ctx->buf_rd_ix <= (ctx->buf_size >> 1) && ctx->buf_wr_ix - ctx->buf_rd_ix + size <= ctx->buf_size) {
-            memmove(ctx->buf, ctx->buf + ctx->buf_rd_ix, ctx->buf_wr_ix - ctx->buf_rd_ix);
+    } else if (size > ctx->buf_size - ctx->buf_wr_ix) {
+        size_t already = ctx->buf_wr_ix - ctx->buf_rd_ix;
+
+        if (ctx->buf_rd_ix <= (ctx->buf_size >> 1) && size <= ctx->buf_size - already) {
+            memmove(ctx->buf, ctx->buf + ctx->buf_rd_ix, already);
         } else {
             byte *buf;
-            size_t buf_size = initial_buf_size;
+            size_t buf_size;
 
-            do
-                buf_size <<= 1;
-            while (buf_size < ctx->buf_wr_ix - ctx->buf_rd_ix + size);
+            if (already > SIZE_MAX - size) {
+                return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, JBIG2_UNKNOWN_SEGMENT_NUMBER, "read data causes buffer to grow too large");
+            }
+
+            buf_size = jbig2_find_buffer_size(size + already);
+
             buf = jbig2_new(ctx, byte, buf_size);
             if (buf == NULL) {
                 return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to allocate bigger buffer when reading data");
             }
-            memcpy(buf, ctx->buf + ctx->buf_rd_ix, ctx->buf_wr_ix - ctx->buf_rd_ix);
+            memcpy(buf, ctx->buf + ctx->buf_rd_ix, already);
             jbig2_free(ctx->allocator, ctx->buf);
             ctx->buf = buf;
             ctx->buf_size = buf_size;
@@ -263,6 +278,7 @@ jbig2_data_in(Jbig2Ctx *ctx, const unsigned char *data, size_t size)
         ctx->buf_wr_ix -= ctx->buf_rd_ix;
         ctx->buf_rd_ix = 0;
     }
+
     memcpy(ctx->buf + ctx->buf_wr_ix, data, size);
     ctx->buf_wr_ix += size;
 
@@ -387,7 +403,7 @@ jbig2_data_in(Jbig2Ctx *ctx, const unsigned char *data, size_t size)
                 segment->rows = jbig2_get_uint32(p);
                 p += 4;
 
-                segment->data_length = p - s;
+                segment->data_length = (size_t) (p - s);
                 jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number, "unknown length determined to be %lu", (long) segment->data_length);
             }
             else if (segment->data_length > ctx->buf_wr_ix - ctx->buf_rd_ix)
@@ -483,15 +499,15 @@ jbig2_word_stream_buf_get_next_word(Jbig2Ctx *ctx, Jbig2WordStream *self, size_t
     }
 
     if (offset < z->size) {
-        val |= z->data[offset] << 24;
+        val = (uint32_t) z->data[offset] << 24;
         ret++;
     }
     if (offset + 1 < z->size) {
-        val |= z->data[offset + 1] << 16;
+        val |= (uint32_t) z->data[offset + 1] << 16;
         ret++;
     }
     if (offset + 2 < z->size) {
-        val |= z->data[offset + 2] << 8;
+        val |= (uint32_t) z->data[offset + 2] << 8;
         ret++;
     }
     if (offset + 3 < z->size) {

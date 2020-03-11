@@ -86,8 +86,8 @@ struct _Jbig2Ctx {
 
     byte *buf;
     size_t buf_size;
-    unsigned int buf_rd_ix;
-    unsigned int buf_wr_ix;
+    size_t buf_rd_ix;
+    size_t buf_wr_ix;
 
     Jbig2FileState state;
 

@@ -178,7 +178,7 @@ jbig2_dump_huffman_table(const Jbig2HuffmanTable *table)
 int
 jbig2_huffman_skip(Jbig2HuffmanState *hs)
 {
-    int bits = hs->offset_bits & 7;
+    uint32_t bits = hs->offset_bits & 7;
     int code;
 
     if (bits) {
