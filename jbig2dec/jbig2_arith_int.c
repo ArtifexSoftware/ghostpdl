@@ -42,7 +42,7 @@ jbig2_arith_int_ctx_new(Jbig2Ctx *ctx)
     Jbig2ArithIntCtx *result = jbig2_new(ctx, Jbig2ArithIntCtx, 1);
 
     if (result == NULL) {
-        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate arithmetic integer coding state");
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to allocate arithmetic integer coding state");
         return NULL;
     } else {
         memset(result->IAx, 0, sizeof(result->IAx));
@@ -66,35 +66,35 @@ jbig2_arith_int_decode(Jbig2Ctx *ctx, Jbig2ArithIntCtx *actx, Jbig2ArithState *a
 
     S = jbig2_arith_decode(ctx, as, &IAx[PREV]);
     if (S < 0)
-        return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to decode IAx S");
+        return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to decode IAx S");
     PREV = (PREV << 1) | S;
 
     bit = jbig2_arith_decode(ctx, as, &IAx[PREV]);
     if (bit < 0)
-        return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to decode IAx decision bit 0");
+        return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to decode IAx decision bit 0");
     PREV = (PREV << 1) | bit;
     if (bit) {
         bit = jbig2_arith_decode(ctx, as, &IAx[PREV]);
         if (bit < 0)
-            return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to decode IAx decision bit 1");
+            return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to decode IAx decision bit 1");
         PREV = (PREV << 1) | bit;
 
         if (bit) {
             bit = jbig2_arith_decode(ctx, as, &IAx[PREV]);
             if (bit < 0)
-                return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to decode IAx decision bit 2");
+                return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to decode IAx decision bit 2");
             PREV = (PREV << 1) | bit;
 
             if (bit) {
                 bit = jbig2_arith_decode(ctx, as, &IAx[PREV]);
                 if (bit < 0)
-                    return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to decode IAx decision bit 3");
+                    return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to decode IAx decision bit 3");
                 PREV = (PREV << 1) | bit;
 
                 if (bit) {
                     bit = jbig2_arith_decode(ctx, as, &IAx[PREV]);
                     if (bit < 0)
-                        return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to decode IAx decision bit 4");
+                        return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to decode IAx decision bit 4");
                     PREV = (PREV << 1) | bit;
 
                     if (bit) {
@@ -125,7 +125,7 @@ jbig2_arith_int_decode(Jbig2Ctx *ctx, Jbig2ArithIntCtx *actx, Jbig2ArithState *a
     for (i = 0; i < n_tail; i++) {
         bit = jbig2_arith_decode(ctx, as, &IAx[PREV]);
         if (bit < 0)
-            return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to decode IAx V bit %d", i);
+            return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to decode IAx V bit %d", i);
         PREV = ((PREV << 1) & 511) | (PREV & 256) | bit;
         V = (V << 1) | bit;
     }

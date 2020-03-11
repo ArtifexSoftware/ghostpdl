@@ -125,7 +125,7 @@ void *jbig2_realloc(Jbig2Allocator *allocator, void *p, size_t size, size_t num)
 
 #define jbig2_renew(ctx, p, t, size) ((t *)jbig2_realloc(ctx->allocator, (p), size, sizeof(t)))
 
-int jbig2_error(Jbig2Ctx *ctx, Jbig2Severity severity, int32_t seg_idx, const char *fmt, ...)
+int jbig2_error(Jbig2Ctx *ctx, Jbig2Severity severity, uint32_t seg_idx, const char *fmt, ...)
 #ifdef __GNUC__
     __attribute__ ((format (__printf__, 4, 5)))
 #endif

@@ -60,11 +60,11 @@ jbig2_arith_bytein(Jbig2Ctx *ctx, Jbig2ArithState *as)
 
     /* Treat both errors and reading beyond end of stream as an error. */
     if (as->next_word_bytes < 0) {
-        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to read from underlying stream during arithmetic decoding");
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to read from underlying stream during arithmetic decoding");
         return -1;
     }
     if (as->next_word_bytes == 0) {
-        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to read beyond end of underlying stream during arithmetic decoding");
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to read beyond end of underlying stream during arithmetic decoding");
         return -1;
     }
 
@@ -96,10 +96,10 @@ jbig2_arith_bytein(Jbig2Ctx *ctx, Jbig2ArithState *as)
         if (as->next_word_bytes <= 1) {
             as->next_word_bytes = as->ws->get_next_word(ctx, as->ws, as->offset, &as->next_word);
             if (as->next_word_bytes < 0) {
-                return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to check for marker code due to failure in underlying stream during arithmetic decoding");
+                return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to check for marker code due to failure in underlying stream during arithmetic decoding");
             }
             if (as->next_word_bytes == 0) {
-                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to read end of possible terminating marker code, assuming terminating marker code");
+                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to read end of possible terminating marker code, assuming terminating marker code");
                 as->next_word = 0xFF900000;
                 as->next_word_bytes = 2;
                 as->C += 0xFF00;
@@ -153,10 +153,10 @@ jbig2_arith_bytein(Jbig2Ctx *ctx, Jbig2ArithState *as)
         if (as->next_word_bytes == 0) {
             as->next_word_bytes = as->ws->get_next_word(ctx, as->ws, as->offset, &as->next_word);
             if (as->next_word_bytes < 0) {
-                return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to read from underlying stream during arithmetic decoding");
+                return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to read from underlying stream during arithmetic decoding");
             }
             if (as->next_word_bytes == 0) {
-                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to find terminating marker code before end of underlying stream, assuming terminating marker code");
+                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to find terminating marker code before end of underlying stream, assuming terminating marker code");
                 as->next_word = 0xFF900000;
                 as->next_word_bytes = 2;
                 as->C += 0xFF00;
@@ -186,7 +186,7 @@ jbig2_arith_new(Jbig2Ctx *ctx, Jbig2WordStream *ws)
 
     result = jbig2_new(ctx, Jbig2ArithState, 1);
     if (result == NULL) {
-        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate arithmetic coding state");
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to allocate arithmetic coding state");
         return NULL;
     }
 
@@ -196,12 +196,12 @@ jbig2_arith_new(Jbig2Ctx *ctx, Jbig2WordStream *ws)
     result->next_word_bytes = result->ws->get_next_word(ctx, result->ws, result->offset, &result->next_word);
     if (result->next_word_bytes < 0) {
         jbig2_free(ctx->allocator, result);
-        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to initialize underlying stream of arithmetic decoder");
+        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to initialize underlying stream of arithmetic decoder");
         return NULL;
     }
     if (result->next_word_bytes == 0) {
         jbig2_free(ctx->allocator, result);
-        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to read first byte from underlying stream when initializing arithmetic decoder");
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to read first byte from underlying stream when initializing arithmetic decoder");
         return NULL;
     }
     result->offset += result->next_word_bytes;
@@ -212,7 +212,7 @@ jbig2_arith_new(Jbig2Ctx *ctx, Jbig2WordStream *ws)
     /* Figure E.20 (2) */
     if (jbig2_arith_bytein(ctx, result) < 0) {
         jbig2_free(ctx->allocator, result);
-        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to read second byte from underlying stream when initializing arithmetic decoder");
+        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to read second byte from underlying stream when initializing arithmetic decoder");
         return NULL;
     }
 
@@ -289,7 +289,7 @@ jbig2_arith_renormd(Jbig2Ctx *ctx, Jbig2ArithState *as)
     /* Figure E.18 */
     do {
         if (as->CT == 0 && jbig2_arith_bytein(ctx, as) < 0) {
-            return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to read byte from compressed data stream");
+            return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to read byte from compressed data stream");
         }
         as->A <<= 1;
         as->C <<= 1;
@@ -308,7 +308,7 @@ jbig2_arith_decode(Jbig2Ctx *ctx, Jbig2ArithState *as, Jbig2ArithCx *pcx)
     bool D;
 
     if (index >= MAX_QE_ARRAY_SIZE) {
-        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to determine probability estimate because index out of range");
+        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to determine probability estimate because index out of range");
     }
 
     pqe = &jbig2_arith_Qe[index];
@@ -326,7 +326,7 @@ jbig2_arith_decode(Jbig2Ctx *ctx, Jbig2ArithState *as, Jbig2ArithCx *pcx)
                 *pcx ^= pqe->mps_xor;
             }
             if (jbig2_arith_renormd(ctx, as) < 0) {
-                return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to renormalize decoder");
+                return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to renormalize decoder");
             }
 
             return D;
@@ -346,7 +346,7 @@ jbig2_arith_decode(Jbig2Ctx *ctx, Jbig2ArithState *as, Jbig2ArithCx *pcx)
             *pcx ^= pqe->lps_xor;
         }
         if (jbig2_arith_renormd(ctx, as) < 0) {
-            return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to renormalize decoder");
+            return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to renormalize decoder");
         }
 
         return D;

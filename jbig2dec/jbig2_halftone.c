@@ -51,7 +51,7 @@ jbig2_hd_new(Jbig2Ctx *ctx, const Jbig2PatternDictParams *params, Jbig2Image *im
 
     if (N == 0) {
         /* We've wrapped. */
-        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "params->GRAYMAX out of range");
+        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "params->GRAYMAX out of range");
         return NULL;
     }
 
@@ -60,7 +60,7 @@ jbig2_hd_new(Jbig2Ctx *ctx, const Jbig2PatternDictParams *params, Jbig2Image *im
     if (new != NULL) {
         new->patterns = jbig2_new(ctx, Jbig2Image *, N);
         if (new->patterns == NULL) {
-            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate pattern in collective bitmap dictionary");
+            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to allocate pattern in collective bitmap dictionary");
             jbig2_free(ctx->allocator, new);
             return NULL;
         }
@@ -72,7 +72,7 @@ jbig2_hd_new(Jbig2Ctx *ctx, const Jbig2PatternDictParams *params, Jbig2Image *im
         for (i = 0; i < N; i++) {
             new->patterns[i] = jbig2_image_new(ctx, HPW, HPH);
             if (new->patterns[i] == NULL) {
-                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to allocate pattern element image");
+                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to allocate pattern element image");
                 for (j = 0; j < i; j++)
                     jbig2_free(ctx->allocator, new->patterns[j]);
                 jbig2_free(ctx->allocator, new);
@@ -83,7 +83,7 @@ jbig2_hd_new(Jbig2Ctx *ctx, const Jbig2PatternDictParams *params, Jbig2Image *im
                proper sub image */
             code = jbig2_image_compose(ctx, new->patterns[i], image, -i * (int32_t) HPW, 0, JBIG2_COMPOSE_REPLACE);
             if (code < 0) {
-                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to compose image into collective bitmap dictionary");
+                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to compose image into collective bitmap dictionary");
                 for (j = 0; j < i; j++)
                     jbig2_free(ctx->allocator, new->patterns[j]);
                 jbig2_free(ctx->allocator, new);
@@ -91,7 +91,7 @@ jbig2_hd_new(Jbig2Ctx *ctx, const Jbig2PatternDictParams *params, Jbig2Image *im
             }
         }
     } else {
-        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate collective bitmap dictionary");
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to allocate collective bitmap dictionary");
     }
 
     return new;

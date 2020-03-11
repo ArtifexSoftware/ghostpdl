@@ -113,7 +113,7 @@ static void *jbig2dec_alloc(Jbig2Allocator *allocator_, size_t size)
         if (allocator->ctx) {
             size_t limit_mb = allocator->memory_limit / MBYTE;
             size_t peak_mb = allocator->memory_peak / MBYTE;
-            jbig2_error(allocator->ctx, JBIG2_SEVERITY_DEBUG, -1, "memory: limit: %lu Mbyte peak usage: %lu Mbyte", limit_mb, peak_mb);
+            jbig2_error(allocator->ctx, JBIG2_SEVERITY_DEBUG, JBIG2_UNKNOWN_SEGMENT_NUMBER, "memory: limit: %lu Mbyte peak usage: %lu Mbyte", limit_mb, peak_mb);
         }
     }
 
@@ -181,7 +181,7 @@ static void *jbig2dec_realloc(Jbig2Allocator *allocator_, void *p, size_t size)
         if (allocator->ctx) {
             size_t limit_mb = allocator->memory_limit / MBYTE;
             size_t peak_mb = allocator->memory_peak / MBYTE;
-            jbig2_error(allocator->ctx, JBIG2_SEVERITY_DEBUG, -1, "memory: limit: %lu Mbyte peak usage: %lu Mbyte", limit_mb, peak_mb);
+            jbig2_error(allocator->ctx, JBIG2_SEVERITY_DEBUG, JBIG2_UNKNOWN_SEGMENT_NUMBER, "memory: limit: %lu Mbyte peak usage: %lu Mbyte", limit_mb, peak_mb);
         }
     }
 
@@ -372,7 +372,7 @@ print_usage(void)
 }
 
 static void
-error_callback(void *error_callback_data, const char *buf, Jbig2Severity severity, int32_t seg_idx)
+error_callback(void *error_callback_data, const char *buf, Jbig2Severity severity, uint32_t seg_idx)
 {
     jbig2dec_error_callback_state_t *state = (jbig2dec_error_callback_state_t *) error_callback_data;
     char *type;
@@ -407,7 +407,7 @@ error_callback(void *error_callback_data, const char *buf, Jbig2Severity severit
     strlen("jbig2dec ") +
     strlen(type) + strlen(" ") +
     strlen(buf) + strlen(" ") +
-    strlen("(segment 0x") + strlen("2147483648") + strlen(")") +
+    strlen("(segment 0x") + strlen("4294967296") + strlen(")") +
     1 for trailing NUL. The constant parts amount to 45 bytes. */
     len = 45;
     len += strlen(type);
@@ -417,7 +417,7 @@ error_callback(void *error_callback_data, const char *buf, Jbig2Severity severit
     if (message == NULL) {
         return;
     }
-    if (seg_idx == -1)
+    if (seg_idx == JBIG2_UNKNOWN_SEGMENT_NUMBER)
         snprintf(message, len + 1, "jbig2dec %s %s", type, buf);
     else
         snprintf(message, len + 1, "jbig2dec %s %s (segment 0x%02x)", type, buf, seg_idx);
@@ -683,7 +683,7 @@ main(int argc, char **argv)
             with parse errors. */
             code = jbig2_complete_page(ctx);
             if (code < 0) {
-                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "unable to complete page");
+                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "unable to complete page");
                 goto cleanup;
             }
 
@@ -739,7 +739,7 @@ main(int argc, char **argv)
     if (allocator != NULL && allocator->ctx != NULL) {
         size_t limit_mb = allocator->memory_limit / MBYTE;
         size_t peak_mb = allocator->memory_peak / MBYTE;
-        jbig2_error(allocator->ctx, JBIG2_SEVERITY_DEBUG, -1, "memory: limit: %lu Mbyte peak usage: %lu Mbyte", limit_mb, peak_mb);
+        jbig2_error(allocator->ctx, JBIG2_SEVERITY_DEBUG, JBIG2_UNKNOWN_SEGMENT_NUMBER, "memory: limit: %lu Mbyte peak usage: %lu Mbyte", limit_mb, peak_mb);
     }
 
     /* fin */

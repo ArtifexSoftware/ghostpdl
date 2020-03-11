@@ -71,12 +71,12 @@ jbig2_alloc(Jbig2Allocator *allocator, size_t size, size_t num)
 /* jbig2_free and jbig2_realloc moved to the bottom of this file */
 
 static void
-jbig2_default_error(void *data, const char *msg, Jbig2Severity severity, int32_t seg_idx)
+jbig2_default_error(void *data, const char *msg, Jbig2Severity severity, uint32_t seg_idx)
 {
     /* report only fatal errors by default */
     if (severity == JBIG2_SEVERITY_FATAL) {
         fprintf(stderr, "jbig2 decoder FATAL ERROR: %s", msg);
-        if (seg_idx != -1)
+        if (seg_idx != JBIG2_UNKNOWN_SEGMENT_NUMBER)
             fprintf(stderr, " (segment 0x%02x)", seg_idx);
         fprintf(stderr, "\n");
         fflush(stderr);
@@ -84,7 +84,7 @@ jbig2_default_error(void *data, const char *msg, Jbig2Severity severity, int32_t
 }
 
 int
-jbig2_error(Jbig2Ctx *ctx, Jbig2Severity severity, int32_t segment_number, const char *fmt, ...)
+jbig2_error(Jbig2Ctx *ctx, Jbig2Severity severity, uint32_t segment_number, const char *fmt, ...)
 {
     char buf[1024];
     va_list ap;
@@ -108,7 +108,7 @@ jbig2_ctx_new_imp(Jbig2Allocator *allocator, Jbig2Options options, Jbig2GlobalCt
         Jbig2Ctx fakectx;
         fakectx.error_callback = error_callback;
         fakectx.error_callback_data = error_callback_data;
-        jbig2_error(&fakectx, JBIG2_SEVERITY_FATAL, -1, "incompatible jbig2dec header (%d.%d) and library (%d.%d) versions",
+        jbig2_error(&fakectx, JBIG2_SEVERITY_FATAL, JBIG2_UNKNOWN_SEGMENT_NUMBER, "incompatible jbig2dec header (%d.%d) and library (%d.%d) versions",
             jbig2_version_major, jbig2_version_minor, JBIG2_VERSION_MAJOR, JBIG2_VERSION_MINOR);
         return NULL;
     }
@@ -120,7 +120,7 @@ jbig2_ctx_new_imp(Jbig2Allocator *allocator, Jbig2Options options, Jbig2GlobalCt
 
     result = (Jbig2Ctx *) jbig2_alloc(allocator, sizeof(Jbig2Ctx), 1);
     if (result == NULL) {
-        error_callback(error_callback_data, "failed to allocate initial context", JBIG2_SEVERITY_FATAL, -1);
+        error_callback(error_callback_data, "failed to allocate initial context", JBIG2_SEVERITY_FATAL, JBIG2_UNKNOWN_SEGMENT_NUMBER);
         return NULL;
     }
 
@@ -138,7 +138,7 @@ jbig2_ctx_new_imp(Jbig2Allocator *allocator, Jbig2Options options, Jbig2GlobalCt
     result->n_segments_max = 16;
     result->segments = jbig2_new(result, Jbig2Segment *, result->n_segments_max);
     if (result->segments == NULL) {
-        error_callback(error_callback_data, "failed to allocate initial segments", JBIG2_SEVERITY_FATAL, -1);
+        error_callback(error_callback_data, "failed to allocate initial segments", JBIG2_SEVERITY_FATAL, JBIG2_UNKNOWN_SEGMENT_NUMBER);
         jbig2_free(allocator, result);
         return NULL;
     }
@@ -148,7 +148,7 @@ jbig2_ctx_new_imp(Jbig2Allocator *allocator, Jbig2Options options, Jbig2GlobalCt
     result->max_page_index = 4;
     result->pages = jbig2_new(result, Jbig2Page, result->max_page_index);
     if (result->pages == NULL) {
-        error_callback(error_callback_data, "failed to allocated initial pages", JBIG2_SEVERITY_FATAL, -1);
+        error_callback(error_callback_data, "failed to allocated initial pages", JBIG2_SEVERITY_FATAL, JBIG2_UNKNOWN_SEGMENT_NUMBER);
         jbig2_free(allocator, result->segments);
         jbig2_free(allocator, result);
         return NULL;
@@ -236,7 +236,7 @@ jbig2_data_in(Jbig2Ctx *ctx, const unsigned char *data, size_t size)
         while (buf_size < size);
         ctx->buf = jbig2_new(ctx, byte, buf_size);
         if (ctx->buf == NULL) {
-            return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate buffer when reading data");
+            return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to allocate buffer when reading data");
         }
         ctx->buf_size = buf_size;
         ctx->buf_rd_ix = 0;
@@ -253,7 +253,7 @@ jbig2_data_in(Jbig2Ctx *ctx, const unsigned char *data, size_t size)
             while (buf_size < ctx->buf_wr_ix - ctx->buf_rd_ix + size);
             buf = jbig2_new(ctx, byte, buf_size);
             if (buf == NULL) {
-                return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate bigger buffer when reading data");
+                return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to allocate bigger buffer when reading data");
             }
             memcpy(buf, ctx->buf + ctx->buf_rd_ix, ctx->buf_wr_ix - ctx->buf_rd_ix);
             jbig2_free(ctx->allocator, ctx->buf);
@@ -280,17 +280,17 @@ jbig2_data_in(Jbig2Ctx *ctx, const unsigned char *data, size_t size)
             if (ctx->buf_wr_ix - ctx->buf_rd_ix < 9)
                 return 0;
             if (memcmp(ctx->buf + ctx->buf_rd_ix, jbig2_id_string, 8))
-                return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "not a JBIG2 file header");
+                return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, JBIG2_UNKNOWN_SEGMENT_NUMBER, "not a JBIG2 file header");
             /* D.4.2 */
             ctx->file_header_flags = ctx->buf[ctx->buf_rd_ix + 8];
             /* Check for T.88 amendment 2 */
             if (ctx->file_header_flags & 0x04)
-                return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "file header indicates use of 12 adaptive template pixels (NYI)");
+                return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, JBIG2_UNKNOWN_SEGMENT_NUMBER, "file header indicates use of 12 adaptive template pixels (NYI)");
             /* Check for T.88 amendment 3 */
             if (ctx->file_header_flags & 0x08)
-                return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "file header indicates use of colored region segments (NYI)");
+                return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, JBIG2_UNKNOWN_SEGMENT_NUMBER, "file header indicates use of colored region segments (NYI)");
             if (ctx->file_header_flags & 0xFC) {
-                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "reserved bits (2-7) of file header flags are not zero (0x%02x)", ctx->file_header_flags);
+                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "reserved bits (2-7) of file header flags are not zero (0x%02x)", ctx->file_header_flags);
             }
             /* D.4.3 */
             if (!(ctx->file_header_flags & 2)) {        /* number of pages is known */
@@ -299,9 +299,9 @@ jbig2_data_in(Jbig2Ctx *ctx, const unsigned char *data, size_t size)
                 ctx->n_pages = jbig2_get_uint32(ctx->buf + ctx->buf_rd_ix + 9);
                 ctx->buf_rd_ix += 13;
                 if (ctx->n_pages == 1)
-                    jbig2_error(ctx, JBIG2_SEVERITY_INFO, -1, "file header indicates a single page document");
+                    jbig2_error(ctx, JBIG2_SEVERITY_INFO, JBIG2_UNKNOWN_SEGMENT_NUMBER, "file header indicates a single page document");
                 else
-                    jbig2_error(ctx, JBIG2_SEVERITY_INFO, -1, "file header indicates a %d page document", ctx->n_pages);
+                    jbig2_error(ctx, JBIG2_SEVERITY_INFO, JBIG2_UNKNOWN_SEGMENT_NUMBER, "file header indicates a %d page document", ctx->n_pages);
             } else {            /* number of pages not known */
                 ctx->n_pages = 0;
                 ctx->buf_rd_ix += 9;
@@ -309,10 +309,10 @@ jbig2_data_in(Jbig2Ctx *ctx, const unsigned char *data, size_t size)
             /* determine the file organization based on the flags - D.4.2 again */
             if (ctx->file_header_flags & 1) {
                 ctx->state = JBIG2_FILE_SEQUENTIAL_HEADER;
-                jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1, "file header indicates sequential organization");
+                jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, JBIG2_UNKNOWN_SEGMENT_NUMBER, "file header indicates sequential organization");
             } else {
                 ctx->state = JBIG2_FILE_RANDOM_HEADERS;
-                jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1, "file header indicates random-access organization");
+                jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, JBIG2_UNKNOWN_SEGMENT_NUMBER, "file header indicates random-access organization");
             }
             break;
         case JBIG2_FILE_SEQUENTIAL_HEADER:
@@ -403,7 +403,7 @@ jbig2_data_in(Jbig2Ctx *ctx, const unsigned char *data, size_t size)
         case JBIG2_FILE_EOF:
             if (ctx->buf_rd_ix == ctx->buf_wr_ix)
                 return 0;
-            return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "garbage beyond end of file");
+            return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "garbage beyond end of file");
         }
     }
 }
@@ -468,7 +468,7 @@ jbig2_word_stream_buf_get_next_word(Jbig2Ctx *ctx, Jbig2WordStream *self, size_t
     int ret = 0;
 
     if (self == NULL || word == NULL) {
-        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to read next word of stream because stream or output missing");
+        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to read next word of stream because stream or output missing");
     }
     if (offset >= z->size) {
         *word = 0;
@@ -501,7 +501,7 @@ jbig2_word_stream_buf_new(Jbig2Ctx *ctx, const byte *data, size_t size)
     Jbig2WordStreamBuf *result = jbig2_new(ctx, Jbig2WordStreamBuf, 1);
 
     if (result == NULL) {
-        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate word stream");
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to allocate word stream");
         return NULL;
     }
 

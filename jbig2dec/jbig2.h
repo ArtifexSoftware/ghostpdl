@@ -65,7 +65,8 @@ struct _Jbig2Image {
    handler is used which prints fatal errors to the stderr stream. */
 
 /* error callback */
-typedef void (*Jbig2ErrorCallback)(void *data, const char *msg, Jbig2Severity severity, int32_t seg_idx);
+#define JBIG2_UNKNOWN_SEGMENT_NUMBER ~0U
+typedef void (*Jbig2ErrorCallback)(void *data, const char *msg, Jbig2Severity severity, uint32_t seg_idx);
 
 /* memory allocation is likewise done via a set of callbacks so that
    clients can better control memory usage. If a NULL is passed for

@@ -102,14 +102,14 @@ jbig2_sd_new(Jbig2Ctx *ctx, uint32_t n_symbols)
         new_dict->glyphs = jbig2_new(ctx, Jbig2Image *, n_symbols);
         new_dict->n_symbols = n_symbols;
     } else {
-        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate new empty symbol dictionary");
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to allocate new empty symbol dictionary");
         return NULL;
     }
 
     if (new_dict->glyphs != NULL) {
         memset(new_dict->glyphs, 0, n_symbols * sizeof(Jbig2Image *));
     } else if (new_dict->n_symbols > 0) {
-        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate glyphs for new empty symbol dictionary");
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to allocate glyphs for new empty symbol dictionary");
         jbig2_free(ctx->allocator, new_dict);
         return NULL;
     }
@@ -215,7 +215,7 @@ jbig2_sd_cat(Jbig2Ctx *ctx, uint32_t n_dicts, Jbig2SymbolDict **dicts)
             for (j = 0; j < dicts[i]->n_symbols; j++)
                 new_dict->glyphs[k++] = jbig2_image_reference(ctx, dicts[i]->glyphs[j]);
     } else {
-        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to allocate new symbol dictionary");
+        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to allocate new symbol dictionary");
     }
 
     return new_dict;

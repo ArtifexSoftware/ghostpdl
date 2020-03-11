@@ -312,19 +312,19 @@ jbig2_decode_refinement_TPGRON(Jbig2Ctx *ctx, const Jbig2RefinementRegionParams 
     if (params->GRTEMPLATE == 0 &&
         (pixel_outside_field(params->grat[0], params->grat[1]) ||
         refpixel_outside_field(params->grat[2], params->grat[3])))
-        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1,
+        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, JBIG2_UNKNOWN_SEGMENT_NUMBER,
                            "adaptive template pixel is out of field");
 
     for (y = 0; y < GRH; y++) {
         int bit = jbig2_arith_decode(ctx, as, &GR_stats[start_context]);
         if (bit < 0)
-            return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to decode arithmetic code when handling refinement TPGRON1");
+            return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to decode arithmetic code when handling refinement TPGRON1");
         LTP ^= bit;
         if (!LTP) {
             for (x = 0; x < GRW; x++) {
                 bit = jbig2_arith_decode(ctx, as, &GR_stats[mkctx(params, image, x, y)]);
                 if (bit < 0)
-                    return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to decode arithmetic code when handling refinement TPGRON1");
+                    return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to decode arithmetic code when handling refinement TPGRON1");
                 jbig2_image_set_pixel(image, x, y, bit);
             }
         } else {
@@ -333,7 +333,7 @@ jbig2_decode_refinement_TPGRON(Jbig2Ctx *ctx, const Jbig2RefinementRegionParams 
                 if (iv < 0) {
                     int bit = jbig2_arith_decode(ctx, as, &GR_stats[mkctx(params, image, x, y)]);
                     if (bit < 0)
-                        return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to decode arithmetic code when handling refinement TPGRON1");
+                        return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to decode arithmetic code when handling refinement TPGRON1");
                     jbig2_image_set_pixel(image, x, y, bit);
                 } else
                     jbig2_image_set_pixel(image, x, y, iv);
