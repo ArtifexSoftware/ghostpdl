@@ -451,8 +451,7 @@ make_output_filename(const char *input_filename, const char *extension)
 {
     char *output_filename;
     const char *c, *e;
-    int extlen;
-    int len;
+    size_t extlen, len;
 
     if (extension == NULL) {
         fprintf(stderr, "no filename extension; cannot create output filename!\n");
