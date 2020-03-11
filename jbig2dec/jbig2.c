@@ -322,8 +322,16 @@ jbig2_data_in(Jbig2Ctx *ctx, const unsigned char *data, size_t size)
                 return 0; /* need more data */
             ctx->buf_rd_ix += header_size;
 
-            if (ctx->n_segments == ctx->n_segments_max) {
+            if (ctx->n_segments >= ctx->n_segments_max) {
                 Jbig2Segment **segments;
+
+                if (ctx->n_segments_max == UINT32_MAX) {
+                    ctx->state = JBIG2_FILE_EOF;
+                    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "too many segments in jbig2 image");
+                }
+                else if (ctx->n_segments_max > (UINT32_MAX >> 2)) {
+                    ctx->n_segments_max = UINT32_MAX;
+                }
 
                 segments = jbig2_renew(ctx, ctx->segments, Jbig2Segment *, (ctx->n_segments_max <<= 2));
                 if (segments == NULL) {
@@ -332,7 +340,6 @@ jbig2_data_in(Jbig2Ctx *ctx, const unsigned char *data, size_t size)
                 }
                 ctx->segments = segments;
             }
-
 
             ctx->segments[ctx->n_segments++] = segment;
             if (ctx->state == JBIG2_FILE_RANDOM_HEADERS) {
