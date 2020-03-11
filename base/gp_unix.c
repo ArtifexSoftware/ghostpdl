@@ -422,33 +422,36 @@ int gp_enumerate_fonts_next(void *enum_state, char **fontname, char **path)
         font = state->font_list->fonts[state->index];
         state->index++;
 
-        result = FcPatternGetString (font, FC_FAMILY, 0, &family_fc);
-        if (result != FcResultMatch || family_fc == NULL) {
-            dmlprintf(state->mem, "DEBUG: FC_FAMILY mismatch\n");
-            continue;
-        }
-
+        /* We do the FC_FILE first because this *should* never fail
+         * and it gives us a string to use in later debug prints
+         */
         result = FcPatternGetString (font, FC_FILE, 0, &file_fc);
         if (result != FcResultMatch || file_fc == NULL) {
             dmlprintf(state->mem, "DEBUG: FC_FILE mismatch\n");
             continue;
         }
 
+        result = FcPatternGetString (font, FC_FAMILY, 0, &family_fc);
+        if (result != FcResultMatch || family_fc == NULL) {
+            dmlprintf1(state->mem, "DEBUG: FC_FAMILY mismatch in %s\n", (char *)file_fc);
+            continue;
+        }
+
         result = FcPatternGetBool (font, FC_OUTLINE, 0, &outline_fc);
         if (result != FcResultMatch) {
-            dmlprintf1(state->mem, "DEBUG: FC_OUTLINE failed to match on %s\n", (char*)family_fc);
+            dmlprintf2(state->mem, "DEBUG: FC_OUTLINE failed to match on %s in %s\n", (char*)family_fc, (char *)file_fc);
             continue;
         }
 
         result = FcPatternGetInteger (font, FC_SLANT, 0, &slant_fc);
         if (result != FcResultMatch) {
-            dmlprintf(state->mem, "DEBUG: FC_SLANT didn't match\n");
+            dmlprintf1(state->mem, "DEBUG: FC_SLANT didn't match in %s\n", (char *)file_fc);
             continue;
         }
 
         result = FcPatternGetInteger (font, FC_WEIGHT, 0, &weight_fc);
         if (result != FcResultMatch) {
-            dmlprintf(state->mem, "DEBUG: FC_WEIGHT didn't match\n");
+            dmlprintf1(state->mem, "DEBUG: FC_WEIGHT didn't match in %s\n", (char *)file_fc);
             continue;
         }
         break;
