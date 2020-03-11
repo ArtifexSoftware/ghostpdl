@@ -154,7 +154,7 @@ jbig2_ctx_new_imp(Jbig2Allocator *allocator, Jbig2Options options, Jbig2GlobalCt
         return NULL;
     }
     {
-        int index;
+        uint32_t index;
 
         for (index = 0; index < result->max_page_index; index++) {
             result->pages[index].state = JBIG2_PAGE_FREE;
@@ -412,7 +412,7 @@ Jbig2Allocator *
 jbig2_ctx_free(Jbig2Ctx *ctx)
 {
     Jbig2Allocator *ca;
-    int i;
+    uint32_t i;
 
     if (ctx == NULL)
         return NULL;

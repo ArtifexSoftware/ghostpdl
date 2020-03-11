@@ -72,13 +72,21 @@ jbig2_page_info(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_dat
 
     /* find a free page */
     {
-        int index, j;
+        size_t index, j;
 
         index = ctx->current_page;
         while (ctx->pages[index].state != JBIG2_PAGE_FREE) {
             index++;
             if (index >= ctx->max_page_index) {
                 /* grow the list */
+
+                if (ctx->max_page_index == SIZE_MAX) {
+                    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "too many pages in jbig2 image");
+                }
+                else if (ctx->max_page_index > (SIZE_MAX >> 2)) {
+                    ctx->max_page_index = SIZE_MAX;
+                }
+
                 pages = jbig2_renew(ctx, ctx->pages, Jbig2Page, (ctx->max_page_index <<= 2));
                 if (pages == NULL) {
                     return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to reallocate pages");

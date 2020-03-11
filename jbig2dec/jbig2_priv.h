@@ -101,8 +101,8 @@ struct _Jbig2Ctx {
 
     /* list of decoded pages, including the one in progress,
        currently stored as a contiguous, 0-indexed array. */
-    int current_page;
-    int max_page_index;
+    uint32_t current_page;
+    uint32_t max_page_index;
     Jbig2Page *pages;
 };
 
