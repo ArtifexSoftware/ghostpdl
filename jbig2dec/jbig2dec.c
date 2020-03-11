@@ -70,7 +70,7 @@ typedef struct {
 
 typedef struct {
     int verbose;
-    char *last_message;
+    const char *last_message;
     Jbig2Severity severity;
     char *type;
     long repeats;
@@ -372,12 +372,11 @@ print_usage(void)
 }
 
 static void
-error_callback(void *error_callback_data, const char *buf, Jbig2Severity severity, uint32_t seg_idx)
+error_callback(void *error_callback_data, const char *message, Jbig2Severity severity, uint32_t seg_idx)
 {
     jbig2dec_error_callback_state_t *state = (jbig2dec_error_callback_state_t *) error_callback_data;
     char *type;
-    int len;
-    char *message;
+    int ret;
 
     switch (severity) {
     case JBIG2_SEVERITY_DEBUG:
@@ -403,46 +402,40 @@ error_callback(void *error_callback_data, const char *buf, Jbig2Severity severit
         break;
     }
 
-    /* Worst case length using format "jbig2dec %s %s (segment 0x%02x)".
-    strlen("jbig2dec ") +
-    strlen(type) + strlen(" ") +
-    strlen(buf) + strlen(" ") +
-    strlen("(segment 0x") + strlen("4294967296") + strlen(")") +
-    1 for trailing NUL. The constant parts amount to 45 bytes. */
-    len = 45;
-    len += strlen(type);
-    len += strlen(buf);
-
-    message = malloc(len + 1);
-    if (message == NULL) {
-        return;
-    }
-    if (seg_idx == JBIG2_UNKNOWN_SEGMENT_NUMBER)
-        snprintf(message, len + 1, "jbig2dec %s %s", type, buf);
-    else
-        snprintf(message, len + 1, "jbig2dec %s %s (segment 0x%02x)", type, buf, seg_idx);
-
-    if (state->last_message != NULL && strcmp(message, state->last_message)) {
+    if (state->last_message == NULL || (state->last_message != NULL && strcmp(message, state->last_message) && state->severity == severity && state->type == type)) {
         if (state->repeats > 1)
-            fprintf(stderr, "jbig2dec %s last message repeated %ld times\n", state->type, state->repeats);
-        fprintf(stderr, "%s\n", message);
-        free(state->last_message);
+        {
+            ret = fprintf(stderr, "jbig2dec %s last message repeated %ld times\n", state->type, state->repeats);
+            if (ret < 0)
+                goto printerror;
+        }
+
+        if (seg_idx == JBIG2_UNKNOWN_SEGMENT_NUMBER)
+            ret = fprintf(stderr, "jbig2dec %s %s\n", type, message);
+        else
+            ret = fprintf(stderr, "jbig2dec %s %s (segment 0x%08x)\n", type, message, seg_idx);
+        if (ret < 0)
+            goto printerror;
+
         state->last_message = message;
         state->severity = severity;
         state->type = type;
         state->repeats = 0;
     } else if (state->last_message != NULL) {
         state->repeats++;
-        if (state->repeats % 1000000 == 0)
-            fprintf(stderr, "jbig2dec %s last message repeated %ld times so far\n", state->type, state->repeats);
-        free(message);
-    } else if (state->last_message == NULL) {
-        fprintf(stderr, "%s\n", message);
-        state->last_message = message;
-        state->severity = severity;
-        state->type = type;
-        state->repeats = 0;
+        if (state->repeats % 1000000 == 0) {
+            ret = fprintf(stderr, "jbig2dec %s last message repeated %ld times so far\n", state->type, state->repeats);
+            if (ret < 0)
+                goto printerror;
+        }
     }
+
+    return;
+
+printerror:
+    fprintf(stderr, "jbig2dec WARNING could not print message\n");
+    state->last_message = NULL;
+    state->repeats = 0;
 }
 
 static void
@@ -748,8 +741,6 @@ main(int argc, char **argv)
 cleanup:
     flush_errors(&error_callback_state);
     jbig2_ctx_free(ctx);
-    if (error_callback_state.last_message)
-        free(error_callback_state.last_message);
     if (params.output_filename)
         free(params.output_filename);
     if (params.hash)
