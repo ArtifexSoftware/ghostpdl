@@ -677,6 +677,13 @@ int pdfi_setfillcolor(pdf_context *ctx)
     return 0;
 }
 
+static inline bool
+pattern_instance_uses_base_space(const gs_pattern_instance_t * pinst)
+{
+    return pinst->type->procs.uses_base_space(
+                   pinst->type->procs.get_pattern(pinst) );
+}
+
 /* Now the SCN and scn operators. These set the colour for special spaces;
  * ICCBased, Pattern, Separation and DeviceN
  */
@@ -710,22 +717,18 @@ pdfi_setcolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, boo
         base_space = pcs->base_space;
         code = pdfi_pattern_set(ctx, stream_dict, page_dict, (pdf_name *)ctx->stack_top[-1], &cc);
         pdfi_pop(ctx, 1);
-        if (base_space)
-            ncomps = cs_num_components(base_space);
-    } else {
-        /* Hack because Patterns not working properly, remove when finished. We don't yet set the current colour
-         * space to be /Pattern in pdfi_setpattern. When we come here we retrieve the current space using
-         * gs_currentcolorspace() and if teh type is gs_color_space_Pattern then we set is_pattern.
-         * But because we don't actually set the space, this never happens. So we end up trying to process
-         * the pattern argument (a name) as if it were a number. So in this case just clear the stack and leave
-         * the current colour unchanged.
-         */
-        if (ctx->stack_top[-1]->type == PDF_NAME) {
-            dbgmprintf(ctx->memory, "WARNING: pdfi_setcolorN: Pattern is not supported\n");
-            code = gs_note_error(gs_error_syntaxerror);
-            pdfi_clearstack(ctx);
+        if (code < 0) {
+            /* Ignore the pattern if we failed to set it */
+            dbgmprintf(ctx->memory, "PATTERN: Error setting pattern\n");
+            ctx->pdf_warnings |= W_PDF_BADPATTERN;
+            code = 0;
             goto cleanupExit;
         }
+        if (base_space && pattern_instance_uses_base_space(cc.pattern))
+            ncomps = cs_num_components(base_space);
+        else
+            ncomps = 0;
+    } else {
         ncomps = cs_num_components(pcs);
         cc.pattern = NULL;
     }
