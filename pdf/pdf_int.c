@@ -3272,11 +3272,13 @@ static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_stream *source, 
                 break;
             case K1('W'):           /* clip */
                 pdfi_pop(ctx, 1);
-                code = pdfi_clip(ctx);
+                ctx->clip_active = true;
+                ctx->do_eoclip = false;
                 break;
             case K2('W','*'):       /* eoclip */
                 pdfi_pop(ctx, 1);
-                code = pdfi_eoclip(ctx);
+                ctx->clip_active = true;
+                ctx->do_eoclip = true;
                 break;
             case K1('y'):           /* append curve (final point replicated) */
                 pdfi_pop(ctx, 1);

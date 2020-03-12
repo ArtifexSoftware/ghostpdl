@@ -277,6 +277,10 @@ typedef struct pdf_context_s
     /* offset to the xref table */
     gs_offset_t startxref;
 
+    /* State for handling the wacky W and W* operators */
+    bool clip_active;
+    bool do_eoclip;
+
     /* Track whether file is a hybrid. Initially prefer XRefStm but
      * if we fail to read the structure using an XRefStm, try again
      * using the xref
