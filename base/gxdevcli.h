@@ -680,8 +680,8 @@ typedef struct gx_device_cached_colors_s {
 typedef struct gx_band_params_s {
     int BandWidth;		/* (optional) band width in pixels */
     int BandHeight;		/* (optional) */
-    long BandBufferSpace;	/* (optional) */
-    long tile_cache_size;	/* (optional) */
+    size_t BandBufferSpace;	/* (optional) */
+    size_t tile_cache_size;	/* (optional) */
 } gx_band_params_t;
 
 #define BAND_PARAMS_INITIAL_VALUES 0, 0, 0, 0
@@ -696,8 +696,8 @@ typedef enum {
    the appropriate additions/changes to the compare_gdev_prn_space_params()
    function in gdevprn.c */
 typedef struct gdev_space_params_s {
-    long MaxBitmap;		/* max size of non-buffered bitmap */
-    long BufferSpace;		/* space to use for buffer */
+    size_t MaxBitmap;		/* max size of non-buffered bitmap */
+    size_t BufferSpace;		/* space to use for buffer */
     gx_band_params_t band;	/* see gxband.h */
     bool params_are_read_only;	/* true if put_params may not modify this struct */
     gdev_banding_type banding_type;	/* used to force banding or bitmap */
@@ -767,7 +767,7 @@ typedef struct gdev_pagelist_s {
         long band_offset_y;		/* for rendering that is phase sensitive (old wtsimdi) */\
         bool BLS_force_memory;\
         gx_stroked_gradient_recognizer_t sgr;\
-        int MaxPatternBitmap;		/* Threshold for switching to pattern_clist mode */\
+        size_t MaxPatternBitmap;	/* Threshold for switching to pattern_clist mode */\
         bool page_uses_transparency;    /* PDF 1.4 transparency is used. */\
         gdev_space_params space_params;\
         cmm_dev_profile_t *icc_struct;  /* object dependent profiles */\

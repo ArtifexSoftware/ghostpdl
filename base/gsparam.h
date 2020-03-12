@@ -20,6 +20,7 @@
 #  define gsparam_INCLUDED
 
 #include "gsstype.h"
+#include "stdint_.h"
 
 /*
  * Several interfaces use parameter dictionaries to communicate sets of
@@ -47,7 +48,7 @@ typedef const char *gs_param_name;
 typedef enum {
     /* Scalar */
     gs_param_type_null, gs_param_type_bool, gs_param_type_int,
-    gs_param_type_long, gs_param_type_float,
+    gs_param_type_long, gs_param_type_size_t, gs_param_type_i64, gs_param_type_float,
     /* Homogenous collection */
     gs_param_type_string, gs_param_type_name,
     gs_param_type_int_array, gs_param_type_float_array,
@@ -98,8 +99,8 @@ typedef gs_param_collection gs_param_array;
  * Define the sizes of the various parameter value types, indexed by type.
  */
 #define GS_PARAM_TYPE_SIZES(dict_size)\
-  0, sizeof(bool), sizeof(int), sizeof(long), sizeof(float),\
-  sizeof(gs_param_string), sizeof(gs_param_string),\
+  0, sizeof(bool), sizeof(int), sizeof(long), sizeof(size_t), sizeof(int64_t),\
+  sizeof(float), sizeof(gs_param_string), sizeof(gs_param_string),\
   sizeof(gs_param_int_array), sizeof(gs_param_float_array),\
   sizeof(gs_param_string_array), sizeof(gs_param_string_array),\
   (dict_size), (dict_size), (dict_size)
@@ -108,8 +109,8 @@ typedef gs_param_collection gs_param_array;
  * to by the various value types.
  */
 #define GS_PARAM_TYPE_BASE_SIZES(dict_elt_size)\
-  0, sizeof(bool), sizeof(int), sizeof(long), sizeof(float),\
-  1, 1, sizeof(int), sizeof(float),\
+  0, sizeof(bool), sizeof(int), sizeof(long), sizeof(size_t), sizeof(int64_t),\
+  sizeof(float), 1, 1, sizeof(int), sizeof(float),\
   sizeof(gs_param_string), sizeof(gs_param_string),\
   (dict_elt_size), (dict_elt_size), (dict_elt_size)
 
@@ -122,6 +123,8 @@ extern const byte gs_param_type_base_sizes[];
         bool b;\
         int i;\
         long l;\
+        size_t z;\
+        int64_t i64;\
         float f;\
         gs_param_string s;\
         gs_param_string n;\
@@ -190,10 +193,8 @@ typedef enum {
  * union means 'beginning of enumeration'.
  */
 typedef union gs_param_enumerator_s {
-    int intval;
-    long longval;
-    void *pvoid;
-    char *pchar;
+    int intval;  /* Used by the ref stack param list to index a stack */
+    void *pvoid; /* Used by the C param list to walk a linked list */
 } gs_param_enumerator_t;
 typedef gs_param_string gs_param_key_t;
 
@@ -402,6 +403,10 @@ int param_read_int(gs_param_list *, gs_param_name, int *);
 int param_write_int(gs_param_list *, gs_param_name, const int *);
 int param_read_long(gs_param_list *, gs_param_name, long *);
 int param_write_long(gs_param_list *, gs_param_name, const long *);
+int param_read_i64(gs_param_list *, gs_param_name, int64_t *);
+int param_write_i64(gs_param_list *, gs_param_name, const int64_t *);
+int param_read_size_t(gs_param_list *, gs_param_name, size_t *);
+int param_write_size_t(gs_param_list *, gs_param_name, const size_t *);
 int param_read_float(gs_param_list *, gs_param_name, float *);
 int param_write_float(gs_param_list *, gs_param_name, const float *);
 int param_read_string(gs_param_list *, gs_param_name, gs_param_string *);

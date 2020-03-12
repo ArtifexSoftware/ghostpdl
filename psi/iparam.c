@@ -222,7 +222,16 @@ ref_param_write_typed(gs_param_list * plist, gs_param_name pkey,
             make_int(&value, pvalue->value.i);
             break;
         case gs_param_type_long:
+            /* FIXME: Rangecheck? */
             make_int(&value, pvalue->value.l);
+            break;
+        case gs_param_type_size_t:
+            /* FIXME: Rangecheck? */
+            make_int(&value, pvalue->value.z);
+            break;
+        case gs_param_type_i64:
+            /* FIXME: Rangecheck? */
+            make_int(&value, pvalue->value.i64);
             break;
         case gs_param_type_float:
             make_real(&value, pvalue->value.f);
@@ -782,8 +791,8 @@ ref_param_read_typed(gs_param_list * plist, gs_param_name pkey,
             }
             return 0;
         case t_integer:
-            pvalue->type = gs_param_type_long;
-            pvalue->value.l = loc.pvalue->value.intval;
+            pvalue->type = gs_param_type_i64;
+            pvalue->value.i64 = loc.pvalue->value.intval;
             return 0;
         case t_name:
             pvalue->type = gs_param_type_name;

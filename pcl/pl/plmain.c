@@ -870,7 +870,7 @@ parse_floats(gs_memory_t * mem, uint arg_count, const char *arg, float *f)
 #define argcmp(A, S, L) \
     (!strncmp(A, S, L) && (A[L] == 0 || A[L] == '='))
 
-static int check_for_special_int(pl_main_instance_t * pmi, const char *arg, int b)
+static int check_for_special_int(pl_main_instance_t * pmi, const char *arg, int64_t b)
 {
     if (argcmp(arg, "BATCH", 5))
         return (b == 1) ? 0 : gs_note_error(gs_error_rangecheck);
@@ -1030,7 +1030,7 @@ set_param(pl_main_instance_t * pmi, const char *arg)
     /* We're setting a device parameter to a non-string value. */
     const char *eqp = strchr(arg, '=');
     const char *value;
-    int vi;
+    int64_t vi;
     float vf;
     bool bval = true;
     char buffer[128];
@@ -1070,7 +1070,7 @@ set_param(pl_main_instance_t * pmi, const char *arg)
         spt_val = value+1;
     } else if (strchr(value, '#')) {
         /* We have a non-decimal 'radix' number */
-        int base = 0;
+        int64_t base = 0;
         const char *val = strchr(value, '#') + 1;
         const char *v = value;
         char c;
@@ -1110,12 +1110,12 @@ set_param(pl_main_instance_t * pmi, const char *arg)
         if (code < 0) code = 0;
         if (code <= 0)
             return code;
-        code = param_write_int((gs_param_list *) params,
+        code = param_write_i64((gs_param_list *) params,
                                buffer, &vi);
         spt_type = pl_spt_int;
         spt_val = &vi;
     } else if ((!strchr(value, '.')) &&
-               (sscanf(value, "%d", &vi) == 1)) {
+               (sscanf(value, "%"PRId64, &vi) == 1)) {
         /* Here we have an int -- check for a scaling suffix */
         char suffix = eqp[strlen(eqp) - 1];
 
@@ -1141,7 +1141,7 @@ set_param(pl_main_instance_t * pmi, const char *arg)
         if (code < 0) code = 0;
         if (code <= 0)
             return code;
-        code = param_write_int((gs_param_list *) params,
+        code = param_write_i64((gs_param_list *) params,
                                buffer, &vi);
         spt_type = pl_spt_int;
         spt_val = &vi;

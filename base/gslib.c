@@ -930,7 +930,7 @@ test10(gs_gstate * pgs, gs_memory_t * mem)
     gs_param_int_array HWSa;
     int HWSize[2];
     float HWResolution[2], PageSize[2];
-    long MaxBitmap;
+    size_t MaxBitmap;
     int code;
     gx_device *dev = gs_currentdevice(pgs);
     float xlate_x, xlate_y;
@@ -972,13 +972,13 @@ test10(gs_gstate * pgs, gs_memory_t * mem)
     }
     emprintf3(mem, "PageSize[%d] = [ %f, %f ]\n", PSa.size,
               PSa.data[0], PSa.data[1]);
-    code = param_read_long((gs_param_list *) & list,
-                           "MaxBitmap", &MaxBitmap);
+    code = param_read_size_t((gs_param_list *) & list,
+                             "MaxBitmap", &MaxBitmap);
     if (code < 0) {
         lprintf1("reading MaxBitmap failed! code = %d\n", code);
         gs_abort(mem);
     }
-    emprintf1(mem, "MaxBitmap = %ld\n", MaxBitmap);
+    emprintf1(mem, "MaxBitmap = %"PRIi64"\n", MaxBitmap);
     /* Switch to param list functions to "write" */
     gs_c_param_list_write(&list, mem);
     /* Always set the PageSize. */
@@ -1015,8 +1015,8 @@ test10(gs_gstate * pgs, gs_memory_t * mem)
         code = param_write_int_array((gs_param_list *) & list,
                                      "HWSize", &HWSa);
         MaxBitmap = 1000000L;
-        code = param_write_long((gs_param_list *) & list,
-                                "MaxBitmap", &MaxBitmap);
+        code = param_write_size_t((gs_param_list *) & list,
+                                  "MaxBitmap", &MaxBitmap);
     }
     gs_c_param_list_read(&list);
     code = gs_putdeviceparams(dev, (gs_param_list *) & list);

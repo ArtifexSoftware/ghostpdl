@@ -829,14 +829,15 @@ run_stdin:
 
                     ialloc_set_space(idmemory, avm_system);
                     if (isd) {
-                        int num, i;
+                        int i;
+                        int64_t num;
 
                         /* Check for numbers so we can provide for suffix scalers */
                         /* Note the check for '#' is for PS "radix" numbers such as 16#ff */
                         /* and check for '.' and 'e' or 'E' which are 'real' numbers */
                         if ((strchr(eqp, '#') == NULL) && (strchr(eqp, '.') == NULL) &&
                             (strchr(eqp, 'e') == NULL) && (strchr(eqp, 'E') == NULL) &&
-                            ((i = sscanf((const char *)eqp, "%d", &num)) == 1)) {
+                            ((i = sscanf((const char *)eqp, "%"PRIi64, &num)) == 1)) {
                             char suffix = eqp[strlen(eqp) - 1];
 
                             switch (suffix) {
@@ -857,7 +858,7 @@ run_stdin:
                                 default:
                                     break;   /* not a valid suffix or last char was digit */
                             }
-                            make_int(&value, num);
+                            make_int(&value, (ps_int)num);
                         } else {
                             /* use the PS scanner to capture other valid token types */
                             stream astream;
