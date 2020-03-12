@@ -6095,7 +6095,10 @@ pdf14_push_color_model(gx_device *dev, gs_transparency_color_t group_color_type,
             } else {
                 /* Go ahead and rc increment right now.  This way when
                     we pop, we will make sure to decrement and avoid a
-                    leak for the above profile that we just created */
+                    leak for the above profile that we just created.  This
+                    goes with the assignment to the device's profile.
+                    Note that we still do the increment for the group_color
+                    assignment below. */
                 if (iccprofile == NULL)
                     return NULL;
                 gsicc_adjust_profile_rc(iccprofile, 1, "pdf14_push_color_model");
@@ -6157,9 +6160,9 @@ pdf14_push_color_model(gx_device *dev, gs_transparency_color_t group_color_type,
             break;
     }
 
-    /* ToDO check ref count here */
-    if (group_color_type == ICC && iccprofile != NULL) {
+    if (group_color_type == ICC && iccprofile != NULL) {       
         group_color->icc_profile = iccprofile;
+        gsicc_adjust_profile_rc(iccprofile, 1, "pdf14_push_color_model");
     }
 
     /* If we are a sep device and this is not a softmask, ensure we maintain the
@@ -6208,7 +6211,6 @@ pdf14_push_color_model(gx_device *dev, gs_transparency_color_t group_color_type,
     memcpy(&(group_color->comp_shift), &(pdev->color_info.comp_shift),
         GX_DEVICE_COLOR_MAX_COMPONENTS);
 
-    /* ToDO check ref count here */
     /* If the CS was ICC based, we need to update the device ICC profile
         in the ICC manager, since that is the profile that is used for the
         PDF14 device */
