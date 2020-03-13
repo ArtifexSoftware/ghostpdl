@@ -141,7 +141,7 @@ pdf_simple_font_needs_ToUnicode(const pdf_font_resource_t *pdfont)
           return true;
 
     }
-    return true;
+    return false;
 }
 
 /* Write Encoding differencrs. */
