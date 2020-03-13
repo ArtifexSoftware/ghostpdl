@@ -572,6 +572,7 @@ font_resource_simple_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
     pfres->u.simple.BaseEncoding = -1;
     pfres->u.simple.preferred_encoding_index = -1;
     pfres->u.simple.last_reserved_char = -1;
+    pfres->u.simple.TwoByteToUnicode = 1;
     *ppfres = pfres;
     return 0;
 }
