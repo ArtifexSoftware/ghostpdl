@@ -47,6 +47,7 @@
 #define ARCH_MAX_USHORT                      ((unsigned short)~(unsigned short)0 + (unsigned short)0)
 #define ARCH_MAX_UINT                        ((unsigned int)~0 + (unsigned int)0)
 #define ARCH_MAX_ULONG                       ((unsigned long)~0L + (unsigned long)0)
+#define ARCH_MAX_SIZE_T                      ((size_t)~0L + (size_t)0)
 
          /* ---------------- Floating point ---------------- */
 
