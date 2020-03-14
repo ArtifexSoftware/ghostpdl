@@ -607,8 +607,23 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
     /* It is either our first time, or the stroke was a pattern and
        we are coming back from the error if restart < 1 (0 is first
        time, 1 stroke is set, and we only need to finish out fill */
-    if (pgs->is_fill_color)
-        gs_swapcolors_quick(pgs);
+    if (pgs->is_fill_color) {
+        /* if the fill_color is a pattern, make sure the tile is locked so that	*/
+        /* it does not get evicted as the stroke color is loaded.		*/
+        if (gx_dc_is_pattern1_color(gs_currentdevicecolor_inline(pgs))) {
+            gs_id id;
+
+            if(gs_currentdevicecolor_inline(pgs)->colors.pattern.p_tile != NULL) {
+                id = gs_currentdevicecolor_inline(pgs)->colors.pattern.p_tile->id;
+                code = gx_pattern_cache_entry_set_lock(pgs, id, true);
+            } else {
+                code = 0;
+            }
+	    if (code < 0)
+		return code;	/* lock failed -- tile not in cache? */
+        }
+        gs_swapcolors_quick(pgs);	/* switch to the stroke color */
+    }
 
     if (*restart < 1) {
 
@@ -746,6 +761,21 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
         scale_dash_pattern(pgs, 1.0 / scale);
         gs_setflat(pgs, orig_flatness);
         acode = alpha_buffer_release(pgs, code >= 0);
+    }
+    if (pgs->is_fill_color) {
+        /* The color _should_ be the fill color, so make sure it is unlocked	*/
+        if (gx_dc_is_pattern1_color(gs_currentdevicecolor_inline(pgs))) {
+            gs_id id;
+
+            if(gs_currentdevicecolor_inline(pgs)->colors.pattern.p_tile != NULL) {
+                id = gs_currentdevicecolor_inline(pgs)->colors.pattern.p_tile->id;
+                code = gx_pattern_cache_entry_set_lock(pgs, id, false);
+            } else {
+                code = 0;
+            }
+	    if (code < 0)
+		return code;	/* lock failed -- tile not in cache? */
+        }
     }
 out:
     if (gx_dc_is_pattern1_color(gs_altdevicecolor_inline(pgs))) {

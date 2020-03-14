@@ -766,7 +766,7 @@ int wmain(int argc, wchar_t *argv[], wchar_t *envp[]) {
     }
     code = main_utf8(argc, nargv);
 
-    if (0) {
+     if (0) {
 err:
         fprintf(stderr,
                 "Ghostscript failed to initialise due to malloc failure\n");
