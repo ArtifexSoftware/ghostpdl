@@ -1101,7 +1101,9 @@ if test x"$enable_fapi" != xno; then
 fi
 
 if test x"$FT_BRIDGE" != x"1"; then
-  AC_MSG_ERROR([No usable Freetype source or library found])
+  if test x"$enable_auxtools_only" != x"yes" ; then
+    AC_MSG_ERROR([No usable Freetype source or library found])
+  fi
 fi
 
 AC_SUBST(INSERT_UFST_BRIDGE_EQUAL_ONE)
