@@ -126,7 +126,6 @@ CFLAGSAUX_PROFILETMP="\$(CFLAGS_PROFILE)"
 LDFLAGSAUXTMP="\$(LDFLAGS)"
 AUXEXTRALIBSTMP="\$(EXTRALIBS)"
 
-
 # purposefully do not include "help" output for this
 AC_ARG_ENABLE([save_confaux])
 AC_ARG_ENABLE([auxtools_only])
@@ -2778,6 +2777,7 @@ case $host in
     ;;
     *-darwin*)
       DYNAMIC_CFLAGS="-fPIC $DYNAMIC_CFLAGS"
+      GS_DYNAMIC_LDFLAGS="-dynamiclib -install_name \$(GS_SONAME_MAJOR_MINOR)"
       PCL_DYNAMIC_LDFLAGS="-dynamiclib -install_name \$(PCL_SONAME_MAJOR_MINOR)"
       XPS_DYNAMIC_LDFLAGS="-dynamiclib -install_name \$(XPS_SONAME_MAJOR_MINOR)"
       PDL_DYNAMIC_LDFLAGS="-dynamiclib -install_name \$(GPDL_SONAME_MAJOR_MINOR)"
