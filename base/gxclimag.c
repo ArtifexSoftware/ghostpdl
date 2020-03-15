@@ -1856,11 +1856,10 @@ clist_image_unknowns(gx_device *dev, const clist_image_enum *pie)
     if (pie->color_space.id == gs_no_id) { /* masked image */
         cdev->color_space.space = 0; /* for GC */
     } else {                    /* not masked */
-        if (cdev->color_space.id == pie->color_space.id) {
-            /* The color space pointer might not be valid: update it. */
-            cdev->color_space.space = pie->color_space.space;
-        } else {
+        if (cdev->color_space.id != pie->color_space.id ||
+            cdev->color_space.space != pie->color_space.space) {
             unknown |= color_space_known;
+            cdev->color_space.space = pie->color_space.space;
             cdev->color_space = pie->color_space;
         }
     }
