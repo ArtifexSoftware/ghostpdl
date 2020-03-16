@@ -67,6 +67,7 @@ static dev_proc_fill_linear_color_triangle(obj_filter_fill_linear_color_triangle
 static dev_proc_put_image(obj_filter_put_image);
 static dev_proc_strip_copy_rop2(obj_filter_strip_copy_rop2);
 static dev_proc_strip_tile_rect_devn(obj_filter_strip_tile_rect_devn);
+static dev_proc_fill_stroke_path(obj_filter_fill_stroke_path);
 
 /* The device prototype */
 #define MAX_COORD (max_int_in_fixed - 1000)
@@ -175,7 +176,7 @@ gx_device_obj_filter gs_obj_filter_device =
      default_subclass_copy_alpha_hl_color,
      default_subclass_process_page,
      default_subclass_transform_pixel_region,
-     default_subclass_fill_stroke_path,
+     obj_filter_fill_stroke_path,
     }
 };
 
@@ -220,6 +221,16 @@ int obj_filter_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
 {
     if ((dev->ObjectFilter & FILTERVECTOR) == 0)
         return default_subclass_stroke_path(dev, pgs, ppath, params, pdcolor, pcpath);
+    return 0;
+}
+
+int obj_filter_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
+        const gx_fill_params *fill_params, const gx_drawing_color *pdcolor_fill,
+        const gx_stroke_params *stroke_params, const gx_drawing_color *pdcolor_stroke,
+        const gx_clip_path *pcpath)
+{
+    if ((dev->ObjectFilter & FILTERVECTOR) == 0)
+        return default_subclass_fill_stroke_path(dev, pgs, ppath, fill_params, pdcolor_fill, stroke_params, pdcolor_stroke, pcpath);
     return 0;
 }
 

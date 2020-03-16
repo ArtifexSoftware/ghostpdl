@@ -900,7 +900,7 @@ int default_subclass_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_p
         const gx_clip_path *pcpath)
 {
     if (dev->child)
-        return dev_proc(dev->child, fill_stroke_path)(dev, pgs, ppath, fill_params, pdcolor_fill,
+        return dev_proc(dev->child, fill_stroke_path)(dev->child, pgs, ppath, fill_params, pdcolor_fill,
                                                       stroke_params, pdcolor_stroke, pcpath);
     return 0;
 }
