@@ -34,13 +34,6 @@
 #include "jbig2_page.h"
 #include "jbig2_segment.h"
 
-#if !defined (INT32_MAX)
-#define INT32_MAX  0x7fffffff
-#endif
-#if !defined (UINT32_MAX)
-#define UINT32_MAX 0xffffffff
-#endif
-
 /* dump the page struct info */
 static void
 dump_page_info(Jbig2Ctx *ctx, Jbig2Segment *segment, Jbig2Page *page)

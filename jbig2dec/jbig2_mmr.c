@@ -40,10 +40,6 @@
 #include "jbig2_mmr.h"
 #include "jbig2_segment.h"
 
-#if !defined (UINT32_MAX)
-#define UINT32_MAX 0xffffffff
-#endif
-
 typedef struct {
     uint32_t width;
     uint32_t height;

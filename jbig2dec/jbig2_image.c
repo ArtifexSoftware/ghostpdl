@@ -30,13 +30,6 @@
 #include "jbig2_priv.h"
 #include "jbig2_image.h"
 
-#if !defined (INT32_MAX)
-#define INT32_MAX  0x7fffffff
-#endif
-#if !defined (UINT32_MAX)
-#define UINT32_MAX  0xffffffffu
-#endif
-
 /* allocate a Jbig2Image structure and its associated bitmap */
 Jbig2Image *
 jbig2_image_new(Jbig2Ctx *ctx, uint32_t width, uint32_t height)

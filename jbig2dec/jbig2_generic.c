@@ -42,10 +42,6 @@
 #include "jbig2_page.h"
 #include "jbig2_segment.h"
 
-#if !defined (UINT32_MAX)
-#define UINT32_MAX 0xffffffff
-#endif
-
 /*
 This is an explanation of the unoptimized and optimized generic
 region decoder implementations below, wherein we try to explain

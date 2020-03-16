@@ -55,6 +55,16 @@ typedef uint8_t byte;
 #define NULL ((void*)0)
 #endif
 
+#if !defined (INT32_MIN)
+#define INT32_MIN (-0x7fffffff - 1)
+#endif
+#if !defined (INT32_MAX)
+#define INT32_MAX  0x7fffffff
+#endif
+#if !defined (UINT32_MAX)
+#define UINT32_MAX 0xffffffffu
+#endif
+
 typedef struct _Jbig2Page Jbig2Page;
 typedef struct _Jbig2Segment Jbig2Segment;
 

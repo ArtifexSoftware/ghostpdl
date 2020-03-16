@@ -39,10 +39,6 @@
 #include "jbig2_symbol_dict.h"
 #include "jbig2_text.h"
 
-#if !defined (UINT32_MAX)
-#define UINT32_MAX 0xffffffff
-#endif
-
 Jbig2Segment *
 jbig2_parse_segment_header(Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size, size_t *p_header_size)
 {

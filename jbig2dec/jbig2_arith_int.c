@@ -32,13 +32,6 @@
 #include "jbig2_arith.h"
 #include "jbig2_arith_int.h"
 
-#if !defined (INT32_MIN)
-#define INT32_MIN (-0x7fffffff - 1)
-#endif
-#if !defined (INT32_MAX)
-#define INT32_MAX  0x7fffffff
-#endif
-
 struct _Jbig2ArithIntCtx {
     Jbig2ArithCx IAx[512];
 };
