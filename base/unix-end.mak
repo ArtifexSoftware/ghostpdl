@@ -239,6 +239,9 @@ gxpsmementovg:
 gpdlmementovg:
 	$(MAKE) $(MEMENTOVGMAKEOPTS) .gpdlsubtarget
 
+gpdfmementovg:
+	$(MAKE) $(MEMENTOVGMAKEOPTS) .pdfsubtarget
+
 mementovgclean:
 	$(MAKE) $(MEMENTOVGMAKEOPTS) cleansub
 

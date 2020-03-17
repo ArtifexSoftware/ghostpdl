@@ -962,6 +962,8 @@ int pdfi_apply_SubFileDecode_filter(pdf_context *ctx, int EODCount, pdf_name *EO
 
     *new_stream = NULL;
 
+    memset(&state, 0, sizeof(state));
+
     if (s_SFD_template.set_defaults)
         s_SFD_template.set_defaults((stream_state *)&state);
 

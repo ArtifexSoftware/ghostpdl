@@ -165,7 +165,7 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
             }
 
             code = pdfi_dict_known_by_key(ctx->SpotNames, (pdf_name *)name, &known);
-            if (code < 0 || known) {
+            if (code < 0) {
                 pdfi_countdown(name);
                 goto exit;
             }
