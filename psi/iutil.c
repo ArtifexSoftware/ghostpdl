@@ -531,7 +531,7 @@ other:
             break;
         }
         /* Internal operator, no name. */
-        gs_sprintf(buf, "@0x%lx", (ulong) op->value.opproc);
+        gs_sprintf(buf, "@"PRI_INTPTR, (intptr_t) op->value.opproc);
         break;
     }
     case t_real:

@@ -214,7 +214,8 @@ xps_hash_debug(xps_hash_table_t *table)
         if (!table->entries[i].value)
             dlprintf1("table % 4d: empty\n", i);
         else
-            dlprintf3("table % 4d: key=%s value=%p\n", i,
-                      table->entries[i].key, table->entries[i].value);
+            dlprintf3("table % 4d: key=%s value="PRI_INTPTR"\n", i,
+                      table->entries[i].key,
+                      (intptr_t)table->entries[i].value);
     }
 }

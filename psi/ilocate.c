@@ -249,13 +249,13 @@ ialloc_validate_memory(const gs_ref_memory_t * mem, gc_state_t * gcst)
         const clump_t *cp;
         int i;
 
-        if_debug3m('6', (gs_memory_t *)mem, "[6]validating memory 0x%lx, space %d, level %d\n",
-                   (ulong) mem, mem->space, level);
+        if_debug3m('6', (gs_memory_t *)mem, "[6]validating memory "PRI_INTPTR", space %d, level %d\n",
+                   (intptr_t) mem, mem->space, level);
         /* Validate clumps. */
         for (cp = clump_splay_walk_init(&sw, smem); cp != 0; cp = clump_splay_walk_fwd(&sw))
             if (do_validate_clump(cp, gcst)) {
-                mlprintf3((gs_memory_t *)mem, "while validating memory 0x%lx, space %d, level %d\n",
-                          (ulong) mem, mem->space, level);
+                mlprintf3((gs_memory_t *)mem, "while validating memory "PRI_INTPTR", space %d, level %d\n",
+                          (intptr_t) mem, mem->space, level);
                 gs_abort(gcst->heap);
             }
         /* Validate freelists. */
@@ -269,15 +269,15 @@ ialloc_validate_memory(const gs_ref_memory_t * mem, gc_state_t * gcst)
                 obj_size_t size = pfree[-1].o_size;
 
                 if (pfree[-1].o_type != &st_free) {
-                    mlprintf3((gs_memory_t *)mem, "Non-free object 0x%lx(%u) on freelist %i!\n",
-                              (ulong) pfree, size, i);
+                    mlprintf3((gs_memory_t *)mem, "Non-free object "PRI_INTPTR"(%u) on freelist %i!\n",
+                              (intptr_t) pfree, size, i);
                     break;
                 }
                 if ((i == LARGE_FREELIST_INDEX && size < max_freelist_size) ||
                  (i != LARGE_FREELIST_INDEX &&
                  (size < free_size - obj_align_mask || size > free_size))) {
-                    mlprintf3((gs_memory_t *)mem, "Object 0x%lx(%u) size wrong on freelist %i!\n",
-                              (ulong) pfree, (uint)size, i);
+                    mlprintf3((gs_memory_t *)mem, "Object "PRI_INTPTR"(%u) size wrong on freelist %i!\n",
+                              (intptr_t) pfree, (uint)size, i);
                     break;
                 }
             }
@@ -313,17 +313,17 @@ do_validate_clump(const clump_t * cp, gc_state_t * gcst)
     DO_ALL
         if (pre->o_type == &st_free) {
             if (!object_size_valid(pre, size, cp)) {
-                lprintf3("Bad free object 0x%lx(%lu), in clump 0x%lx!\n",
-                         (ulong) (pre + 1), (ulong) size, (ulong) cp);
+                lprintf3("Bad free object "PRI_INTPTR"(%lu), in clump "PRI_INTPTR"!\n",
+                         (intptr_t) (pre + 1), (ulong) size, (intptr_t) cp);
                 return 1;
             }
         } else if (do_validate_object(pre + 1, cp, gcst)) {
             dmprintf_clump(gcst->heap, "while validating clump", cp);
             return 1;
         }
-    if_debug3m('7', gcst->heap, " [7]validating %s(%lu) 0x%lx\n",
+    if_debug3m('7', gcst->heap, " [7]validating %s(%lu) "PRI_INTPTR"\n",
                struct_type_name_string(pre->o_type),
-               (ulong) size, (ulong) pre);
+               (ulong) size, (intptr_t) pre);
     if (pre->o_type == &st_refs) {
         const ref_packed *rp = (const ref_packed *)(pre + 1);
         const char *end = (const char *)rp + size;
@@ -335,9 +335,9 @@ do_validate_clump(const clump_t * cp, gc_state_t * gcst)
             ret = ialloc_validate_ref_packed(rp, gcst);
 #	    endif
             if (ret) {
-                mlprintf3(gcst->heap, "while validating %s(%lu) 0x%lx\n",
+                mlprintf3(gcst->heap, "while validating %s(%lu) "PRI_INTPTR"\n",
                          struct_type_name_string(pre->o_type),
-                         (ulong) size, (ulong) pre);
+                         (ulong) size, (intptr_t) pre);
                 dmprintf_clump(gcst->heap, "in clump", cp);
                 return ret;
             }
@@ -461,9 +461,9 @@ cks:	    if (optr != 0) {
             break;
         case t_name:
             if (name_index_ptr(cmem, name_index(cmem, pref)) != pref->value.pname) {
-                lprintf3("At 0x%lx, bad name %u, pname = 0x%lx\n",
-                         (ulong) pref, (uint)name_index(cmem, pref),
-                         (ulong) pref->value.pname);
+                lprintf3("At "PRI_INTPTR", bad name %u, pname = "PRI_INTPTR"\n",
+                         (intptr_t) pref, (uint)name_index(cmem, pref),
+                         (intptr_t) pref->value.pname);
                 ret = 1;
                 break;
             } {
@@ -473,18 +473,18 @@ cks:	    if (optr != 0) {
                 if (r_space(&sref) != avm_foreign &&
                     !gc_locate(sref.value.const_bytes, gcst)
                     ) {
-                    lprintf4("At 0x%lx, bad name %u, pname = 0x%lx, string 0x%lx not in any clump\n",
-                             (ulong) pref, (uint) r_size(pref),
-                             (ulong) pref->value.pname,
-                             (ulong) sref.value.const_bytes);
+                    lprintf4("At "PRI_INTPTR", bad name %u, pname = "PRI_INTPTR", string "PRI_INTPTR" not in any clump\n",
+                             (intptr_t) pref, (uint) r_size(pref),
+                             (intptr_t) pref->value.pname,
+                             (intptr_t) sref.value.const_bytes);
                     ret = 1;
                 }
             }
             break;
         case t_string:
             if (r_size(pref) != 0 && !gc_locate(pref->value.bytes, gcst)) {
-                lprintf3("At 0x%lx, string ptr 0x%lx[%u] not in any clump\n",
-                         (ulong) pref, (ulong) pref->value.bytes,
+                lprintf3("At "PRI_INTPTR", string ptr "PRI_INTPTR"[%u] not in any clump\n",
+                         (intptr_t) pref, (intptr_t) pref->value.bytes,
                          (uint) r_size(pref));
                 ret = 1;
             }
@@ -496,8 +496,8 @@ cks:	    if (optr != 0) {
             size = r_size(pref);
             tname = "array";
 cka:	    if (!gc_locate(rptr, gcst)) {
-                lprintf3("At 0x%lx, %s 0x%lx not in any clump\n",
-                         (ulong) pref, tname, (ulong) rptr);
+                lprintf3("At "PRI_INTPTR", %s "PRI_INTPTR" not in any clump\n",
+                         (intptr_t) pref, tname, (intptr_t) rptr);
                 ret = 1;
                 break;
             } {
@@ -507,8 +507,8 @@ cka:	    if (!gc_locate(rptr, gcst)) {
                     const ref *elt = rptr + i;
 
                     if (r_is_packed(elt)) {
-                        lprintf5("At 0x%lx, %s 0x%lx[%u] element %u is not a ref\n",
-                                 (ulong) pref, tname, (ulong) rptr, size, i);
+                        lprintf5("At "PRI_INTPTR", %s "PRI_INTPTR"[%u] element %u is not a ref\n",
+                                 (intptr_t) pref, tname, (intptr_t) rptr, size, i);
                         ret = 1;
                     }
                 }
@@ -520,8 +520,8 @@ cka:	    if (!gc_locate(rptr, gcst)) {
                 break;
             optr = pref->value.packed;
             if (!gc_locate(optr, gcst)) {
-                lprintf2("At 0x%lx, packed array 0x%lx not in any clump\n",
-                         (ulong) pref, (ulong) optr);
+                lprintf2("At "PRI_INTPTR", packed array "PRI_INTPTR" not in any clump\n",
+                         (intptr_t) pref, (intptr_t) optr);
                 ret = 1;
             }
             break;
@@ -534,8 +534,8 @@ cka:	    if (!gc_locate(rptr, gcst)) {
                     !r_has_type(&pdict->count, t_integer) ||
                     !r_has_type(&pdict->maxlength, t_integer)
                     ) {
-                    lprintf2("At 0x%lx, invalid dict 0x%lx\n",
-                             (ulong) pref, (ulong) pdict);
+                    lprintf2("At "PRI_INTPTR", invalid dict "PRI_INTPTR"\n",
+                             (intptr_t) pref, (intptr_t) pdict);
                     ret = 1;
                 }
                 rptr = (const ref *)pdict;
@@ -562,10 +562,10 @@ ialloc_validate_pointer_stability(const obj_header_t * ptr_fr,
         const char *sn_to = (ptr_to->d.o.space_id < count_of(sn)
                         ? sn[ptr_to->d.o.space_id] : "unknown");
 
-        lprintf6("Reference to a less stable object 0x%lx<%s> "
-                 "in the space \'%s\' from 0x%lx<%s> in the space \'%s\' !\n",
-                 (ulong) ptr_to, ptr_to->d.o.t.type->sname, sn_to,
-                 (ulong) ptr_fr, ptr_fr->d.o.t.type->sname, sn_fr);
+        lprintf6("Reference to a less stable object "PRI_INTPTR"<%s> "
+                 "in the space \'%s\' from "PRI_INTPTR"<%s> in the space \'%s\' !\n",
+                 (intptr_t) ptr_to, ptr_to->d.o.t.type->sname, sn_to,
+                 (intptr_t) ptr_fr, ptr_fr->d.o.t.type->sname, sn_fr);
     }
 }
 #endif
@@ -587,14 +587,14 @@ do_validate_object(const obj_header_t * ptr, const clump_t * cp,
 
         st = *gcst;		/* no side effects! */
         if (!(cp = gc_locate(pre, &st))) {
-            mlprintf1(gcst->heap, "Object 0x%lx not in any clump!\n",
-                      (ulong) ptr);
+            mlprintf1(gcst->heap, "Object "PRI_INTPTR" not in any clump!\n",
+                      (intptr_t) ptr);
             return 1;		/*gs_abort(); */
         }
     }
     if (otype == &st_free) {
-        mlprintf3(gcst->heap, "Reference to free object 0x%lx(%lu), in clump 0x%lx!\n",
-                 (ulong) ptr, (ulong) size, (ulong) cp);
+        mlprintf3(gcst->heap, "Reference to free object "PRI_INTPTR"(%lu), in clump "PRI_INTPTR"!\n",
+                 (intptr_t) ptr, (ulong) size, (intptr_t) cp);
         return 1;
     }
     if ((cp != 0 && !object_size_valid(pre, size, cp)) ||
@@ -602,15 +602,15 @@ do_validate_object(const obj_header_t * ptr, const clump_t * cp,
         (oname = struct_type_name_string(otype),
          *oname < 33 || *oname > 126)
         ) {
-        mlprintf2(gcst->heap, "\n Bad object 0x%lx(%lu),\n",
-                  (ulong) ptr, (ulong) size);
-        dmprintf2(gcst->heap, " ssize = %u, in clump 0x%lx!\n",
-                  otype->ssize, (ulong) cp);
+        mlprintf2(gcst->heap, "\n Bad object "PRI_INTPTR"(%lu),\n",
+                  (intptr_t) ptr, (ulong) size);
+        dmprintf2(gcst->heap, " ssize = %u, in clump "PRI_INTPTR"!\n",
+                  otype->ssize, (intptr_t) cp);
         return 1;
     }
     if (size % otype->ssize != 0) {
-        mlprintf3(gcst->heap, "\n Potentially bad object 0x%lx(%lu), in clump 0x%lx!\n",
-                  (ulong) ptr, (ulong) size, (ulong) cp);
+        mlprintf3(gcst->heap, "\n Potentially bad object "PRI_INTPTR"(%lu), in clump "PRI_INTPTR"!\n",
+                  (intptr_t) ptr, (ulong) size, (intptr_t) cp);
         dmprintf3(gcst->heap, " structure name = %s, size = %lu, ssize = %u\n",
                   oname, size, otype->ssize);
         dmprintf(gcst->heap, " This can happen (and is benign) if a device has been subclassed\n");

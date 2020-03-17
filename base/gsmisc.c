@@ -555,7 +555,7 @@ debug_dump_bytes(const gs_memory_t *mem, const byte * from, const byte * to, con
     while (p != to) {
         const byte *q = min(p + 16, to);
 
-        dmprintf1(mem, "0x%lx:", (ulong) p);
+        dmprintf1(mem, PRI_INTPTR, (intptr_t)p);
         while (p != q)
             dmprintf1(mem, " %02x", *p++);
         dmputc(mem, '\n');
@@ -609,7 +609,7 @@ debug_print_string_hex(const gs_memory_t *mem, const byte * chrs, uint len)
   BEGIN\
     ulong *fp_ = (ulong *)&first_arg - 2;\
     for (; fp_ && (fp_[1] & 0xff000000) == 0x08000000; fp_ = (ulong *)*fp_)\
-        dprintf2("  fp=0x%lx ip=0x%lx\n", (ulong)fp_, fp_[1]);\
+        dprintf2("  fp="PRI_INTPTR" ip=0x%lx\n", (intptr_t)fp_, fp_[1]);\
   END
 #endif
 

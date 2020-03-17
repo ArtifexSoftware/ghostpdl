@@ -54,17 +54,17 @@ trace_copy_rop(const char *cname, gx_device * dev,
                int x, int y, int width, int height,
                int phase_x, int phase_y, gs_logical_operation_t lop)
 {
-    dmlprintf4(dev->memory, "%s: dev=0x%lx(%s) depth=%d\n",
-               cname, (ulong) dev, dev->dname, dev->color_info.depth);
-    dmlprintf4(dev->memory, "  source data=0x%lx x=%d raster=%u id=%lu colors=",
-               (ulong) sdata, sourcex, sraster, (ulong) id);
+    dmlprintf4(dev->memory, "%s: dev="PRI_INTPTR"(%s) depth=%d\n",
+               cname, (intptr_t)dev, dev->dname, dev->color_info.depth);
+    dmlprintf4(dev->memory, "  source data="PRI_INTPTR" x=%d raster=%u id=%lu colors=",
+               (intptr_t)sdata, sourcex, sraster, (ulong) id);
     if (scolors)
         dmprintf2(dev->memory, "(%"PRIx64",%"PRIx64");\n", (uint64_t)scolors[0], (uint64_t)scolors[1]);
     else
         dmputs(dev->memory, "none;\n");
     if (textures)
-        dmlprintf8(dev->memory, "  textures=0x%lx size=%dx%d(%dx%d) raster=%u shift=%d(%d)",
-                  (ulong) textures, textures->size.x, textures->size.y,
+        dmlprintf8(dev->memory, "  textures="PRI_INTPTR" size=%dx%d(%dx%d) raster=%u shift=%d(%d)",
+                  (intptr_t)textures, textures->size.x, textures->size.y,
                   textures->rep_width, textures->rep_height,
                   textures->raster, textures->shift, textures->rep_shift);
     else

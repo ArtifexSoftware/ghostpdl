@@ -176,10 +176,10 @@ setup_device_and_mem_for_thread(gs_memory_t *chunk_base_mem, gx_device *dev, boo
     ndev->icc_struct->supports_devn = cdev->icc_struct->supports_devn;
     ncdev->page_uses_transparency = cdev->page_uses_transparency;
     if_debug3m(gs_debug_flag_icc, cdev->memory,
-               "[icc] MT clist device = 0x%p profile = 0x%p handle = 0x%p\n",
-               ncdev,
-               ncdev->icc_struct->device_profile[0],
-               ncdev->icc_struct->device_profile[0]->profile_handle);
+               "[icc] MT clist device = "PRI_INTPTR" profile = "PRI_INTPTR" handle = "PRI_INTPTR"\n",
+               (intptr_t)ncdev,
+               (intptr_t)ncdev->icc_struct->device_profile[0],
+               (intptr_t)ncdev->icc_struct->device_profile[0]->profile_handle);
     /* If the device is_planar, then set the flag in the new_device and the procs */
     if ((ncdev->is_planar = cdev->is_planar))
         gdev_prn_set_procs_planar(ndev);

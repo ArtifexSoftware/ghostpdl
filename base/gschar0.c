@@ -46,8 +46,8 @@ gs_stack_modal_fonts(gs_text_enum_t *pte)
         cfont = cmfont->data.FDepVector[cmfont->data.Encoding[0]];
         pte->fstack.items[fdepth].font = cfont;
         pte->fstack.items[fdepth - 1].index = 0;
-        if_debug2m('j', pte->memory, "[j]stacking depth=%d font=0x%lx\n",
-                   fdepth, (ulong) cfont);
+        if_debug2m('j', pte->memory, "[j]stacking depth=%d font="PRI_INTPTR"\n",
+                   fdepth, (intptr_t)cfont);
     }
     pte->fstack.depth = fdepth;
     return 0;
@@ -59,8 +59,8 @@ gs_type0_init_fstack(gs_text_enum_t *pte, gs_font * pfont)
 {
     if (!(pte->text.operation & (TEXT_FROM_STRING | TEXT_FROM_BYTES)))
         return_error(gs_error_invalidfont);
-    if_debug1m('j', pte->memory, "[j]stacking depth=0 font=0x%lx\n",
-               (ulong) pfont);
+    if_debug1m('j', pte->memory, "[j]stacking depth=0 font="PRI_INTPTR"\n",
+               (intptr_t)pfont);
     pte->fstack.depth = 0;
     pte->fstack.items[0].font = pfont;
     pte->fstack.items[0].index = 0;
@@ -147,8 +147,8 @@ gs_type0_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
                     p += 2;
                     if_debug1m('j', pte->memory, "[j]from root: escape %d\n", fidx);
                   rdown:select_descendant(pfont, pdata, fidx, idepth);
-                    if_debug2m('j', pte->memory, "[j]... new depth=%d, new font=0x%lx\n",
-                               idepth, (ulong) pfont);
+                    if_debug2m('j', pte->memory, "[j]... new depth=%d, new font="PRI_INTPTR"\n",
+                               idepth, (intptr_t)pfont);
                     continue;
                 case fmap_double_escape:
                     if (chr != root_esc_char(pte))
@@ -222,8 +222,8 @@ gs_type0_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
                 fdepth--;
                 do {
                     select_descendant(pfont, pdata, fidx, fdepth);
-                    if_debug3m('j', pte->memory, "[j]down from modal: new depth=%d, index=%d, new font=0x%lx\n",
-                               fdepth, fidx, (ulong) pfont);
+                    if_debug3m('j', pte->memory, "[j]down from modal: new depth=%d, index=%d, new font="PRI_INTPTR"\n",
+                               fdepth, fidx, (intptr_t)pfont);
                     if (pfont->FontType != ft_composite)
                         break;
                     pdata = &pfont0->data;
@@ -402,8 +402,8 @@ gs_type0_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
                         return code;
                     pte->cmap_code = code; /* hack for widthshow */
                     p = str + mindex;
-                    if_debug3m('J', pte->memory, "[J]CMap returns %d, chr=0x%lx, glyph=0x%lx\n",
-                              code, (ulong) chr, (ulong) glyph);
+                    if_debug3m('J', pte->memory, "[J]CMap returns %d, chr=0x%lx, glyph="PRI_INTPTR"\n",
+                              code, (ulong)chr, (intptr_t)glyph);
                     if (code == 0) {
                         if (glyph == GS_NO_GLYPH) {
                             glyph = GS_MIN_CID_GLYPH;
@@ -422,8 +422,8 @@ gs_type0_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
         }
 
         select_descendant(pfont, pdata, fidx, fdepth);
-        if_debug2m('J', pte->memory, "... new depth=%d, new font=0x%lx\n",
-                  fdepth, (ulong) pfont);
+        if_debug2m('J', pte->memory, "... new depth=%d, new font="PRI_INTPTR"\n",
+                  fdepth, (intptr_t)pfont);
     }
 done:
     /* FontBBox may be used as metrics2 with WMode=1 :
@@ -462,8 +462,8 @@ done:
     if (str == pte->text.data.bytes)
         pte->index = p - str;
     pte->fstack.depth = fdepth;
-    if_debug4m('J', pte->memory, "[J]depth=%d font=0x%lx index=%d changed=%d\n",
-               fdepth, (ulong) pte->fstack.items[fdepth].font,
+    if_debug4m('J', pte->memory, "[J]depth=%d font="PRI_INTPTR" index=%d changed=%d\n",
+               fdepth, (intptr_t)pte->fstack.items[fdepth].font,
                pte->fstack.items[fdepth].index, changed);
     return changed;
 }

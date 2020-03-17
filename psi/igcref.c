@@ -118,7 +118,7 @@ refs_clear_marks(const gs_memory_t *cmem,
         if (r_is_packed(rp)) {
 #ifdef DEBUG
             if (gs_debug_c('8')) {
-                dmlprintf1(cmem, "  [8]unmark packed 0x%lx ", (ulong) rp);
+                dmlprintf1(cmem, "  [8]unmark packed "PRI_INTPTR" ", (intptr_t) rp);
                 debug_print_ref(cmem, (const ref *)rp);
                 dmputs(cmem, "\n");
             }
@@ -130,7 +130,7 @@ refs_clear_marks(const gs_memory_t *cmem,
 
 #ifdef DEBUG
             if (gs_debug_c('8')) {
-                dmlprintf1(cmem, "  [8]unmark ref 0x%lx ", (ulong) rp);
+                dmlprintf1(cmem, "  [8]unmark ref "PRI_INTPTR" ", (intptr_t)rp);
                 debug_print_ref(cmem, pref);
                 dmputs(cmem, "\n");
             }
@@ -190,7 +190,7 @@ refs_clear_reloc(obj_header_t *hdr, uint size)
             ref *const pref = (ref *)rp;
 
             if (!ref_type_uses_size_or_null(r_type(pref))) {
-                if_debug1('8', "  [8]clearing reloc at 0x%lx\n", (ulong) rp);
+                if_debug1('8', "  [8]clearing reloc at "PRI_INTPTR"\n", (intptr_t)rp);
                 r_set_size(pref, 0);
             }
             rp += packed_per_ref;
@@ -219,8 +219,8 @@ refs_set_reloc(obj_header_t * hdr, uint reloc, uint size)
 #if align_packed_per_ref == 1
             if (r_has_pmark(rp)) {
                 if_debug1('8',
-                          "  [8]packed ref 0x%lx is marked\n",
-                          (ulong) rp);
+                          "  [8]packed ref "PRI_INTPTR" is marked\n",
+                          (intptr_t)rp);
                 rp++;
             } else {
 #else
@@ -263,9 +263,9 @@ refs_set_reloc(obj_header_t * hdr, uint reloc, uint size)
             switch (marked) {
                 case all_marked:
                     if_debug2('8',
-                              "  [8]packed refs 0x%lx..0x%lx are marked\n",
-                              (ulong) rp,
-                              (ulong) (rp + (align_packed_per_ref - 1)));
+                              "  [8]packed refs "PRI_INTPTR".."PRI_INTPTR" are marked\n",
+                              (intptr_t)rp,
+                              (intptr_t)(rp + (align_packed_per_ref - 1)));
                     rp += align_packed_per_ref;
                     break;
                 default:
@@ -274,14 +274,14 @@ refs_set_reloc(obj_header_t * hdr, uint reloc, uint size)
                     for (i = align_packed_per_ref; i--; rp++) {
                         r_set_pmark(rp);
                         if_debug1('8',
-                                  "  [8]packed ref 0x%lx is marked\n",
-                                  (ulong) rp);
+                                  "  [8]packed ref "PRI_INTPTR" is marked\n",
+                                  (intptr_t)rp);
                     }
                     break;
                 case 0:
 #endif
-                    if_debug2('8', "  [8]%d packed ref(s) at 0x%lx are unmarked\n",
-                              align_packed_per_ref, (ulong) rp);
+                    if_debug2('8', "  [8]%d packed ref(s) at "PRI_INTPTR" are unmarked\n",
+                              align_packed_per_ref, (intptr_t)rp);
                     {
                         uint rel = reloc + freed;
 
@@ -302,28 +302,28 @@ refs_set_reloc(obj_header_t * hdr, uint reloc, uint size)
             ref *pref = (ref *) rp;
 
             if (!r_has_attr(pref, l_mark)) {
-                if_debug1('8', "  [8]ref 0x%lx is unmarked\n",
-                          (ulong) pref);
+                if_debug1('8', "  [8]ref "PRI_INTPTR" is unmarked\n",
+                          (intptr_t)pref);
                 /* Change this to a mark so we can */
                 /* store the relocation. */
                 r_set_type(pref, t_mark);
                 r_set_size(pref, rel);
                 freed += sizeof(ref);
             } else {
-                if_debug1('8', "  [8]ref 0x%lx is marked\n",
-                          (ulong) pref);
+                if_debug1('8', "  [8]ref "PRI_INTPTR" is marked\n",
+                          (intptr_t)pref);
                 /* Store the relocation here if possible. */
                 if (!ref_type_uses_size_or_null(r_type(pref))) {
-                    if_debug2('8', "  [8]storing reloc %u at 0x%lx\n",
-                              rel, (ulong) pref);
+                    if_debug2('8', "  [8]storing reloc %u at "PRI_INTPTR"\n",
+                              rel, (intptr_t)pref);
                     r_set_size(pref, rel);
                 }
             }
             rp += packed_per_ref;
         }
     }
-    if_debug3('7', " [7]at end of refs 0x%lx, size = %u, freed = %u\n",
-              (ulong) (hdr + 1), size, freed);
+    if_debug3('7', " [7]at end of refs "PRI_INTPTR", size = %u, freed = %u\n",
+              (intptr_t)(hdr + 1), size, freed);
     if (freed == size)
         return false;
 #if ARCH_SIZEOF_INT > ARCH_SIZEOF_SHORT
@@ -413,9 +413,9 @@ igc_reloc_refs(ref_packed * from, ref_packed * to, gc_state_t * gcst)
         /* The following assignment is logically unnecessary; */
         /* we do it only for convenience in debugging. */
         pref = (ref *) rp;
-        if_debug3m('8', gcst->heap, "  [8]relocating %s %d ref at 0x%lx\n",
+        if_debug3m('8', gcst->heap, "  [8]relocating %s %d ref at "PRI_INTPTR"\n",
                    (r_has_attr(pref, l_mark) ? "marked" : "unmarked"),
-                   r_btype(pref), (ulong) pref);
+                   r_btype(pref), (intptr_t)pref);
         if ((r_has_attr(pref, l_mark) || do_all) &&
             r_space(pref) >= min_trace
             ) {
@@ -541,8 +541,8 @@ igc_reloc_refs(ref_packed * from, ref_packed * to, gc_state_t * gcst)
                 default:
                     goto no_reloc; /* don't print trace message */
             }
-            if_debug2m('8', gcst->heap, "  [8]relocated 0x%lx => 0x%lx\n",
-                       (ulong)before, (ulong)after);
+            if_debug2m('8', gcst->heap, "  [8]relocated "PRI_INTPTR" => "PRI_INTPTR"\n",
+                       (intptr_t)before, (intptr_t)after);
         }
 no_reloc:
         rp += packed_per_ref;
@@ -688,8 +688,8 @@ refs_compact(const gs_memory_t *mem, obj_header_t * pre, obj_header_t * dpre, ui
             if (r_is_packed(src)) {
                 if (!r_has_pmark(src))
                     break;
-                if_debug1m('8', mem, "  [8]packed ref 0x%lx \"copied\"\n",
-                          (ulong) src);
+                if_debug1m('8', mem, "  [8]packed ref "PRI_INTPTR" \"copied\"\n",
+                          (intptr_t)src);
                 *src &= ~lp_mark;
                 src++;
             } else {		/* full-size ref */
@@ -697,7 +697,7 @@ refs_compact(const gs_memory_t *mem, obj_header_t * pre, obj_header_t * dpre, ui
 
                 if (!r_has_attr(pref, l_mark))
                     break;
-                if_debug1m('8', mem, "  [8]ref 0x%lx \"copied\"\n", (ulong) src);
+                if_debug1m('8', mem, "  [8]ref "PRI_INTPTR" \"copied\"\n", (intptr_t)src);
                 r_clear_attrs(pref, l_mark);
                 src += packed_per_ref;
             }
@@ -707,8 +707,8 @@ refs_compact(const gs_memory_t *mem, obj_header_t * pre, obj_header_t * dpre, ui
     for (;;) {
         if (r_is_packed(src)) {
             if (r_has_pmark(src)) {
-                if_debug2m('8', mem, "  [8]packed ref 0x%lx copied to 0x%lx\n",
-                          (ulong) src, (ulong) dest);
+                if_debug2m('8', mem, "  [8]packed ref "PRI_INTPTR" copied to "PRI_INTPTR"\n",
+                          (intptr_t)src, (intptr_t)dest);
                 *dest++ = *src & ~lp_mark;
             }
             src++;
@@ -716,8 +716,8 @@ refs_compact(const gs_memory_t *mem, obj_header_t * pre, obj_header_t * dpre, ui
             if (r_has_attr((ref *) src, l_mark)) {
                 ref rtemp;
 
-                if_debug2m('8', mem, "  [8]ref 0x%lx copied to 0x%lx\n",
-                           (ulong) src, (ulong) dest);
+                if_debug2m('8', mem, "  [8]ref "PRI_INTPTR" copied to "PRI_INTPTR"\n",
+                           (intptr_t)src, (intptr_t)dest);
                 /* We can't just use ref_assign_inline, */
                 /* because the source and destination */
                 /* might overlap! */
@@ -738,8 +738,8 @@ refs_compact(const gs_memory_t *mem, obj_header_t * pre, obj_header_t * dpre, ui
     /* Check that the relocation came out OK. */
     /* NOTE: this check only works within a single clump. */
     if ((byte *) src - (byte *) dest != r_size((ref *) src - 1) + sizeof(ref)) {
-        mlprintf3(mem, "Reloc error for refs 0x%lx: reloc = %lu, stored = %u\n",
-                 (ulong) dpre, (ulong) ((byte *) src - (byte *) dest),
+        mlprintf3(mem, "Reloc error for refs "PRI_INTPTR": reloc = %lu, stored = %u\n",
+                 (intptr_t) dpre, (ulong) ((byte *) src - (byte *) dest),
                  (uint) r_size((ref *) src - 1));
         gs_abort(mem);
     }

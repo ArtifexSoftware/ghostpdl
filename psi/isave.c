@@ -153,8 +153,8 @@ static const long min_inner_clump_space = sizeof(clump_head_t) + 500;
 static void
 print_save(const char *str, uint spacen, const alloc_save_t *sav)
 {
-  if_debug5('u', "[u]%s space %u 0x%lx: cdata = 0x%lx, id = %lu\n",\
-            str, spacen, (ulong)sav, (ulong)sav->client_data, (ulong)sav->id);
+  if_debug5('u', "[u]%s space %u "PRI_INTPTR": cdata = "PRI_INTPTR", id = %lu\n",\
+            str, spacen, (intptr_t)sav, (intptr_t)sav->client_data, (ulong)sav->id);
 }
 
 /* A link to igcref.c . */
@@ -240,7 +240,7 @@ gs_private_st_complex_only(st_alloc_change, alloc_change_t, "alloc_change",
 static void
 alloc_save_print(const gs_memory_t *mem, alloc_change_t * cp, bool print_current)
 {
-    dmprintf2(mem, " 0x%lx: 0x%lx: ", (ulong) cp, (ulong) cp->where);
+    dmprintf2(mem, " "PRI_INTPTR"x: "PRI_INTPTR": ", (intptr_t) cp, (intptr_t) cp->where);
     if (r_is_packed(&cp->contents)) {
         if (print_current)
             dmprintf2(mem, "saved=%x cur=%x\n", *(ref_packed *) & cp->contents,
@@ -428,8 +428,8 @@ alloc_save_space(gs_ref_memory_t * mem, gs_dual_memory_t * dmem, ulong sid)
                 break;		/* maybe should fail */
             alloc_init_clump(inner, cp->cbot, cp->ctop, cp->sreloc != 0, cp);
             alloc_link_clump(inner, mem);
-            if_debug2m('u', (gs_memory_t *)mem, "[u]inner clump: cbot=0x%lx ctop=0x%lx\n",
-                       (ulong) inner->cbot, (ulong) inner->ctop);
+            if_debug2m('u', (gs_memory_t *)mem, "[u]inner clump: cbot="PRI_INTPTR" ctop="PRI_INTPTR"\n",
+                       (intptr_t) inner->cbot, (intptr_t) inner->ctop);
             if (cp == save_mem.cc)
                 new_cc = inner;
         }
@@ -439,8 +439,8 @@ alloc_save_space(gs_ref_memory_t * mem, gs_dual_memory_t * dmem, ulong sid)
 
     save = gs_alloc_struct((gs_memory_t *) mem, alloc_save_t,
                            &st_alloc_save, "alloc_save_space(save)");
-    if_debug2m('u', (gs_memory_t *)mem, "[u]save space %u at 0x%lx\n",
-               mem->space, (ulong) save);
+    if_debug2m('u', (gs_memory_t *)mem, "[u]save space %u at "PRI_INTPTR"\n",
+               mem->space, (intptr_t) save);
     if (save == 0) {
         /* Free the inner clump structures.  This is the easiest way. */
         restore_free(mem);
@@ -454,8 +454,8 @@ alloc_save_space(gs_ref_memory_t * mem, gs_dual_memory_t * dmem, ulong sid)
     save->is_current = (dmem->current == mem);
     save->id = sid;
     mem->saved = save;
-    if_debug2m('u', (gs_memory_t *)mem, "[u%u]file_save 0x%lx\n",
-               mem->space, (ulong) mem->streams);
+    if_debug2m('u', (gs_memory_t *)mem, "[u%u]file_save "PRI_INTPTR"\n",
+               mem->space, (intptr_t) mem->streams);
     mem->streams = 0;
     mem->total_scanned = 0;
     mem->total_scanned_after_compacting = 0;
@@ -487,8 +487,8 @@ alloc_save_change_in(gs_ref_memory_t *mem, const ref * pcont,
     else if (r_is_struct(pcont))
         cp->offset = (byte *) where - (byte *) pcont->value.pstruct;
     else {
-        lprintf3("Bad type %u for save!  pcont = 0x%lx, where = 0x%lx\n",
-                 r_type(pcont), (ulong) pcont, (ulong) where);
+        lprintf3("Bad type %u for save!  pcont = "PRI_INTPTR", where = "PRI_INTPTR"\n",
+                 r_type(pcont), (intptr_t) pcont, (intptr_t) where);
         gs_abort((const gs_memory_t *)mem);
     }
     if (r_is_packed(where))
@@ -625,8 +625,8 @@ alloc_is_since_save(const void *vptr, const alloc_save_t * save)
     const char *const ptr = (const char *)vptr;
     register gs_ref_memory_t *mem = save->space_local;
 
-    if_debug2m('U', (gs_memory_t *)mem, "[U]is_since_save 0x%lx, 0x%lx:\n",
-               (ulong) ptr, (ulong) save);
+    if_debug2m('U', (gs_memory_t *)mem, "[U]is_since_save "PRI_INTPTR", "PRI_INTPTR":\n",
+               (intptr_t) ptr, (intptr_t) save);
     if (mem->saved == 0) {	/* This is a special case, the final 'restore' from */
         /* alloc_restore_all. */
         return true;
@@ -634,12 +634,12 @@ alloc_is_since_save(const void *vptr, const alloc_save_t * save)
     /* Check against clumps allocated since the save. */
     /* (There may have been intermediate saves as well.) */
     for (;; mem = &mem->saved->state) {
-        if_debug1m('U', (gs_memory_t *)mem, "[U]checking mem=0x%lx\n", (ulong) mem);
+        if_debug1m('U', (gs_memory_t *)mem, "[U]checking mem="PRI_INTPTR"\n", (intptr_t) mem);
         if (ptr_is_within_mem_clumps(ptr, mem)) {
             if_debug0m('U', (gs_memory_t *)mem, "[U+]found\n");
             return true;
         }
-        if_debug1m('U', (gs_memory_t *)mem, "[U-]not in any chunks belonging to 0x%lx\n", (ulong) mem);
+        if_debug1m('U', (gs_memory_t *)mem, "[U-]not in any chunks belonging to "PRI_INTPTR"\n", (intptr_t) mem);
         if (mem->saved == save) {	/* We've checked all the more recent saves, */
             /* must be OK. */
             break;
@@ -657,7 +657,7 @@ alloc_is_since_save(const void *vptr, const alloc_save_t * save)
         (mem = save->space_global) != save->space_local &&
         save->space_global->num_contexts == 1
         ) {
-        if_debug1m('U', (gs_memory_t *)mem, "[U]checking global mem=0x%lx\n", (ulong) mem);
+        if_debug1m('U', (gs_memory_t *)mem, "[U]checking global mem="PRI_INTPTR"\n", (intptr_t) mem);
         if (ptr_is_within_mem_clumps(ptr, mem)) {
             if_debug0m('U', (gs_memory_t *)mem, "[U+]  found\n");
             return true;
@@ -948,9 +948,9 @@ restore_finalize(gs_ref_memory_t * mem)
             struct_proc_finalize((*finalize)) =
             pre->o_type->finalize;
         if (finalize != 0) {
-            if_debug2m('u', (gs_memory_t *)mem, "[u]restore finalizing %s 0x%lx\n",
+            if_debug2m('u', (gs_memory_t *)mem, "[u]restore finalizing %s "PRI_INTPTR"\n",
                        struct_type_name_string(pre->o_type),
-                       (ulong) (pre + 1));
+                       (intptr_t) (pre + 1));
             (*finalize) ((gs_memory_t *) mem, pre + 1);
         }
         END_OBJECTS_SCAN
@@ -966,9 +966,9 @@ restore_resources(alloc_save_t * sprev, gs_ref_memory_t * mem)
 #ifdef DEBUG
     if (mem) {
         /* Note restoring of the file list. */
-        if_debug4m('u', (gs_memory_t *)mem, "[u%u]file_restore 0x%lx => 0x%lx for 0x%lx\n",
-                   mem->space, (ulong)mem->streams,
-                   (ulong)sprev->state.streams, (ulong) sprev);
+        if_debug4m('u', (gs_memory_t *)mem, "[u%u]file_restore "PRI_INTPTR" => "PRI_INTPTR" for "PRI_INTPTR"\n",
+                   mem->space, (intptr_t)mem->streams,
+                   (intptr_t)sprev->state.streams, (intptr_t)sprev);
     }
 #endif
 
@@ -1142,7 +1142,7 @@ forget_changes(gs_ref_memory_t * mem)
     for (; chp; chp = next) {
         ref_packed *prp = chp->where;
 
-        if_debug1m('U', (gs_memory_t *)mem, "[U]forgetting change 0x%lx\n", (ulong) chp);
+        if_debug1m('U', (gs_memory_t *)mem, "[U]forgetting change "PRI_INTPTR"\n", (intptr_t) chp);
         if (chp->offset == AC_OFFSET_ALLOCATED)
             DO_NOTHING;
         else
@@ -1161,9 +1161,9 @@ file_forget_save(gs_ref_memory_t * mem)
     stream *streams = mem->streams;
     stream *saved_streams = save->state.streams;
 
-    if_debug4m('u', (gs_memory_t *)mem, "[u%d]file_forget_save 0x%lx + 0x%lx for 0x%lx\n",
-               mem->space, (ulong) streams, (ulong) saved_streams,
-               (ulong) save);
+    if_debug4m('u', (gs_memory_t *)mem, "[u%d]file_forget_save "PRI_INTPTR" + "PRI_INTPTR" for "PRI_INTPTR"\n",
+               mem->space, (intptr_t) streams, (intptr_t) saved_streams,
+               (intptr_t) save);
     if (streams == 0)
         mem->streams = saved_streams;
     else if (saved_streams != 0) {
@@ -1278,8 +1278,8 @@ save_set_new(gs_ref_memory_t * mem, bool to_new, bool set_limit, ulong *pscanned
 
             SCAN_CLUMP_OBJECTS(cp)
                 DO_ALL
-                if_debug3m('U', (gs_memory_t *)mem, "[U]set_new scan(0x%lx(%u), %d)\n",
-                           (ulong) pre, size, to_new);
+                if_debug3m('U', (gs_memory_t *)mem, "[U]set_new scan("PRI_INTPTR"(%u), %d)\n",
+                           (intptr_t) pre, size, to_new);
             if (pre->o_type == &st_refs) {
                 /* These are refs, scan them. */
                 ref_packed *prp = (ref_packed *) (pre + 1);
@@ -1388,8 +1388,8 @@ save_set_new_changes(gs_ref_memory_t * mem, bool to_new, bool set_limit)
         } else {
             ref_packed *prp = chp->where;
 
-            if_debug3m('U', (gs_memory_t *)mem, "[U]set_new 0x%lx: (0x%lx, %d)\n",
-                       (ulong)chp, (ulong)prp, new);
+            if_debug3m('U', (gs_memory_t *)mem, "[U]set_new "PRI_INTPTR": ("PRI_INTPTR", %d)\n",
+                       (intptr_t)chp, (intptr_t)prp, new);
             if (!r_is_packed(prp)) {
                 ref *const rp = (ref *) prp;
 

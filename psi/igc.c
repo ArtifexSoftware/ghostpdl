@@ -318,8 +318,8 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
                 pms->prev = end;
                 pms->on_heap = false;
                 if_debug2m('6', (const gs_memory_t *)mem,
-                           "[6]adding free 0x%lx(%u) to mark stack\n",
-                           (ulong) pms, pms->count);
+                           "[6]adding free "PRI_INTPTR"(%u) to mark stack\n",
+                           (intptr_t)pms, pms->count);
             }
             cp->rescan_bot = cp->cend;
             cp->rescan_top = cp->cbase;
@@ -455,8 +455,8 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
 
     for_roots(ispace, max_trace, mem, rp) {
         if_debug3m('6', (const gs_memory_t *)mem,
-                   "[6]relocating root 0x%lx: 0x%lx -> 0x%lx\n",
-                   (ulong) rp, (ulong) rp->p, (ulong) * rp->p);
+                   "[6]relocating root "PRI_INTPTR": "PRI_INTPTR" -> "PRI_INTPTR"\n",
+                   (intptr_t)rp, (intptr_t)rp->p, (intptr_t)*rp->p);
         if (rp->ptype == ptr_ref_type) {
             ref *pref = (ref *) * rp->p;
 
@@ -466,8 +466,8 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
         } else
             *rp->p = (*rp->ptype->reloc) (*rp->p, &state);
         if_debug3m('6', (const gs_memory_t *)mem,
-                   "[6]relocated root 0x%lx: 0x%lx -> 0x%lx\n",
-                   (ulong) rp, (ulong) rp->p, (ulong) * rp->p);
+                   "[6]relocated root "PRI_INTPTR": "PRI_INTPTR" -> "PRI_INTPTR"\n",
+                   (intptr_t)rp, (intptr_t)rp->p, (intptr_t)*rp->p);
     }
 
     end_phase(state.heap,"relocate roots");
@@ -530,8 +530,8 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
             mem->saved = prev;
             mem->previous_status = total;
             if_debug3m('6', (const gs_memory_t *)mem,
-                       "[6]0x%lx previous allocated=%lu, used=%lu\n",
-                       (ulong) mem, total.allocated, total.used);
+                       "[6]"PRI_INTPTR" previous allocated=%lu, used=%lu\n",
+                       (intptr_t)mem, total.allocated, total.used);
             gs_memory_status((gs_memory_t *) mem, &total);
             mem->gc_allocated = mem->allocated + total.allocated;
         }
@@ -539,8 +539,8 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
         mem->previous_status = total;
         mem->gc_allocated = mem->allocated + total.allocated;
         if_debug3m('6', (const gs_memory_t *)mem,
-                   "[6]0x%lx previous allocated=%lu, used=%lu\n",
-                   (ulong) mem, total.allocated, total.used);
+                   "[6]"PRI_INTPTR" previous allocated=%lu, used=%lu\n",
+                   (intptr_t)mem, total.allocated, total.used);
     }
 
     end_phase(state.heap,"update stats");
@@ -615,9 +615,9 @@ gc_objects_clear_marks(const gs_memory_t *mem, clump_t * cp)
     if (pre->o_type != &st_free)
         debug_check_object(pre, cp, NULL);
 #endif
-    if_debug3m('7', (const gs_memory_t *)mem, " [7](un)marking %s(%lu) 0x%lx\n",
+    if_debug3m('7', (const gs_memory_t *)mem, " [7](un)marking %s(%lu) "PRI_INTPTR"\n",
                struct_type_name_string(pre->o_type),
-               (ulong) size, (ulong) pre);
+               (ulong) size, (intptr_t)pre);
     o_set_unmarked(pre);
     if (proc != 0)
         (*proc) (mem, pre + 1, size, pre->o_type);
@@ -682,8 +682,8 @@ gc_rescan_clump(clump_t * cp, gc_state_t * pstate, gc_mark_stack * pmstack)
     else if ((byte *) (pre + 1) > stop)
         return more;		/* 'break' won't work here */
     else {
-        if_debug2m('7', mem, " [7]scanning/marking 0x%lx(%lu)\n",
-                   (ulong) pre, (ulong) size);
+        if_debug2m('7', mem, " [7]scanning/marking "PRI_INTPTR"(%lu)\n",
+                   (intptr_t)pre, (ulong)size);
         if (pre->o_type == &st_refs) {
             ref_packed *rp = (ref_packed *) (pre + 1);
             char *end = (char *)rp + size;
@@ -740,8 +740,8 @@ gc_trace_clump(const gs_memory_t *mem, clump_t * cp, gc_state_t * pstate, gc_mar
     SCAN_CLUMP_OBJECTS(cp)
         DO_ALL
     {
-        if_debug2m('7', mem, " [7]scanning/marking 0x%lx(%lu)\n",
-                   (ulong) pre, (ulong) size);
+        if_debug2m('7', mem, " [7]scanning/marking "PRI_INTPTR"(%lu)\n",
+                   (intptr_t)pre, (ulong)size);
         if (pre->o_type == &st_refs) {
             ref_packed *rp = (ref_packed *) (pre + 1);
             char *end = (char *)rp + size;
@@ -804,8 +804,8 @@ gc_trace(gs_gc_root_t * rp, gc_state_t * pstate, gc_mark_stack * pmstack)
   BEGIN\
     if (names_mark_index(nt, nidx)) {\
         new |= 1;\
-        if_debug2m('8', gcst_get_memory_ptr(pstate), "  [8]marked name 0x%lx(%u)\n",\
-                  (ulong)names_index_ptr(nt, nidx), nidx);\
+        if_debug2m('8', gcst_get_memory_ptr(pstate), "  [8]marked name "PRI_INTPTR"(%u)\n",\
+                   (intptr_t)names_index_ptr(nt, nidx), nidx);\
     }\
   END
 
@@ -850,10 +850,10 @@ gc_trace(gs_gc_root_t * rp, gc_state_t * pstate, gc_mark_stack * pmstack)
                 continue;
             }
             debug_check_object(ptr - 1, NULL, NULL);
-          ts:if_debug4m('7', pstate->heap, " [7]%smarking %s 0x%lx[%u]",
+          ts:if_debug4m('7', pstate->heap, " [7]%smarking %s "PRI_INTPTR"[%u]",
                         depth_dots(sp, pms),
                         struct_type_name_string(ptr[-1].o_type),
-                        (ulong) ptr, sp->index);
+                        (intptr_t)ptr, sp->index);
             mproc = ptr[-1].o_type->enum_ptrs;
             if (mproc == gs_no_struct_enum_ptrs ||
                 (ptp = (*mproc)
@@ -869,7 +869,7 @@ gc_trace(gs_gc_root_t * rp, gc_state_t * pstate, gc_mark_stack * pmstack)
             /* template for pointer enumeration work. */
             nptr = (void *)nep.ptr;
             sp->index++;
-            if_debug1m('7', pstate->heap, " = 0x%lx\n", (ulong) nptr);
+            if_debug1m('7', pstate->heap, " = "PRI_INTPTR"\n", (intptr_t)nptr);
             /* Descend into nep.ptr, whose pointer type is ptp. */
             if (ptp == ptr_struct_type) {
                 sp[1].index = 0;
@@ -909,8 +909,8 @@ gc_trace(gs_gc_root_t * rp, gc_state_t * pstate, gc_mark_stack * pmstack)
                 continue;
             }
             --(sp->index);
-            if_debug3m('8', pstate->heap, "  [8]%smarking refs 0x%lx[%u]\n",
-                      depth_dots(sp, pms), (ulong) pptr, sp->index);
+            if_debug3m('8', pstate->heap, "  [8]%smarking refs "PRI_INTPTR"[%u]\n",
+                      depth_dots(sp, pms), (intptr_t)pptr, sp->index);
             if (r_is_packed(pptr)) {
                 if (!r_has_pmark(pptr)) {
                     r_set_pmark(pptr);
@@ -1060,8 +1060,8 @@ gc_extend_stack(gc_mark_stack * pms, gc_state_t * pstate)
 
             if (cp == 0) {	/* We were tracing outside collectible */
                 /* storage.  This can't happen. */
-                lprintf1("mark stack overflowed while outside collectible space at 0x%lx!\n",
-                         (ulong) cptr);
+                lprintf1("mark stack overflowed while outside collectible space at "PRI_INTPTR"!\n",
+                         (intptr_t)cptr);
                 gs_abort(pstate->heap);
             }
             if (cptr < cp->rescan_bot)
@@ -1193,16 +1193,16 @@ gc_objects_set_reloc(gc_state_t * gcst, clump_t * cp)
         ) {			/* Free object */
         reloc += sizeof(obj_header_t) + obj_align_round(size);
         if ((finalize = pre->o_type->finalize) != 0) {
-            if_debug2m('u', gcst->heap, "[u]GC finalizing %s 0x%lx\n",
+            if_debug2m('u', gcst->heap, "[u]GC finalizing %s "PRI_INTPTR"\n",
                        struct_type_name_string(pre->o_type),
-                       (ulong) (pre + 1));
+                       (intptr_t)(pre + 1));
             (*finalize) (gcst->cur_mem, pre + 1);
         }
         pfree = (byte *) pre;
         pre->o_back = (pfree - (byte *) chead) >> obj_back_shift;
         pre->o_nreloc = reloc;
-        if_debug3m('7', gcst->heap, " [7]at 0x%p, unmarked %lu, new reloc = %u\n",
-                   pre, (ulong) size, (unsigned int)reloc);
+        if_debug3m('7', gcst->heap, " [7]at "PRI_INTPTR", unmarked %lu, new reloc = %u\n",
+                   (intptr_t)pre, (ulong) size, (unsigned int)reloc);
     } else {			/* Useful object */
         debug_check_object(pre, cp, gcst);
         pre->o_back = ((byte *) pre - pfree) >> obj_back_shift;
@@ -1241,9 +1241,9 @@ gc_do_reloc(clump_t * cp, gs_ref_memory_t * mem, gc_state_t * pstate)
                 pre->o_type->reloc_ptrs;
 
             if_debug3m('7', (const gs_memory_t *)mem,
-                       " [7]relocating ptrs in %s(%lu) 0x%lx\n",
+                       " [7]relocating ptrs in %s(%lu) "PRI_INTPTR"\n",
                        struct_type_name_string(pre->o_type),
-                       (ulong) size, (ulong) pre);
+                       (ulong)size, (intptr_t)pre);
             if (proc != 0)
                 (*proc) (pre + 1, size, pre->o_type, pstate);
         }
@@ -1259,8 +1259,8 @@ gc_do_reloc(clump_t * cp, gs_ref_memory_t * mem, gc_state_t * pstate)
 const void *
 print_reloc_proc(const void *obj, const char *cname, const void *robj)
 {
-    if_debug3('9', "  [9]relocate %s * 0x%lx to 0x%lx\n",
-              cname, (ulong)obj, (ulong)robj);
+    if_debug3('9', "  [9]relocate %s * "PRI_INTPTR" to "PRI_INTPTR"\n",
+              cname, (intptr_t)obj, (intptr_t)robj);
     return robj;
 }
 
@@ -1289,8 +1289,8 @@ igc_reloc_struct_ptr(const void /*obj_header_t */ *obj, gc_state_t * gcst)
 
             if (cp != 0 && cp->cbase <= (byte *)obj && (byte *)obj <cp->ctop) {
                 if (back > (cp->ctop - cp->cbase) >> obj_back_shift) {
-                    lprintf2("Invalid back pointer %u at 0x%lx!\n",
-                             back, (ulong) obj);
+                    lprintf2("Invalid back pointer %u at "PRI_INTPTR"!\n",
+                             back, (intptr_t)obj);
                     gs_abort(NULL);
                 }
             } else {
@@ -1340,9 +1340,9 @@ gc_objects_compact(clump_t * cp, gc_state_t * gcst)
 
         debug_check_object(pre, cp, gcst);
         if_debug4m('7', cmem,
-                   " [7]compacting %s 0x%lx(%lu) to 0x%lx\n",
+                   " [7]compacting %s "PRI_INTPTR"(%lu) to "PRI_INTPTR"\n",
                    struct_type_name_string(pre->o_type),
-                   (ulong) pre, (ulong) size, (ulong) dpre);
+                   (intptr_t)pre, (ulong)size, (intptr_t)dpre);
         if (procs == 0) {
             if (dpre != pre)
                 memmove(dpre, pre,

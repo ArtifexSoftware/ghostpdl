@@ -40,7 +40,7 @@ gs_setblendmode(gs_gstate *pgs, gs_blend_mode_t mode)
     if (gs_debug_c('v')) {
         static const char *const bm_names[] = { GS_BLEND_MODE_NAMES };
 
-        dmlprintf1(pgs->memory, "[v](0x%lx)blend_mode = ", (long)pgs);
+        dmlprintf1(pgs->memory, "[v]("PRI_INTPTR")blend_mode = ", (intptr_t)pgs);
         if (mode >= 0 && mode < countof(bm_names))
             dmprintf1(pgs->memory, "%s\n", bm_names[mode]);
         else
@@ -67,7 +67,7 @@ gs_currentblendmode(const gs_gstate *pgs)
 int
 gs_setopacityalpha(gs_gstate *pgs, double alpha)
 {
-    if_debug2m('v', pgs->memory, "[v](0x%lx)opacity.alpha = %g\n", (ulong)pgs, alpha);
+    if_debug2m('v', pgs->memory, "[v]("PRI_INTPTR")opacity.alpha = %g\n", (intptr_t)pgs, alpha);
     pgs->opacity.alpha = (alpha < 0.0 ? 0.0 : alpha > 1.0 ? 1.0 : alpha);
     return 0;
 }
@@ -81,7 +81,7 @@ gs_currentopacityalpha(const gs_gstate *pgs)
 int
 gs_setshapealpha(gs_gstate *pgs, double alpha)
 {
-    if_debug2m('v', pgs->memory, "[v](0x%lx)shape.alpha = %g\n", (ulong)pgs, alpha);
+    if_debug2m('v', pgs->memory, "[v]("PRI_INTPTR")shape.alpha = %g\n", (intptr_t)pgs, alpha);
     pgs->shape.alpha = (alpha < 0.0 ? 0.0 : alpha > 1.0 ? 1.0 : alpha);
     return 0;
 }
@@ -95,8 +95,8 @@ gs_currentshapealpha(const gs_gstate *pgs)
 int
 gs_settextknockout(gs_gstate *pgs, bool knockout)
 {
-    if_debug2m('v', pgs->memory, "[v](0x%lx)text_knockout = %s\n",
-              (ulong)pgs, (knockout ? "true" : "false"));
+    if_debug2m('v', pgs->memory, "[v]("PRI_INTPTR")text_knockout = %s\n",
+              (intptr_t)pgs, (knockout ? "true" : "false"));
     pgs->text_knockout = knockout;
     return 0;
 }
@@ -323,8 +323,8 @@ gs_begin_transparency_group(gs_gstate *pgs,
         static const char *const cs_names[] = {
             GS_COLOR_SPACE_TYPE_NAMES
         };
-        dmlprintf6(pgs->memory, "[v](0x%lx)begin_transparency_group [%g %g %g %g] Num_grp_clr_comp = %d\n",
-                  (ulong)pgs, pbbox->p.x, pbbox->p.y, pbbox->q.x, pbbox->q.y,params.group_color_numcomps);
+        dmlprintf6(pgs->memory, "[v]("PRI_INTPTR")begin_transparency_group [%g %g %g %g] Num_grp_clr_comp = %d\n",
+                   (intptr_t)pgs, pbbox->p.x, pbbox->p.y, pbbox->q.x, pbbox->q.y,params.group_color_numcomps);
         if (ptgp->ColorSpace)
             dmprintf1(pgs->memory, "     CS = %s",
                 cs_names[(int)gs_color_space_get_index(ptgp->ColorSpace)]);
@@ -370,9 +370,9 @@ gx_begin_transparency_group(gs_gstate * pgs, gx_device * pdev,
         static const char *const cs_names[] = {
             GS_COLOR_SPACE_TYPE_NAMES
         };
-        dmlprintf6(pdev->memory, "[v](0x%lx)gx_begin_transparency_group [%g %g %g %g] Num_grp_clr_comp = %d\n",
-                  (ulong)pgs, bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y,
-                        pparams->group_color_numcomps);
+        dmlprintf6(pdev->memory, "[v]("PRI_INTPTR")gx_begin_transparency_group [%g %g %g %g] Num_grp_clr_comp = %d\n",
+                   (intptr_t)pgs, bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y,
+                   pparams->group_color_numcomps);
         if (tgp.ColorSpace)
             dmprintf1(pdev->memory, "     CS = %s",
                 cs_names[(int)gs_color_space_get_index(tgp.ColorSpace)]);
@@ -601,9 +601,9 @@ gs_begin_transparency_mask(gs_gstate * pgs,
             return_error(gs_error_VMerror);
         blend_color_space->cmm_icc_profile_data = pgs->icc_manager->default_gray;
         gsicc_adjust_profile_rc(blend_color_space->cmm_icc_profile_data, 1, "gs_begin_transparency_mask");
-        if_debug9m('v', pgs->memory, "[v](0x%lx)gs_begin_transparency_mask [%g %g %g %g]\n\
-          subtype = %d  Background_components = %d, Matte_components = %d, %s\n",
-                  (ulong)pgs, pbbox->p.x, pbbox->p.y, pbbox->q.x, pbbox->q.y,
+        if_debug9m('v', pgs->memory, "[v]("PRI_INTPTR")gs_begin_transparency_mask [%g %g %g %g]\n"
+                   "      subtype = %d  Background_components = %d, Matte_components = %d, %s\n",
+                  (intptr_t)pgs, pbbox->p.x, pbbox->p.y, pbbox->q.x, pbbox->q.y,
                   (int)ptmp->subtype, ptmp->Background_components,
                   ptmp->Matte_components,
                   (ptmp->TransferFunction == mask_transfer_identity ? "no TR" :
@@ -692,9 +692,9 @@ gx_begin_transparency_mask(gs_gstate * pgs, gx_device * pdev,
     }
     memcpy(tmp.transfer_fn, pparams->transfer_fn, size_of(tmp.transfer_fn));
     if_debug10m('v', pgs->memory,
-               "[v](0x%lx)gx_begin_transparency_mask [%g %g %g %g]\n"
+               "[v]("PRI_INTPTR")gx_begin_transparency_mask [%g %g %g %g]\n"
                "      subtype = %d  Background_components = %d Matte_components = %d Num_grp_clr_comp = %d %s\n",
-              (ulong)pgs, pparams->bbox.p.x, pparams->bbox.p.y,
+              (intptr_t)pgs, pparams->bbox.p.x, pparams->bbox.p.y,
               pparams->bbox.q.x, pparams->bbox.q.y,
               (int)tmp.subtype, tmp.Background_components, tmp.Matte_components,
               tmp.group_color_numcomps,
@@ -729,7 +729,7 @@ gs_end_transparency_mask(gs_gstate *pgs,
     if_debug1m('v', pgs->memory,
                "[v]xstate_changed set true, gstate level is %d\n", pgs->level);
     if_debug2m('v', pgs->memory,
-               "[v](0x%lx)gs_end_transparency_mask(%d)\n", (ulong)pgs,
+               "[v]("PRI_INTPTR")gs_end_transparency_mask(%d)\n", (intptr_t)pgs,
                (int)csel);
     params.pdf14_op = PDF14_END_TRANS_MASK;  /* Other parameters not used */
     params.csel = csel;
@@ -747,7 +747,7 @@ gx_end_transparency_mask(gs_gstate * pgs, gx_device * pdev,
                                 const gs_pdf14trans_params_t * pparams)
 {
     if_debug2m('v', pgs->memory,
-               "[v](0x%lx)gx_end_transparency_mask(%d)\n", (ulong)pgs,
+               "[v]("PRI_INTPTR")gx_end_transparency_mask(%d)\n", (intptr_t)pgs,
                (int)pparams->csel);
     return (*dev_proc(pdev, end_transparency_mask)) (pdev, pgs);
 }
@@ -846,7 +846,7 @@ gs_abort_pdf14trans_device(gs_gstate * pgs)
 int
 gx_abort_trans_device(gs_gstate * pgs, gx_device * pdev)
 {
-    if_debug1m('v', pgs->memory, "[v](0x%lx)gx_abort_trans_device\n", (ulong)pgs);
+    if_debug1m('v', pgs->memory, "[v]("PRI_INTPTR")gx_abort_trans_device\n", (intptr_t)pgs);
     return (*dev_proc(pdev, discard_transparency_layer)) (pdev, pgs);
 }
 

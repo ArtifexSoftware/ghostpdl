@@ -338,9 +338,9 @@ accum_close(gx_device * dev)
             (adev->list.count <= 1 ? &adev->list.single : adev->list.head);
 
         dmlprintf6(dev->memory,
-                   "[q]list at 0x%lx, count=%d, head=0x%lx, tail=0x%lx, xrange=(%d,%d):\n",
-                   (ulong) & adev->list, adev->list.count,
-                   (ulong) adev->list.head, (ulong) adev->list.tail,
+                   "[q]list at "PRI_INTPTR", count=%d, head="PRI_INTPTR", tail="PRI_INTPTR", xrange=(%d,%d):\n",
+                   (intptr_t)&adev->list, adev->list.count,
+                   (intptr_t)adev->list.head, (intptr_t)adev->list.tail,
                    adev->list.xmin, adev->list.xmax);
         while (rp != 0) {
             clip_rect_print('q', "   ", rp);
@@ -348,7 +348,7 @@ accum_close(gx_device * dev)
         }
     }
     if (!clip_list_validate(&adev->list)) {
-        mlprintf1(dev->memory, "[q]Bad clip list 0x%lx!\n", (ulong) & adev->list);
+        mlprintf1(dev->memory, "[q]Bad clip list "PRI_INTPTR"!\n", (intptr_t)&adev->list);
         return_error(gs_error_Fatal);
     }
 #endif

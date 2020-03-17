@@ -137,8 +137,8 @@ gx_path_init_contained_shared(gx_path * ppath, const gx_path * shared,
 {
     if (shared) {
         if (shared->segments == &shared->local_segments) {
-            lprintf1("Attempt to share (local) segments of path 0x%lx!\n",
-                     (ulong) shared);
+            lprintf1("Attempt to share (local) segments of path "PRI_INTPTR"!\n",
+                     (intptr_t)shared);
             return_error(gs_error_Fatal);
         }
         *ppath = *shared;
@@ -172,8 +172,8 @@ gx_path_alloc_shared(const gx_path * shared, gs_memory_t * mem,
     ppath->procs = &default_path_procs;
     if (shared) {
         if (shared->segments == &shared->local_segments) {
-            lprintf1("Attempt to share (local) segments of path 0x%lx!\n",
-                     (ulong) shared);
+            lprintf1("Attempt to share (local) segments of path "PRI_INTPTR"!\n",
+                     (intptr_t)shared);
             gs_free_object(mem, ppath, cname);
             return 0;
         }
@@ -203,8 +203,8 @@ gx_path_init_local_shared(gx_path * ppath, const gx_path * shared,
 {
     if (shared) {
         if (shared->segments == &shared->local_segments) {
-            lprintf1("Attempt to share (local) segments of path 0x%lx!\n",
-                     (ulong) shared);
+            lprintf1("Attempt to share (local) segments of path "PRI_INTPTR"!\n",
+                     (intptr_t)shared);
             return_error(gs_error_Fatal);
         }
         *ppath = *shared;
@@ -991,7 +991,7 @@ path_alloc_copy(gx_path * ppath)
 void
 gx_dump_path(const gx_path * ppath, const char *tag)
 {
-    dmlprintf2(ppath->memory, "[P]Path 0x%lx %s:\n", (ulong) ppath, tag);
+    dmlprintf2(ppath->memory, "[P]Path "PRI_INTPTR" %s:\n", (intptr_t)ppath, tag);
     gx_path_print(ppath);
 }
 
@@ -1006,15 +1006,15 @@ gx_path_print(const gx_path * ppath)
                ppath->state_flags, ppath->subpath_count, ppath->curve_count,
                fixed2float(ppath->position.x),
                fixed2float(ppath->position.y));
-    dmlprintf5(ppath->memory," %% box=(%f,%f),(%f,%f) last=0x%lx\n",
+    dmlprintf5(ppath->memory," %% box=(%f,%f),(%f,%f) last="PRI_INTPTR"\n",
                fixed2float(ppath->bbox.p.x), fixed2float(ppath->bbox.p.y),
                fixed2float(ppath->bbox.q.x), fixed2float(ppath->bbox.q.y),
-               (ulong) ppath->box_last);
+               (intptr_t)ppath->box_last);
     dmlprintf4(ppath->memory,
-               " %% segments=0x%lx (refct=%ld, first=0x%lx, current=0x%lx)\n",
-               (ulong) ppath->segments, (long)ppath->segments->rc.ref_count,
-               (ulong) ppath->segments->contents.subpath_first,
-               (ulong) ppath->segments->contents.subpath_current);
+               " %% segments="PRI_INTPTR" (refct=%ld, first="PRI_INTPTR", current="PRI_INTPTR")\n",
+               (intptr_t)ppath->segments, (long)ppath->segments->rc.ref_count,
+               (intptr_t)ppath->segments->contents.subpath_first,
+               (intptr_t)ppath->segments->contents.subpath_current);
     while (pseg) {
         dmlputs(ppath->memory,"");
         gx_print_segment(ppath->memory, pseg);
@@ -1028,14 +1028,14 @@ gx_print_segment(const gs_memory_t *mem, const segment * pseg)
     double py = fixed2float(pseg->pt.y);
     char out[80];
 
-    gs_sprintf(out, "0x%lx<0x%lx,0x%lx>:%u",
-         (ulong) pseg, (ulong) pseg->prev, (ulong) pseg->next, pseg->notes);
+    gs_sprintf(out, PRI_INTPTR "<"PRI_INTPTR","PRI_INTPTR">:%u",
+               (intptr_t)pseg, (intptr_t)pseg->prev, (intptr_t)pseg->next, pseg->notes);
     switch (pseg->type) {
         case s_start:{
                 const subpath *const psub = (const subpath *)pseg;
 
-                dmprintf5(mem, "   %1.4f %1.4f moveto\t%% %s #curves=%d last=0x%lx\n",
-                          px, py, out, psub->curve_count, (ulong) psub->last);
+                dmprintf5(mem, "   %1.4f %1.4f moveto\t%% %s #curves=%d last="PRI_INTPTR"\n",
+                          px, py, out, psub->curve_count, (intptr_t)psub->last);
                 break;
             }
         case s_curve:{
@@ -1066,13 +1066,13 @@ gx_print_segment(const gs_memory_t *mem, const segment * pseg)
                 const line_close_segment *const plc =
                 (const line_close_segment *)pseg;
 
-                dmprintf4(mem, "   closepath\t%% %s %1.4f %1.4f 0x%lx\n",
-                          out, px, py, (ulong) (plc->sub));
+                dmprintf4(mem, "   closepath\t%% %s %1.4f %1.4f "PRI_INTPTR"\n",
+                          out, px, py, (intptr_t)(plc->sub));
                 break;
             }
         default:
-            dmprintf4(mem, "   %1.4f %1.4f <type 0x%x>\t%% %s\n",
-                      px, py, pseg->type, out);
+            dmprintf4(mem, "   %1.4f %1.4f <type "PRI_INTPTR">\t%% %s\n",
+                      px, py, (intptr_t)pseg->type, out);
     }
 }
 

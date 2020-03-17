@@ -31,8 +31,8 @@ void
 gc_strings_set_marks(clump_t * cp, bool mark)
 {
     if (cp->smark != 0) {
-        if_debug3('6', "[6]clearing string marks 0x%lx[%u] to %d\n",
-                  (ulong) cp->smark, cp->smark_size, (int)mark);
+        if_debug3('6', "[6]clearing string marks "PRI_INTPTR"[%u] to %d\n",
+                  (intptr_t)cp->smark, cp->smark_size, (int)mark);
         memset(cp->smark, 0, cp->smark_size);
         if (mark)
             gc_mark_string(cp->sbase + HDR_ID_OFFSET, (cp->climit - cp->sbase) - HDR_ID_OFFSET, true, cp);
@@ -141,7 +141,7 @@ gc_string_mark(const byte * ptr, uint size, bool set, gc_state_t * gcst)
     if (!(cp = gc_locate(ptr - HDR_ID_OFFSET, gcst))) {		/* not in a clump */
 #ifdef DEBUG
         if (gs_debug_c('5')) {
-            dmlprintf2(gcst->heap, "[5]0x%lx[%u]", (ulong) ptr - HDR_ID_OFFSET, size);
+            dmlprintf2(gcst->heap, "[5]"PRI_INTPTR"[%u]", (intptr_t)ptr - HDR_ID_OFFSET, size);
             dmprintstr(gcst->heap);
             dmputs(gcst->heap, " not in a clump\n");
         }
@@ -152,8 +152,8 @@ gc_string_mark(const byte * ptr, uint size, bool set, gc_state_t * gcst)
         return false;
 #ifdef DEBUG
     if (ptr - HDR_ID_OFFSET < cp->ctop) {
-        lprintf4("String pointer 0x%lx[%u] outside [0x%lx..0x%lx)\n",
-                 (ulong) ptr - HDR_ID_OFFSET, size, (ulong) cp->ctop, (ulong) cp->climit);
+        lprintf4("String pointer "PRI_INTPTR"[%u] outside ["PRI_INTPTR".."PRI_INTPTR")\n",
+                 (intptr_t)ptr - HDR_ID_OFFSET, size, (intptr_t)cp->ctop, (intptr_t)cp->climit);
         return false;
     } else if (ptr + size > cp->climit) {	/*
                                                  * If this is the bottommost string in a clump that has
@@ -171,9 +171,9 @@ gc_string_mark(const byte * ptr, uint size, bool set, gc_state_t * gcst)
         while (ptr - HDR_ID_OFFSET == scp->climit && scp->outer != 0)
             scp = scp->outer;
         if (ptr - HDR_ID_OFFSET + size > scp->climit) {
-            lprintf4("String pointer 0x%lx[%u] outside [0x%lx..0x%lx)\n",
-                     (ulong) ptr - HDR_ID_OFFSET, size,
-                     (ulong) scp->ctop, (ulong) scp->climit);
+            lprintf4("String pointer "PRI_INTPTR"[%u] outside ["PRI_INTPTR".."PRI_INTPTR")\n",
+                     (intptr_t)ptr - HDR_ID_OFFSET, size,
+                     (intptr_t)scp->ctop, (intptr_t)scp->climit);
             return false;
         }
     }
@@ -181,9 +181,9 @@ gc_string_mark(const byte * ptr, uint size, bool set, gc_state_t * gcst)
     marks = gc_mark_string(ptr, size, set, cp);
 #ifdef DEBUG
     if (gs_debug_c('5')) {
-        dmlprintf4(gcst->heap, "[5]%s%smarked 0x%lx[%u]",
+        dmlprintf4(gcst->heap, "[5]%s%smarked "PRI_INTPTR"[%u]",
                   (marks ? "" : "already "), (set ? "" : "un"),
-                  (ulong) ptr - HDR_ID_OFFSET, size);
+                  (intptr_t)ptr - HDR_ID_OFFSET, size);
         dmprintstr(gcst->heap);
         dmputc(gcst->heap, '\n');
     }
@@ -198,8 +198,8 @@ gc_strings_clear_reloc(clump_t * cp)
 {
     if (cp->sreloc != 0) {
         gc_strings_set_marks(cp, true);
-        if_debug1('6', "[6]clearing string reloc 0x%lx\n",
-                  (ulong) cp->sreloc);
+        if_debug1('6', "[6]clearing string reloc "PRI_INTPTR"\n",
+                  (intptr_t)cp->sreloc);
         gc_strings_set_reloc(cp);
     }
 }
@@ -320,8 +320,8 @@ igc_reloc_string(gs_string * sptr, gc_state_t * gcst)
     }
     byt = *bitp & (0xff >> (8 - (offset & 7)));
     reloc -= byte_count_one_bits(byt);
-    if_debug2('5', "[5]relocate string 0x%lx to 0x%lx\n",
-              (ulong) ptr, (ulong) (cp->sdest - reloc));
+    if_debug2('5', "[5]relocate string "PRI_INTPTR" to 0x%lx\n",
+              (intptr_t)ptr, (intptr_t)(cp->sdest - reloc));
     sptr->data = (cp->sdest - reloc) + HDR_ID_OFFSET;
 }
 void
@@ -360,7 +360,7 @@ gc_strings_compact(clump_t * cp, const gs_memory_t *mem)
             for (; i < n; i += R) {
                 uint j;
 
-                dmlprintf1(mem, "[4]0x%lx: ", (ulong) (base + i));
+                dmlprintf1(mem, "[4]"PRI_INTPTR": ", (intptr_t) (base + i));
                 for (j = i; j < i + R; j++) {
                     byte ch = base[j];
 

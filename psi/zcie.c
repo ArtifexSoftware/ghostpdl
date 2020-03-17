@@ -837,8 +837,8 @@ cie_cache_finish_store(i_ctx_t *i_ctx_p, bool replicate)
     pcache = (cie_cache_floats *) (r_ptr(esp - 1, char) + esp->value.intval);
 
     pcache->params.is_identity = false;	/* cache_set_linear computes this */
-    if_debug3m('c', imemory, "[c]cache 0x%lx base=%g, factor=%g:\n",
-               (ulong) pcache, pcache->params.base, pcache->params.factor);
+    if_debug3m('c', imemory, "[c]cache "PRI_INTPTR" base=%g, factor=%g:\n",
+               (intptr_t) pcache, pcache->params.base, pcache->params.factor);
     if (replicate ||
         (code = float_params(op, gx_cie_cache_size, &pcache->values[0])) < 0
         ) {
@@ -974,8 +974,8 @@ cie_create_icc(i_ctx_t *i_ctx_p)
     pcache = (cie_cache_floats *) (r_ptr(esp - 1, char) + esp->value.intval);
 
     pcache->params.is_identity = false;	/* cache_set_linear computes this */
-    if_debug3m('c', imemory, "[c]icc_sample_proc 0x%lx base=%g, factor=%g:\n",
-               (ulong) pcache, pcache->params.base, pcache->params.factor);
+    if_debug3m('c', imemory, "[c]icc_sample_proc "PRI_INTPTR" base=%g, factor=%g:\n",
+               (intptr_t) pcache, pcache->params.base, pcache->params.factor);
     if ((code = float_params(op, gx_cie_cache_size, &pcache->values[0])) < 0) {
         /* We might have underflowed the current stack block. */
         /* Handle the parameters one-by-one. */

@@ -864,8 +864,8 @@ zcurrentfile(i_ctx_t *i_ctx_p)
         ref *efp = zget_current_file(i_ctx_p);
 
         if (esfile != efp) {
-            lprintf2("currentfile: esfile=0x%lx, efp=0x%lx\n",
-                     (ulong) esfile, (ulong) efp);
+            lprintf2("currentfile: esfile="PRI_INTPTR", efp="PRI_INTPTR"\n",
+                     (intptr_t) esfile, (intptr_t) efp);
             ref_assign(op, efp);
         } else
 #endif

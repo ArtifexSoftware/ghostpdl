@@ -79,8 +79,8 @@ zsave(i_ctx_t *i_ctx_p)
         ifree_object(vmsave, "zsave");
         return_error(gs_error_VMerror);
     }
-    if_debug2m('u', imemory, "[u]vmsave 0x%lx, id = %lu\n",
-               (ulong) vmsave, (ulong) sid);
+    if_debug2m('u', imemory, "[u]vmsave "PRI_INTPTR", id = %lu\n",
+               (intptr_t) vmsave, (ulong) sid);
     code = gs_gsave_for_save(igs, &prev);
     if (code < 0)
         return code;
@@ -106,8 +106,8 @@ restore_check_save(i_ctx_t *i_ctx_p, alloc_save_t **asave)
 
     if (code < 0)
         return code;
-    if_debug2m('u', imemory, "[u]vmrestore 0x%lx, id = %lu\n",
-               (ulong) alloc_save_client_data(*asave),
+    if_debug2m('u', imemory, "[u]vmrestore "PRI_INTPTR", id = %lu\n",
+               (intptr_t) alloc_save_client_data(*asave),
                (ulong) op->value.saveid);
     if (I_VALIDATE_BEFORE_RESTORE)
         ivalidate_clean_spaces(i_ctx_p);

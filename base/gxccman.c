@@ -363,10 +363,10 @@ gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
     }
     pair->memory = 0;
     if_debug8m('k', dir->memory,
-               "[k]adding pair 0x%lx: font=0x%lx [%g %g %g %g] UID %ld, 0x%lx\n",
-               (ulong) pair, (ulong) font,
+               "[k]adding pair "PRI_INTPTR": font="PRI_INTPTR" [%g %g %g %g] UID %ld, "PRI_INTPTR"\n",
+               (intptr_t)pair, (intptr_t)font,
                pair->mxx, pair->mxy, pair->myx, pair->myy,
-               (long)pair->UID.id, (ulong) pair->UID.xvalues);
+               (long)pair->UID.id, (intptr_t) pair->UID.xvalues);
     *ppair = pair;
     return 0;
 }
@@ -412,7 +412,7 @@ gs_clean_fm_pair_attributes(gs_font_dir * dir, cached_fm_pair * pair)
 void
 gs_clean_fm_pair(gs_font_dir * dir, cached_fm_pair * pair)
 {
-    if_debug1m('k', dir->memory, "[k]cleaning pair 0x%lx\n", (ulong) pair);
+    if_debug1m('k', dir->memory, "[k]cleaning pair "PRI_INTPTR"\n", (intptr_t) pair);
     pair->font = NULL;
     gs_clean_fm_pair_attributes(dir, pair);
 }
@@ -420,8 +420,8 @@ gs_clean_fm_pair(gs_font_dir * dir, cached_fm_pair * pair)
 int
 gs_purge_fm_pair(gs_font_dir * dir, cached_fm_pair * pair, int xfont_only)
 {
-    if_debug2m('k', dir->memory, "[k]purging pair 0x%lx%s\n",
-               (ulong) pair, (xfont_only ? " (xfont only)" : ""));
+    if_debug2m('k', dir->memory, "[k]purging pair "PRI_INTPTR"%s\n",
+               (intptr_t)pair, (xfont_only ? " (xfont only)" : ""));
     if (pair->xfont != 0) {
         (*pair->xfont->common.procs->release) (pair->xfont,
                                                pair->memory);
@@ -589,8 +589,8 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
     *pcc = cc;
     if (cc == 0)
         return 0;
-    if_debug4m('k', dev->memory, "[k]adding char 0x%lx:%u(%u,%u)\n",
-               (ulong) cc, (uint) icdsize, iwidth, iheight);
+    if_debug4m('k', dev->memory, "[k]adding char "PRI_INTPTR":%u(%u,%u)\n",
+               (intptr_t)cc, (uint)icdsize, iwidth, iheight);
 
     /* Fill in the entry. */
 
@@ -658,8 +658,8 @@ gx_free_cached_char(gs_font_dir * dir, cached_char * cc)
     dir->ccache.cnext = (byte *) cc - cck->data;
     if (cc->linked)
         cc_pair(cc)->num_chars--;
-    if_debug2m('k', dir->memory, "[k]freeing char 0x%lx, pair=0x%lx\n",
-               (ulong) cc, (ulong) cc_pair(cc));
+    if_debug2m('k', dir->memory, "[k]freeing char "PRI_INTPTR", pair="PRI_INTPTR"\n",
+               (intptr_t)cc, (intptr_t)cc_pair(cc));
     gx_bits_cache_free((gx_bits_cache *) & dir->ccache, &cc->head, cck);
 }
 
@@ -669,8 +669,8 @@ gx_add_cached_char(gs_font_dir * dir, gx_device_memory * dev,
 cached_char * cc, cached_fm_pair * pair, const gs_log2_scale_point * pscale)
 {
     if_debug5m('k', dev->memory,
-               "[k]chaining char 0x%lx: pair=0x%lx, glyph=0x%lx, wmode=%d, depth=%d\n",
-               (ulong) cc, (ulong) pair, (ulong) cc->code,
+               "[k]chaining char "PRI_INTPTR": pair="PRI_INTPTR", glyph=0x%lx, wmode=%d, depth=%d\n",
+               (intptr_t)cc, (intptr_t)pair, (ulong)cc->code,
                cc->wmode, cc_depth(cc));
     if (dev != NULL) {
         static const gs_log2_scale_point no_scale =
@@ -834,8 +834,8 @@ gx_add_char_bits(gs_font_dir * dir, cached_char * cc,
 
         if (diff >= sizeof(cached_char_head)) {
             shorten_cached_char(dir, cc, diff);
-            if_debug2m('K', dir->memory, "[K]shortening char 0x%lx by %u (adding)\n",
-                       (ulong) cc, diff);
+            if_debug2m('K', dir->memory, "[K]shortening char "PRI_INTPTR" by %u (adding)\n",
+                       (intptr_t)cc, diff);
         }
     }
 
@@ -860,8 +860,8 @@ gs_purge_font_from_char_caches_forced(gs_font * font, bool force)
     pair = dir->fmcache.mdata;
     count = dir->fmcache.mmax;
     font->is_cached = false; /* Prevent redundant execution. */
-    if_debug1m('k', font->memory, "[k]purging font 0x%lx\n",
-               (ulong) font);
+    if_debug1m('k', font->memory, "[k]purging font "PRI_INTPTR"\n",
+               (intptr_t)font);
     for (; count--; pair++) {
         if (pair->font == font) {
             if (!force && uid_is_valid(&pair->UID)) {	/* Keep the entry. */
@@ -1064,6 +1064,6 @@ shorten_cached_char(gs_font_dir * dir, cached_char * cc, uint diff)
 {
     gx_bits_cache_shorten((gx_bits_cache *) & dir->ccache, &cc->head,
                           diff, cc->chunk);
-    if_debug2m('K', dir->memory, "[K]shortening creates free block 0x%lx(%u)\n",
-              (ulong) ((byte *) cc + cc->head.size), diff);
+    if_debug2m('K', dir->memory, "[K]shortening creates free block "PRI_INTPTR"(%u)\n",
+              (intptr_t)((byte *) cc + cc->head.size), diff);
 }

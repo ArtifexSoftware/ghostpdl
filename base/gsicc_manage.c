@@ -2165,7 +2165,7 @@ gsicc_profile_new(stream *s, gs_memory_t *memory, const char* pname,
         return NULL;
     }
     if_debug1m(gs_debug_flag_icc, mem_nongc,
-               "[icc] allocating ICC profile = 0x%p\n", result);
+               "[icc] allocating ICC profile = "PRI_INTPTR"\n", (intptr_t)result);
     return result;
 }
 
@@ -2176,8 +2176,8 @@ rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname)
     gs_memory_t *mem_nongc =  profile->memory;
 
     if_debug2m(gs_debug_flag_icc, mem,
-               "[icc] rc decrement profile = 0x%p rc = %ld\n",
-               ptr_in, profile->rc.ref_count);
+               "[icc] rc decrement profile = "PRI_INTPTR" rc = %ld\n",
+               (intptr_t)ptr_in, profile->rc.ref_count);
     if (profile->rc.ref_count <= 1 ) {
         /* Clear out the buffer if it is full */
         if (profile->buffer != NULL) {

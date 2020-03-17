@@ -123,8 +123,8 @@ sread_fileno(register stream * s, gp_file * file, byte * buf, uint len)
 
     s_std_init(s, buf, len, &p,
                (seekable ? s_mode_read + s_mode_seek : s_mode_read));
-    if_debug2m('s', s->memory, "[s]read file=0x%lx, fd=%d\n", (ulong) file,
-               fileno(file));
+    if_debug2m('s', s->memory, "[s]read file="PRI_INTPTR", fd=%d\n",
+               (intptr_t) file, fileno(file));
     s->file = file;
     s->file_modes = s->modes;
     s->file_offset = 0;
@@ -264,8 +264,8 @@ swrite_fileno(register stream * s, gp_file * file, byte * buf, uint len)
 
     s_std_init(s, buf, len, &p,
                (file == stdout ? s_mode_write : s_mode_write + s_mode_seek));
-    if_debug2m('s', s->memory, "[s]write file=0x%lx, fd=%d\n", (ulong) file,
-               fileno(file));
+    if_debug2m('s', s->memory, "[s]write file="PRI_INTPTR", fd=%d\n",
+               (intptr_t) file, fileno(file));
     s->file = file;
     s->file_modes = s->modes;
     s->file_offset = 0;		/* in case we switch to reading later */
@@ -353,8 +353,8 @@ s_fileno_switch(stream * s, bool writing)
         if (!(s->file_modes & s_mode_write))
             return ERRC;
         pos = stell(s);
-        if_debug2m('s', s->memory, "[s]switch 0x%lx to write at %ld\n",
-                   (ulong) s, pos);
+        if_debug2m('s', s->memory, "[s]switch "PRI_INTPTR" to write at %ld\n",
+                   (intptr_t)s, pos);
         lseek(fd, pos, SEEK_SET);	/* pacify OS */
         if (modes & s_mode_append) {
             sappend_file(s, s->file, s->cbuf, s->cbsize);  /* sets position */
@@ -367,8 +367,8 @@ s_fileno_switch(stream * s, bool writing)
         if (!(s->file_modes & s_mode_read))
             return ERRC;
         pos = stell(s);
-        if_debug2m('s', s->memory, "[s]switch 0x%lx to read at %ld\n",
-                   (ulong) s, pos);
+        if_debug2m('s', s->memory, "[s]switch "PRI_INTPTR" to read at %ld\n",
+                   (intptr_t) s, pos);
         if (sflush(s) < 0)
             return ERRC;
         lseek(fd, 0L, SEEK_CUR);	/* pacify OS */

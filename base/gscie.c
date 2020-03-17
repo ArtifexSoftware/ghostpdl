@@ -98,8 +98,8 @@ static void
 cache_set_linear(cie_cache_floats *pcf)
 {
         if (pcf->params.is_identity) {
-            if_debug1('c', "[c]is_linear(0x%lx) = true (is_identity)\n",
-                      (ulong)pcf);
+            if_debug1('c', "[c]is_linear("PRI_INTPTR") = true (is_identity)\n",
+                      (intptr_t)pcf);
             pcf->params.linear.is_linear = true;
             pcf->params.linear.origin = 0;
             pcf->params.linear.scale = 1;
@@ -108,14 +108,14 @@ cache_set_linear(cie_cache_floats *pcf)
                 fabs(pcf->params.linear.scale - 1) < 0.00001)
                 pcf->params.is_identity = true;
             if_debug4('c',
-                      "[c]is_linear(0x%lx) = true, origin = %g, scale = %g%s\n",
-                      (ulong)pcf, pcf->params.linear.origin,
+                      "[c]is_linear("PRI_INTPTR") = true, origin = %g, scale = %g%s\n",
+                      (intptr_t)pcf, pcf->params.linear.origin,
                       pcf->params.linear.scale,
                       (pcf->params.is_identity ? " (=> is_identity)" : ""));
         }
 #ifdef DEBUG
         else
-            if_debug1('c', "[c]linear(0x%lx) = false\n", (ulong)pcf);
+            if_debug1('c', "[c]linear("PRI_INTPTR") = false\n", (intptr_t)pcf);
 #endif
 }
 static void
@@ -871,8 +871,8 @@ gs_cie_cache_init(cie_cache_params * pcache, gs_sample_loop_params_t * pslp,
      * Genoa test file 050-01.ps.
      */
     pcache->factor = (any_abs(delta) < 1e-30 ? 1.0 : N / R);
-    if_debug4('c', "[c]cache %s 0x%lx base=%g, factor=%g\n",
-              (const char *)cname, (ulong) pcache,
+    if_debug4('c', "[c]cache %s "PRI_INTPTR" base=%g, factor=%g\n",
+              (const char *)cname, (intptr_t)pcache,
               pcache->base, pcache->factor);
     pslp->A = A;
     pslp->B = B;

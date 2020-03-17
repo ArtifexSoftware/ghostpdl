@@ -229,7 +229,8 @@ gs_main_init_with_args01(gs_main_instance * minst, int argc, char *argv[])
                 if (gs_debug[':'] && !have_dumped_args) {
                     int i;
 
-                    dmprintf1(minst->heap, "%% Args passed to instance 0x%p: ", minst);
+                    dmprintf1(minst->heap, "%% Args passed to instance "PRI_INTPTR": ",
+                              (intptr_t)minst);
                     for (i=1; i<argc; i++)
                         dmprintf1(minst->heap, "%s ", argv[i]);
                     dmprintf(minst->heap, "\n");

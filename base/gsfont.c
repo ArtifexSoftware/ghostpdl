@@ -160,8 +160,8 @@ gs_font_finalize(const gs_memory_t *cmem, void *vptr)
     gs_font *prev = pfont->prev;
     (void)cmem; /* unused */
 
-    if_debug4m('u', cmem, "[u]unlinking font 0x%lx, base=0x%lx, prev=0x%lx, next=0x%lx\n",
-               (ulong) pfont, (ulong) pfont->base, (ulong) prev, (ulong) next);
+    if_debug4m('u', cmem, "[u]unlinking font "PRI_INTPTR", base="PRI_INTPTR", prev="PRI_INTPTR", next="PRI_INTPTR"\n",
+               (intptr_t)pfont, (intptr_t)pfont->base, (intptr_t)prev, (intptr_t)next);
     /* Notify clients that the font is being freed. */
     gs_notify_all(&pfont->notify_list, NULL);
     gs_purge_font_from_char_caches(pfont);
@@ -439,8 +439,8 @@ gs_definefont(gs_font_dir * pdir, gs_font * pfont)
         return code;
     }
     font_link_first(&pdir->orig_fonts, pfont);
-    if_debug2m('m', pfont->memory, "[m]defining font 0x%lx, next=0x%lx\n",
-               (ulong) pfont, (ulong) pfont->next);
+    if_debug2m('m', pfont->memory, "[m]defining font "PRI_INTPTR", next="PRI_INTPTR"\n",
+               (intptr_t)pfont, (intptr_t)pfont->next);
     return 0;
 }
 
@@ -507,8 +507,8 @@ gs_makefont(gs_font_dir * pdir, const gs_font * pfont,
             dmlprintf1(mem, "[m]XUID(%u)", (uint) (-pbfont->UID.id));
         else
             dmlprintf(mem, "[m]no UID");
-        dmprintf8(mem, ", FontType=%d, base=0x%lx,\n[m]  new FontMatrix=[%g %g %g %g %g %g]\n",
-                 pfont->FontType, (ulong)pfont->base,
+        dmprintf8(mem, ", FontType=%d, base="PRI_INTPTR",\n[m]  new FontMatrix=[%g %g %g %g %g %g]\n",
+                 pfont->FontType, (intptr_t)pfont->base,
                  pmat->xx, pmat->xy, pmat->yx, pmat->yy,
                  pmat->tx, pmat->ty);
     }
@@ -529,7 +529,7 @@ gs_makefont(gs_font_dir * pdir, const gs_font * pfont,
                 pf_out->FontMatrix.ty == newmat.ty
                 ) {
                 *ppfont = pf_out;
-                if_debug1m('m', pfont->memory, "[m]found font=0x%lx\n", (ulong) pf_out);
+                if_debug1m('m', pfont->memory, "[m]found font="PRI_INTPTR"\n", (intptr_t)pf_out);
                 return 0;
             }
         can_cache = true;
@@ -557,8 +557,8 @@ gs_makefont(gs_font_dir * pdir, const gs_font * pfont,
              * (We can't free it, because there might be
              * other references to it.)
              */
-            if_debug1m('m', pfont->memory, "[m]discarding font 0x%lx\n",
-                      (ulong) prev);
+            if_debug1m('m', pfont->memory, "[m]discarding font "PRI_INTPTR"\n",
+                      (intptr_t)prev);
             if (prev->prev != 0)
                 prev->prev->next = 0;
             else
@@ -615,8 +615,8 @@ gs_makefont(gs_font_dir * pdir, const gs_font * pfont,
     } else {			/* Prevent garbage pointers. */
         pf_out->next = pf_out->prev = 0;
     }
-    if_debug2m('m', pfont->memory, "[m]new font=0x%lx can_cache=%s\n",
-               (ulong) * ppfont, (can_cache ? "true" : "false"));
+    if_debug2m('m', pfont->memory, "[m]new font="PRI_INTPTR" can_cache=%s\n",
+               (intptr_t)*ppfont, (can_cache ? "true" : "false"));
     return 1;
 }
 
@@ -771,7 +771,7 @@ gs_purge_font(gs_font * pfont)
     else if (pdir->scaled_fonts == pfont)
         pdir->scaled_fonts = next;
     else {			/* Shouldn't happen! */
-        lprintf1("purged font 0x%lx not found\n", (ulong) pfont);
+        lprintf1("purged font "PRI_INTPTR" not found\n", (intptr_t)pfont);
     }
 
     /* Purge the font from the scaled font cache. */

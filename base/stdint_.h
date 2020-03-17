@@ -173,6 +173,10 @@ typedef unsigned long long uint64_t;
 #  define PRIu32 "u"
 # endif
 
+# ifndef PRIx32
+#  define PRIx32 "x"
+# endif
+
 # ifndef PRIu64
 #  define PRIu64 "llu"
 # endif
@@ -230,6 +234,18 @@ typedef unsigned long long uint64_t;
 #  ifndef PRIx64
 #    define PRIx64 PRIxSIZE
 #  endif
+# endif
+
+/* Pointers are hard to do in pure PRIxPTR style, as some platforms
+ * add 0x before the pointer, and others don't. To be consistent, we
+ * therefore roll our own. The difference here is that we always
+ * include the 0x and the % ourselves, and require the arg to be
+ * cast to an intptr_t.
+*/
+# if ARCH_SIZEOF_SIZE_T == 4
+#  define PRI_INTPTR "0x%"PRIx32
+# else
+#  define PRI_INTPTR "0x%"PRIx64
 # endif
 
 #endif /* stdint__INCLUDED */

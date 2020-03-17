@@ -220,8 +220,8 @@ extern_st(st_clump);
                         }\
                 }\
                 if ( pre != end )\
-                {	lprintf2("Clump parsing error, 0x%lx != 0x%lx\n",\
-                                 (ulong)pre, (ulong)end);\
+                {	lprintf2("Clump parsing error, "PRI_INTPTR" != "PRI_INTPTR"\n",\
+                                 (intptr_t)pre, (intptr_t)end);\
                     /*gs_abort((const gs_memory_t *)NULL);*/	\
                 }\
         }
@@ -276,15 +276,15 @@ void alloc_free_clump(clump_t *, gs_ref_memory_t *);
 /* Unfortunately, the ANSI C preprocessor doesn't allow us to */
 /* define the list of variables being printed as a macro. */
 #define dprintf_clump_format\
-  "%s 0x%lx (0x%lx..0x%lx, 0x%lx..0x%lx..0x%lx)\n"
+  "%s "PRI_INTPTR" ("PRI_INTPTR".."PRI_INTPTR", "PRI_INTPTR".."PRI_INTPTR".."PRI_INTPTR")\n"
 #define dmprintf_clump(mem, msg, cp)\
   dmprintf7(mem, dprintf_clump_format,\
-            msg, (ulong)(cp), (ulong)(cp)->cbase, (ulong)(cp)->cbot,\
-            (ulong)(cp)->ctop, (ulong)(cp)->climit, (ulong)(cp)->cend)
+            msg, (intptr_t)(cp), (intptr_t)(cp)->cbase, (intptr_t)(cp)->cbot,\
+            (intptr_t)(cp)->ctop, (intptr_t)(cp)->climit, (intptr_t)(cp)->cend)
 #define if_debug_clump(c, mem, msg, cp)\
   if_debug7m(c, mem,dprintf_clump_format,\
-             msg, (ulong)(cp), (ulong)(cp)->cbase, (ulong)(cp)->cbot,\
-             (ulong)(cp)->ctop, (ulong)(cp)->climit, (ulong)(cp)->cend)
+             msg, (intptr_t)(cp), (intptr_t)(cp)->cbase, (intptr_t)(cp)->cbot,\
+             (intptr_t)(cp)->ctop, (intptr_t)(cp)->climit, (intptr_t)(cp)->cend)
 
 /* ================ Allocator state ================ */
 

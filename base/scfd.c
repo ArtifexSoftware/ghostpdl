@@ -305,9 +305,9 @@ s_CFD_process(stream_state * st, stream_cursor_read * pr,
         (void)rlimit;
         if_debug8m('w', ss->memory,
                    "[w]CFD_process top: eol_count=%d, k_left=%d, rows_left=%d\n"
-                   "    bits=0x%lx, bits_left=%d, read %u, wrote %u%s\n",
+                   "    bits="PRI_INTPTR", bits_left=%d, read %u, wrote %u%s\n",
                    eol_count, k_left, rows_left,
-                   (ulong) bits, bits_left,
+                   (intptr_t) bits, bits_left,
                    (uint) (p - rstart), (uint) (pw->ptr - wstart),
                    (ss->skipping_damage ? ", skipping damage" : ""));
     }

@@ -100,7 +100,7 @@ gs_cspace_final(const gs_memory_t *cmem, void *vptr)
 
     if (pcs->type->final)
         pcs->type->final(pcs);
-    if_debug2m('c', cmem, "[c]cspace final %p %d\n", pcs, (int)pcs->id);
+    if_debug2m('c', cmem, "[c]cspace final "PRI_INTPTR" %d\n", (intptr_t)pcs, (int)pcs->id);
     rc_decrement_only_cs(pcs->base_space, "gs_cspace_final");
     if (pcs->params.device_n.devn_process_space != NULL)
         rc_decrement_only_cs(pcs->params.device_n.devn_process_space, "gs_cspace_final");
@@ -118,8 +118,8 @@ gs_cspace_alloc_with_id(gs_memory_t *mem, ulong id,
 
     rc_alloc_struct_1(pcs, gs_color_space, &st_color_space, mem, return NULL,
                       "gs_cspace_alloc_with_id");
-    if_debug3m('c', mem, "[c]cspace alloc %p %s %d\n",
-               pcs, pcstype->stype->sname, pcstype->index);
+    if_debug3m('c', mem, "[c]cspace alloc "PRI_INTPTR" %s %d\n",
+               (intptr_t)pcs, pcstype->stype->sname, pcstype->index);
     pcs->type = pcstype;
     pcs->id = id;
     pcs->base_space = NULL;

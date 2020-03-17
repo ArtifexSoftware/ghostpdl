@@ -151,7 +151,7 @@ rc_free_proc(rc_free_struct_only);
 #  define rc_check_(vp)\
      BEGIN\
        if (gs_debug_c('?') && (vp)->rc.ref_count < 0)\
-         lprintf2("0x%lx has ref_count of %ld!\n", (ulong)(vp),\
+         lprintf2(PRI_INTPTR" has ref_count of %ld!\n", (intptr_t)(vp),\
                   (vp)->rc.ref_count);\
      END
 #else

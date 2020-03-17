@@ -180,8 +180,8 @@ cmd_write_band(gx_device_clist_writer * cldev, int band_min, int band_max,
         cb.band_min = band_min;
         cb.band_max = band_max;
         cb.pos = cldev->page_info.io_procs->ftell(cfile);
-        if_debug3m('l', cldev->memory, "[l]writing for bands (%d,%d) at %ld\n",
-                  band_min, band_max, (long)cb.pos);
+        if_debug3m('l', cldev->memory, "[l]writing for bands (%d,%d) at %"PRId64"\n",
+                  band_min, band_max, cb.pos);
         cldev->page_info.io_procs->fwrite_chars(&cb, sizeof(cb), bfile);
         if (cp != 0) {
             pcl->tail->next = 0;	/* terminate the list */
@@ -191,12 +191,12 @@ cmd_write_band(gx_device_clist_writer * cldev, int band_min, int band_max,
                     (const byte *)cp >= cldev->cend ||
                     cp->size > cldev->cend - (const byte *)cp
                     ) {
-                    mlprintf1(cldev->memory, "cmd_write_band error at 0x%lx\n", (ulong) cp);
+                    mlprintf1(cldev->memory, "cmd_write_band error at "PRI_INTPTR"\n", (intptr_t) cp);
                     return_error(gs_error_Fatal);
                 }
 #endif
-                if_debug2m('L', cldev->memory, "[L]Wrote cmd id=%ld at %ld\n",
-                           cp->id, (long)cldev->page_info.io_procs->ftell(cfile));
+                if_debug2m('L', cldev->memory, "[L]Wrote cmd id=%ld at %"PRId64"\n",
+                           cp->id, cldev->page_info.io_procs->ftell(cfile));
                 cldev->page_info.io_procs->fwrite_chars(cp + 1, cp->size, cfile);
             }
             pcl->head = pcl->tail = 0;
@@ -236,14 +236,14 @@ cmd_write_pseudo_band(gx_device_clist_writer * cldev, unsigned char *pbuf, int d
     cb.band_max = band;
     cb.pos = cldev->page_info.io_procs->ftell(cfile);
 
-    if_debug2m('l', cldev->memory, "[l]writing pseudo band %d cb pos %ld\n",
-                  band, (long)cb.pos);
+    if_debug2m('l', cldev->memory, "[l]writing pseudo band %d cb pos %"PRId64"\n",
+                  band, cb.pos);
 
     cldev->page_info.io_procs->fwrite_chars(&cb, sizeof(cb), bfile);
 
     /* Now store the information in the cfile */
-    if_debug2m('l', cldev->memory, "[l]writing %d bytes into cfile at %ld\n",
-            data_size, (long)cldev->page_info.io_procs->ftell(cfile));
+    if_debug2m('l', cldev->memory, "[l]writing %d bytes into cfile at %"PRId64"\n",
+            data_size, cldev->page_info.io_procs->ftell(cfile));
 
     cldev->page_info.io_procs->fwrite_chars(pbuf, data_size, cfile);
 
@@ -323,7 +323,7 @@ cmd_put_list_op(gx_device_clist_writer * cldev, cmd_list * pcl, uint size)
         cmd_count_add1(stats_cmd.same_band);
 #ifdef DEBUG
         if (pcl->tail->size > dp - (byte *) (pcl->tail + 1)) {
-            lprintf1("cmd_put_list_op error at 0x%lx\n", (ulong) pcl->tail);
+            lprintf1("cmd_put_list_op error at "PRI_INTPTR"\n", (intptr_t)pcl->tail);
         }
 #endif
         if_debug2m('L', cldev->memory, ", to id=%ld , offset=%ld",
@@ -342,8 +342,8 @@ cmd_put_list_op(gx_device_clist_writer * cldev, cmd_list * pcl, uint size)
             if (pcl->tail < pcl->head ||
                 pcl->tail->size > dp - (byte *) (pcl->tail + 1)
                 ) {
-                lprintf1("cmd_put_list_op error at 0x%lx\n",
-                         (ulong) pcl->tail);
+                lprintf1("cmd_put_list_op error at "PRI_INTPTR"\n",
+                         (intptr_t)pcl->tail);
             }
 #endif
             pcl->tail->next = cp;

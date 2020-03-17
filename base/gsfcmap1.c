@@ -17,6 +17,7 @@
 /* Adobe-based CMap character decoding */
 #include "memory_.h"
 #include "string_.h"
+#include "stdint_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gsstruct.h"
@@ -187,8 +188,8 @@ code_map_decode_next_multidim_regime(const gx_code_map_t * pcmap,
     if (gs_debug_c('J')) {
         dlprintf("[J]CMDNmr() is called: str=(");
         debug_print_string_hex_nomem(str, ssize);
-        dlprintf3(") @ 0x%lx ssize=%d, %d ranges to check\n",
-                  (ulong)str, ssize, pcmap->num_lookup);
+        dlprintf3(") @ "PRI_INTPTR" ssize=%d, %d ranges to check\n",
+                  (intptr_t)str, ssize, pcmap->num_lookup);
     }
 #endif
 #endif

@@ -155,15 +155,15 @@ gs_private_st_simple(st_active_line, active_line, "active_line");
 static void
 print_active_line(const gs_memory_t *mem, const char *label, const active_line * alp)
 {
-    dmlprintf5(mem, "[f]%s 0x%lx(%d): x_current=%f x_next=%f\n",
-               label, (ulong) alp, alp->direction,
+    dmlprintf5(mem, "[f]%s "PRI_INTPTR"(%d): x_current=%f x_next=%f\n",
+               label, (intptr_t)alp, alp->direction,
                fixed2float(alp->x_current), fixed2float(alp->x_next));
-    dmlprintf5(mem, "    start=(%f,%f) pt_end=0x%lx(%f,%f)\n",
+    dmlprintf5(mem, "    start=(%f,%f) pt_end="PRI_INTPTR"(%f,%f)\n",
                fixed2float(alp->start.x), fixed2float(alp->start.y),
-               (ulong) alp->pseg,
+               (intptr_t)alp->pseg,
                fixed2float(alp->end.x), fixed2float(alp->end.y));
-    dmlprintf2(mem, "    prev=0x%lx next=0x%lx\n",
-               (ulong) alp->prev, (ulong) alp->next);
+    dmlprintf2(mem, "    prev="PRI_INTPTR" next="PRI_INTPTR"\n",
+               (intptr_t)alp->prev, (intptr_t)alp->next);
 }
 static void
 print_line_list(const gs_memory_t *mem, const active_line * flp)
@@ -173,8 +173,8 @@ print_line_list(const gs_memory_t *mem, const active_line * flp)
     for (lp = flp; lp != 0; lp = lp->next) {
         fixed xc = lp->x_current, xn = lp->x_next;
 
-        dmlprintf3(mem, "[f]0x%lx(%d): x_current/next=%g",
-                  (ulong) lp, lp->direction,
+        dmlprintf3(mem, "[f]"PRI_INTPTR"(%d): x_current/next=%g",
+                  (intptr_t)lp, lp->direction,
                   fixed2float(xc));
         if (xn != xc)
             dmprintf1(mem, "/%g", fixed2float(xn));
@@ -1337,7 +1337,7 @@ remove_al(const line_list *ll, active_line *alp)
     alp->prev->next = nlp;
     if (nlp)
         nlp->prev = alp->prev;
-    if_debug1m('F', ll->memory, "[F]drop 0x%lx\n", (ulong) alp);
+    if_debug1m('F', ll->memory, "[F]drop "PRI_INTPTR"\n", (intptr_t)alp);
 }
 
 /*
@@ -1616,8 +1616,8 @@ resort_x_line(active_line * alp)
     if (next)
         next->prev = prev;
     while (x_order(prev, alp) > 0) {
-        if_debug2('F', "[F]swap 0x%lx,0x%lx\n",
-                   (ulong) alp, (ulong) prev);
+        if_debug2('F', "[F]swap "PRI_INTPTR","PRI_INTPTR"\n",
+                   (intptr_t)alp, (intptr_t)prev);
         next = prev, prev = prev->prev;
     }
     alp->next = next;
@@ -2153,8 +2153,8 @@ range_alloc(coord_range_list_t *pcrl)
 static void
 range_delete(coord_range_list_t *pcrl, coord_range_t *pcr)
 {
-    if_debug3('Q', "[Qr]delete 0x%lx: [%d,%d)\n", (ulong)pcr, pcr->rmin,
-              pcr->rmax);
+    if_debug3('Q', "[Qr]delete "PRI_INTPTR": [%d,%d)\n",
+              (intptr_t)pcr, pcr->rmin, pcr->rmax);
     pcr->prev->next = pcr->next;
     pcr->next->prev = pcr->prev;
     pcr->next = pcrl->freed;
@@ -2274,13 +2274,13 @@ range_list_add(coord_range_list_t *pcrl, coord_value_t rmin, coord_value_t rmax)
      * abut if the adjacent range is the special min or max range.
      */
     if (rmin < pcr->rmin) {
-        if_debug3('Q', "[Qr]update 0x%lx => [%d,%d)\n", (ulong)pcr, rmin,
-                  pcr->rmax);
+        if_debug3('Q', "[Qr]update "PRI_INTPTR" => [%d,%d)\n",
+                  (intptr_t)pcr, rmin, pcr->rmax);
         pcr->rmin = rmin;
     }
     if (rmax > pcr->rmax) {
-        if_debug3('Q', "[Qr]update 0x%lx => [%d,%d)\n", (ulong)pcr, pcr->rmin,
-                  rmax);
+        if_debug3('Q', "[Qr]update "PRI_INTPTR" => [%d,%d)\n",
+                  (intptr_t)pcr, pcr->rmin, rmax);
         pcr->rmax = rmax;
     }
     pcrl->current = pcr->next;
@@ -2292,7 +2292,7 @@ range_list_add(coord_range_list_t *pcrl, coord_value_t rmin, coord_value_t rmax)
 
         if (prev == 0)
             return_error(gs_error_VMerror);
-        if_debug3('Q', "[Qr]insert 0x%lx: [%d,%d)\n", (ulong)prev, rmin, rmax);
+        if_debug3('Q', "[Qr]insert "PRI_INTPTR": [%d,%d)\n", (intptr_t)prev, rmin, rmax);
         prev->rmin = rmin, prev->rmax = rmax;
         (prev->prev = pcr->prev)->next = prev;
         prev->next = pcr;
