@@ -271,11 +271,18 @@ On other systems the executable may have a different name:</p>
 <tr><td>VMS</td>
     <td><code>gs</code></td></tr>
 <tr><td>MS Windows 95 and later</td>
-    <td><code>gswin32c</code></td></tr>
+    <td><code>gswin32.exe</code></td>
+    <td><code>gswin32c.exe</code></td>
+    <td><code>gswin64.exe</code></td>
+    <td><code>gswin64c.exe</code></td>
+</tr>
 <tr><td>OS/2</td>
     <td><code>gsos2</code></td></tr>
 </table></blockquote>
-
+<p>On Windows, the two digit number indicates the word length of the system for which the binary was built (so
+<code>gswin32.exe</code> is for x86 Windows systems, whilst <code>gswin64.exe</code> is for x86_64 Windows
+systems). And the <code>&quot;c&quot;</code> suffix indicates a Windows console based binary (note that the
+<code>&quot;display device&quot;</code> window will still appear).
 <hr>
 <h2><a name="Output_device"></a>Selecting an output device</h2>
 
@@ -1835,7 +1842,6 @@ RECORD
 </pre></blockquote>
 
 <li>If the FTP transfer was in binary mode:</li>
-<li>If the FTP transfer was in binary mode:</li>
 
 <blockquote><code>
      &#36; set file/attribute=(rfm:stmlf)
@@ -1860,8 +1866,8 @@ and then run Ghostscript by typing <code>gs</code> at the command line.</p>
 
 <p>
 The name of the Ghostscript command line executable on MS Windows is
-<code>gswin32c</code> so use this instead of the plain '<code>gs</code>' in
-the quickstart examples.</p>
+<code>gswin32c</code>/<code>gswin64c</code> so use this instead of the
+plain '<code>gs</code>' in the quickstart examples.</p>
 
 <p>
 To run the batch files in the ghostscript <code>lib</code> directory,
@@ -1883,8 +1889,8 @@ the command shell.</p>
 <p>
 There is also an older version for MS Windows called just <code>gswin32</code>
 that provides its own window for the interactive postscript prompt.
-The executable <code>gswin32c</code> is usually the better option since
-it uses the native command prompt window.</p>
+The executable <code>gswin32c</code>/<code>gswin64c</code> is usually the better
+option since it uses the native command prompt window.</p>
 
 <p>
 For printer devices, the default output is the default printer.
@@ -2548,6 +2554,7 @@ incorrect) rendering of pages containing PDF 1.4 transparency and
     blending.</dd>
 </dl>
 
+<a name="ALLOWPSTRANSPARENCY"></a>
 <dl>
     <dt><code>-dALLOWPSTRANSPARENCY</code></dt>
 <dd>
@@ -5265,7 +5272,7 @@ or contact Artifex Software, Inc.,  1305 Grant Avenue - Suite 200,
 Novato, CA 94945, U.S.A., +1(415)492-9861, for further information.
 
 <p>
-<small>Ghostscript version 9.51, 12 March 2020
+<small>Ghostscript version 9.52, 19 March 2020
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
