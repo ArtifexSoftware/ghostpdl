@@ -2554,6 +2554,7 @@ incorrect) rendering of pages containing PDF 1.4 transparency and
     blending.</dd>
 </dl>
 
+<a name="ALLOWPSTRANSPARENCY"></a>
 <dl>
     <dt><code>-dALLOWPSTRANSPARENCY</code></dt>
 <dd>
@@ -3473,7 +3474,7 @@ system permissions.</dd>
 <dl>
     <dt><code>-dSAFER</code></dt>
 <dd>
-<strong>IMPORTANT NOTE:</strong> Ghostscript now (as of 9.28) defaults to SAFER being active.
+<strong>IMPORTANT NOTE:</strong> Ghostscript now (as of 9.50) defaults to SAFER being active.
 <p>
 Enables access controls on files. Access controls fall into three categories,
 files from which Ghostscript is permitted to read, ones to which it is permitted
@@ -3486,7 +3487,7 @@ Ghostscript development team) uses this interface, we have no control over third
 code.
 <p>
 This is an entirely new implementation of <code>SAFER</code> for Ghostscript versions
-9.28 and later. Earlier versions (see "<a href="#OldSafer">-dOLDSAFER</a>") relied on
+9.50 and later. Earlier versions (see "<a href="#OldSafer">-dOLDSAFER</a>") relied on
 storing the file permission lists in Postscript VM (Virtual Memory), and only applied
 file access permissions to the Postscript file related operators. It relied on restricting
 the function of <code>setpagedevice</code> to avoid the device code from being manipulated
@@ -3503,7 +3504,7 @@ access controls are enabled (see <a href="Language.htm#.activatepathcontrol">.ac
 any call to <code>.addcontrolpath</code> after <code>.activatepathcontrol</code> will result in a
 <code>Fatal</code> error causing the interpreter to immediately exit.
 <p>
-An incompatibility exists between the pre-9.28 and 9.28 and later <code>SAFER</code>.
+An incompatibility exists between the pre-9.50 and 9.50 and later <code>SAFER</code>.
 By removing storage and application entirely from the Postscript language
 environment and internal context, SAFER is no longer affected by Postscript
 <code>save</code>&sol;<code>restore</code> operations. Previously, it was possible
@@ -3518,7 +3519,7 @@ to do the equivalent of:
 In that sequence, the <code>Postscript ops</code> would run with <code>SAFER</code> protection
 but after the restore, <code>SAFER</code> would no longer be in force. This is no longer the case.
 After the call to <code>.setsafe</code> the file controls are in force until the
-interpreter exits. As the 9.28 and later implementation no longer restricts the
+interpreter exits. As the 9.50 and later implementation no longer restricts the
 operation of <code>setpagedevice</code>, and because this capability is <i>extremely</i>
 rarely used, we feel the improvement in security warrants the small reduction in
 flexibility.
@@ -3595,8 +3596,8 @@ are automatically added to the permit read lists.
 <dd>
 <strong>NOTE: This enables deprecated code which will shortly be removed</strong>
 <p>Used in combination with <code>-dSAFER</code> (or <code>.setsafe</code>) enables
-the pre-9.28 SAFER implementation. It is included (for now) in case any users find
-a case where the 9.28 and later <code>SAFER</code> does not work for them. It means
+the pre-9.50 SAFER implementation. It is included (for now) in case any users find
+a case where the 9.50 and later <code>SAFER</code> does not work for them. It means
 such users can keep working until we have assessed the issue, and distributed a solution.
 <p>
 Disables the <code>deletefile</code> and <code>renamefile</code>
