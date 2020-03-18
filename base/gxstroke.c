@@ -1093,12 +1093,51 @@ width_is_thin(pl_ptr plp)
     if ((dx = plp->vector.x) == 0)
         return any_abs(wx) < fixed_half;
 
-    /*
-     * If both horizontal and vertical widths are less than
-     * 0.5, the line is thin.
+    /* For the longest time, we used to have a test here that
+     * attempted to trivially accept diagonal lines as being
+     * thin based on the components of the perpendicular
+     * width vector in device space as both being less than 0.5.
+     * Bug 702196 showed some examples where this was clearly
+     * wrong.
+     *
+     * The cause for this bug was that the 0.5 figure was wrong.
+     * For the point to be less than 1/2 a pixel perpendicular
+     * distant from the line, we'd need x^2 + y^2 < .5^2.
+     * For a 45 degree line, that'd be 2(x^2) < 1/4 = x^2 < 1/8
+     * or x < sqr(1/8). 45 degree line is the "worst case", so
+     * if both horizontal and vertical widths are less than
+     * sqr(1/8), the line is thin. sqr(1/8) = 0.35355339059.
+     * So, we should be using sqr(1/8) rather than 0.5.
+     *
+     * Fixing this did indeed produce many many progressions,
+     * but left just the odd file still showing problems.
+     *
+     * Further investigations show that those cases were due to
+     * the use of "non-uniform" scaling matrices, for example
+     * (83 0 0 51 0 0). With such matrices, it's possible for
+     * nearly horizontal lines to be thin, but nearly vertical
+     * ones to be thick (or vice versa). Having the style of
+     * line "pop" between thick and thin in a single stroke
+     * looks very noticeable.
+     *
+     * We could change the trivial optimisation below to only
+     * apply in the 'uniform' case, but that would never actually
+     * trigger (as tested on the cluster), because all such
+     * cases are caught by the "always_thin" condition in the
+     * caller.
+     *
+     * Just removing the trivial test and leaving the 'complicated'
+     * test below us would leave us vulnerable to "popping",
+     * so we disable both. In practice this makes no difference
+     * to the number of tests showing diffs in the cluster.
      */
-    if (any_abs(wx) < fixed_half && any_abs(wy) < fixed_half)
-        return true;
+#if 0 /* DISABLED TEST, see above */
+    {
+        /* thin_threshold = fixed sqr(1/8) - see above. */
+        const fixed thin_threshold = float2fixed(0.35355339059f);
+        if (any_abs(wx) < thin_threshold && any_abs(wy) < thin_threshold)
+            return true;
+    }
 
     /*
      * We have to do this the hard way, by actually computing the
@@ -1116,6 +1155,9 @@ width_is_thin(pl_ptr plp)
         /* so we don't need to do any de-scaling for the test. */
         return fabs(num) < denom * 0.5;
     }
+#else
+    return false;
+#endif
 }
 
 /* Adjust the endpoints and width of a stroke segment along a specified axis */
