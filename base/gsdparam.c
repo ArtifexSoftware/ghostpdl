@@ -1809,7 +1809,7 @@ label:\
     }
 
     switch (code = param_read_size_t(plist, (param_name = "BandBufferSpace"), &sp.band.BandBufferSpace)) {
-        CHECK_PARAM_CASES(band.BandBufferSpace, sp.band.BandBufferSpace < 0, bbse);
+        CHECK_PARAM_CASES(band.BandBufferSpace, 0, bbse);
     }
 
 
