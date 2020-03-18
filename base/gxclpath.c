@@ -369,8 +369,8 @@ cmd_check_clip_path(gx_device_clist_writer * cldev, const gx_clip_path * pcpath)
  * or stroking.
  */
 #define FILL_KNOWN\
- (cj_ac_sa_known | flatness_known | op_bm_tk_known | opacity_alpha_known |\
-  shape_alpha_known | fill_adjust_known | alpha_known | clip_path_known)
+ (cj_ac_sa_known | flatness_known | op_bm_tk_known | ais_known |\
+  fill_alpha_known | fill_adjust_known | stroke_alpha_known | clip_path_known)
 static void
 cmd_check_fill_known(gx_device_clist_writer* cdev, const gs_gstate* pgs,
     double flatness, const gs_fixed_point* padjust,
@@ -409,23 +409,23 @@ cmd_check_fill_known(gx_device_clist_writer* cdev, const gs_gstate* pgs,
         state_update(stroke_overprint);
         state_update(renderingintent);
     }
-    if (state_neq(opacity.alpha)) {
-        *punknown |= opacity_alpha_known;
-        state_update(opacity.alpha);
+    if (state_neq(alphaisshape)) {
+        *punknown |= ais_known;
+        state_update(alphaisshape);
     }
-    if (state_neq(shape.alpha)) {
-        *punknown |= shape_alpha_known;
-        state_update(shape.alpha);
+    if (state_neq(strokeconstantalpha)) {
+        *punknown |= stroke_alpha_known;
+        state_update(strokeconstantalpha);
+    }
+    if (cdev->gs_gstate.fillconstantalpha != pgs->fillconstantalpha) {
+        *punknown |= fill_alpha_known;
+        state_update(fillconstantalpha);
     }
     if (cdev->gs_gstate.fill_adjust.x != padjust->x ||
         cdev->gs_gstate.fill_adjust.y != padjust->y
         ) {
         *punknown |= fill_adjust_known;
         cdev->gs_gstate.fill_adjust = *padjust;
-    }
-    if (cdev->gs_gstate.alpha != pgs->alpha) {
-        *punknown |= alpha_known;
-        state_update(alpha);
     }
     if (cmd_check_clip_path(cdev, pcpath))
         *punknown |= clip_path_known;
@@ -528,18 +528,18 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                 cldev->gs_gstate.overprint;
             *bp++ = cldev->gs_gstate.renderingintent;
         }
-        if (unknown & opacity_alpha_known) {
-            memcpy(bp, &cldev->gs_gstate.opacity.alpha, sizeof(float));
+        if (unknown & ais_known) {
+            memcpy(bp, &cldev->gs_gstate.alphaisshape,
+                sizeof(cldev->gs_gstate.alphaisshape));
+            bp += sizeof(cldev->gs_gstate.alphaisshape);
+        }
+        if (unknown & stroke_alpha_known) {
+            memcpy(bp, &cldev->gs_gstate.strokeconstantalpha, sizeof(float));
             bp += sizeof(float);
         }
-        if (unknown & shape_alpha_known) {
-            memcpy(bp, &cldev->gs_gstate.shape.alpha, sizeof(float));
+        if (unknown & fill_alpha_known) {
+            memcpy(bp, &cldev->gs_gstate.fillconstantalpha, sizeof(float));
             bp += sizeof(float);
-        }
-        if (unknown & alpha_known) {
-            memcpy(bp, &cldev->gs_gstate.alpha,
-                   sizeof(cldev->gs_gstate.alpha));
-            bp += sizeof(cldev->gs_gstate.alpha);
         }
         code = set_cmd_put_op(&dp, cldev, pcls, cmd_opv_set_misc2,
                               1 + cmd_sizew(misc2_unknown) + (bp - buf));

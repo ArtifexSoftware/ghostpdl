@@ -694,7 +694,7 @@ end
 /okOPcs mark /DeviceGray 0 /DeviceCMYK 1 /DeviceN 2 /Separation 3 .dicttomark def
 
 % Take care of pushing a transparency group if we need it for SMask or for Overprint..
-% After pushing the group, we save the opacityalpha and shapealpha and change them
+% After pushing the group, we save the ca and CA and change them
 % both to 1. For overprint if the colorspace is acceptable, also change to
 % CompatibleOverprint if the device needs it.
 
@@ -722,9 +722,9 @@ end
     2 index aload pop		% pathbbox
     .begintransparencygroup
     % After group pushed, set opacityalpha, shapealpha and blendmode
-    /saveOA .currentopacityalpha def
-    /saveSA .currentshapealpha def
-    1 .setopacityalpha 1 .setshapealpha
+    /saveOA .currentstrokeconstantalpha def
+    /saveSA .currentfillconstantalpha def
+    1 .setfillconstantalpha 1 .setstrokeconstantalpha
     /GroupPushed //true def
   } {
     /GroupPushed //false def
@@ -749,9 +749,9 @@ end
     2 index aload pop		% pathbbox
     .begintransparencygroup
     % After group pushed, set opacityalpha, shapealpha and blendmode
-    /saveOA .currentopacityalpha def
-    /saveSA .currentshapealpha def
-    1 .setopacityalpha 1 .setshapealpha
+    /saveOA .currentstrokeconstantalpha def
+    /saveSA .currentfillconstantalpha def
+    1 .setfillconstantalpha 1 .setstrokeconstantalpha
     /GroupPushed //true def
   } {
     /GroupPushed //false def
@@ -768,7 +768,7 @@ end
   GroupPushed {
     % pop the group, then restore the opacityalpha and shapealpha
     .endtransparencygroup	% end the group
-    saveOA .setopacityalpha saveSA .setshapealpha
+    saveOA .setstrokeconstantalpha saveSA .setfillconstantalpha
   } if
   % Also, if we changed the BM, restore it (AFTER the group was popped)
   .currentblendmode /CompatibleOverprint eq {

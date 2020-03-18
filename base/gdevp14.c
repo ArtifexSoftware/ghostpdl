@@ -1335,7 +1335,7 @@ pdf14_find_backdrop_buf(pdf14_ctx *ctx, bool *is_backdrop)
 
 static	int
 pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
-                              bool knockout, uint16_t alpha, uint16_t shape,
+                              bool knockout, uint16_t alpha, uint16_t shape, uint16_t opacity,
                               gs_blend_mode_t blend_mode, bool idle, uint mask_id,
                               int numcomps, bool cm_back_drop,
                               cmm_profile_t *group_profile,
@@ -1378,6 +1378,7 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
     buf->knockout = knockout;
     buf->alpha = alpha;
     buf->shape = shape;
+    buf->opacity = opacity;
     buf->blend_mode = blend_mode;
     buf->mask_id = mask_id;
     buf->mask_stack = ctx->mask_stack; /* Save because the group rendering may
@@ -2911,6 +2912,38 @@ pdf14_put_params(gx_device * dev, gs_param_list	* plist)
     return code;
 }
 
+static inline void
+pdf14_set_opacity(gx_device* dev, float opacity)
+{
+    pdf14_device* pdev = (pdf14_device*)dev;
+
+    pdev->opacity = opacity;
+    pdev->alpha = pdev->opacity * pdev->shape;
+}
+
+static inline void
+pdf14_set_shape(gx_device* dev, float shape)
+{
+    pdf14_device* pdev = (pdf14_device*)dev;
+
+    pdev->shape = shape;
+    pdev->alpha = pdev->opacity * pdev->shape;
+}
+
+static inline void
+pdf14_set_shape_opacity(gx_device* dev, float shape, float opacity)
+{
+    pdf14_set_opacity(dev, opacity);
+    pdf14_set_shape(dev, shape);
+}
+
+static inline void
+pdf14_set_alpha_one(gx_device* dev)
+{
+    pdf14_set_opacity(dev, 1.0);
+    pdf14_set_shape(dev, 1.0);
+}
+
 /*
  * Copy marking related parameters into the PDF 1.4 device structure for use
  * by pdf14_fill_rectangle.
@@ -2920,9 +2953,22 @@ pdf14_set_marking_params(gx_device *dev, const gs_gstate *pgs)
 {
     pdf14_device * pdev = (pdf14_device *)dev;
 
-    pdev->opacity = pgs->opacity.alpha;
-    pdev->shape = pgs->shape.alpha;
-    pdev->alpha = pgs->opacity.alpha * pgs->shape.alpha;
+    if (pgs->alphaisshape) {
+        pdev->opacity = 1.0;
+        if (pgs->is_fill_color) {
+            pdev->shape = pgs->fillconstantalpha;
+        } else {
+            pdev->shape = pgs->strokeconstantalpha;
+        }
+    } else {
+        pdev->shape = 1.0;
+        if (pgs->is_fill_color) {
+            pdev->opacity = pgs->fillconstantalpha;
+        } else {
+            pdev->opacity = pgs->strokeconstantalpha;
+        }
+    }
+    pdev->alpha = pdev->opacity * pdev->shape;
     pdev->blend_mode = pgs->blend_mode;
     pdev->overprint = pgs->overprint;
     pdev->stroke_overprint = pgs->stroke_overprint;
@@ -2959,8 +3005,8 @@ update_lop_for_pdf14(gs_gstate *pgs, const gx_drawing_color *pdcolor)
     /* The only idempotent blend modes are Normal, Darken and Lighten */
     if ((pgs->alpha != 0xFFFF) ||
         (pgs->blend_mode != BLEND_MODE_Normal && pgs->blend_mode != BLEND_MODE_Darken && pgs->blend_mode != BLEND_MODE_Lighten) ||
-        (pgs->opacity.alpha != 1.0) ||
-        (pgs->shape.alpha != 1.0) ||
+        (pgs->fillconstantalpha != 1.0) ||
+        (pgs->strokeconstantalpha != 1.0) ||
         (hastrans))
     {
         /*
@@ -2997,6 +3043,8 @@ push_shfill_group(pdf14_clist_device *pdev,
 
     params.Isolated = false;
     params.Knockout = true;
+    params.global_opacity = fudged_pgs.fillconstantalpha;
+    params.global_shape = 1.0;
     code = gs_begin_transparency_group(&fudged_pgs, &params, &cb, PDF14_BEGIN_TRANS_GROUP);
 
     /* We have the group handle the blendmode and the opacity,
@@ -3007,7 +3055,8 @@ push_shfill_group(pdf14_clist_device *pdev,
      * the fill operation as part of doing the stroking, we don't
      * push another one. */
     gs_setblendmode(pgs, BLEND_MODE_Normal);
-    gs_setopacityalpha(pgs, 1.0);
+    gs_setfillconstantalpha(pgs, 1.0);
+    gs_setstrokeconstantalpha(pgs, 1.0);
     if (pdev) {
         code = pdf14_clist_update_params(pdev, pgs, false, NULL);
         if (code < 0)
@@ -3094,7 +3143,7 @@ pdf14_fill_path(gx_device *dev,	const gs_gstate *pgs,
         /* Non-idempotent blends require a transparency
          * group to be pushed because shadings might
          * paint several pixels twice. */
-        push_group = gs_currentopacityalpha(pgs) != 1.0 ||
+        push_group = pgs->fillconstantalpha != 1.0 ||
                !blend_is_idempotent(gs_currentblendmode(pgs));
         pinst =
             (gs_pattern2_instance_t *)pdcolor->ccolor.pattern;
@@ -3122,6 +3171,7 @@ pdf14_fill_path(gx_device *dev,	const gs_gstate *pgs,
             if (box.q.y > path_box.q.y)
                 box.q.y = path_box.q.y;
         }
+        /* Group alpha set from fill value. push_shfill_group does reset to 1.0 */
         code = push_shfill_group(NULL, &new_pgs, &box);
     } else
         update_lop_for_pdf14(&new_pgs, pdcolor);
@@ -3164,7 +3214,7 @@ pdf14_stroke_path(gx_device *dev, const	gs_gstate	*pgs,
         /* Non-idempotent blends require a transparency
          * group to be pushed because shadings might
          * paint several pixels twice. */
-        push_group = gs_currentopacityalpha(pgs) != 1.0 ||
+        push_group = pgs->strokeconstantalpha != 1.0 ||
                !blend_is_idempotent(gs_currentblendmode(pgs));
     }
     if (push_group) {
@@ -3213,6 +3263,8 @@ pdf14_stroke_path(gx_device *dev, const	gs_gstate	*pgs,
             if (box.q.y > path_box.q.y)
                 box.q.y = path_box.q.y;
         }
+        /* Group alpha set from fill value. push_shfill_group does reset to 1.0 */
+        new_pgs.fillconstantalpha = new_pgs.strokeconstantalpha;
         code = push_shfill_group(NULL, &new_pgs, &box);
     } else
         update_lop_for_pdf14(&new_pgs, pdcolor);
@@ -3243,12 +3295,15 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *cpgs, gx_path *ppath,
     gs_transparency_group_params_t params = { 0 };
     gs_fixed_rect clip_bbox;
     gs_rect bbox, group_stroke_box;
-    float opacity;
+    float global_shape;
+    float global_opacity;
     gs_blend_mode_t blend_mode;
     gs_fixed_rect path_bbox;
     int expansion_code;
     gs_fixed_point expansion;
     pdf14_device *p14dev = (pdf14_device *)dev;
+    float stroke_alpha = cpgs->strokeconstantalpha;
+    float fill_alpha = cpgs->fillconstantalpha;
 
     /* Break const just once, neatly */
     const_breaker.cpgs = cpgs;
@@ -3258,7 +3313,8 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *cpgs, gx_path *ppath,
         (pgs->ctm.xx == 0.0 && pgs->ctm.xy == 0.0 && pgs->ctm.yx == 0.0 && pgs->ctm.yy == 0.0))
         return 0;
 
-    opacity = pgs->opacity.alpha;
+    global_shape = p14dev->shape;
+    global_opacity = p14dev->opacity;
     blend_mode = pgs->blend_mode;
 
     code = gx_curr_fixed_bbox(pgs, &clip_bbox, NO_PATH);
@@ -3306,6 +3362,13 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *cpgs, gx_path *ppath,
         params.Isolated = false;
         params.group_color = UNKNOWN;
         params.Knockout = false;
+        if (pgs->alphaisshape) {
+            params.global_opacity = 1.0;
+            params.global_shape = pgs->fillconstantalpha;
+        } else {
+            params.global_shape = 1.0;
+            params.global_opacity = pgs->fillconstantalpha;
+        }
 
         /* non-isolated non-knockout group pushed with original alpha and blend mode */
         code = pdf14_begin_transparency_group(dev, &params,
@@ -3314,7 +3377,7 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *cpgs, gx_path *ppath,
             return code;
 
         /* Change alpha to 1.0 and blend mode to compatible overprint for actual drawing */
-        (void)gs_setopacityalpha(pgs, 1.0); /* Can never fail */
+        pdf14_set_alpha_one(dev);
         (void)gs_setblendmode(pgs, BLEND_MODE_CompatibleOverprint); /* Can never fail */
 
         if (pgs->fillconstantalpha > 0) {
@@ -3339,35 +3402,49 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *cpgs, gx_path *ppath,
         params.Isolated = false;
         params.group_color = UNKNOWN;
         params.Knockout = true;
+        params.global_shape = 1.0;
+        params.global_opacity = 1.0;
 
         /* non-isolated knockout group is pushed with alpha = 1.0 and Normal blend mode */
-        (void)gs_setopacityalpha(pgs, 1.0); /* Can never fail */
+        pdf14_set_alpha_one(dev);
         (void)gs_setblendmode(pgs, BLEND_MODE_Normal); /* Can never fail */
 
-        code = pdf14_begin_transparency_group(dev, &params,
-                                              &group_stroke_box, pgs, dev->memory);
+        code = pdf14_begin_transparency_group(dev, &params, &group_stroke_box,
+                                              pgs, dev->memory);
         /* restore blend mode for actual drawing in the group */
         (void)gs_setblendmode(pgs, blend_mode); /* Can never fail */
         if (code < 0) {
             /* Make sure we put everything back even if we exit with an error. */
-            (void)gs_setopacityalpha(pgs, opacity);
+            pdf14_set_shape_opacity(dev, global_shape, global_opacity);
             return code;
         }
 
-        (void)gs_setopacityalpha(pgs, pgs->fillconstantalpha); /* Can never fail */
+        if (pgs->alphaisshape)
+            pdf14_set_shape(dev, pgs->fillconstantalpha);
+        else
+            pdf14_set_opacity(dev, pgs->fillconstantalpha);
+
         p14dev->op_state = PDF14_OP_STATE_FILL;
 
         /* If we are in an overprint situation, set the blend mode to compatible
             overprint */
         if (pgs->overprint && dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE)
-            gs_setblendmode(pgs, BLEND_MODE_CompatibleOverprint); /* Can never fail */
+            (void)gs_setblendmode(pgs, BLEND_MODE_CompatibleOverprint); /* Can never fail */
         code = pdf14_fill_path(dev, pgs, ppath, fill_params, pdcolor_fill, pcpath);
         if (pgs->overprint && dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE)
-            gs_setblendmode(pgs, blend_mode); /* Can never fail */
+            (void)gs_setblendmode(pgs, blend_mode); /* Can never fail */
         if (code < 0)
             goto cleanup;
 
-        gs_setopacityalpha(pgs, pgs->strokeconstantalpha); /* Can never fail */
+        if (pgs->alphaisshape)
+            pdf14_set_shape(dev, pgs->strokeconstantalpha);
+        else
+            pdf14_set_opacity(dev, pgs->strokeconstantalpha);
+
+        /* Note that the stroke can end up looking like a fill here */
+        (void)gs_setstrokeconstantalpha(pgs, stroke_alpha);
+        (void)gs_setfillconstantalpha(pgs, stroke_alpha);
+
         gs_swapcolors_quick(pgs);
         p14dev->op_state = PDF14_OP_STATE_STROKE;
         if (pgs->stroke_overprint && dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE)
@@ -3381,8 +3458,10 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *cpgs, gx_path *ppath,
 
 cleanup:
     /* Now during the pop do the compositing with alpha of 1.0 and normal blend */
-    (void)gs_setopacityalpha(pgs, 1.0); /* Can never fail */
+    pdf14_set_alpha_one(dev);
     (void)gs_setblendmode(pgs, BLEND_MODE_Normal); /* Can never fail */
+    (void)gs_setstrokeconstantalpha(pgs, stroke_alpha);
+    (void)gs_setfillconstantalpha(pgs, fill_alpha);
 
     /* Restore where we were. If an error occured while in the group push
        return that error code but try to do the cleanup */
@@ -3394,7 +3473,7 @@ cleanup:
     }
 
     /* Restore if there were any changes */
-    (void)gs_setopacityalpha(pgs, opacity); /* Can never fail */
+    pdf14_set_shape_opacity(dev, global_shape, global_opacity);
     (void)gs_setblendmode(pgs, blend_mode); /* Can never fail */
 
     return code;
@@ -3869,7 +3948,7 @@ pdf14_fill_mask(gx_device * orig_dev,
             group_rect.q.y = y + h;
             if (!(w <= 0 || h <= 0)) {
                 code = pdf14_push_transparency_group(p14dev->ctx, &group_rect,
-                     1, 0, 65535, 65535, ptile->blending_mode, 0, 0,
+                     1, 0, 65535, 65535, 65535, ptile->blending_mode, 0, 0,
                      ptile->ttrans->n_chan-1, false, NULL, NULL, NULL, NULL);
                 if (code < 0)
                     return code;
@@ -4021,7 +4100,7 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_gstate * pgs,
         blend_mode = ptile->blending_mode;
         memcpy(&save_pdf14_dev, p14dev, sizeof(pdf14_device));
         code = pdf14_push_transparency_group(p14dev->ctx, &rect, 1, 0, (uint16_t)floor(65535 * p14dev->alpha + 0.5),
-                                            (uint16_t)floor(65535 * p14dev->shape + 0.5),
+                                            (uint16_t)floor(65535 * p14dev->shape + 0.5), (uint16_t)floor(65535 * p14dev->opacity + 0.5),
                                              blend_mode, 0, 0, n_chan_tile-1,
                                              false, NULL, NULL, pgs_noconst,
                                              pdev);
@@ -4264,7 +4343,7 @@ pdf14_patt_trans_image_fill(gx_device * dev, const gs_gstate * pgs,
                    "[v*] Pushing trans group patt_trans_image_fill, uid = %ld id = %ld \n",
                    ptile->uid.id, ptile->id);
         code = pdf14_push_transparency_group(p14dev->ctx, &group_rect, 1, 0, 65535, 65535,
-                                             pgs->blend_mode, 0, 0,
+                                             65535, pgs->blend_mode, 0, 0,
                                              ptile->ttrans->n_chan-1, false, NULL,
                                              NULL, (gs_gstate *)pgs, dev);
         /* Set up the output buffer information now that we have
@@ -4335,10 +4414,8 @@ pdf14_set_params(gs_gstate * pgs,
         pgs->blend_mode = pparams->blend_mode;
     if (pparams->changed & PDF14_SET_TEXT_KNOCKOUT)
         pgs->text_knockout = pparams->text_knockout;
-    if (pparams->changed & PDF14_SET_SHAPE_ALPHA)
-        pgs->shape.alpha = pparams->shape.alpha;
-    if (pparams->changed & PDF14_SET_OPACITY_ALPHA)
-        pgs->opacity.alpha = pparams->opacity.alpha;
+    if (pparams->changed & PDF14_SET_AIS)
+        pgs->alphaisshape = pparams->ais;
     if (pparams->changed & PDF14_SET_OVERPRINT)
         pgs->overprint = pparams->overprint;
     if (pparams->changed & PDF14_SET_STROKEOVERPRINT)
@@ -4969,32 +5046,43 @@ pdf14_create_compositor(gx_device * dev, gx_device * * pcdev,
 static int
 pdf14_push_text_group(gx_device *dev, gs_gstate *pgs,
                       gs_blend_mode_t blend_mode, float opacity,
-                      bool is_clist)
+                      float shape, bool is_clist)
 {
     int code;
     gs_transparency_group_params_t params = { 0 };
     gs_rect bbox = { 0 }; /* Bounding box is set by parent */
     pdf14_clist_device * pdev = (pdf14_clist_device *)dev;
+    float alpha = pgs->fillconstantalpha;
 
     /* Push a non-isolated knock-out group making sure the opacity and blend
        mode are correct */
     params.Isolated = false;
     params.Knockout = true;
     params.text_group = PDF14_TEXTGROUP_BT_PUSHED;
-    gs_setopacityalpha(pgs, 1.0);
+    params.global_opacity = 1.0;
+    params.global_shape = 1.0;
+
+    pdf14_set_alpha_one(dev);
+    gs_setfillconstantalpha(pgs, 1.0);
     gs_setblendmode(pgs, BLEND_MODE_Normal);
+
     if (is_clist) {
         code = pdf14_clist_update_params(pdev, pgs, false, NULL);
         if (code < 0)
             return code;
     }
+
     code = gs_begin_transparency_group(pgs, &params, &bbox, PDF14_BEGIN_TRANS_GROUP);
     if (code < 0)
         return code;
-    gs_setopacityalpha(pgs, opacity);
+
+    pdf14_set_shape_opacity(dev, shape, opacity);
+    gs_setfillconstantalpha(pgs, alpha);
     gs_setblendmode(pgs, blend_mode);
-    if (is_clist)
+
+    if (is_clist) {
         code = pdf14_clist_update_params(pdev, pgs, false, NULL);
+    }
     return code;
 }
 
@@ -5008,10 +5096,22 @@ pdf14_text_begin(gx_device * dev, gs_gstate * pgs,
     int code;
     gs_text_enum_t *penum;
     gs_blend_mode_t blend_mode = gs_currentblendmode(pgs);
-    float opacity = gs_currentopacityalpha(pgs);
+    float opacity;
+    float shape;
     bool blend_issue = !(blend_mode == BLEND_MODE_Normal || blend_mode == BLEND_MODE_Compatible || blend_mode == BLEND_MODE_CompatibleOverprint);
     pdf14_device *pdev = (pdf14_device*)dev;
     bool draw = !(text->operation & TEXT_DO_NONE);
+    uint text_mode = gs_currenttextrenderingmode(pgs);
+    bool text_stroke = (text_mode == 1 || text_mode == 2 || text_mode == 5 || text_mode == 6);
+    bool text_fill = (text_mode == 0 || text_mode == 2 || text_mode == 4 || text_mode == 6);
+
+    if (pgs->alphaisshape) {
+        shape = pgs->fillconstantalpha;
+        opacity = 1.0;
+    } else {
+        shape = 1.0;
+        opacity = pgs->fillconstantalpha;
+    }
 
     if_debug0m('v', memory, "[v]pdf14_text_begin\n");
     pdf14_set_marking_params(dev, pgs);
@@ -5044,11 +5144,13 @@ pdf14_text_begin(gx_device * dev, gs_gstate * pgs,
         pdev->text_group = PDF14_TEXTGROUP_BT_NOT_PUSHED;
     }
 
-    if (gs_currenttextknockout(pgs) && (blend_issue || opacity != 1.0) &&
-        gs_currenttextrenderingmode(pgs) != 3 && /* don't bother with invisible text */
-        pdev->text_group == PDF14_TEXTGROUP_BT_NOT_PUSHED)
+    if (gs_currenttextknockout(pgs) && (blend_issue ||
+         (pgs->fillconstantalpha != 1.0 && text_fill) ||
+         (pgs->strokeconstantalpha != 1.0 && text_stroke)) &&
+         text_mode != 3 && /* don't bother with invisible text */
+         pdev->text_group == PDF14_TEXTGROUP_BT_NOT_PUSHED)
         if (draw) {
-            code = pdf14_push_text_group(dev, pgs, blend_mode, opacity,
+            code = pdf14_push_text_group(dev, pgs, blend_mode, opacity, shape,
                 false);
         }
     *ppenum = (gs_text_enum_t *)penum;
@@ -5284,7 +5386,7 @@ pdf14_begin_transparency_group(gx_device *dev,
                               gs_gstate *pgs, gs_memory_t *mem)
 {
     pdf14_device *pdev = (pdf14_device *)dev;
-    double alpha = pgs->opacity.alpha * pgs->shape.alpha;
+    double alpha = ptgp->global_opacity * ptgp->global_shape;
     gs_int_rect rect;
     int code;
     bool isolated = ptgp->Isolated;
@@ -5353,9 +5455,10 @@ pdf14_begin_transparency_group(gx_device *dev,
     if (code < 0)
         return code;
     code = pdf14_push_transparency_group(pdev->ctx, &rect, isolated, ptgp->Knockout,
-                                         (uint16_t)floor (65535 * alpha + 0.5),
-                                         (uint16_t)floor (65535 * pgs->shape.alpha + 0.5),
-                                         pgs->blend_mode, ptgp->idle,
+                                        (uint16_t)floor (65535 * alpha + 0.5),
+                                        (uint16_t)floor(65535 * ptgp->global_shape + 0.5),
+                                        (uint16_t)floor(65535 * ptgp->global_opacity + 0.5),
+                                        pgs->blend_mode, ptgp->idle,
                                          ptgp->mask_id, pdev->color_info.num_components,
                                          cm_back_drop, group_profile, tos_profile,
                                          pgs, dev);
@@ -7102,6 +7205,13 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
     p14dev->pad = target->pad;
     p14dev->log2_align_mod = target->log2_align_mod;
     p14dev->is_planar = target->is_planar;
+
+    p14dev->alpha = 1.0;
+    p14dev->shape = 1.0;
+    p14dev->opacity = 1.0;
+    p14dev->fillconstantalpha = 1.0;
+    p14dev->strokeconstantalpha = 1.0;
+
     /* If the target profile was CIELAB (and we are not using a blend CS),
        then overide with default RGB for
        proper blending.  During put_image we will convert from RGB to
@@ -7396,8 +7506,8 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
             *pbuf++ = pparams->blend_mode;
             *pbuf++ = pparams->group_color;
             put_value(pbuf, pparams->group_color_numcomps);
-            put_value(pbuf, pparams->opacity.alpha);
-            put_value(pbuf, pparams->shape.alpha);
+            put_value(pbuf, pparams->opacity);
+            put_value(pbuf, pparams->shape);
             put_value(pbuf, pparams->bbox);
             put_value(pbuf, pparams->text_group);
             mask_id = pparams->mask_id;
@@ -7480,8 +7590,8 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
                 pdf14_needed = cdev->page_pdf14_needed;
             break;
         case PDF14_SET_BLEND_PARAMS:
-            if (pparams->blend_mode != BLEND_MODE_Normal || pparams->opacity.alpha != 1.0 ||
-                pparams->shape.alpha != 1.0)
+            if (pparams->blend_mode != BLEND_MODE_Normal || pparams->opacity != 1.0 ||
+                pparams->shape != 1.0)
                 pdf14_needed = true;		/* the compositor will be needed while reading */
             else if (smask_level == 0 && trans_group_level == 0)
                 pdf14_needed = false;		/* At page level, set back to false */
@@ -7493,10 +7603,8 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
                 *pbuf++ = pparams->blend_mode;
             if (pparams->changed & PDF14_SET_TEXT_KNOCKOUT)
                 *pbuf++ = pparams->text_knockout;
-            if (pparams->changed & PDF14_SET_OPACITY_ALPHA)
-                put_value(pbuf, pparams->opacity.alpha);
-            if (pparams->changed & PDF14_SET_SHAPE_ALPHA)
-                put_value(pbuf, pparams->shape.alpha);
+            if (pparams->changed & PDF14_SET_AIS)
+                put_value(pbuf, pparams->ais);
             if (pparams->changed & PDF14_SET_OVERPRINT)
                 put_value(pbuf, pparams->overprint);
             if (pparams->changed & PDF14_SET_STROKEOVERPRINT)
@@ -7618,8 +7726,8 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
             params.blend_mode = *data++;
             params.group_color = *data++;  /* Trans group color */
             read_value(data,params.group_color_numcomps);  /* color group size */
-            read_value(data, params.opacity.alpha);
-            read_value(data, params.shape.alpha);
+            read_value(data, params.opacity);
+            read_value(data, params.shape);
             read_value(data, params.bbox);
             read_value(data, params.text_group);
             read_value(data, params.mask_id);
@@ -7696,10 +7804,8 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
                 params.blend_mode = *data++;
             if (params.changed & PDF14_SET_TEXT_KNOCKOUT)
                 params.text_knockout = *data++;
-            if (params.changed & PDF14_SET_OPACITY_ALPHA)
-                read_value(data, params.opacity.alpha);
-            if (params.changed & PDF14_SET_SHAPE_ALPHA)
-                read_value(data, params.shape.alpha);
+            if (params.changed & PDF14_SET_AIS)
+                read_value(data, params.ais);
             if (params.changed & PDF14_SET_OVERPRINT)
                 read_value(data, params.overprint);
             if (params.changed & PDF14_SET_STROKEOVERPRINT)
@@ -9123,13 +9229,9 @@ pdf14_clist_update_params(pdf14_clist_device * pdev, const gs_gstate * pgs,
         changed |= PDF14_SET_TEXT_KNOCKOUT;
         params.text_knockout = pdev->text_knockout = pgs->text_knockout;
     }
-    if (pgs->shape.alpha != pdev->shape) {
-        changed |= PDF14_SET_SHAPE_ALPHA;
-        params.shape.alpha = pdev->shape = pgs->shape.alpha;
-    }
-    if (pgs->opacity.alpha != pdev->opacity) {
-        changed |= PDF14_SET_OPACITY_ALPHA;
-        params.opacity.alpha = pdev->opacity = pgs->opacity.alpha;
+    if (pgs->alphaisshape != pdev->ais) {
+        changed |= PDF14_SET_AIS;
+        params.ais = pdev->shape = pgs->alphaisshape;
     }
     if (pgs->overprint != pdev->overprint) {
         changed |= PDF14_SET_OVERPRINT;
@@ -9224,7 +9326,7 @@ pdf14_clist_fill_path(gx_device	*dev, const gs_gstate *pgs,
         /* Non-idempotent blends require a transparency
          * group to be pushed because shadings might
          * paint several pixels twice. */
-        push_group = gs_currentopacityalpha(pgs) != 1.0 ||
+        push_group = pgs->fillconstantalpha != 1.0 ||
                !blend_is_idempotent(gs_currentblendmode(pgs));
         pinst =
             (gs_pattern2_instance_t *)pdcolor->ccolor.pattern;
@@ -9252,6 +9354,7 @@ pdf14_clist_fill_path(gx_device	*dev, const gs_gstate *pgs,
             if (box.q.y > path_box.q.y)
                 box.q.y = path_box.q.y;
         }
+        /* Group alpha set from fill value. push_shfill_group does reset to 1.0 */
         code = push_shfill_group(pdev, &new_pgs, &box);
     } else
         update_lop_for_pdf14(&new_pgs, pdcolor);
@@ -9306,7 +9409,7 @@ pdf14_clist_stroke_path(gx_device *dev,	const gs_gstate *pgs,
         /* Non-idempotent blends require a transparency
          * group to be pushed because shadings might
          * paint several pixels twice. */
-        push_group = gs_currentopacityalpha(pgs) != 1.0 ||
+        push_group = pgs->strokeconstantalpha != 1.0 ||
                !blend_is_idempotent(gs_currentblendmode(pgs));
         if (pdev->trans_group_parent_cmap_procs != NULL) {
             pinst =
@@ -9358,6 +9461,8 @@ pdf14_clist_stroke_path(gx_device *dev,	const gs_gstate *pgs,
             if (box.q.y > path_box.q.y)
                 box.q.y = path_box.q.y;
         }
+        /* Group alpha set from fill value. push_shfill_group does reset to 1.0 */
+        new_pgs.fillconstantalpha = new_pgs.strokeconstantalpha;
         code = push_shfill_group(pdev, &new_pgs, &box);
     } else
         update_lop_for_pdf14(&new_pgs, pdcolor);
@@ -9397,7 +9502,8 @@ pdf14_clist_fill_stroke_path_pattern_setup(gx_device* dev, const gs_gstate* cpgs
     gs_transparency_group_params_t params = { 0 };
     gs_fixed_rect clip_bbox;
     gs_rect bbox, group_stroke_box;
-    float opacity;
+    float fill_alpha;
+    float stroke_alpha;
     gs_blend_mode_t blend_mode;
     gs_fixed_rect path_bbox;
     int expansion_code;
@@ -9407,7 +9513,8 @@ pdf14_clist_fill_stroke_path_pattern_setup(gx_device* dev, const gs_gstate* cpgs
     const_breaker.cpgs = cpgs;
     pgs = const_breaker.pgs;
 
-    opacity = pgs->opacity.alpha;
+    fill_alpha = pgs->fillconstantalpha;
+    stroke_alpha = pgs->strokeconstantalpha;
     blend_mode = pgs->blend_mode;
 
     code = gx_curr_fixed_bbox(pgs, &clip_bbox, NO_PATH);
@@ -9449,35 +9556,30 @@ pdf14_clist_fill_stroke_path_pattern_setup(gx_device* dev, const gs_gstate* cpgs
     if (pgs->fillconstantalpha == pgs->strokeconstantalpha &&
         pgs->overprint && pgs->stroke_overprint &&
         dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
-        /* Push a non-isolated non-knockout group with alpha = 1.0 and
-           compatible overprint mode.  Group will be composited with
-           original alpha and blend mode */
+
         params.Isolated = false;
         params.group_color = UNKNOWN;
         params.Knockout = false;
+        params.global_opacity = fill_alpha;
+        params.global_shape = 1.0;
 
         /* non-isolated non-knockout group pushed with original alpha and blend mode */
         code = gs_begin_transparency_group(pgs, &params, &group_stroke_box, PDF14_BEGIN_TRANS_GROUP);
         if (code < 0)
             return code;
 
-        /* Change alpha to 1.0 and blend mode to compatible overprint for actual drawing */
-        (void)gs_setopacityalpha(pgs, 1.0); /* Can never fail */
+        /* Set alpha to 1.0 and compatible overprint mode for actual drawings */
+        (void)gs_setfillconstantalpha(pgs, 1.0);
+        (void)gs_setstrokeconstantalpha(pgs, 1.0);
         (void)gs_setblendmode(pgs, BLEND_MODE_CompatibleOverprint); /* Can never fail */
 
-        /* Do fill */
-        if (pgs->fillconstantalpha > 0.0) {
-            code = pdf14_clist_fill_path(dev, pgs, ppath, params_fill, pdevc_fill, pcpath);
-            if (code < 0)
-                goto cleanup;
-        }
+        code = pdf14_clist_fill_path(dev, pgs, ppath, params_fill, pdevc_fill, pcpath);
+        if (code < 0)
+            goto cleanup;
 
-        /* Do stroke */
-        if (pgs->strokeconstantalpha > 0.0) {
-            code = pdf14_clist_stroke_path(dev, pgs, ppath, params_stroke, pdevc_stroke, pcpath);
-            if (code < 0)
-                goto cleanup;
-        }
+        code = pdf14_clist_stroke_path(dev, pgs, ppath, params_stroke, pdevc_stroke, pcpath);
+        if (code < 0)
+            goto cleanup;
 
     } else {
         /* Push a non-isolated knockout group. Do not change the alpha or
@@ -9485,21 +9587,19 @@ pdf14_clist_fill_stroke_path_pattern_setup(gx_device* dev, const gs_gstate* cpgs
         params.Isolated = false;
         params.group_color = UNKNOWN;
         params.Knockout = true;
+        params.global_opacity = 1.0;
+        params.global_shape = 1.0;
 
         /* non-isolated knockout group is pushed with alpha = 1.0 and Normal blend mode */
-        (void)gs_setopacityalpha(pgs, 1.0); /* Can never fail */
+        (void)gs_setfillconstantalpha(pgs, 1.0);
         (void)gs_setblendmode(pgs, BLEND_MODE_Normal); /* Can never fail */
-
         code = gs_begin_transparency_group(pgs, &params, &group_stroke_box, PDF14_BEGIN_TRANS_GROUP);
+
         /* restore blend mode for actual drawing in the group */
         (void)gs_setblendmode(pgs, blend_mode); /* Can never fail */
-        if (code < 0) {
-            (void)gs_setopacityalpha(pgs, opacity); /* Can never fail */
-            return code;
-        }
 
-        if (pgs->fillconstantalpha > 0.0) {
-            (void)gs_setopacityalpha(pgs, pgs->fillconstantalpha); /* Can never fail */
+        if (fill_alpha > 0.0) {
+            (void)gs_setfillconstantalpha(pgs, fill_alpha);
 
             /* If we are in an overprint situation, set the blend mode to compatible
                overprint */
@@ -9514,20 +9614,27 @@ pdf14_clist_fill_stroke_path_pattern_setup(gx_device* dev, const gs_gstate* cpgs
                 (void)gs_setblendmode(pgs, blend_mode); /* Can never fail */
         }
 
-        if (pgs->strokeconstantalpha > 0.0) {
-            (void)gs_setopacityalpha(pgs, pgs->strokeconstantalpha); /* Can never fail */
-            if (pgs->stroke_overprint && dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE)
+        if (stroke_alpha > 0.0) {
+            /* Note that the stroke can end up looking like a fill here */
+            (void)gs_setstrokeconstantalpha(pgs, stroke_alpha);
+            (void)gs_setfillconstantalpha(pgs, stroke_alpha);
+
+            if (pgs->overprint && dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE)
                 (void)gs_setblendmode(pgs, BLEND_MODE_CompatibleOverprint); /* Can never fail */
 
             code = pdf14_clist_stroke_path(dev, pgs, ppath, params_stroke, pdevc_stroke, pcpath);
             if (code < 0)
                 goto cleanup;
+
+            if (pgs->overprint && dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE)
+                (void)gs_setblendmode(pgs, blend_mode); /* Can never fail */
         }
     }
 
 cleanup:
     /* Now during the pop do the compositing with alpha of 1.0 and normal blend */
-    (void)gs_setopacityalpha(pgs, 1.0); /* Can never fail */
+    (void)gs_setfillconstantalpha(pgs, 1.0);
+    (void)gs_setstrokeconstantalpha(pgs, 1.0);
     (void)gs_setblendmode(pgs, BLEND_MODE_Normal); /* Can never fail */
 
     /* Restore where we were. If an error occured while in the group push
@@ -9540,7 +9647,8 @@ cleanup:
     }
 
     /* Restore if there were any changes */
-    (void)gs_setopacityalpha(pgs, opacity); /* Can never fail */
+    (void)gs_setfillconstantalpha(pgs, fill_alpha);
+    (void)gs_setstrokeconstantalpha(pgs, stroke_alpha);
     (void)gs_setblendmode(pgs, blend_mode); /* Can never fail */
 
     return code;
@@ -9608,9 +9716,21 @@ pdf14_clist_text_begin(gx_device * dev,	gs_gstate	* pgs,
     gs_text_enum_t *penum;
     int code;
     gs_blend_mode_t blend_mode = gs_currentblendmode(pgs);
-    float opacity = gs_currentopacityalpha(pgs);
+    float opacity;
+    float shape;
     bool blend_issue = !(blend_mode == BLEND_MODE_Normal || blend_mode == BLEND_MODE_Compatible || blend_mode == BLEND_MODE_CompatibleOverprint);
     bool draw = !(text->operation & TEXT_DO_NONE);
+    uint text_mode = gs_currenttextrenderingmode(pgs);
+    bool text_stroke = (text_mode == 1 || text_mode == 2 || text_mode == 5 || text_mode == 6);
+    bool text_fill = (text_mode == 0 || text_mode == 2 || text_mode == 4 || text_mode == 6);
+
+    if (pgs->alphaisshape) {
+        opacity = 1.0;
+        shape = pgs->fillconstantalpha;
+    } else {
+        opacity = pgs->fillconstantalpha;
+        shape = 1.0;
+    }
 
     if_debug0m('v', memory, "[v]pdf14_clist_text_begin\n");
     /*
@@ -9648,11 +9768,14 @@ pdf14_clist_text_begin(gx_device * dev,	gs_gstate	* pgs,
     3) Text knockout is set to true
     4) And we are actually drawing text
     */
-    if (gs_currenttextknockout(pgs) && (blend_issue || opacity != 1.0) &&
-        gs_currenttextrenderingmode(pgs) != 3 && /* don't bother with invisible text */
+
+    if (gs_currenttextknockout(pgs) && (blend_issue ||
+        (pgs->fillconstantalpha != 1.0 && text_fill) ||
+        (pgs->strokeconstantalpha != 1.0 && text_stroke)) &&
+        text_mode != 3 && /* don't bother with invisible text */
         pdev->text_group == PDF14_TEXTGROUP_BT_NOT_PUSHED) {
         if (draw) {
-            code = pdf14_push_text_group(dev, pgs, blend_mode, opacity, true);
+            code = pdf14_push_text_group(dev, pgs, blend_mode, opacity, shape, true);
             if (code == 0)
                 pdev->text_group = PDF14_TEXTGROUP_BT_PUSHED;  /* Needed during clist writing */
         }

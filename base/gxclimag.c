@@ -1096,8 +1096,8 @@ clist_image_plane_data(gx_image_enum_common_t * info,
             pie->color_map_is_known = true;
             if (code >= 0) {
                 uint want_known = ctm_known | clip_path_known |
-                            op_bm_tk_known | opacity_alpha_known |
-                            shape_alpha_known | alpha_known | fill_adjust_known |
+                            op_bm_tk_known | ais_known |
+                            fill_alpha_known | stroke_alpha_known | fill_adjust_known |
                             (pie->color_space.id == gs_no_id ? 0 :
                                                      color_space_known);
 
@@ -1888,17 +1888,17 @@ clist_image_unknowns(gx_device *dev, const clist_image_enum *pie)
         cdev->gs_gstate.text_knockout = pgs->text_knockout;
         cdev->gs_gstate.renderingintent = pgs->renderingintent;
     }
-    if (cdev->gs_gstate.opacity.alpha != pgs->opacity.alpha) {
-        unknown |= opacity_alpha_known;
-        cdev->gs_gstate.opacity.alpha = pgs->opacity.alpha;
+    if (cdev->gs_gstate.alphaisshape != pgs->alphaisshape) {
+        unknown |= ais_known;
+        cdev->gs_gstate.alphaisshape = pgs->alphaisshape;
     }
-    if (cdev->gs_gstate.shape.alpha != pgs->shape.alpha) {
-        unknown |= shape_alpha_known;
-        cdev->gs_gstate.shape.alpha = pgs->shape.alpha;
+    if (cdev->gs_gstate.strokeconstantalpha != pgs->strokeconstantalpha) {
+        unknown |= stroke_alpha_known;
+        cdev->gs_gstate.strokeconstantalpha = pgs->strokeconstantalpha;
     }
-    if (cdev->gs_gstate.alpha != pgs->alpha) {
-        unknown |= alpha_known;
-        cdev->gs_gstate.alpha = pgs->alpha;
+    if (cdev->gs_gstate.fillconstantalpha != pgs->fillconstantalpha) {
+        unknown |= fill_alpha_known;
+        cdev->gs_gstate.fillconstantalpha = pgs->fillconstantalpha;
     }
     return unknown;
 }

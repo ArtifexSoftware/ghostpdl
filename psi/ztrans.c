@@ -42,6 +42,18 @@
 /* ------ Utilities ------ */
 
 static int
+bogus_set_function(gs_gstate *pgs, double x)
+{
+    return 0;
+}
+
+static float
+bogus_get_function(gs_gstate *pgs)
+{
+    return 0;
+}
+
+static int
 set_float_value(i_ctx_t *i_ctx_p, int (*set_value)(gs_gstate *, double))
 {
     os_ptr op = osp;
@@ -127,28 +139,28 @@ zcurrentblendmode(i_ctx_t *i_ctx_p)
 static int
 zsetopacityalpha(i_ctx_t *i_ctx_p)
 {
-    return set_float_value(i_ctx_p, gs_setopacityalpha);
+    return set_float_value(i_ctx_p, bogus_set_function);
 }
 
 /* - .currentopacityalpha <0..1> */
 static int
 zcurrentopacityalpha(i_ctx_t *i_ctx_p)
 {
-    return current_float_value(i_ctx_p, gs_currentopacityalpha);
+    return current_float_value(i_ctx_p, bogus_get_function);
 }
 
 /* <0..1> .setshapealpha - */
 static int
 zsetshapealpha(i_ctx_t *i_ctx_p)
 {
-    return set_float_value(i_ctx_p, gs_setshapealpha);
+    return set_float_value(i_ctx_p, bogus_set_function);
 }
 
 /* - .currentshapealpha <0..1> */
 static int
 zcurrentshapealpha(i_ctx_t *i_ctx_p)
 {
-    return current_float_value(i_ctx_p, gs_currentshapealpha);
+    return current_float_value(i_ctx_p, bogus_get_function);
 }
 
 /* <bool> .settextknockout - */
@@ -245,6 +257,15 @@ static int common_transparency_group(i_ctx_t *i_ctx_p, pdf14_compositor_operatio
                 params.ColorSpace = NULL;
         }
     }
+
+    if (gs_getalphaisshape(igs)) {
+        params.global_shape = gs_getfillconstantalpha(igs);
+        params.global_opacity = 1.0;
+    } else {
+        params.global_opacity = gs_getfillconstantalpha(igs);
+        params.global_shape = 1.0;
+    }
+
     code = gs_begin_transparency_group(igs, &params, &bbox, group_type);
     if (code < 0)
         return code;
