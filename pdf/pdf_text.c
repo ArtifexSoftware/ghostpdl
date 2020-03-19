@@ -598,13 +598,15 @@ int pdfi_TJ(pdf_context *ctx)
 
         if (o->type == PDF_INT) {
             dx = (double)((pdf_num *)o)->value.i / -1000;
-            gs_distance_transform(dx, 0, &ctm_only(ctx->pgs), &pt);
-            ctx->pgs->current_point.x += pt.x;
+            code = gs_rmoveto(ctx->pgs, dx, 0);
+            if (code < 0)
+                goto TJ_error;
         } else {
             if (o->type == PDF_REAL) {
                 dx = ((pdf_num *)o)->value.d / -1000;
-                gs_distance_transform(dx, 0, &ctm_only(ctx->pgs), &pt);
-                ctx->pgs->current_point.x += pt.x;
+                code = gs_rmoveto(ctx->pgs, dx, 0);
+                if (code < 0)
+                    goto TJ_error;
             } else {
                 if (o->type == PDF_STRING)
                     code = pdfi_show(ctx, (pdf_string *)o);
