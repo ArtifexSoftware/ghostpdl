@@ -823,6 +823,7 @@ static int pdfi_annot_draw_Ink(pdf_context *ctx, pdf_dict *annot, pdf_dict *Norm
     int code = 0;
 
     /* TODO: Generate appearance (see pdf_draw.ps/Ink) */
+    dbgmprintf(ctx->memory, "ANNOT: No AP generation for subtype Ink\n");
     *render_done = true;
 
     return code;
@@ -919,15 +920,189 @@ static int pdfi_annot_draw_Circle(pdf_context *ctx, pdf_dict *annot, pdf_dict *N
     return code;
 }
 
+
+/*********** BEGIN /Stamp ***************/
+typedef struct {
+    double r,g,b;
+} pdfi_annot_stamp_rgb_t;
+
+#define STAMP_RED {0xef/255.,0x40/255.,0x23/255.}
+#define STAMP_GREEN {0x2f/255.,0xae/255.,0x49/255.}
+#define STAMP_BLUE {0x00/255.,0x72/255.,0xbc/255.}
+
+typedef struct {
+    const char *text;
+    double y;
+    double h;
+} pdfi_annot_stamp_text_t;
+
+typedef struct {
+    const char *type;
+    pdfi_annot_stamp_rgb_t rgb;
+    pdfi_annot_stamp_text_t text[2];
+} pdfi_annot_stamp_type_t;
+
+#define STAMP_1LINE(text,y,h) {{text,y,h},{0}}
+#define STAMP_2LINE(text,y,h,text2,y2,h2) {{text,y,h},{text2,y2,h2}}
+
+static pdfi_annot_stamp_type_t pdfi_annot_stamp_types[] = {
+    {"Approved", STAMP_GREEN, STAMP_1LINE("APPROVED", 13, 30)},
+    {"AsIs", STAMP_RED, STAMP_1LINE("AS IS", 13, 30)},
+    {"Confidential", STAMP_RED, STAMP_1LINE("CONFIDENTIAL", 17, 20)},
+    {"Departmental", STAMP_BLUE, STAMP_1LINE("DEPARTMENTAL", 17, 20)},
+    {"Draft", STAMP_RED, STAMP_1LINE("DRAFT", 13, 30)},
+    {"Experimental", STAMP_BLUE, STAMP_1LINE("EXPERIMENTAL", 17, 20)},
+    {"Expired", STAMP_RED, STAMP_1LINE("EXPIRED", 13, 30)},
+    {"Final", STAMP_RED, STAMP_1LINE("FINAL", 13, 30)},
+    {"ForComment", STAMP_GREEN, STAMP_1LINE("FOR COMMENT", 17, 20)},
+    {"ForPublicRelease", STAMP_GREEN, STAMP_2LINE("FOR PUBLIC",26,18,"RELEASE",8.5,18)},
+    {"NotApproved", STAMP_RED, STAMP_1LINE("NOT APPROVED", 17, 20)},
+    {"NotForPublicRelease", STAMP_RED, STAMP_2LINE("NOT FOR",26,18,"PUBLIC RELEASE",8.5,18)},
+    {"Sold", STAMP_BLUE, STAMP_1LINE("SOLD", 13, 30)},
+    {"TopSecret", STAMP_RED, STAMP_1LINE("TOP SECRET", 14, 26)},
+    {0}
+};
+/* Use "Draft" if not found, make sure this value is correct if above array changes */
+#define STAMP_DRAFT_INDEX 4
+
+/* Draw the frame for the stamp.  This is taken straight form the PS code. */
+static int pdfi_annot_draw_stamp_frame(pdf_context *ctx)
+{
+    int code;
+
+    code = gs_moveto(ctx->pgs, 6.0, 0.0);
+    if (code < 0) goto exit;
+    code = gs_arcto(ctx->pgs, 190, 0, 190, 6, 6, 0);
+    if (code < 0) goto exit;
+    code = gs_arcto(ctx->pgs, 190, 47, 184, 47, 6, 0);
+    if (code < 0) goto exit;
+    code = gs_arcto(ctx->pgs, 0, 47, 0, 41, 6, 0);
+    if (code < 0) goto exit;
+    code = gs_arcto(ctx->pgs, 0, 0, 6, 0, 6, 0);
+    if (code < 0) goto exit;
+    code = gs_closepath(ctx->pgs);
+    if (code < 0) goto exit;
+
+    code = gs_moveto(ctx->pgs, 10, 4);
+    if (code < 0) goto exit;
+    code = gs_arcto(ctx->pgs, 185, 4, 185, 9, 5, 0);
+    if (code < 0) goto exit;
+    code = gs_arcto(ctx->pgs, 185, 43, 180, 43, 5, 0);
+    if (code < 0) goto exit;
+    code = gs_arcto(ctx->pgs, 5, 43, 5, 38, 5, 0);
+    if (code < 0) goto exit;
+    code = gs_arcto(ctx->pgs, 5, 4, 9, 4, 5, 0);
+    if (code < 0) goto exit;
+    code = gs_closepath(ctx->pgs);
+    if (code < 0) goto exit;
+    code = gs_eofill(ctx->pgs);
+    if (code < 0) goto exit;
+
+ exit:
+    return code;
+}
+
+/* draw text for stamp */
+static int pdfi_annot_draw_stamp_text(pdf_context *ctx, pdfi_annot_stamp_text_t *text)
+{
+    if (!text->text)
+        return 0;
+
+    /* TODO: Figure this out later (see pdf_draw.ps/text) */
+    return 0;
+}
+
+/* Generate appearance (see pdf_draw.ps/Stamp)
+ *
+ * If there was an AP it was already handled.
+ * For testing, see tests_private/pdf/PDF_1.7_FTS/fts_32_3204.pdf
+ */
 static int pdfi_annot_draw_Stamp(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
 {
     int code = 0;
+    int code1 = 0;
+    gs_rect rect;
+    double width, height;
+    pdfi_annot_stamp_type_t *stamp_type;
+    pdf_name *Name = NULL;
+    double xscale, yscale;
+    double angle;
+    int i;
 
-    /* TODO: Generate appearance (see pdf_draw.ps/Stamp) */
+    code = pdfi_annot_start_transparency(ctx, annot);
+    if (code < 0) goto exit1;
+
+    code = pdfi_annot_rect(ctx, annot, &rect);
+    if (code < 0) goto exit;
+
+    code = pdfi_dict_knownget_type(ctx, annot, "Name", PDF_NAME, (pdf_obj **)&Name);
+    if (code <= 0) goto exit;
+
+    /* Translate to the center of Rect */
+    width = rect.q.x - rect.p.x;
+    height = rect.q.y - rect.p.y;
+    code = gs_translate(ctx->pgs, rect.p.x + width/2, rect.p.y + height/2);
+    if (code < 0) goto exit;
+
+    /* This math comes from the PS code.  I assume the values are related to
+       the h and y values in the various Stamp type data.
+    */
+    /* Scale by the minimum of the two ratios, but make sure it's not 0 */
+    yscale = height / 50.;
+    xscale = width / 190.;
+    if (xscale < yscale)
+        yscale = xscale;
+    if (yscale <= 0.0)
+        yscale = 1.0;
+    code = gs_scale(ctx->pgs, yscale, yscale);
+    if (code < 0) goto exit;
+
+    /* Search through types and find a match, if no match use Draft */
+    for (stamp_type = pdfi_annot_stamp_types; stamp_type->type; stamp_type ++) {
+        if (Name && pdfi_name_is(Name, stamp_type->type))
+            break;
+    }
+    if (!stamp_type->type) {
+        stamp_type = &pdfi_annot_stamp_types[STAMP_DRAFT_INDEX];
+    }
+
+    /* Draw the frame */
+    code = pdfi_gs_setrgbcolor(ctx, stamp_type->rgb.r, stamp_type->rgb.g,
+                               stamp_type->rgb.b);
+    if (code < 0) goto exit;
+
+    code = gs_translate(ctx->pgs, -95, -25);
+    if (code < 0) goto exit;
+    code = gs_atan2_degrees(2.0, 190.0, &angle);
+    if (code < 0) goto exit;
+    code = gs_rotate(ctx->pgs, angle);
+    if (code < 0) goto exit;
+
+    /* Draw frame in gray */
+    code = pdfi_gsave(ctx);
+    code = gs_translate(ctx->pgs, 1, -1);
+    code = pdfi_gs_setgray(ctx, 0.75);
+    code = pdfi_annot_draw_stamp_frame(ctx);
+    code = pdfi_grestore(ctx);
+
+    /* Draw frame colored */
+    code = pdfi_annot_draw_stamp_frame(ctx);
+
+    /* Draw the text */
+    for (i=0; i<2; i++) {
+        code = pdfi_annot_draw_stamp_text(ctx, &stamp_type->text[i]);
+        if (code < 0) goto exit;
+    }
+
+ exit:
+    code1 = pdfi_annot_end_transparency(ctx, annot);
+    if (code >= 0)
+        code = code1;
+ exit1:
     *render_done = true;
-
     return code;
 }
+/*********** END /Stamp ***************/
 
 /* See pdf_draw.ps/FreeText */
 static int pdfi_annot_draw_FreeText(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
@@ -938,6 +1113,7 @@ static int pdfi_annot_draw_FreeText(pdf_context *ctx, pdf_dict *annot, pdf_dict 
     gs_rect rect;
 
     /* Disabled for now... this was probably not a good one to start with! */
+    dbgmprintf(ctx->memory, "ANNOT: No AP generation for subtype FreeText\n");
     *render_done = true;
     return 0;
 
@@ -1081,6 +1257,7 @@ static int pdfi_annot_draw_StrikeOut(pdf_context *ctx, pdf_dict *annot, pdf_dict
     int code = 0;
 
     /* TODO: Generate appearance (see pdf_draw.ps/StrikeOut) */
+    dbgmprintf(ctx->memory, "ANNOT: No AP generation for subtype StrikeOut\n");
     *render_done = true;
 
     return code;
@@ -1091,6 +1268,7 @@ static int pdfi_annot_draw_Underline(pdf_context *ctx, pdf_dict *annot, pdf_dict
     int code = 0;
 
     /* TODO: Generate appearance (see pdf_draw.ps/Underline) */
+    dbgmprintf(ctx->memory, "ANNOT: No AP generation for subtype Underline\n");
     *render_done = true;
 
     return code;
@@ -1100,7 +1278,8 @@ static int pdfi_annot_draw_Highlight(pdf_context *ctx, pdf_dict *annot, pdf_dict
 {
     int code = 0;
 
-    /* TODO: Generate appearance (see pdf_draw.ps/StrikeOut) */
+    /* TODO: Generate appearance (see pdf_draw.ps/Highlight) */
+    dbgmprintf(ctx->memory, "ANNOT: No AP generation for subtype Highlight\n");
     *render_done = true;
 
     return code;
@@ -1111,6 +1290,7 @@ static int pdfi_annot_draw_Redact(pdf_context *ctx, pdf_dict *annot, pdf_dict *N
     int code = 0;
 
     /* TODO: Generate appearance (see pdf_draw.ps/Redact) */
+    dbgmprintf(ctx->memory, "ANNOT: No AP generation for subtype Redact\n");
     *render_done = true;
 
     return code;
@@ -1139,6 +1319,7 @@ static int pdfi_annot_draw_Popup(pdf_context *ctx, pdf_dict *annot, pdf_dict *No
     }
 
     /* TODO: Generate appearance (see pdf_draw.ps/Popup) */
+    dbgmprintf(ctx->memory, "ANNOT: No AP generation for subtype Popup\n");
     *render_done = true;
 
  exit:
@@ -1196,6 +1377,7 @@ static int pdfi_annot_draw_PolyLine(pdf_context *ctx, pdf_dict *annot, pdf_dict 
    int code = 0;
 
     /* TODO: Generate appearance (see pdf_draw.ps/PolyLine) */
+    dbgmprintf(ctx->memory, "ANNOT: No AP generation for subtype PolyLine\n");
     *render_done = true;
 
     return code;
@@ -1319,6 +1501,7 @@ static int pdfi_annot_draw_Widget(pdf_context *ctx, pdf_dict *annot, pdf_dict *N
     /* TODO: See top part of pdf_draw.ps/drawwidget
      * check for /FT and /T and stuff
      */
+    dbgmprintf(ctx->memory, "ANNOT: No AP generation for subtype Widget\n");
     *render_done = false;
     return 0;
 }

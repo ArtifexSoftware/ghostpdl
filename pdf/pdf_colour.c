@@ -309,7 +309,7 @@ int pdfi_gs_setgray(pdf_context *ctx, double d)
     return gs_setgray(ctx->pgs, d);
 }
 
-static int pdfi_gs_setrgbcolor(pdf_context *ctx, double r, double g, double b)
+int pdfi_gs_setrgbcolor(pdf_context *ctx, double r, double g, double b)
 {
     /* PDF Reference 1.7 p423, any colour operators in a CharProc, following a d1, should be ignored */
     if (ctx->inside_CharProc && ctx->CharProc_is_d1)
