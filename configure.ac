@@ -284,26 +284,26 @@ CFLAGS_LARGEFILE=""
 
 case $host in
         *-linux*|*-gnu)
-        if test $ac_cv_prog_gcc = yes; then
+        if test $GCC = yes; then
             CC_OPT_FLAGS_TO_TRY="-O2 -DNDEBUG"
             CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
         fi
         ;;
         *bsd*)
-        if test $ac_cv_prog_gcc = yes; then
+        if test $GCC = yes; then
             CC_OPT_FLAGS_TO_TRY="-O2 -DNDEBUG"
             CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
         fi
         ;;
         *-darwin*)
-        if test $ac_cv_prog_gcc = yes; then
+        if test $GCC = yes; then
             CC_OPT_FLAGS_TO_TRY="-O2 -DNDEBUG"
             CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
         fi
         SET_DT_SONAME=""
         ;;
         *-mingw*|*-msys*|*-cygwin*)
-        if test $ac_cv_prog_gcc = yes; then
+        if test $GCC = yes; then
             CC_OPT_FLAGS_TO_TRY="-O2 -DNDEBUG"
             CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
         fi
@@ -313,10 +313,10 @@ case $host in
         CC_OPT_FLAGS_TO_TRY="-O2 -DNDEBUG"
         CFLAGS_LARGEFILE="-D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64"
         # the trailing space is required!
-        if test $ac_cv_prog_gcc = no; then
+        if test $GCC = no; then
             SET_DT_SONAME="-h "
         fi
-        if test $ac_cv_prog_gcc = yes; then
+        if test $GCC = yes; then
             CC_OPT_FLAGS_TO_TRY="-O2 -DNDEBUG"
             CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
         else
@@ -324,7 +324,7 @@ case $host in
         fi
         ;;
         *-aix*)
-        if test $ac_cv_prog_gcc = yes; then
+        if test $GCC = yes; then
             CC_OPT_FLAGS_TO_TRY="-O2 -DNDEBUG"
             CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
             SET_DT_SONAME="so"
@@ -335,7 +335,7 @@ esac
 AC_SUBST(SET_DT_SONAME)
 
 
-if test $ac_cv_prog_gcc = yes; then
+if test $GCC = yes; then
     cflags_to_try="-Wall -Wstrict-prototypes -Wundef \
 -Wmissing-declarations -Wmissing-prototypes -Wwrite-strings \
 -fno-strict-aliasing -Werror=declaration-after-statement \
@@ -1197,7 +1197,7 @@ else
         SHARE_ZLIB=0
         ZLIBDIR=$srcdir/zlib
 
-        if test x"$ac_cv_prog_gcc" = x"yes"; then
+        if test x"$GCC" = x"yes"; then
           ZLIBCFLAGS="-Wno-write-strings"
         fi
   else
@@ -1443,7 +1443,7 @@ if test x"$SHARE_LIBTIFF" = x"0" ; then
       fi
       cd "$olddir"
 
-      if test x"$ac_cv_prog_gcc" = x"yes"; then
+      if test x"$GCC" = x"yes"; then
         TIFFCFLAGS="-Wno-write-strings $CFLAGS_NMI $CFLAGS_NUD -DJPEG_LIB_MK1_OR_12BIT=0"
       fi
       # if we're building with our own libjpeg, or we have another libjpeg available, allow jpeg compression in TIFF
@@ -1735,7 +1735,7 @@ if test x$with_luratech != xno; then
           JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -DMAC -DMAC_OS_X_BUILD -fsigned-char"
         ;;
         *-aix*)
-          if test $ac_cv_prog_gcc = yes; then
+          if test $GCC = yes; then
             JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -fsigned-char -DLINUX=1 -DFORTE"
           else
             JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -qchars=signed -DLINUX=1 -DFORTE"
@@ -1876,7 +1876,7 @@ if test x$with_luratech != xno; then
           JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -DMAC -DMAC_OS_X_BUILD"
         ;;
         *-aix*)
-          if test $ac_cv_prog_gcc = yes; then
+          if test $GCC = yes; then
             JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -fsigned-char -DLINUX=1 -DFORTE"
           else
             JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -qchars=signed -DLINUX=1 -DFORTE"
@@ -1917,7 +1917,7 @@ AC_CHECK_FUNCS([fseeko], [CFLAGS_OPJ_HAVE_FSEEKO="-DOPJ_HAVE_FSEEKO=1"], [CFLAGS
 JPX_SSE_CFLAGS=""
 
 if test "x$HAVE_SSE2" = "x" ; then
-  if test $ac_cv_prog_gcc = yes; then
+  if test $GCC = yes; then
     JPX_SSE_CFLAGS="-U__SSE__"
   fi
 fi
@@ -2721,7 +2721,7 @@ AC_ARG_ENABLE([hidden-visibility],
         [hide all shared library symbols which are not part of its public API]),
     [hide_symbols=yes])
 
-if test x$hide_symbols = xyes -a $ac_cv_prog_gcc = yes; then
+if test x$hide_symbols = xyes -a $GCC = yes; then
     attr_default="__attribute__((visibility(\\\"default\\\")))"
     attr_hidden="__attribute__((visibility(\\\"hidden\\\")))"
 fi
@@ -2733,7 +2733,7 @@ case $host in
       PCL_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(PCL_SONAME_MAJOR)"
       XPS_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(XPS_SONAME_MAJOR)"
       PDL_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GPDL_SONAME_MAJOR)"
-      if test $ac_cv_prog_gcc = yes; then
+      if test $GCC = yes; then
         # GCC high level flag
         DYNAMIC_LIBS="-rdynamic"
       else
@@ -2788,7 +2788,7 @@ case $host in
       SO_LIB_EXT=".dylib"
     ;;
     *-sun*|*-solaris*)
-      if test $ac_cv_prog_gcc = yes; then
+      if test $GCC = yes; then
         DYNAMIC_CFLAGS="-fPIC $DYNAMIC_CFLAGS"
       else
         DYNAMIC_CFLAGS="-KPIC $DYNAMIC_CFLAGS"
@@ -2807,7 +2807,7 @@ case $host in
       SO_LIB_EXT=".so"
     ;;
     *-aix*)
-      if test $ac_cv_prog_gcc = yes; then
+      if test $GCC = yes; then
         DYNAMIC_CFLAGS="-fPIC $DYNAMIC_CFLAGS"
         GCFLAGS="-Wl,-brtl -D_LARGE_FILES $GCFLAGS"
         GS_DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
@@ -2826,7 +2826,7 @@ case $host in
 esac
 
 if test x$hide_symbols = xyes ; then
-  if test $ac_cv_prog_gcc = yes; then
+  if test $GCC = yes; then
     DYNAMIC_CFLAGS="$DYNAMIC_CFLAGS -fvisibility=hidden"
   fi
   DYNAMIC_CFLAGS="$DYNAMIC_CFLAGS -DGSDLLEXPORT=\"$attr_default\""
@@ -3274,7 +3274,7 @@ AC_SUBST(VERSIONED_PATH)
 # NOTE: Strict aliasing can cause some parts
 #       of Ghostscript to malfunction.
 # --------------------------------------------------
-if test $ac_cv_prog_gcc = yes; then
+if test $GCC = yes; then
   AC_MSG_CHECKING([whether to explicitly disable strict aliasing])
   CFLAGS_backup="$CFLAGS"
   CFLAGS="$CFLAGS -fno-strict-aliasing"
