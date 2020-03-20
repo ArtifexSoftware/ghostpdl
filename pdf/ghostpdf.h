@@ -365,7 +365,8 @@ pdf_context *pdfi_create_context(gs_memory_t *pmem);
 int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx);
 
 int pdfi_get_name_index(pdf_context *ctx, char *name, int len, unsigned int *returned);
-int pdfi_name_from_index(const gs_memory_t *mem, gs_separation_name index, unsigned char **name, unsigned int *len);
+int pdfi_name_from_index(pdf_context *ctx, int index, unsigned char **name, unsigned int *len);
+int pdfi_separation_name_from_index(const gs_memory_t *mem, gs_separation_name index, unsigned char **name, unsigned int *len);
 int pdfi_open_pdf_file(pdf_context *ctx, char *filename);
 int pdfi_process_pdf_file(pdf_context *ctx, char *filename);
 int pdfi_close_pdf_file(pdf_context *ctx);

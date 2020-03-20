@@ -471,6 +471,7 @@ int pdfi_decode_glyph(gs_font * font, gs_glyph glyph, int ch, ushort *unicode_re
 int pdfi_glyph_name(gs_font * pfont, gs_glyph glyph, gs_const_string * pstr)
 {
     int code = 0;
+    unsigned int index = 0;
     pdf_font *font;
     pdf_name *GlyphName = NULL;
 
@@ -499,6 +500,13 @@ int pdfi_glyph_name(gs_font * pfont, gs_glyph glyph, gs_const_string * pstr)
          memcpy(font->fake_glyph_names[i].data, cid_name, strlen(cid_name) + 1);
          return 0;
     }
+
+    code = pdfi_get_name_index(font->ctx, (char *)GlyphName->data, GlyphName->length, &index);
+    if (code < 0)
+        return code;
+
+    code = pdfi_name_from_index(font->ctx, index, (unsigned char **)&pstr->data, &pstr->size);
+    return code;
 
     pstr->data = GlyphName->data;
     pstr->size = GlyphName->length;

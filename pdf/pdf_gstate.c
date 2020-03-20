@@ -1602,7 +1602,7 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict 
             pht->type = ht_type_multiple;
             pht->params.multiple.components = phtc;
             pht->params.multiple.num_comp = 1;
-            pht->params.multiple.get_colorname_string = pdfi_name_from_index;
+            pht->params.multiple.get_colorname_string = pdfi_separation_name_from_index;
             code = gx_gstate_dev_ht_install(ctx->pgs, pdht, pht->type, gs_currentdevice_inline(ctx->pgs));
             if (code < 0)
                 goto error;
@@ -1724,7 +1724,7 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict 
             pht->type = ht_type_multiple;
             pht->params.multiple.components = phtc;
             pht->params.multiple.num_comp = NumComponents;
-            pht->params.multiple.get_colorname_string = pdfi_name_from_index;
+            pht->params.multiple.get_colorname_string = pdfi_separation_name_from_index;
             code = gx_gstate_dev_ht_install(ctx->pgs, pdht, pht->type, gs_currentdevice_inline(ctx->pgs));
             if (code < 0)
                 goto error;
@@ -1749,7 +1749,7 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict 
             pht->type = ht_type_multiple;
             pht->params.multiple.components = phtc;
             pht->params.multiple.num_comp = 1;
-            pht->params.multiple.get_colorname_string = pdfi_name_from_index;
+            pht->params.multiple.get_colorname_string = pdfi_separation_name_from_index;
 
             code = gs_sethalftone_prepare(ctx->pgs, pht, pdht);
 
@@ -1776,7 +1776,7 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict 
             pht->type = ht_type_multiple;
             pht->params.multiple.components = phtc;
             pht->params.multiple.num_comp = 1;
-            pht->params.multiple.get_colorname_string = pdfi_name_from_index;
+            pht->params.multiple.get_colorname_string = pdfi_separation_name_from_index;
 
             code = gs_sethalftone_prepare(ctx->pgs, pht, pdht);
 
@@ -1803,7 +1803,7 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict 
             pht->type = ht_type_multiple;
             pht->params.multiple.components = phtc;
             pht->params.multiple.num_comp = 1;
-            pht->params.multiple.get_colorname_string = pdfi_name_from_index;
+            pht->params.multiple.get_colorname_string = pdfi_separation_name_from_index;
 
             code = gs_sethalftone_prepare(ctx->pgs, pht, pdht);
 

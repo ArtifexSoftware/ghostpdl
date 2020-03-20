@@ -479,7 +479,23 @@ static int pdfi_free_name_table(pdf_context *ctx)
     return 0;
 }
 
-int pdfi_name_from_index(const gs_memory_t *mem, gs_separation_name index, unsigned char **name, unsigned int *len)
+int pdfi_name_from_index(pdf_context *ctx, int index, unsigned char **name, unsigned int *len)
+{
+    pdfi_name_entry *e = (pdfi_name_entry *)ctx->name_table;
+
+    while (e != NULL) {
+        if (e->index == index) {
+            *name = (unsigned char *)e->name;
+            *len = e->len;
+            return 0;
+        }
+        e = e->next;
+    }
+
+    return_error(gs_error_undefined);
+}
+
+int pdfi_separation_name_from_index(const gs_memory_t *mem, gs_separation_name index, unsigned char **name, unsigned int *len)
 {
     pdf_context *ctx = (pdf_context *)mem->gs_lib_ctx;
     pdfi_name_entry *e = (pdfi_name_entry *)ctx->name_table;
@@ -488,6 +504,7 @@ int pdfi_name_from_index(const gs_memory_t *mem, gs_separation_name index, unsig
         if (e->index == index) {
             *name = (unsigned char *)e->name;
             *len = e->len;
+            return 0;
         }
         e = e->next;
     }
