@@ -418,7 +418,7 @@ CCAUXLD=$(CCAUX)
 
 # Define the default gcc flags.
 GCFLAGS=@CPPFLAGS@ @GCFLAGS@ @CFLAGS@ @HAVE_POPEN_PROTO@
-GCFLAGSAUX=@GCFLAGSAUX@ @HAVE_POPEN_PROTO@
+GCFLAGSAUX=@GCFLAGSAUX@ @CFLAGSAUX@ @HAVE_POPEN_PROTO@
 
 # Define the added flags for standard, debugging, profiling
 # and shared object builds.

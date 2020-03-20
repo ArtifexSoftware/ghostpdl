@@ -365,8 +365,14 @@ void test (char * __restrict p){}
                  return 1;
                ],[
                CFLAGS="$CFLAGS -DHAVE_RESTRICT=1"
+               if test x"$host" = x"$build" ; then
+                   CFLAGSAUX="$CFLAGSAUX -DHAVE_RESTRICT=1"
+               fi
                AC_MSG_RESULT([yes])],[
                CFLAGS="$CFLAGS -DHAVE_RESTRICT=0"
+               if test x"$host" = x"$build" ; then
+                   CFLAGSAUX="$CFLAGSAUX -DHAVE_RESTRICT=0"
+               fi
                AC_MSG_RESULT([no])])
 
 
@@ -3277,12 +3283,17 @@ AC_SUBST(VERSIONED_PATH)
 if test $GCC = yes; then
   AC_MSG_CHECKING([whether to explicitly disable strict aliasing])
   CFLAGS_backup="$CFLAGS"
+  CFLAGSAUX_backup="$CFLAGSAUX"
   CFLAGS="$CFLAGS -fno-strict-aliasing"
   AC_TRY_COMPILE(, [return 0;], [
     AC_MSG_RESULT([yes])
     CFLAGS_backup="$CFLAGS"
+    if test x"$host" = x"$build" ; then
+      CFLAGSAUX_backup="$CFLAGSAUX -fno-strict-aliasing"
+    fi
   ])
   CFLAGS="$CFLAGS_backup"
+  CFLAGSAUX="$CFLAGSAUX_backup"
 fi
 
 # --------------------------------------------------
@@ -3430,6 +3441,13 @@ AC_ARG_ENABLE([mkromfs-quiet], AC_HELP_STRING([--enable-mkromfs-quiet],
 
 AC_SUBST(MKROMFS_FLAGS)
 
+
+if test x"$GCFLAGSAUX" = x"\$(GCFLAGS)" ; then
+    GCFLAGSAUX="$GCFLAGS"
+fi
+
+CFLAGSAUX=$(echo $CFLAGSAUX | sed -e 's/-DGS_NO_FILESYSTEM//g')
+
 dnl --------------------------------------------------
 dnl Do substitutions
 dnl --------------------------------------------------
@@ -3443,6 +3461,7 @@ AC_SUBST(STRIP_XE)
 AC_SUBST(JPX_SSE_CFLAGS)
 
 AC_SUBST(CCAUX)
+AC_SUBST(CFLAGSAUX)
 AC_SUBST(GCFLAGSAUX)
 AC_SUBST(CAPOPTAUX)
 AC_SUBST(CFLAGSAUX_STANDARD)
