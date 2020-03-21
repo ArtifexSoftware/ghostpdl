@@ -874,7 +874,15 @@ currentdict /csncompdict undef
   dup dup 1 oget
   mark exch { oforce } forall .dicttomark
   dup dup //true resolvestream
-  /ReusableStreamDecode filter /DataSource exch put
+  {
+    /ReusableStreamDecode filter
+  } stopped
+  {
+    pop null
+%    (   **** Error: Failed to read ICC profile for an ICCBased colour space.\n) pdfformaterror
+%    (               Falling back to a colour space determined by the /N value.\n) pdfformaterror
+  }if
+  /DataSource exch put
   dup /.hash 0 put	% placeholder for use by seticc icc_profile_cache key
   % Check that the number of components (/N) defined in the ICCBased
   % dictionry matches the actual profile. Bug #696120
