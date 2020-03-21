@@ -4354,6 +4354,10 @@ pdf14_set_params(gs_gstate * pgs,
         pgs->strokeconstantalpha = pparams->strokeconstantalpha;
     if (pparams->changed & PDF_SET_FILLSTROKE_STATE) {
         gs_swapcolors_quick(pgs);
+        if (pparams->op_fs_state == PDF14_OP_STATE_STROKE)
+            pgs->is_fill_color = false;
+        else
+            pgs->is_fill_color = true;
     }
     pdf14_set_marking_params(dev, pgs);
 }
@@ -9167,9 +9171,13 @@ pdf14_clist_update_params(pdf14_clist_device * pdev, const gs_gstate * pgs,
         changed |= PDF14_SET_STROKECONSTANTALPHA;
         params.strokeconstantalpha = pdev->strokeconstantalpha = pgs->strokeconstantalpha;
     }
-    if (pgs->is_fill_color != pdev->op_state) {
+    if ((pgs->is_fill_color && pdev->op_state != PDF14_OP_STATE_FILL)) {
         changed |= PDF_SET_FILLSTROKE_STATE;
-        params.op_fs_state = pdev->op_state = pgs->is_fill_color;
+        params.op_fs_state = pdev->op_state = PDF14_OP_STATE_FILL;
+    }
+    if ((!pgs->is_fill_color && pdev->op_state != PDF14_OP_STATE_STROKE)) {
+        changed |= PDF_SET_FILLSTROKE_STATE;
+        params.op_fs_state = pdev->op_state = PDF14_OP_STATE_STROKE;
     }
     if (crop_blend_params) {
         params.ctm = group_params->ctm;
