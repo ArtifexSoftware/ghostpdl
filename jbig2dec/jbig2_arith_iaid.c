@@ -53,7 +53,7 @@ jbig2_arith_iaid_ctx_new(Jbig2Ctx *ctx, uint8_t SBSYMCODELEN)
         return NULL;
     }
 
-    ctx_size = 1U << SBSYMCODELEN;
+    ctx_size = (size_t) 1U << SBSYMCODELEN;
 
     result = jbig2_new(ctx, Jbig2ArithIaidCtx, 1);
     if (result == NULL) {
