@@ -37,6 +37,7 @@ struct _Jbig2ArithState {
 
     uint32_t next_word;
     size_t next_word_bytes;
+    int err;
 
     Jbig2WordStream *ws;
     size_t offset;
@@ -59,7 +60,7 @@ jbig2_arith_bytein(Jbig2Ctx *ctx, Jbig2ArithState *as)
     byte B;
 
     /* Treat both errors and reading beyond end of stream as an error. */
-    if (as->next_word_bytes < 0) {
+    if (as->err != 0) {
         jbig2_error(ctx, JBIG2_SEVERITY_FATAL, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to read from underlying stream during arithmetic decoding");
         return -1;
     }
@@ -96,10 +97,11 @@ jbig2_arith_bytein(Jbig2Ctx *ctx, Jbig2ArithState *as)
         if (as->next_word_bytes <= 1) {
             int ret = as->ws->get_next_word(ctx, as->ws, as->offset, &as->next_word);
             if (ret < 0) {
+                as->err = 1;
                 return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to check for marker code due to failure in underlying stream during arithmetic decoding");
             }
-
             as->next_word_bytes = (size_t) ret;
+
             if (as->next_word_bytes == 0) {
                 jbig2_error(ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to read end of possible terminating marker code, assuming terminating marker code");
                 as->next_word = 0xFF900000;
@@ -155,6 +157,7 @@ jbig2_arith_bytein(Jbig2Ctx *ctx, Jbig2ArithState *as)
         if (as->next_word_bytes == 0) {
             int ret = as->ws->get_next_word(ctx, as->ws, as->offset, &as->next_word);
             if (ret < 0) {
+                as->err = 1;
                 return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to read from underlying stream during arithmetic decoding");
             }
             as->next_word_bytes = (size_t) ret;
@@ -195,6 +198,7 @@ jbig2_arith_new(Jbig2Ctx *ctx, Jbig2WordStream *ws)
         return NULL;
     }
 
+    result->err = 0;
     result->ws = ws;
     result->offset = 0;
 
