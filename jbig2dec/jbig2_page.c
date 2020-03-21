@@ -319,7 +319,7 @@ jbig2_page_add_result(Jbig2Ctx *ctx, Jbig2Page *page, Jbig2Image *image, uint32_
 Jbig2Image *
 jbig2_page_out(Jbig2Ctx *ctx)
 {
-    int index;
+    uint32_t index;
 
     /* search for a completed page */
     for (index = 0; index < ctx->max_page_index; index++) {
@@ -348,7 +348,7 @@ jbig2_page_out(Jbig2Ctx *ctx)
 void
 jbig2_release_page(Jbig2Ctx *ctx, Jbig2Image *image)
 {
-    int index;
+    uint32_t index;
 
     if (image == NULL)
         return;
