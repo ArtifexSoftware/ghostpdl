@@ -165,7 +165,7 @@ gs_gstate_update_pdf14trans(gs_gstate * pgs, gs_pdf14trans_params_t * pparams)
 }
 
 void
-gs_trans_group_params_init(gs_transparency_group_params_t *ptgp)
+gs_trans_group_params_init(gs_transparency_group_params_t *ptgp, float opacity)
 {
     ptgp->ColorSpace = NULL;    /* bogus, but can't do better */
     ptgp->Isolated = false;
@@ -174,7 +174,7 @@ gs_trans_group_params_init(gs_transparency_group_params_t *ptgp)
     ptgp->image_with_SMask = false;
     ptgp->mask_id = 0;
     ptgp->iccprofile = NULL;
-    ptgp->group_opacity = 1.0;
+    ptgp->group_opacity = opacity;
     ptgp->group_shape = 1.0;
 }
 

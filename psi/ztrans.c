@@ -228,7 +228,7 @@ static int common_transparency_group(i_ctx_t *i_ctx_p, pdf14_compositor_operatio
 
     check_type(*dop, t_dictionary);
     check_dict_read(*dop);
-    gs_trans_group_params_init(&params);
+    gs_trans_group_params_init(&params, 1.0);
     if ((code = dict_bool_param(dop, "Isolated", false, &params.Isolated)) < 0 ||
         (code = dict_bool_param(dop, "Knockout", false, &params.Knockout)) < 0 ||
         (code = dict_bool_param(dop, ".image_with_SMask", false, &params.image_with_SMask)) < 0

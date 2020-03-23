@@ -169,7 +169,7 @@ int gs_pop_pdf14trans_device(gs_gstate * pgs, bool is_pattern);
 
 int gs_abort_pdf14trans_device(gs_gstate * pgs);
 
-void gs_trans_group_params_init(gs_transparency_group_params_t *ptgp);
+void gs_trans_group_params_init(gs_transparency_group_params_t *ptgp, float opacity);
 
 int gs_update_trans_marking_params(gs_gstate * pgs);
 
