@@ -174,6 +174,8 @@ gs_trans_group_params_init(gs_transparency_group_params_t *ptgp)
     ptgp->image_with_SMask = false;
     ptgp->mask_id = 0;
     ptgp->iccprofile = NULL;
+    ptgp->group_opacity = 1.0;
+    ptgp->group_shape = 1.0;
 }
 
 int
@@ -208,8 +210,8 @@ gs_begin_transparency_group(gs_gstate *pgs,
     params.Isolated = ptgp->Isolated;
     params.Knockout = ptgp->Knockout;
     params.image_with_SMask = ptgp->image_with_SMask;
-    params.opacity = ptgp->global_opacity;
-    params.shape = ptgp->global_shape;
+    params.opacity = ptgp->group_opacity;
+    params.shape = ptgp->group_shape;
     params.blend_mode = pgs->blend_mode;
     params.text_group = ptgp->text_group;
 
@@ -334,8 +336,8 @@ gx_begin_transparency_group(gs_gstate * pgs, gx_device * pdev,
     tgp.iccprofile = pparams->iccprofile;
     tgp.icc_hashcode = pparams->icc_hash;
 
-    tgp.global_opacity = pparams->opacity;
-    tgp.global_shape = pparams->shape;
+    tgp.group_opacity = pparams->opacity;
+    tgp.group_shape = pparams->shape;
 
     pgs->blend_mode = pparams->blend_mode;
     bbox = pparams->bbox;

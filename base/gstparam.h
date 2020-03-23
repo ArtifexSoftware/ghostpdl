@@ -72,8 +72,8 @@ typedef struct gs_transparency_group_params_s {
     const gs_color_space *ColorSpace;
     bool Isolated;
     bool Knockout;
-    float global_shape;
-    float global_opacity;
+    float group_shape;
+    float group_opacity;
     bool image_with_SMask;
     int text_group;
     bool idle;

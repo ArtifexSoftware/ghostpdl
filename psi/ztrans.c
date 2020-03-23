@@ -259,11 +259,11 @@ static int common_transparency_group(i_ctx_t *i_ctx_p, pdf14_compositor_operatio
     }
 
     if (gs_getalphaisshape(igs)) {
-        params.global_shape = gs_getfillconstantalpha(igs);
-        params.global_opacity = 1.0;
+        params.group_shape = gs_getfillconstantalpha(igs);
+        params.group_opacity = 1.0;
     } else {
-        params.global_opacity = gs_getfillconstantalpha(igs);
-        params.global_shape = 1.0;
+        params.group_opacity = gs_getfillconstantalpha(igs);
+        params.group_shape = 1.0;
     }
 
     code = gs_begin_transparency_group(igs, &params, &bbox, group_type);

@@ -3011,8 +3011,8 @@ push_shfill_group(pdf14_clist_device *pdev,
 
     params.Isolated = false;
     params.Knockout = true;
-    params.global_opacity = fudged_pgs.fillconstantalpha;
-    params.global_shape = 1.0;
+    params.group_opacity = fudged_pgs.fillconstantalpha;
+    params.group_shape = 1.0;
     code = gs_begin_transparency_group(&fudged_pgs, &params, &cb, PDF14_BEGIN_TRANS_GROUP);
 
     /* We have the group handle the blendmode and the opacity,
@@ -3324,8 +3324,8 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *cpgs, gx_path *ppath,
         params.Isolated = false;
         params.group_color = UNKNOWN;
         params.Knockout = false;
-        params.global_opacity = 1.0;
-        params.global_shape = fill_alpha;
+        params.group_opacity = 1.0;
+        params.group_shape = fill_alpha;
 
         /* non-isolated non-knockout group pushed with original alpha and blend mode */
         code = pdf14_begin_transparency_group(dev, &params,
@@ -3356,8 +3356,8 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *cpgs, gx_path *ppath,
         params.Isolated = false;
         params.group_color = UNKNOWN;
         params.Knockout = true;
-        params.global_shape = 1.0;
-        params.global_opacity = 1.0;
+        params.group_shape = 1.0;
+        params.group_opacity = 1.0;
 
         /* non-isolated knockout group is pushed with alpha = 1.0 and Normal blend mode */
         (void)gs_setblendmode(pgs, BLEND_MODE_Normal); /* Can never fail */
@@ -4991,8 +4991,8 @@ pdf14_push_text_group(gx_device *dev, gs_gstate *pgs,
     params.Isolated = false;
     params.Knockout = true;
     params.text_group = PDF14_TEXTGROUP_BT_PUSHED;
-    params.global_opacity = 1.0;
-    params.global_shape = 1.0;
+    params.group_opacity = 1.0;
+    params.group_shape = 1.0;
 
     gs_setfillconstantalpha(pgs, 1.0);
     gs_setblendmode(pgs, BLEND_MODE_Normal);
@@ -5308,7 +5308,7 @@ pdf14_begin_transparency_group(gx_device *dev,
                               gs_gstate *pgs, gs_memory_t *mem)
 {
     pdf14_device *pdev = (pdf14_device *)dev;
-    double alpha = ptgp->global_opacity * ptgp->global_shape;
+    double alpha = ptgp->group_opacity * ptgp->group_shape;
     gs_int_rect rect;
     int code;
     bool isolated = ptgp->Isolated;
@@ -5378,8 +5378,8 @@ pdf14_begin_transparency_group(gx_device *dev,
         return code;
     code = pdf14_push_transparency_group(pdev->ctx, &rect, isolated, ptgp->Knockout,
                                         (uint16_t)floor (65535 * alpha + 0.5),
-                                        (uint16_t)floor(65535 * ptgp->global_shape + 0.5),
-                                        (uint16_t)floor(65535 * ptgp->global_opacity + 0.5),
+                                        (uint16_t)floor(65535 * ptgp->group_shape + 0.5),
+                                        (uint16_t)floor(65535 * ptgp->group_opacity + 0.5),
                                         pgs->blend_mode, ptgp->idle,
                                          ptgp->mask_id, pdev->color_info.num_components,
                                          cm_back_drop, group_profile, tos_profile,
@@ -9486,8 +9486,8 @@ pdf14_clist_fill_stroke_path_pattern_setup(gx_device* dev, const gs_gstate* cpgs
         params.Isolated = false;
         params.group_color = UNKNOWN;
         params.Knockout = false;
-        params.global_opacity = fill_alpha;
-        params.global_shape = 1.0;
+        params.group_opacity = fill_alpha;
+        params.group_shape = 1.0;
 
         /* non-isolated non-knockout group pushed with original alpha and blend mode */
         code = gs_begin_transparency_group(pgs, &params, &group_stroke_box, PDF14_BEGIN_TRANS_GROUP);
@@ -9513,8 +9513,8 @@ pdf14_clist_fill_stroke_path_pattern_setup(gx_device* dev, const gs_gstate* cpgs
         params.Isolated = false;
         params.group_color = UNKNOWN;
         params.Knockout = true;
-        params.global_opacity = 1.0;
-        params.global_shape = 1.0;
+        params.group_opacity = 1.0;
+        params.group_shape = 1.0;
 
         /* non-isolated knockout group is pushed with alpha = 1.0 and Normal blend mode */
         (void)gs_setfillconstantalpha(pgs, 1.0);
