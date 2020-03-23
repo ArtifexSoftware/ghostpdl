@@ -279,9 +279,18 @@ gs_heap_resize_object(gs_memory_t * mem, void *obj, size_t new_num_elements,
         return obj;
     if (mmem->monitor)
         gx_monitor_enter(mmem->monitor);	/* Exclusive access */
-    new_ptr = (gs_malloc_block_t *) gs_realloc(ptr, old_size, new_size);
-    if (new_ptr == 0)
+    if (new_size > mmem->limit - sizeof(gs_malloc_block_t)) {
+        /* too large to allocate; also avoids overflow. */
+        if (mmem->monitor)
+            gx_monitor_leave(mmem->monitor);	/* Done with exclusive access */
         return 0;
+    }
+    new_ptr = (gs_malloc_block_t *) gs_realloc(ptr, old_size, new_size);
+    if (new_ptr == 0) {
+        if (mmem->monitor)
+            gx_monitor_leave(mmem->monitor);	/* Done with exclusive access */
+        return 0;
+    }
     if (new_ptr->prev)
         new_ptr->prev->next = new_ptr;
     else

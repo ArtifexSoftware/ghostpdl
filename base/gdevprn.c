@@ -520,13 +520,15 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
             if (ecode == 0)
                 ecode = code;
 
-            if ( code >= 0 || (reallocate && pass > 1) )
+            if (code >= 0 || (reallocate && pass > 1))
                 ppdev->procs = gs_clist_device_procs;
-            /*
-             * Now the device is a clist device, we enable multi-threaded rendering.
-             * It will remain enabled, but that doesn't really cause any problems.
-             */
-            clist_enable_multi_thread_render(pdev);
+            if (code > 0) {
+                /*
+                 * Now the device is a clist device, we enable multi-threaded rendering.
+                 * It will remain enabled, but that doesn't really cause any problems.
+                 */
+                clist_enable_multi_thread_render(pdev);
+            }
         } else {
             /* Render entirely in memory. */
             gx_device *bdev = (gx_device *)pmemdev;
