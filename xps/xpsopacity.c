@@ -124,8 +124,12 @@ xps_begin_opacity(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
         ctx->opacity_only = save;
     }
 
+    gs_setfillconstantalpha(ctx->pgs, opacity);
+    gs_setstrokeconstantalpha(ctx->pgs, opacity);
     gs_trans_group_params_init(&tgp, opacity);
     gs_begin_transparency_group(ctx->pgs, &tgp, &bbox, PDF14_BEGIN_TRANS_GROUP);
+    gs_setfillconstantalpha(ctx->pgs, 1.0);
+    gs_setstrokeconstantalpha(ctx->pgs, 1.0);
 
     return 0;
 }
