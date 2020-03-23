@@ -337,6 +337,17 @@ typedef struct pdf_context_s
     void *OFFlevels;
     uint64_t BMClevel;
 
+    /* Encryption, passwords and filter details */
+    bool is_encrypted;
+    int V;
+    int Length;
+    char *Password;
+    int R;
+    char O[32];
+    char U[32];
+    int P;
+    pdf_string *EKey;
+
     /* Interpreter level PDF objects */
     uint32_t stack_size;
     pdf_obj **stack_bot;

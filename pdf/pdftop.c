@@ -432,6 +432,12 @@ pdf_impl_set_param(pl_interp_implementation_t *impl,
         ctx->dopdfmarks = boolval;
         return 0;
     }
+    if (!strncmp(param, "PDFPassword", 8)) {
+        ctx->Password = (char *)gs_alloc_bytes(ctx->memory, strlen((char *)val) + 1, "PDF Password from params");
+        memset(ctx->Password, 0x00, strlen((char *)val) + 1);
+        memcpy(ctx->Password, val, strlen((char *)val) + 1);
+        return 0;
+    }
     return 0;
 }
 

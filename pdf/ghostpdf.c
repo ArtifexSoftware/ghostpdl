@@ -34,7 +34,7 @@
 #include "pdf_page.h"
 #include "pdf_check.h"
 #include "pdf_optcontent.h"
-
+#include "pdf_sec.h"
 /*
  * Convenience routine to check if a given string exists in a dictionary
  * verify its contents and print it in a particular fashion to stdout. This
@@ -574,8 +574,11 @@ int pdfi_process_pdf_file(pdf_context *ctx, char *filename)
         if (code < 0 && code != gs_error_undefined)
             goto exit;
         if (code == 0) {
-            dmprintf(ctx->memory, "Encrypted PDF files not yet supported.\n");
-            goto exit;
+            code = pdfi_read_Encryption(ctx);
+            if (code < 0)
+                goto exit;
+//            dmprintf(ctx->memory, "Encrypted PDF files not yet supported.\n");
+//            goto exit;
         }
     }
 
@@ -1005,6 +1008,11 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
 
     if (ctx->pdfi_param_list.head != NULL)
         gs_c_param_list_release(&ctx->pdfi_param_list);
+
+    if(ctx->EKey)
+        pdfi_countdown(ctx->EKey);
+    if (ctx->Password)
+        gs_free_object(ctx->memory, ctx->Password, "PDF Password from params");
 
     if (ctx->cache_entries != 0) {
         pdf_obj_cache_entry *entry = ctx->cache_LRU, *next;

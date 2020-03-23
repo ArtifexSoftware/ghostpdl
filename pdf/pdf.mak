@@ -108,6 +108,9 @@ $(PDFOBJ)pdf_page.$(OBJ): $(PDFSRC)pdf_page.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDI
 $(PDFOBJ)pdf_annot.$(OBJ): $(PDFSRC)pdf_annot.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_annot.c $(PDFO_)pdf_annot.$(OBJ)
 
+$(PDFOBJ)pdf_sec.$(OBJ): $(PDFSRC)pdf_sec.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
+	$(PDFCCC) $(PDFSRC)pdf_sec.c $(PDFO_)pdf_sec.$(OBJ)
+
 $(PDFOBJ)pdf_stack.$(OBJ): $(PDFSRC)pdf_stack.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_stack.c $(PDFO_)pdf_stack.$(OBJ)
 
@@ -202,6 +205,7 @@ PDF_OBJS=\
     $(PDFOBJ)pdf_misc.$(OBJ)\
     $(PDFOBJ)pdf_optcontent.$(OBJ)\
     $(PDFOBJ)pdf_check.$(OBJ)\
+    $(PDFOBJ)pdf_sec.$(OBJ)\
 
 
 # NB - note this is a bit squirrely.  Right now the pjl interpreter is

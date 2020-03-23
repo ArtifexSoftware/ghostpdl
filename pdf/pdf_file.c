@@ -210,14 +210,14 @@ static int pdfi_Predictor_filter(pdf_context *ctx, pdf_dict *d, stream *source, 
     return 0;
 }
 
-static int pdfi_Arc4_filter(pdf_context *ctx, char *Key, stream *source, stream **new_stream)
+static int pdfi_Arc4_filter(pdf_context *ctx, pdf_string *Key, stream *source, stream **new_stream)
 {
     stream_arcfour_state state;
 
     uint min_size = 2048;
     int code;
 
-    s_arcfour_set_key(&state, (const unsigned char *)Key, strlen(Key));
+    s_arcfour_set_key(&state, (const unsigned char *)Key->data, Key->length);
 
     code = pdfi_filter_open(min_size, &s_filter_read_procs, (const stream_template *)&s_arcfour_template, (const stream_state *)&state, ctx->memory->non_gc_memory, new_stream);
 
@@ -228,6 +228,24 @@ static int pdfi_Arc4_filter(pdf_context *ctx, char *Key, stream *source, stream 
     source = *new_stream;
 
     return 0;
+}
+
+int pdfi_apply_Arc4_filter(pdf_context *ctx, pdf_string *Key, pdf_stream *source, pdf_stream **new_stream)
+{
+    int code = 0;
+    stream_arcfour_state state;
+    stream *new_s;
+    int min_size = 32;
+
+    s_arcfour_set_key(&state, (const unsigned char *)Key->data, Key->length);
+
+    code = pdfi_filter_open(min_size, &s_filter_read_procs, (const stream_template *)&s_arcfour_template, (const stream_state *)&state, ctx->memory->non_gc_memory, &new_s);
+    if (code < 0)
+        return code;
+
+    code = pdfi_alloc_stream(ctx, new_s, source->s, new_stream);
+    new_s->strm = source->s;
+    return code;
 }
 
 static int pdfi_AES_filter(pdf_context *ctx, char *Key, bool use_padding, stream *source, stream **new_stream)
@@ -953,7 +971,7 @@ int pdfi_filter(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream
  * NB! The EODString can't be tracked by the stream code. The caller is responsible for
  * managing the lifetime of this object. It must remain valid until the filter is closed.
  */
-int pdfi_apply_SubFileDecode_filter(pdf_context *ctx, int EODCount, pdf_name *EODString, pdf_stream *source, pdf_stream **new_stream, bool inline_image)
+int pdfi_apply_SubFileDecode_filter(pdf_context *ctx, int EODCount, pdf_string *EODString, pdf_stream *source, pdf_stream **new_stream, bool inline_image)
 {
     int code;
     stream_SFD_state state;
