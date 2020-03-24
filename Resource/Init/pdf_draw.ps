@@ -2309,11 +2309,10 @@ currentdict /last-ditch-bpc-csp undef
          currentdict /SMask get /Matte known {/CS currentdict /ColorSpace get dup pdfopdict /cs get exec } if
       >> 0 0 1 1
       .begintransparencygroup
-      .currentstrokeconstantalpha .currentfillconstantalpha .currentshapealpha .currentopacityalpha 5 -1 roll
+      .currentstrokeconstantalpha .currentfillconstantalpha 3 -1 roll
       1 .setfillconstantalpha 1 .setstrokeconstantalpha
-      1 .setopacityalpha 1 .setshapealpha
       doimage
-      .setopacityalpha .setshapealpha .setfillconstantalpha .setstrokeconstantalpha
+      .setfillconstantalpha .setstrokeconstantalpha
       .endtransparencygroup
       % tell the compositor we're done with the SMask.
       % Note that any SMask in the ExtGState should be reapplied
@@ -2326,10 +2325,10 @@ currentdict /last-ditch-bpc-csp undef
         % the image doesn't have an SMask, but the ExtGState does, force a group.
         << /Subtype /Group /Isolated //true >> 0 0 1 1
         .begintransparencygroup
-        .currentstrokeconstantalpha .currentfillconstantalpha .currentshapealpha .currentopacityalpha 5 -1 roll
-        1 .setopacityalpha 1 .setshapealpha
+        .currentstrokeconstantalpha .currentfillconstantalpha 3 -1 roll
+        1 .setfillconstantalpha 1 .setstrokeconstantalpha
         doimage
-        .setopacityalpha .setshapealpha .setfillconstantalpha .setstrokeconstantalpha
+        .setfillconstantalpha .setstrokeconstantalpha
         .endtransparencygroup
       } {
         doimage
