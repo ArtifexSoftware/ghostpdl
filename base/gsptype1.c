@@ -2117,8 +2117,20 @@ gx_dc_pattern_read(
             /* the following works for raster or clist patterns */
             cache_space_needed = buf.size_b + buf.size_c;
         }
+
+        /* Free up any unlocked patterns if needed */
         gx_pattern_cache_ensure_space((gs_gstate *)pgs, cache_space_needed);
 
+        /* If the pattern tile is already in the cache, make sure it isn't locked */
+        /* The lock will be reset below, but the read logic needs to finish loading the pattern. */
+        ptile = &(pgs->pattern_cache->tiles[buf.id % pgs->pattern_cache->num_tiles]);
+        if (ptile->id != gs_no_id && ptile->is_locked) {
+            /* we shouldn't have miltiple tiles locked, but check if OK before unlocking */
+            if (ptile->id != buf.id)
+                return_error(gs_error_unregistered);	/* can't unlock some other tile in this slot */
+            code = gx_pattern_cache_entry_set_lock(pgs, buf.id, false);        /* make sure not locked */
+        }
+        /* get_entry will free the tile in the cache slot if it isn't empty */
         code = gx_pattern_cache_get_entry((gs_gstate *)pgs, /* Break 'const'. */
                         buf.id, &ptile);
         if (code < 0)
