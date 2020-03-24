@@ -485,6 +485,12 @@ currentdict /gput_always_allow .undef
 % Establish a given color (and color space) as current.
 /.settransparencyparams {	% <alpha> <smask> .settransparencyparams -
   PDFusingtransparency {
+    .currentalphaisshape
+    {
+      1 .setopacityalpha  exch .setshapealpha 1
+    } {
+      1 .setshapealpha  exch .setopacityalpha 0
+    } ifelse
       % Set the soft mask by rendering the XObject.  Doing this every time
       % is obviously very inefficient; we'll improve it later.
     .settransparencymask
