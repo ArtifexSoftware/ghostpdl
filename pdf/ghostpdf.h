@@ -121,6 +121,8 @@ typedef enum pdf_error_flag_e {
     E_PDF_KEYWORDTOOLONG = E_PDF_NOHEADER << 15,
     E_PDF_BADPAGETYPE = E_PDF_NOHEADER << 16,
     E_PDF_CIRCULARREF = E_PDF_NOHEADER << 17,
+    E_PDF_UNREPAIRABLE = E_PDF_NOHEADER << 18,
+    E_PDF_REPAIRED = E_PDF_NOHEADER << 19,
 
 } pdf_error_flag;
 

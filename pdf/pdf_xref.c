@@ -854,12 +854,7 @@ static int read_xref(pdf_context *ctx, pdf_stream *s)
 
 int pdfi_read_xref(pdf_context *ctx)
 {
-    byte *Buffer = NULL;
     int code = 0;
-
-    Buffer = gs_alloc_bytes(ctx->memory, BUF_SIZE, "PDF interpreter - allocate working buffer for file validation");
-    if (Buffer == NULL)
-        return_error(gs_error_VMerror);
 
     code = pdfi_loop_detector_mark(ctx);
     if (code < 0)
@@ -980,8 +975,6 @@ int pdfi_read_xref(pdf_context *ctx)
     }
     if (ctx->pdfdebug)
         dmprintf(ctx->memory, "\n");
-    gs_free_object(ctx->memory, Buffer, "PDF interpreter - allocate working buffer for file validation");
-
     (void)pdfi_loop_detector_cleartomark(ctx);
     if (code < 0)
         return code;

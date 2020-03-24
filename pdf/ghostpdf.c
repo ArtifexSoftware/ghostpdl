@@ -343,6 +343,10 @@ pdfi_report_errors(pdf_context *ctx)
             dmprintf(ctx->memory, "\tAn entry in the Pages array was a dictionary with a /Type key whose value was not /Page.\n");
         if (ctx->pdf_errors & E_PDF_CIRCULARREF)
             dmprintf(ctx->memory, "\tAn indirect object caused a circular reference to itself.\n");
+        if (ctx->pdf_errors & E_PDF_UNREPAIRABLE)
+            dmprintf(ctx->memory, "\tFile could not be repaired.\n");
+        if (ctx->pdf_errors & E_PDF_REPAIRED)
+            dmprintf(ctx->memory, "\tFile had an error that needed to be repaired.\n");
     }
 
     if (ctx->pdf_warnings != W_PDF_NOWARNING) {
