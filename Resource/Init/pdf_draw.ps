@@ -3272,7 +3272,7 @@ end
       {} 2 index /S knownoget {
         /D eq { 2 index /D knownoget not { {3} } if exch pop } if
       } if
-      3 index /CA knownoget {.setopacityalpha} if
+      3 index /CA knownoget {dup .setstrokeconstantalpha .setfillconstantalpha} if
       3 -1 roll pop
 %      2 index annotsetcolor {
       0 setdash setlinewidth stroke
@@ -3282,7 +3282,7 @@ end
       % If element 3 of the /Border array is 0, then don't draw the border
       dup 0 ne {
         exch dup length 3 gt { 3 get } { pop {} } ifelse
-        3 index /CA knownoget {.setopacityalpha} if
+        3 index /CA knownoget {dup .setstrokeconstantalpha .setfillconstantalpha} if
 %        2 index annotsetcolor {
         0 setdash setlinewidth stroke
 %        } if
@@ -3291,7 +3291,7 @@ end
       } ifelse
     } ifelse
   } {
-    3 index /CA knownoget {.setopacityalpha} if
+    3 index /CA knownoget {dup .setstrokeconstantalpha .setfillconstantalpha} if
     1 {}
 %    2 index annotsetcolor {
     0 setdash setlinewidth stroke
@@ -3303,7 +3303,7 @@ end
 
 /fillborderpath {		% <annot> fillborderpath -
   gsave
-  dup /ca knownoget {.setopacityalpha} if
+  dup /ca knownoget {dup .setstrokeconstantalpha .setfillconstantalpha} if
   annotsetinteriorcolor
   {fill} if
   grestore
@@ -3780,14 +3780,14 @@ currentdict /set_bc_color undef
       annotsetinteriorcolor
       {
         gsave
-        dup /ca knownoget {.setopacityalpha} if
+        dup /ca knownoget {dup .setstrokeconstantalpha .setfillconstantalpha} if
         dup annotrect
         5 index /RD knownoget {
           applyRD
         } if
         rectfill
         grestore
-        dup /CA knownoget {.setopacityalpha} if
+        dup /CA knownoget {dup .setstrokeconstantalpha .setfillconstantalpha} if
         dup annotsetcolor {
           drawborder
         } if
@@ -3889,10 +3889,10 @@ currentdict /set_bc_color undef
 
       {
         gsave
-        dup /ca knownoget {.setopacityalpha} if
+        dup /ca knownoget {dup .setstrokeconstantalpha .setfillconstantalpha} if
         fill
         grestore
-        dup /CA knownoget {.setopacityalpha} if
+        dup /CA knownoget {dup .setstrokeconstantalpha .setfillconstantalpha} if
         dup annotsetcolor {
           strokeborderpath
         } if
@@ -3928,7 +3928,7 @@ currentdict /set_bc_color undef
       dup 1 index exch lineto
       dup neg lineto
       closepath
-      1 index /CA knownoget {.setopacityalpha} if
+      1 index /CA knownoget {dup .setstrokeconstantalpha .setfillconstantalpha} if
       1 index fillborderpath
       grestore
       3 mul
@@ -3954,7 +3954,7 @@ currentdict /set_bc_color undef
       2.5 mul dup
       0 moveto
       0 0 3 -1 roll 0 360 arc
-      1 index /CA knownoget {.setopacityalpha} if
+      1 index /CA knownoget {dup .setstrokeconstantalpha .setfillconstantalpha} if
       1 index fillborderpath
       grestore
       3 mul dup
@@ -3979,7 +3979,7 @@ currentdict /set_bc_color undef
       dup 0 exch lineto
       0 lineto
       closepath
-      1 index /CA knownoget {.setopacityalpha} if
+      1 index /CA knownoget {dup .setstrokeconstantalpha .setfillconstantalpha} if
       1 index fillborderpath
       grestore
       3 mul
@@ -4029,7 +4029,7 @@ currentdict /set_bc_color undef
       dup 2 div sub
       dup 8.4 mul neg 1 index 5.9 mul neg moveto dup 1.2 div neg 0 lineto
       dup 8.4 mul neg exch 5.9 mul lineto closepath
-      dup /CA knownoget {.setopacityalpha} if
+      dup /CA knownoget {dup .setstrokeconstantalpha .setfillconstantalpha} if
       fillborderpath
       grestore
     } bind executeonly def
@@ -4088,7 +4088,7 @@ currentdict /set_bc_color undef
       dup 2 div sub
       dup 8.4 mul neg 1 index 5.9 mul neg moveto dup 1.2 div neg 0 lineto
       dup 8.4 mul neg exch 5.9 mul lineto closepath
-      dup /CA knownoget {.setopacityalpha} if
+      dup /CA knownoget {dup .setstrokeconstantalpha .setfillconstantalpha} if
       fillborderpath
       grestore
     } bind executeonly def
@@ -4552,11 +4552,11 @@ currentdict /set_bc_color undef
       dup annotrect rectclip
 
       dup /CA knownoget {
-        .setopacityalpha
+        dup .setstrokeconstantalpha .setfillconstantalpha
       } if
 
       dup /ca knownoget {
-        .setopacityalpha
+        dup .setstrokeconstantalpha .setfillconstantalpha
       } if
 
       dup /C knownoget {
