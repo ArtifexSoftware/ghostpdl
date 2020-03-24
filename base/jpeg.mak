@@ -67,6 +67,40 @@ jpeg.clean : jpeg.config-clean jpeg.clean-not-config-clean
 ### WRONG.  MUST DELETE OBJ AND GEN FILES SELECTIVELY.
 jpeg.clean-not-config-clean :
 	$(RM_) $(JOBJ)*.$(OBJ)
+	$(RM_) $(GLGEN)jcomapi.c
+	$(RM_) $(GLGEN)jutils.c
+	$(RM_) $(GLGEN)jmemmgr.c
+	$(RM_) $(GLGEN)jerror.c
+	$(RM_) $(GLGEN)jaricom.c
+	$(RM_) $(GLGEN)jcapimin.c
+	$(RM_) $(GLGEN)jcapistd.c
+	$(RM_) $(GLGEN)jcinit.c
+	$(RM_) $(GLGEN)jccoefct.c
+	$(RM_) $(GLGEN)jccolor.c
+	$(RM_) $(GLGEN)jcdctmgr.c
+	$(RM_) $(GLGEN)jchuff.c
+	$(RM_) $(GLGEN)jcmainct.c
+	$(RM_) $(GLGEN)jcmarker.c
+	$(RM_) $(GLGEN)jcmaster.c
+	$(RM_) $(GLGEN)jcparam.c
+	$(RM_) $(GLGEN)jcprepct.c
+	$(RM_) $(GLGEN)jcsample.c
+	$(RM_) $(GLGEN)jfdctint.c
+	$(RM_) $(GLGEN)jcarith.c
+	$(RM_) $(GLGEN)jdapimin.c
+	$(RM_) $(GLGEN)jdapistd.c
+	$(RM_) $(GLGEN)jdcoefct.c
+	$(RM_) $(GLGEN)jdcolor.c
+	$(RM_) $(GLGEN)jddctmgr.c
+	$(RM_) $(GLGEN)jdhuff.c
+	$(RM_) $(GLGEN)jdinput.c
+	$(RM_) $(GLGEN)jdmainct.c
+	$(RM_) $(GLGEN)jdmarker.c
+	$(RM_) $(GLGEN)jdmaster.c
+	$(RM_) $(GLGEN)jdpostct.c
+	$(RM_) $(GLGEN)jdsample.c
+	$(RM_) $(GLGEN)jidctint.c
+	$(RM_) $(GLGEN)jdarith.c
 
 jpeg.config-clean :
 	$(RMN_) $(JGEN)jpeg*.dev
@@ -183,27 +217,22 @@ $(JGEN)jpegc0.dev : $(JPEG_MAK) $(ECHOGS_XE) $(jpegc0_)
 $(JOBJ)jcomapi.$(OBJ) : $(JSRC)jcomapi.c $(JDEP)
 	$(CP_) $(JSRC)jcomapi.c $(GLGEN)jcomapi.c
 	$(JCC) $(JO_)jcomapi.$(OBJ) $(C_) $(GLGEN)jcomapi.c
-	$(RM_) $(GLGEN)jcomapi.c
 
 $(JOBJ)jutils.$(OBJ) : $(JSRC)jutils.c $(JDEP)
 	$(CP_) $(JSRC)jutils.c $(GLGEN)jutils.c
 	$(JCC) $(JO_)jutils.$(OBJ) $(C_) $(GLGEN)jutils.c
-	$(RM_) $(GLGEN)jutils.c
 
 $(JOBJ)jmemmgr.$(OBJ) : $(JSRC)jmemmgr.c $(JDEP)
 	$(CP_) $(JSRC)jmemmgr.c $(GLGEN)jmemmgr.c
 	$(JCC) $(JO_)jmemmgr.$(OBJ) $(C_) $(GLGEN)jmemmgr.c
-	$(RM_) $(GLGEN)jmemmgr.c
 
 $(JOBJ)jerror.$(OBJ) : $(JSRC)jerror.c $(JDEP)
 	$(CP_) $(JSRC)jerror.c $(GLGEN)jerror.c
 	$(JCC) $(JO_)jerror.$(OBJ) $(C_) $(GLGEN)jerror.c
-	$(RM_) $(GLGEN)jerror.c
 
 $(JOBJ)jaricom.$(OBJ) : $(JSRC)jaricom.c $(JDEP)
 	$(CP_) $(JSRC)jaricom.c $(GLGEN)jaricom.c
 	$(JCC) $(JO_)jaricom.$(OBJ) $(C_) $(GLGEN)jaricom.c
-	$(RM_) $(GLGEN)jaricom.c
 
 # Encoding (compression) code.
 
@@ -233,77 +262,62 @@ $(JGEN)jpege6.dev : $(JPEG_MAK) $(ECHOGS_XE) $(JGEN)jpegc0.dev $(jpege6) $(jpege
 $(JOBJ)jcapimin.$(OBJ) : $(JSRC)jcapimin.c $(JDEP)
 	$(CP_) $(JSRC)jcapimin.c $(GLGEN)jcapimin.c
 	$(JCC) $(JO_)jcapimin.$(OBJ) $(C_) $(GLGEN)jcapimin.c
-	$(RM_) $(GLGEN)jcapimin.c
 
 $(JOBJ)jcapistd.$(OBJ) : $(JSRC)jcapistd.c $(JDEP)
 	$(CP_) $(JSRC)jcapistd.c $(GLGEN)jcapistd.c
 	$(JCC) $(JO_)jcapistd.$(OBJ) $(C_) $(GLGEN)jcapistd.c
-	$(RM_) $(GLGEN)jcapistd.c
 
 $(JOBJ)jcinit.$(OBJ) : $(JSRC)jcinit.c $(JDEP)
 	$(CP_) $(JSRC)jcinit.c $(GLGEN)jcinit.c
 	$(JCC) $(JO_)jcinit.$(OBJ) $(C_) $(GLGEN)jcinit.c
-	$(RM_) $(GLGEN)jcinit.c
 
 $(JOBJ)jccoefct.$(OBJ) : $(JSRC)jccoefct.c $(JDEP)
 	$(CP_) $(JSRC)jccoefct.c $(GLGEN)jccoefct.c
 	$(JCC) $(JO_)jccoefct.$(OBJ) $(C_) $(GLGEN)jccoefct.c
-	$(RM_) $(GLGEN)jccoefct.c
 
 $(JOBJ)jccolor.$(OBJ) : $(JSRC)jccolor.c $(JDEP)
 	$(CP_) $(JSRC)jccolor.c $(GLGEN)jccolor.c
 	$(JCC) $(JO_)jccolor.$(OBJ) $(C_) $(GLGEN)jccolor.c
-	$(RM_) $(GLGEN)jccolor.c
 
 $(JOBJ)jcdctmgr.$(OBJ) : $(JSRC)jcdctmgr.c $(JDEP)
 	$(CP_) $(JSRC)jcdctmgr.c $(GLGEN)jcdctmgr.c
 	$(JCC) $(JO_)jcdctmgr.$(OBJ) $(C_) $(GLGEN)jcdctmgr.c
-	$(RM_) $(GLGEN)jcdctmgr.c
 
 $(JOBJ)jchuff.$(OBJ) : $(JSRC)jchuff.c $(JDEP)
 	$(CP_) $(JSRC)jchuff.c $(GLGEN)jchuff.c
 	$(JCC) $(JO_)jchuff.$(OBJ) $(C_) $(GLGEN)jchuff.c
-	$(RM_) $(GLGEN)jchuff.c
 
 $(JOBJ)jcmainct.$(OBJ) : $(JSRC)jcmainct.c $(JDEP)
 	$(CP_) $(JSRC)jcmainct.c $(GLGEN)jcmainct.c
 	$(JCC) $(JO_)jcmainct.$(OBJ) $(C_) $(GLGEN)jcmainct.c
-	$(RM_) $(GLGEN)jcmainct.c
 
 $(JOBJ)jcmarker.$(OBJ) : $(JSRC)jcmarker.c $(JDEP)
 	$(CP_) $(JSRC)jcmarker.c $(GLGEN)jcmarker.c
 	$(JCC) $(JO_)jcmarker.$(OBJ) $(C_) $(GLGEN)jcmarker.c
-	$(RM_) $(GLGEN)jcmarker.c
 
 $(JOBJ)jcmaster.$(OBJ) : $(JSRC)jcmaster.c $(JDEP)
 	$(CP_) $(JSRC)jcmaster.c $(GLGEN)jcmaster.c
 	$(JCC) $(JO_)jcmaster.$(OBJ) $(C_) $(GLGEN)jcmaster.c
-	$(RM_) $(GLGEN)jcmaster.c
 
 $(JOBJ)jcparam.$(OBJ) : $(JSRC)jcparam.c $(JDEP)
 	$(CP_) $(JSRC)jcparam.c $(GLGEN)jcparam.c
 	$(JCC) $(JO_)jcparam.$(OBJ) $(C_) $(GLGEN)jcparam.c
-	$(RM_) $(GLGEN)jcparam.c
 
 $(JOBJ)jcprepct.$(OBJ) : $(JSRC)jcprepct.c $(JDEP)
 	$(CP_) $(JSRC)jcprepct.c $(GLGEN)jcprepct.c
 	$(JCC) $(JO_)jcprepct.$(OBJ) $(C_) $(GLGEN)jcprepct.c
-	$(RM_) $(GLGEN)jcprepct.c
 
 $(JOBJ)jcsample.$(OBJ) : $(JSRC)jcsample.c $(JDEP)
 	$(CP_) $(JSRC)jcsample.c $(GLGEN)jcsample.c
 	$(JCC) $(JO_)jcsample.$(OBJ) $(C_) $(GLGEN)jcsample.c
-	$(RM_) $(GLGEN)jcsample.c
 
 $(JOBJ)jfdctint.$(OBJ) : $(JSRC)jfdctint.c $(JDEP)
 	$(CP_) $(JSRC)jfdctint.c $(GLGEN)jfdctint.c
 	$(JCC) $(JO_)jfdctint.$(OBJ) $(C_) $(GLGEN)jfdctint.c
-	$(RM_) $(GLGEN)jfdctint.c
 
 $(JOBJ)jcarith.$(OBJ) : $(JSRC)jcarith.c $(JDEP)
 	$(CP_) $(JSRC)jcarith.c $(GLGEN)jcarith.c
 	$(JCC) $(JO_)jcarith.$(OBJ) $(C_) $(GLGEN)jcarith.c
-	$(RM_) $(GLGEN)jcarith.c
 
 # Decompression code
 
@@ -334,52 +348,42 @@ $(JGEN)jpegd6.dev : $(JPEG_MAK) $(ECHOGS_XE) $(JGEN)jpegc0.dev $(jpegd6) $(jpegd
 $(JOBJ)jdapimin.$(OBJ) : $(JSRC)jdapimin.c $(JDEP)
 	$(CP_) $(JSRC)jdapimin.c $(GLGEN)jdapimin.c
 	$(JCC) $(JO_)jdapimin.$(OBJ) $(C_) $(GLGEN)jdapimin.c
-	$(RM_) $(GLGEN)jdapimin.c
 
 $(JOBJ)jdapistd.$(OBJ) : $(JSRC)jdapistd.c $(JDEP)
 	$(CP_) $(JSRC)jdapistd.c $(GLGEN)jdapistd.c
 	$(JCC) $(JO_)jdapistd.$(OBJ) $(C_) $(GLGEN)jdapistd.c
-	$(RM_) $(GLGEN)jdapistd.c
 
 $(JOBJ)jdcoefct.$(OBJ) : $(JSRC)jdcoefct.c $(JDEP)
 	$(CP_) $(JSRC)jdcoefct.c $(GLGEN)jdcoefct.c
 	$(JCC) $(JO_)jdcoefct.$(OBJ) $(C_) $(GLGEN)jdcoefct.c
-	$(RM_) $(GLGEN)jdcoefct.c
 
 $(JOBJ)jdcolor.$(OBJ) : $(JSRC)jdcolor.c $(JDEP)
 	$(CP_) $(JSRC)jdcolor.c $(GLGEN)jdcolor.c
 	$(JCC) $(JO_)jdcolor.$(OBJ) $(C_) $(GLGEN)jdcolor.c
-	$(RM_) $(GLGEN)jdcolor.c
 
 $(JOBJ)jddctmgr.$(OBJ) : $(JSRC)jddctmgr.c $(JDEP)
 	$(CP_) $(JSRC)jddctmgr.c $(GLGEN)jddctmgr.c
 	$(JCC) $(JO_)jddctmgr.$(OBJ) $(C_) $(GLGEN)jddctmgr.c
-	$(RM_) $(GLGEN)jddctmgr.c
 
 $(JOBJ)jdhuff.$(OBJ) : $(JSRC)jdhuff.c $(JDEP)
 	$(CP_) $(JSRC)jdhuff.c $(GLGEN)jdhuff.c
 	$(JCC) $(JO_)jdhuff.$(OBJ) $(C_) $(GLGEN)jdhuff.c
-	$(RM_) $(GLGEN)jdhuff.c
 
 $(JOBJ)jdinput.$(OBJ) : $(JSRC)jdinput.c $(JDEP)
 	$(CP_) $(JSRC)jdinput.c $(GLGEN)jdinput.c
 	$(JCC) $(JO_)jdinput.$(OBJ) $(C_) $(GLGEN)jdinput.c
-	$(RM_) $(GLGEN)jdinput.c
 
 $(JOBJ)jdmainct.$(OBJ) : $(JSRC)jdmainct.c $(JDEP)
 	$(CP_) $(JSRC)jdmainct.c $(GLGEN)jdmainct.c
 	$(JCC) $(JO_)jdmainct.$(OBJ) $(C_) $(GLGEN)jdmainct.c
-	$(RM_) $(GLGEN)jdmainct.c
 
 $(JOBJ)jdmarker.$(OBJ) : $(JSRC)jdmarker.c $(JDEP)
 	$(CP_) $(JSRC)jdmarker.c $(GLGEN)jdmarker.c
 	$(JCC) $(JO_)jdmarker.$(OBJ) $(C_) $(GLGEN)jdmarker.c
-	$(RM_) $(GLGEN)jdmarker.c
 
 $(JOBJ)jdmaster.$(OBJ) : $(JSRC)jdmaster.c $(JDEP)
 	$(CP_) $(JSRC)jdmaster.c $(GLGEN)jdmaster.c
 	$(JCC) $(JO_)jdmaster.$(OBJ) $(C_) $(GLGEN)jdmaster.c
-	$(RM_) $(GLGEN)jdmaster.c
 
 #$(JOBJ)jdhuff.$(OBJ) : $(JSRC)jdhuff.c $(JDEP)
 #	$(CP_) $(JSRC)jdhuff.c $(GLGEN)jdhuff.c
@@ -389,19 +393,15 @@ $(JOBJ)jdmaster.$(OBJ) : $(JSRC)jdmaster.c $(JDEP)
 $(JOBJ)jdpostct.$(OBJ) : $(JSRC)jdpostct.c $(JDEP)
 	$(CP_) $(JSRC)jdpostct.c $(GLGEN)jdpostct.c
 	$(JCC) $(JO_)jdpostct.$(OBJ) $(C_) $(GLGEN)jdpostct.c
-	$(RM_) $(GLGEN)jdpostct.c
 
 $(JOBJ)jdsample.$(OBJ) : $(JSRC)jdsample.c $(JDEP)
 	$(CP_) $(JSRC)jdsample.c $(GLGEN)jdsample.c
 	$(JCC) $(JO_)jdsample.$(OBJ) $(C_) $(GLGEN)jdsample.c
-	$(RM_) $(GLGEN)jdsample.c
 
 $(JOBJ)jidctint.$(OBJ) : $(JSRC)jidctint.c $(JDEP)
 	$(CP_) $(JSRC)jidctint.c $(GLGEN)jidctint.c
 	$(JCC) $(JO_)jidctint.$(OBJ) $(C_) $(GLGEN)jidctint.c
-	$(RM_) $(GLGEN)jidctint.c
 
 $(JOBJ)jdarith.$(OBJ) : $(JSRC)jdarith.c $(JDEP)
 	$(CP_) $(JSRC)jdarith.c $(GLGEN)jdarith.c
 	$(JCC) $(JO_)jdarith.$(OBJ) $(C_) $(GLGEN)jdarith.c
-	$(RM_) $(GLGEN)jdarith.c
