@@ -1682,6 +1682,162 @@ wide_underjoin(pl_ptr plp, pl_ptr nplp)
 }
 #endif
 
+static int
+check_miter(const gx_line_params * pgs_lp, pl_ptr plp, pl_ptr nplp,
+            const gs_matrix * pmat, p_ptr outp, p_ptr np, p_ptr mpt,
+            bool ccw0)
+{
+    /*
+     * Check whether a miter join is appropriate.
+     * Let a, b be the angles of the two lines.
+     * We check tan(a-b) against the miter_check
+     * by using the following formula:
+     *      If tan(a)=u1/v1 and tan(b)=u2/v2, then
+     *      tan(a-b) = (u1*v2 - u2*v1) / (u1*u2 + v1*v2).
+     *
+     * We can do all the computations unscaled,
+     * because we're only concerned with ratios.
+     * However, if we have a non-uniform coordinate
+     * system (indicated by pmat != 0), we must do the
+     * computations in user space.
+     */
+    float check;
+    double u1, v1, u2, v2;
+    double num, denom;
+    int code;
+
+    /*
+     * Don't bother with the miter check if the two
+     * points to be joined are very close together,
+     * namely, in the same square half-pixel.
+     */
+    if (fixed2long(outp->x << 1) == fixed2long(np->x << 1) &&
+        fixed2long(outp->y << 1) == fixed2long(np->y << 1))
+        return 1;
+
+    check = pgs_lp->miter_check;
+    u1 = plp->vector.y, v1 = plp->vector.x;
+    u2 = -nplp->vector.y, v2 = -nplp->vector.x;
+
+    if (pmat) {
+        gs_point pt;
+
+        code = gs_distance_transform_inverse(v1, u1, pmat, &pt);
+        if (code < 0)
+        return code;
+        v1 = pt.x, u1 = pt.y;
+        code = gs_distance_transform_inverse(v2, u2, pmat, &pt);
+        if (code < 0)
+            return code;
+        v2 = pt.x, u2 = pt.y;
+        /*
+         * We need to recompute ccw according to the
+         * relative positions of the lines in user space.
+         * We repeat the computation described above,
+         * using the cdelta values instead of the widths.
+         * Because the definition of ccw above is inverted
+         * from the intuitive one (for historical reasons),
+         * we actually have to do the test backwards.
+         */
+        ccw0 = v1 * u2 < v2 * u1;
+#if defined(DEBUG) && !defined(GS_THREADSAFE)
+        {
+            double a1 = atan2(u1, v1), a2 = atan2(u2, v2), dif = a1 - a2;
+
+            if (dif < 0)
+                dif += 2 * M_PI;
+            else if (dif >= 2 * M_PI)
+                dif -= 2 * M_PI;
+            if (dif != 0 && (dif < M_PI) != ccw0)
+                lprintf8("ccw wrong: tan(a1=%g)=%g/%g, tan(a2=%g)=%g,%g, dif=%g, ccw0=%d\n",
+                         a1, u1, v1, a2, u2, v2, dif, ccw0);
+        }
+#endif
+    }
+    num = u1 * v2 - u2 * v1;
+    denom = u1 * u2 + v1 * v2;
+    /*
+     * We will want either tan(a-b) or tan(b-a)
+     * depending on the orientations of the lines.
+     * Fortunately we know the relative orientations already.
+     */
+    if (!ccw0)          /* have plp - nplp, want vice versa */
+        num = -num;
+#if defined(DEBUG) && !defined(GS_THREADSAFE)
+    if (gs_debug_c('O')) {
+        dlprintf4("[o]Miter check: u1/v1=%f/%f, u2/v2=%f/%f,\n",
+                  u1, v1, u2, v2);
+        dlprintf3("        num=%f, denom=%f, check=%f\n",
+                  num, denom, check);
+    }
+#endif
+    /*
+     * If we define T = num / denom, then we want to use
+     * a miter join iff arctan(T) >= arctan(check).
+     * We know that both of these angles are in the 1st
+     * or 2nd quadrant, and since arctan is monotonic
+     * within each quadrant, we can do the comparisons
+     * on T and check directly, taking signs into account
+     * as follows:
+     *              sign(T) sign(check)     atan(T) >= atan(check)
+     *              ------- -----------     ----------------------
+     *              +       +               T >= check
+     *              -       +               true
+     *              +       -               false
+     *              -       -               T >= check
+     */
+    if (num == 0 && denom == 0)
+        return_error(gs_error_unregistered); /* Must not happen. */
+    if (denom < 0)
+        num = -num, denom = -denom;
+    /* Now denom >= 0, so sign(num) = sign(T). */
+    if (check > 0 ?
+        (num < 0 || num >= denom * check) :
+        (num < 0 && num >= denom * check)
+        ) {
+        /* OK to use a miter join. */
+        gs_fixed_point dirn1, dirn2;
+
+        dirn1.x = plp->e.cdelta.x;
+        dirn1.y = plp->e.cdelta.y;
+        /* If this direction is small enough that we might have
+         * underflowed and the vector record is suitable for us
+         * to use to calculate a better one, then do so. */
+        if ((abs(dirn1.x) + abs(dirn1.y) < 16) &&
+            ((plp->vector.x != 0) || (plp->vector.y != 0)))
+        {
+            float scale = 65536.0;
+            if (abs(plp->vector.x) > abs(plp->vector.y))
+                scale /= abs(plp->vector.x);
+            else
+                scale /= abs(plp->vector.y);
+            dirn1.x = (fixed)(plp->vector.x*scale);
+            dirn1.y = (fixed)(plp->vector.y*scale);
+        }
+        dirn2.x = nplp->o.cdelta.x;
+        dirn2.y = nplp->o.cdelta.y;
+        /* If this direction is small enough that we might have
+         * underflowed and the vector record is suitable for us
+         * to use to calculate a better one, then do so. */
+        if ((abs(dirn2.x) + abs(dirn2.y) < 16) &&
+            ((nplp->vector.x != 0) || (nplp->vector.y != 0)))
+        {
+            float scale = 65536.0;
+            if (abs(nplp->vector.x) > abs(nplp->vector.y))
+                scale /= abs(nplp->vector.x);
+            else
+                scale /= abs(nplp->vector.y);
+            dirn2.x = (fixed)(-nplp->vector.x*scale);
+            dirn2.y = (fixed)(-nplp->vector.y*scale);
+        }
+        if_debug0('O', "        ... passes.\n");
+        /* Compute the intersection of the extended edge lines. */
+        if (line_intersect(outp, &dirn1, np, &dirn2, mpt) == 0)
+            return 0;
+    }
+    return 1;
+}
+
 /* Add a segment to the path.
  * This works by crafting 2 paths, one for each edge, that will later be
  * merged together. */
@@ -1702,6 +1858,14 @@ stroke_add_fast(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
     bool moveto_first  = false;
     bool rmoveto_first = false;
     gs_line_cap start_cap, end_cap;
+    const gs_matrix *pmat = (uniform ? (const gs_matrix *)NULL : &ctm_only(pgs));
+    enum {
+        joinsense_cap = 0,
+        joinsense_cw = 1,
+        joinsense_ccw = 2,
+        joinsense_over = 4,
+        joinsense_under = 8,
+    } joinsense = joinsense_cap;
 
     if (plp->thin) {
         /* We didn't set up the endpoint parameters before, */
@@ -1744,6 +1908,100 @@ stroke_add_fast(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
     ASSIGN_POINT(&rpoints[nrpoints], plp->e.ce);
     npoints++;
     nrpoints++;
+
+    if (nplp != NULL && !nplp->thin) {
+        /* We need to do a join. What sense is it it? */
+        double l, r;
+
+        l = (double)(plp->width.x) /* x1 */ * (nplp->width.y) /* y2 */;
+        r = (double)(nplp->width.x) /* x2 */ * (plp->width.y) /* y1 */;
+
+        if ((l == r) && (join == gs_join_round))
+             joinsense = joinsense_cap;
+        else if ((l > r) ^ reflected)
+             joinsense = joinsense_ccw | joinsense_over | joinsense_under;
+        else
+             joinsense = joinsense_cw | joinsense_over | joinsense_under;
+
+        if (joinsense != joinsense_cap && join == gs_join_miter) {
+            /* We need to do a miter line join. Miters are 'special'
+             * in that we'd like to do them by adjusting the existing
+             * points, rather than adding new ones. */
+            gs_fixed_point mpt;
+            if (joinsense & joinsense_ccw) {
+                /* Underjoin (in reverse path):
+                 * A = plp->o.co, B = plp->e.ce, C = nplp->o.co, D = nplp->e.ce */
+                double xa =  plp->o.co.x, ya =  plp->o.co.y;
+                double xb =  plp->e.ce.x, yb =  plp->e.ce.y;
+                double xc = nplp->o.co.x, yc = nplp->o.co.y;
+                double xd = nplp->e.ce.x, yd = nplp->e.ce.y;
+                double xab = xa-xb, xac = xa-xc, xcd = xc-xd;
+                double yab = ya-yb, yac = ya-yc, ycd = yc-yd;
+                double t_num = xac * ycd - yac * xcd;
+                double t_den = xab * ycd - yab * xcd;
+                code = check_miter(pgs_lp, plp, nplp, pmat, &plp->e.co,
+                                   &nplp->o.ce, &mpt, true);
+                if (code < 0)
+                    return code;
+                if (code == 0) {
+                    points[npoints-1].x = mpt.x;
+                    points[npoints-1].y = mpt.y;
+                    if (ensure_closed) {
+                        points[npoints].x = nplp->o.ce.x;
+                        points[npoints].y = nplp->o.ce.y;
+                        npoints++;
+                    }
+                    joinsense &= ~joinsense_over;
+                } else
+                    join = gs_join_bevel;
+                if (t_den != 0 &&
+                    ((t_num >= 0 && t_num <= t_den) ||
+                     (t_num <= 0 && t_num >= t_den))) {
+                    double x = xa - xab * t_num / t_den;
+                    double y = ya - yab * t_num / t_den;
+                    rpoints[nrpoints-1].x = (fixed)x;
+                    rpoints[nrpoints-1].y = (fixed)y;
+                    joinsense &= ~joinsense_under;
+                }
+            } else {
+                /* Underjoin (in fwd path):
+                 * A = plp->o.ce, B = plp->e.co, C = nplp->o.ce, D = nplp->e.co */
+                double xa =  plp->o.ce.x, ya =  plp->o.ce.y;
+                double xb =  plp->e.co.x, yb =  plp->e.co.y;
+                double xc = nplp->o.ce.x, yc = nplp->o.ce.y;
+                double xd = nplp->e.co.x, yd = nplp->e.co.y;
+                double xab = xa-xb, xac = xa-xc, xcd = xc-xd;
+                double yab = ya-yb, yac = ya-yc, ycd = yc-yd;
+                double t_num = xac * ycd - yac * xcd;
+                double t_den = xab * ycd - yab * xcd;
+                code = check_miter(pgs_lp, plp, nplp, pmat, &plp->e.ce,
+                                   &nplp->o.co, &mpt, false);
+                if (code < 0)
+                    return code;
+                if (code == 0) {
+                    rpoints[nrpoints-1].x = mpt.x;
+                    rpoints[nrpoints-1].y = mpt.y;
+                    if (ensure_closed) {
+                        rpoints[nrpoints].x = nplp->o.co.x;
+                        rpoints[nrpoints].y = nplp->o.co.y;
+                        nrpoints++;
+                    }
+                    joinsense &= ~joinsense_over;
+                } else
+                    join = gs_join_bevel;
+                if (t_den != 0 &&
+                    ((t_num >= 0 && t_num <= t_den) ||
+                     (t_num <= 0 && t_num >= t_den)))   {
+                    double x = xa - xab * t_num / t_den;
+                    double y = ya - yab * t_num / t_den;
+                    points[npoints-1].x = (fixed)x;
+                    points[npoints-1].y = (fixed)y;
+                    joinsense &= ~joinsense_under;
+                }
+            }
+        }
+    }
+
     if ((code = add_points(ppath, points, npoints, moveto_first)) < 0)
         return code;
     if ((code = add_points(rpath, rpoints, nrpoints, rmoveto_first)) < 0)
@@ -1761,28 +2019,22 @@ stroke_add_fast(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
     } else if (nplp->thin) { /* no join */
         code = cap_points(gs_cap_butt, &plp->e, points);
         npoints = code;
-    } else {
-        /* We need to do a join */
-        double l, r;
-
-        l = (double)(plp->width.x) /* x1 */ * (nplp->width.y) /* y2 */;
-        r = (double)(nplp->width.x) /* x2 */ * (plp->width.y) /* y1 */;
-
-        if ((l == r) && (join == gs_join_round)) {
-            /* Do a cap */
-            code = add_pie_cap(ppath, &plp->e);
-            if (code >= 0) {
-                /* If the next line is in the opposite direction as the current one
-                 * we want to leave the point on the same side as it was
-                 * originally. This is required for paths that come to a stop
-                 * and then reverse themselves, but may produce more complexity
-                 * than we'd really like at the ends of smooth beziers. */
-                if ((double)(plp->width.x) * nplp->width.x + (double)plp->width.y * nplp->width.y >= 0)
-                    code = gx_path_add_line(ppath, plp->e.co.x, plp->e.co.y);
-            }
-        } else if ((l > r) ^ reflected) {
-            /* CCW rotation. Join in the forward path. "Underjoin" in the
-             * reverse path. */
+    } else if (joinsense == joinsense_cap) {
+        /* Do a cap */
+        code = add_pie_cap(ppath, &plp->e);
+        if (code >= 0) {
+            /* If the next line is in the opposite direction as the current one
+             * we want to leave the point on the same side as it was
+             * originally. This is required for paths that come to a stop
+             * and then reverse themselves, but may produce more complexity
+             * than we'd really like at the ends of smooth beziers. */
+            if ((double)(plp->width.x) * nplp->width.x + (double)plp->width.y * nplp->width.y >= 0)
+                code = gx_path_add_line(ppath, plp->e.co.x, plp->e.co.y);
+        }
+    } else if (joinsense & joinsense_ccw) {
+        /* CCW rotation. Join in the forward path. "Underjoin" in the
+         * reverse path. */
+        if (joinsense & joinsense_over) {
             /* RJW: Ideally we should include the "|| flags" clause in
              * the following condition. This forces all joins between
              * line segments generated from arcs to be round. This would
@@ -1792,14 +2044,13 @@ stroke_add_fast(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
                 code = add_pie_join_fast_ccw(ppath, plp, nplp, reflected);
             } else { /* non-round join */
                 code = line_join_points_fast_ccw(pgs_lp, plp, nplp,
-                                                 points,
-                                                 (uniform ? (gs_matrix *) 0 :
-                                                            &ctm_only(pgs)),
-                                                 join);
+                                                 points, pmat, join);
                 npoints = code;
             }
             if (code < 0)
                 return code;
+        }
+        if (joinsense & joinsense_under) {
             /* The underjoin */
 #ifndef SLOWER_BUT_MORE_ACCURATE_STROKING
             if ((flags & (nf_some_from_arc | nf_prev_some_from_arc)) == 0) {
@@ -1841,9 +2092,11 @@ stroke_add_fast(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
             }
 #endif
             code = gx_path_add_line(rpath, nplp->o.co.x, nplp->o.co.y);
-        } else {
-            /* CW rotation. Join in the reverse path. "Underjoin" in the
-             * forward path. */
+        }
+    } else if (joinsense & joinsense) {
+        /* CW rotation. Join in the reverse path. "Underjoin" in the
+         * forward path. */
+        if (joinsense & joinsense_over) {
             /* RJW: Ideally we should include the "|| flags" clause in
              * the following condition. This forces all joins between
              * line segments generated from arcs to be round. This would
@@ -1853,17 +2106,17 @@ stroke_add_fast(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
                 code = add_pie_join_fast_cw(rpath, plp, nplp, reflected);
             } else { /* non-round join */
                 code = line_join_points_fast_cw(pgs_lp, plp, nplp,
-                                                rpoints,
-                                                (uniform ? (gs_matrix *) 0 :
-                                                           &ctm_only(pgs)),
-                                                join);
+                                                rpoints, pmat, join);
                 nrpoints = code;
             }
             if (code < 0)
                 return code;
+        }
+        if (joinsense & joinsense_under) {
             /* The underjoin */
 #ifndef SLOWER_BUT_MORE_ACCURATE_STROKING
-            if ((flags & (nf_some_from_arc | nf_prev_some_from_arc)) == 0) {
+            if ((flags & (nf_some_from_arc | nf_prev_some_from_arc)) == 0 &&
+                join != gs_join_miter) {
                 /* RJW: This is an approximation. We ought to draw a line
                  * back to nplp->o.p, and then independently fill any exposed
                  * region under the curve with a round join. Sadly, that's
@@ -2089,150 +2342,6 @@ add_points(gx_path * ppath, const gs_fixed_point * points, int npoints,
 
 /* ---------------- Join computation ---------------- */
 
-static int
-check_miter(const gx_line_params * pgs_lp, pl_ptr plp, pl_ptr nplp,
-            const gs_matrix * pmat, p_ptr outp, p_ptr np, p_ptr mpt,
-            bool ccw0)
-{
-    /*
-     * Check whether a miter join is appropriate.
-     * Let a, b be the angles of the two lines.
-     * We check tan(a-b) against the miter_check
-     * by using the following formula:
-     *      If tan(a)=u1/v1 and tan(b)=u2/v2, then
-     *      tan(a-b) = (u1*v2 - u2*v1) / (u1*u2 + v1*v2).
-     *
-     * We can do all the computations unscaled,
-     * because we're only concerned with ratios.
-     * However, if we have a non-uniform coordinate
-     * system (indicated by pmat != 0), we must do the
-     * computations in user space.
-     */
-    float check = pgs_lp->miter_check;
-    double u1 = plp->vector.y, v1 = plp->vector.x;
-    double u2 = -nplp->vector.y, v2 = -nplp->vector.x;
-    double num, denom;
-    int code;
-
-    if (pmat) {
-        gs_point pt;
-
-        code = gs_distance_transform_inverse(v1, u1, pmat, &pt);
-        if (code < 0)
-        return code;
-        v1 = pt.x, u1 = pt.y;
-        code = gs_distance_transform_inverse(v2, u2, pmat, &pt);
-        if (code < 0)
-            return code;
-        v2 = pt.x, u2 = pt.y;
-        /*
-         * We need to recompute ccw according to the
-         * relative positions of the lines in user space.
-         * We repeat the computation described above,
-         * using the cdelta values instead of the widths.
-         * Because the definition of ccw above is inverted
-         * from the intuitive one (for historical reasons),
-         * we actually have to do the test backwards.
-         */
-        ccw0 = v1 * u2 < v2 * u1;
-#if defined(DEBUG) && !defined(GS_THREADSAFE)
-        {
-            double a1 = atan2(u1, v1), a2 = atan2(u2, v2), dif = a1 - a2;
-
-            if (dif < 0)
-                dif += 2 * M_PI;
-            else if (dif >= 2 * M_PI)
-                dif -= 2 * M_PI;
-            if (dif != 0 && (dif < M_PI) != ccw0)
-                lprintf8("ccw wrong: tan(a1=%g)=%g/%g, tan(a2=%g)=%g,%g, dif=%g, ccw0=%d\n",
-                         a1, u1, v1, a2, u2, v2, dif, ccw0);
-        }
-#endif
-    }
-    num = u1 * v2 - u2 * v1;
-    denom = u1 * u2 + v1 * v2;
-    /*
-     * We will want either tan(a-b) or tan(b-a)
-     * depending on the orientations of the lines.
-     * Fortunately we know the relative orientations already.
-     */
-    if (!ccw0)          /* have plp - nplp, want vice versa */
-        num = -num;
-#if defined(DEBUG) && !defined(GS_THREADSAFE)
-    if (gs_debug_c('O')) {
-        dlprintf4("[o]Miter check: u1/v1=%f/%f, u2/v2=%f/%f,\n",
-                  u1, v1, u2, v2);
-        dlprintf3("        num=%f, denom=%f, check=%f\n",
-                  num, denom, check);
-    }
-#endif
-    /*
-     * If we define T = num / denom, then we want to use
-     * a miter join iff arctan(T) >= arctan(check).
-     * We know that both of these angles are in the 1st
-     * or 2nd quadrant, and since arctan is monotonic
-     * within each quadrant, we can do the comparisons
-     * on T and check directly, taking signs into account
-     * as follows:
-     *              sign(T) sign(check)     atan(T) >= atan(check)
-     *              ------- -----------     ----------------------
-     *              +       +               T >= check
-     *              -       +               true
-     *              +       -               false
-     *              -       -               T >= check
-     */
-    if (num == 0 && denom == 0)
-        return_error(gs_error_unregistered); /* Must not happen. */
-    if (denom < 0)
-        num = -num, denom = -denom;
-    /* Now denom >= 0, so sign(num) = sign(T). */
-    if (check > 0 ?
-        (num < 0 || num >= denom * check) :
-        (num < 0 && num >= denom * check)
-        ) {
-        /* OK to use a miter join. */
-        gs_fixed_point dirn1, dirn2;
-
-        dirn1.x = plp->e.cdelta.x;
-        dirn1.y = plp->e.cdelta.y;
-        /* If this direction is small enough that we might have
-         * underflowed and the vector record is suitable for us
-         * to use to calculate a better one, then do so. */
-        if ((abs(dirn1.x) + abs(dirn1.y) < 16) &&
-            ((plp->vector.x != 0) || (plp->vector.y != 0)))
-        {
-            float scale = 65536.0;
-            if (abs(plp->vector.x) > abs(plp->vector.y))
-                scale /= abs(plp->vector.x);
-            else
-                scale /= abs(plp->vector.y);
-            dirn1.x = (fixed)(plp->vector.x*scale);
-            dirn1.y = (fixed)(plp->vector.y*scale);
-        }
-        dirn2.x = nplp->o.cdelta.x;
-        dirn2.y = nplp->o.cdelta.y;
-        /* If this direction is small enough that we might have
-         * underflowed and the vector record is suitable for us
-         * to use to calculate a better one, then do so. */
-        if ((abs(dirn2.x) + abs(dirn2.y) < 16) &&
-            ((nplp->vector.x != 0) || (nplp->vector.y != 0)))
-        {
-            float scale = 65536.0;
-            if (abs(nplp->vector.x) > abs(nplp->vector.y))
-                scale /= abs(nplp->vector.x);
-            else
-                scale /= abs(nplp->vector.y);
-            dirn2.x = (fixed)(-nplp->vector.x*scale);
-            dirn2.y = (fixed)(-nplp->vector.y*scale);
-        }
-        if_debug0('O', "        ... passes.\n");
-        /* Compute the intersection of the extended edge lines. */
-        if (line_intersect(outp, &dirn1, np, &dirn2, mpt) == 0)
-            return 0;
-    }
-    return 1;
-}
-
 /* Compute the points for a bevel, miter, or triangle join. */
 /* Treat no join the same as a bevel join. */
 /* If pmat != 0, we must inverse-transform the distances for */
@@ -2280,6 +2389,7 @@ line_join_points(const gx_line_params * pgs_lp, pl_ptr plp, pl_ptr nplp,
     bool ccw0 = ccw;
     p_ptr outp, np;
     int   code;
+    gs_fixed_point mpt;
 
     ccw ^= reflected;
 
@@ -2322,21 +2432,11 @@ line_join_points(const gx_line_params * pgs_lp, pl_ptr plp, pl_ptr nplp,
         }
         return 5;
     }
-    /*
-     * Don't bother with the miter check if the two
-     * points to be joined are very close together,
-     * namely, in the same square half-pixel.
-     */
     if (join == gs_join_miter &&
-        !(fixed2long(outp->x << 1) == fixed2long(np->x << 1) &&
-          fixed2long(outp->y << 1) == fixed2long(np->y << 1))
-        ) {
-        gs_fixed_point mpt;
-        code = check_miter(pgs_lp, plp, nplp, pmat, outp, np, &mpt, ccw0);
+        (code = check_miter(pgs_lp, plp, nplp, pmat, outp, np, &mpt, ccw0) <= 0)) {
         if (code < 0)
             return code;
-        if (code == 0)
-            ASSIGN_POINT(outp, mpt);
+        ASSIGN_POINT(outp, mpt);
     }
     return 4;
 }
@@ -2366,26 +2466,6 @@ line_join_points_fast_cw(const gx_line_params * pgs_lp,
     /* Set up for a Bevel join */
     ASSIGN_POINT(&rjoin_points[0], nplp->o.co);
 
-    /*
-     * Don't bother with the miter check if the two
-     * points to be joined are very close together,
-     * namely, in the same square half-pixel.
-     */
-    if (join == gs_join_miter &&
-        !(fixed2long(plp->e.ce.x << 1) == fixed2long(nplp->o.co.x << 1) &&
-          fixed2long(plp->e.ce.y << 1) == fixed2long(nplp->o.co.y << 1))
-        ) {
-        gs_fixed_point mpt;
-        int code = check_miter(pgs_lp, plp, nplp, pmat, &plp->e.ce,
-                               &nplp->o.co, &mpt, false);
-        if (code < 0)
-            return code;
-        if (code == 0) {
-            ASSIGN_POINT(&rjoin_points[0], mpt);
-            ASSIGN_POINT(&rjoin_points[1], nplp->o.co);
-            return 2;
-        }
-    }
     return 1;
 }
 
@@ -2413,26 +2493,6 @@ line_join_points_fast_ccw(const gx_line_params * pgs_lp,
     /* Set up for a Bevel join */
     ASSIGN_POINT(&join_points[0], nplp->o.ce);
 
-    /*
-     * Don't bother with the miter check if the two
-     * points to be joined are very close together,
-     * namely, in the same square half-pixel.
-     */
-    if (join == gs_join_miter &&
-        !(fixed2long(plp->e.co.x << 1) == fixed2long(nplp->o.ce.x << 1) &&
-          fixed2long(plp->e.co.y << 1) == fixed2long(nplp->o.ce.y << 1))
-        ) {
-        gs_fixed_point mpt;
-        int code = check_miter(pgs_lp, plp, nplp, pmat, &plp->e.co,
-                               &nplp->o.ce, &mpt, true);
-        if (code < 0)
-            return code;
-        if (code == 0) {
-            ASSIGN_POINT(&join_points[0], mpt);
-            ASSIGN_POINT(&join_points[1], nplp->o.ce);
-            return 2;
-        }
-    }
     return 1;
 }
 /* ---------------- Cap computations ---------------- */
