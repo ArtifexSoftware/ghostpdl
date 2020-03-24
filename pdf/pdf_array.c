@@ -59,6 +59,9 @@ static int pdfi_array_fetch(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_
 
     *o = NULL;
 
+    if (a->type != PDF_ARRAY)
+        return_error(gs_error_typecheck);
+
     if (index >= a->size)
         return_error(gs_error_rangecheck);
     obj = a->values[index];
@@ -112,6 +115,9 @@ int pdfi_array_get(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o)
  */
 int pdfi_array_get_no_deref(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj **o)
 {
+    if (a->type != PDF_ARRAY)
+        return_error(gs_error_typecheck);
+
     if (index >= a->size)
         return_error(gs_error_rangecheck);
 
@@ -195,6 +201,9 @@ bool pdfi_array_known(pdf_context *ctx, pdf_array *a, pdf_obj *o, int *index)
 {
     int i;
 
+    if (a->type != PDF_ARRAY)
+        return_error(gs_error_typecheck);
+
     for (i=0; i < a->size; i++) {
         pdf_obj *val;
         int code;
@@ -212,6 +221,9 @@ bool pdfi_array_known(pdf_context *ctx, pdf_array *a, pdf_obj *o, int *index)
 
 int pdfi_array_put(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj *o)
 {
+    if (a->type != PDF_ARRAY)
+        return_error(gs_error_typecheck);
+
     if (index > a->size)
         return_error(gs_error_rangecheck);
 
@@ -225,6 +237,9 @@ int pdfi_array_put_int(pdf_context *ctx, pdf_array *a, uint64_t index, int64_t v
 {
     int code;
     pdf_num *obj;
+
+    if (a->type != PDF_ARRAY)
+        return_error(gs_error_typecheck);
 
     code = pdfi_alloc_object(ctx, PDF_INT, 0, (pdf_obj **)&obj);
     obj->value.i = val;
@@ -273,7 +288,7 @@ int pdfi_array_to_gs_rect(pdf_context *ctx, pdf_array *array, gs_rect *rect)
     rect->q.y = 1.0;
 
     /* Identity matrix if no array */
-    if (array == NULL) {
+    if (array == NULL || array->type != PDF_ARRAY) {
         return 0;
     }
     if (pdfi_array_size(array) != 4) {
@@ -313,7 +328,7 @@ int pdfi_array_to_gs_matrix(pdf_context *ctx, pdf_array *array, gs_matrix *mat)
     mat->ty = 0.0;
 
     /* Identity matrix if no array */
-    if (array == NULL) {
+    if (array == NULL || array->type != PDF_ARRAY) {
         return 0;
     }
     if (pdfi_array_size(array) != 6) {

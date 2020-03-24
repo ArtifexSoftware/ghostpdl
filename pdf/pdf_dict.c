@@ -135,6 +135,9 @@ int pdfi_dict_get(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj **o)
 
     *o = NULL;
 
+    if (d->type != PDF_DICT)
+        return_error(gs_error_typecheck);
+
     for (i=0;i< d->entries;i++) {
         t = (pdf_name *)d->keys[i];
 
@@ -168,6 +171,9 @@ int pdfi_dict_get_by_key(pdf_context *ctx, pdf_dict *d, const pdf_name *Key, pdf
     pdf_name *t;
 
     *o = NULL;
+
+    if (d->type != PDF_DICT)
+        return_error(gs_error_typecheck);
 
     for (i=0;i< d->entries;i++) {
         t = (pdf_name *)d->keys[i];
@@ -203,6 +209,9 @@ int pdfi_dict_get_no_store_R(pdf_context *ctx, pdf_dict *d, const char *Key, pdf
     pdf_name *t;
 
     *o = NULL;
+
+    if (d->type != PDF_DICT)
+        return_error(gs_error_typecheck);
 
     for (i=0;i< d->entries;i++) {
         t = (pdf_name *)d->keys[i];
@@ -570,6 +579,9 @@ int pdfi_dict_put_obj(pdf_dict *d, pdf_obj *Key, pdf_obj *value)
     pdf_obj **new_keys, **new_values;
     pdf_name *n;
 
+    if (d->type != PDF_DICT)
+        return_error(gs_error_typecheck);
+
     if (Key->type != PDF_NAME)
         return_error(gs_error_typecheck);
 
@@ -702,6 +714,9 @@ int pdfi_dict_known(pdf_dict *d, const char *Key, bool *known)
     int i;
     pdf_name *t;
 
+    if (d->type != PDF_DICT)
+        return_error(gs_error_typecheck);
+
     *known = false;
     for (i=0;i< d->entries;i++) {
         t = (pdf_name *)d->keys[i];
@@ -789,6 +804,9 @@ int pdfi_dict_known_by_key(pdf_dict *d, pdf_name *Key, bool *known)
     int i;
     pdf_obj *t;
 
+    if (d->type != PDF_DICT)
+        return_error(gs_error_typecheck);
+
     *known = false;
     for (i=0;i< d->entries;i++) {
         t = d->keys[i];
@@ -806,6 +824,9 @@ int pdfi_dict_known_by_key(pdf_dict *d, pdf_name *Key, bool *known)
 int pdfi_dict_next(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, pdf_obj **Value, void *index)
 {
     int code, *i = (int *)index;
+
+    if (d->type != PDF_DICT)
+        return_error(gs_error_typecheck);
 
     if (*i >= d->entries) {
         *Key = NULL;
@@ -872,6 +893,9 @@ bool pdfi_dict_is_stream(pdf_context *ctx, pdf_dict *d)
 {
     int64_t Length = 0;
     int code;
+
+    if (d->type != PDF_DICT)
+        return_error(gs_error_typecheck);
 
     if (d->length_valid)
         goto exit;
