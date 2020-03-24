@@ -485,12 +485,6 @@ currentdict /gput_always_allow .undef
 % Establish a given color (and color space) as current.
 /.settransparencyparams {	% <alpha> <smask> .settransparencyparams -
   PDFusingtransparency {
-    .currentalphaisshape
-    {
-      1 .setopacityalpha  exch .setshapealpha 1
-    } {
-      1 .setshapealpha  exch .setopacityalpha 0
-    } ifelse
       % Set the soft mask by rendering the XObject.  Doing this every time
       % is obviously very inefficient; we'll improve it later.
     .settransparencymask
@@ -673,12 +667,12 @@ end def
   } ifelse
 } bind executeonly def
 
-/OPsaveDstack 6 dict def		% for GroupPushed, saveOP, saveSA, saveBM
+/OPsaveDstack 6 dict def		% for GroupPushed, saveOP, saveFillAlpha, saveBM
 //OPsaveDstack begin
   /GroupPushed //false def
   /ChangeBM //false def
-  /saveOA 1 def
-  /saveSA 1 def
+  /saveStrokeAlpha 1 def
+  /saveFillAlpha 1 def
   /saveBM /Normal def
   /previous 1 dict def		% for nested setup_trans levels
 end
@@ -721,9 +715,9 @@ end
     mark /Subtype /Group /Isolated .currentSMask //null ne .dicttomark
     2 index aload pop		% pathbbox
     .begintransparencygroup
-    % After group pushed, set opacityalpha, shapealpha and blendmode
-    /saveOA .currentstrokeconstantalpha def
-    /saveSA .currentfillconstantalpha def
+    % After group pushed, set alphas and blendmode
+    /saveStrokeAlpha .currentstrokeconstantalpha def
+    /saveFillAlpha .currentfillconstantalpha def
     1 .setfillconstantalpha 1 .setstrokeconstantalpha
     /GroupPushed //true def
   } {
@@ -748,9 +742,9 @@ end
     mark /Subtype /Group /Isolated //true .dicttomark
     2 index aload pop		% pathbbox
     .begintransparencygroup
-    % After group pushed, set opacityalpha, shapealpha and blendmode
-    /saveOA .currentstrokeconstantalpha def
-    /saveSA .currentfillconstantalpha def
+    % After group pushed, set alphas and blendmode
+    /saveStrokeAlpha .currentstrokeconstantalpha def
+    /saveFillAlpha .currentfillconstantalpha def
     1 .setfillconstantalpha 1 .setstrokeconstantalpha
     /GroupPushed //true def
   } {
@@ -766,9 +760,9 @@ end
 /teardown_trans {
   //OPsaveDstack begin
   GroupPushed {
-    % pop the group, then restore the opacityalpha and shapealpha
+    % pop the group, then restore the alphas
     .endtransparencygroup	% end the group
-    saveOA .setstrokeconstantalpha saveSA .setfillconstantalpha
+    saveStrokeAlpha .setstrokeconstantalpha saveFillAlpha .setfillconstantalpha
   } if
   % Also, if we changed the BM, restore it (AFTER the group was popped)
   .currentblendmode /CompatibleOverprint eq {
