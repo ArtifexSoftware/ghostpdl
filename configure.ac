@@ -1252,7 +1252,17 @@ else
           SHARE_LIBPNG=0
           LIBPNGDIR=$srcdir/libpng
           PNGDEVS="$PNGDEVS_ALL"
-  else
+          case $host in
+            *powerpc*)
+                # Building on PPC with gcc, disable libpng's PPC specific
+                # optimizations: we don't include the source file for it
+                # and it only applies to reading, which we don't use.
+                if test $GCC = yes; then
+                  CFLAGS="$CFLAGS -DPNG_POWERPC_VSX_OPT=0"
+                fi
+            ;;
+          esac
+ else
           AC_MSG_RESULT([no])
           AC_CHECK_LIB(png, png_create_write_struct, [
             AC_CHECK_HEADERS(png.h, [
