@@ -526,7 +526,6 @@ int pdfi_close_pdf_file(pdf_context *ctx)
         ctx->main_stream = NULL;
     }
     ctx->main_stream_length = 0;
-    pdfi_free_name_table(ctx);
     return 0;
 }
 
@@ -941,6 +940,8 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
     dmprintf1(ctx->memory, "Normal object cache hit rate: %f\n", hit_rate);
     dmprintf1(ctx->memory, "Compressed object cache hit rate: %f\n", compressed_hit_rate);
 #endif
+    pdfi_free_name_table(ctx);
+
     if (ctx->PageTransparencyArray)
         gs_free_object(ctx->memory, ctx->PageTransparencyArray, "pdfi_free_context");
 
