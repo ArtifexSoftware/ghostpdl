@@ -41,32 +41,6 @@
 
 /* ------ Utilities ------ */
 
-static int
-bogus_set_function(gs_gstate *pgs, double x)
-{
-    return 0;
-}
-
-static float
-bogus_get_function(gs_gstate *pgs)
-{
-    return 0;
-}
-
-static int
-set_float_value(i_ctx_t *i_ctx_p, int (*set_value)(gs_gstate *, double))
-{
-    os_ptr op = osp;
-    double value;
-    int code;
-
-    if (real_param(op, &value) < 0)
-        return_op_typecheck(op);
-    if ((code = set_value(igs, value)) < 0)
-        return code;
-    pop(1);
-    return 0;
-}
 
 static int
 current_float_value(i_ctx_t *i_ctx_p,
@@ -133,34 +107,6 @@ zcurrentblendmode(i_ctx_t *i_ctx_p)
     push(1);
     *op = nref;
     return 0;
-}
-
-/* <0..1> .setopacityalpha - */
-static int
-zsetopacityalpha(i_ctx_t *i_ctx_p)
-{
-    return set_float_value(i_ctx_p, bogus_set_function);
-}
-
-/* - .currentopacityalpha <0..1> */
-static int
-zcurrentopacityalpha(i_ctx_t *i_ctx_p)
-{
-    return current_float_value(i_ctx_p, bogus_get_function);
-}
-
-/* <0..1> .setshapealpha - */
-static int
-zsetshapealpha(i_ctx_t *i_ctx_p)
-{
-    return set_float_value(i_ctx_p, bogus_set_function);
-}
-
-/* - .currentshapealpha <0..1> */
-static int
-zcurrentshapealpha(i_ctx_t *i_ctx_p)
-{
-    return current_float_value(i_ctx_p, bogus_get_function);
 }
 
 /* <bool> .settextknockout - */
@@ -695,10 +641,6 @@ zcurrentSMask(i_ctx_t *i_ctx_p)
 const op_def ztrans1_op_defs[] = {
     {"1.setblendmode", zsetblendmode},
     {"0.currentblendmode", zcurrentblendmode},
-    {"1.setopacityalpha", zsetopacityalpha},
-    {"0.currentopacityalpha", zcurrentopacityalpha},
-    {"1.setshapealpha", zsetshapealpha},
-    {"0.currentshapealpha", zcurrentshapealpha},
     {"1.settextknockout", zsettextknockout},
     {"0.currenttextknockout", zcurrenttextknockout},
     {"0.pushextendedgstate", zpushextendedgstate},
