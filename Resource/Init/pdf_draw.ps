@@ -1477,7 +1477,7 @@ drawopdict begin
 
   /sh {
       OFFlevels length 0 eq {
-        setfillstate resolvesh
+        setsmaskstate resolvesh
         //sh_save 0 save put
         PDFusingtransparency {
           gsave
@@ -2415,8 +2415,8 @@ currentdict /last-ditch-bpc-csp undef
   4 array astore grestore
   /image
   setup_trans
-  { currentdict end setfillstate //true ValidateDecode { imagemask } }
-  { ColorSpace setgcolorspace currentdict end setfillblend //false ValidateDecode { image } }
+  { currentdict end setsmaskstate //true ValidateDecode { imagemask } }
+  { ColorSpace setgcolorspace currentdict end setsmaskstate //false ValidateDecode { image } }
   ifelse
   PDFSTOPONERROR { exec //false } { stopped } ifelse {
     dup type /dicttype eq { pop } if % Sometimes image fails to restore the stack
@@ -2853,7 +2853,7 @@ drawopdict begin
       (               Output may be incorrect.\n) pdfformaterror
       currentdict /qTextSaveMatrix get setmatrix
     } if
-    setfillblend
+    setsmaskstate
     PDFfile fileposition exch                      % pos /Name
 
     % Bug #698226, Acrobat signals an error for recursive XObjects in a PDF file
