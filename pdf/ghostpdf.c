@@ -598,13 +598,10 @@ read_root:
                 if (code < 0)
                     goto exit;
             } else {
-                if (!ctx->repaired) {
-                    code = pdfi_repair_file(ctx);
-                    if (code < 0)
-                        goto exit;
-                    goto read_root;
-                }
-                goto exit;
+                int code1 = pdfi_repair_file(ctx);
+                if (code1 < 0)
+                    goto exit;
+                goto read_root;
             }
         }
     }

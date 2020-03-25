@@ -1983,6 +1983,12 @@ int pdfi_repair_file(pdf_context *ctx)
     uint64_t object_num = 0, generation_num = 0;
     int i;
 
+    if (ctx->repaired) {
+        dmprintf(ctx->memory, "%% Trying to repair file for second time -- unrepairable\n");
+        ctx->pdf_errors |= E_PDF_UNREPAIRABLE;
+        return_error(gs_error_undefined);
+    }
+
     ctx->repaired = true;
     ctx->pdf_errors |= E_PDF_REPAIRED;
 
@@ -2498,21 +2504,13 @@ pdfi_get_child(pdf_context *ctx, pdf_array *Kids, int i, pdf_dict **pchild)
         code = pdfi_dereference(ctx, node->ref_object_num, node->ref_generation_num,
                                 (pdf_obj **)&child);
         if (code < 0) {
-            if (!ctx->repaired) {
-                int code1;
-                code1 = pdfi_repair_file(ctx);
-                if (code1 < 0)
-                    goto errorExit;
-                code = pdfi_dereference(ctx, node->ref_object_num,
-                                        node->ref_generation_num, (pdf_obj **)&child);
-                if (code < 0)
-                    goto errorExit;
-
-            } else {
-                dmprintf(ctx->memory, "%% Trying to repair file for second time -- unrepairable\n");
-                ctx->pdf_errors |= E_PDF_UNREPAIRABLE;
+            int code1 = pdfi_repair_file(ctx);
+            if (code1 < 0)
                 goto errorExit;
-            }
+            code = pdfi_dereference(ctx, node->ref_object_num,
+                                    node->ref_generation_num, (pdf_obj **)&child);
+            if (code < 0)
+                goto errorExit;
         }
         if (child->type != PDF_DICT) {
             code = gs_note_error(gs_error_typecheck);
