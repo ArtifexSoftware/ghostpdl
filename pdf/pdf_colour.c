@@ -331,7 +331,7 @@ static int pdfi_gs_setcmykcolor(pdf_context *ctx, double c, double m, double y, 
     return gs_setcmykcolor(ctx->pgs, c, m, y, k);
 }
 
-static int pdfi_gs_setcolorspace(pdf_context *ctx, gs_color_space *pcs)
+int pdfi_gs_setcolorspace(pdf_context *ctx, gs_color_space *pcs)
 {
     /* PDF Reference 1.7 p423, any colour operators in a CharProc, following a d1, should be ignored */
     if (ctx->inside_CharProc && ctx->CharProc_is_d1)

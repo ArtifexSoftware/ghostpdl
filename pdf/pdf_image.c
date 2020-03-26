@@ -1229,6 +1229,13 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     if (code < 0)
         goto cleanupExit;
 
+    /* Set the colorspace */
+    if (pcs) {
+        code = pdfi_gs_setcolorspace(ctx, pcs);
+        if (code < 0)
+            goto cleanupExit;
+    }
+
     if (ctx->page_has_transparency && image_info.is_JPXDecode && image_info.SMaskInData != 0) {
         code = pdfi_make_smask_dict(ctx, image_dict, &image_info, comps);
         if (code < 0)

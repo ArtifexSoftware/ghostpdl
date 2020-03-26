@@ -61,7 +61,7 @@ gs_color_space_index pdfi_get_color_space_index(pdf_context *ctx, const gs_color
      * spaces. If so then we will want to behave as if we were using the
      * device space.
      */
-    if (csi == gs_color_space_index_ICC)
+    if (csi == gs_color_space_index_ICC && pcs->cmm_icc_profile_data)
         csi = gsicc_get_default_type(pcs->cmm_icc_profile_data);
 
     return csi;
