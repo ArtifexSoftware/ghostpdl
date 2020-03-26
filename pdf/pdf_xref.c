@@ -132,6 +132,8 @@ static int read_xref_stream_entries(pdf_context *ctx, pdf_stream *s, uint64_t fi
     return 0;
 }
 
+/* Forward definition */
+static int read_xref(pdf_context *ctx, pdf_stream *s);
 /* These two routines are recursive.... */
 static int pdfi_read_xref_stream_dict(pdf_context *ctx, pdf_stream *s);
 
@@ -324,7 +326,12 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_dict *d, pdf_stream *s
     if (code < 0)
         return code;
 
-    code = pdfi_read_xref_stream_dict(ctx, s);
+    if (((pdf_obj *)ctx->stack_top[-1])->type == PDF_KEYWORD && ((pdf_keyword *)ctx->stack_top[-1])->key == PDF_XREF) {
+        /* Read old-style xref table */
+        pdfi_pop(ctx, 1);
+        return(read_xref(ctx, ctx->main_stream));
+    } else
+        code = pdfi_read_xref_stream_dict(ctx, s);
 
     return code;
 }
@@ -795,6 +802,8 @@ static int read_xref(pdf_context *ctx, pdf_stream *s)
             if (code < 0)
                 return code;
         }
+
+        pdfi_loop_detector_mark(ctx);
         /* Because of the way the code works when we read a file which is a pure
          * xref stream file, we need to read the first integer of 'x y obj'
          * because the xref stream decoding code expects that to be on the stack.
@@ -802,12 +811,18 @@ static int read_xref(pdf_context *ctx, pdf_stream *s)
         pdfi_seek(ctx, s, num, SEEK_SET);
 
         code = pdfi_read_token(ctx, ctx->main_stream);
-        if (code < 0)
+        if (code < 0) {
+            pdfi_loop_detector_cleartomark(ctx);
             return code;
+        }
 
         code = pdfi_read_xref_stream_dict(ctx, ctx->main_stream);
-        if (code < 0)
+        if (code < 0) {
+            pdfi_loop_detector_cleartomark(ctx);
             return code;
+        }
+
+        pdfi_loop_detector_cleartomark(ctx);
     }
 
     /* Not a hybrid file, so now check if this is a modified file and has
