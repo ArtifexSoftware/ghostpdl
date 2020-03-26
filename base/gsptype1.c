@@ -2129,6 +2129,8 @@ gx_dc_pattern_read(
             if (ptile->id != buf.id)
                 return_error(gs_error_unregistered);	/* can't unlock some other tile in this slot */
             code = gx_pattern_cache_entry_set_lock(pgs, buf.id, false);        /* make sure not locked */
+            if (code < 0)
+                return code;	/* can't happen since we call ensure_space above, but Coverity doesn't know that */
         }
         /* get_entry will free the tile in the cache slot if it isn't empty */
         code = gx_pattern_cache_get_entry((gs_gstate *)pgs, /* Break 'const'. */
