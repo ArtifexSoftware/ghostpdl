@@ -7,7 +7,7 @@ use Data::Dumper;
 
 my $verbose=0;
 
-# bmpcmp usage: [gs] [pcl] [xps] [mupdf] [mujstest] [bmpcmp] [arm] [lowres] [highres] [32] [pdfwrite] [ps2write] [xpswrite] [nopdfwrite] [relaxtimeout] [extended] [smoke] [cull] [avx2] [$user] | abort
+# bmpcmp usage: [gs] [pcl] [xps] [mupdf] [mujstest] [murun] [bmpcmp] [arm] [lowres] [highres] [32] [pdfwrite] [ps2write] [xpswrite] [nopdfwrite] [relaxtimeout] [extended] [smoke] [cull] [avx2] [$user] | abort
 
 
 
@@ -22,7 +22,8 @@ my %products=('abort' =>1,
               'gpdf'=>1,
               'gpdl'=>1,
               'mupdf'=>1,
-              'mujstest'=>1);
+              'mujstest'=>1,
+              'murun'=>1);
 
 my $user;
 my $product="";
