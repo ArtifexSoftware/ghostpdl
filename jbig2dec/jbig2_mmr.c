@@ -45,6 +45,7 @@ typedef struct {
     uint32_t height;
     const byte *data;
     size_t size;
+    size_t consumed_bits;
     uint32_t data_index;
     uint32_t bit_index;
     uint32_t word;
@@ -58,30 +59,34 @@ typedef struct {
 static void
 jbig2_decode_mmr_init(Jbig2MmrCtx *mmr, int width, int height, const byte *data, size_t size)
 {
-    size_t i;
-    uint32_t word = 0;
-
     mmr->width = width;
     mmr->height = height;
     mmr->data = data;
     mmr->size = size;
     mmr->data_index = 0;
-    mmr->bit_index = 0;
+    mmr->bit_index = 32;
+    mmr->word = 0;
+    mmr->consumed_bits = 0;
 
-    for (i = 0; i < size && i < 4; i++)
-        word |= (data[i] << ((3 - i) << 3));
-    mmr->word = word;
+    while (mmr->bit_index >= 8 && mmr->data_index < mmr->size) {
+        mmr->bit_index -= 8;
+        mmr->word |= (mmr->data[mmr->data_index] << mmr->bit_index);
+        mmr->data_index++;
+    }
 }
 
 static void
 jbig2_decode_mmr_consume(Jbig2MmrCtx *mmr, int n_bits)
 {
+    mmr->consumed_bits += n_bits;
+    if (mmr->consumed_bits > mmr->size * 8)
+        mmr->consumed_bits = mmr->size * 8;
+
     mmr->word <<= n_bits;
     mmr->bit_index += n_bits;
-    while (mmr->bit_index >= 8) {
+    while (mmr->bit_index >= 8 && mmr->data_index < mmr->size) {
         mmr->bit_index -= 8;
-        if (mmr->data_index + 4 < mmr->size)
-            mmr->word |= (mmr->data[mmr->data_index + 4] << mmr->bit_index);
+        mmr->word |= (mmr->data[mmr->data_index] << mmr->bit_index);
         mmr->data_index++;
     }
 }
@@ -1259,6 +1264,6 @@ jbig2_decode_halftone_mmr(Jbig2Ctx *ctx, const Jbig2GenericRegionParams *params,
         jbig2_decode_mmr_consume(&mmr, 24);
     }
 
-    *consumed_bytes += mmr.data_index + (mmr.bit_index >> 3) + (mmr.bit_index > 0 ? 1 : 0);
+    *consumed_bytes += (mmr.consumed_bits + 7) / 8;
     return code;
 }
