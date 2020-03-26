@@ -594,8 +594,10 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
     const Jbig2HuffmanParams *huffman_params = NULL;
 
     /* 7.4.1 */
-    if (segment->data_length < 17)
-        goto too_short;
+    if (segment->data_length < 17) {
+        code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "segment too short");
+        goto cleanup2;
+    }
     jbig2_get_region_segment_info(&region_info, segment_data);
     offset += 17;
     /* Check for T.88 amendment 3 */
@@ -603,8 +605,10 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
         return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "region segment flags indicate use of colored bitmap (NYI)");
 
     /* 7.4.3.1.1 */
-    if (segment->data_length - offset < 2)
-        goto too_short;
+    if (segment->data_length - offset < 2) {
+        code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "segment too short");
+        goto cleanup2;
+    }
     flags = jbig2_get_uint16(segment_data + offset);
     offset += 2;
 
@@ -633,8 +637,10 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
 
     if (params.SBHUFF) {        /* Huffman coding */
         /* 7.4.3.1.2 */
-        if (segment->data_length - offset < 2)
-            goto too_short;
+        if (segment->data_length - offset < 2) {
+            code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "segment too short");
+            goto cleanup2;
+        }
         huffman_flags = jbig2_get_uint16(segment_data + offset);
         offset += 2;
 
@@ -643,8 +649,10 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
     } else {                    /* arithmetic coding */
 
         /* 7.4.3.1.3 */
-        if (segment->data_length - offset < 4)
-            goto too_short;
+        if (segment->data_length - offset < 4) {
+            code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "segment too short");
+            goto cleanup2;
+        }
         if ((params.SBREFINE) && !(params.SBRTEMPLATE)) {
             params.sbrat[0] = segment_data[offset];
             params.sbrat[1] = segment_data[offset + 1];
@@ -655,8 +663,10 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
     }
 
     /* 7.4.3.1.4 */
-    if (segment->data_length - offset < 4)
-        goto too_short;
+    if (segment->data_length - offset < 4) {
+        code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "segment too short");
+        goto cleanup2;
+    }
     params.SBNUMINSTANCES = jbig2_get_uint32(segment_data + offset);
     offset += 4;
 
@@ -922,8 +932,10 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
         goto cleanup2;
     }
 
-    if (offset >= segment->data_length)
-        goto too_short;
+    if (offset >= segment->data_length) {
+        code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "segment too short");
+        goto cleanup2;
+    }
     ws = jbig2_word_stream_buf_new(ctx, segment_data + offset, segment->data_length - offset);
     if (ws == NULL) {
         code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate word stream when handling text region image");
@@ -1028,7 +1040,4 @@ cleanup1:
     jbig2_free(ctx->allocator, dicts);
 
     return code;
-
-too_short:
-    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "segment too short");
 }
