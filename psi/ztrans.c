@@ -41,20 +41,6 @@
 
 /* ------ Utilities ------ */
 
-static int
-set_float_value(i_ctx_t *i_ctx_p, int (*set_value)(gs_gstate *, double))
-{
-    os_ptr op = osp;
-    double value;
-    int code;
-
-    if (real_param(op, &value) < 0)
-        return_op_typecheck(op);
-    if ((code = set_value(igs, value)) < 0)
-        return code;
-    pop(1);
-    return 0;
-}
 
 static int
 current_float_value(i_ctx_t *i_ctx_p,
@@ -123,34 +109,6 @@ zcurrentblendmode(i_ctx_t *i_ctx_p)
     return 0;
 }
 
-/* <0..1> .setopacityalpha - */
-static int
-zsetopacityalpha(i_ctx_t *i_ctx_p)
-{
-    return set_float_value(i_ctx_p, gs_setopacityalpha);
-}
-
-/* - .currentopacityalpha <0..1> */
-static int
-zcurrentopacityalpha(i_ctx_t *i_ctx_p)
-{
-    return current_float_value(i_ctx_p, gs_currentopacityalpha);
-}
-
-/* <0..1> .setshapealpha - */
-static int
-zsetshapealpha(i_ctx_t *i_ctx_p)
-{
-    return set_float_value(i_ctx_p, gs_setshapealpha);
-}
-
-/* - .currentshapealpha <0..1> */
-static int
-zcurrentshapealpha(i_ctx_t *i_ctx_p)
-{
-    return current_float_value(i_ctx_p, gs_currentshapealpha);
-}
-
 /* <bool> .settextknockout - */
 static int
 zsettextknockout(i_ctx_t *i_ctx_p)
@@ -216,7 +174,7 @@ static int common_transparency_group(i_ctx_t *i_ctx_p, pdf14_compositor_operatio
 
     check_type(*dop, t_dictionary);
     check_dict_read(*dop);
-    gs_trans_group_params_init(&params);
+    gs_trans_group_params_init(&params, 1.0);
     if ((code = dict_bool_param(dop, "Isolated", false, &params.Isolated)) < 0 ||
         (code = dict_bool_param(dop, "Knockout", false, &params.Knockout)) < 0 ||
         (code = dict_bool_param(dop, ".image_with_SMask", false, &params.image_with_SMask)) < 0
@@ -245,6 +203,15 @@ static int common_transparency_group(i_ctx_t *i_ctx_p, pdf14_compositor_operatio
                 params.ColorSpace = NULL;
         }
     }
+
+    if (gs_getalphaisshape(igs)) {
+        params.group_shape = gs_getfillconstantalpha(igs);
+        params.group_opacity = 1.0;
+    } else {
+        params.group_opacity = gs_getfillconstantalpha(igs);
+        params.group_shape = 1.0;
+    }
+
     code = gs_begin_transparency_group(igs, &params, &bbox, group_type);
     if (code < 0)
         return code;
@@ -674,10 +641,6 @@ zcurrentSMask(i_ctx_t *i_ctx_p)
 const op_def ztrans1_op_defs[] = {
     {"1.setblendmode", zsetblendmode},
     {"0.currentblendmode", zcurrentblendmode},
-    {"1.setopacityalpha", zsetopacityalpha},
-    {"0.currentopacityalpha", zcurrentopacityalpha},
-    {"1.setshapealpha", zsetshapealpha},
-    {"0.currentshapealpha", zcurrentshapealpha},
     {"1.settextknockout", zsettextknockout},
     {"0.currenttextknockout", zcurrenttextknockout},
     {"0.pushextendedgstate", zpushextendedgstate},

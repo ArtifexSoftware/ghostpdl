@@ -999,7 +999,7 @@ xps_parse_gradient_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dic
             }
             gs_end_transparency_mask(ctx->pgs, TRANSPARENCY_CHANNEL_Opacity);
 
-            gs_trans_group_params_init(&tgp);
+            gs_trans_group_params_init(&tgp, 1.0);
             gs_begin_transparency_group(ctx->pgs, &tgp, &bbox, PDF14_BEGIN_TRANS_GROUP);
             code = draw(ctx, root, spread_method, color_func);
             if (code)

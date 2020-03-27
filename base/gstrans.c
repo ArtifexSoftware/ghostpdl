@@ -65,34 +65,6 @@ gs_currentblendmode(const gs_gstate *pgs)
 }
 
 int
-gs_setopacityalpha(gs_gstate *pgs, double alpha)
-{
-    if_debug2m('v', pgs->memory, "[v]("PRI_INTPTR")opacity.alpha = %g\n", (intptr_t)pgs, alpha);
-    pgs->opacity.alpha = (alpha < 0.0 ? 0.0 : alpha > 1.0 ? 1.0 : alpha);
-    return 0;
-}
-
-float
-gs_currentopacityalpha(const gs_gstate *pgs)
-{
-    return pgs->opacity.alpha;
-}
-
-int
-gs_setshapealpha(gs_gstate *pgs, double alpha)
-{
-    if_debug2m('v', pgs->memory, "[v]("PRI_INTPTR")shape.alpha = %g\n", (intptr_t)pgs, alpha);
-    pgs->shape.alpha = (alpha < 0.0 ? 0.0 : alpha > 1.0 ? 1.0 : alpha);
-    return 0;
-}
-
-float
-gs_currentshapealpha(const gs_gstate *pgs)
-{
-    return pgs->shape.alpha;
-}
-
-int
 gs_settextknockout(gs_gstate *pgs, bool knockout)
 {
     if_debug2m('v', pgs->memory, "[v]("PRI_INTPTR")text_knockout = %s\n",
@@ -193,7 +165,7 @@ gs_gstate_update_pdf14trans(gs_gstate * pgs, gs_pdf14trans_params_t * pparams)
 }
 
 void
-gs_trans_group_params_init(gs_transparency_group_params_t *ptgp)
+gs_trans_group_params_init(gs_transparency_group_params_t *ptgp, float opacity)
 {
     ptgp->ColorSpace = NULL;    /* bogus, but can't do better */
     ptgp->Isolated = false;
@@ -202,6 +174,8 @@ gs_trans_group_params_init(gs_transparency_group_params_t *ptgp)
     ptgp->image_with_SMask = false;
     ptgp->mask_id = 0;
     ptgp->iccprofile = NULL;
+    ptgp->group_opacity = opacity;
+    ptgp->group_shape = 1.0;
 }
 
 int
@@ -236,10 +210,11 @@ gs_begin_transparency_group(gs_gstate *pgs,
     params.Isolated = ptgp->Isolated;
     params.Knockout = ptgp->Knockout;
     params.image_with_SMask = ptgp->image_with_SMask;
-    params.opacity = pgs->opacity;
-    params.shape = pgs->shape;
+    params.opacity = ptgp->group_opacity;
+    params.shape = ptgp->group_shape;
     params.blend_mode = pgs->blend_mode;
     params.text_group = ptgp->text_group;
+
     /* This function is called during the c-list writer side.
        Store some information so that we know what the color space is
        so that we can adjust according later during the clist reader.
@@ -361,8 +336,9 @@ gx_begin_transparency_group(gs_gstate * pgs, gx_device * pdev,
     tgp.iccprofile = pparams->iccprofile;
     tgp.icc_hashcode = pparams->icc_hash;
 
-    pgs->opacity.alpha = pparams->opacity.alpha;
-    pgs->shape.alpha = pparams->shape.alpha;
+    tgp.group_opacity = pparams->opacity;
+    tgp.group_shape = pparams->shape;
+
     pgs->blend_mode = pparams->blend_mode;
     bbox = pparams->bbox;
 #ifdef DEBUG
@@ -373,6 +349,7 @@ gx_begin_transparency_group(gs_gstate * pgs, gx_device * pdev,
         dmlprintf6(pdev->memory, "[v]("PRI_INTPTR")gx_begin_transparency_group [%g %g %g %g] Num_grp_clr_comp = %d\n",
                    (intptr_t)pgs, bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y,
                    pparams->group_color_numcomps);
+        dmlprintf2(pdev->memory, "     opacity = %g shape = %g\n", pparams->opacity, pparams->shape);
         if (tgp.ColorSpace)
             dmprintf1(pdev->memory, "     CS = %s",
                 cs_names[(int)gs_color_space_get_index(tgp.ColorSpace)]);
@@ -382,6 +359,7 @@ gx_begin_transparency_group(gs_gstate * pgs, gx_device * pdev,
                  tgp.Isolated, tgp.Knockout);
         if (tgp.iccprofile)
             dmprintf(pdev->memory, "     Have ICC Profile for blending\n");
+
     }
 #endif
     return (*dev_proc(pdev, begin_transparency_group)) (pdev, &tgp, &bbox, pgs,

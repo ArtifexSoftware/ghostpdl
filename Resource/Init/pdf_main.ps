@@ -3627,20 +3627,20 @@ end			% pdfdict
 
 % The following are split out allowing control via ALLOWPSTRANSPARENCY command line param
 [
-  /.currentblendmode /.currentopacityalpha /.currentshapealpha /.currenttextknockout /.begintransparencytextgroup
+  /.currentblendmode /.currenttextknockout /.begintransparencytextgroup
   /.endtransparencytextgroup /.begintransparencymaskgroup /.begintransparencymaskimage /.begintransparencypagegroup
-  /.endtransparencymask /.image3x /.abortpdf14devicefilter /.setfillconstantalpha /.setalphaisshape /.currentalphaisshape
+  /.endtransparencymask /.image3x /.abortpdf14devicefilter /.setstrokeconstantalpha /.setfillconstantalpha /.setalphaisshape /.currentalphaisshape
 
   % Used by our own test suite files
   %/.pushpdf14devicefilter    % transparency-example.ps
   %/.poppdf14devicefilter     % transparency-example.ps
-  %/.setopacityalpha          % transparency-example.ps
-  %/.setshapealpha            % transparency-example.ps
+  %/.setstrokeconstantalpha          % transparency-example.ps
+  %/.setfillconstantalpha            % transparency-example.ps
   %/.endtransparencygroup     % transparency-example.ps
 
   % undefining these causes errors/incorrect output
   %/.setblendmode /.begintransparencygroup /.settextknockout /.setstrokeoverprint /.setfilloverprint
   %/.currentstrokeoverprint /.currentfilloverprint /.currentfillconstantalpha /.currentstrokeconstantalpha
-  %/.setstrokeconstantalpha /.setfillconstantalpha /.setSMask /.currentSMask
+  %/.setSMask /.currentSMask
 
 ] systemdict dup /ALLOWPSTRANSPARENCY get {pop pop}{.undefinternalnames}ifelse

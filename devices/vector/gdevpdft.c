@@ -274,7 +274,7 @@ pdf_begin_transparency_mask(gs_gstate * pgs, gx_device_pdf * pdev,
                                 const gs_pdf14trans_params_t * pparams)
 {
     if (pparams->subtype == TRANSPARENCY_MASK_None) {
-        int code, id = pgs->soft_mask_id;
+        int code;
         pdf_resource_t *pres = 0L;
 
         /* reset the soft mask ID. Apparently this is only used by pdfwrite, if we don't
@@ -284,10 +284,11 @@ pdf_begin_transparency_mask(gs_gstate * pgs, gx_device_pdf * pdev,
         pgs->soft_mask_id = 0;
         code = pdf_prepare_drawing(pdev, pgs, &pres, false);
         if (code == gs_error_interrupt) {
-            /* Not in an appropriate context, ignore it but restore
-             * the old soft_mask_id. Not sure this is correct, but it works for now.
+            /* */
+            /* Not in an appropriate context.  Do not restore the soft_mask_id.
+               Otherwise any group push that occurs following this will use that
+               softmask, which clearly should be NONE here.
              */
-            pgs->soft_mask_id = id;
             /* ignore return code, we don't care about this graphics state as we aren't
              * emitting it anyway
              */

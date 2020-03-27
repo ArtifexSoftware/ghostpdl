@@ -137,6 +137,7 @@ struct pdf14_buf_s {
     bool isolated;
     bool knockout;
     uint16_t alpha;
+    uint16_t opacity;
     uint16_t shape;
     gs_blend_mode_t blend_mode;
     int num_spots;  /* helpful when going between Gray+spots, RGB+spots, CMYK+spots */
@@ -208,6 +209,7 @@ typedef struct pdf14_device_s {
 
     pdf14_ctx *ctx;
     pdf14_smaskcolor_t *smaskcolor;
+    bool ais;
     float opacity;
     float shape;
     float alpha; /* alpha = opacity * shape */

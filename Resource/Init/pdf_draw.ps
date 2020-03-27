@@ -749,7 +749,6 @@ def
   /GroupGState .knownget { setgstate } if
 
   newpath //null SMask
-  1 .setopacityalpha 1 .setshapealpha
   1 CA 1 ca
   /Compatible .setblendmode
         % Execute the body of the Form, similar to DoForm.
@@ -1478,7 +1477,7 @@ drawopdict begin
 
   /sh {
       OFFlevels length 0 eq {
-        setfillstate resolvesh
+        setsmaskstate resolvesh
         //sh_save 0 save put
         PDFusingtransparency {
           gsave
@@ -2292,7 +2291,6 @@ currentdict /last-ditch-bpc-csp undef
       PDFfile fileposition exch
       gsave //nodict begin
       //null .setSMask
-      1 .setopacityalpha 1 .setshapealpha
       1 CA 1 ca
       /Compatible .setblendmode
       DoImage
@@ -2311,11 +2309,10 @@ currentdict /last-ditch-bpc-csp undef
          currentdict /SMask get /Matte known {/CS currentdict /ColorSpace get dup pdfopdict /cs get exec } if
       >> 0 0 1 1
       .begintransparencygroup
-      .currentstrokeconstantalpha .currentfillconstantalpha .currentshapealpha .currentopacityalpha 5 -1 roll
+      .currentstrokeconstantalpha .currentfillconstantalpha 3 -1 roll
       1 .setfillconstantalpha 1 .setstrokeconstantalpha
-      1 .setopacityalpha 1 .setshapealpha
       doimage
-      .setopacityalpha .setshapealpha .setfillconstantalpha .setstrokeconstantalpha
+      .setfillconstantalpha .setstrokeconstantalpha
       .endtransparencygroup
       % tell the compositor we're done with the SMask.
       % Note that any SMask in the ExtGState should be reapplied
@@ -2328,10 +2325,10 @@ currentdict /last-ditch-bpc-csp undef
         % the image doesn't have an SMask, but the ExtGState does, force a group.
         << /Subtype /Group /Isolated //true >> 0 0 1 1
         .begintransparencygroup
-        .currentstrokeconstantalpha .currentfillconstantalpha .currentshapealpha .currentopacityalpha 5 -1 roll
-        1 .setopacityalpha 1 .setshapealpha
+        .currentstrokeconstantalpha .currentfillconstantalpha 3 -1 roll
+        1 .setfillconstantalpha 1 .setstrokeconstantalpha
         doimage
-        .setopacityalpha .setshapealpha .setfillconstantalpha .setstrokeconstantalpha
+        .setfillconstantalpha .setstrokeconstantalpha
         .endtransparencygroup
       } {
         doimage
@@ -2418,8 +2415,8 @@ currentdict /last-ditch-bpc-csp undef
   4 array astore grestore
   /image
   setup_trans
-  { currentdict end setfillstate //true ValidateDecode { imagemask } }
-  { ColorSpace setgcolorspace currentdict end setfillblend //false ValidateDecode { image } }
+  { currentdict end setsmaskstate //true ValidateDecode { imagemask } }
+  { ColorSpace setgcolorspace currentdict end setsmaskstate //false ValidateDecode { image } }
   ifelse
   PDFSTOPONERROR { exec //false } { stopped } ifelse {
     dup type /dicttype eq { pop } if % Sometimes image fails to restore the stack
@@ -2856,7 +2853,7 @@ drawopdict begin
       (               Output may be incorrect.\n) pdfformaterror
       currentdict /qTextSaveMatrix get setmatrix
     } if
-    setfillblend
+    setsmaskstate
     PDFfile fileposition exch                      % pos /Name
 
     % Bug #698226, Acrobat signals an error for recursive XObjects in a PDF file
@@ -3274,7 +3271,7 @@ end
       {} 2 index /S knownoget {
         /D eq { 2 index /D knownoget not { {3} } if exch pop } if
       } if
-      3 index /CA knownoget {.setopacityalpha} if
+      3 index /CA knownoget {dup .setstrokeconstantalpha .setfillconstantalpha} if
       3 -1 roll pop
 %      2 index annotsetcolor {
       0 setdash setlinewidth stroke
@@ -3284,7 +3281,7 @@ end
       % If element 3 of the /Border array is 0, then don't draw the border
       dup 0 ne {
         exch dup length 3 gt { 3 get } { pop {} } ifelse
-        3 index /CA knownoget {.setopacityalpha} if
+        3 index /CA knownoget {dup .setstrokeconstantalpha .setfillconstantalpha} if
 %        2 index annotsetcolor {
         0 setdash setlinewidth stroke
 %        } if
@@ -3293,7 +3290,7 @@ end
       } ifelse
     } ifelse
   } {
-    3 index /CA knownoget {.setopacityalpha} if
+    3 index /CA knownoget {dup .setstrokeconstantalpha .setfillconstantalpha} if
     1 {}
 %    2 index annotsetcolor {
     0 setdash setlinewidth stroke
@@ -3305,7 +3302,7 @@ end
 
 /fillborderpath {		% <annot> fillborderpath -
   gsave
-  dup /ca knownoget {.setopacityalpha} if
+  dup /ca knownoget {dup .setstrokeconstantalpha .setfillconstantalpha} if
   annotsetinteriorcolor
   {fill} if
   grestore
@@ -3782,14 +3779,14 @@ currentdict /set_bc_color undef
       annotsetinteriorcolor
       {
         gsave
-        dup /ca knownoget {.setopacityalpha} if
+        dup /ca knownoget {dup .setstrokeconstantalpha .setfillconstantalpha} if
         dup annotrect
         5 index /RD knownoget {
           applyRD
         } if
         rectfill
         grestore
-        dup /CA knownoget {.setopacityalpha} if
+        dup /CA knownoget {dup .setstrokeconstantalpha .setfillconstantalpha} if
         dup annotsetcolor {
           drawborder
         } if
@@ -3891,10 +3888,10 @@ currentdict /set_bc_color undef
 
       {
         gsave
-        dup /ca knownoget {.setopacityalpha} if
+        dup /ca knownoget {dup .setstrokeconstantalpha .setfillconstantalpha} if
         fill
         grestore
-        dup /CA knownoget {.setopacityalpha} if
+        dup /CA knownoget {dup .setstrokeconstantalpha .setfillconstantalpha} if
         dup annotsetcolor {
           strokeborderpath
         } if
@@ -3930,7 +3927,7 @@ currentdict /set_bc_color undef
       dup 1 index exch lineto
       dup neg lineto
       closepath
-      1 index /CA knownoget {.setopacityalpha} if
+      1 index /CA knownoget {dup .setstrokeconstantalpha .setfillconstantalpha} if
       1 index fillborderpath
       grestore
       3 mul
@@ -3956,7 +3953,7 @@ currentdict /set_bc_color undef
       2.5 mul dup
       0 moveto
       0 0 3 -1 roll 0 360 arc
-      1 index /CA knownoget {.setopacityalpha} if
+      1 index /CA knownoget {dup .setstrokeconstantalpha .setfillconstantalpha} if
       1 index fillborderpath
       grestore
       3 mul dup
@@ -3981,7 +3978,7 @@ currentdict /set_bc_color undef
       dup 0 exch lineto
       0 lineto
       closepath
-      1 index /CA knownoget {.setopacityalpha} if
+      1 index /CA knownoget {dup .setstrokeconstantalpha .setfillconstantalpha} if
       1 index fillborderpath
       grestore
       3 mul
@@ -4031,7 +4028,7 @@ currentdict /set_bc_color undef
       dup 2 div sub
       dup 8.4 mul neg 1 index 5.9 mul neg moveto dup 1.2 div neg 0 lineto
       dup 8.4 mul neg exch 5.9 mul lineto closepath
-      dup /CA knownoget {.setopacityalpha} if
+      dup /CA knownoget {dup .setstrokeconstantalpha .setfillconstantalpha} if
       fillborderpath
       grestore
     } bind executeonly def
@@ -4090,7 +4087,7 @@ currentdict /set_bc_color undef
       dup 2 div sub
       dup 8.4 mul neg 1 index 5.9 mul neg moveto dup 1.2 div neg 0 lineto
       dup 8.4 mul neg exch 5.9 mul lineto closepath
-      dup /CA knownoget {.setopacityalpha} if
+      dup /CA knownoget {dup .setstrokeconstantalpha .setfillconstantalpha} if
       fillborderpath
       grestore
     } bind executeonly def
@@ -4554,11 +4551,11 @@ currentdict /set_bc_color undef
       dup annotrect rectclip
 
       dup /CA knownoget {
-        .setopacityalpha
+        dup .setstrokeconstantalpha .setfillconstantalpha
       } if
 
       dup /ca knownoget {
-        .setopacityalpha
+        dup .setstrokeconstantalpha .setfillconstantalpha
       } if
 
       dup /C knownoget {

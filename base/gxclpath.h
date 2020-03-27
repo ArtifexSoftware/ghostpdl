@@ -37,9 +37,9 @@
 /* segment_notes must fit in the first byte (i.e. be less than 1<<7). */
 #define segment_notes_known	(1<<6) /* not used in pcls->known */
 /* (flags beyond this point require an extra byte) */
-#define opacity_alpha_known	(1<<7)
-#define shape_alpha_known	(1<<8)
-#define alpha_known		(1<<9)
+#define ais_known	(1<<7)
+#define stroke_alpha_known	(1<<8)
+#define fill_alpha_known		(1<<9)
 #define misc2_all_known		((1<<10)-1)
 /* End of misc2 flags. */
 /* The following bits don't get passed in misc2, so are only limited by sizeof uint */
