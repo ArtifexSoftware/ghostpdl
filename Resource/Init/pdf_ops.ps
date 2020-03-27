@@ -923,7 +923,7 @@ currentdict dup /Dpush .undef /Dpop .undef
 
 /B {
   OFFlevels length 0 eq {
-    setsmaskstate setsmaskstate /.fillstroke fsexec
+    setsmaskstate /.fillstroke fsexec
   } {
     newpath
   } ifelse
@@ -933,7 +933,7 @@ currentdict dup /Dpush .undef /Dpop .undef
 
 /B* {
   OFFlevels length 0 eq {
-    setsmaskstate setsmaskstate /.eofillstroke fsexec
+    setsmaskstate /.eofillstroke fsexec
   } {
     newpath
   } ifelse
@@ -1542,7 +1542,7 @@ currentdict /clip_if_required .undef
             % we can ignore it. (wrong answer, but consistent)
             pop pop currentlinewidth
           }ifelse setlinewidth
-          setsmaskstate setsmaskstate dup show grestore
+          setsmaskstate dup show grestore
           //true charpath} bind executeonly
         % Tr 7 - Add to clip
         { //true charpath} bind executeonly
