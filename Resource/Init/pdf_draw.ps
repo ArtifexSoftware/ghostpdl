@@ -2676,6 +2676,38 @@ pdfdict
   pop
   /pdfemptycount exch store
 
+  % We've now seen Form XObjects leaving junk on the stack, so we
+  % can't assume that when we finish the form the stack will be restored
+  % nor can we assume that the junk won't include a 'mark' so we an't
+  % simply do a cleartomark. Instead clear the stack until we get back
+  % to a dictionary which contains /saved_DG. We can still get errors;
+  % if the stream removes too many objects from the stack we will end
+  % up with a stackunderflow, but there's nothing we can do about that.
+  dup type /dicttype eq not {
+    //true
+  } {
+    dup /saved_DG known {
+      //false
+    } {
+      //true
+    } ifelse
+  } ifelse
+  {
+    (   **** Error: Form stream left garbage on the stack, attempting to recover.\n) pdfformaterror
+    (               Output may be incorrect.\n) pdfformaterror
+    {
+      dup type /dicttype eq not {
+        pop
+      } {
+        dup /saved_DG known {
+          exit
+        } {
+          pop
+        } ifelse
+      } ifelse
+    } loop
+  } if
+
   %% Put back pre-existing Default* ColorSpace definitions.
     dup type /dicttype eq {
     begin
