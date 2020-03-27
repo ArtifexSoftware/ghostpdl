@@ -2902,7 +2902,7 @@ template_compose_group(byte *gs_restrict tos_ptr, bool tos_isolated,
     int first_blend_spot = n_chan;
     bool has_mask2 = has_mask;
     byte *gs_restrict dst;
-    byte global_shape = (byte)(255 * pdev->shape + 0.5);
+    byte group_shape = (byte)(255 * pdev->shape + 0.5);
 
     if (!nos_knockout && num_spots > 0 && !blend_valid_for_spot(blend_mode)) {
         first_blend_spot = first_spot;
@@ -3054,7 +3054,7 @@ template_compose_group(byte *gs_restrict tos_ptr, bool tos_isolated,
             if (nos_shape_offset && pix_alpha != 0) {
                 nos_ptr[nos_shape_offset] =
                     art_pdf_union_mul_8(nos_ptr[nos_shape_offset],
-                                        has_alpha ? tos_ptr[tos_shape_offset] : global_shape,
+                                        has_alpha ? tos_ptr[tos_shape_offset] : group_shape,
                                         shape);
             }
             if (dst)
@@ -3655,7 +3655,7 @@ template_compose_group16(uint16_t *gs_restrict tos_ptr, bool tos_isolated,
     int first_blend_spot = n_chan;
     bool has_mask2 = has_mask;
     uint16_t *gs_restrict dst;
-    uint16_t global_shape = (uint16_t)(65535 * pdev->shape + 0.5);
+    uint16_t group_shape = (uint16_t)(65535 * pdev->shape + 0.5);
 
     if (!nos_knockout && num_spots > 0 && !blend_valid_for_spot(blend_mode)) {
         first_blend_spot = first_spot;
@@ -3819,7 +3819,7 @@ template_compose_group16(uint16_t *gs_restrict tos_ptr, bool tos_isolated,
             if (nos_shape_offset && pix_alpha != 0) {
                 nos_ptr[nos_shape_offset] =
                     art_pdf_union_mul_16(nos_ptr[nos_shape_offset],
-                                         has_alpha ? GET16_2NATIVE(tos_is_be, tos_ptr[tos_shape_offset]) : global_shape,
+                                         has_alpha ? GET16_2NATIVE(tos_is_be, tos_ptr[tos_shape_offset]) : group_shape,
                                          shape);
             }
             if (dst)

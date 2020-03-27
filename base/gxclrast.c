@@ -2753,17 +2753,17 @@ read_set_misc2(command_buf_t *pcb, gs_gstate *pgs, segment_notes *pnotes)
         *pnotes = (segment_notes)(cb & 0x3f);
         if_debug1m('L', pgs->memory, " notes=%d\n", *pnotes);
     }
-    if (mask & opacity_alpha_known) {
-        cmd_get_value(pgs->opacity.alpha, cbp);
-        if_debug1m('L', pgs->memory, " opacity.alpha=%g\n", pgs->opacity.alpha);
+    if (mask & ais_known) {
+        cmd_get_value(pgs->alphaisshape, cbp);
+        if_debug1m('L', pgs->memory, " alphaisshape=%d\n", pgs->alphaisshape);
     }
-    if (mask & shape_alpha_known) {
-        cmd_get_value(pgs->shape.alpha, cbp);
-        if_debug1m('L', pgs->memory, " shape.alpha=%g\n", pgs->shape.alpha);
+    if (mask & stroke_alpha_known) {
+        cmd_get_value(pgs->strokeconstantalpha, cbp);
+        if_debug1m('L', pgs->memory, " strokeconstantalpha=%g\n", pgs->strokeconstantalpha);
     }
-    if (mask & alpha_known) {
-        cmd_get_value(pgs->alpha, cbp);
-        if_debug1m('L', pgs->memory, " alpha=%u\n", pgs->alpha);
+    if (mask & fill_alpha_known) {
+        cmd_get_value(pgs->fillconstantalpha, cbp);
+        if_debug1m('L', pgs->memory, " fillconstantalpha=%u\n", pgs->fillconstantalpha);
     }
     pcb->ptr = cbp;
     return 0;

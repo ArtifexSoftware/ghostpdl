@@ -65,7 +65,7 @@ xps_clip(xps_context_t *ctx)
 void
 xps_fill(xps_context_t *ctx)
 {
-    if (gs_currentopacityalpha(ctx->pgs) < 0.001)
+    if (gs_getfillconstantalpha(ctx->pgs) < 0.001)
         gs_newpath(ctx->pgs);
     else if (ctx->fill_rule == 0) {
         if (gs_eofill(ctx->pgs) == gs_error_Remap_Color){

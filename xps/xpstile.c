@@ -388,12 +388,10 @@ xps_parse_tiling_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
         /* If the tiling brush has an opacity, it was already set in the group
            that we are filling.  Reset to 1.0 here to avoid double application
            when the tiling actually occurs */
-        opacity = ctx->pgs->opacity.alpha;
-        gs_setopacityalpha(ctx->pgs, 1.0);
+        opacity = gs_getfillconstantalpha(ctx->pgs);
         gs_setfillconstantalpha(ctx->pgs, 1.0);
         gs_setstrokeconstantalpha(ctx->pgs, 1.0);
         xps_fill(ctx);
-        gs_setopacityalpha(ctx->pgs, opacity);
         gs_setfillconstantalpha(ctx->pgs, opacity);
         gs_setstrokeconstantalpha(ctx->pgs, opacity);
 

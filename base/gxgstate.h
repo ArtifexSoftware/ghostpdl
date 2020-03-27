@@ -242,7 +242,6 @@ struct gs_gstate_s {
     gs_logical_operation_t log_op;
     gx_color_value alpha;
     gs_blend_mode_t blend_mode;
-    gs_transparency_source_t opacity, shape;
     gs_xstate_trans_flags_t trans_flags;
     gs_id soft_mask_id;
     bool text_knockout;
@@ -326,7 +325,7 @@ struct gs_gstate_s {
    { (float)(scale), 0.0, 0.0, (float)(-(scale)), 0.0, 0.0 },\
   false, {0, 0}, {0, 0}, false, \
   lop_default, gx_max_color_value, BLEND_MODE_Compatible,\
-{ 1.0 }, { 1.0 }, {0, 0}, 0, 0/*false*/, 0, 0/*false*/, 0, 0/*false*/, 0, 0/*false*/, 1.0,  \
+  {0, 0}, 0, 0/*false*/, 0, 0/*false*/, 0, 0/*false*/, 0, 0/*false*/, 1.0,  \
    { fixed_half, fixed_half }, 0/*false*/, 1/*true*/, 0/*false*/, 1.0,\
   1, 1/* bpt true */, 0, 0, 0, INIT_CUSTOM_COLOR_PTR	/* 'Custom color' callback pointer */  \
   gx_default_get_cmap_procs
@@ -346,8 +345,6 @@ struct gs_gstate_s {
     s->log_op = __state_init.log_op; \
     s->alpha = __state_init.alpha; \
     s->blend_mode = __state_init.blend_mode; \
-    s->opacity = __state_init.opacity; \
-    s->shape = __state_init.shape; \
     s->trans_flags = __state_init.trans_flags; \
     s->soft_mask_id = __state_init.soft_mask_id; \
     s->text_knockout = __state_init.text_knockout; \
@@ -371,6 +368,9 @@ struct gs_gstate_s {
     s->get_cmap_procs = __state_init.get_cmap_procs; \
     s->show_gstate = NULL; \
     s->is_fill_color = 1; \
+    s->strokeconstantalpha = 1.0; \
+    s->fillconstantalpha = 1.0; \
+    s->alphaisshape = 0; \
   } while (0)
 
 struct_proc_finalize(gs_gstate_finalize);
