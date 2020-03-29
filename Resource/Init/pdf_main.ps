@@ -513,7 +513,12 @@ currentdict /runpdfstring .undef
       {
         dup /Page# exch store
         QUIET not { (Page ) print dup //== exec flush } if
-        pdfgetpage pdfshowpage
+        pdfgetpage
+        dup //null ne { pdfshowpage } {
+          (   **** Error: Page #) pdfformaterror Page# 10 string cvs pdfformaterror
+          ( not found.\n) pdfformaterror
+          /dopdfpages cvx /syntaxerror signalerror
+        } ifelse
       }{
         pop
       }ifelse
@@ -2076,14 +2081,19 @@ currentdict /xref-char-dict undef
 /pdffindpageref {		% <int> pdffindpage <objref>
   dup pdffindpage?
                 % Stack: index countleft noderef
-   1 index 1 ne { pop pop /pdffindpage cvx /rangecheck signalerror } if
-   exch pop
-   PageIndex 2 index 1 sub 65533 .min 2 index oforce put
-   PageNumbers 1 index oforce 3 index dup 65534 le
-    { put }
-    { pop pop pop }	% don't store more than 65534 pagenumbers
+   dup //null ne {
+     1 index 1 ne { pop pop /pdffindpage cvx /rangecheck signalerror } if
+     exch pop
+     PageIndex 2 index 1 sub 65533 .min 2 index oforce put
+     PageNumbers 1 index oforce 3 index dup 65534 le
+      { put }
+      { pop pop pop }	% don't store more than 65534 pagenumbers
+     ifelse
+   } {
+     exch pop			% return the //null
+   }
    ifelse
-   exch pop
+   exch pop			% pop the page number, return the object or null
 } bind executeonly def
 /pdffindpage {		% <int> pdffindpage <pagedict>
   pdffindpageref oforce
@@ -3311,6 +3321,7 @@ currentdict /PDF2PS_matrix_key undef
   {
     /Parent knownoget
     {
+      dup /Pages known not { pop exit } if	% not a valid Page Tree ancestor
       dup 4 1 roll
       resourcespotcolors
       3 -1 roll
