@@ -486,7 +486,8 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                  sizeof(float) +	/* line width */
                  sizeof(float) +	/* miter limit */
                  3 +		/* bm_tk, op, and rend intent */
-                 sizeof(float) * 2 +  /* opacity/shape alpha */
+                 sizeof(cldev->gs_gstate.alphaisshape) +
+                 sizeof(float) * 2 +  /* ca CA */
                  sizeof(cldev->gs_gstate.alpha)
         ];
         byte *bp = buf;
