@@ -451,11 +451,13 @@ class="offsite">Adobe
 Technical Note</a> #5407, "<a
 href="http://partners.adobe.com/asn/developer/acrosdk/DOCS/PDF_Transparency.pdf"
 class="offsite">Transparency
-in PDF</a>". Note, however, that
-Ghostscript's model generalizes that of PDF 1.4 in that Ghostscript
-maintains separate alpha and mask values for opacity and shape, rather than
-a single value with a Boolean that says whether it represents opacity or
-shape.</p>
+in PDF</a>". Previously (in 9.52 and earlier), Ghostscript's model 
+maintained separate alpha and mask values for opacity and shape.  This
+model has been changed (as of 9.53) and instead Ghostscript maintains separate
+float values for stroke and fill alpha values with a boolean that indicates
+if these should be interpreted as shape or alpha values to be more in line with the
+PDF specification.  
+</p>
 <p>
 What follows is a subset of all the custom operators related to transparency, but
 covers the most useful, most common requirements.
@@ -497,25 +499,70 @@ the blending mode is <code>/Compatible</code>.</dd>
 </dl>
 
 <dl>
-<dt><code>&lt;0..1&gt; .setopacityalpha -</code></dt>
+<dt><code>[Deprecated as of 9.53] &lt;0..1&gt; .setopacityalpha -</code></dt>
 <dd>Sets the opacity alpha value in the graphics state.
-The initial opacity alpha value is 1.</dd>
+The initial opacity alpha value is 1.  Note, it is strongly
+suggested that this method not be used as it currently may
+give inconsistent results when mixed with methods that
+set stroke and fill alpha values. </dd>
 </dl>
 
 <dl>
-<dt><code>- .currentopacityalpha &lt;0..1&gt;</code></dt>
-<dd>Returns the graphics state opacity alpha on the stack.</dd>
+<dt><code>[Deprecated as of 9.53] - .currentopacityalpha &lt;0..1&gt;</code></dt>
+<dd>Returns the graphics state opacity alpha on the stack. Note, it is strongly
+suggested that this method not be used as it currently may
+give inconsistent results when mixed with methods that
+set stroke and fill alpha values.</dd>
 </dl>
 
 <dl>
-<dt><code>&lt;0..1&gt; .setshapealpha -</code></dt>
+<dt><code>[Deprecated as of 9.53] &lt;0..1&gt; .setshapealpha -</code></dt>
 <dd>Sets the shape alpha value in the graphics state.
-The initial shape alpha value is 1.</dd>
+The initial shape alpha value is 1. Note, it is strongly
+suggested that this method not be used as it currently may
+give inconsistent results when mixed with methods that
+set stroke and fill alpha values.</dd>
 </dl>
 
 <dl>
-<dt><code>- .currentshapealpha &lt;0..1&gt;</code></dt>
-<dd>Returns the graphics state shape alpha on the stack.</dd>
+<dt><code>[Deprecated as of 9.53] - .currentshapealpha &lt;0..1&gt;</code></dt>
+<dd>Returns the graphics state shape alpha on the stack. Note, it is strongly
+suggested that this method not be used as it currently may
+give inconsistent results when mixed with methods that
+set stroke and fill alpha values.</dd>
+</dl>
+
+<dl>
+<dt><code>&lt;0..1&gt; .setstrokeconstantalpha -</code></dt>
+<dd>Sets the stroke alpha value in the graphics state.
+The initial stroke alpha value is 1.</dd>
+</dl>
+
+<dl>
+<dt><code> - .currentstrokeconstantalpha &lt;0..1&gt;</code></dt>
+<dd>Returns the graphics state stroke alpha value on the stack.</dd>
+</dl>
+
+<dl>
+<dt><code>&lt;0..1&gt; .setfillconstantalpha -</code></dt>
+<dd>Sets the fill alpha value in the graphics state.
+The initial fill alpha value is 1.</dd>
+</dl>
+
+<dl>
+<dt><code> - .currentfillconstantalpha &lt;0..1&gt;</code></dt>
+<dd>Returns the graphics state fill alpha value on the stack.</dd>
+</dl>
+
+<dl>
+<dt><code>&lt;bool&gt; .setalphaisshape -</code></dt>
+<dd>If true, the values set by setstrokeconstantalpha and setfillconstantalpha are interpreted as shape values.
+The initial value of the AIS flag is <code>false</code>.</dd>
+</dl>
+
+<dl>
+<dt><code> - .currentalphaisshape &lt;0..1&gt;</code></dt>
+<dd>Returns the graphics state alpha is shape (AIS) on the stack.</dd>
 </dl>
 
 <dl>
