@@ -1586,9 +1586,6 @@
     <ClCompile Include="..\base\gsalpha.c">
       <Filter>base</Filter>
     </ClCompile>
-    <ClCompile Include="..\base\gsalphac.c">
-      <Filter>base</Filter>
-    </ClCompile>
     <ClCompile Include="..\base\gsargs.c">
       <Filter>base</Filter>
     </ClCompile>
@@ -4859,9 +4856,6 @@
       <Filter>base %28.h%29</Filter>
     </ClInclude>
     <ClInclude Include="..\base\gsalpha.h">
-      <Filter>base %28.h%29</Filter>
-    </ClInclude>
-    <ClInclude Include="..\base\gsalphac.h">
       <Filter>base %28.h%29</Filter>
     </ClInclude>
     <ClInclude Include="..\base\gsargs.h">

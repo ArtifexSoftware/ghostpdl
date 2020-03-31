@@ -126,7 +126,6 @@ CFLAGSAUX_PROFILETMP="\$(CFLAGS_PROFILE)"
 LDFLAGSAUXTMP="\$(LDFLAGS)"
 AUXEXTRALIBSTMP="\$(EXTRALIBS)"
 
-
 # purposefully do not include "help" output for this
 AC_ARG_ENABLE([save_confaux])
 AC_ARG_ENABLE([auxtools_only])
@@ -238,7 +237,7 @@ if test x"$host" != x"$build" ; then
   fi
 fi
 
-dnl --------------------------------------------------  
+dnl --------------------------------------------------
 dnl Allow excluding the contributed drivers
 dnl --------------------------------------------------
 
@@ -285,26 +284,26 @@ CFLAGS_LARGEFILE=""
 
 case $host in
         *-linux*|*-gnu)
-        if test $ac_cv_prog_gcc = yes; then
+        if test $GCC = yes; then
             CC_OPT_FLAGS_TO_TRY="-O2 -DNDEBUG"
             CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
         fi
         ;;
         *bsd*)
-        if test $ac_cv_prog_gcc = yes; then
+        if test $GCC = yes; then
             CC_OPT_FLAGS_TO_TRY="-O2 -DNDEBUG"
             CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
         fi
         ;;
         *-darwin*)
-        if test $ac_cv_prog_gcc = yes; then
+        if test $GCC = yes; then
             CC_OPT_FLAGS_TO_TRY="-O2 -DNDEBUG"
             CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
         fi
         SET_DT_SONAME=""
         ;;
         *-mingw*|*-msys*|*-cygwin*)
-        if test $ac_cv_prog_gcc = yes; then
+        if test $GCC = yes; then
             CC_OPT_FLAGS_TO_TRY="-O2 -DNDEBUG"
             CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
         fi
@@ -314,10 +313,10 @@ case $host in
         CC_OPT_FLAGS_TO_TRY="-O2 -DNDEBUG"
         CFLAGS_LARGEFILE="-D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64"
         # the trailing space is required!
-        if test $ac_cv_prog_gcc = no; then
+        if test $GCC = no; then
             SET_DT_SONAME="-h "
         fi
-        if test $ac_cv_prog_gcc = yes; then
+        if test $GCC = yes; then
             CC_OPT_FLAGS_TO_TRY="-O2 -DNDEBUG"
             CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
         else
@@ -325,7 +324,7 @@ case $host in
         fi
         ;;
         *-aix*)
-        if test $ac_cv_prog_gcc = yes; then
+        if test $GCC = yes; then
             CC_OPT_FLAGS_TO_TRY="-O2 -DNDEBUG"
             CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
             SET_DT_SONAME="so"
@@ -336,7 +335,7 @@ esac
 AC_SUBST(SET_DT_SONAME)
 
 
-if test $ac_cv_prog_gcc = yes; then
+if test $GCC = yes; then
     cflags_to_try="-Wall -Wstrict-prototypes -Wundef \
 -Wmissing-declarations -Wmissing-prototypes -Wwrite-strings \
 -fno-strict-aliasing -Werror=declaration-after-statement \
@@ -366,8 +365,14 @@ void test (char * __restrict p){}
                  return 1;
                ],[
                CFLAGS="$CFLAGS -DHAVE_RESTRICT=1"
+               if test x"$host" = x"$build" ; then
+                   CFLAGSAUX="$CFLAGSAUX -DHAVE_RESTRICT=1"
+               fi
                AC_MSG_RESULT([yes])],[
                CFLAGS="$CFLAGS -DHAVE_RESTRICT=0"
+               if test x"$host" = x"$build" ; then
+                   CFLAGSAUX="$CFLAGSAUX -DHAVE_RESTRICT=0"
+               fi
                AC_MSG_RESULT([no])])
 
 
@@ -1101,7 +1106,9 @@ if test x"$enable_fapi" != xno; then
 fi
 
 if test x"$FT_BRIDGE" != x"1"; then
-  AC_MSG_ERROR([No usable Freetype source or library found])
+  if test x"$enable_auxtools_only" != x"yes" ; then
+    AC_MSG_ERROR([No usable Freetype source or library found])
+  fi
 fi
 
 AC_SUBST(INSERT_UFST_BRIDGE_EQUAL_ONE)
@@ -1196,7 +1203,7 @@ else
         SHARE_ZLIB=0
         ZLIBDIR=$srcdir/zlib
 
-        if test x"$ac_cv_prog_gcc" = x"yes"; then
+        if test x"$GCC" = x"yes"; then
           ZLIBCFLAGS="-Wno-write-strings"
         fi
   else
@@ -1245,7 +1252,17 @@ else
           SHARE_LIBPNG=0
           LIBPNGDIR=$srcdir/libpng
           PNGDEVS="$PNGDEVS_ALL"
-  else
+          case $host in
+            *powerpc*)
+                # Building on PPC with gcc, disable libpng's PPC specific
+                # optimizations: we don't include the source file for it
+                # and it only applies to reading, which we don't use.
+                if test $GCC = yes; then
+                  CFLAGS="$CFLAGS -DPNG_POWERPC_VSX_OPT=0"
+                fi
+            ;;
+          esac
+ else
           AC_MSG_RESULT([no])
           AC_CHECK_LIB(png, png_create_write_struct, [
             AC_CHECK_HEADERS(png.h, [
@@ -1442,7 +1459,7 @@ if test x"$SHARE_LIBTIFF" = x"0" ; then
       fi
       cd "$olddir"
 
-      if test x"$ac_cv_prog_gcc" = x"yes"; then
+      if test x"$GCC" = x"yes"; then
         TIFFCFLAGS="-Wno-write-strings $CFLAGS_NMI $CFLAGS_NUD -DJPEG_LIB_MK1_OR_12BIT=0"
       fi
       # if we're building with our own libjpeg, or we have another libjpeg available, allow jpeg compression in TIFF
@@ -1734,7 +1751,7 @@ if test x$with_luratech != xno; then
           JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -DMAC -DMAC_OS_X_BUILD -fsigned-char"
         ;;
         *-aix*)
-          if test $ac_cv_prog_gcc = yes; then
+          if test $GCC = yes; then
             JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -fsigned-char -DLINUX=1 -DFORTE"
           else
             JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -qchars=signed -DLINUX=1 -DFORTE"
@@ -1875,7 +1892,7 @@ if test x$with_luratech != xno; then
           JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -DMAC -DMAC_OS_X_BUILD"
         ;;
         *-aix*)
-          if test $ac_cv_prog_gcc = yes; then
+          if test $GCC = yes; then
             JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -fsigned-char -DLINUX=1 -DFORTE"
           else
             JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -qchars=signed -DLINUX=1 -DFORTE"
@@ -1916,7 +1933,7 @@ AC_CHECK_FUNCS([fseeko], [CFLAGS_OPJ_HAVE_FSEEKO="-DOPJ_HAVE_FSEEKO=1"], [CFLAGS
 JPX_SSE_CFLAGS=""
 
 if test "x$HAVE_SSE2" = "x" ; then
-  if test $ac_cv_prog_gcc = yes; then
+  if test $GCC = yes; then
     JPX_SSE_CFLAGS="-U__SSE__"
   fi
 fi
@@ -2428,7 +2445,8 @@ IBM_DEVS='ibmpro jetp3852'
 OKI_DEVS='oki182 okiibm oki4w'
 JAPAN_DEVS='lips4 lips4v ljet4pjl lj4dithp dj505j picty180 lips2p bjc880j pr201 pr150 pr1000 pr1000_4 jj100 bj10v bj10vh mj700v2c mj500c mj6000c mj8000c fmpr fmlbp ml600 lbp310 lbp320 md50Mono md50Eco md1xMono escpage lp2000 npdl rpdl'
 MISC_PDEVS='uniprint ap3250 atx23 atx24 atx38 itk24i itk38 coslw2p coslwxl declj250 fs600 imagen lj250 m8510 necp6 oce9050 r4081 sj48 tek4696 t4693d2 t4693d4 t4693d8 dl2100 la50 la70 la75 la75plus ln03 xes md2k md5k gdi samsunggdi'
-OPVP_DEVS='opvp oprp'
+
+AC_ARG_WITH([openprinting],, OPVP_DEVS='opvp oprp', OPVP_DEVS='')
 
 ETS_HALFTONING_DEVS='rinkj'
 
@@ -2468,10 +2486,12 @@ while test -n "$drivers"; do
         PRINTERS)
                 P_DEVS0="$P_DEVS0 $CANON_DEVS $EPSON_DEVS $HP_DEVS $LEXMARK_DEVS $BROTHER_DEVS $APPLE_DEVS $IBM_DEVS $OKI_DEVS $JAPAN_DEVS $MISC_PDEVS $ETS_HALFTONING_DEVS $URF_DEVS"
                 IJS_DEVS0="$IJSDEVS"
-                if test x$ac_cv_lib_dl_dlopen != xno -a x$found_iconv != xno; then
-                        P_DEVS0="$P_DEVS0 $OPVP_DEVS"
-                else
-                        AC_MSG_WARN(Unable to include opvp/oprp driver due to missing or disabled prerequisites...)
+                if test x"$OPVP_DEVS" != x"" ; then
+                  if test x$ac_cv_lib_dl_dlopen != xno -a x$found_iconv != xno; then
+                    P_DEVS0="$P_DEVS0 $OPVP_DEVS"
+                  else
+                    AC_MSG_ERROR(Unable to include opvp/oprp driver due to missing or disabled prerequisites...)
+                  fi
                 fi
                 ;;
         FILES)
@@ -2739,7 +2759,7 @@ AC_ARG_ENABLE([hidden-visibility],
         [hide all shared library symbols which are not part of its public API]),
     [hide_symbols=yes])
 
-if test x$hide_symbols = xyes -a $ac_cv_prog_gcc = yes; then
+if test x$hide_symbols = xyes -a $GCC = yes; then
     attr_default="__attribute__((visibility(\\\"default\\\")))"
     attr_hidden="__attribute__((visibility(\\\"hidden\\\")))"
 fi
@@ -2752,7 +2772,7 @@ case $host in
       XPS_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(XPS_SONAME_MAJOR)"
       PDL_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GPDL_SONAME_MAJOR)"
       PDF_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(PDF_SONAME_MAJOR)"
-      if test $ac_cv_prog_gcc = yes; then
+      if test $GCC = yes; then
         # GCC high level flag
         DYNAMIC_LIBS="-rdynamic"
       else
@@ -2804,6 +2824,7 @@ case $host in
     ;;
     *-darwin*)
       DYNAMIC_CFLAGS="-fPIC $DYNAMIC_CFLAGS"
+      GS_DYNAMIC_LDFLAGS="-dynamiclib -install_name \$(GS_SONAME_MAJOR_MINOR)"
       PCL_DYNAMIC_LDFLAGS="-dynamiclib -install_name \$(PCL_SONAME_MAJOR_MINOR)"
       XPS_DYNAMIC_LDFLAGS="-dynamiclib -install_name \$(XPS_SONAME_MAJOR_MINOR)"
       PDL_DYNAMIC_LDFLAGS="-dynamiclib -install_name \$(GPDL_SONAME_MAJOR_MINOR)"
@@ -2812,7 +2833,7 @@ case $host in
       SO_LIB_EXT=".dylib"
     ;;
     *-sun*|*-solaris*)
-      if test $ac_cv_prog_gcc = yes; then
+      if test $GCC = yes; then
         DYNAMIC_CFLAGS="-fPIC $DYNAMIC_CFLAGS"
       else
         DYNAMIC_CFLAGS="-KPIC $DYNAMIC_CFLAGS"
@@ -2832,7 +2853,7 @@ case $host in
       SO_LIB_EXT=".so"
     ;;
     *-aix*)
-      if test $ac_cv_prog_gcc = yes; then
+      if test $GCC = yes; then
         DYNAMIC_CFLAGS="-fPIC $DYNAMIC_CFLAGS"
         GCFLAGS="-Wl,-brtl -D_LARGE_FILES $GCFLAGS"
         GS_DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
@@ -2854,7 +2875,7 @@ case $host in
 esac
 
 if test x$hide_symbols = xyes ; then
-  if test $ac_cv_prog_gcc = yes; then
+  if test $GCC = yes; then
     DYNAMIC_CFLAGS="$DYNAMIC_CFLAGS -fvisibility=hidden"
   fi
   DYNAMIC_CFLAGS="$DYNAMIC_CFLAGS -DGSDLLEXPORT=\"$attr_default\""
@@ -3308,15 +3329,20 @@ AC_SUBST(VERSIONED_PATH)
 # NOTE: Strict aliasing can cause some parts
 #       of Ghostscript to malfunction.
 # --------------------------------------------------
-if test $ac_cv_prog_gcc = yes; then
+if test $GCC = yes; then
   AC_MSG_CHECKING([whether to explicitly disable strict aliasing])
   CFLAGS_backup="$CFLAGS"
+  CFLAGSAUX_backup="$CFLAGSAUX"
   CFLAGS="$CFLAGS -fno-strict-aliasing"
   AC_TRY_COMPILE(, [return 0;], [
     AC_MSG_RESULT([yes])
     CFLAGS_backup="$CFLAGS"
+    if test x"$host" = x"$build" ; then
+      CFLAGSAUX_backup="$CFLAGSAUX -fno-strict-aliasing"
+    fi
   ])
   CFLAGS="$CFLAGS_backup"
+  CFLAGSAUX="$CFLAGSAUX_backup"
 fi
 
 # --------------------------------------------------
@@ -3464,6 +3490,13 @@ AC_ARG_ENABLE([mkromfs-quiet], AC_HELP_STRING([--enable-mkromfs-quiet],
 
 AC_SUBST(MKROMFS_FLAGS)
 
+
+if test x"$GCFLAGSAUX" = x"\$(GCFLAGS)" ; then
+    GCFLAGSAUX="$GCFLAGS"
+fi
+
+CFLAGSAUX=$(echo $CFLAGSAUX | sed -e 's/-DGS_NO_FILESYSTEM//g')
+
 dnl --------------------------------------------------
 dnl Do substitutions
 dnl --------------------------------------------------
@@ -3477,6 +3510,7 @@ AC_SUBST(STRIP_XE)
 AC_SUBST(JPX_SSE_CFLAGS)
 
 AC_SUBST(CCAUX)
+AC_SUBST(CFLAGSAUX)
 AC_SUBST(GCFLAGSAUX)
 AC_SUBST(CAPOPTAUX)
 AC_SUBST(CFLAGSAUX_STANDARD)

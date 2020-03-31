@@ -66,7 +66,7 @@ sread_file(register stream * s, gp_file * file, byte * buf, uint len)
         gp_clearerr(file);
     s_std_init(s, buf, len, &p,
                (seekable ? s_mode_read + s_mode_seek : s_mode_read));
-    if_debug1m('s', s->memory, "[s]read file=0x%lx\n", (ulong) file);
+    if_debug1m('s', s->memory, "[s]read file="PRI_INTPTR"\n", (intptr_t)file);
     s->file = file;
     s->file_modes = s->modes;
     s->file_offset = 0;
@@ -192,7 +192,7 @@ swrite_file(register stream * s, gp_file * file, byte * buf, uint len)
 
     s_std_init(s, buf, len, &p,
                (gp_get_file(file) == stdout ? s_mode_write : s_mode_write + s_mode_seek));
-    if_debug1m('s', s->memory, "[s]write file=0x%lx\n", (ulong) file);
+    if_debug1m('s', s->memory, "[s]write file="PRI_INTPTR"\n", (intptr_t) file);
     s->file = file;
     s->file_modes = s->modes;
     s->file_offset = 0;		/* in case we switch to reading later */

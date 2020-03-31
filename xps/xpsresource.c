@@ -208,7 +208,8 @@ xps_debug_resource_dictionary(xps_context_t *ctx, xps_resource_t *dict)
     {
         if (dict->base_uri)
             dmprintf1(ctx->memory, "URI = '%s'\n", dict->base_uri);
-        dmprintf2(ctx->memory, "KEY = '%s' VAL = %p\n", dict->name, dict->data);
+        dmprintf2(ctx->memory, "KEY = '%s' VAL = "PRI_INTPTR"\n",
+                  dict->name, (intptr_t)dict->data);
         if (dict->parent)
         {
             dmputs(ctx->memory, "PARENT = {\n");

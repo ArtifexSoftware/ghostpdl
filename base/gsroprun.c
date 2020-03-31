@@ -104,7 +104,7 @@ static void record(int rop)
 #define TEMPLATE_NAME          invert_rop_run1
 #define SPECIFIC_ROP           0x55
 #define SPECIFIC_CODE(O,D,S,T) do { O = ~D; } while (0)
-#define MM_SETUP() __m128i mm_constant_ones = _mm_cmpeq_epi32(mm_constant_ones, mm_constant_ones);
+#define MM_SETUP() static __m128i mm_constant_zeros; __m128i mm_constant_ones = _mm_cmpeq_epi32(mm_constant_zeros, mm_constant_zeros);
 #define MM_SPECIFIC_CODE(O,D,S,T) do { _mm_storeu_si128(O,_mm_xor_si128(_mm_loadu_si128(D),mm_constant_ones)); } while (0 == 1)
 #define S_CONST
 #define T_CONST
@@ -153,7 +153,7 @@ static void invert_rop_run1(rop_run_op *op, byte *d, int len)
 #define TEMPLATE_NAME          invert_rop_run8
 #define SPECIFIC_ROP           0x55
 #define SPECIFIC_CODE(O,D,S,T) do { O = ~D; } while (0)
-#define MM_SETUP() __m128i mm_constant_ones = _mm_cmpeq_epi32(mm_constant_ones, mm_constant_ones);
+#define MM_SETUP() static __m128i mm_constant_zeros; __m128i mm_constant_ones = _mm_cmpeq_epi32(mm_constant_zeros, mm_constant_zeros);
 #define MM_SPECIFIC_CODE(O,D,S,T) do { _mm_storeu_si128(O,_mm_xor_si128(_mm_loadu_si128(D),mm_constant_ones)); } while (0 == 1)
 #define S_CONST
 #define T_CONST

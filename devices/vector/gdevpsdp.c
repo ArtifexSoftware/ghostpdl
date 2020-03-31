@@ -232,7 +232,7 @@ static const gs_param_item_t psdf_param_items[] = {
     /* (DefaultRenderingIntent) */
     pi("DetectBlends", gs_param_type_bool, DetectBlends),
     pi("DoThumbnails", gs_param_type_bool, DoThumbnails),
-    pi("ImageMemory", gs_param_type_long, ImageMemory),
+    pi("ImageMemory", gs_param_type_size_t, ImageMemory),
     /* (LockDistillerParams) */
     pi("LZWEncodePages", gs_param_type_bool, LZWEncodePages),
     pi("OPM", gs_param_type_int, OPM),

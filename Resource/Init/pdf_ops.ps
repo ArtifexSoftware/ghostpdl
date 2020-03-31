@@ -1885,24 +1885,29 @@ currentdict /clip_if_required .undef
 
 % Handle transparency the same as /B operator
 /tB {
-       PDFusingtransparency {
-          % knockout trans group around the filled and stroked object
-          mark
-          /Isolated //true /Knockout //true
-          .dicttomark
-          1 .setopacityalpha
-          % While text will always have a currentpoint, strokepath seems to mess with it.
-          % we get the currentpoint, then use moveto to restore it for pathbbox
-          { gsave currentpoint strokepath moveto pathbbox } stopped grestore {
-            /tB cvx /undefinedresult signalerror
-          } if
-          .begintransparencygroup
-          gsave tf grestore tS
-          .endtransparencygroup
-        } {
-          gsave tf grestore tS
-        } ifelse
-   //true /TextFillStateNeeded gput
+  % Type 3 fonts don't honour text rendering modes, see note on p401 of the 1.7 PDF Reference
+  currentfont /FontType get 3 eq
+  {
+    settextfillstate //true TextTransSetup currentpoint fill TextTransTeardown moveto
+  }
+  {
+    % Don't try to draw text when the point size is 0
+    .currentPDFfontsize 0 eq not {
+      setstrokestate settextfillstate
+      % While text will always have a currentpoint, strokepath seems to mess with it.
+      % we get the currentpoint, then use moveto to restore it.
+      currentpoint
+
+      % For stroking characters, temporarily restore the graphics CTM so that
+      % the line width will be transformed properly.
+      //Tmatrix currentmatrix TextSaveMatrix setmatrix
+      currentdict /qTextSaveMatrix known {qTextSaveMatrix setmatrix} if
+      B
+      setmatrix
+      moveto
+    } if
+  } ifelse
+  //true /TextFillStateNeeded gput
 } bind executeonly def
 
 % This does the wrong thing if there have been multiple text operations

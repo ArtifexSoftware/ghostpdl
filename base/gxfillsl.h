@@ -151,8 +151,8 @@ TEMPLATE_spot_into_scanlines (line_list *ll, fixed band_mask)
                  ) {
                 int x0 = pcr->rmin, x1 = pcr->rmax;
 
-                if_debug4m('Q', ll->memory, "[Qr]draw 0x%lx: [%d,%d),%d\n", (ulong)pcr,
-                           x0, x1, y0);
+                if_debug4m('Q', ll->memory, "[Qr]draw "PRI_INTPTR": [%d,%d),%d\n",
+                           (intptr_t)pcr, x0, x1, y0);
                 code = LOOP_FILL_RECTANGLE_DIRECT(&fo, x0, y0, x1 - x0, 1);
                 if_debug3m('F', ll->memory, "[F]drawing [%d:%d),%d\n", x0, x1, y0);
                 if (code < 0)

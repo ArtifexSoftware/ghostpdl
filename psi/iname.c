@@ -66,9 +66,9 @@ name_print(const char *msg, const name_table *nt, uint nidx, const int *pflag)
     dmlprintf1(nt->memory, "[n]%s", msg);
     if (pflag)
         dmprintf1(nt->memory, "(%d)", *pflag);
-    dmprintf2(nt->memory, " (0x%lx#%u)", (ulong)pname, nidx);
+    dmprintf2(nt->memory, " ("PRI_INTPTR"#%u)", (intptr_t)pname, nidx);
     debug_print_string(nt->memory, str, pnstr->string_size);
-    dmprintf2(nt->memory, "(0x%lx,%u)\n", (ulong)str, pnstr->string_size);
+    dmprintf2(nt->memory, "("PRI_INTPTR",%u)\n", (intptr_t)str, pnstr->string_size);
 }
 #  define if_debug_name(msg, nt, nidx, pflag)\
      if ( gs_debug_c('n') ) name_print(msg, nt, nidx, pflag)

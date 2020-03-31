@@ -319,8 +319,8 @@ gs_gsave(gs_gstate * pgs)
     if (pgs->show_gstate == pgs)
         pgs->show_gstate = pnew->show_gstate = pnew;
     pgs->level++;
-    if_debug2m('g', pgs->memory, "[g]gsave -> 0x%lx, level = %d\n",
-              (ulong) pnew, pgs->level);
+    if_debug2m('g', pgs->memory, "[g]gsave -> "PRI_INTPTR", level = %d\n",
+              (intptr_t)pnew, pgs->level);
     return 0;
 }
 
@@ -378,8 +378,8 @@ gs_grestore_only(gs_gstate * pgs)
     void *pdata = pgs->client_data;
     void *sdata;
 
-    if_debug2m('g', pgs->memory, "[g]grestore 0x%lx, level was %d\n",
-               (ulong) saved, pgs->level);
+    if_debug2m('g', pgs->memory, "[g]grestore "PRI_INTPTR", level was %d\n",
+               (intptr_t)saved, pgs->level);
     if (!saved)
         return 1;
     sdata = saved->client_data;

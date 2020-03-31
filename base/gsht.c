@@ -548,7 +548,7 @@ gx_ht_construct_bits(gx_ht_order * porder)
         gx_ht_construct_bit(phb, porder->width, phb->offset);
 #ifdef DEBUG
     if (gs_debug_c('H')) {
-        dmlprintf1(porder->data_memory, "[H]Halftone order bits 0x%lx:\n", (ulong)porder->bit_data);
+        dmlprintf1(porder->data_memory, "[H]Halftone order bits "PRI_INTPTR":\n", (intptr_t)porder->bit_data);
         for (i = 0, phb = (gx_ht_bit *)porder->bit_data;
              i < porder->num_bits;
              i++, phb++)

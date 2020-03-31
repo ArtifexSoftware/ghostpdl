@@ -130,7 +130,8 @@ gs_main_init0(gs_main_instance * minst, gp_file * in, gp_file * out, gp_file * e
     int code = 0;
 
     if (gs_debug_c(gs_debug_flag_init_details))
-        dmprintf1(minst->heap, "%% Init phase 0 started, instance 0x%p\n", minst);
+        dmprintf1(minst->heap, "%% Init phase 0 started, instance "PRI_INTPTR"\n",
+                  (intptr_t)minst);
 
     /* Do platform-dependent initialization. */
     /* We have to do this as the very first thing, */
@@ -170,7 +171,8 @@ gs_main_init0(gs_main_instance * minst, gp_file * in, gp_file * out, gp_file * e
 
 fail:
     if (gs_debug_c(gs_debug_flag_init_details))
-        dmprintf2(minst->heap, "%% Init phase 0 %s, instance 0x%p\n", code < 0 ? "failed" : "done", minst);
+        dmprintf2(minst->heap, "%% Init phase 0 %s, instance "PRI_INTPTR"\n",
+                  code < 0 ? "failed" : "done", (intptr_t)minst);
 
     return code;
 }
@@ -187,7 +189,8 @@ gs_main_init1(gs_main_instance * minst)
         return 0;
 
     if (gs_debug_c(gs_debug_flag_init_details))
-        dmprintf1(minst->heap, "%% Init phase 1 started, instance 0x%p\n", minst);
+        dmprintf1(minst->heap, "%% Init phase 1 started, instance "PRI_INTPTR"\n",
+                  (intptr_t)minst);
 
     code = ialloc_init(&idmem, minst->heap,
                        minst->memory_clump_size, gs_have_level2());
@@ -232,7 +235,8 @@ fail:
 fail_early:
 
     if (gs_debug_c(gs_debug_flag_init_details))
-        dmprintf2(minst->heap, "%% Init phase 1 %s, instance 0x%p\n", code < 0 ? "failed" : "done", minst);
+        dmprintf2(minst->heap, "%% Init phase 1 %s, instance "PRI_INTPTR"\n",
+                  code < 0 ? "failed" : "done", (intptr_t)minst);
 
     return code;
 }
@@ -333,7 +337,8 @@ gs_main_init2(gs_main_instance * minst)
         return 0;
 
     if (gs_debug_c(gs_debug_flag_init_details))
-        dmprintf1(minst->heap, "%% Init phase 2 started, instance 0x%p\n", minst);
+        dmprintf1(minst->heap, "%% Init phase 2 started, instance "PRI_INTPTR"\n",
+                  (intptr_t)minst);
 
     code = gs_main_init2aux(minst);
     if (code < 0)
@@ -383,7 +388,8 @@ gs_main_init2(gs_main_instance * minst)
 
 fail:
     if (gs_debug_c(gs_debug_flag_init_details))
-        dmprintf2(minst->heap, "%% Init phase 2 %s, instance 0x%p\n", code < 0 ? "failed" : "done", minst);
+        dmprintf2(minst->heap, "%% Init phase 2 %s, instance "PRI_INTPTR"\n",
+                  code < 0 ? "failed" : "done", (intptr_t)minst);
 
     return code;
 }
@@ -1225,7 +1231,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
     i_ctx_p = minst->i_ctx_p;		/* get current interp context */
     if (gs_debug_c(':')) {
         print_resource_usage(minst, &gs_imemory, "Final");
-        dmprintf1(minst->heap, "%% Exiting instance 0x%p\n", minst);
+        dmprintf1(minst->heap, "%% Exiting instance "PRI_INTPTR"\n", (intptr_t)minst);
     }
     /* Do the equivalent of a restore "past the bottom". */
     /* This will release all memory, close all open files, etc. */

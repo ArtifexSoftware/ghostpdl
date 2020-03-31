@@ -79,11 +79,11 @@ stream_finalize(const gs_memory_t *cmem, void *vptr)
     stream *const st = vptr;
     (void)cmem; /* unused */
 
-    if_debug2m('u', st->memory, "[u]%s 0x%lx\n",
+    if_debug2m('u', st->memory, "[u]%s "PRI_INTPTR"\n",
                (!s_is_valid(st) ? "already closed:" :
                 st->is_temp ? "is_temp set:" :
                 st->file == 0 ? "not file:" :
-                "closing file:"), (ulong) st);
+                "closing file:"), (intptr_t) st);
     if (s_is_valid(st) && !st->is_temp && st->file != 0) {
         /* Prevent any attempt to free the buffer. */
         st->cbuf = 0;
@@ -118,8 +118,8 @@ s_alloc(gs_memory_t * mem, client_name_t cname)
 {
     stream *s = gs_alloc_struct(mem, stream, &st_stream, cname);
 
-    if_debug2m('s', mem, "[s]alloc(%s) = 0x%lx\n",
-               client_name_string(cname), (ulong) s);
+    if_debug2m('s', mem, "[s]alloc(%s) = "PRI_INTPTR"\n",
+               client_name_string(cname), (intptr_t) s);
     if (s == 0)
         return 0;
     s_init(s, mem);
@@ -143,10 +143,10 @@ s_alloc_state(gs_memory_t * mem, gs_memory_type_ptr_t stype,
 {
     stream_state *st = gs_alloc_struct(mem, stream_state, stype, cname);
 
-    if_debug3m('s', mem, "[s]alloc_state %s(%s) = 0x%lx\n",
+    if_debug3m('s', mem, "[s]alloc_state %s(%s) = "PRI_INTPTR"\n",
                client_name_string(cname),
                client_name_string(stype->sname),
-               (ulong) st);
+               (intptr_t) st);
     if (st)
         s_init_state(st, NULL, mem);
     return st;
@@ -175,8 +175,8 @@ s_std_init(register stream * s, byte * ptr, uint len, const stream_procs * pp,
     s->file_name.data = 0;	/* in case stream is on stack */
     s->file_name.size = 0;
     if (s->memory) {
-        if_debug4m('s', s->memory, "[s]init 0x%lx, buf=0x%lx, len=%u, modes=%d\n",
-                   (ulong) s, (ulong) ptr, len, modes);
+        if_debug4m('s', s->memory, "[s]init "PRI_INTPTR", buf="PRI_INTPTR", len=%u, modes=%d\n",
+                   (intptr_t) s, (intptr_t) ptr, len, modes);
     }
 }
 
@@ -316,7 +316,7 @@ s_disable(register stream * s)
     }
     /****** SHOULD DO MORE THAN THIS ******/
     if (s->memory) {
-        if_debug1m('s', s->memory, "[s]disable 0x%lx\n", (ulong) s);
+        if_debug1m('s', s->memory, "[s]disable "PRI_INTPTR"\n", (intptr_t) s);
     }
 }
 
@@ -816,14 +816,14 @@ sreadbuf(stream * s, stream_cursor_write * pbuf)
                 eof = strm->end_status == EOFC;
             }
             pw = (prev == 0 ? pbuf : &curr->cursor.w);
-            if_debug4m('s', s->memory, "[s]read process 0x%lx, nr=%u, nw=%u, eof=%d\n",
-                       (ulong) curr, (uint) (pr->limit - pr->ptr),
+            if_debug4m('s', s->memory, "[s]read process "PRI_INTPTR", nr=%u, nw=%u, eof=%d\n",
+                       (intptr_t) curr, (uint) (pr->limit - pr->ptr),
                        (uint) (pw->limit - pw->ptr), eof);
             oldpos = pw->ptr;
             status = (*curr->procs.process) (curr->state, pr, pw, eof);
             pr->limit += left;
-            if_debug5m('s', s->memory, "[s]after read 0x%lx, nr=%u, nw=%u, status=%d, position=%"PRId64"\n",
-                       (ulong) curr, (uint) (pr->limit - pr->ptr),
+            if_debug5m('s', s->memory, "[s]after read "PRI_INTPTR", nr=%u, nw=%u, status=%d, position=%"PRId64"\n",
+                       (intptr_t) curr, (uint) (pr->limit - pr->ptr),
                        (uint) (pw->limit - pw->ptr), status, s->position);
             if (strm == 0 || status != 0)
                 break;
@@ -900,8 +900,8 @@ swritebuf(stream * s, stream_cursor_read * pbuf, bool last)
             else
                 pr = &curr->cursor.r;
             if_debug5m('s', s->memory,
-                       "[s]write process 0x%lx(%s), nr=%u, nw=%u, end=%d\n",
-                       (ulong)curr,
+                       "[s]write process "PRI_INTPTR"(%s), nr=%u, nw=%u, end=%d\n",
+                       (intptr_t)curr,
                        gs_struct_type_name(curr->state->templat->stype),
                        (uint)(pr->limit - pr->ptr),
                        (uint)(pw->limit - pw->ptr), end);
@@ -909,8 +909,8 @@ swritebuf(stream * s, stream_cursor_read * pbuf, bool last)
             if (status >= 0) {
                 status = (*curr->procs.process)(curr->state, pr, pw, end);
                 if_debug5m('s', s->memory,
-                           "[s]after write 0x%lx, nr=%u, nw=%u, end=%d, status=%d\n",
-                           (ulong) curr, (uint) (pr->limit - pr->ptr),
+                           "[s]after write "PRI_INTPTR", nr=%u, nw=%u, end=%d, status=%d\n",
+                           (intptr_t) curr, (uint) (pr->limit - pr->ptr),
                            (uint) (pw->limit - pw->ptr), end, status);
                 if (status == 0 && end)
                     status = EOFC;

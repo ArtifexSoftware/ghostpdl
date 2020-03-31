@@ -2165,7 +2165,7 @@ gsicc_profile_new(stream *s, gs_memory_t *memory, const char* pname,
         return NULL;
     }
     if_debug1m(gs_debug_flag_icc, mem_nongc,
-               "[icc] allocating ICC profile = 0x%p\n", result);
+               "[icc] allocating ICC profile = "PRI_INTPTR"\n", (intptr_t)result);
     return result;
 }
 
@@ -2176,8 +2176,8 @@ rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname)
     gs_memory_t *mem_nongc =  profile->memory;
 
     if_debug2m(gs_debug_flag_icc, mem,
-               "[icc] rc decrement profile = 0x%p rc = %ld\n",
-               ptr_in, profile->rc.ref_count);
+               "[icc] rc decrement profile = "PRI_INTPTR" rc = %ld\n",
+               (intptr_t)ptr_in, profile->rc.ref_count);
     if (profile->rc.ref_count <= 1 ) {
         /* Clear out the buffer if it is full */
         if (profile->buffer != NULL) {
@@ -3010,7 +3010,7 @@ gs_seticcdirectory(const gs_gstate * pgs, gs_param_string * pval)
         pname = (char *)gs_alloc_bytes(mem, namelen,
                                        "gs_seticcdirectory");
         if (pname == NULL)
-            return gs_rethrow(-1, "cannot allocate directory name");
+            return gs_rethrow(gs_error_VMerror, "cannot allocate directory name");
         memcpy(pname,pval->data,namelen-1);
         pname[namelen-1] = 0;
         if (gs_lib_ctx_set_icc_directory(mem, (const char*) pname, namelen) < 0) {

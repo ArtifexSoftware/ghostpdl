@@ -216,16 +216,16 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
         return param_write_bool(plist, ".LockSafetyParams", &dev->LockSafetyParams);
     }
     if (strcmp(Param, "MaxPatternBitmap") == 0) {
-        return param_write_int(plist, "MaxPatternBitmap", &dev->MaxPatternBitmap);
+        return param_write_size_t(plist, "MaxPatternBitmap", &dev->MaxPatternBitmap);
     }
     if (strcmp(Param, "PageUsesTransparency") == 0) {
         return param_write_bool(plist, "PageUsesTransparency", &dev->page_uses_transparency);
     }
     if (strcmp(Param, "MaxBitmap") == 0) {
-        return param_write_long(plist, "MaxBitmap", &(dev->space_params.MaxBitmap));
+        return param_write_size_t(plist, "MaxBitmap", &(dev->space_params.MaxBitmap));
     }
     if (strcmp(Param, "BandBufferSpace") == 0) {
-        return param_write_long(plist, "BandBufferSpace", &dev->space_params.band.BandBufferSpace);
+        return param_write_size_t(plist, "BandBufferSpace", &dev->space_params.band.BandBufferSpace);
     }
     if (strcmp(Param, "BandHeight") == 0) {
         return param_write_int(plist, "BandHeight", &dev->space_params.band.BandHeight);
@@ -234,7 +234,7 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
         return param_write_int(plist, "BandWidth", &dev->space_params.band.BandWidth);
     }
     if (strcmp(Param, "BufferSpace") == 0) {
-        return param_write_long(plist, "BufferSpace", &dev->space_params.BufferSpace);
+        return param_write_size_t(plist, "BufferSpace", &dev->space_params.BufferSpace);
     }
     if (strcmp(Param, "InterpolateControl") == 0) {
         int interpolate_control = dev->interpolate_control;
@@ -719,13 +719,13 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
         (code = param_write_bool(plist, "AntidropoutDownscaler",
                                 &dev->color_info.use_antidropout_downscaler)) < 0 ||
         (code = param_write_bool(plist, ".LockSafetyParams", &dev->LockSafetyParams)) < 0 ||
-        (code = param_write_int(plist, "MaxPatternBitmap", &dev->MaxPatternBitmap)) < 0 ||
+        (code = param_write_size_t(plist, "MaxPatternBitmap", &dev->MaxPatternBitmap)) < 0 ||
         (code = param_write_bool(plist, "PageUsesTransparency", &dev->page_uses_transparency)) < 0 ||
-        (code = param_write_long(plist, "MaxBitmap", &(dev->space_params.MaxBitmap))) < 0 ||
-        (code = param_write_long(plist, "BandBufferSpace", &dev->space_params.band.BandBufferSpace)) < 0 ||
+        (code = param_write_size_t(plist, "MaxBitmap", &(dev->space_params.MaxBitmap))) < 0 ||
+        (code = param_write_size_t(plist, "BandBufferSpace", &dev->space_params.band.BandBufferSpace)) < 0 ||
         (code = param_write_int(plist, "BandHeight", &dev->space_params.band.BandHeight)) < 0 ||
         (code = param_write_int(plist, "BandWidth", &dev->space_params.band.BandWidth)) < 0 ||
-        (code = param_write_long(plist, "BufferSpace", &dev->space_params.BufferSpace)) < 0 ||
+        (code = param_write_size_t(plist, "BufferSpace", &dev->space_params.BufferSpace)) < 0 ||
         (code = param_write_int(plist, "InterpolateControl", &dev->interpolate_control)) < 0
         )
         return code;
@@ -1406,7 +1406,7 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
     long ColorValues = (depth >= 32 ? -1 : 1L << depth);
     int tab = dev->color_info.anti_alias.text_bits;
     int gab = dev->color_info.anti_alias.graphics_bits;
-    int mpbm = dev->MaxPatternBitmap;
+    size_t mpbm = dev->MaxPatternBitmap;
     int ic = dev->interpolate_control;
     bool page_uses_transparency = dev->page_uses_transparency;
     gdev_space_params sp = dev->space_params;
@@ -1770,7 +1770,7 @@ nce:
         ecode = code;
     if ((code = param_read_bool(plist, "AntidropoutDownscaler", &use_antidropout)) < 0)
         ecode = code;
-    if ((code = param_read_int(plist, "MaxPatternBitmap", &mpbm)) < 0)
+    if ((code = param_read_size_t(plist, "MaxPatternBitmap", &mpbm)) < 0)
         ecode = code;
     if ((code = param_read_int(plist, "InterpolateControl", &ic)) < 0)
         ecode = code;
@@ -1779,7 +1779,7 @@ nce:
         ecode = code;
         param_signal_error(plist, param_name, ecode);
     }
-    if ((code = param_read_long(plist, "MaxBitmap", &sp.MaxBitmap)) < 0)
+    if ((code = param_read_size_t(plist, "MaxBitmap", &sp.MaxBitmap)) < 0)
         ecode = code;
 
 #define CHECK_PARAM_CASES(member, bad, label)\
@@ -1796,7 +1796,7 @@ label:\
     case 1:\
         break
 
-    switch (code = param_read_long(plist, (param_name = "BufferSpace"), &sp.BufferSpace)) {
+    switch (code = param_read_size_t(plist, (param_name = "BufferSpace"), &sp.BufferSpace)) {
         CHECK_PARAM_CASES(BufferSpace, sp.BufferSpace < 10000, bse);
     }
 
@@ -1808,8 +1808,8 @@ label:\
         CHECK_PARAM_CASES(band.BandHeight, sp.band.BandHeight < 0, bhe);
     }
 
-    switch (code = param_read_long(plist, (param_name = "BandBufferSpace"), &sp.band.BandBufferSpace)) {
-        CHECK_PARAM_CASES(band.BandBufferSpace, sp.band.BandBufferSpace < 0, bbse);
+    switch (code = param_read_size_t(plist, (param_name = "BandBufferSpace"), &sp.band.BandBufferSpace)) {
+        CHECK_PARAM_CASES(band.BandBufferSpace, 0, bbse);
     }
 
 

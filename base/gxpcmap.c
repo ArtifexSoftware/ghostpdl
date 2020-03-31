@@ -216,27 +216,25 @@ static dev_proc_destroy_buf_device(dummy_destroy_buf_device)
 /* Attempt to determine the size of a pattern (the approximate amount that will */
 /* be needed in the pattern cache). If we end up using the clist, this is only  */
 /* a guess -- we use the tile size which will _probably_ be too large.          */
-static int
+static size_t
 gx_pattern_size_estimate(gs_pattern1_instance_t *pinst, bool has_tags)
 {
     gx_device *tdev = pinst->saved->device;
     int depth = (pinst->templat.PaintType == 2 ? 1 : tdev->color_info.depth);
-    int64_t raster;
-    int64_t size;
+    size_t raster;
+    size_t size;
 
     if (pinst->size.x == 0 || pinst->size.y == 0)
         return 0;
 
     if (pinst->templat.uses_transparency) {
         /* if the device has tags, add in an extra tag byte for the pdf14 compositor */
-        raster = ((int64_t)pinst->size.x * ((depth/8) + 1 + (has_tags ? 1 : 0)));
+        raster = ((size_t)pinst->size.x * ((depth/8) + 1 + (has_tags ? 1 : 0)));
     } else {
-        raster = ((int64_t)pinst->size.x * depth + 7) / 8;
+        raster = ((size_t)pinst->size.x * depth + 7) / 8;
     }
-    size = raster > max_int / pinst->size.y ? (max_int & ~0xFFFF) : raster * pinst->size.y;
-    if (size > (int64_t)max_int)
-        size = (max_int & ~0xFFFF);
-    return (int)size;
+    size = raster > max_size_t / pinst->size.y ? (max_size_t - 0xFFFF) : raster * pinst->size.y;
+    return size;
 }
 
 static void gx_pattern_accum_finalize_cw(gx_device * dev)
@@ -262,10 +260,10 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
 {
     gx_device *tdev = pinst->saved->device;
     bool has_tags = device_encodes_tags(tdev);
-    int size = gx_pattern_size_estimate(pinst, has_tags);
+    size_t size = gx_pattern_size_estimate(pinst, has_tags);
     gx_device_forward *fdev;
     int force_no_clist = 0;
-    int max_pattern_bitmap = tdev->MaxPatternBitmap == 0 ? MaxPatternBitmap_DEFAULT :
+    size_t max_pattern_bitmap = tdev->MaxPatternBitmap == 0 ? MaxPatternBitmap_DEFAULT :
                                 tdev->MaxPatternBitmap;
 
     pinst->is_planar = tdev->is_planar;
@@ -950,7 +948,7 @@ gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
 
         if (ctile->ttrans != NULL) {
             if_debug2m('v', mem,
-                       "[v*] Freeing trans pattern from cache, uid = %ld id = %ld \n",
+                       "[v*] Freeing trans pattern from cache, uid = %ld id = %ld\n",
                        ctile->uid.id, ctile->id);
             if ( ctile->ttrans->pdev14 == NULL) {
                 /* This can happen if we came from the clist */
@@ -987,7 +985,7 @@ gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
 /* enough space is available (or nothing left to free).                     */
 /* This will allow 1 oversized entry                                        */
 void
-gx_pattern_cache_ensure_space(gs_gstate * pgs, int needed)
+gx_pattern_cache_ensure_space(gs_gstate * pgs, size_t needed)
 {
     int code = ensure_pattern_cache(pgs);
     gx_pattern_cache *pcache;
@@ -1015,7 +1013,7 @@ gx_pattern_cache_ensure_space(gs_gstate * pgs, int needed)
 
 /* Export updating the pattern_cache bits_used and tiles_used for clist reading */
 void
-gx_pattern_cache_update_used(gs_gstate *pgs, ulong used)
+gx_pattern_cache_update_used(gs_gstate *pgs, size_t used)
 {
     gx_pattern_cache *pcache = pgs->pattern_cache;
 
@@ -1161,7 +1159,7 @@ gx_pattern_cache_add_entry(gs_gstate * pgs,
             ctile->tmask.data = 0;
         if (trans != 0) {
             if_debug2m('v', pgs->memory,
-                       "[v*] Adding trans pattern to cache, uid = %ld id = %ld \n",
+                       "[v*] Adding trans pattern to cache, uid = %ld id = %ld\n",
                        ctile->uid.id, ctile->id);
             ctile->ttrans = trans;
         }

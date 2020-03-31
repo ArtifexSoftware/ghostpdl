@@ -121,8 +121,8 @@ dstack_find_name_by_index(dict_stack_t * pds, uint nidx)
             name_index_ref(mem, nidx, &dnref);
             dmlputs(mem, "[D]lookup ");
             debug_print_name(mem, &dnref);
-            dmprintf3(mem," in 0x%lx(%u/%u)\n",
-                      (ulong) pdict, dict_length(pdref),
+            dmprintf3(mem," in "PRI_INTPTR"(%u/%u)\n",
+                      (intptr_t)pdict, dict_length(pdref),
                       dict_maxlength(pdref));
         }
 #endif
@@ -208,8 +208,8 @@ dstack_set_top(dict_stack_t * pds)
     ds_ptr dsp = pds->stack.p;
     dict *pdict = dsp->value.pdict;
 
-    if_debug3('d', "[d]dsp = 0x%lx -> 0x%lx, key array type = %d\n",
-              (ulong) dsp, (ulong) pdict, r_type(&pdict->keys));
+    if_debug3('d', "[d]dsp = "PRI_INTPTR" -> "PRI_INTPTR", key array type = %d\n",
+              (intptr_t)dsp, (intptr_t)pdict, r_type(&pdict->keys));
     if (dict_is_packed(pdict) &&
         r_has_attr(dict_access_ref(dsp), a_read)
         ) {

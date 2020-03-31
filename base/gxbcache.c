@@ -16,6 +16,7 @@
 
 /* Bitmap cache implementation */
 #include "memory_.h"
+#include "stdint_.h"
 #include "gx.h"
 #include "gsmdebug.h"
 #include "gxbcache.h"
@@ -85,16 +86,16 @@ gx_bits_cache_alloc(gx_bits_cache * bc, ulong lsize, gx_cached_bits_head ** pcbh
             return -1;
         }
         fsize += cbh_next->size;
-        if_debug2('K', "[K]merging free bits 0x%lx(%u)\n",
-                  (ulong) cbh_next, cbh_next->size);
+        if_debug2('K', "[K]merging free bits "PRI_INTPTR"(%u)\n",
+                  (intptr_t)cbh_next, cbh_next->size);
         cbh_next = (gx_cached_bits_head *) ((byte *) cbh + fsize);
     }
     if (fsize > ssize) {	/* fsize >= ssize1 */
         cbh_next = (gx_cached_bits_head *) ((byte *) cbh + ssize);
         cbh_next->size = fsize - ssize;
         cb_head_set_free(cbh_next);
-        if_debug2('K', "[K]shortening bits 0x%lx by %u (initial)\n",
-                  (ulong) cbh, fsize - ssize);
+        if_debug2('K', "[K]shortening bits "PRI_INTPTR" by %u (initial)\n",
+                  (intptr_t)cbh, fsize - ssize);
     }
     gs_alloc_fill(cbh, gs_alloc_fill_block, ssize);
     cbh->size = ssize;

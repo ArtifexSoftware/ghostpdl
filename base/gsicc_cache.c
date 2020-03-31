@@ -123,8 +123,8 @@ gsicc_cache_new(gs_memory_t *memory)
     }
     rc_init_free(result, memory->stable_memory, 1, rc_gsicc_link_cache_free);
     if_debug2m(gs_debug_flag_icc, memory,
-               "[icc] Allocating link cache = 0x%p memory = 0x%p\n",
-	       result, result->memory);
+               "[icc] Allocating link cache = "PRI_INTPTR" memory = "PRI_INTPTR"\n",
+	       (intptr_t)result, (intptr_t)result->memory);
     return(result);
 }
 
@@ -135,8 +135,8 @@ rc_gsicc_link_cache_free(gs_memory_t * mem, void *ptr_in, client_name_t cname)
     gsicc_link_cache_t *link_cache = (gsicc_link_cache_t * ) ptr_in;
 
     if_debug2m(gs_debug_flag_icc, mem,
-               "[icc] Removing link cache = 0x%p memory = 0x%p\n",
-               link_cache, link_cache->memory);
+               "[icc] Removing link cache = "PRI_INTPTR" memory = "PRI_INTPTR"\n",
+               (intptr_t)link_cache, (intptr_t)link_cache->memory);
     /* NB: freeing the link_cache will call icc_linkcache_finalize */
     gs_free_object(mem->stable_memory, link_cache, "rc_gsicc_link_cache_free");
 }
@@ -149,8 +149,8 @@ icc_linkcache_finalize(const gs_memory_t *mem, void *ptr)
 
     while (link_cache->head != NULL) {
         if (link_cache->head->ref_count != 0) {
-            emprintf2(mem, "link at 0x%p being removed, but has ref_count = %d\n",
-                      link_cache->head, link_cache->head->ref_count);
+            emprintf2(mem, "link at "PRI_INTPTR" being removed, but has ref_count = %d\n",
+                      (intptr_t)link_cache->head, link_cache->head->ref_count);
             link_cache->head->ref_count = 0;	/* force removal */
         }
         gsicc_remove_link(link_cache->head, mem);
@@ -214,8 +214,8 @@ gsicc_alloc_link_dev(gs_memory_t *memory, cmm_profile_t *src_profile,
     result->valid = true;
     result->memory = memory->stable_memory;
 
-    if_debug1m('^', result->memory, "[^]icclink 0x%p init = 1\n",
-               result);
+    if_debug1m('^', result->memory, "[^]icclink "PRI_INTPTR" init = 1\n",
+               (intptr_t)result);
 
     if (src_profile->profile_handle == NULL) {
         src_profile->profile_handle = gsicc_get_profile_handle_buffer(
@@ -304,8 +304,8 @@ gsicc_alloc_link(gs_memory_t *memory, gsicc_hashlink_t hashcode)
     }
     gx_monitor_enter(result->lock);     /* this link is owned by this thread until built and made "valid" */
 
-    if_debug1m('^', result->memory, "[^]icclink 0x%p init = 1\n",
-               result);
+    if_debug1m('^', result->memory, "[^]icclink "PRI_INTPTR" init = 1\n",
+               (intptr_t)result);
     return result;
 }
 
@@ -520,8 +520,8 @@ gsicc_findcachelink(gsicc_hashlink_t hash, gsicc_link_cache_t *icc_link_cache,
             }
             /* bump the ref_count since we will be using this one */
             curr->ref_count++;
-            if_debug3m('^', curr->memory, "[^]%s 0x%p ++ => %d\n",
-                       "icclink", curr, curr->ref_count);
+            if_debug3m('^', curr->memory, "[^]%s "PRI_INTPTR" ++ => %d\n",
+                       "icclink", (intptr_t)curr, curr->ref_count);
             while (curr->valid == false) {
                 gx_monitor_leave(icc_link_cache->lock); /* exit to let other threads run briefly */
                 gx_monitor_enter(curr->lock);			/* wait until we can acquire the lock */
@@ -530,8 +530,7 @@ gsicc_findcachelink(gsicc_hashlink_t hash, gsicc_link_cache_t *icc_link_cache,
                 /* that was building it failed to be able to complete building it		*/
                 /* this is probably a fatal error. MV ???					*/
                 if (curr->valid == false) {
-                    emprintf1(curr->memory, "link 0x%p lock released, but still not valid.\n", curr);	/* Breakpoint here */
-                    return NULL;
+		  emprintf1(curr->memory, "link "PRI_INTPTR" lock released, but still not valid.\n", (intptr_t)curr);	/* Breakpoint here */
                 }
                 gx_monitor_enter(icc_link_cache->lock);	/* re-enter to loop and check */
             }
@@ -553,12 +552,12 @@ gsicc_remove_link(gsicc_link_t *link, const gs_memory_t *memory)
     gsicc_link_cache_t *icc_link_cache = link->icc_link_cache;
 
     if_debug2m(gs_debug_flag_icc, memory,
-               "[icc] Removing link = 0x%p memory = 0x%p\n", link,
-               memory->stable_memory);
+               "[icc] Removing link = "PRI_INTPTR" memory = "PRI_INTPTR"\n",
+               (intptr_t)link, (intptr_t)memory->stable_memory);
     /* NOTE: link->ref_count must be 0: assert ? */
     gx_monitor_enter(icc_link_cache->lock);
     if (link->ref_count != 0) {
-      emprintf2(memory, "link at 0x%p being removed, but has ref_count = %d\n", link, link->ref_count);
+      emprintf2(memory, "link at "PRI_INTPTR" being removed, but has ref_count = %d\n", (intptr_t)link, link->ref_count);
     }
     curr = icc_link_cache->head;
     prev = NULL;
@@ -861,8 +860,8 @@ gsicc_alloc_link_entry(gsicc_link_cache_t *icc_link_cache,
         while (link != NULL ) {
             if (link->ref_count == 0) {
                 /* we will use this one */
-                if_debug3m('^', cache_mem, "[^]%s 0x%lx ++ => %d\n",
-                           "icclink", (ulong)link, link->ref_count);
+                if_debug3m('^', cache_mem, "[^]%s "PRI_INTPTR" ++ => %d\n",
+                           "icclink", (intptr_t)link, link->ref_count);
                 break;
             }
             link = link->next;
@@ -980,8 +979,8 @@ gsicc_get_link_profile(const gs_gstate *pgs, gx_device *dev,
     /* Got a hit, return link (ref_count for the link was already bumped */
     if (found_link != NULL) {
         if_debug2m(gs_debug_flag_icc, memory,
-                   "[icc] Found Link = 0x%p, hash = %lld \n",
-                   found_link, (long long)hash.link_hashcode);
+                   "[icc] Found Link = "PRI_INTPTR", hash = %lld \n",
+                   (intptr_t)found_link, (long long)hash.link_hashcode);
         if_debug2m(gs_debug_flag_icc, memory,
                    "[icc] input_numcomps = %d, input_hash = %lld \n",
                    gs_input_profile->num_comps,
@@ -1225,8 +1224,8 @@ gsicc_get_link_profile(const gs_gstate *pgs, gx_device *dev,
                             include_softproof, include_devicelink, pageneutralcolor,
                             gs_input_profile->data_cs);
         if_debug2m(gs_debug_flag_icc, cache_mem,
-                   "[icc] New Link = 0x%p, hash = %lld \n",
-                   link, (long long)hash.link_hashcode);
+                   "[icc] New Link = "PRI_INTPTR", hash = %lld \n",
+                   (intptr_t)link, (long long)hash.link_hashcode);
         if_debug2m(gs_debug_flag_icc, cache_mem,
                    "[icc] input_numcomps = %d, input_hash = %lld \n",
                    gs_input_profile->num_comps,
@@ -1240,8 +1239,8 @@ gsicc_get_link_profile(const gs_gstate *pgs, gx_device *dev,
         /* This could result in an infinite loop if other threads are waiting	*/
         /* for it to be made valid. (see gsicc_findcachelink).			*/
         link->ref_count--;	/* this thread no longer using this link entry	*/
-        if_debug2m('^', link->memory, "[^]icclink 0x%p -- => %d\n",
-                   link, link->ref_count);
+        if_debug2m('^', link->memory, "[^]icclink "PRI_INTPTR" -- => %d\n",
+                   (intptr_t)link, link->ref_count);
 
         if (icc_link_cache->cache_full) {
             icc_link_cache->cache_full = false;
@@ -1736,8 +1735,8 @@ gsicc_release_link(gsicc_link_t *icclink)
     icc_link_cache = icclink->icc_link_cache;
 
     gx_monitor_enter(icc_link_cache->lock);
-    if_debug2m('^', icclink->memory, "[^]icclink 0x%p -- => %d\n",
-               icclink, icclink->ref_count - 1);
+    if_debug2m('^', icclink->memory, "[^]icclink "PRI_INTPTR" -- => %d\n",
+               (intptr_t)icclink, icclink->ref_count - 1);
     /* Decrement the reference count */
     if (--(icclink->ref_count) == 0) {
 

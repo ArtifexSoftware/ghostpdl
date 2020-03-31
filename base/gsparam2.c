@@ -100,6 +100,8 @@ gs_param_list_puts(stream *dest, gs_param_list *list)
             case gs_param_type_bool:
             case gs_param_type_int:
             case gs_param_type_long:
+            case gs_param_type_size_t:
+            case gs_param_type_i64:
             case gs_param_type_float:
                 sput_bytes(dest, (byte *)&value.value, value_top_sizeof);
             case gs_param_type_null:
@@ -247,6 +249,8 @@ gs_param_list_gets(stream *src, gs_param_list *list, gs_memory_t *mem)
             case gs_param_type_bool:
             case gs_param_type_int:
             case gs_param_type_long:
+            case gs_param_type_size_t:
+            case gs_param_type_i64:
             case gs_param_type_float:
                 code = sget_bytes(src, (byte *)&typed.value, value_top_sizeof);
             case gs_param_type_null:

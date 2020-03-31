@@ -752,8 +752,8 @@ render_ht(gx_ht_tile * pbt, int level /* [1..num_bits-1] */ ,
     byte *data = pbt->tiles.data;
     int code;
 
-    if_debug7('H', "[H]Halftone cache slot 0x%lx: old=%d, new=%d, w=%d(%d), h=%d(%d):\n",
-              (ulong) data, pbt->level, level,
+    if_debug7('H', "[H]Halftone cache slot "PRI_INTPTR": old=%d, new=%d, w=%d(%d), h=%d(%d):\n",
+              (intptr_t)data, pbt->level, level,
               pbt->tiles.size.x, porder->width,
               pbt->tiles.size.y, porder->num_bits / porder->width);
 #ifdef DEBUG

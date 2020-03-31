@@ -474,7 +474,6 @@
     <ClCompile Include="..\base\gpmisc.c" />
     <ClCompile Include="..\base\gsalloc.c" />
     <ClCompile Include="..\base\gsalpha.c" />
-    <ClCompile Include="..\base\gsalphac.c" />
     <ClCompile Include="..\base\gsargs.c" />
     <ClCompile Include="..\base\gsbitcom.c" />
     <ClCompile Include="..\base\gsbitops.c" />
@@ -1672,7 +1671,6 @@
     <ClInclude Include="..\base\gs_mro_e.h" />
     <ClInclude Include="..\base\gsalloc.h" />
     <ClInclude Include="..\base\gsalpha.h" />
-    <ClInclude Include="..\base\gsalphac.h" />
     <ClInclude Include="..\base\gsargs.h" />
     <ClInclude Include="..\base\gsbitmap.h" />
     <ClInclude Include="..\base\gsbitops.h" />

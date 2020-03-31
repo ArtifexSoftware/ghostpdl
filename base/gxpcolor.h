@@ -294,12 +294,12 @@ bool gx_device_is_pattern_accum(gx_device *dev);
 /* Given the size of a new pattern tile, free entries from the cache until  */
 /* enough space is available (or nothing left to free).			    */
 /* This will allow 1 oversized entry					    */
-void gx_pattern_cache_ensure_space(gs_gstate * pgs, int needed);
+void gx_pattern_cache_ensure_space(gs_gstate * pgs, size_t needed);
 
-void gx_pattern_cache_update_used(gs_gstate *pgs, ulong used);
+void gx_pattern_cache_update_used(gs_gstate *pgs, size_t used);
 
 /* Update cache tile space */
-void gx_pattern_cache_update_space(gs_gstate * pgs, int64_t used);
+void gx_pattern_cache_update_space(gs_gstate * pgs, size_t used);
 
 /* Add an accumulated pattern to the cache. */
 /* Note that this does not free any of the data in the accumulator */

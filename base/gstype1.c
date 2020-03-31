@@ -218,9 +218,9 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
             {char1_command_names};
 
             if (c1names[c] == 0)
-                dmlprintf2(pfont->memory, "[1]0x%lx: %02x??\n", (ulong) (cip - 1), c);
+                dmlprintf2(pfont->memory, "[1]"PRI_INTPTR": %02x??\n", (intptr_t)(cip - 1), c);
             else
-                dmlprintf3(pfont->memory, "[1]0x%lx: %02x %s\n", (ulong) (cip - 1), c,
+                dmlprintf3(pfont->memory, "[1]"PRI_INTPTR": %02x %s\n", (intptr_t)(cip - 1), c,
                           c1names[c]);
         }
 #endif
@@ -400,11 +400,11 @@ rsbw:		/* Give the caller the opportunity to intervene. */
                     {char1_extended_command_names};
 
                     if (ce1names[c] == 0)
-                        dmlprintf2(pfont->memory, "[1]0x%lx: %02x??\n",
-                                   (ulong) (cip - 1), c);
+                        dmlprintf2(pfont->memory, "[1]"PRI_INTPTR": %02x??\n",
+                                   (intptr_t)(cip - 1), c);
                     else
-                        dmlprintf3(pfont->memory, "[1]0x%lx: %02x %s\n",
-                                   (ulong) (cip - 1), c, ce1names[c]);
+                        dmlprintf3(pfont->memory, "[1]"PRI_INTPTR": %02x %s\n",
+                                   (intptr_t)(cip - 1), c, ce1names[c]);
                 }
 #endif
                 switch ((char1_extended_command) c) {

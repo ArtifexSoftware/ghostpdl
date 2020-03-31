@@ -152,8 +152,8 @@ heap_available()
     for (n = 0; n < max_malloc_probes; n++) {
         if ((probes[n] = malloc(malloc_probe_size)) == 0)
             break;
-        if_debug2('a', "[a]heap_available probe[%d]=0x%lx\n",
-                  n, (ulong) probes[n]);
+        if_debug2('a', "[a]heap_available probe[%d]="PRI_INTPTR"\n",
+                  n, (intptr_t) probes[n]);
         avail += malloc_probe_size;
     }
     while (n)
@@ -221,8 +221,8 @@ gs_heap_alloc_bytes(gs_memory_t * mem, size_t size, client_name_t cname)
         gs_alloc_fill(ptr, gs_alloc_fill_alloc, size);
 #ifdef DEBUG
     if (gs_debug_c('a') || msg != ok_msg)
-        dmlprintf6(mem, "[a+]gs_malloc(%s)(%"PRIuSIZE") = 0x%lx: %s, used=%ld, max=%ld\n",
-                   client_name_string(cname), size, (ulong) ptr, msg, mmem->used, mmem->max_used);
+        dmlprintf6(mem, "[a+]gs_malloc(%s)(%"PRIuSIZE") = "PRI_INTPTR": %s, used=%"PRIuSIZE", max=%"PRIuSIZE"\n",
+                   client_name_string(cname), size, (intptr_t)ptr, msg, mmem->used, mmem->max_used);
 #endif
     return ptr;
 #undef set_msg
@@ -279,9 +279,18 @@ gs_heap_resize_object(gs_memory_t * mem, void *obj, size_t new_num_elements,
         return obj;
     if (mmem->monitor)
         gx_monitor_enter(mmem->monitor);	/* Exclusive access */
-    new_ptr = (gs_malloc_block_t *) gs_realloc(ptr, old_size, new_size);
-    if (new_ptr == 0)
+    if (new_size > mmem->limit - sizeof(gs_malloc_block_t)) {
+        /* too large to allocate; also avoids overflow. */
+        if (mmem->monitor)
+            gx_monitor_leave(mmem->monitor);	/* Done with exclusive access */
         return 0;
+    }
+    new_ptr = (gs_malloc_block_t *) gs_realloc(ptr, old_size, new_size);
+    if (new_ptr == 0) {
+        if (mmem->monitor)
+            gx_monitor_leave(mmem->monitor);	/* Done with exclusive access */
+        return 0;
+    }
     if (new_ptr->prev)
         new_ptr->prev->next = new_ptr;
     else
@@ -316,17 +325,17 @@ gs_heap_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
     gs_memory_type_ptr_t pstype;
     struct_proc_finalize((*finalize));
 
-    if_debug3m('a', mem, "[a-]gs_free(%s) 0x%lx(%"PRIuSIZE")\n",
-               client_name_string(cname), (ulong) ptr,
+    if_debug3m('a', mem, "[a-]gs_free(%s) "PRI_INTPTR"(%"PRIuSIZE")\n",
+               client_name_string(cname), (intptr_t)ptr,
                (ptr == 0 ? 0 : ((gs_malloc_block_t *) ptr)[-1].size));
     if (ptr == 0)
         return;
     pstype = ((gs_malloc_block_t *) ptr)[-1].type;
     finalize = pstype->finalize;
     if (finalize != 0) {
-        if_debug3m('u', mem, "[u]finalizing %s 0x%lx (%s)\n",
+        if_debug3m('u', mem, "[u]finalizing %s "PRI_INTPTR" (%s)\n",
                    struct_type_name_string(pstype),
-                   (ulong) ptr, client_name_string(cname));
+                   (intptr_t)ptr, client_name_string(cname));
         (*finalize) (mem, ptr);
     }
     if (mmem->monitor)
@@ -394,8 +403,8 @@ gs_heap_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
         }
         if (mmem->monitor)
             gx_monitor_leave(mmem->monitor);	/* Done with exclusive access */
-        lprintf2("%s: free 0x%lx not found!\n",
-                 client_name_string(cname), (ulong) ptr);
+        lprintf2("%s: free "PRI_INTPTR" not found!\n",
+                 client_name_string(cname), (intptr_t) ptr);
         free((char *)((gs_malloc_block_t *) ptr - 1));
     }
 #endif
@@ -410,8 +419,8 @@ gs_heap_resize_string(gs_memory_t * mem, byte * data, size_t old_num, size_t new
                       client_name_t cname)
 {
     if (gs_heap_object_type(mem, data) != &st_bytes)
-        lprintf2("%s: resizing non-string 0x%lx!\n",
-                 client_name_string(cname), (ulong) data);
+        lprintf2("%s: resizing non-string "PRI_INTPTR"!\n",
+                 client_name_string(cname), (intptr_t)data);
     return gs_heap_resize_object(mem, data, new_num, cname);
 }
 static void
@@ -501,8 +510,8 @@ gs_heap_free_all(gs_memory_t * mem, uint free_mask, client_name_t cname)
 
         for (; bp != 0; bp = np) {
             np = bp->next;
-            if_debug3m('a', mem, "[a]gs_heap_free_all(%s) 0x%lx(%"PRIuSIZE")\n",
-                       client_name_string(bp->cname), (ulong) (bp + 1),
+            if_debug3m('a', mem, "[a]gs_heap_free_all(%s) "PRI_INTPTR"(%"PRIuSIZE")\n",
+                       client_name_string(bp->cname), (intptr_t)(bp + 1),
                        bp->size);
             gs_alloc_fill(bp + 1, gs_alloc_fill_free, bp->size);
             free(bp);

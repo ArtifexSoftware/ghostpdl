@@ -212,9 +212,9 @@ s_CFE_process(stream_state * st, stream_cursor_read * pr,
 
         if_debug2m('w', ss->memory, "[w]CFE: read_count = %d, write_count=%d,\n",
                    ss->read_count, ss->write_count);
-        if_debug6m('w', ss->memory, "    pr = 0x%lx(%d)0x%lx, pw = 0x%lx(%d)0x%lx\n",
-                   (ulong) pr->ptr, (int)(rlimit - pr->ptr), (ulong) rlimit,
-                   (ulong) pw->ptr, (int)(wlimit - pw->ptr), (ulong) wlimit);
+        if_debug6m('w', ss->memory, "    pr = "PRI_INTPTR"(%d)"PRI_INTPTR", pw = "PRI_INTPTR"(%d)"PRI_INTPTR"\n",
+                   (intptr_t) pr->ptr, (int)(rlimit - pr->ptr), (intptr_t) rlimit,
+                   (intptr_t) pw->ptr, (int)(wlimit - pw->ptr), (intptr_t) wlimit);
         if (ss->write_count) {
             /* Copy more of an encoded line to the caller. */
             int wcount = wlimit - pw->ptr;
@@ -360,10 +360,11 @@ s_CFE_process(stream_state * st, stream_cursor_read * pr,
         pw->ptr = hc_put_last_bits((stream_hc_state *) ss, q);
     }
   out:
-    if_debug9m('w', ss->memory, "[w]CFE exit %d: read_count = %d, write_count = %d,\n     pr = 0x%lx(%d)0x%lx; pw = 0x%lx(%d)0x%lx\n",
+    if_debug9m('w', ss->memory, "[w]CFE exit %d: read_count = %d, write_count = %d,\n"
+               "     pr = "PRI_INTPTR"(%d)"PRI_INTPTR"; pw = "PRI_INTPTR"(%d)"PRI_INTPTR"\n",
                status, ss->read_count, ss->write_count,
-               (ulong) pr->ptr, (int)(rlimit - pr->ptr), (ulong) rlimit,
-               (ulong) pw->ptr, (int)(wlimit - pw->ptr), (ulong) wlimit);
+               (intptr_t) pr->ptr, (int)(rlimit - pr->ptr), (intptr_t) rlimit,
+               (intptr_t) pw->ptr, (int)(wlimit - pw->ptr), (intptr_t) wlimit);
 #if defined(DEBUG) && !defined(GS_THREADSAFE)
     if (pr->ptr > rlimit || pw->ptr > wlimit) {
         lprintf("Pointer overrun!\n");

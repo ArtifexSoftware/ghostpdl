@@ -219,7 +219,7 @@ gs_memory_chunk_wrap(gs_memory_t **wrapped,      /* chunk allocator init */
     cmem->defer_free_list = NULL;
 
 #ifdef DEBUG_CHUNK_PRINT
-    dmlprintf1(non_gc_target, "New chunk %p\n", cmem);
+    dmlprintf1(non_gc_target, "New chunk "PRI_INTPTR"\n", (intptr_t)cmem);
 #endif
 
     /* Init the chunk management values */
@@ -334,7 +334,7 @@ static int dump_free_loc(gs_memory_t *mem, chunk_free_node_t *node, int depth, v
         else
             dmlprintf(mem, "\\");
     }
-    dmlprintf3(mem, "%p+%x->%p\n", node, node->size, ((byte *)node)+node->size);
+    dmlprintf3(mem, PRI_INTPTR"+%x->"PRI_INTPTR"\n", (intptr_t)node, node->size, (intptr_t)((byte *)node)+node->size);
 #endif
     CHUNK_ASSERT(mem, *limit < (void *)node);
     *limit = ((byte *)node)+node->size;
@@ -361,7 +361,7 @@ static int dump_free_size(gs_memory_t *mem, chunk_free_node_t *node, int depth, 
         else
             dmlprintf(mem, "\\");
     }
-    dmlprintf3(mem, "%p+%x->%p\n", node, node->size, ((byte *)node)+node->size);
+    dmlprintf3(mem, PRI_INTPTR"+%x->"PRI_INTPTR"\n", (intptr_t)node, node->size, (intptr_t)((byte *)node)+node->size);
 #endif
     CHUNK_ASSERT(mem, *size < node->size || (*size == node->size && *addr < (void *)node));
     *size = node->size;
@@ -380,13 +380,13 @@ gs_memory_chunk_dump_memory(const gs_memory_t *mem)
     uint total = 0;
 
 #ifdef DEBUG_CHUNK_PRINT
-    dmlprintf1(cmem->target, "Chunk %p:\n", cmem);
+    dmlprintf1(cmem->target, "Chunk "PRI_INTPTR":\n", (intptr_t)cmem);
 #ifdef DEBUG_CHUNK_PRINT_SLABS
     {
         chunk_slab_t *slab;
         dmlprintf(cmem->target, "Slabs\n");
         for (slab = cmem->slabs; slab != NULL; slab = slab->next)
-            dmlprintf1(cmem->target, " %p\n", slab);
+            dmlprintf1(cmem->target, " "PRI_INTPTR"\n", (intptr_t)slab);
     }
 #endif
     dmlprintf(cmem->target, "Locs:\n");
@@ -778,9 +778,11 @@ chunk_obj_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_n
 
 #ifdef DEBUG_CHUNK_PRINT
 #ifdef DEBUG_SEQ
-    dmlprintf4(cmem->target, "Event %x: malloc(chunk=%p, size=%x, cname=%s)\n", cmem->sequence, cmem, newsize, cname);
+    dmlprintf4(cmem->target, "Event %x: malloc(chunk="PRI_INTPTR", size=%x, cname=%s)\n",
+               cmem->sequence, (intptr_t)cmem, newsize, cname);
 #else
-    dmlprintf3(cmem->target, "malloc(chunk=%p, size=%x, cname=%s)\n", cmem, newsize, cname);
+    dmlprintf3(cmem->target, "malloc(chunk="PRI_INTPTR", size=%x, cname=%s)\n",
+               (intptr_t)cmem, newsize, cname);
 #endif
 #endif
 
@@ -949,13 +951,15 @@ chunk_obj_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_n
     obj->sequence = cmem->sequence;
 #endif
     if (gs_debug_c('A'))
-        dmlprintf3(mem, "[a+]chunk_obj_alloc (%s)(%u) = 0x%lx: OK.\n",
-                   client_name_string(cname), size, (ulong) obj);
+        dmlprintf3(mem, "[a+]chunk_obj_alloc (%s)(%u) = "PRI_INTPTR": OK.\n",
+                   client_name_string(cname), size, (intptr_t) obj);
 #ifdef DEBUG_CHUNK_PRINT
 #ifdef DEBUG_SEQ
-    dmlprintf5(cmem->target, "Event %x: malloced(chunk=%p, addr=%p, size=%x, cname=%s)\n", obj->sequence, cmem, obj, obj->size, cname);
+    dmlprintf5(cmem->target, "Event %x: malloced(chunk="PRI_INTPTR", addr="PRI_INTPTR", size=%x, cname=%s)\n",
+               obj->sequence, (intptr_t)cmem, (intptr_t)obj, obj->size, cname);
 #else
-    dmlprintf4(cmem->target, "malloced(chunk=%p, addr=%p, size=%x, cname=%s)\n", cmem, obj, obj->size, cname);
+    dmlprintf4(cmem->target, "malloced(chunk="PRI_INTPTR", addr="PRI_INTPTR", size=%x, cname=%s)\n",
+               (intptr_t)cmem, (intptr_t)obj, obj->size, cname);
 #endif
 #endif
 #ifdef DEBUG_CHUNK
@@ -1076,9 +1080,11 @@ chunk_free_object(gs_memory_t *mem, void *ptr, client_name_t cname)
 #ifdef DEBUG_CHUNK_PRINT
 #ifdef DEBUG_SEQ
     cmem->sequence++;
-    dmlprintf6(cmem->target, "Event %x: free(chunk=%p, addr=%p, size=%x, num=%x, cname=%s)\n", cmem->sequence, cmem, obj, obj->size, obj->sequence, cname);
+    dmlprintf6(cmem->target, "Event %x: free(chunk="PRI_INTPTR", addr="PRI_INTPTR", size=%x, num=%x, cname=%s)\n",
+               cmem->sequence, (intptr_t)cmem, (intptr_t)obj, obj->size, obj->sequence, cname);
 #else
-    dmlprintf4(cmem->target, "free(chunk=%p, addr=%p, size=%x, cname=%s)\n", cmem, obj, obj->size, cname);
+    dmlprintf4(cmem->target, "free(chunk="PRI_INTPTR", addr="PRI_INTPTR", size=%x, cname=%s)\n",
+               (intptr_t)cmem, (intptr_t)obj, obj->size, cname);
 #endif
 #endif
 
@@ -1089,8 +1095,8 @@ chunk_free_object(gs_memory_t *mem, void *ptr, client_name_t cname)
     }
     /* finalize may change the head_**_chunk doing free of stuff */
 
-    if_debug3m('A', cmem->target, "[a-]chunk_free_object(%s) 0x%lx(%u)\n",
-               client_name_string(cname), (ulong) ptr, obj->size);
+    if_debug3m('A', cmem->target, "[a-]chunk_free_object(%s) "PRI_INTPTR"(%u)\n",
+               client_name_string(cname), (intptr_t)ptr, obj->size);
 
     if (SINGLE_OBJECT_CHUNK(obj->size - obj->padding)) {
         gs_free_object(cmem->target, obj, "chunk_free_object(single object)");

@@ -2002,10 +2002,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\base\gsalphac.c"
-				>
-			</File>
-			<File
 				RelativePath="..\base\gsargs.c"
 				>
 			</File>
@@ -3435,10 +3431,6 @@
 			</File>
 			<File
 				RelativePath="..\base\gsalpha.h"
-				>
-			</File>
-			<File
-				RelativePath="..\base\gsalphac.h"
 				>
 			</File>
 			<File

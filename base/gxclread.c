@@ -197,9 +197,9 @@ rb:
             }
 #	    endif
             if_debug5m('l', ss->local_memory,
-                      "[l]reading for bands (%d,%d) at bfile %ld, cfile %ld, length %u\n",
+                      "[l]reading for bands (%d,%d) at bfile %"PRId64", cfile %"PRId64", length %u\n",
                       bmin, bmax,
-                      (long)(io_procs->ftell(bfile) - sizeof(ss->b_this)), (long)pos, left);
+                      (io_procs->ftell(bfile) - sizeof(ss->b_this)), (int64_t)pos, left);
         }
     }
     pw->ptr = q;

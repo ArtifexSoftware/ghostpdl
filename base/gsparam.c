@@ -178,6 +178,20 @@ param_coerce_typed(gs_param_typed_value * pvalue, gs_param_type req_type,
     switch (pvalue->type /* actual type */ ) {
         case gs_param_type_int:
             switch (req_type) {
+                case gs_param_type_i64:
+                {
+                    int64_t i64 = (int64_t)pvalue->value.i;
+                    pvalue->value.i64 = i64;
+                    goto ok;
+                }
+                case gs_param_type_size_t:
+                {
+                    size_t z = (size_t)pvalue->value.i;
+                    if (pvalue->value.i < 0)
+                        return gs_error_rangecheck;
+                    pvalue->value.z = z;
+                    goto ok;
+                }
                 case gs_param_type_long:
                 {
                     long l = (long)pvalue->value.i;
@@ -196,20 +210,126 @@ param_coerce_typed(gs_param_typed_value * pvalue, gs_param_type req_type,
             break;
         case gs_param_type_long:
             switch (req_type) {
+                case gs_param_type_i64:
+                {
+                    int64_t i64 = (int64_t)pvalue->value.l;
+                    pvalue->value.i64 = i64;
+                    goto ok;
+                }
+                case gs_param_type_size_t:
+                {
+                    size_t z = (size_t)pvalue->value.l;
+                    if (pvalue->value.l < 0
+#if ARCH_SIZEOF_SIZE_T < ARCH_SIZEOF_LONG
+                        || pvalue->value.l != (long)z
+#endif
+                        )
+                        return_error(gs_error_rangecheck);
+                    pvalue->value.z = z;
+                    goto ok;
+                }
                 case gs_param_type_int:
                 {
-                    int int1;
+                    int int1 = (int)pvalue->value.l;
 #if ARCH_SIZEOF_INT < ARCH_SIZEOF_LONG
-                    if (pvalue->value.l != (int)pvalue->value.l)
+                    if (pvalue->value.l != (long)int1)
                         return_error(gs_error_rangecheck);
 #endif
-                    int1 = (int)pvalue->value.l;
                     pvalue->value.i = int1;
                     goto ok;
                 }
                 case gs_param_type_float:
                 {
                     float fl = (float)pvalue->value.l;
+                    pvalue->value.f = fl;
+                    goto ok;
+                }
+                default:
+                    break;
+            }
+            break;
+        case gs_param_type_i64:
+            switch (req_type) {
+                case gs_param_type_size_t:
+                {
+                    size_t z = (size_t)pvalue->value.i64;
+                    if (pvalue->value.i64 < 0
+#if ARCH_SIZEOF_SIZE_T < 8 /* sizeof(int64_t) */
+                        || pvalue->value.i64 != (int64_t)z
+#endif
+                        )
+                        return_error(gs_error_rangecheck);
+                    pvalue->value.z = z;
+                    goto ok;
+                }
+                case gs_param_type_long:
+                {
+                    long l = (long)pvalue->value.i64;
+#if ARCH_SIZEOF_LONG < 8 /* sizeof(int64_t) */
+                    if (pvalue->value.i64 != (int64_t)l)
+                        return_error(gs_error_rangecheck);
+#endif
+                    pvalue->value.l = l;
+                    goto ok;
+                }
+                case gs_param_type_int:
+                {
+                    int int1 = (int)pvalue->value.l;
+#if ARCH_SIZEOF_INT < 8 /* sizeof(int64_t) */
+                    if (pvalue->value.i64 != (int)int1)
+                        return_error(gs_error_rangecheck);
+#endif
+                    pvalue->value.i = int1;
+                    goto ok;
+                }
+                case gs_param_type_float:
+                {
+                    float fl = (float)pvalue->value.i64;
+                    pvalue->value.f = fl;
+                    goto ok;
+                }
+                default:
+                    break;
+            }
+            break;
+        case gs_param_type_size_t:
+            switch (req_type) {
+                case gs_param_type_i64:
+                {
+                    int64_t i64 = (int64_t)pvalue->value.z;
+                    if (i64 < 0
+#if 8 /* sizeof(int64_t) */ < ARCH_SIZEOF_SIZE_T
+                        /* Unlikely, but let's plan for the day when we need 128bit addressing :) */
+                        || pvalue->value.z != (size_t)i64
+#endif
+                        )
+                        return_error(gs_error_rangecheck);
+                    pvalue->value.i64 = i64;
+                    goto ok;
+                }
+                case gs_param_type_long:
+                {
+                    long l = (long)pvalue->value.i64;
+#if ARCH_SIZEOF_LONG < 8 /* sizeof(int64_t) */
+                    if (pvalue->value.i64 != (int64_t)l)
+                        return_error(gs_error_rangecheck);
+#endif
+                    pvalue->value.l = l;
+                    goto ok;
+                }
+                case gs_param_type_int:
+                {
+                    int int1 = (int)pvalue->value.l;
+#if ARCH_SIZEOF_INT < 8 /* sizeof(int64_t) */
+                    if (pvalue->value.i64 != (int)int1)
+                        return_error(gs_error_rangecheck);
+#endif
+                    pvalue->value.i = int1;
+                    goto ok;
+                }
+                case gs_param_type_float:
+                {
+                    float fl = (float)pvalue->value.i64;
                     pvalue->value.f = fl;
                     goto ok;
                 }
@@ -321,6 +441,16 @@ param_read_long(gs_param_list * plist, gs_param_name pkey, long *pvalue)
     RETURN_READ_TYPED(l, gs_param_type_long);
 }
 int
+param_read_i64(gs_param_list * plist, gs_param_name pkey, int64_t *pvalue)
+{
+    RETURN_READ_TYPED(i64, gs_param_type_i64);
+}
+int
+param_read_size_t(gs_param_list * plist, gs_param_name pkey, size_t *pvalue)
+{
+    RETURN_READ_TYPED(z, gs_param_type_size_t);
+}
+int
 param_read_float(gs_param_list * plist, gs_param_name pkey, float *pvalue)
 {
     RETURN_READ_TYPED(f, gs_param_type_float);
@@ -395,6 +525,16 @@ int
 param_write_long(gs_param_list * plist, gs_param_name pkey, const long *pvalue)
 {
     RETURN_WRITE_TYPED(l, gs_param_type_long);
+}
+int
+param_write_i64(gs_param_list * plist, gs_param_name pkey, const int64_t *pvalue)
+{
+    RETURN_WRITE_TYPED(i64, gs_param_type_i64);
+}
+int
+param_write_size_t(gs_param_list * plist, gs_param_name pkey, const size_t *pvalue)
+{
+    RETURN_WRITE_TYPED(z, gs_param_type_size_t);
 }
 int
 param_write_float(gs_param_list * plist, gs_param_name pkey,

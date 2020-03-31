@@ -42,7 +42,7 @@ private_st_jbig2decode_state();	/* creates a gc object for our state, defined in
 /* error callback for jbig2 decoder */
 static void
 s_jbig2decode_error(void *callback_data, const char *msg, Jbig2Severity severity,
-               int32_t seg_idx)
+               uint32_t seg_idx)
 {
     s_jbig2_callback_data_t *error_data = (s_jbig2_callback_data_t *)callback_data;
     const char *type;
@@ -62,7 +62,7 @@ s_jbig2decode_error(void *callback_data, const char *msg, Jbig2Severity severity
             break;;
         default: type = "unknown message:"; break;;
     }
-    if (seg_idx == -1) segment[0] = '\0';
+    if (seg_idx == JBIG2_UNKNOWN_SEGMENT_NUMBER) segment[0] = '\0';
     else gs_sprintf(segment, "(segment 0x%02x)", seg_idx);
 
     if (error_data)

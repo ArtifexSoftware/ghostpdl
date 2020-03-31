@@ -370,7 +370,7 @@ static JB2_Error JB2_Callback my_output(unsigned char *buffer,
 }
 
 #else
-static void my_errors(void *data, const char *msg, Jbig2Severity severity, int32_t seg_idx)
+static void my_errors(void *data, const char *msg, Jbig2Severity severity, uint32_t seg_idx)
 {
     /* Do nothing */
 }

@@ -489,8 +489,8 @@ free_row_buffers(gs_image_enum *penum, int num_planes, client_name_t cname)
     int i;
 
     for (i = num_planes - 1; i >= 0; --i) {
-        if_debug3m('b', penum->memory, "[b]free plane %d row (0x%lx,%u)\n",
-                   i, (ulong)penum->planes[i].row.data,
+        if_debug3m('b', penum->memory, "[b]free plane %d row ("PRI_INTPTR",%u)\n",
+                   i, (intptr_t)penum->planes[i].row.data,
                    penum->planes[i].row.size);
         gs_free_string(gs_image_row_memory(penum), penum->planes[i].row.data,
                        penum->planes[i].row.size, cname);
@@ -538,10 +538,10 @@ gs_image_next_planes(gs_image_enum * penum,
         int pi;
 
         for (pi = 0; pi < num_planes; ++pi)
-            dmprintf6(penum->memory, "[b]plane %d source=0x%lx,%u pos=%u data=0x%lx,%u\n",
-                     pi, (ulong)penum->planes[pi].source.data,
+            dmprintf6(penum->memory, "[b]plane %d source="PRI_INTPTR",%u pos=%u data="PRI_INTPTR",%u\n",
+                     pi, (intptr_t)penum->planes[pi].source.data,
                      penum->planes[pi].source.size, penum->planes[pi].pos,
-                     (ulong)plane_data[pi].data, plane_data[pi].size);
+                     (intptr_t)plane_data[pi].data, plane_data[pi].size);
     }
 #endif
     for (i = 0; i < num_planes; ++i) {
@@ -582,9 +582,9 @@ gs_image_next_planes(gs_image_enum * penum,
                              gs_resize_string(mem, old_data, old_size, raster,
                                               "gs_image_next(row)"));
 
-                        if_debug5m('b', mem, "[b]plane %d row (0x%lx,%u) => (0x%lx,%u)\n",
-                                   i, (ulong)old_data, old_size,
-                                   (ulong)row, raster);
+                        if_debug5m('b', mem, "[b]plane %d row ("PRI_INTPTR",%u) => ("PRI_INTPTR",%u)\n",
+                                   i, (intptr_t)old_data, old_size,
+                                   (intptr_t)row, raster);
                         if (row == 0) {
                             code = gs_note_error(gs_error_VMerror);
                             free_row_buffers(penum, i, "gs_image_next(row)");

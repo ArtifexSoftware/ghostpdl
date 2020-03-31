@@ -39,10 +39,6 @@
 #include "jbig2_symbol_dict.h"
 #include "jbig2_text.h"
 
-#if !defined (UINT32_MAX)
-#define UINT32_MAX 0xffffffff
-#endif
-
 Jbig2Segment *
 jbig2_parse_segment_header(Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size, size_t *p_header_size)
 {
@@ -61,12 +57,17 @@ jbig2_parse_segment_header(Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size, size_t 
 
     result = jbig2_new(ctx, Jbig2Segment, 1);
     if (result == NULL) {
-        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate segment");
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to allocate segment");
         return NULL;
     }
 
     /* 7.2.2 */
     result->number = jbig2_get_uint32(buf);
+    if (result->number == JBIG2_UNKNOWN_SEGMENT_NUMBER) {
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, JBIG2_UNKNOWN_SEGMENT_NUMBER, "segment number too large");
+        jbig2_free(ctx->allocator, result);
+        return NULL;
+    }
 
     /* 7.2.3 */
     result->flags = buf[4];

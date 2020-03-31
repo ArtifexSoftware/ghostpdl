@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2019 Artifex Software, Inc.
+# Copyright (C) 2001-2020 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -429,7 +429,7 @@ CCAUXLD=$(CCAUX)
 
 # Define the default gcc flags.
 GCFLAGS=@CPPFLAGS@ @GCFLAGS@ @CFLAGS@ @HAVE_POPEN_PROTO@
-GCFLAGSAUX=@GCFLAGSAUX@ @HAVE_POPEN_PROTO@
+GCFLAGSAUX=@GCFLAGSAUX@ @CFLAGSAUX@ @HAVE_POPEN_PROTO@
 
 # Define the added flags for standard, debugging, profiling
 # and shared object builds.

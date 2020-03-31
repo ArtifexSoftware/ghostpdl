@@ -156,7 +156,7 @@ pprintg6(stream * s, const char *format, double v1, double v2, double v3,
 
 /* Print a long value using a format. */
 const char *
-pprintld1(stream * s, const char *format, long v)
+pprintld1(stream *s, const char *format, long v)
 {
     const char *fp = pprintf_scan(s, format);
     char str[25];
@@ -170,14 +170,78 @@ pprintld1(stream * s, const char *format, long v)
     return pprintf_scan(s, fp + 3);
 }
 const char *
-pprintld2(stream * s, const char *format, long v1, long v2)
+pprintld2(stream *s, const char *format, long v1, long v2)
 {
     return pprintld1(s, pprintld1(s, format, v1), v2);
 }
 const char *
-pprintld3(stream * s, const char *format, long v1, long v2, long v3)
+pprintld3(stream *s, const char *format, long v1, long v2, long v3)
 {
     return pprintld2(s, pprintld1(s, format, v1), v2, v3);
+}
+
+/* Print a size_t value using a format. */
+const char *
+pprintzd1(stream *s, const char *format, size_t v)
+{
+    const char *fp = pprintf_scan(s, format);
+    char str[25];
+    const size_t z = strlen("%"PRIdSIZE);
+
+#ifdef DEBUG
+    size_t i;
+
+    for (i = 0; i < z; i++)
+        if (fp[i] != ("%"PRIdSIZE)[i])
+            break;
+    if (i != z)
+        lprintf1("Bad format in pprintzd: %s\n", format);
+#endif
+    gs_sprintf(str, "%"PRIdSIZE, v);
+    pputs_short(s, str);
+    return pprintf_scan(s, fp + z);
+}
+const char *
+pprintzd2(stream *s, const char *format, size_t v1, size_t v2)
+{
+    return pprintzd1(s, pprintzd1(s, format, v1), v2);
+}
+const char *
+pprintzd3(stream *s, const char *format, size_t v1, size_t v2, size_t v3)
+{
+    return pprintzd2(s, pprintzd1(s, format, v1), v2, v3);
+}
+
+/* Print an int64_t value using a format. */
+const char *
+pprinti64d1(stream *s, const char *format, int64_t v)
+{
+    const char *fp = pprintf_scan(s, format);
+    char str[25];
+    const size_t z = strlen("%"PRId64);
+
+#ifdef DEBUG
+    size_t i;
+
+    for (i = 0; i < z; i++)
+        if (fp[i] != ("%"PRId64)[i])
+            break;
+    if (i != z)
+        lprintf1("Bad format in pprinti64d: %s\n", format);
+#endif
+    gs_sprintf(str, "%"PRId64, v);
+    pputs_short(s, str);
+    return pprintf_scan(s, fp + z);
+}
+const char *
+pprinti64d2(stream *s, const char *format, int64_t v1, int64_t v2)
+{
+    return pprinti64d1(s, pprinti64d1(s, format, v1), v2);
+}
+const char *
+pprinti64d3(stream *s, const char *format, int64_t v1, int64_t v2, int64_t v3)
+{
+    return pprinti64d2(s, pprinti64d1(s, format, v1), v2, v3);
 }
 
 /* Print (a) string(s) using a format. */

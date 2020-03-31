@@ -58,6 +58,7 @@ if __name__ == '__main__':
     # characters.
     f = io.TextIOWrapper( sys.stdin.buffer, encoding='latin_1')
     progress_n_next = 0
+    memento_n = None
 
     def print_progress():
         print( 'memento_n=%s. num_segv=%s num_leak=%s' % (

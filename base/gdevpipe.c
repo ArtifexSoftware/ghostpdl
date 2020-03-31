@@ -29,8 +29,14 @@
 static int
 do_pclose(FILE *file)
 {
-#ifndef GS_NO_FILESYSTEM
-    return pclose(file);
+#ifdef GS_NO_FILESYSTEM
+    return gs_error_ok;
+#else
+    int status = pclose(file);
+    if (status < 0 || status > 0)
+	    return_error(gs_error_ioerror);
+
+    return gs_error_ok;
 #endif
 }
 
@@ -96,10 +102,11 @@ pipe_fopen(gx_io_device * iodev, const char *fname, const char *access,
 static int
 pipe_fclose(gx_io_device * iodev, gp_file * file)
 {
-#ifndef GS_NO_FILESYSTEM
-    gp_fclose(file);
-#endif
+#ifdef GS_NO_FILESYSTEM
     return 0;
+#else
+    return gp_fclose(file);
+#endif
 }
 
 static int

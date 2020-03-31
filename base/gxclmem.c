@@ -491,8 +491,8 @@ memfile_fclose(clist_file_ptr cf, const char *fname, bool delete)
     if (f->openlist != NULL || ((f->base_memfile != NULL) && f->base_memfile->is_open)) {
         /* TODO: do the cleanup rather than just giving an error */
         emprintf1(f->memory,
-                  "Attempt to delete a memfile still open for read: %p\n",
-                  f);
+                  "Attempt to delete a memfile still open for read: "PRI_INTPTR"\n",
+                  (intptr_t)f);
         return_error(gs_error_invalidfileaccess);
     } else {
         /* Free the memory used by this memfile */
@@ -1058,8 +1058,8 @@ memfile_rewind(clist_file_ptr cf, bool discard_data, const char *ignore_fname)
         if (f->openlist != NULL || f->base_memfile != NULL) {
             /* TODO: Move the data so it is still connected to other open files */
             emprintf1(f->memory,
-                      "memfile_rewind(%p) with discard_data=true failed: ",
-                      f);
+                      "memfile_rewind("PRI_INTPTR") with discard_data=true failed: ",
+                      (intptr_t)f);
             f->error_code = gs_note_error(gs_error_ioerror);
             return f->error_code;
         }

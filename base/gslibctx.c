@@ -86,7 +86,7 @@ gs_lib_ctx_set_icc_directory(const gs_memory_t *mem_gc, const char* pname,
     result = (char*) gs_alloc_bytes(p_ctx_mem, dir_namelen+1,
                                      "gs_lib_ctx_set_icc_directory");
     if (result == NULL) {
-        return -1;
+        return gs_error_VMerror;
     }
     strcpy(result, pname);
     p_ctx->profiledir = result;

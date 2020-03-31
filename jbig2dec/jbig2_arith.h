@@ -32,7 +32,7 @@ Jbig2ArithState *jbig2_arith_new(Jbig2Ctx *ctx, Jbig2WordStream *ws);
 
 /* decode a bit */
 /* Normally returns 0 or 1. May return negative in case of error. */
-int jbig2_arith_decode(Jbig2ArithState *as, Jbig2ArithCx *pcx);
+int jbig2_arith_decode(Jbig2Ctx *ctx, Jbig2ArithState *as, Jbig2ArithCx *pcx);
 
 /* returns true if the end of the data stream has been reached (for sanity checks) */
 bool jbig2_arith_has_reached_marker(Jbig2ArithState *as);

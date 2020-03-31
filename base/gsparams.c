@@ -141,6 +141,8 @@ gs_param_list_serialize(
             case gs_param_type_bool:
             case gs_param_type_int:
             case gs_param_type_long:
+            case gs_param_type_size_t:
+            case gs_param_type_i64:
             case gs_param_type_float:
                 wb_put_bytes((byte *) & value.value, value_top_sizeof, &write_buf);
                 break;
@@ -259,6 +261,8 @@ gs_param_list_unserialize(
             case gs_param_type_bool:
             case gs_param_type_int:
             case gs_param_type_long:
+            case gs_param_type_size_t:
+            case gs_param_type_i64:
             case gs_param_type_float:
                 break;
 

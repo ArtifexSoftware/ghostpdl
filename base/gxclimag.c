@@ -1110,6 +1110,8 @@ clist_image_plane_data(gx_image_enum_common_t * info,
             if (code < 0)
                 return code;
             if (pie->uses_color) {
+                gs_int_point color_phase;
+
                 /* We want to write the color taking into account the entire image so */
                 /* we set re.rect_nbands from pie->ymin and pie->ymax so that we will */
                 /* make the decision to write 'all_bands' the same for the whole image */
@@ -1120,6 +1122,14 @@ clist_image_plane_data(gx_image_enum_common_t * info,
                 code = cmd_put_drawing_color(cdev, re.pcls, &pie->dcolor,
                                              &re, devn_not_tile_fill);
                 if (code < 0)
+                    return code;
+                /* see if phase informaiton must be inserted in the command list */
+                /* if so, go ahead and do it for all_bands */
+                if ( pie->dcolor.type->get_phase(&pie->dcolor, &color_phase) &&
+                     (color_phase.x != re.pcls->tile_phase.x ||
+                      color_phase.y != re.pcls->tile_phase.y ) &&
+                     (code = cmd_set_tile_phase_generic(cdev, re.pcls,
+                                                        color_phase.x, color_phase.y, true)) < 0  )
                     return code;
             }
             if (entire_box.p.x != 0 || entire_box.p.y != 0 ||
@@ -1846,11 +1856,10 @@ clist_image_unknowns(gx_device *dev, const clist_image_enum *pie)
     if (pie->color_space.id == gs_no_id) { /* masked image */
         cdev->color_space.space = 0; /* for GC */
     } else {                    /* not masked */
-        if (cdev->color_space.id == pie->color_space.id) {
-            /* The color space pointer might not be valid: update it. */
-            cdev->color_space.space = pie->color_space.space;
-        } else {
+        if (cdev->color_space.id != pie->color_space.id ||
+            cdev->color_space.space != pie->color_space.space) {
             unknown |= color_space_known;
+            cdev->color_space.space = pie->color_space.space;
             cdev->color_space = pie->color_space;
         }
     }

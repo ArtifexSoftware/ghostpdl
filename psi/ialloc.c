@@ -199,9 +199,9 @@ gs_alloc_ref_array(gs_ref_memory_t * mem, ref * parr, uint attrs,
         ref *end;
 
         obj = (ref *) mem->cc->rtop - 1;		/* back up over last ref */
-        if_debug4m('A', (const gs_memory_t *)mem, "[a%d:+$ ]%s(%u) = 0x%lx\n",
+        if_debug4m('A', (const gs_memory_t *)mem, "[a%d:+$ ]%s(%u) = "PRI_INTPTR"\n",
                    ialloc_trace_space(mem), client_name_string(cname),
-                   num_refs, (ulong) obj);
+                   num_refs, (intptr_t)obj);
         mem->cc->rcur[-1].o_size += num_refs * sizeof(ref);
         end = (ref *) (mem->cc->rtop = mem->cc->cbot +=
                        num_refs * sizeof(ref));
@@ -285,16 +285,16 @@ gs_resize_ref_array(gs_ref_memory_t * mem, ref * parr,
         ref *end = (ref *) (mem->cc->cbot = mem->cc->rtop -=
                             diff * sizeof(ref));
 
-        if_debug4m('A', (const gs_memory_t *)mem, "[a%d:<$ ]%s(%u) 0x%lx\n",
+        if_debug4m('A', (const gs_memory_t *)mem, "[a%d:<$ ]%s(%u) "PRI_INTPTR"\n",
                    ialloc_trace_space(mem), client_name_string(cname), diff,
-                   (ulong) obj);
+                   (intptr_t)obj);
         mem->cc->rcur[-1].o_size -= diff * sizeof(ref);
         make_mark(end - 1);
     } else {
         /* Punt. */
-        if_debug4m('A', (const gs_memory_t *)mem, "[a%d:<$#]%s(%u) 0x%lx\n",
+        if_debug4m('A', (const gs_memory_t *)mem, "[a%d:<$#]%s(%u) "PRI_INTPTR"\n",
                    ialloc_trace_space(mem), client_name_string(cname), diff,
-                   (ulong) obj);
+                   (intptr_t)obj);
         mem->lost.refs += diff * sizeof(ref);
     }
     r_set_size(parr, new_num_refs);
@@ -329,9 +329,9 @@ gs_free_ref_array(gs_ref_memory_t * mem, ref * parr, client_name_t cname)
             mem->cc->rtop = 0;
         } else {
             /* Deallocate it at the end of the refs object. */
-            if_debug4m('A', (const gs_memory_t *)mem, "[a%d:-$ ]%s(%u) 0x%lx\n",
+            if_debug4m('A', (const gs_memory_t *)mem, "[a%d:-$ ]%s(%u) "PRI_INTPTR"\n",
                        ialloc_trace_space(mem), client_name_string(cname),
-                       num_refs, (ulong) obj);
+                       num_refs, (intptr_t)obj);
             mem->cc->rcur[-1].o_size -= num_refs * sizeof(ref);
             mem->cc->rtop = mem->cc->cbot = (byte *) (obj + 1);
             make_mark(obj);
@@ -350,9 +350,9 @@ gs_free_ref_array(gs_ref_memory_t * mem, ref * parr, client_name_t cname)
             (byte *) (obj + (num_refs + 1)) == cl.cp->cend
             ) {
             /* Free the clump. */
-            if_debug4m('a', (const gs_memory_t *)mem, "[a%d:-$L]%s(%u) 0x%lx\n",
+            if_debug4m('a', (const gs_memory_t *)mem, "[a%d:-$L]%s(%u) "PRI_INTPTR"\n",
                        ialloc_trace_space(mem), client_name_string(cname),
-                       num_refs, (ulong) obj);
+                       num_refs, (intptr_t)obj);
             if ((gs_memory_t *)mem != mem->stable_memory) {
                 alloc_save_remove(mem, (ref_packed *)obj, "gs_free_ref_array");
             }
@@ -362,9 +362,9 @@ gs_free_ref_array(gs_ref_memory_t * mem, ref * parr, client_name_t cname)
     }
     /* Punt, but fill the array with nulls so that there won't be */
     /* dangling references to confuse the garbage collector. */
-    if_debug4m('A', (const gs_memory_t *)mem, "[a%d:-$#]%s(%u) 0x%lx\n",
+    if_debug4m('A', (const gs_memory_t *)mem, "[a%d:-$#]%s(%u) "PRI_INTPTR"\n",
                ialloc_trace_space(mem), client_name_string(cname), num_refs,
-               (ulong) obj);
+               (intptr_t)obj);
     {
         uint size;
 
@@ -386,8 +386,8 @@ gs_free_ref_array(gs_ref_memory_t * mem, ref * parr, client_name_t cname)
                 size = num_refs * sizeof(ref);
                 break;
             default:
-                lprintf3("Unknown type 0x%x in free_ref_array(%u,0x%lx)!",
-                         r_type(parr), num_refs, (ulong) obj);
+                lprintf3("Unknown type 0x%x in free_ref_array(%u,"PRI_INTPTR")!",
+                         r_type(parr), num_refs, (intptr_t)obj);
                 return;
         }
         /*

@@ -68,11 +68,11 @@ static void
 alloc_trace(const char *chars, gs_ref_memory_t * imem, client_name_t cname,
             gs_memory_type_ptr_t stype, uint size, const void *ptr)
 {
-    if_debug7m('A', (const gs_memory_t *)imem, "[a%d%s]%s %s(%u) %s0x%lx\n",
+    if_debug7m('A', (const gs_memory_t *)imem, "[a%d%s]%s %s(%u) %s"PRI_INTPTR"\n",
                alloc_trace_space(imem), chars, client_name_string(cname),
                (ptr == 0 || stype == 0 ? "" :
                 struct_type_name_string(stype)),
-               size, (chars[1] == '+' ? "= " : ""), (ulong) ptr);
+               size, (chars[1] == '+' ? "= " : ""), (intptr_t)ptr);
 }
 static bool
 alloc_size_is_ok(gs_memory_type_ptr_t stype)
@@ -82,8 +82,8 @@ alloc_size_is_ok(gs_memory_type_ptr_t stype)
 #  define ALLOC_CHECK_SIZE(mem,stype)\
     BEGIN\
       if (!alloc_size_is_ok(stype)) {\
-        mlprintf2(mem,"size of struct type 0x%lx is 0x%lx!\n",\
-                 (ulong)(stype), (ulong)((stype)->ssize));\
+        mlprintf2(mem,"size of struct type "PRI_INTPTR" is 0x%lx!\n",\
+                  (intptr_t)(stype), (ulong)((stype)->ssize));\
         return 0;\
       }\
     END
@@ -1300,10 +1300,10 @@ i_alloc_byte_array(gs_memory_t * mem, size_t num_elements, size_t elt_size,
     obj = alloc_obj(imem, lsize,
                     &st_bytes, ALLOC_DIRECT, cname);
 
-    if_debug6m('A', mem, "[a%d:+b.]%s -bytes-*(%"PRIuSIZE"=%"PRIuSIZE"*%"PRIuSIZE") = 0x%lx\n",
+    if_debug6m('A', mem, "[a%d:+b.]%s -bytes-*(%"PRIuSIZE"=%"PRIuSIZE"*%"PRIuSIZE") = "PRI_INTPTR"\n",
                alloc_trace_space(imem), client_name_string(cname),
                num_elements * elt_size,
-               num_elements, elt_size, (ulong) obj);
+               num_elements, elt_size, (intptr_t)obj);
     return (byte *) obj;
 }
 static byte *
@@ -1327,10 +1327,10 @@ i_alloc_byte_array_immovable(gs_memory_t * mem, size_t num_elements,
                     &st_bytes, ALLOC_IMMOVABLE | ALLOC_DIRECT,
                     cname);
 
-    if_debug6m('A', mem, "[a%d|+b.]%s -bytes-*(%"PRIuSIZE"=%"PRIuSIZE"*%"PRIuSIZE") = 0x%lx\n",
+    if_debug6m('A', mem, "[a%d|+b.]%s -bytes-*(%"PRIuSIZE"=%"PRIuSIZE"*%"PRIuSIZE") = "PRI_INTPTR"\n",
                alloc_trace_space(imem), client_name_string(cname),
                num_elements * elt_size,
-               num_elements, elt_size, (ulong) obj);
+               num_elements, elt_size, (intptr_t)obj);
     return (byte *) obj;
 }
 static void *
@@ -1360,11 +1360,11 @@ i_alloc_struct_array(gs_memory_t * mem, size_t num_elements,
     if ((size_t)lsize != slsize)
         return NULL;
     obj = alloc_obj(imem, lsize, pstype, ALLOC_DIRECT, cname);
-    if_debug7m('A', mem, "[a%d:+<.]%s %s*(%"PRIuSIZE"=%"PRIuSIZE"*%u) = 0x%lx\n",
+    if_debug7m('A', mem, "[a%d:+<.]%s %s*(%"PRIuSIZE"=%"PRIuSIZE"*%u) = "PRI_INTPTR"\n",
                alloc_trace_space(imem), client_name_string(cname),
                struct_type_name_string(pstype),
                num_elements * pstype->ssize,
-               num_elements, pstype->ssize, (ulong) obj);
+               num_elements, pstype->ssize, (intptr_t)obj);
     return (char *)obj;
 }
 static void *
@@ -1387,11 +1387,11 @@ i_alloc_struct_array_immovable(gs_memory_t * mem, size_t num_elements,
     if ((size_t)lsize != slsize)
         return NULL;
     obj = alloc_obj(imem, lsize, pstype, ALLOC_IMMOVABLE | ALLOC_DIRECT, cname);
-    if_debug7m('A', mem, "[a%d|+<.]%s %s*(%"PRIuSIZE"=%"PRIuSIZE"*%u) = 0x%lx\n",
+    if_debug7m('A', mem, "[a%d|+<.]%s %s*(%"PRIuSIZE"=%"PRIuSIZE"*%u) = "PRI_INTPTR"\n",
                alloc_trace_space(imem), client_name_string(cname),
                struct_type_name_string(pstype),
                num_elements * pstype->ssize,
-               num_elements, pstype->ssize, (ulong) obj);
+               num_elements, pstype->ssize, (intptr_t)obj);
     return (char *)obj;
 }
 static void *
@@ -1430,13 +1430,13 @@ i_resize_object(gs_memory_t * mem, void *obj, size_t new_num_elements,
                 new_obj = obj;
             }
     if (new_obj) {
-        if_debug8m('A', mem, "[a%d:%c%c ]%s %s(%"PRIuSIZE"=>%"PRIuSIZE") 0x%lx\n",
+        if_debug8m('A', mem, "[a%d:%c%c ]%s %s(%"PRIuSIZE"=>%"PRIuSIZE") "PRI_INTPTR"\n",
                    alloc_trace_space(imem),
                    (new_size > old_size ? '>' : '<'),
                    (pstype == &st_bytes ? 'b' : '<'),
                    client_name_string(cname),
                    struct_type_name_string(pstype),
-                   old_size, new_size, (ulong) obj);
+                   old_size, new_size, (intptr_t)obj);
         return new_obj;
     }
     /* Punt. */
@@ -1468,8 +1468,8 @@ i_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
         clump_locator_t cld;
 
         if (pstype == &st_free) {
-            mlprintf2(mem, "%s: object 0x%lx already free!\n",
-                      client_name_string(cname), (ulong) ptr);
+            mlprintf2(mem, "%s: object "PRI_INTPTR" already free!\n",
+                      client_name_string(cname), (intptr_t)ptr);
             return;		/*gs_abort(); */
         }
         /* Check that this allocator owns the object being freed. */
@@ -1478,9 +1478,9 @@ i_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
                !clump_locate_ptr(ptr, &cld)
             ) {
             if (!cld.memory->saved) {
-                mlprintf3(mem, "%s: freeing 0x%lx, not owned by memory 0x%lx!\n",
-                          client_name_string(cname), (ulong) ptr,
-                          (ulong) mem);
+                mlprintf3(mem, "%s: freeing "PRI_INTPTR", not owned by memory "PRI_INTPTR"!\n",
+                          client_name_string(cname), (intptr_t)ptr,
+                          (intptr_t)mem);
                 return;		/*gs_abort(); */
             }
                   /****** HACK: we know the saved state is the first ******
@@ -1491,10 +1491,10 @@ i_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
         if (!(PTR_BETWEEN((const byte *)pp, cld.cp->cbase,
                           cld.cp->cbot))
             ) {
-            mlprintf5(mem, "%s: freeing 0x%lx,\n\toutside clump 0x%lx cbase=0x%lx, cbot=0x%lx!\n",
-                      client_name_string(cname), (ulong) ptr,
-                      (ulong) cld.cp, (ulong) cld.cp->cbase,
-                      (ulong) cld.cp->cbot);
+            mlprintf5(mem, "%s: freeing "PRI_INTPTR",\n\toutside clump "PRI_INTPTR" cbase="PRI_INTPTR", cbot="PRI_INTPTR"!\n",
+                      client_name_string(cname), (intptr_t) ptr,
+                      (intptr_t) cld.cp, (intptr_t) cld.cp->cbase,
+                      (intptr_t) cld.cp->cbot);
             return;		/*gs_abort(); */
         }
     }
@@ -1510,9 +1510,9 @@ i_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
         if (gs_debug['a'] || gs_debug['A'])
             saved_stype = *pstype;
 
-        if_debug3m('u', mem, "[u]finalizing %s 0x%lx (%s)\n",
+        if_debug3m('u', mem, "[u]finalizing %s "PRI_INTPTR" (%s)\n",
                    struct_type_name_string(pstype),
-                   (ulong) ptr, client_name_string(cname));
+                   (intptr_t)ptr, client_name_string(cname));
         (*finalize) (mem, ptr);
 
         if (gs_debug['a'] || gs_debug['A'])
@@ -1637,9 +1637,9 @@ i_alloc_string(gs_memory_t * mem, size_t nbytes, client_name_t cname)
     }
 top:
     if (imem->cc && !imem->cc->c_alone && imem->cc->ctop - imem->cc->cbot > nbytes) {
-        if_debug4m('A', mem, "[a%d:+> ]%s(%"PRIuSIZE") = 0x%lx\n",
+        if_debug4m('A', mem, "[a%d:+> ]%s(%"PRIuSIZE") = "PRI_INTPTR"\n",
                    alloc_trace_space(imem), client_name_string(cname), nbytes,
-                   (ulong) (imem->cc->ctop - nbytes));
+                   (intptr_t)(imem->cc->ctop - nbytes));
         str = imem->cc->ctop -= nbytes;
         gs_alloc_fill(str, gs_alloc_fill_alloc, nbytes);
         str += HDR_ID_OFFSET;
@@ -1698,9 +1698,9 @@ i_alloc_string_immovable(gs_memory_t * mem, size_t nbytes, client_name_t cname)
     cp->c_alone = true;
 
     str = cp->ctop = cp->climit - nbytes;
-    if_debug4m('a', mem, "[a%d|+>L]%s(%"PRIuSIZE") = 0x%lx\n",
+    if_debug4m('a', mem, "[a%d|+>L]%s(%"PRIuSIZE") = "PRI_INTPTR"\n",
                alloc_trace_space(imem), client_name_string(cname), nbytes,
-               (ulong) str);
+               (intptr_t)str);
     gs_alloc_fill(str, gs_alloc_fill_alloc, nbytes);
     str += HDR_ID_OFFSET;
     ASSIGN_HDR_ID(str);
@@ -1727,11 +1727,11 @@ i_resize_string(gs_memory_t * mem, byte * data, size_t old_num, size_t new_num,
          imem->cc->ctop - imem->cc->cbot > new_num - old_num)
         ) {			/* Resize in place. */
         ptr = data + old_num - new_num;
-        if_debug6m('A', mem, "[a%d:%c> ]%s(%"PRIuSIZE"->%"PRIuSIZE") 0x%lx\n",
+        if_debug6m('A', mem, "[a%d:%c> ]%s(%"PRIuSIZE"->%"PRIuSIZE") "PRI_INTPTR"\n",
                    alloc_trace_space(imem),
                    (new_num > old_num ? '>' : '<'),
                    client_name_string(cname), old_num, new_num,
-                   (ulong) ptr);
+                   (intptr_t)ptr);
         imem->cc->ctop = ptr;
         memmove(ptr, data, min(old_num, new_num));
 #ifdef DEBUG
@@ -1750,9 +1750,9 @@ i_resize_string(gs_memory_t * mem, byte * data, size_t old_num, size_t new_num,
             imem->lost.strings += old_num - new_num;
             gs_alloc_fill(data + new_num, gs_alloc_fill_free,
                           old_num - new_num);
-            if_debug5m('A', mem, "[a%d:<> ]%s(%"PRIuSIZE"->%"PRIuSIZE") 0x%lx\n",
+            if_debug5m('A', mem, "[a%d:<> ]%s(%"PRIuSIZE"->%"PRIuSIZE") "PRI_INTPTR"\n",
                        alloc_trace_space(imem), client_name_string(cname),
-                       old_num, new_num, (ulong)ptr);
+                       old_num, new_num, (intptr_t)ptr);
             ptr += HDR_ID_OFFSET;
             ASSIGN_HDR_ID(ptr);
         } else {			/* Punt. */
@@ -1780,14 +1780,14 @@ i_free_string(gs_memory_t * mem, byte * data, size_t nbytes,
         data -= HDR_ID_OFFSET;
         nbytes += HDR_ID_OFFSET;
         if (imem->cc && data == imem->cc->ctop) {
-            if_debug4m('A', mem, "[a%d:-> ]%s(%"PRIuSIZE") 0x%lx\n",
+            if_debug4m('A', mem, "[a%d:-> ]%s(%"PRIuSIZE") "PRI_INTPTR"\n",
                        alloc_trace_space(imem), client_name_string(cname), nbytes,
-                       (ulong) data);
+                       (intptr_t)data);
             imem->cc->ctop += nbytes;
         } else {
-            if_debug4m('A', mem, "[a%d:->#]%s(%"PRIuSIZE") 0x%lx\n",
+            if_debug4m('A', mem, "[a%d:->#]%s(%"PRIuSIZE") "PRI_INTPTR"\n",
                        alloc_trace_space(imem), client_name_string(cname), nbytes,
-                       (ulong) data);
+                       (intptr_t)data);
             imem->lost.strings += nbytes;
         }
         gs_alloc_fill(data, gs_alloc_fill_free, nbytes);
@@ -2102,9 +2102,9 @@ consolidate_clump_free(clump_t *cp, gs_ref_memory_t *mem)
         /* Remove the free objects from the freelists. */
         remove_range_from_freelist(mem, begin_free, cp->cbot);
         if_debug4m('a', (const gs_memory_t *)mem,
-                   "[a]resetting clump 0x%lx cbot from 0x%lx to 0x%lx (%lu free)\n",
-                   (ulong) cp, (ulong) cp->cbot, (ulong) begin_free,
-                   (ulong) ((byte *) cp->cbot - (byte *) begin_free));
+                   "[a]resetting clump "PRI_INTPTR" cbot from "PRI_INTPTR" to "PRI_INTPTR" (%lu free)\n",
+                   (intptr_t)cp, (intptr_t)cp->cbot, (intptr_t)begin_free,
+                   (intptr_t)((byte *)cp->cbot - (byte *)begin_free));
         cp->cbot = (byte *) begin_free;
     }
 }
@@ -2321,8 +2321,8 @@ trim_obj(gs_ref_memory_t *mem, obj_header_t *obj, obj_size_t size, clump_t *cp)
         if (cp) {
 #ifdef DEBUG
             if (cp->cbot != (byte *)obj + old_rounded_size) {
-                lprintf3("resizing 0x%lx, old size %u, new size %u, cbot wrong!\n",
-                         (ulong)obj, old_rounded_size, size);
+                lprintf3("resizing "PRI_INTPTR", old size %u, new size %u, cbot wrong!\n",
+                         (intptr_t)obj, old_rounded_size, size);
                 /* gs_abort */
             } else
 #endif
@@ -2390,8 +2390,8 @@ i_register_root(gs_memory_t * mem, gs_gc_root_t ** rpp, gs_ptr_type_t ptype,
         rp = *rpp;
         rp->free_on_unregister = false;
     }
-    if_debug3m('8', mem, "[8]register root(%s) 0x%lx -> 0x%lx\n",
-               client_name_string(cname), (ulong)rp, (ulong)up);
+    if_debug3m('8', mem, "[8]register root(%s) "PRI_INTPTR" -> "PRI_INTPTR"\n",
+               client_name_string(cname), (intptr_t)rp, (intptr_t)up);
     rp->ptype = ptype;
     rp->p = up;
     rp->next = imem->roots;
@@ -2406,8 +2406,8 @@ i_unregister_root(gs_memory_t * mem, gs_gc_root_t * rp, client_name_t cname)
     gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     gs_gc_root_t **rpp = &imem->roots;
 
-    if_debug2m('8', mem, "[8]unregister root(%s) 0x%lx\n",
-               client_name_string(cname), (ulong) rp);
+    if_debug2m('8', mem, "[8]unregister root(%s) "PRI_INTPTR"\n",
+               client_name_string(cname), (intptr_t)rp);
     while (*rpp != rp)
         rpp = &(*rpp)->next;
     *rpp = (*rpp)->next;
@@ -2602,8 +2602,8 @@ alloc_unlink_clump(clump_t * cp, gs_ref_memory_t * mem)
         clump_splay_app(mem->root, mem, check_in_clump, &found);
 
         if (found != NULL) {
-            mlprintf2((const gs_memory_t *)mem, "unlink_clump 0x%lx not owned by memory 0x%lx!\n",
-                      (ulong) cp, (ulong) mem);
+            mlprintf2((const gs_memory_t *)mem, "unlink_clump "PRI_INTPTR" not owned by memory "PRI_INTPTR"!\n",
+                      (intptr_t)cp, (intptr_t)mem);
             return;		/*gs_abort(); */
         }
     }
@@ -2767,7 +2767,7 @@ debug_dump_contents(const gs_memory_t *mem, const byte * bot,
             }
             continue;
         }
-        gs_sprintf(label, "0x%lx:", (ulong) block);
+        gs_sprintf(label, PRI_INTPTR":", (intptr_t)block);
         debug_indent(mem, indent);
         dmputs(mem, label);
         for (i = 0; i < block_size; ++i) {
@@ -2811,15 +2811,15 @@ debug_print_object(const gs_memory_t *mem, const void *obj, const dump_control_t
     const gs_memory_struct_type_t *type = pre->o_type;
     dump_options_t options = control->options;
 
-    dmprintf3(mem, "  pre=0x%lx(obj=0x%lx) size=%lu", (ulong) pre, (ulong) obj,
+    dmprintf3(mem, "  pre="PRI_INTPTR"(obj="PRI_INTPTR") size=%lu", (ulong) pre, (ulong) obj,
              size);
     switch (options & (dump_do_type_addresses | dump_do_no_types)) {
     case dump_do_type_addresses + dump_do_no_types:	/* addresses only */
-        dmprintf1(mem, " type=0x%lx", (ulong) type);
+        dmprintf1(mem, " type="PRI_INTPTR"", (intptr_t) type);
         break;
     case dump_do_type_addresses:	/* addresses & names */
-        dmprintf2(mem, " type=%s(0x%lx)", struct_type_name_string(type),
-                 (ulong) type);
+        dmprintf2(mem, " type=%s("PRI_INTPTR")", struct_type_name_string(type),
+                 (intptr_t)type);
         break;
     case 0:		/* names only */
         dmprintf1(mem, " type=%s", struct_type_name_string(type));
@@ -2827,7 +2827,7 @@ debug_print_object(const gs_memory_t *mem, const void *obj, const dump_control_t
         ;
     }
     if (options & dump_do_marks) {
-        dmprintf2(mem, " smark/back=%u (0x%x)", pre->o_smark, pre->o_smark);
+        dmprintf2(mem, " smark/back=%u ("PRI_INTPTR")", pre->o_smark, pre->o_smark);
     }
     dmputc(mem, '\n');
     if (type == &st_free)
@@ -2851,7 +2851,7 @@ debug_print_object(const gs_memory_t *mem, const void *obj, const dump_control_t
                         if (!str)
                             dmprintf(mem, "0x0");
                         else
-                            dmprintf2(mem, "0x%lx(%u)", (ulong) str->data, str->size);
+                            dmprintf2(mem, PRI_INTPTR "(%u)", (intptr_t)str->data, str->size);
                         if (options & dump_do_pointed_strings) {
                             dmputs(mem, " =>\n");
                             if (!str)
@@ -2864,7 +2864,7 @@ debug_print_object(const gs_memory_t *mem, const void *obj, const dump_control_t
                         }
                     } else {
                         dmprintf1(mem, (PTR_BETWEEN(ptr, obj, (const byte *)obj + size) ?
-                                  "(0x%lx)\n" : "0x%lx\n"), (ulong) ptr);
+                                  "("PRI_INTPTR")\n" : PRI_INTPTR "\n"), (intptr_t) ptr);
                     }
                 }
             } else { /* proc == 0 */
@@ -2883,22 +2883,22 @@ debug_print_object(const gs_memory_t *mem, const void *obj, const dump_control_t
 void
 debug_dump_clump(const gs_memory_t *mem, const clump_t * cp, const dump_control_t * control)
 {
-    dmprintf1(mem, "clump at 0x%lx:\n", (ulong) cp);
-    dmprintf3(mem, "   chead=0x%lx  cbase=0x%lx sbase=0x%lx\n",
-              (ulong) cp->chead, (ulong) cp->cbase, (ulong) cp->sbase);
-    dmprintf3(mem, "    rcur=0x%lx   rtop=0x%lx  cbot=0x%lx\n",
-              (ulong) cp->rcur, (ulong) cp->rtop, (ulong) cp->cbot);
-    dmprintf4(mem, "    ctop=0x%lx climit=0x%lx smark=0x%lx, size=%u\n",
-              (ulong) cp->ctop, (ulong) cp->climit, (ulong) cp->smark,
+    dmprintf1(mem, "clump at "PRI_INTPTR":\n", (intptr_t) cp);
+    dmprintf3(mem, "   chead="PRI_INTPTR"  cbase="PRI_INTPTR" sbase="PRI_INTPTR"\n",
+              (intptr_t)cp->chead, (intptr_t)cp->cbase, (intptr_t)cp->sbase);
+    dmprintf3(mem, "    rcur="PRI_INTPTR"   rtop="PRI_INTPTR"  cbot="PRI_INTPTR"\n",
+              (intptr_t)cp->rcur, (intptr_t)cp->rtop, (intptr_t)cp->cbot);
+    dmprintf4(mem, "    ctop="PRI_INTPTR" climit="PRI_INTPTR" smark="PRI_INTPTR", size=%u\n",
+              (intptr_t)cp->ctop, (intptr_t)cp->climit, (intptr_t)cp->smark,
               cp->smark_size);
-    dmprintf2(mem, "  sreloc=0x%lx   cend=0x%lx\n",
-              (ulong) cp->sreloc, (ulong) cp->cend);
-    dmprintf6(mem, "left=0x%lx right=0x%lx parent=0x%lx outer=0x%lx inner_count=%u has_refs=%s\n",
-              (ulong) cp->left, (ulong) cp->right, (ulong) cp->parent, (ulong) cp->outer,
+    dmprintf2(mem, "  sreloc="PRI_INTPTR"   cend="PRI_INTPTR"\n",
+              (intptr_t)cp->sreloc, (intptr_t)cp->cend);
+    dmprintf6(mem, "left="PRI_INTPTR" right="PRI_INTPTR" parent="PRI_INTPTR" outer="PRI_INTPTR" inner_count=%u has_refs=%s\n",
+              (intptr_t)cp->left, (intptr_t)cp->right, (intptr_t)cp->parent, (intptr_t)cp->outer,
               cp->inner_count, (cp->has_refs ? "true" : "false"));
 
-    dmprintf2(mem, "  sfree1=0x%lx   sfree=0x%x\n",
-              (ulong) cp->sfree1, cp->sfree);
+    dmprintf2(mem, "  sfree1="PRI_INTPTR"   sfree="PRI_INTPTR"\n",
+              (intptr_t)cp->sfree1, (intptr_t)cp->sfree);
     if (control->options & dump_do_strings) {
         debug_dump_contents(mem, (control->bottom == 0 ? cp->ctop :
                              max(control->bottom, cp->ctop)),
@@ -2982,10 +2982,10 @@ static void ddct(const gs_memory_t *mem, clump_t *cp, clump_t *parent, int depth
     for (i = 0; i < depth; i++)
         dmlprintf(mem, " ");
 
-    dmlprintf7(mem, "Clump %p:%p parent=%p left=%p:%p right=%p:%p\n",
-        cp, cp->cbase, cp->parent,
-        cp->left, cp->left ? cp->left->cbase : NULL,
-        cp->right, cp->right ? cp->right->cbase : NULL);
+    dmlprintf7(mem, "Clump "PRI_INTPTR":"PRI_INTPTR" parent="PRI_INTPTR" left="PRI_INTPTR":"PRI_INTPTR" right="PRI_INTPTR":"PRI_INTPTR"\n",
+        (intptr_t)cp, (intptr_t)cp->cbase, (intptr_t)cp->parent,
+        (intptr_t)cp->left, (intptr_t)cp->left ? cp->left->cbase : NULL,
+        (intptr_t)cp->right, (intptr_t)cp->right ? cp->right->cbase : NULL);
     if (cp->parent != parent)
         dmlprintf(mem, "Parent pointer mismatch!\n");
     ddct(mem, cp->left, cp, depth+1);
