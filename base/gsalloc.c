@@ -778,7 +778,7 @@ ialloc_alloc_state(gs_memory_t * parent, uint clump_size)
 #endif
     iimem->is_controlled = false;
     iimem->gc_status.vm_threshold = clump_size * 3L;
-    iimem->gc_status.max_vm = max_long;
+    iimem->gc_status.max_vm = MAX_MAX_VM;
     iimem->gc_status.signal_value = 0;
     iimem->gc_status.enabled = false;
     iimem->gc_status.requested = 0;
@@ -865,8 +865,7 @@ ialloc_add_clump(gs_ref_memory_t *imem, ulong space, client_name_t cname)
     /* Allow acquisition of this clump. */
     imem->is_controlled = false;
     imem->large_size = imem->clump_size;
-    imem->limit = max_size_t;
-    imem->gc_status.max_vm = max_size_t;
+    imem->limit = imem->gc_status.max_vm = MAX_MAX_VM;
 
     /* Acquire the clump. */
     cp = alloc_add_clump(imem, space, cname);
@@ -954,7 +953,7 @@ ialloc_set_limit(register gs_ref_memory_t * mem)
          * exceeds the lesser of max_vm or (if GC is enabled)
          * gc_allocated + vm_threshold.
          */
-    ulong max_allocated =
+    size_t max_allocated =
     (mem->gc_status.max_vm > mem->previous_status.allocated ?
      mem->gc_status.max_vm - mem->previous_status.allocated :
      0);
@@ -1071,13 +1070,17 @@ gs_memory_set_gc_status(gs_ref_memory_t * mem, const gs_memory_gc_status_t * pst
     ialloc_set_limit(mem);
 }
 
-/* Set VM threshold. */
+/* Set VM threshold. Value passed as int64_t since it is signed */
 void
-gs_memory_set_vm_threshold(gs_ref_memory_t * mem, size_t val)
+gs_memory_set_vm_threshold(gs_ref_memory_t * mem, int64_t val)
 {
     gs_memory_gc_status_t stat;
     gs_ref_memory_t * stable = (gs_ref_memory_t *)mem->stable_memory;
 
+    if (val < MIN_VM_THRESHOLD)
+        val = MIN_VM_THRESHOLD;
+    else if (val > MAX_VM_THRESHOLD)
+        val = MAX_VM_THRESHOLD;
     gs_memory_gc_status(mem, &stat);
     stat.vm_threshold = val;
     gs_memory_set_gc_status(mem, &stat);

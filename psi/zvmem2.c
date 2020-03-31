@@ -26,8 +26,6 @@
 /* Garbage collector control parameters. */
 #define DEFAULT_VM_THRESHOLD_SMALL 100000
 #define DEFAULT_VM_THRESHOLD_LARGE 8000000
-#define MIN_VM_THRESHOLD 1
-#define MAX_VM_THRESHOLD max_long
 
 /* ------ Local/global VM control ------ */
 
@@ -75,17 +73,17 @@ zgcheck(i_ctx_t *i_ctx_p)
  * This is implemented as a PostScript procedure that calls setuserparams.
  */
 int
-set_vm_threshold(i_ctx_t *i_ctx_p, long val)
+set_vm_threshold(i_ctx_t *i_ctx_p, int64_t val)
 {
     if (val < -1)
         return_error(gs_error_rangecheck);
     else if (val == -1)
         val = (gs_debug_c('.') ? DEFAULT_VM_THRESHOLD_SMALL :
                DEFAULT_VM_THRESHOLD_LARGE);
-    else if (val < MIN_VM_THRESHOLD)
-        val = MIN_VM_THRESHOLD;
-    else if (val > MAX_VM_THRESHOLD)
-        val = MAX_VM_THRESHOLD;
+#if PSINT32BIT==1
+    else if (val > max_int)
+        val = max_int
+#endif
     gs_memory_set_vm_threshold(idmemory->space_system, val);
     gs_memory_set_vm_threshold(idmemory->space_global, val);
     gs_memory_set_vm_threshold(idmemory->space_local, val);

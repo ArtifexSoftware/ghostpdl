@@ -20,6 +20,7 @@
 #  define gsalloc_INCLUDED
 
 #include "std.h"
+#include "stdint_.h" /* make sure stdint types are available - for int64_t */
 
 typedef struct gs_ref_memory_s gs_ref_memory_t;
 
@@ -28,7 +29,8 @@ typedef struct gs_ref_memory_s gs_ref_memory_t;
  */
 typedef struct gs_memory_gc_status_s {
         /* Set by client */
-    size_t vm_threshold;		/* GC interval */
+    /* Note vm_threshold is set as a signed value */
+    int64_t vm_threshold;	/* GC interval */
     size_t max_vm;		/* maximum allowed allocation */
 
     int signal_value;		/* value to store in gs_lib_ctx->gcsignal */
@@ -36,9 +38,20 @@ typedef struct gs_memory_gc_status_s {
         /* Set by allocator */
     size_t requested;		/* amount of last failing request */
 } gs_memory_gc_status_t;
+
+/* max_vm values, and vm_threshold are signed in PostScript. */
+#if ARCH_SIZEOF_SIZE_T < ARCH_SIZEOF_INT64_T
+#  define MAX_VM_THRESHOLD max_size_t
+#else
+#  define MAX_VM_THRESHOLD max_int64_t
+#endif
+#define MAX_MAX_VM (max_size_t>>1)
+#define MIN_VM_THRESHOLD 1
+
 void gs_memory_gc_status(const gs_ref_memory_t *, gs_memory_gc_status_t *);
 void gs_memory_set_gc_status(gs_ref_memory_t *, const gs_memory_gc_status_t *);
-void gs_memory_set_vm_threshold(gs_ref_memory_t * mem, size_t val);
+/* Value passed as int64_t, but limited to MAX_VM_THRESHOLD (see set_vm_threshold) */
+void gs_memory_set_vm_threshold(gs_ref_memory_t * mem, int64_t val);
 void gs_memory_set_vm_reclaim(gs_ref_memory_t * mem, bool enabled);
 
 /* ------ Initialization ------ */

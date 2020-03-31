@@ -58,6 +58,20 @@ typedef struct param_def_s {
     param_def_common;
 } param_def_t;
 
+typedef struct size_t_param_def_s {
+    param_def_common;
+    size_t min_value, max_value;
+    size_t (*current)(i_ctx_t *);
+    int (*set)(i_ctx_t *, size_t);
+} size_t_param_def_t;
+
+typedef struct i64_param_def_s {
+    param_def_common;
+    int64_t min_value, max_value;
+    int64_t (*current)(i_ctx_t *);
+    int (*set)(i_ctx_t *, int64_t);
+} i64_param_def_t;
+
 typedef struct long_param_def_s {
     param_def_common;
     long min_value, max_value;
@@ -87,6 +101,10 @@ typedef struct string_param_def_s {
 
 /* Define a parameter set (user or system). */
 typedef struct param_set_s {
+    const size_t_param_def_t *size_t_defs;
+    uint size_t_count;
+    const i64_param_def_t *i64_defs;
+    uint i64_count;
     const long_param_def_t *long_defs;
     uint long_count;
     const bool_param_def_t *bool_defs;
@@ -165,24 +183,34 @@ current_CurFontCache(i_ctx_t *i_ctx_p)
     gs_cachestatus(ifont_dir, cstat);
     return cstat[0];
 }
-static long
+
+/* Even though size_t is unsigned, PostScript limits this to signed range */
+static size_t
 current_MaxGlobalVM(i_ctx_t *i_ctx_p)
 {
     gs_memory_gc_status_t stat;
+    size_t val;
 
     gs_memory_gc_status(iimemory_global, &stat);
+    /* RJW: This seems very supicious to me. I get that in CPSI
+     * mode the max_vm figure needs to be kept to 32bit mode, but
+     * surely clipping it should be correct, rather than truncating
+     * it? i.e. min(stat.max_vm, 0x7fffffff) */
     if (gs_currentcpsimode(imemory))
         return stat.max_vm & 0x7fffffff;
-    else
-        return stat.max_vm;
+    /* else clamp at the maximum positive value for the size_t size signed integer */
+    val = min(stat.max_vm, MAX_VM_THRESHOLD);
+    return val;
 }
+
+/* Even though size_t is unsigned, PostScript limits this to signed range */
 static int
-set_MaxGlobalVM(i_ctx_t *i_ctx_p, long val)
+set_MaxGlobalVM(i_ctx_t *i_ctx_p, size_t val)
 {
     gs_memory_gc_status_t stat;
 
     gs_memory_gc_status(iimemory_global, &stat);
-    stat.max_vm = max(val, 0);
+    stat.max_vm = val;
     gs_memory_set_gc_status(iimemory_global, &stat);
     return 0;
 }
@@ -203,16 +231,19 @@ current_PageCount(i_ctx_t *i_ctx_p)
     return 1000 + i_ctx_p->nv_page_count; /* Add 1000 to imitate NV memory */
 }
 
+static const size_t_param_def_t system_size_t_params[] =
+{
+    /* Extensions */
+    {"MaxGlobalVM", MIN_VM_THRESHOLD, MAX_VM_THRESHOLD, current_MaxGlobalVM, set_MaxGlobalVM}
+};
+
 static const long_param_def_t system_long_params[] =
 {
     {"BuildTime", min_long, max_long, current_BuildTime, NULL},
-{"MaxFontCache", 0, MAX_UINT_PARAM, current_MaxFontCache, set_MaxFontCache},
+    {"MaxFontCache", 0, MAX_UINT_PARAM, current_MaxFontCache, set_MaxFontCache},
     {"CurFontCache", 0, MAX_UINT_PARAM, current_CurFontCache, NULL},
     {"Revision", min_long, max_long, current_Revision, NULL},
-    {"PageCount", min_long, max_long, current_PageCount, NULL},
-
-    /* Extensions */
-    {"MaxGlobalVM", 0, max_long, current_MaxGlobalVM, set_MaxGlobalVM}
+    {"PageCount", min_long, max_long, current_PageCount, NULL}
 };
 
 /* Boolean values */
@@ -249,6 +280,8 @@ static const string_param_def_t system_string_params[] =
 /* The system parameter set */
 static const param_set system_param_set =
 {
+    system_size_t_params, countof(system_size_t_params),
+    NULL, 0,	/* No i64 params for systemparams (yet) */
     system_long_params, countof(system_long_params),
     system_bool_params, countof(system_bool_params),
     system_string_params, countof(system_string_params)
@@ -390,24 +423,31 @@ set_MaxExecStack(i_ctx_t *i_ctx_p, long val)
 {
     return ref_stack_set_max_count(&e_stack, val);
 }
-static long
+static size_t
 current_MaxLocalVM(i_ctx_t *i_ctx_p)
 {
     gs_memory_gc_status_t stat;
+    size_t val;
 
     gs_memory_gc_status(iimemory_local, &stat);
+    /* RJW: This seems very supicious to me. I get that in CPSI
+     * mode the max_vm figure needs to be kept to 32bit mode, but
+     * surely clipping it should be correct, rather than truncating
+     * it? i.e. min(stat.max_vm, 0x7fffffff) */
     if (gs_currentcpsimode(imemory))
         return stat.max_vm & 0x7fffffff;
-    else
-        return stat.max_vm;
+    /* else clamp at the maximun positive value for the size_t size signed integer */
+    val = min(stat.max_vm, MAX_VM_THRESHOLD);
+    return val;
 }
+/* Even though size_t is unsigned, PostScript limits this to signed range */
 static int
-set_MaxLocalVM(i_ctx_t *i_ctx_p, long val)
+set_MaxLocalVM(i_ctx_t *i_ctx_p, size_t val)
 {
     gs_memory_gc_status_t stat;
 
     gs_memory_gc_status(iimemory_local, &stat);
-    stat.max_vm = max(val, 0);
+    stat.max_vm = val;
     gs_memory_set_gc_status(iimemory_local, &stat);
     return 0;
 }
@@ -420,7 +460,7 @@ current_VMReclaim(i_ctx_t *i_ctx_p)
     gs_memory_gc_status(iimemory_local, &lstat);
     return (!gstat.enabled ? -2 : !lstat.enabled ? -1 : 0);
 }
-static long
+static int64_t
 current_VMThreshold(i_ctx_t *i_ctx_p)
 {
     gs_memory_gc_status_t stat;
@@ -570,6 +610,16 @@ set_lab_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
     return gs_setlabicc(igs, pval);
 }
 
+static const size_t_param_def_t user_size_t_params[] =
+{
+    {"MaxLocalVM", MIN_VM_THRESHOLD, MAX_VM_THRESHOLD, current_MaxLocalVM, set_MaxLocalVM}
+};
+
+static const i64_param_def_t user_i64_params[] =
+{
+    {"VMThreshold", -1, MAX_VM_THRESHOLD, current_VMThreshold, set_vm_threshold},
+};
+
 static const long_param_def_t user_long_params[] =
 {
     {"JobTimeout", 0, MAX_UINT_PARAM,
@@ -584,12 +634,8 @@ static const long_param_def_t user_long_params[] =
      current_MaxDictStack, set_MaxDictStack},
     {"MaxExecStack", -1, max_long,
      current_MaxExecStack, set_MaxExecStack},
-    {"MaxLocalVM", 0, max_long,
-     current_MaxLocalVM, set_MaxLocalVM},
     {"VMReclaim", -2, 0,
      current_VMReclaim, set_vm_reclaim},
-    {"VMThreshold", -1, max_long,
-     current_VMThreshold, set_vm_threshold},
     {"WaitTimeout", 0, MAX_UINT_PARAM,
      current_WaitTimeout, set_WaitTimeout},
     /* Extensions */
@@ -685,6 +731,8 @@ static const bool_param_def_t user_bool_params[] =
 /* The user parameter set */
 static const param_set user_param_set =
 {
+    user_size_t_params, countof(user_size_t_params),
+    user_i64_params, countof(user_i64_params),
     user_long_params, countof(user_long_params),
     user_bool_params, countof(user_bool_params),
     user_string_params, countof(user_string_params)
@@ -763,6 +811,48 @@ setparams(i_ctx_t *i_ctx_p, gs_param_list * plist, const param_set * pset)
     int code;
     unsigned int i;
 
+    for (i = 0; i < pset->size_t_count; i++) {
+        const size_t_param_def_t *pdef = &pset->size_t_defs[i];
+        size_t val;
+
+        if (pdef->set == NULL)
+            continue;
+        code = param_read_size_t(plist, pdef->pname, &val);
+        switch (code) {
+            default:		/* invalid */
+                return code;
+            case 1:		/* missing */
+                break;
+            case 0:
+                if (val < pdef->min_value || val > pdef->max_value)
+                    return_error(gs_error_rangecheck);
+                code = (*pdef->set)(i_ctx_p, val);
+                if (code < 0)
+                    return code;
+        }
+    }
+
+    for (i = 0; i < pset->i64_count; i++) {
+        const i64_param_def_t *pdef = &pset->i64_defs[i];
+        int64_t val;
+
+        if (pdef->set == NULL)
+            continue;
+        code = param_read_i64(plist, pdef->pname, &val);
+        switch (code) {
+            default:		/* invalid */
+                return code;
+            case 1:		/* missing */
+                break;
+            case 0:
+                if (val < pdef->min_value || val > pdef->max_value)
+                    return_error(gs_error_rangecheck);
+                code = (*pdef->set)(i_ctx_p, val);
+                if (code < 0)
+                    return code;
+        }
+    }
+
     for (i = 0; i < pset->long_count; i++) {
         const long_param_def_t *pdef = &pset->long_defs[i];
         long val;
@@ -837,6 +927,29 @@ current_param_list(i_ctx_t *i_ctx_p, const param_set * pset,
     unsigned int i;
 
     stack_param_list_write(&list, &o_stack, NULL, iimemory);
+
+    for (i = 0; i < pset->size_t_count; i++) {
+        const char *pname = pset->size_t_defs[i].pname;
+
+        if (pname_matches(pname, psref)) {
+            size_t val = (*pset->size_t_defs[i].current)(i_ctx_p);
+
+            code = param_write_size_t(plist, pname, &val);
+            if (code < 0)
+                return code;
+        }
+    }
+    for (i = 0; i < pset->i64_count; i++) {
+        const char *pname = pset->i64_defs[i].pname;
+
+        if (pname_matches(pname, psref)) {
+            int64_t val = (*pset->i64_defs[i].current)(i_ctx_p);
+
+            code = param_write_i64(plist, pname, &val);
+            if (code < 0)
+                return code;
+        }
+    }
     for (i = 0; i < pset->long_count; i++) {
         const char *pname = pset->long_defs[i].pname;
 
