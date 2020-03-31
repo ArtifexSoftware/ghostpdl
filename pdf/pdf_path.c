@@ -141,8 +141,7 @@ static int pdfi_fill_inner(pdf_context *ctx, bool use_eofill)
     code = pdfi_gsave(ctx);
     if (code < 0) goto exit;
 
-    code = pdfi_trans_setup(ctx, &state, TRANSPARENCY_Caller_Fill,
-                                gs_getfillconstantalpha(ctx->pgs));
+    code = pdfi_trans_setup(ctx, &state, TRANSPARENCY_Caller_Fill);
     if (code == 0) {
         if (use_eofill)
             code = gs_eofill(ctx->pgs);
@@ -190,8 +189,7 @@ int pdfi_stroke(pdf_context *ctx)
     if (code < 0) goto exit;
 
     gs_swapcolors_quick(ctx->pgs);
-    code = pdfi_trans_setup(ctx, &state, TRANSPARENCY_Caller_Stroke,
-                                gs_getstrokeconstantalpha(ctx->pgs));
+    code = pdfi_trans_setup(ctx, &state, TRANSPARENCY_Caller_Stroke);
     if (code == 0) {
         code = gs_stroke(ctx->pgs);
         code1 = pdfi_trans_teardown(ctx, &state);
@@ -444,7 +442,7 @@ static int pdfi_B_inner(pdf_context *ctx, bool use_eofill)
     if (pdfi_oc_is_off(ctx))
         goto exit;
 
-    code = pdfi_trans_set_params(ctx, gs_getstrokeconstantalpha(ctx->pgs));
+    code = pdfi_trans_set_params(ctx);
     if (code == 0) {
         if (use_eofill)
             code = gs_eofillstroke(ctx->pgs, &code1);

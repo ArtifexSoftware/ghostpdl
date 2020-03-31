@@ -301,6 +301,22 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
     return code;
 }
 
+/* Wrapper around gs call to setup the transparency params correctly */
+static int pdfi_gs_begin_transparency_group(gs_gstate * pgs,
+                                       gs_transparency_group_params_t *params,
+                                       const gs_rect *pbbox, pdf14_compositor_operations group_type)
+{
+    if (gs_getalphaisshape(pgs)) {
+        params->group_shape = gs_getfillconstantalpha(pgs);
+        params->group_opacity = 1.0;
+    } else {
+        params->group_opacity = gs_getfillconstantalpha(pgs);
+        params->group_shape = 1.0;
+    }
+
+    return gs_begin_transparency_group(pgs, params, pbbox, group_type);
+}
+
 static int pdfi_transparency_group_common(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *group_dict, gs_rect *bbox, pdf14_compositor_operations group_type)
 {
     gs_transparency_group_params_t params;
@@ -308,7 +324,7 @@ static int pdfi_transparency_group_common(pdf_context *ctx, pdf_dict *page_dict,
     bool b;
     int code;
 
-    gs_trans_group_params_init(&params);
+    gs_trans_group_params_init(&params, 1.0);
     //    gs_setopacityalpha(ctx->pgs, ctx->pgs->fillconstantalpha);
 
     /* It seems the flag for Isolated is /I */
@@ -349,7 +365,7 @@ static int pdfi_transparency_group_common(pdf_context *ctx, pdf_dict *page_dict,
     if (code < 0)
         return_error(code);
 
-    return gs_begin_transparency_group(ctx->pgs, &params, (const gs_rect *)bbox, group_type);
+    return pdfi_gs_begin_transparency_group(ctx->pgs, &params, (const gs_rect *)bbox, group_type);
 }
 
 int pdfi_trans_begin_simple_group(pdf_context *ctx, bool stroked_bbox, bool isolated, bool knockout)
@@ -358,7 +374,7 @@ int pdfi_trans_begin_simple_group(pdf_context *ctx, bool stroked_bbox, bool isol
     gs_rect bbox;
     int code;
 
-    gs_trans_group_params_init(&params);
+    gs_trans_group_params_init(&params, 1.0);
     params.Isolated = isolated;
     params.Knockout = knockout;
 
@@ -366,7 +382,7 @@ int pdfi_trans_begin_simple_group(pdf_context *ctx, bool stroked_bbox, bool isol
     if (code < 0)
         return code;
 
-    code = gs_begin_transparency_group(ctx->pgs, &params, &bbox, PDF14_BEGIN_TRANS_GROUP);
+    code = pdfi_gs_begin_transparency_group(ctx->pgs, &params, &bbox, PDF14_BEGIN_TRANS_GROUP);
     if (code >=  0)
         ctx->current_stream_save.group_depth++;
     return code;
@@ -466,7 +482,7 @@ int pdfi_trans_begin_isolated_group(pdf_context *ctx, bool image_with_SMask)
     gs_transparency_group_params_t params;
     gs_rect bbox;
 
-    gs_trans_group_params_init(&params);
+    gs_trans_group_params_init(&params, 1.0);
 
     params.ColorSpace = NULL;
     params.Isolated = true;
@@ -477,7 +493,7 @@ int pdfi_trans_begin_isolated_group(pdf_context *ctx, bool image_with_SMask)
     bbox.q.x = 1;
     bbox.q.y = 1;
 
-    return gs_begin_transparency_group(ctx->pgs, &params, &bbox, PDF14_BEGIN_TRANS_GROUP);
+    return pdfi_gs_begin_transparency_group(ctx->pgs, &params, &bbox, PDF14_BEGIN_TRANS_GROUP);
 }
 
 int pdfi_trans_end_isolated_group(pdf_context *ctx)
@@ -557,7 +573,7 @@ static bool pdfi_trans_okOPcs(pdf_context *ctx)
 }
 
 int pdfi_trans_setup(pdf_context *ctx, pdfi_trans_state_t *state,
-                     pdfi_transparency_caller_t caller, double alpha)
+                     pdfi_transparency_caller_t caller)
 {
     pdfi_int_gstate *igs = (pdfi_int_gstate *)ctx->pgs->client_data;
     int code;
@@ -597,7 +613,7 @@ int pdfi_trans_setup(pdf_context *ctx, pdfi_trans_state_t *state,
             need_group = true;
     }
 
-    code = pdfi_trans_set_params(ctx, alpha);
+    code = pdfi_trans_set_params(ctx);
     if (code != 0)
         return 0;
 
@@ -609,10 +625,10 @@ int pdfi_trans_setup(pdf_context *ctx, pdfi_trans_state_t *state,
         stroked_bbox = (caller == TRANSPARENCY_Caller_Stroke);
         code = pdfi_trans_begin_simple_group(ctx, stroked_bbox, true, false);
         state->GroupPushed = true;
-        state->saveOA = gs_currentopacityalpha(ctx->pgs);
-        state->saveSA = gs_currentshapealpha(ctx->pgs);
-        code = gs_setopacityalpha(ctx->pgs, 1.0);
-        code = gs_setshapealpha(ctx->pgs, 1.0);
+        state->saveStrokeAlpha = gs_getstrokeconstantalpha(ctx->pgs);
+        state->saveFillAlpha = gs_getfillconstantalpha(ctx->pgs);
+        code = gs_setfillconstantalpha(ctx->pgs, 1.0);
+        code = gs_setstrokeconstantalpha(ctx->pgs, 1.0);
     }
     if (ChangeBM) {
         state->saveBM = mode;
@@ -631,8 +647,8 @@ int pdfi_trans_teardown(pdf_context *ctx, pdfi_trans_state_t *state)
 
     if (state->GroupPushed) {
         code = pdfi_trans_end_simple_group(ctx);
-        code = gs_setopacityalpha(ctx->pgs, state->saveOA);
-        code = gs_setshapealpha(ctx->pgs, state->saveSA);
+        code = gs_setstrokeconstantalpha(ctx->pgs, state->saveStrokeAlpha);
+        code = gs_setfillconstantalpha(ctx->pgs, state->saveFillAlpha);
     }
 
     if (gs_currentblendmode(ctx->pgs) == BLEND_MODE_CompatibleOverprint)
@@ -641,21 +657,16 @@ int pdfi_trans_teardown(pdf_context *ctx, pdfi_trans_state_t *state)
     return code;
 }
 
-int pdfi_trans_set_params(pdf_context *ctx, double alpha)
+int pdfi_trans_set_params(pdf_context *ctx)
 {
     pdfi_int_gstate *igs = (pdfi_int_gstate *)ctx->pgs->client_data;
     gs_transparency_channel_selector_t csel;
 
     if (ctx->page_has_transparency) {
-        if (gs_getalphaisshape(ctx->pgs)) {
-            gs_setshapealpha(ctx->pgs, alpha);
-            gs_setopacityalpha(ctx->pgs, 1.0);
+        if (gs_getalphaisshape(ctx->pgs))
             csel = TRANSPARENCY_CHANNEL_Shape;
-        } else {
-            gs_setshapealpha(ctx->pgs, 1.0);
-            gs_setopacityalpha(ctx->pgs, alpha);
+        else
             csel = TRANSPARENCY_CHANNEL_Opacity;
-        }
         if (igs->SMask) {
             pdfi_trans_set_mask(ctx, igs, csel);
         }

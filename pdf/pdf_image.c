@@ -676,7 +676,7 @@ pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim, pdf_stream *image_str
     int main_plane, mask_plane;
 
     dbgmprintf(ctx->memory, "pdfi_render_image BEGIN\n");
-    code = pdfi_trans_set_params(ctx, gs_getfillconstantalpha(ctx->pgs));
+    code = pdfi_trans_set_params(ctx);
     if (code < 0)
         return code;
 
@@ -888,8 +888,6 @@ pdfi_do_image_smask(pdf_context *ctx, pdf_stream *source, pdfi_image_info_t *ima
     /* Disable SMask for inner image */
     pdfi_gstate_smask_free(igs);
 
-    gs_setopacityalpha(ctx->pgs, 1.0);
-    gs_setshapealpha(ctx->pgs, 1.0);
     gs_setstrokeconstantalpha(ctx->pgs, 1.0);
     gs_setfillconstantalpha(ctx->pgs, 1.0);
     gs_setblendmode(ctx->pgs, BLEND_MODE_Compatible);
@@ -928,7 +926,7 @@ pdfi_image_setup_trans(pdf_context *ctx, pdfi_trans_state_t *state)
     code = gs_lineto(ctx->pgs, 0., 0.);
     if (code < 0)
         goto exit;
-    code = pdfi_trans_setup(ctx, state, TRANSPARENCY_Caller_Image, gs_getfillconstantalpha(ctx->pgs));
+    code = pdfi_trans_setup(ctx, state, TRANSPARENCY_Caller_Image);
  exit:
     pdfi_grestore(ctx);
     return code;
@@ -1443,8 +1441,6 @@ int pdfi_form_execgroup(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *xobject
     /* Disable the SMask */
     pdfi_gstate_smask_free(igs);
 
-    gs_setopacityalpha(ctx->pgs, 1.0);
-    gs_setshapealpha(ctx->pgs, 1.0);
     gs_setblendmode(ctx->pgs, BLEND_MODE_Compatible);
     gs_setstrokeconstantalpha(ctx->pgs, 1.0);
     gs_setfillconstantalpha(ctx->pgs, 1.0);
@@ -1548,7 +1544,7 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
     pdf_name *n = NULL;
 
     dbgmprintf1(ctx->memory, "pdfi_do_image_or_form BEGIN (OBJ = %ld)\n", xobject_dict->object_num);
-    code = pdfi_trans_set_params(ctx, gs_getfillconstantalpha(ctx->pgs));
+    code = pdfi_trans_set_params(ctx);
     if (code < 0)
         return code;
 

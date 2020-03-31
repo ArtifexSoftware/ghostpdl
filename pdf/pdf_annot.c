@@ -109,7 +109,7 @@ static int pdfi_annot_opacity_stroke(pdf_context *ctx, pdf_dict *annot)
     code = pdfi_dict_knownget_number(ctx, annot, "CA", &CA);
     if (code < 0) goto exit;
     if (code > 0) {
-        code = gs_setopacityalpha(ctx->pgs, CA);
+        code = gs_setstrokeconstantalpha(ctx->pgs, CA);
         if (code < 0) goto exit;
     }
  exit:
@@ -125,7 +125,7 @@ static int pdfi_annot_opacity_fill(pdf_context *ctx, pdf_dict *annot)
     code = pdfi_dict_knownget_number(ctx, annot, "ca", &CA);
     if (code < 0) goto exit;
     if (code > 0) {
-        code = gs_setopacityalpha(ctx->pgs, CA);
+        code = gs_setfillconstantalpha(ctx->pgs, CA);
         if (code < 0) goto exit;
     }
 

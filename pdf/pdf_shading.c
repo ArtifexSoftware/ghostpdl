@@ -729,7 +729,7 @@ pdfi_shading_setup_trans(pdf_context *ctx, pdfi_trans_state_t *state, pdf_dict *
     }
 
 
-    code = pdfi_trans_setup(ctx, state, TRANSPARENCY_Caller_Other, gs_getfillconstantalpha(ctx->pgs));
+    code = pdfi_trans_setup(ctx, state, TRANSPARENCY_Caller_Other);
  exit:
     pdfi_countdown(BBox);
     pdfi_grestore(ctx);
@@ -777,7 +777,7 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         goto exit2;
     }
 
-    code = pdfi_trans_set_params(ctx, gs_getfillconstantalpha(ctx->pgs));
+    code = pdfi_trans_set_params(ctx);
     if (code < 0)
         goto exit2;
 
