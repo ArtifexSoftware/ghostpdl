@@ -3117,8 +3117,10 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   ppd_size_t            *best_size = NULL;
   int                   size_matched = 0,
                         margins_matched = 0,
-                        imageable_area_matched = 0,
-                        name_requested_matched = 0;
+                        imageable_area_matched = 0;
+#ifdef CUPS_DEBUG
+  int                   name_requested_matched = 0;
+#endif
   float long_edge_mismatch, short_edge_mismatch;
   gs_param_string icc_pro_dummy;
   int old_cmps = cups->color_info.num_components;
@@ -3501,7 +3503,9 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 	size_matched = 0;
 	margins_matched = 0;
 	imageable_area_matched = 0;
+#ifdef CUPS_DEBUG
 	name_requested_matched = 0;
+#endif
 
 	long_edge_mismatch =
 	  fabs(cups->MediaSize[1] - size->length)/size->length +
@@ -3579,7 +3583,11 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 
 	if (size_matched || imageable_area_matched) {
 	  if (!strcasecmp(cups->pageSizeRequested, size->name))
+          {
+#ifdef CUPS_DEBUG
 	    name_requested_matched = 1;
+#endif
+          }
 	  else
 	    score -= 1000;
 	}
@@ -3674,7 +3682,9 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 	  size_matched = 0;
 	  margins_matched = 0;
 	  imageable_area_matched = 0;
+#ifdef CUPS_DEBUG
 	  name_requested_matched = 0;
+#endif
 
 	  long_edge_mismatch =
 	    fabs(cups->MediaSize[0] - size->length)/size->length +
@@ -3752,7 +3762,11 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 
 	  if (size_matched || imageable_area_matched) {
 	    if (!strcasecmp(cups->pageSizeRequested, size->name))
+            {
+#ifdef CUPS_DEBUG
 	      name_requested_matched = 1;
+#endif
+            }
 	    else
 	      score -= 1000;
 	  }
