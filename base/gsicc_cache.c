@@ -1481,8 +1481,8 @@ gsicc_support_named_color(const gs_color_space *pcs, const gs_gstate *pgs)
     int k, code, i, num_comp, num_spots=0, num_process=0, num_other=0;
     gs_color_space_index type = gs_color_space_get_index(pcs);
     char **names = NULL;
-    byte *pname;
-    uint name_size;
+    byte *pname = NULL; /* Silence compiler warning */
+    uint name_size = 0; /* Silence compiler warning */
     bool is_supported;
 
     /* Get the data for the named profile */
@@ -1504,6 +1504,7 @@ gsicc_support_named_color(const gs_color_space *pcs, const gs_gstate *pgs)
         num_comp = pcs->params.device_n.num_components;
     } else if (type == gs_color_space_index_Separation) {
         pname = (byte *)pcs->params.separation.sep_name;
+        name_size = strlen(pcs->params.separation.sep_name);
         num_comp = 1;
     } else
         return false;
@@ -1513,9 +1514,6 @@ gsicc_support_named_color(const gs_color_space *pcs, const gs_gstate *pgs)
         if (type == gs_color_space_index_DeviceN) {
             pname = (byte *)names[i];
             name_size = strlen(names[i]);
-        }
-        else {
-            name_size = strlen(pcs->params.separation.sep_name);
         }
 
         /* Classify */
