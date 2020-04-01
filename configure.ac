@@ -1435,6 +1435,11 @@ case "x$with_system_libtiff" in
         ;;
 esac
 
+
+if test x"$SHARE_LIBTIFF" != x"$SHARE_LIBJPEG" ; then
+    AC_MSG_ERROR([Mixing local libtiff with shared libjpeg not supported])
+fi
+
 CGLAGS_STORE=$CFLAGS
 CFLAGS=-Wno-misleading-indentation
 AC_TRY_COMPILE([], [return 0;],

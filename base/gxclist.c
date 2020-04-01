@@ -355,12 +355,13 @@ clist_init_states(gx_device * dev, byte * init_data, uint data_size)
     /* Align to the natural boundary for ARM processors, bug 689600 */
     long alignment = (-(long)init_data) & (sizeof(init_data) - 1);
 
-    /*
-     * The +100 in the next line is bogus, but we don't know what the
-     * real check should be. We're effectively assuring that at least 100
-     * bytes will be available to buffer command operands.
+    /* Leave enough room after states for commands that write a reasonable
+     * amount of data. The cmd_largest_size and the data_bits_size should  be
+     * enough to buffer command operands. The data_bits_size is the level
+     * at which commands should expect to split data across buffers. If this
+     * extra space is a little large, it doesn't really hurt.
      */
-    if (state_size + sizeof(cmd_prefix) + cmd_largest_size + 100 + alignment > data_size)
+    if (state_size + sizeof(cmd_prefix) + cmd_largest_size + data_bits_size + alignment > data_size)
         return_error(gs_error_rangecheck);
     /* The end buffer position is not affected by alignment */
     cdev->cend = init_data + data_size;

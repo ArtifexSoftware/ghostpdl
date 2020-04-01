@@ -2433,7 +2433,7 @@ line_join_points(const gx_line_params * pgs_lp, pl_ptr plp, pl_ptr nplp,
         return 5;
     }
     if (join == gs_join_miter &&
-        (code = check_miter(pgs_lp, plp, nplp, pmat, outp, np, &mpt, ccw0) <= 0)) {
+        (code = check_miter(pgs_lp, plp, nplp, pmat, outp, np, &mpt, ccw0)) <= 0) {
         if (code < 0)
             return code;
         ASSIGN_POINT(outp, mpt);

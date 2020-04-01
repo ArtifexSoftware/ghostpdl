@@ -26,7 +26,9 @@
 #include "gspaint.h"
 #include "plmain.h"
 #include "tiffio.h"
+#if defined(SHARE_JPEG) && SHARE_JPEG==0
 #include "jmemcust.h"
+#endif
 #include "gsmchunk.h"
 
 /* Forward decls */
@@ -90,7 +92,9 @@ typedef struct tiff_interp_instance_s {
 
     byte              *samples;
     byte              *proc_samples;
+#if defined(SHARE_JPEG) && SHARE_JPEG==0
     jpeg_cust_mem_data jmem;
+#endif
 } tiff_interp_instance_t;
 
 static int
@@ -421,7 +425,7 @@ static toff_t tifsSizeProc(thandle_t tiff_)
     return tiff->buffer_full;
 }
 
-#if defined(SHARE_LIBTIFF) && SHARE_LIBTIFF==0
+#if defined(SHARE_JPEG) && SHARE_JPEG==0
 static void *gs_j_mem_alloc(j_common_ptr cinfo, size_t size)
 {
     gs_memory_t *mem = (gs_memory_t *)(GET_CUST_MEM_DATA(cinfo)->priv);
@@ -472,7 +476,7 @@ tiff_jpeg_mem_callback(thandle_t tiff_)
 
     return &tiff->jmem;
 }
-#endif /* SHARE_LIBTIFF == 0 */
+#endif /* SHARE_JPEG == 0 */
 
 static int
 guess_pal_depth(int n, uint16_t *rmap, uint16_t *gmap, uint16_t *bmap)
@@ -619,7 +623,7 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                 tiff->photometric == PHOTOMETRIC_LOGLUV) {
                 TIFFSetField(tiff->handle, TIFFTAG_SGILOGDATAFMT, SGILOGDATAFMT_8BIT);
             }
-#if defined(SHARE_LIBTIFF) && SHARE_LIBTIFF==0
+#if defined(SHARE_JPEG) && SHARE_JPEG==0
             TIFFSetJpegMemFunction(tiff->handle,
                                    &tiff_jpeg_mem_callback);
 #endif

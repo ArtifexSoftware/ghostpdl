@@ -5005,11 +5005,10 @@ pdf14_push_text_group(gx_device *dev, gs_gstate *pgs,
     }
 
     code = gs_begin_transparency_group(pgs, &params, &bbox, PDF14_BEGIN_TRANS_GROUP);
-    if (code < 0)
-        return code;
-
     gs_setfillconstantalpha(pgs, alpha);
     gs_setblendmode(pgs, blend_mode);
+    if (code < 0)
+        return code;
 
     if (is_clist) {
         code = pdf14_clist_update_params(pdev, pgs, false, NULL);
@@ -9818,6 +9817,8 @@ pdf14_clist_begin_typed_image(gx_device	* dev, const gs_gstate * pgs,
                     tgp.group_color_numcomps = ptile->ttrans->n_chan-1;
                     tgp.ColorSpace = NULL;
                     tgp.text_group = 0;
+                    tgp.group_opacity = pgs->fillconstantalpha;
+                    tgp.group_shape = 1.0;
                     /* This will handle the compositor command */
                     gs_begin_transparency_group((gs_gstate *) pgs_noconst, &tgp,
                                                 &bbox_out, PDF14_BEGIN_TRANS_GROUP);

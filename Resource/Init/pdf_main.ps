@@ -513,7 +513,12 @@ currentdict /runpdfstring .undef
       {
         dup /Page# exch store
         QUIET not { (Page ) print dup //== exec flush } if
-        pdfgetpage pdfshowpage
+        pdfgetpage
+        dup //null ne { pdfshowpage } {
+          (   **** Error: Page #) pdfformaterror Page# 10 string cvs pdfformaterror
+          ( not found.\n) pdfformaterror
+          /dopdfpages cvx /syntaxerror signalerror
+        } ifelse
       }{
         pop
       }ifelse
@@ -2076,14 +2081,19 @@ currentdict /xref-char-dict undef
 /pdffindpageref {		% <int> pdffindpage <objref>
   dup pdffindpage?
                 % Stack: index countleft noderef
-   1 index 1 ne { pop pop /pdffindpage cvx /rangecheck signalerror } if
-   exch pop
-   PageIndex 2 index 1 sub 65533 .min 2 index oforce put
-   PageNumbers 1 index oforce 3 index dup 65534 le
-    { put }
-    { pop pop pop }	% don't store more than 65534 pagenumbers
+   dup //null ne {
+     1 index 1 ne { pop pop /pdffindpage cvx /rangecheck signalerror } if
+     exch pop
+     PageIndex 2 index 1 sub 65533 .min 2 index oforce put
+     PageNumbers 1 index oforce 3 index dup 65534 le
+      { put }
+      { pop pop pop }	% don't store more than 65534 pagenumbers
+     ifelse
+   } {
+     exch pop			% return the //null
+   }
    ifelse
-   exch pop
+   exch pop			% pop the page number, return the object or null
 } bind executeonly def
 /pdffindpage {		% <int> pdffindpage <pagedict>
   pdffindpageref oforce
@@ -3311,6 +3321,7 @@ currentdict /PDF2PS_matrix_key undef
   {
     /Parent knownoget
     {
+      dup /Pages known not { pop exit } if	% not a valid Page Tree ancestor
       dup 4 1 roll
       resourcespotcolors
       3 -1 roll
@@ -3603,6 +3614,43 @@ currentdict /PDF2PS_matrix_key undef
 } bind executeonly def
 
 end			% pdfdict
+
+
+systemdict /ALLOWPSTRANSPARENCY get
+{
+  /.setopacityalpha
+  {
+    /.setfillconstantalpha where
+    {
+      pop
+      (   **** WARNING: .setopcaityalpha is deprecated (as of 9.53) and will be removed in a future release\n) print
+      (   **** See .setfillconstantalpha/.setalphaisshape for the improved solution\n) print flush
+      false .setalphaisshape
+      dup .setfillconstantalpha
+      .setstrokeconstantalpha
+    }
+    {
+      /.setopacityalpha /undefined cvx signalerror
+    } ifelse
+  } bind def
+
+  /.setshapealpha
+  {
+    /.setfillconstantalpha where
+    {
+      pop
+      (   **** WARNING: .setshapealpha is deprecated (as of 9.53) and will be removed in a future release.\n) print
+      (   **** See .setfillconstantalpha/.setalphaisshape for the improved solution\n) print flush
+      true .setalphaisshape
+      dup .setfillconstantalpha
+      .setstrokeconstantalpha
+    }
+    {
+      /.setshapealpha /undefined cvx signalerror
+    } ifelse
+  } bind def
+} if
+
 .setglobal
 
 %% This list of operators are used internally by various parts of the Ghostscript PDF interpreter.
@@ -3630,14 +3678,12 @@ end			% pdfdict
   /.currentblendmode /.currenttextknockout /.begintransparencytextgroup
   /.endtransparencytextgroup /.begintransparencymaskgroup /.begintransparencymaskimage /.begintransparencypagegroup
   /.endtransparencymask /.image3x /.abortpdf14devicefilter /.setstrokeconstantalpha /.setfillconstantalpha /.setalphaisshape /.currentalphaisshape
-
-  % Used by our own test suite files
+    % Used by our own test suite files
   %/.pushpdf14devicefilter    % transparency-example.ps
   %/.poppdf14devicefilter     % transparency-example.ps
   %/.setstrokeconstantalpha          % transparency-example.ps
   %/.setfillconstantalpha            % transparency-example.ps
   %/.endtransparencygroup     % transparency-example.ps
-
   % undefining these causes errors/incorrect output
   %/.setblendmode /.begintransparencygroup /.settextknockout /.setstrokeoverprint /.setfilloverprint
   %/.currentstrokeoverprint /.currentfilloverprint /.currentfillconstantalpha /.currentstrokeconstantalpha
