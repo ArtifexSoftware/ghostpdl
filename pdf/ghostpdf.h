@@ -347,6 +347,7 @@ typedef struct pdf_context_s
     char U[32];
     int P;
     pdf_string *EKey;
+    bool EncryptMetadata;
 
     /* Interpreter level PDF objects */
     uint32_t stack_size;
