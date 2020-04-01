@@ -1248,6 +1248,9 @@ int pdfi_read_bytes(pdf_context *ctx, byte *Buffer, uint32_t size, uint32_t coun
         code = sgets(s->s, Buffer, total, &bytes);
         if (code == EOFC) {
             s->eof = true;
+        } else if (code == gs_error_ioerror) {
+            ctx->pdf_errors |= E_PDF_BADSTREAM;
+            s->eof = true;
         } else if(code == ERRC) {
             bytes = ERRC;
         } else {
