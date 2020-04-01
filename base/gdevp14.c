@@ -2971,8 +2971,7 @@ update_lop_for_pdf14(gs_gstate *pgs, const gx_drawing_color *pdcolor)
         }
     }
     /* The only idempotent blend modes are Normal, Darken and Lighten */
-    if ((pgs->alpha != 0xFFFF) ||
-        (pgs->blend_mode != BLEND_MODE_Normal && pgs->blend_mode != BLEND_MODE_Darken && pgs->blend_mode != BLEND_MODE_Lighten) ||
+    if ((pgs->blend_mode != BLEND_MODE_Normal && pgs->blend_mode != BLEND_MODE_Darken && pgs->blend_mode != BLEND_MODE_Lighten) ||
         (pgs->fillconstantalpha != 1.0) ||
         (pgs->strokeconstantalpha != 1.0) ||
         (hastrans))
@@ -6631,18 +6630,6 @@ static	const gx_color_map_procs pdf14_cmap_many = {
      pdf14_cmap_devicen_direct,
      pdf14_cmap_is_halftoned
     };
-
-#if 0 /* NOT USED */
-static	const gx_color_map_procs pdf14_cmap_many_group = {
-     pdf14_cmap_gray_direct,
-     pdf14_cmap_rgb_direct,
-     pdf14_cmap_cmyk_direct,
-     pdf14_cmap_rgb_alpha_direct,
-     pdf14_cmap_separation_direct,
-     pdf14_cmap_devicen_direct,
-     pdf14_cmap_is_halftoned
-    };
-#endif  /* NOT USED */
 
 /**
  * Note: copied from gxcmap.c because it's inlined.

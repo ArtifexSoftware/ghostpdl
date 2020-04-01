@@ -22,7 +22,6 @@
 #include "gsutil.h"             /* for gs_next_ids */
 #include "gzstate.h"
 #include "gxcspace.h"           /* here for gscolor2.h */
-#include "gsalpha.h"
 #include "gscolor2.h"
 #include "gscoord.h"            /* for gs_initmatrix */
 #include "gscie.h"
@@ -232,7 +231,6 @@ gs_gstate_alloc(gs_memory_t * mem)
     code = gs_nulldevice(pgs);
     if (code < 0)
         goto fail;
-    gs_setalpha(pgs, 1.0);
     gs_setfillconstantalpha(pgs, 1.0);
     gs_setstrokeconstantalpha(pgs, 1.0);
     gs_setalphaisshape(pgs, false);

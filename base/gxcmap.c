@@ -769,13 +769,7 @@ gx_remap_concrete_DGray(const gs_color_space * pcs, const frac * pconc,
                         gx_device * dev, gs_color_select_t select,
                         const cmm_dev_profile_t *dev_profile)
 {
-    if (pgs->alpha == gx_max_color_value)
-        (*pgs->cmap_procs->map_gray)
-            (pconc[0], pdc, pgs, dev, select);
-    else
-        (*pgs->cmap_procs->map_rgb_alpha)
-            (pconc[0], pconc[0], pconc[0], cv2frac(pgs->alpha),
-             pdc, pgs, dev, select);
+    (*pgs->cmap_procs->map_gray)(pconc[0], pdc, pgs, dev, select);
     return 0;
 }
 int
@@ -808,12 +802,8 @@ gx_remap_DeviceGray(const gs_client_color * pc, const gs_color_space * pcs,
     /* Save original color space and color info into dev color */
     pdc->ccolor.paint.values[0] = pc->paint.values[0];
     pdc->ccolor_valid = true;
-    if (pgs->alpha == gx_max_color_value)
-        (*pgs->cmap_procs->map_gray)
-            (fgray, pdc, pgs, dev, select);
-    else
-        (*pgs->cmap_procs->map_rgb_alpha)
-            (fgray, fgray, fgray, cv2frac(pgs->alpha), pdc, pgs, dev, select);
+
+    (*pgs->cmap_procs->map_gray)(fgray, pdc, pgs, dev, select);
     return 0;
 }
 
@@ -833,13 +823,8 @@ gx_remap_concrete_DRGB(const gs_color_space * pcs, const frac * pconc,
                        gx_device * dev, gs_color_select_t select,
                        const cmm_dev_profile_t *dev_profile)
 {
-    if (pgs->alpha == gx_max_color_value)
-        gx_remap_concrete_rgb(pconc[0], pconc[1], pconc[2],
-                              pdc, pgs, dev, select);
-    else
-        gx_remap_concrete_rgb_alpha(pconc[0], pconc[1], pconc[2],
-                                    cv2frac(pgs->alpha),
-                                    pdc, pgs, dev, select);
+
+    gx_remap_concrete_rgb(pconc[0], pconc[1], pconc[2], pdc, pgs, dev, select);
     return 0;
 }
 int
@@ -855,12 +840,8 @@ gx_remap_DeviceRGB(const gs_client_color * pc, const gs_color_space * pcs,
     pdc->ccolor.paint.values[1] = pc->paint.values[1];
     pdc->ccolor.paint.values[2] = pc->paint.values[2];
     pdc->ccolor_valid = true;
-    if (pgs->alpha == gx_max_color_value)
-        gx_remap_concrete_rgb(fred, fgreen, fblue,
-                              pdc, pgs, dev, select);
-    else
-        gx_remap_concrete_rgb_alpha(fred, fgreen, fblue, cv2frac(pgs->alpha),
-                                    pdc, pgs, dev, select);
+
+    gx_remap_concrete_rgb(fred, fgreen, fblue, pdc, pgs, dev, select);
     return 0;
 }
 
