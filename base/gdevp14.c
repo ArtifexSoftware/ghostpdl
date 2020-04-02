@@ -4371,7 +4371,7 @@ pdf14_fill_mask(gx_device * orig_dev,
             group_rect.q.y = y + h;
             if (!(w <= 0 || h <= 0)) {
 
-                pdf14_group_color_t *group_color_info = pdf14_clone_group_color_info(p14dev, p14dev->ctx->stack->group_color_info);
+                pdf14_group_color_t *group_color_info = pdf14_clone_group_color_info((gx_device *) p14dev, p14dev->ctx->stack->group_color_info);
                 if (group_color_info == NULL)
                     return gs_error_VMerror;
 
@@ -4537,8 +4537,9 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_gstate * pgs,
             return gs_error_VMerror;
 
         code = pdf14_push_transparency_group(p14dev->ctx, &rect, 1, 0, (uint16_t)floor(65535 * p14dev->alpha + 0.5),
-                                             false, false, NULL, NULL, group_color_info, pgs_noconst,
-                                             pdev);
+                                             (uint16_t)floor(65535 * p14dev->shape + 0.5), (uint16_t)floor(65535 * p14dev->opacity + 0.5),
+                                              blend_mode, 0, 0, n_chan_tile - 1,
+                                              false, false, NULL, NULL, group_color_info, pgs_noconst, pdev);
         if (code < 0)
             return code;
 
@@ -4777,18 +4778,22 @@ pdf14_patt_trans_image_fill(gx_device * dev, const gs_gstate * pgs,
         if_debug2m('v', p14dev->ctx->memory,
                    "[v*] Pushing trans group patt_trans_image_fill, uid = %ld id = %ld \n",
                    ptile->uid.id, ptile->id);
+
         code = pdf14_push_transparency_group(p14dev->ctx, &group_rect, 1, 0, 65535, 65535,
                                              65535, pgs->blend_mode, 0, 0,
                                              ptile->ttrans->n_chan-1, false, false, NULL,
                                              NULL, NULL, (gs_gstate *)pgs, dev);
+
         /* Set up the output buffer information now that we have
            pushed the group */
         fill_trans_buffer = new_pattern_trans_buff(pgs->memory);
         pdf14_get_buffer_information(dev, fill_trans_buffer, NULL, false);
+
         /* Store this in the appropriate place in pdcolor.  This
            is released later in pdf14_pattern_trans_render when
            we are all done with the mask fill */
         ptile->ttrans->fill_trans_buffer = fill_trans_buffer;
+
         /* Change the renderer to handle this case so we can catch the
            end.  We will then pop the group and reset the pdcolor proc.
            Keep the base renderer also. */
@@ -5931,6 +5936,7 @@ pdf14_begin_transparency_group(gx_device *dev,
     if_debug0m('v', dev->memory, "[v]Transparency group color space update\n");
     if (code < 0)
         return code;
+
     code = pdf14_push_transparency_group(pdev->ctx, &rect, isolated, ptgp->Knockout,
                                         (uint16_t)floor (65535 * alpha + 0.5),
                                         (uint16_t)floor(65535 * ptgp->group_shape + 0.5),
