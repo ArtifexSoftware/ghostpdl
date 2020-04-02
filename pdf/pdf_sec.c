@@ -469,6 +469,7 @@ int pdfi_read_Encryption(pdf_context *ctx)
     pdf_string *s;
     char *U;
     int64_t i64;
+    double f;
 
     if (ctx->pdfdebug)
         dmprintf(ctx->memory, "%% Checking for Encrypt dictionary\n");
@@ -490,10 +491,14 @@ int pdfi_read_Encryption(pdf_context *ctx)
         goto done;
     }
 
-    code = pdfi_dict_get_int(ctx, d, "Length", &i64);
+    code = pdfi_dict_knownget_number(ctx, d, "Length", &f);
     if (code < 0)
         goto done;
-    KeyLen = (int)i64;
+
+    if (code > 0)
+        KeyLen = (int)f;
+    else
+        KeyLen = 0;
 
     if (!pdfi_name_is((pdf_name *)o, "Standard")) {
         char *Str = NULL;
@@ -571,6 +576,8 @@ int pdfi_read_Encryption(pdf_context *ctx)
 
     switch(ctx->R) {
         case 2:
+            if (KeyLen == 0)
+                KeyLen = 40;
             /* First see if the file is encrypted with an Owner password and no user password
              * in which case an empty user password will work to decrypt it.
              */
@@ -586,6 +593,8 @@ int pdfi_read_Encryption(pdf_context *ctx)
             }
             break;
         case 3:
+            if (KeyLen == 0)
+                KeyLen = 128;
             code = check_user_password_preR5(ctx, "", 0, KeyLen, 3);
             if (code < 0) {
                 if(ctx->Password) {
@@ -598,6 +607,8 @@ int pdfi_read_Encryption(pdf_context *ctx)
             }
             break;
         case 4:
+            if (KeyLen == 0)
+                KeyLen = 128;
             code = pdfi_dict_knownget_type(ctx, d, "EncryptMetadata", PDF_BOOL, &o);
             if (code < 0)
                 goto done;
