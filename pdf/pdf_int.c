@@ -3468,7 +3468,6 @@ repaired_keyword:
             switch(keyword->key) {
                 case PDF_ENDSTREAM:
                     pdfi_close_file(ctx, compressed_stream);
-                    pdfi_clearstack(ctx);
                     return 0;
                     break;
                 case PDF_ENDOBJ:
