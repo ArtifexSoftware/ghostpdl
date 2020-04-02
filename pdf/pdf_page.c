@@ -116,8 +116,8 @@ static int pdfi_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
             return_error(gs_error_typecheck);
         }
     }
-    pdfi_clearstack(ctx);
 page_error:
+    pdfi_clearstack(ctx);
     pdfi_grestore(ctx);
     pdfi_countdown(o);
     return code;
