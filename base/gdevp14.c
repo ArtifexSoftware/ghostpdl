@@ -6216,6 +6216,7 @@ pdf14_push_color_model(gx_device *dev, gs_transparency_color_t group_color_type,
         GX_DEVICE_COLOR_MAX_COMPONENTS);
     memcpy(&(group_color->comp_shift), &(pdev->color_info.comp_shift),
         GX_DEVICE_COLOR_MAX_COMPONENTS);
+    group_color->get_cmap_procs = pdf14_get_cmap_procs;
 
     /* If the CS was ICC based, we need to update the device ICC profile
         in the ICC manager, since that is the profile that is used for the
