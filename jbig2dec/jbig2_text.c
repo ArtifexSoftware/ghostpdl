@@ -593,6 +593,9 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
     uint32_t table_index = 0;
     const Jbig2HuffmanParams *huffman_params = NULL;
 
+    /* zero params to ease cleanup later */
+    memset(&params, 0, sizeof(Jbig2TextRegionParams));
+
     /* 7.4.1 */
     if (segment->data_length < 17) {
         code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "segment too short");
@@ -613,9 +616,6 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
     offset += 2;
 
     jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, "text region header flags 0x%04x", flags);
-
-    /* zero params to ease cleanup later */
-    memset(&params, 0, sizeof(Jbig2TextRegionParams));
 
     params.SBHUFF = flags & 0x0001;
     params.SBREFINE = flags & 0x0002;
