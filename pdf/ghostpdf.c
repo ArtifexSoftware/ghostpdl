@@ -637,17 +637,6 @@ read_root:
             goto exit;
     }
 
-    /* Check all the pages in the file, and all the Resources used by those pages,
-     * to see if transparency is used. The result is stored in a bitwise array in
-     * the pdf_context, 1 bit per page with transparency. We also need to read all
-     * the resources on each page in order to discover how many spot colours are
-     * required (if supported by the device) so we do that in the same routine
-     * to avoid walking the page tree and resources twice.
-     */
-    code = pdfi_check_transparency_spots(ctx);
-    if (code < 0)
-        goto exit;
-
     /* Loop over each page and either render it or output the
      * required information.
      */
@@ -893,6 +882,7 @@ pdf_context *pdfi_create_context(gs_memory_t *pmem)
 
     ctx->main_stream = NULL;
 
+    ctx->SpotNames = NULL;
     /* Setup some flags that don't default to 'false' */
     ctx->showannots = true;
     ctx->preserveannots = true;
@@ -947,9 +937,6 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
     dmprintf1(ctx->memory, "Compressed object cache hit rate: %f\n", compressed_hit_rate);
 #endif
     pdfi_free_name_table(ctx);
-
-    if (ctx->PageTransparencyArray)
-        gs_free_object(ctx->memory, ctx->PageTransparencyArray, "pdfi_free_context");
 
     if (ctx->PDFPassword)
         gs_free_object(ctx->memory, ctx->PDFPassword, "pdfi_free_context");

@@ -16,7 +16,6 @@
 #ifndef PDF_CHECK
 #define PDF_CHECK
 
-int pdfi_check_transparency_spots(pdf_context *ctx);
 int pdfi_check_page_transparency(pdf_context *ctx, pdf_dict *page_dict, bool *transparent, int *spots);
 
 int pdfi_check_Pattern(pdf_context *ctx, pdf_dict *pattern, pdf_dict *page_dict, bool *transparent, int *num_spots);

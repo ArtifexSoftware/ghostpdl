@@ -295,11 +295,6 @@ typedef struct pdf_context_s
 
     /* This tracks whether the current page uses transparency features */
     bool page_has_transparency;
-    /* The transparencyArray has 1 bit per page determing whether any
-     * given page has transparency operators, it is filled in by
-     * prescanning teh file at startup, unless -dNOTRANSPARENCY is set.
-     */
-    char *PageTransparencyArray;
 
     /* Does this page need overprint support? */
     bool page_needs_OP;

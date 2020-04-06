@@ -374,6 +374,7 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num)
     int page_index = page_num >> 3;
     char page_bit = 0x80 >> (page_num % 8);
     pdf_dict *group_dict = NULL;
+    int spots = 0;
 
     if (page_num > ctx->num_pages)
         return_error(gs_error_rangecheck);
@@ -384,6 +385,11 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num)
     code = pdfi_loop_detector_mark(ctx);
     if (code < 0)
         return code;
+
+    /* NOTE: This SpotNames dict is just used during this function, to aid in counting unique spots */
+    if (ctx->SpotNames != NULL)
+        pdfi_countdown(ctx->SpotNames);
+    ctx->SpotNames = NULL;
 
     code = pdfi_loop_detector_add_object(ctx, ctx->Pages->object_num);
     if (code < 0) {
@@ -405,9 +411,37 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num)
         goto exit2;
     }
 
-    /* Force NOTRANSPARENCY here if required, until we can get it working... */
-    /* Need to have this flag setup before calling pdfi_set_media_size() */
-    ctx->page_has_transparency = ctx->PageTransparencyArray[page_index] & page_bit ? 1 : 0;
+    /* NOTE: This SpotNames dict is just used during this function, to aid in counting unique spots */
+    code = pdfi_alloc_object(ctx, PDF_DICT, 32, (pdf_obj **)&ctx->SpotNames);
+    if (code < 0)
+        goto exit2;
+    pdfi_countup(ctx->SpotNames);
+
+    code = pdfi_check_page_transparency(ctx, page_dict, &uses_transparency, &spots);
+    if (code < 0)
+        goto exit2;
+
+    /* If there are spot colours (and by inference, the device renders spot plates) then
+     * send the number of Spots to the device, so it can setup correctly.
+     */
+    if (spots > 0) {
+        gs_c_param_list_write(&ctx->pdfi_param_list, ctx->memory);
+        param_write_int((gs_param_list *)&ctx->pdfi_param_list, "PageSpotColors", &spots);
+        gs_c_param_list_read(&ctx->pdfi_param_list);
+        code = gs_putdeviceparams(ctx->pgs->device, (gs_param_list *)&ctx->pdfi_param_list);
+        if (code > 0) {
+            /* The device was closed, we need to reopen it */
+            code = gs_setdevice_no_erase(ctx->pgs, ctx->pgs->device);
+            if (code < 0) {
+                if (uses_transparency)
+                    (void)gs_abort_pdf14trans_device(ctx->pgs);
+                goto exit2;
+            }
+            gs_erasepage(ctx->pgs);
+        }
+    }
+    ctx->page_has_transparency = uses_transparency;
+
     dbgmprintf1(ctx->memory, "Current page transparency setting is %d\n", ctx->page_has_transparency);
 
     code = pdfi_set_media_size(ctx, page_dict);
@@ -505,6 +539,8 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num)
  exit1:
     pdfi_grestore(ctx);
  exit2:
+    pdfi_countdown(ctx->SpotNames);
+    ctx->SpotNames = NULL;
     pdfi_countdown(page_dict);
     pdfi_countdown(group_dict);
 
