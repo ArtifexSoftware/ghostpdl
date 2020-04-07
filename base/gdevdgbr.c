@@ -423,6 +423,9 @@ gx_get_bits_std_to_native(gx_device * dev, int x, int w, int h,
     gx_color_value src_max = (1 << src_depth) - 1;
 #define v2cv(value) ((ulong)(value) * gx_max_color_value / src_max)
     gx_color_value alpha_default = src_max;
+    subclass_color_mappings scm;
+
+    scm = get_color_mapping_procs_subclass(dev);
 
     params->options &= ~GB_COLORS_ALL | GB_COLORS_NATIVE;
     for (; h > 0; dest_line += raster, src_line += dev_raster, --h) {
@@ -443,9 +446,6 @@ gx_get_bits_std_to_native(gx_device * dev, int x, int w, int h,
             gx_color_value va = alpha_default;
             gx_color_index pixel;
             bool do_alpha = false;
-            subclass_color_mappings scm;
-
-            scm = get_color_mapping_procs_subclass(dev);
 
             /* Fetch the source data. */
             if (stored->options & GB_ALPHA_FIRST) {

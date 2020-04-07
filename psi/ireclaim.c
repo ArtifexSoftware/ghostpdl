@@ -83,7 +83,7 @@ ireclaim(gs_dual_memory_t * dmem, int space)
     ialloc_set_limit(mem);
     if (space < 0) {
         gs_memory_status_t stats;
-        ulong allocated;
+        size_t allocated;
 
         /* If the ammount still allocated after the GC is complete */
         /* exceeds the max_vm setting, then return a VMerror       */

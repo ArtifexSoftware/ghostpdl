@@ -426,7 +426,6 @@ $(GLOBJ)aes.$(OBJ) : $(GLSRC)aes.c $(AK) $(string__h) $(aes_h) $(LIB_MAK) $(MAKE
 
 ### Include files
 
-gsalpha_h=$(GLSRC)gsalpha.h
 gsccode_h=$(GLSRC)gsccode.h
 gsccolor_h=$(GLSRC)gsccolor.h
 # gscedata.[ch] are generated automatically by lib/encs2c.ps.
@@ -916,10 +915,6 @@ $(GLOBJ)gxstroke.$(OBJ) : $(GLSRC)gxstroke.c $(AK) $(gx_h)\
 
 ###### Higher-level facilities
 
-$(GLOBJ)gsalpha.$(OBJ) : $(GLSRC)gsalpha.c $(AK) $(gx_h)\
- $(gsalpha_h) $(gxdcolor_h) $(gzstate_h) $(LIB_MAK) $(MAKEDIRS)
-	$(GLCC) $(GLO_)gsalpha.$(OBJ) $(C_) $(GLSRC)gsalpha.c
-
 # gscedata.[ch] are generated automatically by lib/encs2c.ps.
 $(GLOBJ)gscedata.$(OBJ) : $(GLSRC)gscedata.c\
  $(stdpre_h) $(gstypes_h) $(gscedata_h) $(LIB_MAK) $(MAKEDIRS)
@@ -1091,7 +1086,7 @@ $(GLOBJ)gspath.$(OBJ) : $(GLSRC)gspath.c $(AK) $(gx_h) $(gserrors_h)\
 
 $(GLOBJ)gsstate.$(OBJ) : $(GLSRC)gsstate.c $(AK) $(gx_h) $(gserrors_h)\
  $(memory__h) $(gsstruct_h) $(gsutil_h) $(gzstate_h) $(gxcspace_h)\
- $(gsalpha_h) $(gscolor2_h) $(gscoord_h) $(gscie_h)\
+ $(gscolor2_h) $(gscoord_h) $(gscie_h)\
  $(gxclipsr_h) $(gxcmap_h) $(gxdevice_h) $(gxpcache_h)\
  $(gzht_h) $(gzline_h) $(gspath_h) $(gzpath_h) $(gzcpath_h)\
  $(gsovrc_h) $(gxcolor2_h) $(gxpcolor_h) $(gsicc_manage_h) $(LIB_MAK) $(MAKEDIRS)
@@ -1411,7 +1406,7 @@ $(GLOBJ)gxdownscale.$(OBJ) : $(GLOBJ)gxdownscale_$(WITH_CAL).$(OBJ) $(AK) $(gp_h
 ###### Create a pseudo-"feature" for the entire graphics library.
 
 LIB0s=$(GLOBJ)gpmisc.$(OBJ) $(GLOBJ)stream.$(OBJ) $(GLOBJ)strmio.$(OBJ)
-LIB1s=$(GLOBJ)gsalloc.$(OBJ) $(GLOBJ)gsalpha.$(OBJ) $(GLOBJ)gxdownscale.$(OBJ) $(downscale_) $(GLOBJ)gdevprn.$(OBJ) $(GLOBJ)gdevflp.$(OBJ) $(GLOBJ)gdevkrnlsclass.$(OBJ) $(GLOBJ)gdevepo.$(OBJ)
+LIB1s=$(GLOBJ)gsalloc.$(OBJ) $(GLOBJ)gxdownscale.$(OBJ) $(downscale_) $(GLOBJ)gdevprn.$(OBJ) $(GLOBJ)gdevflp.$(OBJ) $(GLOBJ)gdevkrnlsclass.$(OBJ) $(GLOBJ)gdevepo.$(OBJ)
 LIB2s=$(GLOBJ)gdevmplt.$(OBJ) $(GLOBJ)gsbitcom.$(OBJ) $(GLOBJ)gsbitops.$(OBJ) $(GLOBJ)gsbittab.$(OBJ) $(GLOBJ)gdevoflt.$(OBJ) $(GLOBJ)gdevsclass.$(OBJ)
 # Note: gschar.c is no longer required for a standard build;
 # we include it only for backward compatibility for library clients.
@@ -4881,7 +4876,6 @@ $(GLSRC)sha2.h:$(GLSRC)stdint_.h
 $(GLSRC)sha2.h:$(GLSRC)std.h
 $(GLSRC)sha2.h:$(GLSRC)stdpre.h
 $(GLSRC)sha2.h:$(GLGEN)arch.h
-$(GLSRC)gsalpha.h:$(GLSRC)gsgstate.h
 $(GLSRC)gsccode.h:$(GLSRC)std.h
 $(GLSRC)gsccode.h:$(GLSRC)gstypes.h
 $(GLSRC)gsccode.h:$(GLSRC)stdpre.h

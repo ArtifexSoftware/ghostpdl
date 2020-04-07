@@ -2422,9 +2422,25 @@ currentdict /CMap_read_dict undef
     } 2 bndef
 
   <01000401> % Type 1C
-    { exch pop
-      1 index /Subtype knownoget dup { pop /CIDFontType0 eq } if {
-        readCIDFontType0C
+    {
+      exch pop
+
+      1 index /Subtype knownoget {
+        dup /CIDFontType2 eq{
+          pop
+          (   **** Error: Subtype of a Type 1 CID font is not /CIDFontType0\n) pdfformaterror
+          (               Output may be incorrect.\n) pdfformaterror
+          1 index /Subtype /CIDFontType0 put
+          readCIDFontType0C
+        }
+        {
+          /CIDFontType0 eq {
+            readCIDFontType0C
+          }
+          {
+            readType1C
+          } ifelse
+        } ifelse
       } {
         readType1C
       } ifelse

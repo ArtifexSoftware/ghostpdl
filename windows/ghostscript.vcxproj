@@ -1010,7 +1010,6 @@
     <ClCompile Include="..\base\gp_wsync.c" />
     <ClCompile Include="..\base\gp_wutf8.c" />
     <ClCompile Include="..\base\gsalloc.c" />
-    <ClCompile Include="..\base\gsalpha.c" />
     <ClCompile Include="..\base\gsargs.c" />
     <ClCompile Include="..\base\gsbitcom.c" />
     <ClCompile Include="..\base\gsbitops.c" />
@@ -2076,7 +2075,6 @@
     <ClInclude Include="..\base\gp_mswin.h" />
     <ClInclude Include="..\base\gp_os2.h" />
     <ClInclude Include="..\base\gsalloc.h" />
-    <ClInclude Include="..\base\gsalpha.h" />
     <ClInclude Include="..\base\gsargs.h" />
     <ClInclude Include="..\base\gsbitmap.h" />
     <ClInclude Include="..\base\gsbitops.h" />

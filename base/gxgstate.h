@@ -240,7 +240,6 @@ struct gs_gstate_s {
     gs_point subpath_start;
     bool clamp_coordinates;
     gs_logical_operation_t log_op;
-    gx_color_value alpha;
     gs_blend_mode_t blend_mode;
     gs_xstate_trans_flags_t trans_flags;
     gs_id soft_mask_id;
@@ -324,7 +323,7 @@ struct gs_gstate_s {
   0, 0, { gx_line_params_initial }, 0,\
    { (float)(scale), 0.0, 0.0, (float)(-(scale)), 0.0, 0.0 },\
   false, {0, 0}, {0, 0}, false, \
-  lop_default, gx_max_color_value, BLEND_MODE_Compatible,\
+  lop_default, BLEND_MODE_Compatible,\
   {0, 0}, 0, 0/*false*/, 0, 0/*false*/, 0, 0/*false*/, 0, 0/*false*/, 1.0,  \
    { fixed_half, fixed_half }, 0/*false*/, 1/*true*/, 0/*false*/, 1.0,\
   1, 1/* bpt true */, 0, 0, 0, INIT_CUSTOM_COLOR_PTR	/* 'Custom color' callback pointer */  \
@@ -343,7 +342,6 @@ struct gs_gstate_s {
     s->subpath_start = __state_init.subpath_start; \
     s->clamp_coordinates = __state_init.clamp_coordinates; \
     s->log_op = __state_init.log_op; \
-    s->alpha = __state_init.alpha; \
     s->blend_mode = __state_init.blend_mode; \
     s->trans_flags = __state_init.trans_flags; \
     s->soft_mask_id = __state_init.soft_mask_id; \

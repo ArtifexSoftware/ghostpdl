@@ -70,7 +70,7 @@ typedef struct {
 
 typedef struct {
     int verbose;
-    const char *last_message;
+    char *last_message;
     Jbig2Severity severity;
     char *type;
     long repeats;
@@ -402,9 +402,15 @@ error_callback(void *error_callback_data, const char *message, Jbig2Severity sev
         break;
     }
 
-    if (state->last_message == NULL || (state->last_message != NULL && strcmp(message, state->last_message) && state->severity == severity && state->type == type)) {
-        if (state->repeats > 1)
-        {
+    if (state->last_message != NULL && !strcmp(message, state->last_message) && state->severity == severity && state->type == type) {
+        state->repeats++;
+        if (state->repeats % 1000000 == 0) {
+            ret = fprintf(stderr, "jbig2dec %s last message repeated %ld times so far\n", state->type, state->repeats);
+            if (ret < 0)
+                goto printerror;
+        }
+    } else {
+        if (state->repeats > 1) {
             ret = fprintf(stderr, "jbig2dec %s last message repeated %ld times\n", state->type, state->repeats);
             if (ret < 0)
                 goto printerror;
@@ -417,16 +423,19 @@ error_callback(void *error_callback_data, const char *message, Jbig2Severity sev
         if (ret < 0)
             goto printerror;
 
-        state->last_message = message;
+        state->repeats = 0;
         state->severity = severity;
         state->type = type;
-        state->repeats = 0;
-    } else if (state->last_message != NULL) {
-        state->repeats++;
-        if (state->repeats % 1000000 == 0) {
-            ret = fprintf(stderr, "jbig2dec %s last message repeated %ld times so far\n", state->type, state->repeats);
-            if (ret < 0)
-                goto printerror;
+        free(state->last_message);
+        state->last_message = NULL;
+
+        if (message) {
+            state->last_message = strdup(message);
+            if (state->last_message == NULL) {
+                ret = fprintf(stderr, "jbig2dec WARNING could not duplicate message\n");
+                if (ret < 0)
+                    goto printerror;
+            }
         }
     }
 
@@ -434,8 +443,9 @@ error_callback(void *error_callback_data, const char *message, Jbig2Severity sev
 
 printerror:
     fprintf(stderr, "jbig2dec WARNING could not print message\n");
-    state->last_message = NULL;
     state->repeats = 0;
+    free(state->last_message);
+    state->last_message = NULL;
 }
 
 static void
@@ -559,6 +569,12 @@ main(int argc, char **argv)
 
     filearg = parse_options(argc, argv, &params);
 
+    error_callback_state.verbose = params.verbose;
+    error_callback_state.severity = JBIG2_SEVERITY_DEBUG;
+    error_callback_state.type = NULL;
+    error_callback_state.last_message = NULL;
+    error_callback_state.repeats = 0;
+
     if (params.hash)
         hash_init(&params);
 
@@ -603,10 +619,6 @@ main(int argc, char **argv)
             result = print_usage();
             goto cleanup;
         }
-
-        error_callback_state.verbose = params.verbose;
-        error_callback_state.last_message = NULL;
-        error_callback_state.repeats = 0;
 
         if (params.memory_limit == 0)
             allocator = NULL;
@@ -759,6 +771,8 @@ cleanup:
     jbig2_ctx_free(ctx);
     if (params.output_filename)
         free(params.output_filename);
+    if (error_callback_state.last_message)
+        free(error_callback_state.last_message);
     if (params.hash)
         hash_free(&params);
 
