@@ -32,7 +32,7 @@
  * This is done at the page level, so we maintain a dictionary of the spot colours
  * encountered so far, which we consult before adding any new ones.
  */
-static int pdfi_check_Resources_for_transparency(pdf_context *ctx, pdf_dict *Resources_dict, pdf_dict *page_dict, bool *transparent, int *num_spots);
+static int pdfi_check_Resources_for_transparency(pdf_context *ctx, pdf_dict *Resources_dict, pdf_dict *page_dict, bool *transparent, pdf_dict *spot_dict);
 
 /* For performance and resource reasons we do not want to install the transparency blending
  * compositor unless we need it. Similarly, if a device handles spot colours it can minimise
@@ -65,7 +65,8 @@ static int pdfi_check_Resources_for_transparency(pdf_context *ctx, pdf_dict *Res
  * Check the Resources dictionary ColorSpace entry. pdfi_check_ColorSpace_for_spots is defined
  * in pdf_colour.c
  */
-static int pdfi_check_ColorSpace_dict(pdf_context *ctx, pdf_dict *cspace_dict, pdf_dict *page_dict, int *num_spots)
+static int pdfi_check_ColorSpace_dict(pdf_context *ctx, pdf_dict *cspace_dict,
+                                      pdf_dict *page_dict, pdf_dict *spot_dict)
 {
     int code, i, index;
     pdf_obj *Key = NULL, *Value = NULL;
@@ -81,7 +82,7 @@ static int pdfi_check_ColorSpace_dict(pdf_context *ctx, pdf_dict *cspace_dict, p
 
         i = 1;
         do {
-            code = pdfi_check_ColorSpace_for_spots(ctx, Value, cspace_dict, page_dict, num_spots);
+            code = pdfi_check_ColorSpace_for_spots(ctx, Value, cspace_dict, page_dict, spot_dict);
             if (code < 0)
                 goto error2;
 
@@ -127,14 +128,15 @@ error1:
 /*
  * Process an individual Shading dictionary to see if it contains a ColorSpace with a spot colour
  */
-static int pdfi_check_Shading(pdf_context *ctx, pdf_dict *shading, pdf_dict *page_dict, int *num_spots)
+static int pdfi_check_Shading(pdf_context *ctx, pdf_dict *shading,
+                              pdf_dict *page_dict, pdf_dict *spot_dict)
 {
     int code;
     pdf_obj *o = NULL;
 
     code = pdfi_dict_knownget(ctx, shading, "ColorSpace", (pdf_obj **)&o);
     if (code > 0) {
-        code = pdfi_check_ColorSpace_for_spots(ctx, o, shading, page_dict, num_spots);
+        code = pdfi_check_ColorSpace_for_spots(ctx, o, shading, page_dict, spot_dict);
         pdfi_countdown(o);
         return code;
     }
@@ -144,7 +146,8 @@ static int pdfi_check_Shading(pdf_context *ctx, pdf_dict *shading, pdf_dict *pag
 /*
  * Check the Resources dictionary Shading entry.
  */
-static int pdfi_check_Shading_dict(pdf_context *ctx, pdf_dict *shading_dict, pdf_dict *page_dict, int *num_spots)
+static int pdfi_check_Shading_dict(pdf_context *ctx, pdf_dict *shading_dict,
+                                   pdf_dict *page_dict, pdf_dict *spot_dict)
 {
     int code, i, index;
     pdf_obj *Key = NULL, *Value = NULL;
@@ -160,7 +163,7 @@ static int pdfi_check_Shading_dict(pdf_context *ctx, pdf_dict *shading_dict, pdf
 
         i = 1;
         do {
-            code = pdfi_check_Shading(ctx, (pdf_dict *)Value, page_dict, num_spots);
+            code = pdfi_check_Shading(ctx, (pdf_dict *)Value, page_dict, spot_dict);
             if (code < 0)
                 goto error2;
 
@@ -207,7 +210,8 @@ error1:
  * This routine checks an XObject to see if it contains any spot
  * colour definitions, or transparency usage.
  */
-static int pdfi_check_XObject(pdf_context *ctx, pdf_dict *xobject, pdf_dict *page_dict, bool *transparent, int *num_spots)
+static int pdfi_check_XObject(pdf_context *ctx, pdf_dict *xobject, pdf_dict *page_dict,
+                              bool *transparent, pdf_dict *spot_dict)
 {
     int code = 0;
     pdf_name *n = NULL;
@@ -225,7 +229,7 @@ static int pdfi_check_XObject(pdf_context *ctx, pdf_dict *xobject, pdf_dict *pag
             if (code >= 0) {
                 if (known == true) {
                     *transparent = true;
-                    if (num_spots == NULL)
+                    if (spot_dict == NULL)
                         goto transparency_exit;
                 }
                 code = pdfi_dict_knownget_number(ctx, xobject, "SMaskInData", &f);
@@ -233,15 +237,15 @@ static int pdfi_check_XObject(pdf_context *ctx, pdf_dict *xobject, pdf_dict *pag
                     code = 0;
                     if (f != 0.0)
                         *transparent = true;
-                    if (num_spots == NULL)
+                    if (spot_dict == NULL)
                         goto transparency_exit;
                 }
                 /* Check the image dictionary for a ColorSpace entry, if we are checking spot names */
-                if (num_spots) {
+                if (spot_dict) {
                     code = pdfi_dict_knownget(ctx, xobject, "ColorSpace", (pdf_obj **)&CS);
                     if (code > 0) {
                         /* We don't care if there's an error here, it'll be picked up if we use the ColorSpace later */
-                        (void)pdfi_check_ColorSpace_for_spots(ctx, CS, xobject, page_dict, num_spots);
+                        (void)pdfi_check_ColorSpace_for_spots(ctx, CS, xobject, page_dict, spot_dict);
                         pdfi_countdown(CS);
                     }
                 }
@@ -255,7 +259,7 @@ static int pdfi_check_XObject(pdf_context *ctx, pdf_dict *xobject, pdf_dict *pag
                 code = pdfi_dict_knownget_type(ctx, xobject, "Group", PDF_DICT, (pdf_obj **)&group_dict);
                 if (code > 0) {
                     *transparent = true;
-                    if (num_spots == NULL) {
+                    if (spot_dict == NULL) {
                         pdfi_countdown(group_dict);
                         goto transparency_exit;
                     }
@@ -266,7 +270,7 @@ static int pdfi_check_XObject(pdf_context *ctx, pdf_dict *xobject, pdf_dict *pag
                         code = pdfi_dict_knownget(ctx, group_dict, "CS", &CS);
                         if (code > 0)
                             /* We don't care if there's an error here, it'll be picked up if we use the ColorSpace later */
-                            (void)pdfi_check_ColorSpace_for_spots(ctx, CS, group_dict, page_dict, num_spots);
+                            (void)pdfi_check_ColorSpace_for_spots(ctx, CS, group_dict, page_dict, spot_dict);
                     }
                     pdfi_countdown(group_dict);
                     pdfi_countdown(CS);
@@ -275,7 +279,8 @@ static int pdfi_check_XObject(pdf_context *ctx, pdf_dict *xobject, pdf_dict *pag
 
                 code = pdfi_dict_knownget_type(ctx, xobject, "Resources", PDF_DICT, (pdf_obj **)&resource_dict);
                 if (code > 0) {
-                    code = pdfi_check_Resources_for_transparency(ctx, resource_dict, page_dict, transparent, num_spots);
+                    code = pdfi_check_Resources_for_transparency(ctx, resource_dict, page_dict,
+                                                                 transparent, spot_dict);
                     pdfi_countdown(resource_dict);
                     if (code < 0)
                         goto transparency_exit;
@@ -294,7 +299,8 @@ transparency_exit:
 /*
  * Check the Resources dictionary XObject entry.
  */
-static int pdfi_check_XObject_dict(pdf_context *ctx, pdf_dict *xobject_dict, pdf_dict *page_dict, bool *transparent, int *num_spots)
+static int pdfi_check_XObject_dict(pdf_context *ctx, pdf_dict *xobject_dict, pdf_dict *page_dict,
+                                   bool *transparent, pdf_dict *spot_dict)
 {
     int code, i, index;
     pdf_obj *Key = NULL, *Value = NULL; //, *o = NULL;
@@ -310,7 +316,7 @@ static int pdfi_check_XObject_dict(pdf_context *ctx, pdf_dict *xobject_dict, pdf
 
         i = 1;
         do {
-            code = pdfi_check_XObject(ctx, (pdf_dict *)Value, page_dict, transparent, num_spots);
+            code = pdfi_check_XObject(ctx, (pdf_dict *)Value, page_dict, transparent, spot_dict);
             if (code < 0)
                 goto error2;
 
@@ -357,7 +363,8 @@ error1:
  * This routine checks an ExtGState dictionary to see if it contains any spot
  * colour definitions, or transparency usage.
  */
-static int pdfi_check_ExtGState(pdf_context *ctx, pdf_dict *extgstate_dict, pdf_dict *page_dict, bool *transparent, int *num_spots)
+static int pdfi_check_ExtGState(pdf_context *ctx, pdf_dict *extgstate_dict, pdf_dict *page_dict,
+                                bool *transparent, pdf_dict *spot_dict)
 {
     int code;
     pdf_obj *o = NULL;
@@ -381,11 +388,12 @@ static int pdfi_check_ExtGState(pdf_context *ctx, pdf_dict *extgstate_dict, pdf_
 
                     *transparent = true;
 
-                    if (num_spots != NULL) {
+                    if (spot_dict != NULL) {
                         /* Check if the SMask has a /G (Group) */
                         code = pdfi_dict_knownget(ctx, (pdf_dict *)o, "G", &G);
                         if (code > 0) {
-                            code = pdfi_check_XObject(ctx, (pdf_dict *)G, page_dict, transparent, num_spots);
+                            code = pdfi_check_XObject(ctx, (pdf_dict *)G, page_dict,
+                                                      transparent, page_dict);
                             pdfi_countdown(G);
                         }
                     }
@@ -432,7 +440,8 @@ static int pdfi_check_ExtGState(pdf_context *ctx, pdf_dict *extgstate_dict, pdf_
 /*
  * Check the Resources dictionary ExtGState entry.
  */
-static int pdfi_check_ExtGState_dict(pdf_context *ctx, pdf_dict *extgstate_dict, pdf_dict *page_dict, bool *transparent, int *num_spots)
+static int pdfi_check_ExtGState_dict(pdf_context *ctx, pdf_dict *extgstate_dict, pdf_dict *page_dict,
+                                     bool *transparent, pdf_dict *spot_dict)
 {
     int code, i, index;
     pdf_obj *Key = NULL, *Value = NULL;
@@ -449,8 +458,8 @@ static int pdfi_check_ExtGState_dict(pdf_context *ctx, pdf_dict *extgstate_dict,
         i = 1;
         do {
 
-            (void)pdfi_check_ExtGState(ctx, (pdf_dict *)Value, page_dict, transparent, num_spots);
-            if (*transparent == true && num_spots == NULL)
+            (void)pdfi_check_ExtGState(ctx, (pdf_dict *)Value, page_dict, transparent, spot_dict);
+            if (*transparent == true && spot_dict == NULL)
                 goto transparency_exit;
 
             pdfi_countdown(Key);
@@ -495,30 +504,32 @@ error1:
  * This routine checks a Pattern dictionary to see if it contains any spot
  * colour definitions, or transparency usage.
  */
-int pdfi_check_Pattern(pdf_context *ctx, pdf_dict *pattern, pdf_dict *page_dict, bool *transparent, int *num_spots)
+int pdfi_check_Pattern(pdf_context *ctx, pdf_dict *pattern, pdf_dict *page_dict,
+                       bool *transparent, pdf_dict *spot_dict)
 {
     int code = 0;
     pdf_obj *o = NULL;
 
-    if (num_spots != NULL) {
+    if (spot_dict != NULL) {
         code = pdfi_dict_knownget_type(ctx, pattern, "Shading", PDF_DICT, &o);
         if (code > 0)
-            (void)pdfi_check_Shading(ctx, (pdf_dict *)o, page_dict, num_spots);
+            (void)pdfi_check_Shading(ctx, (pdf_dict *)o, page_dict, spot_dict);
         pdfi_countdown(o);
         o = NULL;
     }
 
     code = pdfi_dict_knownget_type(ctx, pattern, "Resources", PDF_DICT, &o);
     if (code > 0)
-        (void)pdfi_check_Resources_for_transparency(ctx, (pdf_dict *)o, page_dict, transparent, num_spots);
+        (void)pdfi_check_Resources_for_transparency(ctx, (pdf_dict *)o, page_dict,
+                                                    transparent, spot_dict);
     pdfi_countdown(o);
     o = NULL;
-    if (*transparent == true && num_spots == NULL)
+    if (*transparent == true && spot_dict == NULL)
         goto transparency_exit;
 
     code = pdfi_dict_knownget_type(ctx, pattern, "ExtGState", PDF_DICT, &o);
     if (code > 0)
-        (void)pdfi_check_ExtGState(ctx, (pdf_dict *)o, page_dict, transparent, num_spots);
+        (void)pdfi_check_ExtGState(ctx, (pdf_dict *)o, page_dict, transparent, spot_dict);
     pdfi_countdown(o);
     o = NULL;
 
@@ -529,7 +540,8 @@ transparency_exit:
 /*
  * Check the Resources dictionary Pattern entry.
  */
-static int pdfi_check_Pattern_dict(pdf_context *ctx, pdf_dict *pattern_dict, pdf_dict *page_dict, bool *transparent, int *num_spots)
+static int pdfi_check_Pattern_dict(pdf_context *ctx, pdf_dict *pattern_dict, pdf_dict *page_dict,
+                                   bool *transparent, pdf_dict *spot_dict)
 {
     int code, i, index;
     pdf_obj *Key = NULL, *Value = NULL;
@@ -548,7 +560,7 @@ static int pdfi_check_Pattern_dict(pdf_context *ctx, pdf_dict *pattern_dict, pdf
 
         i = 1;
         do {
-            code = pdfi_check_Pattern(ctx, (pdf_dict *)Value, page_dict, transparent, num_spots);
+            code = pdfi_check_Pattern(ctx, (pdf_dict *)Value, page_dict, transparent, spot_dict);
             if (code < 0)
                 goto transparency_exit;
 
@@ -593,7 +605,8 @@ error1:
  * This routine checks a Font dictionary to see if it contains any spot
  * colour definitions, or transparency usage.
  */
-static int pdfi_check_Font(pdf_context *ctx, pdf_dict *font, pdf_dict *page_dict, bool *transparent, int *num_spots)
+static int pdfi_check_Font(pdf_context *ctx, pdf_dict *font, pdf_dict *page_dict,
+                           bool *transparent, pdf_dict *spot_dict)
 {
     int code = 0;
     pdf_obj *o = NULL;
@@ -609,7 +622,8 @@ static int pdfi_check_Font(pdf_context *ctx, pdf_dict *font, pdf_dict *page_dict
 
             code = pdfi_dict_knownget_type(ctx, font, "Resources", PDF_DICT, &o);
             if (code > 0)
-                (void)pdfi_check_Resources_for_transparency(ctx, (pdf_dict *)o, page_dict, transparent, num_spots);
+                (void)pdfi_check_Resources_for_transparency(ctx, (pdf_dict *)o, page_dict,
+                                                            transparent, spot_dict);
         }
     }
     pdfi_countdown(o);
@@ -621,7 +635,8 @@ static int pdfi_check_Font(pdf_context *ctx, pdf_dict *font, pdf_dict *page_dict
 /*
  * Check the Resources dictionary Font entry.
  */
-static int pdfi_check_Font_dict(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *page_dict, bool *transparent, int *num_spots)
+static int pdfi_check_Font_dict(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *page_dict,
+                                bool *transparent, pdf_dict *spot_dict)
 {
     int code, i, index;
     pdf_obj *Key = NULL, *Value = NULL;
@@ -637,7 +652,7 @@ static int pdfi_check_Font_dict(pdf_context *ctx, pdf_dict *font_dict, pdf_dict 
 
         i = 1;
         do {
-            code = pdfi_check_Font(ctx, (pdf_dict *)Value, page_dict, transparent, num_spots);
+            code = pdfi_check_Font(ctx, (pdf_dict *)Value, page_dict, transparent, spot_dict);
 
             pdfi_countdown(Key);
             Key = NULL;
@@ -677,45 +692,47 @@ error1:
     return code;
 }
 
-static int pdfi_check_Resources_for_transparency(pdf_context *ctx, pdf_dict *Resources_dict, pdf_dict *page_dict, bool *transparent, int *num_spots)
+static int pdfi_check_Resources_for_transparency(pdf_context *ctx, pdf_dict *Resources_dict,
+                                                 pdf_dict *page_dict,
+                                                 bool *transparent, pdf_dict *spot_dict)
 {
     int code;
     pdf_obj *d = NULL;
 
     /* First up, check any colour spaces, for new spot colours.
-     * We only do this if asked because its expensive. num_spots being NULL
+     * We only do this if asked because its expensive. spot_dict being NULL
      * means we aren't interested in spot colours (not a DeviceN or Separation device)
      */
-    if (num_spots != NULL) {
+    if (spot_dict != NULL) {
         code = pdfi_dict_knownget_type(ctx, Resources_dict, "ColorSpace", PDF_DICT, &d);
         if (code > 0)
-            (void)pdfi_check_ColorSpace_dict(ctx, (pdf_dict *)d, page_dict, num_spots);
+            (void)pdfi_check_ColorSpace_dict(ctx, (pdf_dict *)d, page_dict, spot_dict);
 
         pdfi_countdown(d);
         d = NULL;
 
         code = pdfi_dict_knownget_type(ctx, Resources_dict, "Shading", PDF_DICT, &d);
         if (code > 0)
-            (void)pdfi_check_Shading_dict(ctx, (pdf_dict *)d, page_dict, num_spots);
+            (void)pdfi_check_Shading_dict(ctx, (pdf_dict *)d, page_dict, spot_dict);
         pdfi_countdown(d);
         d = NULL;
     }
 
     code = pdfi_dict_knownget_type(ctx, Resources_dict, "XObject", PDF_DICT, &d);
     if (code > 0)
-        (void)pdfi_check_XObject_dict(ctx, (pdf_dict *)d, page_dict, transparent, num_spots);
+        (void)pdfi_check_XObject_dict(ctx, (pdf_dict *)d, page_dict, transparent, spot_dict);
     pdfi_countdown(d);
     d = NULL;
 
     code = pdfi_dict_knownget_type(ctx, Resources_dict, "Pattern", PDF_DICT, &d);
     if (code > 0)
-        (void)pdfi_check_Pattern_dict(ctx, (pdf_dict *)d, page_dict, transparent, num_spots);
+        (void)pdfi_check_Pattern_dict(ctx, (pdf_dict *)d, page_dict, transparent, spot_dict);
     pdfi_countdown(d);
     d = NULL;
 
     code = pdfi_dict_knownget_type(ctx, Resources_dict, "Font", PDF_DICT, &d);
     if (code > 0)
-        (void)pdfi_check_Font_dict(ctx, (pdf_dict *)d, page_dict, transparent, num_spots);
+        (void)pdfi_check_Font_dict(ctx, (pdf_dict *)d, page_dict, transparent, spot_dict);
     /* From this point onwards, if we detect transparency (or have already detected it) we
      * can exit, we have already counted up any spot colours.
      */
@@ -724,14 +741,15 @@ static int pdfi_check_Resources_for_transparency(pdf_context *ctx, pdf_dict *Res
 
     code = pdfi_dict_knownget_type(ctx, Resources_dict, "ExtGState", PDF_DICT, &d);
     if (code > 0)
-        (void)pdfi_check_ExtGState_dict(ctx, (pdf_dict *)d, page_dict, transparent, num_spots);
+        (void)pdfi_check_ExtGState_dict(ctx, (pdf_dict *)d, page_dict, transparent, spot_dict);
     pdfi_countdown(d);
     d = NULL;
 
     return 0;
 }
 
-static int pdfi_check_annot_for_transparency(pdf_context *ctx, pdf_dict *annot, pdf_dict *page_dict, bool *transparent, int *num_spots)
+static int pdfi_check_annot_for_transparency(pdf_context *ctx, pdf_dict *annot, pdf_dict *page_dict,
+                                             bool *transparent, pdf_dict *spot_dict)
 {
     int code;
     pdf_name *n;
@@ -749,7 +767,8 @@ static int pdfi_check_annot_for_transparency(pdf_context *ctx, pdf_dict *annot, 
         if (code > 0) {
             code = pdfi_dict_knownget_type(ctx, N, "Resources", PDF_DICT, (pdf_obj **)&Resources);
             if (code > 0)
-                code = pdfi_check_Resources_for_transparency(ctx, (pdf_dict *)Resources, page_dict, transparent, num_spots);
+                code = pdfi_check_Resources_for_transparency(ctx, (pdf_dict *)Resources, page_dict,
+                                                             transparent, spot_dict);
         }
     }
     pdfi_countdown(ap);
@@ -819,7 +838,8 @@ static int pdfi_check_annot_for_transparency(pdf_context *ctx, pdf_dict *annot, 
     return 0;
 }
 
-static int pdfi_check_Annots_for_transparency(pdf_context *ctx, pdf_array *annots_array, pdf_dict *page_dict, bool *transparent, int *num_spots)
+static int pdfi_check_Annots_for_transparency(pdf_context *ctx, pdf_array *annots_array,
+                                              pdf_dict *page_dict, bool *transparent, pdf_dict *spot_dict)
 {
     int i, code = 0;
     pdf_dict *annot = NULL;
@@ -827,14 +847,14 @@ static int pdfi_check_Annots_for_transparency(pdf_context *ctx, pdf_array *annot
     for (i=0; i < pdfi_array_size(annots_array); i++) {
         code = pdfi_array_get_type(ctx, annots_array, (uint64_t)i, PDF_DICT, (pdf_obj **)&annot);
         if (code >= 0) {
-            code = pdfi_check_annot_for_transparency(ctx, annot, page_dict, transparent, num_spots);
+            code = pdfi_check_annot_for_transparency(ctx, annot, page_dict, transparent, spot_dict);
             if (code < 0 && ctx->pdfstoponerror)
                 goto exit;
 
             /* If we've found transparency, and don't need to continue checkign for spot colours
              * just exit as fast as possible.
              */
-            if (*transparent == true && num_spots == NULL)
+            if (*transparent == true && spot_dict == NULL)
                 goto exit;
 
             pdfi_countdown(annot);
@@ -849,93 +869,139 @@ exit:
     return code;
 }
 
-/* From the original PDF interpreter written in PostScript:
+/* Check for transparency and spots on page.
+ *
+ * Sets ctx->spot_capable_device
+ * Builds a dictionary of the unique spot names in spot_dict
+ * Set 'transparent' to true if there is transparency on the page
+ *
+ * From the original PDF interpreter written in PostScript:
  * Note: we deliberately don't check to see whether a Group is defined,
  * because Adobe Illustrator 10 (and possibly other applications) define
  * a page-level group whether transparency is actually used or not.
  * Ignoring the presence of Group is justified because, in the absence
  * of any other transparency features, they have no effect.
  */
-int pdfi_check_page_transparency(pdf_context *ctx, pdf_dict *page_dict, bool *transparent, int *spots)
+static int pdfi_check_page_inner(pdf_context *ctx, pdf_dict *page_dict,
+                                 bool *transparent, pdf_dict *spot_dict)
 {
     int code;
-    pdf_obj *d = NULL;
-    int num_spots = 0;
-    pdf_dict *group_dict = NULL;
+    pdf_dict *Resources = NULL;
+    pdf_array *Annots = NULL;
+    pdf_dict *Group = NULL;
+    pdf_obj *CS = NULL;
+    int intval;
 
-    /* Note that we don't reset 'spots' to 0 because these accumulate across pages */
     *transparent = false;
 
+    /* See if the device supports spots (if not, don't check for them) */
     ctx->spot_capable_device = false;
     gs_c_param_list_read(&ctx->pdfi_param_list);
-    code = param_read_int((gs_param_list *)&ctx->pdfi_param_list, "PageSpotColors", &ctx->spot_capable_device);
+    code = param_read_int((gs_param_list *)&ctx->pdfi_param_list, "PageSpotColors", &intval);
     if (code < 0)
         return code;
-    if (code > 0)
-        ctx->spot_capable_device = 0;
-    else
-        ctx->spot_capable_device = 1;
+    if (code == 0)
+        ctx->spot_capable_device = true;
 
-    /* Check if the page dictionary has a page Group entry */
-    code = pdfi_dict_knownget_type(ctx, page_dict, "Group", PDF_DICT, (pdf_obj **)&group_dict);
-    if (code > 0) {
-        pdf_obj *CS = NULL;
+    /* Disable spot-checking if not spot capable device */
+    if (!ctx->spot_capable_device)
+        spot_dict = NULL;
 
-        /* Page group means the page is transparent but we ignore it for the purposes
-         * of transparency detection. See above.
-         */
-        if (ctx->spot_capable_device) {
-            /* Check the Group to see if it has a ColorSpace (CS) and if it
-             * does whether it has any spot colours */
-            code = pdfi_dict_knownget(ctx, group_dict, "CS", &CS);
-            if (code > 0) {
-                code = pdfi_check_ColorSpace_for_spots(ctx, CS, group_dict, page_dict, spots);
-                if (code < 0 && ctx->pdfstoponerror) {
-                    pdfi_countdown(CS);
-                    pdfi_countdown(group_dict);
-                    pdfi_countdown(ctx->SpotNames);
-                    return code;
-                }
-                pdfi_countdown(CS);
-            }
+    /* Check if the page dictionary has a page Group entry (for spots).
+     * Page group should mean the page has transparency but we ignore it for the purposes
+     * of transparency detection. See above.
+     */
+    if (spot_dict) {
+        code = pdfi_dict_knownget_type(ctx, page_dict, "Group", PDF_DICT, (pdf_obj **)&Group);
+        if (code > 0) {
+            /* If Group has a ColorSpace (CS), then check it for spot colours */
+            code = pdfi_dict_knownget(ctx, Group, "CS", &CS);
+            if (code > 0)
+                code = pdfi_check_ColorSpace_for_spots(ctx, CS, Group, page_dict, spot_dict);
+            if (code < 0 && ctx->pdfstoponerror)
+                goto exit;
         }
-        pdfi_countdown(group_dict);
     }
 
     /* Now check any Resources dictionary in the Page dictionary */
-    code = pdfi_dict_get_type(ctx, page_dict, "Resources", PDF_DICT, &d);
-    if (code >= 0) {
-        if (ctx->spot_capable_device)
-            code = pdfi_check_Resources_for_transparency(ctx, (pdf_dict *)d, page_dict, transparent, &num_spots);
-        else
-            code = pdfi_check_Resources_for_transparency(ctx, (pdf_dict *)d, page_dict, transparent, NULL);
-        pdfi_countdown(d);
-        if (code < 0)
-            return code;
-    }
-    if (code < 0 && code != gs_error_undefined && ctx->pdfstoponerror)
-        return code;
+    code = pdfi_dict_knownget_type(ctx, page_dict, "Resources", PDF_DICT, (pdf_obj **)&Resources);
+    if (code > 0)
+        code = pdfi_check_Resources_for_transparency(ctx, Resources, page_dict,
+                                                     transparent, spot_dict);
+    if (code < 0 && ctx->pdfstoponerror)
+        goto exit;
 
     /* If we are drawing Annotations, check to see if the page uses any Annots */
     if (ctx->showannots) {
-        code = pdfi_dict_get_type(ctx, page_dict, "Annots", PDF_ARRAY, &d);
-        if (code >= 0) {
-            if (ctx->spot_capable_device)
-                code = pdfi_check_Annots_for_transparency(ctx, (pdf_array *)d, page_dict, transparent, &num_spots);
-            else
-                code = pdfi_check_Annots_for_transparency(ctx, (pdf_array *)d, page_dict, transparent, NULL);
-            pdfi_countdown(d);
-            if (code < 0)
-                return code;
-        }
-        if (code < 0 && code != gs_error_undefined && ctx->pdfstoponerror)
-            return code;
+        code = pdfi_dict_knownget_type(ctx, page_dict, "Annots", PDF_ARRAY, (pdf_obj **)&Annots);
+        if (code > 0)
+            code = pdfi_check_Annots_for_transparency(ctx, Annots, page_dict,
+                                                      transparent, spot_dict);
+        if (code < 0 && ctx->pdfstoponerror)
+            goto exit;
     }
 
-    if (ctx->spot_capable_device)
-        *spots += num_spots;
-    else
-        *spots = 0;
+    code = 0;
+ exit:
+    pdfi_countdown(Resources);
+    pdfi_countdown(Annots);
+    pdfi_countdown(CS);
+    pdfi_countdown(Group);
+    return code;
+}
 
-    return 0;
+/* Checks page for transparency, and sets up device for spots, if applicable
+ * Sets ctx->page_has_transparency and ctx->page_num_spots
+ * do_setup -- indicates whether to actually set up the device with the spot count.
+ */
+int pdfi_check_page(pdf_context *ctx, pdf_dict *page_dict, bool do_setup)
+{
+    int code;
+    bool uses_transparency = false;
+    pdf_dict *spot_dict = NULL;
+    int spots = 0;
+
+    ctx->page_num_spots = 0;
+    ctx->page_has_transparency = false;
+
+    code = pdfi_alloc_object(ctx, PDF_DICT, 32, (pdf_obj **)&spot_dict);
+    if (code < 0)
+        goto exit;
+    pdfi_countup(spot_dict);
+
+    /* Check for spots and transparency in this page */
+    code = pdfi_check_page_inner(ctx, page_dict, &uses_transparency, spot_dict);
+    if (code < 0)
+        goto exit;
+
+    /* Count the spots */
+    spots = pdfi_dict_entries(spot_dict);
+
+    /* If there are spot colours (and by inference, the device renders spot plates) then
+     * send the number of Spots to the device, so it can setup correctly.
+     */
+    if (spots > 0 && do_setup) {
+        gs_c_param_list_write(&ctx->pdfi_param_list, ctx->memory);
+        param_write_int((gs_param_list *)&ctx->pdfi_param_list, "PageSpotColors", &spots);
+        gs_c_param_list_read(&ctx->pdfi_param_list);
+        code = gs_putdeviceparams(ctx->pgs->device, (gs_param_list *)&ctx->pdfi_param_list);
+        if (code > 0) {
+            /* The device was closed, we need to reopen it */
+            code = gs_setdevice_no_erase(ctx->pgs, ctx->pgs->device);
+            if (code < 0) {
+                if (uses_transparency)
+                    (void)gs_abort_pdf14trans_device(ctx->pgs);
+                goto exit;
+            }
+            gs_erasepage(ctx->pgs);
+        }
+    }
+
+    /* Set our values in the context, for caller */
+    ctx->page_has_transparency = uses_transparency;
+    ctx->page_num_spots = spots;
+
+ exit:
+    pdfi_countdown(spot_dict);
+    return code;
 }

@@ -296,6 +296,9 @@ typedef struct pdf_context_s
     /* This tracks whether the current page uses transparency features */
     bool page_has_transparency;
 
+    /* This tracks how many spots are on the current page */
+    int page_num_spots;
+
     /* Does this page need overprint support? */
     bool page_needs_OP;
 
@@ -309,7 +312,6 @@ typedef struct pdf_context_s
     double UserUnit;
 
     /* Page level PDF objects */
-    pdf_dict *SpotNames;
     pdf_dict *CurrentPageDict;      /* Last-ditch resource lookup */
 
     /* Page leve 'Default' transfer functions, black generation and under colour removal */

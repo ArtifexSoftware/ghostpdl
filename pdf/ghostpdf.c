@@ -191,8 +191,8 @@ static int pdfi_dump_box(pdf_context *ctx, pdf_dict *page_dict, const char *Key)
  */
 static int pdfi_output_page_info(pdf_context *ctx, uint64_t page_num)
 {
-    int code, spots = 0;
-    bool known = false, transparent = false;
+    int code;
+    bool known = false;
     double f;
     uint64_t page_offset = 0;
     pdf_dict *page_dict = NULL;
@@ -273,12 +273,12 @@ static int pdfi_output_page_info(pdf_context *ctx, uint64_t page_num)
         return code;
     }
 
-    code = pdfi_check_page_transparency(ctx, page_dict, &transparent, &spots);
+    code = pdfi_check_page(ctx, page_dict, false);
     if (code < 0) {
         if (ctx->pdfstoponerror)
             return code;
     } else {
-        if (transparent == true)
+        if (ctx->page_has_transparency)
             dmprintf(ctx->memory, "     Page uses transparency features");
     }
 
@@ -882,7 +882,6 @@ pdf_context *pdfi_create_context(gs_memory_t *pmem)
 
     ctx->main_stream = NULL;
 
-    ctx->SpotNames = NULL;
     /* Setup some flags that don't default to 'false' */
     ctx->showannots = true;
     ctx->preserveannots = true;

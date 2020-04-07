@@ -48,7 +48,7 @@ static int pdfi_create_colorspace_by_name(pdf_context *ctx, pdf_name *name, pdf_
  * names seen so far, so we can ensure we don't end up with duplictaes.
  */
 static int pdfi_check_for_spots_by_name(pdf_context *ctx, pdf_name *name,
-                                          pdf_dict *parent_dict, pdf_dict *page_dict, int *num_spots)
+                                        pdf_dict *parent_dict, pdf_dict *page_dict, pdf_dict *spot_dict)
 {
     pdf_obj *ref_space;
     int code;
@@ -74,17 +74,20 @@ static int pdfi_check_for_spots_by_name(pdf_context *ctx, pdf_name *name,
             return code;
 
         /* recursion */
-        return pdfi_check_ColorSpace_for_spots(ctx, ref_space, parent_dict, page_dict, num_spots);
+        return pdfi_check_ColorSpace_for_spots(ctx, ref_space, parent_dict, page_dict, spot_dict);
     }
     return 0;
 }
 
 static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_array,
-                                           pdf_dict *parent_dict, pdf_dict *page_dict, int *num_spots)
+                                         pdf_dict *parent_dict, pdf_dict *page_dict, pdf_dict *spot_dict)
 {
     pdf_name *space = NULL;
     pdf_array *a = NULL;
     int code = 0;
+
+    if (!spot_dict)
+        return 0;
 
     code = pdfi_array_get_type(ctx, color_array, 0, PDF_NAME, (pdf_obj **)&space);
     if (code != 0)
@@ -98,7 +101,7 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
 
         code = pdfi_array_get(ctx, color_array, 1, &base_space);
         if (code == 0) {
-            code = pdfi_check_ColorSpace_for_spots(ctx, base_space, parent_dict, page_dict, num_spots);
+            code = pdfi_check_ColorSpace_for_spots(ctx, base_space, parent_dict, page_dict, spot_dict);
             (void)pdfi_countdown(base_space);
         }
         goto exit;
@@ -119,7 +122,7 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
         /* "[/Pattern base_space]" */
         code = pdfi_array_get(ctx, color_array, 1, &base_space);
         if (code == 0) {
-            code = pdfi_check_ColorSpace_for_spots(ctx, base_space, parent_dict, page_dict, num_spots);
+            code = pdfi_check_ColorSpace_for_spots(ctx, base_space, parent_dict, page_dict, spot_dict);
             (void)pdfi_countdown(base_space);
         }
         goto exit;
@@ -164,7 +167,7 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
                 continue;
             }
 
-            code = pdfi_dict_known_by_key(ctx->SpotNames, (pdf_name *)name, &known);
+            code = pdfi_dict_known_by_key(spot_dict, (pdf_name *)name, &known);
             if (code < 0) {
                 pdfi_countdown(name);
                 goto exit;
@@ -178,11 +181,10 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
             if (code < 0)
                 goto exit;
 
-            code = pdfi_dict_put_obj(ctx->SpotNames, name, dummy);
+            code = pdfi_dict_put_obj(spot_dict, name, dummy);
             pdfi_countdown(name);
             if (code < 0)
                 break;
-            *num_spots += 1;
         }
         goto exit;
     } else if (pdfi_name_is(space, "Separation")) {
@@ -198,7 +200,7 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
             pdfi_name_is((const pdf_name *)space, "Yellow") || pdfi_name_is((const pdf_name *)space, "Black") ||
             pdfi_name_is((const pdf_name *)space, "None") || pdfi_name_is((const pdf_name *)space, "All"))
             goto exit;
-        code = pdfi_dict_known_by_key(ctx->SpotNames, space, &known);
+        code = pdfi_dict_known_by_key(spot_dict, space, &known);
         if (code < 0 || known)
             goto exit;
 
@@ -206,8 +208,7 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
         if (code < 0)
             goto exit;
 
-        code = pdfi_dict_put_obj(ctx->SpotNames, (pdf_obj *)space, dummy);
-        *num_spots += 1;
+        code = pdfi_dict_put_obj(spot_dict, (pdf_obj *)space, dummy);
         goto exit;
     } else {
         code = pdfi_find_resource(ctx, (unsigned char *)"ColorSpace",
@@ -221,7 +222,7 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
         }
 
         /* recursion */
-        code = pdfi_check_for_spots_by_array(ctx, a, parent_dict, page_dict, num_spots);
+        code = pdfi_check_for_spots_by_array(ctx, a, parent_dict, page_dict, spot_dict);
     }
 
  exit:
@@ -232,11 +233,12 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
     return code;
 }
 
-int pdfi_check_ColorSpace_for_spots(pdf_context *ctx, pdf_obj *space, pdf_dict *parent_dict, pdf_dict *page_dict, int *num_spots)
+int pdfi_check_ColorSpace_for_spots(pdf_context *ctx, pdf_obj *space, pdf_dict *parent_dict,
+                                    pdf_dict *page_dict, pdf_dict *spot_dict)
 {
     int code;
 
-    if (num_spots == NULL)
+    if (!spot_dict)
         return 0;
 
     code = pdfi_loop_detector_mark(ctx);
@@ -244,10 +246,10 @@ int pdfi_check_ColorSpace_for_spots(pdf_context *ctx, pdf_obj *space, pdf_dict *
         return code;
 
     if (space->type == PDF_NAME) {
-        code = pdfi_check_for_spots_by_name(ctx, (pdf_name *)space, parent_dict, page_dict, num_spots);
+        code = pdfi_check_for_spots_by_name(ctx, (pdf_name *)space, parent_dict, page_dict, spot_dict);
     } else {
         if (space->type == PDF_ARRAY) {
-            code = pdfi_check_for_spots_by_array(ctx, (pdf_array *)space, parent_dict, page_dict, num_spots);
+            code = pdfi_check_for_spots_by_array(ctx, (pdf_array *)space, parent_dict, page_dict, spot_dict);
         } else {
             pdfi_loop_detector_cleartomark(ctx);
             return 0;
