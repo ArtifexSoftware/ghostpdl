@@ -793,8 +793,10 @@ static int pdfi_create_icc(pdf_context *ctx, char *Name, stream *s, int ncomps, 
         }
     } else {
         picc_profile = gsicc_profile_new(s, gs_gstate_memory(ctx->pgs), NULL, 0);
-        if (picc_profile == NULL)
+        if (picc_profile == NULL) {
+            rc_decrement(pcs,"pdfi_create_icc");
             return gs_throw(gs_error_VMerror, "pdfi_create_icc Creation of ICC profile failed");
+        }
         /* We have to get the profile handle due to the fact that we need to know
            if it has a data space that is CIELAB */
         picc_profile->profile_handle =
@@ -965,7 +967,7 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
     pdf_dict *ICC_dict = NULL;
     pdf_array *a;
     int64_t Length, N;
-    pdf_obj *Name;
+    pdf_obj *Name = NULL;
     char *cname = NULL;
     int code;
     bool known;
@@ -989,13 +991,12 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
         if(Name->type == PDF_STRING || Name->type == PDF_NAME) {
             cname = (char *)gs_alloc_bytes(ctx->memory, ((pdf_name *)Name)->length + 1, "pdfi_create_iccbased (profile name)");
             if (cname == NULL) {
-                pdfi_countdown(Name);
-                return_error(gs_error_VMerror);
+                code = gs_note_error(gs_error_VMerror);
+                goto done;
             }
             memset(cname, 0x00, ((pdf_name *)Name)->length + 1);
             memcpy(cname, ((pdf_name *)Name)->data, ((pdf_name *)Name)->length);
         }
-        pdfi_countdown(Name);
     }
     if (code < 0)
         goto done;
@@ -1036,8 +1037,6 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
     }
 
     code = pdfi_create_iccprofile(ctx, ICC_dict, cname, Length, N, &icc_N, range, ppcs);
-
-    gs_free_object(ctx->memory, cname, "pdfi_create_iccbased (profile name)");
 
     /* This is just plain hackery for the benefit of Bug696690.pdf. The old PostScript PDF interpreter says:
      * %% This section is to deal with the horrible pair of files in Bug #696690 and Bug #696120
@@ -1114,6 +1113,9 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
     }
 
 done:
+    if (cname)
+        gs_free_object(ctx->memory, cname, "pdfi_create_iccbased (profile name)");
+    pdfi_countdown(Name);
     pdfi_countdown(ICC_dict);
     return code;
 }
