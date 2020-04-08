@@ -581,6 +581,10 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                         s_A85D_init_inline(&sstate.s_ss.a85d);
                         sstate.s_ss.st.templat = &s_A85D_template;
                         sstate.s_ss.a85d.require_eod = true;
+                        /* If this is an inline ASCII string, interpret it normally, throw an error
+                         * if it fails rather than ignoring it as PDF (Acrobat) does.
+                         */
+                        sstate.s_ss.a85d.pdf_rules = false;
                         goto str;
                 }
                 sputback_inline(s, sptr, endptr);
