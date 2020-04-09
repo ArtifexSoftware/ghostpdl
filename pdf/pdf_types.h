@@ -58,8 +58,28 @@ typedef enum pdf_obj_type_e {
     char flags;\
     unsigned int refcnt;\
     gs_memory_t *memory;                /* memory allocator to use */\
-    uint64_t object_num;\
-    uint32_t generation_num
+    /* Technically object numbers can be any integer. The only documented limit\
+     * architecturally is the fact that the linked list of free objects (ab)uses\
+     * the 'offset' field of the xref to hold the object number of the next free\
+     * object, this means object numbers can't be larger than 10 decimal digits.\
+     * Unfortunately, that's 34 bits, so we use the Implementation Limits in\
+     * Appendix H (Annexe C of the 2.0 spec) which limits object numbers to 23 bits.\
+     * But we use 32 bits instead.\
+     */\
+    uint32_t object_num;\
+    uint32_t generation_num;\
+    /* We only use the indirect object number for creating decryption keys for strings\
+     * for which we (currently at least) only need the bottom 3 bytes, but we keep\
+     * a full 32-bits. For the generation number we only need the bottom 2 bytes\
+     * so we keep that as a 16-bit value and truncate it on storage. If storage\
+     * becomes a problem we could use 5 bytes to store the 2 values but to save one\
+     * byte it does not seem worthwhile. Note! the indirect num is the object number\
+     * of the object if it is an indirect object (so indirect_num == object_num) or,\
+     * if the object is defined directly, its the object number of the enclosing\
+     * indirect object. This is not the same thing as the /Parent entry in some dictionaries.\
+     */\
+    uint32_t indirect_num;\
+    uint16_t indirect_gen
 #endif
 
 typedef struct pdf_obj_s {

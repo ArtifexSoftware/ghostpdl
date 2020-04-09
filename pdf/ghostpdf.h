@@ -152,6 +152,13 @@ typedef enum pdf_warning_flag_e {
     W_PDF_BADPATTERN = W_PDF_BADSHADING << 1,
 } pdf_warning_flag;
 
+typedef enum pdf_crypt_filter_e {
+    V1,     /* 40-bit RC4 */
+    V2,     /* 128-bit RC4 */
+    AESV2,  /* 128-bit AES */
+    AESV3,  /* 256-bit AES */
+} pdf_crypt_filter;
+
 #define INITIAL_STACK_SIZE 32
 #define MAX_STACK_SIZE 32767
 #define MAX_OBJECT_CACHE_SIZE 200
@@ -345,6 +352,8 @@ typedef struct pdf_context_s
     int P;
     pdf_string *EKey;
     bool EncryptMetadata;
+    pdf_crypt_filter StrF;
+    pdf_crypt_filter StmF;
 
     /* Interpreter level PDF objects */
     uint32_t stack_size;

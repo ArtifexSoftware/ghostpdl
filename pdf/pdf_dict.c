@@ -45,7 +45,7 @@ void pdfi_free_dict(pdf_obj *o)
     gs_free_object(d->memory, d, "pdf interpreter free dictionary");
 }
 
-int pdfi_dict_from_stack(pdf_context *ctx)
+int pdfi_dict_from_stack(pdf_context *ctx, uint32_t indirect_num, uint32_t indirect_gen)
 {
     uint64_t index = 0;
     pdf_dict *d = NULL;
@@ -104,6 +104,9 @@ int pdfi_dict_from_stack(pdf_context *ctx)
 
     if (ctx->pdfdebug)
         dmprintf (ctx->memory, "\n >>\n");
+
+    d->indirect_num = indirect_num;
+    d->indirect_gen = indirect_gen;
 
     code = pdfi_push(ctx, (pdf_obj *)d);
     if (code < 0)

@@ -322,7 +322,7 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_dict *d, pdf_stream *s
 
     pdfi_seek(ctx, s, num, SEEK_SET);
 
-    code = pdfi_read_token(ctx, ctx->main_stream);
+    code = pdfi_read_token(ctx, ctx->main_stream, 0, 0);
     if (code < 0)
         return code;
 
@@ -345,7 +345,7 @@ static int pdfi_read_xref_stream_dict(pdf_context *ctx, pdf_stream *s)
 
     if (((pdf_obj *)ctx->stack_top[-1])->type == PDF_INT) {
         /* Its an integer, lets try for index gen obj as a XRef stream */
-        code = pdfi_read_token(ctx, ctx->main_stream);
+        code = pdfi_read_token(ctx, ctx->main_stream, 0, 0);
 
         if (code < 0)
             return(pdfi_repair_file(ctx));
@@ -356,7 +356,7 @@ static int pdfi_read_xref_stream_dict(pdf_context *ctx, pdf_stream *s)
             return(pdfi_repair_file(ctx));
         }
 
-        code = pdfi_read_token(ctx, ctx->main_stream);
+        code = pdfi_read_token(ctx, ctx->main_stream, 0, 0);
         if (code < 0) {
             pdfi_pop(ctx, 1);
             return code;
@@ -383,7 +383,7 @@ static int pdfi_read_xref_stream_dict(pdf_context *ctx, pdf_stream *s)
             pdfi_pop(ctx, 1);
 
             do {
-                code = pdfi_read_token(ctx, ctx->main_stream);
+                code = pdfi_read_token(ctx, ctx->main_stream, gen_num, obj_num);
                 if (code < 0)
                     return pdfi_repair_file(ctx);
 
@@ -568,7 +568,7 @@ static int read_xref_section(pdf_context *ctx, pdf_stream *s)
     if (ctx->pdfdebug)
         dmprintf(ctx->memory, "\n%% Reading xref section\n");
 
-    code = pdfi_read_token(ctx, ctx->main_stream);
+    code = pdfi_read_token(ctx, ctx->main_stream, 0, 0);
 
     if (code < 0)
         return code;
@@ -588,7 +588,7 @@ static int read_xref_section(pdf_context *ctx, pdf_stream *s)
 
     start = ((pdf_num *)o)->value.i;
 
-    code = pdfi_read_token(ctx, ctx->main_stream);
+    code = pdfi_read_token(ctx, ctx->main_stream, 0, 0);
     if (code < 0) {
         pdfi_pop(ctx, 1);
         return code;
@@ -713,7 +713,7 @@ static int read_xref(pdf_context *ctx, pdf_stream *s)
         }
     } while (1);
 
-    code = pdfi_read_dict(ctx, ctx->main_stream);
+    code = pdfi_read_dict(ctx, ctx->main_stream, 0, 0);
     if (code < 0)
         return code;
 
@@ -810,7 +810,7 @@ static int read_xref(pdf_context *ctx, pdf_stream *s)
          */
         pdfi_seek(ctx, s, num, SEEK_SET);
 
-        code = pdfi_read_token(ctx, ctx->main_stream);
+        code = pdfi_read_token(ctx, ctx->main_stream, 0, 0);
         if (code < 0) {
             pdfi_loop_detector_cleartomark(ctx);
             return code;
@@ -853,7 +853,7 @@ static int read_xref(pdf_context *ctx, pdf_stream *s)
     if (code < 0)
         return code;
 
-    code = pdfi_read_token(ctx, ctx->main_stream);
+    code = pdfi_read_token(ctx, ctx->main_stream, 0, 0);
     if (code < 0)
         return(code);
 
@@ -893,7 +893,7 @@ int pdfi_read_xref(pdf_context *ctx)
         /* Read the xref(s) */
         pdfi_seek(ctx, ctx->main_stream, ctx->startxref, SEEK_SET);
 
-        code = pdfi_read_token(ctx, ctx->main_stream);
+        code = pdfi_read_token(ctx, ctx->main_stream, 0, 0);
         if (code < 0) {
             dmprintf(ctx->memory, "Failed to read any token at the startxref location\n");
             ctx->pdf_errors |= E_PDF_BADSTARTXREF;

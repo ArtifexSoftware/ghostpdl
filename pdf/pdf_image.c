@@ -36,8 +36,6 @@
 
 #include "gstrans.h"
 
-extern int pdfi_dict_from_stack(pdf_context *ctx);
-
 int pdfi_BI(pdf_context *ctx)
 {
     if (ctx->TextBlockDepth != 0)
@@ -1396,7 +1394,12 @@ int pdfi_ID(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_st
     if (ctx->TextBlockDepth != 0)
         ctx->pdf_warnings |= W_PDF_OPINVALIDINTEXT;
 
-    code = pdfi_dict_from_stack(ctx);
+    /* we want to have the indirect_num and indirect_gen of the created dictionary
+     * be 0, because we are reading from a stream, and the stream has already
+     * been decrypted, we don't need to decrypt any strings contained in the
+     * inline dictionary.
+     */
+    code = pdfi_dict_from_stack(ctx, 0, 0);
     if (code < 0)
         /* pdfi_dict_from_stack cleans up the stack so we don't need to in case of an error */
         return code;

@@ -35,6 +35,7 @@
 #include "pdf_array.h"
 #include "pdf_trans.h"
 #include "pdf_optcontent.h"
+#include "pdf_sec.h"
 
 /***********************************************************************************/
 /* Functions to create the various kinds of 'PDF objects', Created objects have a  */
@@ -503,7 +504,7 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
 
             for (i=0;i < num_entries;i++)
             {
-                code = pdfi_read_token(ctx, compressed_stream);
+                code = pdfi_read_token(ctx, compressed_stream, obj, gen);
                 if (code < 0) {
                     pdfi_close_file(ctx, compressed_stream);
                     pdfi_countdown(compressed_object);
@@ -519,7 +520,7 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
                     return_error(gs_error_typecheck);
                 }
                 pdfi_pop(ctx, 1);
-                code = pdfi_read_token(ctx, compressed_stream);
+                code = pdfi_read_token(ctx, compressed_stream, obj, gen);
                 if (code < 0) {
                     pdfi_close_file(ctx, compressed_stream);
                     pdfi_countdown(compressed_object);
@@ -568,7 +569,7 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
                 Object_stream = compressed_stream;
             }
 
-            code = pdfi_read_token(ctx, Object_stream);
+            code = pdfi_read_token(ctx, Object_stream, obj, gen);
             if (code < 0) {
                 pdfi_close_file(ctx, Object_stream);
                 pdfi_countdown(compressed_object);
@@ -580,7 +581,7 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
 
                 /* Need to read all the elements from COS objects */
                 do {
-                    code = pdfi_read_token(ctx, Object_stream);
+                    code = pdfi_read_token(ctx, Object_stream, obj, gen);
                     if (code < 0) {
                         pdfi_close_file(ctx, Object_stream);
                         pdfi_countdown(compressed_object);
@@ -602,8 +603,8 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
             /* For compressed objects we don't get a 'obj gen obj' sequence which is what sets
              * the object number for uncompressed objects. So we need to do that here.
              */
-            (*object)->object_num = obj;
-            (*object)->generation_num = gen;
+            (*object)->indirect_num = (*object)->object_num = obj;
+            (*object)->indirect_gen = (*object)->generation_num = gen;
             pdfi_countup(*object);
             pdfi_pop(ctx, 1);
 
@@ -803,7 +804,7 @@ static int skip_eol(pdf_context *ctx, pdf_stream *s)
     return 0;
 }
 
-static int pdfi_read_num(pdf_context *ctx, pdf_stream *s)
+static int pdfi_read_num(pdf_context *ctx, pdf_stream *s, uint32_t indirect_num, uint32_t indirect_gen)
 {
     byte Buffer[256];
     unsigned short index = 0;
@@ -904,6 +905,8 @@ static int pdfi_read_num(pdf_context *ctx, pdf_stream *s)
         else
             dmprintf1(ctx->memory, " %"PRIi64, num->value.i);
     }
+    num->indirect_num = indirect_num;
+    num->indirect_gen = indirect_gen;
 
     code = pdfi_push(ctx, (pdf_obj *)num);
 
@@ -913,7 +916,7 @@ static int pdfi_read_num(pdf_context *ctx, pdf_stream *s)
     return code;
 }
 
-static int pdfi_read_name(pdf_context *ctx, pdf_stream *s)
+static int pdfi_read_name(pdf_context *ctx, pdf_stream *s, uint32_t indirect_num, uint32_t indirect_gen)
 {
     char *Buffer, *NewBuf = NULL;
     unsigned short index = 0;
@@ -982,6 +985,8 @@ static int pdfi_read_name(pdf_context *ctx, pdf_stream *s)
         return code;
     }
     memcpy(name->data, Buffer, index);
+    name->indirect_num = indirect_num;
+    name->indirect_gen = indirect_gen;
 
     if (ctx->pdfdebug)
         dmprintf1(ctx->memory, " /%s", Buffer);
@@ -996,7 +1001,7 @@ static int pdfi_read_name(pdf_context *ctx, pdf_stream *s)
     return code;
 }
 
-static int pdfi_read_hexstring(pdf_context *ctx, pdf_stream *s)
+static int pdfi_read_hexstring(pdf_context *ctx, pdf_stream *s, uint32_t indirect_num, uint32_t indirect_gen)
 {
     char *Buffer, *NewBuf = NULL, HexBuf[2];
     unsigned short index = 0;
@@ -1069,6 +1074,9 @@ static int pdfi_read_hexstring(pdf_context *ctx, pdf_stream *s)
         return code;
     }
     memcpy(string->data, Buffer, index);
+    string->indirect_num = indirect_num;
+    string->indirect_gen = indirect_gen;
+
     gs_free_object(ctx->memory, Buffer, "pdfi_read_hexstring");
 
     code = pdfi_push(ctx, (pdf_obj *)string);
@@ -1078,7 +1086,7 @@ static int pdfi_read_hexstring(pdf_context *ctx, pdf_stream *s)
     return code;
 }
 
-static int pdfi_read_string(pdf_context *ctx, pdf_stream *s)
+static int pdfi_read_string(pdf_context *ctx, pdf_stream *s, uint32_t indirect_num, uint32_t indirect_gen)
 {
     char *Buffer, *NewBuf = NULL, octal[3];
     unsigned short index = 0;
@@ -1253,6 +1261,8 @@ static int pdfi_read_string(pdf_context *ctx, pdf_stream *s)
         return code;
     }
     memcpy(string->data, Buffer, index);
+    string->indirect_num = indirect_num;
+    string->indirect_gen = indirect_gen;
 
     gs_free_object(ctx->memory, Buffer, "pdfi_read_string");
 
@@ -1271,7 +1281,7 @@ static int pdfi_read_string(pdf_context *ctx, pdf_stream *s)
     return code;
 }
 
-static int pdfi_array_from_stack(pdf_context *ctx)
+static int pdfi_array_from_stack(pdf_context *ctx, uint32_t indirect_num, uint32_t indirect_gen)
 {
     uint64_t index = 0;
     pdf_array *a = NULL;
@@ -1303,6 +1313,9 @@ static int pdfi_array_from_stack(pdf_context *ctx)
     if (ctx->pdfdebug)
         dmprintf (ctx->memory, " ]\n");
 
+    a->indirect_num = indirect_num;
+    a->indirect_gen = indirect_gen;
+
     code = pdfi_push(ctx, (pdf_obj *)a);
     if (code < 0)
         pdfi_array_free((pdf_obj *)a);
@@ -1310,11 +1323,11 @@ static int pdfi_array_from_stack(pdf_context *ctx)
     return code;
 }
 
-int pdfi_read_dict(pdf_context *ctx, pdf_stream *s)
+int pdfi_read_dict(pdf_context *ctx, pdf_stream *s, uint32_t indirect_num, uint32_t indirect_gen)
 {
     int code, depth;
 
-    code = pdfi_read_token(ctx, s);
+    code = pdfi_read_token(ctx, s, indirect_num, indirect_gen);
     if (code < 0)
         return code;
     if (ctx->stack_top[-1]->type != PDF_DICT_MARK)
@@ -1322,7 +1335,7 @@ int pdfi_read_dict(pdf_context *ctx, pdf_stream *s)
     depth = pdfi_count_stack(ctx);
 
     do {
-        code = pdfi_read_token(ctx, s);
+        code = pdfi_read_token(ctx, s, indirect_num, indirect_gen);
         if (code < 0)
             return code;
     } while(pdfi_count_stack(ctx) > depth);
@@ -1361,7 +1374,7 @@ static int pdfi_skip_comment(pdf_context *ctx, pdf_stream *s)
  * of that type (PDF_NULL, PDF_BOOL or PDF_INDIRECT_REF)
  * and return it instead.
  */
-static int pdfi_read_keyword(pdf_context *ctx, pdf_stream *s)
+static int pdfi_read_keyword(pdf_context *ctx, pdf_stream *s, uint32_t indirect_num, uint32_t indirect_gen)
 {
     byte Buffer[256];
     unsigned short index = 0;
@@ -1406,6 +1419,9 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_stream *s)
     memcpy(keyword->data, Buffer, index);
     pdfi_countup(keyword);
 
+    keyword->indirect_num = indirect_num;
+    keyword->indirect_gen = indirect_gen;
+
     if (ctx->pdfdebug)
         dmprintf1(ctx->memory, " %s\n", Buffer);
 
@@ -1444,6 +1460,8 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_stream *s)
 
                 o->ref_generation_num = gen_num;
                 o->ref_object_num = obj_num;
+                o->indirect_num = indirect_num;
+                o->indirect_gen = indirect_gen;
 
                 code = pdfi_push(ctx, (pdf_obj *)o);
                 if (code < 0)
@@ -1489,6 +1507,8 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_stream *s)
                     return code;
 
                 o->value = true;
+                o->indirect_num = indirect_num;
+                o->indirect_gen = indirect_gen;
 
                 code = pdfi_push(ctx, (pdf_obj *)o);
                 if (code < 0)
@@ -1512,6 +1532,8 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_stream *s)
                     return code;
 
                 o->value = false;
+                o->indirect_num = indirect_num;
+                o->indirect_gen = indirect_gen;
 
                 code = pdfi_push(ctx, (pdf_obj *)o);
                 if (code < 0)
@@ -1528,6 +1550,8 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_stream *s)
                 code = pdfi_alloc_object(ctx, PDF_NULL, 0, &o);
                 if (code < 0)
                     return code;
+                o->indirect_num = indirect_num;
+                o->indirect_gen = indirect_gen;
 
                 code = pdfi_push(ctx, o);
                 if (code < 0)
@@ -1550,7 +1574,7 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_stream *s)
 /* This function reads from the given stream, at the current offset in the stream,
  * a single PDF 'token' and returns it on the stack.
  */
-int pdfi_read_token(pdf_context *ctx, pdf_stream *s)
+int pdfi_read_token(pdf_context *ctx, pdf_stream *s, uint32_t indirect_num, uint32_t indirect_gen)
 {
     int32_t bytes = 0;
     char Buffer[256];
@@ -1579,12 +1603,12 @@ int pdfi_read_token(pdf_context *ctx, pdf_stream *s)
         case '-':
         case '.':
             pdfi_unread(ctx, s, (byte *)&Buffer[0], 1);
-            code = pdfi_read_num(ctx, s);
+            code = pdfi_read_num(ctx, s, indirect_num, indirect_gen);
             if (code < 0)
                 return code;
             break;
         case '/':
-            return pdfi_read_name(ctx, s);
+            return pdfi_read_name(ctx, s, indirect_num, indirect_gen);
             break;
         case '<':
             bytes = pdfi_read_bytes(ctx, (byte *)&Buffer[1], 1, 1, s);
@@ -1603,11 +1627,11 @@ int pdfi_read_token(pdf_context *ctx, pdf_stream *s)
             } else {
                 if (Buffer[1] == '>') {
                     pdfi_unread(ctx, s, (byte *)&Buffer[1], 1);
-                    return pdfi_read_hexstring(ctx, s);
+                    return pdfi_read_hexstring(ctx, s, indirect_num, indirect_gen);
                 } else {
                     if (ishex(Buffer[1])) {
                         pdfi_unread(ctx, s, (byte *)&Buffer[1], 1);
-                        return pdfi_read_hexstring(ctx, s);
+                        return pdfi_read_hexstring(ctx, s, indirect_num, indirect_gen);
                     }
                     else
                         return_error(gs_error_syntaxerror);
@@ -1619,12 +1643,12 @@ int pdfi_read_token(pdf_context *ctx, pdf_stream *s)
             if (bytes <= 0)
                 return (gs_error_ioerror);
             if (Buffer[1] == '>')
-                return pdfi_dict_from_stack(ctx);
+                return pdfi_dict_from_stack(ctx, indirect_num, indirect_gen);
             else
                 return_error(gs_error_syntaxerror);
             break;
         case '(':
-            return pdfi_read_string(ctx, s);
+            return pdfi_read_string(ctx, s, indirect_num, indirect_gen);
             break;
         case '[':
             if (ctx->pdfdebug)
@@ -1632,12 +1656,12 @@ int pdfi_read_token(pdf_context *ctx, pdf_stream *s)
             return pdfi_mark_stack(ctx, PDF_ARRAY_MARK);
             break;
         case ']':
-            code = pdfi_array_from_stack(ctx);
+            code = pdfi_array_from_stack(ctx, indirect_num, indirect_gen);
             if (code < 0) {
                 if (code == gs_error_VMerror || code == gs_error_ioerror || ctx->pdfstoponerror)
                     return code;
                 pdfi_clearstack(ctx);
-                return pdfi_read_token(ctx, s);
+                return pdfi_read_token(ctx, s, indirect_num, indirect_gen);
             }
             break;
         case '{':
@@ -1647,20 +1671,20 @@ int pdfi_read_token(pdf_context *ctx, pdf_stream *s)
             break;
         case '}':
             pdfi_clear_to_mark(ctx);
-            return pdfi_read_token(ctx, s);
+            return pdfi_read_token(ctx, s, indirect_num, indirect_gen);
             break;
         case '%':
             pdfi_skip_comment(ctx, s);
-            return pdfi_read_token(ctx, s);
+            return pdfi_read_token(ctx, s, indirect_num, indirect_gen);
             break;
         default:
             if (isdelimiter(Buffer[0])) {
                 if (ctx->pdfstoponerror)
                     return_error(gs_error_syntaxerror);
-                return pdfi_read_token(ctx, s);
+                return pdfi_read_token(ctx, s, indirect_num, indirect_gen);
             }
             pdfi_unread(ctx, s, (byte *)&Buffer[0], 1);
-            return pdfi_read_keyword(ctx, s);
+            return pdfi_read_keyword(ctx, s, indirect_num, indirect_gen);
             break;
     }
     return 0;
@@ -1687,7 +1711,7 @@ int pdfi_read_object(pdf_context *ctx, pdf_stream *s, gs_offset_t stream_offset)
      * want to deal with it specially by getting the Length, jumping to the end and checking
      * for an endobj. Or not, possibly, because it would be slow.
      */
-    code = pdfi_read_token(ctx, s);
+    code = pdfi_read_token(ctx, s, 0, 0);
     if (code < 0)
         return code;
     if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_INT) {
@@ -1697,7 +1721,7 @@ int pdfi_read_object(pdf_context *ctx, pdf_stream *s, gs_offset_t stream_offset)
     objnum = ((pdf_num *)ctx->stack_top[-1])->value.i;
     pdfi_pop(ctx, 1);
 
-    code = pdfi_read_token(ctx, s);
+    code = pdfi_read_token(ctx, s, 0, 0);
     if (code < 0)
         return code;
     if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_INT) {
@@ -1707,7 +1731,7 @@ int pdfi_read_object(pdf_context *ctx, pdf_stream *s, gs_offset_t stream_offset)
     gen = ((pdf_num *)ctx->stack_top[-1])->value.i;
     pdfi_pop(ctx, 1);
 
-    code = pdfi_read_token(ctx, s);
+    code = pdfi_read_token(ctx, s, 0, 0);
     if (code < 0)
         return code;
     if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
@@ -1721,12 +1745,12 @@ int pdfi_read_object(pdf_context *ctx, pdf_stream *s, gs_offset_t stream_offset)
     }
     pdfi_pop(ctx, 1);
 
-    code = pdfi_read_token(ctx, s);
+    code = pdfi_read_token(ctx, s, objnum, gen);
     if (code < 0)
         return code;
 
     do {
-        code = pdfi_read_token(ctx, s);
+        code = pdfi_read_token(ctx, s, objnum, gen);
         if (code < 0) {
             pdfi_clearstack(ctx);
             return code;
@@ -1748,8 +1772,8 @@ int pdfi_read_object(pdf_context *ctx, pdf_stream *s, gs_offset_t stream_offset)
 
         pdfi_pop(ctx, 1);
 
-        o->object_num = objnum;
-        o->generation_num = gen;
+        o->indirect_num = o->object_num = objnum;
+        o->indirect_gen = o->generation_num = gen;
         code = pdfi_add_to_cache(ctx, o);
         return code;
     }
@@ -1786,8 +1810,8 @@ int pdfi_read_object(pdf_context *ctx, pdf_stream *s, gs_offset_t stream_offset)
             pdfi_pop(ctx, 1);
             return_error(gs_error_syntaxerror);
         }
-        d->object_num = objnum;
-        d->generation_num = gen;
+        d->indirect_num = d->object_num = objnum;
+        d->indirect_gen = d->generation_num = gen;
         d->stream_offset = offset;
         code = pdfi_add_to_cache(ctx, (pdf_obj *)d);
         if (code < 0) {
@@ -1816,7 +1840,7 @@ int pdfi_read_object(pdf_context *ctx, pdf_stream *s, gs_offset_t stream_offset)
             return code;
         }
 
-        code = pdfi_read_token(ctx, ctx->main_stream);
+        code = pdfi_read_token(ctx, ctx->main_stream, objnum, gen);
         if (pdfi_count_stack(ctx) < 2) {
             dmprintf1(ctx->memory, "Failed to find a valid object at the end of the stream object %"PRIu64".\n", objnum);
             return 0;
@@ -1835,7 +1859,7 @@ int pdfi_read_object(pdf_context *ctx, pdf_stream *s, gs_offset_t stream_offset)
         }
         pdfi_pop(ctx, 1);
 
-        code = pdfi_read_token(ctx, ctx->main_stream);
+        code = pdfi_read_token(ctx, ctx->main_stream, objnum, gen);
         if (code < 0) {
             if (ctx->pdfstoponerror)
                 return code;
@@ -1874,8 +1898,8 @@ int pdfi_read_object(pdf_context *ctx, pdf_stream *s, gs_offset_t stream_offset)
 
         pdfi_pop(ctx, 1);
 
-        o->object_num = objnum;
-        o->generation_num = gen;
+        o->indirect_num = o->object_num = objnum;
+        o->indirect_gen = o->generation_num = gen;
         code = pdfi_add_to_cache(ctx, o);
         return code;
     }
@@ -2027,7 +2051,7 @@ int pdfi_repair_file(pdf_context *ctx)
     do {
         offset = pdfi_unread_tell(ctx);
         do {
-            code = pdfi_read_token(ctx, ctx->main_stream);
+            code = pdfi_read_token(ctx, ctx->main_stream, 0, 0);
             if (code < 0) {
                 if (code != gs_error_VMerror && code != gs_error_ioerror) {
                     pdfi_clearstack(ctx);
@@ -2053,7 +2077,7 @@ int pdfi_repair_file(pdf_context *ctx)
                         pdfi_clearstack(ctx);
 
                         do {
-                            code = pdfi_read_token(ctx, ctx->main_stream);
+                            code = pdfi_read_token(ctx, ctx->main_stream, 0, 0);
                             if (code < 0) {
                                 if (code != gs_error_VMerror && code != gs_error_ioerror)
                                     continue;
@@ -2089,7 +2113,7 @@ int pdfi_repair_file(pdf_context *ctx)
                                                 index = 0;
                                         } while (index < 9 && ctx->main_stream->eof == false);
                                         do {
-                                            code = pdfi_read_token(ctx, ctx->main_stream);
+                                            code = pdfi_read_token(ctx, ctx->main_stream, 0, 0);
                                             if (code < 0) {
                                                 if (code != gs_error_VMerror && code != gs_error_ioerror)
                                                     continue;
@@ -2127,7 +2151,7 @@ int pdfi_repair_file(pdf_context *ctx)
                             pdfi_clearstack(ctx);
                         } else
                             if (k->key == PDF_STARTXREF) {
-                                code = pdfi_read_token(ctx, ctx->main_stream);
+                                code = pdfi_read_token(ctx, ctx->main_stream, 0, 0);
                                 if (code < 0 && code != gs_error_VMerror && code != gs_error_ioerror)
                                     continue;
                                 if (code < 0)
@@ -2166,7 +2190,7 @@ int pdfi_repair_file(pdf_context *ctx)
 
             pdfi_seek(ctx, ctx->main_stream, ctx->xref_table->xref[i].u.uncompressed.offset, SEEK_SET);
             do {
-                code = pdfi_read_token(ctx, ctx->main_stream);
+                code = pdfi_read_token(ctx, ctx->main_stream, 0, 0);
                 if (ctx->main_stream->eof == true || (code < 0 && code != gs_error_ioerror && code != gs_error_VMerror))
                     break;;
                 if (code < 0)
@@ -2239,13 +2263,13 @@ int pdfi_repair_file(pdf_context *ctx)
                                     code = pdfi_dict_get_int(ctx, d, "N", &N);
                                     if (code == 0) {
                                         for (j=0;j < N; j++) {
-                                            code = pdfi_read_token(ctx, compressed_stream);
+                                            code = pdfi_read_token(ctx, compressed_stream, 0, 0);
                                             if (code == 0) {
                                                 o = ctx->stack_top[-1];
                                                 if (((pdf_obj *)o)->type == PDF_INT) {
                                                     obj_num = ((pdf_num *)o)->value.i;
                                                     pdfi_pop(ctx, 1);
-                                                    code = pdfi_read_token(ctx, compressed_stream);
+                                                    code = pdfi_read_token(ctx, compressed_stream, 0, 0);
                                                     if (code == 0) {
                                                         o = ctx->stack_top[-1];
                                                         if (((pdf_obj *)o)->type == PDF_INT) {
@@ -3448,7 +3472,7 @@ pdfi_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict 
 
         code = pdfi_dict_get_type(ctx, stream_dict, "StreamKey", PDF_STRING, (pdf_obj **)&StreamKey);
         if (code == gs_error_undefined) {
-            code = pdfi_compute_objkey(ctx, stream_dict->object_num, stream_dict->generation_num, &StreamKey);
+            code = pdfi_compute_objkey(ctx, (pdf_obj *)stream_dict, &StreamKey);
             if (code < 0)
                 return code;
             code = pdfi_dict_put(ctx, stream_dict, "StreamKey", (pdf_obj *)StreamKey);
@@ -3486,7 +3510,7 @@ pdfi_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict 
         return code;
 
     do {
-        code = pdfi_read_token(ctx, compressed_stream);
+        code = pdfi_read_token(ctx, compressed_stream, stream_dict->object_num, stream_dict->generation_num);
         if (code < 0) {
             if (code == gs_error_ioerror || code == gs_error_VMerror || ctx->pdfstoponerror) {
                 pdfi_close_file(ctx, compressed_stream);

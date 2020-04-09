@@ -134,7 +134,7 @@ done:
     return code;
 }
 
-int check_user_password_preR5(pdf_context *ctx, char *Password, int Len, int KeyLen, int R)
+static int check_user_password_preR5(pdf_context *ctx, char *Password, int Len, int KeyLen, int R)
 {
     pdf_string *Key = NULL, *XORKey = NULL;
     int code = 0, i, j, KeyLenBytes = KeyLen / 8;
@@ -192,6 +192,7 @@ int check_user_password_preR5(pdf_context *ctx, char *Password, int Len, int Key
             }
             break;
         case 3:
+        case 4:
             /* Algorithm 3.5 step 2
              * Pass the 32 byte padding string from step 1 of Algorithm 3.2 to an MD5 hash */
             gs_md5_init(&md5);
@@ -278,7 +279,7 @@ int check_user_password_preR5(pdf_context *ctx, char *Password, int Len, int Key
             }
             break;
         default:
-            gs_note_error(gs_error_rangecheck);
+            code = gs_note_error(gs_error_rangecheck);
             goto error;
             break;
     }
@@ -296,7 +297,7 @@ error:
     return code;
 }
 
-int check_owner_password_preR5(pdf_context *ctx, char *Password, int Len, int KeyLen, int R)
+static int check_owner_password_preR5(pdf_context *ctx, char *Password, int Len, int KeyLen, int R)
 {
     char Key[32];
     int code = 0, i, j, KeyLenBytes = KeyLen / 8;
@@ -389,14 +390,34 @@ error:
     return code;
 }
 
+static int check_user_password_R4(pdf_context *ctx, char *Password, int Len, int KeyLen, int R)
+{
+    return_error(gs_error_undefined);
+}
+
+static int check_owner_password_R4(pdf_context *ctx, char *Password, int Len, int KeyLen, int R)
+{
+    return_error(gs_error_undefined);
+}
+
 /* Compute a decryption key for an 'object'. The decryption key for a string or stream is
  * calculated by algorithm 3.1.
  */
-int pdfi_compute_objkey(pdf_context *ctx, int64_t object_num, uint32_t generation_num, pdf_string **Key)
+int pdfi_compute_objkey(pdf_context *ctx, pdf_obj *obj, pdf_string **Key)
 {
     char *Buffer;
     int idx, ELength, code = 0;
     gs_md5_state_t md5;
+    int64_t object_num;
+    uint32_t generation_num;
+
+    if (obj->object_num == 0) {
+        /* The object is a direct object, use the object number of the container instead */
+        /* Not yet implemented, will need plumbing changes in pdfi_dereference */
+    } else {
+        object_num = obj->object_num;
+        generation_num = obj->generation_num;
+    }
 
     /* Step 1, obtain the object and generation numbers (see arguments). If the string is
      * a direct object, use the identifier of the indirect object containing it.
@@ -522,7 +543,7 @@ int pdfi_read_Encryption(pdf_context *ctx)
     if (code < 0)
         goto done;
 
-    if (i64 < 1 || i64 > 4) {
+    if (i64 < 1 || i64 > 5) {
         code = gs_error_rangecheck;
         goto done;
     }
@@ -534,6 +555,8 @@ int pdfi_read_Encryption(pdf_context *ctx)
         case 3:
             break;
         case 4:
+            break;
+        case 5:
             break;
     }
     ctx->V = (int)i64;
@@ -572,12 +595,20 @@ int pdfi_read_Encryption(pdf_context *ctx)
     }
     memcpy(ctx->U, s->data, 32);
 
-    ctx->EncryptMetadata = false;
+    code = pdfi_dict_knownget_type(ctx, d, "EncryptMetadata", PDF_BOOL, &o);
+    if (code < 0)
+        goto done;
+    if (code > 0)
+        ctx->EncryptMetadata = ((pdf_bool *)o)->value;
+    else
+        ctx->EncryptMetadata = false;
 
     switch(ctx->R) {
         case 2:
+            /* Revision 2 is always 40-bit RC4 */
             if (KeyLen == 0)
                 KeyLen = 40;
+            ctx->StrF = ctx->StmF = V1;
             /* First see if the file is encrypted with an Owner password and no user password
              * in which case an empty user password will work to decrypt it.
              */
@@ -593,8 +624,10 @@ int pdfi_read_Encryption(pdf_context *ctx)
             }
             break;
         case 3:
+            /* Revision 3 is always 128-bit RC4 */
             if (KeyLen == 0)
                 KeyLen = 128;
+            ctx->StrF = ctx->StmF = V2;
             code = check_user_password_preR5(ctx, "", 0, KeyLen, 3);
             if (code < 0) {
                 if(ctx->Password) {
@@ -607,19 +640,30 @@ int pdfi_read_Encryption(pdf_context *ctx)
             }
             break;
         case 4:
+            /* Revision 4 is either AES or RC4, but its always 128-bits */
             if (KeyLen == 0)
                 KeyLen = 128;
-            code = pdfi_dict_knownget_type(ctx, d, "EncryptMetadata", PDF_BOOL, &o);
-            if (code < 0)
-                goto done;
-            if (code > 0)
-                ctx->EncryptMetadata = ((pdf_bool *)o)->value;
-            code = gs_error_unknownerror;
+            code = check_user_password_preR5(ctx, "", 0, KeyLen, 4);
+            if (code < 0) {
+                if(ctx->Password) {
+                    /* Empty user password didn't work, try the password we've been given as a user password */
+                    code = check_user_password_preR5(ctx, ctx->Password, strlen(ctx->Password), KeyLen, 4);
+                    if (code < 0) {
+                        code = check_owner_password_preR5(ctx, ctx->Password, strlen(ctx->Password), KeyLen, 4);
+                    }
+                }
+            }
             break;
         case 5:
-            code = gs_error_unknownerror;
+            emprintf(ctx->memory, "\n   **** Error: Revision 5 standard security handler is an Adobe.\n");
+            emprintf(ctx->memory, "\n               proprietary extension and not supported.\n");
+            code = gs_error_rangecheck;
             break;
         case 6:
+            /* Revision 6 is always 256-bit AES */
+            if (KeyLen == 0)
+                KeyLen = 256;
+            ctx->StrF = ctx->StmF = AESV3;
             code = gs_error_unknownerror;
             break;
         default:
