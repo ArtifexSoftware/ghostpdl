@@ -6174,8 +6174,8 @@ pdf14_push_color_model(gx_device *dev, gs_transparency_color_t group_color_type,
     /* If we are a sep device and this is not a softmask, ensure we maintain the
        spot colorants and know how to index into them */
     if (pdev->sep_device && !is_mask) {
-        int num_spots = group_color->num_components -
-                        group_color->icc_profile->num_comps;
+        int num_spots = dev->color_info.num_components -
+            dev->icc_struct->device_profile[0]->num_comps;
 
         if (num_spots > 0) {
             new_num_comps += num_spots;
