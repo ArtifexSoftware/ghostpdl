@@ -3517,9 +3517,16 @@ operation of <code>setpagedevice</code>, and because this capability is <i>extre
 rarely used, we feel the improvement in security warrants the small reduction in
 flexibility.
 <p>
-Path matching is simple: it is case sensitive, and we do not implement full featured
+Path matching is very simple: it is case sensitive, and we do not implement full featured
 &quot;globbing&quot; or regular expression matching (such complexity would significantly
-and negatively impact performance). The following cases are handled:
+and negatively impact performance). Further, the string parameter(s) passed to the
+<code>--permit-file-*</code> option must exactly match the string(s) used to reference
+the file(s): for example, you cannot use a absolute path to grant permission, and
+then a relative path to reference the file (or vice versa) - the path match will fail.
+Similarly, you cannot grant permission through one symlink, and then reference a file
+directly, or through an alternative symlink - again, the matching will fail.
+<p>
+The following cases are handled:
 <ul>
 <li>
 <dt><code>&quot;&sol;path&sol;to&sol;file&quot;</code></dt>
