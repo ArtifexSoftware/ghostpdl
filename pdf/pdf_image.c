@@ -669,7 +669,9 @@ pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim, pdf_stream *image_str
     gs_image_enum *penum = NULL;
     //    unsigned char Buffer[1024];
     byte *buffer = NULL;
-    uint64_t linelen, bytesleft;
+    uint64_t linelen, bytes_left;
+    uint64_t bytes_used = 0;
+    uint64_t bytes_avail = 0;
     gs_const_string plane_data[GS_IMAGE_MAX_COMPONENTS];
     int main_plane, mask_plane;
 
@@ -729,42 +731,49 @@ pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim, pdf_stream *image_str
      * This isn't required by gs_image_next_planes(), but it might make things simpler.
      */
     linelen = pdfi_get_image_line_size((gs_data_image_t *)pim, comps);
-    bytesleft = pdfi_get_image_data_size((gs_data_image_t *)pim, comps);
+    bytes_left = pdfi_get_image_data_size((gs_data_image_t *)pim, comps);
     buffer = gs_alloc_bytes(ctx->memory, linelen, "pdfi_render_image (buffer)");
     if (!buffer) {
         code = gs_note_error(gs_error_VMerror);
         goto cleanupExit;
     }
-    while (bytesleft > 0) {
+    while (bytes_left > 0) {
         uint used[GS_IMAGE_MAX_COMPONENTS];
 
-        code = pdfi_read_bytes(ctx, buffer, 1, linelen, image_stream);
-        if (code < 0) {
-            dmprintf3(ctx->memory,
-                      "WARNING: Image data error (pdfi_read_bytes) bytesleft=%ld, linelen=%ld, code=%d\n",
-                      bytesleft, linelen, code);
-            goto cleanupExit;
-        }
-        if (code != linelen) {
-            dmprintf3(ctx->memory, "WARNING: Image data mismatch, bytesleft=%ld, linelen=%ld, code=%d\n",
-                      bytesleft, linelen, code);
-            code = gs_note_error(gs_error_limitcheck);
-            goto cleanupExit;
+        if (bytes_avail == 0) {
+            code = pdfi_read_bytes(ctx, buffer, 1, linelen, image_stream);
+            if (code < 0) {
+                dmprintf3(ctx->memory,
+                          "WARNING: Image data error (pdfi_read_bytes) bytes_left=%ld, linelen=%ld, code=%d\n",
+                          bytes_left, linelen, code);
+                goto cleanupExit;
+            }
+            if (code != linelen) {
+                dmprintf3(ctx->memory, "WARNING: Image data mismatch, bytes_left=%ld, linelen=%ld, code=%d\n",
+                          bytes_left, linelen, code);
+                code = gs_note_error(gs_error_limitcheck);
+                goto cleanupExit;
+            }
         }
 
-        plane_data[main_plane].data = buffer;
-        plane_data[main_plane].size = linelen;
+        plane_data[main_plane].data = buffer + bytes_used;
+        plane_data[main_plane].size = linelen - bytes_used;
 
         code = gs_image_next_planes(penum, plane_data, used);
         if (code < 0) {
             goto cleanupExit;
         }
-        /* TODO: Deal with case where it didn't consume all the data
-         * Maybe this will never happen when I feed a line at a time?
-         * Does it always consume all the mask data?
-         * (I am being lazy and waiting for a sample file that doesn't work...)
+        /* It might not always consume all the data, but so far the only case
+         * I have seen with that was one that had mask data.
+         * In that case, it used all of plane 0, and none of plane 1 on the first pass.
+         * (image_2bpp.pdf)
+         *
+         * Anyway, this math should handle that case (as well as a case where it consumed only
+         * part of the data, if that can actually happen).
          */
-        bytesleft -= used[main_plane];
+        bytes_used = used[main_plane];
+        bytes_left -= bytes_used;
+        bytes_avail = linelen - bytes_used;
     }
 
     code = 0;
