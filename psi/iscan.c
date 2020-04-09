@@ -535,6 +535,16 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                 return_error(gs_error_Fatal);
         }
     }
+    else {
+        /* We *may* use these in the event of returning to this function after
+         * a interruption, but not every code path below sets them. Set them
+         * to sane values here for safety. We can write the contents of sstate
+         * (back) to pstate before returning.
+         */
+        sstate.s_da.base = sstate.s_da.next = &(sstate.s_da.buf[0]);
+        sstate.s_da.limit = sstate.s_da.next;
+        sstate.s_da.is_dynamic = false;
+    }
     /* Fetch any state variables that are relevant even if */
     /* sstate.s_scan_type == scanning_none. */
     sstate.s_pstack = pstate->s_pstack;
