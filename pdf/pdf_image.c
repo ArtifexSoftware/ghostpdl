@@ -1137,7 +1137,8 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
               pdf_stream *source, bool inline_image)
 {
     pdf_stream *new_stream = NULL;
-    int code = 0, comps = 0;
+    int code = 0, code1 = 0;
+    int comps = 0;
     gs_color_space  *pcs = NULL;
     gs_image1_t t1image;
     gs_image4_t t4image;
@@ -1339,7 +1340,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
 
     code = pdfi_image_setup_trans(ctx, &trans_state);
     if (code < 0)
-        return code;
+        goto cleanupExit;
 
     /* Render the image */
     code = pdfi_render_image(ctx, pim, new_stream,
@@ -1348,10 +1349,11 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     if (code < 0) {
         if (ctx->pdfdebug)
             dmprintf1(ctx->memory, "WARNING: pdfi_do_image: error %d from pdfi_render_image\n", code);
-        goto cleanupExit;
     }
 
-    code = pdfi_trans_teardown(ctx, &trans_state);
+    code1 = pdfi_trans_teardown(ctx, &trans_state);
+    if (code == 0)
+        code = code1;
 
  cleanupExit:
     if (code < 0)
@@ -1546,7 +1548,7 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
     int code;
     pdf_name *n = NULL;
 
-    dbgmprintf1(ctx->memory, "pdfi_do_image_or_form BEGIN (OBJ = %ld)\n", xobject_dict->object_num);
+    dbgmprintf1(ctx->memory, "pdfi_do_image_or_form BEGIN (OBJ = %d)\n", xobject_dict->object_num);
     code = pdfi_trans_set_params(ctx);
     if (code < 0)
         return code;

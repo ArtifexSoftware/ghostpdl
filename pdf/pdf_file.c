@@ -105,6 +105,7 @@ pdfi_filter_open(uint buffer_size,
     s->procs.process = templat->process;
     s->save_close = s->procs.close;
     s->procs.close = file_close_file;
+    s->close_at_eod = 0;
     if (sst == NULL) {
         /* This stream doesn't have any state of its own. */
         /* Hack: use the stream itself as the state. */
