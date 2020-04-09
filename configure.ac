@@ -1,4 +1,4 @@
-dnl Copyright (C) 2001-2019 Artifex Software, Inc.
+dnl Copyright (C) 2001-2020 Artifex Software, Inc.
 dnl All Rights Reserved.
 dnl
 dnl This software is provided AS-IS with no warranty, either express or
