@@ -82,7 +82,7 @@ go_process(stream_state * st, stream_cursor_read *pr, stream_cursor_write *pw, b
         return -1;
     return 0;
 }
-static byte zeros[1<<align_bitmap_mod];
+static byte zeros[1<<align_bitmap_mod] = { 0, };
 static int
 cmd_compress_bitmap(stream_state * st, const byte * data, uint width_bits,
                     uint raster, uint height, stream_cursor_write * pw)
@@ -110,7 +110,6 @@ cmd_compress_bitmap(stream_state * st, const byte * data, uint width_bits,
                 byte b = r.ptr[1] & mask;
                 r2.limit = &b;
                 r2.ptr = r2.limit-1;
-
                 status = go_process(st, &r2, pw, false);
                 if (status)
                     break;
