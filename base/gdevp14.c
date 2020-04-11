@@ -5972,16 +5972,12 @@ pdf14_pop_color_model(gx_device* dev, pdf14_group_color_t* group_color)
             GX_DEVICE_COLOR_MAX_COMPONENTS);
         memcpy(&(pdev->color_info.comp_shift), &(group_color->comp_shift),
             GX_DEVICE_COLOR_MAX_COMPONENTS);
-        group_color->get_cmap_procs = NULL;
-        group_color->group_color_comp_index = NULL;
-        group_color->group_color_mapping_procs = NULL;
         if (group_color->icc_profile != NULL) {
             /* make sure to decrement the device profile.  If it was allocated
                with the push then it will be freed. */
             gsicc_adjust_profile_rc(pdev->icc_struct->device_profile[0], -1, 
                 "pdf14_pop_color_model");
             pdev->icc_struct->device_profile[0] = group_color->icc_profile;
-            group_color->icc_profile = NULL;
         }
     }
 }
@@ -6744,9 +6740,6 @@ pdf14_end_transparency_mask(gx_device *dev, gs_gstate *pgs)
             pdev->pdf14_procs = group_color->unpack_procs;
             pdev->color_info.max_color = group_color->max_color;
             pdev->color_info.max_gray = group_color->max_gray;
-            group_color->get_cmap_procs = NULL;
-            group_color->group_color_comp_index = NULL;
-            group_color->group_color_mapping_procs = NULL;
             set_dev_proc(pdev, encode_color, group_color->encode);
             set_dev_proc(pdev, decode_color, group_color->decode);
             memcpy(&(pdev->color_info.comp_bits),&(group_color->comp_bits),
@@ -6757,7 +6750,6 @@ pdf14_end_transparency_mask(gx_device *dev, gs_gstate *pgs)
             if (group_color->icc_profile != NULL) {
                 gsicc_adjust_profile_rc(dev->icc_struct->device_profile[0], -1, "pdf14_end_transparency_mask");
                 dev->icc_struct->device_profile[0] = group_color->icc_profile;
-                group_color->icc_profile = NULL;
             }
         }
     }
