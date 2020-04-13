@@ -1225,6 +1225,7 @@ pdf14_ctx_new(gx_device *dev, bool deep)
     result->smask_depth = 0;
     result->smask_blend = false;
     result->deep = deep;
+    result->base_icc = NULL;
     return result;
 }
 
@@ -1288,7 +1289,7 @@ pdf14_find_backdrop_buf(pdf14_ctx *ctx, bool *is_backdrop)
 /* This wil create the first buffer when we have
    either the first drawing operation or transparency
    group push.  At that time, the color space in which
-   we are going to be doing the alpha blend will be known */
+   we are going to be doing the alpha blend will be known. */
 static int
 pdf14_initialize_ctx(gx_device* dev, int n_chan, bool additive, gs_gstate* pgs)
 {
@@ -3109,10 +3110,10 @@ pdf14_custom_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
  */
 static void pdf14_cleanup_group_color_profiles (pdf14_device *pdev)
 {
-    if (pdev->ctx) {
+    if (pdev->ctx && pdev->ctx->stack) {
         pdf14_buf *buf, *next;
 
-        for (buf = pdev->ctx->stack; buf != NULL; buf = next) {
+        for (buf = pdev->ctx->stack->saved; buf != NULL; buf = next) {
             pdf14_group_color_t *group_color_info = buf->group_color_info;
             next = buf->saved;
             while (group_color_info) {
@@ -3127,7 +3128,14 @@ static void pdf14_cleanup_group_color_profiles (pdf14_device *pdev)
                                              &render_cond);
 
                        gsicc_adjust_profile_rc(pdev->icc_struct->device_profile[0], -1, "pdf14_end_transparency_group");
-                       pdev->icc_struct->device_profile[0] = group_color_info->icc_profile;
+                       if (group_color_info->previous == NULL && pdev->ctx->base_icc != NULL) {
+                           /* In this case, our first encounter was a group push and we 
+                              stashed the icc profile of the target into base_group. 
+                              Restore it now */
+
+
+                       } else
+                            pdev->icc_struct->device_profile[0] = group_color_info->icc_profile;
                        group_color_info->icc_profile = NULL;
                    }
                }
@@ -5337,6 +5345,19 @@ gx_update_pdf14_compositor(gx_device * pdev, gs_gstate * pgs,
                     /* clist) only needs to use the default ROP to copy the data  */
                     new_pgs.log_op = rop3_default;
                     code = p14dev->pdf14_procs->put_image(pdev, &new_pgs, p14dev->target);
+
+                    /* If needed restore the ICC profile of the device from the context.
+                       This occurs if the first drawing was a group push in which case
+                       we stashed the pdf14 icc profile into the context and set it
+                       to the group profile.  This is in contast to if we just started
+                       drawing with no group push.  In that case, the context itself
+                       has a buffer into which the ICC profile is stored. The current
+                       device_profile ref count is decremented when the buffer is freed */
+                    if (p14dev->ctx->base_icc) {
+                        p14dev->icc_struct->device_profile[0] = p14dev->ctx->base_icc;
+                        gsicc_adjust_profile_rc(p14dev->ctx->base_icc, -1, "gx_update_pdf14_compositor");
+                        p14dev->ctx->base_icc = NULL;
+                   }
                 }
                 /* Before we disable the device release any deviceN structures.
                     free_devicen is set if the pdf14 device had inherited its
@@ -5881,6 +5902,12 @@ pdf14_begin_transparency_group(gx_device *dev,
     if (pdev->ctx->stack == NULL) {
         pdev->ctx->additive = (pdev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE);
         code = compute_group_device_int_rect(pdev, &rect, pbbox, pgs);
+
+        /* In this case, we also have no buffer that was related to the color of
+           the target device.  As such, we need to store the base profile in
+           the context so that we can restore it later */
+        pdev->ctx->base_icc = pdev->icc_struct->device_profile[0];
+        gsicc_adjust_profile_rc(pdev->ctx->base_icc, 1, "pdf14_begin_transparency_group");
     } else {
         if (ptgp->text_group == PDF14_TEXTGROUP_BT_PUSHED)
             rect = pdev->ctx->rect; /* Use parent group for text_group. */
