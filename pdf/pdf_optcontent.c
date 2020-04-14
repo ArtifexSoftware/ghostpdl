@@ -304,7 +304,7 @@ pdfi_oc_is_ocg_visible(pdf_context *ctx, pdf_dict *ocdict)
     pdfi_countdown(type);
 
     if (ctx->pdfdebug) {
-        dmprintf2(ctx->memory, "OCG: OC Dict %ld %s visible\n", ocdict->object_num,
+        dmprintf2(ctx->memory, "OCG: OC Dict %d %s visible\n", ocdict->object_num,
                   is_visible ? "IS" : "IS NOT");
     }
     return is_visible;

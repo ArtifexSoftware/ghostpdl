@@ -21,6 +21,7 @@
 #include "pdf_int.h"
 #include "pdf_array.h"
 #include "pdf_misc.h"
+#include "pdf_sec.h"
 #include "stream.h"
 #include "strimpl.h"
 #include "strmio.h"
@@ -987,9 +988,8 @@ int pdfi_filter_no_decryption(pdf_context *ctx, pdf_dict *dict, pdf_stream *sour
 int pdfi_filter(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream **new_stream, bool inline_image)
 {
     int code;
-    pdf_stream *compressed_stream;
     pdf_stream *crypt_stream = NULL, *SubFile_stream = NULL;
-    pdf_string *StreamKey = NULL, *EODString = NULL;
+    pdf_string *StreamKey = NULL;
 
     *new_stream = NULL;
 

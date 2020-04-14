@@ -580,7 +580,7 @@ pdfi_pattern_set(pdf_context *ctx, pdf_dict *stream_dict,
         code = gs_note_error(gs_error_typecheck);
         goto exit;
     }
-    dbgmprintf1(ctx->memory, "PATTERN: pdfi_setpattern: found pattern object %lu\n", pdict->object_num);
+    dbgmprintf1(ctx->memory, "PATTERN: pdfi_setpattern: found pattern object %d\n", pdict->object_num);
 
     code = pdfi_dict_get_int(ctx, pdict, "PatternType", &patternType);
     if (code < 0)
