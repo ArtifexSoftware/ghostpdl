@@ -506,7 +506,7 @@ int pdfi_Tj(pdf_context *ctx)
     gs_matrix_multiply(&Trm, &ctx->pgs->textmatrix, &Trm);
 
     gs_distance_transform_inverse(linewidth, 0, &Trm, &pt);
-    ctx->pgs->line_params.half_width = sqrt((pt.x * pt.x) + (pt.y + pt.y));
+    ctx->pgs->line_params.half_width = sqrt((pt.x * pt.x) + (pt.y * pt.y));
 
     gs_matrix_multiply(&Trm, &ctm_only(ctx->pgs), &Trm);
     gs_setmatrix(ctx->pgs, &Trm);
