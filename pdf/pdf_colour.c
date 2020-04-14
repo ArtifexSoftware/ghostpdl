@@ -973,6 +973,7 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
     bool known;
     float range[8];
     int icc_N;
+    gs_color_space *pcs = NULL;
 
     code = pdfi_array_get_type(ctx, color_array, index + 1, PDF_DICT, (pdf_obj **)&ICC_dict);
     if (code < 0)
@@ -1036,7 +1037,7 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
         }
     }
 
-    code = pdfi_create_iccprofile(ctx, ICC_dict, cname, Length, N, &icc_N, range, ppcs);
+    code = pdfi_create_iccprofile(ctx, ICC_dict, cname, Length, N, &icc_N, range, &pcs);
 
     /* This is just plain hackery for the benefit of Bug696690.pdf. The old PostScript PDF interpreter says:
      * %% This section is to deal with the horrible pair of files in Bug #696690 and Bug #696120
@@ -1058,7 +1059,7 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
         int i;
 
         gs_gsave(ctx->pgs);
-        code = gs_setcolorspace(ctx->pgs, *ppcs);
+        code = gs_setcolorspace(ctx->pgs, pcs);
         if (code == 0) {
             cc.pattern = 0;
             for (i = 0;i < icc_N; i++)
@@ -1073,8 +1074,8 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
     if (code < 0) {
         pdf_obj *Alternate = NULL;
 
-        if (ppcs != NULL && *ppcs != NULL)
-            rc_decrement(*ppcs,"pdfi_create_iccbased");
+        if (pcs != NULL)
+            rc_decrement(pcs,"pdfi_create_iccbased");
 
         /* Failed to set the ICCBased space, attempt to use the Alternate */
         code = pdfi_dict_knownget(ctx, ICC_dict, "Alternate", &Alternate);
@@ -1092,18 +1093,18 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
         ctx->pdf_warnings |= W_PDF_BADICC_USECOMPS;
         switch(N) {
             case 1:
-                *ppcs = gs_cspace_new_DeviceGray(ctx->memory);
-                if (*ppcs == NULL)
+                pcs = gs_cspace_new_DeviceGray(ctx->memory);
+                if (pcs == NULL)
                     code = gs_note_error(gs_error_VMerror);
                 break;
             case 3:
-                *ppcs = gs_cspace_new_DeviceRGB(ctx->memory);
-                if (*ppcs == NULL)
+                pcs = gs_cspace_new_DeviceRGB(ctx->memory);
+                if (pcs == NULL)
                     code = gs_note_error(gs_error_VMerror);
                 break;
             case 4:
-                *ppcs = gs_cspace_new_DeviceCMYK(ctx->memory);
-                if (*ppcs == NULL)
+                pcs = gs_cspace_new_DeviceCMYK(ctx->memory);
+                if (pcs == NULL)
                     code = gs_note_error(gs_error_VMerror);
                 break;
             default:
@@ -1111,6 +1112,20 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
                 break;
         }
     }
+    if (ppcs!= NULL){
+        /* FIXME
+         * I can see no justification for this whatever, but if I don't do this then some
+         * files with images in a /Separation colour space come out incorrectly. Even surrounding
+         * this with a gsave/grestore pair causes differences.
+         */
+        code = pdfi_gs_setcolorspace(ctx, pcs);
+        *ppcs = pcs;
+    } else {
+        code = pdfi_gs_setcolorspace(ctx, pcs);
+        /* release reference from construction */
+        rc_decrement_only_cs(pcs, "setseparationspace");
+    }
+
 
 done:
     if (cname)
