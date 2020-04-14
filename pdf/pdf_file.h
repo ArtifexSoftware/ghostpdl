@@ -77,6 +77,10 @@
  */
 
 int pdfi_filter(pdf_context *ctx, pdf_dict *d, pdf_stream *source, pdf_stream **new_stream, bool inline_image);
+/* pdfi_filter_no_decryption is a special function used by the xref parsing when dealing with XRefStms and should not be used
+ * for anything else. The pdfi_filter routine will apply decryption as required.
+ */
+int pdfi_filter_no_decryption(pdf_context *ctx, pdf_dict *d, pdf_stream *source, pdf_stream **new_stream, bool inline_image);
 void pdfi_close_file(pdf_context *ctx, pdf_stream *s);
 int pdfi_read_bytes(pdf_context *ctx, byte *Buffer, uint32_t size, uint32_t count, pdf_stream *s);
 int pdfi_unread(pdf_context *ctx, pdf_stream *s, byte *Buffer, uint32_t size);

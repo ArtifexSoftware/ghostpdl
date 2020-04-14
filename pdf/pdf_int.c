@@ -491,9 +491,11 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
 
             code = pdfi_apply_SubFileDecode_filter(ctx, ((pdf_num *)o)->value.i, NULL, ctx->main_stream, &SubFile_stream, false);
             if (code < 0) {
+                pdfi_countdown(o);
                 (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                 return code;
             }
+            pdfi_countdown(o);
 
             code = pdfi_filter(ctx, compressed_object, SubFile_stream, &compressed_stream, false);
             if (code < 0) {
@@ -3466,46 +3468,7 @@ pdfi_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict 
     if (code < 0)
         return code;
 
-    if (ctx->is_encrypted) {
-        pdf_stream *crypt_stream = NULL, *SubFile_stream = NULL;
-        pdf_string *StreamKey = NULL, *EODString = NULL;
-
-        code = pdfi_dict_get_type(ctx, stream_dict, "StreamKey", PDF_STRING, (pdf_obj **)&StreamKey);
-        if (code == gs_error_undefined) {
-            code = pdfi_compute_objkey(ctx, (pdf_obj *)stream_dict, &StreamKey);
-            if (code < 0)
-                return code;
-            code = pdfi_dict_put(ctx, stream_dict, "StreamKey", (pdf_obj *)StreamKey);
-            if (code < 0) {
-                pdfi_countdown(StreamKey);
-                return code;
-            }
-        }
-        if (code < 0)
-            return code;
-
-        /* If we are applying a decryption filter we must also apply a SubFileDecode filter.
-         * This is because the underlying stream may not have a compression filter, if it doesn't
-         * thenwe have no way of detecting the end of the data. Normally we would get an 'endstream'
-         * token but if we have applied a decryption filter then we'll 'decrypt' that token
-         * and that will corrupt it. So make sure we can't read past the end of the stream
-         * by applying a SubFileDecode.
-         */
-        code = pdfi_alloc_object(ctx, PDF_STRING, 9, (pdf_obj **)&EODString);
-        if (code < 0)
-            return code;
-        memcpy(EODString->data, "endstream", 9);
-        pdfi_countup(EODString);
-
-        code = pdfi_apply_SubFileDecode_filter(ctx, 1, EODString, ctx->main_stream, &SubFile_stream, false);
-
-        code = pdfi_apply_Arc4_filter(ctx, StreamKey, SubFile_stream, &crypt_stream);
-
-        code = pdfi_filter(ctx, stream_dict, crypt_stream, &compressed_stream, false);
-        pdfi_countdown(crypt_stream);
-    }
-    else
-        code = pdfi_filter(ctx, stream_dict, ctx->main_stream, &compressed_stream, false);
+    code = pdfi_filter(ctx, stream_dict, ctx->main_stream, &compressed_stream, false);
     if (code < 0)
         return code;
 

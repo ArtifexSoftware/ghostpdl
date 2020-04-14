@@ -94,7 +94,7 @@ static int pdf_compute_encryption_key_preR5(pdf_context *ctx, char *Password, in
      * (revision 4 or greater) If document Metadata is not being encrypted
      * pass 4 bytes with the value 0xFFFFFFFF to the MD5 hash function.
      */
-    if (R > 3 && ctx->EncryptMetadata) {
+    if (R > 3 && !ctx->EncryptMetadata) {
         gs_md5_append(&md5, (const gs_md5_byte_t *)R4String, 4);
     }
 
@@ -390,23 +390,13 @@ error:
     return code;
 }
 
-static int check_user_password_R4(pdf_context *ctx, char *Password, int Len, int KeyLen, int R)
-{
-    return_error(gs_error_undefined);
-}
-
-static int check_owner_password_R4(pdf_context *ctx, char *Password, int Len, int KeyLen, int R)
-{
-    return_error(gs_error_undefined);
-}
-
 /* Compute a decryption key for an 'object'. The decryption key for a string or stream is
  * calculated by algorithm 3.1.
  */
 int pdfi_compute_objkey(pdf_context *ctx, pdf_obj *obj, pdf_string **Key)
 {
     char *Buffer;
-    int idx, ELength, code = 0;
+    int idx, ELength, code = 0, md5_length = 0;
     gs_md5_state_t md5;
     int64_t object_num;
     uint32_t generation_num;
@@ -421,8 +411,10 @@ int pdfi_compute_objkey(pdf_context *ctx, pdf_obj *obj, pdf_string **Key)
 
     /* Step 1, obtain the object and generation numbers (see arguments). If the string is
      * a direct object, use the identifier of the indirect object containing it.
+     * Buffer length is a maximum of the Encryption key + 3 bytes from the object number
+     * + 2 bytes from the generation number and (for AES filters) 4 bytes of sALT.
      */
-    Buffer = (char *)gs_alloc_bytes(ctx->memory, ctx->EKey->length + 5, "");
+    Buffer = (char *)gs_alloc_bytes(ctx->memory, ctx->EKey->length + 9, "");
     if (Buffer == NULL)
         return gs_note_error(gs_error_VMerror);
 
@@ -443,18 +435,23 @@ int pdfi_compute_objkey(pdf_context *ctx, pdf_obj *obj, pdf_string **Key)
     Buffer[++idx] = generation_num & 0xff;
     Buffer[++idx] = (generation_num & 0xff00) >> 8;
 
+    md5_length = ctx->EKey->length + 5;
+
     /* If using the AES algorithm, extend the encryption key an additional 4 bytes
      * by adding the value "sAlT" which corresponds to the hexadecimal 0x73416c54
      * (This addition is done for backward compatibility and is not intended to
      * provide addtional security).
      */
-    /* Not yet implemented */
+    if (ctx->StmF == AESV2 || ctx->StmF == AESV3){
+        memcpy(&Buffer[++idx], sAlTString, 4);
+        md5_length += 4;
+    }
 
     /* Step 3
      * Initialise the MD5 function and pass the result of step 2 as input to this function
      */
     gs_md5_init(&md5);
-    gs_md5_append(&md5, (gs_md5_byte_t *)Buffer, ctx->EKey->length + 5);
+    gs_md5_append(&md5, (gs_md5_byte_t *)Buffer, md5_length);
     gs_md5_finish(&md5, (gs_md5_byte_t *)Buffer);
 
     /* Step 4
@@ -485,6 +482,7 @@ int pdfi_compute_objkey(pdf_context *ctx, pdf_obj *obj, pdf_string **Key)
 int pdfi_read_Encryption(pdf_context *ctx)
 {
     int code = 0, V = 0, KeyLen;
+    pdf_dict *CF_dict = NULL, *StdCF_dict = NULL;
     pdf_dict *d = NULL;
     pdf_obj *o = NULL;
     pdf_string *s;
@@ -598,10 +596,67 @@ int pdfi_read_Encryption(pdf_context *ctx)
     code = pdfi_dict_knownget_type(ctx, d, "EncryptMetadata", PDF_BOOL, &o);
     if (code < 0)
         goto done;
-    if (code > 0)
+    if (code > 0) {
         ctx->EncryptMetadata = ((pdf_bool *)o)->value;
+        pdfi_countdown(o);
+    }
     else
-        ctx->EncryptMetadata = false;
+        ctx->EncryptMetadata = true;
+
+    if (ctx->R > 3) {
+        /* Check the Encrypt dictionary has default values for Stmf and StrF
+         * and that they have the names /StdCF. We don't support anything else.
+         */
+        code = pdfi_dict_get_type(ctx, d, "StmF", PDF_NAME, &o);
+        if (code < 0)
+            goto done;
+        if (!pdfi_name_is((pdf_name *)o, "StdCF")) {
+            code = gs_note_error(gs_error_undefined);
+            goto done;
+        }
+        pdfi_countdown(o);
+
+        code = pdfi_dict_knownget_type(ctx, d, "StrF", PDF_NAME, &o);
+        if (code < 0)
+            goto done;
+        if (!pdfi_name_is((pdf_name *)o, "StdCF")) {
+            code = gs_note_error(gs_error_undefined);
+            goto done;
+        }
+        pdfi_countdown(o);
+
+        /* Validated StmF and StrF, now check the Encrypt dictionary for the definition of
+         * the Crypt Filter dictionary and ensure it has a /StdCF dictionary.
+         */
+        code = pdfi_dict_get_type(ctx, d, "CF", PDF_DICT, &CF_dict);
+        if (code < 0)
+            goto done;
+
+        code = pdfi_dict_get_type(ctx, CF_dict, "StdCF", PDF_DICT, &StdCF_dict);
+        if (code < 0)
+            goto done;
+
+        code = pdfi_dict_get_type(ctx, StdCF_dict, "CFM", PDF_NAME, &o);
+        if (code < 0)
+            goto done;
+        if (pdfi_name_is((pdf_name *)o, "V2")) {
+            ctx->StmF = ctx->StrF = V2;
+        } else {
+            if (pdfi_name_is((pdf_name *)o, "AESV2")) {
+                ctx->StmF = ctx->StrF = AESV2;
+            } else {
+                if (pdfi_name_is((pdf_name *)o, "AESV3")) {
+                    ctx->StmF = ctx->StrF = AESV3;
+                } else {
+                    emprintf(ctx->memory, "\n   **** Error: Unknown default encryption method in crypt filter.\n");
+                    code = gs_error_rangecheck;
+                    goto done;
+                }
+            }
+        }
+        pdfi_countdown(o);
+        o = NULL;
+    }
 
     switch(ctx->R) {
         case 2:
@@ -681,6 +736,8 @@ int pdfi_read_Encryption(pdf_context *ctx)
         ctx->is_encrypted = true;
 
 done:
+    pdfi_countdown(CF_dict);
+    pdfi_countdown(StdCF_dict);
     pdfi_countdown(d);
     pdfi_countdown(o);
     return code;

@@ -198,7 +198,7 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_dict *d, pdf_stream *s
     }
 
     pdfi_seek(ctx, ctx->main_stream, d->stream_offset, SEEK_SET);
-    code = pdfi_filter(ctx, d, s, &XRefStrm, false);
+    code = pdfi_filter_no_decryption(ctx, d, s, &XRefStrm, false);
     if (code < 0) {
         pdfi_countdown(ctx->xref_table);
         ctx->xref_table = NULL;
@@ -383,7 +383,7 @@ static int pdfi_read_xref_stream_dict(pdf_context *ctx, pdf_stream *s)
             pdfi_pop(ctx, 1);
 
             do {
-                code = pdfi_read_token(ctx, ctx->main_stream, gen_num, obj_num);
+                code = pdfi_read_token(ctx, ctx->main_stream, obj_num, gen_num);
                 if (code < 0)
                     return pdfi_repair_file(ctx);
 

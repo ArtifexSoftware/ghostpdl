@@ -236,7 +236,7 @@ int pdfi_apply_Arc4_filter(pdf_context *ctx, pdf_string *Key, pdf_stream *source
     int code = 0;
     stream_arcfour_state state;
     stream *new_s;
-    int min_size = 32;
+    int min_size = 2048;
 
     s_arcfour_set_key(&state, (const unsigned char *)Key->data, Key->length);
 
@@ -268,6 +268,26 @@ static int pdfi_AES_filter(pdf_context *ctx, char *Key, bool use_padding, stream
     source = *new_stream;
 
     return 0;
+}
+
+static int pdfi_apply_AES_filter(pdf_context *ctx, pdf_string *Key, bool use_padding, pdf_stream *source, pdf_stream **new_stream)
+{
+    stream_aes_state state;
+    uint min_size = 2048;
+    int code = 0;
+    stream *new_s;
+
+    s_aes_set_key(&state, Key->data, Key->length);
+    s_aes_set_padding(&state, use_padding);
+
+    code = pdfi_filter_open(min_size, &s_filter_read_procs, (const stream_template *)&s_aes_template, (const stream_state *)&state, ctx->memory->non_gc_memory, &new_s);
+
+    if (code < 0)
+        return code;
+
+    code = pdfi_alloc_stream(ctx, new_s, source->s, new_stream);
+    new_s->strm = source->s;
+    return code;
 }
 
 static int pdfi_Flate_filter(pdf_context *ctx, pdf_dict *d, stream *source, stream **new_stream)
@@ -798,7 +818,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
     return_error(gs_error_undefined);
 }
 
-int pdfi_filter(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream **new_stream, bool inline_image)
+int pdfi_filter_no_decryption(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream **new_stream, bool inline_image)
 {
     pdf_obj *o = NULL, *decode = NULL, *o1 = NULL;
     int code;
@@ -964,6 +984,89 @@ int pdfi_filter(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream
     return code;
 }
 
+int pdfi_filter(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream **new_stream, bool inline_image)
+{
+    int code;
+    pdf_stream *compressed_stream;
+    pdf_stream *crypt_stream = NULL, *SubFile_stream = NULL;
+    pdf_string *StreamKey = NULL, *EODString = NULL;
+
+    *new_stream = NULL;
+
+    /* If the file isn't encrypted, don't apply encryption. If this is an inline
+     * image then its in a content stream and will already be decrypted, so don't
+     * apply decryption again.
+     */
+    if (ctx->is_encrypted && !inline_image) {
+        pdf_obj *o = NULL;
+
+        code = pdfi_dict_get_type(ctx, dict, "StreamKey", PDF_STRING, (pdf_obj **)&StreamKey);
+        if (code == gs_error_undefined) {
+            code = pdfi_compute_objkey(ctx, (pdf_obj *)dict, &StreamKey);
+            if (code < 0)
+                return code;
+            code = pdfi_dict_put(ctx, dict, "StreamKey", (pdf_obj *)StreamKey);
+            if (code < 0) {
+                pdfi_countdown(StreamKey);
+                return code;
+            }
+        }
+        if (code < 0)
+            return code;
+
+        /* If we are applying a decryption filter we must also apply a SubFileDecode filter.
+         * This is because the underlying stream may not have a compression filter, if it doesn't
+         * then we have no way of detecting the end of the data. Normally we would get an 'endstream'
+         * token but if we have applied a decryption filter then we'll 'decrypt' that token
+         * and that will corrupt it. So make sure we can't read past the end of the stream
+         * by applying a SubFileDecode.
+         * NB applying a SubFileDecode filter with an EODString seems to limit the amount of data
+         * that the decode filter is prepared to return at any time to the size of the EODString.
+         * This doesn't play well with other filters (eg the AESDecode filter) which require a
+         * larger minimum to be returned (16 bytes for AESDecode). So I'm using the filter
+         * Length here, even though I'd prefer not to.....
+         */
+        code = pdfi_dict_get_type(ctx, dict, "Length", PDF_INT, &o);
+        if (code < 0)
+            goto error;
+
+        code = pdfi_apply_SubFileDecode_filter(ctx, ((pdf_num *)o)->value.i, NULL, source, &SubFile_stream, false);
+        pdfi_countdown(o);
+
+        switch(ctx->StrF) {
+            /* There are only two possible filters, RC4 or AES, we take care
+             * of the number of bits in the key by using ctx->Length.
+             */
+            case V1:
+            case V2:
+                code = pdfi_apply_Arc4_filter(ctx, StreamKey, SubFile_stream, &crypt_stream);
+                break;
+            case AESV2:
+            case AESV3:
+                code = pdfi_apply_AES_filter(ctx, StreamKey, 1, SubFile_stream, &crypt_stream);
+                break;
+            default:
+                code = gs_error_rangecheck;
+        }
+        if (code < 0)
+            goto error;
+
+        code = pdfi_filter_no_decryption(ctx, dict, crypt_stream, new_stream, false);
+        if (code < 0)
+            pdfi_countdown(SubFile_stream);
+
+        pdfi_countdown(crypt_stream);
+        crypt_stream = NULL;
+    } else {
+        code = pdfi_filter_no_decryption(ctx, dict, source, new_stream, inline_image);
+    }
+    return code;
+
+error:
+    pdfi_countdown(SubFile_stream);
+    return code;
+}
+
 /* This is just a convenience routine. We could use pdfi_filter() above, but because PDF
  * doesn't support the SubFileDecode filter that would mean callers having to manufacture
  * a dictionary in order to use it. That's excessively convoluted, so just supply a simple
@@ -977,7 +1080,7 @@ int pdfi_apply_SubFileDecode_filter(pdf_context *ctx, int EODCount, pdf_string *
     int code;
     stream_SFD_state state;
     stream *new_s = NULL;
-    int min_size = EODCount;
+    int min_size = 2048;
 
     *new_stream = NULL;
 
