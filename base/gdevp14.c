@@ -3128,14 +3128,7 @@ static void pdf14_cleanup_group_color_profiles (pdf14_device *pdev)
                                              &render_cond);
 
                        gsicc_adjust_profile_rc(pdev->icc_struct->device_profile[0], -1, "pdf14_end_transparency_group");
-                       if (group_color_info->previous == NULL && pdev->ctx->base_icc != NULL) {
-                           /* In this case, our first encounter was a group push and we 
-                              stashed the icc profile of the target into base_group. 
-                              Restore it now */
-
-
-                       } else
-                            pdev->icc_struct->device_profile[0] = group_color_info->icc_profile;
+                       pdev->icc_struct->device_profile[0] = group_color_info->icc_profile;
                        group_color_info->icc_profile = NULL;
                    }
                }
