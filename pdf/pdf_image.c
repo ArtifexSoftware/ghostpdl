@@ -939,6 +939,97 @@ pdfi_image_setup_trans(pdf_context *ctx, pdfi_trans_state_t *state)
     return code;
 }
 
+
+/* Setup a type 4 image, particularly the MaskColor array.
+ * Handles error situations like pdf_draw.ps/makemaskimage
+ */
+static int
+pdfi_image_setup_type4(pdf_context *ctx, pdfi_image_info_t *image_info,
+                       gs_image4_t *t4image,
+                       pdf_array *mask_array, gs_color_space *pcs)
+{
+    int i;
+    double num;
+    int code = 0;
+    int bpc = image_info->BPC;
+    uint mask = (1 << bpc) - 1;
+    uint maxval = mask;
+    int64_t intval;
+    bool had_range_error = false;
+    bool had_float_error = false;
+    /* Check for special case of Indexed and BPC=1 (to match AR)
+     * See bugs: 692852, 697919, 689717
+     */
+    bool indexed_case = (pcs && pcs->type == &gs_color_space_type_Indexed && bpc == 1);
+
+    memset(t4image, 0, sizeof(t4image));
+    gs_image4_t_init(t4image, NULL);
+
+    if (pdfi_array_size(mask_array) > GS_IMAGE_MAX_COMPONENTS * 2) {
+        code = gs_note_error(gs_error_rangecheck);
+        goto exit;
+    }
+
+    for (i=0; i<pdfi_array_size(mask_array); i++) {
+        code = pdfi_array_get_int(ctx, mask_array, i, &intval);
+        if (code == gs_error_typecheck) {
+            code = pdfi_array_get_number(ctx, mask_array, i, &num);
+            if (code == 0) {
+                intval = num + 0.5;
+                had_float_error = true;
+            }
+        }
+        if (code < 0)
+            goto exit;
+        if (intval > maxval) {
+            had_range_error = true;
+            if (indexed_case) {
+                if (i == 0) {
+                    /* If first component is invalid, AR9 ignores the mask. */
+                    code = gs_note_error(gs_error_rangecheck);
+                    goto exit;
+                } else {
+                    /* If second component is invalid, AR9 replace it with 1. */
+                    intval = 1;
+                }
+            } else {
+                if (bpc != 1) {
+                    /* If not special handling, just mask it off to be in range */
+                    intval &= mask;
+                }
+            }
+        }
+        t4image->MaskColor[i] = intval;
+    }
+    t4image->MaskColor_is_range = true;
+
+    /* Another special handling (see Bug701468)
+     * If 1 BPC and the two entries are not the same, ignore the mask
+     */
+    if (!indexed_case && bpc == 1 && had_range_error) {
+        if (t4image->MaskColor[0] != t4image->MaskColor[1]) {
+            code = gs_note_error(gs_error_rangecheck);
+            goto exit;
+        } else {
+            t4image->MaskColor[0] &= mask;
+            t4image->MaskColor[1] &= mask;
+        }
+    }
+
+    code = 0;
+
+ exit:
+    if (had_float_error) {
+        dmprintf(ctx->memory, "*** Error: Some elements of Mask array are not integers\n");
+        ctx->pdf_warnings |= W_PDF_IMAGE_ERROR;
+    }
+    if (had_range_error) {
+        dmprintf(ctx->memory, "*** Error: Some elements of Mask array are out of range\n");
+        ctx->pdf_warnings |= W_PDF_IMAGE_ERROR;
+    }
+    return code;
+}
+
 static int
 pdfi_image_get_color(pdf_context *ctx, pdf_stream *source, pdfi_image_info_t *image_info,
                      int *comps, gs_color_space **pcs)
@@ -1293,25 +1384,14 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
         }
     } else {
         if (mask_array) { /* Type 4 */
-            memset(&t4image, 0, sizeof(t1image));
-            pim = (gs_pixel_image_t *)&t4image;
-            gs_image4_t_init(&t4image, NULL);
-            {
-                int i;
-                double num;
-
-                if (pdfi_array_size(mask_array) > GS_IMAGE_MAX_COMPONENTS * 2) {
-                    code = gs_note_error(gs_error_limitcheck);
-                    goto cleanupExit;
-                }
-
-                for (i=0; i<pdfi_array_size(mask_array); i++) {
-                    code = pdfi_array_get_number(ctx, mask_array, i, &num);
-                    if (code < 0)
-                        goto cleanupExit;
-                    t4image.MaskColor[i] = (unsigned int)num;
-                }
-                t4image.MaskColor_is_range = true;
+            code = pdfi_image_setup_type4(ctx, &image_info, &t4image, mask_array, pcs);
+            if (code < 0) {
+                /* If this got an error, setup as a Type 1 image */
+                memset(&t1image, 0, sizeof(t1image));
+                pim = (gs_pixel_image_t *)&t1image;
+                gs_image_t_init_adjust(&t1image, pcs, true);
+            } else {
+                pim = (gs_pixel_image_t *)&t4image;
             }
         } else { /* Type 3 (or is it 3x?) */
             memset(&t3image, 0, sizeof(t1image));
