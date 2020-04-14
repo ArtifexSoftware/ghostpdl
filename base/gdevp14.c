@@ -6226,6 +6226,8 @@ pdf14_push_color_model(gx_device *dev, gs_transparency_color_t group_color_type,
     group_color->max_color = pdev->color_info.max_color = deep ? 65535 : 255;
     group_color->max_gray = pdev->color_info.max_gray = deep ? 65535 : 255;
     group_color->depth = pdev->color_info.depth;
+    group_color->decode = dev_proc(pdev, decode_color);
+    group_color->encode = dev_proc(pdev, encode_color);
     group_color->group_color_mapping_procs = dev_proc(pdev, get_color_mapping_procs);
     group_color->group_color_comp_index = dev_proc(pdev, get_color_comp_index);
     memcpy(&(group_color->comp_bits), &(pdev->color_info.comp_bits),
