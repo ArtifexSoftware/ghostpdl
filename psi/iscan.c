@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2019 Artifex Software, Inc.
+/* Copyright (C) 2001-2020 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -535,6 +535,16 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                 return_error(gs_error_Fatal);
         }
     }
+    else {
+        /* We *may* use these in the event of returning to this function after
+         * a interruption, but not every code path below sets them. Set them
+         * to sane values here for safety. We can write the contents of sstate
+         * (back) to pstate before returning.
+         */
+        sstate.s_da.base = sstate.s_da.next = &(sstate.s_da.buf[0]);
+        sstate.s_da.limit = sstate.s_da.next;
+        sstate.s_da.is_dynamic = false;
+    }
     /* Fetch any state variables that are relevant even if */
     /* sstate.s_scan_type == scanning_none. */
     sstate.s_pstack = pstate->s_pstack;
@@ -581,6 +591,10 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                         s_A85D_init_inline(&sstate.s_ss.a85d);
                         sstate.s_ss.st.templat = &s_A85D_template;
                         sstate.s_ss.a85d.require_eod = true;
+                        /* If this is an inline ASCII string, interpret it normally, throw an error
+                         * if it fails rather than ignoring it as PDF (Acrobat) does.
+                         */
+                        sstate.s_ss.a85d.pdf_rules = false;
                         goto str;
                 }
                 sputback_inline(s, sptr, endptr);

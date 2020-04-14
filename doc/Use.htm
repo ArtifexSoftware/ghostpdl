@@ -1,8 +1,6 @@
 <!doctype html>
 <html>
 <head>
-  gtag('config', 'UA-54391264-2');
-</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro" rel="stylesheet">
@@ -3517,9 +3515,16 @@ operation of <code>setpagedevice</code>, and because this capability is <i>extre
 rarely used, we feel the improvement in security warrants the small reduction in
 flexibility.
 <p>
-Path matching is simple: it is case sensitive, and we do not implement full featured
+Path matching is very simple: it is case sensitive, and we do not implement full featured
 &quot;globbing&quot; or regular expression matching (such complexity would significantly
-and negatively impact performance). The following cases are handled:
+and negatively impact performance). Further, the string parameter(s) passed to the
+<code>--permit-file-*</code> option must exactly match the string(s) used to reference
+the file(s): for example, you cannot use a absolute path to grant permission, and
+then a relative path to reference the file (or vice versa) - the path match will fail.
+Similarly, you cannot grant permission through one symlink, and then reference a file
+directly, or through an alternative symlink - again, the matching will fail.
+<p>
+The following cases are handled:
 <ul>
 <li>
 <dt><code>&quot;&sol;path&sol;to&sol;file&quot;</code></dt>
@@ -5252,7 +5257,7 @@ PCLEOs. (see the FAPI-related source code for details).</p>
 <hr>
 
 <p>
-<small>Copyright &copy; 2000-2019 Artifex Software, Inc.  All rights reserved.</small>
+<small>Copyright &copy; 2000-2020 Artifex Software, Inc.  All rights reserved.</small>
 
 <p>
 This software is provided AS-IS with no warranty, either express or

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2019 Artifex Software, Inc.
+/* Copyright (C) 2001-2020 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -510,8 +510,8 @@ clist_playback_band(clist_playback_action playback_action,
     } clip_save;
     bool in_clip = false;
     gs_gstate gs_gstate;
-    gx_device_color fill_color;
-    gx_device_color stroke_color;
+    gx_device_color fill_color = { 0 };
+    gx_device_color stroke_color = { 0 };
     float dash_pattern[cmd_max_dash];
     gx_fill_params fill_params;
     gx_stroke_params stroke_params;

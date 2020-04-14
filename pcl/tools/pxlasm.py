@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Portions Copyright (C) 2001-2019 Artifex Software Inc.
+# Portions Copyright (C) 2001-2020 Artifex Software Inc.
 #   
 #   This software is distributed under license and may not be copied, modified
 #   or distributed except as expressly authorized under the terms of that

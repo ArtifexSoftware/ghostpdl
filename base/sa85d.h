@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2019 Artifex Software, Inc.
+/* Copyright (C) 2001-2020 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -41,7 +41,14 @@ typedef struct stream_A85D_state_s {
   (ss)->min_left = 1; \
   (ss)->word = 0; \
   (ss)->odd = 0; \
-  /* pdf_rules should not be initialized here */ \
+  /* pdf_rules should not be initialized here. This flag is initialised in\
+   * zA85D to either true or false, and this inline function is called *after*\
+   * that in s_A85D_init to do the remaining initialisation. However, this\
+   * inline function is also called from gs_scan_token to handle inline\
+   * ASCII85 strings. These are not to be interpreted using PDF rules\
+   * and so we must not set the flag here, but in the relevant calling\
+   * functions.\
+   */ \
   (ss)->require_eod=false; \
   END
 extern const stream_template s_A85D_template;
