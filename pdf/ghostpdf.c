@@ -692,6 +692,7 @@ int pdfi_open_pdf_file(pdf_context *ctx, char *filename)
     memset(ctx->main_stream, 0x00, sizeof(pdf_stream));
 
     ctx->main_stream->s = sfopen(filename, "r", ctx->memory);
+    ctx->main_stream->s->close_at_eod = false;
     if (ctx->main_stream == NULL) {
         emprintf1(ctx->memory, "Failed to open file %s\n", filename);
         return_error(gs_error_ioerror);

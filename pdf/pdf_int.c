@@ -1829,11 +1829,13 @@ int pdfi_read_object(pdf_context *ctx, pdf_stream *s, gs_offset_t stream_offset)
 
         code = pdfi_dict_get_int(ctx, d, "Length", &i);
         if (code < 0) {
-            dmprintf1(ctx->memory, "Stream object %"PRIu64" is missing the mandatory keyword /Length, unable to verify the stream langth.\n", objnum);
+            dmprintf1(ctx->memory, "Stream object %"PRIu64" is missing the mandatory keyword /Length, unable to verify the stream length.\n", objnum);
+            ctx->pdf_errors |= E_PDF_BADSTREAM;
             return 0;
         }
         if (i < 0 || (i + offset)> ctx->main_stream_length) {
             dmprintf1(ctx->memory, "Stream object %"PRIu64" has a /Length which, when added to the offset of the object, exceeds the file size.\n", objnum);
+            ctx->pdf_errors |= E_PDF_BADSTREAM;
             return 0;
         }
         code = pdfi_seek(ctx, ctx->main_stream, i, SEEK_CUR);
