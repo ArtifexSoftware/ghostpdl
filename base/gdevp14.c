@@ -1291,7 +1291,7 @@ pdf14_find_backdrop_buf(pdf14_ctx *ctx, bool *is_backdrop)
    group push.  At that time, the color space in which
    we are going to be doing the alpha blend will be known. */
 static int
-pdf14_initialize_ctx(gx_device* dev, int n_chan, bool additive, gs_gstate* pgs)
+pdf14_initialize_ctx(gx_device* dev, int n_chan, bool additive, const gs_gstate* pgs)
 {
     pdf14_device* pdev = (pdf14_device*)dev;
     bool has_tags = device_encodes_tags(dev);
@@ -1396,7 +1396,7 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
        that base buffer now */
     if (tos == NULL && shade_group) {
         code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
-            dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, pgs);
+            dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, (const gs_gstate*) pgs);
         if (code < 0)
             return code;
         tos = ctx->stack;
@@ -2309,7 +2309,7 @@ typedef void(*blend_image_row_proc_t) (const byte *gs_restrict buf_ptr,
     int planestride, int width, int num_comp, uint16_t bg, byte *gs_restrict linebuf);
 
 
-int
+static int
 pdf14_put_image_color_convert(const pdf14_device* dev, gs_gstate* pgs, cmm_dev_profile_t* dev_profile,
                         cmm_dev_profile_t* dev_target_profile, pdf14_buf** buf,
                         byte** buf_ptr, int x, int y, int width, int height)
@@ -2688,8 +2688,6 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
     gx_drawing_color pdcolor;
     gs_int_rect rect = rect_in;
     gs_fixed_rect rect_fixed;
-    int bits_per_comp = ((target->color_info.depth - has_tags * 8) /
-        target->color_info.num_components);
     int planestride = planestride_in;
     int rowstride = rowstride_in;
     byte* buf_ptr = NULL;
@@ -3745,7 +3743,7 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *cpgs, gx_path *ppath,
     /* Check if a context stack is set */
     if (p14dev->ctx->stack == NULL) {
         code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
-            dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, pgs);
+            dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, cpgs);
         if (code < 0)
             return code;
     }
@@ -5572,7 +5570,7 @@ pdf14_text_begin(gx_device * dev, gs_gstate * pgs,
     /* Check if a context stack is set */
     if (pdev->ctx->stack == NULL) {
         code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
-            dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, pgs);
+            dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, (const gs_gstate*) pgs);
         if (code < 0)
             return code;
     }
@@ -6008,7 +6006,6 @@ pdf14_end_transparency_group(gx_device* dev,
 {
     pdf14_device* pdev = (pdf14_device*)dev;
     int code;
-    pdf14_group_color_t* group_color;
     cmm_profile_t* group_profile;
     gsicc_rendering_param_t render_cond;
     cmm_dev_profile_t* dev_profile;
@@ -6048,8 +6045,6 @@ pdf14_push_color_model(gx_device *dev, gs_transparency_color_t group_color_type,
     byte comp_shift[GX_DEVICE_COLOR_MAX_COMPONENTS];
     int k;
     bool has_tags = device_encodes_tags(dev);
-    gsicc_rendering_param_t render_cond;
-    cmm_dev_profile_t *dev_profile;
     bool deep = pdev->ctx->deep;
 
     if_debug0m('v', dev->memory, "[v]pdf14_push_color_model\n");
@@ -6269,15 +6264,13 @@ pdf14_clist_push_color_model(gx_device *dev, gx_device* cdev, gs_gstate *pgs,
     byte comp_shift[GX_DEVICE_COLOR_MAX_COMPONENTS];
     int k;
     bool has_tags = device_encodes_tags(dev);
-    cmm_profile_t* icc_profile_dev = NULL;
     bool deep = device_is_deep(dev);
     gs_transparency_color_t group_color_type = pdf14pct->params.group_color_type;
-    int64_t icc_hash = pdf14pct->params.icc_hash;
-    cmm_profile_t *icc_profile = pdf14pct->params.iccprofile;
-
+    cmm_profile_t *new_profile = pdf14pct->params.iccprofile;
+    cmm_profile_t *old_profile = NULL;
 
     dev_proc(dev, get_profile)(dev, &dev_profile);
-    gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &icc_profile,
+    gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &old_profile,
         &render_cond);
     if_debug0m('v', dev->memory, "[v]pdf14_clist_push_color_model\n");
 
@@ -6311,9 +6304,8 @@ pdf14_clist_push_color_model(gx_device *dev, gx_device* cdev, gs_gstate *pgs,
     memcpy(&(new_group_color->comp_shift), &(pdev->color_info.comp_shift),
         GX_DEVICE_COLOR_MAX_COMPONENTS);
 
-    /* The ICC manager has the ICC profile for the device */
-    new_group_color->icc_profile = icc_profile;
-    gsicc_adjust_profile_rc(icc_profile, 1, "pdf14_clist_push_color_model");
+    if (new_profile == NULL)
+        new_group_color->icc_profile = NULL;
 
     /* isadditive is only used in ctx */
     if (pdev->ctx) {
@@ -6343,7 +6335,7 @@ pdf14_clist_push_color_model(gx_device *dev, gx_device* cdev, gs_gstate *pgs,
     memset(comp_bits, 0, GX_DEVICE_COLOR_MAX_COMPONENTS);
     memset(comp_shift, 0, GX_DEVICE_COLOR_MAX_COMPONENTS);
 
-    if (group_color_type == ICC && icc_profile == NULL)
+    if (group_color_type == ICC && new_profile == NULL)
         return gs_throw(gs_error_undefinedresult, "Missing ICC data");
     if_debug0m('v', cldev->memory, "[v]pdf14_clist_push_color_model\n");
     /* Check if we need to alter the device procs at this stage.  Many of the procs
@@ -6410,13 +6402,10 @@ pdf14_clist_push_color_model(gx_device *dev, gx_device* cdev, gs_gstate *pgs,
         break;
     case ICC:
         /* Check if the profile is different. */
-        dev_proc(dev, get_profile)(dev, &dev_profile);
-        gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile,
-            &icc_profile_dev, &render_cond);
-        if (icc_profile_dev->hashcode != icc_profile->hashcode) {
+        if (old_profile->hashcode != new_profile->hashcode) {
             update_color_info = true;
-            new_num_comps = icc_profile->num_comps;
-            new_depth = icc_profile->num_comps * (8 << deep);
+            new_num_comps = new_profile->num_comps;
+            new_depth = new_profile->num_comps * (8 << deep);
             switch (new_num_comps) {
             case 1:
                 if (pdev->sep_device && !is_mask) {
@@ -6486,10 +6475,10 @@ pdf14_clist_push_color_model(gx_device *dev, gx_device* cdev, gs_gstate *pgs,
     if (pdev->sep_device && !is_mask) {
         int num_spots;
 
-        if (icc_profile_dev == NULL)
+        if (old_profile == NULL)
             return_error(gs_error_undefined);
 
-        num_spots = pdev->color_info.num_components - icc_profile_dev->num_comps;
+        num_spots = pdev->color_info.num_components - old_profile->num_comps;
 
         if (num_spots > 0) {
             new_num_comps += num_spots;
@@ -6535,12 +6524,12 @@ pdf14_clist_push_color_model(gx_device *dev, gx_device* cdev, gs_gstate *pgs,
     cldev->clist_color_info.max_color = pdev->color_info.max_color;
     cldev->clist_color_info.max_gray = pdev->color_info.max_gray;
     /* For the ICC profiles, we want to update the ICC profile for the
-       device in the ICC manager.  We already stored in in pdf14_group_color_t.
+       device.  We store the original in group_color.
        That will be stored in the clist and restored during the reading phase. */
     if (group_color_type == ICC) {
-        gsicc_adjust_profile_rc(icc_profile, 1, "pdf14_clist_push_color_model");
-        gsicc_adjust_profile_rc(dev->icc_struct->device_profile[0], -1, "pdf14_clist_push_color_model");
-        dev->icc_struct->device_profile[0] = icc_profile;
+        gsicc_adjust_profile_rc(new_profile, 1, "pdf14_clist_push_color_model");
+        new_group_color->icc_profile = dev->icc_struct->device_profile[0];
+        dev->icc_struct->device_profile[0] = new_profile;
     }
     if (pdev->ctx) {
         pdev->ctx->additive = new_additive;
@@ -6601,9 +6590,10 @@ pdf14_clist_pop_color_model(gx_device *dev, gs_gstate *pgs)
             pdev->ctx->additive = group_color->isadditive;
         }
        /* The device profile must be restored. */
-        gsicc_adjust_profile_rc(dev->icc_struct->device_profile[0], -1, "pdf14_clist_pop_color_model");
-        dev->icc_struct->device_profile[0] = group_color->icc_profile;
-        group_color->icc_profile = NULL;
+        if (group_color->icc_profile != NULL) {
+            gsicc_adjust_profile_rc(dev->icc_struct->device_profile[0], -1, "pdf14_clist_pop_color_model");
+            dev->icc_struct->device_profile[0] = group_color->icc_profile;
+        }
         if_debug0m('v', dev->memory, "[v]procs updated\n");
     }
     pdf14_pop_group_color(dev, pgs);
@@ -6622,10 +6612,6 @@ pdf14_pop_group_color(gx_device *dev, const gs_gstate *pgs)
     pdf14_group_color_t *group_color = pdev->color_model_stack;
 
     if_debug0m('v', dev->memory, "[v]pdf14_pop_group_color\n");
-
-    /* We need to compliment pdf14_push_parent color */
-    if (group_color->icc_profile != NULL)
-        gsicc_adjust_profile_rc(group_color->icc_profile, -1, "pdf14_pop_group_color");
 
     /* Update the link */
     pdev->color_model_stack = group_color->previous;
@@ -7767,7 +7753,7 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
         pdf14pct->params.is_pattern) {
         code = pdf14_initialize_ctx((gx_device*)p14dev,
             p14dev->color_info.num_components,
-            p14dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, pgs);
+            p14dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, (const gs_gstate*) pgs);
         if (code < 0)
             return code;
     }
