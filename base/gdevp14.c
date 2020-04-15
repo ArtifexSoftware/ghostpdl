@@ -2422,7 +2422,7 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
 #endif
     if (width <= 0 || height <= 0 || buf->data == NULL)
         return 0;
-    buf_ptr = buf->data + rect.p.y * buf->rowstride + (rect.p.x << deep);
+    buf_ptr = buf->data + (rect.p.y - buf->rect.p.y) * buf->rowstride + ((rect.p.x - buf->rect.p.x) << deep);
 
     /* Check that target is OK.  From fuzzing results the target could have been
        destroyed, for e.g if it were a pattern accumulator that was closed
@@ -2754,7 +2754,7 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
     supports_alpha = dev_proc(target, dev_spec_op)(target, gxdso_supports_alpha, NULL, 0);
     code = 0;
 
-    buf_ptr = buf->data + rect.p.y * buf->rowstride + (rect.p.x << deep);
+    buf_ptr = buf->data + (rect.p.y - buf->rect.p.y) * buf->rowstride + ((rect.p.x - buf->rect.p.x) << deep);
 
     /* Note. The logic below will need a little rework if we ever
        have a device that has tags and alpha support */
@@ -3097,7 +3097,7 @@ pdf14_custom_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
     height = y1 - rect.p.y;
     if (width <= 0 || height <= 0 || buf->data == NULL)
         return 0;
-    buf_ptr = buf->data + rect.p.y * buf->rowstride + (rect.p.x<<deep);
+    buf_ptr = buf->data + (rect.p.y - buf->rect.p.y) * buf->rowstride + ((rect.p.x - buf->rect.p.x)<<deep);
 
     return gx_put_blended_image_custom(target, buf_ptr,
                       planestride, rowstride,
