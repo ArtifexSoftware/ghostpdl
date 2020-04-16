@@ -6312,26 +6312,6 @@ pdf14_clist_push_color_model(gx_device *dev, gx_device* cdev, gs_gstate *pgs,
         new_group_color->isadditive = pdev->ctx->additive;
     }
 
-    if (is_mask) {
-        if (pdf14pct->params.iccprofile == NULL) {
-            gs_pdf14trans_params_t* pparams_noconst = (gs_pdf14trans_params_t*)&(pdf14pct->params);
-
-            pparams_noconst->iccprofile = gsicc_read_serial_icc((gx_device*)cdev,
-                pdf14pct->params.icc_hash);
-            if (pparams_noconst->iccprofile == NULL)
-                return gs_throw(-1, "ICC data not found in clist");
-            /* Keep a pointer to the clist device */
-            pparams_noconst->iccprofile->dev = (gx_device*)cdev;
-            /* Now we need to load the rest of the profile buffer */
-            if (pparams_noconst->iccprofile->buffer == NULL) {
-                gcmmhprofile_t dummy = gsicc_get_profile_handle_clist(pparams_noconst->iccprofile, mem);
-
-                if (dummy == NULL)
-                    return_error(gs_error_VMerror);
-            }
-        }
-    }
-
     memset(comp_bits, 0, GX_DEVICE_COLOR_MAX_COMPONENTS);
     memset(comp_shift, 0, GX_DEVICE_COLOR_MAX_COMPONENTS);
 
@@ -9410,7 +9390,7 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
                     break;
 
                 /* Update the color settings of the clist writer.  Store information in stack */
-                code = pdf14_clist_push_color_model(dev, cdev, pgs, pdf14pct, mem, false);
+                code = pdf14_clist_push_color_model(dev, cdev, pgs, pdf14pct, mem, true);
                 if (code < 0)
                     return code;
 
