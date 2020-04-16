@@ -49,8 +49,10 @@ typedef enum pdf_obj_type_e {
     char flags;\
     unsigned int refcnt;\
     gs_memory_t *memory;                /* memory allocator to use */\
-    uint64_t object_num;\
+    uint32_t object_num;\
     uint32_t generation_num;\
+    uint32_t indirect_num;\
+    uint16_t indirect_gen; \
     uint64_t UID
 #else
 #define pdf_obj_common \
