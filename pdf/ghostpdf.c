@@ -919,6 +919,28 @@ pdfi_fontdir_purge_all(const gs_memory_t * mem, cached_char * cc, void *dummy)
     return true;
 }
 
+/* Define DEBUG_CACHE_FREE to turn this on */
+#ifdef DEBUG_CACHE_FREE
+static void
+pdfi_print_cache(pdf_context *ctx)
+{
+    pdf_obj_cache_entry *entry = ctx->cache_LRU, *next;
+
+    dmprintf1(ctx->memory, "CACHE: #entries=%d\n", ctx->cache_entries);
+    while(entry) {
+        next = entry->next;
+        dmprintf5(ctx->memory, "UID:%ld, Object:%d, refcnt:%d, next=%p, prev=%p\n",
+                  entry->o->UID, entry->o->object_num, entry->o->refcnt,
+                  entry->next, entry->previous);
+        entry = next;
+    }
+}
+#else
+static void
+pdfi_print_cache(pdf_context *ctx)
+{}
+#endif
+
 int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
 {
 #if CACHE_STATISTICS
@@ -1010,9 +1032,11 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
         pdf_obj_cache_entry *prev;
 
         do {
+            pdfi_print_cache(ctx);
             entry = ctx->cache_LRU;
             stop = true;
             while(entry) {
+                pdfi_print_cache(ctx);
                 next = entry->next;
                 prev = entry->previous;
 
