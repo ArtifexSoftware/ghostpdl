@@ -217,6 +217,7 @@ void pdfi_free_object(pdf_obj *o)
     switch(o->type) {
         case PDF_ARRAY_MARK:
         case PDF_DICT_MARK:
+        case PDF_PROC_MARK:
         case PDF_NULL:
         case PDF_INT:
         case PDF_REAL:
@@ -1143,7 +1144,7 @@ static int pdfi_read_string(pdf_context *ctx, pdf_stream *s, uint32_t indirect_n
                         Buffer[index] = 0x0a;
                         break;
                     case 'r':
-                        Buffer[index] = 0x0a;
+                        Buffer[index] = 0x0d;
                         break;
                     case 't':
                         Buffer[index] = 0x09;
