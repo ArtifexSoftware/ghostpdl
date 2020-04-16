@@ -6468,6 +6468,8 @@ pdf14_clist_push_color_model(gx_device *dev, gx_device* cdev, gs_gstate *pgs,
     }
 
     if (!update_color_info) {
+        /* Profile not updated */
+        new_group_color->icc_profile = NULL;
         if_debug0m('v', pdev->memory, "[v]procs not updated\n");
         return 0;
     }
