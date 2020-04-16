@@ -998,7 +998,7 @@ int pdfi_filter(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream
      * apply decryption again.
      */
     if (ctx->is_encrypted && !inline_image) {
-        pdf_obj *o = NULL;
+        int64_t Length;
 
         code = pdfi_dict_get_type(ctx, dict, "StreamKey", PDF_STRING, (pdf_obj **)&StreamKey);
         if (code == gs_error_undefined) {
@@ -1026,12 +1026,16 @@ int pdfi_filter(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream
          * larger minimum to be returned (16 bytes for AESDecode). So I'm using the filter
          * Length here, even though I'd prefer not to.....
          */
-        code = pdfi_dict_get_type(ctx, dict, "Length", PDF_INT, &o);
+        code = pdfi_dict_get_int(ctx, dict, "Length", &Length);
         if (code < 0)
             goto error;
 
-        code = pdfi_apply_SubFileDecode_filter(ctx, ((pdf_num *)o)->value.i, NULL, source, &SubFile_stream, false);
-        pdfi_countdown(o);
+        if (Length <= 0) {
+            /* Don't treat as an encrypted stream if Length is 0 */
+            return pdfi_filter_no_decryption(ctx, dict, source, new_stream, inline_image);
+        }
+
+        code = pdfi_apply_SubFileDecode_filter(ctx, Length, NULL, source, &SubFile_stream, false);
 
         switch(ctx->StrF) {
             /* There are only two possible filters, RC4 or AES, we take care
