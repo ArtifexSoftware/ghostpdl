@@ -1377,6 +1377,7 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
     pdf14_buf *buf, * pdf14_backdrop;
     bool has_shape, is_backdrop;
     int code;
+    int num_spots;
 
     if_debug1m('v', ctx->memory,
                "[v]pdf14_push_transparency_group, idle = %d\n", idle);
@@ -1428,9 +1429,15 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
     if (ctx->stack == NULL) {
         isolated = true;
     }
+    
+    if (ctx->smask_depth > 0)
+        num_spots = 0;
+    else
+        num_spots = ctx->num_spots;
+
 
     buf = pdf14_buf_new(rect, ctx->has_tags, !isolated, has_shape, idle, numcomps + 1,
-                        ctx->num_spots, ctx->memory, ctx->deep);
+                        num_spots, ctx->memory, ctx->deep);
     if (buf == NULL)
         return_error(gs_error_VMerror);
 
@@ -1533,7 +1540,7 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
     pdf14_buf *maskbuf;
     int x0, x1, y0, y1;
     int nos_num_color_comp;
-    bool icc_match;
+    bool no_icc_match;
     pdf14_device *pdev = (pdf14_device *)dev;
     bool overprint = pdev->overprint;
     gx_color_index drawn_comps = pdev->drawn_comps_stroke | pdev->drawn_comps_fill;
@@ -1612,16 +1619,16 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
    look at pdf14_begin_transparency_group and pdf14_end_transparency group which
    is where all the ICC information is handled.  We will return to look at that later */
     if (nos->group_color_info->icc_profile != NULL) {
-        icc_match = (nos->group_color_info->icc_profile->hashcode !=
+        no_icc_match = (nos->group_color_info->icc_profile->hashcode !=
                         curr_icc_profile->hashcode);
     } else {
         /* Let the other tests make the decision if we need to transform */
-        icc_match = false;
+        no_icc_match = false;
     }
     /* If the color spaces are different and we actually did do a swap of
        the procs for color */
     if ((nos->group_color_info->group_color_mapping_procs != NULL &&
-        nos_num_color_comp != tos_num_color_comp) || icc_match) {
+        nos_num_color_comp != tos_num_color_comp) || no_icc_match) {
         if (x0 < x1 && y0 < y1) {
             pdf14_buf *result;
             bool did_alloc; /* We don't care here */
