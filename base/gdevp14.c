@@ -6625,6 +6625,15 @@ pdf14_begin_transparency_mask(gx_device	*dev,
     bool deep = device_is_deep(dev);
     pdf14_group_color_t* group_color_info;
 
+    /* Check if a context stack is set. This can occur if clist first does
+       a soft mask. */
+    if (pdev->ctx->stack == NULL) {
+        code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
+            dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, (const gs_gstate*)pgs);
+        if (code < 0)
+            return code;
+    }
+
     if (ptmp->subtype == TRANSPARENCY_MASK_None) {
         pdf14_ctx *ctx = pdev->ctx;
 
