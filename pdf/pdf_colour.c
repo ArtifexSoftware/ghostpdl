@@ -980,7 +980,7 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
         return code;
 
     if (!pdfi_dict_is_stream(ctx, ICC_dict)) {
-        gs_note_error(gs_error_undefined);
+        code = gs_note_error(gs_error_undefined);
         goto done;
     }
     Length = pdfi_dict_stream_length(ctx, ICC_dict);

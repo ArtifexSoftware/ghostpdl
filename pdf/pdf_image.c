@@ -1034,7 +1034,7 @@ static int
 pdfi_image_get_color(pdf_context *ctx, pdf_stream *source, pdfi_image_info_t *image_info,
                      int *comps, gs_color_space **pcs)
 {
-    int code;
+    int code = 0;
     pdfi_jpx_info_t *jpx_info = &image_info->jpx_info;
 
     /* NOTE: Spec says ImageMask and ColorSpace mutually exclusive */
