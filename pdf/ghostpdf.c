@@ -919,6 +919,7 @@ pdfi_fontdir_purge_all(const gs_memory_t * mem, cached_char * cc, void *dummy)
     return true;
 }
 
+#ifdef DEBUG
 /* Define DEBUG_CACHE_FREE to turn this on */
 #ifdef DEBUG_CACHE_FREE
 static void
@@ -940,6 +941,7 @@ static void
 pdfi_print_cache(pdf_context *ctx)
 {}
 #endif
+#endif /* DEBUG */
 
 int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
 {
