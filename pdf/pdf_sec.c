@@ -632,7 +632,7 @@ static int check_owner_password_R5(pdf_context *ctx, char *Password, int Len, in
 
     Test = (char *)gs_alloc_bytes(ctx->memory, NewLen + 8 + 48, "r5 password test");
     if (Test == NULL) {
-        gs_note_error(gs_error_VMerror);
+        code = gs_note_error(gs_error_VMerror);
         goto error;
     }
 

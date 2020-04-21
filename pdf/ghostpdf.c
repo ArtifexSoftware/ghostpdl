@@ -64,7 +64,7 @@ static int dump_info_string(pdf_context *ctx, pdf_dict *source_dict, const char 
 
 static int pdfi_output_metadata(pdf_context *ctx)
 {
-    int code;
+    int code = 0;
 
     if (ctx->num_pages > 1)
         dmprintf2(ctx->memory, "\n        %s has %"PRIi64" pages\n\n", ctx->filename, ctx->num_pages);
