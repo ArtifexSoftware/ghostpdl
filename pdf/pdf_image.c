@@ -975,7 +975,7 @@ pdfi_image_setup_type4(pdf_context *ctx, pdfi_image_info_t *image_info,
         if (code == gs_error_typecheck) {
             code = pdfi_array_get_number(ctx, mask_array, i, &num);
             if (code == 0) {
-                intval = num + 0.5;
+                intval = (int64_t)(num + 0.5);
                 had_float_error = true;
             }
         }
