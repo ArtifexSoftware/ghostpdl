@@ -760,7 +760,6 @@ static int check_owner_password_preR5(pdf_context *ctx, char *Password, int Len,
     pdf_string *EKey = NULL;
     gs_md5_state_t md5;
     pdf_stream *stream, *arc4_stream;
-    stream_arcfour_state state;
     char Buffer[32], Arc4Source[32];
 
     /* Algorithm 3.7 */
@@ -951,7 +950,6 @@ int pdfi_read_Encryption(pdf_context *ctx)
     pdf_dict *d = NULL;
     pdf_obj *o = NULL;
     pdf_string *s = NULL;
-    char *U;
     int64_t i64;
     double f;
 
@@ -1180,7 +1178,7 @@ int pdfi_read_Encryption(pdf_context *ctx)
             /* First see if the file is encrypted with an Owner password and no user password
              * in which case an empty user password will work to decrypt it.
              */
-            code = check_user_password_preR5(ctx, "", 0, KeyLen, 2);
+            code = check_user_password_preR5(ctx, (char *)"", 0, KeyLen, 2);
             if (code < 0) {
                 if(ctx->Password) {
                     /* Empty user password didn't work, try the password we've been given as a user password */
@@ -1196,7 +1194,7 @@ int pdfi_read_Encryption(pdf_context *ctx)
             if (KeyLen == 0)
                 KeyLen = 128;
             ctx->StrF = ctx->StmF = V2;
-            code = check_user_password_preR5(ctx, "", 0, KeyLen, 3);
+            code = check_user_password_preR5(ctx, (char *)"", 0, KeyLen, 3);
             if (code < 0) {
                 if(ctx->Password) {
                     /* Empty user password didn't work, try the password we've been given as a user password */
@@ -1211,7 +1209,7 @@ int pdfi_read_Encryption(pdf_context *ctx)
             /* Revision 4 is either AES or RC4, but its always 128-bits */
             if (KeyLen == 0)
                 KeyLen = 128;
-            code = check_user_password_preR5(ctx, "", 0, KeyLen, 4);
+            code = check_user_password_preR5(ctx, (char *)"", 0, KeyLen, 4);
             if (code < 0) {
                 if(ctx->Password) {
                     /* Empty user password didn't work, try the password we've been given as a user password */
@@ -1226,7 +1224,7 @@ int pdfi_read_Encryption(pdf_context *ctx)
             if (KeyLen == 0)
                 KeyLen = 256;
             ctx->StrF = ctx->StmF = AESV3;
-            code = check_user_password_R5(ctx, "", 0, KeyLen, 3);
+            code = check_user_password_R5(ctx, (char *)"", 0, KeyLen, 3);
             if (code < 0) {
                 if(ctx->Password) {
                     /* Empty user password didn't work, try the password we've been given as a user password */
@@ -1248,7 +1246,7 @@ int pdfi_read_Encryption(pdf_context *ctx)
             if (KeyLen == 0)
                 KeyLen = 256;
             ctx->StrF = ctx->StmF = AESV3;
-            code = check_user_password_R6(ctx, "", 0, KeyLen, 3);
+            code = check_user_password_R6(ctx, (char *)"", 0, KeyLen, 3);
             if (code < 0) {
                 if(ctx->Password) {
                     /* Empty user password didn't work, try the password we've been given as a user password */
