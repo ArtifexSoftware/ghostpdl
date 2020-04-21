@@ -17,8 +17,19 @@
 
 #include "pdf_stack.h"
 #include "pdf_file.h"
+#include "pdf_dict.h"
+#include "pdf_array.h"
+#include "pdf_sec.h"
+#include "pdf_misc.h"
+#include "strmio.h"
 #include "smd5.h"
 #include "sarc4.h"
+#include "aes.h"
+#include "sha2.h"
+
+#ifdef HAVE_LIBIDN
+#  include <stringprep.h>
+#endif
 
 /* The padding string as defined in step 1 of Algorithm 3.2 */
 static char PadString[32] = {
@@ -134,12 +145,305 @@ done:
     return code;
 }
 
+#ifdef HAVE_LIBIDN
+static int apply_sasl(pdf_context *ctx, char *Password, int Len, char **NewPassword, int NewLen)
+{
+    byte *buffer;
+    uint buffer_size;
+    uint output_size;
+    Stringprep_rc err;
+
+    buffer_size = Len * 11 + 1;
+    buffer = (byte *)gs_alloc_bytes(ctx->memory, buffer_size, "saslprep result");
+    if (buffer == NULL)
+        return_error(gs_error_VMerror);
+
+    err = stringprep((char *)buffer, buffer_size, 0, stringprep_saslprep);
+    if (err != STRINGPREP_OK) {
+        gs_free_object(ctx->memory, buffer, "saslprep result");
+
+        /* Since we're just verifying the password to an existing
+         * document here, we don't care about "invalid input" errors
+         * like STRINGPREP_CONTAINS_PROHIBITED.  In these cases, we
+         * ignore the error and return the original string unchanged --
+         * chances are it's not the right password anyway, and if it
+         * is we shouldn't gratuitously fail to decrypt the document.
+         *
+         * On the other hand, errors like STRINGPREP_NFKC_FAILED are
+         * real errors, and should be returned to the user.
+         *
+         * Fortunately, the stringprep error codes are sorted to make
+         * this easy: the errors we want to ignore are the ones with
+         * codes less than 100. */
+        if ((int)err < 100)
+            return 0;
+
+        return_error(gs_error_ioerror);
+    }
+
+    NewLen = strlen((char *)buffer);
+    *NewPassword = buffer;
+
+    return 0;
+
+}
+#endif
+
+static int check_user_password_R5(pdf_context *ctx, char *Password, int Len, int KeyLen, int R)
+{
+    char *UTF8_Password, *Test = NULL, Buffer[32], UEPadded[48];
+    int NewLen;
+    int code = 0;
+    pdf_stream *stream = NULL, *filter_stream = NULL;
+    pdf_string *Key = NULL;
+
+    /* Algorithm 3.11 from the Adobe extensions to the ISO 32000 specification (Extension Level 3) */
+    /* Step 1 convert the password to UTF-8 */
+
+    /* From the original code in Resource/Init/pdf_sec.ps:
+     * Step 1.
+     * If the .saslprep operator isn't available (because ghostscript
+     * wasn't built with libidn support), just skip this step.  ASCII
+     * passwords will still work fine, and even most non-ASCII passwords
+     * will be okay; any non-ASCII passwords that fail will produce a
+     * warning from pdf_process_Encrypt.
+     */
+#ifdef HAVE_LIBIDN
+    code = apply_sasl(ctx, Password, Len, &UTF8_Password, &NewLen);
+    if (code < 0)
+        return code;
+#else
+    UTF8_Password = Password;
+    NewLen = Len;
+#endif
+    if (NewLen > 127)
+        NewLen = 127;
+
+    Test = (char *)gs_alloc_bytes(ctx->memory, NewLen + 8, "R5 password test");
+    if (Test == NULL) {
+        code = gs_note_error(gs_error_VMerror);
+        goto error;
+    }
+
+    /* Try to validate the password as the user password */
+    /* concatenate the password */
+    memcpy(Test, UTF8_Password, NewLen);
+    /* With the 'User Validation Salt' (stored as part of the /O string */
+    memcpy(&Test[NewLen], &ctx->U[32], 8);
+
+    /* Now calculate the SHA256 hash */
+    code = pdfi_open_memory_stream_from_memory(ctx, NewLen + 8, (byte *)Test, &stream);
+    if (code < 0)
+        goto error;
+
+    code = pdfi_apply_SHA256_filter(ctx, stream, &filter_stream);
+    if (code < 0) {
+        pdfi_close_memory_stream(ctx, NULL, stream);
+        goto error;
+    }
+
+    sfread(Buffer, 1, 32, filter_stream->s);
+    pdfi_close_file(ctx, filter_stream);
+    pdfi_close_memory_stream(ctx, NULL, stream);
+
+    if (memcmp(Buffer, ctx->U, 32) != 0) {
+        code = gs_note_error(gs_error_unknownerror);
+        goto error;
+    }
+
+    /* Password matched */
+    /* Finally calculate the decryption key */
+    gs_free_object(ctx->memory, Test, "R5 password test");
+
+    /* Password + last 8 bytes of /U */
+    Test = (char *)gs_alloc_bytes(ctx->memory, NewLen + 8, "R5 password test");
+    if (Test == NULL) {
+        code = gs_note_error(gs_error_VMerror);
+        goto error;
+    }
+
+    memcpy(Test, UTF8_Password, NewLen);
+    /* The 'User Key Salt' (stored as part of the /O string */
+    memcpy(&Test[NewLen], &ctx->U[40], 8);
+
+    /* Now calculate the SHA256 hash */
+    code = pdfi_open_memory_stream_from_memory(ctx, NewLen + 8, (byte *)Test, &stream);
+    if (code < 0)
+        goto error;
+
+    code = pdfi_apply_SHA256_filter(ctx, stream, &filter_stream);
+    if (code < 0) {
+        pdfi_close_memory_stream(ctx, NULL, stream);
+        goto error;
+    }
+
+    sfread(Buffer, 1, 32, filter_stream->s);
+    pdfi_close_file(ctx, filter_stream);
+    pdfi_close_memory_stream(ctx, NULL, stream);
+
+    memset(UEPadded, 0x00, 16);
+    memcpy(&UEPadded[16], ctx->UE, 32);
+
+    code = pdfi_alloc_object(ctx, PDF_STRING, 32, (pdf_obj **)&Key);
+    if (code < 0)
+        goto error;
+    /* pdfi_alloc_object() creates objects with a refrence count of 0 */
+    pdfi_countup(Key);
+    memcpy(Key->data, Buffer, 32);
+
+    /* Now apply AESDecode to the padded UE string, using the SHA from above as the key */
+    code = pdfi_open_memory_stream_from_memory(ctx, 48, (byte *)UEPadded, &stream);
+    if (code < 0)
+        goto error;
+
+    code = pdfi_apply_AES_filter(ctx, Key, false, stream, &filter_stream);
+    if (code < 0) {
+        pdfi_close_memory_stream(ctx, NULL, stream);
+        goto error;
+    }
+
+    sfread(Buffer, 1, 32, filter_stream->s);
+    pdfi_close_file(ctx, filter_stream);
+    pdfi_close_memory_stream(ctx, NULL, stream);
+    pdfi_alloc_object(ctx, PDF_STRING, 32, (pdf_obj **)&ctx->EKey);
+    if (ctx->EKey == NULL)
+        goto error;
+    memcpy(ctx->EKey->data, Buffer, 32);
+    pdfi_countup(ctx->EKey);
+
+error:
+    pdfi_countdown(Key);
+    gs_free_object(ctx->memory, Test, "R5 password test");
+#ifdef HAVE_LIBIDN
+    gs_free_object(ctx->memory, UTF8_Password, "free sasl result");
+#endif
+    return code;
+}
+
+/* Implementation of the PDF security handler revision6 (PDF 1.7 ExtensionLevel 8 algorithm)
+ *
+ * Adobe/ISO has not yet released the details, so the algorithm reference is:
+ * http://esec-lab.sogeti.com/post/The-undocumented-password-validation-algorithm-of-Adobe-Reader-X
+ *
+ * The code below is the same as (and copied from) the MuPDF implementation. And copied from the
+ * Ghostscript implementation in zpdf_r6.c. The ISO specification is now released and the algorithms
+ * used here are documented in the PDF 2.0 specification ISO 32000-2:2017
+ */
+
+static void
+pdf_compute_hardened_hash_r6(unsigned char *password, int pwlen, unsigned char salt[16], unsigned char *ownerkey, unsigned char hash[32])
+{
+	unsigned char data[(128 + 64 + 48) * 64];
+	unsigned char block[64];
+	int block_size = 32;
+	int data_len = 0;
+	int i, j, sum;
+
+    SHA256_CTX sha256;
+    SHA384_CTX sha384;
+    SHA512_CTX sha512;
+    aes_context aes;
+
+    pSHA256_Init(&sha256);
+    pSHA256_Update(&sha256, password, pwlen);
+    pSHA256_Update(&sha256, salt, 8);
+    if (ownerkey)
+        pSHA256_Update(&sha256, ownerkey, 48);
+    pSHA256_Final((uint8_t *)block, &sha256);
+
+	for (i = 0; i < 64 || i < data[data_len * 64 - 1] + 32; i++)
+	{
+		/* Step 2: repeat password and data block 64 times */
+		memcpy(data, password, pwlen);
+		memcpy(data + pwlen, block, block_size);
+		if (ownerkey)
+			memcpy(data + pwlen + block_size, ownerkey, 48);
+		data_len = pwlen + block_size + (ownerkey ? 48 : 0);
+		for (j = 1; j < 64; j++)
+			memcpy(data + j * data_len, data, data_len);
+
+		/* Step 3: encrypt data using data block as key and iv */
+		aes_setkey_enc(&aes, block, 128);
+		aes_crypt_cbc(&aes, AES_ENCRYPT, data_len * 64, block + 16, data, data);
+
+		/* Step 4: determine SHA-2 hash size for this round */
+		for (j = 0, sum = 0; j < 16; j++)
+			sum += data[j];
+
+		/* Step 5: calculate data block for next round */
+		block_size = 32 + (sum % 3) * 16;
+		switch (block_size)
+		{
+        case 32:
+            pSHA256_Init(&sha256);
+            pSHA256_Update(&sha256, data, data_len * 64);
+            pSHA256_Final((uint8_t *)block, &sha256);
+            break;
+        case 48:
+            pSHA384_Init(&sha384);
+            pSHA384_Update(&sha384, data, data_len * 64);
+            pSHA384_Final((uint8_t *)block, &sha384);
+            break;
+        case 64:
+            pSHA512_Init(&sha512);
+            pSHA512_Update(&sha512, data, data_len * 64);
+            pSHA512_Final((uint8_t *)block, &sha512);
+            break;
+		}
+	}
+
+	memset(data, 0, sizeof(data));
+	memcpy(hash, block, 32);
+}
+
+static void
+pdf_compute_encryption_key_r6(unsigned char *password, int pwlen, unsigned char *O, unsigned char *OE, unsigned char *U, unsigned char *UE, int ownerkey, unsigned char *validationkey, unsigned char *output)
+{
+	unsigned char hash[32];
+	unsigned char iv[16];
+    aes_context aes;
+
+	if (pwlen > 127)
+		pwlen = 127;
+
+	pdf_compute_hardened_hash_r6(password, pwlen,
+		(ownerkey ? O : U) + 32,
+		ownerkey ? U : NULL, validationkey);
+	pdf_compute_hardened_hash_r6(password, pwlen,
+        (ownerkey ? O : U) + 40,
+        (ownerkey ? U : NULL), hash);
+
+	memset(iv, 0, sizeof(iv));
+    aes_setkey_dec(&aes, hash, 256);
+	aes_crypt_cbc(&aes, AES_DECRYPT, 32, iv,
+		ownerkey ? OE : UE, output);
+}
+
+static int check_user_password_R6(pdf_context *ctx, char *Password, int Len, int KeyLen, int R)
+{
+	unsigned char validation[32];
+	unsigned char output[32];
+
+    pdf_compute_encryption_key_r6((unsigned char *)Password, Len, (unsigned char *)ctx->O, (unsigned char *)ctx->OE,
+                                  (unsigned char *)ctx->U, (unsigned char *)ctx->UE, 0, validation, output);
+
+    if (memcmp(validation, ctx->U, 32) != 0)
+        return_error(gs_error_unknownerror);
+
+    pdfi_alloc_object(ctx, PDF_STRING, 32, (pdf_obj **)&ctx->EKey);
+    if (ctx->EKey == NULL)
+        return_error(gs_error_VMerror);;
+    memcpy(ctx->EKey->data, output, 32);
+    pdfi_countup(ctx->EKey);
+
+    return 0;
+}
+
 static int check_user_password_preR5(pdf_context *ctx, char *Password, int Len, int KeyLen, int R)
 {
     pdf_string *Key = NULL, *XORKey = NULL;
     int code = 0, i, j, KeyLenBytes = KeyLen / 8;
     pdf_stream *stream, *arc4_stream;
-    stream_arcfour_state state;
     char Buffer[32];
     char Hash[16];
     gs_md5_state_t md5;
@@ -237,6 +541,8 @@ static int check_user_password_preR5(pdf_context *ctx, char *Password, int Len, 
             code = pdfi_alloc_object(ctx, PDF_STRING, KeyLenBytes, (pdf_obj **)&XORKey);
             if (code < 0)
                 goto error;
+            /* pdfi_alloc_object() creates objects with a reference count of 0 */
+            pdfi_countup(XORKey);
 
             /* Step 5
              * Do the following 19 times. Take the output from the previous invocation of the RC4
@@ -297,6 +603,156 @@ error:
     return code;
 }
 
+static int check_owner_password_R5(pdf_context *ctx, char *Password, int Len, int KeyLen, int R)
+{
+    char *UTF8_Password, *Test = NULL, Buffer[32], OEPadded[48];
+    int NewLen;
+    int code = 0;
+    pdf_stream *stream = NULL, *filter_stream = NULL;
+    pdf_string *Key = NULL;
+
+    /* From the original code in Resource/Init/pdf_sec.ps:
+     * Step 1.
+     * If the .saslprep operator isn't available (because ghostscript
+     * wasn't built with libidn support), just skip this step.  ASCII
+     * passwords will still work fine, and even most non-ASCII passwords
+     * will be okay; any non-ASCII passwords that fail will produce a
+     * warning from pdf_process_Encrypt.
+     */
+#ifdef HAVE_LIBIDN
+    code = apply_sasl(ctx, Password, Len, &UTF8_Password, &NewLen);
+    if (code < 0)
+        return code;
+#else
+    UTF8_Password = Password;
+    NewLen = Len;
+#endif
+    if (NewLen > 127)
+        NewLen = 127;
+
+    Test = (char *)gs_alloc_bytes(ctx->memory, NewLen + 8 + 48, "r5 password test");
+    if (Test == NULL) {
+        gs_note_error(gs_error_VMerror);
+        goto error;
+    }
+
+    /* concatenate the password */
+    memcpy(Test, UTF8_Password, NewLen);
+    /* With the 'Owner Validation Salt' (stored as part of the /O string */
+    memcpy(&Test[NewLen], &ctx->O[32], 8);
+    /* and also concatenated with the /U string, which is defined to be 48 bytes for revision 5 */
+    memcpy(&Test[NewLen + 8], &ctx->U, 48);
+
+    /* Now calculate the SHA256 hash */
+    code = pdfi_open_memory_stream_from_memory(ctx, NewLen + 8 + 48, (byte *)Test, &stream);
+    if (code < 0)
+        goto error;
+
+    code = pdfi_apply_SHA256_filter(ctx, stream, &filter_stream);
+    if (code < 0) {
+        pdfi_close_memory_stream(ctx, NULL, stream);
+        goto error;
+    }
+
+    sfread(Buffer, 1, 32, filter_stream->s);
+    pdfi_close_file(ctx, filter_stream);
+    pdfi_close_memory_stream(ctx, NULL, stream);
+
+    if (memcmp(Buffer, ctx->O, 32) != 0) {
+        code = gs_note_error(gs_error_unknownerror);
+        goto error;
+    }
+
+    /* Password matched */
+    /* Finally calculate the decryption key */
+    gs_free_object(ctx->memory, Test, "R5 password test");
+
+    /* Password + last 8 bytes of /O */
+    Test = (char *)gs_alloc_bytes(ctx->memory, NewLen + 8 + 48, "R5 password test");
+    if (Test == NULL) {
+        code = gs_note_error(gs_error_VMerror);
+        goto error;
+    }
+
+    memcpy(Test, UTF8_Password, NewLen);
+    /* The 'User Key Salt' (stored as part of the /O string */
+    memcpy(&Test[NewLen], &ctx->O[40], 8);
+    memcpy(&Test[NewLen + 8], ctx->U, 48);
+
+    /* Now calculate the SHA256 hash */
+    code = pdfi_open_memory_stream_from_memory(ctx, NewLen + 8 + 48, (byte *)Test, &stream);
+    if (code < 0)
+        goto error;
+
+    code = pdfi_apply_SHA256_filter(ctx, stream, &filter_stream);
+    if (code < 0) {
+        pdfi_close_memory_stream(ctx, NULL, stream);
+        goto error;
+    }
+
+    sfread(Buffer, 1, 32, filter_stream->s);
+    pdfi_close_file(ctx, filter_stream);
+    pdfi_close_memory_stream(ctx, NULL, stream);
+
+    memset(OEPadded, 0x00, 16);
+    memcpy(&OEPadded[16], ctx->OE, 32);
+
+    code = pdfi_alloc_object(ctx, PDF_STRING, 32, (pdf_obj **)&Key);
+    if (code < 0)
+        goto error;
+    /* pdfi_alloc_object() creates objects with a refrence count of 0 */
+    pdfi_countup(Key);
+    memcpy(Key->data, Buffer, 32);
+
+    /* Now apply AESDecode to the padded UE string, using the SHA from above as the key */
+    code = pdfi_open_memory_stream_from_memory(ctx, 48, (byte *)OEPadded, &stream);
+    if (code < 0)
+        goto error;
+
+    code = pdfi_apply_AES_filter(ctx, Key, false, stream, &filter_stream);
+    if (code < 0) {
+        pdfi_close_memory_stream(ctx, NULL, stream);
+        goto error;
+    }
+
+    sfread(Buffer, 1, 32, filter_stream->s);
+    pdfi_close_file(ctx, filter_stream);
+    pdfi_close_memory_stream(ctx, NULL, stream);
+    pdfi_alloc_object(ctx, PDF_STRING, 32, (pdf_obj **)&ctx->EKey);
+    if (ctx->EKey == NULL)
+        goto error;
+    memcpy(ctx->EKey->data, Buffer, 32);
+    pdfi_countup(ctx->EKey);
+
+error:
+    pdfi_countdown(Key);
+    gs_free_object(ctx->memory, Test, "R5 password test");
+#ifdef HAVE_LIBIDN
+    gs_free_object(ctx->memory, UTF8_Password, "free sasl result");
+#endif
+    return code;
+}
+
+static int check_owner_password_R6(pdf_context *ctx, char *Password, int Len, int KeyLen, int R)
+{
+	unsigned char validation[32];
+	unsigned char output[32];
+
+    pdf_compute_encryption_key_r6((unsigned char *)Password, Len, (unsigned char *)ctx->O, (unsigned char *)ctx->OE,
+                                  (unsigned char *)ctx->U, (unsigned char *)ctx->UE, 1, validation, output);
+
+    if (memcmp(validation, ctx->O, 32) != 0)
+        return_error(gs_error_unknownerror);
+
+    pdfi_alloc_object(ctx, PDF_STRING, 32, (pdf_obj **)&ctx->EKey);
+    if (ctx->EKey == NULL)
+        return_error(gs_error_VMerror);;
+    memcpy(ctx->EKey->data, output, 32);
+    pdfi_countup(ctx->EKey);
+
+    return 0;
+}
+
 static int check_owner_password_preR5(pdf_context *ctx, char *Password, int Len, int KeyLen, int R)
 {
     char Key[32];
@@ -329,6 +785,8 @@ static int check_owner_password_preR5(pdf_context *ctx, char *Password, int Len,
         code = pdfi_alloc_object(ctx, PDF_STRING, KeyLenBytes, (pdf_obj **)&EKey);
         if (code < 0)
             goto error;
+        /* pdfi_alloc_object() creates objects with a refrence count of 0 */
+        pdfi_countup(EKey);
 
         for (i = 0; i < 50; i++) {
             gs_md5_init(&md5);
@@ -386,7 +844,7 @@ static int check_owner_password_preR5(pdf_context *ctx, char *Password, int Len,
     code = check_user_password_preR5(ctx, Buffer, 32, KeyLen, R);
 
 error:
-    pdfi_countdown(Key);
+    pdfi_countdown(EKey);
     return code;
 }
 
@@ -401,74 +859,81 @@ int pdfi_compute_objkey(pdf_context *ctx, pdf_obj *obj, pdf_string **Key)
     int64_t object_num;
     uint32_t generation_num;
 
-    if (obj->object_num == 0) {
-        /* The object is a direct object, use the object number of the container instead */
-        /* Not yet implemented, will need plumbing changes in pdfi_dereference */
+    if (ctx->R < 5) {
+        if (obj->object_num == 0) {
+            /* The object is a direct object, use the object number of the container instead */
+            /* Not yet implemented, will need plumbing changes in pdfi_dereference */
+        } else {
+            object_num = obj->object_num;
+            generation_num = obj->generation_num;
+        }
+
+        /* Step 1, obtain the object and generation numbers (see arguments). If the string is
+         * a direct object, use the identifier of the indirect object containing it.
+         * Buffer length is a maximum of the Encryption key + 3 bytes from the object number
+         * + 2 bytes from the generation number and (for AES filters) 4 bytes of sALT.
+         */
+        Buffer = (char *)gs_alloc_bytes(ctx->memory, ctx->EKey->length + 9, "");
+        if (Buffer == NULL)
+            return gs_note_error(gs_error_VMerror);
+
+        /* Step 2, Treating the object number and generation number as binary integers, extend
+         * the original n-byte encryption key (calculated in pdfi_read_Encryption) to n+5 bytes
+         * by appending the low order 3 bytes of the object number and the low order 2 bytes of
+         * the generation number in that order, low-order byte first. (n is 5 unless the value
+         * of V in the encryption dictionary is greater than 1 in which case n is the value of
+         * Length divided by 8). Because we store the encryption key is as a PDF string object,
+         * we can just use the length of the string data, we calculated the length as part of
+         * creating the key.
+         */
+        memcpy(Buffer, ctx->EKey->data, ctx->EKey->length);
+        idx = ctx->EKey->length;
+        Buffer[idx] = object_num & 0xff;
+        Buffer[++idx] = (object_num & 0xff00) >> 8;
+        Buffer[++idx] = (object_num & 0xff0000) >> 16;
+        Buffer[++idx] = generation_num & 0xff;
+        Buffer[++idx] = (generation_num & 0xff00) >> 8;
+
+        md5_length = ctx->EKey->length + 5;
+
+        /* If using the AES algorithm, extend the encryption key an additional 4 bytes
+         * by adding the value "sAlT" which corresponds to the hexadecimal 0x73416c54
+         * (This addition is done for backward compatibility and is not intended to
+         * provide addtional security).
+         */
+        if (ctx->StmF == AESV2 || ctx->StmF == AESV3){
+            memcpy(&Buffer[++idx], sAlTString, 4);
+            md5_length += 4;
+        }
+
+        /* Step 3
+         * Initialise the MD5 function and pass the result of step 2 as input to this function
+         */
+        gs_md5_init(&md5);
+        gs_md5_append(&md5, (gs_md5_byte_t *)Buffer, md5_length);
+        gs_md5_finish(&md5, (gs_md5_byte_t *)Buffer);
+
+        /* Step 4
+         * Use the first n+5 bytes, up to a maximum of 16, of the output from the MD5
+         * hash as the key for the RC4 or AES symmetric key algorithms, along with the
+         * string or stream data to be encrypted.
+         */
+        ELength = ctx->EKey->length + 5;
+        if (ELength > 16)
+            ELength = 16;
+
+        code = pdfi_alloc_object(ctx, PDF_STRING, (uint64_t)ELength, (pdf_obj **)Key);
+        if (code >= 0)
+            memcpy((*Key)->data, Buffer, ELength);
+        /* pdfi_alloc_object() creates objects with a refrence count of 0 */
+        pdfi_countup(*Key);
+
+        gs_free_object(ctx->memory, Buffer, "");
     } else {
-        object_num = obj->object_num;
-        generation_num = obj->generation_num;
+        /* Revision 5 & 6 don't use the object number and generation, just return the pre-calculated key */
+        *Key = ctx->EKey;
+        pdfi_countup(*Key);
     }
-
-    /* Step 1, obtain the object and generation numbers (see arguments). If the string is
-     * a direct object, use the identifier of the indirect object containing it.
-     * Buffer length is a maximum of the Encryption key + 3 bytes from the object number
-     * + 2 bytes from the generation number and (for AES filters) 4 bytes of sALT.
-     */
-    Buffer = (char *)gs_alloc_bytes(ctx->memory, ctx->EKey->length + 9, "");
-    if (Buffer == NULL)
-        return gs_note_error(gs_error_VMerror);
-
-    /* Step 2, Treating the object number and generation number as binary integers, extend
-     * the original n-byte encryption key (calculated in pdfi_read_Encryption) to n+5 bytes
-     * by appending the low order 3 bytes of the object number and the low order 2 bytes of
-     * the generation number in that order, low-order byte first. (n is 5 unless the value
-     * of V in the encryption dictionary is greater than 1 in which case n is the value of
-     * Length divided by 8). Because we store the encryption key is as a PDF string object,
-     * we can just use the length of the string data, we calculated the length as part of
-     * creating the key.
-     */
-    memcpy(Buffer, ctx->EKey->data, ctx->EKey->length);
-    idx = ctx->EKey->length;
-    Buffer[idx] = object_num & 0xff;
-    Buffer[++idx] = (object_num & 0xff00) >> 8;
-    Buffer[++idx] = (object_num & 0xff0000) >> 16;
-    Buffer[++idx] = generation_num & 0xff;
-    Buffer[++idx] = (generation_num & 0xff00) >> 8;
-
-    md5_length = ctx->EKey->length + 5;
-
-    /* If using the AES algorithm, extend the encryption key an additional 4 bytes
-     * by adding the value "sAlT" which corresponds to the hexadecimal 0x73416c54
-     * (This addition is done for backward compatibility and is not intended to
-     * provide addtional security).
-     */
-    if (ctx->StmF == AESV2 || ctx->StmF == AESV3){
-        memcpy(&Buffer[++idx], sAlTString, 4);
-        md5_length += 4;
-    }
-
-    /* Step 3
-     * Initialise the MD5 function and pass the result of step 2 as input to this function
-     */
-    gs_md5_init(&md5);
-    gs_md5_append(&md5, (gs_md5_byte_t *)Buffer, md5_length);
-    gs_md5_finish(&md5, (gs_md5_byte_t *)Buffer);
-
-    /* Step 4
-     * Use the first n+5 bytes, up to a maximum of 16, of the output from the MD5
-     * hash as the key for the RC4 or AES symmetric key algorithms, along with the
-     * string or stream data to be encrypted.
-     */
-    ELength = ctx->EKey->length + 5;
-    if (ELength > 16)
-        ELength = 16;
-
-    code = pdfi_alloc_object(ctx, PDF_STRING, (uint64_t)ELength, (pdf_obj **)Key);
-    if (code >= 0)
-        memcpy((*Key)->data, Buffer, ELength);
-
-    gs_free_object(ctx->memory, Buffer, "");
-
     return code;
 }
 
@@ -485,7 +950,7 @@ int pdfi_read_Encryption(pdf_context *ctx)
     pdf_dict *CF_dict = NULL, *StdCF_dict = NULL;
     pdf_dict *d = NULL;
     pdf_obj *o = NULL;
-    pdf_string *s;
+    pdf_string *s = NULL;
     char *U;
     int64_t i64;
     double f;
@@ -573,12 +1038,21 @@ int pdfi_read_Encryption(pdf_context *ctx)
     if (code < 0)
         goto done;
 
-    if (s->length != 32) {
-        pdfi_countdown(s);
-        code = gs_error_rangecheck;
-        goto done;
+    if (ctx->R < 5) {
+        if (s->length < 32) {
+            pdfi_countdown(s);
+            code = gs_error_rangecheck;
+            goto done;
+        }
+        memcpy(ctx->O, s->data, 32);
+    } else {
+        if (s->length < 48) {
+            pdfi_countdown(s);
+            code = gs_error_rangecheck;
+            goto done;
+        }
+        memcpy(ctx->O, s->data, 48);
     }
-    memcpy(ctx->O, s->data, 32);
     pdfi_countdown(s);
     s = NULL;
 
@@ -586,12 +1060,23 @@ int pdfi_read_Encryption(pdf_context *ctx)
     if (code < 0)
         goto done;
 
-    if (s->length != 32) {
-        pdfi_countdown(s);
-        code = gs_error_rangecheck;
-        goto done;
+    if (ctx->R < 5) {
+        if (s->length < 32) {
+            pdfi_countdown(s);
+            code = gs_error_rangecheck;
+            goto done;
+        }
+        memcpy(ctx->U, s->data, 32);
+    } else {
+        if (s->length < 48) {
+            pdfi_countdown(s);
+            code = gs_error_rangecheck;
+            goto done;
+        }
+        memcpy(ctx->U, s->data, 48);
     }
-    memcpy(ctx->U, s->data, 32);
+    pdfi_countdown(s);
+    s = NULL;
 
     code = pdfi_dict_knownget_type(ctx, d, "EncryptMetadata", PDF_BOOL, &o);
     if (code < 0)
@@ -628,11 +1113,11 @@ int pdfi_read_Encryption(pdf_context *ctx)
         /* Validated StmF and StrF, now check the Encrypt dictionary for the definition of
          * the Crypt Filter dictionary and ensure it has a /StdCF dictionary.
          */
-        code = pdfi_dict_get_type(ctx, d, "CF", PDF_DICT, &CF_dict);
+        code = pdfi_dict_get_type(ctx, d, "CF", PDF_DICT, (pdf_obj **)&CF_dict);
         if (code < 0)
             goto done;
 
-        code = pdfi_dict_get_type(ctx, CF_dict, "StdCF", PDF_DICT, &StdCF_dict);
+        code = pdfi_dict_get_type(ctx, CF_dict, "StdCF", PDF_DICT, (pdf_obj **)&StdCF_dict);
         if (code < 0)
             goto done;
 
@@ -656,6 +1141,34 @@ int pdfi_read_Encryption(pdf_context *ctx)
         }
         pdfi_countdown(o);
         o = NULL;
+
+        if (ctx->R > 4) {
+            code = pdfi_dict_get_type(ctx, d, "OE", PDF_STRING, (pdf_obj **)&s);
+            if (code < 0)
+                goto done;
+
+            if (s->length != 32) {
+                pdfi_countdown(s);
+                code = gs_error_rangecheck;
+                goto done;
+            }
+            memcpy(ctx->OE, s->data, 32);
+            pdfi_countdown(s);
+            s = NULL;
+
+            code = pdfi_dict_get_type(ctx, d, "UE", PDF_STRING, (pdf_obj **)&s);
+            if (code < 0)
+                goto done;
+
+            if (s->length != 32) {
+                pdfi_countdown(s);
+                code = gs_error_rangecheck;
+                goto done;
+            }
+            memcpy(ctx->UE, s->data, 32);
+            pdfi_countdown(s);
+            s = NULL;
+        }
     }
 
     switch(ctx->R) {
@@ -710,16 +1223,41 @@ int pdfi_read_Encryption(pdf_context *ctx)
             }
             break;
         case 5:
-            emprintf(ctx->memory, "\n   **** Error: Revision 5 standard security handler is an Adobe.\n");
-            emprintf(ctx->memory, "\n               proprietary extension and not supported.\n");
-            code = gs_error_rangecheck;
+            if (KeyLen == 0)
+                KeyLen = 256;
+            ctx->StrF = ctx->StmF = AESV3;
+            code = check_user_password_R5(ctx, "", 0, KeyLen, 3);
+            if (code < 0) {
+                if(ctx->Password) {
+                    /* Empty user password didn't work, try the password we've been given as a user password */
+                    code = check_user_password_R5(ctx, ctx->Password, strlen(ctx->Password), KeyLen, 3);
+                    if (code < 0) {
+                        code = check_owner_password_R5(ctx, ctx->Password, strlen(ctx->Password), KeyLen, 3);
+                        /* The PostScript code tries to use locale_to_utf8 *if* its defined to convert
+                         * the supplied locale-specific password to UTF8. Unfortunately that's defined
+                         * in the PostScript interpreter and is platform-specific, so we can't use it.
+                         * FIXME add platform-specific pdfi modules and recreate the UTF8 functionality
+                         * in those, then use it here.
+                         */
+                    }
+                }
+            }
             break;
         case 6:
             /* Revision 6 is always 256-bit AES */
             if (KeyLen == 0)
                 KeyLen = 256;
             ctx->StrF = ctx->StmF = AESV3;
-            code = gs_error_unknownerror;
+            code = check_user_password_R6(ctx, "", 0, KeyLen, 3);
+            if (code < 0) {
+                if(ctx->Password) {
+                    /* Empty user password didn't work, try the password we've been given as a user password */
+                    code = check_user_password_R6(ctx, ctx->Password, strlen(ctx->Password), KeyLen, 3);
+                    if (code < 0) {
+                        code = check_owner_password_R6(ctx, ctx->Password, strlen(ctx->Password), KeyLen, 3);
+                    }
+                }
+            }
             break;
         default:
             emprintf1(ctx->memory, "\n   **** Warning: This file uses an unknown standard security handler revision: %d\n", ctx->R);
@@ -740,5 +1278,6 @@ done:
     pdfi_countdown(StdCF_dict);
     pdfi_countdown(d);
     pdfi_countdown(o);
+    pdfi_countdown(s);
     return code;
 }

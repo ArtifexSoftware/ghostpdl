@@ -213,10 +213,10 @@ PDF_OBJS=\
 
 $(PDFOBJ)gpdf.dev: $(ECHOGS_XE) $(PDF_OBJS) \
                   $(PDFGEN)pl.dev $(PDFGEN)$(PL_SCALER).dev $(PDFGEN)pjl.dev $(PDFGEN)func4lib.dev \
-                  $(PDFGEN)pdiff.dev $(PDFGEN)psfilters.dev $(PDFGEN)saes.dev $(PDFGEN)sjpx.dev $(PDFGEN)psfilters.dev \
+                  $(PDFGEN)pdiff.dev $(PDFGEN)psfilters.dev $(PDFGEN)saes.dev $(PDFGEN)ssha2.dev $(PDFGEN)sjpx.dev $(PDFGEN)psfilters.dev \
                   $(PDFGEN)sdct.dev \
                   $(PDF_MAK) $(MAKEDIRS)
 	$(SETMOD) $(PDFOBJ)gpdf $(PDF_OBJS)
 	$(ADDMOD) $(PDFOBJ)gpdf -include $(PDFGEN)$(PL_SCALER) $(PDFGEN)pjl.dev $(PDFGEN)func4lib.dev
 	$(ADDMOD) $(PDFOBJ)gpdf -include $(PDFGEN)pdiff.dev $(PDFGEN)psfilters.dev $(PDFGEN)saes.dev $(PDFGEN)sjpx.dev
-	$(ADDMOD) $(PDFOBJ)gpdf -include $(PDFGEN)psfilters.dev $(PDFGEN)sdct.dev
+	$(ADDMOD) $(PDFOBJ)gpdf -include $(PDFGEN)ssha2.dev $(PDFGEN)psfilters.dev $(PDFGEN)sdct.dev

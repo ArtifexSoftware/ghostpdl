@@ -100,3 +100,5 @@ int pdfi_open_memory_stream_from_memory(pdf_context *ctx, unsigned int size,
 int pdfi_stream_to_buffer(pdf_context *ctx, pdf_dict *stream_dict, byte **buf, int64_t *bufferlen);
 
 int pdfi_apply_Arc4_filter(pdf_context *ctx, pdf_string *Key, pdf_stream *source, pdf_stream **new_stream);
+int pdfi_apply_AES_filter(pdf_context *ctx, pdf_string *Key, bool use_padding, pdf_stream *source, pdf_stream **new_stream);
+int pdfi_apply_SHA256_filter(pdf_context *ctx, pdf_stream *source, pdf_stream **new_stream);

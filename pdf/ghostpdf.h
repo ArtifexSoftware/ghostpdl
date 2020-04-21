@@ -347,8 +347,12 @@ typedef struct pdf_context_s
     int Length;
     char *Password;
     int R;
-    char O[32];
-    char U[32];
+    /* Revision 1-4 have O and E being 32 bytes, revision 5 and 6 48 bytes */
+    char O[48];
+    char U[48];
+    /* OE and UE are used for revision 5 and 6 encryption */
+    char OE[32];
+    char UE[32];
     int P;
     pdf_string *EKey;
     bool EncryptMetadata;

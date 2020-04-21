@@ -39,6 +39,7 @@
 #include "sfilter.h"    /* SubFileDecode and PFBDecode */
 #include "sarc4.h"      /* Arc4Decode */
 #include "saes.h"       /* AESDecode */
+#include "ssha2.h"      /* SHA256Encode */
 
 #ifdef USE_LDF_JB2
 #include "sjbig2_luratech.h"
@@ -212,26 +213,6 @@ static int pdfi_Predictor_filter(pdf_context *ctx, pdf_dict *d, stream *source, 
     return 0;
 }
 
-static int pdfi_Arc4_filter(pdf_context *ctx, pdf_string *Key, stream *source, stream **new_stream)
-{
-    stream_arcfour_state state;
-
-    uint min_size = 2048;
-    int code;
-
-    s_arcfour_set_key(&state, (const unsigned char *)Key->data, Key->length);
-
-    code = pdfi_filter_open(min_size, &s_filter_read_procs, (const stream_template *)&s_arcfour_template, (const stream_state *)&state, ctx->memory->non_gc_memory, new_stream);
-
-    if (code < 0)
-        return code;
-
-    (*new_stream)->strm = source;
-    source = *new_stream;
-
-    return 0;
-}
-
 int pdfi_apply_Arc4_filter(pdf_context *ctx, pdf_string *Key, pdf_stream *source, pdf_stream **new_stream)
 {
     int code = 0;
@@ -250,28 +231,7 @@ int pdfi_apply_Arc4_filter(pdf_context *ctx, pdf_string *Key, pdf_stream *source
     return code;
 }
 
-static int pdfi_AES_filter(pdf_context *ctx, char *Key, bool use_padding, stream *source, stream **new_stream)
-{
-    stream_aes_state state;
-
-    uint min_size = 2048;
-    int code;
-
-    s_aes_set_key(&state, (const unsigned char *)Key, strlen(Key));
-    s_aes_set_padding(&state, use_padding);
-
-    code = pdfi_filter_open(min_size, &s_filter_read_procs, (const stream_template *)&s_aes_template, (const stream_state *)&state, ctx->memory->non_gc_memory, new_stream);
-
-    if (code < 0)
-        return code;
-
-    (*new_stream)->strm = source;
-    source = *new_stream;
-
-    return 0;
-}
-
-static int pdfi_apply_AES_filter(pdf_context *ctx, pdf_string *Key, bool use_padding, pdf_stream *source, pdf_stream **new_stream)
+int pdfi_apply_AES_filter(pdf_context *ctx, pdf_string *Key, bool use_padding, pdf_stream *source, pdf_stream **new_stream)
 {
     stream_aes_state state;
     uint min_size = 2048;
@@ -282,6 +242,24 @@ static int pdfi_apply_AES_filter(pdf_context *ctx, pdf_string *Key, bool use_pad
     s_aes_set_padding(&state, use_padding);
 
     code = pdfi_filter_open(min_size, &s_filter_read_procs, (const stream_template *)&s_aes_template, (const stream_state *)&state, ctx->memory->non_gc_memory, &new_s);
+
+    if (code < 0)
+        return code;
+
+    code = pdfi_alloc_stream(ctx, new_s, source->s, new_stream);
+    new_s->strm = source->s;
+    return code;
+}
+
+int pdfi_apply_SHA256_filter(pdf_context *ctx, pdf_stream *source, pdf_stream **new_stream)
+{
+    stream_SHA256E_state state;
+    uint min_size = 2048;
+    int code = 0;
+    stream *new_s;
+
+    pSHA256_Init(&state.sha256);
+    code = pdfi_filter_open(min_size, &s_filter_read_procs, (const stream_template *)&s_SHA256E_template, (const stream_state *)&state, ctx->memory->non_gc_memory, &new_s);
 
     if (code < 0)
         return code;
@@ -1056,17 +1034,21 @@ int pdfi_filter(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream
             goto error;
 
         code = pdfi_filter_no_decryption(ctx, dict, crypt_stream, new_stream, false);
-        if (code < 0)
-            pdfi_countdown(SubFile_stream);
+        if (code < 0) {
+            pdfi_countdown(crypt_stream);
+            goto error;
+        }
 
         pdfi_countdown(crypt_stream);
         crypt_stream = NULL;
     } else {
         code = pdfi_filter_no_decryption(ctx, dict, source, new_stream, inline_image);
     }
+    pdfi_countdown(StreamKey);
     return code;
 
 error:
+    pdfi_countdown(StreamKey);
     pdfi_countdown(SubFile_stream);
     return code;
 }
