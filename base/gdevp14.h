@@ -191,7 +191,7 @@ struct pdf14_ctx_s {
     bool deep; /* If true, 16 bit data, false, 8 bit data. */
     bool has_tags;
     int num_spots;
-    cmm_profile_t* base_icc;
+    pdf14_group_color_t* base_color;
 };
 
 typedef struct gs_pdf14trans_params_s gs_pdf14trans_params_t;
