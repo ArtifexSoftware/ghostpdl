@@ -124,6 +124,7 @@ typedef enum pdf_error_flag_e {
     E_PDF_UNREPAIRABLE = E_PDF_NOHEADER << 18,
     E_PDF_REPAIRED = E_PDF_NOHEADER << 19,
     E_PDF_BADSTREAM = E_PDF_NOHEADER << 20,
+    E_PDF_MISSINGOBJ = E_PDF_NOHEADER << 21,
 
 } pdf_error_flag;
 

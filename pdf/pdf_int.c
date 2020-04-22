@@ -37,7 +37,7 @@
 #include "pdf_optcontent.h"
 #include "pdf_sec.h"
 
-static int pdfi_read_object(pdf_context *ctx, pdf_stream *s, gs_offset_t stream_offset);
+static int pdfi_read_object(pdf_context *ctx, pdf_stream *s, gs_offset_t stream_offset, uint64_t expected_num);
 static int pdfi_read_object_of_type(pdf_context *ctx, pdf_stream *s, pdf_obj_type type, gs_offset_t stream_offset);
 
 /***********************************************************************************/
@@ -624,7 +624,7 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
                 goto error;
             }
 
-            code = pdfi_read_object(ctx, SubFile_stream, entry->u.uncompressed.offset);
+            code = pdfi_read_object(ctx, SubFile_stream, entry->u.uncompressed.offset, obj);
 
             pdfi_countdown(EODString);
             pdfi_close_file(ctx, SubFile_stream);
@@ -1634,8 +1634,11 @@ int pdfi_read_token(pdf_context *ctx, pdf_stream *s, uint32_t indirect_num, uint
  * objects in compressed object streams! They should always pass a value of 0 for the stream_offset.
  * The stream_offset is the offset from the start of the underlying uncompressed PDF file of
  * the stream we are using. See the comments below when keyword is PDF_STREAM.
+ *
+ * expected_num -- if non-zero, the number of the object we're reading.  So we can abort early
+ * if they don't match.
  */
-static int pdfi_read_object(pdf_context *ctx, pdf_stream *s, gs_offset_t stream_offset)
+static int pdfi_read_object(pdf_context *ctx, pdf_stream *s, gs_offset_t stream_offset, uint64_t expected_num)
 {
     int code = 0;
     uint64_t objnum = 0, gen = 0;
@@ -1656,6 +1659,14 @@ static int pdfi_read_object(pdf_context *ctx, pdf_stream *s, gs_offset_t stream_
     }
     objnum = ((pdf_num *)ctx->stack_top[-1])->value.i;
     pdfi_pop(ctx, 1);
+
+    if (expected_num != 0 && objnum != expected_num) {
+        /* If the object at this offset has the wrong number, then this file has errors */
+        dmprintf3(ctx->memory, "ERROR: wrong object at offset %ld (found %ld, expected %ld)\n",
+                 stream_offset, objnum, expected_num);
+        ctx->pdf_errors |= E_PDF_MISSINGOBJ;
+        return_error(gs_error_undefined);
+    }
 
     code = pdfi_read_token(ctx, s, 0, 0);
     if (code < 0)
@@ -1849,7 +1860,7 @@ static int pdfi_read_object_of_type(pdf_context *ctx, pdf_stream *s, pdf_obj_typ
 {
     int code;
 
-    code = pdfi_read_object(ctx, s, stream_offset);
+    code = pdfi_read_object(ctx, s, stream_offset, 0);
     if (code < 0)
         return code;
 

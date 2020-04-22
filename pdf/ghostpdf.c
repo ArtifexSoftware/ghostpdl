@@ -349,6 +349,8 @@ pdfi_report_errors(pdf_context *ctx)
             dmprintf(ctx->memory, "\tFile had an error that needed to be repaired.\n");
         if (ctx->pdf_errors & E_PDF_BADSTREAM)
             dmprintf(ctx->memory, "\tFile had an error in a stream.\n");
+        if (ctx->pdf_errors & E_PDF_MISSINGOBJ)
+            dmprintf(ctx->memory, "\tThe file contained a reference to an object number that is missing.\n");
     }
 
     if (ctx->pdf_warnings != W_PDF_NOWARNING) {
