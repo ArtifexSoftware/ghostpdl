@@ -682,6 +682,18 @@ int pdfi_free_function(pdf_context *ctx, gs_function_t *pfn)
     if (pfn == NULL)
         return 0;
 
+    if (pfn->head.type == 0) {
+        /* For type 0 functions, need to free up the data associated with the stream
+         * that it was using.  This doesn't get freed in the gs_function_free() code.
+         */
+        gs_function_Sd_params_t *params = (gs_function_Sd_params_t *)&pfn->params;
+
+        gs_free_object(ctx->memory, params->DataSource.data.strm->cbuf, "pdfi_free_function");
+        params->DataSource.data.strm->cbuf = NULL;
+        sclose(params->DataSource.data.strm);
+        gs_free_object(ctx->memory, params->DataSource.data.strm, "pdfi_free_function");
+    }
+
     gs_function_free(pfn, true, ctx->memory);
     return 0;
 }

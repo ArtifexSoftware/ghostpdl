@@ -27,7 +27,7 @@
 #include "pdf_image.h"
 #include "pdf_pattern.h"
 #include "pdf_font.h"
-#include "pdf_pattern.h"
+#include "pdf_colour.h"
 #include "pdf_trans.h"
 
 #include "gsmatrix.h"
@@ -249,10 +249,8 @@ int pdfi_grestore(pdf_context *ctx)
     if (ctx->pgs->level > ctx->current_stream_save.gsave_level) {
         font = pdfi_get_current_pdf_font(ctx);
 
-        if (ctx->pgs->color[0].color_space->type->index == gs_color_space_index_Pattern && ctx->pgs->color[0].color_space->rc.ref_count == 1)
-            (void)pdfi_pattern_cleanup(ctx->pgs->color[0].ccolor);
-        if (ctx->pgs->color[1].color_space->type->index == gs_color_space_index_Pattern && ctx->pgs->color[1].color_space->rc.ref_count == 1)
-            (void)pdfi_pattern_cleanup(ctx->pgs->color[1].ccolor);
+        (void)pdfi_color_cleanup(ctx, 0);
+        (void)pdfi_color_cleanup(ctx, 1);
 
         code = gs_grestore(ctx->pgs);
 

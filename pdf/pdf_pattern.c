@@ -113,7 +113,7 @@ pdfi_setpattern_null(pdf_context *ctx, gs_client_color *cc)
  * functions to 'wrap' these with code to check for replacement of Patterns.
  * This comment is duplicated in pdf_color.c
  */
-int pdfi_pattern_cleanup(const gs_client_color *pcc)
+int pdfi_pattern_cleanup(pdf_context *ctx, const gs_client_color *pcc)
 {
     gs_pattern1_instance_t *pinst = (gs_pattern1_instance_t *)pcc->pattern;
     gs_pattern1_template_t *templat;
