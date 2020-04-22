@@ -17,6 +17,7 @@
 #define PDF_SECURITY
 
 int pdfi_compute_objkey(pdf_context *ctx, pdf_obj *obj, pdf_string **Key);
+int pdfi_decrypt_string(pdf_context *ctx, pdf_string *string);
 int pdfi_read_Encryption(pdf_context *ctx);
 
 #endif

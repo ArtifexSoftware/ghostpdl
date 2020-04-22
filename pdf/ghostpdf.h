@@ -358,6 +358,24 @@ typedef struct pdf_context_s
     bool EncryptMetadata;
     pdf_crypt_filter StrF;
     pdf_crypt_filter StmF;
+    /* decrypting strings is complicated :-(
+     * Streams are easy, because they can't be in compressed ObjStms, and they
+     * have to be indirect objects. Strings can be indirect references or directly
+     * defined, can be in compressed ObjStms and can appear inside content streams.
+     * When they are in content streams we don't decrypt them, because the *stream*
+     * was already decrypted. So when strings are directly or indirectly defined,
+     * and *NOT* defined as part of a content stream, and not in an Objstm, we
+     * need to decrypt them. We can handle the checkign for ObjStm in the actual
+     * decryption routine, where we also handle pciking out the object number of the
+     * enclosing parent, if its a directly defined string, but we cannot tell
+     * whether we are executing a content stream or not, so we need to know that. This
+     * flag is set whenever we are executing a content stream, it is temporarily reset
+     * by pdfi_dereference() because indirect references can't appear in a content stream
+     * so we know we need to decrypt any strings that are indirectly referenced. Note that
+     * Form handling needs to set this flag for the duration of a Form content stream,
+     * because we can execute Forms outside a page context (eg Annotations).
+     */
+    bool decrypt_strings;
 
     /* Interpreter level PDF objects */
     uint32_t stack_size;

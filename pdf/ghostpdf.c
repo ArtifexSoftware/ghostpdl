@@ -577,8 +577,6 @@ int pdfi_process_pdf_file(pdf_context *ctx, char *filename)
             code = pdfi_read_Encryption(ctx);
             if (code < 0)
                 goto exit;
-//            dmprintf(ctx->memory, "Encrypted PDF files not yet supported.\n");
-//            goto exit;
         }
     }
 
@@ -898,6 +896,9 @@ pdf_context *pdfi_create_context(gs_memory_t *pmem)
 
     /* Initially, prefer the XrefStm in a hybrid file */
     ctx->prefer_xrefstm = true;
+
+    /* We decrypt strings from encrypted files until we start a page */
+    ctx->decrypt_strings = true;
 
     memset(&ctx->pdfi_param_list, 0x00, sizeof(gs_c_param_list));
 #if REFCNT_DEBUG

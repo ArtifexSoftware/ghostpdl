@@ -34,6 +34,7 @@ int pdfi_read_dict(pdf_context *ctx, pdf_stream *s, uint32_t indirect_num, uint3
 
 int replace_cache_entry(pdf_context *ctx, pdf_obj *o);
 
+int is_compressed_object(pdf_context *ctx, uint32_t obj, uint32_t gen);
 int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **object);
 int pdfi_deref_loop_detect(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **object);
 

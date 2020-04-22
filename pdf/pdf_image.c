@@ -1613,7 +1613,16 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_di
         if (code < 0)
             code = code1;
     } else {
+        bool saved_decrypt_strings = ctx->decrypt_strings;
+
+        /* We can run a Form even when we aren't running a page content stresm,
+         * eg for an annotation, and we need to *not* decrypt strings in that
+         * case (the content stream will be decrypted and strings in content
+         * streams are not additionally encrypted).
+         */
+        ctx->decrypt_strings = false;
         code = pdfi_interpret_inner_content_stream(ctx, form_dict, page_dict, false, "FORM");
+        ctx->decrypt_strings = saved_decrypt_strings;
     }
 
  exit1:

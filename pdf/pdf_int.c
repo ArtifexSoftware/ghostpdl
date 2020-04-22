@@ -352,6 +352,28 @@ int replace_cache_entry(pdf_context *ctx, pdf_obj *o)
     return 0;
 }
 
+/* Determine if a PDF object is in a compressed ObjStm. Returns < 0
+ * for an error, 0 if it is not in a compressed ObjStm and 1 if it is.
+ * Currently errors are inmpossible.
+ */
+int is_compressed_object(pdf_context *ctx, uint32_t obj, uint32_t gen)
+{
+    xref_entry *entry;
+
+    /* Can't possibly be a compressed object before we have finished reading
+     * the xref.
+     */
+    if (ctx->xref_table == NULL)
+        return 0;
+
+    entry = &ctx->xref_table->xref[obj];
+
+    if (entry->compressed)
+        return 1;
+
+    return 0;
+}
+
 /* pdf_dereference returns an object with a reference count of at least 1, this represents the
  * reference being held by the caller (in **object) when we return from this function.
  */
@@ -361,6 +383,8 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
     pdf_obj *o;
     int code;
     gs_offset_t saved_stream_offset;
+    bool saved_decrypt_strings = ctx->decrypt_strings;
+    pdf_dict *compressed_object = NULL;
 
     if (obj >= ctx->xref_table->xref_size) {
         dmprintf1(ctx->memory, "Error, attempted to dereference object %"PRIu64", which is not present in the xref table\n", obj);
@@ -405,11 +429,12 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
     } else {
         saved_stream_offset = pdfi_unread_tell(ctx);
 
+        ctx->decrypt_strings = false;
+
         if (entry->compressed) {
             /* This is an object in a compressed object stream */
 
             xref_entry *compressed_entry = &ctx->xref_table->xref[entry->u.compressed.compressed_stream_num];
-            pdf_dict *compressed_object;
             pdf_stream *compressed_stream, *SubFile_stream, *Object_stream;
             char Buffer[256];
             int i = 0, object_length = 0;
@@ -426,16 +451,12 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
                 ctx->compressed_misses++;
 #endif
                 code = pdfi_seek(ctx, ctx->main_stream, compressed_entry->u.uncompressed.offset, SEEK_SET);
-                if (code < 0) {
-                    (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
-                    return code;
-                }
+                if (code < 0)
+                    goto error;
 
                 code = pdfi_read_object_of_type(ctx, ctx->main_stream, PDF_DICT, 0);
-                if (code < 0){
-                    (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
-                    return code;
-                }
+                if (code < 0)
+                    goto error;
 
                 compressed_object = (pdf_dict *)ctx->stack_top[-1];
                 pdfi_countup(compressed_object);
@@ -450,93 +471,67 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
             }
             /* Check its an ObjStm ! */
             code = pdfi_dict_get_type(ctx, compressed_object, "Type", PDF_NAME, &o);
-            if (code < 0) {
-                pdfi_countdown(compressed_object);
-                (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
-                return code;
-            }
+            if (code < 0)
+                goto error;
+
             if (((pdf_name *)o)->length != 6 || memcmp(((pdf_name *)o)->data, "ObjStm", 6) != 0){
                 pdfi_countdown(o);
-                pdfi_countdown(compressed_object);
-                (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
-                return_error(gs_error_syntaxerror);
+                code = gs_note_error(gs_error_syntaxerror);
+                goto error;
             }
             pdfi_countdown(o);
 
             /* Need to check the /N entry to see if the object is actually in this stream! */
             code = pdfi_dict_get_int(ctx, compressed_object, "N", &num_entries);
-            if (code < 0) {
-                pdfi_countdown(compressed_object);
-                (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
-                return code;
-            }
+            if (code < 0)
+                goto error;
+
             if (num_entries < 0 || num_entries > ctx->xref_table->xref_size) {
-                pdfi_countdown(compressed_object);
-                (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
-                return_error(gs_error_rangecheck);
+                code = gs_note_error(gs_error_rangecheck);
+                goto error;
             }
 
             code = pdfi_seek(ctx, ctx->main_stream, compressed_object->stream_offset, SEEK_SET);
-            if (code < 0) {
-                pdfi_countdown(compressed_object);
-                (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
-                return code;
-            }
+            if (code < 0)
+                goto error;
 
             code = pdfi_dict_get_type(ctx, compressed_object, "Length", PDF_INT, &o);
-            if (code < 0) {
-                pdfi_countdown(compressed_object);
-                (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
-                return code;
-            }
+            if (code < 0)
+                goto error;
 
             code = pdfi_apply_SubFileDecode_filter(ctx, ((pdf_num *)o)->value.i, NULL, ctx->main_stream, &SubFile_stream, false);
-            if (code < 0) {
-                pdfi_countdown(o);
-                (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
-                return code;
-            }
             pdfi_countdown(o);
+            if (code < 0)
+                goto error;
 
             code = pdfi_filter(ctx, compressed_object, SubFile_stream, &compressed_stream, false);
-            if (code < 0) {
-                pdfi_countdown(compressed_object);
-                (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
-                return code;
-            }
+            if (code < 0)
+                goto error;
 
             for (i=0;i < num_entries;i++)
             {
                 code = pdfi_read_token(ctx, compressed_stream, obj, gen);
                 if (code < 0) {
                     pdfi_close_file(ctx, compressed_stream);
-                    pdfi_countdown(compressed_object);
-                    (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
-                    return code;
+                    goto error;
                 }
                 o = ctx->stack_top[-1];
                 if (((pdf_obj *)o)->type != PDF_INT) {
                     pdfi_pop(ctx, 1);
                     pdfi_close_file(ctx, compressed_stream);
-                    pdfi_countdown(compressed_object);
-                    (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
-                    return_error(gs_error_typecheck);
+                    goto error;
                 }
                 pdfi_pop(ctx, 1);
                 code = pdfi_read_token(ctx, compressed_stream, obj, gen);
                 if (code < 0) {
                     pdfi_close_file(ctx, compressed_stream);
-                    pdfi_countdown(compressed_object);
-                    (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
-                    return code;
+                    goto error;
                 }
                 o = ctx->stack_top[-1];
                 if (((pdf_obj *)o)->type != PDF_INT) {
                     pdfi_pop(ctx, 1);
                     pdfi_close_file(ctx, compressed_stream);
-                    pdfi_countdown(compressed_object);
-                    (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
-                    return_error(gs_error_typecheck);
+                    goto error;
                 }
                 if (i == entry->u.compressed.object_index)
                     offset = ((pdf_num *)o)->value.i;
@@ -551,6 +546,7 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
                 code = pdfi_read_bytes(ctx, (byte *)&Buffer[0], 1, 1, compressed_stream);
                 if (code <= 0) {
                     pdfi_close_file(ctx, compressed_stream);
+                    ctx->decrypt_strings = saved_decrypt_strings;
                     return_error(gs_error_ioerror);
                 }
             }
@@ -564,10 +560,8 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
              */
             if (object_length > 0) {
                 code = pdfi_apply_SubFileDecode_filter(ctx, object_length, NULL, compressed_stream, &Object_stream, false);
-                if (code < 0) {
-                    (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
-                    return code;
-                }
+                if (code < 0)
+                    goto error;
             } else {
                 Object_stream = compressed_stream;
             }
@@ -575,9 +569,7 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
             code = pdfi_read_token(ctx, Object_stream, obj, gen);
             if (code < 0) {
                 pdfi_close_file(ctx, Object_stream);
-                pdfi_countdown(compressed_object);
-                (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
-                return code;
+                goto error;
             }
             if (ctx->stack_top[-1]->type == PDF_ARRAY_MARK || ctx->stack_top[-1]->type == PDF_DICT_MARK) {
                 int start_depth = pdfi_count_stack(ctx);
@@ -587,15 +579,12 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
                     code = pdfi_read_token(ctx, Object_stream, obj, gen);
                     if (code < 0) {
                         pdfi_close_file(ctx, Object_stream);
-                        pdfi_countdown(compressed_object);
-                        (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
-                        return code;
+                        goto error;
                     }
                     if (compressed_stream->eof == true) {
                         pdfi_close_file(ctx, Object_stream);
-                        pdfi_countdown(compressed_object);
-                        (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
-                        return_error(gs_error_ioerror);
+                        code = gs_note_error(gs_error_ioerror);
+                        goto error;
                     }
                 }while ((ctx->stack_top[-1]->type != PDF_ARRAY && ctx->stack_top[-1]->type != PDF_DICT) || pdfi_count_stack(ctx) > start_depth);
             }
@@ -619,39 +608,33 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
             ctx->misses++;
 #endif
             code = pdfi_seek(ctx, ctx->main_stream, entry->u.uncompressed.offset, SEEK_SET);
-            if (code < 0) {
-                (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
-                return code;
-            }
+            if (code < 0)
+                goto error;
 
             code = pdfi_make_name(ctx, (byte *)"trailer", 6, (pdf_obj **)&EODString);
-            if (code < 0) {
-                (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
-                return code;
-            }
+            if (code < 0)
+                goto error;
 
             code = pdfi_apply_SubFileDecode_filter(ctx, 0, EODString, ctx->main_stream, &SubFile_stream, false);
             if (code < 0) {
                 pdfi_countdown(EODString);
-                (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
-                return code;
+                goto error;
             }
 
             code = pdfi_read_object(ctx, SubFile_stream, entry->u.uncompressed.offset);
 
             pdfi_countdown(EODString);
             pdfi_close_file(ctx, SubFile_stream);
-            if (code < 0) {
-                (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
-                return code;
-            }
+            if (code < 0)
+                goto error;
 
             *object = ctx->stack_top[-1];
             pdfi_pop(ctx, 1);
             if ((*object)->object_num == obj) {
                 pdfi_countup(*object);
             } else {
-                return_error(gs_error_undefined);
+                code = gs_note_error(gs_error_undefined);
+                goto error;
             }
         }
         (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
@@ -659,10 +642,18 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
 
     if (ctx->loop_detection) {
         code = pdfi_loop_detector_add_object(ctx, (*object)->object_num);
-        if (code < 0)
+        if (code < 0) {
+            ctx->decrypt_strings = saved_decrypt_strings;
             return code;
+        }
     }
+    ctx->decrypt_strings = saved_decrypt_strings;
     return 0;
+error:
+    ctx->decrypt_strings = saved_decrypt_strings;
+    pdfi_countdown(compressed_object);
+    (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
+    return code;
 }
 
 /* do a derefence with loop detection */
@@ -1268,6 +1259,12 @@ static int pdfi_read_string(pdf_context *ctx, pdf_stream *s, uint32_t indirect_n
     string->indirect_gen = indirect_gen;
 
     gs_free_object(ctx->memory, Buffer, "pdfi_read_string");
+
+    if (ctx->is_encrypted && ctx->decrypt_strings) {
+        code = pdfi_decrypt_string(ctx, string);
+        if (code < 0)
+            return code;
+    }
 
     if (ctx->pdfdebug) {
         int i;

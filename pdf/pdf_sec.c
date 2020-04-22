@@ -861,7 +861,8 @@ int pdfi_compute_objkey(pdf_context *ctx, pdf_obj *obj, pdf_string **Key)
     if (ctx->R < 5) {
         if (obj->object_num == 0) {
             /* The object is a direct object, use the object number of the container instead */
-            /* Not yet implemented, will need plumbing changes in pdfi_dereference */
+            object_num = obj->indirect_num;
+            generation_num = obj->indirect_gen;
         } else {
             object_num = obj->object_num;
             generation_num = obj->generation_num;
@@ -933,6 +934,63 @@ int pdfi_compute_objkey(pdf_context *ctx, pdf_obj *obj, pdf_string **Key)
         *Key = ctx->EKey;
         pdfi_countup(*Key);
     }
+    return code;
+}
+
+int pdfi_decrypt_string(pdf_context *ctx, pdf_string *string)
+{
+    int code = 0;
+    pdf_stream *stream = NULL, *crypt_stream = NULL;
+    pdf_string *EKey = NULL;
+    char *Buffer = NULL;
+
+    if (!is_compressed_object(ctx, string->indirect_num, string->indirect_gen)) {
+        Buffer = (char *)gs_alloc_bytes(ctx->memory, string->length, "pdfi_decrypt_string");
+        if (Buffer == NULL)
+            return_error(gs_error_VMerror);
+
+        code = pdfi_compute_objkey(ctx, (pdf_obj *)string, &EKey);
+        if (code < 0)
+            goto error;
+
+        code = pdfi_open_memory_stream_from_memory(ctx, string->length, (byte *)string->data, &stream);
+        if (code < 0)
+            goto error;
+
+        switch(ctx->StmF) {
+            /* There are only two possible filters, RC4 or AES, we take care
+             * of the number of bits in the key by using ctx->Length.
+             */
+            case V1:
+            case V2:
+                code = pdfi_apply_Arc4_filter(ctx, EKey, stream, &crypt_stream);
+                break;
+            case AESV2:
+            case AESV3:
+                code = pdfi_apply_AES_filter(ctx, EKey, 1, stream, &crypt_stream);
+                break;
+            default:
+                code = gs_error_rangecheck;
+        }
+        if (code < 0) {
+            pdfi_close_memory_stream(ctx, NULL, stream);
+            goto error;
+        }
+
+        sfread(Buffer, 1, string->length, crypt_stream->s);
+
+        pdfi_close_file(ctx, crypt_stream);
+        pdfi_close_memory_stream(ctx, NULL, stream);
+        pdfi_countdown(EKey);
+
+        memcpy(string->data, Buffer, string->length);
+        gs_free_object(ctx->memory, Buffer, "pdfi_decrypt_string");
+    }
+    return code;
+
+error:
+    gs_free_object(ctx->memory, Buffer, "pdfi_decrypt_string");
+    pdfi_countdown(EKey);
     return code;
 }
 
