@@ -5919,7 +5919,10 @@ pdf14_begin_transparency_group(gx_device *dev,
         pdev->text_group = PDF14_TEXTGROUP_BT_PUSHED;  /* For immediate mode and clist reading */
     }
 
-    if (pdev->ctx->stack == NULL || (pdev->ctx->stack->idle && pdev->ctx->stack->data == NULL)) {
+    /* Create base color if this is our first group (which could cause a color space change), or
+       if the previous group is superfluous (which can occur with clist read back) */
+    if (pdev->ctx->stack == NULL || (pdev->ctx->stack->idle && pdev->ctx->stack->data == NULL) ||
+        pdev->ctx->stack->group_popped) {
         pdev->ctx->additive = (pdev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE);
         code = compute_group_device_int_rect(pdev, &rect, pbbox, pgs);
 
