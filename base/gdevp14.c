@@ -3520,7 +3520,6 @@ pdf14_fill_path(gx_device *dev,	const gs_gstate *pgs,
     int code = 0;
     gs_pattern2_instance_t *pinst = NULL;
     int push_group = 0;
-    pdf14_device* pdev14 = (pdf14_device*)dev;
 
     code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
         dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, pgs);
@@ -3651,7 +3650,6 @@ pdf14_stroke_path(gx_device *dev, const	gs_gstate	*pgs,
     gs_gstate new_pgs = *pgs;
     int push_group = 0;
     int code = 0;
-    pdf14_device* p14dev = (pdf14_device*)dev;
 
     if (pdcolor == NULL)
        return_error(gs_error_unknownerror);	/* color must be defined */
@@ -4547,7 +4545,7 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_gstate * pgs,
         blend_mode = ptile->blending_mode;
         memcpy(&save_pdf14_dev, p14dev, sizeof(pdf14_device));
 
-        group_color_info = pdf14_clone_group_color_info(p14dev, p14dev->ctx->stack->group_color_info);
+        group_color_info = pdf14_clone_group_color_info(pdev, p14dev->ctx->stack->group_color_info);
         if (group_color_info == NULL)
             return gs_error_VMerror;
 
@@ -4830,7 +4828,6 @@ pdf14_begin_typed_image(gx_device * dev, const gs_gstate * pgs,
 {
     const gs_image_t *pim = (const gs_image_t *)pic;
     int code;
-    pdf14_device* pdev14 = (pdf14_device*)dev;
 
     code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
         dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, pgs);
@@ -5912,7 +5909,6 @@ pdf14_begin_transparency_group(gx_device *dev,
     bool cm_back_drop = false;
     bool new_icc = false;
     pdf14_group_color_t* group_color_info;
-    pdf14_group_color_t* base_color_info;
 
     code = dev_proc(dev, get_profile)(dev,  &dev_profile);
     if (code < 0)
@@ -5923,7 +5919,7 @@ pdf14_begin_transparency_group(gx_device *dev,
         pdev->text_group = PDF14_TEXTGROUP_BT_PUSHED;  /* For immediate mode and clist reading */
     }
 
-    if (pdev->ctx->stack == NULL) {
+    if (pdev->ctx->stack == NULL || (pdev->ctx->stack->idle && pdev->ctx->stack->data == NULL)) {
         pdev->ctx->additive = (pdev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE);
         code = compute_group_device_int_rect(pdev, &rect, pbbox, pgs);
 
@@ -10965,11 +10961,13 @@ pdf14_increment_smask_color(gs_gstate * pgs, gx_device * dev)
         result = gs_alloc_struct(pdev->memory->stable_memory, pdf14_smaskcolor_t,
                                 &st_pdf14_smaskcolor,
                                 "pdf14_increment_smask_color");
-        if (result == NULL ) 
-            gs_error_VMerror;
+        if (result == NULL) 
+            return gs_error_VMerror;
+
         result->profiles = gsicc_new_iccsmask(pdev->memory->stable_memory);
-        if (result->profiles == NULL ) 
-            gs_error_VMerror;
+        if (result->profiles == NULL) 
+            return gs_error_VMerror;
+
         pdev->smaskcolor = result;
 
         result->profiles->smask_gray = pgs->icc_manager->default_gray;
