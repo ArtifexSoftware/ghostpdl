@@ -26,10 +26,7 @@
 #include "sarc4.h"
 #include "aes.h"
 #include "sha2.h"
-
-#ifdef HAVE_LIBIDN
-#  include <stringprep.h>
-#endif
+#include "pdf_utf8.h"
 
 /* The padding string as defined in step 1 of Algorithm 3.2 */
 static char PadString[32] = {
@@ -1289,12 +1286,27 @@ int pdfi_read_Encryption(pdf_context *ctx)
                     code = check_user_password_R5(ctx, ctx->Password, strlen(ctx->Password), KeyLen, 3);
                     if (code < 0) {
                         code = check_owner_password_R5(ctx, ctx->Password, strlen(ctx->Password), KeyLen, 3);
-                        /* The PostScript code tries to use locale_to_utf8 *if* its defined to convert
-                         * the supplied locale-specific password to UTF8. Unfortunately that's defined
-                         * in the PostScript interpreter and is platform-specific, so we can't use it.
-                         * FIXME add platform-specific pdfi modules and recreate the UTF8 functionality
-                         * in those, then use it here.
+                        /* If the supplied Password fails as the user *and* owner password, mayeb its in
+                         * the locale, not UTF-8, try converting to UTF-8
                          */
+                        if (code < 0) {
+                            pdf_string *P = NULL, *P_UTF8 = NULL;
+
+                            code = pdfi_alloc_object(ctx, PDF_STRING, strlen(ctx->Password), (pdf_obj **)&P);
+                            if (code < 0)
+                                goto done;
+                            memcpy(P->data, ctx->Password, P->length);
+                            code = locale_to_utf8(ctx, P, &P_UTF8);
+                            if (code < 0) {
+                                pdfi_countdown(P);
+                                goto done;
+                            }
+                            code = check_user_password_R5(ctx, (char *)P_UTF8->data, P_UTF8->length, KeyLen, 3);
+                            if (code < 0)
+                                code = check_owner_password_R5(ctx, (char *)P_UTF8->data, P_UTF8->length, KeyLen, 3);
+                            pdfi_countdown(P);
+                            pdfi_countdown(P_UTF8);
+                        }
                     }
                 }
             }
@@ -1311,6 +1323,27 @@ int pdfi_read_Encryption(pdf_context *ctx)
                     code = check_user_password_R6(ctx, ctx->Password, strlen(ctx->Password), KeyLen, 3);
                     if (code < 0) {
                         code = check_owner_password_R6(ctx, ctx->Password, strlen(ctx->Password), KeyLen, 3);
+                        /* If the supplied Password fails as the user *and* owner password, mayeb its in
+                         * the locale, not UTF-8, try converting to UTF-8
+                         */
+                        if (code < 0) {
+                            pdf_string *P = NULL, *P_UTF8 = NULL;
+
+                            code = pdfi_alloc_object(ctx, PDF_STRING, strlen(ctx->Password), (pdf_obj **)&P);
+                            if (code < 0)
+                                goto done;
+                            memcpy(P->data, ctx->Password, P->length);
+                            code = locale_to_utf8(ctx, P, &P_UTF8);
+                            if (code < 0) {
+                                pdfi_countdown(P);
+                                goto done;
+                            }
+                            code = check_user_password_R6(ctx, (char *)P_UTF8->data, P_UTF8->length, KeyLen, 3);
+                            if (code < 0)
+                                code = check_owner_password_R6(ctx, (char *)P_UTF8->data, P_UTF8->length, KeyLen, 3);
+                            pdfi_countdown(P);
+                            pdfi_countdown(P_UTF8);
+                        }
                     }
                 }
             }

@@ -20,6 +20,11 @@ PDFOBJ      = $(PDFOBJDIR)$(D)
 PDFO_       = $(O_)$(PDFOBJ)
 PLOBJ       = $(PLOBJDIR)$(D)
 
+PDFCCC_WIN = $(CC) $(ZM) $(JPX_CFLAGS) $(D_)PDF_INCLUDED$(_D) $(I_)$(PDFSRCDIR)$(_I) $(I_)$(PDFGENDIR)$(_I) \
+	$(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) \
+	$(I_)$(EXPATINCDIR)$(_I) $(I_)$(JPEGXR_SRCDIR)$(_I) $(I_)$(ZSRCDIR)$(_I) \
+        $(I_)$(JPX_OPENJPEG_I_)$(_I) $(I_)$(JB2I_)$(_I) $(C_)
+
 PDFCCC  = $(CC_) $(JPX_CFLAGS) $(D_)PDF_INCLUDED$(_D) $(I_)$(PDFSRCDIR)$(_I) $(I_)$(PDFGENDIR)$(_I) \
 	$(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) \
 	$(I_)$(EXPATINCDIR)$(_I) $(I_)$(JPEGXR_SRCDIR)$(_I) $(I_)$(ZSRCDIR)$(_I) \
@@ -110,6 +115,9 @@ $(PDFOBJ)pdf_annot.$(OBJ): $(PDFSRC)pdf_annot.c $(PDFINCLUDES) $(PDF_MAK) $(MAKE
 
 $(PDFOBJ)pdf_sec.$(OBJ): $(PDFSRC)pdf_sec.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_sec.c $(PDFO_)pdf_sec.$(OBJ)
+
+$(PDFOBJ)pdf_utf8.$(OBJ): $(PDFSRC)pdf_utf8.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
+	$(PDFCCC_WIN) $(PDFSRC)pdf_utf8.c $(PDFO_)pdf_utf8.$(OBJ)
 
 $(PDFOBJ)pdf_stack.$(OBJ): $(PDFSRC)pdf_stack.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_stack.c $(PDFO_)pdf_stack.$(OBJ)
@@ -206,6 +214,7 @@ PDF_OBJS=\
     $(PDFOBJ)pdf_optcontent.$(OBJ)\
     $(PDFOBJ)pdf_check.$(OBJ)\
     $(PDFOBJ)pdf_sec.$(OBJ)\
+    $(PDFOBJ)pdf_utf8.$(OBJ)\
 
 
 # NB - note this is a bit squirrely.  Right now the pjl interpreter is
