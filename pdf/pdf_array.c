@@ -49,6 +49,53 @@ int pdfi_array_alloc(pdf_context *ctx, uint64_t size, pdf_array **a)
     return 0;
 }
 
+/* This was defined in pdf_int.c until we moved the equivalent pdfi_dict_from_stack() into
+ * pdf_dict.c, because we needed to be able to create dictionaries for images. We don't have
+ * that need, but its less confusing to have the array_from_stack function defined in
+ * here, similarly to the dictionary routine.
+ */
+int pdfi_array_from_stack(pdf_context *ctx, uint32_t indirect_num, uint32_t indirect_gen)
+{
+    uint64_t index = 0;
+    pdf_array *a = NULL;
+    pdf_obj *o;
+    int code;
+
+    code = pdfi_count_to_mark(ctx, &index);
+    if (code < 0)
+        return code;
+
+    code = pdfi_array_alloc(ctx, index, &a);
+    if (code < 0)
+        return code;
+
+    while (index) {
+        o = ctx->stack_top[-1];
+        code = pdfi_array_put(ctx, a, --index, o);
+        if (code < 0) {
+            (void)pdfi_clear_to_mark(ctx);
+            return code;
+        }
+        pdfi_pop(ctx, 1);
+    }
+
+    code = pdfi_clear_to_mark(ctx);
+    if (code < 0)
+        return code;
+
+    if (ctx->pdfdebug)
+        dmprintf (ctx->memory, " ]\n");
+
+    a->indirect_num = indirect_num;
+    a->indirect_gen = indirect_gen;
+
+    code = pdfi_push(ctx, (pdf_obj *)a);
+    if (code < 0)
+        pdfi_array_free((pdf_obj *)a);
+
+    return code;
+}
+
 /* Fetch object from array, resolving indirect reference if needed
  * (Does not increment reference count, caller needs to do that if they want to)
  */

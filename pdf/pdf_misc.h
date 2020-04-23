@@ -26,4 +26,6 @@ gs_color_space_index pdfi_get_color_space_index(pdf_context *ctx, const gs_color
 gs_color_space_index pdfi_currentcolorspace(pdf_context *ctx, int index);
 int pdfi_setrenderingintent(pdf_context *ctx, pdf_name *n);
 
+void normalize_rectangle(double *d);
+
 #endif

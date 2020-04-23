@@ -143,3 +143,27 @@ int pdfi_string_from_name(pdf_context *ctx, pdf_name *n, char **str, int *len)
 
     return 0;
 }
+
+void normalize_rectangle(double *d)
+{
+    double d1[4];
+    int i;
+
+    if (d[0] < d[2]) {
+        d1[0] = d[0];
+        d1[2] = d[2];
+    } else {
+        d1[0] = d[2];
+        d1[2] = d[0];
+    }
+    if (d[1] < d[3]) {
+        d1[1] = d[1];
+        d1[3] = d[3];
+    } else {
+        d1[1] = d[3];
+        d1[3] = d[1];
+    }
+    for (i=0;i<=3;i++){
+        d[i] = d1[i];
+    }
+}

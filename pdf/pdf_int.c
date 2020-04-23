@@ -37,6 +37,9 @@
 #include "pdf_optcontent.h"
 #include "pdf_sec.h"
 
+static int pdfi_read_object(pdf_context *ctx, pdf_stream *s, gs_offset_t stream_offset);
+static int pdfi_read_object_of_type(pdf_context *ctx, pdf_stream *s, pdf_obj_type type, gs_offset_t stream_offset);
+
 /***********************************************************************************/
 /* Functions to create the various kinds of 'PDF objects', Created objects have a  */
 /* reference count of 0. Composite objects (dictionaries, arrays, strings) use the */
@@ -671,30 +674,6 @@ pdfi_deref_loop_detect(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **o
     return code;
 }
 
-void normalize_rectangle(double *d)
-{
-    double d1[4];
-    int i;
-
-    if (d[0] < d[2]) {
-        d1[0] = d[0];
-        d1[2] = d[2];
-    } else {
-        d1[0] = d[2];
-        d1[2] = d[0];
-    }
-    if (d[1] < d[3]) {
-        d1[1] = d[1];
-        d1[3] = d[3];
-    } else {
-        d1[1] = d[3];
-        d1[3] = d[1];
-    }
-    for (i=0;i<=3;i++){
-        d[i] = d1[i];
-    }
-}
-
 /***********************************************************************************/
 /* 'token' reading functions. Tokens in this sense are PDF logical objects and the */
 /* related keywords. So that's numbers, booleans, names, strings, dictionaries,    */
@@ -1281,48 +1260,6 @@ static int pdfi_read_string(pdf_context *ctx, pdf_stream *s, uint32_t indirect_n
     return code;
 }
 
-static int pdfi_array_from_stack(pdf_context *ctx, uint32_t indirect_num, uint32_t indirect_gen)
-{
-    uint64_t index = 0;
-    pdf_array *a = NULL;
-    pdf_obj *o;
-    int code;
-
-    code = pdfi_count_to_mark(ctx, &index);
-    if (code < 0)
-        return code;
-
-    code = pdfi_array_alloc(ctx, index, &a);
-    if (code < 0)
-        return code;
-
-    while (index) {
-        o = ctx->stack_top[-1];
-        code = pdfi_array_put(ctx, a, --index, o);
-        if (code < 0) {
-            (void)pdfi_clear_to_mark(ctx);
-            return code;
-        }
-        pdfi_pop(ctx, 1);
-    }
-
-    code = pdfi_clear_to_mark(ctx);
-    if (code < 0)
-        return code;
-
-    if (ctx->pdfdebug)
-        dmprintf (ctx->memory, " ]\n");
-
-    a->indirect_num = indirect_num;
-    a->indirect_gen = indirect_gen;
-
-    code = pdfi_push(ctx, (pdf_obj *)a);
-    if (code < 0)
-        pdfi_array_free((pdf_obj *)a);
-
-    return code;
-}
-
 int pdfi_read_dict(pdf_context *ctx, pdf_stream *s, uint32_t indirect_num, uint32_t indirect_gen)
 {
     int code, depth;
@@ -1341,7 +1278,6 @@ int pdfi_read_dict(pdf_context *ctx, pdf_stream *s, uint32_t indirect_num, uint3
     } while(pdfi_count_stack(ctx) > depth);
     return 0;
 }
-
 
 static int pdfi_skip_comment(pdf_context *ctx, pdf_stream *s)
 {
@@ -1699,7 +1635,7 @@ int pdfi_read_token(pdf_context *ctx, pdf_stream *s, uint32_t indirect_num, uint
  * The stream_offset is the offset from the start of the underlying uncompressed PDF file of
  * the stream we are using. See the comments below when keyword is PDF_STREAM.
  */
-int pdfi_read_object(pdf_context *ctx, pdf_stream *s, gs_offset_t stream_offset)
+static int pdfi_read_object(pdf_context *ctx, pdf_stream *s, gs_offset_t stream_offset)
 {
     int code = 0;
     uint64_t objnum = 0, gen = 0;
@@ -1909,7 +1845,7 @@ int pdfi_read_object(pdf_context *ctx, pdf_stream *s, gs_offset_t stream_offset)
     return_error(gs_error_syntaxerror);
 }
 
-int pdfi_read_object_of_type(pdf_context *ctx, pdf_stream *s, pdf_obj_type type, gs_offset_t stream_offset)
+static int pdfi_read_object_of_type(pdf_context *ctx, pdf_stream *s, pdf_obj_type type, gs_offset_t stream_offset)
 {
     int code;
 
