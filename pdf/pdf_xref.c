@@ -51,52 +51,57 @@ static int resize_xref(pdf_context *ctx, uint64_t new_size)
 
 static int read_xref_stream_entries(pdf_context *ctx, pdf_stream *s, uint64_t first, uint64_t last, uint64_t *W)
 {
-    uint i, j = 0;
+    uint i, j;
+    uint field_width = 0;
     uint32_t type = 0;
     uint64_t objnum = 0, gen = 0;
     byte *Buffer;
     int64_t bytes = 0;
     xref_entry *entry;
 
-    if (W[0] > W[1]) {
-        if (W[0] > W[2]) {
-            j = W[2];
-        } else {
-            j = W[2];
-        }
-    } else {
-        if (W[1] > W[2]) {
-            j = W[1];
-        } else {
-            j = W[2];
-        }
-    }
+    /* Find max number of bytes to be read */
+    field_width = W[0];
+    if (W[1] > field_width)
+        field_width = W[1];
+    if (W[2] > field_width)
+        field_width = W[2];
 
-    Buffer = gs_alloc_bytes(ctx->memory, j, "read_xref_stream_entry working buffer");
+    Buffer = gs_alloc_bytes(ctx->memory, field_width, "read_xref_stream_entry working buffer");
     for (i=first;i<=last; i++){
-        type = objnum = gen = 0;
+        /* Defaults if W[n] = 0 */
+        type = 1;
+        objnum = gen = 0;
 
-        bytes = pdfi_read_bytes(ctx, Buffer, 1, W[0], s);
-        if (bytes < W[0]){
-            gs_free_object(ctx->memory, Buffer, "read_xref_stream_entry, free working buffer (error)");
-            return_error(gs_error_ioerror);
+        if (W[0] != 0) {
+            type = 0;
+            bytes = pdfi_read_bytes(ctx, Buffer, 1, W[0], s);
+            if (bytes < W[0]){
+                gs_free_object(ctx->memory, Buffer, "read_xref_stream_entry, free working buffer (error)");
+                return_error(gs_error_ioerror);
+            }
+            for (j=0;j<W[0];j++)
+                type = (type << 8) + Buffer[j];
         }
-        for (j=0;j<W[0];j++)
-            type = (type << 8) + Buffer[j];
-        bytes = pdfi_read_bytes(ctx, Buffer, 1, W[1], s);
-        if (bytes < W[1]){
-            gs_free_object(ctx->memory, Buffer, "read_xref_stream_entry free working buffer (error)");
-            return_error(gs_error_ioerror);
+
+        if (W[1] != 0) {
+            bytes = pdfi_read_bytes(ctx, Buffer, 1, W[1], s);
+            if (bytes < W[1]){
+                gs_free_object(ctx->memory, Buffer, "read_xref_stream_entry free working buffer (error)");
+                return_error(gs_error_ioerror);
+            }
+            for (j=0;j<W[1];j++)
+                objnum = (objnum << 8) + Buffer[j];
         }
-        for (j=0;j<W[1];j++)
-            objnum = (objnum << 8) + Buffer[j];
-        bytes = pdfi_read_bytes(ctx, Buffer, 1, W[2], s);
-        if (bytes < W[2]){
-            gs_free_object(ctx->memory, Buffer, "read_xref_stream_entry, free working buffer (error)");
-            return_error(gs_error_ioerror);
+
+        if (W[2] != 0) {
+            bytes = pdfi_read_bytes(ctx, Buffer, 1, W[2], s);
+            if (bytes < W[2]){
+                gs_free_object(ctx->memory, Buffer, "read_xref_stream_entry, free working buffer (error)");
+                return_error(gs_error_ioerror);
+            }
+            for (j=0;j<W[2];j++)
+                gen = (gen << 8) + Buffer[j];
         }
-        for (j=0;j<W[2];j++)
-            gen = (gen << 8) + Buffer[j];
 
         entry = &ctx->xref_table->xref[i];
         if (entry->object_num != 0)
