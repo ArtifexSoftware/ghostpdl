@@ -1418,6 +1418,22 @@ pdf14_initialize_ctx(gx_device* dev, int n_chan, bool additive, const gs_gstate*
     return 0;
 }
 
+static pdf14_group_color_t*
+pdf14_clone_group_color_info(gx_device* pdev, pdf14_group_color_t* src)
+{
+    pdf14_group_color_t* des = gs_alloc_struct(pdev->memory->stable_memory,
+        pdf14_group_color_t, &st_pdf14_clr, "pdf14_clone_group_color_info");
+    if (des == NULL)
+        return NULL;
+
+    memcpy(des, src, sizeof(pdf14_group_color_t));
+    if (des->icc_profile != NULL)
+        gsicc_adjust_profile_rc(des->icc_profile, 1, "pdf14_clone_group_color_info");
+    des->previous = NULL;  /* used during clist writing for state stack */
+
+    return des;
+}
+
 static	int
 pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
                               bool knockout, uint16_t alpha, uint16_t shape, uint16_t opacity,
@@ -1599,15 +1615,44 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
     bool overprint = pdev->overprint;
     gx_color_index drawn_comps = pdev->drawn_comps_stroke | pdev->drawn_comps_fill;
     bool has_matte = false;
+    bool created_nos = false;
 
     /* This is our last buffer. There is nothing to 
        compose to.  Keep this buffer until we have the put image.
        If we have another group push, this group must be destroyed.
        This only occurs sometimes when at clist creation time
-       push_shfill_group occured and nothing was drawn in this group */
-    if (nos == NULL) {
+       push_shfill_group occured and nothing was drawn in this group.
+       There is also the complication if we have a softmask.  There
+       are two approaches to this problem.  Apply the softmask during
+       the put image or handle it now.  I choose the later as the
+       put_image code is already way to complicated. */
+    if (nos == NULL && mask_stack == NULL) {
         tos->group_popped = true;
         return 0;
+    }
+
+    /* Here is the case with the soft mask.  Go ahead and create a new
+       target buffer (nos) with the same color information etc, but blank
+       and go ahead and do the blend with the softmask so that it gets applied. */
+    if (nos == NULL && mask_stack != NULL) {
+
+        created_nos = true;
+        nos = pdf14_buf_new(&(tos->rect), ctx->has_tags, !tos->isolated, tos->has_shape,
+            tos->idle, tos->n_chan - 1, tos->num_spots, ctx->memory, ctx->deep);
+        if (nos == NULL)
+            return gs_error_VMerror;
+
+        if_debug4m('v', ctx->memory,
+            "[v] special buffer for softmask application: %d x %d, %d color channels, %d planes\n",
+            nos->rect.q.x, nos->rect.q.y, nos->n_chan, nos->n_planes);
+        nos->isolated = tos->isolated;
+        nos->knockout = tos->knockout;
+        nos->alpha = 65535;
+        nos->shape = 65535;
+        nos->opacity = 65535;
+        nos->blend_mode = tos->blend_mode;
+        nos->mask_id = tos->mask_id;
+        nos->group_color_info = pdf14_clone_group_color_info(dev, tos->group_color_info);
     }
 
     nos_num_color_comp = nos->group_color_info->num_components - tos->num_spots;
@@ -4347,22 +4392,6 @@ pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
         return do_pdf14_copy_alpha_color(dev, data, data_x, aa_raster,
                                          id, x, y, w, h,
                                          color, pdc, depth, devn);
-}
-
-static pdf14_group_color_t*
-pdf14_clone_group_color_info(gx_device* pdev, pdf14_group_color_t* src)
-{
-    pdf14_group_color_t* des = gs_alloc_struct(pdev->memory->stable_memory,
-        pdf14_group_color_t, &st_pdf14_clr, "pdf14_clone_group_color_info");
-    if (des == NULL)
-        return NULL;
-
-    memcpy(des, src, sizeof(pdf14_group_color_t));
-    if (des->icc_profile != NULL)
-        gsicc_adjust_profile_rc(des->icc_profile, 1, "pdf14_clone_group_color_info");
-    des->previous = NULL;  /* used during clist writing for state stack */
-
-    return des;
 }
 
 static	int
