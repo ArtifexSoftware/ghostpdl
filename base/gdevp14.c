@@ -1617,7 +1617,20 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
     bool has_matte = false;
     bool created_nos = false;
 
-    /* This is our last buffer. There is nothing to 
+#ifdef DEBUG
+    pdf14_debug_mask_stack_state(ctx);
+#endif
+    if (mask_stack == NULL) {
+        maskbuf = NULL;
+    }
+    else {
+        maskbuf = mask_stack->rc_mask->mask_buf;
+    }
+
+    if (maskbuf != NULL && maskbuf->matte != NULL)
+        has_matte = true;
+
+    /* Check if this is our last buffer, if yes, there is nothing to 
        compose to.  Keep this buffer until we have the put image.
        If we have another group push, this group must be destroyed.
        This only occurs sometimes when at clist creation time
@@ -1626,7 +1639,7 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
        are two approaches to this problem.  Apply the softmask during
        the put image or handle it now.  I choose the later as the
        put_image code is already way to complicated. */
-    if (nos == NULL && mask_stack == NULL) {
+    if (nos == NULL && maskbuf == NULL) {
         tos->group_popped = true;
         return 0;
     }
@@ -1634,8 +1647,7 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
     /* Here is the case with the soft mask.  Go ahead and create a new
        target buffer (nos) with the same color information etc, but blank
        and go ahead and do the blend with the softmask so that it gets applied. */
-    if (nos == NULL && mask_stack != NULL) {
-
+    if (nos == NULL && maskbuf != NULL) {
         created_nos = true;
         nos = pdf14_buf_new(&(tos->rect), ctx->has_tags, !tos->isolated, tos->has_shape,
             tos->idle, tos->n_chan - 1, tos->num_spots, ctx->memory, ctx->deep);
@@ -1657,18 +1669,6 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
 
     nos_num_color_comp = nos->group_color_info->num_components - tos->num_spots;
     tos_num_color_comp = tos_num_color_comp - tos->num_spots;
-
-#ifdef DEBUG
-    pdf14_debug_mask_stack_state(ctx);
-#endif
-    if (mask_stack == NULL) {
-        maskbuf = NULL;
-    } else {
-        maskbuf = mask_stack->rc_mask->mask_buf;
-    }
-
-    if (maskbuf != NULL && maskbuf->matte != NULL)
-        has_matte = true;
 
     /* Sanitise the dirty rectangles, in case some of the drawing routines
      * have made them overly large. */
