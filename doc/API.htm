@@ -346,11 +346,15 @@ If Ghostscript has been initialised, you must call
 
 <h3><a name="set_stdio"></a><code>gsapi_set_stdio()</code></h3>
 <blockquote>
-Set the callback functions for stdio
+<p>Set the callback functions for stdio
 The stdin callback function should return the number of
 characters read, 0 for EOF, or -1 for error.
 The stdout and stderr callback functions should return
 the number of characters written.
+<p><b>NOTE:</b> These callbacks do not affect output device I/O when
+using &quot;<code>%stdout</code>&quot; as the output file. In that
+case, device output will still be directed to the process &quot;stdout&quot;
+file descriptor, not to the stdio callback.
 </blockquote>
 
 
