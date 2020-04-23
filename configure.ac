@@ -2024,10 +2024,10 @@ if test x$with_urf != xno; then
     AC_MSG_RESULT([yes])
     ENABLEURF="\$(D_)URF_INCLUDED\$(_D)"
     URF_DEVS='urfgray urfrgb urfcmyk'
-    GPDL_URF_TOP_OBJ=$(GPDLOBJ)/$(GPDL_URF_TOP_OBJ_FILE)
-    URF_INCLUDE=$(I_)$(URFSRCDIR)$(_I)
-    URF_DEV=$(GLD)urfd.dev
-    SURFX_H=SURFX_H=$(URFSRCDIR)$(D)surfx.h
+    GPDL_URF_TOP_OBJ="\$(GPDLOBJ)/\$(GPDL_URF_TOP_OBJ_FILE)"
+    URF_INCLUDE="\$(I_)\$(URFSRCDIR)\$(_I)"
+    URF_DEV="\$(GLD)urfd.dev"
+    SURFX_H="\$(URFSRCDIR)\$(D)surfx.h"
 fi
 fi
 

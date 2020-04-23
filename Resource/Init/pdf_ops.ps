@@ -1196,7 +1196,17 @@ currentdict /clip_if_required .undef
   } if
 } bind executeonly def
 
-/Tc { .settextspacing { showfirst } /Show gput } bind executeonly def
+/Tc {
+  {.settextspacing} stopped
+  {
+    (\n   **** Error: A ) pdfformaterror
+    $error /errorname get 256 string cvs pdfformaterror
+    ( error occured while setting the Text Character spacing to ) pdfformaterror
+    256 string cvs pdfformaterror
+    (\n                 Output may be incorrect.\n) pdfformaterror
+  } if
+  { showfirst } /Show gput
+} bind executeonly def
 /TL { .settextleading } bind executeonly def
 /Tr { .settextrenderingmode { showfirst } /Show gput } bind executeonly def
 /Ts { .settextrise settextstate } bind executeonly def

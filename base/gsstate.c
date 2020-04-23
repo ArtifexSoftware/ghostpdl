@@ -978,6 +978,13 @@ gs_currenttextspacing(const gs_gstate *pgs)
 int
 gs_settextspacing(gs_gstate *pgs, double Tc)
 {
+    int code = 0;
+    gs_fixed_point dxy;
+
+    code = gs_distance_transform2fixed(&pgs->ctm, Tc, 1, &dxy);
+    if (code < 0)
+        return code;
+
     pgs->textspacing = (float)Tc;
     return 0;
 }
