@@ -2384,6 +2384,10 @@ int pdfi_read_Pages(pdf_context *ctx)
 
         if (o->type != PDF_DICT) {
             pdfi_countdown(o);
+            ctx->pdf_errors |= E_PDF_BADPAGEDICT;
+            dmprintf(ctx->memory, "*** Error: Something is wrong with the Pages dictionary.  Giving up.\n");
+            if (o->type == PDF_INDIRECT)
+                dmprintf(ctx->memory, "           Double indirect reference.  Loop in Pages tree?\n");
             return_error(gs_error_typecheck);
         }
 
@@ -3423,6 +3427,13 @@ pdfi_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict 
         code = pdfi_read_token(ctx, compressed_stream, stream_dict->object_num, stream_dict->generation_num);
         if (code < 0) {
             if (code == gs_error_ioerror || code == gs_error_VMerror || ctx->pdfstoponerror) {
+                if (code == gs_error_ioerror) {
+                    ctx->pdf_errors |= E_PDF_BADSTREAM;
+                    dmprintf(ctx->memory, "**** Error reading a content stream.  The page may be incomplete.\n");
+                } else if (code == gs_error_VMerror) {
+                    ctx->pdf_errors |= E_PDF_OUTOFMEMORY;
+                    dmprintf(ctx->memory, "**** Error ran out of memory reading a content stream.  The page may be incomplete.\n");
+                }
                 pdfi_close_file(ctx, compressed_stream);
                 return code;
             }

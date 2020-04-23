@@ -351,6 +351,10 @@ pdfi_report_errors(pdf_context *ctx)
             dmprintf(ctx->memory, "\tFile had an error in a stream.\n");
         if (ctx->pdf_errors & E_PDF_MISSINGOBJ)
             dmprintf(ctx->memory, "\tThe file contained a reference to an object number that is missing.\n");
+        if (ctx->pdf_errors & E_PDF_BADPAGEDICT)
+            dmprintf(ctx->memory, "\tThe file contained a bad Pages dictionary.  Couldn't process it.\n");
+        if (ctx->pdf_errors & E_PDF_OUTOFMEMORY)
+            dmprintf(ctx->memory, "\tThe interpeter ran out of memory while processing this file.\n");
     }
 
     if (ctx->pdf_warnings != W_PDF_NOWARNING) {
@@ -656,6 +660,7 @@ read_root:
 
         if (code < 0 && ctx->pdfstoponerror)
             goto exit;
+        code = 0;
     }
 
  exit:

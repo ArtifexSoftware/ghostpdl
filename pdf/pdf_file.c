@@ -893,6 +893,8 @@ int pdfi_filter_no_decryption(pdf_context *ctx, pdf_dict *dict, pdf_stream *sour
                 if (duplicates > 2) {
                     pdfi_countdown(decodeparams_array);
                     pdfi_countdown(filter_array);
+                    ctx->pdf_errors |= E_PDF_BADSTREAM;
+                    dmprintf(ctx->memory, "**** ERROR Detected possible filter bomb (duplicate Filters).  Aborting processing.\n");
                     return_error(gs_error_syntaxerror);
                 }
             }

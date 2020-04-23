@@ -510,7 +510,7 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num)
     pdfi_countdown(page_dict);
     pdfi_countdown(group_dict);
 
-    if (code == 0)
+    if (code == 0 || !ctx->pdfstoponerror)
         code = pl_finish_page(ctx->memory->gs_lib_ctx->top_of_system, ctx->pgs, 1, true);
     return code;
 }
