@@ -1455,6 +1455,28 @@ $(DD)pamcmyk32.dev : $(pxm_) $(GLD)page.dev $(GDEV) \
 $(DD)pam.dev : $(pxm_) $(GLD)page.dev $(GDEV)  $(DEVS_MAK) $(MAKEDIRS)
 	$(SETPDEV2) $(DD)pam $(pxm_)
 
+### --------------- OCR device --------------- ###
+
+ocr_=$(DEVOBJ)gdevocr.$(OBJ)
+libocr_dev=$(DEVOBJ)libocr.dev
+ocr_i_=-include $(DEVOBJ)libocr
+
+$(DEVOBJ)gdevocr.$(OBJ) : $(DEVSRC)gdevocr.c\
+ $(gdevprn_h) $(gdevpccm_h) $(gscdefs_h) $(ocr__h) $(DEVS_MAK) $(MAKEDIRS)
+	$(CC_) $(I_)$(DEVI_) $(II)$(PI_)$(_I) $(PCF_) $(GLF_) $(DEVO_)gdevocr.$(OBJ) $(C_) $(DEVSRC)gdevocr.c
+
+$(DD)ocr.dev : $(libocr_dev) $(ocr_) $(GLD)page.dev $(GDEV) \
+ $(DEVS_MAK) $(MAKEDIRS)
+	$(SETPDEV2) $(DD)ocr $(ocr_)
+	$(ADDMOD) $(DD)ocr $(ocr_i_)
+
+### --------------- OCR device --------------- ###
+
+$(DD)hocr.dev : $(libocr_dev) $(hocr_) $(GLD)page.dev $(GDEV) \
+ $(DEVS_MAK) $(MAKEDIRS)
+	$(SETPDEV2) $(DD)hocr $(hocr_)
+	$(ADDMOD) $(DD)hocr $(hocr_i_)
+
 ### --------------- Portable Network Graphics file format --------------- ###
 ### Requires libpng 0.81 and zlib 0.95 (or more recent versions).         ###
 ### See png.mak and zlib.mak for more details.                         ###
@@ -1915,6 +1937,9 @@ $(DEVOBJ)gdevcmykog.$(OBJ) : $(DEVSRC)gdevcmykog.c $(GDEV) \
 	$(DEVCC) $(DEVO_)gdevcmykog.$(OBJ) $(C_) $(DEVSRC)gdevcmykog.c
 
 ### -------- PDF as an image downscaled device --------------------- ###
+
+gdevpdfimg_h=$(DEVSRC)gdevpdfimg.h
+
 $(DD)pdfimage8.dev : $(DEVOBJ)gdevpdfimg.$(OBJ) $(GLD)page.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
 	$(SETPDEV2) $(DD)pdfimage8 $(DEVOBJ)gdevpdfimg.$(OBJ)
 	$(ADDMOD) $(DD)pdfimage8 -include $(GLD)page
@@ -1932,10 +1957,30 @@ $(DD)PCLm.dev : $(DEVOBJ)gdevpdfimg.$(OBJ) $(GLD)page.dev $(GDEV) $(DEVS_MAK) $(
 	$(ADDMOD) $(DD)PCLm -include $(GLD)page
 
 $(DEVOBJ)gdevpdfimg.$(OBJ) : $(DEVSRC)gdevpdfimg.c $(AK) $(gdevkrnlsclass_h) \
+  $(DEVS_MAK) $(arch_h) $(stdint__h) $(gdevprn_h) $(gxdownscale_h) \
+  $(stream_h) $(spprint_h) $(time__h) $(smd5_h) $(sstring_h) $(strimpl_h) \
+  $(slzwx_h) $(szlibx_h) $(jpeglib__h) $(sdct_h) $(srlx_h) $(gsicc_cache_h) $(sjpeg_h) $(gdevpdfimg_h) $(MAKEDIRS)
+	$(DEVCC) $(DEVO_)gdevpdfimg.$(OBJ) $(C_) $(DEVSRC)gdevpdfimg.c
+
+### -------- PDF image with OCRd text overlay --------------------- ###
+
+$(DD)pdfocr8.dev : $(DEVOBJ)gdevpdfocr.$(OBJ) $(GLD)page.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
+	$(SETPDEV2) $(DD)pdfocr8 $(DEVOBJ)gdevpdfocr.$(OBJ)
+	$(ADDMOD) $(DD)pdfocr8 -include $(GLD)page
+
+$(DD)pdfocr24.dev : $(DEVOBJ)gdevpdfocr.$(OBJ) $(GLD)page.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
+	$(SETPDEV2) $(DD)pdfocr24 $(DEVOBJ)gdevpdfocr.$(OBJ)
+	$(ADDMOD) $(DD)pdfocr24 -include $(GLD)page
+
+$(DD)pdfocr32.dev : $(DEVOBJ)gdevpdfocr.$(OBJ) $(GLD)page.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
+	$(SETPDEV2) $(DD)pdfocr32 $(DEVOBJ)gdevpdfocr.$(OBJ)
+	$(ADDMOD) $(DD)pdfocr32 -include $(GLD)page
+
+$(DEVOBJ)gdevpdfocr.$(OBJ) : $(DEVSRC)gdevpdfocr.c $(AK) $(gdevkrnlsclass_h) \
   $(DEVS_MAK) $(MAKEDIRS) $(arch_h) $(stdint__h) $(gdevprn_h) $(gxdownscale_h) \
   $(stream_h) $(spprint_h) $(time__h) $(smd5_h) $(sstring_h) $(strimpl_h) \
-  $(slzwx_h) $(szlibx_h) $(jpeglib__h) $(sdct_h) $(srlx_h) $(gsicc_cache_h) $(sjpeg_h)
-	$(DEVCC) $(DEVO_)gdevpdfimg.$(OBJ) $(C_) $(DEVSRC)gdevpdfimg.c
+  $(slzwx_h) $(szlibx_h) $(jpeglib__h) $(sdct_h) $(srlx_h) $(gsicc_cache_h) $(sjpeg_h) $(gdevpdfimg_h)
+	$(DEVCC) $(DEVO_)gdevpdfocr.$(OBJ) $(C_) $(DEVSRC)gdevpdfocr.c
 
 ### -------- URF device --------------------- ###
 urf=$(DEVOBJ)gdevurf.$(OBJ)

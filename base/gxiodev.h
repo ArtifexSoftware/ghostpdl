@@ -205,4 +205,11 @@ gs_iodev_init(gs_memory_t * mem);
 void
 gs_iodev_finit(gs_memory_t * mem);
 
+/* Backdoor into romfs for reading file length.
+ * Required because C++ and C seem to differ on sizeof(stat).
+ */
+int
+romfs_file_len(gs_memory_t * mem, const char *name);
+
+
 #endif /* gxiodev_INCLUDED */

@@ -679,6 +679,19 @@ JBIG2_LIB=luratech
 !endif
 !endif
 
+!if exist("leptonica")
+LEPTONICADIR=leptonica
+!endif
+!if exist("tesseract")
+TESSERACTDIR=tesseract
+TESSCXXFLAGS=-DHAVE_AVX -DHAVE_AVX2 -DHAVE_SSE4_1 -DHAVE_FMA -D__AVX__ -D__AVX2__ -D__FMA__ -D__SSE4_1__ /EHsc /std:c++17
+!endif
+!if defined(TESSERACTDIR) && defined(LEPTONICADIR)
+OCR_VERSION=1
+!else
+OCR_VERSION=0
+!endif
+
 !ifndef JBIG2_LIB
 JBIG2_LIB=jbig2dec
 !endif
@@ -1645,6 +1658,10 @@ DEVICE_DEVS16=$(DEVICE_DEVS16) $(DD)cups.dev
 !if "$(WITH_URF)" == "1"
 DEVICE_DEVS16=$(DEVICE_DEVS16) $(DD)urfgray.dev $(DD)urfrgb.dev $(DD)urfcmyk.dev
 !endif
+!if "$(OCR_VERSION)" == "0"
+!else
+DEVICE_DEVS16=$(DEVICE_DEVS16) $(DD)ocr.dev $(DD)hocr.dev $(DD)pdfocr8.dev $(DD)pdfocr24.dev $(DD)pdfocr32.dev
+!endif
 # Overflow for DEVS3,4,5,6,9
 DEVICE_DEVS17=$(DD)ljet3.dev $(DD)ljet3d.dev $(DD)ljet4.dev $(DD)ljet4d.dev
 DEVICE_DEVS18=$(DD)pj.dev $(DD)pjxl.dev $(DD)pjxl300.dev $(DD)jetp3852.dev $(DD)r4081.dev
@@ -1713,6 +1730,7 @@ BEGINFILES2=$(BEGINFILES2) $(BSCFILE)
 
 !include $(GLSRCDIR)\msvctail.mak
 !include $(PSSRCDIR)\winint.mak
+
 # ----------------------------- Main program ------------------------------ #
 
 GSCONSOLE_XE=$(BINDIR)\$(GSCONSOLE).exe
