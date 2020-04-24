@@ -1615,7 +1615,6 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
     bool overprint = pdev->overprint;
     gx_color_index drawn_comps = pdev->drawn_comps_stroke | pdev->drawn_comps_fill;
     bool has_matte = false;
-    bool created_nos = false;
 
 #ifdef DEBUG
     pdf14_debug_mask_stack_state(ctx);
@@ -1648,15 +1647,16 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
        target buffer (nos) with the same color information etc, but blank
        and go ahead and do the blend with the softmask so that it gets applied. */
     if (nos == NULL && maskbuf != NULL) {
-        created_nos = true;
         nos = pdf14_buf_new(&(tos->rect), ctx->has_tags, !tos->isolated, tos->has_shape,
-            tos->idle, tos->n_chan - 1, tos->num_spots, ctx->memory, ctx->deep);
+            tos->idle, tos->n_chan, tos->num_spots, ctx->memory, ctx->deep);
         if (nos == NULL)
             return gs_error_VMerror;
 
         if_debug4m('v', ctx->memory,
             "[v] special buffer for softmask application: %d x %d, %d color channels, %d planes\n",
             nos->rect.q.x, nos->rect.q.y, nos->n_chan, nos->n_planes);
+
+        nos->dirty = tos->dirty;
         nos->isolated = tos->isolated;
         nos->knockout = tos->knockout;
         nos->alpha = 65535;
@@ -1665,6 +1665,11 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
         nos->blend_mode = tos->blend_mode;
         nos->mask_id = tos->mask_id;
         nos->group_color_info = pdf14_clone_group_color_info(dev, tos->group_color_info);
+
+        if (nos->data != NULL)
+            memset(nos->data, 0, nos->planestride * (nos->n_chan +
+            (nos->has_shape ? 1 : 0) +
+             (nos->has_alpha_g ? 1 : 0)));
     }
 
     nos_num_color_comp = nos->group_color_info->num_components - tos->num_spots;
