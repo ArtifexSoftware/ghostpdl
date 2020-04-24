@@ -499,8 +499,16 @@ pdfi_get_image_info(pdf_context *ctx, pdf_dict *image_dict,
     /* Optional (apparently there is no "M" abbreviation for "Mask"? */
     code = pdfi_dict_get(ctx, image_dict, "Mask", &info->Mask);
     if (code < 0) {
-        if (code != gs_error_undefined)
-            goto errorExit;
+        /* A lack of a Mask is not an error. If there is a genuine error reading
+         * the Mask, ignore it unless PDFSTOPONWARNING is set. We can still render
+         * the image. Arguably we should not, and Acrobat doesn't, but the current
+         * GS implementation does.
+         */
+        if (code != gs_error_undefined) {
+           ctx->pdf_warnings |= W_PDF_BAD_IMAGEDICT;
+           if (ctx->pdfstoponwarning)
+                goto errorExit;
+        }
     }
 
     /* Optional (apparently there is no abbreviation for "SMask"? */
