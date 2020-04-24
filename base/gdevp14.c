@@ -2222,6 +2222,8 @@ pdf14_open(gx_device *dev)
         pdev->ctx->rect.q.y = dev->height;
         pdev->ctx->has_tags = has_tags;
         pdev->ctx->num_spots = pdev->color_info.num_components - pdev->num_std_colorants;
+        pdev->ctx->additive = (pdev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE);
+        pdev->ctx->n_chan = pdev->color_info.num_components;
     }
     pdev->free_devicen = true;
     pdev->text_group = PDF14_TEXTGROUP_NO_BT;
@@ -2494,6 +2496,7 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
     bool data_blended = false;
     int num_rows_left;
     cmm_profile_t* src_profile = buf->group_color_info->icc_profile;
+    cmm_profile_t* des_profile = NULL;
     cmm_dev_profile_t *pdf14dev_profile;
     cmm_dev_profile_t *dev_target_profile;
     uint16_t bg = pdev->ctx->additive ? 65535 : 0;
@@ -2554,8 +2557,23 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
     }
 
     /* Check if we have a color conversion issue */
+    if (!(src_profile->hash_is_valid)) {
+        gsicc_get_icc_buff_hash(src_profile->buffer,
+            &(src_profile->hashcode),
+            src_profile->buffer_size);
+        src_profile->hash_is_valid = true;
+    }
+
+    des_profile = dev_target_profile->device_profile[0];
+    if (!(des_profile->hash_is_valid)) {
+        gsicc_get_icc_buff_hash(des_profile->buffer,
+            &(des_profile->hashcode),
+            des_profile->buffer_size);
+        des_profile->hash_is_valid = true;
+    }
+
     if (pdev->using_blend_cs ||
-        dev_target_profile->device_profile[0] != src_profile)
+        des_profile->hashcode != src_profile->hashcode)
         color_mismatch = true;
 
     /* Check if target supports alpha */
@@ -2806,6 +2824,7 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
     int rowstride = rowstride_in;
     byte* buf_ptr = NULL;
     cmm_profile_t* src_profile = buf->group_color_info->icc_profile;
+    cmm_profile_t* des_profile = NULL;
     cmm_dev_profile_t* dev_target_profile;
     cmm_dev_profile_t* pdf14dev_profile;
     bool color_mismatch = false;
@@ -2862,8 +2881,23 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
     }
 
     /* Check if we have a color conversion issue */
-    if (pdev->using_blend_cs ||
-        dev_target_profile->device_profile[0] != src_profile)
+    if (!(src_profile->hash_is_valid)) {
+        gsicc_get_icc_buff_hash(src_profile->buffer,
+            &(src_profile->hashcode),
+            src_profile->buffer_size);
+        src_profile->hash_is_valid = true;
+    }
+
+    des_profile = dev_target_profile->device_profile[0];
+    if (!(des_profile->hash_is_valid)) {
+        gsicc_get_icc_buff_hash(des_profile->buffer,
+            &(des_profile->hashcode),
+            des_profile->buffer_size);
+        des_profile->hash_is_valid = true;
+    }
+
+    if (pdev->using_blend_cs || 
+        des_profile->hashcode != src_profile->hashcode)
         color_mismatch = true;
 
     /* Check if target supports alpha */
