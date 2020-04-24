@@ -135,6 +135,12 @@ BEGINFILES=$(GLGENDIR)\ccf32.tr\
 #!include $(COMMONDIR)/pcdefs.mak
 #!include $(COMMONDIR)/generic.mak
 !include $(GLSRCDIR)\gs.mak
+
+!if "$(OCR_VERSION)"=="1"
+!include $(GLSRCDIR)\leptonica.mak
+!include $(GLSRCDIR)\tesseract.mak
+!endif
+
 !include $(GLSRCDIR)\lib.mak
 !include $(GLSRCDIR)\freetype.mak
 !if "$(UFST_BRIDGE)"=="1"
@@ -150,6 +156,7 @@ BEGINFILES=$(GLGENDIR)\ccf32.tr\
 !include $(GLSRCDIR)\lwf_jp2.mak
 !include $(GLSRCDIR)\openjpeg.mak
 !include $(GLSRCDIR)\cal.mak
+!include $(GLSRCDIR)\ocr.mak
 
 !include $(GLSRCDIR)\expat.mak
 !include $(GLSRCDIR)\jpegxr.mak

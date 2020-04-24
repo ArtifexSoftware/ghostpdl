@@ -508,7 +508,7 @@ AUXEXTRALIBS=@AUXEXTRALIBS@ @AUX_SHARED_ZLIB@
 # All reasonable platforms require -lm, but Rhapsody and perhaps one or
 # two others fold libm into libc and don't require any additional library.
 
-STDLIBS=@PTHREAD_LIBS@ -lm
+STDLIBS=@PTHREAD_LIBS@ -lm @TESSERACT_LIBS@
 
 # Define the include switch(es) for the X11 header files.
 # This can be null if handled in some other way (e.g., the files are
@@ -667,7 +667,7 @@ DEVICE_DEVS12=
 DEVICE_DEVS13=
 DEVICE_DEVS14=
 DEVICE_DEVS15=
-DEVICE_DEVS16=
+DEVICE_DEVS16=@OCR_DEVS@
 DEVICE_DEVS17=
 DEVICE_DEVS18=
 DEVICE_DEVS19=
@@ -720,6 +720,16 @@ LD_SET_DT_SONAME=@SET_DT_SONAME@
 MAKEDIRS=@ORDER_ONLY@ directories
 MAKEDIRSTOP=
 
+OCR_VERSION=@OCR_VERSION@
+LEPTONICADIR=@LEPTONICADIR@
+TESSAVX=@TESS_AVX@
+TESSAVX2=@TESS_AVX2@
+TESSFMA=@TESS_FMA@
+TESSSSE41=@TESS_SSE4_1@
+TESSNEON=@TESS_NEON@
+TESSCXXFLAGS=@TESS_CXXFLAGS@
+TESSERACTDIR=@TESSERACTDIR@
+
 # ---------------- End of platform-specific section ---------------- #
 
 INSTALL_CONTRIB=@INSTALL_CONTRIB@
@@ -754,6 +764,9 @@ include $(GLSRCDIR)/ldf_jb2.mak
 include $(GLSRCDIR)/lwf_jp2.mak
 include $(GLSRCDIR)/openjpeg.mak
 include $(GLSRCDIR)/cal.mak
+@LEPTONICAINCLUDE@
+@TESSERACTINCLUDE@
+include $(GLSRCDIR)/ocr.mak
 
 include $(GLSRCDIR)/jpegxr.mak
 include $(GLSRCDIR)/expat.mak
