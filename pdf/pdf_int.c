@@ -37,8 +37,8 @@
 #include "pdf_optcontent.h"
 #include "pdf_sec.h"
 
-static int pdfi_read_object(pdf_context *ctx, pdf_stream *s, gs_offset_t stream_offset, uint64_t expected_num);
-static int pdfi_read_object_of_type(pdf_context *ctx, pdf_stream *s, pdf_obj_type type, gs_offset_t stream_offset);
+/* Prototype for the benefit of pdfi_read_object */
+static int skip_eol(pdf_context *ctx, pdf_stream *s);
 
 /***********************************************************************************/
 /* Functions to create the various kinds of 'PDF objects', Created objects have a  */
@@ -377,6 +377,228 @@ int is_compressed_object(pdf_context *ctx, uint32_t obj, uint32_t gen)
     return 0;
 }
 
+/*
+ * Technically we can accept a stream other than the main PDF file stream here. This is
+ * really for the case of compressed objects where we read tokens from the compressed
+ * stream, but it also (with some judicious tinkering) allows us to layer a SubFileDecode
+ * on top of the main file stream, which may be useful. Note that this cannot work with
+ * objects in compressed object streams! They should always pass a value of 0 for the stream_offset.
+ * The stream_offset is the offset from the start of the underlying uncompressed PDF file of
+ * the stream we are using. See the comments below when keyword is PDF_STREAM.
+ *
+ * expected_num -- if non-zero, the number of the object we're reading.  So we can abort early
+ * if they don't match.
+ */
+static int pdfi_read_object(pdf_context *ctx, pdf_stream *s, gs_offset_t stream_offset)
+{
+    int code = 0;
+    uint64_t objnum = 0, gen = 0;
+    int64_t i;
+    pdf_keyword *keyword = NULL;
+
+    /* An object consists of 'num gen obj' followed by a token, follwed by an endobj
+     * A stream dictionary might have a 'stream' instead of an 'endobj', in which case we
+     * want to deal with it specially by getting the Length, jumping to the end and checking
+     * for an endobj. Or not, possibly, because it would be slow.
+     */
+    code = pdfi_read_token(ctx, s, 0, 0);
+    if (code < 0)
+        return code;
+    if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_INT) {
+        pdfi_pop(ctx, 1);
+        return_error(gs_error_typecheck);
+    }
+    objnum = ((pdf_num *)ctx->stack_top[-1])->value.i;
+    pdfi_pop(ctx, 1);
+
+    code = pdfi_read_token(ctx, s, 0, 0);
+    if (code < 0)
+        return code;
+    if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_INT) {
+        pdfi_pop(ctx, 1);
+        return_error(gs_error_typecheck);
+    }
+    gen = ((pdf_num *)ctx->stack_top[-1])->value.i;
+    pdfi_pop(ctx, 1);
+
+    code = pdfi_read_token(ctx, s, 0, 0);
+    if (code < 0)
+        return code;
+    if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
+        pdfi_pop(ctx, 1);
+        return_error(gs_error_typecheck);
+    }
+    keyword = ((pdf_keyword *)ctx->stack_top[-1]);
+    if (keyword->key != PDF_OBJ) {
+        pdfi_pop(ctx, 1);
+        return_error(gs_error_syntaxerror);
+    }
+    pdfi_pop(ctx, 1);
+
+    code = pdfi_read_token(ctx, s, objnum, gen);
+    if (code < 0)
+        return code;
+
+    do {
+        code = pdfi_read_token(ctx, s, objnum, gen);
+        if (code < 0) {
+            pdfi_clearstack(ctx);
+            return code;
+        }
+        if (s->eof)
+            return_error(gs_error_syntaxerror);
+    }while (ctx->stack_top[-1]->type != PDF_KEYWORD);
+
+    keyword = ((pdf_keyword *)ctx->stack_top[-1]);
+    if (keyword->key == PDF_ENDOBJ) {
+        pdf_obj *o;
+
+        if (pdfi_count_stack(ctx) < 2) {
+            pdfi_clearstack(ctx);
+            return_error(gs_error_stackunderflow);
+        }
+
+        o = ctx->stack_top[-2];
+
+        pdfi_pop(ctx, 1);
+
+        o->indirect_num = o->object_num = objnum;
+        o->indirect_gen = o->generation_num = gen;
+        code = pdfi_add_to_cache(ctx, o);
+        return code;
+    }
+    if (keyword->key == PDF_STREAM) {
+        /* We should never read a 'stream' keyword from a compressed object stream
+         * so this case should never end up here.
+         */
+        pdf_dict *d = (pdf_dict *)ctx->stack_top[-2];
+        gs_offset_t offset;
+
+        skip_eol(ctx, s);
+
+        /* Strange code time....
+         * If we are using a stream which is *not* the PDF uncompressed main file stream
+         * then doing stell on it will only tell us how many bytes have been read from
+         * that stream, it won't tell us the underlying file position. So we add on the
+         * 'unread' bytes, *and* we add on the position of the start of the stream in
+         * the actual main file. This is all done so that we can check the /Length
+         * of the object. Note that this will *only* work for regular objects it can
+         * not be used for compressed object streams, but those don't need checking anyway
+         * they have a different mechanism altogether and should never get here.
+         */
+        offset = stell(s->s) - s->unread_size + stream_offset;
+        code = pdfi_seek(ctx, ctx->main_stream, offset, SEEK_SET);
+
+        pdfi_pop(ctx, 1);
+
+        if (pdfi_count_stack(ctx) < 1)
+            return_error(gs_error_stackunderflow);
+
+        d = (pdf_dict *)ctx->stack_top[-1];
+
+        if (d->type != PDF_DICT) {
+            pdfi_pop(ctx, 1);
+            return_error(gs_error_syntaxerror);
+        }
+        d->indirect_num = d->object_num = objnum;
+        d->indirect_gen = d->generation_num = gen;
+        d->stream_offset = offset;
+        code = pdfi_add_to_cache(ctx, (pdf_obj *)d);
+        if (code < 0) {
+            pdfi_pop(ctx, 1);
+            return code;
+        }
+
+        /* This code may be a performance overhead, it simply skips over the stream contents
+         * and checks that the stream ends with a 'endstream endobj' pair. We could add a
+         * 'go faster' flag for users who are certain their PDF files are well-formed. This
+         * could also allow us to skip all kinds of other checking.....
+         */
+
+        code = pdfi_dict_get_int(ctx, d, "Length", &i);
+        if (code < 0) {
+            dmprintf1(ctx->memory, "Stream object %"PRIu64" is missing the mandatory keyword /Length, unable to verify the stream length.\n", objnum);
+            ctx->pdf_errors |= E_PDF_BADSTREAM;
+            return 0;
+        }
+        if (i < 0 || (i + offset)> ctx->main_stream_length) {
+            dmprintf1(ctx->memory, "Stream object %"PRIu64" has a /Length which, when added to the offset of the object, exceeds the file size.\n", objnum);
+            ctx->pdf_errors |= E_PDF_BADSTREAM;
+            return 0;
+        }
+        code = pdfi_seek(ctx, ctx->main_stream, i, SEEK_CUR);
+        if (code < 0) {
+            pdfi_pop(ctx, 1);
+            return code;
+        }
+
+        code = pdfi_read_token(ctx, ctx->main_stream, objnum, gen);
+        if (pdfi_count_stack(ctx) < 2) {
+            dmprintf1(ctx->memory, "Failed to find a valid object at the end of the stream object %"PRIu64".\n", objnum);
+            return 0;
+        }
+
+        if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
+            dmprintf1(ctx->memory, "Failed to find an 'endstream' keyword at the end of the stream object %"PRIu64".\n", objnum);
+            pdfi_pop(ctx, 1);
+            return 0;
+        }
+        keyword = ((pdf_keyword *)ctx->stack_top[-1]);
+        if (keyword->key != PDF_ENDSTREAM) {
+            dmprintf2(ctx->memory, "Stream object %"PRIu64" has an incorrect /Length of %"PRIu64"\n", objnum, i);
+            pdfi_pop(ctx, 1);
+            return 0;
+        }
+        pdfi_pop(ctx, 1);
+
+        code = pdfi_read_token(ctx, ctx->main_stream, objnum, gen);
+        if (code < 0) {
+            if (ctx->pdfstoponerror)
+                return code;
+            else
+                /* Something went wrong looking for endobj, but we foudn endstream, so assume
+                 * for now that will suffice.
+                 */
+                return 0;
+        }
+
+        if (pdfi_count_stack(ctx) < 2)
+            return_error(gs_error_stackunderflow);
+
+        if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
+            pdfi_pop(ctx, 2);
+            return_error(gs_error_typecheck);
+        }
+        keyword = ((pdf_keyword *)ctx->stack_top[-1]);
+        if (keyword->key != PDF_ENDOBJ) {
+            pdfi_pop(ctx, 2);
+            return_error(gs_error_typecheck);
+        }
+        pdfi_pop(ctx, 1);
+        return 0;
+    }
+    /* Assume that any other keyword means a missing 'endobj' */
+    if (!ctx->pdfstoponerror) {
+        pdf_obj *o;
+
+        ctx->pdf_errors |= E_PDF_MISSINGENDOBJ;
+
+        if (pdfi_count_stack(ctx) < 2)
+            return_error(gs_error_stackunderflow);
+
+        o = ctx->stack_top[-2];
+
+        pdfi_pop(ctx, 1);
+
+        o->indirect_num = o->object_num = objnum;
+        o->indirect_gen = o->generation_num = gen;
+        code = pdfi_add_to_cache(ctx, o);
+        return code;
+    }
+    pdfi_pop(ctx, 2);
+    return_error(gs_error_syntaxerror);
+}
+
 /* pdf_dereference returns an object with a reference count of at least 1, this represents the
  * reference being held by the caller (in **object) when we return from this function.
  */
@@ -441,7 +663,7 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
             pdf_stream *compressed_stream, *SubFile_stream, *Object_stream;
             char Buffer[256];
             int i = 0, object_length = 0;
-            int64_t num_entries;
+            int64_t num_entries, found_object;
             gs_offset_t offset = 0;
 
             if (ctx->pdfdebug) {
@@ -457,11 +679,22 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
                 if (code < 0)
                     goto error;
 
-                code = pdfi_read_object_of_type(ctx, ctx->main_stream, PDF_DICT, 0);
+                code = pdfi_read_object(ctx, ctx->main_stream, 0);
                 if (code < 0)
                     goto error;
 
                 compressed_object = (pdf_dict *)ctx->stack_top[-1];
+                if (compressed_object->type != PDF_DICT) {
+                    pdfi_pop(ctx, 1);
+                    code = gs_note_error(gs_error_typecheck);
+                    goto error;
+                }
+                if (compressed_object->object_num != compressed_entry->object_num) {
+                    pdfi_pop(ctx, 1);
+                    /* Same error (undefined) as when we read an uncompressed object with the wrong number */
+                    code = gs_note_error(gs_error_undefined);
+                    goto error;
+                }
                 pdfi_countup(compressed_object);
                 pdfi_pop(ctx, 1);
             } else {
@@ -524,6 +757,7 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
                     pdfi_close_file(ctx, compressed_stream);
                     goto error;
                 }
+                found_object = ((pdf_num *)o)->value.i;
                 pdfi_pop(ctx, 1);
                 code = pdfi_read_token(ctx, compressed_stream, obj, gen);
                 if (code < 0) {
@@ -536,8 +770,15 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
                     pdfi_close_file(ctx, compressed_stream);
                     goto error;
                 }
-                if (i == entry->u.compressed.object_index)
+                if (i == entry->u.compressed.object_index) {
+                    if (found_object != obj) {
+                        pdfi_pop(ctx, 1);
+                        pdfi_close_file(ctx, compressed_stream);
+                        code = gs_note_error(gs_error_undefined);
+                        goto error;
+                    }
                     offset = ((pdf_num *)o)->value.i;
+                }
                 if (i == entry->u.compressed.object_index + 1)
                     object_length = ((pdf_num *)o)->value.i - offset;
                 pdfi_pop(ctx, 1);
@@ -624,7 +865,7 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
                 goto error;
             }
 
-            code = pdfi_read_object(ctx, SubFile_stream, entry->u.uncompressed.offset, obj);
+            code = pdfi_read_object(ctx, SubFile_stream, entry->u.uncompressed.offset);
 
             pdfi_countdown(EODString);
             pdfi_close_file(ctx, SubFile_stream);
@@ -632,10 +873,11 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
                 goto error;
 
             *object = ctx->stack_top[-1];
-            pdfi_pop(ctx, 1);
             if ((*object)->object_num == obj) {
                 pdfi_countup(*object);
+                pdfi_pop(ctx, 1);
             } else {
+                pdfi_pop(ctx, 1);
                 code = gs_note_error(gs_error_undefined);
                 goto error;
             }
@@ -652,6 +894,7 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
     }
     ctx->decrypt_strings = saved_decrypt_strings;
     return 0;
+
 error:
     ctx->decrypt_strings = saved_decrypt_strings;
     pdfi_countdown(compressed_object);
@@ -1622,251 +1865,6 @@ int pdfi_read_token(pdf_context *ctx, pdf_stream *s, uint32_t indirect_num, uint
             pdfi_unread(ctx, s, (byte *)&Buffer[0], 1);
             return pdfi_read_keyword(ctx, s, indirect_num, indirect_gen);
             break;
-    }
-    return 0;
-}
-
-/*
- * Technically we can accept a stream other than the main PDF file stream here. This is
- * really for the case of compressed objects where we read tokens from the compressed
- * stream, but it also (with some judicious tinkering) allows us to layer a SubFileDecode
- * on top of the main file stream, which may be useful. Note that this cannot work with
- * objects in compressed object streams! They should always pass a value of 0 for the stream_offset.
- * The stream_offset is the offset from the start of the underlying uncompressed PDF file of
- * the stream we are using. See the comments below when keyword is PDF_STREAM.
- *
- * expected_num -- if non-zero, the number of the object we're reading.  So we can abort early
- * if they don't match.
- */
-static int pdfi_read_object(pdf_context *ctx, pdf_stream *s, gs_offset_t stream_offset, uint64_t expected_num)
-{
-    int code = 0;
-    uint64_t objnum = 0, gen = 0;
-    int64_t i;
-    pdf_keyword *keyword = NULL;
-
-    /* An object consists of 'num gen obj' followed by a token, follwed by an endobj
-     * A stream dictionary might have a 'stream' instead of an 'endobj', in which case we
-     * want to deal with it specially by getting the Length, jumping to the end and checking
-     * for an endobj. Or not, possibly, because it would be slow.
-     */
-    code = pdfi_read_token(ctx, s, 0, 0);
-    if (code < 0)
-        return code;
-    if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_INT) {
-        pdfi_pop(ctx, 1);
-        return_error(gs_error_typecheck);
-    }
-    objnum = ((pdf_num *)ctx->stack_top[-1])->value.i;
-    pdfi_pop(ctx, 1);
-
-    if (expected_num != 0 && objnum != expected_num) {
-        /* If the object at this offset has the wrong number, then this file has errors */
-        dmprintf3(ctx->memory, "ERROR: wrong object at offset %ld (found %ld, expected %ld)\n",
-                 stream_offset, objnum, expected_num);
-        ctx->pdf_errors |= E_PDF_MISSINGOBJ;
-        return_error(gs_error_undefined);
-    }
-
-    code = pdfi_read_token(ctx, s, 0, 0);
-    if (code < 0)
-        return code;
-    if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_INT) {
-        pdfi_pop(ctx, 1);
-        return_error(gs_error_typecheck);
-    }
-    gen = ((pdf_num *)ctx->stack_top[-1])->value.i;
-    pdfi_pop(ctx, 1);
-
-    code = pdfi_read_token(ctx, s, 0, 0);
-    if (code < 0)
-        return code;
-    if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
-        pdfi_pop(ctx, 1);
-        return_error(gs_error_typecheck);
-    }
-    keyword = ((pdf_keyword *)ctx->stack_top[-1]);
-    if (keyword->key != PDF_OBJ) {
-        pdfi_pop(ctx, 1);
-        return_error(gs_error_syntaxerror);
-    }
-    pdfi_pop(ctx, 1);
-
-    code = pdfi_read_token(ctx, s, objnum, gen);
-    if (code < 0)
-        return code;
-
-    do {
-        code = pdfi_read_token(ctx, s, objnum, gen);
-        if (code < 0) {
-            pdfi_clearstack(ctx);
-            return code;
-        }
-        if (s->eof)
-            return_error(gs_error_syntaxerror);
-    }while (ctx->stack_top[-1]->type != PDF_KEYWORD);
-
-    keyword = ((pdf_keyword *)ctx->stack_top[-1]);
-    if (keyword->key == PDF_ENDOBJ) {
-        pdf_obj *o;
-
-        if (pdfi_count_stack(ctx) < 2) {
-            pdfi_clearstack(ctx);
-            return_error(gs_error_stackunderflow);
-        }
-
-        o = ctx->stack_top[-2];
-
-        pdfi_pop(ctx, 1);
-
-        o->indirect_num = o->object_num = objnum;
-        o->indirect_gen = o->generation_num = gen;
-        code = pdfi_add_to_cache(ctx, o);
-        return code;
-    }
-    if (keyword->key == PDF_STREAM) {
-        /* We should never read a 'stream' keyword from a compressed object stream
-         * so this case should never end up here.
-         */
-        pdf_dict *d = (pdf_dict *)ctx->stack_top[-2];
-        gs_offset_t offset;
-
-        skip_eol(ctx, s);
-
-        /* Strange code time....
-         * If we are using a stream which is *not* the PDF uncompressed main file stream
-         * then doing stell on it will only tell us how many bytes have been read from
-         * that stream, it won't tell us the underlying file position. So we add on the
-         * 'unread' bytes, *and* we add on the position of the start of the stream in
-         * the actual main file. This is all done so that we can check the /Length
-         * of the object. Note that this will *only* work for regular objects it can
-         * not be used for compressed object streams, but those don't need checking anyway
-         * they have a different mechanism altogether and should never get here.
-         */
-        offset = stell(s->s) - s->unread_size + stream_offset;
-        code = pdfi_seek(ctx, ctx->main_stream, offset, SEEK_SET);
-
-        pdfi_pop(ctx, 1);
-
-        if (pdfi_count_stack(ctx) < 1)
-            return_error(gs_error_stackunderflow);
-
-        d = (pdf_dict *)ctx->stack_top[-1];
-
-        if (d->type != PDF_DICT) {
-            pdfi_pop(ctx, 1);
-            return_error(gs_error_syntaxerror);
-        }
-        d->indirect_num = d->object_num = objnum;
-        d->indirect_gen = d->generation_num = gen;
-        d->stream_offset = offset;
-        code = pdfi_add_to_cache(ctx, (pdf_obj *)d);
-        if (code < 0) {
-            pdfi_pop(ctx, 1);
-            return code;
-        }
-
-        /* This code may be a performance overhead, it simply skips over the stream contents
-         * and checks that the stream ends with a 'endstream endobj' pair. We could add a
-         * 'go faster' flag for users who are certain their PDF files are well-formed. This
-         * could also allow us to skip all kinds of other checking.....
-         */
-
-        code = pdfi_dict_get_int(ctx, d, "Length", &i);
-        if (code < 0) {
-            dmprintf1(ctx->memory, "Stream object %"PRIu64" is missing the mandatory keyword /Length, unable to verify the stream length.\n", objnum);
-            ctx->pdf_errors |= E_PDF_BADSTREAM;
-            return 0;
-        }
-        if (i < 0 || (i + offset)> ctx->main_stream_length) {
-            dmprintf1(ctx->memory, "Stream object %"PRIu64" has a /Length which, when added to the offset of the object, exceeds the file size.\n", objnum);
-            ctx->pdf_errors |= E_PDF_BADSTREAM;
-            return 0;
-        }
-        code = pdfi_seek(ctx, ctx->main_stream, i, SEEK_CUR);
-        if (code < 0) {
-            pdfi_pop(ctx, 1);
-            return code;
-        }
-
-        code = pdfi_read_token(ctx, ctx->main_stream, objnum, gen);
-        if (pdfi_count_stack(ctx) < 2) {
-            dmprintf1(ctx->memory, "Failed to find a valid object at the end of the stream object %"PRIu64".\n", objnum);
-            return 0;
-        }
-
-        if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
-            dmprintf1(ctx->memory, "Failed to find an 'endstream' keyword at the end of the stream object %"PRIu64".\n", objnum);
-            pdfi_pop(ctx, 1);
-            return 0;
-        }
-        keyword = ((pdf_keyword *)ctx->stack_top[-1]);
-        if (keyword->key != PDF_ENDSTREAM) {
-            dmprintf2(ctx->memory, "Stream object %"PRIu64" has an incorrect /Length of %"PRIu64"\n", objnum, i);
-            pdfi_pop(ctx, 1);
-            return 0;
-        }
-        pdfi_pop(ctx, 1);
-
-        code = pdfi_read_token(ctx, ctx->main_stream, objnum, gen);
-        if (code < 0) {
-            if (ctx->pdfstoponerror)
-                return code;
-            else
-                /* Something went wrong looking for endobj, but we foudn endstream, so assume
-                 * for now that will suffice.
-                 */
-                return 0;
-        }
-
-        if (pdfi_count_stack(ctx) < 2)
-            return_error(gs_error_stackunderflow);
-
-        if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
-            pdfi_pop(ctx, 2);
-            return_error(gs_error_typecheck);
-        }
-        keyword = ((pdf_keyword *)ctx->stack_top[-1]);
-        if (keyword->key != PDF_ENDOBJ) {
-            pdfi_pop(ctx, 2);
-            return_error(gs_error_typecheck);
-        }
-        pdfi_pop(ctx, 1);
-        return 0;
-    }
-    /* Assume that any other keyword means a missing 'endobj' */
-    if (!ctx->pdfstoponerror) {
-        pdf_obj *o;
-
-        ctx->pdf_errors |= E_PDF_MISSINGENDOBJ;
-
-        if (pdfi_count_stack(ctx) < 2)
-            return_error(gs_error_stackunderflow);
-
-        o = ctx->stack_top[-2];
-
-        pdfi_pop(ctx, 1);
-
-        o->indirect_num = o->object_num = objnum;
-        o->indirect_gen = o->generation_num = gen;
-        code = pdfi_add_to_cache(ctx, o);
-        return code;
-    }
-    pdfi_pop(ctx, 2);
-    return_error(gs_error_syntaxerror);
-}
-
-static int pdfi_read_object_of_type(pdf_context *ctx, pdf_stream *s, pdf_obj_type type, gs_offset_t stream_offset)
-{
-    int code;
-
-    code = pdfi_read_object(ctx, s, stream_offset, 0);
-    if (code < 0)
-        return code;
-
-    if (ctx->stack_top[-1]->type != type) {
-        pdfi_pop(ctx, 1);
-        return_error(gs_error_typecheck);
     }
     return 0;
 }
