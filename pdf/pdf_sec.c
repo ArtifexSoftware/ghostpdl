@@ -88,15 +88,18 @@ static int pdf_compute_encryption_key_preR5(pdf_context *ctx, char *Password, in
     code = pdfi_dict_get_type(ctx, ctx->Trailer, "ID", PDF_ARRAY, (pdf_obj **)&a);
     if (code < 0) {
         if (code == gs_error_undefined) {
-            emprintf(ctx->memory, "   **** Error: ID key in the trailer is required for encrypted files.\n");
+            emprintf(ctx->memory, "\n   **** Error: ID key in the trailer is required for encrypted files.\n");
             emprintf(ctx->memory, "               File may not be possible to decrypt.\n");
-        }
-        return code;
+        } else
+            return code;
     }
-    code = pdfi_array_get_type(ctx, a, (uint64_t)0, PDF_STRING, (pdf_obj **)&s);
-    if (code < 0)
-        goto done;
-    gs_md5_append(&md5, s->data, s->length);
+    /* If the file ID was missing, just ignore the error */
+    if (code == 0) {
+        code = pdfi_array_get_type(ctx, a, (uint64_t)0, PDF_STRING, (pdf_obj **)&s);
+        if (code < 0)
+            goto done;
+        gs_md5_append(&md5, s->data, s->length);
+    }
 
     /* Step 6
      * (revision 4 or greater) If document Metadata is not being encrypted
@@ -501,20 +504,21 @@ static int check_user_password_preR5(pdf_context *ctx, char *Password, int Len, 
             code = pdfi_dict_get_type(ctx, ctx->Trailer, "ID", PDF_ARRAY, (pdf_obj **)&a);
             if (code < 0) {
                 if (code == gs_error_undefined) {
-                    emprintf(ctx->memory, "   **** Error: ID key in the trailer is required for encrypted files.\n");
+                    emprintf(ctx->memory, "\n   **** Error: ID key in the trailer is required for encrypted files.\n");
                     emprintf(ctx->memory, "               File may not be possible to decrypt.\n");
-                }
-                return code;
+                } else
+                    return code;
             }
-
-            /* Step 3
-             * Pass the first element of the file's file identifier array ti the hash function
-             * and finish the hash
-             */
-            code = pdfi_array_get_type(ctx, a, (uint64_t)0, PDF_STRING, (pdf_obj **)&s);
-            if (code < 0)
-                goto error;
-            gs_md5_append(&md5, s->data, s->length);
+            if (code == 0) {
+                /* Step 3
+                 * Pass the first element of the file's file identifier array to the hash function
+                 * and finish the hash
+                 */
+                code = pdfi_array_get_type(ctx, a, (uint64_t)0, PDF_STRING, (pdf_obj **)&s);
+                if (code < 0)
+                    goto error;
+                gs_md5_append(&md5, s->data, s->length);
+            }
             gs_md5_finish(&md5, (gs_md5_byte_t *)&Hash);
 
             /* Step 4
@@ -1053,7 +1057,7 @@ int pdfi_read_Encryption(pdf_context *ctx)
         }
         memset(Str, 0x00, ((pdf_name *)o)->length + 1);
         memcpy(Str, ((pdf_name *)o)->data, ((pdf_name *)o)->length);
-        emprintf1(ctx->memory, "   **** Warning: This file uses an unknown security handler %s\n", Str);
+        emprintf1(ctx->memory, "\n   **** Warning: This file uses an unknown security handler %s\n", Str);
         gs_free_object(ctx->memory, Str, "temp string for warning");
         code = gs_error_typecheck;
         goto done;
@@ -1253,11 +1257,14 @@ int pdfi_read_Encryption(pdf_context *ctx)
              */
             code = check_user_password_preR5(ctx, (char *)"", 0, KeyLen, 2);
             if (code < 0) {
-                if(ctx->Password) {
-                    /* Empty user password didn't work, try the password we've been given as a user password */
-                    code = check_user_password_preR5(ctx, ctx->Password, strlen(ctx->Password), KeyLen, 2);
-                    if (code < 0) {
-                        code = check_owner_password_preR5(ctx, ctx->Password, strlen(ctx->Password), KeyLen, 2);
+                code = check_owner_password_preR5(ctx, (char *)"", 0, KeyLen, 2);
+                if (code < 0) {
+                    if(ctx->Password) {
+                        /* Empty user password didn't work, try the password we've been given as a user password */
+                        code = check_user_password_preR5(ctx, ctx->Password, strlen(ctx->Password), KeyLen, 2);
+                        if (code < 0) {
+                            code = check_owner_password_preR5(ctx, ctx->Password, strlen(ctx->Password), KeyLen, 2);
+                        }
                     }
                 }
             }
@@ -1269,11 +1276,14 @@ int pdfi_read_Encryption(pdf_context *ctx)
             ctx->StrF = ctx->StmF = CRYPT_V2;
             code = check_user_password_preR5(ctx, (char *)"", 0, KeyLen, 3);
             if (code < 0) {
-                if(ctx->Password) {
-                    /* Empty user password didn't work, try the password we've been given as a user password */
-                    code = check_user_password_preR5(ctx, ctx->Password, strlen(ctx->Password), KeyLen, 3);
-                    if (code < 0) {
-                        code = check_owner_password_preR5(ctx, ctx->Password, strlen(ctx->Password), KeyLen, 3);
+                code = check_owner_password_preR5(ctx, (char *)"", 0, KeyLen, 2);
+                if (code < 0) {
+                    if(ctx->Password) {
+                        /* Empty user password didn't work, try the password we've been given as a user password */
+                        code = check_user_password_preR5(ctx, ctx->Password, strlen(ctx->Password), KeyLen, 3);
+                        if (code < 0) {
+                            code = check_owner_password_preR5(ctx, ctx->Password, strlen(ctx->Password), KeyLen, 3);
+                        }
                     }
                 }
             }
@@ -1284,11 +1294,14 @@ int pdfi_read_Encryption(pdf_context *ctx)
                 KeyLen = 128;
             code = check_user_password_preR5(ctx, (char *)"", 0, KeyLen, 4);
             if (code < 0) {
-                if(ctx->Password) {
-                    /* Empty user password didn't work, try the password we've been given as a user password */
-                    code = check_user_password_preR5(ctx, ctx->Password, strlen(ctx->Password), KeyLen, 4);
-                    if (code < 0) {
-                        code = check_owner_password_preR5(ctx, ctx->Password, strlen(ctx->Password), KeyLen, 4);
+                code = check_owner_password_preR5(ctx, (char *)"", 0, KeyLen, 4);
+                if (code < 0) {
+                    if(ctx->Password) {
+                        /* Empty user password didn't work, try the password we've been given as a user password */
+                        code = check_user_password_preR5(ctx, ctx->Password, strlen(ctx->Password), KeyLen, 4);
+                        if (code < 0) {
+                            code = check_owner_password_preR5(ctx, ctx->Password, strlen(ctx->Password), KeyLen, 4);
+                        }
                     }
                 }
             }
@@ -1302,31 +1315,34 @@ int pdfi_read_Encryption(pdf_context *ctx)
                 ctx->StrF = CRYPT_AESV2;
             code = check_user_password_R5(ctx, (char *)"", 0, KeyLen, 3);
             if (code < 0) {
-                if(ctx->Password) {
-                    /* Empty user password didn't work, try the password we've been given as a user password */
-                    code = check_user_password_R5(ctx, ctx->Password, strlen(ctx->Password), KeyLen, 3);
-                    if (code < 0) {
-                        code = check_owner_password_R5(ctx, ctx->Password, strlen(ctx->Password), KeyLen, 3);
-                        /* If the supplied Password fails as the user *and* owner password, mayeb its in
-                         * the locale, not UTF-8, try converting to UTF-8
-                         */
+                code = check_owner_password_R5(ctx, (char *)"", 0, KeyLen, 3);
+                if (code < 0) {
+                    if(ctx->Password) {
+                        /* Empty user password didn't work, try the password we've been given as a user password */
+                        code = check_user_password_R5(ctx, ctx->Password, strlen(ctx->Password), KeyLen, 3);
                         if (code < 0) {
-                            pdf_string *P = NULL, *P_UTF8 = NULL;
-
-                            code = pdfi_alloc_object(ctx, PDF_STRING, strlen(ctx->Password), (pdf_obj **)&P);
-                            if (code < 0)
-                                goto done;
-                            memcpy(P->data, ctx->Password, P->length);
-                            code = locale_to_utf8(ctx, P, &P_UTF8);
+                            code = check_owner_password_R5(ctx, ctx->Password, strlen(ctx->Password), KeyLen, 3);
+                            /* If the supplied Password fails as the user *and* owner password, mayeb its in
+                             * the locale, not UTF-8, try converting to UTF-8
+                             */
                             if (code < 0) {
+                                pdf_string *P = NULL, *P_UTF8 = NULL;
+
+                                code = pdfi_alloc_object(ctx, PDF_STRING, strlen(ctx->Password), (pdf_obj **)&P);
+                                if (code < 0)
+                                    goto done;
+                                memcpy(P->data, ctx->Password, P->length);
+                                code = locale_to_utf8(ctx, P, &P_UTF8);
+                                if (code < 0) {
+                                    pdfi_countdown(P);
+                                    goto done;
+                                }
+                                code = check_user_password_R5(ctx, (char *)P_UTF8->data, P_UTF8->length, KeyLen, 3);
+                                if (code < 0)
+                                    code = check_owner_password_R5(ctx, (char *)P_UTF8->data, P_UTF8->length, KeyLen, 3);
                                 pdfi_countdown(P);
-                                goto done;
+                                pdfi_countdown(P_UTF8);
                             }
-                            code = check_user_password_R5(ctx, (char *)P_UTF8->data, P_UTF8->length, KeyLen, 3);
-                            if (code < 0)
-                                code = check_owner_password_R5(ctx, (char *)P_UTF8->data, P_UTF8->length, KeyLen, 3);
-                            pdfi_countdown(P);
-                            pdfi_countdown(P_UTF8);
                         }
                     }
                 }
@@ -1342,31 +1358,34 @@ int pdfi_read_Encryption(pdf_context *ctx)
                 ctx->StrF = CRYPT_AESV3;
             code = check_user_password_R6(ctx, (char *)"", 0, KeyLen, 3);
             if (code < 0) {
-                if(ctx->Password) {
-                    /* Empty user password didn't work, try the password we've been given as a user password */
-                    code = check_user_password_R6(ctx, ctx->Password, strlen(ctx->Password), KeyLen, 3);
-                    if (code < 0) {
-                        code = check_owner_password_R6(ctx, ctx->Password, strlen(ctx->Password), KeyLen, 3);
-                        /* If the supplied Password fails as the user *and* owner password, mayeb its in
-                         * the locale, not UTF-8, try converting to UTF-8
-                         */
+                code = check_owner_password_R6(ctx, (char *)"", 0, KeyLen, 3);
+                if (code < 0) {
+                    if(ctx->Password) {
+                        /* Empty user password didn't work, try the password we've been given as a user password */
+                        code = check_user_password_R6(ctx, ctx->Password, strlen(ctx->Password), KeyLen, 3);
                         if (code < 0) {
-                            pdf_string *P = NULL, *P_UTF8 = NULL;
-
-                            code = pdfi_alloc_object(ctx, PDF_STRING, strlen(ctx->Password), (pdf_obj **)&P);
-                            if (code < 0)
-                                goto done;
-                            memcpy(P->data, ctx->Password, P->length);
-                            code = locale_to_utf8(ctx, P, &P_UTF8);
+                            code = check_owner_password_R6(ctx, ctx->Password, strlen(ctx->Password), KeyLen, 3);
+                            /* If the supplied Password fails as the user *and* owner password, mayeb its in
+                             * the locale, not UTF-8, try converting to UTF-8
+                             */
                             if (code < 0) {
+                                pdf_string *P = NULL, *P_UTF8 = NULL;
+
+                                code = pdfi_alloc_object(ctx, PDF_STRING, strlen(ctx->Password), (pdf_obj **)&P);
+                                if (code < 0)
+                                    goto done;
+                                memcpy(P->data, ctx->Password, P->length);
+                                code = locale_to_utf8(ctx, P, &P_UTF8);
+                                if (code < 0) {
+                                    pdfi_countdown(P);
+                                    goto done;
+                                }
+                                code = check_user_password_R6(ctx, (char *)P_UTF8->data, P_UTF8->length, KeyLen, 3);
+                                if (code < 0)
+                                    code = check_owner_password_R6(ctx, (char *)P_UTF8->data, P_UTF8->length, KeyLen, 3);
                                 pdfi_countdown(P);
-                                goto done;
+                                pdfi_countdown(P_UTF8);
                             }
-                            code = check_user_password_R6(ctx, (char *)P_UTF8->data, P_UTF8->length, KeyLen, 3);
-                            if (code < 0)
-                                code = check_owner_password_R6(ctx, (char *)P_UTF8->data, P_UTF8->length, KeyLen, 3);
-                            pdfi_countdown(P);
-                            pdfi_countdown(P_UTF8);
                         }
                     }
                 }
