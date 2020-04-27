@@ -268,6 +268,11 @@ static int pdfi_add_to_cache(pdf_context *ctx, pdf_obj *o)
 {
     pdf_obj_cache_entry *entry;
 
+    if (ctx->xref_table->xref[o->object_num].cache != NULL) {
+        dmprintf1(ctx->memory, "Attempting to add object to cache when the object is already cached!\n", o->object_num);
+        return_error(gs_error_unknownerror);
+    }
+
     if (o->object_num > ctx->xref_table->xref_size)
         return_error(gs_error_rangecheck);
 
@@ -464,7 +469,6 @@ static int pdfi_read_object(pdf_context *ctx, pdf_stream *s, gs_offset_t stream_
 
         o->indirect_num = o->object_num = objnum;
         o->indirect_gen = o->generation_num = gen;
-        code = pdfi_add_to_cache(ctx, o);
         return code;
     }
     if (keyword->key == PDF_STREAM) {
@@ -503,7 +507,6 @@ static int pdfi_read_object(pdf_context *ctx, pdf_stream *s, gs_offset_t stream_
         d->indirect_num = d->object_num = objnum;
         d->indirect_gen = d->generation_num = gen;
         d->stream_offset = offset;
-        code = pdfi_add_to_cache(ctx, (pdf_obj *)d);
         if (code < 0) {
             pdfi_pop(ctx, 1);
             return code;
@@ -540,6 +543,7 @@ static int pdfi_read_object(pdf_context *ctx, pdf_stream *s, gs_offset_t stream_
 
         if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
             dmprintf1(ctx->memory, "Failed to find an 'endstream' keyword at the end of the stream object %"PRIu64".\n", objnum);
+            ctx->pdf_errors |= E_PDF_MISSINGENDOBJ;
             pdfi_pop(ctx, 1);
             return 0;
         }
@@ -556,9 +560,10 @@ static int pdfi_read_object(pdf_context *ctx, pdf_stream *s, gs_offset_t stream_
             if (ctx->pdfstoponerror)
                 return code;
             else
-                /* Something went wrong looking for endobj, but we foudn endstream, so assume
+                /* Something went wrong looking for endobj, but we found endstream, so assume
                  * for now that will suffice.
                  */
+                ctx->pdf_errors |= E_PDF_MISSINGENDOBJ;
                 return 0;
         }
 
@@ -566,8 +571,14 @@ static int pdfi_read_object(pdf_context *ctx, pdf_stream *s, gs_offset_t stream_
             return_error(gs_error_stackunderflow);
 
         if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
-            pdfi_pop(ctx, 2);
-            return_error(gs_error_typecheck);
+            pdfi_pop(ctx, 1);
+            if (ctx->pdfstoponerror)
+                return_error(gs_error_typecheck);
+            ctx->pdf_errors |= E_PDF_MISSINGENDOBJ;
+            /* Didn't find an endobj, but we have an endstream, so assume
+             * for now that will suffice
+             */
+            return 0;
         }
         keyword = ((pdf_keyword *)ctx->stack_top[-1]);
         if (keyword->key != PDF_ENDOBJ) {
@@ -592,7 +603,6 @@ static int pdfi_read_object(pdf_context *ctx, pdf_stream *s, gs_offset_t stream_
 
         o->indirect_num = o->object_num = objnum;
         o->indirect_gen = o->generation_num = gen;
-        code = pdfi_add_to_cache(ctx, o);
         return code;
     }
     pdfi_pop(ctx, 2);
@@ -610,6 +620,8 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
     gs_offset_t saved_stream_offset;
     bool saved_decrypt_strings = ctx->decrypt_strings;
     pdf_dict *compressed_object = NULL;
+
+    *object = NULL;
 
     if (obj >= ctx->xref_table->xref_size) {
         dmprintf1(ctx->memory, "Error, attempted to dereference object %"PRIu64", which is not present in the xref table\n", obj);
@@ -697,6 +709,10 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
                 }
                 pdfi_countup(compressed_object);
                 pdfi_pop(ctx, 1);
+                code = pdfi_add_to_cache(ctx, (pdf_obj *)compressed_object);
+                if (code < 0) {
+                    goto error;
+                }
             } else {
 #if CACHE_STATISTICS
                 ctx->compressed_hits++;
@@ -845,6 +861,11 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
             pdfi_pop(ctx, 1);
 
             pdfi_countdown(compressed_object);
+            code = pdfi_add_to_cache(ctx, *object);
+            if (code < 0) {
+                pdfi_countdown(*object);
+                goto error;
+            }
         } else {
             pdf_stream *SubFile_stream = NULL;
             pdf_string *EODString;
@@ -872,10 +893,15 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
             if (code < 0)
                 goto error;
 
-            *object = ctx->stack_top[-1];
-            if ((*object)->object_num == obj) {
+            if ((ctx->stack_top[-1])->object_num == obj) {
+                *object = ctx->stack_top[-1];
                 pdfi_countup(*object);
                 pdfi_pop(ctx, 1);
+                code = pdfi_add_to_cache(ctx, *object);
+                if (code < 0) {
+                    pdfi_countdown(*object);
+                    goto error;
+                }
             } else {
                 pdfi_pop(ctx, 1);
                 code = gs_note_error(gs_error_undefined);
@@ -899,6 +925,7 @@ error:
     ctx->decrypt_strings = saved_decrypt_strings;
     pdfi_countdown(compressed_object);
     (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
+    pdfi_clearstack(ctx);
     return code;
 }
 
@@ -980,7 +1007,7 @@ static int fromhex(char c)
  * pushed onto the stack does the reference count become 1, indicating the stack is
  * the only reference.
  */
-int skip_white(pdf_context *ctx, pdf_stream *s)
+int pdfi_skip_white(pdf_context *ctx, pdf_stream *s)
 {
     uint32_t read = 0;
     int32_t bytes = 0;
@@ -1029,7 +1056,7 @@ static int pdfi_read_num(pdf_context *ctx, pdf_stream *s, uint32_t indirect_num,
     pdf_num *num;
     int code = 0, malformed = false;
 
-    skip_white(ctx, s);
+    pdfi_skip_white(ctx, s);
 
     do {
         bytes = pdfi_read_bytes(ctx, (byte *)&Buffer[index], 1, 1, s);
@@ -1561,7 +1588,7 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_stream *s, uint32_t indirect_
     int code;
     pdf_keyword *keyword;
 
-    skip_white(ctx, s);
+    pdfi_skip_white(ctx, s);
 
     do {
         bytes = pdfi_read_bytes(ctx, (byte *)&Buffer[index], 1, 1, s);
@@ -1759,7 +1786,7 @@ int pdfi_read_token(pdf_context *ctx, pdf_stream *s, uint32_t indirect_num, uint
     char Buffer[256];
     int code;
 
-    skip_white(ctx, s);
+    pdfi_skip_white(ctx, s);
 
     bytes = pdfi_read_bytes(ctx, (byte *)Buffer, 1, 1, s);
     if (bytes < 0)
@@ -1794,7 +1821,7 @@ int pdfi_read_token(pdf_context *ctx, pdf_stream *s, uint32_t indirect_num, uint
             if (bytes <= 0)
                 return (gs_error_ioerror);
             if (iswhite(Buffer[1])) {
-                code = skip_white(ctx, s);
+                code = pdfi_skip_white(ctx, s);
                 if (code < 0)
                     return code;
                 bytes = pdfi_read_bytes(ctx, (byte *)&Buffer[1], 1, 1, s);
@@ -1823,8 +1850,10 @@ int pdfi_read_token(pdf_context *ctx, pdf_stream *s, uint32_t indirect_num, uint
                 return (gs_error_ioerror);
             if (Buffer[1] == '>')
                 return pdfi_dict_from_stack(ctx, indirect_num, indirect_gen);
-            else
+            else {
+                pdfi_unread(ctx, s, (byte *)&Buffer[1], 1);
                 return_error(gs_error_syntaxerror);
+            }
             break;
         case '(':
             return pdfi_read_string(ctx, s, indirect_num, indirect_gen);
@@ -1996,6 +2025,15 @@ int pdfi_repair_file(pdf_context *ctx)
     /* First pass, identify all the objects of the form x y obj */
 
     do {
+        code = pdfi_skip_white(ctx, ctx->main_stream);
+        if (code < 0) {
+            if (code != gs_error_VMerror && code != gs_error_ioerror) {
+                pdfi_clearstack(ctx);
+                offset = pdfi_unread_tell(ctx);
+                continue;
+            } else
+                return code;
+        }
         offset = pdfi_unread_tell(ctx);
         do {
             code = pdfi_read_token(ctx, ctx->main_stream, 0, 0);
@@ -2013,6 +2051,10 @@ int pdfi_repair_file(pdf_context *ctx)
                     pdf_num *n;
 
                     if (k->key == PDF_OBJ) {
+                        gs_offset_t saved_offset[3];
+
+                        saved_offset[0] = saved_offset[1] = saved_offset[2] = 0;
+
                         if (pdfi_count_stack(ctx) < 3 || ctx->stack_top[-2]->type != PDF_INT || ctx->stack_top[-2]->type != PDF_INT) {
                             pdfi_clearstack(ctx);
                             continue;
@@ -2024,6 +2066,11 @@ int pdfi_repair_file(pdf_context *ctx)
                         pdfi_clearstack(ctx);
 
                         do {
+                            /* mvoe all the saved offsets up by one */
+                            saved_offset[0] = saved_offset[1];
+                            saved_offset[1] = saved_offset[2];
+                            saved_offset[2] = pdfi_unread_tell(ctx);;
+
                             code = pdfi_read_token(ctx, ctx->main_stream, 0, 0);
                             if (code < 0) {
                                 if (code != gs_error_VMerror && code != gs_error_ioerror)
@@ -2035,6 +2082,24 @@ int pdfi_repair_file(pdf_context *ctx)
 
                             if (ctx->stack_top[-1]->type == PDF_KEYWORD){
                                 pdf_keyword *k = (pdf_keyword *)ctx->stack_top[-1];
+
+                                if (k->key == PDF_OBJ) {
+                                    /* Found obj while looking for endobj, store the existing 'obj'
+                                     * and start afresh.
+                                     */
+                                    code = pdfi_repair_add_object(ctx, object_num, generation_num, offset);
+                                    if (pdfi_count_stack(ctx) < 3 || ctx->stack_top[-2]->type != PDF_INT || ctx->stack_top[-2]->type != PDF_INT) {
+                                        pdfi_clearstack(ctx);
+                                        break;
+                                    }
+                                    n = (pdf_num *)ctx->stack_top[-3];
+                                    object_num = n->value.i;
+                                    n = (pdf_num *)ctx->stack_top[-2];
+                                    generation_num = n->value.i;
+                                    pdfi_clearstack(ctx);
+                                    offset = saved_offset[0];
+                                    continue;
+                                }
 
                                 if (k->key == PDF_ENDOBJ) {
                                     code = pdfi_repair_add_object(ctx, object_num, generation_num, offset);
@@ -2084,7 +2149,6 @@ int pdfi_repair_file(pdf_context *ctx)
                                         break;
                                     } else {
                                         pdfi_clearstack(ctx);
-                                        break;
                                     }
                                 }
                             }
@@ -2103,13 +2167,21 @@ int pdfi_repair_file(pdf_context *ctx)
                                     continue;
                                 if (code < 0)
                                     return code;
-                                offset = pdfi_unread_tell(ctx);
                                 pdfi_clearstack(ctx);
                             } else {
-                                offset = pdfi_unread_tell(ctx);
                                 pdfi_clearstack(ctx);
                             }
                     }
+                    code = pdfi_skip_white(ctx, ctx->main_stream);
+                    if (code < 0) {
+                        if (code != gs_error_VMerror && code != gs_error_ioerror) {
+                            pdfi_clearstack(ctx);
+                            offset = pdfi_unread_tell(ctx);
+                            continue;
+                        } else
+                            return code;
+                    }
+                    offset = pdfi_unread_tell(ctx);
                 }
                 if (pdfi_count_stack(ctx) > 0 && ctx->stack_top[-1]->type != PDF_INT)
                     pdfi_clearstack(ctx);

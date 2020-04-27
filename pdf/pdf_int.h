@@ -20,7 +20,7 @@
 #include "pdf_types.h"
 
 
-int skip_white(pdf_context *ctx, pdf_stream *s);
+int pdfi_skip_white(pdf_context *ctx, pdf_stream *s);
 int pdfi_read_token(pdf_context *ctx, pdf_stream *s, uint32_t indirect_num, uint32_t indirect_gen);
 int pdfi_alloc_object(pdf_context *ctx, pdf_obj_type type, unsigned int size, pdf_obj **obj);
 void pdfi_free_object(pdf_obj *o);

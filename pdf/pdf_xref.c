@@ -643,7 +643,7 @@ static int read_xref_section(pdf_context *ctx, pdf_stream *s)
         }
     }
 
-    skip_white(ctx, s);
+    pdfi_skip_white(ctx, s);
     for (i=0;i< size;i++){
         xref_entry *entry = &ctx->xref_table->xref[i + start];
         unsigned char free;
