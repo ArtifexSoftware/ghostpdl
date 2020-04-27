@@ -560,7 +560,7 @@ GS_DEV_DEFAULT="x11alpha bbox"
 DISPLAY_DEV=$(DD)bbox.dev
 
 # Choose the device(s) to include.  See devs.mak for details,
-# devs.mak and contrib.mak for the list of available devices.
+# devs.mak and dcontrib.mak for the list of available devices.
 # DEVICE_DEVS=$(DISPLAY_DEV) $(DD)x11.dev $(DD)x11_.dev $(DD)x11alpha.dev $(DD)x11alt_.dev $(DD)x11cmyk.dev $(DD)x11cmyk2.dev $(DD)x11cmyk4.dev $(DD)x11cmyk8.dev $(DD)x11gray2.dev $(DD)x11gray4.dev $(DD)x11mono.dev $(DD)x11rg16x.dev $(DD)x11rg32x.dev
 DEVICE_DEVS=$(DISPLAY_DEV)
 DEVICE_DEVS1=$(DD)bit.dev $(DD)bitcmyk.dev $(DD)bitrgb.dev $(DD)bitrgbtags.dev $(DD)bmp16.dev $(DD)bmp16m.dev $(DD)bmp256.dev $(DD)bmp32b.dev $(DD)bmpgray.dev $(DD)bmpmono.dev $(DD)bmpsep1.dev $(DD)bmpsep8.dev $(DD)ccr.dev $(DD)cif.dev $(DD)devicen.dev $(DD)eps2write.dev $(DD)fpng.dev $(DD)inferno.dev $(DD)ink_cov.dev $(DD)inkcov.dev $(DD)jpeg.dev $(DD)jpegcmyk.dev $(DD)jpeggray.dev $(DD)mgr4.dev $(DD)mgr8.dev $(DD)mgrgray2.dev $(DD)mgrgray4.dev $(DD)mgrgray8.dev $(DD)mgrmono.dev $(DD)miff24.dev $(DD)pam.dev $(DD)pamcmyk32.dev $(DD)pamcmyk4.dev $(DD)pbm.dev $(DD)pbmraw.dev $(DD)pcx16.dev $(DD)pcx24b.dev $(DD)pcx256.dev $(DD)pcxcmyk.dev $(DD)pcxgray.dev $(DD)pcxmono.dev $(DD)pdfwrite.dev $(DD)pgm.dev $(DD)pgmraw.dev $(DD)pgnm.dev $(DD)pgnmraw.dev $(DD)pkm.dev $(DD)pkmraw.dev $(DD)pksm.dev $(DD)pksmraw.dev $(DD)plan.dev $(DD)plan9bm.dev $(DD)planc.dev $(DD)plang.dev $(DD)plank.dev $(DD)planm.dev $(DD)plank.dev $(DD)plib.dev $(DD)plibc.dev $(DD)plibg.dev $(DD)plibk.dev $(DD)plibm.dev $(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev $(DD)ps2write.dev $(DD)psdcmyk.dev $(DD)psdcmykog.dev $(DD)psdf.dev $(DD)psdrgb.dev $(DD)spotcmyk.dev $(DD)txtwrite.dev $(DD)xcf.dev $(DD)psdcmyk16.dev $(DD)psdrgb16.dev
@@ -676,7 +676,7 @@ include $(GLSRCDIR)/ijs.mak
 
 
 include $(DEVSRCDIR)/devs.mak
-include $(DEVSRCDIR)/contrib.mak
+include $(DEVSRCDIR)/dcontrib.mak
 include $(GLSRCDIR)/unix-aux.mak
 include $(GLSRCDIR)/unixlink.mak
 include $(GLSRCDIR)/unix-dll.mak

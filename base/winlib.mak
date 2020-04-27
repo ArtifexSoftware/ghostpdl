@@ -159,7 +159,7 @@ BEGINFILES=$(GLGENDIR)\ccf32.tr\
 !include $(GLSRCDIR)\lcups.mak
 !include $(GLSRCDIR)\lcupsi.mak
 !include $(DEVSRCDIR)\devs.mak
-!include $(DEVSRCDIR)\contrib.mak
+!include $(DEVSRCDIR)\dcontrib.mak
 !include $(CONTRIBDIR)\contrib.mak
 
 # Define the compilation rule for Windows devices.

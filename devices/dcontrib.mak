@@ -16,7 +16,7 @@
 # makefile for contributed device drivers.
 
 # Define the name of this makefile.
-DCONTRIB_MAK=$(DEVSRC)contrib.mak $(TOP_MAKEFILES)
+DCONTRIB_MAK=$(DEVSRC)dcontrib.mak $(TOP_MAKEFILES)
 
 ###### --------------------------- Catalog -------------------------- ######
 
@@ -82,7 +82,7 @@ DCONTRIB_MAK=$(DEVSRC)contrib.mak $(TOP_MAKEFILES)
 #	okiibm	Okidata MicroLine IBM-compatible printers
 #	paintjet  alternate H-P PaintJet color printer
 #	photoex  Epson Stylus Color Photo, Photo EX, Photo 700
-#	pj	H-P PaintJet XL driver 
+#	pj	H-P PaintJet XL driver
 #	pjetxl	alternate H-P PaintJet XL driver
 #	pjxl	H-P PaintJet XL color printer
 #	pjxl300  H-P PaintJet XL300 color printer;
@@ -427,7 +427,7 @@ $(DD)paintjet.dev : $(PJET) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 $(DD)pjetxl.dev : $(PJET) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)pjetxl $(PJET)
 
-###--------------------- The Brother HL 7x0 printer --------------------- ### 
+###--------------------- The Brother HL 7x0 printer --------------------- ###
 ### Note: this driver was contributed by users: please contact            ###
 ###       Pierre-Olivier Gaillard (pierre.gaillard@hol.fr)                ###
 ###         for questions about the basic driver;                         ###
