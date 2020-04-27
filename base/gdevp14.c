@@ -887,12 +887,13 @@ resolve_matte(pdf14_buf *maskbuf, byte *src_data, int src_planestride, int src_r
    need to do the offset to our data in the buffer. Bug 700686: If we are in
    a softmask that includes a matte entry, then we need to undo the matte
    entry here at this time in the image's native color space not the parent
-   color space. */
+   color space.   The big_endian term here is only set to true if the data
+   has been baked as such during the put_image blending operation.  */
 static forceinline pdf14_buf*
 template_transform_color_buffer(gs_gstate *pgs, pdf14_ctx *ctx, gx_device *dev,
     pdf14_buf *src_buf, byte *src_data, cmm_profile_t *src_profile,
     cmm_profile_t *des_profile, int x0, int y0, int width, int height, bool *did_alloc,
-    bool has_matte, bool deep)
+    bool has_matte, bool deep, bool big_endian)
 {
     gsicc_rendering_param_t rendering_params;
     gsicc_link_t *icc_link;
@@ -968,6 +969,11 @@ template_transform_color_buffer(gs_gstate *pgs, pdf14_ctx *ctx, gx_device *dev,
     gsicc_init_buffer(&des_buff_desc, des_profile->num_comps, 1<<deep, false,
                       false, true, des_planestride, des_rowstride, height, width);
 
+    if (big_endian) {
+        src_buff_desc.little_endian = false;
+        des_buff_desc.little_endian = false;
+    }
+
     /* If we have a matte entry, undo the pre-blending now.  Also set pdf14
        context to ensure that this is not done again during the group
        composition */
@@ -1038,28 +1044,28 @@ static pdf14_buf*
 pdf14_transform_color_buffer_no_matte(gs_gstate *pgs, pdf14_ctx *ctx, gx_device *dev,
     pdf14_buf *src_buf, byte *src_data, cmm_profile_t *src_profile,
     cmm_profile_t *des_profile, int x0, int y0, int width, int height, bool *did_alloc,
-    bool deep)
+    bool deep, bool big_endian)
 {
     if (deep)
         return template_transform_color_buffer(pgs, ctx, dev, src_buf, src_data, src_profile,
-            des_profile, x0, y0, width, height, did_alloc, false, true);
+            des_profile, x0, y0, width, height, did_alloc, false, true, big_endian);
     else
         return template_transform_color_buffer(pgs, ctx, dev, src_buf, src_data, src_profile,
-            des_profile, x0, y0, width, height, did_alloc, false, false);
+            des_profile, x0, y0, width, height, did_alloc, false, false, big_endian);
 }
 
 static pdf14_buf*
 pdf14_transform_color_buffer_with_matte(gs_gstate *pgs, pdf14_ctx *ctx, gx_device *dev,
     pdf14_buf *src_buf, byte *src_data, cmm_profile_t *src_profile,
     cmm_profile_t *des_profile, int x0, int y0, int width, int height, bool *did_alloc,
-    bool deep)
+    bool deep, bool big_endian)
 {
     if (deep)
         return template_transform_color_buffer(pgs, ctx, dev, src_buf, src_data, src_profile,
-            des_profile, x0, y0, width, height, did_alloc, true, true);
+            des_profile, x0, y0, width, height, did_alloc, true, true, big_endian);
     else
         return template_transform_color_buffer(pgs, ctx, dev, src_buf, src_data, src_profile,
-            des_profile, x0, y0, width, height, did_alloc, true, false);
+            des_profile, x0, y0, width, height, did_alloc, true, false, big_endian);
 }
 
 /**
@@ -1741,13 +1747,13 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
                 result = pdf14_transform_color_buffer_with_matte(pgs, ctx, dev,
                     tos, tos->data, curr_icc_profile, nos->group_color_info->icc_profile,
                     tos->rect.p.x, tos->rect.p.y, tos->rect.q.x - tos->rect.p.x,
-                    tos->rect.q.y - tos->rect.p.y, &did_alloc, tos->deep);
+                    tos->rect.q.y - tos->rect.p.y, &did_alloc, tos->deep, false);
                 has_matte = false;
             } else {
                 result = pdf14_transform_color_buffer_no_matte(pgs, ctx, dev,
                     tos, tos->data, curr_icc_profile, nos->group_color_info->icc_profile,
                     tos->rect.p.x, tos->rect.p.y, tos->rect.q.x - tos->rect.p.x,
-                    tos->rect.q.y - tos->rect.p.y, &did_alloc, tos->deep);
+                    tos->rect.q.y - tos->rect.p.y, &did_alloc, tos->deep, false);
             }
             if (result == NULL)
                 return_error(gs_error_unknownerror);  /* transform failed */
@@ -2427,12 +2433,13 @@ typedef void(*blend_image_row_proc_t) (const byte *gs_restrict buf_ptr,
 static int
 pdf14_put_image_color_convert(const pdf14_device* dev, gs_gstate* pgs, cmm_profile_t* src_profile,
                         cmm_dev_profile_t* dev_target_profile, pdf14_buf** buf,
-                        byte** buf_ptr, int x, int y, int width, int height)
+                        byte** buf_ptr, bool was_blended, int x, int y, int width, int height)
 {
     pdf14_buf* cm_result = NULL;
     cmm_profile_t* des_profile;
     gsicc_rendering_param_t render_cond;
     bool did_alloc;
+    bool big_endian;
 
     gsicc_extract_profile(GS_UNKNOWN_TAG, dev_target_profile, &des_profile,
         &render_cond);
@@ -2440,13 +2447,21 @@ pdf14_put_image_color_convert(const pdf14_device* dev, gs_gstate* pgs, cmm_profi
 #if RAW_DUMP
     dump_raw_buffer(dev->ctx->memory,
         height, width, (*buf)->n_planes, (*buf)->planestride,
-        (*buf)->rowstride, "pdf14_put_image_color_convert_pre", buf_ptr, (*buf)->deep);
+        (*buf)->rowstride, "pdf14_put_image_color_convert_pre", *buf_ptr, (*buf)->deep);
     global_index++;
 #endif
 
+    /* If we are doing a 16 bit buffer it will be big endian if we have already done the 
+       blend, otherwise it will be native endian */
+    if (was_blended && (*buf)->deep) {
+        big_endian = true;
+    } else {
+        big_endian = false;
+    }
+
     cm_result = pdf14_transform_color_buffer_no_matte(pgs, dev->ctx, (gx_device*) dev, *buf,
         *buf_ptr, src_profile, des_profile, x, y, width,
-        height, &did_alloc, (*buf)->deep);
+        height, &did_alloc, (*buf)->deep, big_endian);
 
     if (cm_result == NULL)
         return_error(gs_error_VMerror);
@@ -2461,7 +2476,7 @@ pdf14_put_image_color_convert(const pdf14_device* dev, gs_gstate* pgs, cmm_profi
 #if RAW_DUMP
     dump_raw_buffer(dev->ctx->memory,
         height, width, (*buf)->n_planes, (*buf)->planestride,
-        (*buf)->rowstride, "pdf14_put_image_color_convert_post", buf_ptr, (*buf)->deep);
+        (*buf)->rowstride, "pdf14_put_image_color_convert_post", *buf_ptr, (*buf)->deep);
     global_index++;
 #endif
     return 0;
@@ -2607,7 +2622,7 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
                alpha for the output device or hand back the wrong color space with 
                alpha data.  We choose the later. */
             code = pdf14_put_image_color_convert(pdev, pgs, src_profile,
-                dev_target_profile, &buf, &buf_ptr, rect.p.x, rect.p.y,
+                dev_target_profile, &buf, &buf_ptr, false, rect.p.x, rect.p.y,
                 width, height);
             if (code < 0)
                 return code;
@@ -2644,7 +2659,7 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
                alpha for the output device or hand back the wrong color space with
                alpha data.  We choose the later. */
             code = pdf14_put_image_color_convert(pdev, pgs, src_profile, dev_target_profile,
-                &buf, &buf_ptr, rect.p.x, rect.p.y, width, height);
+                &buf, &buf_ptr, true, rect.p.x, rect.p.y, width, height);
             if (code < 0)
                 return code;
 
@@ -2923,7 +2938,7 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
                device or hand back the wrong color space with
                alpha data.  We choose the later. */
             code = pdf14_put_image_color_convert(pdev, pgs, src_profile,
-                        dev_target_profile, &buf, &buf_ptr, rect.p.x,
+                        dev_target_profile, &buf, &buf_ptr, false, rect.p.x,
                         rect.p.y, width, height);
             if (code < 0)
                 return code;
@@ -2964,7 +2979,7 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
 
         if (color_mismatch) {
             code = pdf14_put_image_color_convert(pdev, pgs, src_profile, dev_target_profile,
-                &buf, &buf_ptr, rect.p.x, rect.p.y, width, height);
+                &buf, &buf_ptr, true, rect.p.x, rect.p.y, width, height);
             if (code < 0)
                 return code;
 
