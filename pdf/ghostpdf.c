@@ -633,6 +633,9 @@ read_root:
     if (code < 0)
         goto exit;
 
+    if (ctx->num_pages == 0)
+        dmprintf(ctx->memory, "\n   **** Warning: PDF document has no pages.\n");
+
     pdfi_read_OptionalRoot(ctx);
 
     if (ctx->pdfinfo) {
