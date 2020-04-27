@@ -1010,7 +1010,7 @@ int pdfi_filter(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream
         if (code < 0)
             goto error;
 
-        if (Length <= 0) {
+        if (Length <= 0 || ctx->StrF == CRYPT_IDENTITY) {
             /* Don't treat as an encrypted stream if Length is 0 */
             return pdfi_filter_no_decryption(ctx, dict, source, new_stream, inline_image);
         }
@@ -1018,15 +1018,18 @@ int pdfi_filter(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream
         code = pdfi_apply_SubFileDecode_filter(ctx, Length, NULL, source, &SubFile_stream, false);
 
         switch(ctx->StrF) {
+            case CRYPT_IDENTITY:
+                /* Can't happen, handled above */
+                break;
             /* There are only two possible filters, RC4 or AES, we take care
              * of the number of bits in the key by using ctx->Length.
              */
-            case V1:
-            case V2:
+            case CRYPT_V1:
+            case CRYPT_V2:
                 code = pdfi_apply_Arc4_filter(ctx, StreamKey, SubFile_stream, &crypt_stream);
                 break;
-            case AESV2:
-            case AESV3:
+            case CRYPT_AESV2:
+            case CRYPT_AESV3:
                 code = pdfi_apply_AES_filter(ctx, StreamKey, 1, SubFile_stream, &crypt_stream);
                 break;
             default:

@@ -898,7 +898,7 @@ int pdfi_compute_objkey(pdf_context *ctx, pdf_obj *obj, pdf_string **Key)
          * (This addition is done for backward compatibility and is not intended to
          * provide addtional security).
          */
-        if (ctx->StmF == AESV2 || ctx->StmF == AESV3){
+        if (ctx->StmF == CRYPT_AESV2 || ctx->StmF == CRYPT_AESV3){
             memcpy(&Buffer[++idx], sAlTString, 4);
             md5_length += 4;
         }
@@ -954,16 +954,21 @@ int pdfi_decrypt_string(pdf_context *ctx, pdf_string *string)
         if (code < 0)
             goto error;
 
-        switch(ctx->StmF) {
+        switch(ctx->StrF) {
             /* There are only two possible filters, RC4 or AES, we take care
              * of the number of bits in the key by using ctx->Length.
              */
-            case V1:
-            case V2:
+            case CRYPT_IDENTITY:
+                pdfi_close_memory_stream(ctx, NULL, stream);
+                code = 0;
+                goto error;
+                break;
+            case CRYPT_V1:
+            case CRYPT_V2:
                 code = pdfi_apply_Arc4_filter(ctx, EKey, stream, &crypt_stream);
                 break;
-            case AESV2:
-            case AESV3:
+            case CRYPT_AESV2:
+            case CRYPT_AESV3:
                 code = pdfi_apply_AES_filter(ctx, EKey, 1, stream, &crypt_stream);
                 break;
             default:
@@ -1007,6 +1012,7 @@ int pdfi_read_Encryption(pdf_context *ctx)
     pdf_string *s = NULL;
     int64_t i64;
     double f;
+    bool SkipStmF = false, SkipStrF = false;
 
     if (ctx->pdfdebug)
         dmprintf(ctx->memory, "%% Checking for Encrypt dictionary\n");
@@ -1149,8 +1155,13 @@ int pdfi_read_Encryption(pdf_context *ctx)
         if (code < 0)
             goto done;
         if (!pdfi_name_is((pdf_name *)o, "StdCF")) {
-            code = gs_note_error(gs_error_undefined);
-            goto done;
+            if (pdfi_name_is((pdf_name *)o, "Identity")) {
+                ctx->StmF = CRYPT_IDENTITY;
+                SkipStmF = true;
+            } else {
+                code = gs_note_error(gs_error_undefined);
+                goto done;
+            }
         }
         pdfi_countdown(o);
 
@@ -1158,8 +1169,13 @@ int pdfi_read_Encryption(pdf_context *ctx)
         if (code < 0)
             goto done;
         if (!pdfi_name_is((pdf_name *)o, "StdCF")) {
-            code = gs_note_error(gs_error_undefined);
-            goto done;
+            if (pdfi_name_is((pdf_name *)o, "Identity")) {
+                ctx->StrF = CRYPT_IDENTITY;
+                SkipStrF = true;
+            } else {
+                code = gs_note_error(gs_error_undefined);
+                goto done;
+            }
         }
         pdfi_countdown(o);
 
@@ -1177,18 +1193,20 @@ int pdfi_read_Encryption(pdf_context *ctx)
         code = pdfi_dict_get_type(ctx, StdCF_dict, "CFM", PDF_NAME, &o);
         if (code < 0)
             goto done;
-        if (pdfi_name_is((pdf_name *)o, "V2")) {
-            ctx->StmF = ctx->StrF = V2;
-        } else {
-            if (pdfi_name_is((pdf_name *)o, "AESV2")) {
-                ctx->StmF = ctx->StrF = AESV2;
+        if (!SkipStmF) {
+            if (pdfi_name_is((pdf_name *)o, "V2")) {
+                ctx->StmF = ctx->StrF = CRYPT_V2;
             } else {
-                if (pdfi_name_is((pdf_name *)o, "AESV3")) {
-                    ctx->StmF = ctx->StrF = AESV3;
+                if (pdfi_name_is((pdf_name *)o, "AESV2")) {
+                    ctx->StmF = ctx->StrF = CRYPT_AESV2;
                 } else {
-                    emprintf(ctx->memory, "\n   **** Error: Unknown default encryption method in crypt filter.\n");
-                    code = gs_error_rangecheck;
-                    goto done;
+                    if (pdfi_name_is((pdf_name *)o, "AESV3")) {
+                        ctx->StmF = ctx->StrF = CRYPT_AESV3;
+                    } else {
+                        emprintf(ctx->memory, "\n   **** Error: Unknown default encryption method in crypt filter.\n");
+                        code = gs_error_rangecheck;
+                        goto done;
+                    }
                 }
             }
         }
@@ -1229,7 +1247,7 @@ int pdfi_read_Encryption(pdf_context *ctx)
             /* Revision 2 is always 40-bit RC4 */
             if (KeyLen == 0)
                 KeyLen = 40;
-            ctx->StrF = ctx->StmF = V1;
+            ctx->StrF = ctx->StmF = CRYPT_V1;
             /* First see if the file is encrypted with an Owner password and no user password
              * in which case an empty user password will work to decrypt it.
              */
@@ -1248,7 +1266,7 @@ int pdfi_read_Encryption(pdf_context *ctx)
             /* Revision 3 is always 128-bit RC4 */
             if (KeyLen == 0)
                 KeyLen = 128;
-            ctx->StrF = ctx->StmF = V2;
+            ctx->StrF = ctx->StmF = CRYPT_V2;
             code = check_user_password_preR5(ctx, (char *)"", 0, KeyLen, 3);
             if (code < 0) {
                 if(ctx->Password) {
@@ -1278,7 +1296,10 @@ int pdfi_read_Encryption(pdf_context *ctx)
         case 5:
             if (KeyLen == 0)
                 KeyLen = 256;
-            ctx->StrF = ctx->StmF = AESV3;
+            if (!SkipStmF)
+                ctx->StmF = CRYPT_AESV2;
+            if (!SkipStrF)
+                ctx->StrF = CRYPT_AESV2;
             code = check_user_password_R5(ctx, (char *)"", 0, KeyLen, 3);
             if (code < 0) {
                 if(ctx->Password) {
@@ -1315,7 +1336,10 @@ int pdfi_read_Encryption(pdf_context *ctx)
             /* Revision 6 is always 256-bit AES */
             if (KeyLen == 0)
                 KeyLen = 256;
-            ctx->StrF = ctx->StmF = AESV3;
+            if (!SkipStmF)
+                ctx->StmF = CRYPT_AESV3;
+            if (!SkipStrF)
+                ctx->StrF = CRYPT_AESV3;
             code = check_user_password_R6(ctx, (char *)"", 0, KeyLen, 3);
             if (code < 0) {
                 if(ctx->Password) {

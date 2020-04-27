@@ -156,10 +156,11 @@ typedef enum pdf_warning_flag_e {
 } pdf_warning_flag;
 
 typedef enum pdf_crypt_filter_e {
-    V1,     /* 40-bit RC4 */
-    V2,     /* 128-bit RC4 */
-    AESV2,  /* 128-bit AES */
-    AESV3,  /* 256-bit AES */
+    CRYPT_IDENTITY, /* No encryption at all */
+    CRYPT_V1,     /* 40-bit RC4 */
+    CRYPT_V2,     /* 128-bit RC4 */
+    CRYPT_AESV2,  /* 128-bit AES */
+    CRYPT_AESV3,  /* 256-bit AES */
 } pdf_crypt_filter;
 
 #define INITIAL_STACK_SIZE 32
