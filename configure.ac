@@ -279,6 +279,7 @@ dnl Set build flags based on environment
 dnl --------------------------------------------------
 
 CC_OPT_FLAGS_TO_TRY="-O -DNDEBUG"
+CC_VISIBILITY_FLAGS_TO_TRY=""
 SET_DT_SONAME="-soname="
 CFLAGS_LARGEFILE=""
 
@@ -287,18 +288,21 @@ case $host in
         if test $GCC = yes; then
             CC_OPT_FLAGS_TO_TRY="-O2 -DNDEBUG"
             CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
+            CC_VISIBILITY_FLAGS_TO_TRY="-fvisibility=hidden"
         fi
         ;;
         *bsd*)
         if test $GCC = yes; then
             CC_OPT_FLAGS_TO_TRY="-O2 -DNDEBUG"
             CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
+            CC_VISIBILITY_FLAGS_TO_TRY="-fvisibility=hidden"
         fi
         ;;
         *-darwin*)
         if test $GCC = yes; then
             CC_OPT_FLAGS_TO_TRY="-O2 -DNDEBUG"
             CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
+            CC_VISIBILITY_FLAGS_TO_TRY="-fvisibility=hidden"
         fi
         SET_DT_SONAME=""
         ;;
@@ -306,6 +310,7 @@ case $host in
         if test $GCC = yes; then
             CC_OPT_FLAGS_TO_TRY="-O2 -DNDEBUG"
             CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
+            CC_VISIBILITY_FLAGS_TO_TRY="-fvisibility=hidden"
         fi
         SET_DT_SONAME=""
         ;;
@@ -319,6 +324,7 @@ case $host in
         if test $GCC = yes; then
             CC_OPT_FLAGS_TO_TRY="-O2 -DNDEBUG"
             CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
+            CC_VISIBILITY_FLAGS_TO_TRY="-fvisibility=hidden"
         else
             CC_DBG_FLAGS_TO_TRY="-g -O0"
         fi
@@ -328,6 +334,7 @@ case $host in
             CC_OPT_FLAGS_TO_TRY="-O2 -DNDEBUG"
             CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
             SET_DT_SONAME="so"
+            CC_VISIBILITY_FLAGS_TO_TRY="-fvisibility=hidden"
         fi
         ;;
 esac
@@ -444,6 +451,17 @@ for flag in $dbgflags_to_try; do
     AC_TRY_COMPILE(, [return 0;], [
         echo "   $flag"
         DBG_CFLAGS="$DBG_CFLAGS $flag"
+    ])
+    CFLAGS=$old_cflags
+done
+
+CFLAGS_VISIBILITY=""
+
+for flag in $CC_VISIBILITY_FLAGS_TO_TRY; do
+    CFLAGS="$CFLAGS $flag"
+    AC_TRY_COMPILE(, [return 0;], [
+        echo "   $flag"
+        CFLAGS_VISIBILITY="$CFLAGS_VISIBILITY $flag"
     ])
     CFLAGS=$old_cflags
 done
@@ -3485,6 +3503,7 @@ AC_SUBST(CFLAGSAUX_PROFILE)
 AC_SUBST(LDFLAGSAUX)
 AC_SUBST(AUXEXTRALIBS)
 AC_SUBST(ARCH_AUTOCONF_HEADER)
+AC_SUBST(CFLAGS_VISIBILITY)
 
 CONFIG_FILES_LIST="$CONFIG_FILES_LIST $THEMAKEFILE"
 
