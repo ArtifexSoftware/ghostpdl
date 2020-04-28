@@ -390,61 +390,32 @@ int is_compressed_object(pdf_context *ctx, uint32_t obj, uint32_t gen)
  * objects in compressed object streams! They should always pass a value of 0 for the stream_offset.
  * The stream_offset is the offset from the start of the underlying uncompressed PDF file of
  * the stream we are using. See the comments below when keyword is PDF_STREAM.
- *
- * expected_num -- if non-zero, the number of the object we're reading.  So we can abort early
- * if they don't match.
  */
-static int pdfi_read_object(pdf_context *ctx, pdf_stream *s, gs_offset_t stream_offset)
+
+/* This reads an object *after* the x y obj keyword has been found. Its broken out
+ * separately for the benefit of the repair code when reading the dictionary following
+ * the 'trailer' keyword, which does not have a 'obj' keyword. Note that it also does
+ * not have an 'endobj', we rely on the error handling to take care of that for us.
+ */
+static int pdfi_read_bare_object(pdf_context *ctx, pdf_stream *s, gs_offset_t stream_offset, uint32_t objnum, uint32_t gen)
 {
     int code = 0;
-    uint64_t objnum = 0, gen = 0;
     int64_t i;
     pdf_keyword *keyword = NULL;
+    gs_offset_t saved_offset[3];
 
-    /* An object consists of 'num gen obj' followed by a token, follwed by an endobj
-     * A stream dictionary might have a 'stream' instead of an 'endobj', in which case we
-     * want to deal with it specially by getting the Length, jumping to the end and checking
-     * for an endobj. Or not, possibly, because it would be slow.
-     */
-    code = pdfi_read_token(ctx, s, 0, 0);
-    if (code < 0)
-        return code;
-    if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_INT) {
-        pdfi_pop(ctx, 1);
-        return_error(gs_error_typecheck);
-    }
-    objnum = ((pdf_num *)ctx->stack_top[-1])->value.i;
-    pdfi_pop(ctx, 1);
-
-    code = pdfi_read_token(ctx, s, 0, 0);
-    if (code < 0)
-        return code;
-    if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_INT) {
-        pdfi_pop(ctx, 1);
-        return_error(gs_error_typecheck);
-    }
-    gen = ((pdf_num *)ctx->stack_top[-1])->value.i;
-    pdfi_pop(ctx, 1);
-
-    code = pdfi_read_token(ctx, s, 0, 0);
-    if (code < 0)
-        return code;
-    if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
-        pdfi_pop(ctx, 1);
-        return_error(gs_error_typecheck);
-    }
-    keyword = ((pdf_keyword *)ctx->stack_top[-1]);
-    if (keyword->key != PDF_OBJ) {
-        pdfi_pop(ctx, 1);
-        return_error(gs_error_syntaxerror);
-    }
-    pdfi_pop(ctx, 1);
+    saved_offset[0] = saved_offset[1] = saved_offset[2] = 0;
 
     code = pdfi_read_token(ctx, s, objnum, gen);
     if (code < 0)
         return code;
 
     do {
+        /* move all the saved offsets up by one */
+        saved_offset[0] = saved_offset[1];
+        saved_offset[1] = saved_offset[2];
+        saved_offset[2] = pdfi_unread_tell(ctx);;
+
         code = pdfi_read_token(ctx, s, objnum, gen);
         if (code < 0) {
             pdfi_clearstack(ctx);
@@ -588,6 +559,27 @@ static int pdfi_read_object(pdf_context *ctx, pdf_stream *s, gs_offset_t stream_
         pdfi_pop(ctx, 1);
         return 0;
     }
+    if (keyword->key == PDF_OBJ) {
+        pdf_obj *o;
+
+        ctx->pdf_errors |= E_PDF_MISSINGENDOBJ;
+
+        /* 4 for; the object we want, the object number, generation number and 'obj' keyword */
+        if (pdfi_count_stack(ctx) < 4)
+            return_error(gs_error_stackunderflow);
+
+        /* If we have that many objects, assume that we can throw away the x y obj and just use the remaining object */
+        o = ctx->stack_top[-4];
+
+        pdfi_pop(ctx, 3);
+
+        o->indirect_num = o->object_num = objnum;
+        o->indirect_gen = o->generation_num = gen;
+        if (saved_offset[0] > 0)
+            (void)pdfi_seek(ctx, s, saved_offset[0], SEEK_SET);
+        return 0;
+    }
+
     /* Assume that any other keyword means a missing 'endobj' */
     if (!ctx->pdfstoponerror) {
         pdf_obj *o;
@@ -607,6 +599,55 @@ static int pdfi_read_object(pdf_context *ctx, pdf_stream *s, gs_offset_t stream_
     }
     pdfi_pop(ctx, 2);
     return_error(gs_error_syntaxerror);
+}
+
+static int pdfi_read_object(pdf_context *ctx, pdf_stream *s, gs_offset_t stream_offset)
+{
+    int code = 0;
+    uint64_t objnum = 0, gen = 0;
+    int64_t i;
+    pdf_keyword *keyword = NULL;
+
+    /* An object consists of 'num gen obj' followed by a token, follwed by an endobj
+     * A stream dictionary might have a 'stream' instead of an 'endobj', in which case we
+     * want to deal with it specially by getting the Length, jumping to the end and checking
+     * for an endobj. Or not, possibly, because it would be slow.
+     */
+    code = pdfi_read_token(ctx, s, 0, 0);
+    if (code < 0)
+        return code;
+    if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_INT) {
+        pdfi_pop(ctx, 1);
+        return_error(gs_error_typecheck);
+    }
+    objnum = ((pdf_num *)ctx->stack_top[-1])->value.i;
+    pdfi_pop(ctx, 1);
+
+    code = pdfi_read_token(ctx, s, 0, 0);
+    if (code < 0)
+        return code;
+    if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_INT) {
+        pdfi_pop(ctx, 1);
+        return_error(gs_error_typecheck);
+    }
+    gen = ((pdf_num *)ctx->stack_top[-1])->value.i;
+    pdfi_pop(ctx, 1);
+
+    code = pdfi_read_token(ctx, s, 0, 0);
+    if (code < 0)
+        return code;
+    if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
+        pdfi_pop(ctx, 1);
+        return_error(gs_error_typecheck);
+    }
+    keyword = ((pdf_keyword *)ctx->stack_top[-1]);
+    if (keyword->key != PDF_OBJ) {
+        pdfi_pop(ctx, 1);
+        return_error(gs_error_syntaxerror);
+    }
+    pdfi_pop(ctx, 1);
+
+    return pdfi_read_bare_object(ctx, s, stream_offset, objnum, gen);
 }
 
 /* pdf_dereference returns an object with a reference count of at least 1, this represents the
@@ -1982,6 +2023,7 @@ int pdfi_repair_file(pdf_context *ctx)
     gs_offset_t offset;
     uint64_t object_num = 0, generation_num = 0;
     int i;
+    gs_offset_t outer_saved_offset[3];
 
     if (ctx->repaired) {
         dmprintf(ctx->memory, "%% Trying to repair file for second time -- unrepairable\n");
@@ -2035,7 +2077,12 @@ int pdfi_repair_file(pdf_context *ctx)
                 return code;
         }
         offset = pdfi_unread_tell(ctx);
+        outer_saved_offset[0] = outer_saved_offset[1] = outer_saved_offset[2] = 0;
         do {
+            outer_saved_offset[0] = outer_saved_offset[1];
+            outer_saved_offset[1] = outer_saved_offset[2];
+            outer_saved_offset[2] = pdfi_unread_tell(ctx);;
+
             code = pdfi_read_token(ctx, ctx->main_stream, 0, 0);
             if (code < 0) {
                 if (code != gs_error_VMerror && code != gs_error_ioerror) {
@@ -2053,6 +2100,8 @@ int pdfi_repair_file(pdf_context *ctx)
                     if (k->key == PDF_OBJ) {
                         gs_offset_t saved_offset[3];
 
+                        offset = outer_saved_offset[0];
+
                         saved_offset[0] = saved_offset[1] = saved_offset[2] = 0;
 
                         if (pdfi_count_stack(ctx) < 3 || ctx->stack_top[-2]->type != PDF_INT || ctx->stack_top[-2]->type != PDF_INT) {
@@ -2066,7 +2115,7 @@ int pdfi_repair_file(pdf_context *ctx)
                         pdfi_clearstack(ctx);
 
                         do {
-                            /* mvoe all the saved offsets up by one */
+                            /* move all the saved offsets up by one */
                             saved_offset[0] = saved_offset[1];
                             saved_offset[1] = saved_offset[2];
                             saved_offset[2] = pdfi_unread_tell(ctx);;
@@ -2169,6 +2218,25 @@ int pdfi_repair_file(pdf_context *ctx)
                                     return code;
                                 pdfi_clearstack(ctx);
                             } else {
+                                if (k->key == PDF_TRAILER) {
+                                    code = pdfi_read_bare_object(ctx, ctx->main_stream, 0, 0, 0);
+                                    if (code == 0 && ctx->stack_top[-1]->type == PDF_DICT) {
+                                        if (ctx->Trailer) {
+                                            pdf_dict *d = (pdf_dict *)ctx->stack_top[-1];
+                                            bool known = false;
+
+                                            code = pdfi_dict_known(d, "Root", &known);
+                                            if (code == 0 && known) {
+                                                pdfi_countdown(ctx->Trailer);
+                                                ctx->Trailer = (pdf_dict *)ctx->stack_top[-1];
+                                                pdfi_countup(ctx->Trailer);
+                                            }
+                                        } else {
+                                            ctx->Trailer = (pdf_dict *)ctx->stack_top[-1];
+                                            pdfi_countup(ctx->Trailer);
+                                        }
+                                    }
+                                }
                                 pdfi_clearstack(ctx);
                             }
                     }
