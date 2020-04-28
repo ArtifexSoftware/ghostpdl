@@ -448,7 +448,7 @@ rewrite_make("base/tiff.mak");
 rewrite_make("base/winlib.mak");
 rewrite_make("psi/int.mak");
 rewrite_make("psi/winint.mak");
-rewrite_make("devices/contrib.mak");
+rewrite_make("devices/dcontrib.mak");
 rewrite_make("devices/devs.mak");
 rewrite_make("gpdl/pspcl6_gcc.mak");
 rewrite_make("pcl/pl/pl.mak");
