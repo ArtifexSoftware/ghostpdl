@@ -1457,7 +1457,7 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
 
     if_debug1m('v', ctx->memory,
                "[v]pdf14_push_transparency_group, idle = %d\n", idle);
-
+#if 0
     /* If the previous group is the top group and was already popped then
        it should be destroyed now and the current group is the page group */
     if (tos != NULL && tos->group_popped) {
@@ -1505,6 +1505,10 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
     if (ctx->stack == NULL) {
         isolated = true;
     }
+#else
+    has_shape = tos->has_shape || tos->knockout;
+#endif
+
     
     if (ctx->smask_depth > 0)
         num_spots = 0;
@@ -3625,6 +3629,7 @@ push_shfill_group(pdf14_clist_device *pdev,
 
     params.Isolated = false;
     params.Knockout = true;
+    params.page_group = false;
     params.group_opacity = fudged_pgs.fillconstantalpha;
     params.group_shape = 1.0;
     code = gs_begin_transparency_group(&fudged_pgs, &params, &cb, PDF14_BEGIN_TRANS_GROUP);
@@ -3954,6 +3959,7 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *cpgs, gx_path *ppath,
         params.Isolated = false;
         params.group_color_type = UNKNOWN;
         params.Knockout = false;
+        params.page_group = false;
         params.group_opacity = 1.0;
         params.group_shape = fill_alpha;
 
@@ -3986,6 +3992,7 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *cpgs, gx_path *ppath,
         params.Isolated = false;
         params.group_color_type = UNKNOWN;
         params.Knockout = true;
+        params.page_group = false;
         params.group_shape = 1.0;
         params.group_opacity = 1.0;
 
@@ -4679,8 +4686,8 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_gstate * pgs,
 
         code = pdf14_push_transparency_group(p14dev->ctx, &rect, 1, 0, (uint16_t)floor(65535 * p14dev->alpha + 0.5),
                                              (uint16_t)floor(65535 * p14dev->shape + 0.5), (uint16_t)floor(65535 * p14dev->opacity + 0.5),
-                                              blend_mode, 0, 0, n_chan_tile - 1,
-                                              false, false, NULL, NULL, group_color_info, pgs_noconst, pdev);
+                                              blend_mode, 0, 0, n_chan_tile - 1, false, false,
+                                              NULL, NULL, group_color_info, pgs_noconst, pdev);
         if (code < 0)
             return code;
 
@@ -4922,8 +4929,8 @@ pdf14_patt_trans_image_fill(gx_device * dev, const gs_gstate * pgs,
 
         code = pdf14_push_transparency_group(p14dev->ctx, &group_rect, 1, 0, 65535, 65535,
                                              65535, pgs->blend_mode, 0, 0,
-                                             ptile->ttrans->n_chan-1, false, false, NULL,
-                                             NULL, NULL, (gs_gstate *)pgs, dev);
+                                             ptile->ttrans->n_chan-1, false, false,
+                                             NULL, NULL, NULL, (gs_gstate *)pgs, dev);
 
         /* Set up the output buffer information now that we have
            pushed the group */
@@ -5648,6 +5655,7 @@ pdf14_push_text_group(gx_device *dev, gs_gstate *pgs,
        mode are correct */
     params.Isolated = false;
     params.Knockout = true;
+    params.page_group = false;
     params.text_group = PDF14_TEXTGROUP_BT_PUSHED;
     params.group_opacity = 1.0;
     params.group_shape = 1.0;
@@ -5979,26 +5987,26 @@ compute_group_device_int_rect(pdf14_device *pdev, gs_int_rect *rect,
 }
 
 static	int
-pdf14_begin_transparency_group(gx_device *dev,
-                              const gs_transparency_group_params_t *ptgp,
-                              const gs_rect *pbbox,
-                              gs_gstate *pgs, gs_memory_t *mem)
+pdf14_begin_transparency_group(gx_device* dev,
+    const gs_transparency_group_params_t* ptgp,
+    const gs_rect* pbbox,
+    gs_gstate* pgs, gs_memory_t* mem)
 {
-    pdf14_device *pdev = (pdf14_device *)dev;
+    pdf14_device* pdev = (pdf14_device*)dev;
     double alpha = ptgp->group_opacity * ptgp->group_shape;
     gs_int_rect rect;
     int code;
     bool isolated = ptgp->Isolated;
     gs_transparency_color_t group_color_type;
-    cmm_profile_t *group_profile;
-    cmm_profile_t *tos_profile;
+    cmm_profile_t* group_profile;
+    cmm_profile_t* tos_profile;
     gsicc_rendering_param_t render_cond;
-    cmm_dev_profile_t *dev_profile;
+    cmm_dev_profile_t* dev_profile;
     bool cm_back_drop = false;
     bool new_icc = false;
     pdf14_group_color_t* group_color_info;
 
-    code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+    code = dev_proc(dev, get_profile)(dev, &dev_profile);
     if (code < 0)
         return code;
     gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &tos_profile, &render_cond);
@@ -6014,15 +6022,16 @@ pdf14_begin_transparency_group(gx_device *dev,
 
     if (code < 0)
         return code;
-    if_debug4m('v', pdev->memory,
-               "[v]pdf14_begin_transparency_group, I = %d, K = %d, alpha = %g, bm = %d\n",
-               ptgp->Isolated, ptgp->Knockout, alpha, pgs->blend_mode);
+    if_debug5m('v', pdev->memory,
+        "[v]pdf14_begin_transparency_group, I = %d, K = %d, alpha = %g, bm = %d page_group = %d\n",
+        ptgp->Isolated, ptgp->Knockout, alpha, pgs->blend_mode, ptgp->page_group);
 
     /* If the group color is unknown then use the current device profile. */
-    if (ptgp->group_color_type == UNKNOWN){
+    if (ptgp->group_color_type == UNKNOWN) {
         group_color_type = ICC;
         group_profile = tos_profile;
-    } else {
+    }
+    else {
         group_color_type = ptgp->group_color_type;
         group_profile = ptgp->iccprofile;
     }
@@ -6030,12 +6039,12 @@ pdf14_begin_transparency_group(gx_device *dev,
     /* We have to handle case where the profile is in the clist */
     if (group_profile == NULL && pdev->pclist_device != NULL) {
         /* Get the serialized data from the clist. */
-        gx_device_clist_reader *pcrdev = (gx_device_clist_reader *)(pdev->pclist_device);
-        group_profile = gsicc_read_serial_icc((gx_device *) pcrdev, ptgp->icc_hashcode);
+        gx_device_clist_reader* pcrdev = (gx_device_clist_reader*)(pdev->pclist_device);
+        group_profile = gsicc_read_serial_icc((gx_device*)pcrdev, ptgp->icc_hashcode);
         if (group_profile == NULL)
             return gs_throw(gs_error_unknownerror, "ICC data not found in clist");
         /* Keep a pointer to the clist device */
-        group_profile->dev = (gx_device *) pcrdev;
+        group_profile->dev = (gx_device*)pcrdev;
         new_icc = true;
     }
     if (group_profile != NULL) {
@@ -6043,8 +6052,8 @@ pdf14_begin_transparency_group(gx_device *dev,
             we will need to CM the backdrop. */
         if (!(group_profile->hash_is_valid)) {
             gsicc_get_icc_buff_hash(group_profile->buffer,
-                                    &(group_profile->hashcode),
-                                    group_profile->buffer_size);
+                &(group_profile->hashcode),
+                group_profile->buffer_size);
             group_profile->hash_is_valid = true;
         }
         if (group_profile->hashcode != tos_profile->hashcode) {
@@ -6057,6 +6066,17 @@ pdf14_begin_transparency_group(gx_device *dev,
        the life of the context. */
     if (pdev->ctx->base_color == NULL) {
         pdev->ctx->base_color = pdf14_make_base_group_color(dev);
+    }
+
+    /* If this is not the page group and we don't yet have a group, we need
+       to create a buffer for the whole page so that we can handle stuff drawn
+       outside this current group (e.g. two non inclusive groups drawn independently) */
+    if (pdev->ctx->stack == NULL && !ptgp->page_group) {
+        code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
+            dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, NULL);
+        if (code < 0)
+            return code;
+        pdev->ctx->stack->isolated = true;
     }
 
     group_color_info = pdf14_push_color_model(dev, group_color_type, ptgp->icc_hashcode,
@@ -6074,8 +6094,8 @@ pdf14_begin_transparency_group(gx_device *dev,
                                         (uint16_t)floor(65535 * ptgp->group_opacity + 0.5),
                                         pgs->blend_mode, ptgp->idle,
                                          ptgp->mask_id, pdev->color_info.num_components,
-                                         cm_back_drop, ptgp->shade_group, group_profile, tos_profile,
-                                         group_color_info, pgs, dev);
+                                         cm_back_drop, ptgp->shade_group,
+                                         group_profile, tos_profile, group_color_info, pgs, dev);
     if (new_icc)
         gsicc_adjust_profile_rc(group_profile, -1, "pdf14_begin_transparency_group");
     return code;
@@ -8084,6 +8104,7 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
             *pbuf++ = (pparams->Isolated & 1) + ((pparams->Knockout & 1) << 1);
             *pbuf++ = pparams->blend_mode;
             *pbuf++ = pparams->group_color_type;
+            *pbuf++ = pparams->page_group;
             put_value(pbuf, pparams->group_color_numcomps);
             put_value(pbuf, pparams->opacity);
             put_value(pbuf, pparams->shape);
@@ -8305,6 +8326,7 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
             params.Knockout = (*data++ >> 1) & 1;
             params.blend_mode = *data++;
             params.group_color_type = *data++;  /* Trans group color */
+            params.page_group = *data++;
             read_value(data,params.group_color_numcomps);  /* color group size */
             read_value(data, params.opacity);
             read_value(data, params.shape);
@@ -10122,6 +10144,7 @@ pdf14_clist_fill_stroke_path_pattern_setup(gx_device* dev, const gs_gstate* cpgs
         params.Isolated = false;
         params.group_color_type = UNKNOWN;
         params.Knockout = false;
+        params.page_group = false;
         params.group_opacity = fill_alpha;
         params.group_shape = 1.0;
 
@@ -10149,6 +10172,7 @@ pdf14_clist_fill_stroke_path_pattern_setup(gx_device* dev, const gs_gstate* cpgs
         params.Isolated = false;
         params.group_color_type = UNKNOWN;
         params.Knockout = true;
+        params.page_group = false;
         params.group_opacity = 1.0;
         params.group_shape = 1.0;
 
@@ -10445,6 +10469,7 @@ pdf14_clist_begin_typed_image(gx_device	* dev, const gs_gstate * pgs,
                     if_debug0m('v', pgs->memory, "[v]Pushing special trans group for image\n");
                     tgp.Isolated = true;
                     tgp.Knockout = false;
+                    tgp.page_group = false;
                     tgp.mask_id = 0;
                     tgp.image_with_SMask = false;
                     tgp.idle = false;

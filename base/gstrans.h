@@ -119,6 +119,7 @@ struct gs_pdf14trans_params_s {
     gs_blend_mode_t blend_mode;
     bool text_knockout;
     int text_group;
+    bool page_group;
     bool ais;
     bool shade_group;
     float opacity;

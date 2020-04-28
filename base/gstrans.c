@@ -170,6 +170,7 @@ gs_trans_group_params_init(gs_transparency_group_params_t *ptgp, float opacity)
     ptgp->ColorSpace = NULL;    /* bogus, but can't do better */
     ptgp->Isolated = false;
     ptgp->Knockout = false;
+    ptgp->page_group = false;
     ptgp->text_group = PDF14_TEXTGROUP_NO_BT;
     ptgp->image_with_SMask = false;
     ptgp->mask_id = 0;
@@ -210,6 +211,8 @@ gs_begin_transparency_group(gs_gstate *pgs,
     params.pdf14_op = group_type;
     params.Isolated = ptgp->Isolated;
     params.Knockout = ptgp->Knockout;
+    if (group_type == PDF14_BEGIN_TRANS_PAGE_GROUP)
+        params.page_group = true;
     params.image_with_SMask = ptgp->image_with_SMask;
     params.opacity = ptgp->group_opacity;
     params.shape = ptgp->group_shape;
@@ -310,8 +313,8 @@ gs_begin_transparency_group(gs_gstate *pgs,
         else
             dmputs(pgs->memory, "     (no CS)");
 
-        dmprintf3(pgs->memory, "  Isolated = %d  Knockout = %d text_group = %d\n",
-                 ptgp->Isolated, ptgp->Knockout, ptgp->text_group);
+        dmprintf4(pgs->memory, "  Isolated = %d  Knockout = %d text_group = %d page_group = %d\n",
+                 ptgp->Isolated, ptgp->Knockout, ptgp->text_group, ptgp->page_group);
     }
 #endif
     params.bbox = *pbbox;
@@ -330,6 +333,7 @@ gx_begin_transparency_group(gs_gstate * pgs, gx_device * pdev,
         return_error(gs_error_rangecheck);
     tgp.Isolated = pparams->Isolated;
     tgp.Knockout = pparams->Knockout;
+    tgp.page_group = pparams->page_group;
     tgp.idle = pparams->idle;
     tgp.mask_id = pparams->mask_id;
     tgp.text_group = pparams->text_group;
@@ -360,8 +364,8 @@ gx_begin_transparency_group(gs_gstate * pgs, gx_device * pdev,
                 cs_names[(int)gs_color_space_get_index(tgp.ColorSpace)]);
         else
             dmputs(pdev->memory, "     (no CS)");
-        dmprintf2(pdev->memory, "  Isolated = %d  Knockout = %d\n",
-                 tgp.Isolated, tgp.Knockout);
+        dmprintf2(pdev->memory, "  Isolated = %d  Knockout = %d  page_group = %d\n",
+                 tgp.Isolated, tgp.Knockout, tgp.page_group);
         if (tgp.iccprofile)
             dmprintf(pdev->memory, "     Have ICC Profile for blending\n");
 
