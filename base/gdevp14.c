@@ -1506,7 +1506,8 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
         isolated = true;
     }
 #else
-    has_shape = tos->has_shape || tos->knockout;
+    if (tos != NULL)
+        has_shape = tos->has_shape || tos->knockout;
 #endif
 
     
