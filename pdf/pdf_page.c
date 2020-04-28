@@ -375,6 +375,7 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num)
     pdf_dict *page_dict = NULL;
     bool page_group_known = false;
     pdf_dict *group_dict = NULL;
+    bool page_dict_error = false;
 
     if (page_num > ctx->num_pages)
         return_error(gs_error_rangecheck);
@@ -403,13 +404,17 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num)
 
     if (code > 0) {
         code = gs_note_error(gs_error_unknownerror);
+        page_dict_error = true;
+        ctx->pdf_errors |= E_PDF_PAGEDICTERROR;
+        dmprintf1(ctx->memory, "*** ERROR: Page %ld has invalid Page dict, skipping\n", page_num+1);
         goto exit2;
     }
 
     code = pdfi_check_page(ctx, page_dict, true);
     if (code < 0) goto exit2;
 
-    dbgmprintf1(ctx->memory, "Current page transparency setting is %d", ctx->page_has_transparency);
+    dbgmprintf2(ctx->memory, "Current page %ld transparency setting is %d", page_num+1,
+                ctx->page_has_transparency);
     if (ctx->spot_capable_device)
         dbgmprintf1(ctx->memory, ", spots=%d\n", ctx->page_num_spots);
     else
@@ -511,6 +516,7 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num)
     pdfi_countdown(group_dict);
 
     if (code == 0 || !ctx->pdfstoponerror)
-        code = pl_finish_page(ctx->memory->gs_lib_ctx->top_of_system, ctx->pgs, 1, true);
+        if (!page_dict_error)
+            code = pl_finish_page(ctx->memory->gs_lib_ctx->top_of_system, ctx->pgs, 1, true);
     return code;
 }

@@ -355,6 +355,8 @@ pdfi_report_errors(pdf_context *ctx)
             dmprintf(ctx->memory, "\tThe file contained a bad Pages dictionary.  Couldn't process it.\n");
         if (ctx->pdf_errors & E_PDF_OUTOFMEMORY)
             dmprintf(ctx->memory, "\tThe interpeter ran out of memory while processing this file.\n");
+        if (ctx->pdf_errors & E_PDF_PAGEDICTERROR)
+            dmprintf(ctx->memory, "\tA page had a bad Page dict and was skipped.\n");
     }
 
     if (ctx->pdf_warnings != W_PDF_NOWARNING) {

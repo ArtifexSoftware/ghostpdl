@@ -127,6 +127,7 @@ typedef enum pdf_error_flag_e {
     E_PDF_MISSINGOBJ = E_PDF_NOHEADER << 21,
     E_PDF_BADPAGEDICT = E_PDF_NOHEADER << 22,
     E_PDF_OUTOFMEMORY = E_PDF_NOHEADER << 23,
+    E_PDF_PAGEDICTERROR = E_PDF_NOHEADER << 24,
 
 } pdf_error_flag;
 

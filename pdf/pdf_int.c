@@ -269,7 +269,7 @@ static int pdfi_add_to_cache(pdf_context *ctx, pdf_obj *o)
     pdf_obj_cache_entry *entry;
 
     if (ctx->xref_table->xref[o->object_num].cache != NULL) {
-        dmprintf1(ctx->memory, "Attempting to add object to cache when the object is already cached!\n", o->object_num);
+        dmprintf1(ctx->memory, "Attempting to add object %d to cache when the object is already cached!\n", o->object_num);
         return_error(gs_error_unknownerror);
     }
 
@@ -491,12 +491,12 @@ static int pdfi_read_bare_object(pdf_context *ctx, pdf_stream *s, gs_offset_t st
 
         code = pdfi_dict_get_int(ctx, d, "Length", &i);
         if (code < 0) {
-            dmprintf1(ctx->memory, "Stream object %"PRIu64" is missing the mandatory keyword /Length, unable to verify the stream length.\n", objnum);
+            dmprintf1(ctx->memory, "Stream object %u missing mandatory keyword /Length, unable to verify the stream length.\n", objnum);
             ctx->pdf_errors |= E_PDF_BADSTREAM;
             return 0;
         }
         if (i < 0 || (i + offset)> ctx->main_stream_length) {
-            dmprintf1(ctx->memory, "Stream object %"PRIu64" has a /Length which, when added to the offset of the object, exceeds the file size.\n", objnum);
+            dmprintf1(ctx->memory, "Stream object %u has /Length which, when added to offset of object, exceeds file size.\n", objnum);
             ctx->pdf_errors |= E_PDF_BADSTREAM;
             return 0;
         }
@@ -508,19 +508,19 @@ static int pdfi_read_bare_object(pdf_context *ctx, pdf_stream *s, gs_offset_t st
 
         code = pdfi_read_token(ctx, ctx->main_stream, objnum, gen);
         if (pdfi_count_stack(ctx) < 2) {
-            dmprintf1(ctx->memory, "Failed to find a valid object at the end of the stream object %"PRIu64".\n", objnum);
+            dmprintf1(ctx->memory, "Failed to find a valid object at end of stream object %u.\n", objnum);
             return 0;
         }
 
         if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
-            dmprintf1(ctx->memory, "Failed to find an 'endstream' keyword at the end of the stream object %"PRIu64".\n", objnum);
+            dmprintf1(ctx->memory, "Failed to find 'endstream' keyword at end of stream object %u.\n", objnum);
             ctx->pdf_errors |= E_PDF_MISSINGENDOBJ;
             pdfi_pop(ctx, 1);
             return 0;
         }
         keyword = ((pdf_keyword *)ctx->stack_top[-1]);
         if (keyword->key != PDF_ENDSTREAM) {
-            dmprintf2(ctx->memory, "Stream object %"PRIu64" has an incorrect /Length of %"PRIu64"\n", objnum, i);
+            dmprintf2(ctx->memory, "Stream object %u has an incorrect /Length of %"PRIu64"\n", objnum, i);
             pdfi_pop(ctx, 1);
             return 0;
         }
@@ -535,7 +535,7 @@ static int pdfi_read_bare_object(pdf_context *ctx, pdf_stream *s, gs_offset_t st
                  * for now that will suffice.
                  */
                 ctx->pdf_errors |= E_PDF_MISSINGENDOBJ;
-                return 0;
+            return 0;
         }
 
         if (pdfi_count_stack(ctx) < 2)
@@ -605,7 +605,6 @@ static int pdfi_read_object(pdf_context *ctx, pdf_stream *s, gs_offset_t stream_
 {
     int code = 0;
     uint64_t objnum = 0, gen = 0;
-    int64_t i;
     pdf_keyword *keyword = NULL;
 
     /* An object consists of 'num gen obj' followed by a token, follwed by an endobj
