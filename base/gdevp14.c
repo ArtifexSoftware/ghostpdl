@@ -2510,11 +2510,11 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
     byte *buf_ptr;
     bool data_blended = false;
     int num_rows_left;
-    cmm_profile_t* src_profile = buf->group_color_info->icc_profile;
+    cmm_profile_t* src_profile = NULL;
     cmm_profile_t* des_profile = NULL;
     cmm_dev_profile_t *pdf14dev_profile;
     cmm_dev_profile_t *dev_target_profile;
-    uint16_t bg = buf->group_color_info->isadditive ? 65535 : 0;
+    uint16_t bg;
     bool has_tags = device_encodes_tags(dev);
     bool deep = pdev->ctx->deep;
     int planestride;
@@ -2529,6 +2529,9 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
     /* Nothing was ever drawn. */
     if (buf == NULL)
         return 0;
+
+    bg = buf->group_color_info->isadditive ? 65535 : 0;
+    src_profile = buf->group_color_info->icc_profile;
 
     num_comp = buf->n_chan - 1;
     rect = buf->rect;
@@ -3166,13 +3169,14 @@ pdf14_cmykspot_put_image(gx_device *dev, gs_gstate *pgs, gx_device *target)
     int planestride;
     int rowstride;
     bool deep = pdev->ctx->deep;
-    const uint16_t bg = buf->group_color_info->isadditive ? 65535 : 0;
+    uint16_t bg;
     int num_comp;
 
     /* Nothing was ever drawn. */
     if (buf == NULL)
         return 0;
 
+    bg = buf->group_color_info->isadditive ? 65535 : 0;
     num_comp = buf->n_chan - 1;
     rect = buf->rect;
     planestride = buf->planestride;
@@ -3234,7 +3238,7 @@ pdf14_custom_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
     int planestride;
     int rowstride;
     int num_comp;
-    const uint16_t bg = pdev->ctx->additive ? 0xffff : 0;
+    uint16_t bg;
     int x1, y1, width, height;
     byte *buf_ptr;
 
@@ -3242,6 +3246,7 @@ pdf14_custom_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
     if (buf == NULL)
         return 0;
 
+    bg = pdev->ctx->additive ? 0xffff : 0;
     num_comp = buf->n_chan - 1;
     rect = buf->rect;
     x0 = rect.p.x;
