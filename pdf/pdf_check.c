@@ -266,15 +266,15 @@ static int pdfi_check_XObject(pdf_context *ctx, pdf_dict *xobject, pdf_dict *pag
 
                     /* Start a new loop detector group to avoid this being detected in the Resources check below */
                     code = pdfi_loop_detector_mark(ctx); /* Mark the start of the XObject dictionary loop */
-                    if (code > 0) {
+                    if (code == 0) {
                         code = pdfi_dict_knownget(ctx, group_dict, "CS", &CS);
                         if (code > 0)
                             /* We don't care if there's an error here, it'll be picked up if we use the ColorSpace later */
                             (void)pdfi_check_ColorSpace_for_spots(ctx, CS, group_dict, page_dict, spot_dict);
+                        (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the XObject dictionary loop */
                     }
                     pdfi_countdown(group_dict);
                     pdfi_countdown(CS);
-                    (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the XObject dictionary loop */
                 }
 
                 code = pdfi_dict_knownget_type(ctx, xobject, "Resources", PDF_DICT, (pdf_obj **)&resource_dict);
