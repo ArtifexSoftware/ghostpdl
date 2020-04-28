@@ -2514,7 +2514,7 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
     cmm_profile_t* des_profile = NULL;
     cmm_dev_profile_t *pdf14dev_profile;
     cmm_dev_profile_t *dev_target_profile;
-    uint16_t bg = pdev->ctx->additive ? 65535 : 0;
+    uint16_t bg = buf->group_color_info->isadditive ? 65535 : 0;
     bool has_tags = device_encodes_tags(dev);
     bool deep = pdev->ctx->deep;
     int planestride;
@@ -3155,18 +3155,18 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
  * Return code: negative on error.
  **/
 static	int
-pdf14_cmykspot_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
+pdf14_cmykspot_put_image(gx_device *dev, gs_gstate *pgs, gx_device *target)
 {
-    pdf14_device * pdev = (pdf14_device *)dev;
+    pdf14_device *pdev = (pdf14_device *)dev;
     pdf14_buf *buf = pdev->ctx->stack;
     gs_int_rect rect;
     int x1, y1, width, height;
-    gs_devn_params * pdevn_params = &pdev->devn_params;
-    gs_separations * pseparations = &pdevn_params->separations;
+    gs_devn_params *pdevn_params = &pdev->devn_params;
+    gs_separations *pseparations = &pdevn_params->separations;
     int planestride;
     int rowstride;
     bool deep = pdev->ctx->deep;
-    const uint16_t bg = pdev->ctx->additive ? 65535 : 0;
+    const uint16_t bg = buf->group_color_info->isadditive ? 65535 : 0;
     int num_comp;
 
     /* Nothing was ever drawn. */
