@@ -2820,6 +2820,111 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
     return code;
 }
 
+/* This is for the case where we have mixture of spots and additive color.
+   For example, RGB + spots or Gray + spots */
+static void
+gx_blend_image_mixed_buffer(byte* buf_ptr, int width, int height, int rowstride,
+    int planestride, int num_comp, int spot_start)
+{
+    int x, y;
+    int position;
+    byte comp, a;
+    int tmp, comp_num;
+
+    for (y = 0; y < height; y++) {
+        position = y * rowstride;
+        for (x = 0; x < width; x++) {
+            a = buf_ptr[position + planestride * num_comp];
+            if ((a + 1) & 0xfe) {
+                a ^= 0xff;
+                for (comp_num = 0; comp_num < spot_start; comp_num++) {
+                    comp = buf_ptr[position + planestride * comp_num];
+                    tmp = ((0xff - comp) * a) + 0x80;
+                    comp += (tmp + (tmp >> 8)) >> 8;
+                    buf_ptr[position + planestride * comp_num] = comp;
+                }
+                for (comp_num = spot_start; comp_num < num_comp; comp_num++) {
+                    comp = buf_ptr[position + planestride * comp_num];
+                    tmp = ((-comp) * a) + 0x80;
+                    comp += (tmp + (tmp >> 8)) >> 8;
+                    buf_ptr[position + planestride * comp_num] = comp;
+                }
+            } else if (a == 0) {
+                for (comp_num = 0; comp_num < spot_start; comp_num++) {
+                    buf_ptr[position + planestride * comp_num] = 0xff;
+                }
+                for (comp_num = spot_start; comp_num < num_comp; comp_num++) {
+                    buf_ptr[position + planestride * comp_num] = 0;
+                }
+            }
+            position += 1;
+        }
+    }
+}
+
+void
+gx_blend_image_mixed_buffer16(byte* buf_ptr_, int width, int height, int rowstride,
+    int planestride, int num_comp, int spot_start)
+{
+    uint16_t* buf_ptr = (uint16_t*)(void*)buf_ptr_;
+    int x, y;
+    int position;
+    int comp, a;
+    int tmp, comp_num;
+
+    /* planestride and rowstride are in bytes, and we want them in shorts */
+    planestride >>= 1;
+    rowstride >>= 1;
+
+    /* Note that the input here is native endian, and the output must be in big endian! */
+    for (y = 0; y < height; y++) {
+        position = y * rowstride;
+        for (x = 0; x < width; x++) {
+            /* composite RGBA (or CMYKA, etc.) pixel with over solid background */
+            a = buf_ptr[position + planestride * num_comp];
+            if (a == 0) {
+                for (comp_num = 0; comp_num < spot_start; comp_num++) {
+                    buf_ptr[position + planestride * comp_num] = 0xffff;
+                }
+                for (comp_num = spot_start; comp_num < num_comp; comp_num++) {
+                    buf_ptr[position + planestride * comp_num] = 0;
+                }
+            } else if (a == 0xffff) {
+#if ARCH_IS_BIG_ENDIAN
+#else
+                /* Convert from native -> big endian */
+                for (comp_num = 0; comp_num < num_comp; comp_num++) {
+                    comp = buf_ptr[position + planestride * comp_num];
+                    ((byte*)&buf_ptr[position + planestride * comp_num])[0] = comp >> 8;
+                    ((byte*)&buf_ptr[position + planestride * comp_num])[1] = comp;
+                }
+#endif
+            } else {
+                a ^= 0xffff;
+                a += a >> 15; /* a is now 0 to 0x10000 */
+                a >>= 1; /* We can only use 15 bits as bg-comp has a sign bit we can't lose */
+                for (comp_num = 0; comp_num < spot_start; comp_num++) {
+                    comp = buf_ptr[position + planestride * comp_num];
+                    tmp = ((0xffff - comp) * a) + 0x4000;
+                    comp += (tmp >> 15); /* Errors in bit 16 upwards will be ignored */
+                    /* Store as big endian */
+                    ((byte*)&buf_ptr[position + planestride * comp_num])[0] = comp >> 8;
+                    ((byte*)&buf_ptr[position + planestride * comp_num])[1] = comp;
+                }
+                for (comp_num = spot_start; comp_num < num_comp; comp_num++) {
+                    comp = buf_ptr[position + planestride * comp_num];
+                    tmp = ((0 - comp) * a) + 0x4000;
+                    comp += (tmp >> 15); /* Errors in bit 16 upwards will be ignored */
+                    /* Store as big endian */
+                    ((byte*)&buf_ptr[position + planestride * comp_num])[0] = comp >> 8;
+                    ((byte*)&buf_ptr[position + planestride * comp_num])[1] = comp;
+                }
+            }
+            position += 1;
+        }
+    }
+}
+
 static int
 pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
     gs_gstate* pgs, pdf14_buf* buf, int planestride_in,
@@ -2977,12 +3082,22 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
             "pre_final_blend", buf_ptr, deep);
         global_index++;
 #endif
-        if (deep) {
-            gx_blend_image_buffer16(buf_ptr, width, height, rowstride,
-                planestride, num_comp, bg);
+        if (color_mismatch && (src_profile->data_cs == gsRGB || src_profile->data_cs == gsGRAY)) {
+            if (deep) {
+                gx_blend_image_mixed_buffer16(buf_ptr, width, height, rowstride,
+                    planestride, num_comp, src_profile->num_comps);
+            } else {
+                gx_blend_image_mixed_buffer(buf_ptr, width, height, rowstride,
+                    planestride, num_comp, src_profile->num_comps);
+            }
         } else {
-            gx_blend_image_buffer(buf_ptr, width, height, rowstride,
-                planestride, num_comp, bg >> 8);
+            if (deep) {
+                gx_blend_image_buffer16(buf_ptr, width, height, rowstride,
+                    planestride, num_comp, bg);
+            } else {
+                gx_blend_image_buffer(buf_ptr, width, height, rowstride,
+                    planestride, num_comp, bg >> 8);
+            }
         }
 
         if (color_mismatch) {

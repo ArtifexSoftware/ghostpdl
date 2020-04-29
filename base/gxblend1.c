@@ -867,14 +867,14 @@ gx_blend_image_buffer16(byte *buf_ptr_, int width, int height, int rowstride,
                     buf_ptr[position + planestride * comp_num] = bebg;
                 }
             } else if (a == 0xffff) {
-                /* Convert from native -> big endian */
-                /* FIXME: Are compilers smart enough to spot that this is
-                 * a no-op on big endian hosts? */
+#if ARCH_IS_BIG_ENDIAN
+#else
                 for (comp_num = 0; comp_num < num_comp; comp_num++) {
                     comp  = buf_ptr[position + planestride * comp_num];
                     ((byte *)&buf_ptr[position + planestride * comp_num])[0] = comp>>8;
                     ((byte *)&buf_ptr[position + planestride * comp_num])[1] = comp;
                 }
+#endif
             } else {
                 a ^= 0xffff;
                 a += a>>15; /* a is now 0 to 0x10000 */
