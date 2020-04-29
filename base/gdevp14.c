@@ -1451,8 +1451,8 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
 {
     pdf14_buf *tos = ctx->stack;
     pdf14_buf *buf, * pdf14_backdrop;
-    bool has_shape, is_backdrop;
-    int code;
+    bool has_shape = false;
+    bool is_backdrop;
     int num_spots;
 
     if_debug1m('v', ctx->memory,
@@ -2862,7 +2862,7 @@ gx_blend_image_mixed_buffer(byte* buf_ptr, int width, int height, int rowstride,
     }
 }
 
-void
+static void
 gx_blend_image_mixed_buffer16(byte* buf_ptr_, int width, int height, int rowstride,
     int planestride, int num_comp, int spot_start)
 {
