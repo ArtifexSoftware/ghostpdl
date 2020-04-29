@@ -422,7 +422,7 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
 
     /* See if pattern uses transparency */
     if (ctx->page_has_transparency) {
-        code = pdfi_check_Pattern(ctx, pdict, page_dict, &transparency, NULL);
+        code = pdfi_check_Pattern_transparency(ctx, pdict, page_dict, &transparency);
         if (code < 0)
             goto exit;
     }

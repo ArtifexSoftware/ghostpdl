@@ -692,6 +692,16 @@ int pdfi_open_pdf_file(pdf_context *ctx, char *filename)
     gs_offset_t Offset = 0;
     int64_t bytes = 0;
     bool found = false;
+    int code, intval;
+
+    /* See if the device supports spots (if not, we won't check for them later) */
+    ctx->spot_capable_device = false;
+    gs_c_param_list_read(&ctx->pdfi_param_list);
+    code = param_read_int((gs_param_list *)&ctx->pdfi_param_list, "PageSpotColors", &intval);
+    if (code < 0)
+        return code;
+    if (code == 0)
+        ctx->spot_capable_device = true;
 
     if (ctx->pdfdebug)
         dmprintf1(ctx->memory, "%% Attempting to open %s as a PDF file\n", filename);
