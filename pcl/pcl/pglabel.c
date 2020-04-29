@@ -1499,27 +1499,29 @@ hpgl_LB(hpgl_args_t * pargs, hpgl_state_t * pgls)
                  * restore the initial position, per TRM 23-78.
                  */
                 if (!hpgl_can_concat_labels(pgls)) {
-                    hpgl_call(hpgl_add_point_to_path(pgls,
+                    code = hpgl_add_point_to_path(pgls,
                                                      pgls->g.
                                                      carriage_return_pos.x,
                                                      pgls->g.
                                                      carriage_return_pos.y,
                                                      hpgl_plot_move_absolute,
-                                                     true));
+                                                     true);
                 } else {
                     /* undo the label origin offsets */
-                    hpgl_call(hpgl_add_point_to_path
+                    code = hpgl_add_point_to_path
                               (pgls, lo_offsets.x, lo_offsets.y,
-                               hpgl_plot_move_relative, false));
+                               hpgl_plot_move_relative, false);
                 }
-                /* clear the current path terminating carriage
-                   returns and linefeeds will leave "moveto's" in
-                   the path */
-                hpgl_call(hpgl_clear_current_path(pgls));
                 /* also clean up stick fonts - they are likely to
                    become dangling references in the current font
                    scheme since they don't have a dictionary entry */
                 hpgl_free_stick_fonts(pgls);
+                if (code < 0)
+                    return code;
+                /* clear the current path terminating carriage
+                   returns and linefeeds will leave "moveto's" in
+                   the path */
+                hpgl_call(hpgl_clear_current_path(pgls));
                 return 0;
             }
             /*
