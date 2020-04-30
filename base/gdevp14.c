@@ -2675,7 +2675,7 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
             rowstride = buf->rowstride;
             planestride = buf->planestride;
             num_comp = buf->n_chan - 1;
-            alpha_offset = num_comp;
+            alpha_offset = 0;  /* It is there but this indicates we have done the blend */
             tag_offset = buf->has_tags ? buf->n_chan : 0;
 
             /* And then out */
