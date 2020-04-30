@@ -1044,6 +1044,7 @@ pdfi_image_get_color(pdf_context *ctx, pdf_stream *source, pdfi_image_info_t *im
 {
     int code = 0;
     pdfi_jpx_info_t *jpx_info = &image_info->jpx_info;
+    pdf_obj *ColorSpace = NULL;
 
     /* NOTE: Spec says ImageMask and ColorSpace mutually exclusive */
     if (image_info->ImageMask) {
@@ -1052,8 +1053,21 @@ pdfi_image_get_color(pdf_context *ctx, pdf_stream *source, pdfi_image_info_t *im
         return 0;
     }
 
-    if (image_info->ColorSpace == NULL) {
+    ColorSpace = image_info->ColorSpace;
+    if (ColorSpace)
+        pdfi_countup(ColorSpace);
+    if (ColorSpace == NULL) {
         if (image_info->is_JPXDecode) {
+            /* The graphics library doesn't support 12-bit images, so the openjpeg layer
+             * (see sjpx_openjpeg.c/decode_image()) is going to translate the 12-bits up to 16-bits.
+             * That means we just treat it as 16-bit when rendering, so force the value
+             * to 16 here.
+             */
+            if (jpx_info->bpc == 12) {
+                jpx_info->bpc = 16;
+            }
+            image_info->BPC = jpx_info->bpc;
+
             if (jpx_info->iccbased) {
                 int dummy; /* Holds number of components read from the ICC profile, we ignore this here */
 
@@ -1066,8 +1080,9 @@ pdfi_image_get_color(pdf_context *ctx, pdf_stream *source, pdfi_image_info_t *im
                               jpx_info->icc_offset, jpx_info->icc_length);
                     goto cleanupExit;
                 }
+                *comps = gs_color_space_num_components(*pcs);
+                goto cleanupExit;
             } else {
-                pdf_name name;
                 char *color_str;
 
                 /* TODO: Hackity BS here, just trying to pull out a reasonable color for now */
@@ -1100,58 +1115,43 @@ pdfi_image_get_color(pdf_context *ctx, pdf_stream *source, pdfi_image_info_t *im
                     goto cleanupExit;
                 }
 
-                /* Make a fake name so I can pass it to this function (hackity, hackity..) */
-                memset(&name, 0, sizeof(pdf_name));
-                name.memory = NULL;
-                name.type = PDF_NAME;
-                name.length = strlen(color_str);
-                name.data = (byte *)color_str;
-                code = pdfi_create_colorspace(ctx, (pdf_obj *)&name,
-                                              image_info->page_dict, image_info->stream_dict,
-                                              pcs, image_info->inline_image);
-                if (code < 0) {
-                    dmprintf1(ctx->memory, "WARNING JPXDecode: Error setting colorspace %s\n", color_str);
+                /* Make a ColorSpace for the name */
+                code = pdfi_make_name(ctx, (byte *)color_str, strlen(color_str), &ColorSpace);
+                if (code < 0)
                     goto cleanupExit;
-                }
             }
-            *comps = gs_color_space_num_components(*pcs);
-            /* The graphics library doesn't support 12-bit images, so the openjpeg layer
-             * (see sjpx_openjpeg.c/decode_image()) is going to translate the 12-bits up to 16-bits.
-             * That means we just treat it as 16-bit when rendering, so force the value
-             * to 16 here.
-             */
-            if (jpx_info->bpc == 12) {
-                jpx_info->bpc = 16;
-            }
-            image_info->BPC = jpx_info->bpc;
         } else {
-            gx_device *dev = gs_currentdevice_inline(ctx->pgs);
-            *comps = dev->color_info.num_components;
-            *pcs = NULL;
-            goto cleanupExit;
+            /* Assume DeviceRGB colorspace */
+            dmprintf(ctx->memory, "**** Error: image has no /ColorSpace key; assuming /DeviceRGB.\n");
+            ctx->pdf_warnings |= W_PDF_BAD_IMAGEDICT;
+            code = pdfi_make_name(ctx, (byte *)"DeviceRGB", strlen("DeviceRGB"), &ColorSpace);
+            if (code < 0)
+                goto cleanupExit;
         }
-    } else {
-        code = pdfi_create_colorspace(ctx, image_info->ColorSpace,
-                                      image_info->page_dict, image_info->stream_dict,
-                                      pcs, image_info->inline_image);
-        /* TODO: image_2bpp.pdf has an image in there somewhere that fails on this call (probably ColorN) */
-        if (code < 0) {
-            dmprintf(ctx->memory, "WARNING: Image has unsupported ColorSpace ");
-            if (image_info->ColorSpace->type == PDF_NAME) {
-                pdf_name *name = (pdf_name *)image_info->ColorSpace;
-                char str[100];
-                memcpy(str, (const char *)name->data, name->length);
-                str[name->length] = '\0';
-                dmprintf1(ctx->memory, "NAME:%s\n", str);
-            } else {
-                dmprintf(ctx->memory, "(not a name)\n");
-            }
-            goto cleanupExit;
-        }
-        *comps = gs_color_space_num_components(*pcs);
     }
 
+    /* At this point ColorSpace is either a string we just made, or the one from the Image */
+    code = pdfi_create_colorspace(ctx, ColorSpace,
+                                  image_info->page_dict, image_info->stream_dict,
+                                  pcs, image_info->inline_image);
+    /* TODO: image_2bpp.pdf has an image in there somewhere that fails on this call (probably ColorN) */
+    if (code < 0) {
+        dmprintf(ctx->memory, "WARNING: Image has unsupported ColorSpace ");
+        if (image_info->ColorSpace->type == PDF_NAME) {
+            pdf_name *name = (pdf_name *)image_info->ColorSpace;
+            char str[100];
+            memcpy(str, (const char *)name->data, name->length);
+            str[name->length] = '\0';
+            dmprintf1(ctx->memory, "NAME:%s\n", str);
+        } else {
+            dmprintf(ctx->memory, "(not a name)\n");
+        }
+        goto cleanupExit;
+    }
+    *comps = gs_color_space_num_components(*pcs);
+
  cleanupExit:
+    pdfi_countdown(ColorSpace);
     return code;
 }
 
@@ -1261,6 +1261,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     pdfi_int_gstate *igs = (pdfi_int_gstate *)ctx->pgs->client_data;
     bool transparency_group = false;
     bool has_smask = false;
+    bool maybe_jpxdecode = false;
     pdfi_trans_state_t trans_state;
     int saved_intent;
 
@@ -1311,12 +1312,18 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
         }
     }
 
+    /* See if it might be a JPXDecode image even though not in the header */
+    if (image_info.ColorSpace == NULL && !image_info.ImageMask)
+        maybe_jpxdecode = true;
+
     /* Handle JPXDecode filter pre-scan of header */
-    if (image_info.is_JPXDecode && !inline_image) {
+    if ((maybe_jpxdecode || image_info.is_JPXDecode) && !inline_image) {
         pdfi_seek(ctx, source, image_dict->stream_offset, SEEK_SET);
         code = pdfi_scan_jpxfilter(ctx, source, image_info.Length, &image_info.jpx_info);
-        if (code < 0)
+        if (code < 0 && image_info.is_JPXDecode)
             goto cleanupExit;
+        if (code == 0 && maybe_jpxdecode)
+            image_info.is_JPXDecode = true;
     }
 
     /* Set the rendering intent if applicable */
