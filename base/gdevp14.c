@@ -1457,60 +1457,10 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
 
     if_debug1m('v', ctx->memory,
                "[v]pdf14_push_transparency_group, idle = %d\n", idle);
-#if 0
-    /* If the previous group is the top group and was already popped then
-       it should be destroyed now and the current group is the page group */
-    if (tos != NULL && tos->group_popped) {
-        if_debug0m('v', ctx->memory, "[v]pop buf, (group_popped)\n");
-        pdf14_buf_free(tos);
-        ctx->stack = NULL;
-        tos = NULL;
-    }
 
-    /* If there is no parent group (i.e. this is the first group push) AND this group
-       was created during the clist writing phase to deal with shading fills, then
-       there is not yet a base group (the file did not have a page group).  Create
-       that base buffer now.  We also have to watch for empty idle groups from the clist */
-    if ((tos == NULL || (tos != NULL && tos->group_popped && tos->idle)) && shade_group) {
-        code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
-            dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, (const gs_gstate*) pgs);
-        if (code < 0)
-            return code;
-        tos = ctx->stack;
-    }
-
-    if (tos == NULL) {
-        has_shape = false;
-    } else {
-        /* We are going to use the shape in the knockout computation.  If previous
-           buffer has a shape or if this is a knockout then we will have a shape here */
-        has_shape = tos->has_shape || tos->knockout;
-    }
-
-    /* If the group is NOT isolated we add in the alpha_g plane.  This enables
-       recompositing to be performed ala art_pdf_recomposite_group_8 so that
-       the backdrop is only included one time in the computation.
-
-       For shape and alpha, backdrop removal is accomplished by maintaining
-       two sets of variables to hold the accumulated values. The group shape
-       and alpha, f_g and alpha_g, accumulate only the shape and alpha of the group
-       elements, excluding the group backdrop.
-
-       */
-    /* Order of buffer data is color data, followed by alpha channel, followed by
-       shape (if present), then alpha_g (if present), then tags (if present) */
-
-    /* If there is not yet a group present, then this is effectively the page group
-       and should be isolated. */
-    if (ctx->stack == NULL) {
-        isolated = true;
-    }
-#else
     if (tos != NULL)
         has_shape = tos->has_shape || tos->knockout;
-#endif
 
-    
     if (ctx->smask_depth > 0)
         num_spots = 0;
     else
@@ -2607,7 +2557,6 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
     dump_raw_buffer(pdev->ctx->memory, height, width, buf->n_planes,
         pdev->ctx->stack->planestride, pdev->ctx->stack->rowstride,
         "pre_final_blend", buf_ptr, deep);
-    global_index++;
 #endif
 
     /* Note. The logic below will need a little rework if we ever
@@ -2660,6 +2609,12 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
                 buf->planestride, num_comp, bg >> 8);
         }
 
+#if RAW_DUMP
+        dump_raw_buffer(pdev->ctx->memory, height, width, buf->n_planes,
+            pdev->ctx->stack->planestride, pdev->ctx->stack->rowstride,
+            "post_final_blend", buf_ptr, deep);
+#endif
+
         /* Take care of color issues */
         if (color_mismatch) {
             /* In this case, just color convert and maintain alpha.  This is a case
@@ -2671,21 +2626,29 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
             if (code < 0)
                 return code;
 
-            /* reset */
-            rowstride = buf->rowstride;
-            planestride = buf->planestride;
-            num_comp = buf->n_chan - 1;
-            alpha_offset = 0;  /* It is there but this indicates we have done the blend */
-            tag_offset = buf->has_tags ? buf->n_chan : 0;
-
-            /* And then out */
-            for (i = 0; i < buf->n_planes; i++)
-                buf_ptrs[i] = buf_ptr + i * planestride;
-            code = dev_proc(target, put_image) (target, target, buf_ptrs, num_comp,
-                rect.p.x, rect.p.y, width, height, rowstride, alpha_offset,
-                tag_offset);
-            /* Right now code has number of rows written */
+#if RAW_DUMP
+            dump_raw_buffer(pdev->ctx->memory, height, width, buf->n_planes,
+                pdev->ctx->stack->planestride, pdev->ctx->stack->rowstride,
+                "final_color_manage", buf_ptr, deep);
+            global_index++;
+#endif
         }
+
+        /* reset */
+        rowstride = buf->rowstride;
+        planestride = buf->planestride;
+        num_comp = buf->n_chan - 1;
+        alpha_offset = 0;  /* It is there but this indicates we have done the blend */
+        tag_offset = buf->has_tags ? buf->n_chan : 0;
+
+        /* And then out */
+        for (i = 0; i < buf->n_planes; i++)
+            buf_ptrs[i] = buf_ptr + i * planestride;
+        code = dev_proc(target, put_image) (target, target, buf_ptrs, num_comp,
+            rect.p.x, rect.p.y, width, height, rowstride, alpha_offset,
+            tag_offset);
+        /* Right now code has number of rows written */
+    
     }
 
     /* If code > 0 then put image worked.  Let it finish and then exit */
