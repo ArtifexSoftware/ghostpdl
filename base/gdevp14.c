@@ -4565,6 +4565,12 @@ pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
                       int depth, bool devn)
 {
     bool deep = device_is_deep(dev);
+    int code;
+
+    code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
+        dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, NULL);
+    if (code < 0)
+        return code;
 
     if (deep)
         return do_pdf14_copy_alpha_color_16(dev, data, data_x, aa_raster,
