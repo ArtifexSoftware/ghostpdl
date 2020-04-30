@@ -32,7 +32,7 @@ static inline void pdfi_countup_impl(pdf_obj *o)
     if (o != NULL) {
         o->refcnt++;
 #if REFCNT_DEBUG
-    dmprintf3(o->memory, "Incrementing reference count of object %d, UID %"PRIi64", to %d\n", o->object_num, o->UID, o->refcnt);
+    dmprintf3(o->memory, "Incrementing reference count of object %d, UID %lu, to %d\n", o->object_num, o->UID, o->refcnt);
 #endif
     }
 #if REFCNT_DEBUG
@@ -51,7 +51,7 @@ static inline void pdfi_countdown_impl(pdf_obj *o)
 #endif
         o->refcnt--;
 #if REFCNT_DEBUG
-        dmprintf3(o->memory, "Decrementing reference count of object %d, UID %"PRIi64", to %d\n", o->object_num, o->UID, o->refcnt);
+        dmprintf3(o->memory, "Decrementing reference count of object %d, UID %lu, to %d\n", o->object_num, o->UID, o->refcnt);
 #endif
         if (o->refcnt == 0) {
 #if REFCNT_DEBUG
@@ -62,11 +62,11 @@ static inline void pdfi_countdown_impl(pdf_obj *o)
                 while(entry) {
                     next = entry->next;
                     if (entry->o->object_num != 0 && entry->o->object_num == o->object_num)
-                        dmprintf2(o->memory, "Freeing object %d, UID %"PRIi64", but there is still a cache entry!\n", o->object_num, o->UID);
+                        dmprintf2(o->memory, "Freeing object %d, UID %lu, but there is still a cache entry!\n", o->object_num, o->UID);
                     entry = next;
                 }
             }
-            dmprintf2(o->memory, "Freeing object %d, UID %"PRIi64"\n", o->object_num, o->UID);
+            dmprintf2(o->memory, "Freeing object %d, UID %lu\n", o->object_num, o->UID);
 #endif
                 pdfi_free_object(o);
         }

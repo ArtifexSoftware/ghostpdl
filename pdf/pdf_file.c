@@ -922,6 +922,8 @@ int pdfi_filter_no_decryption(pdf_context *ctx, pdf_dict *dict, pdf_stream *sour
 
                 code = pdfi_apply_filter(ctx, dict, (pdf_name *)o,
                                          (pdf_dict *)decode, s, &new_s, inline_image);
+                pdfi_countdown(decode);
+                decode = NULL;
                 pdfi_countdown(o);
                 if (code < 0) {
                     *new_stream = 0;
