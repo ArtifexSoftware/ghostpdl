@@ -251,6 +251,7 @@ int pdfi_apply_AES_filter(pdf_context *ctx, pdf_string *Key, bool use_padding, p
     return code;
 }
 
+#ifdef UNUSED_FILTER
 int pdfi_apply_SHA256_filter(pdf_context *ctx, pdf_stream *source, pdf_stream **new_stream)
 {
     stream_SHA256E_state state;
@@ -268,6 +269,7 @@ int pdfi_apply_SHA256_filter(pdf_context *ctx, pdf_stream *source, pdf_stream **
     new_s->strm = source->s;
     return code;
 }
+#endif
 
 static int pdfi_Flate_filter(pdf_context *ctx, pdf_dict *d, stream *source, stream **new_stream)
 {
@@ -1014,6 +1016,7 @@ int pdfi_filter(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream
 
         if (Length <= 0 || ctx->StrF == CRYPT_IDENTITY) {
             /* Don't treat as an encrypted stream if Length is 0 */
+            pdfi_countdown(StreamKey);
             return pdfi_filter_no_decryption(ctx, dict, source, new_stream, inline_image);
         }
 

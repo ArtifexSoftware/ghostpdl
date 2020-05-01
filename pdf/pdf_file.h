@@ -66,6 +66,8 @@
  * to 'unread', and it doesn't exceed 256 bytes.
  */
 
+#ifndef PDF_FILES
+#define PDF_FILES
 /*
  * A pdf_stream object maintains an 'original' stream memeber. This is only used when closing a file/filter.
  * When we apply filters to a file we supply the stream that we use as the basis for the new stream, this is
@@ -101,4 +103,9 @@ int pdfi_stream_to_buffer(pdf_context *ctx, pdf_dict *stream_dict, byte **buf, i
 
 int pdfi_apply_Arc4_filter(pdf_context *ctx, pdf_string *Key, pdf_stream *source, pdf_stream **new_stream);
 int pdfi_apply_AES_filter(pdf_context *ctx, pdf_string *Key, bool use_padding, pdf_stream *source, pdf_stream **new_stream);
+
+#ifdef UNUSED_FILTER
 int pdfi_apply_SHA256_filter(pdf_context *ctx, pdf_stream *source, pdf_stream **new_stream);
+#endif
+
+#endif /* PDF_FILES */

@@ -13,8 +13,13 @@
    CA 94945, U.S.A., +1(415)492-9861, for further information.
 */
 
+#ifndef PDF_UTF8
+#define PDF_UTF8
+
 #include "ghostpdf.h"
 #include "pdf_types.h"
 #include "pdf_stack.h"
 
 int locale_to_utf8(pdf_context *ctx, pdf_string *input, pdf_string **output);
+
+#endif

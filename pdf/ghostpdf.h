@@ -157,7 +157,8 @@ typedef enum pdf_warning_flag_e {
 } pdf_warning_flag;
 
 typedef enum pdf_crypt_filter_e {
-    CRYPT_IDENTITY, /* No encryption at all */
+    CRYPT_NONE,     /* Not an encrypted file */
+    CRYPT_IDENTITY, /* Encrypted file, but no encryption on this object type */
     CRYPT_V1,     /* 40-bit RC4 */
     CRYPT_V2,     /* 128-bit RC4 */
     CRYPT_AESV2,  /* 128-bit AES */
@@ -223,7 +224,6 @@ typedef struct pdf_context_s
     bool renderttnotdef;
     bool pdfinfo;
 
-    char *PDFPassword;
     char *PageList;
 
     /* Text and text state parameters */
@@ -351,6 +351,7 @@ typedef struct pdf_context_s
     int V;
     int Length;
     char *Password;
+    int PasswordLen;
     int R;
     /* Revision 1-4 have O and E being 32 bytes, revision 5 and 6 48 bytes */
     char O[48];

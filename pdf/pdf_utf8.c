@@ -22,7 +22,9 @@
  * build-specifics.
  */
 
-#include "pdf_utf8.h"
+#include "ghostpdf.h"
+#include "pdf_types.h"
+#include "pdf_stack.h"
 
 #ifdef HAVE_LIBIDN
 #  include <stringprep.h>
@@ -31,12 +33,10 @@
 int
 locale_to_utf8(pdf_context *ctx, pdf_string *input, pdf_string **output)
 {
-    char *input;
-    char *output;
-    int code;
+    char *out = NULL;
 
-    output = stringprep_locale_to_utf8(input);
-    if (output == 0) {
+    out = stringprep_locale_to_utf8(input->data);
+    if (out == NULL) {
         /* This function is intended to be used on strings whose
          * character set is unknown, so it's not an error if the
          * input contains invalid characters.  Just return the input
@@ -56,6 +56,13 @@ locale_to_utf8(pdf_context *ctx, pdf_string *input, pdf_string **output)
         return_error(gs_error_ioerror);
     }
 
+    code = pdfi_alloc_object(ctx, PDF_STRING, strlen(out), (pdf_obj **)output);
+    if (code < 0)
+        return code;
+    pdfi_countup(*output);
+    memcpy((*output)->data, out, strlen(out));
+
+    free(out);
     return 0;
 }
 #else

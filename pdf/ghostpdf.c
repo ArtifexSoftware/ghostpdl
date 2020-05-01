@@ -582,7 +582,7 @@ int pdfi_process_pdf_file(pdf_context *ctx, char *filename)
         if (code < 0 && code != gs_error_undefined)
             goto exit;
         if (code == 0) {
-            code = pdfi_read_Encryption(ctx);
+            code = pdfi_initialise_Decryption(ctx);
             if (code < 0)
                 goto exit;
         }
@@ -984,9 +984,6 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
     dmprintf1(ctx->memory, "Compressed object cache hit rate: %f\n", compressed_hit_rate);
 #endif
     pdfi_free_name_table(ctx);
-
-    if (ctx->PDFPassword)
-        gs_free_object(ctx->memory, ctx->PDFPassword, "pdfi_free_context");
 
     if (ctx->PageList)
         gs_free_object(ctx->memory, ctx->PageList, "pdfi_free_context");
