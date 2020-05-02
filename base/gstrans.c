@@ -364,7 +364,7 @@ gx_begin_transparency_group(gs_gstate * pgs, gx_device * pdev,
                 cs_names[(int)gs_color_space_get_index(tgp.ColorSpace)]);
         else
             dmputs(pdev->memory, "     (no CS)");
-        dmprintf2(pdev->memory, "  Isolated = %d  Knockout = %d  page_group = %d\n",
+        dmprintf3(pdev->memory, "  Isolated = %d  Knockout = %d  page_group = %d\n",
                  tgp.Isolated, tgp.Knockout, tgp.page_group);
         if (tgp.iccprofile)
             dmprintf(pdev->memory, "     Have ICC Profile for blending\n");
