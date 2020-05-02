@@ -3073,7 +3073,6 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
             rowstride = buf->rowstride;
             planestride = buf->planestride;
             num_comp = buf->n_chan - 1;
-            alpha_offset = num_comp;
             tag_offset = buf->has_tags ? buf->n_chan : 0;
         }
 
