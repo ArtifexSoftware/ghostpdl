@@ -6168,10 +6168,7 @@ pdf14_begin_transparency_group(gx_device* dev,
         group_profile, false);
     if (group_color_info == NULL)
         return gs_error_VMerror;
-
     if_debug0m('v', dev->memory, "[v]Transparency group color space update\n");
-    if (code < 0)
-        return code;
 
     code = pdf14_push_transparency_group(pdev->ctx, &rect, isolated, ptgp->Knockout,
                                         (uint16_t)floor (65535 * alpha + 0.5),
