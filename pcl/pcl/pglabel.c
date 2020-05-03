@@ -1543,9 +1543,8 @@ hpgl_LB(hpgl_args_t * pargs, hpgl_state_t * pgls)
 
             code = hpgl_process_buffer(pgls, &lo_offsets);
             hpgl_destroy_label_buffer(pgls);
-            if (code < 0)
-                return code;
-            code = hpgl_init_label_buffer(pgls);
+            if (code >= 0)
+                code = hpgl_init_label_buffer(pgls);
             if (code < 0) {
                 hpgl_free_stick_fonts(pgls);
                 return code;
