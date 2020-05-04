@@ -242,6 +242,58 @@ zsaslprep(i_ctx_t *i_ctx_p)
 }
 #endif
 
+#if defined(BUILD_PDF) && BUILD_PDF == 1
+#include "ghostpdf.h"
+
+static int
+psi_pdf_end_page(pdf_context *ctx)
+{
+    return 0;
+}
+
+static int zdopdffile(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    pdf_context *ctx;
+    char pdffilename[gp_file_name_sizeof];
+    int code = 0, code2 = 0;
+
+    check_read_type(*op, t_string);
+    if (r_size(op) > gp_file_name_sizeof - 2)
+        return_error(gs_error_limitcheck);
+
+    ctx = pdfi_create_context(imemory->non_gc_memory);
+    if (ctx == NULL) return_error(gs_error_VMerror);
+
+    code = gs_gsave(ctx->pgs);
+    if (code < 0)
+        goto done;
+    code = gs_setdevice_no_erase(ctx->pgs, igs->device);
+    if (code < 0)
+        goto done;
+
+
+    ctx->end_page = psi_pdf_end_page;
+    memcpy(pdffilename, op->value.bytes, r_size(op));
+    pdffilename[r_size(op)] = 0;
+    code = pdfi_process_pdf_file(ctx, pdffilename);
+    code = gs_grestore(ctx->pgs);
+done:
+    code2 = pdfi_free_context(imemory->non_gc_memory, ctx);
+
+    if (code == 0)
+        code = code2;
+    if (code >= 0) pop(1);
+    return code;
+}
+
+#else
+int zdopdffile(i_ctx_t *i_ctx_p)
+{
+    return_error(gs_error_invalidaccess);
+}
+#endif
+
 /* ------ Initialization procedure ------ */
 
 const op_def zpdfops_op_defs[] =
@@ -249,6 +301,7 @@ const op_def zpdfops_op_defs[] =
     {"0.pdfinkpath", zpdfinkpath},
     {"1.pdfFormName", zpdfFormName},
     {"3.setscreenphase", zsetscreenphase},
+    {"1.dopdffile", zdopdffile},
 #ifdef HAVE_LIBIDN
     {"1.saslprep", zsaslprep},
 #endif

@@ -398,7 +398,7 @@ typedef struct pdf_context_s
     uint64_t *loop_detection;
 
     stream_save current_stream_save;
-
+    int (*end_page) (struct pdf_context_s *ctx);
 #if REFCNT_DEBUG
     uint64_t UID;
 #endif

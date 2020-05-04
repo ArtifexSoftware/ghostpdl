@@ -584,7 +584,7 @@ MKROMFS_FLAGS=@MKROMFS_FLAGS@
 # Choose the language feature(s) to include.  See gs.mak for details.
 
 # if it's included, $(PSD)gs_pdfwr.dev should always be one of the last in the list
-PSI_FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)epsf.dev $(PSD)ttfont.dev \
+PSI_FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev @GPDF_DEV@ $(PSD)epsf.dev $(PSD)ttfont.dev \
                  @UTF8DEVS@ $(PSD)fapi_ps.dev $(PSD)jpx.dev $(PSD)jbig2.dev $(PSD)gs_pdfwr.dev
 
 

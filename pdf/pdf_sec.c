@@ -146,6 +146,8 @@ done:
 }
 
 #ifdef HAVE_LIBIDN
+#  include <stringprep.h>
+
 static int apply_sasl(pdf_context *ctx, char *Password, int Len, char **NewPassword, int NewLen)
 {
     byte *buffer;

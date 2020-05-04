@@ -289,8 +289,10 @@ BUILD_XPS=1
 
 !ifndef BUILD_PDF
 BUILD_PDF=0
+GPDF_DEV=
 !if exist ("$(PDFSRCDIR)\pdf.mak")
 BUILD_PDF=1
+GPDF_DEV=$(PDFOBJDIR)\pdfi.dev
 !endif
 !endif
 
@@ -877,6 +879,10 @@ CFLAGS=$(CFLAGS) -DMETRO -DWINAPI_FAMILY=WINAPI_PARTITION_APP -DTIF_PLATFORM_CON
 # WinRT doesn't allow ExitProcess() so we have to suborn it here.
 # it shouldn't matter since we actually rely on setjmp()/longjmp() for error handling in libtiff
 PNG_CFLAGS=/DExitProcess=exit
+!endif
+
+!if $(BUILD_PDF)
+CFLAGS=/DBUILD_PDF=1 /I$(PDFSRCDIR) /I$(ZSRCDIR) $(CFLAGS)
 !endif
 
 CFLAGS=$(CFLAGS) $(XCFLAGS)
@@ -1605,7 +1611,7 @@ JPX_CFLAGS = $JPX_CFLAGS -DUSE_JPIP -DUSE_OPENJPEG_JP2 -DOPJ_STATIC
 # Choose the language feature(s) to include.  See gs.mak for details.
 
 # if it's included, $(PSD)gs_pdfwr.dev should always be one of the last in the list
-PSI_FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)epsf.dev $(PSD)ttfont.dev \
+PSI_FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(GPDF_DEV) $(PSD)epsf.dev $(PSD)ttfont.dev \
                  $(PSD)jbig2.dev $(PSD)jpx.dev $(PSD)fapi_ps.dev $(GLD)winutf8.dev $(PSD)gs_pdfwr.dev
 
 

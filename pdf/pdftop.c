@@ -94,6 +94,12 @@ pdf_set_icc_user_params(pl_interp_implementation_t *impl, gs_gstate *pgs)
 
 #endif
 
+static int
+pdf_impl_end_page(pdf_context *ctx)
+{
+    return pl_finish_page(ctx->memory->gs_lib_ctx->top_of_system, ctx->pgs, 1, true);
+}
+
 /* Do per-instance interpreter allocation/init. No device is set yet */
 static int
 pdf_impl_allocate_interp_instance(pl_interp_implementation_t *impl,
@@ -114,6 +120,8 @@ pdf_impl_allocate_interp_instance(pl_interp_implementation_t *impl,
         gs_free_object(pmem, instance, "pdf_impl_allocate_interp_instance");
         return gs_error_VMerror;
     }
+
+    ctx->end_page = pdf_impl_end_page;
 
     ctx->instance = instance;
     instance->ctx = ctx;

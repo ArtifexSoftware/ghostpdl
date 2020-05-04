@@ -220,12 +220,17 @@ PDF_OBJS=\
 # NB - note this is a bit squirrely.  Right now the pjl interpreter is
 # required and shouldn't be and PLOBJ==PDFGEN is required.
 
-$(PDFOBJ)gpdf.dev: $(ECHOGS_XE) $(PDF_OBJS) \
-                  $(PDFGEN)pl.dev $(PDFGEN)$(PL_SCALER).dev $(PDFGEN)pjl.dev $(PDFGEN)func4lib.dev \
+$(PDFOBJ)pdfi.dev: $(ECHOGS_XE) $(PDF_OBJS) \
+                  $(PDFGEN)func4lib.dev \
                   $(PDFGEN)pdiff.dev $(PDFGEN)psfilters.dev $(PDFGEN)saes.dev $(PDFGEN)ssha2.dev $(PDFGEN)sjpx.dev $(PDFGEN)psfilters.dev \
                   $(PDFGEN)sdct.dev \
                   $(PDF_MAK) $(MAKEDIRS)
-	$(SETMOD) $(PDFOBJ)gpdf $(PDF_OBJS)
-	$(ADDMOD) $(PDFOBJ)gpdf -include $(PDFGEN)$(PL_SCALER) $(PDFGEN)pjl.dev $(PDFGEN)func4lib.dev
-	$(ADDMOD) $(PDFOBJ)gpdf -include $(PDFGEN)pdiff.dev $(PDFGEN)psfilters.dev $(PDFGEN)saes.dev $(PDFGEN)sjpx.dev
-	$(ADDMOD) $(PDFOBJ)gpdf -include $(PDFGEN)ssha2.dev $(PDFGEN)psfilters.dev $(PDFGEN)sdct.dev
+	$(SETMOD) $(PDFOBJ)pdfi $(PDF_OBJS)
+	$(ADDMOD) $(PDFOBJ)pdfi -include $(PDFGEN)func4lib.dev
+	$(ADDMOD) $(PDFOBJ)pdfi -include $(PDFGEN)pdiff.dev $(PDFGEN)psfilters.dev $(PDFGEN)saes.dev $(PDFGEN)sjpx.dev
+	$(ADDMOD) $(PDFOBJ)pdfi -include $(PDFGEN)ssha2.dev $(PDFGEN)psfilters.dev $(PDFGEN)sdct.dev
+
+$(PDFOBJ)gpdf.dev: $(ECHOGS_XE) $(PDF_OBJS) \
+                  $(PDFGEN)pl.dev $(PDFGEN)$(PL_SCALER).dev $(PDFGEN)pjl.dev $(PDFOBJ)pdfi.dev \
+                  $(PDF_MAK) $(MAKEDIRS)
+	$(SETMOD) $(PDFOBJ)gpdf -include $(PDFOBJ)pdfi.dev $(PDFGEN)$(PL_SCALER) $(PDFGEN)pjl.dev
