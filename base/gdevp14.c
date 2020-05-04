@@ -2463,7 +2463,6 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
     gs_color_space *pcs;
     int x1, y1, width, height;
     byte *buf_ptr;
-    bool data_blended = false;
     int num_rows_left;
     cmm_profile_t* src_profile = NULL;
     cmm_profile_t* des_profile = NULL;
@@ -2723,9 +2722,7 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
                     pdev->ctx->stack->planestride, pdev->ctx->stack->rowstride,
                     "PDF14_PUTIMAGE_SMALL", buf_ptr, deep);
     global_index++;
-    if (!data_blended) {
-        clist_band_count++;
-    }
+    clist_band_count++;
 #endif
     /* Allocate on 32-byte border for AVX CMYK case. Four byte overflow for RGB case */
     /* 28 byte overflow for AVX CMYK case. */
@@ -2747,28 +2744,9 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
         bg >>= 8;
     for (y = 0; y < height; y++) {
         gx_image_plane_t planes;
-        int rows_used,k,x;
+        int rows_used;
 
-        if (data_blended) {
-            if (deep) {
-                uint16_t *lb = (uint16_t *)(void *)linebuf;
-                for (x = 0; x < width; x++) {
-                    for (k = 0; k < num_comp; k++) {
-                        *lb++ = *(uint16_t *)(void *)&buf_ptr[x + buf->planestride * k];
-                    }
-                }
-            } else {
-                byte *lb = linebuf;
-                for (x = 0; x < width; x++) {
-                    for (k = 0; k < num_comp; k++) {
-                        *lb++ = buf_ptr[x + buf->planestride * k];
-                    }
-                }
-            }
-        } else {
-            blend_row(buf_ptr, buf->planestride, width, num_comp, bg, linebuf);
-        }
-
+        blend_row(buf_ptr, buf->planestride, width, num_comp, bg, linebuf);
         planes.data = linebuf;
         planes.data_x = 0;
         planes.raster = width * num_comp;
