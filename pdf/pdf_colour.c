@@ -1619,17 +1619,19 @@ static int pdfi_create_DeviceN(pdf_context *ctx, pdf_array *color_array, int ind
      * a /Separation space and go on
      */
     if (pdfi_array_size(inks) == 1) {
-        pdf_name *ink_name;
+        pdf_name *ink_name = NULL;
 
         code = pdfi_array_get_type(ctx, inks, 0, PDF_NAME, (pdf_obj **)&ink_name);
         if (code < 0)
             goto pdfi_devicen_error;
 
         if (ink_name->length == 3 && memcmp(ink_name->data, "All", 3) == 0) {
-            /* FIXME make a separation sdpace instead */
-            code = gs_error_undefined;
-            goto pdfi_devicen_error;
+            /* FIXME make a separation space instead (but make sure ink_name still gets freed!) */
+            code = gs_note_error(gs_error_undefined);
         }
+        pdfi_countdown(ink_name);
+        if (code < 0)
+            goto pdfi_devicen_error;
     }
 
     code = gs_cspace_new_DeviceN(&pcs, pdfi_array_size(inks), pcs_alt, ctx->memory);
