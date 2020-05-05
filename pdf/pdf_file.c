@@ -801,7 +801,10 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
 
 int pdfi_filter_no_decryption(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream **new_stream, bool inline_image)
 {
-    pdf_obj *o = NULL, *decode = NULL, *o1 = NULL;
+    pdf_obj *o = NULL, *o1 = NULL;
+    pdf_obj *decode = NULL;
+    pdf_obj *Filter = NULL;
+    pdf_array *DecodeParams = NULL;
     int code;
     int64_t i, j, duplicates;
     stream *s = source->s, *new_s = NULL;
@@ -811,161 +814,119 @@ int pdfi_filter_no_decryption(pdf_context *ctx, pdf_dict *dict, pdf_stream *sour
     if (ctx->pdfdebug)
         dmprintf2(ctx->memory, "Filter: offset %ld(0x%lx)\n", dict->stream_offset, dict->stream_offset);
 
-    code = pdfi_dict_get(ctx, dict, "Filter", &o);
-    if (code < 0){
-        if (code == gs_error_undefined) {
-            if (inline_image == true) {
-                code = pdfi_dict_get(ctx, dict, "F", &o);
-                if (code < 0 && code != gs_error_undefined)
-                    return code;
-            }
-            if (code < 0) {
-                code = pdfi_alloc_stream(ctx, s, source->s, new_stream);
-                return code;
-            }
-        } else
-            return code;
+    code = pdfi_dict_knownget(ctx, dict, "Filter", &Filter);
+    if (code == 0 && inline_image)
+        code = pdfi_dict_knownget(ctx, dict, "F", &Filter);
+    if (code < 0)
+        goto exit;
+    if (code == 0) {
+        /* No filter, just open the stream */
+        code = pdfi_alloc_stream(ctx, s, source->s, new_stream);
+        goto exit;
     }
 
-    if (o->type != PDF_NAME) {
-        if (o->type == PDF_ARRAY) {
-            pdf_array *filter_array = (pdf_array *)o;
-            pdf_array *decodeparams_array = NULL;
+    if (Filter->type != PDF_ARRAY && Filter->type != PDF_NAME) {
+        code = gs_note_error(gs_error_typecheck);
+        goto exit;
+    }
 
-            code = pdfi_dict_get(ctx, dict, "DecodeParms", &o);
-            if (code < 0 && code) {
-                if (code == gs_error_undefined) {
-                    if (inline_image == true) {
-                        code = pdfi_dict_get(ctx, dict, "DP", &o);
-                        if (code < 0 && code != gs_error_undefined) {
-                            pdfi_countdown(o);
-                            pdfi_countdown(filter_array);
-                            return code;
-                        }
-                    }
-                } else {
-                    pdfi_countdown(o);
-                    pdfi_countdown(filter_array);
-                    return code;
-                }
-            }
+    if (Filter->type == PDF_NAME) {
+        code = pdfi_dict_knownget(ctx, dict, "DecodeParms", &decode);
+        if (code == 0 && inline_image)
+            code = pdfi_dict_knownget(ctx, dict, "DP", &decode);
+        if (code < 0)
+            goto exit;
 
-            if (code != gs_error_undefined) {
-                decodeparams_array = (pdf_array *)o;
-                if (decodeparams_array->type != PDF_ARRAY) {
-                    pdfi_countdown(decodeparams_array);
-                    pdfi_countdown(filter_array);
-                    return_error(gs_error_typecheck);
-                }
-                if (pdfi_array_size(decodeparams_array) != pdfi_array_size(filter_array)) {
-                    pdfi_countdown(decodeparams_array);
-                    pdfi_countdown(filter_array);
-                    return_error(gs_error_rangecheck);
-                }
-            }
+        code = pdfi_apply_filter(ctx, dict, (pdf_name *)Filter,
+                                 (pdf_dict *)decode, s, &new_s, inline_image);
+        if (code < 0)
+            goto exit;
 
-            /* Check the Filter array to see if we have any duplicates (to prevent filter bombs)
-             * For now we will allow one duplicate (in case people do stupid things like ASCIIEncode
-             * and Flate and ASCIIEncode again or something).
-             */
-            for (i = 0; i < (int)pdfi_array_size(filter_array) - 1;i++) {
-                code = pdfi_array_get_type(ctx, filter_array, i, PDF_NAME, &o);
-                if (code < 0) {
-                    pdfi_countdown(decodeparams_array);
-                    pdfi_countdown(filter_array);
-                    return code;
-                }
-                duplicates = 0;
-
-                for (j = i + 1; j < pdfi_array_size(filter_array);j++) {
-                    code = pdfi_array_get_type(ctx, filter_array, j, PDF_NAME, &o1);
-                    if (code < 0) {
-                        pdfi_countdown(o);
-                        pdfi_countdown(decodeparams_array);
-                        pdfi_countdown(filter_array);
-                        return code;
-                    }
-                    if (((pdf_name *)o)->length == ((pdf_name *)o1)->length) {
-                        if (memcmp(((pdf_name *)o)->data, ((pdf_name *)o1)->data, ((pdf_name *)o)->length) == 0)
-                            duplicates++;
-                    }
-                    pdfi_countdown(o1);
-                }
-                pdfi_countdown(o);
-                if (duplicates > 2) {
-                    pdfi_countdown(decodeparams_array);
-                    pdfi_countdown(filter_array);
-                    ctx->pdf_errors |= E_PDF_BADSTREAM;
-                    dmprintf(ctx->memory, "**** ERROR Detected possible filter bomb (duplicate Filters).  Aborting processing.\n");
-                    return_error(gs_error_syntaxerror);
-                }
-            }
-
-            for (i = 0; i < pdfi_array_size(filter_array);i++) {
-                code = pdfi_array_get_type(ctx, filter_array, i, PDF_NAME, &o);
-                if (code < 0) {
-                    pdfi_countdown(decodeparams_array);
-                    pdfi_countdown(filter_array);
-                    return code;
-                }
-                if (decodeparams_array != NULL) {
-                    code = pdfi_array_get(ctx, decodeparams_array, i, &decode);
-                    if (code < 0) {
-                        pdfi_countdown(decodeparams_array);
-                        pdfi_countdown(filter_array);
-                        return code;
-                    }
-                }
-                if (decode && decode->type != PDF_NULL && decode->type != PDF_DICT) {
-                    pdfi_countdown(decodeparams_array);
-                    pdfi_countdown(filter_array);
-                    return_error(gs_error_typecheck);
-                }
-
-                code = pdfi_apply_filter(ctx, dict, (pdf_name *)o,
-                                         (pdf_dict *)decode, s, &new_s, inline_image);
-                pdfi_countdown(decode);
-                decode = NULL;
-                pdfi_countdown(o);
-                if (code < 0) {
-                    *new_stream = 0;
-                    pdfi_countdown(decodeparams_array);
-                    pdfi_countdown(filter_array);
-                    return code;
-                }
-                s = new_s;
-            }
-            pdfi_countdown(decodeparams_array);
-            pdfi_countdown(filter_array);
-            code = pdfi_alloc_stream(ctx, s, source->s, new_stream);
-        } else
-            return_error(gs_error_typecheck);
+        code = pdfi_alloc_stream(ctx, new_s, source->s, new_stream);
     } else {
-        code = pdfi_dict_get(ctx, dict, "DecodeParms", &decode);
-        if (code < 0 && code) {
-            if (code == gs_error_undefined) {
-                if (inline_image == true) {
-                    code = pdfi_dict_get(ctx, dict, "DP", &decode);
-                    if (code < 0 && code != gs_error_undefined) {
-                        pdfi_countdown(o);
-                        return code;
-                    }
-                }
-            } else {
-                pdfi_countdown(o);
-                return code;
+        pdf_array *filter_array = (pdf_array *)Filter;
+
+        code = pdfi_dict_knownget_type(ctx, dict, "DecodeParms", PDF_ARRAY, (pdf_obj **)&DecodeParams);
+        if (code == 0 && inline_image)
+            code = pdfi_dict_knownget_type(ctx, dict, "DP", PDF_ARRAY, (pdf_obj **)&DecodeParams);
+        if (code < 0)
+            goto exit;
+
+        if (DecodeParams != NULL) {
+            if (pdfi_array_size(DecodeParams) != pdfi_array_size(filter_array)) {
+                code = gs_note_error(gs_error_typecheck);
+                goto exit;
             }
         }
 
-        code = pdfi_apply_filter(ctx, dict, (pdf_name *)o,
-                                 (pdf_dict *)decode, s, &new_s, inline_image);
-        pdfi_countdown(decode);
-        pdfi_countdown(o);
-        if (code < 0)
-            return code;
+        /* Check the Filter array to see if we have any duplicates (to prevent filter bombs)
+         * For now we will allow one duplicate (in case people do stupid things like ASCIIEncode
+         * and Flate and ASCIIEncode again or something).
+         */
+        for (i = 0; i < (int)pdfi_array_size(filter_array) - 1;i++) {
+            code = pdfi_array_get_type(ctx, filter_array, i, PDF_NAME, &o);
+            if (code < 0)
+                goto exit;
+            duplicates = 0;
 
-        code = pdfi_alloc_stream(ctx, new_s, source->s, new_stream);
+            for (j = i + 1; j < pdfi_array_size(filter_array);j++) {
+                code = pdfi_array_get_type(ctx, filter_array, j, PDF_NAME, &o1);
+                if (code < 0) {
+                    goto exit;
+                }
+                if (((pdf_name *)o)->length == ((pdf_name *)o1)->length) {
+                    if (memcmp(((pdf_name *)o)->data, ((pdf_name *)o1)->data, ((pdf_name *)o)->length) == 0)
+                        duplicates++;
+                }
+                pdfi_countdown(o1);
+                o1 = NULL;
+            }
+            pdfi_countdown(o);
+            o = NULL;
+            if (duplicates > 2) {
+                ctx->pdf_errors |= E_PDF_BADSTREAM;
+                dmprintf(ctx->memory, "**** ERROR Detected possible filter bomb (duplicate Filters).  Aborting processing.\n");
+                code = gs_note_error(gs_error_syntaxerror);
+                goto exit;
+            }
+        }
+
+        for (i = 0; i < pdfi_array_size(filter_array);i++) {
+            code = pdfi_array_get_type(ctx, filter_array, i, PDF_NAME, &o);
+            if (code < 0)
+                goto exit;
+            if (DecodeParams != NULL) {
+                code = pdfi_array_get(ctx, DecodeParams, i, &decode);
+                if (code < 0) {
+                    goto exit;
+                }
+            }
+            if (decode && decode->type != PDF_NULL && decode->type != PDF_DICT) {
+                code = gs_note_error(gs_error_typecheck);
+                goto exit;
+            }
+
+            code = pdfi_apply_filter(ctx, dict, (pdf_name *)o,
+                                     (pdf_dict *)decode, s, &new_s, inline_image);
+            pdfi_countdown(decode);
+            decode = NULL;
+            pdfi_countdown(o);
+            o = NULL;
+            if (code < 0) {
+                *new_stream = 0;
+                goto exit;
+            }
+            s = new_s;
+        }
+        code = pdfi_alloc_stream(ctx, s, source->s, new_stream);
     }
+
+ exit:
+    pdfi_countdown(o);
+    pdfi_countdown(o1);
+    pdfi_countdown(DecodeParams);
+    pdfi_countdown(decode);
+    pdfi_countdown(Filter);
     return code;
 }
 
