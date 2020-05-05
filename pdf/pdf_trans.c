@@ -84,7 +84,7 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
     pdf_array *BC = NULL;
     pdf_dict *G_dict = NULL;
     pdf_dict *Group = NULL;
-    pdf_obj *TR;
+    pdf_obj *TR = NULL;
     gs_function_t *gsfunc = NULL;
     pdf_name *n = NULL;
     pdf_name *S = NULL;
@@ -293,6 +293,7 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
     pdfi_countdown(G_dict);
     pdfi_countdown(a);
     pdfi_countdown(BC);
+    pdfi_countdown(TR);
     pdfi_countdown(BBox);
     pdfi_countdown(Matrix);
     pdfi_countdown(CS);
