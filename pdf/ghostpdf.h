@@ -417,6 +417,7 @@ int pdfi_get_name_index(pdf_context *ctx, char *name, int len, unsigned int *ret
 int pdfi_name_from_index(pdf_context *ctx, int index, unsigned char **name, unsigned int *len);
 int pdfi_separation_name_from_index(const gs_memory_t *mem, gs_separation_name index, unsigned char **name, unsigned int *len);
 int pdfi_open_pdf_file(pdf_context *ctx, char *filename);
+int pdfi_set_input_stream(pdf_context *ctx, stream *stm);
 int pdfi_process_pdf_file(pdf_context *ctx, char *filename);
 int pdfi_close_pdf_file(pdf_context *ctx);
 

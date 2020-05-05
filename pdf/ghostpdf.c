@@ -676,15 +676,7 @@ read_root:
     return code;
 }
 
-static void cleanup_pdfi_open_file(pdf_context *ctx, byte *Buffer)
-{
-    if (Buffer != NULL)
-        gs_free_object(ctx->memory, Buffer, "PDF interpreter - cleanup working buffer for file validation");
-
-    pdfi_close_pdf_file(ctx);
-}
-
-int pdfi_open_pdf_file(pdf_context *ctx, char *filename)
+int pdfi_set_input_stream(pdf_context *ctx, stream *stm)
 {
     byte *Buffer = NULL;
     char *s = NULL;
@@ -703,25 +695,16 @@ int pdfi_open_pdf_file(pdf_context *ctx, char *filename)
     if (code == 0)
         ctx->spot_capable_device = true;
 
-    if (ctx->pdfdebug)
-        dmprintf1(ctx->memory, "%% Attempting to open %s as a PDF file\n", filename);
-
     ctx->main_stream = (pdf_stream *)gs_alloc_bytes(ctx->memory, sizeof(pdf_stream), "PDF interpreter allocate main PDF stream");
     if (ctx->main_stream == NULL)
         return_error(gs_error_VMerror);
     memset(ctx->main_stream, 0x00, sizeof(pdf_stream));
-
-    ctx->main_stream->s = sfopen(filename, "r", ctx->memory);
-    ctx->main_stream->s->close_at_eod = false;
-    if (ctx->main_stream == NULL) {
-        emprintf1(ctx->memory, "Failed to open file %s\n", filename);
-        return_error(gs_error_ioerror);
-    }
+    ctx->main_stream->s = stm;
 
     Buffer = gs_alloc_bytes(ctx->memory, BUF_SIZE, "PDF interpreter - allocate working buffer for file validation");
     if (Buffer == NULL) {
-        cleanup_pdfi_open_file(ctx, Buffer);
-        return_error(gs_error_VMerror);
+        code = gs_error_VMerror;
+        goto error;
     }
 
     /* Determine file size */
@@ -738,22 +721,26 @@ int pdfi_open_pdf_file(pdf_context *ctx, char *filename)
 
     bytes = pdfi_read_bytes(ctx, Buffer, 1, Offset, ctx->main_stream);
     if (bytes <= 0) {
-        emprintf(ctx->memory, "Failed to read any bytes from file\n");
-        cleanup_pdfi_open_file(ctx, Buffer);
-        return_error(gs_error_ioerror);
+        emprintf(ctx->memory, "Failed to read any bytes from input stream\n");
+        code = gs_error_ioerror;
+        goto error;
     }
     if (bytes < 8) {
-        emprintf(ctx->memory, "Failed to read enough bytes for a valid PDF header from file\n");
-        cleanup_pdfi_open_file(ctx, Buffer);
-        return_error(gs_error_ioerror);
+        emprintf(ctx->memory, "Failed to read enough bytes for a valid PDF header from input stream\n");
+        code = gs_error_ioerror;
+        goto error;
     }
     Buffer[Offset] = 0x00;
 
     /* First check for existence of header */
     s = strstr((char *)Buffer, "%PDF");
     if (s == NULL) {
-        if (ctx->pdfdebug)
-            dmprintf1(ctx->memory, "%% File %s does not appear to be a PDF file (no %%PDF in first 2Kb of file)\n", filename);
+        if (ctx->pdfdebug) {
+            if (ctx->filename)
+                dmprintf1(ctx->memory, "%% File %s does not appear to be a PDF file (no %%PDF in first 2Kb of file)\n", ctx->filename);
+            else
+                dmprintf1(ctx->memory, "%% File %s does not appear to be a PDF stream (no %%PDF in first 2Kb of stream)\n", ctx->filename);
+        }
         ctx->pdf_errors |= E_PDF_NOHEADER;
     } else {
         /* Now extract header version (may be overridden later) */
@@ -783,15 +770,15 @@ int pdfi_open_pdf_file(pdf_context *ctx, char *filename)
 
         if (pdfi_seek(ctx, ctx->main_stream, ctx->main_stream_length - Offset, SEEK_SET) != 0) {
             emprintf1(ctx->memory, "File is smaller than %"PRIi64" bytes\n", (int64_t)Offset);
-            cleanup_pdfi_open_file(ctx, Buffer);
-            return_error(gs_error_ioerror);
+            code = gs_error_ioerror;
+            goto error;
         }
         read = pdfi_read_bytes(ctx, Buffer, 1, bytes, ctx->main_stream);
 
         if (read <= 0) {
             emprintf1(ctx->memory, "Failed to read %"PRIi64" bytes from file\n", (int64_t)bytes);
-            cleanup_pdfi_open_file(ctx, Buffer);
-            return_error(gs_error_ioerror);
+            code = gs_error_ioerror;
+            goto error;
         }
 
         read = bytes = read + (BUF_SIZE - bytes);
@@ -827,8 +814,29 @@ int pdfi_open_pdf_file(pdf_context *ctx, char *filename)
     if (!found)
         ctx->pdf_errors |= E_PDF_NOSTARTXREF;
 
+error:
     gs_free_object(ctx->memory, Buffer, "PDF interpreter - allocate working buffer for file validation");
-    return 0;
+    return code;
+}
+
+int pdfi_open_pdf_file(pdf_context *ctx, char *filename)
+{
+    stream *s = NULL;
+    int code;
+
+    if (ctx->pdfdebug)
+        dmprintf1(ctx->memory, "%% Attempting to open %s as a PDF file\n", filename);
+
+    s = sfopen(filename, "r", ctx->memory);
+    s->close_at_eod = false;
+    if (s == NULL) {
+        emprintf1(ctx->memory, "Failed to open file %s\n", filename);
+        return_error(gs_error_ioerror);
+    }
+    code = pdfi_set_input_stream(ctx, s);
+    if (code < 0)
+        sfclose(ctx->main_stream->s);
+    return code;
 }
 
 /***********************************************************************************/
@@ -1013,12 +1021,17 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
     }
 
     if (ctx->filename) {
+        /* This should already be closed, but lets make sure */
+        pdfi_close_pdf_file(ctx);
         gs_free_object(ctx->memory, ctx->filename, "pdfi_free_context, free copy of filename");
         ctx->filename = NULL;
     }
 
-    /* This should already be closed, but lets make sure */
-    pdfi_close_pdf_file(ctx);
+    if (ctx->main_stream) {
+        gs_free_object(ctx->memory, ctx->main_stream, "pdfi_free_context, free main PDF stream");
+        ctx->main_stream = NULL;
+    }
+    ctx->main_stream_length = 0;
 
     rc_decrement_cs(ctx->gray_lin, "pdfi_free_context");
     rc_decrement_cs(ctx->gray, "pdfi_free_context");
