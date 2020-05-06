@@ -323,6 +323,7 @@ gx_path_assign_preserve(gx_path * ppto, gx_path * ppfrom)
 int
 gx_path_assign_free(gx_path * ppto, gx_path * ppfrom)
 {
+    int code = 0;
     /*
      * Detect the special case where both paths have non-shared local
      * segments, since we can avoid allocating new segments in this case.
@@ -349,13 +350,10 @@ gx_path_assign_free(gx_path * ppto, gx_path * ppfrom)
 #undef tosegs
     } else {
         /* In all other cases, just do assign + free. */
-        int code = gx_path_assign_preserve(ppto, ppfrom);
-
-        if (code < 0)
-            return code;
+        code = gx_path_assign_preserve(ppto, ppfrom);
     }
     gx_path_free(ppfrom, "gx_path_assign_free");
-    return 0;
+    return code;
 }
 
 /*
