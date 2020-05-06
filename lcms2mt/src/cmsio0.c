@@ -266,7 +266,7 @@ cmsIOHANDLER* CMSEXPORT cmsOpenIOhandlerFromMem(cmsContext ContextID, void *Buff
 
             _cmsFree(ContextID, fm);
             _cmsFree(ContextID, iohandler);
-            cmsSignalError(ContextID, cmsERROR_READ, "Couldn't allocate %ld bytes for profile", size);
+            cmsSignalError(ContextID, cmsERROR_READ, "Couldn't allocate %d bytes for profile", size);
             return NULL;
         }
 
