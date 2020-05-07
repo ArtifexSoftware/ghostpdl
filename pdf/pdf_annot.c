@@ -472,6 +472,7 @@ static int pdfi_annot_draw_Border(pdf_context *ctx, pdf_dict *annot, pdf_array *
     }
     if (!Border) {
         code = pdfi_array_alloc(ctx, 0, &dash);
+        pdfi_countup(dash);
         if (code < 0) goto exit;
         width = 1;
     } else {
@@ -482,10 +483,12 @@ static int pdfi_annot_draw_Border(pdf_context *ctx, pdf_dict *annot, pdf_array *
                 dbgmprintf(ctx->memory, "WARNING: Annotation Border Dash array invalid\n");
                 code = pdfi_array_alloc(ctx, 0, &dash);
                 if (code < 0) goto exit;
+                pdfi_countup(dash);
             }
         } else {
             code = pdfi_array_alloc(ctx, 0, &dash);
             if (code < 0) goto exit;
+            pdfi_countup(dash);
         }
         code = pdfi_array_get_number(ctx, Border, 2, &width);
         if (code < 0) goto exit;
@@ -697,8 +700,11 @@ static int pdfi_annot_draw_LE_one(pdf_context *ctx, pdf_dict *annot, pdf_name *L
  * Draws one at (x1,y1) and one at (x2,y2)
  * If LE is a name instead of an array, only draws at x2,y2 (but needs x1,y1 for angle)
  *  (defaults to None if not there)
+ *
+ * which -- tells whether to draw both ends (0) or just the first one (1) or second one (2)
  */
-static int pdfi_annot_draw_LE(pdf_context *ctx, pdf_dict *annot, double x1, double y1, double x2, double y2)
+static int pdfi_annot_draw_LE(pdf_context *ctx, pdf_dict *annot,
+                              double x1, double y1, double x2, double y2, int which)
 {
     pdf_obj *LE = NULL;
     pdf_name *LE1 = NULL;
@@ -718,7 +724,8 @@ static int pdfi_annot_draw_LE(pdf_context *ctx, pdf_dict *annot, double x1, doub
     dx = x2 - x1;
     dy = y2 - y1;
     code = gs_atan2_degrees(dy, dx, &angle);
-    if (code < 0) goto exit;
+    if (code < 0)
+        angle = 0;
 
     if (LE->type == PDF_ARRAY) {
         code = pdfi_array_get_type(ctx, (pdf_array *)LE, 0, PDF_NAME, (pdf_obj **)&LE1);
@@ -730,12 +737,12 @@ static int pdfi_annot_draw_LE(pdf_context *ctx, pdf_dict *annot, double x1, doub
         LE1 = (pdf_name *)LE;
         LE = NULL;
     }
-    if (LE1) {
+    if (LE1 && (!which || which == 1)) {
         code = pdfi_annot_draw_LE_one(ctx, annot, LE1, x1, y1, angle+180);
         if (code < 0) goto exit;
     }
 
-    if (LE2) {
+    if (LE2 && (!which || which == 2)) {
         code = pdfi_annot_draw_LE_one(ctx, annot, LE2, x2, y2, angle);
         if (code < 0) goto exit;
     }
@@ -1154,7 +1161,7 @@ static int pdfi_annot_draw_CL(pdf_context *ctx, pdf_dict *annot)
      * NOTE: This renders a different arrow than the gs code, but I used the
      * same LE code I used elsewhere, which is clearly better.  So there will be diffs...
      */
-    code = pdfi_annot_draw_LE(ctx, annot, array[0], array[1], array[2], array[3]);
+    code = pdfi_annot_draw_LE(ctx, annot, array[0], array[1], array[2], array[3], 1);
     if (code < 0) goto exit;
 
  exit:
@@ -1457,7 +1464,7 @@ static int pdfi_annot_draw_Line(pdf_context *ctx, pdf_dict *annot, pdf_dict *Nor
     if (code < 0) goto exit;
 
     /* Handle LE */
-    code = pdfi_annot_draw_LE(ctx, annot, lrect.p.x, lrect.p.y, lrect.q.x, lrect.q.y);
+    code = pdfi_annot_draw_LE(ctx, annot, lrect.p.x, lrect.p.y, lrect.q.x, lrect.q.y, 0);
     if (code < 0) goto exit;
 
     /* Draw the actual line */
@@ -1478,34 +1485,11 @@ static int pdfi_annot_draw_Line(pdf_context *ctx, pdf_dict *annot, pdf_dict *Nor
     return code;
 }
 
-static int pdfi_annot_draw_PolyLine(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
-{
-   int code = 0;
-
-    /* TODO: Generate appearance (see pdf_draw.ps/PolyLine) */
-    dbgmprintf(ctx->memory, "ANNOT: No AP generation for subtype PolyLine\n");
-    *render_done = true;
-
-    return code;
-}
-
-/* Generate appearance (see pdf_draw.ps/Polygon)
- *
- * If there was an AP it was already handled.
- */
-static int pdfi_annot_draw_Polygon(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
+/* Create a path from an array of points */
+static int pdfi_annot_path_array(pdf_context *ctx, pdf_dict *annot, pdf_array *Vertices)
 {
     int code = 0;
-    int code1 = 0;
-    pdf_array *Vertices = NULL;
-    bool drawit;
     int i;
-
-    code = pdfi_annot_start_transparency(ctx, annot);
-    if (code < 0) goto exit1;
-
-    code = pdfi_dict_knownget_type(ctx, annot, "Vertices", PDF_ARRAY, (pdf_obj **)&Vertices);
-    if (code < 0) goto exit;
 
     for (i=0; i<pdfi_array_size(Vertices); i+=2) {
         double x,y;
@@ -1523,6 +1507,101 @@ static int pdfi_annot_draw_Polygon(pdf_context *ctx, pdf_dict *annot, pdf_dict *
             if (code < 0) goto exit;
         }
     }
+
+ exit:
+    return code;
+}
+
+/* Generate appearance (see pdf_draw.ps/PolyLine)
+ * NOTE: as of 5-7-20, the gs implementation of this is actually broken
+ *
+ * If there was an AP it was already handled.
+ */
+static int pdfi_annot_draw_PolyLine(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
+{
+    int code = 0;
+    int code1 = 0;
+    pdf_array *Vertices = NULL;
+    bool drawit;
+    int size;
+    double x1, y1, x2, y2;
+
+    code = pdfi_annot_start_transparency(ctx, annot);
+    if (code < 0) goto exit1;
+
+    code = pdfi_dict_knownget_type(ctx, annot, "Vertices", PDF_ARRAY, (pdf_obj **)&Vertices);
+    if (code < 0) goto exit;
+
+    size = pdfi_array_size(Vertices);
+    if (size == 0) {
+        code = 0;
+        goto exit;
+    }
+    code = pdfi_annot_path_array(ctx, annot, Vertices);
+    if (code < 0) goto exit1;
+
+    code = pdfi_annot_setcolor(ctx, annot, false, &drawit);
+    if (code < 0) goto exit;
+
+    code = pdfi_annot_draw_border(ctx, annot, true);
+    if (code < 0) goto exit;
+
+    if (size >= 4) {
+        code = pdfi_array_get_number(ctx, Vertices, 0, &x1);
+        if (code < 0) goto exit;
+        code = pdfi_array_get_number(ctx, Vertices, 1, &y1);
+        if (code < 0) goto exit;
+        code = pdfi_array_get_number(ctx, Vertices, 2, &x2);
+        if (code < 0) goto exit;
+        code = pdfi_array_get_number(ctx, Vertices, 3, &y2);
+        if (code < 0) goto exit;
+        code = pdfi_annot_draw_LE(ctx, annot, x1, y1, x2, y2, 1);
+        if (code < 0) goto exit;
+
+        code = pdfi_array_get_number(ctx, Vertices, size-4, &x1);
+        if (code < 0) goto exit;
+        code = pdfi_array_get_number(ctx, Vertices, size-3, &y1);
+        if (code < 0) goto exit;
+        code = pdfi_array_get_number(ctx, Vertices, size-2, &x2);
+        if (code < 0) goto exit;
+        code = pdfi_array_get_number(ctx, Vertices, size-1, &y2);
+        if (code < 0) goto exit;
+        code = pdfi_annot_draw_LE(ctx, annot, x1, y1, x2, y2, 2);
+        if (code < 0) goto exit;
+    }
+
+ exit:
+    code1 = pdfi_annot_end_transparency(ctx, annot);
+    if (code >= 0)
+        code = code1;
+
+ exit1:
+    *render_done = true;
+    pdfi_countdown(Vertices);
+    return code;
+}
+
+/* Generate appearance (see pdf_draw.ps/Polygon)
+ *
+ * If there was an AP it was already handled.
+ */
+static int pdfi_annot_draw_Polygon(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
+{
+    int code = 0;
+    int code1 = 0;
+    pdf_array *Vertices = NULL;
+    bool drawit;
+
+    code = pdfi_annot_start_transparency(ctx, annot);
+    if (code < 0) goto exit1;
+
+    code = pdfi_dict_knownget_type(ctx, annot, "Vertices", PDF_ARRAY, (pdf_obj **)&Vertices);
+    if (code < 0) goto exit;
+
+    code = pdfi_annot_path_array(ctx, annot, Vertices);
+    if (code < 0) goto exit1;
+
+    code = gs_closepath(ctx->pgs);
 
     /* NOTE: The logic here seems a bit wonky.  Why only set opacity if there was a fill?
      * Anyway, it is based on the ps code (pdf_draw.ps/Polygon).
