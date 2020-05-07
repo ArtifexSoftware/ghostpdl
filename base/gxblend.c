@@ -5130,6 +5130,17 @@ do_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     int first_blend_spot = num_comp;
     pdf14_mark_fill_rect_fn fn;
 
+    /* This is a fix to handle the odd case where overprint is active
+       but drawn comps is zero due to the colorants that are present
+       in the sep or devicen color space.  For example, if the color
+       fill was cyan in a sep color space but we are drawing in a
+       RGB blend space.  In this case the drawn comps is 0 and we should
+       not be using compatible overprint mode here. */
+    if (drawn_comps == 0 && blend_mode == BLEND_MODE_CompatibleOverprint &&
+        buf->group_color_info->isadditive) {
+        blend_mode = BLEND_MODE_Normal;
+    }
+
     if (num_spots > 0 && !blend_valid_for_spot(blend_mode))
         first_blend_spot = num_comp - num_spots;
     if (blend_mode == BLEND_MODE_Normal)
@@ -5749,6 +5760,17 @@ do_mark_fill_rectangle16(gx_device * dev, int x, int y, int w, int h,
     int num_spots = buf->num_spots;
     int first_blend_spot = num_comp;
     pdf14_mark_fill_rect16_fn fn;
+
+  /* This is a fix to handle the odd case where overprint is active
+   but drawn comps is zero due to the colorants that are present
+   in the sep or devicen color space.  For example, if the color
+   fill was cyan in a sep color space but we are drawing in a
+   RGB blend space.  In this case the drawn comps is 0 and we should
+   not be using compatible overprint mode here. */
+    if (drawn_comps == 0 && blend_mode == BLEND_MODE_CompatibleOverprint &&
+        buf->group_color_info->isadditive) {
+        blend_mode = BLEND_MODE_Normal;
+    }
 
     if (num_spots > 0 && !blend_valid_for_spot(blend_mode))
         first_blend_spot = num_comp - num_spots;

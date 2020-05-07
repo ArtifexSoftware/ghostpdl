@@ -660,6 +660,8 @@ gx_check_process_names_DeviceN(gs_color_space * pcs, gs_gstate * pgs)
         return SEP_PURE_CMYK;
     if (num_rgb_process > 0 && num_cmyk_process == 0 && num_spots == 0)
         return SEP_PURE_RGB;
+    if (num_spots > 0 && num_cmyk_process == 0 && num_rgb_process == 0)
+        return SEP_PURE_SPOT;
     return SEP_MIX;
 }
 

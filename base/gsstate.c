@@ -38,6 +38,7 @@
 #include "gxcolor2.h"
 #include "gxpcolor.h"
 #include "gsicc_manage.h"
+#include "gxdevsop.h"
 
 /* Forward references */
 static gs_gstate *gstate_alloc(gs_memory_t *, client_name_t,
@@ -633,10 +634,35 @@ gs_do_set_overprint(gs_gstate * pgs)
     else {
         gx_device* dev = pgs->device;
         cmm_dev_profile_t* dev_profile;
+        gs_color_space_index pcs_index = gs_color_space_get_index(pcs);
 
         dev_proc(dev, get_profile)(dev, &dev_profile);
-        if (!dev_profile->sim_overprint || dev_profile->device_profile[0]->data_cs != gsCMYK)
+        if (!dev_profile->sim_overprint)
             return code;
+
+        /* Transparency device that supports spots and where we have
+           sep or devicen colors needs special consideration if the device
+           is in a additive blend mode.  This could
+           be written more compactly, but it would be unreadable. */
+        if (dev_proc(dev, dev_spec_op)(dev, gxdso_pdf14_sep_device, NULL, 0) &&
+            (dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE) &&
+            (pcs_index == gs_color_space_index_DeviceN ||
+             pcs_index == gs_color_space_index_Separation)) {
+            if (pcs_index == gs_color_space_index_Separation) {
+                if (!(pcs->params.separation.color_type == SEP_MIX ||
+                      pcs->params.separation.color_type == SEP_ENUM)) {
+                    /* Sep color is not a spot color.  We can't do OP and trans */
+                    return code;
+                }
+            }
+            if (pcs_index == gs_color_space_index_DeviceN) {
+                if (pcs->params.device_n.color_type != SEP_PURE_SPOT) {
+                    /* DeviceN has process colors  We can't do OP and trans. */
+                    return code;
+                }
+            }
+
+        }
 
         /* The spaces that do not allow opm (e.g. ones that are not ICC or DeviceCMYK)
            will blow away any true setting later. But we have to be prepared

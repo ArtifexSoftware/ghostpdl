@@ -1089,7 +1089,8 @@ $(GLOBJ)gsstate.$(OBJ) : $(GLSRC)gsstate.c $(AK) $(gx_h) $(gserrors_h)\
  $(gscolor2_h) $(gscoord_h) $(gscie_h)\
  $(gxclipsr_h) $(gxcmap_h) $(gxdevice_h) $(gxpcache_h)\
  $(gzht_h) $(gzline_h) $(gspath_h) $(gzpath_h) $(gzcpath_h)\
- $(gsovrc_h) $(gxcolor2_h) $(gxpcolor_h) $(gsicc_manage_h) $(LIB_MAK) $(MAKEDIRS)
+ $(gsovrc_h) $(gxcolor2_h) $(gxpcolor_h) $(gsicc_manage_h)\
+ $(gxdevsop_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsstate.$(OBJ) $(C_) $(GLSRC)gsstate.c
 
 $(GLOBJ)gstext.$(OBJ) : $(GLSRC)gstext.c $(AK) $(memory__h) $(gdebug_h)\

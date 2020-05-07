@@ -1027,6 +1027,7 @@ gx_default_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
         case gxdso_needs_invariant_palette:
         case gxdso_supports_iccpostrender:
         case gxdso_supports_alpha:
+        case gxdso_pdf14_sep_device:
             return 0;
         case gxdso_pattern_shfill_doesnt_need_path:
             return (dev_proc(pdev, fill_path) == gx_default_fill_path);

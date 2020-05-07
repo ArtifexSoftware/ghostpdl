@@ -7762,6 +7762,14 @@ pdf14_dev_spec_op(gx_device *pdev, int dev_spec_op,
             return 0;
         }
     }
+    if (dev_spec_op == gxdso_pdf14_sep_device) {
+        pdf14_device* dev = (pdf14_device*)pdev;
+
+        if (strcmp(dev->dname, "pdf14cmykspot") == 0 ||
+            strcmp(dev->dname, "pdf14clistcmykspot") == 0)
+            return 1;
+        return 0;
+    }
     if (dev_spec_op == gxdso_is_encoding_direct)
         return 1;
 
