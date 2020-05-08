@@ -403,8 +403,10 @@ gx_cpath_path_list_new(gs_memory_t *mem, gx_clip_path *pcpath, int rule,
     rc_init_free(pcplist, mem, 1, rc_free_cpath_path_list);
     if (pcpath!=NULL && !pcpath->path_valid) {
         code = gx_path_init_contained_shared(&pcplist->path, NULL, mem, cname);
-        if (code < 0)
+        if (code < 0) {
+            gs_free_object(mem, pcplist, "gx_cpath_path_list_new");
             return code;
+        }
         code = gx_cpath_to_path(pcpath, &pcplist->path);
     } else {
         gx_path_init_local(&pcplist->path, mem);
