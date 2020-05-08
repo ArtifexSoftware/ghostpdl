@@ -16,6 +16,9 @@
  * Unicode code points.
  */
 
+#ifndef gdevagl_h_INCLUDED
+#define gdevagl_h_INCLUDED
+
 typedef struct single_glyph_list_s {
   const char *Glyph;
   unsigned short Unicode;
@@ -35,3 +38,5 @@ typedef struct quad_glyph_list_s {
   const char *Glyph;
   unsigned short Unicode[4];
 } quad_glyph_list_t;
+
+#endif

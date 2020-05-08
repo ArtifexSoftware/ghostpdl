@@ -22,6 +22,9 @@
  * SOFTWARE.
 **/
 
+#ifndef ijs_h_INCLUDED
+#define ijs_h_INCLUDED
+
 /* This file contains common data types for IJS */
 
 /* IJS_VERSION is decimal version number times 100 */
@@ -122,3 +125,5 @@ ijs_recv_int (IjsRecvChan *ch, int *val);
 
 int
 ijs_recv_block (IjsRecvChan *ch, char *buf, int buf_size);
+
+#endif

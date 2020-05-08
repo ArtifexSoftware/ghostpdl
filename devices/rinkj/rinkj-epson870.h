@@ -13,8 +13,12 @@
    CA 94945, U.S.A., +1(415)492-9861, for further information.
 */
 
+#ifndef rinkj_epson870_h_INCLUDED
+#define rinkj_epson870_h_INCLUDED
 
 /* A Rinkj driver for a number of variable-dot Epson devices. */
 
 RinkjDevice *
 rinkj_epson870_new (RinkjByteStream *out);
+
+#endif

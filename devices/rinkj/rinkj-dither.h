@@ -13,6 +13,8 @@
    CA 94945, U.S.A., +1(415)492-9861, for further information.
 */
 
+#ifndef rinkj_dither_h_INCLUDED
+#define rinkj_dither_h_INCLUDED
 
 /* The dither object abstraction within the Rinkj driver. */
 
@@ -28,3 +30,5 @@ rinkj_dither_line (RinkjDither *self, unsigned char *dst, const unsigned char *s
 
 void
 rinkj_dither_close (RinkjDither *self);
+
+#endif

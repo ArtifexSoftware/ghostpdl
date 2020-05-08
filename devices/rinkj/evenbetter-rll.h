@@ -16,6 +16,9 @@
 
 /* Header file for testbed implementation of Even Better Screening. */
 
+#ifndef evenbetter_rll_h_INCLUDED
+#define evenbetter_rll_h_INCLUDED
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -100,4 +103,6 @@ eb_free_aligned(void *p);
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif

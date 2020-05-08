@@ -14,6 +14,9 @@
 */
 
 
+#ifndef plvocab_h_INCLUDED
+#define plvocab_h_INCLUDED
+
 /* plvocab.h */
 /* Map between glyph vocabularies */
 
@@ -24,3 +27,5 @@ uint pl_map_MSL_to_Unicode(uint msl, uint symbol_set);
 
 /* Map a Unicode character code to a MSL glyph code similarly. */
 uint pl_map_Unicode_to_MSL(uint unicode, uint symbol_set);
+
+#endif

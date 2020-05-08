@@ -17,13 +17,13 @@
     jbig2dec
 */
 
+#ifndef _JBIG2_H
+#define _JBIG2_H
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-
-#ifndef _JBIG2_H
-#define _JBIG2_H
 
 #define JBIG2_VERSION_MAJOR (0)
 #define JBIG2_VERSION_MINOR (18)
@@ -105,8 +105,6 @@ void jbig2_release_page(Jbig2Ctx *ctx, Jbig2Image *image);
 /* mark the current page as complete, simulating an end-of-page segment (for broken streams) */
 int jbig2_complete_page(Jbig2Ctx *ctx);
 
-#endif                          /* _JBIG2_H */
-
 /* If we don't have a definition for inline, make it nothing so the code will compile */
 #ifndef inline
 #define inline
@@ -115,3 +113,5 @@ int jbig2_complete_page(Jbig2Ctx *ctx);
 #ifdef __cplusplus
 }
 #endif
+
+#endif                          /* _JBIG2_H */

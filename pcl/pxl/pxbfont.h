@@ -17,6 +17,9 @@
 /* pxbfont.h */
 /* Interface to PCL XL built-in bitmap font */
 
+#ifndef pxbfont_h_INCLUDED
+#define pxbfont_h_INCLUDED
+
 /*
  * This bitmap font is included in the interpreter solely for the
  * purpose of producing error pages.
@@ -31,3 +34,5 @@ extern const byte px_bitmap_font_header[];
 extern const uint px_bitmap_font_header_size;
 
 extern const byte px_bitmap_font_char_data[];
+
+#endif

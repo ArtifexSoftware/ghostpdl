@@ -14,6 +14,9 @@
 */
 
 
+#ifndef pgfdata_h_INCLUDED
+#define pgfdata_h_INCLUDED
+
 /* pgfdata.h */
 /* Interface to HP-GL/2 stick and arc font data */
 
@@ -35,3 +38,5 @@ int hpgl_stick_arc_width(gs_char char_index, hpgl_font_type_t font_type);
 /* We also process the The DL (download font) format in this module,
    but it should be separated out */
 int hpgl_531_segments(const gs_memory_t * mem, void *data, void *cdata);
+
+#endif

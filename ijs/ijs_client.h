@@ -22,6 +22,9 @@
  * SOFTWARE.
 **/
 
+#ifndef ijs_client_h_INCLUDED
+#define ijs_client_h_INCLUDED
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -93,4 +96,6 @@ ijs_client_get_version (IjsClientCtx *ctx);
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif

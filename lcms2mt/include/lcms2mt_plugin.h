@@ -29,6 +29,7 @@
 // are defined here. Including this file forces to include the standard API too.
 
 #ifndef _lcms2mt_plugin_H
+#define _lcms2mt_plugin_H
 
 // Deal with Microsoft's attempt at deprecating C standard runtime functions
 #ifdef _MSC_VER
@@ -657,5 +658,4 @@ CMSAPI void    CMSEXPORT _cmsUnlockMutex(cmsContext ContextID, void* mtx);
 #   endif
 #endif
 
-#define _lcms2mt_plugin_H
 #endif
