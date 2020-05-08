@@ -46,8 +46,8 @@
 
 /* BJC printer drivers definitions and utility interfaces */
 
-#ifndef gdevbjc_INCLUDED
-#  define gdevbjc_INCLUDED
+#ifndef gdevbjcUNDERSCORE_INCLUDED
+#  define gdevbjcUNDERSCORE_INCLUDED
 
 /* Define the default X and Y resolution. */
 #define X_DPI 360
@@ -248,4 +248,4 @@ void bjc_rgb_to_cmy (byte r, byte g, byte b, int *c, int *m, int *y);
 void bjc_rgb_to_gray(byte r, byte g, byte b, int *k);
 uint bjc_rand(gx_device_bjc_printer *dev);
 void bjc_init_tresh(gx_device_bjc_printer *dev, int rnd);
-#endif				/* gdevbjc_INCLUDED */
+#endif				/* gdevbjcUNDERSCORE_INCLUDED */

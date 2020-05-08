@@ -304,7 +304,6 @@ currentdict /gput_always_allow .undef
     4 2 roll
     //CSdict exch get exec exch .setfillcolorspace exec {.setfillcolor} stopped
     {
-    (error) == flush
       cleartomark
       [//null /DeviceGray //null /DeviceRGB /DeviceCMYK] exch
       {get} stopped
@@ -1145,7 +1144,7 @@ end readonly def
   %% can come into pdf_text_begin with an opacity not equal to 1.
   PDFusingtransparency .currenttextknockout and
   currentdict /illegal_BT get not and
-{
+  {
     .begintransparencytextgroup
   } if
 
@@ -1329,10 +1328,10 @@ currentdict /clip_if_required .undef
     {		% We add 1 to the length just in case the original
                 % didn't have a FID.
       exch dup length 1 add dict exch
-       {		% Stack: changed newfont key value
-         1 index /FID eq
-         not { 3 copy put } if pop pop
-       }
+      {		% Stack: changed newfont key value
+        1 index /FID eq
+        not { 3 copy put } if pop pop
+      }
       forall exch
     }
    if pop

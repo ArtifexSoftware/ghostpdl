@@ -1499,27 +1499,29 @@ hpgl_LB(hpgl_args_t * pargs, hpgl_state_t * pgls)
                  * restore the initial position, per TRM 23-78.
                  */
                 if (!hpgl_can_concat_labels(pgls)) {
-                    hpgl_call(hpgl_add_point_to_path(pgls,
+                    code = hpgl_add_point_to_path(pgls,
                                                      pgls->g.
                                                      carriage_return_pos.x,
                                                      pgls->g.
                                                      carriage_return_pos.y,
                                                      hpgl_plot_move_absolute,
-                                                     true));
+                                                     true);
                 } else {
                     /* undo the label origin offsets */
-                    hpgl_call(hpgl_add_point_to_path
+                    code = hpgl_add_point_to_path
                               (pgls, lo_offsets.x, lo_offsets.y,
-                               hpgl_plot_move_relative, false));
+                               hpgl_plot_move_relative, false);
                 }
-                /* clear the current path terminating carriage
-                   returns and linefeeds will leave "moveto's" in
-                   the path */
-                hpgl_call(hpgl_clear_current_path(pgls));
                 /* also clean up stick fonts - they are likely to
                    become dangling references in the current font
                    scheme since they don't have a dictionary entry */
                 hpgl_free_stick_fonts(pgls);
+                if (code < 0)
+                    return code;
+                /* clear the current path terminating carriage
+                   returns and linefeeds will leave "moveto's" in
+                   the path */
+                hpgl_call(hpgl_clear_current_path(pgls));
                 return 0;
             }
             /*
@@ -1541,9 +1543,8 @@ hpgl_LB(hpgl_args_t * pargs, hpgl_state_t * pgls)
 
             code = hpgl_process_buffer(pgls, &lo_offsets);
             hpgl_destroy_label_buffer(pgls);
-            if (code < 0)
-                return code;
-            code = hpgl_init_label_buffer(pgls);
+            if (code >= 0)
+                code = hpgl_init_label_buffer(pgls);
             if (code < 0) {
                 hpgl_free_stick_fonts(pgls);
                 return code;
@@ -1591,23 +1592,30 @@ hpgl_print_symbol_mode_char(hpgl_state_t * pgls)
     int saved_origin = pgls->g.label.origin;
     gs_point save_pos = pgls->g.pos;
     gs_point lo_offsets;
+    int code;
 
     hpgl_call(hpgl_gsave(pgls));
     /* HAS this need checking.  I don't know how text direction
        and label origin interact in symbol mode */
     pgls->g.label.origin = 5;
     /* HAS - alot of work for one character */
-    hpgl_call(hpgl_clear_current_path(pgls));
-    hpgl_call(hpgl_init_label_buffer(pgls));
-    hpgl_call(hpgl_buffer_char(pgls, pgls->g.symbol_mode));
-    hpgl_call(hpgl_process_buffer(pgls, &lo_offsets));
-    hpgl_destroy_label_buffer(pgls);
-    hpgl_call(hpgl_grestore(pgls));
+    if (((code = hpgl_clear_current_path(pgls)) >= 0) &&
+        ((code = hpgl_init_label_buffer(pgls)) >= 0)) {
+        if ((code = hpgl_buffer_char(pgls, pgls->g.symbol_mode)) >= 0)
+            code = hpgl_process_buffer(pgls, &lo_offsets);
+        hpgl_destroy_label_buffer(pgls);
+    }
+    {
+        /* must grestore here from earlier gsave */
+        int code2 = hpgl_grestore(pgls);
+        if (code >= 0) code = code2;
+    }
+    hpgl_free_stick_fonts(pgls);
     /* restore the origin */
     pgls->g.label.origin = saved_origin;
-    hpgl_call(hpgl_set_current_position(pgls, &save_pos));
-    hpgl_free_stick_fonts(pgls);
-    return 0;
+    if (code >= 0)
+        hpgl_call(hpgl_set_current_position(pgls, &save_pos));
+    return code;
 }
 
 /* Initialization */

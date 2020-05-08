@@ -722,7 +722,7 @@ retry:
             Clear_CodeRange(exec, TT_CodeRange_Glyph);
         }
     } else if (gOutline->contourCount > 0) {
-        uint16 i;
+        int i;
         bool bInsOK;
         byte *onCurve, *stop, flag;
         short *endPoints;
@@ -796,7 +796,7 @@ retry:
         MoveGlyphOutline(pts, 0, gOutline, m_orig);
         self->nContoursTotal += gOutline->contourCount;
         self->nPointsTotal += nPoints;
-        if (execute_bytecode && !skip_instructions && 
+        if (execute_bytecode && !skip_instructions &&
                 !r->Error(r) && n_ins && bInsOK && !(pFont->inst->GS.instruct_control & 1)) {
             TGlyph_Zone *pts = &exec->pts;
             int k;

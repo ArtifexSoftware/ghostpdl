@@ -303,12 +303,12 @@ pcl_pattern_RF(int indx, const gs_depth_bitmap * ppixmap, pcl_state_t * pcs)
                                              (int)pdev->HWResolution[1],
                                              pcs->memory);
 
-        if (code < 0)
+        if (code < 0) {
+            gs_free_object(pcs->memory, ppixmap->data, "pcl_pattern_RF");
             return code;
+        }
 
         if (pl_dict_put(&pcs->gl_patterns, id_key(key), 2, pptrn) < 0) {
-            pcl_pattern_free_pattern(pcs->memory,
-                                     pptrn, "create GL/2 RF pattern");
             return e_Memory;
         }
 

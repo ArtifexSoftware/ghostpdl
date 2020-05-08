@@ -617,7 +617,7 @@ gs_color_select_t select)
     int i = pcs->type->num_components(pcs);
     cmm_dev_profile_t *dev_profile = NULL;
     gs_color_space_index type = gs_color_space_get_index(pcs);
-    int num_src_comps = 1;
+    uchar num_src_comps = 1;
 
     /* Define the rendering intents. */
     rendering_params.black_point_comp = pgs->blackptcomp;
@@ -1400,7 +1400,7 @@ cmap_separation_halftoned(frac all, gx_device_color * pdc,
      const gs_gstate * pgs, gx_device * dev, gs_color_select_t select,
      const gs_color_space *pcs)
 {
-    uchar i, ncomps = dev->color_info.num_components;
+    uint i, ncomps = dev->color_info.num_components;
     bool additive = dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE;
     frac comp_value = all;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
@@ -1455,7 +1455,7 @@ static void
 cmap_separation_direct(frac all, gx_device_color * pdc, const gs_gstate * pgs,
                  gx_device * dev, gs_color_select_t select, const gs_color_space *pcs)
 {
-    uchar i, ncomps = dev->color_info.num_components;
+    uint i, ncomps = dev->color_info.num_components;
     bool additive = dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE;
     frac comp_value = all;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];

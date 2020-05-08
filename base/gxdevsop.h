@@ -372,6 +372,13 @@ enum {
     /* Private dso used to check that a printer device properly forwards to the default */
     gxdso_debug_printer_check,
 #endif
+    /* gxdso_supports_alpha:
+     *     data = NULL
+     *     size = 0
+     * Returns 1 if the rendering device supports alpha,
+     * 0 otherwise.
+     */
+    gxdso_supports_alpha,
     /* Add new gxdso_ keys above this. */
     gxdso_pattern__LAST
 };

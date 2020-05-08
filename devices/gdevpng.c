@@ -55,6 +55,7 @@
 #include "gdevpccm.h"
 #include "gscdefs.h"
 #include "gxdownscale.h"
+#include "gxdevsop.h"
 
 /* ------ The device descriptors ------ */
 
@@ -79,6 +80,7 @@ static dev_proc_get_params(png_get_params_downscale);
 static dev_proc_put_params(png_put_params_downscale);
 static dev_proc_get_params(png_get_params_downscale_mfs);
 static dev_proc_put_params(png_put_params_downscale_mfs);
+static dev_proc_dev_spec_op(pngalpha_spec_op);
 
 typedef struct gx_device_png_s gx_device_png;
 struct gx_device_png_s {
@@ -280,7 +282,8 @@ static const gx_device_procs pngalpha_procs =
         pngalpha_fillpage,
         NULL,	/* push_transparency_state */
         NULL,	/* pop_transparency_state */
-        pngalpha_put_image
+        pngalpha_put_image,
+        pngalpha_spec_op               /* dev_spec_op */\
 };
 
 const gx_device_pngalpha gs_pngalpha_device = {
@@ -1071,4 +1074,16 @@ pngalpha_copy_alpha(gx_device * dev, const byte * data, int data_x,
         gs_free_object(mem, lin, "copy_alpha(lin)");
         return code;
     }
+}
+
+static int
+pngalpha_spec_op(gx_device* pdev, int dso, void* ptr, int size)
+{
+    switch (dso)
+    {
+    case gxdso_supports_alpha:
+        return 1;
+    }
+
+    return gdev_prn_dev_spec_op(pdev, dso, ptr, size);
 }

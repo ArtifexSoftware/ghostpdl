@@ -170,12 +170,14 @@ gs_trans_group_params_init(gs_transparency_group_params_t *ptgp, float opacity)
     ptgp->ColorSpace = NULL;    /* bogus, but can't do better */
     ptgp->Isolated = false;
     ptgp->Knockout = false;
+    ptgp->page_group = false;
     ptgp->text_group = PDF14_TEXTGROUP_NO_BT;
     ptgp->image_with_SMask = false;
     ptgp->mask_id = 0;
     ptgp->iccprofile = NULL;
     ptgp->group_opacity = opacity;
     ptgp->group_shape = 1.0;
+    ptgp->shade_group = false;
 }
 
 int
@@ -209,12 +211,14 @@ gs_begin_transparency_group(gs_gstate *pgs,
     params.pdf14_op = group_type;
     params.Isolated = ptgp->Isolated;
     params.Knockout = ptgp->Knockout;
+    if (group_type == PDF14_BEGIN_TRANS_PAGE_GROUP)
+        params.page_group = true;
     params.image_with_SMask = ptgp->image_with_SMask;
     params.opacity = ptgp->group_opacity;
     params.shape = ptgp->group_shape;
     params.blend_mode = pgs->blend_mode;
     params.text_group = ptgp->text_group;
-
+    params.shade_group = ptgp->shade_group;
     /* This function is called during the c-list writer side.
        Store some information so that we know what the color space is
        so that we can adjust according later during the clist reader.
@@ -239,11 +243,14 @@ gs_begin_transparency_group(gs_gstate *pgs,
        target device (process color model).  Here we just want
        to set it as a unknown type for clist writing, as we will take care
        of using the parent group color space later during clist reading.
-     */
-
+       Also, if the group was not isolated we MUST use the parent group
+       color space regardless of what the group color space is specified to be.
+       Note that the page group should always be isolated */
+    if (group_type == PDF14_BEGIN_TRANS_PAGE_GROUP)
+        params.Isolated = true;
 
     if (ptgp->ColorSpace == NULL || params.Isolated != true) {
-        params.group_color = UNKNOWN;
+        params.group_color_type = UNKNOWN;
         params.group_color_numcomps = 0;
     } else {
         /* The /CS parameter was present.  Use what was set.  Currently
@@ -258,7 +265,7 @@ gs_begin_transparency_group(gs_gstate *pgs,
             /* Blending space is ICC based.  If we are doing c-list rendering
                we will need to write this color space into the clist.
                */
-            params.group_color = ICC;
+            params.group_color_type = ICC;
             params.group_color_numcomps =
                 blend_color_space->cmm_icc_profile_data->num_comps;
             /* Get the ICC profile */
@@ -281,12 +288,12 @@ gs_begin_transparency_group(gs_gstate *pgs,
                     /* We can end up here if we are in a deviceN color space and
                        we have a sep output device */
                     profile = NULL;
-                    params.group_color = DEVICEN;
+                    params.group_color_type = DEVICEN;
                     params.group_color_numcomps = cs_num_components(blend_color_space);
                 break;
             }
             if (profile != NULL) {
-                params.group_color = ICC;
+                params.group_color_type = ICC;
                 params.group_color_numcomps = profile->num_comps;
                 params.iccprofile = profile;
                 params.icc_hash = profile->hashcode;
@@ -306,8 +313,8 @@ gs_begin_transparency_group(gs_gstate *pgs,
         else
             dmputs(pgs->memory, "     (no CS)");
 
-        dmprintf3(pgs->memory, "  Isolated = %d  Knockout = %d text_group = %d\n",
-                 ptgp->Isolated, ptgp->Knockout, ptgp->text_group);
+        dmprintf4(pgs->memory, "  Isolated = %d  Knockout = %d text_group = %d page_group = %d\n",
+                 ptgp->Isolated, ptgp->Knockout, ptgp->text_group, ptgp->page_group);
     }
 #endif
     params.bbox = *pbbox;
@@ -326,12 +333,14 @@ gx_begin_transparency_group(gs_gstate * pgs, gx_device * pdev,
         return_error(gs_error_rangecheck);
     tgp.Isolated = pparams->Isolated;
     tgp.Knockout = pparams->Knockout;
+    tgp.page_group = pparams->page_group;
     tgp.idle = pparams->idle;
     tgp.mask_id = pparams->mask_id;
     tgp.text_group = pparams->text_group;
+    tgp.shade_group = pparams->shade_group;
 
     /* Needed so that we do proper blending */
-    tgp.group_color = pparams->group_color;
+    tgp.group_color_type = pparams->group_color_type;
     tgp.group_color_numcomps = pparams->group_color_numcomps;
     tgp.iccprofile = pparams->iccprofile;
     tgp.icc_hashcode = pparams->icc_hash;
@@ -355,8 +364,8 @@ gx_begin_transparency_group(gs_gstate * pgs, gx_device * pdev,
                 cs_names[(int)gs_color_space_get_index(tgp.ColorSpace)]);
         else
             dmputs(pdev->memory, "     (no CS)");
-        dmprintf2(pdev->memory, "  Isolated = %d  Knockout = %d\n",
-                 tgp.Isolated, tgp.Knockout);
+        dmprintf3(pdev->memory, "  Isolated = %d  Knockout = %d  page_group = %d\n",
+                 tgp.Isolated, tgp.Knockout, tgp.page_group);
         if (tgp.iccprofile)
             dmprintf(pdev->memory, "     Have ICC Profile for blending\n");
 
@@ -615,7 +624,7 @@ gs_begin_transparency_mask(gs_gstate * pgs,
         if ( blend_color_space->cmm_icc_profile_data != NULL ) {
         /* Blending space is ICC based.  If we are doing c-list rendering we will
            need to write this color space into the clist. */
-            params.group_color = ICC;
+            params.group_color_type = ICC;
             params.group_color_numcomps =
                     blend_color_space->cmm_icc_profile_data->num_comps;
             /* Get the ICC profile */
@@ -625,7 +634,7 @@ gs_begin_transparency_mask(gs_gstate * pgs,
             params.iccprofile = blend_color_space->cmm_icc_profile_data;
             params.icc_hash = blend_color_space->cmm_icc_profile_data->hashcode;
         } else {
-            params.group_color = GRAY_SCALE;
+            params.group_color_type = GRAY_SCALE;
             params.group_color_numcomps = 1;  /* Need to check */
         }
         /* Explicitly decrement the profile data since blend_color_space may not
@@ -647,7 +656,7 @@ gx_begin_transparency_mask(gs_gstate * pgs, gx_device * pdev,
     const int l = sizeof(pparams->Background[0]) * pparams->Background_components;
     const int m = sizeof(pparams->Matte[0]) * pparams->Matte_components;
 
-    tmp.group_color = pparams->group_color;
+    tmp.group_color_type = pparams->group_color_type;
     tmp.subtype = pparams->subtype;
     tmp.group_color_numcomps = pparams->group_color_numcomps;
     tmp.Background_components = pparams->Background_components;
@@ -660,7 +669,7 @@ gx_begin_transparency_mask(gs_gstate * pgs, gx_device * pdev,
     tmp.replacing = pparams->replacing;
     tmp.mask_id = pparams->mask_id;
 
-    if (tmp.group_color == ICC ) {
+    if (tmp.group_color_type == ICC ) {
         /* Do I need to ref count here? */
         tmp.iccprofile = pparams->iccprofile;
         tmp.icc_hashcode = pparams->icc_hash;

@@ -2910,6 +2910,7 @@ currentdict /PDF2PS_matrix_key undef
   % Draw the annotations
   //systemdict /ShowAnnots .knownget not { //true } if {
     /Annots knownoget {
+      dup type /arraytype eq {
       {
         /AnnotDrawCheck exch             % marker to clean up stack on error
         {oforce} stopped
@@ -2946,6 +2947,12 @@ currentdict /PDF2PS_matrix_key undef
         } ifelse
       } ifelse
       } forall
+      }
+      {
+          (   **** Error: Annotation array is not an array, ignoring it.\n) pdfformaterror
+          (               Output may be incorrect.\n) pdfformaterror
+          pop
+      } ifelse
     } if
   } if
   //systemdict /ShowAcroForm .knownget { //true eq } { //false } ifelse {
@@ -3129,48 +3136,56 @@ currentdict /PDF2PS_matrix_key undef
 /annotsusetransparency {	% <page dict> annotsusetransparency <bool>
    //false exch			% Assume no transparency
    /Annots knownoget {		% Get Annots array
+     dup type /arraytype eq {
+         {
+           /AnnotTransparencyCheck exch             % marker to clean up stack on error
+           {oforce} stopped
+           {
+             (   **** Error: Unable to check an annotation for use of transparency.\n) pdfformaterror
+             (                Output may be incorrect.\n) pdfformaterror
+             count -1 0 {                           % make sure we don't go past the top of the stack
+               pop                                  % remove the counter
+               /AnnotTransparencyCheck eq {exit} if % remove object and check if its the marker, exit if it is
+             } for
+           }
+           {
+             exch pop                               % remove the 'on error' marker
+             dup //null ne {
+               dup /Subtype knownoget {
+                 /Highlight eq {      % Highlight annotation is always implemented
+                   pop pop //true exit  % as transparency.
+                 } if
+               } if
+               dup /AP knownoget {	% Get appearance dict for the annoation
+                 /N knownogetdict { 	% Get the /N (i.e. normal) appearance stream
+                   4 dict exch resourceusestransparency { pop pop //true exit } if
+                 } if
+               } if  			% If AP dict known
+               dup /BM knownoget {
+                 //true exit
+               } if
+               dup /CA knownoget {
+                 1 le {
+                   pop pop //true exit
+                 } if
+               } if
+               /ca knownoget {
+                 1 le {
+                   pop //true exit
+                 } if
+               } if
+             } {
+               pop
+             } ifelse
+           } ifelse
+         } forall			% For all annots on the page
+     }
      {
-       /AnnotTransparencyCheck exch             % marker to clean up stack on error
-       {oforce} stopped
-       {
-         (   **** Error: Unable to check an annotation for use of transparency.\n) pdfformaterror
-         (                Output may be incorrect.\n) pdfformaterror
-         count -1 0 {                           % make sure we don't go past the top of the stack
-           pop                                  % remove the counter
-           /AnnotTransparencyCheck eq {exit} if % remove object and check if its the marker, exit if it is
-         } for
-       }
-       {
-         exch pop                               % remove the 'on error' marker
-         dup //null ne {
-           dup /Subtype knownoget {
-             /Highlight eq {      % Highlight annotation is always implemented
-               pop pop //true exit  % as transparency.
-             } if
-           } if
-           dup /AP knownoget {	% Get appearance dict for the annoation
-             /N knownogetdict { 	% Get the /N (i.e. normal) appearance stream
-               4 dict exch resourceusestransparency { pop pop //true exit } if
-             } if
-           } if  			% If AP dict known
-           dup /BM knownoget {
-             //true exit
-           } if
-           dup /CA knownoget {
-             1 le {
-               pop pop //true exit
-             } if
-           } if
-           /ca knownoget {
-             1 le {
-               pop //true exit
-             } if
-           } if
-         } {
-           pop
-         } ifelse
-       } ifelse
-     } forall			% For all annots on the page
+        (   **** Error: Annotation array is not an array, ignoring it.\n) pdfformaterror
+        (               Output may be incorrect.\n) pdfformaterror
+        pop
+     }
+     ifelse
    } if
 } bind executeonly def
 
@@ -3287,17 +3302,24 @@ currentdict /PDF2PS_matrix_key undef
 %	<spotcolordict> <loopdict> <annotsarray>
 % 		 annotsspotcolors <spotcolordict> <loopdict>
 /annotsspotcolors {
-  { oforce
-    dup //null ne {
-      /AP knownoget {	% Get appearance dict for the annoation
-        /N knownogetdict {		% Get the /N (i.e. normal) appearance stream
-          resourcespotcolors
-        } if			% If normal appearance streamknown
-      } if			% If AP dict known
-    } {
-      pop
-    } ifelse
- } forall
+  dup type /arraytype eq {
+      { oforce
+        dup //null ne {
+          /AP knownoget {	% Get appearance dict for the annoation
+            /N knownogetdict {		% Get the /N (i.e. normal) appearance stream
+              resourcespotcolors
+            } if			% If normal appearance streamknown
+          } if			% If AP dict known
+        } {
+          pop
+        } ifelse
+     } forall
+ }
+ {
+    (   **** Error: Annotation array is not an array, ignoring it.\n) pdfformaterror
+    (               Output may be incorrect.\n) pdfformaterror
+     pop
+ } ifelse
 } bind executeonly def
 
 % Determine spot colors are used within a page.  We are creating a dict to

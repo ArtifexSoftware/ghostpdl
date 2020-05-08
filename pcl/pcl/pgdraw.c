@@ -838,6 +838,7 @@ hpgl_polyfill(hpgl_state_t * pgls, hpgl_rendering_mode_t render_mode)
 static int
 hpgl_fill_polyfill_background(hpgl_state_t * pgls)
 {
+    int code, code2;
     /* conditionally mark page as dirty */
     hpgl_call(pcl_mark_page_for_path(pgls));
     /* if we are drawing on a transparent background */
@@ -846,11 +847,12 @@ hpgl_fill_polyfill_background(hpgl_state_t * pgls)
     /* preserve the current foreground color */
     hpgl_call(hpgl_gsave(pgls));
     /* fill a white region. */
-    hpgl_call(gs_setgray(pgls->pgs, 1.0));
-    hpgl_call(gs_fill(pgls->pgs));
+    code = gs_setgray(pgls->pgs, 1.0);
+    if (code >= 0)
+        code = gs_fill(pgls->pgs);
     /* restore the foreground color */
-    hpgl_call(hpgl_grestore(pgls));
-    return 0;
+    code2 = hpgl_grestore(pgls);
+    return (code < 0) ? code : code2;
 }
 
 static int

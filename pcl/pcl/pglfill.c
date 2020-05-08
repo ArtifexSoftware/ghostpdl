@@ -493,7 +493,7 @@ hpgl_RF_build_mask(byte * data, uint index, uint height, uint width,
                                  "hpgl mask raster fill");
     byte *pb1 = data;
     byte *pb2 = mdata;
-    int i, code;
+    int i;
     gs_depth_bitmap mask;
 
     if (mdata == 0) {
@@ -524,10 +524,7 @@ hpgl_RF_build_mask(byte * data, uint index, uint height, uint width,
     mask.size.y = height;
     mask.id = 0;
     mask.num_comps = 1;
-    code = pcl_pattern_RF(-(int)index, &mask, pgls);
-    if (code < 0)
-        gs_free_object(pgls->memory, mdata, "hpgl_RF_build_mask");
-    return code;
+    return pcl_pattern_RF(-(int)index, &mask, pgls);
 }
 
 int
@@ -619,15 +616,14 @@ hpgl_RF(hpgl_args_t * pargs, hpgl_state_t * pgls)
     pixmap.num_comps = 1;
 
     if ((code = pcl_pattern_RF(index, &pixmap, pgls)) < 0) {
-        gs_free_object(pgls->memory, data, "hpgl raster fill");
         if (is_mask) {
-            /* if a mask was built, realease it.  We ignore the return
+            /* if a mask was built, release it.  We ignore the return
                value since we are already in an error state. */
             pcl_pattern_RF(-(int)index, NULL, pgls);
         }
     }
     pgls->g.raster_fill.data = 0;
-    return code;;
+    return code;
 }
 
 /*

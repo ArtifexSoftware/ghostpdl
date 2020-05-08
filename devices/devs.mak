@@ -1464,7 +1464,7 @@ libpng_dev=$(PNGGENDIR)$(D)libpng.dev
 png_i_=-include $(PNGGENDIR)$(D)libpng
 
 $(DEVOBJ)gdevpng.$(OBJ) : $(DEVSRC)gdevpng.c\
- $(gdevprn_h) $(gdevpccm_h) $(gscdefs_h) $(png__h) $(DEVS_MAK) $(MAKEDIRS)
+ $(gdevprn_h) $(gdevpccm_h) $(gscdefs_h) $(png__h) $(gxdevsop_h) $(DEVS_MAK) $(MAKEDIRS)
 	$(CC_) $(I_)$(DEVI_) $(II)$(PI_)$(_I) $(PCF_) $(GLF_) $(DEVO_)gdevpng.$(OBJ) $(C_) $(DEVSRC)gdevpng.c
 
 $(DD)pngmono.dev : $(libpng_dev) $(png_) $(GLD)page.dev $(GDEV) \
