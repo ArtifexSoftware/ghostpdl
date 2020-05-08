@@ -118,7 +118,6 @@ pxl_tags_dict = {
     'SetHalftoneMethod' :       0x6d,
     'SetFillMode' :             0x6e,
     'SetFont' :                 0x6f,
-    'SetHalftoneMethod' :       0x6d,
     'SetLineCap' :              0x71,
     'SetLineDash' :             0x70,
     'SetLineJoin' :             0x72,
