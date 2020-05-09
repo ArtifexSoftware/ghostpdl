@@ -904,7 +904,7 @@ clist_fill_stroke_path(gx_device * pdev, const gs_gstate * pgs,
     if (pdevc_stroke == NULL || pdevc_fill == NULL)
         return_error(gs_error_unknownerror);	/* shouldn't happen */
 
-    if ((cdev->disable_mask & (clist_disable_fill_path || clist_disable_stroke_path)) ||
+    if ((cdev->disable_mask & (clist_disable_fill_path | clist_disable_stroke_path)) ||
         gs_debug_c(',')
         ) {
         /* Disable path-based banding. */
