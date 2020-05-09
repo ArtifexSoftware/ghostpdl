@@ -241,9 +241,6 @@ imageDataBlock.prototype.readPAM = function ()
         this.planes[p].k = parseFloat(line);
       }
     }
-    else if (line.substring(0, 1) == "#")
-    {
-    }
     else if (line.substring(0, 6) == "ENDHDR")
       break;
     else
