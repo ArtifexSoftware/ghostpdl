@@ -373,9 +373,6 @@ class pxl_asm:
         # output is always little endian.
         self.assembled_binding = '<'
         
-    def nullAttributeList(self):
-        return 0
-
     # does not consume the string
     def next_string(self):
         index = self.index

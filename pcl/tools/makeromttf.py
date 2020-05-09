@@ -67,7 +67,7 @@ def get_name(ttfont):
             
 
 if __name__ == '__main__':
-    import sys, os, tempfile
+    import sys
 
     if not sys.argv[1:]:
         print "Usage: %s pxl files" % sys.argv[0]

@@ -43,7 +43,7 @@ imageDataBlock.prototype.updateImage = function()
   var x, y, z;
   var R, G, B;
   var p = this.pos;
-  var canvas = this.canvas.getContext("2d")
+  var canvas = this.canvas.getContext("2d");
   var id = canvas.getImageData(0, 0, w, h);
   var q = 0;
 
@@ -85,7 +85,7 @@ imageDataBlock.prototype.updateImage = function()
   else
   {
     var fwd = w*h;
-    var back = w*h*d-1
+    var back = w*h*d-1;
     for (y = h; y > 0; y--)
     {
       for (x = w; x > 0; x--)

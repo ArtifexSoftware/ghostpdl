@@ -31,7 +31,6 @@ def report(entries):
 
   # Every ghostscript revision creates a ghostpcl revision as
   # well, during the period we've had an svn:external for it
-  first_ext_rev = 2609
   last_gs_rev = 0
   last_pcl_rev = 0
 
