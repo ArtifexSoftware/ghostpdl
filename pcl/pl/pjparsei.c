@@ -82,8 +82,7 @@ pjl_impl_init_job(pl_interp_implementation_t *impl,       /* interp instance to 
     if (pjls == NULL)
         return gs_error_VMerror;
     /* copy the default state to the initial state */
-    pjl_set_init_from_defaults(pjls);
-    return 0;
+    return pjl_set_init_from_defaults(pjls);
 }
 
 static int
