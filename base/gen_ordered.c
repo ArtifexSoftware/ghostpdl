@@ -381,7 +381,7 @@ htsc_mask_to_tos(htsc_dig_grid_t *final_mask)
     }
 #endif
         /* Sort */
-    qsort(values, height * width, sizeof(htsc_threshpoint_t), compare);
+    qsort(values, (size_t)height * width, sizeof(htsc_threshpoint_t), compare);
 #if RAW_SCREEN_DUMP
     EPRINTF(final_mask->memory, "Sorted\n");
     for (k = 0; k < count; k++) {
@@ -808,10 +808,10 @@ htsc_create_dot_mask(htsc_dig_grid_t *dot_grid, int x, int y, int u, int v,
         dot_grid->height = abs(val_min) + y;
         dot_grid->width = x + u;
         dot_grid->data =
-            (int *) ALLOC(dot_grid->memory, dot_grid->height * dot_grid->width * sizeof(int));
+	  (int *) ALLOC(dot_grid->memory, (size_t)dot_grid->height * dot_grid->width * sizeof(int));
         if (dot_grid->data == NULL)
             return -1;
-        memset(dot_grid->data,0,dot_grid->height * dot_grid->width * sizeof(int));
+        memset(dot_grid->data,0,(size_t)dot_grid->height * dot_grid->width * sizeof(int));
         index_x = 0;
         for (k = 0; k < (x+u); k++) {
             index_y=0;
@@ -839,10 +839,10 @@ htsc_create_dot_mask(htsc_dig_grid_t *dot_grid, int x, int y, int u, int v,
         /* All points are valid */
         dot_grid->height = y;
         dot_grid->width = u;
-        dot_grid->data = (int *) ALLOC(dot_grid->memory, y * u * sizeof(int));
+        dot_grid->data = (int *) ALLOC(dot_grid->memory, (size_t)y * u * sizeof(int));
         if (dot_grid->data == NULL)
             return -1;
-        memset(dot_grid->data, -1, y * u * sizeof(int));
+        memset(dot_grid->data, -1, (size_t)y * u * sizeof(int));
         val_min = 0;
     }
     return 0;
@@ -1058,10 +1058,10 @@ htsc_allocate_supercell(htsc_dig_grid_t *super_cell, int x, int y, int u,
     super_cell->height = super_size_y;
     super_cell->width = super_size_x;
     super_cell->data =
-        (int *) ALLOC(dot_grid.memory, super_size_x * super_size_y * sizeof(int));
+        (int *) ALLOC(dot_grid.memory, (size_t)super_size_x * super_size_y * sizeof(int));
     if (super_cell->data == NULL)
         return -1;
-    memset(super_cell->data, 0, super_size_x * super_size_y * sizeof(int));
+    memset(super_cell->data, 0, (size_t)super_size_x * super_size_y * sizeof(int));
     return 0;
 }
 
@@ -1733,13 +1733,13 @@ htsc_create_holladay_mask(htsc_dig_grid_t super_cell, int H, int L,
 
     final_mask->height = H;
     final_mask->width = L;
-    final_mask->data = (int *) ALLOC(final_mask->memory, H * L * sizeof(int));
+    final_mask->data = (int *) ALLOC(final_mask->memory, (size_t)H * L * sizeof(int));
     if (final_mask->data == NULL) {
         code = -1;
         goto out;
     }
 
-    thresholds = (double *) ALLOC(final_mask->memory, H * L * sizeof(double));
+    thresholds = (double *) ALLOC(final_mask->memory, (size_t)H * L * sizeof(double));
     if (final_mask->data == NULL) {
         code = -1;
         goto out;
@@ -1753,7 +1753,7 @@ htsc_create_holladay_mask(htsc_dig_grid_t super_cell, int H, int L,
          thresholds[number_points - k - 1] =
                                     ROUND(temp * MAXVAL * white_scale + 1);
     }
-    memset(final_mask->data, 0, H * L * sizeof(int));
+    memset(final_mask->data, 0, (size_t)H * L * sizeof(int));
 
     for (j = 0; j < H; j++) {
         for (k = 0; k < L; k++) {
@@ -1783,13 +1783,14 @@ htsc_create_nondithered_mask(htsc_dig_grid_t super_cell, int H, int L,
 
     final_mask->height = super_cell.height;
     final_mask->width = super_cell.width;
-    final_mask->data = (int *) ALLOC(final_mask->memory, super_cell.height * super_cell.width *
+    final_mask->data = (int *) ALLOC(final_mask->memory,
+				     (size_t)super_cell.height * super_cell.width *
                                       sizeof(int));
     if (final_mask->data == NULL) {
         code = -1;
         goto out;
     }
-    thresholds = (double *) ALLOC(final_mask->memory, H * L * sizeof(double));
+    thresholds = (double *) ALLOC(final_mask->memory, (size_t)H * L * sizeof(double));
     if (thresholds == NULL) {
         code = -1;
         goto out;
@@ -1803,7 +1804,7 @@ htsc_create_nondithered_mask(htsc_dig_grid_t super_cell, int H, int L,
          thresholds[number_points - k - 1] =
                                     ROUND(temp * MAXVAL * white_scale + 1);
     }
-    memset(final_mask->data, 0, super_cell.height * super_cell.width *
+    memset(final_mask->data, 0, (size_t)super_cell.height * super_cell.width *
                                 sizeof(int));
     for (j = 0; j < super_cell.height; j++) {
         for (k = 0; k < super_cell.width; k++) {

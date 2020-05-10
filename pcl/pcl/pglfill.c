@@ -489,7 +489,7 @@ hpgl_RF_build_mask(byte * data, uint index, uint height, uint width,
 {
     uint raster = (width + 7) / 8;
     byte *mdata = gs_alloc_bytes(pgls->memory,
-                                 height * raster,
+                                 (size_t)height * raster,
                                  "hpgl mask raster fill");
     byte *pb1 = data;
     byte *pb2 = mdata;

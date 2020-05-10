@@ -942,8 +942,9 @@ template_transform_color_buffer(gs_gstate *pgs, pdf14_ctx *ctx, gx_device *dev,
         des_planestride = height * des_rowstride;
         des_n_planes = src_n_planes + diff;
         des_n_chan = src_n_chan + diff;
-        des_data = gs_alloc_bytes(ctx->memory, des_planestride * des_n_planes,
-            "pdf14_transform_color_buffer");
+        des_data = gs_alloc_bytes(ctx->memory,
+                                  (size_t)des_planestride * des_n_planes,
+                                  "pdf14_transform_color_buffer");
         if (des_data == NULL)
             return NULL;
 
@@ -1133,8 +1134,9 @@ pdf14_buf_new(gs_int_rect *rect, bool has_tags, bool has_alpha_g,
     } else {
         planestride = rowstride * height;
         result->planestride = planestride;
-        result->data = gs_alloc_bytes(memory, planestride * n_planes,
-                                        "pdf14_buf_new");
+        result->data = gs_alloc_bytes(memory,
+                                      (size_t)planestride * n_planes,
+                                      "pdf14_buf_new");
         if (result->data == NULL) {
             gs_free_object(memory, result, "pdf14_buf_new");
             return NULL;
@@ -1375,10 +1377,10 @@ pdf14_initialize_ctx(gx_device* dev, int n_chan, bool additive, const gs_gstate*
     if (buf->data != NULL) {
         /* Memsetting by 0, so this copes with the deep case too */
         if (buf->has_tags) {
-            memset(buf->data, 0, buf->planestride * (buf->n_planes - 1));
+            memset(buf->data, 0, (size_t)buf->planestride * (buf->n_planes - 1));
         }
         else {
-            memset(buf->data, 0, buf->planestride * buf->n_planes);
+            memset(buf->data, 0, (size_t)buf->planestride * buf->n_planes);
         }
     }
     buf->saved = NULL;
@@ -1503,9 +1505,10 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
     if (pdf14_backdrop == NULL || (is_backdrop && pdf14_backdrop->backdrop == NULL)) {
         /* Note, don't clear out tags set by pdf14_buf_new == GS_UNKNOWN_TAG */
         /* Memsetting by 0, so this copes with the deep case too */
-        memset(buf->data, 0, buf->planestride * (buf->n_chan +
-                                                 (buf->has_shape ? 1 : 0) +
-                                                 (buf->has_alpha_g ? 1 : 0)));
+        memset(buf->data, 0, (size_t)buf->planestride *
+                                          (buf->n_chan +
+                                           (buf->has_shape ? 1 : 0) +
+                                           (buf->has_alpha_g ? 1 : 0)));
     } else {
         if (!cm_back_drop) {
             pdf14_preserve_backdrop(buf, pdf14_backdrop, is_backdrop
@@ -1530,13 +1533,15 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
        need to blend with its backdrop. This could be NULL if the parent was
        an isolated knockout group. */
     if (buf->knockout && pdf14_backdrop != NULL) {
-        buf->backdrop = gs_alloc_bytes(ctx->memory, buf->planestride * buf->n_planes,
-            "pdf14_push_transparency_group");
+        buf->backdrop = gs_alloc_bytes(ctx->memory,
+                                       (size_t)buf->planestride * buf->n_planes,
+                                       "pdf14_push_transparency_group");
         if (buf->backdrop == NULL) {
             return gs_throw(gs_error_VMerror, "Knockout backdrop allocation failed");
         }
 
-        memcpy(buf->backdrop, buf->data, buf->planestride * buf->n_planes);
+        memcpy(buf->backdrop, buf->data,
+               (size_t)buf->planestride * buf->n_planes);
 
 #if RAW_DUMP
         /* Dump the current buffer to see what we have. */
@@ -1628,9 +1633,11 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
         nos->group_color_info = pdf14_clone_group_color_info(dev, tos->group_color_info);
 
         if (nos->data != NULL)
-            memset(nos->data, 0, nos->planestride * (nos->n_chan +
-            (nos->has_shape ? 1 : 0) +
-             (nos->has_alpha_g ? 1 : 0)));
+            memset(nos->data, 0,
+                   (size_t)nos->planestride *
+                                          (nos->n_chan +
+                                           (nos->has_shape ? 1 : 0) +
+                                           (nos->has_alpha_g ? 1 : 0)));
     }
 
     nos_num_color_comp = nos->group_color_info->num_components - tos->num_spots;
@@ -1857,11 +1864,11 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	uint16_t bg_alph
                    need to set the alpha for this mask as if we had drawn in the
                    entire soft mask buffer */
                 memset(buf->data + buf->planestride, 255,
-                       buf->planestride *(buf->n_chan - 1));
+                       (size_t)buf->planestride * (buf->n_chan - 1));
             }
         } else {
             /* Compose mask with opaque background */
-            memset(buf->data, 0, buf->planestride * buf->n_chan);
+            memset(buf->data, 0, (size_t)buf->planestride * buf->n_chan);
         }
     }
     return 0;
@@ -2288,8 +2295,12 @@ pdf14_get_buffer_information(const gx_device * dev,
 
             transbuff->planestride = planestride;
             transbuff->rowstride = rowstride;
-            transbuff->transbytes = gs_alloc_bytes(mem, planestride*(buf->n_chan + buf->has_tags ? 1 : 0),
-                                                   "pdf14_get_buffer_information");
+            transbuff->transbytes =
+                         gs_alloc_bytes(mem,
+                                        (size_t)planestride *
+                                                (buf->n_chan +
+                                                 buf->has_tags ? 1 : 0),
+                                        "pdf14_get_buffer_information");
             if (transbuff->transbytes == NULL)
                 return gs_error_VMerror;
 

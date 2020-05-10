@@ -1874,7 +1874,8 @@ transform_pixel_region_render_portrait(gx_device *dev, gx_default_transform_pixe
         byte *out;
         int depth = spp;
         if (state->line == NULL) {
-            state->line = gs_alloc_bytes(state->mem, dev->width * depth,
+            state->line = gs_alloc_bytes(state->mem,
+                                         (size_t)dev->width * depth,
                                          "image line");
             if (state->line == NULL)
                 return gs_error_VMerror;

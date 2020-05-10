@@ -314,7 +314,7 @@ y_transfer_init(y_transfer * pyt, gx_device * dev, int ty, int th)
         abuf_flush(mdev);
         mdev->mapped_y = ty & -bh;
         mdev->mapped_height = bh;
-        memset(scan_line_base(mdev, 0), 0, bh * mdev->raster);
+        memset(scan_line_base(mdev, 0), 0, (size_t)bh * mdev->raster);
     }
     pyt->y_next = ty;
     pyt->height_left = th;
@@ -348,7 +348,7 @@ y_transfer_next(y_transfer * pyt, gx_device * dev)
             mdev->mapped_height = mh += bh;
         }
         memset(scan_line_base(mdev, (ms == 0 ? mh : ms) - bh),
-               0, bh * mdev->raster);
+               0, (size_t)bh * mdev->raster);
     }
     /* Now we know that my <= ty < my + mh. */
     tby = ty - my + ms;

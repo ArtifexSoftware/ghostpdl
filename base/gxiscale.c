@@ -499,7 +499,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum, irender_proc_t *render_fn)
             iss.BitsPerComponentIn = sizeof(frac) * 8;
             iss.MaxValueIn = frac_1;
         }
-        in_size = round_up(iss.WidthIn * iss.spp_decode * sizeof(frac),
+        in_size = round_up(iss.WidthIn * iss.spp_decode * (int)sizeof(frac),
                            align_bitmap_mod);
         /* Size to allocate space to store the input as frac type */
     }
@@ -2160,7 +2160,7 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
             /* Get the buffers set up. */
             p_cm_buff =
                 (byte *) gs_alloc_bytes(pgs->memory,
-                                        num_bytes_decode * width_in * spp_cm,
+                                        (size_t)num_bytes_decode * width_in * spp_cm,
                                         "image_render_interpolate_icc");
             /* Set up the buffer descriptors. We keep the bytes the same */
             gsicc_init_buffer(&input_buff_desc, spp_decode, num_bytes_decode,
@@ -2646,7 +2646,7 @@ image_render_interpolate_landscape_icc(gx_image_enum * penum,
             /* Get the buffers set up. */
             p_cm_buff =
                 (byte *) gs_alloc_bytes(pgs->memory,
-                                        num_bytes_decode * width_in * spp_cm,
+                                        (size_t)num_bytes_decode * width_in * spp_cm,
                                         "image_render_interpolate_icc");
             /* Set up the buffer descriptors. We keep the bytes the same */
             gsicc_init_buffer(&input_buff_desc, spp_decode, num_bytes_decode,

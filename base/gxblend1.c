@@ -346,7 +346,7 @@ pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool from_backdrop
             y0 > buf->rect.p.y || y1 < buf->rect.q.y) {
             /* FIXME: There is potential for more optimisation here,
              * but I don't know how often we hit this case. */
-            memset(buf_plane, 0, n_planes * buf->planestride);
+            memset(buf_plane, 0, (size_t)n_planes * buf->planestride);
         } else if (n_planes > tos->n_chan) {
             /* The next planes are alpha_g, shape, tags. We need to clear
              * alpha_g and shape, but don't need to clear the tag plane
@@ -355,7 +355,8 @@ pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool from_backdrop
             if (!from_backdrop && n_planes > tag_plane_num)
                 n_planes = tag_plane_num;
             if (n_planes > tos->n_chan)
-                memset(buf->data + tos->n_chan * buf->planestride, 0, (n_planes - tos->n_chan) * buf->planestride);
+                memset(buf->data + (size_t)tos->n_chan * buf->planestride, 0,
+                       (size_t)(n_planes - tos->n_chan) * buf->planestride);
         }
         buf_plane += (y0 - buf->rect.p.y) * buf->rowstride +
                      ((x0 - buf->rect.p.x)<<deep);

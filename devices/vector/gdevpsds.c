@@ -822,7 +822,8 @@ s_Bicubic_data_at(stream_Bicubic_state *const ss, int x, int y, int c)
         y = ss->HeightIn - 1;
     y -= ss->y_in;
     idx = ss->l_size * (y < 0 ? 0 : y) +
-        (x < 0 ? 0 : x >= ss->WidthIn ? ss->WidthIn-1 : x) * ss->Colors + c;
+            (size_t)(x < 0 ? 0 : x >= ss->WidthIn ? ss->WidthIn-1 : x) *
+                                                         ss->Colors + c;
     return (idx < ss->d_len) ? ss->data[idx] : 0;
 }
 
@@ -952,7 +953,8 @@ s_compr_chooser_set_dimensions(stream_compr_chooser_state * ss, int width,
     ss->height = height;
     ss->depth = depth;
     ss->bits_per_sample = bits_per_sample;
-    ss->sample = gs_alloc_bytes(ss->memory, width * depth, "s_compr_chooser_set_dimensions");
+    ss->sample = gs_alloc_bytes(ss->memory, (size_t)width * depth,
+                                "s_compr_chooser_set_dimensions");
     if (ss->sample == 0)
         return_error(gs_error_VMerror);
     return 0;

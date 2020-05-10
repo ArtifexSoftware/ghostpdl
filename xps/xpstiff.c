@@ -573,7 +573,7 @@ xps_expand_colormap(xps_context_t *ctx, xps_tiff_t *tiff, xps_image_t *image)
 
     stride = image->width * (image->comps + 2);
 
-    samples = xps_alloc(ctx, stride * image->height);
+    samples = xps_alloc(ctx, (size_t)stride * image->height);
     if (!samples)
         return gs_throw(gs_error_VMerror, "out of memory: samples");
 
@@ -694,11 +694,11 @@ xps_decode_tiff_strips(xps_context_t *ctx, xps_tiff_t *tiff, xps_image_t *image)
         image->yres = 96;
     }
 
-    image->samples = xps_alloc(ctx, image->stride * image->height);
+    image->samples = xps_alloc(ctx, (size_t)image->stride * image->height);
     if (!image->samples)
         return gs_throw(gs_error_VMerror, "could not allocate image samples");
 
-    memset(image->samples, 0x55, image->stride * image->height);
+    memset(image->samples, 0x55, (size_t)image->stride * image->height);
 
     wp = image->samples;
 

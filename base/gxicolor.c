@@ -698,7 +698,7 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
                                       penum->ht_offset_bits)) & 15;
             for (k = 0; k < spp_out; k ++) {
                 offset_contone[k]   = (- (((long)(penum->line)) +
-                                          contone_stride * k +
+                                          (long)contone_stride * k +
                                           penum->ht_offset_bits)) & 15;
             }
             data_length = dest_width;
@@ -724,7 +724,7 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
             offset_threshold = (-(long)(penum->thresh_buffer)) & 15;
             for (k = 0; k < spp_out; k ++) {
                 offset_contone[k]   = (- ((long)(penum->line) +
-                                          contone_stride * k)) & 15;
+                                          (long)contone_stride * k)) & 15;
             }
             /* In the landscaped case, we want to accumulate multiple columns
                of data before sending to the device.  We want to have a full
