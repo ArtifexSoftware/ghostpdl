@@ -1,0 +1,22 @@
+path_classifiers:
+  docs:
+    - docs
+    - examples
+  library:
+    - openjpeg
+    - lcms2mt
+    - jbig2dec
+    - exclude: expat
+    - exclude: freetype
+    - exclude: jpeg
+    - exclude: jpegxr
+    - exclude: libpng
+    - exclude: tiff
+    - exclude: zlib
+  devices:
+    - devices
+  contrib:
+    - contrib
+  tools:
+    - toolbin
+    - pcl/tools
