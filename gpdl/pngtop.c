@@ -634,7 +634,9 @@ do_impl_process(png_interp_instance_t *png, stream_cursor_read * pr, bool eof)
                 break;
             }
 
-            png->samples = gs_alloc_bytes(png->memory, png->byte_width * (png->interlaced ? png->height : 1), "png_impl_process(samples)");
+            png->samples = gs_alloc_bytes(png->memory,
+                                          (size_t)png->byte_width * (png->interlaced ? png->height : 1),
+                                          "png_impl_process(samples)");
             if (png->samples == NULL) {
                 png->state = ii_state_flush;
                 break;
@@ -715,16 +717,11 @@ do_impl_process(png_interp_instance_t *png, stream_cursor_read * pr, bool eof)
                 break;
             }
 
-            /* FIXME */
             png->state = ii_state_flush;
             break;
         }
         default:
         case ii_state_flush:
-            //png_destroy_decompress(&png->cinfo);
-
-            //gs_png_mem_term((j_common_ptr)&png->cinfo);
-
             if (png->penum) {
                 (void)gs_image_cleanup_and_free_enum(png->penum, png->pgs);
                 png->penum = NULL;
