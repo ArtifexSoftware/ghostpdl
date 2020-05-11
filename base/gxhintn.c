@@ -648,11 +648,11 @@ static void t1_hinter__make_zone(t1_hinter * self, t1_zone *zone, float * blues,
 
 static bool t1_hinter__realloc_array(gs_memory_t *mem, void **a, void *a0, int *max_count, int elem_size, int enhancement, const char *cname)
 {
-    void *aa = gs_alloc_bytes(mem, (*max_count + enhancement * 2) * elem_size, cname);
+    void *aa = gs_alloc_bytes(mem, (size_t)(*max_count + enhancement * 2) * elem_size, cname);
 
     if (aa == NULL)
         return true;
-    memcpy(aa, *a, *max_count * elem_size);
+    memcpy(aa, *a, (size_t)*max_count * elem_size);
     if (*a != a0)
         gs_free_object(mem, *a, cname);
     *a = aa;
