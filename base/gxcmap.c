@@ -683,13 +683,14 @@ gs_color_select_t select)
                 return false;
 
             /* Check if the profile is DeviceN (NCLR) */
-            if (dev_profile->device_profile[0]->data_cs == gsNCHANNEL) {
+            if (dev_profile->device_profile[GS_DEFAULT_DEVICE_PROFILE]->data_cs == gsNCHANNEL) {
                 if (dev_profile->spotnames == NULL)
                     return false;
                 if (!dev_profile->spotnames->equiv_cmyk_set) {
                     /* Note that if the improper NCLR profile is used, then the
                        composite preview will be wrong. */
-                    code = gsicc_set_devicen_equiv_colors(dev, pgs, dev_profile->device_profile[0]);
+                    code = gsicc_set_devicen_equiv_colors(dev, pgs,
+                                      dev_profile->device_profile[GS_DEFAULT_DEVICE_PROFILE]);
                     if (code < 0)
                         return false;
                     dev_profile->spotnames->equiv_cmyk_set = true;

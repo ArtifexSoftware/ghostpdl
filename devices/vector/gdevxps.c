@@ -1868,7 +1868,7 @@ xps_begin_image(gx_device *dev, const gs_gstate *pgs,
         rc_increment(pcs);
         code = dev_proc(dev, get_profile)(dev, &(dev_profile));
         /* Just use the "default" profile for now */
-        icc_profile = dev_profile->device_profile[0];
+        icc_profile = dev_profile->device_profile[GS_DEFAULT_DEVICE_PROFILE];
         force8bit = true; /* Output image is 8 bit regardless of source */
     } else {
         /* An ICC, RGB, CMYK, Gray color space */

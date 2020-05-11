@@ -114,8 +114,9 @@ setup_device_and_mem_for_thread(gs_memory_t *chunk_base_mem, gx_device *dev, boo
      * a profile with the 'special' name "OI_PROFILE" and throw an error.
      */
     if (!gscms_is_threadsafe() || (dev->icc_struct != NULL &&
-        ((dev->icc_struct->device_profile[0] != NULL &&
-          strncmp(dev->icc_struct->device_profile[0]->name, OI_PROFILE, strlen(OI_PROFILE)) == 0)
+        ((dev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE] != NULL &&
+          strncmp(dev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE]->name,
+              OI_PROFILE, strlen(OI_PROFILE)) == 0)
         || (dev->icc_struct->proof_profile != NULL &&
         strncmp(dev->icc_struct->proof_profile->name, OI_PROFILE, strlen(OI_PROFILE)) == 0)))) {
         ndev->icc_struct = gsicc_new_device_profile_array(ndev->memory);
@@ -125,8 +126,8 @@ setup_device_and_mem_for_thread(gs_memory_t *chunk_base_mem, gx_device *dev, boo
                   code);
             goto out_cleanup;
         }
-        if ((code = gsicc_clone_profile(dev->icc_struct->device_profile[0],
-            &(ndev->icc_struct->device_profile[0]), ndev->memory)) < 0) {
+        if ((code = gsicc_clone_profile(dev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE],
+            &(ndev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE]), ndev->memory)) < 0) {
             emprintf1(dev->memory,
                 "Error setting up device profile, code=%d. Rendering threads not started.\n",
                 code);
@@ -178,8 +179,8 @@ setup_device_and_mem_for_thread(gs_memory_t *chunk_base_mem, gx_device *dev, boo
     if_debug3m(gs_debug_flag_icc, cdev->memory,
                "[icc] MT clist device = "PRI_INTPTR" profile = "PRI_INTPTR" handle = "PRI_INTPTR"\n",
                (intptr_t)ncdev,
-               (intptr_t)ncdev->icc_struct->device_profile[0],
-               (intptr_t)ncdev->icc_struct->device_profile[0]->profile_handle);
+               (intptr_t)ncdev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE],
+               (intptr_t)ncdev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE]->profile_handle);
     /* If the device is_planar, then set the flag in the new_device and the procs */
     if ((ncdev->is_planar = cdev->is_planar))
         gdev_prn_set_procs_planar(ndev);

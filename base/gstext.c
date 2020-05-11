@@ -341,8 +341,8 @@ gs_text_begin(gs_gstate * pgs, const gs_text_params_t * text,
 
         dev_proc(dev, get_profile)(dev, &dev_profile);
         if (dev_profile->sim_overprint && 
-            (dev_profile->device_profile[0]->data_cs == gsCMYK ||
-             dev_profile->device_profile[0]->data_cs == gsNCHANNEL)) {
+            (dev_profile->device_profile[GS_DEFAULT_DEVICE_PROFILE]->data_cs == gsCMYK ||
+             dev_profile->device_profile[GS_DEFAULT_DEVICE_PROFILE]->data_cs == gsNCHANNEL)) {
             if (pgs->text_rendering_mode == 0) {
                 op_params.op_state = OP_STATE_FILL;
                 gs_gstate_update_overprint(pgs, &op_params);

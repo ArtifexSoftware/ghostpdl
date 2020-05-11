@@ -178,7 +178,7 @@ update_ICC_spot_equivalent_cmyk_colors(gx_device * pdev,
 
             name_entry = dev_profile->spotnames->head;
 
-            for (j = 0; j < dev_profile->device_profile[0]->num_comps; j++) {
+            for (j = 0; j < dev_profile->device_profile[GS_DEFAULT_DEVICE_PROFILE]->num_comps; j++) {
                 client_color.paint.values[j] = 0.0;
             }
             for (j = 0; j < dev_profile->spotnames->count; j++) {
@@ -518,9 +518,11 @@ capture_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_gstate * pgs,
        for the CMYK + OG values. */
 
     if (curr_output_profile->data_cs == gsNCHANNEL) {
-        temp_profile.device_profile[0] = temp_state.icc_manager->default_cmyk;
+        temp_profile.device_profile[GS_DEFAULT_DEVICE_PROFILE] = 
+            temp_state.icc_manager->default_cmyk;
     } else {
-        temp_profile.device_profile[0] = curr_output_profile;
+        temp_profile.device_profile[GS_DEFAULT_DEVICE_PROFILE] = 
+            curr_output_profile;
     }
     set_dev_proc(&temp_device, get_profile, gx_default_get_profile);
 

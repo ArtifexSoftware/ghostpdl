@@ -1580,7 +1580,7 @@ gsicc_set_device_profile_colorants(gx_device *dev, char *name_str)
             /* Create a default name string that we can use */
             int total_len;
             int kk;
-            int num_comps = profile_struct->device_profile[0]->num_comps;
+            int num_comps = profile_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE]->num_comps;
             char temp_str[DEFAULT_ICC_COLORANT_LENGTH+2];
 
             /* If names are already set then we do not want to set default ones */
@@ -1846,7 +1846,7 @@ gsicc_verify_device_profiles(gx_device * pdev)
         can_postrender = dev_proc(pdev, dev_spec_op)(pdev, gxdso_supports_iccpostrender, NULL, 0);
     }
 
-    if (dev_icc->device_profile[0] == NULL)
+    if (dev_icc->device_profile[GS_DEFAULT_DEVICE_PROFILE] == NULL)
         return 0;
 
     if (dev_icc->postren_profile != NULL && dev_icc->link_profile != NULL) {
@@ -1883,7 +1883,7 @@ gsicc_verify_device_profiles(gx_device * pdev)
 
     if (dev_icc->link_profile == NULL) {
         if (!objects) {
-            if (!is_sep && dev_icc->device_profile[0]->num_comps !=
+            if (!is_sep && dev_icc->device_profile[GS_DEFAULT_DEVICE_PROFILE]->num_comps !=
                 pdev->color_info.num_components)
                 return gs_rethrow(-1, "Mismatch of ICC profiles and device color model");
             else
@@ -2787,31 +2787,31 @@ gsicc_extract_profile(gs_graphics_type_tag_t graphics_type_tag,
         case GS_UNKNOWN_TAG:
         case GS_UNTOUCHED_TAG:
         default:
-            (*profile) = profile_struct->device_profile[0];
-            *render_cond = profile_struct->rendercond[0];
+            (*profile) = profile_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE];
+            *render_cond = profile_struct->rendercond[GS_DEFAULT_DEVICE_PROFILE];
             break;
         case GS_PATH_TAG:
-            *render_cond = profile_struct->rendercond[1];
-            if (profile_struct->device_profile[1] != NULL) {
-                (*profile) = profile_struct->device_profile[1];
+            *render_cond = profile_struct->rendercond[GS_GRAPHIC_DEVICE_PROFILE];
+            if (profile_struct->device_profile[GS_GRAPHIC_DEVICE_PROFILE] != NULL) {
+                (*profile) = profile_struct->device_profile[GS_GRAPHIC_DEVICE_PROFILE];
             } else {
-                (*profile) = profile_struct->device_profile[0];
+                (*profile) = profile_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE];
             }
             break;
         case GS_IMAGE_TAG:
-            *render_cond = profile_struct->rendercond[2];
-            if (profile_struct->device_profile[2] != NULL) {
-                (*profile) = profile_struct->device_profile[2];
+            *render_cond = profile_struct->rendercond[GS_IMAGE_DEVICE_PROFILE];
+            if (profile_struct->device_profile[GS_IMAGE_DEVICE_PROFILE] != NULL) {
+                (*profile) = profile_struct->device_profile[GS_IMAGE_DEVICE_PROFILE];
             } else {
-                (*profile) = profile_struct->device_profile[0];
+                (*profile) = profile_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE];
             }
             break;
         case GS_TEXT_TAG:
-            *render_cond = profile_struct->rendercond[3];
-            if (profile_struct->device_profile[3] != NULL) {
-                (*profile) = profile_struct->device_profile[3];
+            *render_cond = profile_struct->rendercond[GS_TEXT_DEVICE_PROFILE];
+            if (profile_struct->device_profile[GS_TEXT_DEVICE_PROFILE] != NULL) {
+                (*profile) = profile_struct->device_profile[GS_TEXT_DEVICE_PROFILE];
             } else {
-                (*profile) = profile_struct->device_profile[0];
+                (*profile) = profile_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE];
             }
             break;
         }

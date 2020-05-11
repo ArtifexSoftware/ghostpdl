@@ -734,9 +734,8 @@ gsicc_get_link(const gs_gstate *pgs1, gx_device *dev_in,
                             render_cond.black_point_comp & gsBP_MASK;
 
                             return gsicc_get_link_profile(pgs, dev, gs_input_profile,
-                                                          dev_profile->device_profile[0],
-                                                          rendering_params, memory,
-                                                          false);
+                                             dev_profile->device_profile[GS_DEFAULT_DEVICE_PROFILE],
+                                             rendering_params, memory, false);
                     }
                 } else {
                     /* In this case we may be wanting for a "unmanaged color"
@@ -755,7 +754,7 @@ gsicc_get_link(const gs_gstate *pgs1, gx_device *dev_in,
                         /* Set the identity case if we are in that situation */
                         if (link != NULL) {
                             if (gs_input_profile->num_comps ==
-                                dev_profile->device_profile[0]->num_comps) {
+                                dev_profile->device_profile[GS_DEFAULT_DEVICE_PROFILE]->num_comps) {
                                 link->is_identity = true;
                             }
                             return link;
@@ -787,7 +786,7 @@ gsicc_get_link(const gs_gstate *pgs1, gx_device *dev_in,
                                                      gs_input_profile->num_comps);
             if (link != NULL) {
                 if (gs_input_profile->num_comps ==
-                    dev_profile->device_profile[0]->num_comps) {
+                    dev_profile->device_profile[GS_DEFAULT_DEVICE_PROFILE]->num_comps) {
                     link->is_identity = true;
                 }
                 return link;
@@ -1017,7 +1016,7 @@ gsicc_get_link_profile(const gs_gstate *pgs, gx_device *dev,
             /* Set the identity case if we are in that situation */
             if (link != NULL) {
                 if (gs_input_profile->num_comps ==
-                    dev_profile->device_profile[0]->num_comps) {
+                    dev_profile->device_profile[GS_DEFAULT_DEVICE_PROFILE]->num_comps) {
                     link->is_identity = true;
                 }
                 return link;
@@ -1804,7 +1803,7 @@ int
 gsicc_get_device_profile_comps(const cmm_dev_profile_t *dev_profile)
 {
     if (dev_profile->link_profile == NULL) {
-       return dev_profile->device_profile[0]->num_comps;
+       return dev_profile->device_profile[GS_DEFAULT_DEVICE_PROFILE]->num_comps;
     } else {
        return dev_profile->link_profile->num_comps_out;
     }
