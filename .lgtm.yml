@@ -2,17 +2,28 @@ path_classifiers:
   docs:
     - docs
     - examples
-  library:
+
+  # Libraries that we maintain are explicitly given their own groups
+  # They will be checked, and will contribute to our error/warning counts,
+  # but we can easily enable/disable them in the web frontend.
+  openjpeg:
     - openjpeg
+  lcms2mt:
     - lcms2mt
+  jbig2dec:
     - jbig2dec
-    - exclude: expat
-    - exclude: freetype
-    - exclude: jpeg
-    - exclude: jpegxr
-    - exclude: libpng
-    - exclude: tiff
-    - exclude: zlib
+
+  # Other libraries that we take unchanged are listed here. These will
+  # be scanned, but won't contribute to our counts.
+  library:
+    - expat
+    - freetype
+    - jpeg
+    - jpegxr
+    - libpng
+    - tiff
+    - zlib
+
   devices:
     - devices
   contrib:
