@@ -1122,7 +1122,11 @@ gx_cpath_copy(const gx_clip_path * from, gx_clip_path * pcpath)
     pcpath->cached = NULL;
     l->single = from->rect_list->list.single;
     for (r = from->rect_list->list.head; r != NULL; r = r->next) {
-        s = gs_alloc_struct(from->rect_list->rc.memory, gx_clip_rect, &st_clip_rect, "gx_cpath_copy");
+        if (pcpath->rect_list->rc.memory == NULL)
+            s = gs_alloc_struct(from->rect_list->rc.memory, gx_clip_rect, &st_clip_rect, "gx_cpath_copy");
+        else
+            s = gs_alloc_struct(pcpath->rect_list->rc.memory, gx_clip_rect, &st_clip_rect, "gx_cpath_copy");
+
         if (s == NULL)
             return_error(gs_error_VMerror);
         *s = *r;
