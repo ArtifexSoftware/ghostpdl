@@ -597,7 +597,26 @@ static int pdfi_annot_draw_border(pdf_context *ctx, pdf_dict *annot, bool usepat
 }
 
 
-/* Draw circle LE */
+/* Draw Butt LE */
+static int pdfi_annot_draw_LE_Butt(pdf_context *ctx, pdf_dict *annot)
+{
+    int code;
+    double width;
+    double seglength;
+
+    code = pdfi_annot_get_BS_width(ctx, annot, &width);
+    if (code < 0) goto exit;
+
+    seglength = 3*width;
+    code = gs_moveto(ctx->pgs, 0, -seglength);
+    code = gs_lineto(ctx->pgs, 0, seglength);
+    code = pdfi_annot_draw_border(ctx, annot, true);
+
+ exit:
+    return code;
+}
+
+/* Draw Circle LE */
 static int pdfi_annot_draw_LE_Circle(pdf_context *ctx, pdf_dict *annot)
 {
     double radius;
@@ -619,6 +638,94 @@ static int pdfi_annot_draw_LE_Circle(pdf_context *ctx, pdf_dict *annot)
     radius = width * 3;
     code = gs_moveto(ctx->pgs, radius, 0);
     code = gs_arc(ctx->pgs, 0, 0, radius, 0, 360);
+    code = pdfi_annot_draw_border(ctx, annot, true);
+
+ exit:
+    return code;
+}
+
+/* Draw Diamond LE */
+static int pdfi_annot_draw_LE_Diamond(pdf_context *ctx, pdf_dict *annot)
+{
+    int code;
+    double width;
+    double seglength;
+
+    code = pdfi_annot_get_BS_width(ctx, annot, &width);
+    if (code < 0) goto exit;
+
+    code = pdfi_gsave(ctx);
+    seglength = width * 2.5;
+    code = gs_moveto(ctx->pgs, 0, -seglength);
+    code = gs_lineto(ctx->pgs, -seglength, 0);
+    code = gs_lineto(ctx->pgs, 0, seglength);
+    code = gs_lineto(ctx->pgs, seglength, 0);
+    code = gs_closepath(ctx->pgs);
+    code = pdfi_annot_opacity(ctx, annot);
+    code = pdfi_annot_fillborderpath(ctx, annot);
+
+    code = pdfi_grestore(ctx);
+
+    seglength = width * 3;
+    code = gs_moveto(ctx->pgs, 0, -seglength);
+    code = gs_lineto(ctx->pgs, -seglength, 0);
+    code = gs_lineto(ctx->pgs, 0, seglength);
+    code = gs_lineto(ctx->pgs, seglength, 0);
+    code = gs_closepath(ctx->pgs);
+    code = pdfi_annot_draw_border(ctx, annot, true);
+
+ exit:
+    return code;
+}
+
+/* Draw Square LE */
+static int pdfi_annot_draw_LE_Square(pdf_context *ctx, pdf_dict *annot)
+{
+    int code;
+    double width;
+    double seglength;
+
+    code = pdfi_annot_get_BS_width(ctx, annot, &width);
+    if (code < 0) goto exit;
+
+    code = pdfi_gsave(ctx);
+    seglength = width * 2.5;
+    code = gs_moveto(ctx->pgs, -seglength, -seglength);
+    code = gs_lineto(ctx->pgs, -seglength, seglength);
+    code = gs_lineto(ctx->pgs, seglength, seglength);
+    code = gs_lineto(ctx->pgs, seglength, -seglength);
+    code = gs_closepath(ctx->pgs);
+    code = pdfi_annot_opacity(ctx, annot);
+    code = pdfi_annot_fillborderpath(ctx, annot);
+
+    code = pdfi_grestore(ctx);
+
+    seglength = width * 3;
+    code = gs_moveto(ctx->pgs, -seglength, -seglength);
+    code = gs_lineto(ctx->pgs, -seglength, seglength);
+    code = gs_lineto(ctx->pgs, seglength, seglength);
+    code = gs_lineto(ctx->pgs, seglength, -seglength);
+    code = gs_closepath(ctx->pgs);
+    code = pdfi_annot_draw_border(ctx, annot, true);
+
+ exit:
+    return code;
+}
+
+/* Draw Slash LE */
+static int pdfi_annot_draw_LE_Slash(pdf_context *ctx, pdf_dict *annot)
+{
+    int code;
+    double width;
+    double seglength;
+
+    code = pdfi_annot_get_BS_width(ctx, annot, &width);
+    if (code < 0) goto exit;
+
+    seglength = 6*width;
+    code = gs_rotate(ctx->pgs, 330);
+    code = gs_moveto(ctx->pgs, 0, -seglength);
+    code = gs_lineto(ctx->pgs, 0, seglength);
     code = pdfi_annot_draw_border(ctx, annot, true);
 
  exit:
@@ -654,8 +761,15 @@ static int pdfi_annot_draw_LE_None(pdf_context *ctx, pdf_dict *annot)
 }
 
 annot_LE_dispatch_t annot_LE_dispatch[] = {
+    {"Butt", pdfi_annot_draw_LE_Butt},
     {"Circle", pdfi_annot_draw_LE_Circle},
+    {"Diamond", pdfi_annot_draw_LE_Diamond},
+    {"Slash", pdfi_annot_draw_LE_Slash},
+    {"Square", pdfi_annot_draw_LE_Square},
+    {"ClosedArrow", pdfi_annot_draw_LE_None},
     {"OpenArrow", pdfi_annot_draw_LE_OpenArrow},
+    {"RClosedArrow", pdfi_annot_draw_LE_None},
+    {"ROpenArrow", pdfi_annot_draw_LE_None},
     {"None", pdfi_annot_draw_LE_None},
     { NULL, NULL},
 };
