@@ -14,6 +14,9 @@
 */
 
 
+#ifndef ghostxps_h_INCLUDED
+#define ghostxps_h_INCLUDED
+
 /* combined internal header for the XPS interpreter */
 
 #include "memory_.h"
@@ -456,4 +459,6 @@ int xps_fclose(gp_file *file);
 #define xps_getc gp_fgetc
 #define xps_fread gp_fread
 #define xps_fclose gp_fclose
+#endif
+
 #endif

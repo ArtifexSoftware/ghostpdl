@@ -14,6 +14,9 @@
 */
 
 
+#ifndef rinkj_byte_stream_h_INCLUDED
+#define rinkj_byte_stream_h_INCLUDED
+
 #include "gp.h"
 
 /* Bytestream abstraction for Rinkj driver. */
@@ -38,3 +41,5 @@ rinkj_byte_stream_close (RinkjByteStream *bs);
 
 RinkjByteStream *
 rinkj_byte_stream_file_new (gp_file *f);
+
+#endif

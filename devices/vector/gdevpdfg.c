@@ -2426,7 +2426,8 @@ pdf_write_spot_halftone(gx_device_pdf *pdev, const gs_spot_halftone *psht,
             if (compare_gx_ht_order_levels(&order,porder))
                 continue;
             if (memcmp(order.bit_data, porder->bit_data,
-                       order.num_bits * porder->procs->bit_data_elt_size))
+                       (size_t)order.num_bits *
+                                      porder->procs->bit_data_elt_size))
                 continue;
             /* We have a match. */
             break;

@@ -21,6 +21,9 @@
 /*$Id: gdevlips.h,v 1.4 2002/10/12 23:24:34 tillkamppeter Exp $ */
 /* Common header file for LIPS driver */
 
+#ifndef gdevlips_h_INCLUDED
+#define gdevlips_h_INCLUDED
+
 #define	LIPS_ESC	0x1b
 #define	LIPS_FF		0x0c
 #define	LIPS_CSI	0x9b	/* LIPS_ESC "[" */
@@ -195,3 +198,5 @@ int lips_media_selection(int width, int height);
 int lips_packbits_encode(byte * inBuff, byte * outBuff, int Length);
 int lips_mode3format_encode(byte * inBuff, byte * outBuff, int Length);
 int lips_rle_encode(byte * inBuff, byte * outBuff, int Length);
+
+#endif

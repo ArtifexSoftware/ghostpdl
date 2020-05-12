@@ -471,7 +471,7 @@ static int decode_image(stream_jpxd_state * const state)
 
     /* calculate  total data */
     rowbytes =  (state->width*state->bpp*state->out_numcomps+7)/8;
-    state->totalbytes = rowbytes*state->height;
+    state->totalbytes = (ulong)rowbytes*state->height;
 
     state->pdata = (int **)gs_alloc_byte_array(state->memory->non_gc_memory, sizeof(int*)*state->image->numcomps, 1, "decode_image(pdata)");
     if (!state->pdata)
@@ -503,7 +503,8 @@ static int process_one_trunk(stream_jpxd_state * const state, stream_cursor_writ
     int shift_bit = state->bpp-state->image->comps[0].prec; /*difference between input and output bit-depth*/
     int img_numcomps = min(state->out_numcomps, state->image->numcomps); /* the actual number of channel data used */
     int compno;
-    unsigned long i;
+    unsigned long il;
+    int i;
     int b;
     byte *row;
     unsigned int x_offset;
@@ -649,12 +650,12 @@ static int process_one_trunk(stream_jpxd_state * const state, stream_cursor_writ
         }
 
         pw->ptr++;
-        i = (write_size > (unsigned long)(row_size - x_offset)) ? (row_size - x_offset) : (unsigned int)write_size;
-        memcpy(pw->ptr, &state->row_data[x_offset], i);
-        pw->ptr += i;
+        il = (write_size > (unsigned long)(row_size - x_offset)) ? (row_size - x_offset) : (unsigned int)write_size;
+        memcpy(pw->ptr, &state->row_data[x_offset], il);
+        pw->ptr += il;
         pw->ptr--;
-        state->out_offset += i;
-        write_size -= i;
+        state->out_offset += il;
+        write_size -= il;
         if (write_size == 0)
             break;
     }

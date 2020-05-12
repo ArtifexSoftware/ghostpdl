@@ -14,7 +14,12 @@
 */
 
 
+#ifndef plparams_h_INCLUDED
+#define plparams_h_INCLUDED
+
 /* plparams.h */
 
 int pcl_pjl_pdfmark(gs_memory_t *mem, gx_device *device, char *pdfmark);
 int pcl_pjl_setdistillerparams(gs_memory_t *mem, gx_device *device, char *distillerparams);
+
+#endif

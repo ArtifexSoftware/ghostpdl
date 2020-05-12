@@ -251,9 +251,9 @@ def forfts(args, defs, refs, proc, verbose):
         fmods = dict([(m, 1) for m in fmods])
         if tm or not ts:                # neither tm nor ts = all
             tm = re.compile(tm)
-            tmods = dict([(m, 1) for m in defmods if tm.match(m)])
+            #tmods = dict([(m, 1) for m in defmods if tm.match(m)])
         else:
-            tmods = None
+            #tmods = None
         # ****** fs IS BOGUS, USES ENTIRE MODULE ******
         if fs:
             fs = re.compile(fs)
@@ -306,7 +306,9 @@ def main(argv):
         cwd = args.pop(0)
     else:
         cwd = ''
-    if len(args) < 1: return usage()
+    if len(args) < 1:
+        usage()
+        return
     verbose = False
     # Read the ld script and each file's symbol table.
     ldscript = args.pop(0)
@@ -381,7 +383,8 @@ def main(argv):
         elif arg == '--verbose':
             verbose = True
         else:
-            return usage()
+            usage()
+            return
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv) or 0)

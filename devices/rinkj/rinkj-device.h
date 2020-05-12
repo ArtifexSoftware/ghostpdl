@@ -13,6 +13,8 @@
    CA 94945, U.S.A., +1(415)492-9861, for further information.
 */
 
+#ifndef rinkj_device_h_INCLUDED
+#define rinkj_device_h_INCLUDED
 
 /* The device abstraction within the Rinkj driver. */
 
@@ -53,3 +55,5 @@ rinkj_device_init (RinkjDevice *self, const RinkjDeviceParams *params);
 
 int
 rinkj_device_write (RinkjDevice *self, const char **data);
+
+#endif

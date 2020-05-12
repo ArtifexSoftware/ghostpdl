@@ -268,7 +268,7 @@ static int gdev_pdf_image_begin_page(gx_device_pdf_image *pdf_dev,
                     &rendering_params);
             } else {
                 pdf_dev->icclink = gsicc_alloc_link_dev(pdev->memory,
-                    profile_struct->device_profile[0], profile_struct->postren_profile,
+                    profile_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE], profile_struct->postren_profile,
                     &rendering_params);
             }
             if (pdf_dev->icclink == NULL) {
@@ -1280,7 +1280,7 @@ static int gdev_PCLm_begin_page(gx_device_pdf_image *pdf_dev,
                     &rendering_params);
             } else {
                 pdf_dev->icclink = gsicc_alloc_link_dev(pdev->memory,
-                    profile_struct->device_profile[0], profile_struct->postren_profile,
+                    profile_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE], profile_struct->postren_profile,
                     &rendering_params);
             }
             if (pdf_dev->icclink == NULL) {

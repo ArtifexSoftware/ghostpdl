@@ -27,6 +27,7 @@
 //
 
 #ifndef _lcms2mt_H
+#define _lcms2mt_H
 
 // ********** Configuration toggles ****************************************
 
@@ -1859,5 +1860,4 @@ CMSAPI cmsBool          CMSEXPORT cmsDesaturateLab(cmsContext ContextID, cmsCIEL
 #   endif
 #endif
 
-#define _lcms2mt_H
 #endif

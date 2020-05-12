@@ -13,4 +13,9 @@
    CA 94945, U.S.A., +1(415)492-9861, for further information.
 */
 
+#ifndef plufstlp_h_INCLUDED
+#define plufstlp_h_INCLUDED
+
 void pl_get_ulp_character_data(byte ** header, byte ** character_data);
+
+#endif

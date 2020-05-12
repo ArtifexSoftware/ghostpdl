@@ -79,7 +79,7 @@ add_lines(px_args_t * par, px_state_t * pxs,
         pxeDataType_t type = (pxeDataType_t) par->pv[2]->value.i;
         int point_size = (type == eUByte || type == eSByte ? 2 : 4);
 
-        while (par->source.position < num_points * point_size) {
+        while (par->source.position < (ulong)num_points * point_size) {
             const byte *dp = par->source.data;
             int px, py;
 
@@ -151,7 +151,7 @@ add_curves(px_args_t * par, px_state_t * pxs,
 
         if (num_points % 3)
             return_error(errorIllegalDataLength);
-        while (par->source.position < num_points * point_size) {
+        while (par->source.position < (ulong)num_points * point_size) {
             const byte *dp = par->source.data;
             int points[6];
             int i;

@@ -429,7 +429,7 @@ pattern_accum_open(gx_device * dev)
         code = (*dev_proc(mask, open_device)) ((gx_device *) mask);
         if (code >= 0) {
             mask_open = true;
-            memset(mask->base, 0, mask->raster * mask->height);
+            memset(mask->base, 0, (size_t)mask->raster * mask->height);
         }
     }
 
@@ -1105,7 +1105,7 @@ gx_pattern_cache_add_entry(gs_gstate * pgs,
             used += mask_used;
         }
         if (trans != 0) {
-            trans_used = trans->planestride*trans->n_chan;
+            trans_used = (size_t)trans->planestride*trans->n_chan;
             used += trans_used;
         }
     } else {

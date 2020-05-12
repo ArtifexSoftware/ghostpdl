@@ -19,10 +19,6 @@
 
 import os
 import sys
-import string
-import datetime
-import time
-import codecs
 
 argc = len(sys.argv)
 if argc < 3:

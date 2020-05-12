@@ -72,7 +72,6 @@ def find_targets(target, makefiles):
     # target is a c file - want .$(OBJ) file
     target = target[:-1] + "$(OBJ):"
     target = os.path.basename(target)
-    filename = None
     parsed_targets = []
     # list of lines
     for line in fileinput.input(makefiles):

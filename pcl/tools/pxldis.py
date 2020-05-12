@@ -44,8 +44,6 @@ else:
     def b(x):
         return x
 
-import string 
-
 # for packing and unpacking binary data
 from struct import *
 
@@ -124,7 +122,6 @@ pxl_tags_dict = {
     'SetHalftoneMethod' :       0x6d,
     'SetFillMode' :             0x6e,
     'SetFont' :                 0x6f,
-    'SetHalftoneMethod' :       0x6d,
     'SetLineCap' :              0x71,
     'SetLineDash' :             0x70,
     'SetLineJoin' :             0x72,
@@ -414,9 +411,6 @@ class pxl_dis:
         # true if we get UEL
         self.endjob = 0
         
-    def nullAttributeList(self):
-        return 0
-    
     # redefine unpack to handle endiannes
     def unpack(self, format, data):
 
@@ -768,10 +762,8 @@ class pxl_dis:
             self.index = self.index + 1
 
             tag = unpackB(self.data[self.index])
-            tag_not_listed = 1
             for k in pxl_attribute_name_to_attribute_number_dict:
                 if ( pxl_attribute_name_to_attribute_number_dict[k] == tag ):
-                    tag_not_listed = 0
                     if (k == 'VUDataLength'):
                         # The VUDataLength is only ever seen with the CLJ3500/3550/3600
                         # as part of an optional VendorUnque payload; it is possible
@@ -805,9 +797,8 @@ class pxl_dis:
                     if ( self.isEmbedded(k) ):
                         self.process_EmbeddedInfo(k)
                     return 1
-            if (tag_not_listed):
-                print("Unlisted attribute number:", tag, file=sys.stderr)
-                raise(SyntaxError)("Unlisted attribute number in PXL stream")
+            print("Unlisted attribute number:", tag, file=sys.stderr)
+            raise(SyntaxError)("Unlisted attribute number in PXL stream")
         return 0
 
     def Tag_attr_uint16(self):

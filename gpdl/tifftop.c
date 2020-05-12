@@ -688,7 +688,6 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
             }
             tiff->proc_samples = tiff->samples;
 
-            /* FIXME: Need to allow for LAB, YUV etc too */
             tiff->bpp = tiff->bpc * tiff->num_comps;
             switch(tiff->photometric) {
             case PHOTOMETRIC_MINISWHITE:
@@ -751,9 +750,9 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                     code = gs_error_unknownerror;
                     goto fail_decode;
                 } else if (tiff->tiled) {
-                    tiff->proc_samples = gs_alloc_bytes(tiff->memory, tiff->tile_width * tiff->tile_height * 3, "tiff_tile");
+		  tiff->proc_samples = gs_alloc_bytes(tiff->memory, (size_t)tiff->tile_width * tiff->tile_height * 3, "tiff_tile");
                 } else {
-                    tiff->proc_samples = gs_alloc_bytes(tiff->memory, tiff->width * 3, "tiff_scan");
+		  tiff->proc_samples = gs_alloc_bytes(tiff->memory, (size_t)tiff->width * 3, "tiff_scan");
                 }
                 break;
             }

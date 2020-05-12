@@ -13,9 +13,14 @@
 
 /* Font API support  */
 
+#ifndef xpsfapi_h_INCLUDED
+#define xpsfapi_h_INCLUDED
+
 int
 xps_fapi_rebuildfont(gs_font *pfont);
 
 int
 xps_fapi_passfont(gs_font *pfont, char *fapi_request, char *file_name,
                   byte *font_data, int font_data_len);
+
+#endif

@@ -255,14 +255,14 @@ s_ISpecialDownScale_init(stream_state * st)
 
     /* create intermediate image to hold horizontal zoom */
     ss->tmp = 
-        gs_alloc_byte_array(mem, ss->params.WidthOut * ss->params.spp_interp,
+        gs_alloc_byte_array(mem, (size_t)ss->params.WidthOut * ss->params.spp_interp,
                             ss->sizeofPixelIn, "image_scale tmp");
     /* Allocate buffers for 1 row of source and destination. */
     ss->dst = 
-        gs_alloc_byte_array(mem, ss->params.WidthOut * ss->params.spp_interp,
+        gs_alloc_byte_array(mem, (size_t)ss->params.WidthOut * ss->params.spp_interp,
                             ss->sizeofPixelOut, "image_scale dst");
     ss->src = 
-        gs_alloc_byte_array(mem, ss->params.WidthIn * ss->params.spp_interp,
+        gs_alloc_byte_array(mem, (size_t)ss->params.WidthIn * ss->params.spp_interp,
                             ss->sizeofPixelIn, "image_scale src");
     if (ss->tmp == 0 || ss->dst == 0 || ss->src == 0) {
         s_ISpecialDownScale_release(st);

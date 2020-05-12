@@ -25,6 +25,7 @@
 //
 
 #ifndef _lcms_internal_H
+#define _lcms_internal_H
 
 // Include plug-in foundation
 #ifndef _lcms2mt_plugin_H
@@ -88,11 +89,11 @@
 #   define cmsINLINE static inline
 #endif
 
-// Allow signed overflow, we know this is harmless in this particular context 
+// Allow signed overflow, we know this is harmless in this particular context
 #if defined(__clang__)
 #   define CMS_NO_SANITIZE __attribute__((no_sanitize("signed-integer-overflow")))
 #else
-#   define CMS_NO_SANITIZE 
+#   define CMS_NO_SANITIZE
 #endif
 
 // Other replacement functions
@@ -1119,5 +1120,4 @@ void _cmsFindFormatter(_cmsTRANSFORM* p, cmsUInt32Number InputFormat, cmsUInt32N
 
 cmsUInt32Number _cmsAdjustReferenceCount(cmsUInt32Number *rc, int delta);
 
-#define _lcms_internal_H
 #endif

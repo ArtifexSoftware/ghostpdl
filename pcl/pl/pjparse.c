@@ -1183,14 +1183,20 @@ pjl_get_named_resource(pjl_parser_state * pst, char *name, byte * data)
 
 /* set the initial environment to the default environment, this should
    be done at the beginning of each job */
-void
+int
 pjl_set_init_from_defaults(pjl_parser_state_t * pst)
 {
-    free_pjl_environment(pst->mem, &pst->envir);
-    set_pjl_environment(pst->mem, &pst->envir, pst->defaults);
+    int code = free_pjl_environment(pst->mem, &pst->envir);
+    if (code < 0)
+        return code;
+    code = set_pjl_environment(pst->mem, &pst->envir, pst->defaults);
+    if (code < 0)
+        return code;
 
-    free_pjl_fontsource(pst->mem, &pst->font_envir);
-    set_pjl_fontsource(pst->mem, &pst->font_envir, pst->font_defaults);
+    code = free_pjl_fontsource(pst->mem, &pst->font_envir);
+    if (code < 0)
+        return code;
+    return set_pjl_fontsource(pst->mem, &pst->font_envir, pst->font_defaults);
 }
 
 void

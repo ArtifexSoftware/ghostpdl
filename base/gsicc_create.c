@@ -1176,8 +1176,8 @@ add_lutAtoBtype(unsigned char *input_ptr, gsicc_lutatob *lutatobparts)
         memset(curr_ptr,0,4); /* A curves */
     } else {
         write_bigendian_4bytes(curr_ptr,data_offset);
-        mlut_size = lutatobparts->clut->clut_num_entries *
-                    lutatobparts->clut->clut_word_width * 3;
+        mlut_size = (long)lutatobparts->clut->clut_num_entries *
+                          lutatobparts->clut->clut_word_width * 3;
         pad_bytes = (4 - mlut_size%4)%4;
         data_offset += (mlut_size + pad_bytes + 20);
         curr_ptr += 4;
@@ -2491,14 +2491,16 @@ create_clut_v2(gsicc_clut *clut, gsicc_link_t *link, int num_in,
     if (bitdepth == 2) {
         clut->data_byte = NULL;
         clut->data_short = (unsigned short*)gs_alloc_bytes(memory,
-            clut->clut_num_entries * num_out * sizeof(unsigned short),
-            "create_clut_v2");
+                              (size_t)clut->clut_num_entries * num_out *
+                                                 sizeof(unsigned short),
+                              "create_clut_v2");
         if (clut->data_short == NULL)
             return -1;
     } else {
         clut->data_short = NULL;
         clut->data_byte = (byte*)gs_alloc_bytes(memory,
-            clut->clut_num_entries * num_out, "create_clut_v2");
+                               (size_t)clut->clut_num_entries * num_out,
+                               "create_clut_v2");
         if (clut->data_byte == NULL)
             return -1;
     }

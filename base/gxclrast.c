@@ -612,6 +612,8 @@ in:                             /* Initialize for a new page. */
     memset(&gs_gstate, 0, sizeof(gs_gstate));
     GS_STATE_INIT_VALUES_CLIST((&gs_gstate));
     code = gs_gstate_initialize(&gs_gstate, mem);
+    if (code < 0)
+        goto out;
     gs_gstate.device = tdev;
     gs_gstate.view_clip = NULL; /* Avoid issues in pdf14 fill stroke */
     gs_gstate.clip_path = &clip_path;
@@ -620,7 +622,9 @@ in:                             /* Initialize for a new page. */
         code = gs_note_error(gs_error_VMerror);
         goto out;
     }
-    pcs->type->install_cspace(pcs, &gs_gstate);
+    code = pcs->type->install_cspace(pcs, &gs_gstate);
+    if (code < 0)
+        goto out;
     gs_gstate.color[0].color_space = pcs;
     rc_increment_cs(pcs);
     gs_gstate.color[1].color_space = pcs;
@@ -2383,6 +2387,8 @@ idata:                  data_size = 0;
     if (code < 0) {
         if (pfs.dev != NULL)
             term_patch_fill_state(&pfs);
+        gs_free_object(mem, pcs, "clist_playback_band(pcs)");
+        gs_free_object(mem, cbuf_storage, "clist_playback_band(cbuf_storage)");
         gx_cpath_free(&clip_path, "clist_playback_band");
         if (pcpath != &clip_path)
             gx_cpath_free(pcpath, "clist_playback_band");
@@ -2763,7 +2769,7 @@ read_set_misc2(command_buf_t *pcb, gs_gstate *pgs, segment_notes *pnotes)
     }
     if (mask & fill_alpha_known) {
         cmd_get_value(pgs->fillconstantalpha, cbp);
-        if_debug1m('L', pgs->memory, " fillconstantalpha=%u\n", pgs->fillconstantalpha);
+        if_debug1m('L', pgs->memory, " fillconstantalpha=%u\n", (uint)(pgs->fillconstantalpha));
     }
     pcb->ptr = cbp;
     return 0;

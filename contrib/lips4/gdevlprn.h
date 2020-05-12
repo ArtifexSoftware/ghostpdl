@@ -20,6 +20,9 @@
 /*$Id: gdevlprn.h,v 1.4 2002/10/12 23:24:34 tillkamppeter Exp $ */
 /* Library for Laser Printer Driver */
 
+#ifndef gdevlprn_h_INCLUDED
+#define gdevlprn_h_INCLUDED
+
 /*
    Main part of this library was taked from Hiroshi Narimatsu's
    Ghostscript driver, epag-3.08.
@@ -143,3 +146,5 @@ dev_proc_get_params(lprn_get_params);
 dev_proc_put_params(lprn_put_params);
 
 int lprn_print_image(gx_device_printer * pdev, gp_file * fp);
+
+#endif

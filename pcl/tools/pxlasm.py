@@ -118,7 +118,6 @@ pxl_tags_dict = {
     'SetHalftoneMethod' :       0x6d,
     'SetFillMode' :             0x6e,
     'SetFont' :                 0x6f,
-    'SetHalftoneMethod' :       0x6d,
     'SetLineCap' :              0x71,
     'SetLineDash' :             0x70,
     'SetLineJoin' :             0x72,
@@ -374,9 +373,6 @@ class pxl_asm:
         # output is always little endian.
         self.assembled_binding = '<'
         
-    def nullAttributeList(self):
-        return 0
-
     # does not consume the string
     def next_string(self):
         index = self.index

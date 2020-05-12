@@ -375,7 +375,7 @@ tiff_set_rgb_fields(gx_device_tiff *tfdev)
     else if (tfdev->icc_struct->oi_profile != NULL)
         icc_profile = tfdev->icc_struct->oi_profile;
     else
-        icc_profile = tfdev->icc_struct->device_profile[0];
+        icc_profile = tfdev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE];
 
     switch (icc_profile->data_cs) {
         case gsRGB:
@@ -1791,8 +1791,8 @@ tiffsep_prn_open(gx_device * pdev)
                 &rendering_params);
         } else {
             pdev_sep->icclink = gsicc_alloc_link_dev(pdev->memory,
-                profile_struct->device_profile[0], profile_struct->postren_profile,
-                &rendering_params);
+                profile_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE],
+                profile_struct->postren_profile, &rendering_params);
         }
         if (pdev_sep->icclink == NULL) {
             return_error(gs_error_VMerror);
@@ -2970,17 +2970,17 @@ tiff_open_s(gx_device *pdev)
 
     /* Take care of any color model changes now */
     if (pdev->icc_struct->postren_profile != NULL &&
-        pdev->icc_struct->device_profile[0]->num_comps != pdev->color_info.num_components &&
+        pdev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE]->num_comps != pdev->color_info.num_components &&
         pdev->color_info.depth == 8 * pdev->color_info.num_components) {
 
         code = gx_change_color_model((gx_device*)pdev,
-            pdev->icc_struct->device_profile[0]->num_comps, 8);
+            pdev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE]->num_comps, 8);
         if (code < 0)
             return code;
 
         /* Reset the device procs */
         memset(&(pdev->procs), 0, sizeof(pdev->procs));
-        switch (pdev->icc_struct->device_profile[0]->num_comps) {
+        switch (pdev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE]->num_comps) {
         case 1:
             pdev->procs = tiffscaled8_procs;
             pdev->color_info.dither_colors = 0;

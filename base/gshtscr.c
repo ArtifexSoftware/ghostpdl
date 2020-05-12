@@ -209,8 +209,8 @@ gs_screen_order_alloc(gx_ht_order *porder, gs_memory_t *mem)
 
     if (!FORCE_STRIP_HALFTONES &&
         ((ulong)porder->params.W1 * bitmap_raster(porder->params.W) +
-           num_levels * sizeof(*porder->levels) +
-           porder->params.W * porder->params.W1 * sizeof(gx_ht_bit)) <=
+           (ulong)num_levels * sizeof(*porder->levels) +
+           (ulong)porder->params.W * porder->params.W1 * sizeof(gx_ht_bit)) <=
         porder->screen_params.max_size) {
         /*
          * Allocate an order for the entire tile, but only sample one

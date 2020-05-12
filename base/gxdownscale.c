@@ -918,7 +918,8 @@ static void down_core4_ht(gx_downscaler_t *ds,
     else if ((31 & (intptr_t)in_buffer) == 0)
         downscaled_data = in_buffer; /* Already aligned! Yay! */
     else
-        memcpy(downscaled_data, in_buffer, nc*ds->width); /* Copy to align */
+        memcpy(downscaled_data, in_buffer,
+               (size_t)nc*ds->width); /* Copy to align */
 
     /* Do the halftone */
     for (i = 0; i < nc; i++)
@@ -2018,8 +2019,9 @@ int gx_downscaler_init_planar_trapped_cm(gx_downscaler_t      *ds,
 
     if (apply_cm) {
         for (i = 0; i < post_cm_num_comps; i++) {
-            ds->post_cm[i] = gs_alloc_bytes(dev->memory, post_span * downfactor,
-                                                "gx_downscaler(planar_data)");
+            ds->post_cm[i] = gs_alloc_bytes(dev->memory,
+                                            (size_t)post_span * downfactor,
+                                            "gx_downscaler(planar_data)");
             if (ds->post_cm[i] == NULL) {
                 code = gs_note_error(gs_error_VMerror);
                 goto cleanup;
@@ -2045,15 +2047,17 @@ int gx_downscaler_init_planar_trapped_cm(gx_downscaler_t      *ds,
     memcpy(&ds->params, params, sizeof(*params));
     ds->params.raster = span;
     for (i = 0; i < num_comps; i++) {
-        ds->pre_cm[i] = gs_alloc_bytes(dev->memory, span * downfactor,
-                                            "gx_downscaler(planar_data)");
+        ds->pre_cm[i] = gs_alloc_bytes(dev->memory,
+                                       (size_t)span * downfactor,
+                                       "gx_downscaler(planar_data)");
         if (ds->pre_cm[i] == NULL) {
             code = gs_note_error(gs_error_VMerror);
             goto cleanup;
         }
     }
     if (upfactor > 1) {
-        ds->scaled_data = gs_alloc_bytes(dev->memory, ds->scaled_span * upfactor * num_comps,
+        ds->scaled_data = gs_alloc_bytes(dev->memory,
+                                         (size_t)ds->scaled_span * upfactor * num_comps,
                                          "gx_downscaler(scaled_data)");
         if (ds->scaled_data == NULL) {
             code = gs_note_error(gs_error_VMerror);
@@ -2097,7 +2101,7 @@ int gx_downscaler_init_planar_trapped_cm(gx_downscaler_t      *ds,
 
     if (mfs > 1) {
         ds->mfs_data = (byte *)gs_alloc_bytes(dev->memory,
-                                              (width+1) * num_comps,
+                                              (size_t)(width+1) * num_comps,
                                               "gx_downscaler(mfs)");
         if (ds->mfs_data == NULL) {
             code = gs_note_error(gs_error_VMerror);
@@ -2107,7 +2111,7 @@ int gx_downscaler_init_planar_trapped_cm(gx_downscaler_t      *ds,
     }
     if (dst_bpc == 1) {
         ds->errors = (int *)gs_alloc_bytes(dev->memory,
-                                           num_comps*(width+3)*sizeof(int),
+                                           (size_t)num_comps*(width+3)*sizeof(int),
                                            "gx_downscaler(errors)");
         if (ds->errors == NULL) {
             code = gs_note_error(gs_error_VMerror);
@@ -2488,7 +2492,7 @@ gx_downscaler_init_trapped_cm_halftone(gx_downscaler_t    *ds,
 
     if (apply_cm) {
         ds->post_cm[0] = gs_alloc_bytes(dev->memory,
-                                        post_size * downfactor,
+                                        (size_t)post_size * downfactor,
                                         "gx_downscaler(data)");
         if (ds->post_cm[0] == NULL) {
             code = gs_note_error(gs_error_VMerror);
@@ -2498,8 +2502,8 @@ gx_downscaler_init_trapped_cm_halftone(gx_downscaler_t    *ds,
 
     if (core != NULL || apply_cm) {
         ds->pre_cm[0] = gs_alloc_bytes(dev->memory,
-            span * downfactor,
-            "gx_downscaler(data)");
+                                       (size_t)span * downfactor,
+                                       "gx_downscaler(data)");
         if (ds->pre_cm[0] == NULL) {
             code = gs_note_error(gs_error_VMerror);
             goto cleanup;
@@ -2508,7 +2512,7 @@ gx_downscaler_init_trapped_cm_halftone(gx_downscaler_t    *ds,
     if (core != NULL) {
         if (mfs > 1) {
             ds->mfs_data = (byte *)gs_alloc_bytes(dev->memory,
-                                                  (awidth+1)*nc,
+                                                  (size_t)(awidth+1)*nc,
                                                   "gx_downscaler(mfs)");
             if (ds->mfs_data == NULL) {
                 code = gs_note_error(gs_error_VMerror);
@@ -2518,13 +2522,13 @@ gx_downscaler_init_trapped_cm_halftone(gx_downscaler_t    *ds,
         }
         if (dst_bpc == 1) {
             ds->errors = (int *)gs_alloc_bytes(dev->memory,
-                                               nc*(awidth+3)*sizeof(int),
+                                               (size_t)nc*(awidth+3)*sizeof(int),
                                                "gx_downscaler(errors)");
             if (ds->errors == NULL) {
                 code = gs_note_error(gs_error_VMerror);
                 goto cleanup;
             }
-            memset(ds->errors, 0, nc * (awidth+3) * sizeof(int));
+            memset(ds->errors, 0, (size_t)nc * (awidth+3) * sizeof(int));
         }
     }
 
@@ -3167,7 +3171,7 @@ void *ets_malloc(void *malloc_arg, int size)
 
 void *ets_calloc(void *malloc_arg, int count, int size)
 {
-    void *p = ets_malloc(malloc_arg, count * size);
+    void *p = ets_malloc(malloc_arg, (size_t)count * size);
     if (p)
         memset(p, 0, count * size);
     return p;

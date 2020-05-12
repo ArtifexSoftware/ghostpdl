@@ -362,8 +362,8 @@ zset_outputintent(i_ctx_t * i_ctx_p)
        of the proper Device profile in the icc manager, again, unless someone
        has explicitly set this default profile. */
 
-    dev_comps = dev_profile->device_profile[0]->num_comps;
-    index = gsicc_get_default_type(dev_profile->device_profile[0]);
+    dev_comps = dev_profile->device_profile[GS_DEFAULT_DEVICE_PROFILE]->num_comps;
+    index = gsicc_get_default_type(dev_profile->device_profile[GS_DEFAULT_DEVICE_PROFILE]);
     if (ncomps == dev_comps && index < gs_color_space_index_DevicePixel) {
         /* The OI profile is the same type as the profile for the device and a
            "default" profile for the device was not externally set. So we go
@@ -372,7 +372,7 @@ zset_outputintent(i_ctx_t * i_ctx_p)
            use a keyword of OIProfile for the user/device parameter to indicate
            its usage.  Also, note conflicts if one is setting object dependent
            color management */
-        rc_assign(dev_profile->device_profile[0], picc_profile,
+        rc_assign(dev_profile->device_profile[GS_DEFAULT_DEVICE_PROFILE], picc_profile,
                   "zset_outputintent");
         if_debug0m(gs_debug_flag_icc, imemory, "[icc] OutputIntent used for device profile\n");
     } else {

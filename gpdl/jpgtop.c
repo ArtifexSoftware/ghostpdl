@@ -104,7 +104,6 @@ jpg_detect_language(const char *s, int len)
             strncmp("JFIF", s+6, 5) == 0)
             return 100;
     }
-    /* FIXME: Other formats go here */
 
     return 0;
 }

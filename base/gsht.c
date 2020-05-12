@@ -322,7 +322,7 @@ gx_ht_copy_ht_order(gx_ht_order * pdest, gx_ht_order * psrc, gs_memory_t * mem)
         memcpy(pdest->levels, psrc->levels, psrc->num_levels * sizeof(uint));
     if (pdest->bit_data != 0)
         memcpy(pdest->bit_data, psrc->bit_data,
-                psrc->num_bits * psrc->procs->bit_data_elt_size);
+               (size_t)psrc->num_bits * psrc->procs->bit_data_elt_size);
     pdest->transfer = psrc->transfer;
     rc_increment(pdest->transfer);
     return 0;
@@ -1364,7 +1364,7 @@ gx_ht_construct_threshold( gx_ht_order *d_order, gx_device *dev,
     shift = d_order->shift;
 
     if (d_order->threshold != NULL) return 0;
-    thresh = (byte *)gs_malloc(memory, d_order->width * d_order->full_height, 1,
+    thresh = (byte *)gs_malloc(memory, (size_t)d_order->width * d_order->full_height, 1,
                               "gx_ht_construct_threshold");
     if (thresh == NULL) {
         return -1 ;         /* error if allocation failed   */

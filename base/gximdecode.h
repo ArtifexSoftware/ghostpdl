@@ -16,6 +16,9 @@ CA 94945, U.S.A., +1(415)492-9861, for further information.
 /* Prototypes for decoding and unpacking image data.  Used for color
    monitoring in clist and for creating TIFF files for xpswrite device */
 
+#ifndef gximdecode_h_INCLUDED
+#define gximdecode_h_INCLUDED
+
 #include "gx.h"
 #include "gxfixed.h"
 #include "gximage.h"
@@ -40,3 +43,5 @@ void get_unpack_proc(gx_image_enum_common_t *pie, image_decode_t *imd,
 void get_map(image_decode_t *imd, gs_image_format_t format, const float *decode);
 void applymap16(sample_map map[], const void *psrc, int spp, void *pdes, void *bufend);
 void applymap8(sample_map map[], const void *psrc, int spp, void *pdes, void *bufend);
+
+#endif

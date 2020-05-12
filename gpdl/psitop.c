@@ -90,7 +90,7 @@ check_token(int token_type, const char *s, const char *e, int *score)
 
 #define TOKEN_CHECK(n) else if (e-s == strlen(n) && memcmp(s, n, e-s) == 0) { score[0] += e-s; score[1]++; }
 
-    if (0) {}
+    if (0) { /* Initial block of checking chain */ }
     TOKEN_CHECK("dup")
     TOKEN_CHECK("exch")
     TOKEN_CHECK("grestore")
@@ -121,7 +121,7 @@ score_comment(const char *s, const char *e, int *score)
 {
 #define COMMENT_CHECK(n) else if (e-s >= strlen(n) && memcmp(s, n, strlen(n)) == 0) { score[0] += 100; score[1]++; }
 
-    if (0) {}
+    if (0) { /* Initial block of checking chain */ }
     COMMENT_CHECK("!PS")
     COMMENT_CHECK("%Title:")
     COMMENT_CHECK("%Version:")
@@ -222,7 +222,7 @@ ps_detect_language(const char *s, int len)
             } else if (*t == 27) {
                 /* Give up if we meet an ESC. It could be a UEL. */
                 break;
-            } else if (*t <= 32 || *t > 127) {
+            } else if (*t <= 32 || *(unsigned char *)t > 127) {
                 if (check_token(token_type, token, t, score))
                     break;
                 if (*t != 9 && *t != 10 && *t != 12 && *t != 13 && *t != 32)
@@ -417,11 +417,10 @@ ps_impl_init_job(pl_interp_implementation_t *impl,
 {
     ps_interp_instance_t *psi = (ps_interp_instance_t *)impl->interp_client_data;
     int exit_code;
-    int code = 0;
+    int code;
 
     /* Any error after here *must* reset the device to null */
-    if (code >= 0)
-        code = psapi_set_device(psi->psapi_instance, device);
+    code = psapi_set_device(psi->psapi_instance, device);
 
     if (code >= 0)
         code = psapi_run_string(psi->psapi_instance, "erasepage", 0, &exit_code);

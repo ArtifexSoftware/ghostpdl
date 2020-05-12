@@ -329,8 +329,11 @@ gx_install_DeviceGray(gs_color_space * pcs, gs_gstate * pgs)
         return 0;
 
     /* If we haven't initialised the iccmanager, do it now. */
-    if (pgs->icc_manager->default_gray == NULL)
-        gsicc_init_iccmanager(pgs);
+    if (pgs->icc_manager->default_gray == NULL) {
+        int code = gsicc_init_iccmanager(pgs);
+        if (code < 0)
+            return code;
+    }
 
     /* pcs takes a reference to the default_gray profile data */
     pcs->cmm_icc_profile_data = pgs->icc_manager->default_gray;
@@ -677,7 +680,7 @@ int gx_set_overprint_cmyk(const gs_color_space * pcs, gs_gstate * pgs)
     }
 
     if_debug1m(gs_debug_flag_overprint, pgs->memory,
-        "[overprint] gx_set_overprint_cmyk. drawn_comps = 0x%x\n", drawn_comps);
+        "[overprint] gx_set_overprint_cmyk. drawn_comps = 0x%x\n", (uint)drawn_comps);
 
     if (drawn_comps == 0)
         return gx_spot_colors_set_overprint(pcs, pgs);
@@ -760,7 +763,7 @@ int gx_set_overprint_cmyk(const gs_color_space * pcs, gs_gstate * pgs)
 
     if_debug2m(gs_debug_flag_overprint, pgs->memory,
         "[overprint] gx_set_overprint_cmyk. retain_any_comps = %d, drawn_comps = 0x%x\n",
-        params.retain_any_comps, params.drawn_comps);
+        params.retain_any_comps, (uint)(params.drawn_comps));
 
     /* We are in CMYK, the profiles match and overprint is true.  Set effective
        overprint mode to overprint mode but only if effective has not already

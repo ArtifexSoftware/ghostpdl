@@ -399,7 +399,7 @@ fn_Sd_evaluate_general(const gs_function_t * pfn_common, const float *in, float 
     /* Look up and interpolate the output values. */
 
     {
-        ulong factor = bps * pfn->params.n;
+        ulong factor = (ulong)bps * pfn->params.n;
 
         for (i = 0; i < pfn->params.m; factor *= pfn->params.Size[i++]) {
             int ipart = (int)encoded[i];
@@ -493,7 +493,7 @@ fn_Sd_evaluate_cubic_cached_1d(const gs_function_Sd_t *pfn, const float *in, flo
             int bps = pfn->params.BitsPerSample;
 
             p = &pfn->params.pole[i * pole_step];
-            fn_get_samples[pfn->params.BitsPerSample](pfn, i * bps * pfn->params.n, sdata);
+            fn_get_samples[pfn->params.BitsPerSample](pfn, (ulong)i * bps * pfn->params.n, sdata);
             for (k = 0; k < pfn->params.n; k++, p++)
                 *p = fn_Sd_encode(pfn, k, (double)sdata[k]);
         }

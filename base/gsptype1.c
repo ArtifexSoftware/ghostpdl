@@ -1664,9 +1664,9 @@ gx_dc_pattern_write_raster(gx_color_tile *ptile, int64_t offset, byte *data,
     int left = *psize;
     int64_t offset1 = offset;
 
-    size_b = sizeof(gx_strip_bitmap) +
+    size_b = (int)sizeof(gx_strip_bitmap) +
          ptile->tbits.size.y * ptile->tbits.raster * ptile->tbits.num_planes;
-    size_c = ptile->tmask.data ? sizeof(gx_strip_bitmap) + ptile->tmask.size.y * ptile->tmask.raster : 0;
+    size_c = ptile->tmask.data ? (int)sizeof(gx_strip_bitmap) + ptile->tmask.size.y * ptile->tmask.raster : 0;
     if (data == NULL) {
         *psize = sizeof(gx_dc_serialized_tile_t) + size_b + size_c;
         return 0;

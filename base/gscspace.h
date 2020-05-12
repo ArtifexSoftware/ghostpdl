@@ -221,7 +221,7 @@ typedef int (gs_callback_func_get_colorname_string)
      (const gs_memory_t *mem, gs_separation_name colorname, unsigned char **ppstr, unsigned int *plen);
 
 typedef enum { SEP_NONE, SEP_ALL, SEP_OTHER } separation_type;
-typedef enum { SEP_ENUM, SEP_MIX, SEP_PURE_RGB, SEP_PURE_CMYK } separation_colors;
+typedef enum { SEP_ENUM, SEP_MIX, SEP_PURE_RGB, SEP_PURE_CMYK, SEP_PURE_SPOT} separation_colors;
 
 typedef struct gs_separation_params_s {
     gs_memory_t *mem;

@@ -150,7 +150,7 @@ dot24_print_page (gx_device_printer *pdev, gp_file *prn_stream, char *init_strin
             if (code == 0)
               {
                 /* Pad with lines of zeros. */
-                memset (inp, 0, (24 - lcnt) * line_size);
+                memset (inp, 0, (size_t)(24 - lcnt) * line_size);
                 break;
               }
           }
@@ -162,7 +162,7 @@ dot24_print_page (gx_device_printer *pdev, gp_file *prn_stream, char *init_strin
             if (code == 0)
               {
                 /* Pad with lines of zeros. */
-                memset (inp, 0, (24 - lcnt) * line_size);
+                memset (inp, 0, (size_t)(24 - lcnt) * line_size);
                 break;
               }
           }

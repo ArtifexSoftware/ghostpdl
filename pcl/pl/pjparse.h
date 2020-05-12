@@ -115,7 +115,7 @@ int pjl_register_permanent_soft_font_addition(pjl_parser_state * pst);
 
 /* set the initial environment to the default environment, this should
    be done at the beginning of each job */
-void pjl_set_init_from_defaults(pjl_parser_state * pst);
+int pjl_set_init_from_defaults(pjl_parser_state * pst);
 
 /* returns the size of an named resource, presumably the client can
    use this number (bytes) to allocate memory for the object. 0

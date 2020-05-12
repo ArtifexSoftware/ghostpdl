@@ -14,6 +14,9 @@
 */
 
 
+#ifndef rinkj_screen_eb_h_INCLUDED
+#define rinkj_screen_eb_h_INCLUDED
+
 /* A Rinkj module encapsulating ETS screening. */
 
 RinkjDevice *
@@ -27,3 +30,5 @@ rinkj_screen_eb_set_gamma (RinkjDevice *self, int plane, double gamma, double ma
 
 void
 rinkj_screen_eb_set_lut (RinkjDevice *self, int plane, const double *lut);
+
+#endif

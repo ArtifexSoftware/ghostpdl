@@ -11,6 +11,9 @@
    Novato, CA 94945, U.S.A., +1(415)492-9861, for further information.
 */
 
+#ifndef plfapi_h_INCLUDED
+#define plfapi_h_INCLUDED
+
 /* Font API support  */
 
 int pl_fapi_rebuildfont(gs_font * pfont);
@@ -32,3 +35,5 @@ const char *pl_fapi_ufst_get_fco_list(gs_memory_t * mem);
 const char *pl_fapi_ufst_get_font_dir(gs_memory_t * mem);
 
 bool pl_fapi_ufst_available(gs_memory_t * mem);
+
+#endif
