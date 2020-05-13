@@ -609,8 +609,11 @@ static int pdfi_annot_draw_LE_Butt(pdf_context *ctx, pdf_dict *annot)
 
     seglength = 3*width;
     code = gs_moveto(ctx->pgs, 0, -seglength);
+    if (code < 0) goto exit;
     code = gs_lineto(ctx->pgs, 0, seglength);
+    if (code < 0) goto exit;
     code = pdfi_annot_draw_border(ctx, annot, true);
+    if (code < 0) goto exit;
 
  exit:
     return code;
@@ -627,19 +630,31 @@ static int pdfi_annot_draw_LE_Circle(pdf_context *ctx, pdf_dict *annot)
     if (code < 0) goto exit;
 
     code = pdfi_gsave(ctx);
+    if (code < 0) goto exit;
+
     radius = width * 2.5;
     code = gs_moveto(ctx->pgs, radius, 0);
+    if (code < 0) goto exit_grestore;
     code = gs_arc(ctx->pgs, 0, 0, radius, 0, 360);
+    if (code < 0) goto exit_grestore;
     code = pdfi_annot_opacity(ctx, annot);
+    if (code < 0) goto exit_grestore;
     code = pdfi_annot_fillborderpath(ctx, annot);
+    if (code < 0) goto exit_grestore;
 
     code = pdfi_grestore(ctx);
+    if (code < 0) goto exit;
 
     radius = width * 3;
     code = gs_moveto(ctx->pgs, radius, 0);
+    if (code < 0) goto exit;
     code = gs_arc(ctx->pgs, 0, 0, radius, 0, 360);
+    if (code < 0) goto exit;
     code = pdfi_annot_draw_border(ctx, annot, true);
+    goto exit;
 
+ exit_grestore:
+    (void)pdfi_grestore(ctx);
  exit:
     return code;
 }
@@ -655,25 +670,43 @@ static int pdfi_annot_draw_LE_Diamond(pdf_context *ctx, pdf_dict *annot)
     if (code < 0) goto exit;
 
     code = pdfi_gsave(ctx);
+    if (code < 0) goto exit;
+
     seglength = width * 2.5;
     code = gs_moveto(ctx->pgs, 0, -seglength);
+    if (code < 0) goto exit_grestore;
     code = gs_lineto(ctx->pgs, -seglength, 0);
+    if (code < 0) goto exit_grestore;
     code = gs_lineto(ctx->pgs, 0, seglength);
+    if (code < 0) goto exit_grestore;
     code = gs_lineto(ctx->pgs, seglength, 0);
+    if (code < 0) goto exit_grestore;
     code = gs_closepath(ctx->pgs);
+    if (code < 0) goto exit_grestore;
     code = pdfi_annot_opacity(ctx, annot);
+    if (code < 0) goto exit_grestore;
     code = pdfi_annot_fillborderpath(ctx, annot);
+    if (code < 0) goto exit_grestore;
 
     code = pdfi_grestore(ctx);
+    if (code < 0) goto exit;
 
     seglength = width * 3;
     code = gs_moveto(ctx->pgs, 0, -seglength);
+    if (code < 0) goto exit;
     code = gs_lineto(ctx->pgs, -seglength, 0);
+    if (code < 0) goto exit;
     code = gs_lineto(ctx->pgs, 0, seglength);
+    if (code < 0) goto exit;
     code = gs_lineto(ctx->pgs, seglength, 0);
+    if (code < 0) goto exit;
     code = gs_closepath(ctx->pgs);
+    if (code < 0) goto exit;
     code = pdfi_annot_draw_border(ctx, annot, true);
+    goto exit;
 
+ exit_grestore:
+    (void)pdfi_grestore(ctx);
  exit:
     return code;
 }
@@ -689,25 +722,43 @@ static int pdfi_annot_draw_LE_Square(pdf_context *ctx, pdf_dict *annot)
     if (code < 0) goto exit;
 
     code = pdfi_gsave(ctx);
+    if (code < 0) goto exit;
+
     seglength = width * 2.5;
     code = gs_moveto(ctx->pgs, -seglength, -seglength);
+    if (code < 0) goto exit_grestore;
     code = gs_lineto(ctx->pgs, -seglength, seglength);
+    if (code < 0) goto exit_grestore;
     code = gs_lineto(ctx->pgs, seglength, seglength);
+    if (code < 0) goto exit_grestore;
     code = gs_lineto(ctx->pgs, seglength, -seglength);
+    if (code < 0) goto exit_grestore;
     code = gs_closepath(ctx->pgs);
+    if (code < 0) goto exit_grestore;
     code = pdfi_annot_opacity(ctx, annot);
+    if (code < 0) goto exit_grestore;
     code = pdfi_annot_fillborderpath(ctx, annot);
+    if (code < 0) goto exit_grestore;
 
     code = pdfi_grestore(ctx);
+    if (code < 0) goto exit;
 
     seglength = width * 3;
     code = gs_moveto(ctx->pgs, -seglength, -seglength);
+    if (code < 0) goto exit;
     code = gs_lineto(ctx->pgs, -seglength, seglength);
+    if (code < 0) goto exit;
     code = gs_lineto(ctx->pgs, seglength, seglength);
+    if (code < 0) goto exit;
     code = gs_lineto(ctx->pgs, seglength, -seglength);
+    if (code < 0) goto exit;
     code = gs_closepath(ctx->pgs);
+    if (code < 0) goto exit;
     code = pdfi_annot_draw_border(ctx, annot, true);
+    goto exit;
 
+ exit_grestore:
+    (void)pdfi_grestore(ctx);
  exit:
     return code;
 }
@@ -722,12 +773,72 @@ static int pdfi_annot_draw_LE_Slash(pdf_context *ctx, pdf_dict *annot)
     code = pdfi_annot_get_BS_width(ctx, annot, &width);
     if (code < 0) goto exit;
 
-    seglength = 6*width;
+    seglength = 3*width;
     code = gs_rotate(ctx->pgs, 330);
+    if (code < 0) goto exit;
     code = gs_moveto(ctx->pgs, 0, -seglength);
+    if (code < 0) goto exit;
     code = gs_lineto(ctx->pgs, 0, seglength);
+    if (code < 0) goto exit;
     code = pdfi_annot_draw_border(ctx, annot, true);
+    if (code < 0) goto exit;
 
+ exit:
+    return code;
+}
+
+/* Draw ClosedArrow LE */
+static int pdfi_annot_draw_LE_ClosedArrow(pdf_context *ctx, pdf_dict *annot)
+{
+    int code;
+    double width;
+    double seglen;
+
+    code = pdfi_annot_get_BS_width(ctx, annot, &width);
+    if (code < 0) goto exit;
+
+    code = pdfi_gsave(ctx);
+    if (code < 0) goto exit;
+
+    code = pdfi_gsave(ctx);
+    if (code < 0) goto exit_grestore;
+
+    code = gs_setlinejoin(ctx->pgs, 0);
+    if (code < 0) goto exit_2grestore;
+    code = gs_moveto(ctx->pgs, -width*6, -width*4);
+    if (code < 0) goto exit_2grestore;
+    code = gs_lineto(ctx->pgs, -width/1.2, 0);
+    if (code < 0) goto exit_2grestore;
+    code = gs_lineto(ctx->pgs, -width*6, width*4);
+    if (code < 0) goto exit_2grestore;
+    code = gs_closepath(ctx->pgs);
+    if (code < 0) goto exit_2grestore;
+    code = pdfi_annot_draw_border(ctx, annot, true);
+    if (code < 0) goto exit_2grestore;
+
+    code = pdfi_grestore(ctx);
+    if (code < 0) goto exit_grestore;
+
+    code = gs_translate(ctx->pgs, -1.3*width, 0);
+    if (code < 0) goto exit_grestore;
+    seglen = width / 2;
+    code = gs_moveto(ctx->pgs, -seglen*8.4, -seglen*5.9);
+    if (code < 0) goto exit_grestore;
+    code = gs_lineto(ctx->pgs, -seglen/1.2, 0);
+    if (code < 0) goto exit_grestore;
+    code = gs_lineto(ctx->pgs, -seglen*8.4, seglen*5.9);
+    if (code < 0) goto exit_grestore;
+    code = gs_closepath(ctx->pgs);
+    if (code < 0) goto exit_grestore;
+    code = pdfi_annot_opacity(ctx, annot);
+    if (code < 0) goto exit_grestore;
+    code = pdfi_annot_fillborderpath(ctx, annot);
+    goto exit_grestore;
+
+ exit_2grestore:
+    (void)pdfi_grestore(ctx);
+ exit_grestore:
+    (void)pdfi_grestore(ctx);
  exit:
     return code;
 }
@@ -742,14 +853,60 @@ static int pdfi_annot_draw_LE_OpenArrow(pdf_context *ctx, pdf_dict *annot)
     if (code < 0) goto exit;
 
     code = pdfi_gsave(ctx);
+    if (code < 0) goto exit;
+
     code = gs_setlinejoin(ctx->pgs, 0);
+    if (code < 0) goto exit_grestore;
 
     code = gs_moveto(ctx->pgs, -width*6, -width*4);
+    if (code < 0) goto exit_grestore;
     code = gs_lineto(ctx->pgs, -width/1.2, 0);
+    if (code < 0) goto exit_grestore;
     code = gs_lineto(ctx->pgs, -width*6, width*4);
+    if (code < 0) goto exit_grestore;
     code = pdfi_annot_draw_border(ctx, annot, true);
+    if (code < 0) goto exit_grestore;
 
-    code = pdfi_grestore(ctx);
+ exit_grestore:
+    (void)pdfi_grestore(ctx);
+ exit:
+    return code;
+}
+
+/* Draw RClosedArrow LE */
+static int pdfi_annot_draw_LE_RClosedArrow(pdf_context *ctx, pdf_dict *annot)
+{
+    int code;
+
+    code = pdfi_gsave(ctx);
+    if (code < 0) goto exit;
+
+    code = gs_rotate(ctx->pgs, 180);
+    if (code < 0) goto exit_grestore;
+    code = pdfi_annot_draw_LE_ClosedArrow(ctx, annot);
+    if (code < 0) goto exit_grestore;
+
+ exit_grestore:
+    (void)pdfi_grestore(ctx);
+ exit:
+    return code;
+}
+
+/* Draw ROpenArrow LE */
+static int pdfi_annot_draw_LE_ROpenArrow(pdf_context *ctx, pdf_dict *annot)
+{
+    int code;
+
+    code = pdfi_gsave(ctx);
+    if (code < 0) goto exit;
+
+    code = gs_rotate(ctx->pgs, 180);
+    if (code < 0) goto exit_grestore;
+    code = pdfi_annot_draw_LE_OpenArrow(ctx, annot);
+    if (code < 0) goto exit_grestore;
+
+ exit_grestore:
+    (void)pdfi_grestore(ctx);
  exit:
     return code;
 }
@@ -766,10 +923,10 @@ annot_LE_dispatch_t annot_LE_dispatch[] = {
     {"Diamond", pdfi_annot_draw_LE_Diamond},
     {"Slash", pdfi_annot_draw_LE_Slash},
     {"Square", pdfi_annot_draw_LE_Square},
-    {"ClosedArrow", pdfi_annot_draw_LE_None},
+    {"ClosedArrow", pdfi_annot_draw_LE_ClosedArrow},
     {"OpenArrow", pdfi_annot_draw_LE_OpenArrow},
-    {"RClosedArrow", pdfi_annot_draw_LE_None},
-    {"ROpenArrow", pdfi_annot_draw_LE_None},
+    {"RClosedArrow", pdfi_annot_draw_LE_RClosedArrow},
+    {"ROpenArrow", pdfi_annot_draw_LE_ROpenArrow},
     {"None", pdfi_annot_draw_LE_None},
     { NULL, NULL},
 };
