@@ -378,18 +378,12 @@ typedef int bool;
 
 /*
  * Define the type to be used for ordering pointers (<, >=, etc.).
- * The Borland and Microsoft large models only compare the offset part
- * of segmented pointers.  Semantically, the right type to use for the
- * comparison is char huge *, but we have no idea how expensive comparing
- * such pointers is, and any type that compares all the bits of the pointer,
- * gives the right result for pointers in the same segment, and keeps
- * different segments disjoint will do.
+ * This used to have 'unsigned long' for comparison of segment+offset,
+ * but that hasn't been an issue for YEARS. The old version was not
+ * compatible with 64-bit.
  */
-#if defined(__TURBOC__) || defined(_MSC_VER)
-typedef unsigned long ptr_ord_t;
-#else
 typedef const char *ptr_ord_t;
-#endif
+
 /* Define all the pointer comparison operations. */
 #define _PTR_CMP(p1, rel, p2)  ((ptr_ord_t)(p1) rel (ptr_ord_t)(p2))
 #define PTR_LE(p1, p2) _PTR_CMP(p1, <=, p2)
