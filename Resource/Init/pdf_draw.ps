@@ -3290,7 +3290,7 @@ end
       } ifelse
     } ifelse
   } {
-    3 index /CA knownoget {dup .setstrokeconstantalpha .setfillconstantalpha} if
+    dup /CA knownoget {dup .setstrokeconstantalpha .setfillconstantalpha} if
     1 {}
 %    2 index annotsetcolor {
     0 setdash setlinewidth stroke
@@ -4127,7 +4127,7 @@ currentdict /set_bc_color undef
             3 index aload pop 4 2 roll pop pop
             translate
             0 0 moveto
-            atan                  % <annot> [x1 y1 x2 y2] [LE1 LE2]
+            {atan} stopped {pop pop 0} if           % <annot> [x1 y1 x2 y2] [LE1 LE2]
             rotate
             dup 1 get             % <annot> [x1 y1 x2 y2] [LE1 LE2] LE1
             dup //LineEnd_dict exch known not
@@ -4146,7 +4146,7 @@ currentdict /set_bc_color undef
             3 index aload pop pop pop
             translate
             0 0 moveto
-            atan 180 add
+            {atan} stopped {pop pop 0} if 180 add
             rotate
             0 get dup //LineEnd_dict exch known not {pop /None} if //LineEnd_dict exch get 3 index exch exec
             grestore
@@ -4174,15 +4174,16 @@ currentdict /set_bc_color undef
     } {
       gsave
       //startannottransparency exec
+      dup annotsetcolor pop
       dup /Vertices knownoget {
         1 index /LE knownoget {
           gsave
           1 index 0 4 getinterval aload pop
           4 2 roll
           2 copy translate 4 2 roll
-          3 -1 roll sub      % x1 x2 dy
-          3 1 roll exch sub  % dy dx
-          atan
+          3 -1 roll exch sub      % x1 x2 dy
+          3 1 roll sub  % dy dx
+          {atan} stopped {pop pop 0} if
           rotate
           dup 0 get dup //LineEnd_dict exch known not {pop /None} if //LineEnd_dict exch get 3 index exch exec
           grestore
@@ -4192,7 +4193,7 @@ currentdict /set_bc_color undef
           2 copy translate
           3 -1 roll sub      % x1 x2 dy
           3 1 roll exch sub  % dy dx
-          atan
+          {atan} stopped {pop pop 0} if
           rotate
           1 get dup //LineEnd_dict exch known not {pop /None} if //LineEnd_dict exch get 3 index exch exec
           grestore
