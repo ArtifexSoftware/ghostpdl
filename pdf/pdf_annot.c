@@ -1091,14 +1091,212 @@ static int pdfi_annot_draw_Link(pdf_context *ctx, pdf_dict *annot, pdf_dict *Nor
     return code;
 }
 
+/* Draw a path from an InkList
+ * see zpdfops.c/zpdfinkpath()
+ *
+ * Construct a smooth path passing though a number of points  on the stack
+ * for PDF ink annotations. The program is based on a very simple method of
+ * smoothing polygons by Maxim Shemanarev.
+ * http://www.antigrain.com/research/bezier_interpolation/
+ *
+ * InkList is array of arrays, each representing a stroked path
+ */
+static int pdfi_annot_draw_InkList(pdf_context *ctx, pdf_dict *annot, pdf_array *InkList)
+{
+    int code = 0;
+    pdf_array *points = NULL;
+    int i;
+    int num_points;
+    double x0, y0, x1, y1, x2, y2, x3, y3, xc1, yc1, xc2, yc2, xc3, yc3;
+    double len1, len2, len3, k1, k2, xm1, ym1, xm2, ym2;
+    double ctrl1_x, ctrl1_y, ctrl2_x, ctrl2_y;
+    const double smooth_value = 1; /* from 0..1 range */
+
+    for (i=0; i<pdfi_array_size(InkList); i++) {
+        int j;
+
+        code = pdfi_array_get_type(ctx, InkList, i, PDF_ARRAY, (pdf_obj **)&points);
+        if (code < 0)
+            goto exit;
+
+        num_points = pdfi_array_size(points);
+        if (num_points < 2)
+            goto exit;
+
+        code = pdfi_array_get_number(ctx, points, 0, &x1);
+        if (code < 0) goto exit;
+        code = pdfi_array_get_number(ctx, points, 1, &y1);
+        if (code < 0) goto exit;
+        code = gs_moveto(ctx->pgs, x1, y1);
+        if (code < 0) goto exit;
+        if (num_points == 2)
+            goto stroke;
+
+        code = pdfi_array_get_number(ctx, points, 2, &x2);
+        if (code < 0) goto exit;
+        code = pdfi_array_get_number(ctx, points, 3, &y2);
+        if (code < 0) goto exit;
+        if (num_points == 4) {
+            code = gs_lineto(ctx->pgs, x2, y2);
+            goto stroke;
+        }
+
+        x0 = 2*x1 - x2;
+        y0 = 2*y1 - y2;
+
+        for (j = 4; j <= num_points; j += 2) {
+            if (j < num_points) {
+                code = pdfi_array_get_number(ctx, points, j, &x3);
+                if (code < 0) goto exit;
+                code = pdfi_array_get_number(ctx, points, j+1, &y3);
+                if (code < 0) goto exit;
+            } else {
+                x3 = 2*x2 - x1;
+                y3 = 2*y2 - y1;
+            }
+
+            xc1 = (x0 + x1) / 2.0;
+            yc1 = (y0 + y1) / 2.0;
+            xc2 = (x1 + x2) / 2.0;
+            yc2 = (y1 + y2) / 2.0;
+            xc3 = (x2 + x3) / 2.0;
+            yc3 = (y2 + y3) / 2.0;
+
+            len1 = hypot(x1 - x0, y1 - y0);
+            len2 = hypot(x2 - x1, y2 - y1);
+            len3 = hypot(x3 - x2, y3 - y2);
+
+            k1 = len1 / (len1 + len2);
+            k2 = len2 / (len2 + len3);
+
+            xm1 = xc1 + (xc2 - xc1) * k1;
+            ym1 = yc1 + (yc2 - yc1) * k1;
+
+            xm2 = xc2 + (xc3 - xc2) * k2;
+            ym2 = yc2 + (yc3 - yc2) * k2;
+
+            ctrl1_x = xm1 + (xc2 - xm1) * smooth_value + x1 - xm1;
+            ctrl1_y = ym1 + (yc2 - ym1) * smooth_value + y1 - ym1;
+
+            ctrl2_x = xm2 + (xc2 - xm2) * smooth_value + x2 - xm2;
+            ctrl2_y = ym2 + (yc2 - ym2) * smooth_value + y2 - ym2;
+
+            code = gs_curveto(ctx->pgs, ctrl1_x, ctrl1_y, ctrl2_x, ctrl2_y, x2, y2);
+            if (code < 0) goto exit;
+
+            x0 = x1, x1 = x2, x2 = x3;
+            y0 = y1, y1 = y2, y2 = y3;
+        }
+
+    stroke:
+        code = gs_stroke(ctx->pgs);
+        if (code < 0) goto exit;
+        pdfi_countdown(points);
+        points = NULL;
+    }
+
+ exit:
+    pdfi_countdown(points);
+    return code;
+}
+
+/* Draw a path from a Path array (see 2.0 spec 12.5.6.13)
+ * Path is array of arrays.
+ * First array is 2 args for moveto
+ * The rest of the arrays are either 2 args for lineto or 6 args for curveto
+ */
+static int pdfi_annot_draw_Path(pdf_context *ctx, pdf_dict *annot, pdf_array *Path)
+{
+    int code = 0;
+    pdf_array *points = NULL;
+    double array[6];
+    int i;
+    int num_points;
+
+    for (i=0; i<pdfi_array_size(Path); i++) {
+        code = pdfi_array_get_type(ctx, Path, i, PDF_ARRAY, (pdf_obj **)&points);
+        if (code < 0)
+            goto exit;
+
+        num_points = pdfi_array_size(points);
+        if (num_points != 2 && num_points != 6) {
+            code = gs_note_error(gs_error_rangecheck);
+            goto exit;
+        }
+
+        code = pdfi_array_to_num_array(ctx, points, array, num_points);
+        if (code < 0) goto exit;
+
+        if (i == 0) {
+            code = gs_moveto(ctx->pgs, array[0], array[1]);
+            if (code < 0) goto exit;
+        } else {
+            if (num_points == 2) {
+                code = gs_lineto(ctx->pgs, array[0], array[1]);
+                if (code < 0) goto exit;
+            } else {
+                code = gs_curveto(ctx->pgs, array[0], array[1],
+                                  array[2], array[3], array[4], array[5]);
+                if (code < 0) goto exit;
+            }
+        }
+
+        pdfi_countdown(points);
+        points = NULL;
+    }
+
+    code = pdfi_annot_draw_border(ctx, annot, true);
+
+ exit:
+    pdfi_countdown(points);
+    return code;
+}
+
+/* Generate appearance (see pdf_draw.ps/Ink
+ *
+ * If there was an AP it was already handled.
+ */
 static int pdfi_annot_draw_Ink(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
 {
     int code = 0;
+    int code1 = 0;
+    bool drawit;
+    pdf_array *array = NULL;
 
-    /* TODO: Generate appearance (see pdf_draw.ps/Ink) */
-    dbgmprintf(ctx->memory, "ANNOT: No AP generation for subtype Ink\n");
+    code = pdfi_annot_setcolor(ctx, annot, false, &drawit);
+    if (code <0 || !drawit)
+        goto exit1;
+
+    code = pdfi_annot_start_transparency(ctx, annot);
+    if (code < 0) goto exit1;
+
+    code = gs_setlinewidth(ctx->pgs, 1);
+    if (code < 0) goto exit;
+    code = gs_setlinecap(ctx->pgs, 1);
+    if (code < 0) goto exit;
+    code = gs_setlinejoin(ctx->pgs, 1);
+    if (code < 0) goto exit;
+
+    code = pdfi_dict_knownget_type(ctx, annot, "InkList", PDF_ARRAY, (pdf_obj **)&array);
+    if (code < 0) goto exit;
+    if (code > 0) {
+        code = pdfi_annot_draw_InkList(ctx, annot, array);
+        goto exit;
+    }
+    code = pdfi_dict_knownget_type(ctx, annot, "Path", PDF_ARRAY, (pdf_obj **)&array);
+    if (code < 0) goto exit;
+    if (code > 0) {
+        code = pdfi_annot_draw_Path(ctx, annot, array);
+        goto exit;
+    }
+
+ exit:
+    code1 = pdfi_annot_end_transparency(ctx, annot);
+    if (code >= 0)
+        code = code1;
+ exit1:
+    pdfi_countdown(array);
     *render_done = true;
-
     return code;
 }
 
