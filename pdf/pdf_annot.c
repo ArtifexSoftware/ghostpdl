@@ -596,6 +596,7 @@ static int pdfi_annot_draw_border(pdf_context *ctx, pdf_dict *annot, bool usepat
     return code;
 }
 
+/*********** BEGIN /LE ***************/
 
 /* Draw Butt LE */
 static int pdfi_annot_draw_LE_Butt(pdf_context *ctx, pdf_dict *annot)
@@ -798,45 +799,40 @@ static int pdfi_annot_draw_LE_ClosedArrow(pdf_context *ctx, pdf_dict *annot)
     if (code < 0) goto exit;
 
     code = pdfi_gsave(ctx);
-    if (code < 0) goto exit;
-
-    code = pdfi_gsave(ctx);
     if (code < 0) goto exit_grestore;
 
     code = gs_setlinejoin(ctx->pgs, 0);
-    if (code < 0) goto exit_2grestore;
+    if (code < 0) goto exit_grestore;
     code = gs_moveto(ctx->pgs, -width*6, -width*4);
-    if (code < 0) goto exit_2grestore;
+    if (code < 0) goto exit_grestore;
     code = gs_lineto(ctx->pgs, -width/1.2, 0);
-    if (code < 0) goto exit_2grestore;
+    if (code < 0) goto exit_grestore;
     code = gs_lineto(ctx->pgs, -width*6, width*4);
-    if (code < 0) goto exit_2grestore;
+    if (code < 0) goto exit_grestore;
     code = gs_closepath(ctx->pgs);
-    if (code < 0) goto exit_2grestore;
+    if (code < 0) goto exit_grestore;
     code = pdfi_annot_draw_border(ctx, annot, true);
-    if (code < 0) goto exit_2grestore;
+    if (code < 0) goto exit_grestore;
 
     code = pdfi_grestore(ctx);
-    if (code < 0) goto exit_grestore;
+    if (code < 0) goto exit;
 
     code = gs_translate(ctx->pgs, -1.3*width, 0);
-    if (code < 0) goto exit_grestore;
+    if (code < 0) goto exit;
     seglen = width / 2;
     code = gs_moveto(ctx->pgs, -seglen*8.4, -seglen*5.9);
-    if (code < 0) goto exit_grestore;
+    if (code < 0) goto exit;
     code = gs_lineto(ctx->pgs, -seglen/1.2, 0);
-    if (code < 0) goto exit_grestore;
+    if (code < 0) goto exit;
     code = gs_lineto(ctx->pgs, -seglen*8.4, seglen*5.9);
-    if (code < 0) goto exit_grestore;
+    if (code < 0) goto exit;
     code = gs_closepath(ctx->pgs);
-    if (code < 0) goto exit_grestore;
+    if (code < 0) goto exit;
     code = pdfi_annot_opacity(ctx, annot);
-    if (code < 0) goto exit_grestore;
+    if (code < 0) goto exit;
     code = pdfi_annot_fillborderpath(ctx, annot);
-    goto exit_grestore;
+    goto exit;
 
- exit_2grestore:
-    (void)pdfi_grestore(ctx);
  exit_grestore:
     (void)pdfi_grestore(ctx);
  exit:
@@ -852,23 +848,18 @@ static int pdfi_annot_draw_LE_OpenArrow(pdf_context *ctx, pdf_dict *annot)
     code = pdfi_annot_get_BS_width(ctx, annot, &width);
     if (code < 0) goto exit;
 
-    code = pdfi_gsave(ctx);
+    code = gs_setlinejoin(ctx->pgs, 0);
     if (code < 0) goto exit;
 
-    code = gs_setlinejoin(ctx->pgs, 0);
-    if (code < 0) goto exit_grestore;
-
     code = gs_moveto(ctx->pgs, -width*6, -width*4);
-    if (code < 0) goto exit_grestore;
+    if (code < 0) goto exit;
     code = gs_lineto(ctx->pgs, -width/1.2, 0);
-    if (code < 0) goto exit_grestore;
+    if (code < 0) goto exit;
     code = gs_lineto(ctx->pgs, -width*6, width*4);
-    if (code < 0) goto exit_grestore;
+    if (code < 0) goto exit;
     code = pdfi_annot_draw_border(ctx, annot, true);
-    if (code < 0) goto exit_grestore;
+    if (code < 0) goto exit;
 
- exit_grestore:
-    (void)pdfi_grestore(ctx);
  exit:
     return code;
 }
@@ -878,16 +869,11 @@ static int pdfi_annot_draw_LE_RClosedArrow(pdf_context *ctx, pdf_dict *annot)
 {
     int code;
 
-    code = pdfi_gsave(ctx);
+    code = gs_rotate(ctx->pgs, 180);
+    if (code < 0) goto exit;
+    code = pdfi_annot_draw_LE_ClosedArrow(ctx, annot);
     if (code < 0) goto exit;
 
-    code = gs_rotate(ctx->pgs, 180);
-    if (code < 0) goto exit_grestore;
-    code = pdfi_annot_draw_LE_ClosedArrow(ctx, annot);
-    if (code < 0) goto exit_grestore;
-
- exit_grestore:
-    (void)pdfi_grestore(ctx);
  exit:
     return code;
 }
@@ -897,16 +883,11 @@ static int pdfi_annot_draw_LE_ROpenArrow(pdf_context *ctx, pdf_dict *annot)
 {
     int code;
 
-    code = pdfi_gsave(ctx);
+    code = gs_rotate(ctx->pgs, 180);
+    if (code < 0) goto exit;
+    code = pdfi_annot_draw_LE_OpenArrow(ctx, annot);
     if (code < 0) goto exit;
 
-    code = gs_rotate(ctx->pgs, 180);
-    if (code < 0) goto exit_grestore;
-    code = pdfi_annot_draw_LE_OpenArrow(ctx, annot);
-    if (code < 0) goto exit_grestore;
-
- exit_grestore:
-    (void)pdfi_grestore(ctx);
  exit:
     return code;
 }
@@ -1024,6 +1005,7 @@ static int pdfi_annot_draw_LE(pdf_context *ctx, pdf_dict *annot,
     pdfi_countdown(LE2);
     return code;
 }
+/*********** END /LE ***************/
 
 
 /* Get the Normal AP dictionary/stream, if it exists
