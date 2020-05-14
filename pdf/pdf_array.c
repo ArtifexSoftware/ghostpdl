@@ -406,21 +406,20 @@ int pdfi_array_to_gs_matrix(pdf_context *ctx, pdf_array *array, gs_matrix *mat)
 }
 
 /* Turn a pdf_array into a double array of specified size */
-int pdfi_array_to_num_array(pdf_context *ctx, pdf_array *array, double *out, int size)
+int pdfi_array_to_num_array(pdf_context *ctx, pdf_array *array, double *out, int offset, int size)
 {
     int i;
     int code;
     double num;
 
     for (i=0; i<size; i++) {
-        code = pdfi_array_get_number(ctx, array, i, &num);
+        code = pdfi_array_get_number(ctx, array, offset+i, &num);
         if (code < 0)
             return code;
         out[i] = num;
     }
     return 0;
 }
-
 
 /* Transform a BBox by a matrix (from zmatrix.c/zbbox_transform())*/
 void

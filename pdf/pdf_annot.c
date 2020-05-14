@@ -1224,7 +1224,7 @@ static int pdfi_annot_draw_Path(pdf_context *ctx, pdf_dict *annot, pdf_array *Pa
             goto exit;
         }
 
-        code = pdfi_array_to_num_array(ctx, points, array, num_points);
+        code = pdfi_array_to_num_array(ctx, points, array, 0, num_points);
         if (code < 0) goto exit;
 
         if (i == 0) {
@@ -1594,7 +1594,7 @@ static int pdfi_annot_draw_CL(pdf_context *ctx, pdf_dict *annot)
         goto exit;
     }
 
-    code = pdfi_array_to_num_array(ctx, CL, array, length);
+    code = pdfi_array_to_num_array(ctx, CL, array, 0, length);
     if (code < 0) goto exit;
 
     /* Draw the line */
@@ -1816,26 +1816,155 @@ static int pdfi_annot_draw_Text(pdf_context *ctx, pdf_dict *annot, pdf_dict *Nor
     return code;
 }
 
-static int pdfi_annot_draw_StrikeOut(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
+/* Converts array of 4 points to a basis and 2 dimensions (6 values altogether)
+ *    x0 y0 x1 y1 x2 y2 x3 y3 -> x0 y0 x1-x0 y1-y0 x2-x0 y2-y0
+ *
+ *  ^
+ *  |
+ *  * (x2,y2)    * (x3,y3)
+ *  |
+ *  |
+ *  *------------*->
+ *  (x0,y0)      (x1,y1)
+ */
+static void pdfi_annot_quadpoints2basis(pdf_context *ctx, double *array,
+                                        double *px0, double *py0,
+                                        double *dx1, double *dy1,
+                                        double *dx2, double *dy2)
+{
+    double x0,x1,x2,x3,y0,y1,y2,y3;
+    double minx, miny;
+    int i, mindex;
+
+    /* comment from the PS code
+    % The text is oriented with respect to the vertex with the smallest
+    % y value (or the leftmost of those, if there are two such vertices)
+    % (x0, y0) and the next vertex in a counterclockwise direction
+    % (x1, y1), regardless of whether these are the first two points in
+    % the QuadPoints array.
+    */
+
+    /* starting min point */
+    minx = array[0];
+    miny = array[1];
+    mindex = 0;
+    /* This finds the index of the point with miny and if there were two points with same
+     * miny, it finds the one with minx
+     */
+    for (i=2; i<8; i+=2) {
+        if ((array[i+1] == miny && array[i] < minx) ||  (array[i+1] < miny)) {
+            /* Set new min point */
+            miny = array[i+1];
+            minx = array[i];
+            mindex = i;
+        }
+    }
+
+    /* Pull out the points such that x0 = minx, x1 = miny, etc */
+    i = mindex;
+    x0 = array[i];
+    y0 = array[i+1];
+    i += 2;
+    if (i == 8) i = 0;
+    x1 = array[i];
+    y1 = array[i+1];
+    i += 2;
+    if (i == 8) i = 0;
+    x2 = array[i];
+    y2 = array[i+1];
+    i += 2;
+    if (i == 8) i = 0;
+    x3 = array[i];
+    y3 = array[i+1];
+
+    /* Make it go counterclockwise by picking lower of these 2 points */
+    if (y3 < y1) {
+        y1 = y3;
+        x1 = x3;
+    }
+
+    /* Convert into a starting point and two sets of lengths */
+    *px0 = x0;
+    *py0 = y0;
+    *dx1 = x1 - x0;
+    *dy1 = y1 - y0;
+    *dx2 = x2 - x0;
+    *dy2 = y2 - y0;
+}
+
+/* Generate appearance for Underline or StrikeOut (see pdf_draw.ps/Underline and Strikeout)
+ *
+ * offset -- how far above the QuadPoints box bottom to draw the line
+ *
+ */
+static int pdfi_annot_draw_line_offset(pdf_context *ctx, pdf_dict *annot, double offset)
 {
     int code = 0;
+    bool drawit;
+    pdf_array *QuadPoints = NULL;
+    double array[8];
+    int size;
+    int num_quads;
+    int i;
+    double x0, y0, dx1, dy1, dx2, dy2;
+    double linewidth;
 
-    /* TODO: Generate appearance (see pdf_draw.ps/StrikeOut) */
-    dbgmprintf(ctx->memory, "ANNOT: No AP generation for subtype StrikeOut\n");
-    *render_done = true;
+    code = pdfi_annot_setcolor(ctx, annot, false, &drawit);
+    if (code <0 || !drawit)
+        goto exit;
 
+    code = gs_setlinecap(ctx->pgs, 1);
+    if (code < 0) goto exit;
+
+    code = pdfi_dict_knownget_type(ctx, annot, "QuadPoints", PDF_ARRAY, (pdf_obj **)&QuadPoints);
+    if (code <= 0) goto exit;
+
+    size = pdfi_array_size(QuadPoints);
+    num_quads = size / 8;
+
+    for (i=0; i<num_quads; i++) {
+        code = pdfi_array_to_num_array(ctx, QuadPoints, array, i*8, 8);
+        if (code < 0) goto exit;
+
+        pdfi_annot_quadpoints2basis(ctx, array, &x0, &y0, &dx1, &dy1, &dx2, &dy2);
+
+        /* Acrobat draws the line at offset-ratio of the box width from the bottom of the box
+         * and 1/16 thick of the box width.  /Rect is ignored.
+         */
+        linewidth = sqrt((dx2*dx2) + (dy2*dy2)) / 16.;
+        code = gs_setlinewidth(ctx->pgs, linewidth);
+        if (code < 0) goto exit;
+        code = gs_moveto(ctx->pgs, dx2*offset + x0 , dy2*offset + y0);
+        if (code < 0) goto exit;
+        code = gs_lineto(ctx->pgs, dx2*offset + x0 + dx1, dy2*offset + y0 + dy1);
+        if (code < 0) goto exit;
+        code = gs_stroke(ctx->pgs);
+        if (code < 0) goto exit;
+    }
+
+ exit:
+    pdfi_countdown(QuadPoints);
     return code;
 }
 
+/* Generate appearance (see pdf_draw.ps/StrikeOut)
+ *
+ * If there was an AP it was already handled.
+ */
+static int pdfi_annot_draw_StrikeOut(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
+{
+    *render_done = true;
+    return pdfi_annot_draw_line_offset(ctx, annot, 3/7.);
+}
+
+/* Generate appearance (see pdf_draw.ps/Underline)
+ *
+ * If there was an AP it was already handled.
+ */
 static int pdfi_annot_draw_Underline(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
 {
-    int code = 0;
-
-    /* TODO: Generate appearance (see pdf_draw.ps/Underline) */
-    dbgmprintf(ctx->memory, "ANNOT: No AP generation for subtype Underline\n");
     *render_done = true;
-
-    return code;
+    return pdfi_annot_draw_line_offset(ctx, annot, 1/7.);
 }
 
 static int pdfi_annot_draw_Highlight(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
