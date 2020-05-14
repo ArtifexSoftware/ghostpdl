@@ -178,7 +178,7 @@ gs_tifsWarningHandlerEx(thandle_t client_data, const char* module, const char* f
     char buf[TIFF_PRINT_BUF_LENGTH];
 
     count = vsnprintf(buf, sizeof(buf), fmt, ap);
-    if (count >= sizeof(buf) || count < 0)  { /* C99 || MSVC */
+    if (count < 0 || count >= sizeof(buf))  { /* MSVC || C99 */
         dmlprintf1(pdev->memory, "%s", buf);
         dmlprintf1(pdev->memory, "%s\n", tifs_msg_truncated);
     } else {
@@ -196,7 +196,7 @@ gs_tifsErrorHandlerEx(thandle_t client_data, const char* module, const char* fmt
     char buf[TIFF_PRINT_BUF_LENGTH];
 
     count = vsnprintf(buf, sizeof(buf), fmt, ap);
-    if (count >= sizeof(buf) || count < 0)  { /* C99 || MSVC */
+    if (count < 0 || count >= sizeof(buf) )  { /* MSVC || C99 */
         dmlprintf1(pdev->memory, "%s\n", buf);
         dmlprintf1(pdev->memory, "%s", tifs_msg_truncated);
     } else {

@@ -483,7 +483,7 @@ htsc_determine_cell_shape(int *x_out, int *y_out, int *v_out,
         }
         x = x_use;
     }
-    if (ratio >= 1 && ratio!=0) {
+    if (ratio >= 1) {
         /* The minimal step is in y */
         if (params.verbose > 0) {
             PRINTF(mem, "x\ty\tu\tv\tAngle\tLPI\tLevels\n");

@@ -1869,7 +1869,7 @@ gx_default_8bit_map_gray_color(gx_device * dev, const gx_color_value cv[])
 {
     gx_color_index color = gx_color_value_to_byte(cv[0]);
 
-    return (color == gx_no_color_index ? color ^ 1 : color);
+    return color;
 }
 
 int
@@ -1984,7 +1984,11 @@ cmyk_8bit_map_cmyk_color(gx_device * dev, const gx_color_value cv[])
         ((uint)gx_color_value_to_byte(cv[1]) << 16) +
         ((uint)gx_color_value_to_byte(cv[0]) << 24);
 
+#if ARCH_SIZEOF_GX_COLOR_INDEX > 4
+    return color;
+#else
     return (color == gx_no_color_index ? color ^ 1 : color);
+#endif
 }
 
 gx_color_index

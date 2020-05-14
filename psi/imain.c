@@ -625,7 +625,7 @@ gs_main_set_lib_paths(gs_main_instance * minst)
             break;
         }
     }
-    if (have_rom_device && code >= 0) {
+    if (have_rom_device) {
         code = lib_path_add(minst, "%rom%Resource/Init/");
         if (code < 0)
             return code;

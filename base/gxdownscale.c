@@ -2882,7 +2882,7 @@ static int downscaler_process_fn(void *arg_, gx_device *dev, gx_device *bdev, co
     }
 
     /* Pass on to further processing */
-    if (code >= 0 && arg->orig_options && arg->orig_options->process_fn) {
+    if (arg->orig_options && arg->orig_options->process_fn) {
         out_rect.p.y = rect->p.y*arg->upfactor/arg->downfactor;
         out_rect.q.y += out_rect.p.y;
         code = arg->orig_options->process_fn(arg->orig_options->arg, dev,

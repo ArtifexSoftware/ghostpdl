@@ -178,7 +178,7 @@ int outprintf(const gs_memory_t *mem, const char *fmt, ...)
 
     va_start(args, fmt);
     count = vsnprintf(buf, sizeof(buf), fmt, args);
-    if (count >= sizeof(buf) || count < 0)  { /* C99 || MSVC */
+    if (count < 0 || count >= sizeof(buf))  { /* MSVC || C99 */
         fwrite(buf, 1, sizeof(buf) - 1, stdout);
         fwrite(msg_truncated, 1, sizeof(msg_truncated) - 1, stdout);
     } else {
@@ -197,7 +197,7 @@ int errprintf_nomem(const char *fmt, ...)
 
     va_start(args, fmt);
     count = vsnprintf(buf, sizeof(buf), fmt, args);
-    if (count >= sizeof(buf) || count < 0)  { /* C99 || MSVC */
+    if (count < 0 || count >= sizeof(buf))  { /* MSVC || C99 */
         fwrite(buf, 1, sizeof(buf) - 1, stderr);
         fwrite(msg_truncated, 1, sizeof(msg_truncated) - 1, stderr);
     } else {
@@ -216,7 +216,7 @@ int errprintf(const gs_memory_t *mem, const char *fmt, ...)
 
     va_start(args, fmt);
     count = vsnprintf(buf, sizeof(buf), fmt, args);
-    if (count >= sizeof(buf) || count < 0)  { /* C99 || MSVC */
+    if (count < 0 || count >= sizeof(buf))  { /* MSVC || C99 */
         fwrite(buf, 1, sizeof(buf) - 1, stderr);
         fwrite(msg_truncated, 1, sizeof(msg_truncated) - 1, stderr);
     } else {
@@ -1139,8 +1139,8 @@ static unsigned long pscompact_getcompactedblock(pscompstate *psc, unsigned char
         switch (psc->state) {
             case PSC_BufferIn:
                 c = psc->pgetc(psc->file);
-                if ((c <= 32) || (c == EOF)) {
-                    /* Whitespace */
+                if (c <= 32) {
+                    /* Whitespace (or EOF) */
                     if (psc->inpos == 0) {
                         /* Leading whitespace, just bin it */
                         break;

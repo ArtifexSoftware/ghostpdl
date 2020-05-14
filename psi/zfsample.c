@@ -712,7 +712,7 @@ int make_sampled_function(i_ctx_t * i_ctx_p, ref *arr, ref *pproc, gs_function_t
 
 fail:
     gs_function_Sd_free_params(&params, imemory);
-    return (code < 0 ? code : gs_note_error(gs_error_rangecheck));
+    return code;
 }
 
 /* ------ Initialization procedure ------ */

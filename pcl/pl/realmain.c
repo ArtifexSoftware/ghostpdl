@@ -31,9 +31,7 @@ main(int argc, char *argv[])
     if (code < 0)
         return EXIT_FAILURE;
 
-    if (code >= 0)
-        code = gsapi_init_with_args(minst, argc, argv);
-
+    code = gsapi_init_with_args(minst, argc, argv);
     if (code >= 0)
         code = gsapi_run_string_begin(minst);
     if (code >= 0)
