@@ -678,10 +678,10 @@ mem_swap_byte_rect(byte * base, uint raster, int x, int w, int h, bool store)
             bits32 *pw = (bits32 *) row;
 
             do {
-                bits32 w = *pw;
+                bits32 v = *pw;
 
-                *pw++ = (w >> 24) + ((w >> 8) & 0xff00) +
-                    ((w & 0xff00) << 8) + (w << 24);
+                *pw++ = (v >> 24) + ((v >> 8) & 0xff00) +
+                    ((v & 0xff00) << 8) + (v << 24);
             }
             while (--nx);
         }

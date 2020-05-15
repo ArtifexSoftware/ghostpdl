@@ -324,10 +324,10 @@ pjl_side_effects(pjl_parser_state_t * pst, char *variable, char *value,
                            (int)(pjl_media[indx].width) :
                            (int)(pjl_media[indx].height));
         int formlines = pjl_calc_formlines_new_page_size(page_length);
-        char value[32];
+        char text[32];
 
-        gs_sprintf(value, "%d", formlines);
-        pjl_set(pst, (char *)"FORMLINES", value, defaults);
+        gs_sprintf(text, "%d", formlines);
+        pjl_set(pst, (char *)"FORMLINES", text, defaults);
     }
     /* fill in other side effects here */
     return;

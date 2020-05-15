@@ -112,7 +112,7 @@ typedef struct {
  * on an input line. Called to generate optimised versions.
  */
 static inline void
-ets_line_template(unsigned char * gs_restrict * gs_restrict dest, const ETS_SrcPixel * const gs_restrict * gs_restrict src, int n_planes, int levels, int aspect_x, int aspect_y, int elo, int ehi, int ets_bias, int r_style, int old_quant, int fancy_coupling, int * gs_restrict c_line,
+ets_line_template(unsigned char * gs_restrict * gs_restrict dest, const ETS_SrcPixel * const gs_restrict * gs_restrict src, int n_planes, int levels, int aspect_x, int aspect_y, int elo, int ehi, int ets_biasing_mode, int r_style, int old_quant, int fancy_coupling, int * gs_restrict c_line,
                   const signed char * gs_restrict tmmat, unsigned int tmwidth, unsigned int tmheight, unsigned int y, int xd, ETS_PlaneCtx * gs_restrict * gs_restrict planes, uint32 *seeds, int in_plane_step, int out_plane_step)
 {
     ETS_PixelInternals pi[M];
@@ -271,7 +271,7 @@ ets_line_template(unsigned char * gs_restrict * gs_restrict dest, const ETS_SrcP
                      *   3   like 1, but same shift either side of 0.
                      *   4+  scale the modulation down.
                      */
-                    switch (ets_bias)
+                    switch (ets_biasing_mode)
                     {
                     case ETS_BIAS_ZERO:
                         ets_bias = 0;
