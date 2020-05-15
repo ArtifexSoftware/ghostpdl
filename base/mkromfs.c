@@ -1393,6 +1393,7 @@ static unsigned long pscompact_getcompactedblock(pscompstate *psc, unsigned char
             {
                 unsigned char c = psc->bufferout[psc->outpos++];
                 if (psc->noescape) {
+                    /* No change */
                 } else if ((c == 10) && (psc->outpos < psc->outend)) {
                     if (!psc->escaping) {
                         c = '\\';
