@@ -41,6 +41,7 @@
 #include "gxpath.h"
 #include "gzstate.h"
 #include "pxptable.h"
+#include "pxpthr.h"
 
 #include "plfapi.h"
 
@@ -529,9 +530,6 @@ pxSetFont(px_args_t * par, px_state_t * pxs)
         px_set_symbol_map(pxs, pxfont->font_type == plft_16bit);
         pxgs->char_matrix_set = false;
     } else {                    /* PCLSelectFont */
-
-        extern int pxpcl_selectfont(px_args_t * par, px_state_t * pxs);
-
         code = pxpcl_selectfont(par, pxs);
         if (code < 0)
             return code;
