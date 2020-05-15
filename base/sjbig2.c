@@ -170,9 +170,9 @@ s_jbig2decode_flush_errors(void *callback_data)
 /* jbig2 and postscript have different senses of what pixel
    value is black, so we must invert the image */
 static void
-s_jbig2decode_invert_buffer(unsigned char *buf, int length)
+s_jbig2decode_invert_buffer(unsigned char *buf, size_t length)
 {
-    int i;
+    size_t i;
 
     for (i = 0; i < length; i++)
         *buf++ ^= 0xFF;
@@ -347,8 +347,8 @@ s_jbig2decode_process(stream_state * ss, stream_cursor_read * pr,
 {
     stream_jbig2decode_state *const state = (stream_jbig2decode_state *) ss;
     Jbig2Image *image = state->image;
-    long in_size = pr->limit - pr->ptr;
-    long out_size = pw->limit - pw->ptr;
+    size_t in_size = pr->limit - pr->ptr;
+    size_t out_size = pw->limit - pw->ptr;
     int status = 0;
 
     /* there will only be a single page image,
@@ -377,8 +377,8 @@ s_jbig2decode_process(stream_state * ss, stream_cursor_read * pr,
         }
         if (image != NULL) {
             /* copy data out of the decoded image, if any */
-            long image_size = image->height*image->stride;
-            long usable = min(image_size - state->offset, out_size);
+            size_t image_size = (size_t)image->height*image->stride;
+            size_t usable = min(image_size - state->offset, out_size);
             memcpy(pw->ptr + 1, image->data + state->offset, usable);
             s_jbig2decode_invert_buffer(pw->ptr + 1, usable);
             state->offset += usable;

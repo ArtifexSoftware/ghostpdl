@@ -441,7 +441,8 @@ read_uncompressed_bitmap_data(px_bitmap_enum_t * benum, byte ** pdata,
     pos_in_row = par->source.position % data_per_row_padded;
 
     /* consumed all of the data */
-    if (par->source.position >= data_per_row_padded * par->pv[1]->value.i)
+    if (par->pv[1]->value.i < 0 ||
+        par->source.position >= data_per_row_padded * (ulong)par->pv[1]->value.i)
         return 0;
 
     if (last)
@@ -484,7 +485,8 @@ read_rle_bitmap_data(px_bitmap_enum_t * benum, byte ** pdata, px_args_t * par, b
     pos_in_row = par->source.position % data_per_row_padded;
 
     /* consumed all of the data */
-    if (par->source.position >= data_per_row_padded * par->pv[1]->value.i)
+    if (par->pv[1]->value.i < 0 ||
+        par->source.position >= data_per_row_padded * (ulong)par->pv[1]->value.i)
         return 0;
 
     if (last)

@@ -264,7 +264,7 @@ gsicc_mcm_transform_general(gx_device *dev, gsicc_link_t *icclink,
     if (icclink->hashcode.des_hash == icclink->hashcode.src_hash) {
         if (num_bytes_in == num_bytes_out) {
             /* The easy case */
-            memcpy(outputcolor, inputcolor, num_bytes_in * icclink->num_input);
+            memcpy(outputcolor, inputcolor, (size_t)num_bytes_in * icclink->num_input);
         } else {
             if (num_bytes_in == 2) {
                 unsigned short *in_ptr = (unsigned short*) inputcolor;

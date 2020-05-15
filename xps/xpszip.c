@@ -48,7 +48,7 @@ static inline int getlong(gp_file *file)
 static void *
 xps_zip_alloc_items(xps_context_t *ctx, int items, int size)
 {
-    void *item = xps_alloc(ctx, items * size);
+    void *item = xps_alloc(ctx, (size_t)items * size);
     if (!item) {
         gs_throw(gs_error_VMerror, "out of memory: item.\n");
         return NULL;

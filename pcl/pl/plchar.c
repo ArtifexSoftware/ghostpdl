@@ -1120,7 +1120,7 @@ pl_tt_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
                 return code;
         }
         /* Make sure we clear the entire bitmap. */
-        memset(pmdev->base, 0, bitmap_raster(pmdev->width) * pmdev->height);
+        memset(pmdev->base, 0, (size_t)bitmap_raster(pmdev->width) * pmdev->height);
         code = gx_set_device_color_1(pgs);     /* write 1's */
         if (code < 0)
             return code;

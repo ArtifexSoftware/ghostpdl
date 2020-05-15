@@ -1721,7 +1721,7 @@ gdev_prn_copy_scan_lines(gx_device_printer * pdev, int y, byte * str, uint size)
             break;	/* will fill remaining lines and return code outside the loop */
     }
     /* fill remaining lines with 0's to prevent printing garbage */
-    memset(dest, 0, line_size * (requested_count - i));
+    memset(dest, 0, (size_t)line_size * (requested_count - i));
     return (code < 0 ) ? code : count;
 }
 

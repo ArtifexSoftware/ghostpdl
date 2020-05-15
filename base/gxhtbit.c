@@ -94,7 +94,7 @@ construct_ht_order_short(gx_ht_order *porder, const byte *thresholds)
                     phtr->elt_size == sizeof(ushort) &&
                     !memcmp(phtr->levels, levels, num_levels * sizeof(*levels)) &&
                     !memcmp(phtr->bit_data, porder->bit_data,
-                            size * phtr->elt_size)
+                            (size_t)size * phtr->elt_size)
                     ) {
                     /*
                      * This is a predefined halftone.  Free the levels and

@@ -98,7 +98,7 @@ xps_decode_jpegxr_block(jxr_image_t image, int mx, int my, int *data)
         output->hasalpha = jxr_get_ALPHACHANNEL_FLAG(image);
         output->bits = 8;
         output->stride = output->width * output->comps;
-        output->samples = xps_alloc(ctx, output->stride * output->height);
+        output->samples = xps_alloc(ctx, (size_t)output->stride * output->height);
         if (!output->samples) {
             gs_throw(gs_error_VMerror, "out of memory: output->samples.\n");
             return;
@@ -149,7 +149,7 @@ xps_decode_jpegxr_alpha_block(jxr_image_t image, int mx, int my, int *data)
 
     if (!output->alpha)
     {
-        output->alpha = xps_alloc(ctx, output->width * output->height);
+        output->alpha = xps_alloc(ctx, (size_t)output->width * output->height);
         if (!output->alpha) {
             gs_throw(gs_error_VMerror, "out of memory: output->alpha.\n");
             return;

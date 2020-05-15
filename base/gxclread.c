@@ -808,7 +808,7 @@ clist_render_rectangle(gx_device_clist *cldev, const gs_int_rect *prect,
                  * a gx_saved_page with non-zero cfile or bfile.
                  */
                 bdev->band_offset_x = 0;
-                bdev->band_offset_y = band_first * band_height;
+                bdev->band_offset_y = band_first * (long)band_height;
                 pinfo = &(crdev->page_info);
         } else {
             const gx_placed_page *ppage = &ppages[i];

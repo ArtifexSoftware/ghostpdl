@@ -189,7 +189,7 @@ gx_default_strip_copy_rop2(gx_device * dev,
         return code;
     lop = lop_sanitize(lop);
     if (rop3_uses_D(lop)) {
-        row = gs_alloc_bytes(mem, draster * block_height, "copy_rop row");
+        row = gs_alloc_bytes(mem, (size_t)draster * block_height, "copy_rop row");
         if (row == 0) {
             code = gs_note_error(gs_error_VMerror);
             goto out;

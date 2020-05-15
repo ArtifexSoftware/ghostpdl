@@ -1476,7 +1476,7 @@ sfnt_get_glyph_offset(ref *pdr, gs_font_type42 *pfont42, int index,
 
     if (index < pfont42->data.trueNumGlyphs) {
         sfnts_reader_init(&r, pdr);
-        r.seek(&r, pfont42->data.loca + index * glyf_elem_size);
+        r.seek(&r, pfont42->data.loca + index * (ulong)glyf_elem_size);
         *offset0 =
             pfont42->data.glyf + (glyf_elem_size ==
                               2 ? r.rword(&r) * 2 : r.rlong(&r));
@@ -2510,9 +2510,9 @@ ps_get_glyphname_or_cid(gs_text_enum_t *penum,
 
                     /* Too big for single string, so its an array of 2 strings */
                     code = string_array_access_proc(pbfont->memory, CIDMap, 1,
-                                                 client_char_code * gdb, gdb,
-                                                 NULL, NULL,
-                                                 (const byte **)&Map);
+                                                    client_char_code * (ulong)gdb,
+                                                    gdb, NULL, NULL,
+                                                    (const byte **)&Map);
                 }
                 else {
                     if (CIDMap->tas.rsize <= c_code * gdb) {

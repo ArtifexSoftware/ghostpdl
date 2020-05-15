@@ -985,7 +985,7 @@ clist_copy_planes(gx_device * dev,
         }
 
         /* 0x100 fudge is arbitrary, but the BufferSpace is large w.r.t. cbuf size so it doesn't matter */
-        if ((cdev->cend - cdev->cnext) < 0x100 + (re.height * bytes_row * (long)cdev->color_info.num_components))
+        if ((cdev->cend - cdev->cnext) < 0x100 + ((long)cdev->color_info.num_components * re.height * bytes_row))
             cmd_write_buffer(cdev, cmd_opv_end_run);	/* Insure that all planes fit in the bufferspace */
 
         rect.x = rx, rect.y = re.y;

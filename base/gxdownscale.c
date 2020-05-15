@@ -2107,7 +2107,7 @@ int gx_downscaler_init_planar_trapped_cm(gx_downscaler_t      *ds,
             code = gs_note_error(gs_error_VMerror);
             goto cleanup;
         }
-        memset(ds->mfs_data, 0, (width+1) * num_comps);
+        memset(ds->mfs_data, 0, (size_t)num_comps * (width+1));
     }
     if (dst_bpc == 1) {
         ds->errors = (int *)gs_alloc_bytes(dev->memory,
@@ -2117,7 +2117,7 @@ int gx_downscaler_init_planar_trapped_cm(gx_downscaler_t      *ds,
             code = gs_note_error(gs_error_VMerror);
             goto cleanup;
         }
-        memset(ds->errors, 0, num_comps * (width+3) * sizeof(int));
+        memset(ds->errors, 0, (size_t)num_comps * (width+3) * sizeof(int));
     }
 
     return 0;
@@ -2518,7 +2518,7 @@ gx_downscaler_init_trapped_cm_halftone(gx_downscaler_t    *ds,
                 code = gs_note_error(gs_error_VMerror);
                 goto cleanup;
             }
-            memset(ds->mfs_data, 0, (awidth+1)*nc);
+            memset(ds->mfs_data, 0, (size_t)nc*(awidth+1));
         }
         if (dst_bpc == 1) {
             ds->errors = (int *)gs_alloc_bytes(dev->memory,

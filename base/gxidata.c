@@ -74,7 +74,7 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
         int px;
 
         for (px = 0; px < num_planes; ++px)
-            offsets[px] = planes[px].raster * penum->used.y;
+            offsets[px] = (size_t)planes[px].raster * penum->used.y;
         penum->used.y = 0;
     } else
         memset(offsets, 0, num_planes * sizeof(offsets[0]));
