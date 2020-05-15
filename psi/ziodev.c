@@ -92,6 +92,8 @@ zgetiodevice(i_ctx_t *i_ctx_p)
     return 0;
 }
 
+#define COMPILE_TIME_ASSERT(A,B) typedef char A[(B) ? 1 : -1]
+
 /* ------ %lineedit and %statementedit ------ */
 
 /* <file> <bool> <int> <string> .filelineedit <file> */
@@ -109,6 +111,9 @@ zgetiodevice(i_ctx_t *i_ctx_p)
  * This could be increased by storing the input line in something
  * other than a PostScript string.
  */
+COMPILE_TIME_ASSERT(STATEMENTEDIT_SIZE_CHECK, STATEMENTEDIT_BUF_SIZE <= max_string_size);
+COMPILE_TIME_ASSERT(LINEEDIT_BUF_SIZE_CHECK, LINEEDIT_BUF_SIZE <= max_string_size);
+
 int
 zfilelineedit(i_ctx_t *i_ctx_p)
 {
@@ -139,8 +144,6 @@ zfilelineedit(i_ctx_t *i_ctx_p)
 
     /* extend string */
     initial_buf_size = statement ? STATEMENTEDIT_BUF_SIZE : LINEEDIT_BUF_SIZE;
-    if (initial_buf_size > max_string_size)
-        return_error(gs_error_limitcheck);
     if (!buf->data || (buf->size < initial_buf_size)) {
         count = 0;
         buf->data = gs_alloc_string(imemory_system, initial_buf_size,
