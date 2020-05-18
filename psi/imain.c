@@ -625,7 +625,7 @@ gs_main_set_lib_paths(gs_main_instance * minst)
             break;
         }
     }
-    if (have_rom_device && code >= 0) {
+    if (have_rom_device) {
         code = lib_path_add(minst, "%rom%Resource/Init/");
         if (code < 0)
             return code;
@@ -1079,7 +1079,7 @@ gs_finit_push_systemdict(i_ctx_t *i_ctx_p)
 
 /* Free all resources and return. */
 int
-gs_main_finit(gs_main_instance * minst, int exit_status, int code)
+gs_main_finit(gs_main_instance * minst, int exit_status, int env_code)
 {
     i_ctx_t *i_ctx_p = minst->i_ctx_p;
     gs_dual_memory_t dmem = {0};
@@ -1240,11 +1240,11 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
         i_plugin_holder *h = i_ctx_p->plugin_list;
 
         dmem = *idmemory;
-        code = alloc_restore_all(i_ctx_p);
-        if (code < 0)
+        env_code = alloc_restore_all(i_ctx_p);
+        if (env_code < 0)
             emprintf1(mem_raw,
                       "ERROR %d while the final restore. See gs/psi/ierrors.h for code explanation.\n",
-                      code);
+                      env_code);
         i_iodev_finit(&dmem);
         i_plugin_finit(mem_raw, h);
     }
@@ -1269,7 +1269,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
         }
         free(tempnames);
     }
-    gs_lib_finit(exit_status, code, minst->heap);
+    gs_lib_finit(exit_status, env_code, minst->heap);
 
     set_lib_path_length(minst, 0);
     gs_free_object(minst->heap, minst->lib_path.container.value.refs, "lib_path array");

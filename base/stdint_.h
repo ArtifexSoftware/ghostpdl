@@ -243,9 +243,9 @@ typedef unsigned long long uint64_t;
  * cast to an intptr_t.
 */
 # if ARCH_SIZEOF_SIZE_T == 4
-#  define PRI_INTPTR "0x%"PRIx32
+#  define PRI_INTPTR "0x%" PRIx32
 # else
-#  define PRI_INTPTR "0x%"PRIx64
+#  define PRI_INTPTR "0x%" PRIx64
 # endif
 
 #endif /* stdint__INCLUDED */

@@ -41,6 +41,7 @@
 #include "gxpath.h"
 #include "gzstate.h"
 #include "pxptable.h"
+#include "pxpthr.h"
 
 #include "plfapi.h"
 
@@ -529,9 +530,6 @@ pxSetFont(px_args_t * par, px_state_t * pxs)
         px_set_symbol_map(pxs, pxfont->font_type == plft_16bit);
         pxgs->char_matrix_set = false;
     } else {                    /* PCLSelectFont */
-
-        extern int pxpcl_selectfont(px_args_t * par, px_state_t * pxs);
-
         code = pxpcl_selectfont(par, pxs);
         if (code < 0)
             return code;
@@ -721,10 +719,7 @@ pxReadChar(px_args_t * par, px_state_t * pxs)
                     code = gs_note_error(errorFSTMismatch);
                 else if (data[1] != 0)
                     code = gs_note_error(errorUnsupportedCharacterClass);
-                else if (size < 10 ||
-                         size != 10 + ((pl_get_uint16(data + 6) + 7) >> 3) *
-                         pl_get_uint16(data + 8)
-                    )
+                else if (size < 10)
                     code = gs_note_error(errorIllegalCharacterData);
                 else {
                     int loff = pl_get_int16(data + 2);
@@ -734,7 +729,7 @@ pxReadChar(px_args_t * par, px_state_t * pxs)
                     uint bmp_size = ((width + 7) >> 3) * height;
                     uint bmp_offset = round_up(10, ARCH_ALIGN_PTR_MOD);
 
-                    if (size < 10 || size != 10 + ((width + 7) >> 3) * height)
+                    if (size != 10 + ((width + 7) >> 3) * height)
                         code = gs_note_error(errorIllegalCharacterData);
                     else if ((-16384 > toff) || (toff > 16384))
                         code = gs_note_error(errorIllegalCharacterData);

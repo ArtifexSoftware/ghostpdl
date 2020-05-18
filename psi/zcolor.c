@@ -1842,9 +1842,6 @@ static int comparearrays(i_ctx_t * i_ctx_p, ref *m1, ref *m2)
         if (r_type(&ref1) != r_type(&ref2))
             return 0;
 
-        code = r_type(&ref1);
-        if (code < 0)
-            return code;
         switch(r_type(&ref1)) {
             case t_null:
                 break;
@@ -1944,9 +1941,6 @@ static int hasharray(i_ctx_t * i_ctx_p, ref *m1, gs_md5_state_t *md5)
         if (code < 0)
             return 0;
 
-        code = r_type(&ref1);
-        if (code < 0)
-            return code;
         switch(r_type(&ref1)) {
             case t_null:
                 break;
@@ -3485,8 +3479,7 @@ static int setseparationspace(i_ctx_t * i_ctx_p, ref *sepspace, int *stage, int 
     if (code < 0)
         return code;
     istate->colorspace[0].procs.special.separation.tint_transform = proc;
-    if (code >= 0)
-        code = gs_cspace_set_sepr_function(pcs, pfn);
+    code = gs_cspace_set_sepr_function(pcs, pfn);
     if (code >= 0)
         code = gs_setcolorspace(igs, pcs);
     /* release reference from construction */
@@ -4201,8 +4194,7 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
             if (code < 0)
                 return code;
             istate->colorspace[0].procs.special.separation.tint_transform = proc;
-            if (code >= 0)
-                code = gs_cspace_set_sepr_function(pcs, pfn);
+            code = gs_cspace_set_sepr_function(pcs, pfn);
             if (code >= 0)
                 code = gs_setcolorspace(igs, pcs);
             /* release reference from construction */
@@ -6771,11 +6763,9 @@ currentbasecolor_cont(i_ctx_t *i_ctx_p)
         /* Completed that space, increment the 'depth' */
         make_int(&ep[-2], ++depth);
     }
-    if (code <= 0) {
-        /* Remove our next continuation and our data */
-        esp -= 7;
-        code = o_pop_estack;
-    }
+    /* Remove our next continuation and our data */
+    esp -= 7;
+    code = o_pop_estack;
     return code;
 }
 

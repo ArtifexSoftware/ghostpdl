@@ -819,7 +819,6 @@ op_show_continue_dispatch(i_ctx_t *i_ctx_p, int npop, int code)
                 ref cnref;
                 op_proc_t cont = op_show_continue, exec_cont = 0;
                 gs_glyph glyph = penum->returned.current_glyph;
-                int code;
 
                 pop(npop);
                 op = osp;

@@ -4735,7 +4735,7 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_gstate * pgs,
     }
     /* Now let us push a transparency group into which we are
      * going to tile the pattern.  */
-    if (ppath != NULL && code >= 0) {
+    if (ppath != NULL) {
         pdf14_device save_pdf14_dev;		/* save area for p14dev */
 
         gx_cpath_outer_box(&cpath_intersection, &outer_box);

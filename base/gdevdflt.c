@@ -1972,7 +1972,7 @@ transform_pixel_region_render_portrait(gx_device *dev, gx_default_transform_pixe
                 goto err;
         }
     }
-    return (code < 0 ? code : 1);
+    return 1;
     /* Save position if error, in case we resume. */
 err:
     buffer[0] = run;

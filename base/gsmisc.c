@@ -63,7 +63,7 @@ int outprintf(const gs_memory_t *mem, const char *fmt, ...)
 
     va_start(args, fmt);
     count = vsnprintf(buf, sizeof(buf), fmt, args);
-    if (count >= sizeof(buf) || count < 0)  { /* C99 || MSVC */
+    if (count < 0 || count >= sizeof(buf))  { /* MSVC || C99 */
         outwrite(mem, buf, sizeof(buf) - 1);
         outwrite(mem, msg_truncated, sizeof(msg_truncated) - 1);
     } else {
@@ -82,7 +82,7 @@ int errprintf_nomem(const char *fmt, ...)
 
     va_start(args, fmt);
     count = vsnprintf(buf, sizeof(buf), fmt, args);
-    if (count >= sizeof(buf) || count < 0)  { /* C99 || MSVC */
+    if (count < 0 || count >= sizeof(buf))  { /* MSVC || C99*/
         errwrite_nomem(buf, sizeof(buf) - 1);
         errwrite_nomem(msg_truncated, sizeof(msg_truncated) - 1);
     } else {
@@ -101,7 +101,7 @@ int errprintf(const gs_memory_t *mem, const char *fmt, ...)
 
     va_start(args, fmt);
     count = vsnprintf(buf, sizeof(buf), fmt, args);
-    if (count >= sizeof(buf) || count < 0)  { /* C99 || MSVC */
+    if (count < 0 || count >= sizeof(buf))  { /* MSVC || C99 */
         errwrite(mem, buf, sizeof(buf) - 1);
         errwrite(mem, msg_truncated, sizeof(msg_truncated) - 1);
     } else {
@@ -328,7 +328,7 @@ int gs_throw_imp(const char *func, const char *file, int line, int op, int code,
     if (op == 3)
         errprintf_nomem("  %s:%d: %s(): %s\n", file, line, func, msg);
 
-    if (count >= sizeof(msg) || count < 0)  { /* C99 || MSVC */
+    if (count < 0 || count >= sizeof(msg))  { /* MSVC || C99 */
         errwrite_nomem(msg_truncated, sizeof(msg_truncated) - 1);
     }
     return code;

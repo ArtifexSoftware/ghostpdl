@@ -809,7 +809,7 @@ fapi_image_uncached_glyph(gs_font *pfont, gs_gstate *pgs, gs_show_enum *penum,
              * compression ratios) we therefore set such bytes to zero. It would
              * be nicer if this was fixed in future.
              */
-            r = gs_alloc_bytes(penum->memory, dstr * rast->height,
+            r = gs_alloc_bytes(penum->memory, (size_t)dstr * rast->height,
                                "fapi_finish_render_aux");
             if (!r) {
                 return_error(gs_error_VMerror);

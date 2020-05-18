@@ -34,7 +34,7 @@ xps_isolate_alpha_channel_8(xps_context_t *ctx, xps_image_t *image)
     int y, x, k;
     byte *sp, *dp, *ap;
 
-    image->alpha = xps_alloc(ctx, image->width * image->height);
+    image->alpha = xps_alloc(ctx, (size_t)image->width * image->height);
     if (!image->alpha) {
         gs_throw(gs_error_VMerror, "out of memory: image->alpha.\n");
         return;
@@ -65,7 +65,7 @@ xps_isolate_alpha_channel_16(xps_context_t *ctx, xps_image_t *image)
     int y, x, k;
     unsigned short *sp, *dp, *ap;
 
-    image->alpha = xps_alloc(ctx, image->width * image->height * 2);
+    image->alpha = xps_alloc(ctx, (size_t)image->width * image->height * 2);
     if (!image->alpha) {
         gs_throw(gs_error_VMerror, "out of memory: image->alpha.\n");
         return;

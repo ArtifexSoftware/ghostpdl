@@ -493,7 +493,6 @@ static FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *self, int glyphI
     short count;
     unsigned int i;
     unsigned short nAdvance;
-    unsigned int nNextGlyphPtr = 0;
     unsigned int nPosBeg;
     TExecution_Context *exec = pFont->exec;
     TGlyph_Zone *pts = &exec->pts;
@@ -605,11 +604,10 @@ retry:
             e->flags = flags;
             nUsage++;
         } while (flags & MORE_COMPONENTS);
-        /* Some fonts have bad WE_HAVE_INSTRUCTIONS, so use nNextGlyphPtr : */
         if (r->Error(r))
             goto errex;
         nPos = r->Tell(r);
-        n_ins = ((!r->Eof(r) && (bHaveInstructions || nPos < nNextGlyphPtr)) ? ttfReader__UShort(r) : 0);
+        n_ins = ((!r->Eof(r) && (bHaveInstructions)) ? ttfReader__UShort(r) : 0);
         nPos = r->Tell(r);
         r->ReleaseGlyph(r, glyphIndex);
         glyph = NULL;
@@ -848,7 +846,6 @@ ex:;
 
     if (error == fBadInstruction && execute_bytecode) {
         /* reset a load of stuff so we can try again without hinting */
-        nNextGlyphPtr = 0;
         exec = pFont->exec;
         pts = &exec->pts;
         usage = tti->usage + tti->usage_top;

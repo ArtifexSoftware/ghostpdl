@@ -230,7 +230,7 @@ tile_clip_copy_mono(gx_device * dev,
             /* Copy a tile slice to the memory device buffer. */
             memcpy(cdev->buffer.bytes,
                    cdev->tiles.data + cy * cdev->tiles.raster,
-                   cdev->tiles.raster * ny);
+                   (size_t)cdev->tiles.raster * ny);
             /* Intersect the tile with the source data. */
             /* mcolor0 and mcolor1 invert the data if needed. */
             /* This call can't fail. */

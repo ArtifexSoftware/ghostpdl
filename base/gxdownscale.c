@@ -2107,7 +2107,7 @@ int gx_downscaler_init_planar_trapped_cm(gx_downscaler_t      *ds,
             code = gs_note_error(gs_error_VMerror);
             goto cleanup;
         }
-        memset(ds->mfs_data, 0, (width+1) * num_comps);
+        memset(ds->mfs_data, 0, (size_t)num_comps * (width+1));
     }
     if (dst_bpc == 1) {
         ds->errors = (int *)gs_alloc_bytes(dev->memory,
@@ -2117,7 +2117,7 @@ int gx_downscaler_init_planar_trapped_cm(gx_downscaler_t      *ds,
             code = gs_note_error(gs_error_VMerror);
             goto cleanup;
         }
-        memset(ds->errors, 0, num_comps * (width+3) * sizeof(int));
+        memset(ds->errors, 0, (size_t)num_comps * (width+3) * sizeof(int));
     }
 
     return 0;
@@ -2518,7 +2518,7 @@ gx_downscaler_init_trapped_cm_halftone(gx_downscaler_t    *ds,
                 code = gs_note_error(gs_error_VMerror);
                 goto cleanup;
             }
-            memset(ds->mfs_data, 0, (awidth+1)*nc);
+            memset(ds->mfs_data, 0, (size_t)nc*(awidth+1));
         }
         if (dst_bpc == 1) {
             ds->errors = (int *)gs_alloc_bytes(dev->memory,
@@ -2882,7 +2882,7 @@ static int downscaler_process_fn(void *arg_, gx_device *dev, gx_device *bdev, co
     }
 
     /* Pass on to further processing */
-    if (code >= 0 && arg->orig_options && arg->orig_options->process_fn) {
+    if (arg->orig_options && arg->orig_options->process_fn) {
         out_rect.p.y = rect->p.y*arg->upfactor/arg->downfactor;
         out_rect.q.y += out_rect.p.y;
         code = arg->orig_options->process_fn(arg->orig_options->arg, dev,
@@ -3173,7 +3173,7 @@ void *ets_calloc(void *malloc_arg, int count, int size)
 {
     void *p = ets_malloc(malloc_arg, (size_t)count * size);
     if (p)
-        memset(p, 0, count * size);
+        memset(p, 0, (size_t)count * size);
     return p;
 }
 

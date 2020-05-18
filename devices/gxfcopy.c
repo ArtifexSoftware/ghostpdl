@@ -209,7 +209,10 @@ struct gs_copied_font_data_s {
 extern_st(st_gs_font_info);
 static
 ENUM_PTRS_WITH(gs_copied_font_data_enum_ptrs, gs_copied_font_data_t *cfdata)
-    if (index == 12) {
+    /* See comments in gs_copy_font() below regarding the enumeration of names
+     * and the font's 'dir' member
+     */
+    if (index == 12 && cfdata->dir != NULL) {
         gs_copied_glyph_name_t *names = cfdata->names;
         gs_copied_glyph_extra_name_t *en = cfdata->extra_names;
         int i;
@@ -2110,7 +2113,37 @@ gs_copy_font(gs_font *font, const gs_matrix *orig_matrix, gs_memory_t *mem, gs_f
         goto fail;
     }
     cfdata->info = info;
-    cfdata->dir = font->dir;
+
+    /* This is somewhat unpleasant. We use the 'glyph' as the unique ID for a number
+     * of purposes, but in particular for determining which CharStrings need to be written
+     * out by pdfwrite. The 'glyph' appears to be (sometimes) given by the index of the glyph name
+     * in the *interpreter* name table. For names in one of the standard encodings
+     * we find the name there and use its ID. However, if the glyph name is non-standard
+     * then it is added to the interpreter name table and the name index is used to
+     * identify the glyph. The problem arises if the font is restored away, and a
+     * vmreclaim causes the (now unreferenced) glyph names to be flushed. If we
+     * should then use the same font and glyph, its possible that the name table
+     * might be different, resulting in a different name index. We would then write
+     * duplicate CharStrings to the output, see Bug 687172.
+     * The GC enumeration (see top of file) marks the names in the name table to prevent
+     * them being flushed. As long as everything is in the same memory allocator this
+     * works (ugly though it is). However, if we are using the pdfi PDF interpreter
+     * inside the PostScript interpreter, then a problem arises. The pdfwrite device
+     * holds on to the font copies until the device is destroyed, by which time the
+     * PDF interpreter has already gone. The vmreclaim prior to the device destruction
+     * enumerates the name pointers. Because the font was allocated by pdfi these
+     * are no longer valid. They are also not needed, since the pdfi name table is
+     * not garbage collected..
+     * To cater for both conditions we test the memory allocator the font was using.
+     * If its a GC'ed allocater then we keep a pointer to the font 'dir' and we enumerate
+     * the names and mark them in the interpreter table. Otherwise we don't attempt to
+     * mark them. We use dir being NULL to control whether we mark the names.
+     */
+    if (font->memory != font->memory->non_gc_memory)
+        cfdata->dir = font->dir;
+    else
+        cfdata->dir = NULL;
+
     if ((code = (copy_string(mem, &cfdata->info.Copyright,
                              "gs_copy_font(Copyright)") |
                  copy_string(mem, &cfdata->info.Notice,

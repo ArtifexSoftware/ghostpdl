@@ -101,7 +101,7 @@ gs_private_st_simple(st_seed_row_t_element, pcl_seed_row_t,
 gs_private_st_simple(st_raster_t, pcl_raster_t, "PCL raster object");
 
 /* forward declaration */
-static int process_zero_rows(gs_gstate * pgs, pcl_raster_t * prast, int nrows);
+static int process_zero_rows(pcl_raster_t * prast, int nrows);
 
 /*
  * Clear the consolidation buffer, allocating it if it does not already
@@ -554,7 +554,7 @@ close_raster(gs_gstate * pgs, pcl_raster_t * prast, bool complete)
     /* see if we need to fill in any missing rows */
     if (complete &&
         (prast->src_height > prast->rows_rendered) && prast->src_height_set)
-        (void)process_zero_rows(pgs, prast,
+        (void)process_zero_rows(prast,
                                 prast->src_height - prast->rows_rendered);
     if (prast->pen != 0) {
         gs_image_cleanup(prast->pen, pgs);
@@ -686,7 +686,7 @@ process_zero_mask_rows(pcl_raster_t * prast, int nrows)
  * Returns 0 on success, < 0 in the event of an error.
  */
 static int
-process_zero_rows(gs_gstate * pgs, pcl_raster_t * prast, int nrows)
+process_zero_rows(pcl_raster_t * prast, int nrows)
 {
     int npixels = prast->src_width;
     int nbytes = (npixels * prast->bits_per_plane + 7) / 8;
@@ -1026,8 +1026,7 @@ process_ccitt_compress(gs_gstate * pgs,
  * Process an input data buffer using adpative compression.
  */
 static int
-process_adaptive_compress(gs_gstate * pgs,
-                          pcl_raster_t * prast, const byte * pin, uint insize, bool mono)
+process_adaptive_compress(pcl_raster_t * prast, const byte * pin, uint insize, bool mono)
 {
     pcl_seed_row_t *pseed_row = prast->pseed_rows;
     byte *pdata = pseed_row->pdata;
@@ -1052,7 +1051,7 @@ process_adaptive_compress(gs_gstate * pgs,
             prast->plane_index = 1;
             code = process_row(prast, 0);
         } else if (cmd == 4)
-            code = process_zero_rows(pgs, prast, param);
+            code = process_zero_rows(prast, param);
         else if (cmd == 5) {
             uint rem_rows = prast->src_height - prast->rows_rendered;
             gs_image_enum *pen = prast->pen;
@@ -1157,7 +1156,7 @@ add_raster_plane(const byte * pdata,
         else if (comp_mode == NO_COMPRESS_BLOCK)
             return process_block_nocompress(pcs->pgs, prast, pdata, nbytes);
         else if (comp_mode == ADAPTIVE_COMPRESS)
-            return process_adaptive_compress(pcs->pgs, prast, pdata, nbytes, pcs->personality == pcl5e);
+            return process_adaptive_compress(prast, pdata, nbytes, pcs->personality == pcl5e);
         else
             return process_ccitt_compress(pcs->pgs, prast, pdata, nbytes,
                                           comp_mode);
@@ -1465,7 +1464,7 @@ raster_y_offset(pcl_args_t * pargs, pcl_state_t * pcs)
 
     /* ignored outside of graphics mode */
     if ((prast != 0) && (uint_arg(pargs) > 0)) {
-        return process_zero_rows(pcs->pgs, prast, uint_arg(pargs));
+        return process_zero_rows(prast, uint_arg(pargs));
     } else
         return 0;
 }

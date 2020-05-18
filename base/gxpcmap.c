@@ -1038,7 +1038,6 @@ gx_pattern_cache_add_entry(gs_gstate * pgs,
     gx_bitmap_id id;
     gx_color_tile *ctile;
     int code = ensure_pattern_cache(pgs);
-    extern dev_proc_open_device(pattern_clist_open_device);
     gx_device_memory *mmask = NULL;
     gx_device_memory *mbits = NULL;
     gx_pattern_trans_t *trans = NULL;

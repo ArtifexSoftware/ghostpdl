@@ -411,7 +411,7 @@ compress_alpha_bits(const cached_char * cc, gs_memory_t * mem)
     uint sskip = sraster - ((width * depth + 7) >> 3);
     uint draster = bitmap_raster(width);
     uint dskip = draster - ((width + 7) >> 3);
-    byte *mask = gs_alloc_bytes(mem, draster * height,
+    byte *mask = gs_alloc_bytes(mem, (size_t)draster * height,
                                 "compress_alpha_bits");
     const byte *sptr = data;
     byte *dptr = mask;

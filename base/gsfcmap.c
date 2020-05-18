@@ -630,7 +630,7 @@ gs_cmap_ToUnicode_realloc(gs_memory_t *mem, int new_value_size, gs_cmap_t **ppcm
         return_error(gs_error_VMerror);
     }
     new_ptr = new_map;
-    memset(new_map, 0, cmap->num_codes * (new_value_size + 2));
+    memset(new_map, 0, (size_t)cmap->num_codes * (new_value_size + 2));
 
     for (i=0;i<cmap->num_codes;i++) {
         memcpy(new_ptr, old_map, cmap->value_size + 2);

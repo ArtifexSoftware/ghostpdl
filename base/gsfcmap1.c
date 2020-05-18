@@ -47,11 +47,11 @@ ENUM_PTRS_WITH(cmap_lookup_range_enum_ptrs,
 case 0:
     if (pclr->value_type == CODE_VALUE_GLYPH) {
         const byte *pv = pclr->values.data;
-        int size = pclr->value_size;
+        int gsize = pclr->value_size;
         int k;
 
-        for (k = 0; k < pclr->num_entries; ++k, pv += size) {
-            gs_glyph glyph = bytes2int(pv, size);
+        for (k = 0; k < pclr->num_entries; ++k, pv += gsize) {
+            gs_glyph glyph = bytes2int(pv, gsize);
 
             pclr->cmap->mark_glyph(mem, glyph, pclr->cmap->mark_glyph_data);
         }

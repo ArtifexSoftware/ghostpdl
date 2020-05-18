@@ -660,7 +660,7 @@ pcl_character_data(pcl_args_t * pargs, pcl_state_t * pcs)
                             if (char_data == 0)
                                 return_error(e_Memory);
                             memcpy(char_data, data, 16);
-                            memset(char_data + 16, 0, width_bytes * height);
+                            memset(char_data + 16, 0, (size_t)width_bytes * height);
                             row = char_data + 16;
                             while (src < end && y < height) {   /* Read the next compressed row. */
                                 uint x;

@@ -283,7 +283,7 @@ px_paint_pattern(const gs_client_color * pcc, gs_gstate * pgs)
         code = pl_begin_image2(&penum, &image, pgs);
         if (code < 0)
             break;
-        for (y = 0; code >= 0 && y < full_height; ++y) {
+        for (y = 0; y < full_height; ++y) {
             const byte *row = dp + (y % rep_height) * bytes_per_row;
             uint used;          /* better named not_used */
 
@@ -726,7 +726,7 @@ set_source(const px_args_t * par, px_state_t * pxs, px_paint_t * ppt)
      * set the halftone, and then set the other source, but we have
      * no way to handle this properly with the current library.
      */
-    if (code >= 0 && px_needs_halftone(pxs->memory, ppt))
+    if (px_needs_halftone(pxs->memory, ppt))
         code = px_set_halftone(pxs);
     return code;
 }
