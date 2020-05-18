@@ -625,7 +625,21 @@ currentdict /runpdfstring .undef
   } if
 } bind executeonly def
 
+/newpdf_set_pagesize
+{
+  1 dict begin
+  /MediaBox get
+  dup 0 get 1 index 1 get translate
+  dup 2 get exch 3 get
+  2 array astore /PageSize exch def
+  currentdict
+  setpagedevice
+  end
+} bind executeonly def
+
 /runpdf {		% <file> runpdf -
+  /OLDPDF where {/OLDPDF get} {false} ifelse
+  {
   %% Get the PDF filename (it *must* be a file even if it came from stdin it gets
   %% copied to a temporary file) and store it in pdfdict. We will use this for
   %% hashing fonts to detect if fonts with the same name are from different files.
@@ -665,6 +679,25 @@ currentdict /runpdfstring .undef
         } ifelse
     } forall
     pop
+  } ifelse
+  }
+  {
+    dup .PDFStream      % -file- -pdffile-
+    {
+      dup .PDFInfo        % -file- -pdffile- <dict>
+      dup /NumPages known {
+        /NumPages get 1 sub
+        0 1 3 -1 roll
+        {
+          2 copy .PDFPageInfo
+          newpdf_set_pagesize
+          1 index exch .PDFDrawPage
+          showpage
+        } for
+      } if
+    } stopped {(ERROR!!\n) print }if
+    .PDFClose
+    closefile
   } ifelse
 } bind executeonly odef
 

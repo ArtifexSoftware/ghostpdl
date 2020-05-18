@@ -106,9 +106,11 @@ pdfi_gstate_copy_cb(void *to, const void *from)
     /* Need to free destination contents before overwriting.
      *  On grestore, they might be non-empty.
      */
-    pdfi_gstate_smask_free(igs_to);
-    *(pdfi_int_gstate *) igs_to = *igs_from;
-    pdfi_gstate_smask_install(igs_to, igs_from->memory, igs_from->SMask, igs_from->GroupGState);
+    if (igs_to != NULL) {
+        pdfi_gstate_smask_free(igs_to);
+        *(pdfi_int_gstate *) igs_to = *igs_from;
+        pdfi_gstate_smask_install(igs_to, igs_from->memory, igs_from->SMask, igs_from->GroupGState);
+    }
     return 0;
 }
 
@@ -131,12 +133,12 @@ static const gs_gstate_client_procs pdfi_gstate_procs = {
 };
 
 int
-pdfi_gstate_set_client(pdf_context *ctx)
+pdfi_gstate_set_client(pdf_context *ctx, gs_gstate *pgs)
 {
     pdfi_int_gstate *igs;
 
     igs = pdfi_gstate_alloc_cb(ctx->memory);
-    gs_gstate_set_client(ctx->pgs, igs, &pdfi_gstate_procs, true /* TODO: client_has_pattern_streams ? */);
+    gs_gstate_set_client(pgs, igs, &pdfi_gstate_procs, true /* TODO: client_has_pattern_streams ? */);
     return 0;
 }
 

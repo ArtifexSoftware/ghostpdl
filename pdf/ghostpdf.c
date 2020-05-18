@@ -312,7 +312,7 @@ pdfi_report_errors(pdf_context *ctx)
         if (ctx->pdf_errors & E_PDF_NOHEADERVERSION)
             dmprintf(ctx->memory, "\tThe file header does not contain a version number.\n");
         if (ctx->pdf_errors & E_PDF_NOSTARTXREF)
-            dmprintf(ctx->memory, "\tThe file does contain a 'startxref' token.\n");
+            dmprintf(ctx->memory, "\tThe file does not contain a 'startxref' token.\n");
         if (ctx->pdf_errors & E_PDF_BADSTARTXREF)
             dmprintf(ctx->memory, "\tThe file contain a 'startxref' token, but it does not point to an xref table.\n");
         if (ctx->pdf_errors & E_PDF_BADXREFSTREAM)
@@ -546,7 +546,6 @@ int pdfi_close_pdf_file(pdf_context *ctx)
 int pdfi_process_pdf_file(pdf_context *ctx, char *filename)
 {
     int code = 0, i;
-    pdf_obj *o = NULL;
 
     ctx->filename = (char *)gs_alloc_bytes(ctx->memory, strlen(filename) + 1, "copy of filename");
     if (ctx->filename == NULL)
@@ -557,6 +556,40 @@ int pdfi_process_pdf_file(pdf_context *ctx, char *filename)
     if (code < 0) {
         goto exit;
     }
+
+    /* Loop over each page and either render it or output the
+     * required information.
+     */
+    for (i=0;i < ctx->num_pages;i++) {
+        if (ctx->first_page != 0) {
+            if (i < ctx->first_page - 1)
+                continue;
+        }
+        if (ctx->last_page != 0) {
+            if (i > ctx->last_page - 1)
+                break;;
+        }
+        if (ctx->pdfinfo)
+            code = pdfi_output_page_info(ctx, i);
+        else
+            code = pdfi_page_render(ctx, i, true);
+
+        if (code < 0 && ctx->pdfstoponerror)
+            goto exit;
+        code = 0;
+    }
+
+ exit:
+    pdfi_report_errors(ctx);
+
+    pdfi_close_pdf_file(ctx);
+    return code;
+}
+
+static int pdfi_init_file(pdf_context *ctx)
+{
+    int code = 0;
+    pdf_obj *o = NULL;
 
     code = pdfi_read_xref(ctx);
     if (code < 0) {
@@ -646,33 +679,8 @@ read_root:
             goto exit;
     }
 
-    /* Loop over each page and either render it or output the
-     * required information.
-     */
-    for (i=0;i < ctx->num_pages;i++) {
-        if (ctx->first_page != 0) {
-            if (i < ctx->first_page - 1)
-                continue;
-        }
-        if (ctx->last_page != 0) {
-            if (i > ctx->last_page - 1)
-                break;;
-        }
-        if (ctx->pdfinfo)
-            code = pdfi_output_page_info(ctx, i);
-        else
-            code = pdfi_page_render(ctx, i);
-
-        if (code < 0 && ctx->pdfstoponerror)
-            goto exit;
-        code = 0;
-    }
-
- exit:
+exit:
     pdfi_countdown(o);
-    pdfi_report_errors(ctx);
-
-    pdfi_close_pdf_file(ctx);
     return code;
 }
 
@@ -814,6 +822,8 @@ int pdfi_set_input_stream(pdf_context *ctx, stream *stm)
     if (!found)
         ctx->pdf_errors |= E_PDF_NOSTARTXREF;
 
+    code = pdfi_init_file(ctx);
+
 error:
     gs_free_object(ctx->memory, Buffer, "PDF interpreter - allocate working buffer for file validation");
     return code;
@@ -827,15 +837,18 @@ int pdfi_open_pdf_file(pdf_context *ctx, char *filename)
     if (ctx->pdfdebug)
         dmprintf1(ctx->memory, "%% Attempting to open %s as a PDF file\n", filename);
 
+    ctx->filename = (char *)gs_alloc_bytes(ctx->memory, strlen(filename) + 1, "copy of filename");
+    if (ctx->filename == NULL)
+        return_error(gs_error_VMerror);
+    strcpy(ctx->filename, filename);
+
     s = sfopen(filename, "r", ctx->memory);
-    s->close_at_eod = false;
     if (s == NULL) {
         emprintf1(ctx->memory, "Failed to open file %s\n", filename);
         return_error(gs_error_ioerror);
     }
+    s->close_at_eod = false;
     code = pdfi_set_input_stream(ctx, s);
-    if (code < 0)
-        sfclose(ctx->main_stream->s);
     return code;
 }
 
@@ -901,7 +914,7 @@ pdf_context *pdfi_create_context(gs_memory_t *pmem)
     }
 
     ctx->pgs = pgs;
-    pdfi_gstate_set_client(ctx);
+    pdfi_gstate_set_client(ctx, pgs);
     /* Declare PDL client support for high level patterns, for the benefit
      * of pdfwrite and other high-level devices
      */

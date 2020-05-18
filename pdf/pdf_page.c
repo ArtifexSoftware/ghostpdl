@@ -368,7 +368,119 @@ static void pdfi_setup_transfers(pdf_context *ctx)
     }
 }
 
-int pdfi_page_render(pdf_context *ctx, uint64_t page_num)
+static int store_box(pdf_context *ctx, float *box, pdf_array *a)
+{
+    double f;
+    int code = 0, i;
+
+    for (i=0;i < 4;i++) {
+        code = pdfi_array_get_number(ctx, a, (uint64_t)i, &f);
+        if (code < 0)
+            return code;
+        box[i] = (float)f;
+    }
+    return 0;
+}
+
+int pdfi_page_info(pdf_context *ctx, uint64_t page_num, pdf_info_t *info)
+{
+    int code = 0;
+    uint64_t page_offset = 0;
+    pdf_dict *page_dict = NULL;
+    pdf_array *a = NULL;
+
+    if (page_num > ctx->num_pages)
+        return_error(gs_error_rangecheck);
+
+    code = pdfi_loop_detector_mark(ctx);
+    if (code < 0)
+        return code;
+
+    code = pdfi_loop_detector_add_object(ctx, ctx->Pages->object_num);
+    if (code < 0) {
+        pdfi_loop_detector_cleartomark(ctx);
+        goto done;
+    }
+
+    code = pdfi_get_page_dict(ctx, ctx->Pages, page_num, &page_offset, &page_dict, NULL);
+    pdfi_loop_detector_cleartomark(ctx);
+    if (code < 0)
+        goto done;
+
+    if (code > 0) {
+        code = gs_note_error(gs_error_unknownerror);
+        goto done;
+    }
+
+    code = pdfi_check_page(ctx, page_dict, true);
+    if (code < 0)
+        goto done;
+
+    info->boxes = BOX_NONE;
+    code = pdfi_dict_get_type(ctx, page_dict, "MediaBox", PDF_ARRAY, (pdf_obj **)&a);
+    if (code < 0)
+        goto done;
+    code = store_box(ctx, (float *)&info->MediaBox, a);
+    if (code < 0)
+        goto done;
+    info->boxes |= MEDIA_BOX;
+    pdfi_countdown(a);
+
+    code = pdfi_dict_get_type(ctx, page_dict, "ArtBox", PDF_ARRAY, (pdf_obj **)&a);
+    if (code < 0 && code != gs_error_undefined)
+        goto done;
+    if (code >= 0) {
+        code = store_box(ctx, (float *)&info->ArtBox, a);
+        if (code < 0)
+            goto done;
+        info->boxes |= ART_BOX;
+        pdfi_countdown(a);
+    }
+
+    code = pdfi_dict_get_type(ctx, page_dict, "CropBox", PDF_ARRAY, (pdf_obj **)&a);
+    if (code < 0 && code != gs_error_undefined)
+        goto done;
+    if (code >= 0) {
+        code = store_box(ctx, (float *)&info->CropBox, a);
+        if (code < 0)
+            goto done;
+        info->boxes |= CROP_BOX;
+        pdfi_countdown(a);
+    }
+
+    code = pdfi_dict_get_type(ctx, page_dict, "TrimBox", PDF_ARRAY, (pdf_obj **)&a);
+    if (code < 0 && code != gs_error_undefined)
+        goto done;
+    if (code >= 0) {
+        code = store_box(ctx, (float *)&info->TrimBox, a);
+        if (code < 0)
+            goto done;
+        info->boxes |= TRIM_BOX;
+        pdfi_countdown(a);
+    }
+
+    code = pdfi_dict_get_type(ctx, page_dict, "BleedBox", PDF_ARRAY, (pdf_obj **)&a);
+    if (code < 0 && code != gs_error_undefined)
+        goto done;
+    if (code >= 0) {
+        code = store_box(ctx, (float *)&info->BleedBox, a);
+        if (code < 0)
+            goto done;
+        info->boxes |= BLEED_BOX;
+        pdfi_countdown(a);
+    }
+    code = 0;
+
+    info->HasTransparency = ctx->page_has_transparency;
+    info->NumSpots = ctx->page_num_spots;
+
+done:
+    pdfi_countdown(a);
+    pdfi_countdown(page_dict);
+    return code;
+}
+
+int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
 {
     int code, code1=0;
     uint64_t page_offset = 0;
@@ -411,7 +523,8 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num)
     }
 
     code = pdfi_check_page(ctx, page_dict, true);
-    if (code < 0) goto exit2;
+    if (code < 0)
+        goto exit2;
 
     dbgmprintf2(ctx->memory, "Current page %ld transparency setting is %d", page_num+1,
                 ctx->page_has_transparency);
@@ -420,12 +533,9 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num)
     else
         dbgmprintf(ctx->memory, "\n");
 
-    code = pdfi_set_media_size(ctx, page_dict);
-    if (code < 0) goto exit2;
-    pdfi_set_ctm(ctx);
-
     code = pdfi_dict_knownget_type(ctx, page_dict, "Group", PDF_DICT, (pdf_obj **)&group_dict);
-    if (code < 0) goto exit2;
+    if (code < 0)
+        goto exit2;
     if (group_dict != NULL)
         page_group_known = true;
 
@@ -433,20 +543,33 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num)
     ctx->CurrentPageDict = page_dict;
     pdfi_countup(ctx->CurrentPageDict);
 
-    code = gs_setstrokeconstantalpha(ctx->pgs, 1.0);
-    code = gs_setfillconstantalpha(ctx->pgs, 1.0);
-    code = gs_setalphaisshape(ctx->pgs, 0);
-    code = gs_setblendmode(ctx->pgs, BLEND_MODE_Compatible);
-    code = gs_settextknockout(ctx->pgs, true);
-    code = gs_settextspacing(ctx->pgs, (double)0.0);
-    code = gs_settextleading(ctx->pgs, (double)0.0);
-    gs_settextrenderingmode(ctx->pgs, 0);
-    code = gs_setwordspacing(ctx->pgs, (double)0.0);
-    code = gs_settexthscaling(ctx->pgs, (double)100.0);
-    code = gs_setsmoothness(ctx->pgs, 0.02); /* Match gs code */
-    ctx->TextBlockDepth = 0;
+    /* If we are being called from the PDF interpreter then
+     * we need to set up the page  and the default graphics state
+     * but if we are being called from PostScript we do *not*
+     * want to alter any of the graphics state or the media size.
+     */
+    if (init_graphics) {
+        code = pdfi_set_media_size(ctx, page_dict);
+        if (code < 0)
+            goto exit2;
 
-    pdfi_setup_transfers(ctx);
+        pdfi_set_ctm(ctx);
+
+        code = gs_setstrokeconstantalpha(ctx->pgs, 1.0);
+        code = gs_setfillconstantalpha(ctx->pgs, 1.0);
+        code = gs_setalphaisshape(ctx->pgs, 0);
+        code = gs_setblendmode(ctx->pgs, BLEND_MODE_Compatible);
+        code = gs_settextknockout(ctx->pgs, true);
+        code = gs_settextspacing(ctx->pgs, (double)0.0);
+        code = gs_settextleading(ctx->pgs, (double)0.0);
+        gs_settextrenderingmode(ctx->pgs, 0);
+        code = gs_setwordspacing(ctx->pgs, (double)0.0);
+        code = gs_settexthscaling(ctx->pgs, (double)100.0);
+        code = gs_setsmoothness(ctx->pgs, 0.02); /* Match gs code */
+        ctx->TextBlockDepth = 0;
+
+        pdfi_setup_transfers(ctx);
+    }
 
     /* Set whether device needs OP support
      * This needs to be before transparency device is pushed, if applicable

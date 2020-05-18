@@ -25,7 +25,7 @@ typedef struct int_gstate_s {
     gs_memory_t *memory;
 } pdfi_int_gstate;
 
-int pdfi_gstate_set_client(pdf_context *ctx);
+int pdfi_gstate_set_client(pdf_context *ctx, gs_gstate *pgs);
 void pdfi_gstate_smask_install(pdfi_int_gstate *igs, gs_memory_t *memory, pdf_dict *SMask, gs_gstate *gstate);
 void pdfi_gstate_smask_free(pdfi_int_gstate *igs);
 

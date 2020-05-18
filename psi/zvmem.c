@@ -301,6 +301,7 @@ restore_check_stack(const i_ctx_t *i_ctx_p, const ref_stack_t * pstack,
                 case t_fontID:
                 case t_struct:
                 case t_astruct:
+                case t_pdffile:
                     ptr = stkp->value.pstruct;
                     break;
                 case t_save:

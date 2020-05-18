@@ -1331,7 +1331,7 @@ static int check_password_R6(pdf_context *ctx, char *Password, int PasswordLen, 
  */
 int pdfi_initialise_Decryption(pdf_context *ctx)
 {
-    int code = 0, KeyLen;
+    int code = 0, KeyLen = 0;
 
     code = pdfi_read_Encrypt_dict(ctx, &KeyLen);
     if (code > 0)

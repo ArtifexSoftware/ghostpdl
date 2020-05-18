@@ -29,6 +29,8 @@
 #include "store.h"
 #include "gxgstate.h"
 #include "gxdevsop.h"
+#include "idict.h"
+#include "iname.h"
 
 #ifdef HAVE_LIBIDN
 #  include <stringprep.h>
@@ -244,6 +246,9 @@ zsaslprep(i_ctx_t *i_ctx_p)
 
 #if defined(BUILD_PDF) && BUILD_PDF == 1
 #include "ghostpdf.h"
+#include "pdf_page.h"
+#include "gzht.h"
+#include "gsrefct.h"
 
 static int
 psi_pdf_end_page(pdf_context *ctx)
@@ -287,10 +292,311 @@ done:
     return code;
 }
 
+/*
+ * Declare the structure we use to represent an instance of the PDF parser
+ * as a t_struct. Just a dummy for the moment.
+ */
+typedef struct pdffile_s {
+    pdf_context *ctx;
+} pdffile_t;
+
+/* Structure descriptors */
+static void pdffile_finalize(const gs_memory_t *cmem, void *vptr);
+gs_private_st_simple_final(st_pdffile_t, pdffile_t, "pdffile_struct", pdffile_finalize);
+
+static void
+pdffile_finalize(const gs_memory_t *cmem, void *vptr)
+{
+    pdffile_t *pdffile = vptr;
+
+    if (cmem != NULL && pdffile->ctx != NULL)
+        (void)pdfi_free_context(cmem->non_gc_memory, pdffile->ctx);
+}
+
+static int zPDFstream(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    pdffile_t *pdffile;
+    pdf_context *ctx;
+    int code = 0;
+    stream *s;
+
+    check_read_file(i_ctx_p, s, op);
+    s->close_at_eod = false;
+
+    ctx = pdfi_create_context(imemory->non_gc_memory);
+    if (ctx == NULL) return_error(gs_error_VMerror);
+
+    pdffile = gs_alloc_struct(imemory, pdffile_t, &st_pdffile_t, "PDFfile");
+    if (!pdffile)
+        return_error(gs_error_VMerror);
+
+    pdffile->ctx = ctx;
+
+    code = pdfi_set_input_stream(ctx, s);
+    if (code < 0)
+        return code;
+
+    ctx->end_page = NULL;
+    make_tav(op, t_pdffile, 0, pstruct, (obj_header_t *)(pdffile));
+
+    return 0;
+}
+
+static int zPDFfile(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    pdffile_t *pdffile;
+    pdf_context *ctx;
+    char pdffilename[gp_file_name_sizeof];
+    int code = 0;
+
+    check_read_type(*op, t_string);
+    if (r_size(op) > gp_file_name_sizeof - 2)
+        return_error(gs_error_limitcheck);
+
+    ctx = pdfi_create_context(imemory->non_gc_memory);
+    if (ctx == NULL) return_error(gs_error_VMerror);
+
+    pdffile = gs_alloc_struct(imemory, pdffile_t, &st_pdffile_t, "PDFfile");
+    if (!pdffile)
+        return_error(gs_error_VMerror);
+
+    pdffile->ctx = ctx;
+
+    memcpy(pdffilename, op->value.bytes, r_size(op));
+    pdffilename[r_size(op)] = 0;
+    code = pdfi_open_pdf_file(ctx, pdffilename);
+    if (code < 0)
+        return code;
+
+    ctx->end_page = NULL;
+    make_tav(op, t_pdffile, 0, pstruct, (obj_header_t *)(pdffile));
+    return 0;
+}
+
+static int zPDFclose(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    int code = 0;
+    pdffile_t *pdffile;
+
+    check_type(*op, t_pdffile);
+    pdffile = r_ptr(op, pdffile_t);
+
+    if (pdffile->ctx != NULL) {
+        code = pdfi_free_context(imemory, pdffile->ctx);
+        pdffile->ctx = NULL;
+    }
+    pop(1);
+    return code;
+}
+
+static int zPDFinfo(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    pdffile_t *pdffile;
+    int code = 0;
+    ref intref, nameref;
+
+    check_type(*(op - 1), t_pdffile);
+    pdffile = r_ptr(op - 1, pdffile_t);
+
+    code = dict_create(4, op);
+    if (code < 0)
+        return code;
+
+    code = names_ref(imemory->gs_lib_ctx->gs_name_table, (const byte *)"NumPages", 8, &nameref, 1);
+    if (code < 0)
+        return code;
+
+    make_int(&intref, pdffile->ctx->num_pages);
+
+    code = dict_put(op, &nameref, &intref, &i_ctx_p->dict_stack);
+    return code;
+}
+
+static int zPDFpageinfo(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    ref aref, boolref, nameref, numref, *eltp;
+    int page = 0, code = 0, i;
+    pdffile_t *pdffile;
+    pdf_info_t info;
+
+    check_op(2);
+
+    check_type(*op, t_integer);
+    page = op->value.intval;
+
+    check_type(*(op - 1), t_pdffile);
+    pdffile = r_ptr(op - 1, pdffile_t);
+
+    code = pdfi_page_info(pdffile->ctx, (uint64_t)page, &info);
+    if (code < 0)
+        return code;
+
+    pop(1);
+    op = osp;
+
+    code = dict_create(4, op);
+    if (code < 0)
+        return code;
+
+    code = names_ref(imemory->gs_lib_ctx->gs_name_table, (const byte *)"HasAnnots", 9, &nameref, 1);
+    if (code < 0)
+        return code;
+    make_bool(&boolref, false);
+    code = dict_put(op, &nameref, &boolref, &i_ctx_p->dict_stack);
+    if (code < 0)
+        return code;
+
+    code = names_ref(imemory->gs_lib_ctx->gs_name_table, (const byte *)"UsesTransparency", 16, &nameref, 1);
+    if (code < 0)
+        return code;
+    make_bool(&boolref, info.HasTransparency);
+    code = dict_put(op, &nameref, &boolref, &i_ctx_p->dict_stack);
+    if (code < 0)
+        return code;
+
+    code = names_ref(imemory->gs_lib_ctx->gs_name_table, (const byte *)"NumSpots", 8, &nameref, 1);
+    if (code < 0)
+        return code;
+    make_int(&numref, info.NumSpots);
+    code = dict_put(op, &nameref, &numref, &i_ctx_p->dict_stack);
+    if (code < 0)
+        return code;
+
+    code = names_ref(imemory->gs_lib_ctx->gs_name_table, (const byte *)"MediaBox", 8, &nameref, 1);
+    if (code < 0)
+        return code;
+    code = ialloc_ref_array(&aref, a_all, 4, "array");
+    if (code < 0)
+        return code;
+    refset_null(aref.value.refs, 4);
+    for (i=0;i < 4;i++) {
+        make_real(&numref, info.MediaBox[i]);
+        eltp = aref.value.refs + i;
+        ref_assign_old(&aref, eltp, &numref, "put");
+    }
+    code = dict_put(op, &nameref, &aref, &i_ctx_p->dict_stack);
+    if (code < 0)
+        return code;
+
+    return_error(0);
+}
+
+static int zPDFmetadata(i_ctx_t *i_ctx_p)
+{
+    return_error(gs_error_undefined);
+}
+
+static int zPDFdrawpage(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    int code = 0;
+    uint64_t page = 0;
+    pdffile_t *pdffile;
+    gs_matrix mat;
+
+    check_op(2);
+
+    check_type(*op, t_integer);
+    page = op->value.intval;
+
+    check_type(*(op - 1), t_pdffile);
+    pdffile = r_ptr(op - 1, pdffile_t);
+
+    code = gs_gsave(pdffile->ctx->pgs);
+    if (code < 0)
+        return code;
+
+    code = gs_setdevice_no_erase(pdffile->ctx->pgs, igs->device);
+    if (code < 0)
+        goto error;
+
+    if (pdffile->ctx->pgs->dev_ht)
+        rc_decrement(pdffile->ctx->pgs->dev_ht, "zPDFdrawpage");
+    pdffile->ctx->pgs->dev_ht = igs->dev_ht;
+    rc_increment(pdffile->ctx->pgs->dev_ht);
+
+    code = gx_cpath_copy(igs->clip_path, (gx_clip_path *)pdffile->ctx->pgs->clip_path);
+    if (code < 0)
+        return code;
+
+    code = gx_cpath_copy(igs->effective_clip_path, (gx_clip_path *)pdffile->ctx->pgs->effective_clip_path);
+    if (code < 0)
+        return code;
+
+    code = gx_cpath_copy(igs->view_clip, (gx_clip_path *)pdffile->ctx->pgs->view_clip);
+    if (code < 0)
+        return code;
+
+    code = gs_currentmatrix(igs, &mat);
+    if (code < 0)
+        goto error;
+
+    code = gs_setmatrix(pdffile->ctx->pgs, &mat);
+    if (code < 0)
+        goto error;
+
+    code = pdfi_page_render(pdffile->ctx, page, false);
+    if (code >= 0)
+        pop(2);
+
+error:
+    code = gs_grestore(pdffile->ctx->pgs);
+    return code;
+}
+
+static int zPDFdrawannots(i_ctx_t *i_ctx_p)
+{
+    return_error(gs_error_undefined);
+}
 #else
-int zdopdffile(i_ctx_t *i_ctx_p)
+static int zdopdffile(i_ctx_t *i_ctx_p)
 {
     return_error(gs_error_invalidaccess);
+}
+
+static int zPDFfile(i_ctx_t *i_ctx_p)
+{
+    return_error(gs_error_undefined);
+}
+
+static int zPDFstream(i_ctx_t *i_ctx_p)
+{
+    return_error(gs_error_undefined);
+}
+
+static int zPDFclose(i_ctx_t *i_ctx_p)
+{
+    return_error(gs_error_undefined);
+}
+
+static int zPDFinfo(i_ctx_t *i_ctx_p)
+{
+    return_error(gs_error_undefined);
+}
+
+static int zPDFpageinfo(i_ctx_t *i_ctx_p)
+{
+    return_error(gs_error_undefined);
+}
+
+static int zPDFmetadata(i_ctx_t *i_ctx_p)
+{
+    return_error(gs_error_undefined);
+}
+
+static int zPDFdrawpage(i_ctx_t *i_ctx_p)
+{
+    return_error(gs_error_undefined);
+}
+
+static int zPDFdrawannots(i_ctx_t *i_ctx_p)
+{
+    return_error(gs_error_undefined);
 }
 #endif
 
@@ -302,6 +608,14 @@ const op_def zpdfops_op_defs[] =
     {"1.pdfFormName", zpdfFormName},
     {"3.setscreenphase", zsetscreenphase},
     {"1.dopdffile", zdopdffile},
+    {"0.PDFFile", zPDFfile},
+    {"1.PDFStream", zPDFstream},
+    {"1.PDFClose", zPDFclose},
+    {"1.PDFInfo", zPDFinfo},
+    {"1.PDFPageInfo", zPDFpageinfo},
+    {"1.PDFMetadata", zPDFmetadata},
+    {"1.PDFDrawPage", zPDFdrawpage},
+    {"1.PDFDrawAnnots", zPDFdrawannots},
 #ifdef HAVE_LIBIDN
     {"1.saslprep", zsaslprep},
 #endif

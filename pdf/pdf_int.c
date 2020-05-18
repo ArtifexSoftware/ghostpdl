@@ -2256,11 +2256,14 @@ int pdfi_repair_file(pdf_context *ctx)
         } while (ctx->main_stream->eof == false);
     } while(ctx->main_stream->eof == false);
 
-    if (ctx->main_stream->eof) {
+    if (ctx->main_stream->eof && ctx->filename) {
         sfclose(ctx->main_stream->s);
         ctx->main_stream->s = sfopen(ctx->filename, "r", ctx->memory);
         if (ctx->main_stream->s == NULL)
             return_error(gs_error_ioerror);
+        ctx->main_stream->eof = false;
+    } else {
+        pdfi_seek(ctx, ctx->main_stream, 0, SEEK_SET);
         ctx->main_stream->eof = false;
     }
 

@@ -958,6 +958,7 @@ gc_trace(gs_gc_root_t * rp, gc_state_t * pstate, gc_mark_stack * pmstack)
                 case t_fontID:
                 case t_struct:
                 case t_astruct:
+                case t_pdffile:
                     nptr = rptr->value.pstruct;
                     goto rs;
                     /* Non-trivial non-struct cases */
