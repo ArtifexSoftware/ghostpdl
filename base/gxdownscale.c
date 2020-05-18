@@ -3173,7 +3173,7 @@ void *ets_calloc(void *malloc_arg, int count, int size)
 {
     void *p = ets_malloc(malloc_arg, (size_t)count * size);
     if (p)
-        memset(p, 0, count * size);
+        memset(p, 0, (size_t)count * size);
     return p;
 }
 
