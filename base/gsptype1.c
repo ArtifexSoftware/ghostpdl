@@ -1645,7 +1645,7 @@ typedef struct gx_dc_serialized_tile_s {
 } gx_dc_serialized_tile_t;
 
 enum {
-    TILE_IS_LOCKED   = 0x80000000,
+    TILE_IS_LOCKED   = (int)0x80000000,
     TILE_HAS_OVERLAP = 0x40000000,
     TILE_IS_SIMPLE   = 0x20000000,
     TILE_USES_TRANSP = 0x10000000,
