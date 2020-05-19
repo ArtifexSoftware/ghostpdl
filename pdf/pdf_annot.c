@@ -1967,14 +1967,102 @@ static int pdfi_annot_draw_Underline(pdf_context *ctx, pdf_dict *annot, pdf_dict
     return pdfi_annot_draw_line_offset(ctx, annot, 1/7.);
 }
 
+/* Connect 2 points with an arc that has max distance from the line segment to the arc
+ * equal to 1/4 of the radius.
+ */
+static int pdfi_annot_highlight_arc(pdf_context *ctx, double x0, double y0,
+                                    double x1, double y1)
+{
+    int code = 0;
+    double dx, dy;
+    double xc, yc, r, a1, a2;
+
+    dx = x1 - x0;
+    dy = y1 - y0;
+
+    yc = (y1+y0)/2. - 15./16.*dx;
+    xc = (x1+x0)/2. + 15./16.*dy;
+    r = sqrt((y1-yc)*(y1-yc) + (x1-xc)*(x1-xc));
+    code = gs_atan2_degrees(y1-yc, x1-xc, &a1);
+    if (code < 0)
+        a1 = 0;
+    code = gs_atan2_degrees(y0-yc, x0-xc, &a2);
+    if (code < 0)
+        a2 = 0;
+    code = gs_arcn(ctx->pgs, xc, yc, r, a2, a1);
+
+    return code;
+}
+
+/* Generate appearance (see pdf_draw.ps/Highlight)
+ *
+ * If there was an AP it was already handled.
+ */
 static int pdfi_annot_draw_Highlight(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
 {
     int code = 0;
+    bool drawit;
+    pdf_array *QuadPoints = NULL;
+    double array[8];
+    int size;
+    int num_quads;
+    int i;
 
-    /* TODO: Generate appearance (see pdf_draw.ps/Highlight) */
-    dbgmprintf(ctx->memory, "ANNOT: No AP generation for subtype Highlight\n");
-    *render_done = true;
+    code = pdfi_annot_setcolor(ctx, annot, false, &drawit);
+    if (code <0 || !drawit)
+        goto exit;
 
+    code = gs_setlinecap(ctx->pgs, 1);
+    if (code < 0) goto exit;
+
+    code = pdfi_dict_knownget_type(ctx, annot, "QuadPoints", PDF_ARRAY, (pdf_obj **)&QuadPoints);
+    if (code <= 0) goto exit;
+
+    size = pdfi_array_size(QuadPoints);
+    num_quads = size / 8;
+
+    for (i=0; i<num_quads; i++) {
+        code = pdfi_array_to_num_array(ctx, QuadPoints, array, i*8, 8);
+        if (code < 0) goto exit;
+
+        code = gs_moveto(ctx->pgs, array[2], array[3]);
+        if (code < 0) goto exit;
+
+        code = pdfi_annot_highlight_arc(ctx, array[2], array[3], array[6], array[7]);
+        if (code < 0) goto exit;
+
+        code = gs_lineto(ctx->pgs, array[4], array[5]);
+        if (code < 0) goto exit;
+
+        code = pdfi_annot_highlight_arc(ctx, array[4], array[5], array[0], array[1]);
+        if (code < 0) goto exit;
+
+        code = gs_closepath(ctx->pgs);
+        if (code < 0) goto exit;
+
+        if (ctx->page_has_transparency) {
+            code = pdfi_trans_begin_simple_group(ctx, false, false, false);
+            if (code < 0) goto exit;
+
+            code = gs_setblendmode(ctx->pgs, BLEND_MODE_Multiply);
+            if (code < 0) {
+                (void)pdfi_trans_end_simple_group(ctx);
+                goto exit;
+            }
+            code = gs_fill(ctx->pgs);
+            (void)pdfi_trans_end_simple_group(ctx);
+            if (code < 0) goto exit;
+        } else {
+            code = gs_stroke(ctx->pgs);
+            if (code < 0) goto exit;
+
+            code = gs_newpath(ctx->pgs);
+            if (code < 0) goto exit;
+        }
+    }
+
+ exit:
+    pdfi_countdown(QuadPoints);
     return code;
 }
 
@@ -1984,6 +2072,17 @@ static int pdfi_annot_draw_Redact(pdf_context *ctx, pdf_dict *annot, pdf_dict *N
 
     /* TODO: Generate appearance (see pdf_draw.ps/Redact) */
     dbgmprintf(ctx->memory, "ANNOT: No AP generation for subtype Redact\n");
+    *render_done = true;
+
+    return code;
+}
+
+static int pdfi_annot_draw_Squiggly(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
+{
+    int code = 0;
+
+    /* TODO: Generate appearance (see pdf_draw.ps/Squiggly) */
+    dbgmprintf(ctx->memory, "ANNOT: No AP generation for subtype Squiggly\n");
     *render_done = true;
 
     return code;
@@ -2281,6 +2380,7 @@ annot_dispatch_t annot_dispatch[] = {
     {"Text", pdfi_annot_draw_Text, true},
     {"StrikeOut", pdfi_annot_draw_StrikeOut, true},
     {"Underline", pdfi_annot_draw_Underline, true},
+    {"Squiggly", pdfi_annot_draw_Squiggly, true},
     {"Redact", pdfi_annot_draw_Redact, true},
     {"Highlight", pdfi_annot_draw_Highlight, true},
     {"Polygon", pdfi_annot_draw_Polygon, true},
