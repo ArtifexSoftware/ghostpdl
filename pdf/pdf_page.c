@@ -633,6 +633,7 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
     }
 
  exit1:
+    pdfi_free_DefaultQState(ctx);
     pdfi_grestore(ctx);
  exit2:
     pdfi_countdown(page_dict);
