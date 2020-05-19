@@ -338,7 +338,7 @@ static int zPDFstream(i_ctx_t *i_ctx_p)
         return code;
 
     ctx->end_page = NULL;
-    make_tav(op, t_pdffile, 0, pstruct, (obj_header_t *)(pdffile));
+    make_tav(op, t_pdffile, icurrent_space | a_all, pstruct, (obj_header_t *)(pdffile));
 
     return 0;
 }
@@ -371,7 +371,7 @@ static int zPDFfile(i_ctx_t *i_ctx_p)
         return code;
 
     ctx->end_page = NULL;
-    make_tav(op, t_pdffile, 0, pstruct, (obj_header_t *)(pdffile));
+    make_tav(op, t_pdffile, icurrent_space | a_all, pstruct, (obj_header_t *)(pdffile));
     return 0;
 }
 
