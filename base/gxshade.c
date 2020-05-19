@@ -173,12 +173,13 @@ cs_next_packed_decoded(shade_coord_stream_t * cs, int num_bits,
     int code = cs->get_value(cs, num_bits, &value);
     double max_value = (double)(uint)
         (num_bits == sizeof(uint) * 8 ? ~0 : ((1 << num_bits) - 1));
+    double dvalue = (double)value;
 
     if (code < 0)
         return code;
     *pvalue =
-        (decode == 0 ? value / max_value :
-         decode[0] + value * (decode[1] - decode[0]) / max_value);
+        (decode == 0 ? dvalue / max_value :
+         decode[0] + dvalue * (decode[1] - decode[0]) / max_value);
     return 0;
 }
 

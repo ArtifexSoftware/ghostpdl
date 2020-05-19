@@ -389,11 +389,13 @@ pick_cell_size(gs_screen_halftone * ph, const gs_matrix * pmat, ulong max_size,
                 /* Compute the corresponding values of F and A. */
 
                 if (landscape)
-                    ar = atan2(p.M * pmat->xy, p.N * pmat->yx),
+                    ar = atan2(p.M * (double)pmat->xy,
+                               p.N * (double)pmat->yx),
                         fr = 72.0 * (p.M == 0 ? pmat->xy / p.N * cos(ar) :
                                      pmat->yx / p.M * sin(ar));
                 else
-                    ar = atan2(p.N * pmat->xx, p.M * pmat->yy),
+                    ar = atan2(p.N * (double)pmat->xx,
+                               p.M * (double)pmat->yy),
                         fr = 72.0 * (p.M == 0 ? pmat->yy / p.N * sin(ar) :
                                      pmat->xx / p.M * cos(ar));
                 ft = fabs(fr) * rt;

@@ -295,8 +295,10 @@ setup_arc(px_arc_params_t * params, const px_value_t * pbox,
         if ((dx3 == 0 && dy3 == 0) || (dx4 == 0 && dy4 == 0))
             return_error(errorIllegalAttributeValue);
         {
-            double ang3 = atan2(dy3 * xr, dx3 * yr) * radians_to_degrees;
-            double ang4 = atan2(dy4 * xr, dx4 * yr) * radians_to_degrees;
+            double ang3 = atan2((double)(dy3 * xr),
+                                (double)(dx3 * yr)) * radians_to_degrees;
+            double ang4 = atan2((double)(dy4 * xr),
+                                (double)(dx4 * yr)) * radians_to_degrees;
 
             if (rotated)
                 ang3 += 180, ang4 += 180;

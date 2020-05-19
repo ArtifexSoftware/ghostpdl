@@ -6073,7 +6073,7 @@ pdf14_begin_transparency_group(gx_device* dev,
     gs_gstate* pgs, gs_memory_t* mem)
 {
     pdf14_device* pdev = (pdf14_device*)dev;
-    double alpha = ptgp->group_opacity * ptgp->group_shape;
+    float alpha = ptgp->group_opacity * ptgp->group_shape;
     gs_int_rect rect;
     int code;
     bool isolated = ptgp->Isolated;
@@ -6104,7 +6104,7 @@ pdf14_begin_transparency_group(gx_device* dev,
         return code;
     if_debug5m('v', pdev->memory,
         "[v]pdf14_begin_transparency_group, I = %d, K = %d, alpha = %g, bm = %d page_group = %d\n",
-        ptgp->Isolated, ptgp->Knockout, alpha, pgs->blend_mode, ptgp->page_group);
+        ptgp->Isolated, ptgp->Knockout, (double)alpha, pgs->blend_mode, ptgp->page_group);
 
     /* If the group color is unknown then use the current device profile. */
     if (ptgp->group_color_type == UNKNOWN) {
