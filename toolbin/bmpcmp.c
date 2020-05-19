@@ -16,6 +16,10 @@
 #include <png.h>
 #endif
 
+#ifdef HAVE_LIBTIFF
+#include "tiffio.h"
+#endif
+
 #ifndef BETTER_CMYK
 #define BETTER_CMYK 1
 #endif
@@ -90,6 +94,7 @@ typedef struct
 typedef struct ImageReader
 {
     FILE *file;
+    const char* file_name;
     void *(*read)(struct ImageReader *,
                   int                *w,
                   int                *h,
@@ -1017,6 +1022,193 @@ static void *pnm_read(ImageReader *im,
     return bmp;
 }
 
+#ifdef HAVE_LIBTIFF
+static tmsize_t tiff_cread(thandle_t im_,
+                           void *buf,
+                           tmsize_t n)
+{
+    ImageReader *im = (ImageReader *)im_;
+    return fread(buf, 1, n, im->file);
+}
+
+static tmsize_t tiff_cwrite(thandle_t im_,
+                           void *buf,
+                           tmsize_t n)
+{
+    return 0;
+}
+
+static toff_t tiff_cseek(thandle_t im_,
+                         toff_t offset,
+                         int whence)
+{
+    ImageReader *im = (ImageReader *)im_;
+    fseek(im->file, (long)offset, whence);
+    return (toff_t)ftell(im->file);
+}
+
+static int tiff_cclose(thandle_t im_)
+{
+    return 0;
+}
+
+static toff_t tiff_csize(thandle_t im_)
+{
+    ImageReader *im = (ImageReader *)im_;
+    long pos = ftell(im->file);
+    toff_t size;
+
+    fseek(im->file, 0, SEEK_END);
+    size = (toff_t)ftell(im->file);
+    fseek(im->file, pos, SEEK_SET);
+    return size;
+}
+
+static void* tif_read(ImageReader* im,
+    int* im_width,
+    int* im_height,
+    int* span,
+    int* bpp,
+    int* cmyk)
+{
+    TIFF* tif;
+    uint16 compression;
+    uint16 bpc, num_comps, planar, photometric;
+    uint32 row;
+    int is_tiled;
+    unsigned char *data, *row_ptr;
+    tdata_t buf;
+    uint32 width;
+    uint32 height;
+
+    /* There is only one image in each file */
+    if (ftell(im->file) != 0)
+        return NULL;
+
+    tif = TIFFClientOpen(im->file_name, "rb",
+                         (thandle_t)im,
+                         tiff_cread, tiff_cwrite,
+                         tiff_cseek, tiff_cclose,
+                         tiff_csize,
+                         NULL, NULL/* map/unmap */);
+
+    if (tif == NULL) {
+        fprintf(stderr, "bmpcmp: TIFF failed to parse\n");
+        exit(1);
+    }
+
+    TIFFGetField(tif, TIFFTAG_COMPRESSION, &compression);
+    if (compression == COMPRESSION_JPEG) {
+        fprintf(stderr, "bmpcmp: JPEG compression not supported for TIFF\n");
+        exit(1);
+    }
+
+    TIFFGetField(tif, TIFFTAG_PHOTOMETRIC, &photometric);
+    if (!(photometric == PHOTOMETRIC_SEPARATED ||
+        photometric == PHOTOMETRIC_RGB)) {
+        fprintf(stderr, "bmpcmp: Photometric encoding not supported for TIFF\n");
+        exit(1);
+    }
+
+    TIFFGetField(tif, TIFFTAG_SAMPLESPERPIXEL, &num_comps);
+    if (num_comps != 3 && photometric == PHOTOMETRIC_RGB) {
+        fprintf(stderr, "bmpcmp: Alpha not supported for TIFF\n");
+        exit(1);
+    }
+    if (num_comps != 4 && photometric == PHOTOMETRIC_SEPARATED) {
+        fprintf(stderr, "bmpcmp: Alpha not supported for TIFF\n");
+        exit(1);
+    }
+
+    TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &width);
+    TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &height);
+    TIFFGetField(tif, TIFFTAG_BITSPERSAMPLE, &bpc);
+    TIFFGetField(tif, TIFFTAG_PLANARCONFIG, &planar);
+
+    if (width == 0 || height == 0 || bpc == 0 || num_comps == 0) {
+        fprintf(stderr, "bmpcmp: Bad TIFF content!\n");
+        exit(1);
+    }
+    if (bpc != 8) {
+        fprintf(stderr, "bmpcmp: Only support 8 bpc TIFF!\n");
+        exit(1);
+    }
+    if (num_comps != 1 && num_comps != 3 && num_comps != 4) {
+        fprintf(stderr, "bmpcmp: Only support Gray, RGB or CMYK TIFF!\n");
+        exit(1);
+    }
+    if (num_comps != 4 && planar == PLANARCONFIG_SEPARATE) {
+        fprintf(stderr, "bmpcmp: Only support planar TIFFs if they are CMYK!\n");
+        exit(1);
+    }
+
+    is_tiled = TIFFIsTiled(tif);
+    if (is_tiled) {
+        fprintf(stderr, "bmpcmp: TIFF tiled format not supported!\n");
+        exit(1);
+    }
+
+    data = Malloc(height * width * 4);
+    row_ptr = data;
+
+    buf = _TIFFmalloc(TIFFScanlineSize(tif));
+    if (buf == NULL) {
+        fprintf(stderr, "bmpcmp: TIFF malloc failed\n");
+        exit(1);
+    }
+    if (planar == PLANARCONFIG_CONTIG) {
+        for (row = 0; row < height; row++) {
+            TIFFReadScanline(tif, buf, row, 0);
+            if (num_comps == 4)
+                memcpy(row_ptr, buf, width * 4);
+            else if (num_comps == 3) {
+                uint32 i;
+                char *out = (char *)row_ptr;
+                const char *in = (const char *)buf;
+                for (i = width; i != 0; i--) {
+                   *out++ = in[2];
+                   *out++ = in[1];
+                   *out++ = in[0];
+                   *out++ = 0;
+                   in += 3;
+                }
+            } else if (num_comps == 1) {
+                uint32 i;
+                char *out = (char *)row_ptr;
+                const char *in = (const char *)buf;
+                for (i = width; i != 0; i--) {
+                   *out++ = *in;
+                   *out++ = *in;
+                   *out++ = *in++;
+                   *out++ = 0;
+                }
+            }
+            row_ptr += (width * 4);
+        }
+    } else if (planar == PLANARCONFIG_SEPARATE) {
+        uint16 s, nsamples;
+
+        TIFFGetField(tif, TIFFTAG_SAMPLESPERPIXEL, &nsamples);
+        for (s = 0; s < nsamples; s++)
+            for (row = 0; row < height; row++) {
+                TIFFReadScanline(tif, buf, row, s);
+                memcpy(row_ptr, buf, width * 4);
+                row_ptr += (width * 4);
+            }
+    }
+    _TIFFfree(buf);
+    TIFFClose(tif);
+
+    *im_width = width;
+    *im_height = height;
+    *span = width * 4;
+    *bpp = 32;
+    *cmyk = num_comps == 4;
+
+    return data;
+}
+#endif
+
 #ifdef HAVE_LIBPNG
 static void *png_read(ImageReader *im,
                       int         *width,
@@ -1027,7 +1219,8 @@ static void *png_read(ImageReader *im,
 {
     png_structp png;
     png_infop info;
-    int stride, w, h, y, x;
+    size_t stride;
+    int w, h, y, x;
     unsigned char *data;
     int expand = 0;
 
@@ -1088,8 +1281,8 @@ static void *png_read(ImageReader *im,
 
     *width = w;
     *height = h;
-    *span = stride;
-    *bpp = (stride * 8) / w;
+    *span = (int) stride;
+    *bpp = (int) (stride * 8) / w;
     *cmyk = 0;
     return data;
 }
@@ -1403,6 +1596,7 @@ static void image_open(ImageReader *im,
         fprintf(stderr, "bmpcmp: %s failed to open\n", filename);
         exit(EXIT_FAILURE);
     }
+    im->file_name = filename;
 
     /* Identify the filetype */
     type  = fgetc(im->file);
@@ -1426,6 +1620,11 @@ static void image_open(ImageReader *im,
             im->read = cups_read_be;
         else
             goto fail;
+#ifdef HAVE_LIBTIFF
+    } else if (type == 0x49 || type == 0x4D) {
+        im->read = tif_read;
+        ungetc(type, im->file);
+#endif
     } else {
         type |= (fgetc(im->file)<<8);
         if (type == 0x4d42) { /* BM */
@@ -2501,7 +2700,6 @@ lookup(int c, int m, int y, int k,
     int rx, ry, rz;
     int x0, y0, z0;
     int X0, X1, Y0, Y1, Z0, Z1;
-    int i;
     int c0, c1, c2, c3, Rest;
     int OutChan;
     int Tmp1[3], Tmp2[3];
