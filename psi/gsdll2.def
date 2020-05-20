@@ -14,7 +14,9 @@ EXPORTS
    gsapi_run_file
    gsapi_exit
    gsapi_set_stdio
+   gsapi_set_stdio_with_handle
    gsapi_set_poll
+   gsapi_set_poll_with_handle
    gsapi_set_display_callback
    gsapi_set_arg_encoding
    gsapi_set_default_device_list

@@ -49,7 +49,7 @@ gsapi_new_instance(void **lib, void *caller_handle)
 
     if (heap_mem == NULL)
         return gs_error_Fatal;
-    
+
     code = gs_memory_chunk_wrap(&chunk_mem, heap_mem);
     if (code < 0) {
         gs_malloc_release(heap_mem);
@@ -77,9 +77,26 @@ gsapi_set_stdio(void *instance,
 
     if (ctx == NULL)
         return gs_error_Fatal;
+    return gsapi_set_stdio_with_handle(instance,
+                                       stdin_fn, stdout_fn, stderr_fn,
+                                       ctx->core->default_caller_handle);
+}
+
+GSDLLEXPORT int GSDLLAPI
+gsapi_set_stdio_with_handle(void *instance,
+    int (GSDLLCALLPTR stdin_fn)(void *caller_handle, char *buf, int len),
+    int (GSDLLCALLPTR stdout_fn)(void *caller_handle, const char *str, int len),
+    int (GSDLLCALLPTR stderr_fn)(void *caller_handle, const char *str, int len),
+    void *caller_handle)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+
+    if (ctx == NULL)
+        return gs_error_Fatal;
     ctx->core->stdin_fn  = stdin_fn;
     ctx->core->stdout_fn = stdout_fn;
     ctx->core->stderr_fn = stderr_fn;
+    ctx->core->std_caller_handle = caller_handle;
 
     return 0;
 }
@@ -130,7 +147,19 @@ GSDLLEXPORT int GSDLLAPI gsapi_set_poll(void *instance,
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
     if (instance == NULL)
         return gs_error_Fatal;
+    return gsapi_set_poll_with_handle(instance, poll_fn,
+                                      ctx->core->default_caller_handle);
+}
+
+GSDLLEXPORT int GSDLLAPI gsapi_set_poll_with_handle(void *instance,
+    int (GSDLLCALLPTR poll_fn)(void *caller_handle),
+    void *caller_handle)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (instance == NULL)
+        return gs_error_Fatal;
     ctx->core->poll_fn = poll_fn;
+    ctx->core->poll_caller_handle = caller_handle;
     return 0;
 }
 
@@ -296,7 +325,7 @@ gsapi_run_string_end(void *lib)
         return gs_error_Fatal;
     return pl_main_run_string_end(pl_main_get_instance(ctx->memory));
 }
-    
+
 GSDLLEXPORT int GSDLLAPI
 gsapi_set_param(void *lib, gs_set_param_type type, const char *param, const void *value)
 {

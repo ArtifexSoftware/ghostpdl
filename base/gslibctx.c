@@ -486,7 +486,7 @@ int outwrite(const gs_memory_t *mem, const char *str, int len)
         code = gp_fwrite(str, 1, len, core->fstdout2);
         gp_fflush(core->fstdout2);
     } else if (core->stdout_fn) {
-        return (*core->stdout_fn)(core->caller_handle, str, len);
+        return (*core->stdout_fn)(core->std_caller_handle, str, len);
     } else {
         code = fwrite(str, 1, len, core->fstdout);
         fflush(core->fstdout);
@@ -522,7 +522,7 @@ int errwrite(const gs_memory_t *mem, const char *str, int len)
       return 0;
     core = ctx->core;
     if (core->stderr_fn)
-        return (*core->stderr_fn)(core->caller_handle, str, len);
+        return (*core->stderr_fn)(core->std_caller_handle, str, len);
 
     code = fwrite(str, 1, len, core->fstderr);
     fflush(core->fstderr);
@@ -1073,7 +1073,7 @@ gs_lib_ctx_stash_sanitized_arg(gs_lib_ctx_t *ctx, const char *arg)
     core = ctx->core;
     if (elide)
         len = p-arg;
-    else 
+    else
         len = strlen(arg);
 
     if (core->arg_max == core->argc) {

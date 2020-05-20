@@ -39,7 +39,7 @@ gp_check_interrupts(const gs_memory_t *mem)
     }
 #endif
     if (mem && mem->gs_lib_ctx && mem->gs_lib_ctx->core->poll_fn)
-        return (*mem->gs_lib_ctx->core->poll_fn)(mem->gs_lib_ctx->core->caller_handle);
+        return (*mem->gs_lib_ctx->core->poll_fn)(mem->gs_lib_ctx->core->poll_caller_handle);
     return 0;
 }
 #endif
