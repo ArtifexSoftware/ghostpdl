@@ -9901,7 +9901,7 @@ pdf14_clist_update_params(pdf14_clist_device * pdev, const gs_gstate * pgs,
     }
     if (pgs->alphaisshape != pdev->ais) {
         changed |= PDF14_SET_AIS;
-        params.ais = pdev->shape = pgs->alphaisshape;
+        params.ais = pdev->ais = pgs->alphaisshape;
     }
     if (pgs->overprint != pdev->overprint) {
         changed |= PDF14_SET_OVERPRINT;
