@@ -23,12 +23,8 @@
 #include "pcstate.h"
 #include "pcursor.h"
 #include "pcommand.h"
-
-#define fontnames(agfascreenfontname, agfaname, urwname) urwname
-#include "plftable.h"
-#undef fontnames
-
 #include "pllfont.h"
+#include "plftable.h"
 
 /* utility procedure to print n blank lines */
 static int

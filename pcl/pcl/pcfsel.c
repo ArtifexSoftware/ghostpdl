@@ -23,6 +23,7 @@
 #include "pcfont.h"
 #include "pcfsel.h"
 #include "pcsymbol.h"
+#include "plftable.h"
 
 /* hack to avoid compiler message */
 #ifndef abs
@@ -86,19 +87,14 @@ dmprint_font_params_t(const gs_memory_t * mem, const pl_font_params_t * pfp)
               (0x07FF & pfp->typeface_family));
 }
 
-#include "plftable.h"
-
 static void
 dmprint_ufst_font_name(const gs_memory_t * mem, const pl_font_t * pfont)
 {
-#define fontnames(agfascreenfontname, agfaname, urwname) agfaname
-#include "plftable.h"
     int i;
     bool found = false;
-    (void)pl_built_in_resident_font_table_count;
 
-    for (i = 0; strlen(resident_table[i].full_font_name); i++) {
-        if (!memcmp(&resident_table[i].params,
+    for (i = 0; *pl_built_in_resident_font_table[i].full_font_name[AGFANAME]; i++) {
+        if (!memcmp(&pl_built_in_resident_font_table[i].params,
                     &pfont->params, sizeof(pfont->params))) {
 
             found = true;
@@ -106,7 +102,7 @@ dmprint_ufst_font_name(const gs_memory_t * mem, const pl_font_t * pfont)
         }
     }
     if (found) {
-        dmprintf1(mem, "%s ", resident_table[i].full_font_name);
+        dmprintf1(mem, "%s ", pl_built_in_resident_font_table[i].full_font_name[AGFANAME]);
     } else {
         if (pfont->storage == pcds_internal) {
             dmprintf(mem, "internal font not found in resident table");
@@ -114,20 +110,16 @@ dmprint_ufst_font_name(const gs_memory_t * mem, const pl_font_t * pfont)
         }
         dmprintf(mem, "external font ");
     }
-#undef fontnames
 }
 
 static void
 dmprint_font_name(const gs_memory_t * mem, const pl_font_t * pfont)
 {
-#define fontnames(agfascreenfontname, agfaname, urwname) urwname
-#include "plftable.h"
     int i;
     bool found = false;
-    (void)pl_built_in_resident_font_table_count;
 
-    for (i = 0; strlen(resident_table[i].full_font_name); i++) {
-        if (!memcmp(&resident_table[i].params,
+    for (i = 0; pl_built_in_resident_font_table[i].full_font_name[URWNAME]; i++) {
+        if (!memcmp(&pl_built_in_resident_font_table[i].params,
                     &pfont->params, sizeof(pfont->params))) {
 
             found = true;
@@ -135,7 +127,7 @@ dmprint_font_name(const gs_memory_t * mem, const pl_font_t * pfont)
         }
     }
     if (found) {
-        dmprintf1(mem, "%s ", resident_table[i].full_font_name);
+        dmprintf1(mem, "%s ", pl_built_in_resident_font_table[i].full_font_name[URWNAME]);
     } else {
         if (pfont->storage == pcds_internal) {
             dmprintf(mem, "internal font not found in resident table");
@@ -143,7 +135,6 @@ dmprint_font_name(const gs_memory_t * mem, const pl_font_t * pfont)
         }
         dmprintf(mem, "external font ");
     }
-#undef fontnames
 }
 
 static void

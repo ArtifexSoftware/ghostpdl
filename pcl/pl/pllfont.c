@@ -148,20 +148,19 @@ static void
 check_resident_ufst_fonts(pl_dict_t * pfontdict,
                           bool use_unicode_names_for_keys, gs_memory_t * mem)
 {
-#define fontnames(agfascreenfontname, agfaname, urwname) agfaname
-#include "plftable.h"
     int j;
 
-    for (j = 0; strlen(resident_table[j].full_font_name) != 0
+    for (j = 0;
+         *pl_built_in_resident_font_table[j].full_font_name[AGFANAME] != 0
          && j < pl_built_in_resident_font_table_count; j++) {
         void *value;
 
         /* lookup unicode key in the resident table */
         if (use_unicode_names_for_keys) {
             if (!pl_dict_lookup(pfontdict,
-                                (const byte *)resident_table[j].
+                                (const byte *)pl_built_in_resident_font_table[j].
                                 unicode_fontname,
-                                sizeof(resident_table[j].unicode_fontname),
+                                sizeof(pl_built_in_resident_font_table[j].unicode_fontname),
                                 &value, true,
                                 NULL) /* return data ignored */ ) {
                 int i;
@@ -169,10 +168,10 @@ check_resident_ufst_fonts(pl_dict_t * pfontdict,
                 dmprintf(mem, "Font with unicode key: ");
                 for (i = 0;
                      i <
-                     sizeof(resident_table[j].unicode_fontname) /
-                     sizeof(resident_table[j].unicode_fontname[0]); i++) {
+                     sizeof(pl_built_in_resident_font_table[j].unicode_fontname) /
+                     sizeof(pl_built_in_resident_font_table[j].unicode_fontname[0]); i++) {
                     dmprintf1(mem, "%c",
-                              (char)resident_table[j].unicode_fontname[i]);
+                              (char)pl_built_in_resident_font_table[j].unicode_fontname[i]);
                 }
                 dmprintf1(mem,
                           " not available in font dictionary, resident table position: %d\n",
@@ -190,34 +189,30 @@ check_resident_ufst_fonts(pl_dict_t * pfontdict,
                                 NULL) /* return data ignored */ )
                 dmprintf2(mem,
                           "%s not available in font dictionary, resident table position: %d\n",
-                          resident_table[j].full_font_name, j);
+                          pl_built_in_resident_font_table[j].full_font_name, j);
         }
     }
     return;
-#undef fontnames
 }
 
 static void
 check_resident_fonts(pl_dict_t * pfontdict, gs_memory_t * mem)
 {
-#define fontnames(agfascreenfontname, agfaname, urwname) urwname
-#include "plftable.h"
     int i;
 
     for (i = 0;
-         strlen(resident_table[i].full_font_name) != 0
+         *pl_built_in_resident_font_table[i].full_font_name[URWNAME] != 0
          && i < pl_built_in_resident_font_table_count; i++)
         if (!pl_lookup_font_by_pjl_number(pfontdict, i)) {
             int j;
 
             dmprintf2(mem, "%s (entry %d) not found\n",
-                      resident_table[i].full_font_name, i);
+                      pl_built_in_resident_font_table[i].full_font_name[URWNAME], i);
             dmprintf(mem, "pxl unicode name:");
-            for (j = 0; j < countof(resident_table[i].unicode_fontname); j++)
-                dmprintf1(mem, "'%c'", resident_table[i].unicode_fontname[j]);
+            for (j = 0; j < countof(pl_built_in_resident_font_table[i].unicode_fontname); j++)
+                dmprintf1(mem, "'%c'", pl_built_in_resident_font_table[i].unicode_fontname[j]);
             dmprintf(mem, "\n");
         }
-#undef fontnames
 }
 #endif
 
@@ -268,14 +263,12 @@ pl_load_ufst_lineprinter(gs_memory_t * mem, pl_dict_t * pfontdict,
                          gs_font_dir * pdir, int storage,
                          bool use_unicode_names_for_keys)
 {
-#define fontnames(agfascreenfontname, agfaname, urwname) agfaname
-#include "plftable.h"
     int i;
 
     for (i = 0;
-         strlen(resident_table[i].full_font_name) != 0
+         *pl_built_in_resident_font_table[i].full_font_name[AGFANAME] != 0
          && i < pl_built_in_resident_font_table_count; i++) {
-        if (resident_table[i].params.typeface_family == 0) {
+        if (pl_built_in_resident_font_table[i].params.typeface_family == 0) {
             const byte *header = NULL;
             const byte *char_data = NULL;
             pl_font_t *pplfont =
@@ -301,14 +294,14 @@ pl_load_ufst_lineprinter(gs_memory_t * mem, pl_dict_t * pfontdict,
                 return -1;
 
             pl_fill_in_bitmap_font(pfont, gs_next_ids(mem, 1));
-            pplfont->params = resident_table[i].params;
+            pplfont->params = pl_built_in_resident_font_table[i].params;
             memcpy(pplfont->character_complement,
-                   resident_table[i].character_complement, 8);
+                   pl_built_in_resident_font_table[i].character_complement, 8);
 
             if (use_unicode_names_for_keys)
                 code = pl_dict_put(pfontdict,
-                            (const byte *)resident_table[i].unicode_fontname,
-                            sizeof(resident_table[i].unicode_fontname), pplfont);
+                            (const byte *)pl_built_in_resident_font_table[i].unicode_fontname,
+                            sizeof(pl_built_in_resident_font_table[i].unicode_fontname), pplfont);
             else {
                 byte key[3];
 
@@ -363,7 +356,6 @@ pl_load_ufst_lineprinter(gs_memory_t * mem, pl_dict_t * pfontdict,
         }
     }
     return 0;
-#undef fontnames
 }
 
 static int
@@ -371,9 +363,6 @@ pl_load_built_in_mtype_fonts(const char *pathname, gs_memory_t * mem,
                              pl_dict_t * pfontdict, gs_font_dir * pdir,
                              int storage, bool use_unicode_names_for_keys)
 {
-#define fontnames(agfascreenfontname, agfaname, urwname) agfaname
-#include "plftable.h"
-
     int i, k;
     short status = 0;
     int bSize;
@@ -385,8 +374,6 @@ pl_load_built_in_mtype_fonts(const char *pathname, gs_memory_t * mem,
     pl_font_t *plfont = NULL;
     gs_font *pfont = NULL;
     gs_font_base *pbfont;
-
-    (void)pl_built_in_resident_font_table_count;
 
     /* don't load fonts more than once */
     if (pl_dict_length(pfontdict, true) > 0)
@@ -493,9 +480,9 @@ pl_load_built_in_mtype_fonts(const char *pathname, gs_memory_t * mem,
                     pname = symname;
                 }
 
-                for (j = 0; strlen(resident_table[j].full_font_name); j++) {
+                for (j = 0; *pl_built_in_resident_font_table[j].full_font_name[AGFANAME]; j++) {
                     if (strcmp
-                        ((char *)resident_table[j].full_font_name,
+                        ((char *)pl_built_in_resident_font_table[j].full_font_name,
                          (char *)pname) != 0)
                         continue;
 
@@ -511,10 +498,10 @@ pl_load_built_in_mtype_fonts(const char *pathname, gs_memory_t * mem,
                         plfont->pts_per_inch = 72.307f;
                     }
 
-                    plfont->font_type = resident_table[j].font_type;
+                    plfont->font_type = pl_built_in_resident_font_table[j].font_type;
                     plfont->storage = storage;
                     plfont->data_are_permanent = false;
-                    plfont->params = resident_table[j].params;
+                    plfont->params = pl_built_in_resident_font_table[j].params;
 
                     /*
                      * NB: though the TTFONTINFOTYPE structure has a
@@ -524,7 +511,7 @@ pl_load_built_in_mtype_fonts(const char *pathname, gs_memory_t * mem,
                      * initialization structure is used.
                      */
                     memcpy(plfont->character_complement,
-                           resident_table[j].character_complement, 8);
+                           pl_built_in_resident_font_table[j].character_complement, 8);
 
                     status = gs_definefont(pdir, (gs_font *) pfont);
                     if (status < 0) {
@@ -540,8 +527,8 @@ pl_load_built_in_mtype_fonts(const char *pathname, gs_memory_t * mem,
                     }
                     if (use_unicode_names_for_keys)
                         code = pl_dict_put(pfontdict,
-                                    (const byte *)resident_table[j].unicode_fontname,
-                                    sizeof(resident_table[j].unicode_fontname),
+                                    (const byte *)pl_built_in_resident_font_table[j].unicode_fontname,
+                                    sizeof(pl_built_in_resident_font_table[j].unicode_fontname),
                                     plfont);
                     else {
                         key[2] = (byte) j;
@@ -581,7 +568,6 @@ pl_load_built_in_mtype_fonts(const char *pathname, gs_memory_t * mem,
         return (1);
 
     return (0);
-#undef fontnames
 }
 
 
@@ -591,8 +577,6 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t * mem,
                        pl_dict_t * pfontdict, gs_font_dir * pdir,
                        int storage, bool use_unicode_names_for_keys)
 {
-#define fontnames(agfascreenfontname, agfaname, urwname) urwname
-#include "plftable.h"
     const font_resident_t *residentp;
     /* get rid of this should be keyed by pjl font number */
     byte key[3];
@@ -601,8 +585,6 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t * mem,
     bool found_any = false;
     file_enum *fe;
     int code = 0;
-
-    (void)pl_built_in_resident_font_table_count;
 
     if ((code =
          pl_load_built_in_mtype_fonts(pathname, mem, pfontdict, pdir, storage,
@@ -665,9 +647,9 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t * mem,
 
         /* lookup the font file name in the resident table */
         found = false;
-        for (residentp = resident_table;
-             strlen(residentp->full_font_name); ++residentp) {
-            if (strcmp(buffer, residentp->full_font_name) != 0)
+        for (residentp = pl_built_in_resident_font_table;
+             *residentp->full_font_name[URWNAME]; ++residentp) {
+            if (strcmp(buffer, residentp->full_font_name[URWNAME]) != 0)
                 continue;
             /* load the font file into memory.  NOTE: this closes the file - argh... */
             if (pl_load_tt_font(in, pdir, mem,
@@ -707,7 +689,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t * mem,
                                    sizeof(residentp->unicode_fontname),
                                    plfont);
             else {
-                key[2] = (byte) (residentp - resident_table);
+                key[2] = (byte) (residentp - pl_built_in_resident_font_table);
                 key[0] = key[1] = 0;
                 code = pl_dict_put(pfontdict, key, sizeof(key), plfont);
                 /* leave data stored in the file.  NB this should be a fatal error also. */
@@ -750,7 +732,6 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t * mem,
         check_resident_fonts(pfontdict, mem);
 #endif
     return found_any;
-#undef fontnames
 }
 
 /* These are not implemented */
