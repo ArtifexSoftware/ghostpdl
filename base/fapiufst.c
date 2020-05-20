@@ -79,14 +79,14 @@
 
 #include "gxfapiu.h"
 
-#if UFST_VERSION_MAJOR >= 6 && UFST_VERSION_MINOR >= 2
+#if (UFST_VERSION_MAJOR >= 6 && UFST_VERSION_MINOR >= 2) || UFST_VERSION_MAJOR >= 7
 #include "t1itype1.h"
 #endif
 
 #define ufst_emprintf(m,s) { outflush(m); emprintf(m, s); outflush(m); }
 #define ufst_emprintf1(m,s,d) { outflush(m); emprintf1(m, s, d); outflush(m); }
 
-#if UFST_VERSION_MAJOR >= 6 && UFST_VERSION_MINOR >= 2
+#if (UFST_VERSION_MAJOR >= 6 && UFST_VERSION_MINOR >= 2) || UFST_VERSION_MAJOR >= 7
 #undef true
 #undef false
 
