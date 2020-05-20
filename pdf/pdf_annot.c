@@ -2066,6 +2066,121 @@ static int pdfi_annot_draw_Highlight(pdf_context *ctx, pdf_dict *annot, pdf_dict
     return code;
 }
 
+/* Generate appearance (see pdf_draw.ps/Squiggly)
+ *
+ * If there was an AP it was already handled.
+ */
+static int pdfi_annot_draw_Squiggly(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
+{
+    int code = 0;
+    bool drawit;
+    pdf_array *QuadPoints = NULL;
+    double array[8];
+    int size;
+    int num_quads;
+    int i;
+    double x0, y0, dx1, dy1, dx2, dy2;
+    double p1, p2, p12;
+    int count;
+    bool need_grestore = false;
+    gs_matrix matrix;
+
+    code = pdfi_annot_setcolor(ctx, annot, false, &drawit);
+    if (code <0 || !drawit)
+        goto exit;
+
+    code = gs_setlinecap(ctx->pgs, 1.0);
+    if (code < 0) goto exit;
+    code = gs_setlinejoin(ctx->pgs, 1.0);
+    if (code < 0) goto exit;
+    code = gs_setlinewidth(ctx->pgs, 1.0);
+    if (code < 0) goto exit;
+
+    code = pdfi_dict_knownget_type(ctx, annot, "QuadPoints", PDF_ARRAY, (pdf_obj **)&QuadPoints);
+    if (code <= 0) goto exit;
+
+    size = pdfi_array_size(QuadPoints);
+    num_quads = size / 8;
+
+    for (i=0; i<num_quads; i++) {
+        code = pdfi_array_to_num_array(ctx, QuadPoints, array, i*8, 8);
+        if (code < 0) goto exit;
+
+        code = pdfi_gsave(ctx);
+        if (code < 0) goto exit;
+        need_grestore = true;
+
+        /* Make clipping region */
+        code = gs_moveto(ctx->pgs, array[6], array[7]);
+        if (code < 0) goto exit;
+        code = gs_lineto(ctx->pgs, array[4], array[5]);
+        if (code < 0) goto exit;
+        code = gs_lineto(ctx->pgs, array[0], array[1]);
+        if (code < 0) goto exit;
+        code = gs_lineto(ctx->pgs, array[2], array[3]);
+        if (code < 0) goto exit;
+        code = gs_closepath(ctx->pgs);
+        if (code < 0) goto exit;
+        code = gs_clip(ctx->pgs);
+        if (code < 0) goto exit;
+        code = gs_newpath(ctx->pgs);
+        if (code < 0) goto exit;
+
+        pdfi_annot_quadpoints2basis(ctx, array, &x0, &y0, &dx1, &dy1, &dx2, &dy2);
+
+        code = gs_translate(ctx->pgs, x0+dx2/56+dx2/72, y0+dy2/56+dy2/72);
+        if (code < 0) goto exit;
+
+        p2 = sqrt(dx2*dx2 + dy2*dy2);
+        p1 = sqrt(dx1*dx1 + dy1*dy1);
+
+        if (p2 > 0 && p1 > 0) {
+            p12 = p2 / p1;
+
+            count = (int)((1/p12) * 4 + 1);
+
+            matrix.xx = dx1 * p12;
+            matrix.xy = dy1 * p12;
+            matrix.yx = dx2;
+            matrix.yy = dy2;
+            matrix.tx = 0.0;
+            matrix.ty = 0.0;
+            code = gs_concat(ctx->pgs, &matrix);
+            if (code < 0) goto exit;
+
+            code = gs_scale(ctx->pgs, 1/40., 1/72.);
+            if (code < 0) goto exit;
+
+            code = gs_moveto(ctx->pgs, 0, 0);
+            if (code < 0) goto exit;
+
+            while (count >= 0) {
+                code = gs_lineto(ctx->pgs, 5, 10);
+                if (code < 0) goto exit;
+                code = gs_lineto(ctx->pgs, 10, 0);
+                if (code < 0) goto exit;
+                code = gs_translate(ctx->pgs, 10, 0);
+                if (code < 0) goto exit;
+
+                count --;
+            }
+            code = gs_stroke(ctx->pgs);
+            if (code < 0) goto exit;
+        }
+
+        need_grestore = false;
+        code = pdfi_grestore(ctx);
+        if (code < 0) goto exit;
+    }
+
+ exit:
+    if (need_grestore)
+        (void)pdfi_grestore(ctx);
+    pdfi_countdown(QuadPoints);
+    *render_done = true;
+    return code;
+}
+
 /* Generate appearance (see pdf_draw.ps/Redact)
  *
  * If there was an AP it was already handled.
@@ -2081,17 +2196,6 @@ static int pdfi_annot_draw_Redact(pdf_context *ctx, pdf_dict *annot, pdf_dict *N
     /* Render nothing, don't print warning */
     *render_done = true;
     return 0;
-}
-
-static int pdfi_annot_draw_Squiggly(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
-{
-    int code = 0;
-
-    /* TODO: Generate appearance (see pdf_draw.ps/Squiggly) */
-    dbgmprintf(ctx->memory, "ANNOT: No AP generation for subtype Squiggly\n");
-    *render_done = true;
-
-    return code;
 }
 
 static int pdfi_annot_draw_Popup(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
