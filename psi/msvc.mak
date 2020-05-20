@@ -620,13 +620,9 @@ WITH_CUPS=0
 
 # Define the directory where the FreeType2 library sources are stored.
 # See freetype.mak for more information.
-
-!ifdef UFST_BRIDGE
-!if "$(UFST_BRIDGE)"=="1"
-FT_BRIDGE=0
-!endif
-!endif
-
+# Note that FT_BRIDGE=1 is now the only support configuration for anything
+# other than testing purposes (even when UFST_BRIDGE=1 - we require Freetype
+# for embedded/downloaded fonts.
 !ifndef FT_BRIDGE
 FT_BRIDGE=1
 !endif
