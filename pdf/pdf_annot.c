@@ -39,7 +39,7 @@ typedef int (*annot_func)(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, b
 typedef struct {
     const char *subtype;
     annot_func func;
-    bool simpleAP;
+    bool simpleAP; /* Just Render AP if it exists? (false means more complicated) */
 } annot_dispatch_t;
 
 
@@ -1860,7 +1860,7 @@ static void pdfi_annot_quadpoints2basis(pdf_context *ctx, double *array,
         }
     }
 
-    /* Pull out the points such that x0 = minx, x1 = miny, etc */
+    /* Pull out the points such that x0 = minx, y0 = miny, etc */
     i = mindex;
     x0 = array[i];
     y0 = array[i+1];
@@ -2066,15 +2066,21 @@ static int pdfi_annot_draw_Highlight(pdf_context *ctx, pdf_dict *annot, pdf_dict
     return code;
 }
 
+/* Generate appearance (see pdf_draw.ps/Redact)
+ *
+ * If there was an AP it was already handled.
+ */
 static int pdfi_annot_draw_Redact(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
 {
-    int code = 0;
-
-    /* TODO: Generate appearance (see pdf_draw.ps/Redact) */
-    dbgmprintf(ctx->memory, "ANNOT: No AP generation for subtype Redact\n");
+    /* comment from PS code:
+    %% Redact annotations are part of a process, a Redact annotation is only present
+    %% until the content is removed, before that the content should be present and
+    %% I believe we should print it. So take no action for Redact annotations if they
+    %% have no appearance.
+    */
+    /* Render nothing, don't print warning */
     *render_done = true;
-
-    return code;
+    return 0;
 }
 
 static int pdfi_annot_draw_Squiggly(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
@@ -2372,24 +2378,56 @@ static int pdfi_annot_draw_Widget(pdf_context *ctx, pdf_dict *annot, pdf_dict *N
     return 0;
 }
 
+/* Handle Annotations that are not implemented */
+static int pdfi_annot_draw_NotImplemented(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
+{
+    int code = 0;
+    pdf_name *Subtype = NULL;
+    char str[100];
+
+    code = pdfi_dict_get_type(ctx, annot, "Subtype", PDF_NAME, (pdf_obj **)&Subtype);
+    if (code < 0) goto exit;
+
+    memcpy(str, (const char *)Subtype->data, Subtype->length);
+    str[Subtype->length] = '\0';
+    dbgmprintf1(ctx->memory, "ANNOT: No AP, default appearance for Subtype %s Not Implemented\n", str);
+
+ exit:
+    *render_done = false;
+    pdfi_countdown(Subtype);
+    return code;
+}
+
 annot_dispatch_t annot_dispatch[] = {
-    {"Ink", pdfi_annot_draw_Ink, true},
-    {"Circle", pdfi_annot_draw_Circle, true},
-    {"Stamp", pdfi_annot_draw_Stamp, true},
-    {"FreeText", pdfi_annot_draw_FreeText, true},
+    /* These are in the same order as the PDF 2.0 spec 12.5.6.1 */
     {"Text", pdfi_annot_draw_Text, true},
-    {"StrikeOut", pdfi_annot_draw_StrikeOut, true},
+    {"Link", pdfi_annot_draw_Link, false},
+    {"FreeText", pdfi_annot_draw_FreeText, true},
+    {"Line", pdfi_annot_draw_Line, true},
+    {"Square", pdfi_annot_draw_Square, true},
+    {"Circle", pdfi_annot_draw_Circle, true},
+    {"Polygon", pdfi_annot_draw_Polygon, true},
+    {"PolyLine", pdfi_annot_draw_PolyLine, true},
+    {"Highlight", pdfi_annot_draw_Highlight, true},
     {"Underline", pdfi_annot_draw_Underline, true},
     {"Squiggly", pdfi_annot_draw_Squiggly, true},
-    {"Redact", pdfi_annot_draw_Redact, true},
-    {"Highlight", pdfi_annot_draw_Highlight, true},
-    {"Polygon", pdfi_annot_draw_Polygon, true},
-    {"Square", pdfi_annot_draw_Square, true},
-    {"Line", pdfi_annot_draw_Line, true},
-    {"PolyLine", pdfi_annot_draw_PolyLine, true},
-    {"Link", pdfi_annot_draw_Link, false},
+    {"StrikeOut", pdfi_annot_draw_StrikeOut, true},
+    {"Caret", pdfi_annot_draw_NotImplemented, true},
+    {"Stamp", pdfi_annot_draw_Stamp, true},
+    {"Ink", pdfi_annot_draw_Ink, true},
     {"Popup", pdfi_annot_draw_Popup, false},
+    {"FileAttachment", pdfi_annot_draw_NotImplemented, true},
+    {"Sound", pdfi_annot_draw_NotImplemented, true},
+    {"Movie", pdfi_annot_draw_NotImplemented, true},
+    {"Screen", pdfi_annot_draw_NotImplemented, true},
     {"Widget", pdfi_annot_draw_Widget, false},
+    {"PrinterMark", pdfi_annot_draw_NotImplemented, true},
+    {"TrapNet", pdfi_annot_draw_NotImplemented, true},
+    {"Watermark", pdfi_annot_draw_NotImplemented, true},
+    {"3D", pdfi_annot_draw_NotImplemented, true},
+    {"Redact", pdfi_annot_draw_Redact, true},
+    {"Projection", pdfi_annot_draw_NotImplemented, true},
+    {"RichMedia", pdfi_annot_draw_NotImplemented, true},
     { NULL, NULL},
 };
 
