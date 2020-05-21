@@ -373,7 +373,9 @@ void *gp_enumerate_fonts_init(gs_memory_t *mem)
     pat = FcPatternBuild(NULL,
             FC_OUTLINE, FcTypeBool, 1,
             FC_SCALABLE, FcTypeBool, 1,
+#if defined(FC_MAJOR) && FC_MAJOR >= 2 && defined(FC_MINOR) && FC_MINOR >= 13
             FC_VARIABLE, FcTypeBool, 0,
+#endif
             NULL);
     os = FcObjectSetBuild(FC_FILE, FC_OUTLINE,
             FC_FAMILY, FC_WEIGHT, FC_SLANT,
