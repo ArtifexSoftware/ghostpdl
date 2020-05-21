@@ -50,8 +50,12 @@ void local_restore_stream_state(pdf_context *ctx, stream_save *local_save);
 void cleanup_context_interpretation(pdf_context *ctx, stream_save *local_save);
 void initialise_stream_save(pdf_context *ctx);
 int pdfi_run_context(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, bool stoponerror, const char *desc);
+int
+pdfi_interpret_inner_content_string(pdf_context *ctx, pdf_string *content_string,
+                                    pdf_dict *stream_dict, pdf_dict *page_dict,
+                                    bool stoponerror, const char *desc);
 int pdfi_interpret_inner_content_stream(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, bool stoponerror, const char *desc);
-int pdfi_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict);
+int pdfi_interpret_content_stream(pdf_context *ctx, pdf_stream *content_stream, pdf_dict *stream_dict, pdf_dict *page_dict);
 
 int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_obj **o);
 

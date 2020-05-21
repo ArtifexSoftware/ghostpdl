@@ -24,6 +24,7 @@ int pdfi_setgraystroke(pdf_context *ctx);
 int pdfi_setgrayfill(pdf_context *ctx);
 int pdfi_setrgbstroke(pdf_context *ctx);
 int pdfi_setrgbfill(pdf_context *ctx);
+int pdfi_setrgbfill_array(pdf_context *ctx);
 int pdfi_setcmykstroke(pdf_context *ctx);
 int pdfi_setcmykfill(pdf_context *ctx);
 int pdfi_setstrokecolor_space(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict);

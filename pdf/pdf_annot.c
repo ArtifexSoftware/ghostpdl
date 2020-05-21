@@ -1620,6 +1620,31 @@ static int pdfi_annot_draw_CL(pdf_context *ctx, pdf_dict *annot)
     return code;
 }
 
+/* Process the /DA string by either running it through the interpreter
+ *  or providing a bunch of defaults
+ */
+static int pdfi_annot_process_DA(pdf_context *ctx, pdf_dict *annot)
+{
+    int code = 0;
+    pdf_string *DA = NULL;
+
+    code = pdfi_dict_knownget_type(ctx, annot, "DA", PDF_STRING, (pdf_obj **)&DA);
+    if (code < 0) goto exit;
+    if (code > 0) {
+        code = pdfi_interpret_inner_content_string(ctx, DA, annot,
+                                                   ctx->CurrentPageDict, false, "DA");
+        if (code < 0) goto exit;
+    } else {
+        /* TODO: Setup defaults if there is no DA */
+        code = pdfi_gs_setgray(ctx, 0);
+        if (code < 0) goto exit;
+    }
+
+ exit:
+    pdfi_countdown(DA);
+    return code;
+}
+
 /* FreeText -- Draw text with border around it.
  *
  * See pdf_draw.ps/FreeText
@@ -1631,7 +1656,6 @@ static int pdfi_annot_draw_FreeText(pdf_context *ctx, pdf_dict *annot, pdf_dict 
     int code1 = 0;
     bool drawbackground;
     pdf_dict *BS = NULL;
-    pdf_string *DA = NULL;
 
     *render_done = false;
 
@@ -1651,17 +1675,8 @@ static int pdfi_annot_draw_FreeText(pdf_context *ctx, pdf_dict *annot, pdf_dict 
         if (code < 0) goto exit;
     }
 
-    /* TODO: /DA */
-    code = pdfi_dict_knownget_type(ctx, annot, "DA", PDF_STRING, (pdf_obj **)&DA);
+    code = pdfi_annot_process_DA(ctx, annot);
     if (code < 0) goto exit;
-    if (code > 0) {
-        /* HACKY HACK -- just setting color for sample Bug701889.pdf */
-        code = pdfi_gs_setrgbcolor(ctx, 0.898, 0.1333, 0.2157);
-        if (code < 0) goto exit;
-    } else {
-        code = pdfi_gs_setgray(ctx, 0);
-        if (code < 0) goto exit;
-    }
 
     /* Draw border around text */
     /* TODO: gs-compatible implementation is commented out.  Would rather just delete it... */
@@ -1716,7 +1731,6 @@ static int pdfi_annot_draw_FreeText(pdf_context *ctx, pdf_dict *annot, pdf_dict 
  exit1:
     *render_done = true;
     pdfi_countdown(BS);
-    pdfi_countdown(DA);
     return code;
 }
 

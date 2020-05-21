@@ -3298,6 +3298,10 @@ static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_stream *source, 
                 pdfi_pop(ctx, 1);
                 code = pdfi_op_Q(ctx);
                 break;
+            case K1('r'):       /* non-standard set rgb colour for non-stroke */
+                pdfi_pop(ctx, 1);
+                code = pdfi_setrgbfill_array(ctx);
+                break;
             case K2('r','e'):       /* append rectangle */
                 pdfi_pop(ctx, 1);
                 code = pdfi_rectpath(ctx);
@@ -3509,9 +3513,9 @@ int pdfi_run_context(pdf_context *ctx, pdf_dict *stream_dict,
  * This temporarily turns on pdfstoponerror if requested.
  * It will make sure the stack is cleared and the gstate is matched.
  */
-int
-pdfi_interpret_inner_content_stream(pdf_context *ctx, pdf_dict *stream_dict,
-                                    pdf_dict *page_dict, bool stoponerror, const char *desc)
+static int
+pdfi_interpret_inner_content(pdf_context *ctx, pdf_stream *content_stream, pdf_dict *stream_dict,
+                             pdf_dict *page_dict, bool stoponerror, const char *desc)
 {
     int code = 0;
     bool saved_stoponerror = ctx->pdfstoponerror;
@@ -3525,7 +3529,7 @@ pdfi_interpret_inner_content_stream(pdf_context *ctx, pdf_dict *stream_dict,
         ctx->pdfstoponerror = true;
 
     dbgmprintf1(ctx->memory, "BEGIN %s stream\n", desc);
-    code = pdfi_interpret_content_stream(ctx, stream_dict, page_dict);
+    code = pdfi_interpret_content_stream(ctx, content_stream, stream_dict, page_dict);
     dbgmprintf1(ctx->memory, "END %s stream\n", desc);
 
     if (code < 0)
@@ -3545,26 +3549,64 @@ pdfi_interpret_inner_content_stream(pdf_context *ctx, pdf_dict *stream_dict,
     if (!ctx->pdfstoponerror)
         code = 0;
     return code;
-
 }
 
+/* Interpret inner content from a string
+ */
 int
-pdfi_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
+pdfi_interpret_inner_content_string(pdf_context *ctx, pdf_string *content_string,
+                                    pdf_dict *stream_dict, pdf_dict *page_dict,
+                                    bool stoponerror, const char *desc)
+{
+    int code = 0;
+    pdf_stream *stream = NULL;
+
+    code = pdfi_open_memory_stream_from_memory(ctx, content_string->length,
+                                               content_string->data, &stream);
+    if (code < 0) goto exit;
+
+    /* NOTE: stream gets closed in here */
+    code = pdfi_interpret_inner_content(ctx, stream, stream_dict, page_dict, stoponerror, desc);
+ exit:
+    return code;
+}
+
+/* Interpret inner content from a stream_dict
+ */
+int
+pdfi_interpret_inner_content_stream(pdf_context *ctx, pdf_dict *stream_dict,
+                                    pdf_dict *page_dict, bool stoponerror, const char *desc)
+{
+    return pdfi_interpret_inner_content(ctx, NULL, stream_dict, page_dict, stoponerror, desc);
+}
+
+/*
+ * Interpret a content stream.
+ * content_stream -- content to parse.  If NULL, get it from the stream_dict
+ * stream_dict -- dict containing the stream
+ */
+int
+pdfi_interpret_content_stream(pdf_context *ctx, pdf_stream *content_stream,
+                              pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     int code;
-    pdf_stream *compressed_stream;
+    pdf_stream *stream;
     pdf_keyword *keyword;
 
-    code = pdfi_seek(ctx, ctx->main_stream, stream_dict->stream_offset, SEEK_SET);
-    if (code < 0)
-        return code;
+    if (content_stream != NULL) {
+        stream = content_stream;
+    } else {
+        code = pdfi_seek(ctx, ctx->main_stream, stream_dict->stream_offset, SEEK_SET);
+        if (code < 0)
+            return code;
 
-    code = pdfi_filter(ctx, stream_dict, ctx->main_stream, &compressed_stream, false);
-    if (code < 0)
-        return code;
+        code = pdfi_filter(ctx, stream_dict, ctx->main_stream, &stream, false);
+        if (code < 0)
+            return code;
+    }
 
     do {
-        code = pdfi_read_token(ctx, compressed_stream, stream_dict->object_num, stream_dict->generation_num);
+        code = pdfi_read_token(ctx, stream, stream_dict->object_num, stream_dict->generation_num);
         if (code < 0) {
             if (code == gs_error_ioerror || code == gs_error_VMerror || ctx->pdfstoponerror) {
                 if (code == gs_error_ioerror) {
@@ -3574,14 +3616,14 @@ pdfi_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict 
                     ctx->pdf_errors |= E_PDF_OUTOFMEMORY;
                     dmprintf(ctx->memory, "**** Error ran out of memory reading a content stream.  The page may be incomplete.\n");
                 }
-                pdfi_close_file(ctx, compressed_stream);
+                pdfi_close_file(ctx, stream);
                 return code;
             }
             continue;
         }
 
         if (pdfi_count_stack(ctx) <= 0) {
-            if(compressed_stream->eof == true)
+            if(stream->eof == true)
                 break;
         }
 
@@ -3591,12 +3633,12 @@ repaired_keyword:
 
             switch(keyword->key) {
                 case PDF_ENDSTREAM:
-                    pdfi_close_file(ctx, compressed_stream);
+                    pdfi_close_file(ctx, stream);
                     pdfi_pop(ctx,1);
                     return 0;
                     break;
                 case PDF_ENDOBJ:
-                    pdfi_close_file(ctx, compressed_stream);
+                    pdfi_close_file(ctx, stream);
                     pdfi_clearstack(ctx);
                     ctx->pdf_errors |= E_PDF_MISSINGENDSTREAM;
                     if (ctx->pdfstoponerror)
@@ -3604,14 +3646,14 @@ repaired_keyword:
                     return 0;
                     break;
                 case PDF_NOT_A_KEYWORD:
-                    code = pdfi_interpret_stream_operator(ctx, compressed_stream, stream_dict, page_dict);
+                    code = pdfi_interpret_stream_operator(ctx, stream, stream_dict, page_dict);
                     if (code < 0) {
                         if (code == gs_error_repaired_keyword)
                             goto repaired_keyword;
 
                         ctx->pdf_errors |= E_PDF_TOKENERROR;
                         if (ctx->pdfstoponerror) {
-                            pdfi_close_file(ctx, compressed_stream);
+                            pdfi_close_file(ctx, stream);
                             pdfi_clearstack(ctx);
                             return code;
                         }
@@ -3623,17 +3665,17 @@ repaired_keyword:
                     break;
                 default:
                     ctx->pdf_errors |= E_PDF_MISSINGENDSTREAM;
-                    pdfi_close_file(ctx, compressed_stream);
+                    pdfi_close_file(ctx, stream);
                     pdfi_clearstack(ctx);
                     return_error(gs_error_typecheck);
                     break;
             }
         }
-        if(compressed_stream->eof == true)
+        if(stream->eof == true)
             break;
     }while(1);
 
-    pdfi_close_file(ctx, compressed_stream);
+    pdfi_close_file(ctx, stream);
     return 0;
 }
 

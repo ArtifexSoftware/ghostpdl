@@ -74,7 +74,7 @@ static int pdfi_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
             if (code < 0)
                 goto page_error;
             if (r->type == PDF_DICT) {
-                code = pdfi_interpret_content_stream(ctx, (pdf_dict *)r, page_dict);
+                code = pdfi_interpret_content_stream(ctx, NULL, (pdf_dict *)r, page_dict);
                 pdfi_countdown(r);
                 if (code < 0)
                     goto page_error;
@@ -101,7 +101,7 @@ static int pdfi_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
                         code = gs_note_error(gs_error_typecheck);
                         goto page_error;
                     }
-                    code = pdfi_interpret_content_stream(ctx, (pdf_dict *)o1, page_dict);
+                    code = pdfi_interpret_content_stream(ctx, NULL, (pdf_dict *)o1, page_dict);
                     pdfi_countdown(o1);
                     if (code < 0) {
                         if (code == gs_error_VMerror || ctx->pdfstoponerror == true)
@@ -112,7 +112,7 @@ static int pdfi_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
         }
     } else {
         if (o->type == PDF_DICT) {
-            code = pdfi_interpret_content_stream(ctx, (pdf_dict *)o, page_dict);
+            code = pdfi_interpret_content_stream(ctx, NULL, (pdf_dict *)o, page_dict);
         } else {
             pdfi_countdown(o);
             ctx->decrypt_strings = true;

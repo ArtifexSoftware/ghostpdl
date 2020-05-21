@@ -450,6 +450,38 @@ int pdfi_setrgbstroke(pdf_context *ctx)
         return 0;
 }
 
+/* Non-standard operator that is used in some annotation /DA
+ * Expects stack to be [r g b]
+ */
+int pdfi_setrgbfill_array(pdf_context *ctx)
+{
+    int code;
+    pdf_array *array = NULL;
+
+    ctx->pdf_warnings |= W_PDF_NONSTANDARD_OP;
+    dmprintf(ctx->memory, "WARNING: Non-standard 'r' operator\n");
+
+    if (pdfi_count_stack(ctx) < 1) {
+        if (ctx->pdfstoponerror)
+            return_error(gs_error_stackunderflow);
+        return 0;
+    }
+
+    array = (pdf_array *)ctx->stack_top[-1];
+    if (array->type != PDF_ARRAY) {
+        code = gs_note_error(gs_error_typecheck);
+        goto exit;
+    }
+
+    code = pdfi_setcolor_from_array(ctx, array);
+ exit:
+    pdfi_pop(ctx, 1);
+    if (code != 0 && ctx->pdfstoponerror)
+        return code;
+    else
+        return 0;
+}
+
 int pdfi_setrgbfill(pdf_context *ctx)
 {
     pdf_num *num;
@@ -572,7 +604,6 @@ int pdfi_setcolor_from_array(pdf_context *ctx, pdf_array *array)
     int code = 0;
     uint64_t size;
     double values[4];
-    int i;
 
     size = pdfi_array_size(array);
     if (size != 1 && size != 3 && size != 4) {
@@ -580,11 +611,8 @@ int pdfi_setcolor_from_array(pdf_context *ctx, pdf_array *array)
         goto exit;
     }
 
-    for (i=0; i<size; i++) {
-        code = pdfi_array_get_number(ctx, array, i, &values[i]);
-        if (code < 0)
-            goto exit;
-    }
+    code = pdfi_array_to_num_array(ctx, array, values, 0, size);
+    if (code < 0) goto exit;
 
     switch (size) {
     case 1:
