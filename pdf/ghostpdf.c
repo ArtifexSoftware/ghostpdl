@@ -549,11 +549,6 @@ int pdfi_process_pdf_file(pdf_context *ctx, char *filename)
 {
     int code = 0, i;
 
-    ctx->filename = (char *)gs_alloc_bytes(ctx->memory, strlen(filename) + 1, "copy of filename");
-    if (ctx->filename == NULL)
-        return_error(gs_error_VMerror);
-    strcpy(ctx->filename, filename);
-
     code = pdfi_open_pdf_file(ctx, filename);
     if (code < 0) {
         goto exit;
