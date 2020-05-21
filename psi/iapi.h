@@ -239,7 +239,7 @@ GSDLLEXPORT int GSDLLAPI gsapi_set_display_callback(
  * gsapi_init_with_args().
  */
 GSDLLEXPORT int GSDLLAPI
-gsapi_set_default_device_list(void *instance, char *list, int listlen);
+gsapi_set_default_device_list(void *instance, const char *list, int listlen);
 
 /* Returns a pointer to the current default device string
  * *Must* be called after gsapi_new_instance().

@@ -145,7 +145,7 @@ gsapi_set_display_callback(void *instance, display_callback *callback)
 
 /* Set/Get the default device list string */
 GSDLLEXPORT int GSDLLAPI
-gsapi_set_default_device_list(void *instance, char *list, int listlen)
+gsapi_set_default_device_list(void *instance, const char *list, int listlen)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
     if (instance == NULL)
