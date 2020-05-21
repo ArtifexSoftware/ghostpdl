@@ -2212,33 +2212,146 @@ static int pdfi_annot_draw_Redact(pdf_context *ctx, pdf_dict *annot, pdf_dict *N
     return 0;
 }
 
+/* Display a string */
+static int
+pdfi_annot_display_text(pdf_context *ctx, double size, const char *font,
+                            double x, double y, pdf_string *text)
+{
+    /* TODO: Implement this.  See pdf_draw.ps/Popup */
+    dbgmprintf(ctx->memory, "ANNOT: Rendering of text not implemented\n");
+    return 0;
+}
+
+/* Handle PopUp (see pdf_draw.ps/Popup)
+ * Renders only if /Open=true
+ *
+ * If there's an AP, caller will handle it on return
+ */
 static int pdfi_annot_draw_Popup(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
 {
-    int code = 0;
+    int code = 0, code1 = 0;
     bool Open = false;
+    pdf_dict *Parent = NULL;
+    pdf_string *Contents = NULL;
+    pdf_string *T = NULL;
+    bool has_color;
+    gs_rect rect, rect2;
+    bool need_grestore = false;
+    double x, y;
 
     /* Render only if open */
     code = pdfi_dict_get_bool(ctx, annot, "Open", &Open);
     if (code < 0 && (code != gs_error_undefined))
-        goto exit;
+        goto exit1;
 
     code = 0;
 
+    /* Don't render if not Open */
     if (!Open) {
         *render_done = true;
-        goto exit;
+        goto exit1;
     }
 
+    /* Let caller render if there is an AP */
     if (NormAP) {
         *render_done = false;
-        goto exit;
+        goto exit1;
     }
 
-    /* TODO: Generate appearance (see pdf_draw.ps/Popup) */
-    dbgmprintf(ctx->memory, "ANNOT: No AP generation for subtype Popup\n");
+    /* regardless what happens next, tell caller we rendered it */
     *render_done = true;
 
+    code = pdfi_annot_start_transparency(ctx, annot);
+    if (code < 0) goto exit1;
+
+    code = gs_setlinewidth(ctx->pgs, 0.05);
+
+    /* Use Parent to get color */
+    code = pdfi_dict_knownget_type(ctx, annot, "Parent", PDF_DICT, (pdf_obj **)&Parent);
+    if (code < 0) goto exit;
+    if (code == 0) {
+        code = pdfi_dict_knownget_type(ctx, annot, "P", PDF_DICT, (pdf_obj **)&Parent);
+        if (code < 0) goto exit;
+    }
+    if (code == 0) {
+        /* If no parent, we will use the annotation itself */
+        Parent = annot;
+        pdfi_countup(Parent);
+    }
+
+    /* Set color if there is one specified */
+    code = pdfi_annot_setcolor(ctx, Parent, false, &has_color);
+    if (code < 0) goto exit;
+
+    /* Set a default color if nothing specified */
+    if (!has_color) {
+        code = pdfi_gs_setrgbcolor(ctx, 1.0, 1.0, 0);
+        if (code < 0) goto exit;
+    }
+
+    code = pdfi_annot_Rect(ctx, annot, &rect);
+    if (code < 0) goto exit;
+
+    /* Draw big box (the frame around the /Contents) */
+    code = pdfi_gsave(ctx);
+    if (code < 0) goto exit;
+    need_grestore = true;
+    code = pdfi_gs_setgray(ctx, 1);
+    if (code < 0) goto exit;
+    code = gs_rectfill(ctx->pgs, &rect, 1);
+    if (code < 0) goto exit;
+    code = pdfi_gs_setgray(ctx, 0);
+    if (code < 0) goto exit;
+    code = gs_rectstroke(ctx->pgs, &rect, 1, NULL);
+    if (code < 0) goto exit;
+    code = pdfi_grestore(ctx);
+    need_grestore = false;
+    if (code < 0) goto exit;
+
+    /* Display /Contents in Helvetica */
+    code = pdfi_dict_knownget_type(ctx, Parent, "Contents", PDF_STRING, (pdf_obj **)&Contents);
+    if (code < 0) goto exit;
+    if (code > 0) {
+        x = rect.p.x + 5;
+        y = rect.q.y - 30;
+        code = pdfi_annot_display_text(ctx, 9, "Helvetica", x, y, Contents);
+        if (code < 0) goto exit;
+    }
+
+    /* Draw small, thin box (the frame around the top /T text) */
+    rect2.p.x = rect.p.x;
+    rect2.p.y = rect.q.y - 15;
+    rect2.q.x = rect.q.x;
+    rect2.q.y = rect.p.y + (rect.q.y - rect.p.y);
+
+    gs_rectfill(ctx->pgs, &rect2, 1);
+    if (code < 0) goto exit;
+    pdfi_gs_setgray(ctx, 0);
+    if (code < 0) goto exit;
+    gs_rectstroke(ctx->pgs, &rect2, 1, NULL);
+    if (code < 0) goto exit;
+
+    /* Display /T in Helvetica */
+    code = pdfi_dict_knownget_type(ctx, Parent, "T", PDF_STRING, (pdf_obj **)&T);
+    if (code < 0) goto exit;
+    if (code > 0) {
+        x = rect.p.x + 2; /* TODO: Center it based on stringwidth */
+        y = rect.q.y - 11;
+        code = pdfi_annot_display_text(ctx, 9, "Helvetica", x, y, T);
+        if (code < 0) goto exit;
+    }
+
  exit:
+    if (need_grestore) {
+        code1= pdfi_grestore(ctx);
+        if (code == 0) code = code1;
+    }
+    code1 = pdfi_annot_end_transparency(ctx, annot);
+    if (code == 0) code = code1;
+ exit1:
+    pdfi_countdown(Parent);
+    pdfi_countdown(Contents);
+    pdfi_countdown(T);
     return code;
 }
 
@@ -2488,6 +2601,26 @@ static int pdfi_annot_draw_Square(pdf_context *ctx, pdf_dict *annot, pdf_dict *N
 /* Draws a thing of type /Widget */
 static int pdfi_annot_draw_Widget(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
 {
+#if 0 /* TODO: */
+    int code = 0;
+    bool found_T;
+    bool found_TF;
+    pdf_obj *T = NULL;
+    pdf_obj *TF = NULL;
+
+    /* From pdf_draw.ps/drawwidget:
+  % Acrobat doesn't draw Widget annotations unles they have both /FT
+  % (which is defined as required) and /T keys present. Annoyingly
+  % these can either be inherited from the Form Definition Field
+  % dictionary (via the AcroForm tree) or present directly in the
+  % annotation, so we need to check the annotation to make sure its
+  % a Widget, then follow any /Parent key up to the root node
+  % extracting and storing any FT or T keys as we go (we only care if
+  % these are present, their value is immaterial). If after all that
+  % both keys are not present, then we don't draw the annotation.
+    */
+#endif
+
     /* TODO: See top part of pdf_draw.ps/drawwidget
      * check for /FT and /T and stuff
      */
