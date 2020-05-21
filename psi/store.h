@@ -75,23 +75,12 @@
  */
 #define ref_assign_inline(pto,pfrom)\
         (*(pto) = *(pfrom))
-#ifdef __TURBOC__
-        /*
-         * Move the data in two 32-bit chunks, because
-         * otherwise the compiler calls SCOPY@.
-         * The cast to void is to discourage the compiler from
-         * wanting to deliver the value of the expression.
-         */
-#  define ref_assign(pto,pfrom)\
-        discard(ref_assign_inline(pto, pfrom))
-#else
-        /*
-         * Trust the compiler and hope for the best.
-         * The MIPS compiler doesn't like the cast to void.
-         */
-#  define ref_assign(pto,pfrom)\
-        (*(pto) = *(pfrom))
-#endif
+
+/* This used to be different from above, for the benefit of TURBO C
+ * But we no longer support TURBO C, so....
+ */
+#define ref_assign(pto,pfrom)\
+        ref_assign_inline(pto,pfrom)
 
 #define ialloc_new_mask (idmemory->new_mask)
      /*
