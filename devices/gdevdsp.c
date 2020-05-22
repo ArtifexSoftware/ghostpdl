@@ -1457,7 +1457,7 @@ display_alloc_bitmap(gx_device_display * ddev, gx_device * param_dev)
     }
     else {
         ddev->pBitmap = gs_alloc_byte_array_immovable(ddev->memory->non_gc_memory,
-                (uint)ddev->ulBitmapSize, 1, "display_alloc_bitmap");
+                (size_t)ddev->ulBitmapSize, 1, "display_alloc_bitmap");
     }
 
     if (ddev->pBitmap == NULL) {
