@@ -329,6 +329,7 @@ struct gx_device_clist_writer_s {
                                 /* above set when not at page level with no SMask or when */
                                 /* the page level BM, shape or opacity alpha needs tranaparency */
     int pdf14_trans_group_level;/* 0 when at page level group -- push increments, pop decrements */
+                                /* -1 when PUSH_DEVICE not yet performed to prevent spurious ops */
     int pdf14_smask_level;	/* 0 when at SMask None -- push increments, pop decrements */
     bool page_pdf14_needed;	/* save page level pdf14_needed state */
 
