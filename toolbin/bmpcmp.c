@@ -1149,7 +1149,7 @@ static void* tif_read(ImageReader* im,
     }
 
     data = Malloc(height * width * 4);
-    row_ptr = data;
+    row_ptr = data + (height - 1) * width * 4;
 
     buf = _TIFFmalloc(TIFFScanlineSize(tif));
     if (buf == NULL) {
@@ -1183,7 +1183,7 @@ static void* tif_read(ImageReader* im,
                    *out++ = 0;
                 }
             }
-            row_ptr += (width * 4);
+            row_ptr -= (width * 4);
         }
     } else if (planar == PLANARCONFIG_SEPARATE) {
         uint16 s, nsamples;
@@ -1193,7 +1193,7 @@ static void* tif_read(ImageReader* im,
             for (row = 0; row < height; row++) {
                 TIFFReadScanline(tif, buf, row, s);
                 memcpy(row_ptr, buf, width * 4);
-                row_ptr += (width * 4);
+                row_ptr -= (width * 4);
             }
     }
     _TIFFfree(buf);
