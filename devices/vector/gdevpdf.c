@@ -2945,6 +2945,14 @@ pdf_close(gx_device * dev)
         stream_puts(pdev->strm, "%%EOF\n");
     }
 
+    if (pdev->params.PSPageOptions.size) {
+        int ix;
+
+        for (ix = 0; ix < pdev->params.PSPageOptions.size;ix++)
+            gs_free_object(mem->non_gc_memory, (byte *)pdev->params.PSPageOptions.data[ix].data, "freeing old string array copy");
+        gs_free_object(mem->non_gc_memory, (byte *)pdev->params.PSPageOptions.data, "freeing old string array");
+    }
+
     if (pdev->Linearise) {
         linear_params.LastResource = pdev->next_id - 1;
         linear_params.Offsets = (gs_offset_t *)gs_alloc_bytes(pdev->pdf_memory, pdev->next_id * sizeof(gs_offset_t), "temp xref storage");

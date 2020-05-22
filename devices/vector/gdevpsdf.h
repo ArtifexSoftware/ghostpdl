@@ -332,8 +332,7 @@ extern_st(st_device_psdf);
                 params.MonoImage.Dict),\
     GC_OBJ_ELT2(gx_device_psdf, params.AlwaysEmbed.data,\
                 params.NeverEmbed.data),\
-    GC_CONST_STRING_ELT(gx_device_psdf, params.PSDocOptions),\
-    GC_OBJ_ELT(gx_device_psdf, params.PSPageOptions.data)\
+    GC_CONST_STRING_ELT(gx_device_psdf, params.PSDocOptions)\
   };\
   gs_public_st_basic_super_final(st_device_psdf, gx_device_psdf,\
     "gx_device_psdf", device_psdf_ptrs, device_psdf_data,\
