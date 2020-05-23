@@ -4176,7 +4176,10 @@ currentdict end readonly def
 } bind def
 
 /ShowText  % <string> ShowText -
-{ //GraphicState /TextRenderingMode get 0 eq {
+{
+    //GraphicState /TextRenderingMode get dup 0 eq
+    exch 3 eq not currentfont /FontType get 3 eq and or
+    {
     //GraphicState /WordSpacing get 0
     32
     //GraphicState /CharacterSpacing get 0
@@ -4236,13 +4239,28 @@ currentdict end readonly def
 } bind def
 
 /ShowTextBeg  % - ShowTextBeg -
-{ //GraphicState /TextRenderingMode get 0 ne {
-        currentpoint newpath moveto
-  } if
+{
+  //GraphicState /TextRenderingMode get dup 0 ne
+  {
+        3 ne
+        currentfont /FontType get 3 eq not and {
+          currentpoint newpath moveto
+        } if
+  }
+  {
+      pop
+  } ifelse
 } bind def
 
 /ShowTextEnd  % - ShowTextEnd -
-{ //GraphicState /TextRenderingMode get
+{
+  //GraphicState /TextRenderingMode get
+  currentfont /FontType get 3 eq {
+    dup 3 ne {
+      pop 0
+    } if
+  }if
+
   { dup 1 eq {
       stroke exit
     } if
