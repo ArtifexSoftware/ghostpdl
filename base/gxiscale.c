@@ -2184,6 +2184,9 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
                 p_cm_buff = (byte *) gs_alloc_bytes(pgs->memory,
                     sizeof(unsigned short) * width * spp_cm,
                     "image_render_interpolate_icc");
+                if (!p_cm_buff) {
+                    return gs_error_VMerror;
+                }
                 /* Set up the buffer descriptors. */
                 gsicc_init_buffer(&input_buff_desc, spp_decode, 2,
                               false, false, false, 0, width * spp_decode,
