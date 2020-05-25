@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2017 Marti Maria Saguer
+//  Copyright (c) 1998-2020 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -166,6 +166,23 @@ void CMSEXPORT cmsDeleteTransform(cmsContext ContextID, cmsHTRANSFORM hTransform
     _cmsFree(ContextID, (void *)core);
 }
 
+
+static
+cmsUInt32Number PixelSize(cmsUInt32Number Format)
+{
+    cmsUInt32Number fmt_bytes = T_BYTES(Format);
+
+    // For double, the T_BYTES field is zero
+    if (fmt_bytes == 0)
+        return sizeof(cmsUInt64Number);
+
+    // Otherwise, it is already correct for all formats
+    return fmt_bytes;
+}
+
+
+
+
 // Apply transform.
 void CMSEXPORT cmsDoTransform(cmsContext ContextID, cmsHTRANSFORM  Transform,
                               const void* InputBuffer,
@@ -178,8 +195,8 @@ void CMSEXPORT cmsDoTransform(cmsContext ContextID, cmsHTRANSFORM  Transform,
 
     stride.BytesPerLineIn = 0;  // Not used
     stride.BytesPerLineOut = 0;
-    stride.BytesPerPlaneIn = Size;
-    stride.BytesPerPlaneOut = Size;
+    stride.BytesPerPlaneIn = Size * PixelSize(p->InputFormat);
+    stride.BytesPerPlaneOut = Size * PixelSize(p->OutputFormat);
 
     p -> xform(ContextID, p, InputBuffer, OutputBuffer, Size, 1, &stride);
 }
@@ -949,7 +966,7 @@ cmsBool  _cmsRegisterTransformPlugin(cmsContext ContextID, cmsPluginBase* Data)
     if (fl == NULL) return FALSE;
 
     // Check for full xform plug-ins previous to 2.8, we would need an adapter in that case
-    if (Plugin->base.ExpectedVersion < 80) {
+    if (Plugin->base.ExpectedVersion < 2080-2000) {
 
            fl->OldXform = TRUE;
     }
@@ -1059,7 +1076,7 @@ _cmsFindFormatter(_cmsTRANSFORM* p, cmsUInt32Number InputFormat, cmsUInt32Number
                 return;
             case CHANNELS_SH(3) | BYTES_SH(1) | ((CHANNELS_SH(1) | BYTES_SH(1))<<6):
                 p ->xform = CachedXFORM3to1;
-                return;
+		return;
             case CHANNELS_SH(3) | BYTES_SH(2) | ((CHANNELS_SH(1) | BYTES_SH(2))<<6):
                 p ->xform = CachedXFORM3x2to1x2;
                 return;
@@ -1136,13 +1153,8 @@ _cmsTRANSFORM* AllocEmptyTransform(cmsContext ContextID, cmsPipeline* lut,
     p->core->Lut = lut;
 
        // Let's see if any plug-in want to do the transform by itself
-       if (core->Lut != NULL) {
+       if (core->Lut != NULL && !(*dwFlags & cmsFLAGS_NOOPTIMIZE)) {
 
-           // First, optimise the pipeline. This may cause us to recognise that the Luts are
-           // identity.
-           _cmsOptimizePipeline(ContextID, &core->Lut, Intent, InputFormat, OutputFormat, dwFlags);
-
-           if (_cmsLutIsIdentity(core->Lut) == FALSE) {
               for (Plugin = ctx->TransformCollection;
                      Plugin != NULL;
                      Plugin = Plugin->Next) {
@@ -1175,8 +1187,9 @@ _cmsTRANSFORM* AllocEmptyTransform(cmsContext ContextID, cmsPipeline* lut,
                             return p;
                      }
               }
-          }
 
+              // Not suitable for the transform plug-in, let's check the pipeline plug-in
+              _cmsOptimizePipeline(ContextID, &core->Lut, Intent, InputFormat, OutputFormat, dwFlags);
        }
 
     // Check whatever this is a true floating point transform
@@ -1594,9 +1607,6 @@ cmsHTRANSFORM cmsCloneTransformChangingFormats(cmsContext ContextID,
     const _cmsTRANSFORM *oldXform = (const _cmsTRANSFORM *)hTransform;
     _cmsTRANSFORM *xform;
     cmsFormatter16 FromInput, ToOutput;
-    _cmsTransformPluginChunkType* ctx = (_cmsTransformPluginChunkType*)_cmsContextGetClientChunk(ContextID, TransformPlugin);
-    _cmsTransformCollection* Plugin;
-    _cmsTRANSFORMCORE *core;
 
     _cmsAssert(oldXform != NULL && oldXform->core != NULL);
 
@@ -1625,20 +1635,6 @@ cmsHTRANSFORM cmsCloneTransformChangingFormats(cmsContext ContextID,
     xform ->OutputFormat = OutputFormat;
     xform ->FromInput    = FromInput;
     xform ->ToOutput     = ToOutput;
-
-    /* Transformation plug-in support needed here but only if lcms has determined
-       that this lut is not the identity transform */
-    if (oldXform->core->Lut != NULL && _cmsLutIsIdentity(oldXform->core->Lut) == FALSE) {
-        for (Plugin = ctx->TransformCollection; Plugin != NULL; Plugin = Plugin->Next) {
-            core = xform->core;
-            if (Plugin->Factory(ContextID, &xform->xform, &core->UserData,
-                &core->FreeUserData, &core->Lut, &InputFormat, &OutputFormat, NULL)) {
-                (void)_cmsAdjustReferenceCount(&xform->core->refs, 1);
-                return xform;
-            }
-        }
-    }
-
     _cmsFindFormatter(xform, InputFormat, OutputFormat, xform->core->dwOriginalFlags);
 
     (void)_cmsAdjustReferenceCount(&xform->core->refs, 1);
