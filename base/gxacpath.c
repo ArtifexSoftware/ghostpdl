@@ -431,9 +431,8 @@ accum_alloc_rect(gx_device_cpath_accum * adev)
 #define ACCUM_ALLOC(s, ar, px, py, qx, qy)\
         if (++(adev->list.count) == 1)\
           ar = &adev->list.single;\
-        else if ((ar = accum_alloc_rect(adev)) == 0)\
-          return_error(gs_error_VMerror);\
-        ACCUM_SET(s, ar, px, py, qx, qy)
+        ar = accum_alloc_rect(adev);\
+        if (ar) ACCUM_SET(s, ar, px, py, qx, qy)
 #define ACCUM_SET(s, ar, px, py, qx, qy)\
         (ar)->xmin = px, (ar)->ymin = py, (ar)->xmax = qx, (ar)->ymax = qy;\
         clip_rect_print('Q', s, ar)
@@ -537,6 +536,7 @@ top:
             return 0;
         }
         ACCUM_ALLOC("app.y", nr, x, y, xe, ye);
+        if (!nr) return_error(gs_error_VMerror);
         ACCUM_ADD_LAST(nr);
         return 0;
     } else if (y == rptr->ymin && ye == rptr->ymax && x >= rptr->xmin) {
@@ -546,10 +546,12 @@ top:
             return 0;
         }
         ACCUM_ALLOC("app.x", nr, x, y, xe, ye);
+        if (!nr) return_error(gs_error_VMerror);
         ACCUM_ADD_LAST(nr);
         return 0;
     }
     ACCUM_ALLOC("accum", nr, x, y, xe, ye);
+    if (!nr) return_error(gs_error_VMerror);
     /* Previously we used to always search back from the tail here. Now we
      * base our search on the previous insertion point, in the hopes that
      * locality of reference will save us time. */
@@ -579,6 +581,10 @@ top:
         }
         /* Split off the top part of the new rectangle. */
         ACCUM_ALLOC("a.top", ar, x, ymax, xe, ye);
+        if (!ar) {
+            if (nr != &adev->list.single) ACCUM_FREE("free", nr);
+            return_error(gs_error_VMerror);
+        }
         ACCUM_ADD_AFTER(ar, rptr);
         ye = nr->ymax = ymax;
         clip_rect_print('Q', " ymax", nr);
@@ -592,6 +598,10 @@ top:
 
         while (rsplit->ymax == ymax) {
             ACCUM_ALLOC("s.top", ar, rsplit->xmin, ye, rsplit->xmax, ymax);
+            if (!ar) {
+                if (nr != &adev->list.single) ACCUM_FREE("free", nr);
+                return_error(gs_error_VMerror);
+            }
             ACCUM_ADD_AFTER(ar, rptr);
             rsplit->ymax = ye;
             rsplit = rsplit->prev;
@@ -606,6 +616,10 @@ top:
             rbot = rbot->prev;
         for (rsplit = rbot;;) {
             ACCUM_ALLOC("s.bot", ar, rsplit->xmin, ymin, rsplit->xmax, y);
+            if (!ar) {
+                if (nr != &adev->list.single) ACCUM_FREE("free", nr);
+                return_error(gs_error_VMerror);
+            }
             ACCUM_ADD_BEFORE(ar, rbot);
             rsplit->ymin = y;
             if (rsplit == rptr)
