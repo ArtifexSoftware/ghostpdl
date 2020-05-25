@@ -808,10 +808,10 @@ static int bitmap_paint(gs_image_enum * pen, gs_data_image_t * pim,
 static int
 mask_PaintProc(const gs_client_color * pcolor, gs_gstate * pgs)
 {
+    int code;
     const pixmap_info *ppmap = gs_getpattern(pcolor)->client_data;
     const gs_depth_bitmap *pbitmap = &(ppmap->bitmap);
-    gs_image_enum *pen =
-    gs_image_enum_alloc(gs_gstate_memory(pgs), "mask_PaintProc");
+    gs_image_enum *pen = gs_image_enum_alloc(gs_gstate_memory(pgs), "mask_PaintProc");
     gs_image1_t mask;
 
     if (pen == 0)
@@ -820,7 +820,9 @@ mask_PaintProc(const gs_client_color * pcolor, gs_gstate * pgs)
     mask.Width = pbitmap->size.x;
     mask.Height = pbitmap->size.y;
     gs_image_init(pen, &mask, false, false, pgs);
-    return bitmap_paint(pen, (gs_data_image_t *) & mask, pbitmap, pgs);
+    code = bitmap_paint(pen, (gs_data_image_t *) & mask, pbitmap, pgs);
+    gs_free_object(gs_gstate_memory(pgs), pen, "mask_PaintProc");
+    return code;
 }
 static int
 image_PaintProc(const gs_client_color * pcolor, gs_gstate * pgs)
@@ -896,6 +898,7 @@ image_PaintProc(const gs_client_color * pcolor, gs_gstate * pgs)
                                      (gs_data_image_t *)&image,
                                      pgs )) >= 0 &&
         (code = bitmap_paint(pen, (gs_data_image_t *) & image, pbitmap, pgs)) >= 0) {
+        gs_free_object(gs_gstate_memory(pgs), pen, "image_PaintProc");
         return gs_grestore(pgs);
     }
     /* Failed above, need to undo the gsave */
@@ -922,7 +925,7 @@ bitmap_paint(gs_image_enum * pen, gs_data_image_t * pim,
     else
         for (n = pim->Height; n > 0 && code >= 0; dp += raster, --n)
             code = gs_image_next(pen, dp, nbytes, &used);
-    code1 = gs_image_cleanup_and_free_enum(pen, pgs);
+    code1 = gs_image_cleanup(pen, pgs);
     if (code >= 0 && code1 < 0)
         code = code1;
     return code;
