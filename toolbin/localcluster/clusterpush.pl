@@ -209,7 +209,7 @@ my $cmd="rsync -avxcz ".
 " --exclude membin --exclude memobj --exclude membin64 --exclude memobj64".
 " --exclude profbin --exclude profobj --exclude profbin64 --exclude profobj64".
 " --exclude sanbin --exclude sanobj --exclude sanbin64 --exclude sanobj64".
-" --exclude sobin --exclude soobj --exclude debugbin".
+" --exclude sobin --exclude soobj --exclude debugbin --exclude sodebugbin --exclude sodebugobj".
 " --exclude ufst --exclude ufst-obj --exclude ufst-debugobj".
 " --exclude '*-bin' --exclude '*-obj'".
 " --exclude config.log --exclude .png".
@@ -225,6 +225,8 @@ my $cmd="rsync -avxcz ".
 " --exclude platform/python".
 " --exclude include/html".
 " --exclude include/latex".
+
+" --exclude /build/".
 
 # " --exclude Makefile". We can't just exclude Makefile, since the MuPDF Makefile is not a derived file.
 " -e \"$ssh\" ".
