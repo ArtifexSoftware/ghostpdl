@@ -42,11 +42,13 @@ typedef struct gp_file_s gp_file;
  * Here we deal with the vagaries of various C compilers.  We assume that:
  *      ANSI-standard Unix compilers define __STDC__.
  *      gcc defines __GNUC__.
- *      Borland Turbo C and Turbo C++ define __MSDOS__ and __TURBOC__.
- *      Borland C++ defines __BORLANDC__, __MSDOS__, and __TURBOC__.
  *      Microsoft C/C++ defines _MSC_VER and _MSDOS.
+ *
+ * The following are compilers we no longer support:
  *      Watcom C defines __WATCOMC__ and MSDOS.
  *      MetroWerks C defines __MWERKS__.
+ *      Borland Turbo C and Turbo C++ define __MSDOS__ and __TURBOC__.
+ *      Borland C++ defines __BORLANDC__, __MSDOS__, and __TURBOC__.
  *
  * We arrange to define __MSDOS__ on all the MS-DOS platforms.
  */

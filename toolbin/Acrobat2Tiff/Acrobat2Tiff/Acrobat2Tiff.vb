@@ -15,8 +15,8 @@ Module Acrobat2Tiff
     Console.WriteLine("        using [ -gray | -mono | -rgb | -cmyk ]")
     Console.WriteLine("  Resolution defaults to 72dpi, but may be specified e.g. -r 300")
     Console.WriteLine("")
-    Console.WriteLine("Tested with Acrobat 9.0, will hopefully work with 7/8/10/11/DC too.")
-    Console.WriteLine("Ensure you have no other Acrobat processes running, or the colorspace")
+        Console.WriteLine("Tested with Acrobat 9.0, will hopefully work with 7/8/10/11/DC too.")
+        Console.WriteLine("Ensure you have no other Acrobat processes running, or the colorspace")
     Console.WriteLine("and Resolution of output images may be wrong.")
   End Sub
 
@@ -45,10 +45,11 @@ Module Acrobat2Tiff
     Dim i As Integer
     Dim cspace As Integer
     Dim infile As String
-    Dim outfile As String
+        Dim outfile As String
+        Dim result As Integer
 
-    ' Set defaults
-    infile = ""
+        ' Set defaults
+        infile = ""
     outfile = ""
     res = 72
     cspace = 1
@@ -95,14 +96,14 @@ Module Acrobat2Tiff
       Return
     End If
 
-    'Console.WriteLine("Input: '" & infile & "'")
-    'Console.WriteLine("Output: '" & outfile & "'")
-    'Console.WriteLine("Resolution: " & CStr(res))
-    'Console.WriteLine("CSpace: " & CStr(cspace))
+        Console.WriteLine("Input: '" & infile & "'")
+        Console.WriteLine("Output: '" & outfile & "'")
+        Console.WriteLine("Resolution: " & CStr(res))
+        Console.WriteLine("CSpace: " & CStr(cspace))
 
-    ' Set the registry values
-    setRegistryKeys("HKEY_CURRENT_USER\Software\Adobe\Adobe Acrobat\7.0\AVConversionFromPDF\cSettings", "TIFF", res, cspace)
-    setRegistryKeys("HKEY_CURRENT_USER\Software\Adobe\Adobe Acrobat\8.0\AVConversionFromPDF\cSettings", "TIFF", res, cspace)
+        ' Set the registry values
+        setRegistryKeys("HKEY_CURRENT_USER\Software\Adobe\Adobe Acrobat\7.0\AVConversionFromPDF\cSettings", "TIFF", res, cspace)
+        setRegistryKeys("HKEY_CURRENT_USER\Software\Adobe\Adobe Acrobat\8.0\AVConversionFromPDF\cSettings", "TIFF", res, cspace)
     setRegistryKeys("HKEY_CURRENT_USER\Software\Adobe\Adobe Acrobat\9.0\AVConversionFromPDF\cSettings", "TIFF", res, cspace)
     setRegistryKeys("HKEY_CURRENT_USER\Software\Adobe\Adobe Acrobat\10.0\AVConversionFromPDF\cSettings", "TIFF", res, cspace)
     setRegistryKeys("HKEY_CURRENT_USER\Software\Adobe\Adobe Acrobat\11.0\AVConversionFromPDF\cSettings", "TIFF", res, cspace)
@@ -114,17 +115,19 @@ Module Acrobat2Tiff
     ' Create Acrobat Document object
     PDDoc = CreateObject("AcroExch.PDDoc")
 
-    ' Open PDF file
-    PDDoc.Open(infile)
+        ' Open PDF file
+        result = PDDoc.Open(infile)
 
-    ' Hide Acrobat application so everything is done in silent mode
-    PDFApp.Hide()
+        ' Hide Acrobat application so everything is done in silent mode
+        'PDFApp.Hide()
 
-    ' Create Javascript bridge object
-    JSObj = PDDoc.GetJSObject()
+        ' Create Javascript bridge object
 
-    ' Create Tiff file
-    JSObj.SaveAs(outfile, "com.adobe.acrobat.tiff")
+        JSObj = PDDoc.GetJSObject
+        result = PDDoc.GetNumPages
+
+        ' Create Tiff file
+        JSObj.SaveAs(outfile, "com.adobe.acrobat.tiff")
 
     PDDoc.Close()
     PDFApp.CloseAllDocs()

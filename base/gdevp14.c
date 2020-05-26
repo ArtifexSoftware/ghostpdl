@@ -5638,7 +5638,7 @@ gx_update_pdf14_compositor(gx_device * pdev, gs_gstate * pgs,
  * doing a page which uses PDF 1.4 transparency.  This routine is only active
  * when the PDF 1.4 compositor is 'disabled'.  It checks for reenabling the
  * PDF 1.4 compositor.  Otherwise it simply passes create compositor requests
- * to the targer.
+ * to the target.
  */
 static	int
 pdf14_forward_create_compositor(gx_device * dev, gx_device * * pcdev,
@@ -6074,7 +6074,7 @@ pdf14_begin_transparency_group(gx_device* dev,
     gs_gstate* pgs, gs_memory_t* mem)
 {
     pdf14_device* pdev = (pdf14_device*)dev;
-    double alpha = ptgp->group_opacity * ptgp->group_shape;
+    float alpha = ptgp->group_opacity * ptgp->group_shape;
     gs_int_rect rect;
     int code;
     bool isolated = ptgp->Isolated;
@@ -6105,7 +6105,7 @@ pdf14_begin_transparency_group(gx_device* dev,
         return code;
     if_debug5m('v', pdev->memory,
         "[v]pdf14_begin_transparency_group, I = %d, K = %d, alpha = %g, bm = %d page_group = %d\n",
-        ptgp->Isolated, ptgp->Knockout, alpha, pgs->blend_mode, ptgp->page_group);
+        ptgp->Isolated, ptgp->Knockout, (double)alpha, pgs->blend_mode, ptgp->page_group);
 
     /* If the group color is unknown then use the current device profile. */
     if (ptgp->group_color_type == UNKNOWN) {
@@ -8146,6 +8146,9 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
     gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &icc_profile,
                           &render_cond);
     *pbuf++ = opcode;			/* 1 byte */
+    if (trans_group_level < 0 && opcode != PDF14_PUSH_DEVICE)
+        return_error(gs_error_unregistered);	/* prevent spurious transparency ops (Bug 702327) */
+
     switch (opcode) {
         default:			/* Should not occur. */
             break;
@@ -8175,7 +8178,7 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
             break;
         case PDF14_POP_DEVICE:
             pdf14_needed = false;		/* reset pdf14_needed */
-            trans_group_level = 0;
+            trans_group_level = -1;		/* reset so we need to PUSH_DEVICE next */
             smask_level = 0;
             put_value(pbuf, pparams->is_pattern);
             break;
@@ -8548,6 +8551,7 @@ c_pdf14trans_adjust_ctm(gs_composite_t * pct0, int x0, int y0, gs_gstate *pgs)
  *
  * Note that this routine will be called only if the device is not already
  * a PDF 1.4 transparency compositor.
+ * Return an error if it is not a PDF14_PUSH_DEVICE operation.
  */
 static	int
 c_pdf14trans_create_default_compositor(const gs_composite_t * pct,
@@ -8569,8 +8573,9 @@ c_pdf14trans_create_default_compositor(const gs_composite_t * pct,
             *pp14dev = p14dev;
             break;
         default:
-            *pp14dev = tdev;
-            break;
+	    /* No other compositor actions are allowed if this isn't a pdf14 compositor */
+            *pp14dev = NULL;
+	    return_error(gs_error_unregistered);
     }
     return code;
 }
@@ -9902,7 +9907,7 @@ pdf14_clist_update_params(pdf14_clist_device * pdev, const gs_gstate * pgs,
     }
     if (pgs->alphaisshape != pdev->ais) {
         changed |= PDF14_SET_AIS;
-        params.ais = pdev->shape = pgs->alphaisshape;
+        params.ais = pdev->ais = pgs->alphaisshape;
     }
     if (pgs->overprint != pdev->overprint) {
         changed |= PDF14_SET_OVERPRINT;

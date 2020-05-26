@@ -497,7 +497,7 @@ do_stroke(gs_gstate * pgs)
         }
         gs_setlinewidth(pgs, new_width);
         scale_dash_pattern(pgs, scale);
-        gs_setflat(pgs, orig_flatness * scale);
+        gs_setflat(pgs, (double)(orig_flatness * scale));
         /*
          * The alpha-buffer device requires that we fill the
          * entire path as a single unit.
@@ -750,7 +750,7 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
             goto out;
         gs_setlinewidth(pgs, new_width);
         scale_dash_pattern(pgs, scale);
-        gs_setflat(pgs, orig_flatness * scale);
+        gs_setflat(pgs, (double)(orig_flatness * scale));
         pgs->log_op = orig_lop;
     } else
         acode = 0;

@@ -625,10 +625,10 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
                        Well we could use eigenvalues of the quadratic form,
                        but it gives same result with a bigger calculus.
                      */
-                    double max_rr = (xx*xx + xy*xy + yx*yx + yy*yy +
-                                        sqrt( ((xy + yx)*(xy + yx) + (xx - yy)*(xx - yy)) *
-                                              ((xy - yx)*(xy - yx) + (xx + yy)*(xx + yy))
-                                            )
+                    double max_rr = ((double)(xx*xx + xy*xy + yx*yx + yy*yy) +
+                                     sqrt((double)((xy + yx)*(xy + yx) + (xx - yy)*(xx - yy)) *
+                                                  ((xy - yx)*(xy - yx) + (xx + yy)*(xx + yy))
+                                          )
                                      )/2;
 
                     always_thin = max_rr * line_width * line_width < 0.25;

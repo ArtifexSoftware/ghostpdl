@@ -84,9 +84,25 @@ gsapi_set_stdio(void *instance,
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
     if (instance == NULL)
         return gs_error_Fatal;
+    return gsapi_set_stdio_with_handle(instance,
+                                       stdin_fn, stdout_fn, stderr_fn,
+                                       ctx->core->default_caller_handle);
+}
+
+GSDLLEXPORT int GSDLLAPI
+gsapi_set_stdio_with_handle(void *instance,
+    int(GSDLLCALL *stdin_fn)(void *caller_handle, char *buf, int len),
+    int(GSDLLCALL *stdout_fn)(void *caller_handle, const char *str, int len),
+    int(GSDLLCALL *stderr_fn)(void *caller_handle, const char *str, int len),
+    void *caller_handle)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (instance == NULL)
+        return gs_error_Fatal;
     ctx->core->stdin_fn = stdin_fn;
     ctx->core->stdout_fn = stdout_fn;
     ctx->core->stderr_fn = stderr_fn;
+    ctx->core->std_caller_handle = caller_handle;
     return 0;
 }
 
@@ -98,7 +114,20 @@ gsapi_set_poll(void *instance,
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
     if (instance == NULL)
         return gs_error_Fatal;
+    return gsapi_set_poll_with_handle(instance, poll_fn,
+                                      ctx->core->default_caller_handle);
+}
+
+GSDLLEXPORT int GSDLLAPI
+gsapi_set_poll_with_handle(void *instance,
+    int(GSDLLCALL *poll_fn)(void *caller_handle),
+    void *caller_handle)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (instance == NULL)
+        return gs_error_Fatal;
     ctx->core->poll_fn = poll_fn;
+    ctx->core->poll_caller_handle = caller_handle;
     return 0;
 }
 

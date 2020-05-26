@@ -152,6 +152,15 @@ gsapi_set_stdio(void *instance,
     int (GSDLLCALLPTR stdout_fn)(void *caller_handle, const char *str, int len),
     int (GSDLLCALLPTR stderr_fn)(void *caller_handle, const char *str, int len));
 
+/* Does the same as the above, but using the caller_handle given here,
+ * rather than the default one specified at gsapi_new_instance time. */
+GSDLLEXPORT int GSDLLAPI
+gsapi_set_stdio_with_handle(void *instance,
+    int (GSDLLCALLPTR stdin_fn)(void *caller_handle, char *buf, int len),
+    int (GSDLLCALLPTR stdout_fn)(void *caller_handle, const char *str, int len),
+    int (GSDLLCALLPTR stderr_fn)(void *caller_handle, const char *str, int len),
+    void *caller_handle);
+
 /* Set the callback function for polling.
  * This is used for handling window events or cooperative
  * multitasking.  This function will only be called if
@@ -163,6 +172,11 @@ gsapi_set_stdio(void *instance,
  */
 GSDLLEXPORT int GSDLLAPI gsapi_set_poll(void *instance,
     int (GSDLLCALLPTR poll_fn)(void *caller_handle));
+
+/* Does the same as the above, but using the caller_handle given here,
+ * rather than the default one specified at gsapi_new_instance time. */
+GSDLLEXPORT int GSDLLAPI gsapi_set_poll_with_handle(void *instance,
+    int (GSDLLCALLPTR poll_fn)(void *caller_handle), void *caller_handle);
 
 /* Set the display device callback structure.
  * If the display device is used, this must be called

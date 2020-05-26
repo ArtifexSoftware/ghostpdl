@@ -27,53 +27,44 @@
  ****** unlike memcmp which returns -1, 0, or 1.
  ******/
 
-#ifdef __TURBOC__
-/* Define inline functions */
-#  ifdef __WIN32__
-#    define memcmp_inline(b1,b2,len) memcmp(b1,b2,len)
-#  else
-#    define memcmp_inline(b1,b2,len) __memcmp__(b1,b2,len)
-#  endif
-#  include <mem.h>
+#define memcmp_inline(b1,b2,len) memcmp(b1,b2,len)
+
+/*
+ * Apparently the newer VMS compilers include prototypes
+ * for the mem... routines in <string.h>.  Unfortunately,
+ * gcc lies on Sun systems: it defines __STDC__ even if
+ * the header files in /usr/include are broken.
+ * However, Solaris systems, which define __svr4__, do have
+ * correct header files.
+ */
+/*
+ * The exceptions vastly outnumber the BSD4_2 "rule":
+ * these tests should be the other way around....
+ */
+
+#if defined(VMS) || defined(_POSIX_SOURCE) || (defined(__STDC__) && (!defined(sun) || defined(__svr4__))) || defined(_HPUX_SOURCE) || defined(__WATCOMC__) || defined(THINK_C) || defined(bsdi) || defined(__FreeBSD) || (defined(_MSC_VER) && _MSC_VER >= 1000)
+#  include <string.h>
 #else
-        /* Not Turbo C, no inline functions */
-#  define memcmp_inline(b1,b2,len) memcmp(b1,b2,len)
-        /*
-         * Apparently the newer VMS compilers include prototypes
-         * for the mem... routines in <string.h>.  Unfortunately,
-         * gcc lies on Sun systems: it defines __STDC__ even if
-         * the header files in /usr/include are broken.
-         * However, Solaris systems, which define __svr4__, do have
-         * correct header files.
-         */
-        /*
-         * The exceptions vastly outnumber the BSD4_2 "rule":
-         * these tests should be the other way around....
-         */
-#  if defined(VMS) || defined(_POSIX_SOURCE) || (defined(__STDC__) && (!defined(sun) || defined(__svr4__))) || defined(_HPUX_SOURCE) || defined(__WATCOMC__) || defined(THINK_C) || defined(bsdi) || defined(__FreeBSD) || (defined(_MSC_VER) && _MSC_VER >= 1000)
-#    include <string.h>
-#  else
-#    if defined(BSD4_2) || defined(UTEK)
+#  if defined(BSD4_2) || defined(UTEK)
 extern bcopy(), bcmp(), bzero();
 
-#	 define memcpy(dest,src,len) bcopy(src,dest,len)
-#	 define memcmp(b1,b2,len) bcmp(b1,b2,len)
-         /* Define our own versions of missing routines (in gsmisc.c). */
-#	 define MEMORY__NEED_MEMMOVE
-#        include <sys/types.h>	/* for size_t */
-#	 define MEMORY__NEED_MEMSET
-#	 if defined(UTEK)
-#          define MEMORY__NEED_MEMCHR
-#        endif			/* UTEK */
-#    else
-#      include <memory.h>
-#      if defined(__SVR3) || defined(sun)	/* Not sure this is right.... */
-#	 define MEMORY__NEED_MEMMOVE
-#        include <sys/types.h>	/* for size_t */
-#      endif			/* __SVR3 or sun */
-#    endif			/* BSD4_2 or UTEK */
-#  endif			/* VMS, POSIX, ... */
-#endif /* !__TURBOC__ */
+#      define memcpy(dest,src,len) bcopy(src,dest,len)
+#      define memcmp(b1,b2,len) bcmp(b1,b2,len)
+       /* Define our own versions of missing routines (in gsmisc.c). */
+#      define MEMORY__NEED_MEMMOVE
+#      include <sys/types.h>  /* for size_t */
+#      define MEMORY__NEED_MEMSET
+#      if defined(UTEK)
+#        define MEMORY__NEED_MEMCHR
+#      endif                  /* UTEK */
+#  else
+#    include <memory.h>
+#    if defined(__SVR3) || defined(sun)       /* Not sure this is right.... */
+#      define MEMORY__NEED_MEMMOVE
+#      include <sys/types.h>  /* for size_t */
+#    endif                    /* __SVR3 or sun */
+#  endif                      /* BSD4_2 or UTEK */
+#endif                        /* VMS, POSIX, ... */
 
 /*
  * If we are profiling, substitute our own versions of memset, memcpy,

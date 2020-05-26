@@ -669,13 +669,9 @@ WITH_CUPS=0
 
 # Define the directory where the FreeType2 library sources are stored.
 # See freetype.mak for more information.
-
-!ifdef UFST_BRIDGE
-!if "$(UFST_BRIDGE)"=="1"
-FT_BRIDGE=0
-!endif
-!endif
-
+# Note that FT_BRIDGE=1 is now the only support configuration for anything
+# other than testing purposes (even when UFST_BRIDGE=1 - we require Freetype
+# for embedded/downloaded fonts.
 !ifndef FT_BRIDGE
 FT_BRIDGE=1
 !endif
@@ -1030,6 +1026,11 @@ MS_TOOLSET_VERSION=14.24.28316
 # VS2019 (Toolset v142 - update)
 MSVC_VERSION=16
 MS_TOOLSET_VERSION=14.25.28614
+!endif
+!if "$(_NMAKE_VER)" == "14.26.28805.0"
+# VS2019 (Toolset v142 - update)
+MSVC_VERSION=16
+MS_TOOLSET_VERSION=14.26.28805
 !endif
 !endif
 

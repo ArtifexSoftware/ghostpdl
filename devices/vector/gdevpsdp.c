@@ -625,6 +625,10 @@ gdev_psdf_get_params(gx_device * dev, gs_param_list * plist)
     if (code < 0)
         return code;
 
+    code = param_write_string_array(plist, "PSPageOptions", &pdev->params.PSPageOptions);
+    if (code < 0)
+        return code;
+
     code = psdf_write_name(plist, "CannotEmbedFontPolicy",
                 CannotEmbedFontPolicy_names[(int)pdev->params.CannotEmbedFontPolicy]);
 
@@ -1040,6 +1044,65 @@ psdf_put_image_params(const gx_device_psdf * pdev, gs_param_list * plist,
     return ecode;
 }
 
+/* This is a convenience routine. There doesn't seem to be any way to have a param_string_array
+ * enumerated for garbage collection, and we have (currently) three members of the psdf_distiller_params
+ * structure which store param_string_array. If the interpreter is using garbage collection then there
+ * is the potential for the array, or its contents, to be relocated or freed while we are still
+ * maintaining pointers to them, unless we enumerate the pointers.
+ * Instead, we'll copy the string data from the interpreter, make our own param_string_array, and
+ * manage the memory ourselves. This allows us to move the data into non-GC memory which is preferable
+ * anyway.
+ */
+static int psdf_copy_param_string_array(gs_memory_t *mem, gs_param_list * plist, gs_param_string_array *sa, gs_param_string_array *da)
+{
+    int code;
+
+    if (sa->size > 0) {
+        int ix;
+        byte **dest;
+
+        if (da->data != NULL) {
+            for (ix = 0; ix < da->size;ix++)
+                gs_free_object(mem->non_gc_memory, (byte *)da->data[ix].data, "freeing old string array copy");
+            gs_free_object(mem->non_gc_memory, (byte *)da->data, "freeing old string array");
+        }
+        da->data = (const gs_param_string *)gs_alloc_bytes(mem->non_gc_memory, sa->size * sizeof(gs_param_string), "allocate new string array");
+        if (da->data == NULL)
+            return_error(gs_note_error(gs_error_VMerror));
+        memset((byte *)da->data, 0x00, sa->size * sizeof(gs_param_string));
+        da->size = sa->size;
+        da->persistent = false;
+
+        for(ix=0;ix < sa->size;ix++) {
+            ((gs_param_string *)&da->data[ix])->data = gs_alloc_bytes(mem->non_gc_memory, sa->data[ix].size, "allocate new strings");
+            if (da->data[ix].data == NULL)
+                return_error(gs_note_error(gs_error_VMerror));
+            memcpy((byte *)(da->data[ix].data), sa->data[ix].data, sa->data[ix].size);
+            ((gs_param_string *)&da->data[ix])->size = sa->data[ix].size;
+            ((gs_param_string *)&da->data[ix])->persistent = false;
+        }
+        gs_free_object(plist->memory, (byte *)sa->data, "freeing temporary param string array");
+        sa->data = NULL;
+        sa->size = 0;
+    }
+    return 0;
+}
+
+static int psdf_read_copy_param_string_array(gs_memory_t *mem, gs_param_list * plist, char *Key, gs_param_string_array *da)
+{
+    gs_param_string_array sa;
+    int code;
+
+    code  = param_read_embed_array(plist, Key, &sa);
+    if (code < 0)
+        return code;
+
+    if(sa.size)
+        code = psdf_copy_param_string_array(mem, plist, &sa, da);
+
+    return code;
+}
+
 /* Put parameters. */
 int
 gdev_psdf_put_params(gx_device * dev, gs_param_list * plist)
@@ -1076,6 +1139,8 @@ gdev_psdf_put_params(gx_device * dev, gs_param_list * plist)
         params.MonoImage.ACSDict = params.MonoImage.Dict = 0;
         params.AlwaysEmbed.data = params.NeverEmbed.data = 0;
         params.AlwaysEmbed.size = params.AlwaysEmbed.persistent = params.NeverEmbed.size = params.NeverEmbed.persistent = 0;
+        params.PSPageOptions.data = NULL;
+        params.PSPageOptions.size = 0;
     }
 
     /* General parameters. */
@@ -1184,6 +1249,7 @@ gdev_psdf_put_params(gx_device * dev, gs_param_list * plist)
                                  &params.AlwaysEmbed, mem, ecode);
     ecode = psdf_put_embed_param(plist, "~NeverEmbed", ".NeverEmbed",
                                  &params.NeverEmbed, mem, ecode);
+
     params.CannotEmbedFontPolicy = (enum psdf_cannot_embed_font_policy)
         psdf_put_enum(plist, "CannotEmbedFontPolicy",
                       (int)params.CannotEmbedFontPolicy,
@@ -1199,7 +1265,7 @@ gdev_psdf_put_params(gx_device * dev, gs_param_list * plist)
     if (code < 0)
         goto exit;
 
-    code  = param_read_embed_array(plist, "PSPageOptions", &params.PSPageOptions);
+    code = psdf_read_copy_param_string_array(pdev->memory, plist, "PSPageOptions", &params.PSPageOptions);
     if (code < 0)
         goto exit;
 
@@ -1208,6 +1274,14 @@ gdev_psdf_put_params(gx_device * dev, gs_param_list * plist)
 exit:
     if (!(pdev->params.LockDistillerParams && params.LockDistillerParams)) {
         /* Only update the device paramters if there was no error */
+        /* If we have any copied param_string_arrays, start by freeing them */
+        if (pdev->params.PSPageOptions.size && params.PSPageOptions.size) {
+            int ix;
+
+            for (ix = 0; ix < pdev->params.PSPageOptions.size;ix++)
+                gs_free_object(mem->non_gc_memory, (byte *)pdev->params.PSPageOptions.data[ix].data, "freeing old string array copy");
+            gs_free_object(mem->non_gc_memory, (byte *)pdev->params.PSPageOptions.data, "freeing old string array");
+        }
         pdev->params = params;
     } else {
         /* We read a bunch of parameters and are now throwing them away. Either because there
@@ -1216,10 +1290,15 @@ exit:
          */
         gs_memory_t *stable_mem = gs_memory_stable(mem);
 
-        if (params.NeverEmbed.data != 0)
-            gs_free_object(stable_mem, (void *)params.NeverEmbed.data, "free dummy param NeverEmbed");
-        if (params.AlwaysEmbed.data != 0)
-            gs_free_object(stable_mem, (void *)params.AlwaysEmbed.data, "free dummy param AlwaysEmbed");
+        if (params.PSPageOptions.data != NULL) {
+            int ix;
+
+            for (ix = 0; ix < pdev->params.PSPageOptions.size;ix++)
+                gs_free_object(mem->non_gc_memory, (byte *)pdev->params.PSPageOptions.data[ix].data, "freeing dummy PSPageOptions");
+            gs_free_object(mem->non_gc_memory, (byte *)pdev->params.PSPageOptions.data, "freeing dummy PSPageOptions");
+            params.PSPageOptions.data = NULL;
+            params.PSPageOptions.size = 0;
+        }
         if (params.CalCMYKProfile.data != 0)
             gs_free_string(stable_mem, (void *)params.CalCMYKProfile.data, params.CalCMYKProfile.size, "free dummy param CalCMYKProfile");
         if (params.CalGrayProfile.data != 0)

@@ -98,7 +98,7 @@ psapi_new_instance(gs_lib_ctx_t **pinstance,
         return gs_error_Fatal;
     }
     mem->gs_lib_ctx->top_of_system = (void*) minst;
-    mem->gs_lib_ctx->core->caller_handle = caller_handle;
+    mem->gs_lib_ctx->core->default_caller_handle = caller_handle;
     mem->gs_lib_ctx->core->custom_color_callback = NULL;
 #ifdef METRO
     mem->gs_lib_ctx->core->stdin_fn = metro_stdin;
@@ -139,7 +139,7 @@ psapi_delete_instance(gs_lib_ctx_t *ctx)
     mem = (gs_memory_t *)(ctx->memory);
     minst = get_minst_from_memory(ctx->memory);
 
-    ctx->core->caller_handle = NULL;
+    ctx->core->default_caller_handle = NULL;
     ctx->core->stdin_fn = NULL;
     ctx->core->stdout_fn = NULL;
     ctx->core->stderr_fn = NULL;

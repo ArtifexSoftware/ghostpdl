@@ -484,6 +484,7 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
         if (gdev_mem_bits_size(&bdev, band_width, band_height, &cdev->page_line_ptrs_offset) < 0)
             return_error(gs_error_VMerror);
     }
+    cdev->pdf14_trans_group_level = -1;	/* to prevent any initial op except PUSH_DEVICE */
     cdev->ins_count = 0;
     code = clist_init_tile_cache(dev, data, bits_size);
     if (code < 0) {

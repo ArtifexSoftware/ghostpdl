@@ -92,7 +92,9 @@ typedef struct {
     bool stdout_is_redirected;	/* to stderr or fstdout2 */
     bool stdout_to_stderr;
     bool stdin_is_interactive;
-    void *caller_handle;	/* identifies caller of GS DLL/shared object */
+    void *default_caller_handle;	/* identifies caller of GS DLL/shared object */
+    void *std_caller_handle;
+    void *poll_caller_handle;
     void *custom_color_callback;  /* pointer to color callback structure */
     int (GSDLLCALL *stdin_fn)(void *caller_handle, char *buf, int len);
     int (GSDLLCALL *stdout_fn)(void *caller_handle, const char *str, int len);
