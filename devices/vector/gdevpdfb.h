@@ -263,6 +263,7 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  0,				/* image_mask_id */
  0,				/* image_mask_is_SMask */
  0,				/* image_mask_skip */
+ 0,             /* smask_construction */
  0,				/* image_with_SMask */
  {0,0,0,0,0,0}, 		/* gs_matrix converting_image_matrix */
  0,				/* image_mask_scale */

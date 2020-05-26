@@ -2287,7 +2287,7 @@ textw_text_process(gs_text_enum_t *pte)
         code = gx_default_text_restore_state(pte_fallback);
         if (code < 0)
             return code;
-        gs_text_release(pte_fallback, "txtwrite_text_process");
+        gs_text_release(NULL, pte_fallback, "txtwrite_text_process");
     }
     pte_fallback = penum->pte_fallback = NULL;
 
@@ -2378,7 +2378,7 @@ textw_text_process(gs_text_enum_t *pte)
                 penum->returned.current_glyph = pte_fallback->returned.current_glyph;
                 return code;
             }
-            gs_text_release(pte_fallback, "txtwrite_text_process");
+            gs_text_release(NULL, pte_fallback, "txtwrite_text_process");
             penum->pte_fallback = 0;
         }
     }
@@ -2453,7 +2453,7 @@ textw_text_release(gs_text_enum_t *pte, client_name_t cname)
     if (penum->text_state)
         gs_free(tdev->memory, penum->text_state, 1, sizeof(penum->text_state), "txtwrite free text state");
 
-    gs_text_release(pte, cname);
+    gs_text_release(NULL, pte, cname);
 }
 
 /* This is the list of methods for the text enumerator */

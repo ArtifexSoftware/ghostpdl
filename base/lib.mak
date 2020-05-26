@@ -1106,7 +1106,8 @@ $(GLOBJ)gsstate.$(OBJ) : $(GLSRC)gsstate.c $(AK) $(gx_h) $(gserrors_h)\
 $(GLOBJ)gstext.$(OBJ) : $(GLSRC)gstext.c $(AK) $(memory__h) $(gdebug_h)\
  $(gserrors_h) $(gsmemory_h) $(gsstruct_h) $(gstypes_h)\
  $(gxfcache_h) $(gxdevcli_h) $(gxdcolor_h) $(gxfont_h) $(gxpath_h)\
- $(gxtext_h) $(gzstate_h) $(gsutil_h) $(gxdevsop_h) $(LIB_MAK) $(MAKEDIRS)
+ $(gxtext_h) $(gzstate_h) $(gsutil_h) $(gxdevsop_h)\
+ $(gscspace_h) $(gsicc_blacktext_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gstext.$(OBJ) $(C_) $(GLSRC)gstext.c
 
 # We make gsiodevs a separate module so the PS interpreter can replace it.
@@ -2959,7 +2960,8 @@ $(GLOBJ)gxctable.$(OBJ) : $(GLSRC)gxctable.c $(AK) $(gx_h)\
 gsicc_=$(GLOBJ)gsicc_manage.$(OBJ) $(GLOBJ)gsicc_cache.$(OBJ)\
  $(GLOBJ)gsicc_$(WHICH_CMS).$(OBJ) $(GLOBJ)gsicc_profilecache.$(OBJ)\
  $(GLOBJ)gsicc_create.$(OBJ)  $(GLOBJ)gsicc_nocm.$(OBJ)\
- $(GLOBJ)gsicc_replacecm.$(OBJ) $(GLOBJ)gsicc_monitorcm.$(OBJ)
+ $(GLOBJ)gsicc_replacecm.$(OBJ) $(GLOBJ)gsicc_monitorcm.$(OBJ)\
+ $(GLOBJ)gsicc_blacktext.$(OBJ)
 
 sicclib_=$(GLOBJ)gsicc.$(OBJ)
 $(GLD)sicclib.dev : $(LIB_MAK) $(ECHOGS_XE) $(sicclib_) $(gsicc_) $(md5_)\
@@ -2980,6 +2982,7 @@ gsicc_cms_h=$(GLSRC)gsicc_cms.h
 gsicc_manage_h=$(GLSRC)gsicc_manage.h
 gsicc_cache_h=$(GLSRC)gsicc_cache.h
 gsicc_profilecache_h=$(GLSRC)gsicc_profilecache.h
+gsicc_blacktext_h=$(GLSRC)gsicc_blacktext.h
 
 $(GLOBJ)gsicc_monitorcm.$(OBJ) : $(GLSRC)gsicc_monitorcm.c $(AK) $(std_h)\
  $(stdpre_h) $(gstypes_h) $(gsmemory_h) $(gxdevcli_h)\
@@ -3019,6 +3022,11 @@ $(GLOBJ)gsicc_profilecache.$(OBJ) : $(GLSRC)gsicc_profilecache.c $(AK)\
  $(gscms_h) $(gsicc_profilecache_h) $(gzstate_h) $(gserrors_h) $(gx_h)\
  $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsicc_profilecache.$(OBJ) $(C_) $(GLSRC)gsicc_profilecache.c
+
+$(GLOBJ)gsicc_blacktext.$(OBJ) : $(GLSRC)gsicc_blacktext.c $(AK)\
+ $(gsmemory_h) $(gsstruct_h) $(gzstate_h) $(gsicc_blacktext_h)\
+ $(LIB_MAK) $(MAKEDIRS)
+	$(GLCC) $(GLO_)gsicc_blacktext.$(OBJ) $(C_) $(GLSRC)gsicc_blacktext.c
 
 $(GLOBJ)gsicc_lcms2mt_1_0.$(OBJ) : $(GLSRC)gsicc_lcms2mt.c\
  $(memory__h) $(gsicc_cms_h) $(gslibctx_h) $(gserrors_h) $(gxdevice_h) $(LIB_MAK) $(MAKEDIRS)

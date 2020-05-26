@@ -42,6 +42,7 @@
 #include "gsccolor.h"
 #include "gsht1.h"
 #include "gxclipsr.h"
+#include "gsicc_blacktext.h"
 
 
 /*
@@ -202,6 +203,8 @@ typedef struct gs_xstate_trans_flags {
 #define gs_currentcolor_inline(pgs)       ((pgs)->color[0].ccolor)
 #define gs_currentcolorspace_inline(pgs)  ((pgs)->color[0].color_space)
 #define gs_altdevicecolor_inline(pgs)     ((pgs)->color[1].dev_color)
+#define gs_altcolor_inline(pgs)           ((pgs)->color[1].ccolor)
+#define gs_altcolorspace_inline(pgs)      ((pgs)->color[1].color_space)
 #define gs_currentcolor_eopm(pgs)         ((pgs)->color[0].effective_opm)
 
 #define char_tm_only(pgs) *(gs_matrix *)&(pgs)->char_tm
@@ -261,6 +264,8 @@ struct gs_gstate_s {
     gsicc_manager_t *icc_manager; /* ICC color manager, profile */
     gsicc_link_cache_t *icc_link_cache; /* ICC linked transforms */
     gsicc_profile_cache_t *icc_profile_cache;  /* ICC profiles from PS. */
+    gsicc_blacktext_state_t *black_text_state;  /* Used to store and restore cs for black text */
+
     CUSTOM_COLOR_PTR        /* Pointer to custom color callback struct */
     const gx_color_map_procs *
       (*get_cmap_procs)(const gs_gstate *, const gx_device *);
@@ -326,7 +331,7 @@ struct gs_gstate_s {
   lop_default, BLEND_MODE_Compatible,\
   {0, 0}, 0, 1/*true*/, 0, 0/*false*/, 0, 0/*false*/, 0, 0/*false*/, 1.0,  \
    { fixed_half, fixed_half }, 0/*false*/, 1/*true*/, 0/*false*/, (float)0.02,\
-  1, 1/* bpt true */, 0, 0, 0, INIT_CUSTOM_COLOR_PTR	/* 'Custom color' callback pointer */  \
+  1, 1/* bpt true */, 0, 0, 0, 0, INIT_CUSTOM_COLOR_PTR	/* 'Custom color' callback pointer */  \
   gx_default_get_cmap_procs
 
 #define GS_STATE_INIT_VALUES(s, scale) \
@@ -364,6 +369,7 @@ struct gs_gstate_s {
     s->icc_link_cache = __state_init.icc_link_cache; \
     s->icc_profile_cache = __state_init.icc_profile_cache; \
     s->get_cmap_procs = __state_init.get_cmap_procs; \
+    s->black_text_state = NULL; \
     s->show_gstate = NULL; \
     s->is_fill_color = 1; \
     s->strokeconstantalpha = 1.0; \
@@ -406,9 +412,10 @@ struct_proc_finalize(gs_gstate_finalize);
   m(16, color[1].dev_color)\
   m(17, font) \
   m(18, root_font) \
-  m(19, show_gstate)
+  m(19, show_gstate) \
+  m(20, black_text_state)
 
-#define gs_gstate_num_ptrs 20
+#define gs_gstate_num_ptrs 21
 
 /* The '+1' in the following is because gs_gstate.device
  * is handled specially
@@ -429,7 +436,6 @@ void gs_gstate_pre_assign(gs_gstate *to, const gs_gstate *from);
 /* Release an gs_gstate. */
 void gs_gstate_release(gs_gstate * pgs);
 int gs_currentscreenphase_pgs(const gs_gstate *, gs_int_point *, gs_color_select_t);
-
 
 /* The following macro is used for development purpose for designating places
    where current point is changed. Clients must not use it. */

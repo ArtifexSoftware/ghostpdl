@@ -3526,6 +3526,7 @@ gs_pdf14_device_copy_params(gx_device *dev, const gx_device *target)
         dev->icc_struct->pageneutralcolor = profile_targ->pageneutralcolor;
         dev->icc_struct->supports_devn = profile_targ->supports_devn;
         dev->icc_struct->usefastcolor = profile_targ->usefastcolor;
+        dev->icc_struct->blacktext = profile_targ->blacktext;
 
         if (pdev->using_blend_cs) {
             /* Swap the device profile and the blend profile. */
@@ -7824,6 +7825,8 @@ pdf14_dev_spec_op(gx_device *pdev, int dev_spec_op,
             return p14dev->overprint || p14dev->stroke_overprint;
         }
     }
+    if (dev_spec_op == gxdso_in_smask_construction)
+        return p14dev->in_smask_construction > 0;
     if (dev_spec_op == gxdso_in_smask)
         return p14dev->in_smask_construction > 0 || p14dev->depth_within_smask;
 

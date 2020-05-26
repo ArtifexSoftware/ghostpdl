@@ -67,9 +67,16 @@ gx_stroke_fill(gx_path * ppath, gs_gstate * pgs)
         return code;
     params.flatness = (caching_an_outline_font(pgs) ? 0.0 : pgs->flatness);
     params.traditional = false;
-    return (*dev_proc(dev, stroke_path))
+
+    code = (*dev_proc(dev, stroke_path))
         (dev, (const gs_gstate *)pgs, ppath, &params,
          gs_currentdevicecolor_inline(pgs), pcpath);
+
+    if (pgs->black_text_state) {
+        gsicc_restore_black_text(pgs);
+    }
+
+    return code;
 }
 
 int
@@ -89,11 +96,18 @@ gx_fill_stroke_path(gs_gstate * pgs, int rule)
     fill_params.flatness = (caching_an_outline_font(pgs) ? 0.0 : pgs->flatness);
     stroke_params.flatness = (caching_an_outline_font(pgs) ? 0.0 : pgs->flatness);
     stroke_params.traditional = false;
-    return (*dev_proc(dev, fill_stroke_path))
+
+    code = (*dev_proc(dev, fill_stroke_path))
         (dev, (const gs_gstate *)pgs, pgs->path,
          &fill_params, gs_currentdevicecolor_inline(pgs),
          &stroke_params, gs_altdevicecolor_inline(pgs),
          pcpath);
+
+    if (pgs->black_text_state) {
+        gsicc_restore_black_text(pgs);
+    }
+
+    return code;
 }
 
 int

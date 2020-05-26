@@ -1453,6 +1453,7 @@ gsicc_new_device_profile_array(gs_memory_t *memory)
     result->graydetection = false;
     result->pageneutralcolor = false;
     result->usefastcolor = false;  /* Default is to not use fast color */
+    result->blacktext = false;
     result->prebandthreshold = true;
     result->supports_devn = false;
     result->sim_overprint = true;  /* Default is to simulate overprint */

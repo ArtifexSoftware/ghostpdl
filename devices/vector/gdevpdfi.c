@@ -2696,6 +2696,8 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                 return 0;
             }
             break;
+        case gxdso_in_smask_construction:
+            return pdev->smask_construction;
         case gxdso_get_dev_param:
             {
                 int code;

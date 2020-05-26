@@ -459,7 +459,7 @@ px_text(px_args_t * par, px_state_t * pxs, bool to_path)
 
         if (code >= 0) {
             code = gs_text_process(penum);
-            gs_text_release(penum, "pxtext");
+            gs_text_release(pgs, penum, "pxtext");
         }
         if (fxvals)
             gs_free_object(mem, fxvals, "px_text fvals");

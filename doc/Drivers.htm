@@ -3029,7 +3029,7 @@ error code as usual, or one of the following values (see
 </dl>
 
 <dl>
-<dt><code>int gs_text_release(gs_text_enum_t&nbsp;*pte,
+<dt><code>int gs_text_release(gs_gstate * pgs, gs_text_enum_t&nbsp;*pte,
 client_name_t&nbsp;cname)</code></dt><p> <dd>Finish processing text and release
 all associated structures.  Clients must call this procedure after
 <code>gs_text_process</code> returns 0 or an error, and may call it at
