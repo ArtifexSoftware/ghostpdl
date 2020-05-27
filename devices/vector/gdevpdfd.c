@@ -188,12 +188,18 @@ pdf_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1, fixed y1,
          */
         if (x0 < xmin)
             x0 = xmin;
-        if (x1 > xmax)
-            x1 = xmax;
+
         if (y0 < ymin)
             y0 = ymin;
-        if (y1 > ymax)
-            y1 = ymax;
+
+        /* We used to clamp x1 and y1 here, but actually, because this is a rectangle
+         * we don't need to do that, we need to clamp the *difference* between x0,x1
+         * and y0,y1 to keep it inside the Acrobat 4 or 5 limits.
+         */
+        if (x1 - x0 > xmax)
+            x1 = x0 + xmax;
+        if (y1 - y0 > ymax)
+            y1 = y0 + xmax;
     }
     return psdf_dorect(vdev, x0, y0, x1, y1, type);
 }
