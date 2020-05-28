@@ -425,6 +425,7 @@ int pdfi_page_info(pdf_context *ctx, uint64_t page_num, pdf_info_t *info)
         goto done;
     info->boxes |= MEDIA_BOX;
     pdfi_countdown(a);
+    a = NULL;
 
     code = pdfi_dict_get_type(ctx, page_dict, "ArtBox", PDF_ARRAY, (pdf_obj **)&a);
     if (code < 0 && code != gs_error_undefined)
@@ -435,6 +436,7 @@ int pdfi_page_info(pdf_context *ctx, uint64_t page_num, pdf_info_t *info)
             goto done;
         info->boxes |= ART_BOX;
         pdfi_countdown(a);
+        a = NULL;
     }
 
     code = pdfi_dict_get_type(ctx, page_dict, "CropBox", PDF_ARRAY, (pdf_obj **)&a);
@@ -446,6 +448,7 @@ int pdfi_page_info(pdf_context *ctx, uint64_t page_num, pdf_info_t *info)
             goto done;
         info->boxes |= CROP_BOX;
         pdfi_countdown(a);
+        a = NULL;
     }
 
     code = pdfi_dict_get_type(ctx, page_dict, "TrimBox", PDF_ARRAY, (pdf_obj **)&a);
@@ -457,6 +460,7 @@ int pdfi_page_info(pdf_context *ctx, uint64_t page_num, pdf_info_t *info)
             goto done;
         info->boxes |= TRIM_BOX;
         pdfi_countdown(a);
+        a = NULL;
     }
 
     code = pdfi_dict_get_type(ctx, page_dict, "BleedBox", PDF_ARRAY, (pdf_obj **)&a);
@@ -468,6 +472,7 @@ int pdfi_page_info(pdf_context *ctx, uint64_t page_num, pdf_info_t *info)
             goto done;
         info->boxes |= BLEED_BOX;
         pdfi_countdown(a);
+        a = NULL;
     }
     code = 0;
 
