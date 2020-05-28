@@ -1467,7 +1467,7 @@ int pdf_reset_color(gx_device_pdf * pdev, const gs_gstate * pgs,
                      * unlike shading patterns we have no fallback.
                      */
                     if (pdev->CompatibilityLevel < 1.2) {
-		      return_error(gs_error_undefined);
+                        return_error(gs_error_undefined);
                     }
                     code = pdf_put_colored_pattern(pdev, pdc, pcs,
                                 ppscc, pgs, &pres);

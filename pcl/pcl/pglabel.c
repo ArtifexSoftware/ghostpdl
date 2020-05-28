@@ -1575,6 +1575,8 @@ hpgl_free_stick_fonts(hpgl_state_t * pgls)
     pl_font_t *font = &pgls->g.stick_font[pgls->g.font_selected]
         [pfs->params.proportional_spacing];
 
+    pl_font_glyph_width_cache_remove_nodes(font);
+
     /* no stick fonts - nothing to do */
     if (font->pfont == 0)
         return;
