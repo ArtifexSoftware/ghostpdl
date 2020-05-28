@@ -1401,9 +1401,6 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
     if (pdev->params.TransferFunctionInfo == tfi_Apply && pdev->transfer_not_identity && !is_mask)
         pdev->JPEG_PassThrough = 0;
 
-/*    if (pdev->JPEG_PassThrough)
-        uncompressed = pie->writer.binary[0].strm;*/
-
     /* Code below here deals with setting up the multiple data stream writing.
      * We can have up to 4 stream writers, which we keep in an array. We must
      * always have at least one which writes the uncompressed stream. If we

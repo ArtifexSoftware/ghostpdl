@@ -41,7 +41,11 @@
  * Windows and Linux fail with coordinates outside +/- 16383. Hence, we
  * limit coordinates to 16k, with a little slop.
  */
-#define MAX_USER_COORD 16300
+/* 28/05/2020 This was only being applied to text and a subset of paths. Since
+ * Acrobat 4 is now more than 20 years old, lets just drop support for it. The
+ * PDF specification never had this limit, just Adobe's software.
+ */
+/* #define MAX_USER_COORD 16300 */
 
 /* ---------------- Statically allocated sizes ---------------- */
 /* These should really be dynamic.... */
