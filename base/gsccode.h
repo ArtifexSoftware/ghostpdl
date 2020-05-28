@@ -20,6 +20,7 @@
 #  define gsccode_INCLUDED
 
 #include "std.h"
+#include "stdint_.h"
 #include "gstypes.h"
 
 /*
@@ -27,9 +28,9 @@
  * string, but because of composite fonts, character codes must be
  * at least 32 bits.
  */
-typedef ulong gs_char;
+typedef uint64_t gs_char;
 
-#define GS_NO_CHAR ((gs_char)~0UL)
+#define GS_NO_CHAR ((gs_char)~((uint64_t)0))
 /* Backward compatibility */
 #define gs_no_char GS_NO_CHAR
 
@@ -74,15 +75,17 @@ typedef ulong gs_char;
  * "name", not an integer), but should not make assumptions about whether
  * GS_NO_GLYPH is less than or greater than gs_c_min_std_encoding_glyph.
  */
-typedef ulong gs_glyph;
+typedef uint64_t gs_glyph;
 
 #define GS_NO_GLYPH ((gs_glyph)0x7fffffff)
-#if ARCH_SIZEOF_LONG > 4
+
+#if ARCH_SIZEOF_LONG_LONG > 4
 #  define GS_MIN_CID_GLYPH ((gs_glyph)0x80000000L)
 #else
 /* Avoid compiler warnings about signed/unsigned constants. */
 #  define GS_MIN_CID_GLYPH ((gs_glyph)~0x7fffffff)
 #endif
+
 #define GS_MIN_GLYPH_INDEX (GS_MIN_CID_GLYPH | (GS_MIN_CID_GLYPH >> 1))
 #define GS_GLYPH_TAG (gs_glyph)(GS_MIN_CID_GLYPH | GS_MIN_GLYPH_INDEX)
 #define GS_MAX_GLYPH max_ulong
