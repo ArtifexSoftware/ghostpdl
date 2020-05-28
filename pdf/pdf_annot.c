@@ -1,4 +1,4 @@
- /* Copyright (C) 2001-2020 Artifex Software, Inc.
+/* Copyright (C) 2001-2020 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -2598,15 +2598,67 @@ static int pdfi_annot_draw_Square(pdf_context *ctx, pdf_dict *annot, pdf_dict *N
     return code;
 }
 
+/* Render Widget with no AP
+ */
+static int pdfi_annot_render_Widget(pdf_context *ctx, pdf_dict *annot)
+{
+    int code = 0;
+    pdf_dict *MK = NULL;
+    bool drawit = false;
+    gs_rect rect;
+    bool need_grestore = false;
+
+    code = pdfi_dict_knownget_type(ctx, annot, "MK", PDF_DICT, (pdf_obj **)&MK);
+    /* Don't try to render if no MK dict */
+    if (code <= 0) goto exit;
+
+    /* Basically just render the rectangle around the widget for now */
+    code = pdfi_annot_Rect(ctx, annot, &rect);
+    if (code < 0) goto exit;
+
+    code = pdfi_gsave(ctx);
+    if (code < 0) goto exit;
+    need_grestore = true;
+    code = pdfi_annot_setcolor_key(ctx, MK, "BG", false, &drawit);
+    if (code < 0) goto exit;
+    if (drawit)
+        code = gs_rectfill(ctx->pgs, &rect, 1);
+    if (code < 0) goto exit;
+    need_grestore = false;
+    code = pdfi_grestore(ctx);
+    if (code < 0) goto exit;
+
+    pdfi_gsave(ctx);
+    if (code < 0) goto exit;
+    need_grestore = true;
+    code = pdfi_annot_setcolor_key(ctx, MK, "BC", false, &drawit);
+    if (code < 0) goto exit;
+    if (drawit)
+        code = gs_rectstroke(ctx->pgs, &rect, 1, NULL);
+    if (code < 0) goto exit;
+    need_grestore = false;
+    code = pdfi_grestore(ctx);
+    if (code < 0) goto exit;
+
+    /* TODO: Stuff with can-regenerate-ap ?? */
+
+ exit:
+    if (need_grestore)
+        (void)pdfi_grestore(ctx);
+    pdfi_countdown(MK);
+    return code;
+}
+
 /* Draws a thing of type /Widget */
 static int pdfi_annot_draw_Widget(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormAP, bool *render_done)
 {
-#if 0 /* TODO: */
     int code = 0;
-    bool found_T;
-    bool found_TF;
+    bool found_T = false;
+    bool found_TF = false;
     pdf_obj *T = NULL;
     pdf_obj *TF = NULL;
+    pdf_dict *Parent = NULL;
+    pdf_dict *currdict = NULL;
 
     /* From pdf_draw.ps/drawwidget:
   % Acrobat doesn't draw Widget annotations unles they have both /FT
@@ -2619,14 +2671,60 @@ static int pdfi_annot_draw_Widget(pdf_context *ctx, pdf_dict *annot, pdf_dict *N
   % these are present, their value is immaterial). If after all that
   % both keys are not present, then we don't draw the annotation.
     */
-#endif
 
     /* TODO: See top part of pdf_draw.ps/drawwidget
      * check for /FT and /T and stuff
      */
-    dbgmprintf(ctx->memory, "ANNOT: No AP generation for subtype Widget\n");
-    *render_done = false;
-    return 0;
+    currdict = annot;
+    pdfi_countup(currdict);
+    while (true) {
+        code = pdfi_dict_knownget(ctx, currdict, "T", &T);
+        if (code < 0) goto exit;
+        if (code > 0) {
+            found_T = true;
+            break;
+        }
+        code = pdfi_dict_knownget(ctx, currdict, "TF", &TF);
+        if (code < 0) goto exit;
+        if (code > 0) {
+            found_TF = true;
+            break;
+        }
+        /* Check for Parent */
+        code = pdfi_dict_knownget_type(ctx, currdict, "Parent", PDF_DICT, (pdf_obj **)&Parent);
+        if (code < 0) goto exit;
+        if (code == 0)
+            break;
+        pdfi_countdown(currdict);
+        currdict = Parent;
+        pdfi_countup(currdict);
+    }
+
+    code = 0;
+    if (!found_T && !found_TF) {
+        *render_done = true;
+        dmprintf(ctx->memory, "**** Warning: A Widget annotation dictionary lacks either the FT or T key.\n");
+        dmprintf(ctx->memory, "              Acrobat ignores such annoataions, annotation will not be rendered.\n");
+        dmprintf(ctx->memory, "              Output may not be as expected.\n");
+        goto exit;
+    }
+
+    if (NormAP) {
+        /* Let caller render it */
+        *render_done = false;
+        goto exit;
+    }
+
+    /* No AP, try to render the Widget ourselves */
+    code = pdfi_annot_render_Widget(ctx, annot);
+    *render_done = true;
+
+ exit:
+    pdfi_countdown(T);
+    pdfi_countdown(TF);
+    pdfi_countdown(Parent);
+    pdfi_countdown(currdict);
+    return code;
 }
 
 /* Handle Annotations that are not implemented */
