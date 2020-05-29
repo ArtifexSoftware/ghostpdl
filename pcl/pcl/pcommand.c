@@ -191,6 +191,26 @@ pcl_do_registrations(pcl_state_t * pcs, pcl_parser_state_t * pst)
     }
     return 0;
 }
+
+/* Similar to pcl_do_resets() but doesn't teminate loop immediately after
+error. */
+static int
+pcl_do_resets_permanent(pcl_state_t * pcs)
+{
+    const pcl_init_t **init = pcl_init_table;
+    int code = 0;
+
+    for (; *init; ++init) {
+        if ((*init)->do_reset) {
+            int code2 = (*(*init)->do_reset) (pcs, pcl_reset_permanent);
+            if (code2 < 0 && code >= 0) {
+                code = code2;
+            }
+        }
+    }
+    return code;
+}
+
 /*
  * Run the reset code of all the modules.
  */
@@ -199,10 +219,17 @@ pcl_do_resets(pcl_state_t * pcs, pcl_reset_type_t type)
 {
     const pcl_init_t **init = pcl_init_table;
     int code = 0;
+    if (type == pcl_reset_permanent) {
+        /* We do not want early termination of the loop. */
+        return pcl_do_resets_permanent(pcs);
+    }
 
     for (; *init && code >= 0; ++init) {
         if ((*init)->do_reset)
             code = (*(*init)->do_reset) (pcs, type);
+    }
+    if (code < 0) {
+        (void) pcl_do_resets_permanent(pcs);
     }
     return code;
 }
