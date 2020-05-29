@@ -1813,7 +1813,7 @@ tiffsep_close_sep_file(tiffsep_device *tfdev, const char *fn, int comp_num)
     int code;
 
     if (tfdev->tiff[comp_num]) {
-        TIFFCleanup(tfdev->tiff[comp_num]);
+        TIFFClose(tfdev->tiff[comp_num]);
         tfdev->tiff[comp_num] = NULL;
     }
 
@@ -1832,7 +1832,7 @@ tiffsep_close_comp_file(tiffsep_device *tfdev, const char *fn)
     int code;
 
     if (tfdev->tiff_comp) {
-        TIFFCleanup(tfdev->tiff_comp);
+        TIFFClose(tfdev->tiff_comp);
         tfdev->tiff_comp = NULL;
     }
 
@@ -2577,9 +2577,7 @@ cleanup:
             }
         }
         TIFFWriteDirectory(tfdev->tiff_comp);
-        if (fmt) {
-            code = tiffsep_close_comp_file(tfdev, pdev->fname);
-        }
+        code = tiffsep_close_comp_file(tfdev, pdev->fname);
         if (code1 < 0) {
             code = code1;
         }

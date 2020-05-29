@@ -74,7 +74,7 @@ tiff_close(gx_device * pdev)
     gx_device_tiff *const tfdev = (gx_device_tiff *)pdev;
 
     if (tfdev->tif)
-        TIFFCleanup(tfdev->tif);
+        TIFFClose(tfdev->tif);
 
     if (tfdev->icclink != NULL)
     {

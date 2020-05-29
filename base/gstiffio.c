@@ -105,11 +105,13 @@ gs_tifsCloseProc(thandle_t fd)
 {
     tifs_io_private *tiffio = (tifs_io_private *)fd;
     gx_device_printer *pdev = tiffio->pdev;
-    int code = gp_fclose(tiffio->f);
-    
+
+    /* We don't close tiffio->f as this will be closed later by the
+     * device. */
+
     gs_free(pdev->memory, tiffio, sizeof(tifs_io_private), 1, "gs_tifsCloseProc");
 
-    return code;
+    return 0;
 }
 
 static uint64_t
@@ -122,12 +124,12 @@ gs_tifsSizeProc(thandle_t fd)
     if (curpos < 0) {
         return(0);
     }
-    
+
     if (gp_fseek(tiffio->f, (gs_offset_t)0, SEEK_END) < 0) {
         return(0);
     }
     length = (uint64_t)gp_ftell(tiffio->f);
-    
+
     if (gp_fseek(tiffio->f, curpos, SEEK_SET) < 0) {
         return(0);
     }
@@ -152,7 +154,7 @@ tiff_from_filep(gx_device_printer *dev,  const char *name, gp_file *filep, int b
         mode[modelen++] = '8';
 
     mode[modelen] = (char)0;
-    
+
     tiffio = (tifs_io_private *)gs_malloc(dev->memory, sizeof(tifs_io_private), 1, "tiff_from_filep");
     if (!tiffio) {
         return NULL;
@@ -173,7 +175,7 @@ static void
 gs_tifsWarningHandlerEx(thandle_t client_data, const char* module, const char* fmt, va_list ap)
 {
     tifs_io_private *tiffio = (tifs_io_private *)client_data;
-    gx_device_printer *pdev = tiffio->pdev;    
+    gx_device_printer *pdev = tiffio->pdev;
     int count;
     char buf[TIFF_PRINT_BUF_LENGTH];
 
@@ -190,7 +192,7 @@ static void
 gs_tifsErrorHandlerEx(thandle_t client_data, const char* module, const char* fmt, va_list ap)
 {
     tifs_io_private *tiffio = (tifs_io_private *)client_data;
-    gx_device_printer *pdev = tiffio->pdev;    
+    gx_device_printer *pdev = tiffio->pdev;
     const char *max_size_error = "Maximum TIFF file size exceeded";
     int count;
     char buf[TIFF_PRINT_BUF_LENGTH];
@@ -242,7 +244,7 @@ TIFFOpen(const char* name, const char* mode)
 {
     (void)name;
     (void)mode;
-    
+
     return(NULL);
 }
 
