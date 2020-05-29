@@ -32,6 +32,11 @@ void gx_ht_threshold_row_bit_sub(byte *contone,  byte *threshold_strip,
                              int dithered_stride, int width, int num_rows,
                              int offset_bits);
 
+struct gx_downscale_liner_s {
+    int  (*get_line)(gx_downscale_liner *, void *, int);
+    void (*drop)(gx_downscale_liner *, gs_memory_t *);
+};
+
 enum
 {
     MAX_ETS_PLANES = 8
@@ -1725,43 +1730,63 @@ gx_downscaler_scale_rounded(int width, int factor)
     return (width*up + down-1)/down;
 }
 
+typedef struct {
+    gx_downscale_liner    base;
+    ClapTrap             *claptrap;
+    int                   y;
+    int                   width;
+    int                   height;
+    int                   num_comps;
+    gs_get_bits_params_t *params;
+    gx_downscale_liner   *chain;
+} liner_claptrap_planar;
+
+static int
+claptrap_planar_line(gx_downscale_liner *liner_, void *buffer, int row)
+{
+    liner_claptrap_planar *liner = (liner_claptrap_planar *)liner_;
+    gs_get_bits_params_t  *params = (gs_get_bits_params_t *)buffer;
+
+    liner->params = params;
+    return ClapTrap_GetLinePlanar(liner->claptrap, params->data);
+}
+
+static void
+claptrap_planar_drop(gx_downscale_liner *liner_, gs_memory_t *mem)
+{
+    liner_claptrap_planar *liner = (liner_claptrap_planar *)liner_;
+    gx_downscale_liner *next;
+
+    if (!liner)
+        return;
+    ClapTrap_Fin(mem, liner->claptrap);
+    next = liner->chain;
+    gs_free_object(mem, liner, "liner_claptrap_planar");
+    if (next)
+        next->drop(next, mem);
+}
+
 static int get_planar_line_for_trap(void *arg, unsigned char *buf)
 {
-    gx_downscaler_t *ds = (gx_downscaler_t *)arg;
-    gs_int_rect rect;
-    gs_get_bits_params_t params; /* params (if trapping) */
-    int nc = ds->num_planes;
+    liner_claptrap_planar *ct = (liner_claptrap_planar *)arg;
+    gs_get_bits_params_t params;
+    int nc = ct->num_comps;
     int i, code;
     unsigned char *buf2;
 
-    rect.p.x = 0;
-    rect.p.y = ds->claptrap_y++;
-    rect.q.x = ds->dev->width;
-    rect.q.y = rect.p.y+1;
-    /* Allow for devices (like psdcmyk) that make several passes through
-     * the image. */
-    if (ds->claptrap_y == ds->dev->height)
-        ds->claptrap_y = 0;
-
-    params = *ds->claptrap_params;
+    params = *ct->params;
     buf2 = buf;
     for (i = 0; i < nc; i++)
     {
         params.data[i] = buf2;
-        buf2 += ds->width;
+        buf2 += ct->width;
     }
 
-    code = (*dev_proc(ds->dev, get_bits_rectangle))(ds->dev, &rect, &params, NULL);
-    if (code < 0)
-        return code;
-
-    /* Now cope with the fact we might have been returned pointers */
-    for (i = 0; i < nc; i++)
-    {
-        if (params.data[i] != buf)
-            memcpy(buf, params.data[i], ds->width);
-        buf += ds->width;
-    }
+    code = ct->chain->get_line(ct->chain, &params, ct->y++);
+    /* Allow for devices (like psdcmyk) that make several passes through
+     * the image. */
+    if (ct->y == ct->height)
+        ct->y = 0;
 
     return code;
 }
@@ -1975,6 +2000,126 @@ int gx_downscaler_init_planar_trapped(gx_downscaler_t      *ds,
                                                 NULL, NULL, num_comps);
 }
 
+typedef struct {
+    gx_downscale_liner  base;
+    gx_device          *dev;
+} liner_getbits_chunky;
+
+static int
+getbits_chunky_line(gx_downscale_liner *liner_, void *buffer, int row)
+{
+    liner_getbits_chunky *liner = (liner_getbits_chunky *)liner_;
+
+    return (*dev_proc(liner->dev, get_bits))(liner->dev, row, buffer, NULL);
+}
+
+static void
+getbits_chunky_drop(gx_downscale_liner *liner_, gs_memory_t *mem)
+{
+    liner_getbits_chunky *liner = (liner_getbits_chunky *)liner_;
+
+    gs_free_object(mem, liner, "liner_getbits_chunky");
+}
+
+typedef struct {
+    gx_downscale_liner  base;
+    gx_device          *dev;
+    int                 raster;
+    int                 num_comps;
+} liner_getbits_planar;
+
+static int
+getbits_planar_line(gx_downscale_liner *liner_, void *output, int row)
+{
+    liner_getbits_planar *liner = (liner_getbits_planar *)liner_;
+    gs_get_bits_params_t *params = (gs_get_bits_params_t *)output;
+    gs_get_bits_params_t  params2;
+    gs_int_rect           rect;
+    int i, code, n;
+
+    rect.p.x = 0;
+    rect.p.y = row;
+    rect.q.x = liner->dev->width;
+    rect.q.y = row+1;
+
+    n = liner->dev->width;
+    if (liner->dev->color_info.depth > liner->dev->color_info.num_components * 8 + 8)
+        n *= 2;
+
+    params2 = *params;
+
+    code = (*dev_proc(liner->dev, get_bits_rectangle))(liner->dev, &rect, &params2, NULL);
+
+    /* get_bits_rectangle doesn't like doing planar copies, only return
+     * pointers. This is a problem for us, so fudge it here. */
+    for (i = 0; i < liner->num_comps; i++)
+        if (params->data[i] != params2.data[1])
+            memcpy(params->data[i], params2.data[i], n);
+
+    return code;
+}
+
+static void
+getbits_planar_drop(gx_downscale_liner *liner_, gs_memory_t *mem)
+{
+    liner_getbits_planar *liner = (liner_getbits_planar *)liner_;
+
+    gs_free_object(mem, liner, "liner_getbits_planar");
+}
+
+typedef struct {
+    gx_downscale_liner  base;
+    ClapTrap           *claptrap;
+    int                 y;
+    int                 height;
+    gx_downscale_liner *chain;
+} liner_claptrap;
+
+static int
+claptrap_line(gx_downscale_liner *liner_, void *buffer, int row)
+{
+    liner_claptrap *liner = (liner_claptrap *)liner_;
+
+    return ClapTrap_GetLine(liner->claptrap, buffer);
+}
+
+static void
+claptrap_drop(gx_downscale_liner *liner_, gs_memory_t *mem)
+{
+    liner_claptrap *liner = (liner_claptrap *)liner_;
+    gx_downscale_liner *next;
+
+    if (!liner)
+        return;
+    ClapTrap_Fin(mem, liner->claptrap);
+    next = liner->chain;
+    gs_free_object(mem, liner, "liner_claptrap");
+    if (next)
+        next->drop(next, mem);
+}
+
+
+#define alloc_liner(mem, type, get, drop, res) \
+    do_alloc_liner(mem, sizeof(type), #type, get, drop,\
+                   (gx_downscale_liner **)res)
+
+static int
+do_alloc_liner(gs_memory_t *mem, size_t size, const char *type,
+               int (*get_line)(gx_downscale_liner *, void *, int),
+               void (*drop)(gx_downscale_liner *, gs_memory_t *),
+               gx_downscale_liner **res)
+{
+    gx_downscale_liner *liner;
+
+    liner = (gx_downscale_liner *)gs_alloc_bytes(mem, size, type);
+    *res = liner;
+    if (liner == NULL)
+        return_error(gs_error_VMerror);
+    liner->get_line = get_line;
+    liner->drop = drop;
+    return 0;
+}
+
 int gx_downscaler_init_planar_trapped_cm(gx_downscaler_t      *ds,
                                          gx_device            *dev,
                                          gs_get_bits_params_t *params,
@@ -2029,20 +2174,58 @@ int gx_downscaler_init_planar_trapped_cm(gx_downscaler_t      *ds,
         }
     }
 
+    /* The primary line source for planar comes always from
+    * get_bits_rectangle. */
+    {
+        liner_getbits_planar *gb_liner;
+
+        code = alloc_liner(dev->memory,
+                           liner_getbits_planar,
+                           getbits_planar_line,
+                           getbits_planar_drop,
+                           &gb_liner);
+        if (code < 0)
+            goto cleanup;
+        gb_liner->dev = dev;
+        gb_liner->num_comps = num_comps;
+        ds->liner = &gb_liner->base;
+    }
+
     code = check_trapping(dev->memory, trap_w, trap_h, num_comps, comp_order);
     if (code < 0)
         return code;
 
     if (trap_w > 0 || trap_h > 0) {
-        ds->claptrap = ClapTrap_Init(dev->memory, width, dev->height, num_comps, comp_order, trap_w, trap_h, get_planar_line_for_trap, ds);
-        if (ds->claptrap == NULL) {
+        liner_claptrap_planar *ct_liner;
+
+        code = alloc_liner(dev->memory,
+                           liner_claptrap_planar,
+                           claptrap_planar_line,
+                           claptrap_planar_drop,
+                           &ct_liner);
+        if (code < 0)
+            goto cleanup;
+        ct_liner->chain     = ds->liner;
+        ct_liner->y         = 0;
+        ct_liner->height    = dev->height;
+        ct_liner->num_comps = ds->num_comps;
+        ct_liner->width     = dev->width;
+        ds->liner = &ct_liner->base;
+        ct_liner->claptrap = ClapTrap_Init(dev->memory,
+                                           dev->width,
+                                           dev->height,
+                                           num_comps,
+                                           comp_order,
+                                           trap_w,
+                                           trap_h,
+                                           get_planar_line_for_trap,
+                                           ct_liner);
+        if (ct_liner->claptrap == NULL) {
             emprintf(dev->memory, "Trapping initialisation failed");
             code = gs_note_error(gs_error_VMerror);
             goto cleanup;
         }
     }
-    else
-        ds->claptrap = NULL;
 
     memcpy(&ds->params, params, sizeof(*params));
     ds->params.raster = span;
@@ -2129,14 +2312,15 @@ int gx_downscaler_init_planar_trapped_cm(gx_downscaler_t      *ds,
 
 static int get_line_for_trap(void *arg, unsigned char *buf)
 {
-    gx_downscaler_t *ds = (gx_downscaler_t *)arg;
+    liner_claptrap *ct = (liner_claptrap *)arg;
 
     /* Allow for devices (like psdcmyk) that make several passes through
-     * the image. */
-    if (ds->claptrap_y == ds->dev->height)
-        ds->claptrap_y = 0;
+     * the image. This is a bit crap cos it assumes that we will pass
+     * through strictly from top to bottom (possibly repeatedly). */
+    if (ct->y == ct->height)
+        ct->y = 0;
 
-    return (*dev_proc(ds->dev, get_bits))(ds->dev, ds->claptrap_y++, buf, NULL);
+    return ct->chain->get_line(ct->chain, buf, ct->y++);
 }
 
 int gx_downscaler_init(gx_downscaler_t   *ds,
@@ -2360,7 +2544,7 @@ gx_downscaler_init_trapped_cm_halftone(gx_downscaler_t    *ds,
     int                width;
     int                awidth;
     int                pad_white;
-    int                code;
+    int                code = 0;
     gx_downscale_core *core;
     int                upfactor;
     int                downfactor;
@@ -2398,19 +2582,54 @@ gx_downscaler_init_trapped_cm_halftone(gx_downscaler_t    *ds,
     ds->dst_bpc           = dst_bpc;
     ds->num_comps         = num_comps;
 
+    /* The primary line source comes always from getbits. */
+    {
+        liner_getbits_chunky *gb_liner;
+
+        code = alloc_liner(dev->memory,
+                           liner_getbits_chunky,
+                           getbits_chunky_line,
+                           getbits_chunky_drop,
+                           &gb_liner);
+        if (code < 0)
+            goto cleanup;
+        gb_liner->dev = dev;
+        ds->liner = &gb_liner->base;
+    }
+
     code = check_trapping(dev->memory, trap_w, trap_h, num_comps, comp_order);
     if (code < 0)
         return code;
 
     if (trap_w > 0 || trap_h > 0) {
-        ds->claptrap = ClapTrap_Init(dev->memory, width, dev->height, num_comps, comp_order, trap_w, trap_h, get_line_for_trap, ds);
-        if (ds->claptrap == NULL) {
+        liner_claptrap *ct_liner;
+
+        code = alloc_liner(dev->memory,
+                           liner_claptrap,
+                           claptrap_line,
+                           claptrap_drop,
+                           &ct_liner);
+        if (code < 0)
+            goto cleanup;
+        ct_liner->chain  = ds->liner;
+        ct_liner->y      = 0;
+        ct_liner->height = dev->height;
+        ds->liner = &ct_liner->base;
+        ct_liner->claptrap = ClapTrap_Init(dev->memory,
+                                           width,
+                                           dev->height,
+                                           num_comps,
+                                           comp_order,
+                                           trap_w,
+                                           trap_h,
+                                           get_line_for_trap,
+                                           ct_liner);
+        if (ct_liner->claptrap == NULL) {
             emprintf(dev->memory, "Trapping initialisation failed");
             code = gs_note_error(gs_error_VMerror);
             goto cleanup;
         }
-    } else
-        ds->claptrap = NULL;
+    }
 
     /* Choose an appropriate core. Try to honour our early_cm
      * choice, and fallback to late cm if we can't. */
@@ -2560,8 +2779,8 @@ void gx_downscaler_fin(gx_downscaler_t *ds)
     ds->htrow = NULL;
     ds->htrow_alloc = NULL;
 
-    if (ds->claptrap)
-        ClapTrap_Fin(ds->dev->memory, ds->claptrap);
+    if (ds->liner)
+        ds->liner->drop(ds->liner, ds->dev->memory);
 
     if (ds->ets_config)
         ets_destroy(ds->dev->memory, ds->ets_config);
@@ -2581,10 +2800,9 @@ int gx_downscaler_getbits(gx_downscaler_t *ds,
 
     /* Check for the simple case */
     if (ds->down_core == NULL) {
-        if (ds->claptrap)
-            code = ClapTrap_GetLine(ds->claptrap, ds->apply_cm ? ds->pre_cm[0] : out_data);
-        else
-            code = (*dev_proc(ds->dev, get_bits))(ds->dev, row, ds->apply_cm ? ds->pre_cm[0] : out_data, NULL);
+        code = ds->liner->get_line(ds->liner,
+                                   ds->apply_cm ? ds->pre_cm[0] : out_data,
+                                   row);
         if (code < 0)
             return code;
         if (ds->apply_cm) {
@@ -2598,23 +2816,13 @@ int gx_downscaler_getbits(gx_downscaler_t *ds,
     y        = row * downfactor;
     y_end    = y + downfactor;
     data_ptr = ds->pre_cm[0];
-    if (ds->claptrap) {
-        do {
-            code = ClapTrap_GetLine(ds->claptrap, data_ptr);
-            if (code < 0)
-                return code;
-            data_ptr += ds->span;
-            y++;
-        } while (y < y_end);
-    } else {
-        do {
-            code = (*dev_proc(ds->dev, get_bits))(ds->dev, y, data_ptr, NULL);
-            if (code < 0)
-                return code;
-            data_ptr += ds->span;
-            y++;
-        } while (y < y_end);
-    }
+    do {
+        code = ds->liner->get_line(ds->liner, data_ptr, y);
+        if (code < 0)
+            return code;
+        data_ptr += ds->span;
+        y++;
+    } while (y < y_end);
 
     if (ds->apply_cm) {
         if (ds->early_cm) {
@@ -2640,7 +2848,7 @@ int gx_downscaler_get_bits_rectangle(gx_downscaler_t      *ds,
                                      gs_get_bits_params_t *params,
                                      int                   row)
 {
-    int                   code;
+    int                   code = 0;
     gs_int_rect           rect;
     int                   plane;
     int                   factor = ds->factor;
@@ -2648,7 +2856,11 @@ int gx_downscaler_get_bits_rectangle(gx_downscaler_t      *ds,
     int                   upfactor, downfactor;
     int                   subrow;
     int                   copy = (ds->dev->width * ds->src_bpc + 7)>>3;
-    int                   i, j;
+    int                   i, j, n;
+
+    n = ds->dev->width;
+    if (ds->dev->color_info.depth > ds->dev->color_info.num_components*8+8)
+       n *= 2;
 
     decode_factor(factor, &upfactor, &downfactor);
 
@@ -2666,7 +2878,7 @@ int gx_downscaler_get_bits_rectangle(gx_downscaler_t      *ds,
     rect.q.y = ((row/upfactor) + 1) * downfactor;
 
     /* Check for the simple case */
-    if (ds->down_core == NULL && ds->claptrap == NULL) {
+    if (ds->down_core == NULL) {
         gs_get_bits_params_t saved;
         if (ds->apply_cm) {
             /* Always do the request giving our own workspace,
@@ -2676,7 +2888,7 @@ int gx_downscaler_get_bits_rectangle(gx_downscaler_t      *ds,
                 params->data[i] = ds->pre_cm[i];
             params->options |= GB_RETURN_POINTER;
         }
-        code = (*dev_proc(ds->dev, get_bits_rectangle))(ds->dev, &rect, params, NULL);
+        code = ds->liner->get_line(ds->liner, params, row);
         if (code < 0)
             return code;
         if (ds->apply_cm) {
@@ -2701,46 +2913,37 @@ int gx_downscaler_get_bits_rectangle(gx_downscaler_t      *ds,
     for (i = 0; i < ds->num_planes; i++)
          params2.data[i] = ds->pre_cm[i];
 
-    /* Get downfactor rows worth of data */
-    if (ds->claptrap)
-        code = gs_error_rangecheck; /* Always work a line at a time with claptrap */
-    else
-        code = (*dev_proc(ds->dev, get_bits_rectangle))(ds->dev, &rect, &params2, NULL);
-    if (code == gs_error_rangecheck) {
-        /* At the bottom of a band, the get_bits_rectangle call can fail to be
-         * able to return us enough lines of data at the same time. We therefore
-         * drop back to reading them one at a time, and copying them into our
-         * own buffer. */
-        for (i = 0; i < downfactor; i++) {
-            rect.q.y = rect.p.y+1;
-            if (rect.q.y > ds->dev->height)
-                break;
-            memcpy(&params2, &ds->params, sizeof(params2));
-            for (j = 0; j < ds->num_planes; j++)
-                params2.data[j] = ds->pre_cm[j] + i * ds->span;
-            if (ds->claptrap) {
-                ds->claptrap_params = &params2;
-                code = ClapTrap_GetLinePlanar(ds->claptrap, &params2.data[0]);
-            } else {
-                /* We always want a copy */
-                params2.options &= ~GB_RETURN_POINTER;
-                params2.options |=  GB_RETURN_COPY;
-                code = (*dev_proc(ds->dev, get_bits_rectangle))(ds->dev, &rect, &params2, NULL);
-            }
-            if (code < 0)
-                break;
-            rect.p.y++;
+    /* Get downfactor rows worth of data - we always work a line at a
+     * time now. */
+    for (i = 0; i < downfactor; i++) {
+        rect.q.y = rect.p.y+1;
+        if (rect.q.y > ds->dev->height)
+            break;
+        memcpy(&params2, &ds->params, sizeof(params2));
+        for (j = 0; j < ds->num_planes; j++)
+            params2.data[j] = ds->pre_cm[j] + i * ds->span;
+        code = ds->liner->get_line(ds->liner, &params2, rect.p.y);
+        if (code < 0)
+            break;
+        for (j = 0; j < ds->num_planes; j++) {
+            byte *tgt = ds->pre_cm[j] + i * ds->span;
+            if (params2.data[j] != tgt)
+                memcpy(tgt, params2.data[j], n);
         }
-        if (i == 0)
-            return code;
-        /* If we still haven't got enough, we've hit the end of the page; just
-         * duplicate the last line we did get. */
-        for (;i < downfactor; i++)
-            for (j = 0; j < ds->num_planes; j++)
-                memcpy(ds->pre_cm[j] + i*ds->span, ds->pre_cm[j] + (i-1)*ds->span, copy);
+        rect.p.y++;
     }
+    if (i == 0)
+        return code;
     if (code < 0)
         return code;
+    /* If we still haven't got enough, we've hit the end of the page; just
+     * duplicate the last line we did get. */
+    for (; i < downfactor; i++)
+        for (j = 0; j < ds->num_planes; j++)
+            memcpy(ds->pre_cm[j] + i*ds->span, ds->pre_cm[j] + (i-1)*ds->span, copy);
+
+    for (j = 0; j < ds->num_planes; j++)
+        params2.data[j] = ds->pre_cm[j];
 
     if (ds->early_cm && ds->apply_cm) {
         code = ds->apply_cm(ds->apply_cm_arg, ds->params.data, ds->post_cm, ds->dev->width, downfactor, params->raster);

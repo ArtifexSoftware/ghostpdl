@@ -69,6 +69,8 @@ typedef void (gx_downscale_core)(gx_downscaler_t *ds,
                                  int              plane,
                                  int              span);
 
+typedef struct gx_downscale_liner_s gx_downscale_liner;
+
 struct gx_downscaler_s {
     gx_device            *dev;        /* Device */
     int                   width;      /* Width (pixels) */
@@ -87,9 +89,7 @@ struct gx_downscaler_s {
     int                   num_comps;  /* Number of components as rendered */
     int                   num_planes; /* Number of planes if planar, 0 otherwise */
 
-    ClapTrap             *claptrap;   /* ClapTrap pointer (if trapping) */
-    int                   claptrap_y; /* y pointer (if trapping) */
-    gs_get_bits_params_t *claptrap_params; /* params (if trapping) */
+    gx_downscale_liner   *liner;      /* Source for line data */
 
     int                   early_cm;
     gx_downscale_cm_fn   *apply_cm;
@@ -118,7 +118,7 @@ struct gx_downscaler_s {
  *    gx_downscaler_get_bits_rectangle (for planar mode)
  *  + finalise with gx_downscaler_fin
  */
- 
+
 /* For chunky mode, currently only:
  *   src_bpc ==  8 && dst_bpc ==  1 && num_comps == 1
  *   src_bpc ==  8 && dst_bpc ==  8 && num_comps == 1
