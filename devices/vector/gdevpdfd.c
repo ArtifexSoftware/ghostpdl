@@ -1606,7 +1606,6 @@ gdev_pdf_fill_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
         return code;
     {
         stream *s = pdev->strm;
-        gs_matrix *psmat = NULL;
         gs_path_enum cenum;
         gdev_vector_dopath_state_t state;
 
@@ -1619,13 +1618,11 @@ gdev_pdf_fill_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
             pprintg1(s, "%g i\n", params->flatness);
             pdev->state.flatness = params->flatness;
         }
-        code = pdf_write_path(pdev, (gs_path_enum *)&cenum, &state, (gx_path *)ppath, 0, gx_path_type_fill | gx_path_type_optimize, psmat);
+        code = pdf_write_path(pdev, (gs_path_enum *)&cenum, &state, (gx_path *)ppath, 0, gx_path_type_fill | gx_path_type_optimize, NULL);
         if (code < 0)
             return code;
 
         stream_puts(s, (params->rule < 0 ? "f\n" : "f*\n"));
-        if (psmat)
-            stream_puts(s, "Q\n");
     }
     return 0;
 }
@@ -1974,7 +1971,6 @@ gdev_pdf_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
     int code;
     gs_fixed_rect box1 = *rect, box = box1;
     gx_device_pdf *pdev = (gx_device_pdf *) dev;
-    gs_matrix *psmat = NULL;
     const bool convert_to_image = (pdev->CompatibilityLevel <= 1.2 &&
             gx_dc_is_pattern2_color(pdcolor));
 
@@ -1996,8 +1992,6 @@ gdev_pdf_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
         pprintg4(pdev->strm, "%g %g %g %g re f\n",
                 fixed2float(box1.p.x), fixed2float(box1.p.y),
                 fixed2float(box1.q.x - box1.p.x) , fixed2float(box1.q.y - box1.p.y));
-        if (psmat)
-            stream_puts(pdev->strm, "Q\n");
         if (pdev->Eps2Write) {
             gs_rect *Box;
 
