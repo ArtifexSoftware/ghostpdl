@@ -1108,7 +1108,7 @@ int pdfi_check_page(pdf_context *ctx, pdf_dict *page_dict, bool do_setup)
     /* If there are spot colours (and by inference, the device renders spot plates) then
      * send the number of Spots to the device, so it can setup correctly.
      */
-    if (spots > 0 && do_setup) {
+    if (do_setup) {
         gs_c_param_list_write(&ctx->pdfi_param_list, ctx->memory);
         param_write_int((gs_param_list *)&ctx->pdfi_param_list, "PageSpotColors", &spots);
         gs_c_param_list_read(&ctx->pdfi_param_list);
