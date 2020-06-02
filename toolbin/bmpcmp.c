@@ -3688,6 +3688,7 @@ int main(int argc, char *argv[])
     DiffFn        *diffFn;
     Params         params;
     int            noDifferences = 1;
+    int            can_compare = 1;
     void           *lab1, *lab2;
 
     parseArgs(argc, argv, &params);
@@ -3723,11 +3724,13 @@ int main(int argc, char *argv[])
                 "bmpcmp: Page %d: Can't compare images "
                 "(w=%d,%d) (h=%d,%d) (s=%d,%d) (bpp=%d,%d) (cmyk=%d,%d)!\n",
                 imagecount, w, w2, h, h2, s, s2, bpp, bpp2, cmyk, cmyk2);
+            can_compare = 0;
             continue;
         }
 
         if (params.lab && (lab1 == NULL || lab2 == NULL)) {
             fprintf(stderr, "bmpcmp: Lab compare failed (only valid for tiffs with icc profiles)\n");
+            can_compare = 0;
             continue;
         }
 
@@ -3925,12 +3928,15 @@ done:
                 imagecount+1, params.filename2);
         exit(EXIT_FAILURE);
     }
+    /* Also count as a failure if the images are different sizes, color, bits etc */
+    if (can_compare == 0)
+        exit(EXIT_FAILURE);
 
     image_close(&image1);
     image_close(&image2);
 
     if (noDifferences == 1)
-      fprintf(stderr, "bmpcmp: no differences detected\n");
+        fprintf(stderr, "bmpcmp: no differences detected\n");
 
     return EXIT_SUCCESS;
 }
