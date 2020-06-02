@@ -140,7 +140,7 @@ halftone_init(gx_image_enum *penum)
                                     penum->pgs->dev_ht->components[k].corder.threshold_inverted,
                                     penum->pgs->dev_ht->components[k].corder.width,
                                     penum->pgs->dev_ht->components[k].corder.full_height,
-                                    -penum->pgs->screen_phase[k].x,
+                                    penum->pgs->screen_phase[k].x,
                                     -penum->pgs->screen_phase[k].y,
                                     penum->pgs->dev_ht->components[k].corder.threshold) < 0)
             goto fail;
