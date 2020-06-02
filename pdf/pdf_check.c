@@ -1108,11 +1108,14 @@ int pdfi_check_page(pdf_context *ctx, pdf_dict *page_dict, bool do_setup)
     /* If there are spot colours (and by inference, the device renders spot plates) then
      * send the number of Spots to the device, so it can setup correctly.
      */
-    if (do_setup) {
-        gs_c_param_list_write(&ctx->pdfi_param_list, ctx->memory);
-        param_write_int((gs_param_list *)&ctx->pdfi_param_list, "PageSpotColors", &spots);
-        gs_c_param_list_read(&ctx->pdfi_param_list);
-        code = gs_putdeviceparams(ctx->pgs->device, (gs_param_list *)&ctx->pdfi_param_list);
+    if (do_setup && tracker.spot_dict) {
+        gs_c_param_list list;
+
+        gs_c_param_list_write(&list, ctx->memory);
+        param_write_int((gs_param_list *)&list, "PageSpotColors", &spots);
+        gs_c_param_list_read(&list);
+        code = gs_putdeviceparams(ctx->pgs->device, (gs_param_list *)&list);
+        gs_c_param_list_release(&list);
         if (code > 0) {
             /* The device was closed, we need to reopen it */
             code = gs_setdevice_no_erase(ctx->pgs, ctx->pgs->device);
