@@ -3694,7 +3694,7 @@ int main(int argc, char *argv[])
     if (params.window <= 1 && params.threshold == 0) {
         diffFn = simple_diff;
         if (params.lab) {
-            fprintf(stderr, "bmpcmp: LAB comparison requires window > 1 and threshold > 0");
+            fprintf(stderr, "bmpcmp: LAB comparison requires window > 1 and threshold > 0\n");
         }
     } else {
         diffFn = fuzzy_diff;
@@ -3702,7 +3702,7 @@ int main(int argc, char *argv[])
 
 #ifndef COLOR_MANAGED
     if (params.lab) {
-        fprintf(stderr, "bmpcmp: LAB comparison selected but bmp compiled without cmm!");
+        fprintf(stderr, "bmpcmp: LAB comparison selected but bmp compiled without cmm!\n");
     }
 #endif
 
@@ -3727,7 +3727,7 @@ int main(int argc, char *argv[])
         }
 
         if (params.lab && (lab1 == NULL || lab2 == NULL)) {
-            fprintf(stderr, "bmpcmp: Lab compare failed (only valid for tiffs with icc profiles)");
+            fprintf(stderr, "bmpcmp: Lab compare failed (only valid for tiffs with icc profiles)\n");
             continue;
         }
 
