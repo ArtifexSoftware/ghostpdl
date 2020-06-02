@@ -2938,3 +2938,45 @@ int pdfi_do_annotations(pdf_context *ctx, pdf_dict *page_dict)
     pdfi_countdown(Annots);
     return code;
 }
+
+static int pdfi_form_draw_field(pdf_context *ctx, pdf_dict *AcroForm, pdf_dict *field)
+{
+    return 0;
+}
+
+int pdfi_do_acroform(pdf_context *ctx, pdf_dict *page_dict)
+{
+    int code = 0;
+    pdf_dict *AcroForm = NULL;
+    pdf_array *Fields = NULL;
+    pdf_dict *field = NULL;
+    int i;
+
+    if (!ctx->showacroform)
+        return 0;
+
+    code = pdfi_dict_knownget_type(ctx, ctx->Root, "AcroForm", PDF_DICT, (pdf_obj **)&AcroForm);
+    if (code <= 0)
+        goto exit;
+
+    code = pdfi_dict_knownget_type(ctx, AcroForm, "Fields", PDF_ARRAY, (pdf_obj **)&Fields);
+    if (code <= 0)
+        goto exit;
+
+    for (i=0; i<pdfi_array_size(Fields); i++) {
+        code = pdfi_array_get_type(ctx, Fields, i, PDF_DICT, (pdf_obj **)&field);
+        if (code < 0)
+            continue;
+        code = pdfi_form_draw_field(ctx, AcroForm, field);
+        if (code < 0)
+            goto exit;
+        pdfi_countdown(field);
+        field = NULL;
+    }
+
+ exit:
+    pdfi_countdown(field);
+    pdfi_countdown(Fields);
+    pdfi_countdown(AcroForm);
+    return code;
+}

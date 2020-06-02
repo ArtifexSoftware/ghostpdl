@@ -19,5 +19,6 @@
 #define PDF_ANNOTATIONS
 
 int pdfi_do_annotations(pdf_context *ctx, pdf_dict *page_dict);
+int pdfi_do_acroform(pdf_context *ctx, pdf_dict *page_dict);
 
 #endif
