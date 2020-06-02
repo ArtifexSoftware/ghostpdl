@@ -86,8 +86,8 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\libpng;..\zlib;..\debugobj\;..\tiff\libtiff;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;HAVE_LIBPNG;HAVE_LIBTIFF;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\lcms2mt\include;..\libpng;..\zlib;..\debugobj\;..\tiff\libtiff;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>COLOR_MANAGED;WIN32;_DEBUG;_CONSOLE;HAVE_LIBPNG;HAVE_LIBTIFF;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -103,8 +103,8 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\libpng;..\zlib;..\debugobj\;..\tiff\libtiff;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;HAVE_LIBPNG;HAVE_LIBTIFF;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\lcms2mt\include;..\libpng;..\zlib;..\debugobj\;..\tiff\libtiff;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>COLOR_MANAGED;WIN32;NDEBUG;_CONSOLE;HAVE_LIBPNG;HAVE_LIBTIFF;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader />
       <WarningLevel>Level3</WarningLevel>
@@ -124,8 +124,8 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\libpng;..\zlib;..\debugobj\;..\tiff\libtiff;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;HAVE_LIBPNG;HAVE_LIBTIFF;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\lcms2mt\include;..\libpng;..\zlib;..\debugobj\;..\tiff\libtiff;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>COLOR_MANAGED;WIN32;_DEBUG;_CONSOLE;HAVE_LIBPNG;HAVE_LIBTIFF;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -144,8 +144,8 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\libpng;..\zlib;..\debugobj\;..\tiff\libtiff;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;HAVE_LIBPNG;HAVE_LIBTIFF;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\lcms2mt\include;..\libpng;..\zlib;..\debugobj\;..\tiff\libtiff;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>COLOR_MANAGED;WIN32;NDEBUG;_CONSOLE;HAVE_LIBPNG;HAVE_LIBTIFF;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader />
       <WarningLevel>Level3</WarningLevel>
@@ -160,6 +160,32 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\lcms2mt\src\cmsalpha.c" />
+    <ClCompile Include="..\lcms2mt\src\cmscam02.c" />
+    <ClCompile Include="..\lcms2mt\src\cmscgats.c" />
+    <ClCompile Include="..\lcms2mt\src\cmscnvrt.c" />
+    <ClCompile Include="..\lcms2mt\src\cmserr.c" />
+    <ClCompile Include="..\lcms2mt\src\cmsgamma.c" />
+    <ClCompile Include="..\lcms2mt\src\cmsgmt.c" />
+    <ClCompile Include="..\lcms2mt\src\cmshalf.c" />
+    <ClCompile Include="..\lcms2mt\src\cmsintrp.c" />
+    <ClCompile Include="..\lcms2mt\src\cmsio0.c" />
+    <ClCompile Include="..\lcms2mt\src\cmsio1.c" />
+    <ClCompile Include="..\lcms2mt\src\cmslut.c" />
+    <ClCompile Include="..\lcms2mt\src\cmsmd5.c" />
+    <ClCompile Include="..\lcms2mt\src\cmsmtrx.c" />
+    <ClCompile Include="..\lcms2mt\src\cmsnamed.c" />
+    <ClCompile Include="..\lcms2mt\src\cmsopt.c" />
+    <ClCompile Include="..\lcms2mt\src\cmspack.c" />
+    <ClCompile Include="..\lcms2mt\src\cmspcs.c" />
+    <ClCompile Include="..\lcms2mt\src\cmsplugin.c" />
+    <ClCompile Include="..\lcms2mt\src\cmsps2.c" />
+    <ClCompile Include="..\lcms2mt\src\cmssamp.c" />
+    <ClCompile Include="..\lcms2mt\src\cmssm.c" />
+    <ClCompile Include="..\lcms2mt\src\cmstypes.c" />
+    <ClCompile Include="..\lcms2mt\src\cmsvirt.c" />
+    <ClCompile Include="..\lcms2mt\src\cmswtpnt.c" />
+    <ClCompile Include="..\lcms2mt\src\cmsxform.c" />
     <ClCompile Include="..\libpng\png.c" />
     <ClCompile Include="..\libpng\pngerror.c" />
     <ClCompile Include="..\libpng\pngget.c" />
@@ -228,6 +254,12 @@
     <ClCompile Include="..\zlib\uncompr.c" />
     <ClCompile Include="..\zlib\zutil.c" />
     <ClCompile Include="bmpcmp.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\lcms2mt\include\lcms2mt.h" />
+    <ClInclude Include="..\lcms2mt\include\lcms2mt_plugin.h" />
+    <ClInclude Include="..\lcms2mt\src\extra_xform.h" />
+    <ClInclude Include="..\lcms2mt\src\lcms2_internal.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
