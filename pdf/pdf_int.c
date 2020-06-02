@@ -684,7 +684,7 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
     if (entry->free) {
         dmprintf1(ctx->memory, "Attempt to dereference free object %"PRIu64", returning a null object.\n", entry->object_num);
         code = pdfi_alloc_object(ctx, PDF_NULL, 1, object);
-        if (code > 0)
+        if (code >= 0)
             pdfi_countup(*object);
         return code;
     }
