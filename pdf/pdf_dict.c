@@ -206,7 +206,7 @@ int pdfi_dict_get_by_key(pdf_context *ctx, pdf_dict *d, const pdf_name *Key, pdf
  * read the indirect object anyway, and we need to ensure that Form XObjects (for example)
  * don't have circular calls.
  */
-int pdfi_dict_get_no_store_R(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj **o)
+int pdfi_dict_get_no_store_R(pdf_context *ctx, pdf_dict *d, const pdf_name *Key, pdf_obj **o)
 {
     int i=0, code;
     pdf_name *t;
@@ -220,7 +220,7 @@ int pdfi_dict_get_no_store_R(pdf_context *ctx, pdf_dict *d, const char *Key, pdf
         t = (pdf_name *)d->keys[i];
 
         if (t && t->type == PDF_NAME) {
-            if (pdfi_name_is((pdf_name *)t, Key)) {
+            if (!pdfi_name_cmp((pdf_name *)t, Key)) {
                 if (d->values[i]->type == PDF_INDIRECT) {
                     pdf_indirect_ref *r = (pdf_indirect_ref *)d->values[i];
 

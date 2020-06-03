@@ -57,6 +57,6 @@ pdfi_interpret_inner_content_string(pdf_context *ctx, pdf_string *content_string
 int pdfi_interpret_inner_content_stream(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, bool stoponerror, const char *desc);
 int pdfi_interpret_content_stream(pdf_context *ctx, pdf_stream *content_stream, pdf_dict *stream_dict, pdf_dict *page_dict);
 
-int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_obj **o);
+int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name, pdf_dict *dict, pdf_dict *page_dict, pdf_obj **o);
 
 #endif

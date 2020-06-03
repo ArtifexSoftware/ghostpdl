@@ -3679,39 +3679,59 @@ repaired_keyword:
     return 0;
 }
 
-int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_obj **o)
+/*
+ * Checks for both "Resource" and "RD" in the specified dict.
+ * And then gets the typedict of Type (e.g. Font or XObject).
+ * Returns 0 if undefined, >0 if found, <0 if error
+ */
+static int pdfi_resource_knownget_typedict(pdf_context *ctx, unsigned char *Type,
+                                           pdf_dict *dict, pdf_dict **typedict)
 {
-    char Key[256];
-    pdf_dict *Resources, *TypedResources, *Parent;
     int code;
-    bool known = false;
+    pdf_dict *Resources = NULL;
+
+    code = pdfi_dict_knownget_type(ctx, dict, "Resources", PDF_DICT, (pdf_obj **)&Resources);
+    if (code == 0)
+        code = pdfi_dict_knownget_type(ctx, dict, "DR", PDF_DICT, (pdf_obj **)&Resources);
+    if (code < 0) goto exit;
+    if (code > 0)
+        code = pdfi_dict_knownget_type(ctx, Resources, (const char *)Type, PDF_DICT, (pdf_obj **)typedict);
+ exit:
+    pdfi_countdown(Resources);
+    return code;
+}
+
+int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name,
+                       pdf_dict *dict, pdf_dict *page_dict, pdf_obj **o)
+{
+    pdf_dict *typedict = NULL;
+    pdf_dict *Parent = NULL;
+    int code;
 
     *o = NULL;
-    memcpy(Key, name->data, name->length);
-    Key[name->length] = 0x00;
 
-    code = pdfi_dict_get(ctx, stream_dict, "Resources", (pdf_obj **)&Resources);
-    if (code == 0) {
-        code = pdfi_dict_get(ctx, Resources, (const char *)Type, (pdf_obj **)&TypedResources);
-        if (code == 0) {
-            pdfi_countdown(Resources);
-            code = pdfi_dict_get_no_store_R(ctx, TypedResources, Key, o);
-            pdfi_countdown(TypedResources);
-            if (code != gs_error_undefined)
-                return code;
-        }
+    /* Check the provided dict */
+    code = pdfi_resource_knownget_typedict(ctx, Type, dict, &typedict);
+    if (code < 0) goto exit;
+    if (code > 0) {
+        code = pdfi_dict_get_no_store_R(ctx, typedict, name, o);
+        if (code != gs_error_undefined)
+            goto exit;
     }
 
-    code = pdfi_dict_known(stream_dict, "Parent", &known);
-    if (code == 0 && known) {
-        code = pdfi_dict_get_type(ctx, stream_dict, "Parent", PDF_DICT, (pdf_obj **)&Parent);
-        if (code == 0 && Parent->object_num != ctx->CurrentPageDict->object_num) {
+    /* Check the Parents, if any */
+    code = pdfi_dict_knownget_type(ctx, dict, "Parent", PDF_DICT, (pdf_obj **)&Parent);
+    if (code < 0) goto exit;
+    if (code > 0) {
+        if (Parent->object_num != ctx->CurrentPageDict->object_num) {
             code = pdfi_find_resource(ctx, Type, name, Parent, page_dict, o);
             if (code != gs_error_undefined)
-                return code;
+                goto exit;
         }
-        pdfi_countdown(Parent);
     }
+
+    pdfi_countdown(typedict);
+    typedict = NULL;
 
     /* Normally page_dict can't be (or shouldn't be) NULL. However, if we are processing
      * a TYpe 3 font, then the 'page dict' is the Resources dictionary of that font. If
@@ -3724,33 +3744,33 @@ int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name, pd
      * last-ditch resource to check.
      */
     if (page_dict != NULL) {
-        code = pdfi_dict_get(ctx, page_dict, "Resources", (pdf_obj **)&Resources);
-        if (code < 0)
-            return code;
+        code = pdfi_resource_knownget_typedict(ctx, Type, page_dict, &typedict);
+        if (code < 0) goto exit;
 
-        code = pdfi_dict_get(ctx, Resources, (const char *)Type, (pdf_obj **)&TypedResources);
-        pdfi_countdown(Resources);
-        if (code < 0)
-            return code;
-
-        code = pdfi_dict_get_no_store_R(ctx, TypedResources, Key, o);
-        pdfi_countdown(TypedResources);
-        return code;
+        if (code > 0) {
+            code = pdfi_dict_get_no_store_R(ctx, typedict, name, o);
+            goto exit;
+        }
     }
+
+    pdfi_countdown(typedict);
+    typedict = NULL;
 
     if (ctx->CurrentPageDict != NULL) {
-        code = pdfi_dict_get(ctx, ctx->CurrentPageDict, "Resources", (pdf_obj **)&Resources);
-        if (code < 0)
-            return code;
+        code = pdfi_resource_knownget_typedict(ctx, Type, ctx->CurrentPageDict, &typedict);
+        if (code < 0) goto exit;
 
-        code = pdfi_dict_get(ctx, Resources, (const char *)Type, (pdf_obj **)&TypedResources);
-        pdfi_countdown(Resources);
-        if (code < 0)
-            return code;
-
-        code = pdfi_dict_get_no_store_R(ctx, TypedResources, Key, o);
-        pdfi_countdown(TypedResources);
-        return code;
+        if (code > 0) {
+            code = pdfi_dict_get_no_store_R(ctx, typedict, name, o);
+            goto exit;
+        }
     }
+
+    /* If we got all the way down there, we didn't find it */
+    code = gs_error_undefined;
+
+exit:
+    pdfi_countdown(typedict);
+    pdfi_countdown(Parent);
     return code;
 }
