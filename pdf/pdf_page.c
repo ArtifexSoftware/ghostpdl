@@ -527,6 +527,7 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
         goto exit2;
     }
 
+    pdfi_device_set_flags(ctx);
     code = pdfi_check_page(ctx, page_dict, true);
     if (code < 0)
         goto exit2;
@@ -580,7 +581,6 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
      * This needs to be before transparency device is pushed, if applicable
      */
     pdfi_trans_set_needs_OP(ctx);
-    pdfi_device_set_flags(ctx);
     pdfi_oc_init(ctx);
 
     pdfi_gsave(ctx);

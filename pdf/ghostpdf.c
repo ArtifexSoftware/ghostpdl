@@ -689,16 +689,7 @@ int pdfi_set_input_stream(pdf_context *ctx, stream *stm)
     gs_offset_t Offset = 0;
     int64_t bytes = 0;
     bool found = false;
-    int code, intval;
-
-    /* See if the device supports spots (if not, we won't check for them later) */
-    ctx->spot_capable_device = false;
-    gs_c_param_list_read(&ctx->pdfi_param_list);
-    code = param_read_int((gs_param_list *)&ctx->pdfi_param_list, "PageSpotColors", &intval);
-    if (code < 0)
-        return code;
-    if (code == 0)
-        ctx->spot_capable_device = true;
+    int code;
 
     ctx->main_stream = (pdf_stream *)gs_alloc_bytes(ctx->memory, sizeof(pdf_stream), "PDF interpreter allocate main PDF stream");
     if (ctx->main_stream == NULL)
@@ -940,7 +931,6 @@ pdf_context *pdfi_create_context(gs_memory_t *pmem)
     /* We decrypt strings from encrypted files until we start a page */
     ctx->decrypt_strings = true;
 
-    memset(&ctx->pdfi_param_list, 0x00, sizeof(gs_c_param_list));
 #if REFCNT_DEBUG
     ctx->UID = 1;
 #endif
@@ -1059,9 +1049,6 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
 
     pdfi_free_DefaultQState(ctx);
     pdfi_oc_free(ctx);
-
-    if (ctx->pdfi_param_list.head != NULL)
-        gs_c_param_list_release(&ctx->pdfi_param_list);
 
     if(ctx->EKey)
         pdfi_countdown(ctx->EKey);

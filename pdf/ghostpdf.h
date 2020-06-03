@@ -254,10 +254,6 @@ typedef struct pdf_context_s
      */
     float HeaderVersion, FinalVersion;
 
-    /* Needed for communicating with the device. I'm not sure if its legitimate
-     * to keep one, and read/write it all the time, but there's one way to find out....
-     */
-    gs_c_param_list pdfi_param_list;
     /* Needed to determine whether we need to reset the device to handle any spots
      * and whether we need to prescan the PDF file to determine how many spot colourants
      * (if any) are used in the file.

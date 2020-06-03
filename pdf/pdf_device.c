@@ -72,13 +72,20 @@ void pdfi_device_set_flags(pdf_context *ctx)
 {
     bool has_pdfmark;
     bool has_ForOPDFRead;
+    gx_device *dev = ctx->pgs->device;
 
-    has_pdfmark = pdfi_device_check_param_exists(ctx->pgs->device, "pdfmark");
-    has_ForOPDFRead = pdfi_device_check_param_bool(ctx->pgs->device, "ForOPDFRead");
+    has_pdfmark = pdfi_device_check_param_exists(dev, "pdfmark");
+    has_ForOPDFRead = pdfi_device_check_param_bool(dev, "ForOPDFRead");
 
     /* Cache these so they don't have to constantly be calculated */
     ctx->writepdfmarks = has_pdfmark || ctx->dopdfmarks;
     ctx->annotations_preserved = ctx->writepdfmarks && !has_ForOPDFRead;
+
+    /* PreserveTrMode is for pdfwrite device */
+    ctx->preserve_tr_mode = pdfi_device_check_param_bool(dev, "PreserveTrMode");
+
+    /* See if it is a DeviceN (spot capable) */
+    ctx->spot_capable_device = dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0);
 
     dbgmprintf2(ctx->memory, "Device writepdfmarks=%s, annotations_preserved=%s\n",
                 ctx->writepdfmarks ? "TRUE" : "FALSE",

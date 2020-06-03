@@ -139,7 +139,6 @@ pdf_impl_set_device(pl_interp_implementation_t *impl, gx_device *pdevice)
 {
     pdf_interp_instance_t *instance = impl->interp_client_data;
     pdf_context *ctx = instance->ctx;
-//    gs_c_param_list list;
     int code;
 
 #if 0
@@ -165,26 +164,6 @@ pdf_impl_set_device(pl_interp_implementation_t *impl, gx_device *pdevice)
         gs_fill(ctx->pgs);
     }
 #endif
-
-    if (ctx->pdfi_param_list.head != NULL) {
-        gs_c_param_list_release(&ctx->pdfi_param_list);
-        memset(&ctx->pdfi_param_list, 0x00, sizeof(gs_c_param_list));
-    }
-
-    /* Check if the device wants PreserveTrMode (pdfwrite) */
-    gs_c_param_list_write(&ctx->pdfi_param_list, ctx->memory);
-    code = gs_getdeviceparams(pdevice, (gs_param_list *)&ctx->pdfi_param_list);
-    if (code >= 0) {
-        gs_c_param_list_read(&ctx->pdfi_param_list);
-        code = param_read_bool((gs_param_list *)&ctx->pdfi_param_list, "PreserveTrMode", &ctx->preserve_tr_mode);
-    } else {
-        gs_c_param_list_release(&ctx->pdfi_param_list);
-        memset(&ctx->pdfi_param_list, 0x00, sizeof(gs_c_param_list));
-        return code;
-    }
-//    gs_c_param_list_release(&list);
-//    if (code < 0)
-//        return code;
 
     gs_setaccuratecurves(ctx->pgs, true); /* NB not sure */
     /* Not sure if we should do this at all here, but it seems it should be .3, not 0 */
