@@ -2761,11 +2761,17 @@ gx_downscaler_init_trapped_cm_halftone(gx_downscaler_t    *ds,
 void gx_downscaler_fin(gx_downscaler_t *ds)
 {
     int plane;
+
+    if (ds->dev == NULL)
+        return;
+
     for (plane=0; plane < GS_CLIENT_COLOR_MAX_COMPONENTS; plane++) {
         gs_free_object(ds->dev->memory, ds->pre_cm[plane],
                        "gx_downscaler(planar_data)");
         gs_free_object(ds->dev->memory, ds->post_cm[plane],
                        "gx_downscaler(planar_data)");
+        ds->pre_cm[plane] = NULL;
+        ds->post_cm[plane] = NULL;
     }
     ds->num_planes = 0;
 
@@ -2781,9 +2787,11 @@ void gx_downscaler_fin(gx_downscaler_t *ds)
 
     if (ds->liner)
         ds->liner->drop(ds->liner, ds->dev->memory);
+    ds->liner = NULL;
 
     if (ds->ets_config)
         ets_destroy(ds->dev->memory, ds->ets_config);
+    ds->ets_config = NULL;
 }
 
 /* Chunky case */
