@@ -107,6 +107,10 @@ struct gx_downscaler_s {
     byte                 *htrow_alloc;
     byte                 *inbuf;
     byte                 *inbuf_alloc;
+
+    int                   do_skew_detection;
+    int                   skew_detected;
+    double                skew_angle;
 };
 
 /* The following structure is used to hold the configuration
@@ -120,6 +124,7 @@ typedef struct gx_downscaler_params_s
     int trap_h;
     int trap_order[GS_CLIENT_COLOR_MAX_COMPONENTS];
     int ets;
+    int do_skew_detection;
 } gx_downscaler_params;
 
 /* To use the downscaler:
@@ -227,7 +232,7 @@ int gx_downscaler_process_page(gx_device                 *dev,
                                int                        factor);
 
 #define GX_DOWNSCALER_PARAMS_DEFAULTS \
-{ 1, 0, 0, 0, { 3, 1, 0, 2 } }
+{ 1, 0, 0, 0, { 3, 1, 0, 2 }, 0, 0 }
 
 enum {
     GX_DOWNSCALER_PARAMS_MFS = 1,

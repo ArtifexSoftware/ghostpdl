@@ -56,6 +56,8 @@ cal_OBJS = \
 	$(CAL_OBJ)$(CAL_PREFIX)blendavx2.$(OBJ)	\
 	$(CAL_OBJ)$(CAL_PREFIX)blendsse42.$(OBJ)\
 	$(CAL_OBJ)$(CAL_PREFIX)blend.$(OBJ)	\
+	$(CAL_OBJ)$(CAL_PREFIX)skew.$(OBJ)	\
+	$(CAL_OBJ)$(CAL_PREFIX)deskew.$(OBJ)	\
 	$(CAL_OBJ)$(CAL_PREFIX)cmsavx2.$(OBJ)	\
 	$(CAL_OBJ)$(CAL_PREFIX)cmssse42.$(OBJ)	\
 	$(CAL_OBJ)$(CAL_PREFIX)cmsneon.$(OBJ)	\
@@ -120,6 +122,12 @@ $(CAL_OBJ)$(CAL_PREFIX)blendsse42.$(OBJ) : $(CAL_SRC)blendsse42.c $(cal_HDRS) $(
 
 $(CAL_OBJ)$(CAL_PREFIX)blend.$(OBJ) : $(CAL_SRC)blend.c $(cal_HDRS) $(CAL_DEP) $(gsmemory_h)
 	$(CAL_CC) $(I_)$(GLSRC) $(CAL_O)blend.$(OBJ) $(C_) $(CAL_SRC)blend.c
+
+$(CAL_OBJ)$(CAL_PREFIX)skew.$(OBJ) : $(CAL_SRC)skew.c $(cal_HDRS) $(CAL_DEP) $(gsmemory_h)
+	$(CAL_CC) $(I_)$(GLSRC) $(CAL_O)skew.$(OBJ) $(C_) $(CAL_SRC)skew.c
+
+$(CAL_OBJ)$(CAL_PREFIX)deskew.$(OBJ) : $(CAL_SRC)deskew.c $(cal_HDRS) $(CAL_DEP) $(gsmemory_h)
+	$(CAL_CC) $(I_)$(GLSRC) $(CAL_O)deskew.$(OBJ) $(C_) $(CAL_SRC)deskew.c
 
 cal_ets_h=$(CAL_SRC)cal_ets.h
 ca_ets_tm_h=$(CAL_SRC)cal_ets_tm.h

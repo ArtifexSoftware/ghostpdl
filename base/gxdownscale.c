@@ -2080,6 +2080,61 @@ claptrap_drop(gx_downscale_liner *liner_, gs_memory_t *mem)
         next->drop(next, mem);
 }
 
+#ifdef WITH_CAL
+typedef struct {
+    gx_downscale_liner   base;
+    cal_deskewer        *deskewer;
+    cal_deskewer_bander *bander;
+    int                  height;
+    int                  get_row;
+    int                  got_row;
+    gx_downscale_liner  *chain;
+} liner_skew;
+
+static int
+skew_line(gx_downscale_liner *liner_, void *buffer, int row)
+{
+    liner_skew *liner = (liner_skew *)liner_;
+    int code;
+
+    if (row < liner->got_row)
+       liner->get_row = 0;
+
+    liner->got_row = row;
+
+    while (1) {
+        code = cal_deskewer_band_pull(liner->bander, buffer);
+        if (code == 1)
+            return 0; /* We got a line! */
+
+        code = liner->chain->get_line(liner->chain,
+                                      buffer,
+                                      liner->get_row++);
+        if (code < 0)
+            return code;
+        code = cal_deskewer_band_push(liner->bander,
+                                      buffer);
+        if (code < 0)
+            return code;
+    }
+}
+
+static void
+skew_drop(gx_downscale_liner *liner_, gs_memory_t *mem)
+{
+    liner_skew *liner = (liner_skew *)liner_;
+    gx_downscale_liner *next;
+
+    if (!liner)
+        return;
+    cal_deskewer_band_end(liner->bander, mem);
+    cal_deskewer_fin(liner->deskewer, mem);
+    next = liner->chain;
+    gs_free_object(mem, liner, "liner_skew");
+    if (next)
+        next->drop(next, mem);
+}
+#endif
 
 #define alloc_liner(mem, type, get, drop, res) \
     do_alloc_liner(mem, sizeof(type), #type, get, drop,\
@@ -2364,6 +2419,12 @@ select_8_to_8_core(int nc, int factor)
     return NULL;
 }
 
+#ifdef WITH_CAL
+static unsigned char bg0[GX_DEVICE_COLOR_MAX_COMPONENTS] = {0};
+static unsigned char bg1[GX_DEVICE_COLOR_MAX_COMPONENTS] = {
+    0xFF, 0xFF, 0xFF, 0xFF };
+#endif
+
 int
 gx_downscaler_init_cm_halftone(gx_downscaler_t      *ds,
                                gx_device            *dev,
@@ -2423,6 +2484,7 @@ gx_downscaler_init_cm_halftone(gx_downscaler_t      *ds,
     ds->ht                = ht;
     ds->dst_bpc           = dst_bpc;
     ds->num_comps         = num_comps;
+    ds->do_skew_detection = params->do_skew_detection;
 
     /* The primary line source comes always from getbits. */
     {
@@ -2438,6 +2500,89 @@ gx_downscaler_init_cm_halftone(gx_downscaler_t      *ds,
         gb_liner->dev = dev;
         ds->liner = &gb_liner->base;
     }
+
+#ifdef WITH_CAL
+    if (ds->do_skew_detection) {
+        /* Do a skew detection pass */
+        int j;
+        int w = ds->dev->width;
+        int h = ds->dev->height;
+        int n = ds->dev->color_info.num_components;
+        cal_skew *skew;
+        byte *buffer = gs_alloc_bytes(ds->dev->memory, w*n, "skew_row");
+        if (buffer == NULL)
+            return_error(gs_error_VMerror);
+        skew = cal_skew_init(ds->dev->memory->gs_lib_ctx->core->cal_ctx,
+                             ds->dev->memory,
+                             w, h);
+        if (skew == NULL)
+            code = gs_error_VMerror;
+        for (j = 0; code >= 0 && j < h; j++) {
+            code = ds->liner->get_line(ds->liner, buffer, j);
+            /* Craply turn that into "greyscale" */
+            if (n > 1) {
+                int i, k;
+                const byte *src = buffer;
+                byte *dst = buffer;
+                for (i = w; i > 0; i--) {
+                    int v = 0;
+                    for (k = n; k > 0; k--)
+                        v += *src++;
+                    *dst++ = (v+(n>>1))/n;
+                 }
+            }
+            code = cal_skew_process(skew, ds->dev->memory, buffer);
+        }
+        if (code >= 0)
+            ds->skew_angle = cal_skew_detect(skew, ds->dev->memory);
+        gs_free_object(ds->dev->memory, buffer, "skew_row");
+        cal_skew_fin(skew, ds->dev->memory);
+        if (code < 0)
+            goto cleanup;
+
+        if (ds->skew_angle != 0) {
+            liner_skew *sk_liner;
+            unsigned int dw, dh;
+
+            code = alloc_liner(dev->memory,
+                               liner_skew,
+                               skew_line,
+                               skew_drop,
+                               &sk_liner);
+            if (code < 0)
+                goto cleanup;
+            sk_liner->chain = ds->liner;
+            sk_liner->get_row = 0;
+            sk_liner->got_row = 0;
+            sk_liner->height = dev->height;
+            ds->liner = &sk_liner->base;
+            sk_liner->deskewer = cal_deskewer_init(
+                             ds->dev->memory->gs_lib_ctx->core->cal_ctx,
+                             ds->dev->memory,
+                             ds->dev->width, ds->dev->height,
+                             &dw,
+                             &dh,
+                             ds->skew_angle,
+                             1, /* Keep the page size constant */
+                             1.0, 1.0, 1.0, 1.0,
+                             (ds->num_comps <= 3 ? bg1 : bg0),
+                             ds->num_comps);
+            if (sk_liner->deskewer == NULL) {
+                emprintf(dev->memory, "Deskewer initialisation failed");
+                code = gs_note_error(gs_error_VMerror);
+                goto cleanup;
+            }
+            sk_liner->bander = cal_deskewer_band_begin(sk_liner->deskewer,
+                                                       ds->dev->memory,
+                                                       0, 0);
+            if (sk_liner->bander == NULL) {
+                emprintf(dev->memory, "Deskewer initialisation(2) failed");
+                code = gs_note_error(gs_error_VMerror);
+                goto cleanup;
+            }
+        }
+    }
+#endif
 
     code = check_trapping(dev->memory, params->trap_w, params->trap_h,
                           num_comps, params->trap_order);
@@ -3039,7 +3184,7 @@ int gx_downscaler_read_params(gs_param_list        *plist,
                               int                   features)
 {
     int code;
-    int downscale, mfs, ets;
+    int downscale, mfs, ets, deskew;
     int trap_w, trap_h;
     const char *param_name;
     gs_param_int_array trap_order;
@@ -3054,6 +3199,22 @@ int gx_downscaler_read_params(gs_param_list        *plist,
         case 0:
             if (downscale >= 1) {
                 params->downscale_factor = downscale;
+                break;
+            }
+            code = gs_error_rangecheck;
+        default:
+            param_signal_error(plist, param_name, code);
+            return code;
+    }
+
+    switch (code = param_read_int(plist,
+                                  (param_name = "Deskew"),
+                                  &deskew)) {
+        case 1:
+            break;
+        case 0:
+            if (deskew >= 0) {
+                params->do_skew_detection = deskew;
                 break;
             }
             code = gs_error_rangecheck;
@@ -3193,6 +3354,8 @@ int gx_downscaler_write_params(gs_param_list        *plist,
     trap_order.persistent = false;
 
     if ((code = param_write_int(plist, "DownScaleFactor", &params->downscale_factor)) < 0)
+        ecode = code;
+    if ((code = param_write_int(plist, "Deskew", &params->do_skew_detection)) < 0)
         ecode = code;
     if (features & GX_DOWNSCALER_PARAMS_MFS)
     {
