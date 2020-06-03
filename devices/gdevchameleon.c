@@ -636,19 +636,16 @@ chameleon_print_page(gx_device_printer * pdev, gp_file * prn_stream)
         return gs_error_rangecheck;
     }
 
-    code = gx_downscaler_init_trapped_cm_halftone
-                                            (&ds,
-                                             (gx_device *)pdev,
-                                             pcdev->bpc,
-                                             pcdev->dst_bpc,
-                                             pcdev->num_components,
-                                             pcdev->downscale.downscale_factor,
-                                             pcdev->downscale.min_feature_size,
-                                             NULL, 0, /* Adjust width */
-                                             0, 0, NULL, /* Trapping w/h/comp_order */
-                                             col_convert, col_convert_arg, /* Color Management */
-                                             pcdev->dst_num_components,
-                                             default_ht);
+    code = gx_downscaler_init_cm_halftone(&ds,
+                                          (gx_device *)pdev,
+                                          pcdev->bpc,
+                                          pcdev->dst_bpc,
+                                          pcdev->num_components,
+                                          &pcdev->downscale,
+                                          NULL, 0, /* Adjust width */
+                                          col_convert, col_convert_arg, /* Color Management */
+                                          pcdev->dst_num_components,
+                                          default_ht);
     if (code < 0)
         goto cleanup;
 

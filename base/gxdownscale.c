@@ -1694,7 +1694,7 @@ static void down_core32(gx_downscaler_t *ds,
     }
 }
 
-static void decode_factor(int factor, int *up, int *down)
+void gx_downscaler_decode_factor(int factor, int *up, int *down)
 {
     if (factor == 32)
         *down = 3, *up = 2;
@@ -1709,7 +1709,7 @@ gx_downscaler_scale(int width, int factor)
 {
     int up, down;
 
-    decode_factor(factor, &up, &down);
+    gx_downscaler_decode_factor(factor, &up, &down);
     return (width*up)/down;
 }
 
@@ -1717,7 +1717,7 @@ int gx_downscaler_adjust_bandheight(int factor, int band_height)
 {
     int up, down;
 
-    decode_factor(factor, &up, &down);
+    gx_downscaler_decode_factor(factor, &up, &down);
     return (band_height/down)*down;
 }
 
@@ -1726,7 +1726,7 @@ gx_downscaler_scale_rounded(int width, int factor)
 {
     int up, down;
 
-    decode_factor(factor, &up, &down);
+    gx_downscaler_decode_factor(factor, &up, &down);
     return (width*up + down-1)/down;
 }
 
@@ -1971,33 +1971,15 @@ static int init_ht(gx_downscaler_t *ds, int num_planes, gx_downscale_core *downs
 
 int gx_downscaler_init_planar(gx_downscaler_t      *ds,
                               gx_device            *dev,
-                              gs_get_bits_params_t *params,
-                              int                   num_comps,
-                              int                   factor,
-                              int                   mfs,
                               int                   src_bpc,
-                              int                   dst_bpc)
+                              int                   dst_bpc,
+                              int                   num_comps,
+                        const gx_downscaler_params *params,
+                        const gs_get_bits_params_t *gb_params)
 {
-    return gx_downscaler_init_planar_trapped_cm(ds, dev, params, num_comps,
-        factor, mfs, src_bpc, dst_bpc, 0, 0, NULL, NULL, NULL, num_comps);
-}
-
-int gx_downscaler_init_planar_trapped(gx_downscaler_t      *ds,
-                                      gx_device            *dev,
-                                      gs_get_bits_params_t *params,
-                                      int                   num_comps,
-                                      int                   factor,
-                                      int                   mfs,
-                                      int                   src_bpc,
-                                      int                   dst_bpc,
-                                      int                   trap_w,
-                                      int                   trap_h,
-                                      const int            *comp_order)
-{
-    return gx_downscaler_init_planar_trapped_cm(ds, dev, params, num_comps,
-                                                factor, mfs, src_bpc, dst_bpc,
-                                                trap_w, trap_h, comp_order,
-                                                NULL, NULL, num_comps);
+    return gx_downscaler_init_planar_cm(ds, dev, src_bpc, dst_bpc,
+                                        num_comps, params, gb_params,
+                                        NULL, NULL, num_comps);
 }
 
 typedef struct {
@@ -2120,20 +2102,16 @@ do_alloc_liner(gs_memory_t *mem, size_t size, const char *type,
     return 0;
 }
 
-int gx_downscaler_init_planar_trapped_cm(gx_downscaler_t      *ds,
-                                         gx_device            *dev,
-                                         gs_get_bits_params_t *params,
-                                         int                   num_comps,
-                                         int                   factor,
-                                         int                   mfs,
-                                         int                   src_bpc,
-                                         int                   dst_bpc,
-                                         int                   trap_w,
-                                         int                   trap_h,
-                                         const int            *comp_order,
-                                         gx_downscale_cm_fn   *apply_cm,
-                                         void                 *apply_cm_arg,
-                                         int                   post_cm_num_comps)
+int gx_downscaler_init_planar_cm(gx_downscaler_t      *ds,
+                                 gx_device            *dev,
+                                 int                   src_bpc,
+                                 int                   dst_bpc,
+                                 int                   num_comps,
+                           const gx_downscaler_params *params,
+                           const gs_get_bits_params_t *gb_params,
+                                 gx_downscale_cm_fn   *apply_cm,
+                                 void                 *apply_cm_arg,
+                                 int                   post_cm_num_comps)
 {
     int                span = bitmap_raster(dev->width * src_bpc);
     int                post_span = bitmap_raster(dev->width * src_bpc);
@@ -2142,8 +2120,10 @@ int gx_downscaler_init_planar_trapped_cm(gx_downscaler_t      *ds,
     gx_downscale_core *core;
     int                i;
     int                upfactor, downfactor;
+    int                factor = params->downscale_factor;
+    int                mfs = params->min_feature_size;
 
-    decode_factor(factor, &upfactor, &downfactor);
+    gx_downscaler_decode_factor(factor, &upfactor, &downfactor);
 
     /* width = scaled width */
     width = (dev->width*upfactor)/downfactor;
@@ -2191,11 +2171,12 @@ int gx_downscaler_init_planar_trapped_cm(gx_downscaler_t      *ds,
         ds->liner = &gb_liner->base;
     }
 
-    code = check_trapping(dev->memory, trap_w, trap_h, num_comps, comp_order);
+    code = check_trapping(dev->memory, params->trap_w, params->trap_h,
+                          num_comps, params->trap_order);
     if (code < 0)
         return code;
 
-    if (trap_w > 0 || trap_h > 0) {
+    if (params->trap_w > 0 || params->trap_h > 0) {
         liner_claptrap_planar *ct_liner;
 
         code = alloc_liner(dev->memory,
@@ -2215,9 +2196,9 @@ int gx_downscaler_init_planar_trapped_cm(gx_downscaler_t      *ds,
                                            dev->width,
                                            dev->height,
                                            num_comps,
-                                           comp_order,
-                                           trap_w,
-                                           trap_h,
+                                           params->trap_order,
+                                           params->trap_w,
+                                           params->trap_h,
                                            get_planar_line_for_trap,
                                            ct_liner);
         if (ct_liner->claptrap == NULL) {
@@ -2227,7 +2208,7 @@ int gx_downscaler_init_planar_trapped_cm(gx_downscaler_t      *ds,
         }
     }
 
-    memcpy(&ds->params, params, sizeof(*params));
+    memcpy(&ds->params, gb_params, sizeof(*gb_params));
     ds->params.raster = span;
     for (i = 0; i < num_comps; i++) {
         ds->pre_cm[i] = gs_alloc_bytes(dev->memory,
@@ -2323,178 +2304,41 @@ static int get_line_for_trap(void *arg, unsigned char *buf)
     return ct->chain->get_line(ct->chain, buf, ct->y++);
 }
 
-int gx_downscaler_init(gx_downscaler_t   *ds,
-                       gx_device         *dev,
-                       int                src_bpc,
-                       int                dst_bpc,
-                       int                num_comps,
-                       int                factor,
-                       int                mfs,
-                       int              (*adjust_width_proc)(int, int),
-                       int                adjust_width)
+int gx_downscaler_init(gx_downscaler_t      *ds,
+                       gx_device            *dev,
+                       int                   src_bpc,
+                       int                   dst_bpc,
+                       int                   num_comps,
+                 const gx_downscaler_params *params,
+                       int                 (*adjust_width_proc)(int, int),
+                       int                   adjust_width)
 {
-    return gx_downscaler_init_trapped_cm_ets(ds, dev, src_bpc, dst_bpc, num_comps,
-        factor, mfs, adjust_width_proc, adjust_width, 0, 0, NULL, NULL, NULL, 0, 0);
-}
-
-
-int gx_downscaler_init_ets(gx_downscaler_t   *ds,
-                           gx_device         *dev,
-                           int                src_bpc,
-                           int                dst_bpc,
-                           int                num_comps,
-                           int                factor,
-                           int                mfs,
-                           int              (*adjust_width_proc)(int, int),
-                           int                adjust_width,
-                           int                ets)
-{
-    return gx_downscaler_init_trapped_cm_ets(ds, dev, src_bpc, dst_bpc, num_comps,
-        factor, mfs, adjust_width_proc, adjust_width, 0, 0, NULL, NULL, NULL, 0, ets);
-}
-
-int gx_downscaler_init_trapped(gx_downscaler_t   *ds,
-                               gx_device         *dev,
-                               int                src_bpc,
-                               int                dst_bpc,
-                               int                num_comps,
-                               int                factor,
-                               int                mfs,
-                               int              (*adjust_width_proc)(int, int),
-                               int                adjust_width,
-                               int                trap_w,
-                               int                trap_h,
-                               const int         *comp_order)
-{
-    return gx_downscaler_init_trapped_cm_ets(ds, dev, src_bpc, dst_bpc,
-                                             num_comps, factor, mfs,
-                                             adjust_width_proc, adjust_width,
-                                             trap_w, trap_h, comp_order,
-                                             NULL, NULL, 0, 0);
-}
-
-int gx_downscaler_init_trapped_ets(gx_downscaler_t   *ds,
-                                   gx_device         *dev,
-                                   int                src_bpc,
-                                   int                dst_bpc,
-                                   int                num_comps,
-                                   int                factor,
-                                   int                mfs,
-                                   int              (*adjust_width_proc)(int, int),
-                                   int                adjust_width,
-                                   int                trap_w,
-                                   int                trap_h,
-                                   const int         *comp_order,
-                                   int                ets)
-{
-    return gx_downscaler_init_trapped_cm_ets(ds, dev, src_bpc, dst_bpc,
-                                             num_comps, factor, mfs,
-                                             adjust_width_proc, adjust_width,
-                                             trap_w, trap_h, comp_order,
-                                             NULL, NULL, 0, ets);
-}
-int gx_downscaler_init_cm(gx_downscaler_t    *ds,
-                           gx_device          *dev,
-                           int                 src_bpc,
-                           int                 dst_bpc,
-                           int                 num_comps,
-                           int                 factor,
-                           int                 mfs,
-                           int               (*adjust_width_proc)(int, int),
-                           int                 adjust_width,
-                           gx_downscale_cm_fn *apply_cm,
-                           void               *apply_cm_arg,
-                           int                 post_cm_num_comps)
-{
-    return gx_downscaler_init_trapped_cm_ets(ds, dev, src_bpc, dst_bpc,
-                                             num_comps, factor, mfs,
-                                             adjust_width_proc, adjust_width,
-                                             0, 0, NULL,
-                                             apply_cm, apply_cm_arg, post_cm_num_comps, 0);
-}
-
-int gx_downscaler_init_cm_ets(gx_downscaler_t    *ds,
-                              gx_device          *dev,
-                              int                 src_bpc,
-                              int                 dst_bpc,
-                              int                 num_comps,
-                              int                 factor,
-                              int                 mfs,
-                              int               (*adjust_width_proc)(int, int),
-                              int                 adjust_width,
-                              gx_downscale_cm_fn *apply_cm,
-                              void               *apply_cm_arg,
-                              int                 post_cm_num_comps,
-                              int                 ets)
-{
-    return gx_downscaler_init_trapped_cm_ets(ds, dev, src_bpc, dst_bpc,
-                                             num_comps, factor, mfs,
-                                             adjust_width_proc, adjust_width,
-                                             0, 0, NULL,
-                                             apply_cm, apply_cm_arg, post_cm_num_comps, ets);
-}
-
-int gx_downscaler_init_trapped_cm(gx_downscaler_t    *ds,
-                                  gx_device          *dev,
-                                  int                 src_bpc,
-                                  int                 dst_bpc,
-                                  int                 num_comps,
-                                  int                 factor,
-                                  int                 mfs,
-                                  int               (*adjust_width_proc)(int, int),
-                                  int                 adjust_width,
-                                  int                 trap_w,
-                                  int                 trap_h,
-                                  const int          *comp_order,
-                                  gx_downscale_cm_fn *apply_cm,
-                                  void               *apply_cm_arg,
-                                  int                 post_cm_num_comps)
-{
-    return gx_downscaler_init_trapped_cm_ets(ds, dev, src_bpc, dst_bpc,
-                                             num_comps, factor, mfs,
-                                             adjust_width_proc, adjust_width,
-                                             trap_w, trap_h, comp_order,
-                                             apply_cm, apply_cm_arg, post_cm_num_comps,
-                                             0);
+    return gx_downscaler_init_cm(ds, dev, src_bpc, dst_bpc, num_comps,
+                                 params, adjust_width_proc, adjust_width,
+                                 NULL, NULL, 0);
 }
 
 static gx_downscaler_ht_t bogus_ets_halftone;
 
-int gx_downscaler_init_trapped_cm_ets(gx_downscaler_t    *ds,
-                                  gx_device          *dev,
-                                  int                 src_bpc,
-                                  int                 dst_bpc,
-                                  int                 num_comps,
-                                  int                 factor,
-                                  int                 mfs,
-                                  int               (*adjust_width_proc)(int, int),
-                                  int                 adjust_width,
-                                  int                 trap_w,
-                                  int                 trap_h,
-                                  const int          *comp_order,
-                                  gx_downscale_cm_fn *apply_cm,
-                                  void               *apply_cm_arg,
-                                  int                 post_cm_num_comps,
-                                  int                 ets)
+int gx_downscaler_init_cm(gx_downscaler_t      *ds,
+                          gx_device            *dev,
+                          int                   src_bpc,
+                          int                   dst_bpc,
+                          int                   num_comps,
+                    const gx_downscaler_params *params,
+                          int                 (*adjust_width_proc)(int, int),
+                          int                   adjust_width,
+                          gx_downscale_cm_fn   *apply_cm,
+                          void                 *apply_cm_arg,
+                          int                   post_cm_num_comps)
 {
-    return gx_downscaler_init_trapped_cm_halftone(ds,
-                                                  dev,
-                                                  src_bpc,
-                                                  dst_bpc,
-                                                  num_comps,
-                                                  factor,
-                                                  mfs,
-                                                  adjust_width_proc,
-                                                  adjust_width,
-                                                  trap_w,
-                                                  trap_h,
-                                                  comp_order,
-                                                  apply_cm,
-                                                  apply_cm_arg,
-                                                  post_cm_num_comps,
-                                                  ets ? &bogus_ets_halftone : NULL);
+    return gx_downscaler_init_cm_halftone(ds, dev, src_bpc, dst_bpc,
+                                          num_comps, params,
+                                          adjust_width_proc, adjust_width,
+                                          apply_cm, apply_cm_arg,
+                                          post_cm_num_comps,
+                                          params->ets ? &bogus_ets_halftone : NULL);
 }
-
 
 static gx_downscale_core *
 select_8_to_8_core(int nc, int factor)
@@ -2521,22 +2365,18 @@ select_8_to_8_core(int nc, int factor)
 }
 
 int
-gx_downscaler_init_trapped_cm_halftone(gx_downscaler_t    *ds,
-                                  gx_device          *dev,
-                                  int                 src_bpc,
-                                  int                 dst_bpc,
-                                  int                 num_comps,
-                                  int                 factor,
-                                  int                 mfs,
-                                  int               (*adjust_width_proc)(int, int),
-                                  int                 adjust_width,
-                                  int                 trap_w,
-                                  int                 trap_h,
-                                  const int          *comp_order,
-                                  gx_downscale_cm_fn *apply_cm,
-                                  void               *apply_cm_arg,
-                                  int                 post_cm_num_comps,
-                                  gx_downscaler_ht_t *ht)
+gx_downscaler_init_cm_halftone(gx_downscaler_t      *ds,
+                               gx_device            *dev,
+                               int                   src_bpc,
+                               int                   dst_bpc,
+                               int                   num_comps,
+                         const gx_downscaler_params *params,
+                               int                 (*adjust_width_proc)(int, int),
+                               int                   adjust_width,
+                               gx_downscale_cm_fn   *apply_cm,
+                               void                 *apply_cm_arg,
+                               int                   post_cm_num_comps,
+                               gx_downscaler_ht_t   *ht)
 {
     int                size;
     int                post_size;
@@ -2549,11 +2389,13 @@ gx_downscaler_init_trapped_cm_halftone(gx_downscaler_t    *ds,
     int                upfactor;
     int                downfactor;
     int                nc;
+    int                factor = params->downscale_factor;
+    int                mfs = params->min_feature_size;
 
     size = gdev_mem_bytes_per_scan_line((gx_device *)dev);
     post_size = bitmap_raster(dev->width * src_bpc * post_cm_num_comps);
 
-    decode_factor(factor, &upfactor, &downfactor);
+    gx_downscaler_decode_factor(factor, &upfactor, &downfactor);
 
     /* width = scaled width */
     width = (dev->width * upfactor)/downfactor;
@@ -2597,11 +2439,12 @@ gx_downscaler_init_trapped_cm_halftone(gx_downscaler_t    *ds,
         ds->liner = &gb_liner->base;
     }
 
-    code = check_trapping(dev->memory, trap_w, trap_h, num_comps, comp_order);
+    code = check_trapping(dev->memory, params->trap_w, params->trap_h,
+                          num_comps, params->trap_order);
     if (code < 0)
         return code;
 
-    if (trap_w > 0 || trap_h > 0) {
+    if (params->trap_w > 0 || params->trap_h > 0) {
         liner_claptrap *ct_liner;
 
         code = alloc_liner(dev->memory,
@@ -2619,9 +2462,9 @@ gx_downscaler_init_trapped_cm_halftone(gx_downscaler_t    *ds,
                                            width,
                                            dev->height,
                                            num_comps,
-                                           comp_order,
-                                           trap_w,
-                                           trap_h,
+                                           params->trap_order,
+                                           params->trap_w,
+                                           params->trap_h,
                                            get_line_for_trap,
                                            ct_liner);
         if (ct_liner->claptrap == NULL) {
@@ -2804,7 +2647,7 @@ int gx_downscaler_getbits(gx_downscaler_t *ds,
     byte *data_ptr;
     int   upfactor, downfactor;
 
-    decode_factor(ds->factor, &upfactor, &downfactor);
+    gx_downscaler_decode_factor(ds->factor, &upfactor, &downfactor);
 
     /* Check for the simple case */
     if (ds->down_core == NULL) {
@@ -2870,7 +2713,7 @@ int gx_downscaler_get_bits_rectangle(gx_downscaler_t      *ds,
     if (ds->dev->color_info.depth > ds->dev->color_info.num_components*8+8)
        n *= 2;
 
-    decode_factor(factor, &upfactor, &downfactor);
+    gx_downscaler_decode_factor(factor, &upfactor, &downfactor);
 
     subrow = row % upfactor;
     if (subrow) {
@@ -3140,7 +2983,7 @@ int gx_downscaler_process_page(gx_device                 *dev,
     gx_downscale_core *core;
 
     arg.orig_options = options;
-    decode_factor(factor, &arg.upfactor, &arg.downfactor);
+    gx_downscaler_decode_factor(factor, &arg.upfactor, &arg.downfactor);
     arg.ds.dev = dev;
     arg.ds.width = (dev->width * arg.upfactor + arg.downfactor-1)/arg.downfactor;
     arg.ds.awidth = arg.ds.width;

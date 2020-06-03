@@ -1262,11 +1262,10 @@ psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
     if (sep_line == NULL)
         return_error(gs_error_VMerror);
 
-    code = gx_downscaler_init_planar_trapped(&ds, (gx_device *)pdev, &params, num_comp,
-                                             psd_dev->downscale.downscale_factor, 0, bpc, bpc,
-                                             psd_dev->downscale.trap_w,
-                                             psd_dev->downscale.trap_h,
-                                             psd_dev->downscale.trap_order);
+    code = gx_downscaler_init_planar(&ds, (gx_device *)pdev,
+                                     bpc, bpc, num_comp,
+                                     &psd_dev->downscale,
+                                     &params);
     if (code < 0)
         goto cleanup;
 

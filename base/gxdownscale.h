@@ -109,6 +109,19 @@ struct gx_downscaler_s {
     byte                 *inbuf_alloc;
 };
 
+/* The following structure is used to hold the configuration
+ * parameters for the downscaler.
+ */
+typedef struct gx_downscaler_params_s
+{
+    int downscale_factor;
+    int min_feature_size;
+    int trap_w;
+    int trap_h;
+    int trap_order[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    int ets;
+} gx_downscaler_params;
+
 /* To use the downscaler:
  *
  *  + define a gx_downscaler_t on the stack.
@@ -131,178 +144,58 @@ struct gx_downscaler_s {
  *   src_bpp == 16 && dst_bpp == 16
  * are supported.
  */
-int gx_downscaler_init(gx_downscaler_t   *ds,
-                       gx_device         *dev,
-                       int                src_bpc,
-                       int                dst_bpc,
-                       int                num_comps,
-                       int                factor,
-                       int                mfs,
-                       int              (*adjust_width_proc)(int, int),
-                       int                adjust_width);
+int gx_downscaler_init(gx_downscaler_t      *ds,
+                       gx_device            *dev,
+                       int                   src_bpc,
+                       int                   dst_bpc,
+                       int                   num_comps,
+                 const gx_downscaler_params *params,
+                       int                 (*adjust_width_proc)(int, int),
+                       int                   adjust_width);
 
-int gx_downscaler_init_ets(gx_downscaler_t   *ds,
-                           gx_device         *dev,
-                           int                src_bpc,
-                           int                dst_bpc,
-                           int                num_comps,
-                           int                factor,
-                           int                mfs,
-                           int              (*adjust_width_proc)(int, int),
-                           int                adjust_width,
-                           int                ets);
+int gx_downscaler_init_cm(gx_downscaler_t      *ds,
+                          gx_device            *dev,
+                          int                   src_bpc,
+                          int                   dst_bpc,
+                          int                   num_comps,
+                    const gx_downscaler_params *params,
+                          int                 (*adjust_width_proc)(int, int),
+                          int                   adjust_width,
+                          gx_downscale_cm_fn   *apply_cm,
+                          void                 *apply_cm_arg,
+                          int                   post_cm_num_comps);
 
-int gx_downscaler_init_trapped(gx_downscaler_t   *ds,
-                               gx_device         *dev,
-                               int                src_bpc,
-                               int                dst_bpc,
-                               int                num_comps,
-                               int                factor,
-                               int                mfs,
-                               int              (*adjust_width_proc)(int, int),
-                               int                adjust_width,
-                               int                trap_w,
-                               int                trap_h,
-                               const int         *comp_order);
-
-int gx_downscaler_init_trapped_ets(gx_downscaler_t   *ds,
-                                   gx_device         *dev,
-                                   int                src_bpc,
-                                   int                dst_bpc,
-                                   int                num_comps,
-                                   int                factor,
-                                   int                mfs,
-                                   int              (*adjust_width_proc)(int, int),
-                                   int                adjust_width,
-                                   int                trap_w,
-                                   int                trap_h,
-                                   const int         *comp_order,
-                                   int                ets);
-
-int gx_downscaler_init_cm(gx_downscaler_t    *ds,
-                          gx_device          *dev,
-                          int                 src_bpc,
-                          int                 dst_bpc,
-                          int                 num_comps,
-                          int                 factor,
-                          int                 mfs,
-                          int               (*adjust_width_proc)(int, int),
-                          int                 adjust_width,
-                          gx_downscale_cm_fn *apply_cm,
-                          void               *apply_cm_arg,
-                          int                 post_cm_num_comps);
-
-int gx_downscaler_init_cm_ets(gx_downscaler_t    *ds,
-                              gx_device          *dev,
-                              int                 src_bpc,
-                              int                 dst_bpc,
-                              int                 num_comps,
-                              int                 factor,
-                              int                 mfs,
-                              int               (*adjust_width_proc)(int, int),
-                              int                 adjust_width,
-                              gx_downscale_cm_fn *apply_cm,
-                              void               *apply_cm_arg,
-                              int                 post_cm_num_comps,
-                              int                 ets);
-
-int gx_downscaler_init_trapped_cm(gx_downscaler_t    *ds,
-                                  gx_device          *dev,
-                                  int                 src_bpc,
-                                  int                 dst_bpc,
-                                  int                 num_comps,
-                                  int                 factor,
-                                  int                 mfs,
-                                  int               (*adjust_width_proc)(int, int),
-                                  int                 adjust_width,
-                                  int                 trap_w,
-                                  int                 trap_h,
-                                  const int          *comp_order,
-                                  gx_downscale_cm_fn *apply_cm,
-                                  void               *apply_cm_arg,
-                                  int                 post_cm_num_comps);
-
-int gx_downscaler_init_trapped_cm_ets(gx_downscaler_t    *ds,
-                                      gx_device          *dev,
-                                      int                 src_bpc,
-                                      int                 dst_bpc,
-                                      int                 num_comps,
-                                      int                 factor,
-                                      int                 mfs,
-                                      int               (*adjust_width_proc)(int, int),
-                                      int                 adjust_width,
-                                      int                 trap_w,
-                                      int                 trap_h,
-                                      const int          *comp_order,
-                                      gx_downscale_cm_fn *apply_cm,
-                                      void               *apply_cm_arg,
-                                      int                 post_cm_num_comps,
-                                      int                 ets);
-
-int gx_downscaler_init_trapped_cm_halftone(gx_downscaler_t    *ds,
-                                           gx_device          *dev,
-                                           int                 src_bpc,
-                                           int                 dst_bpc,
-                                           int                 num_comps,
-                                           int                 factor,
-                                           int                 mfs,
-                                           int               (*adjust_width_proc)(int, int),
-                                           int                 adjust_width,
-                                           int                 trap_w,
-                                           int                 trap_h,
-                                           const int          *comp_order,
-                                           gx_downscale_cm_fn *apply_cm,
-                                           void               *apply_cm_arg,
-                                           int                 post_cm_num_comps,
-                                           gx_downscaler_ht_t *ht);
+int gx_downscaler_init_cm_halftone(gx_downscaler_t      *ds,
+                                   gx_device            *dev,
+                                   int                   src_bpc,
+                                   int                   dst_bpc,
+                                   int                   num_comps,
+                             const gx_downscaler_params *params,
+                                   int                 (*adjust_width_proc)(int, int),
+                                   int                   adjust_width,
+                                   gx_downscale_cm_fn   *apply_cm,
+                                   void                 *apply_cm_arg,
+                                   int                   post_cm_num_comps,
+                                   gx_downscaler_ht_t   *ht);
 
 int gx_downscaler_init_planar(gx_downscaler_t      *ds,
                               gx_device            *dev,
-                              gs_get_bits_params_t *params,
-                              int                   num_comps,
-                              int                   factor,
-                              int                   mfs,
                               int                   src_bpc,
-                              int                   dst_bpc);
-
-int gx_downscaler_init_planar_trapped(gx_downscaler_t      *ds,
-                                      gx_device            *dev,
-                                      gs_get_bits_params_t *params,
-                                      int                   num_comps,
-                                      int                   factor,
-                                      int                   mfs,
-                                      int                   src_bpc,
-                                      int                   dst_bpc,
-                                      int                   trap_w,
-                                      int                   trap_h,
-                                      const int            *comp_order);
+                              int                   dst_bpc,
+                              int                   num_comps,
+                        const gx_downscaler_params *params,
+                        const gs_get_bits_params_t *gb_params);
 
 int gx_downscaler_init_planar_cm(gx_downscaler_t      *ds,
                                  gx_device            *dev,
-                                 gs_get_bits_params_t *params,
-                                 int                   num_comps,
-                                 int                   factor,
-                                 int                   mfs,
                                  int                   src_bpc,
                                  int                   dst_bpc,
+                                 int                   num_comps,
+                           const gx_downscaler_params *params,
+                           const gs_get_bits_params_t *gb_params,
                                  gx_downscale_cm_fn   *apply_cm,
                                  void                 *apply_cm_arg,
                                  int                   post_cm_num_comps);
-
-int gx_downscaler_init_planar_trapped_cm(gx_downscaler_t      *ds,
-                                         gx_device            *dev,
-                                         gs_get_bits_params_t *params,
-                                         int                   num_comps,
-                                         int                   factor,
-                                         int                   mfs,
-                                         int                   src_bpc,
-                                         int                   dst_bpc,
-                                         int                   trap_w,
-                                         int                   trap_h,
-                                         const int            *comp_order,
-                                         gx_downscale_cm_fn   *apply_cm,
-                                         void                 *apply_cm_arg,
-                                         int                   post_cm_num_comps);
 
 int gx_downscaler_getbits(gx_downscaler_t *ds,
                           byte            *out_data,
@@ -315,6 +208,8 @@ int gx_downscaler_get_bits_rectangle(gx_downscaler_t      *ds,
 /* Must only fin a device that has been inited (though you can safely
  * fin several times) */
 void gx_downscaler_fin(gx_downscaler_t *ds);
+
+void gx_downscaler_decode_factor(int factor, int *up, int *down);
 
 int
 gx_downscaler_scale(int width, int factor);
@@ -330,19 +225,6 @@ int gx_downscaler_adjust_bandheight(int factor, int band_height);
 int gx_downscaler_process_page(gx_device                 *dev,
                                gx_process_page_options_t *options,
                                int                        factor);
-
-/* The following structure is used to hold the configuration
- * parameters for the downscaler.
- */
-typedef struct gx_downscaler_params_s
-{
-    int downscale_factor;
-    int min_feature_size;
-    int trap_w;
-    int trap_h;
-    int trap_order[GS_CLIENT_COLOR_MAX_COMPONENTS];
-    int ets;
-} gx_downscaler_params;
 
 #define GX_DOWNSCALER_PARAMS_DEFAULTS \
 { 1, 0, 0, 0, { 3, 1, 0, 2 } }

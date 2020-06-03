@@ -454,8 +454,6 @@ do_png_print_page(gx_device_png * pdev, gp_file * file, bool monod)
     png_text text_png;
     int dst_bpc, src_bpc;
     bool errdiff = 0;
-    int factor = pdev->downscale.downscale_factor;
-    int mfs = pdev->downscale.min_feature_size;
 
     bool invert = false, endian_swap = false, bg_needed = false;
     png_byte bit_depth = 0;
@@ -471,14 +469,15 @@ do_png_print_page(gx_device_png * pdev, gp_file * file, bool monod)
     png_color *palettep;
     png_uint_16 num_palette;
     png_uint_32 valid = 0;
+    int upfactor, downfactor;
 
     /* Sanity check params */
-    if (factor < 1)
-        factor = 1;
-    if (mfs < 1)
-        mfs = 1;
-    else if (mfs > 2)
-        mfs = 2;
+    if (pdev->downscale.downscale_factor < 1)
+        pdev->downscale.downscale_factor = 1;
+    if (pdev->downscale.min_feature_size < 1)
+        pdev->downscale.min_feature_size = 1;
+    else if (pdev->downscale.min_feature_size > 2)
+        pdev->downscale.min_feature_size = 2;
 
     /* Slightly nasty, but it saves us duplicating this entire routine. */
     if (monod) {
@@ -506,11 +505,13 @@ do_png_print_page(gx_device_png * pdev, gp_file * file, bool monod)
     png_set_write_fn(png_ptr, file, my_png_write, my_png_flush);
 
     /* set the file information here */
+    gx_downscaler_decode_factor(pdev->downscale.downscale_factor,
+                                &upfactor, &downfactor);
     /* resolution is in pixels per meter vs. dpi */
     x_pixels_per_unit =
-        (png_uint_32) (pdev->HWResolution[0] * (100.0 / 2.54) / factor + 0.5);
+        (png_uint_32) (pdev->HWResolution[0] * upfactor * (100.0 / 2.54) / downfactor + 0.5);
     y_pixels_per_unit =
-        (png_uint_32) (pdev->HWResolution[1] * (100.0 / 2.54) / factor + 0.5);
+        (png_uint_32) (pdev->HWResolution[1] * upfactor * (100.0 / 2.54) / downfactor + 0.5);
 
     phys_unit_type = PNG_RESOLUTION_METER;
     valid |= PNG_INFO_pHYs;
@@ -612,9 +613,9 @@ do_png_print_page(gx_device_png * pdev, gp_file * file, bool monod)
     if (errdiff)
         src_bpc = 8;
     else
-        factor = 1;
-    width = pdev->width/factor;
-    height = pdev->height/factor;
+        pdev->downscale.downscale_factor = upfactor = downfactor = 1;
+    width = pdev->width * upfactor / downfactor;
+    height = pdev->height * upfactor / downfactor;
 
 #if PNG_LIBPNG_VER_MINOR >= 5
     png_set_pHYs(png_ptr, info_ptr,
@@ -700,7 +701,7 @@ do_png_print_page(gx_device_png * pdev, gp_file * file, bool monod)
      * hit. So ensure that we only trigger downscales when we need them.
      */
     code = gx_downscaler_init(&ds, (gx_device *)pdev, src_bpc, dst_bpc,
-                              depth/dst_bpc, factor, mfs, NULL, 0);
+                              depth/dst_bpc, &pdev->downscale, NULL, 0);
     if (code >= 0)
     {
 #ifdef CLUSTER

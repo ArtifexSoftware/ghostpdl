@@ -197,8 +197,7 @@ do_ocr_print_page(gx_device_ocr * pdev, gp_file * file, int hocr)
                               8, /* src_bpc */
                               8, /* dst_bpc */
                               1, /* num_comps */
-                              factor,
-                              9, /* mfs */
+                              &pdev->downscale,
                               NULL, 0); /* adjust_width_proc, width */
     if (code < 0)
         return code;
@@ -211,7 +210,7 @@ do_ocr_print_page(gx_device_ocr * pdev, gp_file * file, int hocr)
         code = gs_error_VMerror;
         goto done;
     }
-    
+
     for (row = 0; row < height && code >= 0; row++) {
         code = gx_downscaler_getbits(&ds, data + row * raster, row);
     }

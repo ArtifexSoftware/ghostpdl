@@ -416,11 +416,9 @@ encode(gx_device *pdev, stream **s, const stream_template *t, gs_memory_t *mem)
 }
 
 static int
-pdf_image_downscale_and_print_page(gx_device_printer *dev, int factor,
-                                   int mfs, int bpc, int num_comps,
-                                   int trap_w, int trap_h,
-                                   const int *trap_order,
-                                   int ets)
+pdf_image_downscale_and_print_page(gx_device_printer *dev,
+                                   gx_downscaler_params *params,
+                                   int bpc, int num_comps)
 {
     gx_device_pdf_image *const pdf_dev = (gx_device_pdf_image *)dev;
     int code = 0;
@@ -428,6 +426,7 @@ pdf_image_downscale_and_print_page(gx_device_printer *dev, int factor,
     int size = gdev_mem_bytes_per_scan_line((gx_device *)dev);
     int max_size = size;
     int row;
+    int factor = params->downscale_factor;
     int height = gx_downscaler_scale(dev->height, factor);
     int width = gx_downscaler_scale(dev->width, factor);
     gx_downscaler_t ds;
@@ -442,24 +441,23 @@ pdf_image_downscale_and_print_page(gx_device_printer *dev, int factor,
     while(page->next)
         page = page->next;
 
-    if (num_comps == 4) {
-        if (pdf_dev->icclink == NULL) {
-            code = gx_downscaler_init_trapped_ets(&ds, (gx_device *)dev, 8, bpc, num_comps,
-                factor, mfs, NULL, /*&fax_adjusted_width*/ 0, /*aw*/ trap_w, trap_h, trap_order, ets);
-        } else {
-            code = gx_downscaler_init_trapped_cm_ets(&ds, (gx_device *)dev, 8, bpc, num_comps,
-                factor, mfs, NULL, /*&fax_adjusted_width*/ 0, /*aw*/ trap_w, trap_h, trap_order,
-                pdf_image_chunky_post_cm, pdf_dev->icclink, pdf_dev->icclink->num_output, ets);
-        }
+    if (num_comps != 4)
+        params->trap_w = params->trap_h = 0;
+    if (pdf_dev->icclink == NULL) {
+        code = gx_downscaler_init(&ds, (gx_device *)dev,
+                                  8, bpc, num_comps,
+                                  params,
+                                  NULL, /*&fax_adjusted_width*/
+                                  0 /*aw*/);
     } else {
-        if (pdf_dev->icclink == NULL) {
-            code = gx_downscaler_init_ets(&ds, (gx_device *)dev, 8, bpc, num_comps,
-                factor, mfs, NULL, /*&fax_adjusted_width*/ 0, /*aw*/ ets);
-        } else {
-            code = gx_downscaler_init_cm_ets(&ds, (gx_device *)dev, 8, bpc, num_comps,
-                factor, mfs, NULL, /*&fax_adjusted_width*/ 0, /*aw*/ pdf_image_chunky_post_cm, pdf_dev->icclink,
-                pdf_dev->icclink->num_output, ets);
-        }
+        code = gx_downscaler_init_cm(&ds, (gx_device *)dev,
+                                     8, bpc, num_comps,
+                                     params,
+                                     NULL, /*&fax_adjusted_width*/
+                                     0, /*aw*/
+                                     pdf_image_chunky_post_cm,
+                                     pdf_dev->icclink,
+                                     pdf_dev->icclink->num_output);
     }
     if (code < 0)
         return code;
@@ -863,11 +861,9 @@ pdf_image_print_page(gx_device_printer * pdev, gp_file * file)
         return code;
 
     code = pdf_image_downscale_and_print_page(pdev,
-                                         pdf_dev->downscale.downscale_factor,
-                                         pdf_dev->downscale.min_feature_size,
-                                         8, pdf_dev->color_info.num_components,
-                                         0, 0, NULL,
-                                         pdf_dev->downscale.ets);
+                                              &pdf_dev->downscale,
+                                              8,
+                                              pdf_dev->color_info.num_components);
     if (code < 0)
         return code;
 
@@ -1339,19 +1335,19 @@ static int gdev_PCLm_begin_page(gx_device_pdf_image *pdf_dev,
 }
 
 static int
-PCLm_downscale_and_print_page(gx_device_printer *dev, int factor,
-                              int mfs, int bpc, int num_comps,
-                              int trap_w, int trap_h, const int *trap_order,
-                              int ets)
+PCLm_downscale_and_print_page(gx_device_printer *dev,
+                              int bpc, int num_comps)
 {
     gx_device_pdf_image *const pdf_dev = (gx_device_pdf_image *)dev;
     int code = 0;
     uint Read;
     byte *data = NULL;
     int size = gdev_mem_bytes_per_scan_line((gx_device *)dev);
-    int max_size =size;
+    int max_size = size;
     int row, NumStrips;
     double StripDecrement;
+    const gx_downscaler_params *params = &pdf_dev->downscale;
+    int factor = params->downscale_factor;
     int height = dev->height/factor;
     int width = dev->width/factor;
     gx_downscaler_t ds;
@@ -1366,12 +1362,20 @@ PCLm_downscale_and_print_page(gx_device_printer *dev, int factor,
         page = page->next;
 
     if (pdf_dev->icclink == NULL) {
-        code = gx_downscaler_init_ets(&ds, (gx_device *)dev, 8, bpc, num_comps,
-            factor, mfs, NULL, /*&fax_adjusted_width*/ 0, /*aw*/ ets);
+        code = gx_downscaler_init(&ds, (gx_device *)dev,
+                                  8, bpc, num_comps,
+                                  params,
+                                  NULL, /*&fax_adjusted_width*/
+                                  0 /*aw*/);
     } else {
-        code = gx_downscaler_init_cm_ets(&ds, (gx_device *)dev, 8, bpc, num_comps,
-            factor, mfs, NULL, /*&fax_adjusted_width*/ 0, /*aw*/ pdf_image_chunky_post_cm, pdf_dev->icclink,
-            pdf_dev->icclink->num_output, ets);
+        code = gx_downscaler_init_cm(&ds, (gx_device *)dev,
+                                     8, bpc, num_comps,
+                                     params,
+                                     NULL, /*&fax_adjusted_width*/
+                                     0, /*aw*/
+                                     pdf_image_chunky_post_cm,
+                                     pdf_dev->icclink,
+                                     pdf_dev->icclink->num_output);
     }
     if (code < 0)
         return code;
@@ -1668,11 +1672,7 @@ PCLm_print_page(gx_device_printer * pdev, gp_file * file)
         return code;
 
     code = PCLm_downscale_and_print_page(pdev,
-                                         pdf_dev->downscale.downscale_factor,
-                                         pdf_dev->downscale.min_feature_size,
-                                         8, pdf_dev->color_info.num_components,
-                                         0, 0, NULL,
-                                         pdf_dev->downscale.ets);
+                                         8, pdf_dev->color_info.num_components);
     if (code < 0)
         return code;
 

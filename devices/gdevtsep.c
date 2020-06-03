@@ -329,12 +329,9 @@ tiffscaled_print_page(gx_device_printer * pdev, gp_file * file)
 
 
     return tiff_downscale_and_print_page(pdev, tfdev->tif,
-                                         tfdev->downscale.downscale_factor,
-                                         tfdev->downscale.min_feature_size,
+                                         &tfdev->downscale,
                                          tfdev->AdjustWidth,
-                                         1, 1,
-                                         0, 0, NULL,
-                                         tfdev->downscale.ets);
+                                         1, 1);
 }
 
 static int
@@ -357,12 +354,9 @@ tiffscaled8_print_page(gx_device_printer * pdev, gp_file * file)
             tfdev->MaxStripSize);
     }
     return tiff_downscale_and_print_page(pdev, tfdev->tif,
-                                         tfdev->downscale.downscale_factor,
-                                         tfdev->downscale.min_feature_size,
+                                         &tfdev->downscale,
                                          tfdev->AdjustWidth,
-                                         8, 1,
-                                         0, 0, NULL,
-                                         0);
+                                         8, 1);
 }
 
 static void
@@ -416,12 +410,9 @@ tiffscaled24_print_page(gx_device_printer * pdev, gp_file * file)
     }
 
     return tiff_downscale_and_print_page(pdev, tfdev->tif,
-                                         tfdev->downscale.downscale_factor,
-                                         tfdev->downscale.min_feature_size,
+                                         &tfdev->downscale,
                                          tfdev->AdjustWidth,
-                                         8, 3,
-                                         0, 0, NULL,
-                                         0);
+                                         8, 3);
 }
 
 static void
@@ -459,13 +450,9 @@ tiffscaled32_print_page(gx_device_printer * pdev, gp_file * file)
     }
 
     return tiff_downscale_and_print_page(pdev, tfdev->tif,
-                                         tfdev->downscale.downscale_factor,
-                                         tfdev->downscale.min_feature_size,
+                                         &tfdev->downscale,
                                          tfdev->AdjustWidth,
-                                         8, 4,
-                                         tfdev->downscale.trap_w, tfdev->downscale.trap_h,
-                                         tfdev->downscale.trap_order,
-                                         0);
+                                         8, 4);
 }
 
 static int
@@ -485,13 +472,9 @@ tiffscaled4_print_page(gx_device_printer * pdev, gp_file * file)
                          tfdev->MaxStripSize);
 
     return tiff_downscale_and_print_page(pdev, tfdev->tif,
-                                         tfdev->downscale.downscale_factor,
-                                         tfdev->downscale.min_feature_size,
+                                         &tfdev->downscale,
                                          tfdev->AdjustWidth,
-                                         1, 4,
-                                         tfdev->downscale.trap_w, tfdev->downscale.trap_h,
-                                         tfdev->downscale.trap_order,
-                                         tfdev->downscale.ets);
+                                         1, 4);
 }
 
 /* Called when the post render ICC profile is in a different color space
@@ -2242,7 +2225,6 @@ tiffsep_print_page(gx_device_printer * pdev, gp_file * file)
     gs_parsed_file_name_t parsed;
     int plane_count = 0;  /* quiet compiler */
     int factor = tfdev->downscale.downscale_factor;
-    int mfs = tfdev->downscale.min_feature_size;
     int dst_bpc = tfdev->BitsPerComponent;
     gx_downscaler_t ds;
     int width = gx_downscaler_scale(tfdev->width, factor);
@@ -2481,10 +2463,10 @@ tiffsep_print_page(gx_device_printer * pdev, gp_file * file)
                     }
                 }
             }
-            code = gx_downscaler_init_planar_trapped(&ds, (gx_device *)pdev, &params,
-                                                     num_comp, factor, mfs, 8, dst_bpc,
-                                                     tfdev->downscale.trap_w, tfdev->downscale.trap_h,
-                                                     tfdev->downscale.trap_order);
+            code = gx_downscaler_init_planar(&ds, (gx_device *)pdev,
+                                             8, dst_bpc, num_comp,
+                                             &tfdev->downscale,
+                                             &params);
             if (code < 0)
                 goto cleanup;
             byte_width = (width * dst_bpc + 7)>>3;
