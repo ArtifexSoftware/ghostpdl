@@ -27,6 +27,7 @@ typedef struct gx_device_display_s gx_device_display;
         gx_device_memory *mdev;\
         display_callback *callback;\
         void *pHandle;\
+        int pHandle_set;\
         int nFormat;\
         void *pBitmap;\
         unsigned long ulBitmapSize;\

@@ -1346,3 +1346,9 @@ bool gx_color_info_equal(const gx_device_color_info * p1, const gx_device_color_
         return false;
     return true;
 }
+
+int gx_callout(gx_device *dev, int id, int size, void *data)
+{
+    return gs_lib_ctx_callout(dev->memory, dev->dname,
+                              id, size, data);
+}

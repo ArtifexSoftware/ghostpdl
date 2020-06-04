@@ -1982,4 +1982,7 @@ void gx_device_dump(gx_device *dev, const char *text);
 /* Compare color information structures */
 bool gx_color_info_equal(const gx_device_color_info *p1, const gx_device_color_info *p2);
 
+/* Perform a callout to registered handlers from the device. */
+int gx_callout(gx_device *dev, int id, int size, void *data);
+
 #endif /* gxdevcli_INCLUDED */

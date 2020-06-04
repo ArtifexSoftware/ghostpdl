@@ -128,7 +128,8 @@ struct pl_main_instance_s
     pl_interp_implementation_t **implementations;
     pl_interp_implementation_t *curr_implementation;
     byte buf[8192]; /* languages read buffer */
-    void *disp; /* display device pointer NB wrong - remove */
+    void *display; /* display device pointer - to support legacy API. Will
+                    * be removed. */
 };
 
 
@@ -168,10 +169,50 @@ get_device_index(const gs_memory_t * mem, const char *value)
     return di;
 }
 
+static int
+legacy_display_callout(void *instance,
+                       void *handle,
+                       const char *dev_name,
+                       int id,
+                       int size,
+                       void *data)
+{
+    pl_main_instance_t *inst = (pl_main_instance_t *)handle;
+
+    if (dev_name == NULL)
+        return -1;
+    if (strcmp(dev_name, "display") != 0)
+        return -1;
+
+    if (id == DISPLAY_CALLOUT_GET_CALLBACK_LEGACY) {
+        /* get display callbacks */
+        gs_display_get_callback_t *cb = (gs_display_get_callback_t *)data;
+        cb->callback = inst->display;
+        return 0;
+    }
+    return -1;
+}
+
 int
 pl_main_set_display_callback(pl_main_instance_t *inst, void *callback)
 {
-    inst->disp = callback;
+    int code;
+
+    if (inst->display == NULL && callback != NULL) {
+        /* First registration. */
+        code = gs_lib_ctx_register_callout(inst->memory,
+                                           legacy_display_callout,
+                                           inst);
+        if (code < 0)
+            return code;
+    }
+    if (inst->display != NULL && callback == NULL) {
+        /* Deregistered. */
+        gs_lib_ctx_deregister_callout(inst->memory,
+                                      legacy_display_callout,
+                                      inst);
+    }
+    inst->display = callback;
     return 0;
 }
 
@@ -816,16 +857,19 @@ pl_top_create_device(pl_main_instance_t * pti, int index)
                 return code;
         }
 
-        /* If the display device is selected (default), set up the callback.  NB Move me. */
-        if (strcmp(gs_devicename(pti->device), "display") == 0) {
-            gx_device_display *ddev;
+        if (pti->device->is_open &&
+            dev_proc(pti->device, dev_spec_op)(pti->device,
+                                               gxdso_reopen_after_init,
+                                               NULL, 0) == 1) {
+            code = gs_closedevice(pti->device);
+            if (code < 0)
+                return code;
 
-            if (!pti->disp) {
-                code = -1;
-            } else {
-                ddev = (gx_device_display *) pti->device;
-                ddev->callback = (display_callback *) pti->disp;
-
+            code = gs_opendevice(pti->device);
+            if (code < 0) {
+                dmprintf(pti->device->memory,
+                         "**** Unable to open the device, quitting.\n");
+                return code;
             }
         }
     }

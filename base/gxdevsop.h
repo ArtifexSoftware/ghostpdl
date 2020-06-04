@@ -379,6 +379,15 @@ enum {
      * 0 otherwise.
      */
     gxdso_supports_alpha,
+    /* gxdso_reopen_after_init:
+     *     data = NULL
+     *     size = 0
+     * Returns 1 if the device should be closed/reopened after gs
+     * finishes initialisation (e.g. to give it a chance to fetch
+     * configuration from registered callout handlers),
+     * 0 otherwise.
+     */
+    gxdso_reopen_after_init,
     /* Add new gxdso_ keys above this. */
     gxdso_pattern__LAST
 };

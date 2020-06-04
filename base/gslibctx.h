@@ -81,6 +81,14 @@ typedef struct gs_fs_list_s {
     struct gs_fs_list_s *next;
 } gs_fs_list_t;
 
+typedef int (*gs_callout_fn)(void *, void *, const char *, int, int, void *);
+
+typedef struct gs_callout_list_s {
+    struct gs_callout_list_s *next;
+    gs_callout_fn callout;
+    void *handle;
+} gs_callout_list_t;
+
 typedef struct {
     void *monitor;
     int refs;
@@ -117,6 +125,8 @@ typedef struct {
      * but that's too hard to arrange, so we live with it in
      * all builds. */
     void *cal_ctx;
+
+    gs_callout_list_t *callouts;
 
     /* Stashed args */
     int arg_max;
@@ -193,6 +203,12 @@ gs_lib_ctx_t *gs_lib_ctx_get_interp_instance( const gs_memory_t *mem );
 void *gs_lib_ctx_get_cms_context( const gs_memory_t *mem );
 void gs_lib_ctx_set_cms_context( const gs_memory_t *mem, void *cms_context );
 int gs_lib_ctx_get_act_on_uel( const gs_memory_t *mem );
+
+int gs_lib_ctx_register_callout(gs_memory_t *mem, gs_callout_fn, void *arg);
+void gs_lib_ctx_deregister_callout(gs_memory_t *mem, gs_callout_fn, void *arg);
+int gs_lib_ctx_callout(gs_memory_t *mem, const char *dev_name,
+                       int id, int size, void *data);
+
 
 #ifndef GS_THREADSAFE
 /* HACK to get at non garbage collection memory pointer

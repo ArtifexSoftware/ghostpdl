@@ -262,4 +262,27 @@ struct display_callback_v1_s {
 
 #define DISPLAY_CALLBACK_V1_SIZEOF sizeof(struct display_callback_v1_s)
 
+#define DISPLAY_CALLOUT_GET_CALLBACK 0
+#define DISPLAY_CALLOUT_GET_CALLBACK_LEGACY 1
+
+typedef struct {
+    display_callback *callback;
+    void *caller_handle;
+} gs_display_get_callback_t;
+
+/* The display device calls a callout to find the callback structure
+ * and caller_handle from the environment (the DLL caller/user of the
+ * API).
+ * It passes:
+ *   id = DISPLAY_CALLOUT_GET_CALLBACK.
+ *   size = sizeof(gs_display_get_callback_t) (or larger);
+ *   data = pointer to gs_display_get_callback_t instance for callout
+ *          handler to fill in.
+ *
+ * In order to support the old gsapi_set_display_callback we have a
+ * related callout, DISPLAY_CALLOUT_GET_CALLBACK_LEGACY. Do not use
+ * this!
+ */
+
+
 #endif /* gdevdsp_INCLUDED */

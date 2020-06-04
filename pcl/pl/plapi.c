@@ -63,6 +63,7 @@ gsapi_new_instance(void **lib, void *caller_handle)
     }
 
     *lib = (void *)(chunk_mem->gs_lib_ctx);
+    chunk_mem->gs_lib_ctx->core->default_caller_handle = caller_handle;
 
     return 0;
 }
@@ -396,4 +397,23 @@ gsapi_remove_fs(void *instance, gsapi_fs_t *fs, void *secret)
     if (ctx == NULL)
         return;
     gs_remove_fs(ctx->memory, (gs_fs_t *)fs, secret);
+}
+
+GSDLLEXPORT int GSDLLAPI gsapi_register_callout(
+   void *instance, gs_callout fn, void *handle)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (instance == NULL)
+        return gs_error_Fatal;
+    return gs_lib_ctx_register_callout(ctx->memory, fn, handle);
+}
+
+/* Deregister a handler for gs callouts. */
+GSDLLEXPORT void GSDLLAPI gsapi_deregister_callout(
+   void *instance, gs_callout fn, void *handle)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (instance == NULL)
+        return;
+    gs_lib_ctx_deregister_callout(ctx->memory, fn, handle);
 }

@@ -210,6 +210,7 @@ const gx_device_display gs_display_device =
     NULL,			/* mdev */
     NULL,			/* callback */
     NULL,			/* pHandle */
+    0,                          /* pHandle_set */
     0,				/* nFormat */
     NULL,			/* pBitmap */
     0, 				/* ulBitmapSize */
@@ -242,11 +243,33 @@ display_open(gx_device * dev)
 {
     gx_device_display *ddev = (gx_device_display *) dev;
     int ccode;
+    gs_display_get_callback_t data;
 
     /* Erase these, in case we are opening a copied device. */
     ddev->mdev = NULL;
     ddev->pBitmap = NULL;
     ddev->ulBitmapSize = 0;
+
+    /* Fetch our callback procedures. */
+    data.callback = NULL;
+    data.caller_handle = NULL;
+    ccode = gx_callout(dev, DISPLAY_CALLOUT_GET_CALLBACK, sizeof(data), &data);
+    if (ccode < 0) {
+        ccode = gx_callout(dev, DISPLAY_CALLOUT_GET_CALLBACK_LEGACY, sizeof(data), &data);
+        if (ccode < 0) {
+            ddev->callback = NULL;
+            ddev->pHandle = NULL;
+            if (ccode != gs_error_unknownerror)
+                return ccode;
+        } else {
+            ddev->callback = data.callback;
+            ddev->pHandle_set = 0;
+        }
+    } else {
+        ddev->callback = data.callback;
+        ddev->pHandle = data.caller_handle;
+        ddev->pHandle_set = 1;
+    }
 
     /* Allow device to be opened "disabled" without a callback. */
     /* The callback will be set later and the device re-opened. */
@@ -805,27 +828,31 @@ display_get_params(gx_device * dev, gs_param_list * plist)
     size_t dptr;
     char buf[64];
 
-    idx = ((int)sizeof(size_t)) * 8 - 4;
-    buf[i++] = '1';
-    buf[i++] = '6';
-    buf[i++] = '#';
-    dptr = (size_t)(ddev->pHandle);
-    while (idx >= 0) {
-        val = (int)(dptr >> idx) & 0xf;
-        if (val <= 9)
-            buf[i++] = '0' + val;
-        else
-            buf[i++] = 'a' - 10 + val;
-        idx -= 4;
-    }
-    buf[i] = '\0';
-
-    param_string_from_transient_string(dhandle, buf);
-
     code = gx_default_get_params(dev, plist);
+    if (code < 0)
+        return code;
+
+    if (!ddev->pHandle_set) {
+        idx = ((int)sizeof(size_t)) * 8 - 4;
+        buf[i++] = '1';
+        buf[i++] = '6';
+        buf[i++] = '#';
+        dptr = (size_t)(ddev->pHandle);
+        while (idx >= 0) {
+            val = (int)(dptr >> idx) & 0xf;
+            if (val <= 9)
+                buf[i++] = '0' + val;
+            else
+                buf[i++] = 'a' - 10 + val;
+            idx -= 4;
+        }
+        buf[i] = '\0';
+
+        param_string_from_transient_string(dhandle, buf);
+        code = param_write_string(plist, "DisplayHandle", &dhandle);
+    }
+
     (void)(code < 0 ||
-        (code = param_write_string(plist,
-            "DisplayHandle", &dhandle)) < 0 ||
         (code = param_write_int(plist,
             "DisplayFormat", &ddev->nFormat)) < 0 ||
         (code = param_write_float(plist,
@@ -890,96 +917,98 @@ display_put_params(gx_device * dev, gs_param_list * plist)
             break;
     }
 
-    /* 64-bit systems need to use DisplayHandle as a string */
-    switch (code = param_read_string(plist, "DisplayHandle", &dh)) {
-        case 0:
-            found_string_handle = 1;
-            break;
-        default:
-            if ((code == gs_error_typecheck) && (sizeof(size_t) <= 4)) {
-                /* 32-bit systems can use the older long type */
-                switch (code = param_read_long(plist, "DisplayHandle",
-                    (long *)(&handle))) {
-                    case 0:
-                        if (dev->is_open) {
-                            if (ddev->pHandle != handle)
-                                ecode = gs_error_rangecheck;
-                            else
-                                break;
-                        }
-                        else {
-                            ddev->pHandle = handle;
-                            break;
-                        }
-                        goto hdle;
-                    default:
-                        ecode = code;
-                      hdle:param_signal_error(plist, "DisplayHandle", ecode);
-                    case 1:
-                        break;
-                }
+    if (!ddev->pHandle_set) {
+        /* 64-bit systems need to use DisplayHandle as a string */
+        switch (code = param_read_string(plist, "DisplayHandle", &dh)) {
+            case 0:
+                found_string_handle = 1;
                 break;
-            }
-            ecode = code;
-            param_signal_error(plist, "DisplayHandle", ecode);
-            /* fall through */
-        case 1:
-            dh.data = 0;
-            break;
-    }
-    if (found_string_handle) {
-        /*
-         * Convert from a string to a pointer.
-         * It is assumed that size_t has the same size as a pointer.
-         * Allow formats (1234), (10#1234) or (16#04d2).
-         */
-        size_t ptr = 0;
-        int i;
-        int base = 10;
-        int val;
-        code = 0;
-        for (i=0; i<dh.size; i++) {
-            val = dh.data[i];
-            if ((val >= '0') && (val <= '9'))
-                val = val - '0';
-            else if ((val >= 'A') && (val <= 'F'))
-                val = val - 'A' + 10;
-            else if ((val >= 'a') && (val <= 'f'))
-                val = val - 'a' + 10;
-            else if (val == '#') {
-                base = (int)ptr;
-                ptr = 0;
-                if ((base != 10) && (base != 16)) {
+            default:
+                if ((code == gs_error_typecheck) && (sizeof(size_t) <= 4)) {
+                    /* 32-bit systems can use the older long type */
+                    switch (code = param_read_long(plist, "DisplayHandle",
+                        (long *)(&handle))) {
+                        case 0:
+                            if (dev->is_open) {
+                                if (ddev->pHandle != handle)
+                                    ecode = gs_error_rangecheck;
+                                else
+                                    break;
+                            }
+                            else {
+                                ddev->pHandle = handle;
+                                break;
+                            }
+                            goto hdle;
+                        default:
+                            ecode = code;
+                          hdle:param_signal_error(plist, "DisplayHandle", ecode);
+                        case 1:
+                            break;
+                    }
+                    break;
+                }
+                ecode = code;
+                param_signal_error(plist, "DisplayHandle", ecode);
+                /* fall through */
+            case 1:
+                dh.data = 0;
+                break;
+        }
+        if (found_string_handle) {
+            /*
+             * Convert from a string to a pointer.
+             * It is assumed that size_t has the same size as a pointer.
+             * Allow formats (1234), (10#1234) or (16#04d2).
+             */
+            size_t ptr = 0;
+            int i;
+            int base = 10;
+            int val;
+            code = 0;
+            for (i=0; i<dh.size; i++) {
+                val = dh.data[i];
+                if ((val >= '0') && (val <= '9'))
+                    val = val - '0';
+                else if ((val >= 'A') && (val <= 'F'))
+                    val = val - 'A' + 10;
+                else if ((val >= 'a') && (val <= 'f'))
+                    val = val - 'a' + 10;
+                else if (val == '#') {
+                    base = (int)ptr;
+                    ptr = 0;
+                    if ((base != 10) && (base != 16)) {
+                        code = gs_error_rangecheck;
+                        break;
+                    }
+                    continue;
+                }
+                else {
                     code = gs_error_rangecheck;
                     break;
                 }
-                continue;
-            }
-            else {
-                code = gs_error_rangecheck;
-                break;
-            }
 
-            if (base == 10)
-                ptr = ptr * 10 + val;
-            else if (base == 16)
-                ptr = ptr * 16 + val;
-            else {
-                code = gs_error_rangecheck;
-                break;
-            }
-        }
-        if (code == 0) {
-            if (dev->is_open) {
-                if (ddev->pHandle != (void *)ptr)
+                if (base == 10)
+                    ptr = ptr * 10 + val;
+                else if (base == 16)
+                    ptr = ptr * 16 + val;
+                else {
                     code = gs_error_rangecheck;
+                    break;
+                }
             }
-            else
-                ddev->pHandle = (void *)ptr;
-        }
-        if (code < 0) {
-            ecode = code;
-            param_signal_error(plist, "DisplayHandle", ecode);
+            if (code == 0) {
+                if (dev->is_open) {
+                    if (ddev->pHandle != (void *)ptr)
+                        code = gs_error_rangecheck;
+                }
+                else
+                    ddev->pHandle = (void *)ptr;
+            }
+            if (code < 0) {
+                ecode = code;
+                param_signal_error(plist, "DisplayHandle", ecode);
+            }
         }
     }
 
@@ -1248,6 +1277,9 @@ display_spec_op(gx_device *dev, int op, void *data, int datasize)
 
     if (op == gxdso_supports_devn) {
         return (dev_proc(dev, fill_rectangle_hl_color) == display_fill_rectangle_hl_color);
+    }
+    if (op == gxdso_reopen_after_init) {
+        return 1;
     }
     return gx_default_dev_spec_op(dev, op, data, datasize);
 }

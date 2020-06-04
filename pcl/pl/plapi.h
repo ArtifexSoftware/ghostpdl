@@ -182,9 +182,42 @@ GSDLLEXPORT int GSDLLAPI gsapi_set_poll_with_handle(void *instance,
  * If the display device is used, this must be called
  * after gsapi_new_instance() and before gsapi_init_with_args().
  * See gdevdisp.h for more details.
+ * DEPRECATED: Use gsapi_set_display_callback_with_handle instead.
  */
 GSDLLEXPORT int GSDLLAPI gsapi_set_display_callback(
    void *instance, display_callback *callback);
+
+/* The callout mechanism allows devices to query "callers" (users of the
+ * DLL) in device specific ways. The callout function pointer type will
+ * be called with:
+ *   callout_handle = the value given at registration
+ *   device_name    = the name of the current device
+ *   id             = An integer, guaranteed to be unique within the
+ *                    callouts from a given device, identifying the
+ *                    purpose of this call.
+ *   size           = device/id specific, but typically the size of 'data'.
+ *   data           = device/id specific, but typically the pointer to
+ *                    an in/out data block.
+ *  Returns an error code (gs_error_unknownerror (-1) if unclaimed,
+ *  non-negative on success, standard gs error numbers recommended).
+ */
+typedef int (*gs_callout)(void *instance,
+                          void *callout_handle,
+                          const char *device_name,
+                          int id,
+                          int size,
+                          void *data);
+
+/* Register a handler for gs callouts.
+ * This must be called after gsapi_new_instance() and (typically)
+ * before gsapi_init_with_args().
+ */
+GSDLLEXPORT int GSDLLAPI gsapi_register_callout(
+   void *instance, gs_callout callout, void *callout_handle);
+
+/* Deregister a handler for gs callouts. */
+GSDLLEXPORT void GSDLLAPI gsapi_deregister_callout(
+   void *instance, gs_callout callout, void *callout_handle);
 
 /* Set the string containing the list of default device names
  * for example "display x11alpha x11 bbox". Allows the calling

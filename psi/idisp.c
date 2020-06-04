@@ -47,70 +47,36 @@
 #include "gsequivc.h"
 #include "gdevdsp.h"
 #include "gdevdsp2.h"
+#include "gxgstate.h"
+#include "gxdevsop.h"
 
 int
-display_set_callback(gs_main_instance *minst, display_callback *callback)
+reopen_device_if_required(gs_main_instance *minst)
 {
     i_ctx_t *i_ctx_p;
-    bool was_open;
     int code;
-    int exit_code = 0;
-    os_ptr op;
     gx_device *dev;
-    gx_device_display *ddev;
-
-    /* If display device exists, copy prototype if needed and return
-     *  device true
-     * If it doesn't exist, return
-     *  false
-     */
-    const char getdisplay[] =
-      "devicedict /display known dup { /display finddevice exch } if";
-    code = gs_main_run_string(minst, getdisplay, 0, &exit_code,
-        &minst->error_object);
-    if (code < 0)
-       return code;
 
     i_ctx_p = minst->i_ctx_p;	/* run_string may change i_ctx_p if GC */
-    op = osp;
-    check_type(*op, t_boolean);
-    if (op->value.boolval) {
-        /* display device was included in Ghostscript so we need
-         * to set the callback structure pointer within it.
-         * If the device is already open, close it before
-         * setting callback, then reopen it.
-         */
-        check_read_type(op[-1], t_device);
-        if (op[-1].value.pdevice == NULL)
-            /* This can happen if we invalidated devices on the stack by calling nulldevice after they were pushed */
-            return_error(gs_error_undefined);
+    dev = gs_currentdevice_inline(i_ctx_p->pgs);
+    if (dev == NULL)
+        /* This can happen if we invalidated devices on the stack by calling nulldevice after they were pushed */
+        return_error(gs_error_undefined);
 
-        dev = op[-1].value.pdevice;
+    if (!dev->is_open)
+        return 0;
 
-        was_open = dev->is_open;
-        if (was_open) {
-            code = gs_closedevice(dev);
-            if (code < 0)
-                return code;
-        }
+    if (dev_proc(dev, dev_spec_op)(dev, gxdso_reopen_after_init, NULL, 0) != 1)
+       return 0;
 
-        ddev = (gx_device_display *) dev;
+    code = gs_closedevice(dev);
+    if (code < 0)
+        return code;
 
-        /* Deal with the case where we subclassed the device before we got here */
-        while (ddev->child)
-            ddev = (gx_device_display *)ddev->child;
-
-        ddev->callback = callback;
-
-        if (was_open) {
-            code = gs_opendevice(dev);
-            if (code < 0) {
-                dmprintf(dev->memory, "**** Unable to open the display device, quitting.\n");
-                return code;
-            }
-        }
-        pop(1);	/* device */
+    code = gs_opendevice(dev);
+    if (code < 0) {
+        dmprintf(dev->memory, "**** Unable to reopen the device, quitting.\n");
+        return code;
     }
-    pop(1);	/* boolean */
     return 0;
 }

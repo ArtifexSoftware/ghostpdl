@@ -1897,7 +1897,7 @@ gdevdsp2_h=$(DEVSRCDIR)$(D)gdevdsp2.h
 
 $(PSOBJ)idisp.$(OBJ) : $(PSSRC)idisp.c $(OP) $(stdio__h) $(gp_h)\
  $(stdpre_h) $(gscdefs_h) $(gsdevice_h) $(gsmemory_h) $(gstypes_h)\
- $(iapi_h) $(iref_h)\
+ $(iapi_h) $(iref_h) $(gxgstate_h) $(gxdevsop_h)\
  $(imain_h) $(iminst_h) $(idisp_h) $(ostack_h)\
  $(gx_h) $(gxdevice_h) $(gxdevmem_h) $(gdevdsp_h) $(gdevdsp2_h)\
  $(INT_MAK) $(MAKEDIRS)

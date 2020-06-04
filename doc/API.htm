@@ -68,6 +68,8 @@
 <li><a href="#set_poll_with_handle"><code>gsapi_set_poll_with_handle</code></a></li>
 <li><a href="#set_poll"><code>gsapi_set_poll</code></a></li>
 <li><a href="#set_display_callback"><code>gsapi_set_display_callback</code></a></li>
+<li><a href="#register_callout"><code>gsapi_register_callout</code></a></li>
+<li><a href="#deregister_callout"><code>gsapi_deregister_callout</code></a></li>
 <li><a href="#set_arg_encoding"><code>gsapi_set_arg_encoding</code></a></li>
 <li><a href="#run"><code>gsapi_run_string_begin</code></a></li>
 <li><a href="#run"><code>gsapi_run_string_continue</code></a></li>
@@ -86,6 +88,8 @@
 <li><a href="#add_fs"><code>gsapi_add_fs</code></a></li>
 <li><a href="#remove_fs"><code>gsapi_remove_fs</code></a></li>
 <li><a href="#return_codes">Return codes</a></li>
+<li><a href="#gsapi_fs_t">gsapi_fs_t</a></li>
+<li><a href="#callout">Callouts</a></li>
 </ul>
 <li><a href="#Example_usage">Example usage</a></li>
 <li><a href="#stdio">Standard input and output</a></li>
@@ -231,6 +235,18 @@ int
 
 <li><code>
 int
+<a href="#register_callout">gsapi_register_callout</a>
+(void *instance, gs_callout callout, void *callout_handle);
+</code></li>
+
+<li><code>
+void
+<a href="#deregister_callout">gsapi_deregister_callout</a>
+(void *instance, gs_callout callout, void *callout_handle);
+</code></li>
+
+<li><code>
+int
 <a href="#set_arg_encoding">gsapi_set_arg_encoding</a>
 (void *instance, int encoding);
 </code></li>
@@ -336,7 +352,7 @@ else {
 <blockquote>
 Create a new instance of Ghostscript.
 This instance is passed to most other gsapi functions.
-The caller_handle will be provided to callback functions.
+The caller_handle is the default value that will be provided to callback functions.
 
 <b>Unless Ghostscript has been compiled with the </code>GS_THREADSAFE</code>
 define, only one instance at a time is supported.</b>
@@ -420,13 +436,33 @@ Otherwise the behaviour of this function matches
 
 <h3><a name="set_display_callback"></a><code>gsapi_set_display_callback()</code></h3>
 <blockquote>
+<b>This call is deprecated; please use
+<code><a href="#register_callout">gsapi_register_callout</a></code>
+to register a <a href="#callout">callout</a> handler for the
+<a href="#display">display</a> device in preference.</b>
 Set the callback structure for the <a href="#display">display</a>
-device.  If the <a href="#display">display</a> device is used,
+device. The handle passed in the callback functions is taken from
+the <code>DisplayHandle</code> parameter (or NULL if there is no
+such parameter). If the <a href="#display">display</a> device is used,
 this must be called after
 <code>gsapi_new_instance()</code>
 and before <code>gsapi_init_with_args()</code>.
 See <code><a href="../base/gdevdsp.h">gdevdsp.h</a></code>
 for more details.
+</blockquote>
+
+<h3><a name="register_callout"></a><code>gsapi_register_callout()</code></h3>
+<blockquote>
+<p>This call registers a <code><a href="#callout">callout</a></code>
+handler.</p>
+</blockquote>
+
+<h3><a name="deregister_callout"></a><code>gsapi_deregister_callout()</code></h3>
+<blockquote>
+<p>This call deregisters a <code><a href="#callout">callout</a></code> handler
+previously registered with <code><a href="#register_callout">gsapi_register_callout</a></code>.
+All three arguments must match exactly for the callout handler to
+be deregistered.</p>
 </blockquote>
 
 <h3><a name="set_arg_encoding"></a><code>gsapi_set_arg_encoding()</code></h3>
@@ -868,6 +904,45 @@ Reopen a stream with a different mode. Behaves like
 <code>freopen(fname, mode, FILE *)</code>.
 </dl>
 
+<h3><a name="callout"></a>Callouts</h3>
+<blockquote>
+<p>Callouts are a mechanism
+for the core code (specifically devices) to communicate with the
+user of gsapi. This communication can take the form of passing
+information out vis-a-vis what devices are doing, or requesting
+configuration from the caller to affect exactly how the device
+itself works.</p>
+<p>This is deliberately an extensible system, so exact details of
+callouts should be documented with the device in question. In general
+however a callout handler will be of the form:</p>
+<pre>
+typedef int (*gs_callout)(void *callout_handle,
+                          const char *device_name,
+                          int id,
+                          int size,
+                          void *data);
+</pre>
+<p>The <code>callout_handle</code> value passed to the callout will
+be the value passed in at registration. The <code>device_name</code>
+should be a null-terminated string giving the name of the device
+(though care should be taken to cope with the case where
+<code>device_name</code> is NULL for potential future uses).
+The <code>id</code> value will have a (device-specific) meaning; see
+the documentation for the device in question for more details.
+Finally, <code>size</code> and <code>data</code> have callout
+specific meanings, but typically, <code>data</code> will be a pointer
+to data block (which may either be uninitialised or wholly/partially
+initialised on entry, and may be updated on exit), and <code>size</code>
+will be the size (in bytes) of the block pointed to by <code>data</code>.
+</p>
+<p>A return value of -1 (<code>gs_error_unknownerror</code>) means
+the callout was not recognised by the handler, and should be passed
+to more handlers. Other negative values are interpreted as standard
+Ghostscript error values, and stop the propagation of the callout.
+Non-negative return codes mean the callout was handled and should
+not be passed to any more registered callout handlers.</p>
+</blockquote>
+
 <hr>
 <h2><a name="Example_usage"></a>Example Usage</h2>
 <p>To try out the following examples in a development environment like Microsoft's
@@ -1097,18 +1172,27 @@ This device provides you with access to the raster output of
 Ghostscript.  It is your responsibility to copy this raster
 to a display window or printer.</p>
 <p>
-To use this device, you must provide a callback structure
-with addresses of a number of callback functions.
-The address of the callback structure is provided using
-<code>gsapi_set_display_callback()</code>.
+In order for this device to operate, it needs access to a structure
+containing a set of callback functions, and a callback handle (an
+opaque <code>void *</code> that can be used by caller to locate its
+own state). There are 2 ways that the device can get this
+information, a legacy method, and a modern method.
+</p>
+<dl>
+<dt>Legacy method</dt>
+<dd>
+<p>The address of the callback structure, is provided
+using <code>gsapi_set_display_callback()</code>.
 This must be called after
 <code>gsapi_new_instance()</code>
 and before
 <code>gsapi_init_with_args()</code>.</p>
 <p>
-The callbacks are for device open, close, resize, sync, page,
-memory allocation and updating.
-Each callback function contains a handle can be set using</p>
+With this call, the callback handle is passed as NULL by default, but can
+be overridden by using a parameter. We actively dislike
+this way of working, as we consider passing addresses
+via the command line distasteful. The handle can be
+set using</p>
 <blockquote>
   -sDisplayHandle=1234
 </blockquote>
@@ -1146,6 +1230,31 @@ The previous API, using a number value:</p>
 is still supported on 32 bit systems, but will cause a "typecheck"
 error on 64 bit systems, and is considered deprecated. It should
 not be used in new code.</p>
+</dd>
+<dt>Modern method
+<dd>
+<p>The preferred method is to register a callout handler using
+<code><a href="#register_callout">gsapi_register_callout</a></code>.
+When this handler is called for the <code>&quot;display&quot;</code>
+device, with <code>id = 0</code> (= <code>DISPLAY_CALLOUT_GET_CALLBACK</code>),
+then <code>data</code> should point to an empty <code>gs_display_get_callback_t</code>
+block, with <code>size = sizeof(gs_display_get_callback_t)</code>.
+</p>
+<pre>
+typedef struct {
+    display_callback *callback;
+    void *caller_handle;
+} gs_display_get_callback_t;
+</pre>
+<p>The handler should fill in the structure before returning,
+with a return code of 0.</p>
+</dd>
+</dl>
+<p>
+Note, that the DisplayHandle value is only consulted for
+display device callbacks registered using the (legacy, now deprecated)
+<code>gsapi_set_display_callback</code> API, not the preferred
+<code>gsapi_register_callout</code> based mechanism.
 
 <p>
 The device raster format can be configured using</p>
