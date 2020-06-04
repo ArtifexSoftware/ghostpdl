@@ -25,14 +25,14 @@
 #include "xpsfapi.h"
 
 /* forward declarations for the pl_ff_stub definition */
-static ulong
-xps_fapi_get_long(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index);
+static int
+xps_fapi_get_long(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsigned long *ret);
 
 static int
-xps_fapi_get_glyph(gs_fapi_font *ff, int char_code, byte *buf,
-                   ushort buf_length);
+xps_fapi_get_glyph(gs_fapi_font *ff, gs_glyph char_code, byte *buf,
+                   int buf_length);
 
-static ushort
+static int
 xps_fapi_serialize_tt_font(gs_fapi_font *ff, void *buf, int buf_size);
 
 static int
@@ -41,12 +41,12 @@ xps_get_glyphdirectory_data(gs_fapi_font *ff, int char_code,
 
 static int
 xps_fapi_set_cache(gs_text_enum_t *penum, const gs_font_base *pbfont,
-                   const gs_string *char_name, int cid,
+                   const gs_string *char_name, gs_glyph cid,
                    const double pwidth[2], const gs_rect *pbbox,
                    const double Metrics2_sbw_default[4], bool *imagenow);
 
 static int
-xps_fapi_get_metrics(gs_fapi_font *ff, gs_string *char_name, int cid,
+xps_fapi_get_metrics(gs_fapi_font *ff, gs_string *char_name, gs_glyph cid,
                      double *m, bool vertical);
 
 static const gs_fapi_font pl_ff_stub = {
@@ -92,8 +92,8 @@ static const gs_fapi_font pl_ff_stub = {
     xps_fapi_set_cache          /* fapi_set_cache */
 };
 
-static ulong
-xps_fapi_get_long(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index)
+static int
+xps_fapi_get_long(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsigned long *ret)
 {
     ulong value = -1;
 
@@ -101,20 +101,20 @@ xps_fapi_get_long(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index)
 }
 
 static int
-xps_fapi_get_glyph(gs_fapi_font *ff, int char_code, byte *buf,
-                   ushort buf_length)
+xps_fapi_get_glyph(gs_fapi_font *ff, gs_glyph char_code, byte *buf,
+                   int buf_length)
 {
     int size = -1;
 
     return (size);
 }
 
-static ushort
+static int
 xps_fapi_serialize_tt_font(gs_fapi_font *ff, void *buf, int buf_size)
 {
     int code = -1;
 
-    return ((ushort) code);
+    return (code);
 }
 
 static int
@@ -125,7 +125,7 @@ xps_get_glyphdirectory_data(gs_fapi_font *ff, int char_code,
 }
 
 static int
-xps_fapi_get_metrics(gs_fapi_font *ff, gs_string *char_name, int cid,
+xps_fapi_get_metrics(gs_fapi_font *ff, gs_string *char_name, gs_glyph cid,
                      double *m, bool vertical)
 {
     return (0);
@@ -133,7 +133,7 @@ xps_fapi_get_metrics(gs_fapi_font *ff, gs_string *char_name, int cid,
 
 static int
 xps_fapi_set_cache(gs_text_enum_t *penum, const gs_font_base *pbfont,
-                   const gs_string *char_name, int cid,
+                   const gs_string *char_name, gs_glyph cid,
                    const double pwidth[2], const gs_rect *pbbox,
                    const double Metrics2_sbw_default[4], bool *imagenow)
 {
