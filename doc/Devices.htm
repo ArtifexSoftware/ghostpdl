@@ -76,12 +76,14 @@
 <ul>
 <li><a href="#PDF">PDF file output</a></li>
 <li><a href="#PDFimage">Bitmap PDF output, PCLm output</a></li>
+<li><a href="#OCR">OCR devices</a></li>
+<li><a href="#PDFocr">Bitmap PDF output (with OCR text)</a></li>
 <li><a href="#PS">PostScript file output</a></li>
 <li><a href="#EPS">EPS file output</a></li>
 <li><a href="#PXL">PCL-XL file output</a></li>
 <li><a href="#TXT">Text output</a></li>
 </ul>
-<li><a href="#Dis    play_devices">Display devices</a></li>
+<li><a href="#Display_devices">Display devices</a></li>
 <ul>
 <li><a href="#x11_devices">X Window System</a></li>
 <li><a href="#display_device">display device (MS Windows, OS/2, gtk+)</a></li>
@@ -952,6 +954,92 @@ In addition to raster image files, Ghostscript supports output in a number
 of 'high-level' formats. These allow Ghostscript to preserve (as much as
 possible) the drawing elements of the input file maintaining flexibility,
 resolution independence, and editability.</p>
+
+<h3><a name="OCR"></a>Optical Character Recognition (OCR) output</h3>
+
+<p>
+  These devices render internally in 8 bit greyscale, and then
+  feed the resultant image into an OCR engine. Currently, we
+  are using the Tesseract engine. Not only is this both free
+  and open source, it gives very good results, and supports
+  a huge number of languages/scripts.
+</p>
+<p>
+  The Tesseract engine relies on files to encapsulate each
+  language and/or script. These &quot;traineddata&quot; files
+  are available in different forms, including <a href="github.com/tesseract-ocr/tessdata_fast">fast</a>
+  and <a href="tesseract-ocr/tessdata_best">best</a> variants.
+  Alternatively, people can train their own data using the
+  standard Tesseract tools.
+</p>
+<p>
+  These files are looked for from a variety of places. Firstly,
+  any files placed in &quot;Resource/Tesseract/&quot; will be
+  included in the binary for any standard (COMPILE_INITS=1) build.
+  Secondly, files will be searched for in the current directory.
+  Thirdly, files will be searched for in the directory given by
+  the environment variable TESSDATA_PREFIX.
+</p>
+<p>
+  By default, the OCR process defaults to looking for English text,
+  using &quot;eng.traineddata&quot;. This can be changed by using the
+  <code>-sOCRLanguage=</code> switch;
+</p>
+<blockquote>
+<dl>
+<dt><code>-sOCRLanguage=</code><b><em>language</em></b></dt>
+<dd>This sets the trained data sets to use within the Tesseract
+  OCR engine. For example, the following will use English and
+  Arabic:</dd></dl>
+<blockquote>
+<pre>
+ <kbd>gs -sDEVICE=ocr -r200 -sOCRLanguage="eng,ara" -o out.txt\
+      zlib/zlib.3.pdf</kbd>
+</pre>
+</blockquote>
+</blockquote>
+<p>
+  The first device is named ocr. It extracts data as unicode codepoints
+  and outputs them to the device as a stream of UTF-8 bytes.
+</p>
+<p>
+  The second device is named hocr. This extracts the data in
+  <a href="wikipedia.org/wiki/HOCR">hOCR</a> format.
+</p>
+<p>
+  These devices are implemented as downscaling devices, so the
+  standard parameters can be used to control this process. It
+  may seem strange to use downscaling on an image that is not
+  actually going to be output, but there are actually good reasons
+  for this. Firstly, the higher the resolution, the slower the
+  OCR process. Secondly, the way the Tesseract OCR engine works
+  means that anti-aliased images perform broadly as well as the
+  super-sampled image from which it came.
+</p>
+
+<h3><a name="PDFocr"></a>PDF image output (with OCR text)</h3>
+
+<p>
+  These devices do the same render to bitmap and wrap as a PDF process as
+  the <a name="PDFimage">PDFimage</a> devices above, but with the addition
+  of an OCR step at the end. The OCR'd text is overlaid &quot;invisibly&quot;
+  over the images, so searching and cut/paste should still work.
+</p>
+<p>
+  The OCR engine being used is Tesseract. For information on this
+  including how to control what language data is used, see the <a href="OCR">
+  OCR devices</a> section above.
+</p>
+<p>
+  There are three devices named pdfocr8, pdfocr24 and pdfocr32. These
+  produce valid PDF files with a colour depth of 8 (Gray), 24 (RGB) or
+  32 (CMYK).
+</p>
+<p>
+  These devices accept all the same flags as the <a name="PDFimage">PDFimage</a>
+  devices described above.
+</p>
+<p>
 
 <h2><a name="High-level"></a>High-level devices</h2>
 
