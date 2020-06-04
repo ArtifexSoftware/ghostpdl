@@ -34,6 +34,7 @@
 #include "gxdevsop.h"
 #include "gzpath.h"
 #include "gdevkrnlsclass.h" /* 'standard' built in subclasses, currently First/Last Page and obejct filter */
+#include "gxchar.h"
 
 /* #define TRACE_TXTWRITE 1 */
 
@@ -2281,7 +2282,8 @@ textw_text_process(gs_text_enum_t *pte)
             if (code == gs_error_invalidfont) /* Bug 688370. */
                 return code;
             /* Fall back to the default implementation. */
-            code = pdf_default_text_begin(pte, &pte->text, &pte_fallback);
+            code = gx_default_text_begin(pte->dev, pte->pgs, &pte->text, pte->current_font,
+                                 pte->path, pte->pdcolor, pte->pcpath, pte->memory, &pte_fallback);
             if (code < 0)
                 return code;
             penum->pte_fallback = pte_fallback;
