@@ -36,7 +36,6 @@ pdfi_type3_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
     pdf_font_type3 *font;
     pdf_name *GlyphName = NULL;
     pdf_dict *CharProc = NULL;
-    byte *Key = NULL;
     int SavedTextBlockDepth = 0;
     char Notdef[8] = {".notdef"};
 
@@ -47,31 +46,24 @@ pdfi_type3_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
     if (code < 0)
         return code;
 
-    Key = gs_alloc_bytes(font->ctx->memory, GlyphName->length + 1, "working buffer for BuildChar");
-    if (Key == NULL)
-        goto build_char_error;
-    memset(Key, 0x00, GlyphName->length + 1);
-    memcpy(Key, GlyphName->data, GlyphName->length);
-    code = pdfi_dict_get(font->ctx, font->CharProcs, (const char *)Key, (pdf_obj **)&CharProc);
+    code = pdfi_dict_get_by_key(font->ctx, font->CharProcs, (const char *)GlyphName, (pdf_obj **)&CharProc);
     if (code == gs_error_undefined) {
+        byte *Key = NULL;
         /* Can't find the named glyph, try to find a /.notdef as a substitute */
-        pdfi_countdown(GlyphName);
-        gs_free_object(font->ctx->memory, Key, "working buffer for BuildChar");
-
         Key = gs_alloc_bytes(font->ctx->memory, 8, "working buffer for BuildChar");
         if (Key == NULL)
             goto build_char_error;
         memset(Key, 0x00, 8);
         memcpy(Key, Notdef, 8);
         code = pdfi_dict_get(font->ctx, font->CharProcs, (const char *)Key, (pdf_obj **)&CharProc);
+        gs_free_object(font->ctx->memory, Key, "working buffer for BuildChar");
         if (code == gs_error_undefined) {
-            gs_free_object(font->ctx->memory, Key, "working buffer for BuildChar");
-            return 0;
+            code = 0;
+            goto build_char_error;
         }
     }
     if (code < 0)
         goto build_char_error;
-    gs_free_object(font->ctx->memory, Key, "working buffer for BuildChar");
 
     font->ctx->TextBlockDepth = 0;
     font->ctx->inside_CharProc = true;
@@ -82,15 +74,8 @@ pdfi_type3_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
     font->ctx->inside_CharProc = false;
     font->ctx->CharProc_is_d1 = false;
     font->ctx->TextBlockDepth = SavedTextBlockDepth;
-    if (code < 0)
-        goto build_char_error;
-
-    pdfi_countdown(GlyphName);
-    pdfi_countdown(CharProc);
-    return 0;
 
 build_char_error:
-    gs_free_object(font->ctx->memory, Key, "working buffer for BuildChar");
     pdfi_countdown(GlyphName);
     pdfi_countdown(CharProc);
     return code;
