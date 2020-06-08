@@ -268,7 +268,7 @@ TD_error:
 static int pdfi_show(pdf_context *ctx, pdf_string *s)
 {
     int code = 0, i;
-    gs_text_enum_t *penum;
+    gs_text_enum_t *penum, *saved_penum;
     gs_text_params_t text;
     gs_matrix mat;
     pdf_font *current_font = NULL;
@@ -388,10 +388,11 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
 
         code = gs_text_begin(ctx->pgs, &text, ctx->memory, &penum);
         if (code >= 0) {
+            saved_penum = ctx->current_text_enum;
             ctx->current_text_enum = penum;
             code = gs_text_process(penum);
             gs_text_release(penum, "pdfi_Tj");
-            ctx->current_text_enum = NULL;
+            ctx->current_text_enum = saved_penum;
         }
 
         if (Trmode >= 4) {
@@ -400,10 +401,11 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
             gs_moveto(ctx->pgs, 0, 0);
             code = gs_text_begin(ctx->pgs, &text, ctx->memory, &penum);
             if (code >= 0) {
+                saved_penum = ctx->current_text_enum;
                 ctx->current_text_enum = penum;
                 code = gs_text_process(penum);
                 gs_text_release(penum, "pdfi_Tj");
-                ctx->current_text_enum = NULL;
+                ctx->current_text_enum = saved_penum;
             }
         }
 
