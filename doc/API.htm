@@ -63,7 +63,9 @@
 <li><a href="#revision"><code>gsapi_revision</code></a></li>
 <li><a href="#new_instance"><code>gsapi_new_instance</code></a></li>
 <li><a href="#delete_instance"><code>gsapi_delete_instance</code></a></li>
+<li><a href="#set_stdio_with_handle"><code>gsapi_set_stdio_with_handle</code></a></li>
 <li><a href="#set_stdio"><code>gsapi_set_stdio</code></a></li>
+<li><a href="#set_poll_with_handle"><code>gsapi_set_poll_with_handle</code></a></li>
 <li><a href="#set_poll"><code>gsapi_set_poll</code></a></li>
 <li><a href="#set_display_callback"><code>gsapi_set_display_callback</code></a></li>
 <li><a href="#set_arg_encoding"><code>gsapi_set_arg_encoding</code></a></li>
@@ -186,11 +188,27 @@ void
 
 <li><code>
 int
+<a href="#set_stdio_with_handle">gsapi_set_stdio_with_handle</a>
+(void *instance,
+    int(*stdin_fn)(void *caller_handle, char *buf, int len),
+    int(*stdout_fn)(void *caller_handle, const char *str, int len),
+    int(*stderr_fn)(void *caller_handle, const char *str, int len),
+    void *caller_handle);
+</code></li>
+
+<li><code>
+int
 <a href="#set_stdio">gsapi_set_stdio</a>
 (void *instance,
     int(*stdin_fn)(void *caller_handle, char *buf, int len),
     int(*stdout_fn)(void *caller_handle, const char *str, int len),
     int(*stderr_fn)(void *caller_handle, const char *str, int len));
+</code></li>
+
+<li><code>
+int
+<a href="#set_poll_with_handle">gsapi_set_poll</a>
+(void *instance, int(*poll_fn)(void *caller_handle, void *caller_handle));
 </code></li>
 
 <li><code>
@@ -344,9 +362,10 @@ If Ghostscript has been initialised, you must call
 </blockquote>
 
 
-<h3><a name="set_stdio"></a><code>gsapi_set_stdio()</code></h3>
+<h3><a name="set_stdio_with_handle"></a><code>gsapi_set_stdio_with_handle()</code></h3>
 <blockquote>
-<p>Set the callback functions for stdio
+<p>Set the callback functions for stdio, together with the
+handle to use in the callback functions.
 The stdin callback function should return the number of
 characters read, 0 for EOF, or -1 for error.
 The stdout and stderr callback functions should return
@@ -357,10 +376,19 @@ case, device output will still be directed to the process &quot;stdout&quot;
 file descriptor, not to the stdio callback.
 </blockquote>
 
-
-<h3><a name="set_poll"></a><code>gsapi_set_poll()</code></h3>
+<h3><a name="set_stdio"></a><code>gsapi_set_stdio()</code></h3>
 <blockquote>
-Set the callback function for polling. This function will only be called if
+<p>Set the callback functions for stdio.  The handle used
+in the callbacks will be taken from the value passed
+to <code><a href="#new_instance">gsapi_new_instance</a></code>.  Otherwise the behaviour of this
+function matches <code><a href="#set_stdio_with_handle">gsapi_set_stdio_with_handle</a></code>.
+</blockquote>
+
+
+<h3><a name="set_poll_with_handle"></a><code>gsapi_set_poll_with_handle()</code></h3>
+<blockquote>
+Set the callback function for polling, together with the handle to pass
+to the callback function. This function will only be called if
 the Ghostscript interpreter was compiled with <code>CHECK_INTERRUPTS</code>
 as described in <code><a href="../base/gpcheck.h">gpcheck.h</a></code>.
 <p>
@@ -373,6 +401,15 @@ The polling function is called very frequently during interpretation and
 rendering so it must be fast. If the function is slow, then using a counter
 to return 0 immediately some number of times can be used to reduce the
 performance impact.</p>
+</blockquote>
+
+<h3><a name="set_poll"></a><code>gsapi_set_poll()</code></h3>
+<blockquote>
+Set the callback function for polling.  The handle passed to the
+callback function will be taken from the handle passed to
+<code><a href="#new_instance">gsapi_new_instance</a></code>.
+Otherwise the behaviour of this function matches
+<code><a href="#set_poll_with_handle">gsapi_set_poll_with_handle</a></code>.
 </blockquote>
 
 <h3><a name="set_display_callback"></a><code>gsapi_set_display_callback()</code></h3>
