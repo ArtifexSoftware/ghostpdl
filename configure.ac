@@ -818,6 +818,163 @@ AC_SUBST(SYNC)
 AC_SUBST(PTHREAD_LIBS)
 AC_SUBST(RECURSIVE_MUTEXATTR)
 
+dnl Tesseract/Leptonica detection
+TESSERACTDIR=tesseract
+LEPTONICADIR=leptonica
+OCR_VERSION=0
+LEPTONICAINCLUDE=
+TESSERACTINCLUDE=
+TESSERACT_LIBS=
+OCR_DEVS=
+
+AC_ARG_WITH([tesseract], AC_HELP_STRING([--without-tesseract],
+    [do not try to use the Tesseract library for OCR]))
+
+if test x$with_tesseract != xno; then
+  AC_MSG_CHECKING([for local Tesseract library source])
+  if test -d $srcdir/tesseract && test -d $srcdir/leptonica; then
+    AC_MSG_RESULT([yes])
+    AC_LANG_PUSH(C++)
+    AC_TRY_COMPILE([],
+                   [return 0;],
+                   [HAVE_CXX_COMPILER=yes],
+                   [HAVE_CXX_COMPILER=no])
+    if test x$HAVE_CXX_COMPILER != xyes; then
+      AC_MSG_WARN([Disabling tesseract as no working C++ compiler])
+    else
+      dnl --------------------------------------------------
+      dnl check for sse4.1, avx, avx2 or fma
+      dnl --------------------------------------------------
+      AC_MSG_CHECKING([sse4.1 support])
+      save_cxxflags=$CXXFLAGS
+      TESS_CXXFLAGS=""
+      CXXFLAGS="$CXXFLAGS -msse4.1"
+
+      TESS_SSE4_1=""
+      AC_LINK_IFELSE(
+        [AC_LANG_PROGRAM([#include <emmintrin.h>
+                          #include <smmintrin.h>],
+                         [__m128i input1;
+                          unsigned char buf1[[128]];
+                          input1 = _mm_loadu_si128((const __m128i *)buf1);
+                          input1 = _mm_hadd_epi32(input1, input1);
+                          return(0);
+                         ])],
+        [TESS_SSE4_1="-msse4.1"],
+        [TESS_SSE4_1=""])
+
+      if test "x$TESS_SSE4_1" != x; then
+        AC_MSG_RESULT(yes)
+        TESS_CXXFLAGS="$TESS_CXXFLAGS -DHAVE_SSE4_1"
+      else
+        AC_MSG_RESULT(no)
+      fi
+
+      AC_MSG_CHECKING([avx support])
+      CXXFLAGS="$save_cxxflags -mavx"
+
+      TESS_AVX=""
+      AC_LINK_IFELSE(
+        [AC_LANG_PROGRAM([#include <immintrin.h>],
+	                 [__m256d input1 = _mm256_setzero_pd();
+                          input1 = _mm256_hadd_pd(input1, input1);
+                          return(0);])],
+        [TESS_AVX="-mavx"],
+        [TESS_AVX=""])
+
+      if test "x$TESS_AVX" != x; then
+        AC_MSG_RESULT(yes)
+        TESS_CXXFLAGS="$TESS_CXXFLAGS -DHAVE_AVX"
+      else
+        AC_MSG_RESULT(no)
+      fi
+
+      AC_MSG_CHECKING([avx2 support])
+      CXXFLAGS="$save_cxxflags -mavx2"
+
+      TESS_AVX2=""
+      AC_LINK_IFELSE(
+        [AC_LANG_PROGRAM([#include <immintrin.h>],
+	                 [__m256i input1;
+                          unsigned char buf1[[256]];
+                          input1 = _mm256_loadu_si256((const __m256i *)buf1);
+                          input1 = _mm256_adds_epu8(input1, input1);
+                          return(0);])],
+        [TESS_AVX2="-mavx2"],
+        [TESS_AVX2=""])
+
+      if test "x$TESS_AVX2" != x; then
+        AC_MSG_RESULT(yes)
+        TESS_CXXFLAGS="$TESS_CXXFLAGS -DHAVE_AVX2"
+      else
+        AC_MSG_RESULT(no)
+      fi
+
+      AC_MSG_CHECKING([fma support])
+      CXXFLAGS="$save_cxxflags -mfma"
+
+      TESS_FMA=""
+      AC_LINK_IFELSE(
+        [AC_LANG_PROGRAM([#include <immintrin.h>],
+	                 [__m256d input1 = _mm256_setzero_pd();
+                          input1 = _mm256_fmadd_pd(input1, input1, input1);
+                          return(0);])],
+        [TESS_FMA="-mfma"],
+        [TESS_FMA=""])
+
+      if test "x$TESS_FMA" != x; then
+        AC_MSG_RESULT(yes)
+        TESS_CXXFLAGS="$TESS_CXXFLAGS -DHAVE_FMA"
+      else
+        AC_MSG_RESULT(no)
+      fi
+
+      AC_MSG_CHECKING([neon support])
+      CXXFLAGS="$save_cxxflags -mfpu=neon -mcpu=cortex-a53"
+
+      TESS_NEON=""
+      AC_LINK_IFELSE(
+       [AC_LANG_PROGRAM([#include "arm_neon.h"],
+                        [int32x4_t round = vdupq_n_s32(10);
+                         return(0);])],
+       [TESS_NEON="-mfpu=neon -mcpu=cortex-a53 -D__ARM_NEON__"],
+       [TESS_NEON=""])
+
+      if test "x$TESS_NEON" != x; then
+        AC_MSG_RESULT(yes)
+        TESS_CXXFLAGS="$TESS_CXXFLAGS -DHAVE_NEON"
+      else
+        AC_MSG_RESULT(no)
+      fi
+
+      CXXFLAGS="$save_cxxflags"
+
+      OCR_VERSION=1
+      OCR_DEVS="\$(DD)ocr.dev \$(DD)hocr.dev \$(DD)pdfocr8.dev \$(DD)pdfocr24.dev \$(DD)pdfocr32.dev"
+      LEPTONICAINCLUDE="include base/leptonica.mak"
+      TESSERACTINCLUDE="include base/tesseract.mak"
+      TESSERACT_LIBS="-lstdc++"
+    fi
+    AC_LANG_POP()
+  else
+    AC_MSG_RESULT([no])
+  fi
+fi
+
+AC_SUBST(TESSERACT_LIBS)
+AC_SUBST(LEPTONICAINCLUDE)
+AC_SUBST(TESSERACTINCLUDE)
+AC_SUBST(LEPTONICADIR)
+AC_SUBST(TESSERACTDIR)
+AC_SUBST(OCR_DEVS)
+AC_SUBST(OCR_VERSION)
+AC_SUBST(TESS_AVX)
+AC_SUBST(TESS_AVX2)
+AC_SUBST(TESS_FMA)
+AC_SUBST(TESS_SSE4_1)
+AC_SUBST(TESS_NEON)
+AC_SUBST(TESS_CXXFLAGS)
+
 dnl Tests for iconv (Needed for OpenPrinting Vector, "opvp" output device)
 AC_ARG_WITH(libiconv,
             [AC_HELP_STRING([--with-libiconv=@<:@no/gnu/native@:>@],

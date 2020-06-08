@@ -20,6 +20,10 @@
 #include "tiffio.h"
 #endif
 
+#ifdef COLOR_MANAGED
+#include "lcms2mt.h"
+#endif
+
 #ifndef BETTER_CMYK
 #define BETTER_CMYK 1
 #endif
@@ -89,6 +93,8 @@ typedef struct
     int        bpp;
     /* Output BMP sizes */
     BBox       output_size;
+    /* lab flag */
+    int        lab;
 } Params;
 
 typedef struct ImageReader
@@ -100,7 +106,8 @@ typedef struct ImageReader
                   int                *h,
                   int                *s,
                   int                *bpp,
-                  int                *cmyk);
+                  int                *cmyk,
+                  void               **lab);
 } ImageReader;
 
 /*
@@ -125,6 +132,17 @@ static void *Malloc(size_t size) {
     block = malloc(size);
     if (block == NULL) {
         fprintf(stderr, "bmpcmp: Failed to malloc %u bytes\n", (unsigned int)size);
+        exit(EXIT_FAILURE);
+    }
+    return block;
+}
+
+static void* Calloc(size_t size) {
+    void* block;
+
+    block = calloc(size, 1);
+    if (block == NULL) {
+        fprintf(stderr, "bmpcmp: Failed to calloc %u bytes\n", (unsigned int)size);
         exit(EXIT_FAILURE);
     }
     return block;
@@ -370,7 +388,8 @@ static void *bmp_read(ImageReader *im,
                       int         *height,
                       int         *span,
                       int         *bpp,
-                      int         *cmyk)
+                      int         *cmyk,
+                      void       **lab)
 {
     int            offset;
     long           filelen, filepos;
@@ -379,6 +398,7 @@ static void *bmp_read(ImageReader *im,
 
     /* No CMYK bmp support */
     *cmyk = 0;
+    *lab = NULL;
 
     filepos = ftell(im->file);
     fseek(im->file, 0, SEEK_END);
@@ -450,11 +470,14 @@ static void *cups_read(ImageReader *im,
                        int         *span,
                        int         *bpp,
                        int         *cmyk,
-                       int          rev)
+                       int          rev,
+                       void       **lab)
 {
     unsigned char *data, *d;
     int            c, x, y, b, bpc, bpl;
     int            colspace;
+
+    *lab = NULL;
 
     if (skip_bytes(im->file, 372) == EOF)
         return NULL;
@@ -531,9 +554,10 @@ static void *cups_read_le(ImageReader *im,
                           int         *height,
                           int         *span,
                           int         *bpp,
-                          int         *cmyk)
+                          int         *cmyk,
+                          void       **lab)
 {
-    return cups_read(im, width, height, span, bpp, cmyk, 0);
+    return cups_read(im, width, height, span, bpp, cmyk, 0, lab);
 }
 
 static void *cups_read_be(ImageReader *im,
@@ -541,9 +565,10 @@ static void *cups_read_be(ImageReader *im,
                           int         *height,
                           int         *span,
                           int         *bpp,
-                          int         *cmyk)
+                          int         *cmyk,
+                          void       **lab)
 {
-    return cups_read(im, width, height, span, bpp, cmyk, 1);
+    return cups_read(im, width, height, span, bpp, cmyk, 1, lab);
 }
 
 static void skip_to_eol(FILE *file)
@@ -960,11 +985,14 @@ static void *pnm_read(ImageReader *im,
                       int         *height,
                       int         *span,
                       int         *bpp,
-                      int         *cmyk)
+                      int         *cmyk,
+                      void        **lab)
 {
     unsigned char *bmp;
     int            c, maxval;
     void          (*read)(FILE *, int, int, int, unsigned char *);
+
+    *lab = NULL;
 
     c = fgetc(im->file);
     /* Skip over any white space before the P */
@@ -1069,17 +1097,28 @@ static void* tif_read(ImageReader* im,
     int* im_height,
     int* span,
     int* bpp,
-    int* cmyk)
+    int* cmyk,
+    void **lab)
 {
     TIFF* tif;
     uint16 compression;
     uint16 bpc, num_comps, planar, photometric;
     uint32 row;
     int is_tiled;
-    unsigned char *data, *row_ptr;
+    unsigned char *data, *row_ptr, *data_lab = NULL;
     tdata_t buf;
     uint32 width;
     uint32 height;
+    void* picc = NULL;
+    uint32 icc_size;
+    int has_icc = 0;
+#ifdef COLOR_MANAGED
+    cmsHPROFILE icc_profile, hLab;
+    cmsHTRANSFORM icc_transform;
+    cmsContext ctx;
+#endif
+
+    *lab = NULL;
 
     /* There is only one image in each file */
     if (ftell(im->file) != 0)
@@ -1147,6 +1186,45 @@ static void* tif_read(ImageReader* im,
         fprintf(stderr, "bmpcmp: TIFF tiled format not supported!\n");
         exit(1);
     }
+#ifdef COLOR_MANAGED
+    has_icc = TIFFGetField(tif, TIFFTAG_ICCPROFILE, &icc_size, &picc);
+    if (has_icc) {
+        uint32 data_type = TYPE_CMYK_8;
+
+        /* Set our own error handling function */
+        ctx = cmsCreateContext(NULL, NULL);
+        if (ctx == NULL) {
+            fprintf(stderr, "bmpcmp: Failed in ICC profile handling!\n");
+            exit(1);
+        }
+        icc_profile = cmsOpenProfileFromMem(ctx, picc, icc_size);
+        if (icc_profile == NULL) {
+            fprintf(stderr, "bmpcmp: Failed in ICC profile handling!\n");
+            exit(EXIT_FAILURE);
+        }
+        hLab = cmsCreateLab4Profile(ctx, NULL);
+        if (hLab == NULL) {
+            fprintf(stderr, "bmpcmp: Failed in ICC profile handling!\n");
+            exit(EXIT_FAILURE);
+        }
+        if (num_comps == 1)
+            data_type = TYPE_GRAY_8;
+        else if (num_comps == 3)
+            data_type = TYPE_RGB_8;
+
+        /* Data will be alpha Lab */
+        icc_transform = cmsCreateTransform(ctx, icc_profile, data_type, hLab,
+            TYPE_ALab_8, INTENT_RELATIVE_COLORIMETRIC, 0);
+        if (icc_transform == NULL) {
+            fprintf(stderr, "bmpcmp: Failed in ICC profile handling!\n");
+            exit(EXIT_FAILURE);
+        }
+
+        /* Do calloc just to make sure alpha value is known */
+        data_lab = Calloc(height * width * 4);
+        *lab = data_lab;
+    }
+#endif
 
     data = Malloc(height * width * 4);
     row_ptr = data + (height - 1) * width * 4;
@@ -1196,6 +1274,16 @@ static void* tif_read(ImageReader* im,
                 row_ptr -= (width * 4);
             }
     }
+
+#ifdef COLOR_MANAGED
+    if (data_lab != NULL) {
+        cmsDoTransform(NULL, icc_transform, data, data_lab, width* height);
+        cmsDeleteTransform(NULL, icc_transform);
+        cmsCloseProfile(NULL, icc_profile);
+        cmsCloseProfile(NULL, hLab);
+        cmsDeleteContext(ctx);
+    }
+#endif
     _TIFFfree(buf);
     TIFFClose(tif);
 
@@ -1215,7 +1303,8 @@ static void *png_read(ImageReader *im,
                       int         *height,
                       int         *span,
                       int         *bpp,
-                      int         *cmyk)
+                      int         *cmyk,
+                      void        **lab)
 {
     png_structp png;
     png_infop info;
@@ -1223,6 +1312,8 @@ static void *png_read(ImageReader *im,
     int w, h, y, x;
     unsigned char *data;
     int expand = 0;
+
+    *lab = NULL;
 
     /* There is only one image in each file */
     if (ftell(im->file) != 0)
@@ -1293,11 +1384,14 @@ static void *psd_read(ImageReader *im,
                       int         *height,
                       int         *span,
                       int         *bpp,
-                      int         *cmyk)
+                      int         *cmyk,
+                      void       **lab)
 {
     int c, ir_len, w, h, n, x, y, z, N;
     unsigned char *bmp, *line, *ptr;
     int bpc;
+
+    *lab = NULL;
 
     if (feof(im->file))
         return NULL;
@@ -1785,6 +1879,56 @@ struct FuzzyParams {
                            unsigned char *map);
 };
 
+/* Data is alpha, L,a,b */
+static int fuzzy_slow_lab(FuzzyParams* fuzzy_params,
+    unsigned char* isrc,
+    unsigned char* isrc2,
+    unsigned char* map,
+    int            x,
+    int            y)
+{
+    int xmin, ymin, xmax, ymax;
+    int span, t;
+
+    /* left of window = max(0, x - window) - x */
+    xmin = -fuzzy_params->window;
+    if (xmin < -x)
+        xmin = -x;
+    /* right of window = min(width, x + window) - x */
+    xmax = fuzzy_params->window;
+    if (xmax > fuzzy_params->width - x)
+        xmax = fuzzy_params->width - x;
+    /* top of window = max(0, y - window) - y */
+    ymin = -fuzzy_params->window;
+    if (ymin < -y)
+        ymin = -y;
+    /* bottom of window = min(height, y + window) - y */
+    ymax = fuzzy_params->window;
+    if (ymax > fuzzy_params->height - y)
+        ymax = fuzzy_params->height - y;
+    span = fuzzy_params->span;
+    t = fuzzy_params->threshold;
+
+    for (y = ymin; y < ymax; y++)
+    {
+        for (x = xmin; x < xmax; x++)
+        {
+            int o = x * 4 + y * span;
+            float v;
+
+            /* dE^2 */
+            v = (((float) isrc[1] - (float) isrc2[o + 1]) * ((float) isrc[1] - (float) isrc2[o + 1]) / (6.5536f)) +
+                ((float) isrc[2] - (float) isrc2[o + 2]) * ((float) isrc[2] - (float) isrc2[o + 2]) +
+                ((float) isrc[3] - (float) isrc2[o + 3]) * ((float) isrc[3] - (float) isrc2[o + 3]);
+
+            if (v <= t)
+                return 0;
+        }
+    }
+    *map |= 15;
+    return 1;
+}
+
 static int fuzzy_slow(FuzzyParams   *fuzzy_params,
                       unsigned char *isrc,
                       unsigned char *isrc2,
@@ -1929,6 +2073,32 @@ static int fuzzy_slow_exhaustive(FuzzyParams   *fuzzy_params,
     return ret;
 }
 
+/* Data is alpha, L,a,b */
+static int fuzzy_fast_lab(FuzzyParams* fuzzy_params,
+    unsigned char* isrc,
+    unsigned char* isrc2,
+    unsigned char* map)
+{
+    int        i;
+    ptrdiff_t* wTab = fuzzy_params->wTab;
+    int        t = fuzzy_params->threshold;
+
+    for (i = fuzzy_params->wTabLen; i > 0; i--)
+    {
+        ptrdiff_t o = *wTab++;
+        float       v;
+
+        /* dE^2 */
+        v = (((float) isrc[1] - (float) isrc2[o + 1]) * ((float) isrc[1] - (float) isrc2[o + 1]) / (6.5536f)) +
+            ((float) isrc[2] - (float) isrc2[o + 2]) * ((float) isrc[2] - (float) isrc2[o + 2]) +
+            ((float) isrc[3] - (float) isrc2[o + 3]) * ((float) isrc[3] - (float) isrc2[o + 3]);
+        if (v <= t)
+            return 0;
+    }
+    *map |= 15;
+    return 1;
+}
+
 static int fuzzy_fast(FuzzyParams   *fuzzy_params,
                       unsigned char *isrc,
                       unsigned char *isrc2,
@@ -2057,6 +2227,9 @@ static void fuzzy_diff_int(unsigned char *bmp,
     {
         fuzzy_params.slowFn    = fuzzy_slow_exhaustive;
         fuzzy_params.fastFn    = fuzzy_fast_exhaustive;
+    } else if (params->lab) {
+        fuzzy_params.slowFn = fuzzy_slow_lab;
+        fuzzy_params.fastFn = fuzzy_fast_lab;
     } else {
         fuzzy_params.slowFn    = fuzzy_slow;
         fuzzy_params.fastFn    = fuzzy_fast;
@@ -3204,6 +3377,7 @@ static void syntax(void)
     fprintf(stderr, "  -t <threshold> or -t<threshold>   threshold   (default=0)\n");
     fprintf(stderr, "  -e                                exhaustive search\n");
     fprintf(stderr, "  -o <minx> <maxx> <miny> <maxy>    Output bitmap size hints (0 for default)\n");
+    fprintf(stderr, "  -l                                Use dE^2 diff in CIELAB (only for tiffs with icc profiles)\n");
     fprintf(stderr, "  -h or --help or -?                Output this message and exit\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "  <file1> and <file2> can be "
@@ -3276,6 +3450,9 @@ static void parseArgs(int argc, char *argv[], Params *params)
                     break;
                 case 'e':
                     params->exhaustive = 1;
+                    break;
+                case 'l':
+                    params->lab = 1;
                     break;
                 case 'h':
                 case '?':
@@ -3511,21 +3688,31 @@ int main(int argc, char *argv[])
     DiffFn        *diffFn;
     Params         params;
     int            noDifferences = 1;
+    void           *lab1, *lab2;
 
     parseArgs(argc, argv, &params);
     if (params.window <= 1 && params.threshold == 0) {
         diffFn = simple_diff;
+        if (params.lab) {
+            fprintf(stderr, "bmpcmp: LAB comparison requires window > 1 and threshold > 0\n");
+        }
     } else {
         diffFn = fuzzy_diff;
     }
+
+#ifndef COLOR_MANAGED
+    if (params.lab) {
+        fprintf(stderr, "bmpcmp: LAB comparison selected but bmp compiled without cmm!\n");
+    }
+#endif
 
     image_open(&image1, params.filename1);
     image_open(&image2, params.filename2);
 
     imagecount = 0;
     while (((bmp2 = NULL,
-             bmp  = image1.read(&image1,&w, &h, &s, &bpp, &cmyk )) != NULL) &&
-           ((bmp2 = image2.read(&image2,&w2,&h2,&s2,&bpp2,&cmyk2)) != NULL))
+        bmp = image1.read(&image1, &w, &h, &s, &bpp, &cmyk, &lab1)) != NULL) &&
+        ((bmp2 = image2.read(&image2, &w2, &h2, &s2, &bpp2, &cmyk2, &lab2)) != NULL))
     {
         imagecount++;
         /* Check images are compatible */
@@ -3533,9 +3720,14 @@ int main(int argc, char *argv[])
             (cmyk != cmyk2))
         {
             fprintf(stderr,
-                    "bmpcmp: Page %d: Can't compare images "
-                    "(w=%d,%d) (h=%d,%d) (s=%d,%d) (bpp=%d,%d) (cmyk=%d,%d)!\n",
-                    imagecount, w, w2, h, h2, s, s2, bpp, bpp2, cmyk, cmyk2);
+                "bmpcmp: Page %d: Can't compare images "
+                "(w=%d,%d) (h=%d,%d) (s=%d,%d) (bpp=%d,%d) (cmyk=%d,%d)!\n",
+                imagecount, w, w2, h, h2, s, s2, bpp, bpp2, cmyk, cmyk2);
+            continue;
+        }
+
+        if (params.lab && (lab1 == NULL || lab2 == NULL)) {
+            fprintf(stderr, "bmpcmp: Lab compare failed (only valid for tiffs with icc profiles)\n");
             continue;
         }
 
@@ -3543,13 +3735,19 @@ int main(int argc, char *argv[])
         {
             makeWindowTable(&params, s, bpp);
         }
-        map = Malloc(s*h*sizeof(unsigned char));
-        memset(map, 0, s*h*sizeof(unsigned char));
-        params.width  = w;
+        map = Malloc(s * h * sizeof(unsigned char));
+        memset(map, 0, s * h * sizeof(unsigned char));
+        params.width = w;
         params.height = h;
-        params.span   = s;
-        params.bpp    = bpp;
-        (*diffFn)(bmp, bmp2, map, &bbox, &params);
+        params.span = s;
+        params.bpp = bpp;
+
+        if (params.lab) {
+            (*diffFn)(lab1, lab2, map, &bbox, &params);
+        } else {
+            (*diffFn)(bmp, bmp2, map, &bbox, &params);
+        }
+
         if ((bbox.xmin <= bbox.xmax) && (bbox.ymin <= bbox.ymax))
         {
             /* Make the bbox sensibly exclusive */
@@ -3709,6 +3907,8 @@ int main(int argc, char *argv[])
         free(bmp);
         free(bmp2);
         free(map);
+        free(lab1);
+        free(lab2);
     }
 
 done:

@@ -74,7 +74,7 @@ tiff_close(gx_device * pdev)
     gx_device_tiff *const tfdev = (gx_device_tiff *)pdev;
 
     if (tfdev->tif)
-        TIFFCleanup(tfdev->tif);
+        TIFFClose(tfdev->tif);
 
     if (tfdev->icclink != NULL)
     {
@@ -536,10 +536,9 @@ static int tiff_chunky_post_cm(void  *arg, byte **dst, byte **src, int w, int h,
 /* Special version, called with 8 bit grey input to be downsampled to 1bpp
  * output. */
 int
-tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif, int factor,
-                              int mfs, int aw, int bpc, int num_comps,
-                              int trap_w, int trap_h, const int *trap_order,
-                              int ets)
+tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif,
+                              gx_downscaler_params *params,
+                              int aw, int bpc, int num_comps)
 {
     gx_device_tiff *const tfdev = (gx_device_tiff *)dev;
     int code = 0;
@@ -547,6 +546,7 @@ tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif, int factor,
     int size = gdev_mem_bytes_per_scan_line((gx_device *)dev);
     int max_size = max(size, TIFFScanlineSize(tif));
     int row;
+    int factor = params->downscale_factor;
     int height = dev->height/factor;
     gx_downscaler_t ds;
 
@@ -554,24 +554,20 @@ tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif, int factor,
     if (code < 0)
         return code;
 
-    if (num_comps == 4) {
-        if (tfdev->icclink == NULL) {
-            code = gx_downscaler_init_trapped_ets(&ds, (gx_device *)dev, 8, bpc, num_comps,
-                factor, mfs, &fax_adjusted_width, aw, trap_w, trap_h, trap_order, ets);
-        } else {
-            code = gx_downscaler_init_trapped_cm_ets(&ds, (gx_device *)dev, 8, bpc, num_comps,
-                factor, mfs, &fax_adjusted_width, aw, trap_w, trap_h, trap_order,
-                tiff_chunky_post_cm, tfdev->icclink, tfdev->icclink->num_output, ets);
-        }
+    if (num_comps == 4)
+        params->trap_w = params->trap_h = 1;
+    if (tfdev->icclink == NULL) {
+        code = gx_downscaler_init(&ds, (gx_device *)dev,
+                                  8, bpc, num_comps,
+                                  params,
+                                  &fax_adjusted_width, aw);
     } else {
-        if (tfdev->icclink == NULL) {
-            code = gx_downscaler_init_ets(&ds, (gx_device *)dev, 8, bpc, num_comps,
-                factor, mfs, &fax_adjusted_width, aw, ets);
-        } else {
-            code = gx_downscaler_init_cm_ets(&ds, (gx_device *)dev, 8, bpc, num_comps,
-                factor, mfs, &fax_adjusted_width, aw, tiff_chunky_post_cm, tfdev->icclink,
-                tfdev->icclink->num_output, ets);
-        }
+        code = gx_downscaler_init_cm(&ds, (gx_device *)dev,
+                                     8, bpc, num_comps,
+                                     params,
+                                     &fax_adjusted_width, aw,
+                                     tiff_chunky_post_cm, tfdev->icclink,
+                                     tfdev->icclink->num_output);
     }
     if (code < 0)
         return code;

@@ -44,7 +44,7 @@ inline static void process_at_pixel(ClapTrap      * gs_restrict ct,
     int            width        = ct->width;
     int            height       = ct->height;
 #ifndef NDEBUG
-    int            num_comp_lim = ct->num_comps;
+    int            num_comp_lim = ct->num_comps-1;
 #endif
     int            max_x_offset = ct->max_x_offset;
     int            max_y_offset = ct->max_y_offset;
@@ -152,7 +152,7 @@ int ClapTrap_GetLinePlanar(ClapTrap       * gs_restrict ct,
     int x;
     int line_offset;
     unsigned char *process;
-    int num_comp_lim = ct->num_comps;
+    int num_comp_lim = ct->num_comps-1;
 
     /* Read in as many lines as we need */
     max_y = ct->y + ct->max_y_offset;

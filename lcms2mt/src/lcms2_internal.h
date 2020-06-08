@@ -1,7 +1,7 @@
 
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2017 Marti Maria Saguer
+//  Copyright (c) 1998-2020 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -25,7 +25,6 @@
 //
 
 #ifndef _lcms_internal_H
-#define _lcms_internal_H
 
 // Include plug-in foundation
 #ifndef _lcms2mt_plugin_H
@@ -48,7 +47,7 @@
 #endif
 
 // BorlandC 5.5, VC2003 are broken on that
-#if defined(__BORLANDC__) || defined(_MSC_VER) && (_MSC_VER < 1400) // 1400 == VC++ 8.0
+#if defined(__BORLANDC__) || (defined(_MSC_VER) && (_MSC_VER < 1400)) // 1400 == VC++ 8.0
 #define sinf(x) (float)sin((float)x)
 #define sqrtf(x) (float)sqrt((float)x)
 #endif
@@ -518,8 +517,6 @@ struct _cmsContext_struct {
                                       // If NULL, then it reverts to global Context0
 
     _cmsMemPluginChunkType DefaultMemoryManager;  // The allocators used for creating the context itself. Cannot be overridden
-
-    cmsUInt32Number dwFlags;          // Horrid, but safe hack
 };
 
 // Returns a pointer to a valid context structure, including the global one if id is zero.
@@ -941,6 +938,9 @@ cmsBool           _cmsReadCHAD(cmsContext ContextID, cmsMAT3* Dest, cmsHPROFILE 
 
 // Profile linker --------------------------------------------------------------------------------------------------
 
+// Link several profiles to obtain a single LUT modelling the whole color transform. Intents, Black point
+// compensation and Adaptation parameters may vary across profiles. BPC and Adaptation refers to the PCS
+// after the profile. I.e, BPC[0] refers to connexion between profile(0) and profile(1)
 cmsPipeline* _cmsLinkProfiles(cmsContext         ContextID,
                               cmsUInt32Number    nProfiles,
                               cmsUInt32Number    TheIntents[],
@@ -1120,4 +1120,5 @@ void _cmsFindFormatter(_cmsTRANSFORM* p, cmsUInt32Number InputFormat, cmsUInt32N
 
 cmsUInt32Number _cmsAdjustReferenceCount(cmsUInt32Number *rc, int delta);
 
+#define _lcms_internal_H
 #endif

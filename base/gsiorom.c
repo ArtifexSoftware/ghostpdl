@@ -412,3 +412,40 @@ romfs_enumerate_next(gs_memory_t * mem, file_enum *pfen, char *ptr, uint maxlen)
     romfs_enumerate_close(mem, pfen);
     return ~(uint)0;
 }
+
+int
+romfs_file_len(gs_memory_t * mem, const char *fname)
+{
+    extern const uint32_t *gs_romfs[];
+    extern const time_t gs_romfs_buildtime;
+    const uint32_t *node_scan = gs_romfs[0], *node = NULL;
+    uint32_t filelen, blocks;
+    int i;
+    char *filename;
+    uint namelen = strlen(fname);
+
+    /* a build time of zero indicates we have the "dummy" romfs
+     * used when COMPILE_INITS==0 - returning a specific error here
+     * gives us a quick way to check for that.
+     */
+    if (gs_romfs_buildtime == (time_t)0) {
+        return_error(gs_error_unregistered);
+    }
+
+    /* scan the inodes to find the requested file */
+    for (i=0; node_scan != 0; i++, node_scan = gs_romfs[i]) {
+        filelen = get_u32_big_endian(node_scan) & 0x7fffffff;	/* ignore compression bit */
+        blocks = (filelen+ROMFS_BLOCKSIZE-1)/ ROMFS_BLOCKSIZE;
+        filename = (char *)(&(node_scan[1+(2*blocks)]));
+        if ((namelen == strlen(filename)) &&
+            (strncmp(filename, fname, namelen) == 0)) {
+            node = node_scan;
+            break;
+        }
+    }
+    /* inode points to the file (or NULL if not found */
+    if (node == NULL)
+        return_error(gs_error_undefinedfilename);
+
+    return (int)filelen;
+}

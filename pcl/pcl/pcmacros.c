@@ -79,7 +79,7 @@ pcl_execute_macro(const pcl_macro_t * pmac, pcl_state_t * pcs,
     if (reset) {
         code = pcl_do_resets(pcs, reset);
         if (code < 0)
-            return code;
+            goto check_after;
     }
     state.definitions = pcs->pcl_commands;
     state.hpgl_parser_state = &gstate;
@@ -91,6 +91,7 @@ pcl_execute_macro(const pcl_macro_t * pmac, pcl_state_t * pcs,
     pcs->macro_level++;
     code = pcl_process(&state, pcs, &r);
     pcs->macro_level--;
+    check_after:
     if (after) {
         int errcode = do_copies(&saved, pcs, after);
         if (errcode < 0)

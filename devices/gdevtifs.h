@@ -55,10 +55,8 @@ dev_proc_put_params(tiff_put_params_downscale_cmyk_ets);
 int tiff_print_page(gx_device_printer *dev, TIFF *tif, int min_feature_size);
 
 int tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif,
-                                  int factor, int msf, int aw, int bpc,
-                                  int num_comps,
-                                  int trap_w, int trap_h, const int *trap_order,
-                                  int ets);
+                                  gx_downscaler_params *params,
+                                  int aw, int bpc, int num_comps);
 void tiff_set_handlers (void);
 
 /*
