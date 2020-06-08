@@ -412,7 +412,7 @@ int pdfi_page_info(pdf_context *ctx, uint64_t page_num, pdf_info_t *info)
         goto done;
     }
 
-    code = pdfi_check_page(ctx, page_dict, true);
+    code = pdfi_check_page(ctx, page_dict, false);
     if (code < 0)
         goto done;
 
