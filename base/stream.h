@@ -326,6 +326,7 @@ int spseek(stream *, gs_offset_t);
 /* Allocate a stream or a stream state. */
 stream *s_alloc(gs_memory_t *, client_name_t);
 stream_state *s_alloc_state(gs_memory_t *, gs_memory_type_ptr_t, client_name_t);
+stream *s_alloc_immovable(gs_memory_t *, client_name_t);
 /*
  * Initialize a separately allocated stream or stream state, as if allocated
  * by s_alloc[_state].

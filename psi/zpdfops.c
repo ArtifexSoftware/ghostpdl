@@ -298,11 +298,24 @@ done:
  */
 typedef struct pdffile_s {
     pdf_context *ctx;
+    stream *ps_stream;
+    stream *pdf_stream;
 } pdffile_t;
 
 /* Structure descriptors */
 static void pdffile_finalize(const gs_memory_t *cmem, void *vptr);
-gs_private_st_simple_final(st_pdffile_t, pdffile_t, "pdffile_struct", pdffile_finalize);
+
+gs_private_st_composite_final(st_pdffile_t, pdffile_t, "pdffile_struct",\
+    pdffile_enum_ptrs, pdffile_reloc_ptrs, pdffile_finalize);
+
+static
+ENUM_PTRS_BEGIN(pdffile_enum_ptrs) return 0;
+ENUM_PTR2(0, pdffile_t, ps_stream, pdf_stream);
+ENUM_PTRS_END
+
+static RELOC_PTRS_BEGIN(pdffile_reloc_ptrs);
+RELOC_PTR2(pdffile_t, ps_stream, pdf_stream);
+RELOC_PTRS_END
 
 static void
 pdffile_finalize(const gs_memory_t *cmem, void *vptr)
@@ -332,8 +345,11 @@ static int zPDFstream(i_ctx_t *i_ctx_p)
         return_error(gs_error_VMerror);
 
     pdffile->ctx = ctx;
+    pdffile->ps_stream = s;
+    pdffile->pdf_stream = s_alloc_immovable(imemory, "PDFstream copy of PS stream");
+    *(pdffile->pdf_stream) = *(pdffile->ps_stream);
 
-    code = pdfi_set_input_stream(ctx, s);
+    code = pdfi_set_input_stream(ctx, pdffile->pdf_stream);
     if (code < 0)
         return code;
 
@@ -363,6 +379,7 @@ static int zPDFfile(i_ctx_t *i_ctx_p)
         return_error(gs_error_VMerror);
 
     pdffile->ctx = ctx;
+    pdffile->ps_stream = NULL;
 
     memcpy(pdffilename, op->value.bytes, r_size(op));
     pdffilename[r_size(op)] = 0;
@@ -387,6 +404,10 @@ static int zPDFclose(i_ctx_t *i_ctx_p)
     if (pdffile->ctx != NULL) {
         code = pdfi_free_context(imemory, pdffile->ctx);
         pdffile->ctx = NULL;
+    }
+    if (pdffile->ps_stream) {
+        *(pdffile->ps_stream) = *(pdffile->pdf_stream);
+        memset(pdffile->pdf_stream, 0x00, sizeof(stream));
     }
     pop(1);
     return code;

@@ -125,6 +125,18 @@ s_alloc(gs_memory_t * mem, client_name_t cname)
     s_init(s, mem);
     return s;
 }
+stream *
+s_alloc_immovable(gs_memory_t * mem, client_name_t cname)
+{
+    stream *s = gs_alloc_struct_immovable(mem, stream, &st_stream, cname);
+
+    if_debug2m('s', mem, "[s]alloc(%s) = "PRI_INTPTR"\n",
+               client_name_string(cname), (intptr_t) s);
+    if (s == 0)
+        return 0;
+    s_init(s, mem);
+    return s;
+}
 
 /* Allocate a stream state and initialize it minimally. */
 void
