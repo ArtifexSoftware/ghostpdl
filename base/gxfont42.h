@@ -96,7 +96,7 @@ struct gs_type42_data_s {
      * the definition and/or by changing the name of the data member, we add
      * another member trueNumGlyphs to hold the value from maxp.
      */
-    uint numGlyphs;		/* from size of loca */
+    int numGlyphs;		/* from size of loca */
     uint trueNumGlyphs;		/* from maxp */
     uint maxPoints;         /* from maxp (used by pdfwrite) */
     uint maxContours;       /* from maxp (used by pdfwrite) */
