@@ -185,7 +185,7 @@ hp:	r = *pr;
             if (count) {
                 --p;
                 status = 0;	/* reprocess error next time */
-            } else if (*p == '%')
+            } else if (p > pr->ptr && p < pr->limit && *p == '%')
                 goto hp;	/* ignore % */
         }
         p = q;
