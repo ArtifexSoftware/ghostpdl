@@ -691,6 +691,11 @@ int pdfi_set_input_stream(pdf_context *ctx, stream *stm)
     bool found = false;
     int code;
 
+    /* In case of broken PDF files, the repair could run off the end of the
+     * file, so make sure that doing so does *not* automagically close the file
+     */
+    stm->close_at_eod = false;
+
     ctx->main_stream = (pdf_stream *)gs_alloc_bytes(ctx->memory, sizeof(pdf_stream), "PDF interpreter allocate main PDF stream");
     if (ctx->main_stream == NULL)
         return_error(gs_error_VMerror);
@@ -835,7 +840,6 @@ int pdfi_open_pdf_file(pdf_context *ctx, char *filename)
         emprintf1(ctx->memory, "Failed to open file %s\n", filename);
         return_error(gs_error_ioerror);
     }
-    s->close_at_eod = false;
     code = pdfi_set_input_stream(ctx, s);
     return code;
 }
