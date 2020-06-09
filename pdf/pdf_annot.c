@@ -2939,9 +2939,227 @@ int pdfi_do_annotations(pdf_context *ctx, pdf_dict *page_dict)
     return code;
 }
 
-static int pdfi_form_draw_field(pdf_context *ctx, pdf_dict *AcroForm, pdf_dict *field)
+/* Get value from a field, or its Parents (recursive)
+ * Returns <0 on error, 0 if not found, >0 if found
+ */
+static int pdfi_form_get_inheritable(pdf_context *ctx, pdf_dict *field, const char *Key, pdf_obj_type type, pdf_obj **o)
 {
+    int code = 0;
+    pdf_dict *Parent = NULL;
+
+    /* Check this field */
+    code = pdfi_dict_knownget_type(ctx, field, Key, type, o);
+    if (code != 0) goto exit;
+
+    /* If not found, recursively check Parent, if any */
+    code = pdfi_dict_knownget_type(ctx, field, "Parent", PDF_DICT, (pdf_obj **)&Parent);
+    if (code <= 0) goto exit;
+    code = pdfi_form_get_inheritable(ctx, Parent, Key, type, o);
+
+ exit:
+    pdfi_countdown(Parent);
+    return code;
+}
+
+/* draw field Btn */
+static int pdfi_form_draw_Btn(pdf_context *ctx, pdf_dict *AcroForm, pdf_dict *field, pdf_dict *AP)
+{
+    int code;
+    bool Radio = false;
+    bool Pushbutton = false;
+    pdf_num *Ff = NULL;
+    int64_t value;
+
+    /* TODO: There can be Kids array. I think it should be handled in caller.
+     * Need an example...
+     */
+    if (AP != NULL) {
+        code = pdfi_annot_draw_AP(ctx, field, AP);
+        goto exit;
+    }
+
+    /* Get Ff field (default is 0) */
+    code = pdfi_form_get_inheritable(ctx, field, "Ff", PDF_INT, (pdf_obj **)&Ff);
+    if (code < 0) goto exit;
+
+    if (code == 0)
+        value = 0;
+    else
+        value = Ff->value.i;
+    Radio = value & 0x10000; /* Bit 16 */
+    Pushbutton = value & 0x20000; /* Bit 17 */
+
+    dmprintf(ctx->memory, "WARNING: AcroForm field 'Btn' with no AP not implemented.\n");
+    dmprintf2(ctx->memory, "       : Radio = %s, Pushbutton = %s.\n",
+              Radio ? "TRUE" : "FALSE", Pushbutton ? "TRUE" : "FALSE");
+ exit:
     return 0;
+}
+
+/* draw field Tx */
+static int pdfi_form_draw_Tx(pdf_context *ctx, pdf_dict *AcroForm, pdf_dict *field, pdf_dict *AP)
+{
+    int code = 0;
+
+    if (AP != NULL)
+        return pdfi_annot_draw_AP(ctx, field, AP);
+
+    dmprintf(ctx->memory, "WARNING: AcroForm field 'Tx' with no AP not implemented.\n");
+    return code;
+}
+
+/* draw field Ch */
+static int pdfi_form_draw_Ch(pdf_context *ctx, pdf_dict *AcroForm, pdf_dict *field, pdf_dict *AP)
+{
+    int code = 0;
+    bool NeedAppearances = false; /* TODO: Spec says default is false, gs code uses true... */
+
+    code = pdfi_dict_get_bool(ctx, AcroForm, "NeedAppearances", &NeedAppearances);
+    if (code < 0 && code != gs_error_undefined) goto exit;
+
+    if (!NeedAppearances && AP != NULL)
+        return pdfi_annot_draw_AP(ctx, field, AP);
+
+    dmprintf(ctx->memory, "WARNING: AcroForm field 'Ch' with no AP not implemented.\n");
+ exit:
+    return code;
+}
+
+/* draw field Sig */
+static int pdfi_form_draw_Sig(pdf_context *ctx, pdf_dict *AcroForm, pdf_dict *field, pdf_dict *AP)
+{
+    dmprintf(ctx->memory, "WARNING: AcroForm field 'Sig' not implemented.\n");
+    return 0;
+}
+
+/* draw terminal field */
+static int pdfi_form_draw_terminal(pdf_context *ctx, pdf_dict *Page, pdf_dict *AcroForm, pdf_dict *field)
+{
+    int code = 0;
+    pdf_indirect_ref *P = NULL;
+    pdf_name *FT = NULL;
+    pdf_dict *AP = NULL;
+
+    /* See if the field goes on this page */
+    /* NOTE: We know the "P" is an indirect ref, so just fetch it that way.
+     * If we fetch the actual object, it will result in a cyclical reference in the cache
+     * that causes a memory leak, so don't do that.
+     * (The cyclical reference is because the object containing P is actually inside P)
+     */
+    code = pdfi_dict_get_ref(ctx, field, "P", &P);
+    if (code < 0) {
+        if (code == gs_error_undefined)
+            code = 0;
+        goto exit;
+    }
+
+    if (P->ref_object_num != Page->object_num) {
+        /* Not this page */
+        code = 0;
+        goto exit;
+    }
+
+    /* Render the field */
+    /* NOTE: The spec says the FT is inheritable, implying it might be present in
+     * a Parent and not explicitly in a Child.  The gs implementation doesn't seem
+     * to handle this case, but I am going to go ahead and handle it.  We will figure
+     * out if this causes diffs later, if ever...
+     */
+    code = pdfi_form_get_inheritable(ctx, field, "FT", PDF_NAME, (pdf_obj **)&FT);
+    if (code <= 0) goto exit;
+
+    code = pdfi_annot_get_NormAP(ctx, field, &AP);
+    if (code < 0) goto exit;
+
+    if (pdfi_name_is(FT, "Btn")) {
+        code = pdfi_form_draw_Btn(ctx, AcroForm, field, AP);
+    } else if (pdfi_name_is(FT, "Tx")) {
+        code = pdfi_form_draw_Tx(ctx, AcroForm, field, AP);
+    } else if (pdfi_name_is(FT, "Ch")) {
+        code = pdfi_form_draw_Ch(ctx, AcroForm, field, AP);
+    } else if (pdfi_name_is(FT, "Sig")) {
+        code = pdfi_form_draw_Sig(ctx, AcroForm, field, AP);
+    } else {
+        dmprintf(ctx->memory, "*** WARNING unknown field FT ignored\n");
+        /* TODO: Handle warning better */
+        code = 0;
+    }
+
+ exit:
+    pdfi_countdown(FT);
+    pdfi_countdown(P);
+    pdfi_countdown(AP);
+    return code;
+}
+
+/* From pdf_draw.ps/draw_form_field():
+% We distinguish 4 types of nodes on the form field tree:
+%  - non-terminal field - has a kid that refers to the parent (or anywhere else)
+%  - terminal field with separate widget annotations - has a kid that doesn't have a parent
+%  - terminal field with a merged widget annotation - has no kids
+%  - widget annotation - has /Subtype and /Rect
+%
+% The recursive enumeration of the form fields doesn't descend into widget annotations.
+*/
+static int pdfi_form_draw_field(pdf_context *ctx, pdf_dict *Page, pdf_dict *AcroForm, pdf_dict *field)
+{
+    int code = 0;
+    pdf_array *Kids = NULL;
+    pdf_dict *child = NULL;
+    pdf_dict *Parent = NULL;
+    int i;
+
+    code = pdfi_dict_knownget_type(ctx, field, "Kids", PDF_ARRAY, (pdf_obj **)&Kids);
+    if (code < 0) goto exit;
+    if (code == 0) {
+        code = pdfi_form_draw_terminal(ctx, Page, AcroForm, field);
+        goto exit;
+    }
+
+    /* Handle Kids */
+    if (pdfi_array_size(Kids) <= 0) {
+        dmprintf(ctx->memory, "*** Error: Ignoring empty /Kids array in Form field.\n");
+        dmprintf(ctx->memory, "    Output may be incorrect.\n");
+        /* TODO: Set warning flag */
+        code = 0;
+        goto exit;
+    }
+
+    /* Check first child to see if it has a parent */
+    code = pdfi_array_get_type(ctx, Kids, 0, PDF_DICT, (pdf_obj **)&child);
+    if (code < 0) goto exit;
+    code = pdfi_dict_knownget_type(ctx, child, "Parent", PDF_DICT, (pdf_obj **)&Parent);
+    if (code < 0) goto exit;
+
+    /* If kid has no parent, then treat this as terminal field */
+    if (code == 0) {
+        /* TODO: This case isn't tested because no examples available.
+         * I think it's only relevant for Btn, and not sure if it
+         * should be dealt with here or in Btn routine.
+         */
+        code = pdfi_form_draw_terminal(ctx, Page, AcroForm, field);
+        goto exit;
+    }
+
+    pdfi_countdown(child);
+    child = NULL;
+    /* Render the Kids (recursive) */
+    for (i=0; i<pdfi_array_size(Kids); i++) {
+        code = pdfi_array_get_type(ctx, Kids, i, PDF_DICT, (pdf_obj **)&child);
+        if (code < 0) goto exit;
+
+        code = pdfi_form_draw_field(ctx, Page, AcroForm, child);
+        if (code < 0) goto exit;
+
+        pdfi_countdown(child);
+        child = NULL;
+    }
+
+ exit:
+    pdfi_countdown(child);
+    pdfi_countdown(Kids);
+    pdfi_countdown(Parent);
+    return code;
 }
 
 int pdfi_do_acroform(pdf_context *ctx, pdf_dict *page_dict)
@@ -2967,7 +3185,7 @@ int pdfi_do_acroform(pdf_context *ctx, pdf_dict *page_dict)
         code = pdfi_array_get_type(ctx, Fields, i, PDF_DICT, (pdf_obj **)&field);
         if (code < 0)
             continue;
-        code = pdfi_form_draw_field(ctx, AcroForm, field);
+        code = pdfi_form_draw_field(ctx, page_dict, AcroForm, field);
         if (code < 0)
             goto exit;
         pdfi_countdown(field);

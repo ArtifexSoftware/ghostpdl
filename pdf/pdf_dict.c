@@ -201,6 +201,35 @@ int pdfi_dict_get_by_key(pdf_context *ctx, pdf_dict *d, const pdf_name *Key, pdf
     return_error(gs_error_undefined);
 }
 
+/* Get indirect reference without de-referencing it */
+int pdfi_dict_get_ref(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_indirect_ref **o)
+{
+    int i=0;
+    pdf_name *t;
+
+    *o = NULL;
+
+    if (d->type != PDF_DICT)
+        return_error(gs_error_typecheck);
+
+    for (i=0;i< d->entries;i++) {
+        t = (pdf_name *)d->keys[i];
+
+        if (t && t->type == PDF_NAME) {
+            if (pdfi_name_is((pdf_name *)t, Key)) {
+                if (d->values[i]->type == PDF_INDIRECT) {
+                    *o = (pdf_indirect_ref *)d->values[i];
+                    pdfi_countup(*o);
+                    return 0;
+                } else {
+                    return_error(gs_error_typecheck);
+                }
+            }
+        }
+    }
+    return_error(gs_error_undefined);
+}
+
 /* As per pdfi_dict_get(), but doesn't replace an indirect reference in a dictionary with a
  * new object. This is for Resources following, such as Do, where we will have to seek and
  * read the indirect object anyway, and we need to ensure that Form XObjects (for example)

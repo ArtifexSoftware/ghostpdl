@@ -39,6 +39,7 @@ int pdfi_dict_get_by_key(pdf_context *ctx, pdf_dict *d, const pdf_name *Key, pdf
 int pdfi_dict_get_no_store_R(pdf_context *ctx, pdf_dict *d, const pdf_name *Key, pdf_obj **o);
 int pdfi_dict_get_type2(pdf_context *ctx, pdf_dict *d, const char *Key1, const char *Key2, pdf_obj_type type, pdf_obj **o);
 int pdfi_dict_get_type(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj_type t, pdf_obj **o);
+int pdfi_dict_get_ref(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_indirect_ref **o);
 int pdfi_dict_get_int2(pdf_context *ctx, pdf_dict *d, const char *Key1, const char *Key2, int64_t *i);
 int pdfi_dict_get_int(pdf_context *ctx, pdf_dict *d, const char *Key, int64_t *i);
 int pdfi_dict_get_int_def(pdf_context *ctx, pdf_dict *d, const char *Key, int64_t *i, int64_t def_val);
