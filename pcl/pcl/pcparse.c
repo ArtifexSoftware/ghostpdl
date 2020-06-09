@@ -25,6 +25,7 @@
 #include "pcursor.h"
 #include "rtmisc.h"
 #include "rtgmode.h"
+#include "rtraster.h"
 
 /* We don't know whether an Enable Display Functions takes effect while */
 /* defining a macro.  To play it safe, we're providing both options. */
@@ -699,6 +700,10 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
 
         if (mcode < 0 && code >= 0)
             code = mcode;
+    }
+    if (code < 0) {
+        /* This avoids memento squeeze leaks. */
+        (void) pcl_complete_raster(pcs);
     }
     return code;
 }
