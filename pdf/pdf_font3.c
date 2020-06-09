@@ -46,7 +46,7 @@ pdfi_type3_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
     if (code < 0)
         return code;
 
-    code = pdfi_dict_get_by_key(font->ctx, font->CharProcs, (const char *)GlyphName, (pdf_obj **)&CharProc);
+    code = pdfi_dict_get_by_key(font->ctx, font->CharProcs, GlyphName, (pdf_obj **)&CharProc);
     if (code == gs_error_undefined) {
         byte *Key = NULL;
         /* Can't find the named glyph, try to find a /.notdef as a substitute */
