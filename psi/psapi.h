@@ -64,7 +64,11 @@ typedef enum {
     psapi_spt_int     = 2,   /* void * is a pointer to an int */
     psapi_spt_float   = 3,   /* void * is a float * */
     psapi_spt_name    = 4,   /* void * is a char * */
-    psapi_spt_string  = 5    /* void * is a char * */
+    psapi_spt_string  = 5,   /* void * is a char * */
+    psapi_spt_long    = 6,   /* void * is a long * */
+    psapi_spt_i64     = 7,   /* void * is an int64_t * */
+    psapi_spt_size_t  = 8    /* void * is a size_t * */
+
 } psapi_sptype;
 int
 psapi_set_param(gs_lib_ctx_t *ctx,

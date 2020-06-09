@@ -74,9 +74,15 @@
 <li><a href="#run"><code>gsapi_run_string_end</code></a></li>
 <li><a href="#run"><code>gsapi_run_string_with_length</code></a></li>
 <li><a href="#run"><code>gsapi_run_string</code></a></li>
+<li><a href="#run"><code>gsapi_run_file</code></a></li>
 <li><a href="#init"><code>gsapi_init_with_args</code></a></li>
-<li><a href="#run"><code>gsapi_run_*</code></a></li>
 <li><a href="#exit"><code>gsapi_exit</code></a></li>
+<li><a href="#set_param"><code>gsapi_set_param</code></a></li>
+<li><a href="#add_control_path"><code>gsapi_add_control_path</code></a></li>
+<li><a href="#remove_control_path"><code>gsapi_remove_control_path</code></a></li>
+<li><a href="#purge_control_paths"><code>gsapi_purge_control_paths</code></a></li>
+<li><a href="#activate_path_control"><code>gsapi_activate_path_control</code></a></li>
+<li><a href="#is_path_control_active"><code>gsapi_is_path_control_active</code></a></li>
 <li><a href="#add_fs"><code>gsapi_add_fs</code></a></li>
 <li><a href="#remove_fs"><code>gsapi_remove_fs</code></a></li>
 <li><a href="#return_codes">Return codes</a></li>
@@ -481,6 +487,43 @@ pieces and submit each in a separate
 Exit the interpreter.
 This must be called on shutdown if <code>gsapi_init_with_args()</code>
 has been called, and just before <code>gsapi_delete_instance()</code>.
+</blockquote>
+
+<h3><a name="set_param"></a><code>gsapi_set_param()</code></h3>
+<blockquote>
+Set a parameter.
+Equivalent to passing a parameter on the command line.
+</blockquote>
+
+<h3><a name="add_control_path"></a><code>gsapi_add_control_path()</code></h3>
+<blockquote>
+Add a (case sensitive) path to one of the lists of permitted paths for file access.
+See <a href="Use.htm#Safer">here</a> for more information about permitted paths.
+</blockquote>
+
+<h3><a name="remove_control_path"></a><code>gsapi_remove_control_path()</code></h3>
+<blockquote>
+Remove a (case sensitive) path from one of the lists of permitted paths for file access.
+See <a href="Use.htm#Safer">here</a> for more information about permitted paths.
+</blockquote>
+
+<h3><a name="purge_control_paths"></a><code>gsapi_purge_control_paths()</code></h3>
+<blockquote>
+Clear all the paths from one of the lists of permitted paths for file access.
+See <a href="Use.htm#Safer">here</a> for more information about permitted paths.
+</blockquote>
+
+<h3><a name="activate_path_control"></a><code>gsapi_activate_path_control()</code></h3>
+<blockquote>
+Enable/Disable path control (i.e. whether paths are checked against permitted paths
+before access is granted).
+See <a href="Use.htm#Safer">here</a> for more information about permitted paths.
+</blockquote>
+
+<h3><a name="is_path_control_active"></a><code>gsapi_is_path_control_active()</code></h3>
+<blockquote>
+Query whether path control is activated or not.
+See <a href="Use.htm#Safer">here</a> for more information about permitted paths.
 </blockquote>
 
 <h3><a name="add_fs"></a><code>gsapi_add_fs()</code></h3>

@@ -335,6 +335,15 @@ psapi_set_param(gs_lib_ctx_t *ctx,
         case psapi_spt_name:
             code = name_ref(ctx->memory, val, strlen(val), &value, 1);
             break;
+        case psapi_spt_long:
+            make_int(&value, *(long *)val);
+            break;
+        case psapi_spt_i64:
+            make_int(&value, *(int64_t *)val);
+            break;
+        case psapi_spt_size_t:
+            make_int(&value, *(size_t *)val);
+            break;
         default:
             break;
     }

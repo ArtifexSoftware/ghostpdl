@@ -1303,6 +1303,18 @@ pl_main_set_typed_param(pl_main_instance_t * pmi, pl_set_param_type type, const 
         code = param_write_string((gs_param_list *) params,
                                   param, &str_value);
         break;
+    case pl_spt_long:
+        code = param_write_long((gs_param_list *) params,
+                                param, (long *)value);
+        break;
+    case pl_spt_i64:
+        code = param_write_i64((gs_param_list *) params,
+                               param, (int64_t *)value);
+        break;
+    case pl_spt_size_t:
+        code = param_write_size_t((gs_param_list *) params,
+                                  param, (size_t *)value);
+        break;
     default:
         code = gs_note_error(gs_error_rangecheck);
     }

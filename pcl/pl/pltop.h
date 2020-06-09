@@ -80,7 +80,10 @@ typedef enum {
     pl_spt_int     = 2,   /* void * is a pointer to an int */
     pl_spt_float   = 3,   /* void * is a float * */
     pl_spt_name    = 4,   /* void * is a char * */
-    pl_spt_string  = 5    /* void * is a char * */
+    pl_spt_string  = 5,   /* void * is a char * */
+    pl_spt_long    = 6,   /* void * is a long * */
+    pl_spt_i64     = 7,   /* void * is an int64_t * */
+    pl_spt_size_t  = 8    /* void * is a size_t * */
 } pl_set_param_type;
 int pl_set_param(pl_interp_implementation_t *, pl_set_param_type type, const char *param, const void *value);
 typedef int (*pl_interp_proc_set_param_t) (pl_interp_implementation_t *,
