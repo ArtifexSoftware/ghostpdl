@@ -3312,8 +3312,8 @@ cdj_set_bpp(gx_device *pdev, int bpp, int ccomps)
             gs_closedevice(pdev);
         }
         if (pdev->is_open) {
-            int				code;	/* Return code */
-            gdev_prn_space_params	sp;	/* Space parameter data */
+            int			code;	/* Return code */
+            gdev_space_params	sp;	/* Space parameter data */
 
             /* Reallocate memory for device */
             sp = ((gx_device_printer *)pdev)->space_params;

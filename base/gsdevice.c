@@ -1352,3 +1352,27 @@ int gx_callout(gx_device *dev, int id, int size, void *data)
     return gs_lib_ctx_callout(dev->memory, dev->dname,
                               id, size, data);
 }
+
+/* compare two space_params, we can't do this with memcmp since there is padding in the structure */
+int
+gdev_space_params_cmp(const gdev_space_params sp1,
+                      const gdev_space_params sp2) {
+  if (sp1.MaxBitmap != sp2.MaxBitmap)
+    return(1);
+  if (sp1.BufferSpace != sp2.BufferSpace)
+    return(1);
+  if (sp1.band.BandWidth != sp2.band.BandWidth)
+    return(1);
+  if (sp1.band.BandHeight != sp2.band.BandHeight)
+    return(1);
+  if (sp1.band.BandBufferSpace != sp2.band.BandBufferSpace)
+    return(1);
+  if (sp1.band.tile_cache_size != sp2.band.tile_cache_size)
+    return(1);
+  if (sp1.params_are_read_only != sp2.params_are_read_only)
+    return(1);
+  if (sp1.banding_type != sp2.banding_type)
+    return(1);
+
+  return(0);
+}

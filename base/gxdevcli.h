@@ -675,8 +675,7 @@ typedef struct gx_device_cached_colors_s {
  * Define the parameters controlling banding.
  */
 /* if you make any additions/changes to this structure you need to make
-   the appropriate additions/changes to the compare_gdev_prn_space_params()
-   function in gdevprn.c */
+   the appropriate additions/changes to gdev_space_params_cmp() */
 typedef struct gx_band_params_s {
     int BandWidth;		/* (optional) band width in pixels */
     int BandHeight;		/* (optional) */
@@ -693,8 +692,7 @@ typedef enum {
 } gdev_banding_type;
 
 /* if you make any additions/changes to this structure you need to make
-   the appropriate additions/changes to the compare_gdev_prn_space_params()
-   function in gdevprn.c */
+   the appropriate additions/changes to the gdev_space_params_cmp() */
 typedef struct gdev_space_params_s {
     size_t MaxBitmap;		/* max size of non-buffered bitmap */
     size_t BufferSpace;		/* space to use for buffer */
@@ -702,6 +700,11 @@ typedef struct gdev_space_params_s {
     bool params_are_read_only;	/* true if put_params may not modify this struct */
     gdev_banding_type banding_type;	/* used to force banding or bitmap */
 } gdev_space_params;
+
+/* Returns 0 for a match, non-zero otherwise. Like memcmp, but allowing
+ * for uninitialised padding. */
+int gdev_space_params_cmp(const gdev_space_params sp1,
+                          const gdev_space_params sp2);
 
 typedef struct gdev_pagelist_s {
         rc_header rc;

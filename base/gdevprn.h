@@ -99,7 +99,7 @@ typedef struct gx_printer_device_procs_s {
      */
 
 #define prn_dev_proc_get_space_params(proc)\
-  void proc(const gx_device_printer *, gdev_prn_space_params *)
+  void proc(const gx_device_printer *, gdev_space_params *)
     prn_dev_proc_get_space_params((*get_space_params));
 
 } gx_printer_device_procs;
@@ -580,10 +580,10 @@ int gdev_prn_print_scan_lines(gx_device *);
 
 /* Allocate / reallocate / free printer memory. */
 int gdev_prn_allocate_memory(gx_device *pdev,
-                             gdev_prn_space_params *space,
+                             gdev_space_params *space,
                              int new_width, int new_height);
 int gdev_prn_reallocate_memory(gx_device *pdev,
-                               gdev_prn_space_params *space,
+                               gdev_space_params *space,
                                int new_width, int new_height);
 int gdev_prn_free_memory(gx_device *pdev);
 
