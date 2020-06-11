@@ -127,8 +127,7 @@ typedef struct bg_print_s {
 } bg_print_t;
 
 #define gx_prn_device_common\
-        byte skip[max(sizeof(gx_device_memory), sizeof(gx_device_clist)) -\
-                  sizeof(gx_device) + sizeof(double) /* padding */];\
+        gx_device_clist_mutatable_common;\
         gx_printer_device_procs printer_procs;\
                 /* ------ Device parameters that must be set ------ */\
                 /* ------ before calling the device open routine. ------ */\
@@ -141,18 +140,11 @@ typedef struct bg_print_s {
                 /* ------ End of parameters ------ */\
         bool file_is_new;		/* true iff file just opened */\
         gp_file *file;  		/* output file */\
-        long buffer_space;	        /* amount of space for clist buffer, */\
-                                        /* 0 means not using clist */\
-        byte *buf;			/* buffer for rendering */\
-        gs_memory_t *buffer_memory;	/* allocator for command list */\
-        gs_memory_t *bandlist_memory;	/* allocator for bandlist files */\
-        uint clist_disable_mask;	/* mask of clist options to disable */\
         bool bg_print_requested;	/* request background printing of page from clist */\
         bg_print_t bg_print;            /* background printing data shared with thread */\
         int num_render_threads_requested;	/* for multiple band rendering threads */\
         gx_saved_pages_list *saved_pages_list;	/* list when we are saving pages instead of printing */\
-        gx_device_procs save_procs_while_delaying_erasepage;	/* save device procs while delaying erasepage. */\
-        gx_device_procs orig_procs	/* original (std_)procs */
+        gx_device_procs save_procs_while_delaying_erasepage	/* save device procs while delaying erasepage. */
 
 /* The device descriptor */
 struct gx_device_printer_s {
@@ -161,7 +153,7 @@ struct gx_device_printer_s {
 };
 
 /* A useful check to determine if the page is being rendered as a clist */
-#define PRINTER_IS_CLIST(pdev) ((gx_device_printer *)(pdev)->buffer_space != 0)
+#define PRINTER_IS_CLIST(pdev) (((gx_device_printer *)(pdev))->buffer_space != 0)
 
 extern_st(st_device_printer);
 #define public_st_device_printer()	/* in gdevprn.c */\
@@ -300,7 +292,7 @@ extern const gx_device_procs prn_bg_procs;
  */
 #define prn_device_body_rest2_(print_page, print_page_copies, duplex_set)\
          { 0 },		/* std_procs */\
-         { 0 },		/* skip */\
+         GX_CLIST_MUTATABLE_DEVICE_DEFAULTS,\
          { print_page,\
            print_page_copies,\
            { gx_default_create_buf_device,\
@@ -316,17 +308,11 @@ extern const gx_device_procs prn_bg_procs;
         0/*false*/, duplex_set,	/* Duplex[_set] */\
         0/*false*/,	/* file_is_new */\
         0,	        /* *file */\
-        0,		/* buffer_space */\
-        0,		/* *buf */\
-        0,		/* *buffer_memory */\
-        0,		/* *bandlist_memory */\
-        0,		/* clist_disable_mask */\
         0/*false*/,	/* bg_print_requested */\
         {  0/*sema*/, 0/*device*/, 0/*thread_id*/, 0/*num_copies*/, 0/*return_code*/ }, /* bg_print */\
         0, 		/* num_render_threads_requested */\
         0,              /* saved_pages_list */\
-        { 0 },	/* save_procs_while_delaying_erasepage */\
-        { 0 }	/* ... orig_procs */
+        { 0 }           /* save_procs_while_delaying_erasepage */
 #define prn_device_body_rest_(print_page)\
   prn_device_body_rest2_(print_page, gx_default_print_page_copies, -1)
 #define prn_device_body_copies_rest_(print_page_copies)\

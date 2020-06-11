@@ -1415,3 +1415,25 @@ clist_make_accum_device(gx_device *target, const char *dname, void *base, int sp
         */
         return cdev;
 }
+
+/* GC information */
+#define DEVICE_MUTATED_TO_CLIST(pdev) \
+    (((gx_device_clist_mutatable *)(pdev))->buffer_space != 0)
+
+static
+ENUM_PTRS_WITH(device_clist_mutatable_enum_ptrs, gx_device_clist_mutatable *pdev)
+    if (DEVICE_MUTATED_TO_CLIST(pdev))
+        ENUM_PREFIX(st_device_clist, 0);
+    else
+        ENUM_PREFIX(st_device_forward, 0);
+    break;
+ENUM_PTRS_END
+static
+RELOC_PTRS_WITH(device_clist_mutatable_reloc_ptrs, gx_device_clist_mutatable *pdev)
+{
+    if (DEVICE_MUTATED_TO_CLIST(pdev))
+        RELOC_PREFIX(st_device_clist);
+    else
+        RELOC_PREFIX(st_device_forward);
+} RELOC_PTRS_END
+public_st_device_clist_mutatable();

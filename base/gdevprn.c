@@ -37,10 +37,7 @@
 /* GC information */
 static
 ENUM_PTRS_WITH(device_printer_enum_ptrs, gx_device_printer *pdev);
-    if (PRINTER_IS_CLIST(pdev))
-        ENUM_PREFIX(st_device_clist, 2);
-    else
-        ENUM_PREFIX(st_device_forward, 2);
+    ENUM_PREFIX(st_device_clist_mutatable, 2);
     break;
 case 0:ENUM_RETURN(gx_device_enum_ptr(pdev->parent));
 case 1:ENUM_RETURN(gx_device_enum_ptr(pdev->child));
@@ -50,10 +47,7 @@ RELOC_PTRS_WITH(device_printer_reloc_ptrs, gx_device_printer *pdev)
 {
     pdev->parent = gx_device_reloc_ptr(pdev->parent, gcst);
     pdev->child = gx_device_reloc_ptr(pdev->child, gcst);
-    if (PRINTER_IS_CLIST(pdev))
-        RELOC_PREFIX(st_device_clist);
-    else
-        RELOC_PREFIX(st_device_forward);
+    RELOC_PREFIX(st_device_clist_mutatable);
 } RELOC_PTRS_END
 public_st_device_printer();
 
@@ -362,9 +356,9 @@ gdev_prn_tear_down(gx_device *pdev, byte **the_memory)
     }
 
     /* Reset device proc vector to default */
-    if (ppdev->orig_procs.open_device != 0)
+    if (ppdev->orig_procs.open_device != NULL)
         pdev->procs = ppdev->orig_procs;
-    ppdev->orig_procs.open_device = 0;	/* prevent uninit'd restore of procs */
+    ppdev->orig_procs.open_device = NULL; /* prevent uninit'd restore of procs */
 
     return was_command_list;
 }

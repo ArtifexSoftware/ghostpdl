@@ -347,7 +347,7 @@ const gx_device_bit gs_bitrgbtags_device =
             gx_default_end_page
         }, /* page_procs */
         { 0 }, /* procs */
-        { 0 }, /* skip */
+        GX_CLIST_MUTATABLE_DEVICE_DEFAULTS,
         {
           bittags_print_page,
           gx_default_print_page_copies,
@@ -364,17 +364,11 @@ const gx_device_bit gs_bitrgbtags_device =
         -1,    /* Duplex_set */
         false, /* file_is_new */
         NULL,  /* file */
-        0,     /* buffer_space */
-        NULL,  /* buf */
-        NULL,  /* buffer_memory */
-        NULL,  /* bandlist_memory */
-        0,     /* clist_disable_mask */
         false, /* bg_print_requested */
         {0},   /* bg_print */
         0,     /* num_render_threads_requested */
         NULL,  /* saved_pages_list */
-        {0},   /* save_procs_while_delaying_erasepage */
-        {0}    /* orig_procs */
+        {0}    /* save_procs_while_delaying_erasepage */
     };
 
 static void
