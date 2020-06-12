@@ -1398,7 +1398,7 @@ clist_make_accum_device(gx_device *target, const char *dname, void *base, int sp
 
         /* Fields left zeroed :
             int   max_fill_band;
-            int   is_printer;
+            dev_proc_dev_spec_op(orig_spec_op);
             float MediaSize[2];
             float ImagingBBox[4];
             bool  ImagingBBox_set;

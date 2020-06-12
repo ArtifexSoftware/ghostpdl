@@ -182,7 +182,7 @@ typedef struct gx_clist_state_s gx_clist_state;
         uint data_size;			/* size of buffer */\
         gx_band_params_t band_params;	/* band buffering parameters */\
         bool do_not_open_or_close_bandfiles;	/* if true, do not open/close bandfiles */\
-        int is_printer;                 /* if true, then clist is based on a prn device */\
+        dev_proc_dev_spec_op((*orig_spec_op)); /* Original dev spec op handler */\
                 /* Following are used for both writing and reading. */\
         gx_bits_cache_chunk *cache_chunk;	/* the only chunk of bits */\
         gx_bits_cache bits;\

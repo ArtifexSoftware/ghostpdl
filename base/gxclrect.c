@@ -623,8 +623,8 @@ clist_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
         return cwdev->op_fill_active || cwdev->op_stroke_active;
     }
     /* forward to the appropriate super class */
-    if (cdev->is_printer)
-        return gdev_prn_forwarding_dev_spec_op(pdev, dev_spec_op, data, size);
+    if (cdev->orig_spec_op)
+        return cdev->orig_spec_op(pdev, dev_spec_op, data, size);
     if (dev_proc(cdev, open_device) == pattern_clist_open_device)
         return pattern_accum_dev_spec_op(pdev, dev_spec_op, data, size);
     return gx_default_dev_spec_op(pdev, dev_spec_op, data, size);
