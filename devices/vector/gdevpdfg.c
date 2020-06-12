@@ -2610,7 +2610,7 @@ pdf_get_halftone_component_index(const gs_multiple_halftone *pmht,
     return j;
 }
 static int
-pdf_write_multiple_halftone(gx_device_pdf *pdev,
+pdf_write_multiple_halftone(gx_device_pdf *pdev, const gs_halftone *pht,
                             const gs_multiple_halftone *pmht,
                             const gx_device_halftone *pdht, long *pid)
 {
@@ -2680,7 +2680,7 @@ pdf_write_multiple_halftone(gx_device_pdf *pdev,
             done_Default = true;
         }
         phtc = &pmht->components[code];
-        if ((code = pmht->get_colorname_string(pdev->memory, phtc->cname, &str, &len)) < 0 ||
+        if ((code = pmht->get_colorname_string(pht->rc.memory, phtc->cname, &str, &len)) < 0 ||
             (code = pdf_string_to_cos_name(pdev, str, len, &value)) < 0)
             return code;
         cos_value_write(&value, pdev);
@@ -2740,7 +2740,7 @@ pdf_update_halftone(gx_device_pdf *pdev, const gs_gstate *pgs,
         break;
     case ht_type_multiple:
     case ht_type_multiple_colorscreen:
-        code = pdf_write_multiple_halftone(pdev, &pht->params.multiple,
+        code = pdf_write_multiple_halftone(pdev, pht, &pht->params.multiple,
                                            pdht, &id);
         break;
     default:

@@ -475,6 +475,9 @@ zpushpdf14devicefilter(i_ctx_t *i_ctx_p)
     gx_device *cdev = gs_currentdevice_inline(igs);
 
     check_type(*op, t_integer);
+    if (dev_proc(cdev, dev_spec_op)(cdev, gxdso_is_pdf14_device, NULL, 0) > 0)
+        return 0;		/* ignore push_device if already is pdf14 device */
+
     /* Bug 698087: In case some program uses our .pushpdf14devicefilter  make	*/
     /*             sure that the device knows that we are using the pdf14	*/
     /*             transparency. Note this will close and re-open the device	*/
@@ -495,8 +498,6 @@ zpushpdf14devicefilter(i_ctx_t *i_ctx_p)
         if (cdev->is_open) {
             if ((code = gs_closedevice((gx_device *)cdev)) < 0)
                 return code;
-            if (dev_proc(cdev, dev_spec_op)(cdev, gxdso_is_pdf14_device, NULL, 0) > 0)
-                pdf14_disable_device(cdev);	/* should already be disabled  (bug 698306) */
         }
         if ((code = gs_opendevice((gx_device *)cdev)) < 0)
             return code;

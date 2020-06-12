@@ -250,7 +250,10 @@ typedef enum {
     gs_spt_int     = 2,   /* void * is a pointer to an int */
     gs_spt_float   = 3,   /* void * is a float * */
     gs_spt_name    = 4,   /* void * is a char * */
-    gs_spt_string  = 5    /* void * is a char * */
+    gs_spt_string  = 5,   /* void * is a char * */
+    gs_spt_long    = 6,   /* void * is a long * */
+    gs_spt_i64     = 7,   /* void * is a int64_t * */
+    gs_spt_size_t  = 8    /* void * is a size_t * */
 } gs_set_param_type;
 GSDLLEXPORT int GSDLLAPI gsapi_set_param(void *instance, gs_set_param_type type, const char *param, const void *value);
 

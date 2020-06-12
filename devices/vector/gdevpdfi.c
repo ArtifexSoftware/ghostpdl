@@ -1925,7 +1925,14 @@ pdf_image_end_image_data(gx_image_enum_common_t * info, bool draw_last,
     /* Clean up any outstanding streams before freeing the enumerator */
     while (pie->writer.alt_writer_count-- > 0) {
         ecode = psdf_end_binary(&(pie->writer.binary[pie->writer.alt_writer_count]));
-        if (ecode < 0 && code >= 0) code  = ecode;
+        /* If we are skipping an image (because its clipped out or similar) then we
+         * won't have written any data to it. Some filters (notably the DCTEncode filter)
+         * throw an error (premature EOD) if we close the filter without writing any data to it.
+         * So if we are skipping the image, ignore errors when closing the stream.
+         * Unfortunately we don't set pie->skipping until after begin_typed_image()
+         * or we could avoid a lot of setup....
+         */
+        if (ecode < 0 && code >= 0 && !pie->skipping) code  = ecode;
     }
 
     gx_image_free_enum(&info);

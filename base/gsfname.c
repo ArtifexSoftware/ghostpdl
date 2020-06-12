@@ -46,7 +46,8 @@ gs_parse_file_name(gs_parsed_file_name_t * pfn, const char *pname, uint len,
     pdelim = memchr(pname + 1, '%', len - 1);
     if (pdelim == NULL)		/* %device */
         dlen = len;
-    else if (pdelim[1] == 0) {	/* %device% */
+    /* gs strings aren't necessarily null terminated */
+    else if (pdelim[1] == 0 || pdelim - pname == len - 1) {	/* %device% */
         pdelim = NULL;
         dlen = len;
     } else {

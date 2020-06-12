@@ -270,7 +270,7 @@ gs_type42_font_init(gs_font_type42 * pfont, int subfontID)
         }
     }
     loca_size >>= pfont->data.indexToLocFormat + 1;
-    pfont->data.numGlyphs = (loca_size == 0 ? 0 : loca_size - 1);
+    pfont->data.numGlyphs = loca_size - 1;
     if (pfont->data.numGlyphs > pfont->data.trueNumGlyphs) {
         /* pfont->key_name.chars is ASCIIZ due to copy_font_name. */
         char buf[gs_font_name_max + 2];
@@ -353,16 +353,24 @@ gs_type42_font_init(gs_font_type42 * pfont, int subfontID)
             /* Since 'loca' is usually sorted, first try the simple linear scan to  */
             /* avoid the need to perform the more expensive process. */
             glyph_start = get_glyph_offset(pfont, 0);
-            for (i = 1; i < loca_size; i++) {
-                glyph_offset = get_glyph_offset(pfont, i);
-                glyph_length = glyph_offset - glyph_start;
-                if (glyph_length > 0x80000000)
-                    break;
-                if (glyph_offset > glyph_size)
-                    break;
-                /* out of order loca */
-                pfont->data.len_glyphs[i - 1] = glyph_length;
-                glyph_start = glyph_offset;
+            if (loca_size > 1) {
+                for (i = 1; i < loca_size; i++) {
+                    glyph_offset = get_glyph_offset(pfont, i);
+                    glyph_length = glyph_offset - glyph_start;
+                    if (glyph_length > 0x80000000)
+                        break;
+                    if (glyph_offset > glyph_size)
+                        break;
+                    /* out of order loca */
+                    pfont->data.len_glyphs[i - 1] = glyph_length;
+                    glyph_start = glyph_offset;
+                }
+            }
+            else {
+                /* This is purely so broken fonts don't cause an uninitialized
+                   memory access later on.
+                 */
+                pfont->data.len_glyphs[0] = 0;
             }
             if (i < loca_size) {
                 /*

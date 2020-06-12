@@ -1688,7 +1688,7 @@ FAPI_FF_get_glyph(gs_fapi_font *ff, int char_code, byte *buf,
                     glyph_length = gs_fapi_glyph_invalid_index;
                 }
                 else if (pfont42->data.len_glyphs) {
-                    if (char_code < pfont42->data.trueNumGlyphs)
+                    if (char_code <= pfont42->data.numGlyphs)
                         glyph_length = pfont42->data.len_glyphs[char_code];
                     else
                         glyph_length = gs_fapi_glyph_invalid_index;

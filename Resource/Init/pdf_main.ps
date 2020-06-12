@@ -3729,16 +3729,12 @@ systemdict /ALLOWPSTRANSPARENCY get
 ] systemdict .undefinternalnames
 
 % The following are split out allowing control via ALLOWPSTRANSPARENCY command line param
+% The examples/transparency_example.ps uses some of these (on the first line).
 [
+  /.pushpdf14devicefilter /.poppdf14devicefilter /.setstrokeconstantalpha /.setfillconstantalpha /.endtransparencygroup
   /.currentblendmode /.currenttextknockout /.begintransparencytextgroup
   /.endtransparencytextgroup /.begintransparencymaskgroup /.begintransparencymaskimage /.begintransparencypagegroup
   /.endtransparencymask /.image3x /.abortpdf14devicefilter /.setstrokeconstantalpha /.setfillconstantalpha /.setalphaisshape /.currentalphaisshape
-    % Used by our own test suite files
-  %/.pushpdf14devicefilter    % transparency-example.ps
-  %/.poppdf14devicefilter     % transparency-example.ps
-  %/.setstrokeconstantalpha          % transparency-example.ps
-  %/.setfillconstantalpha            % transparency-example.ps
-  %/.endtransparencygroup     % transparency-example.ps
   % undefining these causes errors/incorrect output
   %/.setblendmode /.begintransparencygroup /.settextknockout /.setstrokeoverprint /.setfilloverprint
   %/.currentstrokeoverprint /.currentfilloverprint /.currentfillconstantalpha /.currentstrokeconstantalpha

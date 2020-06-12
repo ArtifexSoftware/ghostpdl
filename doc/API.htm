@@ -63,7 +63,9 @@
 <li><a href="#revision"><code>gsapi_revision</code></a></li>
 <li><a href="#new_instance"><code>gsapi_new_instance</code></a></li>
 <li><a href="#delete_instance"><code>gsapi_delete_instance</code></a></li>
+<li><a href="#set_stdio_with_handle"><code>gsapi_set_stdio_with_handle</code></a></li>
 <li><a href="#set_stdio"><code>gsapi_set_stdio</code></a></li>
+<li><a href="#set_poll_with_handle"><code>gsapi_set_poll_with_handle</code></a></li>
 <li><a href="#set_poll"><code>gsapi_set_poll</code></a></li>
 <li><a href="#set_display_callback"><code>gsapi_set_display_callback</code></a></li>
 <li><a href="#set_arg_encoding"><code>gsapi_set_arg_encoding</code></a></li>
@@ -72,9 +74,15 @@
 <li><a href="#run"><code>gsapi_run_string_end</code></a></li>
 <li><a href="#run"><code>gsapi_run_string_with_length</code></a></li>
 <li><a href="#run"><code>gsapi_run_string</code></a></li>
+<li><a href="#run"><code>gsapi_run_file</code></a></li>
 <li><a href="#init"><code>gsapi_init_with_args</code></a></li>
-<li><a href="#run"><code>gsapi_run_*</code></a></li>
 <li><a href="#exit"><code>gsapi_exit</code></a></li>
+<li><a href="#set_param"><code>gsapi_set_param</code></a></li>
+<li><a href="#add_control_path"><code>gsapi_add_control_path</code></a></li>
+<li><a href="#remove_control_path"><code>gsapi_remove_control_path</code></a></li>
+<li><a href="#purge_control_paths"><code>gsapi_purge_control_paths</code></a></li>
+<li><a href="#activate_path_control"><code>gsapi_activate_path_control</code></a></li>
+<li><a href="#is_path_control_active"><code>gsapi_is_path_control_active</code></a></li>
 <li><a href="#add_fs"><code>gsapi_add_fs</code></a></li>
 <li><a href="#remove_fs"><code>gsapi_remove_fs</code></a></li>
 <li><a href="#return_codes">Return codes</a></li>
@@ -186,11 +194,27 @@ void
 
 <li><code>
 int
+<a href="#set_stdio_with_handle">gsapi_set_stdio_with_handle</a>
+(void *instance,
+    int(*stdin_fn)(void *caller_handle, char *buf, int len),
+    int(*stdout_fn)(void *caller_handle, const char *str, int len),
+    int(*stderr_fn)(void *caller_handle, const char *str, int len),
+    void *caller_handle);
+</code></li>
+
+<li><code>
+int
 <a href="#set_stdio">gsapi_set_stdio</a>
 (void *instance,
     int(*stdin_fn)(void *caller_handle, char *buf, int len),
     int(*stdout_fn)(void *caller_handle, const char *str, int len),
     int(*stderr_fn)(void *caller_handle, const char *str, int len));
+</code></li>
+
+<li><code>
+int
+<a href="#set_poll_with_handle">gsapi_set_poll</a>
+(void *instance, int(*poll_fn)(void *caller_handle, void *caller_handle));
 </code></li>
 
 <li><code>
@@ -344,9 +368,10 @@ If Ghostscript has been initialised, you must call
 </blockquote>
 
 
-<h3><a name="set_stdio"></a><code>gsapi_set_stdio()</code></h3>
+<h3><a name="set_stdio_with_handle"></a><code>gsapi_set_stdio_with_handle()</code></h3>
 <blockquote>
-<p>Set the callback functions for stdio
+<p>Set the callback functions for stdio, together with the
+handle to use in the callback functions.
 The stdin callback function should return the number of
 characters read, 0 for EOF, or -1 for error.
 The stdout and stderr callback functions should return
@@ -357,10 +382,19 @@ case, device output will still be directed to the process &quot;stdout&quot;
 file descriptor, not to the stdio callback.
 </blockquote>
 
-
-<h3><a name="set_poll"></a><code>gsapi_set_poll()</code></h3>
+<h3><a name="set_stdio"></a><code>gsapi_set_stdio()</code></h3>
 <blockquote>
-Set the callback function for polling. This function will only be called if
+<p>Set the callback functions for stdio.  The handle used
+in the callbacks will be taken from the value passed
+to <code><a href="#new_instance">gsapi_new_instance</a></code>.  Otherwise the behaviour of this
+function matches <code><a href="#set_stdio_with_handle">gsapi_set_stdio_with_handle</a></code>.
+</blockquote>
+
+
+<h3><a name="set_poll_with_handle"></a><code>gsapi_set_poll_with_handle()</code></h3>
+<blockquote>
+Set the callback function for polling, together with the handle to pass
+to the callback function. This function will only be called if
 the Ghostscript interpreter was compiled with <code>CHECK_INTERRUPTS</code>
 as described in <code><a href="../base/gpcheck.h">gpcheck.h</a></code>.
 <p>
@@ -373,6 +407,15 @@ The polling function is called very frequently during interpretation and
 rendering so it must be fast. If the function is slow, then using a counter
 to return 0 immediately some number of times can be used to reduce the
 performance impact.</p>
+</blockquote>
+
+<h3><a name="set_poll"></a><code>gsapi_set_poll()</code></h3>
+<blockquote>
+Set the callback function for polling.  The handle passed to the
+callback function will be taken from the handle passed to
+<code><a href="#new_instance">gsapi_new_instance</a></code>.
+Otherwise the behaviour of this function matches
+<code><a href="#set_poll_with_handle">gsapi_set_poll_with_handle</a></code>.
 </blockquote>
 
 <h3><a name="set_display_callback"></a><code>gsapi_set_display_callback()</code></h3>
@@ -444,6 +487,43 @@ pieces and submit each in a separate
 Exit the interpreter.
 This must be called on shutdown if <code>gsapi_init_with_args()</code>
 has been called, and just before <code>gsapi_delete_instance()</code>.
+</blockquote>
+
+<h3><a name="set_param"></a><code>gsapi_set_param()</code></h3>
+<blockquote>
+Set a parameter.
+Equivalent to passing a parameter on the command line.
+</blockquote>
+
+<h3><a name="add_control_path"></a><code>gsapi_add_control_path()</code></h3>
+<blockquote>
+Add a (case sensitive) path to one of the lists of permitted paths for file access.
+See <a href="Use.htm#Safer">here</a> for more information about permitted paths.
+</blockquote>
+
+<h3><a name="remove_control_path"></a><code>gsapi_remove_control_path()</code></h3>
+<blockquote>
+Remove a (case sensitive) path from one of the lists of permitted paths for file access.
+See <a href="Use.htm#Safer">here</a> for more information about permitted paths.
+</blockquote>
+
+<h3><a name="purge_control_paths"></a><code>gsapi_purge_control_paths()</code></h3>
+<blockquote>
+Clear all the paths from one of the lists of permitted paths for file access.
+See <a href="Use.htm#Safer">here</a> for more information about permitted paths.
+</blockquote>
+
+<h3><a name="activate_path_control"></a><code>gsapi_activate_path_control()</code></h3>
+<blockquote>
+Enable/Disable path control (i.e. whether paths are checked against permitted paths
+before access is granted).
+See <a href="Use.htm#Safer">here</a> for more information about permitted paths.
+</blockquote>
+
+<h3><a name="is_path_control_active"></a><code>gsapi_is_path_control_active()</code></h3>
+<blockquote>
+Query whether path control is activated or not.
+See <a href="Use.htm#Safer">here</a> for more information about permitted paths.
 </blockquote>
 
 <h3><a name="add_fs"></a><code>gsapi_add_fs()</code></h3>

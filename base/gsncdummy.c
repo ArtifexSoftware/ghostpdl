@@ -252,7 +252,7 @@ client_pantone_install_Separation(client_custom_color_params_t * pparam,
     /*
      * Get the character string and length for the component name.
      */
-    pcs->params.separation.get_colorname_string(dev->memory, name,
+    pcs->params.separation.get_colorname_string(pcs->rc.memory, name,
                                                 &pname, &name_size);
     /*
     * Compare the colorant name to those in our PANTONE color list.
@@ -323,7 +323,7 @@ client_pantone_install_DeviceN(client_custom_color_params_t * pparam,
         /*
          * Get the character string and length for the component name.
          */
-        pcs->params.device_n.get_colorname_string(dev->memory, names[i],
+        pcs->params.device_n.get_colorname_string(pcs->rc.memory, names[i],
                                                         &pname, &name_size);
         /*
          * Postscript does not include /None as a color component but it is
