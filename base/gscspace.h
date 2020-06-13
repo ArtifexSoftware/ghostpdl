@@ -218,7 +218,7 @@ typedef ulong gs_separation_name;	/* BOGUS */
  * names.
  */
 typedef int (gs_callback_func_get_colorname_string)
-     (const gs_memory_t *mem, gs_separation_name colorname, unsigned char **ppstr, unsigned int *plen);
+     (gs_gstate *pgs, gs_separation_name colorname, unsigned char **ppstr, unsigned int *plen);
 
 typedef enum { SEP_NONE, SEP_ALL, SEP_OTHER } separation_type;
 typedef enum { SEP_ENUM, SEP_MIX, SEP_PURE_RGB, SEP_PURE_CMYK, SEP_PURE_SPOT} separation_colors;

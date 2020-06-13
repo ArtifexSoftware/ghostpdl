@@ -48,14 +48,14 @@ static int dict_threshold2_params(const ref *, gs_threshold2_halftone *,
  * pointer and a string length.
  */
 int
-gs_get_colorname_string(const gs_memory_t *mem, gs_separation_name colorname_index,
+gs_get_colorname_string(gs_gstate *pgs, gs_separation_name colorname_index,
                         unsigned char **ppstr, unsigned int *pname_size)
 {
     ref nref;
 
-    name_index_ref(mem, colorname_index, &nref);
-    name_string_ref(mem, &nref, &nref);
-    return obj_string_data(mem, &nref, (const unsigned char**) ppstr, pname_size);
+    name_index_ref(pgs->memory, colorname_index, &nref);
+    name_string_ref(pgs->memory, &nref, &nref);
+    return obj_string_data(pgs->memory, &nref, (const unsigned char**) ppstr, pname_size);
 }
 
 /* Dummy spot function */
@@ -141,7 +141,7 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 
         /* Get the name of the component  verify that we will use it. */
         cname = name_index(mem, &rvalue[0]);
-        code = gs_get_colorname_string(mem, cname, &pname, &name_size);
+        code = gs_get_colorname_string(pgs, cname, &pname, &name_size);
         if (code < 0)
             break;
         colorant_number = gs_cname_to_colorant_number(pgs, pname, name_size,
@@ -205,7 +205,7 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 
             /* Get the name of the component */
             cname = name_index(mem, &rvalue[0]);
-            code = gs_get_colorname_string(mem, cname, &pname, &name_size);
+            code = gs_get_colorname_string(pgs, cname, &pname, &name_size);
             if (code < 0)
                 break;
             colorant_number = gs_cname_to_colorant_number(pgs, pname, name_size,
@@ -273,7 +273,7 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 
             /* Get the name of the component and verify that we will use it. */
             cname = name_index(mem, &rvalue[0]);
-            code = gs_get_colorname_string(mem, cname, &pname, &name_size);
+            code = gs_get_colorname_string(pgs, cname, &pname, &name_size);
             if (code < 0)
                 break;
             colorant_number = gs_cname_to_colorant_number(pgs, pname, name_size,
