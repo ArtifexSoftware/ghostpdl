@@ -164,7 +164,7 @@ extern_st(st_ht_component_element);
 typedef struct gs_multiple_halftone_s {
     gs_halftone_component *components;
     uint num_comp;
-    int (*get_colorname_string)(const gs_memory_t *mem, gs_separation_name colorname_index,
+    int (*get_colorname_string)(gs_gstate *pgs, gs_separation_name colorname_index,
                 unsigned char **ppstr, unsigned int *pname_size);
 } gs_multiple_halftone;
 
