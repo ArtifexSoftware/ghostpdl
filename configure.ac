@@ -1436,6 +1436,13 @@ else
                   CFLAGS="$CFLAGS -DPNG_POWERPC_VSX_OPT=0"
                 fi
             ;;
+            *arm64*|*aarch64*)
+                # Building on arm64 with gcc, disable libpng's neon
+                # optimizations.
+                if test $GCC = yes; then
+                  CFLAGS="$CFLAGS -DPNG_ARM_NEON_OPT=0"
+                fi
+            ;;
           esac
  else
           AC_MSG_RESULT([no])
