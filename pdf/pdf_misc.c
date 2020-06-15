@@ -138,7 +138,7 @@ int pdfi_string_from_name(pdf_context *ctx, pdf_name *n, char **str, int *len)
         return gs_note_error(gs_error_VMerror);
 
     memcpy(*str, n->data, n->length);
-    (*str)[n->length + 1] = 0x00;
+    (*str)[n->length] = 0x00;
     *len = n->length;
 
     return 0;
