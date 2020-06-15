@@ -20,6 +20,7 @@
 
 /* Interpreter graphics state things (see igstate.h/int_gstate) */
 typedef struct int_gstate_s {
+    pdf_context *ctx;
     pdf_dict *SMask; /* PDF only, null | dictionary | true */
     gs_gstate *GroupGState; /* gstate associated with the SMask */
     gs_memory_t *memory;

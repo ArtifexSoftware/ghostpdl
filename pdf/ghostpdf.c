@@ -511,10 +511,20 @@ int pdfi_name_from_index(pdf_context *ctx, int index, unsigned char **name, unsi
     return_error(gs_error_undefined);
 }
 
-int pdfi_separation_name_from_index(const gs_memory_t *mem, gs_separation_name index, unsigned char **name, unsigned int *len)
+int pdfi_separation_name_from_index(gs_gstate *pgs, gs_separation_name index, unsigned char **name, unsigned int *len)
 {
-    pdf_context *ctx = (pdf_context *)mem->gs_lib_ctx;
-    pdfi_name_entry *e = (pdfi_name_entry *)ctx->name_table;
+    pdfi_int_gstate *igs = (pdfi_int_gstate *)pgs->client_data;
+    pdf_context *ctx = NULL;
+    pdfi_name_entry *e = NULL;
+
+    if (igs == NULL)
+        return_error(gs_error_undefined);
+
+    ctx = igs->ctx;
+    if (ctx == NULL)
+        return_error(gs_error_undefined);
+
+    e = (pdfi_name_entry *)ctx->name_table;
 
     while (e != NULL) {
         if (e->index == index) {

@@ -138,6 +138,7 @@ pdfi_gstate_set_client(pdf_context *ctx, gs_gstate *pgs)
     pdfi_int_gstate *igs;
 
     igs = pdfi_gstate_alloc_cb(ctx->memory);
+    igs->ctx = ctx;
     gs_gstate_set_client(pgs, igs, &pdfi_gstate_procs, true /* TODO: client_has_pattern_streams ? */);
     return 0;
 }
@@ -1586,6 +1587,7 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict 
     }
     memset(pdht, 0x00, sizeof(gx_device_halftone));
     pdht->num_dev_comp = ctx->pgs->device->color_info.num_components;
+    pdht->rc.memory = ctx->memory;
 
     switch(type) {
         case 1:
@@ -1817,13 +1819,16 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict 
             gx_unset_both_dev_colors(ctx->pgs);
             break;
         default:
-            return_error(gs_error_rangecheck);
+            code = gs_note_error(gs_error_rangecheck);
+            goto error;
             break;
     }
     gs_free_object(ctx->memory, pdht, "pdfi_do_halftone");
     return 0;
 
 error:
+    if (pdht != NULL)
+        gx_device_halftone_release(pdht, pdht->rc.memory);
     gs_free_object(ctx->memory, str, "pdfi_string_from_name");
     pdfi_countdown(Key);
     pdfi_countdown(Value);
