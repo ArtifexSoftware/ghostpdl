@@ -54,6 +54,11 @@
 #include "gsequivc.h"
 #include "gdevdsp.h"
 #include "gdevdsp2.h"
+#include "gxclist.h"
+#include "gxdevbuf.h"
+#include "gxgetbit.h"
+#include "gdevmpla.h"
+#include "gdevprn.h"           /* For gdev_create_buf_device */
 
 #include "gdevkrnlsclass.h" /* 'standard' built in subclasses, currently First/Last Page and obejct filter */
 
@@ -108,12 +113,12 @@ static const gx_device_procs display_procs =
     display_close,
     gx_default_w_b_map_rgb_color,
     gx_default_w_b_map_color_rgb,
-    display_fill_rectangle,
+    NULL, /* display_fill_rectangle - will be inserted later */
     NULL,				/* tile rectangle */
-    display_copy_mono,
-    display_copy_color,
+    NULL, /* display_copy_mono - will be inserted later */
+    NULL, /* display_copy_color - will be inserted later */
     NULL,				/* draw line */
-    display_get_bits,
+    NULL, /* display_get_bits - will be inserted later */
     display_get_params,
     display_put_params,
     gx_default_cmyk_map_cmyk_color, 	/* map_cmyk_color */
@@ -175,24 +180,16 @@ public_st_device_display();
 
 static
 ENUM_PTRS_WITH(display_enum_ptrs, gx_device_display *ddev)
-    if (index == 0) {
-        if (ddev->mdev) {
-            return ENUM_OBJ(gx_device_enum_ptr((gx_device *)ddev->mdev));
-        }
-        return 0;
-    }
-    else if (index-1 < ddev->devn_params.separations.num_separations)
-        ENUM_RETURN(ddev->devn_params.separations.names[index-1].data);
+    if (index < ddev->devn_params.separations.num_separations)
+        ENUM_RETURN(ddev->devn_params.separations.names[index].data);
     else
-        return 0;
+        ENUM_PREFIX(st_device_clist_mutatable, ddev->devn_params.separations.num_separations);
+    return 0;
 ENUM_PTRS_END
 
 static
 RELOC_PTRS_WITH(display_reloc_ptrs, gx_device_display *ddev)
-    if (ddev->mdev) {
-        ddev->mdev = (gx_device_memory *)
-            gx_device_reloc_ptr((gx_device *)ddev->mdev, gcst);
-    }
+    RELOC_PREFIX(st_device_clist_mutatable);
     {   int i;
         for (i = 0; i < ddev->devn_params.separations.num_separations; ++i) {
             RELOC_PTR(gx_device_display, devn_params.separations.names[i].data);
@@ -207,13 +204,13 @@ const gx_device_display gs_display_device =
                         INITIAL_WIDTH, INITIAL_HEIGHT,
                         INITIAL_RESOLUTION, INITIAL_RESOLUTION),
     {0},			/* std_procs */
-    NULL,			/* mdev */
+    GX_CLIST_MUTATABLE_DEVICE_DEFAULTS,
     NULL,			/* callback */
     NULL,			/* pHandle */
     0,                          /* pHandle_set */
     0,				/* nFormat */
     NULL,			/* pBitmap */
-    0, 				/* ulBitmapSize */
+    0, 				/* zBitmapSize */
     0, 				/* HWResolution_set */
 
     {    /* devn_params specific parameters */
@@ -246,9 +243,8 @@ display_open(gx_device * dev)
     gs_display_get_callback_t data;
 
     /* Erase these, in case we are opening a copied device. */
-    ddev->mdev = NULL;
     ddev->pBitmap = NULL;
-    ddev->ulBitmapSize = 0;
+    ddev->zBitmapSize = 0;
 
     /* Fetch our callback procedures. */
     data.callback = NULL;
@@ -313,9 +309,11 @@ display_open(gx_device * dev)
     }
 
     /* Tell caller the device parameters */
-    ccode = (*(ddev->callback->display_size)) (ddev->pHandle, dev,
-        dev->width, dev->height, display_raster(ddev), ddev->nFormat,
-        ddev->mdev->base);
+    ccode = (*(ddev->callback->display_size))(ddev->pHandle, dev,
+                          dev->width, dev->height,
+                          display_raster(ddev), ddev->nFormat,
+                          CLIST_MUTATABLE_HAS_MUTATED(ddev) ?
+                               NULL : ((gx_device_memory *)ddev)->base);
     if (ccode < 0) {
         display_free_bitmap(ddev);
         (*(ddev->callback->display_close))(ddev->pHandle, dev);
@@ -358,6 +356,10 @@ display_output_page(gx_device * dev, int copies, int flush)
 {
     gx_device_display *ddev = (gx_device_display *) dev;
     int code;
+    int is_planar = (ddev->nFormat & (DISPLAY_PLANAR |
+                                     DISPLAY_PLANAR_INTERLEAVED)) &&
+                    (ddev->color_info.num_components > 1);
+
     if (ddev->callback == NULL)
         return gs_error_Fatal;
     display_set_separations(ddev);
@@ -365,8 +367,72 @@ display_output_page(gx_device * dev, int copies, int flush)
     while(dev->parent)
         dev = dev->parent;
 
-    code = (*(ddev->callback->display_page))
+    if (CLIST_MUTATABLE_HAS_MUTATED(ddev)) {
+        /* Rectangle request mode! */
+        gs_get_bits_options_t options;
+
+        options = GB_RETURN_COPY | GB_ALIGN_STANDARD |
+                  GB_OFFSET_SPECIFIED | GB_RASTER_SPECIFIED |
+                  GB_COLORS_NATIVE;
+        switch (ddev->nFormat & DISPLAY_ALPHA_MASK) {
+            default:
+            case DISPLAY_ALPHA_NONE:
+                break;
+            case DISPLAY_ALPHA_FIRST:
+            case DISPLAY_UNUSED_FIRST:
+                options |=  GB_ALPHA_FIRST;
+                break;
+            case DISPLAY_ALPHA_LAST:
+            case DISPLAY_UNUSED_LAST:
+                options |=  GB_ALPHA_LAST;
+                break;
+        }
+        if (is_planar)
+            options |= GB_PACKING_PLANAR;
+        else
+            options |= GB_PACKING_CHUNKY;
+
+        while (1) {
+            void *mem = NULL;
+            int ox, oy, x, y, w, h, i, raster, plane_raster;
+            gs_int_rect rect;
+            gs_get_bits_params_t params;
+
+            code = ddev->callback->display_rectangle_request
+                                                (ddev->pHandle, dev,
+                                                 &mem, &ox, &oy,
+                                                 &raster, &plane_raster,
+                                                 &x, &y, &w, &h);
+            if (w == 0 || h == 0)
+                break;
+            if (mem == NULL) {
+                code = gs_note_error(gs_error_VMerror);
+                break;
+            }
+            rect.p.x = x;
+            rect.p.y = y;
+            rect.q.x = x + w;
+            rect.q.y = y + h;
+            params.options = options;
+            if (is_planar) {
+                for (i = 0; i < ddev->color_info.num_components; i++)
+                    params.data[i] = (byte *)mem + i * plane_raster;
+            } else {
+                params.data[0] = (byte *)mem;
+            }
+            params.x_offset = ox;
+            params.original_y = oy;
+            params.raster = raster;
+            code = dev_proc(ddev, get_bits_rectangle)((gx_device *)ddev,
+                                                      &rect, &params, NULL);
+            if (code < 0)
+                break;
+        }
+    } else {
+        /* Full page mode. Just claim completion! */
+        code = (*(ddev->callback->display_page))
                         (ddev->pHandle, dev, copies, flush);
+    }
 
     if (code >= 0)
         code = gx_finish_output_page(dev, copies, flush);
@@ -381,18 +447,23 @@ display_close(gx_device * dev)
     if (ddev->callback == NULL)
         return 0;	/* ignore the call since we were never properly opened */
 
+    while(dev->parent)
+        dev = dev->parent;
+
     /* Tell caller that device is about to be closed. */
     (*(ddev->callback->display_preclose))(ddev->pHandle, dev);
 
     /* Release memory. */
     display_free_bitmap(ddev);
 
-    while(dev->parent)
-        dev = dev->parent;
-
     /* Tell caller that device is closed. */
     /* This is always the last callback */
     (*(ddev->callback->display_close))(ddev->pHandle, dev);
+
+    /* Reset device proc vector to default */
+    if (ddev->orig_procs.open_device != NULL)
+        ddev->procs = ddev->orig_procs;
+    ddev->orig_procs.open_device = NULL; /* prevent uninit'd restore of procs */
 
     return 0;
 }
@@ -749,13 +820,12 @@ display_map_color_rgb_bgr24(gx_device * dev, gx_color_index color,
 /* Fill a rectangle */
 static int
 display_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
-                  gx_color_index color)
+                       gx_color_index color)
 {
     gx_device_display *ddev = (gx_device_display *) dev;
     if (ddev->callback == NULL)
         return 0;		/* ignore -- needed for fillpage when device wasn't really opened */
-    dev_proc(ddev->mdev, fill_rectangle)((gx_device *)ddev->mdev,
-        x, y, w, h, color);
+    ddev->mutated_procs.fill_rectangle(dev, x, y, w, h, color);
 
     while(dev->parent)
         dev = dev->parent;
@@ -768,15 +838,15 @@ display_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 /* Copy a monochrome bitmap */
 static int
 display_copy_mono(gx_device * dev,
-             const byte * base, int sourcex, int raster, gx_bitmap_id id,
-             int x, int y, int w, int h,
-             gx_color_index zero, gx_color_index one)
+                  const byte * base, int sourcex, int raster,
+                  gx_bitmap_id id, int x, int y, int w, int h,
+                  gx_color_index zero, gx_color_index one)
 {
     gx_device_display *ddev = (gx_device_display *) dev;
     if (ddev->callback == NULL)
         return gs_error_Fatal;
-    dev_proc(ddev->mdev, copy_mono)((gx_device *)ddev->mdev,
-        base, sourcex, raster, id, x, y, w, h, zero, one);
+    ddev->mutated_procs.copy_mono(dev, base, sourcex, raster, id,
+                                  x, y, w, h, zero, one);
 
     while(dev->parent)
         dev = dev->parent;
@@ -789,14 +859,13 @@ display_copy_mono(gx_device * dev,
 /* Copy a color pixel map  */
 static int
 display_copy_color(gx_device * dev,
-              const byte * base, int sourcex, int raster, gx_bitmap_id id,
-              int x, int y, int w, int h)
+                   const byte * base, int sourcex, int raster,
+                   gx_bitmap_id id, int x, int y, int w, int h)
 {
     gx_device_display *ddev = (gx_device_display *) dev;
     if (ddev->callback == NULL)
         return gs_error_Fatal;
-    dev_proc(ddev->mdev, copy_color)((gx_device *)ddev->mdev,
-        base, sourcex, raster, id, x, y, w, h);
+    ddev->mutated_procs.copy_color(dev, base, sourcex, raster, id, x, y, w, h);
 
     while(dev->parent)
         dev = dev->parent;
@@ -812,8 +881,7 @@ display_get_bits(gx_device * dev, int y, byte * str, byte ** actual_data)
     gx_device_display *ddev = (gx_device_display *) dev;
     if (ddev->callback == NULL)
         return gs_error_Fatal;
-    return dev_proc(ddev->mdev, get_bits)((gx_device *)ddev->mdev,
-        y, str, actual_data);
+    return ddev->mutated_procs.get_bits(dev, y, str, actual_data);
 }
 
 static int
@@ -1123,19 +1191,20 @@ display_put_params(gx_device * dev, gs_param_list * plist)
 
         /* tell caller about the new size */
         if ((*ddev->callback->display_size)(ddev->pHandle, dev,
-            dev->width, dev->height, display_raster(ddev),
-            ddev->nFormat, ddev->mdev->base) < 0)
+            dev->width, dev->height, display_raster(ddev), ddev->nFormat,
+            CLIST_MUTATABLE_HAS_MUTATED(ddev) ? NULL :
+                                  ((gx_device_memory *)ddev)->base) < 0)
             return_error(gs_error_rangecheck);
     }
-        /*
-         * Make the color_info.depth correct for the bpc and num_components since
-         * devn mode always has the display bitmap set up for 64-bits, but others,
-         * such as pdf14 compositor expect it to match (for "deep" detection).
-         */
-        if (ddev->icc_struct && ddev->icc_struct->supports_devn) {
-            ddev->color_info.depth = ddev->devn_params.bitspercomponent *
-                                         ddev->color_info.num_components;
-        }
+    /*
+     * Make the color_info.depth correct for the bpc and num_components since
+     * devn mode always has the display bitmap set up for 64-bits, but others,
+     * such as pdf14 compositor expect it to match (for "deep" detection).
+     */
+    if (ddev->icc_struct && ddev->icc_struct->supports_devn) {
+        ddev->color_info.depth = ddev->devn_params.bitspercomponent *
+                                     ddev->color_info.num_components;
+    }
     return 0;
 }
 
@@ -1149,9 +1218,8 @@ display_finish_copydevice(gx_device *dev, const gx_device *from_dev)
     ddev->is_open = false;
 
     /* Clear pointers */
-    ddev->mdev = NULL;
     ddev->pBitmap = NULL;
-    ddev->ulBitmapSize = 0;
+    ddev->zBitmapSize = 0;
 
     return 0;
 }
@@ -1274,6 +1342,7 @@ display_ret_devn_params(gx_device * dev)
 static int
 display_spec_op(gx_device *dev, int op, void *data, int datasize)
 {
+    gx_device_display *ddev = (gx_device_display *)dev;
 
     if (op == gxdso_supports_devn) {
         return (dev_proc(dev, fill_rectangle_hl_color) == display_fill_rectangle_hl_color);
@@ -1281,6 +1350,15 @@ display_spec_op(gx_device *dev, int op, void *data, int datasize)
     if (op == gxdso_reopen_after_init) {
         return 1;
     }
+    if (op == gxdso_adjust_bandheight)
+    {
+        if (ddev->callback->display_adjust_band_height)
+            return ddev->callback->display_adjust_band_height(ddev->pHandle,
+                                                              ddev,
+                                                              datasize);
+        return 0;
+    }
+
     return gx_default_dev_spec_op(dev, op, data, datasize);
 }
 
@@ -1301,8 +1379,8 @@ display_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
     if (pdcolor->type != gx_dc_type_devn && pdcolor->type != &gx_dc_devn_masked) {
         return gx_fill_rectangle_device_rop( x, y, w, h, pdcolor, dev, lop_default);
     }
-    pure_color = display_separation_encode_color(dev, pdcolor->colors.devn.values);
-    return display_fill_rectangle(dev, x, y, w, h, pure_color);
+    pure_color = dev_proc(dev, encode_color)(dev, pdcolor->colors.devn.values);
+    return dev_proc(dev, fill_rectangle)(dev, x, y, w, h, pure_color);
 }
 
 /*
@@ -1335,7 +1413,7 @@ display_separation_get_color_comp_index(gx_device * dev,
 /* Return 0 on success, gs_error_rangecheck on failure */
 static int display_check_structure(gx_device_display *ddev)
 {
-    if (ddev->callback == 0)
+    if (ddev->callback == NULL)
         return_error(gs_error_rangecheck);
 
     if (ddev->callback->size == sizeof(struct display_callback_v1_s)) {
@@ -1347,8 +1425,20 @@ static int display_check_structure(gx_device_display *ddev)
         if (ddev->callback->version_minor > DISPLAY_VERSION_MINOR_V1)
             return_error(gs_error_rangecheck);
     }
-    else {
+    else if (ddev->callback->size == sizeof(struct display_callback_v2_s)) {
         /* V2 structure with added display_separation callback */
+        if (ddev->callback->size != sizeof(display_callback))
+            return_error(gs_error_rangecheck);
+
+        if (ddev->callback->version_major != DISPLAY_VERSION_MAJOR_V2)
+            return_error(gs_error_rangecheck);
+
+        /* complain if caller asks for newer features */
+        if (ddev->callback->version_minor > DISPLAY_VERSION_MINOR_V2)
+            return_error(gs_error_rangecheck);
+    }
+    else {
+        /* V3 structure with added display_separation callback */
         if (ddev->callback->size != sizeof(display_callback))
             return_error(gs_error_rangecheck);
 
@@ -1394,13 +1484,33 @@ display_free_bitmap(gx_device_display * ddev)
                 ddev->pBitmap, "display_free_bitmap");
         }
         ddev->pBitmap = NULL;
-        if (ddev->mdev)
-            ddev->mdev->base = NULL;
+        if (!CLIST_MUTATABLE_HAS_MUTATED(ddev))
+            ((gx_device_memory *)ddev)->base = NULL;
     }
-    if (ddev->mdev) {
-        dev_proc(ddev->mdev, close_device)((gx_device *)ddev->mdev);
-        gx_device_retain((gx_device *)(ddev->mdev), false);
-        ddev->mdev = NULL;
+
+    if (CLIST_MUTATABLE_HAS_MUTATED(ddev)) {
+        gx_device_clist *const pclist_dev = (gx_device_clist *)ddev;
+        gx_device_clist_common * const pcldev = &pclist_dev->common;
+        gx_device_clist_reader * const pcrdev = &pclist_dev->reader;
+        /* Close cmd list device & point to the storage */
+        (*gs_clist_device_procs.close_device)( (gx_device *)pcldev );
+        ddev->buf = NULL;
+        ddev->buffer_space = 0;
+
+        gs_free_object(pcldev->memory->non_gc_memory, pcldev->cache_chunk, "free tile cache for clist");
+        pcldev->cache_chunk = 0;
+
+        rc_decrement(pcldev->icc_cache_cl, "gdev_prn_tear_down");
+        pcldev->icc_cache_cl = NULL;
+
+        clist_free_icc_table(pcldev->icc_table, pcldev->memory);
+        pcldev->icc_table = NULL;
+
+        /* If the clist is a reader clist, free any color_usage_array
+         * memory used by same.
+         */
+        if (!CLIST_IS_WRITER(pclist_dev))
+            gs_free_object(pcrdev->memory, pcrdev->color_usage_array, "clist_color_usage_array");
     }
 }
 
@@ -1409,7 +1519,9 @@ static int
 display_raster(gx_device_display *dev)
 {
     int align = 0;
-    int bytewidth = ((dev->width * dev->color_info.depth) + 7) /8;
+    int n = (dev->nFormat & (DISPLAY_PLANAR | DISPLAY_PLANAR_INTERLEAVED)) ?
+             dev->color_info.num_components : 1;
+    int bytewidth = ((dev->width * dev->color_info.depth / n) + 7) /8;
     switch (dev->nFormat & DISPLAY_ROW_ALIGN_MASK) {
         case DISPLAY_ROW_ALIGN_4:
             align = 4;
@@ -1431,7 +1543,207 @@ display_raster(gx_device_display *dev)
         align = ARCH_ALIGN_PTR_MOD;
     align -= 1;
     bytewidth = (bytewidth + align) & (~align);
+    if (dev->nFormat & DISPLAY_PLANAR_INTERLEAVED)
+        bytewidth *= n;
     return bytewidth;
+}
+
+/* Set the buffer device to planar mode. */
+static int
+set_planar(gx_device_memory *mdev, const gx_device *tdev, int interleaved)
+{
+    int num_comp = tdev->color_info.num_components;
+    gx_render_plane_t planes[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    int depth = tdev->color_info.depth / num_comp;
+    int k;
+
+    if (num_comp < 1 || num_comp > GX_DEVICE_COLOR_MAX_COMPONENTS)
+        return_error(gs_error_rangecheck);
+    /* Round up the depth per plane to a power of 2. */
+    while (depth & (depth - 1))
+        --depth, depth = (depth | (depth >> 1)) + 1;
+
+    /* We want the most significant plane to come out first. */
+    planes[num_comp-1].shift = 0;
+    planes[num_comp-1].depth = depth;
+    for (k = (num_comp - 2); k >= 0; k--) {
+        planes[k].depth = depth;
+        planes[k].shift = planes[k + 1].shift + depth;
+    }
+    return gdev_mem_set_planar_interleaved(mdev, num_comp, planes,
+                                           interleaved);
+}
+
+static int
+display_create_buf_device(gx_device **pbdev, gx_device *target, int y,
+                          const gx_render_plane_t *render_plane,
+                          gs_memory_t *mem, gx_color_usage_t *color_usage)
+{
+    int depth;
+    const gx_device_memory *mdproto;
+    gx_device_memory *mdev;
+    gx_device_display *ddev = (gx_device_display *)target;
+
+    depth = target->color_info.depth;
+    if (target->is_planar)
+        depth /= target->color_info.num_components;
+
+    mdproto = gdev_mem_device_for_bits(depth);
+    if (mdproto == NULL)
+        return_error(gs_error_rangecheck);
+    if (mem) {
+        mdev = gs_alloc_struct(mem, gx_device_memory, &st_device_memory,
+                               "create_buf_device");
+        if (mdev == NULL)
+            return_error(gs_error_VMerror);
+    } else {
+        mdev = (gx_device_memory *)*pbdev;
+    }
+    if (target == (gx_device *)mdev) {
+        dev_t_proc_dev_spec_op((*orig_dso), gx_device) = dev_proc(mdev, dev_spec_op);
+        /* The following is a special hack for setting up printer devices. */
+        assign_dev_procs(mdev, mdproto);
+        /* Do not override the dev_spec_op! */
+        dev_proc(mdev, dev_spec_op) = orig_dso;
+        check_device_separable((gx_device *)mdev);
+        gx_device_fill_in_procs((gx_device *)mdev);
+    } else {
+        gs_make_mem_device(mdev, mdproto, mem, (color_usage == NULL ? 1 : 0),
+                           target);
+        if (ddev->nFormat & DISPLAY_COLORS_SEPARATION)
+            mdev->procs.fill_rectangle_hl_color = display_fill_rectangle_hl_color;
+    }
+    mdev->width = target->width;
+    mdev->band_y = y;
+    mdev->log2_align_mod = target->log2_align_mod;
+    mdev->pad = target->pad;
+    mdev->is_planar = target->is_planar;
+    /*
+     * The matrix in the memory device is irrelevant,
+     * because all we do with the device is call the device-level
+     * output procedures, but we may as well set it to
+     * something halfway reasonable.
+     */
+    gs_deviceinitialmatrix(target, &mdev->initial_matrix);
+    /****** QUESTIONABLE, BUT BETTER THAN OMITTING ******/
+    if (&mdev->color_info != &target->color_info) /* Pacify Valgrind */
+        mdev->color_info = target->color_info;
+    *pbdev = (gx_device *)mdev;
+
+    if (ddev->nFormat & (DISPLAY_PLANAR | DISPLAY_PLANAR_INTERLEAVED)) {
+        int interleaved = (ddev->nFormat & DISPLAY_PLANAR_INTERLEAVED);
+        if (gs_device_is_memory(*pbdev) /* == render_plane->index < 0 */) {
+            return set_planar((gx_device_memory *)*pbdev, *pbdev, interleaved);
+        }
+    }
+
+    return 0;
+}
+
+static int
+display_size_buf_device(gx_device_buf_space_t *space, gx_device *target,
+                        const gx_render_plane_t *render_plane,
+                        int height, bool for_band)
+{
+    gx_device_display *ddev = (gx_device_display *)target;
+    gx_device_memory mdev;
+    int code;
+    int planar = ddev->nFormat & (DISPLAY_PLANAR | DISPLAY_PLANAR_INTERLEAVED);
+    int interleaved = (ddev->nFormat & DISPLAY_PLANAR_INTERLEAVED);
+
+    if (!planar || (render_plane && render_plane->index >= 0))
+        return gx_default_size_buf_device(space, target, render_plane,
+                                          height, for_band);
+
+    /* Planar case */
+    mdev.color_info = target->color_info;
+    mdev.pad = target->pad;
+    mdev.log2_align_mod = target->log2_align_mod;
+    mdev.is_planar = target->is_planar;
+    code = set_planar(&mdev, target, interleaved);
+    if (code < 0)
+        return code;
+    if (gdev_mem_bits_size(&mdev, target->width, height, &(space->bits)) < 0)
+        return_error(gs_error_VMerror);
+    space->line_ptrs = gdev_mem_line_ptrs_size(&mdev, target->width, height);
+    space->raster = display_raster(ddev);
+    return 0;
+}
+
+static gx_device_buf_procs_t display_buf_procs = {
+    display_create_buf_device,
+    display_size_buf_device,
+    gx_default_setup_buf_device,
+    gx_default_destroy_buf_device
+};
+
+static int		/* returns 0 ok, else -ve error cde */
+setup_as_clist(gx_device_display *ddev, gs_memory_t *buffer_memory)
+{
+    gdev_space_params space_params = ddev->space_params;
+    gx_device *target = (gx_device *)ddev;
+    uint space;
+    int code;
+    gx_device_clist *const pclist_dev = (gx_device_clist *)ddev;
+    gx_device_clist_common * const pcldev = &pclist_dev->common;
+    byte *base;
+    bool save_is_open = ddev->is_open;	/* Save around temporary failure in open_c loop */
+
+    while (target->parent != NULL) {
+        target = target->parent;
+        gx_update_from_subclass(target);
+    }
+
+    /* Try to allocate based simply on param-requested buffer size */
+    for ( space = space_params.BufferSpace; ; ) {
+        base = gs_alloc_bytes(buffer_memory, space,
+                              "cmd list buffer");
+        if (base != NULL)
+            break;
+        if ((space >>= 1) < MIN_BUFFER_SPACE)
+            break;
+    }
+    if (base == NULL)
+        return_error(gs_error_VMerror);
+
+    /* Try opening the command list, to see if we allocated */
+    /* enough buffer space. */
+open_c:
+    ddev->buf = base;
+    ddev->buffer_space = space;
+    pclist_dev->common.orig_spec_op = dev_proc(ddev, dev_spec_op);
+    clist_init_io_procs(pclist_dev, ddev->BLS_force_memory);
+    clist_init_params(pclist_dev, base, space, target,
+                      display_buf_procs,
+                      space_params.band,
+                      false, /* do_not_open_or_close_bandfiles */
+                      (ddev->bandlist_memory == NULL ?
+                       ddev->memory->non_gc_memory:
+                       ddev->bandlist_memory),
+                      ddev->clist_disable_mask,
+                      ddev->page_uses_transparency);
+    code = (*gs_clist_device_procs.open_device)( (gx_device *)pcldev );
+    if (code < 0) {
+        /* If there wasn't enough room, and we haven't */
+        /* already shrunk the buffer, try enlarging it. */
+        if (code == gs_error_rangecheck &&
+            space >= space_params.BufferSpace) {
+            space += space / 8;
+            gs_free_object(buffer_memory, base,
+                           "cmd list buf(retry open)");
+            base = gs_alloc_bytes(buffer_memory, space,
+                                  "cmd list buf(retry open)");
+            ddev->buf = base;
+            if (base != NULL) {
+                ddev->is_open = save_is_open;	/* allow for success when we loop */
+                goto open_c;
+            }
+        }
+        /* Failure. */
+        gs_free_object(buffer_memory, base, "cmd list buf");
+        ddev->buffer_space = 0;
+    }
+    return code;
 }
 
 /* Allocate the backing bitmap. */
@@ -1439,7 +1751,7 @@ static int
 display_alloc_bitmap(gx_device_display * ddev, gx_device * param_dev)
 {
     int ccode;
-    const gx_device_memory *mdproto;
+    gx_device_buf_space_t buf_space;
 
     if (ddev->callback == NULL)
         return gs_error_Fatal;
@@ -1447,63 +1759,125 @@ display_alloc_bitmap(gx_device_display * ddev, gx_device * param_dev)
     /* free old bitmap (if any) */
     display_free_bitmap(ddev);
 
-    /* allocate a memory device for rendering */
-    mdproto = gdev_mem_device_for_bits(ddev->color_info.depth);
-    if (mdproto == 0)
-        return_error(gs_error_rangecheck);
+    ddev->orig_procs = ddev->procs;
+    /* Initialise the clist/memory device specific fields. */
+    memset(ddev->skip, 0, sizeof(ddev->skip));
+    /* Calculate the size required for the a memory device. */
+    display_size_buf_device(&buf_space, (gx_device *)ddev,
+                            NULL, ddev->height, false);
+    ddev->zBitmapSize = buf_space.bits + buf_space.line_ptrs;
 
-    ddev->mdev = gs_alloc_struct(gs_memory_stable(ddev->memory),
-            gx_device_memory, &st_device_memory, "display_memory_device");
-    if (ddev->mdev == 0)
-        return_error(gs_error_VMerror);
-
-    gs_make_mem_device(ddev->mdev, mdproto, gs_memory_stable(ddev->memory),
-        0, (gx_device *) NULL);
-    check_device_separable((gx_device *)(ddev->mdev));
-    gx_device_fill_in_procs((gx_device *)(ddev->mdev));
-    /* Mark the memory device as retained.  When the bitmap is closed,
-     * we will clear this and the memory device will be then be freed.
-     */
-    gx_device_retain((gx_device *)(ddev->mdev), true);
-
-    /* Memory device width may be larger than device width
-     * if row alignment is not 4.
-     */
-    ddev->mdev->width = param_dev->width;
-    ddev->mdev->width = display_raster(ddev) * 8 / ddev->color_info.depth;
-    ddev->mdev->height = param_dev->height;
-
-    /* Tell the memory device to allocate the line pointers separately
-     * so we can place the bitmap in special memory.
-     */
-    ddev->mdev->line_pointer_memory = ddev->mdev->memory;
-    if (gdev_mem_bits_size(ddev->mdev, ddev->mdev->width, ddev->mdev->height,
-        &(ddev->ulBitmapSize)) < 0)
-        return_error(gs_error_VMerror);
+    if (ddev->callback->version_major > DISPLAY_VERSION_MAJOR_V2 ||
+        ddev->callback->display_rectangle_request != NULL) {
+        /* Clist mode is a possibility. Maybe check in here whether
+         * we want to suggest clist? */
+        /* FIXME: For now, we'll just assume that the memalloc callback
+         * is smart enough to make a sensible decision. */
+    }
 
     /* allocate bitmap using an allocator not subject to GC */
     if (ddev->callback->display_memalloc
         && ddev->callback->display_memfree) {
-        ddev->pBitmap = (*ddev->callback->display_memalloc)(ddev->pHandle,
-            ddev, ddev->ulBitmapSize);
+        /* Note: For Planar buffers, we allocate the linepointers
+         * as part of this allocation, just after the bitmap. Maybe we
+         * want to allocate them ourselves, so they aren't exposed to
+         * the caller? (Or the caller can pass in a pointer to a
+         * structure of it's own without having to allow for these
+         * pointers?)*/
+        if (ddev->callback->version_major > DISPLAY_VERSION_MAJOR_V2)
+            ddev->pBitmap = (*ddev->callback->display_memalloc)(ddev->pHandle,
+                             ddev, ddev->zBitmapSize);
+        else if (ddev->zBitmapSize > ARCH_MAX_ULONG)
+            ddev->pBitmap = NULL;
+        else {
+            struct display_callback_v2_s *v2;
+            v2 = (struct display_callback_v2_s *)(ddev->callback);
+            ddev->pBitmap = (v2->display_memalloc)(ddev->pHandle,
+                                 ddev, (unsigned long)ddev->zBitmapSize);
+        }
     }
     else {
         ddev->pBitmap = gs_alloc_byte_array_immovable(ddev->memory->non_gc_memory,
-                (size_t)ddev->ulBitmapSize, 1, "display_alloc_bitmap");
+                          ddev->zBitmapSize, 1, "display_alloc_bitmap");
     }
 
     if (ddev->pBitmap == NULL) {
-        ddev->mdev->width = 0;
-        ddev->mdev->height = 0;
-        return_error(gs_error_VMerror);
+        /* Bitmap failed to allocate. Can we recover by using rectangle
+         * request mode? */
+        if (ddev->callback->version_major <= DISPLAY_VERSION_MAJOR_V2 ||
+            ddev->callback->display_rectangle_request == NULL) {
+            /* No. Hard fail. */
+            ddev->width = 0;
+            ddev->height = 0;
+            return_error(gs_error_VMerror);
+        }
+        /* Let's set up as a clist. */
+        ccode = setup_as_clist(ddev, ddev->memory->non_gc_memory);
+        if (ccode >= 0)
+            ddev->procs = gs_clist_device_procs;
+    } else {
+        /* Set up as PageMode. */
+        gx_device *bdev = (gx_device *)ddev;
+
+        /* Ensure we're not seen as a clist device. */
+        ddev->buffer_space = 0;
+        if ((ccode = gdev_create_buf_device
+                 (display_create_buf_device,
+                  &bdev, bdev, 0, NULL, NULL, NULL)) < 0 ||
+                (ccode = gx_default_setup_buf_device
+                 (bdev, ddev->pBitmap, buf_space.raster,
+                  (byte **)((byte *)ddev->pBitmap + buf_space.bits), 0, ddev->height,
+                  ddev->height)) < 0
+                ) {
+            /* Catastrophic. Shouldn't ever happen */
+            display_free_bitmap(ddev);
+            return_error(ccode);
+        }
     }
 
-    ddev->mdev->base = (byte *) ddev->pBitmap;
-    ddev->mdev->foreign_bits = true;
+#define COPY_PROC(p) set_dev_proc(ddev, p, ddev->orig_procs.p)
+    COPY_PROC(get_initial_matrix);
+    COPY_PROC(output_page);
+    COPY_PROC(close_device);
+    COPY_PROC(map_rgb_color);
+    COPY_PROC(map_color_rgb);
+    COPY_PROC(get_params);
+    COPY_PROC(put_params);
+    COPY_PROC(map_cmyk_color);
+    COPY_PROC(get_xfont_procs);
+    COPY_PROC(get_xfont_device);
+    COPY_PROC(map_rgb_alpha_color);
+    set_dev_proc(ddev, get_page_device, gx_page_device_get_page_device);
+    COPY_PROC(get_clipping_box);
+    COPY_PROC(map_color_rgb_alpha);
+    COPY_PROC(get_hardware_params);
+    COPY_PROC(get_color_mapping_procs);
+    COPY_PROC(get_color_comp_index);
+    COPY_PROC(encode_color);
+    COPY_PROC(decode_color);
+    COPY_PROC(update_spot_equivalent_colors);
+    COPY_PROC(ret_devn_params);
+    /* This can be set from the memory device (planar) or target */
+    if ( dev_proc(ddev, put_image) == gx_default_put_image )
+        set_dev_proc(ddev, put_image, ddev->orig_procs.put_image);
+#undef COPY_PROC
 
-    ccode = dev_proc(ddev->mdev, open_device)((gx_device *)ddev->mdev);
-    if (ccode < 0)
-        display_free_bitmap(ddev);
+     /* Now, we want to hook various procs to give the callbacks
+      * progress reports. But only in non-clist mode. */
+    if (!CLIST_MUTATABLE_HAS_MUTATED(ddev)) {
+        ddev->mutated_procs = ddev->procs;
+        ddev->procs.fill_rectangle = display_fill_rectangle;
+        ddev->procs.copy_mono = display_copy_mono;
+        ddev->procs.copy_color = display_copy_color;
+        ddev->procs.get_bits = display_get_bits;
+    }
+
+    /* In command list mode, we've already opened the device. */
+    if (!CLIST_MUTATABLE_HAS_MUTATED(ddev)) {
+        ccode = dev_proc(ddev, open_device)((gx_device *)ddev);
+        if (ccode < 0)
+            display_free_bitmap(ddev);
+    }
 
     /* erase bitmap - before display gets redrawn */
     /*
@@ -1773,21 +2147,30 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
     switch (ddev->nFormat & DISPLAY_ROW_ALIGN_MASK) {
         case DISPLAY_ROW_ALIGN_DEFAULT:
             align = ARCH_ALIGN_PTR_MOD;
+            if (sizeof(void *) == 4)
+                ddev->log2_align_mod = 2;
+            else
+                ddev->log2_align_mod = 3;
             break;
         case DISPLAY_ROW_ALIGN_4:
             align = 4;
+            ddev->log2_align_mod = 2;
             break;
         case DISPLAY_ROW_ALIGN_8:
             align = 8;
+            ddev->log2_align_mod = 3;
             break;
         case DISPLAY_ROW_ALIGN_16:
             align = 16;
+            ddev->log2_align_mod = 4;
             break;
         case DISPLAY_ROW_ALIGN_32:
             align = 32;
+            ddev->log2_align_mod = 5;
             break;
         case DISPLAY_ROW_ALIGN_64:
             align = 64;
+            ddev->log2_align_mod = 6;
             break;
         default:
             align = 0;	/* not permitted */
@@ -1912,6 +2295,16 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
             break;
         default:
             return_error(gs_error_rangecheck);
+    }
+
+    switch (nFormat & (DISPLAY_PLANAR | DISPLAY_PLANAR_INTERLEAVED))
+    {
+        case DISPLAY_CHUNKY:
+            ddev->is_planar = 0;
+            break;
+        default:
+            ddev->is_planar = 1;
+            break;
     }
 
     /* restore old anti_alias info */

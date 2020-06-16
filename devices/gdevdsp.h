@@ -19,30 +19,45 @@
 #  define gdevdsp_INCLUDED
 
 /*
- * The callback structure must be provided by calling the
- * Ghostscript APIs in the following order:
+ * There are 2 mechanisms to provide the callback structure to
+ * Ghostscript. A legacy one, and a modern one. The legacy one is
+ * deprecated and should not be used in new code - at some point it may
+ * be removed.
+ *
+ * Modern method: Call the Ghostscript APIs in the following order:
+ *  gsapi_new_instance(&minst);
+ *  gsapi_register_callout(minst, callout, callout_handle);
+ *  gsapi_init_with_args(minst, argc, argv);
+ *
+ * The callout handler should look for a callout from the 'display'
+ * device, with id=DISPLAY_CALLOUT_GET_CALLBACK and respond by filling
+ * in the supplied gs_display_get_callback_t structure.
+ *
+ * Supported parameters and default values are:
+ * -dDisplayFormat=0                      long
+ *    Color format specified using bitfields below.
+ *    Included as argument of display_size() and display_presize()
+ * These can only be changed when the device is closed.
+ *
+ * Legacy method: Call the Ghostscript APIs in the following order:
  *  gsapi_new_instance(&minst);
  *  gsapi_set_display_callback(minst, callback);
  *  gsapi_init_with_args(minst, argc, argv);
  *
- * Supported parameters and default values are:
+ * An additional parameter is supported, with default value NULL:
  * -sDisplayHandle=16#04d2 or 1234        string
  *    Caller supplied handle as a decimal or hexadecimal number
  *    in a string.  On 32-bit platforms, it may be set
  *    using -dDisplayHandle=1234 for backward compatibility.
  *    Included as first parameter of all callback functions.
  *
- * -dDisplayFormat=0                      long
- *    Color format specified using bitfields below.
- *    Included as argument of display_size() and display_presize()
- * These can only be changed when the device is closed.
- *
  * The second parameter of all callback functions "void *device"
  * is the address of the Ghostscript display device instance.
  * The arguments "void *handle" and "void *device" together
  * uniquely identify an instance of the display device.
  *
- * A typical sequence of callbacks would be
+ * A typical sequence of callbacks (when running without a
+ * display_choose_mode) would be:
  *  open, presize, memalloc, size, sync, page
  *  presize, memfree, memalloc, size, sync, page
  *  preclose, memfree, close
@@ -53,13 +68,42 @@
  * If opening the device fails, you might see the following:
  *  open, presize, memalloc, memfree, close
  *
+ * A typical sequence of callbacks (when running with a
+ * display_choose_mode) will depend upon whether display_choose_mode
+ * selects pagemode or request-rectangle mode:
+ *
+ * In the pagemode case:
+ *  open, presize, display_choose_mode, memalloc, size, sync, page
+ *  presize, display_choose_mode, memfree, memalloc, size, sync, page
+ *  preclose, memfree, close
+ * The caller should not access the image buffer:
+ *  - before the first sync
+ *  - between presize and size
+ *  - after preclose
+ * If opening the device fails, you might see the following:
+ *  open, presize, memalloc, memfree, close
+ *
+ * In the request-rectangle mode:
+ *  open, presize, display_choose_mode, {rectangle_request}*
+ *  presize, display_choose_mode, {rectangle_request}*
+ *  preclose, close
+ *
+ * In a run that mixed request-rectangle and pagemode:
+ *  open, presize, display_choose_mode, memalloc, size, sync, page
+ *  presize, display_choose_mode, memfree, {rectangle_request}*
+ *  presize, display_choose_mode, {rectangle_request}*
+ *  presize, display_choose_mode, memalloc, size, sync, page
+ *  preclose, memfree, close
  */
 
-#define DISPLAY_VERSION_MAJOR 2
+#define DISPLAY_VERSION_MAJOR 3
 #define DISPLAY_VERSION_MINOR 0
 
 #define DISPLAY_VERSION_MAJOR_V1 1 /* before separation format was added */
 #define DISPLAY_VERSION_MINOR_V1 0
+
+#define DISPLAY_VERSION_MAJOR_V2 2 /* before planar and banding were added */
+#define DISPLAY_VERSION_MINOR_V2 0
 
 /* The display format is set by a combination of the following bitfields */
 
@@ -144,6 +188,14 @@ typedef enum {
 } DISPLAY_FORMAT_ROW_ALIGN;
 #define DISPLAY_ROW_ALIGN_MASK 0x00700000L
 
+/* Define whether we are using chunky, planar or planar interleaved
+ * representation. */
+typedef enum {
+    DISPLAY_CHUNKY             = (0<<23),
+    DISPLAY_PLANAR             = (1<<23),
+    DISPLAY_PLANAR_INTERLEAVED = (2<<23),
+} DISPLAY_FORMAT_PLANARNESS;
+
 #ifndef display_callback_DEFINED
 #define display_callback_DEFINED
 typedef struct display_callback_s display_callback;
@@ -204,6 +256,10 @@ struct display_callback_s {
     /* This can be used for cooperative multitasking or for
      * progressive update of the display.
      * This function pointer may be set to NULL if not required.
+     * NOTE: This is actually a really bad thing to work on. It may well
+     * end up not being called back at all during the rendering process,
+     * in particular if transparency is in use, or if rectangle request
+     * mode is used.
      */
     int (*display_update)(void *handle, void *device, int x, int y,
         int w, int h);
@@ -214,8 +270,14 @@ struct display_callback_s {
      * allocates the bitmap. This will only called to allocate the
      * image buffer. The first row will be placed at the address
      * returned by display_memalloc.
+     *
+     * In the event of this callback returning NULL, Ghostscript will
+     * look for a display_rectangle_request callback. If one is not
+     * supplied, then this will be reported as memory exhaustion. If
+     * one is supplied, then Ghostscript will switch to working in
+     * rectangle request mode.
      */
-    void *(*display_memalloc)(void *handle, void *device, unsigned long size);
+    void *(*display_memalloc)(void *handle, void *device, size_t size);
 
     /* Free memory for bitmap */
     /* If this is NULL, the Ghostscript memory device will free the bitmap */
@@ -238,13 +300,80 @@ struct display_callback_s {
         int component, const char *component_name,
         unsigned short c, unsigned short m,
         unsigned short y, unsigned short k);
+
+    /* Added in V3 */
+    /* If non NULL, then this gives the callback provider a chance to
+     * a) be informed of and b) control the bandheight used by the
+     * display device. If a call to allocate the page mode bitmap fails
+     * (either an internal allocation or a display_memalloc call), then
+     * Ghostscript will look for the presence of a
+     * display_rectangle_request callback. If it exists, then it will
+     * attempt to use retangle request mode.
+     *
+     * As part of this, it will pick an appropriate bandheight. If
+     * this callback exists, it will be called so the callback provider
+     * can know (and, optionally, tweak) the bandheight to be used.
+     * This is purely for performance. The callback should only ever
+     * *reduce* the bandheight given here.
+     *
+     * Return the adjusted bandheight (or 0 for no change).
+     */
+    int (*display_adjust_band_height)(void *handle, void *device,
+                                      int bandheight);
+
+    /* Ask the callback for a rectangle to render (and a block to render
+     * it in). Each subsequent call tells the caller that any previous
+     * call has finished. To signal 'no more rectangles' return with
+     * *w or *h = 0.
+     *
+     * On entry: *raster and *plane_raster are set to the standard
+     *   values. All other values are undefined.
+     * On return: *memory should point to a block of memory to use.
+     *   Pixel (*ox,*oy) is the first pixel represented in that block.
+     *   *raster = the number of bytes difference between the address of
+     *   component 0 of Pixel(*ox,*oy) and the address of component 0 of
+     *   Pixel(*ox,1+*oy).
+     *   *plane_raster = the number of bytes difference between the
+     *   address of component 0 of Pixel(*ox,*oy) and the address of
+     *   component 1 of Pixel(*ox,*oy), if in planar mode, 0 otherwise.
+     *   *x, *y, *w, *h = rectangle requested within that memory block.
+     *
+     */
+    int (*display_rectangle_request)(void *handle, void *device,
+                                     void **memory, int *ox, int *oy,
+                                     int *raster, int *plane_raster,
+                                     int *x, int *y, int *w, int *h);
+};
+
+/* This is the V2 structure, before banding and planar support was added */
+struct display_callback_v2_s {
+    int size; /* sizeof(struct display_callback_v2) */
+    int version_major; /* DISPLAY_VERSION_MAJOR_V2 */
+    int version_minor; /* DISPLAY_VERSION_MINOR_V2 */
+    int (*display_open)(void *handle, void *device);
+    int (*display_preclose)(void *handle, void *device);
+    int (*display_close)(void *handle, void *device);
+    int (*display_presize)(void *handle, void *device,
+        int width, int height, int raster, unsigned int format);
+    int (*display_size)(void *handle, void *device, int width, int height,
+        int raster, unsigned int format, unsigned char *pimage);
+    int (*display_sync)(void *handle, void *device);
+    int (*display_page)(void *handle, void *device, int copies, int flush);
+    int (*display_update)(void *handle, void *device, int x, int y,
+        int w, int h);
+    void *(*display_memalloc)(void *handle, void *device, unsigned long size);
+    int (*display_memfree)(void *handle, void *device, void *mem);
+    int (*display_separation)(void *handle, void *device,
+        int component, const char *component_name,
+        unsigned short c, unsigned short m,
+        unsigned short y, unsigned short k);
 };
 
 /* This is the V1 structure, before separation format was added */
 struct display_callback_v1_s {
-    int size;
-    int version_major;
-    int version_minor;
+    int size; /* sizeof(struct display_callback_v1) */
+    int version_major; /* DISPLAY_VERSION_MAJOR_V1 */
+    int version_minor; /* DISPLAY_VERSION_MINOR_V1 */
     int (*display_open)(void *handle, void *device);
     int (*display_preclose)(void *handle, void *device);
     int (*display_close)(void *handle, void *device);
