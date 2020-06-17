@@ -236,8 +236,10 @@ int pdfi_curveto(pdf_context *ctx)
         pdfi_clearstack(ctx);
         if (ctx->pdfstoponerror)
             return_error(gs_error_stackunderflow);
-        else
+        else {
+            ctx->pdf_errors |= E_PDF_STACKUNDERFLOWERROR;
             return 0;
+        }
     }
 
     for (i=0;i < 6;i++){

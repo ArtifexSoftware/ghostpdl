@@ -3090,6 +3090,7 @@ static int split_bogus_operator(pdf_context *ctx, pdf_stream *source, pdf_dict *
     code = pdfi_interpret_stream_operator(ctx, source, stream_dict, page_dict);
 
 error_exit:
+    ctx->pdf_errors |= E_PDF_TOKENERROR;
     pdfi_countdown(key1);
     pdfi_countdown(key2);
     pdfi_clearstack(ctx);
