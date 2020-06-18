@@ -183,6 +183,33 @@ static void pdfi_set_ctm(pdf_context *ctx)
 
 }
 
+/* Get .MediaSize from the device to setup PageSize in context */
+static int pdfi_get_media_size(pdf_context *ctx)
+{
+    gs_c_param_list list;
+    int code;
+    gs_param_float_array msa;
+
+    code = pdfi_device_check_param(ctx->pgs->device, ".MediaSize", &list);
+    if (code < 0) goto exit;
+
+    gs_c_param_list_read(&list);
+    code = param_read_float_array((gs_param_list *)&list, ".MediaSize", &msa);
+    if (code < 0) goto exit;
+
+    /* TODO: I have no idea if this works right when the page is rotated.
+     * It makes my brain explode :(
+     */
+    ctx->PageSize[0] = 0;
+    ctx->PageSize[1] = 0;
+    ctx->PageSize[2] = msa.data[0];
+    ctx->PageSize[3] = msa.data[1];
+
+ exit:
+    gs_c_param_list_release(&list);
+    return code;
+}
+
 static int pdfi_set_media_size(pdf_context *ctx, pdf_dict *page_dict)
 {
     gs_c_param_list list;
@@ -554,6 +581,10 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
      * but if we are being called from PostScript we do *not*
      * want to alter any of the graphics state or the media size.
      */
+    /* TODO: I think this is a mix of things we might need to
+     * still be setting up.
+     * (for example, I noticed the blendmode and moved it outside the if)
+     */
     if (init_graphics) {
         code = pdfi_set_media_size(ctx, page_dict);
         if (code < 0)
@@ -564,7 +595,6 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
         code = gs_setstrokeconstantalpha(ctx->pgs, 1.0);
         code = gs_setfillconstantalpha(ctx->pgs, 1.0);
         code = gs_setalphaisshape(ctx->pgs, 0);
-        code = gs_setblendmode(ctx->pgs, BLEND_MODE_Compatible);
         code = gs_settextknockout(ctx->pgs, true);
         code = gs_settextspacing(ctx->pgs, (double)0.0);
         code = gs_settextleading(ctx->pgs, (double)0.0);
@@ -575,7 +605,15 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
         ctx->TextBlockDepth = 0;
 
         pdfi_setup_transfers(ctx);
+    } else {
+        /* Gets ctx->PageSize setup correctly
+         * TODO: Probably not right if the page is rotated?
+         * PageSize is needed by the transparency code,
+         * not sure where else it might be used, if anywhere.
+         */
+        pdfi_get_media_size(ctx);
     }
+    code = gs_setblendmode(ctx->pgs, BLEND_MODE_Compatible);
 
     /* Set whether device needs OP support
      * This needs to be before transparency device is pushed, if applicable

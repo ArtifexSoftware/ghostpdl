@@ -16,6 +16,7 @@
 #ifndef PDF_DEVICE
 #define PDF_DEVICE
 
+int pdfi_device_check_param(gx_device *dev, const char *param, gs_c_param_list *list);
 bool pdfi_device_check_param_bool(gx_device *dev, const char *param);
 bool pdfi_device_check_param_exists(gx_device *dev, const char *param);
 void pdfi_device_set_flags(pdf_context *ctx);

@@ -19,7 +19,7 @@
 #include "pdf_stack.h"
 #include "pdf_device.h"
 
-static int pdfi_device_check_param(gx_device *dev, const char *param, gs_c_param_list *list)
+int pdfi_device_check_param(gx_device *dev, const char *param, gs_c_param_list *list)
 {
     dev_param_req_t request;
     int code;
