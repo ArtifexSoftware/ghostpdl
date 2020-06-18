@@ -1692,7 +1692,7 @@ gs_fapi_do_char(gs_font *pfont, gs_gstate *pgs, gs_text_enum_t *penum, char *fon
     }
     else {
         code =
-            I->ff.fapi_set_cache(penum, pbfont, &enc_char_name_string, -1,
+            I->ff.fapi_set_cache(penum, pbfont, &enc_char_name_string, GS_NO_GLYPH,
                                  sbw + 2, &char_bbox, sbwp, &imagenow);
     }
     

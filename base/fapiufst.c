@@ -720,74 +720,170 @@ pack_float(LPUB8 * p, float v)
 
 #define PACK_ZERO(p) *(p++) = 0
 #define PACK_BYTE(p, c) *(p++) = c
-#define PACK_WORD(p, i, var) pack_word(&p, ff->get_word(ff, var, i))
-#define PACK_LONG(p, i, var) pack_long(&p, ff->get_long(ff, var, i))
 
-static void
+static inline int
+pack_feature_word(gs_fapi_font * ff, LPUB8 * p, gs_fapi_font_feature var, int ind)
+{
+    UW16 val;
+    int code = ff->get_word(ff, var, ind, (unsigned short *)&val);
+    if (code < 0)
+        return code;
+    pack_word(p, val);
+
+    return code;
+}
+
+static inline int
+pack_feature_long(gs_fapi_font * ff, LPUB8 * p, gs_fapi_font_feature var, int ind)
+{
+    UL32 val;
+    unsigned long lv;
+    int code = ff->get_long(ff, var, ind, &lv);
+    if (code < 0)
+        return code;
+    val = (UL32)lv;
+    pack_word(p, val);
+
+    return code;
+}
+
+static int
 pack_pseo_word_array(fapi_ufst_server * r, gs_fapi_font * ff, UB8 ** p,
                      UW16 max_count, gs_fapi_font_feature count_id,
                      gs_fapi_font_feature array_id)
 {
-    UW16 k = min(ff->get_word(ff, count_id, 0), max_count), j;
+    UW16 k, k2, j;
+    int code;
+
+    code = ff->get_word(ff, count_id, 0, (unsigned short *)&k2);
+    if (code < 0)
+        return code;
+    k = min(k2, max_count);
 
     pack_word(p, k);
     for (j = 0; j < k; j++)
-        PACK_WORD(*p, j, array_id);
+        code = pack_feature_word(ff, p, j, array_id);
     for (; j < max_count; j++)
         pack_word(p, 0);
+
+    return code;
 }
 
-static void
+static int
 pack_pseo_fhdr(fapi_ufst_server * r, gs_fapi_font * ff, UB8 * p)
 {
     ushort j, n, skip = 0;
+    int code;
 
     while (((uint64_t) p) & 0x03)       /* align to QUADWORD */
         PACK_ZERO(p);
 
     pack_long(&p, 1);           /* format = 1 */
-    for (j = 0; j < 6; j++)
-        pack_float(&p, ff->get_float(ff, gs_fapi_font_feature_FontMatrix, j));
+    for (j = 0; j < 6; j++) {
+        float f;
+        code = ff->get_float(ff, gs_fapi_font_feature_FontMatrix, j, &f);
+        if (code < 0)
+            return code;
+        pack_float(&p, f);
+    }
     while (((uint64_t) p) & 0x03)       /* align to QUADWORD */
         PACK_ZERO(p);
     /* UFST has no definition for PSEO structure, so implement serialization : */
-    PACK_LONG(p, 0, gs_fapi_font_feature_UniqueID);
-    PACK_LONG(p, 0, gs_fapi_font_feature_BlueScale);
-    PACK_WORD(p, 0, gs_fapi_font_feature_Weight);
-    PACK_WORD(p, 0, gs_fapi_font_feature_ItalicAngle);
-    PACK_WORD(p, 0, gs_fapi_font_feature_IsFixedPitch);
-    PACK_WORD(p, 0, gs_fapi_font_feature_UnderLinePosition);
-    PACK_WORD(p, 0, gs_fapi_font_feature_UnderlineThickness);
-    PACK_WORD(p, 0, gs_fapi_font_feature_FontType);
-    PACK_WORD(p, 0, gs_fapi_font_feature_FontBBox);
-    PACK_WORD(p, 1, gs_fapi_font_feature_FontBBox);
-    PACK_WORD(p, 2, gs_fapi_font_feature_FontBBox);
-    PACK_WORD(p, 3, gs_fapi_font_feature_FontBBox);
-    pack_pseo_word_array(r, ff, &p, 14, gs_fapi_font_feature_BlueValues_count,
+    /* NOTE: PACK_LONG and PACK_WORD macros can do a return on error */
+    code = pack_feature_long(ff, &p, 0, gs_fapi_font_feature_UniqueID);
+    if (code < 0)
+        return code;
+    code = pack_feature_long(ff, &p, 0, gs_fapi_font_feature_BlueScale);
+    if (code < 0)
+        return code;
+    code = pack_feature_word(ff, &p, 0, gs_fapi_font_feature_Weight);
+    if (code < 0)
+        return code;
+    code = pack_feature_word(ff, &p, 0, gs_fapi_font_feature_ItalicAngle);
+    if (code < 0)
+        return code;
+    code = pack_feature_word(ff, &p, 0, gs_fapi_font_feature_IsFixedPitch);
+    if (code < 0)
+        return code;
+    code = pack_feature_word(ff, &p, 0, gs_fapi_font_feature_UnderLinePosition);
+    if (code < 0)
+        return code;
+    code = pack_feature_word(ff, &p, 0, gs_fapi_font_feature_UnderlineThickness);
+    if (code < 0)
+        return code;
+    code = pack_feature_word(ff, &p, 0, gs_fapi_font_feature_FontType);
+    if (code < 0)
+        return code;
+    code = pack_feature_word(ff, &p, 0, gs_fapi_font_feature_FontBBox);
+    if (code < 0)
+        return code;
+    code = pack_feature_word(ff, &p, 1, gs_fapi_font_feature_FontBBox);
+    if (code < 0)
+        return code;
+    code = pack_feature_word(ff, &p, 2, gs_fapi_font_feature_FontBBox);
+    if (code < 0)
+        return code;
+    code = pack_feature_word(ff, &p, 3, gs_fapi_font_feature_FontBBox);
+    if (code < 0)
+        return code;
+    code = pack_pseo_word_array(r, ff, &p, 14, gs_fapi_font_feature_BlueValues_count,
                          gs_fapi_font_feature_BlueValues);
-    pack_pseo_word_array(r, ff, &p, 10, gs_fapi_font_feature_OtherBlues_count,
+    if (code < 0)
+        return code;
+    code = pack_pseo_word_array(r, ff, &p, 10, gs_fapi_font_feature_OtherBlues_count,
                          gs_fapi_font_feature_OtherBlues);
-    pack_pseo_word_array(r, ff, &p, 14,
+    if (code < 0)
+        return code;
+
+    code = pack_pseo_word_array(r, ff, &p, 14,
                          gs_fapi_font_feature_FamilyBlues_count,
                          gs_fapi_font_feature_FamilyBlues);
-    pack_pseo_word_array(r, ff, &p, 10,
+    if (code < 0)
+        return code;
+
+    code = pack_pseo_word_array(r, ff, &p, 10,
                          gs_fapi_font_feature_FamilyOtherBlues_count,
                          gs_fapi_font_feature_FamilyOtherBlues);
-    PACK_WORD(p, 0, gs_fapi_font_feature_BlueShift);
-    PACK_WORD(p, 0, gs_fapi_font_feature_BlueFuzz);
-    PACK_WORD(p, 0, gs_fapi_font_feature_StdHW);
-    PACK_WORD(p, 0, gs_fapi_font_feature_StdVW);
-    pack_pseo_word_array(r, ff, &p, 12, gs_fapi_font_feature_StemSnapH_count,
+    if (code < 0)
+        return code;
+
+    code = pack_feature_word(ff, &p, 0, gs_fapi_font_feature_BlueShift);
+    if (code < 0)
+        return code;
+    code = pack_feature_word(ff, &p, 0, gs_fapi_font_feature_BlueFuzz);
+    if (code < 0)
+        return code;
+    code = pack_feature_word(ff, &p, 0, gs_fapi_font_feature_StdHW);
+    if (code < 0)
+        return code;
+    code = pack_feature_word(ff, &p, 0, gs_fapi_font_feature_StdVW);
+    if (code < 0)
+        return code;
+    code = pack_pseo_word_array(r, ff, &p, 12, gs_fapi_font_feature_StemSnapH_count,
                          gs_fapi_font_feature_StemSnapH);
-    pack_pseo_word_array(r, ff, &p, 12, gs_fapi_font_feature_StemSnapV_count,
+    if (code < 0)
+        return code;
+
+    code = pack_pseo_word_array(r, ff, &p, 12, gs_fapi_font_feature_StemSnapV_count,
                          gs_fapi_font_feature_StemSnapV);
-    PACK_WORD(p, 0, gs_fapi_font_feature_ForceBold);
-    PACK_WORD(p, 0, gs_fapi_font_feature_LanguageGroup);
-    PACK_WORD(p, 0, gs_fapi_font_feature_lenIV);
+    if (code < 0)
+        return code;
+
+    code = pack_feature_word(ff, &p, 0, gs_fapi_font_feature_ForceBold);
+    if (code < 0)
+        return code;
+    code = pack_feature_word(ff, &p, 0, gs_fapi_font_feature_LanguageGroup);
+    if (code < 0)
+        return code;
+    code = pack_feature_word(ff, &p, 0, gs_fapi_font_feature_lenIV);
+    if (code < 0)
+        return code;
     for (j = 0; j < 12; j++)
         PACK_ZERO(p), PACK_ZERO(p);     /* Reserved2 */
     /* max data size = 107 words + 6 floats in ASCII */
-    n = ff->get_word(ff, gs_fapi_font_feature_Subrs_count, 0);
+    code = ff->get_word(ff, gs_fapi_font_feature_Subrs_count, 0, &n);
+    if (code < 0)
+        return code;
     pack_word(&p, n);
     for (j = 0; j < n; j++) {
         ushort subr_len = ff->get_subr(ff, j, 0, 0);
@@ -802,23 +898,23 @@ pack_pseo_fhdr(fapi_ufst_server * r, gs_fapi_font * ff, UB8 * p)
         else
             skip = 1;
     }
-    n = ff->get_word(ff, gs_fapi_font_feature_GlobalSubrs_count, 0);
-    /* get_word() doesn't have an error return value, so I've used an unlikely value */
-    if (n != 65535) {
-        pack_word(&p, n);
-        for (j = 0; j < n; j++) {
-            ushort subr_len = ff->get_gsubr(ff, j, 0, 0);
+    code = ff->get_word(ff, gs_fapi_font_feature_GlobalSubrs_count, 0, &n);
+    if (code < 0)
+        return code;
 
-            if (subr_len != 0) {
-                pack_word(&p, j);
-                pack_word(&p, subr_len);
-                PACK_BYTE(p, 1);        /* is_decrypted */
-                ff->get_gsubr(ff, j, p, subr_len);
-                p += subr_len;
-            }
-            else
-                skip = 1;
+    pack_word(&p, n);
+    for (j = 0; j < n; j++) {
+        ushort subr_len = ff->get_gsubr(ff, j, 0, 0);
+
+        if (subr_len != 0) {
+            pack_word(&p, j);
+            pack_word(&p, subr_len);
+            PACK_BYTE(p, 1);        /* is_decrypted */
+            ff->get_gsubr(ff, j, p, subr_len);
+            p += subr_len;
         }
+        else
+            skip = 1;
     }
     if (skip)
         pack_word(&p, 0xFFFF);
@@ -905,20 +1001,37 @@ ufst_make_font_data(fapi_ufst_server * r, const char *font_file_path,
 
         area_length += PCLETTOFONTHDRSIZE;
         if (ff->is_type1) {
-            int subrs_count = ff->get_word(ff, gs_fapi_font_feature_Subrs_count, 0);
-            int subrs_length = ff->get_long(ff, gs_fapi_font_feature_Subrs_total_size, 0);
+            int subrs_count;
+            int subrs_length;
             int subrs_area_size;
-            int gsubrs_count = ff->get_word(ff, gs_fapi_font_feature_GlobalSubrs_count, 0);
+            int gsubrs_count;
+            unsigned short usval;
+            unsigned long ulval;
 
-            /* get_word() doesn't have an error return value, so I've used an unlikely value */
-            if (gsubrs_count != 65535)
-                subrs_count += gsubrs_count;
+            code = ff->get_word(ff, gs_fapi_font_feature_Subrs_count, 0, &usval);
+            if (code < 0)
+                return code;
+            subrs_count = usval;
+            code = ff->get_word(ff, gs_fapi_font_feature_GlobalSubrs_count, 0, &usval);
+            if (code < 0)
+                return code;
+            gsubrs_count = usval;
+
+            subrs_count += gsubrs_count;
+
+            code = ff->get_long(ff, gs_fapi_font_feature_Subrs_total_size, 0, &ulval);
+            if (code < 0)
+                return code;
+            subrs_length = (int)ulval;
 
             subrs_area_size = subrs_count * 5 + subrs_length + 2;
             area_length += 360 + subrs_area_size;       /* some inprecise - see pack_pseo_fhdr */
         }
         else {
-            tt_size = ff->get_long(ff, gs_fapi_font_feature_TT_size, 0);
+            code = ff->get_long(ff, gs_fapi_font_feature_TT_size, 0, &tt_size);
+            if (code < 0)
+                return code;
+
             if (tt_size == 0)
                 return_error(gs_error_invalidfont);
 /*            area_length += tt_size + (use_XL_format ? 6 : 4) + 4 + 2;*/
@@ -979,8 +1092,13 @@ ufst_make_font_data(fapi_ufst_server * r, const char *font_file_path,
         }
     }
     else {
+        unsigned long ulval;
+
         d->font_type = (ff->is_type1 ? FC_PST1_TYPE : FC_TT_TYPE);
-        d->font_id = ff->get_long(ff, gs_fapi_font_feature_UniqueID, 0);
+        code = ff->get_long(ff, gs_fapi_font_feature_UniqueID, 0, &ulval);
+        if (code < 0)
+            return code;
+        d->font_id = ulval;
         if (d->font_id < 0) {
             d->font_id = assign_font_id();
         }
@@ -1047,7 +1165,9 @@ ufst_make_font_data(fapi_ufst_server * r, const char *font_file_path,
         if (ff->is_type1) {
             LPUB8 fontdata = (LPUB8) h + PCLETTOFONTHDRSIZE;
 
-            pack_pseo_fhdr(r, ff, fontdata);
+            code = pack_pseo_fhdr(r, ff, fontdata);
+            if (code < 0)
+                return code;
         }
         else {
             LPUB8 pseg = (LPUB8) h + PCLETTOFONTHDRSIZE;
@@ -1060,8 +1180,11 @@ ufst_make_font_data(fapi_ufst_server * r, const char *font_file_path,
             *((ulong *) (&(pseg[2]))) = SWAPL(tt_size);
 
             d->tt_font_body_offset = (LPUB8) fontdata - (LPUB8) d;
-            if (ff->serialize_tt_font(ff, fontdata, tt_size))
-                return_error(gs_error_invalidfont);
+
+            code = ff->serialize_tt_font(ff, fontdata, tt_size);
+            if (code < 0)
+                return code;
+
             *(fontdata + tt_size) = 255;
             *(fontdata + tt_size + 1) = 255;
             *(fontdata + tt_size + 2) = 0;

@@ -32,19 +32,18 @@
 #include "pdf_agl.h"
 
 /* forward declarations for the pdfi_ff_stub definition */
-static ulong
-pdfi_fapi_get_long(gs_fapi_font * ff, gs_fapi_font_feature var_id, int index);
+static int
+pdfi_fapi_get_long(gs_fapi_font * ff, gs_fapi_font_feature var_id, int index, unsigned long *ret);
 
 static int
 pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_string * charstring,
-                gs_string * name, int ccode, gs_string * enc_char_name,
+                gs_string * name, gs_glyph ccode, gs_string * enc_char_name,
                 char *font_file_path, gs_fapi_char_ref * cr, bool bCID);
 
 static int
-pdfi_fapi_get_glyph(gs_fapi_font * ff, int char_code, byte * buf,
-                  ushort buf_length);
+pdfi_fapi_get_glyph(gs_fapi_font * ff, gs_glyph char_code, byte * buf, int buf_length);
 
-static ushort
+static int
 pdfi_fapi_serialize_tt_font(gs_fapi_font * ff, void *buf, int buf_size);
 
 static int
@@ -53,13 +52,12 @@ pdfi_get_glyphdirectory_data(gs_fapi_font * ff, int char_code,
 
 static int
 pdfi_fapi_set_cache(gs_text_enum_t * penum, const gs_font_base * pbfont,
-                  const gs_string * char_name, int cid,
+                  const gs_string * char_name, gs_glyph cid,
                   const double pwidth[2], const gs_rect * pbbox,
                   const double Metrics2_sbw_default[4], bool * imagenow);
 
 static int
-pdfi_fapi_get_metrics(gs_fapi_font * ff, gs_string * char_name, int cid,
-                    double *m, bool vertical);
+pdfi_fapi_get_metrics(gs_fapi_font * ff, gs_string * char_name, gs_glyph cid, double *m, bool vertical);
 
 static const gs_fapi_font pdfi_ff_stub = {
     0,                          /* server_font_data */
@@ -101,13 +99,13 @@ static const gs_fapi_font pdfi_ff_stub = {
     pdfi_fapi_set_cache           /* fapi_set_cache */
 };
 
-static ulong
-pdfi_fapi_get_long(gs_fapi_font * ff, gs_fapi_font_feature var_id, int index)
+static int
+pdfi_fapi_get_long(gs_fapi_font * ff, gs_fapi_font_feature var_id, int index, unsigned long *ret)
 {
-    ulong value = -1;
     (void)index;
+    *ret = -1;
 
-    return (value);
+    return 0;
 }
 
 extern pdfi_single_glyph_list_t *pdfi_SingleGlyphList;
@@ -115,7 +113,7 @@ extern mac_glyph_ordering_t MacintoshOrdering[];
 
 static int
 pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_string * charstring,
-                gs_string * name, int ccode, gs_string * enc_char_name,
+                gs_string * name, gs_glyph ccode, gs_string * enc_char_name,
                 char *font_file_path, gs_fapi_char_ref * cr, bool bCID)
 {
     if (pbfont->FontType == ft_TrueType) {
@@ -220,13 +218,12 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
 }
 
 static int
-pdfi_fapi_get_glyph(gs_fapi_font * ff, int char_code, byte * buf,
-                  ushort buf_length)
+pdfi_fapi_get_glyph(gs_fapi_font * ff, gs_glyph char_code, byte * buf, int buf_length)
 {
     return 0;
 }
 
-static ushort
+static int
 pdfi_fapi_serialize_tt_font(gs_fapi_font * ff, void *buf, int buf_size)
 {
     return 0;
@@ -240,15 +237,14 @@ pdfi_get_glyphdirectory_data(gs_fapi_font * ff, int char_code,
 }
 
 static int
-pdfi_fapi_get_metrics(gs_fapi_font * ff, gs_string * char_name, int cid,
-                    double *m, bool vertical)
+pdfi_fapi_get_metrics(gs_fapi_font * ff, gs_string * char_name, gs_glyph cid, double *m, bool vertical)
 {
     return 0;
 }
 
 static int
 pdfi_fapi_set_cache(gs_text_enum_t * penum, const gs_font_base * pbfont,
-                  const gs_string * char_name, int cid,
+                  const gs_string * char_name, gs_glyph cid,
                   const double pwidth[2], const gs_rect * pbbox,
                   const double Metrics2_sbw_default[4], bool * imagenow)
 {

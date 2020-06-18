@@ -152,6 +152,8 @@ zcheck_r6_password(i_ctx_t * i_ctx_p)
         return_error(gs_error_undefined);
     if (!r_has_type(Oref, t_string))
       return_error(gs_error_typecheck);
+    if (r_size(Oref) < 48)
+        return_error(gs_error_invalidaccess);
 
     code = dict_find_string(CryptDict, "OE", &OEref);
     if (code < 0)
@@ -160,6 +162,8 @@ zcheck_r6_password(i_ctx_t * i_ctx_p)
         return_error(gs_error_undefined);
     if (!r_has_type(OEref, t_string))
       return_error(gs_error_typecheck);
+    if (r_size(OEref) < 32)
+        return_error(gs_error_invalidaccess);
 
     code = dict_find_string(CryptDict, "U", &Uref);
     if (code < 0)
@@ -168,6 +172,8 @@ zcheck_r6_password(i_ctx_t * i_ctx_p)
         return_error(gs_error_undefined);
     if (!r_has_type(Uref, t_string))
       return_error(gs_error_typecheck);
+    if (r_size(Uref) < 48)
+        return_error(gs_error_invalidaccess);
 
     code = dict_find_string(CryptDict, "UE", &UEref);
     if (code < 0)
@@ -176,6 +182,8 @@ zcheck_r6_password(i_ctx_t * i_ctx_p)
         return_error(gs_error_undefined);
     if (!r_has_type(UEref, t_string))
       return_error(gs_error_typecheck);
+    if (r_size(UEref) < 32)
+        return_error(gs_error_invalidaccess);
 
     pop(2);
     op = osp;

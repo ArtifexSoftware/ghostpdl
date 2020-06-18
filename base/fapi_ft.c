@@ -1114,7 +1114,7 @@ gs_fapi_ft_get_scaled_font(gs_fapi_server * a_server, gs_fapi_font * a_font,
     ff_server *s = (ff_server *) a_server;
     ff_face *face = (ff_face *) a_font->server_font_data;
     FT_Error ft_error = 0;
-    int i, j;
+    int i, j, code;
     FT_CharMap cmap = NULL;
     bool data_owned = true;
 
@@ -1183,7 +1183,6 @@ gs_fapi_ft_get_scaled_font(gs_fapi_server * a_server, gs_fapi_font * a_font,
         /* Load a typeface from a file. */
         else if (a_font->font_file_path) {
             FT_Open_Args args;
-            int code;
 
             memset(&args, 0x00, sizeof(args));
 
@@ -1215,9 +1214,12 @@ gs_fapi_ft_get_scaled_font(gs_fapi_server * a_server, gs_fapi_font * a_font,
 
             if (a_font->is_type1) {
                 long length;
-                int type =
-                    a_font->get_word(a_font, gs_fapi_font_feature_FontType,
-                                     0);
+                unsigned short type = 0;
+
+                code = a_font->get_word(a_font, gs_fapi_font_feature_FontType, 0, &type);
+                if (code < 0) {
+                    return code;
+                }
 
                 /* Tell the FAPI interface that we need to decrypt the /Subrs data. */
                 a_font->need_decrypt = true;
@@ -1230,6 +1232,7 @@ gs_fapi_ft_get_scaled_font(gs_fapi_server * a_server, gs_fapi_font * a_font,
                     length = gs_fapi_serialize_type1_font(a_font, NULL, 0);
                 else
                     length = gs_fapi_serialize_type2_font(a_font, NULL, 0);
+
                 open_args.memory_base = own_font_data =
                     FF_alloc(s->ftmemory, length);
                 if (!open_args.memory_base)
@@ -1237,14 +1240,14 @@ gs_fapi_ft_get_scaled_font(gs_fapi_server * a_server, gs_fapi_font * a_font,
                 own_font_data_len = length;
                 if (type == 1)
                     open_args.memory_size =
-                        gs_fapi_serialize_type1_font(a_font, own_font_data,
-                                                     length);
+                        gs_fapi_serialize_type1_font(a_font, own_font_data, length);
                 else
                     open_args.memory_size =
-                        gs_fapi_serialize_type2_font(a_font, own_font_data,
-                                                     length);
+                        gs_fapi_serialize_type2_font(a_font, own_font_data, length);
+
                 if (open_args.memory_size != length)
                     return_error(gs_error_unregistered);        /* Must not happen. */
+
                 ft_inc_int = new_inc_int(a_server, a_font);
                 if (!ft_inc_int) {
                     FF_free(s->ftmemory, own_font_data);
@@ -1255,10 +1258,15 @@ gs_fapi_ft_get_scaled_font(gs_fapi_server * a_server, gs_fapi_font * a_font,
             /* It must be type 42 (see code in FAPI_FF_get_glyph in zfapi.c). */
             else {
                 /* Get the length of the TrueType data. */
-                open_args.memory_size =
-                    a_font->get_long(a_font, gs_fapi_font_feature_TT_size, 0);
-                if (open_args.memory_size == 0)
+                unsigned long ms;
+
+                code = a_font->get_long(a_font, gs_fapi_font_feature_TT_size, 0, &ms);
+                if (code < 0)
+                    return code;
+                if (ms == 0)
                     return_error(gs_error_invalidfont);
+
+                open_args.memory_size = (FT_Long)ms;
 
                 /* Load the TrueType data into a single buffer. */
                 open_args.memory_base = own_font_data =
@@ -1268,10 +1276,10 @@ gs_fapi_ft_get_scaled_font(gs_fapi_server * a_server, gs_fapi_font * a_font,
 
                 own_font_data_len = open_args.memory_size;
 
-                if (a_font->
-                    serialize_tt_font(a_font, own_font_data,
-                                      open_args.memory_size))
-                    return_error(gs_error_invalidfont);
+                code = a_font->serialize_tt_font(a_font, own_font_data,
+                                      open_args.memory_size);
+                if (code < 0)
+                    return code;
 
                 /* We always load incrementally. */
                 ft_inc_int = new_inc_int(a_server, a_font);

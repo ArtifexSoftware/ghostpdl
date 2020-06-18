@@ -271,7 +271,7 @@ gs_type42_font_init(gs_font_type42 * pfont, int subfontID)
     }
     loca_size >>= pfont->data.indexToLocFormat + 1;
     pfont->data.numGlyphs = loca_size - 1;
-    if (pfont->data.numGlyphs > pfont->data.trueNumGlyphs) {
+    if (pfont->data.numGlyphs > (int)pfont->data.trueNumGlyphs) {
         /* pfont->key_name.chars is ASCIIZ due to copy_font_name. */
         char buf[gs_font_name_max + 2];
 

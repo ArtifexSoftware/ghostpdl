@@ -179,42 +179,44 @@ struct gs_fapi_font_s
     const void *char_data;
     int char_data_len;
     float embolden;
-    unsigned short (*get_word) (gs_fapi_font *ff,
-                                gs_fapi_font_feature var_id, int index);
-    unsigned long (*get_long) (gs_fapi_font *ff, gs_fapi_font_feature var_id,
-                               int index);
-    float (*get_float) (gs_fapi_font *ff, gs_fapi_font_feature var_id,
-                        int index);
-    int (*get_name) (gs_fapi_font *ff, gs_fapi_font_feature var_id,
-                     int index, char *buffer, int len);
-    int (*get_proc) (gs_fapi_font *ff, gs_fapi_font_feature var_id,
-                     int index, char *Buffer);
-    unsigned short (*get_gsubr) (gs_fapi_font *ff, int index, byte *buf,
-                                 ushort buf_length);
-    unsigned short (*get_subr) (gs_fapi_font *ff, int index, byte *buf,
-                                ushort buf_length);
-    unsigned short (*get_raw_subr) (gs_fapi_font *ff, int index, byte *buf,
-                                    ushort buf_length);
-    int (*get_glyph) (gs_fapi_font *ff, int char_code, byte *buf,
-                      ushort buf_length);
-    unsigned short (*serialize_tt_font) (gs_fapi_font *ff, void *buf,
-                                         int buf_size);
-    unsigned short (*get_charstring) (gs_fapi_font *ff, int index,
-                                      byte *buf, ushort buf_length);
-    unsigned short (*get_charstring_name) (gs_fapi_font *ff, int index,
-                                           byte *buf, ushort buf_length);
-    int (*get_glyphdirectory_data) (gs_fapi_font *ff, int char_code,
-                                    const byte **ptr);
+
+    int (*get_word) (gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsigned short *ret);
+
+    int (*get_long) (gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsigned long *ret);
+
+    int (*get_float) (gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, float *ret);
+
+    int (*get_name) (gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, char *buffer, int len);
+
+    int (*get_proc) (gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, char *Buffer);
+
+    int (*get_gsubr) (gs_fapi_font *ff, int index, byte *buf, int buf_length);
+
+    int (*get_subr) (gs_fapi_font *ff, int index, byte *buf, int buf_length);
+
+    int (*get_raw_subr) (gs_fapi_font *ff, int index, byte *buf, int buf_length);
+
+    int (*get_glyph) (gs_fapi_font *ff, gs_glyph char_code, byte *buf, int buf_length);
+
+    int (*serialize_tt_font) (gs_fapi_font *ff, void *buf, int buf_size);
+
+    int (*get_charstring) (gs_fapi_font *ff, int index, byte *buf, ushort buf_length);
+
+    int (*get_charstring_name) (gs_fapi_font *ff, int index, byte *buf, ushort buf_length);
+
+    int (*get_glyphdirectory_data) (gs_fapi_font *ff, int char_code, const byte **ptr);
+
     int (*get_glyphname_or_cid) (gs_text_enum_t *penum, gs_font_base *pbfont,
                                  gs_string *charstring, gs_string *name,
-                                 int ccode, gs_string *enc_char_name,
+                                 gs_glyph ccode, gs_string *enc_char_name,
                                  char *font_file_path, gs_fapi_char_ref *cr,
                                  bool bCID);
-    int (*fapi_get_metrics) (gs_fapi_font *ff, gs_string *char_name,
-                             int cid, double *m, bool vertical);
+
+    int (*fapi_get_metrics) (gs_fapi_font *ff, gs_string *char_name, gs_glyph cid, double *m, bool vertical);
+
     int (*fapi_set_cache) (gs_text_enum_t *penum,
                            const gs_font_base *pbfont,
-                           const gs_string *char_name, int cid,
+                           const gs_string *char_name, gs_glyph cid,
                            const double pwidth[2], const gs_rect *pbbox,
                            const double Metrics2_sbw_default[4],
                            bool *imagenow);

@@ -61,19 +61,18 @@ static const char *UFSTPLUGINPARM = "UFST_PlugIn=";
 extern const char gp_file_name_list_separator;
 
 /* forward declarations for the pl_ff_stub definition */
-static ulong
-pl_fapi_get_long(gs_fapi_font * ff, gs_fapi_font_feature var_id, int index);
+static int
+pl_fapi_get_long(gs_fapi_font * ff, gs_fapi_font_feature var_id, int index, unsigned long *ret);
 
 static int
 pl_fapi_get_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_string * charstring,
-                gs_string * name, int ccode, gs_string * enc_char_name,
+                gs_string * name, gs_glyph ccode, gs_string * enc_char_name,
                 char *font_file_path, gs_fapi_char_ref * cr, bool bCID);
 
 static int
-pl_fapi_get_glyph(gs_fapi_font * ff, int char_code, byte * buf,
-                  ushort buf_length);
+pl_fapi_get_glyph(gs_fapi_font * ff, gs_glyph char_code, byte * buf, int buf_length);
 
-static ushort
+static int
 pl_fapi_serialize_tt_font(gs_fapi_font * ff, void *buf, int buf_size);
 
 static int
@@ -82,12 +81,12 @@ pl_get_glyphdirectory_data(gs_fapi_font * ff, int char_code,
 
 static int
 pl_fapi_set_cache(gs_text_enum_t * penum, const gs_font_base * pbfont,
-                  const gs_string * char_name, int cid,
+                  const gs_string * char_name, gs_glyph cid,
                   const double pwidth[2], const gs_rect * pbbox,
                   const double Metrics2_sbw_default[4], bool * imagenow);
 
 static int
-pl_fapi_get_metrics(gs_fapi_font * ff, gs_string * char_name, int cid,
+pl_fapi_get_metrics(gs_fapi_font * ff, gs_string * char_name, gs_glyph cid,
                     double *m, bool vertical);
 
 static const gs_fapi_font pl_ff_stub = {
@@ -130,25 +129,28 @@ static const gs_fapi_font pl_ff_stub = {
     pl_fapi_set_cache           /* fapi_set_cache */
 };
 
-static ulong
-pl_fapi_get_long(gs_fapi_font * ff, gs_fapi_font_feature var_id, int index)
+static int
+pl_fapi_get_long(gs_fapi_font * ff, gs_fapi_font_feature var_id, int index, unsigned long *ret)
 {
     gs_font *pfont = (gs_font *) ff->client_font_data;
     pl_font_t *plfont = (pl_font_t *) pfont->client_data;
-    ulong value = -1;
+    int code = 0;
     (void)index;
 
     if (var_id == gs_fapi_font_feature_TT_size) {
-        value =
-            plfont->header_size - (plfont->offsets.GT +
+        *ret = plfont->header_size - (plfont->offsets.GT +
                                    (plfont->large_sizes ? 6 : 4));
     }
-    return (value);
+    else {
+        *ret = 0;
+        code = gs_note_error(gs_error_undefined);
+    }
+    return code;
 }
 
 static int
 pl_fapi_get_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_string * charstring,
-                gs_string * name, int ccode, gs_string * enc_char_name,
+                gs_string * name, gs_glyph ccode, gs_string * enc_char_name,
                 char *font_file_path, gs_fapi_char_ref * cr, bool bCID)
 {
     pl_font_t *plfont = pbfont->client_data;
@@ -171,8 +173,7 @@ pl_fapi_get_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_string * charst
 }
 
 static int
-pl_fapi_get_glyph(gs_fapi_font * ff, int char_code, byte * buf,
-                  ushort buf_length)
+pl_fapi_get_glyph(gs_fapi_font * ff, gs_glyph char_code, byte * buf, int buf_length)
 {
     gs_font *pfont = (gs_font *) ff->client_font_data;
     /* Zero is a valid size for a TTF glyph, so init to that.
@@ -191,12 +192,12 @@ pl_fapi_get_glyph(gs_fapi_font * ff, int char_code, byte * buf,
     return (size);
 }
 
-static ushort
+static int
 pl_fapi_serialize_tt_font(gs_fapi_font * ff, void *buf, int buf_size)
 {
     gs_font *pfont = (gs_font *) ff->client_font_data;
     pl_font_t *plfont = (pl_font_t *) pfont->client_data;
-    short code = -1;
+    int code = -1;
     int offset = (plfont->offsets.GT + (plfont->large_sizes ? 6 : 4));
 
     if (buf_size >= (plfont->header_size - offset)) {
@@ -204,7 +205,7 @@ pl_fapi_serialize_tt_font(gs_fapi_font * ff, void *buf, int buf_size)
 
         memcpy(buf, (plfont->header + offset), buf_size);
     }
-    return ((ushort) code);
+    return (code);
 }
 
 static int
@@ -215,7 +216,7 @@ pl_get_glyphdirectory_data(gs_fapi_font * ff, int char_code,
 }
 
 static int
-pl_fapi_get_metrics(gs_fapi_font * ff, gs_string * char_name, int cid,
+pl_fapi_get_metrics(gs_fapi_font * ff, gs_string * char_name, gs_glyph cid,
                     double *m, bool vertical)
 {
     gs_font_base *pfont = (gs_font_base *) ff->client_font_data;
@@ -244,7 +245,7 @@ pl_fapi_get_metrics(gs_fapi_font * ff, gs_string * char_name, int cid,
 
 static int
 pl_fapi_set_cache(gs_text_enum_t * penum, const gs_font_base * pbfont,
-                  const gs_string * char_name, int cid,
+                  const gs_string * char_name, gs_glyph cid,
                   const double pwidth[2], const gs_rect * pbbox,
                   const double Metrics2_sbw_default[4], bool * imagenow)
 {
@@ -325,7 +326,7 @@ pl_fapi_set_cache(gs_text_enum_t * penum, const gs_font_base * pbfont,
 
 static int
 pl_fapi_set_cache_rotate(gs_text_enum_t * penum, const gs_font_base * pbfont,
-                         const gs_string * char_name, int cid,
+                         const gs_string * char_name, gs_glyph cid,
                          const double pwidth[2], const gs_rect * pbbox,
                          const double Metrics2_sbw_default[4],
                          bool * imagenow)
@@ -491,7 +492,7 @@ void pl_text_release(gs_text_enum_t *pte, client_name_t cname)
 
 static int
 pl_fapi_set_cache_metrics(gs_text_enum_t * penum, const gs_font_base * pbfont,
-                         const gs_string * char_name, int cid,
+                         const gs_string * char_name, gs_glyph cid,
                          const double pwidth[2], const gs_rect * pbbox,
                          const double Metrics2_sbw_default[4],
                          bool * imagenow)

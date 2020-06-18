@@ -426,7 +426,7 @@ $(GLOBJ)aes.$(OBJ) : $(GLSRC)aes.c $(AK) $(string__h) $(aes_h) $(LIB_MAK) $(MAKE
 
 ### Include files
 
-gsccode_h=$(GLSRC)gsccode.h
+gsccode_h=$(GLSRC)gsccode.h $(std_h) $(stdint__h) $(gstypes_h)
 gsccolor_h=$(GLSRC)gsccolor.h
 # gscedata.[ch] are generated automatically by lib/encs2c.ps.
 gscedata_h=$(GLSRC)gscedata.h
