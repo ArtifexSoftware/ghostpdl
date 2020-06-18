@@ -566,7 +566,11 @@ static int zPDFdrawpage(i_ctx_t *i_ctx_p)
         pop(2);
 
 error:
-    code = gs_grestore(pdffile->ctx->pgs);
+    /* Need to call gs_grestore_only() because gs_grestore() expects
+     * there to be an additional saved context, so it does
+     * a gsave() which we definitely don't want (causes memory leaks)
+     */
+    code = gs_grestore_only(pdffile->ctx->pgs);
     return code;
 }
 
