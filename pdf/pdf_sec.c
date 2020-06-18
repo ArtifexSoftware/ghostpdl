@@ -148,7 +148,7 @@ done:
 #ifdef HAVE_LIBIDN
 #  include <stringprep.h>
 
-static int apply_sasl(pdf_context *ctx, char *Password, int Len, char **NewPassword, int NewLen)
+static int apply_sasl(pdf_context *ctx, char *Password, int Len, char **NewPassword, int *NewLen)
 {
     byte *buffer;
     uint buffer_size;
@@ -183,7 +183,7 @@ static int apply_sasl(pdf_context *ctx, char *Password, int Len, char **NewPassw
         return_error(gs_error_ioerror);
     }
 
-    NewLen = strlen((char *)buffer);
+    *NewLen = strlen((char *)buffer);
     *NewPassword = buffer;
 
     return 0;
