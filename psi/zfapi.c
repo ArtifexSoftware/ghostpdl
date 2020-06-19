@@ -1805,7 +1805,7 @@ static int
 FAPI_FF_get_charstring_name(gs_fapi_font *ff, int index, byte *buf,
                             ushort buf_length)
 {
-    int code;
+    int code = 0;
     ref *pdr = pfont_dict(((gs_font_base *) ff->client_font_data2));
     ref *CharStrings, eltp[2], string;
 
@@ -3066,7 +3066,7 @@ ps_get_glyphname_or_cid(gs_text_enum_t *penum,
            for same char code. The last should be true due to
            PLRM3, "5.9.4 Subsetting and Incremental Definition of Glyphs".
          */
-        if (ccode >= 0) {
+        if (ccode != GS_NO_CHAR) {
             cr->char_codes[0] = client_char_code;
         }
         else {
