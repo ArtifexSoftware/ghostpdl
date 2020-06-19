@@ -83,8 +83,8 @@ const gs_const_string mem_mono_w_b_palette = {
 /* ------ Generic code ------ */
 
 /* Return the appropriate memory device for a given */
-/* number of bits per pixel (0 if none suitable). 
-   Greater than 64 occurs for the planar case 
+/* number of bits per pixel (0 if none suitable).
+   Greater than 64 occurs for the planar case
    which we will then return a mem_x_device */
 static const gx_device_memory *const mem_devices[65] = {
     0, &mem_mono_device, &mem_mapped2_device, 0, &mem_mapped4_device,
@@ -161,7 +161,7 @@ gs_make_mem_device(gx_device_memory * dev, const gx_device_memory * mdproto,
             break;
     }
     /* Preload the black and white cache. */
-    if (target == 0) {
+    if (target == NULL) {
         if (dev->color_info.depth == 1) {
             /* The default for black-and-white devices is inverted. */
             dev->cached_colors.black = 1;
@@ -192,7 +192,7 @@ gs_make_mem_device(gx_device_memory * dev, const gx_device_memory * mdproto,
                 cv[k] = 0;
             }
         }
-       gdev_mem_mono_set_inverted(dev, (target == 0 || 
+       gdev_mem_mono_set_inverted(dev, (target == NULL ||
                                    (*dev_proc(dev, encode_color))((gx_device *)dev, cv) != 0));
     }
     check_device_separable((gx_device *)dev);
@@ -212,7 +212,7 @@ gs_make_mem_device_with_copydevice(gx_device_memory ** ppdev,
     int code;
     gx_device_memory *pdev;
 
-    if (mem == 0)
+    if (mem == NULL)
         return -1;
 
     code = gs_copydevice((gx_device **)&pdev,
@@ -230,7 +230,7 @@ gs_make_mem_device_with_copydevice(gx_device_memory ** ppdev,
             break;
     }
     /* Preload the black and white cache. */
-    if (target == 0) {
+    if (target == NULL) {
         if (pdev->color_info.depth == 1) {
             /* The default for black-and-white devices is inverted. */
             pdev->cached_colors.black = 1;
@@ -252,7 +252,7 @@ gs_make_mem_device_with_copydevice(gx_device_memory ** ppdev,
         gx_color_value cv[3];
 
        cv[0] = cv[1] = cv[2] = 0;
-        gdev_mem_mono_set_inverted(pdev, (target == 0 ||
+        gdev_mem_mono_set_inverted(pdev, (target == NULL ||
                                    (*dev_proc(pdev, encode_color))((gx_device *)pdev, cv) != 0));
     }
     check_device_separable((gx_device *)pdev);
@@ -270,7 +270,7 @@ gs_make_mem_mono_device_with_copydevice(gx_device_memory ** ppdev, gs_memory_t *
     int code;
     gx_device_memory *pdev;
 
-    if (mem == 0)
+    if (mem == NULL)
         return -1;
 
     code = gs_copydevice((gx_device **)&pdev,
@@ -441,7 +441,7 @@ gdev_mem_open_scan_lines(gx_device_memory *mdev, int setup_height)
 
     if (setup_height < 0 || setup_height > mdev->height)
         return_error(gs_error_rangecheck);
-    if (mdev->bitmap_memory != 0) {
+    if (mdev->bitmap_memory != NULL) {
         int align;
         /* Allocate the data now. */
         if (gdev_mem_bitmap_size(mdev, &size) < 0)
@@ -451,7 +451,7 @@ gdev_mem_open_scan_lines(gx_device_memory *mdev, int setup_height)
             return_error(gs_error_limitcheck);
         mdev->base = gs_alloc_bytes(mdev->bitmap_memory, (uint)size,
                                     "mem_open");
-        if (mdev->base == 0)
+        if (mdev->base == NULL)
             return_error(gs_error_VMerror);
 #ifdef PACIFY_VALGRIND
         /* If we end up writing the bitmap to the clist, we can get valgrind errors
@@ -463,14 +463,14 @@ gdev_mem_open_scan_lines(gx_device_memory *mdev, int setup_height)
         align = 1<<mdev->log2_align_mod;
         mdev->base += (-(int)(intptr_t)mdev->base) & (align-1);
         mdev->foreign_bits = false;
-    } else if (mdev->line_pointer_memory != 0) {
+    } else if (mdev->line_pointer_memory != NULL) {
         /* Allocate the line pointers now. */
 
         mdev->line_ptrs = (byte **)
             gs_alloc_byte_array(mdev->line_pointer_memory, mdev->height,
                                 sizeof(byte *) * (mdev->is_planar ? mdev->color_info.num_components : 1),
                                 "gdev_mem_open_scan_lines");
-        if (mdev->line_ptrs == 0)
+        if (mdev->line_ptrs == NULL)
             return_error(gs_error_VMerror);
         mdev->foreign_line_pointers = false;
         line_pointers_adjacent = false;
@@ -478,7 +478,7 @@ gdev_mem_open_scan_lines(gx_device_memory *mdev, int setup_height)
     if (line_pointers_adjacent) {
         int code;
 
-        if (mdev->base == 0)
+        if (mdev->base == NULL)
             return_error(gs_error_rangecheck);
 
         code = gdev_mem_bits_size(mdev, mdev->width, mdev->height, &size);
@@ -610,7 +610,7 @@ mem_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
             GB_PACKING_CHUNKY | GB_COLORS_NATIVE | GB_ALPHA_NONE;
         return_error(gs_error_rangecheck);
     }
-    if (mdev->line_ptrs == 0x00)
+    if (mdev->line_ptrs == NULL)
         return_error(gs_error_rangecheck);
     if ((w <= 0) | (h <= 0)) {
         if ((w | h) < 0)
@@ -715,7 +715,7 @@ mem_word_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
     bit_x = x * dev->color_info.depth;
     bit_w = w * dev->color_info.depth;
 
-    if(mdev->line_ptrs == 0x00)
+    if(mdev->line_ptrs == NULL)
         return_error(gs_error_rangecheck);
 
     src = scan_line_base(mdev, y);
