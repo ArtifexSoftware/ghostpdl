@@ -2110,6 +2110,7 @@ mem_planar_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 
     /* First off, see if we can satisfy get_bits_rectangle with just returning
      * pointers to the existing data. */
+    if (params->options & GB_RETURN_POINTER)
     {
         gs_get_bits_params_t copy_params;
         byte **base = &scan_line_base(mdev, y);
@@ -2165,6 +2166,57 @@ mem_planar_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
             }
         }
     }
+
+    if ((params->options & GB_RETURN_POINTER) == 0) {
+        /* Can we do the fetch using a faked GB_RETURN_POINTER request
+         * and then copy the data? */
+        gs_get_bits_params_t params2 = *params;
+        gs_get_bits_params_t copy_params;
+        byte **base = &scan_line_base(mdev, y);
+        int code;
+
+        params2.options &= ~GB_RETURN_COPY;
+        params2.options |= GB_RETURN_POINTER;
+
+        copy_params.options =
+            GB_COLORS_NATIVE | GB_PACKING_PLANAR | GB_ALPHA_NONE |
+            (mdev->raster ==
+             bitmap_raster(mdev->width * mdev->color_info.depth) ?
+             GB_RASTER_STANDARD : GB_RASTER_SPECIFIED);
+        params2.raster = mdev->raster;
+        copy_params.raster = mdev->raster;
+        code = gx_get_bits_return_pointer(dev, x, h, &params2,
+                                          &copy_params, base);
+        if (code >= 0) {
+            /* get_bits worked. Let's copy the data out. */
+            int bpc = mdev->color_info.depth / mdev->color_info.num_components;
+            int left = x;
+            int right = x+w;
+            int i, j;
+            switch (bpc) {
+                case  1: left >>= 3; right = (right+7)>>3; break;
+                case  2: left >>= 2; right = (right+3)>>2; break;
+                case  4: left >>= 1; right = (right+1)>>1; break;
+                case  8: break;
+                case 12: left = (left&~1); left += left>>1;
+                         right = right+(right>>1)+(right&1); break;
+                case 16: left *= 2; right *= 2; break;
+                default: return_error(gs_error_rangecheck);
+            }
+            right -= left;
+            for (i = 0; i < mdev->color_info.num_components; i++) {
+                byte *d = params->data[i];
+                const byte *s = params2.data[i];
+                for (j = 0; j < h; j++) {
+                    memcpy(d, s, right);
+                    d += params->raster;
+                    s += params2.raster;
+                }
+            }
+            return code;
+        }
+    }
+
     /*
      * We can't return the requested plane by itself.  Fall back to
      * chunky format.  This is somewhat painful.
