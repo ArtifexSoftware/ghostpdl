@@ -947,6 +947,11 @@ pdf_context *pdfi_create_context(gs_memory_t *pmem)
     /* We decrypt strings from encrypted files until we start a page */
     ctx->decrypt_strings = true;
 
+    /* Weirdly the graphics library wants us to always have two gstates, the
+     * initial state and at least one saved state. if we don't then when we
+     * grestore back to the initial state, it immediately saves another one.
+     */
+    code = gs_gsave(ctx->pgs);
 #if REFCNT_DEBUG
     ctx->UID = 1;
 #endif
@@ -1059,6 +1064,15 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
         gx_pattern_cache_free(ctx->pgs->pattern_cache);
         if (ctx->pgs->font)
             pdfi_countdown_current_font(ctx);
+
+        /* We use gs_grestore_only() instead of gs_grestore, because gs_grestore
+         * will not restore below two gstates and we want to clear the entire
+         * stack of saved states, back to the initial state.
+         */
+        while (ctx->pgs->saved)
+            gs_grestore_only(ctx->pgs);
+
+        /* And here we free the initial graphics state */
         gs_gstate_free(ctx->pgs);
         ctx->pgs = NULL;
     }
