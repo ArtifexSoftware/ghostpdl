@@ -415,10 +415,6 @@ struct_proc_finalize(gs_gstate_finalize);
 /* gs_gstate_initial. */
 int gs_gstate_initialize(gs_gstate * pgs, gs_memory_t * mem);
 
-/* Make a temporary copy of a gs_gstate.  Note that this does not */
-/* do all the necessary reference counting, etc. */
-gs_gstate * gs_gstate_copy_temp(const gs_gstate * pgs, gs_memory_t * mem);
-
 /* Increment reference counts to note that a graphics state has been copied. */
 void gs_gstate_copied(gs_gstate * pgs);
 

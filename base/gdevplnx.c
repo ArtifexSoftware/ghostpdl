@@ -29,6 +29,7 @@
 #include "gxgetbit.h"
 #include "gxiparam.h"
 #include "gxgstate.h"
+#include "gsstate.h"
 #include "gdevplnx.h"
 
 /* Define the size of the locally allocated bitmap buffers. */
@@ -428,6 +429,7 @@ plane_device_init(gx_device_plane_extract *edev, gx_device *target,
     gx_device_set_target((gx_device_forward *)edev, target);
     gx_device_copy_params((gx_device *)edev, target);
     edev->plane_dev = plane_dev;
+    gx_device_retain(plane_dev, true);
     edev->plane = *render_plane;
     plane_open_device((gx_device *)edev);
     if (clear) {
@@ -841,6 +843,8 @@ typedef struct plane_image_enum_s {
     const gs_gstate *pgs;	/* original gs_gstate */
     gs_gstate *pgs_image;	/* modified gs_gstate state */
 } plane_image_enum_t;
+/* Note that we include the pgs_image which is 'bytes' type (not gs_gstate) */
+/* It still needs to be traced so that a GC won't free it prematurely.      */
 gs_private_st_suffix_add3(st_plane_image_enum, plane_image_enum_t,
   "plane_image_enum_t", plane_image_enum_enum_ptrs,
   plane_image_enum_reloc_ptrs, st_gx_image_enum_common, info, pgs, pgs_image);
@@ -991,10 +995,9 @@ plane_begin_typed_image(gx_device * dev,
     }
     info = gs_alloc_struct(memory, plane_image_enum_t, &st_plane_image_enum,
                            "plane_image_begin_typed(info)");
-    pgs_image = gs_gstate_copy_temp(pgs, memory);
+    pgs_image = gs_gstate_copy(pgs, memory);
     if (pgs_image == 0 || info == 0)
         goto fail;
-    *pgs_image = *pgs;
     pgs_image->client_data = info;
     pgs_image->get_cmap_procs = plane_get_cmap_procs;
     code = dev_proc(edev->plane_dev, begin_typed_image)
@@ -1034,6 +1037,7 @@ plane_image_end_image(gx_image_enum_common_t * info, bool draw_last)
     plane_image_enum_t * const ppie = (plane_image_enum_t *)info;
     int code = gx_image_end(ppie->info, draw_last);
 
+    ppie->pgs_image->client_data = NULL;       /* this isn't a complete client_data struct */
     gs_free_object(ppie->memory, ppie->pgs_image,
                    "plane_image_end_image(pgs_image)");
     gx_image_free_enum(&info);
