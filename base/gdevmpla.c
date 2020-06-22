@@ -29,6 +29,7 @@
 
 /* procedures */
 static dev_proc_open_device(mem_planar_open);
+static dev_proc_open_device(mem_planar_open_interleaved);
 declare_mem_procs(mem_planar_copy_mono, mem_planar_copy_color, mem_planar_fill_rectangle);
 static dev_proc_copy_color(mem_planar_copy_color_24to8);
 static dev_proc_copy_color(mem_planar_copy_color_4to1);
@@ -80,6 +81,14 @@ int
 gdev_mem_set_planar(gx_device_memory * mdev, int num_planes,
                     const gx_render_plane_t *planes /*[num_planes]*/)
 {
+    return gdev_mem_set_planar_interleaved(mdev, num_planes, planes, 0);
+}
+
+int
+gdev_mem_set_planar_interleaved(gx_device_memory * mdev, int num_planes,
+                                const gx_render_plane_t *planes /*[num_planes]*/,
+                                int interleaved)
+{
     int total_depth;
     int same_depth = planes[0].depth;
     gx_color_index covered = 0;
@@ -114,7 +123,10 @@ gdev_mem_set_planar(gx_device_memory * mdev, int num_planes,
     memcpy(mdev->planes, planes, num_planes * sizeof(planes[0]));
     mdev->plane_depth = same_depth;
     /* Change the drawing procedures. */
-    set_dev_proc(mdev, open_device, mem_planar_open);
+    if (interleaved)
+        set_dev_proc(mdev, open_device, mem_planar_open_interleaved);
+    else
+        set_dev_proc(mdev, open_device, mem_planar_open);
     /* Regardless of how many planes we are using, always let the
      * device know how to handle hl_color. Even if we spot that we
      * can get away with a normal device, our callers may want to
@@ -180,6 +192,17 @@ mem_planar_open(gx_device * dev)
     if (!dev->is_planar)
         return_error(gs_error_rangecheck);
     return gdev_mem_open_scan_lines(mdev, dev->height);
+}
+
+static int
+mem_planar_open_interleaved(gx_device * dev)
+{
+    gx_device_memory *const mdev = (gx_device_memory *)dev;
+
+    /* Check that we aren't trying to open a chunky device as planar. */
+    if (!dev->is_planar)
+        return_error(gs_error_rangecheck);
+    return gdev_mem_open_scan_lines_interleaved(mdev, dev->height, 1);
 }
 
 /*

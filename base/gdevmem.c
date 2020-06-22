@@ -436,6 +436,13 @@ mem_open(gx_device * dev)
 int
 gdev_mem_open_scan_lines(gx_device_memory *mdev, int setup_height)
 {
+    return gdev_mem_open_scan_lines_interleaved(mdev, setup_height, 0);
+}
+int
+gdev_mem_open_scan_lines_interleaved(gx_device_memory *mdev,
+                                     int setup_height,
+                                     int interleaved)
+{
     bool line_pointers_adjacent = true;
     ulong size;
 
@@ -488,7 +495,9 @@ gdev_mem_open_scan_lines(gx_device_memory *mdev, int setup_height)
         mdev->line_ptrs = (byte **)(mdev->base + size);
     }
     mdev->raster = gx_device_raster((gx_device *)mdev, 1);
-    return gdev_mem_set_line_ptrs(mdev, NULL, 0, NULL, setup_height);
+    return gdev_mem_set_line_ptrs_interleaved(mdev, NULL, 0, NULL,
+                                              setup_height,
+                                              interleaved);
 }
 /*
  * Set up the scan line pointers of a memory device.
@@ -497,13 +506,21 @@ gdev_mem_open_scan_lines(gx_device_memory *mdev, int setup_height)
  * num_planes, plane_depths, plane_depth.
  */
 int
-gdev_mem_set_line_ptrs(gx_device_memory * mdev, byte * base, int raster,
+gdev_mem_set_line_ptrs(gx_device_memory *mdev, byte *base, int raster,
                        byte **line_ptrs, int setup_height)
+{
+    return gdev_mem_set_line_ptrs_interleaved(mdev, base, raster, line_ptrs, setup_height, 0);
+}
+int
+gdev_mem_set_line_ptrs_interleaved(gx_device_memory * mdev, byte * base,
+                                   int raster, byte **line_ptrs,
+                                   int setup_height, int interleaved)
 {
     int num_planes = (mdev->is_planar ? mdev->color_info.num_components : 0);
     byte **pline;
     byte *data;
     int pi;
+    int plane_raster;
 
     /* If we are supplied with line_ptrs, then assume that we don't have
      * any already, and take them on. */
@@ -539,6 +556,10 @@ gdev_mem_set_line_ptrs(gx_device_memory * mdev, byte * base, int raster,
         num_planes = 1;
     }
 
+    if (interleaved)
+        plane_raster = raster, raster *= num_planes;
+    else
+        plane_raster = raster * mdev->height;
     for (pi = 0; pi < num_planes; ++pi) {
         byte **pptr = pline;
         byte **pend = pptr + setup_height;
@@ -548,7 +569,7 @@ gdev_mem_set_line_ptrs(gx_device_memory * mdev, byte * base, int raster,
             *pptr++ = scan_line;
             scan_line += raster;
         }
-        data += raster * mdev->height;
+        data += plane_raster;
         pline += setup_height;	/* not mdev->height, see gxdevmem.h */
     }
 
