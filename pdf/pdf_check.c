@@ -1105,14 +1105,20 @@ int pdfi_check_page(pdf_context *ctx, pdf_dict *page_dict, bool do_setup)
     if (tracker.spot_dict)
         spots = pdfi_dict_entries(tracker.spot_dict);
 
-    /* If there are spot colours (and by inference, the device renders spot plates) then
-     * send the number of Spots to the device, so it can setup correctly.
-     */
-    if (do_setup && tracker.spot_dict) {
+    /* If setup requested, tell the device about spots and transparency */
+    if (do_setup) {
         gs_c_param_list list;
 
         gs_c_param_list_write(&list, ctx->memory);
-        param_write_int((gs_param_list *)&list, "PageSpotColors", &spots);
+
+        /* If there are spot colours (and by inference, the device renders spot plates) then
+         * send the number of Spots to the device, so it can setup correctly.
+         */
+        if (tracker.spot_dict)
+            param_write_int((gs_param_list *)&list, "PageSpotColors", &spots);
+
+        code = param_write_bool((gs_param_list *)&list, "PageUsesTransparency",
+                                &tracker.transparent);
         gs_c_param_list_read(&list);
         code = gs_putdeviceparams(ctx->pgs->device, (gs_param_list *)&list);
         gs_c_param_list_release(&list);

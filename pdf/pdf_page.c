@@ -294,10 +294,6 @@ static int pdfi_set_media_size(pdf_context *ctx, pdf_dict *page_dict)
     /* ----- setup specific device parameters ----- */
     gs_c_param_list_write(&list, ctx->memory);
 
-    /* Setup the device transparency mode for this page */
-    code = param_write_bool((gs_param_list *)&list, "PageUsesTransparency",
-                            &ctx->page_has_transparency);
-
     code = param_write_float_array((gs_param_list *)&list, ".MediaSize", &fa);
     if (code >= 0)
     {
