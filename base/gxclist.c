@@ -1335,12 +1335,11 @@ clist_put_data(const gx_device_clist *cdev, int select, int64_t offset, const by
 }
 
 gx_device_clist *
-clist_make_accum_device(gx_device *target, const char *dname, void *base, int space,
+clist_make_accum_device(gs_memory_t *mem, gx_device *target, const char *dname, void *base, int space,
                         gx_device_buf_procs_t *buf_procs, gx_band_params_t *band_params,
                         bool use_memory_clist, bool uses_transparency,
                         gs_pattern1_instance_t *pinst)
 {
-        gs_memory_t *mem = target->memory;
         gx_device_clist *cdev = gs_alloc_struct(mem, gx_device_clist,
                         &st_device_clist, "clist_make_accum_device");
         gx_device_clist_writer *cwdev = (gx_device_clist_writer *)cdev;

@@ -478,7 +478,7 @@ void clist_update_trans_bbox(gx_device_clist_writer *dev, gs_int_rect *bbox);
 /* Make a clist device for accumulating. Used for pattern-clist as well as */
 /* for pdf14 pages that are too large to be done in page mode.             */
 gx_device_clist *
-clist_make_accum_device(gx_device *target, const char *dname, void *base, int space,
+clist_make_accum_device(gs_memory_t *mem, gx_device *target, const char *dname, void *base, int space,
                         gx_device_buf_procs_t *buf_procs, gx_band_params_t *band_params,
                         bool use_memory_clist, bool uses_transparency,
                         gs_pattern1_instance_t *pinst);

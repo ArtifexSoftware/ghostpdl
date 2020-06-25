@@ -309,7 +309,7 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
         gx_device_clist_writer *cwdev;
         const int data_size = 1024*128;
         gx_band_params_t band_params = { 0 };
-        byte *data  = gs_alloc_bytes(tdev->memory->non_gc_memory, data_size, cname);
+        byte *data  = gs_alloc_bytes(mem->non_gc_memory, data_size, cname);
 
         if (data == NULL)
             return 0;
@@ -319,7 +319,7 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
         band_params.BandHeight = pinst->size.y;
         band_params.BandBufferSpace = 0;
 
-        cdev = clist_make_accum_device(tdev, "pattern-clist", data, data_size,
+        cdev = clist_make_accum_device(mem, tdev, "pattern-clist", data, data_size,
                                        &buf_procs, &band_params, true, /* use_memory_clist */
                                        pinst->templat.uses_transparency, pinst);
         if (cdev == 0) {
