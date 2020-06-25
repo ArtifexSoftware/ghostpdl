@@ -50,8 +50,7 @@ pjl_impl_characteristics(const pl_interp_implementation_t * impl)        /* impl
         pjl_detect_language,
         "Artifex",
         PJLVERSION,
-        PJLBUILDDATE,
-        17                      /* sizeof min buffer == sizeof UEL */
+        PJLBUILDDATE
     };
     return &pjl_characteristics;
 }

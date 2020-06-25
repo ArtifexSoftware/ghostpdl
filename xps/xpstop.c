@@ -76,8 +76,7 @@ xps_impl_characteristics(const pl_interp_implementation_t *pimpl)
         xps_detect_language,
         "Artifex",
         XPS_VERSION,
-        XPS_BUILD_DATE,
-        XPS_PARSER_MIN_INPUT_SIZE, /* Minimum input size */
+        XPS_BUILD_DATE
     };
     return &xps_characteristics;
 }

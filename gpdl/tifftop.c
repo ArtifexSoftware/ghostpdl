@@ -116,8 +116,7 @@ static const pl_interp_characteristics_t tiff_characteristics = {
     tiff_detect_language,
     "Artifex",
     "0.01",
-    "18 Nov 2019",
-    1 /* minimum input size */
+    "18 Nov 2019"
 };
 
 /* Get implementation's characteristics */

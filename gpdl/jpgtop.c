@@ -113,8 +113,7 @@ static const pl_interp_characteristics_t jpg_characteristics = {
     jpg_detect_language,
     "Artifex",
     "0.01",
-    "11 Nov 2019",
-    1 /* minimum input size */
+    "11 Nov 2019"
 };
 
 /* GS's fakakta jpeg integration insists on putting a

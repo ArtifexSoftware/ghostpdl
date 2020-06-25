@@ -119,8 +119,7 @@ static const pl_interp_characteristics_t jp2k_characteristics = {
     jp2k_detect_language,
     "Artifex",
     "0.01",
-    "22 Nov 2019",
-    1 /* minimum input size */
+    "22 Nov 2019"
 };
 
 /* Get implementation's characteristics */

@@ -160,8 +160,7 @@ pxl_impl_characteristics(const pl_interp_implementation_t * impl)        /* impl
         pxl_detect_language,
         "Artifex",
         PXLVERSION,
-        PXLBUILDDATE,
-        px_parser_min_input_size
+        PXLBUILDDATE
     };
     return &pxl_characteristics;
 }
