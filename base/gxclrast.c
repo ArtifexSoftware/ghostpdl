@@ -625,10 +625,9 @@ in:                             /* Initialize for a new page. */
     code = pcs->type->install_cspace(pcs, &gs_gstate);
     if (code < 0)
         goto out;
-    gs_gstate.color[0].color_space = pcs;
-    rc_increment_cs(pcs);
+    gs_gstate.color[0].color_space = pcs; /* we already have one ref */
     gs_gstate.color[1].color_space = pcs;
-    rc_increment_cs(pcs);
+    rc_increment_cs(pcs); /* increment for second ref */
     /* Remove the ICC link cache and replace with the device link cache
        so that we share the cache across bands */
     rc_decrement(gs_gstate.icc_link_cache,"clist_playback_band");
@@ -2387,7 +2386,8 @@ idata:                  data_size = 0;
     if (code < 0) {
         if (pfs.dev != NULL)
             term_patch_fill_state(&pfs);
-        gs_free_object(mem, pcs, "clist_playback_band(pcs)");
+        rc_decrement(gs_gstate.color[0].color_space, "clist_playback_band");
+        rc_decrement(gs_gstate.color[1].color_space, "clist_playback_band");
         gs_free_object(mem, cbuf_storage, "clist_playback_band(cbuf_storage)");
         gx_cpath_free(&clip_path, "clist_playback_band");
         if (pcpath != &clip_path)
@@ -2401,7 +2401,8 @@ idata:                  data_size = 0;
         goto in;
     if (pfs.dev != NULL)
         term_patch_fill_state(&pfs);
-    gs_free_object(mem, pcs, "clist_playback_band(pcs)");
+    rc_decrement(gs_gstate.color[0].color_space, "clist_playback_band");
+    rc_decrement(gs_gstate.color[1].color_space, "clist_playback_band");
     gs_free_object(mem, cbuf_storage, "clist_playback_band(cbuf_storage)");
     gx_cpath_free(&clip_path, "clist_playback_band");
     if (pcpath != &clip_path)
