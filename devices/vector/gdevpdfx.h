@@ -909,6 +909,8 @@ struct gx_device_pdf_s {
                                      * anything in the image processing routines.
                                      */
     float UserUnit;
+    int OCRStage;                   /* Used to control a (sort of) state machine when using OCR to get a Unicode value for a glyph */
+    uint64_t OCRUnicode;            /* Used to pass back the Unicode value from the OCR stage to the text processing */
 };
 
 #define is_in_page(pdev)\

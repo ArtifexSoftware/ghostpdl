@@ -3209,6 +3209,11 @@ pdf_text_process(gs_text_enum_t *pte)
 
     code = -1;                /* to force default implementation */
 
+    if (pdev->OCRStage == 2) {
+        gs_text_release(pte->pgs, penum->pte_default, "pdf_text_process");
+        penum->pte_default = 0;
+    }
+
     /*
      * If we fell back to the default implementation, continue using it.
      */
@@ -3546,7 +3551,9 @@ pdf_text_process(gs_text_enum_t *pte)
                 return code1;
         }
 
-        gs_text_enum_copy_dynamic(pte, pte_default, true);
+        if (pdev->OCRStage == 0)
+            gs_text_enum_copy_dynamic(pte, pte_default, true);
+
         if (code)
             return code;
         gs_text_release(NULL, pte_default, "pdf_text_process");
@@ -3629,7 +3636,7 @@ pdf_text_process(gs_text_enum_t *pte)
         gs_free_string(pte->memory, buf, size, "pdf_text_process");
     }
  skip:
-    if (code < 0 ||
+    if (code < 0 || code == TEXT_PROCESS_INTERVENE ||
             ((pte->current_font->FontType == ft_user_defined ||
             pte->current_font->FontType == ft_PCL_user_defined ||
             pte->current_font->FontType == ft_PDF_user_defined ||
@@ -3639,6 +3646,8 @@ pdf_text_process(gs_text_enum_t *pte)
             pte->current_font->FontType == ft_TrueType) &&
              code != TEXT_PROCESS_INTERVENE &&
             penum->index < penum->text.size)) {
+        int OCRUnicode = code == TEXT_PROCESS_INTERVENE ? 1 : 0;
+
         if (code == gs_error_unregistered) /* Debug purpose only. */
             return code;
         if (code == gs_error_VMerror)
@@ -3659,6 +3668,10 @@ pdf_text_process(gs_text_enum_t *pte)
             return code;
         penum->pte_default = pte_default;
         gs_text_enum_copy_dynamic(pte_default, pte, false);
+        if (OCRUnicode) {
+            pdev->OCRStage = 1;
+            pte_default->can_cache = 0;
+        }
     }
     /* The 'process' procedure might also have set pte_default itself. */
     if (penum->pte_default && !code)

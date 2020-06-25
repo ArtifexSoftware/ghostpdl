@@ -300,7 +300,9 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  0,                     /* ExtensionMetadata */
  0,                     /* PDFFormName */
  0,                     /* PassThroughWriter */
- 1.0                    /* UserUnit */
+ 1.0,                   /* UserUnit */
+ 0,                     /* UnicodeStage */
+ 0                      /* OCRUnicode */
 };
 
 #else

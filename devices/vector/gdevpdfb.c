@@ -505,6 +505,18 @@ gdev_pdf_fill_mask(gx_device * dev,
 
     if (width <= 0 || height <= 0)
         return 0;
+
+    /* If OCRStage is 1 then we are handling an image which is a rendered glyph
+     * that we want to have OCR software process and return a Unicode code point for.
+     * We specifically do *not* want to send the image to the outptu PDF file!
+     */
+    if (pdev->OCRStage == 1) {
+        /* Process the image here */
+        pdev->OCRStage = 2;
+        pdev->OCRUnicode = 0;
+        return 0;
+    }
+
     if (depth > 1 || (!gx_dc_is_pure(pdcolor) != 0 && !(gx_dc_is_pattern1_color(pdcolor))))
         return gx_default_fill_mask(dev, data, data_x, raster, id,
                                     x, y, width, height, pdcolor, depth, lop,

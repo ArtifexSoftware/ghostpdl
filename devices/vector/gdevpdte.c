@@ -87,27 +87,37 @@ pdf_process_string_aux(pdf_text_enum_t *penum, gs_string *pstr,
 int
 pdf_add_ToUnicode(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_t *pdfont,
                   gs_glyph glyph, gs_char ch, const gs_const_string *gnstr)
-{   int code;
+{   int code = 0;
     gs_char length;
     ushort *unicode = 0;
 
     if (glyph == GS_NO_GLYPH)
         return 0;
     length = font->procs.decode_glyph((gs_font *)font, glyph, ch, NULL, 0);
-    if ((length == 0 || length == GS_NO_CHAR) && gnstr != NULL && gnstr->size == 7) {
-        if (!memcmp(gnstr->data, "uni", 3)) {
-            static const char *hexdigits = "0123456789ABCDEF";
-            char *d0 = strchr(hexdigits, gnstr->data[3]);
-            char *d1 = strchr(hexdigits, gnstr->data[4]);
-            char *d2 = strchr(hexdigits, gnstr->data[5]);
-            char *d3 = strchr(hexdigits, gnstr->data[6]);
-
+    if (length == 0 || length == GS_NO_CHAR) {
+        if (pdev->OCRStage == 2) {
             unicode = (ushort *)gs_alloc_bytes(pdev->memory, sizeof(ushort), "temporary Unicode array");
-            if (d0 != NULL && d1 != NULL && d2 != NULL && d3 != NULL) {
-                char *u = (char *)unicode;
-                u[0] = ((d0 - hexdigits) << 4) + ((d1 - hexdigits));
-                u[1] = ((d2 - hexdigits) << 4) + ((d3 - hexdigits));
-                length = 2;
+            if (unicode == NULL)
+                return_error(gs_error_VMerror);
+            memset(unicode, 0x00, sizeof(short));
+            length = 2;
+        } else {
+            if (gnstr != NULL && gnstr->size == 7) {
+                if (!memcmp(gnstr->data, "uni", 3)) {
+                    static const char *hexdigits = "0123456789ABCDEF";
+                    char *d0 = strchr(hexdigits, gnstr->data[3]);
+                    char *d1 = strchr(hexdigits, gnstr->data[4]);
+                    char *d2 = strchr(hexdigits, gnstr->data[5]);
+                    char *d3 = strchr(hexdigits, gnstr->data[6]);
+
+                    unicode = (ushort *)gs_alloc_bytes(pdev->memory, sizeof(ushort), "temporary Unicode array");
+                    if (d0 != NULL && d1 != NULL && d2 != NULL && d3 != NULL) {
+                        char *u = (char *)unicode;
+                        u[0] = ((d0 - hexdigits) << 4) + ((d1 - hexdigits));
+                        u[1] = ((d2 - hexdigits) << 4) + ((d3 - hexdigits));
+                        length = 2;
+                    }
+                }
             }
         }
     }
@@ -162,10 +172,12 @@ pdf_add_ToUnicode(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_t *pdfon
             gs_cmap_ToUnicode_add_pair(pdfont->cmap_ToUnicode, ch, unicode, length);
         if (length > 2 && pdfont->u.simple.Encoding != NULL)
             pdfont->TwoByteToUnicode = 0;
-    }
+    } else
+        code = TEXT_PROCESS_INTERVENE;
+
     if (unicode)
         gs_free_object(pdev->memory, unicode, "temporary Unicode array");
-    return 0;
+    return code;
 }
 
 typedef struct {
@@ -358,11 +370,11 @@ pdf_encode_string_element(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_
         * The decision about writing it out is deferred until pdf_write_font_resource.
         */
     code = pdf_add_ToUnicode(pdev, font, pdfont, glyph, ch, &gnstr);
-    if (code < 0)
-        return code;
-    pet->glyph = glyph;
-    pet->str = gnstr;
-    return 0;
+    if (code == 0) {
+        pet->glyph = glyph;
+        pet->str = gnstr;
+    }
+    return code;
 }
 
 /*
@@ -713,7 +725,7 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
         code = process_text_return_width(penum, font, ppts,
                                          (gs_const_string *)pstr, gdata,
                                          &width_pt, &accepted, &glyphs_bbox);
-        if (code < 0)
+        if (code < 0 || code == TEXT_PROCESS_INTERVENE)
             goto done;
         if (code == 0) {
             /* No characters with redefined widths -- the fast case. */
@@ -1035,7 +1047,7 @@ process_text_return_width(const pdf_text_enum_t *pte, gs_font_base *font,
         {  const gs_glyph *gdata_i = (gdata != NULL ? gdata + i : 0);
 
             code = pdf_encode_string_element(pdev, (gs_font *)font, pdfont, ch, gdata_i);
-            if (code < 0)
+            if (code != 0)
                 return code;
         }
         if ((font->FontType == ft_user_defined ||
@@ -1133,7 +1145,9 @@ process_text_return_width(const pdf_text_enum_t *pte, gs_font_base *font,
     }
     *pdpt = dpt;
 
-    return widths_differ;
+    if (widths_differ)
+        return TEXT_PROCESS_RENDER;
+    return 0;
 }
 
 /*
