@@ -1340,7 +1340,7 @@ clist_make_accum_device(gx_device *target, const char *dname, void *base, int sp
                         bool use_memory_clist, bool uses_transparency,
                         gs_pattern1_instance_t *pinst)
 {
-        gs_memory_t *mem = target->memory;
+        gs_memory_t *mem = target->memory->non_gc_memory;
         gx_device_clist *cdev = gs_alloc_struct(mem, gx_device_clist,
                         &st_device_clist, "clist_make_accum_device");
         gx_device_clist_writer *cwdev = (gx_device_clist_writer *)cdev;
