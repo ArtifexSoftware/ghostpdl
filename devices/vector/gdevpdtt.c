@@ -299,13 +299,29 @@ static void
 pdf_text_release(gs_text_enum_t *pte, client_name_t cname)
 {
     pdf_text_enum_t *const penum = (pdf_text_enum_t *)pte;
+    gx_device_pdf *pdev = (gx_device_pdf *)penum->dev;
+    ocr_glyph_t *next;
 
     if (penum->pte_default) {
         gs_text_release(NULL, penum->pte_default, cname);
         penum->pte_default = 0;
     }
     pdf_text_release_cgp(penum);
+
+    while (pdev->ocr_glyphs != NULL)
+    {
+        next = pdev->ocr_glyphs->next;
+
+        gs_free_object(pdev->memory, pdev->ocr_glyphs->data, "free bitmap");
+        gs_free_object(pdev->memory, pdev->ocr_glyphs, "free bitmap");
+        pdev->ocr_glyphs = next;
+    }
+    if (pdev->OCRUnicode != NULL)
+        gs_free_object(pdev->memory, pdev->OCRUnicode, "free returned unicodes");
+    pdev->OCRUnicode = NULL;
+
     gx_default_text_release(pte, cname);
+    pdev->OCRStage = 0;
 }
 void
 pdf_text_release_cgp(pdf_text_enum_t *penum)
@@ -3152,6 +3168,57 @@ static int pdf_query_purge_cached_char(const gs_memory_t *mem, cached_char *cc, 
     return 0;
 }
 
+static int ProcessTextForOCR(gs_text_enum_t *pte)
+{
+    pdf_text_enum_t *const penum = (pdf_text_enum_t *)pte;
+    gx_device_pdf *pdev = (gx_device_pdf *)penum->dev;
+    gs_text_enum_t *pte_default;
+    int code;
+
+    if (pdev->OCRStage == OCR_UnInit) {
+        gs_gsave(pte->pgs);
+        pdev->OCRSaved = (gs_text_enum_t*)gs_alloc_bytes(pdev->memory,sizeof(gs_text_enum_t),"saved enumerator for OCR");
+        if(pdev->OCRSaved == NULL)
+            return_error(gs_error_VMerror);
+        *(pdev->OCRSaved) = *pte;
+        gs_text_enum_copy_dynamic(pdev->OCRSaved,pte,true);
+
+        code = pdf_default_text_begin(pte, &pte->text, &pte_default);
+        if (code < 0)
+            return code;
+        penum->pte_default = pte_default;
+        gs_text_enum_copy_dynamic(pte_default, pte, false);
+        pdev->OCRStage = OCR_Rendering;
+    }
+
+    if (pdev->OCRStage == OCR_Rendering) {
+        penum->pte_default->can_cache = 0;
+        code = gs_text_process(penum->pte_default);
+        pdev->OCR_char_code = penum->pte_default->returned.current_char;
+        pdev->OCR_glyph = penum->pte_default->returned.current_glyph;
+        gs_text_enum_copy_dynamic(pte, penum->pte_default, true);
+        if (code == TEXT_PROCESS_RENDER)
+            return code;
+        if (code != 0) {
+            gs_free_object(pdev->memory, pdev->OCRSaved,"saved enumerator for OCR");
+            pdev->OCRSaved = NULL;
+            gs_grestore(pte->pgs);
+            gs_text_release(pte->pgs, penum->pte_default, "pdf_text_process");
+            penum->pte_default = NULL;
+            return code;
+        }
+        gs_grestore(pte->pgs);
+        *pte = *(pdev->OCRSaved);
+        gs_text_enum_copy_dynamic(pte, pdev->OCRSaved, true);
+        gs_free_object(pdev->memory, pdev->OCRSaved,"saved enumerator for OCR");
+        pdev->OCRSaved = NULL;
+        gs_text_release(pte->pgs, penum->pte_default, "pdf_text_process");
+        penum->pte_default = NULL;
+        pdev->OCRStage = OCR_Rendered;
+    }
+    return 0;
+}
+
 /*
  * Continue processing text.  This is the 'process' procedure in the text
  * enumerator.  Per the check in pdf_text_begin, we know the operation is
@@ -3205,6 +3272,12 @@ pdf_text_process(gs_text_enum_t *pte)
         pdev->type3charpath = true;
         if (!penum->charproc_accum)
             goto default_impl;
+    }
+
+    if (pdev->UseOCR != UseOCRNever) {
+        code = ProcessTextForOCR(pte);
+        if (code != 0)
+            return code;
     }
 
     code = -1;                /* to force default implementation */
@@ -3547,6 +3620,7 @@ pdf_text_process(gs_text_enum_t *pte)
         }
 
         gs_text_enum_copy_dynamic(pte, pte_default, true);
+
         if (code)
             return code;
         gs_text_release(NULL, pte_default, "pdf_text_process");

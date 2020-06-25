@@ -43,6 +43,7 @@
 #include "gxcpath.h"
 
 #include "gsfcmap.h"
+#include "tessocr.h"
 
 static int pdf_char_widths(gx_device_pdf *const pdev,
                             pdf_font_resource_t *pdfont, int ch,
@@ -80,6 +81,216 @@ pdf_process_string_aux(pdf_text_enum_t *penum, gs_string *pstr,
     return pdf_process_string(penum, pstr, pfmat, ppts, gdata);
 }
 
+static int OCRText(gx_device_pdf *pdev, gs_glyph glyph, gs_char ch, gs_char *length, byte **unicode)
+{
+#if OCR_VERSION > 0
+    int code = 0;
+
+    if(pdev->OCRStage == OCR_Rendered) {
+        int llx, lly, urx, ury, char_count = 0, returned_count = 0, *returned;
+        ocr_glyph_t *next_glyph = pdev->ocr_glyphs;
+        int rows, stride, row, column;
+        byte *bitmap = NULL, *src, *dest, *rowptr, srcmask, destmask;
+        void *state;
+        const char *language = pdev->ocr_language;
+        gp_file *DbgFile;
+
+        if(language == NULL || language[0] == 0)
+            language = "eng";
+
+        /* We should alredy have rendered a bitmap for all the glyphs in the
+         * text operation, so this shuld be redundant, but best to be safe.
+         */
+        if(next_glyph == NULL)
+            return_error(gs_error_unknownerror);
+
+        /* Identify the bounding box of the returned glyphs by examing the bounds and position
+         * of each glyph. At the same time count the number of expected returned characters.
+         * We treat any empty bitmap (all 0x00 bytes) as a space because, obviously, the
+         * OCR engine can't tell differentiate between a space character and no character at all.
+         */
+        llx = next_glyph->x;
+        lly = next_glyph->y;
+        urx = llx + next_glyph->width;
+        ury = lly + next_glyph->height;
+        if(next_glyph != NULL && !next_glyph->is_space)
+            char_count++;
+        next_glyph = (ocr_glyph_t *)next_glyph->next;
+        while(next_glyph) {
+            if(!next_glyph->is_space)
+                char_count++;
+            if(next_glyph->x < llx)
+                llx = next_glyph->x;
+            if(next_glyph->y < lly)
+                lly = next_glyph->y;
+            if(next_glyph->x + next_glyph->width > urx)
+                urx = next_glyph->x + next_glyph->width;
+            if(next_glyph->y + next_glyph->height > ury)
+                ury = next_glyph->y + next_glyph->height;
+            next_glyph = next_glyph->next;
+        }
+
+        /* Allocate and initialise the 'strip' bitmap which will receive all the
+         * individual glyph bitmaps.
+         */
+        rows = ury - lly;
+        stride = (((urx - llx) + 7) / 8) + 1;
+        bitmap = gs_alloc_bytes(pdev->memory, rows * stride, "working OCR memory");
+        if(bitmap == NULL)
+            return_error(gs_error_VMerror);
+        memset(bitmap, 0x00, rows * stride);
+
+        /* Allocate a buffer for the OCR engine to return the Unicode code points. This needs work,
+         * we might want more information returned (bounding boxes and confidence levels) and we
+         * need to think about the possibility that the OCR engine finds more character than we
+         * expected (eg fi ligatures returned as 'f' and 'i'.
+         */
+        returned = (int *)gs_alloc_bytes(pdev->memory, char_count * sizeof(int), "returned unicodes");
+        if(returned == NULL) {
+            gs_free_object(pdev->memory, bitmap, "working OCR memory");
+            return_error(gs_error_VMerror);
+        }
+        memset(returned, 0x00, char_count * sizeof(int));
+
+        /* Now copy each glyph bitmap to the correct position in the strip. This is complicated
+         * by the fact that bitmaps are monochrome pcaked into bytes and so the destination
+         * may not be aligned on a byte boundary.
+         */
+        next_glyph = (ocr_glyph_t *)pdev->ocr_glyphs;
+        while(next_glyph) {
+            rowptr = bitmap + ((next_glyph->y - lly) * stride) + (int)floor((next_glyph->x - llx) / 8);
+            for(row = 0;row < next_glyph->height;row++) {
+                dest = rowptr + row * stride;
+                src = next_glyph->data + (row * next_glyph->raster);
+                destmask = 0x80 >> (next_glyph->x - llx) % 8;
+                srcmask = 0x80;
+                for(column = 0; column < next_glyph->width;column++) {
+                    if(*src & srcmask) {
+                        *dest = *dest | destmask;
+                    }
+                    srcmask = srcmask >> 1;
+                    if(srcmask == 0) {
+                        srcmask = 0x80;
+                        src++;
+                    }
+                    destmask = destmask >> 1;
+                    if(destmask == 0) {
+                        destmask = 0x80;
+                        dest++;
+                    }
+                }
+            }
+            next_glyph = next_glyph->next;
+        }
+
+#if 0
+        DbgFile = gp_fopen(pdev->memory, "d:/temp/bits.txt", "wb+");
+        for(row = 0;row < rows;row++) {
+            for(column = 0;column < stride;column++) {
+                dest = bitmap + (row * stride);
+                gp_fprintf(DbgFile, "%02x", dest[column]);
+            }
+            gp_fprintf(DbgFile, "\n");
+        }
+        gp_fclose(DbgFile);
+#endif
+        /* Initialise the OCR engine */
+        code = ocr_init_api(pdev->memory->non_gc_memory, language,
+            pdev->ocr_engine, &state);
+        if(code < 0) {
+            gs_free_object(pdev->memory, bitmap, "working OCR memory");
+            gs_free_object(pdev->memory, returned, "returned unicodes");
+            return code;
+        }
+        returned_count = char_count;
+
+        /* Pass our strip to the OCR engine */
+        code = ocr_bitmap_to_unicodes(state,
+            bitmap, 0, stride * 8, rows, stride,
+            (int)pdev->HWResolution[0],
+            (int)pdev->HWResolution[1],
+            returned, &returned_count);
+
+        /* and close the engine back down again */
+        ocr_fin_api(pdev->memory->non_gc_memory, state);
+        gs_free_object(pdev->memory, bitmap, "working OCR memory");
+
+        if(code < 0) {
+            pdev->OCRStage = OCR_Failed;
+            gs_free_object(pdev->memory, returned, "returned unicodes");
+            return code;
+        }
+
+        /* Future enhancement we should fall back to trying the individual bitmap here */
+        if(returned_count != char_count) {
+            pdev->OCRStage = OCR_Failed;
+            gs_free_object(pdev->memory, returned, "returned unicodes");
+            return 0;
+        }
+        pdev->OCRUnicode = returned;
+
+        /* Actually perform OCR on the stored bitmaps */
+        pdev->OCRStage = OCR_UnicodeAvailable;
+    }
+
+    if(pdev->OCRStage == OCR_UnicodeAvailable) {
+        /* We've OCR'ed the bitmaps already, find the unicode value */
+        ocr_glyph_t *new_glyph = (ocr_glyph_t *)pdev->ocr_glyphs;
+        int ocr_index = 0;
+        uint mask = 0xFF;
+        int ix;
+        char *u;
+
+        /* Find the bitmap which matches the character/glyph we are processing */
+        while(new_glyph) {
+            if(new_glyph->char_code == ch || new_glyph->glyph == glyph) {
+                ocr_glyph_t *g1 = pdev->ocr_glyphs;
+
+                /* Spaces are handled specially, so just jump out now */
+                if(new_glyph->is_space)
+                    break;
+
+                /* Otherwise, find all the bitmaps which lie to the left of the
+                 * one we found (we are assuming for now that the returned
+                 * Unicode values are left to right)
+                 */
+                while(g1) {
+                    if(!g1->is_space) {
+                        if(g1->x < new_glyph->x)
+                            ocr_index++;
+                    }
+                    g1 = g1->next;
+                }
+                break;
+            }
+            new_glyph = new_glyph->next;
+        }
+
+        /* If we found a matching bitmap, get the corresponding unicode code point from
+         * the stored values returned by the OCR engine.
+         */
+        if(new_glyph) {
+            *unicode = (byte *)gs_alloc_bytes(pdev->memory, 2 * sizeof(ushort), "temporary Unicode array");
+            if(*unicode == NULL)
+                return_error(gs_error_VMerror);
+            u = (char *)(*unicode);
+            if(new_glyph->is_space) {
+                memset(u, 0x00, 3);
+                u[3] = 0x20;
+            }
+            else {
+                for(ix = 0;ix < 4;ix++) {
+                    u[3 - ix] = (pdev->OCRUnicode[ocr_index] & mask) >> (8 * ix);
+                    mask = mask << 8;
+                }
+            }
+            *length = 4;
+        }
+    }
+    #endif
+    return 0;
+}
+
 /*
  * Add char code pair to ToUnicode CMap,
  * creating the CMap on neccessity.
@@ -87,27 +298,43 @@ pdf_process_string_aux(pdf_text_enum_t *penum, gs_string *pstr,
 int
 pdf_add_ToUnicode(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_t *pdfont,
                   gs_glyph glyph, gs_char ch, const gs_const_string *gnstr)
-{   int code;
-    gs_char length;
+{   int code = 0;
+    gs_char length = 0;
     ushort *unicode = 0;
 
     if (glyph == GS_NO_GLYPH)
         return 0;
-    length = font->procs.decode_glyph((gs_font *)font, glyph, ch, NULL, 0);
-    if ((length == 0 || length == GS_NO_CHAR) && gnstr != NULL && gnstr->size == 7) {
-        if (!memcmp(gnstr->data, "uni", 3)) {
-            static const char *hexdigits = "0123456789ABCDEF";
-            char *d0 = strchr(hexdigits, gnstr->data[3]);
-            char *d1 = strchr(hexdigits, gnstr->data[4]);
-            char *d2 = strchr(hexdigits, gnstr->data[5]);
-            char *d3 = strchr(hexdigits, gnstr->data[6]);
+    if(pdev->UseOCR == UseOCRAlways) {
+        code = OCRText(pdev, glyph, ch, &length, (byte **)&unicode);
+        if(code < 0)
+            return code;
+    }
+    else {
+        length = font->procs.decode_glyph((gs_font *)font, glyph, ch, NULL, 0);
+        if(length == 0 || length == GS_NO_CHAR) {
+            if(gnstr != NULL && gnstr->size == 7) {
+                if(!memcmp(gnstr->data, "uni", 3)) {
+                    static const char *hexdigits = "0123456789ABCDEF";
+                    char *d0 = strchr(hexdigits, gnstr->data[3]);
+                    char *d1 = strchr(hexdigits, gnstr->data[4]);
+                    char *d2 = strchr(hexdigits, gnstr->data[5]);
+                    char *d3 = strchr(hexdigits, gnstr->data[6]);
 
-            unicode = (ushort *)gs_alloc_bytes(pdev->memory, sizeof(ushort), "temporary Unicode array");
-            if (d0 != NULL && d1 != NULL && d2 != NULL && d3 != NULL) {
-                char *u = (char *)unicode;
-                u[0] = ((d0 - hexdigits) << 4) + ((d1 - hexdigits));
-                u[1] = ((d2 - hexdigits) << 4) + ((d3 - hexdigits));
-                length = 2;
+                    unicode = (ushort *)gs_alloc_bytes(pdev->memory, sizeof(ushort), "temporary Unicode array");
+                    if(d0 != NULL && d1 != NULL && d2 != NULL && d3 != NULL) {
+                        char *u = (char *)unicode;
+                        u[0] = ((d0 - hexdigits) << 4) + ((d1 - hexdigits));
+                        u[1] = ((d2 - hexdigits) << 4) + ((d3 - hexdigits));
+                        length = 2;
+                    }
+                }
+            }
+            else {
+                if(pdev->UseOCR != UseOCRNever) {
+                    code = OCRText(pdev, glyph, ch, &length, (byte **)&unicode);
+                    if(code < 0)
+                        return code;
+                }
             }
         }
     }
@@ -163,6 +390,7 @@ pdf_add_ToUnicode(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_t *pdfon
         if (length > 2 && pdfont->u.simple.Encoding != NULL)
             pdfont->TwoByteToUnicode = 0;
     }
+
     if (unicode)
         gs_free_object(pdev->memory, unicode, "temporary Unicode array");
     return 0;
@@ -255,8 +483,11 @@ pdf_encode_string_element(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_
     pet = &pdfont->u.simple.Encoding[ch];
     glyph = (gdata == NULL ? font->procs.encode_char(font, ch, GLYPH_SPACE_NAME)
                            : *gdata);
-    if (glyph == GS_NO_GLYPH || glyph == pet->glyph)
+    if (glyph == GS_NO_GLYPH || glyph == pet->glyph) {
+        if((pdfont->cmap_ToUnicode == NULL || !gs_cmap_ToUnicode_check_pair(pdfont->cmap_ToUnicode, ch)) && pdev->UseOCR != UseOCRNever)
+            (void)pdf_add_ToUnicode(pdev, font, pdfont, glyph, ch, &gnstr);
         return 0;
+    }
     if (pet->glyph != GS_NO_GLYPH) { /* encoding conflict */
         return_error(gs_error_rangecheck);
         /* Must not happen because pdf_obtain_font_resource
@@ -358,7 +589,7 @@ pdf_encode_string_element(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_
         * The decision about writing it out is deferred until pdf_write_font_resource.
         */
     code = pdf_add_ToUnicode(pdev, font, pdfont, glyph, ch, &gnstr);
-    if (code < 0)
+    if(code < 0)
         return code;
     pet->glyph = glyph;
     pet->str = gnstr;
@@ -1035,6 +1266,7 @@ process_text_return_width(const pdf_text_enum_t *pte, gs_font_base *font,
         {  const gs_glyph *gdata_i = (gdata != NULL ? gdata + i : 0);
 
             code = pdf_encode_string_element(pdev, (gs_font *)font, pdfont, ch, gdata_i);
+
             if (code < 0)
                 return code;
         }

@@ -76,6 +76,7 @@
 <ul>
 <li><a href="#OCR">OCR text output</a></li>
 <li><a href="#PDFocr">Bitmap PDF output (with OCR text)</a></li>
+<li><a href="#PDFwriteocr">Vector PDF output (with OCR Unicode CMaps)</a></li>
 </ul>
 <li><a href="#High-level">High level formats</a></li>
 <ul>
@@ -1058,6 +1059,37 @@ resolution independence, and editability.</p>
   devices described above.
 </p>
 <p>
+
+<h3><a name="PDFwriteocr"></a>Vector PDF output (with OCR Unicode CMaps)</h3>
+<p>
+The pdfwrite device has been augmented to use the OCR engine to analyse text
+(not images!) in the input stream, and derive Unicode code points for it.
+That information can then be used to create ToUnicode CMaps which are attached
+to the Font (or CIDFont) objects embedded in the PDF file.
+</p>
+<p>
+Fonts which have ToUnicode CMaps can be reliably (limited by the accuracy of
+the CMap) used in search and copy/paste functions, as well as text extraction
+from PDF files. Note that OCR is not a 100% perfect process; it is possible
+that some text might be misidentified.
+</p>
+<p>
+OCR is a slow operation! In addition it can (for Latin text at least) sometimes
+be preferable not to add ToUnicode information which may be incorrect, but instead
+to use the existing font Encoding. For English text this may give better results.
+</p>
+<p>For these reasons the OCR functionality of pdfwrite can be controlled by using a new
+parameter <code>-sUseOCR</code>. This has three possible values;
+</p>
+<dt><code>-sUseOCR=</code><b><em>string</em></b></dt>
+<dd>
+  <dl>
+    <dt>Never<dd>Default - don't use OCR at all even if support is built-in.
+    <dt>AsNeeded<dd>If there is no existing ToUnicode information, use OCR.
+    <dt>Always<dd>Ignore any existing information and always use OCR.
+  </dl>
+</dd>
+</p>
 
 <hr>
 

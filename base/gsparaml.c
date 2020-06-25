@@ -1046,3 +1046,31 @@ int gs_param_list_to_string(gs_param_list *plist, gs_param_name key, char *value
         *value = 0;
     return to_string(plist, key, &out);
 }
+
+int gs_param_list_dump(gs_param_list *plist)
+{
+    gs_param_enumerator_t enumerator;
+    gs_param_key_t key;
+    int code;
+    char buffer[4096];
+    int len;
+
+    param_init_enumerator(&enumerator);
+    while ((code = param_get_next_key(plist, &enumerator, &key)) == 0) {
+        char string_key[256];	/* big enough for any reasonable key */
+
+        if (key.size > sizeof(string_key) - 1) {
+            code = gs_note_error(gs_error_rangecheck);
+            break;
+        }
+        memcpy(string_key, key.data, key.size);
+        string_key[key.size] = 0;
+        dlprintf1("%s ", string_key);
+        code = gs_param_list_to_string(plist, string_key, buffer, &len);
+        if (code < 0)
+            break;
+        dlprintf1("%s ", buffer);
+    }
+    dlprintf("\n");
+    return code;
+}

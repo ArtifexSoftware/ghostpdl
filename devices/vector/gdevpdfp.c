@@ -255,6 +255,48 @@ gdev_pdf_get_param(gx_device *dev, char *Param, void *list)
             return(param_write_null(plist, "DSC"));
         }
     }
+
+#if OCR_VERSION > 0
+    if (strcmp(Param, "OCRLanguage") == 0) {
+        gs_param_string langstr;
+        if (pdev->ocr_language[0]) {
+            langstr.data = (const byte *)pdev->ocr_language;
+            langstr.size = strlen(pdev->ocr_language);
+            langstr.persistent = false;
+        } else {
+            langstr.data = (const byte *)"eng";
+            langstr.size = 3;
+            langstr.persistent = false;
+        }
+        return param_write_string(plist, "OCRLanguage", &langstr);
+    }
+    if (strcmp(Param, "OCREngine") == 0)
+        return param_write_int(plist, "OCREngine", &pdev->ocr_engine);
+
+    if (strcmp(Param, "UseOCR") == 0) {
+        gs_param_string ocrstr;
+
+        switch(pdev->UseOCR) {
+            case UseOCRNever:
+                ocrstr.data = (const byte *)"Never";
+                ocrstr.size = 5;
+                ocrstr.persistent = false;
+                break;
+            UseOCRAsNeeded:
+                ocrstr.data = (const byte *)"AsNeeded";
+                ocrstr.size = 8;
+                ocrstr.persistent = false;
+                break;
+            UseOCRAlways:
+                ocrstr.data = (const byte *)"Always";
+                ocrstr.size = 8;
+                ocrstr.persistent = false;
+                break;
+        }
+        return param_write_string(plist, "UseOCR", &ocrstr);
+    }
+#endif
+
     return gdev_psdf_get_param(dev, Param, list);
 }
 
@@ -268,6 +310,49 @@ gdev_pdf_get_params(gx_device * dev, gs_param_list * plist)
     float cl = (float)pdev->CompatibilityLevel;
     int code;
     int cdv = CoreDistVersion;
+
+#if OCR_VERSION > 0
+    gs_param_string langstr;
+
+    if (pdev->ocr_language[0]) {
+        langstr.data = (const byte *)pdev->ocr_language;
+        langstr.size = strlen(pdev->ocr_language);
+        langstr.persistent = false;
+    } else {
+        langstr.data = (const byte *)"eng";
+        langstr.size = 3;
+        langstr.persistent = false;
+    }
+
+    {
+        gs_param_string ocrstr;
+
+        switch(pdev->UseOCR) {
+            case UseOCRNever:
+                ocrstr.data = (const byte *)"Never";
+                ocrstr.size = 5;
+                ocrstr.persistent = false;
+                break;
+            UseOCRAsNeeded:
+                ocrstr.data = (const byte *)"AsNeeded";
+                ocrstr.size = 8;
+                ocrstr.persistent = false;
+                break;
+            UseOCRAlways:
+                ocrstr.data = (const byte *)"Always";
+                ocrstr.size = 8;
+                ocrstr.persistent = false;
+                break;
+        }
+        code = param_write_string(plist, "UseOCR", &ocrstr);
+    }
+    code = param_write_string(plist, "OCRLanguage", &langstr);
+    if(code < 0)
+        return code;
+    code = param_write_int(plist, "OCREngine", &pdev->ocr_engine);
+    if(code < 0)
+        return code;
+#endif
 
     pdev->ParamCompatibilityLevel = cl;
     code = gdev_psdf_get_params(dev, plist);
@@ -366,6 +451,83 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
                 break;
         }
     }
+
+#if OCR_VERSION > 0
+    {
+        int len;
+        gs_param_string langstr;
+        switch (code = param_read_string(plist, (param_name = "OCRLanguage"), &langstr)) {
+            case 0:
+                len = langstr.size;
+                if (len >= sizeof(pdev->ocr_language))
+                    len = sizeof(pdev->ocr_language)-1;
+                memcpy(pdev->ocr_language, langstr.data, len);
+                pdev->ocr_language[len] = 0;
+                break;
+            case 1:
+                break;
+            default:
+                ecode = code;
+                param_signal_error(plist, param_name, ecode);
+        }
+    }
+
+    {
+        int engine;
+        switch (code = param_read_int(plist, (param_name = "OCREngine"), &engine)) {
+            case 0:
+                pdev->ocr_engine = engine;
+                break;
+            case 1:
+                break;
+            default:
+                ecode = code;
+                param_signal_error(plist, param_name, ecode);
+        }
+    }
+
+    {
+        gs_param_string ocrstr;
+
+        code = param_read_string(plist, (param_name = "UseOCR"), &ocrstr);
+        switch(code) {
+            case 0:
+                if (ocrstr.size == 5 && memcmp(ocrstr.data, "Never", 5) == 0)
+                    pdev->UseOCR = UseOCRNever;
+                if (ocrstr.size == 8 && memcmp(ocrstr.data, "AsNeeded", 8) == 0)
+                    pdev->UseOCR = UseOCRAsNeeded;
+                if (ocrstr.size == 6 && memcmp(ocrstr.data, "Always", 6) == 0)
+                    pdev->UseOCR = UseOCRAlways;
+                break;
+            case 1:
+                break;
+            default:
+                param_signal_error(plist, param_name, code);
+                break;
+        }
+    }
+
+    {
+        gs_param_string ocrstr;
+
+        code = param_read_string(plist, (param_name = "UseOCR"), &ocrstr);
+        switch(code) {
+            case 0:
+                if (ocrstr.size == 5 && memcmp(ocrstr.data, "Never", 5) == 0)
+                    pdev->UseOCR = UseOCRNever;
+                if (ocrstr.size == 8 && memcmp(ocrstr.data, "AsNeeded", 8) == 0)
+                    pdev->UseOCR = UseOCRAsNeeded;
+                if (ocrstr.size == 6 && memcmp(ocrstr.data, "Always", 6) == 0)
+                    pdev->UseOCR = UseOCRAlways;
+                break;
+            case 1:
+                break;
+            default:
+                param_signal_error(plist, param_name, code);
+                break;
+        }
+    }
+#endif
 
     /*
      * Check for LockDistillerParams before doing anything else.
