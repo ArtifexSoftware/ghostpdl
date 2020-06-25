@@ -388,6 +388,7 @@ void gs_lib_ctx_fin(gs_memory_t *mem)
     gs_memory_t *ctx_mem;
     int refs, i;
     gs_fs_list_t *fs;
+    gs_callout_list_t *entry;
 
     if (!mem || !mem->gs_lib_ctx)
         return;
@@ -428,6 +429,13 @@ void gs_lib_ctx_fin(gs_memory_t *mem)
             gs_fs_list_t *next = fs->next;
             gs_free_object(fs->memory, fs, "gs_lib_ctx_fin");
             fs = next;
+        }
+
+        entry = ctx->core->callouts;
+        while (entry) {
+            gs_callout_list_t *next = entry->next;
+            gs_free_object(mem->non_gc_memory, entry, "gs_callout_list_t");
+            entry = next;
         }
 
         for (i = 0; i < ctx->core->argc; i++)
