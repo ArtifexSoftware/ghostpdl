@@ -256,7 +256,7 @@ pxl_impl_init_job(pl_interp_implementation_t * impl,
     pxl_interp_instance_t *pxli = impl->interp_client_data;
     px_state_t *pxs = pxli->pxs;
     gs_memory_t *mem = pxli->memory;
-    
+
     enum { Sbegin, Ssetdevice, Sinitg, Sgsave, Serase, Sdone } stage;
 
     px_reset_errors(pxli->pxs);
