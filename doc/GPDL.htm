@@ -136,13 +136,15 @@ code sequences (or PJL fragments, which implicitly start with a
 
 <h2><a name="API"></a>The API</h2>
 
-<p>The API for GPDL is deliberately designed to be nearly identical
-to that for Ghostscript itself. Details of Ghostscripts API can be
+<p>The API for GPDL (found in <a href="../pcl/pl/plapi.h">plapi.h</a>)
+is deliberately designed to be nearly identical
+to that for Ghostscript itself (found in <a href="../psi/iapi.h">iapi.h</a>).
+Details of Ghostscript's API can be
 found <a href="API.htm">here</a>, and we refer you to that. Only
 differences from that API will be documented here. In particular
 the differences in the handling of switches within the
-<code>gsapi_init_with_args</code></p> are documented
-<a href="#different_switches">here</a>.
+<code>gsapi_init_with_args</code> are documented
+<a href="#different_switches">here</a>.</p>
 <p>Our intent is that existing users of the Ghostscript API should be
 able to drop a GPDL DLL in as a replacement with little to no code
 changes.</p>
@@ -245,7 +247,7 @@ format, as used in modern Windows systems printing pipelines.</p>
   Postscript interpreter, as described in the accompanying
   documentation.</p>
 <h3><a name="URF"></a>URF</h3>
-<p>Currently available to commercial customers only, the URF langauge
+<p>Currently available to commercial customers only, the URF language
 implementation implements support for the URF file format, as used
 by Apple Airprint.</p>
 <h3><a name="JPG"></a>JPG</h3>
