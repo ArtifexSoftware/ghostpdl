@@ -504,6 +504,130 @@ ocr_recognise(void *api_, int w, int h, void *data,
     return code;
 }
 
+static Pix *
+ocr_set_bitmap(tesseract::TessBaseAPI *api,
+               int w, int h,
+               const unsigned char *data, int data_x, int raster,
+               int xres, int yres)
+{
+    /* Tesseract prefers a border around things, so we add an 8 pixel
+     * border all around. */
+#define BORDER_SIZE 8
+    int r = (w+BORDER_SIZE*2+3)&~3;
+    Pix *image = pixCreateHeader(r, h+BORDER_SIZE*2, 8);
+    unsigned char *pdata, *d;
+    const unsigned char *s;
+    int x, y;
+
+    if (image == NULL)
+        return NULL;
+
+    pdata = gs_alloc_bytes(leptonica_mem, r * (h+BORDER_SIZE*2), "ocr_set_bitmap");
+    if (pdata == NULL) {
+        pixDestroy(&image);
+        return NULL;
+    }
+    pixSetData(image, (l_uint32 *)pdata);
+    pixSetPadBits(image, 1);
+    pixSetXRes(image, xres);
+    pixSetYRes(image, yres);
+
+    s = &data[data_x>>3] + raster*(h-1);
+    d = pdata;
+    memset(d, 255, r * (h+BORDER_SIZE*2));
+    d += r*BORDER_SIZE + BORDER_SIZE;
+    for (y = 0; y < h; y++) {
+        int b = 128>>(data_x & 7);
+        for (x = 0; x < w; x++) {
+            if (s[x>>3] & b)
+                d[x^3] = 0;
+            else
+                d[x^3] = 255;
+            b >>= 1;
+            if (b == 0)
+                b = 128;
+        }
+        s -= raster;
+        d += r;
+    }
+
+    api->SetImage(image);
+    //pixWrite("test.pnm", image, IFF_PNM);
+
+    return image;
+}
+
+static void
+ocr_clear_bitmap(Pix *image)
+{
+    gs_free_object(leptonica_mem, pixGetData(image), "ocr_clear_bitmap");
+    pixSetData(image, NULL);
+    pixDestroy(&image);
+}
+
+int ocr_bitmap_to_unicode(void *state,
+                          const void *data, int data_x,
+                          int w, int h, int raster,
+                          int xres, int yres, int *unicode)
+{
+    tesseract::TessBaseAPI *api = (tesseract::TessBaseAPI *)state;
+    Pix *image;
+    int code;
+
+    if (api == NULL)
+        return 0;
+
+    image = ocr_set_bitmap(api, w, h, (const unsigned char *)data,
+                           data_x, raster, xres, yres);
+    if (image == NULL)
+        return_error(gs_error_VMerror);
+
+    code = api->Recognize(NULL);
+    if (code >= 0) {
+        /* Bingo! */
+        tesseract::ResultIterator *res_it = api->GetIterator();
+
+        while (!res_it->Empty(tesseract::RIL_BLOCK)) {
+            if (res_it->Empty(tesseract::RIL_WORD)) {
+                res_it->Next(tesseract::RIL_WORD);
+                continue;
+            }
+
+            do {
+                const unsigned char *graph = (unsigned char *)res_it->GetUTF8Text(tesseract::RIL_SYMBOL);
+                if (graph && graph[0] != 0) {
+                    /* Quick and nasty conversion from UTF8 to unicode. */
+                    if (graph[0] < 0x80)
+                        *unicode = graph[0];
+                    else {
+                        *unicode = graph[1] & 0x3f;
+                        if (graph[0] < 0xE0)
+                            *unicode += (graph[0] & 0x1f)<<6;
+                        else {
+                            *unicode = (graph[2] & 0x3f) | (*unicode << 6);
+                            if (graph[0] < 0xF0) {
+                                *unicode += (graph[0] & 0x0F)<<6;
+                            } else {
+                                *unicode = (graph[3] & 0x3f) | (*unicode<<6);
+                                *unicode += (graph[0] & 0x7);
+                            }
+                        }
+                    }
+                }
+                res_it->Next(tesseract::RIL_SYMBOL);
+             } while (!res_it->Empty(tesseract::RIL_BLOCK) &&
+                      !res_it->IsAtBeginningOf(tesseract::RIL_WORD));
+        }
+        delete res_it;
+        code = code;
+    }
+
+    ocr_clear_bitmap(image);
+
+    return code;
+}
+
+
 };
 
 /* Currently tesseract is the only C++ lib we have.

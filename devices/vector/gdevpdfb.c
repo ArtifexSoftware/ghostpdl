@@ -496,7 +496,7 @@ gdev_pdf_copy_color(gx_device * dev, const byte * base, int sourcex,
 /* Fill a mask. */
 int
 gdev_pdf_fill_mask(gx_device * dev,
-                 const byte * data, int data_x, int raster, gx_bitmap_id id,
+                   const byte * data, int data_x, int raster, gx_bitmap_id id,
                    int x, int y, int width, int height,
                    const gx_drawing_color * pdcolor, int depth,
                    gs_logical_operation_t lop, const gx_clip_path * pcpath)
@@ -508,13 +508,27 @@ gdev_pdf_fill_mask(gx_device * dev,
 
     /* If OCRStage is 1 then we are handling an image which is a rendered glyph
      * that we want to have OCR software process and return a Unicode code point for.
-     * We specifically do *not* want to send the image to the outptu PDF file!
+     * We specifically do *not* want to send the image to the output PDF file!
      */
     if (pdev->OCRStage == 1) {
         /* Process the image here */
-        pdev->OCRStage = 2;
+        int code;
+        void *state;
+
         pdev->OCRUnicode = 0;
-        return 0;
+        pdev->OCRStage = 2;
+        code = ocr_init_api(dev->memory->non_gc_memory, "eng", &state);
+        if (code < 0)
+           return code;
+
+        code = ocr_bitmap_to_unicode(state,
+                                     data, data_x, width, height, raster,
+                                     (int)dev->HWResolution[0],
+                                     (int)dev->HWResolution[1],
+                                     &pdev->OCRUnicode);
+        ocr_fin_api(dev->memory->non_gc_memory, state);
+
+        return code;
     }
 
     if (depth > 1 || (!gx_dc_is_pure(pdcolor) != 0 && !(gx_dc_is_pattern1_color(pdcolor))))

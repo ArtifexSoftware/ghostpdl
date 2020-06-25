@@ -50,5 +50,10 @@ int ocr_recognise(void *api_, int w, int h, void *data,
                   int (*callback)(void *, const char *, const int *, const int *, const int *, int),
                   void *arg);
 
+int ocr_bitmap_to_unicode(void *state,
+                          const void *data, int data_x,
+                          int w, int h, int raster,
+                          int xres, int yres, int *unicode);
+
 #endif
 
