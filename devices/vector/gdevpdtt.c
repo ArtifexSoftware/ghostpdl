@@ -3671,6 +3671,7 @@ pdf_text_process(gs_text_enum_t *pte)
         if (OCRUnicode) {
             pdev->OCRStage = 1;
             pte_default->can_cache = 0;
+            pte_default->index = pdev->OCRUnicode;
         }
     }
     /* The 'process' procedure might also have set pte_default itself. */

@@ -96,11 +96,20 @@ pdf_add_ToUnicode(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_t *pdfon
     length = font->procs.decode_glyph((gs_font *)font, glyph, ch, NULL, 0);
     if (length == 0 || length == GS_NO_CHAR) {
         if (pdev->OCRStage == 2) {
-            unicode = (ushort *)gs_alloc_bytes(pdev->memory, sizeof(ushort), "temporary Unicode array");
+            uint mask = 0xFF;
+            int ix;
+            char* u;
+
+            pdev->OCRStage = 0;
+            unicode = (ushort *)gs_alloc_bytes(pdev->memory, 2 * sizeof(ushort), "temporary Unicode array");
             if (unicode == NULL)
                 return_error(gs_error_VMerror);
-            memset(unicode, 0x00, sizeof(short));
-            length = 2;
+            u = (char*)unicode;
+            for(ix = 0;ix < 4;ix++) {
+                u[3 - ix] = (pdev->OCRUnicode & mask) >> (8 * ix);
+                mask = mask << 8;
+            }
+            length = 4;
         } else {
             if (gnstr != NULL && gnstr->size == 7) {
                 if (!memcmp(gnstr->data, "uni", 3)) {
@@ -1047,6 +1056,9 @@ process_text_return_width(const pdf_text_enum_t *pte, gs_font_base *font,
         {  const gs_glyph *gdata_i = (gdata != NULL ? gdata + i : 0);
 
             code = pdf_encode_string_element(pdev, (gs_font *)font, pdfont, ch, gdata_i);
+            if(code == TEXT_PROCESS_INTERVENE)
+                pdev->OCRUnicode = i;
+
             if (code != 0)
                 return code;
         }
