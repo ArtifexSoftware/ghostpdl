@@ -1048,8 +1048,8 @@ upd_print_page(gx_device_printer *pdev, gp_file *out)
  */
    if(!upd || B_OK4GO != (upd->flags & (B_OK4GO | B_ERROR))) {
 #if UPD_MESSAGES & (UPD_M_ERROR | UPD_M_TOPCALLS)
-         errprintf(pdev->memory, "CALL-REJECTED upd_print_page(0x%05lx,0x%05lx)\n",
-             (long) udev,(long) out);
+         errprintf(pdev->memory, "CALL-REJECTED upd_print_page(" PRI_INTPTR "," PRI_INTPTR ")\n",
+             (intptr_t)udev,(intptr_t) out);
 #endif
 	 return_error(gs_error_undefined);
    }

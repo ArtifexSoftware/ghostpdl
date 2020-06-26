@@ -2150,7 +2150,7 @@ hp_colour_print_page(gx_device_printer * pdev, gp_file * prn_stream, int ptype)
         ep_p += plane_size;
       }
       /* Make a sentinel and align to word size.  */
-      eg.print_buf = (byte *)((word)(ep_p + sizeof(word)) & ~(sizeof(word)-1));
+      eg.print_buf = (byte *)((intptr_t)(ep_p + sizeof(word)) & ~(sizeof(word)-1));
     }
     eg.num_comps = num_comps;
   }

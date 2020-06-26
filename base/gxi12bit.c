@@ -412,14 +412,14 @@ image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
 f:
         if (sizeof(pdevc_next->colors.binary.color[0]) <= sizeof(ulong))
             if_debug7m('B', penum->memory,
-                       "[B]0x%x,0x%x,0x%x,0x%x -> 0x%lx,0x%lx,0x%lx\n",
+                       "[B]0x%x,0x%x,0x%x,0x%x -> 0x%lx,0x%lx," PRI_INTPTR "\n",
                        next.v[0], next.v[1], next.v[2], next.v[3],
                        (ulong)pdevc_next->colors.binary.color[0],
                        (ulong)pdevc_next->colors.binary.color[1],
-                       (ulong)pdevc_next->type);
+                       (intptr_t)pdevc_next->type);
         else
             if_debug9m('B', penum->memory,
-                       "[B]0x%x,0x%x,0x%x,0x%x -> 0x%08lx%08lx,0x%08lx%08lx,0x%lx\n",
+                       "[B]0x%x,0x%x,0x%x,0x%x -> 0x%08lx%08lx,0x%08lx%08lx," PRI_INTPTR "\n",
                        next.v[0], next.v[1], next.v[2], next.v[3],
                        (ulong)(pdevc_next->colors.binary.color[0] >>
                                8 * (sizeof(pdevc_next->colors.binary.color[0]) - sizeof(ulong))),
@@ -427,7 +427,7 @@ f:
                        (ulong)(pdevc_next->colors.binary.color[1] >>
                                8 * (sizeof(pdevc_next->colors.binary.color[1]) - sizeof(ulong))),
                        (ulong)pdevc_next->colors.binary.color[1],
-                       (ulong)pdevc_next->type);
+                       (intptr_t)pdevc_next->type);
 /* NB: sizeof gx_color_index is 4 or 8 bytes! */
 
         /* Even though the supplied colors don't match, */

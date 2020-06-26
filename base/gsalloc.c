@@ -2814,8 +2814,8 @@ debug_print_object(const gs_memory_t *mem, const void *obj, const dump_control_t
     const gs_memory_struct_type_t *type = pre->o_type;
     dump_options_t options = control->options;
 
-    dmprintf3(mem, "  pre="PRI_INTPTR"(obj="PRI_INTPTR") size=%lu", (ulong) pre, (ulong) obj,
-             size);
+    dmprintf3(mem, "  pre="PRI_INTPTR"(obj="PRI_INTPTR") size=%lu",
+              (intptr_t) pre, (intptr_t) obj, size);
     switch (options & (dump_do_type_addresses | dump_do_no_types)) {
     case dump_do_type_addresses + dump_do_no_types:	/* addresses only */
         dmprintf1(mem, " type="PRI_INTPTR"", (intptr_t) type);

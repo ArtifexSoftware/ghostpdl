@@ -24,6 +24,9 @@
 
 #include "gp_mswin.h"
 
+/* Should be in io.h */
+extern intptr_t _get_osfhandle(int fd);
+
 /* Open a file with the given name, as a stream of uninterpreted bytes. */
 FILE *
 gp_fopen_impl(gs_memory_t *mem, const char *fname, const char *mode)
@@ -144,11 +147,11 @@ bool gp_fseekable_impl(FILE *f)
 {
     struct __stat64 s;
     int fno;
-    
+
     fno = fileno(f);
     if (fno < 0)
         return(false);
-    
+
     if (_fstat64(fno, &s) < 0)
         return(false);
 

@@ -62,7 +62,7 @@ struct name_s {
 /*      pvalue == pv_other: other status */
 #define pv_other ((ref *)1)
 /*      pvalue != pv_no_defn, pvalue != pv_other: pvalue is valid */
-#define pv_valid(pvalue) ((unsigned long)(pvalue) > 1)
+#define pv_valid(pvalue) ((uintptr_t)(pvalue) > 1)
     ref *pvalue;		/* if only defined in systemdict or */
                                 /* userdict, this points to the value */
 };

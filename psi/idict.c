@@ -659,8 +659,8 @@ dict_undef(ref * pdref, const ref * pkey, dict_stack_t *pds)
 #ifdef DEBUG
             /* Check the the cache is correct. */
             if (!(pds && dstack_dict_is_permanent(pds, pdref)))
-                lprintf1("dict_undef: cached name value pointer 0x%lx is incorrect!\n",
-                         (ulong) pname->pvalue);
+                lprintf1("dict_undef: cached name value pointer " PRI_INTPTR " is incorrect!\n",
+                         (intptr_t) pname->pvalue);
 #endif
             /* Clear the cache */
             pname->pvalue = pv_no_defn;
