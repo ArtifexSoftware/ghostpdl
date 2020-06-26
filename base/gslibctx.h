@@ -97,9 +97,9 @@ typedef struct {
     FILE *fstdout;
     FILE *fstderr;
     gp_file *fstdout2;		/* for redirecting %stdout and diagnostics */
-    bool stdout_is_redirected;	/* to stderr or fstdout2 */
-    bool stdout_to_stderr;
-    bool stdin_is_interactive;
+    int stdout_is_redirected;	/* to stderr or fstdout2 */
+    int stdout_to_stderr;
+    int stdin_is_interactive;
     void *default_caller_handle;	/* identifies caller of GS DLL/shared object */
     void *std_caller_handle;
     void *poll_caller_handle;
@@ -112,7 +112,7 @@ typedef struct {
     /* True if we are emulating CPSI. Ideally this would be in the imager
      * state, but this can't be done due to problems detecting changes in it
      * for the clist based devices. */
-    bool CPSI_mode;
+    int CPSI_mode;
     int scanconverter;
     int act_on_uel;
 
@@ -146,7 +146,7 @@ typedef struct gs_lib_ctx_s
                                     */
     gs_gc_root_ptr name_table_root;
     /* Define whether dictionaries expand automatically when full. */
-    bool dict_auto_expand;  /* ps dictionary: false level 1 true level 2 or 3 */
+    int dict_auto_expand;  /* ps dictionary: false level 1 true level 2 or 3 */
     /* A table of local copies of the IODevices */
     struct gx_io_device_s **io_device_table;
     int io_device_table_count;
@@ -155,7 +155,7 @@ typedef struct gs_lib_ctx_s
     client_check_file_permission_t client_check_file_permission;
     /* Define the default value of AccurateScreens that affects setscreen
        and setcolorscreen. */
-    bool screen_accurate_screens;
+    int screen_accurate_screens;
     uint screen_min_screen_levels;
     /* Accuracy vs. performance for ICC color */
     uint icc_color_accuracy;
