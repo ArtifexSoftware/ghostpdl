@@ -1198,7 +1198,7 @@ int gs_lib_ctx_register_callout(gs_memory_t *mem, gs_callout_fn fn, void *arg)
         return 0;
 
    core = mem->gs_lib_ctx->core;
-   entry = (gs_callout_list_t *)gs_alloc_bytes(mem->non_gc_memory,
+   entry = (gs_callout_list_t *)gs_alloc_bytes(core->memory,
                                                sizeof(*entry),
                                                "gs_callout_list_t");
    if (entry == NULL)
@@ -1225,7 +1225,7 @@ void gs_lib_ctx_deregister_callout(gs_memory_t *mem, gs_callout_fn fn, void *arg
    while (*entry) {
         if ((*entry)->callout == fn && (*entry)->handle == arg) {
             gs_callout_list_t *next = (*entry)->next;
-            gs_free_object(mem->non_gc_memory, *entry, "gs_callout_list_t");
+            gs_free_object(core->memory, *entry, "gs_callout_list_t");
             *entry = next;
         } else {
             entry = &(*entry)->next;
