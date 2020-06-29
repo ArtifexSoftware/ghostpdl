@@ -218,7 +218,7 @@ int
 <li><code>
 int
 <a href="#set_poll_with_handle">gsapi_set_poll_with_handle</a>
-(void *instance, int(*poll_fn)(void *caller_handle, void *caller_handle));
+(void *instance, int(*poll_fn)(void *caller_handle), void *caller_handle);
 </code></li>
 
 <li><code>
@@ -564,6 +564,22 @@ has been called, and just before <code>gsapi_delete_instance()</code>.
 <blockquote>
 Set a parameter.
 Equivalent to passing a parameter on the command line.
+Makes use of gs_set_param_type which is defined as
+<blockquote>
+<pre>
+typedef enum {
+    gs_spt_invalid = -1,
+    gs_spt_null    = 0,   /* void * is NULL */
+    gs_spt_bool    = 1,   /* void * is NULL (false) or non-NULL (true) */
+    gs_spt_int     = 2,   /* void * is a pointer to an int */
+    gs_spt_float   = 3,   /* void * is a float * */
+    gs_spt_name    = 4,   /* void * is a char * */
+    gs_spt_string  = 5,   /* void * is a char * */
+    gs_spt_long    = 6,   /* void * is a long * */
+    gs_spt_i64     = 7,   /* void * is a int64_t * */
+    gs_spt_size_t  = 8    /* void * is a size_t * */
+} gs_set_param_type;
+</pre></blockquote>
 </blockquote>
 
 <h3><a name="add_control_path"></a><code>gsapi_add_control_path()</code></h3>
