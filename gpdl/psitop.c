@@ -309,8 +309,7 @@ ps_impl_characteristics(const pl_interp_implementation_t *impl)     /* implement
     ps_detect_language,
     "Artifex",
     PSVERSION,
-    PSBUILDDATE,
-    1				/* minimum input size to PostScript */
+    PSBUILDDATE
   };
 #undef PSVERSION
 #undef PSBUILDDATE

@@ -33,6 +33,7 @@
 #include "gslibctx.h"
 #include "gp.h"
 #include "gsargs.h"
+#include "gdevdsp.h"
 
 typedef struct { int a[(int)GS_ARG_ENCODING_LOCAL   == (int)PS_ARG_ENCODING_LOCAL   ? 1 : -1]; } compile_time_assert_0;
 typedef struct { int a[(int)GS_ARG_ENCODING_UTF8    == (int)PS_ARG_ENCODING_UTF8    ? 1 : -1]; } compile_time_assert_1;
@@ -131,21 +132,80 @@ gsapi_set_poll_with_handle(void *instance,
     return 0;
 }
 
+static int
+legacy_display_callout(void *instance,
+                       void *handle,
+                       const char *dev_name,
+                       int id,
+                       int size,
+                       void *data)
+{
+    gs_main_instance *inst = (gs_main_instance *)instance;
+
+    if (dev_name == NULL)
+        return -1;
+    if (strcmp(dev_name, "display") != 0)
+        return -1;
+
+    if (id == DISPLAY_CALLOUT_GET_CALLBACK_LEGACY) {
+        /* get display callbacks */
+        gs_display_get_callback_t *cb = (gs_display_get_callback_t *)data;
+        cb->callback = inst->display;
+        return 0;
+    }
+    return -1;
+}
+
 /* Set the display callback structure */
 GSDLLEXPORT int GSDLLAPI
 gsapi_set_display_callback(void *instance, display_callback *callback)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    gs_main_instance *minst;
+    int code;
     if (instance == NULL)
         return gs_error_Fatal;
-    get_minst_from_memory(ctx->memory)->display = callback;
+    minst = get_minst_from_memory(ctx->memory);
+    if (minst->display == NULL && callback != NULL) {
+        /* First registration. */
+        code = gs_lib_ctx_register_callout(minst->heap,
+                                           legacy_display_callout,
+                                           minst);
+        if (code < 0)
+            return code;
+    }
+    if (minst->display != NULL && callback == NULL) {
+        /* Deregistered. */
+        gs_lib_ctx_deregister_callout(minst->heap,
+                                      legacy_display_callout,
+                                      minst);
+    }
+    minst->display = callback;
     /* not in a language switched build */
     return 0;
 }
 
+GSDLLEXPORT int GSDLLAPI
+gsapi_register_callout(void *instance, gs_callout fn, void *handle)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (instance == NULL)
+        return gs_error_Fatal;
+    return gs_lib_ctx_register_callout(ctx->memory, fn, handle);
+}
+
+GSDLLEXPORT void GSDLLAPI
+gsapi_deregister_callout(void *instance, gs_callout fn, void *handle)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (instance == NULL)
+        return;
+    gs_lib_ctx_deregister_callout(ctx->memory, fn, handle);
+}
+
 /* Set/Get the default device list string */
 GSDLLEXPORT int GSDLLAPI
-gsapi_set_default_device_list(void *instance, char *list, int listlen)
+gsapi_set_default_device_list(void *instance, const char *list, int listlen)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
     if (instance == NULL)

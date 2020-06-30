@@ -475,6 +475,14 @@ run_stdin:
                 if (code < 0) return code;
                 break;
             }
+            if (*arg != 0) {
+                /* Unmatched switch. */
+                outprintf(minst->heap,
+                          "   Unknown switch '--%s'.\n",
+                          arg);
+                arg_finit(pal);
+                return gs_error_Fatal;
+            }
             /* FALLTHROUGH */
         case '+':
             pal->expand_ats = false;

@@ -160,7 +160,6 @@ TESSDEPS=\
 	$(TESSERACTDIR)/src/classify/tessclassifier.h\
 	$(TESSERACTDIR)/src/classify/trainingsample.h\
 	$(TESSERACTDIR)/src/cutil/bitvec.h\
-	$(TESSERACTDIR)/src/cutil/callcpp.h\
 	$(TESSERACTDIR)/src/cutil/emalloc.h\
 	$(TESSERACTDIR)/src/cutil/oldlist.h\
 	$(TESSERACTDIR)/src/dict/dawg.h\
@@ -568,9 +567,6 @@ $(TESSOBJ)classify_tessclassifier.$(OBJ) : $(TESSERACTDIR)/src/classify/tessclas
 
 $(TESSOBJ)classify_trainingsample.$(OBJ) : $(TESSERACTDIR)/src/classify/trainingsample.cpp $(TESSDEPS)
 	$(TESSCXX) $(TESSO_)classify_trainingsample.$(OBJ) $(C_) $(TESSERACTDIR)/src/classify/trainingsample.cpp
-
-$(TESSOBJ)cutil_callcpp.$(OBJ) : $(TESSERACTDIR)/src/cutil/callcpp.cpp $(TESSDEPS)
-	$(TESSCXX) $(TESSO_)cutil_callcpp.$(OBJ) $(C_) $(TESSERACTDIR)/src/cutil/callcpp.cpp
 
 $(TESSOBJ)cutil_cutil_class.$(OBJ) : $(TESSERACTDIR)/src/cutil/cutil_class.cpp $(TESSDEPS)
 	$(TESSCXX) $(TESSO_)cutil_cutil_class.$(OBJ) $(C_) $(TESSERACTDIR)/src/cutil/cutil_class.cpp
@@ -1003,7 +999,6 @@ TESSERACT_OBJS_2 = \
 
 TESSERACT_OBJS_3=\
 	$(TESSOBJ)classify_classify.$(OBJ)\
-	$(TESSOBJ)cutil_callcpp.$(OBJ)\
 	$(TESSOBJ)dict_context.$(OBJ)\
 	$(TESSOBJ)dict_dawg.$(OBJ)\
 	$(TESSOBJ)dict_dawg_cache.$(OBJ)\

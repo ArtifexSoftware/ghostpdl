@@ -628,6 +628,33 @@ in:                             /* Initialize for a new page. */
     gs_gstate.color[0].color_space = pcs; /* we already have one ref */
     gs_gstate.color[1].color_space = pcs;
     rc_increment_cs(pcs); /* increment for second ref */
+    /* Initialize client color and device color */
+    gs_gstate.color[0].ccolor =
+        gs_alloc_struct(mem, gs_client_color, &st_client_color, "clist_playback_band");
+    gs_gstate.color[1].ccolor =
+        gs_alloc_struct(mem, gs_client_color, &st_client_color, "clist_playback_band");
+    gs_gstate.color[0].dev_color =
+        gs_alloc_struct(mem, gx_device_color, &st_device_color, "clist_playback_band");
+    gs_gstate.color[1].dev_color =
+        gs_alloc_struct(mem, gx_device_color, &st_device_color, "clist_playback_band");
+    if (gs_gstate.color[0].ccolor == 0 || gs_gstate.color[0].dev_color == 0 ||
+        gs_gstate.color[1].ccolor == 0 || gs_gstate.color[1].dev_color == 0
+        ) {
+        gs_free_object(mem, gs_gstate.color[1].ccolor, "clist_playback_band");
+        gs_free_object(mem, gs_gstate.color[0].dev_color, "clist_playback_band");
+        gs_free_object(mem, gs_gstate.color[1].dev_color, "clist_playback_band");
+        return_error(gs_error_VMerror);
+    }
+    gs_gstate.color[0].color_space->pclient_color_space_data =
+        pcs->pclient_color_space_data;
+    cs_full_init_color(gs_gstate.color[0].ccolor, pcs);
+    gx_unset_dev_color(&gs_gstate);
+
+    gs_gstate.color[1].color_space->pclient_color_space_data =
+        pcs->pclient_color_space_data;
+    cs_full_init_color(gs_gstate.color[1].ccolor, pcs);
+    gx_unset_dev_color(&gs_gstate);
+
     /* Remove the ICC link cache and replace with the device link cache
        so that we share the cache across bands */
     rc_decrement(gs_gstate.icc_link_cache,"clist_playback_band");
@@ -2360,6 +2387,14 @@ idata:                  data_size = 0;
         gx_pattern_cache_free(gs_gstate.pattern_cache);
         gs_gstate.pattern_cache = NULL;
     }
+    /* Free the client color and device colors allocated upon entry */
+    gs_free_object(mem, gs_gstate.color[0].ccolor, "clist_playback_band");
+    gs_free_object(mem, gs_gstate.color[1].ccolor, "clist_playback_band");
+    gs_free_object(mem, gs_gstate.color[0].dev_color, "clist_playback_band");
+    gs_free_object(mem, gs_gstate.color[1].dev_color, "clist_playback_band");
+    gs_gstate.color[0].ccolor = gs_gstate.color[1].ccolor = NULL;
+    gs_gstate.color[0].dev_color = gs_gstate.color[1].dev_color = NULL;
+
     /* The imager state release will decrement the icc link cache.  To avoid
        race conditions lock the cache */
     gx_monitor_enter(cdev->icc_cache_cl->lock);

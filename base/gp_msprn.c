@@ -72,12 +72,12 @@ const gx_io_device gs_iodev_printer = {
 };
 
 typedef struct tid_s {
-    unsigned long tid;
+    uintptr_t tid;
 } tid_t;
 
 void mswin_printer_thread(void *arg)
 {
-    int fd = (int)arg;
+    int fd = (int)(intptr_t)arg;
     char pname[gp_file_name_sizeof];
     char data[4096];
     HANDLE hprinter = INVALID_HANDLE_VALUE;
@@ -162,10 +162,10 @@ mswin_printer_fopen(gx_io_device * iodev, const char *fname, const char *access,
     DWORD version = GetVersion();
     HANDLE hprinter;
     int pipeh[2];
-    unsigned long tid;
+    uintptr_t tid;
     HANDLE hthread;
     char pname[gp_file_name_sizeof];
-    unsigned long *ptid = &((tid_t *)(iodev->state))->tid;
+    uintptr_t *ptid = &((tid_t *)(iodev->state))->tid;
     gs_lib_ctx_t *ctx = mem->gs_lib_ctx;
     gs_fs_list_t *fs = ctx->core->fs;
 
@@ -224,7 +224,7 @@ mswin_printer_fopen(gx_io_device * iodev, const char *fname, const char *access,
     }
 
     /* start a thread to read the pipe */
-    tid = _beginthread(&mswin_printer_thread, 32768, (void *)(pipeh[0]));
+    tid = _beginthread(&mswin_printer_thread, 32768, (void *)(intptr_t)(pipeh[0]));
     if (tid == -1) {
         gp_fclose(*pfile);
         *pfile = NULL;
@@ -242,7 +242,7 @@ mswin_printer_fopen(gx_io_device * iodev, const char *fname, const char *access,
         *pfile = NULL;
         return_error(gs_error_invalidfileaccess);
     }
-    *ptid = (unsigned long)hthread;
+    *ptid = (uintptr_t)hthread;
 
     /* Give the name of the printer to the thread by writing
      * it to the pipe.  This is avoids elaborate thread
@@ -257,7 +257,7 @@ mswin_printer_fopen(gx_io_device * iodev, const char *fname, const char *access,
 static int
 mswin_printer_fclose(gx_io_device * iodev, gp_file * file)
 {
-    unsigned long *ptid = &((tid_t *)(iodev->state))->tid;
+    uintptr_t *ptid = &((tid_t *)(iodev->state))->tid;
     HANDLE hthread;
     gp_fclose(file);
     if (*ptid != -1) {

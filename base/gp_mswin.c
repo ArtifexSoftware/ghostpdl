@@ -537,7 +537,7 @@ FILE *mswin_popen(const char *cmd, const char *mode)
         else {
             CloseHandle(piProcInfo.hProcess);
             CloseHandle(piProcInfo.hThread);
-            handle = _open_osfhandle((long)hChildStdinWr, 0);
+            handle = _open_osfhandle((intptr_t)hChildStdinWr, 0);
         }
 
     if (hChildStdinRd != INVALID_HANDLE_VALUE)
@@ -670,7 +670,7 @@ gp_open_scratch_file_impl(const gs_memory_t *mem,
     }
     if (hfile != INVALID_HANDLE_VALUE) {
         /* Associate a C file handle with an OS file handle. */
-        fd = _open_osfhandle((long)hfile, 0);
+        fd = _open_osfhandle((intptr_t)hfile, 0);
         if (fd == -1)
             CloseHandle(hfile);
         else {

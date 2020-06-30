@@ -206,8 +206,7 @@ pcl_impl_characteristics(const pl_interp_implementation_t * impl)        /* impl
         pcl_detect_language,
         "Artifex",
         PCLVERSION,
-        PCLBUILDDATE,
-        17                      /* size of min buffer == sizeof UEL */
+        PCLBUILDDATE
     };
     return &pcl_characteristics;
 }

@@ -96,7 +96,7 @@
 /* This should go into gdevprn.h, or, better yet, gdevprn should
    acquire an API for changing resolution. */
 int gdev_prn_maybe_realloc_memory(gx_device_printer *pdev,
-                                  gdev_prn_space_params *old_space,
+                                  gdev_space_params *old_space,
                                   int old_width, int old_height,
                                   bool old_page_uses_transparency);
 
@@ -1180,7 +1180,7 @@ done:
 void
 cups_get_space_params(const gx_device_printer *pdev,
 					/* I - Printer device */
-                      gdev_prn_space_params   *space_params)
+                            gdev_space_params *space_params)
 					/* O - Space parameters */
 {
   float	cache_size;			/* Size of tile cache in bytes */
@@ -3100,7 +3100,7 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   int			margins_set;	/* Were the margins set? */
   int			size_set;	/* Was the size set? */
   int			color_set;	/* Were the color attrs set? */
-  gdev_prn_space_params	sp_old;	        /* Space parameter data */
+  gdev_space_params	sp_old;	        /* Space parameter data */
   int			width,		/* New width of page */
                         height,		/* New height of page */
                         width_old = 0,  /* Previous width of page */

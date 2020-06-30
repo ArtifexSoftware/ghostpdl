@@ -78,7 +78,7 @@
 /* This should go into gdevprn.h, or, better yet, gdevprn should
    acquire an API for changing resolution. */
 int gdev_prn_maybe_realloc_memory(gx_device_printer *pdev,
-                                  gdev_prn_space_params *old_space,
+                                  gdev_space_params *old_space,
                                   int old_width, int old_height,
                                   bool old_page_uses_transparency);
 

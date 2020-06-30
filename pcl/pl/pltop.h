@@ -41,7 +41,6 @@ typedef struct pl_interp_characteristics_s
     const char *manufacturer;   /* manuf str */
     const char *version;        /* version str */
     const char *build_date;     /* build date str */
-    int min_input_size;         /* min sizeof input buffer */
 } pl_interp_characteristics_t;
 
 /*

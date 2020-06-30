@@ -76,8 +76,7 @@ xps_impl_characteristics(const pl_interp_implementation_t *pimpl)
         xps_detect_language,
         "Artifex",
         XPS_VERSION,
-        XPS_BUILD_DATE,
-        XPS_PARSER_MIN_INPUT_SIZE, /* Minimum input size */
+        XPS_BUILD_DATE
     };
     return &xps_characteristics;
 }
@@ -156,7 +155,7 @@ xps_impl_allocate_interp_instance(pl_interp_implementation_t *impl,
     instance->scratch_file = NULL;
     instance->scratch_name[0] = 0;
     instance->memory = pmem;
-    
+
     /* NB needs error handling */
     ctx->fontdir = gs_font_dir_alloc(ctx->memory);
     if (!ctx->fontdir) {
@@ -236,7 +235,7 @@ xps_impl_init_job(pl_interp_implementation_t *impl,
     (void)xps_set_icc_user_params(impl, ctx->pgs);
     xps_set_nocache(impl, ctx->fontdir);
 
-    gs_setscanconverter(ctx->pgs, pl_main_get_scanconverter(ctx->memory));    
+    gs_setscanconverter(ctx->pgs, pl_main_get_scanconverter(ctx->memory));
 
     /* gsave and grestore (among other places) assume that */
     /* there are at least 2 gstates on the graphics stack. */

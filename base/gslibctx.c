@@ -388,6 +388,7 @@ void gs_lib_ctx_fin(gs_memory_t *mem)
     gs_memory_t *ctx_mem;
     int refs, i;
     gs_fs_list_t *fs;
+    gs_callout_list_t *entry;
 
     if (!mem || !mem->gs_lib_ctx)
         return;
@@ -428,6 +429,13 @@ void gs_lib_ctx_fin(gs_memory_t *mem)
             gs_fs_list_t *next = fs->next;
             gs_free_object(fs->memory, fs, "gs_lib_ctx_fin");
             fs = next;
+        }
+
+        entry = ctx->core->callouts;
+        while (entry) {
+            gs_callout_list_t *next = entry->next;
+            gs_free_object(mem->non_gc_memory, entry, "gs_callout_list_t");
+            entry = next;
         }
 
         for (i = 0; i < ctx->core->argc; i++)
@@ -1178,4 +1186,72 @@ int gs_lib_ctx_get_args(gs_lib_ctx_t *ctx, const char * const **argv)
     core = ctx->core;
     *argv = (const char * const *)core->argv;
     return core->argc;
+}
+
+int gs_lib_ctx_register_callout(gs_memory_t *mem, gs_callout_fn fn, void *arg)
+{
+    gs_lib_ctx_core_t *core;
+    gs_callout_list_t *entry;
+
+    if (mem == NULL || mem->gs_lib_ctx == NULL ||
+        mem->gs_lib_ctx->core == NULL || fn == NULL)
+        return 0;
+
+   core = mem->gs_lib_ctx->core;
+   entry = (gs_callout_list_t *)gs_alloc_bytes(core->memory,
+                                               sizeof(*entry),
+                                               "gs_callout_list_t");
+   if (entry == NULL)
+       return_error(gs_error_VMerror);
+   entry->next = core->callouts;
+   entry->callout = fn;
+   entry->handle = arg;
+   core->callouts = entry;
+
+   return 0;
+}
+
+void gs_lib_ctx_deregister_callout(gs_memory_t *mem, gs_callout_fn fn, void *arg)
+{
+    gs_lib_ctx_core_t *core;
+    gs_callout_list_t **entry;
+
+    if (mem == NULL || mem->gs_lib_ctx == NULL ||
+        mem->gs_lib_ctx->core == NULL || fn == NULL)
+        return;
+
+   core = mem->gs_lib_ctx->core;
+   entry = &core->callouts;
+   while (*entry) {
+        if ((*entry)->callout == fn && (*entry)->handle == arg) {
+            gs_callout_list_t *next = (*entry)->next;
+            gs_free_object(core->memory, *entry, "gs_callout_list_t");
+            *entry = next;
+        } else {
+            entry = &(*entry)->next;
+        }
+   }
+}
+
+int gs_lib_ctx_callout(gs_memory_t *mem, const char *dev_name,
+                       int id, int size, void *data)
+{
+    gs_lib_ctx_core_t *core;
+    gs_callout_list_t *entry;
+
+    if (mem == NULL || mem->gs_lib_ctx == NULL || mem->gs_lib_ctx->core == NULL)
+        return -1;
+
+    core = mem->gs_lib_ctx->core;
+    entry = core->callouts;
+    while (entry) {
+        int code = entry->callout(mem->gs_lib_ctx->top_of_system,
+                                  entry->handle, dev_name, id, size, data);
+        if (code >= 0)
+            return code;
+        if (code != gs_error_unknownerror)
+            return code;
+        entry = entry->next;
+    }
+    return -1;
 }

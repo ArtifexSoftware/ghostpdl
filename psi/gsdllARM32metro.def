@@ -1,36 +1,38 @@
 ;	'Ghostscript Interpreter DLL'
-LIBRARY		GSDLLARM32METRO
+LIBRARY                GSDLLARM32METRO
 EXPORTS	
-		DllEntryPoint
-		DllMain
-		gsdll_revision		@1
-		gsdll_init		@2
-		gsdll_execute_begin	@3
-		gsdll_execute_cont	@4
-		gsdll_execute_end	@5
-		gsdll_exit		@6
-		gsdll_init_with_encoding
-		gsdll_initA
-		gsdll_initW
-		gsapi_revision
-		gsapi_new_instance
-		gsapi_delete_instance
-		gsapi_init_with_args
-		gsapi_init_with_argsA
-		gsapi_init_with_argsW
-		gsapi_run_string_begin
-		gsapi_run_string_continue
-		gsapi_run_string_end
-		gsapi_run_string_with_length
-		gsapi_run_string
-		gsapi_run_file
-		gsapi_exit
-		gsapi_set_stdio
-		gsapi_set_stdio_with_handle
-		gsapi_set_poll
-		gsapi_set_poll_with_handle
-		gsapi_set_display_callback
-		gsapi_set_arg_encoding
+                DllEntryPoint
+                DllMain
+                gsdll_revision                @1
+                gsdll_init                @2
+                gsdll_execute_begin	@3
+                gsdll_execute_cont	@4
+                gsdll_execute_end	@5
+                gsdll_exit                @6
+                gsdll_init_with_encoding
+                gsdll_initA
+                gsdll_initW
+                gsapi_revision
+                gsapi_new_instance
+                gsapi_delete_instance
+                gsapi_init_with_args
+                gsapi_init_with_argsA
+                gsapi_init_with_argsW
+                gsapi_run_string_begin
+                gsapi_run_string_continue
+                gsapi_run_string_end
+                gsapi_run_string_with_length
+                gsapi_run_string
+                gsapi_run_file
+                gsapi_exit
+                gsapi_set_stdio
+                gsapi_set_stdio_with_handle
+                gsapi_set_poll
+                gsapi_set_poll_with_handle
+                gsapi_set_display_callback
+                gsapi_register_callout
+                gsapi_deregister_callout
+                gsapi_set_arg_encoding
                 gsapi_set_default_device_list
                 gsapi_get_default_device_list
                 gsapi_set_param

@@ -46,24 +46,43 @@
 % ====================== Error handler =======================
 % A general error handler prints an error to page.
 
-currentdict /DSC_OPDFREAD known {
-  % See if our notification from ps2write is present. If it is
-  % then pick it up. Otherwise define it as false. Used to prevent
-  % use of setmatrix at start of each page. The DSC-compliant
-  % output from ps2write wraps pages in a save/restore, so we don't
-  % need the setmatrix, and it breaks use of psnup with the output.
+% At this point if we have been written by the (e)ps2write device, there will
+% be a dictionary on the operand stack which contains some flags controlling the
+% later behaviour of this ProcSet. Be aware that this dictionary is present until
+% it is processed by the main dictionary handling at line 155 of this file, it is
+% important to make sure this dictionary is preserved, and remains top of the stack
+% when we reach that point.
+% For safety, the code between now and that point which also uses that configuration
+% information must check to see that the operand stack has at least one operand and that
+% its a dictionary, and must preserve that dictionary if it uses it.
 
-  currentdict /DSC_OPDFREAD get
-}{
-  false
+% Determine whether to create a custom error handler.
+% Check to see there's at least one object on the stack,
+% and that said object is a dicitonary. If either is not true
+% then create a custom error handler. If there is a dictionary,
+% assume its the 'global config' dictionary written by ps2write
+% (this should always be true!) and look to see if it has a
+% EPS2Write key. If it does get it. If EPS2Write is true then
+% don't create a custom error handler. If it is false or not present
+% then do create a custom error handler.
+count 0 ne {
+  dup type /dicttype eq {
+    dup /EPS2Write known {
+      dup /EPS2Write get not
+    }
+    {
+      true
+    }ifelse
+  }
+  {
+    true
+  } ifelse
+}
+{
+  true
 } ifelse
 
 10 dict begin % A dictionary for local binding
-
-% This switch used to control paeg independent values, like
-% whether to use InitialMatrix in SetupPageView
-%
-/DSC_OPDFREAD exch def
 
 /this currentdict def
 /y 720 def
@@ -79,62 +98,85 @@ currentdict /DSC_OPDFREAD known {
   //this /y 2 copy get 12 sub put
 } bind def
 
-errordict /handleerror
-{ systemdict begin
-  $error begin
-  newerror
-  { (%%[ Error handled by opdfread.ps : ) print errorname //ebuf cvs print (; OffendingCommand: )
-    print /command load //ebuf cvs print ( ]%%) = flush
-    /newerror false store vmstatus pop pop 0 ne
-    { grestoreall
-    } if
-    errorname (VMerror) ne
-    { showpage
-    } if
-    initgraphics
-    0 720 moveto
-    errorname (VMerror) eq
-    { //this /ehsave known
-      { clear //this /ehsave get restore 2 vmreclaim
+% We only actually create and push the custom error handler if we are not an EPS.
+{
+  errordict /handleerror
+  { systemdict begin
+    $error begin
+    newerror
+    { (%%[ Error handled by opdfread.ps : ) print errorname //ebuf cvs print (; OffendingCommand: )
+      print /command load //ebuf cvs print ( ]%%) = flush
+      /newerror false store vmstatus pop pop 0 ne
+      { grestoreall
       } if
-      vmstatus exch pop exch pop
-    }
-    /Courier 12 selectfont
-    {
-      (ERROR: ) //prnt exec errorname //prnt exec
-      (OFFENDING COMMAND: ) //prnt exec
-      /command load //prnt exec
-      $error /ostack known {
-        (%%[STACK:) =
-        (STACK:) //prnt exec
-        $error /ostack get aload length {
-          //newline exec
-          dup mark eq {
-            (-mark-) dup = show
-          } {
-            dup type /nametype eq {
-              dup xcheck not {
-                (/) show
-                (/) print
-             } if
-          } if
-          dup = //ebuf cvs show
-          } ifelse
-        } repeat
+      errorname (VMerror) ne
+      { showpage
       } if
-    } ifelse
-    (%%]%) =
-    //systemdict /showpage get exec
-    quit
-  } if
-  end
-  end
-} bind readonly put
+      initgraphics
+      0 720 moveto
+      errorname (VMerror) eq
+      { //this /ehsave known
+        { clear //this /ehsave get restore 2 vmreclaim
+        } if
+        vmstatus exch pop exch pop
+      }
+      /Courier 12 selectfont
+      {
+        (ERROR: ) //prnt exec errorname //prnt exec
+        (OFFENDING COMMAND: ) //prnt exec
+        /command load //prnt exec
+        $error /ostack known {
+          (%%[STACK:) =
+          (STACK:) //prnt exec
+          $error /ostack get aload length {
+            //newline exec
+            dup mark eq {
+              (-mark-) dup = show
+            } {
+              dup type /nametype eq {
+                dup xcheck not {
+                  (/) show
+                  (/) print
+               } if
+            } if
+            dup = //ebuf cvs show
+            } ifelse
+          } repeat
+        } if
+      } ifelse
+      (%%]%) =
+      //systemdict /showpage get exec
+      quit
+    } if
+    end
+    end
+  } bind readonly put
+} if
 
 end % A dictionary for local binding
 
-
 50 dict begin
+
+% Read the definitions of various global parameters from the dictionary
+% written at the head of the file by ps2write, and define the parameters
+% in this dictionary. Check first to make sure we have a dictionary on the
+% stack; if we do, assume its the 'global configuration' dictionary.
+count 0 ne {
+  dup type /dicttype eq {
+    {def} forall
+    false
+  }
+  {
+    true
+  } ifelse
+}
+{
+  true
+} ifelse
+
+{
+  (   *** Warning: global definitions dictionary not found, file may be corrupted.\n) print flush
+} if
 
 % ===================== Debugging =========================================
 

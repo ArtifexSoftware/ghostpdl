@@ -1227,7 +1227,7 @@ $(GLOBJ)gdevplnx.$(OBJ) : $(GLSRC)gdevplnx.c $(AK) $(gx_h)\
  $(gserrors_h) $(gsbitops_h) $(gsrop_h) $(gsstruct_h) $(gsutil_h)\
  $(gdevplnx_h)\
  $(gxcmap_h) $(gxdcolor_h) $(gxdevice_h) $(gxdevmem_h) $(gxdither_h)\
- $(gxgetbit_h) $(gxiparam_h) $(gxgstate_h) $(LIB_MAK) $(MAKEDIRS)
+ $(gxgetbit_h) $(gxiparam_h) $(gxgstate_h) $(gsstate_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gdevplnx.$(OBJ) $(C_) $(GLSRC)gdevplnx.c
 
 ### Default driver procedure implementations

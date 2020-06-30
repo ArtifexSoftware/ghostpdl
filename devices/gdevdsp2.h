@@ -20,23 +20,26 @@
 
 #include "gdevdevn.h"
 #include "gdevdsp.h"
+#include "gxclist.h"
 
 typedef struct gx_device_display_s gx_device_display;
 
 #define gx_device_display_common\
-        gx_device_memory *mdev;\
         display_callback *callback;\
         void *pHandle;\
+        int pHandle_set;\
         int nFormat;\
         void *pBitmap;\
-        unsigned long ulBitmapSize;\
+        size_t zBitmapSize;\
         int HWResolution_set;\
         gs_devn_params devn_params;\
-        equivalent_cmyk_color_params equiv_cmyk_colors
+        equivalent_cmyk_color_params equiv_cmyk_colors;\
+        gx_device_procs mutated_procs
 
 /* The device descriptor */
 struct gx_device_display_s {
     gx_device_common;
+    gx_device_clist_mutatable_common;
     gx_device_display_common;
 };
 

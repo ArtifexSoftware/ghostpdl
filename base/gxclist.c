@@ -353,7 +353,7 @@ clist_init_states(gx_device * dev, byte * init_data, uint data_size)
         &((gx_device_clist *)dev)->writer;
     ulong state_size = cdev->nbands * (ulong) sizeof(gx_clist_state);
     /* Align to the natural boundary for ARM processors, bug 689600 */
-    long alignment = (-(long)init_data) & (sizeof(init_data) - 1);
+    intptr_t alignment = (-(intptr_t)init_data) & (sizeof(init_data) - 1);
 
     /* Leave enough room after states for commands that write a reasonable
      * amount of data. The cmd_largest_size and the data_bits_size should  be
@@ -1398,7 +1398,7 @@ clist_make_accum_device(gx_device *target, const char *dname, void *base, int sp
 
         /* Fields left zeroed :
             int   max_fill_band;
-            int   is_printer;
+            dev_proc_dev_spec_op(orig_spec_op);
             float MediaSize[2];
             float ImagingBBox[4];
             bool  ImagingBBox_set;
@@ -1415,3 +1415,25 @@ clist_make_accum_device(gx_device *target, const char *dname, void *base, int sp
         */
         return cdev;
 }
+
+/* GC information */
+#define DEVICE_MUTATED_TO_CLIST(pdev) \
+    (((gx_device_clist_mutatable *)(pdev))->buffer_space != 0)
+
+static
+ENUM_PTRS_WITH(device_clist_mutatable_enum_ptrs, gx_device_clist_mutatable *pdev)
+    if (DEVICE_MUTATED_TO_CLIST(pdev))
+        ENUM_PREFIX(st_device_clist, 0);
+    else
+        ENUM_PREFIX(st_device_forward, 0);
+    break;
+ENUM_PTRS_END
+static
+RELOC_PTRS_WITH(device_clist_mutatable_reloc_ptrs, gx_device_clist_mutatable *pdev)
+{
+    if (DEVICE_MUTATED_TO_CLIST(pdev))
+        RELOC_PREFIX(st_device_clist);
+    else
+        RELOC_PREFIX(st_device_forward);
+} RELOC_PTRS_END
+public_st_device_clist_mutatable();

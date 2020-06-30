@@ -242,7 +242,7 @@ rc_object_type_name(const void *vp, const rc_header *prc)
         dist = (const char *)&dist - (const char *)vp;
         if (dist < 10000 && dist > -10000)
             return "(on stack)";
-        if ((ulong)pstype < 0x10000 || (long)pstype < 0)
+        if ((uintptr_t)pstype < 0x10000 || (uintptr_t)pstype < 0)
             return "(anomalous)";
     }
     return client_name_string(gs_struct_type_name(pstype));

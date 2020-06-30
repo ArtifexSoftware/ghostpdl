@@ -44,4 +44,9 @@
 int gdev_mem_set_planar(gx_device_memory * mdev, int num_planes,
                         const gx_render_plane_t *planes /*[num_planes]*/);
 
+int gdev_mem_set_planar_interleaved(
+                             gx_device_memory * mdev, int num_planes,
+                       const gx_render_plane_t *planes /*[num_planes]*/,
+                             int interleaved);
+
 #endif /* gdevmpla_INCLUDED */

@@ -125,6 +125,9 @@ int_gstate_alloc(const gs_dual_memory_t * dmem)
     gs_ref_memory_t *gmem = dmem->space_global;
     gs_gstate *pgs = gs_gstate_alloc((gs_memory_t *)lmem);
 
+    if (pgs == NULL)
+        return NULL;
+
     iigs = gs_alloc_struct((gs_memory_t *)lmem, int_gstate, &st_int_gstate,
                            "int_gstate_alloc(int_gstate)");
     if (iigs == NULL)

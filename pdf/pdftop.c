@@ -28,8 +28,6 @@
 #include "gxht.h" /* gsht1.h is incomplete, we need storage size of gs_halftone */
 #include "gsht1.h"
 
-#define PDF_PARSER_MIN_INPUT_SIZE (8192 * 4)
-
 static int pdfi_install_halftone(pdf_context *ctx, gx_device *pdevice);
 
 /*
@@ -66,8 +64,7 @@ pdf_impl_characteristics(const pl_interp_implementation_t *pimpl)
         pdf_detect_language,
         "Artifex",
         PDF_VERSION,
-        PDF_BUILD_DATE,
-        PDF_PARSER_MIN_INPUT_SIZE, /* Minimum input size */
+        PDF_BUILD_DATE
     };
     return &pdf_characteristics;
 }

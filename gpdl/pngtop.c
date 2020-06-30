@@ -112,18 +112,8 @@ static const pl_interp_characteristics_t png_characteristics = {
     png_detect_language,
     "Artifex",
     "0.01",
-    "11 Nov 2019",
-    1 /* minimum input size */
+    "11 Nov 2019"
 };
-
-/* GS's fakakta png integration insists on putting a
- * memory structure pointer in the decompress structs client data.
- * This is no good to find our instance from. We therefore find
- * it by offsetting back from the address of the cinfo. This is
- * a nasty bit of casting, so wrap it in a macro. */
-#define JPG_FROM_CINFO(CINFO) \
-    (png_interp_instance_t *)(((char *)(CINFO))-offsetof(png_interp_instance_t,cinfo))
-
 
 /* Get implementation's characteristics */
 static const pl_interp_characteristics_t * /* always returns a descriptor */
@@ -210,39 +200,6 @@ png_impl_get_device_memory(pl_interp_implementation_t *impl)
     return png->dev ? png->dev->memory : NULL;
 }
 
-#if 0 /* UNUSED */
-static int
-png_impl_set_param(pl_interp_implementation_t *impl,
-                   pl_set_param_type           type,
-                   const char                 *param,
-                   const void                 *val)
-{
-    png_interp_instance_t *png = (png_interp_instance_t *)impl->interp_client_data;
-
-    /* No params set here */
-    return 0;
-}
-
-static int
-png_impl_add_path(pl_interp_implementation_t *impl,
-                  const char                 *path)
-{
-    png_interp_instance_t *png = (png_interp_instance_t *)impl->interp_client_data;
-
-    /* No paths to add */
-    return 0;
-}
-
-static int
-png_impl_post_args_init(pl_interp_implementation_t *impl)
-{
-    png_interp_instance_t *png = (png_interp_instance_t *)impl->interp_client_data;
-
-    /* No post args processing */
-    return 0;
-}
-#endif
-
 /* Prepare interp instance for the next "job" */
 static int
 png_impl_init_job(pl_interp_implementation_t *impl,
@@ -255,25 +212,6 @@ png_impl_init_job(pl_interp_implementation_t *impl,
 
     return 0;
 }
-
-#if 0 /* UNUSED */
-static int
-png_impl_run_prefix_commands(pl_interp_implementation_t *impl,
-                             const char                 *prefix)
-{
-    png_interp_instance_t *png = (png_interp_instance_t *)impl->interp_client_data;
-
-    return 0;
-}
-
-static int
-png_impl_process_file(pl_interp_implementation_t *impl, const char *filename)
-{
-    png_interp_instance_t *png = (png_interp_instance_t *)impl->interp_client_data;
-
-    return 0;
-}
-#endif
 
 /* Do any setup for parser per-cursor */
 static int                      /* ret 0 or +ve if ok, else -ve error code */

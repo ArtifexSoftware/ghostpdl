@@ -1410,6 +1410,11 @@ pdf_output_page(gx_device * dev, int num_copies, int flush)
     gx_device_pdf *const pdev = (gx_device_pdf *) dev;
     int code;
 
+    if (pdev->Eps2Write && pdev->next_page != 0 && !gx_outputfile_is_separate_pages(pdev->fname, dev->memory)) {
+       emprintf(pdev->memory, "\n   *** EPS files may not contain multiple pages.\n   *** Use of the %%d filename format is required to output pages to multiple EPS files.\n");
+       return_error(gs_error_ioerror);
+    }
+
     if (pdev->ForOPDFRead) {
         code = pdf_close_page(pdev, num_copies);
         if (code < 0)

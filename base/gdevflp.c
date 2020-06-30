@@ -513,8 +513,14 @@ flp_put_params(gx_device * dev, gs_param_list * plist)
     code = param_read_bool(plist, "DisablePageHandler", &temp_bool);
     if (code < 0)
         return code;
-    if (code == 0)
+    if (code == 0) {
         dev->DisablePageHandler = temp_bool;
+
+        if (dev->DisablePageHandler == false) {
+            first_last_subclass_data *psubclass_data = dev->subclass_data;
+            psubclass_data->PageCount = 0;
+        }
+    }
 
     code = default_subclass_put_params(dev, plist);
 

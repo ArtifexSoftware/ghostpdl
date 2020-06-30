@@ -126,7 +126,8 @@ struct pl_main_instance_s
     pl_interp_implementation_t **implementations;
     pl_interp_implementation_t *curr_implementation;
     byte buf[8192]; /* languages read buffer */
-    void *disp; /* display device pointer NB wrong - remove */
+    void *display; /* display device pointer - to support legacy API. Will
+                    * be removed. */
 };
 
 
@@ -166,10 +167,50 @@ get_device_index(const gs_memory_t * mem, const char *value)
     return di;
 }
 
+static int
+legacy_display_callout(void *instance,
+                       void *handle,
+                       const char *dev_name,
+                       int id,
+                       int size,
+                       void *data)
+{
+    pl_main_instance_t *inst = (pl_main_instance_t *)handle;
+
+    if (dev_name == NULL)
+        return -1;
+    if (strcmp(dev_name, "display") != 0)
+        return -1;
+
+    if (id == DISPLAY_CALLOUT_GET_CALLBACK_LEGACY) {
+        /* get display callbacks */
+        gs_display_get_callback_t *cb = (gs_display_get_callback_t *)data;
+        cb->callback = inst->display;
+        return 0;
+    }
+    return -1;
+}
+
 int
 pl_main_set_display_callback(pl_main_instance_t *inst, void *callback)
 {
-    inst->disp = callback;
+    int code;
+
+    if (inst->display == NULL && callback != NULL) {
+        /* First registration. */
+        code = gs_lib_ctx_register_callout(inst->memory,
+                                           legacy_display_callout,
+                                           inst);
+        if (code < 0)
+            return code;
+    }
+    if (inst->display != NULL && callback == NULL) {
+        /* Deregistered. */
+        gs_lib_ctx_deregister_callout(inst->memory,
+                                      legacy_display_callout,
+                                      inst);
+    }
+    inst->display = callback;
     return 0;
 }
 
@@ -178,6 +219,7 @@ pl_main_init_with_args(pl_main_instance_t *inst, int argc, char *argv[])
 {
     gs_memory_t *mem = inst->memory;
     pl_interp_implementation_t *pjli;
+    int code;
 
     gp_init();
     /* debug flags we reset this out of gs_lib_init0 which sets these
@@ -224,17 +266,20 @@ pl_main_init_with_args(pl_main_instance_t *inst, int argc, char *argv[])
         return gs_error_Fatal;
     }
 
-    if (argc == 1 ||
-        pl_main_process_options(inst,
-                                &inst->args,
-                                pjli) < 0) {
+    code = pl_main_process_options(inst,
+                                   &inst->args,
+                                   pjli);
+    if (code == gs_error_invalidexit)
+        code = 0; /* This is given by someone running "quit" in PS. */
+    else if (argc == 1 || code < 0) {
         /* Print error verbage and return */
         int i;
         const gx_device **dev_list;
         int num_devs =
             gs_lib_device_list((const gx_device * const **)&dev_list,
                                NULL);
-        errprintf(mem, pl_usage, argv[0]);
+        if (code != gs_error_Info)
+            errprintf(mem, pl_usage, argv[0]);
 
         if (pl_characteristics(pjli)->version)
             errprintf(mem, "Version: %s\n",
@@ -243,7 +288,13 @@ pl_main_init_with_args(pl_main_instance_t *inst, int argc, char *argv[])
             errprintf(mem, "Build date: %s\n",
                       pl_characteristics(pjli)->
                       build_date);
-        errprintf(mem, "Devices:");
+        errprintf(mem, "Languages:");
+        for (i = 0; inst->implementations[i] != NULL; i++) {
+            if (((i + 1)) % 9 == 0)
+                errprintf(mem, "\n");
+            errprintf(mem, " %s", pl_characteristics(inst->implementations[i])->language);
+        }
+        errprintf(mem, "\nDevices:");
         for (i = 0; i < num_devs; ++i) {
             if (((i + 1)) % 9 == 0)
                 errprintf(mem, "\n");
@@ -804,16 +855,19 @@ pl_top_create_device(pl_main_instance_t * pti, int index)
                 return code;
         }
 
-        /* If the display device is selected (default), set up the callback.  NB Move me. */
-        if (strcmp(gs_devicename(pti->device), "display") == 0) {
-            gx_device_display *ddev;
+        if (pti->device->is_open &&
+            dev_proc(pti->device, dev_spec_op)(pti->device,
+                                               gxdso_reopen_after_init,
+                                               NULL, 0) == 1) {
+            code = gs_closedevice(pti->device);
+            if (code < 0)
+                return code;
 
-            if (!pti->disp) {
-                code = -1;
-            } else {
-                ddev = (gx_device_display *) pti->device;
-                ddev->callback = (display_callback *) pti->disp;
-
+            code = gs_opendevice(pti->device);
+            if (code < 0) {
+                dmprintf(pti->device->memory,
+                         "**** Unable to open the device, quitting.\n");
+                return code;
             }
         }
     }
@@ -1366,7 +1420,6 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                         pl_interp_implementation_t * pjli)
 {
     int code = 0;
-    bool help = false;
     const char *arg = NULL;
     gs_c_param_list *params = &pmi->params;
     int device_index = -1;
@@ -1393,7 +1446,9 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
         arg += 2;
         switch (arg[-1]) {
             case '-':
-                if (strcmp(arg, "debug") == 0) {
+                if (strcmp(arg, "help") == 0) {
+                    goto help;
+                } else if (strcmp(arg, "debug") == 0) {
                     gs_debug_flags_list(pmi->memory);
                     break;
                 } else if (strncmp(arg, "debug=", 6) == 0) {
@@ -1482,7 +1537,12 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     if (code < 0) return code;
                     break;
                 }
-                /* FALLTHROUGH */
+                if (*arg != 0) {
+                    dmprintf1(pmi->memory, "Unrecognized switch: %s\n", arg-2);
+                    code = -1;
+                    break;
+                }
+                break;
             default:
                 dmprintf1(pmi->memory, "Unrecognized switch: %s\n", arg-2);
                 code = -1;
@@ -1539,6 +1599,11 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     }
                 }
                 break;
+            case 'h':
+help:
+                arg_finit(pal);
+                gs_c_param_list_release(params);
+                return gs_error_Info;
             case 'H':
                 {
                     float hwmarg[4];
@@ -1576,29 +1641,6 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     code = pass_path_to_languages(pmi, path);
                 }
                 break;
-            case 'm':
-                {
-                    float marg[2];
-                    gs_param_float_array fa;
-                    uint sz = countof(marg);
-                    uint parsed = parse_floats(pmi->memory, sz, arg, marg);
-                    if (parsed != sz) {
-                        dmprintf(pmi->memory,
-                                 "-m must be followed by <left>x<bottom>\n");
-                        return -1;
-                    }
-                    fa.data = marg;
-                    fa.size = parsed;
-                    fa.persistent = false;
-                    code =
-                        param_write_float_array((gs_param_list *) params,
-                                                "Margins", &fa);
-
-                }
-                break;
-            case 'h':
-                help = true;
-                goto out;
                 /* job control line follows - PJL */
             case 'j':
             case 'J':
@@ -1660,35 +1702,16 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                         rawheap->limit = (long)maxk << 10;
                 }
                 break;
-            case 'o':
+            case 'l':          /* personality */
                 {
-                    const char *adef;
-                    gs_param_string str;
-
-                    if (arg[0] == 0) {
-                        code = arg_next(pal, (const char **)&adef, pmi->memory);
-                        if (code < 0)
-                            break;
-                        code = gs_lib_ctx_stash_sanitized_arg(pmi->memory->gs_lib_ctx, "?");
-                        if (code < 0)
-                            return code;
-                    } else
-                        adef = arg;
-                    if (adef == NULL)
-                    {
-                        code = gs_error_undefinedfilename;
-                        break;
-                    }
-                    code = gs_add_outputfile_control_path(pmi->memory, adef);
-                    if (code < 0)
-                        break;
-                    param_string_from_transient_string(str, adef);
-                    code =
-                        param_write_string((gs_param_list *) params,
-                                           "OutputFile", &str);
-                    pmi->pause = false;
-                    break;
+                    if (!strcmp(arg, "RTL") || !strcmp(arg, "PCL5E") ||
+                        !strcmp(arg, "PCL5C"))
+                        strcpy(pmi->pcl_personality, arg);
+                    else
+                        dmprintf(pmi->memory,
+                                 "PCL personality must be RTL, PCL5E or PCL5C\n");
                 }
+                break;
             case 'L':          /* language */
                 {
                     int index;
@@ -1718,16 +1741,55 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     }
                     break;
                 }
-            case 'l':          /* personality */
+            case 'm':
                 {
-                    if (!strcmp(arg, "RTL") || !strcmp(arg, "PCL5E") ||
-                        !strcmp(arg, "PCL5C"))
-                        strcpy(pmi->pcl_personality, arg);
-                    else
+                    float marg[2];
+                    gs_param_float_array fa;
+                    uint sz = countof(marg);
+                    uint parsed = parse_floats(pmi->memory, sz, arg, marg);
+                    if (parsed != sz) {
                         dmprintf(pmi->memory,
-                                 "PCL personality must be RTL, PCL5E or PCL5C\n");
+                                 "-m must be followed by <left>x<bottom>\n");
+                        return -1;
+                    }
+                    fa.data = marg;
+                    fa.size = parsed;
+                    fa.persistent = false;
+                    code =
+                        param_write_float_array((gs_param_list *) params,
+                                                "Margins", &fa);
+
                 }
                 break;
+            case 'o':
+                {
+                    const char *adef;
+                    gs_param_string str;
+
+                    if (arg[0] == 0) {
+                        code = arg_next(pal, (const char **)&adef, pmi->memory);
+                        if (code < 0)
+                            break;
+                        code = gs_lib_ctx_stash_sanitized_arg(pmi->memory->gs_lib_ctx, "?");
+                        if (code < 0)
+                            return code;
+                    } else
+                        adef = arg;
+                    if (adef == NULL)
+                    {
+                        code = gs_error_undefinedfilename;
+                        break;
+                    }
+                    code = gs_add_outputfile_control_path(pmi->memory, adef);
+                    if (code < 0)
+                        break;
+                    param_string_from_transient_string(str, adef);
+                    code =
+                        param_write_string((gs_param_list *) params,
+                                           "OutputFile", &str);
+                    pmi->pause = false;
+                    break;
+                }
             case 'r':
                 {
                     float res[2];
@@ -1807,6 +1869,18 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     }
                     break;
                 }
+            case 'q':
+                /* Silently accept -q to match gs. We are pretty quiet
+                 * on startup anyway. */
+                code = set_param(pmi, "QUIET");
+                break;
+            case 'v':               /* print revision */
+                if (pl_characteristics(pjli)->version)
+                    errprintf(pmi->memory, "%s\n",
+                              pl_characteristics(pjli)->version);
+                arg_finit(pal);
+                gs_c_param_list_release(params);
+                return 0;
             case 'Z':
                 set_debug_flags(arg, gs_debug);
                 break;
@@ -1815,11 +1889,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
             return code;
         arg = NULL;
     }
-  out:if (help) {
-        arg_finit(pal);
-        gs_c_param_list_release(params);
-        return -1;
-    }
+  out:
     /* PCL does not support spot colors and XPS files with spot colors are very
        rare (as in never found in the wild). Handling XPS spots for a separation
        device will require a little work. To avoid issues at the current time,

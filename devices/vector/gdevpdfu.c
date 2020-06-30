@@ -568,6 +568,7 @@ int ps2write_dsc_header(gx_device_pdf * pdev, int pages)
             if (code < 0)
                 return code;
         }
+        stream_puts(s, "10 dict dup begin\n");
         stream_puts(s, "/DSC_OPDFREAD true def\n");
         if (pdev->Eps2Write) {
             stream_puts(s, "/SetPageSize false def\n");
@@ -577,6 +578,7 @@ int ps2write_dsc_header(gx_device_pdf * pdev, int pages)
                 stream_puts(s, "/SetPageSize true def\n");
             stream_puts(s, "/EPS2Write false def\n");
         }
+        stream_puts(s, "end\n");
 
         code = copy_procsets(s, pdev->HaveTrueTypes, false);
         if (code < 0)
@@ -626,6 +628,7 @@ pdfwrite_pdf_open_document(gx_device_pdf * pdev)
                     if (code < 0)
                         return code;
                 }
+                stream_puts(s, "10 dict dup begin\n");
                 stream_puts(s, "/DSC_OPDFREAD false def\n");
                 code = copy_procsets(s, pdev->HaveTrueTypes, true);
                 if (code < 0)
@@ -646,6 +649,7 @@ pdfwrite_pdf_open_document(gx_device_pdf * pdev)
                     stream_puts(s, "/FitPages true def\n");
                 if(pdev->CenterPages)
                     stream_puts(s, "/CenterPages true def\n");
+                stream_puts(s, "end\n");
                 pdev->OPDFRead_procset_length = stell(s);
             }
         }

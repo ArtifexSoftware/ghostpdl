@@ -37,10 +37,7 @@
 /* GC information */
 static
 ENUM_PTRS_WITH(device_printer_enum_ptrs, gx_device_printer *pdev);
-    if (PRINTER_IS_CLIST(pdev))
-        ENUM_PREFIX(st_device_clist, 2);
-    else
-        ENUM_PREFIX(st_device_forward, 2);
+    ENUM_PREFIX(st_device_clist_mutatable, 2);
     break;
 case 0:ENUM_RETURN(gx_device_enum_ptr(pdev->parent));
 case 1:ENUM_RETURN(gx_device_enum_ptr(pdev->child));
@@ -50,10 +47,7 @@ RELOC_PTRS_WITH(device_printer_reloc_ptrs, gx_device_printer *pdev)
 {
     pdev->parent = gx_device_reloc_ptr(pdev->parent, gcst);
     pdev->child = gx_device_reloc_ptr(pdev->child, gcst);
-    if (PRINTER_IS_CLIST(pdev))
-        RELOC_PREFIX(st_device_clist);
-    else
-        RELOC_PREFIX(st_device_forward);
+    RELOC_PREFIX(st_device_clist_mutatable);
 } RELOC_PTRS_END
 public_st_device_printer();
 
@@ -67,7 +61,7 @@ const gx_device_procs prn_bg_procs =
 
 /* Forward references */
 int gdev_prn_maybe_realloc_memory(gx_device_printer *pdev,
-                                  gdev_prn_space_params *old_space,
+                                  gdev_space_params *old_space,
                                   int old_width, int old_height,
                                   bool old_page_uses_transparency);
 
@@ -222,7 +216,7 @@ gdev_prn_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
 static int		/* returns 0 ok, else -ve error cde */
 gdev_prn_setup_as_command_list(gx_device *pdev, gs_memory_t *buffer_memory,
                                byte **the_memory,
-                               const gdev_prn_space_params *space_params,
+                               const gdev_space_params *space_params,
                                bool bufferSpace_is_exact)
 {
     gx_device_printer * const ppdev = (gx_device_printer *)pdev;
@@ -271,7 +265,7 @@ BACKTRACE(pdev);
 open_c:
     ppdev->buf = base;
     ppdev->buffer_space = space;
-    pclist_dev->common.is_printer = 1;
+    pclist_dev->common.orig_spec_op = dev_proc(ppdev, dev_spec_op);
     clist_init_io_procs(pclist_dev, ppdev->BLS_force_memory);
     clist_init_params(pclist_dev, base, space, target,
                       ppdev->printer_procs.buf_procs,
@@ -362,21 +356,21 @@ gdev_prn_tear_down(gx_device *pdev, byte **the_memory)
     }
 
     /* Reset device proc vector to default */
-    if (ppdev->orig_procs.open_device != 0)
+    if (ppdev->orig_procs.open_device != NULL)
         pdev->procs = ppdev->orig_procs;
-    ppdev->orig_procs.open_device = 0;	/* prevent uninit'd restore of procs */
+    ppdev->orig_procs.open_device = NULL; /* prevent uninit'd restore of procs */
 
     return was_command_list;
 }
 
 static int
-gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
+gdev_prn_allocate(gx_device *pdev, gdev_space_params *new_space_params,
                   int new_width, int new_height, bool reallocate)
 {
     gx_device_printer * const ppdev = (gx_device_printer *)pdev;
     gx_device_memory * const pmemdev = (gx_device_memory *)pdev;
     byte *the_memory = 0;
-    gdev_prn_space_params save_params = ppdev->space_params;
+    gdev_space_params save_params = ppdev->space_params;
     int save_width = 0x0badf00d; /* Quiet compiler */
     int save_height = 0x0badf00d; /* Quiet compiler */
     bool is_command_list = false; /* Quiet compiler */
@@ -400,7 +394,7 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
         ulong pdf14_trans_buffer_size = 0;
         byte *base = 0;
         bool bufferSpace_is_default = false;
-        gdev_prn_space_params space_params;
+        gdev_space_params space_params;
         gx_device_buf_space_t buf_space;
 
         if (reallocate)
@@ -600,7 +594,7 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
 
 int
 gdev_prn_allocate_memory(gx_device *pdev,
-                         gdev_prn_space_params *new_space_params,
+                         gdev_space_params *new_space_params,
                          int new_width, int new_height)
 {
     return gdev_prn_allocate(pdev, new_space_params,
@@ -609,7 +603,7 @@ gdev_prn_allocate_memory(gx_device *pdev,
 
 int
 gdev_prn_reallocate_memory(gx_device *pdev,
-                         gdev_prn_space_params *new_space_params,
+                         gdev_space_params *new_space_params,
                          int new_width, int new_height)
 {
     return gdev_prn_allocate(pdev, new_space_params,
@@ -797,7 +791,7 @@ gdev_prn_put_params(gx_device * pdev, gs_param_list * plist)
     int width = pdev->width;
     int height = pdev->height;
     int nthreads = ppdev->num_render_threads_requested;
-    gdev_prn_space_params save_sp;
+    gdev_space_params save_sp;
     gs_param_string ofs;
     gs_param_string bls;
     gs_param_dict mdict;
@@ -1007,7 +1001,7 @@ gdev_prn_put_params(gx_device * pdev, gs_param_list * plist)
 /* Default routine to (not) override current space_params. */
 void
 gx_default_get_space_params(const gx_device_printer *printer_dev,
-                            gdev_prn_space_params *space_params)
+                            gdev_space_params *space_params)
 {
     return;
 }
@@ -1717,7 +1711,7 @@ gdev_prn_copy_scan_lines(gx_device_printer * pdev, int y, byte * str, uint size)
     count = max(0, min(requested_count, pdev->height - y));
     for (i = 0; i < count; i++, dest += line_size) {
         code = gdev_prn_get_bits(pdev, y + i, dest, NULL);
-        if (code < 0) 
+        if (code < 0)
             break;	/* will fill remaining lines and return code outside the loop */
     }
     /* fill remaining lines with 0's to prevent printing garbage */
@@ -1744,35 +1738,10 @@ gdev_prn_close_printer(gx_device * pdev)
     return 0;
 }
 
-/* compare two space_params, we can't do this with memcmp since there is padding in the structure */
-static int
-compare_gdev_prn_space_params(const gdev_prn_space_params sp1,
-                              const gdev_prn_space_params sp2) {
-  if (sp1.MaxBitmap != sp2.MaxBitmap)
-    return(1);
-  if (sp1.BufferSpace != sp2.BufferSpace)
-    return(1);
-  if (sp1.band.BandWidth != sp2.band.BandWidth)
-    return(1);
-  if (sp1.band.BandHeight != sp2.band.BandHeight)
-    return(1);
-  if (sp1.band.BandBufferSpace != sp2.band.BandBufferSpace)
-    return(1);
-  if (sp1.band.tile_cache_size != sp2.band.tile_cache_size)
-    return(1);
-  if (sp1.params_are_read_only != sp2.params_are_read_only)
-    return(1);
-  if (sp1.banding_type != sp2.banding_type)
-    return(1);
-
-  return(0);
-}
-
-
 /* If necessary, free and reallocate the printer memory after changing params */
 int
 gdev_prn_maybe_realloc_memory(gx_device_printer *prdev,
-                              gdev_prn_space_params *old_sp,
+                              gdev_space_params *old_sp,
                               int old_width, int old_height,
                               bool old_page_uses_transparency)
 {
@@ -1789,13 +1758,13 @@ gdev_prn_maybe_realloc_memory(gx_device_printer *prdev,
      * for these filesets.
      */
     if (prdev->is_open &&
-        (compare_gdev_prn_space_params(prdev->space_params, *old_sp) != 0 ||
+        (gdev_space_params_cmp(prdev->space_params, *old_sp) != 0 ||
          prdev->width != old_width || prdev->height != old_height ||
          prdev->page_uses_transparency != old_page_uses_transparency)
         ) {
         int new_width = prdev->width;
         int new_height = prdev->height;
-        gdev_prn_space_params new_sp;
+        gdev_space_params new_sp;
 
 #ifdef DEBUGGING_HACKS
 debug_dump_bytes(pdev->memory, (const byte *)old_sp, (const byte *)(old_sp + 1), "old");

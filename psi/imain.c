@@ -306,11 +306,11 @@ int gs_main_init2aux(gs_main_instance * minst) {
         if (code < 0)
             return code;
         minst->init_done = 2;
+
         /* NB this is to be done with device parameters
          * both minst->display and  display_set_callback() are going away
         */
-        if (minst->display)
-        if ((code = display_set_callback(minst, minst->display)) < 0)
+        if ((code = reopen_device_if_required(minst)) < 0)
             return code;
 
         if ((code = gs_main_run_string(minst,
@@ -344,7 +344,7 @@ gs_main_init2(gs_main_instance * minst)
     if (code < 0)
        goto fail;
 
-    i_ctx_p = minst->i_ctx_p; /* display_set_callback or run_string may change it */
+    i_ctx_p = minst->i_ctx_p; /* reopen_device_if_display or run_string may change it */
 
     /* Now process the initial saved-pages=... argument, if any as well as saved-pages-test */
     {

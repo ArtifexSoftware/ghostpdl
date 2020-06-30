@@ -258,6 +258,9 @@ int gs_make_mem_device_with_copydevice(gx_device_memory ** mdev,
  * scan lines.  Banding devices use this (see gxclread.c).
  */
 int gdev_mem_open_scan_lines(gx_device_memory *mdev, int setup_height);
+int gdev_mem_open_scan_lines_interleaved(gx_device_memory *mdev,
+                                         int setup_height,
+                                         int interleaved);
 
 /*
  * Initialize the line pointers of a memory device.  base and/or line_ptrs
@@ -275,6 +278,11 @@ int gdev_mem_open_scan_lines(gx_device_memory *mdev, int setup_height);
 int gdev_mem_set_line_ptrs(gx_device_memory *mdev,
                            byte *base, int raster, byte **line_ptrs,
                            int setup_height);
+int
+gdev_mem_set_line_ptrs_interleaved(gx_device_memory *mdev,
+                                   byte *base, int raster,
+                                   byte **line_ptrs, int setup_height,
+                                   int interleaved);
 
 /* Define whether a monobit memory device is inverted (black=1). */
 void gdev_mem_mono_set_inverted(gx_device_memory * mdev, bool black_is_1);

@@ -196,7 +196,7 @@ s_stdout_write_process(stream_state * st, stream_cursor_read *pr,
     if (count == 0)
         return 0;
     written = outwrite(st->memory, (const char *)pr->ptr + 1, count);
-    if (written < count)
+    if (written != count)
         return ERRC;
     pr->ptr += written;
     return 0;

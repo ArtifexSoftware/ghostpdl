@@ -182,7 +182,7 @@ typedef struct gx_clist_state_s gx_clist_state;
         uint data_size;			/* size of buffer */\
         gx_band_params_t band_params;	/* band buffering parameters */\
         bool do_not_open_or_close_bandfiles;	/* if true, do not open/close bandfiles */\
-        int is_printer;                 /* if true, then clist is based on a prn device */\
+        dev_proc_dev_spec_op((*orig_spec_op)); /* Original dev spec op handler */\
                 /* Following are used for both writing and reading. */\
         gx_bits_cache_chunk *cache_chunk;	/* the only chunk of bits */\
         gx_bits_cache bits;\
@@ -609,5 +609,51 @@ void clist_debug_set_ctm_imp(const gs_matrix *m);
         fit_fill_w(dev, x, w);\
         crop_copy_y(dev, data, data_x, raster, id, y, h);\
     END
+
+/* Devices that are expected to be able to 'mutate' into being clist
+ * devices have to be constructed in a particular way. They have to
+ * have to have the "header" be padded out to a given size (so the clist
+ * fields can all fit in at the top), and then the device specific
+ * fields can follow this.
+ * These fields should follow gx_device_common. */
+#define gx_device_clist_mutatable_common\
+    byte skip[max(sizeof(gx_device_memory), sizeof(gx_device_clist)) -\
+              sizeof(gx_device) + sizeof(double) /* padding */];\
+    long buffer_space;	          /* amount of space for clist buffer, */\
+                                  /* 0 means not using clist */\
+    byte *buf;	                  /* buffer for rendering */\
+    gs_memory_t *buffer_memory;   /* allocator for command list */\
+    gs_memory_t *bandlist_memory; /* allocator for bandlist files */\
+    uint clist_disable_mask;      /* mask of clist options to disable */\
+    gx_device_procs orig_procs	/* original (std_)procs */
+
+
+#define GX_CLIST_MUTATABLE_DEVICE_DEFAULTS \
+    { 0 },   /* skip */\
+    0,       /* buffer_space */\
+    NULL,    /* buf */\
+    0,       /* buffer_memory */\
+    0,       /* bandlist_memory */\
+    0,       /* clist_disable_mask */\
+    { NULL } /* orig_procs */
+
+typedef struct {
+    gx_device_common;
+    gx_device_clist_mutatable_common;
+} gx_device_clist_mutatable;
+
+extern_st(st_device_clist_mutatable);
+#define public_st_device_clist_mutatable()	/* in gxclist.c */\
+  gs_public_st_complex_only(st_device_clist_mutatable,\
+    gx_device_clist_mutatable, "gx_device_clist_mutatable", 0, \
+    device_clist_mutatable_enum_ptrs, device_clist_mutatable_reloc_ptrs,\
+    gx_device_finalize)
+#define st_device_clist_mutatable_max_ptrs\
+  (st_device_clist_mutable_max_ptrs)
+
+/* A useful check to determine if a device that can be mutated to be a
+ * clist has undergone such a mutation. */
+#define CLIST_MUTATABLE_HAS_MUTATED(pdev) \
+    (((gx_device_clist_mutatable *)(pdev))->buffer_space != 0)
 
 #endif /* gxclist_INCLUDED */

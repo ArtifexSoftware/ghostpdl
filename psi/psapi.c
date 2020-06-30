@@ -101,13 +101,12 @@ psapi_new_instance(gs_lib_ctx_t **pinstance,
     mem->gs_lib_ctx->core->default_caller_handle = caller_handle;
     mem->gs_lib_ctx->core->custom_color_callback = NULL;
 #ifdef METRO
-    mem->gs_lib_ctx->core->stdin_fn = metro_stdin;
-    mem->gs_lib_ctx->core->stdout_fn = metro_stdout;
-    mem->gs_lib_ctx->core->stderr_fn = metro_stderr;
-#else
-    mem->gs_lib_ctx->core->stdin_fn = NULL;
-    mem->gs_lib_ctx->core->stdout_fn = NULL;
-    mem->gs_lib_ctx->core->stderr_fn = NULL;
+    if (mem->gs_lib_ctx->core->stdin_fn == NULL)
+        mem->gs_lib_ctx->core->stdin_fn = metro_stdin;
+    if (mem->gs_lib_ctx->core->stdout_fn == NULL)
+        mem->gs_lib_ctx->core->stdout_fn = metro_stdout;
+    if (mem->gs_lib_ctx->core->stderr_fn == NULL)
+        mem->gs_lib_ctx->core->stderr_fn = metro_stderr;
 #endif
     mem->gs_lib_ctx->core->poll_fn = NULL;
 

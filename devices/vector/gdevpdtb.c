@@ -359,7 +359,7 @@ pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
             font_name.size -= SUBSET_PREFIX_SIZE;
         }
     } else {
-        gs_sprintf(fnbuf, ".F%lx", (ulong)copied);
+        gs_sprintf(fnbuf, ".F" PRI_INTPTR, (intptr_t)copied);
         font_name.data = (byte *)fnbuf;
         font_name.size = strlen(fnbuf);
     }

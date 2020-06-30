@@ -50,8 +50,7 @@ pjl_impl_characteristics(const pl_interp_implementation_t * impl)        /* impl
         pjl_detect_language,
         "Artifex",
         PJLVERSION,
-        PJLBUILDDATE,
-        17                      /* sizeof min buffer == sizeof UEL */
+        PJLBUILDDATE
     };
     return &pjl_characteristics;
 }
@@ -65,7 +64,7 @@ pjl_impl_allocate_interp_instance(pl_interp_implementation_t *impl,
     pjl_parser_state *pjls = pjl_process_init(mem);
 
     impl->interp_client_data = pjls;
-    
+
     if (pjls == NULL)
         return gs_error_VMerror;
 

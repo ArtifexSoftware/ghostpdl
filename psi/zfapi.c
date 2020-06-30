@@ -1805,7 +1805,7 @@ static int
 FAPI_FF_get_charstring_name(gs_fapi_font *ff, int index, byte *buf,
                             ushort buf_length)
 {
-    int code;
+    int code = 0;
     ref *pdr = pfont_dict(((gs_font_base *) ff->client_font_data2));
     ref *CharStrings, eltp[2], string;
 
@@ -2650,7 +2650,7 @@ ps_fapi_set_cache(gs_text_enum_t *penum, const gs_font_base *pbfont,
     op_proc_t exec_cont = 0;    /* dummy - see below */
     int code = 0;
 
-    if (cid == GS_NO_GLYPH) {
+    if (cid < GS_MIN_CID_GLYPH) {
         ref cname;
 
         make_string(&cname, avm_foreign | a_readonly, char_name->size,
@@ -2663,7 +2663,7 @@ ps_fapi_set_cache(gs_text_enum_t *penum, const gs_font_base *pbfont,
     else {
         ref cidref;
 
-        make_int(&cidref, cid);
+        make_int(&cidref, (cid - GS_MIN_CID_GLYPH));
         code = zchar_set_cache(i_ctx_p, pbfont, &cidref, NULL, pwidth, pbbox,
                                zfapi_finish_render, &exec_cont,
                                Metrics2_sbw_default);
@@ -3066,7 +3066,7 @@ ps_get_glyphname_or_cid(gs_text_enum_t *penum,
            for same char code. The last should be true due to
            PLRM3, "5.9.4 Subsetting and Incremental Definition of Glyphs".
          */
-        if (ccode >= 0) {
+        if (ccode != GS_NO_CHAR) {
             cr->char_codes[0] = client_char_code;
         }
         else {

@@ -1925,9 +1925,16 @@ label:\
     if (code == 0)
         dev->DisablePageHandler = temp_bool;
 
-    if ((code = param_read_string(plist, "PageList", &pagelist)) != 1 && pagelist.size > 0) {
+    code = param_read_string(plist, "PageList", &pagelist);
+    if (code < 0)
+        ecode = code;
+    if (code == 0) {
         if (dev->PageList)
             rc_decrement(dev->PageList, "default put_params PageList");
+        dev->PageList = NULL;
+    }
+
+    if (code == 0 && pagelist.size > 0) {
         dev->PageList = (gdev_pagelist *)gs_alloc_bytes(dev->memory->non_gc_memory, sizeof(gdev_pagelist), "structure to hold page list");
         if (!dev->PageList)
             return gs_note_error(gs_error_VMerror);

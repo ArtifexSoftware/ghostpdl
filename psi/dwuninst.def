@@ -1,4 +1,4 @@
 ;	'Ghostscript uninstall'
-NAME		UNINSTGS
+NAME                UNINSTGS
 HEAPSIZE	4096
 STACKSIZE	32768
