@@ -26,7 +26,7 @@ Limitations as of 2020-06-18:
     Only tested on Linux.
 
     Only very limited testing on has been done.
-    
+
     We don't provide gsapi_add_fs() or gsapi_remove_fs().
 
 '''
@@ -117,13 +117,13 @@ display_callback = collections.namedtuple('display_callback',
 def gsapi_set_display_callback(instance, callback):
     assert isinstance(callback, display_callback)
     callback2 = _display_callback()
-    
+
     # Copy from <callback> into <callback2>.
     for name, type_ in _display_callback._fields_:
         value = getattr(callback, name)
         value2 = type_(value)
         setattr(callback2, name, value2)
-    
+
     e = _libgs.gsapi_set_display_callback(instance, ctypes.byref(callback2))
     if not e:
         # Ensure that we keep references to callbacks.
@@ -140,9 +140,9 @@ def gsapi_set_default_device_list(instance, list_):
             len(list_),
             )
     return e
-    
-    
-def gsapi_get_default_device_list(instance):
+
+
+;def gsapi_get_default_device_list(instance):
     '''
     Returns (e, list) where <list> is a string.
     '''
@@ -176,7 +176,7 @@ def gsapi_init_with_args(instance, args):
         enc_arg = arg.encode('utf-8')
         argv[i] = ctypes.create_string_buffer(enc_arg)
     argv[argc] = None
-    
+
     e = _libgs.gsapi_init_with_args(instance, argc, argv)
     return e
 
@@ -484,12 +484,12 @@ if 0:
 
 
 if __name__ == '__main__':
-    
+
     # test
     #
-    
+
     print('Running some very simple and incomplete tests...')
-    
+
     print('libgs: %s' % _libgs)
 
     e, revision  = gsapi_revision()
@@ -520,11 +520,11 @@ if __name__ == '__main__':
     e = gsapi_set_display_callback(instance, d)
     print('gsapi_set_display_callback => e=%s' % e)
     assert not e
-    
+
     e = gsapi_set_default_device_list(instance, 'bmp256 bmp32b bmpgray bmpmono bmpsep1 bmpsep8 ccr cdeskjet cdj1600 cdj500')
     print('gsapi_set_default_device_list => e=%s' % e)
     assert not e
-    
+
     e, l = gsapi_get_default_device_list(instance)
     print('gsapi_get_default_device_list => e=%s l=%s' % (e, l))
     assert not e
@@ -532,9 +532,8 @@ if __name__ == '__main__':
     e = gsapi_init_with_args(instance, ['gs',])
     print('gsapi_init_with_args => e=%s' % e)
     assert not e
-    
+
     for value in 32, True, 3.14, 'hello world':
         e = gsapi_set_param(instance, "foo", value);
         print('gsapi_set_param %s => e=%s' % (value, e))
         assert not e
-    
