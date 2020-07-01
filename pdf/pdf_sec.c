@@ -839,8 +839,13 @@ int pdfi_compute_objkey(pdf_context *ctx, pdf_obj *obj, pdf_string **Key)
          * a direct object, use the identifier of the indirect object containing it.
          * Buffer length is a maximum of the Encryption key + 3 bytes from the object number
          * + 2 bytes from the generation number and (for AES filters) 4 bytes of sALT.
+         * But... We must make sure the buffer is large enough for the 128 bits of an MD5 hash.
          */
-        Buffer = (char *)gs_alloc_bytes(ctx->memory, ctx->EKey->length + 9, "");
+        md5_length = ctx->EKey->length + 9;
+        if (md5_length < 16)
+            md5_length = 16;
+
+        Buffer = (char *)gs_alloc_bytes(ctx->memory, md5_length, "");
         if (Buffer == NULL)
             return gs_note_error(gs_error_VMerror);
 
