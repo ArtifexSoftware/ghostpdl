@@ -141,7 +141,7 @@ def gsapi_set_default_device_list(instance, list_):
     return e
 
 
-;def gsapi_get_default_device_list(instance):
+def gsapi_get_default_device_list(instance):
     '''
     Returns (e, list) where <list> is a string.
     '''
