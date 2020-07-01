@@ -13,9 +13,8 @@ Overview:
 
 Usage:
 
-    Need to ensure that libgs.so is found, e.g. with:
-
-        LD_LIBRARY_PATH=sodebugbin
+    make sodebug
+    LD_LIBRARY_PATH=sodebugbin ./toolbin/gsapi.py
 
 Requirements:
 
@@ -79,7 +78,7 @@ def gsapi_set_stdio(instance, stdin_fn, stdout_fn, stderr_fn):
     stderr_fn2 = _stdio_fn(stderr_fn) if stderr_fn else None
     e = _libgs.gsapi_set_stdio(instance, stdout_fn2, stdout_fn2, stdout_fn2)
     if not e:
-        # Need to keep references to call back functions.
+        # Need to keep references to call-back functions.
         global _gsapi_set_stdio_refs
         _gsapi_set_stdio_refs = stdin_fn2, stdout_fn2, stderr_fn2
     return e
