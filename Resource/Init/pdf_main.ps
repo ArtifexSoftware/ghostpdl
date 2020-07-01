@@ -639,6 +639,7 @@ currentdict /runpdfstring .undef
 
 /runpdf {		% <file> runpdf -
   /NEWPDF where {/NEWPDF get not} {true} ifelse
+%false
   {
   %% Get the PDF filename (it *must* be a file even if it came from stdin it gets
   %% copied to a temporary file) and store it in pdfdict. We will use this for
@@ -683,6 +684,7 @@ currentdict /runpdfstring .undef
   }
   {
     dup .PDFStream      % -file- -pdffile-
+    dup mark exch
     {
       dup .PDFInfo        % -file- -pdffile- <dict>
       dup /NumPages known {
@@ -696,6 +698,7 @@ currentdict /runpdfstring .undef
         } for
       } if
     } stopped {(ERROR!!\n) print }if
+    cleartomark
     .PDFClose
     closefile
   } ifelse
