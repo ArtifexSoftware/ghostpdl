@@ -405,6 +405,8 @@ pdfi_report_errors(pdf_context *ctx)
             dmprintf(ctx->memory, "\tThe file has an error when interpreting a Pattern object.\n");
         if (ctx->pdf_warnings & W_PDF_NONSTANDARD_OP)
             dmprintf(ctx->memory, "\tThe file uses a non-standard PDF operator.\n");
+        if (ctx->pdf_warnings & W_PDF_NUM_EXPONENT)
+            dmprintf(ctx->memory, "\tThe file uses numbers with exponents, which is not standard PDF.\n");
     }
 
     dmprintf(ctx->memory, "\n   **** This file had errors that were repaired or ignored.\n");

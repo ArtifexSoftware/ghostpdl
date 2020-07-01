@@ -1093,6 +1093,9 @@ static int pdfi_read_num(pdf_context *ctx, pdf_stream *s, uint32_t indirect_num,
     unsigned short index = 0;
     short bytes;
     bool real = false;
+    bool has_decimal_point = false;
+    bool has_exponent = false;
+    unsigned short exponent_index = 0;
     pdf_num *num;
     int code = 0, malformed = false;
 
@@ -1118,32 +1121,44 @@ static int pdfi_read_num(pdf_context *ctx, pdf_stream *s, uint32_t indirect_num,
                 break;
             }
         }
-        if (Buffer[index] == '.')
-            if (real == true) {
+        if (Buffer[index] == '.') {
+            if (has_decimal_point == true) {
                 if (ctx->pdfstoponerror)
                     return_error(gs_error_syntaxerror);
                 malformed = true;
-            } else
-                real = true;
-        else {
-            if (Buffer[index] == '-' || Buffer[index] == '+') {
-                if (index != 0) {
-                    if (ctx->pdfstoponerror)
-                        return_error(gs_error_syntaxerror);
-                    malformed = true;
-                }
             } else {
-                if (Buffer[index] < 0x30 || Buffer[index] > 0x39) {
-                    if (ctx->pdfstoponerror)
-                        return_error(gs_error_syntaxerror);
-                    if (!(ctx->pdf_errors & E_PDF_MISSINGWHITESPACE))
-                        dmprintf(ctx->memory, "Ignoring missing white space while parsing number\n");
-                    ctx->pdf_errors |= E_PDF_MISSINGWHITESPACE;
-                    pdfi_unread(ctx, s, (byte *)&Buffer[index], 1);
-                    Buffer[index] = 0x00;
-                    break;
-                }
+                has_decimal_point = true;
+                real = true;
             }
+        } else if (Buffer[index] == 'e' || Buffer[index] == 'E') {
+            /* TODO: technically scientific notation isn't in PDF spec,
+             * but gs seems to accept it, so we should also?
+             */
+            if (has_exponent == true) {
+                if (ctx->pdfstoponerror)
+                    return_error(gs_error_syntaxerror);
+                malformed = true;
+            } else {
+                ctx->pdf_warnings |= W_PDF_NUM_EXPONENT;
+                has_exponent = true;
+                exponent_index = index;
+                real = true;
+            }
+        } else if (Buffer[index] == '-' || Buffer[index] == '+') {
+            if (!(index == 0 || (has_exponent && index == exponent_index+1))) {
+                if (ctx->pdfstoponerror)
+                    return_error(gs_error_syntaxerror);
+                malformed = true;
+            }
+        } else if (Buffer[index] < 0x30 || Buffer[index] > 0x39) {
+            if (ctx->pdfstoponerror)
+                return_error(gs_error_syntaxerror);
+            if (!(ctx->pdf_errors & E_PDF_MISSINGWHITESPACE))
+                dmprintf(ctx->memory, "Ignoring missing white space while parsing number\n");
+            ctx->pdf_errors |= E_PDF_MISSINGWHITESPACE;
+            pdfi_unread(ctx, s, (byte *)&Buffer[index], 1);
+            Buffer[index] = 0x00;
+            break;
         }
         if (++index > 255)
             return_error(gs_error_syntaxerror);
