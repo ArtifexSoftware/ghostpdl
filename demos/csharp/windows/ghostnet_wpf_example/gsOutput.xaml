@@ -1,0 +1,28 @@
+﻿<Window x:Class="ghostnet_wpf_example.gsOutput"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Ghostscript Messages" Height="500" Width="500" 
+        FontFamily="Segou UI" FontSize="12" >
+
+    <DockPanel LastChildFill="True">
+        <Grid DockPanel.Dock="Bottom" Visibility="Visible" Background="WhiteSmoke" >
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="133*" />
+                <ColumnDefinition Width="43*"/>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Button Grid.Row="0" Grid.Column="2" Width="50" Height="20" Click="ClearContents" Margin="5,0,15,0">
+                <TextBlock>Clear</TextBlock>
+            </Button>
+            <Button Grid.Row="0" Grid.Column="3" Width="50" Height="20" Click="HideWindow" Margin="5,0,15,0">
+                <TextBlock>OK</TextBlock>
+            </Button>
+        </Grid>
+        <!-- Pages are last child fill.  This goes in the center of our dock panel -->
+        <Grid HorizontalAlignment="Stretch" Background="DarkGray">
+            <TextBox x:Name="xaml_gsText" Margin="1, 1, 1, 1" VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible" Text="{Binding gsIOString}" IsReadOnly="True"/>
+        </Grid>
+
+    </DockPanel>
+</Window>

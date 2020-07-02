@@ -1,0 +1,740 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using System.ComponentModel;
+using System.Diagnostics;
+using Microsoft.Win32;
+using GhostNET;
+using System.IO;
+
+static class Constants
+{
+	public const double SCALE_THUMB = 0.1;
+	public const int BLANK_WIDTH = 17;
+	public const int BLANK_HEIGHT = 22;
+	public const int DEFAULT_GS_RES = 300;
+	public const int PAGE_VERT_MARGIN = 10;
+	public const int MAX_PRINT_PREVIEW_LENGTH = 250;
+	public const int ZOOM_MAX = 4;
+	public const double ZOOM_MIN = 0.25;
+}
+
+namespace ghostnet_wpf_example
+{
+	/// <summary>
+	/// Interaction logic for MainWindow.xaml
+	/// </summary>
+	/// 
+	public enum NotifyType_t
+	{
+		MESS_STATUS,
+		MESS_ERROR
+	};
+
+	public enum status_t
+	{
+		S_ISOK,
+		E_FAILURE,
+		E_OUTOFMEM,
+		E_NEEDPASSWORD
+	};
+
+	public enum Page_Content_t
+	{
+		FULL_RESOLUTION = 0,
+		THUMBNAIL,
+		OLD_RESOLUTION,
+		LOW_RESOLUTION,
+		NOTSET,
+		BLANK
+	};
+	public enum zoom_t
+	{
+		NO_ZOOM,
+		ZOOM_IN,
+		ZOOM_OUT
+	}
+
+	public enum doc_t
+	{
+		UNKNOWN,
+		PDF,
+		PS,
+		PCL,
+		XPS
+	}
+
+	public struct idata_t
+	{
+		public int page_num;
+		public Byte[] bitmap;
+		public int height;
+		public int width;
+		public int raster;
+		public double zoom;
+	}
+
+	public struct pagesizes_t
+	{
+		public Point size;
+		public double cummulative_y;
+	}
+
+	public partial class MainWindow : Window
+	{
+
+		ghostsharp m_ghostscript;
+		bool m_file_open;
+		doc_t m_document_type;
+		String m_currfile;
+		List<TempFile> m_tempfiles;
+		String m_origfile;
+		int m_currpage;
+		gsOutput m_gsoutput;
+		public int m_numpages;
+		private static Pages m_docPages;
+		private static double m_doczoom;
+		public List<pagesizes_t> m_page_sizes;
+		List<idata_t> m_list_thumb;
+		List<idata_t> m_images_rendered;
+		bool m_init_done;
+		bool m_busy_render;
+		bool m_firstime;
+		bool m_validZoom;
+		bool m_aa;
+		bool m_aa_change;
+		List<int> m_toppage_pos;
+		int m_page_progress_count;
+
+		private static List<Page_Content_t> m_pageType;
+
+		public void ShowMessage(NotifyType_t type, String Message)
+		{
+			if (type == NotifyType_t.MESS_ERROR)
+			{
+				MessageBox.Show(Message, "Error", MessageBoxButton.OK);
+			}
+			else
+			{
+				MessageBox.Show(Message, "Notice", MessageBoxButton.OK);
+			}
+		}
+		public MainWindow()
+        {
+            InitializeComponent();
+			this.Closing += new System.ComponentModel.CancelEventHandler(Window_Closing);
+
+			/* Set up ghostscript calls for progress update */
+			m_ghostscript = new ghostsharp();
+			m_ghostscript.gsUpdateMain += new ghostsharp.gsCallBackMain(gsProgress);
+			m_ghostscript.gsIOUpdateMain += new ghostsharp.gsIOCallBackMain(gsIO);
+			m_ghostscript.gsDLLProblemMain += new ghostsharp.gsDLLProblem(gsDLL);
+
+			m_currpage = 0;
+			m_gsoutput = new gsOutput();
+			m_gsoutput.Activate();
+			m_tempfiles = new List<TempFile>();
+			m_thumbnails = new List<DocPage>();
+			m_docPages = new Pages();
+			m_pageType = new List<Page_Content_t>();
+			m_page_sizes = new List<pagesizes_t>();
+			m_file_open = false;
+			m_document_type = doc_t.UNKNOWN;
+			m_doczoom = 1.0;
+			m_init_done = false;
+			m_busy_render = true;
+			m_validZoom = true;
+			m_firstime = true;
+			m_list_thumb = new List<idata_t>();
+			m_images_rendered = new List<idata_t>();
+			m_busy_rendering = false;
+			m_aa = true;
+			m_aa_change = false;
+
+			xaml_PageList.AddHandler(Grid.DragOverEvent, new System.Windows.DragEventHandler(Grid_DragOver), true);
+			xaml_PageList.AddHandler(Grid.DropEvent, new System.Windows.DragEventHandler(Grid_Drop), true);
+
+			/* For case of opening another file */
+			string[] arguments = Environment.GetCommandLineArgs();
+			if (arguments.Length > 1)
+			{
+				string filePath = arguments[1];
+				ProcessFile(filePath);
+			}
+		}
+		private void gsIO(object gsObject, String mess, int len)
+		{
+			m_gsoutput.Update(mess, len);
+		}
+		private void ShowGSMessage(object sender, RoutedEventArgs e)
+		{
+			m_gsoutput.Show();
+		}
+		private void gsDLL(object gsObject, String mess)
+		{
+			ShowMessage(NotifyType_t.MESS_STATUS, mess);
+		}
+
+		private void gsThumbRendered(object gsObject, int width, int height, int raster,
+			IntPtr data, gsParamState_t state)
+		{
+			ThumbPageCallback(gsObject, width, height, raster, state.zoom, state.currpage, data);
+		}
+
+		private void gsPageRendered(object gsObject, int width, int height, int raster,
+			IntPtr data, gsParamState_t state)
+		{
+			MainPageCallback(gsObject, width, height, raster, state.zoom, state.currpage, data);
+		}
+
+		private void gsProgress(object gsObject, gsEventArgs asyncInformation)
+		{
+			if (asyncInformation.Completed)
+			{
+				switch  (asyncInformation.Params.task)
+				{
+
+					case GS_Task_t.CREATE_XPS:
+						xaml_DistillProgress.Value = 100;
+						xaml_DistillGrid.Visibility = System.Windows.Visibility.Collapsed;
+						break;
+
+					case GS_Task_t.PS_DISTILL:
+						xaml_DistillProgress.Value = 100;
+						xaml_DistillGrid.Visibility = System.Windows.Visibility.Collapsed;
+						break;
+
+					case GS_Task_t.SAVE_RESULT:
+						break;
+
+					case GS_Task_t.DISPLAY_DEV_THUMBS_NON_PDF:
+					case GS_Task_t.DISPLAY_DEV_THUMBS_PDF:
+						ThumbsDone();
+						break;
+
+					case GS_Task_t.DISPLAY_DEV_PDF:
+					case GS_Task_t.DISPLAY_DEV_NON_PDF:
+						RenderingDone();
+						break;
+
+				}
+				if (asyncInformation.Params.result == GS_Result_t.gsFAILED)
+				{
+					switch (asyncInformation.Params.task)
+					{
+						case GS_Task_t.CREATE_XPS:
+							ShowMessage(NotifyType_t.MESS_STATUS, "Ghostscript failed to create XPS");
+							break;
+
+						case GS_Task_t.PS_DISTILL:
+							ShowMessage(NotifyType_t.MESS_STATUS, "Ghostscript failed to distill PS");
+							break;
+
+						case GS_Task_t.SAVE_RESULT:
+							ShowMessage(NotifyType_t.MESS_STATUS, "Ghostscript failed to convert document");
+							break;
+
+						default:
+							ShowMessage(NotifyType_t.MESS_STATUS, "Ghostscript failed.");
+							break;
+
+					}
+					return;
+				}
+				GSResult(asyncInformation.Params);
+			}
+			else
+			{
+				switch (asyncInformation.Params.task)
+				{
+					case GS_Task_t.CREATE_XPS:
+						this.xaml_DistillProgress.Value = asyncInformation.Progress;
+						break;
+
+					case GS_Task_t.PS_DISTILL:
+						this.xaml_DistillProgress.Value = asyncInformation.Progress;
+						break;
+
+					case GS_Task_t.SAVE_RESULT:
+						break;
+				}
+			}
+		}
+
+		/* GS Result*/
+		public void GSResult(gsParamState_t gs_result)
+		{
+			TempFile tempfile = null;
+
+			if (gs_result.outputfile != null)
+				tempfile = new TempFile(gs_result.outputfile);
+
+			if (gs_result.result == GS_Result_t.gsCANCELLED)
+			{
+				xaml_DistillGrid.Visibility = System.Windows.Visibility.Collapsed;
+				if (tempfile != null)
+				{
+					try
+					{
+						tempfile.DeleteFile();
+					}
+					catch
+					{
+						ShowMessage(NotifyType_t.MESS_STATUS, "Problem Deleting Temp File");
+					}
+				}
+				return;
+			}
+			if (gs_result.result == GS_Result_t.gsFAILED)
+			{
+				xaml_DistillGrid.Visibility = System.Windows.Visibility.Collapsed;
+				ShowMessage(NotifyType_t.MESS_STATUS, "GS Failed Conversion");
+				if (tempfile != null)
+				{
+					try
+					{
+						tempfile.DeleteFile();
+					}
+					catch
+					{
+						ShowMessage(NotifyType_t.MESS_STATUS, "Problem Deleting Temp File");
+					}
+				}
+				return;
+			}
+			switch (gs_result.task)
+			{
+				case GS_Task_t.CREATE_XPS:
+					xaml_DistillGrid.Visibility = System.Windows.Visibility.Collapsed;
+					/* Always do print all from xps conversion as it will do
+					 * the page range handling for us */
+					/* Add file to temp file list */
+					m_tempfiles.Add(tempfile);
+					PrintXPS(gs_result.outputfile, true, -1, -1, true);
+					break;
+
+				case GS_Task_t.PS_DISTILL:
+					xaml_DistillGrid.Visibility = System.Windows.Visibility.Collapsed;
+					m_origfile = gs_result.inputfile;
+
+					/* Save distilled result */
+					SaveFileDialog dlg = new SaveFileDialog();
+					dlg.Filter = "PDF file (*.pdf)|*.pdf";
+					dlg.FileName = System.IO.Path.GetFileNameWithoutExtension(m_origfile) + ".pdf";
+					if (dlg.ShowDialog() == true)
+					{
+						try
+						{
+							if (File.Exists(dlg.FileName))
+							{
+								File.Delete(dlg.FileName);
+							}
+							File.Copy(tempfile.Filename, dlg.FileName);
+						}
+						catch (Exception except)
+						{
+							ShowMessage(NotifyType_t.MESS_ERROR, "Exception Saving Distilled Result:" + except.Message);
+						}
+
+					}
+					tempfile.DeleteFile();
+					break;
+
+				case GS_Task_t.SAVE_RESULT:
+					/* Don't delete file in this case as this was our output! */
+					ShowMessage(NotifyType_t.MESS_STATUS, "GS Completed Conversion");
+					break;
+			}
+		}
+
+		private void OpenFileCommand(object sender, ExecutedRoutedEventArgs e)
+		{
+            OpenFile(sender, e);
+        }
+
+		private void CleanUp()
+		{
+			m_init_done = false;
+
+			/* Collapse this stuff since it is going to be released */
+			xaml_ThumbGrid.Visibility = System.Windows.Visibility.Collapsed;
+
+			/* Clear out everything */
+			if (m_docPages != null && m_docPages.Count > 0)
+				m_docPages.Clear();
+			if (m_pageType != null && m_pageType.Count > 0)
+				m_pageType.Clear();
+			if (m_thumbnails != null && m_thumbnails.Count > 0)
+				m_thumbnails.Clear();
+			if (m_toppage_pos != null && m_toppage_pos.Count > 0)
+				m_toppage_pos.Clear();
+			if (m_list_thumb != null && m_list_thumb.Count > 0)
+				m_list_thumb.Clear();
+			if (m_images_rendered != null && m_images_rendered.Count > 0)
+				m_images_rendered.Clear();
+			if (m_page_sizes != null && m_page_sizes.Count > 0)
+				m_page_sizes.Clear();
+
+			m_currfile = null;
+			m_origfile = null;
+			m_numpages = -1;
+			m_file_open = false;
+			m_firstime = true;
+			m_document_type = doc_t.UNKNOWN;
+			m_origfile = null;
+			CleanUpTempFiles();
+			m_file_open = false;
+			m_busy_render = true;
+			xaml_TotalPages.Text = "/ 0";
+			xaml_currPage.Text = "0";
+			CloseExtraWindows(false);
+
+			return;
+		}
+
+		private void CloseCommand(object sender, ExecutedRoutedEventArgs e)
+		{
+			if (m_init_done)
+				CleanUp();
+		}
+
+		private bool ReadyForOpen()
+		{
+			/* Check if gs is currently busy. If it is then don't allow a new
+			 * file to be opened. They can cancel gs with the cancel button if
+			 * they want */
+			if (m_ghostscript.GetStatus() != gsStatus.GS_READY)
+			{
+				ShowMessage(NotifyType_t.MESS_STATUS, "GS busy. Cancel to open new file.");
+				return false;
+			}
+			return true;
+		}
+
+		private void OpenFile(object sender, RoutedEventArgs e)
+		{
+			if (!ReadyForOpen())
+				return;
+
+			OpenFileDialog dlg = new OpenFileDialog();
+			dlg.Filter = "Document Files(*.ps;*.eps;*.pdf)|*.ps;*.eps;*.pdf;|All files (*.*)|*.*";
+			dlg.FilterIndex = 1;
+			if (dlg.ShowDialog() == true)
+				ProcessFile(dlg.FileName);
+		}
+
+		public void ProcessFile(String FileName)
+		{
+			/* Before we even get started check for issues */
+			/* First check if file exists and is available */
+			if (!System.IO.File.Exists(FileName))
+			{
+				ShowMessage(NotifyType_t.MESS_STATUS, "File not found!");
+				return;
+			}
+			if (m_file_open)
+			{
+				/* In this case, we want to go ahead and launch a new process
+				 * handing it the filename */
+				/* We need to get the location */
+				string path = System.Reflection.Assembly.GetExecutingAssembly().CodeBase;
+				Process p = new Process();
+				try
+				{
+					Process.Start(path, FileName);
+				}
+				catch (InvalidOperationException)
+				{
+					Console.WriteLine("InvalidOperationException");
+				}
+				catch (Win32Exception)
+				{
+					Console.WriteLine("Win32 Exception: There was an error in opening the associated file. ");
+				}
+				return;
+			}
+
+			/* If we have a ps or eps file then launch the distiller first
+			 * and then we will get a temp pdf file which we will open.  This is done
+			 * to demo both methods of doing callbacks from gs worker thread.  Either
+			 * progress as we distill the stream for PS or page by page for PDF */
+			string extension = System.IO.Path.GetExtension(FileName);
+
+			/* We are doing this based on the extension but like should do
+			 * it based upon the content */
+			switch (extension.ToUpper())
+			{
+				case ".PS":
+					m_document_type = doc_t.PS;
+					break;
+				case ".EPS":
+					m_document_type = doc_t.PS;
+					break;
+				case ".PDF":
+					m_document_type = doc_t.PDF;
+					break;
+				case ".XPS":
+					m_document_type = doc_t.XPS;
+					break;
+				case ".BIN":
+					m_document_type = doc_t.PCL;
+					break;
+				default:
+					{
+						m_document_type = doc_t.UNKNOWN;
+						ShowMessage(NotifyType_t.MESS_STATUS, "Unknown File Type");
+						return;
+					}
+			}
+			if (extension.ToUpper() == ".PS" || extension.ToUpper() == ".EPS")
+			{
+
+				MessageBoxResult result = MessageBox.Show("Would you like to Distill this file?", "ghostnet", MessageBoxButton.YesNoCancel);
+				switch (result)
+				{
+					case MessageBoxResult.Yes:
+						xaml_DistillProgress.Value = 0;
+						if (m_ghostscript.DistillPS(FileName, Constants.DEFAULT_GS_RES) == gsStatus.GS_BUSY)
+						{
+							ShowMessage(NotifyType_t.MESS_STATUS, "GS currently busy");
+							return;
+						}
+						xaml_DistillName.Text = "Distilling";
+						xaml_CancelDistill.Visibility = System.Windows.Visibility.Visible;
+						xaml_DistillName.FontWeight = FontWeights.Bold;
+						xaml_DistillGrid.Visibility = System.Windows.Visibility.Visible;
+						return;
+					case MessageBoxResult.No:
+						break;
+					case MessageBoxResult.Cancel:
+						return;
+				}
+			}
+			m_currfile = FileName;
+			//m_numpages = m_ghostscript.GetPageCount(m_currfile);
+			RenderThumbs();
+			return;
+
+		}
+		private void CancelDistillClick(object sender, RoutedEventArgs e)
+		{
+
+		}
+		private void DeleteTempFile(String file)
+		{
+			for (int k = 0; k < m_tempfiles.Count; k++)
+			{
+				if (String.Compare(file, m_tempfiles[k].Filename) == 0)
+				{
+					try
+					{
+						m_tempfiles[k].DeleteFile();
+						m_tempfiles.RemoveAt(k);
+					}
+					catch
+					{
+						ShowMessage(NotifyType_t.MESS_STATUS, "Problem Deleting Temp File");
+					}
+					break;
+				}
+			}
+		}
+
+		private void CleanUpTempFiles()
+		{
+			for (int k = 0; k < m_tempfiles.Count; k++)
+			{
+				try
+				{
+					m_tempfiles[k].DeleteFile();
+				}
+				catch
+				{
+					ShowMessage(NotifyType_t.MESS_STATUS, "Problem Deleting Temp File");
+				}
+			}
+			m_tempfiles.Clear();
+		}
+		private void OnAboutClick(object sender, RoutedEventArgs e)
+		{
+			About about = new About(this);
+			var desc_static = about.Description;
+			String desc;
+
+			String gs_vers = m_ghostscript.GetVersion();
+			if (gs_vers == null)
+				desc = "\nGhostscript DLL: Not Found";
+			else
+				desc = "\nGhostscript DLL: Using " + gs_vers + " 64 bit\n";
+
+			about.description.Text = desc;
+			about.ShowDialog();
+		}
+
+		private static DocPage InitDocPage()
+		{
+			DocPage doc_page = new DocPage();
+
+			doc_page.BitMap = null;
+			doc_page.Height = Constants.BLANK_HEIGHT;
+			doc_page.Width = Constants.BLANK_WIDTH;
+			return doc_page;
+		}
+
+		private void ThumbSelected(object sender, MouseButtonEventArgs e)
+		{
+			var item = ((FrameworkElement)e.OriginalSource).DataContext as DocPage;
+
+			if (item != null)
+			{
+				if (item.PageNum < 0)
+					return;
+
+				var obj = xaml_PageList.Items[item.PageNum - 1];
+				xaml_PageList.ScrollIntoView(obj);
+			}
+		}
+
+		void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+		{
+			CloseExtraWindows(true);
+		}
+
+		void CloseExtraWindows(bool shutdown)
+		{
+			if (shutdown)
+			{
+				if (m_gsoutput != null)
+					m_gsoutput.RealWindowClosing();
+				if (m_printcontrol != null)
+					m_printcontrol.RealWindowClosing();
+			}
+			else
+			{
+				if (m_gsoutput != null)
+					m_gsoutput.Hide();
+				if (m_printcontrol != null)
+					m_printcontrol.Hide();
+			}
+		}
+
+		private void PageScrollChanged(object sender, ScrollChangedEventArgs e)
+		{
+			e.Handled = true;
+
+			if (!m_init_done || m_busy_rendering || m_toppage_pos == null)
+				return;
+
+			/* Find the pages that are visible.  */
+			double top_window = e.VerticalOffset;
+			double bottom_window = top_window + e.ViewportHeight;
+			int first_page = -1;
+			int last_page = -1;
+
+			if (top_window > m_toppage_pos[m_numpages - 1])
+			{
+				first_page = m_numpages - 1;
+				last_page = first_page;
+			}
+			else
+			{
+				for (int k = 0; k < (m_toppage_pos.Count() - 1); k++)
+				{
+					if (top_window <= m_toppage_pos[k + 1] && bottom_window >= m_toppage_pos[k])
+					{
+						if (first_page == -1)
+							first_page = k;
+						else
+						{
+							last_page = k;
+							break;
+						}
+					}
+					else
+					{
+						if (first_page != -1)
+						{
+							last_page = first_page;
+							break;
+						}
+					}
+				}
+			}
+
+			m_currpage = first_page;
+			xaml_currPage.Text = (m_currpage + 1).ToString();
+
+			/* Only PDF does this page sensitive approach */
+			if (m_document_type != doc_t.PDF)
+				return;
+
+			/* Disable for now.  All do full doc rendering.  NB implement
+			 * for XPS and PDF which allow direct page access */
+			//PageRangeRender(first_page, last_page);
+			return;
+		}
+		private void Grid_DragOver(object sender, System.Windows.DragEventArgs e)
+		{
+			if (e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop))
+			{
+				e.Effects = System.Windows.DragDropEffects.All;
+			}
+			else
+			{
+				e.Effects = System.Windows.DragDropEffects.None;
+			}
+			e.Handled = false;
+		}
+
+		private void Grid_Drop(object sender, System.Windows.DragEventArgs e)
+		{
+			if (e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop))
+			{
+				string[] docPath = (string[])e.Data.GetData(System.Windows.DataFormats.FileDrop);
+				ProcessFile(String.Join("", docPath));
+			}
+		}
+		private void PageEnterClicked(object sender, KeyEventArgs e)
+		{
+			if (e.Key == Key.Return)
+			{
+				e.Handled = true;
+				var desired_page = xaml_currPage.Text;
+				try
+				{
+					int page = System.Convert.ToInt32(desired_page);
+					if (page > 0 && page < (m_numpages + 1))
+					{
+						var obj = xaml_PageList.Items[page - 1];
+						xaml_PageList.ScrollIntoView(obj);
+					}
+				}
+				catch (FormatException)
+				{
+					Console.WriteLine("String is not a sequence of digits.");
+				}
+				catch (OverflowException)
+				{
+					Console.WriteLine("The number cannot fit in an Int32.");
+				}
+			}
+		}
+
+		private void AA_uncheck(object sender, RoutedEventArgs e)
+		{
+			m_aa = false;
+			m_aa_change = true;
+			RenderMainAll();
+		}
+
+		private void AA_check(object sender, RoutedEventArgs e)
+		{
+			m_aa = true;
+			m_aa_change = true;
+			RenderMainAll();
+		}
+	}
+}
