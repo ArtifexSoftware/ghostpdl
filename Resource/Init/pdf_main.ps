@@ -2761,7 +2761,7 @@ currentdict /PDF2PS_matrix_key undef
   dup /PDFusingtransparency exch def {
     % If the current device isn't CMYK, or if it is a device that (currently) supports transparency
     % we don't need the special handling of Overprint transparency, so disable the checking.
-    currentpagedevice dup /Colors get 4 lt
+    currentpagedevice dup /Colors get 4 lt 1 index /SimulateOverprint get not or
     exch /HaveTransparency .knownget not { //false } if or
     % device needs special Oveprint handling
     /setup_trans exch

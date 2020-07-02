@@ -3628,8 +3628,14 @@ pdf14_set_marking_params(gx_device *dev, const gs_gstate *pgs)
     }
     pdev->alpha = pdev->opacity * pdev->shape;
     pdev->blend_mode = pgs->blend_mode;
-    pdev->overprint = pgs->overprint;
-    pdev->stroke_overprint = pgs->stroke_overprint;
+    if (pdev->icc_struct->sim_overprint) {
+        pdev->overprint = pgs->overprint;
+        pdev->stroke_overprint = pgs->stroke_overprint;
+    } else {
+        pdev->overprint = false;
+        pdev->stroke_overprint = false;
+    }
+
     pdev->fillconstantalpha = pgs->fillconstantalpha;
     pdev->strokeconstantalpha = pgs->strokeconstantalpha;
 
@@ -4080,10 +4086,12 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *cpgs, gx_path *ppath,
 
         /* If we are in an overprint situation, set the blend mode to compatible
             overprint */
-        if (pgs->overprint && dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE)
+        if (p14dev->icc_struct->sim_overprint && pgs->overprint &&
+            dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE)
             (void)gs_setblendmode(pgs, BLEND_MODE_CompatibleOverprint); /* Can never fail */
         code = pdf14_fill_path(dev, pgs, ppath, fill_params, pdcolor_fill, pcpath);
-        if (pgs->overprint && dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE)
+        if (p14dev->icc_struct->sim_overprint && pgs->overprint &&
+            dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE)
             (void)gs_setblendmode(pgs, blend_mode); /* Can never fail */
         if (code < 0)
             goto cleanup;
@@ -4093,7 +4101,8 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *cpgs, gx_path *ppath,
 
         gs_swapcolors_quick(pgs);
         p14dev->op_state = PDF14_OP_STATE_STROKE;
-        if (pgs->stroke_overprint && dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE)
+        if (p14dev->icc_struct->sim_overprint && pgs->stroke_overprint &&
+            dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE)
             (void)gs_setblendmode(pgs, BLEND_MODE_CompatibleOverprint); /* Can never fail */
         code = pdf14_stroke_path(dev, pgs, ppath, stroke_params, pdcolor_stroke, pcpath);
         /* Don't need to restore blendmode here, as it will be restored below. */
@@ -10233,7 +10242,7 @@ pdf14_clist_fill_stroke_path_pattern_setup(gx_device* dev, const gs_gstate* cpgs
 
     /* See if overprint is enabled for both stroke and fill AND if ca == CA */
     if (pgs->fillconstantalpha == pgs->strokeconstantalpha &&
-        pgs->overprint && pgs->stroke_overprint &&
+        pgs->overprint && pgs->stroke_overprint && dev->icc_struct->sim_overprint &&
         dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
 
         params.Isolated = false;
@@ -10284,14 +10293,16 @@ pdf14_clist_fill_stroke_path_pattern_setup(gx_device* dev, const gs_gstate* cpgs
 
             /* If we are in an overprint situation, set the blend mode to compatible
                overprint */
-            if (pgs->overprint && dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE)
+            if (dev->icc_struct->sim_overprint && pgs->overprint &&
+                dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE)
                 (void)gs_setblendmode(pgs, BLEND_MODE_CompatibleOverprint); /* Can never fail */
 
             code = pdf14_clist_fill_path(dev, pgs, ppath, params_fill, pdevc_fill, pcpath);
             if (code < 0)
                 goto cleanup;
 
-            if (pgs->overprint && dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE)
+            if (dev->icc_struct->sim_overprint && pgs->overprint &&
+                dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE)
                 (void)gs_setblendmode(pgs, blend_mode); /* Can never fail */
         }
 
@@ -10307,7 +10318,8 @@ pdf14_clist_fill_stroke_path_pattern_setup(gx_device* dev, const gs_gstate* cpgs
             if (code < 0)
                 goto cleanup;
 
-            if (pgs->overprint && dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE)
+            if (dev->icc_struct->sim_overprint && pgs->overprint &&
+                dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE)
                 (void)gs_setblendmode(pgs, blend_mode); /* Can never fail */
         }
     }
