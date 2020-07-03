@@ -127,9 +127,18 @@ struct pl_main_instance_s
     arg_list args;
     pl_interp_implementation_t **implementations;
     pl_interp_implementation_t *curr_implementation;
-    byte buf[8192]; /* languages read buffer */
+
+    /* When processing data via 'run_string', interpreters may not
+     * completely consume the data they are passed each time. We use
+     * this buffer to carry over data between calls. */
+    byte *buf_ptr;
+    int buf_fill;
+    int buf_max;
+
     void *display; /* display device pointer - to support legacy API. Will
                     * be removed. */
+    bool detect_runstring_language;
+    bool revert_to_pjl_after_runstring;
 };
 
 
@@ -139,7 +148,9 @@ static int pl_main_languages_init(gs_memory_t * mem, pl_main_instance_t * inst);
 
 static pl_interp_implementation_t
     *pl_select_implementation(pl_interp_implementation_t * pjl_instance,
-                              pl_main_instance_t * pmi, stream *s);
+                              pl_main_instance_t * pmi,
+                              const char *data,
+                              int len);
 
 /* Process the options on the command line. */
 static gp_file *pl_main_arg_fopen(const char *fname, void *mem);
@@ -308,29 +319,6 @@ pl_main_init_with_args(pl_main_instance_t *inst, int argc, char *argv[])
     return 0;
 }
 
-
-int
-pl_main_run_string_begin(pl_main_instance_t *minst)
-{
-    return pl_process_begin(minst->curr_implementation);
-}
-
-int
-pl_main_run_string_continue(pl_main_instance_t *minst, const char *str, unsigned int length)
-{
-    stream_cursor_read cursor;
-
-    cursor.ptr = (const byte *)str-1; /* -1 because of gs's stupid stream convention */
-    cursor.limit = cursor.ptr + length;
-    return pl_process(minst->curr_implementation, &cursor);
-}
-
-int
-pl_main_run_string_end(pl_main_instance_t *minst)
-{
-    return pl_process_end(minst->curr_implementation);
-}
-
 static int
 revert_to_pjli(pl_main_instance_t *minst)
 {
@@ -351,6 +339,194 @@ revert_to_pjli(pl_main_instance_t *minst)
     }
     minst->curr_implementation = pjli;
     code = pl_init_job(minst->curr_implementation, minst->device);
+
+    return code;
+}
+
+int
+pl_main_run_string_begin(pl_main_instance_t *minst)
+{
+    /* If the current implementation is PJL (language 0) then don't
+     * actually init here. Instead, just mark us as needing to auto
+     * detect the language type when we get some data. */
+    minst->detect_runstring_language = (minst->curr_implementation == minst->implementations[0]);
+    minst->revert_to_pjl_after_runstring = minst->detect_runstring_language;
+    if (minst->detect_runstring_language)
+        return 0;
+
+    return pl_process_begin(minst->curr_implementation);
+}
+
+static int
+ensure_buf_size(pl_main_instance_t *minst, int len)
+{
+    int max = minst->buf_max;
+
+    if (len < max)
+        return 0;
+
+    if (max == 0)
+        max = 4096;
+
+    while (max < len) {
+        max *= 2;
+        if (max < 0)
+            return_error(gs_error_VMerror);
+    }
+
+    if (minst->buf_max == 0) {
+        minst->buf_ptr = gs_alloc_bytes(minst->memory, max, "minst_buffer");
+        if (minst->buf_ptr == NULL)
+            return_error(gs_error_VMerror);
+    } else {
+        byte *newbuf = gs_resize_object(minst->memory, minst->buf_ptr, max, "minst_buffer");
+        if (newbuf == NULL)
+            return_error(gs_error_VMerror);
+        minst->buf_ptr = newbuf;
+    }
+    minst->buf_max = max;
+
+    return 0;
+}
+
+int
+pl_main_run_string_continue(pl_main_instance_t *minst, const char *str, unsigned int length)
+{
+    stream_cursor_read cursor;
+    int code;
+    pl_interp_implementation_t *pjli = minst->implementations[0];
+    const byte *initial_pos;
+    int unread;
+
+    /* First off, get all our data into a single buffer (both anything
+     * buffered from previous calls, and anything we have now). */
+    if (minst->buf_fill > 0) {
+        /* Ensure we have a buffer large enough. */
+        code = ensure_buf_size(minst, length + minst->buf_fill);
+        if (code < 0)
+            return code;
+
+        memcpy(&minst->buf_ptr[minst->buf_fill], str, length);
+        minst->buf_fill += length;
+        cursor.ptr = minst->buf_ptr - 1 ; /* -1 because of gs's stupid stream convention */
+        cursor.limit = cursor.ptr + length;
+    } else {
+        /* Use the callers buffer directly. */
+        cursor.ptr = (const byte *)str-1; /* -1 because of gs's stupid stream convention */
+        cursor.limit = cursor.ptr + length;
+    }
+
+    /* Now process that buffer. The outside loop here is used as we
+     * try different languages. */
+    do {
+        /* Remember where we started this attempt so we can spot us
+         * failing to make progress. */
+        initial_pos = cursor.ptr;
+
+        if (minst->detect_runstring_language) {
+            pl_interp_implementation_t *desired_implementation;
+
+            minst->detect_runstring_language = 0;
+
+            desired_implementation = pl_select_implementation(pjli,
+                                                              minst,
+                                                (const char *)cursor.ptr+1,
+                                                         (int)length);
+
+            /* Possibly this never happens? But attempt to cope anyway. */
+            if (desired_implementation == NULL) {
+                code = -1;
+                break;
+            }
+            if (gs_debug_c('I') || gs_debug_c(':'))
+                dmlprintf1(minst->memory, "PDL detected as %s\n",
+                           pl_characteristics(desired_implementation)->language);
+
+            /* If the language implementation needs changing, change it. */
+            if (desired_implementation != pjli) {
+                code = pl_init_job(desired_implementation, minst->device);
+                minst->curr_implementation = desired_implementation;
+                if (code < 0)
+                    return code;
+            }
+            code = pl_process_begin(minst->curr_implementation);
+            if (code < 0)
+                return code;
+        }
+
+        code = pl_process(minst->curr_implementation, &cursor);
+        if (code == gs_error_NeedInput) {
+            code = 0;
+            break;
+        }
+        if (code == 0 && cursor.ptr != cursor.limit) {
+            code = gs_error_InterpreterExit;
+        }
+        if (code == gs_error_InterpreterExit) {
+            if (minst->curr_implementation == pjli) {
+                /* We might have just hit a ENTER LANGUAGE. */
+                /* Ideally, we should look at what language ENTER LANGUAGE
+                 * said to use, and then swap to that. That means looking up
+                 * a variable in the pjl interpreter, and we don't have the
+                 * means to do that at the moment. For now let's assume it
+                 * says "auto" and let's process it based on that. */
+                minst->detect_runstring_language = 1;
+            } else {
+                /* The interpreter itself has hit UEL. Automatically guess
+                 * what comes next. Probably back to PJL. */
+                minst->detect_runstring_language = 1;
+                if (minst->revert_to_pjl_after_runstring) {
+                    code = revert_to_pjli(minst);
+                    if (code < 0)
+                        break;
+                }
+            }
+            code = 0;
+        }
+        /* If we have data left, and we made progress last time,
+         * head back to the top to try again with the remaining
+         * data in the buffer. */
+    } while (code >= 0 && cursor.ptr != initial_pos);
+
+    /* Now, deal with any unread data. */
+    unread = (int)(cursor.limit - cursor.ptr);
+    if (unread) {
+        /* We used count bytes, but still have unread bytes left. */
+        if (minst->buf_fill > 0) {
+            /* Move the remaining data down our buffer. */
+            int count = (int)(cursor.ptr + 1 - minst->buf_ptr);
+            memmove(&minst->buf_ptr[0], &minst->buf_ptr[count],
+                    unread);
+        } else {
+            /* Store the remaining data in the buffer. */
+            int count = (int)(cursor.ptr + 1 - (const byte *)str);
+            int code2 = ensure_buf_size(minst, unread);
+            if (code2 < 0)
+                return code < 0 ? code : code2;
+            memcpy(&minst->buf_ptr[0], str + count, unread);
+        }
+    }
+    minst->buf_fill = (int)unread;
+
+    return code;
+}
+
+int
+pl_main_run_string_end(pl_main_instance_t *minst)
+{
+    int code;
+    code = pl_process_end(minst->curr_implementation);
+
+    if (minst->buf_fill != 0)
+        code = gs_note_error(gs_error_syntaxerror);
+    minst->buf_fill = 0;
+
+    if (minst->revert_to_pjl_after_runstring) {
+        int code2 = revert_to_pjli(minst);
+        if (code2 < 0)
+            return code < 0 ? code : code2;
+        minst->revert_to_pjl_after_runstring = 0;
+    }
 
     return code;
 }
@@ -419,7 +595,12 @@ pl_main_run_file_utf8(pl_main_instance_t *minst, const char *prefix_commands, co
              * before calling this function. */
             if (minst->curr_implementation == pjli) {
                 /* Autodetect the language based on the content. */
-                desired_implementation = pl_select_implementation(pjli, minst, s);
+                desired_implementation = pl_select_implementation(
+                                                    pjli,
+                                                    minst,
+                                      (const char *)s->cursor.r.ptr+1,
+                                               (int)(s->cursor.r.limit -
+                                                     s->cursor.r.ptr));
 
                 /* Possibly this never happens? But attempt to cope anyway. */
                 if (desired_implementation == NULL)
@@ -637,6 +818,7 @@ pl_main_delete_instance(pl_main_instance_t *minst)
         gs_free_object(mem, impl, "pl_main_languages_delete_instance()");
     }
 
+    gs_free_object(mem, minst->buf_ptr, "minst_buffer");
 
     gs_iodev_finit(mem);
     gs_lib_finit(0, 0, mem);
@@ -2027,7 +2209,9 @@ pl_auto_sense(pl_main_instance_t *minst, const char *name,  int buffer_length)
    (2) it has been selected in PJL or (3) we need to auto sense. */
 static pl_interp_implementation_t *
 pl_select_implementation(pl_interp_implementation_t * pjli,
-                         pl_main_instance_t * pmi, stream *s)
+                         pl_main_instance_t * pmi,
+                         const char *ptr,
+                         int len)
 {
     /* Determine language of file to interpret. We're making the incorrect */
     /* assumption that any file only contains jobs in one PDL. The correct */
@@ -2040,8 +2224,7 @@ pl_select_implementation(pl_interp_implementation_t * pjli,
     if ((impl = pl_pjl_select(pmi, pjli)) != 0)
         return impl;
     /* lookup string in name field for each implementation */
-    return pl_auto_sense(pmi, (const char *)s->cursor.r.ptr + 1,
-                         (s->cursor.r.limit - s->cursor.r.ptr));
+    return pl_auto_sense(pmi, ptr, len);
 }
 
 /* Find default language implementation */
