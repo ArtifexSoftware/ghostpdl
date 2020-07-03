@@ -686,6 +686,18 @@ static int do_test(const char *title, int format,
 
     /* Run our test. */
     code = gsapi_init_with_args(instance, argc, argv);
+    if ((format & DISPLAY_ROW_ALIGN_MASK) == DISPLAY_ROW_ALIGN_4 &&
+        sizeof(void *) > 4) {
+        if (code == -100) {
+            printf("Got expected failure!\n");
+            code = 0;
+            goto fail;
+        } else if (code == 0) {
+            printf("Failed to get expected failure!\n");
+            code = -1;
+            goto fail;
+        }
+    }
     if (code < 0) {
         printf("Error %d in gsapi_init_with_args\n", code);
         goto fail;
@@ -707,7 +719,7 @@ failearly:
     printf("%s%s%s%s %s\n", title, clist_str, legacy_str, align_str,
            (code < 0) ? "failed" : "complete");
 
-    return (code < 0);
+    return code;
 }
 
 static int test(const char *title, int format, const char *fname)
