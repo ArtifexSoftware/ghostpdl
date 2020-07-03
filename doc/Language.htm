@@ -614,7 +614,7 @@ onto the group that now becomes current.</dd>
 </dl>
 
 <dl>
-<dt><code>&lt;paramdict&gt; &lt;llx&gt; &lt;lly&gt; &lt;urx&gt; &lt;ury&gt;
+<dt><code>&lt;cs_set?&gt; &lt;paramdict&gt; &lt;llx&gt; &lt;lly&gt; &lt;urx&gt; &lt;ury&gt;
 .begintransparencymaskgroup -</code></dt>
 <dd>Begins a new transparency mask, which is represented as a group.
 The <code>ll/ur</code> coordinates
@@ -630,6 +630,22 @@ are the bounding box of the mask in the current user coordinate system.
 <dd>(optional) Function object (produced by applying
 <code>.buildfunction</code> to a Function dictionary).</dd>
 </dl>
+The <code>cs_set</code> parameter is a boolean indicating whether the color
+space for the mask group is the current color space in the graphics state, or
+whether mask group color space should be inherited from the previous group
+in the transparency group stack. In general, for the most consistent results,
+it is recommended that this be set to <code>true</code>, and the intended
+color space set in the graphics state prior to the <code>.begintransparencymaskgroup</code>
+call.
+</dl>
+<dl>
+<dt><code>&lt;mask#&gt; .endtransparencymask -</code></dt>
+<dd>Ends the current transparency mask group, compositing the mask group being ended
+and setting it as the current soft mask in the graphics state.
+<p>
+The <code>mask#</code> parameter indicates whether the mask should be treated as
+as opacity mask (<code>0</code>) or shape (<code>1</code>).
+</dd>
 </dl>
 
 <h5><a name="Transparency_ImageType"></a>New ImageType</h5>
