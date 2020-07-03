@@ -246,6 +246,8 @@ display_open(gx_device * dev)
     ddev->pBitmap = NULL;
     ddev->zBitmapSize = 0;
 
+    ddev->orig_procs = ddev->procs;
+
     /* Fetch our callback procedures. */
     data.callback = NULL;
     data.caller_handle = NULL;
@@ -1711,7 +1713,7 @@ setup_as_clist(gx_device_display *ddev, gs_memory_t *buffer_memory)
 open_c:
     ddev->buf = base;
     ddev->buffer_space = space;
-    pclist_dev->common.orig_spec_op = dev_proc(ddev, dev_spec_op);
+    pclist_dev->common.orig_spec_op = ddev->orig_procs.dev_spec_op;
     clist_init_io_procs(pclist_dev, ddev->BLS_force_memory);
     clist_init_params(pclist_dev, base, space, target,
                       display_buf_procs,
@@ -1759,7 +1761,6 @@ display_alloc_bitmap(gx_device_display * ddev, gx_device * param_dev)
     /* free old bitmap (if any) */
     display_free_bitmap(ddev);
 
-    ddev->orig_procs = ddev->procs;
     /* Initialise the clist/memory device specific fields. */
     memset(ddev->skip, 0, sizeof(ddev->skip));
     /* Calculate the size required for the a memory device. */
