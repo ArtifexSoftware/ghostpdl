@@ -293,7 +293,7 @@ txtwrite_close_device(gx_device * dev)
     }
 
 #ifdef TRACE_TXTWRITE
-    fclose(tdev->DebugFile);
+    gp_fclose(tdev->DebugFile);
 #endif
     return code;
 }
@@ -343,14 +343,14 @@ static int merge_vertically(gx_device_txtwrite_t *tdev)
                 to = y_list->x_ordered_list;
                 from = next->x_ordered_list;
 #ifdef TRACE_TXTWRITE
-                fprintf(tdev->DebugFile, "\nConsolidating two horizontal lines, line 1:");
+                gp_fprintf(tdev->DebugFile, "\nConsolidating two horizontal lines, line 1:");
                 debug_x = from;
                 while (debug_x) {
                     gp_fprintf(tdev->DebugFile, "\n\t");
                     gp_fwrite(debug_x->Unicode_Text, sizeof(unsigned short), debug_x->Unicode_Text_Size, tdev->DebugFile);
                     debug_x = debug_x->next;
                 }
-                fprintf(tdev->DebugFile, "\nConsolidating two horizontal lines, line 2");
+                gp_fprintf(tdev->DebugFile, "\nConsolidating two horizontal lines, line 2");
                 debug_x = to;
                 while (debug_x) {
                     gp_fprintf(tdev->DebugFile, "\n\t");
@@ -388,14 +388,14 @@ static int merge_vertically(gx_device_txtwrite_t *tdev)
                 }
                 y_list->x_ordered_list = new_order;
 #ifdef TRACE_TXTWRITE
-                fprintf(tdev->DebugFile, "\nAfter:");
+                gp_fprintf(tdev->DebugFile, "\nAfter:");
                 debug_x = new_order;
                 while (debug_x) {
                     gp_fprintf(tdev->DebugFile, "\n\t");
                     gp_fwrite(debug_x->Unicode_Text, sizeof(unsigned short), debug_x->Unicode_Text_Size, tdev->DebugFile);
                     debug_x = debug_x->next;
                 }
-                fprintf(tdev->DebugFile, "\n");
+                gp_fprintf(tdev->DebugFile, "\n");
 #endif
                 y_list->next = next->next;
                 if (next->next)
@@ -2117,6 +2117,20 @@ static int
 txt_add_fragment(gx_device_txtwrite_t *tdev, textw_text_enum_t *penum)
 {
     text_list_entry_t *unsorted_entry, *t;
+
+#ifdef TRACE_TXTWRITE
+    gp_fprintf(tdev->DebugFile, "txt_add_fragment: ");
+    gp_fwrite(penum->TextBuffer, sizeof(unsigned short), penum->TextBufferIndex, tdev->DebugFile);
+    gp_fprintf(tdev->DebugFile, "\n");
+    {
+        int i=0;
+        gp_fprintf(tdev->DebugFile, "widths:");
+        for (i=0; i<penum->TextBufferIndex; ++i) {
+            gp_fprintf(tdev->DebugFile, " %f", penum->Widths[i]);
+        }
+        gp_fprintf(tdev->DebugFile, "\n");
+    }
+#endif
 
     /* Create a duplicate entry for the unsorted list */
     unsorted_entry = (text_list_entry_t *)gs_malloc(tdev->memory->stable_memory, 1,

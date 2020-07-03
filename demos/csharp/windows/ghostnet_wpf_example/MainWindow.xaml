@@ -1,0 +1,214 @@
+﻿<Window x:Class="ghostnet_wpf_example.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ghostnet_wpf_example"
+        mc:Ignorable="d" UseLayoutRounding="True"
+        Title="GhostNet WPF example" Height="880" Width="870">
+    <!-- UseLayoutRounding needed to avoid funny interpolation effects on pages -->
+    <Window.Resources>
+        <ItemsPanelTemplate x:Key="MenuItemPanelTemplateNoIcon">
+            <StackPanel Margin="-20,0,0,0" Background="WhiteSmoke"/>
+        </ItemsPanelTemplate>
+        <DataTemplate x:Key="PageTemplate">
+            <Canvas Tag="{Binding Path=pagename}" HorizontalAlignment="Center" VerticalAlignment="Top" Height="{Binding Height}" Width="{Binding Width}" Margin="0,0,0,0" ClipToBounds="True">
+                <Image Width="{Binding Width}" Height="{Binding Height}" Stretch="Fill" HorizontalAlignment="Center" Source="{Binding BitMap}">
+                    <Image.BitmapEffect>
+                        <DropShadowBitmapEffect Color="Black" Direction="-50" ShadowDepth="40" Softness=".7" />
+                    </Image.BitmapEffect>
+                </Image>
+            </Canvas>
+        </DataTemplate>
+
+        <DataTemplate x:Key="ThumbTemplate">
+            <Image Width="{Binding Width}" Height="{Binding Height}" Stretch="Fill" HorizontalAlignment="Center" Source="{Binding BitMap}" Margin="24,24,0,0">
+                <Image.BitmapEffect>
+                    <DropShadowBitmapEffect Color="Black" Direction="-50"
+                    ShadowDepth="5" Softness=".7" />
+                </Image.BitmapEffect>
+            </Image>
+        </DataTemplate>
+        
+    </Window.Resources>
+
+    <!-- The following is needed to set up all the keyboard short cuts -->
+    <Window.CommandBindings>
+        <CommandBinding Command="Open" Executed="OpenFileCommand"></CommandBinding>
+        <CommandBinding Command="Close" Executed="CloseCommand"></CommandBinding>
+        <CommandBinding Command="Print" Executed="PrintCommand"></CommandBinding>
+    </Window.CommandBindings>
+    <Window.InputBindings>
+        <KeyBinding Key="O" Modifiers="Control" Command="Open"></KeyBinding>
+        <KeyBinding Key="W" Modifiers="Control" Command="Close"></KeyBinding>
+        <KeyBinding Key="P" Modifiers="Control" Command="Print"></KeyBinding>
+    </Window.InputBindings>
+
+    <DockPanel LastChildFill="True">
+        <Menu IsMainMenu="True" DockPanel.Dock="Top" Background="WhiteSmoke" FocusManager.IsFocusScope="False">
+            <MenuItem Header="_File" x:Name="xaml_file" VerticalAlignment="Center">
+                <MenuItem VerticalAlignment="Center" Padding="5" InputGestureText="Ctrl+O" Command="Open" >
+                    <MenuItem.Header>
+                        <TextBlock Margin="5,0,0,0" VerticalAlignment="Center" Text="Open..." ></TextBlock>
+                    </MenuItem.Header>
+                </MenuItem>
+                <MenuItem Padding="5" Command="Close" InputGestureText="Ctrl+W" x:Name="xaml_closefile" VerticalAlignment="Center">
+                    <MenuItem.Header>
+                        <TextBlock Margin="5,0,0,0" Text="Close" VerticalAlignment="Center"></TextBlock>
+                    </MenuItem.Header>
+                </MenuItem>
+                <MenuItem Padding="5" Command="Print" InputGestureText="Ctrl+W" x:Name="xaml_printfile" VerticalAlignment="Center">
+                    <MenuItem.Header>
+                        <TextBlock Margin="5,0,0,0" Text="Print" VerticalAlignment="Center"></TextBlock>
+                    </MenuItem.Header>
+                </MenuItem>
+                <MenuItem Padding="5" Click="ShowGSMessage" x:Name="xaml_gsmessage" VerticalAlignment="Center" >
+                    <MenuItem.Header>
+                        <TextBlock Margin="5,0,0,0" Text="Show Messages" VerticalAlignment="Center"></TextBlock>
+                    </MenuItem.Header>
+                </MenuItem>
+            </MenuItem>
+            <MenuItem Header="About" Click="OnAboutClick"/>
+        </Menu>
+        <WrapPanel Orientation="Horizontal" DockPanel.Dock="Top" Background="WhiteSmoke">
+            <TextBox x:Name="xaml_currPage" Grid.Row="0" Width="40" Height="20" VerticalScrollBarVisibility="Hidden" Padding="0"
+                     HorizontalScrollBarVisibility="Hidden"  TextAlignment="Center" Margin="20,2,0,2" PreviewKeyDown="PageEnterClicked" VerticalAlignment="Center"/>
+            <TextBlock Margin="2,0,0,0" Height="20" Text="/ 0" x:Name="xaml_TotalPages" Padding="0" VerticalAlignment="Center" Focusable="False">
+                <TextBlock.FontSize>12</TextBlock.FontSize>
+            </TextBlock>
+
+            <Button Margin="20 0 2 0" Width="20" Height="20" Click="ZoomIn" Background="Transparent" BorderBrush="DarkBlue"  x:Name="xaml_zoomIn" Focusable="False">
+                <TextBlock Margin="0,0,0,0" Height="20" Text="+" FontWeight="Bold">
+                    <TextBlock.FontSize>12</TextBlock.FontSize>
+                </TextBlock>
+            </Button>
+            <Button  Margin="0 0 2 0" x:Name="xaml_zoomOut" Width="20" Height="20"  Click="ZoomOut" Background="Transparent" BorderBrush="DarkBlue">
+                <TextBlock Margin="0,0,0,0" Height="20" Text="–" FontWeight="Bold">
+                    <TextBlock.FontSize>12</TextBlock.FontSize>
+                </TextBlock>
+            </Button>
+            <TextBox Grid.Row="0"  Grid.Column="2" Margin="0 0 0 0" Width="30" Height="20" VerticalScrollBarVisibility="Hidden"
+                     HorizontalScrollBarVisibility="Hidden"  TextAlignment="Left" x:Name="xaml_Zoomsize"
+                     PreviewKeyDown="ZoomEnterClicked" TextChanged="ZoomTextChanged" VerticalAlignment="Center" Padding="0"/>
+            <TextBlock Margin="2,0,0,0" Height="20" Text="%">
+                <TextBlock.FontSize>12</TextBlock.FontSize>
+            </TextBlock>
+
+            <TextBlock Margin="20,0,0,0" Height="20" Text="Enable Antialias:">
+                <TextBlock.FontSize>12</TextBlock.FontSize>
+            </TextBlock>
+            <CheckBox x:Name="xaml_aa" Margin="2,2,0,0" Unchecked="AA_uncheck" Checked="AA_check" IsChecked="True"></CheckBox>
+        </WrapPanel>
+
+        <!-- The progress bar that runs during GS distilling -->
+        <Grid x:Name="xaml_DistillGrid" DockPanel.Dock="Bottom" Visibility="Collapsed">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <ProgressBar x:Name="xaml_DistillProgress" Grid.Row="0" Grid.Column="0" Margin="3" Minimum="0"
+                     Maximum="100" Height="20" HorizontalAlignment="Stretch"/>
+            <TextBlock x:Name="xaml_DistillName" Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Margin="5, 0, 5, 0"><Bold>Distilling</Bold></TextBlock>
+            <Button  Grid.Row="0" Grid.Column="2" Width="50" Height="20" Name="xaml_CancelDistill" Click="CancelDistillClick" Background="Transparent" BorderBrush="Transparent" Margin="5,0,5,0">
+                <Button.Template>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Grid>
+                            <Rectangle Height="Auto" RadiusX="5" RadiusY="5">
+                                <Rectangle.Fill >
+                                    <SolidColorBrush Color="LightSlateGray"></SolidColorBrush>
+                                </Rectangle.Fill>
+                            </Rectangle>
+                            <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Button.Template>
+                <TextBlock><Bold>Cancel</Bold></TextBlock>
+            </Button>
+        </Grid>
+
+        <Grid x:Name="xaml_PrintGrid" DockPanel.Dock="Bottom" Visibility="Collapsed">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <ProgressBar x:Name="xaml_PrintProgress" Grid.Row="0" Grid.Column="0" Margin="3" Minimum="0"
+                     Maximum="100" Height="20" HorizontalAlignment="Stretch" />
+            <TextBlock Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Margin="5, 0, 5, 0"><Bold>Printing</Bold></TextBlock>
+        </Grid>
+
+        <!-- The progress bar that runs while the pages are rendered -->
+        <Grid x:Name="xaml_ProgressGrid" DockPanel.Dock="Bottom" Visibility="Collapsed">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <ProgressBar x:Name="xaml_RenderProgress" Grid.Row="0" Grid.Column="0" Margin="3" Minimum="0"
+                     Maximum="100" Height="20" HorizontalAlignment="Stretch" />
+            <TextBlock x:Name="xaml_RenderProgressText" Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" Margin="5, 0, 5, 0"><Bold>Creating Thumbs</Bold></TextBlock>
+        </Grid>
+
+        <!-- Thumb viewer/selector -->
+        <Grid x:Name="xaml_ThumbGrid" Width="150" Background="DarkGray" DockPanel.Dock="Left" Visibility="Collapsed">
+            <ListView x:Name="xaml_ThumbList" HorizontalAlignment="Stretch"
+                      ItemTemplate="{StaticResource ThumbTemplate}"
+                      ScrollViewer.CanContentScroll="False"
+                      Background="DarkGray"
+                      PreviewMouseLeftButtonUp="ThumbSelected">
+            </ListView>
+        </Grid>
+
+        <!-- Pages are last child fill.  This goes in the center of dock panel ScrollViewer.CanContentScroll False allows continuous scrolling-->
+        <!--  <Grid x:Name="xaml_PageGrid" HorizontalAlignment="Stretch" Background="DarkGray" DockPanel.Dock="Left" AllowDrop="True"> -->
+        <ListView x:Name="xaml_PageList" HorizontalAlignment="Stretch"
+                ItemTemplate="{StaticResource PageTemplate}"
+                ScrollViewer.CanContentScroll="False"
+                Background="DarkGray"
+                ScrollViewer.IsDeferredScrollingEnabled="False"
+                IsHitTestVisible="True"
+                SelectionMode="Single"
+                ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                ScrollViewer.VerticalScrollBarVisibility="Visible"
+                ScrollViewer.ScrollChanged="PageScrollChanged"
+                DockPanel.Dock="Left" AllowDrop="True"
+                >
+
+            <!-- This keeps the pages in the center of the panel -->
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="BorderThickness" Value="0"/>
+                    <Setter Property="Margin" Value="10"/>
+                    <!-- This should be changed with PAGE_MARGIN -->
+                    <Setter Property="Padding" Value="0"/>
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                    <!-- This overrides the blue back ground color of the current selection or mouse over -->
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ListViewItem">
+                                <Border x:Name="border" Background="Transparent">
+                                    <VisualStateManager.VisualStateGroups>
+                                        <VisualStateGroup x:Name="CommonStates">
+                                            <VisualState x:Name="Normal" />
+                                            <VisualState x:Name="Disabled" />
+                                        </VisualStateGroup>
+                                        <VisualStateGroup x:Name="SelectionStates">
+                                            <VisualState x:Name="Unselected" />
+                                            <VisualState x:Name="Selected">
+                                            </VisualState>
+                                            <VisualState x:Name="SelectedUnfocused">
+                                            </VisualState>
+                                        </VisualStateGroup>
+                                    </VisualStateManager.VisualStateGroups>
+                                    <ContentPresenter/>
+                                </Border>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </ListView.ItemContainerStyle>
+        </ListView>
+    </DockPanel>
+
+</Window>

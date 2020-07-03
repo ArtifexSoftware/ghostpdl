@@ -71,6 +71,8 @@
 <li><a href="#register_callout"><code>gsapi_register_callout</code></a></li>
 <li><a href="#deregister_callout"><code>gsapi_deregister_callout</code></a></li>
 <li><a href="#set_arg_encoding"><code>gsapi_set_arg_encoding</code></a></li>
+<li><a href="#get_default_device_list"><code>gsapi_get_default_device_list</code></a></li>
+<li><a href="#set_default_device_list"><code>gsapi_set_default_device_list</code></a></li>
 <li><a href="#run"><code>gsapi_run_string_begin</code></a></li>
 <li><a href="#run"><code>gsapi_run_string_continue</code></a></li>
 <li><a href="#run"><code>gsapi_run_string_end</code></a></li>
@@ -217,8 +219,8 @@ int
 
 <li><code>
 int
-<a href="#set_poll_with_handle">gsapi_set_poll_with_handle</a>
-(void *instance, int(*poll_fn)(void *caller_handle), void *caller_handle);
+<a href="#set_poll_with_handle">gsapi_set_poll</a>
+(void *instance, int(*poll_fn)(void *caller_handle, void *caller_handle));
 </code></li>
 
 <li><code>
@@ -249,6 +251,16 @@ void
 int
 <a href="#set_arg_encoding">gsapi_set_arg_encoding</a>
 (void *instance, int encoding);
+</code></li>
+
+<li><code>
+int
+<a href="#set_default_device_list">gsapi_set_default_device_list</a>(void *instance, const char *list, int listlen);
+</code></li>
+
+<li><code>
+int
+<a href="#get_default_device_list">gsapi_get_default_device_list</a>(void *instance, char **list, int *listlen)
 </code></li>
 
 <li><code>
@@ -301,41 +313,6 @@ int
 int
 <a href="#exit">gsapi_exit</a>
 (void *instance);
-</code></li>
-
-<li><code>
-int
-<a href="#set_param">gsapi_set_param</a>(void *instance, gs_set_param_type type, const char *param, const void *value);
-</code></li>
-
-<li><code>
-int
-<a href="#add_control_path">
-gsapi_add_control_path</a>(void *instance, int type, const char *path);
-</code></li>
-
-<li><code>
-int
-<a href="#remove_control_path">
-gsapi_remove_control_path</a>(void *instance, int type, const char *path);
-</code></li>
-
-<li><code>
-void
-<a href="#purge_control_paths">
-gsapi_purge_control_paths</a>(void *instance, int type);
-</code></li>
-
-<li><code>
-void
-<a href="#activate_path_control">
-gsapi_activate_path_control</a>(void *instance, int enable);
-</code></li>
-
-<li><code>
-int
-<a href="#is_path_control_active">
-gsapi_is_path_control_active</a>(void *instance);
 </code></li>
 
 <li><code>
@@ -514,6 +491,23 @@ This must be called after  <code>gsapi_new_instance()</code>
 and before <code>gsapi_init_with_args()</code>.
 </blockquote>
 
+<h3><a name="set_default_device_list"></a><code>set_default_device_list()</code></h3>
+<blockquote>
+Set the string containing the list of default device names,
+for example "display x11alpha x11 bbox". Allows the calling
+application to influence which device(s) gs will try, in order,
+in it's selection of the default device.
+This must be called after  <code>gsapi_new_instance()</code>
+and before <code>gsapi_init_with_args()</code>.
+</blockquote>
+
+<h3><a name="get_default_device_list"></a><code>get_default_device_list()</code></h3>
+<blockquote>
+Returns a pointer to the current default device string.
+This must be called after  <code>gsapi_new_instance()</code>
+and before <code>gsapi_init_with_args()</code>.
+</blockquote>
+
 <h3><a name="init"></a><code>gsapi_init_with_args()</code></h3>
 <blockquote>
 Initialise the interpreter.
@@ -564,22 +558,6 @@ has been called, and just before <code>gsapi_delete_instance()</code>.
 <blockquote>
 Set a parameter.
 Equivalent to passing a parameter on the command line.
-Makes use of gs_set_param_type which is defined as
-<blockquote>
-<pre>
-typedef enum {
-    gs_spt_invalid = -1,
-    gs_spt_null    = 0,   /* void * is NULL */
-    gs_spt_bool    = 1,   /* void * is NULL (false) or non-NULL (true) */
-    gs_spt_int     = 2,   /* void * is a pointer to an int */
-    gs_spt_float   = 3,   /* void * is a float * */
-    gs_spt_name    = 4,   /* void * is a char * */
-    gs_spt_string  = 5,   /* void * is a char * */
-    gs_spt_long    = 6,   /* void * is a long * */
-    gs_spt_i64     = 7,   /* void * is a int64_t * */
-    gs_spt_size_t  = 8    /* void * is a size_t * */
-} gs_set_param_type;
-</pre></blockquote>
 </blockquote>
 
 <h3><a name="add_control_path"></a><code>gsapi_add_control_path()</code></h3>
@@ -1599,7 +1577,7 @@ return <code>max(200, 200*(bandheight/200))</code>. If the function
 returns 0, then the existing value will be used unchanged.</p>
 <p>Any size rectangle can be chosen with any size bandheight,
 so ultimately the value chosen here will not matter much. It
-may make some small difference in speed in some cases.</p>
+may make some small difference in speed in some cases.</p>  
 
 <h3><a name="display_rectangle_request"></a>display_rectangle_request</h3>
 <pre>int (*display_rectangle_request)(void *handle, void *device,

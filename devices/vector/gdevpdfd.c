@@ -222,6 +222,7 @@ const gx_device_vector_procs pdf_vector_procs = {
 int
 pdf_remember_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
 {
+    int code = 0;
     /* Used for skipping redundant clip paths. SF bug #624168. */
     if (pdev->clip_path != 0) {
         gx_path_free(pdev->clip_path, "pdf clip path");
@@ -233,7 +234,22 @@ pdf_remember_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
     pdev->clip_path = gx_path_alloc(pdev->pdf_memory, "pdf clip path");
     if (pdev->clip_path == 0)
         return_error(gs_error_VMerror);
-    return gx_cpath_to_path((gx_clip_path *)pcpath, pdev->clip_path);
+
+    code = gx_cpath_to_path((gx_clip_path *)pcpath, pdev->clip_path);
+    if (code < 0)
+        return code;
+
+    /* gx_cpath_to_path above ends up going through gx_path_assign_preserve
+     * which specifically states that the segments of the paths (in this case pcpath
+     * and pdev->clip_path) must have been allocated with the same allocator.
+     * If that's not true (eg pdfi running inside GS) then we need to 'unshare'
+     * the path. Otherwise we mauy end up with pcpath being freed and discarded
+     * while the pdfwrite devcie still thinks it has a pointer to it.
+     */
+    if (pcpath->path.memory != pdev->pdf_memory)
+        code = gx_path_unshare(pdev->clip_path);
+
+    return code;
 }
 
 /* Check if same clipping path. */
