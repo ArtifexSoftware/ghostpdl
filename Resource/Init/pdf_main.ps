@@ -625,21 +625,57 @@ currentdict /runpdfstring .undef
   } if
 } bind executeonly def
 
+% This routine is used to set the PostScript /PageSize from the MediaBox of the
+% PDF file. It caters for cases where hte MediaBox does not have its origin at
+% 0,0 by translating the CTM. It also handles situations such as the MediaBox
+% being entirely negative. This routine needs more work, in particular we should
+% look at the 'Use*Box' settings for the size, we should use PDFFitPage and scale
+% the content appropriately.
+%
 /newpdf_set_pagesize
 {
   1 dict begin
-  /MediaBox get
-  dup 0 get 1 index 1 get translate
-  dup 2 get exch 3 get
-  2 array astore /PageSize exch def
+  /MediaBox get dup
+  dup 2 get 1 index 0 get sub dup 0 lt {-1 mul} if
+  exch dup 3 get exch 1 get sub dup 0 lt {-1 mul} if
+  2 array astore
+  /PageSize exch def
   currentdict
   setpagedevice
+  dup 0 get -1 mul exch 1 get -1 mul translate
   end
+} bind executeonly def
+
+% This routine checks a list of known/implemented command line switches to see if they
+% have been defined in the PostScript environment. If they have we construct a dictionary
+% containing the names and their values, and return it. That dictionary can then be
+% passed to a custom PostScript operator and used to configure the PDF interpreter.
+%
+% NB device parameters will already have been sent to the device and used to configure it
+% so here we should only handle parameters which control the behaviour of the interpreter.
+%
+/newpdf_gather_parameters
+{
+  10 dict begin
+  /PDFSwitches [ /PDFPassword /PDFDEBUG /PDFSTOPONERROR /PDFSTOPONWARNING /NOTRANSPARENCY /FirstPage /LastPage
+                 /NOCIDFALLBACK /NO_PDFMARK_OUTLINES /NO_PDFMARK_DESTS /PDFFitPage /Printed
+                 /UseBleedBox /UseCropBox /UseArtBox /UseTrimBox /ShowAcroForm /ShowAnnots /PreserveAnnots
+                 /NoUserUnit /RENDERTTNOTDEF /DOPDFMARKS /PDFINFO ] def
+
+  0 1 PDFSwitches length 1 sub {
+    PDFSwitches exch get dup where {
+      exch dup 3 1 roll get def
+    }
+    {
+      pop
+    } ifelse
+  } for
+  currentdict /PDFSwitches undef
+  currentdict end
 } bind executeonly def
 
 /runpdf {		% <file> runpdf -
   /NEWPDF where {/NEWPDF get not} {true} ifelse
-%false
   {
   %% Get the PDF filename (it *must* be a file even if it came from stdin it gets
   %% copied to a temporary file) and store it in pdfdict. We will use this for
@@ -683,10 +719,13 @@ currentdict /runpdfstring .undef
   } ifelse
   }
   {
-    dup .PDFStream      % -file- -pdffile-
-    dup mark exch
+    newpdf_gather_parameters    % -file- <dict>
+    .PDFInit                    % -file- -pdffile-
+    2 copy                      % -file -pdffile- -file- -pdffile-
+    .PDFStream                  % -file- -pdffile-
+    dup mark exch               % -file- -pdffile- -mark- -pdffile-
     {
-      dup .PDFInfo        % -file- -pdffile- <dict>
+      dup .PDFInfo              % -file- -pdffile- -mark- -pdffile- <dict>
       dup /NumPages known {
         /NumPages get 1 sub
         0 1 3 -1 roll
