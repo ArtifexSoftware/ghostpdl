@@ -487,7 +487,12 @@ currentdict /token_nofail_dict .undef
       } if
       oforce                  % but dereference {1 0 R}
       dup type dup /arraytype eq exch /packedarraytype eq or {
-        [ exch 2 index <<>> copy  exch { safe_recursive exch } forall pop]
+        [ exch {
+            counttomark 1 add index <<>> copy	% create a copy for the recursion
+            exch safe_recursive exch
+            pop					% pop the dictionary created for this level
+          } forall
+        ]
       } {
         dup type /dicttype eq {
           << exch 2 index <<>> copy  exch { 3 -1 roll exch safe_recursive 3 -1 roll oforce 3 1 roll exch } forall pop>>
