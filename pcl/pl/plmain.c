@@ -710,7 +710,7 @@ flush_to_end_of_job:
     return 0;
 
 error_fatal:
-    revert_to_pjli(minst);
+    (void)revert_to_pjli(minst);
 error_fatal_reverted:
     sfclose(s);
     return gs_error_Fatal;
