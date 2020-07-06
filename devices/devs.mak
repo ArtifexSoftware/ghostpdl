@@ -295,7 +295,7 @@ $(DD)display.dev : $(display_) $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
 $(DEVOBJ)gdevdsp.$(OBJ) : $(DEVSRC)gdevdsp.c $(string__h) $(gdevkrnlsclass_h)\
  $(gp_h) $(gpcheck_h) $(gdevpccm_h) $(gsparam_h) $(gsdevice_h)\
  $(GDEVH) $(gxdevmem_h) $(gdevdevn_h) $(gsequivc_h) $(gdevdsp_h) $(gdevdsp2_h) \
-  $(DEVS_MAK) $(MAKEDIRS)
+ $(gsicc_manage_h) $(DEVS_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevdsp.$(OBJ) $(C_) $(DEVSRC)gdevdsp.c
 
 ### -------------------------- The X11 device -------------------------- ###

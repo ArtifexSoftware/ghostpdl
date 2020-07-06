@@ -59,6 +59,7 @@
 #include "gxgetbit.h"
 #include "gdevmpla.h"
 #include "gdevprn.h"           /* For gdev_create_buf_device */
+#include "gsicc_manage.h"
 
 #include "gdevkrnlsclass.h" /* 'standard' built in subclasses, currently First/Last Page and obejct filter */
 
@@ -2283,6 +2284,11 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
                 maxvalue, maxvalue);
             if ((nFormat & DISPLAY_DEPTH_MASK) == DISPLAY_DEPTH_8) {
                 ddev->devn_params.bitspercomponent = bpc;
+                if (ddev->icc_struct == NULL) {
+                    ddev->icc_struct = gsicc_new_device_profile_array(ddev->memory);
+                    if (ddev->icc_struct == NULL)
+                        return_error(gs_error_VMerror);
+                }
                 ddev->icc_struct->supports_devn = true;
                 set_color_procs(pdev,
                     display_separation_encode_color,
