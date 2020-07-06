@@ -722,22 +722,35 @@ currentdict /runpdfstring .undef
     newpdf_gather_parameters    % -file- <dict>
     .PDFInit                    % -file- -pdffile-
     2 copy                      % -file -pdffile- -file- -pdffile-
-    .PDFStream                  % -file- -pdffile-
-    dup mark exch               % -file- -pdffile- -mark- -pdffile-
     {
-      dup .PDFInfo              % -file- -pdffile- -mark- -pdffile- <dict>
-      dup /NumPages known {
-        /NumPages get 1 sub
-        0 1 3 -1 roll
+        .PDFStream              % -file- -pdffile-
+    } stopped
+
+    {
+        pop pop
+        (ERROR scanning PDF file structure!!\n) print
+        showpage
+    }
+    {
+        dup mark exch           % -file- -pdffile- -mark- -pdffile-
         {
-          2 copy .PDFPageInfo
-          newpdf_set_pagesize
-          1 index exch .PDFDrawPage
-          showpage
-        } for
-      } if
-    } stopped {(ERROR!!\n) print }if
-    cleartomark
+          dup .PDFInfo          % -file- -pdffile- -mark- -pdffile- <dict>
+          dup /NumPages known {
+            /NumPages get 1 sub
+            0 1 3 -1 roll
+            {
+              2 copy .PDFPageInfo
+              newpdf_set_pagesize
+              1 index exch .PDFDrawPage
+              showpage
+            } for
+          } if
+        } stopped
+        {
+            (ERROR parsing PDF contents!!\n) print showpage
+        }if
+        cleartomark
+    } ifelse
     .PDFClose
     closefile
   } ifelse
