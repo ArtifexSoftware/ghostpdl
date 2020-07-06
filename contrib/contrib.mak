@@ -57,8 +57,6 @@ CONTDEV=$(AK) $(ECHOGS_XE) $(GDEVH)
 #	cdnj500  HP DesignJet 500
 #	chp2200  HP Business Inkjet 2200
 #       dl2100   DEC DL2100
-#	dmprt	 dot matrix printer driver for Ghostscript (it can use 
-#		 dviprt printer config files, japanese)
 #	escpage  Epson ESC/Page driver for Ghostscript (japanese)
 #	fmpr	 Fujitsu FMPR (japanese)
 #	fmlbp	 Fujitsu FMLBP2xx Page Printer (japanese)
@@ -1081,29 +1079,6 @@ $(DEVOBJ)gdev10v.$(OBJ) : $(JAPSRC)gdev10v.c $(PDEVH) \
 #	$(DEVCC) -DPC9801 $(O_)$@ $(C_) $(JAPSRC)gdev10v.c
 
 
-### ---------------- Dot matrix printer device ---------------- ###
-dmprt_=$(DEVOBJ)gdevdmpr.$(OBJ) $(DEVOBJ)dviprlib.$(OBJ) $(DEVOBJ)gdevprn.$(OBJ)
-
-$(DD)dmprt.dev : $(dmprt_) $(DD)page.dev \
-                           $(CONTDEV) $(CONTRIB_MAK) $(MAKEDIRS)
-	$(SETDEV) $(DD)dmprt $(dmprt_)
-	$(ADDMOD) $(DD)dmprt -ps dmp_init
-
-$(DEVOBJ)gdevdmpr.$(OBJ) : $(JAPSRC)gdevdmpr.c $(JAPSRC)dviprlib.h $(PDEVH) \
-                           $(CONTRIB_MAK) $(MAKEDIRS)
-	$(DEVCC) $(O_)$@ $(C_) $(JAPSRC)gdevdmpr.c
-
-$(DEVOBJ)dviprlib.$(OBJ) : $(JAPSRC)dviprlib.c $(JAPSRC)dviprlib.h \
-                           $(CONTRIB_MAK) $(MAKEDIRS)
-	$(DEVCC) $(O_)$@ $(C_) $(JAPSRC)dviprlib.c
-
-extra-dmprt-install: install-libdata
-	$(INSTALL_DATA) $(JAPSRC)dmp_init.ps $(DESTDIR)$(gsdatadir)$(D)lib || exit 1
-	$(INSTALL_DATA) $(JAPSRC)dmp_site.ps $(DESTDIR)$(gsdatadir)$(D)lib || exit 1
-	$(INSTALL_DATA) $(JAPSRC)escp_24.src $(DESTDIR)$(gsdatadir)$(D)lib || exit 1
-
-
-
 ##
 ## EPSON MachJet driver 
 ##
@@ -1272,4 +1247,4 @@ extra-upp-install: install-libdata
 
 ### ------------ Build/Install special features ------------ ###
 
-install-contrib-extras: extra-dmprt-install extra-upp-install
+install-contrib-extras: extra-upp-install
