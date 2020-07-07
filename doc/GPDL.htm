@@ -57,6 +57,9 @@
 <ul>
 <li><a href="#What_Is_This">What is the GhostPDL Interpreter Framework?</a></li>
 <li><a href="#API">The API</a></li>
+  <ul>
+  <li><a href="#run">The run_string functions</a></li>
+  </ul>
 <li><a href="#executable">The GPDL executable</a></li>
 <li><a href="#different_switches">Differences in switches from Ghostscript</a></li>
 <li><a href="#languages">Supported languages</a></li>
@@ -148,6 +151,20 @@ the differences in the handling of switches within the
 <p>Our intent is that existing users of the Ghostscript API should be
 able to drop a GPDL DLL in as a replacement with little to no code
 changes.</p>
+
+<h3><a name="run"></a>The run_string APIs</h3>
+
+<p>The <code>run_string</code> APIs have parameters for
+<code>int user_errors</code> and <code>int *error_code</code>.
+Within Ghostscript, these allow a caller to bypass the language's
+standard error handling, and to trap errors externally.
+This makes no sense within a printer implementation (and, in
+particular, no sense for a postscript interpreter running
+jobs within a JobServer loop as GPDL does). Thus these
+parameters are kept for ABI compatibility, but are largely
+ignored within the GPDL implementation of gsapi.
+For sanity, pass 0 for <code>user_errors</code>, and expect
+<code>*error_code</code> to be set to 0 on exit.</p>
 
 <h2><a name="executable"></a>The GPDL executable</h2>
 

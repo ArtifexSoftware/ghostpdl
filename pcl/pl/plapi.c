@@ -113,9 +113,13 @@ gsapi_init_with_args(void *lib, int argc, char **argv)
 }
 
 GSDLLEXPORT int GSDLLAPI
-gsapi_run_file(void *lib, const char *file_name)
+gsapi_run_file(void *lib, const char *file_name, int user_errors, int *pexit_code)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+
+    if (pexit_code != NULL)
+        *pexit_code = 0;
+
     if (lib == NULL)
         return gs_error_Fatal;
 
@@ -301,30 +305,67 @@ gsapi_set_arg_encoding(void *instance, int encoding)
 }
 
 GSDLLEXPORT int GSDLLAPI
-gsapi_run_string_begin(void *lib)
+gsapi_run_string_begin(void *lib, int user_errors, int *pexit_code)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+
+    if (pexit_code != NULL)
+        *pexit_code = 0;
+
     if (lib == NULL)
         return gs_error_Fatal;
     return pl_main_run_string_begin(pl_main_get_instance(ctx->memory));
 }
 
 GSDLLEXPORT int GSDLLAPI
-gsapi_run_string_continue(void *lib, const char *str, unsigned int length)
+gsapi_run_string_continue(void *lib, const char *str, unsigned int length,
+                          int user_errors, int *pexit_code)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+
+    if (pexit_code != NULL)
+        *pexit_code = 0;
+
     if (lib == NULL)
         return gs_error_Fatal;
     return pl_main_run_string_continue(pl_main_get_instance(ctx->memory), str, length);
 }
 
 GSDLLEXPORT int GSDLLAPI
-gsapi_run_string_end(void *lib)
+gsapi_run_string_end(void *lib, int user_errors, int *pexit_code)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+
+    if (pexit_code != NULL)
+        *pexit_code = 0;
+
     if (lib == NULL)
         return gs_error_Fatal;
     return pl_main_run_string_end(pl_main_get_instance(ctx->memory));
+}
+
+GSDLLEXPORT int GSDLLAPI
+gsapi_run_string_with_length(void *lib, const char *str, unsigned int length,
+                             int user_errors, int *pexit_code)
+{
+    int code = gsapi_run_string_begin(lib, user_errors, pexit_code);
+    if (code < 0)
+        return code;
+    code = gsapi_run_string_continue(lib, str, length, user_errors, pexit_code);
+    if (code < 0 && code != gs_error_NeedInput)
+        return code;
+    code = gsapi_run_string_end(lib, user_errors, pexit_code);
+    if (code == gs_error_NeedInput)
+        return_error(gs_error_Fatal);
+    return code;
+}
+
+GSDLLEXPORT int GSDLLAPI
+gsapi_run_string(void *lib, const char *str,
+                 int user_errors, int *pexit_code)
+{
+    return gsapi_run_string_with_length(lib, str, (unsigned int)strlen(str),
+                                        user_errors, pexit_code);
 }
 
 GSDLLEXPORT int GSDLLAPI

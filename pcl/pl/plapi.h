@@ -264,17 +264,52 @@ enum {
  * gsapi_run... functions if required, ending with gsapi_exit and
  * gsapi_destroy_instance.
  */
-GSDLLEXPORT int GSDLLAPI gsapi_init_with_args(void *instance, int argc, char **argv);
+GSDLLEXPORT int GSDLLAPI gsapi_init_with_args(void *instance,
+                                              int argc,
+                                              char **argv);
 
-GSDLLEXPORT int GSDLLAPI gsapi_run_file(void *instance, const char *file_name);
+/* The following functions all take user_errors and pexit_code as
+ * parameters. These exist in the Ghostscript API to allow tight control
+ * of the way errors are handled within the Postscript environment.
+ * Such control is not possible (or desired) with GhostPDL due to
+ * the encapsulation used on each different job. Thus these parameters
+ * are present purely to give an exact ABI match with the Ghostscript
+ * implementation of this interface.
+ *
+ * For sanity, always pass 0 for user_errors, and expect *pexit_code
+ * to be set to 0.
+ */
+GSDLLEXPORT int GSDLLAPI gsapi_run_file(void *instance,
+                                        const char *file_name,
+                                        int user_errors,
+                                        int *pexit_code);
 
 GSDLLEXPORT int GSDLLAPI gsapi_exit(void *instance);
 
-GSDLLEXPORT int GSDLLAPI gsapi_run_string_begin(void *instance);
+GSDLLEXPORT int GSDLLAPI gsapi_run_string_begin(void *instance,
+                                                int user_errors,
+                                                int *pexit_code);
 
-GSDLLEXPORT int GSDLLAPI gsapi_run_string_continue(void *instance, const char *str, unsigned int length);
+GSDLLEXPORT int GSDLLAPI gsapi_run_string_continue(void *instance,
+                                                   const char *str,
+                                                   unsigned int length,
+                                                   int user_errors,
+                                                   int *pexit_code);
 
-GSDLLEXPORT int GSDLLAPI gsapi_run_string_end(void *instance);
+GSDLLEXPORT int GSDLLAPI gsapi_run_string_end(void *instance,
+                                              int user_errors,
+                                              int *pexit_code);
+
+GSDLLEXPORT int GSDLLAPI gsapi_run_string_with_length(void *instance,
+                                                      const char *str,
+                                                      unsigned int length,
+                                                      int user_errors,
+                                                      int *pexit_code);
+
+GSDLLEXPORT int GSDLLAPI gsapi_run_string(void *instance,
+                                          const char *str,
+                                          int user_errors,
+                                          int *pexit_code);
 
 typedef enum {
     gs_spt_invalid = -1,
