@@ -252,7 +252,7 @@ gp_feof(gp_file *f) {
 
 static inline int
 gp_fclose(gp_file *f) {
-    int ret = (f->ops.close)(f);
+    int ret = (f->ops.close ? (f->ops.close)(f) : 0);
     gp_file_dealloc(f);
     return ret;
 }
@@ -297,6 +297,8 @@ gp_fflush(gp_file *f) {
 
 static inline int
 gp_ferror(gp_file *f) {
+    if (f->ops.ferror == NULL)
+        return 0;
     return (f->ops.ferror)(f);
 }
 
