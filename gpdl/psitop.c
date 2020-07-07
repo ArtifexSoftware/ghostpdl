@@ -481,9 +481,67 @@ static int
 ps_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr)
 {
     ps_interp_instance_t *psi = (ps_interp_instance_t *)impl->interp_client_data;
-    const unsigned int len = pr->limit - pr->ptr;
+    unsigned int len;
     int code, exit_code = 0;
 
+    if (psi->bytes_fed == 0)
+    {
+        /* Skip over whitespace/comments looking for a PDF marker. */
+        while (pr->ptr < pr->limit)
+        {
+            int i;
+
+            /* Skip over whitespace (as defined in PLRM) */
+            if (pr->ptr[1] == 0 ||
+                pr->ptr[1] == 9 ||
+                pr->ptr[1] == 10 ||
+                pr->ptr[1] == 12 ||
+                pr->ptr[1] == 13 ||
+                pr->ptr[1] == 32) {
+                pr->ptr++;
+                continue;
+            }
+
+            /* If we're not starting a comment, exit. */
+            if (pr->ptr[1] != '%')
+                break;
+
+            /* If we're starting with a PDF header, swap to file mode. */
+            if (pr->limit - pr->ptr >= 8 &&
+                strncmp((const char *)&pr->ptr[2], "PDF-", 4) == 0 &&
+                (pr->ptr[6] >= '1' && pr->ptr[6] <= '9') &&
+                pr->ptr[7] == '.' &&
+                (pr->ptr[8] >= '0' && pr->ptr[8] <= '9'))
+                return_error(gs_error_NeedFile);
+
+            /* Check for a historical PDF header. */
+            if (pr->limit - pr->ptr >= 22 &&
+                strncmp((const char *)&pr->ptr[2], "!PS-Adobe-", 10) == 0 &&
+                (pr->ptr[12] >= '0' && pr->ptr[12] <= '9') &&
+                pr->ptr[13] == '.' &&
+                (pr->ptr[14] >= '0' && pr->ptr[14] <= '9') &&
+                strncmp((const char *)&pr->ptr[15], " PDF-", 5) == 0 &&
+                (pr->ptr[20] >= '0' && pr->ptr[20] <= '9') &&
+                pr->ptr[21] == '.' &&
+                (pr->ptr[22] >= '0' && pr->ptr[22] <= '9'))
+                return_error(gs_error_NeedFile);
+
+            /* Do we have a complete comment that we can skip? */
+            for (i = 1; pr->ptr + i < pr->limit; i++)
+                if (pr->ptr[i+1] == 10 || pr->ptr[i+1] == 13) {
+                    pr->ptr += i;
+                    i = 0; /* Loop again in case there are more comments. */
+                    break;
+                }
+            /* If we fall out of the loop naturally, then we hit the end
+             * of the buffer without terminating our comment. We need to
+             * abort the loop and return. */
+            if (i != 0)
+                return_error(gs_error_NeedInput);
+        }
+    }
+
+    len = pr->limit - pr->ptr;
     code = psapi_run_string_continue(psi->psapi_instance, (const char *)pr->ptr + 1, len, 0, &exit_code);
     if (exit_code == gs_error_InterpreterExit) {
         int64_t offset;

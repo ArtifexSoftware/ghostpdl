@@ -59,6 +59,7 @@
 <li><a href="#API">The API</a></li>
   <ul>
   <li><a href="#run">The run_string functions</a></li>
+  <li><a href="#string_vs_file">String vs File functions</a></li>
   </ul>
 <li><a href="#executable">The GPDL executable</a></li>
 <li><a href="#different_switches">Differences in switches from Ghostscript</a></li>
@@ -165,6 +166,48 @@ parameters are kept for ABI compatibility, but are largely
 ignored within the GPDL implementation of gsapi.
 For sanity, pass 0 for <code>user_errors</code>, and expect
 <code>*error_code</code> to be set to 0 on exit.</p>
+
+<h3><a name="string_vs_file"></a>String vs File functions</h3>
+
+<p>Some file types, such as Postscript and PCL, are designed to be
+'streamable'; that is to say that the files can be fed in and
+consumed as they are interpreted. Other file types, such as PDF or
+XPS require the whole file to be available so that the interpreters
+can seek back and forth within it to extract the data they require.</p>
+
+<p>Traditionally, Ghostscript has relied upon the caller knowing
+which type of data is which; streamable data can be fed in to the
+system using the <code>gsapi_run_string</code> APIs, and complete files
+of data can be fed in using <code>gsapi_run_file</code> or
+<code>gsapi_init_with_args</code> APIs. Streamable data contained
+with a file is simple to deal with, as it's trivial for an interpreter
+to read bytes from a file, but doing random access on a stream is
+much harder.</p>
+
+<p>In systems where data is being streamed in, but it is required
+to be available for random access, the entire stream must be buffered
+for presentation to the language interpreters. With Ghostscript,
+the responsibility for doing this fell to the caller. Unfortunately,
+this means that the caller also has to be responsible for scanning
+the incoming data to spot when it is in a format that requires
+buffering. With the explosion of formats that GPDL supports this
+quickly becomes unpalatable.</p>
+
+<p>While the caller is still free to do such buffering of data
+itself, GPDL will do it automatically if required. If a language
+spots that data being fed to it via the <code>gsapi_run_string</code>
+APIs is in a format that requires buffering, the entire string of
+data will be automatically collected together, and then be
+represented internally to the <code>gsapi_run_file</code> API.</p>
+
+<p>The current implementation buffers the data in memory. Alternative
+implementations could use a backing store if such a thing were
+available. For server based applications the use of memory is not
+likely to be a problem (assuming reasonably sized input files at least).
+For printer integrations, it's entirely possible that no backing
+store will be available, so RAM may be the only option. Integrators
+may wish to place a limit on the size of files that can be buffered
+in this way.</p>
 
 <h2><a name="executable"></a>The GPDL executable</h2>
 

@@ -50,6 +50,7 @@
 #include "gxiodev.h"
 #include "stream.h"
 #include "strmio.h"
+#include "gp.h"
 
 /* includes for the display device */
 #include "gdevdevn.h"
@@ -81,6 +82,20 @@ Options: -dNOPAUSE -E[#] -h -L<PCL|PCLXL> -K<maxK> -l<PCL5C|PCL5E|RTL> -Z...\n\
          -H<l>x<b>x<r>x<t> -dNOCACHE\n\
          -sOutputFile=<file> (-s<option>=<string> | -d<option>[=<value>])*\n\
          -J<PJL commands>\n";
+
+/* Simple structure to hold the contents of a buffered file.
+ * We have a list of chunks of data held in an index. */
+typedef struct
+{
+    gs_memory_t *memory;
+    size_t index_max; /* Size of the index */
+    size_t len;
+    byte **index;
+} buffered_file;
+
+/* Work in 1 meg chunks for now. */
+#define BUFFERED_FILE_CHUNK_SHIFT 20
+#define BUFFERED_FILE_CHUNK_SIZE (1<<BUFFERED_FILE_CHUNK_SHIFT)
 
 /*
  * Main instance for all interpreters.
@@ -139,6 +154,8 @@ struct pl_main_instance_s
                     * be removed. */
     bool detect_runstring_language;
     bool revert_to_pjl_after_runstring;
+
+    void *buffering_runstring_as_file;
 };
 
 
@@ -389,6 +406,266 @@ ensure_buf_size(pl_main_instance_t *minst, int len)
     return 0;
 }
 
+static
+int buffer_data(pl_main_instance_t *minst, const char *data, unsigned int len)
+{
+    buffered_file *bf = minst->buffering_runstring_as_file;
+    size_t newlen = bf->len + len;
+    size_t start = bf->len;
+    size_t chunk_max;
+    size_t num_chunks = (bf->len + BUFFERED_FILE_CHUNK_SIZE-1)>>BUFFERED_FILE_CHUNK_SHIFT;
+
+    if (len == 0)
+         return 0;
+
+    /* Copy anything that fits into the next chunk. */
+    if (start < num_chunks<<BUFFERED_FILE_CHUNK_SHIFT) {
+        size_t max = (num_chunks<<BUFFERED_FILE_CHUNK_SHIFT) - start;
+        if (max > len)
+            max = len;
+        memcpy(&bf->index[start>>BUFFERED_FILE_CHUNK_SHIFT][start & (BUFFERED_FILE_CHUNK_SIZE-1)],
+               data, max);
+        bf->len += max;
+        data += max;
+        start += max;
+        len -= (unsigned int)max;
+        if (len == 0)
+             return 0;
+    }
+
+    /* Do we need to extend the chunk index? */
+    chunk_max = bf->index_max<<BUFFERED_FILE_CHUNK_SHIFT;
+    if (newlen > chunk_max) {
+        byte **new_index;
+        if (chunk_max < 32*BUFFERED_FILE_CHUNK_SIZE)
+            chunk_max = 32*BUFFERED_FILE_CHUNK_SIZE;
+        while (newlen > chunk_max)
+            chunk_max *= 2;
+        chunk_max >>= BUFFERED_FILE_CHUNK_SHIFT;
+        if (bf->index == NULL) {
+            new_index = (byte **)gs_alloc_bytes(bf->memory,
+                                                sizeof(byte **) * chunk_max,
+                                                "buffered_file_index");
+        } else {
+            new_index = (byte **)gs_resize_object(bf->memory,
+                                                  bf->index,
+                                                  sizeof(byte **) * chunk_max,
+                                                  "buffered_file_index");
+        }
+        if (new_index == NULL)
+            return_error(gs_error_VMerror);
+        bf->index = new_index;
+        bf->index_max = chunk_max;
+    }
+
+    /* Now allocate chunks and copy in the data. */
+    do {
+        unsigned int max;
+        byte *chunk = gs_alloc_bytes(bf->memory,
+                                     BUFFERED_FILE_CHUNK_SIZE,
+                                     "buffered_file_chunk");
+        if (chunk == NULL)
+            return_error(gs_error_VMerror);
+        bf->index[start>>BUFFERED_FILE_CHUNK_SHIFT] = chunk;
+        max = len;
+        if (max > BUFFERED_FILE_CHUNK_SIZE)
+            max = BUFFERED_FILE_CHUNK_SIZE;
+        memcpy(chunk, data, max);
+        data += max;
+        bf->len = (start += max);
+        len -= max;
+    } while (len);
+
+    return 0;
+}
+
+static int
+start_need_file(pl_main_instance_t *minst, const char *data, unsigned int len)
+{
+    buffered_file *bf = (buffered_file *)gs_alloc_bytes(minst->memory->non_gc_memory,
+                                                        sizeof(*bf), "buffered_file");
+    if (bf == NULL)
+        return_error(gs_error_VMerror);
+
+    memset(bf, 0, sizeof(*bf));
+    bf->memory = minst->memory->non_gc_memory;
+    minst->buffering_runstring_as_file = bf;
+
+    return buffer_data(minst, data, len);
+}
+
+static void
+drop_buffered_file(buffered_file *bf)
+{
+    size_t i;
+
+    if (bf == NULL)
+        return;
+
+    for (i = (bf->len+BUFFERED_FILE_CHUNK_SIZE-1)>>BUFFERED_FILE_CHUNK_SHIFT; i > 0; i--)
+    {
+        gs_free_object(bf->memory, bf->index[i-1], "buffered_file_chunk");
+    }
+    gs_free_object(bf->memory, bf->index, "buffered_file_index");
+    gs_free_object(bf->memory, bf, "buffered_file_index");
+}
+
+typedef struct
+{
+   gp_file base;
+   buffered_file *bf;
+   gs_offset_t pos;
+} gp_file_buffered;
+
+static int
+buffered_file_getc(gp_file *gp_)
+{
+    gp_file_buffered *gp = (gp_file_buffered *)gp_;
+    gs_offset_t pos = gp->pos;
+
+    if (pos >= gp->bf->len)
+        return -1;
+    gp->pos++;
+
+    return (int)gp->bf->index[pos>>BUFFERED_FILE_CHUNK_SHIFT][pos & ((1<<BUFFERED_FILE_CHUNK_SHIFT)-1)];
+}
+
+static int
+buffered_file_read(gp_file *gp_, size_t size, unsigned int count, void *buf)
+{
+    gp_file_buffered *gp = (gp_file_buffered *)gp_;
+    gs_offset_t pos = gp->pos;
+    gs_offset_t end;
+    gs_offset_t n = 0;
+    size_t bytes;
+
+    bytes = size * count;
+    end = pos + bytes;
+
+    if (end > gp->bf->len)
+        end = gp->bf->len;
+    if (end <= pos)
+        return 0;
+    if (bytes > end - pos)
+        bytes = end - pos;
+
+    while (bytes > 0) {
+        gs_offset_t off = pos & (BUFFERED_FILE_CHUNK_SIZE-1);
+        gs_offset_t left = BUFFERED_FILE_CHUNK_SIZE - off;
+        if (left > bytes)
+            left = bytes;
+        memcpy(buf, &gp->bf->index[pos>>BUFFERED_FILE_CHUNK_SHIFT][off],
+               left);
+        bytes -= left;
+        n += left;
+    }
+    gp->pos += n;
+
+    return n/size;
+}
+
+static int
+buffered_file_seek(gp_file *gp_, gs_offset_t offset, int whence)
+{
+    gp_file_buffered *gp = (gp_file_buffered *)gp_;
+    gs_offset_t pos;
+
+    if (whence == SEEK_END)
+        pos = gp->bf->len + offset;
+    else if (whence == SEEK_CUR)
+        pos = gp->pos + offset;
+    else
+        pos = offset;
+
+    if (pos < 0)
+        pos = 0;
+    else if (pos > gp->bf->len)
+        pos = gp->bf->len;
+    gp->pos = pos;
+
+    return 0;
+}
+
+static gs_offset_t
+buffered_file_tell(gp_file *gp_)
+{
+    gp_file_buffered *gp = (gp_file_buffered *)gp_;
+
+    return gp->pos;
+}
+
+static int
+buffered_file_eof(gp_file *gp_)
+{
+    gp_file_buffered *gp = (gp_file_buffered *)gp_;
+
+    return gp->pos == gp->bf->len;
+}
+
+static int
+buffered_file_seekable(gp_file *gp)
+{
+    return 1;
+}
+
+static gp_file_ops_t buffered_file_ops = {
+    NULL, /* close */
+    buffered_file_getc,
+    NULL, /* putc */
+    buffered_file_read,
+    NULL, /* write */
+    buffered_file_seek,
+    buffered_file_tell,
+    buffered_file_eof,
+    NULL, /* dup */
+    buffered_file_seekable,
+    NULL, /* pread */
+    NULL, /* pwrite */
+    NULL, /* is_char_buffered */
+    NULL, /* fflush */
+    NULL, /* ferror */
+    NULL, /* get_file */
+    NULL, /* clearerr */
+    NULL /* reopen */
+};
+
+static int
+buffered_file_fs_open_file(const gs_memory_t *mem,
+                           void *secret,
+                     const char *fname,
+                     const char *mode,
+                           gp_file **file)
+{
+    gp_file_buffered *gp;
+
+    if (strcmp(fname, "gpdl_buffered_file:"))
+        return 0;
+
+    if (mode[0] != 'r')
+        return_error(gs_error_invalidaccess);
+
+    gp = (gp_file_buffered *)gp_file_alloc(mem, &buffered_file_ops,
+                                           sizeof(*gp), "gp_file_buffered");
+    if (gp == NULL)
+        return_error(gs_error_VMerror); /* Allocation failed */
+
+    /* Setup the crypt-specific state */
+    gp->bf = (buffered_file *)secret;
+
+    /* Return the new instance */
+    *file = &gp->base;
+
+    return 0;
+}
+
+static gsapi_fs_t buffered_file_fs = {
+    buffered_file_fs_open_file,
+    NULL,
+    NULL,
+    NULL,
+    NULL
+};
+
 int
 pl_main_run_string_continue(pl_main_instance_t *minst, const char *str, unsigned int length)
 {
@@ -397,6 +674,9 @@ pl_main_run_string_continue(pl_main_instance_t *minst, const char *str, unsigned
     pl_interp_implementation_t *pjli = minst->implementations[0];
     const byte *initial_pos;
     int unread;
+
+    if (minst->buffering_runstring_as_file)
+        return buffer_data(minst, str, length);
 
     /* First off, get all our data into a single buffer (both anything
      * buffered from previous calls, and anything we have now). */
@@ -455,6 +735,11 @@ pl_main_run_string_continue(pl_main_instance_t *minst, const char *str, unsigned
         }
 
         code = pl_process(minst->curr_implementation, &cursor);
+        if (code == gs_error_NeedFile) {
+            code = start_need_file(minst, (const char *)cursor.ptr + 1, cursor.limit - cursor.ptr);
+            cursor.ptr = cursor.limit;
+            break;
+        }
         if (code == gs_error_NeedInput) {
             code = 0;
             break;
@@ -507,26 +792,6 @@ pl_main_run_string_continue(pl_main_instance_t *minst, const char *str, unsigned
         }
     }
     minst->buf_fill = (int)unread;
-
-    return code;
-}
-
-int
-pl_main_run_string_end(pl_main_instance_t *minst)
-{
-    int code;
-    code = pl_process_end(minst->curr_implementation);
-
-    if (minst->buf_fill != 0)
-        code = gs_note_error(gs_error_syntaxerror);
-    minst->buf_fill = 0;
-
-    if (minst->revert_to_pjl_after_runstring) {
-        int code2 = revert_to_pjli(minst);
-        if (code2 < 0)
-            return code < 0 ? code : code2;
-        minst->revert_to_pjl_after_runstring = 0;
-    }
 
     return code;
 }
@@ -716,6 +981,44 @@ error_fatal_reverted:
     return gs_error_Fatal;
 }
 
+int
+pl_main_run_string_end(pl_main_instance_t *minst)
+{
+    int code;
+
+    if (minst->buffering_runstring_as_file) {
+        buffered_file *bf = minst->buffering_runstring_as_file;
+        minst->buffering_runstring_as_file = NULL;
+        code = gsapi_add_fs(minst, &buffered_file_fs, bf);
+        if (code >= 0) {
+            code = pl_process_end(minst->curr_implementation);
+            if (code >= 0)
+                code = pl_process_file(minst->curr_implementation,
+                                       "gpdl_buffered_file:");
+            gsapi_remove_fs(minst, &buffered_file_fs, bf);
+        }
+        drop_buffered_file(bf);
+    } else {
+        code = pl_process_end(minst->curr_implementation);
+
+        if (code >= 0)
+            code = pl_process_eof(minst->curr_implementation);
+
+        if (minst->buf_fill != 0)
+            code = gs_note_error(gs_error_syntaxerror);
+        minst->buf_fill = 0;
+    }
+
+    if (minst->revert_to_pjl_after_runstring) {
+        int code2 = revert_to_pjli(minst);
+        if (code2 < 0)
+            return code < 0 ? code : code2;
+        minst->revert_to_pjl_after_runstring = 0;
+    }
+
+    return code;
+}
+
 /* We assume that the desired language has been set as minst->implementation here. */
 static int
 pl_main_run_prefix(pl_main_instance_t *minst, const char *prefix_commands)
@@ -817,6 +1120,8 @@ pl_main_delete_instance(pl_main_instance_t *minst)
 
         gs_free_object(mem, impl, "pl_main_languages_delete_instance()");
     }
+
+    drop_buffered_file(minst->buffering_runstring_as_file);
 
     gs_free_object(mem, minst->buf_ptr, "minst_buffer");
 
