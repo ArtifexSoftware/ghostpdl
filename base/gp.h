@@ -191,7 +191,7 @@ struct gp_file_s {
 /* Allocate a structure based on a gp_file, initialise it with the
  * given prototype, and zero the rest of it. Returns NULL on failure
  * to allocate. */
-gp_file *gp_file_alloc(gs_memory_t *mem, const gp_file_ops_t *prototype, size_t size, const char *cname);
+gp_file *gp_file_alloc(const gs_memory_t *mem, const gp_file_ops_t *prototype, size_t size, const char *cname);
 
 /* Called automatically by gp_fclose. May be needed for implementers to
  * clear up allocations if errors occur while opening files. */
