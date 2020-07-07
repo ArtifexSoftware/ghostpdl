@@ -262,7 +262,7 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
             pdfi_set_GrayBackground(&params);
         }
 
-        code = gs_begin_transparency_mask(ctx->pgs, &params, &bbox, true);
+        code = gs_begin_transparency_mask(ctx->pgs, &params, &bbox, false);
         if (code < 0)
             goto exit;
 

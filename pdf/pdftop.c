@@ -27,6 +27,7 @@
 #include "gxdevice.h" /* so we can include gxht.h below */
 #include "gxht.h" /* gsht1.h is incomplete, we need storage size of gs_halftone */
 #include "gsht1.h"
+#include "pdf_device.h"
 
 static int pdfi_install_halftone(pdf_context *ctx, gx_device *pdevice);
 
@@ -151,16 +152,14 @@ pdf_impl_set_device(pl_interp_implementation_t *impl, gx_device *pdevice)
 
     /* TODO: Hack to do what is in the bottom of gs_pdfwr.ps
      * This basically causes the pdfwrite device to be initialized.
-     * Not clear if it really matters but I noticed it getting initialized
-     * in a weird place during patterns if this wasn't here.
-     *
+     * Not sure if this is the correct place to do this.
+     * Note that if running gs/pdfi, it will happen in the gs interpreter.
+     * Putting it here means it only runs in gpdf, which seems correct.
      */
-#if 0
-    if (!strcmp(pdevice->dname, "pdfwrite")) {
+    if (pdfi_device_check_param_exists(pdevice, "ForOPDFRead")) {
         gs_newpath(ctx->pgs);
         gs_fill(ctx->pgs);
     }
-#endif
 
     gs_setaccuratecurves(ctx->pgs, true); /* NB not sure */
     /* Not sure if we should do this at all here, but it seems it should be .3, not 0 */

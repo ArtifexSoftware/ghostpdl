@@ -649,6 +649,7 @@ pdfi_pattern_create(pdf_context *ctx, pdf_array *color_array,
     }
     if (ppcs != NULL) {
         *ppcs = pcs;
+        rc_increment_cs(pcs);
     } else {
         code = gs_setcolorspace(ctx->pgs, pcs);
 #if 0
