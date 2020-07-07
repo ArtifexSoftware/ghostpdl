@@ -1,6 +1,7 @@
 package com.artifex.gsjava;
 
 import com.artifex.gsjava.callbacks.DisplayCallback;
+import com.artifex.gsjava.callbacks.ICalloutFunction;
 import com.artifex.gsjava.callbacks.IPollFunction;
 import com.artifex.gsjava.callbacks.IStdErrFunction;
 import com.artifex.gsjava.callbacks.IStdInFunction;
@@ -62,4 +63,32 @@ public class GSAPI {
 	public static native int gsapi_set_poll(long instance, IPollFunction pollfun);
 
 	public static native int gsapi_set_display_callback(long instance, DisplayCallback displayCallback);
+
+	public static native int gsapi_register_callout(long instance, ICalloutFunction callout, long calloutHandle);
+
+	public static native void gsapi_deregister_callout(long instance, ICalloutFunction callout, long calloutHandle);
+
+	public static native int gsapi_set_arg_encoding(long instance, int encoding);
+
+	public static native int gsapi_set_default_device_list(long instance, byte[] list, int listlen);
+
+	public static native int gsapi_get_default_device_list(long instance, ByteArrayReference list, IntReference listlen);
+
+	public static native int gsapi_init_with_args(long instance, int argc, ByteArrayReference argv);
+
+	public static native int gsapi_run_string_begin(long instance, int userErrors, IntReference pExitCode);
+
+	public static native int gsapi_run_string_continue(long instance, byte[] str, int length, int userErros,
+			IntReference pExitCode);
+
+	public static native int gsapi_run_string_end(long instance, int userErrors, IntReference pExitCode);
+
+	public static native int gsapi_run_string_with_length(long instance, byte[] str, int length, int userErrors,
+			IntReference pExitCode);
+
+	public static native int gsapi_run_string(long instance, byte[] str, int userErrors, IntReference pExitCode);
+
+	public static native int gsapi_run_file(long instance, byte[] fileName, int userErrors, IntReference pExitCode);
+
+	public static native int gsapi_exit(long instance);
 }
