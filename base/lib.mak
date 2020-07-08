@@ -947,7 +947,8 @@ $(GLOBJ)gscspace.$(OBJ) : $(GLSRC)gscspace.c $(AK) $(gx_h)\
  $(gserrors_h) $(memory__h) $(gsstruct_h) $(gsccolor_h) $(gsutil_h)\
  $(gxcmap_h) $(gxcspace_h) $(gxgstate_h) $(gsovrc_h) $(gsstate_h)\
  $(gsdevice_h) $(gxdevcli_h) $(gzstate_h) $(gsnamecl_h) $(stream_h)\
- $(gsicc_h) $(gsicc_manage_h) $(string__h) $(LIB_MAK) $(MAKEDIRS)
+ $(gsicc_h) $(gsicc_manage_h) $(string__h) $(strmio_h) $(gsicc_cache_h)\
+ $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gscspace.$(OBJ) $(C_) $(GLSRC)gscspace.c
 
 $(GLOBJ)gscicach.$(OBJ) : $(GLSRC)gscicach.c $(AK) $(gx_h)\
