@@ -619,6 +619,7 @@ siinterp_h=$(GLSRC)siinterp.h
 siscale_h=$(GLSRC)siscale.h
 sidscale_h=$(GLSRC)sidscale.h
 simscale_h=$(GLSRC)simscale.h
+simscale_foo_h=$(GLSRC)simscale_foo.h
 gximage_h=$(GLSRC)gximage.h
 gxhldevc_h=$(GLSRC)gxhldevc.h
 gsptype2_h=$(GLSRC)gsptype2.h
@@ -2383,7 +2384,7 @@ $(GLOBJ)sidscale.$(OBJ) : $(GLSRC)sidscale.c $(AK)\
 
 # -------------- imagemask scaling filter --------------- #
 
-simscale_=$(GLOBJ)simscale.$(OBJ)
+simscale_=$(GLOBJ)simscale.$(OBJ) $(GLOBJ)simscale_foo.$(OBJ)
 $(GLD)simscale.dev : $(LIB_MAK) $(ECHOGS_XE) $(simscale_) $(LIB_MAK) $(MAKEDIRS)
 	$(SETMOD) $(GLD)simscale $(simscale_)
 
@@ -2391,6 +2392,10 @@ $(GLOBJ)simscale.$(OBJ) : $(GLSRC)simscale.c $(AK) $(memory__h)\
  $(gserrors_h) $(simscale_h) $(strimpl_h) $(sisparam_h)\
  $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)simscale.$(OBJ) $(C_) $(GLSRC)simscale.c
+
+$(GLOBJ)simscale_foo.$(OBJ) : $(GLSRC)simscale_foo.c $(AK) $(simscale_foo_h)\
+  $(LIB_MAK) $(MAKEDIRS)
+	$(GLCC) $(GLO_)simscale_foo.$(OBJ) $(C_) $(GLSRC)simscale_foo.c
 
 # ---------------- Extended halftone support ---------------- #
 # This is only used by one non-PostScript-based project.
