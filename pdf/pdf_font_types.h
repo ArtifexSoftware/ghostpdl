@@ -109,6 +109,9 @@ typedef struct pdf_font_type0_s {
 
 typedef struct pdf_font_type1_s {
     pdf_font_common;
+    gs_string *Subrs;
+    pdf_dict *CharStrings;
+    int NumSubrs;
 } pdf_font_type1;
 
 typedef struct pdf_font_type3_s {
@@ -133,6 +136,17 @@ typedef struct pdf_font_truetype_s {
     int64_t descflags;
     pdfi_truetype_cmap cmap;
 } pdf_font_truetype;
+
+typedef struct pdf_cidfont_type0 {
+    pdf_font_base;
+    gs_string sfnt;
+    pdf_dict *CIDSystemInfo;
+    int64_t DW;
+    pdf_array *W;
+    pdf_array *DW2;
+    pdf_array *W2;
+    font_proc_glyph_info((*orig_glyph_info));
+} pdf_cidfont_type0;
 
 typedef struct pdf_cidfont_type2 {
     pdf_font_base;

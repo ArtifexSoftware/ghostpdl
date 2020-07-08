@@ -414,6 +414,9 @@ typedef struct pdf_context_s
      */
     pdf_stream *current_stream;
     stream_save current_stream_save;
+
+    pdf_dict *pdffontmap;
+
     int (*end_page) (struct pdf_context_s *ctx);
 #if REFCNT_DEBUG
     uint64_t UID;

@@ -157,8 +157,7 @@ static int alloc_type3_font(pdf_context *ctx, pdf_font_type3 **font)
 
     t3font->pfont->client_data = (void *)t3font;
     t3font->pfont->id = gs_next_ids(ctx->memory, 1);
-    t3font->pfont->UID.id = no_UniqueID;
-    t3font->pfont->UID.xvalues = NULL;
+    uid_set_UniqueID(&t3font->pfont->UID, no_UniqueID);
 
     *font = (pdf_font_type3 *)t3font;
     return 0;
@@ -196,7 +195,6 @@ int pdfi_read_type3_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
         return code;
 
     font->object_num = font_dict->object_num;
-    font->pfont->id = font_dict->object_num;
 
     code = pdfi_dict_get_type(ctx, font_dict, "FontBBox", PDF_ARRAY, &obj);
     if (code < 0)

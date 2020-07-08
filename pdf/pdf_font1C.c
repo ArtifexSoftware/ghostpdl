@@ -16,10 +16,18 @@
 /* code for CFF (type 1C) font handling */
 
 #include "pdf_int.h"
-#include "pdf_font1C.h"
+#include "pdf_types.h"
 #include "pdf_font_types.h"
+#include "pdf_font.h"
+#include "pdf_font1C.h"
+#include "pdf_fontps.h"
 
 int pdfi_read_type1C_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict, pdf_dict *page_dict, gs_font **pfont)
 {
+    int code;
+    byte *fbuf = NULL;
+    int fbuflen = 0;
+    pdf_font *ppfont = NULL;
+
     return_error(gs_error_invalidfont);
 }

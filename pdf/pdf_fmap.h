@@ -13,13 +13,8 @@
    CA 94945, U.S.A., +1(415)492-9861, for further information.
 */
 
-/* Type 1 font handling routines */
-
-#ifndef PDF_TYPE1_FONT
-#define PDF_TYPE1_FONT
-
-int pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict, pdf_dict *page_dict, gs_font **pfont);
-int pdfi_free_font_type1(pdf_obj *font);
-int pdfi_t1_global_glyph_code(const gs_font *pfont, gs_const_string *gstr, gs_glyph *pglyph);
-
-#endif
+/* We expect to lookup a name, but what we get back might be a name,
+   or might be a string.
+ */
+int
+pdf_fontmap_lookup_font(pdf_context *ctx, pdf_name *fname, pdf_obj **mapname);

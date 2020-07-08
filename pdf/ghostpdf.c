@@ -916,8 +916,8 @@ pdf_context *pdfi_create_context(gs_memory_t *pmem)
     code *= ctx->stack_size;
     ctx->stack_limit = ctx->stack_bot + ctx->stack_size;
 
-    ctx->font_dir = gs_font_dir_alloc2(ctx->memory, ctx->memory);
-    if (ctx->font_dir == NULL) {
+    code = pdfi_init_font_directory(ctx);
+    if (code < 0) {
         gs_free_object(pmem->non_gc_memory, ctx->stack_bot, "pdf_create_context");
         gs_free_object(pmem->non_gc_memory, ctx, "pdf_create_context");
         gs_gstate_free(pgs);
@@ -1178,7 +1178,7 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
         gx_purge_selected_cached_chars(ctx->font_dir, pdfi_fontdir_purge_all, (void *)NULL);
         gs_free_object(ctx->memory, ctx->font_dir, "pdfi_free_context");
     }
-
+    pdfi_countdown(ctx->pdffontmap);
     gs_free_object(ctx->memory, ctx, "pdfi_free_context");
     return 0;
 }

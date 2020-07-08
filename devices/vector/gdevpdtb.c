@@ -349,6 +349,8 @@ pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
      * this is required for PCL, see 'pdf_free_pdf_font_cache' in gdevpdf.c
      * for further details.
      */
+    pdev->pdf_font_dir->global_glyph_code = font->dir->global_glyph_code;
+
     pbfont->copied->dir = pbfont->complete->dir = pdev->pdf_font_dir;
     pbfont->is_standard = is_standard;
     if (pfname->size > 0) {

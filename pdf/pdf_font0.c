@@ -45,7 +45,7 @@ static font_type pdfi_fonttype_picker(byte *buf, int64_t buflen)
         else if (MAKEMAGIC(buf[0], buf[1], buf[2], buf[3]) == MAKEMAGIC(1, 0, 4, 1)) {
             return ft_CID_encrypted; /* 1C/CFF */
         }
-        else if (MAKEMAGIC(buf[0], buf[1], 0, 0) == MAKEMAGIC(127, 1, 0, 0)) {
+        else if (MAKEMAGIC(buf[0], buf[1], 0, 0) == MAKEMAGIC(128, 1, 0, 0)) {
             return ft_CID_encrypted; /* pfb */
         }
     }
@@ -257,6 +257,7 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     pfont0->dir = ctx->font_dir;
     pfont0->is_resource = false;
     gs_notify_init(&pfont0->notify_list, ctx->memory);
+    pfont0->id = gs_next_ids(ctx->memory, 1);
     pfont0->base = (gs_font *) pfont0;
     pfont0->client_data = pdft0;
     pfont0->WMode = pcmap->wmode;

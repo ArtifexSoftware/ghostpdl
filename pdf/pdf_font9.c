@@ -22,6 +22,7 @@
 #include "pdf_int.h"
 #include "pdf_font.h"
 #include "pdf_font0.h"
+#include "pdf_fontps.h"
 #include "pdf_font_types.h"
 #include "pdf_stack.h"
 #include "pdf_file.h"
@@ -30,7 +31,15 @@
 
 int pdfi_read_cidtype0_font(pdf_context *ctx, pdf_dict *font_dict, byte *fbuf, int fbuflen, pdf_font **ppfont)
 {
+#if 0
+    int code;
+
+    code = pdfi_read_ps_font(ctx, font_dict, fbuf, fbuflen, ppfont);
+    if (code < 0) return code;
+#else
     gs_free_object(ctx->memory, fbuf, "pdfi_read_cidtype0_font");
+#endif
+
     return_error(gs_error_invalidfont);
 }
 

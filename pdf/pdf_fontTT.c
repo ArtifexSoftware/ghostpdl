@@ -97,7 +97,8 @@ pdfi_alloc_tt_font(pdf_context *ctx, pdf_font_truetype **font, bool is_cid)
     pfont->InBetweenSize = fbit_use_outlines;
     pfont->TransformedChar = fbit_use_outlines;
     /* We may want to do something clever with an XUID here */
-    uid_set_UniqueID(&pfont->UID, gs_next_ids(ctx->memory, 1));
+    pfont->id = gs_next_ids(ctx->memory, 1);
+    uid_set_UniqueID(&pfont->UID, pfont->id);
     /* The buildchar proc will be filled in by FAPI -
        we won't worry about working without FAPI */
     pfont->procs.encode_char = pdfi_encode_char;
@@ -169,14 +170,6 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
     }
     font->FontDescriptor = (pdf_dict *)fontdesc;
     fontdesc = NULL;
-    if (font_dict->object_num != 0) {
-        font->object_num = font_dict->object_num;
-        font->pfont->id = font_dict->object_num;
-    }
-    else {
-        /* For now, anyway */
-        font->pfont->id = font->pfont->UID.id;
-    }
 
     code = pdfi_dict_get_number(ctx, font_dict, "FirstChar", &f);
     if (code < 0) {

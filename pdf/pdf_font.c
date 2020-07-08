@@ -314,6 +314,8 @@ int pdfi_free_font(pdf_obj *font)
             return pdfi_free_font_type0((pdf_obj *)font);
             break;
         case e_pdf_font_type1:
+            return pdfi_free_font_type1((pdf_obj *)font);
+            break;
         case e_pdf_font_cff:
         case e_pdf_font_type3:
             return pdfi_free_font_type3((pdf_obj *)font);
@@ -482,38 +484,66 @@ int pdfi_glyph_name(gs_font * pfont, gs_glyph glyph, gs_const_string * pstr)
     pdf_name *GlyphName = NULL;
 
     font = (pdf_font *)pfont->client_data;
-    if (font->Encoding != NULL)
-        code = pdfi_array_get(font->ctx, font->Encoding, (uint64_t)glyph, (pdf_obj **)&GlyphName);
-    if (code < 0 && !font->fake_glyph_names)
-        return code;
 
-    /* For the benefit of the vector devices, if a glyph index is outside the encoding, we create a fake name */
-    if (GlyphName == NULL) {
-        int i;
-        char cid_name[5 + sizeof(gs_glyph) * 3 + 1];
-        for (i = 0; i < font->LastChar; i++)
-            if (font->fake_glyph_names[i].data == NULL) break;
-
-         if (i == font->LastChar) return_error(gs_error_invalidfont);
-
-         gs_sprintf(cid_name, "glyph%lu", (ulong) glyph);
-
-         pstr->data = font->fake_glyph_names[i].data =
-                       gs_alloc_bytes(OBJ_MEMORY(font), strlen(cid_name) + 1, "pdfi_glyph_name: fake name");
-         if (font->fake_glyph_names[i].data == NULL)
-             return_error(gs_error_VMerror);
-         pstr->size = font->fake_glyph_names[i].size = strlen(cid_name);
-         memcpy(font->fake_glyph_names[i].data, cid_name, strlen(cid_name) + 1);
-         return 0;
+    if (glyph > gs_c_min_std_encoding_glyph && glyph < GS_MIN_CID_GLYPH) {
+        code = gs_c_glyph_name(glyph, pstr);
     }
+    else {
+        if (font->Encoding != NULL)
+            code = pdfi_array_get(font->ctx, font->Encoding, (uint64_t)glyph, (pdf_obj **)&GlyphName);
+        if (code < 0 && !font->fake_glyph_names)
+            return code;
+        /* For the benefit of the vector devices, if a glyph index is outside the encoding, we create a fake name */
+        if (GlyphName == NULL) {
+            int i;
+            char cid_name[5 + sizeof(gs_glyph) * 3 + 1];
+            for (i = 0; i < font->LastChar; i++)
+                if (font->fake_glyph_names[i].data == NULL) break;
 
-    code = pdfi_get_name_index(font->ctx, (char *)GlyphName->data, GlyphName->length, &index);
-    if (code < 0) {
+             if (i == font->LastChar) return_error(gs_error_invalidfont);
+
+             gs_sprintf(cid_name, "glyph%lu", (ulong) glyph);
+
+             pstr->data = font->fake_glyph_names[i].data =
+                           gs_alloc_bytes(OBJ_MEMORY(font), strlen(cid_name) + 1, "pdfi_glyph_name: fake name");
+             if (font->fake_glyph_names[i].data == NULL)
+                 return_error(gs_error_VMerror);
+             pstr->size = font->fake_glyph_names[i].size = strlen(cid_name);
+             memcpy(font->fake_glyph_names[i].data, cid_name, strlen(cid_name) + 1);
+             return 0;
+        }
+
+        code = pdfi_get_name_index(font->ctx, (char *)GlyphName->data, GlyphName->length, &index);
+        if (code < 0) {
+            pdfi_countdown(GlyphName);
+            return code;
+        }
+
+        code = pdfi_name_from_index(font->ctx, index, (unsigned char **)&pstr->data, &pstr->size);
         pdfi_countdown(GlyphName);
-        return code;
     }
-
-    code = pdfi_name_from_index(font->ctx, index, (unsigned char **)&pstr->data, &pstr->size);
-    pdfi_countdown(GlyphName);
     return code;
+}
+
+
+static int pdfi_global_glyph_code(const gs_font *pfont, gs_const_string *gstr, gs_glyph *pglyph)
+{
+    int code = 0;
+    if (pfont->FontType == ft_encrypted) {
+        code = pdfi_t1_global_glyph_code(pfont, gstr, pglyph);
+    }
+    else {
+        code = gs_note_error(gs_error_invalidaccess);
+    }
+    return code;
+}
+
+int pdfi_init_font_directory(pdf_context *ctx)
+{
+    ctx->font_dir = gs_font_dir_alloc2(ctx->memory, ctx->memory);
+    if (ctx->font_dir == NULL) {
+        return_error(gs_error_VMerror);
+    }
+    ctx->font_dir->global_glyph_code = pdfi_global_glyph_code;
+    return 0;
 }

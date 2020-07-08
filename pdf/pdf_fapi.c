@@ -27,13 +27,45 @@
 #include "gscoord.h"
 #include "gspath.h"
 #include "pdf_int.h"
+#include "pdf_dict.h"
 #include "pdf_array.h"
 #include "pdf_font.h"
 #include "pdf_agl.h"
 
 /* forward declarations for the pdfi_ff_stub definition */
 static int
+pdfi_fapi_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsigned short *ret);
+
+static int
 pdfi_fapi_get_long(gs_fapi_font * ff, gs_fapi_font_feature var_id, int index, unsigned long *ret);
+
+static int
+pdfi_fapi_get_float(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, float *ret);
+
+static int
+pdfi_fapi_get_name(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, char *buffer, int len);
+
+static int
+pdfi_fapi_get_proc(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, char *buffer);
+
+static int
+pdfi_fapi_get_gsubr(gs_fapi_font *ff, int index, byte *buf, int buf_length);
+
+static int
+pdfi_fapi_get_subr(gs_fapi_font *ff, int index, byte *buf, int buf_length);
+
+static int
+pdfi_fapi_get_raw_subr(gs_fapi_font *ff, int index, byte *buf, int buf_length);
+
+static int
+pdfi_fapi_serialize_tt_font(gs_fapi_font * ff, void *buf, int buf_size);
+
+static int
+pdfi_fapi_get_charstring(gs_fapi_font *ff, int index, byte *buf, ushort buf_length);
+
+static int
+pdfi_fapi_get_charstring_name(gs_fapi_font *ff, int index, byte *buf, ushort buf_length);
+
 
 static int
 pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_string * charstring,
@@ -43,8 +75,6 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
 static int
 pdfi_fapi_get_glyph(gs_fapi_font * ff, gs_glyph char_code, byte * buf, int buf_length);
 
-static int
-pdfi_fapi_serialize_tt_font(gs_fapi_font * ff, void *buf, int buf_size);
 
 static int
 pdfi_get_glyphdirectory_data(gs_fapi_font * ff, int char_code,
@@ -60,51 +90,382 @@ static int
 pdfi_fapi_get_metrics(gs_fapi_font * ff, gs_string * char_name, gs_glyph cid, double *m, bool vertical);
 
 static const gs_fapi_font pdfi_ff_stub = {
-    0,                          /* server_font_data */
-    0,                          /* need_decrypt */
-    NULL,                       /* const gs_memory_t */
-    0,                          /* font_file_path */
-    0,                          /* full_font_buf */
-    0,                          /* full_font_buf_len */
-    0,                          /* subfont */
-    false,                      /* is_type1 */
-    false,                      /* is_cid */
-    false,                      /* is_outline_font */
-    false,                      /* is_mtx_skipped */
-    false,                      /* is_vertical */
-    false,                      /* metrics_only */
+    0,                                              /* server_font_data */
+    0,                                              /* need_decrypt */
+    NULL,                                           /* const gs_memory_t */
+    0,                                              /* font_file_path */
+    0,                                              /* full_font_buf */
+    0,                                              /* full_font_buf_len */
+    0,                                              /* subfont */
+    false,                                          /* is_type1 */
+    false,                                          /* is_cid */
+    false,                                          /* is_outline_font */
+    false,                                          /* is_mtx_skipped */
+    false,                                          /* is_vertical */
+    false,                                          /* metrics_only */
     {{3, 1}, {1, 0}, {3, 0}, {3, 10}, {-1, -1}},    /* ttf_cmap_req */
     {-1, -1},                                       /* ttf_cmap_selected */
-    0,                          /* client_ctx_p */
-    0,                          /* client_font_data */
-    0,                          /* client_font_data2 */
-    0,                          /* char_data */
-    0,                          /* char_data_len */
-    0,                          /* embolden */
-    NULL,                       /* get_word */
-    pdfi_fapi_get_long,           /* get_long */
-    NULL,                       /* get_float */
-    NULL,                       /* get_name */
-    NULL,                       /* get_proc */
-    NULL,                       /* get_gsubr */
-    NULL,                       /* get_subr */
-    NULL,                       /* get_raw_subr */
-    pdfi_fapi_get_glyph,          /* get_glyph */
-    pdfi_fapi_serialize_tt_font,  /* serialize_tt_font */
-    NULL,                       /* get_charstring */
-    NULL,                       /* get_charstring_name */
-    pdfi_get_glyphdirectory_data, /* get_GlyphDirectory_data_ptr */
-    pdfi_fapi_get_glyphname_or_cid, /* get_glyphname_or_cid */
-    pdfi_fapi_get_metrics,        /* fapi_get_metrics */
-    pdfi_fapi_set_cache           /* fapi_set_cache */
+    0,                                              /* client_ctx_p */
+    0,                                              /* client_font_data */
+    0,                                              /* client_font_data2 */
+    0,                                              /* char_data */
+    0,                                              /* char_data_len */
+    0,                                              /* embolden */
+    pdfi_fapi_get_word,                             /* get_word */
+    pdfi_fapi_get_long,                             /* get_long */
+    pdfi_fapi_get_float,                            /* get_float */
+    pdfi_fapi_get_name,                             /* get_name */
+    pdfi_fapi_get_proc,                             /* get_proc */
+    pdfi_fapi_get_gsubr,                            /* get_gsubr */
+    pdfi_fapi_get_subr,                             /* get_subr */
+    pdfi_fapi_get_raw_subr,                         /* get_raw_subr */
+    pdfi_fapi_get_glyph,                            /* get_glyph */
+    pdfi_fapi_serialize_tt_font,                    /* serialize_tt_font */
+    pdfi_fapi_get_charstring,                       /* get_charstring */
+    pdfi_fapi_get_charstring_name,                  /* get_charstring_name */
+    pdfi_get_glyphdirectory_data,                   /* get_GlyphDirectory_data_ptr */
+    pdfi_fapi_get_glyphname_or_cid,                 /* get_glyphname_or_cid */
+    pdfi_fapi_get_metrics,                          /* fapi_get_metrics */
+    pdfi_fapi_set_cache                             /* fapi_set_cache */
 };
+
+static inline ushort
+float_to_ushort(float v)
+{
+    return ((ushort) (v * 16)); /* fixme : the scale may depend on renderer */
+}
+
+static int
+pdfi_fapi_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsigned short *ret)
+{
+    int code = 0;
+    gs_font_type1 *pfont = (gs_font_type1 *) ff->client_font_data;
+
+    switch ((int)var_id) {
+        case gs_fapi_font_feature_Weight:
+            *ret = 0;           /* wrong */
+            break;
+        case gs_fapi_font_feature_ItalicAngle:
+            *ret = 0;           /* wrong */
+            break;
+        case gs_fapi_font_feature_IsFixedPitch:
+            *ret = 0;           /* wrong */
+            break;
+        case gs_fapi_font_feature_UnderLinePosition:
+            *ret = 0;           /* wrong */
+            break;
+        case gs_fapi_font_feature_UnderlineThickness:
+            *ret = 0;           /* wrong */
+            break;
+        case gs_fapi_font_feature_FontType:
+            *ret = (pfont->FontType == 2 ? 2 : 1);
+            break;
+        case gs_fapi_font_feature_FontBBox:
+            switch (index) {
+                case 0:
+                    *ret = ((ushort) pfont->FontBBox.p.x);
+                    break;
+                case 1:
+                    *ret = ((ushort) pfont->FontBBox.p.y);
+                    break;
+                case 2:
+                    *ret = ((ushort) pfont->FontBBox.q.x);
+                    break;
+                case 3:
+                    *ret = ((ushort) pfont->FontBBox.q.y);
+                    break;
+                default:
+                    code = gs_note_error(gs_error_rangecheck);
+            }
+            break;
+        case gs_fapi_font_feature_BlueValues_count:
+            *ret = pfont->data.BlueValues.count;
+            break;
+        case gs_fapi_font_feature_BlueValues:
+            *ret =  (float_to_ushort(pfont->data.BlueValues.values[index]));
+            break;
+        case gs_fapi_font_feature_OtherBlues_count:
+            *ret = pfont->data.OtherBlues.count;
+            break;
+        case gs_fapi_font_feature_OtherBlues:
+            *ret = (float_to_ushort(pfont->data.OtherBlues.values[index]));
+            break;
+        case gs_fapi_font_feature_FamilyBlues_count:
+            *ret = pfont->data.FamilyBlues.count;
+            break;
+        case gs_fapi_font_feature_FamilyBlues:
+            *ret = (float_to_ushort(pfont->data.FamilyBlues.values[index]));
+            break;
+        case gs_fapi_font_feature_FamilyOtherBlues_count:
+            *ret = pfont->data.FamilyOtherBlues.count;
+            break;
+        case gs_fapi_font_feature_FamilyOtherBlues:
+            *ret = (float_to_ushort(pfont->data.FamilyOtherBlues.values[index]));
+            break;
+        case gs_fapi_font_feature_BlueShift:
+            *ret = float_to_ushort(pfont->data.BlueShift);
+            break;
+        case gs_fapi_font_feature_BlueFuzz:
+            *ret = float_to_ushort(pfont->data.BlueShift);
+            break;
+        case gs_fapi_font_feature_StdHW:
+            *ret = (pfont->data.StdHW.count == 0 ? 0 : float_to_ushort(pfont->data.StdHW.values[0]));   /* UFST bug ? */
+            break;
+        case gs_fapi_font_feature_StdVW:
+            *ret = (pfont->data.StdVW.count == 0 ? 0 : float_to_ushort(pfont->data.StdVW.values[0]));   /* UFST bug ? */
+            break;
+        case gs_fapi_font_feature_StemSnapH_count:
+            *ret = pfont->data.StemSnapH.count;
+            break;
+        case gs_fapi_font_feature_StemSnapH:
+            *ret = float_to_ushort(pfont->data.StemSnapH.values[index]);
+            break;
+        case gs_fapi_font_feature_StemSnapV_count:
+            *ret = pfont->data.StemSnapV.count;
+            break;
+        case gs_fapi_font_feature_StemSnapV:
+            *ret = float_to_ushort(pfont->data.StemSnapV.values[index]);
+            break;
+        case gs_fapi_font_feature_ForceBold:
+            *ret = pfont->data.ForceBold;
+            break;
+        case gs_fapi_font_feature_LanguageGroup:
+            *ret = pfont->data.LanguageGroup;
+            break;
+        case gs_fapi_font_feature_lenIV:
+            *ret = ff->need_decrypt ? 0 : pfont->data.lenIV;
+            break;
+#if 0
+        case gs_fapi_font_feature_GlobalSubrs_count:
+            {
+                ref *Private, *GlobalSubrs;
+
+                if (pfont->FontType == ft_encrypted2) {
+                    if (dict_find_string(pdr, "Private", &Private) <= 0) {
+                        *ret = 0;
+                        break;
+                    }
+                    if (dict_find_string(Private, "GlobalSubrs", &GlobalSubrs) <= 0) {
+                        *ret = 0;
+                        break;
+                    }
+                    *ret = r_size(GlobalSubrs);
+                    break;
+                }
+                *ret = 0;
+                break;
+            }
+#endif
+        case gs_fapi_font_feature_Subrs_count:
+            {
+                if (pfont->FontType == ft_encrypted) {
+                    pdf_font_type1 *pdffont1 = (pdf_font_type1 *)pfont->client_data;
+                    *ret = pdffont1->NumSubrs;
+                }
+                break;
+            }
+        case gs_fapi_font_feature_CharStrings_count:
+            {
+                if (pfont->FontType == ft_encrypted) {
+                    pdf_font_type1 *pdffont1 = (pdf_font_type1 *)pfont->client_data;
+                    *ret = pdffont1->CharStrings->entries;
+                }
+                break;
+            }
+        default:
+            code = gs_error_undefined;
+            *ret = -1;
+    }
+    return code;
+}
 
 static int
 pdfi_fapi_get_long(gs_fapi_font * ff, gs_fapi_font_feature var_id, int index, unsigned long *ret)
 {
-    (void)index;
-    *ret = -1;
+    gs_font_type1 *pfont = (gs_font_type1 *) ff->client_font_data;
+    int code = 0;
 
+    switch ((int)var_id) {
+        case gs_fapi_font_feature_UniqueID:
+            *ret = pfont->UID.id;
+            break;
+        case gs_fapi_font_feature_BlueScale:
+            *ret = (ulong) (pfont->data.BlueScale * 65536);
+            break;
+        case gs_fapi_font_feature_Subrs_total_size:
+            {
+                if (pfont->FontType == ft_encrypted) {
+                    pdf_font_type1 *pdffont1 = (pdf_font_type1 *)pfont->client_data;
+                    int i;
+                    *ret = 0;
+                    for (i = 0; i < pdffont1->NumSubrs; i++) {
+                        *ret += pdffont1->Subrs[i].size;
+                    }
+                }
+            }
+            break;
+        default:
+            code = gs_error_undefined;
+            break;
+    }
+    return code;
+}
+
+static int
+pdfi_fapi_get_float(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, float *ret)
+{
+    gs_font_base *pbfont = (gs_font_base *) ff->client_font_data2;
+    int code = 0;
+    gs_fapi_server *I = pbfont->FAPI;
+
+    switch ((int)var_id) {
+        case gs_fapi_font_feature_FontMatrix:
+            {
+                double FontMatrix_div;
+                gs_matrix m, *mptr;
+
+                if (I && I->get_fontmatrix) {
+                    FontMatrix_div = 1;
+                    mptr = &m;
+                    I->get_fontmatrix(I, mptr);
+                }
+                else {
+                    FontMatrix_div = ((ff->is_cid && (!FAPI_ISCIDFONT(pbfont))) ? 1000 : 1);
+                    mptr = &(pbfont->base->FontMatrix);
+                }
+                switch (index) {
+                    case 0:
+                    default:
+                        *ret = (mptr->xx / FontMatrix_div);
+                        break;
+                    case 1:
+                        *ret = (mptr->xy / FontMatrix_div);
+                        break;
+                    case 2:
+                        *ret = (mptr->yx / FontMatrix_div);
+                        break;
+                    case 3:
+                        *ret = (mptr->yy / FontMatrix_div);
+                        break;
+                    case 4:
+                        *ret = (mptr->tx / FontMatrix_div);
+                        break;
+                    case 5:
+                        *ret = (mptr->ty / FontMatrix_div);
+                        break;
+                }
+                break;
+            }
+        default:
+            code = gs_error_undefined;
+    }
+
+    return code;
+}
+
+/* Only required for multiple masters, I believe */
+static int
+pdfi_fapi_get_name(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, char *buffer, int len)
+{
+    (void)ff;
+    (void)var_id;
+    (void)index;
+    (void)buffer;
+    (void)len;
+    return 0;
+}
+
+/* Only required for multiple masters, I believe */
+static int
+pdfi_fapi_get_proc(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, char *buffer)
+{
+    (void)ff;
+    (void)var_id;
+    (void)index;
+    (void)buffer;
+    return 0;
+}
+
+static int
+pdfi_fapi_get_gsubr(gs_fapi_font *ff, int index, byte *buf, int buf_length)
+{
+    return 0;
+}
+
+static inline void
+decode_bytes(byte *p, const byte *s, int l, int lenIV)
+{
+    ushort state = 4330;
+
+    for (; l; s++, l--) {
+        uchar c = (*s ^ (state >> 8));
+
+        state = (*s + state) * crypt_c1 + crypt_c2;
+        if (lenIV > 0)
+            lenIV--;
+        else {
+            *p = c;
+            p++;
+        }
+    }
+}
+
+static int
+pdfi_fapi_get_subr(gs_fapi_font *ff, int index, byte *buf, int buf_length)
+{
+    gs_font_type1 *pfont = (gs_font_type1 *) ff->client_font_data;
+    int code = 0;
+
+    if (pfont->FontType == ft_encrypted) {
+        pdf_font_type1 *pdffont1 = (pdf_font_type1 *)pfont->client_data;
+        if (index > pdffont1->NumSubrs) {
+            code = gs_error_rangecheck;
+        }
+        else {
+            code = pdffont1->Subrs[index].size;
+            if (buf && buf_length >= code) {
+                if (ff->need_decrypt && pfont->data.lenIV >= 0) {
+                    decode_bytes(buf, pdffont1->Subrs[index].data, code, pfont->data.lenIV);
+                }
+                else {
+                    memcpy(buf, pdffont1->Subrs[index].data, code);
+                }
+            }
+        }
+    }
+    return code;
+}
+
+static int
+pdfi_fapi_get_raw_subr(gs_fapi_font *ff, int index, byte *buf, int buf_length)
+{
+    gs_font_type1 *pfont = (gs_font_type1 *) ff->client_font_data;
+    int code = 0;
+
+    if (pfont->FontType == ft_encrypted) {
+        pdf_font_type1 *pdffont1 = (pdf_font_type1 *)pfont->client_data;
+        if (index > pdffont1->NumSubrs) {
+            code = gs_error_rangecheck;
+        }
+        else {
+            code = pdffont1->Subrs[index].size;
+            if (buf && buf_length >= code) {
+                memcpy(buf, pdffont1->Subrs[index].data, code);
+            }
+        }
+    }
+    return code;
+}
+
+static int
+pdfi_fapi_get_charstring(gs_fapi_font *ff, int index, byte *buf, ushort buf_length)
+{
+    return 0;
+}
+
+static int
+pdfi_fapi_get_charstring_name(gs_fapi_font *ff, int index, byte *buf, ushort buf_length)
+{
     return 0;
 }
 
@@ -236,7 +597,38 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
 static int
 pdfi_fapi_get_glyph(gs_fapi_font * ff, gs_glyph char_code, byte * buf, int buf_length)
 {
-    return 0;
+    gs_font_base *pbfont = (gs_font_base *) ff->client_font_data2;
+    int code = 0;
+
+    /* This should only get called for Postscript-type fonts */
+    if (ff->is_type1) {
+        gs_font_type1 *pfont1 = (gs_font_type1 *) ff->client_font_data;
+        pdf_name *glyphname = NULL;
+        pdf_string *charstring = NULL;
+        pdf_font_type1 *pdffont1 = (pdf_font_type1 *)pbfont->client_data;
+        code = pdfi_array_get(pdffont1->ctx, pdffont1->Encoding, (uint64_t)char_code, (pdf_obj **)&glyphname);
+        if (code < 0) {
+            pdfi_countdown(glyphname);
+            return code;
+        }
+        code = pdfi_dict_get_by_key(pdffont1->ctx, pdffont1->CharStrings, glyphname, (pdf_obj **)&charstring);
+        pdfi_countdown(glyphname);
+        if (code < 0) {
+            code = pdfi_dict_get(pdffont1->ctx, pdffont1->CharStrings, ".notdef", (pdf_obj **)&charstring);
+        }
+        code = charstring->length;
+        if (buf != NULL && code <= buf_length) {
+            if (ff->need_decrypt && pfont1->data.lenIV >= 0)
+                decode_bytes(buf, charstring->data, buf_length, pfont1->data.lenIV);
+            else
+                memcpy(buf, charstring->data, charstring->length);
+        }
+        pdfi_countdown(charstring);
+    }
+    else {
+        code = gs_error_invalidaccess;
+    }
+    return code;
 }
 
 static int

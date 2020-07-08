@@ -91,7 +91,7 @@ pdfi_alloc_cidtype2_font(pdf_context *ctx, pdf_cidfont_type2 **font, bool is_cid
         pdfi_countdown(ttfont);
         return_error(gs_error_VMerror);
     }
-    memset(pfont, 0x00, sizeof(gs_font_type42));
+    memset(pfont, 0x00, sizeof(gs_font_cid2));
 
     ttfont->pfont = (gs_font_base *)pfont;
 
@@ -117,7 +117,8 @@ pdfi_alloc_cidtype2_font(pdf_context *ctx, pdf_cidfont_type2 **font, bool is_cid
     pfont->InBetweenSize = fbit_use_outlines;
     pfont->TransformedChar = fbit_use_outlines;
     /* We may want to do something clever with an XUID here */
-    uid_set_UniqueID(&pfont->UID, gs_next_ids(ctx->memory, 1));
+    pfont->id = gs_next_ids(ctx->memory, 1);
+    uid_set_UniqueID(&pfont->UID, pfont->id);
     /* The buildchar proc will be filled in by FAPI -
        we won't worry about working without FAPI */
     pfont->procs.encode_char = pdfi_encode_char;
@@ -174,14 +175,6 @@ int pdfi_read_cidtype2_font(pdf_context *ctx, pdf_dict *font_dict, byte *buf, in
     pdfi_countup(font_dict);
     font->FontDescriptor = (pdf_dict *)fontdesc;
     fontdesc = NULL;
-    if (font_dict->object_num != 0) {
-        font->object_num = font_dict->object_num;
-        font->pfont->id = font_dict->object_num;
-    }
-    else {
-        /* For now, anyway */
-        font->pfont->id = font->pfont->UID.id;
-    }
 
     /* Ownership of buf is now part of the font and managed via its lifetime */
     font->sfnt.data = buf;
