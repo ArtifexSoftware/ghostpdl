@@ -194,7 +194,7 @@ extern const stream_template s_zlibE_template;
     500000,	    /* ImageMemory */ \
     0,		    /* LockDistillerParams (false) */ \
     0,		    /* LZWEncodePages (false) */ \
-    1,		    /* Overprintmode (OPM) */ \
+    0,		    /* Overprintmode (OPM) */ \
     0,		    /* PreserveOPIComments (false) */ \
     1,		    /* UseFlateCompression (true) */ \
         /* Color processing parameters */\
