@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<stetic-interface>
+  <configuration>
+    <images-root-path>..</images-root-path>
+    <target-gtk-version>2.12</target-gtk-version>
+  </configuration>
+  <import>
+    <widget-library name="../bin/Debug/gtk_viewer.exe" internal="true" />
+  </import>
+  <widget class="Gtk.Window" id="gtk_viewer.src.gsOutput" design-size="400 300">
+    <property name="MemberName" />
+    <property name="Title" translatable="yes">gsOutput</property>
+    <property name="WindowPosition">CenterOnParent</property>
+    <child>
+      <placeholder />
+    </child>
+  </widget>
+</stetic-interface>
