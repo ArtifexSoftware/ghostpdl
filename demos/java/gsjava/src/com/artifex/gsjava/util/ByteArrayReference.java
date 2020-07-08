@@ -1,7 +1,13 @@
-package com.artifex.gsjava;
+package com.artifex.gsjava.util;
 
 import java.util.Arrays;
 
+/**
+ * Stores a reference to a byte array.
+ *
+ * @author Ethan Vrhel
+ *
+ */
 public class ByteArrayReference {
 
 	public volatile byte[] value;
@@ -10,7 +16,7 @@ public class ByteArrayReference {
 		this(null);
 	}
 
-	public ByteArrayReference(byte[] value) {
+	public ByteArrayReference(final byte[] value) {
 		this.value = value;
 	}
 

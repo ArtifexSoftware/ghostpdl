@@ -8,9 +8,9 @@ package com.artifex.gsjava.callbacks;
  */
 public abstract class DisplayCallback {
 
-	public int size;
-	public int versionMajor;
-	public int versionMinor;
+	public volatile int size;
+	public volatile int versionMajor;
+	public volatile int versionMinor;
 
 	public int onDisplayOpen(long handle, long device) {
 		return 0;

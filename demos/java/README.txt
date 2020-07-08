@@ -1,1 +1,0 @@
-This will be a demo of ghostscript use in Java

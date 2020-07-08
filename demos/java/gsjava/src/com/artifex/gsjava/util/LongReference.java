@@ -1,5 +1,11 @@
-package com.artifex.gsjava;
+package com.artifex.gsjava.util;
 
+/**
+ * Stores a reference to a long.
+ *
+ * @author Ethan Vrhel
+ *
+ */
 public class LongReference {
 
 	public volatile long value;

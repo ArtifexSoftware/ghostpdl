@@ -6,11 +6,37 @@ import com.artifex.gsjava.callbacks.IPollFunction;
 import com.artifex.gsjava.callbacks.IStdErrFunction;
 import com.artifex.gsjava.callbacks.IStdInFunction;
 import com.artifex.gsjava.callbacks.IStdOutFunction;
+import com.artifex.gsjava.util.ByteArrayReference;
+import com.artifex.gsjava.util.IntReference;
+import com.artifex.gsjava.util.LongReference;
 
+/**
+ * Class which contains native bindings to Ghostscript via the JNI.
+ *
+ * @author Ethan Vrhel
+ *
+ */
 public class GSAPI {
 
-	public static final long GS_NULL = 0;
+	static {
+		registerLibraries();
+	}
 
+	/**
+	 * Registers the needed native libraries.
+	 */
+	private static void registerLibraries() {
+		System.loadLibrary("gs_jni");
+	}
+
+	/**
+	 * NULL
+	 */
+	public static final long GS_NULL = 0L;
+
+	/**
+	 * Error codes
+	 */
 	public static final int GS_ERROR_OK = 0,
 							GS_ERROR_UNKNOWNERROR = -1,
 							GS_ERROR_DICTFULL = -2,
@@ -38,15 +64,41 @@ public class GSAPI {
 							GS_ERROR_UNMATCHEDMARK = -24,
 							GS_ERROR_VMERROR = -25;
 
+	/**
+	 * Error codes
+	 */
 	public static final int GS_ERROR_CONFIGURATION_ERROR = -26,
 							GS_ERROR_UNDEFINEDRESOURCE = -27,
 							GS_ERROR_UNREGISTERED = -28,
 							GS_ERROR_INVALIDCONTEXT = -29,
 							GS_ERROR_INVALID = -30;
 
+	public static class Revision {
+		public volatile byte[] product;
+		public volatile byte[] copyright;
+		public volatile long revision;
+		public volatile long revisionDate;
+
+		public Revision() {
+			this.product = null;
+			this.copyright = null;
+			this.revision = 0L;
+			this.revisionDate = 0L;
+		}
+
+		public String getProduct() {
+			return new String(product);
+		}
+
+		public String getCopyright() {
+			return new String(copyright);
+		}
+	}
+
+	// Don't let this class be instantiated
 	private GSAPI() { }
 
-	public static native int gsapi_revision(int len);
+	public static native int gsapi_revision(GSAPI.Revision revision, int len);
 
 	public static native int gsapi_new_instance(LongReference instance, long callerHandle);
 
