@@ -521,6 +521,9 @@ static void
 prepare_splits(split_data *splits)
 {
     if (splits->num_splits) {
+        /* Limit splits->num_splits to something merely insane to avoid overflow. */
+        if (splits->num_splits > (1<<(8*sizeof(int)-2))/sizeof(unsigned long))
+            splits->num_splits = (1<<(8*sizeof(int)-2))/sizeof(unsigned long);
         /* Make sure we have a properly sized size array. */
         if (splits->num_splits > splits->max_splits) {
             unsigned long *sizes = realloc(splits->sizes, sizeof(unsigned long) * splits->num_splits);
