@@ -274,7 +274,10 @@ typedef struct pdf_context_s
      */
     gs_gstate *DefaultQState;
 
-    int preserve_tr_mode; /* for avoiding charpath with pdfwrite */
+    bool preserve_tr_mode; /* for avoiding charpath with pdfwrite */
+    /* Are SMask's preserved by device (pdfwrite) */
+    bool preserve_smask;
+
 
     gs_color_space *gray_lin; /* needed for transparency */
     gs_color_space *gray;

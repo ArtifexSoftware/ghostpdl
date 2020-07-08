@@ -33,6 +33,7 @@
 #include "gspath2.h"
 #include "gsiparm4.h"
 #include "gsiparm3.h"
+#include "gsipar3x.h"
 
 #include "gstrans.h"
 
@@ -854,43 +855,57 @@ pdfi_data_image_params(pdf_context *ctx, pdfi_image_info_t *info,
     return code;
 }
 
+/* Returns number of components in Matte array or 0 if not found, <0 if error */
+static int
+pdfi_image_get_matte(pdf_context *ctx, pdf_dict *smask_dict, float *vals, int size)
+{
+    int i;
+    pdf_array *Matte = NULL;
+    int code;
+    double f;
+
+    code = pdfi_dict_knownget_type(ctx, smask_dict, "Matte",
+                                   PDF_ARRAY, (pdf_obj **)&Matte);
+    if (code <= 0)
+        goto exit;
+
+    if (pdfi_array_size(Matte) > size) {
+        code = gs_note_error(gs_error_rangecheck);
+        goto exit;
+    }
+
+    for (i = 0; i < pdfi_array_size(Matte); i++) {
+        code = pdfi_array_get_number(ctx, Matte, (uint64_t)i, &f);
+        if (code < 0)
+            goto exit;
+        vals[i] = (float)f;
+    }
+    if (i == pdfi_array_size(Matte))
+        code = i;
+
+ exit:
+    pdfi_countdown(Matte);
+    return code;
+}
+
 /* See ztrans.c/zbegintransparencymaskimage() and pdf_draw.ps/doimagesmask */
 static int
 pdfi_do_image_smask(pdf_context *ctx, pdf_stream *source, pdfi_image_info_t *image_info)
 {
     gs_rect bbox = { { 0, 0} , { 1, 1} };
     gs_transparency_mask_params_t params;
-    pdf_array *a = NULL;
     gs_offset_t savedoffset = 0;
-    double f;
     int code, code1;
     pdfi_int_gstate *igs = (pdfi_int_gstate *)ctx->pgs->client_data;
-
-    /* TODO: We should check for the /PreserveSMask device parameter here. If this is
-     * true (currently pdfwite only) then the device will process the SMask from the
-     * image and we need do nothinng here.
-     */
 
     dbgmprintf(ctx->memory, "pdfi_do_image_smask BEGIN\n");
 
     gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Luminosity);
 
-    code = pdfi_dict_knownget_type(ctx, (pdf_dict *)image_info->SMask, "Matte",
-                                   PDF_ARRAY, (pdf_obj **)&a);
-    if (code > 0) {
-        int ix;
-
-        for (ix = 0; ix < pdfi_array_size(a); ix++) {
-            code = pdfi_array_get_number(ctx, a, (uint64_t)ix, &f);
-            if (code < 0)
-                break;
-            params.Matte[ix] = f;
-        }
-        if (ix >= pdfi_array_size(a))
-            params.Matte_components = pdfi_array_size(a);
-        else
-            params.Matte_components = 0;
-    }
+    code = pdfi_image_get_matte(ctx, (pdf_dict *)image_info->SMask, params.Matte,
+                                GS_CLIENT_COLOR_MAX_COMPONENTS);
+    if (code >= 0)
+        params.Matte_components = code;
 
     //        params.image_with_SMask = true; /* TODO: Not sure... */
 
@@ -920,7 +935,6 @@ pdfi_do_image_smask(pdf_context *ctx, pdf_stream *source, pdfi_image_info_t *ima
         code = code1;
 
  exit:
-    pdfi_countdown(a);
     dbgmprintf(ctx->memory, "pdfi_do_image_smask END\n");
     return code;
 }
@@ -1035,6 +1049,35 @@ pdfi_image_setup_type4(pdf_context *ctx, pdfi_image_info_t *image_info,
         dmprintf(ctx->memory, "*** Error: Some elements of Mask array are out of range\n");
         ctx->pdf_warnings |= W_PDF_IMAGE_ERROR;
     }
+    return code;
+}
+
+/* Setup a type 3x image
+ */
+static int
+pdfi_image_setup_type3x(pdf_context *ctx, pdfi_image_info_t *image_info,
+                        gs_image3x_t *t3ximage, pdfi_image_info_t *smask_info, int comps)
+{
+    int code = 0;
+    gs_image3x_mask_t *mask;
+
+    memset(t3ximage, 0, sizeof(*t3ximage));
+    gs_image3x_t_init(t3ximage, NULL);
+    if (gs_getalphaisshape(ctx->pgs))
+        mask = &t3ximage->Shape;
+    else
+        mask = &t3ximage->Opacity;
+    mask->InterleaveType = 3;
+
+    code = pdfi_image_get_matte(ctx, (pdf_dict *)image_info->SMask, mask->Matte,
+                                GS_CLIENT_COLOR_MAX_COMPONENTS);
+    if (code > 0)
+        mask->has_Matte = true;
+
+    code = pdfi_data_image_params(ctx, smask_info, &mask->MaskDict, comps, NULL);
+    if (code < 0)
+        goto exit;
+ exit:
     return code;
 }
 
@@ -1251,16 +1294,18 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     gs_image1_t t1image;
     gs_image4_t t4image;
     gs_image3_t t3image;
+    gs_image3x_t t3ximage;
     gs_pixel_image_t *pim = NULL;
     pdf_dict *alt_dict = NULL;
-    pdfi_image_info_t image_info, mask_info;
+    pdfi_image_info_t image_info, mask_info, smask_info;
     pdf_dict *mask_dict = NULL;
+    pdf_dict *smask_dict = NULL; /* only non-null for imagetype 3x (PreserveSMask) */
     pdf_array *mask_array = NULL;
     unsigned char *mask_buffer = NULL;
     uint64_t mask_size = 0;
     pdfi_int_gstate *igs = (pdfi_int_gstate *)ctx->pgs->client_data;
     bool transparency_group = false;
-    bool has_smask = false;
+    bool need_smask_cleanup = false;
     bool maybe_jpxdecode = false;
     pdfi_trans_state_t trans_state;
     int saved_intent;
@@ -1348,6 +1393,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
             goto cleanupExit;
     }
 
+    /* Make a fake SMask dict if needed for JPXDecode */
     if (ctx->page_has_transparency && image_info.is_JPXDecode && image_info.SMaskInData != 0) {
         code = pdfi_make_smask_dict(ctx, image_dict, &image_info, comps);
         if (code < 0)
@@ -1355,23 +1401,27 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     }
 
     if (ctx->page_has_transparency == true && image_info.SMask != NULL) {
-        code = pdfi_do_image_smask(ctx, source, &image_info);
-        if (code < 0)
-            goto cleanupExit;
+        /* If this flag is set, then device will process the SMask and we need do nothing
+         * here (e.g. pdfwrite).
+         */
+        if (!ctx->preserve_smask) {
+            code = pdfi_do_image_smask(ctx, source, &image_info);
+            if (code < 0)
+                goto cleanupExit;
+            need_smask_cleanup = true;
+        }
         code = pdfi_trans_begin_isolated_group(ctx, true);
         if (code < 0)
             goto cleanupExit;
         transparency_group = true;
-        has_smask = true;
-    } else {
-        if (igs->SMask) {
-            code = pdfi_trans_begin_isolated_group(ctx, false);
-            if (code < 0)
-                goto cleanupExit;
-            transparency_group = true;
-        }
+    } else if (igs->SMask) {
+        code = pdfi_trans_begin_isolated_group(ctx, false);
+        if (code < 0)
+            goto cleanupExit;
+        transparency_group = true;
     }
 
+    /* Get the Mask data either as an array or a dict, if present */
     if (image_info.SMask == NULL && image_info.Mask != NULL) {
         if (image_info.Mask->type == PDF_ARRAY) {
             mask_array = (pdf_array *)image_info.Mask;
@@ -1386,8 +1436,17 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
         }
     }
 
-    /* Get the image into a supported gs type (type1, type3, type4) */
-    if (!image_info.Mask) { /* Type 1 and ImageMask */
+    /* Get the SMask info if we will need it (Type 3x images) */
+    if (image_info.SMask && ctx->preserve_smask) {
+        /* smask_dict non-NULL is used to flag a Type 3x image below */
+        smask_dict = (pdf_dict *)image_info.SMask;
+        code = pdfi_get_image_info(ctx, smask_dict, page_dict, stream_dict, inline_image, &smask_info);
+        if (code < 0)
+            goto cleanupExit;
+    }
+
+    /* Get the image into a supported gs type (type1, type3, type4, type3x) */
+    if (!image_info.Mask && !smask_dict) { /* Type 1 and ImageMask */
         memset(&t1image, 0, sizeof(t1image));
         pim = (gs_pixel_image_t *)&t1image;
 
@@ -1396,6 +1455,19 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
             gs_image_t_init_adjust(&t1image, NULL, false);
         } else {
             gs_image_t_init_adjust(&t1image, pcs, true);
+        }
+    } else if (smask_dict) { /* Type 3x */
+        code = pdfi_image_setup_type3x(ctx, &image_info, &t3ximage, &smask_info, comps);
+        if (code < 0) {
+            /* If this got an error, setup as a Type 1 image */
+            /* NOTE: I did this error-handling the same as for Type 4 image below.
+             * Dunno if it's better to do this or to just abort the whole image?
+             */
+            memset(&t1image, 0, sizeof(t1image));
+            pim = (gs_pixel_image_t *)&t1image;
+            gs_image_t_init_adjust(&t1image, pcs, true);
+        } else {
+            pim = (gs_pixel_image_t *)&t3ximage;
         }
     } else {
         if (mask_array) { /* Type 4 */
@@ -1408,8 +1480,8 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
             } else {
                 pim = (gs_pixel_image_t *)&t4image;
             }
-        } else { /* Type 3 (or is it 3x?) */
-            memset(&t3image, 0, sizeof(t1image));
+        } else { /* Type 3 */
+            memset(&t3image, 0, sizeof(t3image));
             pim = (gs_pixel_image_t *)&t3image;
             gs_image3_t_init(&t3image, NULL, interleave_separate_source);
             code = pdfi_data_image_params(ctx, &mask_info, &t3image.MaskDict, 1, NULL);
@@ -1417,6 +1489,13 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
                 goto cleanupExit;
         }
     }
+
+
+    /* At this point pim points to a structure containing the specific type
+     * of image, and then we can handle it generically from here.
+     * The underlying gs image functions will do different things for different
+     * types of images.
+     */
 
     /* Setup the common params */
     pim->ColorSpace = pcs;
@@ -1432,8 +1511,12 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
         code = pdfi_stream_to_buffer(ctx, mask_dict, &mask_buffer, (int64_t *)&mask_size);
         if (code < 0)
             goto cleanupExit;
+    } else if (smask_dict) {
+        /* This will happen only in case of PreserveSMask (Type 3x) */
+        code = pdfi_stream_to_buffer(ctx, smask_dict, &mask_buffer, (int64_t *)&mask_size);
+        if (code < 0)
+            goto cleanupExit;
     }
-
 
     /* Setup the data stream for the image data */
     if (!inline_image)
@@ -1467,7 +1550,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
 
     if (transparency_group) {
         pdfi_trans_end_isolated_group(ctx);
-        if (has_smask)
+        if (need_smask_cleanup)
             pdfi_trans_end_smask_notify(ctx);
     }
 
