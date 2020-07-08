@@ -150,17 +150,6 @@ pdf_impl_set_device(pl_interp_implementation_t *impl, gx_device *pdevice)
     if (code < 0)
         goto cleanup_setdevice;
 
-    /* TODO: Hack to do what is in the bottom of gs_pdfwr.ps
-     * This basically causes the pdfwrite device to be initialized.
-     * Not sure if this is the correct place to do this.
-     * Note that if running gs/pdfi, it will happen in the gs interpreter.
-     * Putting it here means it only runs in gpdf, which seems correct.
-     */
-    if (pdfi_device_check_param_exists(pdevice, "ForOPDFRead")) {
-        gs_newpath(ctx->pgs);
-        gs_fill(ctx->pgs);
-    }
-
     gs_setaccuratecurves(ctx->pgs, true); /* NB not sure */
     /* Not sure if we should do this at all here, but it seems it should be .3, not 0 */
     gs_setfilladjust(ctx->pgs, .3, .3);
@@ -181,6 +170,17 @@ pdf_impl_set_device(pl_interp_implementation_t *impl, gx_device *pdevice)
     code = pdfi_install_halftone(ctx, pdevice);
     if (code < 0)
         goto cleanup_halftone;
+
+    /* TODO: Hack to do what is in the bottom of gs_pdfwr.ps
+     * This basically causes the pdfwrite device to be initialized.
+     * Not sure if this is the correct place to do this.
+     * Note that if running gs/pdfi, it will happen in the gs interpreter.
+     * Putting it here means it only runs in gpdf, which seems correct.
+     */
+    if (pdfi_device_check_param_exists(pdevice, "ForOPDFRead")) {
+        gs_newpath(ctx->pgs);
+        gs_fill(ctx->pgs);
+    }
 
     return 0;
 
