@@ -444,12 +444,12 @@ int buffer_data(pl_main_instance_t *minst, const char *data, unsigned int len)
         chunk_max >>= BUFFERED_FILE_CHUNK_SHIFT;
         if (bf->index == NULL) {
             new_index = (byte **)gs_alloc_bytes(bf->memory,
-                                                sizeof(byte **) * chunk_max,
+                                                sizeof(byte *) * chunk_max,
                                                 "buffered_file_index");
         } else {
             new_index = (byte **)gs_resize_object(bf->memory,
                                                   bf->index,
-                                                  sizeof(byte **) * chunk_max,
+                                                  sizeof(byte *) * chunk_max,
                                                   "buffered_file_index");
         }
         if (new_index == NULL)
