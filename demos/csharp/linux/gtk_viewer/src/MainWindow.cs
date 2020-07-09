@@ -89,7 +89,6 @@ namespace gs_mono_example
         private static Pages m_docPages;
         private static double m_doczoom;
         public List<pagesizes_t> m_page_sizes;
-        List<idata_t> m_list_thumb;
         List<idata_t> m_images_rendered;
         bool m_init_done;
         bool m_busy_render;
@@ -154,13 +153,12 @@ namespace gs_mono_example
             m_busy_render = true;
             m_validZoom = true;
             m_firstime = true;
-            m_list_thumb = new List<idata_t>();
             m_images_rendered = new List<idata_t>();
             m_busy_rendering = false;
             m_aa = true;
             m_aa_change = false;
-
-
+            Gtk.TextTagTable tag = new Gtk.TextTagTable(IntPtr.Zero);
+           
             /* Set up Vbox in main window */
             this.SetDefaultSize(500, 700);
             this.Title = "GhostPDL Mono GTK Demo";
@@ -264,12 +262,12 @@ namespace gs_mono_example
 
         private void OnQuit(object sender, EventArgs e)
         {
-            throw new NotImplementedException();
+            Application.Quit();
         }
 
         private void OnShowMessages(object sender, EventArgs e)
         {
-            throw new NotImplementedException();
+            m_gsoutput.Show();
         }
 
         private void OnClose(object sender, EventArgs e)
@@ -279,7 +277,9 @@ namespace gs_mono_example
 
         private void gsIO(object gsObject, String mess, int len)
         {
-            //m_gsoutput.Update(mess, len);
+            Gtk.TextBuffer buffer = m_gsoutput.m_textView.Buffer;
+            Gtk.TextIter ti = buffer.EndIter;
+            buffer.Insert(ref ti, mess.Substring(0, len));
         }
 
         private void gsDLL(object gsObject, String mess)
@@ -316,12 +316,12 @@ namespace gs_mono_example
 
                     case GS_Task_t.DISPLAY_DEV_THUMBS_NON_PDF:
                     case GS_Task_t.DISPLAY_DEV_THUMBS_PDF:
-                        //ThumbsDone();
+                        ThumbsDone();
                         break;
 
                     case GS_Task_t.DISPLAY_DEV_PDF:
                     case GS_Task_t.DISPLAY_DEV_NON_PDF:
-                        //RenderingDone();
+                        RenderingDone();
                         break;
 
                 }

@@ -21,8 +21,8 @@ namespace gs_mono_example
 			doc_page.Height = (int)(height / (Constants.SCALE_THUMB));
 			doc_page.PageNum = page_num;
 			m_docPages.Add(doc_page);
-			m_toppage_pos.Add(offset + Constants.PAGE_VERT_MARGIN);
-			offset += doc_page.Height + Constants.PAGE_VERT_MARGIN;
+			//m_toppage_pos.Add(offset + Constants.PAGE_VERT_MARGIN);
+			//offset += doc_page.Height + Constants.PAGE_VERT_MARGIN;
 		}
 
 		/* Rendered all the thumbnail pages.  Stick them in the appropriate lists */
@@ -37,7 +37,7 @@ namespace gs_mono_example
 			
 			//m_ghostscript.gsPageRenderedMain -= new ghostsharp.gsCallBackPageRenderedMain(gsThumbRendered);
 
-			m_numpages = m_list_thumb.Count;
+			m_numpages = m_thumbnails.Count;
 			if (m_numpages < 1)
 			{
 				//ShowMessage(NotifyType_t.MESS_STATUS, "File failed to open properly");
@@ -48,10 +48,9 @@ namespace gs_mono_example
 				m_init_done = true;
 				//xaml_TotalPages.Text = "/" + m_numpages;
 				//xaml_currPage.Text = m_currpage.ToString();
-				m_list_thumb.Clear();
 
 				/* If non-pdf, kick off full page rendering */
-				RenderMainFirst();
+				//RenderMainFirst();
 			}
 		}
 
