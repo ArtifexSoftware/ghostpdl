@@ -508,6 +508,31 @@ done:
     return code;
 }
 
+/* Init a bunch of the graphics state for the beginning of a page
+ * see pdf_ops.ps/graphicsbeginpage()
+ * (also used by annotations)
+ */
+int pdfi_page_graphics_begin(pdf_context *ctx)
+{
+    int code;
+
+    gs_setaccuratecurves(ctx->pgs, true);
+    code = gs_setstrokeconstantalpha(ctx->pgs, 1.0);
+    if (code < 0) goto exit;
+    code = gs_setfillconstantalpha(ctx->pgs, 1.0);
+    if (code < 0) goto exit;
+    code = gs_setalphaisshape(ctx->pgs, 0);
+    if (code < 0) goto exit;
+    code = gs_setblendmode(ctx->pgs, BLEND_MODE_Compatible);
+    if (code < 0) goto exit;
+    code = gs_settextknockout(ctx->pgs, true);
+    if (code < 0) goto exit;
+    code = gs_setsmoothness(ctx->pgs, 0.02); /* Match gs code */
+    if (code < 0) goto exit;
+ exit:
+    return code;
+}
+
 int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
 {
     int code, code1=0;
@@ -588,16 +613,15 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
 
         pdfi_set_ctm(ctx);
 
-        code = gs_setstrokeconstantalpha(ctx->pgs, 1.0);
-        code = gs_setfillconstantalpha(ctx->pgs, 1.0);
-        code = gs_setalphaisshape(ctx->pgs, 0);
-        code = gs_settextknockout(ctx->pgs, true);
+        /* TODO: see stuff in pdf_impl_set_device() -- should be collected in one place?
+         * This is doing it per-page and the other is doing it one time.
+         * (issue related to initializing pdfwrite device)
+         */
         code = gs_settextspacing(ctx->pgs, (double)0.0);
         code = gs_settextleading(ctx->pgs, (double)0.0);
         gs_settextrenderingmode(ctx->pgs, 0);
         code = gs_setwordspacing(ctx->pgs, (double)0.0);
         code = gs_settexthscaling(ctx->pgs, (double)100.0);
-        code = gs_setsmoothness(ctx->pgs, 0.02); /* Match gs code */
         ctx->TextBlockDepth = 0;
 
         pdfi_setup_transfers(ctx);
@@ -609,7 +633,7 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
          */
         pdfi_get_media_size(ctx);
     }
-    code = gs_setblendmode(ctx->pgs, BLEND_MODE_Compatible);
+    code = pdfi_page_graphics_begin(ctx);
 
     /* Set whether device needs OP support
      * This needs to be before transparency device is pushed, if applicable

@@ -150,9 +150,17 @@ pdf_impl_set_device(pl_interp_implementation_t *impl, gx_device *pdevice)
     if (code < 0)
         goto cleanup_setdevice;
 
-    gs_setaccuratecurves(ctx->pgs, true); /* NB not sure */
-    /* Not sure if we should do this at all here, but it seems it should be .3, not 0 */
-    gs_setfilladjust(ctx->pgs, .3, .3);
+    /* TODO: See stuff with init_graphics in pdfi_page_render -- I think this
+     * should be collected in one place?
+     * This is essentially doing it one time, and the other is doing it per page.
+     * The main thing seems to be doing it here is before the pdfwrite device
+     * gets setup, and doing it in pdf_page.c is after the pdfwrite device gets
+     * setup.  It can cause spurious 'gs' state entries if there are discrepencies.
+     */
+    /* Doing this here to avoid having a ".02 /SM" entry showing up in ExtGState
+     * of pdfwrite output.
+     */
+    code = gs_setsmoothness(ctx->pgs, 0.02); /* Match gs code */
 
     gs_setscanconverter(ctx->pgs, pl_main_get_scanconverter(ctx->memory));
 
@@ -181,7 +189,6 @@ pdf_impl_set_device(pl_interp_implementation_t *impl, gx_device *pdevice)
         gs_newpath(ctx->pgs);
         gs_fill(ctx->pgs);
     }
-
     return 0;
 
 cleanup_halftone:

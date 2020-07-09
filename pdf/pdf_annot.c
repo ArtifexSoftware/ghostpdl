@@ -28,6 +28,7 @@
 #include "pdf_gstate.h"
 #include "pdf_misc.h"
 #include "pdf_optcontent.h"
+#include "pdf_page.h"
 #include "pdf_annot.h"
 #include "pdf_colour.h"
 #include "gspath2.h"
@@ -195,17 +196,13 @@ static int pdfi_annot_draw_AP(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormA
     /* graphicsbeginpage() */
     /* textbeginpage() */
     code = gs_initgraphics(ctx->pgs);
-    code = gs_setstrokeconstantalpha(ctx->pgs, 1.0);
-    code = gs_setfillconstantalpha(ctx->pgs, 1.0);
-    code = gs_setalphaisshape(ctx->pgs, 0);
-    code = gs_setblendmode(ctx->pgs, BLEND_MODE_Compatible);
-    code = gs_settextknockout(ctx->pgs, true);
+    code = pdfi_page_graphics_begin(ctx);
+
     code = gs_settextspacing(ctx->pgs, (double)0.0);
     code = gs_settextleading(ctx->pgs, (double)0.0);
     gs_settextrenderingmode(ctx->pgs, 0);
     code = gs_setwordspacing(ctx->pgs, (double)0.0);
     code = gs_settexthscaling(ctx->pgs, (double)100.0);
-    code = gs_setsmoothness(ctx->pgs, 0.02); /* Match gs code */
     ctx->TextBlockDepth = 0;
     /* TODO: FIXME */
 
