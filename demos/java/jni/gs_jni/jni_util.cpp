@@ -2,14 +2,17 @@
 
 #include <exception>
 #include <string.h>
+#include <varargs.h>
 
-void setByteArrayField(JNIEnv *env, jobject object, const char *field, jbyteArray value)
+#define FIELD(E, O, F, S) E->GetFieldID(E->GetObjectClass(O), F, S)
+
+void util::setByteArrayField(JNIEnv *env, jobject object, const char *field, jbyteArray value)
 {
-    jfieldID fieldID = env->GetFieldID(env->GetObjectClass(object), field, "[B");
+    jfieldID fieldID = FIELD(env, object, field, "[B");
     env->SetObjectField(object, fieldID, value);
 }
 
-void setByteArrayField(JNIEnv *env, jobject object, const char *field, const char *string)
+void util::setByteArrayField(JNIEnv *env, jobject object, const char *field, const char *string)
 {
     jsize len = (jsize)strlen(string);
     jbyteArray byteArray = env->NewByteArray(len);
@@ -17,17 +20,27 @@ void setByteArrayField(JNIEnv *env, jobject object, const char *field, const cha
     setByteArrayField(env, object, field, byteArray);
 }
 
-void setLongField(JNIEnv *env, jobject object, const char *field, jlong value)
+void util::setLongField(JNIEnv *env, jobject object, const char *field, jlong value)
 {
-    jfieldID fieldID = env->GetFieldID(env->GetObjectClass(object), field, "J");
+    jfieldID fieldID = FIELD(env, object, field, "J");
     env->SetLongField(object, fieldID, value);
 }
 
+int util::callIntMethod(JNIEnv *env, jobject object, const char *method, const char *sig, ...)
+{
+    jmethodID methodID = env->GetMethodID(env->GetObjectClass(object), method, sig);
+    va_list args;
+    int result;
+    va_start(args, sig);
+    result = env->CallIntMethod(object, methodID, args);
+    va_end(args);
+    return result;
+}
 
-jint throwNoClassDefError(JNIEnv *env, const char *message)
+jint util::throwNoClassDefError(JNIEnv *env, const char *message)
 {
     jclass exClass;
-    const char *className = "java/lang/NoClassDefFoundError";
+    static const char *className = "java/lang/NoClassDefFoundError";
 
     exClass = env->FindClass(className);
     if (exClass == NULL)
@@ -36,14 +49,41 @@ jint throwNoClassDefError(JNIEnv *env, const char *message)
     return env->ThrowNew(exClass, message);
 }
 
-jint throwNullPointerException(JNIEnv *env, const char *message)
+jint util::throwNullPointerException(JNIEnv *env, const char *message)
 {
     jclass exClass;
-    const char *className = "java/lang/NullPointerException";
+    static const char *className = "java/lang/NullPointerException";
 
     exClass = env->FindClass(className);
     if (exClass == NULL)
         return throwNoClassDefError(env, className);
 
     return env->ThrowNew(exClass, message);
+}
+
+jobject util::newLongReference(JNIEnv *env)
+{
+    jclass lClass;
+    static const char *className = "com/arifex/gsjava/util/LongReference";
+
+    lClass = env->FindClass(className);
+    if (lClass == NULL)
+    {
+        throwNoClassDefError(env, className);
+        return NULL;
+    }
+
+    jmethodID constructor = env->GetMethodID(lClass, "<init>", "()V");
+
+    jobject obj = env->NewObject(lClass, constructor);
+    return obj;
+}
+
+jobject util::newLongReference(JNIEnv *env, jlong value)
+{
+    jobject ref = newLongReference(env);
+    if (!ref)
+        return NULL;
+    setLongField(env, ref, "value", value);
+    return ref;
 }

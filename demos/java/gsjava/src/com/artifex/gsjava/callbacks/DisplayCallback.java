@@ -1,5 +1,8 @@
 package com.artifex.gsjava.callbacks;
 
+import com.artifex.gsjava.util.IntReference;
+import com.artifex.gsjava.util.LongReference;
+
 /**
  * Class wrapping a display_callback structure.
  *
@@ -64,8 +67,9 @@ public abstract class DisplayCallback {
 		return 0;
 	}
 
-	public int onDisplayRectangleRequest(long handle, long device, long memory, long ox,
-			long oy, long raster, long planeRaster, long x, long y, long w, long h) {
+	public int onDisplayRectangleRequest(long handle, long device, LongReference memory, long ox,
+			IntReference oy, IntReference raster, IntReference planeRaster, IntReference x,
+			IntReference y, IntReference w, IntReference h) {
 		return 0;
 	}
 }

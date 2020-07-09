@@ -108,7 +108,7 @@ public class GSAPI {
 			IStdOutFunction stdout, IStdErrFunction stderr, long callerHandle);
 
 	public static native int gsapi_set_stdio(long instance, IStdInFunction stdin, IStdOutFunction stdout,
-			IStdErrFunction stderr, long callerHandle);
+			IStdErrFunction stderr);
 
 	public static native int gsapi_set_poll_with_handle(long instance, IPollFunction pollfun, long callerHandle);
 

@@ -106,10 +106,10 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1set_1stdio_1with_1ha
 /*
  * Class:     com_artifex_gsjava_GSAPI
  * Method:    gsapi_set_stdio
- * Signature: (JLcom/artifex/gsjava/callbacks/IStdInFunction;Lcom/artifex/gsjava/callbacks/IStdOutFunction;Lcom/artifex/gsjava/callbacks/IStdErrFunction;J)I
+ * Signature: (JLcom/artifex/gsjava/callbacks/IStdInFunction;Lcom/artifex/gsjava/callbacks/IStdOutFunction;Lcom/artifex/gsjava/callbacks/IStdErrFunction;)I
  */
 JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1set_1stdio
-  (JNIEnv *, jclass, jlong, jobject, jobject, jobject, jlong);
+  (JNIEnv *, jclass, jlong, jobject, jobject, jobject);
 
 /*
  * Class:     com_artifex_gsjava_GSAPI
