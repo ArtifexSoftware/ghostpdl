@@ -2,7 +2,6 @@
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using Gtk;
-using gtk_viewer.src;
 using GhostNET;
 
 namespace gs_mono_example
@@ -100,7 +99,11 @@ namespace gs_mono_example
         bool m_aa_change;
         List<int> m_toppage_pos;
         int m_page_progress_count;
-
+        Gtk.ProgressBar m_GtkProgressBar;
+        Label m_GtkProgressLabel;
+        HBox m_GtkProgressBox;
+        Gtk.TreeView m_GtkTree;
+        Gtk.VBox m_GtkvBoxMain;
 
         void ShowMessage(Window parent, NotifyType_t type, string message)
         {
@@ -135,6 +138,8 @@ namespace gs_mono_example
             m_ghostscript.gsIOUpdateMain += new ghostsharp.gsIOCallBackMain(gsIO);
             m_ghostscript.gsDLLProblemMain += new ghostsharp.gsDLLProblem(gsDLL);
 
+            DeleteEvent += delegate { Application.Quit(); };
+
             m_currpage = 0;
             m_gsoutput = new gsOutput();
             m_gsoutput.Activate();
@@ -154,6 +159,122 @@ namespace gs_mono_example
             m_busy_rendering = false;
             m_aa = true;
             m_aa_change = false;
+
+
+            /* Set up Vbox in main window */
+            this.SetDefaultSize(500, 700);
+            this.Title = "GhostPDL Mono GTK Demo";
+            m_GtkvBoxMain = new VBox(false, 0);
+            this.Add(m_GtkvBoxMain);
+
+            /* Add Menu Bar to vBox */
+            Gtk.MenuBar menu_bar = new MenuBar();
+            Menu filemenu = new Menu();
+            MenuItem file = new MenuItem("File");
+            file.Submenu = filemenu;
+           
+            AccelGroup agr = new AccelGroup();
+            AddAccelGroup(agr);
+
+            ImageMenuItem openi = new ImageMenuItem(Stock.Open, agr);
+            openi.AddAccelerator("activate", agr, new AccelKey(
+                Gdk.Key.o, Gdk.ModifierType.ControlMask, AccelFlags.Visible));
+            openi.Activated += OnOpen;
+            filemenu.Append(openi);
+
+            ImageMenuItem closei = new ImageMenuItem(Stock.Close, agr);
+            closei.AddAccelerator("activate", agr, new AccelKey(
+                Gdk.Key.w, Gdk.ModifierType.ControlMask, AccelFlags.Visible));
+            closei.Activated += OnClose;
+            filemenu.Append(closei);
+
+            MenuItem messagesi = new MenuItem("Show Messages");
+            messagesi.Activated += OnShowMessages;
+            filemenu.Append(messagesi);
+
+            SeparatorMenuItem sep = new SeparatorMenuItem();
+            filemenu.Append(sep);
+
+            ImageMenuItem quiti = new ImageMenuItem(Stock.Quit, agr);
+            quiti.AddAccelerator("activate", agr, new AccelKey(
+                Gdk.Key.q, Gdk.ModifierType.ControlMask, AccelFlags.Visible));
+            filemenu.Append(quiti);
+            quiti.Activated += OnQuit;
+
+            menu_bar.Append(file);
+
+            Menu aboutmenu = new Menu();
+            MenuItem about = new MenuItem("About");
+            about.Submenu = aboutmenu;
+            menu_bar.Append(about);
+
+            m_GtkvBoxMain.PackStart(menu_bar, false, false, 0);
+
+            /* Add a hbox with the page information, zoom control, and aa to vbox */
+            HBox pageBox = new HBox(false, 0);
+            Entry pageEntry = new Entry();
+            pageEntry.WidthChars = 4;
+            Label pageTotal = new Label("/0");
+            pageBox.PackStart(pageEntry, false, false, 0);
+            pageBox.PackStart(pageTotal, false, false, 0);
+
+            HBox zoomBox = new HBox(false, 0);
+            Button zoomPlus = new Button();
+            zoomPlus.Label = "+";
+            Button zoomMinus = new Button();
+            zoomMinus.Label = "–";
+            Entry zoomEntry = new Entry();
+            zoomEntry.WidthChars = 3;
+            Label precentLabel = new Label("%");
+            zoomBox.PackStart(zoomPlus, false, false, 0);
+            zoomBox.PackStart(zoomMinus, false, false, 0);
+            zoomBox.PackStart(zoomEntry, false, false, 0);
+            zoomBox.PackStart(precentLabel, false, false, 0);
+
+            HBox hBoxControls = new HBox(false, 0);
+            CheckButton aaCheck = new CheckButton("Enable Antialias:");
+            hBoxControls.PackStart(pageBox, false, false, 0);
+            hBoxControls.PackStart(zoomBox, false, false, 20);
+            hBoxControls.PackStart(aaCheck, false, false, 0);
+
+            m_GtkvBoxMain.PackStart(hBoxControls, false, false, 0);
+
+            /* Tree view containing thumbnail and main images */
+            m_GtkTree = new Gtk.TreeView();
+            Gtk.TreeViewColumn thumbColumn = new Gtk.TreeViewColumn();
+            Gtk.TreeViewColumn pageColumn = new Gtk.TreeViewColumn();
+            m_GtkTree.AppendColumn(thumbColumn);
+            m_GtkTree.AppendColumn(pageColumn);
+            Gtk.ListStore imageStore = new Gtk.ListStore(typeof(Image), typeof(Image));
+            m_GtkTree.Model = imageStore;
+
+            m_GtkvBoxMain.PackStart(m_GtkTree, true, true, 0);
+
+            /* Progress bar */
+            m_GtkProgressBox = new HBox(false, 0);
+            m_GtkProgressBar = new ProgressBar();
+            m_GtkProgressBar.Orientation = ProgressBarOrientation.LeftToRight;
+            m_GtkProgressBox.PackStart(m_GtkProgressBar, true, true, 0);
+            m_GtkProgressLabel = new Label("Render Thumbnails");
+            m_GtkProgressBox.PackStart(m_GtkProgressLabel, false, false, 0);
+
+           // m_GtkvBoxMain.PackStart(m_GtkProgressBox, false, false, 0);
+           // m_GtkvBoxMain.Remove(m_GtkProgressBox);
+        }
+
+        private void OnQuit(object sender, EventArgs e)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void OnShowMessages(object sender, EventArgs e)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void OnClose(object sender, EventArgs e)
+        {
+            throw new NotImplementedException();
         }
 
         private void gsIO(object gsObject, String mess, int len)
@@ -164,6 +285,18 @@ namespace gs_mono_example
         private void gsDLL(object gsObject, String mess)
         {
             ShowMessage(this, NotifyType_t.MESS_STATUS, mess);
+        }
+
+        private void gsThumbRendered(object gsObject, int width, int height, int raster,
+                                    IntPtr data, gsParamState_t state)
+        {
+            ThumbPageCallback(gsObject, width, height, raster, state.zoom, state.currpage, data);
+        }
+
+        private void gsPageRendered(object gsObject, int width, int height, int raster,
+                                    IntPtr data, gsParamState_t state)
+        {
+            MainPageCallback(gsObject, width, height, raster, state.zoom, state.currpage, data);
         }
 
         private void gsProgress(object gsObject, gsEventArgs asyncInformation)

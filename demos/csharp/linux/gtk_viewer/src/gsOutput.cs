@@ -1,12 +1,17 @@
 ﻿using System;
-namespace gtk_viewer.src
+namespace gs_mono_example
 {
-    public partial class gsOutput : Gtk.Window
+    public class gsOutput : Gtk.Window
     {
-        public gsOutput() :
-                base(Gtk.WindowType.Toplevel)
+        public gsOutput() : base(Gtk.WindowType.Popup)
         {
-            this.Build();
+            Gtk.TextBuffer m_textBuffer = new Gtk.TextBuffer()
+            Gtk.TextView m_textView = new Gtk.TextView()
+            Gtk.VBox vBox = new Gtk.VBox();
+
+            this.Add(vBox);
+
+
         }
     }
 }

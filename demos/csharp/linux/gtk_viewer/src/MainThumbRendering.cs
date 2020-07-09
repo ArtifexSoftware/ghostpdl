@@ -93,12 +93,12 @@ namespace gs_mono_example
 		/* Render the thumbnail images */
 		private void RenderThumbs()
 		{
-			//xaml_RenderProgress.Value = 0;
-		//xaml_RenderProgressText.Text = "Creating Thumbs";
-			//xaml_ProgressGrid.Visibility = System.Windows.Visibility.Visible;
+            m_GtkvBoxMain.PackStart(m_GtkProgressBox, false, false, 0);
+            m_GtkProgressLabel.Text = "Rendering Thumbs";
+            m_GtkProgressBar.Fraction = 0.0;
 
-		//m_ghostscript.gsPageRenderedMain += new ghostsharp.gsCallBackPageRenderedMain(gsThumbRendered);
-			m_ghostscript.gsDisplayDeviceRenderAll(m_currfile, Constants.SCALE_THUMB, false, GS_Task_t.DISPLAY_DEV_THUMBS_NON_PDF);
+            m_ghostscript.gsPageRenderedMain += new ghostsharp.gsCallBackPageRenderedMain(gsThumbRendered);
+            m_ghostscript.gsDisplayDeviceRenderAll(m_currfile, Constants.SCALE_THUMB, false, GS_Task_t.DISPLAY_DEV_THUMBS_NON_PDF);
 		}
 	}
 }
