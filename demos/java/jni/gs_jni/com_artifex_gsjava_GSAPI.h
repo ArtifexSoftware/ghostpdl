@@ -178,10 +178,10 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1get_1default_1device
 /*
  * Class:     com_artifex_gsjava_GSAPI
  * Method:    gsapi_init_with_args
- * Signature: (JILcom/artifex/gsjava/ByteArrayReference;)I
+ * Signature: (JI[[B)I
  */
 JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1init_1with_1args
-  (JNIEnv *, jclass, jlong, jint, jobject);
+  (JNIEnv *, jclass, jlong, jint, jobjectArray);
 
 /*
  * Class:     com_artifex_gsjava_GSAPI

@@ -22,9 +22,12 @@
 // display memfree
 #define DISPLAY_SEPARATION_SIG "(JJI[BSSSS)I"
 #define DISPLAY_ADJUST_BAND_HEIGHT_SIG "(JJI)I"
-#define DISPLAY_RECTANGLE_REQUEST "(JJLcom/artifex/gsjava/LongReference;JLcom/artifex/gsjava/IntReference;\
+#define DISPLAY_RECTANGLE_REQUEST "(JJLcom/artifex/gsjava/LongReference;Lcom/artifex/gsjava/IntReference;\
 Lcom/artifex/gsjava/IntReference;Lcom/artifex/gsjava/IntReference;Lcom/artifex/gsjava/IntReference;\
-Lcom/artifex/gsjava/IntReference;Lcom/artifex/gsjava/IntReference;Lcom/artifex/gsjava/IntReference;)I"
+Lcom/artifex/gsjava/IntReference;Lcom/artifex/gsjava/IntReference;Lcom/artifex/gsjava/IntReference;\
+Lcom/artifex/gsjava/IntReference;)I"
+
+using namespace util;
 
 static JNIEnv *g_env = NULL;
 
@@ -35,6 +38,8 @@ static jobject g_stdErr = NULL;
 static jobject g_poll = NULL;
 
 static jobject g_displayCallback = NULL;
+
+static jobject g_callout = NULL;
 
 void callbacks::setJNIEnv(JNIEnv *env)
 {
@@ -54,8 +59,8 @@ int callbacks::stdInFunction(void *callerHandle, char *buf, int len)
 	if (g_env && g_stdIn)
 	{
 		jbyteArray byteArray = g_env->NewByteArray(len);
-		g_env->SetByteArrayRegion(byteArray, 0, len, (signed char *)buf);
-		code = util::callIntMethod(g_env, g_stdIn, "onStdIn", STDIN_SIG, (jlong)callerHandle, byteArray, (jint)len);
+		g_env->SetByteArrayRegion(byteArray, 0, len, (jbyte *)buf);
+		code = callIntMethod(g_env, g_stdIn, "onStdIn", STDIN_SIG, (jlong)callerHandle, byteArray, (jint)len);
 	}
 	return code;
 }
@@ -66,8 +71,8 @@ int callbacks::stdOutFunction(void *callerHandle, const char *str, int len)
 	if (g_env && g_stdOut)
 	{
 		jbyteArray byteArray = g_env->NewByteArray(len);
-		g_env->SetByteArrayRegion(byteArray, 0, len, (const signed char *)str);
-		code = util::callIntMethod(g_env, g_stdOut, "onStdOut", STDOUT_SIG, (jlong)callerHandle, byteArray, (jint)len);
+		g_env->SetByteArrayRegion(byteArray, 0, len, (const jbyte *)str);
+		code = callIntMethod(g_env, g_stdOut, "onStdOut", STDOUT_SIG, (jlong)callerHandle, byteArray, (jint)len);
 	}
 	return code;
 }
@@ -78,8 +83,8 @@ int callbacks::stdErrFunction(void *callerHandle, const char *str, int len)
 	if (g_env && g_stdErr)
 	{
 		jbyteArray byteArray = g_env->NewByteArray(len);
-		g_env->SetByteArrayRegion(byteArray, 0, len, (const signed char *)str);
-		code = util::callIntMethod(g_env, g_stdErr, "onStdErr", STDERR_SIG, (jlong)callerHandle, byteArray, (jint)len);
+		g_env->SetByteArrayRegion(byteArray, 0, len, (const jbyte *)str);
+		code = callIntMethod(g_env, g_stdErr, "onStdErr", STDERR_SIG, (jlong)callerHandle, byteArray, (jint)len);
 	}
 	return code;
 }
@@ -94,13 +99,32 @@ int callbacks::pollFunction(void *callerHandle)
 	int code = 0;
 	if (g_env && g_poll)
 	{
-		code = util::callIntMethod(g_env, g_poll, "onPoll", POLL_SIG, (jlong)callerHandle);
+		code = callIntMethod(g_env, g_poll, "onPoll", POLL_SIG, (jlong)callerHandle);
 	}
 	return code;
 }
 
 void callbacks::setDisplayCallback(jobject displayCallback)
 {
+	g_displayCallback = displayCallback;
+}
+
+void callbacks::setCalloutCallback(jobject callout)
+{
+	g_callout = callout;
+}
+
+int callbacks::calloutFunction(void *instance, void *handle, const char *deviceName, int id, int size, void *data)
+{
+	int code = 0;
+	if (g_env && g_callout)
+	{
+		jsize len = strlen(deviceName);
+		jbyteArray array = g_env->NewByteArray(len);
+		g_env->SetByteArrayRegion(array, 0, len, (const jbyte *)deviceName);
+		code = callIntMethod(g_env, g_callout, "onCallout", "(JJ[BIIJ)I", (jlong)instance, (jlong)handle, array, id, size, (jlong)data);
+	}
+	return code;
 }
 
 int callbacks::display::displayOpenFunction(void *handle, void *device)
@@ -108,7 +132,7 @@ int callbacks::display::displayOpenFunction(void *handle, void *device)
 	int code = 0;
 	if (g_env && g_displayCallback)
 	{
-		code = util::callIntMethod(g_env, g_displayCallback, "onDisplayOpen", DISPLAY_OPEN_SIG, (jlong)handle, (jlong)device);
+		code = callIntMethod(g_env, g_displayCallback, "onDisplayOpen", DISPLAY_OPEN_SIG, (jlong)handle, (jlong)device);
 	}
 	return code;
 }
@@ -118,7 +142,7 @@ int callbacks::display::displayPrecloseFunction(void *handle, void *device)
 	int code = 0;
 	if (g_env && g_displayCallback)
 	{
-		code = util::callIntMethod(g_env, g_displayCallback, "onDisplayPreclose", DISPLAY_PRECLOSE_SIG, (jlong)handle, (jlong)device);
+		code = callIntMethod(g_env, g_displayCallback, "onDisplayPreclose", DISPLAY_PRECLOSE_SIG, (jlong)handle, (jlong)device);
 	}
 	return code;
 }
@@ -128,7 +152,7 @@ int callbacks::display::displayCloseFunction(void *handle, void *device)
 	int code = 0;
 	if (g_env && g_displayCallback)
 	{
-		code = util::callIntMethod(g_env, g_displayCallback, "onDisplayClose", DISPLAY_CLOSE_SIG, (jlong)handle, (jlong)device);
+		code = callIntMethod(g_env, g_displayCallback, "onDisplayClose", DISPLAY_CLOSE_SIG, (jlong)handle, (jlong)device);
 	}
 	return code;
 }
@@ -138,7 +162,7 @@ int callbacks::display::displayPresizeFunction(void *handle, void *device, int w
 	int code = 0;
 	if (g_env && g_displayCallback)
 	{
-		code = util::callIntMethod(g_env, g_displayCallback, "onDisplayPresize", DISPLAY_PRESIZE_SIG, (jlong)handle,
+		code = callIntMethod(g_env, g_displayCallback, "onDisplayPresize", DISPLAY_PRESIZE_SIG, (jlong)handle,
 			(jlong)device, width, height, raster, (jint)format);
 	}
 	return code;
@@ -152,7 +176,7 @@ int callbacks::display::displaySizeFunction(void *handle, void *device, int widt
 		jsize len = width * height * format;
 		jbyteArray byteArray = g_env->NewByteArray(len);
 		g_env->SetByteArrayRegion(byteArray, 0, len, (signed char *)pimage);
-		code = util::callIntMethod(g_env, g_displayCallback, "onDisplaySize", DISPLAY_SIZE_SIG, (jlong)handle,
+		code = callIntMethod(g_env, g_displayCallback, "onDisplaySize", DISPLAY_SIZE_SIG, (jlong)handle,
 			(jlong)device, width, height, raster, (jint)format, byteArray);
 	}
 	return code;
@@ -163,7 +187,7 @@ int callbacks::display::displaySyncFunction(void *handle, void *device)
 	int code = 0;
 	if (g_env && g_displayCallback)
 	{
-		code = util::callIntMethod(g_env, g_displayCallback, "onDisplaySync", DISPLAY_SYNC_SIG, (jlong)handle, (jlong)device);
+		code = callIntMethod(g_env, g_displayCallback, "onDisplaySync", DISPLAY_SYNC_SIG, (jlong)handle, (jlong)device);
 	}
 	return code;
 }
@@ -173,7 +197,7 @@ int callbacks::display::displayPageFunction(void *handle, void *device, int copi
 	int code = 0;
 	if (g_env && g_displayCallback)
 	{
-		code = util::callIntMethod(g_env, g_displayCallback, "onDisplayPage", DISPLAY_PAGE_SIG, (jlong)handle, (jlong)device, copies, flush);
+		code = callIntMethod(g_env, g_displayCallback, "onDisplayPage", DISPLAY_PAGE_SIG, (jlong)handle, (jlong)device, copies, flush);
 	}
 	return code;
 }
@@ -183,7 +207,7 @@ int callbacks::display::displayUpdateFunction(void *handle, void *device, int x,
 	int code = 0;
 	if (g_env && g_displayCallback)
 	{
-		code = util::callIntMethod(g_env, g_displayCallback, "onDisplayUpdate", DISPLAY_UPDATE_SIG, (jlong)handle, (jlong)device, x, y, w, h);
+		code = callIntMethod(g_env, g_displayCallback, "onDisplayUpdate", DISPLAY_UPDATE_SIG, (jlong)handle, (jlong)device, x, y, w, h);
 	}
 	return code;
 }
@@ -196,7 +220,7 @@ int callbacks::display::displaySeparationFunction(void *handle, void *device, in
 		jsize len = strlen(componentName);
 		jbyteArray byteArray = g_env->NewByteArray(len);
 		g_env->SetByteArrayRegion(byteArray, 0, len, (signed char *)componentName);
-		code = util::callIntMethod(g_env, g_displayCallback, "onDisplaySeparation", DISPLAY_SEPARATION_SIG, (jlong)handle,
+		code = callIntMethod(g_env, g_displayCallback, "onDisplaySeparation", DISPLAY_SEPARATION_SIG, (jlong)handle,
 			(jlong)device, component, byteArray, c, m, y, k);
 	}
 	return code;
@@ -207,7 +231,7 @@ int callbacks::display::displayAdjustBandHeightFunction(void *handle, void *devi
 	int code = 0;
 	if (g_env && g_displayCallback)
 	{
-		code = util::callIntMethod(g_env, g_displayCallback, "onDisplayAdjustBandHeght", DISPLAY_ADJUST_BAND_HEIGHT_SIG,
+		code = callIntMethod(g_env, g_displayCallback, "onDisplayAdjustBandHeght", DISPLAY_ADJUST_BAND_HEIGHT_SIG,
 			(jlong)handle, (jlong)device, bandHeight);
 	}
 	return code;
@@ -218,7 +242,40 @@ int callbacks::display::displayRectangleRequestFunction(void *handle, void *devi
 	int code = 0;
 	if (g_env && g_displayCallback)
 	{
-		jobject memoryRef = util::newLongReference(g_env, (jlong)*memory);
+		// All references must be global references to make sure Java doesn't free objects after the call in Java
+		LongReference memoryRef = LongReference(g_env, (jlong)*memory).asGlobal();
+		IntReference oxRef = IntReference(g_env, *ox).asGlobal();
+		IntReference oyRef = IntReference(g_env, *oy).asGlobal();
+		IntReference rasterRef = IntReference(g_env, *raster).asGlobal();
+		IntReference planeRasterRef = IntReference(g_env, *plane_raster).asGlobal();
+		IntReference xRef = IntReference(g_env, *x).asGlobal();
+		IntReference yRef = IntReference(g_env, *y).asGlobal();
+		IntReference wRef = IntReference(g_env, *w).asGlobal();
+		IntReference hRef = IntReference(g_env, *h).asGlobal();
+
+		code = callIntMethod(g_env, g_displayCallback, "onDisplayRectangleRequest", DISPLAY_RECTANGLE_REQUEST,
+			(jlong)handle, (jlong)device, memoryRef, oxRef, oyRef, rasterRef, planeRasterRef, xRef, yRef, wRef, hRef);
+
+		*memory = (void *)memoryRef.value();
+		*ox = oxRef.value();
+		*oy = oyRef.value();
+		*raster = rasterRef.value();
+		*plane_raster = planeRasterRef.value();
+		*x = xRef.value();
+		*y = yRef.value();
+		*w = wRef.value();
+		*h = hRef.value();
+
+		// We don't need references to these objects anymore so delete the globals to allow them to be garbage collected
+		memoryRef.deleteGlobal();
+		oxRef.deleteGlobal();
+		oyRef.deleteGlobal();
+		rasterRef.deleteGlobal();
+		planeRasterRef.deleteGlobal();
+		xRef.deleteGlobal();
+		yRef.deleteGlobal();
+		wRef.deleteGlobal();
+		hRef.deleteGlobal();
 	}
 	return code;
 }

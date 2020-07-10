@@ -42,4 +42,7 @@ namespace callbacks
 			void **memory, int *ox, int *oy, int *raster, int *plane_raster,
 			int *x, int *y, int *w, int *h);
 	}
+
+	void setCalloutCallback(jobject calout);
+	int calloutFunction(void *instance, void *handle, const char *deviceName, int id, int size, void *data);
 }

@@ -67,7 +67,7 @@ public abstract class DisplayCallback {
 		return 0;
 	}
 
-	public int onDisplayRectangleRequest(long handle, long device, LongReference memory, long ox,
+	public int onDisplayRectangleRequest(long handle, long device, LongReference memory, IntReference ox,
 			IntReference oy, IntReference raster, IntReference planeRaster, IntReference x,
 			IntReference y, IntReference w, IntReference h) {
 		return 0;
