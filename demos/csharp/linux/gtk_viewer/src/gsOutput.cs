@@ -11,13 +11,21 @@ namespace gs_mono_example
         {
             this.SetDefaultSize(500, 500); 
             this.Title = "GhostPDL Standard Output";
-            VBox vBox = new VBox(true, 0);
-            this.Add(vBox);
+
+            //VBox vBox = new VBox(true, 0);
+            //this.Add(vBox);
+
+            ScrolledWindow scrolledWindow = new ScrolledWindow();
+            scrolledWindow.BorderWidth = 5;
+            scrolledWindow.ShadowType = ShadowType.In;
 
             this.DeleteEvent += Handle_DeleteEvent;
 
             m_textView = new Gtk.TextView();
-            vBox.PackStart(m_textView, true, true, 0);
+            scrolledWindow.Add(m_textView);
+
+            //vBox.PackStart(scrolledWindow, true, true, 0);
+            this.Add(scrolledWindow);
             this.ShowAll();
             this.Hide();
         }

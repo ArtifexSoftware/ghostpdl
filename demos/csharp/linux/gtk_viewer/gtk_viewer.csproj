@@ -65,6 +65,7 @@
       <Link>src\ghostnet.cs</Link>
     </Compile>
     <Compile Include="src\gsOutput.cs" />
+    <Compile Include="gtk-gui\gtk_viewer.src.gsOutput.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="packages\GtkSharp.3.22.25.98\build\GtkSharp.targets" Condition="Exists('packages\GtkSharp.3.22.25.98\build\GtkSharp.targets')" />

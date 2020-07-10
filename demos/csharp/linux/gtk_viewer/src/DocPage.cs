@@ -1,6 +1,5 @@
 ﻿using System;
 using System.ComponentModel;
-using System.Drawing;
 using System.Collections.ObjectModel;
 
 namespace gs_mono_example
@@ -10,7 +9,7 @@ namespace gs_mono_example
 		private int height;
 		private int width;
 		private double zoom;
-        private Bitmap bitmap;
+        private Gdk.Pixbuf pixbuf;
 		private String pagename;
 		private int pagenum;
 		private Page_Content_t content;
@@ -41,13 +40,13 @@ namespace gs_mono_example
 			set { zoom = value; }
 		}
 
-		public Bitmap BitMap
+		public Gdk.Pixbuf PixBuf
 		{
-			get { return bitmap; }
+			get { return pixbuf; }
 			set
 			{
-				bitmap = value;
-				OnPropertyChanged("BitMap");
+                pixbuf = value;
+				OnPropertyChanged("PixBuf");
 			}
 		}
 
@@ -85,17 +84,17 @@ namespace gs_mono_example
 			this.height = 0;
 			this.width = 0;
 			this.zoom = 0;
-			this.bitmap = null;
+			this.pixbuf = null;
 			this.pagenum = -1;
 			this.pagename = "";
 		}
 
-		public DocPage(int Height, int Width, double Zoom, Bitmap BitMap, int PageNum)
+		public DocPage(int Height, int Width, double Zoom, Gdk.Pixbuf PixBuf, int PageNum)
 		{
 			this.height = Height;
 			this.width = Width;
 			this.zoom = Zoom;
-			this.bitmap = BitMap;
+			this.pixbuf = PixBuf;
 			this.pagename = ("Page " + (pagenum + 1));
 		}
 	};

@@ -101,32 +101,29 @@ namespace gs_mono_example
         Gtk.ProgressBar m_GtkProgressBar;
         Label m_GtkProgressLabel;
         HBox m_GtkProgressBox;
-        Gtk.TreeView m_GtkTree;
+        Gtk.TreeView m_GtkTreeThumb;
+        Gtk.TreeView m_GtkTreeMain;
         Gtk.VBox m_GtkvBoxMain;
+        Label m_GtkpageTotal;
+        Entry m_GtkpageEntry;
+        Gtk.ListStore m_GtkimageStoreThumb;
+        Gtk.ListStore m_GtkimageStoreMain;
+        Gtk.ScrolledWindow m_GtkthumbScroll;
+        Gtk.ScrolledWindow m_GtkmainScroll;
+        Gtk.Entry m_GtkzoomEntry;
+        Gtk.CheckButton m_GtkaaCheck;
 
-        void ShowMessage(Window parent, NotifyType_t type, string message)
+        void ShowMessage(NotifyType_t type, string message)
         {
-            Dialog dialog = null;
-            String title = "Notice";
+            MessageDialog md = new MessageDialog(this,
+            DialogFlags.DestroyWithParent, MessageType.Error,
+            ButtonsType.Close, message);
 
             if (type == NotifyType_t.MESS_ERROR)
-                title = "Error";
-
-            try
-            {
-                dialog = new Dialog(title, parent,
-                    DialogFlags.DestroyWithParent | DialogFlags.Modal,
-                    ResponseType.Ok);
-                dialog.VBox.Add(new Label(message));
-                dialog.ShowAll();
-
-                dialog.Run();
-            }
-            finally
-            {
-                if (dialog != null)
-                    dialog.Destroy();
-            }
+                md.Title = "Error";
+            else
+                md.Title = "Notice";
+            md.ShowAll();
         }
 
         public MainWindow() : base(Gtk.WindowType.Toplevel)
@@ -154,7 +151,6 @@ namespace gs_mono_example
             m_validZoom = true;
             m_firstime = true;
             m_images_rendered = new List<idata_t>();
-            m_busy_rendering = false;
             m_aa = true;
             m_aa_change = false;
             Gtk.TextTagTable tag = new Gtk.TextTagTable(IntPtr.Zero);
@@ -210,43 +206,74 @@ namespace gs_mono_example
 
             /* Add a hbox with the page information, zoom control, and aa to vbox */
             HBox pageBox = new HBox(false, 0);
-            Entry pageEntry = new Entry();
-            pageEntry.WidthChars = 4;
-            Label pageTotal = new Label("/0");
-            pageBox.PackStart(pageEntry, false, false, 0);
-            pageBox.PackStart(pageTotal, false, false, 0);
+            m_GtkpageEntry = new Entry();
+            m_GtkpageEntry.WidthChars = 4;
+            m_GtkpageTotal = new Label("/0");
+            pageBox.PackStart(m_GtkpageEntry, false, false, 0);
+            pageBox.PackStart(m_GtkpageTotal, false, false, 0);
 
             HBox zoomBox = new HBox(false, 0);
             Button zoomPlus = new Button();
             zoomPlus.Label = "+";
             Button zoomMinus = new Button();
             zoomMinus.Label = "–";
-            Entry zoomEntry = new Entry();
-            zoomEntry.WidthChars = 3;
+            m_GtkzoomEntry = new Entry();
+            m_GtkzoomEntry.WidthChars = 3;
             Label precentLabel = new Label("%");
             zoomBox.PackStart(zoomPlus, false, false, 0);
             zoomBox.PackStart(zoomMinus, false, false, 0);
-            zoomBox.PackStart(zoomEntry, false, false, 0);
+            zoomBox.PackStart(m_GtkzoomEntry, false, false, 0);
             zoomBox.PackStart(precentLabel, false, false, 0);
 
             HBox hBoxControls = new HBox(false, 0);
-            CheckButton aaCheck = new CheckButton("Enable Antialias:");
+            m_GtkaaCheck = new CheckButton("Enable Antialias:");
+            m_GtkaaCheck.Active = true;
+            m_GtkaaCheck.Clicked += AaCheck_Clicked;
             hBoxControls.PackStart(pageBox, false, false, 0);
             hBoxControls.PackStart(zoomBox, false, false, 20);
-            hBoxControls.PackStart(aaCheck, false, false, 0);
+            hBoxControls.PackStart(m_GtkaaCheck, false, false, 0);
 
             m_GtkvBoxMain.PackStart(hBoxControls, false, false, 0);
 
             /* Tree view containing thumbnail and main images */
-            m_GtkTree = new Gtk.TreeView();
-            Gtk.TreeViewColumn thumbColumn = new Gtk.TreeViewColumn();
-            Gtk.TreeViewColumn pageColumn = new Gtk.TreeViewColumn();
-            m_GtkTree.AppendColumn(thumbColumn);
-            m_GtkTree.AppendColumn(pageColumn);
-            Gtk.ListStore imageStore = new Gtk.ListStore(typeof(Image), typeof(Image));
-            m_GtkTree.Model = imageStore;
+            HBox hBoxPages = new HBox(false, 0);
 
-            m_GtkvBoxMain.PackStart(m_GtkTree, true, true, 0);
+            /* Must be scrollable */
+            m_GtkthumbScroll = new ScrolledWindow();
+            m_GtkthumbScroll.BorderWidth = 5;
+            m_GtkthumbScroll.ShadowType = ShadowType.In;
+
+            m_GtkmainScroll = new ScrolledWindow();
+            m_GtkmainScroll.BorderWidth = 5;
+            m_GtkmainScroll.ShadowType = ShadowType.In;
+
+            m_GtkTreeThumb = new Gtk.TreeView();
+            m_GtkTreeThumb.HeadersVisible = false;
+            m_GtkimageStoreThumb = new Gtk.ListStore(typeof(Gdk.Pixbuf));
+            m_GtkTreeThumb.AppendColumn("Thumb", new Gtk.CellRendererPixbuf(), "pixbuf", 0);
+            m_GtkTreeThumb.Style.YThickness = 100;
+            m_GtkthumbScroll.Add(m_GtkTreeThumb);
+
+           /* var colmn = m_GtkTreeThumb.Columns;
+            var mycol = (Gtk.TreeViewColumn)colmn.GetValue(0);
+            mycol.Spacing = 40;
+            mycol.FixedWidth = 0;*/
+
+            m_GtkTreeMain = new Gtk.TreeView();
+            m_GtkTreeMain.HeadersVisible = false;
+            m_GtkimageStoreMain = new Gtk.ListStore(typeof(Gdk.Pixbuf));
+            m_GtkTreeMain.AppendColumn("Main", new Gtk.CellRendererPixbuf(), "pixbuf", 0);
+            m_GtkmainScroll.Add(m_GtkTreeMain);
+
+            hBoxPages.PackStart(m_GtkthumbScroll, false, false, 0);
+            hBoxPages.PackStart(m_GtkmainScroll, true, true, 0);
+
+            m_GtkTreeThumb.Model = m_GtkimageStoreThumb;
+            m_GtkTreeMain.Model = m_GtkimageStoreMain;
+
+
+
+            m_GtkvBoxMain.PackStart(hBoxPages, true, true, 0);
 
             /* Progress bar */
             m_GtkProgressBox = new HBox(false, 0);
@@ -256,9 +283,18 @@ namespace gs_mono_example
             m_GtkProgressLabel = new Label("Render Thumbnails");
             m_GtkProgressBox.PackStart(m_GtkProgressLabel, false, false, 0);
 
-           // m_GtkvBoxMain.PackStart(m_GtkProgressBox, false, false, 0);
-           // m_GtkvBoxMain.Remove(m_GtkProgressBox);
+            m_GtkvBoxMain.PackStart(m_GtkProgressBox, false, false, 0);
+            //m_GtkvBoxMain.Remove(m_GtkProgressBox);
         }
+
+        void AaCheck_Clicked(object sender, EventArgs e)
+        {
+            m_aa = !m_aa;
+            m_aa_change = true;
+            if (m_init_done && !m_busy_render)
+                RenderMainAll();
+        }
+
 
         private void OnQuit(object sender, EventArgs e)
         {
@@ -275,31 +311,40 @@ namespace gs_mono_example
             throw new NotImplementedException();
         }
 
-        private void gsIO(object gsObject, String mess, int len)
+        private void gsIO(String mess, int len)
         {
             Gtk.TextBuffer buffer = m_gsoutput.m_textView.Buffer;
             Gtk.TextIter ti = buffer.EndIter;
-            buffer.Insert(ref ti, mess.Substring(0, len));
+
+            try
+            {
+                var part = mess.Substring(0, len);
+                buffer.Insert(ref ti, part);
+            }
+            catch(Exception except)
+            {
+                var issue = except.Message;
+            }
         }
 
-        private void gsDLL(object gsObject, String mess)
+        private void gsDLL(String mess)
         {
-            ShowMessage(this, NotifyType_t.MESS_STATUS, mess);
+            ShowMessage(NotifyType_t.MESS_STATUS, mess);
         }
 
-        private void gsThumbRendered(object gsObject, int width, int height, int raster,
+        private void gsThumbRendered(int width, int height, int raster,
                                     IntPtr data, gsParamState_t state)
         {
-            ThumbPageCallback(gsObject, width, height, raster, state.zoom, state.currpage, data);
+            ThumbPageCallback(width, height, raster, state.zoom, state.currpage, data);
         }
 
-        private void gsPageRendered(object gsObject, int width, int height, int raster,
+        private void gsPageRendered(int width, int height, int raster,
                                     IntPtr data, gsParamState_t state)
         {
-            MainPageCallback(gsObject, width, height, raster, state.zoom, state.currpage, data);
+            MainPageCallback(width, height, raster, state.zoom, state.currpage, data);
         }
 
-        private void gsProgress(object gsObject, gsEventArgs asyncInformation)
+        private void gsProgress(gsEventArgs asyncInformation)
         {
             if (asyncInformation.Completed)
             {
@@ -330,19 +375,19 @@ namespace gs_mono_example
                     switch (asyncInformation.Params.task)
                     {
                         case GS_Task_t.CREATE_XPS:
-                            ShowMessage(this, NotifyType_t.MESS_STATUS, "Ghostscript failed to create XPS");
+                            ShowMessage(NotifyType_t.MESS_STATUS, "Ghostscript failed to create XPS");
                             break;
 
                         case GS_Task_t.PS_DISTILL:
-                            ShowMessage(this, NotifyType_t.MESS_STATUS, "Ghostscript failed to distill PS");
+                            ShowMessage(NotifyType_t.MESS_STATUS, "Ghostscript failed to distill PS");
                             break;
 
                         case GS_Task_t.SAVE_RESULT:
-                            ShowMessage(this, NotifyType_t.MESS_STATUS, "Ghostscript failed to convert document");
+                            ShowMessage(NotifyType_t.MESS_STATUS, "Ghostscript failed to convert document");
                             break;
 
                         default:
-                            ShowMessage(this, NotifyType_t.MESS_STATUS, "Ghostscript failed.");
+                            ShowMessage(NotifyType_t.MESS_STATUS, "Ghostscript failed.");
                             break;
 
                     }
@@ -444,7 +489,7 @@ namespace gs_mono_example
 
                 case GS_Task_t.SAVE_RESULT:
                     /* Don't delete file in this case as this was our output! */
-                    ShowMessage(this, NotifyType_t.MESS_STATUS, "GS Completed Conversion");
+                    ShowMessage(NotifyType_t.MESS_STATUS, "GS Completed Conversion");
                     break;
             }
         }

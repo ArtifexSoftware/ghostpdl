@@ -16,9 +16,9 @@ namespace gs_mono_example
 			DocPage doc_page = new DocPage();
 			doc_page.Content = Page_Content_t.THUMBNAIL;
 			doc_page.Zoom = zoom_in;
-			doc_page.BitMap = m_thumbnails[page_num - 1].BitMap;
-			doc_page.Width = (int)(width / (Constants.SCALE_THUMB));
-			doc_page.Height = (int)(height / (Constants.SCALE_THUMB));
+            doc_page.Width = (int)(width / (Constants.SCALE_THUMB));
+            doc_page.Height = (int)(height / (Constants.SCALE_THUMB));
+            doc_page.PixBuf = m_thumbnails[page_num - 1].PixBuf.ScaleSimple(doc_page.Width, doc_page.Height, Gdk.InterpType.Nearest);
 			doc_page.PageNum = page_num;
 			m_docPages.Add(doc_page);
 			//m_toppage_pos.Add(offset + Constants.PAGE_VERT_MARGIN);
@@ -28,37 +28,42 @@ namespace gs_mono_example
 		/* Rendered all the thumbnail pages.  Stick them in the appropriate lists */
 		private void ThumbsDone()
 		{
-           	//m_toppage_pos.Add(offset);
-			//xaml_ProgressGrid.Visibility = System.Windows.Visibility.Collapsed;
-			//xaml_RenderProgress.Value = 0;
-			//xaml_PageList.ItemsSource = m_docPages;
-			//xaml_ThumbList.ItemsSource = m_thumbnails;
-			//xaml_ThumbList.Items.Refresh();
-			
-			//m_ghostscript.gsPageRenderedMain -= new ghostsharp.gsCallBackPageRenderedMain(gsThumbRendered);
-
-			m_numpages = m_thumbnails.Count;
+            //m_GtkvBoxMain.Remove(m_GtkProgressBox);
+            m_ghostscript.gsPageRenderedMain -= new ghostsharp.gsCallBackPageRenderedMain(gsThumbRendered);
+            m_numpages = m_thumbnails.Count;
 			if (m_numpages < 1)
 			{
-				//ShowMessage(NotifyType_t.MESS_STATUS, "File failed to open properly");
+				ShowMessage(NotifyType_t.MESS_STATUS, "File failed to open properly");
 				//CleanUp();
 			}
 			else
 			{
 				m_init_done = true;
-				//xaml_TotalPages.Text = "/" + m_numpages;
-				//xaml_currPage.Text = m_currpage.ToString();
+                m_GtkpageEntry.Text = "1";
+                m_GtkpageTotal.Text = "/" + m_numpages;
+                m_GtkzoomEntry.Text = "100";
+                for (int k = 0; k < m_numpages; k++)
+                {
+                    m_GtkimageStoreThumb.AppendValues(m_thumbnails[k].PixBuf);
+                    m_GtkimageStoreMain.AppendValues(m_docPages[k].PixBuf);
+                }
 
-				/* If non-pdf, kick off full page rendering */
-				//RenderMainFirst();
-			}
-		}
+              //  var colmn = m_GtkTreeThumb.Columns;
+              //  var mycol = (Gtk.TreeViewColumn)colmn.GetValue(0);
 
-		/* Callback from ghostscript with the rendered thumbnail.  Also update progress */
-		private void ThumbPageCallback(object gsObject, int width, int height, int raster, double zoom_in,
-			int page_num, IntPtr data)
-		{
-			Byte[] bitmap = new byte[raster * height];
+                //mycol.IsFloating = true;
+
+
+                /* If non-pdf, kick off full page rendering */
+                RenderMainFirst();
+            }
+        }
+
+        /* Callback from ghostscript with the rendered thumbnail.  Also update progress */
+        private void ThumbPageCallback(int width, int height, int raster, double zoom_in,
+            int page_num, IntPtr data)
+        {
+            Byte[] bitmap = new byte[raster * height];
             int offset = 0;
 
             Marshal.Copy(data, bitmap, 0, raster * height);
@@ -71,28 +76,19 @@ namespace gs_mono_example
             doc_page.Zoom = zoom_in;
             doc_page.PageNum = page_num;
 
-            GCHandle pinned = GCHandle.Alloc(bitmap, GCHandleType.Pinned);
-            IntPtr address = pinned.AddrOfPinnedObject();
-            doc_page.BitMap = new Bitmap(doc_page.Width, doc_page.Height, raster,
-                System.Drawing.Imaging.PixelFormat.Format24bppRgb, address);
-            pinned.Free();
-
+            doc_page.PixBuf = new Gdk.Pixbuf(bitmap, Gdk.Colorspace.Rgb, false, 8, width, height, raster);
             ThumbAssignMain(page_num, width, height, 1.0, ref offset);
 
             /* Dispatch progress bar update on UI thread */
-#if false
-            System.Windows.Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Send, new Action(() =>
-			{
-				/* Logrithmic but it will show progress */
-			//xaml_RenderProgress.Value = ((double) page_num / ((double) page_num + 1))* 100.0;
-			}));
-#endif
+            Gtk.Application.Invoke(delegate {
+                m_GtkProgressBar.Fraction = ((double)page_num / ((double)page_num + 1));
+            });
 		}
 
 		/* Render the thumbnail images */
 		private void RenderThumbs()
 		{
-            m_GtkvBoxMain.PackStart(m_GtkProgressBox, false, false, 0);
+           //m_GtkvBoxMain.PackStart(m_GtkProgressBox, false, false, 0);
             m_GtkProgressLabel.Text = "Rendering Thumbs";
             m_GtkProgressBar.Fraction = 0.0;
 

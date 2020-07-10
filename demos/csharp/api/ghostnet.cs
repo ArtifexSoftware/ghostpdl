@@ -155,7 +155,7 @@ public class gsEventArgs : EventArgs
 		private int display_page(IntPtr handle, IntPtr device, int copies, int flush)
 		{
 			m_params.currpage += 1;
-			gsPageRenderedMain(this, m_pagewidth, m_pageheight, m_pageraster, m_pageptr, m_params);
+			gsPageRenderedMain(m_pagewidth, m_pageheight, m_pageraster, m_pageptr, m_params);
 			return 0;
 		}
 
@@ -212,10 +212,28 @@ public class gsEventArgs : EventArgs
 
 		private int stdout_callback(IntPtr handle, IntPtr pointer, int count)
 		{
-			String output = Marshal.PtrToStringAnsi(pointer);
-			gsIOUpdateMain(this, output, count);
+            String output = null;
+            try
+            {
+                output = Marshal.PtrToStringAnsi(pointer);
+            }
+            catch (Exception except)
+            {
+                var mess = except.Message;
+            }
 
-			switch (m_params.task)
+            try
+            {
+                gsIOUpdateMain(output, count);
+            }
+            catch (Exception excep2)
+            {
+                var mess = excep2.Message;
+            }
+
+            return count;
+#if false
+            switch (m_params.task)
 			{
 				case GS_Task_t.CREATE_XPS:
 					if (count >= 7 && output.Substring(0, 4) == "Page")
@@ -276,12 +294,13 @@ public class gsEventArgs : EventArgs
 					break;
 			}
 			return count;
+#endif
 		}
 
 		private int stderr_callback(IntPtr handle, IntPtr pointer, int count)
 		{
 			String output = Marshal.PtrToStringAnsi(pointer);
-			gsIOUpdateMain(this, output, count);
+			gsIOUpdateMain(output, count);
 			return count;
 		}
 
@@ -298,16 +317,16 @@ public class gsEventArgs : EventArgs
 		IntPtr ptr_display_struct;
 
 		/* Callbacks to Main */
-		internal delegate void gsDLLProblem(object gsObject, String mess);
+		internal delegate void gsDLLProblem(String mess);
 		internal event gsDLLProblem gsDLLProblemMain;
 
-		internal delegate void gsIOCallBackMain(object gsObject, String mess, int len);
+		internal delegate void gsIOCallBackMain(String mess, int len);
 		internal event gsIOCallBackMain gsIOUpdateMain;
 
-		internal delegate void gsCallBackMain(object gsObject, gsEventArgs info);
+		internal delegate void gsCallBackMain(gsEventArgs info);
 		internal event gsCallBackMain gsUpdateMain;
 
-		internal delegate void gsCallBackPageRenderedMain(object gsObject, int width, int height, int raster,
+		internal delegate void gsCallBackPageRenderedMain(int width, int height, int raster,
 			IntPtr data, gsParamState_t state);
 		internal event gsCallBackPageRenderedMain gsPageRenderedMain;
 
@@ -405,7 +424,7 @@ public class gsEventArgs : EventArgs
 				gsIOUpdateMain(this, bound, bound.Length);
 				gsIOUpdateMain(this, stack, stack.Length); */
 				String output = "Ghostscript DLL Invalid Access.";
-				gsDLLProblemMain(this, output);
+				gsDLLProblemMain(output);
 				return;
 			}
 			switch (Params.task)
@@ -435,7 +454,7 @@ public class gsEventArgs : EventArgs
 				Value = (gsParamState_t)e.Result;
 				info = new gsEventArgs(true, 100, Value);
 			}
-			gsUpdateMain(this, info);
+			gsUpdateMain(info);
 		}
 
 		/* Callback as worker progresses */
@@ -444,7 +463,7 @@ public class gsEventArgs : EventArgs
 			/* Callback with progress */
 			gsParamState_t Value = new gsParamState_t();
 			gsEventArgs info = new gsEventArgs(false, e.ProgressPercentage, Value);
-			gsUpdateMain(this, info);
+			gsUpdateMain(info);
 		}
 		private gsParamState_t gsFileSync(gsParamState_t in_params)
 		{
@@ -489,7 +508,7 @@ public class gsEventArgs : EventArgs
 				argPtrsStable = GCHandle.Alloc(argPtrs, GCHandleType.Pinned);
 
 				fullcommand = "Command Line: " + fullcommand + "\n";
-				gsIOUpdateMain(this, fullcommand, fullcommand.Length);
+				gsIOUpdateMain(fullcommand, fullcommand.Length);
 				code = ghostapi.gsapi_init_with_args(gsInstance, num_params, argPtrsStable.AddrOfPinnedObject());
 				if (code < 0 && code != gsConstants.E_QUIT)
 				{
@@ -498,23 +517,23 @@ public class gsEventArgs : EventArgs
 			}
 			catch (DllNotFoundException except)
 			{
-				gsDLLProblemMain(this, "Exception: " + except.Message);
+				gsDLLProblemMain("Exception: " + except.Message);
 				in_params.result = GS_Result_t.gsFAILED;
 				cleanup = false;
 			}
 			catch (BadImageFormatException except)
 			{
-				gsDLLProblemMain(this, "Exception: " + except.Message);
+				gsDLLProblemMain("Exception: " + except.Message);
 				in_params.result = GS_Result_t.gsFAILED;
 				cleanup = false;
 			}
 			catch (GhostscriptException except)
 			{
-				gsDLLProblemMain(this, "Exception: " + except.Message);
+				gsDLLProblemMain("Exception: " + except.Message);
 			}
 			catch (Exception except)
 			{
-				gsDLLProblemMain(this, "Exception: " + except.Message);
+				gsDLLProblemMain("Exception: " + except.Message);
 			}
 			finally
 			{
@@ -593,7 +612,7 @@ public class gsEventArgs : EventArgs
 				argPtrsStable = GCHandle.Alloc(argPtrs, GCHandleType.Pinned);
 
 				fullcommand = "Command Line: " + fullcommand + "\n";
-				gsIOUpdateMain(this, fullcommand, fullcommand.Length);
+				gsIOUpdateMain(fullcommand, fullcommand.Length);
 				code = ghostapi.gsapi_init_with_args(gsInstance, num_params, argPtrsStable.AddrOfPinnedObject());
 				if (code < 0)
 				{
@@ -602,25 +621,25 @@ public class gsEventArgs : EventArgs
 			}
 			catch (DllNotFoundException except)
 			{
-				gsDLLProblemMain(this, "Exception: " + except.Message);
+				gsDLLProblemMain("Exception: " + except.Message);
 				Params.result = GS_Result_t.gsFAILED;
 				cleanup = false;
 				e.Result = Params;
 			}
 			catch (BadImageFormatException except)
 			{
-				gsDLLProblemMain(this, "Exception: " + except.Message);
+				gsDLLProblemMain("Exception: " + except.Message);
 				Params.result = GS_Result_t.gsFAILED;
 				cleanup = false;
 				e.Result = Params;
 			}
 			catch (GhostscriptException except)
 			{
-				gsDLLProblemMain(this, "Exception: " + except.Message);
+				gsDLLProblemMain("Exception: " + except.Message);
 			}
 			catch (Exception except)
 			{
-				gsDLLProblemMain(this, "Exception: " + except.Message);
+				gsDLLProblemMain("Exception: " + except.Message);
 			}
 			finally
 			{ 
@@ -712,7 +731,7 @@ public class gsEventArgs : EventArgs
 				argPtrsStable = GCHandle.Alloc(argPtrs, GCHandleType.Pinned);
 
 				fullcommand = "Command Line: " + fullcommand + "\n";
-				gsIOUpdateMain(this, fullcommand, fullcommand.Length);
+				gsIOUpdateMain(fullcommand, fullcommand.Length);
 				code = ghostapi.gsapi_init_with_args(gsInstance, num_params, argPtrsStable.AddrOfPinnedObject());
 				if (code < 0)
 				{
@@ -767,26 +786,26 @@ public class gsEventArgs : EventArgs
 			}
 			catch (DllNotFoundException except)
 			{
-				gsDLLProblemMain(this, "Exception: " + except.Message);
+				gsDLLProblemMain("Exception: " + except.Message);
 				Params.result = GS_Result_t.gsFAILED;
 				cleanup = false;
 				e.Result = Params;
 			}
 			catch (BadImageFormatException except)
 			{
-				gsDLLProblemMain(this, "Exception: " + except.Message);
+				gsDLLProblemMain("Exception: " + except.Message);
 				Params.result = GS_Result_t.gsFAILED;
 				cleanup = false;
 				e.Result = Params;
 			}
 			catch (GhostscriptException except)
 			{
-				gsDLLProblemMain(this, "Exception: " + except.Message);
+				gsDLLProblemMain("Exception: " + except.Message);
 			}
 			catch (Exception except)
 			{
 				/* Could be a file io issue */
-				gsDLLProblemMain(this, "Exception: " + except.Message);
+				gsDLLProblemMain("Exception: " + except.Message);
 				Params.result = GS_Result_t.gsFAILED;
 				cleanup = false;
 				e.Result = Params;
@@ -881,7 +900,7 @@ public class gsEventArgs : EventArgs
 				argPtrsStable = GCHandle.Alloc(argPtrs, GCHandleType.Pinned);
 
 				fullcommand = "Command Line: " + fullcommand + "\n";
-				gsIOUpdateMain(this, fullcommand, fullcommand.Length);
+				gsIOUpdateMain(fullcommand, fullcommand.Length);
 				code = ghostapi.gsapi_init_with_args(dispInstance, num_params, argPtrsStable.AddrOfPinnedObject());
 				if (code < 0)
 				{
@@ -891,21 +910,21 @@ public class gsEventArgs : EventArgs
 
 			catch (DllNotFoundException except)
 			{
-				gsDLLProblemMain(this, "Exception: " + except.Message);
+				gsDLLProblemMain("Exception: " + except.Message);
 				gsparams.result = GS_Result_t.gsFAILED;
 				cleanup = false;
 				e.Result = gsparams;
 			}
 			catch (BadImageFormatException except)
 			{
-				gsDLLProblemMain(this, "Exception: " + except.Message);
+				gsDLLProblemMain("Exception: " + except.Message);
 				gsparams.result = GS_Result_t.gsFAILED;
 				cleanup = false;
 				e.Result = gsparams;
 			}
 			catch (GhostscriptException except)
 			{
-				gsDLLProblemMain(this, "Exception: " + except.Message);
+				gsDLLProblemMain("Exception: " + except.Message);
 				gsparams.result = GS_Result_t.gsFAILED;
 				if (dispInstance != IntPtr.Zero)
 					ghostapi.gsapi_delete_instance(dispInstance);
@@ -913,7 +932,7 @@ public class gsEventArgs : EventArgs
 			}
 			catch (Exception except)
 			{
-				gsDLLProblemMain(this, "Exception: " + except.Message);
+				gsDLLProblemMain("Exception: " + except.Message);
 				gsparams.result = GS_Result_t.gsFAILED;
 				if (dispInstance != IntPtr.Zero)
 					ghostapi.gsapi_delete_instance(dispInstance);
@@ -993,7 +1012,7 @@ public class gsEventArgs : EventArgs
 			}
 		}
 
-		#region public_methods
+#region public_methods
 
 		/* Direct call on gsapi to get the version of the DLL we are using */
 		public String GetVersion()
@@ -1022,7 +1041,7 @@ public class gsEventArgs : EventArgs
 			}
 			catch (Exception except)
 			{
-				gsDLLProblemMain(this, "Exception: " + except.Message);
+				gsDLLProblemMain("Exception: " + except.Message);
 			}
 			return null;
 		}
@@ -1216,7 +1235,7 @@ public class gsEventArgs : EventArgs
 			}
 			catch (Exception except)
 			{
-				gsDLLProblemMain(this, "Exception: " + except.Message);
+				gsDLLProblemMain("Exception: " + except.Message);
 				out_params.result = GS_Result_t.gsFAILED;
 			}
 
@@ -1237,6 +1256,6 @@ public class gsEventArgs : EventArgs
 		{
 			m_worker.CancelAsync();
 		}
-		#endregion
+#endregion
 	}
 }
