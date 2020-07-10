@@ -165,7 +165,7 @@ namespace ghostnet_wpf_example
 				ProcessFile(filePath);
 			}
 		}
-		private void gsIO(object gsObject, String mess, int len)
+		private void gsIO(String mess, int len)
 		{
 			m_gsoutput.Update(mess, len);
 		}
@@ -173,24 +173,24 @@ namespace ghostnet_wpf_example
 		{
 			m_gsoutput.Show();
 		}
-		private void gsDLL(object gsObject, String mess)
+		private void gsDLL(String mess)
 		{
 			ShowMessage(NotifyType_t.MESS_STATUS, mess);
 		}
 
-		private void gsThumbRendered(object gsObject, int width, int height, int raster,
+		private void gsThumbRendered(int width, int height, int raster,
 			IntPtr data, gsParamState_t state)
 		{
-			ThumbPageCallback(gsObject, width, height, raster, state.zoom, state.currpage, data);
+			ThumbPageCallback(width, height, raster, state.zoom, state.currpage, data);
 		}
 
-		private void gsPageRendered(object gsObject, int width, int height, int raster,
+		private void gsPageRendered(int width, int height, int raster,
 			IntPtr data, gsParamState_t state)
 		{
-			MainPageCallback(gsObject, width, height, raster, state.zoom, state.currpage, data);
+			MainPageCallback(width, height, raster, state.zoom, state.currpage, data);
 		}
 
-		private void gsProgress(object gsObject, gsEventArgs asyncInformation)
+		private void gsProgress(gsEventArgs asyncInformation)
 		{
 			if (asyncInformation.Completed)
 			{

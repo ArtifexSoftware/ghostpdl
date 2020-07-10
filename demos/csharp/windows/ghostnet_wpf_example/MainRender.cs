@@ -35,7 +35,7 @@ namespace ghostnet_wpf_example
 		}
 
 		/* Callback from ghostscript with the rendered image. */
-		private void MainPageCallback(object gsObject, int width, int height, int raster, double zoom_in,
+		private void MainPageCallback(int width, int height, int raster, double zoom_in,
 			int page_num, IntPtr data)
 		{
 			Byte[] bitmap = new byte[raster * height];

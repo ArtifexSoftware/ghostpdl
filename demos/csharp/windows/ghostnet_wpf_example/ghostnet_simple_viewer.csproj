@@ -98,12 +98,16 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="..\..\api\ghostapi.cs">
+      <Link>ghostapi.cs</Link>
+    </Compile>
+    <Compile Include="..\..\api\ghostnet.cs">
+      <Link>ghostnet.cs</Link>
+    </Compile>
     <Compile Include="About.xaml.cs">
       <DependentUpon>About.xaml</DependentUpon>
     </Compile>
     <Compile Include="DocPage.cs" />
-    <Compile Include="ghostapi.cs" />
-    <Compile Include="ghostnet.cs" />
     <Compile Include="gsIO.cs" />
     <Compile Include="gsOutput.xaml.cs">
       <DependentUpon>gsOutput.xaml</DependentUpon>
