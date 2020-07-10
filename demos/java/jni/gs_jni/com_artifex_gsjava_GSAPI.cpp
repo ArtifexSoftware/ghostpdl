@@ -168,11 +168,8 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1get_1default_1device
 	int code = gsapi_get_default_device_list((void *)instance, &clist, &clistlen);
 	if (code == 0)
 	{
-		ByteArrayReference listRef = ByteArrayReference(env, list);
-		listRef.setValue(clist);
-
-		IntReference listlenRef = IntReference(env, listlen);
-		listlenRef.setValue(clistlen);
+		ByteArrayReference::setValueField(env, list, clist);
+		IntReference::setValueField(env, listlen, clistlen);
 	}
 	return code;
 }
@@ -187,43 +184,75 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1init_1with_1args
 }
 
 JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1run_1string_1begin
-	(JNIEnv *, jclass, jlong, jint, jobject)
+	(JNIEnv *env, jclass, jlong instance, jint userErrors, jobject pExitCode)
 {
-	return 0;
+	int exitCode;
+	int code = gsapi_run_string_begin((void *)instance, userErrors, &exitCode);
+	if (pExitCode)
+		IntReference::setValueField(env, pExitCode, exitCode);
+	return code;
 }
 
 JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1run_1string_1continue
-	(JNIEnv *, jclass, jlong, jbyteArray, jint, jint, jobject)
+	(JNIEnv *env, jclass, jlong instance, jbyteArray str, jint length, jint userErrors, jobject pExitCode)
 {
-	return 0;
+	jboolean copy = false;
+	int exitCode;
+	const char *cstring = (const char *)env->GetByteArrayElements(str, &copy);
+	int code = gsapi_run_string_continue((void *)instance, cstring, length, userErrors, &exitCode);
+	if (pExitCode)
+		IntReference::setValueField(env, pExitCode, exitCode);
+	return code;
 }
 
 JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1run_1string_1end
-	(JNIEnv *, jclass, jlong, jint, jobject)
+	(JNIEnv *env, jclass, jlong instance, jint userErrors, jobject pExitCode)
 {
-	return 0;
+	int exitCode;
+	int code = gsapi_run_string_end((void *)instance, userErrors, &exitCode);
+	if (pExitCode)
+		IntReference::setValueField(env, pExitCode, exitCode);
+	return code;
 }
 
 JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1run_1string_1with_1length
-	(JNIEnv *, jclass, jlong, jbyteArray, jint, jint, jobject)
+	(JNIEnv *env, jclass, jlong instance, jbyteArray str, jint length, jint userErrors, jobject pExitCode)
 {
-	return 0;
+	jboolean copy = false;
+	int exitCode;
+	const char *cstring = (const char *)env->GetByteArrayElements(str, &copy);
+	int code = gsapi_run_string_with_length((void *)instance, cstring, length, userErrors, &exitCode);
+	if (pExitCode)
+		IntReference::setValueField(env, pExitCode, exitCode);
+	return code;
 }
 
 JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1run_1string
-	(JNIEnv *, jclass, jlong, jbyteArray, jint, jobject)
+	(JNIEnv *env, jclass, jlong instance, jbyteArray str, jint userErrors, jobject pExitCode)
 {
-	return 0;
+	jboolean copy = false;
+	int exitCode;
+	const char *cstring = (const char *)env->GetByteArrayElements(str, &copy);
+	int code = gsapi_run_string((void *)instance, cstring, userErrors, &exitCode);
+	if (pExitCode)
+		IntReference::setValueField(env, pExitCode, exitCode);
+	return code;
 }
 
 JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1run_1file
-	(JNIEnv *, jclass, jlong, jbyteArray, jint, jobject)
+	(JNIEnv *env, jclass, jlong instance, jbyteArray fileName, jint userErrors, jobject pExitCode)
 {
-	return 0;
+	jboolean copy = false;
+	int exitCode;
+	const char *cstring = (const char *)env->GetByteArrayElements(fileName, &copy);
+	int code = gsapi_run_file((void *)instance, cstring, userErrors, &exitCode);
+	if (pExitCode)
+		IntReference::setValueField(env, pExitCode, exitCode);
+	return code;
 }
 
 JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1exit
-	(JNIEnv *, jclass, jlong)
+	(JNIEnv *env, jclass, jlong instance)
 {
-	return 0;
+	return gsapi_exit((void *)instance);
 }

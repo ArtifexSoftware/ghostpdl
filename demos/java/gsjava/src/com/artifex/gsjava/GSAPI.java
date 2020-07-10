@@ -132,7 +132,7 @@ public class GSAPI {
 
 	public static native int gsapi_run_string_begin(long instance, int userErrors, IntReference pExitCode);
 
-	public static native int gsapi_run_string_continue(long instance, byte[] str, int length, int userErros,
+	public static native int gsapi_run_string_continue(long instance, byte[] str, int length, int userErrors,
 			IntReference pExitCode);
 
 	public static native int gsapi_run_string_end(long instance, int userErrors, IntReference pExitCode);

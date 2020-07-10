@@ -212,7 +212,8 @@ int callbacks::display::displayUpdateFunction(void *handle, void *device, int x,
 	return code;
 }
 
-int callbacks::display::displaySeparationFunction(void *handle, void *device, int component, const char *componentName, unsigned short c, unsigned short m, unsigned short y, unsigned short k)
+int callbacks::display::displaySeparationFunction(void *handle, void *device, int component, const char *componentName,
+	unsigned short c, unsigned short m, unsigned short y, unsigned short k)
 {
 	int code = 0;
 	if (g_env && g_displayCallback)
@@ -237,7 +238,8 @@ int callbacks::display::displayAdjustBandHeightFunction(void *handle, void *devi
 	return code;
 }
 
-int callbacks::display::displayRectangleRequestFunction(void *handle, void *device, void **memory, int *ox, int *oy, int *raster, int *plane_raster, int *x, int *y, int *w, int *h)
+int callbacks::display::displayRectangleRequestFunction(void *handle, void *device, void **memory, int *ox, int *oy,
+	int *raster, int *plane_raster, int *x, int *y, int *w, int *h)
 {
 	int code = 0;
 	if (g_env && g_displayCallback)

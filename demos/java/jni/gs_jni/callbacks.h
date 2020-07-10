@@ -4,6 +4,12 @@
 
 namespace callbacks
 {
+	/*!
+	Sets the JNIEnv which the callbacks should use. Must be set for any Java
+	callbacks to be called.
+
+	@param env A JNIEnv.
+	*/
 	void setJNIEnv(JNIEnv *env);
 
 	void setIOCallbacks(jobject stdIn, jobject stdOut, jobject stdErr);

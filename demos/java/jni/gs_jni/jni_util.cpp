@@ -129,11 +129,6 @@ util::LongReference::LongReference(JNIEnv *env, jlong value) : m_env(env), m_obj
     m_object = env->NewObject(lClass, constructor, value);
 }
 
-util::LongReference::LongReference(JNIEnv *env, jobject object) :
-    m_env(env), m_object(object)
-{
-}
-
 util::LongReference::~LongReference()
 {
 }
@@ -157,11 +152,6 @@ util::IntReference::IntReference(JNIEnv *env, jint value) : m_env(env), m_object
     jmethodID constructor = env->GetMethodID(iClass, "<init>", "(I)V");
 
     m_object = env->NewObject(iClass, constructor, value);
-}
-
-util::IntReference::IntReference(JNIEnv *env, jobject object) :
-    m_env(env), m_object(object)
-{
 }
 
 util::IntReference::~IntReference()
@@ -210,11 +200,6 @@ util::ByteArrayReference::ByteArrayReference(JNIEnv *env, const signed char *arr
 
 util::ByteArrayReference::ByteArrayReference(JNIEnv *env, const unsigned char *array, jsize len) :
     ByteArrayReference(env, (const char *)array, len)
-{
-}
-
-util::ByteArrayReference::ByteArrayReference(JNIEnv *env, jobject object) :
-    m_env(env), m_object(object)
 {
 }
 
