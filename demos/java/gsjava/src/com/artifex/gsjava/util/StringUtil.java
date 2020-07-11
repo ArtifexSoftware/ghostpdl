@@ -9,5 +9,14 @@ public class StringUtil {
 		return result;
 	}
 
+	public static byte[][] to2DByteArray(final String[] strs){
+		final byte[][] array = new byte[strs.length][];
+		for (int i = 0; i < strs.length; i++) {
+			final String str = strs[i];
+			array[i] = toNullTerminatedByteArray(str);
+		}
+		return array;
+	}
+
 	private StringUtil() { }
 }

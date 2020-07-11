@@ -9,6 +9,7 @@ import com.artifex.gsjava.callbacks.IStdOutFunction;
 import com.artifex.gsjava.util.ByteArrayReference;
 import com.artifex.gsjava.util.IntReference;
 import com.artifex.gsjava.util.LongReference;
+import com.artifex.gsjava.util.StringUtil;
 
 /**
  * Class which contains native bindings to Ghostscript via the JNI.
@@ -116,10 +117,8 @@ public class GSAPI {
 
 	public static native int gsapi_set_display_callback(long instance, DisplayCallback displayCallback);
 
-	// Only one callout can be registered right now
 	public static native int gsapi_register_callout(long instance, ICalloutFunction callout, long calloutHandle);
 
-	// Only one callout can be deregistered right now
 	public static native void gsapi_deregister_callout(long instance, ICalloutFunction callout, long calloutHandle);
 
 	public static native int gsapi_set_arg_encoding(long instance, int encoding);
@@ -129,6 +128,10 @@ public class GSAPI {
 	public static native int gsapi_get_default_device_list(long instance, ByteArrayReference list, IntReference listlen);
 
 	public static native int gsapi_init_with_args(long instance, int argc, byte[][] argv);
+
+	public static int gsapi_init_with_args(long instance, String[] argv) {
+		return gsapi_init_with_args(instance, argv.length, StringUtil.to2DByteArray(argv));
+	}
 
 	public static native int gsapi_run_string_begin(long instance, int userErrors, IntReference pExitCode);
 

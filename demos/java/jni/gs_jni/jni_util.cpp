@@ -28,13 +28,18 @@ jbyteArray util::getByteArrayField(JNIEnv *env, jobject object, const char *fiel
 
 char **util::jbyteArray2DToCharArray(JNIEnv *env, jobjectArray array)
 {
-    jboolean copy = true;
+    jboolean copy = false;
     jsize len = env->GetArrayLength(array);
     char **result = new char*[len];
     for (jsize i = 0; i < len; i++)
     {
         jbyteArray byteArrayObject = (jbyteArray)env->GetObjectArrayElement(array, i);
-        result[i] = (char *)env->GetByteArrayElements(byteArrayObject, &copy);
+        char *elem = (char *)env->GetByteArrayElements(byteArrayObject, &copy);
+        jsize slen = strlen(elem);
+        char *nstring = new char[slen + 1LL];
+        nstring[slen] = 0;
+        memcpy(nstring, elem, slen);
+        result[i] = nstring;
     }
     return result;
 }
@@ -79,7 +84,7 @@ int util::callIntMethod(JNIEnv *env, jobject object, const char *method, const c
     va_list args;
     int result;
     va_start(args, sig);
-    result = env->CallIntMethod(object, methodID, args);
+    result = env->CallIntMethodV(object, methodID, args);
     va_end(args);
     return result;
 }

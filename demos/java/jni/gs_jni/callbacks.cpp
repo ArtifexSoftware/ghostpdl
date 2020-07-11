@@ -48,9 +48,21 @@ void callbacks::setJNIEnv(JNIEnv *env)
 
 void callbacks::setIOCallbacks(jobject stdIn, jobject stdOut, jobject stdErr)
 {
-	g_stdIn = stdIn;
-	g_stdOut = stdOut;
-	g_stdErr = stdErr;
+	if (g_env)
+	{
+		if (g_stdIn)
+			g_env->DeleteGlobalRef(g_stdIn);
+
+		if (g_stdOut)
+			g_env->DeleteGlobalRef(g_stdOut);
+
+		if (g_stdErr)
+			g_env->DeleteGlobalRef(g_stdErr);
+
+		g_stdIn = g_env->NewGlobalRef(stdIn);
+		g_stdOut = g_env->NewGlobalRef(stdOut);
+		g_stdErr = g_env->NewGlobalRef(stdErr);
+	}
 }
 
 int callbacks::stdInFunction(void *callerHandle, char *buf, int len)
@@ -106,12 +118,24 @@ int callbacks::pollFunction(void *callerHandle)
 
 void callbacks::setDisplayCallback(jobject displayCallback)
 {
-	g_displayCallback = displayCallback;
+	if (g_env)
+	{
+		if (g_displayCallback)
+			g_env->DeleteGlobalRef(displayCallback);
+
+		g_displayCallback = g_env->NewGlobalRef(displayCallback);
+	}
 }
 
 void callbacks::setCalloutCallback(jobject callout)
 {
-	g_callout = callout;
+	if (g_env)
+	{
+		if (g_callout)
+			g_env->DeleteGlobalRef(g_callout);
+
+		g_callout = g_env->NewGlobalRef(callout);
+	}
 }
 
 int callbacks::calloutFunction(void *instance, void *handle, const char *deviceName, int id, int size, void *data)
