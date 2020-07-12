@@ -1,5 +1,7 @@
 package com.artifex.gsjava;
 
+import java.util.List;
+
 import com.artifex.gsjava.callbacks.DisplayCallback;
 import com.artifex.gsjava.callbacks.ICalloutFunction;
 import com.artifex.gsjava.callbacks.IPollFunction;
@@ -74,6 +76,41 @@ public class GSAPI {
 							GS_ERROR_INVALIDCONTEXT = -29,
 							GS_ERROR_INVALID = -30;
 
+	public static final int GS_COLORS_NATIVE = (1 << 0),
+							GS_COLORS_GRAY = (1 << 1),
+							GS_COLORS_RGB = (1 << 2),
+							GS_COLORS_CMYK = (1 << 3),
+							GS_DISPLAY_COLORS_SEPARATION = (1 << 19);
+
+	public static final long GS_DISPLAY_COLORS_MASK = 0x8000fL;
+
+	public static final int GS_DISPLAY_ALPHA_NONE = (0 << 4),
+							GS_DISPLAY_ALPHA_FIRST = (1 << 4),
+							GS_DISPLAY_ALPHA_LAST = (1 << 5),
+							GS_DIAPLAY_UNUSED_FIRST = (1 <<6),
+							GS_DISPLAY_UNUSED_LAST = (1 << 7);
+
+	public static final long GS_DISPLAY_ALPGA_MASK = 0x00f0L;
+
+	public static final int GS_DISPLAY_DEPTH_1 = (1 << 8),
+							GS_DISPLAY_DEPTH_2 = (1 << 9),
+							GS_DISPLAY_DEPTH_4 = (1 << 10),
+							GS_DISPLAY_DEPTH_8 = (1 << 11),
+							GS_DISPLAY_DEPTH_12 = (1 << 12),
+							GS_DISPLAY_DEPTH_16 = (1 << 3);
+
+	public static final long GS_DISPLAY_DEPTH_MASK = 0xff00L;
+
+	public static final int GS_DISPLAY_BIGENDIAN = (0 << 16),
+							GS_DISPLAY_LITTLEENDIAN = (1 << 16);
+
+	public static final long GS_DISPLAY_ENDIAN_MASK = 0x00010000L;
+
+	public static final int GS_DISPLAY_TOPFIRST = (0 << 17),
+							GS_DISPLAY_BOTTOMFIRST = (1 << 17);
+
+	public static final long DISPLAY_FIRSTROW_MASK = 0x00020000L;
+
 	public static class Revision {
 		public volatile byte[] product;
 		public volatile byte[] copyright;
@@ -129,10 +166,6 @@ public class GSAPI {
 
 	public static native int gsapi_init_with_args(long instance, int argc, byte[][] argv);
 
-	public static int gsapi_init_with_args(long instance, String[] argv) {
-		return gsapi_init_with_args(instance, argv.length, StringUtil.to2DByteArray(argv));
-	}
-
 	public static native int gsapi_run_string_begin(long instance, int userErrors, IntReference pExitCode);
 
 	public static native int gsapi_run_string_continue(long instance, byte[] str, int length, int userErrors,
@@ -148,4 +181,34 @@ public class GSAPI {
 	public static native int gsapi_run_file(long instance, byte[] fileName, int userErrors, IntReference pExitCode);
 
 	public static native int gsapi_exit(long instance);
+
+	// Utility methods to make calling some native methods easier
+
+	public static int gsapi_init_with_args(long instance, String[] argv) {
+		return gsapi_init_with_args(instance, argv.length, StringUtil.to2DByteArray(argv));
+	}
+
+	public static int gsapi_init_with_args(long instance, List<String> argv) {
+		return gsapi_init_with_args(instance, argv.toArray(new String[argv.size()]));
+	}
+
+	public static int gsapi_run_string_continue(long instance, String str, int length, int userErrors,
+			IntReference pExitCode) {
+		return gsapi_run_string_continue(instance, StringUtil.toNullTerminatedByteArray(str.substring(0, length)),
+				length, userErrors, pExitCode);
+	}
+
+	public static int gsapi_run_string_with_length(long instance, String str, int length, int userErrors,
+			IntReference pExitCode) {
+		return gsapi_run_string_with_length(instance, StringUtil.toNullTerminatedByteArray(str.substring(0, length)),
+				length, userErrors, pExitCode);
+	}
+
+	public static int gsapi_run_string(long instance, String str, int userErrors, IntReference pExitCode) {
+		return gsapi_run_string(instance, StringUtil.toNullTerminatedByteArray(str), userErrors, pExitCode);
+	}
+
+	public static int gsapi_run_file(long instance, String fileName, int userErrors, IntReference pExitCode) {
+		return gsapi_run_file(instance, StringUtil.toNullTerminatedByteArray(fileName), userErrors, pExitCode);
+	}
 }
