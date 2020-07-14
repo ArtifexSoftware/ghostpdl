@@ -97,26 +97,26 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1set_1poll
 JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1set_1display_1callback
 	(JNIEnv *env, jclass, jlong instance, jobject displayCallback)
 {
-	display_callback cb;
-	cb.size = sizeof(display_callback);
-	cb.version_major = 1;
-	cb.version_minor = 0;
+	display_callback *cb = new display_callback;
+	cb->size = sizeof(display_callback);
+	cb->version_major = DISPLAY_VERSION_MAJOR;
+	cb->version_minor = DISPLAY_VERSION_MINOR;
 
-	cb.display_open = callbacks::display::displayOpenFunction;
-	cb.display_preclose = callbacks::display::displayPrecloseFunction;
-	cb.display_close = callbacks::display::displayCloseFunction;
-	cb.display_presize = callbacks::display::displayPresizeFunction;
-	cb.display_size = callbacks::display::displaySizeFunction;
-	cb.display_sync = callbacks::display::displaySyncFunction;
-	cb.display_page = callbacks::display::displayPageFunction;
-	cb.display_update = callbacks::display::displayUpdateFunction;
-	cb.display_memalloc = NULL;
-	cb.display_memfree = NULL;
-	cb.display_separation = callbacks::display::displaySeparationFunction;
-	cb.display_adjust_band_height = callbacks::display::displayAdjustBandHeightFunction;
-	cb.display_rectangle_request = callbacks::display::displayRectangleRequestFunction;
+	cb->display_open = callbacks::display::displayOpenFunction;
+	cb->display_preclose = callbacks::display::displayPrecloseFunction;
+	cb->display_close = callbacks::display::displayCloseFunction;
+	cb->display_presize = callbacks::display::displayPresizeFunction;
+	cb->display_size = callbacks::display::displaySizeFunction;
+	cb->display_sync = callbacks::display::displaySyncFunction;
+	cb->display_page = callbacks::display::displayPageFunction;
+	cb->display_update = callbacks::display::displayUpdateFunction;
+	cb->display_memalloc = NULL;
+	cb->display_memfree = NULL;
+	cb->display_separation = callbacks::display::displaySeparationFunction;
+	cb->display_adjust_band_height = callbacks::display::displayAdjustBandHeightFunction;
+	cb->display_rectangle_request = callbacks::display::displayRectangleRequestFunction;
 
-	int code = gsapi_set_display_callback((void *)instance, &cb);
+	int code = gsapi_set_display_callback((void *)instance, cb);
 	if (code == 0)
 	{
 		callbacks::setJNIEnv(env);

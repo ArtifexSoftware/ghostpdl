@@ -197,7 +197,7 @@ int callbacks::display::displaySizeFunction(void *handle, void *device, int widt
 	int code = 0;
 	if (g_env && g_displayCallback)
 	{
-		jsize len = width * height * format;
+		jsize len = height * raster;
 		jbyteArray byteArray = g_env->NewByteArray(len);
 		g_env->SetByteArrayRegion(byteArray, 0, len, (signed char *)pimage);
 		code = callIntMethod(g_env, g_displayCallback, "onDisplaySize", DISPLAY_SIZE_SIG, (jlong)handle,

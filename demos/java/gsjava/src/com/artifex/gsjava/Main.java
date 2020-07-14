@@ -66,7 +66,7 @@ public class Main {
 			final File ofile = new File("image.tiff");
 
 
-			String[] gargs = { "gs", "-dNOPAUSE", "-dSAFER",
+			final String[] gargs = { "gs", "-dNOPAUSE", "-dSAFER",
 					"-I%rom%Resource%/Init/",
 					"-dBATCH", "-r72", "-sDEVICE=display",
 					"-dDisplayFormat=" + format,
