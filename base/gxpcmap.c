@@ -725,7 +725,10 @@ blank_unmasked_bits(gx_device * mask,
             ptr += raster;
         }
     } else {
-        if (depth/num_comps != 8)
+        /* Planar, only handle 8 or 16 bits */
+        int bytes_per_component = (depth/num_comps) >> 3;
+
+        if (depth/num_comps != 8 && depth/num_comps != 16)
             return_error(gs_error_rangecheck);
         for (y = 0; y < h; y++)
         {
@@ -744,8 +747,10 @@ blank_unmasked_bits(gx_device * mask,
                     int xx = x+x0;
                     if (((mine[xx>>3]>>(x&7)) & 1) == 0) {
                         *ptr++ = blank;
+                        if (bytes_per_component > 1)
+                            *ptr++ = blank;
                     } else {
-                        ptr++;
+                        ptr += bytes_per_component;
                     }
                 }
             }
