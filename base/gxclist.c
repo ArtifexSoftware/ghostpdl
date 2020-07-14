@@ -342,6 +342,23 @@ clist_init_bands(gx_device * dev, gx_device_memory *bdev, uint data_size,
     return 0;
 }
 
+/* Minimum BufferSpace needed when writing the clist */
+/* This is an exported function because it is used to set up render threads */
+size_t
+clist_minimum_buffer(int nbands) {
+
+    /* Leave enough room after states for commands that write a reasonable
+     * amount of data. The cmd_largest_size and the data_bits_size should  be
+     * enough to buffer command operands. The data_bits_size is the level
+     * at which commands should expect to split data across buffers. If this
+     * extra space is a little large, it doesn't really hurt.
+     */
+    return (nbands * (ulong) sizeof(gx_clist_state) +
+            sizeof(cmd_prefix) +
+            cmd_largest_size +
+            data_bits_size);
+}
+
 /*
  * Initialize the allocation for the band states, which are used only
  * when writing.  Requires: nbands.  Sets: states, cbuf, cend.
@@ -355,13 +372,7 @@ clist_init_states(gx_device * dev, byte * init_data, uint data_size)
     /* Align to the natural boundary for ARM processors, bug 689600 */
     intptr_t alignment = (-(intptr_t)init_data) & (sizeof(init_data) - 1);
 
-    /* Leave enough room after states for commands that write a reasonable
-     * amount of data. The cmd_largest_size and the data_bits_size should  be
-     * enough to buffer command operands. The data_bits_size is the level
-     * at which commands should expect to split data across buffers. If this
-     * extra space is a little large, it doesn't really hurt.
-     */
-    if (state_size + sizeof(cmd_prefix) + cmd_largest_size + data_bits_size + alignment > data_size)
+    if (clist_minimum_buffer(cdev->nbands) > data_size)
         return_error(gs_error_rangecheck);
     /* The end buffer position is not affected by alignment */
     cdev->cend = init_data + data_size;

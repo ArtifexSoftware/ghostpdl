@@ -548,6 +548,11 @@ clist_enable_multi_thread_render(gx_device *dev);
 void
 clist_teardown_render_threads(gx_device *dev);
 
+/* Minimum BufferSpace needed when writing the clist */
+/* This is an exported function because it is used to set up render threads */
+/* and in clist_init_states to make sure the buffer is large enough */
+size_t clist_minimum_buffer(int nbands);
+
 #ifdef DEBUG
 #define clist_debug_rect clist_debug_rect_imp
 void clist_debug_rect_imp(int x, int y, int width, int height);
