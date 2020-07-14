@@ -191,7 +191,7 @@ struct gp_file_s {
 /* Allocate a structure based on a gp_file, initialise it with the
  * given prototype, and zero the rest of it. Returns NULL on failure
  * to allocate. */
-gp_file *gp_file_alloc(gs_memory_t *mem, const gp_file_ops_t *prototype, size_t size, const char *cname);
+gp_file *gp_file_alloc(const gs_memory_t *mem, const gp_file_ops_t *prototype, size_t size, const char *cname);
 
 /* Called automatically by gp_fclose. May be needed for implementers to
  * clear up allocations if errors occur while opening files. */
@@ -252,7 +252,7 @@ gp_feof(gp_file *f) {
 
 static inline int
 gp_fclose(gp_file *f) {
-    int ret = (f->ops.close)(f);
+    int ret = (f->ops.close ? (f->ops.close)(f) : 0);
     gp_file_dealloc(f);
     return ret;
 }
@@ -297,6 +297,8 @@ gp_fflush(gp_file *f) {
 
 static inline int
 gp_ferror(gp_file *f) {
+    if (f->ops.ferror == NULL)
+        return 0;
     return (f->ops.ferror)(f);
 }
 

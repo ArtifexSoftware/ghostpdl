@@ -14,7 +14,6 @@
 */
 
 
-/* $Id: simscale.h 6651 2006-03-13 16:18:19Z raph $ */
 /* Definitions for image mask interpolation filter */
 /* Requires scommon.h; strimpl.h if any templates are referenced */
 
@@ -32,11 +31,14 @@ struct stream_imscale_state_s {
     int src_y;
     int src_offset;
     int src_size;
+    int src_line_padded;
 
     byte *dst;
-    int dst_y;
+    int64_t dst_togo; /* down-counter of output bytes */
     int dst_offset;
     int dst_size;
+    int dst_line_size;
+    int dst_line_padded;
 };
 
 extern const stream_template s_imscale_template;

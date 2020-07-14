@@ -11,9 +11,17 @@
 #include <memory.h>
 #include <assert.h>
 #include <limits.h>
+#include <stdarg.h>
 
-//#include "pcl/pl/plapi.h"   /* GSAPI - gpdf version */
+#ifndef GHOSTPDL
+#define GHOSTPDL 1
+#endif
+
+#if GHOSTPDL
+#include "pcl/pl/plapi.h"   /* GSAPI - gpdf version */
+#else
 #include "psi/iapi.h"       /* GSAPI - ghostscript version */
+#endif
 #include "devices/gdevdsp.h"
 
 /* In order to get consistent printing of pointers, we can't just
@@ -587,7 +595,7 @@ callout(void *instance,
 
 /*--------------------------------------------------------------------*/
 /* This is the function that actually runs a test. */
-static int do_test(const char *title, int format,
+static int do_ddtest(const char *title, int format,
                    int use_clist, int legacy,
                    const char *fname)
 {
@@ -613,9 +621,9 @@ static int do_test(const char *title, int format,
     if (legacy)
         argv[argc++] = handle_arg;
     if (format & DISPLAY_COLORS_SEPARATION)
-        argv[argc++] = "examples/spots.ps";
+        argv[argc++] = "../../examples/spots.ps";
     else
-        argv[argc++] = "examples/tiger.eps";
+        argv[argc++] = "../../examples/tiger.eps";
 
     sprintf(format_arg, "-dDisplayFormat=16#%x", format);
     sprintf(handle_arg, "-sDisplayHandle=16#%" FMT_PTR, PTR_CAST &teststate);
@@ -686,6 +694,18 @@ static int do_test(const char *title, int format,
 
     /* Run our test. */
     code = gsapi_init_with_args(instance, argc, argv);
+    if ((format & DISPLAY_ROW_ALIGN_MASK) == DISPLAY_ROW_ALIGN_4 &&
+        sizeof(void *) > 4) {
+        if (code == -100) {
+            printf("Got expected failure!\n");
+            code = 0;
+            goto fail;
+        } else if (code == 0) {
+            printf("Failed to get expected failure!\n");
+            code = -1;
+            goto fail;
+        }
+    }
     if (code < 0) {
         printf("Error %d in gsapi_init_with_args\n", code);
         goto fail;
@@ -707,10 +727,10 @@ failearly:
     printf("%s%s%s%s %s\n", title, clist_str, legacy_str, align_str,
            (code < 0) ? "failed" : "complete");
 
-    return (code < 0);
+    return code;
 }
 
-static int test(const char *title, int format, const char *fname)
+static int displaydev_test(const char *title, int format, const char *fname)
 {
     int use_clist, legacy, align, code;
 
@@ -722,7 +742,7 @@ static int test(const char *title, int format, const char *fname)
                 if (align != 2) {
                     form |= align<<20;
                 }
-                code = do_test(title, form, use_clist, legacy, fname);
+                code = do_ddtest(title, form, use_clist, legacy, fname);
                 if (code < 0)
                     return code;
             }
@@ -731,30 +751,145 @@ static int test(const char *title, int format, const char *fname)
     return code;
 }
 
+static int
+runstring_test(const char *dev, char *outfile, ...)
+{
+    int code;
+    void *instance   = NULL;
+    char devtext[64];
+    va_list args;
+    char *infile;
+    int error_code;
+
+    /* Construct the argc/argv to pass to ghostscript. */
+    int argc = 0;
+    char *argv[10];
+
+    sprintf(devtext, "-sDEVICE=%s", dev);
+    argv[argc++] = "gpdl";
+    argv[argc++] = devtext;
+    argv[argc++] = "-o";
+    argv[argc++] = outfile;
+
+    /* Create a GS instance. */
+    code = gsapi_new_instance(&instance, INSTANCE_HANDLE);
+    if (code < 0) {
+        printf("Error %d in gsapi_new_instance\n", code);
+        goto failearly;
+    }
+
+    /* Run our test. */
+    code = gsapi_init_with_args(instance, argc, argv);
+    if (code < 0) {
+        printf("Error %d in gsapi_init_with_args\n", code);
+        goto fail;
+    }
+
+    va_start(args, outfile);
+    while ((infile = va_arg(args, char *)) != NULL) {
+        printf("Feeding %s via runstring\n", infile);
+        code = gsapi_run_string_begin(instance, 0, &error_code);
+        if (code < 0) {
+            printf("Error %d in gsapi_run_string_begin\n", code);
+            goto fail;
+        }
+
+        {
+            FILE *file = fopen(infile, "rb");
+            char block[1024];
+            unsigned int len;
+            if (file == NULL) {
+                printf("Error: Failed to open %s for reading\n", infile);
+                code = -1;
+                goto fail;
+            }
+            while (!feof(file)) {
+                len = (unsigned int)fread(block, 1, 1024, file);
+
+                code = gsapi_run_string_continue(instance, block, len,
+                                                 0, &error_code);
+                if (code < 0) {
+                    printf("Error %d in gsapi_run_string_continue\n", code);
+                    goto fail;
+                }
+            }
+        }
+
+        code = gsapi_run_string_end(instance, 0, &error_code);
+        if (code < 0) {
+            printf("Error %d in gsapi_run_string_end\n", code);
+            goto fail;
+        }
+    }
+    va_end(args);
+
+    /* Close the interpreter down (important, or we will leak!) */
+    code = gsapi_exit(instance);
+    if (code < 0) {
+        printf("Error %d in gsapi_exit\n", code);
+        goto fail;
+    }
+
+fail:
+    /* Delete the gs instance. */
+    gsapi_delete_instance(instance);
+
+failearly:
+
+    return code;
+}
+
 int main(int argc, char *argv[])
 {
     int code = 0;
 
-#define RUNTEST(STR, FMT, FILE)\
-    if (code >= 0) code = test(STR, FMT, FILE)
+#define RUNTEST(A)\
+    if (code >= 0) code = (A)
 
-    /* Run a variety of tests. */
-    RUNTEST("Chunky Windows Gray", 0x030802, "ddtest0");
-    RUNTEST("Chunky Windows RGB",  0x030804, "ddtest1");
+#define RS(A)\
+    RUNTEST(runstring_test A )
+
+    RS(("pdfwrite", "apitest12.pdf", "../../examples/tiger.eps", NULL));
+    RS(("pdfwrite", "apitest13.pdf", "../../examples/golfer.eps", NULL));
+    RS(("pdfwrite", "apitest14.pdf", "../../examples/tiger.eps",
+                                     "../../examples/golfer.eps",
+                                     NULL));
+#if GHOSTPDL
+    RS(("pdfwrite", "apitest15.pdf", "../../pcl/examples/tiger.px3", NULL));
+    RS(("pdfwrite", "apitest16.pdf", "../../xps/tools/tiger.xps", NULL));
+    RS(("pdfwrite", "apitest17.pdf", "../../pcl/examples/tiger.px3",
+                                     "../../examples/golfer.eps",
+                                     "../../xps/tools/tiger.xps",
+                                     NULL));
+    RS(("pdfwrite", "apitest18.pdf", "../../zlib/zlib.3.pdf", NULL));
+    RS(("pdfwrite", "apitest19.pdf", "../../pcl/examples/tiger.px3",
+                                     "../../examples/tiger.eps",
+                                     "../../examples/golfer.eps",
+                                     "../../zlib/zlib.3.pdf",
+                                     "../../xps/tools/tiger.xps",
+                                     NULL));
+#endif
+
+#define DD(STR, FMT, FILE)\
+    RUNTEST(displaydev_test(STR, FMT, FILE))
+
+    /* Run a variety of tests for the display device. */
+    DD("Chunky Windows Gray", 0x030802, "apitest0");
+    DD("Chunky Windows RGB",  0x030804, "apitest1");
     /* Display device does no support "little endian" CMYK */
-    RUNTEST("Chunky Windows CMYK", 0x020808, "ddtest2");
+    DD("Chunky Windows CMYK", 0x020808, "apitest2");
 
-    RUNTEST("Planar Windows Gray", 0x830802, "ddtest3");
-    RUNTEST("Planar Windows RGB",  0x830804, "ddtest4");
-    RUNTEST("Planar Windows CMYK", 0x820808, "ddtest5");
+    DD("Planar Windows Gray", 0x830802, "apitest3");
+    DD("Planar Windows RGB",  0x830804, "apitest4");
+    DD("Planar Windows CMYK", 0x820808, "apitest5");
 
-    RUNTEST("Planar Interleaved Windows Gray", 0x1030802, "ddtest6");
-    RUNTEST("Planar Interleaved Windows RGB",  0x1030804, "ddtest7");
-    RUNTEST("Planar Interleaved Windows CMYK", 0x1020808, "ddtest8");
+    DD("Planar Interleaved Windows Gray", 0x1030802, "apitest6");
+    DD("Planar Interleaved Windows RGB",  0x1030804, "apitest7");
+    DD("Planar Interleaved Windows CMYK", 0x1020808, "apitest8");
 
-    RUNTEST("Chunky Spots", 0x0A0800, "ddtest9");
-    RUNTEST("Planar Spots", 0x8A0800, "ddtest10");
-    RUNTEST("Planar Interleaved Spots", 0x10A0800, "ddtest11");
+    DD("Chunky Spots", 0x0A0800, "apitest9");
+    DD("Planar Spots", 0x8A0800, "apitest10");
+    DD("Planar Interleaved Spots", 0x10A0800, "apitest11");
 
     return 0;
 }

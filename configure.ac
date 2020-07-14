@@ -248,7 +248,7 @@ INSTALL_CONTRIB="install-contrib-extras"
 
 if test x"$enable_contrib" = x; then
     case $host in
-      *-mingw*|*-msys*|*-cygwin*)
+      *-mingw*|*-msys*)
         AC_MSG_WARN([disabling contrib devices])
         enable_contrib=no
       ;;
@@ -306,7 +306,7 @@ case $host in
         fi
         SET_DT_SONAME=""
         ;;
-        *-mingw*|*-msys*|*-cygwin*)
+        *-mingw*|*-msys*)
         if test $GCC = yes; then
             CC_OPT_FLAGS_TO_TRY="-O2 -DNDEBUG"
             CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
@@ -391,10 +391,10 @@ ARCH_CONF_HEADER=
 
 if test x"$with_arch_h" = x""; then
     case $host in
-          x86_64*-mingw*|x86_64*-msys*|x86_64*-cygwin*)
+          x86_64*-mingw*|x86_64*-msys*)
             ARCH_CONF_HEADER="\$(GLSRCDIR)/../arch/windows-x64-msvc.h"
           ;;
-          *-mingw*|*-msys*|*-cygwin*)
+          *-mingw*|*-msys*)
             ARCH_CONF_HEADER="\$(GLSRCDIR)/../arch/windows-x86-msvc.h"
           ;;
           *-darwin*)
@@ -1872,7 +1872,7 @@ AC_ARG_WITH([ijs], AC_HELP_STRING([--without-ijs],
     [disable IJS driver support]))
 
 case $host in
-    *-mingw*|*-msys*|*-cygwin*)
+    *-mingw*|*-msys*)
         AC_MSG_WARN([disabling the ijs device])
         with_ijs=no
     ;;
@@ -2976,7 +2976,7 @@ case $host in
       fi
       SO_LIB_EXT=".so"
     ;;
-    *-mingw*|*-msys*|*-cygwin*)
+    *-mingw*|*-msys*)
       if test x$hide_symbols = xyes; then
         attr_default="__declspec(dllexport)"
         attr_hidden=""
@@ -3007,6 +3007,32 @@ case $host in
       GPDL_SONAME="lib\$(GPDL${libname1}"
       GPDL_SONAME_MAJOR="lib\$(GPDL${libname3}"
       GPDL_SONAME_MAJOR_MINOR="lib\$(GPDL${libname2}"
+    ;;
+    *-cygwin*)
+      if test x$hide_symbols = xyes; then
+        attr_default="__declspec(dllexport)"
+        attr_hidden=""
+      fi
+      GS_DYNAMIC_LDFLAGS="-shared -Wl,--out-implib=\$(BINDIR)/lib\$(GS_SO_BASE).dll.a $_ldflags"
+      PCL_DYNAMIC_LDFLAGS="-shared -Wl,--out-implib=\$(BINDIR)/lib\$(PCL_SO_BASE).dll.a $_ldflags"
+      XPS_DYNAMIC_LDFLAGS="-shared -Wl,--out-implib=\$(BINDIR)/lib\$(XPS_SO_BASE).dll.a $_ldflags"
+      PDL_DYNAMIC_LDFLAGS="-shared -Wl,--out-implib=\$(BINDIR)/lib\$(PDL_SO_BASE).dll.a $_ldflags"
+      SO_LIB_EXT=""
+      DLL_EXT=".dll"
+      SO_LIB_VERSION_SEPARATOR="-"
+      # make sure the import library doesn't link a program against the DLL with the minor version in it
+      GS_SONAME="lib\$(GS${libname1}"
+      GS_SONAME_MAJOR="lib\$(GS${libname3}"
+      GS_SONAME_MAJOR_MINOR="cyg\$(GS${libname2}"
+      PCL_SONAME="lib\$(PCL${libname1}"
+      PCL_SONAME_MAJOR="lib\$(PCL${libname3}"
+      PCL_SONAME_MAJOR_MINOR="cyg\$(PCL${libname2}"
+      XPS_SONAME="lib\$(XPS${libname1}"
+      XPS_SONAME_MAJOR="lib\$(XPS${libname3}"
+      XPS_SONAME_MAJOR_MINOR="cyg\$(XPS${libname2}"
+      GPDL_SONAME="lib\$(GPDL${libname1}"
+      GPDL_SONAME_MAJOR="lib\$(GPDL${libname3}"
+      GPDL_SONAME_MAJOR_MINOR="cyg\$(GPDL${libname2}"
     ;;
     *bsd*)
       DYNAMIC_CFLAGS="-fPIC $DYNAMIC_CFLAGS"
@@ -3464,7 +3490,7 @@ AC_SUBST(AUXDIRPOSTFIX)
 EXEEXT=""
 
 case $host in
-    *-mingw*|*-msys*|*-cygwin*)
+    *-mingw*|*-msys*)
       EXEEXT=".exe"
     ;;
     *)
@@ -3484,7 +3510,7 @@ AC_SUBST(EXEEXT)
 AUXEXEEXT=""
 
 case $build in
-    *-mingw*|*-msys*|*-cygwin*)
+    *-mingw*|*-msys*)
       AUXEXEEXT=".exe"
     ;;
     *)

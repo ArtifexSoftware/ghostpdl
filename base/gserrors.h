@@ -102,6 +102,12 @@ enum gs_error_type {
     gs_error_NeedInput = -106,
 
 /*
+ * Internal code to all run_string to request that the data is rerun
+ * using run_file.
+ */
+    gs_error_NeedFile = -107,
+
+/*
  * Internal code for a normal exit when usage info is displayed.
  * This allows Window versions of Ghostscript to pause until
  * the message can be read.

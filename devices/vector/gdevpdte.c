@@ -161,7 +161,7 @@ pdf_add_ToUnicode(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_t *pdfon
         if (pdfont->cmap_ToUnicode != NULL)
             gs_cmap_ToUnicode_add_pair(pdfont->cmap_ToUnicode, ch, unicode, length);
         if (length > 2 && pdfont->u.simple.Encoding != NULL)
-            pdfont->u.simple.TwoByteToUnicode = 0;
+            pdfont->TwoByteToUnicode = 0;
     }
     if (unicode)
         gs_free_object(pdev->memory, unicode, "temporary Unicode array");

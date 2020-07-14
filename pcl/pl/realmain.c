@@ -26,18 +26,19 @@ main(int argc, char *argv[])
     int code, code1;
     void *minst = NULL;
     size_t uel_len = strlen(PJL_UEL);
-    
+    int dummy;
+
     code = gsapi_new_instance(&minst, (void *)0);
     if (code < 0)
         return EXIT_FAILURE;
 
     code = gsapi_init_with_args(minst, argc, argv);
     if (code >= 0)
-        code = gsapi_run_string_begin(minst);
+        code = gsapi_run_string_begin(minst, 0, &dummy);
     if (code >= 0)
-        code = gsapi_run_string_continue(minst, PJL_UEL, uel_len);
+        code = gsapi_run_string_continue(minst, PJL_UEL, uel_len, 0, &dummy);
     if (code >= 0)
-        code = gsapi_run_string_end(minst);
+        code = gsapi_run_string_end(minst, 0, &dummy);
     if (code == gs_error_InterpreterExit)
         code = 0;
 

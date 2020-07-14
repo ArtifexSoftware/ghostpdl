@@ -401,16 +401,16 @@ generic_pread(gp_file *f, size_t count, gs_offset_t offset, void *buf)
     int c;
     int64_t os, curroff = gp_ftell(f);
     if (curroff < 0) return curroff;
-    
+
     os = gp_fseek(f, offset, 0);
     if (os < 0) return os;
-    
+
     c = gp_fread(buf, 1, count, f);
     if (c < 0) return c;
-    
+
     os = gp_fseek(f, curroff, 0);
     if (os < 0) return os;
-    
+
     return c;
 }
 
@@ -420,20 +420,20 @@ generic_pwrite(gp_file *f, size_t count, gs_offset_t offset, const void *buf)
     int c;
     int64_t os, curroff = gp_ftell(f);
     if (curroff < 0) return curroff;
-    
+
     os = gp_fseek(f, offset, 0);
     if (os < 0) return os;
-    
+
     c = gp_fwrite(buf, 1, count, f);
     if (c < 0) return c;
-    
+
     os = gp_fseek(f, curroff, 0);
     if (os < 0) return os;
-    
+
     return c;
 }
 
-gp_file *gp_file_alloc(gs_memory_t *mem, const gp_file_ops_t *prototype, size_t size, const char *cname)
+gp_file *gp_file_alloc(const gs_memory_t *mem, const gp_file_ops_t *prototype, size_t size, const char *cname)
 {
     gp_file *file = (gp_file *)gs_alloc_bytes(mem->non_gc_memory, size, cname ? cname : "gp_file");
     if (file == NULL)

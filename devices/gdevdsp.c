@@ -59,6 +59,7 @@
 #include "gxgetbit.h"
 #include "gdevmpla.h"
 #include "gdevprn.h"           /* For gdev_create_buf_device */
+#include "gsicc_manage.h"
 
 #include "gdevkrnlsclass.h" /* 'standard' built in subclasses, currently First/Last Page and obejct filter */
 
@@ -245,6 +246,8 @@ display_open(gx_device * dev)
     /* Erase these, in case we are opening a copied device. */
     ddev->pBitmap = NULL;
     ddev->zBitmapSize = 0;
+
+    ddev->orig_procs = ddev->procs;
 
     /* Fetch our callback procedures. */
     data.callback = NULL;
@@ -1711,7 +1714,7 @@ setup_as_clist(gx_device_display *ddev, gs_memory_t *buffer_memory)
 open_c:
     ddev->buf = base;
     ddev->buffer_space = space;
-    pclist_dev->common.orig_spec_op = dev_proc(ddev, dev_spec_op);
+    pclist_dev->common.orig_spec_op = ddev->orig_procs.dev_spec_op;
     clist_init_io_procs(pclist_dev, ddev->BLS_force_memory);
     clist_init_params(pclist_dev, base, space, target,
                       display_buf_procs,
@@ -1759,7 +1762,6 @@ display_alloc_bitmap(gx_device_display * ddev, gx_device * param_dev)
     /* free old bitmap (if any) */
     display_free_bitmap(ddev);
 
-    ddev->orig_procs = ddev->procs;
     /* Initialise the clist/memory device specific fields. */
     memset(ddev->skip, 0, sizeof(ddev->skip));
     /* Calculate the size required for the a memory device. */
@@ -2282,6 +2284,11 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
                 maxvalue, maxvalue);
             if ((nFormat & DISPLAY_DEPTH_MASK) == DISPLAY_DEPTH_8) {
                 ddev->devn_params.bitspercomponent = bpc;
+                if (ddev->icc_struct == NULL) {
+                    ddev->icc_struct = gsicc_new_device_profile_array(ddev->memory);
+                    if (ddev->icc_struct == NULL)
+                        return_error(gs_error_VMerror);
+                }
                 ddev->icc_struct->supports_devn = true;
                 set_color_procs(pdev,
                     display_separation_encode_color,

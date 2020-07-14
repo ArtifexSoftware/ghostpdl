@@ -979,7 +979,7 @@ gs_remove_fs(const gs_memory_t *mem,
         return;
 
     pfs = &core->fs;
-    while (pfs)
+    while (*pfs)
     {
         gs_fs_list_t *fs = *pfs;
         if (fs->fs.open_file == rfs->open_file &&

@@ -78,7 +78,7 @@ namespace ghostnet_wpf_example
 		}
 
 		/* Callback from ghostscript with the rendered thumbnail.  Also update progress */
-		private void ThumbPageCallback(object gsObject, int width, int height, int raster, double zoom_in,
+		private void ThumbPageCallback(int width, int height, int raster, double zoom_in,
 			int page_num, IntPtr data)
 		{
 			Byte[] bitmap = new byte[raster * height];

@@ -218,10 +218,11 @@ mgrN_print_page(gx_device_printer *pdev, gp_file *pstream)
             }
         }
 
-        if ( bdev->mgr_depth != 8 )
+        if ( bdev->mgr_depth != 8 ) {
             data = (byte *)gs_malloc(pdev->memory, mgr_line_size, 1, "mgrN_print_page");
-        if (data == NULL)
-            return_error(gs_error_VMerror);
+            if (data == NULL)
+                return_error(gs_error_VMerror);
+        }
 
         while ( !(code = mgr_next_row(&cur)) )
            {

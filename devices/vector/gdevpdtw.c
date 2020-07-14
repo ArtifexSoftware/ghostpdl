@@ -119,7 +119,7 @@ pdf_simple_font_needs_ToUnicode(const pdf_font_resource_t *pdfont)
             In this circumstance, write the ToUnicode map to get a searchable PDF.
         */
         return true;
-    if (!pdfont->u.simple.TwoByteToUnicode)
+    if (!pdfont->TwoByteToUnicode)
         return true;
 
     for (ch = 0; ch < 256; ++ch) {
