@@ -85,6 +85,7 @@ zoom_line(stream_imscale_state *ss) {
 	unsigned char * const dst1 = ss->dst + ss->dst_line_padded;
 	unsigned char * const dst2 = ss->dst + 2*ss->dst_line_padded;
 	unsigned char * const dst3 = ss->dst + 3*ss->dst_line_padded;
+    unsigned int i;
 
     /* r0..r4 are shift registers that contain 5x5 bit matrix and serve
      * as buffers for byte-based access to memory. The registers have
@@ -115,7 +116,7 @@ zoom_line(stream_imscale_state *ss) {
 
     /* Possible improvement: buffer output in a 64-bit accumulator and write 16-bit chunks. */
     /* Unfortunately in this case big- and little-endian systems need different code. */
-    for (int i=0; i < ss->src_size; i++) {
+    for (i=0; i < ss->src_size; i++) {
         uint32_t out;                         /* 0 5 2 7 4 : number of empty bits in r0..r4 */
 
         out = ZOOM(r0, r1, r2, r3, r4) << 4;
