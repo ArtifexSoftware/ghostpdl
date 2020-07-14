@@ -123,6 +123,24 @@ pdfi_alloc_tt_font(pdf_context *ctx, pdf_font_truetype **font, bool is_cid)
     return 0;
 }
 
+static uint pdfi_type42_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph)
+{
+    uint ID = glyph;
+    int code = 0;
+
+    code = pdfi_fapi_check_cmap_for_GID((gs_font *)pfont, &ID);
+    if (code < 0)
+        return code;
+
+    return ID;
+}
+
+static int pdfi_set_type42_data_procs(gs_font_type42 *pfont)
+{
+    pfont->data.get_glyph_index = pdfi_type42_get_glyph_index;
+    return 0;
+}
+
 int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict, pdf_dict *page_dict, gs_font **ppfont)
 {
     pdf_font_truetype *font;
@@ -250,6 +268,11 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
     memset(font->fake_glyph_names, 0x00, font->LastChar * sizeof(gs_string));
 
     code = gs_type42_font_init((gs_font_type42 *)font->pfont, 0);
+    if (code < 0) {
+        goto error;
+    }
+
+    code = pdfi_set_type42_data_procs((gs_font_type42 *)font->pfont);
     if (code < 0) {
         goto error;
     }
