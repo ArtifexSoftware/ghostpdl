@@ -2451,7 +2451,7 @@ currentdict /last-ditch-bpc-csp undef
 
 /.paintform {	% <formdict> <resdict> <stream> .paintform -
   1 index /FormResDict gput  % For broken forms that inherit resources from the context.
-  3 -1 roll dup /Group known PDFusingtransparency and {
+  3 -1 roll dup /Group oknown PDFusingtransparency and {
     .paintgroupform
   } {
     pop pdfopdict .pdfruncontext
