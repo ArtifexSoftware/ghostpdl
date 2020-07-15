@@ -90,6 +90,7 @@ namespace gs_mono_example
         private static double m_doczoom;
         public List<pagesizes_t> m_page_sizes;
         List<idata_t> m_images_rendered;
+        List<idata_t> m_thumbs_rendered;
         bool m_init_done;
         bool m_busy_render;
         bool m_firstime;
@@ -112,18 +113,35 @@ namespace gs_mono_example
         Gtk.ScrolledWindow m_GtkmainScroll;
         Gtk.Entry m_GtkzoomEntry;
         Gtk.CheckButton m_GtkaaCheck;
+        Gtk.Button m_GtkZoomPlus;
+        Gtk.Button m_GtkZoomMinus;
 
         void ShowMessage(NotifyType_t type, string message)
         {
-            MessageDialog md = new MessageDialog(this,
-            DialogFlags.DestroyWithParent, MessageType.Error,
-            ButtonsType.Close, message);
+            Gtk.MessageType mess;
 
             if (type == NotifyType_t.MESS_ERROR)
-                md.Title = "Error";
+            {
+                mess = MessageType.Error;
+            }
             else
-                md.Title = "Notice";
-            md.ShowAll();
+            {
+                mess = MessageType.Warning;
+            }
+
+            /* Dispatch on UI thread */
+            Gtk.Application.Invoke(delegate
+            {
+                MessageDialog md = new MessageDialog(null,
+                                   DialogFlags.Modal,
+                                   mess,
+                                   ButtonsType.Ok,
+                                   message);
+                md.SetPosition(WindowPosition.Center);
+                md.ShowAll();
+                md.Run();
+                md.Destroy();
+            });
         }
 
         public MainWindow() : base(Gtk.WindowType.Toplevel)
@@ -151,6 +169,7 @@ namespace gs_mono_example
             m_validZoom = true;
             m_firstime = true;
             m_images_rendered = new List<idata_t>();
+            m_thumbs_rendered = new List<idata_t>();
             m_aa = true;
             m_aa_change = false;
             Gtk.TextTagTable tag = new Gtk.TextTagTable(IntPtr.Zero);
@@ -213,15 +232,17 @@ namespace gs_mono_example
             pageBox.PackStart(m_GtkpageTotal, false, false, 0);
 
             HBox zoomBox = new HBox(false, 0);
-            Button zoomPlus = new Button();
-            zoomPlus.Label = "+";
-            Button zoomMinus = new Button();
-            zoomMinus.Label = "–";
+            m_GtkZoomPlus = new Button();
+            m_GtkZoomPlus.Label = "+";
+            m_GtkZoomPlus.Clicked += ZoomIn;
+            m_GtkZoomMinus = new Button();
+            m_GtkZoomMinus.Label = "–";
+            m_GtkZoomMinus.Clicked += ZoomOut;
             m_GtkzoomEntry = new Entry();
             m_GtkzoomEntry.WidthChars = 3;
             Label precentLabel = new Label("%");
-            zoomBox.PackStart(zoomPlus, false, false, 0);
-            zoomBox.PackStart(zoomMinus, false, false, 0);
+            zoomBox.PackStart(m_GtkZoomPlus, false, false, 0);
+            zoomBox.PackStart(m_GtkZoomMinus, false, false, 0);
             zoomBox.PackStart(m_GtkzoomEntry, false, false, 0);
             zoomBox.PackStart(precentLabel, false, false, 0);
 
@@ -265,13 +286,15 @@ namespace gs_mono_example
             m_GtkTreeMain.AppendColumn("Main", new Gtk.CellRendererPixbuf(), "pixbuf", 0);
             m_GtkmainScroll.Add(m_GtkTreeMain);
 
+            //To disable selections, set the selection mode to None:
+            m_GtkTreeMain.Selection.Mode = SelectionMode.None;
+
+
             hBoxPages.PackStart(m_GtkthumbScroll, false, false, 0);
             hBoxPages.PackStart(m_GtkmainScroll, true, true, 0);
 
             m_GtkTreeThumb.Model = m_GtkimageStoreThumb;
             m_GtkTreeMain.Model = m_GtkimageStoreMain;
-
-
 
             m_GtkvBoxMain.PackStart(hBoxPages, true, true, 0);
 
@@ -313,18 +336,23 @@ namespace gs_mono_example
 
         private void gsIO(String mess, int len)
         {
-            Gtk.TextBuffer buffer = m_gsoutput.m_textView.Buffer;
-            Gtk.TextIter ti = buffer.EndIter;
+            return;
+            Gtk.Application.Invoke(delegate
+            {
 
-            try
-            {
-                var part = mess.Substring(0, len);
-                buffer.Insert(ref ti, part);
-            }
-            catch(Exception except)
-            {
-                var issue = except.Message;
-            }
+                Gtk.TextBuffer buffer = m_gsoutput.m_textView.Buffer;
+                Gtk.TextIter ti = buffer.EndIter;
+
+                try
+                {
+                    var part = mess.Substring(0, len);
+                    buffer.Insert(ref ti, part);
+                }
+                catch (Exception except)
+                {
+                    var issue = except.Message;
+                }
+            });
         }
 
         private void gsDLL(String mess)

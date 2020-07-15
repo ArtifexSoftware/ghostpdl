@@ -11,7 +11,7 @@ namespace gs_mono_example
 	    private static List<DocPage> m_thumbnails;
 
 		/* Assign current pages to blown up thumbnail images */
-		private void ThumbAssignMain(int page_num, int width, int height, double zoom_in, ref int offset)
+		private void ThumbAssignMain(int page_num, int width, int height, double zoom_in)
 		{
 			DocPage doc_page = new DocPage();
 			doc_page.Content = Page_Content_t.THUMBNAIL;
@@ -25,20 +25,49 @@ namespace gs_mono_example
 			//offset += doc_page.Height + Constants.PAGE_VERT_MARGIN;
 		}
 
-		/* Rendered all the thumbnail pages.  Stick them in the appropriate lists */
-		private void ThumbsDone()
-		{
+        /* In MS NET version this is returned on the main UI thread.  Not
+           so in MONO .NET  */
+        private void ThumbsDone()
+        {
+            /* Dispatch on UI thread */
+            Gtk.Application.Invoke(delegate {
+                ThumbsDoneMain();
+            });
+        }
+
+        private void ThumbsDoneMain()
+        { 
             //m_GtkvBoxMain.Remove(m_GtkProgressBox);
             m_ghostscript.gsPageRenderedMain -= new ghostsharp.gsCallBackPageRenderedMain(gsThumbRendered);
-            m_numpages = m_thumbnails.Count;
-			if (m_numpages < 1)
-			{
-				ShowMessage(NotifyType_t.MESS_STATUS, "File failed to open properly");
-				//CleanUp();
-			}
-			else
-			{
-				m_init_done = true;
+            m_numpages = m_thumbs_rendered.Count;
+            if (m_numpages < 1)
+            {
+                ShowMessage(NotifyType_t.MESS_STATUS, "File failed to open properly");
+                //CleanUp();
+            }
+            else
+            {
+                for (int k = 0; k < m_thumbs_rendered.Count; k++)
+                {
+                    DocPage doc_page = new DocPage();
+                    m_thumbnails.Add(doc_page);
+
+                    doc_page.Width = m_thumbs_rendered[k].width;
+                    doc_page.Height = m_thumbs_rendered[k].height;
+                    doc_page.Content = Page_Content_t.THUMBNAIL;
+                    doc_page.Zoom = m_thumbs_rendered[k].zoom;
+
+                    doc_page.PixBuf = new Gdk.Pixbuf(m_thumbs_rendered[k].bitmap,
+                        Gdk.Colorspace.Rgb, false, 8, m_thumbs_rendered[k].width,
+                        m_thumbs_rendered[k].height, m_thumbs_rendered[k].raster);
+                    doc_page.PageNum = m_thumbs_rendered[k].page_num;
+
+                    ThumbAssignMain(m_thumbs_rendered[k].page_num,
+                        m_thumbs_rendered[k].width, m_thumbs_rendered[k].height, 
+                        1.0);
+                }
+
+                m_init_done = true;
                 m_GtkpageEntry.Text = "1";
                 m_GtkpageTotal.Text = "/" + m_numpages;
                 m_GtkzoomEntry.Text = "100";
@@ -48,15 +77,16 @@ namespace gs_mono_example
                     m_GtkimageStoreMain.AppendValues(m_docPages[k].PixBuf);
                 }
 
-              //  var colmn = m_GtkTreeThumb.Columns;
-              //  var mycol = (Gtk.TreeViewColumn)colmn.GetValue(0);
-
-                //mycol.IsFloating = true;
-
+                m_thumbs_rendered.Clear();
 
                 /* If non-pdf, kick off full page rendering */
                 RenderMainFirst();
             }
+
+            //m_GtkvBoxMain.Remove(m_GtkProgressBox);
+            m_ghostscript.gsPageRenderedMain -= new ghostsharp.gsCallBackPageRenderedMain(gsThumbRendered);
+            m_numpages = m_thumbnails.Count;
+
         }
 
         /* Callback from ghostscript with the rendered thumbnail.  Also update progress */
@@ -64,20 +94,18 @@ namespace gs_mono_example
             int page_num, IntPtr data)
         {
             Byte[] bitmap = new byte[raster * height];
-            int offset = 0;
+
+            idata_t thumb = new idata_t();
 
             Marshal.Copy(data, bitmap, 0, raster * height);
-            DocPage doc_page = new DocPage();
-            m_thumbnails.Add(doc_page);
 
-            doc_page.Width = width;
-            doc_page.Height = height;
-            doc_page.Content = Page_Content_t.THUMBNAIL;
-            doc_page.Zoom = zoom_in;
-            doc_page.PageNum = page_num;
-
-            doc_page.PixBuf = new Gdk.Pixbuf(bitmap, Gdk.Colorspace.Rgb, false, 8, width, height, raster);
-            ThumbAssignMain(page_num, width, height, 1.0, ref offset);
+            thumb.bitmap = bitmap;
+            thumb.page_num = page_num;
+            thumb.width = width;
+            thumb.height = height;
+            thumb.raster = raster;
+            thumb.zoom = zoom_in;
+            m_thumbs_rendered.Add(thumb);
 
             /* Dispatch progress bar update on UI thread */
             Gtk.Application.Invoke(delegate {

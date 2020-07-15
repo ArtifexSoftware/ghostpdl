@@ -54,28 +54,30 @@ namespace gs_mono_example
 				return false;
 		}
 
-		private void ZoomOut(object sender)
-		{
+		private void ZoomOut(object sender, EventArgs e)
+        {
 			if (ZoomDisabled())
 				return;
 			if (!m_init_done || m_doczoom <=  Constants.ZOOM_MIN)
 				return;
 
-			m_doczoom = GetNextZoom(m_doczoom, -1);
-			//xaml_Zoomsize.Text = Math.Round(m_doczoom * 100.0).ToString();
-			ResizePages();
+            m_busy_render = true;
+            m_doczoom = GetNextZoom(m_doczoom, -1);
+            m_GtkzoomEntry.Text = Math.Round(m_doczoom * 100.0).ToString();
+            ResizePages();
 			RenderMainAll();
 		}
 
-		private void ZoomIn(object sender)
-		{
+		private void ZoomIn(object sender, EventArgs e)
+        {
 			if (ZoomDisabled())
 				return;
 			if (!m_init_done || m_doczoom >= Constants.ZOOM_MAX)
 				return;
 
-			m_doczoom = GetNextZoom(m_doczoom, 1);
-			//xaml_Zoomsize.Text = Math.Round(m_doczoom * 100.0).ToString();
+            m_busy_render = true;
+            m_doczoom = GetNextZoom(m_doczoom, 1);
+		    m_GtkzoomEntry.Text = Math.Round(m_doczoom * 100.0).ToString();
 			ResizePages();
 			RenderMainAll();
 		}
@@ -148,21 +150,27 @@ namespace gs_mono_example
 			if (m_page_sizes.Count == 0)
 				return;
 
-			for (int k = 0; k < m_numpages; k++)
+            Gtk.TreeIter tree_iter;
+            m_GtkimageStoreMain.GetIterFirst(out tree_iter);
+
+            for (int k = 0; k < m_numpages; k++)
 			{
 				var doc_page = m_docPages[k];
-				if (doc_page.Zoom == m_doczoom &&
-					doc_page.Width == (int)(m_doczoom * m_page_sizes[k].width) &&
-					doc_page.Height == (int)(m_doczoom * m_page_sizes[k].height))
+				if (doc_page.Zoom == m_doczoom)
 					continue;
 				else
 				{
-					/* Resize it now */
-					doc_page.Width = (int)(m_doczoom * m_page_sizes[k].width);
+                    /* Resize it now */
+                    doc_page.PixBuf =
+                        doc_page.PixBuf.ScaleSimple((int)(m_doczoom * m_page_sizes[k].width),
+                        (int)(m_doczoom * m_page_sizes[k].height), Gdk.InterpType.Nearest);
+                    doc_page.Width = (int)(m_doczoom * m_page_sizes[k].width);
 					doc_page.Height = (int)(m_doczoom * m_page_sizes[k].height);
 					doc_page.Zoom = m_doczoom;
 					doc_page.Content= Page_Content_t.OLD_RESOLUTION;
-				}
+                    m_GtkimageStoreMain.SetValue(tree_iter, 0, doc_page.PixBuf);
+                    m_GtkimageStoreMain.IterNext(ref tree_iter);
+                }
 			}
 		}
 	}
