@@ -202,6 +202,7 @@ int pdfi_read_cidtype2_font(pdf_context *ctx, pdf_dict *font_dict, byte *buf, in
     if (code > 0) {
         font->DW = ((pdf_num *)obj)->value.i;
         pdfi_countdown(obj);
+        obj = NULL;
     }
     else {
         font->DW = 1000;
@@ -209,6 +210,7 @@ int pdfi_read_cidtype2_font(pdf_context *ctx, pdf_dict *font_dict, byte *buf, in
     code = pdfi_dict_knownget_type(ctx, font_dict, "DW2", PDF_ARRAY, (pdf_obj **)&obj);
     if (code > 0) {
         font->DW2 = (pdf_array *)obj;
+        obj = NULL;
     }
     else {
         font->DW2 = NULL;
