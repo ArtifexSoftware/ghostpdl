@@ -1663,12 +1663,11 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_di
     gs_rect bbox;
     pdf_array *BBox;
 
-    if (form_dict->stream_offset == 0) {
+    if (!pdfi_dict_is_stream(ctx, form_dict)) {
         /* See bug #702560. The original file has a Form XObject which is not a stream. Instead
          * the Form XObject has a /Contents key which points to a stream dictionary. This is plainly
          * illegal but, as always, Acrobat can open it....
-         * We can detect that the form dictionary isn't a stream dictionary because the offset is 0. If
-         * PDFSTOPONERROR is true then we just exit. Otherwise we look for a /Contents key in the stream
+         * If PDFSTOPONERROR is true then we just exit. Otherwise we look for a /Contents key in the stream
          * dictionary. If we find one we dereference the object to get a stream dictionary, then merge the
          * two dictionaries, ensuring the stream offset is correct, and proceed as if that's what we'd
          * always had. If we don't have a /Contents key then exit with a typecheck error.
@@ -1677,7 +1676,7 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_di
 
         if (!ctx->pdfstoponerror) {
             code = pdfi_dict_knownget_type(ctx, form_dict, "Contents", PDF_DICT, (pdf_obj **)&stream_dict);
-            if (code < 0 || stream_dict == NULL || stream_dict->stream_offset == 0) {
+            if (code < 0 || stream_dict == NULL || !pdfi_dict_is_stream(ctx, stream_dict)) {
                 pdfi_countdown(stream_dict);
                 ctx->pdf_errors |= E_PDF_BADSTREAMDICT;
                 return_error(gs_error_typecheck);

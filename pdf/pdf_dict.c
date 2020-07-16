@@ -915,8 +915,9 @@ int pdfi_merge_dicts(pdf_dict *target, pdf_dict *source)
 }
 
 /* Check if dict is a stream
- * It's a stream if it has a Length key
- * Not a stream if it has no Length, or some other error happened when looking it up.
+ * It's a stream if it has a non-zero stream_offset (indicating it had a stream token)
+ *
+ * This also finds and catches the Length, if it is present
  *
  * Since dicts get created in various ways, we do a lazy-evaluation on whether there is a
  * Length key, then cache it in the object so we don't have to check next time.
@@ -932,13 +933,11 @@ bool pdfi_dict_is_stream(pdf_context *ctx, pdf_dict *d)
     if (d->length_valid)
         goto exit;
 
+    d->is_stream = (d->stream_offset != 0);
+
     code = pdfi_dict_get_int(ctx, d, "Length", &Length);
-    if (code < 0) {
-        /* Includes undefined */
-        d->is_stream = false;
-    } else {
-        d->is_stream = true;
-    }
+    if (code < 0)
+        Length = 0;
 
     /* Make sure Length is not negative... */
     if (Length < 0)
