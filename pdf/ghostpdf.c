@@ -359,7 +359,7 @@ pdfi_report_errors(pdf_context *ctx)
             dmprintf(ctx->memory, "\tA page had a bad Page dict and was skipped.\n");
         if (ctx->pdf_errors & E_PDF_STACKUNDERFLOWERROR)
             dmprintf(ctx->memory, "\tToo few operands for an operator, operator was skipped.\n");
-        if (ctx->pdf_errors & E_PDF_BADTSREAMDICT)
+        if (ctx->pdf_errors & E_PDF_BADSTREAMDICT)
             dmprintf(ctx->memory, "\tA stream dictionary was not followed by a 'stream' keyword.\n");
     }
 

@@ -1679,7 +1679,7 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_di
             code = pdfi_dict_knownget_type(ctx, form_dict, "Contents", PDF_DICT, (pdf_obj **)&stream_dict);
             if (code < 0 || stream_dict == NULL || stream_dict->stream_offset == 0) {
                 pdfi_countdown(stream_dict);
-                ctx->pdf_errors |= E_PDF_BADTSREAMDICT;
+                ctx->pdf_errors |= E_PDF_BADSTREAMDICT;
                 return_error(gs_error_typecheck);
             }
             ctx->pdf_warnings |= W_PDF_STREAM_HAS_CONTENTS;
@@ -1689,7 +1689,7 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_di
             if (code < 0)
                 return code;
         } else {
-            ctx->pdf_errors |= E_PDF_BADTSREAMDICT;
+            ctx->pdf_errors |= E_PDF_BADSTREAMDICT;
             return_error(gs_error_typecheck);
         }
     }
