@@ -2301,7 +2301,7 @@ int pdfi_repair_file(pdf_context *ctx)
             do {
                 code = pdfi_read_token(ctx, ctx->main_stream, 0, 0);
                 if (ctx->main_stream->eof == true || (code < 0 && code != gs_error_ioerror && code != gs_error_VMerror))
-                    break;;
+                    break;
                 if (code < 0)
                     return code;
                 if (ctx->stack_top[-1]->type == PDF_KEYWORD) {
@@ -2313,24 +2313,23 @@ int pdfi_repair_file(pdf_context *ctx)
                     if (k->key == PDF_ENDOBJ) {
                         if (pdfi_count_stack(ctx) > 1) {
                             if (ctx->stack_top[-2]->type == PDF_DICT) {
-                                 pdf_dict *d = (pdf_dict *)ctx->stack_top[-2];
-                                 pdf_obj *o = NULL;
+                                pdf_dict *d = (pdf_dict *)ctx->stack_top[-2];
+                                pdf_obj *o = NULL;
 
-                                 code = pdfi_dict_get(ctx, d, "Type", &o);
-                                 if (code < 0 && code != gs_error_undefined){
-                                     pdfi_clearstack(ctx);
-                                     return code;
-                                 }
-                                 if (o != NULL) {
-                                     pdf_name *n = (pdf_name *)o;
+                                code = pdfi_dict_knownget_type(ctx, d, "Type", PDF_NAME, &o);
+                                if (code < 0) {
+                                    pdfi_clearstack(ctx);
+                                    return code;
+                                }
+                                if (code > 0) {
+                                    pdf_name *n = (pdf_name *)o;
 
-                                     if (n->type == PDF_NAME) {
-                                         if (n->length == 7 && memcmp(n->data, "Catalog", 7) == 0) {
-                                             ctx->Root = (pdf_dict *)ctx->stack_top[-2];
-                                             pdfi_countup(ctx->Root);
-                                         }
-                                     }
-                                 }
+                                    if (pdfi_name_is(n, "Catalog")) {
+                                        ctx->Root = (pdf_dict *)ctx->stack_top[-2];
+                                        pdfi_countup(ctx->Root);
+                                    }
+                                }
+                                pdfi_countdown(o);
                             }
                         }
                         pdfi_clearstack(ctx);
@@ -2338,7 +2337,7 @@ int pdfi_repair_file(pdf_context *ctx)
                     }
                     if (k->key == PDF_STREAM) {
                         pdf_dict *d;
-                        pdf_name *n;
+                        pdf_name *n = NULL;
 
                         if (pdfi_count_stack(ctx) <= 1) {
                             pdfi_clearstack(ctx);
@@ -2349,17 +2348,15 @@ int pdfi_repair_file(pdf_context *ctx)
                             pdfi_clearstack(ctx);
                             break;;
                         }
-                        code = pdfi_dict_get(ctx, d, "Type", (pdf_obj **)&n);
+                        code = pdfi_dict_knownget_type(ctx, d, "Type", PDF_NAME, (pdf_obj **)&n);
                         if (code < 0) {
                             if (ctx->pdfstoponerror || code == gs_error_VMerror) {
                                 pdfi_clearstack(ctx);
                                 return code;
                             }
-                            pdfi_clearstack(ctx);
-                            break;
                         }
-                        if (n->type == PDF_NAME) {
-                            if (n->length == 6 && memcmp(n->data, "ObjStm", 6) == 0) {
+                        if (code > 0) {
+                            if (pdfi_name_is(n, "ObjStm")) {
                                 int64_t N, obj_num, offset;
                                 int j;
                                 pdf_stream *compressed_stream;
@@ -2409,6 +2406,7 @@ int pdfi_repair_file(pdf_context *ctx)
                                 }
                             }
                         }
+                        pdfi_countdown(n);
                         pdfi_clearstack(ctx);
                         break;
                     }
@@ -2474,6 +2472,7 @@ int pdfi_read_Root(pdf_context *ctx)
     /* We don't pdfi_countdown(o1) now, because we've transferred our
      * reference to the pointer in the pdf_context structure.
      */
+    pdfi_countdown(ctx->Root); /* If file was repaired it might be set already */
     ctx->Root = (pdf_dict *)o1;
     return 0;
 }
