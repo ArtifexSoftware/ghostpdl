@@ -2644,6 +2644,7 @@ pdfdict
       {
         dup /FilePosition known
         {
+            PDFSTOPONERROR { /DoForm cvx /undefinedresource signalerror } if
             (   **** Error: Invalid Form definition. Output may be incorrect.\n) pdfformaterror
             exch pop
         }
