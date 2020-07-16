@@ -129,7 +129,7 @@ typedef enum pdf_error_flag_e {
     E_PDF_OUTOFMEMORY = E_PDF_NOHEADER << 23,
     E_PDF_PAGEDICTERROR = E_PDF_NOHEADER << 24,
     E_PDF_STACKUNDERFLOWERROR = E_PDF_NOHEADER << 25,
-
+    E_PDF_BADTSREAMDICT = E_PDF_NOHEADER << 26,
 } pdf_error_flag;
 
 typedef enum pdf_warning_flag_e {
@@ -157,6 +157,7 @@ typedef enum pdf_warning_flag_e {
     W_PDF_BADPATTERN = W_PDF_BADSHADING << 1,
     W_PDF_NONSTANDARD_OP = W_PDF_BADPATTERN << 1,
     W_PDF_NUM_EXPONENT = W_PDF_NONSTANDARD_OP << 1,
+    W_PDF_STREAM_HAS_CONTENTS = W_PDF_NUM_EXPONENT << 1,
 } pdf_warning_flag;
 
 typedef enum pdf_crypt_filter_e {

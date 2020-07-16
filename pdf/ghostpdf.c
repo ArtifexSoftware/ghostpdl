@@ -359,6 +359,8 @@ pdfi_report_errors(pdf_context *ctx)
             dmprintf(ctx->memory, "\tA page had a bad Page dict and was skipped.\n");
         if (ctx->pdf_errors & E_PDF_STACKUNDERFLOWERROR)
             dmprintf(ctx->memory, "\tToo few operands for an operator, operator was skipped.\n");
+        if (ctx->pdf_errors & E_PDF_BADTSREAMDICT)
+            dmprintf(ctx->memory, "\tA stream dictionary was not followed by a 'stream' keyword.\n");
     }
 
     if (ctx->pdf_warnings != W_PDF_NOWARNING) {
@@ -407,6 +409,8 @@ pdfi_report_errors(pdf_context *ctx)
             dmprintf(ctx->memory, "\tThe file uses a non-standard PDF operator.\n");
         if (ctx->pdf_warnings & W_PDF_NUM_EXPONENT)
             dmprintf(ctx->memory, "\tThe file uses numbers with exponents, which is not standard PDF.\n");
+        if (ctx->pdf_warnings & W_PDF_STREAM_HAS_CONTENTS)
+            dmprintf(ctx->memory, "\tA stream dictionary has no stream and instead uses a /Contents entry, which is invalid.\n");
     }
 
     dmprintf(ctx->memory, "\n   **** This file had errors that were repaired or ignored.\n");
