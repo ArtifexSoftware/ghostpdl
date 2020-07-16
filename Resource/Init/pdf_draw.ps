@@ -2635,7 +2635,26 @@ pdfdict
     } forall
   } if
 
-  3 index //false /resolvestream cvx
+  3 index
+  % /Contents for the stream is not per the spec, but Acrobat handles it
+  dup /Contents knownoget
+  {
+      % We want to make it's a dictionary, and represents a stream
+      dup type /dicttype eq
+      {
+        dup /FilePosition known
+        {
+            (   **** Error: Invalid Form definition. Output may be incorrect.\n) pdfformaterror
+            exch pop
+        }
+        {pop} ifelse
+      }
+      {
+        pop
+      }
+      ifelse
+  }if
+  //false /resolvestream cvx
   /.paintform cvx
   ] cvx /PaintProc exch put
     % Adjust pdfemptycount since we have an extra dictionary on the stack
