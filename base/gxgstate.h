@@ -369,6 +369,10 @@ struct gs_gstate_s {
     s->strokeconstantalpha = 1.0; \
     s->fillconstantalpha = 1.0; \
     s->alphaisshape = 0; \
+    s->texthscaling = 100.0; \
+    s->textspacing = 0.0; \
+    s->textleading = 0; \
+    s->wordspacing = 0.0; \
   } while (0)
 
 struct_proc_finalize(gs_gstate_finalize);
