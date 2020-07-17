@@ -221,7 +221,7 @@ jint util::throwAllocationError(JNIEnv *env, const char *message)
         return -1;
 
     jclass exClass;
-    static const char *const className = "com/artifex/gsjava/util/";
+    static const char *const className = "com/artifex/gsjava/util/AllocationError";
 
     exClass = env->FindClass(className);
     if (exClass == NULL)

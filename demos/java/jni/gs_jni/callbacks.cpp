@@ -14,7 +14,7 @@
 #define DISPLAY_PRECLOSE_SIG "(JJ)I"
 #define DISPLAY_CLOSE_SIG "(JJ)I"
 #define DISPLAY_PRESIZE_SIG "(JJIIII)I"
-#define DISPLAY_SIZE_SIG "(JJIIII[B)I"
+#define DISPLAY_SIZE_SIG "(JJIIIILcom/artifex/gsjava/util/BytePointer;)I"
 #define DISPLAY_SYNC_SIG "(JJ)I"
 #define DISPLAY_PAGE_SIG "(JJIZ)I"
 #define DISPLAY_UPDATE_SIG "(JJIIII)I"
@@ -207,8 +207,38 @@ int callbacks::display::displaySizeFunction(void *handle, void *device, int widt
 		jsize len = height * raster;
 		jbyteArray byteArray = g_env->NewByteArray(len);
 		g_env->SetByteArrayRegion(byteArray, 0, len, (signed char *)pimage);
+
+		static const char *const bytePointerClassName = "com/artifex/gsjava/util/BytePointer";
+		static const char *const nativePointerClassName = "com/artifex/gsjava/util/NativePointer";
+
+		jclass bytePointerClass = g_env->FindClass(bytePointerClassName);
+		if (bytePointerClass == NULL)
+			return throwNoClassDefError(g_env, bytePointerClassName);
+
+		jclass nativePointerClass = g_env->FindClass(nativePointerClassName);
+		if (nativePointerClass == NULL)
+			return throwNoClassDefError(g_env, nativePointerClassName);
+
+
+
+		jmethodID constructor = g_env->GetMethodID(bytePointerClass, "<init>", "()V");
+		if (constructor == NULL)
+			return throwNoSuchMethodError(g_env, "com.artifex.gsjava.util.BytePointer.<init>()V");
+		jobject bytePointer = g_env->NewObject(bytePointerClass, constructor);
+
+		jfieldID dataPtrID = g_env->GetFieldID(nativePointerClass, "address", "J");
+		if (dataPtrID == NULL)
+			return throwNoSuchFieldError(g_env, "address");
+
+		jfieldID lengthID = g_env->GetFieldID(bytePointerClass, "length", "J");
+		if (lengthID == NULL)
+			return throwNoSuchFieldError(g_env, "length");
+
+		g_env->SetLongField(bytePointer, dataPtrID, (jlong)pimage);
+		g_env->SetLongField(bytePointer, lengthID, len);
+
 		code = callIntMethod(g_env, g_displayCallback, "onDisplaySize", DISPLAY_SIZE_SIG, (jlong)handle,
-			(jlong)device, width, height, raster, (jint)format, byteArray);
+			(jlong)device, width, height, raster, (jint)format, bytePointer);
 	}
 	return code;
 }

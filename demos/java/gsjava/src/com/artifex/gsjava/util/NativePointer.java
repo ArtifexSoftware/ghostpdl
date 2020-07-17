@@ -23,6 +23,17 @@ package com.artifex.gsjava.util;
  */
 public class NativePointer {
 
+	static {
+		registerLibraries();
+	}
+
+	/**
+	 * Registers the needed native libraries.
+	 */
+	private static void registerLibraries() {
+		System.loadLibrary("gs_jni");
+	}
+
 	public static final long	NULL = 0x0L;
 
 	public static final long	BYTE_SIZE = 1L,
@@ -111,7 +122,7 @@ public class NativePointer {
 
 	private static native long callocNative(long count, long size) throws AllocationError;
 
-	private static native long freeNative(long block) throws AllocationError;
+	private static native void freeNative(long block);
 
 
 	public static native byte[] byteArrayNative(long address, long len);

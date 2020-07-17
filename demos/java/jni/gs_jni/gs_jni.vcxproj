@@ -165,12 +165,14 @@
   <ItemGroup>
     <ClInclude Include="callbacks.h" />
     <ClInclude Include="com_artifex_gsjava_GSAPI.h" />
+    <ClInclude Include="com_artifex_gsjava_util_NativePointer.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="jni_util.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="callbacks.cpp" />
     <ClCompile Include="com_artifex_gsjava_GSAPI.cpp" />
+    <ClCompile Include="com_artifex_gsjava_util_NativePointer.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="jni_util.cpp" />
   </ItemGroup>

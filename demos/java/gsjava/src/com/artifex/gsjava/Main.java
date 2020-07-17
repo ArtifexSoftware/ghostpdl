@@ -11,6 +11,7 @@ import java.util.List;
 import com.artifex.gsjava.GSAPI.Revision;
 import com.artifex.gsjava.callbacks.DisplayCallback;
 import com.artifex.gsjava.util.LongReference;
+import com.artifex.gsjava.util.NativePointer;
 
 public class Main {
 
@@ -59,12 +60,23 @@ public class Main {
 
 			final int format = GS_COLORS_RGB | GS_DISPLAY_DEPTH_8 | GS_DISPLAY_LITTLEENDIAN;
 
-			final File file = new File("Hello.pdf");
+			final File file = new File("redgreen.pdf");
 			if (!file.exists())
 				throw new FileNotFoundException(file.getAbsolutePath());
 
 			final File ofile = new File("image.tiff");
 
+			NativePointer ptr = new NativePointer();
+			ptr.calloc(5, NativePointer.CHAR_SIZE);
+			long address = ptr.getAddress();
+			NativePointer.setCharNative(address, 0, 'H');
+			NativePointer.setCharNative(address, 1, 'e');
+			NativePointer.setCharNative(address, 2, 'l');
+			NativePointer.setCharNative(address, 3, 'l');
+			NativePointer.setCharNative(address, 4, 'o');
+			char[] chars = NativePointer.charArrayNative(address, 5);
+			System.out.println(new String(chars));
+			ptr.free();
 
 			final String[] gargs = { "gs", "-dNOPAUSE", "-dSAFER",
 					"-I%rom%Resource%/Init/",

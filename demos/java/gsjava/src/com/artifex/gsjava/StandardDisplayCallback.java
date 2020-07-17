@@ -16,6 +16,7 @@ public class StandardDisplayCallback extends DisplayCallback {
 		this.pageRaster = raster;
 		this.pimage = pimage;
 		System.out.println("width=" + width + ", height=" + height + ", raster=" + raster);
+		System.out.println("pimage=" + pimage);
 		return 0;
 	}
 
