@@ -6,9 +6,39 @@
 
 namespace util
 {
+
+
 	typedef class LongReference LongReference;
 	typedef class IntReference IntReference;
 	typedef class ByteArrayReference ByteArrayReference;
+
+	/*!
+	Returns the field ID of a field inside an object, checking if it exists and ensuring
+	all arguments are non-null. If the field is not found, the Java exception NoSuchFieldError
+	will be thrown and NULL will be returned.
+
+	@param env A JNIEnv.
+	@param object The object to find the field in.
+	@param field The name of the field.
+	@param sig The field's signature.
+
+	@return The field ID, or NULL if the field is not found, or any argument is NULL.
+	*/
+	jfieldID getFieldID(JNIEnv *env, jobject object, const char *field, const char *sig);
+
+	/*!
+	Returns the method ID of a method inside an object, checking if it exists and ensuring
+	all arguments are non-null. If the method is not found, the Java exception NoSuchMethodError
+	will be thrown and NULL will be returned.
+
+	@param env A JNIEnv.
+	@param object The object to find the method in.
+	@param method The name of the method.
+	@param sig The method's signature.
+
+	@return The method ID, or NULL if the method is not found, or any argument is NULL.
+	*/
+	jmethodID getMethodID(JNIEnv *env, jobject object, const char *method, const char *sig);
 
 	/*!
 	Sets a byte array field of an object.
@@ -134,6 +164,47 @@ namespace util
 	@return The result of throwing the exception.
 	*/
 	jint throwNullPointerException(JNIEnv *env, const char *message);
+
+	/*!
+	Throws the Java exception java.lang.NoSuchMethodError with a message. The function
+	calling this function should immediately return after calling this function.
+
+	@param env A JNIEnv.
+	@param message The message of the exception.
+
+	@return The result of throwing the exception.
+	*/
+	jint throwNoSuchMethodError(JNIEnv *env, const char *message);
+
+	/*!
+	Throws the Java exception java.lang.NoSuchFieldError with a message. The function
+	calling this function should immediately return after calling this function.
+
+	@param env A JNIEnv.
+	@param message The message of the exception.
+
+	@return The result of throwing the exception.
+	*/
+	jint throwNoSuchFieldError(JNIEnv *env, const char *message);
+
+	/*!
+	Returns the name of a jclass. The name is dynamically allocated and after usage,
+	freeClassName() should be called.
+
+	@param env A JNIEnv.
+	@param clazz A jclass.
+
+	@return The name of the class, or NULL if env or clazz are NULL.
+	*/
+	const char *getClassName(JNIEnv *env, jclass clazz);
+
+	/*!
+	Frees a class name generated from getClassName().
+
+	@param className The className generated from getClassName().
+	*/
+	void freeClassName(const char *className);
+
 
 	/*!
 	Class representing the class com.artifex.gsjava.util.LongReference.

@@ -128,7 +128,6 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1set_1display_1callba
 JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1register_1callout
 	(JNIEnv *env, jclass, jlong instance, jobject callout, jlong calloutHandle)
 {
-	// Only supports registering one callout right now
 	int code = gsapi_register_callout((void *)instance, callbacks::calloutFunction, (void *)calloutHandle);
 	if (code == 0)
 	{
@@ -141,7 +140,6 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1register_1callout
 JNIEXPORT void JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1deregister_1callout
 	(JNIEnv *env, jclass, jlong instance, jobject callout, jlong calloutHandle)
 {
-	// Only supports deregistering one callout right now
 	gsapi_deregister_callout((void *)instance, callbacks::calloutFunction, (void *)calloutHandle);
 }
 
@@ -154,6 +152,8 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1set_1arg_1encoding
 JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1set_1default_1device_1list
 	(JNIEnv *env, jclass, jlong instance, jbyteArray list, jint listlen)
 {
+	if (list == NULL)
+		return throwNullPointerException(env, "list");
 	jboolean isCopy = false;
 	int code = gsapi_set_default_device_list((void *)instance,
 		(const char *)env->GetByteArrayElements(list, &isCopy), listlen);
@@ -168,8 +168,11 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1get_1default_1device
 	int code = gsapi_get_default_device_list((void *)instance, &clist, &clistlen);
 	if (code == 0)
 	{
-		ByteArrayReference::setValueField(env, list, clist);
-		IntReference::setValueField(env, listlen, clistlen);
+		if (list)
+			ByteArrayReference::setValueField(env, list, clist);
+
+		if (listlen)
+			IntReference::setValueField(env, listlen, clistlen);
 	}
 	return code;
 }
@@ -177,6 +180,8 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1get_1default_1device
 JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1init_1with_1args
 	(JNIEnv *env, jclass, jlong instance, jint argc, jobjectArray argv)
 {
+	if (argv == NULL)
+		return throwNullPointerException(env, "argv");
 	char **cargv = jbyteArray2DToCharArray(env, argv);
 	int code = gsapi_init_with_args((void *)instance, argc, cargv);
 	delete2DByteArray(argc, cargv);
@@ -196,6 +201,8 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1run_1string_1begin
 JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1run_1string_1continue
 	(JNIEnv *env, jclass, jlong instance, jbyteArray str, jint length, jint userErrors, jobject pExitCode)
 {
+	if (str == NULL)
+		return throwNullPointerException(env, "str");
 	jboolean copy = false;
 	int exitCode;
 	const char *cstring = (const char *)env->GetByteArrayElements(str, &copy);
@@ -218,6 +225,8 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1run_1string_1end
 JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1run_1string_1with_1length
 	(JNIEnv *env, jclass, jlong instance, jbyteArray str, jint length, jint userErrors, jobject pExitCode)
 {
+	if (str == NULL)
+		return throwNullPointerException(env, "str");
 	jboolean copy = false;
 	int exitCode;
 	const char *cstring = (const char *)env->GetByteArrayElements(str, &copy);
@@ -230,6 +239,8 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1run_1string_1with_1l
 JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1run_1string
 	(JNIEnv *env, jclass, jlong instance, jbyteArray str, jint userErrors, jobject pExitCode)
 {
+	if (str == NULL)
+		return throwNullPointerException(env, "str");
 	jboolean copy = false;
 	int exitCode;
 	const char *cstring = (const char *)env->GetByteArrayElements(str, &copy);
@@ -242,6 +253,8 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1run_1string
 JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1run_1file
 	(JNIEnv *env, jclass, jlong instance, jbyteArray fileName, jint userErrors, jobject pExitCode)
 {
+	if (fileName == NULL)
+		return throwNullPointerException(env, "fileName");
 	jboolean copy = false;
 	int exitCode;
 	const char *cstring = (const char *)env->GetByteArrayElements(fileName, &copy);

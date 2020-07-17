@@ -103,7 +103,13 @@ int callbacks::stdErrFunction(void *callerHandle, const char *str, int len)
 
 void callbacks::setPollCallback(jobject poll)
 {
-	g_poll = poll;
+	if (g_env)
+	{
+		if (g_poll)
+			g_env->DeleteGlobalRef(g_poll);
+
+		g_poll = g_env->NewGlobalRef(poll);
+	}
 }
 
 int callbacks::pollFunction(void *callerHandle)
@@ -192,7 +198,8 @@ int callbacks::display::displayPresizeFunction(void *handle, void *device, int w
 	return code;
 }
 
-int callbacks::display::displaySizeFunction(void *handle, void *device, int width, int height, int raster, unsigned int format, unsigned char *pimage)
+int callbacks::display::displaySizeFunction(void *handle, void *device, int width, int height, int raster,
+	unsigned int format, unsigned char *pimage)
 {
 	int code = 0;
 	if (g_env && g_displayCallback)
@@ -221,7 +228,8 @@ int callbacks::display::displayPageFunction(void *handle, void *device, int copi
 	int code = 0;
 	if (g_env && g_displayCallback)
 	{
-		code = callIntMethod(g_env, g_displayCallback, "onDisplayPage", DISPLAY_PAGE_SIG, (jlong)handle, (jlong)device, copies, flush);
+		code = callIntMethod(g_env, g_displayCallback, "onDisplayPage", DISPLAY_PAGE_SIG, (jlong)handle,
+			(jlong)device, copies, flush);
 	}
 	return code;
 }
@@ -231,7 +239,8 @@ int callbacks::display::displayUpdateFunction(void *handle, void *device, int x,
 	int code = 0;
 	if (g_env && g_displayCallback)
 	{
-		code = callIntMethod(g_env, g_displayCallback, "onDisplayUpdate", DISPLAY_UPDATE_SIG, (jlong)handle, (jlong)device, x, y, w, h);
+		code = callIntMethod(g_env, g_displayCallback, "onDisplayUpdate", DISPLAY_UPDATE_SIG, (jlong)handle,
+			(jlong)device, x, y, w, h);
 	}
 	return code;
 }
@@ -244,7 +253,7 @@ int callbacks::display::displaySeparationFunction(void *handle, void *device, in
 	{
 		jsize len = strlen(componentName);
 		jbyteArray byteArray = g_env->NewByteArray(len);
-		g_env->SetByteArrayRegion(byteArray, 0, len, (signed char *)componentName);
+		g_env->SetByteArrayRegion(byteArray, 0, len, (const jbyte *)componentName);
 		code = callIntMethod(g_env, g_displayCallback, "onDisplaySeparation", DISPLAY_SEPARATION_SIG, (jlong)handle,
 			(jlong)device, component, byteArray, c, m, y, k);
 	}
