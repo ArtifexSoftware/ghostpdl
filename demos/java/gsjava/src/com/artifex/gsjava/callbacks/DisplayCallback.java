@@ -1,5 +1,6 @@
 package com.artifex.gsjava.callbacks;
 
+import com.artifex.gsjava.util.BytePointer;
 import com.artifex.gsjava.util.IntReference;
 import com.artifex.gsjava.util.LongReference;
 
@@ -33,7 +34,7 @@ public abstract class DisplayCallback {
 	}
 
 	public int onDisplaySize(long handle, long device, int width,
-			int height,int raster, int format, byte[] pimage) {
+			int height,int raster, int format, BytePointer pimage) {
 		return 0;
 	}
 

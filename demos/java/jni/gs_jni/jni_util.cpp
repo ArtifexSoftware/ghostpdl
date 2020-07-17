@@ -215,19 +215,34 @@ jint util::throwNoSuchFieldError(JNIEnv *env, const char *message)
     return env->ThrowNew(exClass, message);
 }
 
+jint util::throwAllocationError(JNIEnv *env, const char *message)
+{
+    if (env == NULL)
+        return -1;
+
+    jclass exClass;
+    static const char *const className = "com/artifex/gsjava/util/";
+
+    exClass = env->FindClass(className);
+    if (exClass == NULL)
+        return throwNoClassDefError(env, className);
+
+    return env->ThrowNew(exClass, message);
+}
+
 const char *util::getClassName(JNIEnv *env, jclass clazz)
 {
-    jmethodID id = getMethodID(env, clazz, "getName", "()Ljava/lang/String;");
-    if (id == NULL)
+    jmethodID getNameID = getMethodID(env, clazz, "getName", "()Ljava/lang/String;");
+    if (getNameID == NULL)
         return NULL;
 
-    jobject name = env->CallObjectMethod(clazz, id);
+    jobject name = env->CallObjectMethod(clazz, getNameID);
     jclass sClass = env->GetObjectClass(name);
-    jmethodID id = getMethodID(env, clazz, "getBytes", "()[B");
-    if (id == NULL)
+    jmethodID getBytesID = getMethodID(env, clazz, "getBytes", "()[B");
+    if (getBytesID == NULL)
         return NULL;
 
-    jbyteArray bname = (jbyteArray)env->CallObjectMethod(name, id);
+    jbyteArray bname = (jbyteArray)env->CallObjectMethod(name, getBytesID);
     jsize len = env->GetArrayLength(bname);
 
     char *cstr = new char[len];

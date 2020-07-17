@@ -188,6 +188,17 @@ namespace util
 	jint throwNoSuchFieldError(JNIEnv *env, const char *message);
 
 	/*!
+	Throws the Java exception com.artifex.gsjava.util.AllocationError with a message.
+	The function calling this function should immediately return after calling this function.
+
+	@param env A JNIEnv.
+	@param message The message of the exception.
+
+	@return The result of throwing the exception.
+	*/
+	jint throwAllocationError(JNIEnv *env, const char *message);
+
+	/*!
 	Returns the name of a jclass. The name is dynamically allocated and after usage,
 	freeClassName() should be called.
 
