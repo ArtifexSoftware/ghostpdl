@@ -64,7 +64,7 @@ setup_device_and_mem_for_thread(gs_memory_t *chunk_base_mem, gx_device *dev, boo
     gs_c_param_list paramlist;
     gs_devn_params *pclist_devn_params;
     gx_device_buf_space_t buf_space;
-    ulong state_size;
+    size_t min_buffer_space;
 
 
     /* Every thread will have a 'chunk allocator' to reduce the interaction
@@ -193,11 +193,12 @@ setup_device_and_mem_for_thread(gs_memory_t *chunk_base_mem, gx_device *dev, boo
     ncdev->space_params.banding_type = BandingAlways;
     code = npdev->printer_procs.buf_procs.size_buf_device
                 (&buf_space, (gx_device *)ncdev, NULL, ncdev->space_params.band.BandHeight, false);
-    /* The 100 is bogus, we are just matching what is in clist_init_states */
-    state_size = cdev->nbands * (ulong) sizeof(gx_clist_state) + sizeof(cmd_prefix) + cmd_largest_size + 100;
+    min_buffer_space = clist_minimum_buffer(cdev->nbands);
     ncdev->space_params.band.BandBufferSpace = buf_space.bits + buf_space.line_ptrs;
-    if (state_size > ncdev->space_params.band.BandBufferSpace)
-        ncdev->space_params.band.BandBufferSpace = state_size;
+    /* Check if the BandBufferSpace is large enough to allow us for clist writing */
+    /* to prevent an error from gdev_prn_allocate_memory which checks that.       */
+    if (min_buffer_space > ncdev->space_params.band.BandBufferSpace)
+        ncdev->space_params.band.BandBufferSpace = min_buffer_space;
     ncdev->space_params.band.tile_cache_size = cdev->page_info.tile_cache_size;	/* must be the same */
     ncdev->space_params.band.BandBufferSpace += cdev->page_info.tile_cache_size;
 
