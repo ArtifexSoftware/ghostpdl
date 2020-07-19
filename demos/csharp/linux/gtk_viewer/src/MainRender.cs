@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Runtime;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Runtime.InteropServices;
-using GhostNET;
+using GhostMono;
 
 namespace gs_mono_example
 {
@@ -10,9 +11,11 @@ namespace gs_mono_example
 	{
 		int m_firstpage;
 		int m_lastpage;
+        int m_current_page;
+        Gtk.TreeIter m_tree_iter;
 
-		/* For PDF optimization */
-		private void PageRangeRender(int first_page, int last_page)
+        /* For PDF optimization */
+        private void PageRangeRender(int first_page, int last_page)
 		{
 			bool render_pages = false;
 			for (int k = first_page; k <= last_page; k++)
@@ -36,66 +39,65 @@ namespace gs_mono_example
         private void MainPageCallback(int width, int height, int raster, double zoom_in,
             int page_num, IntPtr data)
         {
-            Byte[] bitmap = new byte[raster * height];
+            Byte[] bitmap = null;
 
-            idata_t page = new idata_t();
-
+            bitmap = new byte[raster * height];
             Marshal.Copy(data, bitmap, 0, raster * height);
+            DocPage doc_page = m_docPages[m_current_page];
 
-            page.bitmap = bitmap;
-            page.page_num = page_num;
-            page.width = width;
-            page.height = height;
-            page.raster = raster;
-            page.zoom = zoom_in;
-            m_images_rendered.Add(page);
-
-            /* Dispatch progress bar update on UI thread */
-            Gtk.Application.Invoke(delegate {
-                m_GtkProgressBar.Fraction = ((double)page_num / ((double)page_num + 1));
-            });
-        }
-
-        /* Done rendering. Again in MS .NET this is on the main UI thread.
-           In MONO .NET not the case. */
-        private void RenderingDone()
-        {
-            /* Dispatch on UI thread */
-            Gtk.Application.Invoke(delegate {
-                RenderingDoneMain();
-            });
-        }
-
-        private void RenderingDoneMain()
-		{
-            Gtk.TreeIter tree_iter;
-            m_GtkimageStoreMain.GetIterFirst(out tree_iter);
-
-            for (int k = 0; k < m_images_rendered.Count; k++)
+            if (doc_page.Content != Page_Content_t.FULL_RESOLUTION ||
+                m_aa_change)
             {
-                DocPage doc_page = m_docPages[k];
+                doc_page.Width = width;
+                doc_page.Height = height;
+                doc_page.Content = Page_Content_t.FULL_RESOLUTION;
 
-                if (doc_page.Content != Page_Content_t.FULL_RESOLUTION ||
-                    m_aa_change)
+                doc_page.Zoom = m_doczoom;
+                doc_page.PixBuf = new Gdk.Pixbuf(bitmap,
+                        Gdk.Colorspace.Rgb, false, 8, width,
+                        height, raster);
+
+                m_GtkimageStoreMain.SetValue(m_tree_iter, 0, doc_page.PixBuf);
+            }
+
+            if (page_num == 1)
+                m_page_scroll_pos[0] = height;
+            else
+                m_page_scroll_pos[page_num - 1] = height + m_page_scroll_pos[page_num - 2];
+
+            m_GtkimageStoreMain.IterNext(ref m_tree_iter);
+            m_current_page += 1;
+            m_GtkProgressBar.Fraction = ((double)page_num / ((double)page_num + 1));
+            return;
+        }
+
+        private void RenderingDone()
+		{
+            if (m_firstime)
+            {
+                for (int k = 0; k < m_numpages; k++)
                 {
-                    doc_page.Width = m_images_rendered[k].width;
-                    doc_page.Height = m_images_rendered[k].height;
-                    doc_page.Content = Page_Content_t.FULL_RESOLUTION;
-
-                    doc_page.Zoom = m_doczoom;
-                    doc_page.PixBuf = new Gdk.Pixbuf(m_images_rendered[k].bitmap,
-                            Gdk.Colorspace.Rgb, false, 8, m_images_rendered[k].width,
-                            m_images_rendered[k].height, m_images_rendered[k].raster);
-
-                    m_GtkimageStoreMain.SetValue(tree_iter, 0, m_docPages[k].PixBuf);
-                    m_GtkimageStoreMain.IterNext(ref tree_iter);
+                    pagesizes_t size = new pagesizes_t();
+                    size.height = m_docPages[k].Height;
+                    size.width = m_docPages[k].Width;
+                    m_page_sizes.Add(size);
                 }
             }
 
             m_aa_change = false;
             m_firstime = false;
             m_busy_render = false;
-            m_images_rendered.Clear();
+
+            /* Free up the large objects generated from the image pages.  If
+             * this is not done, the application will run out of memory as
+             * the user does repeated zoom or aa changes, generating more and
+             * more pages without freeing previous ones.  The large object heap
+             * is handled differently than other memory in terms of its GC */            
+            GCSettings.LargeObjectHeapCompactionMode = 
+                GCLargeObjectHeapCompactionMode.CompactOnce;
+                GC.Collect();
+
+            RemoveProgressBar();
             m_file_open = true;
             m_ghostscript.gsPageRenderedMain -= new ghostsharp.gsCallBackPageRenderedMain(gsPageRendered);
             m_GtkaaCheck.Sensitive = true;
@@ -107,10 +109,12 @@ namespace gs_mono_example
 		private void RenderMainFirst()
 		{
 			m_firstpage = 1;
-			m_busy_render = true;
-			m_page_progress_count = 0;
+            m_current_page = 0;
+            m_GtkimageStoreMain.GetIterFirst(out m_tree_iter);
+            m_busy_render = true;
             m_ghostscript.gsPageRenderedMain += new ghostsharp.gsCallBackPageRenderedMain(gsPageRendered);
-			m_ghostscript.gsDisplayDeviceRenderAll(m_currfile, m_doczoom, m_aa, GS_Task_t.DISPLAY_DEV_NON_PDF);
+            AddProgressBar("Rendering Pages");
+            m_ghostscript.gsDisplayDeviceRenderAll(m_currfile, m_doczoom, m_aa, GS_Task_t.DISPLAY_DEV_NON_PDF);
 		}
 
 		/* Render all, but only if not already busy,  called via zoom or aa changes */
@@ -129,8 +133,6 @@ namespace gs_mono_example
             {
                 var mess = except.Message;
             }
-
-
         }
 	}
 }

@@ -24,7 +24,7 @@ namespace gs_mono_example
 			if (curr_zoom < ZoomSteps[k + 1] && direction > 0)
 				return ZoomSteps[k + 1];
 
-			if (curr_zoom == ZoomSteps[k + 1] && direction > 0)
+			if (Math.Abs(curr_zoom - ZoomSteps[k + 1]) <= Single.Epsilon && direction > 0)
 			{
 				if (k + 1 < ZoomSteps.Length - 1)
 					return ZoomSteps[k + 2];
@@ -36,7 +36,7 @@ namespace gs_mono_example
 			if (curr_zoom > ZoomSteps[k] && direction < 0)
 				return ZoomSteps[k];
 
-			if (curr_zoom == ZoomSteps[k] && direction < 0)
+			if (Math.Abs(curr_zoom - ZoomSteps[k]) <= Single.Epsilon && direction < 0)
 			{
 				if (k > 0)
 					return ZoomSteps[k - 1];
@@ -64,6 +64,7 @@ namespace gs_mono_example
             m_busy_render = true;
             m_doczoom = GetNextZoom(m_doczoom, -1);
             m_GtkzoomEntry.Text = Math.Round(m_doczoom * 100.0).ToString();
+            m_zoom_txt = m_GtkzoomEntry.Text;
             ResizePages();
 			RenderMainAll();
 		}
@@ -78,85 +79,103 @@ namespace gs_mono_example
             m_busy_render = true;
             m_doczoom = GetNextZoom(m_doczoom, 1);
 		    m_GtkzoomEntry.Text = Math.Round(m_doczoom * 100.0).ToString();
-			ResizePages();
+            m_zoom_txt = m_GtkzoomEntry.Text;
+            ResizePages();
 			RenderMainAll();
 		}
 
-		private void ZoomTextChanged(object sender)
+        void ZoomChanged(object sender, EventArgs e)
+        {
+            Regex regex = new Regex("[^0-9.]+");
+
+            var text_entered = m_GtkzoomEntry.Text;
+            if (text_entered == "")
+            {
+                return;
+            }
+
+            if (!m_init_done)
+            {
+                m_GtkzoomEntry.Text = "100";
+                return;
+            }
+
+            bool ok = !regex.IsMatch(text_entered);
+            if (!ok)
+            {
+                m_GtkzoomEntry.Text = m_zoom_txt;
+                return;
+            }
+
+            double zoom = (double)System.Convert.ToDouble(text_entered);
+            if (zoom > Constants.ZOOM_MAX)
+            {
+                zoom = Constants.ZOOM_MAX;
+            }
+            if (zoom < Constants.ZOOM_MIN)
+            {
+                zoom = Constants.ZOOM_MIN;
+            }
+
+            m_GtkzoomEntry.Text = zoom.ToString();
+            m_doczoom = zoom / 100.0;
+
+            m_busy_render = true;
+            m_zoom_txt = m_GtkzoomEntry.Text;
+            ResizePages();
+            RenderMainAll();
+        }
+
+        void PageChanged(object sender, EventArgs e)
+        {
+            Regex regex = new Regex("[^0-9.]+");
+
+            var text_entered = m_GtkpageEntry.Text;
+            if (text_entered == "")
+            {
+                return;
+            }
+
+            if (!m_init_done)
+            {
+                m_GtkpageEntry.Text = "";
+                return;
+            }
+
+            bool ok = !regex.IsMatch(text_entered);
+            if (!ok)
+            {
+                m_GtkpageEntry.Text = m_page_txt;
+                return;
+            }
+
+            int page = (Int32)System.Convert.ToInt32(text_entered);
+            if (page > m_numpages)
+            {
+                page = m_numpages;
+            }
+            if (page < 1)
+            {
+                page = 1;
+            }
+
+            m_GtkpageEntry.Text = page.ToString();
+            m_page_txt = m_GtkpageEntry.Text;
+            ScrollMainTo(page - 1);
+        }
+
+        private void ResizePages()
 		{
-			Regex regex = new Regex("[^0-9.]+");
-            //System.Windows.Controls.TextBox tbox =
-            //	(System.Windows.Controls.TextBox)sender;
-#if false
-            if (tbox.Text == "")
-			{
-				e.Handled = true;
-				return;
-			}
-#endif
-
-/* Need to check it again.  back space does not cause PreviewTextInputTo
- * to fire */
-#if false
-            bool ok = !regex.IsMatch(tbox.Text);
-			if (ok)
-				m_validZoom = true;
-			else
-			{
-				m_validZoom = false;
-				//tbox.Text = "";
-			}
-#endif
-		}
-
-		private void ZoomEnterClicked(object sender)
-		{
-			if (!m_validZoom)
-				return;
-#if false
-            if (e.Key == Key.Return)
-			{
-				e.Handled = true;
-				//var desired_zoom = xaml_Zoomsize.Text;
-				try
-				{
-					double zoom = (double)System.Convert.ToDouble(desired_zoom) / 100.0;
-					if (zoom > Constants.ZOOM_MAX)
-						zoom = Constants.ZOOM_MAX;
-					if (zoom < Constants.ZOOM_MIN)
-						zoom = Constants.ZOOM_MIN;
-
-					m_doczoom = zoom;
-					ResizePages();
-					RenderMainAll();
-					//xaml_Zoomsize.Text = Math.Round(zoom * 100.0).ToString();
-				}
-				catch (FormatException)
-				{
-					//xaml_Zoomsize.Text = "";
-					Console.WriteLine("String is not a sequence of digits.");
-				}
-				catch (OverflowException)
-				{
-					//xaml_Zoomsize.Text = "";
-					Console.WriteLine("The number cannot fit");
-				}
-			}
-#endif
-		}
-
-		private void ResizePages()
-		{
-			if (m_page_sizes.Count == 0)
-				return;
-
             Gtk.TreeIter tree_iter;
             m_GtkimageStoreMain.GetIterFirst(out tree_iter);
+
+            if (m_page_sizes.Count < 1)
+                return;
 
             for (int k = 0; k < m_numpages; k++)
 			{
 				var doc_page = m_docPages[k];
-				if (doc_page.Zoom == m_doczoom)
+				if (Math.Abs(doc_page.Zoom - m_doczoom) <= Single.Epsilon)
 					continue;
 				else
 				{
@@ -170,6 +189,11 @@ namespace gs_mono_example
 					doc_page.Content= Page_Content_t.OLD_RESOLUTION;
                     m_GtkimageStoreMain.SetValue(tree_iter, 0, doc_page.PixBuf);
                     m_GtkimageStoreMain.IterNext(ref tree_iter);
+
+                    if (k == 0)
+                        m_page_scroll_pos[0] = doc_page.Height;
+                    else
+                        m_page_scroll_pos[k] = doc_page.Height + m_page_scroll_pos[k - 1];
                 }
 			}
 		}

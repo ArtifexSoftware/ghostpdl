@@ -1,219 +1,216 @@
 ﻿using System;
 using System.Runtime.InteropServices;   /* Marshaling */
-//using System.ComponentModel;            /* Background threading */
 using System.Threading;
 using System.Collections.Generic;       /* Use of List */
 using System.IO;                        /* Use of path */
 using GhostAPI;                         /* Use of Ghostscript API */
-using System.Windows.Documents;
-#if WPF
-using ghostnet_wpf_example;             /* For Print control */
-#endif
 
-namespace GhostNET
+namespace GhostMono
 {
-	public enum GS_Task_t
-	{
-		PS_DISTILL,
-		CREATE_XPS,
-		SAVE_RESULT,
-		GET_PAGE_COUNT,
-		GENERIC,
-		DISPLAY_DEV_THUMBS_NON_PDF,
-		DISPLAY_DEV_THUMBS_PDF,
-		DISPLAY_DEV_NON_PDF,
-		DISPLAY_DEV_PDF,
-	}
-	public enum GS_Result_t
-	{
-		gsOK,
-		gsFAILED,
-		gsCANCELLED
-	}
-	public enum gsStatus
-	{
-		GS_READY,
-		GS_BUSY,
-		GS_ERROR
-	};
+    public enum GS_Task_t
+    {
+        PS_DISTILL,
+        CREATE_XPS,
+        SAVE_RESULT,
+        GET_PAGE_COUNT,
+        GENERIC,
+        DISPLAY_DEV_THUMBS_NON_PDF,
+        DISPLAY_DEV_THUMBS_PDF,
+        DISPLAY_DEV_NON_PDF,
+        DISPLAY_DEV_PDF,
+    }
+    public enum GS_Result_t
+    {
+        gsOK,
+        gsFAILED,
+        gsCANCELLED
+    }
+    public enum gsStatus
+    {
+        GS_READY,
+        GS_BUSY,
+        GS_ERROR
+    };
 
-	/* Parameters */
-	public struct gsParamState_t
-	{
-		public String outputfile;
-		public String inputfile;
-		public GS_Task_t task;
-		public GS_Result_t result;
-		public int num_pages;
-		public List<int> pages;
-		public int firstpage;
-		public int lastpage;
-		public int currpage;
-		public List<String> args;
-		public int return_code;
-		public double zoom;
-	};
+    /* Parameters */
+    public struct gsParamState_t
+    {
+        public String outputfile;
+        public String inputfile;
+        public GS_Task_t task;
+        public GS_Result_t result;
+        public int num_pages;
+        public List<int> pages;
+        public int firstpage;
+        public int lastpage;
+        public int currpage;
+        public List<String> args;
+        public int return_code;
+        public double zoom;
+    };
 
-public class gsThreadCallBack
-	{
-		private bool m_completed;
-		private int m_progress;
-		private gsParamState_t m_param;
-		public bool Completed
-		{
-			get { return m_completed; }
-		}
-		public gsParamState_t Params
-		{
-			get { return m_param; }
-		}
-		public int Progress
-		{
-			get { return m_progress; }
-		}
-		public gsThreadCallBack(bool completed, int progress, gsParamState_t param)
-		{
-			m_completed = completed;
-			m_progress = progress;
-			m_param = param;
-		}
-	}
+    public class gsThreadCallBack
+    {
+        private bool m_completed;
+        private int m_progress;
+        private gsParamState_t m_param;
+        public bool Completed
+        {
+            get { return m_completed; }
+        }
+        public gsParamState_t Params
+        {
+            get { return m_param; }
+        }
+        public int Progress
+        {
+            get { return m_progress; }
+        }
+        public gsThreadCallBack(bool completed, int progress, gsParamState_t param)
+        {
+            m_completed = completed;
+            m_progress = progress;
+            m_param = param;
+        }
+    }
 
-	class ghostsharp
-	{
-		public class GhostscriptException : Exception
-		{
-			public GhostscriptException(string message) : base(message)
-			{
-			}
-		}
+    class ghostsharp
+    {
+        public class GhostscriptException : Exception
+        {
+            public GhostscriptException(string message) : base(message)
+            {
+            }
+        }
 
-		/* Ghostscript display device callback delegates. */
+        /* Ghostscript display device callback delegates. */
 
-		/* New device has been opened */
-		/* This is the first event from this device. */
-		public delegate int display_open_del(IntPtr handle, IntPtr device);
+        /* New device has been opened */
+        /* This is the first event from this device. */
+        public delegate int display_open_del(IntPtr handle, IntPtr device);
 
-		/* Device is about to be closed. */
-		/* Device will not be closed until this function returns. */
-		public delegate int display_preclose_del(IntPtr handle, IntPtr device);
+        /* Device is about to be closed. */
+        /* Device will not be closed until this function returns. */
+        public delegate int display_preclose_del(IntPtr handle, IntPtr device);
 
-		/* Device has been closed. */
-		/* This is the last event from this device. */
-		public delegate int display_close_del(IntPtr handle, IntPtr device);
+        /* Device has been closed. */
+        /* This is the last event from this device. */
+        public delegate int display_close_del(IntPtr handle, IntPtr device);
 
-		/* Device is about to be resized. */
-		/* Resize will only occur if this function returns 0. */
-		/* raster is byte count of a row. */
-		public delegate int display_presize_del(IntPtr handle, IntPtr device,
-			int width, int height, int raster, uint format);
+        /* Device is about to be resized. */
+        /* Resize will only occur if this function returns 0. */
+        /* raster is byte count of a row. */
+        public delegate int display_presize_del(IntPtr handle, IntPtr device,
+            int width, int height, int raster, uint format);
 
-		/* Device has been resized. */
-		/* New pointer to raster returned in pimage */
-		public delegate int display_size_del(IntPtr handle, IntPtr device,
-							int width, int height, int raster, uint format,
-							IntPtr pimage);
+        /* Device has been resized. */
+        /* New pointer to raster returned in pimage */
+        public delegate int display_size_del(IntPtr handle, IntPtr device,
+                            int width, int height, int raster, uint format,
+                            IntPtr pimage);
 
-		/* flushpage */
-		public delegate int display_sync_del(IntPtr handle, IntPtr device);
+        /* flushpage */
+        public delegate int display_sync_del(IntPtr handle, IntPtr device);
 
-		/* showpage */
-		/* If you want to pause on showpage, then don't return immediately */
-		public delegate int display_page_del(IntPtr handle, IntPtr device, int copies, int flush);
+        /* showpage */
+        /* If you want to pause on showpage, then don't return immediately */
+        public delegate int display_page_del(IntPtr handle, IntPtr device, int copies, int flush);
 
 
-		/* Notify the caller whenever a portion of the raster is updated. */
-		/* This can be used for cooperative multitasking or for
+        /* Notify the caller whenever a portion of the raster is updated. */
+        /* This can be used for cooperative multitasking or for
 		 * progressive update of the display.
 		 * This function pointer may be set to NULL if not required.
 		 */
-		public delegate int display_update_del(IntPtr handle, IntPtr device, int x, int y,
-			  int w, int h);
+        public delegate int display_update_del(IntPtr handle, IntPtr device, int x, int y,
+              int w, int h);
 
-		/* Allocate memory for bitmap */
-		/* This is provided in case you need to create memory in a special
+        /* Allocate memory for bitmap */
+        /* This is provided in case you need to create memory in a special
 		 * way, e.g. shared.  If this is NULL, the Ghostscript memory device
 		 * allocates the bitmap. This will only called to allocate the
 		 * image buffer. The first row will be placed at the address
 		 * returned by display_memalloc.
 		 */
-		public delegate int display_memalloc_del(IntPtr handle, IntPtr device, ulong size);
+        public delegate int display_memalloc_del(IntPtr handle, IntPtr device, ulong size);
 
-		/* Free memory for bitmap */
-		/* If this is NULL, the Ghostscript memory device will free the bitmap */
-		public delegate int display_memfree_del(IntPtr handle, IntPtr device, IntPtr mem);
+        /* Free memory for bitmap */
+        /* If this is NULL, the Ghostscript memory device will free the bitmap */
+        public delegate int display_memfree_del(IntPtr handle, IntPtr device, IntPtr mem);
 
-		private int display_size(IntPtr handle, IntPtr device,
-							int width, int height, int raster, uint format,
-							IntPtr pimage)
-		{
-			m_pagewidth = width;
-			m_pageheight = height;
-			m_pageraster = raster;
-			m_pageptr = pimage;
-			return 0;
-		}
+        private int display_size(IntPtr handle, IntPtr device,
+                            int width, int height, int raster, uint format,
+                            IntPtr pimage)
+        {
+            m_pagewidth = width;
+            m_pageheight = height;
+            m_pageraster = raster;
+            m_pageptr = pimage;
+            return 0;
+        }
 
-		private int display_page(IntPtr handle, IntPtr device, int copies, int flush)
-		{
-			m_params.currpage += 1;
-			gsPageRenderedMain(m_pagewidth, m_pageheight, m_pageraster, m_pageptr, m_params);
-			return 0;
-		}
+        private int display_page(IntPtr handle, IntPtr device, int copies, int flush)
+        {
+            m_params.currpage += 1;
+            Gtk.Application.Invoke(delegate {
+                gsPageRenderedMain(m_pagewidth, m_pageheight, m_pageraster, m_pageptr, m_params);
+            });
+            return 0;
+        }
 
-		private int display_open(IntPtr handle, IntPtr device)
-		{
-			return 0;
-		}
+        private int display_open(IntPtr handle, IntPtr device)
+        {
+            return 0;
+        }
 
-		private int display_preclose(IntPtr handle, IntPtr device)
-		{
-			return 0;
-		}
+        private int display_preclose(IntPtr handle, IntPtr device)
+        {
+            return 0;
+        }
 
-		private int display_close(IntPtr handle, IntPtr device)
-		{
-			return 0;
-		}
+        private int display_close(IntPtr handle, IntPtr device)
+        {
+            return 0;
+        }
 
-		private int display_presize(IntPtr handle, IntPtr device,
-			int width, int height, int raster, uint format)
-		{
-			return 0;
-		}
+        private int display_presize(IntPtr handle, IntPtr device,
+            int width, int height, int raster, uint format)
+        {
+            return 0;
+        }
 
-		private int display_update(IntPtr handle, IntPtr device, int x, int y,
-			  int w, int h)
-		{
-			return 0;
-		}
+        private int display_update(IntPtr handle, IntPtr device, int x, int y,
+              int w, int h)
+        {
+            return 0;
+        }
 
-		private int display_memalloc(IntPtr handle, IntPtr device, ulong size)
-		{
-			return 0;
-		}
+        private int display_memalloc(IntPtr handle, IntPtr device, ulong size)
+        {
+            return 0;
+        }
 
-		private int display_memfree(IntPtr handle, IntPtr device, IntPtr mem)
-		{
-			return 0;
-		}
-		private int display_sync(IntPtr handle, IntPtr device)
-		{
-			return 0;
-		}
+        private int display_memfree(IntPtr handle, IntPtr device, IntPtr mem)
+        {
+            return 0;
+        }
+        private int display_sync(IntPtr handle, IntPtr device)
+        {
+            return 0;
+        }
 
-		/* Delegate for stdio */
-		public delegate int gs_stdio_handler(IntPtr caller_handle, IntPtr buffer,
-			int len);
+        /* Delegate for stdio */
+        public delegate int gs_stdio_handler(IntPtr caller_handle, IntPtr buffer,
+            int len);
 
-		private int stdin_callback(IntPtr handle, IntPtr pointer, int count)
-		{
-			String output = Marshal.PtrToStringAnsi(pointer);
-			return count;
-		}
+        private int stdin_callback(IntPtr handle, IntPtr pointer, int count)
+        {
+            String output = Marshal.PtrToStringAnsi(pointer);
+            return count;
+        }
 
-		private int stdout_callback(IntPtr handle, IntPtr pointer, int count)
-		{
+        private int stdout_callback(IntPtr handle, IntPtr pointer, int count)
+        {
             String output = null;
             try
             {
@@ -226,7 +223,9 @@ public class gsThreadCallBack
 
             try
             {
-                gsIOUpdateMain(output, count);
+                Gtk.Application.Invoke(delegate {
+                    gsIOUpdateMain(output, count);
+                });
             }
             catch (Exception excep2)
             {
@@ -234,177 +233,136 @@ public class gsThreadCallBack
             }
 
             return count;
-#if false
-            switch (m_params.task)
-			{
-				case GS_Task_t.CREATE_XPS:
-					if (count >= 7 && output.Substring(0, 4) == "Page")
-					{
-						String page = output.Substring(5, count - 6);
-						int numVal;
-						try
-						{
-							double perc = 0.0;
-							numVal = System.Convert.ToInt32(page);
-							if (m_params.firstpage == -1 && m_params.lastpage == -1 &&
-								m_params.pages == null)
-							{
-								/* Doing full document */
-								perc = 100.0 * (double)numVal / (double)m_params.num_pages;
-							}
-							else
-							{
-								if (m_params.pages != null)
-								{
-									perc = 100.0 * ((double)numVal - m_params.currpage) / (double)m_params.num_pages;
-									m_params.currpage += 1;
-								}
-								else
-								{
-									/* continugous set of pages */
-									perc = 100.0 * ((double)numVal - m_params.firstpage + 1) / (double)m_params.num_pages;
-								}
-							}
-							m_worker.ReportProgress((int)perc);
-						}
-						catch (FormatException)
-						{
-							Console.WriteLine("XPSPrint Error: Input string is not a sequence of digits.");
-						}
-						catch (OverflowException)
-						{
-							Console.WriteLine("XPSPrint Error: The number cannot fit in an Int32.");
-						}
-					}
-					break;
 
-				case GS_Task_t.GET_PAGE_COUNT:
-					try
-					{
-						m_params.num_pages = Int32.Parse(output.Substring(0, count - 1));
-					}
-					catch (FormatException)
-					{
-						return count;
-					}
-					break;
+        }
 
-				case GS_Task_t.DISPLAY_DEV_NON_PDF:
-				case GS_Task_t.DISPLAY_DEV_PDF:
-				case GS_Task_t.DISPLAY_DEV_THUMBS_NON_PDF:
-				case GS_Task_t.DISPLAY_DEV_THUMBS_PDF:
-					break;
-			}
-			return count;
-#endif
-		}
+        private int stderr_callback(IntPtr handle, IntPtr pointer, int count)
+        {
+            String output = Marshal.PtrToStringAnsi(pointer);
 
-		private int stderr_callback(IntPtr handle, IntPtr pointer, int count)
-		{
-			String output = Marshal.PtrToStringAnsi(pointer);
-			gsIOUpdateMain(output, count);
-			return count;
-		}
+            Gtk.Application.Invoke(delegate {
+                gsIOUpdateMain(output, count);
+            });
 
-		IntPtr gsInstance;
-		IntPtr dispInstance;
-		Thread m_worker;
-		gsParamState_t m_params;
-		IntPtr m_pageptr;
-		int m_pagewidth;
-		int m_pageheight;
-		int m_pageraster;
+            return count;
+        }
 
-		display_callback_t m_display_callback;
-		IntPtr ptr_display_struct;
+        IntPtr gsInstance;
+        IntPtr dispInstance;
+        Thread m_worker;
+        bool m_worker_busy;
+        gsParamState_t m_params;
+        IntPtr m_pageptr;
+        int m_pagewidth;
+        int m_pageheight;
+        int m_pageraster;
 
-		/* Callbacks to Main */
-		internal delegate void gsDLLProblem(String mess);
-		internal event gsDLLProblem gsDLLProblemMain;
+        display_callback_t m_display_callback;
+        IntPtr ptr_display_struct;
 
-		internal delegate void gsIOCallBackMain(String mess, int len);
-		internal event gsIOCallBackMain gsIOUpdateMain;
+        /* Callbacks to Main */
+        internal delegate void gsDLLProblem(String mess);
+        internal event gsDLLProblem gsDLLProblemMain;
 
-		internal delegate void gsCallBackMain(gsThreadCallBack info);
-		internal event gsCallBackMain gsUpdateMain;
+        internal delegate void gsIOCallBackMain(String mess, int len);
+        internal event gsIOCallBackMain gsIOUpdateMain;
 
-		internal delegate void gsCallBackPageRenderedMain(int width, int height, int raster,
-			IntPtr data, gsParamState_t state);
-		internal event gsCallBackPageRenderedMain gsPageRenderedMain;
+        internal delegate void gsCallBackMain(gsThreadCallBack info);
+        internal event gsCallBackMain gsUpdateMain;
+
+        internal delegate void gsCallBackPageRenderedMain(int width, int height, int raster,
+            IntPtr data, gsParamState_t state);
+        internal event gsCallBackPageRenderedMain gsPageRenderedMain;
 
 
-		/* From my understanding you cannot pin delegates.  These need to be declared
+        /* From my understanding you cannot pin delegates.  These need to be declared
 		 * as members to keep a reference to the delegates and avoid their possible GC. 
 		 * since the C# GC has no idea that GS has a reference to these items. */
-		readonly gs_stdio_handler raise_stdin;
-		readonly gs_stdio_handler raise_stdout;
-		readonly gs_stdio_handler raise_stderr;
-		
-		/* Ghostscript display callback struct */
-		public struct display_callback_t
-		{
-			public int sizeof_display_callback;
-			public int major_vers;
-			public int minor_vers;
-			public display_open_del display_open;
-			public display_preclose_del display_preclose;
-			public display_close_del display_close;
-			public display_presize_del display_presize;
-			public display_size_del display_size;
-			public display_sync_del display_sync;
-			public display_page_del display_page;
-			public display_update_del display_update;
-			public display_memalloc_del display_memalloc;
-			public display_memfree_del display_memfree;
-		};
-		public ghostsharp()
-		{
-			m_worker = null;
-			gsInstance = IntPtr.Zero;
-			dispInstance = IntPtr.Zero;
+        readonly gs_stdio_handler raise_stdin;
+        readonly gs_stdio_handler raise_stdout;
+        readonly gs_stdio_handler raise_stderr;
 
-			/* Avoiding delegate GC during the life of this object */
-			raise_stdin = stdin_callback;
-			raise_stdout = stdout_callback;
-			raise_stderr = stderr_callback;
+        /* Ghostscript display callback struct */
+        public struct display_callback_t
+        {
+            public int sizeof_display_callback;
+            public int major_vers;
+            public int minor_vers;
+            public display_open_del display_open;
+            public display_preclose_del display_preclose;
+            public display_close_del display_close;
+            public display_presize_del display_presize;
+            public display_size_del display_size;
+            public display_sync_del display_sync;
+            public display_page_del display_page;
+            public display_update_del display_update;
+            public display_memalloc_del display_memalloc;
+            public display_memfree_del display_memfree;
+        };
+        public ghostsharp()
+        {
+            m_worker = null;
+            gsInstance = IntPtr.Zero;
+            dispInstance = IntPtr.Zero;
 
-			m_display_callback.major_vers = 1;
-			m_display_callback.minor_vers = 0;
-			m_display_callback.display_open = display_open;
-			m_display_callback.display_preclose = display_preclose;
-			m_display_callback.display_close = display_close;
-			m_display_callback.display_presize = display_presize;
-			m_display_callback.display_size = display_size;
-			m_display_callback.display_sync = display_sync;
-			m_display_callback.display_page = display_page;
-			m_display_callback.display_update = display_update;
-			//m_display_callback.display_memalloc = display_memalloc;
-			//m_display_callback.display_memfree = display_memfree;
-			m_display_callback.display_memalloc = null;
-			m_display_callback.display_memfree = null;
+            /* Avoiding delegate GC during the life of this object */
+            raise_stdin = stdin_callback;
+            raise_stdout = stdout_callback;
+            raise_stderr = stderr_callback;
 
-			/* The size the structure when marshalled to unmanaged code */
-			m_display_callback.sizeof_display_callback = Marshal.SizeOf(typeof(display_callback_t));
+            m_display_callback.major_vers = 1;
+            m_display_callback.minor_vers = 0;
+            m_display_callback.display_open = display_open;
+            m_display_callback.display_preclose = display_preclose;
+            m_display_callback.display_close = display_close;
+            m_display_callback.display_presize = display_presize;
+            m_display_callback.display_size = display_size;
+            m_display_callback.display_sync = display_sync;
+            m_display_callback.display_page = display_page;
+            m_display_callback.display_update = display_update;
+            //m_display_callback.display_memalloc = display_memalloc;
+            //m_display_callback.display_memfree = display_memfree;
+            m_display_callback.display_memalloc = null;
+            m_display_callback.display_memfree = null;
 
-			ptr_display_struct = Marshal.AllocHGlobal(m_display_callback.sizeof_display_callback);
-			Marshal.StructureToPtr(m_display_callback, ptr_display_struct, false);
-		}
+            /* The size the structure when marshalled to unmanaged code */
+            m_display_callback.sizeof_display_callback = Marshal.SizeOf(typeof(display_callback_t));
+
+            ptr_display_struct = Marshal.AllocHGlobal(m_display_callback.sizeof_display_callback);
+            Marshal.StructureToPtr(m_display_callback, ptr_display_struct, false);
+            m_worker_busy = false;
+        }
 
 
-		/* Callback upon worker all done */
-		private void gsCompleted(gsParamState_t Params)
-		{
-			gsThreadCallBack info = new gsThreadCallBack(true, 100, Params);
-			gsUpdateMain(info);
-		}
+        /* Callback upon worker all done */
+        private void gsCompleted(gsParamState_t Params)
+        {
+            gsThreadCallBack info = new gsThreadCallBack(true, 100, Params);
+            Gtk.Application.Invoke(delegate {
+                gsUpdateMain(info);
+            });
+            m_worker_busy = false;
+        }
 
-		/* Callback as worker progresses in run string case */
-		private void gsProgressChanged(gsParamState_t Params, int percent)
-		{
-			/* Callback with progress */
-			gsThreadCallBack info = new gsThreadCallBack(false, percent, Params);
-			gsUpdateMain(info);
-		}
+        /* Callback as worker progresses in run string case */
+        private void gsProgressChanged(gsParamState_t Params, int percent)
+        {
+            /* Callback with progress */
+            gsThreadCallBack info = new gsThreadCallBack(false, percent, Params);
+            Gtk.Application.Invoke(delegate {
+                gsUpdateMain(info);
+            });
+        }
+
+        /* Callback for problem */
+        private void gsErrorReport(string message)
+        {
+            Gtk.Application.Invoke(delegate {
+                gsDLLProblemMain(message);;
+            });
+            m_worker_busy = false;
+        }
+
 		private gsParamState_t gsFileSync(gsParamState_t in_params)
 		{
 			int num_params = in_params.args.Count;
@@ -457,23 +415,23 @@ public class gsThreadCallBack
 			}
 			catch (DllNotFoundException except)
 			{
-				gsDLLProblemMain("Exception: " + except.Message);
+                gsErrorReport("Exception: " + except.Message);
 				in_params.result = GS_Result_t.gsFAILED;
 				cleanup = false;
 			}
 			catch (BadImageFormatException except)
 			{
-				gsDLLProblemMain("Exception: " + except.Message);
+                gsErrorReport("Exception: " + except.Message);
 				in_params.result = GS_Result_t.gsFAILED;
 				cleanup = false;
 			}
 			catch (GhostscriptException except)
 			{
-				gsDLLProblemMain("Exception: " + except.Message);
+                gsErrorReport("Exception: " + except.Message);
 			}
 			catch (Exception except)
 			{
-				gsDLLProblemMain("Exception: " + except.Message);
+                gsErrorReport("Exception: " + except.Message);
 			}
 			finally
 			{
@@ -563,25 +521,25 @@ public class gsThreadCallBack
 			}
 			catch (DllNotFoundException except)
 			{
-				gsDLLProblemMain("Exception: " + except.Message);
+                gsErrorReport("Exception: " + except.Message);
 				Params.result = GS_Result_t.gsFAILED;
 				cleanup = false;
 				Result = Params;
 			}
 			catch (BadImageFormatException except)
 			{
-				gsDLLProblemMain("Exception: " + except.Message);
+                gsErrorReport("Exception: " + except.Message);
 				Params.result = GS_Result_t.gsFAILED;
 				cleanup = false;
 				Result = Params;
 			}
 			catch (GhostscriptException except)
 			{
-				gsDLLProblemMain("Exception: " + except.Message);
+                gsErrorReport("Exception: " + except.Message);
 			}
 			catch (Exception except)
 			{
-				gsDLLProblemMain("Exception: " + except.Message);
+                gsErrorReport("Exception: " + except.Message);
 			}
 			finally
 			{ 
@@ -728,26 +686,26 @@ public class gsThreadCallBack
 			}
 			catch (DllNotFoundException except)
 			{
-				gsDLLProblemMain("Exception: " + except.Message);
+                gsErrorReport("Exception: " + except.Message);
 				Params.result = GS_Result_t.gsFAILED;
 				cleanup = false;
 				Result = Params;
 			}
 			catch (BadImageFormatException except)
 			{
-				gsDLLProblemMain("Exception: " + except.Message);
+                gsErrorReport("Exception: " + except.Message);
 				Params.result = GS_Result_t.gsFAILED;
 				cleanup = false;
 				Result = Params;
 			}
 			catch (GhostscriptException except)
 			{
-				gsDLLProblemMain("Exception: " + except.Message);
+                gsErrorReport("Exception: " + except.Message);
 			}
 			catch (Exception except)
 			{
-				/* Could be a file io issue */
-				gsDLLProblemMain("Exception: " + except.Message);
+                /* Could be a file io issue */
+                gsErrorReport("Exception: " + except.Message);
 				Params.result = GS_Result_t.gsFAILED;
 				cleanup = false;
 				Result = Params;
@@ -854,21 +812,21 @@ public class gsThreadCallBack
 
 			catch (DllNotFoundException except)
 			{
-				gsDLLProblemMain("Exception: " + except.Message);
+                gsErrorReport("Exception: " + except.Message);
 				gsparams.result = GS_Result_t.gsFAILED;
 				cleanup = false;
 				Result = gsparams;
 			}
 			catch (BadImageFormatException except)
 			{
-				gsDLLProblemMain("Exception: " + except.Message);
+                gsErrorReport("Exception: " + except.Message);
 				gsparams.result = GS_Result_t.gsFAILED;
 				cleanup = false;
 				Result = gsparams;
 			}
 			catch (GhostscriptException except)
 			{
-				gsDLLProblemMain("Exception: " + except.Message);
+                gsErrorReport("Exception: " + except.Message);
 				gsparams.result = GS_Result_t.gsFAILED;
 				if (dispInstance != IntPtr.Zero)
 					ghostapi.gsapi_delete_instance(dispInstance);
@@ -876,7 +834,7 @@ public class gsThreadCallBack
 			}
 			catch (Exception except)
 			{
-				gsDLLProblemMain("Exception: " + except.Message);
+                gsErrorReport("Exception: " + except.Message);
 				gsparams.result = GS_Result_t.gsFAILED;
 				if (dispInstance != IntPtr.Zero)
 					ghostapi.gsapi_delete_instance(dispInstance);
@@ -912,11 +870,11 @@ public class gsThreadCallBack
 		 * that we have to do */
 		private gsStatus RunGhostscriptAsync(gsParamState_t Params)
 		{
-			try
+            try
 			{
-				if (m_worker != null)
-				{
-					return gsStatus.GS_BUSY;
+				if (m_worker_busy)
+                { 
+                    return gsStatus.GS_BUSY;
 				}
 
 				switch (Params.task)
@@ -940,7 +898,8 @@ public class gsThreadCallBack
 				var arguments = new List<object>();
 				arguments.Add(Params);
 				arguments.Add(this);
-				m_worker.Start(arguments);
+                m_worker_busy = true;
+                m_worker.Start(arguments);
 
 				return gsStatus.GS_READY;
 			}
@@ -980,7 +939,7 @@ public class gsThreadCallBack
 			}
 			catch (Exception except)
 			{
-				gsDLLProblemMain("Exception: " + except.Message);
+                gsErrorReport("Exception: " + except.Message);
 			}
 			return null;
 		}
@@ -1013,63 +972,6 @@ public class gsThreadCallBack
 			else
 				return -1;
 		}
-
-#if WPF
-		/* Launch a thread to create XPS document for windows printing */
-		public gsStatus CreateXPS(String fileName, int resolution, int num_pages,
-								Print printsettings, int firstpage, int lastpage)
-		{
-			gsParamState_t gsparams = new gsParamState_t();
-			gsparams.args = new List<string>();
-
-			gsparams.inputfile = fileName;
-			gsparams.args.Add("gs");
-			gsparams.args.Add("-dNOPAUSE");
-			gsparams.args.Add("-dBATCH");
-			gsparams.args.Add("-I%rom%Resource/Init/");
-			gsparams.args.Add("-dSAFER");
-			gsparams.args.Add("-r" + resolution.ToString());
-			gsparams.args.Add("-dNOCACHE");
-			gsparams.args.Add("-sDEVICE=xpswrite");
-			gsparams.args.Add("-dFirstPage=" + firstpage.ToString());
-			gsparams.args.Add("-dLastPage=" + lastpage.ToString());
-
-			if (printsettings != null)
-			{
-				double paperheight;
-				double paperwidth;
-
-				if (printsettings.m_pagedetails.Landscape == true)
-				{
-					paperheight = printsettings.m_pagedetails.PrintableArea.Width;
-					paperwidth = printsettings.m_pagedetails.PrintableArea.Height;
-				}
-				else
-				{
-					paperheight = printsettings.m_pagedetails.PrintableArea.Height;
-					paperwidth = printsettings.m_pagedetails.PrintableArea.Width;
-				}
-
-				double width = paperwidth * 72.0 / 100.0;
-				double height = paperheight * 72.0 / 100.0;
-				gsparams.args.Add("-dDEVICEWIDTHPOINTS=" + width);
-				gsparams.args.Add("-dDEVICEHEIGHTPOINTS=" + height);
-				gsparams.args.Add("-dFIXEDMEDIA");
-
-				/* Scale and translate and rotate if needed */
-				if (printsettings.xaml_autofit.IsChecked == true)
-					gsparams.args.Add("-dFitPage");
-			}
-			gsparams.outputfile = Path.GetTempFileName();
-			gsparams.args.Add("-o");
-			gsparams.args.Add(gsparams.outputfile);
-			gsparams.args.Add("-f");
-			gsparams.args.Add(fileName);
-			gsparams.task = GS_Task_t.CREATE_XPS;
-
-			return RunGhostscriptAsync(gsparams);
-		}
-#endif
 
 		/* Launch a thread rendering all the pages with the display device
 		 * to distill an input PS file and save as a PDF. */
@@ -1120,8 +1022,8 @@ public class gsThreadCallBack
 			gsparams.args.Add(fileName);
 			gsparams.task = task;
 			gsparams.currpage = 0;
-
-			return RunGhostscriptAsync(gsparams);
+            m_params.currpage = 0;
+            return RunGhostscriptAsync(gsparams);
 		}
 
 
@@ -1150,8 +1052,9 @@ public class gsThreadCallBack
 			gsparams.args.Add(fileName);
 			gsparams.task = GS_Task_t.DISPLAY_DEV_PDF;
 			gsparams.currpage = first_page - 1;
+            m_params.currpage = first_page - 1;
 
-			return RunGhostscriptAsync(gsparams);
+            return RunGhostscriptAsync(gsparams);
 		}
 
 		/* Close the display device and delete the instance */
@@ -1174,7 +1077,7 @@ public class gsThreadCallBack
 			}
 			catch (Exception except)
 			{
-				gsDLLProblemMain("Exception: " + except.Message);
+                gsErrorReport("Exception: " + except.Message);
 				out_params.result = GS_Result_t.gsFAILED;
 			}
 
@@ -1184,7 +1087,7 @@ public class gsThreadCallBack
 		/* Check if gs is currently busy */
 		public gsStatus GetStatus()
 		{
-			if (m_worker != null)
+			if (m_worker_busy)
 				return gsStatus.GS_BUSY;
 			else
 				return gsStatus.GS_READY;

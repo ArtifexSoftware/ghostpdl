@@ -20,10 +20,6 @@ namespace gs_mono_example
             {
                 var mess = except.Message;
             }
-
-
-
-
         }
     }
 }

@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using Gtk;
-using GhostNET;
+using GhostMono;
 
 namespace gs_mono_example
 {
@@ -14,8 +13,8 @@ namespace gs_mono_example
         public const int DEFAULT_GS_RES = 300;
         public const int PAGE_VERT_MARGIN = 10;
         public const int MAX_PRINT_PREVIEW_LENGTH = 250;
-        public const int ZOOM_MAX = 4;
-        public const double ZOOM_MIN = 0.25;
+        public const int ZOOM_MAX = 400;
+        public const double ZOOM_MIN = 25;
     }
 
     public enum NotifyType_t
@@ -57,16 +56,6 @@ namespace gs_mono_example
         XPS
     }
 
-    public struct idata_t
-    {
-        public int page_num;
-        public Byte[] bitmap;
-        public int height;
-        public int width;
-        public int raster;
-        public double zoom;
-    }
-
     public struct pagesizes_t
     {
         public double width;
@@ -89,16 +78,13 @@ namespace gs_mono_example
         private static Pages m_docPages;
         private static double m_doczoom;
         public List<pagesizes_t> m_page_sizes;
-        List<idata_t> m_images_rendered;
-        List<idata_t> m_thumbs_rendered;
         bool m_init_done;
         bool m_busy_render;
         bool m_firstime;
         bool m_validZoom;
         bool m_aa;
         bool m_aa_change;
-        List<int> m_toppage_pos;
-        int m_page_progress_count;
+        List<int> m_page_scroll_pos;
         Gtk.ProgressBar m_GtkProgressBar;
         Label m_GtkProgressLabel;
         HBox m_GtkProgressBox;
@@ -115,6 +101,9 @@ namespace gs_mono_example
         Gtk.CheckButton m_GtkaaCheck;
         Gtk.Button m_GtkZoomPlus;
         Gtk.Button m_GtkZoomMinus;
+        String m_zoom_txt;
+        String m_page_txt;
+        bool m_ignore_scroll_change;
 
         void ShowMessage(NotifyType_t type, string message)
         {
@@ -161,6 +150,7 @@ namespace gs_mono_example
             m_thumbnails = new List<DocPage>();
             m_docPages = new Pages();
             m_page_sizes = new List<pagesizes_t>();
+            m_page_scroll_pos = new List<int>();
             m_file_open = false;
             m_document_type = doc_t.UNKNOWN;
             m_doczoom = 1.0;
@@ -168,12 +158,12 @@ namespace gs_mono_example
             m_busy_render = true;
             m_validZoom = true;
             m_firstime = true;
-            m_images_rendered = new List<idata_t>();
-            m_thumbs_rendered = new List<idata_t>();
             m_aa = true;
             m_aa_change = false;
-            Gtk.TextTagTable tag = new Gtk.TextTagTable(IntPtr.Zero);
-           
+            m_zoom_txt = "100";
+            m_page_txt = "1";
+            m_ignore_scroll_change = false;
+
             /* Set up Vbox in main window */
             this.SetDefaultSize(500, 700);
             this.Title = "GhostPDL Mono GTK Demo";
@@ -185,7 +175,7 @@ namespace gs_mono_example
             Menu filemenu = new Menu();
             MenuItem file = new MenuItem("File");
             file.Submenu = filemenu;
-           
+
             AccelGroup agr = new AccelGroup();
             AddAccelGroup(agr);
 
@@ -205,6 +195,10 @@ namespace gs_mono_example
             messagesi.Activated += OnShowMessages;
             filemenu.Append(messagesi);
 
+            MenuItem about = new MenuItem("About");
+            about.Activated += OnAboutClicked;
+            filemenu.Append(about);
+
             SeparatorMenuItem sep = new SeparatorMenuItem();
             filemenu.Append(sep);
 
@@ -216,16 +210,12 @@ namespace gs_mono_example
 
             menu_bar.Append(file);
 
-            Menu aboutmenu = new Menu();
-            MenuItem about = new MenuItem("About");
-            about.Submenu = aboutmenu;
-            menu_bar.Append(about);
-
             m_GtkvBoxMain.PackStart(menu_bar, false, false, 0);
 
             /* Add a hbox with the page information, zoom control, and aa to vbox */
             HBox pageBox = new HBox(false, 0);
             m_GtkpageEntry = new Entry();
+            m_GtkpageEntry.Activated += PageChanged;
             m_GtkpageEntry.WidthChars = 4;
             m_GtkpageTotal = new Label("/0");
             pageBox.PackStart(m_GtkpageEntry, false, false, 0);
@@ -240,6 +230,7 @@ namespace gs_mono_example
             m_GtkZoomMinus.Clicked += ZoomOut;
             m_GtkzoomEntry = new Entry();
             m_GtkzoomEntry.WidthChars = 3;
+            m_GtkzoomEntry.Activated += ZoomChanged;
             Label precentLabel = new Label("%");
             zoomBox.PackStart(m_GtkZoomPlus, false, false, 0);
             zoomBox.PackStart(m_GtkZoomMinus, false, false, 0);
@@ -267,6 +258,7 @@ namespace gs_mono_example
             m_GtkmainScroll = new ScrolledWindow();
             m_GtkmainScroll.BorderWidth = 5;
             m_GtkmainScroll.ShadowType = ShadowType.In;
+            m_GtkmainScroll.Vadjustment.ValueChanged += Vadjustment_Changed;
 
             m_GtkTreeThumb = new Gtk.TreeView();
             m_GtkTreeThumb.HeadersVisible = false;
@@ -274,21 +266,21 @@ namespace gs_mono_example
             m_GtkTreeThumb.AppendColumn("Thumb", new Gtk.CellRendererPixbuf(), "pixbuf", 0);
             m_GtkTreeThumb.Style.YThickness = 100;
             m_GtkthumbScroll.Add(m_GtkTreeThumb);
-
-           /* var colmn = m_GtkTreeThumb.Columns;
-            var mycol = (Gtk.TreeViewColumn)colmn.GetValue(0);
-            mycol.Spacing = 40;
-            mycol.FixedWidth = 0;*/
+            m_GtkTreeThumb.RowActivated += M_GtkTreeThumb_RowActivated;
 
             m_GtkTreeMain = new Gtk.TreeView();
             m_GtkTreeMain.HeadersVisible = false;
+            m_GtkTreeMain.RulesHint = false;
+
             m_GtkimageStoreMain = new Gtk.ListStore(typeof(Gdk.Pixbuf));
             m_GtkTreeMain.AppendColumn("Main", new Gtk.CellRendererPixbuf(), "pixbuf", 0);
             m_GtkmainScroll.Add(m_GtkTreeMain);
 
+            // Separate with gridlines
+            m_GtkTreeMain.EnableGridLines = TreeViewGridLines.Horizontal;
+
             //To disable selections, set the selection mode to None:
             m_GtkTreeMain.Selection.Mode = SelectionMode.None;
-
 
             hBoxPages.PackStart(m_GtkthumbScroll, false, false, 0);
             hBoxPages.PackStart(m_GtkmainScroll, true, true, 0);
@@ -297,17 +289,99 @@ namespace gs_mono_example
             m_GtkTreeMain.Model = m_GtkimageStoreMain;
 
             m_GtkvBoxMain.PackStart(hBoxPages, true, true, 0);
+        }
 
+        void Vadjustment_Changed(object sender, EventArgs e)
+        {
+            if (!m_init_done)
+            {
+                return;
+            }
+
+            if (m_ignore_scroll_change)
+            {
+                m_ignore_scroll_change = false;
+                return;
+            }
+
+            Gtk.Adjustment zz = sender as Gtk.Adjustment;
+            double val = zz.Value;
+            int page = 1;
+
+            for (int k = 0; k < m_numpages; k++)
+            {
+                if (val <= m_page_scroll_pos[k])
+                {
+                    m_GtkpageEntry.Text = page.ToString();
+                    m_page_txt = m_GtkpageEntry.Text;
+                    return;
+                }
+                page += 1;
+            }
+            m_GtkpageEntry.Text = m_numpages.ToString();
+            m_page_txt = m_GtkpageEntry.Text;
+        }
+
+        void OnAboutClicked(object sender, EventArgs args)
+        {
+            AboutDialog about = new AboutDialog();
+            about.ProgramName = "GhostPDL Gtk# Viewer";
+            about.Version = "0.1";
+            about.Copyright = "(c) Artifex Software";
+            about.Comments = @"A demo of GhostPDL API with C# Mono";
+            about.Website = "http://www.artifex.com";
+            about.Run();
+            about.Destroy();
+        }
+
+        /* C# Insanity to get the index of the selected item */
+        void M_GtkTreeThumb_RowActivated(object o, RowActivatedArgs args)
+        {
+            TreeModel treeModel;
+            TreeSelection my_selected_row = m_GtkTreeThumb.Selection;
+
+            var TreePath = my_selected_row.GetSelectedRows(out treeModel);
+            var item = TreePath.GetValue(0);
+            var result = item.ToString();
+            int index = System.Convert.ToInt32(result);
+
+            ScrollMainTo(index);                  
+        }
+
+        void ScrollMainTo(int index)
+        {
+            m_ignore_scroll_change = true;
+            var bar = m_GtkmainScroll.Hadjustment;
+
+            if (index < 0 || index > m_numpages - 1)
+                return;
+
+            if (index == 0)
+                m_GtkmainScroll.Vadjustment.Value = 0;
+            else
+                m_GtkmainScroll.Vadjustment.Value = m_page_scroll_pos[index-1];
+
+            m_currpage = index + 1;
+            m_GtkpageEntry.Text = m_currpage.ToString();
+            m_page_txt = m_GtkpageEntry.Text;
+        }
+
+        void AddProgressBar(String text)
+        {
             /* Progress bar */
             m_GtkProgressBox = new HBox(false, 0);
             m_GtkProgressBar = new ProgressBar();
             m_GtkProgressBar.Orientation = ProgressBarOrientation.LeftToRight;
             m_GtkProgressBox.PackStart(m_GtkProgressBar, true, true, 0);
-            m_GtkProgressLabel = new Label("Render Thumbnails");
+            m_GtkProgressLabel = new Label(text);
             m_GtkProgressBox.PackStart(m_GtkProgressLabel, false, false, 0);
-
             m_GtkvBoxMain.PackStart(m_GtkProgressBox, false, false, 0);
-            //m_GtkvBoxMain.Remove(m_GtkProgressBox);
+            m_GtkProgressBar.Fraction = 0.0;
+        }
+
+        void RemoveProgressBar()
+        {
+            m_GtkvBoxMain.Remove(m_GtkProgressBox);
         }
 
         void AaCheck_Clicked(object sender, EventArgs e)
@@ -317,7 +391,6 @@ namespace gs_mono_example
             if (m_init_done && !m_busy_render)
                 RenderMainAll();
         }
-
 
         private void OnQuit(object sender, EventArgs e)
         {
@@ -331,28 +404,16 @@ namespace gs_mono_example
 
         private void OnClose(object sender, EventArgs e)
         {
-            throw new NotImplementedException();
+            Application.Quit();
         }
 
         private void gsIO(String mess, int len)
         {
-            return;
-            Gtk.Application.Invoke(delegate
-            {
+            Gtk.TextBuffer buffer = m_gsoutput.m_textView.Buffer;
+            Gtk.TextIter ti = buffer.EndIter;
 
-                Gtk.TextBuffer buffer = m_gsoutput.m_textView.Buffer;
-                Gtk.TextIter ti = buffer.EndIter;
-
-                try
-                {
-                    var part = mess.Substring(0, len);
-                    buffer.Insert(ref ti, part);
-                }
-                catch (Exception except)
-                {
-                    var issue = except.Message;
-                }
-            });
+            var part = mess.Substring(0, len);
+            buffer.Insert(ref ti, part);
         }
 
         private void gsDLL(String mess)
@@ -372,13 +433,12 @@ namespace gs_mono_example
             MainPageCallback(width, height, raster, state.zoom, state.currpage, data);
         }
 
-        private void gsProgress(gsEventArgs asyncInformation)
+        private void gsProgress(gsThreadCallBack info)
         {
-            if (asyncInformation.Completed)
+            if (info.Completed)
             {
-                switch (asyncInformation.Params.task)
+                switch (info.Params.task)
                 {
-
                     case GS_Task_t.PS_DISTILL:
                         //xaml_DistillProgress.Value = 100;
                         //xaml_DistillGrid.Visibility = System.Windows.Visibility.Collapsed;
@@ -398,9 +458,10 @@ namespace gs_mono_example
                         break;
 
                 }
-                if (asyncInformation.Params.result == GS_Result_t.gsFAILED)
+
+                if (info.Params.result == GS_Result_t.gsFAILED)
                 {
-                    switch (asyncInformation.Params.task)
+                    switch (info.Params.task)
                     {
                         case GS_Task_t.CREATE_XPS:
                             ShowMessage(NotifyType_t.MESS_STATUS, "Ghostscript failed to create XPS");
@@ -417,15 +478,14 @@ namespace gs_mono_example
                         default:
                             ShowMessage(NotifyType_t.MESS_STATUS, "Ghostscript failed.");
                             break;
-
                     }
                     return;
                 }
-                GSResult(asyncInformation.Params);
+                GSResult(info.Params);
             }
             else
             {
-                switch (asyncInformation.Params.task)
+                switch (info.Params.task)
                 {
                     case GS_Task_t.CREATE_XPS:
                         // this.xaml_DistillProgress.Value = asyncInformation.Progress;
@@ -563,7 +623,6 @@ namespace gs_mono_example
                 m_extension = m_currfile.Split('.')[1];
             }
             dialog.Destroy();
-
             RenderThumbs();
         }
     }
