@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Runtime;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Runtime.InteropServices;
-using GhostNET;
+using GhostMono;
 
 namespace gs_mono_example
 {
@@ -10,9 +11,11 @@ namespace gs_mono_example
 	{
 		int m_firstpage;
 		int m_lastpage;
+        int m_current_page;
+        Gtk.TreeIter m_tree_iter;
 
-		/* For PDF optimization */
-		private void PageRangeRender(int first_page, int last_page)
+        /* For PDF optimization */
+        private void PageRangeRender(int first_page, int last_page)
 		{
 			bool render_pages = false;
 			for (int k = first_page; k <= last_page; k++)
@@ -36,87 +39,100 @@ namespace gs_mono_example
         private void MainPageCallback(int width, int height, int raster, double zoom_in,
             int page_num, IntPtr data)
         {
-            try
+            Byte[] bitmap = null;
+
+            bitmap = new byte[raster * height];
+            Marshal.Copy(data, bitmap, 0, raster * height);
+            DocPage doc_page = m_docPages[m_current_page];
+
+            if (doc_page.Content != Page_Content_t.FULL_RESOLUTION ||
+                m_aa_change)
             {
-                Byte[] bitmap = new byte[raster * height];
+                doc_page.Width = width;
+                doc_page.Height = height;
+                doc_page.Content = Page_Content_t.FULL_RESOLUTION;
 
-                Marshal.Copy(data, bitmap, 0, raster * height);
-                DocPage doc_page = m_docPages[page_num - 1];
+                doc_page.Zoom = m_doczoom;
+                doc_page.PixBuf = new Gdk.Pixbuf(bitmap,
+                        Gdk.Colorspace.Rgb, false, 8, width,
+                        height, raster);
 
-                if (doc_page.Content != Page_Content_t.FULL_RESOLUTION ||
-                    m_aa_change)
-                {
-                    doc_page.Width = width;
-                    doc_page.Height = height;
-                    doc_page.Content = Page_Content_t.FULL_RESOLUTION;
-                    doc_page.Zoom = m_doczoom;
-                    doc_page.PixBuf = new Gdk.Pixbuf(bitmap, Gdk.Colorspace.Rgb, false, 8, width, height, raster);
-                }
-
-                /* Get the 1.0 page scalings */
-                if (m_firstime)
-                {
-                    pagesizes_t page_size = new pagesizes_t();
-                    page_size.width = width;
-                    page_size.height = height;
-                    m_page_sizes.Add(page_size);
-                }
-            }
-            catch (Exception except)
-            {
-                var t = except.Message;
+                m_GtkimageStoreMain.SetValue(m_tree_iter, 0, doc_page.PixBuf);
             }
 
-            /* Dispatch progress bar update on UI thread */
-            Gtk.Application.Invoke(delegate {
-                m_GtkProgressBar.Fraction = ((double)page_num / ((double)m_numpages));
-            });
+            if (page_num == 1)
+                m_page_scroll_pos[0] = height;
+            else
+                m_page_scroll_pos[page_num - 1] = height + m_page_scroll_pos[page_num - 2];
+
+            m_GtkimageStoreMain.IterNext(ref m_tree_iter);
+            m_current_page += 1;
+            m_GtkProgressBar.Fraction = ((double)page_num / ((double)page_num + 1));
+            return;
         }
 
-		/* Done rendering. Update the pages with the new raster information if needed */
-		private void RenderingDone()
+        private void RenderingDone()
 		{
-			int page_index = m_firstpage - 1;
-			m_toppage_pos = new List<int>(m_images_rendered.Count + 1);
-			int offset = 0;
-            Gtk.TreeIter tree_iter;
-
-            m_GtkimageStoreMain.GetIterFirst(out tree_iter);
-            for (int k = 0; k < m_numpages; k++)
+            if (m_firstime)
             {
-                m_GtkimageStoreMain.SetValue(tree_iter, 0, m_docPages[k].PixBuf);
-                m_GtkimageStoreMain.IterNext(ref tree_iter);
+                for (int k = 0; k < m_numpages; k++)
+                {
+                    pagesizes_t size = new pagesizes_t();
+                    size.height = m_docPages[k].Height;
+                    size.width = m_docPages[k].Width;
+                    m_page_sizes.Add(size);
+                }
             }
 
-            m_GtkaaCheck.Sensitive = true;
             m_aa_change = false;
-			m_firstime = false;
-			m_toppage_pos.Add(offset);
-			m_busy_render = false;
-			m_images_rendered.Clear();
-			m_file_open = true;
-			m_busy_render = false;
+            m_firstime = false;
+            m_busy_render = false;
 
-			m_ghostscript.gsPageRenderedMain -= new ghostsharp.gsCallBackPageRenderedMain(gsPageRendered);
-		}
+            /* Free up the large objects generated from the image pages.  If
+             * this is not done, the application will run out of memory as
+             * the user does repeated zoom or aa changes, generating more and
+             * more pages without freeing previous ones.  The large object heap
+             * is handled differently than other memory in terms of its GC */            
+            GCSettings.LargeObjectHeapCompactionMode = 
+                GCLargeObjectHeapCompactionMode.CompactOnce;
+                GC.Collect();
+
+            RemoveProgressBar();
+            m_file_open = true;
+            m_ghostscript.gsPageRenderedMain -= new ghostsharp.gsCallBackPageRenderedMain(gsPageRendered);
+            m_GtkaaCheck.Sensitive = true;
+            m_GtkZoomMinus.Sensitive = true;
+            m_GtkZoomPlus.Sensitive = true;
+        }
 
 		/* Render all pages full resolution */
 		private void RenderMainFirst()
 		{
 			m_firstpage = 1;
-			m_busy_render = true;
-			m_page_progress_count = 0;
+            m_current_page = 0;
+            m_GtkimageStoreMain.GetIterFirst(out m_tree_iter);
+            m_busy_render = true;
             m_ghostscript.gsPageRenderedMain += new ghostsharp.gsCallBackPageRenderedMain(gsPageRendered);
-			m_ghostscript.gsDisplayDeviceRenderAll(m_currfile, m_doczoom, m_aa, GS_Task_t.DISPLAY_DEV_NON_PDF);
+            AddProgressBar("Rendering Pages");
+            m_ghostscript.gsDisplayDeviceRenderAll(m_currfile, m_doczoom, m_aa, GS_Task_t.DISPLAY_DEV_NON_PDF);
 		}
 
 		/* Render all, but only if not already busy,  called via zoom or aa changes */
 		private void RenderMainAll()
 		{
-			if (m_busy_render || !m_init_done)
-				return;
-            m_GtkaaCheck.Sensitive = false;
-            RenderMainFirst();
-		}
+            try
+            {
+                if (!m_init_done)
+                    return;
+                m_GtkaaCheck.Sensitive = false;
+                m_GtkZoomMinus.Sensitive = false;
+                m_GtkZoomPlus.Sensitive = false;
+                RenderMainFirst();
+            }
+            catch(Exception except)
+            {
+                var mess = except.Message;
+            }
+        }
 	}
 }

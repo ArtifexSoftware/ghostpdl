@@ -10,7 +10,7 @@ namespace gs_mono_example
 		private int width;
 		private double zoom;
         private Gdk.Pixbuf pixbuf;
-		private String pagename;
+        private String pagename;
 		private int pagenum;
 		private Page_Content_t content;
 

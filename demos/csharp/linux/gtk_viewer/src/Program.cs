@@ -11,10 +11,15 @@ namespace gs_mono_example
             Application.Init();
             MainWindow win = new MainWindow();
             win.ShowAll();
-            Application.Run();
 
-
-
+            try
+            {
+                Application.Run();
+            }
+            catch(Exception except)
+            {
+                var mess = except.Message;
+            }
         }
     }
 }

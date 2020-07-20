@@ -324,8 +324,8 @@ struct gs_gstate_s {
    { (float)(scale), 0.0, 0.0, (float)(-(scale)), 0.0, 0.0 },\
   false, {0, 0}, {0, 0}, false, \
   lop_default, BLEND_MODE_Compatible,\
-  {0, 0}, 0, 0/*false*/, 0, 0/*false*/, 0, 0/*false*/, 0, 0/*false*/, 1.0,  \
-   { fixed_half, fixed_half }, 0/*false*/, 1/*true*/, 0/*false*/, 1.0,\
+  {0, 0}, 0, 1/*true*/, 0, 0/*false*/, 0, 0/*false*/, 0, 0/*false*/, 1.0,  \
+   { fixed_half, fixed_half }, 0/*false*/, 1/*true*/, 0/*false*/, (float)0.02,\
   1, 1/* bpt true */, 0, 0, 0, INIT_CUSTOM_COLOR_PTR	/* 'Custom color' callback pointer */  \
   gx_default_get_cmap_procs
 
@@ -371,8 +371,9 @@ struct gs_gstate_s {
     s->alphaisshape = 0; \
     s->texthscaling = 100.0; \
     s->textspacing = 0.0; \
-    s->textleading = 0; \
+    s->textleading = 0.0; \
     s->wordspacing = 0.0; \
+    s->textrise = 0.0; \
   } while (0)
 
 struct_proc_finalize(gs_gstate_finalize);
