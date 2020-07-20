@@ -196,16 +196,8 @@ static int pdfi_annot_draw_AP(pdf_context *ctx, pdf_dict *annot, pdf_dict *NormA
     /* graphicsbeginpage() */
     /* textbeginpage() */
     code = gs_initgraphics(ctx->pgs);
-    code = pdfi_page_graphics_begin(ctx);
-
-    code = gs_settextspacing(ctx->pgs, (double)0.0);
-    code = gs_settextleading(ctx->pgs, (double)0.0);
-    gs_settextrenderingmode(ctx->pgs, 0);
-    code = gs_setwordspacing(ctx->pgs, (double)0.0);
-    code = gs_settexthscaling(ctx->pgs, (double)100.0);
     ctx->TextBlockDepth = 0;
     /* TODO: FIXME */
-
 
     code = pdfi_annot_Rect(ctx, annot, &rect);
     if (code < 0) goto exit;
