@@ -488,7 +488,7 @@ namespace ghostnet_wpf_example
 						return;
 					}
 			}
-			if (extension.ToUpper() == ".PS" || extension.ToUpper() == ".EPS")
+			if (extension.ToUpper() != ".PDF")
 			{
 
 				MessageBoxResult result = MessageBox.Show("Would you like to Distill this file?", "ghostnet", MessageBoxButton.YesNoCancel);

@@ -232,69 +232,6 @@ public class gsEventArgs : EventArgs
             }
 
             return count;
-#if false
-            switch (m_params.task)
-			{
-				case GS_Task_t.CREATE_XPS:
-					if (count >= 7 && output.Substring(0, 4) == "Page")
-					{
-						String page = output.Substring(5, count - 6);
-						int numVal;
-						try
-						{
-							double perc = 0.0;
-							numVal = System.Convert.ToInt32(page);
-							if (m_params.firstpage == -1 && m_params.lastpage == -1 &&
-								m_params.pages == null)
-							{
-								/* Doing full document */
-								perc = 100.0 * (double)numVal / (double)m_params.num_pages;
-							}
-							else
-							{
-								if (m_params.pages != null)
-								{
-									perc = 100.0 * ((double)numVal - m_params.currpage) / (double)m_params.num_pages;
-									m_params.currpage += 1;
-								}
-								else
-								{
-									/* continugous set of pages */
-									perc = 100.0 * ((double)numVal - m_params.firstpage + 1) / (double)m_params.num_pages;
-								}
-							}
-							m_worker.ReportProgress((int)perc);
-						}
-						catch (FormatException)
-						{
-							Console.WriteLine("XPSPrint Error: Input string is not a sequence of digits.");
-						}
-						catch (OverflowException)
-						{
-							Console.WriteLine("XPSPrint Error: The number cannot fit in an Int32.");
-						}
-					}
-					break;
-
-				case GS_Task_t.GET_PAGE_COUNT:
-					try
-					{
-						m_params.num_pages = Int32.Parse(output.Substring(0, count - 1));
-					}
-					catch (FormatException)
-					{
-						return count;
-					}
-					break;
-
-				case GS_Task_t.DISPLAY_DEV_NON_PDF:
-				case GS_Task_t.DISPLAY_DEV_PDF:
-				case GS_Task_t.DISPLAY_DEV_THUMBS_NON_PDF:
-				case GS_Task_t.DISPLAY_DEV_THUMBS_PDF:
-					break;
-			}
-			return count;
-#endif
 		}
 
 		private int stderr_callback(IntPtr handle, IntPtr pointer, int count)
