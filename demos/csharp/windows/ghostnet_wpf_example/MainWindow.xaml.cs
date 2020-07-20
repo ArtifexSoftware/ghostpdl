@@ -441,7 +441,6 @@ namespace ghostnet_wpf_example
 				 * handing it the filename */
 				/* We need to get the location */
 				string path = System.Reflection.Assembly.GetExecutingAssembly().CodeBase;
-				Process p = new Process();
 				try
 				{
 					Process.Start(path, FileName);
