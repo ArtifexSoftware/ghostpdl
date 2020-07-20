@@ -9,27 +9,15 @@ namespace gs_mono_example
     static class Constants
     {
         public const double SCALE_THUMB = 0.1;
-        public const int BLANK_WIDTH = 17;
-        public const int BLANK_HEIGHT = 22;
         public const int DEFAULT_GS_RES = 300;
-        public const int PAGE_VERT_MARGIN = 10;
-        public const int MAX_PRINT_PREVIEW_LENGTH = 250;
-        public const int ZOOM_MAX = 400;
-        public const double ZOOM_MIN = 25;
+        public const int ZOOM_MAX = 4;
+        public const double ZOOM_MIN = .25;
     }
 
     public enum NotifyType_t
     {
         MESS_STATUS,
         MESS_ERROR
-    };
-
-    public enum status_t
-    {
-        S_ISOK,
-        E_FAILURE,
-        E_OUTOFMEM,
-        E_NEEDPASSWORD
     };
 
     public enum Page_Content_t
@@ -41,34 +29,17 @@ namespace gs_mono_example
         NOTSET,
         BLANK
     };
-    public enum zoom_t
-    {
-        NO_ZOOM,
-        ZOOM_IN,
-        ZOOM_OUT
-    }
-
-    public enum doc_t
-    {
-        UNKNOWN,
-        PDF,
-        PS,
-        PCL,
-        XPS
-    }
 
     public struct pagesizes_t
     {
         public double width;
         public double height;
-        public double cummulative_y;
     }
 
     public partial class MainWindow : Gtk.Window
     {
         ghostsharp m_ghostscript;
         bool m_file_open;
-        doc_t m_document_type;
         String m_currfile;
         String m_extension;
         List<TempFile> m_tempfiles;
@@ -82,7 +53,6 @@ namespace gs_mono_example
         bool m_init_done;
         bool m_busy_render;
         bool m_firstime;
-        bool m_validZoom;
         bool m_aa;
         bool m_aa_change;
         List<int> m_page_scroll_pos;
@@ -153,11 +123,9 @@ namespace gs_mono_example
             m_page_sizes = new List<pagesizes_t>();
             m_page_scroll_pos = new List<int>();
             m_file_open = false;
-            m_document_type = doc_t.UNKNOWN;
             m_doczoom = 1.0;
             m_init_done = false;
             m_busy_render = true;
-            m_validZoom = true;
             m_firstime = true;
             m_aa = true;
             m_aa_change = false;
@@ -360,7 +328,6 @@ namespace gs_mono_example
         void ScrollMainTo(int index)
         {
             m_ignore_scroll_change = true;
-            var bar = m_GtkmainScroll.Hadjustment;
 
             if (index < 0 || index > m_numpages - 1)
                 return;
@@ -468,7 +435,6 @@ namespace gs_mono_example
                     case GS_Task_t.DISPLAY_DEV_NON_PDF:
                         RenderingDone();
                         break;
-
                 }
 
                 if (info.Params.result == GS_Result_t.gsFAILED)
@@ -709,11 +675,9 @@ namespace gs_mono_example
             m_page_scroll_pos = new List<int>();
 
             m_file_open = false;
-            m_document_type = doc_t.UNKNOWN;
             m_doczoom = 1.0;
             m_init_done = false;
             m_busy_render = true;
-            m_validZoom = true;
             m_firstime = true;
             m_aa = true;
             m_aa_change = false;
@@ -725,7 +689,6 @@ namespace gs_mono_example
             m_origfile = null;
             m_numpages = -1;
             m_file_open = false;
-            m_document_type = doc_t.UNKNOWN;
             CleanUpTempFiles();
             m_tempfiles = new List<TempFile>();
             return;

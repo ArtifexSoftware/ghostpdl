@@ -329,10 +329,10 @@ namespace GhostMono
         private void gsCompleted(gsParamState_t Params)
         {
             gsThreadCallBack info = new gsThreadCallBack(true, 100, Params);
+            m_worker_busy = false;
             Gtk.Application.Invoke(delegate {
                 gsUpdateMain(info);
             });
-            m_worker_busy = false;
         }
 
         /* Callback as worker progresses in run string case */
