@@ -312,7 +312,7 @@ def gsapi_activate_path_control(instance, enable):
 
 
 def gsapi_is_path_control_active(instance):
-    e = gsapi.gsapi_is_path_control_active(instance)
+    e = _libgs.gsapi_is_path_control_active(instance)
     return e
 
 
