@@ -939,7 +939,46 @@ gs_initgraphics(gs_gstate * pgs)
     }
     pgs->in_cachedevice = 0;
 
+    code = gs_settextspacing(pgs, (double)0.0);
+    if (code < 0)
+        goto exit;
+    code = gs_settextleading(pgs, (double)0.0);
+    if (code < 0)
+        goto exit;
+    gs_settextrenderingmode(pgs, 0);
+    if (code < 0)
+        goto exit;
+    code = gs_setwordspacing(pgs, (double)0.0);
+    if (code < 0)
+        goto exit;
+    code = gs_settexthscaling(pgs, (double)100.0);
+    if (code < 0)
+        goto exit;
+
+    gs_setaccuratecurves(pgs, true);
+
+    code = gs_setstrokeconstantalpha(pgs, 1.0);
+    if (code < 0)
+        goto exit;
+    code = gs_setfillconstantalpha(pgs, 1.0);
+    if (code < 0)
+        goto exit;
+    code = gs_setalphaisshape(pgs, 0);
+    if (code < 0)
+        goto exit;
+    code = gs_setblendmode(pgs, BLEND_MODE_Compatible);
+    if (code < 0)
+        goto exit;
+    code = gs_settextknockout(pgs, true);
+    if (code < 0)
+        goto exit;
+    code = gs_setsmoothness(pgs, 0.02); /* Match gs code */
+    if (code < 0)
+        goto exit;
+
     return 0;
+exit:
+    return code;
 }
 
 /* setfilladjust */
