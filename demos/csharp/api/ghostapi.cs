@@ -62,8 +62,8 @@ namespace GhostAPI
 #endif
 #endif
 #endif
-		/* Callback proto for stdio */
-		public delegate int gsStdIOHandler(IntPtr caller_handle, IntPtr buffer, int len);
+        /* Callback proto for stdio */
+        public delegate int gsStdIOHandler(IntPtr caller_handle, IntPtr buffer, int len);
 
 		/* Callback proto for poll function */
 		public delegate int gsPollHandler(IntPtr caller_handle);

@@ -978,8 +978,8 @@ namespace GhostMono
 			gsparams.args.Add("-I%rom%Resource/Init/");
 			gsparams.args.Add("-dSAFER");
 			gsparams.args.Add("-sDEVICE=pdfwrite");
-			gsparams.outputfile = Path.GetTempFileName();
-			gsparams.args.Add("-o" + gsparams.outputfile);
+            gsparams.outputfile = Path.GetTempFileName();
+            gsparams.args.Add("-o" + gsparams.outputfile);
 			gsparams.task = GS_Task_t.PS_DISTILL;
 
 			return RunGhostscriptAsync(gsparams);
