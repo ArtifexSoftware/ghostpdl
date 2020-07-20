@@ -214,15 +214,7 @@ namespace GhostMono
             String output = null;
             try
             {
-                output = Marshal.PtrToStringAnsi(pointer);
-            }
-            catch (Exception except)
-            {
-                var mess = except.Message;
-            }
-
-            try
-            {
+                output = Marshal.PtrToStringAnsi(pointer);    
                 Gtk.Application.Invoke(delegate {
                     gsIOUpdateMain(output, count);
                 });
@@ -239,7 +231,6 @@ namespace GhostMono
         private int stderr_callback(IntPtr handle, IntPtr pointer, int count)
         {
             String output = Marshal.PtrToStringAnsi(pointer);
-
             Gtk.Application.Invoke(delegate {
                 gsIOUpdateMain(output, count);
             });
@@ -1001,7 +992,7 @@ namespace GhostMono
 			gsParamState_t gsparams = new gsParamState_t();
 			int format = (gsConstants.DISPLAY_COLORS_RGB |
 							gsConstants.DISPLAY_DEPTH_8 |
-							gsConstants.DISPLAY_LITTLEENDIAN);
+							gsConstants.DISPLAY_BIGENDIAN);
 			int resolution = (int)(72.0 * zoom + 0.5);
 
 			gsparams.args = new List<string>();

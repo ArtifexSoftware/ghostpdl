@@ -377,11 +377,13 @@ namespace gs_mono_example
             m_GtkProgressBox.PackStart(m_GtkProgressLabel, false, false, 0);
             m_GtkvBoxMain.PackStart(m_GtkProgressBox, false, false, 0);
             m_GtkProgressBar.Fraction = 0.0;
+            this.ShowAll();
         }
 
         void RemoveProgressBar()
         {
             m_GtkvBoxMain.Remove(m_GtkProgressBox);
+            this.ShowAll();
         }
 
         void AaCheck_Clicked(object sender, EventArgs e)
@@ -440,8 +442,8 @@ namespace gs_mono_example
                 switch (info.Params.task)
                 {
                     case GS_Task_t.PS_DISTILL:
-                        //xaml_DistillProgress.Value = 100;
-                        //xaml_DistillGrid.Visibility = System.Windows.Visibility.Collapsed;
+                        m_GtkProgressBar.Fraction = 1.0;
+                        RemoveProgressBar();
                         break;
 
                     case GS_Task_t.SAVE_RESULT:
@@ -488,11 +490,8 @@ namespace gs_mono_example
                 switch (info.Params.task)
                 {
                     case GS_Task_t.CREATE_XPS:
-                        // this.xaml_DistillProgress.Value = asyncInformation.Progress;
-                        break;
-
                     case GS_Task_t.PS_DISTILL:
-                        // this.xaml_DistillProgress.Value = asyncInformation.Progress;
+                        m_GtkProgressBar.Fraction = (double)(info.Progress) / 100.0;
                         break;
 
                     case GS_Task_t.SAVE_RESULT:
@@ -504,15 +503,13 @@ namespace gs_mono_example
         /* GS Result*/
         public void GSResult(gsParamState_t gs_result)
         {
-#if false
-            // TempFile tempfile = null;
+            TempFile tempfile = null;
 
-            // if (gs_result.outputfile != null)
-            //     tempfile = new TempFile(gs_result.outputfile);
+            if (gs_result.outputfile != null)
+                 tempfile = new TempFile(gs_result.outputfile);
 
             if (gs_result.result == GS_Result_t.gsCANCELLED)
             {
-               // xaml_DistillGrid.Visibility = System.Windows.Visibility.Collapsed;
                 if (tempfile != null)
                 {
                     try
@@ -521,15 +518,14 @@ namespace gs_mono_example
                     }
                     catch
                     {
-                        ShowMessage(this, NotifyType_t.MESS_STATUS, "Problem Deleting Temp File");
+                        ShowMessage(NotifyType_t.MESS_STATUS, "Problem Deleting Temp File");
                     }
                 }
                 return;
             }
             if (gs_result.result == GS_Result_t.gsFAILED)
             {
-               //xaml_DistillGrid.Visibility = System.Windows.Visibility.Collapsed;
-                ShowMessage(this, NotifyType_t.MESS_STATUS, "GS Failed Conversion");
+                ShowMessage(NotifyType_t.MESS_STATUS, "GS Failed Conversion");
                 if (tempfile != null)
                 {
                     try
@@ -538,48 +534,57 @@ namespace gs_mono_example
                     }
                     catch
                     {
-                        ShowMessage(this, NotifyType_t.MESS_STATUS, "Problem Deleting Temp File");
+                        ShowMessage(NotifyType_t.MESS_STATUS, "Problem Deleting Temp File");
                     }
                 }
                 return;
             }
-#endif
+
             switch (gs_result.task)
             {
-#if false
                 case GS_Task_t.PS_DISTILL:
-                    //xaml_DistillGrid.Visibility = System.Windows.Visibility.Collapsed;
                     m_origfile = gs_result.inputfile;
 
-                    /* Save distilled result */
-                    SaveFileDialog dlg = new SaveFileDialog();
-                    dlg.Filter = "PDF file (*.pdf)|*.pdf";
-                    dlg.FileName = System.IO.Path.GetFileNameWithoutExtension(m_origfile) + ".pdf";
-                    if (dlg.ShowDialog() == true)
+                    Gtk.FileChooserDialog dialog = new Gtk.FileChooserDialog("Save Document",
+                                                    (Gtk.Window)this.Toplevel,
+                                                     Gtk.FileChooserAction.Save);                                                   
+                    dialog.LocalOnly = true;
+                    dialog.AddButton(Gtk.Stock.Cancel, Gtk.ResponseType.Cancel);
+                    dialog.AddButton(Gtk.Stock.Save, Gtk.ResponseType.Yes);
+                    dialog.SetFilename(System.IO.Path.GetFileNameWithoutExtension(m_origfile) + ".pdf");             
+
+                    Gtk.FileFilter filter = new Gtk.FileFilter();
+                    filter.Name = "doc/pdf";
+                    filter.AddMimeType("application/pdf");
+                    filter.AddPattern("*.pdf");
+                    dialog.Filter = filter;
+
+                    int response = dialog.Run();
+                    if (response == (int)Gtk.ResponseType.Yes)
                     {
+                        m_currfile = dialog.Filename;
                         try
                         {
-                            if (File.Exists(dlg.FileName))
+                            if (System.IO.File.Exists(m_currfile))
                             {
-                                File.Delete(dlg.FileName);
+                                System.IO.File.Delete(m_currfile);
                             }
-                            File.Copy(tempfile.Filename, dlg.FileName);
+
+                            var res = System.IO.File.Exists(tempfile.Filename);
+
+
+                            System.IO.File.Copy(tempfile.Filename, dialog.Filename);
                         }
                         catch (Exception except)
                         {
-                            ShowMessage(this, NotifyType_t.MESS_ERROR, "Exception Saving Distilled Result:" + except.Message);
+                            ShowMessage(NotifyType_t.MESS_ERROR, "Exception Saving Distilled Result:" + except.Message);
                         }
-
                     }
+
+                    dialog.Destroy();
                     tempfile.DeleteFile();
                     break;
-#endif
-
-                case GS_Task_t.SAVE_RESULT:
-                    /* Don't delete file in this case as this was our output! */
-                    ShowMessage(NotifyType_t.MESS_STATUS, "GS Completed Conversion");
-                    break;
-            }
+            }                        
         }
 
         protected void OnDeleteEvent(object sender, DeleteEventArgs a)
@@ -623,6 +628,27 @@ namespace gs_mono_example
                 m_extension = m_currfile.Split('.')[1];
             }
             dialog.Destroy();
+
+            int result;
+            if (!(m_extension.ToUpper() == "PDF" || m_extension.ToUpper() == "pdf"))
+            {
+                MessageDialog md = new MessageDialog(this,
+                    DialogFlags.DestroyWithParent, MessageType.Question,
+                    ButtonsType.YesNo, "Would you like to Distill this file ?");
+
+                result = md.Run();
+                md.Destroy();
+                if ((ResponseType) result == ResponseType.Yes)
+                {
+                    AddProgressBar("Distilling");
+                    if (m_ghostscript.DistillPS(m_currfile, Constants.DEFAULT_GS_RES) == gsStatus.GS_BUSY)
+                    {
+                        ShowMessage(NotifyType_t.MESS_STATUS, "GS currently busy");
+                        return;
+                    }
+                    return;
+                }
+            }
             RenderThumbs();
         }
     }

@@ -40,6 +40,7 @@ namespace GhostAPI
 		public const int DISPLAY_COLORS_RGB = (1 << 2);
 		public const int DISPLAY_DEPTH_8 = (1 << 11);
 		public const int DISPLAY_LITTLEENDIAN = (1 << 16);
+        public const int DISPLAY_BIGENDIAN = (0 << 16);
 	}
 
 	class ghostapi
