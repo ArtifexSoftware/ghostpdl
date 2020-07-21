@@ -14,32 +14,46 @@ Overview:
 Usage:
 
     make sodebug
-    LD_LIBRARY_PATH=sodebugbin ./toolbin/gsapi.py
+    LD_LIBRARY_PATH=sodebugbin ./demos/python/gsapi.py
 
 Requirements:
 
-    Requires python3.7 or later.
+    Should work on python-2.5+ and python-3.0+, but this might change in
+    future.
 
-Limitations as of 2020-06-18:
-
-    Only tested on Linux.
+Limitations as of 2020-07-21:
 
     Only very limited testing on has been done.
 
+    Only tested on Linux and OpenBSD.
+
+    Only tested with python-3.7 and 2.7.
+
     We don't provide gsapi_add_fs() or gsapi_remove_fs().
+
+    We only provide display_callback V2, without V3's
+    display_adjust_band_height and display_rectangle_request.
 
 '''
 
-import collections
 import ctypes
 import sys
 
 
 
-gsapi_revision_t = collections.namedtuple('gsapi_revision_t',
-        'product copyright revision revisiondate'
-        )
-
+class gsapi_revision_t:
+    def __init__(self, product, copyright, revision, revisiondate):
+        self.product = product
+        self.copyright = copyright
+        self.revision = revision
+        self.revisiondate = revisiondate
+    def __str__(self):
+        return 'product=%r copyright=%r revision=%r revisiondate=%r' % (
+                self.product,
+                self.copyright,
+                self.revision,
+                self.revisiondate,
+                )
 
 def gsapi_revision():
     '''
@@ -93,32 +107,47 @@ def gsapi_set_poll(instance, poll_fn):
     return e
 
 
-display_callback = collections.namedtuple('display_callback',
-    ' size'
-    ' version_major'
-    ' version_minor'
-    ' display_open'
-    ' display_preclose'
-    ' display_close'
-    ' display_presize'
-    ' display_size'
-    ' display_sync'
-    ' display_page'
-    ' display_update'
-    ' display_memalloc'
-    ' display_memfree'
-    ' display_separation'
-    ,
-    defaults=[0]*14,
-    )
+class display_callback:
+    def __init__(self,
+            version_major = 0,
+            version_minor = 0,
+            display_open = 0,
+            display_preclose = 0,
+            display_close = 0,
+            display_presize = 0,
+            display_size = 0,
+            display_sync = 0,
+            display_page = 0,
+            display_update = 0,
+            display_memalloc = 0,
+            display_memfree = 0,
+            display_separation = 0,
+            display_adjust_band_height = 0,
+            ):
+        self.version_major              = version_major
+        self.version_minor              = version_minor
+        self.display_open               = display_open
+        self.display_preclose           = display_preclose
+        self.display_close              = display_close
+        self.display_presize            = display_presize
+        self.display_size               = display_size
+        self.display_sync               = display_sync
+        self.display_page               = display_page
+        self.display_update             = display_update
+        self.display_memalloc           = display_memalloc
+        self.display_memfree            = display_memfree
+        self.display_separation         = display_separation
+        self.display_adjust_band_height = display_adjust_band_height
 
 
 def gsapi_set_display_callback(instance, callback):
     assert isinstance(callback, display_callback)
     callback2 = _display_callback()
-
+    callback2.size = ctypes.sizeof(callback2)
     # Copy from <callback> into <callback2>.
     for name, type_ in _display_callback._fields_:
+        if name == 'size':
+            continue
         value = getattr(callback, name)
         value2 = type_(value)
         setattr(callback2, name, value2)
