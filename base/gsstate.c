@@ -945,9 +945,9 @@ gs_initgraphics(gs_gstate * pgs)
     code = gs_settextleading(pgs, (double)0.0);
     if (code < 0)
         goto exit;
+
     gs_settextrenderingmode(pgs, 0);
-    if (code < 0)
-        goto exit;
+
     code = gs_setwordspacing(pgs, (double)0.0);
     if (code < 0)
         goto exit;
