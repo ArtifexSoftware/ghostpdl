@@ -9,6 +9,7 @@ import subprocess
 import sys
 import time
 import traceback
+import threading
 
 
 def place( frame_record):
@@ -21,7 +22,7 @@ def place( frame_record):
     function    = frame_record.function
     ret = os.path.split( filename)[1] + ':' + str( line) + ':' + function + ':'
     if 0:
-        tid = str( threading.currentThread())
+        tid = str(threading.currentThread())
         ret = '[' + tid + '] ' + ret
     return ret
 

@@ -35,7 +35,7 @@ namespace gs_mono_example
             if (m_numpages < 1)
             {
                 ShowMessage(NotifyType_t.MESS_STATUS, "File failed to open properly");
-                //CleanUp();
+                CleanUp();
             }
             else
             {

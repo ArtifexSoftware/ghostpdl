@@ -2,33 +2,22 @@
 using System.Collections.Generic;
 using Gtk;
 using GhostMono;
+using System.Diagnostics;
 
 namespace gs_mono_example
 {
     static class Constants
     {
         public const double SCALE_THUMB = 0.1;
-        public const int BLANK_WIDTH = 17;
-        public const int BLANK_HEIGHT = 22;
         public const int DEFAULT_GS_RES = 300;
-        public const int PAGE_VERT_MARGIN = 10;
-        public const int MAX_PRINT_PREVIEW_LENGTH = 250;
-        public const int ZOOM_MAX = 400;
-        public const double ZOOM_MIN = 25;
+        public const int ZOOM_MAX = 4;
+        public const double ZOOM_MIN = .25;
     }
 
     public enum NotifyType_t
     {
         MESS_STATUS,
         MESS_ERROR
-    };
-
-    public enum status_t
-    {
-        S_ISOK,
-        E_FAILURE,
-        E_OUTOFMEM,
-        E_NEEDPASSWORD
     };
 
     public enum Page_Content_t
@@ -40,34 +29,17 @@ namespace gs_mono_example
         NOTSET,
         BLANK
     };
-    public enum zoom_t
-    {
-        NO_ZOOM,
-        ZOOM_IN,
-        ZOOM_OUT
-    }
-
-    public enum doc_t
-    {
-        UNKNOWN,
-        PDF,
-        PS,
-        PCL,
-        XPS
-    }
 
     public struct pagesizes_t
     {
         public double width;
         public double height;
-        public double cummulative_y;
     }
 
     public partial class MainWindow : Gtk.Window
     {
         ghostsharp m_ghostscript;
         bool m_file_open;
-        doc_t m_document_type;
         String m_currfile;
         String m_extension;
         List<TempFile> m_tempfiles;
@@ -81,7 +53,6 @@ namespace gs_mono_example
         bool m_init_done;
         bool m_busy_render;
         bool m_firstime;
-        bool m_validZoom;
         bool m_aa;
         bool m_aa_change;
         List<int> m_page_scroll_pos;
@@ -152,11 +123,9 @@ namespace gs_mono_example
             m_page_sizes = new List<pagesizes_t>();
             m_page_scroll_pos = new List<int>();
             m_file_open = false;
-            m_document_type = doc_t.UNKNOWN;
             m_doczoom = 1.0;
             m_init_done = false;
             m_busy_render = true;
-            m_validZoom = true;
             m_firstime = true;
             m_aa = true;
             m_aa_change = false;
@@ -289,6 +258,14 @@ namespace gs_mono_example
             m_GtkTreeMain.Model = m_GtkimageStoreMain;
 
             m_GtkvBoxMain.PackStart(hBoxPages, true, true, 0);
+
+            /* For case of opening another file */
+            string[] arguments = Environment.GetCommandLineArgs();
+            if (arguments.Length > 1)
+            {
+                m_currfile = arguments[1];
+                ProcessFile();
+            }
         }
 
         void Vadjustment_Changed(object sender, EventArgs e)
@@ -351,7 +328,6 @@ namespace gs_mono_example
         void ScrollMainTo(int index)
         {
             m_ignore_scroll_change = true;
-            var bar = m_GtkmainScroll.Hadjustment;
 
             if (index < 0 || index > m_numpages - 1)
                 return;
@@ -406,7 +382,8 @@ namespace gs_mono_example
 
         private void OnClose(object sender, EventArgs e)
         {
-            Application.Quit();
+            if (m_init_done)
+                CleanUp(); 
         }
 
         private void gsIO(String mess, int len)
@@ -458,7 +435,6 @@ namespace gs_mono_example
                     case GS_Task_t.DISPLAY_DEV_NON_PDF:
                         RenderingDone();
                         break;
-
                 }
 
                 if (info.Params.result == GS_Result_t.gsFAILED)
@@ -571,8 +547,6 @@ namespace gs_mono_example
                             }
 
                             var res = System.IO.File.Exists(tempfile.Filename);
-
-
                             System.IO.File.Copy(tempfile.Filename, dialog.Filename);
                         }
                         catch (Exception except)
@@ -620,15 +594,41 @@ namespace gs_mono_example
             filter.AddPattern("*.xps");
             filter.AddPattern("*.oxps");
             dialog.Filter = filter;
-
             int response = dialog.Run();
-            if (response == (int)Gtk.ResponseType.Accept)
-            {
-                m_currfile = dialog.Filename;
-                m_extension = m_currfile.Split('.')[1];
-            }
-            dialog.Destroy();
 
+            if (response != (int)Gtk.ResponseType.Accept)
+            {
+                dialog.Destroy();
+                return;
+            }
+
+            if (m_file_open)
+            {
+                /* launch a new process */
+                string path = System.Reflection.Assembly.GetExecutingAssembly().Location;
+
+                Process p = new Process();
+                try
+                {
+                    String name = dialog.Filename;
+                    Process.Start(path, name);
+                }
+                catch (Exception except)
+                {
+                    Console.WriteLine("Problem opening file: " + except.Message);
+                }
+                dialog.Destroy();
+                return;
+            }
+
+            m_currfile = dialog.Filename;
+            dialog.Destroy();
+            ProcessFile();
+        }
+
+        public void ProcessFile()
+        {
+            m_extension = m_currfile.Split('.')[1];
             int result;
             if (!(m_extension.ToUpper() == "PDF" || m_extension.ToUpper() == "pdf"))
             {
@@ -638,7 +638,7 @@ namespace gs_mono_example
 
                 result = md.Run();
                 md.Destroy();
-                if ((ResponseType) result == ResponseType.Yes)
+                if ((ResponseType)result == ResponseType.Yes)
                 {
                     AddProgressBar("Distilling");
                     if (m_ghostscript.DistillPS(m_currfile, Constants.DEFAULT_GS_RES) == gsStatus.GS_BUSY)
@@ -649,7 +649,65 @@ namespace gs_mono_example
                     return;
                 }
             }
+            m_file_open = true;
             RenderThumbs();
+        }
+
+        private void CleanUp()
+        {
+            /* Clear out everything */
+            if (m_docPages != null && m_docPages.Count > 0)
+                m_docPages.Clear();
+            if (m_thumbnails != null && m_thumbnails.Count > 0)
+                m_thumbnails.Clear();
+            if (m_page_sizes != null && m_page_sizes.Count > 0)
+                m_page_sizes.Clear();
+            if (m_page_scroll_pos != null && m_page_scroll_pos.Count > 0)
+                m_page_scroll_pos.Clear();
+
+            m_GtkimageStoreThumb.Clear();
+            m_GtkimageStoreMain.Clear();
+
+            m_currpage = 0;
+            m_thumbnails = new List<DocPage>();
+            m_docPages = new Pages();
+            m_page_sizes = new List<pagesizes_t>();
+            m_page_scroll_pos = new List<int>();
+
+            m_file_open = false;
+            m_doczoom = 1.0;
+            m_init_done = false;
+            m_busy_render = true;
+            m_firstime = true;
+            m_aa = true;
+            m_aa_change = false;
+            m_zoom_txt = "100";
+            m_page_txt = "0";
+            m_GtkpageTotal.Text = "/ 0";
+            m_ignore_scroll_change = false;
+            m_currfile = null;
+            m_origfile = null;
+            m_numpages = -1;
+            m_file_open = false;
+            CleanUpTempFiles();
+            m_tempfiles = new List<TempFile>();
+            return;
+        }
+
+        private void CleanUpTempFiles()
+        {
+            for (int k = 0; k < m_tempfiles.Count; k++)
+            {
+                try
+                {
+                    m_tempfiles[k].DeleteFile();
+                }
+                catch
+                {
+                    ShowMessage(NotifyType_t.MESS_STATUS, "Problem Deleting Temp File");
+                }
+            }
+            m_tempfiles.Clear();
         }
     }
 }

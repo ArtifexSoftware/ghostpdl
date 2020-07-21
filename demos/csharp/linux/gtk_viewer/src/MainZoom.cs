@@ -108,18 +108,20 @@ namespace gs_mono_example
             }
 
             double zoom = (double)System.Convert.ToDouble(text_entered);
+            zoom = zoom / 100.0;
+
             if (zoom > Constants.ZOOM_MAX)
             {
                 zoom = Constants.ZOOM_MAX;
+                m_GtkzoomEntry.Text = (zoom * 100).ToString();
             }
             if (zoom < Constants.ZOOM_MIN)
             {
                 zoom = Constants.ZOOM_MIN;
+                m_GtkzoomEntry.Text = (zoom * 100).ToString();
             }
 
-            m_GtkzoomEntry.Text = zoom.ToString();
-            m_doczoom = zoom / 100.0;
-
+            m_doczoom = zoom;
             m_busy_render = true;
             m_zoom_txt = m_GtkzoomEntry.Text;
             ResizePages();

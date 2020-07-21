@@ -329,10 +329,10 @@ namespace GhostMono
         private void gsCompleted(gsParamState_t Params)
         {
             gsThreadCallBack info = new gsThreadCallBack(true, 100, Params);
+            m_worker_busy = false;
             Gtk.Application.Invoke(delegate {
                 gsUpdateMain(info);
             });
-            m_worker_busy = false;
         }
 
         /* Callback as worker progresses in run string case */
@@ -978,8 +978,8 @@ namespace GhostMono
 			gsparams.args.Add("-I%rom%Resource/Init/");
 			gsparams.args.Add("-dSAFER");
 			gsparams.args.Add("-sDEVICE=pdfwrite");
-			gsparams.outputfile = Path.GetTempFileName();
-			gsparams.args.Add("-o" + gsparams.outputfile);
+            gsparams.outputfile = Path.GetTempFileName();
+            gsparams.args.Add("-o" + gsparams.outputfile);
 			gsparams.task = GS_Task_t.PS_DISTILL;
 
 			return RunGhostscriptAsync(gsparams);

@@ -441,7 +441,6 @@ namespace ghostnet_wpf_example
 				 * handing it the filename */
 				/* We need to get the location */
 				string path = System.Reflection.Assembly.GetExecutingAssembly().CodeBase;
-				Process p = new Process();
 				try
 				{
 					Process.Start(path, FileName);
@@ -489,7 +488,7 @@ namespace ghostnet_wpf_example
 						return;
 					}
 			}
-			if (extension.ToUpper() == ".PS" || extension.ToUpper() == ".EPS")
+			if (extension.ToUpper() != ".PDF")
 			{
 
 				MessageBoxResult result = MessageBox.Show("Would you like to Distill this file?", "ghostnet", MessageBoxButton.YesNoCancel);
