@@ -194,7 +194,9 @@ int pdfi_op_q(pdf_context *ctx)
 {
     int code;
 
+#if DEBUG_GSAVE
     dbgmprintf(ctx->memory, "(doing q)\n"); /* TODO: Spammy, delete me at some point */
+#endif
     code = pdfi_gsave(ctx);
 
     if (code < 0 && ctx->pdfstoponerror)
@@ -210,7 +212,9 @@ int pdfi_op_Q(pdf_context *ctx)
 {
     int code = 0;
 
+#if DEBUG_GSAVE
     dbgmprintf(ctx->memory, "(doing Q)\n"); /* TODO: Spammy, delete me at some point */
+#endif
     if (ctx->pgs->level <= ctx->current_stream_save.gsave_level) {
         /* We don't throw an error here, we just ignore it and continue */
         ctx->pdf_warnings |= W_PDF_TOOMANYQ;

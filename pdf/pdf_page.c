@@ -142,7 +142,7 @@ static int pdfi_process_one_page(pdf_context *ctx, pdf_dict *page_dict)
     /* Put our state back the way it was before we ran the contents
      * and check if the stream had problems
      */
-#ifdef PROBE_STREAMS
+#if PROBE_STREAMS
     if (ctx->pgs->level > ctx->current_stream_save.gsave_level ||
         pdfi_count_stack(ctx) > ctx->current_stream_save.stack_count)
         code = ((pdf_context *)0)->first_page;
@@ -555,8 +555,10 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
     if (code < 0)
         goto exit2;
 
-    dbgmprintf2(ctx->memory, "Current page %ld transparency setting is %d", page_num+1,
+    if (ctx->pdfdebug)
+        dbgmprintf2(ctx->memory, "Current page %ld transparency setting is %d", page_num+1,
                 ctx->page_has_transparency);
+
     if (ctx->spot_capable_device)
         dbgmprintf1(ctx->memory, ", spots=%d\n", ctx->page_num_spots);
     else

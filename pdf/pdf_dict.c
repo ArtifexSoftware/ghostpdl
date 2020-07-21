@@ -40,9 +40,9 @@ void pdfi_free_dict(pdf_obj *o)
         if (d->keys[i] != NULL)
             pdfi_countdown(d->keys[i]);
     }
-    gs_free_object(d->memory, d->keys, "pdf interpreter free dictionary keys");
-    gs_free_object(d->memory, d->values, "pdf interpreter free dictioanry values");
-    gs_free_object(d->memory, d, "pdf interpreter free dictionary");
+    gs_free_object(OBJ_MEMORY(d), d->keys, "pdf interpreter free dictionary keys");
+    gs_free_object(OBJ_MEMORY(d), d->values, "pdf interpreter free dictioanry values");
+    gs_free_object(OBJ_MEMORY(d), d, "pdf interpreter free dictionary");
 }
 
 int pdfi_dict_from_stack(pdf_context *ctx, uint32_t indirect_num, uint32_t indirect_gen)
@@ -648,18 +648,18 @@ int pdfi_dict_put_obj(pdf_dict *d, pdf_obj *Key, pdf_obj *value)
         }
     }
 
-    new_keys = (pdf_obj **)gs_alloc_bytes(d->memory, (d->size + 1) * sizeof(pdf_obj *), "pdfi_dict_put reallocate dictionary keys");
-    new_values = (pdf_obj **)gs_alloc_bytes(d->memory, (d->size + 1) * sizeof(pdf_obj *), "pdfi_dict_put reallocate dictionary values");
+    new_keys = (pdf_obj **)gs_alloc_bytes(OBJ_MEMORY(d), (d->size + 1) * sizeof(pdf_obj *), "pdfi_dict_put reallocate dictionary keys");
+    new_values = (pdf_obj **)gs_alloc_bytes(OBJ_MEMORY(d), (d->size + 1) * sizeof(pdf_obj *), "pdfi_dict_put reallocate dictionary values");
     if (new_keys == NULL || new_values == NULL){
-        gs_free_object(d->memory, new_keys, "pdfi_dict_put memory allocation failure");
-        gs_free_object(d->memory, new_values, "pdfi_dict_put memory allocation failure");
+        gs_free_object(OBJ_MEMORY(d), new_keys, "pdfi_dict_put memory allocation failure");
+        gs_free_object(OBJ_MEMORY(d), new_values, "pdfi_dict_put memory allocation failure");
         return_error(gs_error_VMerror);
     }
     memcpy(new_keys, d->keys, d->size * sizeof(pdf_obj *));
     memcpy(new_values, d->values, d->size * sizeof(pdf_obj *));
 
-    gs_free_object(d->memory, d->keys, "pdfi_dict_put key reallocation");
-    gs_free_object(d->memory, d->values, "pdfi_dict_put value reallocation");
+    gs_free_object(OBJ_MEMORY(d), d->keys, "pdfi_dict_put key reallocation");
+    gs_free_object(OBJ_MEMORY(d), d->values, "pdfi_dict_put value reallocation");
 
     d->keys = new_keys;
     d->values = new_values;

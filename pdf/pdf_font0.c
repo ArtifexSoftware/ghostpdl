@@ -233,7 +233,7 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
 
     pdft0->type = PDF_FONT;
     pdft0->pdfi_font_type = e_pdf_font_type0;
-    pdft0->memory = ctx->memory;
+    pdft0->ctx = ctx;
 #if REFCNT_DEBUG
     pdft0->refcnt_ctx = (void *)ctx;
     pdft0->UID = ctx->UID++;
@@ -399,13 +399,13 @@ pdfi_free_font_type0(pdf_obj *font)
     pdfi_countdown(pdft0->Encoding);
     pdfi_countdown(pdft0->DescendantFonts);
     pdfi_countdown(pdft0->ToUnicode);
-    gs_free_object(pdft0->memory, pfont0->data.Encoding, "pdfi_free_font_type0(data.Encoding)");
+    gs_free_object(OBJ_MEMORY(pdft0), pfont0->data.Encoding, "pdfi_free_font_type0(data.Encoding)");
     /* We shouldn't need to free the fonts in the FDepVector, that should happen
         with DescendantFonts above.
      */
-    gs_free_object(pdft0->memory, pfont0->data.FDepVector, "pdfi_free_font_type0(data.FDepVector)");
-    gs_free_object(pdft0->memory, pfont0, "pdfi_free_font_type0(pfont0)");
-    gs_free_object(pdft0->memory, pdft0, "pdfi_free_font_type0(pdft0)");
+    gs_free_object(OBJ_MEMORY(pdft0), pfont0->data.FDepVector, "pdfi_free_font_type0(data.FDepVector)");
+    gs_free_object(OBJ_MEMORY(pdft0), pfont0, "pdfi_free_font_type0(pfont0)");
+    gs_free_object(OBJ_MEMORY(pdft0), pdft0, "pdfi_free_font_type0(pdft0)");
 
     return 0;
 }

@@ -94,7 +94,9 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
     gs_transparency_mask_subtype_t subtype = TRANSPARENCY_MASK_Luminosity;
     pdf_bool *Processed = NULL;
 
+#if DEBUG_TRANSPARENCY
     dbgmprintf(ctx->memory, "pdfi_trans_set_mask (.execmaskgroup) BEGIN\n");
+#endif
     memset(&params, 0, sizeof(params));
 
     /* Following the logic of the ps code, cram a /Processed key in the SMask dict to
@@ -102,7 +104,9 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
      */
     code = pdfi_dict_knownget_type(ctx, SMask, "Processed", PDF_BOOL, (pdf_obj **)&Processed);
     if (code > 0 && Processed->value) {
+#if DEBUG_TRANSPARENCY
         dbgmprintf(ctx->memory, "SMask already built, skipping\n");
+#endif
         goto exit;
     }
     /* If /Processed not in the dict, put it there */
@@ -298,7 +302,9 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
     pdfi_countdown(Matrix);
     pdfi_countdown(CS);
     pdfi_countdown(Processed);
+#if DEBUG_TRANSPARENCY
     dbgmprintf(ctx->memory, "pdfi_trans_set_mask (.execmaskgroup) END\n");
+#endif
     return code;
 }
 
@@ -545,7 +551,8 @@ void pdfi_trans_set_needs_OP(pdf_context *ctx)
         ctx->page_needs_OP = false;
     else
         ctx->page_needs_OP = true;
-    dbgmprintf1(ctx->memory, "Page %s Overprint\n", ctx->page_needs_OP ?
+    if(ctx->pdfdebug)
+        dbgmprintf1(ctx->memory, "Page %s Overprint\n", ctx->page_needs_OP ?
                 "NEEDS" : "does NOT NEED");
 }
 
@@ -566,10 +573,14 @@ static bool pdfi_trans_okOPcs(pdf_context *ctx)
          * According to mvrhel, DeviceGray should also be included (see comment in gx_set_overprint_ICC()).
          * Sample: 030_Gray_K_black_OP_x1a.pdf (??)
          */
+#if DEBUG_TRANSPARENCY
         dbgmprintf1(ctx->memory, "Colorspace is %d, OKAY for OVERPRINT\n", csi);
+#endif
         return true;
     default:
+#if DEBUG_TRANSPARENCY
         dbgmprintf1(ctx->memory, "Colorspace is %d, NOT OKAY for OVERPRINT\n", csi);
+#endif
         return false;
     }
 

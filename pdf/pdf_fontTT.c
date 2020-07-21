@@ -53,7 +53,6 @@ pdfi_alloc_tt_font(pdf_context *ctx, pdf_font_truetype **font, bool is_cid)
         return_error(gs_error_VMerror);
 
     memset(ttfont, 0x00, sizeof(pdf_font_truetype));
-    ttfont->memory = ctx->memory;
     ttfont->type = PDF_FONT;
     ttfont->ctx = ctx;
     ttfont->pdfi_font_type = e_pdf_font_truetype;
@@ -260,7 +259,7 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
     pdfi_countdown(obj);
     obj = NULL;
 
-    font->fake_glyph_names = (gs_string *)gs_alloc_bytes(font->memory, font->LastChar * sizeof(gs_string), "pdfi_read_truetype_font: fake_glyph_names");
+    font->fake_glyph_names = (gs_string *)gs_alloc_bytes(OBJ_MEMORY(font), font->LastChar * sizeof(gs_string), "pdfi_read_truetype_font: fake_glyph_names");
     if (!font->fake_glyph_names) {
         code = gs_note_error(gs_error_VMerror);
         goto error;
@@ -308,23 +307,23 @@ int pdfi_free_font_truetype(pdf_obj *font)
     pdf_font_truetype *ttfont = (pdf_font_truetype *)font;
     int i;
     if (ttfont->pfont)
-        gs_free_object(ttfont->memory, ttfont->pfont, "Free TrueType gs_font");
+        gs_free_object(OBJ_MEMORY(ttfont), ttfont->pfont, "Free TrueType gs_font");
 
     if (ttfont->Widths)
-        gs_free_object(ttfont->memory, ttfont->Widths, "Free TrueType font Widths array");
+        gs_free_object(OBJ_MEMORY(ttfont), ttfont->Widths, "Free TrueType font Widths array");
 
     if (ttfont->fake_glyph_names != NULL) {
         for (i = 0; i < ttfont->LastChar; i++) {
             if (ttfont->fake_glyph_names[i].data != NULL)
-                gs_free_object(ttfont->memory, ttfont->fake_glyph_names[i].data, "Free TrueType fake_glyph_name");
+                gs_free_object(OBJ_MEMORY(ttfont), ttfont->fake_glyph_names[i].data, "Free TrueType fake_glyph_name");
         }
     }
-    gs_free_object(ttfont->memory, ttfont->fake_glyph_names, "Free TrueType fake_glyph_names");
-    gs_free_object(ttfont->memory, ttfont->sfnt.data, "Free TrueType font sfnt buffer");
+    gs_free_object(OBJ_MEMORY(ttfont), ttfont->fake_glyph_names, "Free TrueType fake_glyph_names");
+    gs_free_object(OBJ_MEMORY(ttfont), ttfont->sfnt.data, "Free TrueType font sfnt buffer");
 
     pdfi_countdown(ttfont->FontDescriptor);
     pdfi_countdown(ttfont->Encoding);
-    gs_free_object(ttfont->memory, ttfont, "Free TrueType font");
+    gs_free_object(OBJ_MEMORY(ttfont), ttfont, "Free TrueType font");
 
     return 0;
 }

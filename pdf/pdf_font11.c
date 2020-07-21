@@ -73,7 +73,6 @@ pdfi_alloc_cidtype2_font(pdf_context *ctx, pdf_cidfont_type2 **font, bool is_cid
         return_error(gs_error_VMerror);
 
     memset(ttfont, 0x00, sizeof(pdf_font_truetype));
-    ttfont->memory = ctx->memory;
     ttfont->type = PDF_FONT;
     ttfont->ctx = ctx;
     ttfont->pdfi_font_type = e_pdf_cidfont_type2;
@@ -287,10 +286,10 @@ int pdfi_free_font_cidtype2(pdf_obj *font)
 {
     pdf_cidfont_type2 *pdfcidf = (pdf_cidfont_type2 *)font;
     gs_font_cid2 *pfont = (gs_font_cid2 *)pdfcidf->pfont;
-    gs_free_object(pdfcidf->memory, pfont, "pdfi_free_font_cidtype2(pfont)");
+    gs_free_object(OBJ_MEMORY(pdfcidf), pfont, "pdfi_free_font_cidtype2(pfont)");
 
-    gs_free_object(pdfcidf->memory, pdfcidf->cidtogidmap.data, "pdfi_free_font_cidtype2(cidtogidmap.data)");
-    gs_free_object(pdfcidf->memory, pdfcidf->sfnt.data, "pdfi_free_font_cidtype2(sfnt.data)");
+    gs_free_object(OBJ_MEMORY(pdfcidf), pdfcidf->cidtogidmap.data, "pdfi_free_font_cidtype2(cidtogidmap.data)");
+    gs_free_object(OBJ_MEMORY(pdfcidf), pdfcidf->sfnt.data, "pdfi_free_font_cidtype2(sfnt.data)");
 
     pdfi_countdown(pdfcidf->PDF_font);
     pdfi_countdown(pdfcidf->BaseFont);
@@ -299,7 +298,7 @@ int pdfi_free_font_cidtype2(pdf_obj *font)
     pdfi_countdown(pdfcidf->DW2);
     pdfi_countdown(pdfcidf->W2);
 
-    gs_free_object(pdfcidf->memory, pdfcidf, "pdfi_free_font_cidtype2(pdfcidf)");
+    gs_free_object(OBJ_MEMORY(pdfcidf), pdfcidf, "pdfi_free_font_cidtype2(pdfcidf)");
 return 0;
 
     return 0;

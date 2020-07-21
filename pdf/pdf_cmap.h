@@ -43,7 +43,6 @@ typedef struct pdf_cmap_s pdf_cmap;
 struct pdf_cmap_s
 {
   pdf_obj_common;
-  pdf_context *ctx;
   byte *buf;
   int buflen;
   int cmaptype;

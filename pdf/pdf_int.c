@@ -98,7 +98,7 @@ int pdfi_alloc_object(pdf_context *ctx, pdf_obj_type type, unsigned int size, pd
         return_error(gs_error_VMerror);
 
     memset(*obj, 0x00, bytes);
-    (*obj)->memory = ctx->memory;
+    (*obj)->ctx = ctx;
     (*obj)->type = type;
 
     switch(type) {
@@ -195,8 +195,8 @@ static void pdfi_free_namestring(pdf_obj *o)
     pdf_name *n = (pdf_name *)o;
 
     if (n->data != NULL)
-        gs_free_object(n->memory, n->data, "pdf interpreter free name or string data");
-    gs_free_object(n->memory, n, "pdf interpreter free name or string");
+        gs_free_object(OBJ_MEMORY(n), n->data, "pdf interpreter free name or string data");
+    gs_free_object(OBJ_MEMORY(n), n, "pdf interpreter free name or string");
 }
 
 static void pdfi_free_keyword(pdf_obj *o)
@@ -205,16 +205,16 @@ static void pdfi_free_keyword(pdf_obj *o)
     pdf_keyword *k = (pdf_keyword *)o;
 
     if (k->data != NULL)
-        gs_free_object(k->memory, k->data, "pdf interpreter free keyword data");
-    gs_free_object(k->memory, k, "pdf interpreter free keyword");
+        gs_free_object(OBJ_MEMORY(k), k->data, "pdf interpreter free keyword data");
+    gs_free_object(OBJ_MEMORY(k), k, "pdf interpreter free keyword");
 }
 
 static void pdfi_free_xref_table(pdf_obj *o)
 {
     xref_table *xref = (xref_table *)o;
 
-    gs_free_object(xref->memory, xref->xref, "pdfi_free_xref_table");
-    gs_free_object(xref->memory, xref, "pdfi_free_xref_table");
+    gs_free_object(OBJ_MEMORY(xref), xref->xref, "pdfi_free_xref_table");
+    gs_free_object(OBJ_MEMORY(xref), xref, "pdfi_free_xref_table");
 }
 
 void pdfi_free_object(pdf_obj *o)
@@ -228,7 +228,7 @@ void pdfi_free_object(pdf_obj *o)
         case PDF_REAL:
         case PDF_INDIRECT:
         case PDF_BOOL:
-            gs_free_object(o->memory, o, "pdf interpreter object refcount to 0");
+            gs_free_object(OBJ_MEMORY(o), o, "pdf interpreter object refcount to 0");
             break;
         case PDF_STRING:
         case PDF_NAME:
@@ -253,7 +253,7 @@ void pdfi_free_object(pdf_obj *o)
             pdfi_free_cmap(o);
             break;
         default:
-            dbgmprintf(o->memory, "!!! Attempting to free unknown obect type !!!\n");
+            dbgmprintf(OBJ_MEMORY(o), "!!! Attempting to free unknown obect type !!!\n");
             break;
     }
 }
@@ -274,7 +274,9 @@ static int pdfi_add_to_cache(pdf_context *ctx, pdf_obj *o)
     pdf_obj_cache_entry *entry;
 
     if (ctx->xref_table->xref[o->object_num].cache != NULL) {
+#if DEBUG_CACHE_FREE
         dmprintf1(ctx->memory, "Attempting to add object %d to cache when the object is already cached!\n", o->object_num);
+#endif
         return_error(gs_error_unknownerror);
     }
 
@@ -283,7 +285,9 @@ static int pdfi_add_to_cache(pdf_context *ctx, pdf_obj *o)
 
     if (ctx->cache_entries == MAX_OBJECT_CACHE_SIZE)
     {
+#if DEBUG_CACHE_FREE
         dbgmprintf(ctx->memory, "Cache full, evicting LRU\n");
+#endif
         if (ctx->cache_LRU) {
             entry = ctx->cache_LRU;
             ctx->cache_LRU = entry->next;
@@ -1187,7 +1191,7 @@ static int pdfi_read_num(pdf_context *ctx, pdf_stream *s, uint32_t indirect_num,
             if (sscanf((const char *)Buffer, "%f", &tempf) == 0) {
                 if (ctx->pdfdebug)
                     dmprintf1(ctx->memory, "failed to read real number : %s\n", Buffer);
-                gs_free_object(num->memory, num, "pdfi_read_num error");
+                gs_free_object(OBJ_MEMORY(num), num, "pdfi_read_num error");
                 return_error(gs_error_syntaxerror);
             }
             num->value.d = tempf;
@@ -1196,7 +1200,7 @@ static int pdfi_read_num(pdf_context *ctx, pdf_stream *s, uint32_t indirect_num,
             if (sscanf((const char *)Buffer, "%d", &tempi) == 0) {
                 if (ctx->pdfdebug)
                     dmprintf1(ctx->memory, "failed to read integer : %s\n", Buffer);
-                gs_free_object(num->memory, num, "pdfi_read_num error");
+                gs_free_object(OBJ_MEMORY(num), num, "pdfi_read_num error");
                 return_error(gs_error_syntaxerror);
             }
             num->value.i = tempi;
@@ -2003,7 +2007,7 @@ static int pdfi_repair_add_object(pdf_context *ctx, uint64_t obj, uint64_t gen, 
             return_error(gs_error_VMerror);
         }
         memset(ctx->xref_table->xref, 0x00, (obj + 1) * sizeof(xref_entry));
-        ctx->xref_table->memory = ctx->memory;
+        ctx->xref_table->ctx = ctx;
         ctx->xref_table->type = PDF_XREF_TABLE;
         ctx->xref_table->xref_size = obj + 1;
 #if REFCNT_DEBUG
@@ -3519,12 +3523,16 @@ int pdfi_run_context(pdf_context *ctx, pdf_dict *stream_dict,
     int code;
     gs_gstate *DefaultQState;
 
+#if DEBUG_CONTEXT
     dbgmprintf(ctx->memory, "pdfi_run_context BEGIN\n");
+#endif
     pdfi_copy_DefaultQState(ctx, &DefaultQState);
     pdfi_set_DefaultQState(ctx, ctx->pgs);
     code = pdfi_interpret_inner_content_stream(ctx, stream_dict, page_dict, stoponerror, desc);
     pdfi_restore_DefaultQState(ctx, &DefaultQState);
+#if DEBUG_CONTEXT
     dbgmprintf(ctx->memory, "pdfi_run_context END\n");
+#endif
     return code;
 }
 
@@ -3548,9 +3556,13 @@ pdfi_interpret_inner_content(pdf_context *ctx, pdf_stream *content_stream, pdf_d
     if (stoponerror)
         ctx->pdfstoponerror = true;
 
+#if DEBUG_CONTEXT
     dbgmprintf1(ctx->memory, "BEGIN %s stream\n", desc);
+#endif
     code = pdfi_interpret_content_stream(ctx, content_stream, stream_dict, page_dict);
+#if DEBUG_CONTEXT
     dbgmprintf1(ctx->memory, "END %s stream\n", desc);
+#endif
 
     if (code < 0)
         dbgmprintf1(ctx->memory, "ERROR: inner_stream: code %d when rendering stream\n", code);
@@ -3558,7 +3570,7 @@ pdfi_interpret_inner_content(pdf_context *ctx, pdf_stream *content_stream, pdf_d
     ctx->pdfstoponerror = saved_stoponerror;
 
     /* Put our state back the way it was on entry */
-#ifdef PROBE_STREAMS
+#if PROBE_STREAMS
     if (ctx->pgs->level > ctx->current_stream_save.gsave_level ||
         pdfi_count_stack(ctx) > ctx->current_stream_save.stack_count)
         code = ((pdf_context *)0)->first_page;

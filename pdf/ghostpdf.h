@@ -413,6 +413,9 @@ typedef struct pdf_context_s
 #endif
 }pdf_context;
 
+#define OBJ_CTX(o) ((pdf_context *)(o->ctx))
+#define OBJ_MEMORY(o) OBJ_CTX(o)->memory
+
 pdf_context *pdfi_create_context(gs_memory_t *pmem);
 int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx);
 

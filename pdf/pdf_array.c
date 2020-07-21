@@ -32,8 +32,8 @@ void pdfi_array_free(pdf_obj *o)
         if (a->values[i] != NULL)
             pdfi_countdown(a->values[i]);
     }
-    gs_free_object(a->memory, a->values, "pdf interpreter free array contents");
-    gs_free_object(a->memory, a, "pdf interpreter free array");
+    gs_free_object(OBJ_MEMORY(a), a->values, "pdf interpreter free array contents");
+    gs_free_object(OBJ_MEMORY(a), a, "pdf interpreter free array");
 }
 
 int pdfi_array_alloc(pdf_context *ctx, uint64_t size, pdf_array **a)

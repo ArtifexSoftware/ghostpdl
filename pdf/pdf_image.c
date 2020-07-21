@@ -684,7 +684,9 @@ pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim, pdf_stream *image_str
     gs_const_string plane_data[GS_IMAGE_MAX_COMPONENTS];
     int main_plane, mask_plane;
 
+#if DEBUG_IMAGES
     dbgmprintf(ctx->memory, "pdfi_render_image BEGIN\n");
+#endif
     code = pdfi_trans_set_params(ctx);
     if (code < 0)
         return code;
@@ -793,7 +795,9 @@ pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim, pdf_stream *image_str
     if (penum)
         gs_image_cleanup_and_free_enum(penum, ctx->pgs);
     pdfi_grestore(ctx);
+#if DEBUG_IMAGES
     dbgmprintf(ctx->memory, "pdfi_render_image END\n");
+#endif
     return code;
 }
 
@@ -898,7 +902,9 @@ pdfi_do_image_smask(pdf_context *ctx, pdf_stream *source, pdfi_image_info_t *ima
     int code, code1;
     pdfi_int_gstate *igs = (pdfi_int_gstate *)ctx->pgs->client_data;
 
+#if DEBUG_IMAGES
     dbgmprintf(ctx->memory, "pdfi_do_image_smask BEGIN\n");
+#endif
 
     gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Luminosity);
 
@@ -935,7 +941,9 @@ pdfi_do_image_smask(pdf_context *ctx, pdf_stream *source, pdfi_image_info_t *ima
         code = code1;
 
  exit:
+#if DEBUG_IMAGES
     dbgmprintf(ctx->memory, "pdfi_do_image_smask END\n");
+#endif
     return code;
 }
 
@@ -1310,7 +1318,9 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     pdfi_trans_state_t trans_state;
     int saved_intent;
 
+#if DEBUG_IMAGES
     dbgmprintf(ctx->memory, "pdfi_do_image BEGIN\n");
+#endif
     memset(&mask_info, 0, sizeof(mask_info));
 
     if (!inline_image) {
@@ -1377,7 +1387,9 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
         if (code < 0) {
             /* TODO: Flag a warning on this?  Sample fts_17_1706.pdf has misspelled Intent
                which gs renders without flagging an error */
+#if DEBUG_IMAGES
             dbgmprintf(ctx->memory, "WARNING: Image with unexpected Intent\n");
+#endif
         }
     }
 
@@ -1571,7 +1583,9 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     /* Restore the rendering intent */
     gs_setrenderingintent(ctx->pgs, saved_intent);
 
+#if DEBUG_IMAGES
     dbgmprintf(ctx->memory, "pdfi_do_image END\n");
+#endif
     return code;
 }
 
@@ -1693,7 +1707,9 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_di
         }
     }
 
+#if DEBUG_IMAGES
     dbgmprintf(ctx->memory, "pdfi_do_form BEGIN\n");
+#endif
     code = pdfi_dict_known(form_dict, "Group", &group_known);
     if (code < 0)
         goto exit;
@@ -1762,7 +1778,9 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *form_di
  exit:
     pdfi_countdown(FormMatrix);
     pdfi_countdown(BBox);
+#if DEBUG_IMAGES
     dbgmprintf(ctx->memory, "pdfi_do_form END\n");
+#endif
     if (code < 0)
         return code;
     return 0;
@@ -1774,7 +1792,9 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
     int code;
     pdf_name *n = NULL;
 
+#if DEBUG_IMAGES
     dbgmprintf1(ctx->memory, "pdfi_do_image_or_form BEGIN (OBJ = %d)\n", xobject_dict->object_num);
+#endif
     code = pdfi_trans_set_params(ctx);
     if (code < 0)
         return code;
@@ -1803,7 +1823,9 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
             code = gs_error_typecheck;
         }
     }
+#if DEBUG_IMAGES
     dbgmprintf(ctx->memory, "pdfi_do_image_or_form END\n");
+#endif
     return 0;
 }
 

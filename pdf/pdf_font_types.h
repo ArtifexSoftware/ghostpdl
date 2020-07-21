@@ -79,7 +79,6 @@ typedef enum pdf_font_type_e {
 
 #define pdf_font_base \
     pdf_obj_common;\
-    pdf_context *ctx;               /* We may need access to the PDF level from the font */\
     gs_font_base *pfont;            /* Graphics library font structure */\
     pdf_font_type pdfi_font_type;   /* See above */\
     pdf_dict *PDF_font;             /* The original font dictionary from the PDF file */\

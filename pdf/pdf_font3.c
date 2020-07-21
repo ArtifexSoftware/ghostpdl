@@ -41,22 +41,22 @@ pdfi_type3_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
 
     font = (pdf_font_type3 *)pfont->client_data;
 
-    SavedTextBlockDepth = font->ctx->TextBlockDepth;
-    code = pdfi_array_get(font->ctx, font->Encoding, (uint64_t)chr, (pdf_obj **)&GlyphName);
+    SavedTextBlockDepth = OBJ_CTX(font)->TextBlockDepth;
+    code = pdfi_array_get(OBJ_CTX(font), font->Encoding, (uint64_t)chr, (pdf_obj **)&GlyphName);
     if (code < 0)
         return code;
 
-    code = pdfi_dict_get_by_key(font->ctx, font->CharProcs, GlyphName, (pdf_obj **)&CharProc);
+    code = pdfi_dict_get_by_key(OBJ_CTX(font), font->CharProcs, GlyphName, (pdf_obj **)&CharProc);
     if (code == gs_error_undefined) {
         byte *Key = NULL;
         /* Can't find the named glyph, try to find a /.notdef as a substitute */
-        Key = gs_alloc_bytes(font->ctx->memory, 8, "working buffer for BuildChar");
+        Key = gs_alloc_bytes(OBJ_MEMORY(font), 8, "working buffer for BuildChar");
         if (Key == NULL)
             goto build_char_error;
         memset(Key, 0x00, 8);
         memcpy(Key, Notdef, 8);
-        code = pdfi_dict_get(font->ctx, font->CharProcs, (const char *)Key, (pdf_obj **)&CharProc);
-        gs_free_object(font->ctx->memory, Key, "working buffer for BuildChar");
+        code = pdfi_dict_get(OBJ_CTX(font), font->CharProcs, (const char *)Key, (pdf_obj **)&CharProc);
+        gs_free_object(OBJ_MEMORY(font), Key, "working buffer for BuildChar");
         if (code == gs_error_undefined) {
             code = 0;
             goto build_char_error;
@@ -65,15 +65,15 @@ pdfi_type3_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
     if (code < 0)
         goto build_char_error;
 
-    font->ctx->TextBlockDepth = 0;
-    font->ctx->inside_CharProc = true;
-    font->ctx->CharProc_is_d1 = false;
-    pdfi_gsave(font->ctx);
-    code = pdfi_interpret_inner_content_stream(font->ctx, CharProc, font->PDF_font, true, "CharProc");
-    pdfi_grestore(font->ctx);
-    font->ctx->inside_CharProc = false;
-    font->ctx->CharProc_is_d1 = false;
-    font->ctx->TextBlockDepth = SavedTextBlockDepth;
+    OBJ_CTX(font)->TextBlockDepth = 0;
+    OBJ_CTX(font)->inside_CharProc = true;
+    OBJ_CTX(font)->CharProc_is_d1 = false;
+    pdfi_gsave(OBJ_CTX(font));
+    code = pdfi_interpret_inner_content_stream(OBJ_CTX(font), CharProc, font->PDF_font, true, "CharProc");
+    pdfi_grestore(OBJ_CTX(font));
+    OBJ_CTX(font)->inside_CharProc = false;
+    OBJ_CTX(font)->CharProc_is_d1 = false;
+    OBJ_CTX(font)->TextBlockDepth = SavedTextBlockDepth;
 
 build_char_error:
     pdfi_countdown(GlyphName);
@@ -90,7 +90,7 @@ static int alloc_type3_font(pdf_context *ctx, pdf_font_type3 **font)
         return_error(gs_error_VMerror);
 
     memset(t3font, 0x00, sizeof(pdf_font_type3));
-    (t3font)->memory = ctx->memory;
+    (t3font)->ctx = ctx;
     (t3font)->type = PDF_FONT;
 
 #if REFCNT_DEBUG
@@ -165,16 +165,16 @@ int pdfi_free_font_type3(pdf_obj *font)
     pdf_font_type3 *t3font = (pdf_font_type3 *)font;
 
     if (t3font->pfont)
-        gs_free_object(t3font->memory, t3font->pfont, "Free type 3 font");
+        gs_free_object(OBJ_MEMORY(t3font), t3font->pfont, "Free type 3 font");
 
     if (t3font->Widths)
-        gs_free_object(t3font->memory, t3font->Widths, "Free type 3 font Widths array");
+        gs_free_object(OBJ_MEMORY(t3font), t3font->Widths, "Free type 3 font Widths array");
 
     pdfi_countdown(t3font->PDF_font);
     pdfi_countdown(t3font->FontDescriptor);
     pdfi_countdown(t3font->CharProcs);
     pdfi_countdown(t3font->Encoding);
-    gs_free_object(font->memory, font, "Free type 3 font");
+    gs_free_object(OBJ_MEMORY(font), font, "Free type 3 font");
     return 0;
 }
 

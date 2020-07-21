@@ -497,7 +497,7 @@ int pdfi_glyph_name(gs_font * pfont, gs_glyph glyph, gs_const_string * pstr)
          gs_sprintf(cid_name, "glyph%lu", (ulong) glyph);
 
          pstr->data = font->fake_glyph_names[i].data =
-                       gs_alloc_bytes(font->memory, strlen(cid_name) + 1, "pdfi_glyph_name: fake name");
+                       gs_alloc_bytes(OBJ_MEMORY(font), strlen(cid_name) + 1, "pdfi_glyph_name: fake name");
          if (font->fake_glyph_names[i].data == NULL)
              return_error(gs_error_VMerror);
          pstr->size = font->fake_glyph_names[i].size = strlen(cid_name);

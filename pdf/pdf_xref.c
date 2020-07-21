@@ -183,7 +183,7 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_dict *d, pdf_stream *s
             return_error(gs_error_VMerror);
         }
         memset(ctx->xref_table->xref, 0x00, size * sizeof(xref_entry));
-        ctx->xref_table->memory = ctx->memory;
+        ctx->xref_table->ctx = ctx;
         ctx->xref_table->type = PDF_XREF_TABLE;
         ctx->xref_table->xref_size = size;
 #if REFCNT_DEBUG
@@ -630,7 +630,7 @@ static int read_xref_section(pdf_context *ctx, pdf_stream *s)
 #endif
 
             memset(ctx->xref_table->xref, 0x00, (start + size) * sizeof(xref_entry));
-            ctx->xref_table->memory = ctx->memory;
+            ctx->xref_table->ctx = ctx;
             ctx->xref_table->type = PDF_XREF_TABLE;
             ctx->xref_table->xref_size = start + size;
             pdfi_countup(ctx->xref_table);
@@ -776,7 +776,7 @@ static int read_xref(pdf_context *ctx, pdf_stream *s)
         }
 
         memset(ctx->xref_table->xref, 0x00, size * sizeof(xref_entry));
-        ctx->xref_table->memory = ctx->memory;
+        ctx->xref_table->ctx = ctx;
         ctx->xref_table->type = PDF_XREF_TABLE;
         ctx->xref_table->xref_size = size;
         pdfi_countup(ctx->xref_table);

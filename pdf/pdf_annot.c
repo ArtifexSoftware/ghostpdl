@@ -2092,9 +2092,9 @@ static int pdfi_annot_draw_Squiggly(pdf_context *ctx, pdf_dict *annot, pdf_dict 
     if (code <0 || !drawit)
         goto exit;
 
-    code = gs_setlinecap(ctx->pgs, 1.0);
+    code = gs_setlinecap(ctx->pgs, gs_cap_round);
     if (code < 0) goto exit;
-    code = gs_setlinejoin(ctx->pgs, 1.0);
+    code = gs_setlinejoin(ctx->pgs, gs_join_round);
     if (code < 0) goto exit;
     code = gs_setlinewidth(ctx->pgs, 1.0);
     if (code < 0) goto exit;

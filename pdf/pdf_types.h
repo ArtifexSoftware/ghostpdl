@@ -16,6 +16,18 @@
 #ifndef PDF_OBJ_TYPES
 #define PDF_OBJ_TYPES
 
+/* defines for various compile-time debugging flags.
+ * These only emit any text on a debug build and when the relevant
+ * flag is set and compiled.
+ */
+#define DEBUG_PATTERN 0
+#define DEBUG_CONTEXT 0
+#define DEBUG_GSAVE 0
+#define DEBUG_IMAGES 0
+#define DEBUG_TRANSPARENCY 0
+#define DEBUG_DEVICE 0
+#define DEBUG_CACHE_FREE 0
+#define PROBE_STREAMS 0
 #define REFCNT_DEBUG 0
 
 #include "stdint_.h"    /* Various data types */
@@ -45,11 +57,10 @@ typedef enum pdf_obj_type_e {
 
 #if REFCNT_DEBUG
 #define pdf_obj_common \
-    void *refcnt_ctx;                     \
     pdf_obj_type type;\
     char flags;\
     unsigned int refcnt;\
-    gs_memory_t *memory;                /* memory allocator to use */\
+    void *ctx;\
     uint32_t object_num;\
     uint32_t generation_num;\
     uint32_t indirect_num;\
@@ -60,7 +71,10 @@ typedef enum pdf_obj_type_e {
     pdf_obj_type type;\
     char flags;\
     unsigned int refcnt;\
-    gs_memory_t *memory;                /* memory allocator to use */\
+    /* We have to define ctx as a void * and cast it, because the pdf_context structure\
+     * contains pdf_object members, so there's a circular dependency\
+     */\
+    void *ctx;\
     /* Technically object numbers can be any integer. The only documented limit\
      * architecturally is the fact that the linked list of free objects (ab)uses\
      * the 'offset' field of the xref to hold the object number of the next free\

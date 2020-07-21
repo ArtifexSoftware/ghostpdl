@@ -19,6 +19,8 @@
 #define PDF_STACK_OPERATIONS
 
 #include "pdf_int.h"
+#include "pdf_types.h"
+#include "ghostpdf.h"
 
 int pdfi_pop(pdf_context *ctx, int num);
 int pdfi_push(pdf_context *ctx, pdf_obj *o);
@@ -32,7 +34,7 @@ static inline void pdfi_countup_impl(pdf_obj *o)
     if (o != NULL) {
         o->refcnt++;
 #if REFCNT_DEBUG
-    dmprintf3(o->memory, "Incrementing reference count of object %d, UID %lu, to %d\n", o->object_num, o->UID, o->refcnt);
+    dmprintf3(OBJ_MEMORY(o), "Incrementing reference count of object %d, UID %lu, to %d\n", o->object_num, o->UID, o->refcnt);
 #endif
     }
 #if REFCNT_DEBUG
@@ -47,26 +49,26 @@ static inline void pdfi_countdown_impl(pdf_obj *o)
     if (o != NULL) {
 #ifdef DEBUG
         if (o->refcnt == 0)
-            emprintf(o->memory, "Decrementing object with refcount at 0!\n");
+            emprintf(OBJ_MEMORY(o), "Decrementing object with refcount at 0!\n");
 #endif
         o->refcnt--;
 #if REFCNT_DEBUG
-        dmprintf3(o->memory, "Decrementing reference count of object %d, UID %lu, to %d\n", o->object_num, o->UID, o->refcnt);
+        dmprintf3(OBJ_MEMORY(o), "Decrementing reference count of object %d, UID %lu, to %d\n", o->object_num, o->UID, o->refcnt);
 #endif
         if (o->refcnt == 0) {
 #if REFCNT_DEBUG
-            pdf_context *ctx = (pdf_context *)o->refcnt_ctx;
+            pdf_context *ctx = (pdf_context *)o->ctx;
             if (ctx != NULL && ctx->cache_entries != 0) {
                 pdf_obj_cache_entry *entry = ctx->cache_LRU, *next;
 
                 while(entry) {
                     next = entry->next;
                     if (entry->o->object_num != 0 && entry->o->object_num == o->object_num)
-                        dmprintf2(o->memory, "Freeing object %d, UID %lu, but there is still a cache entry!\n", o->object_num, o->UID);
+                        dmprintf2(OBJ_MEMORY(o), "Freeing object %d, UID %lu, but there is still a cache entry!\n", o->object_num, o->UID);
                     entry = next;
                 }
             }
-            dmprintf2(o->memory, "Freeing object %d, UID %lu\n", o->object_num, o->UID);
+            dmprintf2(OBJ_MEMORY(o), "Freeing object %d, UID %lu\n", o->object_num, o->UID);
 #endif
                 pdfi_free_object(o);
         }

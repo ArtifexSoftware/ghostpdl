@@ -164,7 +164,9 @@ pdfi_pattern_paint(const gs_client_color *pcc, gs_gstate *pgs)
     pdf_context *ctx = context->ctx;
     int code = 0;
 
+#if DEBUG_PATTERN
     dbgmprintf(ctx->memory, "BEGIN PATTERN PaintProc\n");
+#endif
     code = pdfi_gsave(ctx); /* TODO: This might be redundant? */
     if (code < 0)
         return code;
@@ -196,7 +198,9 @@ pdfi_pattern_paint(const gs_client_color *pcc, gs_gstate *pgs)
 
  exit:
     pdfi_grestore(ctx);
+#if DEBUG_PATTERN
     dbgmprintf(ctx->memory, "END PATTERN PaintProc\n");
+#endif
     return code;
 }
 
@@ -251,9 +255,13 @@ pdfi_pattern_paint_high_level(const gs_client_color *pcc, gs_gstate *pgs_ignore)
     if (code < 0)
         goto errorExit;
 
+#if DEBUG_PATTERN
     dbgmprintf(ctx->memory, "PATTERN: BEGIN high level pattern stream\n");
+#endif
     code = pdfi_pattern_paint_stream(ctx, &pdc->ccolor);
+#if DEBUG_PATTERN
     dbgmprintf(ctx->memory, "PATTERN: END high level pattern stream\n");
+#endif
     if (code < 0)
         goto errorExit;
 
@@ -308,8 +316,10 @@ pdfi_pattern_gset(pdf_context *ctx)
     fillalpha = gs_getfillconstantalpha(ctx->pgs);
 
     /* This will preserve the ->level and a couple other things */
-    dbgmprintf2(ctx->memory, "PATTERN setting DefaultQState, old device=%s, new device=%s\n",
+#if DEBUG_PATTERN
+    dbgmprintf2(ctx->memory, "PATTERN: setting DefaultQState, old device=%s, new device=%s\n",
                 ctx->pgs->device->dname, ctx->DefaultQState->device->dname);
+#endif
     code = gs_setgstate(ctx->pgs, pdfi_get_DefaultQState(ctx));
 
     if (code < 0)
@@ -369,7 +379,9 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
     pdf_array *Matrix = NULL;
     bool transparency = false;
 
+#if DEBUG_PATTERN
     dbgmprintf(ctx->memory, "PATTERN: Type 1 pattern\n");
+#endif
 
     gs_pattern1_init(&templat);
 
@@ -398,7 +410,9 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
      */
     code = pdfi_dict_get_type(ctx, pdict, "Resources", PDF_DICT, (pdf_obj **)&Resources);
     if (code < 0) {
+#if DEBUG_PATTERN
         dbgmprintf(ctx->memory, "PATTERN: Missing Resources in Pattern dict\n");
+#endif
         ctx->pdf_warnings |= W_PDF_BADPATTERN;
         code = 0;
     }
@@ -481,7 +495,9 @@ pdfi_setpattern_type2(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
 
     /* See zbuildshadingpattern() */
 
+#if DEBUG_PATTERN
     dbgmprintf(ctx->memory, "PATTERN: Type 2 pattern\n");
+#endif
 
     /* (optional Matrix) */
     code = pdfi_dict_knownget_type(ctx, pdict, "Matrix", PDF_ARRAY, (pdf_obj **)&Matrix);
@@ -580,7 +596,9 @@ pdfi_pattern_set(pdf_context *ctx, pdf_dict *stream_dict,
         code = gs_note_error(gs_error_typecheck);
         goto exit;
     }
+#if DEBUG_PATTERN
     dbgmprintf1(ctx->memory, "PATTERN: pdfi_setpattern: found pattern object %d\n", pdict->object_num);
+#endif
 
     code = pdfi_dict_get_int(ctx, pdict, "PatternType", &patternType);
     if (code < 0)
@@ -626,7 +644,9 @@ pdfi_pattern_create(pdf_context *ctx, pdf_array *color_array,
      * Need to make a "nullpattern" (see pdf_ops.c, /nullpattern)
      */
     /* NOTE: See zcolor.c/setpatternspace */
+#if DEBUG_PATTERN
     dbgmprintf(ctx->memory, "PATTERN: pdfi_create_Pattern\n");
+#endif
     //    return 0;
 
     pcs = gs_cspace_alloc(ctx->memory, &gs_color_space_type_Pattern);
@@ -637,7 +657,9 @@ pdfi_pattern_create(pdf_context *ctx, pdf_array *color_array,
         pcs->base_space = NULL;
         pcs->params.pattern.has_base_space = false;
     } else {
+#if DEBUG_PATTERN
         dbgmprintf(ctx->memory, "PATTERN: with base space! pdfi_create_Pattern\n");
+#endif
         code = pdfi_array_get(ctx, color_array, 1, &base_obj);
         if (code < 0)
             goto exit;

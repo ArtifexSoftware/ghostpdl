@@ -88,8 +88,9 @@ void pdfi_device_set_flags(pdf_context *ctx)
     /* See if it is a DeviceN (spot capable) */
     ctx->spot_capable_device = dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0);
 
+#if DEBUG_DEVICE
     dbgmprintf2(ctx->memory, "Device writepdfmarks=%s, annotations_preserved=%s\n",
-                ctx->writepdfmarks ? "TRUE" : "FALSE",
+        ctx->writepdfmarks ? "TRUE" : "FALSE",
                 ctx->annotations_preserved ? "TRUE" : "FALSE");
-
+#endif
 }
