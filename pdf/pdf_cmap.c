@@ -773,15 +773,15 @@ cmap_is_whitespace(int c)
 
 
 static inline int
-cmap_is_whitespace_or_fslash(int c)
+cmap_end_object(int c)
 {
-    return cmap_is_whitespace(c) || (c == '/');
+    return cmap_is_whitespace(c) || (c == '/') || (c == '[') || (c == ']') || (c == '(') || (c == '<');
 }
 
 static inline int
-cmap_end_object(int c)
+cmap_end_number_object(int c)
 {
-    return cmap_is_whitespace(c) || (c == '/') || (c == ']');
+    return (c != '.' && (c < '0' || c > '9'));
 }
 
 static inline bool ishex(char c)
@@ -846,7 +846,7 @@ pdfi_interpret_cmap(gs_memory_t *mem, byte *cmapbuf, int64_t buflen, pdf_cmap *p
               {
                   byte *n = cmapbuf;
                   int len;
-                  while (cmapbuf++ < buflim && !cmap_is_whitespace_or_fslash((int)*cmapbuf))
+                  while (cmapbuf++ < buflim && !cmap_end_object((int)*cmapbuf))
                     ;
                   len = cmapbuf - n;
                   code = cmap_stack_push_name(cs, n, len);
@@ -926,7 +926,7 @@ pdfi_interpret_cmap(gs_memory_t *mem, byte *cmapbuf, int64_t buflen, pdf_cmap *p
                  int len;
                  byte *n = --cmapbuf, *numbuf;
 
-                 while (cmapbuf++ < buflim && !cmap_end_object((int)*cmapbuf)) {
+                 while (cmapbuf++ < buflim && !cmap_end_number_object((int)*cmapbuf)) {
                    if (*cmapbuf == '.') is_float = true;
                  }
                  len = cmapbuf - n;
@@ -962,7 +962,7 @@ pdfi_interpret_cmap(gs_memory_t *mem, byte *cmapbuf, int64_t buflen, pdf_cmap *p
                  int len, i;
                  int (*opfunc)(gs_memory_t *mem, cmap_stack_t *stack, pdf_cmap *pdficmap) = NULL;
 
-                 while (cmapbuf++ < buflim && !cmap_is_whitespace_or_fslash((int)*cmapbuf))
+                 while (cmapbuf++ < buflim && !cmap_end_object((int)*cmapbuf))
                    ;
                  len = cmapbuf - n;
                  for (i = 0; cmap_oper_list[i].opname != NULL; i++) {
