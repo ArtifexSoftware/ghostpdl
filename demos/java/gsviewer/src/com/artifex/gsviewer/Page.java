@@ -1,4 +1,4 @@
-package com.artifex.gsjava;
+package com.artifex.gsviewer;
 
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -18,8 +18,6 @@ import java.io.File;
 import java.io.IOException;
 
 import javax.imageio.ImageIO;
-
-import com.artifex.gsjava.gui.RenderParams;
 
 public class Page {
 
@@ -46,14 +44,6 @@ public class Page {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-	}
-
-	public void render(final RenderParams params) {
-		final Dimension viewport = params.getViewport();
-		final Point location = params.getLocation();
-		final Graphics g = params.getGraphics();
-		final Image img = image.getScaledInstance(viewport.width, viewport.height, Image.SCALE_SMOOTH);
-		g.drawImage(img, location.x, location.y, params.getObserver());
 	}
 
 	@Override

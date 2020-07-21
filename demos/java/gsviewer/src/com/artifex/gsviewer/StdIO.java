@@ -1,4 +1,4 @@
-package com.artifex.gsjava;
+package com.artifex.gsviewer;
 
 import com.artifex.gsjava.callbacks.IStdErrFunction;
 import com.artifex.gsjava.callbacks.IStdInFunction;

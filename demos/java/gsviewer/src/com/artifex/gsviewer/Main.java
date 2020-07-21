@@ -1,19 +1,20 @@
-package com.artifex.gsjava;
+package com.artifex.gsviewer;
 
-import static com.artifex.gsjava.GSAPI.*;
+import static com.artifex.gsjava.GSAPI.GS_ERROR_OK;
+import static com.artifex.gsjava.GSAPI.GS_NULL;
+import static com.artifex.gsjava.GSAPI.gsapi_delete_instance;
+import static com.artifex.gsjava.GSAPI.gsapi_new_instance;
+import static com.artifex.gsjava.GSAPI.gsapi_revision;
+import static com.artifex.gsjava.GSAPI.gsapi_set_arg_encoding;
+import static com.artifex.gsjava.GSAPI.gsapi_set_stdio_with_handle;
 
 import java.awt.Dimension;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 import com.artifex.gsjava.GSAPI.Revision;
 import com.artifex.gsjava.callbacks.DisplayCallback;
-import com.artifex.gsjava.gui.DisplayWindow;
 import com.artifex.gsjava.util.LongReference;
-import com.artifex.gsjava.util.NativePointer;
 
 public class Main {
 
@@ -66,8 +67,6 @@ public class Main {
 				throw new FileNotFoundException(file.getAbsolutePath());
 
 			Document doc = Document.loadFromFile(instanceRef.value, file);
-			DisplayWindow win = new DisplayWindow(new Dimension(800, 600));
-			win.renderPage(doc.get(0));
 
 		} else {
 			System.err.println("Failed to create new instance");

@@ -1,4 +1,4 @@
-package com.artifex.gsjava;
+package com.artifex.gsviewer;
 
 import static com.artifex.gsjava.GSAPI.*;
 
@@ -32,12 +32,8 @@ public class Document implements List<Page> {
 			return null;
 		}
 		final int format = GS_COLORS_RGB | GS_DISPLAY_DEPTH_8 | GS_DISPLAY_BIGENDIAN;
-		final String[] gargs = { "gs", "-dNOPAUSE", "-dSAFER",
-				"-I%rom%Resource%/Init/",
-				"-dBATCH", "-r72", "-sDEVICE=display",
-				"-dDisplayFormat=" + format,
-				"-f",
-				file.getAbsolutePath() };
+		final String[] gargs = { "gs", "-dNOPAUSE", "-dSAFER", "-I%rom%Resource%/Init/", "-dBATCH", "-r72",
+				"-sDEVICE=display", "-dDisplayFormat=" + format, "-f", file.getAbsolutePath() };
 		code = gsapi_init_with_args(instance, gargs);
 		if (code != GS_ERROR_OK) {
 			System.err.println("Failed to gsapi_init_with_args");
@@ -56,8 +52,8 @@ public class Document implements List<Page> {
 		}
 
 		@Override
-		public int onDisplaySize(long handle, long device, int width,
-				int height, int raster, int format, BytePointer pimage) {
+		public int onDisplaySize(long handle, long device, int width, int height, int raster, int format,
+				BytePointer pimage) {
 			this.pageWidth = width;
 			this.pageHeight = height;
 			this.pageRaster = raster;
@@ -72,9 +68,9 @@ public class Document implements List<Page> {
 			System.out.println("On display page");
 			System.out.println("Handle = 0x" + Long.toHexString(handle));
 			System.out.println("Device = 0x" + Long.toHexString(device));
-			System.out.println("Copies = "+ copies);
+			System.out.println("Copies = " + copies);
 			System.out.println("Flush = " + flush);
-			byte[] data = (byte[])pimage.toArrayNoConvert();
+			byte[] data = (byte[]) pimage.toArrayNoConvert();
 			pages.add(new Page(data, pageWidth, pageHeight, pageRaster, BufferedImage.TYPE_3BYTE_BGR));
 			return 0;
 		}
@@ -215,7 +211,7 @@ public class Document implements List<Page> {
 		if (o == this)
 			return true;
 		if (o instanceof Document) {
-			return pages.equals(((Document)o).pages);
+			return pages.equals(((Document) o).pages);
 		}
 		return false;
 	}

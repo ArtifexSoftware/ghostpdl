@@ -1,4 +1,4 @@
-package com.artifex.gsjava;
+package com.artifex.gsviewer;
 
 import com.artifex.gsjava.callbacks.DisplayCallback;
 import com.artifex.gsjava.util.BytePointer;
