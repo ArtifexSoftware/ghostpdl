@@ -274,7 +274,7 @@ static int pdfi_add_to_cache(pdf_context *ctx, pdf_obj *o)
     pdf_obj_cache_entry *entry;
 
     if (ctx->xref_table->xref[o->object_num].cache != NULL) {
-#if DEBUG_CACHE_FREE
+#if DEBUG_CACHE
         dmprintf1(ctx->memory, "Attempting to add object %d to cache when the object is already cached!\n", o->object_num);
 #endif
         return_error(gs_error_unknownerror);
@@ -285,7 +285,7 @@ static int pdfi_add_to_cache(pdf_context *ctx, pdf_obj *o)
 
     if (ctx->cache_entries == MAX_OBJECT_CACHE_SIZE)
     {
-#if DEBUG_CACHE_FREE
+#if DEBUG_CACHE
         dbgmprintf(ctx->memory, "Cache full, evicting LRU\n");
 #endif
         if (ctx->cache_LRU) {

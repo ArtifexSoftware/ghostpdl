@@ -977,8 +977,7 @@ pdfi_fontdir_purge_all(const gs_memory_t * mem, cached_char * cc, void *dummy)
     return true;
 }
 
-#ifdef DEBUG
-/* Define DEBUG_CACHE_FREE to turn this on */
+#if DEBUG_CACHE
 #if DEBUG_CACHE_FREE
 static void
 pdfi_print_cache(pdf_context *ctx)
@@ -988,7 +987,7 @@ pdfi_print_cache(pdf_context *ctx)
     dmprintf1(ctx->memory, "CACHE: #entries=%d\n", ctx->cache_entries);
     while(entry) {
         next = entry->next;
-#if RERFCNT_DEBUG
+#if REFCNT_DEBUG
         dmprintf5(ctx->memory, "UID:%ld, Object:%d, refcnt:%d, next=%p, prev=%p\n",
                   entry->o->UID, entry->o->object_num, entry->o->refcnt,
                   entry->next, entry->previous);
@@ -1100,7 +1099,7 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
     if (ctx->cache_entries != 0) {
         pdf_obj_cache_entry *entry = ctx->cache_LRU, *next;
 
-#if DEBUG_CACHE_FREE
+#if DEBUG_CACHE
         int count;
         bool stop = true;
         pdf_obj_cache_entry *prev;
