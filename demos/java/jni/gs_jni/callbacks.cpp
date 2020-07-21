@@ -27,6 +27,8 @@ Lcom/artifex/gsjava/IntReference;Lcom/artifex/gsjava/IntReference;Lcom/artifex/g
 Lcom/artifex/gsjava/IntReference;Lcom/artifex/gsjava/IntReference;Lcom/artifex/gsjava/IntReference;\
 Lcom/artifex/gsjava/IntReference;)I"
 
+#define CHECK_AND_RETURN(E) if (E->ExceptionOccurred()) { return -21; }
+
 using namespace util;
 
 static JNIEnv *g_env = NULL;
@@ -127,9 +129,13 @@ void callbacks::setDisplayCallback(jobject displayCallback)
 	if (g_env)
 	{
 		if (g_displayCallback)
-			g_env->DeleteGlobalRef(displayCallback);
+		{
+			g_env->DeleteGlobalRef(g_displayCallback);
+			g_displayCallback = NULL;
+		}
 
 		g_displayCallback = g_env->NewGlobalRef(displayCallback);
+		//g_displayCallback = displayCallback;
 	}
 }
 
@@ -162,9 +168,14 @@ int callbacks::display::displayOpenFunction(void *handle, void *device)
 	int code = 0;
 	if (g_env && g_displayCallback)
 	{
+		jclass clazz = g_env->GetObjectClass(g_displayCallback);
+		const char *name = getClassName(g_env, clazz);
+		printf("class name: %s", name);
+		freeClassName(name);
 		code = callIntMethod(g_env, g_displayCallback, "onDisplayOpen", DISPLAY_OPEN_SIG, (jlong)handle, (jlong)device);
+		CHECK_AND_RETURN(g_env);
 	}
-	return code;
+	return 0;
 }
 
 int callbacks::display::displayPrecloseFunction(void *handle, void *device)
@@ -173,6 +184,7 @@ int callbacks::display::displayPrecloseFunction(void *handle, void *device)
 	if (g_env && g_displayCallback)
 	{
 		code = callIntMethod(g_env, g_displayCallback, "onDisplayPreclose", DISPLAY_PRECLOSE_SIG, (jlong)handle, (jlong)device);
+		CHECK_AND_RETURN(g_env);
 	}
 	return code;
 }
@@ -183,6 +195,7 @@ int callbacks::display::displayCloseFunction(void *handle, void *device)
 	if (g_env && g_displayCallback)
 	{
 		code = callIntMethod(g_env, g_displayCallback, "onDisplayClose", DISPLAY_CLOSE_SIG, (jlong)handle, (jlong)device);
+		CHECK_AND_RETURN(g_env);
 	}
 	return code;
 }
@@ -194,6 +207,7 @@ int callbacks::display::displayPresizeFunction(void *handle, void *device, int w
 	{
 		code = callIntMethod(g_env, g_displayCallback, "onDisplayPresize", DISPLAY_PRESIZE_SIG, (jlong)handle,
 			(jlong)device, width, height, raster, (jint)format);
+		CHECK_AND_RETURN(g_env);
 	}
 	return code;
 }
@@ -213,32 +227,46 @@ int callbacks::display::displaySizeFunction(void *handle, void *device, int widt
 
 		jclass bytePointerClass = g_env->FindClass(bytePointerClassName);
 		if (bytePointerClass == NULL)
-			return throwNoClassDefError(g_env, bytePointerClassName);
+		{
+			throwNoClassDefError(g_env, bytePointerClassName);
+			return -21;
+		}
 
 		jclass nativePointerClass = g_env->FindClass(nativePointerClassName);
 		if (nativePointerClass == NULL)
-			return throwNoClassDefError(g_env, nativePointerClassName);
-
-
+		{
+			throwNoClassDefError(g_env, nativePointerClassName);
+			return -21;
+		}
 
 		jmethodID constructor = g_env->GetMethodID(bytePointerClass, "<init>", "()V");
 		if (constructor == NULL)
-			return throwNoSuchMethodError(g_env, "com.artifex.gsjava.util.BytePointer.<init>()V");
+		{
+			throwNoSuchMethodError(g_env, "com.artifex.gsjava.util.BytePointer.<init>()V");
+			return -21;
+		}
 		jobject bytePointer = g_env->NewObject(bytePointerClass, constructor);
 
 		jfieldID dataPtrID = g_env->GetFieldID(nativePointerClass, "address", "J");
 		if (dataPtrID == NULL)
-			return throwNoSuchFieldError(g_env, "address");
+		{
+			throwNoSuchFieldError(g_env, "address");
+			return -21;
+		}
 
 		jfieldID lengthID = g_env->GetFieldID(bytePointerClass, "length", "J");
 		if (lengthID == NULL)
-			return throwNoSuchFieldError(g_env, "length");
+		{
+			throwNoSuchFieldError(g_env, "length");
+			return -21;
+		}
 
 		g_env->SetLongField(bytePointer, dataPtrID, (jlong)pimage);
 		g_env->SetLongField(bytePointer, lengthID, len);
 
 		code = callIntMethod(g_env, g_displayCallback, "onDisplaySize", DISPLAY_SIZE_SIG, (jlong)handle,
 			(jlong)device, width, height, raster, (jint)format, bytePointer);
+		CHECK_AND_RETURN(g_env);
 	}
 	return code;
 }
@@ -249,6 +277,7 @@ int callbacks::display::displaySyncFunction(void *handle, void *device)
 	if (g_env && g_displayCallback)
 	{
 		code = callIntMethod(g_env, g_displayCallback, "onDisplaySync", DISPLAY_SYNC_SIG, (jlong)handle, (jlong)device);
+		CHECK_AND_RETURN(g_env);
 	}
 	return code;
 }
@@ -260,6 +289,7 @@ int callbacks::display::displayPageFunction(void *handle, void *device, int copi
 	{
 		code = callIntMethod(g_env, g_displayCallback, "onDisplayPage", DISPLAY_PAGE_SIG, (jlong)handle,
 			(jlong)device, copies, flush);
+		CHECK_AND_RETURN(g_env);
 	}
 	return code;
 }
@@ -271,6 +301,7 @@ int callbacks::display::displayUpdateFunction(void *handle, void *device, int x,
 	{
 		code = callIntMethod(g_env, g_displayCallback, "onDisplayUpdate", DISPLAY_UPDATE_SIG, (jlong)handle,
 			(jlong)device, x, y, w, h);
+		CHECK_AND_RETURN(g_env);
 	}
 	return code;
 }
@@ -286,6 +317,7 @@ int callbacks::display::displaySeparationFunction(void *handle, void *device, in
 		g_env->SetByteArrayRegion(byteArray, 0, len, (const jbyte *)componentName);
 		code = callIntMethod(g_env, g_displayCallback, "onDisplaySeparation", DISPLAY_SEPARATION_SIG, (jlong)handle,
 			(jlong)device, component, byteArray, c, m, y, k);
+		CHECK_AND_RETURN(g_env);
 	}
 	return code;
 }
@@ -297,6 +329,7 @@ int callbacks::display::displayAdjustBandHeightFunction(void *handle, void *devi
 	{
 		code = callIntMethod(g_env, g_displayCallback, "onDisplayAdjustBandHeght", DISPLAY_ADJUST_BAND_HEIGHT_SIG,
 			(jlong)handle, (jlong)device, bandHeight);
+		CHECK_AND_RETURN(g_env);
 	}
 	return code;
 }
@@ -341,6 +374,8 @@ int callbacks::display::displayRectangleRequestFunction(void *handle, void *devi
 		yRef.deleteGlobal();
 		wRef.deleteGlobal();
 		hRef.deleteGlobal();
+
+		CHECK_AND_RETURN(g_env);
 	}
 	return code;
 }

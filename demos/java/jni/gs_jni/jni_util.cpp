@@ -34,19 +34,25 @@ jmethodID util::getMethodID(JNIEnv *env, jobject object, const char *method, con
     if (env == NULL || object == NULL || method == NULL || sig == NULL)
         return NULL;
 
-    jclass clazz = env->GetObjectClass(object);
+    jobject obj = env->NewLocalRef(object);
+    jclass clazz = env->GetObjectClass(obj);
+    env->DeleteLocalRef(obj);
+
     jmethodID methodID = env->GetMethodID(clazz, method, sig);
     if (methodID == NULL)
     {
         const char *className = getClassName(env, clazz);
 
-        const std::string full = std::string(className) + method + sig;
+        const std::string full = std::string(className) + "." + method + sig;
         throwNoSuchMethodError(env, full.c_str());
 
         freeClassName(className);
 
+        env->DeleteLocalRef(clazz);
         return NULL;
     }
+
+    env->DeleteLocalRef(clazz);
     return methodID;
 }
 
@@ -152,6 +158,7 @@ int util::callIntMethod(JNIEnv *env, jobject object, const char *method, const c
     va_start(args, sig);
     result = env->CallIntMethodV(object, methodID, args);
     va_end(args);
+
     return result;
 }
 
@@ -232,27 +239,23 @@ jint util::throwAllocationError(JNIEnv *env, const char *message)
 
 const char *util::getClassName(JNIEnv *env, jclass clazz)
 {
-    jmethodID getNameID = getMethodID(env, clazz, "getName", "()Ljava/lang/String;");
-    if (getNameID == NULL)
-        return NULL;
+    jclass clsClazz = env->GetObjectClass(clazz);
 
-    jobject name = env->CallObjectMethod(clazz, getNameID);
-    jclass sClass = env->GetObjectClass(name);
-    jmethodID getBytesID = getMethodID(env, clazz, "getBytes", "()[B");
-    if (getBytesID == NULL)
-        return NULL;
-
-    jbyteArray bname = (jbyteArray)env->CallObjectMethod(name, getBytesID);
-    jsize len = env->GetArrayLength(bname);
-
-    char *cstr = new char[len];
+    jmethodID methodId = env->GetMethodID(clsClazz, "getName", "()Ljava/lang/String;");
+    jstring className = (jstring)env->CallObjectMethod(clazz, methodId);
+    const char *chars = env->GetStringUTFChars(className, NULL);
+    jsize len = env->GetStringLength(className);
+    char *cstr = new char[len + 1LL];
     if (cstr == NULL)
+    {
+        env->ReleaseStringUTFChars(className, chars);
+        env->DeleteLocalRef(className);
         return NULL;
-
-    jboolean copy = false;
-    jbyte *bytes = env->GetByteArrayElements(bname, &copy);
-
-    memcpy(cstr, bytes, len);
+    }
+    cstr[len] = 0;
+    memcpy(cstr, chars, len);
+    env->ReleaseStringUTFChars(className, chars);
+    env->DeleteLocalRef(className);
     return cstr;
 }
 

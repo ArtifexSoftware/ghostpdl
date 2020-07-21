@@ -87,10 +87,10 @@ public class GSAPI {
 	public static final int GS_DISPLAY_ALPHA_NONE = (0 << 4),
 							GS_DISPLAY_ALPHA_FIRST = (1 << 4),
 							GS_DISPLAY_ALPHA_LAST = (1 << 5),
-							GS_DIAPLAY_UNUSED_FIRST = (1 <<6),
+							GS_DISPLAY_UNUSED_FIRST = (1 << 6),
 							GS_DISPLAY_UNUSED_LAST = (1 << 7);
 
-	public static final long GS_DISPLAY_ALPGA_MASK = 0x00f0L;
+	public static final long GS_DISPLAY_ALPHA_MASK = 0x00f0L;
 
 	public static final int GS_DISPLAY_DEPTH_1 = (1 << 8),
 							GS_DISPLAY_DEPTH_2 = (1 << 9),

@@ -2,6 +2,7 @@ package com.artifex.gsjava;
 
 import static com.artifex.gsjava.GSAPI.*;
 
+import java.awt.Dimension;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
@@ -10,6 +11,7 @@ import java.util.List;
 
 import com.artifex.gsjava.GSAPI.Revision;
 import com.artifex.gsjava.callbacks.DisplayCallback;
+import com.artifex.gsjava.gui.DisplayWindow;
 import com.artifex.gsjava.util.LongReference;
 import com.artifex.gsjava.util.NativePointer;
 
@@ -50,7 +52,7 @@ public class Main {
 			}
 
 			final DisplayCallback displayCallback = new StandardDisplayCallback();
-			code = gsapi_set_display_callback(instanceRef.value, displayCallback);
+			//code = gsapi_set_display_callback(instanceRef.value, displayCallback);
 			if (code != GS_ERROR_OK) {
 				System.err.println("Failed to display callback (code = " + code + ")");
 				gsapi_delete_instance(instanceRef.value);
@@ -59,31 +61,19 @@ public class Main {
 			}
 
 			final int format = GS_COLORS_RGB | GS_DISPLAY_DEPTH_8 | GS_DISPLAY_LITTLEENDIAN;
-
-			final File file = new File("redgreen.pdf");
+			// 22 0 236
+			final File file = new File("blue.pdf");
 			if (!file.exists())
 				throw new FileNotFoundException(file.getAbsolutePath());
 
 			final File ofile = new File("image.tiff");
 
-			NativePointer ptr = new NativePointer();
-			ptr.calloc(5, NativePointer.CHAR_SIZE);
-			long address = ptr.getAddress();
-			NativePointer.setCharNative(address, 0, 'H');
-			NativePointer.setCharNative(address, 1, 'e');
-			NativePointer.setCharNative(address, 2, 'l');
-			NativePointer.setCharNative(address, 3, 'l');
-			NativePointer.setCharNative(address, 4, 'o');
-			char[] chars = NativePointer.charArrayNative(address, 5);
-			System.out.println(new String(chars));
-			ptr.free();
-
-			final String[] gargs = { "gs", "-dNOPAUSE", "-dSAFER",
-					"-I%rom%Resource%/Init/",
-					"-dBATCH", "-r72", "-sDEVICE=display",
-					"-dDisplayFormat=" + format,
-					"-f",
-					file.getAbsolutePath() };
+			///final String[] gargs = { "gs", "-dNOPAUSE", "-dSAFER",
+			//		"-I%rom%Resource%/Init/",
+			//		"-dBATCH", "-r72", "-sDEVICE=display",
+			//		"-dDisplayFormat=" + format,
+			//		"-f",
+			//		file.getAbsolutePath() };
 
 			/*String[] gargs = { "gs", "-dNOPAUSE", "-dSAFER",
 					"-I%rom%Resource%/Init/",
@@ -91,13 +81,17 @@ public class Main {
 					"-f",
 					file.getAbsolutePath() };*/
 			//final String[] gargs = { "gs", "-Z#", "-h" };
-			System.out.println("args = " + Arrays.toString(gargs));
-			code = gsapi_init_with_args(instanceRef.value, gargs);
-			if (code != GS_ERROR_OK) {
-				System.err.println("Failed to gsapi_init_with_args (code = " + code + ")");
-			} else {
-				System.out.println("gsapi_init_with_args success");
-			}
+			//System.out.println("args = " + Arrays.toString(gargs));
+			//code = gsapi_init_with_args(instanceRef.value, gargs);
+			//if (code != GS_ERROR_OK) {
+			//	System.err.println("Failed to gsapi_init_with_args (code = " + code + ")");
+			//} else {
+			//	System.out.println("gsapi_init_with_args success");
+			//}
+
+			Document doc = Document.loadFromFile(instanceRef.value, file);
+			DisplayWindow win = new DisplayWindow(new Dimension(800, 600));
+			win.renderPage(doc.get(0));
 
 		} else {
 			System.err.println("Failed to create new instance");
