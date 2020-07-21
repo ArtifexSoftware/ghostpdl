@@ -120,14 +120,14 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
         pdf_cidfont_type2 *pttfont = (pdf_cidfont_type2 *)pbfont->client_data;
         gs_glyph gid;
 
-        if (((gs_glyph)ccode) > GS_MIN_CID_GLYPH)
+        if (ccode > GS_MIN_CID_GLYPH)
            ccode = ccode - GS_MIN_CID_GLYPH;
 
         gid = ccode;
         if (pttfont->cidtogidmap.size > (ccode << 1) + 1) {
             gid = pttfont->cidtogidmap.data[ccode << 1] << 8 | pttfont->cidtogidmap.data[(ccode << 1) + 1];
         }
-        cr->client_char_code = ((gs_glyph)ccode) - GS_MIN_CID_GLYPH;
+        cr->client_char_code = ccode;
         cr->char_codes[0] = gid;
         cr->is_glyph_index = true;
         return 0;
@@ -264,9 +264,6 @@ static int pdfi_get_glyph_metrics(gs_font *pfont, gs_glyph cid, double *widths, 
 {
     pdf_cidfont_type2 *pdffont11 = (pdf_cidfont_type2 *)pfont->client_data;
     int i;
-
-    if (cid >= GS_MIN_CID_GLYPH)
-        cid = cid - GS_MIN_CID_GLYPH;
 
     widths[GLYPH_W0_WIDTH_INDEX] = pdffont11->DW;
     widths[GLYPH_W0_HEIGHT_INDEX] = 0;
@@ -464,6 +461,10 @@ pdfi_fapi_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
                    gs_char chr, gs_glyph glyph)
 {
     int code;
+    /* gs_fapi_do_char() expects the "natural" glyph, not the offset value */
+    if (glyph > GS_MIN_CID_GLYPH)
+        glyph -= GS_MIN_CID_GLYPH;
+
     code =
         gs_fapi_do_char(pfont, pgs, (gs_text_enum_t *) penum, NULL, false,
                         NULL, NULL, chr, glyph, 0);
