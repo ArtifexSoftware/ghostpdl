@@ -31,7 +31,7 @@ public class Document implements List<Page> {
 			System.err.println("Failed to set display callback");
 			return null;
 		}
-		final int format = GS_COLORS_RGB | GS_DISPLAY_DEPTH_8 | GS_DISPLAY_LITTLEENDIAN | GS_DISPLAY_UNUSED_FIRST;
+		final int format = GS_COLORS_RGB | GS_DISPLAY_DEPTH_8 | GS_DISPLAY_BIGENDIAN;
 		final String[] gargs = { "gs", "-dNOPAUSE", "-dSAFER",
 				"-I%rom%Resource%/Init/",
 				"-dBATCH", "-r72", "-sDEVICE=display",
@@ -75,7 +75,7 @@ public class Document implements List<Page> {
 			System.out.println("Copies = "+ copies);
 			System.out.println("Flush = " + flush);
 			byte[] data = (byte[])pimage.toArrayNoConvert();
-			pages.add(new Page(data, pageWidth, pageHeight, BufferedImage.TYPE_4BYTE_ABGR));
+			pages.add(new Page(data, pageWidth, pageHeight, pageRaster, BufferedImage.TYPE_3BYTE_BGR));
 			return 0;
 		}
 	}

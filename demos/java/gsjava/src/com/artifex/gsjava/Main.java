@@ -60,34 +60,10 @@ public class Main {
 				return;
 			}
 
-			final int format = GS_COLORS_RGB | GS_DISPLAY_DEPTH_8 | GS_DISPLAY_LITTLEENDIAN;
 			// 22 0 236
-			final File file = new File("blue.pdf");
+			final File file = new File("tiger.eps");
 			if (!file.exists())
 				throw new FileNotFoundException(file.getAbsolutePath());
-
-			final File ofile = new File("image.tiff");
-
-			///final String[] gargs = { "gs", "-dNOPAUSE", "-dSAFER",
-			//		"-I%rom%Resource%/Init/",
-			//		"-dBATCH", "-r72", "-sDEVICE=display",
-			//		"-dDisplayFormat=" + format,
-			//		"-f",
-			//		file.getAbsolutePath() };
-
-			/*String[] gargs = { "gs", "-dNOPAUSE", "-dSAFER",
-					"-I%rom%Resource%/Init/",
-					"-dBATCH", "-r72", "-sDEVICE=tiff24nc", "-o", ofile.getAbsolutePath(),
-					"-f",
-					file.getAbsolutePath() };*/
-			//final String[] gargs = { "gs", "-Z#", "-h" };
-			//System.out.println("args = " + Arrays.toString(gargs));
-			//code = gsapi_init_with_args(instanceRef.value, gargs);
-			//if (code != GS_ERROR_OK) {
-			//	System.err.println("Failed to gsapi_init_with_args (code = " + code + ")");
-			//} else {
-			//	System.out.println("gsapi_init_with_args success");
-			//}
 
 			Document doc = Document.loadFromFile(instanceRef.value, file);
 			DisplayWindow win = new DisplayWindow(new Dimension(800, 600));
