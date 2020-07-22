@@ -11,44 +11,54 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
-
+import java.util.Objects;
 import com.artifex.gsjava.callbacks.DisplayCallback;
 import com.artifex.gsjava.util.BytePointer;
+import com.artifex.gsjava.util.LongReference;
+import com.artifex.gsviewer.ImageUtil.ImageParams;
 
 public class Document implements List<Page> {
 
+	private static final Object slock = new Object();
 	private static final DocumentLoader documentLoader = new DocumentLoader();
+	private static final int format = GS_COLORS_RGB | GS_DISPLAY_DEPTH_8 | GS_DISPLAY_BIGENDIAN;
 
-	public static Document loadFromFile(final long instance, final String file) throws FileNotFoundException {
-		return loadFromFile(instance, new File(file));
-	}
+	private static void initDocInstance(LongReference instanceRef) throws IllegalStateException {
+		int code = gsapi_new_instance(instanceRef, GS_NULL);
+		if (code != GS_ERROR_OK) {
+			gsapi_delete_instance(instanceRef.value);
+			throw new IllegalStateException("Failed to set stdio with handle (code = " + code + ")");
+		}
 
-	public static Document loadFromFile(final long instance, final File file) throws FileNotFoundException {
-		if (!file.exists())
-			throw new FileNotFoundException(file.getAbsolutePath());
-		int code = gsapi_set_display_callback(instance, documentLoader);
+		code = gsapi_set_arg_encoding(instanceRef.value, 1);
 		if (code != GS_ERROR_OK) {
-			System.err.println("Failed to set display callback");
-			return null;
+			gsapi_delete_instance(instanceRef.value);
+			throw new IllegalArgumentException("Failed to set arg encoding (code = " + code + ")");
 		}
-		final int format = GS_COLORS_RGB | GS_DISPLAY_DEPTH_8 | GS_DISPLAY_BIGENDIAN;
-		final String[] gargs = { "gs", "-dNOPAUSE", "-dSAFER", "-I%rom%Resource%/Init/", "-dBATCH", "-r72",
-				"-sDEVICE=display", "-dDisplayFormat=" + format, "-f", file.getAbsolutePath() };
-		code = gsapi_init_with_args(instance, gargs);
+
+		code = gsapi_set_display_callback(instanceRef.value, documentLoader.reset());
 		if (code != GS_ERROR_OK) {
-			System.err.println("Failed to gsapi_init_with_args");
-			return null;
+			gsapi_delete_instance(instanceRef.value);
+			throw new IllegalStateException("Failed to set display callback code=" + code);
 		}
-		return new Document(documentLoader.pages);
 	}
 
 	private static class DocumentLoader extends DisplayCallback {
 		private int pageWidth, pageHeight, pageRaster;
 		private BytePointer pimage;
-		private List<Page> pages;
+		private List<BufferedImage> images;
 
 		private DocumentLoader() {
-			pages = new LinkedList<>();
+			reset();
+		}
+
+		private DocumentLoader reset() {
+			this.pageWidth = 0;
+			this.pageHeight = 0;
+			this.pageRaster = 0;
+			this.pimage = null;
+			this.images = new LinkedList<>();
+			return this;
 		}
 
 		@Override
@@ -58,32 +68,135 @@ public class Document implements List<Page> {
 			this.pageHeight = height;
 			this.pageRaster = raster;
 			this.pimage = pimage;
-			System.out.println("width=" + width + ", height=" + height + ", raster=" + raster);
-			System.out.println("pimage=" + pimage);
 			return 0;
 		}
 
 		@Override
 		public int onDisplayPage(long handle, long device, int copies, boolean flush) {
-			System.out.println("On display page");
-			System.out.println("Handle = 0x" + Long.toHexString(handle));
-			System.out.println("Device = 0x" + Long.toHexString(device));
-			System.out.println("Copies = " + copies);
-			System.out.println("Flush = " + flush);
 			byte[] data = (byte[]) pimage.toArrayNoConvert();
-			pages.add(new Page(data, pageWidth, pageHeight, pageRaster, BufferedImage.TYPE_3BYTE_BGR));
+			images.add(ImageUtil.createImage(data, new ImageParams(pageWidth, pageHeight, pageRaster, BufferedImage.TYPE_3BYTE_BGR)));
 			return 0;
 		}
 	}
 
-	private final List<Page> pages;
+	private File file;
+	private List<Page> pages;
 
-	public Document() {
-		this.pages = new ArrayList<>();
+	public Document(final File file)
+			throws FileNotFoundException, IllegalStateException, NullPointerException {
+		this.file = Objects.requireNonNull(file, "file");
+		if (!file.exists())
+			throw new FileNotFoundException(file.getAbsolutePath());
+
+		final String[] gargs = { "gs", "-dNOPAUSE", "-dSAFER", "-I%rom%Resource%/Init/", "-dBATCH", "-r" + Page.PAGE_LOW_DPI,
+				"-sDEVICE=display", "-dDisplayFormat=" + format, "-f", file.getAbsolutePath() };
+
+		synchronized (slock) {
+			LongReference instanceRef = new LongReference();
+			initDocInstance(instanceRef);
+
+			int code = gsapi_init_with_args(instanceRef.value, gargs);
+			gsapi_exit(instanceRef.value);
+			gsapi_delete_instance(instanceRef.value);
+			if (code != GS_ERROR_OK) {
+				throw new IllegalStateException("Failed to gsapi_init_with_args code=" + code);
+			}
+
+			this.pages = new ArrayList<>(documentLoader.images.size());
+			for (BufferedImage img : documentLoader.images) {
+				pages.add(new Page(img));
+			}
+		}
 	}
 
-	public Document(final List<Page> pages) {
-		this.pages = new ArrayList<>(pages);
+	public Document(final String filename) throws FileNotFoundException, NullPointerException {
+		this(new File(Objects.requireNonNull(filename, "filename")));
+	}
+
+	public void loadHighRes(int startPage, int endPage) throws IndexOutOfBoundsException, IllegalStateException {
+		checkBounds(startPage, endPage);
+		final String[] gargs = { "gs", "-dNOPAUSE", "-dSAFER", "-I%rom%Resource%/Init/", "-dBATCH", "-r" + Page.PAGE_HIGH_DPI,
+				"-sDEVICE=display", "-dFirstPage=" + startPage, "-dLastPage=" + endPage, "-dDisplayFormat=" + format,
+				"-dTextAlphaBits=4", "-dGraphicsAlphaBits=4",
+				"-f", file.getAbsolutePath() };
+		synchronized (slock) {
+			LongReference instanceRef = new LongReference();
+			initDocInstance(instanceRef);
+
+			int code = gsapi_init_with_args(instanceRef.value, gargs);
+			gsapi_exit(instanceRef.value);
+			gsapi_delete_instance(instanceRef.value);
+			if (code != GS_ERROR_OK) {
+				throw new IllegalStateException("Failed to gsapi_init_with_args code=" + code);
+			}
+
+			int ind = startPage - 1;
+			for (final BufferedImage img : documentLoader.images) {
+				this.pages.get(ind++).setHighRes(img);
+			}
+		}
+	}
+
+	public void loadHighRes(int page) throws IndexOutOfBoundsException, IllegalStateException {
+		loadHighRes(page, page);
+	}
+
+	public void loadHighResList(final int... pages) throws IndexOutOfBoundsException, IllegalStateException {
+		if (pages.length > 0) {
+			final StringBuilder builder = new StringBuilder();
+			if (pages[0] < 1 || pages[0] > this.pages.size())
+				throw new IndexOutOfBoundsException("page=" + pages[0]);
+			builder.append(pages[0]);
+
+			for (int i = 1; i < pages.length; i++) {
+				if (pages[i] < 1 || pages[i] > this.pages.size())
+					throw new IndexOutOfBoundsException("page=" + pages[i]);
+				builder.append(',').append(pages[i]);
+			}
+
+
+			final String[] gargs = { "gs", "-dNOPAUSE", "-dSAFER", "-I%rom%Resource%/Init/", "-dBATCH", "-r" + Page.PAGE_HIGH_DPI,
+					"-sDEVICE=display", "-sPageList=" + builder.toString(), "-dDisplayFormat=" + format,
+					"-dTextAlphaBits=4", "-dGraphicsAlphaBits=4",
+					"-f", file.getAbsolutePath() };
+
+			synchronized (slock) {
+				LongReference instanceRef = new LongReference();
+				initDocInstance(instanceRef);
+
+				int code = gsapi_init_with_args(instanceRef.value, gargs);
+				gsapi_exit(instanceRef.value);
+				gsapi_delete_instance(instanceRef.value);
+				if (code != GS_ERROR_OK) {
+					throw new IllegalStateException("Failed to gsapi_init_with_args code=" + code);
+				}
+
+				int ind = 0;
+				for (final BufferedImage img : documentLoader.images) {
+					this.pages.get(pages[ind] - 1).setHighRes(img);
+				}
+			}
+		}
+	}
+
+	public void unloadHighRes(int startPage, int endPage) throws IndexOutOfBoundsException {
+		checkBounds(startPage, endPage);
+		for (int i = startPage - 1; i < endPage; i++) {
+			pages.get(i).unloadHighRes();
+		}
+	}
+
+	public void unloadHighRes(int page) throws IndexOutOfBoundsException {
+		unloadHighRes(page, page);
+	}
+
+	private void checkBounds(int start, int end) throws IndexOutOfBoundsException {
+		if (start < 1 || start >= pages.size())
+			throw new IndexOutOfBoundsException("start=" + start);
+		if (end < 1 || end > pages.size())
+			throw new IndexOutOfBoundsException("end=" + end);
+		if (end < start)
+			throw new IndexOutOfBoundsException("end < start");
 	}
 
 	@Override
@@ -211,7 +324,7 @@ public class Document implements List<Page> {
 		if (o == this)
 			return true;
 		if (o instanceof Document) {
-			return pages.equals(((Document) o).pages);
+			return pages.equals(((Document)o).pages);
 		}
 		return false;
 	}
