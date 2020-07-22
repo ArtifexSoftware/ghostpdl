@@ -2560,6 +2560,7 @@ pdf_close(gx_device * dev)
     int64_t start_section, end_section;
     char str[256];
     pdf_linearisation_t linear_params;
+    bool file_per_page = false;
 
     if (!dev->is_open)
       return_error(gs_error_undefined);
@@ -2582,26 +2583,14 @@ pdf_close(gx_device * dev)
      * marks.
      */
     if (pdev->next_page == 0) {
-        /* If we didn't get called from pdf_output_page, and we are doign file-per-page
-         * output, then the call from close_device will leave an empty file which we don't
-         * want. So here we delete teh file.
-         */
-        if (!pdev->InOutputPage && gx_outputfile_is_separate_pages(pdev->fname, pdev->memory)) {
-            code = gdev_vector_close_file((gx_device_vector *) pdev);
-            if (code != 0)
-                return code;
-            code = pdf_close_files(pdev, 0);
+        file_per_page = !pdev->InOutputPage &&
+            gx_outputfile_is_separate_pages(pdev->fname, pdev->memory);
+        if (!file_per_page) {
+            code = pdf_open_page(pdev, PDF_IN_STREAM);
+
             if (code < 0)
                 return code;
-            code = gx_device_delete_output_file((const gx_device *)pdev, pdev->fname);
-            if (code != 0)
-                return gs_note_error(gs_error_ioerror);
-            return code;
         }
-        code = pdf_open_page(pdev, PDF_IN_STREAM);
-
-        if (code < 0)
-            return code;
     }
     if (pdev->contents_id != 0)
         pdf_close_page(pdev, 1);
@@ -3462,6 +3451,18 @@ pdf_close(gx_device * dev)
     code = pdf_close_files(pdev, code);
     if (code < 0)
         return code;
+
+    /* If we didn't get called from pdf_output_page, and we are doign file-per-page
+     * output, then the call from close_device will leave an empty file which we don't
+     * want. So here we delete the file.
+     * NOTE: We needed to let it process the whole page in order to make sure everything
+     * got properly freed.
+     */
+    if (file_per_page) {
+        code = gx_device_delete_output_file((const gx_device *)pdev, pdev->fname);
+        if (code != 0)
+            code = gs_note_error(gs_error_ioerror);
+    }
 
     pdf_free_pdf_font_cache(pdev);
     return code;
