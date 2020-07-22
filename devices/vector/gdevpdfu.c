@@ -1186,6 +1186,7 @@ stream_to_none(gx_device_pdf * pdev)
         }
         if (pdev->compression_at_page_start == pdf_compress_Flate) {	/* Terminate the filters. */
             stream *fs = s->strm;
+            byte *buf;
 
             if (!pdev->binary_ok) {
                 sclose(s);	/* Terminate the ASCII85 filter. */
@@ -1194,8 +1195,9 @@ stream_to_none(gx_device_pdf * pdev)
                 pdev->strm = s = fs;
                 fs = s->strm;
             }
+            buf = s->cbuf; /* Save because sclose may zero it out (causing memory leak) */
             sclose(s);		/* Next terminate the compression filter */
-            gs_free_object(pdev->pdf_memory, s->cbuf, "zlib buffer");
+            gs_free_object(pdev->pdf_memory, buf, "zlib buffer");
             gs_free_object(pdev->pdf_memory, s, "zlib stream");
             pdev->strm = fs;
         }
