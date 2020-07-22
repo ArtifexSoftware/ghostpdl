@@ -483,7 +483,7 @@ AC_LINK_IFELSE(
   [AC_LANG_PROGRAM([#include <stdio.h>], [
   return(0);
   ])],
-  [CFLAGS_SANITIZE="$CFLAGS"], [CFLAGS_SANITIZE="****************ADDRESS_SANITIZER_NOT_SUPPORTED*********************"])
+  [CFLAGS_SANITIZE="$CFLAGS"], [CFLAGS_SANITIZE="'****************ADDRESS_SANITIZER_NOT_SUPPORTED*********************'"])
 
 CFLAGS="$CFLAGS_SAVED"
 
