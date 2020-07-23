@@ -225,9 +225,9 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
                         cr->is_glyph_index = false;
                     }
                 }
-                pdfi_countdown(GlyphName);
             }
         }
+        pdfi_countdown(GlyphName);
         return 0;
     }
     return pbfont->procs.glyph_name((gs_font *)pbfont, ccode, (gs_const_string *)enc_char_name);
