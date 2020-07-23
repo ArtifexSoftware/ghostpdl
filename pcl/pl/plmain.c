@@ -331,7 +331,7 @@ pl_main_init_with_args(pl_main_instance_t *inst, int argc, char *argv[])
             errprintf(mem, " %s", gs_devicename(dev_list[i]));
         }
         errprintf(mem, "\n");
-        return gs_error_Fatal;
+        return code == gs_error_Info ? 0 : gs_error_Fatal;
     }
     return 0;
 }
