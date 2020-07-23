@@ -673,7 +673,8 @@ pdfi_pattern_create(pdf_context *ctx, pdf_array *color_array,
         *ppcs = pcs;
         rc_increment_cs(pcs);
     } else {
-        code = gs_setcolorspace(ctx->pgs, pcs);
+        code = pdfi_gs_setcolorspace(ctx, pcs);
+
 #if 0
         /* An attempt to init a "Null" pattern, causes crashes on cluster */
         {
