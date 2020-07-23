@@ -1222,11 +1222,19 @@ null_copy_color(gx_device * dev, const byte * data,
 static int
 null_put_params(gx_device * dev, gs_param_list * plist)
 {
+    int code;
+    cmm_dev_profile_t *iccs = dev->icc_struct;
+
     /*
      * If this is not a page device, we must defeat attempts to reset
      * the size; otherwise this is equivalent to gx_forward_put_params.
+     * Equally, we don't want it to unexpectectly error out on certain
+     * ICC parameters - so defeat those, too.
      */
-    int code = gx_forward_put_params(dev, plist);
+    dev->icc_struct = NULL;
+    code = gx_forward_put_params(dev, plist);
+    rc_decrement(dev->icc_struct, "null_put_params");
+    dev->icc_struct = iccs;
 
     if (code < 0 || dev_proc(dev, get_page_device)(dev) == dev)
         return code;
