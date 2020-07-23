@@ -3027,7 +3027,6 @@ static int split_bogus_operator(pdf_context *ctx, pdf_stream *source, pdf_dict *
             goto error_exit;
 
         if (code > 0) {
-            pdfi_countup(key1);
             switch(keyword->length - 3) {
                 case 1:
                     code = search_table_1(ctx, &keyword->data[key1->length], &key2);
@@ -3044,7 +3043,6 @@ static int split_bogus_operator(pdf_context *ctx, pdf_stream *source, pdf_dict *
         }
         if (code <= 0)
             goto error_exit;
-        pdfi_countup(key2);
     }
 
     if (keyword->length > 5 || keyword->length < 2)
@@ -3055,7 +3053,6 @@ static int split_bogus_operator(pdf_context *ctx, pdf_stream *source, pdf_dict *
         goto error_exit;
 
     if (code > 0) {
-        pdfi_countup(key1);
         switch(keyword->length - 2) {
             case 1:
                 code = search_table_1(ctx, &keyword->data[key1->length], &key2);
@@ -3071,7 +3068,6 @@ static int split_bogus_operator(pdf_context *ctx, pdf_stream *source, pdf_dict *
         }
         if (code <= 0)
             goto error_exit;
-        pdfi_countup(key2);
     }
 
     if (keyword->length > 4)
@@ -3082,7 +3078,6 @@ static int split_bogus_operator(pdf_context *ctx, pdf_stream *source, pdf_dict *
         goto error_exit;
 
     if (code > 0) {
-        pdfi_countup(key1);
         switch(keyword->length - 1) {
             case 1:
                 code = search_table_1(ctx, &keyword->data[key1->length], &key2);
@@ -3098,7 +3093,6 @@ static int split_bogus_operator(pdf_context *ctx, pdf_stream *source, pdf_dict *
         }
         if (code <= 0)
             goto error_exit;
-        pdfi_countup(key2);
     }
 
     /* If we get here, we have two PDF_KEYWORD objects. We push them on the stack
