@@ -23,6 +23,35 @@ public class Document implements List<Page> {
 	private static final DocumentLoader documentLoader = new DocumentLoader();
 	private static final int format = GS_COLORS_RGB | GS_DISPLAY_DEPTH_8 | GS_DISPLAY_BIGENDIAN;
 
+	public static void loadDocumentAsync(final File file, final DocAsyncLoadCallback cb)
+			throws NullPointerException {
+		Objects.requireNonNull(cb, "DocAsyncLoadCallback");
+		final Thread t = new Thread(() -> {
+			Document doc = null;
+			Exception exception = null;
+			try {
+				doc = new Document(file);
+			} catch (FileNotFoundException | IllegalStateException | NullPointerException e) {
+				exception = e;
+			}
+			cb.onDocumentLoad(doc, exception);
+		});
+		t.setName("Document-Loader-Thread");
+		t.setDaemon(true);
+		t.start();
+	}
+
+	public static void loadDocumentAsync(final String filename, final DocAsyncLoadCallback cb)
+			throws NullPointerException {
+		loadDocumentAsync(new File(filename), cb);
+	}
+
+	@FunctionalInterface
+	public static interface DocAsyncLoadCallback {
+
+		public void onDocumentLoad(Document doc, Exception exception);
+	}
+
 	private static void initDocInstance(LongReference instanceRef) throws IllegalStateException {
 		int code = gsapi_new_instance(instanceRef, GS_NULL);
 		if (code != GS_ERROR_OK) {
