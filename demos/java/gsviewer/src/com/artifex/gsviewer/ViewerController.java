@@ -26,6 +26,12 @@ public class ViewerController implements ViewerGUIListener {
 				System.out.println("Loaded document");
 				this.currentDocument = doc;
 				source.loadDocumentToViewer(doc);
+
+				for (int i = 1; i <= doc.size(); i++) {
+					doc.loadHighRes(i);
+					source.setLoadProgress((int)((double)i / doc.size() * 100));
+				}
+				source.setLoadProgress(0);
 			}
 		}, (int progress) -> {
 			source.setLoadProgress(progress);
@@ -51,17 +57,17 @@ public class ViewerController implements ViewerGUIListener {
 
 	@Override
 	public void onPageChange(int oldPage, int newPage) {
-		System.out.println("Page change: " + oldPage + " to " + newPage);
+
 	}
 
 	@Override
 	public void onZoomChange(double oldZoom, double newZoom) {
-		System.out.println("Zoom change: " + oldZoom + " to " + newZoom);
+
 	}
 
 	@Override
 	public void onScrollChange(Point oldScroll, Point newScroll) {
-		System.out.println("Scroll change: " + oldScroll + " to " + newScroll);
+
 	}
 
 	@Override

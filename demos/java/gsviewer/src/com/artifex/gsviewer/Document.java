@@ -392,6 +392,15 @@ public class Document implements List<Page> {
 		pages.clear();
 	}
 
+	/**
+	 * Returns the name of the document loaded.
+	 *
+	 * @return The name.
+	 */
+	public String getName() {
+		return file.getName();
+	}
+
 	private void checkBounds(int start, int end) throws IndexOutOfBoundsException {
 		if (start < 1 || start > pages.size())
 			throw new IndexOutOfBoundsException("start=" + start);

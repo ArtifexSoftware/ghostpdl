@@ -23,8 +23,8 @@ public class Page {
 	 */
 	public static final int PAGE_LOW_DPI = 10;
 
-	private BufferedImage lowRes;
-	private BufferedImage highRes;
+	private volatile BufferedImage lowRes;
+	private volatile BufferedImage highRes;
 
 	public Page() {
 		this(null, null);

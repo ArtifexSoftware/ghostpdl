@@ -170,7 +170,6 @@ int callbacks::display::displayOpenFunction(void *handle, void *device)
 	{
 		jclass clazz = g_env->GetObjectClass(g_displayCallback);
 		const char *name = getClassName(g_env, clazz);
-		printf("class name: %s", name);
 		freeClassName(name);
 		code = callIntMethod(g_env, g_displayCallback, "onDisplayOpen", DISPLAY_OPEN_SIG, (jlong)handle, (jlong)device);
 		CHECK_AND_RETURN(g_env);

@@ -2,44 +2,68 @@ package com.artifex.gsviewer.gui;
 
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.Graphics;
 import java.awt.Image;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JPanel;
-import javax.swing.RepaintManager;
+import javax.swing.JScrollPane;
+import javax.swing.SwingUtilities;
 
 import com.artifex.gsviewer.Document;
 import com.artifex.gsviewer.Page;
 
 /**
- * Auto-generated form using NetBeans.
+ * <p>Used to display documents into a window.</p>
+ *
+ * <p>Partially a auto-generated form using NetBeans.</p>
  */
 public class ViewerWindow extends javax.swing.JFrame {
 
 	private static final long serialVersionUID = 1L;
+
+	/**
+	 * The gap between each page in the main viewer, in pixels.
+	 */
+	public static final int VIEWER_PAGE_GAP = 10;
+
+	/**
+	 * The gap between each page in the mini viewer, in pixels.
+	 */
+	public static final int MINI_VIEWER_PAGE_GAP = 10;
 
 	private ViewerGUIListener guiListener;
 	private int currentPage, maxPage;
 	private double currentZoom;
 
 	private Document loadedDocument;
+	private ScrollMap scrollMap;
 	private List<PagePanel> viewerPagePanels;
 	private List<PagePanel> miniViewerPagePanels;
 
 	/**
-	 * Creates new form ViewerWindow
+	 * Creates new ViewerWindow.
 	 */
 	public ViewerWindow() {
 		this(null);
 	}
 
+	/**
+	 * Creates a new ViewerWindow with a GUIListener.
+	 *
+	 * @param listener A ViewerGUIListener.
+	 */
 	public ViewerWindow(final ViewerGUIListener listener) {
 		initComponents();
 		this.currentPage = 0;
@@ -48,7 +72,34 @@ public class ViewerWindow extends javax.swing.JFrame {
 		this.viewerPagePanels = new ArrayList<>();
 		this.miniViewerPagePanels = new ArrayList<>();
 
+		this.viewerScrollPane.getVerticalScrollBar().addMouseListener(new MouseListener() {
+
+			@Override
+			public void mouseClicked(MouseEvent e) { }
+
+			@Override
+			public void mousePressed(MouseEvent e) { }
+
+			@Override
+			public void mouseReleased(MouseEvent e) {
+				if (scrollMap != null) {
+					final int page = scrollMap.getCurrentPage();
+					currentPage = page;
+					assumePage(page);
+				}
+			}
+
+			@Override
+			public void mouseEntered(MouseEvent e) { }
+
+			@Override
+			public void mouseExited(MouseEvent e) { }
+
+		});
+
 		setGUIListener(listener);
+
+		setLocationRelativeTo(null);
 	}
 
 	/**
@@ -290,9 +341,11 @@ public class ViewerWindow extends javax.swing.JFrame {
 		if (maxPage > 0) {
 			final int oldPage = currentPage;
 			currentPage = Math.max(currentPage - 1, 1);
-			pageNumberField.setText(new StringBuilder().append(currentPage).toString());
 			if (guiListener != null)
 				guiListener.onPageChange(oldPage, currentPage);
+			if (scrollMap != null)
+				scrollMap.scrollTo(currentPage);
+			assumePage(currentPage);
 		} else {
 			pageNumberField.setText(new StringBuilder().append(0).toString());
 		}
@@ -302,9 +355,11 @@ public class ViewerWindow extends javax.swing.JFrame {
 		if (maxPage > 0) {
 			final int oldPage = currentPage;
 			currentPage = Math.min(currentPage + 1, maxPage);
-			pageNumberField.setText(new StringBuilder().append(currentPage).toString());
 			if (guiListener != null)
 				guiListener.onPageChange(oldPage, currentPage);
+			if (scrollMap != null)
+				scrollMap.scrollTo(currentPage);
+			assumePage(currentPage);
 		} else {
 			pageNumberField.setText(new StringBuilder().append(0).toString());
 		}
@@ -326,6 +381,10 @@ public class ViewerWindow extends javax.swing.JFrame {
 				this.currentPage = newPage;
 				if (guiListener != null)
 					guiListener.onPageChange(oldPage, currentPage);
+				if (this.scrollMap != null) {
+					scrollMap.scrollTo(newPage);
+					assumePage(newPage);
+				}
 			} catch (IllegalArgumentException e) {
 				System.err.println(new StringBuilder().append("Invalid page number \"").
 						append(text).append('\"').toString());
@@ -407,21 +466,19 @@ public class ViewerWindow extends javax.swing.JFrame {
 
 		private static final long serialVersionUID = 1L;
 
-		private static final int	VIEWER_MODE = 0,
-									MINI_VIEWER_MODE = 1;
-
 		private Object lock;
 		private Page page;
-		private int mode;
 
-		private PagePanel(final Page page, final Dimension size, final int mode) {
+		private PagePanel(final Page page) {
 			this.lock = new Object();
 			this.page = page;
-			this.mode = mode;
-			setPreferredSize(size);
+
+			setPreferredSize(page.getSize());
+			setMaximumSize(page.getSize());
 
 			setBackground(Color.WHITE);
 
+			setDoubleBuffered(false);
 			pack();
 		}
 
@@ -430,38 +487,58 @@ public class ViewerWindow extends javax.swing.JFrame {
 			super.paintComponent(g);
 			synchronized (lock) {
 				if (page != null) {
-					Dimension size = getSize();
-					BufferedImage img;
-					switch (mode) {
-					case VIEWER_MODE:
-						img = page.getDisplayableImage();
-						if (img != null)
-							g.drawImage(img.getScaledInstance(size.width, size.height, Image.SCALE_FAST), 0, 0, this);
-						break;
-					case MINI_VIEWER_MODE:
-						img = page.getLowResImage();
-						if (img != null)
-							g.drawImage(img, 0, 0, this);
-						break;
-					default:
-						throw new IllegalStateException("Illegal mode");
-					}
+					Dimension pageSize = page.getSize();
+					BufferedImage img = page.getDisplayableImage();
+					if (img != null)
+						g.drawImage(img == page.getLowResImage() ?
+								img.getScaledInstance(pageSize.width, pageSize.height, Image.SCALE_FAST) :
+									img, 0, 0, this);
+
 				}
 			}
 		}
+	}
+
+	private class MiniViewerActionListener implements ActionListener {
+
+		private final int pageNum;
+
+		private MiniViewerActionListener(int pageNum) {
+			this.pageNum = pageNum;
+		}
 
 		@Override
-		public void invalidate() {
-			super.invalidate();
-			System.out.println("Invalidated!");
+		public void actionPerformed(ActionEvent e) {
+			ViewerWindow.this.scrollMap.scrollTo(pageNum);
+			assumePage(pageNum);
+		}
+
+	}
+
+	@Override
+	public void validate() {
+		super.validate();
+		if (this.scrollMap != null) {
+			this.scrollMap.genMap(1.0);
+			assumePage(this.currentPage = this.scrollMap.getCurrentPage());
 		}
 	}
 
+	/**
+	 * Sets sthe ViewerGUIListener the window should use.
+	 *
+	 * @param listener A listener.
+	 */
 	public void setGUIListener(final ViewerGUIListener listener) {
 		this.guiListener = listener;
 		listener.onViewerAdd(this);
 	}
 
+	/**
+	 * Sets the page which should be jumped to.
+	 *
+	 * @param newPage A page.
+	 */
 	public void setPage(final int newPage) {
 		try {
 			if (newPage < 1 || newPage > maxPage)
@@ -470,6 +547,10 @@ public class ViewerWindow extends javax.swing.JFrame {
 			currentPage = newPage;
 			if (guiListener != null)
 				guiListener.onPageChange(oldPage, currentPage);
+			if (scrollMap != null) {
+				scrollMap.scrollTo(newPage);
+				assumePage(newPage);
+			}
 		} catch (IllegalArgumentException e) {
 			System.err.println(new StringBuilder().append("Invalid page number \"").
 					append(newPage).append('\"').toString());
@@ -478,19 +559,68 @@ public class ViewerWindow extends javax.swing.JFrame {
 		}
 	}
 
-	public void setMaxPage(final int max) {
-		this.maxPage = max;
-	}
-
+	/**
+	 * Sets the progress of the progress bar in the window.
+	 *
+	 * @param progress The amount of progress (0-100).
+	 */
 	public void setLoadProgress(final int progress) {
 		progressBar.setValue(progress);
 	}
 
+	/**
+	 * Loads a document into the viewer.
+	 *
+	 * @param document The document to load, if <code>null</code> the current
+	 * document will be unloaded.
+	 */
 	public void loadDocumentToViewer(final Document document) {
-		if (document == null) {
-			unloadViewerDocument();
+		final Dimension oldSize = getSize();
+		unloadViewerDocument();
+		if (document == null)
 			return;
+
+		this.loadedDocument = document;
+		viewerContentPane.setLayout(new BoxLayout(viewerContentPane, BoxLayout.Y_AXIS));
+
+		for (final Page page : document) {
+			final PagePanel panel = new PagePanel(page);
+			viewerContentPane.add(panel);
+			viewerContentPane.add(Box.createVerticalStrut(VIEWER_PAGE_GAP));
+
+			viewerPagePanels.add(panel);
 		}
+
+		miniViewerContentPane.setLayout(new BoxLayout(miniViewerContentPane, BoxLayout.Y_AXIS));
+
+		int pageNum = 1;
+		for (final Page page : document) {
+			ImageIcon icon = new ImageIcon(page.getLowResImage());
+			JButton button = new JButton(icon);
+			button.setPreferredSize(page.getLowResSize());
+			button.addActionListener(new MiniViewerActionListener(pageNum++));
+
+			miniViewerContentPane.add(button);
+			miniViewerContentPane.add(Box.createVerticalStrut(MINI_VIEWER_PAGE_GAP));
+		}
+
+		this.scrollMap = new ScrollMap(document, this, VIEWER_PAGE_GAP);
+		this.viewerScrollPane.getVerticalScrollBar().setValue(0);
+
+		assumePage(this.currentPage = 1);
+		assumeMaxPages(this.maxPage = document.size());
+
+		setSize(oldSize);
+
+		setTitle("Viewer - " + document.getName());
+	}
+
+	public void unloadViewerDocument() {
+		this.loadedDocument = null;
+		this.scrollMap = null;
+		this.assumePage(0);
+		this.assumeMaxPages(0);
+		setTitle("Viewer");
 
 		for (final PagePanel panel : viewerPagePanels) {
 			synchronized (panel.lock) {
@@ -506,40 +636,34 @@ public class ViewerWindow extends javax.swing.JFrame {
 			}
 		}
 		miniViewerContentPane.removeAll();
-		viewerPagePanels.clear();
+		miniViewerPagePanels.clear();
 
-		this.loadedDocument = document;
+		SwingUtilities.invokeLater(() -> {
+			viewerContentPane.revalidate();
+			viewerContentPane.repaint();
 
-		setResizable(false);
-
-		viewerContentPane.setLayout(new BoxLayout(viewerContentPane, BoxLayout.Y_AXIS));
-
-		for (final Page page : document) {
-			final PagePanel panel = new PagePanel(page, page.getSize(), PagePanel.VIEWER_MODE);
-			viewerContentPane.add(panel);
-			viewerContentPane.add(Box.createVerticalStrut(10));
-
-			viewerPagePanels.add(panel);
-		}
-
-		miniViewerContentPane.setLayout(new BoxLayout(miniViewerContentPane, BoxLayout.Y_AXIS));
-
-		for (final Page page : document) {
-			final PagePanel panel = new PagePanel(page, page.getLowResSize(), PagePanel.MINI_VIEWER_MODE);
-			miniViewerContentPane.add(panel);
-			miniViewerContentPane.add(Box.createVerticalStrut(10));
-
-			miniViewerPagePanels.add(panel);
-		}
-
-		setResizable(true);
-	}
-
-	public void unloadViewerDocument() {
-		this.loadedDocument = null;
+			miniViewerContentPane.revalidate();
+			miniViewerContentPane.repaint();
+		});
 	}
 
 	public Document getLoadedDocument() {
 		return loadedDocument;
+	}
+
+	public JComponent getPageComponent(final int pageNum) {
+		return viewerPagePanels.get(pageNum - 1);
+	}
+
+	public JScrollPane getViewerScrollPane() {
+		return viewerScrollPane;
+	}
+
+	private void assumePage(int pageNum) {
+		this.pageNumberField.setText(new StringBuilder().append(pageNum).toString());
+	}
+
+	private void assumeMaxPages(int pageCount) {
+		this.maxPagesLabel.setText(new StringBuilder().append(pageCount).toString());
 	}
 }
