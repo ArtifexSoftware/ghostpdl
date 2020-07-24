@@ -1004,21 +1004,6 @@ pdf_begin_encrypt(gx_device_pdf * pdev, stream **s, gs_id object_id)
      */
 }
 
-/* Remove the encryption filter. */
-void
-pdf_end_encrypt(gx_device_pdf * pdev)
-{
-    if (pdev->KeyLength) {
-        stream *s = pdev->strm;
-        stream *fs = s->strm;
-
-        sclose(s);
-        gs_free_object(pdev->pdf_memory, s->cbuf, "encrypt buffer");
-        gs_free_object(pdev->pdf_memory, s, "encrypt stream");
-        pdev->strm = fs;
-    }
-}
-
 /* Enter stream context. */
 static int
 none_to_stream(gx_device_pdf * pdev)
@@ -1172,6 +1157,7 @@ stream_to_none(gx_device_pdf * pdev)
     stream *s = pdev->strm;
     gs_offset_t length;
     int code;
+    stream *target;
 
     if (pdev->ResourcesBeforeUsage) {
         int code = pdf_exit_substream(pdev);
@@ -1184,24 +1170,16 @@ stream_to_none(gx_device_pdf * pdev)
             if (code < 0)
                 return code;
         }
-        if (pdev->compression_at_page_start == pdf_compress_Flate) {	/* Terminate the filters. */
-            stream *fs = s->strm;
-            byte *buf;
+        target = pdev->strm;
 
-            if (!pdev->binary_ok) {
-                sclose(s);	/* Terminate the ASCII85 filter. */
-                gs_free_object(pdev->pdf_memory, s->cbuf, "A85E contents buffer");
-                gs_free_object(pdev->pdf_memory, s, "A85E contents stream");
-                pdev->strm = s = fs;
-                fs = s->strm;
-            }
-            buf = s->cbuf; /* Save because sclose may zero it out (causing memory leak) */
-            sclose(s);		/* Next terminate the compression filter */
-            gs_free_object(pdev->pdf_memory, buf, "zlib buffer");
-            gs_free_object(pdev->pdf_memory, s, "zlib stream");
-            pdev->strm = fs;
-        }
-        pdf_end_encrypt(pdev);
+        if (pdev->compression_at_page_start == pdf_compress_Flate)
+            target = target->strm;
+        if (!pdev->binary_ok)
+            target = target->strm;
+        if (pdf_end_encrypt(pdev))
+            target = target->strm;
+        s_close_filters(&pdev->strm, target);
+
         s = pdev->strm;
         length = pdf_stell(pdev) - pdev->contents_pos;
         if (pdev->PDFA != 0)
