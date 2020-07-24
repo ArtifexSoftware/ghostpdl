@@ -16,12 +16,12 @@ public class GSFileFilter extends FileFilter {
 		final int ind = name.lastIndexOf('.');
 		final String ext = name.substring(ind);
 		return
-			equals(ext, "pdf") ||
-			equals(ext, "eps") ||
-			equals(ext, "ps") ||
-			equals(ext, "xps") ||
-			equals(ext, "oxps") ||
-			equals(ext, "bin");
+			equals(ext, ".pdf") ||
+			equals(ext, ".eps") ||
+			equals(ext, ".ps") ||
+			equals(ext, ".xps") ||
+			equals(ext, ".oxps") ||
+			equals(ext, ".bin");
 	}
 
 	@Override

@@ -4,17 +4,19 @@ import java.awt.Point;
 
 public interface ViewerGUIListener {
 
-	public void onPageChange(ViewerWindow source, int oldPage, int newPage);
+	public void onViewerAdd(ViewerWindow source);
 
-	public void onZoomChange(ViewerWindow source, double oldZoom, double newZoom);
+	public void onPageChange(int oldPage, int newPage);
 
-	public void onScrollChange(ViewerWindow source, Point oldScroll, Point newScroll);
+	public void onZoomChange(double oldZoom, double newZoom);
 
-	public void onOpenFile(ViewerWindow source);
+	public void onScrollChange(Point oldScroll, Point newScroll);
 
-	public void onCloseFile(ViewerWindow source);
+	public void onOpenFile();
 
-	public void onClosing(ViewerWindow source);
+	public void onCloseFile();
 
-	public void onSettingsOpen(ViewerWindow source);
+	public void onClosing();
+
+	public void onSettingsOpen();
 }

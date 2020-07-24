@@ -1,11 +1,26 @@
 package com.artifex.gsviewer;
 
+import java.awt.Dimension;
 import java.awt.image.BufferedImage;
 import com.artifex.gsviewer.ImageUtil.ImageParams;
 
+/**
+ * A Page represents an individual page within a Document. It stores a high resolution image
+ * and a low resolution preview image.
+ *
+ * @author Ethan Vrhel
+ *
+ */
 public class Page {
 
+	/**
+	 * The high-resolution DPI to use.
+	 */
 	public static final int PAGE_HIGH_DPI = 72;
+
+	/**
+	 * The low-resolution DPI to use.
+	 */
 	public static final int PAGE_LOW_DPI = 10;
 
 	private BufferedImage lowRes;
@@ -56,6 +71,11 @@ public class Page {
 		}
 	}
 
+	public void unloadAll() {
+		unloadLowRes();
+		unloadHighRes();
+	}
+
 	public BufferedImage getLowResImage() {
 		return lowRes;
 	}
@@ -66,6 +86,29 @@ public class Page {
 
 	public BufferedImage getDisplayableImage() {
 		return highRes == null ? lowRes : highRes;
+	}
+
+	public Dimension getLowResSize() {
+		return lowRes == null ? null : new Dimension(lowRes.getWidth(), lowRes.getHeight());
+	}
+
+	public Dimension getHighResSize() {
+		return highRes == null ? null : new Dimension(highRes.getWidth(), highRes.getHeight());
+	}
+
+	public Dimension getDisplayableSize() {
+		return highRes == null ? getLowResSize() : getHighResSize();
+	}
+
+	public Dimension getSize() {
+		Dimension size = getHighResSize();
+		if (size != null)
+			return size;
+		size = getLowResSize();
+		if (size == null)
+			return new Dimension(0, 0);
+		return new Dimension(size.width * PAGE_HIGH_DPI / PAGE_LOW_DPI,
+				size.height * PAGE_HIGH_DPI / PAGE_LOW_DPI);
 	}
 
 	@Override
@@ -93,7 +136,6 @@ public class Page {
 
 	@Override
 	public void finalize() {
-		unloadLowRes();
-		unloadHighRes();
+		unloadAll();
 	}
 }

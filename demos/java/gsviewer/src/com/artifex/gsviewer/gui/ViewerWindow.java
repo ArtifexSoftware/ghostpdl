@@ -1,5 +1,23 @@
 package com.artifex.gsviewer.gui;
 
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Graphics;
+import java.awt.Image;
+import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JPanel;
+import javax.swing.RepaintManager;
+
+import com.artifex.gsviewer.Document;
+import com.artifex.gsviewer.Page;
+
 /**
  * Auto-generated form using NetBeans.
  */
@@ -11,6 +29,10 @@ public class ViewerWindow extends javax.swing.JFrame {
 	private int currentPage, maxPage;
 	private double currentZoom;
 
+	private Document loadedDocument;
+	private List<PagePanel> viewerPagePanels;
+	private List<PagePanel> miniViewerPagePanels;
+
 	/**
 	 * Creates new form ViewerWindow
 	 */
@@ -20,10 +42,13 @@ public class ViewerWindow extends javax.swing.JFrame {
 
 	public ViewerWindow(final ViewerGUIListener listener) {
 		initComponents();
-		this.guiListener = listener;
 		this.currentPage = 0;
 		this.maxPage = 0;
 		this.currentZoom = 1.0;
+		this.viewerPagePanels = new ArrayList<>();
+		this.miniViewerPagePanels = new ArrayList<>();
+
+		setGUIListener(listener);
 	}
 
 	/**
@@ -267,7 +292,7 @@ public class ViewerWindow extends javax.swing.JFrame {
 			currentPage = Math.max(currentPage - 1, 1);
 			pageNumberField.setText(new StringBuilder().append(currentPage).toString());
 			if (guiListener != null)
-				guiListener.onPageChange(this, oldPage, currentPage);
+				guiListener.onPageChange(oldPage, currentPage);
 		} else {
 			pageNumberField.setText(new StringBuilder().append(0).toString());
 		}
@@ -279,7 +304,7 @@ public class ViewerWindow extends javax.swing.JFrame {
 			currentPage = Math.min(currentPage + 1, maxPage);
 			pageNumberField.setText(new StringBuilder().append(currentPage).toString());
 			if (guiListener != null)
-				guiListener.onPageChange(this, oldPage, currentPage);
+				guiListener.onPageChange(oldPage, currentPage);
 		} else {
 			pageNumberField.setText(new StringBuilder().append(0).toString());
 		}
@@ -287,7 +312,7 @@ public class ViewerWindow extends javax.swing.JFrame {
 
 	private void formWindowClosing(java.awt.event.WindowEvent evt) {// GEN-FIRST:event_formWindowClosing
 		if (guiListener != null)
-			guiListener.onClosing(this);
+			guiListener.onClosing();
 	}// GEN-LAST:event_formWindowClosing
 
 	private void pageNumberFieldKeyPressed(java.awt.event.KeyEvent evt) {// GEN-FIRST:event_pageNumberFieldKeyPressed
@@ -300,7 +325,7 @@ public class ViewerWindow extends javax.swing.JFrame {
 				final int oldPage = currentPage;
 				this.currentPage = newPage;
 				if (guiListener != null)
-					guiListener.onPageChange(this, oldPage, currentPage);
+					guiListener.onPageChange(oldPage, currentPage);
 			} catch (IllegalArgumentException e) {
 				System.err.println(new StringBuilder().append("Invalid page number \"").
 						append(text).append('\"').toString());
@@ -315,7 +340,7 @@ public class ViewerWindow extends javax.swing.JFrame {
 		final double oldZoom = currentZoom;
 		this.currentZoom = sliderValue;
 		if (guiListener != null && oldZoom != currentZoom)
-			guiListener.onZoomChange(this, oldZoom, currentZoom);
+			guiListener.onZoomChange(oldZoom, currentZoom);
 	}// GEN-LAST:event_zoomSliderMouseReleased
 
 	private void increaseZoomButtonActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_increaseZoomButtonActionPerformed
@@ -323,7 +348,7 @@ public class ViewerWindow extends javax.swing.JFrame {
 		this.currentZoom = Math.min(Math.ceil((oldZoom * 10) + 1) / 10, 2.0);
 		zoomSlider.setValue((int)(currentZoom * 50));
 		if (guiListener != null && oldZoom != currentZoom)
-			guiListener.onZoomChange(this, oldZoom, currentZoom);
+			guiListener.onZoomChange(oldZoom, currentZoom);
 	}// GEN-LAST:event_increaseZoomButtonActionPerformed
 
 	private void decreaseZoomButtonActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_decreaseZoomButtonActionPerformed
@@ -331,27 +356,27 @@ public class ViewerWindow extends javax.swing.JFrame {
 		this.currentZoom = Math.max(Math.floor((oldZoom * 10) - 1) / 10, 0.0);
 		zoomSlider.setValue((int)(currentZoom * 50));
 		if (guiListener != null && oldZoom != currentZoom)
-			guiListener.onZoomChange(this, oldZoom, currentZoom);
+			guiListener.onZoomChange(oldZoom, currentZoom);
 	}// GEN-LAST:event_decreaseZoomButtonActionPerformed
 
 	private void openMenuActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_openMenuActionPerformed
 		if (guiListener != null)
-			guiListener.onOpenFile(this);
+			guiListener.onOpenFile();
 	}// GEN-LAST:event_openMenuActionPerformed
 
 	private void closeMenuItemActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_closeMenuItemActionPerformed
 		if (guiListener != null)
-			guiListener.onCloseFile(this);
+			guiListener.onCloseFile();
 	}// GEN-LAST:event_closeMenuItemActionPerformed
 
 	private void exitMenuItemActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_exitMenuItemActionPerformed
 		if (guiListener != null)
-			guiListener.onClosing(this);
+			guiListener.onClosing();
 	}// GEN-LAST:event_exitMenuItemActionPerformed
 
 	private void settingsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_settingsMenuItemActionPerformed
 		if (guiListener != null)
-			guiListener.onSettingsOpen(this);
+			guiListener.onSettingsOpen();
 	}// GEN-LAST:event_settingsMenuItemActionPerformed
 
 	// Variables declaration - do not modify//GEN-BEGIN:variables
@@ -378,8 +403,63 @@ public class ViewerWindow extends javax.swing.JFrame {
 	private javax.swing.JSlider zoomSlider;
 	// End of variables declaration//GEN-END:variables
 
+	private class PagePanel extends JPanel {
+
+		private static final long serialVersionUID = 1L;
+
+		private static final int	VIEWER_MODE = 0,
+									MINI_VIEWER_MODE = 1;
+
+		private Object lock;
+		private Page page;
+		private int mode;
+
+		private PagePanel(final Page page, final Dimension size, final int mode) {
+			this.lock = new Object();
+			this.page = page;
+			this.mode = mode;
+			setPreferredSize(size);
+
+			setBackground(Color.WHITE);
+
+			pack();
+		}
+
+		@Override
+		public void paintComponent(Graphics g) {
+			super.paintComponent(g);
+			synchronized (lock) {
+				if (page != null) {
+					Dimension size = getSize();
+					BufferedImage img;
+					switch (mode) {
+					case VIEWER_MODE:
+						img = page.getDisplayableImage();
+						if (img != null)
+							g.drawImage(img.getScaledInstance(size.width, size.height, Image.SCALE_FAST), 0, 0, this);
+						break;
+					case MINI_VIEWER_MODE:
+						img = page.getLowResImage();
+						if (img != null)
+							g.drawImage(img, 0, 0, this);
+						break;
+					default:
+						throw new IllegalStateException("Illegal mode");
+					}
+				}
+			}
+		}
+
+		@Override
+		public void invalidate() {
+			super.invalidate();
+			System.out.println("Invalidated!");
+		}
+	}
+
 	public void setGUIListener(final ViewerGUIListener listener) {
 		this.guiListener = listener;
+		listener.onViewerAdd(this);
 	}
 
 	public void setPage(final int newPage) {
@@ -389,7 +469,7 @@ public class ViewerWindow extends javax.swing.JFrame {
 			final int oldPage = currentPage;
 			currentPage = newPage;
 			if (guiListener != null)
-				guiListener.onPageChange(this, oldPage, currentPage);
+				guiListener.onPageChange(oldPage, currentPage);
 		} catch (IllegalArgumentException e) {
 			System.err.println(new StringBuilder().append("Invalid page number \"").
 					append(newPage).append('\"').toString());
@@ -400,5 +480,66 @@ public class ViewerWindow extends javax.swing.JFrame {
 
 	public void setMaxPage(final int max) {
 		this.maxPage = max;
+	}
+
+	public void setLoadProgress(final int progress) {
+		progressBar.setValue(progress);
+	}
+
+	public void loadDocumentToViewer(final Document document) {
+		if (document == null) {
+			unloadViewerDocument();
+			return;
+		}
+
+		for (final PagePanel panel : viewerPagePanels) {
+			synchronized (panel.lock) {
+				panel.page = null;
+			}
+		}
+		viewerContentPane.removeAll();
+		viewerPagePanels.clear();
+
+		for (final PagePanel panel : miniViewerPagePanels) {
+			synchronized (panel.lock) {
+				panel.page = null;
+			}
+		}
+		miniViewerContentPane.removeAll();
+		viewerPagePanels.clear();
+
+		this.loadedDocument = document;
+
+		setResizable(false);
+
+		viewerContentPane.setLayout(new BoxLayout(viewerContentPane, BoxLayout.Y_AXIS));
+
+		for (final Page page : document) {
+			final PagePanel panel = new PagePanel(page, page.getSize(), PagePanel.VIEWER_MODE);
+			viewerContentPane.add(panel);
+			viewerContentPane.add(Box.createVerticalStrut(10));
+
+			viewerPagePanels.add(panel);
+		}
+
+		miniViewerContentPane.setLayout(new BoxLayout(miniViewerContentPane, BoxLayout.Y_AXIS));
+
+		for (final Page page : document) {
+			final PagePanel panel = new PagePanel(page, page.getLowResSize(), PagePanel.MINI_VIEWER_MODE);
+			miniViewerContentPane.add(panel);
+			miniViewerContentPane.add(Box.createVerticalStrut(10));
+
+			miniViewerPagePanels.add(panel);
+		}
+
+		setResizable(true);
+	}
+
+	public void unloadViewerDocument() {
+		this.loadedDocument = null;
+	}
+
+	public Document getLoadedDocument() {
+		return loadedDocument;
 	}
 }
