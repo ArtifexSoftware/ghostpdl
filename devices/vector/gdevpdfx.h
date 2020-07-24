@@ -1172,7 +1172,7 @@ int pdf_copy_data_safe(stream *s, gp_file *file, gs_offset_t position, long coun
 /* Add the encryption filter. */
 int pdf_begin_encrypt(gx_device_pdf * pdev, stream **s, gs_id object_id);
 /* Remove the encryption filter. */
-int inline pdf_end_encrypt(gx_device_pdf *pdev)
+static int inline pdf_end_encrypt(gx_device_pdf *pdev)
 {
     if (pdev->KeyLength)
         return 1;
