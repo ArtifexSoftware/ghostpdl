@@ -1107,7 +1107,17 @@ gs_main_run_file2(gs_main_instance *minst,
                   int              *pexit_code,
                   ref              *perror_object)
 {
-    return runarg(minst, "", filename, ".runfile", runFlush, user_errors, pexit_code, perror_object);
+    int code, code1;
+
+    code = gs_add_control_path(minst->heap, gs_permit_file_reading, filename);
+    if (code < 0) return code;
+
+    code = runarg(minst, "", filename, ".runfile", runFlush, user_errors, pexit_code, perror_object);
+
+    code1 = gs_remove_control_path(minst->heap, gs_permit_file_reading, filename);
+    if (code >= 0 && code1 < 0) code = code1;
+
+    return code;
 }
 static int
 run_string(gs_main_instance *minst,
