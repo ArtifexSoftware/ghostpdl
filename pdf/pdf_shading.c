@@ -658,8 +658,7 @@ pdfi_shading_free(pdf_context *ctx, gs_shading_t *psh)
         if (mesh_params->Decode != NULL)
             gs_free_object(ctx->memory, mesh_params->Decode, "release mesh shading Decode array");
         if (mesh_params->DataSource.data.strm != NULL) {
-            gs_free_object(ctx->memory, mesh_params->DataSource.data.strm->cbuf_string.data, "release mesh shading Data Source buffer");
-            sclose(mesh_params->DataSource.data.strm);
+            s_close_filters(&mesh_params->DataSource.data.strm, mesh_params->DataSource.data.strm->strm);
             gs_free_object(ctx->memory, mesh_params->DataSource.data.strm, "release mesh shading Data Source");
         }
     }

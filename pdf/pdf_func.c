@@ -459,7 +459,7 @@ pdfi_build_function_0(pdf_context *ctx, gs_function_params_t * mnDR,
     return 0;
 
 function_0_error:
-    sclose(params.DataSource.data.strm);
+    s_close_filters(&params.DataSource.data.strm, params.DataSource.data.strm->strm);
     params.DataSource.data.strm = NULL;
     gs_function_Sd_free_params(&params, ctx->memory);
     /* These are freed by gs_function_Sd_free_params, since we copied
@@ -688,9 +688,7 @@ int pdfi_free_function(pdf_context *ctx, gs_function_t *pfn)
          */
         gs_function_Sd_params_t *params = (gs_function_Sd_params_t *)&pfn->params;
 
-        gs_free_object(ctx->memory, params->DataSource.data.strm->cbuf, "pdfi_free_function");
-        params->DataSource.data.strm->cbuf = NULL;
-        sclose(params->DataSource.data.strm);
+        s_close_filters(&params->DataSource.data.strm, params->DataSource.data.strm->strm);
         gs_free_object(ctx->memory, params->DataSource.data.strm, "pdfi_free_function");
     }
 
