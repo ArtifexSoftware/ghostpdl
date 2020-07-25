@@ -643,6 +643,10 @@ pdf_indexed_color_space(gx_device_pdf *pdev, const gs_gstate * pgs, cos_value_t 
     }
     stream_write(&es, palette, table_size);
     gs_free_string(mem, palette, table_size, "pdf_color_space(palette)");
+    /* Another case where we use sclose() and not sclose_filters(), because the
+     * buffer we supplied to s_init_filter is a heap based C object, so we
+     * must not free it.
+     */
     sclose(&es);
     sflush(&s);
     string_used = (uint)stell(&s);
@@ -874,6 +878,11 @@ pdf_color_space_named(gx_device_pdf *pdev, const gs_gstate * pgs,
         if (code < 0)
             return_error(gs_error_unregistered); /* Must not happen. */
         serialized_size = stell(&s);
+        /* I think this is another case where we use sclose() and not sclose_filters().
+         * It seems like we don't actually write anything, but it allows us to find the
+         * length of the serialised data. No buffer hre, so we must no call
+         * s_close_filters() as that will try to free it.
+         */
         sclose(&s);
         if (serialized_size <= sizeof(serialized0))
             serialized = serialized0;

@@ -116,6 +116,7 @@ GSDLLEXPORT int GSDLLAPI
 gsapi_run_file(void *lib, const char *file_name, int user_errors, int *pexit_code)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+    int code, code1;
 
     if (pexit_code != NULL)
         *pexit_code = 0;
@@ -123,7 +124,15 @@ gsapi_run_file(void *lib, const char *file_name, int user_errors, int *pexit_cod
     if (lib == NULL)
         return gs_error_Fatal;
 
-    return pl_main_run_file(pl_main_get_instance(ctx->memory), file_name);
+    code = gs_add_control_path(ctx->memory, gs_permit_file_reading, file_name);
+    if (code < 0) return code;
+
+    code = pl_main_run_file(pl_main_get_instance(ctx->memory), file_name);
+
+    code1 = gs_remove_control_path(ctx->memory, gs_permit_file_reading, file_name);
+    if (code >= 0 && code1 < 0) code = code1;
+
+    return code;
 }
 
 GSDLLEXPORT int GSDLLAPI

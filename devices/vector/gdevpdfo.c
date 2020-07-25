@@ -1132,6 +1132,10 @@ static int write_key_as_string_encrypted(const gx_device_pdf *pdev, const byte *
     memcpy(buffer, str, size);
     s_arcfour_process_buffer(&sarc4, buffer, size);
     stream_write(&sout, buffer, size);
+    /* Another case where we use sclose() and not s_close_filters(), because the
+     * buffer we supplied to s_init_filter is a heap based C object, so we
+     * must not free it.
+     */
     sclose(&sout); /* Writes ')'. */
     gs_free_object(pdev->pdf_memory, buffer, "Free encryption buffer");
     return 0;
