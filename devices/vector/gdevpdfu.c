@@ -2117,6 +2117,10 @@ pdf_encrypt_encoded_string(const gx_device_pdf *pdev, const byte *str, uint size
             break;
         }
     }
+    /* Another case where we use sclose() and not sclose_filters(), because the
+     * buffer we supplied to s_init_filter is a heap based C object, so we
+     * must not free it.
+     */
     sclose(&sout); /* Writes ')'. */
     return (int)stell(&sinp) + 1;
 }
@@ -2681,7 +2685,7 @@ pdf_function_aux(gx_device_pdf *pdev, const gs_function_t *pfn,
                 stream_write(writer.strm, ptr, count);
             }
             code = psdf_end_binary(&writer);
-            sclose(s);
+            s_close_filters(&s, s->strm);
         }
         pdev->strm = save;
         if (code < 0)

@@ -467,6 +467,12 @@ pdf_compute_fileID(gx_device_pdf * pdev)
     pdev->KeyLength = KeyLength;
     if (code < 0)
         return code;
+    /* Generally we would call s_close_filters() here in order to free the data buffer
+     * associated with the MD5 filter, but the data buffer we passed in to s_MD5E_make_stream()
+     * is part of the device structure, so we must *NOT* free that buffer. Therefore we must
+     * instead call sclose(). This confusion over ownership of the stream buffers causes
+     * a lot of problems......
+     */
     sclose(s);
     gs_free_object(mem, s, "pdf_compute_fileID");
     return 0;
