@@ -599,7 +599,8 @@ clist_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
         return 1;
     if (dev_spec_op == gxdso_pattern_shfill_doesnt_need_path)
         return 1;
-    if (dev_spec_op == gxdso_supports_devn) {
+    if (dev_spec_op == gxdso_supports_devn
+     || dev_spec_op == gxdso_skip_icc_component_validation) {
         cmm_dev_profile_t *dev_profile;
         int code;
         code = dev_proc(cdev, get_profile)((gx_device*) cdev, &dev_profile);

@@ -1347,7 +1347,7 @@ display_spec_op(gx_device *dev, int op, void *data, int datasize)
 {
     gx_device_display *ddev = (gx_device_display *)dev;
 
-    if (op == gxdso_supports_devn) {
+    if (op == gxdso_supports_devn || op == gxdso_skip_icc_component_validation) {
         return (dev_proc(dev, fill_rectangle_hl_color) == display_fill_rectangle_hl_color);
     }
     if (op == gxdso_reopen_after_init) {

@@ -49,7 +49,8 @@ mem_planar_dev_spec_op(gx_device *pdev, int dev_spec_op,
 {
     cmm_dev_profile_t *dev_profile;
 
-    if (dev_spec_op == gxdso_supports_devn) {
+    if (dev_spec_op == gxdso_supports_devn
+     || dev_spec_op == gxdso_skip_icc_component_validation) {
         dev_proc(pdev, get_profile)(pdev, &dev_profile);
         if (dev_profile != NULL && dev_profile->supports_devn &&
             dev_proc(pdev, fill_rectangle_hl_color) == mem_planar_fill_rectangle_hl_color)
