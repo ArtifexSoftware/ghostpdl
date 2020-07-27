@@ -778,9 +778,10 @@ pdf_iccbased_color_space(gx_device_pdf *pdev, const gs_gstate * pgs, cos_value_t
                          const gs_color_space *pcs, cos_array_t *pca)
 {
     cos_stream_t * pcstrm;
-    int code = 0;
+    int code = 0, code1 = 0;
     unsigned char major = 0, minor = 0;
     bool downgrade_icc = false;
+    pdf_resource_t *pres = NULL;
 
     /*
      * This would arise only in a pdf ==> pdf translation, but we
@@ -864,13 +865,22 @@ pdf_iccbased_color_space(gx_device_pdf *pdev, const gs_gstate * pgs, cos_value_t
         pcs->cmm_icc_profile_data->buffer_size);
     }
 
+    /*
+     * The stream has been added to the array: However because the stream cos object
+     * has an id (it has to be an indirect object), freeing the colour space won't
+     * free the ICC profile stream. In order to have the stream freed we must add it to
+     * a resource chain; we don't have a resource chain for ICC profiles, so add it to
+     * resourceOther instead. This means it will be among the last objects released.
+     */
+    code1 = pdf_alloc_resource(pdev, resourceOther, pcstrm->id, &pres, -1);
+    if (code1 >= 0) {
+        COS_FREE(pres->object, "pdf_iccbased_color_space");
+        pres->object = (cos_object_t *)pcstrm;
+    }
+
     if (code >= 0)
         code = pdf_finish_iccbased(pdev, pcstrm);
-    /*
-     * The stream has been added to the array: in case of failure, the
-     * caller will free the array, so there is no need to free the stream
-     * explicitly here.
-     */
+
     return code;
 }
 
