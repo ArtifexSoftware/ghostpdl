@@ -25,6 +25,7 @@ public class Page {
 
 	private volatile BufferedImage lowRes;
 	private volatile BufferedImage highRes;
+	private volatile BufferedImage zoomed;
 
 	public Page() {
 		this(null, null);
@@ -71,6 +72,22 @@ public class Page {
 		}
 	}
 
+	public void loadZoomed(final byte[] data, final int width, final int height, final int raster, final int format) {
+		setZoomed(ImageUtil.createImage(data, new ImageParams(width, height, raster, format)));
+	}
+
+	public void setZoomed(final BufferedImage zoomed) {
+		unloadZoomed();
+		this.zoomed = zoomed;
+	}
+
+	public void unloadZoomed() {
+		if (zoomed != null) {
+			zoomed.flush();
+			zoomed = null;
+		}
+	}
+
 	public void unloadAll() {
 		unloadLowRes();
 		unloadHighRes();
@@ -84,6 +101,10 @@ public class Page {
 		return highRes;
 	}
 
+	public BufferedImage getZoomedImage() {
+		return zoomed;
+	}
+
 	public BufferedImage getDisplayableImage() {
 		return highRes == null ? lowRes : highRes;
 	}
@@ -94,6 +115,10 @@ public class Page {
 
 	public Dimension getHighResSize() {
 		return highRes == null ? null : new Dimension(highRes.getWidth(), highRes.getHeight());
+	}
+
+	public Dimension getZoomedSize() {
+		return zoomed == null ? null : new Dimension(zoomed.getWidth(), zoomed.getHeight());
 	}
 
 	public Dimension getDisplayableSize() {

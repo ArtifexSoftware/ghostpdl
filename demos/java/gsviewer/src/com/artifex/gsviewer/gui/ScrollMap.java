@@ -9,8 +9,14 @@ import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 
 import com.artifex.gsviewer.Document;
-import com.artifex.gsviewer.Page;
 
+/**
+ * A ScrollMap stores information on how far down a scroll bar
+ * a certain page is in a viewer.
+ *
+ * @author Ethan Vrhel
+ *
+ */
 public class ScrollMap {
 
 	private final Document document;
@@ -18,6 +24,13 @@ public class ScrollMap {
 	private final int gap;
 	private int[] scrollMap;
 
+	/**
+	 * Creates and generates a new ScrollMap at zoom 1.0.
+	 *
+	 * @param document The document to generate the map from.
+	 * @param window The viewer window to receive scroll panes from.
+	 * @param gap The gap in between pages.
+	 */
 	public ScrollMap(final Document document, final ViewerWindow window, final int gap) {
 		this.document = Objects.requireNonNull(document, "document");
 		this.scrollMap = null;
@@ -26,7 +39,14 @@ public class ScrollMap {
 		genMap(1.0);
 	}
 
-	public synchronized void genMap(final double zoom) {
+	/**
+	 * Generates a map at a given zoom amount.
+	 *
+	 * @param zoom The amount that the document is zoomed in.
+	 * @throws IllegalArgumentException If <code>zoom</code> is less than
+	 * 0 or greater than 2.
+	 */
+	public synchronized void genMap(final double zoom) throws IllegalArgumentException {
 		if (zoom < 0.0 || zoom > 2.0)
 			throw new IllegalArgumentException("0.0 < zoom < 2.0");
 		scrollMap = new int[document.size()];
@@ -43,29 +63,61 @@ public class ScrollMap {
 		}
 	}
 
-	public synchronized int getScroll(int page) {
+	/**
+	 * Returns the amount of scroll on the scroll pane at which page
+	 * <code>page</code> is visible.
+	 *
+	 * @param page The page to get the scroll value for.
+	 * @return The respective value.
+	 * @throws IndexOutOfBoundsException If <code>page</code> is not a page
+	 * in the document.
+	 */
+	public synchronized int getScroll(int page) throws IndexOutOfBoundsException {
+		if (page < 1 || page > scrollMap.length)
+			throw new IndexOutOfBoundsException("page = " + page);
 		return scrollMap[page - 1];
 	}
 
+	/**
+	 * Returns the current page scrolled to in the scroll pane.
+	 *
+	 * @return The scroll value.
+	 */
 	public synchronized int getCurrentPage() {
 		final JScrollPane scrollPane = window.getViewerScrollPane();
 		final JScrollBar vScrollBar = scrollPane.getVerticalScrollBar();
 		final int scrollValue = vScrollBar.getValue();
 
 		for (int i = 0; i < scrollMap.length; i++) {
-			if (scrollValue > scrollMap[i])
-				return i + 1;
+			if (scrollValue < scrollMap[i])
+				return i; /* Not i + 1! */
 		}
-		return 0;
+		return scrollMap.length;
 	}
 
-	public synchronized void scrollTo(int page) {
+	/**
+	 * Automatically scrolls the scroll pane inside the viewer to the
+	 * given page.
+	 *
+	 * @param page The page to srcoll to.
+	 * @throws IndexOutOfBoundsException When <code>page</code> is not in
+	 * the document.
+	 */
+	public synchronized void scrollTo(int page) throws IndexOutOfBoundsException {
+		if (page < 1 || page > scrollMap.length)
+			throw new IndexOutOfBoundsException("page = " + page);
 		final int scroll = scrollMap[page - 1];
 		final JScrollPane scrollPane = window.getViewerScrollPane();
 		final JScrollBar vScrollBar = scrollPane.getVerticalScrollBar();
 		vScrollBar.setValue(scroll);
 	}
 
+	/**
+	 * Returns a copy of the array backing the scroll map, or
+	 * <code>null</code> if none has been generated.
+	 *
+	 * @return A copy of the scroll map's backing array.
+	 */
 	public synchronized int[] getMap() {
 		if (scrollMap == null)
 			return null;

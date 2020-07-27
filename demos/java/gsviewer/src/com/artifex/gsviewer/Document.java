@@ -401,6 +401,43 @@ public class Document implements List<Page> {
 		return file.getName();
 	}
 
+	public void zoomArea(final int page, final double zoom) {
+		checkBounds(page, page);
+
+		int start = page - 1;
+		start = start < 1 ? page : start;
+		int end = page + 1;
+		end = end > pages.size() ? page : end;
+
+		final String[] gargs = {
+				"gs", "-dNOPAUSE", "-dSAFER", "-I%rom%Resource%/Init/",
+				"-dBATCH", "-r" + (int)(Page.PAGE_HIGH_DPI * zoom),
+				"-sDEVICE=display", "-dFirstPage=" + start, "-dLastPage=" + end,
+				"-dDisplayFormat=" + format,
+				"-dTextAlphaBits=4", "-dGraphicsAlphaBits=4",
+				"-f", file.getAbsolutePath() };
+		synchronized (slock) {
+			LongReference instanceRef = new LongReference();
+			initDocInstance(instanceRef);
+
+			int code = gsapi_init_with_args(instanceRef.value, gargs);
+			gsapi_exit(instanceRef.value);
+			gsapi_delete_instance(instanceRef.value);
+			if (code != GS_ERROR_OK) {
+				throw new IllegalStateException("Failed to gsapi_init_with_args code=" + code);
+			}
+
+			int ind = start - 1;
+			for (final BufferedImage img : documentLoader.images) {
+				this.pages.get(ind++).setZoomed(img);
+			}
+		}
+	}
+
+	public void unZoomPage(final int page) {
+		checkBounds(page, page);
+	}
+
 	private void checkBounds(int start, int end) throws IndexOutOfBoundsException {
 		if (start < 1 || start > pages.size())
 			throw new IndexOutOfBoundsException("start=" + start);
