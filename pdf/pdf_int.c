@@ -899,6 +899,9 @@ int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obj
             }
 
             pdfi_close_file(ctx, Object_stream);
+            if (Object_stream != compressed_stream)
+                pdfi_close_file(ctx, compressed_stream);
+            pdfi_close_file(ctx, SubFile_stream);
 
             *object = ctx->stack_top[-1];
             /* For compressed objects we don't get a 'obj gen obj' sequence which is what sets
