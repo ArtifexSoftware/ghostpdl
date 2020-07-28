@@ -666,11 +666,12 @@ static int GS_OPM(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dic
 
 static int GS_Font(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
+    /* TODO: Make sure to handle a NULL stream_dict when this is implemented */
     dbgmprintf(ctx->memory, "ExtGState Font not yet implemented\n");
     return 0;
 }
 
-static int pdfi_set_blackgeneration(pdf_context *ctx, pdf_obj *obj, pdf_dict *stream_dict, pdf_dict *page_dict, bool is_BG)
+static int pdfi_set_blackgeneration(pdf_context *ctx, pdf_obj *obj, pdf_dict *page_dict, bool is_BG)
 {
     int code = 0, i;
     gs_function_t *pfn;
@@ -736,7 +737,7 @@ static int GS_BG(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict
     if (code < 0)
         return code;
 
-    code = pdfi_set_blackgeneration(ctx, obj, stream_dict, page_dict, true);
+    code = pdfi_set_blackgeneration(ctx, obj, page_dict, true);
 
     pdfi_countdown(obj);
 
@@ -752,14 +753,14 @@ static int GS_BG2(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dic
     if (code < 0)
         return code;
 
-    code = pdfi_set_blackgeneration(ctx, obj, stream_dict, page_dict, false);
+    code = pdfi_set_blackgeneration(ctx, obj, page_dict, false);
 
     pdfi_countdown(obj);
 
     return code;
 }
 
-static int pdfi_set_undercolorremoval(pdf_context *ctx, pdf_obj *obj, pdf_dict *stream_dict, pdf_dict *page_dict, bool is_BG)
+static int pdfi_set_undercolorremoval(pdf_context *ctx, pdf_obj *obj, pdf_dict *page_dict, bool is_BG)
 {
     int code = 0, i;
     gs_function_t *pfn;
@@ -825,7 +826,7 @@ static int GS_UCR(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dic
     if (code < 0)
         return code;
 
-    code = pdfi_set_undercolorremoval(ctx, obj, stream_dict, page_dict, true);
+    code = pdfi_set_undercolorremoval(ctx, obj, page_dict, true);
 
     pdfi_countdown(obj);
 
@@ -841,7 +842,7 @@ static int GS_UCR2(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_di
     if (code < 0)
         return code;
 
-    code = pdfi_set_undercolorremoval(ctx, obj, stream_dict, page_dict, false);
+    code = pdfi_set_undercolorremoval(ctx, obj, page_dict, false);
 
     pdfi_countdown(obj);
 
@@ -1000,7 +1001,7 @@ static int pdfi_set_gray_transfer(pdf_context *ctx, pdf_dict *d, pdf_dict *page_
     return pdfi_free_function(ctx, pfn);
 }
 
-static int pdfi_set_transfer(pdf_context *ctx, pdf_obj *obj, pdf_dict *stream_dict, pdf_dict *page_dict, bool is_TR)
+static int pdfi_set_transfer(pdf_context *ctx, pdf_obj *obj, pdf_dict *page_dict, bool is_TR)
 {
     int code = 0;
 
@@ -1043,7 +1044,7 @@ static int GS_TR(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict
     if (code < 0)
         return code;
 
-    code = pdfi_set_transfer(ctx, obj, stream_dict, page_dict, true);
+    code = pdfi_set_transfer(ctx, obj, page_dict, true);
 
     pdfi_countdown(obj);
 
@@ -1058,7 +1059,7 @@ static int GS_TR2(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dic
     if (code < 0)
         return code;
 
-    code = pdfi_set_transfer(ctx, obj, stream_dict, page_dict, false);
+    code = pdfi_set_transfer(ctx, obj, page_dict, false);
 
     pdfi_countdown(obj);
 
@@ -2059,12 +2060,34 @@ GS_Func_t ExtGStateTable[] = {
     {"TK", GS_TK},
 };
 
+/* Set gstate from dictionary
+ * NOTE: stream_dict may not be needed and can currently be NULL.
+ * If we decide it can't be NULL, check Patterns implementation to refactor it to pass that param.
+ */
+int pdfi_set_ExtGState(pdf_context *ctx, pdf_dict *stream_dict,
+                       pdf_dict *page_dict, pdf_dict *gstate_dict)
+{
+    int code, i, limit = sizeof(ExtGStateTable) / sizeof (GS_Func_t);
+    bool known;
+
+    for (i=0;i < limit; i++) {
+        code = pdfi_dict_known(gstate_dict, ExtGStateTable[i].Name, &known);
+        if (code < 0 && ctx->pdfstoponerror)
+            break;
+        if (known) {
+            code = ExtGStateTable[i].proc(ctx, gstate_dict, stream_dict, page_dict);
+            if (code < 0 && ctx->pdfstoponerror)
+                break;
+        }
+    }
+    return code;
+}
+
 int pdfi_setgstate(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     pdf_name *n;
     pdf_obj *o;
-    int code, i, limit = sizeof(ExtGStateTable) / sizeof (GS_Func_t);
-    bool known;
+    int code=0, code1 = 0;
 
     code = pdfi_loop_detector_mark(ctx);
     if (code < 0)
@@ -2093,24 +2116,11 @@ int pdfi_setgstate(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         return_error(gs_error_typecheck);
     }
 
-    for (i=0;i < limit; i++) {
-        code = pdfi_dict_known((pdf_dict *)o, ExtGStateTable[i].Name, &known);
-        if (code < 0 && ctx->pdfstoponerror) {
-            (void)pdfi_loop_detector_cleartomark(ctx);
-            pdfi_countdown(o);
-            return code;
-        }
-        if (known) {
-            code = ExtGStateTable[i].proc(ctx, (pdf_dict *)o, stream_dict, page_dict);
-            if (code < 0 && ctx->pdfstoponerror) {
-                (void)pdfi_loop_detector_cleartomark(ctx);
-                pdfi_countdown(o);
-                return code;
-            }
-        }
-    }
+    code = pdfi_set_ExtGState(ctx, stream_dict, page_dict, (pdf_dict *)o);
 
-    code = pdfi_loop_detector_cleartomark(ctx);
+    code1 = pdfi_loop_detector_cleartomark(ctx);
+    if (code == 0) code = code1;
+
     pdfi_countdown(o);
     return code;
 }

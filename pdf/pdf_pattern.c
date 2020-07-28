@@ -307,7 +307,7 @@ pdfi_pattern_paintproc(const gs_client_color *pcc, gs_gstate *pgs)
 
 /* Setup the correct gstate for a pattern */
 static int
-pdfi_pattern_gset(pdf_context *ctx)
+pdfi_pattern_gset(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *ExtGState)
 {
     int code;
     float strokealpha, fillalpha;
@@ -321,24 +321,28 @@ pdfi_pattern_gset(pdf_context *ctx)
                 ctx->pgs->device->dname, ctx->DefaultQState->device->dname);
 #endif
     code = gs_setgstate(ctx->pgs, pdfi_get_DefaultQState(ctx));
-
-    if (code < 0)
-        goto exit;
+    if (code < 0) goto exit;
     code = gs_setstrokeconstantalpha(ctx->pgs, strokealpha);
+    if (code < 0) goto exit;
     code = gs_setfillconstantalpha(ctx->pgs, fillalpha);
+    if (code < 0) goto exit;
 
+    /* Set ExtGState if one is provided */
+    if (ExtGState)
+        code = pdfi_set_ExtGState(ctx, NULL, page_dict, ExtGState);
  exit:
     return code;
 }
 
 /* Setup the pattern gstate and other context */
 static int
-pdfi_pattern_setup(pdf_context *ctx, gs_pattern_template_t *templat, pdf_dict *page_dict, pdf_dict *pat_dict)
+pdfi_pattern_setup(pdf_context *ctx, gs_pattern_template_t *templat,
+                   pdf_dict *page_dict, pdf_dict *pat_dict, pdf_dict *ExtGState)
 {
     int code = 0;
     pdf_pattern_context_t *context = NULL;
 
-    code = pdfi_pattern_gset(ctx);
+    code = pdfi_pattern_gset(ctx, page_dict, ExtGState);
     if (code < 0)
         goto errorExit;
 
@@ -457,7 +461,7 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
     if (code < 0)
         goto exit;
 
-    code = pdfi_pattern_setup(ctx, (gs_pattern_template_t *)&templat, page_dict, pdict);
+    code = pdfi_pattern_setup(ctx, (gs_pattern_template_t *)&templat, page_dict, pdict, NULL);
     if (code < 0) {
         (void) pdfi_grestore(ctx);
         goto exit;
@@ -521,10 +525,6 @@ pdfi_setpattern_type2(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
     code = pdfi_dict_knownget_type(ctx, pdict, "ExtGState", PDF_DICT, (pdf_obj **)&ExtGState);
     if (code < 0)
         goto exit;
-    if (code != 0) {
-        /* Not implemented, ignore for now */
-        dbgmprintf(ctx->memory, "WARNING: Pattern ExtGState not supported, skipping\n");
-    }
 
     code = pdfi_gsave(ctx);
     if (code < 0)
@@ -532,7 +532,7 @@ pdfi_setpattern_type2(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
 
     gs_pattern2_init(&templat);
 
-    code = pdfi_pattern_setup(ctx, (gs_pattern_template_t *)&templat, NULL, NULL);
+    code = pdfi_pattern_setup(ctx, (gs_pattern_template_t *)&templat, NULL, NULL, ExtGState);
     if (code < 0) {
         (void) pdfi_grestore(ctx);
         goto exit;

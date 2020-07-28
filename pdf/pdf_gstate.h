@@ -45,6 +45,7 @@ int pdfi_setdash(pdf_context *ctx);
 int pdfi_setmiterlimit(pdf_context *ctx);
 int pdfi_setgstate(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict);
 int pdfi_setdash_impl(pdf_context *ctx, pdf_array *a, double phase_d);
+int pdfi_set_ExtGState(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_dict *gstate_dict);
 
 int pdfi_free_DefaultQState(pdf_context *ctx);
 int pdfi_set_DefaultQState(pdf_context *ctx, gs_gstate *pgs);
