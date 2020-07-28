@@ -191,7 +191,7 @@ gs_make_mem_abuf_device(gx_device_memory * adev, gs_memory_t * mem,
     adev->mapped_x = mapped_x;
     set_dev_proc(adev, close_device, mem_abuf_close);
     set_dev_proc(adev, get_clipping_box, mem_abuf_get_clipping_box);
-    if (!devn) 
+    if (!devn)
         adev->save_hl_color = NULL; /* This is the test for when we flush the
                                        the buffer as to what copy_alpha type
                                        use */
@@ -235,7 +235,7 @@ abuf_flush_block(gx_device_memory * adev, int y)
       * (see gsbitops.c), we can't expand the box only to pixel
       * boundaries:
           int alpha_mask = -1 << adev->log2_alpha_bits;
-      * Instead, we must expand it to byte boundaries, 
+      * Instead, we must expand it to byte boundaries,
       */
         int alpha_mask = ~7;
         gs_int_rect bbox;
@@ -249,7 +249,7 @@ abuf_flush_block(gx_device_memory * adev, int y)
                              adev->raster, bits, draster, &adev->log2_scale,
                              adev->log2_alpha_bits);
         /* Set up with NULL when adev initialized */
-        if (adev->save_hl_color == NULL) { 
+        if (adev->save_hl_color == NULL) {
             return (*dev_proc(target, copy_alpha)) (target,
                                               bits, 0, draster, gx_no_bitmap_id,
                                                   (adev->mapped_x + bbox.p.x) >>
@@ -387,6 +387,13 @@ mem_abuf_copy_mono(gx_device * dev,
     fit_copy_xyw(dev, base, sourcex, sraster, id, x, y, w, h);	/* don't limit h */
     if (w <= 0 || h <= 0)
         return 0;
+    if (mdev->mapped_height != 0 && mdev->mapped_start != 0 &&
+        mdev->save_color != one) {
+        /* Color has changed. Better flush. */
+        int code = abuf_flush(mdev);
+        if (code < 0)
+            return code;
+    }
     mdev->save_color = one;
     y_transfer_init(&yt, dev, y, h);
     while (yt.height_left > 0) {
@@ -415,6 +422,13 @@ mem_abuf_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     fit_fill_xy(dev, x, y, w, h);
     fit_fill_w(dev, x, w);	/* don't limit h */
     /* or check w <= 0, h <= 0 */
+    if (mdev->mapped_height != 0 && mdev->mapped_start != 0 &&
+        mdev->save_color != color) {
+        /* Color has changed. Better flush. */
+        int code = abuf_flush(mdev);
+        if (code < 0)
+            return code;
+    }
     mdev->save_color = color;
     y_transfer_init(&yt, dev, y, h);
     while (yt.height_left > 0) {
@@ -448,6 +462,13 @@ mem_abuf_fill_rectangle_hl_color(gx_device * dev, const gs_fixed_rect *rect,
     fit_fill_xy(dev, x, y, w, h);
     fit_fill_w(dev, x, w);	/* don't limit h */
     /* or check w <= 0, h <= 0 */
+    if (mdev->mapped_height != 0 && mdev->mapped_start != 0 &&
+        memcmp(mdev->save_hl_color, pdcolor, sizeof(*pdcolor)) != 0) {
+        /* Color has changed. Better flush. */
+        int code = abuf_flush(mdev);
+        if (code < 0)
+            return code;
+    }
     mdev->save_hl_color = pdcolor;
     y_transfer_init(&yt, dev, y, h);
     while (yt.height_left > 0) {
