@@ -408,8 +408,10 @@ static int pdfi_check_XObject_dict(pdf_context *ctx, pdf_dict *xobject_dict, pdf
             return code;
 
         code = pdfi_dict_first(ctx, xobject_dict, &Key, &Value, (void *)&index);
-        if (code < 0 || Value->type != PDF_DICT)
+        if (code < 0)
             goto error1;
+        if (Value->type != PDF_DICT)
+            goto error2;
 
         i = 1;
         do {
