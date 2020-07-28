@@ -163,6 +163,7 @@ pdfi_parse_type4_func_stream(pdf_context *ctx, pdf_stream *function_stream, int 
                         return_error (gs_error_syntaxerror);
                     *size += 3;
                     code = pdfi_parse_type4_func_stream(ctx, function_stream, depth + 1, ops, size);
+                    depth --;
                     if (code < 0)
                         return code;
                     if (p) {
