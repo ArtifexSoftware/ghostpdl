@@ -22,6 +22,7 @@ import javax.swing.SwingUtilities;
 
 import com.artifex.gsviewer.Document;
 import com.artifex.gsviewer.Page;
+import com.artifex.gsviewer.PageUpdateCallback;
 
 /**
  * <p>Used to display documents into a window.</p>
@@ -50,6 +51,11 @@ public class ViewerWindow extends javax.swing.JFrame {
 	private ScrollMap scrollMap;
 	private List<PagePanel> viewerPagePanels;
 	private List<PagePanel> miniViewerPagePanels;
+
+	private Dimension min;
+	private Dimension max;
+
+	private boolean gotoPage;
 
 	/**
 	 * Creates new ViewerWindow.
@@ -83,6 +89,7 @@ public class ViewerWindow extends javax.swing.JFrame {
 			public void mouseReleased(MouseEvent e) {
 				if (scrollMap != null)
 					assumePage(currentPage = scrollMap.getCurrentPage());
+				refreshButtons();
 			}
 
 			@Override
@@ -105,6 +112,11 @@ public class ViewerWindow extends javax.swing.JFrame {
 		pageNumberField.setEditable(false);
 
 		setLocationRelativeTo(null);
+
+		min = getMinimumSize();
+		max = getMaximumSize();
+
+		gotoPage = false;
 	}
 
 	/**
@@ -442,41 +454,99 @@ public class ViewerWindow extends javax.swing.JFrame {
 	private javax.swing.JSlider zoomSlider;
 	// End of variables declaration//GEN-END:variables
 
-	private class PagePanel extends JPanel {
+	private class PagePanel extends JPanel implements PageUpdateCallback {
 
 		private static final long serialVersionUID = 1L;
 
 		private Object lock;
 		private Page page;
+		private double size;
 
-		private PagePanel(final Page page) {
+		private Image toDraw;
+
+		private PagePanel(final Page page, double size) {
 			this.lock = new Object();
 			this.page = page;
+			this.size = size == 0.0 ? 0.01 : size;
 
-			setPreferredSize(page.getSize());
-			setMaximumSize(page.getSize());
+			Dimension pageSize = page.getSize();
+
+			Dimension actualSize = new Dimension((int)(pageSize.width * size),
+					(int)(pageSize.height * size));
+
+			toDraw = getImage();
+
+			setPreferredSize(actualSize);
+			setMaximumSize(actualSize);
 
 			setBackground(Color.WHITE);
 
 			setDoubleBuffered(false);
-			pack();
+			//pack();
+
+			page.addCallback(this);
+		}
+
+		public Image getImage() {
+			if (page != null && page.getLowResImage() != null) {
+				Dimension pageSize = page.getSize();
+				Dimension actualSize = new Dimension((int)(pageSize.width * size),
+						(int)(pageSize.height * size));
+				BufferedImage img = page.getDisplayableImage();
+				if (page.getZoomedImage() != null && size > 1.0)
+					img = page.getZoomedImage();
+
+				Image result = img;
+				if (img == page.getLowResImage() || !pageSize.equals(actualSize))
+					result = img.getScaledInstance(actualSize.width, actualSize.height, Image.SCALE_FAST);
+				return result;
+			} else {
+				return null;
+			}
+		}
+
+		private void cleanup() {
+			if (page != null) {
+				page.removeCallback(this);
+				page = null;
+			}
 		}
 
 		@Override
 		public void paintComponent(Graphics g) {
 			super.paintComponent(g);
 			synchronized (lock) {
-				if (page != null) {
-					Dimension pageSize = page.getSize();
-					BufferedImage img = page.getDisplayableImage();
-					if (img != null)
-						g.drawImage(img == page.getLowResImage() ?
-								img.getScaledInstance(pageSize.width, pageSize.height, Image.SCALE_FAST) :
-									img, 0, 0, this);
-
+				if (toDraw != null) {
+					g.drawImage(toDraw, 0, 0, this);
 				}
 			}
 		}
+
+		@Override
+		public void onPageUpdate() {
+			toDraw = getImage();
+			SwingUtilities.invokeLater(() -> {
+				repaint();
+			});
+		}
+
+		@Override
+		public void onLoadLowRes() { }
+
+		@Override
+		public void onUnloadLowRes() { }
+
+		@Override
+		public void onLoadHighRes() { }
+
+		@Override
+		public void onUnloadHighRes() { }
+
+		@Override
+		public void onLoadZoomed() { }
+
+		@Override
+		public void onUnloadZoomed() { }
 	}
 
 	private class MiniViewerActionListener implements ActionListener {
@@ -498,9 +568,12 @@ public class ViewerWindow extends javax.swing.JFrame {
 	public void validate() {
 		super.validate();
 		if (this.scrollMap != null) {
-			this.scrollMap.genMap(1.0);
 			assumePage(this.currentPage = this.scrollMap.getCurrentPage());
+			if (gotoPage)
+				scrollMap.scrollTo(currentPage);
 		}
+		unlockSize();
+		gotoPage = false;
 	}
 
 	/**
@@ -529,17 +602,18 @@ public class ViewerWindow extends javax.swing.JFrame {
 	 * document will be unloaded.
 	 */
 	public void loadDocumentToViewer(final Document document) {
-		final Dimension oldSize = getSize();
 		unloadViewerDocument();
 		if (document == null)
 			return;
+
+		lockSize();
 
 		this.loadedDocument = document;
 		viewerContentPane.setLayout(new BoxLayout(viewerContentPane, BoxLayout.Y_AXIS));
 
 		// Generate the viewer page components
 		for (final Page page : document) {
-			final PagePanel panel = new PagePanel(page);
+			final PagePanel panel = new PagePanel(page, 1.0);
 			viewerContentPane.add(panel);
 			viewerContentPane.add(Box.createVerticalStrut(VIEWER_PAGE_GAP));
 
@@ -567,8 +641,6 @@ public class ViewerWindow extends javax.swing.JFrame {
 		assumePage(this.currentPage = 1);
 		assumeMaxPages(this.maxPage = document.size());
 
-		setSize(oldSize);
-
 		setTitle("Viewer - " + document.getName());
 
 		zoomSlider.setEnabled(true);
@@ -584,6 +656,8 @@ public class ViewerWindow extends javax.swing.JFrame {
 	}
 
 	public void unloadViewerDocument() {
+		lockSize();
+
 		this.loadedDocument = null;
 		this.scrollMap = null;
 		this.assumePage(0);
@@ -592,28 +666,16 @@ public class ViewerWindow extends javax.swing.JFrame {
 
 		for (final PagePanel panel : viewerPagePanels) {
 			synchronized (panel.lock) {
-				panel.page = null;
+				panel.cleanup();
 			}
 		}
 		viewerContentPane.removeAll();
 		viewerPagePanels.clear();
 
-		for (final PagePanel panel : miniViewerPagePanels) {
-			synchronized (panel.lock) {
-				panel.page = null;
-			}
-		}
 		miniViewerContentPane.removeAll();
 		miniViewerPagePanels.clear();
 
-		zoomSlider.setEnabled(false);
-		increaseZoomButton.setEnabled(false);
-		decreaseZoomButton.setEnabled(false);
-		zoomSlider.setValue(50);
-
-		nextPageButton.setEnabled(false);
-		lastPageButton.setEnabled(false);
-		pageNumberField.setEditable(false);
+		System.gc();
 
 		SwingUtilities.invokeLater(() -> {
 			viewerContentPane.revalidate();
@@ -692,18 +754,24 @@ public class ViewerWindow extends javax.swing.JFrame {
 		if (newZoom < 0 || newZoom > 2)
 			return false;
 		if (newZoom != currentZoom) {
+			gotoPage = true;
 			final double oldZoom = currentZoom;
 			this.currentZoom = newZoom;
 			if (guiListener != null)
 				guiListener.onZoomChange(oldZoom, currentZoom);
 			if (this.scrollMap != null) {
-				scrollMap.genMap(currentZoom);
-				scrollMap.scrollTo(currentPage);
+				redisplayDocument();
 			}
 
 			refreshButtons();
 		}
 		return true;
+	}
+
+	public int getCurrentPage() {
+		if (this.scrollMap != null)
+			return scrollMap.getCurrentPage();
+		return 0;
 	}
 
 	/**
@@ -715,6 +783,46 @@ public class ViewerWindow extends javax.swing.JFrame {
 
 		this.increaseZoomButton.setEnabled(currentZoom != 2.0 && loadedDocument != null);
 		this.decreaseZoomButton.setEnabled(currentZoom != 0.0 && loadedDocument != null);
+	}
+
+	private void redisplayDocument() {
+		lockSize();
+
+		for (final PagePanel panel : viewerPagePanels) {
+			synchronized (panel.lock) {
+				panel.cleanup();
+			}
+		}
+		viewerContentPane.removeAll();
+		viewerPagePanels.clear();
+
+		System.gc();
+
+		for (final Page page : loadedDocument) {
+			final PagePanel panel = new PagePanel(page, currentZoom);
+			viewerContentPane.add(panel);
+			viewerContentPane.add(Box.createVerticalStrut(VIEWER_PAGE_GAP));
+
+			viewerPagePanels.add(panel);
+		}
+
+		SwingUtilities.invokeLater(() -> {
+			gotoPage = true;
+			revalidate();
+		});
+	}
+
+	private void lockSize() {
+		Dimension size = getSize();
+		setMinimumSize(size);
+		setMaximumSize(size);
+		setResizable(false);
+	}
+
+	private void unlockSize() {
+		setMinimumSize(min);
+		setMaximumSize(max);
+		setResizable(true);
 	}
 
 	/**

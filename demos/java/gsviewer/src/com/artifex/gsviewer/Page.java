@@ -2,6 +2,9 @@ package com.artifex.gsviewer;
 
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
+import java.util.Collection;
+import java.util.HashSet;
+
 import com.artifex.gsviewer.ImageUtil.ImageParams;
 
 /**
@@ -27,6 +30,8 @@ public class Page {
 	private volatile BufferedImage highRes;
 	private volatile BufferedImage zoomed;
 
+	private Collection<PageUpdateCallback> callbacks;
+
 	public Page() {
 		this(null, null);
 	}
@@ -38,6 +43,7 @@ public class Page {
 	public Page(final BufferedImage lowRes, final BufferedImage highRes) {
 		this.lowRes = lowRes;
 		this.highRes = highRes;
+		this.callbacks = new HashSet<>();
 	}
 
 	public void loadHighRes(final byte[] data, final int width, final int height, final int raster, final int format) {
@@ -47,12 +53,20 @@ public class Page {
 	public void setHighRes(final BufferedImage highRes) {
 		unloadHighRes();
 		this.highRes = highRes;
+		for (PageUpdateCallback cb : callbacks) {
+			cb.onLoadHighRes();
+			cb.onPageUpdate();
+		}
 	}
 
 	public void unloadHighRes() {
 		if (highRes != null) {
 			highRes.flush();
 			highRes = null;
+			for (PageUpdateCallback cb : callbacks) {
+				cb.onUnloadHighRes();
+				cb.onPageUpdate();
+			}
 		}
 	}
 
@@ -63,12 +77,20 @@ public class Page {
 	public void setLowRes(final BufferedImage lowRes) {
 		unloadLowRes();
 		this.lowRes = lowRes;
+		for (PageUpdateCallback cb : callbacks) {
+			cb.onLoadLowRes();
+			cb.onPageUpdate();
+		}
 	}
 
 	public void unloadLowRes() {
 		if (lowRes != null) {
 			lowRes.flush();
 			lowRes = null;
+			for (PageUpdateCallback cb : callbacks) {
+				cb.onUnloadLowRes();
+				cb.onPageUpdate();
+			}
 		}
 	}
 
@@ -79,12 +101,20 @@ public class Page {
 	public void setZoomed(final BufferedImage zoomed) {
 		unloadZoomed();
 		this.zoomed = zoomed;
+		for (PageUpdateCallback cb : callbacks) {
+			cb.onLoadZoomed();
+			cb.onPageUpdate();
+		}
 	}
 
 	public void unloadZoomed() {
 		if (zoomed != null) {
 			zoomed.flush();
 			zoomed = null;
+			for (PageUpdateCallback cb : callbacks) {
+				cb.onUnloadZoomed();
+				cb.onPageUpdate();
+			}
 		}
 	}
 
@@ -134,6 +164,15 @@ public class Page {
 			return new Dimension(0, 0);
 		return new Dimension(size.width * PAGE_HIGH_DPI / PAGE_LOW_DPI,
 				size.height * PAGE_HIGH_DPI / PAGE_LOW_DPI);
+	}
+
+	public void addCallback(PageUpdateCallback cb) {
+		callbacks.add(cb);
+		cb.onPageUpdate();
+	}
+
+	public void removeCallback(PageUpdateCallback cb) {
+		callbacks.remove(cb);
 	}
 
 	@Override

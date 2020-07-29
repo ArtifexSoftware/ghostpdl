@@ -58,7 +58,7 @@ public class ScrollMap {
 			final Dimension cSize = component.getSize();
 
 			scrollMap[pageNum] = currentScroll;
-			currentScroll += cSize.height;
+			currentScroll += cSize.height * zoom;
 			currentScroll += gap;
 		}
 	}

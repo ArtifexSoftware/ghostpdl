@@ -62,7 +62,7 @@ public class ViewerController implements ViewerGUIListener {
 
 	@Override
 	public void onZoomChange(double oldZoom, double newZoom) {
-
+		//Page page
 	}
 
 	@Override
