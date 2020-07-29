@@ -304,14 +304,16 @@ typedef struct y_transfer_s {
     int transfer_y;
     int transfer_height;
 } y_transfer;
-static void
+static int
 y_transfer_init(y_transfer * pyt, gx_device * dev, int ty, int th)
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
     int bh = 1 << mdev->log2_scale.y;
 
     if (ty < mdev->mapped_y || ty > mdev->mapped_y + mdev->mapped_height) {
-        abuf_flush(mdev);
+        int code = abuf_flush(mdev);
+        if (code < 0)
+            return code;
         mdev->mapped_y = ty & -bh;
         mdev->mapped_height = bh;
         memset(scan_line_base(mdev, 0), 0, (size_t)bh * mdev->raster);
@@ -319,6 +321,8 @@ y_transfer_init(y_transfer * pyt, gx_device * dev, int ty, int th)
     pyt->y_next = ty;
     pyt->height_left = th;
     pyt->transfer_height = 0;
+
+    return 0;
 }
 /* while ( yt.height_left > 0 ) { y_transfer_next(&yt, mdev); ... } */
 static int
@@ -380,6 +384,7 @@ mem_abuf_copy_mono(gx_device * dev,
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
     y_transfer yt;
+    int code;
 
     if (zero != gx_no_color_index || one == gx_no_color_index)
         return_error(gs_error_undefinedresult);
@@ -395,10 +400,11 @@ mem_abuf_copy_mono(gx_device * dev,
             return code;
     }
     mdev->save_color = one;
-    y_transfer_init(&yt, dev, y, h);
+    code = y_transfer_init(&yt, dev, y, h);
+    if (code < 0)
+        return code;
     while (yt.height_left > 0) {
-        int code = y_transfer_next(&yt, dev);
-
+        code = y_transfer_next(&yt, dev);
         if (code < 0)
             return code;
         (*dev_proc(&mem_mono_device, copy_mono)) (dev,
@@ -417,6 +423,7 @@ mem_abuf_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
     y_transfer yt;
+    int code;
 
     x -= mdev->mapped_x;
     fit_fill_xy(dev, x, y, w, h);
@@ -430,10 +437,11 @@ mem_abuf_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
             return code;
     }
     mdev->save_color = color;
-    y_transfer_init(&yt, dev, y, h);
+    code = y_transfer_init(&yt, dev, y, h);
+    if (code < 0)
+        return code;
     while (yt.height_left > 0) {
-        int code = y_transfer_next(&yt, dev);
-
+        code = y_transfer_next(&yt, dev);
         if (code < 0)
             return code;
         (*dev_proc(&mem_mono_device, fill_rectangle)) (dev,
@@ -456,6 +464,7 @@ mem_abuf_fill_rectangle_hl_color(gx_device * dev, const gs_fixed_rect *rect,
     int y = fixed2int(rect->p.y);
     int w = fixed2int(rect->q.x) - x;
     int h = fixed2int(rect->q.y) - y;
+    int code;
     (void)pgs;
 
     x -= mdev->mapped_x;
@@ -470,10 +479,11 @@ mem_abuf_fill_rectangle_hl_color(gx_device * dev, const gs_fixed_rect *rect,
             return code;
     }
     mdev->save_hl_color = pdcolor;
-    y_transfer_init(&yt, dev, y, h);
+    code = y_transfer_init(&yt, dev, y, h);
+    if (code < 0)
+        return code;
     while (yt.height_left > 0) {
-        int code = y_transfer_next(&yt, dev);
-
+        code = y_transfer_next(&yt, dev);
         if (code < 0)
             return code;
         (*dev_proc(&mem_mono_device, fill_rectangle)) (dev,
