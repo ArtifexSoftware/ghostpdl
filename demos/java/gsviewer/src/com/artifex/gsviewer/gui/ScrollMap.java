@@ -87,9 +87,12 @@ public class ScrollMap {
 		final JScrollPane scrollPane = window.getViewerScrollPane();
 		final JScrollBar vScrollBar = scrollPane.getVerticalScrollBar();
 		final int scrollValue = vScrollBar.getValue();
+		return getPageFor(scrollValue);
+	}
 
+	public synchronized int getPageFor(int scroll) {
 		for (int i = 0; i < scrollMap.length; i++) {
-			if (scrollValue < scrollMap[i])
+			if (scroll < scrollMap[i])
 				return i; /* Not i + 1! */
 		}
 		return scrollMap.length;

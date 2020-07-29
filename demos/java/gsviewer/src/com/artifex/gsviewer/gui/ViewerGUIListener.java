@@ -10,7 +10,7 @@ public interface ViewerGUIListener {
 
 	public void onZoomChange(double oldZoom, double newZoom);
 
-	public void onScrollChange(Point oldScroll, Point newScroll);
+	public void onScrollChange(int newScroll);
 
 	public void onOpenFile();
 

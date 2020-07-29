@@ -1,11 +1,14 @@
 package com.artifex.gsviewer.gui;
 
+import java.awt.Adjustable;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.AdjustmentEvent;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
@@ -77,27 +80,21 @@ public class ViewerWindow extends javax.swing.JFrame {
 		this.viewerPagePanels = new ArrayList<>();
 		this.miniViewerPagePanels = new ArrayList<>();
 
-		this.viewerScrollPane.getVerticalScrollBar().addMouseListener(new MouseListener() {
-
-			@Override
-			public void mouseClicked(MouseEvent e) { }
-
-			@Override
-			public void mousePressed(MouseEvent e) { }
-
-			@Override
-			public void mouseReleased(MouseEvent e) {
-				if (scrollMap != null)
-					assumePage(currentPage = scrollMap.getCurrentPage());
-				refreshButtons();
+		// Adjustment listener looks for any change in the scroll value of the scrollbar
+		this.viewerScrollPane.getVerticalScrollBar().addAdjustmentListener((AdjustmentEvent evt) -> {
+			if (scrollMap != null) {
+				Adjustable adjustable = evt.getAdjustable();
+				int currentPage = scrollMap.getPageFor(adjustable.getValue());
+				if (ViewerWindow.this.currentPage != currentPage) {
+					if (guiListener != null)
+						guiListener.onPageChange(ViewerWindow.this.currentPage, currentPage);
+				}
+				if (guiListener != null)
+					guiListener.onScrollChange(adjustable.getValue());
+				ViewerWindow.this.currentPage = currentPage;
+				assumePage(currentPage);
 			}
-
-			@Override
-			public void mouseEntered(MouseEvent e) { }
-
-			@Override
-			public void mouseExited(MouseEvent e) { }
-
+			refreshButtons();
 		});
 
 		setGUIListener(listener);
