@@ -11,10 +11,15 @@ Overview:
     exceptions are usually for out-parameters, which are returned directly as
     part of a tuple.]
 
+    See examples.py for sample usage.
+
 Usage:
 
     make sodebug
     LD_LIBRARY_PATH=sodebugbin ./demos/python/gsapi.py
+
+    On Windows perform Release build (x64 or Win32).  Select
+    appropriate DLL to use below.
 
 Requirements:
 
@@ -25,7 +30,7 @@ Limitations as of 2020-07-21:
 
     Only very limited testing on has been done.
 
-    Only tested on Linux and OpenBSD.
+    Tested on Linux, OpenBSD and Windows.
 
     Only tested with python-3.7 and 2.7.
 
@@ -39,7 +44,12 @@ Limitations as of 2020-07-21:
 import ctypes
 import sys
 
+#Linux
+_libgs = ctypes.CDLL('libgs.so')
 
+#Windows
+#_libgs = ctypes.CDLL('../../bin/gpdldll64.dll')
+#_libgs = ctypes.CDLL('../../bin/gpdldll32.dll')
 
 class gsapi_revision_t:
     def __init__(self, product, copyright, revision, revisiondate):
@@ -431,8 +441,6 @@ def gsapi_is_path_control_active(instance):
 # Implementation details.
 #
 
-
-_libgs = ctypes.CDLL('libgs.so')
 
 # The encoding that we use when passing strings to the underlying gsapi_*() C
 # functions. Changed by gsapi_set_arg_encoding().
