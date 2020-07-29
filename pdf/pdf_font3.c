@@ -94,7 +94,6 @@ static int alloc_type3_font(pdf_context *ctx, pdf_font_type3 **font)
     (t3font)->type = PDF_FONT;
 
 #if REFCNT_DEBUG
-    (t3font)->refcnt_ctx = (void *)ctx;
     (t3font)->UID = ctx->UID++;
     dmprintf2(ctx->memory, "Allocated object of type %c with UID %"PRIi64"\n", t3font->type, t3font->UID);
 #endif

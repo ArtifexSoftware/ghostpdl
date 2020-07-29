@@ -218,7 +218,6 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     pdft0->pdfi_font_type = e_pdf_font_type0;
     pdft0->ctx = ctx;
 #if REFCNT_DEBUG
-    pdft0->refcnt_ctx = (void *)ctx;
     pdft0->UID = ctx->UID++;
     dmprintf2(ctx->memory, "Allocated object of type %c with UID %"PRIi64"\n", pdft0->type, pdft0->UID);
 #endif

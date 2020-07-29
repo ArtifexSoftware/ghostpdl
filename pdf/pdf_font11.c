@@ -78,7 +78,6 @@ pdfi_alloc_cidtype2_font(pdf_context *ctx, pdf_cidfont_type2 **font, bool is_cid
     ttfont->pdfi_font_type = e_pdf_cidfont_type2;
 
 #if REFCNT_DEBUG
-    ttfont->refcnt_ctx = (void *)ctx;
     ttfont->UID = ctx->UID++;
     dmprintf2(ctx->memory, "Allocated object of type %c with UID %"PRIi64"\n", ttfont->type, ttfont->UID);
 #endif
