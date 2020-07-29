@@ -134,6 +134,17 @@ int pdfi_pattern_cleanup(pdf_context *ctx, const gs_client_color *pcc)
         gs_free_object(context->ctx->memory, context, "Free pattern context");
         templat->client_data = NULL;
     }
+    /* Cleanup colorspace in the saved graphics state if needed.
+     * TODO: This seems super-hacky and fragile but it's because otherwise
+     * the colorspace can be automagically freed down in the gstate code and
+     * then it can leak (for instance if it has a function).
+     * Surely there is a better solution?
+     */
+    if (pinst->saved) {
+        (void)pdfi_colorspace_cleanup(ctx, pinst->saved->color[0].color_space);
+        (void)pdfi_colorspace_cleanup(ctx, pinst->saved->color[1].color_space);
+    }
+
     return 0;
 }
 

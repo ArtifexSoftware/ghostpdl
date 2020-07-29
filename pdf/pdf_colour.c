@@ -2260,10 +2260,6 @@ pdfi_color_cleanup_inner(pdf_context *ctx, gs_color_space *pcs, gs_client_color 
 /* This is called in places where the colorspace might be about to get freed.
  * It gives us a hook to cleanup the data associated with some of the more
  * complicated colorspaces, such as patterns and spaces with functions.
- *
- * It's broken up into extra pdfi_color_cleanup_inner() because I thought I
- * might need to call the actual cleanup in different ways, but it turned out
- * not to be necessary (so far).  This keeps the code a bit more clear anyway.
  */
 int pdfi_color_cleanup(pdf_context *ctx, int index)
 {
@@ -2277,6 +2273,14 @@ int pdfi_color_cleanup(pdf_context *ctx, int index)
     pcs = ctx->pgs->color[index].color_space;
     pcc = ctx->pgs->color[index].ccolor;
     return pdfi_color_cleanup_inner(ctx, pcs, pcc);
+}
+
+/* Cleanup a specific colorspace (see comment on pdfi_color_cleanup() */
+int pdfi_colorspace_cleanup(pdf_context *ctx, gs_color_space *pcs)
+{
+    if (pcs->rc.ref_count != 1)
+        return 0;
+    return pdfi_color_cleanup_inner(ctx, pcs, NULL);
 }
 
 int pdfi_create_colorspace(pdf_context *ctx, pdf_obj *space, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs, bool inline_image)

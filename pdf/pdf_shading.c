@@ -650,8 +650,11 @@ pdfi_shading_free(pdf_context *ctx, gs_shading_t *psh)
 {
     gs_shading_params_t *params = &psh->params;
 
-    if (params->ColorSpace)
+    if (params->ColorSpace) {
+        /* Make sure colorspace is cleaned up in case we are about to free it */
+        (void)pdfi_colorspace_cleanup(ctx, params->ColorSpace);
         rc_decrement(params->ColorSpace, "release shading ColorSpace");
+    }
     if (psh->head.type > 3) {
         gs_shading_mesh_params_t *mesh_params = (gs_shading_mesh_params_t *)params;
 
