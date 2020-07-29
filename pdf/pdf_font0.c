@@ -73,21 +73,21 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     int code, nlen;
     pdf_obj *cmap = NULL;
     pdf_cmap *pcmap = NULL;
-    pdf_array *arr;
-    pdf_dict *decfont; /* there can only be one */
-    pdf_name *n;
-    pdf_obj *basefont;
+    pdf_array *arr = NULL;
+    pdf_dict *decfont = NULL; /* there can only be one */
+    pdf_name *n = NULL;
+    pdf_obj *basefont = NULL;
     pdf_obj *tounicode = NULL;
     int cidftype;
     const char *ffstrings[] = {"FontFile", "FontFile2", "FontFile3"};
     int ff;
-    pdf_dict *fontdesc;
-    pdf_dict *ffile;
+    pdf_dict *fontdesc = NULL;
+    pdf_dict *ffile = NULL;
     byte *buf;
     int64_t buflen;
-    pdf_font *descpfont;
-    pdf_font_type0 *pdft0;
-    gs_font_type0 *pfont0;
+    pdf_font *descpfont = NULL;
+    pdf_font_type0 *pdft0 = NULL;
+    gs_font_type0 *pfont0 = NULL;
 
     code = pdfi_dict_get(ctx, font_dict, "Encoding", &cmap);
     if (code < 0) goto error;
@@ -105,6 +105,7 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     }
     code = pdfi_array_get(ctx, arr, 0, (pdf_obj **)&decfont);
     pdfi_countdown(arr);
+    arr = NULL;
     if (code < 0) goto error;
     if (decfont->type != PDF_DICT) {
         code = gs_note_error(gs_error_invalidfont);
@@ -119,12 +120,10 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     }
     pdfi_countdown(n);
     code = pdfi_dict_get(ctx, (pdf_dict *)decfont, "Subtype", (pdf_obj **)&n);
-    if (code < 0) {
-        pdfi_countdown(decfont);
+    if (code < 0)
         goto error;
-    }
+
     if (n->type != PDF_NAME || n->length != 12 || memcmp(n->data, "CIDFontType", 11) != 0) {
-        pdfi_countdown(decfont);
         pdfi_countdown(n);
         code = gs_note_error(gs_error_invalidfont);
         goto error;
@@ -147,14 +146,10 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     }
 
     code = pdfi_dict_get(ctx, decfont, "FontDescriptor", (pdf_obj **)&fontdesc);
-    if (code < 0) {
-        pdfi_countdown(basefont);
-        pdfi_countdown(decfont);
+    if (code < 0)
         goto error;
-    }
+
     if (fontdesc->type != PDF_DICT) {
-        pdfi_countdown(basefont);
-        pdfi_countdown(decfont);
         code = gs_note_error(gs_error_invalidfont);
         goto error;
     }
@@ -162,21 +157,16 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
         code = pdfi_dict_get(ctx, fontdesc, ffstrings[ff], (pdf_obj **)&ffile);
         if (code >= 0) break;
     }
-    if (code < 0) {
-        pdfi_countdown(basefont);
-        pdfi_countdown(decfont);
-        pdfi_countdown(fontdesc);
+    if (code < 0)
         goto error;
-    }
+
     if (ffile->type != PDF_DICT) {
-        pdfi_countdown(basefont);
-        pdfi_countdown(ffile);
-        pdfi_countdown(decfont);
-        pdfi_countdown(fontdesc);
         code = gs_note_error(gs_error_invalidfont);
         goto error;
     }
     pdfi_countdown(fontdesc);
+    fontdesc = NULL;
+
     /* We are supposed to be able to discern the underlying font type
      * from FontFile, FontFile2, or FontFile3 + Subtype of the stream.
      * Typical PDF, none of these prove trustworthy, so we have to
@@ -186,11 +176,10 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
      */
     code = pdfi_stream_to_buffer(ctx, (pdf_dict *)ffile, &buf, &buflen);
     pdfi_countdown(ffile);
-    if (code < 0) {
-        pdfi_countdown(basefont);
-        pdfi_countdown(decfont);
+    ffile = NULL;
+    if (code < 0)
         goto error;
-    }
+
     switch (pdfi_fonttype_picker(buf, buflen)) {
         case ft_CID_TrueType:
           code = pdfi_read_cidtype2_font(ctx, decfont, buf, buflen, &descpfont);
@@ -202,32 +191,26 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     }
     /* reference is now owned by the descendent font created above */
     pdfi_countdown(decfont);
+    decfont = NULL;
     if (code < 0) {
-        pdfi_countdown(basefont);
-        pdfi_countdown(tounicode);
         code = gs_note_error(gs_error_invalidfont);
         goto error;
     }
     /* If we're got this far, we have a CMap and a descendant font, let's make the Type 0 */
     pdft0 = (pdf_font_type0 *)gs_alloc_bytes(ctx->memory, sizeof(pdf_font_type0), "pdfi (type0 pdf_font)");
     if (pdft0 == NULL) {
-        pdfi_countdown(basefont);
         code = gs_note_error(gs_error_VMerror);
         goto error;
     }
     code = pdfi_array_alloc(ctx, 1, &arr);
     if (code < 0) {
         gs_free_object(ctx->memory, pdft0, "pdfi_read_type0_font(pdft0)");
-        pdfi_countdown(basefont);
         goto error;
     }
     arr->refcnt = 1;
     code = pdfi_array_put(ctx, arr, 0, (pdf_obj *)descpfont);
-    pdfi_countdown(descpfont);
     if (code < 0) {
         gs_free_object(ctx->memory, pdft0, "pdfi_read_type0_font(pdft0)");
-        pdfi_countdown(basefont);
-        pdfi_countdown(arr);
         goto error;
     }
 
@@ -251,6 +234,12 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     pdfi_countup(font_dict);
     pdft0->FontDescriptor = NULL;
     pdft0->BaseFont = basefont;
+
+    /* Ownership transferred to pdft0, if we jump to error
+     * these will now be freed by counting down pdft0.
+     */
+    tounicode = NULL;
+    arr = NULL;
     basefont = NULL;
 
     pdft0->pfont = NULL; /* In case we error out */
@@ -258,8 +247,6 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     pfont0 = (gs_font_type0 *)gs_alloc_struct(ctx->memory, gs_font, &st_gs_font_type0, "pdfi gs type 0 font");
     if (pfont0 == NULL) {
         gs_free_object(ctx->memory, pdft0, "pdfi_read_type0_font(pdft0)");
-        pdfi_countdown(basefont);
-        pdfi_countdown(arr);
         code = gs_note_error(gs_error_VMerror);
         goto error;
     }
@@ -333,10 +320,7 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
 
     pfont0->data.Encoding = (uint *)gs_alloc_bytes(ctx->memory, sizeof(uint), "pdfi_read_type0_font Encoding");
     if (pfont0->data.Encoding == NULL) {
-        gs_free_object(ctx->memory, pdft0, "pdfi_read_type0_font(pdft0)");
         gs_free_object(ctx->memory, pfont0, "pdfi_read_type0_font(pfont0)");
-        pdfi_countdown(basefont);
-        pdfi_countdown(arr);
         code = gs_note_error(gs_error_VMerror);
         goto error;
     }
@@ -345,25 +329,32 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     pfont0->data.encoding_size = 1;
     pfont0->data.FDepVector = (gs_font **)gs_alloc_bytes(ctx->memory, sizeof(gs_font *), "pdfi_read_type0_font FDepVector");
     if (pfont0->data.FDepVector == NULL) {
-        gs_free_object(ctx->memory, pdft0, "pdfi_read_type0_font(pdft0)");
+        /* We transferred ownership of pcmap to pfont0 above, but we didn't null the pointer
+         * so we could keep using it. We must NULL it out before returning an error to prevent
+         * reference counting problems.
+         */
+        pcmap = NULL;
         gs_free_object(ctx->memory, pfont0, "pdfi_read_type0_font(pfont0)");
-        pdfi_countdown(basefont);
-        pdfi_countdown(arr);
         code = gs_note_error(gs_error_VMerror);
         goto error;
     }
     *pfont0->data.FDepVector = (gs_font *)descpfont->pfont;
+    pdfi_countdown(descpfont);
+    descpfont = NULL;
     pfont0->data.fdep_size = 1;
     pfont0->data.CMap = (gs_cmap_t *)pcmap->gscmap;
+
+    /* NULL he pointer to prevent any reference counting problems, ownership was
+     * transferred to pfont0, but we maintained the pointer for easy access until this
+     * point.
+     */
+    pcmap = NULL;
 
     pdft0->pfont = (gs_font_base *)pfont0;
 
     code = gs_definefont(ctx->font_dir, (gs_font *)pdft0->pfont);
     if (code < 0) {
-        gs_free_object(ctx->memory, pdft0, "pdfi_read_type0_font(pdft0)");
         gs_free_object(ctx->memory, pfont0, "pdfi_read_type0_font(pfont0)");
-        pdfi_countdown(basefont);
-        pdfi_countdown(arr);
         code = gs_note_error(gs_error_VMerror);
         goto error;
     }
@@ -372,10 +363,7 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     if (pdft0->object_num != 0) {
         code = replace_cache_entry(ctx, (pdf_obj *)pdft0);
         if (code < 0) {
-            gs_free_object(ctx->memory, pdft0, "pdfi_read_type0_font(pdft0)");
             gs_free_object(ctx->memory, pfont0, "pdfi_read_type0_font(pfont0)");
-            pdfi_countdown(basefont);
-            pdfi_countdown(arr);
             code = gs_note_error(gs_error_VMerror);
             goto error;
         }
@@ -385,6 +373,16 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     return 0;
 
 error:
+    pdfi_countdown(arr);
+    pdfi_countdown(pcmap);
+    pdfi_countdown(tounicode);
+    pdfi_countdown(basefont);
+    pdfi_countdown(decfont);
+    pdfi_countdown(fontdesc);
+    pdfi_countdown(ffile);
+    pdfi_countdown(descpfont);
+    pdfi_countdown(pdft0);
+
     return code;
 }
 
