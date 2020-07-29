@@ -158,10 +158,15 @@ int pdfi_read_cidtype2_font(pdf_context *ctx, pdf_dict *font_dict, byte *buf, in
     *ppfont = NULL;
 
     code = pdfi_dict_knownget_type(ctx, font_dict, "FontDescriptor", PDF_DICT, &fontdesc);
-    if (code <= 0)
+    if (code <= 0) {
+        /* We own the buffer now, so we must free it on error */
+        gs_free_object(ctx->memory, buf, "pdfi_read_cidtype2_font");
         return_error(gs_error_invalidfont);
+    }
 
     if ((code = pdfi_alloc_cidtype2_font(ctx, &font, false)) < 0) {
+        /* We own the buffer now, so we must free it on error */
+        gs_free_object(ctx->memory, buf, "pdfi_read_cidtype2_font");
         pdfi_countdown(fontdesc);
         return code;
     }
@@ -178,6 +183,7 @@ int pdfi_read_cidtype2_font(pdf_context *ctx, pdf_dict *font_dict, byte *buf, in
         font->pfont->id = font->pfont->UID.id;
     }
 
+    /* Ownership of buf is now part of the font and managed via its lifetime */
     font->sfnt.data = buf;
     font->sfnt.size = buflen;
 
@@ -277,6 +283,7 @@ int pdfi_read_cidtype2_font(pdf_context *ctx, pdf_dict *font_dict, byte *buf, in
         *ppfont = (pdf_font *)font;
     return code;
 error:
+
     pdfi_countdown(obj);
     pdfi_countdown(font);
     return code;

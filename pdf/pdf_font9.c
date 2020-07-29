@@ -30,6 +30,7 @@
 
 int pdfi_read_cidtype0_font(pdf_context *ctx, pdf_dict *font_dict, byte *fbuf, int fbuflen, pdf_font **ppfont)
 {
+    gs_free_object(ctx->memory, fbuf, "pdfi_read_cidtype0_font");
     return_error(gs_error_invalidfont);
 }
 
