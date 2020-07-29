@@ -1156,7 +1156,7 @@ int pdfi_free_cmap(pdf_obj *cmapo)
         gs_cmap_adobe1_t *pgscmap = cmap->gscmap;
         gs_free_object(OBJ_MEMORY(cmap), pgscmap->def.lookup, "pdfi_free_cmap(def.lookup)");
         gs_free_object(OBJ_MEMORY(cmap), pgscmap->notdef.lookup, "pdfi_free_cmap(notdef.lookup)");
-        gs_free_object(OBJ_MEMORY(cmap), pgscmap, "pdfi_free_cmap(cmap->gscmap)");
+        (void)gs_cmap_free((gs_cmap_t *)pgscmap, OBJ_MEMORY(cmap));
         gs_free_object(OBJ_MEMORY(cmap), cmap->code_space.ranges, "pdfi_free_cmap(code_space.ranges");
         pdfir = cmap->cmap_range.ranges;
         while (pdfir != NULL) {
