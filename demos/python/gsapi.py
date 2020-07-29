@@ -42,14 +42,24 @@ Limitations as of 2020-07-21:
 '''
 
 import ctypes
+import platform
 import sys
 
-#Linux
-_libgs = ctypes.CDLL('libgs.so')
 
-#Windows
-#_libgs = ctypes.CDLL('../../bin/gpdldll64.dll')
-#_libgs = ctypes.CDLL('../../bin/gpdldll32.dll')
+if platform.system() in ('Linux', 'OpenBSD'):
+    _libgs = ctypes.CDLL('libgs.so')
+
+elif platform.system() == 'Windows':
+    if sys.maxsize == 2**31 - 1:
+        _libgs = ctypes.CDLL('../../bin/gpdldll32.dll')
+    elif sys.maxsize == 2**63 - 10:
+        _libgs = ctypes.CDLL('../../bin/gpdldll64.dll')
+    else:
+        raise Exception('Unrecognised sys.maxsize=0x%x' % sys.maxsize)
+
+else:
+    raise Exception('Unrecognised platform.system()=%s' % platform.system())
+
 
 class gsapi_revision_t:
     def __init__(self, product, copyright, revision, revisiondate):
