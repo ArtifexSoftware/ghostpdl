@@ -1080,6 +1080,10 @@ $(GLOBJ)gsparams.$(OBJ) : $(GLSRC)gsparams.c $(AK) $(gx_h)\
  $(gserrors_h) $(memory__h) $(gsparams_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsparams.$(OBJ) $(C_) $(GLSRC)gsparams.c
 
+$(GLOBJ)gsparaml.$(OBJ) : $(GLSRC)gsparaml.c $(AK) $(gx_h)\
+ $(gserrors_h) $(gsparam_h) $(string__h) $(LIB_MAK) $(MAKEDIRS)
+	$(GLCC) $(GLO_)gsparaml.$(OBJ) $(C_) $(GLSRC)gsparaml.c
+
 $(GLOBJ)gspath.$(OBJ) : $(GLSRC)gspath.c $(AK) $(gx_h) $(gserrors_h)\
  $(math__h) $(gscoord_h) $(gspath_h)\
  $(gxdevice_h) $(gxdevmem_h) $(gxfixed_h) $(gxmatrix_h)\
@@ -2170,7 +2174,7 @@ gxclpath_h=$(GLSRC)gxclpath.h
 
 clbase1_=$(GLOBJ)gxclist.$(OBJ) $(GLOBJ)gxclbits.$(OBJ) $(GLOBJ)gxclpage.$(OBJ)
 clbase2_=$(GLOBJ)gxclrast.$(OBJ) $(GLOBJ)gxclread.$(OBJ) $(GLOBJ)gxclrect.$(OBJ)
-clbase3_=$(GLOBJ)gxclutil.$(OBJ) $(GLOBJ)gsparams.$(OBJ) $(GLOBJ)gxshade6.$(OBJ)
+clbase3_=$(GLOBJ)gxclutil.$(OBJ) $(GLOBJ)gsparams.$(OBJ) $(GLOBJ)gsparaml.$(OBJ) $(GLOBJ)gxshade6.$(OBJ)
 # gxclrect.c requires rop_proc_table, so we need gsroptab here.
 clbase4_=$(GLOBJ)gsroptab.$(OBJ) $(GLOBJ)gsroprun.$(OBJ) $(GLOBJ)stream.$(OBJ)
 clpath_=$(GLOBJ)gxclimag.$(OBJ) $(GLOBJ)gxclpath.$(OBJ) $(GLOBJ)gxdhtserial.$(OBJ)
