@@ -6,7 +6,11 @@ Example use of gsapi for various tasks.
 @author: Michael Vrhel
 """
 
-import gsapi
+try:
+    import gsapi
+except Exception as err:
+    print('Failure to import gsapi. Check shared library path')
+    print(err.args)
 
 def run_gpdl(params, path):
 
@@ -16,7 +20,7 @@ def run_gpdl(params, path):
             raise Warning('gsapi_new_instance failure')
     except Exception as err:
         print(err.args)
-        return;
+        return
 
     try:
         e = gsapi.gsapi_set_arg_encoding(instance, gsapi.GS_ARG_ENCODING_UTF8)
@@ -34,7 +38,7 @@ def run_gpdl(params, path):
 
     except Exception as err:
         print(err.args)
-        return;
+        return
 
     end_gpdl(instance)
     return
@@ -47,7 +51,7 @@ def init_gpdl(params):
             raise Warning('gsapi_new_instance failure')
     except Exception as err:
         print(err.args)
-        return None;
+        return None
 
     try:
         e = gsapi.gsapi_set_arg_encoding(instance, gsapi.GS_ARG_ENCODING_UTF8)
@@ -60,7 +64,7 @@ def init_gpdl(params):
 
     except Exception as err:
         print(err.args)
-        return None;
+        return None
 
     return instance
 
@@ -116,6 +120,7 @@ def extract_text():
     params =['gs', '-dNOPAUSE', '-dBATCH','-sDEVICE=txtwrite',
              '-dTextFormat=3','-o', out_filename, '-f', in_filename]
     run_gpdl(params, None)
+
     return
 
 # Perform different color conversions on text, graphic, and image content
@@ -137,6 +142,7 @@ def object_dependent_color_conversion():
 
     # Include ICC profile location to readable path
     run_gpdl(params, '../../toolbin/color/icc_creator/effects/')
+
     return
 
 # Perform different color conversions on text, graphic, and image content
@@ -156,6 +162,7 @@ def object_dependent_rendering_intent():
 
     # Include ICC profile location to readable path
     run_gpdl(params, '../../toolbin/color/src_color/')
+
     return
 
 # Distill
@@ -168,6 +175,7 @@ def distill():
     params =['gs', '-dNOPAUSE', '-dBATCH', '-sDEVICE=pdfwrite',
              '-o', out_filename, '-f', in_filename]
     run_gpdl(params, None)
+
     return
 
 # Transparency in Postscript
@@ -180,6 +188,7 @@ def trans_ps():
     params =['gs', '-dNOPAUSE', '-dBATCH', '-sDEVICE=pngalpha',
              '-dALLOWPSTRANSPARENCY', '-o', out_filename, '-f', in_filename]
     run_gpdl(params, None)
+
     return
 
 # Run string to feed chunks
@@ -198,7 +207,7 @@ def run_string():
             raise Warning('gsapi_new_instance failure')
     except Exception as err:
         print(err.args)
-        return;
+        return
 
     try:
         e = gsapi.gsapi_set_arg_encoding(instance, gsapi.GS_ARG_ENCODING_UTF8)
@@ -209,7 +218,7 @@ def run_string():
         if e:
             raise Warning('gsapi_init_with_args failure')
 
-        [e, exitcode] = gsapi.gsapi_run_string_begin(instance, 0);
+        [e, exitcode] = gsapi.gsapi_run_string_begin(instance, 0)
         if e:
             raise Warning('gsapi_run_string_begin failure')
 
@@ -218,11 +227,11 @@ def run_string():
             data = f.read(size)
             if not data:
                 break
-            [e, exitcode] = gsapi.gsapi_run_string_continue(instance, data, 0);
+            [e, exitcode] = gsapi.gsapi_run_string_continue(instance, data, 0)
             if e:
                 raise Warning('gsapi_run_string_continue failure')
 
-        [e, exitcode] = gsapi.gsapi_run_string_end(instance, 0);
+        [e, exitcode] = gsapi.gsapi_run_string_end(instance, 0)
         if e:
             raise Warning('gsapi_run_string_end failure')
 
@@ -238,16 +247,16 @@ def run_string():
 # Examples
 print('***********Text extraction***********');
 extract_text()
-print('***********Color conversion***********');
+print('***********Color conversion***********')
 object_dependent_color_conversion()
-print('***********Rendering intent***********');
+print('***********Rendering intent***********')
 object_dependent_rendering_intent()
-print('***********Distillation***************');
+print('***********Distillation***************')
 distill()
-print('***********Postscript with transparency********');
+print('***********Postscript with transparency********')
 trans_ps()
-print('***********Multiple files********');
+print('***********Multiple files********')
 multiple_files()
-print('***********Run string********');
+print('***********Run string********')
 run_string()
 wait = input("press enter to exit")

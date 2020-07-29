@@ -4,10 +4,9 @@ API methods and they have the same names and usage as described
 in the Ghostscript API documentation.  
 
 If you are working in a Linux based system, _libgs in gsapi.py is specified to
-use libgs.so .  If you are working on Windows you will need to comment
-the Linux specification of _libgs and uncomment one of the Windows based
-ones (x64 or 32 bit).   Consideration was made to have this auto detectable but
-many of the solutions may not work on every environment and Python version.  
+use libgs.so .  If you are working on Windows, you will be using either gpddll32.dll
+or gpdldll64.dll.  You will need to build the appropriate library with the ghostscript
+build process.
 
 The file examples.py demonstrates several examples using the gsapi methods.
 These include, text extraction, object dependent color conversion, distillation,
