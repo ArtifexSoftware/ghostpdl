@@ -174,7 +174,7 @@ document as Unicode.
 <h4>Options</h4>
 <blockquote>
 <dl>
-<dt><code>-dTextFormat=<em>0 | 1 | 2 | 3 </em></code> (default is 3)
+<dt><code>-dTextFormat=<em>0 | 1 | 2 | 3 | 4 </em></code> (default is 3)
 <p><dd>Format 0 is intended for use by developers and outputs XML-escaped Unicode
 along with information regarding the format of the text (position, font name,
 point size, etc). The XML output is the same format as the MuPDF output, but
@@ -185,6 +185,7 @@ as the MuPDF code, and so the results will not be identical.</dd></p>
 <p><dd>Format 2 outputs Unicode (UCS2) text (with a Byte Order Mark) which
 approximates the layout of the text in the original document.</dd></p>
 <p><dd>Format 3 is the same as format 2, but the text is encoded in UTF-8.</dd></p>
+<p><dd>Format 4 is internal format similar to Format 0 but with extra information.</dd></p>
 </dl></blockquote>
 
 <p>
