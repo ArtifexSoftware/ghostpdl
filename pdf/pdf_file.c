@@ -951,10 +951,8 @@ int pdfi_filter(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream
             if (code < 0)
                 return code;
             code = pdfi_dict_put(ctx, dict, "StreamKey", (pdf_obj *)StreamKey);
-            if (code < 0) {
-                pdfi_countdown(StreamKey);
-                return code;
-            }
+            if (code < 0)
+                goto error;
         }
         if (code < 0)
             return code;
@@ -982,6 +980,10 @@ int pdfi_filter(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream
         }
 
         code = pdfi_apply_SubFileDecode_filter(ctx, Length, NULL, source, &SubFile_stream, false);
+        if (code < 0)
+            goto error;
+
+        SubFile_stream->original = source->s;
 
         switch(ctx->StrF) {
             case CRYPT_IDENTITY:
@@ -1001,26 +1003,27 @@ int pdfi_filter(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream
             default:
                 code = gs_error_rangecheck;
         }
-        if (code < 0)
-            goto error;
-
-        code = pdfi_filter_no_decryption(ctx, dict, crypt_stream, new_stream, false);
         if (code < 0) {
-            pdfi_countdown(crypt_stream);
+            pdfi_close_file(ctx, SubFile_stream);
             goto error;
         }
 
-        pdfi_countdown(crypt_stream);
-        crypt_stream = NULL;
+        crypt_stream->original = SubFile_stream->original;
+        gs_free_object(ctx->memory, SubFile_stream, "pdfi_filter");
+
+        code = pdfi_filter_no_decryption(ctx, dict, crypt_stream, new_stream, false);
+        if (code < 0) {
+            pdfi_close_file(ctx, crypt_stream);
+            goto error;
+        }
+
+        (*new_stream)->original = source->s;
+        gs_free_object(ctx->memory, crypt_stream, "pdfi_filter");
     } else {
         code = pdfi_filter_no_decryption(ctx, dict, source, new_stream, inline_image);
     }
-    pdfi_countdown(StreamKey);
-    return code;
-
 error:
     pdfi_countdown(StreamKey);
-    pdfi_countdown(SubFile_stream);
     return code;
 }
 
