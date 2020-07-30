@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Created on Tue Jul 21 10:05:07 2020
@@ -8,93 +9,35 @@ Example use of gsapi for various tasks.
 
 try:
     import gsapi
-except Exception as err:
+except Exception:
     print('Failure to import gsapi. Check shared library path')
-    print(err.args)
+    raise
+
+import os
+
+ghostpdl_root = os.path.abspath('%s/../../..' % __file__)
+print('ghostpdl_root=%s' % ghostpdl_root)
 
 def run_gpdl(params, path):
-
-    try:
-        e, instance = gsapi.gsapi_new_instance(0)
-        if e:
-            raise Warning('gsapi_new_instance failure')
-    except Exception as err:
-        print(err.args)
-        return
-
-    try:
-        e = gsapi.gsapi_set_arg_encoding(instance, gsapi.GS_ARG_ENCODING_UTF8)
-        if e:
-            raise Warning('gsapi_set_arg_encoding failure')
-
-        if path != None:
-            e = gsapi.gsapi_add_control_path(instance, gsapi.GS_PERMIT_FILE_READING, path)
-            if e:
-                raise Warning('gsapi_add_control_path failure')
-
-        e = gsapi.gsapi_init_with_args(instance, params)
-        if e:
-            raise Warning('gsapi_init_with_args failure')
-
-    except Exception as err:
-        print(err.args)
-        return
-
+    instance = gsapi.gsapi_new_instance(0)
+    gsapi.gsapi_set_arg_encoding(instance, gsapi.GS_ARG_ENCODING_UTF8)
+    gsapi.gsapi_add_control_path(instance, gsapi.GS_PERMIT_FILE_READING, path)
+    gsapi.gsapi_init_with_args(instance, params)
     end_gpdl(instance)
-    return
 
 def init_gpdl(params):
-
-    try:
-        e, instance = gsapi.gsapi_new_instance(0)
-        if e:
-            raise Warning('gsapi_new_instance failure')
-    except Exception as err:
-        print(err.args)
-        return None
-
-    try:
-        e = gsapi.gsapi_set_arg_encoding(instance, gsapi.GS_ARG_ENCODING_UTF8)
-        if e:
-            raise Warning('gsapi_set_arg_encoding failure')
-
-        e = gsapi.gsapi_init_with_args(instance, params)
-        if e:
-            raise Warning('gsapi_init_with_args failure')
-
-    except Exception as err:
-        print(err.args)
-        return None
-
+    instance = gsapi.gsapi_new_instance(0)
+    gsapi.gsapi_set_arg_encoding(instance, gsapi.GS_ARG_ENCODING_UTF8)
+    gsapi.gsapi_init_with_args(instance, params)
     return instance
 
 def run_file(instance, filename):
-
-    try:
-        (e, exitcode) = gsapi.gsapi_run_file(instance, filename, None)
-        if e:
-            raise Warning('gsapi_run_file failure')
-
-    except Exception as err:
-        print(err.args)
-
-    return
+    exitcode = gsapi.gsapi_run_file(instance, filename, None)
+    return exitcode
 
 def end_gpdl(instance):
-
-    try:
-        e = gsapi.gsapi_exit(instance)
-        if e:
-            raise Warning('gsapi_exit failure')
-    
-        e = gsapi.gsapi_delete_instance(instance)
-        if e:
-            raise Warning('gsapi_delete_instance failure')
-
-    except Exception as err:
-        print(err.args)
-
-    return
+    gsapi.gsapi_exit(instance)
+    gsapi.gsapi_delete_instance(instance)
 
 # run multiple files through same instance
 def multiple_files():
@@ -104,34 +47,32 @@ def multiple_files():
     params =['gs', '-dNOPAUSE', '-dBATCH', '-sDEVICE=pngalpha',
              '-r72', '-o', out_filename]
     instance = init_gpdl(params)
-    run_file(instance, '../../examples/tiger.eps')
-    run_file(instance, '../../examples/snowflak.ps')
-    run_file(instance, '../../examples/annots.pdf')
+    run_file(instance, '%s/examples/tiger.eps' % ghostpdl_root)
+    run_file(instance, '%s/examples/snowflak.ps' % ghostpdl_root)
+    run_file(instance, '%s/examples/annots.pdf' % ghostpdl_root)
 
     end_gpdl(instance)
 
 # Extract text from source file
 def extract_text():
 
-    in_filename = '../../examples/alphabet.ps'
+    in_filename = '%s/examples/alphabet.ps' % ghostpdl_root
     out_filename = 'alphabet.txt'
     print('Extracting text from %s to %s' % (in_filename, out_filename))
 
     params =['gs', '-dNOPAUSE', '-dBATCH','-sDEVICE=txtwrite',
              '-dTextFormat=3','-o', out_filename, '-f', in_filename]
-    run_gpdl(params, None)
-
-    return
+    run_gpdl(params, in_filename)
 
 # Perform different color conversions on text, graphic, and image content
 # through the use of different destination ICC profiles
 def object_dependent_color_conversion():
 
-    in_filename = '../../examples/text_graph_image_cmyk_rgb.pdf'
+    in_filename = '%s/examples/text_graph_image_cmyk_rgb.pdf' % ghostpdl_root
     out_filename = 'rendered_profile.tif'
-    image_icc = '../../toolbin/color/icc_creator/effects/cyan_output.icc'
-    graphic_icc = '../../toolbin/color/icc_creator/effects/magenta_output.icc'
-    text_icc = '../../toolbin/color/icc_creator/effects/yellow_output.icc'
+    image_icc = '%s/toolbin/color/icc_creator/effects/cyan_output.icc' % ghostpdl_root
+    graphic_icc = '%s/toolbin/color/icc_creator/effects/magenta_output.icc' % ghostpdl_root
+    text_icc = '%s/toolbin/color/icc_creator/effects/yellow_output.icc' % ghostpdl_root
     print('Object dependent color conversion on %s to %s' % (in_filename, out_filename))
 
     params =['gs', '-dNOPAUSE', '-dBATCH', '-sDEVICE=tiff32nc',
@@ -143,15 +84,13 @@ def object_dependent_color_conversion():
     # Include ICC profile location to readable path
     run_gpdl(params, '../../toolbin/color/icc_creator/effects/')
 
-    return
-
 # Perform different color conversions on text, graphic, and image content
 # through the use of different rendering intents
 def object_dependent_rendering_intent():
 
-    in_filename = '../../examples/text_graph_image_cmyk_rgb.pdf'
+    in_filename = '%s/examples/text_graph_image_cmyk_rgb.pdf' % ghostpdl_root
     out_filename = 'rendered_intent.tif'
-    output_icc_profile = '../../toolbin/color/src_color/cmyk_des_renderintent.icc'
+    output_icc_profile = '%s/toolbin/color/src_color/cmyk_des_renderintent.icc' % ghostpdl_root
     print('Object dependent rendering intents on %s to %s' % (in_filename, out_filename))
 
     params =['gs', '-dNOPAUSE', '-dBATCH', '-sDEVICE=tiff32nc',
@@ -163,85 +102,55 @@ def object_dependent_rendering_intent():
     # Include ICC profile location to readable path
     run_gpdl(params, '../../toolbin/color/src_color/')
 
-    return
-
 # Distill
 def distill():
 
-    in_filename = '../../examples/tiger.eps'
+    in_filename = '%s/examples/tiger.eps' % ghostpdl_root
     out_filename = 'tiger.pdf'
     print('Distilling %s to %s' % (in_filename, out_filename))
 
     params =['gs', '-dNOPAUSE', '-dBATCH', '-sDEVICE=pdfwrite',
              '-o', out_filename, '-f', in_filename]
-    run_gpdl(params, None)
-
-    return
+    run_gpdl(params, in_filename)
 
 # Transparency in Postscript
 def trans_ps():
 
-    in_filename = '../../examples/transparency_example.ps'
+    in_filename = '%s/examples/transparency_example.ps' % ghostpdl_root
     out_filename = 'transparency.png'
     print('Rendering Transparency PS file %s to %s' % (in_filename, out_filename))
 
     params =['gs', '-dNOPAUSE', '-dBATCH', '-sDEVICE=pngalpha',
              '-dALLOWPSTRANSPARENCY', '-o', out_filename, '-f', in_filename]
-    run_gpdl(params, None)
-
-    return
+    run_gpdl(params, in_filename)
 
 # Run string to feed chunks
 def run_string():
 
     f = None
     size = 1024;
-    in_filename = '../../examples/tiger.eps'
+    in_filename = '%s/examples/tiger.eps' % ghostpdl_root
     out_filename = 'tiger_byte_fed.png'
     params =['gs', '-dNOPAUSE', '-dBATCH', '-sDEVICE=pngalpha',
               '-o', out_filename]
 
-    try:
-        e, instance = gsapi.gsapi_new_instance(0)
-        if e:
-            raise Warning('gsapi_new_instance failure')
-    except Exception as err:
-        print(err.args)
-        return
+    instance = gsapi.gsapi_new_instance(0)
 
-    try:
-        e = gsapi.gsapi_set_arg_encoding(instance, gsapi.GS_ARG_ENCODING_UTF8)
-        if e:
-            raise Warning('gsapi_set_arg_encoding failure')
-    
-        e = gsapi.gsapi_init_with_args(instance, params)
-        if e:
-            raise Warning('gsapi_init_with_args failure')
+    gsapi.gsapi_set_arg_encoding(instance, gsapi.GS_ARG_ENCODING_UTF8)
+    gsapi.gsapi_init_with_args(instance, params)
 
-        [e, exitcode] = gsapi.gsapi_run_string_begin(instance, 0)
-        if e:
-            raise Warning('gsapi_run_string_begin failure')
+    exitcode = gsapi.gsapi_run_string_begin(instance, 0)
 
-        f = open(in_filename,"rb")
+    with open(in_filename,"rb") as f:
         while True:
             data = f.read(size)
             if not data:
                 break
-            [e, exitcode] = gsapi.gsapi_run_string_continue(instance, data, 0)
-            if e:
-                raise Warning('gsapi_run_string_continue failure')
+            exitcode = gsapi.gsapi_run_string_continue(instance, data, 0)
 
-        [e, exitcode] = gsapi.gsapi_run_string_end(instance, 0)
-        if e:
-            raise Warning('gsapi_run_string_end failure')
-
-    except Exception as err:
-        print(err.args)
+    exitcode = gsapi.gsapi_run_string_end(instance, 0)
 
     end_gpdl(instance)
-    if f != None:
-        f.close()
-    return
 
 
 # Examples
