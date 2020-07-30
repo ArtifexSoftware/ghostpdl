@@ -36,6 +36,7 @@
 #include "gzcpath.h"
 #include "gsovrc.h"
 #include "gxcolor2.h"
+#include "gscolor3.h" /* for gs_smoothness() */
 #include "gxpcolor.h"
 #include "gsicc_manage.h"
 #include "gxdevsop.h"
