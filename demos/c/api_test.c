@@ -839,12 +839,80 @@ failearly:
     return code;
 }
 
+static int
+param_test(const char *dev, char *outfile)
+{
+    int code;
+    void *instance   = NULL;
+    char devtext[64];
+
+    /* Construct the argc/argv to pass to ghostscript. */
+    int argc = 0;
+    char *argv[10];
+
+    sprintf(devtext, "-sDEVICE=%s", dev);
+    argv[argc++] = "gpdl";
+    argv[argc++] = devtext;
+    argv[argc++] = "-o";
+    argv[argc++] = outfile;
+
+    /* Create a GS instance. */
+    code = gsapi_new_instance(&instance, INSTANCE_HANDLE);
+    if (code < 0) {
+        printf("Error %d in gsapi_new_instance\n", code);
+        goto failearly;
+    }
+
+    code = gsapi_set_param(instance, gs_spt_parsed, "Foo", "0");
+    if (code < 0) {
+        printf("Got error from early param setting.\n");
+        goto fail;
+    }
+
+    /* Run our test. */
+    code = gsapi_init_with_args(instance, argc, argv);
+    if (code < 0) {
+        printf("Error %d in gsapi_init_with_args\n", code);
+        goto fail;
+    }
+
+    code = gsapi_set_param(instance, gs_spt_parsed | gs_spt_more_to_come, "Bar", "1");
+    if (code < 0) {
+        printf("Error %d in gsapi_set_param\n", code);
+        goto fail;
+    }
+
+    code = gsapi_set_param(instance, gs_spt_parsed, "Baz", "<</Test[0 1 2.3]/Charm(>>)/Vixen<01234567>/Scented/Ephemeral>>");
+    if (code < 0) {
+        printf("Error %d in gsapi_set_param\n", code);
+        goto fail;
+    }
+
+    /* Close the interpreter down (important, or we will leak!) */
+    code = gsapi_exit(instance);
+    if (code < 0) {
+        printf("Error %d in gsapi_exit\n", code);
+        goto fail;
+    }
+
+fail:
+    /* Delete the gs instance. */
+    gsapi_delete_instance(instance);
+
+failearly:
+
+    return code;
+}
+
+
 int main(int argc, char *argv[])
 {
     int code = 0;
 
 #define RUNTEST(A)\
     if (code >= 0) code = (A)
+
+    RUNTEST(param_test("ppmraw", "apitest20.ppm"));
 
 #define RS(A)\
     RUNTEST(runstring_test A )

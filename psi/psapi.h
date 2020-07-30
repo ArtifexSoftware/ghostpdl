@@ -57,24 +57,13 @@ psapi_init_with_args01(gs_lib_ctx_t  *instance,
 int
 psapi_init_with_args2(gs_lib_ctx_t  *instance);
 
-typedef enum {
-    psapi_spt_invalid = -1,
-    psapi_spt_null    = 0,   /* void * is NULL */
-    psapi_spt_bool    = 1,   /* void * is NULL (false) or non-NULL (true) */
-    psapi_spt_int     = 2,   /* void * is a pointer to an int */
-    psapi_spt_float   = 3,   /* void * is a float * */
-    psapi_spt_name    = 4,   /* void * is a char * */
-    psapi_spt_string  = 5,   /* void * is a char * */
-    psapi_spt_long    = 6,   /* void * is a long * */
-    psapi_spt_i64     = 7,   /* void * is an int64_t * */
-    psapi_spt_size_t  = 8    /* void * is a size_t * */
-
-} psapi_sptype;
 int
 psapi_set_param(gs_lib_ctx_t *ctx,
-                psapi_sptype  type,
-                const char   *param,
-                const void   *val);
+                gs_param_list *plist);
+
+int
+psapi_set_device_param(gs_lib_ctx_t *ctx,
+                       gs_param_list *plist);
 
 int
 psapi_add_path(gs_lib_ctx_t *ctx,

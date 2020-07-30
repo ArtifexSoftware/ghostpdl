@@ -378,13 +378,11 @@ ps_impl_get_device_memory(pl_interp_implementation_t *impl)
 
 static int
 ps_impl_set_param(pl_interp_implementation_t *impl,
-                  pl_set_param_type           type,
-                  const char                 *param,
-                  const void                 *val)
+                  gs_param_list *plist)
 {
     ps_interp_instance_t *psi = (ps_interp_instance_t *)impl->interp_client_data;
 
-    return psapi_set_param(psi->psapi_instance, type, param, val);
+    return psapi_set_param(psi->psapi_instance, plist);
 }
 
 static int

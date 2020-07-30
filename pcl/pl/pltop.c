@@ -56,14 +56,12 @@ pl_get_device_memory(pl_interp_implementation_t *impl)
 
 int
 pl_set_param(pl_interp_implementation_t *impl,
-             pl_set_param_type           type,
-             const char                 *param,
-             const void                 *value)
+             gs_param_list              *plist)
 {
     if (impl->proc_set_param == NULL)
         return 0;
 
-    return impl->proc_set_param(impl, type, param, value);
+    return impl->proc_set_param(impl, plist);
 }
 
 int

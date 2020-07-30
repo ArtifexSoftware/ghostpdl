@@ -21,103 +21,67 @@
 #include "gserrors.h"
 #include "string_.h"
 
-/* We need to know how many items are in an array or dictionary */
-static int count_tokens(char *p)
+static int
+add_tokens(gs_param_list *plist, gs_param_name key, char **pp, uint *dict_count);
+
+static int
+walk_number(char **p, bool *is_integer)
 {
-    int tokens = 0;
+    char *p1 = *p;
+    bool integer = true;
 
-    while (*p != 0x00){
-        switch (*p) {
-            case ' ':
-                p++;
-                break;
-            case 'f':
-                if (strncmp(p, "false", 5) != 0)
-                    return -1;
-                p += 5;
-                tokens++;
-                break;
-            case 't':
-                if (strncmp(p, "true", 4) != 0)
-                    return -1;
-                p += 4;
-                tokens++;
-                break;
-            case '<':
-                if (p[1] == '>') {
-                    int nesting = 0;
-
-                    p+=2;
-                    while (*p != 0x00) {
-                        if (*p == '>' && p[1] == '>') {
-                            p++;
-                            if (nesting == 0)
-                                break;
-                        } else
-                            if (*p == '<' && p[1] == '<') {
-                                p += 2;
-                                nesting++;
-                            } else
-                                p++;
-                    }
-                    if (*p == 0x00)
-                        return -1;
-                    tokens++;
-                    p++;
-                } else {
-                    while (*p != 0x00 && *p != '>')
-                        p++;
-                    if (*p == 0x00)
-                        return -1;
-                    tokens++;
-                    p++;
-                }
-                break;
-            case '/':
-                while (*p != 0x00 && *p != ' ')
-                    p++;
-                tokens++;
-                break;
-            case '(':
-                while (*p != 0x00 && *p != ')')
-                    p++;
-                if (*p == 0x00)
-                    return -1;
-                p++;
-                tokens++;
-                break;
-            case '[':
-                while (*p != 0x00 && *p != ']')
-                    p++;
-                if (*p == 0x00)
-                    return -1;
-                p++;
-                tokens++;
-                break;
-            case '0':
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-            case '5':
-            case '6':
-            case '7':
-            case '8':
-            case '9':
-            case '.':
-                while (*p != 0x00 && *p != ' ') {
-                    if ((*p < 0x30 || *p > 0x39) && *p != '.')
-                        return -1;
-                    p++;
-                }
-                tokens++;
-                break;
-            default:
+    if (*p1 == '+')
+        p1++;
+    while (*p1 == ' ')
+        p1++;
+    while (*p1 == '-')
+        p1++;
+    while (*p1 == ' ')
+        p1++;
+    if (*p1 == 0 || ((*p1 < '0' || *p1 > '9') && (*p1 != '.')))
+        return -1;
+    while ((*p1 >= '0' && *p1 <= '9') || *p1 == '.') {
+        if (*p1 == '.') {
+            if (!integer) /* Can't cope with multiple .'s */
                 return -1;
-                break;
+            integer = false;
         }
+
+        p1++;
     }
-    return tokens;
+    /* Allow for exponent form. */
+    if (*p1 == 'e' || *p1 == 'E') {
+        p1++;
+        if (*p1 == '-')
+            p1++;
+        if (*p1 < '0' || *p1 > '9')
+            return -1;
+        while (*p1 >= '0' && *p1 <= '9')
+            p1++;
+    }
+
+    *is_integer = integer;
+    *p = p1;
+
+    return 0;
+}
+
+/* Delimiter chars, as taken from pdf spec. Any of these characters
+ * ends a token. */
+static int
+ends_token(const char *p)
+{
+    return (*p == 0 ||
+            *p == 9 ||
+            *p == 10 ||
+            *p == 12 ||
+            *p == 13 ||
+            *p == '/' ||
+            *p == '%' ||
+            *p == '<' || *p == '>' ||
+            *p == '[' || *p == ']' ||
+            *p == '{' || *p == '}' ||
+            *p == '(' || *p == ')');
 }
 
 /* Dictionaries are surprisingly easy, we just make a param_dict
@@ -128,60 +92,23 @@ static int
 process_dict(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char **p)
 {
     gs_param_dict dict;
-    int code, tokens, nested = 0;
-    char *p1 = *p, *start = *p;
+    int code, code2;
 
-    /* for now we won't handle nested dicts */
-    do {
-        if (*p1 != '>' && *p1 != 0x00) {
-            if (*p1 == '<' && *(p1 + 1) == '<') {
-                nested++;
-                p1 += 2;
-            } else
-                p1++;
-        } else {
-            if (*(p1 + 1) != '>' && *(p1 + 1) != 0x00) {
-                p1++;
-            } else {
-                if (!nested)
-                    break;
-                nested--;
-                p1 += 2;
-            }
-        }
-    } while (1);
-
-    if (*p1 == 0x00)
-        return -1;
-
-    /* NULL out the dictionary end marks */
-    *p1++ = 0x00;
-    if (*p1 == 0x00)
-        return -1;
-    *p1 = 0x00;
-
-    /* Move the string pointer past the end of the dictionary so that
-     * parsing will continue correctly
-     */
-    *p = p1 + 1;
-
-    p1 = start;
-
-    tokens = count_tokens(p1);
-    dict.size = tokens;
-
+    /* We are implicitly relying on that fact that we're working to
+     * C param lists, not ref param lists here, as C param lists don't
+     * need the size up front, but ref param lists do. This makes the
+     * recursion MUCH simpler. */
     code = param_begin_write_dict((gs_param_list *)plist, key, &dict, false);
     if (code < 0)
         return code;
 
     gs_param_list_set_persistent_keys(dict.list, false);
 
-    code = gs_param_list_add_tokens(dict.list, p1);
-    if (code < 0)
-        return code;
-
-    code = param_end_write_dict((gs_param_list *)plist, key, &dict);
-    return code;
+    dict.size = 0;
+    code = add_tokens(dict.list, NULL, p, &dict.size);
+    (*p) += 2;
+    code2 = param_end_write_dict((gs_param_list *)plist, key, &dict);
+    return code < 0 ? code : code2;
 }
 
 static int
@@ -196,59 +123,62 @@ process_dict_or_hexstring(gs_memory_t *mem, gs_c_param_list *plist, gs_param_nam
         return process_dict(mem, plist, key, p);
     }
 
-    src = dest = p1;
-    while (*src != 0x00 && *src != '>') {
+    dest = p1;
+    src = p1+1;
+    while (*src && *src != '>') {
         data = 0;
         for (i=0;i<2;i++) {
-            if(*src >= '0' && *src <= '9') {
+            if (*src >= '0' && *src <= '9') {
                 data = (data << 4);
                 data += (*src - '0');
+            } else if (*src >= 'A' && *src <= 'F') {
+                data = (data << 4);
+                data += (*src - 'A' + 10);
+            } else if (*src >= 'a' && *src <= 'f') {
+                data = (data << 4);
+                data += (*src - 'a' + 10);
             } else {
-                if (*src >= 'A' && *src <= 'F') {
-                    data = (data << 4);
-                    data += (*src - 'A' + 10);
-                } else {
-                    if (*src >= 'a' && *src <= 'f') {
-                        data = (data << 4);
-                        data += (*src - 'a' + 10);
-                    } else {
-                        return -1;
-                    }
-                }
+                return -1;
             }
             src++;
         }
         *dest++ = data;
     }
-    *dest = 0x00;
 
-    *p = dest + 1;
+    if (*src == 0)
+        return -1;
+
+    *p = src + 1;
 
     ps.data = (const byte *)p1;
-    ps.size = strlen(p1);
+    ps.size = dest - p1;
     ps.persistent = false;
     return param_write_string((gs_param_list *)plist, key, &ps);
 }
 
+/* On entry, p points to the '/'. Because we need to null terminate
+ * to cope with reading the key of key/value pairs, we move all the
+ * chars back by 1, overwriting the '/' to give us room. This avoids
+ * us relying on trailing whitespace. */
 static int
 process_name(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name *key, char **p)
 {
-    char *start = *p + 1;
+    char *p1 = *p + 1; /* Skip the '/' */
+    char *start = p1-1;
     gs_param_string ps;
 
-    while (**p != ' ' && **p != 0x00)
-        (*p)++;
+    while (!ends_token(p1))
+        p1[-1] = p1[0], p1++;
 
-    if (**p != 0x00) {
-        **p = 0x00;
-        (*p)++;
-    }
+    /* Null terminate (in case it's the '*key = NULL' case below) */
+    p1[-1] = 0;
+    *p = p1;
 
     if (*key == NULL)
         *key = (gs_param_name)start;
     else {
         ps.data = (const byte *)start;
-        ps.size = strlen(start);
+        ps.size = p1 - start - 1;
         ps.persistent = false;
         param_write_name((gs_param_list *)plist, *key, &ps);
         *key = NULL;
@@ -259,20 +189,20 @@ process_name(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name *key, char 
 static int
 process_string(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char **p)
 {
-    char *start = *p + 1;
+    char *p1 = *p;
+    char *start = p1 + 1;
     gs_param_string ps;
 
-    while (**p != ')' && **p != 0x00)
-        (*p)++;
+    while (*p1 && *p1 != ')')
+        p1++;
 
-    if (**p != ')')
+    if (*p1 == 0)
         return -1;
 
-    **p= 0x00;
-    (*p)++;
+    *p = p1 + 1; /* Resume after the ')' */
 
     ps.data = (const byte *)start;
-    ps.size = strlen(start);
+    ps.size = p1-start;
     ps.persistent = false;
     return param_write_string((gs_param_list *)plist, key, &ps);
 }
@@ -298,8 +228,9 @@ process_string(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char
 static int
 process_array(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char **p)
 {
-    int tokens = 0, nested = 0, index = 0, code = 0;
+    int code = 0;
     gs_param_type array_type = gs_param_type_null;
+    int index = 0, array_max = 0;
     char *start = *p + 1, *p1 = start;
     gs_param_string *parray = 0L;
     char *array_data = 0x00;
@@ -307,92 +238,40 @@ process_array(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char 
     gs_param_int_array int_array;
     gs_param_float_array float_array;
 
-    /* for now we won't handle nested arrays */
-    do {
-        while (*p1 != ']' && *p1 != 0x00) {
-            if (*p1 == '[')
-                nested++;
-            p1++;
-        }
-    } while (nested--);
-
-    if (*p1 == 0x00)
-        return -1;
-
-    *p1 = 0x00;
     p1 = start;
 
-    tokens = count_tokens(start);
-
-    while (*p1 != 0x00 && code == 0){
+    while (*p1 != ']' && code == 0) {
         switch (*p1) {
             case ' ':
                 p1++;
                 break;
 
-            case 'f':
-                if (array_type != gs_param_type_null && array_type != gs_param_type_string_array) {
-                    code = gs_error_typecheck;
-                    break;
-                }
-                if (array_type == gs_param_type_null) {
-                    array_data = (char *)gs_alloc_bytes(mem, sizeof(gs_param_string) * tokens, "param string array in param parsing");
-                    if (array_data == NULL){
-                        code = gs_error_VMerror;
-                        break;
-                    }
-                    array_type = gs_param_type_string_array;
-                }
-                if (strncmp(p1, "false", 5) == 0) {
-                    parray = (gs_param_string *)array_data;
-                    parray[index].data = (const byte *)p1;
-                    p1 += 5;
-                    *p1++ = 0x00;
-                    parray[index].size = 5;
-                    parray[index++].persistent = false;
-                } else {
-                    code = gs_error_typecheck;
-                    break;
-                }
-                break;
-
-            case 't':
-                if (array_type != gs_param_type_null && array_type != gs_param_type_string_array) {
-                    code = gs_error_typecheck;
-                    break;
-                }
-                if (array_type == gs_param_type_null) {
-                    array_data = (char *)gs_alloc_bytes(mem, sizeof(gs_param_string) * tokens, "param string array in param parsing");
-                    if (array_data == NULL){
-                        code = gs_error_VMerror;
-                        break;
-                    }
-                    array_type = gs_param_type_string_array;
-                }
-                if (strncmp(p1, "true", 4) == 0) {
-                    parray = (gs_param_string *)array_data;
-                    parray[index].data = (const byte *)p1;
-                    p1 += 4;
-                    *p1++ = 0x00;
-                    parray[index].size = 4;
-                    parray[index++].persistent = false;
-                } else {
-                    code = gs_error_typecheck;
-                    break;
-                }
-                break;
+            /* We used to parse 'false' and 'true' here, but they ended
+             * up as string params, rather that bools, thus making
+             * [ false ] and [ (false) ] parse to the be the same thing.
+             * That feels wrong, so we've removed the code until param
+             * lists actually support arrays of bools. */
 
             case '<':
                 if (array_type != gs_param_type_null && array_type != gs_param_type_string_array) {
                     code = gs_error_typecheck;
                     break;
                 }
-                if (array_type == gs_param_type_null) {
-                    array_data = (char *)gs_alloc_bytes(mem, sizeof(gs_param_string) * tokens, "param string array in param parsing");
-                    if (array_data == NULL){
-                        code = gs_error_VMerror;
-                        break;
+                if (index == array_max) {
+                    int new_max = array_max * 2;
+                    if (new_max == 0)
+                        new_max = 32;
+                    if (array_data == NULL) {
+                        array_data = (char *)gs_alloc_bytes(mem, sizeof(gs_param_string) * new_max, "param string array in param parsing");
+                    } else {
+                        char *new_array = (char *)gs_resize_object(mem, array_data, sizeof(gs_param_string) * new_max, "param string array in param parsing");
+                        if (new_array == NULL) {
+                            code = gs_error_VMerror;
+                            break;
+                        }
+                        array_data = new_array;
                     }
+                    array_max = new_max;
                     array_type = gs_param_type_string_array;
                 }
                 if (*(p1+1) == '<') {
@@ -407,32 +286,28 @@ process_array(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char 
                     parray = (gs_param_string *)array_data;
                     src = dest = ++p1;
                     parray[index].data = (const byte *)p1;
-                    while (*src != 0x00 && *src != '>') {
+                    while (*src && *src != '>') {
                         data = 0;
                         for (i=0;i<2;i++) {
-                            if(*src >= '0' && *src <= '9') {
+                            if (*src >= '0' && *src <= '9') {
                                 data = (data << 4);
                                 data += (*src - '0');
+                            } else if (*src >= 'A' && *src <= 'F') {
+                                data = (data << 4);
+                                data += (*src - 'A' + 10);
+                            } else if (*src >= 'a' && *src <= 'f') {
+                                data = (data << 4);
+                                data += (*src - 'a' + 10);
                             } else {
-                                if (*src >= 'A' && *src <= 'F') {
-                                    data = (data << 4);
-                                    data += (*src - 'A' + 10);
-                                } else {
-                                    if (*src >= 'a' && *src <= 'f') {
-                                        data = (data << 4);
-                                        data += (*src - 'a' + 10);
-                                    } else {
-                                        return -1;
-                                    }
-                                }
+                                goto return_minus_one;
                             }
                             src++;
                         }
                         *dest++ = data;
                     }
-                    *dest = 0x00;
-                    parray[index].size = strlen((char *)(parray[index].data));
+                    parray[index].size = dest - p1;
                     parray[index++].persistent = false;
+                    p1 = src;
                 }
                 break;
 
@@ -441,22 +316,30 @@ process_array(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char 
                     code = gs_error_typecheck;
                     break;
                 }
-                if (array_type == gs_param_type_null) {
-                    array_data = (char *)gs_alloc_bytes(mem, sizeof(gs_param_string) * tokens, "param string array in param parsing");
-                    if (array_data == NULL){
-                        code = gs_error_VMerror;
-                        break;
+                if (index == array_max) {
+                    int new_max = array_max * 2;
+                    if (new_max == 0)
+                        new_max = 32;
+                    if (array_data == NULL) {
+                        array_data = (char *)gs_alloc_bytes(mem, sizeof(gs_param_string) * new_max, "param string array in param parsing");
+                    } else {
+                        char *new_array = (char *)gs_resize_object(mem, array_data, sizeof(gs_param_string) * new_max, "param string array in param parsing");
+                        if (new_array == NULL) {
+                            code = gs_error_VMerror;
+                            break;
+                        }
+                        array_data = new_array;
                     }
+                    array_max = new_max;
                     array_type = gs_param_type_string_array;
                 }
                 parray = (gs_param_string *)array_data;
                 parray[index].data = (const byte *)p1;
-                while (*p1 != ' ' && *p1 != 0x00)
+                while (!ends_token(p1))
                     p1++;
-                if (*p1 == 0x00)
-                    return -1;
-                *p1++ = 0x00;
-                parray[index].size = strlen((char *)(parray[index].data));
+                parray[index].size = p1 - (char *)(parray[index].data);
+                if (parray[index].size == 0)
+                    goto return_minus_one;
                 parray[index++].persistent = false;
                 break;
 
@@ -465,22 +348,30 @@ process_array(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char 
                     code = gs_error_typecheck;
                     break;
                 }
-                if (array_type == gs_param_type_null) {
-                    array_data = (char *)gs_alloc_bytes(mem, sizeof(gs_param_string) * tokens, "param string array in param parsing");
-                    if (array_data == NULL){
-                        code = gs_error_VMerror;
-                        break;
+                if (index == array_max) {
+                    int new_max = array_max * 2;
+                    if (new_max == 0)
+                        new_max = 32;
+                    if (array_data == NULL) {
+                        array_data = (char *)gs_alloc_bytes(mem, sizeof(gs_param_string) * new_max, "param string array in param parsing");
+                    } else {
+                        char *new_array = (char *)gs_resize_object(mem, array_data, sizeof(gs_param_string) * new_max, "param string array in param parsing");
+                        if (new_array == NULL) {
+                            code = gs_error_VMerror;
+                            break;
+                        }
+                        array_data = new_array;
                     }
+                    array_max = new_max;
                     array_type = gs_param_type_string_array;
                 }
                 parray = (gs_param_string *)array_data;
                 parray[index].data = (const byte *)p1;
-                while (*p1 != ')' && *p1 != 0x00)
+                while (*p1 && *p1 != ')')
                     p1++;
-                if (*p1 == 0x00)
-                    return -1;
-                *p1++ = 0x00;
-                parray[index].size = strlen((char *)(parray[index].data));
+                if (*p1 == 0)
+                    goto return_minus_one;
+                parray[index].size = p1 - (char *)(parray[index].data);
                 parray[index++].persistent = false;
                 break;
             case '[':
@@ -498,47 +389,25 @@ process_array(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char 
             case '8':
             case '9':
             case '.':
+            case '+':
+            case '-':
                 if (array_type == gs_param_type_string_array) {
                     code = gs_error_typecheck;
                     break;
                 } else {
-                    int integer = 1;
-                    char *c = p1;
+                    bool integer;
+                    const char *start = p1;
+                    char c;
                     float *floats;
                     int *ints, i;
 
-                    integer = 1;
-                    while (*p1 != 0x00 && ((*p1 >= '0' && *p1 <= '9') || *p1 == '.')) {
-                        if (*p1 == '.')
-                            integer = 0;
-                        p1++;
-                    }
-                    if (*p1 == 0x00)
-                        return -1;
-                    *p1++ = 0x00;
+                    code = walk_number(&p1, &integer);
+                    if (code < 0)
+                        break;
 
-                    if (array_type == gs_param_type_null) {
-                        if (integer) {
-                            ints = (int *)gs_alloc_bytes(mem, sizeof(int) * tokens, "param string array in param parsing");
-                            if (ints == NULL){
-                                code = gs_error_VMerror;
-                                break;
-                            }
-                            array_type = gs_param_type_int_array;
-                            array_data = (char *)ints;
-                        } else {
-                            floats = (float *)gs_alloc_bytes(mem, sizeof(float) * tokens, "param string array in param parsing");
-                            if (floats == NULL){
-                                code = gs_error_VMerror;
-                                break;
-                            }
-                            array_type = gs_param_type_float_array;
-                            array_data = (char *)floats;
-                        }
-                    }
                     if (array_type == gs_param_type_int_array && !integer) {
                         ints = (int *)array_data;
-                        floats = (float *)gs_alloc_bytes(mem, sizeof(float) * tokens, "param string array in param parsing");
+                        floats = (float *)gs_alloc_bytes(mem, sizeof(float) * array_max, "param string array in param parsing");
                         if (floats == NULL){
                             code = gs_error_VMerror;
                             break;
@@ -550,13 +419,35 @@ process_array(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char 
                         gs_free_object(mem, ints, "param string array in param parsing");
                         array_data = (char *)floats;
                     }
+                    if (index == array_max) {
+                        union { float f; int i; } size_me;
+                        int new_max = array_max * 2;
+                        if (new_max == 0) {
+                            new_max = 32;
+                            array_type = integer ? gs_param_type_int_array : gs_param_type_float_array;
+                        }
+                        if (array_data == NULL) {
+                            array_data = (char *)gs_alloc_bytes(mem, sizeof(size_me) * new_max, "param string array in param parsing");
+                        } else {
+                            char *new_array = (char *)gs_resize_object(mem, array_data, sizeof(size_me) * new_max, "param string array in param parsing");
+                            if (new_array == NULL) {
+                                code = gs_error_VMerror;
+                                break;
+                            }
+                            array_data = new_array;
+                        }
+                        array_max = new_max;
+                    }
+                    c = *p1;
+                    *p1 = 0;
                     if (array_type == gs_param_type_int_array) {
                         ints = (int *)array_data;
-                        ints[index++] = (int)atoi(c);
+                        ints[index++] = (int)atol(start);
                     } else {
                         floats = (float *)array_data;
-                        floats[index++] = (float)atof(c);
+                        floats[index++] = (float)atof(start);
                     }
+                    *p1 = c;
                 }
                 break;
             default:
@@ -564,76 +455,82 @@ process_array(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char 
                 break;
         }
     }
+    if (0) {
+return_minus_one:
+        code = -1;
+    }
 
     /* Now we have to deal with adding the array to the parm list, there are
      * (of course!) different calls for each array type....
      */
-    switch(array_type) {
-        case gs_param_type_string_array:
-            string_array.data = (const gs_param_string *)array_data;
-            string_array.persistent = 0;
-            string_array.size = tokens;
-            code = param_write_string_array((gs_param_list *)plist, key, &string_array);
-            break;
-        case gs_param_type_int_array:
-            int_array.data = (const int *)array_data;
-            int_array.persistent = 0;
-            int_array.size = tokens;
-            code = param_write_int_array((gs_param_list *)plist, key, &int_array);
-            break;
-        case gs_param_type_float_array:
-            float_array.data = (const float *)array_data;
-            float_array.persistent = 0;
-            float_array.size = tokens;
-            code = param_write_float_array((gs_param_list *)plist, key, &float_array);
-            break;
+    if (code >= 0)
+    {
+        *p = p1 + 1;
+        switch(array_type) {
+            case gs_param_type_string_array:
+                string_array.data = (const gs_param_string *)array_data;
+                string_array.persistent = 0;
+                string_array.size = index;
+                code = param_write_string_array((gs_param_list *)plist, key, &string_array);
+                break;
+            case gs_param_type_int_array:
+                int_array.data = (const int *)array_data;
+                int_array.persistent = 0;
+                int_array.size = index;
+                code = param_write_int_array((gs_param_list *)plist, key, &int_array);
+                break;
+            case gs_param_type_float_array:
+                float_array.data = (const float *)array_data;
+                float_array.persistent = 0;
+                float_array.size = index;
+                code = param_write_float_array((gs_param_list *)plist, key, &float_array);
+                break;
 
-        default:
-            break;
+            default:
+                break;
+        }
     }
 
     /* And now we can throw away the array data, we copied it to the param list. */
     gs_free_object(mem, array_data, "param string array in param parsing");
 
-    /* Update the string pointer to point past the 0x00 byte marking the end of the array */
-    *p = p1 + 1;
-
     return code;
 }
 
+/* We rely on the fact that we can overwrite, then restore *end here. */
 static int
 process_number(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char **p)
 {
-    char *start = *p;
-    bool integer = true;
-    int code = 0;
+    bool integer;
+    const char *start = *p;
+    char c;
+    int code = walk_number(p, &integer);
 
-    while (**p != ' ' && **p != 0x00) {
-        if (**p == '.')
-            integer = false;
+    if (code < 0)
+        return code;
 
-        (*p)++;
-    }
-
-    if (**p != 0x00) {
-        **p = 0x00;
-        (*p)++;
-    }
-
+    /* Hacky. Null terminate so that atof/atol don't overrun. This is
+     * safe because at worst p points to the null terminator byte, and
+     * we can safely overwrite end for a moment. Ick. */
+    c = **p;
+    **p = 0;
     if (!integer) {
         float f = (float)atof(start);
         code = param_write_float((gs_param_list *)plist, key, (float *)&f);
     } else {
+        /* FIXME: Should probably really be int64_t here rather than int? */
         long i = atol(start);
         code = param_write_long((gs_param_list *)plist, key, &i);
     }
+    **p = c;
 
     return code;
 }
 
 static int
-add_tokens(gs_param_list *plist, gs_param_name key, char *p)
+add_tokens(gs_param_list *plist, gs_param_name key, char **pp, uint *dict_count)
 {
+    char *p = *pp;
     int code = 0;
     /* If single == true, then we are looking for a single value,
      * otherwise it's a list of key/value pairs */
@@ -643,7 +540,7 @@ add_tokens(gs_param_list *plist, gs_param_name key, char *p)
     int single_done = 0;
     bool f = false, t = true;
 
-    while (*p != 0x00) {
+    while (*p) {
         switch (*p) {
             case ' ':
                 p++;
@@ -653,7 +550,11 @@ add_tokens(gs_param_list *plist, gs_param_name key, char *p)
                     return -1;
                 if (strncmp(p, "false", 5) != 0)
                     return -1;
+                if (!ends_token(p+5))
+                    return -1;
                 code = param_write_bool((gs_param_list *)plist, key, &f);
+                if (code >= 0 && dict_count != NULL)
+                    (*dict_count)++;
                 p += 5;
                 single_done = single;
                 key = NULL;
@@ -663,7 +564,11 @@ add_tokens(gs_param_list *plist, gs_param_name key, char *p)
                     return -1;
                 if (strncmp(p, "true", 4) != 0)
                     return -1;
+                if (!ends_token(p+4))
+                    return -1;
                 code = param_write_bool((gs_param_list *)plist, key, &t);
+                if (code >= 0 && dict_count != NULL)
+                    (*dict_count)++;
                 p += 4;
                 single_done = single;
                 key = NULL;
@@ -672,6 +577,8 @@ add_tokens(gs_param_list *plist, gs_param_name key, char *p)
                 if (single_done || key == NULL)
                     return -1;
                 code = process_dict_or_hexstring(plist->memory, (gs_c_param_list *)plist, key, &p);
+                if (code >= 0 && dict_count != NULL)
+                    (*dict_count)++;
                 single_done = single;
                 key = NULL;
                 break;
@@ -681,6 +588,8 @@ add_tokens(gs_param_list *plist, gs_param_name key, char *p)
                 if (single_done)
                     return -1;
                 code = process_name(plist->memory, (gs_c_param_list *)plist, &key, &p);
+                if (code >= 0 && have_key && dict_count != NULL)
+                    (*dict_count)++;
                 if (have_key) {
                     single_done = single;
                     key = NULL;
@@ -691,6 +600,8 @@ add_tokens(gs_param_list *plist, gs_param_name key, char *p)
                 if (single_done || key == NULL)
                     return -1;
                 code = process_string(plist->memory, (gs_c_param_list *)plist, key, &p);
+                if (code >= 0 && dict_count != NULL)
+                    (*dict_count)++;
                 single_done = single;
                 key = NULL;
                 break;
@@ -698,6 +609,8 @@ add_tokens(gs_param_list *plist, gs_param_name key, char *p)
                 if (single_done || key == NULL)
                     return -1;
                 code = process_array(plist->memory, (gs_c_param_list *)plist, key, &p);
+                if (code >= 0 && dict_count != NULL)
+                    (*dict_count)++;
                 single_done = single;
                 key = NULL;
                 break;
@@ -715,9 +628,19 @@ add_tokens(gs_param_list *plist, gs_param_name key, char *p)
                 if (single_done || key == NULL)
                     return -1;
                 code = process_number(plist->memory, (gs_c_param_list *)plist, key, &p);
+                if (code >= 0 && dict_count != NULL)
+                    (*dict_count)++;
                 single_done = single;
                 key = NULL;
                 break;
+            case '>':
+                if (dict_count != NULL && p[1] == '>') {
+                    if (key != NULL)
+                        return -1;
+                    *pp = p;
+                    return 0;
+                }
+                return -1;
             default:
                 return -1;
                 break;
@@ -734,14 +657,34 @@ add_tokens(gs_param_list *plist, gs_param_name key, char *p)
  */
 int gs_param_list_add_tokens(gs_param_list *plist, char *p)
 {
-    return add_tokens(plist, NULL, p);
+    char *r = p;
+    return add_tokens(plist, NULL, &r, NULL);
 }
 
 /* Given a key, and a string representing a single (maybe complex) value
  * to parse, parse it and add what we find to the supplied param list.
  */
-int gs_param_list_add_parsed_value(gs_param_list *plist, gs_param_name key, char *p)
+int gs_param_list_add_parsed_value(gs_param_list *plist, gs_param_name key, const char *p)
 {
-    return add_tokens(plist, key, p);
+    size_t len;
+    char *q, *r;
+    int code;
+
+    /* Treat NULL as the empty string. */
+    if (p == NULL)
+        return 0;
+
+    len = strlen(p) + 1;
+    q = (char *)gs_alloc_bytes(plist->memory, len, "gs_param_list_add_parsed_value");
+    if (q == NULL)
+        return_error(gs_error_VMerror);
+    memcpy(q, p, len);
+
+    r = q;
+    code = add_tokens(plist, key, &r, NULL);
+
+    gs_free_object(plist->memory, q, "gs_param_list_add_parsed_value");
+
+    return code;
 }
 

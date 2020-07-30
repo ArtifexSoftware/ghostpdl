@@ -37,6 +37,7 @@
 #include "store.h"
 #include "iname.h"
 #include "interp.h"
+#include "gxgstate.h"
 
 #ifndef GS_THREADSAFE
 /* Number of threads to allow per process. Unless GS_THREADSAFE is defined
@@ -144,6 +145,11 @@ psapi_delete_instance(gs_lib_ctx_t *ctx)
     ctx->core->stderr_fn = NULL;
     ctx->core->poll_fn = NULL;
     minst->display = NULL;
+
+    if (minst->param_list) {
+        gs_c_param_list_release((gs_c_param_list *)minst->param_list);
+        gs_free_object(minst->heap, minst->param_list, "psapi_delete_instance");
+    }
 
     gs_free_object(mem, minst, "init_main_instance");
 
@@ -290,67 +296,21 @@ psapi_init_with_args2(gs_lib_ctx_t *ctx)
 }
 
 int
-psapi_set_param(gs_lib_ctx_t *ctx,
-                psapi_sptype  type,
-                const char   *param,
-                const void   *val)
+psapi_set_device_param(gs_lib_ctx_t *ctx,
+                       gs_param_list *plist)
 {
     gs_main_instance *minst = get_minst_from_memory(ctx->memory);
-    ref value;
-    int code = 0;
-    i_ctx_t *i_ctx_p = minst->i_ctx_p;
-    uint space = icurrent_space;
 
-    ialloc_set_space(idmemory, avm_system);
-    switch (type) {
-        case psapi_spt_null:
-            make_null(&value);
-            break;
-        case psapi_spt_bool:
-            if (val)
-                make_true(&value);
-            else
-                make_false(&value);
-            break;
-        case psapi_spt_int:
-            make_int(&value, *(int *)val);
-            break;
-        case psapi_spt_float:
-            make_real(&value, *(float *)val);
-            break;
-        case psapi_spt_string:
-            if (val == NULL)
-                make_empty_string(&value, a_readonly);
-            else {
-                size_t len = strlen(val);
-                byte *body = ialloc_string(len, "-s");
+    return gs_putdeviceparams(minst->i_ctx_p->pgs->device, plist);
+}
 
-                if (body == NULL)
-                    return gs_error_Fatal;
-                memcpy(body, val, len);
-                make_const_string(&value, a_readonly | avm_system, len, body);
-            }
-            break;
-        case psapi_spt_name:
-            code = name_ref(ctx->memory, val, strlen(val), &value, 1);
-            break;
-        case psapi_spt_long:
-            make_int(&value, *(long *)val);
-            break;
-        case psapi_spt_i64:
-            make_int(&value, *(int64_t *)val);
-            break;
-        case psapi_spt_size_t:
-            make_int(&value, *(size_t *)val);
-            break;
-        default:
-            break;
-    }
-    ialloc_set_space(idmemory, space);
-    /* Enter the name in systemdict. */
-    i_initial_enter_name_copy(minst->i_ctx_p, param, &value);
+int
+psapi_set_param(gs_lib_ctx_t *ctx,
+                gs_param_list *plist)
+{
+    gs_main_instance *minst = get_minst_from_memory(ctx->memory);
 
-    return code;
+    return gs_main_set_language_param(minst, plist);
 }
 
 int

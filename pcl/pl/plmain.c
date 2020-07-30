@@ -277,8 +277,6 @@ pl_main_init_with_args(pl_main_instance_t *inst, int argc, char *argv[])
     }
 
     gp_get_realtime(inst->base_time);
-    gs_c_param_list_write(&inst->params, mem);
-    gs_param_list_set_persistent_keys((gs_param_list *)&inst->params, false);
 
     if (arg_init(&inst->args, (const char **)argv, argc, pl_main_arg_fopen, mem,
                  inst->get_codepoint, mem) < 0)
@@ -1270,6 +1268,8 @@ pl_main_alloc_instance(gs_memory_t * mem)
     strncpy(&minst->pcl_personality[0], "PCL",
             sizeof(minst->pcl_personality) - 1);
     mem->gs_lib_ctx->top_of_system = minst;
+    gs_c_param_list_write(&minst->params, mem);
+    gs_param_list_set_persistent_keys((gs_param_list *)&minst->params, false);
     return minst;
 }
 
@@ -1460,15 +1460,13 @@ static int check_for_special_str(pl_main_instance_t * pmi, const char *arg, gs_p
 
 static int
 pass_param_to_languages(pl_main_instance_t *pmi,
-                        pl_set_param_type   type,
-                        const char         *param,
-                        const void         *value)
+                        gs_param_list      *plist)
 {
     pl_interp_implementation_t **imp;
     int code = 0;
 
     for (imp = pmi->implementations; *imp != NULL; imp++) {
-        code = pl_set_param(*imp, type, param, value);
+        code = pl_set_param(*imp, plist);
         if (code != 0)
             break;
     }
@@ -1565,8 +1563,8 @@ end:
     return code;
 }
 
-static int
-set_param(pl_main_instance_t * pmi, const char *arg)
+int
+pl_main_set_param(pl_main_instance_t * pmi, const char *arg)
 {
     /* We're setting a device parameter to a non-string value. */
     const char *eqp = strchr(arg, '=');
@@ -1575,8 +1573,6 @@ set_param(pl_main_instance_t * pmi, const char *arg)
     float vf;
     bool bval = true;
     char buffer[128];
-    pl_set_param_type spt_type = pl_spt_invalid;
-    const void *spt_val = NULL;
     static const char const_true_string[] = "true";
     int code = 0;
     gs_c_param_list *params = &pmi->params;
@@ -1594,6 +1590,7 @@ set_param(pl_main_instance_t * pmi, const char *arg)
         dmprintf1(pmi->memory, "Command line key is too long: %s\n", arg);
         return -1;
     }
+    gs_c_param_list_write_more(params);
     strncpy(buffer, arg, eqp - arg);
     buffer[eqp - arg] = '\0';
     if (value && value[0] == '/') {
@@ -1607,8 +1604,6 @@ set_param(pl_main_instance_t * pmi, const char *arg)
         param_string_from_transient_string(str, value + 1);
         code = param_write_name((gs_param_list *) params,
                                 buffer, &str);
-        spt_type = pl_spt_name;
-        spt_val = value+1;
     } else if (strchr(value, '#')) {
         /* We have a non-decimal 'radix' number */
         int64_t base = 0;
@@ -1653,8 +1648,6 @@ set_param(pl_main_instance_t * pmi, const char *arg)
             return code;
         code = param_write_i64((gs_param_list *) params,
                                buffer, &vi);
-        spt_type = pl_spt_int;
-        spt_val = &vi;
     } else if ((!strchr(value, '.')) &&
                (sscanf(value, "%"PRId64, &vi) == 1)) {
         /* Here we have an int -- check for a scaling suffix */
@@ -1684,8 +1677,6 @@ set_param(pl_main_instance_t * pmi, const char *arg)
             return code;
         code = param_write_i64((gs_param_list *) params,
                                buffer, &vi);
-        spt_type = pl_spt_int;
-        spt_val = &vi;
     } else if (sscanf(value, "%f", &vf) == 1) {
         /* We have a float */
         code = check_for_special_float(pmi, arg, vf);
@@ -1693,8 +1684,6 @@ set_param(pl_main_instance_t * pmi, const char *arg)
             return code;
         code = param_write_float((gs_param_list *) params,
                                  buffer, &vf);
-        spt_type = pl_spt_float;
-        spt_val = &vf;
     } else if (!strcmp(value, "null")) {
         code = check_for_special_int(pmi, arg, (int)bval);
         if (code < 0) code = 0;
@@ -1702,8 +1691,6 @@ set_param(pl_main_instance_t * pmi, const char *arg)
             return code;
         code = param_write_null((gs_param_list *) params,
                                 buffer);
-        spt_type = pl_spt_null;
-        spt_val = NULL;
     } else if (!strcmp(value, "true")) {
         /* bval = true; */
         code = check_for_special_int(pmi, arg, (int)bval);
@@ -1712,8 +1699,6 @@ set_param(pl_main_instance_t * pmi, const char *arg)
             return code;
         code = param_write_bool((gs_param_list *) params,
                                 buffer, &bval);
-        spt_type = pl_spt_bool;
-        spt_val = (void*)1;
     } else if (!strcmp(value, "false")) {
         bval = false;
         code = check_for_special_int(pmi, arg, (int)bval);
@@ -1722,8 +1707,6 @@ set_param(pl_main_instance_t * pmi, const char *arg)
             return code;
         code = param_write_bool((gs_param_list *) params,
                                 buffer, &bval);
-        spt_type = pl_spt_bool;
-        spt_val = NULL;
     } else {
         dmprintf(pmi->memory,
                  "Usage for -d is -d<option>=[<integer>|<float>|null|true|false|name]\n");
@@ -1732,28 +1715,23 @@ set_param(pl_main_instance_t * pmi, const char *arg)
     }
     if (code < 0)
         return code;
-    return pass_param_to_languages(pmi, spt_type, buffer, spt_val);
+    gs_c_param_list_read(params);
+    code = pass_param_to_languages(pmi, (gs_param_list *) params);
+
+    /* If we have a device, send it to the device, and clear it from
+     * the list. If we don't have a device, we leave it in the list for
+     * it to be sent to device later. */
+    if (pmi->device) {
+        gs_c_param_list_read(params);
+        code = gs_putdeviceparams(pmi->device, (gs_param_list *) params);
+        gs_c_param_list_release(params);
+    }
+
+    return code;
 }
 
 int
-pl_main_set_param(pl_main_instance_t * pmi, const char *arg)
-{
-    int code;
-    gs_c_param_list *params = &pmi->params;
-
-    gs_c_param_list_write_more(params);
-    code = set_param(pmi, arg);
-    if (code < 0) {
-        gs_c_param_list_release(params);
-        return code;
-    }
-
-    gs_c_param_list_read(params);
-    return gs_putdeviceparams(pmi->device, (gs_param_list *) params);
-}
-
-static int
-set_string_param(pl_main_instance_t * pmi, const char *arg)
+pl_main_set_string_param(pl_main_instance_t * pmi, const char *arg)
 {
     /* We're setting a device or user parameter to a string. */
     char *eqp;
@@ -1795,12 +1773,23 @@ set_string_param(pl_main_instance_t * pmi, const char *arg)
         strncpy(buffer, arg, eqp - arg);
         buffer[eqp - arg] = '\0';
 
+        gs_c_param_list_write_more(params);
         param_string_from_transient_string(str, value);
         code = param_write_string((gs_param_list *) params,
                                   buffer, &str);
         if (code < 0)
             return code;
-        return pass_param_to_languages(pmi, pl_spt_string, buffer, value);
+        gs_c_param_list_read(params);
+        code = pass_param_to_languages(pmi, (gs_param_list *)params);
+        if (code < 0) {
+            gs_c_param_list_release(params);
+            return code;
+        }
+
+        if (pmi->device) {
+            code = gs_putdeviceparams(pmi->device, (gs_param_list *)params);
+            gs_c_param_list_release(params);
+        }
     }
     return code;
 }
@@ -1812,6 +1801,9 @@ pl_main_set_typed_param(pl_main_instance_t * pmi, pl_set_param_type type, const 
     gs_c_param_list *params = &pmi->params;
     gs_param_string str_value;
     bool bval;
+    int more_to_come = type & pl_spt_more_to_come;
+
+    type &= ~pl_spt_more_to_come;
 
     /* First set it in the device params */
     gs_c_param_list_write_more(params);
@@ -1856,6 +1848,10 @@ pl_main_set_typed_param(pl_main_instance_t * pmi, pl_set_param_type type, const 
         code = param_write_size_t((gs_param_list *) params,
                                   param, (size_t *)value);
         break;
+    case pl_spt_parsed:
+        code = gs_param_list_add_parsed_value((gs_param_list *)params,
+                                              param, (void *)value);
+        break;
     default:
         code = gs_note_error(gs_error_rangecheck);
     }
@@ -1865,25 +1861,23 @@ pl_main_set_typed_param(pl_main_instance_t * pmi, pl_set_param_type type, const 
     }
     gs_c_param_list_read(params);
 
-    /* Then send it to the languages */
-    return pass_param_to_languages(pmi, type, param, value);
-}
-
-int
-pl_main_set_string_param(pl_main_instance_t * pmi, const char *arg)
-{
-    int code;
-    gs_c_param_list *params = &pmi->params;
-
-    gs_c_param_list_write_more(params);
-    code = set_string_param(pmi, arg);
-    if (code < 0) {
-        gs_c_param_list_release(params);
-        return code;
+    if (pmi->implementations == NULL || more_to_come) {
+        /* Leave it in the param list for later. */
+        return 0;
     }
 
-    gs_c_param_list_read(params);
-    return gs_putdeviceparams(pmi->device, (gs_param_list *) params);
+    /* Then send it to the languages */
+    code = pass_param_to_languages(pmi, (gs_param_list *)params);
+    if (code < 0)
+        return code;
+
+    /* Send it to the device, if there is one. */
+    if (pmi->device) {
+        code = gs_putdeviceparams(pmi->device, (gs_param_list *)params);
+        gs_c_param_list_release(params);
+    }
+
+    return code;
 }
 
 static int
@@ -2043,7 +2037,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                 continue; /* Next arg has already been read, if there is one */
             case 'd':
             case 'D':
-                code = set_param(pmi, arg);
+                code = pl_main_set_param(pmi, arg);
                 if (code < 0)
                     return code;
                 break;
@@ -2078,6 +2072,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     ia.data = geom;
                     ia.size = 2;
                     ia.persistent = false;
+                    gs_c_param_list_write_more(params);
                     code =
                         param_write_int_array((gs_param_list *) params,
                                               "HWSize", &ia);
@@ -2107,6 +2102,7 @@ help:
                     fa.data = hwmarg;
                     fa.size = parsed;
                     fa.persistent = false;
+                    gs_c_param_list_write_more(params);
                     code =
                         param_write_float_array((gs_param_list *) params,
                                               ".HWMargins", &fa);
@@ -2244,6 +2240,7 @@ help:
                     fa.data = marg;
                     fa.size = parsed;
                     fa.persistent = false;
+                    gs_c_param_list_write_more(params);
                     code =
                         param_write_float_array((gs_param_list *) params,
                                                 "Margins", &fa);
@@ -2273,6 +2270,7 @@ help:
                     if (code < 0)
                         break;
                     param_string_from_transient_string(str, adef);
+                    gs_c_param_list_write_more(params);
                     code =
                         param_write_string((gs_param_list *) params,
                                            "OutputFile", &str);
@@ -2298,6 +2296,7 @@ help:
                     fa.data = res;
                     fa.size = sz;
                     fa.persistent = false;
+                    gs_c_param_list_write_more(params);
                     code =
                         param_write_float_array((gs_param_list *) params,
                                                 "HWResolution", &fa);
@@ -2343,11 +2342,11 @@ help:
                     } else if (!strncmp(arg, "OutputFile", 10) && strlen(eqp) > 0) {
                         code = gs_add_outputfile_control_path(pmi->memory, eqp+1);
                         if (code < 0) return code;
-                        code = set_string_param(pmi, arg);
+                        code = pl_main_set_string_param(pmi, arg);
                         if (code < 0)
                             return code;
                     } else {
-                        code = set_string_param(pmi, arg);
+                        code = pl_main_set_string_param(pmi, arg);
                         if (code < 0)
                             return code;
                     }
@@ -2356,7 +2355,7 @@ help:
             case 'q':
                 /* Silently accept -q to match gs. We are pretty quiet
                  * on startup anyway. */
-                code = set_param(pmi, "QUIET");
+                code = pl_main_set_param(pmi, "QUIET");
                 break;
             case 'v':               /* print revision */
                 if (pl_characteristics(pjli)->version)
@@ -2381,6 +2380,7 @@ help:
     */
     {
         int num_spots = 0;
+        gs_c_param_list_write_more(params);
         code = param_write_int((gs_param_list *)params, "PageSpotColors", &(num_spots));
         if (code < 0)
             return code;

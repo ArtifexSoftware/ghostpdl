@@ -85,6 +85,10 @@ int gs_main_init1(gs_main_instance * minst);
  */
 int gs_main_init2(gs_main_instance * minst);
 
+int
+gs_main_set_language_param(gs_main_instance *minst,
+                           gs_param_list    *plist);
+
 /*
  * The runlibfile operator uses a search path, as described in
  * Use.htm, for looking up file names.  Each interpreter instance has
