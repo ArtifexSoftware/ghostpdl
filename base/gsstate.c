@@ -592,8 +592,11 @@ gs_gstate_update_overprint(gs_gstate * pgs, const gs_overprint_params_t * pparam
                                                    pgs->memory,
                                                    NULL);
         if (code >= 0 || code == gs_error_handled){
-            if (ovptdev != dev)
+            if (ovptdev != dev) {
                 gx_set_device_only(pgs, ovptdev);
+                /* Get rid of extra reference */
+                rc_decrement(ovptdev, "gs_gstate_update_overprint(ovptdev)");
+            }
             code = 0;
         }
     }
