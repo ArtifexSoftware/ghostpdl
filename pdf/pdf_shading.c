@@ -84,6 +84,8 @@ static int pdfi_build_shading_function(pdf_context *ctx, gs_function_t **ppfn, c
             code = pdfi_build_function(ctx, &Functions[i], shading_domain, num_inputs, (pdf_dict *)rsubfn, page_dict);
             if (code < 0)
                 goto build_shading_function_error;
+            pdfi_countdown(rsubfn);
+            rsubfn = NULL;
         }
         params.m = num_inputs;
         params.Domain = 0;
