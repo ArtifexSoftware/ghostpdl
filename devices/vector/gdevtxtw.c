@@ -75,6 +75,8 @@ typedef struct text_list_entry_s {
     gs_point FontBBox_bottomleft, FontBBox_topright;
     float *Widths;
     float *Advs;
+    float *GlyphWidths;
+    float *SpanDeltaX;
     unsigned short *Unicode_Text;
     int Unicode_Text_Size;
     int render_mode;
@@ -150,6 +152,8 @@ typedef struct textw_text_enum_s {
     double cdevproc_result[10];
     float *Widths;
     float *Advs;
+    float *GlyphWidths;
+    float *SpanDeltaX;
     unsigned short *TextBuffer;
     int TextBufferIndex;
     text_list_entry_t *text_state;
@@ -839,34 +843,54 @@ static int decorated_text_output(gx_device_txtwrite_t *tdev)
 static int extract_text_output(gx_device_txtwrite_t *tdev)
 {
     text_list_entry_t* entry;
+    gp_fprintf(tdev->file, "<?xml version=\"1.0\"?>\n");
     gp_fprintf(tdev->file, "<page>\n");
     for (entry = tdev->PageData.unsorted_text_list;
             entry;
             entry = entry->next
             ) {
-        float x = entry->start.x;
+
         int i;
-        gp_fprintf(tdev->file,
-                "<span bbox=\"%0.4f %0.4f %0.4f %0.4f\" font=\"%s\" size=\"%0.4f\">\n",
-                entry->start.x,
-                entry->start.y,
-                entry->end.x,
-                entry->end.y,
-                entry->FontName,
-                entry->size
+        float x = entry->start.x - entry->matrix.tx;
+        gp_fprintf(tdev->file, "<span");
+        gp_fprintf(tdev->file, " ctm=\"%f %f %f %f %f %f\"",
+                entry->matrix.xx,
+                entry->matrix.xy,
+                entry->matrix.yx,
+                entry->matrix.yy,
+                entry->matrix.tx,
+                entry->matrix.ty
                 );
+        gp_fprintf(tdev->file, " ctm_orig=\"%f %f %f %f %f %f\"",
+                entry->matrix.xx,
+                entry->matrix.xy,
+                entry->matrix.yx,
+                entry->matrix.yy,
+                entry->matrix.tx,
+                entry->matrix.ty
+                );
+        gp_fprintf(tdev->file, " trm=\"%lf %f %f %lf %f %f\"",
+                entry->size,
+                0.0f,
+                0.0f,
+                entry->size,
+                0.0f,
+                0.0f
+                );
+        gp_fprintf(tdev->file, " len=\"%i\"", entry->Unicode_Text_Size);
+        gp_fprintf(tdev->file, " wmode=\"%i\"", entry->wmode);
+        gp_fprintf(tdev->file, " font_name=\"%s\"", entry->FontName);
+        gp_fprintf(tdev->file, ">\n");
         for (i=0; i<entry->Unicode_Text_Size; i++) {
-            float x_next = x + entry->Widths[i];
-            char escaped[32];
-            escaped_Unicode(entry->Unicode_Text[i], escaped);
+            float x_next = x + entry->SpanDeltaX[i];
+            int c = entry->Unicode_Text[i];
             gp_fprintf(tdev->file,
-                    "<char bbox=\"%0.4f %0.4f %0.4f %0.4f\" c=\"%s\" adv=\"%0.4f\"/>\n",
+                    "<char x=\"%f\" y=\"%f\" c=\"%c\" ucs=\"%u\" adv=\"%f\"/>\n",
                     x,
-                    entry->start.y,
-                    x_next,
-                    entry->end.y,
-                    escaped,
-                    entry->Advs[i]
+                    entry->start.y - entry->matrix.ty,
+                    (c >= 32 && c < 127 && c != '"') ? c : '.',
+                    c,
+                    entry->GlyphWidths[i] / entry->size
                     );
             x = x_next;
         }
@@ -935,6 +959,8 @@ txtwrite_output_page(gx_device * dev, int num_copies, int flush)
             gs_free(tdev->memory, x_entry->Unicode_Text, x_entry->Unicode_Text_Size, sizeof (usnigned short), "txtwrite free text fragment text buffer");
             gs_free(tdev->memory, x_entry->Widths, x_entry->Unicode_Text_Size, sizeof (float), "txtwrite free widths array");
             gs_free(tdev->memory, x_entry->Advs, x_entry->Unicode_Text_Size, sizeof (float), "txtwrite free advs array");
+            gs_free(tdev->memory, x_entry->GlyphWidths, x_entry->Unicode_Text_Size, sizeof (float), "txtwrite free widths array");
+            gs_free(tdev->memory, x_entry->SpanDeltaX, x_entry->Unicode_Text_Size, sizeof (float), "txtwrite free advs array");
             gs_free(tdev->memory, x_entry->FontName, 1, strlen(x_entry->FontName) + 1, "txtwrite free Font Name");
             if (x_entry->next) {
                 x_entry = x_entry->next;
@@ -961,6 +987,8 @@ txtwrite_output_page(gx_device * dev, int num_copies, int flush)
         gs_free(tdev->memory, x_entry->Unicode_Text, x_entry->Unicode_Text_Size, sizeof (usnigned short), "txtwrite free unsorted text fragment text buffer");
         gs_free(tdev->memory, x_entry->Widths, x_entry->Unicode_Text_Size, sizeof (float), "txtwrite free widths array");
         gs_free(tdev->memory, x_entry->Advs, x_entry->Unicode_Text_Size, sizeof (float), "txtwrite free advs array");
+        gs_free(tdev->memory, x_entry->GlyphWidths, x_entry->Unicode_Text_Size, sizeof (float), "txtwrite free widths array");
+        gs_free(tdev->memory, x_entry->SpanDeltaX, x_entry->Unicode_Text_Size, sizeof (float), "txtwrite free advs array");
         gs_free(tdev->memory, x_entry->FontName, 1, strlen(x_entry->FontName) + 1, "txtwrite free Font Name");
         gs_free(tdev->memory, x_entry, 1, sizeof(text_list_entry_t), "txtwrite free unsorted text fragment");
         x_entry = next_x;
@@ -1940,6 +1968,8 @@ txtwrite_process_cmap_text(gs_text_enum_t *pte)
                 pte->returned.total_width.x += wanted.x;
                 pte->returned.total_width.y += wanted.y;
                 penum->Widths[penum->TextBufferIndex] = wanted.x;
+                penum->GlyphWidths[penum->TextBufferIndex] = widths.real_width.xy.x * penum->text_state->size;
+                penum->SpanDeltaX[penum->TextBufferIndex] = widths.real_width.xy.x * penum->text_state->size;
 
                 if (pte->text.operation & TEXT_ADD_TO_ALL_WIDTHS) {
                     gs_point tpt;
@@ -1961,6 +1991,7 @@ txtwrite_process_cmap_text(gs_text_enum_t *pte)
                 pte->returned.total_width.y += dpt.y;
 
                 penum->Widths[penum->TextBufferIndex] += dpt.x;
+                penum->GlyphWidths[penum->TextBufferIndex] += dpt.x;
                 penum->TextBufferIndex += get_unicode(penum, (gs_font *)pte->orig_font, glyph, chr, &penum->TextBuffer[penum->TextBufferIndex]);
                 break;
             case 2:		/* end of string */
@@ -2028,6 +2059,8 @@ txtwrite_process_plain_text(gs_text_enum_t *pte)
         pte->returned.total_width.y += wanted.y;
         penum->Widths[penum->TextBufferIndex] = wanted.x;
         penum->Advs[penum->TextBufferIndex] = wanted.x;
+        penum->GlyphWidths[penum->TextBufferIndex] = widths.real_width.xy.x * penum->text_state->size;
+        penum->SpanDeltaX[penum->TextBufferIndex] = widths.real_width.xy.x * penum->text_state->size;
 
         if (pte->text.operation & TEXT_ADD_TO_ALL_WIDTHS) {
             gs_point tpt;
@@ -2049,6 +2082,7 @@ txtwrite_process_plain_text(gs_text_enum_t *pte)
         pte->returned.total_width.y += dpt.y;
 
         penum->Widths[penum->TextBufferIndex] += dpt.x;
+        penum->SpanDeltaX[penum->TextBufferIndex] += dpt.x;
         code = get_unicode(penum, (gs_font *)pte->orig_font, glyph, ch, &penum->TextBuffer[penum->TextBufferIndex]);
         /* If a single text code returned multiple Unicode values, then we need to set the
          * 'extra' code points' widths to 0.
@@ -2056,6 +2090,8 @@ txtwrite_process_plain_text(gs_text_enum_t *pte)
         if (code > 1) {
             memset(&penum->Widths[penum->TextBufferIndex + 1], 0x00, (code - 1) * sizeof(float));
             memset(&penum->Advs[penum->TextBufferIndex + 1], 0x00, (code - 1) * sizeof(float));
+            memset(&penum->GlyphWidths[penum->TextBufferIndex + 1], 0x00, (code - 1) * sizeof(float));
+            memset(&penum->SpanDeltaX[penum->TextBufferIndex + 1], 0x00, (code - 1) * sizeof(float));
         }
         penum->TextBufferIndex += code;
 /*        gs_moveto_aux(penum->pgs, gx_current_path(penum->pgs),
@@ -2216,10 +2252,22 @@ txt_add_fragment(gx_device_txtwrite_t *tdev, textw_text_enum_t *penum)
         penum->TextBufferIndex, sizeof(float), "txtwrite alloc widths array");
     if (!penum->text_state->Advs)
         return gs_note_error(gs_error_VMerror);
+    penum->text_state->GlyphWidths = (float *)gs_malloc(tdev->memory->stable_memory,
+        penum->TextBufferIndex, sizeof(float), "txtwrite alloc widths array");
+    if (!penum->text_state->GlyphWidths)
+        return gs_note_error(gs_error_VMerror);
+    penum->text_state->SpanDeltaX = (float *)gs_malloc(tdev->memory->stable_memory,
+        penum->TextBufferIndex, sizeof(float), "txtwrite alloc widths array");
+    if (!penum->text_state->SpanDeltaX)
+        return gs_note_error(gs_error_VMerror);
     memset(penum->text_state->Widths, 0x00, penum->TextBufferIndex * sizeof(float));
     memcpy(penum->text_state->Widths, penum->Widths, penum->TextBufferIndex * sizeof(float));
     memset(penum->text_state->Advs, 0x00, penum->TextBufferIndex * sizeof(float));
     memcpy(penum->text_state->Advs, penum->Advs, penum->TextBufferIndex * sizeof(float));
+    memset(penum->text_state->GlyphWidths, 0x00, penum->TextBufferIndex * sizeof(float));
+    memcpy(penum->text_state->GlyphWidths, penum->GlyphWidths, penum->TextBufferIndex * sizeof(float));
+    memset(penum->text_state->SpanDeltaX, 0x00, penum->TextBufferIndex * sizeof(float));
+    memcpy(penum->text_state->SpanDeltaX, penum->SpanDeltaX, penum->TextBufferIndex * sizeof(float));
 
     unsorted_entry->Unicode_Text = (unsigned short *)gs_malloc(tdev->memory->stable_memory,
         penum->TextBufferIndex, sizeof(unsigned short), "txtwrite alloc sorted text buffer");
@@ -2235,10 +2283,22 @@ txt_add_fragment(gx_device_txtwrite_t *tdev, textw_text_enum_t *penum)
         penum->TextBufferIndex, sizeof(float), "txtwrite alloc widths array");
     if (!unsorted_entry->Advs)
         return gs_note_error(gs_error_VMerror);
+    unsorted_entry->GlyphWidths = (float *)gs_malloc(tdev->memory->stable_memory,
+        penum->TextBufferIndex, sizeof(float), "txtwrite alloc widths array");
+    if (!unsorted_entry->GlyphWidths)
+        return gs_note_error(gs_error_VMerror);
+    unsorted_entry->SpanDeltaX = (float *)gs_malloc(tdev->memory->stable_memory,
+        penum->TextBufferIndex, sizeof(float), "txtwrite alloc widths array");
+    if (!unsorted_entry->SpanDeltaX)
+        return gs_note_error(gs_error_VMerror);
     memset(unsorted_entry->Widths, 0x00, penum->TextBufferIndex * sizeof(float));
     memcpy(unsorted_entry->Widths, penum->Widths, penum->TextBufferIndex * sizeof(float));
     memset(unsorted_entry->Advs, 0x00, penum->TextBufferIndex * sizeof(float));
     memcpy(unsorted_entry->Advs, penum->Advs, penum->TextBufferIndex * sizeof(float));
+    memset(unsorted_entry->GlyphWidths, 0x00, penum->TextBufferIndex * sizeof(float));
+    memcpy(unsorted_entry->GlyphWidths, penum->GlyphWidths, penum->TextBufferIndex * sizeof(float));
+    memset(unsorted_entry->SpanDeltaX, 0x00, penum->TextBufferIndex * sizeof(float));
+    memcpy(unsorted_entry->SpanDeltaX, penum->SpanDeltaX, penum->TextBufferIndex * sizeof(float));
 
     unsorted_entry->FontName = (char *)gs_malloc(tdev->memory->stable_memory,
         (strlen(penum->text_state->FontName) + 1), sizeof(unsigned char), "txtwrite alloc sorted text buffer");
@@ -2310,6 +2370,14 @@ textw_text_process(gs_text_enum_t *pte)
         penum->Advs = (float *)gs_malloc(tdev->memory->stable_memory,
             pte->text.size * 4, sizeof(float), "txtwrite temporary advs array");
         if (!penum->Advs)
+            return gs_note_error(gs_error_VMerror);
+        penum->GlyphWidths = (float *)gs_malloc(tdev->memory->stable_memory,
+            pte->text.size * 4, sizeof(float), "txtwrite temporary glyphwidths array");
+        if (!penum->GlyphWidths)
+            return gs_note_error(gs_error_VMerror);
+        penum->SpanDeltaX = (float *)gs_malloc(tdev->memory->stable_memory,
+            pte->text.size * 4, sizeof(float), "txtwrite temporary spandeltax array");
+        if (!penum->SpanDeltaX)
             return gs_note_error(gs_error_VMerror);
     }
     {
