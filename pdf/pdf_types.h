@@ -30,6 +30,7 @@
 #define DEBUG_CACHE_FREE 0
 #define PROBE_STREAMS 0
 #define REFCNT_DEBUG 0
+#define CACHE_STATISTICS 0
 
 #include "stdint_.h"    /* Various data types */
 #include "scommon.h"    /* for gs_offset_t */

@@ -1149,6 +1149,9 @@ int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx)
             ctx->cache_entries--;
             gs_free_object(ctx->memory, entry, "pdfi_free_context, free LRU");
             entry = next;
+#if REFCNT_DEBUG
+            ctx->cache_LRU = entry;
+#endif
         }
 #endif
         ctx->cache_LRU = ctx->cache_MRU = NULL;

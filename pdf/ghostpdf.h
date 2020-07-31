@@ -87,8 +87,6 @@
 
 #define BUF_SIZE 2048
 
-#define CACHE_STATISTICS 0
-
 #include "pdf_types.h"
 
 /*
