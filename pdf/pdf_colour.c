@@ -2239,6 +2239,9 @@ pdfi_color_cleanup_inner(pdf_context *ctx, gs_color_space *pcs, gs_client_color 
     int code = 0;
     gs_function_t *pfn;
 
+     if (gs_color_space_get_index(pcs) == gs_color_space_index_Indexed)
+         pcs = pcs->base_space;
+
     /* Handle cleanup of Separation functions if applicable */
     pfn = gs_cspace_get_sepr_function(pcs);
     if (pfn)
