@@ -19,6 +19,7 @@ import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
@@ -490,11 +491,13 @@ public class ViewerWindow extends javax.swing.JFrame {
 				Dimension actualSize = new Dimension((int)(pageSize.width * size),
 						(int)(pageSize.height * size));
 				BufferedImage img = page.getDisplayableImage();
-				if (page.getZoomedImage() != null && size > 1.0)
+				if (page.getZoomedImage() != null && size > 1.0) {
+					System.out.println("Using zoomed image!");
 					img = page.getZoomedImage();
+				}
 
 				Image result = img;
-				if (img == page.getLowResImage() || !pageSize.equals(actualSize))
+				if (img == page.getLowResImage() || currentZoom < 1.0)
 					result = img.getScaledInstance(actualSize.width, actualSize.height, Image.SCALE_FAST);
 				return result;
 			} else {
@@ -540,7 +543,9 @@ public class ViewerWindow extends javax.swing.JFrame {
 		public void onUnloadHighRes() { }
 
 		@Override
-		public void onLoadZoomed() { }
+		public void onLoadZoomed() {
+			System.out.println(page.getZoomedSize());
+		}
 
 		@Override
 		public void onUnloadZoomed() { }
@@ -769,6 +774,10 @@ public class ViewerWindow extends javax.swing.JFrame {
 		if (this.scrollMap != null)
 			return scrollMap.getCurrentPage();
 		return 0;
+	}
+
+	public void showErrorDialog(String title, String message) {
+		JOptionPane.showMessageDialog(this, message, title, JOptionPane.ERROR_MESSAGE);
 	}
 
 	/**

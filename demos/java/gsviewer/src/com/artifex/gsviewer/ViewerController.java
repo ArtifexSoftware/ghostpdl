@@ -1,7 +1,7 @@
 package com.artifex.gsviewer;
 
-import java.awt.Point;
 import java.io.File;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -14,8 +14,10 @@ import com.artifex.gsviewer.gui.ViewerWindow;
 
 public class ViewerController implements ViewerGUIListener {
 
-	private final static Lock lock = new ReentrantLock();
-	private final static Condition cv = lock.newCondition();
+	private static final Lock lock = new ReentrantLock();
+	private static final Condition cv = lock.newCondition();
+
+	private static final AtomicBoolean operationInProgress = new AtomicBoolean(false);
 
 	private ViewerWindow source;
 	private Document currentDocument;
@@ -24,14 +26,24 @@ public class ViewerController implements ViewerGUIListener {
 		if (currentDocument != null)
 			close();
 		Document.loadDocumentAsync(file, (final Document doc, final Exception exception) -> {
+			if (operationInProgress.get()) {
+				source.showErrorDialog("Error", "An operation is already in progress");
+				return;
+			}
+			//operationInProgress.set(true);
 			source.setLoadProgress(0);
 			if (exception != null) {
-				JOptionPane.showMessageDialog(source, exception.toString(),
-						"Failed to load", JOptionPane.ERROR_MESSAGE);
+				source.showErrorDialog("Failed to load", exception.toString());
+				operationInProgress.set(false);
 			} else {
 				System.out.println("Loaded document");
 				this.currentDocument = doc;
 				source.loadDocumentToViewer(doc);
+				operationInProgress.set(false);
+
+				synchronized (operationInProgress) {
+					operationInProgress.notifyAll();
+				}
 
 				dispatchSmartLoader();
 			}
@@ -71,7 +83,27 @@ public class ViewerController implements ViewerGUIListener {
 
 	@Override
 	public void onZoomChange(double oldZoom, double newZoom) {
+		if (newZoom > 1.0) {
+			int currentPage = source.getCurrentPage();
+			Runnable r = () -> {
+				if (operationInProgress.get()) {
+					source.showErrorDialog("Error", "An operation is already in progress");
+					return;
+				}
 
+				//operationInProgress.set(true);
+
+				currentDocument.zoomArea(currentPage, newZoom);
+
+				operationInProgress.set(false);
+				synchronized (operationInProgress) {
+					operationInProgress.notifyAll();
+				}
+			};
+			Thread t = new Thread(r);
+			t.setName("Zoom-Thread");
+			t.start();
+		}
 	}
 
 	@Override
@@ -122,6 +154,20 @@ public class ViewerController implements ViewerGUIListener {
 						currentPage, currentPage - 1, currentPage + 1,
 						currentPage - 2, currentPage + 2 };
 
+				if (operationInProgress.get()) {
+					synchronized (operationInProgress) {
+						while (operationInProgress.get()) {
+							try {
+								operationInProgress.wait();
+							} catch (InterruptedException e) {
+								source.showErrorDialog("Error", e.toString());
+							}
+						}
+					}
+				}
+
+				//operationInProgress.set(true);
+
 				int ind = 0;
 				for (int page : toLoad) {
 					if (page >= 1 && page <= doc.size()) {
@@ -134,6 +180,8 @@ public class ViewerController implements ViewerGUIListener {
 					source.setLoadProgress((int)(((double)ind / toLoad.length) * 100));
 				}
 				source.setLoadProgress(0);
+
+				operationInProgress.set(false);
 
 				lock.lock();
 				try {

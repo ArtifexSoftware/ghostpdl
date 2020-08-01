@@ -94,7 +94,8 @@ public class Page {
 		}
 	}
 
-	public void loadZoomed(final byte[] data, final int width, final int height, final int raster, final int format) {
+	public void loadZoomed(final byte[] data, final int width, final int height,
+			final int raster, final int format) {
 		setZoomed(ImageUtil.createImage(data, new ImageParams(width, height, raster, format)));
 	}
 
@@ -121,6 +122,7 @@ public class Page {
 	public void unloadAll() {
 		unloadLowRes();
 		unloadHighRes();
+		unloadZoomed();
 	}
 
 	public BufferedImage getLowResImage() {

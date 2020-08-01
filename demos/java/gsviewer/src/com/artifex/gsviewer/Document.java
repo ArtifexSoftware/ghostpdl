@@ -380,14 +380,32 @@ public class Document implements List<Page> {
 		unloadHighRes(page, page);
 	}
 
+	public void loadZoomed(int startPage, int endPage, double scale) throws IndexOutOfBoundsException {
+		checkBounds(startPage, endPage);
+	}
+
+	public void loadZoomed(int page, double scale) throws IndexOutOfBoundsException {
+
+	}
+
+	public void unloadZoomed(int startPage, int endPage) throws IndexOutOfBoundsException {
+		checkBounds(startPage, endPage);
+		for (int i = startPage; i <= endPage; i++) {
+			pages.get(i - 1).unloadZoomed();
+		}
+	}
+
+	public void unloadZoomed(int page) throws IndexOutOfBoundsException {
+		unloadZoomed(page, page);
+	}
+
 	/**
 	 * Unloads the document's resources. The document will be unusable after this
 	 * call.
 	 */
 	public void unload() {
 		for (Page p : pages) {
-			p.unloadLowRes();
-			p.unloadHighRes();
+			p.unloadAll();
 		}
 		pages.clear();
 	}
