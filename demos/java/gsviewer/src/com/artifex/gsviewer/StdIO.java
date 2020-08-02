@@ -13,6 +13,9 @@ import com.artifex.gsjava.callbacks.IStdOutFunction;
  */
 public class StdIO implements IStdOutFunction, IStdErrFunction, IStdInFunction {
 
+	public static final boolean ENABLE_STD_OUT_IO = false;
+	public static final boolean ENABLE_STD_ERR_IO = true;
+
 	@Override
 	public int onStdIn(long callerHandle, byte[] buf, int len) {
 		return len;
@@ -20,13 +23,15 @@ public class StdIO implements IStdOutFunction, IStdErrFunction, IStdInFunction {
 
 	@Override
 	public int onStdErr(long callerHandle, byte[] str, int len) {
-		System.err.println(new String(str));
+		if (ENABLE_STD_ERR_IO)
+			System.err.println(new String(str));
 		return len;
 	}
 
 	@Override
 	public int onStdOut(long callerHandle, byte[] str, int len) {
-		System.out.println(new String(str));
+		if (ENABLE_STD_OUT_IO)
+			System.out.println(new String(str));
 		return len;
 	}
 

@@ -12,6 +12,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
 import com.artifex.gsjava.callbacks.DisplayCallback;
 import com.artifex.gsjava.util.BytePointer;
 import com.artifex.gsjava.util.LongReference;
@@ -29,22 +34,51 @@ public class Document implements List<Page> {
 	private static final DocumentLoader documentLoader = new DocumentLoader();
 	private static final int format = GS_COLORS_RGB | GS_DISPLAY_DEPTH_8 | GS_DISPLAY_BIGENDIAN;
 
+	private static final ReentrantLock operationLock = new ReentrantLock();
+	private static final Condition operationCv = operationLock.newCondition();
+	private static final AtomicBoolean operationInProgress = new AtomicBoolean(false);
+
+	public static final int ASYNC_DISPATCH_OK = 0, ASYNC_DISPATCH_OPERATION_IN_PROGRESS = 1;
+	public static final int OPERATION_WAIT = 0, OPERATION_RETURN = 1, OPERATION_THROW = 2;
+
 	/**
 	 * Loads a document on a separate thread.
 	 *
 	 * @param file The file to load.
 	 * @param cb The callback when loading the document has finished.
 	 * @param dlb The callback signifying when progress has occurred while loading.
+	 * @param operationMode How the loader should behave if an operation is already in
+	 * progress. Can be <code>OPERATION_WAIT</code>, meaning the loader should
+	 * wait until a running operation has finished, <code>OPERATION_RETURN</code> meaning
+	 * the loader should immediately return <code>ASYNC_DISPATCH_OPERATION_IN_PROGRESS</code>, or
+	 * <code>OPERATION_THROW</code> meaning the loader should throw an
+	 * <code>OperationInProgressException</code>.
+	 *
+	 * @return The state of the thread dispatching. This is either <code>ASYNC_DISPATCH_OK</code>
+	 * or <code>ASYNC_DISPATCH_OPERATION_IN_PROGRESS</code> which is also dependent on
+	 * <code>operationMode</code>.
+	 *
 	 * @throws NullPointerException When <code>cb</code> is <code>null</code>.
+	 * @throws RuntimeException When the current thread fails to wait until a thread has finished
+	 * completing an operation.
+	 * @throws IllegalArgumentException When <code>operationMode</code> is not
+	 * <code>OPERTAION_WAIT</coded>, <code>OPERATION_RETURN</code>, or <code>OPERATION_THROW</code>.
+	 * @throws OperationInProgressException When an operation is in progress and
+	 * <code>operationMode</codeE> is <code>OPERATION_THROW</code>.
 	 */
-	public static void loadDocumentAsync(final File file, final DocAsyncLoadCallback cb, final DocLoadProgressCallback dlb)
-			throws NullPointerException {
+	public static int loadDocumentAsync(final File file, final DocAsyncLoadCallback cb,
+			final DocLoadProgressCallback dlb, final int operationMode)
+			throws NullPointerException, RuntimeException, IllegalArgumentException,
+			OperationInProgressException {
+		if (!handleOperationMode(operationMode))
+			return ASYNC_DISPATCH_OPERATION_IN_PROGRESS;
+
 		Objects.requireNonNull(cb, "DocAsyncLoadCallback");
 		final Thread t = new Thread(() -> {
 			Document doc = null;
 			Exception exception = null;
 			try {
-				doc = new Document(file, dlb);
+				doc = new Document(file, dlb, operationMode);
 			} catch (FileNotFoundException | IllegalStateException | NullPointerException e) {
 				exception = e;
 			}
@@ -53,6 +87,7 @@ public class Document implements List<Page> {
 		t.setName("Document-Loader-Thread");
 		t.setDaemon(true);
 		t.start();
+		return ASYNC_DISPATCH_OK;
 	}
 
 	/**
@@ -60,11 +95,27 @@ public class Document implements List<Page> {
 	 *
 	 * @param file The file to load.
 	 * @param cb The callback when loading the document has finished.
+	 * @param operationMode How the loader should behave if an operation is already in
+	 * progress. Can be <code>OPERATION_WAIT</code>, meaning the loader should
+	 * wait until a running operation has finished, <code>OPERATION_RETURN</code> meaning
+	 * the loader should immediately return <code>ASYNC_DISPATCH_OPERATION_IN_PROGRESS</code>, or
+	 * <code>OPERATION_THROW</code> meaning the loader should throw an
+	 * <code>OperationInProgressException</code>.
+	 *
+	 * @return The state of the thread dispatching. This is either <code>ASYNC_DISPATCH_OK</code>
+	 * or <code>ASYNC_DISPATCH_OPERATION_IN_PROGRESS</code> which is also dependent on
+	 * <code>operationMode</code>.
+	 *
 	 * @throws NullPointerException When <code>cb</code> is <code>null</code>.
+	 * @throws RuntimeException When the current thread fails to wait until a thread has finished
+	 * completing an operation.
+	 * @throws IllegalArgumentException When <code>operationMode</code> is not
+	 * <code>ASYNC_OPERTAION_WAIT</coded> or <code>ASYNC_OPERATION_RETURN</code>.
 	 */
-	public static void loadDocumentAsync(final File file, final DocAsyncLoadCallback cb)
-			throws NullPointerException {
-		loadDocumentAsync(file, cb, null);
+	public static int loadDocumentAsync(final File file, final DocAsyncLoadCallback cb,
+			final int operationMode)
+			throws NullPointerException, RuntimeException, IllegalArgumentException {
+		return loadDocumentAsync(file, cb, null, operationMode);
 	}
 
 	/**
@@ -73,11 +124,27 @@ public class Document implements List<Page> {
 	 * @param filename The name of the file to load.
 	 * @param cb The callback when loading the document has finished.
 	 * @param dlb The callback signifying when progress has occurred while loading.
+	 * @param operationMode How the loader should behave if an operation is already in
+	 * progress. Can be <code>OPERATION_WAIT</code>, meaning the loader should
+	 * wait until a running operation has finished, <code>OPERATION_RETURN</code> meaning
+	 * the loader should immediately return <code>ASYNC_DISPATCH_OPERATION_IN_PROGRESS</code>, or
+	 * <code>OPERATION_THROW</code> meaning the loader should throw an
+	 * <code>OperationInProgressException</code>.
+	 *
+	 * @return The state of the thread dispatching. This is either <code>ASYNC_DISPATCH_OK</code>
+	 * or <code>ASYNC_DISPATCH_OPERATION_IN_PROGRESS</code> which is also dependent on
+	 * <code>operationMode</code>.
+	 *
 	 * @throws NullPointerException When <code>cb</code> is <code>null</code>.
+	 * @throws RuntimeException When the current thread fails to wait until a thread has finished
+	 * completing an operation.
+	 * @throws IllegalArgumentException When <code>operationMode</code> is not
+	 * <code>ASYNC_OPERTAION_WAIT</coded> or <code>ASYNC_OPERATION_RETURN</code>.
 	 */
-	public static void loadDocumentAsync(final String filename, final DocAsyncLoadCallback cb, final DocLoadProgressCallback dlb)
-			throws NullPointerException {
-		loadDocumentAsync(new File(filename), cb, dlb);
+	public static int loadDocumentAsync(final String filename, final DocAsyncLoadCallback cb,
+			final DocLoadProgressCallback dlb, final int operationMode)
+			throws NullPointerException, RuntimeException, IllegalArgumentException {
+		return loadDocumentAsync(new File(filename), cb, dlb, operationMode);
 	}
 
 	/**
@@ -85,11 +152,66 @@ public class Document implements List<Page> {
 	 *
 	 * @param filename The name of the file to load.
 	 * @param cb The callback when loading the document has finished.
+	 * @param operationMode How the loader should behave if an operation is already in
+	 * progress. Can be <code>OPERATION_WAIT</code>, meaning the loader should
+	 * wait until a running operation has finished, <code>OPERATION_RETURN</code> meaning
+	 * the loader should immediately return <code>ASYNC_DISPATCH_OPERATION_IN_PROGRESS</code>, or
+	 * <code>OPERATION_THROW</code> meaning the loader should throw an
+	 * <code>OperationInProgressException</code>.
+	 *
+	 * @return The state of the thread dispatching. This is either <code>ASYNC_DISPATCH_OK</code>
+	 * or <code>ASYNC_DISPATCH_OPERATION_IN_PROGRESS</code> which is also dependent on
+	 * <code>operationMode</code>.
+	 *
 	 * @throws NullPointerException When <code>cb</code> is <code>null</code>.
+	 * @throws RuntimeException When the current thread fails to wait until a thread has finished
+	 * completing an operation.
+	 * @throws IllegalArgumentException When <code>operationMode</code> is not
+	 * <code>ASYNC_OPERTAION_WAIT</coded> or <code>ASYNC_OPERATION_RETURN</code>.
 	 */
-	public static void loadDocumentAsync(final String filename, final DocAsyncLoadCallback cb)
-			throws NullPointerException {
-		loadDocumentAsync(filename, cb, null);
+	public static int loadDocumentAsync(final String filename, final DocAsyncLoadCallback cb,
+			final int operationMode)
+			throws NullPointerException, RuntimeException, IllegalArgumentException {
+		return loadDocumentAsync(filename, cb, null, operationMode);
+	}
+
+	private static void startOperation() {
+		operationInProgress.set(true);
+	}
+
+	private static boolean handleOperationMode(final int operationMode)
+			throws OperationInProgressException, IllegalArgumentException {
+		boolean inProgress = operationInProgress.get();
+		if (inProgress && operationMode == OPERATION_RETURN)
+			return false;
+		else if (inProgress && operationMode == OPERATION_THROW)
+			throw new OperationInProgressException("loadDocument");
+		else if (inProgress && operationMode == OPERATION_WAIT)
+			waitForOperation();
+		else if (inProgress)
+			throw new IllegalArgumentException("Unknown operation mode: " + operationMode);
+		return true;
+	}
+
+	private static void waitForOperation() {
+		operationLock.lock();
+		try {
+			operationCv.await();
+		} catch (InterruptedException e) {
+			throw new RuntimeException("Thread interrupted", e);
+		} finally {
+			operationLock.unlock();
+		}
+	}
+
+	private static void operationDone() {
+		operationLock.lock();
+		operationInProgress.set(false);
+		try {
+			operationCv.notify();
+		} finally {
+			operationLock.unlock();
+		}
 	}
 
 	@FunctionalInterface
@@ -116,6 +238,21 @@ public class Document implements List<Page> {
 		 * @param progress The amount of progress (from 0 to 100).
 		 */
 		public void onDocumentProgress(int progress);
+	}
+
+	/**
+	 * Exception indicating an operation is already in progress.
+	 *
+	 * @author Ethan Vrhel
+	 *
+	 */
+	public static final class OperationInProgressException extends RuntimeException {
+
+		private static final long serialVersionUID = 1L;
+
+		public OperationInProgressException(String message) {
+			super(message);
+		}
 	}
 
 	private static void initDocInstance(LongReference instanceRef) throws IllegalStateException {
@@ -191,12 +328,22 @@ public class Document implements List<Page> {
 	 *
 	 * @param file The file to load.
 	 * @param loadCallback The callback to indicate when progress has occurred while loading.
+	 * @param operationMode How the loader should behave if an operation is already in
+	 * progress. Can be <code>OPERATION_WAIT</code>, meaning the loader should
+	 * wait until a running operation has finished, <code>OPERATION_RETURN</code> meaning
+	 * the loader should immediately return, or <code>OPERATION_THROW</code> meaning the loader
+	 * should throw an <code>OperationInProgressException</code>.
+	 *
 	 * @throws FileNotFoundException When <code>file</code> does not exist.
-	 * @throws IllegalStateException When Ghostscript fails to intialize or load the document.
+	 * @throws IllegalStateException When Ghostscript fails to initialize or load the document.
 	 * @throws NullPointerException When <code>file</code> is <code>null</code>.
+	 * @throws OperationInProgressException When an operation is already in progress.
+	 * @throws IllegalArgumentException When <code>operationMode</code> is not
+	 * <code>ASYNC_OPERTAION_WAIT</coded> or <code>ASYNC_OPERATION_RETURN</code>.
 	 */
-	public Document(final File file, final DocLoadProgressCallback loadCallback)
-			throws FileNotFoundException, IllegalStateException, NullPointerException {
+	public Document(final File file, final DocLoadProgressCallback loadCallback, int operationMode)
+			throws FileNotFoundException, IllegalStateException, NullPointerException,
+			OperationInProgressException, IllegalArgumentException {
 		this.file = Objects.requireNonNull(file, "file");
 		if (!file.exists())
 			throw new FileNotFoundException(file.getAbsolutePath());
@@ -204,39 +351,53 @@ public class Document implements List<Page> {
 		final String[] gargs = { "gs", "-dNOPAUSE", "-dSAFER", "-I%rom%Resource%/Init/", "-dBATCH", "-r" + Page.PAGE_LOW_DPI,
 				"-sDEVICE=display", "-dDisplayFormat=" + format, "-f", file.getAbsolutePath() };
 
-		synchronized (slock) {
-			LongReference instanceRef = new LongReference();
+		if (!handleOperationMode(operationMode))
+			return;
+
+		startOperation();
+
+		LongReference instanceRef = new LongReference();
+		try {
 			initDocInstance(instanceRef);
-
-			documentLoader.callback = loadCallback;
-
-			int code = gsapi_init_with_args(instanceRef.value, gargs);
-			gsapi_exit(instanceRef.value);
-			gsapi_delete_instance(instanceRef.value);
-			if (code != GS_ERROR_OK) {
-				throw new IllegalStateException("Failed to gsapi_init_with_args code=" + code);
-			}
-
-			this.pages = new ArrayList<>(documentLoader.images.size());
-			for (BufferedImage img : documentLoader.images) {
-				pages.add(new Page(img));
-			}
-
-			if (documentLoader.callback != null)
-				documentLoader.callback.onDocumentProgress(100);
+		} catch (IllegalStateException e) {
+			operationDone();
 		}
+
+		documentLoader.callback = loadCallback;
+
+		int code = gsapi_init_with_args(instanceRef.value, gargs);
+		gsapi_exit(instanceRef.value);
+		gsapi_delete_instance(instanceRef.value);
+		if (code != GS_ERROR_OK) {
+			operationDone();
+			throw new IllegalStateException("Failed to gsapi_init_with_args code=" + code);
+		}
+
+		this.pages = new ArrayList<>(documentLoader.images.size());
+		for (BufferedImage img : documentLoader.images) {
+			pages.add(new Page(img));
+		}
+
+		if (documentLoader.callback != null)
+			documentLoader.callback.onDocumentProgress(100);
+
+		operationDone();
 	}
 
 	/**
 	 * Creates and loads a document from a filename.
 	 *
 	 * @param file The file to load.
-	 * @throws FileNotFoundException If the given file does not exist.
-	 * @throws NullPointerException If <code>file</code> is <code>null</code>.
+	 *
+	 * @throws FileNotFoundException When <code>file</code> does not exist.
+	 * @throws IllegalStateException When Ghostscript fails to initialize or load the document.
+	 * @throws NullPointerException When <code>file</code> is <code>null</code>.
+	 * @throws OperationInProgressException When an operation is already in progress.
 	 */
-	public Document(final File file)
-			throws FileNotFoundException, NullPointerException {
-		this(file, null);
+	public Document(final File file, final int operationMode)
+			throws FileNotFoundException, IllegalStateException, NullPointerException,
+			OperationInProgressException {
+		this(file, null, operationMode);
 	}
 
 	/**
@@ -244,12 +405,17 @@ public class Document implements List<Page> {
 	 *
 	 * @param filename The name of the file to load.
 	 * @param loadCallback The callback to indicate when progress has occurred while loading.
-	 * @throws FileNotFoundException If the given filename does not exist.
-	 * @throws NullPointerException If <code>filename</code> is <code>null</code>.
+	 *
+	 * @throws FileNotFoundException When <code>file</code> does not exist.
+	 * @throws IllegalStateException When Ghostscript fails to initialize or load the document.
+	 * @throws NullPointerException When <code>file</code> is <code>null</code>.
+	 * @throws OperationInProgressException When an operation is already in progress.
 	 */
-	public Document(final String filename, final DocLoadProgressCallback loadCallback)
-			throws FileNotFoundException, NullPointerException {
-		this(new File(Objects.requireNonNull(filename, "filename")), loadCallback);
+	public Document(final String filename, final DocLoadProgressCallback loadCallback,
+			final int operationMode)
+			throws FileNotFoundException, IllegalStateException, NullPointerException,
+			OperationInProgressException {
+		this(new File(Objects.requireNonNull(filename, "filename")), loadCallback, operationMode);
 	}
 
 	/**
@@ -259,9 +425,9 @@ public class Document implements List<Page> {
 	 * @throws FileNotFoundException If the given filename does not exist.
 	 * @throws NullPointerException If <code>filename</code> is <code>null</code>.
 	 */
-	public Document(final String filename)
+	public Document(final String filename, final int operationMode)
 			throws FileNotFoundException, NullPointerException {
-		this(filename, null);
+		this(filename, null, operationMode);
 	}
 
 	/**
@@ -273,28 +439,38 @@ public class Document implements List<Page> {
 	 * are not in the document or <code>endPage</code> is less than <code>firstPage</code>.
 	 * @throws IllegalStateException When Ghostscript fails to initialize or load the document.
 	 */
-	public void loadHighRes(int startPage, int endPage) throws IndexOutOfBoundsException, IllegalStateException {
+	public void loadHighRes(int operationMode, int startPage, int endPage)
+			throws IndexOutOfBoundsException, IllegalStateException {
 		checkBounds(startPage, endPage);
-		final String[] gargs = { "gs", "-dNOPAUSE", "-dSAFER", "-I%rom%Resource%/Init/", "-dBATCH", "-r" + Page.PAGE_HIGH_DPI,
-				"-sDEVICE=display", "-dFirstPage=" + startPage, "-dLastPage=" + endPage, "-dDisplayFormat=" + format,
+
+		if (!handleOperationMode(operationMode))
+			return;
+
+		startOperation();
+
+		final String[] gargs = { "gs", "-dNOPAUSE", "-dSAFER", "-I%rom%Resource%/Init/",
+				"-dBATCH", "-r" + Page.PAGE_HIGH_DPI, "-sDEVICE=display",
+				"-dFirstPage=" + startPage, "-dLastPage=" + endPage, "-dDisplayFormat=" + format,
 				"-dTextAlphaBits=4", "-dGraphicsAlphaBits=4",
 				"-f", file.getAbsolutePath() };
-		synchronized (slock) {
-			LongReference instanceRef = new LongReference();
-			initDocInstance(instanceRef);
 
-			int code = gsapi_init_with_args(instanceRef.value, gargs);
-			gsapi_exit(instanceRef.value);
-			gsapi_delete_instance(instanceRef.value);
-			if (code != GS_ERROR_OK) {
-				throw new IllegalStateException("Failed to gsapi_init_with_args code=" + code);
-			}
+		LongReference instanceRef = new LongReference();
+		initDocInstance(instanceRef);
 
-			int ind = startPage - 1;
-			for (final BufferedImage img : documentLoader.images) {
-				this.pages.get(ind++).setHighRes(img);
-			}
+		int code = gsapi_init_with_args(instanceRef.value, gargs);
+		gsapi_exit(instanceRef.value);
+		gsapi_delete_instance(instanceRef.value);
+		if (code != GS_ERROR_OK) {
+			operationDone();
+			throw new IllegalStateException("Failed to gsapi_init_with_args code=" + code);
 		}
+
+		int ind = startPage - 1;
+		for (final BufferedImage img : documentLoader.images) {
+			this.pages.get(ind++).setHighRes(img);
+		}
+
+		operationDone();
 	}
 
 	/**
@@ -305,8 +481,9 @@ public class Document implements List<Page> {
 	 * @throws IllegalStateException When Ghostscript fails to initialize or load the
 	 * images.
 	 */
-	public void loadHighRes(int page) throws IndexOutOfBoundsException, IllegalStateException {
-		loadHighRes(page, page);
+	public void loadHighRes(int operationMode, int page)
+			throws IndexOutOfBoundsException, IllegalStateException {
+		loadHighRes(page, page, operationMode);
 	}
 
 	/**
@@ -317,7 +494,8 @@ public class Document implements List<Page> {
 	 * @throws IllegalStateException When Ghostscript fails to initialize or load the
 	 * images.
 	 */
-	public void loadHighResList(final int... pages) throws IndexOutOfBoundsException, IllegalStateException {
+	public void loadHighResList(int operationMode, final int... pages)
+			throws IndexOutOfBoundsException, IllegalStateException {
 		if (pages.length > 0) {
 			final StringBuilder builder = new StringBuilder();
 			if (pages[0] < 1 || pages[0] > this.pages.size())
@@ -380,18 +558,19 @@ public class Document implements List<Page> {
 		unloadHighRes(page, page);
 	}
 
-	public void loadZoomed(int startPage, int endPage, double scale) throws IndexOutOfBoundsException {
+	public void loadZoomed(int operationMode, int startPage, int endPage, double scale)
+			throws IndexOutOfBoundsException {
 		checkBounds(startPage, endPage);
 	}
 
-	public void loadZoomed(int page, double scale) throws IndexOutOfBoundsException {
+	public void loadZoomed(int operationMode, int page, double scale) throws IndexOutOfBoundsException {
 
 	}
 
 	public void unloadZoomed(int startPage, int endPage) throws IndexOutOfBoundsException {
 		checkBounds(startPage, endPage);
 		for (int i = startPage; i <= endPage; i++) {
-			pages.get(i - 1).unloadZoomed();
+			pages.get(i).unloadZoomed();
 		}
 	}
 
@@ -419,8 +598,13 @@ public class Document implements List<Page> {
 		return file.getName();
 	}
 
-	public void zoomArea(final int page, final double zoom) {
+	public void zoomArea(final int operationMode, final int page, final double zoom) {
 		checkBounds(page, page);
+
+		if (!handleOperationMode(operationMode))
+			return;
+
+		startOperation();
 
 		int start = page - 1;
 		start = start < 1 ? page : start;
@@ -434,22 +618,24 @@ public class Document implements List<Page> {
 				"-dDisplayFormat=" + format,
 				"-dTextAlphaBits=4", "-dGraphicsAlphaBits=4",
 				"-f", file.getAbsolutePath() };
-		synchronized (slock) {
-			LongReference instanceRef = new LongReference();
-			initDocInstance(instanceRef);
 
-			int code = gsapi_init_with_args(instanceRef.value, gargs);
-			gsapi_exit(instanceRef.value);
-			gsapi_delete_instance(instanceRef.value);
-			if (code != GS_ERROR_OK) {
-				throw new IllegalStateException("Failed to gsapi_init_with_args code=" + code);
-			}
+		LongReference instanceRef = new LongReference();
+		initDocInstance(instanceRef);
 
-			int ind = start - 1;
-			for (final BufferedImage img : documentLoader.images) {
-				this.pages.get(ind++).setZoomed(img);
-			}
+		int code = gsapi_init_with_args(instanceRef.value, gargs);
+		gsapi_exit(instanceRef.value);
+		gsapi_delete_instance(instanceRef.value);
+		if (code != GS_ERROR_OK) {
+			operationDone();
+			throw new IllegalStateException("Failed to gsapi_init_with_args code=" + code);
 		}
+
+		int ind = start - 1;
+		for (final BufferedImage img : documentLoader.images) {
+			this.pages.get(ind++).setZoomed(img);
+		}
+
+		operationDone();
 	}
 
 	public void unZoomPage(final int page) {

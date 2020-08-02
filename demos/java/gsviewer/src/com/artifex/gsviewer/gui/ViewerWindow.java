@@ -8,9 +8,6 @@ import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.AdjustmentEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
@@ -491,10 +488,8 @@ public class ViewerWindow extends javax.swing.JFrame {
 				Dimension actualSize = new Dimension((int)(pageSize.width * size),
 						(int)(pageSize.height * size));
 				BufferedImage img = page.getDisplayableImage();
-				if (page.getZoomedImage() != null && size > 1.0) {
-					System.out.println("Using zoomed image!");
+				if (page.getZoomedImage() != null && size > 1.0)
 					img = page.getZoomedImage();
-				}
 
 				Image result = img;
 				if (img == page.getLowResImage() || currentZoom < 1.0)
@@ -543,9 +538,7 @@ public class ViewerWindow extends javax.swing.JFrame {
 		public void onUnloadHighRes() { }
 
 		@Override
-		public void onLoadZoomed() {
-			System.out.println(page.getZoomedSize());
-		}
+		public void onLoadZoomed() { }
 
 		@Override
 		public void onUnloadZoomed() { }
@@ -579,7 +572,7 @@ public class ViewerWindow extends javax.swing.JFrame {
 	}
 
 	/**
-	 * Sets sthe ViewerGUIListener the window should use.
+	 * Sets the ViewerGUIListener the window should use.
 	 *
 	 * @param listener A listener.
 	 */
@@ -609,6 +602,8 @@ public class ViewerWindow extends javax.swing.JFrame {
 			return;
 
 		lockSize();
+		//if (true)
+		//throw new NullPointerException();
 
 		this.loadedDocument = document;
 		viewerContentPane.setLayout(new BoxLayout(viewerContentPane, BoxLayout.Y_AXIS));
@@ -780,6 +775,10 @@ public class ViewerWindow extends javax.swing.JFrame {
 		JOptionPane.showMessageDialog(this, message, title, JOptionPane.ERROR_MESSAGE);
 	}
 
+	public void showWarningDialog(String title, String message) {
+		JOptionPane.showMessageDialog(this, message, title, JOptionPane.WARNING_MESSAGE);
+	}
+
 	/**
 	 * Refresh each button's state.
 	 */
@@ -815,6 +814,7 @@ public class ViewerWindow extends javax.swing.JFrame {
 		SwingUtilities.invokeLater(() -> {
 			gotoPage = true;
 			revalidate();
+			scrollMap.genMap(1.0);
 		});
 	}
 

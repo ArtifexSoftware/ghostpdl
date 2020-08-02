@@ -1,17 +1,25 @@
 package com.artifex.gsviewer;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.PrintStream;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import javax.swing.JFileChooser;
-import javax.swing.JOptionPane;
-
 import com.artifex.gsviewer.gui.ViewerGUIListener;
 import com.artifex.gsviewer.gui.ViewerWindow;
 
+/**
+ * The ViewerController is an implementation of a <code>ViewerGUIListener</code>
+ * used to control the main logic of the viewer such as determining what pages
+ * should be loaded.
+ *
+ * @author Ethan Vrhel
+ *
+ */
 public class ViewerController implements ViewerGUIListener {
 
 	private static final Lock lock = new ReentrantLock();
@@ -26,19 +34,22 @@ public class ViewerController implements ViewerGUIListener {
 		if (currentDocument != null)
 			close();
 		Document.loadDocumentAsync(file, (final Document doc, final Exception exception) -> {
+			// Don't allow multiple ghostscript operations at once
 			if (operationInProgress.get()) {
-				source.showErrorDialog("Error", "An operation is already in progress");
+				source.showWarningDialog("Error", "An operation is already in progress");
 				return;
 			}
-			//operationInProgress.set(true);
+
+			operationInProgress.set(true);
+
 			source.setLoadProgress(0);
 			if (exception != null) {
 				source.showErrorDialog("Failed to load", exception.toString());
 				operationInProgress.set(false);
 			} else {
-				System.out.println("Loaded document");
 				this.currentDocument = doc;
 				source.loadDocumentToViewer(doc);
+
 				operationInProgress.set(false);
 
 				synchronized (operationInProgress) {
@@ -67,6 +78,7 @@ public class ViewerController implements ViewerGUIListener {
 	@Override
 	public void onViewerAdd(ViewerWindow source) {
 		this.source = source;
+		Thread.setDefaultUncaughtExceptionHandler(new UnhandledExceptionHandler());
 	}
 
 	@Override
@@ -87,11 +99,11 @@ public class ViewerController implements ViewerGUIListener {
 			int currentPage = source.getCurrentPage();
 			Runnable r = () -> {
 				if (operationInProgress.get()) {
-					source.showErrorDialog("Error", "An operation is already in progress");
+					source.showWarningDialog("Error", "An operation is already in progress");
 					return;
 				}
 
-				//operationInProgress.set(true);
+				operationInProgress.set(true);
 
 				currentDocument.zoomArea(currentPage, newZoom);
 
@@ -140,9 +152,7 @@ public class ViewerController implements ViewerGUIListener {
 	}
 
 	@Override
-	public void onSettingsOpen() {
-		System.out.println("Settings open");
-	}
+	public void onSettingsOpen() { }
 
 	private void dispatchSmartLoader() {
 		Runnable r = () -> {
@@ -166,7 +176,7 @@ public class ViewerController implements ViewerGUIListener {
 					}
 				}
 
-				//operationInProgress.set(true);
+				operationInProgress.set(true);
 
 				int ind = 0;
 				for (int page : toLoad) {
@@ -199,5 +209,21 @@ public class ViewerController implements ViewerGUIListener {
 		t.setDaemon(true);
 		t.setName("Document-Smart-Loader-Thread");
 		t.start();
+	}
+
+	private class UnhandledExceptionHandler implements Thread.UncaughtExceptionHandler {
+
+		@Override
+		public void uncaughtException(Thread t, Throwable e) {
+			if (source != null) {
+				ByteArrayOutputStream os = new ByteArrayOutputStream();
+				PrintStream out = new PrintStream(os);
+				e.printStackTrace(out);
+				String errorMessage = new String(os.toByteArray());
+				source.showErrorDialog("Unhandled Exception", errorMessage);
+			}
+			DefaultUnhandledExceptionHandler.INSTANCE.uncaughtException(t, e);
+		}
+
 	}
 }
