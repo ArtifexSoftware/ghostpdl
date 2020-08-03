@@ -17,6 +17,7 @@
 #define gdevpdfimg_h_INCLUDED
 
 #include "gdevprn.h"
+#include "gxdownscale.h"
 
 typedef struct pdfimage_page_s {
     int ImageObjectNumber;
@@ -64,7 +65,7 @@ typedef struct gx_device_pdf_image_s {
     struct {
         char language[1024];
         void *state;
- 
+
         /* Number of "file level" objects - i.e. the number of objects
          * required to define the font. */
         int file_objects;
