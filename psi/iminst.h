@@ -87,6 +87,7 @@ struct gs_main_instance_s {
 
     /* Used for gsapi_set_params in the gs (not gpdl) case. */
     gs_c_param_list *param_list;
+    int mid_run_string;
 };
 
 /*

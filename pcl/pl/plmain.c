@@ -155,6 +155,8 @@ struct pl_main_instance_s
     bool detect_runstring_language;
     bool revert_to_pjl_after_runstring;
 
+    bool mid_runstring; /* True if we are mid-runstring */
+
     void *buffering_runstring_as_file;
 };
 
@@ -361,6 +363,14 @@ revert_to_pjli(pl_main_instance_t *minst)
 int
 pl_main_run_string_begin(pl_main_instance_t *minst)
 {
+    int code;
+
+    if (minst->mid_runstring == 1) {
+        dmprintf(minst->memory, "Can't begin a run_string during a run_string\n");
+        return -1;
+    }
+    minst->mid_runstring = 1;
+
     /* If the current implementation is PJL (language 0) then don't
      * actually init here. Instead, just mark us as needing to auto
      * detect the language type when we get some data. */
@@ -369,7 +379,12 @@ pl_main_run_string_begin(pl_main_instance_t *minst)
     if (minst->detect_runstring_language)
         return 0;
 
-    return pl_process_begin(minst->curr_implementation);
+    code = pl_process_begin(minst->curr_implementation);
+
+    if (code < 0)
+        minst->mid_runstring = 0;
+
+    return code;
 }
 
 static int
@@ -664,8 +679,8 @@ static gsapi_fs_t buffered_file_fs = {
     NULL
 };
 
-int
-pl_main_run_string_continue(pl_main_instance_t *minst, const char *str, unsigned int length)
+static int
+do_run_string_continue(pl_main_instance_t *minst, const char *str, unsigned int length)
 {
     stream_cursor_read cursor;
     int code;
@@ -790,6 +805,18 @@ pl_main_run_string_continue(pl_main_instance_t *minst, const char *str, unsigned
         }
     }
     minst->buf_fill = (int)unread;
+
+    return code;
+}
+
+int
+pl_main_run_string_continue(pl_main_instance_t *minst, const char *str, unsigned int length)
+{
+    int code;
+
+    code = do_run_string_continue(minst, str, length);
+    if (code < 0)
+        minst->mid_runstring = 0;
 
     return code;
 }
@@ -1010,9 +1037,12 @@ pl_main_run_string_end(pl_main_instance_t *minst)
     if (minst->revert_to_pjl_after_runstring) {
         int code2 = revert_to_pjli(minst);
         if (code2 < 0)
-            return code < 0 ? code : code2;
-        minst->revert_to_pjl_after_runstring = 0;
+            code = code < 0 ? code : code2;
+        else
+            minst->revert_to_pjl_after_runstring = 0;
     }
+
+    minst->mid_runstring = 0;
 
     return code;
 }
@@ -1059,6 +1089,11 @@ pl_main_run_file(pl_main_instance_t *minst, const char *file_name)
 
     if (minst == NULL)
         return 0;
+
+    if (minst->mid_runstring == 1) {
+        dmprintf(minst->memory, "Can't run_file during a run_string\n");
+        return -1;
+    }
 
     /* Convert the file_name to utf8 */
     if (minst->get_codepoint) {
@@ -1802,6 +1837,11 @@ pl_main_set_typed_param(pl_main_instance_t * pmi, pl_set_param_type type, const 
     gs_param_string str_value;
     bool bval;
     int more_to_come = type & pl_spt_more_to_come;
+
+    if (pmi->mid_runstring) {
+        dmprintf(pmi->memory, "Can't set parameters mid run_string\n");
+        return -1;
+    }
 
     type &= ~pl_spt_more_to_come;
 

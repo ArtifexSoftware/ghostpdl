@@ -333,12 +333,23 @@ psapi_run_string_begin(gs_lib_ctx_t *ctx,
                        int           user_errors,
                        int          *pexit_code)
 {
+    gs_main_instance *minst;
+    int code;
+
     if (ctx == NULL)
         return gs_error_Fatal;
+    minst = get_minst_from_memory(ctx->memory);
 
-    return gs_main_run_string_begin(get_minst_from_memory(ctx->memory),
-                                    user_errors, pexit_code,
-                                    &(get_minst_from_memory(ctx->memory)->error_object));
+    if (minst->mid_run_string == 1)
+        return -1;
+    minst->mid_run_string = 1;
+
+    code = gs_main_run_string_begin(minst, user_errors, pexit_code,
+                                    &(minst->error_object));
+    if (code < 0)
+        minst->mid_run_string = 0;
+
+    return code;
 }
 
 int
@@ -348,12 +359,20 @@ psapi_run_string_continue(gs_lib_ctx_t *ctx,
                           int         user_errors,
                           int        *pexit_code)
 {
+    gs_main_instance *minst;
+    int code;
+
     if (ctx == NULL)
         return gs_error_Fatal;
+    minst = get_minst_from_memory(ctx->memory);
 
-    return gs_main_run_string_continue(get_minst_from_memory(ctx->memory),
-                                       str, length, user_errors, pexit_code,
-                                       &(get_minst_from_memory(ctx->memory)->error_object));
+    code = gs_main_run_string_continue(minst, str, length, user_errors,
+                                       pexit_code,
+                                       &(minst->error_object));
+    if (code < 0)
+        minst->mid_run_string = 0;
+
+    return code;
 }
 
 uint
@@ -370,12 +389,18 @@ psapi_run_string_end(gs_lib_ctx_t *ctx,
                      int           user_errors,
                      int          *pexit_code)
 {
+    int code;
+    gs_main_instance *minst;
+
     if (ctx == NULL)
         return gs_error_Fatal;
+    minst = get_minst_from_memory(ctx->memory);
 
-    return gs_main_run_string_end(get_minst_from_memory(ctx->memory),
-                                  user_errors, pexit_code,
-                                  &(get_minst_from_memory(ctx->memory)->error_object));
+    code = gs_main_run_string_end(minst, user_errors, pexit_code,
+                                  &(minst->error_object));
+
+    minst->mid_run_string = 0;
+    return code;
 }
 
 int
@@ -421,6 +446,9 @@ psapi_run_file(gs_lib_ctx_t *ctx,
     if (ctx == NULL)
         return gs_error_Fatal;
     minst = get_minst_from_memory(ctx->memory);
+
+    if (minst->mid_run_string == 1)
+        return -1;
 
     /* Convert the file_name to utf8 */
     if (minst->get_codepoint) {
