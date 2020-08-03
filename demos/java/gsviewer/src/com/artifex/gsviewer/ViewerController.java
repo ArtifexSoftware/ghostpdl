@@ -25,8 +25,6 @@ public class ViewerController implements ViewerGUIListener {
 	private static final Lock lock = new ReentrantLock();
 	private static final Condition cv = lock.newCondition();
 
-	private static final AtomicBoolean operationInProgress = new AtomicBoolean(false);
-
 	private ViewerWindow source;
 	private Document currentDocument;
 
@@ -35,32 +33,18 @@ public class ViewerController implements ViewerGUIListener {
 			close();
 		Document.loadDocumentAsync(file, (final Document doc, final Exception exception) -> {
 			// Don't allow multiple ghostscript operations at once
-			if (operationInProgress.get()) {
-				source.showWarningDialog("Error", "An operation is already in progress");
-				return;
-			}
-
-			operationInProgress.set(true);
-
+				//source.showWarningDialog("Error", "An operation is already in progress");
+			source.loadDocumentToViewer(doc);
 			source.setLoadProgress(0);
 			if (exception != null) {
 				source.showErrorDialog("Failed to load", exception.toString());
-				operationInProgress.set(false);
 			} else {
 				this.currentDocument = doc;
-				source.loadDocumentToViewer(doc);
-
-				operationInProgress.set(false);
-
-				synchronized (operationInProgress) {
-					operationInProgress.notifyAll();
-				}
-
 				dispatchSmartLoader();
 			}
 		}, (int progress) -> {
 			source.setLoadProgress(progress);
-		});
+		}, Document.OPERATION_RETURN);
 	}
 
 	public void close() {
@@ -98,18 +82,13 @@ public class ViewerController implements ViewerGUIListener {
 		if (newZoom > 1.0) {
 			int currentPage = source.getCurrentPage();
 			Runnable r = () -> {
-				if (operationInProgress.get()) {
+					//source.showWarningDialog("Error", "An operation is already in progress");
+					//return;
+
+				try {
+					currentDocument.zoomArea(Document.OPERATION_THROW, currentPage, newZoom);
+				} catch (Document.OperationInProgressException e) {
 					source.showWarningDialog("Error", "An operation is already in progress");
-					return;
-				}
-
-				operationInProgress.set(true);
-
-				currentDocument.zoomArea(currentPage, newZoom);
-
-				operationInProgress.set(false);
-				synchronized (operationInProgress) {
-					operationInProgress.notifyAll();
 				}
 			};
 			Thread t = new Thread(r);
@@ -155,57 +134,7 @@ public class ViewerController implements ViewerGUIListener {
 	public void onSettingsOpen() { }
 
 	private void dispatchSmartLoader() {
-		Runnable r = () -> {
-			boolean[] loaded = new boolean[currentDocument.size()];
-			Document doc;
-			while ((doc = source.getLoadedDocument()) != null) {
-				int currentPage = source.getCurrentPage();
-				int[] toLoad =  new int[] {
-						currentPage, currentPage - 1, currentPage + 1,
-						currentPage - 2, currentPage + 2 };
-
-				if (operationInProgress.get()) {
-					synchronized (operationInProgress) {
-						while (operationInProgress.get()) {
-							try {
-								operationInProgress.wait();
-							} catch (InterruptedException e) {
-								source.showErrorDialog("Error", e.toString());
-							}
-						}
-					}
-				}
-
-				operationInProgress.set(true);
-
-				int ind = 0;
-				for (int page : toLoad) {
-					if (page >= 1 && page <= doc.size()) {
-						if (!loaded[page - 1]) {
-							doc.loadHighRes(page);
-							loaded[page - 1] = true;
-						}
-					}
-					ind++;
-					source.setLoadProgress((int)(((double)ind / toLoad.length) * 100));
-				}
-				source.setLoadProgress(0);
-
-				operationInProgress.set(false);
-
-				lock.lock();
-				try {
-					cv.await();
-				} catch (InterruptedException e) {
-					System.err.println("Interrupted in smart loader: " + e);
-				} catch (IllegalMonitorStateException e) {
-					System.err.println("Exception in smart loader await: " + e);
-				} finally {
-					lock.unlock();
-				}
-			}
-		};
-		Thread t = new Thread(r);
+		Thread t = new Thread(new SmartLoader());
 		t.setDaemon(true);
 		t.setName("Document-Smart-Loader-Thread");
 		t.start();
@@ -225,5 +154,45 @@ public class ViewerController implements ViewerGUIListener {
 			DefaultUnhandledExceptionHandler.INSTANCE.uncaughtException(t, e);
 		}
 
+	}
+
+	private class SmartLoader implements Runnable {
+
+		@Override
+		public void run() {
+			System.out.println("Smart loader dispatched.");
+			boolean[] loaded = new boolean[currentDocument.size()];
+			Document doc;
+			while ((doc = source.getLoadedDocument()) != null) {
+				int currentPage = source.getCurrentPage();
+				int[] toLoad =  new int[] {
+						currentPage, currentPage - 1, currentPage + 1,
+						currentPage - 2, currentPage + 2 };
+
+				int ind = 0;
+				for (int page : toLoad) {
+					if (page >= 1 && page <= doc.size()) {
+						if (!loaded[page - 1]) {
+							doc.loadHighRes(Document.OPERATION_WAIT, page);
+							loaded[page - 1] = true;
+						}
+					}
+					ind++;
+					source.setLoadProgress((int)(((double)ind / toLoad.length) * 100));
+				}
+				source.setLoadProgress(0);
+
+				lock.lock();
+				try {
+					cv.await();
+				} catch (InterruptedException e) {
+					System.err.println("Interrupted in smart loader: " + e);
+				} catch (IllegalMonitorStateException e) {
+					System.err.println("Exception in smart loader await: " + e);
+				} finally {
+					lock.unlock();
+				}
+			}
+		}
 	}
 }

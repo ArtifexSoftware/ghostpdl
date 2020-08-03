@@ -1,5 +1,11 @@
 package com.artifex.gsjava.util;
 
+/**
+ * An error thrown when native memory allocation fails.
+ *
+ * @author Ethan Vrhel
+ *
+ */
 public class AllocationError extends Error {
 
 	private static final long serialVersionUID = 1L;

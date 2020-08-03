@@ -111,6 +111,12 @@ public class GSAPI {
 
 	public static final long DISPLAY_FIRSTROW_MASK = 0x00020000L;
 
+	/**
+	 * Class used to store version information about Ghostscript.
+	 *
+	 * @author Ethan Vrhel
+	 *
+	 */
 	public static class Revision {
 		public volatile byte[] product;
 		public volatile byte[] copyright;
@@ -124,10 +130,20 @@ public class GSAPI {
 			this.revisionDate = 0L;
 		}
 
+		/**
+		 * Returns the product information as a String.
+		 *
+		 * @return The product information.
+		 */
 		public String getProduct() {
 			return new String(product);
 		}
 
+		/**
+		 * Returns the copyright information as a String.
+		 *
+		 * @return The copyright information.
+		 */
 		public String getCopyright() {
 			return new String(copyright);
 		}

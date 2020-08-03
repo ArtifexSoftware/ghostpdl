@@ -644,6 +644,7 @@ public class ViewerWindow extends javax.swing.JFrame {
 		increaseZoomButton.setEnabled(true);
 		decreaseZoomButton.setEnabled(true);
 		zoomSlider.setValue(50);
+		zoomSlider.setFocusable(true);
 
 		nextPageButton.setEnabled(true);
 		lastPageButton.setEnabled(true);
@@ -659,6 +660,10 @@ public class ViewerWindow extends javax.swing.JFrame {
 		this.scrollMap = null;
 		this.assumePage(0);
 		this.assumeMaxPages(0);
+		this.zoomSlider.setValue(50);
+		this.zoomSlider.setEnabled(false);
+		this.zoomSlider.setFocusable(false);
+		this.pageNumberField.setEditable(false);
 		setTitle("Viewer");
 
 		for (final PagePanel panel : viewerPagePanels) {

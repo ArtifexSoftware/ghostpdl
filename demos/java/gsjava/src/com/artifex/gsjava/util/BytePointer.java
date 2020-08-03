@@ -1,5 +1,12 @@
 package com.artifex.gsjava.util;
 
+/**
+ * A byte pointer stores a pointer to a memory location containing
+ * bytes.
+ *
+ * @author Ethan Vrhel
+ *
+ */
 public class BytePointer extends NativePointer implements NativeArray<Byte> {
 
 	private long length;

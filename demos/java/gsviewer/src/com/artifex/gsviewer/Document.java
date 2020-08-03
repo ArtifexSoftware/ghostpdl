@@ -12,9 +12,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import com.artifex.gsjava.callbacks.DisplayCallback;
@@ -23,23 +21,47 @@ import com.artifex.gsjava.util.LongReference;
 import com.artifex.gsviewer.ImageUtil.ImageParams;
 
 /**
- * A Document stores an ordered list of Pages.
+ * <p>A Document stores an ordered list of Pages. This class implements
+ * <code>java.util.List</code>, so it inherits all of a list's capabilities,
+ * such as the ability to iterate over the document.</p>
+ *
+ * <p>The Document class also handles loading of pages through Ghostcript
+ * and ensuring that two Ghostscript operations are not running at the
+ * same time.</p>
  *
  * @author Ethan Vrhel
  *
  */
 public class Document implements List<Page> {
 
-	private static final Object slock = new Object();
-	private static final DocumentLoader documentLoader = new DocumentLoader();
-	private static final int format = GS_COLORS_RGB | GS_DISPLAY_DEPTH_8 | GS_DISPLAY_BIGENDIAN;
+	private static final DocumentLoader documentLoader = new DocumentLoader(); // The document loader
+	private static final int format = GS_COLORS_RGB | GS_DISPLAY_DEPTH_8 | GS_DISPLAY_BIGENDIAN; // Format
 
-	private static final ReentrantLock operationLock = new ReentrantLock();
-	private static final Condition operationCv = operationLock.newCondition();
-	private static final AtomicBoolean operationInProgress = new AtomicBoolean(false);
+	private static final ReentrantLock operationLock = new ReentrantLock(); // The operation lock
+	private static final Condition operationCv = operationLock.newCondition(); // The operation condition variable
+	private static volatile boolean operationInProgress = false; // Whether an operation is in progress
 
+	/**
+	 * Asynchronous execution dispatch returns.
+	 */
 	public static final int ASYNC_DISPATCH_OK = 0, ASYNC_DISPATCH_OPERATION_IN_PROGRESS = 1;
-	public static final int OPERATION_WAIT = 0, OPERATION_RETURN = 1, OPERATION_THROW = 2;
+
+	/**
+	 * Operation mode indicating the method should wait until a running operation has finished.
+	 */
+	public static final int OPERATION_WAIT = 0;
+
+	/**
+	 * Operation mode indicating the method should immediately return if an operation is already
+	 * running.
+	 */
+	public static final int OPERATION_RETURN = 1;
+
+	/**
+	 * Operation mode indicating the method should throw an <code>OperationInProgressException</code>
+	 * if an operation is already running.
+	 */
+	public static final int OPERATION_THROW = 2;
 
 	/**
 	 * Loads a document on a separate thread.
@@ -175,24 +197,41 @@ public class Document implements List<Page> {
 		return loadDocumentAsync(filename, cb, null, operationMode);
 	}
 
+	/**
+	 * Call, internally, on the start of an operation.
+	 */
 	private static void startOperation() {
-		operationInProgress.set(true);
+		operationInProgress = true;
 	}
 
+	/**
+	 * Call, internally, on the start of an operation, before <code>startOperation()</code>.
+	 *
+	 * @param operationMode The operation mode.
+	 * @return Whether the calling function should continue to its operation.
+	 * @throws OperationInProgressException When an operation is in progress and <code>operationMode</code>
+	 * is <code>OPERATION_THROW</code>. This should not be caught by the calling function, who should
+	 * throw it instead.
+	 * @throws IllegalArgumentException When <code>operationMode</code> is not a valid operation mode.
+	 */
 	private static boolean handleOperationMode(final int operationMode)
 			throws OperationInProgressException, IllegalArgumentException {
-		boolean inProgress = operationInProgress.get();
-		if (inProgress && operationMode == OPERATION_RETURN)
+		if (operationInProgress && operationMode == OPERATION_RETURN)
 			return false;
-		else if (inProgress && operationMode == OPERATION_THROW)
-			throw new OperationInProgressException("loadDocument");
-		else if (inProgress && operationMode == OPERATION_WAIT)
+		else if (operationInProgress && operationMode == OPERATION_THROW) {
+			StackTraceElement[] elems = new Exception().getStackTrace();
+			throw new OperationInProgressException(elems[1].getClassName() + "." + elems[1].getMethodName());
+		} else if (operationInProgress && operationMode == OPERATION_WAIT)
 			waitForOperation();
-		else if (inProgress)
+		else if (operationInProgress)
 			throw new IllegalArgumentException("Unknown operation mode: " + operationMode);
 		return true;
 	}
 
+	/**
+	 * Called internally by <code>handleOperationMode()</code>. Waits for an operation
+	 * to finish.
+	 */
 	private static void waitForOperation() {
 		operationLock.lock();
 		try {
@@ -204,11 +243,14 @@ public class Document implements List<Page> {
 		}
 	}
 
+	/**
+	 * Call, internally, when an operation is done.
+	 */
 	private static void operationDone() {
 		operationLock.lock();
-		operationInProgress.set(false);
+		operationInProgress = false;
 		try {
-			operationCv.notify();
+			operationCv.signal();
 		} finally {
 			operationLock.unlock();
 		}
@@ -255,6 +297,12 @@ public class Document implements List<Page> {
 		}
 	}
 
+	/**
+	 * Initializes an instance of Ghostcript.
+	 *
+	 * @param instanceRef A reference to the instance of Ghostscript.
+	 * @throws IllegalStateException When any Ghostscript operation fails to execute.
+	 */
 	private static void initDocInstance(LongReference instanceRef) throws IllegalStateException {
 		int code = gsapi_new_instance(instanceRef, GS_NULL);
 		if (code != GS_ERROR_OK) {
@@ -275,6 +323,12 @@ public class Document implements List<Page> {
 		}
 	}
 
+	/**
+	 * Class which handles loading a Document.
+	 *
+	 * @author Ethan Vrhel
+	 *
+	 */
 	private static class DocumentLoader extends DisplayCallback {
 		private int pageWidth, pageHeight, pageRaster;
 		private BytePointer pimage;
@@ -337,9 +391,10 @@ public class Document implements List<Page> {
 	 * @throws FileNotFoundException When <code>file</code> does not exist.
 	 * @throws IllegalStateException When Ghostscript fails to initialize or load the document.
 	 * @throws NullPointerException When <code>file</code> is <code>null</code>.
-	 * @throws OperationInProgressException When an operation is already in progress.
+	 * @throws OperationInProgressException When an operation is already in progress
+	 * and <code>operationMode</code> is <code>OPERATION_THROW</code>.
 	 * @throws IllegalArgumentException When <code>operationMode</code> is not
-	 * <code>ASYNC_OPERTAION_WAIT</coded> or <code>ASYNC_OPERATION_RETURN</code>.
+	 * <code>OPERATION_WAIT</coded>, <code>OPERATION_RETURN</code>, or <code>OPERATION_THROW</code>.
 	 */
 	public Document(final File file, final DocLoadProgressCallback loadCallback, int operationMode)
 			throws FileNotFoundException, IllegalStateException, NullPointerException,
@@ -388,11 +443,19 @@ public class Document implements List<Page> {
 	 * Creates and loads a document from a filename.
 	 *
 	 * @param file The file to load.
+	 * @param operationMode How the loader should behave if an operation is already in
+	 * progress. Can be <code>OPERATION_WAIT</code>, meaning the loader should
+	 * wait until a running operation has finished, <code>OPERATION_RETURN</code> meaning
+	 * the loader should immediately return, or <code>OPERATION_THROW</code> meaning the loader
+	 * should throw an <code>OperationInProgressException</code>.
 	 *
 	 * @throws FileNotFoundException When <code>file</code> does not exist.
 	 * @throws IllegalStateException When Ghostscript fails to initialize or load the document.
 	 * @throws NullPointerException When <code>file</code> is <code>null</code>.
-	 * @throws OperationInProgressException When an operation is already in progress.
+	 * @throws OperationInProgressException When an operation is already in progress
+	 * and <code>operationMode</code> is <code>OPERATION_THROW</code>.
+	 * @throws IllegalArgumentException When <code>operationMode</code> is not
+	 * <code>OPERATION_WAIT</coded>, <code>OPERATION_RETURN</code>, or <code>OPERATION_THROW</code>.
 	 */
 	public Document(final File file, final int operationMode)
 			throws FileNotFoundException, IllegalStateException, NullPointerException,
@@ -405,11 +468,19 @@ public class Document implements List<Page> {
 	 *
 	 * @param filename The name of the file to load.
 	 * @param loadCallback The callback to indicate when progress has occurred while loading.
+	 * @param operationMode How the loader should behave if an operation is already in
+	 * progress. Can be <code>OPERATION_WAIT</code>, meaning the loader should
+	 * wait until a running operation has finished, <code>OPERATION_RETURN</code> meaning
+	 * the loader should immediately return, or <code>OPERATION_THROW</code> meaning the loader
+	 * should throw an <code>OperationInProgressException</code>.
 	 *
 	 * @throws FileNotFoundException When <code>file</code> does not exist.
 	 * @throws IllegalStateException When Ghostscript fails to initialize or load the document.
 	 * @throws NullPointerException When <code>file</code> is <code>null</code>.
-	 * @throws OperationInProgressException When an operation is already in progress.
+	 * @throws OperationInProgressException When an operation is already in progress
+	 * and <code>operationMode</code> is <code>OPERATION_THROW</code>.
+	 * @throws IllegalArgumentException When <code>operationMode</code> is not
+	 * <code>OPERATION_WAIT</coded>, <code>OPERATION_RETURN</code>, or <code>OPERATION_THROW</code>.
 	 */
 	public Document(final String filename, final DocLoadProgressCallback loadCallback,
 			final int operationMode)
@@ -422,19 +493,37 @@ public class Document implements List<Page> {
 	 * Creates and loads a document from a filename.
 	 *
 	 * @param filename The name of the file to load.
-	 * @throws FileNotFoundException If the given filename does not exist.
-	 * @throws NullPointerException If <code>filename</code> is <code>null</code>.
+	 * @param operationMode How the loader should behave if an operation is already in
+	 * progress. Can be <code>OPERATION_WAIT</code>, meaning the loader should
+	 * wait until a running operation has finished, <code>OPERATION_RETURN</code> meaning
+	 * the loader should immediately return, or <code>OPERATION_THROW</code> meaning the loader
+	 * should throw an <code>OperationInProgressException</code>.
+	 *
+	 * @throws FileNotFoundException When <code>filename</code> does not exist.
+	 * @throws IllegalStateException When Ghostscript fails to initialize or load the document.
+	 * @throws NullPointerException When <code>filename</code> is <code>null</code>.
+	 * @throws OperationInProgressException When an operation is already in progress
+	 * and <code>operationMode</code> is <code>OPERATION_THROW</code>.
+	 * @throws IllegalArgumentException When <code>operationMode</code> is not
+	 * <code>OPERATION_WAIT</coded>, <code>OPERATION_RETURN</code>, or <code>OPERATION_THROW</code>.
 	 */
 	public Document(final String filename, final int operationMode)
-			throws FileNotFoundException, NullPointerException {
+			throws FileNotFoundException, IllegalStateException, NullPointerException,
+			OperationInProgressException {
 		this(filename, null, operationMode);
 	}
 
 	/**
 	 * Loads the high resolution images in a range of images.
 	 *
+	 * @param operationMode How the loader should behave if an operation is already in
+	 * progress. Can be <code>OPERATION_WAIT</code>, meaning the loader should
+	 * wait until a running operation has finished, <code>OPERATION_RETURN</code> meaning
+	 * the loader should immediately return, or <code>OPERATION_THROW</code> meaning the loader
+	 * should throw an <code>OperationInProgressException</code>.
 	 * @param startPage The first page to load.
 	 * @param endPage The end page to load.
+	 *
 	 * @throws IndexOutOfBoundsException When <code>firstPage</code> or <code>endPage</code>
 	 * are not in the document or <code>endPage</code> is less than <code>firstPage</code>.
 	 * @throws IllegalStateException When Ghostscript fails to initialize or load the document.
@@ -476,45 +565,68 @@ public class Document implements List<Page> {
 	/**
 	 * Loads the high resolution image of a singular page.
 	 *
+	 * @param operationMode How the loader should behave if an operation is already in
+	 * progress. Can be <code>OPERATION_WAIT</code>, meaning the loader should
+	 * wait until a running operation has finished, <code>OPERATION_RETURN</code> meaning
+	 * the loader should immediately return, or <code>OPERATION_THROW</code> meaning the loader
+	 * should throw an <code>OperationInProgressException</code>.
 	 * @param page The page to load.
+	 *
 	 * @throws IndexOutOfBoundsException When <code>page</code> is not in the document.
-	 * @throws IllegalStateException When Ghostscript fails to initialize or load the
-	 * images.
+	 * @throws IllegalStateException When Ghostscript fails to initialize or load the document.
+	 * @throws OperationInProgressException When an operation is already in progress
+	 * and <code>operationMode</code> is <code>OPERATION_THROW</code>.
+	 * @throws IllegalArgumentException When <code>operationMode</code> is not
+	 * <code>OPERATION_WAIT</coded>, <code>OPERATION_RETURN</code>, or <code>OPERATION_THROW</code>.
 	 */
 	public void loadHighRes(int operationMode, int page)
-			throws IndexOutOfBoundsException, IllegalStateException {
-		loadHighRes(page, page, operationMode);
+			throws IndexOutOfBoundsException, IllegalStateException, OperationInProgressException {
+		loadHighRes(operationMode, page, page);
 	}
 
 	/**
 	 * Loads the high resolution images of a list of pages.
 	 *
+	 * @param operationMode How the loader should behave if an operation is already in
+	 * progress. Can be <code>OPERATION_WAIT</code>, meaning the loader should
+	 * wait until a running operation has finished, <code>OPERATION_RETURN</code> meaning
+	 * the loader should immediately return, or <code>OPERATION_THROW</code> meaning the loader
+	 * should throw an <code>OperationInProgressException</code>.
 	 * @param pages The pages to load.
+	 *
 	 * @throws IndexOutOfBoundsException When any page is not a page in the document.
-	 * @throws IllegalStateException When Ghostscript fails to initialize or load the
-	 * images.
+	 * @throws IllegalStateException When Ghostscript fails to initialize or load the document.
+	 * @throws OperationInProgressException When an operation is already in progress
+	 * and <code>operationMode</code> is <code>OPERATION_THROW</code>.
+	 * @throws IllegalArgumentException When <code>operationMode</code> is not
+	 * <code>OPERATION_WAIT</coded>, <code>OPERATION_RETURN</code>, or <code>OPERATION_THROW</code>.
 	 */
-	public void loadHighResList(int operationMode, final int... pages)
-			throws IndexOutOfBoundsException, IllegalStateException {
+	public void loadHighResList(int operationMode, final int[] pages)
+			throws IndexOutOfBoundsException, IllegalStateException, OperationInProgressException {
 		if (pages.length > 0) {
-			final StringBuilder builder = new StringBuilder();
-			if (pages[0] < 1 || pages[0] > this.pages.size())
-				throw new IndexOutOfBoundsException("page=" + pages[0]);
-			builder.append(pages[0]);
+			if (!handleOperationMode(operationMode))
+				return;
 
-			for (int i = 1; i < pages.length; i++) {
-				if (pages[i] < 1 || pages[i] > this.pages.size())
-					throw new IndexOutOfBoundsException("page=" + pages[i]);
-				builder.append(',').append(pages[i]);
-			}
+			try {
+				startOperation();
+
+				final StringBuilder builder = new StringBuilder();
+				if (pages[0] < 1 || pages[0] > this.pages.size())
+					throw new IndexOutOfBoundsException("page=" + pages[0]);
+				builder.append(pages[0]);
+
+				for (int i = 1; i < pages.length; i++) {
+					if (pages[i] < 1 || pages[i] > this.pages.size())
+						throw new IndexOutOfBoundsException("page=" + pages[i]);
+					builder.append(',').append(pages[i]);
+				}
 
 
-			final String[] gargs = { "gs", "-dNOPAUSE", "-dSAFER", "-I%rom%Resource%/Init/", "-dBATCH", "-r" + Page.PAGE_HIGH_DPI,
-					"-sDEVICE=display", "-sPageList=" + builder.toString(), "-dDisplayFormat=" + format,
-					"-dTextAlphaBits=4", "-dGraphicsAlphaBits=4",
-					"-f", file.getAbsolutePath() };
+				final String[] gargs = { "gs", "-dNOPAUSE", "-dSAFER", "-I%rom%Resource%/Init/", "-dBATCH", "-r" + Page.PAGE_HIGH_DPI,
+						"-sDEVICE=display", "-sPageList=" + builder.toString(), "-dDisplayFormat=" + format,
+						"-dTextAlphaBits=4", "-dGraphicsAlphaBits=4",
+						"-f", file.getAbsolutePath() };
 
-			synchronized (slock) {
 				LongReference instanceRef = new LongReference();
 				initDocInstance(instanceRef);
 
@@ -529,6 +641,8 @@ public class Document implements List<Page> {
 				for (final BufferedImage img : documentLoader.images) {
 					this.pages.get(pages[ind] - 1).setHighRes(img);
 				}
+			} finally {
+				operationDone();
 			}
 		}
 	}
@@ -538,6 +652,7 @@ public class Document implements List<Page> {
 	 *
 	 * @param startPage The start page to unload the high resolution image from.
 	 * @param endPage The end page to unload the high resolution image from.
+	 *
 	 * @throws IndexOutOfBoundsException When <code>startPage</code> and <code>endPage</code>
 	 * are outside document or <code>endPage</code> is less than <code>startPage</code>.
 	 */
@@ -552,21 +667,22 @@ public class Document implements List<Page> {
 	 * Unloads a high resolution image at the given page.
 	 *
 	 * @param page The page to unload the high resolution image.
+	 *
 	 * @throws IndexOutOfBoundsException When page is not a page in the document.
 	 */
 	public void unloadHighRes(int page) throws IndexOutOfBoundsException {
 		unloadHighRes(page, page);
 	}
 
-	public void loadZoomed(int operationMode, int startPage, int endPage, double scale)
-			throws IndexOutOfBoundsException {
-		checkBounds(startPage, endPage);
-	}
-
-	public void loadZoomed(int operationMode, int page, double scale) throws IndexOutOfBoundsException {
-
-	}
-
+	/**
+	 * Unloads the zoomed images for a range of pages.
+	 *
+	 * @param startPage The start page to unload.
+	 * @param endPage The end page to unload.
+	 *
+	 * @throws IndexOutOfBoundsException When <code>startPage</code> and <code>endPage</code>
+	 * are outside document or <code>endPage</code> is less than <code>startPage</code>.
+	 */
 	public void unloadZoomed(int startPage, int endPage) throws IndexOutOfBoundsException {
 		checkBounds(startPage, endPage);
 		for (int i = startPage; i <= endPage; i++) {
@@ -574,6 +690,13 @@ public class Document implements List<Page> {
 		}
 	}
 
+	/**
+	 * Unloads a zoomed image for a page.
+	 *
+	 * @param page The page to unload.
+	 *
+	 * @throws IndexOutOfBoundsException When <code>page</code> is not in the document.
+	 */
 	public void unloadZoomed(int page) throws IndexOutOfBoundsException {
 		unloadZoomed(page, page);
 	}
@@ -598,50 +721,80 @@ public class Document implements List<Page> {
 		return file.getName();
 	}
 
-	public void zoomArea(final int operationMode, final int page, final double zoom) {
+	/**
+	 * Zooms the area around page <code>page</code>. The area around <code>page</code>
+	 * is <code>page - 1</code> to <code>page + 1</code>. The method will automatically
+	 * handle if <code>page - 1</code> or <code>page + 1</code> are out of range. However,
+	 * it does not handle if <code>page</code> is not in the document.
+	 *
+	 * @param operationMode How the loader should behave if an operation is already in
+	 * progress. Can be <code>OPERATION_WAIT</code>, meaning the loader should
+	 * wait until a running operation has finished, <code>OPERATION_RETURN</code> meaning
+	 * the loader should immediately return, or <code>OPERATION_THROW</code> meaning the loader
+	 * should throw an <code>OperationInProgressException</code>.
+	 * @param page The page to load around.
+	 * @param zoom The zoom of the pages.
+	 *
+	 * @throws IndexOutOfBoundsException When <code>page</code> is not in the document.
+	 * @throws IllegalStateException When Ghostscript fails to initialize or load the document.
+	 * @throws OperationInProgressException When an operation is already in progress
+	 * and <code>operationMode</code> is <code>OPERATION_THROW</code>.
+	 * @throws IllegalArgumentException When <code>operationMode</code> is not
+	 * <code>OPERATION_WAIT</coded>, <code>OPERATION_RETURN</code>, or <code>OPERATION_THROW</code>.
+	 */
+	public void zoomArea(final int operationMode, final int page, final double zoom)
+		throws IndexOutOfBoundsException {
 		checkBounds(page, page);
 
 		if (!handleOperationMode(operationMode))
 			return;
 
-		startOperation();
+		try {
+			startOperation();
 
-		int start = page - 1;
-		start = start < 1 ? page : start;
-		int end = page + 1;
-		end = end > pages.size() ? page : end;
+			int start = page - 1;
+			start = start < 1 ? page : start;
+			int end = page + 1;
+			end = end > pages.size() ? page : end;
 
-		final String[] gargs = {
-				"gs", "-dNOPAUSE", "-dSAFER", "-I%rom%Resource%/Init/",
-				"-dBATCH", "-r" + (int)(Page.PAGE_HIGH_DPI * zoom),
-				"-sDEVICE=display", "-dFirstPage=" + start, "-dLastPage=" + end,
-				"-dDisplayFormat=" + format,
-				"-dTextAlphaBits=4", "-dGraphicsAlphaBits=4",
-				"-f", file.getAbsolutePath() };
+			final String[] gargs = {
+					"gs", "-dNOPAUSE", "-dSAFER", "-I%rom%Resource%/Init/",
+					"-dBATCH", "-r" + (int)(Page.PAGE_HIGH_DPI * zoom),
+					"-sDEVICE=display", "-dFirstPage=" + start, "-dLastPage=" + end,
+					"-dDisplayFormat=" + format,
+					"-dTextAlphaBits=4", "-dGraphicsAlphaBits=4",
+					"-f", file.getAbsolutePath() };
 
-		LongReference instanceRef = new LongReference();
-		initDocInstance(instanceRef);
+			LongReference instanceRef = new LongReference();
+			initDocInstance(instanceRef);
 
-		int code = gsapi_init_with_args(instanceRef.value, gargs);
-		gsapi_exit(instanceRef.value);
-		gsapi_delete_instance(instanceRef.value);
-		if (code != GS_ERROR_OK) {
+			int code = gsapi_init_with_args(instanceRef.value, gargs);
+			gsapi_exit(instanceRef.value);
+			gsapi_delete_instance(instanceRef.value);
+			if (code != GS_ERROR_OK) {
+				operationDone();
+				throw new IllegalStateException("Failed to gsapi_init_with_args code=" + code);
+			}
+
+			int ind = start - 1;
+			for (final BufferedImage img : documentLoader.images) {
+				this.pages.get(ind++).setZoomed(img);
+			}
+		} finally {
 			operationDone();
-			throw new IllegalStateException("Failed to gsapi_init_with_args code=" + code);
 		}
-
-		int ind = start - 1;
-		for (final BufferedImage img : documentLoader.images) {
-			this.pages.get(ind++).setZoomed(img);
-		}
-
-		operationDone();
 	}
 
-	public void unZoomPage(final int page) {
-		checkBounds(page, page);
-	}
-
+	/**
+	 * Checks to make sure the pages <code>start</code> through
+	 * <code>end</code> are in the document, and throws an
+	 * <code>IndexOutOfBoundsException</code> if they are not.
+	 *
+	 * @param start The start page.
+	 * @param end The end page.
+	 * @throws IndexOutOfBoundsException When <code>startPage</code> and <code>endPage</code>
+	 * are outside document or <code>endPage</code> is less than <code>startPage</code>.
+	 */
 	private void checkBounds(int start, int end) throws IndexOutOfBoundsException {
 		if (start < 1 || start > pages.size())
 			throw new IndexOutOfBoundsException("start=" + start);
@@ -650,6 +803,8 @@ public class Document implements List<Page> {
 		if (end < start)
 			throw new IndexOutOfBoundsException("end < start");
 	}
+
+	// Implementations of inherited methods from java.util.List.
 
 	@Override
 	public int size() {
