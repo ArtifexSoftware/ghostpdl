@@ -1639,7 +1639,7 @@ int pdfi_form_execgroup(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *xobject
         goto exit;
 
     if (GroupGState) {
-        code = gs_setgstate(ctx->pgs, GroupGState);
+        code = pdfi_gs_setgstate(ctx->pgs, GroupGState);
         if (code < 0)
             goto exit2;
     }

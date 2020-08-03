@@ -181,7 +181,7 @@ pdfi_pattern_paint(const gs_client_color *pcc, gs_gstate *pgs)
     code = pdfi_gsave(ctx); /* TODO: This might be redundant? */
     if (code < 0)
         return code;
-    code = gs_setgstate(ctx->pgs, pgs);
+    code = pdfi_gs_setgstate(ctx->pgs, pgs);
     if (code < 0)
         goto exit;
 
@@ -238,7 +238,7 @@ pdfi_pattern_paint_high_level(const gs_client_color *pcc, gs_gstate *pgs_ignore)
     code = pdfi_gsave(ctx);
     if (code < 0)
         return code;
-    code = gs_setgstate(ctx->pgs, pinst->saved);
+    code = pdfi_gs_setgstate(ctx->pgs, pinst->saved);
     if (code < 0)
         goto errorExit;
 
@@ -331,7 +331,7 @@ pdfi_pattern_gset(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *ExtGState)
     dbgmprintf2(ctx->memory, "PATTERN: setting DefaultQState, old device=%s, new device=%s\n",
                 ctx->pgs->device->dname, ctx->DefaultQState->device->dname);
 #endif
-    code = gs_setgstate(ctx->pgs, pdfi_get_DefaultQState(ctx));
+    code = pdfi_gs_setgstate(ctx->pgs, pdfi_get_DefaultQState(ctx));
     if (code < 0) goto exit;
     code = gs_setstrokeconstantalpha(ctx->pgs, strokealpha);
     if (code < 0) goto exit;

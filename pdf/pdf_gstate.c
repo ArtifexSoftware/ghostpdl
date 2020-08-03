@@ -287,6 +287,46 @@ int pdfi_grestore(pdf_context *ctx)
     return 0;
 }
 
+/* gs_setgstate is somewhat unpleasant from our point of view, because it replaces
+ * the content of the graphics state, without going through our pdfi_gsave/pdfi_grestore
+ * functionaltiy. In particular we replace the current font in the graphics state when
+ * we call it, and this means we *don't* count down the PDF_font object reference count
+ * which leads to an incorrect count and either memory leaks or early freeing.
+ * This function *requires* that the calling function will do a pdfi_gsave *before*
+ * calling pdfi_setgstate, and a pdfi_grestore *after* calling pdfi_gs_setgstate.
+ * it correctly increments/decrements the font reference counts for that condition
+ * and no other.
+ */
+int pdfi_gs_setgstate(gs_gstate * pgs, const gs_gstate * pfrom)
+{
+    pdf_font *font = NULL;
+    int code = 0;
+
+    /* We are going to release a reference to the font from the graphics state
+    * (if there is one) so count it down to keep things straight.
+    */
+    if (pgs->font) {
+        font = (pdf_font *)pgs->font->client_data;
+        if (font)
+            pdfi_countdown(font);
+    }
+
+    code = gs_setgstate(pgs, pfrom);
+    if (code < 0)
+        return code;
+
+    /* The copied gstate may have contained a font, and we expect to do a
+     * pdfi_grestore on exit from here, which will count down the font
+     * so count it up now in preparation.
+     */
+    if (pgs->font) {
+        font = (pdf_font *)pgs->font->client_data;
+        if (font)
+            pdfi_countup(font);
+    }
+    return code;
+}
+
 int pdfi_setlinewidth(pdf_context *ctx)
 {
     int code;
