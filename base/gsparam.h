@@ -570,4 +570,11 @@ int gs_param_list_add_tokens(gs_param_list *plist, char *p);
  * to parse, parse it and add what we find to the supplied param list. */
 int gs_param_list_add_parsed_value(gs_param_list *plist, gs_param_name key, const char *p);
 
+/* Given a key and a pointer to some storage (value), retrieve the
+ * value corresponding to the key from the list. If the storage is
+ * non-null, store a text version of the value there. Return the number
+ * of bytes required for the text version (including terminator) in the
+ * address pointed to be len. */
+int gs_param_list_to_string(gs_param_list *plist, gs_param_name key, char *value, int *len);
+
 #endif /* gsparam_INCLUDED */

@@ -372,7 +372,9 @@ gsapi_exit(void *instance);
 typedef enum {
     gs_spt_invalid = -1,
     gs_spt_null    = 0,   /* void * is NULL */
-    gs_spt_bool    = 1,   /* void * is NULL (false) or non-NULL (true) */
+    gs_spt_bool    = 1,   /* For set, void * is NULL (false) or non-NULL
+                           * (true). For get, void * points to an int,
+                           * 0 false, 1 true. */
     gs_spt_int     = 2,   /* void * is a pointer to an int */
     gs_spt_float   = 3,   /* void * is a float * */
     gs_spt_name    = 4,   /* void * is a char * */
@@ -388,13 +390,23 @@ typedef enum {
      * itself several times. Accordingly, if you OR the type with
      * gs_spt_more_to_come, the param will held ready to be passed into
      * the device, and will only actually be sent when the next typed
-     * param is set without this flag (or on device init). */
+     * param is set without this flag (or on device init). Not valid
+     * for get_typed_param. */
     gs_spt_more_to_come = 1<<31
 } gs_set_param_type;
 /* gs_spt_parsed allows for a string such as "<< /Foo 0 /Bar true >>" or
  * "[ 1 2 3 ]" etc to be used so more complex parameters can be set. */
 
 GSDLLEXPORT int GSDLLAPI gsapi_set_param(void *instance, gs_set_param_type type, const char *param, const void *value);
+
+/* Called to get a value. value points to storage of the appropriate
+ * type. If value is passed as NULL on entry, then the return code is
+ * the number of bytes storage required for the type. Thus to read a
+ * name/string/parsed value, call once with value=NULL, then obtain
+ * the storage, and call again with value=the storage to get a nul
+ * terminated string. (nul terminator is included in the count - hence
+ * an empty string requires 1 byte storage) */
+GSDLLEXPORT int GSDLLAPI gsapi_get_param(void *instance, gs_set_param_type type, const char *param, void *value);
 
 enum {
     GS_PERMIT_FILE_READING = 0,

@@ -387,6 +387,15 @@ gsapi_set_param(void *lib, gs_set_param_type type, const char *param, const void
 }
 
 GSDLLEXPORT int GSDLLAPI
+gsapi_get_param(void *lib, gs_set_param_type type, const char *param, void *value)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+    if (lib == NULL)
+        return gs_error_Fatal;
+    return pl_main_get_typed_param(pl_main_get_instance(ctx->memory), (pl_set_param_type)type, param, value);
+}
+
+GSDLLEXPORT int GSDLLAPI
 gsapi_add_control_path(void *instance, int type, const char *path)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;

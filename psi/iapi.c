@@ -502,6 +502,141 @@ gsapi_set_param(void *lib, gs_set_param_type type, const char *param, const void
 }
 
 GSDLLEXPORT int GSDLLAPI
+gsapi_get_param(void *lib, gs_set_param_type type, const char *param, void *value)
+{
+    int code = 0;
+    gs_param_string str_value;
+    gs_c_param_list params;
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+
+    if (lib == NULL)
+        return gs_error_Fatal;
+
+    gs_c_param_list_write(&params, ctx->memory);
+
+    /* Should never be set, but clear the more to come bit anyway in case. */
+    type &= ~gs_spt_more_to_come;
+
+    code = psapi_get_device_params(ctx, (gs_param_list *)&params);
+    if (code < 0) {
+        gs_c_param_list_release(&params);
+        return code;
+    }
+
+    gs_c_param_list_read(&params);
+    switch (type)
+    {
+    case gs_spt_null:
+        code = param_read_null((gs_param_list *)&params, param);
+        if (code < 0)
+            break;
+        code = 0;
+        break;
+    case gs_spt_bool:
+    {
+        bool b;
+        code = param_read_bool((gs_param_list *)&params, param, &b);
+        if (code < 0)
+            break;
+        code = sizeof(int);
+        if (value != NULL)
+            *(int *)value = !!b;
+        break;
+    }
+    case gs_spt_int:
+    {
+        int i;
+        code = param_read_int((gs_param_list *)&params, param, &i);
+        if (code < 0)
+            break;
+        code = sizeof(int);
+        if (value != NULL)
+            *(int *)value = i;
+        break;
+    }
+    case gs_spt_float:
+    {
+        float f;
+        code = param_read_float((gs_param_list *)&params, param, &f);
+        if (code < 0)
+            break;
+        code = sizeof(float);
+        if (value != NULL)
+            *(float *)value = f;
+        break;
+    }
+    case gs_spt_name:
+        code = param_read_name((gs_param_list *)&params, param, &str_value);
+        if (code < 0)
+            break;
+        if (value != NULL) {
+            memcpy(value, str_value.data, str_value.size);
+            ((char *)value)[str_value.size] = 0;
+        }
+        code = str_value.size+1;
+        break;
+    case gs_spt_string:
+        code = param_read_string((gs_param_list *)&params, param, &str_value);
+        if (code < 0)
+            break;
+        if (value != NULL) {
+            memcpy(value, str_value.data, str_value.size);
+            ((char *)value)[str_value.size] = 0;
+        }
+        code = str_value.size+1;
+        break;
+    case gs_spt_long:
+    {
+        long l;
+        code = param_read_long((gs_param_list *)&params, param, &l);
+        if (code < 0)
+            break;
+        if (value != NULL)
+            *(long *)value = l;
+        code = sizeof(long);
+        break;
+    }
+    case gs_spt_i64:
+    {
+        int64_t i64;
+        code = param_read_i64((gs_param_list *)&params, param, &i64);
+        if (code < 0)
+            break;
+        if (value != NULL)
+            *(int64_t *)value = i64;
+        code = sizeof(int64_t);
+        break;
+    }
+    case gs_spt_size_t:
+    {
+        size_t z;
+        code = param_read_size_t((gs_param_list *)&params, param, &z);
+        if (code < 0)
+            break;
+        if (value != NULL)
+            *(size_t *)value = z;
+        code = sizeof(size_t);
+        break;
+    }
+    case gs_spt_parsed:
+    {
+        int len;
+        code = gs_param_list_to_string((gs_param_list *)&params,
+                                       param, (char *)value, &len);
+        if (code >= 0)
+            code = len;
+        break;
+    }
+    default:
+        code = gs_note_error(gs_error_rangecheck);
+    }
+    gs_c_param_list_release(&params);
+
+    return code;
+}
+
+
+GSDLLEXPORT int GSDLLAPI
 gsapi_add_control_path(void *instance, int type, const char *path)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;

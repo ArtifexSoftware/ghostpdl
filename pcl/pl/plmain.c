@@ -1830,7 +1830,7 @@ pl_main_set_string_param(pl_main_instance_t * pmi, const char *arg)
 }
 
 int
-pl_main_set_typed_param(pl_main_instance_t * pmi, pl_set_param_type type, const char *param, const void *value)
+pl_main_set_typed_param(pl_main_instance_t *pmi, pl_set_param_type type, const char *param, const void *value)
 {
     int code = 0;
     gs_c_param_list *params = &pmi->params;
@@ -1916,6 +1916,140 @@ pl_main_set_typed_param(pl_main_instance_t * pmi, pl_set_param_type type, const 
         code = gs_putdeviceparams(pmi->device, (gs_param_list *)params);
         gs_c_param_list_release(params);
     }
+
+    return code;
+}
+
+int
+pl_main_get_typed_param(pl_main_instance_t *pmi, pl_set_param_type type, const char *param, void *value)
+{
+    int code = 0;
+    gs_c_param_list params;
+    gs_param_string str_value;
+
+    if (pmi->mid_runstring) {
+        dmprintf(pmi->memory, "Can't get parameters mid run_string\n");
+        return -1;
+    }
+
+    /* The "more to come" bit should never be set, but clear it anyway. */
+    type &= ~pl_spt_more_to_come;
+
+    gs_c_param_list_write(&params, pmi->memory);
+    code = gs_getdeviceparams(pmi->device, (gs_param_list *)&params);
+    if (code < 0) {
+        gs_c_param_list_release(&params);
+        return code;
+    }
+
+    gs_c_param_list_read(&params);
+    switch (type)
+    {
+    case pl_spt_null:
+        code = param_read_null((gs_param_list *)&params, param);
+        if (code < 0)
+            break;
+        code = 0;
+        break;
+    case pl_spt_bool:
+    {
+        bool b;
+        code = param_read_bool((gs_param_list *)&params, param, &b);
+        if (code < 0)
+            break;
+        code = sizeof(int);
+        if (value != NULL)
+            *(int *)value = !!b;
+        break;
+    }
+    case pl_spt_int:
+    {
+        int i;
+        code = param_read_int((gs_param_list *)&params, param, &i);
+        if (code < 0)
+            break;
+        code = sizeof(int);
+        if (value != NULL)
+            *(int *)value = i;
+        break;
+    }
+    case pl_spt_float:
+    {
+        float f;
+        code = param_read_float((gs_param_list *)&params, param, &f);
+        if (code < 0)
+            break;
+        code = sizeof(float);
+        if (value != NULL)
+            *(float *)value = f;
+        break;
+    }
+    case pl_spt_name:
+        code = param_read_name((gs_param_list *)&params, param, &str_value);
+        if (code < 0)
+            break;
+        if (value != NULL) {
+            memcpy(value, str_value.data, str_value.size);
+            ((char *)value)[str_value.size] = 0;
+        }
+        code = str_value.size+1;
+        break;
+    case pl_spt_string:
+        code = param_read_string((gs_param_list *)&params, param, &str_value);
+        if (code < 0)
+            break;
+        if (value != NULL) {
+            memcpy(value, str_value.data, str_value.size);
+            ((char *)value)[str_value.size] = 0;
+        }
+        code = str_value.size+1;
+        break;
+    case pl_spt_long:
+    {
+        long l;
+        code = param_read_long((gs_param_list *)&params, param, &l);
+        if (code < 0)
+            break;
+        if (value != NULL)
+            *(long *)value = l;
+        code = sizeof(long);
+        break;
+    }
+    case pl_spt_i64:
+    {
+        int64_t i64;
+        code = param_read_i64((gs_param_list *)&params, param, &i64);
+        if (code < 0)
+            break;
+        if (value != NULL)
+            *(int64_t *)value = i64;
+        code = sizeof(int64_t);
+        break;
+    }
+    case pl_spt_size_t:
+    {
+        size_t z;
+        code = param_read_size_t((gs_param_list *)&params, param, &z);
+        if (code < 0)
+            break;
+        if (value != NULL)
+            *(size_t *)value = z;
+        code = sizeof(size_t);
+        break;
+    }
+    case pl_spt_parsed:
+    {
+        int len;
+        code = gs_param_list_to_string((gs_param_list *)&params,
+                                       param, (char *)value, &len);
+        if (code >= 0)
+            code = len;
+        break;
+    }
+    default:
+        code = gs_note_error(gs_error_rangecheck);
+    }
+    gs_c_param_list_release(&params);
 
     return code;
 }

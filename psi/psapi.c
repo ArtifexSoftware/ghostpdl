@@ -305,6 +305,15 @@ psapi_set_device_param(gs_lib_ctx_t *ctx,
 }
 
 int
+psapi_get_device_params(gs_lib_ctx_t *ctx,
+                        gs_param_list *plist)
+{
+    gs_main_instance *minst = get_minst_from_memory(ctx->memory);
+
+    return gs_getdeviceparams(minst->i_ctx_p->pgs->device, plist);
+}
+
+int
 psapi_set_param(gs_lib_ctx_t *ctx,
                 gs_param_list *plist)
 {

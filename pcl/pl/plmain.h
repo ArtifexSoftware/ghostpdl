@@ -62,7 +62,9 @@ int pl_main_set_string_param(pl_main_instance_t *minst, const char *arg);
 typedef enum {
     pl_spt_invalid = -1,
     pl_spt_null    = 0,   /* void * is NULL */
-    pl_spt_bool    = 1,   /* void * is NULL (false) or non-NULL (true) */
+    pl_spt_bool    = 1,   /* For set, void * is NULL (false) or non-NULL
+                           * (true). For get, void * points to an int,
+                           * 0 false, 1 true. */
     pl_spt_int     = 2,   /* void * is a pointer to an int */
     pl_spt_float   = 3,   /* void * is a float * */
     pl_spt_name    = 4,   /* void * is a char * */
@@ -78,12 +80,22 @@ typedef enum {
      * itself several times. Accordingly, if you OR the type with
      * pl_spt_more_to_come, the param will held ready to be passed into
      * the device, and will only actually be sent when the next typed
-     * param is set without this flag (or on device init). */
+     * param is set without this flag (or on device init). Not valid
+     * for get_typed_param. */
     pl_spt_more_to_come = 1<<31
 } pl_set_param_type;
 /* gs_spt_parsed allows for a string such as "<< /Foo 0 /Bar true >>" or
  * "[ 1 2 3 ]" etc to be used so more complex parameters can be set. */
 int pl_main_set_typed_param(pl_main_instance_t *minst, pl_set_param_type type, const char *param, const void *value);
+
+/* Called to get a value. value points to storage of the appropriate
+ * type. If value is passed as NULL on entry, then the return code is
+ * the number of bytes storage required for the type. Thus to read a
+ * name/string/parsed value, call once with value=NULL, then obtain
+ * the storage, and call again with value=the storage to get a nul
+ * terminated string. (nul terminator is included in the count - hence
+ * an empty string requires 1 byte storage) */
+int pl_main_get_typed_param(pl_main_instance_t *minst, pl_set_param_type type, const char *param, void *value);
 
 /* instance accessors */
 bool pl_main_get_interpolate(const gs_memory_t *mem);

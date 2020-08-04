@@ -76,6 +76,7 @@ ends_token(const char *p)
             *p == 10 ||
             *p == 12 ||
             *p == 13 ||
+            *p == 32 ||
             *p == '/' ||
             *p == '%' ||
             *p == '<' || *p == '>' ||
@@ -688,3 +689,260 @@ int gs_param_list_add_parsed_value(gs_param_list *plist, gs_param_name key, cons
     return code;
 }
 
+typedef struct {
+    char *value;
+    int *len;
+    char last;
+} outstate;
+
+static void
+out_string(outstate *out, const char *str)
+{
+    int slen = str ? (int)strlen(str) : 0;
+
+    if (slen == 0)
+        return;
+
+    if (out->last != 0 && out->last != ')' && out->last != '>' &&
+        out->last != '[' && out->last != ']' && out->last != '}' &&
+        *str != '(' && *str != ')' && *str != '<' && *str != '>' &&
+        *str != '[' && *str != ']' && *str != '{' && *str != '}' &&
+        *str != '/') {
+        /* We need to insert some whitespace */
+        *out->len += 1;
+        if (out->value != NULL) {
+            *out->value++ = ' ';
+            *out->value = 0;
+        }
+    }
+
+    *out->len += slen;
+    out->last = str[slen-1];
+    if (out->value != NULL) {
+        memcpy(out->value, str, slen);
+        out->value += slen;
+        *out->value = 0;
+    }
+}
+
+static void
+string_to_string(const char *data, int len, outstate *out)
+{
+    int i;
+    char text[4];
+
+    if (len == 0) {
+        out_string(out, "()");
+        return;
+    }
+
+    /* For simplicity, let's always out as hexstrings */
+    out_string(out, "<");
+    text[2] = 0;
+    for (i = 0; i < len; i++) {
+        text[0] = "0123456789ABCDEF"[(*data >> 4) & 15];
+        text[1] = "0123456789ABCDEF"[(*data++) & 15];
+        out->last = 0;
+        out_string(out, text);
+    }
+    out_string(out, ">");
+}
+
+static void
+name_to_string(const char *data, int len, outstate *out)
+{
+    int i;
+    char text[4];
+
+    out_string(out, "/");
+    text[3] = 0;
+    for (i = 0; i < len; i++) {
+        char c = *data++;
+        if (c > 32 && c < 127 && c != '/' && c != '#' &&
+            c != '<' && c != '>' &&
+            c != '[' && c != ']' &&
+            c != '(' && c != ')' &&
+            c != '{' && c != '}') {
+            text[0] = c;
+            text[1] = 0;
+        } else {
+            text[0] = '#';
+            text[1] = "0123456789ABCDEF"[(c >> 4) & 15];
+            text[2] = "0123456789ABCDEF"[c & 15];
+        }
+        out->last = 0;
+        out_string(out, text);
+    }
+}
+
+static void
+int_array_to_string(gs_param_int_array ia, outstate *out)
+{
+    int i;
+    char text[32];
+
+    out_string(out, "[");
+    for (i = 0; i < ia.size; i++) {
+        gs_sprintf(text, "%d", ia.data[i]);
+        out_string(out, text);
+    }
+    out_string(out, "]");
+}
+
+static void
+float_array_to_string(gs_param_float_array fa, outstate *out)
+{
+    int i;
+    char text[32];
+
+    out_string(out, "[");
+    for (i = 0; i < fa.size; i++) {
+        gs_sprintf(text, "%f", fa.data[i]);
+        out_string(out, text);
+    }
+    out_string(out, "]");
+}
+
+static void
+string_array_to_string(gs_param_string_array sa, outstate *out)
+{
+    int i;
+
+    out_string(out, "[");
+    for (i = 0; i < sa.size; i++) {
+        string_to_string((const char *)sa.data[i].data, sa.data[i].size, out);
+    }
+    out_string(out, "]");
+}
+
+static int to_string(gs_param_list *plist, gs_param_name key, outstate *out);
+
+static int
+out_dict(gs_param_collection *dict, outstate *out)
+{
+    gs_param_list *plist = dict->list;
+    gs_param_enumerator_t enumerator;
+    gs_param_key_t key;
+    int code;
+
+    out_string(out, "<<");
+
+    param_init_enumerator(&enumerator);
+    while ((code = param_get_next_key(plist, &enumerator, &key)) == 0) {
+        char string_key[256];	/* big enough for any reasonable key */
+
+        if (key.size > sizeof(string_key) - 1) {
+            code = gs_note_error(gs_error_rangecheck);
+            break;
+        }
+        memcpy(string_key, key.data, key.size);
+        string_key[key.size] = 0;
+        name_to_string((char *)key.data, key.size, out);
+        code = to_string(plist, string_key, out);
+        if (code < 0)
+            break;
+    }
+
+    out_string(out, ">>");
+
+    return code;
+}
+
+static int
+to_string(gs_param_list *plist, gs_param_name key, outstate *out)
+{
+    int code = 0;
+    gs_param_typed_value pvalue;
+
+    pvalue.type = gs_param_type_any;
+    code = param_read_typed(plist, key, &pvalue);
+    if (code < 0)
+        return code;
+    if (code > 0)
+        return_error(gs_error_unknownerror);
+    switch (pvalue.type) {
+    case gs_param_type_null:
+        out_string(out, "null");
+        break;
+    case gs_param_type_bool:
+        if (pvalue.value.b)
+            out_string(out, "true");
+        else
+            out_string(out, "false");
+        break;
+    case gs_param_type_int:
+    {
+        char text[32];
+        gs_sprintf(text, "%d", pvalue.value.i);
+        out_string(out, text);
+        break;
+    }
+    case gs_param_type_i64:
+    {
+        char text[32];
+        gs_sprintf(text, PRId64, pvalue.value.i64);
+        out_string(out, text);
+        break;
+    }
+    case gs_param_type_long:
+    {
+        char text[32];
+        gs_sprintf(text, "%ld", pvalue.value.l);
+        out_string(out, text);
+        break;
+    }
+    case gs_param_type_size_t:
+    {
+        char text[32];
+        gs_sprintf(text, PRIdSIZE, pvalue.value.z);
+        out_string(out, text);
+        break;
+    }
+    case gs_param_type_float:
+    {
+        char text[32];
+        gs_sprintf(text, "%f", pvalue.value.f);
+        out_string(out, text);
+        break;
+    }
+    case gs_param_type_dict:
+        code = out_dict(&pvalue.value.d, out);
+        break;
+    case gs_param_type_dict_int_keys:
+        return -1;
+    case gs_param_type_array:
+        return -1;
+    case gs_param_type_string:
+        string_to_string((char *)pvalue.value.s.data, pvalue.value.s.size, out);
+        break;
+    case gs_param_type_name:
+        name_to_string((char *)pvalue.value.n.data, pvalue.value.n.size, out);
+        break;
+    case gs_param_type_int_array:
+        int_array_to_string(pvalue.value.ia, out);
+        break;
+    case gs_param_type_float_array:
+        float_array_to_string(pvalue.value.fa, out);
+        break;
+    case gs_param_type_string_array:
+        string_array_to_string(pvalue.value.sa, out);
+        break;
+    default:
+        return -1;
+    }
+
+    return code;
+}
+
+int gs_param_list_to_string(gs_param_list *plist, gs_param_name key, char *value, int *len)
+{
+    outstate out;
+
+    out.value = value;
+    out.len = len;
+    out.last = 0;
+    *len = 1; /* Always space for the terminator. */
+    if (value)
+        *value = 0;
+    return to_string(plist, key, &out);
+}
