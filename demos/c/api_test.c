@@ -839,6 +839,45 @@ failearly:
     return code;
 }
 
+char *types[] = {
+    "null",
+    "bool",
+    "int",
+    "float",
+    "name",
+    "string",
+    "long",
+    "i64",
+    "size_t",
+    "parsed"
+};
+
+static int
+list_params(void *instance)
+{
+    void *iter = NULL;
+    char *key;
+    gs_set_param_type type;
+    char buffer[1024];
+    int code;
+
+    while ((code = gsapi_enumerate_params(instance, &iter, &key, &type)) == 0) {
+        printf("Key=%s, type=%s: ", key, type >= 0 && type <= 9 ? types[type] : "invalid");
+        code = gsapi_get_param(instance, gs_spt_parsed, key, NULL);
+        if (code < 0)
+            break;
+        if (code > sizeof(buffer)) {
+            printf("<overly long value>\n");
+            continue;
+        }
+        code = gsapi_get_param(instance, gs_spt_parsed, key, buffer);
+        if (code < 0)
+            break;
+        printf("%s\n", buffer);
+    }
+    return code;
+}
+
 static int
 param_test(const char *dev, char *outfile)
 {
@@ -867,6 +906,13 @@ param_test(const char *dev, char *outfile)
     code = gsapi_set_param(instance, gs_spt_parsed, "Foo", "0");
     if (code < 0) {
         printf("Got error from early param setting.\n");
+        goto fail;
+    }
+
+    /* List the params: */
+    code = list_params(instance);
+    if (code < 0) {
+        printf("Error %d while listing params\n", code);
         goto fail;
     }
 
@@ -921,8 +967,15 @@ param_test(const char *dev, char *outfile)
         printf("Bad buffer return");
         goto fail;
     }
-    if (strcmp(buffer, "<</Sp#20ce/D#7Fl/Baz<0123>/Bar<313233>/Foo[/A/B/C/D/E]/VSamples[1 1 1 1]/HSamples[1 1 1 1]/Blend 0/QFactor 0.1>>")) {
+    if (strcmp(buffer, "<</Sp#20ce/D#7Fl/Baz<0123>/Bar(123)/Foo[/A/B/C/D/E]/VSamples[1 1 1 1]/HSamples[1 1 1 1]/Blend 0/QFactor 0.1>>")) {
         printf("Bad value return");
+        goto fail;
+    }
+
+    /* List the params: */
+    code = list_params(instance);
+    if (code < 0) {
+        printf("Error %d in while listing params\n", code);
         goto fail;
     }
 
