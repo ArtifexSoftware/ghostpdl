@@ -678,21 +678,59 @@ sub_function_error:
     return code;
 }
 
+
+static int pdfi_free_function_special(pdf_context *ctx, gs_function_t *pfn);
+
+/* For type 0 functions, need to free up the data associated with the stream
+ * that it was using.  This doesn't get freed in the gs_function_free() code.
+ */
+static int pdfi_free_function_0(pdf_context *ctx, gs_function_t *pfn)
+{
+    gs_function_Sd_params_t *params = (gs_function_Sd_params_t *)&pfn->params;
+
+    s_close_filters(&params->DataSource.data.strm, params->DataSource.data.strm->strm);
+    gs_free_object(ctx->memory, params->DataSource.data.strm, "pdfi_free_function");
+    return 0;
+}
+
+/* For type 3 functions, it has an array of functions that might need special handling.
+ */
+static int pdfi_free_function_3(pdf_context *ctx, gs_function_t *pfn)
+{
+    gs_function_1ItSg_params_t *params = (gs_function_1ItSg_params_t *)&pfn->params;
+    int i;
+
+    for (i=0; i<params->k; i++) {
+        pdfi_free_function_special(ctx, (gs_function_t *)params->Functions[i]);
+    }
+    return 0;
+}
+
+/* Free any special stuff associated with a function */
+static int pdfi_free_function_special(pdf_context *ctx, gs_function_t *pfn)
+{
+    switch(pfn->head.type) {
+    case 0:
+        pdfi_free_function_0(ctx, pfn);
+        break;
+    case 3:
+        pdfi_free_function_3(ctx, pfn);
+        break;
+    default:
+        break;
+    }
+    return 0;
+}
+
 int pdfi_free_function(pdf_context *ctx, gs_function_t *pfn)
 {
     if (pfn == NULL)
         return 0;
 
-    if (pfn->head.type == 0) {
-        /* For type 0 functions, need to free up the data associated with the stream
-         * that it was using.  This doesn't get freed in the gs_function_free() code.
-         */
-        gs_function_Sd_params_t *params = (gs_function_Sd_params_t *)&pfn->params;
+    /* Free any special stuff for the function */
+    pdfi_free_function_special(ctx, pfn);
 
-        s_close_filters(&params->DataSource.data.strm, params->DataSource.data.strm->strm);
-        gs_free_object(ctx->memory, params->DataSource.data.strm, "pdfi_free_function");
-    }
-
+    /* Free the standard stuff handled by the gs library */
     gs_function_free(pfn, true, ctx->memory);
     return 0;
 }
