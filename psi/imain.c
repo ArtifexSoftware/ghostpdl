@@ -402,6 +402,7 @@ gs_main_set_language_param(gs_main_instance *minst,
             break;
         case gs_param_type_name:
             code = name_ref(ctx->memory, pvalue.value.n.data, pvalue.value.n.size, &value, 1);
+            break;
         case gs_param_type_int_array:
             /* We don't support arrays for now */
             continue;
