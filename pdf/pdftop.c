@@ -323,111 +323,205 @@ pdf_impl_get_device_memory(pl_interp_implementation_t *impl)
     return ctx->memory;
 }
 
+static int plist_value_get_int64(gs_param_typed_value *pvalue, int64_t *pint)
+{
+    if (pvalue->type == gs_param_type_i64) {
+        *pint = pvalue->value.i64;
+        return 0;
+    }
+    return_error(gs_error_typecheck);
+}
+
+static int plist_value_get_string(pdf_context *ctx, gs_param_typed_value *pvalue, char **pstr, int *plen)
+{
+    if (pvalue->type == gs_param_type_string) {
+        *pstr = (char *)gs_alloc_bytes(ctx->memory, pvalue->value.s.size + 1, "string from param list");
+        if (*pstr == NULL)
+            return_error(gs_error_VMerror);
+
+        memset(*pstr, 0x00, pvalue->value.s.size + 1);
+        memcpy(*pstr, pvalue->value.s.data, pvalue->value.s.size + 1);
+        *plen = pvalue->value.s.size;
+        return 0;
+    }
+    return_error(gs_error_typecheck);
+}
+
+static int plist_value_get_int(gs_param_typed_value *pvalue, int *pint)
+{
+    if (pvalue->type == gs_param_type_int) {
+        *pint = (int64_t)pvalue->value.i;
+        return 0;
+    }
+    if (pvalue->type == gs_param_type_i64) {
+        int64_t i64;
+        int code;
+
+        code = plist_value_get_int64(pvalue, &i64);
+        if (code < 0)
+            return code;
+
+        if (i64 > ((int64_t)1 << 32))
+            return_error(gs_error_rangecheck);
+
+        *pint = (int)i64;
+        return 0;
+    }
+    return_error(gs_error_typecheck);
+}
+
+static int plist_value_get_bool(gs_param_typed_value *pvalue, bool *pbool)
+{
+    if (pvalue->type == gs_param_type_bool) {
+        *pbool = pvalue->value.b;
+        return 0;
+    }
+    return_error(gs_error_typecheck);
+}
+
 static int
 pdf_impl_set_param(pl_interp_implementation_t *impl,
-                  pl_set_param_type           type,
-                  const char                 *param,
-                  const void                 *val)
+                   gs_param_list    *plist)
 {
     pdf_interp_instance_t *instance = impl->interp_client_data;
     pdf_context *ctx = instance->ctx;
-    bool boolval = (bool)(int64_t)val;
+    gs_param_enumerator_t enumerator;
+    gs_param_key_t key;
+    int code, boolval = 0;
 
-    if (!strncmp(param, "FirstPage", 9)) {
-        ctx->first_page = *((int *)val);
-        return 0;
-    }
-    if (!strncmp(param, "LastPage", 8)) {
-        ctx->last_page = *((int *)val);
-        return 0;
-    }
-    /* PDF interpreter flags */
-    if (!strncmp(param, "PDFDEBUG", 8)) {
-        ctx->pdfdebug = boolval;
-        return 0;
-    }
-    if (!strncmp(param, "PDFSTOPONERROR", 14)) {
-        ctx->pdfstoponerror = boolval;
-        return 0;
-    }
-    if (!strncmp(param, "PDFSTOPONWARNING", 16)) {
-        ctx->pdfstoponwarning = boolval;
-        return 0;
-    }
-    if (!strncmp(param, "NOTRANSPARENCY", 14)) {
-        ctx->notransparency = boolval;
-        return 0;
-    }
-    if (!strncmp(param, "NOCIDFALLBACK", 13)) {
-        ctx->nocidfallback = boolval;
-        return 0;
-    }
-    if (!strncmp(param, "NO_PDFMARK_OUTLINES", 19)) {
-        ctx->no_pdfmark_outlines = boolval;
-        return 0;
-    }
-    if (!strncmp(param, "NO_PDFMARK_DESTS", 16)) {
-        ctx->no_pdfmark_dests = boolval;
-        return 0;
-    }
-    if (!strncmp(param, "PDFFitPage", 10)) {
-        ctx->pdffitpage = boolval;
-        return 0;
-    }
-    if (!strncmp(param, "UseCropBox", 10)) {
-        ctx->usecropbox = boolval;
-        return 0;
-    }
-    if (!strncmp(param, "UseArtBox", 9)) {
-        ctx->useartbox = boolval;
-        return 0;
-    }
-    if (!strncmp(param, "UseBleedBox", 11)) {
-        ctx->usebleedbox = boolval;
-        return 0;
-    }
-    if (!strncmp(param, "UseTrimBox", 10)) {
-        ctx->usetrimbox = boolval;
-        return 0;
-    }
-    if (!strncmp(param, "Printed", 7)) {
-        ctx->printed = boolval;
-        return 0;
-    }
-    if (!strncmp(param, "ShowAcroForm", 12)) {
-        ctx->showacroform = boolval;
-        return 0;
-    }
-    if (!strncmp(param, "ShowAnnots", 10)) {
-        ctx->showannots = boolval;
-        return 0;
-    }
-    if (!strncmp(param, "PreserveAnnots", 14)) {
-        ctx->preserveannots = boolval;
-        return 0;
-    }
-    if (!strncmp(param, "NoUserUnit", 10)) {
-        ctx->nouserunit = boolval;
-        return 0;
-    }
-    if (!strncmp(param, "RENDERTTNOTDEF", 13)) {
-        ctx->renderttnotdef = boolval;
-        return 0;
-    }
-    if (!strncmp(param, "PDFINFO", 13)) {
-        ctx->pdfinfo = boolval;
-        return 0;
-    }
-    if (!strncmp(param, "DOPDFMARKS", 10)) {
-        ctx->dopdfmarks = boolval;
-        return 0;
-    }
-    if (!strncmp(param, "PDFPassword", 8)) {
-        ctx->Password = (char *)gs_alloc_bytes(ctx->memory, strlen((char *)val) + 1, "PDF Password from params");
-        memset(ctx->Password, 0x00, strlen((char *)val) + 1);
-        memcpy(ctx->Password, val, strlen((char *)val) + 1);
-        ctx->PasswordLen = strlen((char *)val);
-        return 0;
+    param_init_enumerator(&enumerator);
+    while ((code = param_get_next_key(plist, &enumerator, &key)) == 0) {
+        char param[256];	/* big enough for any reasonable key */
+        gs_param_typed_value pvalue;
+        void *val;
+
+        if (key.size > sizeof(param) - 1) {
+            code = gs_note_error(gs_error_rangecheck);
+            break;
+        }
+        memcpy(param, key.data, key.size);
+        param[key.size] = 0;
+        if ((code = param_read_typed(plist, param, &pvalue)) != 0) {
+            code = (code > 0 ? gs_note_error(gs_error_unknownerror) : code);
+            break;
+        }
+
+        if (!strncmp(param, "FirstPage", 9)) {
+            code = plist_value_get_int(&pvalue, &ctx->first_page);
+            if (code < 0)
+                return code;
+        }
+        if (!strncmp(param, "LastPage", 8)) {
+            code = plist_value_get_int(&pvalue, &ctx->last_page);
+            if (code < 0)
+                return code;
+        }
+        /* PDF interpreter flags */
+        if (!strncmp(param, "PDFDEBUG", 8)) {
+            code = plist_value_get_bool(&pvalue, &ctx->pdfdebug);
+            if (code < 0)
+                return code;
+        }
+        if (!strncmp(param, "PDFSTOPONERROR", 14)) {
+            code = plist_value_get_bool(&pvalue, &ctx->pdfstoponerror);
+            if (code < 0)
+                return code;
+        }
+        if (!strncmp(param, "PDFSTOPONWARNING", 16)) {
+            code = plist_value_get_bool(&pvalue, &ctx->pdfstoponwarning);
+            if (code < 0)
+                return code;
+        }
+        if (!strncmp(param, "NOTRANSPARENCY", 14)) {
+            code = plist_value_get_bool(&pvalue, &ctx->notransparency);
+            if (code < 0)
+                return code;
+        }
+        if (!strncmp(param, "NOCIDFALLBACK", 13)) {
+            code = plist_value_get_bool(&pvalue, &ctx->nocidfallback);
+            if (code < 0)
+                return code;
+        }
+        if (!strncmp(param, "NO_PDFMARK_OUTLINES", 19)) {
+            code = plist_value_get_bool(&pvalue, &ctx->no_pdfmark_outlines);
+            if (code < 0)
+                return code;
+        }
+        if (!strncmp(param, "NO_PDFMARK_DESTS", 16)) {
+            code = plist_value_get_bool(&pvalue, &ctx->no_pdfmark_dests);
+            if (code < 0)
+                return code;
+        }
+        if (!strncmp(param, "PDFFitPage", 10)) {
+            code = plist_value_get_bool(&pvalue, &ctx->pdffitpage);
+            if (code < 0)
+                return code;
+        }
+        if (!strncmp(param, "UseCropBox", 10)) {
+            code = plist_value_get_bool(&pvalue, &ctx->usecropbox);
+            if (code < 0)
+                return code;
+        }
+        if (!strncmp(param, "UseArtBox", 9)) {
+            code = plist_value_get_bool(&pvalue, &ctx->useartbox);
+            if (code < 0)
+                return code;
+        }
+        if (!strncmp(param, "UseBleedBox", 11)) {
+            code = plist_value_get_bool(&pvalue, &ctx->usebleedbox);
+            if (code < 0)
+                return code;
+        }
+        if (!strncmp(param, "UseTrimBox", 10)) {
+            code = plist_value_get_bool(&pvalue, &ctx->usetrimbox);
+            if (code < 0)
+                return code;
+        }
+        if (!strncmp(param, "Printed", 7)) {
+            code = plist_value_get_bool(&pvalue, &ctx->printed);
+            if (code < 0)
+                return code;
+        }
+        if (!strncmp(param, "ShowAcroForm", 12)) {
+            code = plist_value_get_bool(&pvalue, &ctx->showacroform);
+            if (code < 0)
+                return code;
+        }
+        if (!strncmp(param, "ShowAnnots", 10)) {
+            code = plist_value_get_bool(&pvalue, &ctx->showannots);
+            if (code < 0)
+                return code;
+        }
+        if (!strncmp(param, "PreserveAnnots", 14)) {
+            code = plist_value_get_bool(&pvalue, &ctx->preserveannots);
+            if (code < 0)
+                return code;
+        }
+        if (!strncmp(param, "NoUserUnit", 10)) {
+            code = plist_value_get_bool(&pvalue, &ctx->nouserunit);
+            if (code < 0)
+                return code;
+        }
+        if (!strncmp(param, "RENDERTTNOTDEF", 13)) {
+            code = plist_value_get_bool(&pvalue, &ctx->renderttnotdef);
+            if (code < 0)
+                return code;
+        }
+        if (!strncmp(param, "PDFINFO", 13)) {
+            code = plist_value_get_bool(&pvalue, &ctx->pdfinfo);
+            if (code < 0)
+                return code;
+        }
+        if (!strncmp(param, "DOPDFMARKS", 10)) {
+            code = plist_value_get_bool(&pvalue, &ctx->dopdfmarks);
+            if (code < 0)
+                return code;
+        }
+        if (!strncmp(param, "PDFPassword", 8)) {
+            code = plist_value_get_string(ctx, &pvalue, &ctx->Password , &ctx->PasswordLen);
+            if (code < 0)
+                return code;
+        }
     }
     return 0;
 }
