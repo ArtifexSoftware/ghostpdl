@@ -287,6 +287,9 @@ static int pop_oper_func(gs_memory_t *mem, cmap_stack_t *s, pdf_cmap *pdficmap)
 
 static int cmap_usecmap_func(gs_memory_t *mem, cmap_stack_t *s, pdf_cmap *pdficmap)
 {
+    pdf_name *n = NULL;
+    pdf_cmap *upcmap = NULL;
+
     if (cmap_stack_count(s) < 1)
         return_error(gs_error_stackunderflow);
 
@@ -294,8 +297,6 @@ static int cmap_usecmap_func(gs_memory_t *mem, cmap_stack_t *s, pdf_cmap *pdficm
     if (pdficmap->code_space.num_ranges == 0) {
         byte *nstr = NULL;
         int code, len = s->cur[0].size;
-        pdf_name *n;
-        pdf_cmap *upcmap = NULL;
 
         if (cmap_obj_has_type(&(s->cur[0]), CMAP_OBJ_NAME)) {
             nstr = s->cur[0].val.name;
@@ -324,14 +325,14 @@ static int cmap_usecmap_func(gs_memory_t *mem, cmap_stack_t *s, pdf_cmap *pdficm
                     upcmap->notdef_cmap_range.ranges = NULL;
                     /* But we keep the subcmap itself because we rely on its storage */
                     pdficmap->next = upcmap;
-                }
-                else {
-                    pdfi_countdown(upcmap);
+                    pdfi_countup(upcmap);
                 }
             }
         }
 
     }
+    pdfi_countdown(upcmap);
+    pdfi_countdown(n);
     return cmap_stack_pop(s, 1);
 }
 
