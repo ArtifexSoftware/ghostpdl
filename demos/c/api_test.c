@@ -842,9 +842,10 @@ failearly:
 static int
 param_test(const char *dev, char *outfile)
 {
-    int code;
+    int code, len;
     void *instance   = NULL;
     char devtext[64];
+    char buffer[4096];
 
     /* Construct the argc/argv to pass to ghostscript. */
     int argc = 0;
@@ -888,6 +889,43 @@ param_test(const char *dev, char *outfile)
         goto fail;
     }
 
+    /* This should fail, as /Baz is not an expected error. */
+    code = gsapi_get_param(instance, gs_spt_parsed, "Baz", buffer);
+    if (code == -1) {
+        printf("Got expected error gsapi_get_param\n");
+    } else  {
+        printf("Error %d in gsapi_get_param\n", code);
+        goto fail;
+    }
+
+    code = gsapi_set_param(instance, gs_spt_parsed, "GrayImageDict", "<</QFactor 0.1 /Blend 0/HSamples [1 1 1 1] /VSamples [ 1 1 1 1 ] /Foo[/A/B/C/D/E] /Bar (123) /Baz <0123> /Sp#20ce /D#7fl>>");
+    if (code < 0) {
+        printf("Error %d in gsapi_set_param\n", code);
+        goto fail;
+    }
+
+    code = gsapi_get_param(instance, gs_spt_parsed, "GrayImageDict", NULL);
+    if (code < 0) {
+        printf("Error %d in gsapi_get_param\n", code);
+        goto fail;
+    }
+    len = code;
+    buffer[len-1] = 98;
+    buffer[len] = 99;
+    code = gsapi_get_param(instance, gs_spt_parsed, "GrayImageDict", buffer);
+    if (code < 0) {
+        printf("Error %d in gsapi_get_param\n", code);
+        goto fail;
+    }
+    if (buffer[len] != 99 || buffer[len-1] != 0) {
+        printf("Bad buffer return");
+        goto fail;
+    }
+    if (strcmp(buffer, "<</Sp#20ce/D#7Fl/Baz<0123>/Bar<313233>/Foo[/A/B/C/D/E]/VSamples[1 1 1 1]/HSamples[1 1 1 1]/Blend 0/QFactor 0.1>>")) {
+        printf("Bad value return");
+        goto fail;
+    }
+
     /* Close the interpreter down (important, or we will leak!) */
     code = gsapi_exit(instance);
     if (code < 0) {
@@ -904,6 +942,66 @@ failearly:
     return code;
 }
 
+static int
+res_change_test(const char *dev, char *outfile)
+{
+    int code, dummy;
+    void *instance   = NULL;
+    char devtext[64];
+
+    /* Construct the argc/argv to pass to ghostscript. */
+    int argc = 0;
+    char *argv[10];
+
+    sprintf(devtext, "-sDEVICE=%s", dev);
+    argv[argc++] = "gpdl";
+    argv[argc++] = devtext;
+    argv[argc++] = "-o";
+    argv[argc++] = outfile;
+    argv[argc++] = "-r100";
+    argv[argc++] = "../../examples/tiger.eps";
+
+    /* Create a GS instance. */
+    code = gsapi_new_instance(&instance, INSTANCE_HANDLE);
+    if (code < 0) {
+        printf("Error %d in gsapi_new_instance\n", code);
+        goto failearly;
+    }
+
+    /* Run our test. */
+    code = gsapi_init_with_args(instance, argc, argv);
+    if (code < 0) {
+        printf("Error %d in gsapi_init_with_args\n", code);
+        goto fail;
+    }
+
+    code = gsapi_set_param(instance, gs_spt_parsed, "HWResolution", "[200 200]");
+    if (code < 0) {
+        printf("Error %d in gsapi_set_param\n", code);
+        goto fail;
+    }
+
+    code = gsapi_run_file(instance, "../../examples/tiger.eps", 0, &dummy);
+    if (code < 0) {
+        printf("Error %d in gsapi_run_file\n", code);
+        goto fail;
+    }
+
+    /* Close the interpreter down (important, or we will leak!) */
+    code = gsapi_exit(instance);
+    if (code < 0) {
+        printf("Error %d in gsapi_exit\n", code);
+        goto fail;
+    }
+
+fail:
+    /* Delete the gs instance. */
+    gsapi_delete_instance(instance);
+
+failearly:
+
+    return code;
+}
 
 int main(int argc, char *argv[])
 {
@@ -912,7 +1010,8 @@ int main(int argc, char *argv[])
 #define RUNTEST(A)\
     if (code >= 0) code = (A)
 
-    RUNTEST(param_test("ppmraw", "apitest20.ppm"));
+    RUNTEST(param_test("pdfwrite", "apitest20.pdf"));
+    RUNTEST(res_change_test("ppmraw", "apitest21_%d.ppm"));
 
 #define RS(A)\
     RUNTEST(runstring_test A )
