@@ -1102,6 +1102,7 @@
     <ClCompile Include="..\base\gspaint.c" />
     <ClCompile Include="..\base\gsparam.c" />
     <ClCompile Include="..\base\gsparam2.c" />
+    <ClCompile Include="..\base\gsparaml.c" />
     <ClCompile Include="..\base\gsparams.c" />
     <ClCompile Include="..\base\gsparamx.c" />
     <ClCompile Include="..\base\gspath.c" />

@@ -379,8 +379,21 @@ typedef enum {
     gs_spt_string  = 5,   /* void * is a char * */
     gs_spt_long    = 6,   /* void * is a long * */
     gs_spt_i64     = 7,   /* void * is an int64_t * */
-    gs_spt_size_t  = 8    /* void * is a size_t * */
+    gs_spt_size_t  = 8,   /* void * is a size_t * */
+    gs_spt_parsed  = 9,   /* void * is a pointer to a char * to be parsed */
+
+    /* Setting a typed param causes it to be instantly fed to to the
+     * device. This can cause the device to reinitialise itself. Hence,
+     * setting a sequence of typed params can cause the device to reset
+     * itself several times. Accordingly, if you OR the type with
+     * gs_spt_more_to_come, the param will held ready to be passed into
+     * the device, and will only actually be sent when the next typed
+     * param is set without this flag (or on device init). */
+    gs_spt_more_to_come = 1<<31
 } gs_set_param_type;
+/* gs_spt_parsed allows for a string such as "<< /Foo 0 /Bar true >>" or
+ * "[ 1 2 3 ]" etc to be used so more complex parameters can be set. */
+
 GSDLLEXPORT int GSDLLAPI gsapi_set_param(void *instance, gs_set_param_type type, const char *param, const void *value);
 
 enum {

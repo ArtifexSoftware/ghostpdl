@@ -417,6 +417,11 @@ gs_copydevice2(gx_device ** pnew_dev, const gx_device * dev, bool keep_open,
      */
     new_dev->is_open = dev->is_open && keep_open;
     fill_dev_proc(new_dev, finish_copydevice, gx_default_finish_copydevice);
+    /* We really want to be able to interrogate the device for capabilities
+     * and/or preferences right from when it is created, so set dev_spec_op
+     * now (if not already set).
+     */
+    fill_dev_proc(new_dev, dev_spec_op, gx_default_dev_spec_op);
     code = dev_proc(new_dev, finish_copydevice)(new_dev, dev);
     if (code < 0) {
         gs_free_object(mem, new_dev, "gs_copydevice(device)");

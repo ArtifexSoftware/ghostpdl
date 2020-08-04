@@ -388,6 +388,13 @@ enum {
      * 0 otherwise.
      */
     gxdso_reopen_after_init,
+
+    /* Normally, when we set a device ICC profile, we validate that the number
+     * of components against the number of components the device supports. But
+     * in certain cases, we don't want to do that (DeviceN devices and nullpage,
+     * for example).
+     */
+    gxdso_skip_icc_component_validation,
     /* Add new gxdso_ keys above this. */
     gxdso_pattern__LAST
 };

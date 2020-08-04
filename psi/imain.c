@@ -325,11 +325,140 @@ int gs_main_init2aux(gs_main_instance * minst) {
 }
 
 int
+gs_main_set_language_param(gs_main_instance *minst,
+                           gs_param_list    *plist)
+{
+    ref value;
+    int code = 0;
+    i_ctx_t *i_ctx_p = minst->i_ctx_p;
+    uint space = icurrent_space;
+    gs_param_enumerator_t enumerator;
+    gs_param_key_t key;
+    gs_lib_ctx_t *ctx = minst->heap->gs_lib_ctx;
+
+    ialloc_set_space(idmemory, avm_system);
+
+    param_init_enumerator(&enumerator);
+    while ((code = param_get_next_key(plist, &enumerator, &key)) == 0) {
+        char string_key[256];	/* big enough for any reasonable key */
+        gs_param_typed_value pvalue;
+
+        if (key.size > sizeof(string_key) - 1) {
+            code = gs_note_error(gs_error_rangecheck);
+            break;
+        }
+        memcpy(string_key, key.data, key.size);
+        string_key[key.size] = 0;
+        if ((code = param_read_typed(plist, string_key, &pvalue)) != 0) {
+            code = (code > 0 ? gs_note_error(gs_error_unknownerror) : code);
+            break;
+        }
+        switch (pvalue.type) {
+        case gs_param_type_null:
+            make_null(&value);
+            break;
+        case gs_param_type_bool:
+            if (pvalue.value.b)
+                make_true(&value);
+            else
+                make_false(&value);
+            break;
+        case gs_param_type_int:
+            make_int(&value, (ps_int)pvalue.value.i);
+            break;
+        case gs_param_type_i64:
+            make_int(&value, (ps_int)pvalue.value.i64);
+            break;
+        case gs_param_type_long:
+            make_int(&value, (ps_int)pvalue.value.l);
+            break;
+        case gs_param_type_size_t:
+            make_int(&value, (ps_int)pvalue.value.z);
+            break;
+        case gs_param_type_float:
+            make_real(&value, pvalue.value.f);
+            break;
+        case gs_param_type_dict:
+            /* We don't support dicts for now */
+            continue;
+        case gs_param_type_dict_int_keys:
+            /* We don't support dicts with int keys for now */
+            continue;
+        case gs_param_type_array:
+            /* We don't support arrays for now */
+            continue;
+        case gs_param_type_string:
+            if (pvalue.value.s.data == NULL || pvalue.value.s.size == 0)
+                make_empty_string(&value, a_readonly);
+            else {
+                size_t len = pvalue.value.s.size;
+                byte *body = ialloc_string(len, "-s");
+
+                if (body == NULL)
+                    return gs_error_Fatal;
+                memcpy(body, pvalue.value.s.data, len);
+                make_const_string(&value, a_readonly | avm_system, len, body);
+            }
+            break;
+        case gs_param_type_name:
+            code = name_ref(ctx->memory, pvalue.value.n.data, pvalue.value.n.size, &value, 1);
+        case gs_param_type_int_array:
+            /* We don't support arrays for now */
+            continue;
+        case gs_param_type_float_array:
+            /* We don't support arrays for now */
+            continue;
+        case gs_param_type_string_array:
+            /* We don't support arrays for now */
+            continue;
+        default:
+            continue;
+        }
+        if (code < 0)
+            break;
+
+        ialloc_set_space(idmemory, space);
+        /* Enter the name in systemdict. */
+        i_initial_enter_name_copy(minst->i_ctx_p, string_key, &value);
+    }
+
+    return code;
+}
+
+static int
+gs_main_push_params(gs_main_instance *minst)
+{
+    int code;
+    gs_c_param_list *plist;
+
+    plist = minst->param_list;
+    if (!plist)
+        return 0;
+
+    code = gs_putdeviceparams(minst->i_ctx_p->pgs->device,
+                              (gs_param_list *)plist);
+    if (code < 0)
+        return code;
+
+    code = gs_main_set_language_param(minst, (gs_param_list *)plist);
+    if (code < 0)
+        return code;
+
+    gs_c_param_list_release(plist);
+
+    return code;
+}
+
+int
 gs_main_init2(gs_main_instance * minst)
 {
     i_ctx_t *i_ctx_p;
     int code = gs_main_init1(minst);
 
+    if (code < 0)
+        return code;
+
+    code = gs_main_push_params(minst);
     if (code < 0)
         return code;
 

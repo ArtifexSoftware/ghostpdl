@@ -1084,6 +1084,7 @@ static dev_proc_strip_copy_rop(null_strip_copy_rop);
 static dev_proc_strip_copy_rop2(null_strip_copy_rop2);
 static dev_proc_strip_tile_rect_devn(null_strip_tile_rect_devn);
 static dev_proc_fill_rectangle_hl_color(null_fill_rectangle_hl_color);
+static dev_proc_dev_spec_op(null_spec_op);
 
 #define null_procs(get_initial_matrix, get_page_device) {\
         gx_default_open_device,\
@@ -1151,7 +1152,7 @@ static dev_proc_fill_rectangle_hl_color(null_fill_rectangle_hl_color);
         NULL, /* push_transparency_state */\
         NULL, /* pop_transparency_state */\
         NULL, /* put_image */\
-        gx_default_dev_spec_op, /* dev_spec_op */\
+        null_spec_op, /* dev_spec_op */\
         NULL, /* copy_planes */\
         NULL, /* get_profile */\
         NULL, /* set_graphics_type_tag */\
@@ -1352,6 +1353,18 @@ static int null_fill_rectangle_hl_color(gx_device *pdev,
     const gx_clip_path *pcpath)
 {
     return 0;
+}
+
+static int
+null_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
+{
+    /* Defeat the ICC profile components check, which we want to do since
+       we also short-circuit ICC device parameters - see null_put_params.
+     */
+    if (dev_spec_op == gxdso_skip_icc_component_validation) {
+        return 1;
+    }
+    return gx_default_dev_spec_op(pdev, dev_spec_op, data, size);
 }
 
 bool

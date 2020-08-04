@@ -508,7 +508,8 @@ tiff_set_icc_color_fields(gx_device_printer *pdev)
 static int
 tiffsep_spec_op(gx_device *dev_, int op, void *data, int datasize)
 {
-    if (op == gxdso_supports_iccpostrender || op == gxdso_supports_devn) {
+    if (op == gxdso_supports_iccpostrender || op == gxdso_supports_devn
+     || op == gxdso_skip_icc_component_validation) {
         return true;
     }
     return gdev_prn_dev_spec_op(dev_, op, data, datasize);

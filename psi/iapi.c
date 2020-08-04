@@ -402,10 +402,103 @@ gsapi_exit(void *instance)
 GSDLLEXPORT int GSDLLAPI
 gsapi_set_param(void *lib, gs_set_param_type type, const char *param, const void *value)
 {
+    int code = 0;
+    gs_param_string str_value;
+    bool bval;
+    int more_to_come = type & gs_spt_more_to_come;
+    gs_main_instance *minst;
+    gs_c_param_list *params;
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+
     if (lib == NULL)
         return gs_error_Fatal;
-    return psapi_set_param(ctx, (psapi_sptype)type, param, value);
+    minst = get_minst_from_memory(ctx->memory);
+
+    /* First off, ensure we have a param list to work with. */
+    params = minst->param_list;
+    if (params == NULL) {
+        params = minst->param_list =
+                   gs_c_param_list_alloc(minst->heap, "gs_main_instance_param_list");
+        if (params == NULL)
+            return_error(gs_error_VMerror);
+        gs_c_param_list_write(params, minst->heap);
+        gs_param_list_set_persistent_keys((gs_param_list *)params, false);
+    }
+
+    type &= ~gs_spt_more_to_come;
+
+    /* Set the passed param in the device params */
+    gs_c_param_list_write_more(params);
+    switch (type)
+    {
+    case gs_spt_null:
+        code = param_write_null((gs_param_list *) params,
+                                param);
+        break;
+    case gs_spt_bool:
+        bval = (value != NULL);
+        code = param_write_bool((gs_param_list *) params,
+                                param, &bval);
+        break;
+    case gs_spt_int:
+        code = param_write_int((gs_param_list *) params,
+                               param, (int *)value);
+        break;
+    case gs_spt_float:
+        code = param_write_float((gs_param_list *) params,
+                                 param, (float *)value);
+        break;
+    case gs_spt_name:
+        param_string_from_transient_string(str_value, value);
+        code = param_write_name((gs_param_list *) params,
+                                param, &str_value);
+        break;
+    case gs_spt_string:
+        param_string_from_transient_string(str_value, value);
+        code = param_write_string((gs_param_list *) params,
+                                  param, &str_value);
+        break;
+    case gs_spt_long:
+        code = param_write_long((gs_param_list *) params,
+                                param, (long *)value);
+        break;
+    case gs_spt_i64:
+        code = param_write_i64((gs_param_list *) params,
+                               param, (int64_t *)value);
+        break;
+    case gs_spt_size_t:
+        code = param_write_size_t((gs_param_list *) params,
+                                  param, (size_t *)value);
+        break;
+    case gs_spt_parsed:
+        code = gs_param_list_add_parsed_value((gs_param_list *)params,
+                                              param, (void *)value);
+        break;
+    default:
+        code = gs_note_error(gs_error_rangecheck);
+    }
+    if (code < 0) {
+        gs_c_param_list_release(params);
+        return code;
+    }
+    gs_c_param_list_read(params);
+
+    if (more_to_come) {
+        /* Leave it in the param list for later. */
+        return 0;
+    }
+
+    /* Send it to the device. */
+    code = psapi_set_device_param(ctx, (gs_param_list *)params);
+    if (code < 0)
+        return code;
+
+    /* Send it to the language */
+    code = psapi_set_param(ctx, (gs_param_list *)params);
+
+    gs_c_param_list_release(params);
+
+    return code;
 }
 
 GSDLLEXPORT int GSDLLAPI

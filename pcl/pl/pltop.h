@@ -69,26 +69,11 @@ pl_get_device_memory(pl_interp_implementation_t *);
 typedef gs_memory_t * (*pl_interp_proc_get_device_memory_t) (pl_interp_implementation_t *);
 
 /*
- * Pass a parameter/value to a language.
- * Note: Keep this in sync with gs_set_param_type from iapi.h.
+ * Pass some parameter/values to a language.
  */
-typedef enum {
-    pl_spt_invalid = -1,
-    pl_spt_null    = 0,   /* void * is NULL */
-    pl_spt_bool    = 1,   /* void * is NULL (false) or non-NULL (true) */
-    pl_spt_int     = 2,   /* void * is a pointer to an int */
-    pl_spt_float   = 3,   /* void * is a float * */
-    pl_spt_name    = 4,   /* void * is a char * */
-    pl_spt_string  = 5,   /* void * is a char * */
-    pl_spt_long    = 6,   /* void * is a long * */
-    pl_spt_i64     = 7,   /* void * is an int64_t * */
-    pl_spt_size_t  = 8    /* void * is a size_t * */
-} pl_set_param_type;
-int pl_set_param(pl_interp_implementation_t *, pl_set_param_type type, const char *param, const void *value);
+int pl_set_param(pl_interp_implementation_t *, gs_param_list *plist);
 typedef int (*pl_interp_proc_set_param_t) (pl_interp_implementation_t *,
-                                           pl_set_param_type,
-                                           const char *,
-                                           const void *);
+                                           gs_param_list *plist);
 
 /*
  * Add a path to a language's search path.

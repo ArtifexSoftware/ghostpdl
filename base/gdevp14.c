@@ -7773,7 +7773,8 @@ pdf14_dev_spec_op(gx_device *pdev, int dev_spec_op,
             return 1;
         }
     }
-    if (dev_spec_op == gxdso_supports_devn) {
+    if (dev_spec_op == gxdso_supports_devn
+     || dev_spec_op == gxdso_skip_icc_component_validation) {
         cmm_dev_profile_t *dev_profile;
         int code;
         code = dev_proc(pdev, get_profile)((gx_device*) pdev, &dev_profile);

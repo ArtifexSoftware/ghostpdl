@@ -561,4 +561,13 @@ void gs_c_param_list_write_more(gs_c_param_list *); /* switch back to writing, n
 void gs_c_param_list_read(gs_c_param_list *);	/* switch to reading */
 void gs_c_param_list_release(gs_c_param_list *);
 
+/* Given a string to parse (a list of key/value pairs), parse it and add
+ * what we find to the supplied param list. Note that p is corrupted
+ * by the processing. */
+int gs_param_list_add_tokens(gs_param_list *plist, char *p);
+
+/* Given a key, and a string representing a single (maybe complex) value
+ * to parse, parse it and add what we find to the supplied param list. */
+int gs_param_list_add_parsed_value(gs_param_list *plist, gs_param_name key, const char *p);
+
 #endif /* gsparam_INCLUDED */

@@ -6020,6 +6020,9 @@
     <ClCompile Include="..\tesseract\src\wordrec\wordrec.cpp">
       <Filter>tesseract\wordrec</Filter>
     </ClCompile>
+    <ClCompile Include="..\base\gsparaml.c">
+      <Filter>base</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\base\aes.h">

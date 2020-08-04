@@ -1837,12 +1837,12 @@ gsicc_verify_device_profiles(gx_device * pdev)
 {
     int k;
     cmm_dev_profile_t *dev_icc = pdev->icc_struct;
-    bool is_sep = false;
+    bool check_components = true;
     bool can_postrender = false;
     bool objects = false;
 
-    if (pdev->procs.dev_spec_op != NULL) {
-        is_sep = dev_proc(pdev, dev_spec_op)(pdev, gxdso_supports_devn, NULL, 0);
+    if (dev_proc(pdev, dev_spec_op) != NULL) {
+        check_components = !(dev_proc(pdev, dev_spec_op)(pdev, gxdso_skip_icc_component_validation, NULL, 0));
         can_postrender = dev_proc(pdev, dev_spec_op)(pdev, gxdso_supports_iccpostrender, NULL, 0);
     }
 
@@ -1864,7 +1864,7 @@ gsicc_verify_device_profiles(gx_device * pdev)
         if (!can_postrender) {
             return gs_rethrow(-1, "Post render profile not supported by device");
         }
-        if (!is_sep) {
+        if (check_components) {
             if (dev_icc->postren_profile->num_comps !=
                 pdev->color_info.num_components) {
                 return gs_rethrow(-1, "Post render profile does not match the device color model");
@@ -1883,33 +1883,37 @@ gsicc_verify_device_profiles(gx_device * pdev)
 
     if (dev_icc->link_profile == NULL) {
         if (!objects) {
-            if (!is_sep && dev_icc->device_profile[GS_DEFAULT_DEVICE_PROFILE]->num_comps !=
+            if (check_components && dev_icc->device_profile[GS_DEFAULT_DEVICE_PROFILE]->num_comps !=
                 pdev->color_info.num_components)
                 return gs_rethrow(-1, "Mismatch of ICC profiles and device color model");
             else
                 return 0;  /* Currently sep devices have some leeway here */
         } else {
-            for (k = 1; k < NUM_DEVICE_PROFILES; k++)
-                if (!is_sep && dev_icc->device_profile[k] != NULL) {
-                    if (dev_icc->device_profile[k]->num_comps !=
-                        pdev->color_info.num_components)
-                        return gs_rethrow(-1, "Mismatch of object dependent ICC profiles and device color model");
-                }
+            if (check_components) {
+                for (k = 1; k < NUM_DEVICE_PROFILES; k++)
+                    if (dev_icc->device_profile[k] != NULL) {
+                        if (dev_icc->device_profile[k]->num_comps !=
+                            pdev->color_info.num_components)
+                            return gs_rethrow(-1, "Mismatch of object dependent ICC profiles and device color model");
+                    }
+            }
             return 0;
         }
     } else {
         /* The input of the device link must match the output of the device
            profile and the device link output must match the device color
            model */
-        if (!is_sep && dev_icc->link_profile->num_comps_out !=
+        if (check_components && dev_icc->link_profile->num_comps_out !=
             pdev->color_info.num_components) {
             return gs_rethrow(-1, "Mismatch of device link profile and device color model");
         }
-        for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
-            if (!is_sep && dev_icc->device_profile[k] != NULL) {
-                if (dev_icc->device_profile[k]->num_comps !=
-                    dev_icc->link_profile->num_comps) {
-                    return gs_rethrow(-1, "Mismatch of device link profile and device ICC profile");
+        if (check_components) {
+            for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
+                if (dev_icc->device_profile[k] != NULL) {
+                    if (dev_icc->device_profile[k]->num_comps !=
+                        dev_icc->link_profile->num_comps) {
+                        return gs_rethrow(-1, "Mismatch of device link profile and device ICC profile");
+                    }
                 }
             }
         }

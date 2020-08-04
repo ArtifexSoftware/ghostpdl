@@ -59,6 +59,30 @@ int pl_to_exit(gs_memory_t *mem);
 
 int pl_main_set_param(pl_main_instance_t *minst, const char *arg);
 int pl_main_set_string_param(pl_main_instance_t *minst, const char *arg);
+typedef enum {
+    pl_spt_invalid = -1,
+    pl_spt_null    = 0,   /* void * is NULL */
+    pl_spt_bool    = 1,   /* void * is NULL (false) or non-NULL (true) */
+    pl_spt_int     = 2,   /* void * is a pointer to an int */
+    pl_spt_float   = 3,   /* void * is a float * */
+    pl_spt_name    = 4,   /* void * is a char * */
+    pl_spt_string  = 5,   /* void * is a char * */
+    pl_spt_long    = 6,   /* void * is a long * */
+    pl_spt_i64     = 7,   /* void * is an int64_t * */
+    pl_spt_size_t  = 8,   /* void * is a size_t * */
+    pl_spt_parsed  = 9,   /* void * is a pointer to a char * to be parsed */
+
+    /* Setting a typed param causes it to be instantly fed to to the
+     * device. This can cause the device to reinitialise itself. Hence,
+     * setting a sequence of typed params can cause the device to reset
+     * itself several times. Accordingly, if you OR the type with
+     * pl_spt_more_to_come, the param will held ready to be passed into
+     * the device, and will only actually be sent when the next typed
+     * param is set without this flag (or on device init). */
+    pl_spt_more_to_come = 1<<31
+} pl_set_param_type;
+/* gs_spt_parsed allows for a string such as "<< /Foo 0 /Bar true >>" or
+ * "[ 1 2 3 ]" etc to be used so more complex parameters can be set. */
 int pl_main_set_typed_param(pl_main_instance_t *minst, pl_set_param_type type, const char *param, const void *value);
 
 /* instance accessors */
