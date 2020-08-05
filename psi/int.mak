@@ -1876,7 +1876,7 @@ $(PSOBJ)apitest.$(OBJ) : $(PSSRC)apitest.c $(GH)\
 $(PSOBJ)iapi.$(OBJ) : $(PSSRC)iapi.c $(AK) $(psapi_h)\
  $(string__h) $(ierrors_h) $(gscdefs_h) $(gstypes_h) $(iapi_h)\
  $(iref_h) $(imain_h) $(imainarg_h) $(iminst_h) $(gslibctx_h)\
- $(INT_MAK) $(MAKEDIRS)
+ $(gsstate_h) $(icstate_h) $(INT_MAK) $(MAKEDIRS)
 	$(PSCC) $(PSO_)iapi.$(OBJ) $(C_) $(PSSRC)iapi.c
 
 $(PSOBJ)psapi.$(OBJ) : $(PSSRC)psapi.c $(AK)\

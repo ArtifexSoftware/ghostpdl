@@ -34,6 +34,8 @@
 #include "gp.h"
 #include "gsargs.h"
 #include "gdevdsp.h"
+#include "gsstate.h"
+#include "icstate.h"
 
 typedef struct { int a[(int)GS_ARG_ENCODING_LOCAL   == (int)PS_ARG_ENCODING_LOCAL   ? 1 : -1]; } compile_time_assert_0;
 typedef struct { int a[(int)GS_ARG_ENCODING_UTF8    == (int)PS_ARG_ENCODING_UTF8    ? 1 : -1]; } compile_time_assert_1;
@@ -495,6 +497,11 @@ gsapi_set_param(void *lib, gs_set_param_type type, const char *param, const void
 
     /* Send it to the language */
     code = psapi_set_param(ctx, (gs_param_list *)params);
+    if (code < 0)
+        return code;
+
+    /* Trigger an initgraphics */
+    code = gs_initgraphics(minst->i_ctx_p->pgs);
 
     gs_c_param_list_release(params);
 

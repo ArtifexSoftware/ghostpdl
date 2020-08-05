@@ -932,8 +932,6 @@ run_stdin:
             {
                 char *adef = arg_copy(arg, minst->heap);
                 char *eqp;
-                bool isd = (sw == 'D' || sw == 'd');
-                ref value;
 
                 if (adef == NULL)
                     return gs_error_Fatal;
