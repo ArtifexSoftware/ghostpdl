@@ -82,6 +82,7 @@
 <li><a href="#init"><code>gsapi_init_with_args</code></a></li>
 <li><a href="#exit"><code>gsapi_exit</code></a></li>
 <li><a href="#set_param"><code>gsapi_set_param</code></a></li>
+<li><a href="#get_param"><code>gsapi_get_param</code></a></li>
 <li><a href="#add_control_path"><code>gsapi_add_control_path</code></a></li>
 <li><a href="#remove_control_path"><code>gsapi_remove_control_path</code></a></li>
 <li><a href="#purge_control_paths"><code>gsapi_purge_control_paths</code></a></li>
@@ -557,7 +558,17 @@ has been called, and just before <code>gsapi_delete_instance()</code>.
 <h3><a name="set_param"></a><code>gsapi_set_param()</code></h3>
 <blockquote>
 Set a parameter.
-Equivalent to passing a parameter on the command line.
+Broadly, this is equivalent to setting a parameter using <code>-d</code>, <code>-s</code> or <code>-p</code> on the command line. This call cannot be made during a <code>run_string</code> operation.
+<p>
+  Parameters in this context are not the same as 'arguments' as processed by <code>gsapi_init_with_args</code>, but often the same thing can be achieved. For example, with <code>gsapi_init_with_args</code>, we can pass &quot;<code>-r200</code>&quot; to change the resolution. Broadly the same thing can be achieved by using <code>gsapi_set_param</code> to set a parsed value of &quot;<code>&lt;&lt;/HWResolution [ 200.0 200.0 ]&gt;&gt;</code>&quot;.
+<p>
+Note, that internally, when we set a parameter, we perform an <code>initgraphics</code> operation. This means that using <code>set_param</code> other than at the start of a page is likely to give unexpected results.
+</blockquote>
+
+<h3><a name="get_param"></a><code>gsapi_set_param()</code></h3>
+<blockquote>
+Get a parameter.
+Retrieve the current value of a parameter.
 </blockquote>
 
 <h3><a name="add_control_path"></a><code>gsapi_add_control_path()</code></h3>
