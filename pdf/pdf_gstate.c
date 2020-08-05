@@ -1339,6 +1339,7 @@ static int build_type1_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
         code = gs_note_error(gs_error_VMerror);
         goto error;
     }
+    memset(order, 0x00, sizeof(gx_ht_order));
 
     if (obj->type == PDF_NAME) {
         if (pdfi_name_is((pdf_name *)obj, "Default")) {
@@ -1423,6 +1424,10 @@ static int build_type1_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
 error:
     pdfi_countdown(obj);
     pdfi_free_function(ctx, pfn);
+    if (code < 0 && order != NULL) {
+        gs_free_object(ctx->memory, order->bit_data, "build_type1_halftone error");
+        gs_free_object(ctx->memory, order->levels, "build_type1_halftone error");
+    }
     gs_free_object(ctx->memory, order, "build_type1_halftone");
     gs_free_object(ctx->memory, penum, "build_type1_halftone");
     return code;
