@@ -35,6 +35,7 @@ int pdfi_get_blend_mode(pdf_context *ctx, pdf_name *name, gs_blend_mode_t *mode)
 int pdfi_concat(pdf_context *ctx);
 int pdfi_gsave(pdf_context *ctx);
 int pdfi_grestore(pdf_context *ctx);
+int pdfi_gs_setgstate(gs_gstate * pgs, const gs_gstate * pfrom);
 int pdfi_op_q(pdf_context *ctx);
 int pdfi_op_Q(pdf_context *ctx);
 int pdfi_setlinewidth(pdf_context *ctx);

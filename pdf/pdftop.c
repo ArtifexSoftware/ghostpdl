@@ -387,13 +387,12 @@ pdf_impl_set_param(pl_interp_implementation_t *impl,
     pdf_context *ctx = instance->ctx;
     gs_param_enumerator_t enumerator;
     gs_param_key_t key;
-    int code, boolval = 0;
+    int code;
 
     param_init_enumerator(&enumerator);
     while ((code = param_get_next_key(plist, &enumerator, &key)) == 0) {
         char param[256];	/* big enough for any reasonable key */
         gs_param_typed_value pvalue;
-        void *val;
 
         if (key.size > sizeof(param) - 1) {
             code = gs_note_error(gs_error_rangecheck);
