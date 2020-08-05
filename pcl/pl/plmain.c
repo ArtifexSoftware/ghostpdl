@@ -2097,6 +2097,54 @@ pl_main_get_typed_param(pl_main_instance_t *pmi, pl_set_param_type type, const c
 }
 
 static int
+handle_dash_s(pl_main_instance_t *pmi, const char *arg, int *device_index)
+{
+    int code = 0;
+    char *eqp;
+    const char *value;
+
+    eqp = strchr(arg, '=');
+    if (!(eqp || (eqp = strchr(arg, '#')))) {
+        dmprintf(pmi->memory,
+                 "Usage for -s is -s<option>=<string>\n");
+        return -1;
+    }
+    value = eqp + 1;
+    if (!strncmp(arg, "DEVICE", 6)) {
+        if (device_index == NULL) {
+            dmprintf(pmi->memory, "DEVICE cannot be set this late!\n");
+            return -1;
+        }
+        if (*device_index != -1) {
+            dmprintf(pmi->memory, "DEVICE can only be set once!\n");
+            return -1;
+        }
+        *device_index = get_device_index(pmi->memory, value);
+        if (*device_index == -1)
+            return -1;
+    } else if (!strncmp(arg, "DefaultGrayProfile",
+                        strlen("DefaultGrayProfile"))) {
+        pmi->pdefault_gray_icc = arg_copy(value, pmi->memory);
+    } else if (!strncmp(arg, "DefaultRGBProfile",
+                        strlen("DefaultRGBProfile"))) {
+        pmi->pdefault_rgb_icc = arg_copy(value, pmi->memory);
+    } else if (!strncmp(arg, "DefaultCMYKProfile",
+                        strlen("DefaultCMYKProfile"))) {
+        pmi->pdefault_cmyk_icc = arg_copy(value, pmi->memory);
+    } else if (!strncmp(arg, "ICCProfileDir", strlen("ICCProfileDir"))) {
+        pmi->piccdir = arg_copy(value, pmi->memory);
+    } else if (!strncmp(arg, "OutputFile", 10) && strlen(eqp) > 0) {
+        code = gs_add_outputfile_control_path(pmi->memory, eqp+1);
+        if (code < 0)
+            return code;
+        code = pl_main_set_string_param(pmi, arg);
+    } else {
+        code = pl_main_set_string_param(pmi, arg);
+    }
+    return code;
+}
+
+static int
 do_arg_match(const char **arg, const char *match, size_t match_len)
 {
     const char *s = *arg;
@@ -2530,49 +2578,10 @@ help:
                 break;
             case 's':
             case 'S':
-                {
-                    char *eqp;
-                    const char *value;
-
-                    eqp = strchr(arg, '=');
-                    if (!(eqp || (eqp = strchr(arg, '#')))) {
-                        dmprintf(pmi->memory,
-                                 "Usage for -s is -s<option>=<string>\n");
-                        return -1;
-                    }
-                    value = eqp + 1;
-                    if (!strncmp(arg, "DEVICE", 6)) {
-                        if (device_index != -1) {
-                            dmprintf(pmi->memory, "DEVICE can only be set once!\n");
-                            return -1;
-                        }
-                        device_index = get_device_index(pmi->memory, value);
-                        if (device_index == -1)
-                            return -1;
-                    } else if (!strncmp(arg, "DefaultGrayProfile",
-                                        strlen("DefaultGrayProfile"))) {
-                        pmi->pdefault_gray_icc = arg_copy(value, pmi->memory);
-                    } else if (!strncmp(arg, "DefaultRGBProfile",
-                                        strlen("DefaultRGBProfile"))) {
-                        pmi->pdefault_rgb_icc = arg_copy(value, pmi->memory);
-                    } else if (!strncmp(arg, "DefaultCMYKProfile",
-                                        strlen("DefaultCMYKProfile"))) {
-                        pmi->pdefault_cmyk_icc = arg_copy(value, pmi->memory);
-                    } else if (!strncmp(arg, "ICCProfileDir", strlen("ICCProfileDir"))) {
-                        pmi->piccdir = arg_copy(value, pmi->memory);
-                    } else if (!strncmp(arg, "OutputFile", 10) && strlen(eqp) > 0) {
-                        code = gs_add_outputfile_control_path(pmi->memory, eqp+1);
-                        if (code < 0) return code;
-                        code = pl_main_set_string_param(pmi, arg);
-                        if (code < 0)
-                            return code;
-                    } else {
-                        code = pl_main_set_string_param(pmi, arg);
-                        if (code < 0)
-                            return code;
-                    }
-                    break;
-                }
+                code = handle_dash_s(pmi, arg, &device_index);
+                if (code < 0)
+                    return code;
+                break;
             case 'q':
                 /* Silently accept -q to match gs. We are pretty quiet
                  * on startup anyway. */
@@ -2624,7 +2633,7 @@ help:
 
     /* If we have (at least one) filename to process */
     if (arg) {
-        /* From here on in, we can only accept -c, -f, and filenames */
+        /* From here on in, we can only accept -c, -d, -f, -s, -p and filenames */
         /* In the unlikely event that someone wants to run a file starting with
          * a '-', they'll do "-f -blah". The - of the "-blah" must not be accepted
          * by the arg processing in the loop below. We use 'not_an_arg' to handle
@@ -2644,6 +2653,29 @@ help:
                 code = handle_dash_c(pmi, pal, &collected_commands, &arg);
                 if (code < 0)
                     break;
+                not_an_arg = 0;
+                continue; /* We've already read any -f into arg */
+            } else if (!not_an_arg && arg[0] == '-' &&
+                       (arg[1] == 's' || arg[1] == 'S')) {
+                code = handle_dash_s(pmi, arg+2, NULL);
+                if (code < 0)
+                    break;
+                arg = NULL;
+                not_an_arg = 0;
+                continue; /* We've already read any -f into arg */
+            } else if (!not_an_arg && arg[0] == '-' &&
+                       (arg[1] == 'd' || arg[1] == 'D')) {
+                code = pl_main_set_param(pmi, arg+2);
+                if (code < 0)
+                    break;
+                arg = NULL;
+                not_an_arg = 0;
+                continue; /* We've already read any -f into arg */
+            } else if (!not_an_arg && arg[0] == '-' && arg[1] == 'p') {
+                code = pl_main_set_parsed_param(pmi, arg+2);
+                if (code < 0)
+                    break;
+                arg = NULL;
                 not_an_arg = 0;
                 continue; /* We've already read any -f into arg */
             } else if (!not_an_arg && arg[0] == '-' && arg[1] == 'f') {
