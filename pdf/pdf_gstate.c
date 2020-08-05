@@ -1673,7 +1673,11 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict 
                 return code;
             }
 
+            if (ctx->loop_detection)
+                pdfi_loop_detector_mark(ctx);
             code = pdfi_dict_first(ctx, halftone_dict, &Key, &Value, &index);
+            if (ctx->loop_detection)
+                pdfi_loop_detector_cleartomark(ctx);
             if (code < 0)
                 goto error;
 
@@ -1692,10 +1696,10 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict 
                     pdfi_loop_detector_mark(ctx);
 
                 code = pdfi_dict_next(ctx, halftone_dict, &Key, &Value, &index);
-                if (code < 0 && code != gs_error_undefined)
-                    goto error;
                 if (ctx->loop_detection)
                     pdfi_loop_detector_cleartomark(ctx);
+                if (code < 0 && code != gs_error_undefined)
+                    goto error;
 
             } while (code >= 0);
 
@@ -1707,7 +1711,11 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict 
 
             /* extract each halftone from the type 5 dictionary, build a halftone for each by type */
             ix = index = 0;
+            if (ctx->loop_detection)
+                pdfi_loop_detector_mark(ctx);
             code = pdfi_dict_first(ctx, halftone_dict, &Key, &Value, &index);
+            if (ctx->loop_detection)
+                pdfi_loop_detector_cleartomark(ctx);
             if (code < 0)
                 goto error;
             do {
@@ -1763,7 +1771,11 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict 
                 pdfi_countdown(Key);
                 pdfi_countdown(Value);
                 Key = Value = NULL;
+                if (ctx->loop_detection)
+                    pdfi_loop_detector_mark(ctx);
                 code = pdfi_dict_next(ctx, halftone_dict, &Key, &Value, &index);
+                if (ctx->loop_detection)
+                    pdfi_loop_detector_cleartomark(ctx);
                 if (code < 0 && code != gs_error_undefined)
                     goto error;
             } while (code >= 0);
