@@ -1800,10 +1800,14 @@ static int pdfi_create_DeviceN(pdf_context *ctx, pdf_array *color_array, int ind
 
             do {
                 if (Space->type != PDF_STRING && Space->type != PDF_NAME && Space->type != PDF_ARRAY) {
+                    pdfi_countdown(Space);
+                    pdfi_countdown(Colorant);
                     code = gs_note_error(gs_error_typecheck);
                     goto pdfi_devicen_error;
                 }
                 if (Colorant->type != PDF_STRING && Colorant->type != PDF_NAME) {
+                    pdfi_countdown(Space);
+                    pdfi_countdown(Colorant);
                     code = gs_note_error(gs_error_typecheck);
                     goto pdfi_devicen_error;
                 }
@@ -1835,6 +1839,10 @@ static int pdfi_create_DeviceN(pdf_context *ctx, pdf_array *color_array, int ind
                     code = gs_note_error(gs_error_VMerror);
                     goto pdfi_devicen_error;
                 }
+
+                pdfi_countdown(Space);
+                pdfi_countdown(Colorant);
+                Space = Colorant = NULL;
 
                 code = pdfi_dict_next(ctx, Colorants, &Colorant, &Space, &ix);
                 if (code == gs_error_undefined)
