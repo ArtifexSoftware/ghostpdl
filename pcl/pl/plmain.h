@@ -59,6 +59,7 @@ int pl_to_exit(gs_memory_t *mem);
 
 int pl_main_set_param(pl_main_instance_t *minst, const char *arg);
 int pl_main_set_string_param(pl_main_instance_t *minst, const char *arg);
+int pl_main_set_parsed_param(pl_main_instance_t *minst, const char *arg);
 typedef enum {
     pl_spt_invalid = -1,
     pl_spt_null    = 0,   /* void * is NULL */

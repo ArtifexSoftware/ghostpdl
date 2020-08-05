@@ -1830,6 +1830,48 @@ pl_main_set_string_param(pl_main_instance_t * pmi, const char *arg)
 }
 
 int
+pl_main_set_parsed_param(pl_main_instance_t * pmi, const char *arg)
+{
+    char *eqp;
+    const char *value;
+    char buffer[128];
+
+    eqp = strchr(arg, '=');
+    if (!(eqp || (eqp = strchr(arg, '#')))) {
+        return -1;
+    }
+    value = eqp + 1;
+    if (!strncmp(arg, "DEVICE", 6)) {
+        dmprintf(pmi->memory, "DEVICE cannot be set by -p!\n");
+        return -1;
+    } else if (!strncmp(arg, "DefaultGrayProfile",
+                        strlen("DefaultGrayProfile"))) {
+        dmprintf(pmi->memory, "DefaultGrayProfile cannot be set by -p!\n");
+        return -1;
+    } else if (!strncmp(arg, "DefaultRGBProfile",
+                        strlen("DefaultRGBProfile"))) {
+        dmprintf(pmi->memory, "DefaultRGBProfile cannot be set by -p!\n");
+        return -1;
+    } else if (!strncmp(arg, "DefaultCMYKProfile",
+                        strlen("DefaultCMYKProfile"))) {
+        dmprintf(pmi->memory, "DefaultCMYKProfile cannot be set by -p!\n");
+        return -1;
+    } else if (!strncmp(arg, "ICCProfileDir", strlen("ICCProfileDir"))) {
+        dmprintf(pmi->memory, "ICCProfileDir cannot be set by -p!\n");
+        return -1;
+    }
+
+    if (eqp-arg >= sizeof(buffer)-1) {
+        dmprintf1(pmi->memory, "Command line key is too long: %s\n", arg);
+        return -1;
+    }
+    strncpy(buffer, arg, eqp - arg);
+    buffer[eqp - arg] = '\0';
+
+    return pl_main_set_typed_param(pmi, pl_spt_parsed, buffer, value);
+}
+
+int
 pl_main_set_typed_param(pl_main_instance_t *pmi, pl_set_param_type type, const char *param, const void *value)
 {
     int code = 0;
@@ -2451,6 +2493,11 @@ help:
                     pmi->pause = false;
                     break;
                 }
+            case 'p':
+                code = pl_main_set_parsed_param(pmi, arg);
+                if (code < 0)
+                    return code;
+                break;
             case 'r':
                 {
                     float res[2];
