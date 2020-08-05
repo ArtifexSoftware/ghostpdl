@@ -529,7 +529,7 @@ setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
         ss->params.EntireWidthIn = ss->params.WidthIn = ss->params.PatchWidthIn = pim->Width;
         ss->params.EntireHeightIn = ss->params.HeightIn = ss->params.PatchHeightIn = pim->Height;
         ss->params.EntireWidthOut = ss->params.WidthOut = ss->params.PatchWidthOut = s_Downsample_size_out(pim->Width, factor, false);
-        ss->params.EntireHeightOut = ss->params.HeightOut =  s_Downsample_size_out(pim->Height, factor, false);
+        ss->params.EntireHeightOut = ss->params.HeightOut = ss->params.PatchHeightOut = ss->params.PatchHeightOut2 = s_Downsample_size_out(pim->Height, factor, false);
 
         /* Bug #697944 The code below to apply the downsampling filter always
          * resizes the input data to the filter with 8BPC and then resizes the output back to whatever
@@ -539,8 +539,8 @@ setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
         ss->params.BitsPerComponentIn = ss->params.BitsPerComponentOut = 8;
 
         ss->params.spp_interp = ss->params.spp_decode = Colors;
-        ss->params.TopMarginIn = ss->params.TopMarginOut = ss->params.LeftMarginIn = ss->params.LeftMarginOut = 0;
-        ss->params.src_y_offset = 0;
+        ss->params.TopMarginIn = ss->params.TopMarginOut = ss->params.TopMarginOut2 = ss->params.LeftMarginIn = ss->params.LeftMarginOut = 0;
+        ss->params.src_y_offset = ss->params.pad_y = 0;
         ss->params.early_cm = true;
         ss->params.MaxValueIn = ss->params.MaxValueOut = (int)pow(2, pdip->Depth);
 
