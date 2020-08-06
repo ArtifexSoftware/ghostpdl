@@ -164,22 +164,48 @@ process_dict_or_hexstring(gs_memory_t *mem, gs_c_param_list *plist, gs_param_nam
 static int
 process_name(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name *key, char **p)
 {
-    char *p1 = *p + 1; /* Skip the '/' */
-    char *start = p1-1;
+    char *out = *p;
+    char *in = *p + 1;
+    char *start = out;
     gs_param_string ps;
 
-    while (!ends_token(p1))
-        p1[-1] = p1[0], p1++;
+    while (!ends_token(in)) {
+        if (*in == '#') {
+            int v;
+            if (in[1] >= '0' && in[1] <= '9')
+                v = (in[1] - '0')<<4;
+            else if (in[1] >= 'a' && in[1] <= 'f')
+                v = (in[1] - 'a' + 10)<<4;
+            else if (in[1] >= 'A' && in[1] <= 'F')
+                v = (in[1] - 'a' + 10)<<4;
+            else
+                return -1;
+            if (in[2] >= '0' && in[2] <= '9')
+                v += (in[2] - '0');
+            else if (in[2] >= 'a' && in[2] <= 'f')
+                v += (in[2] - 'a' + 10);
+            else if (in[2] >= 'A' && in[2] <= 'F')
+                v += (in[2] - 'a' + 10);
+            else
+                return -1;
+            if (v == 0)
+                return -1;
+            *out++ = v;
+            in += 3;
+            continue;
+        }
+        *out++ = *in++;
+    }
 
     /* Null terminate (in case it's the '*key = NULL' case below) */
-    p1[-1] = 0;
-    *p = p1;
+    *out = 0;
+    *p = in;
 
     if (*key == NULL)
         *key = (gs_param_name)start;
     else {
         ps.data = (const byte *)start;
-        ps.size = p1 - start - 1;
+        ps.size = out - start;
         ps.persistent = false;
         param_write_name((gs_param_list *)plist, *key, &ps);
         *key = NULL;
