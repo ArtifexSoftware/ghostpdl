@@ -1840,6 +1840,10 @@ static int pdfi_create_DeviceN(pdf_context *ctx, pdf_array *color_array, int ind
                     goto pdfi_devicen_error;
                 }
 
+                /* We've attached the colorant colour space to the DeviceN space, we no longer need this
+                 * reference to it, so discard it.
+                 */
+                rc_decrement_cs(colorant_space, "pdfi_devicen(colorant)");
                 pdfi_countdown(Space);
                 pdfi_countdown(Colorant);
                 Space = Colorant = NULL;
@@ -2247,18 +2251,34 @@ pdfi_color_cleanup_inner(pdf_context *ctx, gs_color_space *pcs, gs_client_color 
     int code = 0;
     gs_function_t *pfn;
 
-     if (gs_color_space_get_index(pcs) == gs_color_space_index_Indexed)
-         pcs = pcs->base_space;
+    if (gs_color_space_get_index(pcs) == gs_color_space_index_Indexed)
+        pcs = pcs->base_space;
 
     /* Handle cleanup of Separation functions if applicable */
     pfn = gs_cspace_get_sepr_function(pcs);
     if (pfn)
         pdfi_free_function(ctx, pfn);
 
-    /* Handle cleanup of DeviceN functions if applicable */
-    pfn = gs_cspace_get_devn_function(pcs);
-    if (pfn)
-        pdfi_free_function(ctx, pfn);
+    if (gs_color_space_get_index(pcs) == gs_color_space_index_DeviceN) {
+        gs_device_n_colorant * pnextatt, * patt = pcs->params.device_n.colorants;
+        /* Handle cleanup of DeviceN functions if applicable */
+        pfn = gs_cspace_get_devn_function(pcs);
+        if (pfn)
+            pdfi_free_function(ctx, pfn);
+
+        while (patt != NULL) {
+            pnextatt = patt->next;
+            pcs = patt->cspace;
+            if (gs_color_space_get_index(pcs) == gs_color_space_index_Indexed)
+                pcs = pcs->base_space;
+            if (gs_color_space_get_index(pcs) == gs_color_space_index_Separation) {
+                pfn = gs_cspace_get_sepr_function(pcs);
+                if (pfn)
+                    pdfi_free_function(ctx, pfn);
+            }
+            patt = pnextatt;
+        }
+    }
 
     if (pcc) {
         /* Handle Pattern cleanup if applicable */
