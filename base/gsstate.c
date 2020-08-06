@@ -1353,7 +1353,7 @@ gstate_clone(gs_gstate * pfrom, gs_memory_t * mem, client_name_t cname,
     return pgs;
   fail:
     if (pdata != NULL)
-        (*pfrom->client_procs.free) (pdata, mem);
+        (*pfrom->client_procs.free) (pdata, mem, pgs);
     memset(pgs->color, 0, 2*sizeof(gs_gstate_color));
     gs_free_object(mem, pgs->line_params.dash.pattern, cname);
     GSTATE_ASSIGN_PARTS(pgs, &parts);
@@ -1407,15 +1407,15 @@ gstate_free_contents(gs_gstate * pgs)
         gx_cpath_free(pgs->view_clip, cname);
         pgs->view_clip = NULL;
     }
+    if (pgs->client_data != 0)
+        (*pgs->client_procs.free) (pgs->client_data, mem, pgs);
+    pgs->client_data = 0;
     gs_swapcolors_quick(pgs);
     cs_adjust_counts_icc(pgs, -1);
     gs_swapcolors_quick(pgs);
     cs_adjust_counts_icc(pgs, -1);
     pgs->color[0].color_space = 0;
     pgs->color[1].color_space = 0;
-    if (pgs->client_data != 0)
-        (*pgs->client_procs.free) (pgs->client_data, mem);
-    pgs->client_data = 0;
     gs_free_object(mem, pgs->line_params.dash.pattern, cname);
     pgs->line_params.dash.pattern = 0;
     gstate_free_parts(pgs, mem, cname);     /* this also clears pointers to freed elements */

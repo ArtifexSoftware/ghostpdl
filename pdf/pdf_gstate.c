@@ -116,11 +116,13 @@ pdfi_gstate_copy_cb(void *to, const void *from)
 
 /* Free the interpreter's part of a graphics state. */
 static void
-pdfi_gstate_free_cb(void *old, gs_memory_t * mem)
+pdfi_gstate_free_cb(void *old, gs_memory_t * mem, gs_gstate *pgs)
 {
     pdfi_int_gstate *igs = (pdfi_int_gstate *)old;
     if (old == NULL)
         return;
+    (void)pdfi_color_cleanup(igs->ctx, pgs, 0);
+    (void)pdfi_color_cleanup(igs->ctx, pgs, 1);
     pdfi_gstate_smask_free(igs);
     gs_free_object(mem, igs, "pdfi_gstate_free");
 }
@@ -255,9 +257,6 @@ int pdfi_grestore(pdf_context *ctx)
      */
     if (ctx->pgs->level > ctx->current_stream_save.gsave_level) {
         font = pdfi_get_current_pdf_font(ctx);
-
-        (void)pdfi_color_cleanup(ctx, 0);
-        (void)pdfi_color_cleanup(ctx, 1);
 
         code = gs_grestore(ctx->pgs);
 

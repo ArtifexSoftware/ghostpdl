@@ -196,7 +196,7 @@ px_gstate_client_copy_for(void *to, void *from, gs_gstate_copy_reason_t reason)
 #undef pxto
 }
 static void
-px_gstate_client_free(void *old, gs_memory_t * mem)
+px_gstate_client_free(void *old, gs_memory_t * mem, gs_gstate *pgs)
 {
     px_gstate_t *pxgs = old;
 

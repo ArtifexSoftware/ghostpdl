@@ -306,7 +306,7 @@ int pdfi_gs_setgray(pdf_context *ctx, double d)
     if (ctx->inside_CharProc && ctx->CharProc_is_d1)
         return 0;
 
-    (void)pdfi_color_cleanup(ctx, 0);
+    (void)pdfi_color_cleanup(ctx, ctx->pgs, 0);
     return gs_setgray(ctx->pgs, d);
 }
 
@@ -316,7 +316,7 @@ int pdfi_gs_setrgbcolor(pdf_context *ctx, double r, double g, double b)
     if (ctx->inside_CharProc && ctx->CharProc_is_d1)
         return 0;
 
-    (void)pdfi_color_cleanup(ctx, 0);
+    (void)pdfi_color_cleanup(ctx, ctx->pgs, 0);
     return gs_setrgbcolor(ctx->pgs, r, g, b);
 }
 
@@ -326,7 +326,7 @@ static int pdfi_gs_setcmykcolor(pdf_context *ctx, double c, double m, double y, 
     if (ctx->inside_CharProc && ctx->CharProc_is_d1)
         return 0;
 
-    (void)pdfi_color_cleanup(ctx, 0);
+    (void)pdfi_color_cleanup(ctx, ctx->pgs, 0);
     return gs_setcmykcolor(ctx->pgs, c, m, y, k);
 }
 
@@ -336,7 +336,7 @@ int pdfi_gs_setcolorspace(pdf_context *ctx, gs_color_space *pcs)
     if (ctx->inside_CharProc && ctx->CharProc_is_d1)
         return 0;
 
-    (void)pdfi_color_cleanup(ctx, 0);
+    (void)pdfi_color_cleanup(ctx, ctx->pgs, 0);
     return gs_setcolorspace(ctx->pgs, pcs);
 }
 
@@ -2293,17 +2293,17 @@ pdfi_color_cleanup_inner(pdf_context *ctx, gs_color_space *pcs, gs_client_color 
  * It gives us a hook to cleanup the data associated with some of the more
  * complicated colorspaces, such as patterns and spaces with functions.
  */
-int pdfi_color_cleanup(pdf_context *ctx, int index)
+int pdfi_color_cleanup(pdf_context *ctx, gs_gstate *pgs, int index)
 {
     gs_color_space *pcs;
     gs_client_color *pcc;
 
     /* Only do the cleanup if it is about to be freed */
-    if (ctx->pgs->color[index].color_space->rc.ref_count != 1)
+    if (pgs->color[index].color_space->rc.ref_count != 1)
         return 0;
 
-    pcs = ctx->pgs->color[index].color_space;
-    pcc = ctx->pgs->color[index].ccolor;
+    pcs = pgs->color[index].color_space;
+    pcc = pgs->color[index].ccolor;
     return pdfi_color_cleanup_inner(ctx, pcs, pcc);
 }
 
