@@ -322,6 +322,8 @@ pdfi_JBIG2Decode_filter(pdf_context *ctx, pdf_dict *dict, pdf_dict *decode,
                                                       buf, buflen, &globalctx);
 
                 s_jbig2decode_set_global_data((stream_state*)&state, NULL, globalctx);
+
+                gs_free_object(ctx->memory, buf, "pdfi_JBIG2Decode_filter (Globals buf)");
             }
         }
     }
