@@ -822,6 +822,38 @@ int_array_to_string(gs_param_int_array ia, outstate *out)
 }
 
 static void
+print_float(char *text, float f)
+{
+    /* We attempt to tidy up %f's somewhat unpredictable output
+     * here, so rather than printing 0.10000000 we print 0.1 */
+    char *p = text;
+    int frac = 0;
+    gs_sprintf(text, "%f", f);
+    /* Find the terminator, or 'e' to spot exponent mode. */
+    while (*p && *p != 'e' && *p != 'E') {
+        if (*p == '.')
+            frac = 1;
+        p++;
+    }
+    /* If we've hit the terminator, and passed a '.' at some point
+     * we know we potentially have a tail to tidy up. */
+    if (*p == 0 && frac) {
+        p--;
+        /* Clear a trail of 0's. */
+        while (*p == '0')
+            *p-- = 0;
+        /* If we cleared the entire fractional part, remove the . */
+        if (*p == '.') {
+            /* Allow for -.0000 => -0 rather than - */
+            if (p == text || p[-1] < '0' || p[-1] > '9')
+                *p = '0', p[1] = 0;
+            else
+                p[0] = 0;
+        }
+    }
+}
+
+static void
 float_array_to_string(gs_param_float_array fa, outstate *out)
 {
     int i;
@@ -829,7 +861,7 @@ float_array_to_string(gs_param_float_array fa, outstate *out)
 
     out_string(out, "[");
     for (i = 0; i < fa.size; i++) {
-        gs_sprintf(text, "%f", fa.data[i]);
+        print_float(text, fa.data[i]);
         out_string(out, text);
     }
     out_string(out, "]");
@@ -945,7 +977,7 @@ to_string(gs_param_list *plist, gs_param_name key, outstate *out)
     case gs_param_type_float:
     {
         char text[32];
-        gs_sprintf(text, "%f", pvalue.value.f);
+        print_float(text, pvalue.value.f);
         out_string(out, text);
         break;
     }
