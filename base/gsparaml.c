@@ -313,7 +313,7 @@ process_array(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char 
                 break;
 
             case '/':
-                if (array_type != gs_param_type_null && array_type != gs_param_type_string_array) {
+                if (array_type != gs_param_type_null && array_type != gs_param_type_name_array) {
                     code = gs_error_typecheck;
                     break;
                 }
@@ -332,10 +332,10 @@ process_array(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char 
                         array_data = new_array;
                     }
                     array_max = new_max;
-                    array_type = gs_param_type_string_array;
+                    array_type = gs_param_type_name_array;
                 }
                 parray = (gs_param_string *)array_data;
-                parray[index].data = (const byte *)p1;
+                parray[index].data = (const byte *)++p1;
                 while (!ends_token(p1))
                     p1++;
                 parray[index].size = p1 - (char *)(parray[index].data);
@@ -473,6 +473,12 @@ return_minus_one:
                 string_array.persistent = 0;
                 string_array.size = index;
                 code = param_write_string_array((gs_param_list *)plist, key, &string_array);
+                break;
+            case gs_param_type_name_array:
+                string_array.data = (const gs_param_string *)array_data;
+                string_array.persistent = 0;
+                string_array.size = index;
+                code = param_write_name_array((gs_param_list *)plist, key, &string_array);
                 break;
             case gs_param_type_int_array:
                 int_array.data = (const int *)array_data;
@@ -815,6 +821,18 @@ string_array_to_string(gs_param_string_array sa, outstate *out)
     out_string(out, "]");
 }
 
+static void
+name_array_to_string(gs_param_string_array na, outstate *out)
+{
+    int i;
+
+    out_string(out, "[");
+    for (i = 0; i < na.size; i++) {
+        name_to_string((const char *)na.data[i].data, na.data[i].size, out);
+    }
+    out_string(out, "]");
+}
+
 static int to_string(gs_param_list *plist, gs_param_name key, outstate *out);
 
 static int
@@ -926,6 +944,9 @@ to_string(gs_param_list *plist, gs_param_name key, outstate *out)
         break;
     case gs_param_type_string_array:
         string_array_to_string(pvalue.value.sa, out);
+        break;
+    case gs_param_type_name_array:
+        name_array_to_string(pvalue.value.na, out);
         break;
     default:
         return -1;
