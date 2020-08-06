@@ -106,7 +106,7 @@ zcurrent_uint(i_ctx_t *i_ctx_p, uint (*current_proc)(const gs_gstate *))
 /* "Client" procedures */
 static void *gs_istate_alloc(gs_memory_t * mem);
 static int gs_istate_copy(void *to, const void *from);
-static void gs_istate_free(void *old, gs_memory_t * mem);
+static void gs_istate_free(void *old, gs_memory_t * mem, gs_gstate *pgs);
 static const gs_gstate_client_procs istate_procs = {
     gs_istate_alloc,
     gs_istate_copy,
@@ -693,7 +693,7 @@ gs_istate_copy(void *to, const void *from)
 
 /* Free the interpreter's part of a graphics state. */
 static void
-gs_istate_free(void *old, gs_memory_t * mem)
+gs_istate_free(void *old, gs_memory_t * mem, gs_gstate *pgs)
 {
     gs_free_object(mem, old, "int_grestore");
 }
