@@ -1051,6 +1051,7 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
         } else {
             known = false;
         }
+        pdfi_countdown(a);
     } else
         known = false;
 
@@ -1113,11 +1114,11 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
             /* The Alternate should be one of the device spaces, therefore a Name object. If its not, fallback to using /N */
             if (Alternate->type == PDF_NAME)
                 code = pdfi_create_colorspace_by_name(ctx, (pdf_name *)Alternate, stream_dict, page_dict, ppcs, inline_image);
-                pdfi_countdown(Alternate);
-                if (code == 0) {
-                    ctx->pdf_warnings |= W_PDF_BADICC_USE_ALT;
-                    goto done;
-                }
+            pdfi_countdown(Alternate);
+            if (code == 0) {
+                ctx->pdf_warnings |= W_PDF_BADICC_USE_ALT;
+                goto done;
+            }
         }
         /* Use the number of components *from the profile* to set a space.... */
         ctx->pdf_warnings |= W_PDF_BADICC_USECOMPS;
