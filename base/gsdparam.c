@@ -754,7 +754,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
     }
     else
         param_string_from_string(pagelist, null_str);
-    if ((code = param_write_name(plist, "PageList", &pagelist)) < 0)
+    if ((code = param_write_string(plist, "PageList", &pagelist)) < 0)
         return code;
 
     temp_bool = dev->ObjectFilter & FILTERIMAGE;
