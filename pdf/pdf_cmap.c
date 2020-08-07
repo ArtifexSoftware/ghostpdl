@@ -1119,6 +1119,11 @@ pdfi_read_cmap(pdf_context *ctx, pdf_obj *cmap, pdf_cmap **pcmap)
     pdfi_cmap->buf = buf;
     pdfi_cmap->buflen = buflen;
 
+    /* In case of technically invalid CMap files which do not contain a CMapType, See Bug #690737.
+     * This makes sure we clean up the CMap contents in pdfi_free_cmap() below.
+     */
+    pdfi_cmap->cmaptype = 1;
+
     code = pdfi_interpret_cmap(ctx->memory, buf, buflen, pdfi_cmap);
     if (code < 0) goto error_out;
 
