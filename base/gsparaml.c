@@ -762,13 +762,32 @@ string_to_string(const char *data, int len, outstate *out)
 {
     int i;
     char text[4];
+    const char *d = data;
 
-    if (len == 0) {
-        out_string(out, "()");
+    /* Check to see if we have any awkward chars */
+    for (i = len; i != 0; i--) {
+        if (*d < 32 || *d >= 127 || *d == ')')
+            break;
+        d++;
+    }
+
+    /* No awkward chars, do it the easy way. */
+    if (i == 0) {
+        d = data;
+        out_string(out, "(");
+        out->last = 0;
+        text[1] = 0;
+        for (i = len; i != 0; i--) {
+            text[0] = *d++;
+            out->last = 0;
+            out_string(out, text);
+        }
+        out->last = 0;
+        out_string(out, ")");
         return;
     }
 
-    /* For simplicity, let's always out as hexstrings */
+    /* Output as hexstring */
     out_string(out, "<");
     text[2] = 0;
     for (i = 0; i < len; i++) {
@@ -956,7 +975,7 @@ to_string(gs_param_list *plist, gs_param_name key, outstate *out)
     case gs_param_type_i64:
     {
         char text[32];
-        gs_sprintf(text, PRId64, pvalue.value.i64);
+        gs_sprintf(text, "%"PRId64, pvalue.value.i64);
         out_string(out, text);
         break;
     }
@@ -970,7 +989,7 @@ to_string(gs_param_list *plist, gs_param_name key, outstate *out)
     case gs_param_type_size_t:
     {
         char text[32];
-        gs_sprintf(text, PRIdSIZE, pvalue.value.z);
+        gs_sprintf(text, "%"PRIdSIZE, pvalue.value.z);
         out_string(out, text);
         break;
     }
