@@ -43,3 +43,6 @@ EXPORTS
                 gsapi_is_path_control_active
                 gsapi_add_fs
                 gsapi_remove_fs
+                gsapi_set_param
+                gsapi_get_param
+                gsapi_enumerate_params
