@@ -185,8 +185,10 @@ int pdfi_array_peek_type(pdf_context *ctx, pdf_array *a, uint64_t index,
     if (code < 0)
         return code;
 
-    if ((*o)->type != type)
+    if ((*o)->type != type) {
+        *o = NULL;
         return_error(gs_error_typecheck);
+    }
 
     return 0;
 }
