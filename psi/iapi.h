@@ -408,6 +408,28 @@ GSDLLEXPORT int GSDLLAPI gsapi_set_param(void *instance, gs_set_param_type type,
  * an empty string requires 1 byte storage) */
 GSDLLEXPORT int GSDLLAPI gsapi_get_param(void *instance, gs_set_param_type type, const char *param, void *value);
 
+/* Enumerator to list all the parameters.
+ * Caller defines void *iter = NULL, and calls with &iter.
+ * Each call, iter is updated to reflect the position within the
+ * enumeration, so passing iterator back in gets the next key. The call
+ * returns negative values for errors, 0 for success, and 1 for "no more
+ * keys".
+ *
+ *  void *iter = NULL;
+ *  gs_set_param_type type;
+ *  const char *key;
+ *  int code;
+ *  while ((code = gsapi_enumerate_params(inst, &iter, &key, &type)) == 0) {
+ *      // Process key
+ *  }
+ *
+ * Note that the ordering of enumerations is NOT defined. key is valid
+ * until the next call to gsapi_enumerate_params. Only one enumeration
+ * at a time (starting a new enumeration will invalidate any previous
+ * enumeration).
+ */
+GSDLLEXPORT int GSDLLAPI gsapi_enumerate_params(void *instance, void **iterator, const char **key, gs_set_param_type *type);
+
 enum {
     GS_PERMIT_FILE_READING = 0,
     GS_PERMIT_FILE_WRITING = 1,

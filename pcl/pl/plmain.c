@@ -51,6 +51,7 @@
 #include "stream.h"
 #include "strmio.h"
 #include "gp.h"
+#include "gserrors.h"
 
 /* includes for the display device */
 #include "gdevdevn.h"
@@ -158,6 +159,12 @@ struct pl_main_instance_s
     bool mid_runstring; /* True if we are mid-runstring */
 
     void *buffering_runstring_as_file;
+
+    /* The state for gsapi param enumeration */
+    gs_c_param_list enum_params;
+    gs_param_enumerator_t enum_iter;
+    char *enum_keybuf;
+    int enum_keybuf_max;
 };
 
 
@@ -1158,6 +1165,9 @@ pl_main_delete_instance(pl_main_instance_t *minst)
 
     gs_free_object(mem, minst->buf_ptr, "minst_buffer");
 
+    gs_c_param_list_release(&minst->enum_params);
+    gs_free_object(mem, minst->enum_keybuf, "param enumerator keybuf");
+
     gs_iodev_finit(mem);
     gs_lib_finit(0, 0, mem);
     gs_free_object(mem, minst, "pl_main_instance");
@@ -2092,6 +2102,110 @@ pl_main_get_typed_param(pl_main_instance_t *pmi, pl_set_param_type type, const c
         code = gs_note_error(gs_error_rangecheck);
     }
     gs_c_param_list_release(&params);
+
+    return code;
+}
+
+int pl_main_enumerate_params(pl_main_instance_t *pmi, void **iter, const char **key, pl_set_param_type *type)
+{
+    int code = 0;
+    gs_param_key_t keyp;
+
+    if (key == NULL)
+        return -1;
+    *key = NULL;
+    if (pmi == NULL || iter == NULL)
+        return -1;
+
+    if (*iter == NULL) {
+        /* Free any existing param list. */
+        gs_c_param_list_release(&pmi->enum_params);
+        /* No device -> no params. */
+        if (pmi->device == NULL)
+            return 1;
+        /* Set up a new one. */
+        gs_c_param_list_write(&pmi->enum_params, pmi->memory);
+        /* Get the keys. */
+        code = gs_getdeviceparams(pmi->device, (gs_param_list *)&pmi->enum_params);
+        if (code < 0)
+            return code;
+
+        param_init_enumerator(&pmi->enum_iter);
+        *iter = &pmi->enum_iter;
+    } else if (*iter != &pmi->enum_iter)
+        return -1;
+
+    gs_c_param_list_read(&pmi->enum_params);
+    code = param_get_next_key((gs_param_list *)&pmi->enum_params, &pmi->enum_iter, &keyp);
+    if (code < 0)
+        return code;
+    if (code != 0) {
+        /* End of iteration. */
+        *iter = NULL;
+        *key = NULL;
+        return 1;
+    }
+    if (pmi->enum_keybuf_max < keyp.size+1) {
+        int newsize = keyp.size+1;
+        char *newkey;
+        if (newsize < 128)
+            newsize = 128;
+        if (pmi->enum_keybuf == NULL) {
+            newkey = (char *)gs_alloc_bytes(pmi->memory, newsize, "enumerator key buffer");
+        } else {
+            newkey = (char *)gs_resize_object(pmi->memory, pmi->enum_keybuf, newsize, "enumerator key buffer");
+        }
+        if (newkey == NULL)
+            return_error(gs_error_VMerror);
+        pmi->enum_keybuf = newkey;
+        pmi->enum_keybuf_max = newsize;
+    }
+    memcpy(pmi->enum_keybuf, keyp.data, keyp.size);
+    pmi->enum_keybuf[keyp.size] = 0;
+    *key = pmi->enum_keybuf;
+
+    if (type) {
+        gs_param_typed_value pvalue;
+        pvalue.type = gs_param_type_any;
+        code = param_read_typed((gs_param_list *)&pmi->enum_params, *key, &pvalue);
+        if (code < 0)
+            return code;
+        if (code > 0)
+            return_error(gs_error_unknownerror);
+
+        switch (pvalue.type) {
+        case gs_param_type_null:
+            *type = pl_spt_null;
+            break;
+        case gs_param_type_bool:
+            *type = pl_spt_bool;
+            break;
+        case gs_param_type_int:
+            *type = pl_spt_int;
+            break;
+        case gs_param_type_long:
+            *type = pl_spt_long;
+            break;
+        case gs_param_type_size_t:
+            *type = pl_spt_size_t;
+            break;
+        case gs_param_type_i64:
+            *type = pl_spt_i64;
+            break;
+        case gs_param_type_float:
+            *type = pl_spt_float;
+            break;
+        case gs_param_type_string:
+            *type = pl_spt_string;
+            break;
+        case gs_param_type_name:
+            *type = pl_spt_name;
+            break;
+        default:
+            *type = pl_spt_parsed;
+            break;
+        }
+    }
 
     return code;
 }

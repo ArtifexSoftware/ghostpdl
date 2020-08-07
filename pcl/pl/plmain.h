@@ -98,6 +98,8 @@ int pl_main_set_typed_param(pl_main_instance_t *minst, pl_set_param_type type, c
  * an empty string requires 1 byte storage) */
 int pl_main_get_typed_param(pl_main_instance_t *minst, pl_set_param_type type, const char *param, void *value);
 
+int pl_main_enumerate_params(pl_main_instance_t *minst, void **iterator, const char **key, pl_set_param_type *type);
+
 /* instance accessors */
 bool pl_main_get_interpolate(const gs_memory_t *mem);
 bool pl_main_get_nocache(const gs_memory_t *mem);

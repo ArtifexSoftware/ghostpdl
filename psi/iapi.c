@@ -485,7 +485,7 @@ gsapi_set_param(void *lib, gs_set_param_type type, const char *param, const void
     }
     gs_c_param_list_read(params);
 
-    if (more_to_come) {
+    if (more_to_come || minst->i_ctx_p == NULL) {
         /* Leave it in the param list for later. */
         return 0;
     }
@@ -495,7 +495,6 @@ gsapi_set_param(void *lib, gs_set_param_type type, const char *param, const void
     if (code < 0)
         return code;
 
-    /* Send it to the language */
     code = psapi_set_param(ctx, (gs_param_list *)params);
     if (code < 0)
         return code;
@@ -642,6 +641,118 @@ gsapi_get_param(void *lib, gs_set_param_type type, const char *param, void *valu
     return code;
 }
 
+GSDLLEXPORT int GSDLLAPI
+gsapi_enumerate_params(void *instance, void **iter, const char **key, gs_set_param_type *type)
+{
+    gs_main_instance *minst;
+    gs_c_param_list *params;
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    int code = 0;
+    gs_param_key_t keyp;
+
+    if (ctx == NULL)
+        return gs_error_Fatal;
+
+    minst = get_minst_from_memory(ctx->memory);
+    params = &minst->enum_params;
+
+    if (key == NULL)
+        return -1;
+    *key = NULL;
+    if (iter == NULL)
+        return -1;
+
+    if (*iter == NULL) {
+        /* Free any existing param list. */
+        gs_c_param_list_release(params);
+        if (minst->i_ctx_p == NULL) {
+            return 1;
+        }
+        /* Set up a new one. */
+        gs_c_param_list_write(params, minst->heap);
+        /* Get the keys. */
+        code = psapi_get_device_params(ctx, (gs_param_list *)params);
+        if (code < 0)
+            return code;
+
+        param_init_enumerator(&minst->enum_iter);
+        *iter = &minst->enum_iter;
+    } else if (*iter != &minst->enum_iter)
+        return -1;
+
+    gs_c_param_list_read(params);
+    code = param_get_next_key((gs_param_list *)params, &minst->enum_iter, &keyp);
+    if (code < 0)
+        return code;
+    if (code != 0) {
+        /* End of iteration. */
+        *iter = NULL;
+        return 1;
+    }
+    if (minst->enum_keybuf_max < keyp.size+1) {
+        int newsize = keyp.size+1;
+        char *newkey;
+        if (newsize < 128)
+            newsize = 128;
+        if (minst->enum_keybuf == NULL) {
+            newkey = (char *)gs_alloc_bytes(minst->heap, newsize, "enumerator key buffer");
+        } else {
+            newkey = (char *)gs_resize_object(minst->heap, minst->enum_keybuf, newsize, "enumerator key buffer");
+        }
+        if (newkey == NULL)
+            return_error(gs_error_VMerror);
+        minst->enum_keybuf = newkey;
+        minst->enum_keybuf_max = newsize;
+    }
+    memcpy(minst->enum_keybuf, keyp.data, keyp.size);
+    minst->enum_keybuf[keyp.size] = 0;
+    *key = minst->enum_keybuf;
+
+    if (type) {
+        gs_param_typed_value pvalue;
+        pvalue.type = gs_param_type_any;
+        code = param_read_typed((gs_param_list *)params, *key, &pvalue);
+        if (code < 0)
+            return code;
+        if (code > 0)
+            return_error(gs_error_unknownerror);
+
+        switch (pvalue.type) {
+        case gs_param_type_null:
+            *type = gs_spt_null;
+            break;
+        case gs_param_type_bool:
+            *type = gs_spt_bool;
+            break;
+        case gs_param_type_int:
+            *type = gs_spt_int;
+            break;
+        case gs_param_type_long:
+            *type = gs_spt_long;
+            break;
+        case gs_param_type_size_t:
+            *type = gs_spt_size_t;
+            break;
+        case gs_param_type_i64:
+            *type = gs_spt_i64;
+            break;
+        case gs_param_type_float:
+            *type = gs_spt_float;
+            break;
+        case gs_param_type_string:
+            *type = gs_spt_string;
+            break;
+        case gs_param_type_name:
+            *type = gs_spt_name;
+            break;
+        default:
+            *type = gs_spt_parsed;
+            break;
+        }
+    }
+
+    return code;
+}
 
 GSDLLEXPORT int GSDLLAPI
 gsapi_add_control_path(void *instance, int type, const char *path)
