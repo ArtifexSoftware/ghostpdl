@@ -59,41 +59,44 @@
 % Rescale, translate and rotate to fit the BoundingBox on the page
 /EPSBoundingBoxFitPage { % llx lly urx ury --
   EPSDEBUG { (gs_epsf.ps: Rescaling EPS to fit page\n) print flush } if
-  clippath pathbbox newpath
-  % translate to new origin at lower left of clippath
-  3 index 3 index translate
-  % Figure out if rotate is needed.
+  clippath pathbbox newpath    % ellx elly eurx eury  pllx plly purx pury
 
-  1 index 4 index sub 1 index 4 index sub eq not {
-  1 index 4 index sub 1 index 4 index sub gt	% bbox page-clipbox page-is-landscape
-  6 index 10 index sub 6 index 10 index sub gt % bbox page-clipbox page-is-landscape bbox-is-landscape
-  xor
-  }{
-    //false
-  }ifelse
-  dup 10 1 roll	% need-rotate compute need-rotate.
-
-  % if we are rotating the contents, we need to also rotate the
-  % bounding box of the content!
-  {
-    8 -4 roll
-    exch 4 -2 roll exch 4 2 roll
+  % Convert box corners to coordinates of the center and box sizes
+  2 {	% loop doing the page coordinates, the the EPS bbox coordinates
+    3 -1 roll exch        % ... llx urx lly ury
+    2 {		% loop doing Y then X coordnates
+      2 copy exch sub     % ... llx urx lly ury ury-lly
+      3 1 roll            % ... llx urx ury-lly lly ury
+      add 2 div           % ... llx urx ury-lly (lly+ury)/2
+      4 2 roll            % ... ury-lly (lly+ury)/2 llx urx
+    } repeat
     8 4 roll
+  } repeat
+  % edx, edy = EPS dimension X and Y, ecx, ecy = EPS Center X and Y.
+  % pdx and pcx, etc, are for the Page values.
+  % edx ecx edy ecy pdx pcx pdy pcy
+
+  % Move the origin to the center of the printable area.
+  3 -1 roll exch          % edx ecx edy ecy pdx pdy pcx pcy
+  translate               % edx ecx edy ecy pdx pdy
+
+  % Find orientation of the best fit. Square pages or files don't rotate.
+  2 copy sub              % edx ecx edy ecy pdx pdy pdx-pdy
+  6 index 5 index sub mul % edx ecx edy ecy pdx pdy (pdx-pdy)*(edx-edy)
+  0 lt {
+    90 rotate
+    exch
   } if
 
-  % stack: rotate-needed bbox page-clipbox
-  % calculate scale to fit smaller of width or height
-  exch 4 -1 roll sub 3 1 roll exch sub
-  4 2 roll 5 index 5 index 4 2 roll
-  exch 4 -1 roll sub 3 1 roll exch sub
-  4 2 roll
-  exch 4 -1 roll div 3 1 roll exch div
-  1 index 1 index lt {pop}{exch pop} ifelse
-  dup scale
-  % translate to EPS -llx,-lly
-  exch neg exch neg translate
-  % Finally perform the rotate if needed.
-  { clippath pathbbox pop 0 translate 90 rotate pop pop } if
+  % Scale to fit in the most restricting direction.
+  4 -1 roll div           % edx ecx ecy pdx pdy/edy
+  exch 5 -1 roll div      % ecx ecy pdy/edy pdx/edx
+  //.min exec
+  dup scale               % ecx ecy
+
+  % Center the document
+  neg exch neg exch translate
+
 } bind executeonly odef
 
 /EPSBoundingBoxProcess { % (llx lly urx ury) state --
