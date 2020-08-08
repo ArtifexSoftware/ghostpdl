@@ -953,6 +953,7 @@ run_stdin:
                     arg_free((char *)adef, minst->heap);
                     return code;
                 }
+                break;
             }
         case 'u':               /* undefine name */
             if (!*arg) {
