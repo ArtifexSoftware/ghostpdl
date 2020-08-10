@@ -15,6 +15,7 @@ import java.util.Objects;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
+import com.artifex.gsjava.GSInstance;
 import com.artifex.gsjava.callbacks.DisplayCallback;
 import com.artifex.gsjava.util.BytePointer;
 import com.artifex.gsjava.util.LongReference;
@@ -303,24 +304,43 @@ public class Document implements List<Page> {
 	 * @param instanceRef A reference to the instance of Ghostscript.
 	 * @throws IllegalStateException When any Ghostscript operation fails to execute.
 	 */
-	private static void initDocInstance(LongReference instanceRef) throws IllegalStateException {
-		int code = gsapi_new_instance(instanceRef, GS_NULL);
+//	private static void initDocInstance(LongReference instanceRef) throws IllegalStateException {
+//		int code = gsapi_new_instance(instanceRef, GS_NULL);
+//		if (code != GS_ERROR_OK) {
+//			gsapi_delete_instance(instanceRef.value);
+//			throw new IllegalStateException("Failed to set stdio with handle (code = " + code + ")");
+//		}
+//
+//		code = gsapi_set_arg_encoding(instanceRef.value, 1);
+//		if (code != GS_ERROR_OK) {
+//			gsapi_delete_instance(instanceRef.value);
+//			throw new IllegalArgumentException("Failed to set arg encoding (code = " + code + ")");
+//		}
+//
+//		code = gsapi_set_display_callback(instanceRef.value, documentLoader.reset());
+//		if (code != GS_ERROR_OK) {
+//			gsapi_delete_instance(instanceRef.value);
+//			throw new IllegalStateException("Failed to set display callback code=" + code);
+//		}
+//	}
+
+	private static GSInstance initDocInstance() throws IllegalStateException {
+		GSInstance instance = new GSInstance();
+
+		int code;
+		code = instance.setArgEncoding(1);
 		if (code != GS_ERROR_OK) {
-			gsapi_delete_instance(instanceRef.value);
-			throw new IllegalStateException("Failed to set stdio with handle (code = " + code + ")");
+			instance.deleteInstance();
+			throw new IllegalStateException("Failed to set arg encoding (code = " + code + ")");
 		}
 
-		code = gsapi_set_arg_encoding(instanceRef.value, 1);
+		code = instance.setDisplayCallback(documentLoader.reset());
 		if (code != GS_ERROR_OK) {
-			gsapi_delete_instance(instanceRef.value);
-			throw new IllegalArgumentException("Failed to set arg encoding (code = " + code + ")");
+			instance.deleteInstance();
+			throw new IllegalStateException("Failed to set display callback (code = " + code + ")");
 		}
 
-		code = gsapi_set_display_callback(instanceRef.value, documentLoader.reset());
-		if (code != GS_ERROR_OK) {
-			gsapi_delete_instance(instanceRef.value);
-			throw new IllegalStateException("Failed to set display callback code=" + code);
-		}
+		return instance;
 	}
 
 	/**
@@ -411,18 +431,21 @@ public class Document implements List<Page> {
 
 		startOperation();
 
-		LongReference instanceRef = new LongReference();
+		GSInstance instance = null;
 		try {
-			initDocInstance(instanceRef);
+			instance = initDocInstance();
 		} catch (IllegalStateException e) {
 			operationDone();
 		}
 
+		if (instance == null)
+			throw new IllegalStateException("Failed to initialize Ghostscript");
+
 		documentLoader.callback = loadCallback;
 
-		int code = gsapi_init_with_args(instanceRef.value, gargs);
-		gsapi_exit(instanceRef.value);
-		gsapi_delete_instance(instanceRef.value);
+		int code = instance.initWithArgs(gargs);
+		instance.exit();
+		instance.deleteInstance();
 		if (code != GS_ERROR_OK) {
 			operationDone();
 			throw new IllegalStateException("Failed to gsapi_init_with_args code=" + code);
@@ -543,12 +566,19 @@ public class Document implements List<Page> {
 				"-dTextAlphaBits=4", "-dGraphicsAlphaBits=4",
 				"-f", file.getAbsolutePath() };
 
-		LongReference instanceRef = new LongReference();
-		initDocInstance(instanceRef);
+		GSInstance instance = null;
+		try {
+			instance = initDocInstance();
+		} catch (IllegalStateException e) {
+			operationDone();
+		}
 
-		int code = gsapi_init_with_args(instanceRef.value, gargs);
-		gsapi_exit(instanceRef.value);
-		gsapi_delete_instance(instanceRef.value);
+		if (instance == null)
+			throw new IllegalStateException("Failed to initialize Ghoscript");
+
+		int code = instance.initWithArgs(gargs);
+		instance.exit();
+		instance.deleteInstance();
 		if (code != GS_ERROR_OK) {
 			operationDone();
 			throw new IllegalStateException("Failed to gsapi_init_with_args code=" + code);
@@ -627,12 +657,19 @@ public class Document implements List<Page> {
 						"-dTextAlphaBits=4", "-dGraphicsAlphaBits=4",
 						"-f", file.getAbsolutePath() };
 
-				LongReference instanceRef = new LongReference();
-				initDocInstance(instanceRef);
+				GSInstance instance = null;
+				try {
+					instance = initDocInstance();
+				} catch (IllegalStateException e) {
+					operationDone();
+				}
 
-				int code = gsapi_init_with_args(instanceRef.value, gargs);
-				gsapi_exit(instanceRef.value);
-				gsapi_delete_instance(instanceRef.value);
+				if (instance == null)
+					throw new IllegalStateException("Failed to initialize Ghoscript");
+
+				int code = instance.initWithArgs(gargs);
+				instance.exit();
+				instance.deleteInstance();
 				if (code != GS_ERROR_OK) {
 					throw new IllegalStateException("Failed to gsapi_init_with_args code=" + code);
 				}
@@ -765,12 +802,19 @@ public class Document implements List<Page> {
 					"-dTextAlphaBits=4", "-dGraphicsAlphaBits=4",
 					"-f", file.getAbsolutePath() };
 
-			LongReference instanceRef = new LongReference();
-			initDocInstance(instanceRef);
+			GSInstance instance = null;
+			try {
+				instance = initDocInstance();
+			} catch (IllegalStateException e) {
+				operationDone();
+			}
 
-			int code = gsapi_init_with_args(instanceRef.value, gargs);
-			gsapi_exit(instanceRef.value);
-			gsapi_delete_instance(instanceRef.value);
+			if (instance == null)
+				throw new IllegalStateException("Failed to initialize Ghoscript");
+
+			int code = instance.initWithArgs(gargs);
+			instance.exit();
+			instance.deleteInstance();
 			if (code != GS_ERROR_OK) {
 				operationDone();
 				throw new IllegalStateException("Failed to gsapi_init_with_args code=" + code);

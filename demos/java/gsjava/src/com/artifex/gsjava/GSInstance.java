@@ -15,7 +15,7 @@ import com.artifex.gsjava.util.IntReference;
 import com.artifex.gsjava.util.LongReference;
 
 /**
- * Utility class to make Ghostscript calls easier by automatically storing a
+ * Utility class to make Ghostscript calls easier by storing a
  * Ghostscript instance and, optionally, a caller handle.
  *
  * @author Ethan Vrhel
@@ -40,8 +40,10 @@ public class GSInstance {
 	}
 
 	public void deleteInstance() {
-		gsapi_delete_instance(instance);
-		instance = GS_NULL;
+		if (instance != GS_NULL) {
+			gsapi_delete_instance(instance);
+			instance = GS_NULL;
+		}
 	}
 
 	public int setStdio(IStdInFunction stdin, IStdOutFunction stdout, IStdErrFunction stderr) {
@@ -92,8 +94,38 @@ public class GSInstance {
 		return gsapi_run_string_begin(instance, userErrors, pExitCode);
 	}
 
+	public int runStringContinue(byte[] str, int length, int userErrors, IntReference pExitCode) {
+		return gsapi_run_string_continue(instance, str, length, userErrors, pExitCode);
+	}
+
+	public int runStringContinue(String str, int length, int userErrors, IntReference pExitCode) {
+		return gsapi_run_string_continue(instance, str, length, userErrors, pExitCode);
+	}
+
+	public int runString(byte[] str, int userErrors, IntReference pExitCode) {
+		return gsapi_run_string(instance, str, userErrors, pExitCode);
+	}
+
+	public int runString(String str, int userErrors, IntReference pExitCode) {
+		return gsapi_run_string(instance, str, userErrors, pExitCode);
+	}
+
+	public int runFile(byte[] fileName, int userErrors, IntReference pExitCode) {
+		return gsapi_run_file(instance, fileName, userErrors, pExitCode);
+	}
+
+	public int runFile(String filename, int userErrors, IntReference pExitCode) {
+		return gsapi_run_file(instance, filename, userErrors, pExitCode);
+	}
+
+	public int exit() {
+		return gsapi_exit(instance);
+	}
+
 	@Override
 	public void finalize() {
+		if (instance != GS_NULL)
+			exit();
 		deleteInstance();
 	}
 

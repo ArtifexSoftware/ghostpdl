@@ -27,6 +27,7 @@ public class ViewerController implements ViewerGUIListener {
 
 	private ViewerWindow source;
 	private Document currentDocument;
+	private SmartLoader smartLoader;
 
 	public void open(final File file) {
 		if (currentDocument != null)
@@ -121,6 +122,8 @@ public class ViewerController implements ViewerGUIListener {
 
 	@Override
 	public void onCloseFile() {
+		smartLoader.stop();
+		smartLoader = null;
 		close();
 	}
 
@@ -134,10 +137,10 @@ public class ViewerController implements ViewerGUIListener {
 	public void onSettingsOpen() { }
 
 	private void dispatchSmartLoader() {
-		Thread t = new Thread(new SmartLoader());
-		t.setDaemon(true);
-		t.setName("Document-Smart-Loader-Thread");
-		t.start();
+		if (smartLoader != null)
+			smartLoader.stop();
+		smartLoader = new SmartLoader(currentDocument);
+		smartLoader.start();
 	}
 
 	private class UnhandledExceptionHandler implements Thread.UncaughtExceptionHandler {
@@ -158,22 +161,55 @@ public class ViewerController implements ViewerGUIListener {
 
 	private class SmartLoader implements Runnable {
 
+		private volatile boolean[] loaded;
+		private volatile boolean shouldRun;
+		private Thread thread;
+
+		private SmartLoader(Document doc) {
+			loaded = new boolean[doc.size()];
+			shouldRun = true;
+		}
+
+		private void start() {
+			if (thread != null)
+				stop();
+			shouldRun = true;
+			thread = new Thread(this);
+			thread.setDaemon(true);
+			thread.setName("Document-Smart-Loader-Thread");
+			thread.start();
+		}
+
+		private void stop() {
+			shouldRun = false;
+			lock.lock();
+			cv.signalAll();
+			lock.unlock();
+			try {
+				thread.join();
+			} catch (InterruptedException e) {
+				throw new RuntimeException("Thread join interrupted", e);
+			}
+			thread = null;
+		}
+
 		@Override
 		public void run() {
 			System.out.println("Smart loader dispatched.");
-			boolean[] loaded = new boolean[currentDocument.size()];
-			Document doc;
-			while ((doc = source.getLoadedDocument()) != null) {
+			while (shouldRun) {
 				int currentPage = source.getCurrentPage();
 				int[] toLoad =  new int[] {
 						currentPage, currentPage - 1, currentPage + 1,
 						currentPage - 2, currentPage + 2 };
 
+				if (loaded.length != currentDocument.size())
+					throw new IllegalStateException("Array is size " + loaded.length + " while doc size is " + currentDocument.size());
+
 				int ind = 0;
 				for (int page : toLoad) {
-					if (page >= 1 && page <= doc.size()) {
+					if (page >= 1 && page <= currentDocument.size()) {
 						if (!loaded[page - 1]) {
-							doc.loadHighRes(Document.OPERATION_WAIT, page);
+							currentDocument.loadHighRes(Document.OPERATION_WAIT, page);
 							loaded[page - 1] = true;
 						}
 					}
@@ -187,8 +223,6 @@ public class ViewerController implements ViewerGUIListener {
 					cv.await();
 				} catch (InterruptedException e) {
 					System.err.println("Interrupted in smart loader: " + e);
-				} catch (IllegalMonitorStateException e) {
-					System.err.println("Exception in smart loader await: " + e);
 				} finally {
 					lock.unlock();
 				}
