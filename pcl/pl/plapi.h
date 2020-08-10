@@ -347,7 +347,8 @@ GSDLLEXPORT int GSDLLAPI gsapi_set_param(void *instance, gs_set_param_type type,
  * name/string/parsed value, call once with value=NULL, then obtain
  * the storage, and call again with value=the storage to get a nul
  * terminated string. (nul terminator is included in the count - hence
- * an empty string requires 1 byte storage) */
+ * an empty string requires 1 byte storage). Returns gs_error_undefined
+ * (-21) if not found.  */
 GSDLLEXPORT int GSDLLAPI gsapi_get_param(void *instance, gs_set_param_type type, const char *param, void *value);
 
 /* Enumerator to list all the parameters.

@@ -1999,6 +1999,8 @@ pl_main_get_typed_param(pl_main_instance_t *pmi, pl_set_param_type type, const c
     {
     case pl_spt_null:
         code = param_read_null((gs_param_list *)&params, param);
+        if (code == 1)
+            code = gs_error_undefined;
         if (code < 0)
             break;
         code = 0;
@@ -2007,6 +2009,8 @@ pl_main_get_typed_param(pl_main_instance_t *pmi, pl_set_param_type type, const c
     {
         bool b;
         code = param_read_bool((gs_param_list *)&params, param, &b);
+        if (code == 1)
+            code = gs_error_undefined;
         if (code < 0)
             break;
         code = sizeof(int);
@@ -2018,6 +2022,8 @@ pl_main_get_typed_param(pl_main_instance_t *pmi, pl_set_param_type type, const c
     {
         int i;
         code = param_read_int((gs_param_list *)&params, param, &i);
+        if (code == 1)
+            code = gs_error_undefined;
         if (code < 0)
             break;
         code = sizeof(int);
@@ -2029,6 +2035,8 @@ pl_main_get_typed_param(pl_main_instance_t *pmi, pl_set_param_type type, const c
     {
         float f;
         code = param_read_float((gs_param_list *)&params, param, &f);
+        if (code == 1)
+            code = gs_error_undefined;
         if (code < 0)
             break;
         code = sizeof(float);
@@ -2038,6 +2046,8 @@ pl_main_get_typed_param(pl_main_instance_t *pmi, pl_set_param_type type, const c
     }
     case pl_spt_name:
         code = param_read_name((gs_param_list *)&params, param, &str_value);
+        if (code == 1)
+            code = gs_error_undefined;
         if (code < 0)
             break;
         if (value != NULL) {
@@ -2048,9 +2058,11 @@ pl_main_get_typed_param(pl_main_instance_t *pmi, pl_set_param_type type, const c
         break;
     case pl_spt_string:
         code = param_read_string((gs_param_list *)&params, param, &str_value);
+        if (code == 1)
+            code = gs_error_undefined;
         if (code < 0)
             break;
-        if (value != NULL) {
+        else if (value != NULL) {
             memcpy(value, str_value.data, str_value.size);
             ((char *)value)[str_value.size] = 0;
         }
@@ -2060,6 +2072,8 @@ pl_main_get_typed_param(pl_main_instance_t *pmi, pl_set_param_type type, const c
     {
         long l;
         code = param_read_long((gs_param_list *)&params, param, &l);
+        if (code == 1)
+            code = gs_error_undefined;
         if (code < 0)
             break;
         if (value != NULL)
@@ -2071,6 +2085,8 @@ pl_main_get_typed_param(pl_main_instance_t *pmi, pl_set_param_type type, const c
     {
         int64_t i64;
         code = param_read_i64((gs_param_list *)&params, param, &i64);
+        if (code == 1)
+            code = gs_error_undefined;
         if (code < 0)
             break;
         if (value != NULL)
@@ -2082,6 +2098,8 @@ pl_main_get_typed_param(pl_main_instance_t *pmi, pl_set_param_type type, const c
     {
         size_t z;
         code = param_read_size_t((gs_param_list *)&params, param, &z);
+        if (code == 1)
+            code = gs_error_undefined;
         if (code < 0)
             break;
         if (value != NULL)
@@ -2094,6 +2112,8 @@ pl_main_get_typed_param(pl_main_instance_t *pmi, pl_set_param_type type, const c
         int len;
         code = gs_param_list_to_string((gs_param_list *)&params,
                                        param, (char *)value, &len);
+        if (code == 1)
+            code = gs_error_undefined;
         if (code >= 0)
             code = len;
         break;

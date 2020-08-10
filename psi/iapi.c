@@ -534,6 +534,8 @@ gsapi_get_param(void *lib, gs_set_param_type type, const char *param, void *valu
     {
     case gs_spt_null:
         code = param_read_null((gs_param_list *)&params, param);
+        if (code == 1)
+            code = gs_error_undefined;
         if (code < 0)
             break;
         code = 0;
@@ -542,6 +544,8 @@ gsapi_get_param(void *lib, gs_set_param_type type, const char *param, void *valu
     {
         bool b;
         code = param_read_bool((gs_param_list *)&params, param, &b);
+        if (code == 1)
+            code = gs_error_undefined;
         if (code < 0)
             break;
         code = sizeof(int);
@@ -553,6 +557,8 @@ gsapi_get_param(void *lib, gs_set_param_type type, const char *param, void *valu
     {
         int i;
         code = param_read_int((gs_param_list *)&params, param, &i);
+        if (code == 1)
+            code = gs_error_undefined;
         if (code < 0)
             break;
         code = sizeof(int);
@@ -564,6 +570,8 @@ gsapi_get_param(void *lib, gs_set_param_type type, const char *param, void *valu
     {
         float f;
         code = param_read_float((gs_param_list *)&params, param, &f);
+        if (code == 1)
+            code = gs_error_undefined;
         if (code < 0)
             break;
         code = sizeof(float);
@@ -573,6 +581,8 @@ gsapi_get_param(void *lib, gs_set_param_type type, const char *param, void *valu
     }
     case gs_spt_name:
         code = param_read_name((gs_param_list *)&params, param, &str_value);
+        if (code == 1)
+            code = gs_error_undefined;
         if (code < 0)
             break;
         if (value != NULL) {
@@ -583,6 +593,8 @@ gsapi_get_param(void *lib, gs_set_param_type type, const char *param, void *valu
         break;
     case gs_spt_string:
         code = param_read_string((gs_param_list *)&params, param, &str_value);
+        if (code == 1)
+            code = gs_error_undefined;
         if (code < 0)
             break;
         if (value != NULL) {
@@ -595,6 +607,8 @@ gsapi_get_param(void *lib, gs_set_param_type type, const char *param, void *valu
     {
         long l;
         code = param_read_long((gs_param_list *)&params, param, &l);
+        if (code == 1)
+            code = gs_error_undefined;
         if (code < 0)
             break;
         if (value != NULL)
@@ -606,6 +620,8 @@ gsapi_get_param(void *lib, gs_set_param_type type, const char *param, void *valu
     {
         int64_t i64;
         code = param_read_i64((gs_param_list *)&params, param, &i64);
+        if (code == 1)
+            code = gs_error_undefined;
         if (code < 0)
             break;
         if (value != NULL)
@@ -617,6 +633,8 @@ gsapi_get_param(void *lib, gs_set_param_type type, const char *param, void *valu
     {
         size_t z;
         code = param_read_size_t((gs_param_list *)&params, param, &z);
+        if (code == 1)
+            code = gs_error_undefined;
         if (code < 0)
             break;
         if (value != NULL)
@@ -629,6 +647,8 @@ gsapi_get_param(void *lib, gs_set_param_type type, const char *param, void *valu
         int len;
         code = gs_param_list_to_string((gs_param_list *)&params,
                                        param, (char *)value, &len);
+        if (code == 1)
+            code = gs_error_undefined;
         if (code >= 0)
             code = len;
         break;

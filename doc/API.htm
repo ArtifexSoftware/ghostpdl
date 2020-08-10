@@ -576,9 +576,10 @@ has been called, and just before <code>gsapi_delete_instance()</code>.
 Set a parameter.
 Broadly, this is equivalent to setting a parameter using <code>-d</code>, <code>-s</code> or <code>-p</code> on the command line. This call cannot be made during a <code>run_string</code> operation.
 <p>
-  Parameters in this context are not the same as 'arguments' as processed by <code>gsapi_init_with_args</code>, but often the same thing can be achieved. For example, with <code>gsapi_init_with_args</code>, we can pass &quot;<code>-r200</code>&quot; to change the resolution. Broadly the same thing can be achieved by using <code>gsapi_set_param</code> to set a parsed value of &quot;<code>&lt;&lt;/HWResolution [ 200.0 200.0 ]&gt;&gt;</code>&quot;.
+Parameters in this context are not the same as 'arguments' as processed by <code>gsapi_init_with_args</code>, but often the same thing can be achieved. For example, with <code>gsapi_init_with_args</code>, we can pass &quot;<code>-r200</code>&quot; to change the resolution. Broadly the same thing can be achieved by using <code>gsapi_set_param</code> to set a parsed value of &quot;<code>&lt;&lt;/HWResolution [ 200.0 200.0 ]&gt;&gt;</code>&quot;.
 <p>
 Note, that internally, when we set a parameter, we perform an <code>initgraphics</code> operation. This means that using <code>set_param</code> other than at the start of a page is likely to give unexpected results.
+<p>Further, note that attempting to set a parameter that the device does not recognise will be silently ignored, and that parameter will not be found in subsequent <code>gsapi_get_param</code> calls.
 </blockquote>
 
 <h3><a name="get_param"></a><code>gsapi_get_param()</code></h3>
@@ -588,6 +589,8 @@ Retrieve the current value of a parameter.
 <p>The return value is -ve for error, or the number of bytes storage required for the value. Call once with <code>value = NULL</code> to get the number of bytes required, then call again with <code>value</code> pointing to at least the required number of bytes where the value will be copied out. Note that the caller is required to know the type of value in order to get it. For all types other than <code>string</code>, <code>name</code>, <code>parsed</code> knowing the type means you already know the size required.
 <p>
 This call retrieves parameters/values that have made it to the device. Thus, any values set using the <code>gs_spt_more_to_come</code> without a following call without that flag will not be retrieved. Similarly, attempting to get a parameter before <code>gs_init_with_args</code> has been called will not list any, even if <code>gsapi_set_param</code> has been used.
+<p>
+Attempting to read a parameter that is not set will return <code>gs_error_undefined (-21)</code>. Note that calling <code>gsapi_set_param</code> followed by <code>gsapi_get_param</code> may not find the value, if the device did not recognise the key as being one of its configuration keys.
 </blockquote>
 
 <h3><a name="enumerate_params"></a><code>gsapi_enumerate_params()</code></h3>
