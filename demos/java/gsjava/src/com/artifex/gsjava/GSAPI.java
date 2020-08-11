@@ -11,6 +11,7 @@ import com.artifex.gsjava.callbacks.IStdOutFunction;
 import com.artifex.gsjava.util.ByteArrayReference;
 import com.artifex.gsjava.util.IntReference;
 import com.artifex.gsjava.util.LongReference;
+import com.artifex.gsjava.util.Reference;
 import com.artifex.gsjava.util.StringUtil;
 
 /**
@@ -109,7 +110,20 @@ public class GSAPI {
 	public static final int GS_DISPLAY_TOPFIRST = (0 << 17),
 							GS_DISPLAY_BOTTOMFIRST = (1 << 17);
 
-	public static final long DISPLAY_FIRSTROW_MASK = 0x00020000L;
+	public static final long GS_DISPLAY_FIRSTROW_MASK = 0x00020000L;
+
+	public static final int GS_SPT_INVALID = -1,
+							GS_SPT_NULL = 0,
+							GS_SPT_BOOL = 1,
+							GS_SPT_INT = 2,
+							GS_SPT_FLOAT = 3,
+							GS_SPT_NAME = 4,
+							GS_SPT_STRING = 5,
+							GS_SPT_LONG = 6,
+							GS_SPT_I64 = 7,
+							GS_SPT_SIZE_T = 8,
+							GS_SPT_PARSED = 9,
+							GS_SPT_MORE_TO_COME = 1 << 31;
 
 	/**
 	 * Class used to store version information about Ghostscript.
@@ -197,6 +211,12 @@ public class GSAPI {
 	public static native int gsapi_run_file(long instance, byte[] fileName, int userErrors, IntReference pExitCode);
 
 	public static native int gsapi_exit(long instance);
+
+	public static native int gsapi_set_param(long instance, byte[] param, Object value, int paramType);
+
+	public static native int gsapi_get_param(long instance, byte[] param, Reference<?> value, int paramType);
+
+	public static native int gsapi_enumerate_params(long instance, Reference<?> iter, ByteArrayReference key, IntReference paramType);
 
 	// Utility methods to make calling some native methods easier
 

@@ -162,6 +162,25 @@ int util::callIntMethod(JNIEnv *env, jobject object, const char *method, const c
     return result;
 }
 
+void util::setObjectField(JNIEnv *env, jobject object, const char *field, jobject value)
+{
+    jfieldID fieldID = getFieldID(env, object, field, "Ljava/lang/Object;");
+    if (fieldID == NULL)
+        return;
+
+    env->SetObjectField(object, fieldID, value);
+}
+
+jobject util::getObjectField(JNIEnv *env, jobject object, const char *field)
+{
+
+    jfieldID fieldID = getFieldID(env, object, field, "Ljava/lang/Object");
+    if (fieldID == NULL)
+        return 0;
+
+    return env->GetObjectField(object, fieldID);
+}
+
 jint util::throwNoClassDefError(JNIEnv *env, const char *message)
 {
     if (env == NULL)
@@ -229,6 +248,21 @@ jint util::throwAllocationError(JNIEnv *env, const char *message)
 
     jclass exClass;
     static const char *const className = "com/artifex/gsjava/util/AllocationError";
+
+    exClass = env->FindClass(className);
+    if (exClass == NULL)
+        return throwNoClassDefError(env, className);
+
+    return env->ThrowNew(exClass, message);
+}
+
+jint util::throwIllegalArgumentException(JNIEnv *env, const char *message)
+{
+    if (env == NULL)
+        return -1;
+
+    jclass exClass;
+    static const char *const className = "java/lang/IllegalArgumentException";
 
     exClass = env->FindClass(className);
     if (exClass == NULL)

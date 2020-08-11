@@ -7,7 +7,7 @@
 namespace util
 {
 
-
+	typedef class Reference Reference;
 	typedef class LongReference LongReference;
 	typedef class IntReference IntReference;
 	typedef class ByteArrayReference ByteArrayReference;
@@ -143,6 +143,18 @@ namespace util
 	*/
 	int callIntMethod(JNIEnv *env, jobject object, const char *name, const char *sig, ...);
 
+	void setObjectField(JNIEnv *env, jobject object, const char *field, jobject value);
+
+	jobject getObjectField(JNIEnv *env, jobject object, const char *field);
+	/*
+	jobject toWrapperType(jboolean value);
+	jobject toWrapperType(jchar value);
+	jobject toWrapperType(jshort value);
+	jobject toWrapperType(jint value);
+	jobject toWrapperType(jlong value);
+	jobject toWrapperType(jfloat value);
+	jobject toWrapperType(jdouble value);*/
+
 	/*!
 	Throws the Java exception java.lang.NoClassDefFoundError with a message. The function
 	calling this function should immediately return after calling this function.
@@ -198,6 +210,8 @@ namespace util
 	*/
 	jint throwAllocationError(JNIEnv *env, const char *message);
 
+	jint throwIllegalArgumentException(JNIEnv *env, const char *message);
+
 	/*!
 	Returns the name of a jclass. The name is dynamically allocated and after usage,
 	freeClassName() should be called.
@@ -216,6 +230,23 @@ namespace util
 	*/
 	void freeClassName(const char *className);
 
+	class Reference
+	{
+	private:
+		JNIEnv *m_env;
+		jobject m_object;
+	public:
+
+		static inline void setValueField(JNIEnv *env, jobject object, jobject value)
+		{
+			setObjectField(env, object, "value", value);
+		}
+
+		static inline jobject getValueField(JNIEnv *env, jobject object)
+		{
+			return getObjectField(env, object, "value");
+		}
+	};
 
 	/*!
 	Class representing the class com.artifex.gsjava.util.LongReference.

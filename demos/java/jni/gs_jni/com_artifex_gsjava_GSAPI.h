@@ -239,6 +239,15 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1run_1file
 JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1exit
   (JNIEnv *, jclass, jlong);
 
+JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1set_1param
+  (JNIEnv *, jclass, jlong, jbyteArray, jobject, jint);
+
+JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1get_1param
+  (JNIEnv *, jclass, jlong, jbyteArray, jobject, jint);
+
+JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1enumerate_1params
+  (JNIEnv *, jclass, jlong, jobject, jobject, jobject);
+
 #ifdef __cplusplus
 }
 #endif

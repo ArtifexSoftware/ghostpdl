@@ -8,6 +8,9 @@
 
 using namespace util;
 
+static bool isParamOkay(jobject object, gs_set_param_type type);
+static void *getAsPointer(JNIEnv *env, jobject object, gs_set_param_type type, bool *success);
+
 JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1revision
 	(JNIEnv *env, jclass, jobject revision, jint len)
 {
@@ -268,4 +271,119 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1exit
 	(JNIEnv *env, jclass, jlong instance)
 {
 	return gsapi_exit((void *)instance);
+}
+
+JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1set_1param
+	(JNIEnv *env, jclass, jlong instance, jbyteArray param, jobject value, jint paramType)
+{
+	if (!param)
+	{
+		throwNullPointerException(env, "param");
+		return -1;
+	}
+
+	gs_set_param_type type = (gs_set_param_type)paramType;
+	bool paramSuccess;
+	void *data = getAsPointer(env, value, type, &paramSuccess);
+	if (!paramSuccess)
+	{
+		throwIllegalArgumentException(env, "paramType");
+		return -1;
+	}
+
+	jboolean copy = false;
+	int exitCode;
+	const char *cstring = (const char *)env->GetByteArrayElements(param, &copy);
+
+	int code = gsapi_set_param((void *)instance, cstring, data, type);
+	delete data;
+
+	return code;
+}
+
+JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1get_1param
+	(JNIEnv *, jclass, jlong instance, jbyteArray param, jobject value, jint paramType)
+{
+
+}
+
+JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1enumerate_1params
+   (JNIEnv *, jclass, jlong, jobject, jobject, jobject)
+{
+
+}
+
+bool isParamOkay(jobject object, gs_set_param_type type)
+{
+	switch (type)
+	{
+	case gs_spt_invalid:
+		break;
+	case gs_spt_null:
+		return object == NULL;
+		break;
+	case gs_spt_bool:
+		break;
+	case gs_spt_int:
+		break;
+	case gs_spt_float:
+		break;
+	case gs_spt_name:
+		break;
+	case gs_spt_string:
+		break;
+	case gs_spt_long:
+		break;
+	case gs_spt_i64:
+		break;
+	case gs_spt_size_t:
+		break;
+	case gs_spt_parsed:
+		break;
+	case gs_spt_more_to_come:
+		break;
+	default:
+		return false;
+	}
+	return false;
+}
+
+void *getAsPointer(JNIEnv *env, jobject object, gs_set_param_type type, bool *success)
+{
+	if (!isParamOkay(object, type))
+	{
+		*success = false;
+		return NULL;
+	}
+	switch (type)
+	{
+	case gs_spt_invalid:
+		break;
+	case gs_spt_null:
+		return NULL;
+		break;
+	case gs_spt_bool:
+		break;
+	case gs_spt_int:
+		break;
+	case gs_spt_float:
+		break;
+	case gs_spt_name:
+		break;
+	case gs_spt_string:
+		break;
+	case gs_spt_long:
+		break;
+	case gs_spt_i64:
+		break;
+	case gs_spt_size_t:
+		break;
+	case gs_spt_parsed:
+		break;
+	case gs_spt_more_to_come:
+		break;
+	default:
+		return false;
+	}
+	return nullptr;
 }

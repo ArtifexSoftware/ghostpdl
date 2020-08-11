@@ -8,7 +8,7 @@ import java.util.Arrays;
  * @author Ethan Vrhel
  *
  */
-public class ByteArrayReference {
+public class ByteArrayReference extends Reference<byte[]> {
 
 	public volatile byte[] value;
 
