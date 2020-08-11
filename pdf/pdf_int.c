@@ -2211,7 +2211,7 @@ int pdfi_repair_file(pdf_context *ctx)
                                                     code = pdfi_repair_add_object(ctx, object_num, generation_num, offset);
                                                     if (code < 0) {
                                                         if (code != gs_error_VMerror && code != gs_error_ioerror)
-                                                            continue;
+                                                            break;
                                                         return code;
                                                     }
                                                     break;
