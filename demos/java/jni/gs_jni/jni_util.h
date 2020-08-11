@@ -146,14 +146,24 @@ namespace util
 	void setObjectField(JNIEnv *env, jobject object, const char *field, jobject value);
 
 	jobject getObjectField(JNIEnv *env, jobject object, const char *field);
-	/*
-	jobject toWrapperType(jboolean value);
-	jobject toWrapperType(jchar value);
-	jobject toWrapperType(jshort value);
-	jobject toWrapperType(jint value);
-	jobject toWrapperType(jlong value);
-	jobject toWrapperType(jfloat value);
-	jobject toWrapperType(jdouble value);*/
+
+	jobject toWrapperType(JNIEnv *env, jboolean value);
+	jobject toWrapperType(JNIEnv *env, jbyte value);
+	jobject toWrapperType(JNIEnv *env, jchar value);
+	jobject toWrapperType(JNIEnv *env, jshort value);
+	jobject toWrapperType(JNIEnv *env, jint value);
+	jobject toWrapperType(JNIEnv *env, jlong value);
+	jobject toWrapperType(JNIEnv *env, jfloat value);
+	jobject toWrapperType(JNIEnv *env, jdouble value);
+
+	jboolean toBoolean(JNIEnv *env, jobject wrapped);
+	jbyte toByte(JNIEnv *env, jobject wrapped);
+	jchar toChar(JNIEnv *env, jobject wrapped);
+	jshort toShort(JNIEnv *env, jobject wrapped);
+	jint toInt(JNIEnv *env, jobject wrapped);
+	jlong toLong(JNIEnv *env, jobject wrapped);
+	jfloat toFloat(JNIEnv *env, jobject wrapped);
+	jdouble toDouble(JNIEnv *env, jobject wrapped);
 
 	/*!
 	Throws the Java exception java.lang.NoClassDefFoundError with a message. The function
@@ -232,9 +242,6 @@ namespace util
 
 	class Reference
 	{
-	private:
-		JNIEnv *m_env;
-		jobject m_object;
 	public:
 
 		static inline void setValueField(JNIEnv *env, jobject object, jobject value)
@@ -245,6 +252,96 @@ namespace util
 		static inline jobject getValueField(JNIEnv *env, jobject object)
 		{
 			return getObjectField(env, object, "value");
+		}
+	private:
+		JNIEnv *m_env;
+		jobject m_value;
+	public:
+
+		Reference(JNIEnv *env);
+		Reference(JNIEnv *env, jobject value);
+		~Reference();
+
+		inline jobject value()
+		{
+			return getValueField(m_env, m_value);
+		}
+
+		inline jboolean booleanValue()
+		{
+			return toBoolean(m_env, value());
+		}
+
+		inline jbyte byteValue()
+		{
+			return toByte(m_env, value());
+		}
+
+		inline jchar charValue()
+		{
+			return toChar(m_env, value());
+		}
+
+		inline jshort shortValue()
+		{
+			return toShort(m_env, value());
+		}
+
+		inline jint intValue()
+		{
+			return toInt(m_env, value());
+		}
+
+		inline jlong longValue()
+		{
+			return toLong(m_env, value());
+		}
+
+		inline jfloat floatValue()
+		{
+			return toFloat(m_env, value());
+		}
+
+		inline jdouble doubleValue()
+		{
+			return toDouble(m_env, value());
+		}
+
+		void set(jobject value);
+
+		inline void set(jboolean value)
+		{
+			set(toWrapperType(m_env, value));
+		}
+
+		inline void set(jbyte value)
+		{
+			set(toWrapperType(m_env, value));
+		}
+
+		inline void set(jshort value)
+		{
+			set(toWrapperType(m_env, value));
+		}
+
+		inline void set(jint value)
+		{
+			set(toWrapperType(m_env, value));
+		}
+
+		inline void set(jlong value)
+		{
+			set(toWrapperType(m_env, value));
+		}
+
+		inline void set(jfloat value)
+		{
+			set(toWrapperType(m_env, value));
+		}
+
+		inline void set(jdouble value)
+		{
+			set(toWrapperType(m_env, value));
 		}
 	};
 

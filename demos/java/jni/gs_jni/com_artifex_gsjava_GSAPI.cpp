@@ -302,15 +302,16 @@ JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1set_1param
 }
 
 JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1get_1param
-	(JNIEnv *, jclass, jlong instance, jbyteArray param, jobject value, jint paramType)
+	(JNIEnv *env, jclass, jlong instance, jbyteArray param, jobject value, jint paramType)
 {
-
+	jobject obj = toWrapperType(env, (jboolean)true);
+	return -1;
 }
 
 JNIEXPORT jint JNICALL Java_com_artifex_gsjava_GSAPI_gsapi_1enumerate_1params
    (JNIEnv *, jclass, jlong, jobject, jobject, jobject)
 {
-
+	return -1;
 }
 
 bool isParamOkay(jobject object, gs_set_param_type type)
@@ -383,7 +384,7 @@ void *getAsPointer(JNIEnv *env, jobject object, gs_set_param_type type, bool *su
 	case gs_spt_more_to_come:
 		break;
 	default:
-		return false;
+		return NULL;
 	}
-	return nullptr;
+	return NULL;
 }

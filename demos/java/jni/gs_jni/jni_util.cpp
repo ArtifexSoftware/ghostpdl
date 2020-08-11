@@ -181,6 +181,222 @@ jobject util::getObjectField(JNIEnv *env, jobject object, const char *field)
     return env->GetObjectField(object, fieldID);
 }
 
+jobject util::toWrapperType(JNIEnv *env, jboolean value)
+{
+    jclass clazz;
+    static const char *const className = "java/lang/Boolean";
+    clazz = env->FindClass(className);
+    if (!clazz)
+    {
+        throwNoClassDefError(env, className);
+        return NULL;
+    }
+    jmethodID methodID = env->GetMethodID(clazz, "<init>", "(Z)V");
+    jobject result = env->NewObject(clazz, methodID, value);
+    return result;
+}
+
+jobject util::toWrapperType(JNIEnv *env, jbyte value)
+{
+    jclass clazz;
+    static const char *const className = "java/lang/Byte";
+    clazz = env->FindClass(className);
+    if (!clazz)
+    {
+        throwNoClassDefError(env, className);
+        return NULL;
+    }
+    jmethodID methodID = env->GetMethodID(clazz, "<init>", "(Z)V");
+    jobject result = env->NewObject(clazz, methodID, value);
+    return result;
+}
+
+jobject util::toWrapperType(JNIEnv *env, jchar value)
+{
+    jclass clazz;
+    static const char *const className = "java/lang/Character";
+    clazz = env->FindClass(className);
+    if (!clazz)
+    {
+        throwNoClassDefError(env, className);
+        return NULL;
+    }
+    jmethodID methodID = env->GetMethodID(clazz, "<init>", "(C)V");
+    jobject result = env->NewObject(clazz, methodID, value);
+    return result;
+}
+
+jobject util::toWrapperType(JNIEnv *env, jshort value)
+{
+    jclass clazz;
+    static const char *const className = "java/lang/Short";
+    clazz = env->FindClass(className);
+    if (!clazz)
+    {
+        throwNoClassDefError(env, className);
+        return NULL;
+    }
+    jmethodID methodID = env->GetMethodID(clazz, "<init>", "(S)V");
+    jobject result = env->NewObject(clazz, methodID, value);
+    return result;
+}
+
+jobject util::toWrapperType(JNIEnv *env, jint value)
+{
+    jclass clazz;
+    static const char *const className = "java/lang/Integer";
+    clazz = env->FindClass(className);
+    if (!clazz)
+    {
+        throwNoClassDefError(env, className);
+        return NULL;
+    }
+    jmethodID methodID = env->GetMethodID(clazz, "<init>", "(I)V");
+    jobject result = env->NewObject(clazz, methodID, value);
+    return result;
+}
+
+jobject util::toWrapperType(JNIEnv *env, jlong value)
+{
+    jclass clazz;
+    static const char *const className = "java/lang/Long";
+    clazz = env->FindClass(className);
+    if (!clazz)
+    {
+        throwNoClassDefError(env, className);
+        return NULL;
+    }
+    jmethodID methodID = env->GetMethodID(clazz, "<init>", "(J)V");
+    jobject result = env->NewObject(clazz, methodID, value);
+    return result;
+}
+
+jobject util::toWrapperType(JNIEnv *env, jfloat value)
+{
+    jclass clazz;
+    static const char *const className = "java/lang/Float";
+    clazz = env->FindClass(className);
+    if (!clazz)
+    {
+        throwNoClassDefError(env, className);
+        return NULL;
+    }
+    jmethodID methodID = env->GetMethodID(clazz, "<init>", "(F)V");
+    jobject result = env->NewObject(clazz, methodID, value);
+    return result;
+}
+
+jobject util::toWrapperType(JNIEnv *env, jdouble value)
+{
+    jclass clazz;
+    static const char *const className = "java/lang/Double";
+    clazz = env->FindClass(className);
+    if (!clazz)
+    {
+        throwNoClassDefError(env, className);
+        return NULL;
+    }
+    jmethodID methodID = env->GetMethodID(clazz, "<init>", "(D)V");
+    jobject result = env->NewObject(clazz, methodID, value);
+    return result;
+}
+
+jboolean util::toBoolean(JNIEnv *env, jobject wrapped)
+{
+    jclass clazz = env->GetObjectClass(wrapped);
+    jfieldID fieldID = env->GetFieldID(clazz, "value", "Z");
+    if (fieldID == NULL)
+    {
+        throwNoSuchFieldError(env, "value");
+        return 0;
+    }
+    return env->GetBooleanField(wrapped, fieldID);
+}
+
+jbyte util::toByte(JNIEnv *env, jobject wrapped)
+{
+    jclass clazz = env->GetObjectClass(wrapped);
+    jfieldID fieldID = env->GetFieldID(clazz, "value", "B");
+    if (fieldID == NULL)
+    {
+        throwNoSuchFieldError(env, "value");
+        return 0;
+    }
+    return env->GetByteField(wrapped, fieldID);
+}
+
+jchar util::toChar(JNIEnv *env, jobject wrapped)
+{
+    jclass clazz = env->GetObjectClass(wrapped);
+    jfieldID fieldID = env->GetFieldID(clazz, "value", "C");
+    if (fieldID == NULL)
+    {
+        throwNoSuchFieldError(env, "value");
+        return 0;
+    }
+    return env->GetCharField(wrapped, fieldID);
+}
+
+jshort util::toShort(JNIEnv *env, jobject wrapped)
+{
+    jclass clazz = env->GetObjectClass(wrapped);
+    jfieldID fieldID = env->GetFieldID(clazz, "value", "S");
+    if (fieldID == NULL)
+    {
+        throwNoSuchFieldError(env, "value");
+        return 0;
+    }
+    return env->GetShortField(wrapped, fieldID);
+}
+
+jint util::toInt(JNIEnv *env, jobject wrapped)
+{
+    jclass clazz = env->GetObjectClass(wrapped);
+    jfieldID fieldID = env->GetFieldID(clazz, "value", "I");
+    if (fieldID == NULL)
+    {
+        throwNoSuchFieldError(env, "value");
+        return 0;
+    }
+    return env->GetIntField(wrapped, fieldID);
+}
+
+jlong util::toLong(JNIEnv *env, jobject wrapped)
+{
+    jclass clazz = env->GetObjectClass(wrapped);
+    jfieldID fieldID = env->GetFieldID(clazz, "value", "J");
+    if (fieldID == NULL)
+    {
+        throwNoSuchFieldError(env, "value");
+        return 0;
+    }
+    return env->GetLongField(wrapped, fieldID);
+}
+
+jfloat util::toFloat(JNIEnv *env, jobject wrapped)
+{
+    jclass clazz = env->GetObjectClass(wrapped);
+    jfieldID fieldID = env->GetFieldID(clazz, "value", "F");
+    if (fieldID == NULL)
+    {
+        throwNoSuchFieldError(env, "value");
+        return 0;
+    }
+    return env->GetFloatField(wrapped, fieldID);
+}
+
+jdouble util::toDouble(JNIEnv *env, jobject wrapped)
+{
+    jclass clazz = env->GetObjectClass(wrapped);
+    jfieldID fieldID = env->GetFieldID(clazz, "value", "D");
+    if (fieldID == NULL)
+    {
+        throwNoSuchFieldError(env, "value");
+        return 0;
+    }
+    return env->GetDoubleField(wrapped, fieldID);
+}
+
 jint util::throwNoClassDefError(JNIEnv *env, const char *message)
 {
     if (env == NULL)
@@ -412,4 +628,27 @@ util::ByteArrayReference::ByteArrayReference(JNIEnv *env, const unsigned char *a
 
 util::ByteArrayReference::~ByteArrayReference()
 {
+}
+
+util::Reference::Reference(JNIEnv *env) : Reference(m_env, NULL)
+{
+}
+
+util::Reference::Reference(JNIEnv *env, jobject value) : m_env(env), m_value(NULL)
+{
+    if (value)
+        m_value = m_env->NewGlobalRef(value);
+}
+
+util::Reference::~Reference()
+{
+    if (m_value)
+        m_env->DeleteGlobalRef(m_value);
+}
+
+void util::Reference::set(jobject value)
+{
+    if (m_value)
+        m_env->DeleteGlobalRef(m_value);
+    m_value = m_env->NewGlobalRef(value);
 }
